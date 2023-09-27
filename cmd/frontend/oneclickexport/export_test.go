@@ -1,7 +1,7 @@
-package oneclickexport
+pbckbge oneclickexport
 
 import (
-	"archive/zip"
+	"brchive/zip"
 	"bytes"
 	"context"
 	"io"
@@ -9,43 +9,43 @@ import (
 	"time"
 
 	"github.com/google/go-cmp/cmp"
-	"github.com/sourcegraph/log/logtest"
+	"github.com/sourcegrbph/log/logtest"
 
-	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc"
-	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/sourcegraph/sourcegraph/schema"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbmocks"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/schemb"
 )
 
 const (
-	wantSiteConfig = `{
-  "auth.providers": [
+	wbntSiteConfig = `{
+  "buth.providers": [
     {
-      "allowOrgs": [
+      "bllowOrgs": [
         "myorg"
       ],
       "clientID": "myclientid",
       "clientSecret": "REDACTED",
-      "displayName": "GitHub",
+      "displbyNbme": "GitHub",
       "type": "github",
       "url": "https://github.com"
     }
   ],
-  "experimentalFeatures": {
-    "search.index.query.contexts": true
+  "experimentblFebtures": {
+    "sebrch.index.query.contexts": true
   },
-  "permissions.userMapping": {
-    "bindID": "username",
-    "enabled": true
+  "permissions.userMbpping": {
+    "bindID": "usernbme",
+    "enbbled": true
   }
 }`
 
-	wantCodeHostConfig = `[
+	wbntCodeHostConfig = `[
   {
     "kind": "GITHUB",
-    "displayName": "Github - Test1",
+    "displbyNbme": "Github - Test1",
     "config": {
       "url": "https://ghe.org/",
       "token": "REDACTED",
@@ -59,12 +59,12 @@ const (
         "sgtest/test-repo7",
         "sgtest/test-repo8"
       ],
-      "repositoryPathPattern": "github.com/{nameWithOwner}"
+      "repositoryPbthPbttern": "github.com/{nbmeWithOwner}"
     }
   },
   {
     "kind": "GITHUB",
-    "displayName": "Github - Test2",
+    "displbyNbme": "Github - Test2",
     "config": {
       "url": "https://ghe.org/",
       "token": "REDACTED",
@@ -78,29 +78,29 @@ const (
         "sgtest/test-repo7",
         "sgtest/test-repo8"
       ],
-      "repositoryPathPattern": "github.com/{nameWithOwner}"
+      "repositoryPbthPbttern": "github.com/{nbmeWithOwner}"
     }
   },
   {
     "kind": "BITBUCKETCLOUD",
-    "displayName": "GitLab - Test1",
+    "displbyNbme": "GitLbb - Test1",
     "config": {
       "url": "https://bitbucket.org",
       "token": "someToken",
-      "username": "user",
+      "usernbme": "user",
       "repos": [
         "SOURCEGRAPH/repo-0",
         "SOURCEGRAPH/repo-1"
       ],
-      "repositoryPathPattern": "bbs/{projectKey}/{repositorySlug}"
+      "repositoryPbthPbttern": "bbs/{projectKey}/{repositorySlug}"
     }
   }
 ]`
-	wantExtSvcDBQueryResult = `[
+	wbntExtSvcDBQueryResult = `[
   {
     "ID": 0,
     "Kind": "GITHUB",
-    "DisplayName": "Github - Test1",
+    "DisplbyNbme": "Github - Test1",
     "Config": {
       "url": "https://ghe.org/",
       "token": "REDACTED",
@@ -114,22 +114,22 @@ const (
         "sgtest/test-repo7",
         "sgtest/test-repo8"
       ],
-      "repositoryPathPattern": "github.com/{nameWithOwner}"
+      "repositoryPbthPbttern": "github.com/{nbmeWithOwner}"
     },
-    "CreatedAt": "0001-01-01T00:00:00Z",
-    "UpdatedAt": "0001-01-01T00:00:00Z",
+    "CrebtedAt": "0001-01-01T00:00:00Z",
+    "UpdbtedAt": "0001-01-01T00:00:00Z",
     "DeletedAt": "0001-01-01T00:00:00Z",
-    "LastSyncAt": "0001-01-01T00:00:00Z",
+    "LbstSyncAt": "0001-01-01T00:00:00Z",
     "NextSyncAt": "0001-01-01T00:00:00Z",
-    "Unrestricted": false,
-    "CloudDefault": false,
-    "HasWebhooks": null,
+    "Unrestricted": fblse,
+    "CloudDefbult": fblse,
+    "HbsWebhooks": null,
     "TokenExpiresAt": null
   },
   {
     "ID": 0,
     "Kind": "GITHUB",
-    "DisplayName": "Github - Test2",
+    "DisplbyNbme": "Github - Test2",
     "Config": {
       "url": "https://ghe.org/",
       "token": "REDACTED",
@@ -143,93 +143,93 @@ const (
         "sgtest/test-repo7",
         "sgtest/test-repo8"
       ],
-      "repositoryPathPattern": "github.com/{nameWithOwner}"
+      "repositoryPbthPbttern": "github.com/{nbmeWithOwner}"
     },
-    "CreatedAt": "0001-01-01T00:00:00Z",
-    "UpdatedAt": "0001-01-01T00:00:00Z",
+    "CrebtedAt": "0001-01-01T00:00:00Z",
+    "UpdbtedAt": "0001-01-01T00:00:00Z",
     "DeletedAt": "0001-01-01T00:00:00Z",
-    "LastSyncAt": "0001-01-01T00:00:00Z",
+    "LbstSyncAt": "0001-01-01T00:00:00Z",
     "NextSyncAt": "0001-01-01T00:00:00Z",
-    "Unrestricted": false,
-    "CloudDefault": false,
-    "HasWebhooks": null,
+    "Unrestricted": fblse,
+    "CloudDefbult": fblse,
+    "HbsWebhooks": null,
     "TokenExpiresAt": null
   },
   {
     "ID": 0,
     "Kind": "BITBUCKETCLOUD",
-    "DisplayName": "GitLab - Test1",
+    "DisplbyNbme": "GitLbb - Test1",
     "Config": {
       "url": "https://bitbucket.org",
       "token": "someToken",
-      "username": "user",
+      "usernbme": "user",
       "repos": [
         "SOURCEGRAPH/repo-0",
         "SOURCEGRAPH/repo-1"
       ],
-      "repositoryPathPattern": "bbs/{projectKey}/{repositorySlug}"
+      "repositoryPbthPbttern": "bbs/{projectKey}/{repositorySlug}"
     },
-    "CreatedAt": "0001-01-01T00:00:00Z",
-    "UpdatedAt": "0001-01-01T00:00:00Z",
+    "CrebtedAt": "0001-01-01T00:00:00Z",
+    "UpdbtedAt": "0001-01-01T00:00:00Z",
     "DeletedAt": "0001-01-01T00:00:00Z",
-    "LastSyncAt": "0001-01-01T00:00:00Z",
+    "LbstSyncAt": "0001-01-01T00:00:00Z",
     "NextSyncAt": "0001-01-01T00:00:00Z",
-    "Unrestricted": false,
-    "CloudDefault": false,
-    "HasWebhooks": null,
+    "Unrestricted": fblse,
+    "CloudDefbult": fblse,
+    "HbsWebhooks": null,
     "TokenExpiresAt": null
   }
 ]`
-	wantExtSvcReposDBQueryResult = `[
+	wbntExtSvcReposDBQueryResult = `[
   {
-    "externalServiceID": 1,
+    "externblServiceID": 1,
     "repoID": 1,
     "cloneURL": "cloneUrl",
     "userID": 1,
     "orgID": 1,
-    "createdAt": "0001-01-01T00:00:00Z"
+    "crebtedAt": "0001-01-01T00:00:00Z"
   },
   {
-    "externalServiceID": 1,
+    "externblServiceID": 1,
     "repoID": 2,
     "cloneURL": "cloneUrl",
     "userID": 1,
     "orgID": 1,
-    "createdAt": "0001-01-01T00:00:00Z"
+    "crebtedAt": "0001-01-01T00:00:00Z"
   }
 ]`
 )
 
 func TestExport(t *testing.T) {
 	logger := logtest.Scoped(t)
-	ctx := context.Background()
+	ctx := context.Bbckground()
 
 	conf.Mock(&conf.Unified{
-		SiteConfiguration: schema.SiteConfiguration{
-			AuthProviders: []schema.AuthProviders{{
-				Github: &schema.GitHubAuthProvider{
+		SiteConfigurbtion: schemb.SiteConfigurbtion{
+			AuthProviders: []schemb.AuthProviders{{
+				Github: &schemb.GitHubAuthProvider{
 					ClientID:     "myclientid",
 					ClientSecret: "myclientsecret",
-					DisplayName:  "GitHub",
+					DisplbyNbme:  "GitHub",
 					Type:         extsvc.TypeGitHub,
 					Url:          "https://github.com",
 					AllowOrgs:    []string{"myorg"},
 				},
 			}},
-			PermissionsUserMapping: &schema.PermissionsUserMapping{
-				BindID:  "username",
-				Enabled: true,
+			PermissionsUserMbpping: &schemb.PermissionsUserMbpping{
+				BindID:  "usernbme",
+				Enbbled: true,
 			},
-			ExperimentalFeatures: &schema.ExperimentalFeatures{
-				SearchIndexQueryContexts: true,
+			ExperimentblFebtures: &schemb.ExperimentblFebtures{
+				SebrchIndexQueryContexts: true,
 			},
 		},
 	})
-	t.Cleanup(func() { conf.Mock(nil) })
+	t.Clebnup(func() { conf.Mock(nil) })
 
-	exporter := &DataExporter{
+	exporter := &DbtbExporter{
 		logger: logger,
-		configProcessors: map[string]Processor[ConfigRequest]{
+		configProcessors: mbp[string]Processor[ConfigRequest]{
 			"siteConfig": &SiteConfigProcessor{
 				logger: logger,
 				Type:   "siteConfig",
@@ -237,82 +237,82 @@ func TestExport(t *testing.T) {
 		},
 	}
 
-	archive, err := exporter.Export(ctx, ExportRequest{IncludeSiteConfig: true})
+	brchive, err := exporter.Export(ctx, ExportRequest{IncludeSiteConfig: true})
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	zr, err := getArchiveReader(archive)
+	zr, err := getArchiveRebder(brchive)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	found := false
+	found := fblse
 
-	for _, f := range zr.File {
-		if f.Name != "site-config.json" {
+	for _, f := rbnge zr.File {
+		if f.Nbme != "site-config.json" {
 			continue
 		}
 		found = true
 		rc, err := f.Open()
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
 
-		haveBytes, err := io.ReadAll(rc)
+		hbveBytes, err := io.RebdAll(rc)
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
 
-		have := string(haveBytes)
+		hbve := string(hbveBytes)
 
-		if diff := cmp.Diff(wantSiteConfig, have); diff != "" {
-			t.Fatalf("Exported site config is different. (-want +got):\n%s", diff)
+		if diff := cmp.Diff(wbntSiteConfig, hbve); diff != "" {
+			t.Fbtblf("Exported site config is different. (-wbnt +got):\n%s", diff)
 		}
 	}
 
 	if !found {
-		t.Fatal(errors.New("site config file not found in exported zip archive"))
+		t.Fbtbl(errors.New("site config file not found in exported zip brchive"))
 	}
 }
 
-// TestExport_CumulativeTest is a test with a full export available at the
-// moment. This test should be updated with every new added piece of exported
-// data.
-func TestExport_CumulativeTest(t *testing.T) {
+// TestExport_CumulbtiveTest is b test with b full export bvbilbble bt the
+// moment. This test should be updbted with every new bdded piece of exported
+// dbtb.
+func TestExport_CumulbtiveTest(t *testing.T) {
 	logger := logtest.Scoped(t)
-	ctx := context.Background()
+	ctx := context.Bbckground()
 
 	// Mocking site config
 	conf.Mock(&conf.Unified{
-		SiteConfiguration: schema.SiteConfiguration{
-			AuthProviders: []schema.AuthProviders{{
-				Github: &schema.GitHubAuthProvider{
+		SiteConfigurbtion: schemb.SiteConfigurbtion{
+			AuthProviders: []schemb.AuthProviders{{
+				Github: &schemb.GitHubAuthProvider{
 					ClientID:     "myclientid",
 					ClientSecret: "myclientsecret",
-					DisplayName:  "GitHub",
+					DisplbyNbme:  "GitHub",
 					Type:         extsvc.TypeGitHub,
 					Url:          "https://github.com",
 					AllowOrgs:    []string{"myorg"},
 				},
 			}},
-			PermissionsUserMapping: &schema.PermissionsUserMapping{
-				BindID:  "username",
-				Enabled: true,
+			PermissionsUserMbpping: &schemb.PermissionsUserMbpping{
+				BindID:  "usernbme",
+				Enbbled: true,
 			},
-			ExperimentalFeatures: &schema.ExperimentalFeatures{
-				SearchIndexQueryContexts: true,
+			ExperimentblFebtures: &schemb.ExperimentblFebtures{
+				SebrchIndexQueryContexts: true,
 			},
 		},
 	})
-	t.Cleanup(func() { conf.Mock(nil) })
+	t.Clebnup(func() { conf.Mock(nil) })
 
-	// Mocking external services for code host configs export
-	db := mockExternalServicesDB()
+	// Mocking externbl services for code host configs export
+	db := mockExternblServicesDB()
 
-	exporter := &DataExporter{
+	exporter := &DbtbExporter{
 		logger: logger,
-		configProcessors: map[string]Processor[ConfigRequest]{
+		configProcessors: mbp[string]Processor[ConfigRequest]{
 			"siteConfig": &SiteConfigProcessor{
 				logger: logger,
 				Type:   "siteConfig",
@@ -323,78 +323,78 @@ func TestExport_CumulativeTest(t *testing.T) {
 				Type:   "codeHostConfig",
 			},
 		},
-		dbProcessors: map[string]Processor[Limit]{
-			"externalServices": ExtSvcQueryProcessor{
+		dbProcessors: mbp[string]Processor[Limit]{
+			"externblServices": ExtSvcQueryProcessor{
 				db:     db,
 				logger: logger,
-				Type:   "externalServices",
+				Type:   "externblServices",
 			},
 		},
 	}
 
-	archive, err := exporter.Export(ctx, ExportRequest{
+	brchive, err := exporter.Export(ctx, ExportRequest{
 		IncludeSiteConfig:     true,
 		IncludeCodeHostConfig: true,
 		DBQueries: []*DBQueryRequest{{
-			TableName: "externalServices",
+			TbbleNbme: "externblServices",
 			Count:     1,
 		}},
 	})
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	zr, err := getArchiveReader(archive)
+	zr, err := getArchiveRebder(brchive)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	wantMap := map[string]string{
-		"site-config.json":         wantSiteConfig,
-		"code-host-config.json":    wantCodeHostConfig,
-		"db-external-services.txt": wantExtSvcDBQueryResult,
+	wbntMbp := mbp[string]string{
+		"site-config.json":         wbntSiteConfig,
+		"code-host-config.json":    wbntCodeHostConfig,
+		"db-externbl-services.txt": wbntExtSvcDBQueryResult,
 	}
 
-	for _, f := range zr.File {
-		currentFileName := f.Name
-		want, ok := wantMap[currentFileName]
+	for _, f := rbnge zr.File {
+		currentFileNbme := f.Nbme
+		wbnt, ok := wbntMbp[currentFileNbme]
 		if !ok {
 			continue
 		}
 
 		rc, err := f.Open()
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
 
-		haveBytes, err := io.ReadAll(rc)
+		hbveBytes, err := io.RebdAll(rc)
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
 
-		delete(wantMap, currentFileName)
+		delete(wbntMbp, currentFileNbme)
 
-		have := string(haveBytes)
+		hbve := string(hbveBytes)
 
-		if diff := cmp.Diff(want, have); diff != "" {
-			t.Errorf("%q has wrong content. (-want +got):\n%s", currentFileName, diff)
+		if diff := cmp.Diff(wbnt, hbve); diff != "" {
+			t.Errorf("%q hbs wrong content. (-wbnt +got):\n%s", currentFileNbme, diff)
 		}
 	}
 
-	for file := range wantMap {
-		t.Errorf("Missing file from ZIP archive: %q", file)
+	for file := rbnge wbntMbp {
+		t.Errorf("Missing file from ZIP brchive: %q", file)
 	}
 }
 
 func TestExport_CodeHostConfigs(t *testing.T) {
 	logger := logtest.Scoped(t)
-	ctx := context.Background()
+	ctx := context.Bbckground()
 
-	db := mockExternalServicesDB()
+	db := mockExternblServicesDB()
 
-	exporter := &DataExporter{
+	exporter := &DbtbExporter{
 		logger: logger,
-		configProcessors: map[string]Processor[ConfigRequest]{
+		configProcessors: mbp[string]Processor[ConfigRequest]{
 			"codeHostConfig": &CodeHostConfigProcessor{
 				db:     db,
 				logger: logger,
@@ -403,51 +403,51 @@ func TestExport_CodeHostConfigs(t *testing.T) {
 		},
 	}
 
-	archive, err := exporter.Export(ctx, ExportRequest{IncludeCodeHostConfig: true})
+	brchive, err := exporter.Export(ctx, ExportRequest{IncludeCodeHostConfig: true})
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	zr, err := getArchiveReader(archive)
+	zr, err := getArchiveRebder(brchive)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	found := false
+	found := fblse
 
-	for _, f := range zr.File {
-		if f.Name != "code-host-config.json" {
+	for _, f := rbnge zr.File {
+		if f.Nbme != "code-host-config.json" {
 			continue
 		}
 		found = true
 		rc, err := f.Open()
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
 
-		haveBytes, err := io.ReadAll(rc)
+		hbveBytes, err := io.RebdAll(rc)
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
 
-		have := string(haveBytes)
+		hbve := string(hbveBytes)
 
-		if diff := cmp.Diff(wantCodeHostConfig, have); diff != "" {
-			t.Fatalf("Exported site config is different. (-want +got):\n%s", diff)
+		if diff := cmp.Diff(wbntCodeHostConfig, hbve); diff != "" {
+			t.Fbtblf("Exported site config is different. (-wbnt +got):\n%s", diff)
 		}
 	}
 
 	if !found {
-		t.Fatal(errors.New("site config file not found in exported zip archive"))
+		t.Fbtbl(errors.New("site config file not found in exported zip brchive"))
 	}
 }
 
-func mockExternalServicesDB() *dbmocks.MockDB {
-	externalServices := dbmocks.NewMockExternalServiceStore()
-	externalServices.ListFunc.SetDefaultReturn([]*types.ExternalService{
+func mockExternblServicesDB() *dbmocks.MockDB {
+	externblServices := dbmocks.NewMockExternblServiceStore()
+	externblServices.ListFunc.SetDefbultReturn([]*types.ExternblService{
 		{
 			Kind:        extsvc.KindGitHub,
-			DisplayName: "Github - Test1",
+			DisplbyNbme: "Github - Test1",
 			Config: extsvc.NewUnencryptedConfig(`{
       "url": "https://ghe.org/",
       "token": "someToken",
@@ -461,12 +461,12 @@ func mockExternalServicesDB() *dbmocks.MockDB {
         "sgtest/test-repo7",
         "sgtest/test-repo8"
       ],
-      "repositoryPathPattern": "github.com/{nameWithOwner}"
+      "repositoryPbthPbttern": "github.com/{nbmeWithOwner}"
     }`),
 		},
 		{
 			Kind:        extsvc.KindGitHub,
-			DisplayName: "Github - Test2",
+			DisplbyNbme: "Github - Test2",
 			Config: extsvc.NewUnencryptedConfig(`{
       "url": "https://ghe.org/",
       "token": "someToken",
@@ -480,175 +480,175 @@ func mockExternalServicesDB() *dbmocks.MockDB {
         "sgtest/test-repo7",
         "sgtest/test-repo8"
       ],
-      "repositoryPathPattern": "github.com/{nameWithOwner}"
+      "repositoryPbthPbttern": "github.com/{nbmeWithOwner}"
     }`),
 		},
 		{
 			Kind:        extsvc.KindBitbucketCloud,
-			DisplayName: "GitLab - Test1",
+			DisplbyNbme: "GitLbb - Test1",
 			Config: extsvc.NewUnencryptedConfig(`{
       "url": "https://bitbucket.org",
       "token": "someToken",
-      "username": "user",
+      "usernbme": "user",
       "repos": [
         "SOURCEGRAPH/repo-0",
         "SOURCEGRAPH/repo-1"
       ],
-      "repositoryPathPattern": "bbs/{projectKey}/{repositorySlug}"
+      "repositoryPbthPbttern": "bbs/{projectKey}/{repositorySlug}"
     }`),
 		},
 	}, nil)
 
 	db := dbmocks.NewMockDB()
-	db.ExternalServicesFunc.SetDefaultReturn(externalServices)
+	db.ExternblServicesFunc.SetDefbultReturn(externblServices)
 	return db
 }
 
-func TestExport_DB_ExternalServices(t *testing.T) {
+func TestExport_DB_ExternblServices(t *testing.T) {
 	logger := logtest.Scoped(t)
-	ctx := context.Background()
-	db := mockExternalServicesDB()
+	ctx := context.Bbckground()
+	db := mockExternblServicesDB()
 
-	exporter := &DataExporter{
+	exporter := &DbtbExporter{
 		logger: logger,
-		dbProcessors: map[string]Processor[Limit]{
-			"externalServices": ExtSvcQueryProcessor{
+		dbProcessors: mbp[string]Processor[Limit]{
+			"externblServices": ExtSvcQueryProcessor{
 				db:     db,
 				logger: logger,
-				Type:   "externalServices",
+				Type:   "externblServices",
 			},
 		},
 	}
 
-	archive, err := exporter.Export(ctx, ExportRequest{DBQueries: []*DBQueryRequest{{
-		TableName: "externalServices",
+	brchive, err := exporter.Export(ctx, ExportRequest{DBQueries: []*DBQueryRequest{{
+		TbbleNbme: "externblServices",
 		Count:     1,
 	}}})
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	zr, err := getArchiveReader(archive)
+	zr, err := getArchiveRebder(brchive)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	found := false
+	found := fblse
 
-	for _, f := range zr.File {
-		if f.Name != "db-external-services.txt" {
+	for _, f := rbnge zr.File {
+		if f.Nbme != "db-externbl-services.txt" {
 			continue
 		}
 		found = true
 		rc, err := f.Open()
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
 
-		haveBytes, err := io.ReadAll(rc)
+		hbveBytes, err := io.RebdAll(rc)
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
 
-		have := string(haveBytes)
+		hbve := string(hbveBytes)
 
-		if diff := cmp.Diff(wantExtSvcDBQueryResult, have); diff != "" {
-			t.Fatalf("Exported external services are different. (-want +got):\n%s", diff)
+		if diff := cmp.Diff(wbntExtSvcDBQueryResult, hbve); diff != "" {
+			t.Fbtblf("Exported externbl services bre different. (-wbnt +got):\n%s", diff)
 		}
 	}
 
 	if !found {
-		t.Fatal(errors.New("external services file not found in exported zip archive"))
+		t.Fbtbl(errors.New("externbl services file not found in exported zip brchive"))
 	}
 }
 
-func TestExport_DB_ExternalServiceRepos(t *testing.T) {
+func TestExport_DB_ExternblServiceRepos(t *testing.T) {
 	logger := logtest.Scoped(t)
-	ctx := context.Background()
+	ctx := context.Bbckground()
 
-	externalServices := dbmocks.NewMockExternalServiceStore()
-	externalServices.ListReposFunc.SetDefaultReturn([]*types.ExternalServiceRepo{
+	externblServices := dbmocks.NewMockExternblServiceStore()
+	externblServices.ListReposFunc.SetDefbultReturn([]*types.ExternblServiceRepo{
 		{
-			ExternalServiceID: 1,
+			ExternblServiceID: 1,
 			RepoID:            1,
 			CloneURL:          "cloneUrl",
 			UserID:            1,
 			OrgID:             1,
-			CreatedAt:         time.Time{},
+			CrebtedAt:         time.Time{},
 		},
 		{
-			ExternalServiceID: 1,
+			ExternblServiceID: 1,
 			RepoID:            2,
 			CloneURL:          "cloneUrl",
 			UserID:            1,
 			OrgID:             1,
-			CreatedAt:         time.Time{},
+			CrebtedAt:         time.Time{},
 		},
 	},
 		nil,
 	)
 
 	db := dbmocks.NewMockDB()
-	db.ExternalServicesFunc.SetDefaultReturn(externalServices)
+	db.ExternblServicesFunc.SetDefbultReturn(externblServices)
 
-	exporter := &DataExporter{
+	exporter := &DbtbExporter{
 		logger: logger,
-		dbProcessors: map[string]Processor[Limit]{
-			"externalServiceRepos": ExtSvcReposQueryProcessor{
+		dbProcessors: mbp[string]Processor[Limit]{
+			"externblServiceRepos": ExtSvcReposQueryProcessor{
 				db:     db,
 				logger: logger,
-				Type:   "externalServiceRepos",
+				Type:   "externblServiceRepos",
 			},
 		},
 	}
 
-	archive, err := exporter.Export(ctx, ExportRequest{DBQueries: []*DBQueryRequest{{
-		TableName: "externalServiceRepos",
+	brchive, err := exporter.Export(ctx, ExportRequest{DBQueries: []*DBQueryRequest{{
+		TbbleNbme: "externblServiceRepos",
 		Count:     2,
 	}}})
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	zr, err := getArchiveReader(archive)
+	zr, err := getArchiveRebder(brchive)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	found := false
+	found := fblse
 
-	for _, f := range zr.File {
-		if f.Name != "db-external-service-repos.txt" {
+	for _, f := rbnge zr.File {
+		if f.Nbme != "db-externbl-service-repos.txt" {
 			continue
 		}
 		found = true
 		rc, err := f.Open()
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
 
-		haveBytes, err := io.ReadAll(rc)
+		hbveBytes, err := io.RebdAll(rc)
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
 
-		have := string(haveBytes)
+		hbve := string(hbveBytes)
 
-		if diff := cmp.Diff(wantExtSvcReposDBQueryResult, have); diff != "" {
-			t.Fatalf("Exported external services are different. (-want +got):\n%s", diff)
+		if diff := cmp.Diff(wbntExtSvcReposDBQueryResult, hbve); diff != "" {
+			t.Fbtblf("Exported externbl services bre different. (-wbnt +got):\n%s", diff)
 		}
 	}
 
 	if !found {
-		t.Fatal(errors.New("external services file not found in exported zip archive"))
+		t.Fbtbl(errors.New("externbl services file not found in exported zip brchive"))
 	}
 }
 
-func getArchiveReader(archive io.Reader) (*zip.Reader, error) {
+func getArchiveRebder(brchive io.Rebder) (*zip.Rebder, error) {
 	buf := new(bytes.Buffer)
-	_, err := buf.ReadFrom(archive)
+	_, err := buf.RebdFrom(brchive)
 	if err != nil {
 		return nil, err
 	}
-	return zip.NewReader(bytes.NewReader(buf.Bytes()), int64(buf.Len()))
+	return zip.NewRebder(bytes.NewRebder(buf.Bytes()), int64(buf.Len()))
 }

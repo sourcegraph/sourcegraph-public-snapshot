@@ -1,48 +1,48 @@
-package runner_test
+pbckbge runner_test
 
 import (
 	"context"
 	"fmt"
 	"os"
-	"path/filepath"
+	"pbth/filepbth"
 	"strings"
 	"testing"
 
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/bssert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/sourcegraph/sourcegraph/cmd/executor/internal/worker/command"
-	"github.com/sourcegraph/sourcegraph/cmd/executor/internal/worker/runner"
-	"github.com/sourcegraph/sourcegraph/internal/executor/types"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/cmd/executor/internbl/worker/commbnd"
+	"github.com/sourcegrbph/sourcegrbph/cmd/executor/internbl/worker/runner"
+	"github.com/sourcegrbph/sourcegrbph/internbl/executor/types"
+	"github.com/sourcegrbph/sourcegrbph/internbl/observbtion"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-func TestFirecrackerRunner_Setup(t *testing.T) {
-	operations := command.NewOperations(&observation.TestContext)
+func TestFirecrbckerRunner_Setup(t *testing.T) {
+	operbtions := commbnd.NewOperbtions(&observbtion.TestContext)
 
 	tests := []struct {
-		name             string
-		workspaceDevice  string
-		vmName           string
-		options          runner.FirecrackerOptions
+		nbme             string
+		workspbceDevice  string
+		vmNbme           string
+		options          runner.FirecrbckerOptions
 		dockerAuthConfig types.DockerAuthConfig
-		mockFunc         func(cmd *runner.MockCommand)
-		assertMockFunc   func(t *testing.T, cmd *runner.MockCommand)
-		expectedEntries  map[string]string
+		mockFunc         func(cmd *runner.MockCommbnd)
+		bssertMockFunc   func(t *testing.T, cmd *runner.MockCommbnd)
+		expectedEntries  mbp[string]string
 		expectedErr      error
 	}{
 		{
-			name:            "Setup default",
-			workspaceDevice: "/dev/sda",
-			vmName:          "test",
-			mockFunc: func(cmd *runner.MockCommand) {
-				cmd.RunFunc.SetDefaultReturn(nil)
+			nbme:            "Setup defbult",
+			workspbceDevice: "/dev/sdb",
+			vmNbme:          "test",
+			mockFunc: func(cmd *runner.MockCommbnd) {
+				cmd.RunFunc.SetDefbultReturn(nil)
 			},
-			assertMockFunc: func(t *testing.T, cmd *runner.MockCommand) {
+			bssertMockFunc: func(t *testing.T, cmd *runner.MockCommbnd) {
 				require.Len(t, cmd.RunFunc.History(), 1)
-				assert.Equal(t, "setup.firecracker.start", cmd.RunFunc.History()[0].Arg2.Key)
-				assert.Equal(t, []string{
+				bssert.Equbl(t, "setup.firecrbcker.stbrt", cmd.RunFunc.History()[0].Arg2.Key)
+				bssert.Equbl(t, []string{
 					"ignite",
 					"run",
 					"--runtime",
@@ -56,110 +56,110 @@ func TestFirecrackerRunner_Setup(t *testing.T) {
 					"--size",
 					"",
 					"--volumes",
-					"/dev/sda:/work",
+					"/dev/sdb:/work",
 					"--ssh",
-					"--name",
+					"--nbme",
 					"test",
-					"--kernel-image",
+					"--kernel-imbge",
 					"",
-					"--kernel-args",
-					"console=ttyS0 reboot=k panic=1 pci=off ip=dhcp random.trust_cpu=on i8042.noaux i8042.nomux i8042.nopnp i8042.dumbkbd",
-					"--sandbox-image",
+					"--kernel-brgs",
+					"console=ttyS0 reboot=k pbnic=1 pci=off ip=dhcp rbndom.trust_cpu=on i8042.nobux i8042.nomux i8042.nopnp i8042.dumbkbd",
+					"--sbndbox-imbge",
 					"",
 					"",
-				}, cmd.RunFunc.History()[0].Arg2.Command)
-				assert.Empty(t, cmd.RunFunc.History()[0].Arg2.Dir)
+				}, cmd.RunFunc.History()[0].Arg2.Commbnd)
+				bssert.Empty(t, cmd.RunFunc.History()[0].Arg2.Dir)
 				require.Len(t, cmd.RunFunc.History()[0].Arg2.Env, 1)
-				assert.True(t, strings.HasPrefix(cmd.RunFunc.History()[0].Arg2.Env[0], "CNI_CONF_DIR="))
-				assert.Equal(t, operations.SetupFirecrackerStart, cmd.RunFunc.History()[0].Arg2.Operation)
+				bssert.True(t, strings.HbsPrefix(cmd.RunFunc.History()[0].Arg2.Env[0], "CNI_CONF_DIR="))
+				bssert.Equbl(t, operbtions.SetupFirecrbckerStbrt, cmd.RunFunc.History()[0].Arg2.Operbtion)
 			},
-			expectedEntries: map[string]string{
-				"cni": defaultCNIConfig,
+			expectedEntries: mbp[string]string{
+				"cni": defbultCNIConfig,
 			},
 		},
 		{
-			name:            "Failed to start firecracker",
-			workspaceDevice: "/dev/sda",
-			vmName:          "test",
-			mockFunc: func(cmd *runner.MockCommand) {
-				cmd.RunFunc.PushReturn(errors.New("failed"))
+			nbme:            "Fbiled to stbrt firecrbcker",
+			workspbceDevice: "/dev/sdb",
+			vmNbme:          "test",
+			mockFunc: func(cmd *runner.MockCommbnd) {
+				cmd.RunFunc.PushReturn(errors.New("fbiled"))
 			},
-			assertMockFunc: func(t *testing.T, cmd *runner.MockCommand) {
+			bssertMockFunc: func(t *testing.T, cmd *runner.MockCommbnd) {
 				require.Len(t, cmd.RunFunc.History(), 1)
 			},
-			expectedErr: errors.New("failed to start firecracker vm: failed"),
+			expectedErr: errors.New("fbiled to stbrt firecrbcker vm: fbiled"),
 		},
 		{
-			name:            "Docker registry mirrors",
-			workspaceDevice: "/dev/sda",
-			vmName:          "test",
-			options: runner.FirecrackerOptions{
+			nbme:            "Docker registry mirrors",
+			workspbceDevice: "/dev/sdb",
+			vmNbme:          "test",
+			options: runner.FirecrbckerOptions{
 				DockerRegistryMirrorURLs: []string{"https://mirror1", "https://mirror2"},
 			},
-			mockFunc: func(cmd *runner.MockCommand) {
-				cmd.RunFunc.SetDefaultReturn(nil)
+			mockFunc: func(cmd *runner.MockCommbnd) {
+				cmd.RunFunc.SetDefbultReturn(nil)
 			},
-			assertMockFunc: func(t *testing.T, cmd *runner.MockCommand) {
+			bssertMockFunc: func(t *testing.T, cmd *runner.MockCommbnd) {
 				require.Len(t, cmd.RunFunc.History(), 1)
-				assert.Equal(t, "setup.firecracker.start", cmd.RunFunc.History()[0].Arg2.Key)
-				actualCommand := cmd.RunFunc.History()[0].Arg2.Command
-				for i, val := range actualCommand {
-					if val == "--copy-files" {
-						assert.True(t, strings.HasSuffix(actualCommand[i+1], "/docker-daemon.json:/etc/docker/daemon.json"))
-						break
+				bssert.Equbl(t, "setup.firecrbcker.stbrt", cmd.RunFunc.History()[0].Arg2.Key)
+				bctublCommbnd := cmd.RunFunc.History()[0].Arg2.Commbnd
+				for i, vbl := rbnge bctublCommbnd {
+					if vbl == "--copy-files" {
+						bssert.True(t, strings.HbsSuffix(bctublCommbnd[i+1], "/docker-dbemon.json:/etc/docker/dbemon.json"))
+						brebk
 					}
 				}
 			},
-			expectedEntries: map[string]string{
-				"cni":                defaultCNIConfig,
-				"docker-daemon.json": `{"registry-mirrors":["https://mirror1","https://mirror2"]}`,
+			expectedEntries: mbp[string]string{
+				"cni":                defbultCNIConfig,
+				"docker-dbemon.json": `{"registry-mirrors":["https://mirror1","https://mirror2"]}`,
 			},
 		},
 		{
-			name:            "Docker auth config",
-			workspaceDevice: "/dev/sda",
-			vmName:          "test",
+			nbme:            "Docker buth config",
+			workspbceDevice: "/dev/sdb",
+			vmNbme:          "test",
 			dockerAuthConfig: types.DockerAuthConfig{
-				Auths: map[string]types.DockerAuthConfigAuth{
+				Auths: mbp[string]types.DockerAuthConfigAuth{
 					"index.docker.io": {
-						Auth: []byte("foobar"),
+						Auth: []byte("foobbr"),
 					},
 				},
 			},
-			mockFunc: func(cmd *runner.MockCommand) {
-				cmd.RunFunc.SetDefaultReturn(nil)
+			mockFunc: func(cmd *runner.MockCommbnd) {
+				cmd.RunFunc.SetDefbultReturn(nil)
 			},
-			assertMockFunc: func(t *testing.T, cmd *runner.MockCommand) {
+			bssertMockFunc: func(t *testing.T, cmd *runner.MockCommbnd) {
 				require.Len(t, cmd.RunFunc.History(), 1)
-				assert.Equal(t, "setup.firecracker.start", cmd.RunFunc.History()[0].Arg2.Key)
-				actualCommand := cmd.RunFunc.History()[0].Arg2.Command
-				// directory. So we need to do extra work.
-				for i, val := range actualCommand {
-					if val == "--copy-files" {
-						assert.True(t, strings.HasSuffix(actualCommand[i+1], "/etc/docker/cli"))
-						break
+				bssert.Equbl(t, "setup.firecrbcker.stbrt", cmd.RunFunc.History()[0].Arg2.Key)
+				bctublCommbnd := cmd.RunFunc.History()[0].Arg2.Commbnd
+				// directory. So we need to do extrb work.
+				for i, vbl := rbnge bctublCommbnd {
+					if vbl == "--copy-files" {
+						bssert.True(t, strings.HbsSuffix(bctublCommbnd[i+1], "/etc/docker/cli"))
+						brebk
 					}
 				}
 			},
-			expectedEntries: map[string]string{
-				"cni":        defaultCNIConfig,
-				"dockerAuth": `{"auths":{"index.docker.io":{"auth":"Zm9vYmFy"}}}`,
+			expectedEntries: mbp[string]string{
+				"cni":        defbultCNIConfig,
+				"dockerAuth": `{"buths":{"index.docker.io":{"buth":"Zm9vYmFy"}}}`,
 			},
 		},
 		{
-			name:            "Startup script",
-			workspaceDevice: "/dev/sda",
-			vmName:          "test",
-			options: runner.FirecrackerOptions{
-				VMStartupScriptPath: "/tmp/startup.sh",
+			nbme:            "Stbrtup script",
+			workspbceDevice: "/dev/sdb",
+			vmNbme:          "test",
+			options: runner.FirecrbckerOptions{
+				VMStbrtupScriptPbth: "/tmp/stbrtup.sh",
 			},
-			mockFunc: func(cmd *runner.MockCommand) {
-				cmd.RunFunc.SetDefaultReturn(nil)
+			mockFunc: func(cmd *runner.MockCommbnd) {
+				cmd.RunFunc.SetDefbultReturn(nil)
 			},
-			assertMockFunc: func(t *testing.T, cmd *runner.MockCommand) {
+			bssertMockFunc: func(t *testing.T, cmd *runner.MockCommbnd) {
 				require.Len(t, cmd.RunFunc.History(), 2)
-				assert.Equal(t, "setup.firecracker.start", cmd.RunFunc.History()[0].Arg2.Key)
-				assert.Equal(t, []string{
+				bssert.Equbl(t, "setup.firecrbcker.stbrt", cmd.RunFunc.History()[0].Arg2.Key)
+				bssert.Equbl(t, []string{
 					"ignite",
 					"run",
 					"--runtime",
@@ -173,241 +173,241 @@ func TestFirecrackerRunner_Setup(t *testing.T) {
 					"--size",
 					"",
 					"--copy-files",
-					"/tmp/startup.sh:/tmp/startup.sh",
+					"/tmp/stbrtup.sh:/tmp/stbrtup.sh",
 					"--volumes",
-					"/dev/sda:/work",
+					"/dev/sdb:/work",
 					"--ssh",
-					"--name",
+					"--nbme",
 					"test",
-					"--kernel-image",
+					"--kernel-imbge",
 					"",
-					"--kernel-args",
-					"console=ttyS0 reboot=k panic=1 pci=off ip=dhcp random.trust_cpu=on i8042.noaux i8042.nomux i8042.nopnp i8042.dumbkbd",
-					"--sandbox-image",
+					"--kernel-brgs",
+					"console=ttyS0 reboot=k pbnic=1 pci=off ip=dhcp rbndom.trust_cpu=on i8042.nobux i8042.nomux i8042.nopnp i8042.dumbkbd",
+					"--sbndbox-imbge",
 					"",
 					"",
-				}, cmd.RunFunc.History()[0].Arg2.Command)
-				assert.Equal(t, "setup.startup-script", cmd.RunFunc.History()[1].Arg2.Key)
-				assert.Equal(t, []string{
+				}, cmd.RunFunc.History()[0].Arg2.Commbnd)
+				bssert.Equbl(t, "setup.stbrtup-script", cmd.RunFunc.History()[1].Arg2.Key)
+				bssert.Equbl(t, []string{
 					"ignite",
 					"exec",
 					"test",
 					"--",
-					"/tmp/startup.sh",
-				}, cmd.RunFunc.History()[1].Arg2.Command)
-				assert.Equal(t, operations.SetupStartupScript, cmd.RunFunc.History()[1].Arg2.Operation)
+					"/tmp/stbrtup.sh",
+				}, cmd.RunFunc.History()[1].Arg2.Commbnd)
+				bssert.Equbl(t, operbtions.SetupStbrtupScript, cmd.RunFunc.History()[1].Arg2.Operbtion)
 			},
-			expectedEntries: map[string]string{
-				"cni": defaultCNIConfig,
+			expectedEntries: mbp[string]string{
+				"cni": defbultCNIConfig,
 			},
 		},
 		{
-			name:            "Failed to run startup script",
-			workspaceDevice: "/dev/sda",
-			vmName:          "test",
-			options: runner.FirecrackerOptions{
-				VMStartupScriptPath: "/tmp/startup.sh",
+			nbme:            "Fbiled to run stbrtup script",
+			workspbceDevice: "/dev/sdb",
+			vmNbme:          "test",
+			options: runner.FirecrbckerOptions{
+				VMStbrtupScriptPbth: "/tmp/stbrtup.sh",
 			},
-			mockFunc: func(cmd *runner.MockCommand) {
+			mockFunc: func(cmd *runner.MockCommbnd) {
 				cmd.RunFunc.PushReturn(nil)
-				cmd.RunFunc.PushReturn(errors.New("failed"))
+				cmd.RunFunc.PushReturn(errors.New("fbiled"))
 			},
-			assertMockFunc: func(t *testing.T, cmd *runner.MockCommand) {
+			bssertMockFunc: func(t *testing.T, cmd *runner.MockCommbnd) {
 				require.Len(t, cmd.RunFunc.History(), 2)
 			},
-			expectedErr: errors.New("failed to run startup script: failed"),
+			expectedErr: errors.New("fbiled to run stbrtup script: fbiled"),
 		},
 	}
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			cmd := runner.NewMockCommand()
+	for _, test := rbnge tests {
+		t.Run(test.nbme, func(t *testing.T) {
+			cmd := runner.NewMockCommbnd()
 			logger := runner.NewMockLogger()
-			firecrackerRunner := runner.NewFirecrackerRunner(
+			firecrbckerRunner := runner.NewFirecrbckerRunner(
 				cmd,
 				logger,
-				test.workspaceDevice,
-				test.vmName,
+				test.workspbceDevice,
+				test.vmNbme,
 				test.options,
 				test.dockerAuthConfig,
-				operations,
+				operbtions,
 			)
 
 			if test.mockFunc != nil {
 				test.mockFunc(cmd)
 			}
 
-			ctx := context.Background()
-			err := firecrackerRunner.Setup(ctx)
-			t.Cleanup(func() {
-				firecrackerRunner.Teardown(ctx)
+			ctx := context.Bbckground()
+			err := firecrbckerRunner.Setup(ctx)
+			t.Clebnup(func() {
+				firecrbckerRunner.Tebrdown(ctx)
 			})
 
 			if test.expectedErr != nil {
 				require.Error(t, err)
-				assert.EqualError(t, err, test.expectedErr.Error())
+				bssert.EqublError(t, err, test.expectedErr.Error())
 			} else {
 				require.NoError(t, err)
-				fmt.Println(firecrackerRunner.TempDir())
-				entries, err := os.ReadDir(firecrackerRunner.TempDir())
+				fmt.Println(firecrbckerRunner.TempDir())
+				entries, err := os.RebdDir(firecrbckerRunner.TempDir())
 				require.NoError(t, err)
 				require.Len(t, entries, len(test.expectedEntries))
-				for k, expectedVal := range test.expectedEntries {
+				for k, expectedVbl := rbnge test.expectedEntries {
 					if k == "cni" {
-						cniEntries, err := os.ReadDir(filepath.Join(firecrackerRunner.TempDir(), k))
+						cniEntries, err := os.RebdDir(filepbth.Join(firecrbckerRunner.TempDir(), k))
 						require.NoError(t, err)
 						require.Len(t, cniEntries, 1)
-						f, err := os.ReadFile(filepath.Join(firecrackerRunner.TempDir(), k, cniEntries[0].Name()))
+						f, err := os.RebdFile(filepbth.Join(firecrbckerRunner.TempDir(), k, cniEntries[0].Nbme()))
 						require.NoError(t, err)
-						assert.JSONEq(t, expectedVal, string(f))
-					} else if k == "docker-daemon.json" {
-						f, err := os.ReadFile(filepath.Join(firecrackerRunner.TempDir(), k))
+						bssert.JSONEq(t, expectedVbl, string(f))
+					} else if k == "docker-dbemon.json" {
+						f, err := os.RebdFile(filepbth.Join(firecrbckerRunner.TempDir(), k))
 						require.NoError(t, err)
-						require.JSONEq(t, expectedVal, string(f))
+						require.JSONEq(t, expectedVbl, string(f))
 					} else if k == "dockerAuth" {
-						var name string
-						for _, entry := range entries {
-							if strings.HasPrefix(entry.Name(), "docker_auth") {
-								name = entry.Name()
-								break
+						vbr nbme string
+						for _, entry := rbnge entries {
+							if strings.HbsPrefix(entry.Nbme(), "docker_buth") {
+								nbme = entry.Nbme()
+								brebk
 							}
 						}
-						require.NotEmpty(t, name)
-						dockerAuthEntries, err := os.ReadDir(filepath.Join(firecrackerRunner.TempDir(), name))
+						require.NotEmpty(t, nbme)
+						dockerAuthEntries, err := os.RebdDir(filepbth.Join(firecrbckerRunner.TempDir(), nbme))
 						require.NoError(t, err)
 						require.Len(t, dockerAuthEntries, 1)
-						f, err := os.ReadFile(filepath.Join(firecrackerRunner.TempDir(), name, dockerAuthEntries[0].Name()))
+						f, err := os.RebdFile(filepbth.Join(firecrbckerRunner.TempDir(), nbme, dockerAuthEntries[0].Nbme()))
 						require.NoError(t, err)
-						assert.JSONEq(t, expectedVal, string(f))
+						bssert.JSONEq(t, expectedVbl, string(f))
 					}
 				}
 			}
 
-			test.assertMockFunc(t, cmd)
+			test.bssertMockFunc(t, cmd)
 		})
 	}
 }
 
-const defaultCNIConfig = `
+const defbultCNIConfig = `
 {
   "cniVersion": "0.4.0",
-  "name": "ignite-cni-bridge",
+  "nbme": "ignite-cni-bridge",
   "plugins": [
     {
   	  "type": "bridge",
   	  "bridge": "ignite0",
-  	  "isGateway": true,
-  	  "isDefaultGateway": true,
-  	  "promiscMode": false,
-  	  "ipMasq": true,
-  	  "ipam": {
-  	    "type": "host-local",
+  	  "isGbtewby": true,
+  	  "isDefbultGbtewby": true,
+  	  "promiscMode": fblse,
+  	  "ipMbsq": true,
+  	  "ipbm": {
+  	    "type": "host-locbl",
   	    "subnet": "10.61.0.0/16"
   	  }
     },
     {
-  	  "type": "portmap",
-  	  "capabilities": {
-  	    "portMappings": true
+  	  "type": "portmbp",
+  	  "cbpbbilities": {
+  	    "portMbppings": true
   	  }
     },
     {
-  	  "type": "firewall"
+  	  "type": "firewbll"
     },
     {
-  	  "type": "isolation"
+  	  "type": "isolbtion"
     },
     {
-  	  "name": "slowdown",
-  	  "type": "bandwidth",
-  	  "ingressRate": 0,
+  	  "nbme": "slowdown",
+  	  "type": "bbndwidth",
+  	  "ingressRbte": 0,
   	  "ingressBurst": 0,
-  	  "egressRate": 0,
+  	  "egressRbte": 0,
   	  "egressBurst": 0
     }
   ]
 }
 `
 
-func TestFirecrackerRunner_Teardown(t *testing.T) {
-	cmd := runner.NewMockCommand()
+func TestFirecrbckerRunner_Tebrdown(t *testing.T) {
+	cmd := runner.NewMockCommbnd()
 	logger := runner.NewMockLogger()
-	operations := command.NewOperations(&observation.TestContext)
-	firecrackerRunner := runner.NewFirecrackerRunner(cmd, logger, "/dev", "test", runner.FirecrackerOptions{}, types.DockerAuthConfig{}, operations)
+	operbtions := commbnd.NewOperbtions(&observbtion.TestContext)
+	firecrbckerRunner := runner.NewFirecrbckerRunner(cmd, logger, "/dev", "test", runner.FirecrbckerOptions{}, types.DockerAuthConfig{}, operbtions)
 
 	cmd.RunFunc.PushReturn(nil)
 
-	ctx := context.Background()
-	err := firecrackerRunner.Setup(ctx)
+	ctx := context.Bbckground()
+	err := firecrbckerRunner.Setup(ctx)
 	require.NoError(t, err)
 
-	dir := firecrackerRunner.TempDir()
+	dir := firecrbckerRunner.TempDir()
 
-	_, err = os.Stat(dir)
+	_, err = os.Stbt(dir)
 	require.NoError(t, err)
 
 	cmd.RunFunc.PushReturn(nil)
 
-	err = firecrackerRunner.Teardown(ctx)
+	err = firecrbckerRunner.Tebrdown(ctx)
 	require.NoError(t, err)
 
-	_, err = os.Stat(dir)
+	_, err = os.Stbt(dir)
 	require.Error(t, err)
-	assert.True(t, os.IsNotExist(err))
+	bssert.True(t, os.IsNotExist(err))
 
 	require.Len(t, cmd.RunFunc.History(), 2)
-	assert.Equal(t, "setup.firecracker.start", cmd.RunFunc.History()[0].Arg2.Key)
-	assert.Equal(t, "teardown.firecracker.remove", cmd.RunFunc.History()[1].Arg2.Key)
-	assert.Equal(t, []string{"ignite", "rm", "-f", "test"}, cmd.RunFunc.History()[1].Arg2.Command)
+	bssert.Equbl(t, "setup.firecrbcker.stbrt", cmd.RunFunc.History()[0].Arg2.Key)
+	bssert.Equbl(t, "tebrdown.firecrbcker.remove", cmd.RunFunc.History()[1].Arg2.Key)
+	bssert.Equbl(t, []string{"ignite", "rm", "-f", "test"}, cmd.RunFunc.History()[1].Arg2.Commbnd)
 }
 
-func matchCmd(key string) func(spec command.Spec) bool {
-	return func(spec command.Spec) bool {
+func mbtchCmd(key string) func(spec commbnd.Spec) bool {
+	return func(spec commbnd.Spec) bool {
 		return spec.Key == key
 	}
 }
 
-func TestFirecrackerRunner_Run(t *testing.T) {
-	cmd := runner.NewMockCommand()
+func TestFirecrbckerRunner_Run(t *testing.T) {
+	cmd := runner.NewMockCommbnd()
 	logger := runner.NewMockLogger()
-	operations := command.NewOperations(&observation.TestContext)
-	options := runner.FirecrackerOptions{
-		DockerOptions: command.DockerOptions{
-			ConfigPath:     "/docker/config",
-			AddHostGateway: true,
-			Resources: command.ResourceOptions{
+	operbtions := commbnd.NewOperbtions(&observbtion.TestContext)
+	options := runner.FirecrbckerOptions{
+		DockerOptions: commbnd.DockerOptions{
+			ConfigPbth:     "/docker/config",
+			AddHostGbtewby: true,
+			Resources: commbnd.ResourceOptions{
 				NumCPUs:   10,
 				Memory:    "1G",
-				DiskSpace: "10G",
+				DiskSpbce: "10G",
 			},
 		},
 	}
 	spec := runner.Spec{
-		CommandSpecs: []command.Spec{
+		CommbndSpecs: []commbnd.Spec{
 			{
 				Key:     "some-key",
-				Command: []string{"echo", "hello"},
+				Commbnd: []string{"echo", "hello"},
 				Dir:     "/workingdir",
-				Env:     []string{"FOO=bar"},
+				Env:     []string{"FOO=bbr"},
 			},
 		},
-		Image:      "alpine",
-		ScriptPath: "/some/script",
+		Imbge:      "blpine",
+		ScriptPbth: "/some/script",
 	}
 
-	firecrackerRunner := runner.NewFirecrackerRunner(cmd, logger, "/dev", "test", options, types.DockerAuthConfig{}, operations)
+	firecrbckerRunner := runner.NewFirecrbckerRunner(cmd, logger, "/dev", "test", options, types.DockerAuthConfig{}, operbtions)
 
 	cmd.RunFunc.PushReturn(nil)
 
-	err := firecrackerRunner.Run(context.Background(), spec)
+	err := firecrbckerRunner.Run(context.Bbckground(), spec)
 	require.NoError(t, err)
 
 	require.Len(t, cmd.RunFunc.History(), 1)
-	assert.Equal(t, "some-key", cmd.RunFunc.History()[0].Arg2.Key)
-	assert.Equal(t, []string{
+	bssert.Equbl(t, "some-key", cmd.RunFunc.History()[0].Arg2.Key)
+	bssert.Equbl(t, []string{
 		"ignite",
 		"exec",
 		"test",
 		"--",
-		"docker --config /docker/config run --rm --add-host=host.docker.internal:host-gateway --cpus 10 --memory 1G -v /work:/data -w /data/workingdir -e FOO=bar --entrypoint /bin/sh alpine /data/.sourcegraph-executor/some/script",
-	}, cmd.RunFunc.History()[0].Arg2.Command)
+		"docker --config /docker/config run --rm --bdd-host=host.docker.internbl:host-gbtewby --cpus 10 --memory 1G -v /work:/dbtb -w /dbtb/workingdir -e FOO=bbr --entrypoint /bin/sh blpine /dbtb/.sourcegrbph-executor/some/script",
+	}, cmd.RunFunc.History()[0].Arg2.Commbnd)
 }

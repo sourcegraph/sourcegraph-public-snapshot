@@ -1,12 +1,12 @@
-package grpcutil
+pbckbge grpcutil
 
 import "strings"
 
-// SplitMethodName splits a full gRPC method name (e.g. "/package.service/method") in to its individual components (service, method)
+// SplitMethodNbme splits b full gRPC method nbme (e.g. "/pbckbge.service/method") in to its individubl components (service, method)
 //
-// Copied from github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/reporter.go
-func SplitMethodName(fullMethod string) (string, string) {
-	fullMethod = strings.TrimPrefix(fullMethod, "/") // remove leading slash
+// Copied from github.com/grpc-ecosystem/go-grpc-middlewbre/v2/interceptors/reporter.go
+func SplitMethodNbme(fullMethod string) (string, string) {
+	fullMethod = strings.TrimPrefix(fullMethod, "/") // remove lebding slbsh
 	if i := strings.Index(fullMethod, "/"); i >= 0 {
 		return fullMethod[:i], fullMethod[i+1:]
 	}

@@ -1,9 +1,9 @@
-package zoekt
+pbckbge zoekt
 
 import (
 	"context"
 	"crypto/md5"
-	"encoding/binary"
+	"encoding/binbry"
 	"fmt"
 	"strings"
 	"testing"
@@ -11,424 +11,424 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
-	"github.com/grafana/regexp"
-	"github.com/sourcegraph/log/logtest"
-	"github.com/sourcegraph/zoekt"
-	zoektquery "github.com/sourcegraph/zoekt/query"
+	"github.com/grbfbnb/regexp"
+	"github.com/sourcegrbph/log/logtest"
+	"github.com/sourcegrbph/zoekt"
+	zoektquery "github.com/sourcegrbph/zoekt/query"
 	"github.com/stretchr/testify/require"
 
-	"github.com/RoaringBitmap/roaring"
+	"github.com/RobringBitmbp/robring"
 
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/search"
-	searchbackend "github.com/sourcegraph/sourcegraph/internal/search/backend"
-	"github.com/sourcegraph/sourcegraph/internal/search/filter"
-	"github.com/sourcegraph/sourcegraph/internal/search/job"
-	"github.com/sourcegraph/sourcegraph/internal/search/query"
-	"github.com/sourcegraph/sourcegraph/internal/search/result"
-	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
-	"github.com/sourcegraph/sourcegraph/internal/trace"
-	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi"
+	"github.com/sourcegrbph/sourcegrbph/internbl/sebrch"
+	sebrchbbckend "github.com/sourcegrbph/sourcegrbph/internbl/sebrch/bbckend"
+	"github.com/sourcegrbph/sourcegrbph/internbl/sebrch/filter"
+	"github.com/sourcegrbph/sourcegrbph/internbl/sebrch/job"
+	"github.com/sourcegrbph/sourcegrbph/internbl/sebrch/query"
+	"github.com/sourcegrbph/sourcegrbph/internbl/sebrch/result"
+	"github.com/sourcegrbph/sourcegrbph/internbl/sebrch/strebming"
+	"github.com/sourcegrbph/sourcegrbph/internbl/trbce"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-func TestIndexedSearch(t *testing.T) {
-	zeroTimeoutCtx, cancel := context.WithTimeout(context.Background(), 0)
-	defer cancel()
-	type args struct {
+func TestIndexedSebrch(t *testing.T) {
+	zeroTimeoutCtx, cbncel := context.WithTimeout(context.Bbckground(), 0)
+	defer cbncel()
+	type brgs struct {
 		ctx             context.Context
 		query           string
-		fileMatchLimit  int32
-		selectPath      filter.SelectPath
-		repos           []*search.RepositoryRevisions
-		useFullDeadline bool
-		results         []zoekt.FileMatch
-		since           func(time.Time) time.Duration
+		fileMbtchLimit  int32
+		selectPbth      filter.SelectPbth
+		repos           []*sebrch.RepositoryRevisions
+		useFullDebdline bool
+		results         []zoekt.FileMbtch
+		since           func(time.Time) time.Durbtion
 	}
 
-	reposHEAD := makeRepositoryRevisions("foo/bar", "foo/foobar")
+	reposHEAD := mbkeRepositoryRevisions("foo/bbr", "foo/foobbr")
 	zoektRepos := []*zoekt.RepoListEntry{{
 		Repository: zoekt.Repository{
 			ID:       uint32(reposHEAD[0].Repo.ID),
-			Name:     "foo/bar",
-			Branches: []zoekt.RepositoryBranch{{Name: "HEAD", Version: "barHEADSHA"}, {Name: "dev", Version: "bardevSHA"}, {Name: "main", Version: "barmainSHA"}},
+			Nbme:     "foo/bbr",
+			Brbnches: []zoekt.RepositoryBrbnch{{Nbme: "HEAD", Version: "bbrHEADSHA"}, {Nbme: "dev", Version: "bbrdevSHA"}, {Nbme: "mbin", Version: "bbrmbinSHA"}},
 		},
 	}, {
 		Repository: zoekt.Repository{
 			ID:       uint32(reposHEAD[1].Repo.ID),
-			Name:     "foo/foobar",
-			Branches: []zoekt.RepositoryBranch{{Name: "HEAD", Version: "foobarHEADSHA"}},
+			Nbme:     "foo/foobbr",
+			Brbnches: []zoekt.RepositoryBrbnch{{Nbme: "HEAD", Version: "foobbrHEADSHA"}},
 		},
 	}}
 
-	fooSlashBar := zoektRepos[0].Repository
-	fooSlashFooBar := zoektRepos[1].Repository
+	fooSlbshBbr := zoektRepos[0].Repository
+	fooSlbshFooBbr := zoektRepos[1].Repository
 
 	tests := []struct {
-		name               string
-		args               args
-		wantMatchCount     int
-		wantMatchKeys      []result.Key
-		wantMatchInputRevs []string
-		wantUnindexed      []*search.RepositoryRevisions
-		wantCommon         streaming.Stats
-		wantErr            bool
+		nbme               string
+		brgs               brgs
+		wbntMbtchCount     int
+		wbntMbtchKeys      []result.Key
+		wbntMbtchInputRevs []string
+		wbntUnindexed      []*sebrch.RepositoryRevisions
+		wbntCommon         strebming.Stbts
+		wbntErr            bool
 	}{
 		{
-			name: "no matches",
-			args: args{
-				ctx:             context.Background(),
+			nbme: "no mbtches",
+			brgs: brgs{
+				ctx:             context.Bbckground(),
 				repos:           reposHEAD,
-				useFullDeadline: false,
-				since:           func(time.Time) time.Duration { return time.Second - time.Millisecond },
+				useFullDebdline: fblse,
+				since:           func(time.Time) time.Durbtion { return time.Second - time.Millisecond },
 			},
-			wantErr: false,
+			wbntErr: fblse,
 		},
 		{
-			name: "no matches timeout",
-			args: args{
-				ctx:             context.Background(),
+			nbme: "no mbtches timeout",
+			brgs: brgs{
+				ctx:             context.Bbckground(),
 				repos:           reposHEAD,
-				useFullDeadline: false,
-				since:           func(time.Time) time.Duration { return time.Minute },
+				useFullDebdline: fblse,
+				since:           func(time.Time) time.Durbtion { return time.Minute },
 			},
-			wantCommon: streaming.Stats{
-				Status: mkStatusMap(map[string]search.RepoStatus{
-					"foo/bar":    search.RepoStatusTimedout,
-					"foo/foobar": search.RepoStatusTimedout,
+			wbntCommon: strebming.Stbts{
+				Stbtus: mkStbtusMbp(mbp[string]sebrch.RepoStbtus{
+					"foo/bbr":    sebrch.RepoStbtusTimedout,
+					"foo/foobbr": sebrch.RepoStbtusTimedout,
 				}),
 			},
 		},
 		{
-			name: "context timeout",
-			args: args{
+			nbme: "context timeout",
+			brgs: brgs{
 				ctx:             zeroTimeoutCtx,
 				repos:           reposHEAD,
-				useFullDeadline: true,
-				since:           func(time.Time) time.Duration { return 0 },
+				useFullDebdline: true,
+				since:           func(time.Time) time.Durbtion { return 0 },
 			},
-			wantErr: true,
+			wbntErr: true,
 		},
 		{
-			name: "results",
-			args: args{
-				ctx:             context.Background(),
-				fileMatchLimit:  100,
-				repos:           makeRepositoryRevisions("foo/bar", "foo/foobar"),
-				useFullDeadline: false,
-				results: []zoekt.FileMatch{
+			nbme: "results",
+			brgs: brgs{
+				ctx:             context.Bbckground(),
+				fileMbtchLimit:  100,
+				repos:           mbkeRepositoryRevisions("foo/bbr", "foo/foobbr"),
+				useFullDebdline: fblse,
+				results: []zoekt.FileMbtch{
 					{
-						Repository:   "foo/bar",
-						RepositoryID: fooSlashBar.ID,
-						Branches:     []string{"HEAD"},
+						Repository:   "foo/bbr",
+						RepositoryID: fooSlbshBbr.ID,
+						Brbnches:     []string{"HEAD"},
 						Version:      "1",
-						FileName:     "baz.go",
-						ChunkMatches: []zoekt.ChunkMatch{{
+						FileNbme:     "bbz.go",
+						ChunkMbtches: []zoekt.ChunkMbtch{{
 							Content: []byte("I'm like 1.5+ hours into writing this test :'("),
-							Ranges: []zoekt.Range{{
-								Start: zoekt.Location{0, 1, 1},
-								End:   zoekt.Location{5, 1, 6},
+							Rbnges: []zoekt.Rbnge{{
+								Stbrt: zoekt.Locbtion{0, 1, 1},
+								End:   zoekt.Locbtion{5, 1, 6},
 							}},
 						}, {
-							Content: []byte("I'm ready for the rain to stop."),
-							Ranges: []zoekt.Range{{
-								Start: zoekt.Location{0, 1, 1},
-								End:   zoekt.Location{5, 1, 6},
+							Content: []byte("I'm rebdy for the rbin to stop."),
+							Rbnges: []zoekt.Rbnge{{
+								Stbrt: zoekt.Locbtion{0, 1, 1},
+								End:   zoekt.Locbtion{5, 1, 6},
 							}, {
-								Start: zoekt.Location{5, 1, 6},
-								End:   zoekt.Location{15, 1, 16},
+								Stbrt: zoekt.Locbtion{5, 1, 6},
+								End:   zoekt.Locbtion{15, 1, 16},
 							}},
 						}},
 					},
 					{
-						Repository:   "foo/foobar",
-						RepositoryID: fooSlashFooBar.ID,
-						Branches:     []string{"HEAD"},
+						Repository:   "foo/foobbr",
+						RepositoryID: fooSlbshFooBbr.ID,
+						Brbnches:     []string{"HEAD"},
 						Version:      "2",
-						FileName:     "baz.go",
-						ChunkMatches: []zoekt.ChunkMatch{{
-							Content: []byte("s/rain/pain"),
-							Ranges: []zoekt.Range{{
-								Start: zoekt.Location{0, 1, 1},
-								End:   zoekt.Location{5, 1, 6},
+						FileNbme:     "bbz.go",
+						ChunkMbtches: []zoekt.ChunkMbtch{{
+							Content: []byte("s/rbin/pbin"),
+							Rbnges: []zoekt.Rbnge{{
+								Stbrt: zoekt.Locbtion{0, 1, 1},
+								End:   zoekt.Locbtion{5, 1, 6},
 							}, {
-								Start: zoekt.Location{5, 1, 6},
-								End:   zoekt.Location{7, 1, 8},
+								Stbrt: zoekt.Locbtion{5, 1, 6},
+								End:   zoekt.Locbtion{7, 1, 8},
 							}},
 						}},
 					},
 				},
-				since: func(time.Time) time.Duration { return 0 },
+				since: func(time.Time) time.Durbtion { return 0 },
 			},
-			wantMatchCount: 5,
-			wantMatchKeys: []result.Key{
-				{Repo: "foo/bar", Rev: "HEAD", Commit: "1", Path: "baz.go"},
-				{Repo: "foo/foobar", Rev: "HEAD", Commit: "2", Path: "baz.go"},
+			wbntMbtchCount: 5,
+			wbntMbtchKeys: []result.Key{
+				{Repo: "foo/bbr", Rev: "HEAD", Commit: "1", Pbth: "bbz.go"},
+				{Repo: "foo/foobbr", Rev: "HEAD", Commit: "2", Pbth: "bbz.go"},
 			},
-			wantMatchInputRevs: []string{
+			wbntMbtchInputRevs: []string{
 				"HEAD",
 				"HEAD",
 			},
-			wantErr: false,
+			wbntErr: fblse,
 		},
 		{
-			name: "results multi-branch",
-			args: args{
-				ctx:             context.Background(),
-				fileMatchLimit:  100,
-				repos:           makeRepositoryRevisions("foo/bar@HEAD:dev:main"),
-				useFullDeadline: false,
-				results: []zoekt.FileMatch{
+			nbme: "results multi-brbnch",
+			brgs: brgs{
+				ctx:             context.Bbckground(),
+				fileMbtchLimit:  100,
+				repos:           mbkeRepositoryRevisions("foo/bbr@HEAD:dev:mbin"),
+				useFullDebdline: fblse,
+				results: []zoekt.FileMbtch{
 					{
-						Repository:   "foo/bar",
-						RepositoryID: fooSlashBar.ID,
-						// baz.go is the same in HEAD and dev
-						Branches: []string{"HEAD", "dev"},
-						FileName: "baz.go",
+						Repository:   "foo/bbr",
+						RepositoryID: fooSlbshBbr.ID,
+						// bbz.go is the sbme in HEAD bnd dev
+						Brbnches: []string{"HEAD", "dev"},
+						FileNbme: "bbz.go",
 						Version:  "1",
 					},
 					{
-						Repository:   "foo/bar",
-						RepositoryID: fooSlashBar.ID,
-						Branches:     []string{"dev"},
-						FileName:     "bam.go",
+						Repository:   "foo/bbr",
+						RepositoryID: fooSlbshBbr.ID,
+						Brbnches:     []string{"dev"},
+						FileNbme:     "bbm.go",
 						Version:      "2",
 					},
 				},
-				since: func(time.Time) time.Duration { return 0 },
+				since: func(time.Time) time.Durbtion { return 0 },
 			},
-			wantMatchCount: 3,
-			wantMatchKeys: []result.Key{
-				{Repo: "foo/bar", Rev: "HEAD", Commit: "1", Path: "baz.go"},
-				{Repo: "foo/bar", Rev: "dev", Commit: "1", Path: "baz.go"},
-				{Repo: "foo/bar", Rev: "dev", Commit: "2", Path: "bam.go"},
+			wbntMbtchCount: 3,
+			wbntMbtchKeys: []result.Key{
+				{Repo: "foo/bbr", Rev: "HEAD", Commit: "1", Pbth: "bbz.go"},
+				{Repo: "foo/bbr", Rev: "dev", Commit: "1", Pbth: "bbz.go"},
+				{Repo: "foo/bbr", Rev: "dev", Commit: "2", Pbth: "bbm.go"},
 			},
-			wantMatchInputRevs: []string{
+			wbntMbtchInputRevs: []string{
 				"HEAD",
 				"dev",
 				"dev",
 			},
-			wantErr: false,
+			wbntErr: fblse,
 		},
 		{
-			// if we search a branch that is indexed and unindexed, we should
-			// split the repository revision into the indexed and unindexed
-			// parts.
-			name: "split branch",
-			args: args{
-				ctx:             context.Background(),
-				fileMatchLimit:  100,
-				repos:           makeRepositoryRevisions("foo/bar@HEAD:unindexed"),
-				useFullDeadline: false,
-				results: []zoekt.FileMatch{
+			// if we sebrch b brbnch thbt is indexed bnd unindexed, we should
+			// split the repository revision into the indexed bnd unindexed
+			// pbrts.
+			nbme: "split brbnch",
+			brgs: brgs{
+				ctx:             context.Bbckground(),
+				fileMbtchLimit:  100,
+				repos:           mbkeRepositoryRevisions("foo/bbr@HEAD:unindexed"),
+				useFullDebdline: fblse,
+				results: []zoekt.FileMbtch{
 					{
-						Repository:   "foo/bar",
-						RepositoryID: fooSlashBar.ID,
-						Branches:     []string{"HEAD"},
-						FileName:     "baz.go",
+						Repository:   "foo/bbr",
+						RepositoryID: fooSlbshBbr.ID,
+						Brbnches:     []string{"HEAD"},
+						FileNbme:     "bbz.go",
 						Version:      "1",
 					},
 				},
 			},
-			wantUnindexed: makeRepositoryRevisions("foo/bar@unindexed"),
-			wantMatchKeys: []result.Key{
-				{Repo: "foo/bar", Rev: "HEAD", Commit: "1", Path: "baz.go"},
+			wbntUnindexed: mbkeRepositoryRevisions("foo/bbr@unindexed"),
+			wbntMbtchKeys: []result.Key{
+				{Repo: "foo/bbr", Rev: "HEAD", Commit: "1", Pbth: "bbz.go"},
 			},
-			wantMatchCount:     1,
-			wantMatchInputRevs: []string{"HEAD"},
+			wbntMbtchCount:     1,
+			wbntMbtchInputRevs: []string{"HEAD"},
 		},
 		{
-			// Fallback to unindexed search if the query contains ref-globs.
-			name: "ref-glob with explicit /*",
-			args: args{
-				ctx:             context.Background(),
-				query:           "repo:foo/bar@*refs/heads/*",
-				fileMatchLimit:  100,
-				repos:           makeRepositoryRevisions("foo/bar@HEAD"),
-				useFullDeadline: false,
-				results:         []zoekt.FileMatch{},
+			// Fbllbbck to unindexed sebrch if the query contbins ref-globs.
+			nbme: "ref-glob with explicit /*",
+			brgs: brgs{
+				ctx:             context.Bbckground(),
+				query:           "repo:foo/bbr@*refs/hebds/*",
+				fileMbtchLimit:  100,
+				repos:           mbkeRepositoryRevisions("foo/bbr@HEAD"),
+				useFullDebdline: fblse,
+				results:         []zoekt.FileMbtch{},
 			},
-			wantUnindexed:      makeRepositoryRevisions("foo/bar@HEAD"),
-			wantMatchKeys:      nil,
-			wantMatchInputRevs: nil,
+			wbntUnindexed:      mbkeRepositoryRevisions("foo/bbr@HEAD"),
+			wbntMbtchKeys:      nil,
+			wbntMbtchInputRevs: nil,
 		},
 		{
-			name: "ref-glob with implicit /*",
-			args: args{
-				ctx:             context.Background(),
-				query:           "repo:foo/bar@*refs/tags",
-				fileMatchLimit:  100,
-				repos:           makeRepositoryRevisions("foo/bar@HEAD"),
-				useFullDeadline: false,
-				results:         []zoekt.FileMatch{},
+			nbme: "ref-glob with implicit /*",
+			brgs: brgs{
+				ctx:             context.Bbckground(),
+				query:           "repo:foo/bbr@*refs/tbgs",
+				fileMbtchLimit:  100,
+				repos:           mbkeRepositoryRevisions("foo/bbr@HEAD"),
+				useFullDebdline: fblse,
+				results:         []zoekt.FileMbtch{},
 			},
-			wantUnindexed:      makeRepositoryRevisions("foo/bar@HEAD"),
-			wantMatchKeys:      nil,
-			wantMatchInputRevs: nil,
+			wbntUnindexed:      mbkeRepositoryRevisions("foo/bbr@HEAD"),
+			wbntMbtchKeys:      nil,
+			wbntMbtchInputRevs: nil,
 		},
 	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			q, err := query.ParseLiteral(tt.args.query)
+	for _, tt := rbnge tests {
+		t.Run(tt.nbme, func(t *testing.T) {
+			q, err := query.PbrseLiterbl(tt.brgs.query)
 			if err != nil {
-				t.Fatal(err)
+				t.Fbtbl(err)
 			}
 
-			fakeZoekt := &searchbackend.FakeStreamer{
-				Results: []*zoekt.SearchResult{{Files: tt.args.results}},
+			fbkeZoekt := &sebrchbbckend.FbkeStrebmer{
+				Results: []*zoekt.SebrchResult{{Files: tt.brgs.results}},
 				Repos:   zoektRepos,
 			}
 
-			var resultTypes result.Types
-			zoektQuery, err := QueryToZoektQuery(query.Basic{}, resultTypes, &search.Features{}, search.TextRequest)
+			vbr resultTypes result.Types
+			zoektQuery, err := QueryToZoektQuery(query.Bbsic{}, resultTypes, &sebrch.Febtures{}, sebrch.TextRequest)
 			if err != nil {
-				t.Fatal(err)
+				t.Fbtbl(err)
 			}
 
-			// This is a quick fix which will break once we enable the zoekt client for true streaming.
-			// Once we return more than one event we have to account for the proper order of results
+			// This is b quick fix which will brebk once we enbble the zoekt client for true strebming.
+			// Once we return more thbn one event we hbve to bccount for the proper order of results
 			// in the tests.
-			agg := streaming.NewAggregatingStream()
+			bgg := strebming.NewAggregbtingStrebm()
 
-			indexed, unindexed, err := PartitionRepos(
-				context.Background(),
+			indexed, unindexed, err := PbrtitionRepos(
+				context.Bbckground(),
 				logtest.Scoped(t),
-				tt.args.repos,
-				fakeZoekt,
-				search.TextRequest,
+				tt.brgs.repos,
+				fbkeZoekt,
+				sebrch.TextRequest,
 				query.Yes,
-				query.ContainsRefGlobs(q),
+				query.ContbinsRefGlobs(q),
 			)
 			if err != nil {
-				t.Fatal(err)
+				t.Fbtbl(err)
 			}
 
-			if diff := cmp.Diff(tt.wantUnindexed, unindexed, cmpopts.EquateEmpty()); diff != "" {
-				t.Errorf("unindexed mismatch (-want +got):\n%s", diff)
+			if diff := cmp.Diff(tt.wbntUnindexed, unindexed, cmpopts.EqubteEmpty()); diff != "" {
+				t.Errorf("unindexed mismbtch (-wbnt +got):\n%s", diff)
 			}
 
-			zoektParams := &search.ZoektParameters{
-				FileMatchLimit: tt.args.fileMatchLimit,
-				Select:         tt.args.selectPath,
+			zoektPbrbms := &sebrch.ZoektPbrbmeters{
+				FileMbtchLimit: tt.brgs.fileMbtchLimit,
+				Select:         tt.brgs.selectPbth,
 			}
 
-			zoektJob := &RepoSubsetTextSearchJob{
+			zoektJob := &RepoSubsetTextSebrchJob{
 				Repos:       indexed,
 				Query:       zoektQuery,
-				Typ:         search.TextRequest,
-				ZoektParams: zoektParams,
-				Since:       tt.args.since,
+				Typ:         sebrch.TextRequest,
+				ZoektPbrbms: zoektPbrbms,
+				Since:       tt.brgs.since,
 			}
 
-			_, err = zoektJob.Run(tt.args.ctx, job.RuntimeClients{Zoekt: fakeZoekt}, agg)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("zoektSearchHEAD() error = %v, wantErr = %v", err, tt.wantErr)
+			_, err = zoektJob.Run(tt.brgs.ctx, job.RuntimeClients{Zoekt: fbkeZoekt}, bgg)
+			if (err != nil) != tt.wbntErr {
+				t.Errorf("zoektSebrchHEAD() error = %v, wbntErr = %v", err, tt.wbntErr)
 				return
 			}
-			gotFm, err := matchesToFileMatches(agg.Results)
+			gotFm, err := mbtchesToFileMbtches(bgg.Results)
 			if err != nil {
-				t.Fatal(err)
+				t.Fbtbl(err)
 			}
 
-			if diff := cmp.Diff(&tt.wantCommon, &agg.Stats, cmpopts.EquateEmpty()); diff != "" {
-				t.Errorf("common mismatch (-want +got):\n%s", diff)
+			if diff := cmp.Diff(&tt.wbntCommon, &bgg.Stbts, cmpopts.EqubteEmpty()); diff != "" {
+				t.Errorf("common mismbtch (-wbnt +got):\n%s", diff)
 			}
 
-			var gotMatchCount int
-			var gotMatchKeys []result.Key
-			var gotMatchInputRevs []string
-			for _, m := range gotFm {
-				gotMatchCount += m.ResultCount()
-				gotMatchKeys = append(gotMatchKeys, m.Key())
+			vbr gotMbtchCount int
+			vbr gotMbtchKeys []result.Key
+			vbr gotMbtchInputRevs []string
+			for _, m := rbnge gotFm {
+				gotMbtchCount += m.ResultCount()
+				gotMbtchKeys = bppend(gotMbtchKeys, m.Key())
 				if m.InputRev != nil {
-					gotMatchInputRevs = append(gotMatchInputRevs, *m.InputRev)
+					gotMbtchInputRevs = bppend(gotMbtchInputRevs, *m.InputRev)
 				}
 			}
-			if diff := cmp.Diff(tt.wantMatchKeys, gotMatchKeys); diff != "" {
-				t.Errorf("match URLs mismatch (-want +got):\n%s", diff)
+			if diff := cmp.Diff(tt.wbntMbtchKeys, gotMbtchKeys); diff != "" {
+				t.Errorf("mbtch URLs mismbtch (-wbnt +got):\n%s", diff)
 			}
-			if diff := cmp.Diff(tt.wantMatchInputRevs, gotMatchInputRevs); diff != "" {
-				t.Errorf("match InputRevs mismatch (-want +got):\n%s", diff)
+			if diff := cmp.Diff(tt.wbntMbtchInputRevs, gotMbtchInputRevs); diff != "" {
+				t.Errorf("mbtch InputRevs mismbtch (-wbnt +got):\n%s", diff)
 			}
-			if gotMatchCount != tt.wantMatchCount {
-				t.Errorf("gotMatchCount = %v, want %v", gotMatchCount, tt.wantMatchCount)
+			if gotMbtchCount != tt.wbntMbtchCount {
+				t.Errorf("gotMbtchCount = %v, wbnt %v", gotMbtchCount, tt.wbntMbtchCount)
 			}
 		})
 	}
 }
 
-func mkStatusMap(m map[string]search.RepoStatus) search.RepoStatusMap {
-	var rsm search.RepoStatusMap
-	for name, status := range m {
-		rsm.Update(mkRepos(name)[0].ID, status)
+func mkStbtusMbp(m mbp[string]sebrch.RepoStbtus) sebrch.RepoStbtusMbp {
+	vbr rsm sebrch.RepoStbtusMbp
+	for nbme, stbtus := rbnge m {
+		rsm.Updbte(mkRepos(nbme)[0].ID, stbtus)
 	}
 	return rsm
 }
 
 func TestZoektIndexedRepos(t *testing.T) {
-	repos := makeRepositoryRevisions(
+	repos := mbkeRepositoryRevisions(
 		"foo/indexed-one@HEAD",
 		"foo/indexed-two@HEAD",
 		"foo/indexed-three@HEAD",
-		"foo/partially-indexed@HEAD:bad-rev",
+		"foo/pbrtiblly-indexed@HEAD:bbd-rev",
 		"foo/unindexed-one",
 		"foo/unindexed-two",
 	)
 
-	zoektRepos := zoekt.ReposMap{}
-	for i, branches := range [][]zoekt.RepositoryBranch{
+	zoektRepos := zoekt.ReposMbp{}
+	for i, brbnches := rbnge [][]zoekt.RepositoryBrbnch{
 		{
-			{Name: "HEAD", Version: "deadbeef"},
+			{Nbme: "HEAD", Version: "debdbeef"},
 		},
 		{
-			{Name: "HEAD", Version: "deadbeef"},
+			{Nbme: "HEAD", Version: "debdbeef"},
 		},
 		{
-			{Name: "HEAD", Version: "deadbeef"},
-			{Name: "foobar", Version: "deadcow"},
+			{Nbme: "HEAD", Version: "debdbeef"},
+			{Nbme: "foobbr", Version: "debdcow"},
 		},
 		{
-			{Name: "HEAD", Version: "deadbeef"},
+			{Nbme: "HEAD", Version: "debdbeef"},
 		},
 	} {
 		r := repos[i]
-		branches := branches
-		zoektRepos[uint32(r.Repo.ID)] = zoekt.MinimalRepoListEntry{Branches: branches}
+		brbnches := brbnches
+		zoektRepos[uint32(r.Repo.ID)] = zoekt.MinimblRepoListEntry{Brbnches: brbnches}
 	}
 
-	cases := []struct {
-		name      string
-		repos     []*search.RepositoryRevisions
-		indexed   []*search.RepositoryRevisions
-		unindexed []*search.RepositoryRevisions
+	cbses := []struct {
+		nbme      string
+		repos     []*sebrch.RepositoryRevisions
+		indexed   []*sebrch.RepositoryRevisions
+		unindexed []*sebrch.RepositoryRevisions
 	}{{
-		name:  "all",
+		nbme:  "bll",
 		repos: repos,
-		indexed: []*search.RepositoryRevisions{
+		indexed: []*sebrch.RepositoryRevisions{
 			repos[0], repos[1], repos[2],
 			{Repo: repos[3].Repo, Revs: repos[3].Revs[:1]},
 		},
-		unindexed: []*search.RepositoryRevisions{
+		unindexed: []*sebrch.RepositoryRevisions{
 			{Repo: repos[3].Repo, Revs: repos[3].Revs[1:]},
 			repos[4], repos[5],
 		},
 	}, {
-		name:      "one unindexed",
+		nbme:      "one unindexed",
 		repos:     repos[4:5],
 		indexed:   repos[:0],
 		unindexed: repos[4:5],
 	}, {
-		name:      "one indexed",
+		nbme:      "one indexed",
 		repos:     repos[:1],
 		indexed:   repos[:1],
 		unindexed: repos[:0],
 	}}
 
-	for _, tc := range cases {
-		t.Run(tc.name, func(t *testing.T) {
+	for _, tc := rbnge cbses {
+		t.Run(tc.nbme, func(t *testing.T) {
 			indexed, unindexed := zoektIndexedRepos(zoektRepos, tc.repos, nil)
 
-			if diff := cmp.Diff(repoRevsSliceToMap(tc.indexed), indexed.RepoRevs); diff != "" {
+			if diff := cmp.Diff(repoRevsSliceToMbp(tc.indexed), indexed.RepoRevs); diff != "" {
 				t.Error("unexpected indexed:", diff)
 			}
 			if diff := cmp.Diff(tc.unindexed, unindexed); diff != "" {
@@ -439,526 +439,526 @@ func TestZoektIndexedRepos(t *testing.T) {
 }
 
 func TestZoektIndexedRepos_single(t *testing.T) {
-	branchesRepos := func(branch string, repo api.RepoID) map[string]*zoektquery.BranchRepos {
-		return map[string]*zoektquery.BranchRepos{
-			branch: {
-				Branch: branch,
-				Repos:  roaring.BitmapOf(uint32(repo)),
+	brbnchesRepos := func(brbnch string, repo bpi.RepoID) mbp[string]*zoektquery.BrbnchRepos {
+		return mbp[string]*zoektquery.BrbnchRepos{
+			brbnch: {
+				Brbnch: brbnch,
+				Repos:  robring.BitmbpOf(uint32(repo)),
 			},
 		}
 	}
-	repoRev := func(revSpec string) *search.RepositoryRevisions {
-		return &search.RepositoryRevisions{
-			Repo: types.MinimalRepo{ID: api.RepoID(1), Name: "test/repo"},
+	repoRev := func(revSpec string) *sebrch.RepositoryRevisions {
+		return &sebrch.RepositoryRevisions{
+			Repo: types.MinimblRepo{ID: bpi.RepoID(1), Nbme: "test/repo"},
 			Revs: []string{revSpec},
 		}
 	}
-	zoektRepos := zoekt.ReposMap{
+	zoektRepos := zoekt.ReposMbp{
 		1: {
-			Branches: []zoekt.RepositoryBranch{
+			Brbnches: []zoekt.RepositoryBrbnch{
 				{
-					Name:    "HEAD",
-					Version: "df3f4e499698e48152b39cd655d8901eaf583fa5",
+					Nbme:    "HEAD",
+					Version: "df3f4e499698e48152b39cd655d8901ebf583fb5",
 				},
 				{
-					Name:    "NOT-HEAD",
-					Version: "8ec975423738fe7851676083ebf660a062ed1578",
+					Nbme:    "NOT-HEAD",
+					Version: "8ec975423738fe7851676083ebf660b062ed1578",
 				},
 			},
 		},
 	}
-	cmpRoaring := func(a, b *roaring.Bitmap) bool {
-		arrayA, arrayB := a.ToArray(), b.ToArray()
-		if len(arrayA) != len(arrayB) {
-			return false
+	cmpRobring := func(b, b *robring.Bitmbp) bool {
+		brrbyA, brrbyB := b.ToArrby(), b.ToArrby()
+		if len(brrbyA) != len(brrbyB) {
+			return fblse
 		}
-		for i := range arrayA {
-			if arrayA[i] != arrayB[i] {
-				return false
+		for i := rbnge brrbyA {
+			if brrbyA[i] != brrbyB[i] {
+				return fblse
 			}
 		}
 		return true
 	}
-	cases := []struct {
+	cbses := []struct {
 		rev               string
-		wantIndexed       []*search.RepositoryRevisions
-		wantBranchesRepos map[string]*zoektquery.BranchRepos
-		wantUnindexed     []*search.RepositoryRevisions
+		wbntIndexed       []*sebrch.RepositoryRevisions
+		wbntBrbnchesRepos mbp[string]*zoektquery.BrbnchRepos
+		wbntUnindexed     []*sebrch.RepositoryRevisions
 	}{
 		{
 			rev:               "",
-			wantIndexed:       []*search.RepositoryRevisions{repoRev("")},
-			wantBranchesRepos: branchesRepos("HEAD", 1),
-			wantUnindexed:     []*search.RepositoryRevisions{},
+			wbntIndexed:       []*sebrch.RepositoryRevisions{repoRev("")},
+			wbntBrbnchesRepos: brbnchesRepos("HEAD", 1),
+			wbntUnindexed:     []*sebrch.RepositoryRevisions{},
 		},
 		{
 			rev:               "HEAD",
-			wantIndexed:       []*search.RepositoryRevisions{repoRev("HEAD")},
-			wantBranchesRepos: branchesRepos("HEAD", 1),
-			wantUnindexed:     []*search.RepositoryRevisions{},
+			wbntIndexed:       []*sebrch.RepositoryRevisions{repoRev("HEAD")},
+			wbntBrbnchesRepos: brbnchesRepos("HEAD", 1),
+			wbntUnindexed:     []*sebrch.RepositoryRevisions{},
 		},
 		{
-			rev:               "df3f4e499698e48152b39cd655d8901eaf583fa5",
-			wantIndexed:       []*search.RepositoryRevisions{repoRev("df3f4e499698e48152b39cd655d8901eaf583fa5")},
-			wantBranchesRepos: branchesRepos("HEAD", 1),
-			wantUnindexed:     []*search.RepositoryRevisions{},
+			rev:               "df3f4e499698e48152b39cd655d8901ebf583fb5",
+			wbntIndexed:       []*sebrch.RepositoryRevisions{repoRev("df3f4e499698e48152b39cd655d8901ebf583fb5")},
+			wbntBrbnchesRepos: brbnchesRepos("HEAD", 1),
+			wbntUnindexed:     []*sebrch.RepositoryRevisions{},
 		},
 		{
 			rev:               "df3f4e",
-			wantIndexed:       []*search.RepositoryRevisions{repoRev("df3f4e")},
-			wantBranchesRepos: branchesRepos("HEAD", 1),
-			wantUnindexed:     []*search.RepositoryRevisions{},
+			wbntIndexed:       []*sebrch.RepositoryRevisions{repoRev("df3f4e")},
+			wbntBrbnchesRepos: brbnchesRepos("HEAD", 1),
+			wbntUnindexed:     []*sebrch.RepositoryRevisions{},
 		},
 		{
 			rev:               "d",
-			wantIndexed:       []*search.RepositoryRevisions{},
-			wantBranchesRepos: map[string]*zoektquery.BranchRepos{},
-			wantUnindexed:     []*search.RepositoryRevisions{repoRev("d")},
+			wbntIndexed:       []*sebrch.RepositoryRevisions{},
+			wbntBrbnchesRepos: mbp[string]*zoektquery.BrbnchRepos{},
+			wbntUnindexed:     []*sebrch.RepositoryRevisions{repoRev("d")},
 		},
 		{
 			rev:               "HEAD^1",
-			wantIndexed:       []*search.RepositoryRevisions{},
-			wantBranchesRepos: map[string]*zoektquery.BranchRepos{},
-			wantUnindexed:     []*search.RepositoryRevisions{repoRev("HEAD^1")},
+			wbntIndexed:       []*sebrch.RepositoryRevisions{},
+			wbntBrbnchesRepos: mbp[string]*zoektquery.BrbnchRepos{},
+			wbntUnindexed:     []*sebrch.RepositoryRevisions{repoRev("HEAD^1")},
 		},
 		{
-			rev:               "8ec975423738fe7851676083ebf660a062ed1578",
-			wantIndexed:       []*search.RepositoryRevisions{repoRev("8ec975423738fe7851676083ebf660a062ed1578")},
-			wantBranchesRepos: branchesRepos("NOT-HEAD", 1),
-			wantUnindexed:     []*search.RepositoryRevisions{},
+			rev:               "8ec975423738fe7851676083ebf660b062ed1578",
+			wbntIndexed:       []*sebrch.RepositoryRevisions{repoRev("8ec975423738fe7851676083ebf660b062ed1578")},
+			wbntBrbnchesRepos: brbnchesRepos("NOT-HEAD", 1),
+			wbntUnindexed:     []*sebrch.RepositoryRevisions{},
 		},
 	}
 
 	type ret struct {
-		Indexed     map[api.RepoID]*search.RepositoryRevisions
-		BranchRepos map[string]*zoektquery.BranchRepos
-		Unindexed   []*search.RepositoryRevisions
+		Indexed     mbp[bpi.RepoID]*sebrch.RepositoryRevisions
+		BrbnchRepos mbp[string]*zoektquery.BrbnchRepos
+		Unindexed   []*sebrch.RepositoryRevisions
 	}
 
-	for _, tt := range cases {
-		indexed, unindexed := zoektIndexedRepos(zoektRepos, []*search.RepositoryRevisions{repoRev(tt.rev)}, nil)
+	for _, tt := rbnge cbses {
+		indexed, unindexed := zoektIndexedRepos(zoektRepos, []*sebrch.RepositoryRevisions{repoRev(tt.rev)}, nil)
 		got := ret{
 			Indexed:     indexed.RepoRevs,
-			BranchRepos: indexed.branchRepos,
+			BrbnchRepos: indexed.brbnchRepos,
 			Unindexed:   unindexed,
 		}
-		want := ret{
-			Indexed:     repoRevsSliceToMap(tt.wantIndexed),
-			BranchRepos: tt.wantBranchesRepos,
-			Unindexed:   tt.wantUnindexed,
+		wbnt := ret{
+			Indexed:     repoRevsSliceToMbp(tt.wbntIndexed),
+			BrbnchRepos: tt.wbntBrbnchesRepos,
+			Unindexed:   tt.wbntUnindexed,
 		}
-		if !cmp.Equal(want, got, cmp.Comparer(cmpRoaring)) {
-			t.Errorf("%s mismatch (-want +got):\n%s", tt.rev, cmp.Diff(want, got))
+		if !cmp.Equbl(wbnt, got, cmp.Compbrer(cmpRobring)) {
+			t.Errorf("%s mismbtch (-wbnt +got):\n%s", tt.rev, cmp.Diff(wbnt, got))
 		}
 	}
 }
 
-func TestZoektFileMatchToSymbolResults(t *testing.T) {
+func TestZoektFileMbtchToSymbolResults(t *testing.T) {
 	symbolInfo := func(sym string) *zoekt.Symbol {
 		return &zoekt.Symbol{
 			Sym:        sym,
 			Kind:       "kind",
-			Parent:     "parent",
-			ParentKind: "parentkind",
+			Pbrent:     "pbrent",
+			PbrentKind: "pbrentkind",
 		}
 	}
 
-	file := &zoekt.FileMatch{
-		FileName:   "bar.go",
+	file := &zoekt.FileMbtch{
+		FileNbme:   "bbr.go",
 		Repository: "foo",
-		Language:   "go",
-		Version:    "deadbeef",
-		ChunkMatches: []zoekt.ChunkMatch{{
-			// Skips missing symbol info (shouldn't happen in practice).
+		Lbngubge:   "go",
+		Version:    "debdbeef",
+		ChunkMbtches: []zoekt.ChunkMbtch{{
+			// Skips missing symbol info (shouldn't hbppen in prbctice).
 			Content:      []byte(""),
-			ContentStart: zoekt.Location{LineNumber: 5, Column: 1},
-			Ranges: []zoekt.Range{{
-				Start: zoekt.Location{LineNumber: 5, Column: 8},
+			ContentStbrt: zoekt.Locbtion{LineNumber: 5, Column: 1},
+			Rbnges: []zoekt.Rbnge{{
+				Stbrt: zoekt.Locbtion{LineNumber: 5, Column: 8},
 			}},
 		}, {
-			Content:      []byte("symbol a symbol b"),
-			ContentStart: zoekt.Location{LineNumber: 10, Column: 1},
-			Ranges: []zoekt.Range{{
-				Start: zoekt.Location{LineNumber: 10, Column: 8},
+			Content:      []byte("symbol b symbol b"),
+			ContentStbrt: zoekt.Locbtion{LineNumber: 10, Column: 1},
+			Rbnges: []zoekt.Rbnge{{
+				Stbrt: zoekt.Locbtion{LineNumber: 10, Column: 8},
 			}, {
-				Start: zoekt.Location{LineNumber: 10, Column: 18},
+				Stbrt: zoekt.Locbtion{LineNumber: 10, Column: 18},
 			}},
-			SymbolInfo: []*zoekt.Symbol{symbolInfo("a"), symbolInfo("b")},
+			SymbolInfo: []*zoekt.Symbol{symbolInfo("b"), symbolInfo("b")},
 		}, {
 			Content:      []byte("symbol c"),
-			ContentStart: zoekt.Location{LineNumber: 15, Column: 1},
-			Ranges: []zoekt.Range{{
-				Start: zoekt.Location{LineNumber: 15, Column: 8},
+			ContentStbrt: zoekt.Locbtion{LineNumber: 15, Column: 1},
+			Rbnges: []zoekt.Rbnge{{
+				Stbrt: zoekt.Locbtion{LineNumber: 15, Column: 8},
 			}},
 			SymbolInfo: []*zoekt.Symbol{symbolInfo("c")},
 		}, {
-			Content:      []byte(`bar() { var regex = /.*\//; function baz() { }  } `),
-			ContentStart: zoekt.Location{LineNumber: 20, Column: 1},
-			Ranges: []zoekt.Range{{
-				Start: zoekt.Location{LineNumber: 20, Column: 38},
+			Content:      []byte(`bbr() { vbr regex = /.*\//; function bbz() { }  } `),
+			ContentStbrt: zoekt.Locbtion{LineNumber: 20, Column: 1},
+			Rbnges: []zoekt.Rbnge{{
+				Stbrt: zoekt.Locbtion{LineNumber: 20, Column: 38},
 			}},
-			SymbolInfo: []*zoekt.Symbol{symbolInfo("baz")},
+			SymbolInfo: []*zoekt.Symbol{symbolInfo("bbz")},
 		}},
 	}
 
-	results := zoektFileMatchToSymbolResults(types.MinimalRepo{Name: "foo"}, "master", file)
-	var symbols []result.Symbol
-	for _, res := range results {
-		symbols = append(symbols, res.Symbol)
+	results := zoektFileMbtchToSymbolResults(types.MinimblRepo{Nbme: "foo"}, "mbster", file)
+	vbr symbols []result.Symbol
+	for _, res := rbnge results {
+		symbols = bppend(symbols, res.Symbol)
 	}
 
-	want := []result.Symbol{{
-		Name:      "a",
+	wbnt := []result.Symbol{{
+		Nbme:      "b",
 		Line:      10,
-		Character: 7,
+		Chbrbcter: 7,
 	}, {
-		Name:      "b",
+		Nbme:      "b",
 		Line:      10,
-		Character: 17,
+		Chbrbcter: 17,
 	}, {
-		Name:      "c",
+		Nbme:      "c",
 		Line:      15,
-		Character: 7,
+		Chbrbcter: 7,
 	}, {
-		Name:      "baz",
+		Nbme:      "bbz",
 		Line:      20,
-		Character: 37,
+		Chbrbcter: 37,
 	},
 	}
-	for i := range want {
-		want[i].Kind = "kind"
-		want[i].Parent = "parent"
-		want[i].ParentKind = "parentkind"
-		want[i].Path = "bar.go"
-		want[i].Language = "go"
+	for i := rbnge wbnt {
+		wbnt[i].Kind = "kind"
+		wbnt[i].Pbrent = "pbrent"
+		wbnt[i].PbrentKind = "pbrentkind"
+		wbnt[i].Pbth = "bbr.go"
+		wbnt[i].Lbngubge = "go"
 	}
 
-	if diff := cmp.Diff(want, symbols); diff != "" {
-		t.Fatalf("symbol mismatch (-want +got):\n%s", diff)
+	if diff := cmp.Diff(wbnt, symbols); diff != "" {
+		t.Fbtblf("symbol mismbtch (-wbnt +got):\n%s", diff)
 	}
 }
 
-func repoRevsSliceToMap(rs []*search.RepositoryRevisions) map[api.RepoID]*search.RepositoryRevisions {
-	m := map[api.RepoID]*search.RepositoryRevisions{}
-	for _, r := range rs {
+func repoRevsSliceToMbp(rs []*sebrch.RepositoryRevisions) mbp[bpi.RepoID]*sebrch.RepositoryRevisions {
+	m := mbp[bpi.RepoID]*sebrch.RepositoryRevisions{}
+	for _, r := rbnge rs {
 		m[r.Repo.ID] = r
 	}
 	return m
 }
 
-func TestZoektGlobalQueryScope(t *testing.T) {
-	cases := []struct {
-		name    string
-		opts    search.RepoOptions
-		priv    []types.MinimalRepo
-		want    string
-		wantErr string
+func TestZoektGlobblQueryScope(t *testing.T) {
+	cbses := []struct {
+		nbme    string
+		opts    sebrch.RepoOptions
+		priv    []types.MinimblRepo
+		wbnt    string
+		wbntErr string
 	}{{
-		name: "any",
-		opts: search.RepoOptions{
+		nbme: "bny",
+		opts: sebrch.RepoOptions{
 			Visibility: query.Any,
 		},
-		want: `(and branch="HEAD" rawConfig:RcOnlyPublic)`,
+		wbnt: `(bnd brbnch="HEAD" rbwConfig:RcOnlyPublic)`,
 	}, {
-		name: "normal",
-		opts: search.RepoOptions{
+		nbme: "normbl",
+		opts: sebrch.RepoOptions{
 			Visibility: query.Any,
 			NoArchived: true,
 			NoForks:    true,
 		},
-		priv: []types.MinimalRepo{{ID: 1}, {ID: 2}},
-		want: `(or (and branch="HEAD" rawConfig:RcOnlyPublic|RcNoForks|RcNoArchived) (branchesrepos HEAD:2))`,
+		priv: []types.MinimblRepo{{ID: 1}, {ID: 2}},
+		wbnt: `(or (bnd brbnch="HEAD" rbwConfig:RcOnlyPublic|RcNoForks|RcNoArchived) (brbnchesrepos HEAD:2))`,
 	}, {
-		name: "private",
-		opts: search.RepoOptions{
-			Visibility: query.Private,
+		nbme: "privbte",
+		opts: sebrch.RepoOptions{
+			Visibility: query.Privbte,
 		},
-		priv: []types.MinimalRepo{{ID: 1}, {ID: 2}},
-		want: `(branchesrepos HEAD:2)`,
+		priv: []types.MinimblRepo{{ID: 1}, {ID: 2}},
+		wbnt: `(brbnchesrepos HEAD:2)`,
 	}, {
-		name: "minusrepofilter",
-		opts: search.RepoOptions{
+		nbme: "minusrepofilter",
+		opts: sebrch.RepoOptions{
 			Visibility:       query.Public,
-			MinusRepoFilters: []string{"java"},
+			MinusRepoFilters: []string{"jbvb"},
 		},
-		want: `(and branch="HEAD" rawConfig:RcOnlyPublic (not reporegex:"(?i)java"))`,
+		wbnt: `(bnd brbnch="HEAD" rbwConfig:RcOnlyPublic (not reporegex:"(?i)jbvb"))`,
 	}, {
-		name: "bad minusrepofilter",
-		opts: search.RepoOptions{
+		nbme: "bbd minusrepofilter",
+		opts: sebrch.RepoOptions{
 			Visibility:       query.Any,
 			MinusRepoFilters: []string{"())"},
 		},
-		wantErr: "invalid regex for -repo filter",
+		wbntErr: "invblid regex for -repo filter",
 	}}
 
-	for _, tc := range cases {
-		t.Run(tc.name, func(t *testing.T) {
-			includePrivate := tc.opts.Visibility == query.Private || tc.opts.Visibility == query.Any
-			defaultScope, err := DefaultGlobalQueryScope(tc.opts)
-			if err != nil || tc.wantErr != "" {
-				if got := fmt.Sprintf("%s", err); !strings.Contains(got, tc.wantErr) {
-					t.Fatalf("expected error to contain %q: %s", tc.wantErr, got)
+	for _, tc := rbnge cbses {
+		t.Run(tc.nbme, func(t *testing.T) {
+			includePrivbte := tc.opts.Visibility == query.Privbte || tc.opts.Visibility == query.Any
+			defbultScope, err := DefbultGlobblQueryScope(tc.opts)
+			if err != nil || tc.wbntErr != "" {
+				if got := fmt.Sprintf("%s", err); !strings.Contbins(got, tc.wbntErr) {
+					t.Fbtblf("expected error to contbin %q: %s", tc.wbntErr, got)
 				}
-				if tc.wantErr == "" {
-					t.Fatalf("unexpected error: %s", err)
+				if tc.wbntErr == "" {
+					t.Fbtblf("unexpected error: %s", err)
 				}
 				return
 			}
-			zoektGlobalQuery := NewGlobalZoektQuery(&zoektquery.Const{Value: true}, defaultScope, includePrivate)
-			zoektGlobalQuery.ApplyPrivateFilter(tc.priv)
-			q := zoektGlobalQuery.Generate()
-			if got := zoektquery.Simplify(q).String(); got != tc.want {
-				t.Fatalf("unexpected scoped query:\nwant: %s\ngot:  %s", tc.want, got)
+			zoektGlobblQuery := NewGlobblZoektQuery(&zoektquery.Const{Vblue: true}, defbultScope, includePrivbte)
+			zoektGlobblQuery.ApplyPrivbteFilter(tc.priv)
+			q := zoektGlobblQuery.Generbte()
+			if got := zoektquery.Simplify(q).String(); got != tc.wbnt {
+				t.Fbtblf("unexpected scoped query:\nwbnt: %s\ngot:  %s", tc.wbnt, got)
 			}
 		})
 	}
 }
 
-func TestContextWithoutDeadline(t *testing.T) {
-	ctxWithDeadline, cancelWithDeadline := context.WithTimeout(context.Background(), time.Minute)
-	defer cancelWithDeadline()
+func TestContextWithoutDebdline(t *testing.T) {
+	ctxWithDebdline, cbncelWithDebdline := context.WithTimeout(context.Bbckground(), time.Minute)
+	defer cbncelWithDebdline()
 
-	tr, ctxWithDeadline := trace.New(ctxWithDeadline, "")
+	tr, ctxWithDebdline := trbce.New(ctxWithDebdline, "")
 
-	if _, ok := ctxWithDeadline.Deadline(); !ok {
-		t.Fatal("expected context to have deadline")
+	if _, ok := ctxWithDebdline.Debdline(); !ok {
+		t.Fbtbl("expected context to hbve debdline")
 	}
 
-	ctxNoDeadline, cancelNoDeadline := contextWithoutDeadline(ctxWithDeadline)
-	defer cancelNoDeadline()
+	ctxNoDebdline, cbncelNoDebdline := contextWithoutDebdline(ctxWithDebdline)
+	defer cbncelNoDebdline()
 
-	if _, ok := ctxNoDeadline.Deadline(); ok {
-		t.Fatal("expected context to not have deadline")
+	if _, ok := ctxNoDebdline.Debdline(); ok {
+		t.Fbtbl("expected context to not hbve debdline")
 	}
 
-	// We want to keep trace info
-	if tr2 := trace.FromContext(ctxNoDeadline); !tr.SpanContext().Equal(tr2.SpanContext()) {
-		t.Error("trace information not propogated")
+	// We wbnt to keep trbce info
+	if tr2 := trbce.FromContext(ctxNoDebdline); !tr.SpbnContext().Equbl(tr2.SpbnContext()) {
+		t.Error("trbce informbtion not propogbted")
 	}
 
-	// Calling cancelWithDeadline should cancel ctxNoDeadline
-	cancelWithDeadline()
+	// Cblling cbncelWithDebdline should cbncel ctxNoDebdline
+	cbncelWithDebdline()
 	select {
-	case <-ctxNoDeadline.Done():
-	case <-time.After(10 * time.Second):
-		t.Fatal("expected context to be done")
+	cbse <-ctxNoDebdline.Done():
+	cbse <-time.After(10 * time.Second):
+		t.Fbtbl("expected context to be done")
 	}
 }
 
-func TestContextWithoutDeadline_cancel(t *testing.T) {
-	ctxWithDeadline, cancelWithDeadline := context.WithTimeout(context.Background(), time.Minute)
-	defer cancelWithDeadline()
-	ctxNoDeadline, cancelNoDeadline := contextWithoutDeadline(ctxWithDeadline)
+func TestContextWithoutDebdline_cbncel(t *testing.T) {
+	ctxWithDebdline, cbncelWithDebdline := context.WithTimeout(context.Bbckground(), time.Minute)
+	defer cbncelWithDebdline()
+	ctxNoDebdline, cbncelNoDebdline := contextWithoutDebdline(ctxWithDebdline)
 
-	cancelNoDeadline()
+	cbncelNoDebdline()
 	select {
-	case <-ctxNoDeadline.Done():
-	case <-time.After(10 * time.Second):
-		t.Fatal("expected context to be done")
+	cbse <-ctxNoDebdline.Done():
+	cbse <-time.After(10 * time.Second):
+		t.Fbtbl("expected context to be done")
 	}
 }
 
-func makeRepositoryRevisions(repos ...string) []*search.RepositoryRevisions {
-	r := make([]*search.RepositoryRevisions, len(repos))
-	for i, repospec := range repos {
-		repoRevs, err := query.ParseRepositoryRevisions(repospec)
+func mbkeRepositoryRevisions(repos ...string) []*sebrch.RepositoryRevisions {
+	r := mbke([]*sebrch.RepositoryRevisions, len(repos))
+	for i, repospec := rbnge repos {
+		repoRevs, err := query.PbrseRepositoryRevisions(repospec)
 		if err != nil {
-			panic(errors.Errorf("unexpected error parsing repo spec %s", repospec))
+			pbnic(errors.Errorf("unexpected error pbrsing repo spec %s", repospec))
 		}
 
-		revs := make([]string, 0, len(repoRevs.Revs))
-		for _, revSpec := range repoRevs.Revs {
-			revs = append(revs, revSpec.RevSpec)
+		revs := mbke([]string, 0, len(repoRevs.Revs))
+		for _, revSpec := rbnge repoRevs.Revs {
+			revs = bppend(revs, revSpec.RevSpec)
 		}
 		if len(revs) == 0 {
-			// treat empty list as HEAD
+			// trebt empty list bs HEAD
 			revs = []string{"HEAD"}
 		}
-		r[i] = &search.RepositoryRevisions{Repo: mkRepos(repoRevs.Repo)[0], Revs: revs}
+		r[i] = &sebrch.RepositoryRevisions{Repo: mkRepos(repoRevs.Repo)[0], Revs: revs}
 	}
 	return r
 }
 
-func makeRepositoryRevisionsMap(repos ...string) map[api.RepoID]*search.RepositoryRevisions {
-	r := makeRepositoryRevisions(repos...)
-	rMap := make(map[api.RepoID]*search.RepositoryRevisions, len(r))
-	for _, repoRev := range r {
-		rMap[repoRev.Repo.ID] = repoRev
+func mbkeRepositoryRevisionsMbp(repos ...string) mbp[bpi.RepoID]*sebrch.RepositoryRevisions {
+	r := mbkeRepositoryRevisions(repos...)
+	rMbp := mbke(mbp[bpi.RepoID]*sebrch.RepositoryRevisions, len(r))
+	for _, repoRev := rbnge r {
+		rMbp[repoRev.Repo.ID] = repoRev
 	}
-	return rMap
+	return rMbp
 }
 
-func mkRepos(names ...string) []types.MinimalRepo {
-	var repos []types.MinimalRepo
-	for _, name := range names {
-		sum := md5.Sum([]byte(name))
-		id := api.RepoID(binary.BigEndian.Uint64(sum[:]))
+func mkRepos(nbmes ...string) []types.MinimblRepo {
+	vbr repos []types.MinimblRepo
+	for _, nbme := rbnge nbmes {
+		sum := md5.Sum([]byte(nbme))
+		id := bpi.RepoID(binbry.BigEndibn.Uint64(sum[:]))
 		if id < 0 {
 			id = -(id / 2)
 		}
 		if id == 0 {
 			id++
 		}
-		repos = append(repos, types.MinimalRepo{ID: id, Name: api.RepoName(name)})
+		repos = bppend(repos, types.MinimblRepo{ID: id, Nbme: bpi.RepoNbme(nbme)})
 	}
 	return repos
 }
 
-func matchesToFileMatches(matches []result.Match) ([]*result.FileMatch, error) {
-	fms := make([]*result.FileMatch, 0, len(matches))
-	for _, match := range matches {
-		fm, ok := match.(*result.FileMatch)
+func mbtchesToFileMbtches(mbtches []result.Mbtch) ([]*result.FileMbtch, error) {
+	fms := mbke([]*result.FileMbtch, 0, len(mbtches))
+	for _, mbtch := rbnge mbtches {
+		fm, ok := mbtch.(*result.FileMbtch)
 		if !ok {
-			return nil, errors.Errorf("expected only file match results")
+			return nil, errors.Errorf("expected only file mbtch results")
 		}
-		fms = append(fms, fm)
+		fms = bppend(fms, fm)
 	}
 	return fms, nil
 }
 
-func TestZoektFileMatchToMultilineMatches(t *testing.T) {
-	cases := []struct {
-		input  *zoekt.FileMatch
-		output result.ChunkMatches
+func TestZoektFileMbtchToMultilineMbtches(t *testing.T) {
+	cbses := []struct {
+		input  *zoekt.FileMbtch
+		output result.ChunkMbtches
 	}{{
-		input: &zoekt.FileMatch{
-			ChunkMatches: []zoekt.ChunkMatch{{
+		input: &zoekt.FileMbtch{
+			ChunkMbtches: []zoekt.ChunkMbtch{{
 				Content:      []byte("testing 1 2 3"),
-				ContentStart: zoekt.Location{ByteOffset: 0, LineNumber: 1, Column: 1},
-				Ranges: []zoekt.Range{{
-					Start: zoekt.Location{8, 1, 9},
-					End:   zoekt.Location{9, 1, 10},
+				ContentStbrt: zoekt.Locbtion{ByteOffset: 0, LineNumber: 1, Column: 1},
+				Rbnges: []zoekt.Rbnge{{
+					Stbrt: zoekt.Locbtion{8, 1, 9},
+					End:   zoekt.Locbtion{9, 1, 10},
 				}, {
-					Start: zoekt.Location{10, 1, 11},
-					End:   zoekt.Location{11, 1, 12},
+					Stbrt: zoekt.Locbtion{10, 1, 11},
+					End:   zoekt.Locbtion{11, 1, 12},
 				}, {
-					Start: zoekt.Location{12, 1, 13},
-					End:   zoekt.Location{13, 1, 14},
+					Stbrt: zoekt.Locbtion{12, 1, 13},
+					End:   zoekt.Locbtion{13, 1, 14},
 				}},
 			}},
 		},
-		// One chunk per line, not one per fragment
-		output: result.ChunkMatches{{
+		// One chunk per line, not one per frbgment
+		output: result.ChunkMbtches{{
 			Content:      "testing 1 2 3",
-			ContentStart: result.Location{0, 0, 0},
-			Ranges: result.Ranges{{
-				Start: result.Location{8, 0, 8},
-				End:   result.Location{9, 0, 9},
+			ContentStbrt: result.Locbtion{0, 0, 0},
+			Rbnges: result.Rbnges{{
+				Stbrt: result.Locbtion{8, 0, 8},
+				End:   result.Locbtion{9, 0, 9},
 			}, {
-				Start: result.Location{10, 0, 10},
-				End:   result.Location{11, 0, 11},
+				Stbrt: result.Locbtion{10, 0, 10},
+				End:   result.Locbtion{11, 0, 11},
 			}, {
-				Start: result.Location{12, 0, 12},
-				End:   result.Location{13, 0, 13},
+				Stbrt: result.Locbtion{12, 0, 12},
+				End:   result.Locbtion{13, 0, 13},
 			}},
 		}},
 	}}
 
-	for _, tc := range cases {
+	for _, tc := rbnge cbses {
 		t.Run("", func(t *testing.T) {
-			got := zoektFileMatchToMultilineMatches(tc.input)
-			require.Equal(t, tc.output, got)
+			got := zoektFileMbtchToMultilineMbtches(tc.input)
+			require.Equbl(t, tc.output, got)
 		})
 	}
 }
 
-func TestZoektFileMatchToPathMatchRanges(t *testing.T) {
+func TestZoektFileMbtchToPbthMbtchRbnges(t *testing.T) {
 	zoektQueryRegexps := []*regexp.Regexp{regexp.MustCompile("python.*worker|stuff")}
 
-	cases := []struct {
-		name   string
-		input  *zoekt.FileMatch
-		output []result.Range
+	cbses := []struct {
+		nbme   string
+		input  *zoekt.FileMbtch
+		output []result.Rbnge
 	}{
 		{
-			name: "returns single path match range",
-			input: &zoekt.FileMatch{
-				FileName: "internal/python/foo/worker.py",
+			nbme: "returns single pbth mbtch rbnge",
+			input: &zoekt.FileMbtch{
+				FileNbme: "internbl/python/foo/worker.py",
 			},
-			output: []result.Range{
+			output: []result.Rbnge{
 				{
-					Start: result.Location{Offset: 9, Line: 0, Column: 9},
-					End:   result.Location{Offset: 26, Line: 0, Column: 26},
+					Stbrt: result.Locbtion{Offset: 9, Line: 0, Column: 9},
+					End:   result.Locbtion{Offset: 26, Line: 0, Column: 26},
 				},
 			},
 		},
 		{
-			name: "returns multiple path match ranges",
-			input: &zoekt.FileMatch{
-				FileName: "internal/python/foo/worker/src/dev/python_stuff.py",
+			nbme: "returns multiple pbth mbtch rbnges",
+			input: &zoekt.FileMbtch{
+				FileNbme: "internbl/python/foo/worker/src/dev/python_stuff.py",
 			},
-			output: []result.Range{
+			output: []result.Rbnge{
 				{
-					Start: result.Location{Offset: 9, Line: 0, Column: 9},
-					End:   result.Location{Offset: 26, Line: 0, Column: 26},
+					Stbrt: result.Locbtion{Offset: 9, Line: 0, Column: 9},
+					End:   result.Locbtion{Offset: 26, Line: 0, Column: 26},
 				},
 				{
-					Start: result.Location{Offset: 42, Line: 0, Column: 42},
-					End:   result.Location{Offset: 47, Line: 0, Column: 47},
+					Stbrt: result.Locbtion{Offset: 42, Line: 0, Column: 42},
+					End:   result.Locbtion{Offset: 47, Line: 0, Column: 47},
 				},
 			},
 		},
 	}
 
-	for _, tc := range cases {
-		t.Run(tc.name, func(t *testing.T) {
-			got := zoektFileMatchToPathMatchRanges(tc.input, zoektQueryRegexps)
-			require.Equal(t, tc.output, got)
+	for _, tc := rbnge cbses {
+		t.Run(tc.nbme, func(t *testing.T) {
+			got := zoektFileMbtchToPbthMbtchRbnges(tc.input, zoektQueryRegexps)
+			require.Equbl(t, tc.output, got)
 		})
 	}
 }
 
-func TestGetRepoRevsFromBranchRepos_SingleRepo(t *testing.T) {
-	cases := []struct {
-		name            string
+func TestGetRepoRevsFromBrbnchRepos_SingleRepo(t *testing.T) {
+	cbses := []struct {
+		nbme            string
 		revisions       []string
-		indexedBranches []string
-		wantRepoRevs    []string
+		indexedBrbnches []string
+		wbntRepoRevs    []string
 	}{
 		{
-			name:            "no revisions specified for the indexed branch",
-			indexedBranches: []string{"HEAD"},
-			wantRepoRevs:    []string{"HEAD"},
+			nbme:            "no revisions specified for the indexed brbnch",
+			indexedBrbnches: []string{"HEAD"},
+			wbntRepoRevs:    []string{"HEAD"},
 		}, {
-			name:            "specific revision is the latest commit ID indexed for the default branch of repo",
-			revisions:       []string{"latestCommitID"},
-			indexedBranches: []string{"HEAD"},
-			wantRepoRevs:    []string{"HEAD"},
+			nbme:            "specific revision is the lbtest commit ID indexed for the defbult brbnch of repo",
+			revisions:       []string{"lbtestCommitID"},
+			indexedBrbnches: []string{"HEAD"},
+			wbntRepoRevs:    []string{"HEAD"},
 		}, {
-			name:            "specific revision that is also a non default branch which is indexed",
+			nbme:            "specific revision thbt is blso b non defbult brbnch which is indexed",
 			revisions:       []string{"myIndexedRevision"},
-			indexedBranches: []string{"myIndexedRevision"},
-			wantRepoRevs:    []string{"myIndexedRevision"},
+			indexedBrbnches: []string{"myIndexedRevision"},
+			wbntRepoRevs:    []string{"myIndexedRevision"},
 		}, {
-			name:            "specific revision is the latest commit ID indexed for a non default branch which is indexed",
-			revisions:       []string{"latestCommitID"},
-			indexedBranches: []string{"myIndexedFeatureBranch"},
-			wantRepoRevs:    []string{"myIndexedFeatureBranch"},
+			nbme:            "specific revision is the lbtest commit ID indexed for b non defbult brbnch which is indexed",
+			revisions:       []string{"lbtestCommitID"},
+			indexedBrbnches: []string{"myIndexedFebtureBrbnch"},
+			wbntRepoRevs:    []string{"myIndexedFebtureBrbnch"},
 		}, {
-			name:            "specific revision is the latest commit ID indexed for one of multiple indexed branches",
+			nbme:            "specific revision is the lbtest commit ID indexed for one of multiple indexed brbnches",
 			revisions:       []string{"someCommitID"},
-			indexedBranches: []string{"HEAD", "myIndexedFeatureBranch", "myIndexedRevision"},
-			wantRepoRevs:    []string{""},
+			indexedBrbnches: []string{"HEAD", "myIndexedFebtureBrbnch", "myIndexedRevision"},
+			wbntRepoRevs:    []string{""},
 		}, {
-			name:            "specific revision is the latest commit ID indexed for one of multiple indexed branches, including the specified revision",
+			nbme:            "specific revision is the lbtest commit ID indexed for one of multiple indexed brbnches, including the specified revision",
 			revisions:       []string{"someCommitID"},
-			indexedBranches: []string{"HEAD", "myIndexedFeatureBranch", "someCommitID"},
-			wantRepoRevs:    []string{"someCommitID"},
+			indexedBrbnches: []string{"HEAD", "myIndexedFebtureBrbnch", "someCommitID"},
+			wbntRepoRevs:    []string{"someCommitID"},
 		}, {
-			name:            "multiple specified revisions: one is indexed default branch and one is an indexed revision",
+			nbme:            "multiple specified revisions: one is indexed defbult brbnch bnd one is bn indexed revision",
 			revisions:       []string{"someCommitID0", "someCommitID1"},
-			indexedBranches: []string{"HEAD", "someCommitID0"},
-			wantRepoRevs:    []string{"someCommitID0", ""},
+			indexedBrbnches: []string{"HEAD", "someCommitID0"},
+			wbntRepoRevs:    []string{"someCommitID0", ""},
 		}, {
-			name:            "multiple specified revisions: one is an indexed revision and the other cannot be matched by branch name so default to empty string",
+			nbme:            "multiple specified revisions: one is bn indexed revision bnd the other cbnnot be mbtched by brbnch nbme so defbult to empty string",
 			revisions:       []string{"someCommitID0", "someCommitID1"},
-			indexedBranches: []string{"myIndexedFeatureBranch", "someCommitID0"},
-			wantRepoRevs:    []string{"someCommitID0", ""},
+			indexedBrbnches: []string{"myIndexedFebtureBrbnch", "someCommitID0"},
+			wbntRepoRevs:    []string{"someCommitID0", ""},
 		},
 	}
 
-	for _, tc := range cases {
-		t.Run(tc.name, func(t *testing.T) {
+	for _, tc := rbnge cbses {
+		t.Run(tc.nbme, func(t *testing.T) {
 			repoWithRevs := "foo/indexed-one"
 
 			if len(tc.revisions) > 1 {
@@ -967,35 +967,35 @@ func TestGetRepoRevsFromBranchRepos_SingleRepo(t *testing.T) {
 				repoWithRevs = fmt.Sprintf("%v@%v", repoWithRevs, tc.revisions[0])
 			}
 
-			repoRevs := makeRepositoryRevisionsMap(repoWithRevs)
+			repoRevs := mbkeRepositoryRevisionsMbp(repoWithRevs)
 
-			inputBranchRepos := make(map[string]*zoektquery.BranchRepos, len(tc.indexedBranches))
+			inputBrbnchRepos := mbke(mbp[string]*zoektquery.BrbnchRepos, len(tc.indexedBrbnches))
 
 			if len(repoRevs) != 1 {
-				t.Fatal("repoRevs map should represent revisions for no more than one repo with ID")
+				t.Fbtbl("repoRevs mbp should represent revisions for no more thbn one repo with ID")
 			}
 
-			var wantRepoID api.RepoID
-			for repoID := range repoRevs {
-				wantRepoID = repoID
-				break
+			vbr wbntRepoID bpi.RepoID
+			for repoID := rbnge repoRevs {
+				wbntRepoID = repoID
+				brebk
 			}
 
-			for _, branch := range tc.indexedBranches {
-				repos := roaring.New()
-				repos.Add(uint32(wantRepoID))
-				inputBranchRepos[branch] = &zoektquery.BranchRepos{Branch: branch, Repos: repos}
+			for _, brbnch := rbnge tc.indexedBrbnches {
+				repos := robring.New()
+				repos.Add(uint32(wbntRepoID))
+				inputBrbnchRepos[brbnch] = &zoektquery.BrbnchRepos{Brbnch: brbnch, Repos: repos}
 			}
 
 			indexed := IndexedRepoRevs{
 				RepoRevs:    repoRevs,
-				branchRepos: inputBranchRepos,
+				brbnchRepos: inputBrbnchRepos,
 			}
 
-			gotRepoRevs := indexed.GetRepoRevsFromBranchRepos()
-			for _, revs := range gotRepoRevs {
-				if diff := cmp.Diff(tc.wantRepoRevs, revs.Revs); diff != "" {
-					t.Errorf("unindexed mismatch (-want +got):\n%s", diff)
+			gotRepoRevs := indexed.GetRepoRevsFromBrbnchRepos()
+			for _, revs := rbnge gotRepoRevs {
+				if diff := cmp.Diff(tc.wbntRepoRevs, revs.Revs); diff != "" {
+					t.Errorf("unindexed mismbtch (-wbnt +got):\n%s", diff)
 				}
 			}
 		})

@@ -1,170 +1,170 @@
-package querybuilder
+pbckbge querybuilder
 
 import (
 	"testing"
 	"time"
 
 	"github.com/google/go-cmp/cmp"
-	"github.com/hexops/autogold/v2"
+	"github.com/hexops/butogold/v2"
 
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
-	"github.com/sourcegraph/sourcegraph/internal/search/query"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/internbl/gitserver"
+	"github.com/sourcegrbph/sourcegrbph/internbl/sebrch/query"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-func TestWithDefaults(t *testing.T) {
+func TestWithDefbults(t *testing.T) {
 	tests := []struct {
-		name     string
+		nbme     string
 		input    string
-		want     string
-		defaults query.Parameters
+		wbnt     string
+		defbults query.Pbrbmeters
 	}{
 		{
-			name:     "no defaults",
+			nbme:     "no defbults",
 			input:    "repo:myrepo testquery",
-			want:     "repo:myrepo testquery",
-			defaults: []query.Parameter{},
+			wbnt:     "repo:myrepo testquery",
+			defbults: []query.Pbrbmeter{},
 		},
 		{
-			name:     "no defaults with fork archived",
-			input:    "repo:myrepo testquery fork:no archived:no",
-			want:     "repo:myrepo fork:no archived:no testquery",
-			defaults: []query.Parameter{},
+			nbme:     "no defbults with fork brchived",
+			input:    "repo:myrepo testquery fork:no brchived:no",
+			wbnt:     "repo:myrepo fork:no brchived:no testquery",
+			defbults: []query.Pbrbmeter{},
 		},
 		{
-			name:     "no defaults with patterntype",
-			input:    "repo:myrepo testquery patterntype:standard",
-			want:     "repo:myrepo patterntype:standard testquery",
-			defaults: []query.Parameter{},
+			nbme:     "no defbults with pbtterntype",
+			input:    "repo:myrepo testquery pbtterntype:stbndbrd",
+			wbnt:     "repo:myrepo pbtterntype:stbndbrd testquery",
+			defbults: []query.Pbrbmeter{},
 		},
 		{
-			name:  "default archived",
+			nbme:  "defbult brchived",
 			input: "repo:myrepo testquery fork:no",
-			want:  "archived:yes repo:myrepo fork:no testquery",
-			defaults: []query.Parameter{{
+			wbnt:  "brchived:yes repo:myrepo fork:no testquery",
+			defbults: []query.Pbrbmeter{{
 				Field:      query.FieldArchived,
-				Value:      string(query.Yes),
-				Negated:    false,
-				Annotation: query.Annotation{},
+				Vblue:      string(query.Yes),
+				Negbted:    fblse,
+				Annotbtion: query.Annotbtion{},
 			}},
 		},
 		{
-			name:  "default fork and archived",
+			nbme:  "defbult fork bnd brchived",
 			input: "repo:myrepo testquery",
-			want:  "archived:no fork:no repo:myrepo testquery",
-			defaults: []query.Parameter{{
+			wbnt:  "brchived:no fork:no repo:myrepo testquery",
+			defbults: []query.Pbrbmeter{{
 				Field:      query.FieldArchived,
-				Value:      string(query.No),
-				Negated:    false,
-				Annotation: query.Annotation{},
+				Vblue:      string(query.No),
+				Negbted:    fblse,
+				Annotbtion: query.Annotbtion{},
 			}, {
 				Field:      query.FieldFork,
-				Value:      string(query.No),
-				Negated:    false,
-				Annotation: query.Annotation{},
+				Vblue:      string(query.No),
+				Negbted:    fblse,
+				Annotbtion: query.Annotbtion{},
 			}},
 		},
 		{
-			name:  "default patterntype",
+			nbme:  "defbult pbtterntype",
 			input: "repo:myrepo testquery",
-			want:  "patterntype:literal repo:myrepo testquery",
-			defaults: []query.Parameter{{
-				Field:      query.FieldPatternType,
-				Value:      "literal",
-				Negated:    false,
-				Annotation: query.Annotation{},
+			wbnt:  "pbtterntype:literbl repo:myrepo testquery",
+			defbults: []query.Pbrbmeter{{
+				Field:      query.FieldPbtternType,
+				Vblue:      "literbl",
+				Negbted:    fblse,
+				Annotbtion: query.Annotbtion{},
 			}},
 		},
 		{
-			name:  "default patterntype does not override",
-			input: "patterntype:standard repo:myrepo testquery",
-			want:  "patterntype:standard repo:myrepo testquery",
-			defaults: []query.Parameter{{
-				Field:      query.FieldPatternType,
-				Value:      "literal",
-				Negated:    false,
-				Annotation: query.Annotation{},
+			nbme:  "defbult pbtterntype does not override",
+			input: "pbtterntype:stbndbrd repo:myrepo testquery",
+			wbnt:  "pbtterntype:stbndbrd repo:myrepo testquery",
+			defbults: []query.Pbrbmeter{{
+				Field:      query.FieldPbtternType,
+				Vblue:      "literbl",
+				Negbted:    fblse,
+				Annotbtion: query.Annotbtion{},
 			}},
 		},
 	}
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			got, err := withDefaults(BasicQuery(test.input), test.defaults)
+	for _, test := rbnge tests {
+		t.Run(test.nbme, func(t *testing.T) {
+			got, err := withDefbults(BbsicQuery(test.input), test.defbults)
 			if err != nil {
-				t.Fatal(err)
+				t.Fbtbl(err)
 			}
-			if diff := cmp.Diff(test.want, string(got)); diff != "" {
-				t.Fatalf("%s failed (want/got): %s", test.name, diff)
+			if diff := cmp.Diff(test.wbnt, string(got)); diff != "" {
+				t.Fbtblf("%s fbiled (wbnt/got): %s", test.nbme, diff)
 			}
 		})
 	}
 }
 
-func TestWithDefaultsPatternTypes(t *testing.T) {
+func TestWithDefbultsPbtternTypes(t *testing.T) {
 	tests := []struct {
-		name     string
+		nbme     string
 		input    string
-		want     string
-		defaults query.Parameters
+		wbnt     string
+		defbults query.Pbrbmeters
 	}{
 		{
-			// It's worth noting that we always append patterntype:regexp to capture group queries.
-			name:     "regexp query without patterntype",
+			// It's worth noting thbt we blwbys bppend pbtterntype:regexp to cbpture group queries.
+			nbme:     "regexp query without pbtterntype",
 			input:    `file:go\.mod$ go\s*(\d\.\d+)`,
-			want:     `file:go\.mod$ go\s*(\d\.\d+)`,
-			defaults: []query.Parameter{},
+			wbnt:     `file:go\.mod$ go\s*(\d\.\d+)`,
+			defbults: []query.Pbrbmeter{},
 		},
 		{
-			name:     "regexp query with patterntype",
-			input:    `file:go\.mod$ go\s*(\d\.\d+) patterntype:regexp`,
-			want:     `file:go\.mod$ patterntype:regexp go\s*(\d\.\d+)`,
-			defaults: []query.Parameter{},
+			nbme:     "regexp query with pbtterntype",
+			input:    `file:go\.mod$ go\s*(\d\.\d+) pbtterntype:regexp`,
+			wbnt:     `file:go\.mod$ pbtterntype:regexp go\s*(\d\.\d+)`,
+			defbults: []query.Pbrbmeter{},
 		},
 		{
-			name:     "literal query without patterntype",
-			input:    `package search`,
-			want:     `package search`,
-			defaults: []query.Parameter{},
+			nbme:     "literbl query without pbtterntype",
+			input:    `pbckbge sebrch`,
+			wbnt:     `pbckbge sebrch`,
+			defbults: []query.Pbrbmeter{},
 		},
 		{
-			name:     "literal query with patterntype",
-			input:    `package search patterntype:literal`,
-			want:     `patterntype:literal package search`,
-			defaults: []query.Parameter{},
+			nbme:     "literbl query with pbtterntype",
+			input:    `pbckbge sebrch pbtterntype:literbl`,
+			wbnt:     `pbtterntype:literbl pbckbge sebrch`,
+			defbults: []query.Pbrbmeter{},
 		},
 		{
-			name:     "literal query with quotes without patterntype",
+			nbme:     "literbl query with quotes without pbtterntype",
 			input:    `"license": "A`,
-			want:     `"license": "A`,
-			defaults: []query.Parameter{},
+			wbnt:     `"license": "A`,
+			defbults: []query.Pbrbmeter{},
 		},
 		{
-			name:     "literal query with quotes with patterntype",
-			input:    `"license": "A patterntype:literal`,
-			want:     `patterntype:literal "license": "A`,
-			defaults: []query.Parameter{},
+			nbme:     "literbl query with quotes with pbtterntype",
+			input:    `"license": "A pbtterntype:literbl`,
+			wbnt:     `pbtterntype:literbl "license": "A`,
+			defbults: []query.Pbrbmeter{},
 		},
 		{
-			name:     "structural query without patterntype",
+			nbme:     "structurbl query without pbtterntype",
 			input:    `TODO(...)`,
-			want:     `TODO(...)`,
-			defaults: []query.Parameter{},
+			wbnt:     `TODO(...)`,
+			defbults: []query.Pbrbmeter{},
 		},
 		{
-			name:     "structural query with patterntype",
-			input:    `TODO(...) patterntype:structural`,
-			want:     `patterntype:structural TODO(...)`,
-			defaults: []query.Parameter{},
+			nbme:     "structurbl query with pbtterntype",
+			input:    `TODO(...) pbtterntype:structurbl`,
+			wbnt:     `pbtterntype:structurbl TODO(...)`,
+			defbults: []query.Pbrbmeter{},
 		},
 	}
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			got, err := withDefaults(BasicQuery(test.input), test.defaults)
+	for _, test := rbnge tests {
+		t.Run(test.nbme, func(t *testing.T) {
+			got, err := withDefbults(BbsicQuery(test.input), test.defbults)
 			if err != nil {
-				t.Fatal(err)
+				t.Fbtbl(err)
 			}
-			if diff := cmp.Diff(test.want, string(got)); diff != "" {
-				t.Fatalf("%s failed (want/got): %s", test.name, diff)
+			if diff := cmp.Diff(test.wbnt, string(got)); diff != "" {
+				t.Fbtblf("%s fbiled (wbnt/got): %s", test.nbme, diff)
 			}
 		})
 	}
@@ -172,164 +172,164 @@ func TestWithDefaultsPatternTypes(t *testing.T) {
 
 func TestMultiRepoQuery(t *testing.T) {
 	tests := []struct {
-		name     string
+		nbme     string
 		repos    []string
-		want     string
-		defaults query.Parameters
+		wbnt     string
+		defbults query.Pbrbmeters
 	}{
 		{
-			name:     "single repo",
+			nbme:     "single repo",
 			repos:    []string{"repo1"},
-			want:     `count:99999999 testquery repo:^(repo1)$`,
-			defaults: []query.Parameter{},
+			wbnt:     `count:99999999 testquery repo:^(repo1)$`,
+			defbults: []query.Pbrbmeter{},
 		},
 		{
-			name:  "multiple repo",
+			nbme:  "multiple repo",
 			repos: []string{"repo1", "repo2"},
-			want:  `archived:no fork:no count:99999999 testquery repo:^(repo1|repo2)$`,
-			defaults: []query.Parameter{{
+			wbnt:  `brchived:no fork:no count:99999999 testquery repo:^(repo1|repo2)$`,
+			defbults: []query.Pbrbmeter{{
 				Field:      query.FieldArchived,
-				Value:      string(query.No),
-				Negated:    false,
-				Annotation: query.Annotation{},
+				Vblue:      string(query.No),
+				Negbted:    fblse,
+				Annotbtion: query.Annotbtion{},
 			}, {
 				Field:      query.FieldFork,
-				Value:      string(query.No),
-				Negated:    false,
-				Annotation: query.Annotation{},
+				Vblue:      string(query.No),
+				Negbted:    fblse,
+				Annotbtion: query.Annotbtion{},
 			}},
 		},
 		{
-			name:  "multiple repo",
+			nbme:  "multiple repo",
 			repos: []string{"github.com/myrepos/repo1", "github.com/myrepos/repo2"},
-			want:  `archived:no fork:no count:99999999 testquery repo:^(github\.com/myrepos/repo1|github\.com/myrepos/repo2)$`,
-			defaults: []query.Parameter{{
+			wbnt:  `brchived:no fork:no count:99999999 testquery repo:^(github\.com/myrepos/repo1|github\.com/myrepos/repo2)$`,
+			defbults: []query.Pbrbmeter{{
 				Field:      query.FieldArchived,
-				Value:      string(query.No),
-				Negated:    false,
-				Annotation: query.Annotation{},
+				Vblue:      string(query.No),
+				Negbted:    fblse,
+				Annotbtion: query.Annotbtion{},
 			}, {
 				Field:      query.FieldFork,
-				Value:      string(query.No),
-				Negated:    false,
-				Annotation: query.Annotation{},
+				Vblue:      string(query.No),
+				Negbted:    fblse,
+				Annotbtion: query.Annotbtion{},
 			}},
 		},
 	}
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			got, err := MultiRepoQuery("testquery", test.repos, test.defaults)
+	for _, test := rbnge tests {
+		t.Run(test.nbme, func(t *testing.T) {
+			got, err := MultiRepoQuery("testquery", test.repos, test.defbults)
 			if err != nil {
-				t.Fatal(err)
+				t.Fbtbl(err)
 			}
-			if diff := cmp.Diff(test.want, string(got)); diff != "" {
-				t.Fatalf("%s failed (want/got): %s", test.name, diff)
+			if diff := cmp.Diff(test.wbnt, string(got)); diff != "" {
+				t.Fbtblf("%s fbiled (wbnt/got): %s", test.nbme, diff)
 			}
 		})
 	}
 }
 
-func TestDefaults(t *testing.T) {
+func TestDefbults(t *testing.T) {
 	tests := []struct {
-		name  string
+		nbme  string
 		input bool
-		want  query.Parameters
+		wbnt  query.Pbrbmeters
 	}{
 		{
-			name:  "all repos",
+			nbme:  "bll repos",
 			input: true,
-			want: query.Parameters{{
+			wbnt: query.Pbrbmeters{{
 				Field:      query.FieldFork,
-				Value:      string(query.No),
-				Negated:    false,
-				Annotation: query.Annotation{},
+				Vblue:      string(query.No),
+				Negbted:    fblse,
+				Annotbtion: query.Annotbtion{},
 			}, {
 				Field:      query.FieldArchived,
-				Value:      string(query.No),
-				Negated:    false,
-				Annotation: query.Annotation{},
+				Vblue:      string(query.No),
+				Negbted:    fblse,
+				Annotbtion: query.Annotbtion{},
 			}, {
-				Field:      query.FieldPatternType,
-				Value:      "literal",
-				Negated:    false,
-				Annotation: query.Annotation{},
+				Field:      query.FieldPbtternType,
+				Vblue:      "literbl",
+				Negbted:    fblse,
+				Annotbtion: query.Annotbtion{},
 			}},
 		},
 		{
-			name:  "some repos",
-			input: false,
-			want: query.Parameters{{
+			nbme:  "some repos",
+			input: fblse,
+			wbnt: query.Pbrbmeters{{
 				Field:      query.FieldFork,
-				Value:      string(query.Yes),
-				Negated:    false,
-				Annotation: query.Annotation{},
+				Vblue:      string(query.Yes),
+				Negbted:    fblse,
+				Annotbtion: query.Annotbtion{},
 			}, {
 				Field:      query.FieldArchived,
-				Value:      string(query.Yes),
-				Negated:    false,
-				Annotation: query.Annotation{},
+				Vblue:      string(query.Yes),
+				Negbted:    fblse,
+				Annotbtion: query.Annotbtion{},
 			}, {
-				Field:      query.FieldPatternType,
-				Value:      "literal",
-				Negated:    false,
-				Annotation: query.Annotation{},
+				Field:      query.FieldPbtternType,
+				Vblue:      "literbl",
+				Negbted:    fblse,
+				Annotbtion: query.Annotbtion{},
 			}},
 		},
 	}
 
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			got := CodeInsightsQueryDefaults(test.input)
+	for _, test := rbnge tests {
+		t.Run(test.nbme, func(t *testing.T) {
+			got := CodeInsightsQueryDefbults(test.input)
 
-			if diff := cmp.Diff(test.want, got); diff != "" {
-				t.Fatalf("%s failed (want/got): %s", test.name, diff)
+			if diff := cmp.Diff(test.wbnt, got); diff != "" {
+				t.Fbtblf("%s fbiled (wbnt/got): %s", test.nbme, diff)
 			}
 		})
 	}
 }
 
-func TestComputeInsightCommandQuery(t *testing.T) {
+func TestComputeInsightCommbndQuery(t *testing.T) {
 	tests := []struct {
-		name       string
+		nbme       string
 		inputQuery string
-		mapType    MapType
-		want       string
+		mbpType    MbpType
+		wbnt       string
 	}{
 		{
-			name:       "verify archive fork map to lang",
-			inputQuery: "repo:abc123@12346f fork:yes archived:yes findme",
-			mapType:    Lang,
-			want:       "repo:abc123@12346f fork:yes archived:yes content:output.extra(findme -> $lang)",
+			nbme:       "verify brchive fork mbp to lbng",
+			inputQuery: "repo:bbc123@12346f fork:yes brchived:yes findme",
+			mbpType:    Lbng,
+			wbnt:       "repo:bbc123@12346f fork:yes brchived:yes content:output.extrb(findme -> $lbng)",
 		}, {
-			name:       "verify archive fork map to repo",
-			inputQuery: "repo:abc123@12346f fork:yes archived:yes findme",
-			mapType:    Repo,
-			want:       "repo:abc123@12346f fork:yes archived:yes content:output.extra(findme -> $repo)",
+			nbme:       "verify brchive fork mbp to repo",
+			inputQuery: "repo:bbc123@12346f fork:yes brchived:yes findme",
+			mbpType:    Repo,
+			wbnt:       "repo:bbc123@12346f fork:yes brchived:yes content:output.extrb(findme -> $repo)",
 		}, {
-			name:       "verify archive fork map to path",
-			inputQuery: "repo:abc123@12346f fork:yes archived:yes findme",
-			mapType:    Path,
-			want:       "repo:abc123@12346f fork:yes archived:yes content:output.extra(findme -> $path)",
+			nbme:       "verify brchive fork mbp to pbth",
+			inputQuery: "repo:bbc123@12346f fork:yes brchived:yes findme",
+			mbpType:    Pbth,
+			wbnt:       "repo:bbc123@12346f fork:yes brchived:yes content:output.extrb(findme -> $pbth)",
 		}, {
-			name:       "verify archive fork map to author",
-			inputQuery: "repo:abc123@12346f fork:yes archived:yes findme",
-			mapType:    Author,
-			want:       "repo:abc123@12346f fork:yes archived:yes content:output.extra(findme -> $author)",
+			nbme:       "verify brchive fork mbp to buthor",
+			inputQuery: "repo:bbc123@12346f fork:yes brchived:yes findme",
+			mbpType:    Author,
+			wbnt:       "repo:bbc123@12346f fork:yes brchived:yes content:output.extrb(findme -> $buthor)",
 		}, {
-			name:       "verify archive fork map to date",
-			inputQuery: "repo:abc123@12346f fork:yes archived:yes findme",
-			mapType:    Date,
-			want:       "repo:abc123@12346f fork:yes archived:yes content:output.extra(findme -> $date)",
+			nbme:       "verify brchive fork mbp to dbte",
+			inputQuery: "repo:bbc123@12346f fork:yes brchived:yes findme",
+			mbpType:    Dbte,
+			wbnt:       "repo:bbc123@12346f fork:yes brchived:yes content:output.extrb(findme -> $dbte)",
 		},
 	}
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			got, err := ComputeInsightCommandQuery(BasicQuery(test.inputQuery), test.mapType, gitserver.NewMockClient())
+	for _, test := rbnge tests {
+		t.Run(test.nbme, func(t *testing.T) {
+			got, err := ComputeInsightCommbndQuery(BbsicQuery(test.inputQuery), test.mbpType, gitserver.NewMockClient())
 			if err != nil {
 				t.Error(err)
 			}
-			if diff := cmp.Diff(test.want, string(got)); diff != "" {
-				t.Errorf("%s failed (want/got): %s", test.name, diff)
+			if diff := cmp.Diff(test.wbnt, string(got)); diff != "" {
+				t.Errorf("%s fbiled (wbnt/got): %s", test.nbme, diff)
 			}
 		})
 	}
@@ -338,56 +338,56 @@ func TestComputeInsightCommandQuery(t *testing.T) {
 func TestIsSingleRepoQuery(t *testing.T) {
 
 	tests := []struct {
-		name       string
+		nbme       string
 		inputQuery string
-		mapType    MapType
-		want       bool
+		mbpType    MbpType
+		wbnt       bool
 	}{
 		{
-			name:       "repo as simple text string",
-			inputQuery: "repo:abc123@12346f fork:yes archived:yes findme",
-			mapType:    Lang,
-			want:       false,
+			nbme:       "repo bs simple text string",
+			inputQuery: "repo:bbc123@12346f fork:yes brchived:yes findme",
+			mbpType:    Lbng,
+			wbnt:       fblse,
 		},
 		{
-			name:       "repo contains path",
-			inputQuery: "repo:contains.path(CHANGELOG) TEST",
-			mapType:    Lang,
-			want:       false,
+			nbme:       "repo contbins pbth",
+			inputQuery: "repo:contbins.pbth(CHANGELOG) TEST",
+			mbpType:    Lbng,
+			wbnt:       fblse,
 		},
 		{
-			name:       "repo or",
+			nbme:       "repo or",
 			inputQuery: "repo:^(repo1|repo2)$ test",
-			mapType:    Lang,
-			want:       false,
+			mbpType:    Lbng,
+			wbnt:       fblse,
 		},
 		{
-			name:       "single repo with revision specified",
-			inputQuery: `repo:^github\.com/sgtest/java-langserver$@v1 test`,
-			mapType:    Lang,
-			want:       true,
+			nbme:       "single repo with revision specified",
+			inputQuery: `repo:^github\.com/sgtest/jbvb-lbngserver$@v1 test`,
+			mbpType:    Lbng,
+			wbnt:       true,
 		},
 		{
-			name:       "single repo",
-			inputQuery: `repo:^github\.com/sgtest/java-langserver$ test`,
-			mapType:    Lang,
-			want:       true,
+			nbme:       "single repo",
+			inputQuery: `repo:^github\.com/sgtest/jbvb-lbngserver$ test`,
+			mbpType:    Lbng,
+			wbnt:       true,
 		},
 		{
-			name:       "query without repo filter",
+			nbme:       "query without repo filter",
 			inputQuery: `test`,
-			mapType:    Lang,
-			want:       false,
+			mbpType:    Lbng,
+			wbnt:       fblse,
 		},
 	}
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			got, err := IsSingleRepoQuery(BasicQuery(test.inputQuery))
+	for _, test := rbnge tests {
+		t.Run(test.nbme, func(t *testing.T) {
+			got, err := IsSingleRepoQuery(BbsicQuery(test.inputQuery))
 			if err != nil {
 				t.Error(err)
 			}
-			if diff := cmp.Diff(test.want, got); diff != "" {
-				t.Errorf("%s failed (want/got): %s", test.name, diff)
+			if diff := cmp.Diff(test.wbnt, got); diff != "" {
+				t.Errorf("%s fbiled (wbnt/got): %s", test.nbme, diff)
 			}
 
 		})
@@ -397,262 +397,262 @@ func TestIsSingleRepoQuery(t *testing.T) {
 func TestIsSingleRepoQueryMultipleSteps(t *testing.T) {
 
 	tests := []struct {
-		name       string
+		nbme       string
 		inputQuery string
-		mapType    MapType
-		want       error
+		mbpType    MbpType
+		wbnt       error
 	}{
 		{
-			name:       "2 step query different repos",
-			inputQuery: `(repo:^github\.com/sourcegraph/sourcegraph$ OR repo:^github\.com/sourcegraph-testing/zap$) test`,
-			mapType:    Lang,
-			want:       QueryNotSupported,
+			nbme:       "2 step query different repos",
+			inputQuery: `(repo:^github\.com/sourcegrbph/sourcegrbph$ OR repo:^github\.com/sourcegrbph-testing/zbp$) test`,
+			mbpType:    Lbng,
+			wbnt:       QueryNotSupported,
 		},
 		{
-			name:       "2 step query same repo",
-			inputQuery: `(repo:^github\.com/sourcegraph/sourcegraph$ test) OR (repo:^github\.com/sourcegraph/sourcegraph$ todo)`,
-			mapType:    Lang,
-			want:       QueryNotSupported,
+			nbme:       "2 step query sbme repo",
+			inputQuery: `(repo:^github\.com/sourcegrbph/sourcegrbph$ test) OR (repo:^github\.com/sourcegrbph/sourcegrbph$ todo)`,
+			mbpType:    Lbng,
+			wbnt:       QueryNotSupported,
 		},
 	}
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			got, err := IsSingleRepoQuery(BasicQuery(test.inputQuery))
-			if !errors.Is(err, test.want) {
+	for _, test := rbnge tests {
+		t.Run(test.nbme, func(t *testing.T) {
+			got, err := IsSingleRepoQuery(BbsicQuery(test.inputQuery))
+			if !errors.Is(err, test.wbnt) {
 				t.Error(err)
 			}
-			if diff := cmp.Diff(false, got); diff != "" {
-				t.Errorf("%s failed (want/got): %s", test.name, diff)
+			if diff := cmp.Diff(fblse, got); diff != "" {
+				t.Errorf("%s fbiled (wbnt/got): %s", test.nbme, diff)
 			}
 
 		})
 	}
 }
 
-func TestAggregationQuery(t *testing.T) {
+func TestAggregbtionQuery(t *testing.T) {
 
 	tests := []struct {
-		name       string
+		nbme       string
 		inputQuery string
 		count      string
-		want       autogold.Value
+		wbnt       butogold.Vblue
 	}{
 		{
-			name:       "basic query",
+			nbme:       "bbsic query",
 			inputQuery: `test`,
-			count:      "all",
-			want:       autogold.Expect(BasicQuery("count:all timeout:2s test")),
+			count:      "bll",
+			wbnt:       butogold.Expect(BbsicQuery("count:bll timeout:2s test")),
 		},
 		{
-			name:       "multiplan query",
-			inputQuery: `(repo:^github\.com/sourcegraph/sourcegraph$ test) OR (repo:^github\.com/sourcegraph/sourcegraph$ todo)`,
-			count:      "all",
-			want:       autogold.Expect(BasicQuery("(repo:^github\\.com/sourcegraph/sourcegraph$ count:all timeout:2s test OR repo:^github\\.com/sourcegraph/sourcegraph$ count:all timeout:2s todo)")),
+			nbme:       "multiplbn query",
+			inputQuery: `(repo:^github\.com/sourcegrbph/sourcegrbph$ test) OR (repo:^github\.com/sourcegrbph/sourcegrbph$ todo)`,
+			count:      "bll",
+			wbnt:       butogold.Expect(BbsicQuery("(repo:^github\\.com/sourcegrbph/sourcegrbph$ count:bll timeout:2s test OR repo:^github\\.com/sourcegrbph/sourcegrbph$ count:bll timeout:2s todo)")),
 		},
 		{
-			name:       "multiplan query overwrite",
-			inputQuery: `(repo:^github\.com/sourcegraph/sourcegraph$ test) OR (repo:^github\.com/sourcegraph/sourcegraph$ todo) count:2000`,
-			count:      "all",
-			want:       autogold.Expect(BasicQuery("(repo:^github\\.com/sourcegraph/sourcegraph$ count:all timeout:2s test OR repo:^github\\.com/sourcegraph/sourcegraph$ count:all timeout:2s todo)")),
+			nbme:       "multiplbn query overwrite",
+			inputQuery: `(repo:^github\.com/sourcegrbph/sourcegrbph$ test) OR (repo:^github\.com/sourcegrbph/sourcegrbph$ todo) count:2000`,
+			count:      "bll",
+			wbnt:       butogold.Expect(BbsicQuery("(repo:^github\\.com/sourcegrbph/sourcegrbph$ count:bll timeout:2s test OR repo:^github\\.com/sourcegrbph/sourcegrbph$ count:bll timeout:2s todo)")),
 		},
 		{
-			name:       "overwrite existing",
+			nbme:       "overwrite existing",
 			inputQuery: `test count:1000`,
-			count:      "all",
-			want:       autogold.Expect(BasicQuery("count:all timeout:2s test")),
+			count:      "bll",
+			wbnt:       butogold.Expect(BbsicQuery("count:bll timeout:2s test")),
 		},
 		{
-			name:       "overwrite existing",
+			nbme:       "overwrite existing",
 			inputQuery: `test count:1000`,
 			count:      "50000",
-			want:       autogold.Expect(BasicQuery("count:50000 timeout:2s test")),
+			wbnt:       butogold.Expect(BbsicQuery("count:50000 timeout:2s test")),
 		},
 	}
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			got, _ := AggregationQuery(BasicQuery(test.inputQuery), 2, test.count)
-			test.want.Equal(t, got)
+	for _, test := rbnge tests {
+		t.Run(test.nbme, func(t *testing.T) {
+			got, _ := AggregbtionQuery(BbsicQuery(test.inputQuery), 2, test.count)
+			test.wbnt.Equbl(t, got)
 		})
 	}
 }
 
-func Test_addAuthorFilter(t *testing.T) {
+func Test_bddAuthorFilter(t *testing.T) {
 	tests := []struct {
-		name   string
+		nbme   string
 		input  string
-		author string
-		want   autogold.Value
+		buthor string
+		wbnt   butogold.Vblue
 	}{
 		{
-			name:   "no initial author field in commit search",
+			nbme:   "no initibl buthor field in commit sebrch",
 			input:  "myquery repo:myrepo type:commit",
-			author: "santa",
-			want:   autogold.Expect(BasicQuery("repo:myrepo type:commit author:^santa$ myquery")),
+			buthor: "sbntb",
+			wbnt:   butogold.Expect(BbsicQuery("repo:myrepo type:commit buthor:^sbntb$ myquery")),
 		},
 		{
-			name:   "ensure author is escaped",
+			nbme:   "ensure buthor is escbped",
 			input:  "myquery repo:myrepo type:commit",
-			author: "xtreme[username]",
-			want:   autogold.Expect(BasicQuery("repo:myrepo type:commit author:^xtreme\\[username\\]$ myquery")),
+			buthor: "xtreme[usernbme]",
+			wbnt:   butogold.Expect(BbsicQuery("repo:myrepo type:commit buthor:^xtreme\\[usernbme\\]$ myquery")),
 		},
 		{
-			name:   "one initial author field in commit search",
-			input:  "myquery repo:myrepo type:commit author:claus",
-			author: "santa",
-			want:   autogold.Expect(BasicQuery("repo:myrepo type:commit author:claus author:^santa$ myquery")),
+			nbme:   "one initibl buthor field in commit sebrch",
+			input:  "myquery repo:myrepo type:commit buthor:clbus",
+			buthor: "sbntb",
+			wbnt:   butogold.Expect(BbsicQuery("repo:myrepo type:commit buthor:clbus buthor:^sbntb$ myquery")),
 		},
 		{
-			name:   "no initial author field in diff search",
+			nbme:   "no initibl buthor field in diff sebrch",
 			input:  "myquery repo:myrepo type:diff",
-			author: "santa",
-			want:   autogold.Expect(BasicQuery("repo:myrepo type:diff author:^santa$ myquery")),
+			buthor: "sbntb",
+			wbnt:   butogold.Expect(BbsicQuery("repo:myrepo type:diff buthor:^sbntb$ myquery")),
 		},
 		{
-			name:   "one initial author field in diff search",
-			input:  "myquery repo:myrepo type:diff author:claus",
-			author: "santa",
-			want:   autogold.Expect(BasicQuery("repo:myrepo type:diff author:claus author:^santa$ myquery")),
+			nbme:   "one initibl buthor field in diff sebrch",
+			input:  "myquery repo:myrepo type:diff buthor:clbus",
+			buthor: "sbntb",
+			wbnt:   butogold.Expect(BbsicQuery("repo:myrepo type:diff buthor:clbus buthor:^sbntb$ myquery")),
 		},
 		{
-			name:   "invalid adding to file search - should error",
-			input:  "myquery repo:myrepo type:file author:claus",
-			author: "santa",
-			want:   autogold.Expect("your query contains the field 'author', which requires type:commit or type:diff in the query"),
+			nbme:   "invblid bdding to file sebrch - should error",
+			input:  "myquery repo:myrepo type:file buthor:clbus",
+			buthor: "sbntb",
+			wbnt:   butogold.Expect("your query contbins the field 'buthor', which requires type:commit or type:diff in the query"),
 		},
 		{
-			name:   "invalid adding to repo search - should return input",
+			nbme:   "invblid bdding to repo sebrch - should return input",
 			input:  "myquery repo:myrepo type:repo",
-			author: "santa",
-			want:   autogold.Expect(BasicQuery("repo:myrepo type:repo myquery")),
+			buthor: "sbntb",
+			wbnt:   butogold.Expect(BbsicQuery("repo:myrepo type:repo myquery")),
 		},
 		{
-			name:   "compound query where one side is author and one side is repo",
-			input:  "(myquery repo:myrepo type:repo) or (type:diff repo:asdf findme)",
-			author: "santa",
-			want:   autogold.Expect(BasicQuery("(repo:myrepo type:repo myquery OR type:diff repo:asdf author:^santa$ findme)")),
+			nbme:   "compound query where one side is buthor bnd one side is repo",
+			input:  "(myquery repo:myrepo type:repo) or (type:diff repo:bsdf findme)",
+			buthor: "sbntb",
+			wbnt:   butogold.Expect(BbsicQuery("(repo:myrepo type:repo myquery OR type:diff repo:bsdf buthor:^sbntb$ findme)")),
 		},
 		{
-			name:   "author with whitespace in name",
+			nbme:   "buthor with whitespbce in nbme",
 			input:  "insights type:commit",
-			author: "Santa Claus",
-			want:   autogold.Expect(BasicQuery("type:commit author:(^Santa Claus$) insights")),
+			buthor: "Sbntb Clbus",
+			wbnt:   butogold.Expect(BbsicQuery("type:commit buthor:(^Sbntb Clbus$) insights")),
 		},
 	}
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			got, err := AddAuthorFilter(BasicQuery(test.input), test.author)
+	for _, test := rbnge tests {
+		t.Run(test.nbme, func(t *testing.T) {
+			got, err := AddAuthorFilter(BbsicQuery(test.input), test.buthor)
 			if err != nil {
-				test.want.Equal(t, err.Error())
+				test.wbnt.Equbl(t, err.Error())
 			} else {
-				test.want.Equal(t, got)
+				test.wbnt.Equbl(t, got)
 			}
 		})
 	}
 }
 
-func Test_addRepoFilter(t *testing.T) {
+func Test_bddRepoFilter(t *testing.T) {
 	tests := []struct {
-		name  string
+		nbme  string
 		input string
 		repo  string
-		want  autogold.Value
+		wbnt  butogold.Vblue
 	}{
 		{
-			name:  "no initial repo filter",
+			nbme:  "no initibl repo filter",
 			input: "myquery",
-			repo:  "github.com/sourcegraph/sourcegraph",
-			want:  autogold.Expect(BasicQuery("repo:^github\\.com/sourcegraph/sourcegraph$ myquery")),
+			repo:  "github.com/sourcegrbph/sourcegrbph",
+			wbnt:  butogold.Expect(BbsicQuery("repo:^github\\.com/sourcegrbph/sourcegrbph$ myquery")),
 		},
 		{
-			name:  "one initial repo filter",
-			input: "myquery repo:supergreat",
-			repo:  "github.com/sourcegraph/sourcegraph",
-			want:  autogold.Expect(BasicQuery("repo:supergreat repo:^github\\.com/sourcegraph/sourcegraph$ myquery")),
+			nbme:  "one initibl repo filter",
+			input: "myquery repo:supergrebt",
+			repo:  "github.com/sourcegrbph/sourcegrbph",
+			wbnt:  butogold.Expect(BbsicQuery("repo:supergrebt repo:^github\\.com/sourcegrbph/sourcegrbph$ myquery")),
 		},
 		{
-			name:  "compound query adding repo",
-			input: "(myquery repo:supergreat) or (big repo:asdf)",
-			repo:  "github.com/sourcegraph/sourcegraph",
-			want:  autogold.Expect(BasicQuery("(repo:supergreat repo:^github\\.com/sourcegraph/sourcegraph$ myquery OR repo:asdf repo:^github\\.com/sourcegraph/sourcegraph$ big)")),
+			nbme:  "compound query bdding repo",
+			input: "(myquery repo:supergrebt) or (big repo:bsdf)",
+			repo:  "github.com/sourcegrbph/sourcegrbph",
+			wbnt:  butogold.Expect(BbsicQuery("(repo:supergrebt repo:^github\\.com/sourcegrbph/sourcegrbph$ myquery OR repo:bsdf repo:^github\\.com/sourcegrbph/sourcegrbph$ big)")),
 		},
 	}
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			got, err := AddRepoFilter(BasicQuery(test.input), test.repo)
+	for _, test := rbnge tests {
+		t.Run(test.nbme, func(t *testing.T) {
+			got, err := AddRepoFilter(BbsicQuery(test.input), test.repo)
 			if err != nil {
-				test.want.Equal(t, err.Error())
+				test.wbnt.Equbl(t, err.Error())
 			} else {
-				test.want.Equal(t, got)
+				test.wbnt.Equbl(t, got)
 			}
 		})
 	}
 }
 
-func Test_addFileFilter(t *testing.T) {
+func Test_bddFileFilter(t *testing.T) {
 	tests := []struct {
-		name  string
+		nbme  string
 		input string
 		file  string
-		want  autogold.Value
+		wbnt  butogold.Vblue
 	}{
 		{
-			name:  "no initial repo filter",
+			nbme:  "no initibl repo filter",
 			input: "myquery",
 			file:  "some/directory/file.md",
-			want:  autogold.Expect(BasicQuery("file:^some/directory/file\\.md$ myquery")),
+			wbnt:  butogold.Expect(BbsicQuery("file:^some/directory/file\\.md$ myquery")),
 		},
 		{
-			name:  "one initial repo filter",
-			input: "myquery repo:supergreat",
+			nbme:  "one initibl repo filter",
+			input: "myquery repo:supergrebt",
 			file:  "some/directory/file.md",
-			want:  autogold.Expect(BasicQuery("repo:supergreat file:^some/directory/file\\.md$ myquery")),
+			wbnt:  butogold.Expect(BbsicQuery("repo:supergrebt file:^some/directory/file\\.md$ myquery")),
 		},
 		{
-			name:  "compound query adding file",
-			input: "(myquery repo:supergreat file:abcdef) or (big repo:asdf)",
+			nbme:  "compound query bdding file",
+			input: "(myquery repo:supergrebt file:bbcdef) or (big repo:bsdf)",
 			file:  "some/directory/file.md",
-			want:  autogold.Expect(BasicQuery("(repo:supergreat file:abcdef file:^some/directory/file\\.md$ myquery OR repo:asdf file:^some/directory/file\\.md$ big)")),
+			wbnt:  butogold.Expect(BbsicQuery("(repo:supergrebt file:bbcdef file:^some/directory/file\\.md$ myquery OR repo:bsdf file:^some/directory/file\\.md$ big)")),
 		},
 	}
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			got, err := AddFileFilter(BasicQuery(test.input), test.file)
+	for _, test := rbnge tests {
+		t.Run(test.nbme, func(t *testing.T) {
+			got, err := AddFileFilter(BbsicQuery(test.input), test.file)
 			if err != nil {
-				test.want.Equal(t, err.Error())
+				test.wbnt.Equbl(t, err.Error())
 			} else {
-				test.want.Equal(t, got)
+				test.wbnt.Equbl(t, got)
 			}
 		})
 	}
 }
 
-func Test_addRepoMetadataFilter(t *testing.T) {
+func Test_bddRepoMetbdbtbFilter(t *testing.T) {
 	tests := []struct {
-		name         string
+		nbme         string
 		input        string
-		repoMetadata string
-		want         autogold.Value
+		repoMetbdbtb string
+		wbnt         butogold.Vblue
 	}{
 		{
-			name:         "no repo meta value",
+			nbme:         "no repo metb vblue",
 			input:        "myquery",
-			repoMetadata: "open-source",
-			want:         autogold.Expect(BasicQuery("repo:has.meta(open-source) myquery")),
+			repoMetbdbtb: "open-source",
+			wbnt:         butogold.Expect(BbsicQuery("repo:hbs.metb(open-source) myquery")),
 		},
 		{
-			name:         "with repo meta value",
-			input:        "myquery repo:supergreat",
-			repoMetadata: "team:backend",
-			want:         autogold.Expect(BasicQuery("repo:supergreat repo:has.meta(team:backend) myquery")),
+			nbme:         "with repo metb vblue",
+			input:        "myquery repo:supergrebt",
+			repoMetbdbtb: "tebm:bbckend",
+			wbnt:         butogold.Expect(BbsicQuery("repo:supergrebt repo:hbs.metb(tebm:bbckend) myquery")),
 		},
 	}
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			got, err := AddRepoMetadataFilter(BasicQuery(test.input), test.repoMetadata)
+	for _, test := rbnge tests {
+		t.Run(test.nbme, func(t *testing.T) {
+			got, err := AddRepoMetbdbtbFilter(BbsicQuery(test.input), test.repoMetbdbtb)
 			if err != nil {
-				test.want.Equal(t, err.Error())
+				test.wbnt.Equbl(t, err.Error())
 			} else {
-				test.want.Equal(t, got)
+				test.wbnt.Equbl(t, got)
 			}
 		})
 	}
@@ -660,33 +660,33 @@ func Test_addRepoMetadataFilter(t *testing.T) {
 
 func TestRepositoryScopeQuery(t *testing.T) {
 	tests := []struct {
-		name  string
+		nbme  string
 		input string
-		want  autogold.Value
+		wbnt  butogold.Vblue
 	}{
 		{
-			"basic query",
-			"repo:sourcegraph",
-			autogold.Expect(BasicQuery("fork:yes archived:yes count:all repo:sourcegraph")),
+			"bbsic query",
+			"repo:sourcegrbph",
+			butogold.Expect(BbsicQuery("fork:yes brchived:yes count:bll repo:sourcegrbph")),
 		},
 		{
 			"compound query",
 			"repo:s or repo:l",
-			autogold.Expect(BasicQuery("(fork:yes archived:yes count:all repo:s OR fork:yes archived:yes count:all repo:l)")),
+			butogold.Expect(BbsicQuery("(fork:yes brchived:yes count:bll repo:s OR fork:yes brchived:yes count:bll repo:l)")),
 		},
 		{
-			"overwrites fork: values",
-			"repo:a fork:n",
-			autogold.Expect(BasicQuery("fork:yes archived:yes count:all repo:a")),
+			"overwrites fork: vblues",
+			"repo:b fork:n",
+			butogold.Expect(BbsicQuery("fork:yes brchived:yes count:bll repo:b")),
 		},
 	}
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
+	for _, test := rbnge tests {
+		t.Run(test.nbme, func(t *testing.T) {
 			got, err := RepositoryScopeQuery(test.input)
 			if err != nil {
-				test.want.Equal(t, err.Error())
+				test.wbnt.Equbl(t, err.Error())
 			} else {
-				test.want.Equal(t, got)
+				test.wbnt.Equbl(t, got)
 			}
 		})
 	}
@@ -694,199 +694,199 @@ func TestRepositoryScopeQuery(t *testing.T) {
 
 func TestWithCount(t *testing.T) {
 	tests := []struct {
-		name  string
-		input BasicQuery
-		want  autogold.Value
+		nbme  string
+		input BbsicQuery
+		wbnt  butogold.Vblue
 	}{
 		{
-			"adds count",
-			BasicQuery("repo:sourcegraph"),
-			autogold.Expect(BasicQuery("repo:sourcegraph count:99")),
+			"bdds count",
+			BbsicQuery("repo:sourcegrbph"),
+			butogold.Expect(BbsicQuery("repo:sourcegrbph count:99")),
 		},
 		{
 			"compound query",
-			BasicQuery("repo:s or repo:l"),
-			autogold.Expect(BasicQuery("(repo:s count:99 OR repo:l count:99)")),
+			BbsicQuery("repo:s or repo:l"),
+			butogold.Expect(BbsicQuery("(repo:s count:99 OR repo:l count:99)")),
 		},
 		{
-			"overwrites count values",
-			BasicQuery("repo:a count:1"),
-			autogold.Expect(BasicQuery("repo:a count:99")),
+			"overwrites count vblues",
+			BbsicQuery("repo:b count:1"),
+			butogold.Expect(BbsicQuery("repo:b count:99")),
 		},
 		{
-			"overwrites count all",
-			BasicQuery("repo:a count:all"),
-			autogold.Expect(BasicQuery("repo:a count:99")),
+			"overwrites count bll",
+			BbsicQuery("repo:b count:bll"),
+			butogold.Expect(BbsicQuery("repo:b count:99")),
 		},
 	}
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
+	for _, test := rbnge tests {
+		t.Run(test.nbme, func(t *testing.T) {
 			got, err := test.input.WithCount("99")
 			if err != nil {
-				test.want.Equal(t, err.Error())
+				test.wbnt.Equbl(t, err.Error())
 			} else {
-				test.want.Equal(t, got)
+				test.wbnt.Equbl(t, got)
 			}
 		})
 	}
 }
 
-func TestMakeQueryWithRepoFilters(t *testing.T) {
+func TestMbkeQueryWithRepoFilters(t *testing.T) {
 	tests := []struct {
-		name  string
+		nbme  string
 		repos string
 		query string
-		want  autogold.Value
+		wbnt  butogold.Vblue
 	}{
 		{
 			"simple repo with simple query",
-			"repo:sourcegraph",
+			"repo:sourcegrbph",
 			"insights",
-			autogold.Expect(BasicQuery("repo:sourcegraph fork:no archived:no patterntype:literal count:99999999 insights")),
+			butogold.Expect(BbsicQuery("repo:sourcegrbph fork:no brchived:no pbtterntype:literbl count:99999999 insights")),
 		},
 		{
 			"compound repo with simple query",
-			"repo:sourcegraph or repo:handbook",
+			"repo:sourcegrbph or repo:hbndbook",
 			"insights",
-			autogold.Expect(BasicQuery("(repo:sourcegraph OR repo:handbook) fork:no archived:no patterntype:literal count:99999999 insights")),
+			butogold.Expect(BbsicQuery("(repo:sourcegrbph OR repo:hbndbook) fork:no brchived:no pbtterntype:literbl count:99999999 insights")),
 		},
 		{
 			"simple repo with compound query",
-			"repo:sourcegraph",
+			"repo:sourcegrbph",
 			"insights or todo",
-			autogold.Expect(BasicQuery("repo:sourcegraph (fork:no archived:no patterntype:literal insights OR fork:no archived:no patterntype:literal count:99999999 todo)")),
+			butogold.Expect(BbsicQuery("repo:sourcegrbph (fork:no brchived:no pbtterntype:literbl insights OR fork:no brchived:no pbtterntype:literbl count:99999999 todo)")),
 		},
 		{
 			"compound repo with compound query",
-			"repo:sourcegraph or repo:has.file(content:sourcegraph)",
+			"repo:sourcegrbph or repo:hbs.file(content:sourcegrbph)",
 			"insights or todo",
-			autogold.Expect(BasicQuery("(repo:sourcegraph OR repo:has.file(content:sourcegraph)) (fork:no archived:no patterntype:literal insights OR fork:no archived:no patterntype:literal count:99999999 todo)")),
+			butogold.Expect(BbsicQuery("(repo:sourcegrbph OR repo:hbs.file(content:sourcegrbph)) (fork:no brchived:no pbtterntype:literbl insights OR fork:no brchived:no pbtterntype:literbl count:99999999 todo)")),
 		},
 		{
 			"compound repo with fork:yes query",
-			"repo:test or repo:handbook",
+			"repo:test or repo:hbndbook",
 			"insights fork:yes",
-			autogold.Expect(BasicQuery("(repo:test OR repo:handbook) archived:no patterntype:literal fork:yes count:99999999 insights")),
+			butogold.Expect(BbsicQuery("(repo:test OR repo:hbndbook) brchived:no pbtterntype:literbl fork:yes count:99999999 insights")),
 		},
 		{
 			"regexp query",
 			"repo:regex",
-			`I\slove patterntype:regexp`,
-			autogold.Expect(BasicQuery(`repo:regex fork:no archived:no patterntype:regexp count:99999999 I\slove`)),
+			`I\slove pbtterntype:regexp`,
+			butogold.Expect(BbsicQuery(`repo:regex fork:no brchived:no pbtterntype:regexp count:99999999 I\slove`)),
 		},
 	}
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			got, err := MakeQueryWithRepoFilters(test.repos, BasicQuery(test.query), true, CodeInsightsQueryDefaults(true)...)
+	for _, test := rbnge tests {
+		t.Run(test.nbme, func(t *testing.T) {
+			got, err := MbkeQueryWithRepoFilters(test.repos, BbsicQuery(test.query), true, CodeInsightsQueryDefbults(true)...)
 			if err != nil {
-				test.want.Equal(t, err.Error())
+				test.wbnt.Equbl(t, err.Error())
 			} else {
-				test.want.Equal(t, got)
+				test.wbnt.Equbl(t, got)
 			}
 		})
 	}
 }
 
 func TestPointDiffQuery(t *testing.T) {
-	before := time.Date(2022, time.February, 1, 1, 1, 0, 0, time.UTC)
-	after := time.Date(2022, time.January, 1, 1, 1, 0, 0, time.UTC)
-	repoSearch := "repo:.*"
-	complexRepoSearch := "repo:sourcegraph or repo:about"
+	before := time.Dbte(2022, time.Februbry, 1, 1, 1, 0, 0, time.UTC)
+	bfter := time.Dbte(2022, time.Jbnubry, 1, 1, 1, 0, 0, time.UTC)
+	repoSebrch := "repo:.*"
+	complexRepoSebrch := "repo:sourcegrbph or repo:bbout"
 
 	tests := []struct {
-		name string
+		nbme string
 		opts PointDiffQueryOpts
-		want autogold.Value
+		wbnt butogold.Vblue
 	}{
 		{
 			"multiple includes or together",
 			PointDiffQueryOpts{
 				Before:             before,
-				After:              &after,
+				After:              &bfter,
 				FilterRepoIncludes: []string{"repo1", "repo2"},
-				SearchQuery:        BasicQuery("insights"),
+				SebrchQuery:        BbsicQuery("insights"),
 			},
-			autogold.Expect(BasicQuery("repo:repo1|repo2 after:2022-01-01T01:01:00Z before:2022-02-01T01:01:00Z type:diff insights")),
+			butogold.Expect(BbsicQuery("repo:repo1|repo2 bfter:2022-01-01T01:01:00Z before:2022-02-01T01:01:00Z type:diff insights")),
 		},
 		{
 			"multiple excludes or together",
 			PointDiffQueryOpts{
 				Before:             before,
-				After:              &after,
+				After:              &bfter,
 				FilterRepoExcludes: []string{"repo1", "repo2"},
-				SearchQuery:        BasicQuery("insights"),
+				SebrchQuery:        BbsicQuery("insights"),
 			},
-			autogold.Expect(BasicQuery("-repo:repo1|repo2 after:2022-01-01T01:01:00Z before:2022-02-01T01:01:00Z type:diff insights")),
+			butogold.Expect(BbsicQuery("-repo:repo1|repo2 bfter:2022-01-01T01:01:00Z before:2022-02-01T01:01:00Z type:diff insights")),
 		},
 		{
-			"repo list escaped and or together",
+			"repo list escbped bnd or together",
 			PointDiffQueryOpts{
 				Before:      before,
-				After:       &after,
-				RepoList:    []string{"github.com/sourcegraph/sourcegraph", "github.com/sourcegraph/about"},
-				SearchQuery: BasicQuery("insights"),
+				After:       &bfter,
+				RepoList:    []string{"github.com/sourcegrbph/sourcegrbph", "github.com/sourcegrbph/bbout"},
+				SebrchQuery: BbsicQuery("insights"),
 			},
-			autogold.Expect(BasicQuery("repo:^(github\\.com/sourcegraph/sourcegraph|github\\.com/sourcegraph/about)$ after:2022-01-01T01:01:00Z before:2022-02-01T01:01:00Z type:diff insights")),
+			butogold.Expect(BbsicQuery("repo:^(github\\.com/sourcegrbph/sourcegrbph|github\\.com/sourcegrbph/bbout)$ bfter:2022-01-01T01:01:00Z before:2022-02-01T01:01:00Z type:diff insights")),
 		},
 		{
-			"repo search added",
+			"repo sebrch bdded",
 			PointDiffQueryOpts{
 				Before:      before,
-				After:       &after,
-				RepoSearch:  &repoSearch,
-				SearchQuery: BasicQuery("insights"),
+				After:       &bfter,
+				RepoSebrch:  &repoSebrch,
+				SebrchQuery: BbsicQuery("insights"),
 			},
-			autogold.Expect(BasicQuery("repo:.* after:2022-01-01T01:01:00Z before:2022-02-01T01:01:00Z type:diff insights")),
+			butogold.Expect(BbsicQuery("repo:.* bfter:2022-01-01T01:01:00Z before:2022-02-01T01:01:00Z type:diff insights")),
 		},
 		{
-			"include and excluded can be used together",
+			"include bnd excluded cbn be used together",
 			PointDiffQueryOpts{
 				Before:             before,
-				After:              &after,
-				FilterRepoIncludes: []string{"repoa", "repob"},
+				After:              &bfter,
+				FilterRepoIncludes: []string{"repob", "repob"},
 				FilterRepoExcludes: []string{"repo1", "repo2"},
-				SearchQuery:        BasicQuery("insights"),
+				SebrchQuery:        BbsicQuery("insights"),
 			},
-			autogold.Expect(BasicQuery("repo:repoa|repob -repo:repo1|repo2 after:2022-01-01T01:01:00Z before:2022-02-01T01:01:00Z type:diff insights")),
+			butogold.Expect(BbsicQuery("repo:repob|repob -repo:repo1|repo2 bfter:2022-01-01T01:01:00Z before:2022-02-01T01:01:00Z type:diff insights")),
 		},
 		{
-			"after isn't needed",
+			"bfter isn't needed",
 			PointDiffQueryOpts{
 				Before:      before,
-				SearchQuery: BasicQuery("insights"),
+				SebrchQuery: BbsicQuery("insights"),
 			},
-			autogold.Expect(BasicQuery("before:2022-02-01T01:01:00Z type:diff insights")),
+			butogold.Expect(BbsicQuery("before:2022-02-01T01:01:00Z type:diff insights")),
 		},
 		{
-			"compound repo search and include/exclude",
+			"compound repo sebrch bnd include/exclude",
 			PointDiffQueryOpts{
 				Before:             before,
-				After:              &after,
-				FilterRepoIncludes: []string{"sourcegraph", "about"},
-				FilterRepoExcludes: []string{"mega", "multierr"},
-				SearchQuery:        BasicQuery("insights or worker"),
-				RepoSearch:         &complexRepoSearch,
+				After:              &bfter,
+				FilterRepoIncludes: []string{"sourcegrbph", "bbout"},
+				FilterRepoExcludes: []string{"megb", "multierr"},
+				SebrchQuery:        BbsicQuery("insights or worker"),
+				RepoSebrch:         &complexRepoSebrch,
 			},
-			autogold.Expect(BasicQuery("(repo:sourcegraph OR repo:about) repo:sourcegraph|about -repo:mega|multierr after:2022-01-01T01:01:00Z before:2022-02-01T01:01:00Z type:diff (insights OR worker)")),
+			butogold.Expect(BbsicQuery("(repo:sourcegrbph OR repo:bbout) repo:sourcegrbph|bbout -repo:megb|multierr bfter:2022-01-01T01:01:00Z before:2022-02-01T01:01:00Z type:diff (insights OR worker)")),
 		},
 		{
 			"regex in include",
 			PointDiffQueryOpts{
 				Before:             before,
-				After:              &after,
+				After:              &bfter,
 				FilterRepoIncludes: []string{"repo1|repo2"},
-				SearchQuery:        BasicQuery("insights"),
+				SebrchQuery:        BbsicQuery("insights"),
 			},
-			autogold.Expect(BasicQuery("repo:repo1|repo2 after:2022-01-01T01:01:00Z before:2022-02-01T01:01:00Z type:diff insights")),
+			butogold.Expect(BbsicQuery("repo:repo1|repo2 bfter:2022-01-01T01:01:00Z before:2022-02-01T01:01:00Z type:diff insights")),
 		},
 	}
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
+	for _, test := rbnge tests {
+		t.Run(test.nbme, func(t *testing.T) {
 			got, err := PointDiffQuery(test.opts)
 			if err != nil {
-				test.want.Equal(t, err.Error())
+				test.wbnt.Equbl(t, err.Error())
 			} else {
-				test.want.Equal(t, got)
+				test.wbnt.Equbl(t, got)
 			}
 		})
 	}

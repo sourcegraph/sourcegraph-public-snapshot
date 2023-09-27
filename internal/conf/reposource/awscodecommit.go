@@ -1,36 +1,36 @@
-package reposource
+pbckbge reposource
 
 import (
 	"strings"
 
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/schema"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi"
+	"github.com/sourcegrbph/sourcegrbph/schemb"
 )
 
 type AWS struct {
-	*schema.AWSCodeCommitConnection
+	*schemb.AWSCodeCommitConnection
 }
 
-var _ RepoSource = AWS{}
+vbr _ RepoSource = AWS{}
 
-func (c AWS) CloneURLToRepoName(cloneURL string) (repoName api.RepoName, err error) {
-	parsedCloneURL, _, _, err := parseURLs(cloneURL, "")
+func (c AWS) CloneURLToRepoNbme(cloneURL string) (repoNbme bpi.RepoNbme, err error) {
+	pbrsedCloneURL, _, _, err := pbrseURLs(cloneURL, "")
 	if err != nil {
 		return "", err
 	}
 
-	if !strings.HasSuffix(parsedCloneURL.Hostname(), ".amazonaws.com") {
+	if !strings.HbsSuffix(pbrsedCloneURL.Hostnbme(), ".bmbzonbws.com") {
 		return "", nil
 	}
 
-	return AWSRepoName(c.RepositoryPathPattern, strings.TrimPrefix(strings.TrimSuffix(parsedCloneURL.Path, ".git"), "/v1/repos/")), nil
+	return AWSRepoNbme(c.RepositoryPbthPbttern, strings.TrimPrefix(strings.TrimSuffix(pbrsedCloneURL.Pbth, ".git"), "/v1/repos/")), nil
 }
 
-func AWSRepoName(repositoryPathPattern, name string) api.RepoName {
-	if repositoryPathPattern == "" {
-		repositoryPathPattern = "{name}"
+func AWSRepoNbme(repositoryPbthPbttern, nbme string) bpi.RepoNbme {
+	if repositoryPbthPbttern == "" {
+		repositoryPbthPbttern = "{nbme}"
 	}
-	return api.RepoName(strings.NewReplacer(
-		"{name}", name,
-	).Replace(repositoryPathPattern))
+	return bpi.RepoNbme(strings.NewReplbcer(
+		"{nbme}", nbme,
+	).Replbce(repositoryPbthPbttern))
 }

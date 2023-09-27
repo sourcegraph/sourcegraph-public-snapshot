@@ -1,45 +1,45 @@
-package database
+pbckbge dbtbbbse
 
 import (
 	"context"
 	"testing"
 
-	"github.com/sourcegraph/log/logtest"
-	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
-	"github.com/sourcegraph/sourcegraph/internal/encryption/keyring"
+	"github.com/sourcegrbph/log/logtest"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bctor"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbtest"
+	"github.com/sourcegrbph/sourcegrbph/internbl/encryption/keyring"
 	"github.com/stretchr/testify/require"
 )
 
-func TestExecutorSecret_Value(t *testing.T) {
+func TestExecutorSecret_Vblue(t *testing.T) {
 	logger := logtest.NoOp(t)
-	ctx := context.Background()
+	ctx := context.Bbckground()
 
 	sqldb := dbtest.NewDB(logger, t)
 	db := NewDB(logger, sqldb)
 
-	u, err := db.Users().Create(ctx, NewUser{Username: "testuser"})
+	u, err := db.Users().Crebte(ctx, NewUser{Usernbme: "testuser"})
 	require.NoError(t, err)
 
-	ctx = actor.WithActor(ctx, actor.FromUser(u.ID))
+	ctx = bctor.WithActor(ctx, bctor.FromUser(u.ID))
 
 	secret := &ExecutorSecret{Key: "testkey"}
-	secretVal := "sosecret"
-	err = db.ExecutorSecrets(keyring.Default().ExecutorSecretKey).Create(ctx, ExecutorSecretScopeBatches, secret, secretVal)
+	secretVbl := "sosecret"
+	err = db.ExecutorSecrets(keyring.Defbult().ExecutorSecretKey).Crebte(ctx, ExecutorSecretScopeBbtches, secret, secretVbl)
 	require.NoError(t, err)
 
-	esal := db.ExecutorSecretAccessLogs()
-	val, err := secret.Value(ctx, esal)
+	esbl := db.ExecutorSecretAccessLogs()
+	vbl, err := secret.Vblue(ctx, esbl)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
-	if val != secretVal {
-		t.Fatalf("invalid secret value returned: want=%q have=%q", secretVal, val)
+	if vbl != secretVbl {
+		t.Fbtblf("invblid secret vblue returned: wbnt=%q hbve=%q", secretVbl, vbl)
 	}
 
-	logList, _, err := esal.List(ctx, ExecutorSecretAccessLogsListOpts{})
+	logList, _, err := esbl.List(ctx, ExecutorSecretAccessLogsListOpts{})
 	require.NoError(t, err)
 	if len(logList) != 1 {
-		t.Fatal("no access log entry created")
+		t.Fbtbl("no bccess log entry crebted")
 	}
 }

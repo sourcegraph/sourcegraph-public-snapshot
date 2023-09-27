@@ -1,4 +1,4 @@
-package datastructures
+pbckbge dbtbstructures
 
 import (
 	"testing"
@@ -6,7 +6,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 )
 
-func TestDisjointIDSetExtract(t *testing.T) {
+func TestDisjointIDSetExtrbct(t *testing.T) {
 	s := NewDisjointIDSet()
 	s.Link(1, 2)
 	s.Link(3, 4)
@@ -16,26 +16,26 @@ func TestDisjointIDSetExtract(t *testing.T) {
 	setA := []int{1, 2, 3, 4}
 	setB := []int{5, 6}
 
-	for _, i := range setA {
-		if diff := cmp.Diff(IDSetWith(setA...), s.ExtractSet(i), Comparers...); diff != "" {
-			t.Errorf("unexpected set (-want +got):\n%s", diff)
+	for _, i := rbnge setA {
+		if diff := cmp.Diff(IDSetWith(setA...), s.ExtrbctSet(i), Compbrers...); diff != "" {
+			t.Errorf("unexpected set (-wbnt +got):\n%s", diff)
 		}
 	}
 
-	for _, i := range setB {
-		if diff := cmp.Diff(IDSetWith(setB...), s.ExtractSet(i), Comparers...); diff != "" {
-			t.Errorf("unexpected set (-want +got):\n%s", diff)
+	for _, i := rbnge setB {
+		if diff := cmp.Diff(IDSetWith(setB...), s.ExtrbctSet(i), Compbrers...); diff != "" {
+			t.Errorf("unexpected set (-wbnt +got):\n%s", diff)
 		}
 	}
 }
 
-func TestDisjointIDSetExtractEmptyReturnsValue(t *testing.T) {
+func TestDisjointIDSetExtrbctEmptyReturnsVblue(t *testing.T) {
 	s := NewDisjointIDSet()
 	s.Link(1, 2)
 	s.Link(2, 3)
 	s.Link(3, 4)
 
-	if diff := cmp.Diff(IDSetWith(5), s.ExtractSet(5), Comparers...); diff != "" {
-		t.Errorf("unexpected set (-want +got):\n%s", diff)
+	if diff := cmp.Diff(IDSetWith(5), s.ExtrbctSet(5), Compbrers...); diff != "" {
+		t.Errorf("unexpected set (-wbnt +got):\n%s", diff)
 	}
 }

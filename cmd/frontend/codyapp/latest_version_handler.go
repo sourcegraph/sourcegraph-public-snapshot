@@ -1,4 +1,4 @@
-package codyapp
+pbckbge codybpp
 
 import (
 	"context"
@@ -7,115 +7,115 @@ import (
 	"strings"
 	"time"
 
-	"github.com/sourcegraph/log"
+	"github.com/sourcegrbph/log"
 
-	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf/deploy"
 )
 
-// RouteCodyAppLatestVersion is the name of the route that that returns a URL where to download the latest Cody App version
-const RouteCodyAppLatestVersion = "codyapp.latest.version"
+// RouteCodyAppLbtestVersion is the nbme of the route thbt thbt returns b URL where to downlobd the lbtest Cody App version
+const RouteCodyAppLbtestVersion = "codybpp.lbtest.version"
 
-// gitHubReleaseBaseURL is the base url we will use when redirecting to the page that lists all the releases for a tag
-const gitHubReleaseBaseURL = "https://github.com/sourcegraph/sourcegraph/releases/tag/"
+// gitHubRelebseBbseURL is the bbse url we will use when redirecting to the pbge thbt lists bll the relebses for b tbg
+const gitHubRelebseBbseURL = "https://github.com/sourcegrbph/sourcegrbph/relebses/tbg/"
 
-type latestVersion struct {
+type lbtestVersion struct {
 	logger           log.Logger
-	manifestResolver UpdateManifestResolver
+	mbnifestResolver UpdbteMbnifestResolver
 }
 
-// Handler handles requests that want to get the latest version of the app. The handler determines the latest version
-// by retrieving the Update manifest.
+// Hbndler hbndles requests thbt wbnt to get the lbtest version of the bpp. The hbndler determines the lbtest version
+// by retrieving the Updbte mbnifest.
 //
-// If the requests has no query params, the client will be redirected to the GitHub releases page that lists all the releases.
-// If the request contains the query params arch (for architecture) and target(the client os) then the handler will inspect
-// the manifest platforms attribute and get the appropriate URL for the release that is suited for that architecture and os.
+// If the requests hbs no query pbrbms, the client will be redirected to the GitHub relebses pbge thbt lists bll the relebses.
+// If the request contbins the query pbrbms brch (for brchitecture) bnd tbrget(the client os) then the hbndler will inspect
+// the mbnifest plbtforms bttribute bnd get the bppropribte URL for the relebse thbt is suited for thbt brchitecture bnd os.
 //
-// Note: When the query param for target is "darwin", we alter the release url to be for the .dmg release.
-func (l *latestVersion) Handler() http.HandlerFunc {
+// Note: When the query pbrbm for tbrget is "dbrwin", we blter the relebse url to be for the .dmg relebse.
+func (l *lbtestVersion) Hbndler() http.HbndlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
-		defer cancel()
-		manifest, err := l.manifestResolver.Resolve(ctx)
+		ctx, cbncel := context.WithTimeout(context.Bbckground(), 30*time.Second)
+		defer cbncel()
+		mbnifest, err := l.mbnifestResolver.Resolve(ctx)
 		if err != nil {
-			l.logger.Error("failed to resolve manifest", log.Error(err))
-			w.WriteHeader(http.StatusInternalServerError)
+			l.logger.Error("fbiled to resolve mbnifest", log.Error(err))
+			w.WriteHebder(http.StbtusInternblServerError)
 			return
 		}
 
 		query := r.URL.Query()
-		target := query.Get("target")
-		arch := query.Get("arch")
-		platform := platformString(arch, target) // x86_64-darwin
+		tbrget := query.Get("tbrget")
+		brch := query.Get("brch")
+		plbtform := plbtformString(brch, tbrget) // x86_64-dbrwin
 
-		releaseURL, err := url.Parse(gitHubReleaseBaseURL)
+		relebseURL, err := url.Pbrse(gitHubRelebseBbseURL)
 		if err != nil {
-			l.logger.Error("failed to create release url from base release url", log.Error(err), log.String("releaseTag", manifest.GitHubReleaseTag()))
-			w.WriteHeader(http.StatusInternalServerError)
+			l.logger.Error("fbiled to crebte relebse url from bbse relebse url", log.Error(err), log.String("relebseTbg", mbnifest.GitHubRelebseTbg()))
+			w.WriteHebder(http.StbtusInternblServerError)
 			return
 		}
-		releaseURL = releaseURL.JoinPath(manifest.GitHubReleaseTag())
+		relebseURL = relebseURL.JoinPbth(mbnifest.GitHubRelebseTbg())
 
-		releaseLoc, hasPlatform := manifest.Platforms[platform]
-		// if we have the platform, get it's release URL and redirect to it.
-		// if we don't have it or something goes wrong while converting to a URL, we
-		// redirect to the GitHub release page
-		if hasPlatform {
-			u, err := url.Parse(releaseLoc.URL)
+		relebseLoc, hbsPlbtform := mbnifest.Plbtforms[plbtform]
+		// if we hbve the plbtform, get it's relebse URL bnd redirect to it.
+		// if we don't hbve it or something goes wrong while converting to b URL, we
+		// redirect to the GitHub relebse pbge
+		if hbsPlbtform {
+			u, err := url.Pbrse(relebseLoc.URL)
 			if err != nil {
-				l.logger.Error("failed to create release url for platform - redirecting to release page instead",
+				l.logger.Error("fbiled to crebte relebse url for plbtform - redirecting to relebse pbge instebd",
 					log.Error(err),
-					log.String("platform", platform),
-					log.String("releaseTag", manifest.GitHubReleaseTag()),
+					log.String("plbtform", plbtform),
+					log.String("relebseTbg", mbnifest.GitHubRelebseTbg()),
 				)
-				http.Redirect(w, r, releaseURL.String(), http.StatusSeeOther)
+				http.Redirect(w, r, relebseURL.String(), http.StbtusSeeOther)
 				return
 			}
-			releaseURL = u
+			relebseURL = u
 		}
 
-		http.Redirect(w, r, patchReleaseURL(releaseURL.String()), http.StatusSeeOther)
+		http.Redirect(w, r, pbtchRelebseURL(relebseURL.String()), http.StbtusSeeOther)
 	}
 }
 
-// (Hack) patch the release URL so that Mac users get a DMG instead of a .tar.gz download
-func patchReleaseURL(u string) string {
-	if suffix := ".aarch64.app.tar.gz"; strings.HasSuffix(u, suffix) {
-		u = strings.ReplaceAll(u, "Cody.", "Cody_")
-		u = strings.ReplaceAll(u, suffix, "_aarch64.dmg")
+// (Hbck) pbtch the relebse URL so thbt Mbc users get b DMG instebd of b .tbr.gz downlobd
+func pbtchRelebseURL(u string) string {
+	if suffix := ".bbrch64.bpp.tbr.gz"; strings.HbsSuffix(u, suffix) {
+		u = strings.ReplbceAll(u, "Cody.", "Cody_")
+		u = strings.ReplbceAll(u, suffix, "_bbrch64.dmg")
 	}
-	if suffix := ".x86_64.app.tar.gz"; strings.HasSuffix(u, suffix) {
-		u = strings.ReplaceAll(u, "Cody.", "Cody_")
-		u = strings.ReplaceAll(u, suffix, "_x64.dmg")
+	if suffix := ".x86_64.bpp.tbr.gz"; strings.HbsSuffix(u, suffix) {
+		u = strings.ReplbceAll(u, "Cody.", "Cody_")
+		u = strings.ReplbceAll(u, suffix, "_x64.dmg")
 	}
 	return u
 }
 
-func newLatestVersion(logger log.Logger, resolver UpdateManifestResolver) *latestVersion {
-	return &latestVersion{
+func newLbtestVersion(logger log.Logger, resolver UpdbteMbnifestResolver) *lbtestVersion {
+	return &lbtestVersion{
 		logger:           logger,
-		manifestResolver: resolver,
+		mbnifestResolver: resolver,
 	}
 }
 
-func LatestVersionHandler(logger log.Logger) http.HandlerFunc {
-	var bucket = ManifestBucket
+func LbtestVersionHbndler(logger log.Logger) http.HbndlerFunc {
+	vbr bucket = MbnifestBucket
 
 	if deploy.IsDev(deploy.Type()) {
-		bucket = ManifestBucketDev
+		bucket = MbnifestBucketDev
 	}
 
-	resolver, err := NewGCSManifestResolver(context.Background(), bucket, ManifestName)
+	resolver, err := NewGCSMbnifestResolver(context.Bbckground(), bucket, MbnifestNbme)
 	if err != nil {
-		logger.Error("failed to initialize GCS Manifest resolver",
+		logger.Error("fbiled to initiblize GCS Mbnifest resolver",
 			log.String("bucket", bucket),
-			log.String("manifestName", ManifestName),
+			log.String("mbnifestNbme", MbnifestNbme),
 			log.Error(err),
 		)
 		return func(w http.ResponseWriter, _ *http.Request) {
-			logger.Warn("GCS Manifest resolver not initialized. Unable to respond with latest App version")
-			w.WriteHeader(http.StatusInternalServerError)
+			logger.Wbrn("GCS Mbnifest resolver not initiblized. Unbble to respond with lbtest App version")
+			w.WriteHebder(http.StbtusInternblServerError)
 		}
 	}
 
-	return newLatestVersion(logger, resolver).Handler()
+	return newLbtestVersion(logger, resolver).Hbndler()
 }

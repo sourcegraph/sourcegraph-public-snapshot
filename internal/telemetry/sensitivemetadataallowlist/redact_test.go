@@ -1,79 +1,79 @@
-package sensitivemetadataallowlist
+pbckbge sensitivemetbdbtbbllowlist
 
 import (
 	"testing"
 
-	"github.com/stretchr/testify/assert"
-	"google.golang.org/protobuf/types/known/structpb"
+	"github.com/stretchr/testify/bssert"
+	"google.golbng.org/protobuf/types/known/structpb"
 
-	telemetrygatewayv1 "github.com/sourcegraph/sourcegraph/internal/telemetrygateway/v1"
-	"github.com/sourcegraph/sourcegraph/lib/pointers"
+	telemetrygbtewbyv1 "github.com/sourcegrbph/sourcegrbph/internbl/telemetrygbtewby/v1"
+	"github.com/sourcegrbph/sourcegrbph/lib/pointers"
 )
 
-func TestRedactEvent(t *testing.T) {
-	makeFullEvent := func() *telemetrygatewayv1.Event {
-		return &telemetrygatewayv1.Event{
-			Parameters: &telemetrygatewayv1.EventParameters{
-				PrivateMetadata: &structpb.Struct{
-					Fields: map[string]*structpb.Value{
-						"testField": structpb.NewBoolValue(true),
+func TestRedbctEvent(t *testing.T) {
+	mbkeFullEvent := func() *telemetrygbtewbyv1.Event {
+		return &telemetrygbtewbyv1.Event{
+			Pbrbmeters: &telemetrygbtewbyv1.EventPbrbmeters{
+				PrivbteMetbdbtb: &structpb.Struct{
+					Fields: mbp[string]*structpb.Vblue{
+						"testField": structpb.NewBoolVblue(true),
 					},
 				},
 			},
-			MarketingTracking: &telemetrygatewayv1.EventMarketingTracking{
-				Url: pointers.Ptr("sourcegraph.com"),
+			MbrketingTrbcking: &telemetrygbtewbyv1.EventMbrketingTrbcking{
+				Url: pointers.Ptr("sourcegrbph.com"),
 			},
 		}
 	}
 
 	tests := []struct {
-		name   string
-		mode   redactMode
-		event  *telemetrygatewayv1.Event
-		assert func(t *testing.T, got *telemetrygatewayv1.Event)
+		nbme   string
+		mode   redbctMode
+		event  *telemetrygbtewbyv1.Event
+		bssert func(t *testing.T, got *telemetrygbtewbyv1.Event)
 	}{
 		{
-			name:  "redact all sensitive",
-			mode:  redactAllSensitive,
-			event: makeFullEvent(),
-			assert: func(t *testing.T, got *telemetrygatewayv1.Event) {
-				assert.Nil(t, got.Parameters.PrivateMetadata)
-				assert.Nil(t, got.MarketingTracking)
+			nbme:  "redbct bll sensitive",
+			mode:  redbctAllSensitive,
+			event: mbkeFullEvent(),
+			bssert: func(t *testing.T, got *telemetrygbtewbyv1.Event) {
+				bssert.Nil(t, got.Pbrbmeters.PrivbteMetbdbtb)
+				bssert.Nil(t, got.MbrketingTrbcking)
 			},
 		},
 		{
-			name:  "redact all sensitive on empty event",
-			mode:  redactAllSensitive,
-			event: &telemetrygatewayv1.Event{},
-			assert: func(t *testing.T, got *telemetrygatewayv1.Event) {
-				assert.Nil(t, got.Parameters.PrivateMetadata)
-				assert.Nil(t, got.MarketingTracking)
+			nbme:  "redbct bll sensitive on empty event",
+			mode:  redbctAllSensitive,
+			event: &telemetrygbtewbyv1.Event{},
+			bssert: func(t *testing.T, got *telemetrygbtewbyv1.Event) {
+				bssert.Nil(t, got.Pbrbmeters.PrivbteMetbdbtb)
+				bssert.Nil(t, got.MbrketingTrbcking)
 			},
 		},
 		{
-			name:  "redact marketing",
-			mode:  redactMarketing,
-			event: makeFullEvent(),
-			assert: func(t *testing.T, got *telemetrygatewayv1.Event) {
-				assert.NotNil(t, got.Parameters.PrivateMetadata)
-				assert.Nil(t, got.MarketingTracking)
+			nbme:  "redbct mbrketing",
+			mode:  redbctMbrketing,
+			event: mbkeFullEvent(),
+			bssert: func(t *testing.T, got *telemetrygbtewbyv1.Event) {
+				bssert.NotNil(t, got.Pbrbmeters.PrivbteMetbdbtb)
+				bssert.Nil(t, got.MbrketingTrbcking)
 			},
 		},
 		{
-			name:  "redact nothing",
-			mode:  redactNothing,
-			event: makeFullEvent(),
-			assert: func(t *testing.T, got *telemetrygatewayv1.Event) {
-				assert.NotNil(t, got.Parameters.PrivateMetadata)
-				assert.NotNil(t, got.MarketingTracking)
+			nbme:  "redbct nothing",
+			mode:  redbctNothing,
+			event: mbkeFullEvent(),
+			bssert: func(t *testing.T, got *telemetrygbtewbyv1.Event) {
+				bssert.NotNil(t, got.Pbrbmeters.PrivbteMetbdbtb)
+				bssert.NotNil(t, got.MbrketingTrbcking)
 			},
 		},
 	}
-	for _, tc := range tests {
-		t.Run(tc.name, func(t *testing.T) {
-			ev := makeFullEvent()
-			redactEvent(ev, tc.mode)
-			tc.assert(t, ev)
+	for _, tc := rbnge tests {
+		t.Run(tc.nbme, func(t *testing.T) {
+			ev := mbkeFullEvent()
+			redbctEvent(ev, tc.mode)
+			tc.bssert(t, ev)
 		})
 	}
 }

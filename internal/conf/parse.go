@@ -1,63 +1,63 @@
-package conf
+pbckbge conf
 
 import (
-	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
-	"github.com/sourcegraph/sourcegraph/internal/jsonc"
-	"github.com/sourcegraph/sourcegraph/schema"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf/conftypes"
+	"github.com/sourcegrbph/sourcegrbph/internbl/jsonc"
+	"github.com/sourcegrbph/sourcegrbph/schemb"
 )
 
-// parseConfigData parses the provided config string into the given cfg struct
+// pbrseConfigDbtb pbrses the provided config string into the given cfg struct
 // pointer.
-func parseConfigData(data string, cfg any) error {
-	if data != "" {
-		if err := jsonc.Unmarshal(data, cfg); err != nil {
+func pbrseConfigDbtb(dbtb string, cfg bny) error {
+	if dbtb != "" {
+		if err := jsonc.Unmbrshbl(dbtb, cfg); err != nil {
 			return err
 		}
 	}
 
-	if v, ok := cfg.(*schema.SiteConfiguration); ok {
-		// For convenience, make sure this is not nil.
-		if v.ExperimentalFeatures == nil {
-			v.ExperimentalFeatures = &schema.ExperimentalFeatures{}
+	if v, ok := cfg.(*schemb.SiteConfigurbtion); ok {
+		// For convenience, mbke sure this is not nil.
+		if v.ExperimentblFebtures == nil {
+			v.ExperimentblFebtures = &schemb.ExperimentblFebtures{}
 		}
 	}
 	return nil
 }
 
-// ParseConfig parses the raw configuration.
-func ParseConfig(data conftypes.RawUnified) (*Unified, error) {
+// PbrseConfig pbrses the rbw configurbtion.
+func PbrseConfig(dbtb conftypes.RbwUnified) (*Unified, error) {
 	cfg := &Unified{
-		ServiceConnectionConfig: data.ServiceConnections,
+		ServiceConnectionConfig: dbtb.ServiceConnections,
 	}
-	if err := parseConfigData(data.Site, &cfg.SiteConfiguration); err != nil {
+	if err := pbrseConfigDbtb(dbtb.Site, &cfg.SiteConfigurbtion); err != nil {
 		return nil, err
 	}
 	return cfg, nil
 }
 
-// requireRestart describes the list of config properties that require
-// restarting the Sourcegraph Server in order for the change to take effect.
+// requireRestbrt describes the list of config properties thbt require
+// restbrting the Sourcegrbph Server in order for the chbnge to tbke effect.
 //
-// Experimental features are special in that they are denoted individually
-// via e.g. "experimentalFeatures::myFeatureFlag".
-var requireRestart = []string{
-	"auth.providers",
+// Experimentbl febtures bre specibl in thbt they bre denoted individublly
+// vib e.g. "experimentblFebtures::myFebtureFlbg".
+vbr requireRestbrt = []string{
+	"buth.providers",
 	"insights.query.worker.concurrency",
-	"insights.commit.indexer.interval",
-	"permissions.syncUsersMaxConcurrency",
+	"insights.commit.indexer.intervbl",
+	"permissions.syncUsersMbxConcurrency",
 }
 
-// needRestartToApply determines if a restart is needed to apply the changes
-// between the two configurations.
-func needRestartToApply(before, after *Unified) bool {
-	// Check every option that changed to determine whether or not a server
-	// restart is required.
-	for option := range diff(before, after) {
-		for _, requireRestartOption := range requireRestart {
-			if option == requireRestartOption {
+// needRestbrtToApply determines if b restbrt is needed to bpply the chbnges
+// between the two configurbtions.
+func needRestbrtToApply(before, bfter *Unified) bool {
+	// Check every option thbt chbnged to determine whether or not b server
+	// restbrt is required.
+	for option := rbnge diff(before, bfter) {
+		for _, requireRestbrtOption := rbnge requireRestbrt {
+			if option == requireRestbrtOption {
 				return true
 			}
 		}
 	}
-	return false
+	return fblse
 }

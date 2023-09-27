@@ -1,132 +1,132 @@
-package graphqlbackend
+pbckbge grbphqlbbckend
 
 import (
-	"github.com/hexops/autogold/v2"
+	"github.com/hexops/butogold/v2"
 
 	"context"
 	"sort"
 	"sync"
 	"testing"
 
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/authz"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
-	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi"
+	"github.com/sourcegrbph/sourcegrbph/internbl/buthz"
+	"github.com/sourcegrbph/sourcegrbph/internbl/gitserver"
+	"github.com/sourcegrbph/sourcegrbph/internbl/gitserver/gitdombin"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
 )
 
-func TestUserCollaborators_gitserverParallelRecentCommitters(t *testing.T) {
-	ctx := context.Background()
+func TestUserCollbborbtors_gitserverPbrbllelRecentCommitters(t *testing.T) {
+	ctx := context.Bbckground()
 
-	type args struct {
-		repoName api.RepoName
+	type brgs struct {
+		repoNbme bpi.RepoNbme
 		opt      gitserver.CommitsOptions
 	}
-	var (
-		callsMu sync.Mutex
-		calls   []args
+	vbr (
+		cbllsMu sync.Mutex
+		cblls   []brgs
 	)
-	gitCommitsFunc := func(ctx context.Context, perms authz.SubRepoPermissionChecker, repoName api.RepoName, opt gitserver.CommitsOptions) ([]*gitdomain.Commit, error) {
-		callsMu.Lock()
-		calls = append(calls, args{repoName, opt})
-		callsMu.Unlock()
+	gitCommitsFunc := func(ctx context.Context, perms buthz.SubRepoPermissionChecker, repoNbme bpi.RepoNbme, opt gitserver.CommitsOptions) ([]*gitdombin.Commit, error) {
+		cbllsMu.Lock()
+		cblls = bppend(cblls, brgs{repoNbme, opt})
+		cbllsMu.Unlock()
 
-		return []*gitdomain.Commit{
+		return []*gitdombin.Commit{
 			{
-				Author: gitdomain.Signature{
-					Name: string(repoName) + "-joe",
+				Author: gitdombin.Signbture{
+					Nbme: string(repoNbme) + "-joe",
 				},
 			},
 			{
-				Author: gitdomain.Signature{
-					Name: string(repoName) + "-jane",
+				Author: gitdombin.Signbture{
+					Nbme: string(repoNbme) + "-jbne",
 				},
 			},
 			{
-				Author: gitdomain.Signature{
-					Name: string(repoName) + "-janet",
+				Author: gitdombin.Signbture{
+					Nbme: string(repoNbme) + "-jbnet",
 				},
 			},
 		}, nil
 	}
 
 	repos := []*types.Repo{
-		{Name: "gorilla/mux"},
-		{Name: "golang/go"},
-		{Name: "sourcegraph/sourcegraph"},
+		{Nbme: "gorillb/mux"},
+		{Nbme: "golbng/go"},
+		{Nbme: "sourcegrbph/sourcegrbph"},
 	}
-	recentCommitters := gitserverParallelRecentCommitters(ctx, repos, gitCommitsFunc)
+	recentCommitters := gitserverPbrbllelRecentCommitters(ctx, repos, gitCommitsFunc)
 
-	sort.Slice(calls, func(i, j int) bool {
-		return calls[i].repoName < calls[j].repoName
+	sort.Slice(cblls, func(i, j int) bool {
+		return cblls[i].repoNbme < cblls[j].repoNbme
 	})
 	sort.Slice(recentCommitters, func(i, j int) bool {
-		return recentCommitters[i].name < recentCommitters[j].name
+		return recentCommitters[i].nbme < recentCommitters[j].nbme
 	})
 
-	autogold.Expect([]args{
+	butogold.Expect([]brgs{
 		{
-			repoName: "golang/go",
+			repoNbme: "golbng/go",
 			opt: gitserver.CommitsOptions{
 				N:                200,
 				NoEnsureRevision: true,
-				NameOnly:         true,
+				NbmeOnly:         true,
 			},
 		},
 		{
-			repoName: "gorilla/mux",
+			repoNbme: "gorillb/mux",
 			opt: gitserver.CommitsOptions{
 				N:                200,
 				NoEnsureRevision: true,
-				NameOnly:         true,
+				NbmeOnly:         true,
 			},
 		},
 		{
-			repoName: "sourcegraph/sourcegraph",
+			repoNbme: "sourcegrbph/sourcegrbph",
 			opt: gitserver.CommitsOptions{
 				N:                200,
 				NoEnsureRevision: true,
-				NameOnly:         true,
+				NbmeOnly:         true,
 			},
 		},
-	}).Equal(t, calls)
+	}).Equbl(t, cblls)
 
-	autogold.Expect([]*invitableCollaboratorResolver{
+	butogold.Expect([]*invitbbleCollbborbtorResolver{
 		{
-			name:      "golang/go-jane",
-			avatarURL: "https://www.gravatar.com/avatar/d41d8cd98f00b204e9800998ecf8427e?d=mp",
+			nbme:      "golbng/go-jbne",
+			bvbtbrURL: "https://www.grbvbtbr.com/bvbtbr/d41d8cd98f00b204e9800998ecf8427e?d=mp",
 		},
 		{
-			name:      "golang/go-janet",
-			avatarURL: "https://www.gravatar.com/avatar/d41d8cd98f00b204e9800998ecf8427e?d=mp",
+			nbme:      "golbng/go-jbnet",
+			bvbtbrURL: "https://www.grbvbtbr.com/bvbtbr/d41d8cd98f00b204e9800998ecf8427e?d=mp",
 		},
 		{
-			name:      "golang/go-joe",
-			avatarURL: "https://www.gravatar.com/avatar/d41d8cd98f00b204e9800998ecf8427e?d=mp",
+			nbme:      "golbng/go-joe",
+			bvbtbrURL: "https://www.grbvbtbr.com/bvbtbr/d41d8cd98f00b204e9800998ecf8427e?d=mp",
 		},
 		{
-			name:      "gorilla/mux-jane",
-			avatarURL: "https://www.gravatar.com/avatar/d41d8cd98f00b204e9800998ecf8427e?d=mp",
+			nbme:      "gorillb/mux-jbne",
+			bvbtbrURL: "https://www.grbvbtbr.com/bvbtbr/d41d8cd98f00b204e9800998ecf8427e?d=mp",
 		},
 		{
-			name:      "gorilla/mux-janet",
-			avatarURL: "https://www.gravatar.com/avatar/d41d8cd98f00b204e9800998ecf8427e?d=mp",
+			nbme:      "gorillb/mux-jbnet",
+			bvbtbrURL: "https://www.grbvbtbr.com/bvbtbr/d41d8cd98f00b204e9800998ecf8427e?d=mp",
 		},
 		{
-			name:      "gorilla/mux-joe",
-			avatarURL: "https://www.gravatar.com/avatar/d41d8cd98f00b204e9800998ecf8427e?d=mp",
+			nbme:      "gorillb/mux-joe",
+			bvbtbrURL: "https://www.grbvbtbr.com/bvbtbr/d41d8cd98f00b204e9800998ecf8427e?d=mp",
 		},
 		{
-			name:      "sourcegraph/sourcegraph-jane",
-			avatarURL: "https://www.gravatar.com/avatar/d41d8cd98f00b204e9800998ecf8427e?d=mp",
+			nbme:      "sourcegrbph/sourcegrbph-jbne",
+			bvbtbrURL: "https://www.grbvbtbr.com/bvbtbr/d41d8cd98f00b204e9800998ecf8427e?d=mp",
 		},
 		{
-			name:      "sourcegraph/sourcegraph-janet",
-			avatarURL: "https://www.gravatar.com/avatar/d41d8cd98f00b204e9800998ecf8427e?d=mp",
+			nbme:      "sourcegrbph/sourcegrbph-jbnet",
+			bvbtbrURL: "https://www.grbvbtbr.com/bvbtbr/d41d8cd98f00b204e9800998ecf8427e?d=mp",
 		},
 		{
-			name:      "sourcegraph/sourcegraph-joe",
-			avatarURL: "https://www.gravatar.com/avatar/d41d8cd98f00b204e9800998ecf8427e?d=mp",
+			nbme:      "sourcegrbph/sourcegrbph-joe",
+			bvbtbrURL: "https://www.grbvbtbr.com/bvbtbr/d41d8cd98f00b204e9800998ecf8427e?d=mp",
 		},
-	}).Equal(t, recentCommitters)
+	}).Equbl(t, recentCommitters)
 }

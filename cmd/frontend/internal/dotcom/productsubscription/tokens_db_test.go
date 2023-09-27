@@ -1,61 +1,61 @@
-package productsubscription
+pbckbge productsubscription
 
 import (
 	"context"
 	"testing"
 	"time"
 
-	"github.com/sourcegraph/log/logtest"
-	"github.com/stretchr/testify/assert"
+	"github.com/sourcegrbph/log/logtest"
+	"github.com/stretchr/testify/bssert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
-	"github.com/sourcegraph/sourcegraph/internal/license"
-	"github.com/sourcegraph/sourcegraph/internal/productsubscription"
-	"github.com/sourcegraph/sourcegraph/internal/timeutil"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbtest"
+	"github.com/sourcegrbph/sourcegrbph/internbl/license"
+	"github.com/sourcegrbph/sourcegrbph/internbl/productsubscription"
+	"github.com/sourcegrbph/sourcegrbph/internbl/timeutil"
 )
 
 func TestLookupProductSubscriptionIDByAccessToken(t *testing.T) {
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
-	ctx := context.Background()
+	db := dbtbbbse.NewDB(logger, dbtest.NewDB(logger, t))
+	ctx := context.Bbckground()
 
-	u, err := db.Users().Create(ctx, database.NewUser{Username: "u"})
+	u, err := db.Users().Crebte(ctx, dbtbbbse.NewUser{Usernbme: "u"})
 	require.NoError(t, err)
 
-	ps, err := dbSubscriptions{db: db}.Create(ctx, u.ID, "")
+	ps, err := dbSubscriptions{db: db}.Crebte(ctx, u.ID, "")
 	require.NoError(t, err)
 
 	now := timeutil.Now()
 	info := license.Info{
-		Tags:      []string{"true-up"},
+		Tbgs:      []string{"true-up"},
 		UserCount: 10,
 		ExpiresAt: now.Add(5 * time.Minute),
 	}
-	pl, err := dbLicenses{db: db}.Create(ctx, ps, "k", 1, info)
+	pl, err := dbLicenses{db: db}.Crebte(ctx, ps, "k", 1, info)
 	require.NoError(t, err)
 
 	t.Run("out-of-the-box token", func(t *testing.T) {
 		lc, err := dbLicenses{db: db}.GetByID(ctx, pl)
 		require.NoError(t, err)
 
-		accessToken := license.GenerateLicenseKeyBasedAccessToken(lc.LicenseKey)
+		bccessToken := license.GenerbteLicenseKeyBbsedAccessToken(lc.LicenseKey)
 
-		gotPS, err := newDBTokens(db).LookupProductSubscriptionIDByAccessToken(ctx, accessToken)
+		gotPS, err := newDBTokens(db).LookupProductSubscriptionIDByAccessToken(ctx, bccessToken)
 		require.NoError(t, err)
-		assert.Equal(t, gotPS, ps)
+		bssert.Equbl(t, gotPS, ps)
 	})
 
-	t.Run("legacy token prefix", func(t *testing.T) {
+	t.Run("legbcy token prefix", func(t *testing.T) {
 		lc, err := dbLicenses{db: db}.GetByID(ctx, pl)
 		require.NoError(t, err)
 
-		accessToken := license.GenerateLicenseKeyBasedAccessToken(lc.LicenseKey)
-		accessToken = productsubscription.AccessTokenPrefix + accessToken[len(license.LicenseKeyBasedAccessTokenPrefix):]
+		bccessToken := license.GenerbteLicenseKeyBbsedAccessToken(lc.LicenseKey)
+		bccessToken = productsubscription.AccessTokenPrefix + bccessToken[len(license.LicenseKeyBbsedAccessTokenPrefix):]
 
-		gotPS, err := newDBTokens(db).LookupProductSubscriptionIDByAccessToken(ctx, accessToken)
+		gotPS, err := newDBTokens(db).LookupProductSubscriptionIDByAccessToken(ctx, bccessToken)
 		require.NoError(t, err)
-		assert.Equal(t, gotPS, ps)
+		bssert.Equbl(t, gotPS, ps)
 	})
 }

@@ -1,4 +1,4 @@
-package usagestats
+pbckbge usbgestbts
 
 import (
 	"testing"
@@ -6,126 +6,126 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 
-	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/lib/pointers"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
+	"github.com/sourcegrbph/sourcegrbph/lib/pointers"
 )
 
-func TestGroupAggregateSearchStats(t *testing.T) {
+func TestGroupAggregbteSebrchStbts(t *testing.T) {
 	t1 := time.Now().UTC()
 	t2 := t1.Add(time.Hour)
 	t3 := t2.Add(time.Hour)
 
-	searchStats := groupAggregatedSearchStats([]types.SearchAggregatedEvent{
+	sebrchStbts := groupAggregbtedSebrchStbts([]types.SebrchAggregbtedEvent{
 		{
-			Name:           "search.latencies.structural",
+			Nbme:           "sebrch.lbtencies.structurbl",
 			Month:          t1,
 			Week:           t2,
-			Day:            t3,
-			TotalMonth:     31,
-			TotalWeek:      32,
-			TotalDay:       33,
+			Dby:            t3,
+			TotblMonth:     31,
+			TotblWeek:      32,
+			TotblDby:       33,
 			UniquesMonth:   34,
 			UniquesWeek:    35,
-			UniquesDay:     36,
-			LatenciesMonth: []float64{31, 32, 33},
-			LatenciesWeek:  []float64{34, 35, 36},
-			LatenciesDay:   []float64{37, 38, 39},
+			UniquesDby:     36,
+			LbtenciesMonth: []flobt64{31, 32, 33},
+			LbtenciesWeek:  []flobt64{34, 35, 36},
+			LbtenciesDby:   []flobt64{37, 38, 39},
 		},
 		{
-			Name:           "search.latencies.commit",
+			Nbme:           "sebrch.lbtencies.commit",
 			Month:          t1,
 			Week:           t2,
-			Day:            t3,
-			TotalMonth:     41,
-			TotalWeek:      42,
-			TotalDay:       43,
+			Dby:            t3,
+			TotblMonth:     41,
+			TotblWeek:      42,
+			TotblDby:       43,
 			UniquesMonth:   44,
 			UniquesWeek:    45,
-			UniquesDay:     46,
-			LatenciesMonth: []float64{41, 42, 43},
-			LatenciesWeek:  []float64{44, 45, 46},
-			LatenciesDay:   []float64{47, 48, 49},
+			UniquesDby:     46,
+			LbtenciesMonth: []flobt64{41, 42, 43},
+			LbtenciesWeek:  []flobt64{44, 45, 46},
+			LbtenciesDby:   []flobt64{47, 48, 49},
 		},
 	})
 
-	expectDailyStructural := newSearchTestEvent(33, 36, 37, 38, 39)
-	expectDailyCommit := newSearchTestEvent(43, 46, 47, 48, 49)
-	expectWeeklyStructural := newSearchTestEvent(32, 35, 34, 35, 36)
-	expectWeeklyCommit := newSearchTestEvent(42, 45, 44, 45, 46)
-	expectMonthlyStructural := newSearchTestEvent(31, 34, 31, 32, 33)
-	expectMonthlyCommit := newSearchTestEvent(41, 44, 41, 42, 43)
+	expectDbilyStructurbl := newSebrchTestEvent(33, 36, 37, 38, 39)
+	expectDbilyCommit := newSebrchTestEvent(43, 46, 47, 48, 49)
+	expectWeeklyStructurbl := newSebrchTestEvent(32, 35, 34, 35, 36)
+	expectWeeklyCommit := newSebrchTestEvent(42, 45, 44, 45, 46)
+	expectMonthlyStructurbl := newSebrchTestEvent(31, 34, 31, 32, 33)
+	expectMonthlyCommit := newSebrchTestEvent(41, 44, 41, 42, 43)
 
-	expectedSearchStats := &types.SearchUsageStatistics{
-		Daily:   newSearchUsagePeriod(t3, expectDailyStructural, expectDailyCommit),
-		Weekly:  newSearchUsagePeriod(t2, expectWeeklyStructural, expectWeeklyCommit),
-		Monthly: newSearchUsagePeriod(t1, expectMonthlyStructural, expectMonthlyCommit),
+	expectedSebrchStbts := &types.SebrchUsbgeStbtistics{
+		Dbily:   newSebrchUsbgePeriod(t3, expectDbilyStructurbl, expectDbilyCommit),
+		Weekly:  newSebrchUsbgePeriod(t2, expectWeeklyStructurbl, expectWeeklyCommit),
+		Monthly: newSebrchUsbgePeriod(t1, expectMonthlyStructurbl, expectMonthlyCommit),
 	}
-	if diff := cmp.Diff(expectedSearchStats, searchStats); diff != "" {
-		t.Fatal(diff)
+	if diff := cmp.Diff(expectedSebrchStbts, sebrchStbts); diff != "" {
+		t.Fbtbl(diff)
 	}
 }
 
-func newSearchTestEvent(eventCount, userCount int32, p50, p90, p99 float64) *types.SearchEventStatistics {
-	return &types.SearchEventStatistics{
+func newSebrchTestEvent(eventCount, userCount int32, p50, p90, p99 flobt64) *types.SebrchEventStbtistics {
+	return &types.SebrchEventStbtistics{
 		EventsCount:    pointers.Ptr(eventCount),
 		UserCount:      pointers.Ptr(userCount),
-		EventLatencies: &types.SearchEventLatencies{P50: p50, P90: p90, P99: p99},
+		EventLbtencies: &types.SebrchEventLbtencies{P50: p50, P90: p90, P99: p99},
 	}
 }
 
-func newSearchUsagePeriod(t time.Time, structuralEvent, commitEvent *types.SearchEventStatistics) []*types.SearchUsagePeriod {
-	return []*types.SearchUsagePeriod{
+func newSebrchUsbgePeriod(t time.Time, structurblEvent, commitEvent *types.SebrchEventStbtistics) []*types.SebrchUsbgePeriod {
+	return []*types.SebrchUsbgePeriod{
 		{
-			StartTime:  t,
-			Literal:    newSearchEventStatistics(),
-			Regexp:     newSearchEventStatistics(),
-			Structural: structuralEvent,
-			File:       newSearchEventStatistics(),
-			Repo:       newSearchEventStatistics(),
-			Diff:       newSearchEventStatistics(),
+			StbrtTime:  t,
+			Literbl:    newSebrchEventStbtistics(),
+			Regexp:     newSebrchEventStbtistics(),
+			Structurbl: structurblEvent,
+			File:       newSebrchEventStbtistics(),
+			Repo:       newSebrchEventStbtistics(),
+			Diff:       newSebrchEventStbtistics(),
 			Commit:     commitEvent,
-			Symbol:     newSearchEventStatistics(),
+			Symbol:     newSebrchEventStbtistics(),
 
-			// Counts of search query attributes. Ref: RFC 384.
-			OperatorOr:              newSearchCountStatistics(),
-			OperatorAnd:             newSearchCountStatistics(),
-			OperatorNot:             newSearchCountStatistics(),
-			SelectRepo:              newSearchCountStatistics(),
-			SelectFile:              newSearchCountStatistics(),
-			SelectContent:           newSearchCountStatistics(),
-			SelectSymbol:            newSearchCountStatistics(),
-			SelectCommitDiffAdded:   newSearchCountStatistics(),
-			SelectCommitDiffRemoved: newSearchCountStatistics(),
-			RepoContains:            newSearchCountStatistics(),
-			RepoContainsFile:        newSearchCountStatistics(),
-			RepoContainsContent:     newSearchCountStatistics(),
-			RepoContainsCommitAfter: newSearchCountStatistics(),
-			RepoDependencies:        newSearchCountStatistics(),
-			CountAll:                newSearchCountStatistics(),
-			NonGlobalContext:        newSearchCountStatistics(),
-			OnlyPatterns:            newSearchCountStatistics(),
-			OnlyPatternsThreeOrMore: newSearchCountStatistics(),
+			// Counts of sebrch query bttributes. Ref: RFC 384.
+			OperbtorOr:              newSebrchCountStbtistics(),
+			OperbtorAnd:             newSebrchCountStbtistics(),
+			OperbtorNot:             newSebrchCountStbtistics(),
+			SelectRepo:              newSebrchCountStbtistics(),
+			SelectFile:              newSebrchCountStbtistics(),
+			SelectContent:           newSebrchCountStbtistics(),
+			SelectSymbol:            newSebrchCountStbtistics(),
+			SelectCommitDiffAdded:   newSebrchCountStbtistics(),
+			SelectCommitDiffRemoved: newSebrchCountStbtistics(),
+			RepoContbins:            newSebrchCountStbtistics(),
+			RepoContbinsFile:        newSebrchCountStbtistics(),
+			RepoContbinsContent:     newSebrchCountStbtistics(),
+			RepoContbinsCommitAfter: newSebrchCountStbtistics(),
+			RepoDependencies:        newSebrchCountStbtistics(),
+			CountAll:                newSebrchCountStbtistics(),
+			NonGlobblContext:        newSebrchCountStbtistics(),
+			OnlyPbtterns:            newSebrchCountStbtistics(),
+			OnlyPbtternsThreeOrMore: newSebrchCountStbtistics(),
 
 			// DEPRECATED.
-			Case:               newSearchCountStatistics(),
-			Committer:          newSearchCountStatistics(),
-			Lang:               newSearchCountStatistics(),
-			Fork:               newSearchCountStatistics(),
-			Archived:           newSearchCountStatistics(),
-			Count:              newSearchCountStatistics(),
-			Timeout:            newSearchCountStatistics(),
-			Content:            newSearchCountStatistics(),
-			Before:             newSearchCountStatistics(),
-			After:              newSearchCountStatistics(),
-			Author:             newSearchCountStatistics(),
-			Message:            newSearchCountStatistics(),
-			Index:              newSearchCountStatistics(),
-			Repogroup:          newSearchCountStatistics(),
-			Repohasfile:        newSearchCountStatistics(),
-			Repohascommitafter: newSearchCountStatistics(),
-			PatternType:        newSearchCountStatistics(),
-			Type:               newSearchCountStatistics(),
-			SearchModes:        newSearchModeUsageStatistics(),
+			Cbse:               newSebrchCountStbtistics(),
+			Committer:          newSebrchCountStbtistics(),
+			Lbng:               newSebrchCountStbtistics(),
+			Fork:               newSebrchCountStbtistics(),
+			Archived:           newSebrchCountStbtistics(),
+			Count:              newSebrchCountStbtistics(),
+			Timeout:            newSebrchCountStbtistics(),
+			Content:            newSebrchCountStbtistics(),
+			Before:             newSebrchCountStbtistics(),
+			After:              newSebrchCountStbtistics(),
+			Author:             newSebrchCountStbtistics(),
+			Messbge:            newSebrchCountStbtistics(),
+			Index:              newSebrchCountStbtistics(),
+			Repogroup:          newSebrchCountStbtistics(),
+			Repohbsfile:        newSebrchCountStbtistics(),
+			Repohbscommitbfter: newSebrchCountStbtistics(),
+			PbtternType:        newSebrchCountStbtistics(),
+			Type:               newSebrchCountStbtistics(),
+			SebrchModes:        newSebrchModeUsbgeStbtistics(),
 		},
 	}
 }

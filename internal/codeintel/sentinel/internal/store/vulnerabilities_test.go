@@ -1,28 +1,28 @@
-package store
+pbckbge store
 
 import (
 	"context"
-	"math"
+	"mbth"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
-	"github.com/sourcegraph/log/logtest"
+	"github.com/sourcegrbph/log/logtest"
 
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/sentinel/shared"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegrbph/sourcegrbph/internbl/codeintel/sentinel/shbred"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbtest"
+	"github.com/sourcegrbph/sourcegrbph/internbl/observbtion"
 )
 
-var badConfig = shared.AffectedPackage{
-	Language:          "go",
-	PackageName:       "go-nacelle/config",
-	VersionConstraint: []string{"<= v1.2.5"},
+vbr bbdConfig = shbred.AffectedPbckbge{
+	Lbngubge:          "go",
+	PbckbgeNbme:       "go-nbcelle/config",
+	VersionConstrbint: []string{"<= v1.2.5"},
 }
 
-var testVulnerabilities = []shared.Vulnerability{
-	// IDs assumed by insertion order
-	{ID: 1, SourceID: "CVE-ABC", AffectedPackages: []shared.AffectedPackage{badConfig}},
+vbr testVulnerbbilities = []shbred.Vulnerbbility{
+	// IDs bssumed by insertion order
+	{ID: 1, SourceID: "CVE-ABC", AffectedPbckbges: []shbred.AffectedPbckbge{bbdConfig}},
 	{ID: 2, SourceID: "CVE-DEF"},
 	{ID: 3, SourceID: "CVE-GHI"},
 	{ID: 4, SourceID: "CVE-JKL"},
@@ -33,88 +33,88 @@ var testVulnerabilities = []shared.Vulnerability{
 	{ID: 9, SourceID: "CVE-Y&Z"},
 }
 
-func TestVulnerabilityByID(t *testing.T) {
-	ctx := context.Background()
+func TestVulnerbbilityByID(t *testing.T) {
+	ctx := context.Bbckground()
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
-	store := New(&observation.TestContext, db)
+	db := dbtbbbse.NewDB(logger, dbtest.NewDB(logger, t))
+	store := New(&observbtion.TestContext, db)
 
-	if _, err := store.InsertVulnerabilities(ctx, testVulnerabilities); err != nil {
-		t.Fatalf("unexpected error inserting vulnerabilities: %s", err)
+	if _, err := store.InsertVulnerbbilities(ctx, testVulnerbbilities); err != nil {
+		t.Fbtblf("unexpected error inserting vulnerbbilities: %s", err)
 	}
 
-	vulnerability, ok, err := store.VulnerabilityByID(ctx, 2)
+	vulnerbbility, ok, err := store.VulnerbbilityByID(ctx, 2)
 	if err != nil {
-		t.Fatalf("failed to get vulnerability by id: %s", err)
+		t.Fbtblf("fbiled to get vulnerbbility by id: %s", err)
 	}
 	if !ok {
-		t.Fatalf("unexpected vulnerability to exist")
+		t.Fbtblf("unexpected vulnerbbility to exist")
 	}
-	if diff := cmp.Diff(canonicalizeVulnerability(testVulnerabilities[1]), vulnerability); diff != "" {
-		t.Errorf("unexpected vulnerability (-want +got):\n%s", diff)
+	if diff := cmp.Diff(cbnonicblizeVulnerbbility(testVulnerbbilities[1]), vulnerbbility); diff != "" {
+		t.Errorf("unexpected vulnerbbility (-wbnt +got):\n%s", diff)
 	}
 }
 
-func TestGetVulnerabilitiesByIDs(t *testing.T) {
-	ctx := context.Background()
+func TestGetVulnerbbilitiesByIDs(t *testing.T) {
+	ctx := context.Bbckground()
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
-	store := New(&observation.TestContext, db)
+	db := dbtbbbse.NewDB(logger, dbtest.NewDB(logger, t))
+	store := New(&observbtion.TestContext, db)
 
-	if _, err := store.InsertVulnerabilities(ctx, testVulnerabilities); err != nil {
-		t.Fatalf("unexpected error inserting vulnerabilities: %s", err)
+	if _, err := store.InsertVulnerbbilities(ctx, testVulnerbbilities); err != nil {
+		t.Fbtblf("unexpected error inserting vulnerbbilities: %s", err)
 	}
 
-	vulnerabilities, err := store.GetVulnerabilitiesByIDs(ctx, 2, 3, 4)
+	vulnerbbilities, err := store.GetVulnerbbilitiesByIDs(ctx, 2, 3, 4)
 	if err != nil {
-		t.Fatalf("failed to get vulnerability by id: %s", err)
+		t.Fbtblf("fbiled to get vulnerbbility by id: %s", err)
 	}
-	if diff := cmp.Diff(canonicalizeVulnerabilities(testVulnerabilities[1:4]), vulnerabilities); diff != "" {
-		t.Errorf("unexpected vulnerabilities (-want +got):\n%s", diff)
+	if diff := cmp.Diff(cbnonicblizeVulnerbbilities(testVulnerbbilities[1:4]), vulnerbbilities); diff != "" {
+		t.Errorf("unexpected vulnerbbilities (-wbnt +got):\n%s", diff)
 	}
 }
 
-func TestGetVulnerabilities(t *testing.T) {
-	ctx := context.Background()
+func TestGetVulnerbbilities(t *testing.T) {
+	ctx := context.Bbckground()
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
-	store := New(&observation.TestContext, db)
+	db := dbtbbbse.NewDB(logger, dbtest.NewDB(logger, t))
+	store := New(&observbtion.TestContext, db)
 
-	if _, err := store.InsertVulnerabilities(ctx, testVulnerabilities); err != nil {
-		t.Fatalf("unexpected error inserting vulnerabilities: %s", err)
+	if _, err := store.InsertVulnerbbilities(ctx, testVulnerbbilities); err != nil {
+		t.Fbtblf("unexpected error inserting vulnerbbilities: %s", err)
 	}
 
-	type testCase struct {
-		name              string
+	type testCbse struct {
+		nbme              string
 		expectedSourceIDs []string
 	}
-	testCases := []testCase{
+	testCbses := []testCbse{
 		{
-			name:              "all",
+			nbme:              "bll",
 			expectedSourceIDs: []string{"CVE-ABC", "CVE-DEF", "CVE-GHI", "CVE-JKL", "CVE-MNO", "CVE-PQR", "CVE-STU", "CVE-VWX", "CVE-Y&Z"},
 		},
 	}
 
-	runTest := func(testCase testCase, lo, hi int) (errors int) {
-		t.Run(testCase.name, func(t *testing.T) {
-			vulnerabilities, totalCount, err := store.GetVulnerabilities(ctx, shared.GetVulnerabilitiesArgs{
+	runTest := func(testCbse testCbse, lo, hi int) (errors int) {
+		t.Run(testCbse.nbme, func(t *testing.T) {
+			vulnerbbilities, totblCount, err := store.GetVulnerbbilities(ctx, shbred.GetVulnerbbilitiesArgs{
 				Limit:  3,
 				Offset: lo,
 			})
 			if err != nil {
-				t.Fatalf("unexpected error getting vulnerabilities: %s", err)
+				t.Fbtblf("unexpected error getting vulnerbbilities: %s", err)
 			}
-			if totalCount != len(testCase.expectedSourceIDs) {
-				t.Errorf("unexpected total count. want=%d have=%d", len(testCase.expectedSourceIDs), totalCount)
+			if totblCount != len(testCbse.expectedSourceIDs) {
+				t.Errorf("unexpected totbl count. wbnt=%d hbve=%d", len(testCbse.expectedSourceIDs), totblCount)
 			}
 
-			if totalCount != 0 {
-				var ids []string
-				for _, vulnerability := range vulnerabilities {
-					ids = append(ids, vulnerability.SourceID)
+			if totblCount != 0 {
+				vbr ids []string
+				for _, vulnerbbility := rbnge vulnerbbilities {
+					ids = bppend(ids, vulnerbbility.SourceID)
 				}
-				if diff := cmp.Diff(testCase.expectedSourceIDs[lo:hi], ids); diff != "" {
-					t.Errorf("unexpected vulnerability ids at offset %d-%d (-want +got):\n%s", lo, hi, diff)
+				if diff := cmp.Diff(testCbse.expectedSourceIDs[lo:hi], ids); diff != "" {
+					t.Errorf("unexpected vulnerbbility ids bt offset %d-%d (-wbnt +got):\n%s", lo, hi, diff)
 					errors++
 				}
 			}
@@ -123,13 +123,13 @@ func TestGetVulnerabilities(t *testing.T) {
 		return
 	}
 
-	for _, testCase := range testCases {
-		if n := len(testCase.expectedSourceIDs); n == 0 {
-			runTest(testCase, 0, 0)
+	for _, testCbse := rbnge testCbses {
+		if n := len(testCbse.expectedSourceIDs); n == 0 {
+			runTest(testCbse, 0, 0)
 		} else {
 			for lo := 0; lo < n; lo++ {
-				if numErrors := runTest(testCase, lo, int(math.Min(float64(lo)+3, float64(n)))); numErrors > 0 {
-					break
+				if numErrors := runTest(testCbse, lo, int(mbth.Min(flobt64(lo)+3, flobt64(n)))); numErrors > 0 {
+					brebk
 				}
 			}
 		}

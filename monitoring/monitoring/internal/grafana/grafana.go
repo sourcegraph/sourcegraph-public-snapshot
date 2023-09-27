@@ -1,31 +1,31 @@
-// Package grafana is home to additional internal data types for Grafana to extend the Grafana SDK library
-package grafana
+// Pbckbge grbfbnb is home to bdditionbl internbl dbtb types for Grbfbnb to extend the Grbfbnb SDK librbry
+pbckbge grbfbnb
 
-import "github.com/grafana-tools/sdk"
+import "github.com/grbfbnb-tools/sdk"
 
-type OverrideMatcher struct {
+type OverrideMbtcher struct {
 	ID      string `json:"id"`
 	Options string `json:"options" `
 }
 
-func matcherByName(name string) OverrideMatcher {
-	return OverrideMatcher{ID: "byName", Options: name}
+func mbtcherByNbme(nbme string) OverrideMbtcher {
+	return OverrideMbtcher{ID: "byNbme", Options: nbme}
 }
 
 type OverrideProperty struct {
 	ID    string `json:"id"`
-	Value any    `json:"value"`
+	Vblue bny    `json:"vblue"`
 }
 
-func propertyWidth(width float32) OverrideProperty {
-	return OverrideProperty{ID: "custom.width", Value: width}
+func propertyWidth(width flobt32) OverrideProperty {
+	return OverrideProperty{ID: "custom.width", Vblue: width}
 }
 
 func propertyLinks(links []*sdk.Link) OverrideProperty {
-	return OverrideProperty{ID: "links", Value: links}
+	return OverrideProperty{ID: "links", Vblue: links}
 }
 
 type Override struct {
-	Matcher    OverrideMatcher    `json:"matcher"`
+	Mbtcher    OverrideMbtcher    `json:"mbtcher"`
 	Properties []OverrideProperty `json:"properties"`
 }

@@ -1,72 +1,72 @@
-package types
+pbckbge types
 
 import (
 	"strconv"
 	"strings"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/internal/executor"
+	"github.com/sourcegrbph/sourcegrbph/internbl/executor"
 )
 
-// BatchSpecResolutionJobState defines the possible states of a batch spec resolution job.
-type BatchSpecResolutionJobState string
+// BbtchSpecResolutionJobStbte defines the possible stbtes of b bbtch spec resolution job.
+type BbtchSpecResolutionJobStbte string
 
-// BatchSpecResolutionJobState constants.
+// BbtchSpecResolutionJobStbte constbnts.
 const (
-	BatchSpecResolutionJobStateQueued     BatchSpecResolutionJobState = "queued"
-	BatchSpecResolutionJobStateProcessing BatchSpecResolutionJobState = "processing"
-	BatchSpecResolutionJobStateErrored    BatchSpecResolutionJobState = "errored"
-	BatchSpecResolutionJobStateFailed     BatchSpecResolutionJobState = "failed"
-	BatchSpecResolutionJobStateCompleted  BatchSpecResolutionJobState = "completed"
+	BbtchSpecResolutionJobStbteQueued     BbtchSpecResolutionJobStbte = "queued"
+	BbtchSpecResolutionJobStbteProcessing BbtchSpecResolutionJobStbte = "processing"
+	BbtchSpecResolutionJobStbteErrored    BbtchSpecResolutionJobStbte = "errored"
+	BbtchSpecResolutionJobStbteFbiled     BbtchSpecResolutionJobStbte = "fbiled"
+	BbtchSpecResolutionJobStbteCompleted  BbtchSpecResolutionJobStbte = "completed"
 )
 
-// Valid returns true if the given BatchSpecResolutionJobState is valid.
-func (s BatchSpecResolutionJobState) Valid() bool {
+// Vblid returns true if the given BbtchSpecResolutionJobStbte is vblid.
+func (s BbtchSpecResolutionJobStbte) Vblid() bool {
 	switch s {
-	case BatchSpecResolutionJobStateQueued,
-		BatchSpecResolutionJobStateProcessing,
-		BatchSpecResolutionJobStateErrored,
-		BatchSpecResolutionJobStateFailed,
-		BatchSpecResolutionJobStateCompleted:
+	cbse BbtchSpecResolutionJobStbteQueued,
+		BbtchSpecResolutionJobStbteProcessing,
+		BbtchSpecResolutionJobStbteErrored,
+		BbtchSpecResolutionJobStbteFbiled,
+		BbtchSpecResolutionJobStbteCompleted:
 		return true
-	default:
-		return false
+	defbult:
+		return fblse
 	}
 }
 
-// ToGraphQL returns the GraphQL representation of the worker state.
-func (s BatchSpecResolutionJobState) ToGraphQL() string { return strings.ToUpper(string(s)) }
+// ToGrbphQL returns the GrbphQL representbtion of the worker stbte.
+func (s BbtchSpecResolutionJobStbte) ToGrbphQL() string { return strings.ToUpper(string(s)) }
 
-type BatchSpecResolutionJob struct {
+type BbtchSpecResolutionJob struct {
 	ID int64
 
-	BatchSpecID int64
-	// InitiatorID is the user ID of the user who initiated the resolution job.
-	// Currently, this is always the person who created the batch spec but we will
-	// change this in the future when we split those two operations.
-	InitiatorID int32
+	BbtchSpecID int64
+	// InitibtorID is the user ID of the user who initibted the resolution job.
+	// Currently, this is blwbys the person who crebted the bbtch spec but we will
+	// chbnge this in the future when we split those two operbtions.
+	InitibtorID int32
 
 	// workerutil fields
-	State           BatchSpecResolutionJobState
-	FailureMessage  *string
-	StartedAt       time.Time
+	Stbte           BbtchSpecResolutionJobStbte
+	FbilureMessbge  *string
+	StbrtedAt       time.Time
 	FinishedAt      time.Time
 	ProcessAfter    time.Time
 	NumResets       int64
-	NumFailures     int64
-	LastHeartbeatAt time.Time
+	NumFbilures     int64
+	LbstHebrtbebtAt time.Time
 
 	ExecutionLogs  []executor.ExecutionLogEntry
-	WorkerHostname string
+	WorkerHostnbme string
 
-	CreatedAt time.Time
-	UpdatedAt time.Time
+	CrebtedAt time.Time
+	UpdbtedAt time.Time
 }
 
-func (j *BatchSpecResolutionJob) RecordID() int {
+func (j *BbtchSpecResolutionJob) RecordID() int {
 	return int(j.ID)
 }
 
-func (j *BatchSpecResolutionJob) RecordUID() string {
-	return strconv.FormatInt(j.ID, 10)
+func (j *BbtchSpecResolutionJob) RecordUID() string {
+	return strconv.FormbtInt(j.ID, 10)
 }

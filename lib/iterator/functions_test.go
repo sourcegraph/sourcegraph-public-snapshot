@@ -1,16 +1,16 @@
-package iterator_test
+pbckbge iterbtor_test
 
 import (
 	"fmt"
 
-	"github.com/sourcegraph/sourcegraph/lib/iterator"
+	"github.com/sourcegrbph/sourcegrbph/lib/iterbtor"
 )
 
-func ExampleCollect() {
-	it := iterator.From([]string{"Hello", "world"})
-	v, err := iterator.Collect(it)
+func ExbmpleCollect() {
+	it := iterbtor.From([]string{"Hello", "world"})
+	v, err := iterbtor.Collect(it)
 	if err != nil {
-		panic(err)
+		pbnic(err)
 	}
 	fmt.Println(v)
 	// Output: [Hello world]

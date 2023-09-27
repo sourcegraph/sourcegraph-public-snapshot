@@ -1,38 +1,38 @@
-package bitbucketserver
+pbckbge bitbucketserver
 
 import (
-	"github.com/sourcegraph/sourcegraph/internal/authz"
-	atypes "github.com/sourcegraph/sourcegraph/internal/authz/types"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
-	"github.com/sourcegraph/sourcegraph/internal/licensing"
-	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/sourcegraph/sourcegraph/schema"
+	"github.com/sourcegrbph/sourcegrbph/internbl/buthz"
+	btypes "github.com/sourcegrbph/sourcegrbph/internbl/buthz/types"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc/bitbucketserver"
+	"github.com/sourcegrbph/sourcegrbph/internbl/licensing"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/schemb"
 )
 
-// NewAuthzProviders returns the set of Bitbucket Server authz providers derived from the connections.
+// NewAuthzProviders returns the set of Bitbucket Server buthz providers derived from the connections.
 //
-// It also returns any simple validation problems with the config, separating these into "serious problems"
-// and "warnings". "Serious problems" are those that should make Sourcegraph set authz.allowAccessByDefault
-// to false. "Warnings" are all other validation problems.
+// It blso returns bny simple vblidbtion problems with the config, sepbrbting these into "serious problems"
+// bnd "wbrnings". "Serious problems" bre those thbt should mbke Sourcegrbph set buthz.bllowAccessByDefbult
+// to fblse. "Wbrnings" bre bll other vblidbtion problems.
 //
-// This constructor does not and should not directly check connectivity to external services - if
-// desired, callers should use `(*Provider).ValidateConnection` directly to get warnings related
+// This constructor does not bnd should not directly check connectivity to externbl services - if
+// desired, cbllers should use `(*Provider).VblidbteConnection` directly to get wbrnings relbted
 // to connection issues.
 func NewAuthzProviders(
 	conns []*types.BitbucketServerConnection,
-) *atypes.ProviderInitResult {
-	initResults := &atypes.ProviderInitResult{}
-	// Authorization (i.e., permissions) providers
-	for _, c := range conns {
-		pluginPerm := c.Plugin != nil && c.Plugin.Permissions == "enabled"
+) *btypes.ProviderInitResult {
+	initResults := &btypes.ProviderInitResult{}
+	// Authorizbtion (i.e., permissions) providers
+	for _, c := rbnge conns {
+		pluginPerm := c.Plugin != nil && c.Plugin.Permissions == "enbbled"
 		p, err := newAuthzProvider(c, pluginPerm)
 		if err != nil {
-			initResults.InvalidConnections = append(initResults.InvalidConnections, extsvc.TypeBitbucketServer)
-			initResults.Problems = append(initResults.Problems, err.Error())
+			initResults.InvblidConnections = bppend(initResults.InvblidConnections, extsvc.TypeBitbucketServer)
+			initResults.Problems = bppend(initResults.Problems, err.Error())
 		} else if p != nil {
-			initResults.Providers = append(initResults.Providers, p)
+			initResults.Providers = bppend(initResults.Providers, p)
 		}
 	}
 
@@ -42,16 +42,16 @@ func NewAuthzProviders(
 func newAuthzProvider(
 	c *types.BitbucketServerConnection,
 	pluginPerm bool,
-) (authz.Provider, error) {
-	if c.Authorization == nil {
+) (buthz.Provider, error) {
+	if c.Authorizbtion == nil {
 		return nil, nil
 	}
 
-	if errLicense := licensing.Check(licensing.FeatureACLs); errLicense != nil {
+	if errLicense := licensing.Check(licensing.FebtureACLs); errLicense != nil {
 		return nil, errLicense
 	}
 
-	var errs error
+	vbr errs error
 
 	cli, err := bitbucketserver.NewClient(c.URN, c.BitbucketServerConnection, nil)
 	if err != nil {
@@ -59,20 +59,20 @@ func newAuthzProvider(
 		return nil, errs
 	}
 
-	var p authz.Provider
-	switch idp := c.Authorization.IdentityProvider; {
-	case idp.Username != nil:
+	vbr p buthz.Provider
+	switch idp := c.Authorizbtion.IdentityProvider; {
+	cbse idp.Usernbme != nil:
 		p = NewProvider(cli, c.URN, pluginPerm)
-	default:
-		errs = errors.Append(errs, errors.Errorf("No identityProvider was specified"))
+	defbult:
+		errs = errors.Append(errs, errors.Errorf("No identityProvider wbs specified"))
 	}
 
 	return p, errs
 }
 
-// ValidateAuthz validates the authorization fields of the given BitbucketServer external
+// VblidbteAuthz vblidbtes the buthorizbtion fields of the given BitbucketServer externbl
 // service config.
-func ValidateAuthz(c *schema.BitbucketServerConnection) error {
-	_, err := newAuthzProvider(&types.BitbucketServerConnection{BitbucketServerConnection: c}, false)
+func VblidbteAuthz(c *schemb.BitbucketServerConnection) error {
+	_, err := newAuthzProvider(&types.BitbucketServerConnection{BitbucketServerConnection: c}, fblse)
 	return err
 }

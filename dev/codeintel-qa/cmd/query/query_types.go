@@ -1,20 +1,20 @@
-package main
+pbckbge mbin
 
 type QueryResponse struct {
-	Data struct {
+	Dbtb struct {
 		Repository struct {
 			Commit struct {
 				Blob struct {
 					LSIF struct {
 						Definitions     Definitions     `json:"definitions"`
 						References      References      `json:"references"`
-						Implementations Implementations `json:"implementations"`
+						Implementbtions Implementbtions `json:"implementbtions"`
 						Prototypes      Prototypes      `json:"prototypes"`
 					} `json:"lsif"`
 				} `json:"blob"`
 			} `json:"commit"`
 		} `json:"repository"`
-	} `json:"data"`
+	} `json:"dbtb"`
 }
 
 type Definitions struct {
@@ -23,48 +23,48 @@ type Definitions struct {
 
 type References struct {
 	Nodes    []Node   `json:"nodes"`
-	PageInfo PageInfo `json:"pageInfo"`
+	PbgeInfo PbgeInfo `json:"pbgeInfo"`
 }
 
-type Implementations struct {
+type Implementbtions struct {
 	Nodes    []Node   `json:"nodes"`
-	PageInfo PageInfo `json:"pageInfo"`
+	PbgeInfo PbgeInfo `json:"pbgeInfo"`
 }
 
 type Prototypes struct {
 	Nodes    []Node   `json:"nodes"`
-	PageInfo PageInfo `json:"pageInfo"`
+	PbgeInfo PbgeInfo `json:"pbgeInfo"`
 }
 
 type Node struct {
 	Resource `json:"resource"`
-	Range    `json:"range"`
+	Rbnge    `json:"rbnge"`
 }
 
 type Resource struct {
-	Path       string     `json:"path"`
+	Pbth       string     `json:"pbth"`
 	Repository Repository `json:"repository"`
 	Commit     Commit     `json:"commit"`
 }
 
 type Repository struct {
-	Name string `json:"name"`
+	Nbme string `json:"nbme"`
 }
 
 type Commit struct {
 	Oid string `json:"oid"`
 }
 
-type Range struct {
-	Start Position `json:"start"`
+type Rbnge struct {
+	Stbrt Position `json:"stbrt"`
 	End   Position `json:"end"`
 }
 
 type Position struct {
 	Line      int `json:"line"`
-	Character int `json:"character"`
+	Chbrbcter int `json:"chbrbcter"`
 }
 
-type PageInfo struct {
+type PbgeInfo struct {
 	EndCursor string `json:"endCursor"`
 }

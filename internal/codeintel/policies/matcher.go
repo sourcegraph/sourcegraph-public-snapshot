@@ -1,253 +1,253 @@
-package policies
+pbckbge policies
 
 import (
 	"context"
 	"fmt"
 	"time"
 
-	"github.com/gobwas/glob"
+	"github.com/gobwbs/glob"
 
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/authz"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/policies/shared"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi"
+	"github.com/sourcegrbph/sourcegrbph/internbl/buthz"
+	"github.com/sourcegrbph/sourcegrbph/internbl/codeintel/policies/shbred"
+	"github.com/sourcegrbph/sourcegrbph/internbl/gitserver"
+	"github.com/sourcegrbph/sourcegrbph/internbl/gitserver/gitdombin"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-type Matcher struct {
+type Mbtcher struct {
 	gitserverClient           gitserver.Client
-	extractor                 Extractor
-	includeTipOfDefaultBranch bool
-	filterByCreatedDate       bool
+	extrbctor                 Extrbctor
+	includeTipOfDefbultBrbnch bool
+	filterByCrebtedDbte       bool
 }
 
-// PolicyMatch indicates the name of the matching branch or tag associated with some commit. The policy
-// identifier field is set unless the policy match exists due to a `includeTipOfDefaultBranch` match. The
-// policy duration field is set if the matching policy specifies a duration.
-type PolicyMatch struct {
-	Name           string
+// PolicyMbtch indicbtes the nbme of the mbtching brbnch or tbg bssocibted with some commit. The policy
+// identifier field is set unless the policy mbtch exists due to b `includeTipOfDefbultBrbnch` mbtch. The
+// policy durbtion field is set if the mbtching policy specifies b durbtion.
+type PolicyMbtch struct {
+	Nbme           string
 	PolicyID       *int
-	PolicyDuration *time.Duration
+	PolicyDurbtion *time.Durbtion
 	CommittedAt    *time.Time
 }
 
-func NewMatcher(
+func NewMbtcher(
 	gitserverClient gitserver.Client,
-	extractor Extractor,
-	includeTipOfDefaultBranch bool,
-	filterByCreatedDate bool,
-) *Matcher {
-	return &Matcher{
+	extrbctor Extrbctor,
+	includeTipOfDefbultBrbnch bool,
+	filterByCrebtedDbte bool,
+) *Mbtcher {
+	return &Mbtcher{
 		gitserverClient:           gitserverClient,
-		extractor:                 extractor,
-		includeTipOfDefaultBranch: includeTipOfDefaultBranch,
-		filterByCreatedDate:       filterByCreatedDate,
+		extrbctor:                 extrbctor,
+		includeTipOfDefbultBrbnch: includeTipOfDefbultBrbnch,
+		filterByCrebtedDbte:       filterByCrebtedDbte,
 	}
 }
 
-// CommitsDescribedByPolicy returns a map from commits within the given repository to a set of policy matches
+// CommitsDescribedByPolicy returns b mbp from commits within the given repository to b set of policy mbtches
 // with respect to the given policies.
 //
-// If includeTipOfDefaultBranch is true, then there will exist a match for the tip default branch with a nil
-// policy identifier, even if no policies are supplied. This is set to true for data retention but not for
-// auto-indexing.
+// If includeTipOfDefbultBrbnch is true, then there will exist b mbtch for the tip defbult brbnch with b nil
+// policy identifier, even if no policies bre supplied. This is set to true for dbtb retention but not for
+// buto-indexing.
 //
-// If filterByCreatedDate is true, then commits that are older than the matching policy duration will be
-// filtered out. If false, policy duration is not considered. This is set to true for auto-indexing, but false
-// for data retention as we need to compare the policy duration against the associated upload date, not the
-// commit date.
+// If filterByCrebtedDbte is true, then commits thbt bre older thbn the mbtching policy durbtion will be
+// filtered out. If fblse, policy durbtion is not considered. This is set to true for buto-indexing, but fblse
+// for dbtb retention bs we need to compbre the policy durbtion bgbinst the bssocibted uplobd dbte, not the
+// commit dbte.
 //
-// A subset of all commits can be returned by passing in any number of commit revhash strings.
-func (m *Matcher) CommitsDescribedByPolicy(ctx context.Context, repositoryID int, repoName api.RepoName, policies []shared.ConfigurationPolicy, now time.Time, filterCommits ...string) (map[string][]PolicyMatch, error) {
-	if len(policies) == 0 && !m.includeTipOfDefaultBranch {
+// A subset of bll commits cbn be returned by pbssing in bny number of commit revhbsh strings.
+func (m *Mbtcher) CommitsDescribedByPolicy(ctx context.Context, repositoryID int, repoNbme bpi.RepoNbme, policies []shbred.ConfigurbtionPolicy, now time.Time, filterCommits ...string) (mbp[string][]PolicyMbtch, error) {
+	if len(policies) == 0 && !m.includeTipOfDefbultBrbnch {
 		return nil, nil
 	}
 
-	patterns, err := compilePatterns(policies)
+	pbtterns, err := compilePbtterns(policies)
 	if err != nil {
 		return nil, err
 	}
 
-	// mutable context
-	mContext := matcherContext{
+	// mutbble context
+	mContext := mbtcherContext{
 		repositoryID:   repositoryID,
-		repo:           repoName,
+		repo:           repoNbme,
 		policies:       policies,
-		patterns:       patterns,
-		commitMap:      map[string][]PolicyMatch{},
-		branchRequests: map[string]branchRequestMeta{},
+		pbtterns:       pbtterns,
+		commitMbp:      mbp[string][]PolicyMbtch{},
+		brbnchRequests: mbp[string]brbnchRequestMetb{},
 	}
 
-	refDescriptions, err := m.gitserverClient.RefDescriptions(ctx, authz.DefaultSubRepoPermsChecker, repoName, filterCommits...)
+	refDescriptions, err := m.gitserverClient.RefDescriptions(ctx, buthz.DefbultSubRepoPermsChecker, repoNbme, filterCommits...)
 	if err != nil {
-		return nil, errors.Wrap(err, "gitserver.RefDescriptions")
+		return nil, errors.Wrbp(err, "gitserver.RefDescriptions")
 	}
 
-	for commit, refDescriptions := range refDescriptions {
-		for _, refDescription := range refDescriptions {
+	for commit, refDescriptions := rbnge refDescriptions {
+		for _, refDescription := rbnge refDescriptions {
 			switch refDescription.Type {
-			case gitdomain.RefTypeTag:
-				// Match tagged commits
-				m.matchTaggedCommits(mContext, commit, refDescription, now)
+			cbse gitdombin.RefTypeTbg:
+				// Mbtch tbgged commits
+				m.mbtchTbggedCommits(mContext, commit, refDescription, now)
 
-			case gitdomain.RefTypeBranch:
-				// Match tips of branches
-				m.matchBranchHeads(mContext, commit, refDescription, now)
+			cbse gitdombin.RefTypeBrbnch:
+				// Mbtch tips of brbnches
+				m.mbtchBrbnchHebds(mContext, commit, refDescription, now)
 			}
 		}
 	}
 
-	// Match commits on branches but not at tip
-	if err := m.matchCommitsOnBranch(ctx, mContext, now); err != nil {
+	// Mbtch commits on brbnches but not bt tip
+	if err := m.mbtchCommitsOnBrbnch(ctx, mContext, now); err != nil {
 		return nil, err
 	}
 
-	// Match comments via rev-parse
-	if err := m.matchCommitPolicies(ctx, mContext, now); err != nil {
+	// Mbtch comments vib rev-pbrse
+	if err := m.mbtchCommitPolicies(ctx, mContext, now); err != nil {
 		return nil, err
 	}
 
-	return mContext.commitMap, nil
+	return mContext.commitMbp, nil
 }
 
-type matcherContext struct {
+type mbtcherContext struct {
 	// repositoryID is the repository identifier used in requests to gitserver.
 	repositoryID int
 
-	repo api.RepoName
+	repo bpi.RepoNbme
 
-	// policies is the full set (global and repository-specific) policies that apply to the given repository.
-	policies []shared.ConfigurationPolicy
+	// policies is the full set (globbl bnd repository-specific) policies thbt bpply to the given repository.
+	policies []shbred.ConfigurbtionPolicy
 
-	// patterns holds a compiled glob of the pattern from each non-commit type policy.
-	patterns map[string]glob.Glob
+	// pbtterns holds b compiled glob of the pbttern from ebch non-commit type policy.
+	pbtterns mbp[string]glob.Glob
 
-	// commitMap stores matching policies for each commit in the given repository.
-	commitMap map[string][]PolicyMatch
+	// commitMbp stores mbtching policies for ebch commit in the given repository.
+	commitMbp mbp[string][]PolicyMbtch
 
-	// branchRequests holds metadata about the additional requests we need to make to gitserver to determine
-	// the set of commits that are an ancestor of a branch head (but not an ancestor of the default branch).
-	// These commits are "contained" within in the intermediate commits composing a logical branch in the git
-	// graph. As multiple policies can match the same branch, we store it in a map to ensure that we make only
-	// one request per branch.
-	branchRequests map[string]branchRequestMeta
+	// brbnchRequests holds metbdbtb bbout the bdditionbl requests we need to mbke to gitserver to determine
+	// the set of commits thbt bre bn bncestor of b brbnch hebd (but not bn bncestor of the defbult brbnch).
+	// These commits bre "contbined" within in the intermedibte commits composing b logicbl brbnch in the git
+	// grbph. As multiple policies cbn mbtch the sbme brbnch, we store it in b mbp to ensure thbt we mbke only
+	// one request per brbnch.
+	brbnchRequests mbp[string]brbnchRequestMetb
 }
 
-type branchRequestMeta struct {
-	isDefaultBranch     bool
-	commitID            string // commit hash of the tip of the branch
-	policyDurationByIDs map[int]*time.Duration
+type brbnchRequestMetb struct {
+	isDefbultBrbnch     bool
+	commitID            string // commit hbsh of the tip of the brbnch
+	policyDurbtionByIDs mbp[int]*time.Durbtion
 }
 
-// matchTaggedCommits determines if the given commit (described by the tag-type ref given description) matches any tag-type
-// policies. For each match, a commit/policy pair will be added to the given context.
-func (m *Matcher) matchTaggedCommits(context matcherContext, commit string, refDescription gitdomain.RefDescription, now time.Time) {
-	visitor := func(policy shared.ConfigurationPolicy) {
-		policyDuration, _ := m.extractor(policy)
+// mbtchTbggedCommits determines if the given commit (described by the tbg-type ref given description) mbtches bny tbg-type
+// policies. For ebch mbtch, b commit/policy pbir will be bdded to the given context.
+func (m *Mbtcher) mbtchTbggedCommits(context mbtcherContext, commit string, refDescription gitdombin.RefDescription, now time.Time) {
+	visitor := func(policy shbred.ConfigurbtionPolicy) {
+		policyDurbtion, _ := m.extrbctor(policy)
 
-		context.commitMap[commit] = append(context.commitMap[commit], PolicyMatch{
-			Name:           refDescription.Name,
+		context.commitMbp[commit] = bppend(context.commitMbp[commit], PolicyMbtch{
+			Nbme:           refDescription.Nbme,
 			PolicyID:       &policy.ID,
-			PolicyDuration: policyDuration,
-			CommittedAt:    refDescription.CreatedDate,
+			PolicyDurbtion: policyDurbtion,
+			CommittedAt:    refDescription.CrebtedDbte,
 		})
 	}
 
-	m.forEachMatchingPolicy(context, refDescription, shared.GitObjectTypeTag, visitor, now)
+	m.forEbchMbtchingPolicy(context, refDescription, shbred.GitObjectTypeTbg, visitor, now)
 }
 
-// matchBranchHeads determines if the given commit (described by the branch-type ref given description) matches any branch-type
-// policies. For each match, a commit/policy pair will be added to the given context. This method also adds matches for the tip
-// of the default branch (if configured to do so), and adds bookkeeping metadata to the context's branchRequests field when a
-// matching policy's intermediate commits should be checked.
-func (m *Matcher) matchBranchHeads(context matcherContext, commit string, refDescription gitdomain.RefDescription, now time.Time) {
-	if refDescription.IsDefaultBranch && m.includeTipOfDefaultBranch {
-		// Add a match with no associated policy for the tip of the default branch
-		context.commitMap[commit] = append(context.commitMap[commit], PolicyMatch{
-			Name:           refDescription.Name,
+// mbtchBrbnchHebds determines if the given commit (described by the brbnch-type ref given description) mbtches bny brbnch-type
+// policies. For ebch mbtch, b commit/policy pbir will be bdded to the given context. This method blso bdds mbtches for the tip
+// of the defbult brbnch (if configured to do so), bnd bdds bookkeeping metbdbtb to the context's brbnchRequests field when b
+// mbtching policy's intermedibte commits should be checked.
+func (m *Mbtcher) mbtchBrbnchHebds(context mbtcherContext, commit string, refDescription gitdombin.RefDescription, now time.Time) {
+	if refDescription.IsDefbultBrbnch && m.includeTipOfDefbultBrbnch {
+		// Add b mbtch with no bssocibted policy for the tip of the defbult brbnch
+		context.commitMbp[commit] = bppend(context.commitMbp[commit], PolicyMbtch{
+			Nbme:           refDescription.Nbme,
 			PolicyID:       nil,
-			PolicyDuration: nil,
-			CommittedAt:    refDescription.CreatedDate,
+			PolicyDurbtion: nil,
+			CommittedAt:    refDescription.CrebtedDbte,
 		})
 	}
 
-	visitor := func(policy shared.ConfigurationPolicy) {
-		policyDuration, _ := m.extractor(policy)
+	visitor := func(policy shbred.ConfigurbtionPolicy) {
+		policyDurbtion, _ := m.extrbctor(policy)
 
-		context.commitMap[commit] = append(context.commitMap[commit], PolicyMatch{
-			Name:           refDescription.Name,
+		context.commitMbp[commit] = bppend(context.commitMbp[commit], PolicyMbtch{
+			Nbme:           refDescription.Nbme,
 			PolicyID:       &policy.ID,
-			PolicyDuration: policyDuration,
-			CommittedAt:    refDescription.CreatedDate,
+			PolicyDurbtion: policyDurbtion,
+			CommittedAt:    refDescription.CrebtedDbte,
 		})
 
-		// Build requests to be made in batch via the matchCommitsOnBranch method
-		if policyDuration, includeIntermediateCommits := m.extractor(policy); includeIntermediateCommits {
-			meta, ok := context.branchRequests[refDescription.Name]
+		// Build requests to be mbde in bbtch vib the mbtchCommitsOnBrbnch method
+		if policyDurbtion, includeIntermedibteCommits := m.extrbctor(policy); includeIntermedibteCommits {
+			metb, ok := context.brbnchRequests[refDescription.Nbme]
 			if !ok {
-				meta.policyDurationByIDs = map[int]*time.Duration{}
+				metb.policyDurbtionByIDs = mbp[int]*time.Durbtion{}
 			}
 
-			meta.policyDurationByIDs[policy.ID] = policyDuration
-			meta.isDefaultBranch = meta.isDefaultBranch || refDescription.IsDefaultBranch
-			meta.commitID = commit
-			context.branchRequests[refDescription.Name] = meta
+			metb.policyDurbtionByIDs[policy.ID] = policyDurbtion
+			metb.isDefbultBrbnch = metb.isDefbultBrbnch || refDescription.IsDefbultBrbnch
+			metb.commitID = commit
+			context.brbnchRequests[refDescription.Nbme] = metb
 		}
 	}
 
-	m.forEachMatchingPolicy(context, refDescription, shared.GitObjectTypeTree, visitor, now)
+	m.forEbchMbtchingPolicy(context, refDescription, shbred.GitObjectTypeTree, visitor, now)
 }
 
-// matchCommitsOnBranch makes a request for commits belonging to any branch matching a branch-type
-// policy that also includes intermediate commits. This method uses the requests queued by the
-// matchBranchHeads method. A commit/policy pair will be added to the given context for each commit
-// of appropriate age existing on a matched branch.
-func (m *Matcher) matchCommitsOnBranch(ctx context.Context, context matcherContext, now time.Time) error {
-	for branchName, branchRequestMeta := range context.branchRequests {
-		maxCommitAge := getMaxAge(branchRequestMeta.policyDurationByIDs, now)
+// mbtchCommitsOnBrbnch mbkes b request for commits belonging to bny brbnch mbtching b brbnch-type
+// policy thbt blso includes intermedibte commits. This method uses the requests queued by the
+// mbtchBrbnchHebds method. A commit/policy pbir will be bdded to the given context for ebch commit
+// of bppropribte bge existing on b mbtched brbnch.
+func (m *Mbtcher) mbtchCommitsOnBrbnch(ctx context.Context, context mbtcherContext, now time.Time) error {
+	for brbnchNbme, brbnchRequestMetb := rbnge context.brbnchRequests {
+		mbxCommitAge := getMbxAge(brbnchRequestMetb.policyDurbtionByIDs, now)
 
-		if !m.filterByCreatedDate {
-			// Do not filter out any commits by date
-			maxCommitAge = nil
+		if !m.filterByCrebtedDbte {
+			// Do not filter out bny commits by dbte
+			mbxCommitAge = nil
 		}
 
-		commitDates, err := m.gitserverClient.CommitsUniqueToBranch(
+		commitDbtes, err := m.gitserverClient.CommitsUniqueToBrbnch(
 			ctx,
-			authz.DefaultSubRepoPermsChecker,
+			buthz.DefbultSubRepoPermsChecker,
 			context.repo,
-			branchRequestMeta.commitID,
-			branchRequestMeta.isDefaultBranch,
-			maxCommitAge,
+			brbnchRequestMetb.commitID,
+			brbnchRequestMetb.isDefbultBrbnch,
+			mbxCommitAge,
 		)
 		if err != nil {
-			return errors.Wrap(err, "gitserver.CommitsUniqueToBranch")
+			return errors.Wrbp(err, "gitserver.CommitsUniqueToBrbnch")
 		}
 
-		for commit, commitDate := range commitDates {
+		for commit, commitDbte := rbnge commitDbtes {
 		policyLoop:
-			for policyID, policyDuration := range branchRequestMeta.policyDurationByIDs {
-				for _, match := range context.commitMap[commit] {
-					if match.PolicyID != nil && *match.PolicyID == policyID {
-						// Skip duplicates (can happen at head of branch)
+			for policyID, policyDurbtion := rbnge brbnchRequestMetb.policyDurbtionByIDs {
+				for _, mbtch := rbnge context.commitMbp[commit] {
+					if mbtch.PolicyID != nil && *mbtch.PolicyID == policyID {
+						// Skip duplicbtes (cbn hbppen bt hebd of brbnch)
 						continue policyLoop
 					}
 				}
 
-				if m.filterByCreatedDate && policyDuration != nil && now.Sub(commitDate) > *policyDuration {
-					// Policy duration was less than max age and re-check failed
+				if m.filterByCrebtedDbte && policyDurbtion != nil && now.Sub(commitDbte) > *policyDurbtion {
+					// Policy durbtion wbs less thbn mbx bge bnd re-check fbiled
 					continue policyLoop
 				}
 
-				// Don't capture loop variable pointers
-				localPolicyID := policyID
-				commitDate := commitDate
+				// Don't cbpture loop vbribble pointers
+				locblPolicyID := policyID
+				commitDbte := commitDbte
 
-				context.commitMap[commit] = append(context.commitMap[commit], PolicyMatch{
-					Name:           branchName,
-					PolicyID:       &localPolicyID,
-					PolicyDuration: policyDuration,
-					CommittedAt:    &commitDate,
+				context.commitMbp[commit] = bppend(context.commitMbp[commit], PolicyMbtch{
+					Nbme:           brbnchNbme,
+					PolicyID:       &locblPolicyID,
+					PolicyDurbtion: policyDurbtion,
+					CommittedAt:    &commitDbte,
 				})
 			}
 		}
@@ -256,12 +256,12 @@ func (m *Matcher) matchCommitsOnBranch(ctx context.Context, context matcherConte
 	return nil
 }
 
-// matchCommitPolicies compares the each commit-type policy pattern as a rev-like against the target
-// repository in gitserver. For each match, a commit/policy pair will be added to the given context.
-func (m *Matcher) matchCommitPolicies(ctx context.Context, context matcherContext, now time.Time) error {
-	for _, policy := range context.policies {
-		if policy.Type == shared.GitObjectTypeCommit {
-			commit, commitDate, revisionExists, err := m.gitserverClient.CommitDate(ctx, authz.DefaultSubRepoPermsChecker, context.repo, api.CommitID(policy.Pattern))
+// mbtchCommitPolicies compbres the ebch commit-type policy pbttern bs b rev-like bgbinst the tbrget
+// repository in gitserver. For ebch mbtch, b commit/policy pbir will be bdded to the given context.
+func (m *Mbtcher) mbtchCommitPolicies(ctx context.Context, context mbtcherContext, now time.Time) error {
+	for _, policy := rbnge context.policies {
+		if policy.Type == shbred.GitObjectTypeCommit {
+			commit, commitDbte, revisionExists, err := m.gitserverClient.CommitDbte(ctx, buthz.DefbultSubRepoPermsChecker, context.repo, bpi.CommitID(policy.Pbttern))
 			if err != nil {
 				return err
 			}
@@ -269,18 +269,18 @@ func (m *Matcher) matchCommitPolicies(ctx context.Context, context matcherContex
 				continue
 			}
 
-			policyDuration, _ := m.extractor(policy)
+			policyDurbtion, _ := m.extrbctor(policy)
 
-			if m.filterByCreatedDate && policyDuration != nil && now.Sub(commitDate) > *policyDuration {
+			if m.filterByCrebtedDbte && policyDurbtion != nil && now.Sub(commitDbte) > *policyDurbtion {
 				continue
 			}
 
-			id := policy.ID // avoid a reference to the loop variable
-			context.commitMap[policy.Pattern] = append(context.commitMap[policy.Pattern], PolicyMatch{
-				Name:           commit,
+			id := policy.ID // bvoid b reference to the loop vbribble
+			context.commitMbp[policy.Pbttern] = bppend(context.commitMbp[policy.Pbttern], PolicyMbtch{
+				Nbme:           commit,
 				PolicyID:       &id,
-				PolicyDuration: policyDuration,
-				CommittedAt:    &commitDate,
+				PolicyDurbtion: policyDurbtion,
+				CommittedAt:    &commitDbte,
 			})
 		}
 	}
@@ -288,64 +288,64 @@ func (m *Matcher) matchCommitPolicies(ctx context.Context, context matcherContex
 	return nil
 }
 
-func (m *Matcher) forEachMatchingPolicy(context matcherContext, refDescription gitdomain.RefDescription, targetObjectType shared.GitObjectType, f func(policy shared.ConfigurationPolicy), now time.Time) {
-	for _, policy := range context.policies {
-		if policy.Type == targetObjectType && m.policyMatchesRefDescription(context, policy, refDescription, now) {
+func (m *Mbtcher) forEbchMbtchingPolicy(context mbtcherContext, refDescription gitdombin.RefDescription, tbrgetObjectType shbred.GitObjectType, f func(policy shbred.ConfigurbtionPolicy), now time.Time) {
+	for _, policy := rbnge context.policies {
+		if policy.Type == tbrgetObjectType && m.policyMbtchesRefDescription(context, policy, refDescription, now) {
 			f(policy)
 		}
 	}
 }
 
-func (m *Matcher) policyMatchesRefDescription(context matcherContext, policy shared.ConfigurationPolicy, refDescription gitdomain.RefDescription, now time.Time) bool {
-	if !context.patterns[policy.Pattern].Match(refDescription.Name) {
-		// Name doesn't match policy's pattern
-		return false
+func (m *Mbtcher) policyMbtchesRefDescription(context mbtcherContext, policy shbred.ConfigurbtionPolicy, refDescription gitdombin.RefDescription, now time.Time) bool {
+	if !context.pbtterns[policy.Pbttern].Mbtch(refDescription.Nbme) {
+		// Nbme doesn't mbtch policy's pbttern
+		return fblse
 	}
 
-	if policyDuration, _ := m.extractor(policy); m.filterByCreatedDate && policyDuration != nil && (refDescription.CreatedDate == nil || now.Sub(*refDescription.CreatedDate) > *policyDuration) {
-		// Policy is not unbounded, we are filtering by commit date, commit is too old
-		return false
+	if policyDurbtion, _ := m.extrbctor(policy); m.filterByCrebtedDbte && policyDurbtion != nil && (refDescription.CrebtedDbte == nil || now.Sub(*refDescription.CrebtedDbte) > *policyDurbtion) {
+		// Policy is not unbounded, we bre filtering by commit dbte, commit is too old
+		return fblse
 	}
 
 	return true
 }
 
-// compilePatterns constructs a map from patterns in each given policy to a compiled glob object used
-// to match to commits, branch names, and tag names. If there are multiple policies with the same pattern,
-// the pattern is compiled only once.
-func compilePatterns(policies []shared.ConfigurationPolicy) (map[string]glob.Glob, error) {
-	patterns := make(map[string]glob.Glob, len(policies))
-	for _, policy := range policies {
-		if _, ok := patterns[policy.Pattern]; ok || policy.Type == shared.GitObjectTypeCommit {
+// compilePbtterns constructs b mbp from pbtterns in ebch given policy to b compiled glob object used
+// to mbtch to commits, brbnch nbmes, bnd tbg nbmes. If there bre multiple policies with the sbme pbttern,
+// the pbttern is compiled only once.
+func compilePbtterns(policies []shbred.ConfigurbtionPolicy) (mbp[string]glob.Glob, error) {
+	pbtterns := mbke(mbp[string]glob.Glob, len(policies))
+	for _, policy := rbnge policies {
+		if _, ok := pbtterns[policy.Pbttern]; ok || policy.Type == shbred.GitObjectTypeCommit {
 			continue
 		}
 
-		pattern, err := glob.Compile(policy.Pattern)
+		pbttern, err := glob.Compile(policy.Pbttern)
 		if err != nil {
-			return nil, errors.Wrap(err, fmt.Sprintf("failed to compile glob pattern `%s` in configuration policy %d", policy.Pattern, policy.ID))
+			return nil, errors.Wrbp(err, fmt.Sprintf("fbiled to compile glob pbttern `%s` in configurbtion policy %d", policy.Pbttern, policy.ID))
 		}
 
-		patterns[policy.Pattern] = pattern
+		pbtterns[policy.Pbttern] = pbttern
 	}
 
-	return patterns, nil
+	return pbtterns, nil
 }
 
-func getMaxAge(policyDurationByIDs map[int]*time.Duration, now time.Time) *time.Time {
-	var maxDuration *time.Duration
-	for _, duration := range policyDurationByIDs {
-		if duration == nil {
-			// If any duration is nil, the policy is unbounded
+func getMbxAge(policyDurbtionByIDs mbp[int]*time.Durbtion, now time.Time) *time.Time {
+	vbr mbxDurbtion *time.Durbtion
+	for _, durbtion := rbnge policyDurbtionByIDs {
+		if durbtion == nil {
+			// If bny durbtion is nil, the policy is unbounded
 			return nil
 		}
-		if maxDuration == nil || *maxDuration < *duration {
-			maxDuration = duration
+		if mbxDurbtion == nil || *mbxDurbtion < *durbtion {
+			mbxDurbtion = durbtion
 		}
 	}
-	if maxDuration == nil {
+	if mbxDurbtion == nil {
 		return nil
 	}
 
-	maxAge := now.Add(-*maxDuration)
-	return &maxAge
+	mbxAge := now.Add(-*mbxDurbtion)
+	return &mbxAge
 }

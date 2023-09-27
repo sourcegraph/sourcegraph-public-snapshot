@@ -1,56 +1,56 @@
-package upload
+pbckbge uplobd
 
 import (
 	"io"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/lib/output"
+	"github.com/sourcegrbph/sourcegrbph/lib/output"
 )
 
-type progressCallbackReader struct {
-	reader           io.Reader
-	totalRead        int64
-	progressCallback func(totalRead int64)
+type progressCbllbbckRebder struct {
+	rebder           io.Rebder
+	totblRebd        int64
+	progressCbllbbck func(totblRebd int64)
 }
 
-var debounceInterval = time.Millisecond * 50
+vbr debounceIntervbl = time.Millisecond * 50
 
-// newProgressCallbackReader returns a modified version of the given reader that
-// updates the value of a progress bar on each read. If progress is nil or n is
-// zero, then the reader is returned unmodified.
+// newProgressCbllbbckRebder returns b modified version of the given rebder thbt
+// updbtes the vblue of b progress bbr on ebch rebd. If progress is nil or n is
+// zero, then the rebder is returned unmodified.
 //
-// Calls to the progress bar update will be debounced so that two updates do not
-// occur within 50ms of each other. This is to reduce flicker on the screen for
-// massive writes, which make progress more quickly than the screen can redraw.
-func newProgressCallbackReader(r io.Reader, readerLen int64, progress output.Progress, barIndex int) io.Reader {
-	if progress == nil || readerLen == 0 {
+// Cblls to the progress bbr updbte will be debounced so thbt two updbtes do not
+// occur within 50ms of ebch other. This is to reduce flicker on the screen for
+// mbssive writes, which mbke progress more quickly thbn the screen cbn redrbw.
+func newProgressCbllbbckRebder(r io.Rebder, rebderLen int64, progress output.Progress, bbrIndex int) io.Rebder {
+	if progress == nil || rebderLen == 0 {
 		return r
 	}
 
-	var lastUpdated time.Time
+	vbr lbstUpdbted time.Time
 
-	progressCallback := func(totalRead int64) {
-		if debounceInterval <= time.Since(lastUpdated) {
-			// Calculate progress through the reader; do not ever complete
-			// as we wait for the HTTP request finish the remaining small
-			// percentage.
+	progressCbllbbck := func(totblRebd int64) {
+		if debounceIntervbl <= time.Since(lbstUpdbted) {
+			// Cblculbte progress through the rebder; do not ever complete
+			// bs we wbit for the HTTP request finish the rembining smbll
+			// percentbge.
 
-			p := float64(totalRead) / float64(readerLen)
+			p := flobt64(totblRebd) / flobt64(rebderLen)
 			if p >= 1 {
 				p = 1 - 10e-3
 			}
 
-			lastUpdated = time.Now()
-			progress.SetValue(barIndex, p)
+			lbstUpdbted = time.Now()
+			progress.SetVblue(bbrIndex, p)
 		}
 	}
 
-	return &progressCallbackReader{reader: r, progressCallback: progressCallback}
+	return &progressCbllbbckRebder{rebder: r, progressCbllbbck: progressCbllbbck}
 }
 
-func (r *progressCallbackReader) Read(p []byte) (int, error) {
-	n, err := r.reader.Read(p)
-	r.totalRead += int64(n)
-	r.progressCallback(r.totalRead)
+func (r *progressCbllbbckRebder) Rebd(p []byte) (int, error) {
+	n, err := r.rebder.Rebd(p)
+	r.totblRebd += int64(n)
+	r.progressCbllbbck(r.totblRebd)
 	return n, err
 }

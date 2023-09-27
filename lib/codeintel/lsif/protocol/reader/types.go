@@ -1,12 +1,12 @@
-package reader
+pbckbge rebder
 
-import "github.com/sourcegraph/sourcegraph/lib/codeintel/lsif/protocol"
+import "github.com/sourcegrbph/sourcegrbph/lib/codeintel/lsif/protocol"
 
 type Element struct {
 	ID      int
 	Type    string
-	Label   string
-	Payload any
+	Lbbel   string
+	Pbylobd bny
 }
 
 type Edge struct {
@@ -17,20 +17,20 @@ type Edge struct {
 }
 
 type ToolInfo struct {
-	Name    string
+	Nbme    string
 	Version string
 }
 
-type MetaData struct {
+type MetbDbtb struct {
 	Version          string
 	ProjectRoot      string
 	PositionEncoding string
 	ToolInfo         ToolInfo
 }
 
-type Range struct {
-	protocol.RangeData
-	Tag *protocol.RangeTag `json:"tag,omitempty"`
+type Rbnge struct {
+	protocol.RbngeDbtb
+	Tbg *protocol.RbngeTbg `json:"tbg,omitempty"`
 }
 
 type ResultSet struct{}
@@ -41,19 +41,19 @@ type Moniker struct {
 	Identifier string
 }
 
-type PackageInformation struct {
-	Name    string
+type PbckbgeInformbtion struct {
+	Nbme    string
 	Version string
-	Manager string
+	Mbnbger string
 }
 
-type Diagnostic struct {
+type Dibgnostic struct {
 	Severity       int
 	Code           string
-	Message        string
+	Messbge        string
 	Source         string
-	StartLine      int
-	StartCharacter int
+	StbrtLine      int
+	StbrtChbrbcter int
 	EndLine        int
-	EndCharacter   int
+	EndChbrbcter   int
 }

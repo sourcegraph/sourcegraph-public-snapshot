@@ -1,44 +1,44 @@
-package codeintel
+pbckbge codeintel
 
 import (
 	"context"
 
-	"github.com/sourcegraph/sourcegraph/cmd/worker/job"
-	"github.com/sourcegraph/sourcegraph/cmd/worker/shared/init/codeintel"
-	workerdb "github.com/sourcegraph/sourcegraph/cmd/worker/shared/init/db"
+	"github.com/sourcegrbph/sourcegrbph/cmd/worker/job"
+	"github.com/sourcegrbph/sourcegrbph/cmd/worker/shbred/init/codeintel"
+	workerdb "github.com/sourcegrbph/sourcegrbph/cmd/worker/shbred/init/db"
 
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads"
-	"github.com/sourcegraph/sourcegraph/internal/env"
-	"github.com/sourcegraph/sourcegraph/internal/goroutine"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegrbph/sourcegrbph/internbl/codeintel/uplobds"
+	"github.com/sourcegrbph/sourcegrbph/internbl/env"
+	"github.com/sourcegrbph/sourcegrbph/internbl/goroutine"
+	"github.com/sourcegrbph/sourcegrbph/internbl/observbtion"
 )
 
-type uploadExpirerJob struct{}
+type uplobdExpirerJob struct{}
 
-func NewUploadExpirerJob() job.Job {
-	return &uploadExpirerJob{}
+func NewUplobdExpirerJob() job.Job {
+	return &uplobdExpirerJob{}
 }
 
-func (j *uploadExpirerJob) Description() string {
+func (j *uplobdExpirerJob) Description() string {
 	return ""
 }
 
-func (j *uploadExpirerJob) Config() []env.Config {
+func (j *uplobdExpirerJob) Config() []env.Config {
 	return []env.Config{
-		uploads.ExpirerConfigInst,
+		uplobds.ExpirerConfigInst,
 	}
 }
 
-func (j *uploadExpirerJob) Routines(_ context.Context, observationCtx *observation.Context) ([]goroutine.BackgroundRoutine, error) {
-	services, err := codeintel.InitServices(observationCtx)
+func (j *uplobdExpirerJob) Routines(_ context.Context, observbtionCtx *observbtion.Context) ([]goroutine.BbckgroundRoutine, error) {
+	services, err := codeintel.InitServices(observbtionCtx)
 	if err != nil {
 		return nil, err
 	}
 
-	db, err := workerdb.InitDB(observationCtx)
+	db, err := workerdb.InitDB(observbtionCtx)
 	if err != nil {
 		return nil, err
 	}
 
-	return uploads.NewExpirationTasks(observationCtx, services.UploadsService, services.PoliciesService, db.Repos()), nil
+	return uplobds.NewExpirbtionTbsks(observbtionCtx, services.UplobdsService, services.PoliciesService, db.Repos()), nil
 }

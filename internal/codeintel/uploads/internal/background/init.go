@@ -1,64 +1,64 @@
-package background
+pbckbge bbckground
 
 import (
 	"os"
 	"strings"
 
-	"github.com/sourcegraph/log"
+	"github.com/sourcegrbph/log"
 
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/internal/background/backfiller"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/internal/background/commitgraph"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/internal/background/expirer"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/internal/background/janitor"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/internal/background/processor"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/internal/lsifstore"
-	uploadsstore "github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/internal/store"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
-	"github.com/sourcegraph/sourcegraph/internal/goroutine"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/internal/uploadstore"
-	"github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker"
-	dbworkerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
+	"github.com/sourcegrbph/sourcegrbph/internbl/codeintel/uplobds/internbl/bbckground/bbckfiller"
+	"github.com/sourcegrbph/sourcegrbph/internbl/codeintel/uplobds/internbl/bbckground/commitgrbph"
+	"github.com/sourcegrbph/sourcegrbph/internbl/codeintel/uplobds/internbl/bbckground/expirer"
+	"github.com/sourcegrbph/sourcegrbph/internbl/codeintel/uplobds/internbl/bbckground/jbnitor"
+	"github.com/sourcegrbph/sourcegrbph/internbl/codeintel/uplobds/internbl/bbckground/processor"
+	"github.com/sourcegrbph/sourcegrbph/internbl/codeintel/uplobds/internbl/lsifstore"
+	uplobdsstore "github.com/sourcegrbph/sourcegrbph/internbl/codeintel/uplobds/internbl/store"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/gitserver"
+	"github.com/sourcegrbph/sourcegrbph/internbl/goroutine"
+	"github.com/sourcegrbph/sourcegrbph/internbl/observbtion"
+	"github.com/sourcegrbph/sourcegrbph/internbl/uplobdstore"
+	"github.com/sourcegrbph/sourcegrbph/internbl/workerutil/dbworker"
+	dbworkerstore "github.com/sourcegrbph/sourcegrbph/internbl/workerutil/dbworker/store"
 )
 
-func NewUploadProcessorJob(
-	observationCtx *observation.Context,
-	store uploadsstore.Store,
+func NewUplobdProcessorJob(
+	observbtionCtx *observbtion.Context,
+	store uplobdsstore.Store,
 	lsifstore lsifstore.Store,
 	repoStore processor.RepoStore,
 	gitserverClient gitserver.Client,
-	db database.DB,
-	uploadStore uploadstore.Store,
+	db dbtbbbse.DB,
+	uplobdStore uplobdstore.Store,
 	config *processor.Config,
-) []goroutine.BackgroundRoutine {
-	metrics := processor.NewResetterMetrics(observationCtx)
-	uploadsProcessorStore := dbworkerstore.New(observationCtx, db.Handle(), uploadsstore.UploadWorkerStoreOptions)
-	uploadsResetterStore := dbworkerstore.New(observationCtx.Clone(observation.Honeycomb(nil)), db.Handle(), uploadsstore.UploadWorkerStoreOptions)
-	dbworker.InitPrometheusMetric(observationCtx, uploadsProcessorStore, "codeintel", "upload", nil)
+) []goroutine.BbckgroundRoutine {
+	metrics := processor.NewResetterMetrics(observbtionCtx)
+	uplobdsProcessorStore := dbworkerstore.New(observbtionCtx, db.Hbndle(), uplobdsstore.UplobdWorkerStoreOptions)
+	uplobdsResetterStore := dbworkerstore.New(observbtionCtx.Clone(observbtion.Honeycomb(nil)), db.Hbndle(), uplobdsstore.UplobdWorkerStoreOptions)
+	dbworker.InitPrometheusMetric(observbtionCtx, uplobdsProcessorStore, "codeintel", "uplobd", nil)
 
-	return []goroutine.BackgroundRoutine{
-		processor.NewUploadProcessorWorker(
-			observationCtx,
+	return []goroutine.BbckgroundRoutine{
+		processor.NewUplobdProcessorWorker(
+			observbtionCtx,
 			store,
 			lsifstore,
 			gitserverClient,
 			repoStore,
-			uploadsProcessorStore,
-			uploadStore,
+			uplobdsProcessorStore,
+			uplobdStore,
 			config,
 		),
-		processor.NewUploadResetter(observationCtx.Logger, uploadsResetterStore, metrics),
+		processor.NewUplobdResetter(observbtionCtx.Logger, uplobdsResetterStore, metrics),
 	}
 }
 
-func NewCommittedAtBackfillerJob(
-	store uploadsstore.Store,
+func NewCommittedAtBbckfillerJob(
+	store uplobdsstore.Store,
 	gitserverClient gitserver.Client,
-	config *backfiller.Config,
-) []goroutine.BackgroundRoutine {
-	return []goroutine.BackgroundRoutine{
-		backfiller.NewCommittedAtBackfiller(
+	config *bbckfiller.Config,
+) []goroutine.BbckgroundRoutine {
+	return []goroutine.BbckgroundRoutine{
+		bbckfiller.NewCommittedAtBbckfiller(
 			store,
 			gitserverClient,
 			config,
@@ -66,54 +66,54 @@ func NewCommittedAtBackfillerJob(
 	}
 }
 
-func NewJanitor(
-	observationCtx *observation.Context,
-	store uploadsstore.Store,
+func NewJbnitor(
+	observbtionCtx *observbtion.Context,
+	store uplobdsstore.Store,
 	lsifstore lsifstore.Store,
 	gitserverClient gitserver.Client,
-	config *janitor.Config,
-) []goroutine.BackgroundRoutine {
-	jobsByName := map[string]goroutine.BackgroundRoutine{
-		"DeletedRepositoryJanitor":           janitor.NewDeletedRepositoryJanitor(store, config, observationCtx),
-		"UnknownCommitJanitor":               janitor.NewUnknownCommitJanitor(store, gitserverClient, config, observationCtx),
-		"AbandonedUploadJanitor":             janitor.NewAbandonedUploadJanitor(store, config, observationCtx),
-		"ExpiredUploadJanitor":               janitor.NewExpiredUploadJanitor(store, config, observationCtx),
-		"ExpiredUploadTraversalJanitor":      janitor.NewExpiredUploadTraversalJanitor(store, config, observationCtx),
-		"HardDeleter":                        janitor.NewHardDeleter(store, lsifstore, config, observationCtx),
-		"AuditLogJanitor":                    janitor.NewAuditLogJanitor(store, config, observationCtx),
-		"SCIPExpirationTask":                 janitor.NewSCIPExpirationTask(lsifstore, config, observationCtx),
-		"AbandonedSchemaVersionsRecordsTask": janitor.NewAbandonedSchemaVersionsRecordsTask(lsifstore, config, observationCtx),
-		"UnknownRepositoryJanitor":           janitor.NewUnknownRepositoryJanitor(store, config, observationCtx),
-		"UnknownCommitJanitor2":              janitor.NewUnknownCommitJanitor2(store, gitserverClient, config, observationCtx),
-		"ExpiredRecordJanitor":               janitor.NewExpiredRecordJanitor(store, config, observationCtx),
-		"FrontendDBReconciler":               janitor.NewFrontendDBReconciler(store, lsifstore, config, observationCtx),
-		"CodeIntelDBReconciler":              janitor.NewCodeIntelDBReconciler(store, lsifstore, config, observationCtx),
+	config *jbnitor.Config,
+) []goroutine.BbckgroundRoutine {
+	jobsByNbme := mbp[string]goroutine.BbckgroundRoutine{
+		"DeletedRepositoryJbnitor":           jbnitor.NewDeletedRepositoryJbnitor(store, config, observbtionCtx),
+		"UnknownCommitJbnitor":               jbnitor.NewUnknownCommitJbnitor(store, gitserverClient, config, observbtionCtx),
+		"AbbndonedUplobdJbnitor":             jbnitor.NewAbbndonedUplobdJbnitor(store, config, observbtionCtx),
+		"ExpiredUplobdJbnitor":               jbnitor.NewExpiredUplobdJbnitor(store, config, observbtionCtx),
+		"ExpiredUplobdTrbversblJbnitor":      jbnitor.NewExpiredUplobdTrbversblJbnitor(store, config, observbtionCtx),
+		"HbrdDeleter":                        jbnitor.NewHbrdDeleter(store, lsifstore, config, observbtionCtx),
+		"AuditLogJbnitor":                    jbnitor.NewAuditLogJbnitor(store, config, observbtionCtx),
+		"SCIPExpirbtionTbsk":                 jbnitor.NewSCIPExpirbtionTbsk(lsifstore, config, observbtionCtx),
+		"AbbndonedSchembVersionsRecordsTbsk": jbnitor.NewAbbndonedSchembVersionsRecordsTbsk(lsifstore, config, observbtionCtx),
+		"UnknownRepositoryJbnitor":           jbnitor.NewUnknownRepositoryJbnitor(store, config, observbtionCtx),
+		"UnknownCommitJbnitor2":              jbnitor.NewUnknownCommitJbnitor2(store, gitserverClient, config, observbtionCtx),
+		"ExpiredRecordJbnitor":               jbnitor.NewExpiredRecordJbnitor(store, config, observbtionCtx),
+		"FrontendDBReconciler":               jbnitor.NewFrontendDBReconciler(store, lsifstore, config, observbtionCtx),
+		"CodeIntelDBReconciler":              jbnitor.NewCodeIntelDBReconciler(store, lsifstore, config, observbtionCtx),
 	}
 
-	disabledJobs := map[string]struct{}{}
-	for _, name := range strings.Split(os.Getenv("CODEINTEL_UPLOAD_JANITOR_DISABLED_SUB_JOBS"), ",") {
-		disabledJobs[name] = struct{}{}
+	disbbledJobs := mbp[string]struct{}{}
+	for _, nbme := rbnge strings.Split(os.Getenv("CODEINTEL_UPLOAD_JANITOR_DISABLED_SUB_JOBS"), ",") {
+		disbbledJobs[nbme] = struct{}{}
 	}
 
-	jobs := []goroutine.BackgroundRoutine{}
-	for name, v := range jobsByName {
-		if _, ok := disabledJobs[name]; ok {
-			observationCtx.Logger.Warn("DISABLING CODE INTEL UPLOAD JANITOR SUB-JOB", log.String("name", name))
+	jobs := []goroutine.BbckgroundRoutine{}
+	for nbme, v := rbnge jobsByNbme {
+		if _, ok := disbbledJobs[nbme]; ok {
+			observbtionCtx.Logger.Wbrn("DISABLING CODE INTEL UPLOAD JANITOR SUB-JOB", log.String("nbme", nbme))
 		} else {
-			jobs = append(jobs, v)
+			jobs = bppend(jobs, v)
 		}
 	}
 
 	return jobs
 }
 
-func NewCommitGraphUpdater(
-	store uploadsstore.Store,
+func NewCommitGrbphUpdbter(
+	store uplobdsstore.Store,
 	gitserverClient gitserver.Client,
-	config *commitgraph.Config,
-) []goroutine.BackgroundRoutine {
-	return []goroutine.BackgroundRoutine{
-		commitgraph.NewCommitGraphUpdater(
+	config *commitgrbph.Config,
+) []goroutine.BbckgroundRoutine {
+	return []goroutine.BbckgroundRoutine{
+		commitgrbph.NewCommitGrbphUpdbter(
 			store,
 			gitserverClient,
 			config,
@@ -121,17 +121,17 @@ func NewCommitGraphUpdater(
 	}
 }
 
-func NewExpirationTasks(
-	observationCtx *observation.Context,
-	store uploadsstore.Store,
+func NewExpirbtionTbsks(
+	observbtionCtx *observbtion.Context,
+	store uplobdsstore.Store,
 	policySvc expirer.PolicyService,
 	gitserverClient gitserver.Client,
-	repoStore database.RepoStore,
+	repoStore dbtbbbse.RepoStore,
 	config *expirer.Config,
-) []goroutine.BackgroundRoutine {
-	return []goroutine.BackgroundRoutine{
-		expirer.NewUploadExpirer(
-			observationCtx,
+) []goroutine.BbckgroundRoutine {
+	return []goroutine.BbckgroundRoutine{
+		expirer.NewUplobdExpirer(
+			observbtionCtx,
 			store,
 			repoStore,
 			policySvc,

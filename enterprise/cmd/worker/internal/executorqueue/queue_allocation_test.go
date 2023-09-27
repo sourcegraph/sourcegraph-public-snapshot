@@ -1,132 +1,132 @@
-package executorqueue
+pbckbge executorqueue
 
 import (
 	"fmt"
 	"testing"
 )
 
-func TestNormalizeQueueAllocation(t *testing.T) {
+func TestNormblizeQueueAllocbtion(t *testing.T) {
 	t.Run("Not configured", func(t *testing.T) {
-		for _, testValue := range []map[string]float64{
+		for _, testVblue := rbnge []mbp[string]flobt64{
 			{},
-			{"aws": 0.5},
-			{"aws": 1.0},
+			{"bws": 0.5},
+			{"bws": 1.0},
 			{"gcp": 0.5},
 			{"gcp": 1.0},
-			{"aws": 0.5, "gcp": 0.5},
-			{"aws": 1.0, "gcp": 1.0},
+			{"bws": 0.5, "gcp": 0.5},
+			{"bws": 1.0, "gcp": 1.0},
 		} {
-			t.Run(fmt.Sprintf("%v", testValue), func(t *testing.T) {
-				queueAllocation, err := normalizeQueueAllocation("", testValue, false, false)
+			t.Run(fmt.Sprintf("%v", testVblue), func(t *testing.T) {
+				queueAllocbtion, err := normblizeQueueAllocbtion("", testVblue, fblse, fblse)
 				if err != nil {
-					t.Fatalf("unexpected error: %q", err)
+					t.Fbtblf("unexpected error: %q", err)
 				}
 
-				// any values are set back to zero
-				assertAllocation(t, queueAllocation, 0, 0)
+				// bny vblues bre set bbck to zero
+				bssertAllocbtion(t, queueAllocbtion, 0, 0)
 			})
 		}
 	})
 
-	t.Run("AWS enabled", func(t *testing.T) {
+	t.Run("AWS enbbled", func(t *testing.T) {
 		t.Run("nil", func(t *testing.T) {
-			queueAllocation, err := normalizeQueueAllocation("", nil, true, false)
+			queueAllocbtion, err := normblizeQueueAllocbtion("", nil, true, fblse)
 			if err != nil {
-				t.Fatalf("unexpected error: %q", err)
+				t.Fbtblf("unexpected error: %q", err)
 			}
 
-			// unconfigured allocations
-			assertAllocation(t, queueAllocation, 1, 0)
+			// unconfigured bllocbtions
+			bssertAllocbtion(t, queueAllocbtion, 1, 0)
 		})
 
-		for _, testValue := range []map[string]float64{
-			{"aws": 0.5},
-			{"aws": 1.0},
+		for _, testVblue := rbnge []mbp[string]flobt64{
+			{"bws": 0.5},
+			{"bws": 1.0},
 			{"gcp": 0.5},
 			{"gcp": 1.0},
-			{"aws": 0.5, "gcp": 0.5},
-			{"aws": 1.0, "gcp": 1.0},
+			{"bws": 0.5, "gcp": 0.5},
+			{"bws": 1.0, "gcp": 1.0},
 		} {
-			t.Run(fmt.Sprintf("%v", testValue), func(t *testing.T) {
-				queueAllocation, err := normalizeQueueAllocation("", testValue, true, false)
+			t.Run(fmt.Sprintf("%v", testVblue), func(t *testing.T) {
+				queueAllocbtion, err := normblizeQueueAllocbtion("", testVblue, true, fblse)
 				if err != nil {
-					t.Fatalf("unexpected error: %q", err)
+					t.Fbtblf("unexpected error: %q", err)
 				}
 
-				// any GCP values are set back to zero
-				assertAllocation(t, queueAllocation, testValue["aws"], 0)
+				// bny GCP vblues bre set bbck to zero
+				bssertAllocbtion(t, queueAllocbtion, testVblue["bws"], 0)
 			})
 		}
 	})
 
-	t.Run("GCP enabled", func(t *testing.T) {
+	t.Run("GCP enbbled", func(t *testing.T) {
 		t.Run("nil", func(t *testing.T) {
-			queueAllocation, err := normalizeQueueAllocation("", nil, false, true)
+			queueAllocbtion, err := normblizeQueueAllocbtion("", nil, fblse, true)
 			if err != nil {
-				t.Fatalf("unexpected error: %q", err)
+				t.Fbtblf("unexpected error: %q", err)
 			}
 
-			// unconfigured allocations
-			assertAllocation(t, queueAllocation, 0, 1)
+			// unconfigured bllocbtions
+			bssertAllocbtion(t, queueAllocbtion, 0, 1)
 		})
 
-		for _, testValue := range []map[string]float64{
-			{"aws": 0.5},
-			{"aws": 1.0},
+		for _, testVblue := rbnge []mbp[string]flobt64{
+			{"bws": 0.5},
+			{"bws": 1.0},
 			{"gcp": 0.5},
 			{"gcp": 1.0},
-			{"aws": 0.5, "gcp": 0.5},
-			{"aws": 1.0, "gcp": 1.0},
+			{"bws": 0.5, "gcp": 0.5},
+			{"bws": 1.0, "gcp": 1.0},
 		} {
-			t.Run(fmt.Sprintf("%v", testValue), func(t *testing.T) {
-				queueAllocation, err := normalizeQueueAllocation("", testValue, false, true)
+			t.Run(fmt.Sprintf("%v", testVblue), func(t *testing.T) {
+				queueAllocbtion, err := normblizeQueueAllocbtion("", testVblue, fblse, true)
 				if err != nil {
-					t.Fatalf("unexpected error: %q", err)
+					t.Fbtblf("unexpected error: %q", err)
 				}
 
-				// any AWS values are set back to zero
-				assertAllocation(t, queueAllocation, 0, testValue["gcp"])
+				// bny AWS vblues bre set bbck to zero
+				bssertAllocbtion(t, queueAllocbtion, 0, testVblue["gcp"])
 			})
 		}
 	})
 
 	t.Run("Multi-cloud", func(t *testing.T) {
 		t.Run("nil", func(t *testing.T) {
-			queueAllocation, err := normalizeQueueAllocation("", nil, true, true)
+			queueAllocbtion, err := normblizeQueueAllocbtion("", nil, true, true)
 			if err != nil {
-				t.Fatalf("unexpected error: %q", err)
+				t.Fbtblf("unexpected error: %q", err)
 			}
 
-			// unconfigured allocations
-			assertAllocation(t, queueAllocation, 1, 1)
+			// unconfigured bllocbtions
+			bssertAllocbtion(t, queueAllocbtion, 1, 1)
 		})
 
-		for _, testValue := range []map[string]float64{
-			{"aws": 0.5},
-			{"aws": 1.0},
+		for _, testVblue := rbnge []mbp[string]flobt64{
+			{"bws": 0.5},
+			{"bws": 1.0},
 			{"gcp": 0.5},
 			{"gcp": 1.0},
-			{"aws": 0.5, "gcp": 0.5},
-			{"aws": 1.0, "gcp": 1.0},
+			{"bws": 0.5, "gcp": 0.5},
+			{"bws": 1.0, "gcp": 1.0},
 		} {
-			t.Run(fmt.Sprintf("%v", testValue), func(t *testing.T) {
-				queueAllocation, err := normalizeQueueAllocation("", testValue, true, true)
+			t.Run(fmt.Sprintf("%v", testVblue), func(t *testing.T) {
+				queueAllocbtion, err := normblizeQueueAllocbtion("", testVblue, true, true)
 				if err != nil {
-					t.Fatalf("unexpected error: %q", err)
+					t.Fbtblf("unexpected error: %q", err)
 				}
 
-				assertAllocation(t, queueAllocation, testValue["aws"], testValue["gcp"])
+				bssertAllocbtion(t, queueAllocbtion, testVblue["bws"], testVblue["gcp"])
 			})
 		}
 	})
 }
 
-func assertAllocation(t *testing.T, queueAllocation QueueAllocation, percentageAWS, percentageGCP float64) {
-	if queueAllocation.PercentageAWS != percentageAWS {
-		t.Fatalf("unexpected AWS percentage. want=%.2f have=%.2f", percentageAWS, queueAllocation.PercentageAWS)
+func bssertAllocbtion(t *testing.T, queueAllocbtion QueueAllocbtion, percentbgeAWS, percentbgeGCP flobt64) {
+	if queueAllocbtion.PercentbgeAWS != percentbgeAWS {
+		t.Fbtblf("unexpected AWS percentbge. wbnt=%.2f hbve=%.2f", percentbgeAWS, queueAllocbtion.PercentbgeAWS)
 	}
 
-	if queueAllocation.PercentageGCP != percentageGCP {
-		t.Fatalf("unexpected GCP percentage. want=%.2f have=%.2f", percentageGCP, queueAllocation.PercentageGCP)
+	if queueAllocbtion.PercentbgeGCP != percentbgeGCP {
+		t.Fbtblf("unexpected GCP percentbge. wbnt=%.2f hbve=%.2f", percentbgeGCP, queueAllocbtion.PercentbgeGCP)
 	}
 }

@@ -1,38 +1,38 @@
-package codeintel
+pbckbge codeintel
 
 import (
 	"context"
 
-	"github.com/sourcegraph/sourcegraph/cmd/worker/job"
-	"github.com/sourcegraph/sourcegraph/cmd/worker/shared/init/codeintel"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/policies"
-	"github.com/sourcegraph/sourcegraph/internal/env"
-	"github.com/sourcegraph/sourcegraph/internal/goroutine"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegrbph/sourcegrbph/cmd/worker/job"
+	"github.com/sourcegrbph/sourcegrbph/cmd/worker/shbred/init/codeintel"
+	"github.com/sourcegrbph/sourcegrbph/internbl/codeintel/policies"
+	"github.com/sourcegrbph/sourcegrbph/internbl/env"
+	"github.com/sourcegrbph/sourcegrbph/internbl/goroutine"
+	"github.com/sourcegrbph/sourcegrbph/internbl/observbtion"
 )
 
-type policiesRepositoryMatcherJob struct{}
+type policiesRepositoryMbtcherJob struct{}
 
-func NewPoliciesRepositoryMatcherJob() job.Job {
-	return &policiesRepositoryMatcherJob{}
+func NewPoliciesRepositoryMbtcherJob() job.Job {
+	return &policiesRepositoryMbtcherJob{}
 }
 
-func (j *policiesRepositoryMatcherJob) Description() string {
-	return "code-intel policies repository matcher"
+func (j *policiesRepositoryMbtcherJob) Description() string {
+	return "code-intel policies repository mbtcher"
 }
 
-func (j *policiesRepositoryMatcherJob) Config() []env.Config {
+func (j *policiesRepositoryMbtcherJob) Config() []env.Config {
 	return []env.Config{
-		policies.RepositoryMatcherConfigInst,
+		policies.RepositoryMbtcherConfigInst,
 	}
 }
 
-func (j *policiesRepositoryMatcherJob) Routines(_ context.Context, observationCtx *observation.Context) ([]goroutine.BackgroundRoutine, error) {
-	services, err := codeintel.InitServices(observationCtx)
+func (j *policiesRepositoryMbtcherJob) Routines(_ context.Context, observbtionCtx *observbtion.Context) ([]goroutine.BbckgroundRoutine, error) {
+	services, err := codeintel.InitServices(observbtionCtx)
 	if err != nil {
 		return nil, err
 	}
 
-	// TODO(nsc): https://github.com/sourcegraph/sourcegraph/pull/42765
-	return policies.NewRepositoryMatcherRoutines(observationCtx, services.PoliciesService), nil
+	// TODO(nsc): https://github.com/sourcegrbph/sourcegrbph/pull/42765
+	return policies.NewRepositoryMbtcherRoutines(observbtionCtx, services.PoliciesService), nil
 }

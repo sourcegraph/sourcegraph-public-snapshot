@@ -1,31 +1,31 @@
-package sourcegraphoperator
+pbckbge sourcegrbphoperbtor
 
 import (
 	"testing"
 
-	"github.com/sourcegraph/sourcegraph/internal/cloud"
-	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/schema"
+	"github.com/sourcegrbph/sourcegrbph/internbl/cloud"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf"
+	"github.com/sourcegrbph/sourcegrbph/schemb"
 )
 
-func TestValidateConfig(t *testing.T) {
+func TestVblidbteConfig(t *testing.T) {
 	cloud.MockSiteConfig(
 		t,
-		&cloud.SchemaSiteConfig{
-			AuthProviders: &cloud.SchemaAuthProviders{
-				SourcegraphOperator: &cloud.SchemaAuthProviderSourcegraphOperator{
-					Issuer: "https://example.com/alice",
+		&cloud.SchembSiteConfig{
+			AuthProviders: &cloud.SchembAuthProviders{
+				SourcegrbphOperbtor: &cloud.SchembAuthProviderSourcegrbphOperbtor{
+					Issuer: "https://exbmple.com/blice",
 				},
 			},
 		},
 	)
 
-	conf.TestValidator(
+	conf.TestVblidbtor(
 		t,
 		conf.Unified{
-			SiteConfiguration: schema.SiteConfiguration{},
+			SiteConfigurbtion: schemb.SiteConfigurbtion{},
 		},
-		validateConfig,
-		conf.NewSiteProblems("Sourcegraph Operator authentication provider requires `externalURL` to be set to the external URL of your site (example: https://sourcegraph.example.com)"),
+		vblidbteConfig,
+		conf.NewSiteProblems("Sourcegrbph Operbtor buthenticbtion provider requires `externblURL` to be set to the externbl URL of your site (exbmple: https://sourcegrbph.exbmple.com)"),
 	)
 }

@@ -1,8 +1,8 @@
-package exportloopref
+pbckbge exportloopref
 
 import (
 	"github.com/kyoh86/exportloopref"
-	"github.com/sourcegraph/sourcegraph/dev/linters/nolint"
+	"github.com/sourcegrbph/sourcegrbph/dev/linters/nolint"
 )
 
-var Analyzer = nolint.Wrap(exportloopref.Analyzer)
+vbr Anblyzer = nolint.Wrbp(exportloopref.Anblyzer)

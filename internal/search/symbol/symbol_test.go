@@ -1,76 +1,76 @@
-package symbol
+pbckbge symbol
 
 import (
 	"context"
 	"testing"
 
-	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	srp "github.com/sourcegraph/sourcegraph/internal/authz/subrepoperms"
-	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/search"
-	"github.com/sourcegraph/sourcegraph/internal/search/result"
-	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/sourcegraph/sourcegraph/schema"
-	"github.com/stretchr/testify/assert"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bctor"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi"
+	srp "github.com/sourcegrbph/sourcegrbph/internbl/buthz/subrepoperms"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf"
+	"github.com/sourcegrbph/sourcegrbph/internbl/sebrch"
+	"github.com/sourcegrbph/sourcegrbph/internbl/sebrch/result"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/schemb"
+	"github.com/stretchr/testify/bssert"
 )
 
-func TestSearchZoektDoesntPanicWithNilQuery(t *testing.T) {
-	// As soon as we reach Streamer.Search function, we can consider test successful,
-	// that's why we can just mock it.
-	mockStreamer := NewMockStreamer()
+func TestSebrchZoektDoesntPbnicWithNilQuery(t *testing.T) {
+	// As soon bs we rebch Strebmer.Sebrch function, we cbn consider test successful,
+	// thbt's why we cbn just mock it.
+	mockStrebmer := NewMockStrebmer()
 	expectedErr := errors.New("short circuit")
-	mockStreamer.SearchFunc.SetDefaultReturn(nil, expectedErr)
-	search.IndexedMock = mockStreamer
-	t.Cleanup(func() {
-		search.IndexedMock = nil
+	mockStrebmer.SebrchFunc.SetDefbultReturn(nil, expectedErr)
+	sebrch.IndexedMock = mockStrebmer
+	t.Clebnup(func() {
+		sebrch.IndexedMock = nil
 	})
 
-	_, err := searchZoekt(context.Background(), types.MinimalRepo{ID: 1}, "commitID", nil, "branch", nil, nil, nil)
-	assert.ErrorIs(t, err, expectedErr)
+	_, err := sebrchZoekt(context.Bbckground(), types.MinimblRepo{ID: 1}, "commitID", nil, "brbnch", nil, nil, nil)
+	bssert.ErrorIs(t, err, expectedErr)
 }
 
 func TestFilterZoektResults(t *testing.T) {
 	conf.Mock(&conf.Unified{
-		SiteConfiguration: schema.SiteConfiguration{
-			ExperimentalFeatures: &schema.ExperimentalFeatures{
-				SubRepoPermissions: &schema.SubRepoPermissions{
-					Enabled: true,
+		SiteConfigurbtion: schemb.SiteConfigurbtion{
+			ExperimentblFebtures: &schemb.ExperimentblFebtures{
+				SubRepoPermissions: &schemb.SubRepoPermissions{
+					Enbbled: true,
 				},
 			},
 		},
 	})
-	t.Cleanup(func() { conf.Mock(nil) })
+	t.Clebnup(func() { conf.Mock(nil) })
 
-	repoName := api.RepoName("foo")
-	ctx := context.Background()
-	ctx = actor.WithActor(ctx, &actor.Actor{
+	repoNbme := bpi.RepoNbme("foo")
+	ctx := context.Bbckground()
+	ctx = bctor.WithActor(ctx, &bctor.Actor{
 		UID: 1,
 	})
-	checker, err := srp.NewSimpleChecker(repoName, []string{"/**", "-/*_test.go"})
+	checker, err := srp.NewSimpleChecker(repoNbme, []string{"/**", "-/*_test.go"})
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
-	results := []*result.SymbolMatch{
+	results := []*result.SymbolMbtch{
 		{
 			Symbol: result.Symbol{},
 			File: &result.File{
-				Path: "foo.go",
+				Pbth: "foo.go",
 			},
 		},
 		{
 			Symbol: result.Symbol{},
 			File: &result.File{
-				Path: "foo_test.go",
+				Pbth: "foo_test.go",
 			},
 		},
 	}
-	filtered, err := FilterZoektResults(ctx, checker, repoName, results)
+	filtered, err := FilterZoektResults(ctx, checker, repoNbme, results)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
-	assert.Len(t, filtered, 1)
+	bssert.Len(t, filtered, 1)
 	r := filtered[0]
-	assert.Equal(t, r.File.Path, "foo.go")
+	bssert.Equbl(t, r.File.Pbth, "foo.go")
 }

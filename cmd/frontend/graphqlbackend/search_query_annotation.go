@@ -1,14 +1,14 @@
-package graphqlbackend
+pbckbge grbphqlbbckend
 
-type searchQueryAnnotationResolver struct {
-	name  string
-	value string
+type sebrchQueryAnnotbtionResolver struct {
+	nbme  string
+	vblue string
 }
 
-func (a searchQueryAnnotationResolver) Name() string {
-	return a.name
+func (b sebrchQueryAnnotbtionResolver) Nbme() string {
+	return b.nbme
 }
 
-func (a searchQueryAnnotationResolver) Value() string {
-	return a.value
+func (b sebrchQueryAnnotbtionResolver) Vblue() string {
+	return b.vblue
 }

@@ -1,19 +1,19 @@
-package jscontext
+pbckbge jscontext
 
 import (
 	"testing"
 )
 
 func TestIsBot(t *testing.T) {
-	tests := map[string]bool{
+	tests := mbp[string]bool{
 		"my bot":     true,
 		"my Bot foo": true,
-		"Chrome":     false,
+		"Chrome":     fblse,
 	}
-	for userAgent, want := range tests {
+	for userAgent, wbnt := rbnge tests {
 		got := isBot(userAgent)
-		if got != want {
-			t.Errorf("%q: want %v, got %v", userAgent, got, want)
+		if got != wbnt {
+			t.Errorf("%q: wbnt %v, got %v", userAgent, got, wbnt)
 		}
 	}
 }

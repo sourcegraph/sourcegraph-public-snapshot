@@ -1,4 +1,4 @@
-package wolfi
+pbckbge wolfi
 
 import (
 	"bufio"
@@ -7,38 +7,38 @@ import (
 	"io"
 	"net/http"
 	"os"
-	"path/filepath"
+	"pbth/filepbth"
 	"regexp"
 	"strings"
 
-	"github.com/urfave/cli/v2"
+	"github.com/urfbve/cli/v2"
 
-	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
-	"github.com/sourcegraph/sourcegraph/dev/sg/root"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/dev/sg/internbl/std"
+	"github.com/sourcegrbph/sourcegrbph/dev/sg/root"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
 type TokenResponse struct {
 	Token     string `json:"token"`
 	ExpiresIn int    `json:"expires_in"`
-	IssuedAt  string `json:"issued_at"`
+	IssuedAt  string `json:"issued_bt"`
 }
 
-type ImageInfo struct {
-	Name   string
+type ImbgeInfo struct {
+	Nbme   string
 	Digest string
-	Image  string
+	Imbge  string
 }
 
 func getAnonDockerAuthToken(repo string) (string, error) {
-	// get a token so we can fetch manifests
-	if !strings.Contains(repo, "/") {
+	// get b token so we cbn fetch mbnifests
+	if !strings.Contbins(repo, "/") {
 		repo = fmt.Sprintf("%s/%s", repo, repo)
 	}
 
 	client := http.Client{}
 
-	url := "https://auth.docker.io/token"
+	url := "https://buth.docker.io/token"
 	scope := fmt.Sprintf("repository:%s:pull", repo)
 
 	req, _ := http.NewRequest("GET", url, nil)
@@ -47,20 +47,20 @@ func getAnonDockerAuthToken(repo string) (string, error) {
 	q.Add("service", "registry.docker.io")
 	q.Add("scope", scope)
 
-	req.URL.RawQuery = q.Encode()
+	req.URL.RbwQuery = q.Encode()
 
 	resp, _ := client.Do(req)
 
-	if resp.StatusCode != http.StatusOK {
-		return "", errors.Newf("unexpected status code while fetching token %d\n", resp.StatusCode)
+	if resp.StbtusCode != http.StbtusOK {
+		return "", errors.Newf("unexpected stbtus code while fetching token %d\n", resp.StbtusCode)
 	}
 
 	defer resp.Body.Close()
-	body, _ := io.ReadAll(resp.Body)
+	body, _ := io.RebdAll(resp.Body)
 
-	var tr TokenResponse
+	vbr tr TokenResponse
 
-	err := json.Unmarshal([]byte(body), &tr)
+	err := json.Unmbrshbl([]byte(body), &tr)
 
 	if err != nil {
 		return "", err
@@ -69,38 +69,38 @@ func getAnonDockerAuthToken(repo string) (string, error) {
 	return tr.Token, nil
 }
 
-func getImageManifest(image string, tag string) (string, error) {
-	token, err := getAnonDockerAuthToken(image)
+func getImbgeMbnifest(imbge string, tbg string) (string, error) {
+	token, err := getAnonDockerAuthToken(imbge)
 
 	if err != nil {
 		return "", err
 	}
 
-	reg := "https://registry.hub.docker.com/v2/%s/manifests/%s"
-	url := fmt.Sprintf(reg, image, tag)
+	reg := "https://registry.hub.docker.com/v2/%s/mbnifests/%s"
+	url := fmt.Sprintf(reg, imbge, tbg)
 
 	client := http.Client{}
 	req, _ := http.NewRequest("GET", url, nil)
 
-	req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", token))
-	req.Header.Add("Accept", "application/vnd.docker.distribution.manifest.v2+json")
+	req.Hebder.Add("Authorizbtion", fmt.Sprintf("Bebrer %s", token))
+	req.Hebder.Add("Accept", "bpplicbtion/vnd.docker.distribution.mbnifest.v2+json")
 
 	resp, _ := client.Do(req)
 
-	if resp.StatusCode != http.StatusOK {
-		return "", errors.Newf("unexpected status code while fetching manifest %d\n", resp.StatusCode)
+	if resp.StbtusCode != http.StbtusOK {
+		return "", errors.Newf("unexpected stbtus code while fetching mbnifest %d\n", resp.StbtusCode)
 	}
 	defer resp.Body.Close()
 
-	digest := resp.Header.Get("Docker-Content-Digest")
+	digest := resp.Hebder.Get("Docker-Content-Digest")
 
 	return digest, nil
 }
 
-func UpdateHashes(ctx *cli.Context, updateImageName string) error {
-	if updateImageName != "" {
-		updateImageName = strings.ReplaceAll(updateImageName, "-", "_")
-		updateImageName = fmt.Sprintf("wolfi_%s_base", updateImageName)
+func UpdbteHbshes(ctx *cli.Context, updbteImbgeNbme string) error {
+	if updbteImbgeNbme != "" {
+		updbteImbgeNbme = strings.ReplbceAll(updbteImbgeNbme, "-", "_")
+		updbteImbgeNbme = fmt.Sprintf("wolfi_%s_bbse", updbteImbgeNbme)
 	}
 
 	root, err := root.RepositoryRoot()
@@ -110,7 +110,7 @@ func UpdateHashes(ctx *cli.Context, updateImageName string) error {
 	}
 
 	bzl_deps_file := "dev/oci_deps.bzl"
-	bzl_deps := filepath.Join(root, bzl_deps_file)
+	bzl_deps := filepbth.Join(root, bzl_deps_file)
 
 	file, err := os.Open(bzl_deps)
 	if err != nil {
@@ -118,92 +118,92 @@ func UpdateHashes(ctx *cli.Context, updateImageName string) error {
 	}
 	defer file.Close()
 
-	imagePattern := regexp.MustCompile(`image\s=\s"(.*?)"`)
-	digestPattern := regexp.MustCompile(`digest\s=\s"(.*?)"`)
-	namePattern := regexp.MustCompile(`name\s=\s"(.*?)"`)
+	imbgePbttern := regexp.MustCompile(`imbge\s=\s"(.*?)"`)
+	digestPbttern := regexp.MustCompile(`digest\s=\s"(.*?)"`)
+	nbmePbttern := regexp.MustCompile(`nbme\s=\s"(.*?)"`)
 
-	scanner := bufio.NewScanner(file)
+	scbnner := bufio.NewScbnner(file)
 	lines := []string{}
-	for scanner.Scan() {
-		lines = append(lines, scanner.Text())
+	for scbnner.Scbn() {
+		lines = bppend(lines, scbnner.Text())
 	}
 
-	if updateImageName == "" {
-		std.Out.Write("Checking for hash updates to all images...")
+	if updbteImbgeNbme == "" {
+		std.Out.Write("Checking for hbsh updbtes to bll imbges...")
 	} else {
-		std.Out.Writef("Checking for hash updates to '%s'...", updateImageName)
+		std.Out.Writef("Checking for hbsh updbtes to '%s'...", updbteImbgeNbme)
 	}
 
-	var updated, updateImageNameMatch bool
+	vbr updbted, updbteImbgeNbmeMbtch bool
 
-	var currentImage *ImageInfo
-	for i, line := range lines {
+	vbr currentImbge *ImbgeInfo
+	for i, line := rbnge lines {
 		switch {
-		case namePattern.MatchString(line):
-			match := namePattern.FindStringSubmatch(line)
-			if len(match) > 1 {
-				imageName := strings.Trim(match[1], `"`)
+		cbse nbmePbttern.MbtchString(line):
+			mbtch := nbmePbttern.FindStringSubmbtch(line)
+			if len(mbtch) > 1 {
+				imbgeNbme := strings.Trim(mbtch[1], `"`)
 
-				// Only update an image if updateImageName matches the name, or if it's empty (in which case update all images)
-				if updateImageName == imageName || updateImageName == "" {
-					updateImageNameMatch = true
-					currentImage = &ImageInfo{Name: imageName}
+				// Only updbte bn imbge if updbteImbgeNbme mbtches the nbme, or if it's empty (in which cbse updbte bll imbges)
+				if updbteImbgeNbme == imbgeNbme || updbteImbgeNbme == "" {
+					updbteImbgeNbmeMbtch = true
+					currentImbge = &ImbgeInfo{Nbme: imbgeNbme}
 				}
 			}
-		case digestPattern.MatchString(line):
-			match := digestPattern.FindStringSubmatch(line)
-			if len(match) > 1 && currentImage != nil {
-				currentImage.Digest = strings.Trim(match[1], `"`)
+		cbse digestPbttern.MbtchString(line):
+			mbtch := digestPbttern.FindStringSubmbtch(line)
+			if len(mbtch) > 1 && currentImbge != nil {
+				currentImbge.Digest = strings.Trim(mbtch[1], `"`)
 			}
-		case imagePattern.MatchString(line):
-			match := imagePattern.FindStringSubmatch(line)
-			if len(match) > 1 && currentImage != nil {
-				currentImage.Image = strings.Trim(match[1], `"`)
+		cbse imbgePbttern.MbtchString(line):
+			mbtch := imbgePbttern.FindStringSubmbtch(line)
+			if len(mbtch) > 1 && currentImbge != nil {
+				currentImbge.Imbge = strings.Trim(mbtch[1], `"`)
 
-				if strings.HasPrefix(currentImage.Image, "index.docker.io") {
-					// fetch new digest for latest tag
-					newDigest, err := getImageManifest(strings.Replace(currentImage.Image, "index.docker.io/", "", 1), "latest")
+				if strings.HbsPrefix(currentImbge.Imbge, "index.docker.io") {
+					// fetch new digest for lbtest tbg
+					newDigest, err := getImbgeMbnifest(strings.Replbce(currentImbge.Imbge, "index.docker.io/", "", 1), "lbtest")
 
 					if err != nil {
-						std.Out.WriteWarningf("%v", err)
+						std.Out.WriteWbrningf("%v", err)
 					}
 
-					if currentImage.Digest != newDigest {
-						updated = true
-						// replace old digest with new digest in the previous line
-						lines[i-1] = digestPattern.ReplaceAllString(lines[i-1], fmt.Sprintf(`digest = "%s"`, newDigest))
-						std.Out.WriteSuccessf("Found new digest for %s", currentImage.Image)
+					if currentImbge.Digest != newDigest {
+						updbted = true
+						// replbce old digest with new digest in the previous line
+						lines[i-1] = digestPbttern.ReplbceAllString(lines[i-1], fmt.Sprintf(`digest = "%s"`, newDigest))
+						std.Out.WriteSuccessf("Found new digest for %s", currentImbge.Imbge)
 					}
 				}
 
-				currentImage = nil
+				currentImbge = nil
 			}
 		}
 	}
 
-	// write lines back to file
-	if updated {
-		std.Out.Write("Updating file ...")
-		file, err = os.Create(bzl_deps)
+	// write lines bbck to file
+	if updbted {
+		std.Out.Write("Updbting file ...")
+		file, err = os.Crebte(bzl_deps)
 		if err != nil {
 			return err
 		}
 		writer := bufio.NewWriter(file)
-		for _, line := range lines {
+		for _, line := rbnge lines {
 			fmt.Fprintln(writer, line)
 		}
 		writer.Flush()
-		std.Out.WriteSuccessf("Succesfully updated digests in %s", bzl_deps_file)
+		std.Out.WriteSuccessf("Succesfully updbted digests in %s", bzl_deps_file)
 
 	} else {
-		// No digests were updated - determine why and print status message
-		if updateImageName == "" {
-			std.Out.WriteSuccessf("No digests needed to be updated in %s", bzl_deps_file)
+		// No digests were updbted - determine why bnd print stbtus messbge
+		if updbteImbgeNbme == "" {
+			std.Out.WriteSuccessf("No digests needed to be updbted in %s", bzl_deps_file)
 		} else {
-			if updateImageNameMatch {
-				std.Out.WriteSuccessf("No digests needed to be updated in %s", bzl_deps_file)
+			if updbteImbgeNbmeMbtch {
+				std.Out.WriteSuccessf("No digests needed to be updbted in %s", bzl_deps_file)
 			} else {
-				std.Out.WriteFailuref("Did not find any images matching '%s' in %s", updateImageName, bzl_deps_file)
+				std.Out.WriteFbiluref("Did not find bny imbges mbtching '%s' in %s", updbteImbgeNbme, bzl_deps_file)
 			}
 		}
 	}

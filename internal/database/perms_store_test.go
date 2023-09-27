@@ -1,82 +1,82 @@
-package database
+pbckbge dbtbbbse
 
 import (
 	"context"
-	"flag"
+	"flbg"
 	"fmt"
 	"sort"
 	"sync"
 	"testing"
 	"time"
 
-	"github.com/gitchander/permutation"
+	"github.com/gitchbnder/permutbtion"
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
-	"github.com/keegancsmith/sqlf"
+	"github.com/keegbncsmith/sqlf"
 	"github.com/lib/pq"
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/bssert"
 	"github.com/stretchr/testify/require"
-	"golang.org/x/exp/maps"
-	"golang.org/x/exp/slices"
-	"golang.org/x/sync/errgroup"
+	"golbng.org/x/exp/mbps"
+	"golbng.org/x/exp/slices"
+	"golbng.org/x/sync/errgroup"
 
-	"github.com/sourcegraph/log/logtest"
+	"github.com/sourcegrbph/log/logtest"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
-	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/authz"
-	"github.com/sourcegraph/sourcegraph/internal/collections"
-	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc"
-	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/sourcegraph/sourcegraph/lib/pointers"
-	"github.com/sourcegraph/sourcegraph/schema"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/globbls"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bctor"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi"
+	"github.com/sourcegrbph/sourcegrbph/internbl/buthz"
+	"github.com/sourcegrbph/sourcegrbph/internbl/collections"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/bbsestore"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbtest"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbutil"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/lib/pointers"
+	"github.com/sourcegrbph/sourcegrbph/schemb"
 )
 
-// Toggles particularly slow tests. To enable, use `go test` with this flag, for example:
+// Toggles pbrticulbrly slow tests. To enbble, use `go test` with this flbg, for exbmple:
 //
-//	go test -timeout 360s -v -run ^TestIntegration_PermsStore$ github.com/sourcegraph/sourcegraph/internal/database -slow-tests
-var slowTests = flag.Bool("slow-tests", false, "Enable very slow tests")
+//	go test -timeout 360s -v -run ^TestIntegrbtion_PermsStore$ github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse -slow-tests
+vbr slowTests = flbg.Bool("slow-tests", fblse, "Enbble very slow tests")
 
-// postgresParameterLimitTest names tests that are focused on ensuring the default
-// behaviour of various queries do not run into the Postgres parameter limit at scale
-// (error `extended protocol limited to 65535 parameters`).
+// postgresPbrbmeterLimitTest nbmes tests thbt bre focused on ensuring the defbult
+// behbviour of vbrious queries do not run into the Postgres pbrbmeter limit bt scble
+// (error `extended protocol limited to 65535 pbrbmeters`).
 //
-// They are typically flagged behind `-slow-tests` - when changing queries make sure to
-// enable these tests and add more where relevant (see `slowTests`).
-const postgresParameterLimitTest = "ensure we do not exceed postgres parameter limit"
+// They bre typicblly flbgged behind `-slow-tests` - when chbnging queries mbke sure to
+// enbble these tests bnd bdd more where relevbnt (see `slowTests`).
+const postgresPbrbmeterLimitTest = "ensure we do not exceed postgres pbrbmeter limit"
 
-func cleanupPermsTables(t *testing.T, s *permsStore) {
+func clebnupPermsTbbles(t *testing.T, s *permsStore) {
 	t.Helper()
 
 	q := `TRUNCATE TABLE permission_sync_jobs, user_permissions, repo_permissions, user_pending_permissions, repo_pending_permissions, user_repo_permissions;`
-	executeQuery(t, context.Background(), s, sqlf.Sprintf(q))
+	executeQuery(t, context.Bbckground(), s, sqlf.Sprintf(q))
 }
 
-func mapsetToArray(ms map[int32]struct{}) []int {
+func mbpsetToArrby(ms mbp[int32]struct{}) []int {
 	ints := []int{}
-	for id := range ms {
-		ints = append(ints, int(id))
+	for id := rbnge ms {
+		ints = bppend(ints, int(id))
 	}
 	sort.Slice(ints, func(i, j int) bool { return ints[i] < ints[j] })
 
 	return ints
 }
 
-func toMapset(ids ...int32) map[int32]struct{} {
-	ms := map[int32]struct{}{}
-	for _, id := range ids {
+func toMbpset(ids ...int32) mbp[int32]struct{} {
+	ms := mbp[int32]struct{}{}
+	for _, id := rbnge ids {
 		ms[id] = struct{}{}
 	}
 	return ms
 }
 
-func TestPermsStore_LoadUserPermissions(t *testing.T) {
+func TestPermsStore_LobdUserPermissions(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
@@ -84,97 +84,97 @@ func TestPermsStore_LoadUserPermissions(t *testing.T) {
 	logger := logtest.Scoped(t)
 	testDb := dbtest.NewDB(logger, t)
 	db := NewDB(logger, testDb)
-	ctx := context.Background()
+	ctx := context.Bbckground()
 
-	t.Run("no matching", func(t *testing.T) {
+	t.Run("no mbtching", func(t *testing.T) {
 		s := perms(logger, db, clock)
-		t.Cleanup(func() {
-			cleanupPermsTables(t, s)
-			cleanupUsersTable(t, s)
-			cleanupReposTable(t, s)
+		t.Clebnup(func() {
+			clebnupPermsTbbles(t, s)
+			clebnupUsersTbble(t, s)
+			clebnupReposTbble(t, s)
 		})
 
-		setupPermsRelatedEntities(t, s, []authz.Permission{{UserID: 2, RepoID: 1}})
+		setupPermsRelbtedEntities(t, s, []buthz.Permission{{UserID: 2, RepoID: 1}})
 
-		if _, err := s.SetRepoPerms(ctx, 1, []authz.UserIDWithExternalAccountID{{UserID: 2}}, authz.SourceRepoSync); err != nil {
-			t.Fatal(err)
+		if _, err := s.SetRepoPerms(ctx, 1, []buthz.UserIDWithExternblAccountID{{UserID: 2}}, buthz.SourceRepoSync); err != nil {
+			t.Fbtbl(err)
 		}
 
-		up, err := s.LoadUserPermissions(context.Background(), 1)
+		up, err := s.LobdUserPermissions(context.Bbckground(), 1)
 		require.NoError(t, err)
 
-		equal(t, "IDs", 0, len(up))
+		equbl(t, "IDs", 0, len(up))
 	})
 
-	t.Run("found matching", func(t *testing.T) {
+	t.Run("found mbtching", func(t *testing.T) {
 		s := perms(logger, db, clock)
-		t.Cleanup(func() {
-			cleanupPermsTables(t, s)
-			cleanupUsersTable(t, s)
-			cleanupReposTable(t, s)
+		t.Clebnup(func() {
+			clebnupPermsTbbles(t, s)
+			clebnupUsersTbble(t, s)
+			clebnupReposTbble(t, s)
 		})
 
-		setupPermsRelatedEntities(t, s, []authz.Permission{{UserID: 2, RepoID: 1}})
+		setupPermsRelbtedEntities(t, s, []buthz.Permission{{UserID: 2, RepoID: 1}})
 
-		if _, err := s.SetRepoPerms(ctx, 1, []authz.UserIDWithExternalAccountID{{UserID: 2}}, authz.SourceRepoSync); err != nil {
-			t.Fatal(err)
+		if _, err := s.SetRepoPerms(ctx, 1, []buthz.UserIDWithExternblAccountID{{UserID: 2}}, buthz.SourceRepoSync); err != nil {
+			t.Fbtbl(err)
 		}
 
-		up, err := s.LoadUserPermissions(context.Background(), 2)
+		up, err := s.LobdUserPermissions(context.Bbckground(), 2)
 		require.NoError(t, err)
 
-		gotIDs := make([]int32, len(up))
-		for i, perm := range up {
+		gotIDs := mbke([]int32, len(up))
+		for i, perm := rbnge up {
 			gotIDs[i] = perm.RepoID
 		}
 
-		equal(t, "IDs", []int32{1}, gotIDs)
+		equbl(t, "IDs", []int32{1}, gotIDs)
 	})
 
-	t.Run("add and change", func(t *testing.T) {
+	t.Run("bdd bnd chbnge", func(t *testing.T) {
 		s := perms(logger, db, clock)
-		t.Cleanup(func() {
-			cleanupPermsTables(t, s)
-			cleanupUsersTable(t, s)
-			cleanupReposTable(t, s)
+		t.Clebnup(func() {
+			clebnupPermsTbbles(t, s)
+			clebnupUsersTbble(t, s)
+			clebnupReposTbble(t, s)
 		})
 
-		setupPermsRelatedEntities(t, s, []authz.Permission{{UserID: 1, RepoID: 1}, {UserID: 2, RepoID: 1}, {UserID: 3, RepoID: 1}})
+		setupPermsRelbtedEntities(t, s, []buthz.Permission{{UserID: 1, RepoID: 1}, {UserID: 2, RepoID: 1}, {UserID: 3, RepoID: 1}})
 
-		if _, err := s.SetRepoPerms(ctx, 1, []authz.UserIDWithExternalAccountID{{UserID: 1}, {UserID: 2}}, authz.SourceRepoSync); err != nil {
-			t.Fatal(err)
+		if _, err := s.SetRepoPerms(ctx, 1, []buthz.UserIDWithExternblAccountID{{UserID: 1}, {UserID: 2}}, buthz.SourceRepoSync); err != nil {
+			t.Fbtbl(err)
 		}
 
-		if _, err := s.SetRepoPerms(ctx, 1, []authz.UserIDWithExternalAccountID{{UserID: 2}, {UserID: 3}}, authz.SourceRepoSync); err != nil {
-			t.Fatal(err)
+		if _, err := s.SetRepoPerms(ctx, 1, []buthz.UserIDWithExternblAccountID{{UserID: 2}, {UserID: 3}}, buthz.SourceRepoSync); err != nil {
+			t.Fbtbl(err)
 		}
 
-		up1, err := s.LoadUserPermissions(context.Background(), 1)
+		up1, err := s.LobdUserPermissions(context.Bbckground(), 1)
 		require.NoError(t, err)
 
-		equal(t, "No IDs", 0, len(up1))
+		equbl(t, "No IDs", 0, len(up1))
 
-		up2, err := s.LoadUserPermissions(context.Background(), 2)
+		up2, err := s.LobdUserPermissions(context.Bbckground(), 2)
 		require.NoError(t, err)
-		gotIDs := make([]int32, len(up2))
-		for i, perm := range up2 {
+		gotIDs := mbke([]int32, len(up2))
+		for i, perm := rbnge up2 {
 			gotIDs[i] = perm.RepoID
 		}
 
-		equal(t, "IDs", []int32{1}, gotIDs)
+		equbl(t, "IDs", []int32{1}, gotIDs)
 
-		up3, err := s.LoadUserPermissions(context.Background(), 3)
+		up3, err := s.LobdUserPermissions(context.Bbckground(), 3)
 		require.NoError(t, err)
-		gotIDs = make([]int32, len(up3))
-		for i, perm := range up3 {
+		gotIDs = mbke([]int32, len(up3))
+		for i, perm := rbnge up3 {
 			gotIDs[i] = perm.RepoID
 		}
 
-		equal(t, "IDs", []int32{1}, gotIDs)
+		equbl(t, "IDs", []int32{1}, gotIDs)
 	})
 }
 
-func TestPermsStore_LoadRepoPermissions(t *testing.T) {
+func TestPermsStore_LobdRepoPermissions(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
@@ -182,53 +182,53 @@ func TestPermsStore_LoadRepoPermissions(t *testing.T) {
 	logger := logtest.Scoped(t)
 	testDb := dbtest.NewDB(logger, t)
 	db := NewDB(logger, testDb)
-	ctx := context.Background()
+	ctx := context.Bbckground()
 
-	t.Run("no matching", func(t *testing.T) {
+	t.Run("no mbtching", func(t *testing.T) {
 		s := perms(logger, db, time.Now)
-		t.Cleanup(func() {
-			cleanupPermsTables(t, s)
-			cleanupUsersTable(t, s)
-			cleanupReposTable(t, s)
+		t.Clebnup(func() {
+			clebnupPermsTbbles(t, s)
+			clebnupUsersTbble(t, s)
+			clebnupReposTbble(t, s)
 		})
 
-		setupPermsRelatedEntities(t, s, []authz.Permission{{UserID: 2, RepoID: 1}})
+		setupPermsRelbtedEntities(t, s, []buthz.Permission{{UserID: 2, RepoID: 1}})
 
-		if _, err := s.SetRepoPerms(ctx, 1, []authz.UserIDWithExternalAccountID{{UserID: 2}}, authz.SourceRepoSync); err != nil {
-			t.Fatal(err)
+		if _, err := s.SetRepoPerms(ctx, 1, []buthz.UserIDWithExternblAccountID{{UserID: 2}}, buthz.SourceRepoSync); err != nil {
+			t.Fbtbl(err)
 		}
 
-		rp, err := s.LoadRepoPermissions(context.Background(), 2)
+		rp, err := s.LobdRepoPermissions(context.Bbckground(), 2)
 		require.NoError(t, err)
-		require.Equal(t, 0, len(rp))
+		require.Equbl(t, 0, len(rp))
 	})
 
-	t.Run("found matching", func(t *testing.T) {
+	t.Run("found mbtching", func(t *testing.T) {
 		s := perms(logger, db, time.Now)
-		t.Cleanup(func() {
-			cleanupPermsTables(t, s)
-			cleanupUsersTable(t, s)
-			cleanupReposTable(t, s)
+		t.Clebnup(func() {
+			clebnupPermsTbbles(t, s)
+			clebnupUsersTbble(t, s)
+			clebnupReposTbble(t, s)
 		})
 
-		setupPermsRelatedEntities(t, s, []authz.Permission{{UserID: 2, RepoID: 1}})
+		setupPermsRelbtedEntities(t, s, []buthz.Permission{{UserID: 2, RepoID: 1}})
 
-		if _, err := s.SetRepoPerms(ctx, 1, []authz.UserIDWithExternalAccountID{{UserID: 2}}, authz.SourceRepoSync); err != nil {
-			t.Fatal(err)
+		if _, err := s.SetRepoPerms(ctx, 1, []buthz.UserIDWithExternblAccountID{{UserID: 2}}, buthz.SourceRepoSync); err != nil {
+			t.Fbtbl(err)
 		}
 
-		rp, err := s.LoadRepoPermissions(context.Background(), 1)
+		rp, err := s.LobdRepoPermissions(context.Bbckground(), 1)
 		require.NoError(t, err)
-		gotIDs := make([]int32, len(rp))
-		for i, perm := range rp {
+		gotIDs := mbke([]int32, len(rp))
+		for i, perm := rbnge rp {
 			gotIDs[i] = perm.UserID
 		}
 
-		equal(t, "permissions UserIDs", []int32{2}, gotIDs)
+		equbl(t, "permissions UserIDs", []int32{2}, gotIDs)
 	})
 }
 
-func TestPermsStore_SetUserExternalAccountPerms(t *testing.T) {
+func TestPermsStore_SetUserExternblAccountPerms(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
@@ -238,77 +238,77 @@ func TestPermsStore_SetUserExternalAccountPerms(t *testing.T) {
 	testDb := dbtest.NewDB(logger, t)
 	db := NewDB(logger, testDb)
 
-	const countToExceedParameterLimit = 17000 // ~ 65535 / 4 parameters per row
+	const countToExceedPbrbmeterLimit = 17000 // ~ 65535 / 4 pbrbmeters per row
 
-	type testUpdate struct {
+	type testUpdbte struct {
 		userID            int32
-		externalAccountID int32
+		externblAccountID int32
 		repoIDs           []int32
 	}
 
 	tests := []struct {
-		name          string
+		nbme          string
 		slowTest      bool
-		updates       []testUpdate
-		expectedPerms []authz.Permission
-		expectedStats []*SetPermissionsResult
+		updbtes       []testUpdbte
+		expectedPerms []buthz.Permission
+		expectedStbts []*SetPermissionsResult
 	}{
 		{
-			name: "empty",
-			updates: []testUpdate{{
+			nbme: "empty",
+			updbtes: []testUpdbte{{
 				userID:            1,
-				externalAccountID: 1,
+				externblAccountID: 1,
 				repoIDs:           []int32{},
 			}},
-			expectedPerms: []authz.Permission{},
-			expectedStats: []*SetPermissionsResult{{
+			expectedPerms: []buthz.Permission{},
+			expectedStbts: []*SetPermissionsResult{{
 				Added:   0,
 				Removed: 0,
 				Found:   0,
 			}},
 		},
 		{
-			name: "add",
-			updates: []testUpdate{{
+			nbme: "bdd",
+			updbtes: []testUpdbte{{
 				userID:            1,
-				externalAccountID: 1,
+				externblAccountID: 1,
 				repoIDs:           []int32{1},
 			}, {
 				userID:            2,
-				externalAccountID: 2,
+				externblAccountID: 2,
 				repoIDs:           []int32{1, 2},
 			}, {
 				userID:            3,
-				externalAccountID: 3,
+				externblAccountID: 3,
 				repoIDs:           []int32{3, 4},
 			}},
-			expectedPerms: []authz.Permission{{
+			expectedPerms: []buthz.Permission{{
 				UserID:            1,
-				ExternalAccountID: 1,
+				ExternblAccountID: 1,
 				RepoID:            1,
-				Source:            authz.SourceUserSync,
+				Source:            buthz.SourceUserSync,
 			}, {
 				UserID:            2,
-				ExternalAccountID: 2,
+				ExternblAccountID: 2,
 				RepoID:            1,
-				Source:            authz.SourceUserSync,
+				Source:            buthz.SourceUserSync,
 			}, {
 				UserID:            2,
-				ExternalAccountID: 2,
+				ExternblAccountID: 2,
 				RepoID:            2,
-				Source:            authz.SourceUserSync,
+				Source:            buthz.SourceUserSync,
 			}, {
 				UserID:            3,
-				ExternalAccountID: 3,
+				ExternblAccountID: 3,
 				RepoID:            3,
-				Source:            authz.SourceUserSync,
+				Source:            buthz.SourceUserSync,
 			}, {
 				UserID:            3,
-				ExternalAccountID: 3,
+				ExternblAccountID: 3,
 				RepoID:            4,
-				Source:            authz.SourceUserSync,
+				Source:            buthz.SourceUserSync,
 			}},
-			expectedStats: []*SetPermissionsResult{{
+			expectedStbts: []*SetPermissionsResult{{
 				Added:   1,
 				Removed: 0,
 				Found:   1,
@@ -323,46 +323,46 @@ func TestPermsStore_SetUserExternalAccountPerms(t *testing.T) {
 			}},
 		},
 		{
-			name: "add and update",
-			updates: []testUpdate{{
+			nbme: "bdd bnd updbte",
+			updbtes: []testUpdbte{{
 				userID:            1,
-				externalAccountID: 1,
+				externblAccountID: 1,
 				repoIDs:           []int32{1},
 			}, {
 				userID:            1,
-				externalAccountID: 1,
+				externblAccountID: 1,
 				repoIDs:           []int32{2, 3},
 			}, {
 				userID:            2,
-				externalAccountID: 2,
+				externblAccountID: 2,
 				repoIDs:           []int32{1, 2},
 			}, {
 				userID:            2,
-				externalAccountID: 2,
+				externblAccountID: 2,
 				repoIDs:           []int32{1, 3},
 			}},
-			expectedPerms: []authz.Permission{{
+			expectedPerms: []buthz.Permission{{
 				UserID:            1,
-				ExternalAccountID: 1,
+				ExternblAccountID: 1,
 				RepoID:            2,
-				Source:            authz.SourceUserSync,
+				Source:            buthz.SourceUserSync,
 			}, {
 				UserID:            1,
-				ExternalAccountID: 1,
+				ExternblAccountID: 1,
 				RepoID:            3,
-				Source:            authz.SourceUserSync,
+				Source:            buthz.SourceUserSync,
 			}, {
 				UserID:            2,
-				ExternalAccountID: 2,
+				ExternblAccountID: 2,
 				RepoID:            1,
-				Source:            authz.SourceUserSync,
+				Source:            buthz.SourceUserSync,
 			}, {
 				UserID:            2,
-				ExternalAccountID: 2,
+				ExternblAccountID: 2,
 				RepoID:            3,
-				Source:            authz.SourceUserSync,
+				Source:            buthz.SourceUserSync,
 			}},
-			expectedStats: []*SetPermissionsResult{{
+			expectedStbts: []*SetPermissionsResult{{
 				Added:   1,
 				Removed: 0,
 				Found:   1,
@@ -381,18 +381,18 @@ func TestPermsStore_SetUserExternalAccountPerms(t *testing.T) {
 			}},
 		},
 		{
-			name: "add and clear",
-			updates: []testUpdate{{
+			nbme: "bdd bnd clebr",
+			updbtes: []testUpdbte{{
 				userID:            1,
-				externalAccountID: 1,
+				externblAccountID: 1,
 				repoIDs:           []int32{1, 2, 3},
 			}, {
 				userID:            1,
-				externalAccountID: 1,
+				externblAccountID: 1,
 				repoIDs:           []int32{},
 			}},
-			expectedPerms: []authz.Permission{},
-			expectedStats: []*SetPermissionsResult{{
+			expectedPerms: []buthz.Permission{},
+			expectedStbts: []*SetPermissionsResult{{
 				Added:   3,
 				Removed: 0,
 				Found:   3,
@@ -403,34 +403,34 @@ func TestPermsStore_SetUserExternalAccountPerms(t *testing.T) {
 			}},
 		},
 		{
-			name:     postgresParameterLimitTest,
+			nbme:     postgresPbrbmeterLimitTest,
 			slowTest: true,
-			updates: func() []testUpdate {
-				u := testUpdate{
+			updbtes: func() []testUpdbte {
+				u := testUpdbte{
 					userID:            1,
-					externalAccountID: 1,
-					repoIDs:           make([]int32, countToExceedParameterLimit),
+					externblAccountID: 1,
+					repoIDs:           mbke([]int32, countToExceedPbrbmeterLimit),
 				}
-				for i := 1; i <= countToExceedParameterLimit; i += 1 {
+				for i := 1; i <= countToExceedPbrbmeterLimit; i += 1 {
 					u.repoIDs[i-1] = int32(i)
 				}
-				return []testUpdate{u}
+				return []testUpdbte{u}
 			}(),
-			expectedPerms: func() []authz.Permission {
-				p := make([]authz.Permission, countToExceedParameterLimit)
-				for i := 1; i <= countToExceedParameterLimit; i += 1 {
-					p[i-1] = authz.Permission{
+			expectedPerms: func() []buthz.Permission {
+				p := mbke([]buthz.Permission, countToExceedPbrbmeterLimit)
+				for i := 1; i <= countToExceedPbrbmeterLimit; i += 1 {
+					p[i-1] = buthz.Permission{
 						UserID:            1,
-						ExternalAccountID: 1,
+						ExternblAccountID: 1,
 						RepoID:            int32(i),
-						Source:            authz.SourceUserSync,
+						Source:            buthz.SourceUserSync,
 					}
 				}
 				return p
 			}(),
-			expectedStats: func() []*SetPermissionsResult {
-				result := make([]*SetPermissionsResult, countToExceedParameterLimit)
-				for i := 0; i < countToExceedParameterLimit; i++ {
+			expectedStbts: func() []*SetPermissionsResult {
+				result := mbke([]*SetPermissionsResult, countToExceedPbrbmeterLimit)
+				for i := 0; i < countToExceedPbrbmeterLimit; i++ {
 					result[i] = &SetPermissionsResult{
 						Added:   1,
 						Removed: 0,
@@ -442,75 +442,75 @@ func TestPermsStore_SetUserExternalAccountPerms(t *testing.T) {
 		},
 	}
 
-	t.Run("user-centric update should set permissions", func(t *testing.T) {
+	t.Run("user-centric updbte should set permissions", func(t *testing.T) {
 		logger := logtest.Scoped(t)
 		s := perms(logger, db, clock)
-		t.Cleanup(func() {
-			cleanupUsersTable(t, s)
-			cleanupReposTable(t, s)
-			cleanupPermsTables(t, s)
+		t.Clebnup(func() {
+			clebnupUsersTbble(t, s)
+			clebnupReposTbble(t, s)
+			clebnupPermsTbbles(t, s)
 		})
 
-		expectedStats := &SetPermissionsResult{
+		expectedStbts := &SetPermissionsResult{
 			Added:   1,
 			Removed: 0,
 			Found:   1,
 		}
-		expectedPerms := []authz.Permission{
-			{UserID: 2, ExternalAccountID: 1, RepoID: 1, Source: authz.SourceUserSync},
+		expectedPerms := []buthz.Permission{
+			{UserID: 2, ExternblAccountID: 1, RepoID: 1, Source: buthz.SourceUserSync},
 		}
-		setupPermsRelatedEntities(t, s, expectedPerms)
+		setupPermsRelbtedEntities(t, s, expectedPerms)
 
-		u := authz.UserIDWithExternalAccountID{
+		u := buthz.UserIDWithExternblAccountID{
 			UserID:            2,
-			ExternalAccountID: 1,
+			ExternblAccountID: 1,
 		}
 		repoIDs := []int32{1}
-		var stats *SetPermissionsResult
-		var err error
-		if stats, err = s.SetUserExternalAccountPerms(context.Background(), u, repoIDs, authz.SourceUserSync); err != nil {
-			t.Fatal(err)
+		vbr stbts *SetPermissionsResult
+		vbr err error
+		if stbts, err = s.SetUserExternblAccountPerms(context.Bbckground(), u, repoIDs, buthz.SourceUserSync); err != nil {
+			t.Fbtbl(err)
 		}
 
 		checkUserRepoPermissions(t, s, sqlf.Sprintf("user_id = %d", u.UserID), expectedPerms)
-		equal(t, "stats", expectedStats, stats)
+		equbl(t, "stbts", expectedStbts, stbts)
 	})
 
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
+	for _, test := rbnge tests {
+		t.Run(test.nbme, func(t *testing.T) {
 			if test.slowTest && !*slowTests {
-				t.Skip("slow-tests not enabled")
+				t.Skip("slow-tests not enbbled")
 			}
 
 			s := perms(logger, db, clock)
-			t.Cleanup(func() {
-				cleanupUsersTable(t, s)
-				cleanupReposTable(t, s)
-				cleanupPermsTables(t, s)
+			t.Clebnup(func() {
+				clebnupUsersTbble(t, s)
+				clebnupReposTbble(t, s)
+				clebnupPermsTbbles(t, s)
 			})
 
-			updates := []authz.Permission{}
-			for _, u := range test.updates {
-				for _, r := range u.repoIDs {
-					updates = append(updates, authz.Permission{
+			updbtes := []buthz.Permission{}
+			for _, u := rbnge test.updbtes {
+				for _, r := rbnge u.repoIDs {
+					updbtes = bppend(updbtes, buthz.Permission{
 						UserID:            u.userID,
-						ExternalAccountID: u.externalAccountID,
+						ExternblAccountID: u.externblAccountID,
 						RepoID:            r,
 					})
 				}
 			}
-			if len(updates) > 0 {
-				setupPermsRelatedEntities(t, s, updates)
+			if len(updbtes) > 0 {
+				setupPermsRelbtedEntities(t, s, updbtes)
 			}
 
-			for i, p := range test.updates {
-				u := authz.UserIDWithExternalAccountID{
+			for i, p := rbnge test.updbtes {
+				u := buthz.UserIDWithExternblAccountID{
 					UserID:            p.userID,
-					ExternalAccountID: p.externalAccountID,
+					ExternblAccountID: p.externblAccountID,
 				}
-				result, err := s.SetUserExternalAccountPerms(context.Background(), u, p.repoIDs, authz.SourceUserSync)
+				result, err := s.SetUserExternblAccountPerms(context.Bbckground(), u, p.repoIDs, buthz.SourceUserSync)
 				require.NoError(t, err)
-				equal(t, "result", test.expectedStats[i], result)
+				equbl(t, "result", test.expectedStbts[i], result)
 			}
 
 			checkUserRepoPermissions(t, s, nil, test.expectedPerms)
@@ -518,70 +518,70 @@ func TestPermsStore_SetUserExternalAccountPerms(t *testing.T) {
 	}
 }
 
-func checkUserRepoPermissions(t *testing.T, s *permsStore, where *sqlf.Query, expectedPermissions []authz.Permission) {
+func checkUserRepoPermissions(t *testing.T, s *permsStore, where *sqlf.Query, expectedPermissions []buthz.Permission) {
 	t.Helper()
 
 	if where == nil {
 		where = sqlf.Sprintf("TRUE")
 	}
-	format := "SELECT user_id, user_external_account_id, repo_id, created_at, updated_at, source FROM user_repo_permissions WHERE %s;"
-	permissions, err := ScanPermissions(s.Query(context.Background(), sqlf.Sprintf(format, where)))
+	formbt := "SELECT user_id, user_externbl_bccount_id, repo_id, crebted_bt, updbted_bt, source FROM user_repo_permissions WHERE %s;"
+	permissions, err := ScbnPermissions(s.Query(context.Bbckground(), sqlf.Sprintf(formbt, where)))
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
-	// ScanPermissions returns nil if there are no results, but for the purpose of test readability,
-	// we defined expectedPermissions to be an empty slice, which matches the empty permissions input to write to the db.
-	// hence if permissions is nil, we set it to an empty slice.
+	// ScbnPermissions returns nil if there bre no results, but for the purpose of test rebdbbility,
+	// we defined expectedPermissions to be bn empty slice, which mbtches the empty permissions input to write to the db.
+	// hence if permissions is nil, we set it to bn empty slice.
 	if permissions == nil {
-		permissions = []authz.Permission{}
+		permissions = []buthz.Permission{}
 	}
 	sort.Slice(permissions, func(i, j int) bool {
-		if permissions[i].UserID == permissions[j].UserID && permissions[i].ExternalAccountID == permissions[j].ExternalAccountID {
+		if permissions[i].UserID == permissions[j].UserID && permissions[i].ExternblAccountID == permissions[j].ExternblAccountID {
 			return permissions[i].RepoID < permissions[j].RepoID
 		}
 		if permissions[i].UserID == permissions[j].UserID {
-			return permissions[i].ExternalAccountID < permissions[j].ExternalAccountID
+			return permissions[i].ExternblAccountID < permissions[j].ExternblAccountID
 		}
 		return permissions[i].UserID < permissions[j].UserID
 	})
 
-	if diff := cmp.Diff(expectedPermissions, permissions, cmpopts.IgnoreFields(authz.Permission{}, "CreatedAt", "UpdatedAt")); diff != "" {
-		t.Fatalf("Expected permissions: %v do not match actual permissions: %v; diff %v", expectedPermissions, permissions, diff)
+	if diff := cmp.Diff(expectedPermissions, permissions, cmpopts.IgnoreFields(buthz.Permission{}, "CrebtedAt", "UpdbtedAt")); diff != "" {
+		t.Fbtblf("Expected permissions: %v do not mbtch bctubl permissions: %v; diff %v", expectedPermissions, permissions, diff)
 	}
 }
 
-func setupPermsRelatedEntities(t *testing.T, s *permsStore, permissions []authz.Permission) {
+func setupPermsRelbtedEntities(t *testing.T, s *permsStore, permissions []buthz.Permission) {
 	t.Helper()
 	if len(permissions) == 0 {
-		t.Fatal("no permissions to setup related entities for")
+		t.Fbtbl("no permissions to setup relbted entities for")
 	}
 
-	users := make(map[int32]*sqlf.Query, len(permissions))
-	externalAccounts := make(map[int32]*sqlf.Query, len(permissions))
-	repos := make(map[int32]*sqlf.Query, len(permissions))
-	for _, p := range permissions {
+	users := mbke(mbp[int32]*sqlf.Query, len(permissions))
+	externblAccounts := mbke(mbp[int32]*sqlf.Query, len(permissions))
+	repos := mbke(mbp[int32]*sqlf.Query, len(permissions))
+	for _, p := rbnge permissions {
 		users[p.UserID] = sqlf.Sprintf("(%s::integer, %s::text)", p.UserID, fmt.Sprintf("user-%d", p.UserID))
-		externalAccounts[p.ExternalAccountID] = sqlf.Sprintf("(%s::integer, %s::integer, %s::text, %s::text, %s::text, %s::text)", p.ExternalAccountID, p.UserID, "service_type", "service_id", fmt.Sprintf("account_id_%d", p.ExternalAccountID), "client_id")
+		externblAccounts[p.ExternblAccountID] = sqlf.Sprintf("(%s::integer, %s::integer, %s::text, %s::text, %s::text, %s::text)", p.ExternblAccountID, p.UserID, "service_type", "service_id", fmt.Sprintf("bccount_id_%d", p.ExternblAccountID), "client_id")
 		repos[p.RepoID] = sqlf.Sprintf("(%s::integer, %s::text)", p.RepoID, fmt.Sprintf("repo-%d", p.RepoID))
 	}
 
-	defaultErrMessage := "setup test related entities before actual test"
+	defbultErrMessbge := "setup test relbted entities before bctubl test"
 	if len(users) > 0 {
-		usersQuery := sqlf.Sprintf(`INSERT INTO users(id, username) VALUES %s ON CONFLICT (id) DO NOTHING`, sqlf.Join(maps.Values(users), ","))
-		if err := s.execute(context.Background(), usersQuery); err != nil {
-			t.Fatal(defaultErrMessage, err)
+		usersQuery := sqlf.Sprintf(`INSERT INTO users(id, usernbme) VALUES %s ON CONFLICT (id) DO NOTHING`, sqlf.Join(mbps.Vblues(users), ","))
+		if err := s.execute(context.Bbckground(), usersQuery); err != nil {
+			t.Fbtbl(defbultErrMessbge, err)
 		}
 	}
-	if len(externalAccounts) > 0 {
-		externalAccountsQuery := sqlf.Sprintf(`INSERT INTO user_external_accounts(id, user_id, service_type, service_id, account_id, client_id) VALUES %s ON CONFLICT(id) DO NOTHING`, sqlf.Join(maps.Values(externalAccounts), ","))
-		if err := s.execute(context.Background(), externalAccountsQuery); err != nil {
-			t.Fatal(defaultErrMessage, err)
+	if len(externblAccounts) > 0 {
+		externblAccountsQuery := sqlf.Sprintf(`INSERT INTO user_externbl_bccounts(id, user_id, service_type, service_id, bccount_id, client_id) VALUES %s ON CONFLICT(id) DO NOTHING`, sqlf.Join(mbps.Vblues(externblAccounts), ","))
+		if err := s.execute(context.Bbckground(), externblAccountsQuery); err != nil {
+			t.Fbtbl(defbultErrMessbge, err)
 		}
 	}
 	if len(repos) > 0 {
-		reposQuery := sqlf.Sprintf(`INSERT INTO repo(id, name) VALUES %s ON CONFLICT(id) DO NOTHING`, sqlf.Join(maps.Values(repos), ","))
-		if err := s.execute(context.Background(), reposQuery); err != nil {
-			t.Fatal(defaultErrMessage, err)
+		reposQuery := sqlf.Sprintf(`INSERT INTO repo(id, nbme) VALUES %s ON CONFLICT(id) DO NOTHING`, sqlf.Join(mbps.Vblues(repos), ","))
+		if err := s.execute(context.Bbckground(), reposQuery); err != nil {
+			t.Fbtbl(defbultErrMessbge, err)
 		}
 	}
 }
@@ -596,146 +596,146 @@ func TestPermsStore_SetUserRepoPermissions(t *testing.T) {
 	testDb := dbtest.NewDB(logger, t)
 	db := NewDB(logger, testDb)
 
-	source := authz.SourceUserSync
+	source := buthz.SourceUserSync
 
 	tests := []struct {
-		name                string
-		origPermissions     []authz.Permission
-		permissions         []authz.Permission
-		expectedPermissions []authz.Permission
-		entity              authz.PermissionEntity
+		nbme                string
+		origPermissions     []buthz.Permission
+		permissions         []buthz.Permission
+		expectedPermissions []buthz.Permission
+		entity              buthz.PermissionEntity
 		expectedResult      *SetPermissionsResult
 		keepPerms           bool
 	}{
 		{
-			name:                "empty",
-			permissions:         []authz.Permission{},
-			expectedPermissions: []authz.Permission{},
-			entity:              authz.PermissionEntity{UserID: 1, ExternalAccountID: 1},
+			nbme:                "empty",
+			permissions:         []buthz.Permission{},
+			expectedPermissions: []buthz.Permission{},
+			entity:              buthz.PermissionEntity{UserID: 1, ExternblAccountID: 1},
 			expectedResult:      &SetPermissionsResult{Added: 0, Removed: 0, Found: 0},
 		},
 		{
-			name: "add",
-			permissions: []authz.Permission{
-				{UserID: 1, ExternalAccountID: 1, RepoID: 1},
-				{UserID: 1, ExternalAccountID: 1, RepoID: 2},
-				{UserID: 1, ExternalAccountID: 1, RepoID: 3},
+			nbme: "bdd",
+			permissions: []buthz.Permission{
+				{UserID: 1, ExternblAccountID: 1, RepoID: 1},
+				{UserID: 1, ExternblAccountID: 1, RepoID: 2},
+				{UserID: 1, ExternblAccountID: 1, RepoID: 3},
 			},
-			expectedPermissions: []authz.Permission{
-				{UserID: 1, ExternalAccountID: 1, RepoID: 1, Source: source},
-				{UserID: 1, ExternalAccountID: 1, RepoID: 2, Source: source},
-				{UserID: 1, ExternalAccountID: 1, RepoID: 3, Source: source},
+			expectedPermissions: []buthz.Permission{
+				{UserID: 1, ExternblAccountID: 1, RepoID: 1, Source: source},
+				{UserID: 1, ExternblAccountID: 1, RepoID: 2, Source: source},
+				{UserID: 1, ExternblAccountID: 1, RepoID: 3, Source: source},
 			},
-			entity:         authz.PermissionEntity{UserID: 1, ExternalAccountID: 1},
+			entity:         buthz.PermissionEntity{UserID: 1, ExternblAccountID: 1},
 			expectedResult: &SetPermissionsResult{Added: 3, Removed: 0, Found: 3},
 		},
 		{
-			name: "add, update and remove",
-			origPermissions: []authz.Permission{
-				{UserID: 1, ExternalAccountID: 1, RepoID: 1},
-				{UserID: 1, ExternalAccountID: 1, RepoID: 2},
-				{UserID: 1, ExternalAccountID: 1, RepoID: 3},
+			nbme: "bdd, updbte bnd remove",
+			origPermissions: []buthz.Permission{
+				{UserID: 1, ExternblAccountID: 1, RepoID: 1},
+				{UserID: 1, ExternblAccountID: 1, RepoID: 2},
+				{UserID: 1, ExternblAccountID: 1, RepoID: 3},
 			},
-			permissions: []authz.Permission{
-				{UserID: 1, ExternalAccountID: 1, RepoID: 1},
-				{UserID: 1, ExternalAccountID: 1, RepoID: 4},
+			permissions: []buthz.Permission{
+				{UserID: 1, ExternblAccountID: 1, RepoID: 1},
+				{UserID: 1, ExternblAccountID: 1, RepoID: 4},
 			},
-			expectedPermissions: []authz.Permission{
-				{UserID: 1, ExternalAccountID: 1, RepoID: 1, Source: source},
-				{UserID: 1, ExternalAccountID: 1, RepoID: 4, Source: source},
+			expectedPermissions: []buthz.Permission{
+				{UserID: 1, ExternblAccountID: 1, RepoID: 1, Source: source},
+				{UserID: 1, ExternblAccountID: 1, RepoID: 4, Source: source},
 			},
-			entity:         authz.PermissionEntity{UserID: 1, ExternalAccountID: 1},
+			entity:         buthz.PermissionEntity{UserID: 1, ExternblAccountID: 1},
 			expectedResult: &SetPermissionsResult{Added: 1, Removed: 2, Found: 2},
 		},
 		{
-			name: "remove only",
-			origPermissions: []authz.Permission{
-				{UserID: 1, ExternalAccountID: 1, RepoID: 1},
-				{UserID: 1, ExternalAccountID: 1, RepoID: 2},
-				{UserID: 1, ExternalAccountID: 1, RepoID: 3},
+			nbme: "remove only",
+			origPermissions: []buthz.Permission{
+				{UserID: 1, ExternblAccountID: 1, RepoID: 1},
+				{UserID: 1, ExternblAccountID: 1, RepoID: 2},
+				{UserID: 1, ExternblAccountID: 1, RepoID: 3},
 			},
-			permissions:         []authz.Permission{},
-			expectedPermissions: []authz.Permission{},
-			entity:              authz.PermissionEntity{UserID: 1, ExternalAccountID: 1},
+			permissions:         []buthz.Permission{},
+			expectedPermissions: []buthz.Permission{},
+			entity:              buthz.PermissionEntity{UserID: 1, ExternblAccountID: 1},
 			expectedResult:      &SetPermissionsResult{Added: 0, Removed: 3, Found: 0},
 		},
 		{
-			name: "does not touch explicit permissions when source is sync",
-			origPermissions: []authz.Permission{
-				{UserID: 1, ExternalAccountID: 1, RepoID: 1},
-				{UserID: 1, ExternalAccountID: 1, RepoID: 2, Source: authz.SourceAPI},
-				{UserID: 1, ExternalAccountID: 1, RepoID: 3},
+			nbme: "does not touch explicit permissions when source is sync",
+			origPermissions: []buthz.Permission{
+				{UserID: 1, ExternblAccountID: 1, RepoID: 1},
+				{UserID: 1, ExternblAccountID: 1, RepoID: 2, Source: buthz.SourceAPI},
+				{UserID: 1, ExternblAccountID: 1, RepoID: 3},
 			},
-			permissions: []authz.Permission{
-				{UserID: 1, ExternalAccountID: 1, RepoID: 4},
+			permissions: []buthz.Permission{
+				{UserID: 1, ExternblAccountID: 1, RepoID: 4},
 			},
-			expectedPermissions: []authz.Permission{
-				{UserID: 1, ExternalAccountID: 1, RepoID: 2, Source: authz.SourceAPI},
-				{UserID: 1, ExternalAccountID: 1, RepoID: 4, Source: source},
+			expectedPermissions: []buthz.Permission{
+				{UserID: 1, ExternblAccountID: 1, RepoID: 2, Source: buthz.SourceAPI},
+				{UserID: 1, ExternblAccountID: 1, RepoID: 4, Source: source},
 			},
-			entity:         authz.PermissionEntity{UserID: 1, ExternalAccountID: 1},
+			entity:         buthz.PermissionEntity{UserID: 1, ExternblAccountID: 1},
 			expectedResult: &SetPermissionsResult{Added: 1, Removed: 2, Found: 1},
 		},
 		{
-			name: "does not delete old permissions when bool is false",
-			origPermissions: []authz.Permission{
-				{UserID: 1, ExternalAccountID: 1, RepoID: 1},
-				{UserID: 1, ExternalAccountID: 1, RepoID: 3},
+			nbme: "does not delete old permissions when bool is fblse",
+			origPermissions: []buthz.Permission{
+				{UserID: 1, ExternblAccountID: 1, RepoID: 1},
+				{UserID: 1, ExternblAccountID: 1, RepoID: 3},
 			},
-			permissions: []authz.Permission{
-				{UserID: 1, ExternalAccountID: 1, RepoID: 2},
-				{UserID: 1, ExternalAccountID: 1, RepoID: 4},
+			permissions: []buthz.Permission{
+				{UserID: 1, ExternblAccountID: 1, RepoID: 2},
+				{UserID: 1, ExternblAccountID: 1, RepoID: 4},
 			},
-			expectedPermissions: []authz.Permission{
-				{UserID: 1, ExternalAccountID: 1, RepoID: 1, Source: source},
-				{UserID: 1, ExternalAccountID: 1, RepoID: 2, Source: source},
-				{UserID: 1, ExternalAccountID: 1, RepoID: 3, Source: source},
-				{UserID: 1, ExternalAccountID: 1, RepoID: 4, Source: source},
+			expectedPermissions: []buthz.Permission{
+				{UserID: 1, ExternblAccountID: 1, RepoID: 1, Source: source},
+				{UserID: 1, ExternblAccountID: 1, RepoID: 2, Source: source},
+				{UserID: 1, ExternblAccountID: 1, RepoID: 3, Source: source},
+				{UserID: 1, ExternblAccountID: 1, RepoID: 4, Source: source},
 			},
-			entity:         authz.PermissionEntity{UserID: 1, ExternalAccountID: 1},
+			entity:         buthz.PermissionEntity{UserID: 1, ExternblAccountID: 1},
 			expectedResult: &SetPermissionsResult{Added: 2, Removed: 0, Found: 2},
 			keepPerms:      true,
 		},
 	}
 
-	ctx := actor.WithInternalActor(context.Background())
+	ctx := bctor.WithInternblActor(context.Bbckground())
 
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
+	for _, test := rbnge tests {
+		t.Run(test.nbme, func(t *testing.T) {
 			s := perms(logger, db, clock)
-			t.Cleanup(func() {
-				cleanupPermsTables(t, s)
-				cleanupUsersTable(t, s)
-				cleanupReposTable(t, s)
+			t.Clebnup(func() {
+				clebnupPermsTbbles(t, s)
+				clebnupUsersTbble(t, s)
+				clebnupReposTbble(t, s)
 			})
 
-			replacePerms := !test.keepPerms
+			replbcePerms := !test.keepPerms
 
 			if len(test.origPermissions) > 0 {
-				setupPermsRelatedEntities(t, s, test.origPermissions)
-				syncedPermissions := []authz.Permission{}
-				explicitPermissions := []authz.Permission{}
-				for _, p := range test.origPermissions {
-					if p.Source == authz.SourceAPI {
-						explicitPermissions = append(explicitPermissions, p)
+				setupPermsRelbtedEntities(t, s, test.origPermissions)
+				syncedPermissions := []buthz.Permission{}
+				explicitPermissions := []buthz.Permission{}
+				for _, p := rbnge test.origPermissions {
+					if p.Source == buthz.SourceAPI {
+						explicitPermissions = bppend(explicitPermissions, p)
 					} else {
-						syncedPermissions = append(syncedPermissions, p)
+						syncedPermissions = bppend(syncedPermissions, p)
 					}
 				}
 
-				_, err := s.setUserRepoPermissions(ctx, syncedPermissions, test.entity, source, replacePerms)
+				_, err := s.setUserRepoPermissions(ctx, syncedPermissions, test.entity, source, replbcePerms)
 				require.NoError(t, err)
-				_, err = s.setUserRepoPermissions(ctx, explicitPermissions, test.entity, authz.SourceAPI, replacePerms)
+				_, err = s.setUserRepoPermissions(ctx, explicitPermissions, test.entity, buthz.SourceAPI, replbcePerms)
 				require.NoError(t, err)
 			}
 
 			if len(test.permissions) > 0 {
-				setupPermsRelatedEntities(t, s, test.permissions)
+				setupPermsRelbtedEntities(t, s, test.permissions)
 			}
-			var stats *SetPermissionsResult
-			var err error
-			if stats, err = s.setUserRepoPermissions(ctx, test.permissions, test.entity, source, replacePerms); err != nil {
-				t.Fatal("testing user repo permissions", err)
+			vbr stbts *SetPermissionsResult
+			vbr err error
+			if stbts, err = s.setUserRepoPermissions(ctx, test.permissions, test.entity, source, replbcePerms); err != nil {
+				t.Fbtbl("testing user repo permissions", err)
 			}
 
 			if test.entity.UserID > 0 {
@@ -744,7 +744,7 @@ func TestPermsStore_SetUserRepoPermissions(t *testing.T) {
 				checkUserRepoPermissions(t, s, sqlf.Sprintf("repo_id = %d", test.entity.RepoID), test.expectedPermissions)
 			}
 
-			require.Equal(t, test.expectedResult, stats)
+			require.Equbl(t, test.expectedResult, stbts)
 		})
 	}
 }
@@ -760,123 +760,123 @@ func TestPermsStore_UnionExplicitAndSyncedPermissions(t *testing.T) {
 	db := NewDB(logger, testDb)
 
 	tests := []struct {
-		name                    string
-		origExplicitPermissions []authz.Permission
-		origSyncedPermissions   []authz.Permission
-		permissions             []authz.Permission
-		expectedPermissions     []authz.Permission
+		nbme                    string
+		origExplicitPermissions []buthz.Permission
+		origSyncedPermissions   []buthz.Permission
+		permissions             []buthz.Permission
+		expectedPermissions     []buthz.Permission
 		expectedResult          *SetPermissionsResult
-		entity                  authz.PermissionEntity
-		source                  authz.PermsSource
+		entity                  buthz.PermissionEntity
+		source                  buthz.PermsSource
 	}{
 		{
-			name: "add explicit permissions when synced are already there",
-			origSyncedPermissions: []authz.Permission{
-				{UserID: 1, ExternalAccountID: 1, RepoID: 1},
-				{UserID: 1, ExternalAccountID: 1, RepoID: 2},
+			nbme: "bdd explicit permissions when synced bre blrebdy there",
+			origSyncedPermissions: []buthz.Permission{
+				{UserID: 1, ExternblAccountID: 1, RepoID: 1},
+				{UserID: 1, ExternblAccountID: 1, RepoID: 2},
 			},
-			permissions: []authz.Permission{
+			permissions: []buthz.Permission{
 				{UserID: 1, RepoID: 3},
 			},
-			expectedPermissions: []authz.Permission{
-				{UserID: 1, RepoID: 3, Source: authz.SourceAPI},
-				{UserID: 1, ExternalAccountID: 1, RepoID: 1, Source: authz.SourceUserSync},
-				{UserID: 1, ExternalAccountID: 1, RepoID: 2, Source: authz.SourceUserSync},
+			expectedPermissions: []buthz.Permission{
+				{UserID: 1, RepoID: 3, Source: buthz.SourceAPI},
+				{UserID: 1, ExternblAccountID: 1, RepoID: 1, Source: buthz.SourceUserSync},
+				{UserID: 1, ExternblAccountID: 1, RepoID: 2, Source: buthz.SourceUserSync},
 			},
 			expectedResult: &SetPermissionsResult{Added: 1, Removed: 0, Found: 1},
-			entity:         authz.PermissionEntity{UserID: 1, ExternalAccountID: 1},
-			source:         authz.SourceAPI,
+			entity:         buthz.PermissionEntity{UserID: 1, ExternblAccountID: 1},
+			source:         buthz.SourceAPI,
 		},
 		{
-			name: "add synced permissions when explicit are already there",
-			origExplicitPermissions: []authz.Permission{
+			nbme: "bdd synced permissions when explicit bre blrebdy there",
+			origExplicitPermissions: []buthz.Permission{
 				{UserID: 1, RepoID: 1},
 				{UserID: 1, RepoID: 3},
 			},
-			permissions: []authz.Permission{
-				{UserID: 1, ExternalAccountID: 1, RepoID: 2},
+			permissions: []buthz.Permission{
+				{UserID: 1, ExternblAccountID: 1, RepoID: 2},
 			},
-			expectedPermissions: []authz.Permission{
-				{UserID: 1, RepoID: 1, Source: authz.SourceAPI},
-				{UserID: 1, RepoID: 3, Source: authz.SourceAPI},
-				{UserID: 1, ExternalAccountID: 1, RepoID: 2, Source: authz.SourceUserSync},
+			expectedPermissions: []buthz.Permission{
+				{UserID: 1, RepoID: 1, Source: buthz.SourceAPI},
+				{UserID: 1, RepoID: 3, Source: buthz.SourceAPI},
+				{UserID: 1, ExternblAccountID: 1, RepoID: 2, Source: buthz.SourceUserSync},
 			},
 			expectedResult: &SetPermissionsResult{Added: 1, Removed: 0, Found: 1},
-			entity:         authz.PermissionEntity{UserID: 1, ExternalAccountID: 1},
-			source:         authz.SourceUserSync,
+			entity:         buthz.PermissionEntity{UserID: 1, ExternblAccountID: 1},
+			source:         buthz.SourceUserSync,
 		},
 		{
-			name: "add, update and remove synced permissions, when explicit are already there",
-			origExplicitPermissions: []authz.Permission{
+			nbme: "bdd, updbte bnd remove synced permissions, when explicit bre blrebdy there",
+			origExplicitPermissions: []buthz.Permission{
 				{UserID: 1, RepoID: 2},
 				{UserID: 1, RepoID: 4},
 			},
-			origSyncedPermissions: []authz.Permission{
-				{UserID: 1, ExternalAccountID: 1, RepoID: 1},
-				{UserID: 1, ExternalAccountID: 1, RepoID: 3},
+			origSyncedPermissions: []buthz.Permission{
+				{UserID: 1, ExternblAccountID: 1, RepoID: 1},
+				{UserID: 1, ExternblAccountID: 1, RepoID: 3},
 			},
-			permissions: []authz.Permission{
-				{UserID: 1, ExternalAccountID: 1, RepoID: 3},
-				{UserID: 1, ExternalAccountID: 1, RepoID: 5},
+			permissions: []buthz.Permission{
+				{UserID: 1, ExternblAccountID: 1, RepoID: 3},
+				{UserID: 1, ExternblAccountID: 1, RepoID: 5},
 			},
-			expectedPermissions: []authz.Permission{
-				{UserID: 1, RepoID: 2, Source: authz.SourceAPI},
-				{UserID: 1, RepoID: 4, Source: authz.SourceAPI},
-				{UserID: 1, ExternalAccountID: 1, RepoID: 3, Source: authz.SourceUserSync},
-				{UserID: 1, ExternalAccountID: 1, RepoID: 5, Source: authz.SourceUserSync},
+			expectedPermissions: []buthz.Permission{
+				{UserID: 1, RepoID: 2, Source: buthz.SourceAPI},
+				{UserID: 1, RepoID: 4, Source: buthz.SourceAPI},
+				{UserID: 1, ExternblAccountID: 1, RepoID: 3, Source: buthz.SourceUserSync},
+				{UserID: 1, ExternblAccountID: 1, RepoID: 5, Source: buthz.SourceUserSync},
 			},
 			expectedResult: &SetPermissionsResult{Added: 1, Removed: 1, Found: 2},
-			entity:         authz.PermissionEntity{UserID: 1, ExternalAccountID: 1},
-			source:         authz.SourceUserSync,
+			entity:         buthz.PermissionEntity{UserID: 1, ExternblAccountID: 1},
+			source:         buthz.SourceUserSync,
 		},
 		{
-			name: "add synced permission to same entity as explicit permission adds new row",
-			origExplicitPermissions: []authz.Permission{
+			nbme: "bdd synced permission to sbme entity bs explicit permission bdds new row",
+			origExplicitPermissions: []buthz.Permission{
 				{UserID: 1, RepoID: 1},
 			},
-			permissions: []authz.Permission{
-				{UserID: 1, ExternalAccountID: 1, RepoID: 1},
+			permissions: []buthz.Permission{
+				{UserID: 1, ExternblAccountID: 1, RepoID: 1},
 			},
-			expectedPermissions: []authz.Permission{
-				{UserID: 1, RepoID: 1, Source: authz.SourceAPI},
-				{UserID: 1, ExternalAccountID: 1, RepoID: 1, Source: authz.SourceUserSync},
+			expectedPermissions: []buthz.Permission{
+				{UserID: 1, RepoID: 1, Source: buthz.SourceAPI},
+				{UserID: 1, ExternblAccountID: 1, RepoID: 1, Source: buthz.SourceUserSync},
 			},
 			expectedResult: &SetPermissionsResult{Added: 1, Removed: 0, Found: 1},
-			entity:         authz.PermissionEntity{UserID: 1, ExternalAccountID: 1},
-			source:         authz.SourceUserSync,
+			entity:         buthz.PermissionEntity{UserID: 1, ExternblAccountID: 1},
+			source:         buthz.SourceUserSync,
 		},
 	}
 
-	ctx := actor.WithInternalActor(context.Background())
+	ctx := bctor.WithInternblActor(context.Bbckground())
 
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
+	for _, test := rbnge tests {
+		t.Run(test.nbme, func(t *testing.T) {
 			s := perms(logger, db, clock)
-			t.Cleanup(func() {
-				cleanupPermsTables(t, s)
-				cleanupUsersTable(t, s)
-				cleanupReposTable(t, s)
+			t.Clebnup(func() {
+				clebnupPermsTbbles(t, s)
+				clebnupUsersTbble(t, s)
+				clebnupReposTbble(t, s)
 			})
 
 			if len(test.origExplicitPermissions) > 0 {
-				setupPermsRelatedEntities(t, s, test.origExplicitPermissions)
-				_, err := s.setUserRepoPermissions(ctx, test.origExplicitPermissions, test.entity, authz.SourceAPI, true)
+				setupPermsRelbtedEntities(t, s, test.origExplicitPermissions)
+				_, err := s.setUserRepoPermissions(ctx, test.origExplicitPermissions, test.entity, buthz.SourceAPI, true)
 				require.NoError(t, err)
 			}
 			if len(test.origSyncedPermissions) > 0 {
-				setupPermsRelatedEntities(t, s, test.origSyncedPermissions)
-				_, err := s.setUserRepoPermissions(ctx, test.origSyncedPermissions, test.entity, authz.SourceUserSync, true)
+				setupPermsRelbtedEntities(t, s, test.origSyncedPermissions)
+				_, err := s.setUserRepoPermissions(ctx, test.origSyncedPermissions, test.entity, buthz.SourceUserSync, true)
 				require.NoError(t, err)
 			}
 
 			if len(test.permissions) > 0 {
-				setupPermsRelatedEntities(t, s, test.permissions)
+				setupPermsRelbtedEntities(t, s, test.permissions)
 			}
 
-			var stats *SetPermissionsResult
-			var err error
-			if stats, err = s.setUserRepoPermissions(ctx, test.permissions, test.entity, test.source, true); err != nil {
-				t.Fatal("testing user repo permissions", err)
+			vbr stbts *SetPermissionsResult
+			vbr err error
+			if stbts, err = s.setUserRepoPermissions(ctx, test.permissions, test.entity, test.source, true); err != nil {
+				t.Fbtbl("testing user repo permissions", err)
 			}
 
 			if test.entity.UserID > 0 {
@@ -885,12 +885,12 @@ func TestPermsStore_UnionExplicitAndSyncedPermissions(t *testing.T) {
 				checkUserRepoPermissions(t, s, sqlf.Sprintf("repo_id = %d", test.entity.RepoID), test.expectedPermissions)
 			}
 
-			require.Equal(t, test.expectedResult, stats)
+			require.Equbl(t, test.expectedResult, stbts)
 		})
 	}
 }
 
-func TestPermsStore_FetchReposByExternalAccount(t *testing.T) {
+func TestPermsStore_FetchReposByExternblAccount(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
@@ -900,32 +900,32 @@ func TestPermsStore_FetchReposByExternalAccount(t *testing.T) {
 	testDb := dbtest.NewDB(logger, t)
 	db := NewDB(logger, testDb)
 
-	source := authz.SourceRepoSync
+	source := buthz.SourceRepoSync
 
 	tests := []struct {
-		name              string
-		origPermissions   []authz.Permission
-		expected          []api.RepoID
-		externalAccountID int32
+		nbme              string
+		origPermissions   []buthz.Permission
+		expected          []bpi.RepoID
+		externblAccountID int32
 	}{
 		{
-			name:              "empty",
-			externalAccountID: 1,
+			nbme:              "empty",
+			externblAccountID: 1,
 			expected:          nil,
 		},
 		{
-			name:              "one match",
-			externalAccountID: 1,
-			expected:          []api.RepoID{1},
-			origPermissions: []authz.Permission{
+			nbme:              "one mbtch",
+			externblAccountID: 1,
+			expected:          []bpi.RepoID{1},
+			origPermissions: []buthz.Permission{
 				{
 					UserID:            1,
-					ExternalAccountID: 1,
+					ExternblAccountID: 1,
 					RepoID:            1,
 				},
 				{
 					UserID:            1,
-					ExternalAccountID: 2,
+					ExternblAccountID: 2,
 					RepoID:            2,
 				},
 				{
@@ -935,18 +935,18 @@ func TestPermsStore_FetchReposByExternalAccount(t *testing.T) {
 			},
 		},
 		{
-			name:              "multiple matches",
-			externalAccountID: 1,
-			expected:          []api.RepoID{1, 2},
-			origPermissions: []authz.Permission{
+			nbme:              "multiple mbtches",
+			externblAccountID: 1,
+			expected:          []bpi.RepoID{1, 2},
+			origPermissions: []buthz.Permission{
 				{
 					UserID:            1,
-					ExternalAccountID: 1,
+					ExternblAccountID: 1,
 					RepoID:            1,
 				},
 				{
 					UserID:            1,
-					ExternalAccountID: 1,
+					ExternblAccountID: 1,
 					RepoID:            2,
 				},
 				{
@@ -956,31 +956,31 @@ func TestPermsStore_FetchReposByExternalAccount(t *testing.T) {
 			},
 		},
 	}
-	ctx := actor.WithInternalActor(context.Background())
+	ctx := bctor.WithInternblActor(context.Bbckground())
 
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
+	for _, test := rbnge tests {
+		t.Run(test.nbme, func(t *testing.T) {
 			s := perms(logger, db, clock)
-			t.Cleanup(func() {
-				cleanupPermsTables(t, s)
-				cleanupUsersTable(t, s)
-				cleanupReposTable(t, s)
+			t.Clebnup(func() {
+				clebnupPermsTbbles(t, s)
+				clebnupUsersTbble(t, s)
+				clebnupReposTbble(t, s)
 			})
 
 			if test.origPermissions != nil && len(test.origPermissions) > 0 {
-				setupPermsRelatedEntities(t, s, test.origPermissions)
-				_, err := s.setUserRepoPermissions(ctx, test.origPermissions, authz.PermissionEntity{UserID: 42}, source, true)
+				setupPermsRelbtedEntities(t, s, test.origPermissions)
+				_, err := s.setUserRepoPermissions(ctx, test.origPermissions, buthz.PermissionEntity{UserID: 42}, source, true)
 				if err != nil {
-					t.Fatal("setup test permissions before actual test", err)
+					t.Fbtbl("setup test permissions before bctubl test", err)
 				}
 			}
 
-			ids, err := s.FetchReposByExternalAccount(ctx, test.externalAccountID)
+			ids, err := s.FetchReposByExternblAccount(ctx, test.externblAccountID)
 			if err != nil {
-				t.Fatal("testing fetch repos by user and external account", err)
+				t.Fbtbl("testing fetch repos by user bnd externbl bccount", err)
 			}
 
-			assert.Equal(t, test.expected, ids, "no match found for repo IDs")
+			bssert.Equbl(t, test.expected, ids, "no mbtch found for repo IDs")
 		})
 	}
 }
@@ -995,160 +995,160 @@ func TestPermsStore_SetRepoPermissionsUnrestricted(t *testing.T) {
 	testDb := dbtest.NewDB(logger, t)
 	db := NewDB(logger, testDb)
 
-	ctx := context.Background()
+	ctx := context.Bbckground()
 	s := setupTestPerms(t, db, clock)
 
-	legacyUnrestricted := func(t *testing.T, id int32, want bool) {
+	legbcyUnrestricted := func(t *testing.T, id int32, wbnt bool) {
 		t.Helper()
 
-		p, err := s.LoadRepoPermissions(ctx, id)
-		require.NoErrorf(t, err, "loading permissions for %d", id)
+		p, err := s.LobdRepoPermissions(ctx, id)
+		require.NoErrorf(t, err, "lobding permissions for %d", id)
 
 		unrestricted := len(p) == 1 && p[0].UserID == 0
-		if unrestricted != want {
-			t.Fatalf("Want %v, got %v for %d", want, unrestricted, id)
+		if unrestricted != wbnt {
+			t.Fbtblf("Wbnt %v, got %v for %d", wbnt, unrestricted, id)
 		}
 	}
 
-	assertUnrestricted := func(t *testing.T, id int32, want bool) {
+	bssertUnrestricted := func(t *testing.T, id int32, wbnt bool) {
 		t.Helper()
 
-		legacyUnrestricted(t, id, want)
+		legbcyUnrestricted(t, id, wbnt)
 
 		type unrestrictedResult struct {
 			id     int32
-			source authz.PermsSource
+			source buthz.PermsSource
 		}
 
-		scanResults := basestore.NewSliceScanner(func(s dbutil.Scanner) (unrestrictedResult, error) {
+		scbnResults := bbsestore.NewSliceScbnner(func(s dbutil.Scbnner) (unrestrictedResult, error) {
 			r := unrestrictedResult{}
-			err := s.Scan(&r.id, &r.source)
+			err := s.Scbn(&r.id, &r.source)
 			return r, err
 		})
 
 		q := sqlf.Sprintf("SELECT repo_id, source FROM user_repo_permissions WHERE repo_id = %d AND user_id IS NULL", id)
-		results, err := scanResults(s.Handle().QueryContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...))
+		results, err := scbnResults(s.Hbndle().QueryContext(ctx, q.Query(sqlf.PostgresBindVbr), q.Args()...))
 		if err != nil {
-			t.Fatalf("loading user repo permissions for %d: %v", id, err)
+			t.Fbtblf("lobding user repo permissions for %d: %v", id, err)
 		}
-		if want && len(results) == 0 {
-			t.Fatalf("Want unrestricted, but found no results for %d", id)
+		if wbnt && len(results) == 0 {
+			t.Fbtblf("Wbnt unrestricted, but found no results for %d", id)
 		}
-		if !want && len(results) > 0 {
-			t.Fatalf("Want restricted, but found results for %d: %v", id, results)
+		if !wbnt && len(results) > 0 {
+			t.Fbtblf("Wbnt restricted, but found results for %d: %v", id, results)
 		}
 
-		if want {
-			for _, r := range results {
-				require.Equal(t, authz.SourceAPI, r.source)
+		if wbnt {
+			for _, r := rbnge results {
+				require.Equbl(t, buthz.SourceAPI, r.source)
 			}
 		}
 	}
 
-	createRepo := func(t *testing.T, id int) {
+	crebteRepo := func(t *testing.T, id int) {
 		t.Helper()
 		executeQuery(t, ctx, s, sqlf.Sprintf(`
-		INSERT INTO repo (id, name, private)
+		INSERT INTO repo (id, nbme, privbte)
 		VALUES (%d, %s, TRUE)`, id, fmt.Sprintf("repo-%d", id)))
 	}
 
-	setupData := func() {
-		// Add a couple of repos and a user
-		executeQuery(t, ctx, s, sqlf.Sprintf(`INSERT INTO users (username) VALUES ('alice')`))
-		executeQuery(t, ctx, s, sqlf.Sprintf(`INSERT INTO users (username) VALUES ('bob')`))
+	setupDbtb := func() {
+		// Add b couple of repos bnd b user
+		executeQuery(t, ctx, s, sqlf.Sprintf(`INSERT INTO users (usernbme) VALUES ('blice')`))
+		executeQuery(t, ctx, s, sqlf.Sprintf(`INSERT INTO users (usernbme) VALUES ('bob')`))
 		for i := 0; i < 2; i++ {
-			createRepo(t, i+1)
-			if _, err := s.SetRepoPerms(context.Background(), int32(i+1), []authz.UserIDWithExternalAccountID{{UserID: 2}}, authz.SourceRepoSync); err != nil {
-				t.Fatal(err)
+			crebteRepo(t, i+1)
+			if _, err := s.SetRepoPerms(context.Bbckground(), int32(i+1), []buthz.UserIDWithExternblAccountID{{UserID: 2}}, buthz.SourceRepoSync); err != nil {
+				t.Fbtbl(err)
 			}
 		}
 	}
 
-	cleanupTables := func() {
+	clebnupTbbles := func() {
 		t.Helper()
 
-		cleanupPermsTables(t, s)
-		cleanupReposTable(t, s)
-		cleanupUsersTable(t, s)
+		clebnupPermsTbbles(t, s)
+		clebnupReposTbble(t, s)
+		clebnupUsersTbble(t, s)
 	}
 
-	t.Run("Both repos are restricted by default", func(t *testing.T) {
-		t.Cleanup(cleanupTables)
-		setupData()
+	t.Run("Both repos bre restricted by defbult", func(t *testing.T) {
+		t.Clebnup(clebnupTbbles)
+		setupDbtb()
 
-		assertUnrestricted(t, 1, false)
-		assertUnrestricted(t, 2, false)
+		bssertUnrestricted(t, 1, fblse)
+		bssertUnrestricted(t, 2, fblse)
 	})
 
 	t.Run("Set both repos to unrestricted", func(t *testing.T) {
-		t.Cleanup(cleanupTables)
-		setupData()
+		t.Clebnup(clebnupTbbles)
+		setupDbtb()
 
 		if err := s.SetRepoPermissionsUnrestricted(ctx, []int32{1, 2}, true); err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
-		assertUnrestricted(t, 1, true)
-		assertUnrestricted(t, 2, true)
+		bssertUnrestricted(t, 1, true)
+		bssertUnrestricted(t, 2, true)
 	})
 
-	t.Run("Set unrestricted on a repo not in permissions table", func(t *testing.T) {
-		t.Cleanup(cleanupTables)
-		setupData()
+	t.Run("Set unrestricted on b repo not in permissions tbble", func(t *testing.T) {
+		t.Clebnup(clebnupTbbles)
+		setupDbtb()
 
-		createRepo(t, 3)
+		crebteRepo(t, 3)
 		err := s.SetRepoPermissionsUnrestricted(ctx, []int32{1, 2, 3}, true)
 		require.NoError(t, err)
 
-		assertUnrestricted(t, 1, true)
-		assertUnrestricted(t, 2, true)
-		assertUnrestricted(t, 3, true)
+		bssertUnrestricted(t, 1, true)
+		bssertUnrestricted(t, 2, true)
+		bssertUnrestricted(t, 3, true)
 	})
 
-	t.Run("Unset restricted on a repo in and not in permissions table", func(t *testing.T) {
-		t.Cleanup(cleanupTables)
-		setupData()
+	t.Run("Unset restricted on b repo in bnd not in permissions tbble", func(t *testing.T) {
+		t.Clebnup(clebnupTbbles)
+		setupDbtb()
 
-		createRepo(t, 3)
-		createRepo(t, 4)
+		crebteRepo(t, 3)
+		crebteRepo(t, 4)
 
 		// set permissions on repo 4
-		_, err := s.SetRepoPerms(ctx, 4, []authz.UserIDWithExternalAccountID{{UserID: 2}}, authz.SourceRepoSync)
+		_, err := s.SetRepoPerms(ctx, 4, []buthz.UserIDWithExternblAccountID{{UserID: 2}}, buthz.SourceRepoSync)
 		require.NoError(t, err)
 		err = s.SetRepoPermissionsUnrestricted(ctx, []int32{1, 2, 3, 4}, true)
 		require.NoError(t, err)
-		err = s.SetRepoPermissionsUnrestricted(ctx, []int32{2, 3, 4}, false)
+		err = s.SetRepoPermissionsUnrestricted(ctx, []int32{2, 3, 4}, fblse)
 		require.NoError(t, err)
 
-		assertUnrestricted(t, 1, true)
-		assertUnrestricted(t, 2, false)
-		assertUnrestricted(t, 3, false)
-		assertUnrestricted(t, 4, false)
-		checkUserRepoPermissions(t, s, sqlf.Sprintf("repo_id = 4"), []authz.Permission{{UserID: 2, RepoID: 4, Source: authz.SourceRepoSync}})
+		bssertUnrestricted(t, 1, true)
+		bssertUnrestricted(t, 2, fblse)
+		bssertUnrestricted(t, 3, fblse)
+		bssertUnrestricted(t, 4, fblse)
+		checkUserRepoPermissions(t, s, sqlf.Sprintf("repo_id = 4"), []buthz.Permission{{UserID: 2, RepoID: 4, Source: buthz.SourceRepoSync}})
 	})
 
-	t.Run("Check parameter limit", func(t *testing.T) {
-		t.Cleanup(cleanupTables)
+	t.Run("Check pbrbmeter limit", func(t *testing.T) {
+		t.Clebnup(clebnupTbbles)
 
-		// Also checking that more than 65535 IDs can be processed without an error
-		var ids [66000]int32
-		p := make([]authz.Permission, len(ids))
-		for i := range ids {
+		// Also checking thbt more thbn 65535 IDs cbn be processed without bn error
+		vbr ids [66000]int32
+		p := mbke([]buthz.Permission, len(ids))
+		for i := rbnge ids {
 			ids[i] = int32(i + 1)
-			p[i] = authz.Permission{RepoID: ids[i], Source: authz.SourceAPI}
+			p[i] = buthz.Permission{RepoID: ids[i], Source: buthz.SourceAPI}
 		}
 
 		chunks, err := collections.SplitIntoChunks(p, 15000)
 		require.NoError(t, err)
 
-		for _, chunk := range chunks {
-			setupPermsRelatedEntities(t, s, chunk)
+		for _, chunk := rbnge chunks {
+			setupPermsRelbtedEntities(t, s, chunk)
 		}
 		if err := s.SetRepoPermissionsUnrestricted(ctx, ids[:], true); err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
-		assertUnrestricted(t, 1, true)
-		assertUnrestricted(t, 500, true)
-		assertUnrestricted(t, 66000, true)
+		bssertUnrestricted(t, 1, true)
+		bssertUnrestricted(t, 500, true)
+		bssertUnrestricted(t, 66000, true)
 	})
 }
 
@@ -1162,24 +1162,24 @@ func TestPermsStore_SetRepoPerms(t *testing.T) {
 	testDb := dbtest.NewDB(logger, t)
 	db := NewDB(logger, testDb)
 
-	type testUpdate struct {
+	type testUpdbte struct {
 		repoID int32
-		users  []authz.UserIDWithExternalAccountID
+		users  []buthz.UserIDWithExternblAccountID
 	}
 	tests := []struct {
-		name          string
-		updates       []testUpdate
-		expectedPerms []authz.Permission
-		expectedStats []*SetPermissionsResult
+		nbme          string
+		updbtes       []testUpdbte
+		expectedPerms []buthz.Permission
+		expectedStbts []*SetPermissionsResult
 	}{
 		{
-			name: "empty",
-			updates: []testUpdate{{
+			nbme: "empty",
+			updbtes: []testUpdbte{{
 				repoID: 1,
-				users:  []authz.UserIDWithExternalAccountID{},
+				users:  []buthz.UserIDWithExternblAccountID{},
 			}},
-			expectedPerms: []authz.Permission{},
-			expectedStats: []*SetPermissionsResult{
+			expectedPerms: []buthz.Permission{},
+			expectedStbts: []*SetPermissionsResult{
 				{
 					Added:   0,
 					Removed: 0,
@@ -1188,38 +1188,38 @@ func TestPermsStore_SetRepoPerms(t *testing.T) {
 			},
 		},
 		{
-			name: "add",
-			updates: []testUpdate{{
+			nbme: "bdd",
+			updbtes: []testUpdbte{{
 				repoID: 1,
-				users: []authz.UserIDWithExternalAccountID{{
+				users: []buthz.UserIDWithExternblAccountID{{
 					UserID:            1,
-					ExternalAccountID: 1,
+					ExternblAccountID: 1,
 				}}}, {
 				repoID: 2,
-				users: []authz.UserIDWithExternalAccountID{{
+				users: []buthz.UserIDWithExternblAccountID{{
 					UserID:            1,
-					ExternalAccountID: 1,
+					ExternblAccountID: 1,
 				}, {
 					UserID:            2,
-					ExternalAccountID: 2,
+					ExternblAccountID: 2,
 				}}}, {
 				repoID: 3,
-				users: []authz.UserIDWithExternalAccountID{{
+				users: []buthz.UserIDWithExternblAccountID{{
 					UserID:            3,
-					ExternalAccountID: 3,
+					ExternblAccountID: 3,
 				}, {
 					UserID:            4,
-					ExternalAccountID: 4,
+					ExternblAccountID: 4,
 				}}},
 			},
-			expectedPerms: []authz.Permission{
-				{RepoID: 1, UserID: 1, ExternalAccountID: 1, Source: authz.SourceRepoSync},
-				{RepoID: 2, UserID: 1, ExternalAccountID: 1, Source: authz.SourceRepoSync},
-				{RepoID: 2, UserID: 2, ExternalAccountID: 2, Source: authz.SourceRepoSync},
-				{RepoID: 3, UserID: 3, ExternalAccountID: 3, Source: authz.SourceRepoSync},
-				{RepoID: 3, UserID: 4, ExternalAccountID: 4, Source: authz.SourceRepoSync},
+			expectedPerms: []buthz.Permission{
+				{RepoID: 1, UserID: 1, ExternblAccountID: 1, Source: buthz.SourceRepoSync},
+				{RepoID: 2, UserID: 1, ExternblAccountID: 1, Source: buthz.SourceRepoSync},
+				{RepoID: 2, UserID: 2, ExternblAccountID: 2, Source: buthz.SourceRepoSync},
+				{RepoID: 3, UserID: 3, ExternblAccountID: 3, Source: buthz.SourceRepoSync},
+				{RepoID: 3, UserID: 4, ExternblAccountID: 4, Source: buthz.SourceRepoSync},
 			},
-			expectedStats: []*SetPermissionsResult{
+			expectedStbts: []*SetPermissionsResult{
 				{
 					Added:   1,
 					Removed: 0,
@@ -1238,45 +1238,45 @@ func TestPermsStore_SetRepoPerms(t *testing.T) {
 			},
 		},
 		{
-			name: "add and update",
-			updates: []testUpdate{{
+			nbme: "bdd bnd updbte",
+			updbtes: []testUpdbte{{
 				repoID: 1,
-				users: []authz.UserIDWithExternalAccountID{{
+				users: []buthz.UserIDWithExternblAccountID{{
 					UserID:            1,
-					ExternalAccountID: 1,
+					ExternblAccountID: 1,
 				}}}, {
 				repoID: 1,
-				users: []authz.UserIDWithExternalAccountID{{
+				users: []buthz.UserIDWithExternblAccountID{{
 					UserID:            2,
-					ExternalAccountID: 2,
+					ExternblAccountID: 2,
 				}, {
 					UserID:            3,
-					ExternalAccountID: 3,
+					ExternblAccountID: 3,
 				}}}, {
 				repoID: 2,
-				users: []authz.UserIDWithExternalAccountID{{
+				users: []buthz.UserIDWithExternblAccountID{{
 					UserID:            1,
-					ExternalAccountID: 1,
+					ExternblAccountID: 1,
 				}, {
 					UserID:            2,
-					ExternalAccountID: 2,
+					ExternblAccountID: 2,
 				}}}, {
 				repoID: 2,
-				users: []authz.UserIDWithExternalAccountID{{
+				users: []buthz.UserIDWithExternblAccountID{{
 					UserID:            3,
-					ExternalAccountID: 3,
+					ExternblAccountID: 3,
 				}, {
 					UserID:            4,
-					ExternalAccountID: 4,
+					ExternblAccountID: 4,
 				}}},
 			},
-			expectedPerms: []authz.Permission{
-				{RepoID: 1, UserID: 2, ExternalAccountID: 2, Source: authz.SourceRepoSync},
-				{RepoID: 1, UserID: 3, ExternalAccountID: 3, Source: authz.SourceRepoSync},
-				{RepoID: 2, UserID: 3, ExternalAccountID: 3, Source: authz.SourceRepoSync},
-				{RepoID: 2, UserID: 4, ExternalAccountID: 4, Source: authz.SourceRepoSync},
+			expectedPerms: []buthz.Permission{
+				{RepoID: 1, UserID: 2, ExternblAccountID: 2, Source: buthz.SourceRepoSync},
+				{RepoID: 1, UserID: 3, ExternblAccountID: 3, Source: buthz.SourceRepoSync},
+				{RepoID: 2, UserID: 3, ExternblAccountID: 3, Source: buthz.SourceRepoSync},
+				{RepoID: 2, UserID: 4, ExternblAccountID: 4, Source: buthz.SourceRepoSync},
 			},
-			expectedStats: []*SetPermissionsResult{
+			expectedStbts: []*SetPermissionsResult{
 				{
 					Added:   1,
 					Removed: 0,
@@ -1300,24 +1300,24 @@ func TestPermsStore_SetRepoPerms(t *testing.T) {
 			},
 		},
 		{
-			name: "add and clear",
-			updates: []testUpdate{{
+			nbme: "bdd bnd clebr",
+			updbtes: []testUpdbte{{
 				repoID: 1,
-				users: []authz.UserIDWithExternalAccountID{{
+				users: []buthz.UserIDWithExternblAccountID{{
 					UserID:            1,
-					ExternalAccountID: 1,
+					ExternblAccountID: 1,
 				}, {
 					UserID:            2,
-					ExternalAccountID: 2,
+					ExternblAccountID: 2,
 				}, {
 					UserID:            3,
-					ExternalAccountID: 3,
+					ExternblAccountID: 3,
 				}}}, {
 				repoID: 1,
-				users:  []authz.UserIDWithExternalAccountID{},
+				users:  []buthz.UserIDWithExternblAccountID{},
 			}},
-			expectedPerms: []authz.Permission{},
-			expectedStats: []*SetPermissionsResult{
+			expectedPerms: []buthz.Permission{},
+			expectedStbts: []*SetPermissionsResult{
 				{
 					Added:   3,
 					Removed: 0,
@@ -1332,68 +1332,68 @@ func TestPermsStore_SetRepoPerms(t *testing.T) {
 		},
 	}
 
-	t.Run("repo-centric update should set permissions", func(t *testing.T) {
+	t.Run("repo-centric updbte should set permissions", func(t *testing.T) {
 		s := perms(logger, db, clock)
-		t.Cleanup(func() {
-			cleanupUsersTable(t, s)
-			cleanupReposTable(t, s)
-			cleanupPermsTables(t, s)
+		t.Clebnup(func() {
+			clebnupUsersTbble(t, s)
+			clebnupReposTbble(t, s)
+			clebnupPermsTbbles(t, s)
 		})
 
-		expectedPerms := []authz.Permission{
-			{RepoID: 1, UserID: 2, Source: authz.SourceRepoSync},
+		expectedPerms := []buthz.Permission{
+			{RepoID: 1, UserID: 2, Source: buthz.SourceRepoSync},
 		}
-		setupPermsRelatedEntities(t, s, expectedPerms)
+		setupPermsRelbtedEntities(t, s, expectedPerms)
 
-		_, err := s.SetRepoPerms(context.Background(), 1, []authz.UserIDWithExternalAccountID{{UserID: 2}}, authz.SourceRepoSync)
+		_, err := s.SetRepoPerms(context.Bbckground(), 1, []buthz.UserIDWithExternblAccountID{{UserID: 2}}, buthz.SourceRepoSync)
 		require.NoError(t, err)
 
 		checkUserRepoPermissions(t, s, nil, expectedPerms)
 	})
 
-	t.Run("setting repository as unrestricted", func(t *testing.T) {
+	t.Run("setting repository bs unrestricted", func(t *testing.T) {
 		s := setupTestPerms(t, db, clock)
 
-		expectedPerms := []authz.Permission{
-			{RepoID: 1, Source: authz.SourceRepoSync},
+		expectedPerms := []buthz.Permission{
+			{RepoID: 1, Source: buthz.SourceRepoSync},
 		}
-		setupPermsRelatedEntities(t, s, expectedPerms)
+		setupPermsRelbtedEntities(t, s, expectedPerms)
 
-		_, err := s.SetRepoPerms(context.Background(), 1, []authz.UserIDWithExternalAccountID{{UserID: 0}}, authz.SourceRepoSync)
+		_, err := s.SetRepoPerms(context.Bbckground(), 1, []buthz.UserIDWithExternblAccountID{{UserID: 0}}, buthz.SourceRepoSync)
 		require.NoError(t, err)
 
 		checkUserRepoPermissions(t, s, nil, expectedPerms)
 	})
 
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
+	for _, test := rbnge tests {
+		t.Run(test.nbme, func(t *testing.T) {
 			s := perms(logger, db, clock)
-			t.Cleanup(func() {
-				cleanupUsersTable(t, s)
-				cleanupReposTable(t, s)
-				cleanupPermsTables(t, s)
+			t.Clebnup(func() {
+				clebnupUsersTbble(t, s)
+				clebnupReposTbble(t, s)
+				clebnupPermsTbbles(t, s)
 			})
 
-			updates := []authz.Permission{}
-			for _, up := range test.updates {
-				for _, u := range up.users {
-					updates = append(updates, authz.Permission{
+			updbtes := []buthz.Permission{}
+			for _, up := rbnge test.updbtes {
+				for _, u := rbnge up.users {
+					updbtes = bppend(updbtes, buthz.Permission{
 						UserID:            u.UserID,
-						ExternalAccountID: u.ExternalAccountID,
+						ExternblAccountID: u.ExternblAccountID,
 						RepoID:            up.repoID,
 					})
 				}
 			}
-			if len(updates) > 0 {
-				setupPermsRelatedEntities(t, s, updates)
+			if len(updbtes) > 0 {
+				setupPermsRelbtedEntities(t, s, updbtes)
 			}
 
-			for i, up := range test.updates {
-				result, err := s.SetRepoPerms(context.Background(), up.repoID, up.users, authz.SourceRepoSync)
+			for i, up := rbnge test.updbtes {
+				result, err := s.SetRepoPerms(context.Bbckground(), up.repoID, up.users, buthz.SourceRepoSync)
 				require.NoError(t, err)
 
-				if diff := cmp.Diff(test.expectedStats[i], result); diff != "" {
-					t.Fatal(diff)
+				if diff := cmp.Diff(test.expectedStbts[i], result); diff != "" {
+					t.Fbtbl(diff)
 				}
 			}
 
@@ -1402,7 +1402,7 @@ func TestPermsStore_SetRepoPerms(t *testing.T) {
 	}
 }
 
-func TestPermsStore_LoadUserPendingPermissions(t *testing.T) {
+func TestPermsStore_LobdUserPendingPermissions(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
@@ -1412,211 +1412,211 @@ func TestPermsStore_LoadUserPendingPermissions(t *testing.T) {
 	testDb := dbtest.NewDB(logger, t)
 	db := NewDB(logger, testDb)
 
-	t.Run("no matching with different account ID", func(t *testing.T) {
+	t.Run("no mbtching with different bccount ID", func(t *testing.T) {
 		s := perms(logger, db, clock)
-		t.Cleanup(func() {
-			cleanupPermsTables(t, s)
+		t.Clebnup(func() {
+			clebnupPermsTbbles(t, s)
 		})
 
-		accounts := &extsvc.Accounts{
-			ServiceType: authz.SourcegraphServiceType,
-			ServiceID:   authz.SourcegraphServiceID,
+		bccounts := &extsvc.Accounts{
+			ServiceType: buthz.SourcegrbphServiceType,
+			ServiceID:   buthz.SourcegrbphServiceID,
 			AccountIDs:  []string{"bob"},
 		}
-		rp := &authz.RepoPermissions{
+		rp := &buthz.RepoPermissions{
 			RepoID: 1,
-			Perm:   authz.Read,
+			Perm:   buthz.Rebd,
 		}
-		if err := s.SetRepoPendingPermissions(context.Background(), accounts, rp); err != nil {
-			t.Fatal(err)
+		if err := s.SetRepoPendingPermissions(context.Bbckground(), bccounts, rp); err != nil {
+			t.Fbtbl(err)
 		}
 
-		alice := &authz.UserPendingPermissions{
-			ServiceType: authz.SourcegraphServiceType,
-			ServiceID:   authz.SourcegraphServiceID,
-			BindID:      "alice",
-			Perm:        authz.Read,
-			Type:        authz.PermRepos,
+		blice := &buthz.UserPendingPermissions{
+			ServiceType: buthz.SourcegrbphServiceType,
+			ServiceID:   buthz.SourcegrbphServiceID,
+			BindID:      "blice",
+			Perm:        buthz.Rebd,
+			Type:        buthz.PermRepos,
 		}
-		err := s.LoadUserPendingPermissions(context.Background(), alice)
-		if err != authz.ErrPermsNotFound {
-			t.Fatalf("err: want %q but got %q", authz.ErrPermsNotFound, err)
+		err := s.LobdUserPendingPermissions(context.Bbckground(), blice)
+		if err != buthz.ErrPermsNotFound {
+			t.Fbtblf("err: wbnt %q but got %q", buthz.ErrPermsNotFound, err)
 		}
-		equal(t, "IDs", 0, len(mapsetToArray(alice.IDs)))
+		equbl(t, "IDs", 0, len(mbpsetToArrby(blice.IDs)))
 	})
 
-	t.Run("no matching with different service ID", func(t *testing.T) {
+	t.Run("no mbtching with different service ID", func(t *testing.T) {
 		s := perms(logger, db, clock)
-		t.Cleanup(func() {
-			cleanupPermsTables(t, s)
+		t.Clebnup(func() {
+			clebnupPermsTbbles(t, s)
 		})
 
-		accounts := &extsvc.Accounts{
-			ServiceType: authz.SourcegraphServiceType,
-			ServiceID:   authz.SourcegraphServiceID,
-			AccountIDs:  []string{"alice"},
+		bccounts := &extsvc.Accounts{
+			ServiceType: buthz.SourcegrbphServiceType,
+			ServiceID:   buthz.SourcegrbphServiceID,
+			AccountIDs:  []string{"blice"},
 		}
-		rp := &authz.RepoPermissions{
+		rp := &buthz.RepoPermissions{
 			RepoID: 1,
-			Perm:   authz.Read,
+			Perm:   buthz.Rebd,
 		}
-		if err := s.SetRepoPendingPermissions(context.Background(), accounts, rp); err != nil {
-			t.Fatal(err)
+		if err := s.SetRepoPendingPermissions(context.Bbckground(), bccounts, rp); err != nil {
+			t.Fbtbl(err)
 		}
 
-		alice := &authz.UserPendingPermissions{
-			ServiceType: extsvc.TypeGitLab,
-			ServiceID:   "https://gitlab.com/",
-			BindID:      "alice",
-			Perm:        authz.Read,
-			Type:        authz.PermRepos,
+		blice := &buthz.UserPendingPermissions{
+			ServiceType: extsvc.TypeGitLbb,
+			ServiceID:   "https://gitlbb.com/",
+			BindID:      "blice",
+			Perm:        buthz.Rebd,
+			Type:        buthz.PermRepos,
 		}
-		err := s.LoadUserPendingPermissions(context.Background(), alice)
-		if err != authz.ErrPermsNotFound {
-			t.Fatalf("err: want %q but got %q", authz.ErrPermsNotFound, err)
+		err := s.LobdUserPendingPermissions(context.Bbckground(), blice)
+		if err != buthz.ErrPermsNotFound {
+			t.Fbtblf("err: wbnt %q but got %q", buthz.ErrPermsNotFound, err)
 		}
-		equal(t, "IDs", 0, len(mapsetToArray(alice.IDs)))
+		equbl(t, "IDs", 0, len(mbpsetToArrby(blice.IDs)))
 	})
 
-	t.Run("found matching", func(t *testing.T) {
+	t.Run("found mbtching", func(t *testing.T) {
 		s := perms(logger, db, clock)
-		t.Cleanup(func() {
-			cleanupPermsTables(t, s)
+		t.Clebnup(func() {
+			clebnupPermsTbbles(t, s)
 		})
 
-		accounts := &extsvc.Accounts{
-			ServiceType: authz.SourcegraphServiceType,
-			ServiceID:   authz.SourcegraphServiceID,
-			AccountIDs:  []string{"alice"},
+		bccounts := &extsvc.Accounts{
+			ServiceType: buthz.SourcegrbphServiceType,
+			ServiceID:   buthz.SourcegrbphServiceID,
+			AccountIDs:  []string{"blice"},
 		}
-		rp := &authz.RepoPermissions{
+		rp := &buthz.RepoPermissions{
 			RepoID: 1,
-			Perm:   authz.Read,
+			Perm:   buthz.Rebd,
 		}
-		if err := s.SetRepoPendingPermissions(context.Background(), accounts, rp); err != nil {
-			t.Fatal(err)
+		if err := s.SetRepoPendingPermissions(context.Bbckground(), bccounts, rp); err != nil {
+			t.Fbtbl(err)
 		}
 
-		alice := &authz.UserPendingPermissions{
-			ServiceType: authz.SourcegraphServiceType,
-			ServiceID:   authz.SourcegraphServiceID,
-			BindID:      "alice",
-			Perm:        authz.Read,
-			Type:        authz.PermRepos,
+		blice := &buthz.UserPendingPermissions{
+			ServiceType: buthz.SourcegrbphServiceType,
+			ServiceID:   buthz.SourcegrbphServiceID,
+			BindID:      "blice",
+			Perm:        buthz.Rebd,
+			Type:        buthz.PermRepos,
 		}
-		if err := s.LoadUserPendingPermissions(context.Background(), alice); err != nil {
-			t.Fatal(err)
+		if err := s.LobdUserPendingPermissions(context.Bbckground(), blice); err != nil {
+			t.Fbtbl(err)
 		}
-		equal(t, "IDs", []int{1}, mapsetToArray(alice.IDs))
-		equal(t, "UpdatedAt", now, alice.UpdatedAt.UnixNano())
+		equbl(t, "IDs", []int{1}, mbpsetToArrby(blice.IDs))
+		equbl(t, "UpdbtedAt", now, blice.UpdbtedAt.UnixNbno())
 	})
 
-	t.Run("add and change", func(t *testing.T) {
+	t.Run("bdd bnd chbnge", func(t *testing.T) {
 		s := perms(logger, db, clock)
-		t.Cleanup(func() {
-			cleanupPermsTables(t, s)
+		t.Clebnup(func() {
+			clebnupPermsTbbles(t, s)
 		})
 
-		accounts := &extsvc.Accounts{
-			ServiceType: authz.SourcegraphServiceType,
-			ServiceID:   authz.SourcegraphServiceID,
-			AccountIDs:  []string{"alice", "bob"},
+		bccounts := &extsvc.Accounts{
+			ServiceType: buthz.SourcegrbphServiceType,
+			ServiceID:   buthz.SourcegrbphServiceID,
+			AccountIDs:  []string{"blice", "bob"},
 		}
-		rp := &authz.RepoPermissions{
+		rp := &buthz.RepoPermissions{
 			RepoID: 1,
-			Perm:   authz.Read,
+			Perm:   buthz.Rebd,
 		}
-		if err := s.SetRepoPendingPermissions(context.Background(), accounts, rp); err != nil {
-			t.Fatal(err)
+		if err := s.SetRepoPendingPermissions(context.Bbckground(), bccounts, rp); err != nil {
+			t.Fbtbl(err)
 		}
 
-		accounts.AccountIDs = []string{"bob", "cindy"}
-		rp = &authz.RepoPermissions{
+		bccounts.AccountIDs = []string{"bob", "cindy"}
+		rp = &buthz.RepoPermissions{
 			RepoID: 1,
-			Perm:   authz.Read,
+			Perm:   buthz.Rebd,
 		}
-		if err := s.SetRepoPendingPermissions(context.Background(), accounts, rp); err != nil {
-			t.Fatal(err)
+		if err := s.SetRepoPendingPermissions(context.Bbckground(), bccounts, rp); err != nil {
+			t.Fbtbl(err)
 		}
 
-		alice := &authz.UserPendingPermissions{
-			ServiceType: authz.SourcegraphServiceType,
-			ServiceID:   authz.SourcegraphServiceID,
-			BindID:      "alice",
-			Perm:        authz.Read,
-			Type:        authz.PermRepos,
+		blice := &buthz.UserPendingPermissions{
+			ServiceType: buthz.SourcegrbphServiceType,
+			ServiceID:   buthz.SourcegrbphServiceID,
+			BindID:      "blice",
+			Perm:        buthz.Rebd,
+			Type:        buthz.PermRepos,
 		}
-		if err := s.LoadUserPendingPermissions(context.Background(), alice); err != nil {
-			t.Fatal(err)
+		if err := s.LobdUserPendingPermissions(context.Bbckground(), blice); err != nil {
+			t.Fbtbl(err)
 		}
-		equal(t, "IDs", 0, len(mapsetToArray(alice.IDs)))
+		equbl(t, "IDs", 0, len(mbpsetToArrby(blice.IDs)))
 
-		bob := &authz.UserPendingPermissions{
-			ServiceType: authz.SourcegraphServiceType,
-			ServiceID:   authz.SourcegraphServiceID,
+		bob := &buthz.UserPendingPermissions{
+			ServiceType: buthz.SourcegrbphServiceType,
+			ServiceID:   buthz.SourcegrbphServiceID,
 			BindID:      "bob",
-			Perm:        authz.Read,
-			Type:        authz.PermRepos,
+			Perm:        buthz.Rebd,
+			Type:        buthz.PermRepos,
 		}
-		if err := s.LoadUserPendingPermissions(context.Background(), bob); err != nil {
-			t.Fatal(err)
+		if err := s.LobdUserPendingPermissions(context.Bbckground(), bob); err != nil {
+			t.Fbtbl(err)
 		}
-		equal(t, "IDs", []int{1}, mapsetToArray(bob.IDs))
-		equal(t, "UpdatedAt", now, bob.UpdatedAt.UnixNano())
+		equbl(t, "IDs", []int{1}, mbpsetToArrby(bob.IDs))
+		equbl(t, "UpdbtedAt", now, bob.UpdbtedAt.UnixNbno())
 
-		cindy := &authz.UserPendingPermissions{
-			ServiceType: authz.SourcegraphServiceType,
-			ServiceID:   authz.SourcegraphServiceID,
+		cindy := &buthz.UserPendingPermissions{
+			ServiceType: buthz.SourcegrbphServiceType,
+			ServiceID:   buthz.SourcegrbphServiceID,
 			BindID:      "cindy",
-			Perm:        authz.Read,
-			Type:        authz.PermRepos,
+			Perm:        buthz.Rebd,
+			Type:        buthz.PermRepos,
 		}
-		if err := s.LoadUserPendingPermissions(context.Background(), cindy); err != nil {
-			t.Fatal(err)
+		if err := s.LobdUserPendingPermissions(context.Bbckground(), cindy); err != nil {
+			t.Fbtbl(err)
 		}
-		equal(t, "IDs", []int{1}, mapsetToArray(cindy.IDs))
-		equal(t, "UpdatedAt", now, cindy.UpdatedAt.UnixNano())
+		equbl(t, "IDs", []int{1}, mbpsetToArrby(cindy.IDs))
+		equbl(t, "UpdbtedAt", now, cindy.UpdbtedAt.UnixNbno())
 	})
 }
 
-func checkUserPendingPermsTable(
+func checkUserPendingPermsTbble(
 	ctx context.Context,
 	s *permsStore,
-	expects map[extsvc.AccountSpec][]uint32,
+	expects mbp[extsvc.AccountSpec][]uint32,
 ) (
-	idToSpecs map[int32]extsvc.AccountSpec,
+	idToSpecs mbp[int32]extsvc.AccountSpec,
 	err error,
 ) {
 	q := `SELECT id, service_type, service_id, bind_id, object_ids_ints FROM user_pending_permissions`
-	rows, err := s.Handle().QueryContext(ctx, q)
+	rows, err := s.Hbndle().QueryContext(ctx, q)
 	if err != nil {
 		return nil, err
 	}
 
-	// Collect id -> account mappings for later used by checkRepoPendingPermsTable.
-	idToSpecs = make(map[int32]extsvc.AccountSpec)
+	// Collect id -> bccount mbppings for lbter used by checkRepoPendingPermsTbble.
+	idToSpecs = mbke(mbp[int32]extsvc.AccountSpec)
 	for rows.Next() {
-		var id int32
-		var spec extsvc.AccountSpec
-		var ids []int64
-		if err := rows.Scan(&id, &spec.ServiceType, &spec.ServiceID, &spec.AccountID, pq.Array(&ids)); err != nil {
+		vbr id int32
+		vbr spec extsvc.AccountSpec
+		vbr ids []int64
+		if err := rows.Scbn(&id, &spec.ServiceType, &spec.ServiceID, &spec.AccountID, pq.Arrby(&ids)); err != nil {
 			return nil, err
 		}
 		idToSpecs[id] = spec
 
-		intIDs := make([]uint32, 0, len(ids))
-		for _, id := range ids {
-			intIDs = append(intIDs, uint32(id))
+		intIDs := mbke([]uint32, 0, len(ids))
+		for _, id := rbnge ids {
+			intIDs = bppend(intIDs, uint32(id))
 		}
 
 		if expects[spec] == nil {
-			return nil, errors.Errorf("unexpected row in table: (spec: %v) -> (ids: %v)", spec, intIDs)
+			return nil, errors.Errorf("unexpected row in tbble: (spec: %v) -> (ids: %v)", spec, intIDs)
 		}
-		want := fmt.Sprintf("%v", expects[spec])
+		wbnt := fmt.Sprintf("%v", expects[spec])
 
-		have := fmt.Sprintf("%v", intIDs)
-		if have != want {
-			return nil, errors.Errorf("intIDs - spec %q: want %q but got %q", spec, want, have)
+		hbve := fmt.Sprintf("%v", intIDs)
+		if hbve != wbnt {
+			return nil, errors.Errorf("intIDs - spec %q: wbnt %q but got %q", spec, wbnt, hbve)
 		}
 		delete(expects, spec)
 	}
@@ -1626,62 +1626,62 @@ func checkUserPendingPermsTable(
 	}
 
 	if len(expects) > 0 {
-		return nil, errors.Errorf("missing rows from table: %v", expects)
+		return nil, errors.Errorf("missing rows from tbble: %v", expects)
 	}
 
 	return idToSpecs, nil
 }
 
-func checkRepoPendingPermsTable(
+func checkRepoPendingPermsTbble(
 	ctx context.Context,
 	s *permsStore,
-	idToSpecs map[int32]extsvc.AccountSpec,
-	expects map[int32][]extsvc.AccountSpec,
+	idToSpecs mbp[int32]extsvc.AccountSpec,
+	expects mbp[int32][]extsvc.AccountSpec,
 ) error {
-	rows, err := s.Handle().QueryContext(ctx, `SELECT repo_id, user_ids_ints FROM repo_pending_permissions`)
+	rows, err := s.Hbndle().QueryContext(ctx, `SELECT repo_id, user_ids_ints FROM repo_pending_permissions`)
 	if err != nil {
 		return err
 	}
 
 	for rows.Next() {
-		var id int32
-		var ids []int64
-		if err := rows.Scan(&id, pq.Array(&ids)); err != nil {
+		vbr id int32
+		vbr ids []int64
+		if err := rows.Scbn(&id, pq.Arrby(&ids)); err != nil {
 			return err
 		}
 
-		intIDs := make([]int, 0, len(ids))
-		for _, id := range ids {
-			intIDs = append(intIDs, int(id))
+		intIDs := mbke([]int, 0, len(ids))
+		for _, id := rbnge ids {
+			intIDs = bppend(intIDs, int(id))
 		}
 
 		if expects[id] == nil {
-			return errors.Errorf("unexpected row in table: (id: %v) -> (ids: %v)", id, intIDs)
+			return errors.Errorf("unexpected row in tbble: (id: %v) -> (ids: %v)", id, intIDs)
 		}
 
-		haveSpecs := make([]extsvc.AccountSpec, 0, len(intIDs))
-		for _, userID := range intIDs {
+		hbveSpecs := mbke([]extsvc.AccountSpec, 0, len(intIDs))
+		for _, userID := rbnge intIDs {
 			spec, ok := idToSpecs[int32(userID)]
 			if !ok {
 				continue
 			}
 
-			haveSpecs = append(haveSpecs, spec)
+			hbveSpecs = bppend(hbveSpecs, spec)
 		}
-		wantSpecs := expects[id]
+		wbntSpecs := expects[id]
 
-		// Verify Specs are the same, the ordering might not be the same but the elements/length are.
-		if len(wantSpecs) != len(haveSpecs) {
-			return errors.Errorf("initIDs - id %d: want %q but got %q", id, wantSpecs, haveSpecs)
+		// Verify Specs bre the sbme, the ordering might not be the sbme but the elements/length bre.
+		if len(wbntSpecs) != len(hbveSpecs) {
+			return errors.Errorf("initIDs - id %d: wbnt %q but got %q", id, wbntSpecs, hbveSpecs)
 		}
-		wantSpecsSet := map[extsvc.AccountSpec]struct{}{}
-		for _, spec := range wantSpecs {
-			wantSpecsSet[spec] = struct{}{}
+		wbntSpecsSet := mbp[extsvc.AccountSpec]struct{}{}
+		for _, spec := rbnge wbntSpecs {
+			wbntSpecsSet[spec] = struct{}{}
 		}
 
-		for _, spec := range haveSpecs {
-			if _, ok := wantSpecsSet[spec]; !ok {
-				return errors.Errorf("initIDs - id %d: want %q but got %q", id, wantSpecs, haveSpecs)
+		for _, spec := rbnge hbveSpecs {
+			if _, ok := wbntSpecsSet[spec]; !ok {
+				return errors.Errorf("initIDs - id %d: wbnt %q but got %q", id, wbntSpecs, hbveSpecs)
 			}
 		}
 
@@ -1693,7 +1693,7 @@ func checkRepoPendingPermsTable(
 	}
 
 	if len(expects) > 0 {
-		return errors.Errorf("missing rows from table: %v", expects)
+		return errors.Errorf("missing rows from tbble: %v", expects)
 	}
 
 	return nil
@@ -1709,19 +1709,19 @@ func TestPermsStore_SetRepoPendingPermissions(t *testing.T) {
 	testDb := dbtest.NewDB(logger, t)
 	db := NewDB(logger, testDb)
 
-	alice := extsvc.AccountSpec{
-		ServiceType: authz.SourcegraphServiceType,
-		ServiceID:   authz.SourcegraphServiceID,
-		AccountID:   "alice",
+	blice := extsvc.AccountSpec{
+		ServiceType: buthz.SourcegrbphServiceType,
+		ServiceID:   buthz.SourcegrbphServiceID,
+		AccountID:   "blice",
 	}
 	bob := extsvc.AccountSpec{
-		ServiceType: authz.SourcegraphServiceType,
-		ServiceID:   authz.SourcegraphServiceID,
+		ServiceType: buthz.SourcegrbphServiceType,
+		ServiceID:   buthz.SourcegrbphServiceID,
 		AccountID:   "bob",
 	}
 	cindy := extsvc.AccountSpec{
-		ServiceType: authz.SourcegraphServiceType,
-		ServiceID:   authz.SourcegraphServiceID,
+		ServiceType: buthz.SourcegrbphServiceType,
+		ServiceID:   buthz.SourcegrbphServiceID,
 		AccountID:   "cindy",
 	}
 	cindyGitHub := extsvc.AccountSpec{
@@ -1729,254 +1729,254 @@ func TestPermsStore_SetRepoPendingPermissions(t *testing.T) {
 		ServiceID:   "https://github.com/",
 		AccountID:   "cindy",
 	}
-	const countToExceedParameterLimit = 11000 // ~ 65535 / 6 parameters per row
+	const countToExceedPbrbmeterLimit = 11000 // ~ 65535 / 6 pbrbmeters per row
 
-	type update struct {
-		accounts *extsvc.Accounts
-		perm     *authz.RepoPermissions
+	type updbte struct {
+		bccounts *extsvc.Accounts
+		perm     *buthz.RepoPermissions
 	}
 	tests := []struct {
-		name                   string
+		nbme                   string
 		slowTest               bool
-		updates                []update
-		expectUserPendingPerms map[extsvc.AccountSpec][]uint32 // account -> object_ids
-		expectRepoPendingPerms map[int32][]extsvc.AccountSpec  // repo_id -> accounts
+		updbtes                []updbte
+		expectUserPendingPerms mbp[extsvc.AccountSpec][]uint32 // bccount -> object_ids
+		expectRepoPendingPerms mbp[int32][]extsvc.AccountSpec  // repo_id -> bccounts
 	}{
 		{
-			name: "empty",
-			updates: []update{
+			nbme: "empty",
+			updbtes: []updbte{
 				{
-					accounts: &extsvc.Accounts{
-						ServiceType: authz.SourcegraphServiceType,
-						ServiceID:   authz.SourcegraphServiceID,
+					bccounts: &extsvc.Accounts{
+						ServiceType: buthz.SourcegrbphServiceType,
+						ServiceID:   buthz.SourcegrbphServiceID,
 						AccountIDs:  nil,
 					},
-					perm: &authz.RepoPermissions{
+					perm: &buthz.RepoPermissions{
 						RepoID: 1,
-						Perm:   authz.Read,
+						Perm:   buthz.Rebd,
 					},
 				},
 			},
 		},
 		{
-			name: "add",
-			updates: []update{
+			nbme: "bdd",
+			updbtes: []updbte{
 				{
-					accounts: &extsvc.Accounts{
-						ServiceType: authz.SourcegraphServiceType,
-						ServiceID:   authz.SourcegraphServiceID,
-						AccountIDs:  []string{"alice"},
+					bccounts: &extsvc.Accounts{
+						ServiceType: buthz.SourcegrbphServiceType,
+						ServiceID:   buthz.SourcegrbphServiceID,
+						AccountIDs:  []string{"blice"},
 					},
-					perm: &authz.RepoPermissions{
+					perm: &buthz.RepoPermissions{
 						RepoID: 1,
-						Perm:   authz.Read,
+						Perm:   buthz.Rebd,
 					},
 				}, {
-					accounts: &extsvc.Accounts{
-						ServiceType: authz.SourcegraphServiceType,
-						ServiceID:   authz.SourcegraphServiceID,
-						AccountIDs:  []string{"alice", "bob"},
+					bccounts: &extsvc.Accounts{
+						ServiceType: buthz.SourcegrbphServiceType,
+						ServiceID:   buthz.SourcegrbphServiceID,
+						AccountIDs:  []string{"blice", "bob"},
 					},
-					perm: &authz.RepoPermissions{
+					perm: &buthz.RepoPermissions{
 						RepoID: 2,
-						Perm:   authz.Read,
+						Perm:   buthz.Rebd,
 					},
 				}, {
-					accounts: &extsvc.Accounts{
+					bccounts: &extsvc.Accounts{
 						ServiceType: "github",
 						ServiceID:   "https://github.com/",
 						AccountIDs:  []string{"cindy"},
 					},
-					perm: &authz.RepoPermissions{
+					perm: &buthz.RepoPermissions{
 						RepoID: 3,
-						Perm:   authz.Read,
+						Perm:   buthz.Rebd,
 					},
 				},
 			},
-			expectUserPendingPerms: map[extsvc.AccountSpec][]uint32{
-				alice:       {1, 2},
+			expectUserPendingPerms: mbp[extsvc.AccountSpec][]uint32{
+				blice:       {1, 2},
 				bob:         {2},
 				cindyGitHub: {3},
 			},
-			expectRepoPendingPerms: map[int32][]extsvc.AccountSpec{
-				1: {alice},
-				2: {alice, bob},
+			expectRepoPendingPerms: mbp[int32][]extsvc.AccountSpec{
+				1: {blice},
+				2: {blice, bob},
 				3: {cindyGitHub},
 			},
 		},
 		{
-			name: "add and update",
-			updates: []update{
+			nbme: "bdd bnd updbte",
+			updbtes: []updbte{
 				{
-					accounts: &extsvc.Accounts{
-						ServiceType: authz.SourcegraphServiceType,
-						ServiceID:   authz.SourcegraphServiceID,
-						AccountIDs:  []string{"alice", "bob"},
+					bccounts: &extsvc.Accounts{
+						ServiceType: buthz.SourcegrbphServiceType,
+						ServiceID:   buthz.SourcegrbphServiceID,
+						AccountIDs:  []string{"blice", "bob"},
 					},
-					perm: &authz.RepoPermissions{
+					perm: &buthz.RepoPermissions{
 						RepoID: 1,
-						Perm:   authz.Read,
+						Perm:   buthz.Rebd,
 					},
 				}, {
-					accounts: &extsvc.Accounts{
-						ServiceType: authz.SourcegraphServiceType,
-						ServiceID:   authz.SourcegraphServiceID,
+					bccounts: &extsvc.Accounts{
+						ServiceType: buthz.SourcegrbphServiceType,
+						ServiceID:   buthz.SourcegrbphServiceID,
 						AccountIDs:  []string{"bob", "cindy"},
 					},
-					perm: &authz.RepoPermissions{
+					perm: &buthz.RepoPermissions{
 						RepoID: 1,
-						Perm:   authz.Read,
+						Perm:   buthz.Rebd,
 					},
 				}, {
-					accounts: &extsvc.Accounts{
+					bccounts: &extsvc.Accounts{
 						ServiceType: "github",
 						ServiceID:   "https://github.com/",
 						AccountIDs:  []string{"cindy"},
 					},
-					perm: &authz.RepoPermissions{
+					perm: &buthz.RepoPermissions{
 						RepoID: 2,
-						Perm:   authz.Read,
+						Perm:   buthz.Rebd,
 					},
 				},
 			},
-			expectUserPendingPerms: map[extsvc.AccountSpec][]uint32{
-				alice:       {},
+			expectUserPendingPerms: mbp[extsvc.AccountSpec][]uint32{
+				blice:       {},
 				bob:         {1},
 				cindy:       {1},
 				cindyGitHub: {2},
 			},
-			expectRepoPendingPerms: map[int32][]extsvc.AccountSpec{
+			expectRepoPendingPerms: mbp[int32][]extsvc.AccountSpec{
 				1: {bob, cindy},
 				2: {cindyGitHub},
 			},
 		},
 		{
-			name: "add and clear",
-			updates: []update{
+			nbme: "bdd bnd clebr",
+			updbtes: []updbte{
 				{
-					accounts: &extsvc.Accounts{
-						ServiceType: authz.SourcegraphServiceType,
-						ServiceID:   authz.SourcegraphServiceID,
-						AccountIDs:  []string{"alice", "bob", "cindy"},
+					bccounts: &extsvc.Accounts{
+						ServiceType: buthz.SourcegrbphServiceType,
+						ServiceID:   buthz.SourcegrbphServiceID,
+						AccountIDs:  []string{"blice", "bob", "cindy"},
 					},
-					perm: &authz.RepoPermissions{
+					perm: &buthz.RepoPermissions{
 						RepoID: 1,
-						Perm:   authz.Read,
+						Perm:   buthz.Rebd,
 					},
 				}, {
-					accounts: &extsvc.Accounts{
-						ServiceType: authz.SourcegraphServiceType,
-						ServiceID:   authz.SourcegraphServiceID,
+					bccounts: &extsvc.Accounts{
+						ServiceType: buthz.SourcegrbphServiceType,
+						ServiceID:   buthz.SourcegrbphServiceID,
 						AccountIDs:  []string{},
 					},
-					perm: &authz.RepoPermissions{
+					perm: &buthz.RepoPermissions{
 						RepoID: 1,
-						Perm:   authz.Read,
+						Perm:   buthz.Rebd,
 					},
 				},
 			},
-			expectUserPendingPerms: map[extsvc.AccountSpec][]uint32{
-				alice: {},
+			expectUserPendingPerms: mbp[extsvc.AccountSpec][]uint32{
+				blice: {},
 				bob:   {},
 				cindy: {},
 			},
-			expectRepoPendingPerms: map[int32][]extsvc.AccountSpec{
+			expectRepoPendingPerms: mbp[int32][]extsvc.AccountSpec{
 				1: {},
 			},
 		},
 		{
-			name:     postgresParameterLimitTest,
+			nbme:     postgresPbrbmeterLimitTest,
 			slowTest: true,
-			updates: func() []update {
-				u := update{
-					accounts: &extsvc.Accounts{
-						ServiceType: authz.SourcegraphServiceType,
-						ServiceID:   authz.SourcegraphServiceID,
-						AccountIDs:  make([]string, countToExceedParameterLimit),
+			updbtes: func() []updbte {
+				u := updbte{
+					bccounts: &extsvc.Accounts{
+						ServiceType: buthz.SourcegrbphServiceType,
+						ServiceID:   buthz.SourcegrbphServiceID,
+						AccountIDs:  mbke([]string, countToExceedPbrbmeterLimit),
 					},
-					perm: &authz.RepoPermissions{
+					perm: &buthz.RepoPermissions{
 						RepoID: 1,
-						Perm:   authz.Read,
+						Perm:   buthz.Rebd,
 					},
 				}
-				for i := 1; i <= countToExceedParameterLimit; i++ {
-					u.accounts.AccountIDs[i-1] = fmt.Sprintf("%d", i)
+				for i := 1; i <= countToExceedPbrbmeterLimit; i++ {
+					u.bccounts.AccountIDs[i-1] = fmt.Sprintf("%d", i)
 				}
-				return []update{u}
+				return []updbte{u}
 			}(),
-			expectUserPendingPerms: func() map[extsvc.AccountSpec][]uint32 {
-				perms := make(map[extsvc.AccountSpec][]uint32, countToExceedParameterLimit)
-				for i := 1; i <= countToExceedParameterLimit; i++ {
+			expectUserPendingPerms: func() mbp[extsvc.AccountSpec][]uint32 {
+				perms := mbke(mbp[extsvc.AccountSpec][]uint32, countToExceedPbrbmeterLimit)
+				for i := 1; i <= countToExceedPbrbmeterLimit; i++ {
 					perms[extsvc.AccountSpec{
-						ServiceType: authz.SourcegraphServiceType,
-						ServiceID:   authz.SourcegraphServiceID,
+						ServiceType: buthz.SourcegrbphServiceType,
+						ServiceID:   buthz.SourcegrbphServiceID,
 						AccountID:   fmt.Sprintf("%d", i),
 					}] = []uint32{1}
 				}
 				return perms
 			}(),
-			expectRepoPendingPerms: map[int32][]extsvc.AccountSpec{
+			expectRepoPendingPerms: mbp[int32][]extsvc.AccountSpec{
 				1: func() []extsvc.AccountSpec {
-					accounts := make([]extsvc.AccountSpec, countToExceedParameterLimit)
-					for i := 1; i <= countToExceedParameterLimit; i++ {
-						accounts[i-1] = extsvc.AccountSpec{
-							ServiceType: authz.SourcegraphServiceType,
-							ServiceID:   authz.SourcegraphServiceID,
+					bccounts := mbke([]extsvc.AccountSpec, countToExceedPbrbmeterLimit)
+					for i := 1; i <= countToExceedPbrbmeterLimit; i++ {
+						bccounts[i-1] = extsvc.AccountSpec{
+							ServiceType: buthz.SourcegrbphServiceType,
+							ServiceID:   buthz.SourcegrbphServiceID,
 							AccountID:   fmt.Sprintf("%d", i),
 						}
 					}
-					return accounts
+					return bccounts
 				}(),
 			},
 		},
 	}
 
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
+	for _, test := rbnge tests {
+		t.Run(test.nbme, func(t *testing.T) {
 			if test.slowTest && !*slowTests {
-				t.Skip("slow-tests not enabled")
+				t.Skip("slow-tests not enbbled")
 			}
 
 			s := perms(logger, db, clock)
-			t.Cleanup(func() {
-				cleanupPermsTables(t, s)
+			t.Clebnup(func() {
+				clebnupPermsTbbles(t, s)
 			})
 
-			ctx := context.Background()
+			ctx := context.Bbckground()
 
-			for _, update := range test.updates {
+			for _, updbte := rbnge test.updbtes {
 				const numOps = 30
 				g, ctx := errgroup.WithContext(ctx)
 				for i := 0; i < numOps; i++ {
-					// Make local copy to prevent race conditions
-					accounts := *update.accounts
-					perm := &authz.RepoPermissions{
-						RepoID:    update.perm.RepoID,
-						Perm:      update.perm.Perm,
-						UpdatedAt: update.perm.UpdatedAt,
+					// Mbke locbl copy to prevent rbce conditions
+					bccounts := *updbte.bccounts
+					perm := &buthz.RepoPermissions{
+						RepoID:    updbte.perm.RepoID,
+						Perm:      updbte.perm.Perm,
+						UpdbtedAt: updbte.perm.UpdbtedAt,
 					}
-					if update.perm.UserIDs != nil {
-						perm.UserIDs = update.perm.UserIDs
+					if updbte.perm.UserIDs != nil {
+						perm.UserIDs = updbte.perm.UserIDs
 					}
 					g.Go(func() error {
-						return s.SetRepoPendingPermissions(ctx, &accounts, perm)
+						return s.SetRepoPendingPermissions(ctx, &bccounts, perm)
 					})
 				}
-				if err := g.Wait(); err != nil {
-					t.Fatal(err)
+				if err := g.Wbit(); err != nil {
+					t.Fbtbl(err)
 				}
 			}
 
-			// Query and check rows in "user_pending_permissions" table.
-			idToSpecs, err := checkUserPendingPermsTable(ctx, s, test.expectUserPendingPerms)
+			// Query bnd check rows in "user_pending_permissions" tbble.
+			idToSpecs, err := checkUserPendingPermsTbble(ctx, s, test.expectUserPendingPerms)
 			if err != nil {
-				t.Fatal("user_pending_permissions:", err)
+				t.Fbtbl("user_pending_permissions:", err)
 			}
 
-			// Query and check rows in "repo_pending_permissions" table.
-			err = checkRepoPendingPermsTable(ctx, s, idToSpecs, test.expectRepoPendingPerms)
+			// Query bnd check rows in "repo_pending_permissions" tbble.
+			err = checkRepoPendingPermsTbble(ctx, s, idToSpecs, test.expectRepoPendingPerms)
 			if err != nil {
-				t.Fatal("repo_pending_permissions:", err)
+				t.Fbtbl("repo_pending_permissions:", err)
 			}
 		})
 	}
@@ -1992,75 +1992,75 @@ func TestPermsStore_ListPendingUsers(t *testing.T) {
 	testDb := dbtest.NewDB(logger, t)
 	db := NewDB(logger, testDb)
 
-	type update struct {
-		accounts *extsvc.Accounts
-		perm     *authz.RepoPermissions
+	type updbte struct {
+		bccounts *extsvc.Accounts
+		perm     *buthz.RepoPermissions
 	}
 	tests := []struct {
-		name               string
-		updates            []update
+		nbme               string
+		updbtes            []updbte
 		expectPendingUsers []string
 	}{
 		{
-			name:               "no user with pending permissions",
+			nbme:               "no user with pending permissions",
 			expectPendingUsers: nil,
 		},
 		{
-			name: "has user with pending permissions",
-			updates: []update{
+			nbme: "hbs user with pending permissions",
+			updbtes: []updbte{
 				{
-					accounts: &extsvc.Accounts{
-						ServiceType: authz.SourcegraphServiceType,
-						ServiceID:   authz.SourcegraphServiceID,
-						AccountIDs:  []string{"alice"},
+					bccounts: &extsvc.Accounts{
+						ServiceType: buthz.SourcegrbphServiceType,
+						ServiceID:   buthz.SourcegrbphServiceID,
+						AccountIDs:  []string{"blice"},
 					},
-					perm: &authz.RepoPermissions{
+					perm: &buthz.RepoPermissions{
 						RepoID: 1,
-						Perm:   authz.Read,
+						Perm:   buthz.Rebd,
 					},
 				},
 			},
-			expectPendingUsers: []string{"alice"},
+			expectPendingUsers: []string{"blice"},
 		},
 		{
-			name: "has user but with empty object_ids",
-			updates: []update{
+			nbme: "hbs user but with empty object_ids",
+			updbtes: []updbte{
 				{
-					accounts: &extsvc.Accounts{
-						ServiceType: authz.SourcegraphServiceType,
-						ServiceID:   authz.SourcegraphServiceID,
-						AccountIDs:  []string{"bob@example.com"},
+					bccounts: &extsvc.Accounts{
+						ServiceType: buthz.SourcegrbphServiceType,
+						ServiceID:   buthz.SourcegrbphServiceID,
+						AccountIDs:  []string{"bob@exbmple.com"},
 					},
-					perm: &authz.RepoPermissions{
+					perm: &buthz.RepoPermissions{
 						RepoID: 1,
-						Perm:   authz.Read,
+						Perm:   buthz.Rebd,
 					},
 				}, {
-					accounts: &extsvc.Accounts{
-						ServiceType: authz.SourcegraphServiceType,
-						ServiceID:   authz.SourcegraphServiceID,
+					bccounts: &extsvc.Accounts{
+						ServiceType: buthz.SourcegrbphServiceType,
+						ServiceID:   buthz.SourcegrbphServiceID,
 						AccountIDs:  nil,
 					},
-					perm: &authz.RepoPermissions{
+					perm: &buthz.RepoPermissions{
 						RepoID: 1,
-						Perm:   authz.Read,
+						Perm:   buthz.Rebd,
 					},
 				},
 			},
 			expectPendingUsers: nil,
 		},
 		{
-			name: "has user but with different service ID",
-			updates: []update{
+			nbme: "hbs user but with different service ID",
+			updbtes: []updbte{
 				{
-					accounts: &extsvc.Accounts{
-						ServiceType: extsvc.TypeGitLab,
-						ServiceID:   "https://gitlab.com/",
-						AccountIDs:  []string{"bob@example.com"},
+					bccounts: &extsvc.Accounts{
+						ServiceType: extsvc.TypeGitLbb,
+						ServiceID:   "https://gitlbb.com/",
+						AccountIDs:  []string{"bob@exbmple.com"},
 					},
-					perm: &authz.RepoPermissions{
+					perm: &buthz.RepoPermissions{
 						RepoID: 1,
-						Perm:   authz.Read,
+						Perm:   buthz.Rebd,
 					},
 				},
 			},
@@ -2068,39 +2068,39 @@ func TestPermsStore_ListPendingUsers(t *testing.T) {
 		},
 	}
 
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
+	for _, test := rbnge tests {
+		t.Run(test.nbme, func(t *testing.T) {
 			s := perms(logger, db, clock)
-			t.Cleanup(func() {
-				cleanupPermsTables(t, s)
+			t.Clebnup(func() {
+				clebnupPermsTbbles(t, s)
 			})
 
-			ctx := context.Background()
+			ctx := context.Bbckground()
 
-			for _, update := range test.updates {
-				tmp := &authz.RepoPermissions{
-					RepoID:    update.perm.RepoID,
-					Perm:      update.perm.Perm,
-					UpdatedAt: update.perm.UpdatedAt,
+			for _, updbte := rbnge test.updbtes {
+				tmp := &buthz.RepoPermissions{
+					RepoID:    updbte.perm.RepoID,
+					Perm:      updbte.perm.Perm,
+					UpdbtedAt: updbte.perm.UpdbtedAt,
 				}
-				if update.perm.UserIDs != nil {
-					tmp.UserIDs = update.perm.UserIDs
+				if updbte.perm.UserIDs != nil {
+					tmp.UserIDs = updbte.perm.UserIDs
 				}
-				if err := s.SetRepoPendingPermissions(ctx, update.accounts, tmp); err != nil {
-					t.Fatal(err)
+				if err := s.SetRepoPendingPermissions(ctx, updbte.bccounts, tmp); err != nil {
+					t.Fbtbl(err)
 				}
 			}
 
-			bindIDs, err := s.ListPendingUsers(ctx, authz.SourcegraphServiceType, authz.SourcegraphServiceID)
+			bindIDs, err := s.ListPendingUsers(ctx, buthz.SourcegrbphServiceType, buthz.SourcegrbphServiceID)
 			if err != nil {
-				t.Fatal(err)
+				t.Fbtbl(err)
 			}
-			equal(t, "bindIDs", test.expectPendingUsers, bindIDs)
+			equbl(t, "bindIDs", test.expectPendingUsers, bindIDs)
 		})
 	}
 }
 
-func TestPermsStore_GrantPendingPermissions(t *testing.T) {
+func TestPermsStore_GrbntPendingPermissions(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
@@ -2110,490 +2110,490 @@ func TestPermsStore_GrantPendingPermissions(t *testing.T) {
 	testDb := dbtest.NewDB(logger, t)
 	db := NewDB(logger, testDb)
 	s := perms(logger, db, clock)
-	ctx := context.Background()
+	ctx := context.Bbckground()
 
-	alice := extsvc.AccountSpec{
-		ServiceType: authz.SourcegraphServiceType,
-		ServiceID:   authz.SourcegraphServiceID,
-		AccountID:   "alice",
+	blice := extsvc.AccountSpec{
+		ServiceType: buthz.SourcegrbphServiceType,
+		ServiceID:   buthz.SourcegrbphServiceID,
+		AccountID:   "blice",
 	}
 	bob := extsvc.AccountSpec{
-		ServiceType: authz.SourcegraphServiceType,
-		ServiceID:   authz.SourcegraphServiceID,
+		ServiceType: buthz.SourcegrbphServiceType,
+		ServiceID:   buthz.SourcegrbphServiceID,
 		AccountID:   "bob",
 	}
 
-	type ExternalAccount struct {
+	type ExternblAccount struct {
 		ID     int32
 		UserID int32
 		extsvc.AccountSpec
 	}
 
-	setupExternalAccounts := func(accounts []ExternalAccount) {
-		users := make(map[int32]*sqlf.Query)
-		values := make([]*sqlf.Query, 0, len(accounts))
-		for _, a := range accounts {
-			if _, ok := users[a.UserID]; !ok {
-				users[a.UserID] = sqlf.Sprintf("(%s::integer, %s::text)", a.UserID, fmt.Sprintf("user-%d", a.UserID))
+	setupExternblAccounts := func(bccounts []ExternblAccount) {
+		users := mbke(mbp[int32]*sqlf.Query)
+		vblues := mbke([]*sqlf.Query, 0, len(bccounts))
+		for _, b := rbnge bccounts {
+			if _, ok := users[b.UserID]; !ok {
+				users[b.UserID] = sqlf.Sprintf("(%s::integer, %s::text)", b.UserID, fmt.Sprintf("user-%d", b.UserID))
 			}
-			values = append(values, sqlf.Sprintf("(%s::integer, %s::integer, %s::text, %s::text, %s::text, %s::text)",
-				a.ID, a.UserID, a.ServiceType, a.ServiceID, a.AccountID, a.ClientID))
+			vblues = bppend(vblues, sqlf.Sprintf("(%s::integer, %s::integer, %s::text, %s::text, %s::text, %s::text)",
+				b.ID, b.UserID, b.ServiceType, b.ServiceID, b.AccountID, b.ClientID))
 		}
-		userQuery := sqlf.Sprintf("INSERT INTO users(id, username) VALUES %s", sqlf.Join(maps.Values(users), ","))
+		userQuery := sqlf.Sprintf("INSERT INTO users(id, usernbme) VALUES %s", sqlf.Join(mbps.Vblues(users), ","))
 		executeQuery(t, ctx, s, userQuery)
 
-		accountQuery := sqlf.Sprintf("INSERT INTO user_external_accounts(id, user_id, service_type, service_id, account_id, client_id) VALUES %s", sqlf.Join(values, ","))
-		executeQuery(t, ctx, s, accountQuery)
+		bccountQuery := sqlf.Sprintf("INSERT INTO user_externbl_bccounts(id, user_id, service_type, service_id, bccount_id, client_id) VALUES %s", sqlf.Join(vblues, ","))
+		executeQuery(t, ctx, s, bccountQuery)
 	}
 
-	// this limit will also exceed param limit for user_repo_permissions,
-	// as we are sending 6 parameter per row
-	const countToExceedParameterLimit = 17000 // ~ 65535 / 4 parameters per row
+	// this limit will blso exceed pbrbm limit for user_repo_permissions,
+	// bs we bre sending 6 pbrbmeter per row
+	const countToExceedPbrbmeterLimit = 17000 // ~ 65535 / 4 pbrbmeters per row
 
 	type pending struct {
-		accounts *extsvc.Accounts
-		perm     *authz.RepoPermissions
+		bccounts *extsvc.Accounts
+		perm     *buthz.RepoPermissions
 	}
-	type update struct {
-		regulars []*authz.RepoPermissions
+	type updbte struct {
+		regulbrs []*buthz.RepoPermissions
 		pendings []pending
 	}
 	tests := []struct {
-		name                   string
+		nbme                   string
 		slowTest               bool
-		updates                []update
-		grants                 []*authz.UserGrantPermissions
-		expectUserRepoPerms    []authz.Permission
-		expectUserPerms        map[int32][]uint32              // user_id -> object_ids
-		expectRepoPerms        map[int32][]uint32              // repo_id -> user_ids
-		expectUserPendingPerms map[extsvc.AccountSpec][]uint32 // account -> object_ids
-		expectRepoPendingPerms map[int32][]extsvc.AccountSpec  // repo_id -> accounts
+		updbtes                []updbte
+		grbnts                 []*buthz.UserGrbntPermissions
+		expectUserRepoPerms    []buthz.Permission
+		expectUserPerms        mbp[int32][]uint32              // user_id -> object_ids
+		expectRepoPerms        mbp[int32][]uint32              // repo_id -> user_ids
+		expectUserPendingPerms mbp[extsvc.AccountSpec][]uint32 // bccount -> object_ids
+		expectRepoPendingPerms mbp[int32][]extsvc.AccountSpec  // repo_id -> bccounts
 
-		upsertRepoPermissionsPageSize int
+		upsertRepoPermissionsPbgeSize int
 	}{
 		{
-			name: "empty",
-			grants: []*authz.UserGrantPermissions{
+			nbme: "empty",
+			grbnts: []*buthz.UserGrbntPermissions{
 				{
 					UserID:                1,
-					UserExternalAccountID: 1,
-					ServiceType:           authz.SourcegraphServiceType,
-					ServiceID:             authz.SourcegraphServiceID,
-					AccountID:             "alice",
+					UserExternblAccountID: 1,
+					ServiceType:           buthz.SourcegrbphServiceType,
+					ServiceID:             buthz.SourcegrbphServiceID,
+					AccountID:             "blice",
 				},
 			},
-			expectUserRepoPerms: []authz.Permission{},
+			expectUserRepoPerms: []buthz.Permission{},
 		},
 		{
-			name: "no matching pending permissions",
-			updates: []update{
+			nbme: "no mbtching pending permissions",
+			updbtes: []updbte{
 				{
-					regulars: []*authz.RepoPermissions{
+					regulbrs: []*buthz.RepoPermissions{
 						{
 							RepoID:  1,
-							Perm:    authz.Read,
-							UserIDs: toMapset(1),
+							Perm:    buthz.Rebd,
+							UserIDs: toMbpset(1),
 						}, {
 							RepoID:  2,
-							Perm:    authz.Read,
-							UserIDs: toMapset(1, 2),
+							Perm:    buthz.Rebd,
+							UserIDs: toMbpset(1, 2),
 						},
 					},
 					pendings: []pending{
 						{
-							accounts: &extsvc.Accounts{
-								ServiceType: authz.SourcegraphServiceType,
-								ServiceID:   authz.SourcegraphServiceID,
-								AccountIDs:  []string{"alice"},
+							bccounts: &extsvc.Accounts{
+								ServiceType: buthz.SourcegrbphServiceType,
+								ServiceID:   buthz.SourcegrbphServiceID,
+								AccountIDs:  []string{"blice"},
 							},
-							perm: &authz.RepoPermissions{
+							perm: &buthz.RepoPermissions{
 								RepoID: 1,
-								Perm:   authz.Read,
+								Perm:   buthz.Rebd,
 							},
 						}, {
-							accounts: &extsvc.Accounts{
-								ServiceType: authz.SourcegraphServiceType,
-								ServiceID:   authz.SourcegraphServiceID,
+							bccounts: &extsvc.Accounts{
+								ServiceType: buthz.SourcegrbphServiceType,
+								ServiceID:   buthz.SourcegrbphServiceID,
 								AccountIDs:  []string{"bob"},
 							},
-							perm: &authz.RepoPermissions{
+							perm: &buthz.RepoPermissions{
 								RepoID: 2,
-								Perm:   authz.Read,
+								Perm:   buthz.Rebd,
 							},
 						},
 					},
 				},
 			},
-			grants: []*authz.UserGrantPermissions{
+			grbnts: []*buthz.UserGrbntPermissions{
 				{
 					UserID:                1,
-					UserExternalAccountID: 3,
-					ServiceType:           authz.SourcegraphServiceType,
-					ServiceID:             authz.SourcegraphServiceID,
+					UserExternblAccountID: 3,
+					ServiceType:           buthz.SourcegrbphServiceType,
+					ServiceID:             buthz.SourcegrbphServiceID,
 					AccountID:             "cindy",
 				},
 			},
-			expectUserRepoPerms: []authz.Permission{
-				{UserID: 1, ExternalAccountID: 1, RepoID: 1, Source: authz.SourceRepoSync},
-				{UserID: 1, ExternalAccountID: 1, RepoID: 2, Source: authz.SourceRepoSync},
-				{UserID: 2, ExternalAccountID: 2, RepoID: 2, Source: authz.SourceRepoSync},
+			expectUserRepoPerms: []buthz.Permission{
+				{UserID: 1, ExternblAccountID: 1, RepoID: 1, Source: buthz.SourceRepoSync},
+				{UserID: 1, ExternblAccountID: 1, RepoID: 2, Source: buthz.SourceRepoSync},
+				{UserID: 2, ExternblAccountID: 2, RepoID: 2, Source: buthz.SourceRepoSync},
 			},
-			expectUserPerms: map[int32][]uint32{
+			expectUserPerms: mbp[int32][]uint32{
 				1: {1, 2},
 				2: {2},
 			},
-			expectRepoPerms: map[int32][]uint32{
+			expectRepoPerms: mbp[int32][]uint32{
 				1: {1},
 				2: {1, 2},
 			},
-			expectUserPendingPerms: map[extsvc.AccountSpec][]uint32{
-				alice: {1},
+			expectUserPendingPerms: mbp[extsvc.AccountSpec][]uint32{
+				blice: {1},
 				bob:   {2},
 			},
-			expectRepoPendingPerms: map[int32][]extsvc.AccountSpec{
-				1: {alice},
+			expectRepoPendingPerms: mbp[int32][]extsvc.AccountSpec{
+				1: {blice},
 				2: {bob},
 			},
 		},
 		{
-			name: "grant pending permission",
-			updates: []update{
+			nbme: "grbnt pending permission",
+			updbtes: []updbte{
 				{
-					regulars: []*authz.RepoPermissions{},
+					regulbrs: []*buthz.RepoPermissions{},
 					pendings: []pending{{
-						accounts: &extsvc.Accounts{
-							ServiceType: authz.SourcegraphServiceType,
-							ServiceID:   authz.SourcegraphServiceID,
-							AccountIDs:  []string{"alice"},
+						bccounts: &extsvc.Accounts{
+							ServiceType: buthz.SourcegrbphServiceType,
+							ServiceID:   buthz.SourcegrbphServiceID,
+							AccountIDs:  []string{"blice"},
 						},
-						perm: &authz.RepoPermissions{
+						perm: &buthz.RepoPermissions{
 							RepoID: 1,
-							Perm:   authz.Read,
+							Perm:   buthz.Rebd,
 						},
 					}},
 				},
 			},
-			grants: []*authz.UserGrantPermissions{{
+			grbnts: []*buthz.UserGrbntPermissions{{
 				UserID:                1,
-				UserExternalAccountID: 1,
-				ServiceType:           authz.SourcegraphServiceType,
-				ServiceID:             authz.SourcegraphServiceID,
-				AccountID:             "alice",
+				UserExternblAccountID: 1,
+				ServiceType:           buthz.SourcegrbphServiceType,
+				ServiceID:             buthz.SourcegrbphServiceID,
+				AccountID:             "blice",
 			}},
-			expectUserRepoPerms: []authz.Permission{
-				{UserID: 1, ExternalAccountID: 1, RepoID: 1, Source: authz.SourceUserSync},
+			expectUserRepoPerms: []buthz.Permission{
+				{UserID: 1, ExternblAccountID: 1, RepoID: 1, Source: buthz.SourceUserSync},
 			},
-			expectUserPerms: map[int32][]uint32{
+			expectUserPerms: mbp[int32][]uint32{
 				1: {1},
 			},
-			expectRepoPerms: map[int32][]uint32{
+			expectRepoPerms: mbp[int32][]uint32{
 				1: {1},
 			},
-			expectUserPendingPerms: map[extsvc.AccountSpec][]uint32{},
-			expectRepoPendingPerms: map[int32][]extsvc.AccountSpec{
+			expectUserPendingPerms: mbp[extsvc.AccountSpec][]uint32{},
+			expectRepoPendingPerms: mbp[int32][]extsvc.AccountSpec{
 				1: {},
 			},
 		},
 		{
-			name: "grant pending permission with existing permissions",
-			updates: []update{
+			nbme: "grbnt pending permission with existing permissions",
+			updbtes: []updbte{
 				{
-					regulars: []*authz.RepoPermissions{
+					regulbrs: []*buthz.RepoPermissions{
 						{
 							RepoID:  1,
-							Perm:    authz.Read,
-							UserIDs: toMapset(1),
+							Perm:    buthz.Rebd,
+							UserIDs: toMbpset(1),
 						},
 					},
 					pendings: []pending{{
-						accounts: &extsvc.Accounts{
-							ServiceType: authz.SourcegraphServiceType,
-							ServiceID:   authz.SourcegraphServiceID,
-							AccountIDs:  []string{"alice"},
+						bccounts: &extsvc.Accounts{
+							ServiceType: buthz.SourcegrbphServiceType,
+							ServiceID:   buthz.SourcegrbphServiceID,
+							AccountIDs:  []string{"blice"},
 						},
-						perm: &authz.RepoPermissions{
+						perm: &buthz.RepoPermissions{
 							RepoID: 2,
-							Perm:   authz.Read,
+							Perm:   buthz.Rebd,
 						},
 					}},
 				},
 			},
-			grants: []*authz.UserGrantPermissions{{
+			grbnts: []*buthz.UserGrbntPermissions{{
 				UserID:                1,
-				UserExternalAccountID: 1,
-				ServiceType:           authz.SourcegraphServiceType,
-				ServiceID:             authz.SourcegraphServiceID,
-				AccountID:             "alice",
+				UserExternblAccountID: 1,
+				ServiceType:           buthz.SourcegrbphServiceType,
+				ServiceID:             buthz.SourcegrbphServiceID,
+				AccountID:             "blice",
 			}},
-			expectUserRepoPerms: []authz.Permission{
-				{UserID: 1, ExternalAccountID: 1, RepoID: 1, Source: authz.SourceRepoSync},
-				{UserID: 1, ExternalAccountID: 1, RepoID: 2, Source: authz.SourceUserSync},
+			expectUserRepoPerms: []buthz.Permission{
+				{UserID: 1, ExternblAccountID: 1, RepoID: 1, Source: buthz.SourceRepoSync},
+				{UserID: 1, ExternblAccountID: 1, RepoID: 2, Source: buthz.SourceUserSync},
 			},
-			expectUserPerms: map[int32][]uint32{
+			expectUserPerms: mbp[int32][]uint32{
 				1: {1, 2},
 			},
-			expectRepoPerms: map[int32][]uint32{
+			expectRepoPerms: mbp[int32][]uint32{
 				1: {1},
 				2: {1},
 			},
-			expectUserPendingPerms: map[extsvc.AccountSpec][]uint32{},
-			expectRepoPendingPerms: map[int32][]extsvc.AccountSpec{
+			expectUserPendingPerms: mbp[extsvc.AccountSpec][]uint32{},
+			expectRepoPendingPerms: mbp[int32][]extsvc.AccountSpec{
 				2: {},
 			},
 		},
 		{
-			name: "union matching pending permissions for same account ID but different service IDs",
-			updates: []update{
+			nbme: "union mbtching pending permissions for sbme bccount ID but different service IDs",
+			updbtes: []updbte{
 				{
-					regulars: []*authz.RepoPermissions{
+					regulbrs: []*buthz.RepoPermissions{
 						{
 							RepoID:  1,
-							Perm:    authz.Read,
-							UserIDs: toMapset(1),
+							Perm:    buthz.Rebd,
+							UserIDs: toMbpset(1),
 						}, {
 							RepoID:  2,
-							Perm:    authz.Read,
-							UserIDs: toMapset(1, 2),
+							Perm:    buthz.Rebd,
+							UserIDs: toMbpset(1, 2),
 						},
 					},
 					pendings: []pending{
 						{
-							accounts: &extsvc.Accounts{
-								ServiceType: authz.SourcegraphServiceType,
-								ServiceID:   authz.SourcegraphServiceID,
-								AccountIDs:  []string{"alice"},
+							bccounts: &extsvc.Accounts{
+								ServiceType: buthz.SourcegrbphServiceType,
+								ServiceID:   buthz.SourcegrbphServiceID,
+								AccountIDs:  []string{"blice"},
 							},
-							perm: &authz.RepoPermissions{
+							perm: &buthz.RepoPermissions{
 								RepoID: 1,
-								Perm:   authz.Read,
+								Perm:   buthz.Rebd,
 							},
 						},
 						{
-							accounts: &extsvc.Accounts{
-								ServiceType: extsvc.TypeGitLab,
-								ServiceID:   "https://gitlab.com/",
-								AccountIDs:  []string{"alice"},
+							bccounts: &extsvc.Accounts{
+								ServiceType: extsvc.TypeGitLbb,
+								ServiceID:   "https://gitlbb.com/",
+								AccountIDs:  []string{"blice"},
 							},
-							perm: &authz.RepoPermissions{
+							perm: &buthz.RepoPermissions{
 								RepoID: 2,
-								Perm:   authz.Read,
+								Perm:   buthz.Rebd,
 							},
 						}, {
-							accounts: &extsvc.Accounts{
-								ServiceType: authz.SourcegraphServiceType,
-								ServiceID:   authz.SourcegraphServiceID,
+							bccounts: &extsvc.Accounts{
+								ServiceType: buthz.SourcegrbphServiceType,
+								ServiceID:   buthz.SourcegrbphServiceID,
 								AccountIDs:  []string{"bob"},
 							},
-							perm: &authz.RepoPermissions{
+							perm: &buthz.RepoPermissions{
 								RepoID: 3,
-								Perm:   authz.Read,
+								Perm:   buthz.Rebd,
 							},
 						},
 					},
 				},
 			},
-			grants: []*authz.UserGrantPermissions{
+			grbnts: []*buthz.UserGrbntPermissions{
 				{
 					UserID:                3,
-					UserExternalAccountID: 3,
-					ServiceType:           authz.SourcegraphServiceType,
-					ServiceID:             authz.SourcegraphServiceID,
-					AccountID:             "alice",
+					UserExternblAccountID: 3,
+					ServiceType:           buthz.SourcegrbphServiceType,
+					ServiceID:             buthz.SourcegrbphServiceID,
+					AccountID:             "blice",
 				}, {
 					UserID:                3,
-					UserExternalAccountID: 4,
-					ServiceType:           extsvc.TypeGitLab,
-					ServiceID:             "https://gitlab.com/",
-					AccountID:             "alice",
+					UserExternblAccountID: 4,
+					ServiceType:           extsvc.TypeGitLbb,
+					ServiceID:             "https://gitlbb.com/",
+					AccountID:             "blice",
 				},
 			},
-			expectUserRepoPerms: []authz.Permission{
-				{UserID: 1, ExternalAccountID: 1, RepoID: 1, Source: authz.SourceRepoSync},
-				{UserID: 1, ExternalAccountID: 1, RepoID: 2, Source: authz.SourceRepoSync},
-				{UserID: 2, ExternalAccountID: 2, RepoID: 2, Source: authz.SourceRepoSync},
-				{UserID: 3, ExternalAccountID: 3, RepoID: 1, Source: authz.SourceUserSync},
-				{UserID: 3, ExternalAccountID: 4, RepoID: 2, Source: authz.SourceUserSync},
+			expectUserRepoPerms: []buthz.Permission{
+				{UserID: 1, ExternblAccountID: 1, RepoID: 1, Source: buthz.SourceRepoSync},
+				{UserID: 1, ExternblAccountID: 1, RepoID: 2, Source: buthz.SourceRepoSync},
+				{UserID: 2, ExternblAccountID: 2, RepoID: 2, Source: buthz.SourceRepoSync},
+				{UserID: 3, ExternblAccountID: 3, RepoID: 1, Source: buthz.SourceUserSync},
+				{UserID: 3, ExternblAccountID: 4, RepoID: 2, Source: buthz.SourceUserSync},
 			},
-			expectUserPerms: map[int32][]uint32{
+			expectUserPerms: mbp[int32][]uint32{
 				1: {1, 2},
 				2: {2},
 				3: {1, 2},
 			},
-			expectRepoPerms: map[int32][]uint32{
+			expectRepoPerms: mbp[int32][]uint32{
 				1: {1, 3},
 				2: {1, 2, 3},
 			},
-			expectUserPendingPerms: map[extsvc.AccountSpec][]uint32{
+			expectUserPendingPerms: mbp[extsvc.AccountSpec][]uint32{
 				bob: {3},
 			},
-			expectRepoPendingPerms: map[int32][]extsvc.AccountSpec{
+			expectRepoPendingPerms: mbp[int32][]extsvc.AccountSpec{
 				1: {},
 				2: {},
 				3: {bob},
 			},
 		},
 		{
-			name: "union matching pending permissions for same service ID but different account IDs",
-			updates: []update{
+			nbme: "union mbtching pending permissions for sbme service ID but different bccount IDs",
+			updbtes: []updbte{
 				{
-					regulars: []*authz.RepoPermissions{
+					regulbrs: []*buthz.RepoPermissions{
 						{
 							RepoID:  1,
-							Perm:    authz.Read,
-							UserIDs: toMapset(1),
+							Perm:    buthz.Rebd,
+							UserIDs: toMbpset(1),
 						}, {
 							RepoID:  2,
-							Perm:    authz.Read,
-							UserIDs: toMapset(1, 2),
+							Perm:    buthz.Rebd,
+							UserIDs: toMbpset(1, 2),
 						},
 					},
 					pendings: []pending{
 						{
-							accounts: &extsvc.Accounts{
-								ServiceType: authz.SourcegraphServiceType,
-								ServiceID:   authz.SourcegraphServiceID,
-								AccountIDs:  []string{"alice@example.com"},
+							bccounts: &extsvc.Accounts{
+								ServiceType: buthz.SourcegrbphServiceType,
+								ServiceID:   buthz.SourcegrbphServiceID,
+								AccountIDs:  []string{"blice@exbmple.com"},
 							},
-							perm: &authz.RepoPermissions{
+							perm: &buthz.RepoPermissions{
 								RepoID: 1,
-								Perm:   authz.Read,
+								Perm:   buthz.Rebd,
 							},
 						}, {
-							accounts: &extsvc.Accounts{
-								ServiceType: authz.SourcegraphServiceType,
-								ServiceID:   authz.SourcegraphServiceID,
-								AccountIDs:  []string{"alice2@example.com"},
+							bccounts: &extsvc.Accounts{
+								ServiceType: buthz.SourcegrbphServiceType,
+								ServiceID:   buthz.SourcegrbphServiceID,
+								AccountIDs:  []string{"blice2@exbmple.com"},
 							},
-							perm: &authz.RepoPermissions{
+							perm: &buthz.RepoPermissions{
 								RepoID: 2,
-								Perm:   authz.Read,
+								Perm:   buthz.Rebd,
 							},
 						},
 					},
 				},
 			},
-			grants: []*authz.UserGrantPermissions{
+			grbnts: []*buthz.UserGrbntPermissions{
 				{
 					UserID:                3,
-					UserExternalAccountID: 3,
-					ServiceType:           authz.SourcegraphServiceType,
-					ServiceID:             authz.SourcegraphServiceID,
-					AccountID:             "alice@example.com",
+					UserExternblAccountID: 3,
+					ServiceType:           buthz.SourcegrbphServiceType,
+					ServiceID:             buthz.SourcegrbphServiceID,
+					AccountID:             "blice@exbmple.com",
 				}, {
 					UserID:                3,
-					UserExternalAccountID: 4,
-					ServiceType:           authz.SourcegraphServiceType,
-					ServiceID:             authz.SourcegraphServiceID,
-					AccountID:             "alice2@example.com",
+					UserExternblAccountID: 4,
+					ServiceType:           buthz.SourcegrbphServiceType,
+					ServiceID:             buthz.SourcegrbphServiceID,
+					AccountID:             "blice2@exbmple.com",
 				},
 			},
-			expectUserRepoPerms: []authz.Permission{
-				{UserID: 1, ExternalAccountID: 1, RepoID: 1, Source: authz.SourceRepoSync},
-				{UserID: 1, ExternalAccountID: 1, RepoID: 2, Source: authz.SourceRepoSync},
-				{UserID: 2, ExternalAccountID: 2, RepoID: 2, Source: authz.SourceRepoSync},
-				{UserID: 3, ExternalAccountID: 3, RepoID: 1, Source: authz.SourceUserSync},
-				{UserID: 3, ExternalAccountID: 4, RepoID: 2, Source: authz.SourceUserSync},
+			expectUserRepoPerms: []buthz.Permission{
+				{UserID: 1, ExternblAccountID: 1, RepoID: 1, Source: buthz.SourceRepoSync},
+				{UserID: 1, ExternblAccountID: 1, RepoID: 2, Source: buthz.SourceRepoSync},
+				{UserID: 2, ExternblAccountID: 2, RepoID: 2, Source: buthz.SourceRepoSync},
+				{UserID: 3, ExternblAccountID: 3, RepoID: 1, Source: buthz.SourceUserSync},
+				{UserID: 3, ExternblAccountID: 4, RepoID: 2, Source: buthz.SourceUserSync},
 			},
-			expectUserPerms: map[int32][]uint32{
+			expectUserPerms: mbp[int32][]uint32{
 				1: {1, 2},
 				2: {2},
 				3: {1, 2},
 			},
-			expectRepoPerms: map[int32][]uint32{
+			expectRepoPerms: mbp[int32][]uint32{
 				1: {1, 3},
 				2: {1, 2, 3},
 			},
-			expectUserPendingPerms: map[extsvc.AccountSpec][]uint32{},
-			expectRepoPendingPerms: map[int32][]extsvc.AccountSpec{
+			expectUserPendingPerms: mbp[extsvc.AccountSpec][]uint32{},
+			expectRepoPendingPerms: mbp[int32][]extsvc.AccountSpec{
 				1: {},
 				2: {},
 			},
 		},
 		{
-			name:                          "grant pending permission with pagination",
-			upsertRepoPermissionsPageSize: 2,
-			updates: []update{
+			nbme:                          "grbnt pending permission with pbginbtion",
+			upsertRepoPermissionsPbgeSize: 2,
+			updbtes: []updbte{
 				{
-					regulars: []*authz.RepoPermissions{},
+					regulbrs: []*buthz.RepoPermissions{},
 					pendings: []pending{{
-						accounts: &extsvc.Accounts{
-							ServiceType: authz.SourcegraphServiceType,
-							ServiceID:   authz.SourcegraphServiceID,
-							AccountIDs:  []string{"alice"},
+						bccounts: &extsvc.Accounts{
+							ServiceType: buthz.SourcegrbphServiceType,
+							ServiceID:   buthz.SourcegrbphServiceID,
+							AccountIDs:  []string{"blice"},
 						},
-						perm: &authz.RepoPermissions{
+						perm: &buthz.RepoPermissions{
 							RepoID: 1,
-							Perm:   authz.Read,
+							Perm:   buthz.Rebd,
 						},
 					}, {
-						accounts: &extsvc.Accounts{
-							ServiceType: authz.SourcegraphServiceType,
-							ServiceID:   authz.SourcegraphServiceID,
-							AccountIDs:  []string{"alice"},
+						bccounts: &extsvc.Accounts{
+							ServiceType: buthz.SourcegrbphServiceType,
+							ServiceID:   buthz.SourcegrbphServiceID,
+							AccountIDs:  []string{"blice"},
 						},
-						perm: &authz.RepoPermissions{
+						perm: &buthz.RepoPermissions{
 							RepoID: 2,
-							Perm:   authz.Read,
+							Perm:   buthz.Rebd,
 						},
 					}, {
-						accounts: &extsvc.Accounts{
-							ServiceType: authz.SourcegraphServiceType,
-							ServiceID:   authz.SourcegraphServiceID,
-							AccountIDs:  []string{"alice"},
+						bccounts: &extsvc.Accounts{
+							ServiceType: buthz.SourcegrbphServiceType,
+							ServiceID:   buthz.SourcegrbphServiceID,
+							AccountIDs:  []string{"blice"},
 						},
-						perm: &authz.RepoPermissions{
+						perm: &buthz.RepoPermissions{
 							RepoID: 3,
-							Perm:   authz.Read,
+							Perm:   buthz.Rebd,
 						},
 					}},
 				},
 			},
-			grants: []*authz.UserGrantPermissions{{
+			grbnts: []*buthz.UserGrbntPermissions{{
 				UserID:                1,
-				UserExternalAccountID: 1,
-				ServiceType:           authz.SourcegraphServiceType,
-				ServiceID:             authz.SourcegraphServiceID,
-				AccountID:             "alice",
+				UserExternblAccountID: 1,
+				ServiceType:           buthz.SourcegrbphServiceType,
+				ServiceID:             buthz.SourcegrbphServiceID,
+				AccountID:             "blice",
 			}},
-			expectUserRepoPerms: []authz.Permission{
-				{UserID: 1, ExternalAccountID: 1, RepoID: 1, Source: authz.SourceUserSync},
-				{UserID: 1, ExternalAccountID: 1, RepoID: 2, Source: authz.SourceUserSync},
-				{UserID: 1, ExternalAccountID: 1, RepoID: 3, Source: authz.SourceUserSync},
+			expectUserRepoPerms: []buthz.Permission{
+				{UserID: 1, ExternblAccountID: 1, RepoID: 1, Source: buthz.SourceUserSync},
+				{UserID: 1, ExternblAccountID: 1, RepoID: 2, Source: buthz.SourceUserSync},
+				{UserID: 1, ExternblAccountID: 1, RepoID: 3, Source: buthz.SourceUserSync},
 			},
-			expectUserPerms: map[int32][]uint32{
+			expectUserPerms: mbp[int32][]uint32{
 				1: {1, 2, 3},
 			},
-			expectRepoPerms: map[int32][]uint32{
+			expectRepoPerms: mbp[int32][]uint32{
 				1: {1},
 				2: {1},
 				3: {1},
 			},
-			expectUserPendingPerms: map[extsvc.AccountSpec][]uint32{},
-			expectRepoPendingPerms: map[int32][]extsvc.AccountSpec{
+			expectUserPendingPerms: mbp[extsvc.AccountSpec][]uint32{},
+			expectRepoPendingPerms: mbp[int32][]extsvc.AccountSpec{
 				1: {},
 				2: {},
 				3: {},
 			},
 		},
 		{
-			name:     postgresParameterLimitTest,
+			nbme:     postgresPbrbmeterLimitTest,
 			slowTest: true,
-			updates: []update{
+			updbtes: []updbte{
 				{
-					regulars: []*authz.RepoPermissions{},
+					regulbrs: []*buthz.RepoPermissions{},
 					pendings: func() []pending {
-						accounts := &extsvc.Accounts{
-							ServiceType: authz.SourcegraphServiceType,
-							ServiceID:   authz.SourcegraphServiceID,
-							AccountIDs:  []string{"alice"},
+						bccounts := &extsvc.Accounts{
+							ServiceType: buthz.SourcegrbphServiceType,
+							ServiceID:   buthz.SourcegrbphServiceID,
+							AccountIDs:  []string{"blice"},
 						}
-						pendings := make([]pending, countToExceedParameterLimit)
-						for i := 1; i <= countToExceedParameterLimit; i += 1 {
+						pendings := mbke([]pending, countToExceedPbrbmeterLimit)
+						for i := 1; i <= countToExceedPbrbmeterLimit; i += 1 {
 							pendings[i-1] = pending{
-								accounts: accounts,
-								perm: &authz.RepoPermissions{
+								bccounts: bccounts,
+								perm: &buthz.RepoPermissions{
 									RepoID: int32(i),
-									Perm:   authz.Read,
+									Perm:   buthz.Rebd,
 								},
 							}
 						}
@@ -2601,147 +2601,147 @@ func TestPermsStore_GrantPendingPermissions(t *testing.T) {
 					}(),
 				},
 			},
-			grants: []*authz.UserGrantPermissions{
+			grbnts: []*buthz.UserGrbntPermissions{
 				{
 					UserID:                1,
-					UserExternalAccountID: 1,
-					ServiceType:           authz.SourcegraphServiceType,
-					ServiceID:             authz.SourcegraphServiceID,
-					AccountID:             "alice",
+					UserExternblAccountID: 1,
+					ServiceType:           buthz.SourcegrbphServiceType,
+					ServiceID:             buthz.SourcegrbphServiceID,
+					AccountID:             "blice",
 				},
 			},
-			expectUserRepoPerms: func() []authz.Permission {
-				perms := make([]authz.Permission, 0, countToExceedParameterLimit)
-				for i := 1; i <= countToExceedParameterLimit; i += 1 {
-					perms = append(perms, authz.Permission{
+			expectUserRepoPerms: func() []buthz.Permission {
+				perms := mbke([]buthz.Permission, 0, countToExceedPbrbmeterLimit)
+				for i := 1; i <= countToExceedPbrbmeterLimit; i += 1 {
+					perms = bppend(perms, buthz.Permission{
 						UserID:            1,
-						ExternalAccountID: 1,
+						ExternblAccountID: 1,
 						RepoID:            int32(i),
-						Source:            authz.SourceUserSync,
+						Source:            buthz.SourceUserSync,
 					})
 				}
 				return perms
 			}(),
-			expectUserPerms: func() map[int32][]uint32 {
-				repos := make([]uint32, countToExceedParameterLimit)
-				for i := 1; i <= countToExceedParameterLimit; i += 1 {
+			expectUserPerms: func() mbp[int32][]uint32 {
+				repos := mbke([]uint32, countToExceedPbrbmeterLimit)
+				for i := 1; i <= countToExceedPbrbmeterLimit; i += 1 {
 					repos[i-1] = uint32(i)
 				}
-				return map[int32][]uint32{1: repos}
+				return mbp[int32][]uint32{1: repos}
 			}(),
-			expectRepoPerms: func() map[int32][]uint32 {
-				repos := make(map[int32][]uint32, countToExceedParameterLimit)
-				for i := 1; i <= countToExceedParameterLimit; i += 1 {
+			expectRepoPerms: func() mbp[int32][]uint32 {
+				repos := mbke(mbp[int32][]uint32, countToExceedPbrbmeterLimit)
+				for i := 1; i <= countToExceedPbrbmeterLimit; i += 1 {
 					repos[int32(i)] = []uint32{1}
 				}
 				return repos
 			}(),
-			expectUserPendingPerms: map[extsvc.AccountSpec][]uint32{},
-			expectRepoPendingPerms: func() map[int32][]extsvc.AccountSpec {
-				repos := make(map[int32][]extsvc.AccountSpec, countToExceedParameterLimit)
-				for i := 1; i <= countToExceedParameterLimit; i += 1 {
+			expectUserPendingPerms: mbp[extsvc.AccountSpec][]uint32{},
+			expectRepoPendingPerms: func() mbp[int32][]extsvc.AccountSpec {
+				repos := mbke(mbp[int32][]extsvc.AccountSpec, countToExceedPbrbmeterLimit)
+				for i := 1; i <= countToExceedPbrbmeterLimit; i += 1 {
 					repos[int32(i)] = []extsvc.AccountSpec{}
 				}
 				return repos
 			}(),
 		},
 	}
-	for _, test := range tests {
-		if t.Failed() {
-			break
+	for _, test := rbnge tests {
+		if t.Fbiled() {
+			brebk
 		}
 
-		t.Run(test.name, func(t *testing.T) {
+		t.Run(test.nbme, func(t *testing.T) {
 			if test.slowTest && !*slowTests {
-				t.Skip("slow-tests not enabled")
+				t.Skip("slow-tests not enbbled")
 			}
 
-			if test.upsertRepoPermissionsPageSize > 0 {
-				upsertRepoPermissionsPageSize = test.upsertRepoPermissionsPageSize
+			if test.upsertRepoPermissionsPbgeSize > 0 {
+				upsertRepoPermissionsPbgeSize = test.upsertRepoPermissionsPbgeSize
 			}
 
-			t.Cleanup(func() {
-				cleanupPermsTables(t, s)
-				cleanupUsersTable(t, s)
-				cleanupReposTable(t, s)
+			t.Clebnup(func() {
+				clebnupPermsTbbles(t, s)
+				clebnupUsersTbble(t, s)
+				clebnupReposTbble(t, s)
 
-				if test.upsertRepoPermissionsPageSize > 0 {
-					upsertRepoPermissionsPageSize = defaultUpsertRepoPermissionsPageSize
+				if test.upsertRepoPermissionsPbgeSize > 0 {
+					upsertRepoPermissionsPbgeSize = defbultUpsertRepoPermissionsPbgeSize
 				}
 			})
 
-			accounts := make([]ExternalAccount, 0)
-			for _, grant := range test.grants {
-				accounts = append(accounts, ExternalAccount{
-					ID:     grant.UserExternalAccountID,
-					UserID: grant.UserID,
+			bccounts := mbke([]ExternblAccount, 0)
+			for _, grbnt := rbnge test.grbnts {
+				bccounts = bppend(bccounts, ExternblAccount{
+					ID:     grbnt.UserExternblAccountID,
+					UserID: grbnt.UserID,
 					AccountSpec: extsvc.AccountSpec{
-						ServiceType: grant.ServiceType,
-						ServiceID:   grant.ServiceID,
-						AccountID:   grant.AccountID,
+						ServiceType: grbnt.ServiceType,
+						ServiceID:   grbnt.ServiceID,
+						AccountID:   grbnt.AccountID,
 						ClientID:    "client_id",
 					},
 				})
 			}
 
-			// create related entities
-			if len(accounts) > 0 {
-				setupExternalAccounts(accounts)
+			// crebte relbted entities
+			if len(bccounts) > 0 {
+				setupExternblAccounts(bccounts)
 			}
 
 			if len(test.expectUserRepoPerms) > 0 {
-				setupPermsRelatedEntities(t, s, test.expectUserRepoPerms)
+				setupPermsRelbtedEntities(t, s, test.expectUserRepoPerms)
 			}
 
-			for _, update := range test.updates {
-				for _, p := range update.regulars {
+			for _, updbte := rbnge test.updbtes {
+				for _, p := rbnge updbte.regulbrs {
 					repoID := p.RepoID
-					users := make([]authz.UserIDWithExternalAccountID, 0, len(p.UserIDs))
-					for userID := range p.UserIDs {
-						users = append(users, authz.UserIDWithExternalAccountID{
+					users := mbke([]buthz.UserIDWithExternblAccountID, 0, len(p.UserIDs))
+					for userID := rbnge p.UserIDs {
+						users = bppend(users, buthz.UserIDWithExternblAccountID{
 							UserID:            userID,
-							ExternalAccountID: userID,
+							ExternblAccountID: userID,
 						})
 					}
 
-					if _, err := s.SetRepoPerms(ctx, repoID, users, authz.SourceRepoSync); err != nil {
-						t.Fatal(err)
+					if _, err := s.SetRepoPerms(ctx, repoID, users, buthz.SourceRepoSync); err != nil {
+						t.Fbtbl(err)
 					}
 				}
-				for _, p := range update.pendings {
-					if err := s.SetRepoPendingPermissions(ctx, p.accounts, p.perm); err != nil {
-						t.Fatal(err)
+				for _, p := rbnge updbte.pendings {
+					if err := s.SetRepoPendingPermissions(ctx, p.bccounts, p.perm); err != nil {
+						t.Fbtbl(err)
 					}
 				}
 			}
 
-			for _, grant := range test.grants {
-				err := s.GrantPendingPermissions(ctx, grant)
+			for _, grbnt := rbnge test.grbnts {
+				err := s.GrbntPendingPermissions(ctx, grbnt)
 				if err != nil {
-					t.Fatal(err)
+					t.Fbtbl(err)
 				}
 			}
 
 			checkUserRepoPermissions(t, s, nil, test.expectUserRepoPerms)
 
-			// Query and check rows in "user_pending_permissions" table.
-			idToSpecs, err := checkUserPendingPermsTable(ctx, s, test.expectUserPendingPerms)
+			// Query bnd check rows in "user_pending_permissions" tbble.
+			idToSpecs, err := checkUserPendingPermsTbble(ctx, s, test.expectUserPendingPerms)
 			if err != nil {
-				t.Fatal("user_pending_permissions:", err)
+				t.Fbtbl("user_pending_permissions:", err)
 			}
 
-			// Query and check rows in "repo_pending_permissions" table.
-			err = checkRepoPendingPermsTable(ctx, s, idToSpecs, test.expectRepoPendingPerms)
+			// Query bnd check rows in "repo_pending_permissions" tbble.
+			err = checkRepoPendingPermsTbble(ctx, s, idToSpecs, test.expectRepoPendingPerms)
 			if err != nil {
-				t.Fatal("repo_pending_permissions:", err)
+				t.Fbtbl("repo_pending_permissions:", err)
 			}
 		})
 	}
 }
 
-// This test is used to ensure we ignore invalid pending user IDs on updating repository pending permissions
-// because permissions have been granted for those users.
-func TestPermsStore_SetPendingPermissionsAfterGrant(t *testing.T) {
+// This test is used to ensure we ignore invblid pending user IDs on updbting repository pending permissions
+// becbuse permissions hbve been grbnted for those users.
+func TestPermsStore_SetPendingPermissionsAfterGrbnt(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
@@ -2751,66 +2751,66 @@ func TestPermsStore_SetPendingPermissionsAfterGrant(t *testing.T) {
 	testDb := dbtest.NewDB(logger, t)
 	db := NewDB(logger, testDb)
 	s := perms(logger, db, clock)
-	defer cleanupPermsTables(t, s)
+	defer clebnupPermsTbbles(t, s)
 
-	ctx := context.Background()
+	ctx := context.Bbckground()
 
-	setupPermsRelatedEntities(t, s, []authz.Permission{
+	setupPermsRelbtedEntities(t, s, []buthz.Permission{
 		{
 			UserID:            1,
 			RepoID:            1,
-			ExternalAccountID: 1,
+			ExternblAccountID: 1,
 		},
 		{
 			UserID:            2,
 			RepoID:            1,
-			ExternalAccountID: 2,
+			ExternblAccountID: 2,
 		},
 	})
 
-	// Set up pending permissions for at least two users
+	// Set up pending permissions for bt lebst two users
 	if err := s.SetRepoPendingPermissions(ctx, &extsvc.Accounts{
-		ServiceType: authz.SourcegraphServiceType,
-		ServiceID:   authz.SourcegraphServiceID,
-		AccountIDs:  []string{"alice", "bob"},
-	}, &authz.RepoPermissions{
+		ServiceType: buthz.SourcegrbphServiceType,
+		ServiceID:   buthz.SourcegrbphServiceID,
+		AccountIDs:  []string{"blice", "bob"},
+	}, &buthz.RepoPermissions{
 		RepoID: 1,
-		Perm:   authz.Read,
+		Perm:   buthz.Rebd,
 	}); err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	// Now grant permissions for these two users, which effectively remove corresponding rows
-	// from the `user_pending_permissions` table.
-	if err := s.GrantPendingPermissions(ctx, &authz.UserGrantPermissions{
+	// Now grbnt permissions for these two users, which effectively remove corresponding rows
+	// from the `user_pending_permissions` tbble.
+	if err := s.GrbntPendingPermissions(ctx, &buthz.UserGrbntPermissions{
 		UserID:      1,
-		ServiceType: authz.SourcegraphServiceType,
-		ServiceID:   authz.SourcegraphServiceID,
-		AccountID:   "alice",
+		ServiceType: buthz.SourcegrbphServiceType,
+		ServiceID:   buthz.SourcegrbphServiceID,
+		AccountID:   "blice",
 	}); err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	if err := s.GrantPendingPermissions(ctx, &authz.UserGrantPermissions{
+	if err := s.GrbntPendingPermissions(ctx, &buthz.UserGrbntPermissions{
 		UserID:      2,
-		ServiceType: authz.SourcegraphServiceType,
-		ServiceID:   authz.SourcegraphServiceID,
+		ServiceType: buthz.SourcegrbphServiceType,
+		ServiceID:   buthz.SourcegrbphServiceID,
 		AccountID:   "bob",
 	}); err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	// Now the `repo_pending_permissions` table has references to these two deleted rows,
+	// Now the `repo_pending_permissions` tbble hbs references to these two deleted rows,
 	// it should just ignore them.
 	if err := s.SetRepoPendingPermissions(ctx, &extsvc.Accounts{
-		ServiceType: authz.SourcegraphServiceType,
-		ServiceID:   authz.SourcegraphServiceID,
-		AccountIDs:  []string{}, // Intentionally empty to cover "no-update" case
-	}, &authz.RepoPermissions{
+		ServiceType: buthz.SourcegrbphServiceType,
+		ServiceID:   buthz.SourcegrbphServiceID,
+		AccountIDs:  []string{}, // Intentionblly empty to cover "no-updbte" cbse
+	}, &buthz.RepoPermissions{
 		RepoID: 1,
-		Perm:   authz.Read,
+		Perm:   buthz.Rebd,
 	}); err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 }
 
@@ -2823,79 +2823,79 @@ func TestPermsStore_DeleteAllUserPermissions(t *testing.T) {
 	testDb := dbtest.NewDB(logger, t)
 	db := NewDB(logger, testDb)
 	s := perms(logger, db, clock)
-	t.Cleanup(func() {
-		cleanupPermsTables(t, s)
-		cleanupUsersTable(t, s)
-		cleanupReposTable(t, s)
+	t.Clebnup(func() {
+		clebnupPermsTbbles(t, s)
+		clebnupUsersTbble(t, s)
+		clebnupReposTbble(t, s)
 	})
 
-	ctx := context.Background()
+	ctx := context.Bbckground()
 
-	// Create 2 users and their external accounts and repos
-	// Set up test users and external accounts
+	// Crebte 2 users bnd their externbl bccounts bnd repos
+	// Set up test users bnd externbl bccounts
 	extSQL := `
-	INSERT INTO user_external_accounts(user_id, service_type, service_id, account_id, client_id, created_at, updated_at, deleted_at, expired_at)
+	INSERT INTO user_externbl_bccounts(user_id, service_type, service_id, bccount_id, client_id, crebted_bt, updbted_bt, deleted_bt, expired_bt)
 		VALUES(%s, %s, %s, %s, %s, %s, %s, %s, %s)
 	`
 	qs := []*sqlf.Query{
-		sqlf.Sprintf(`INSERT INTO users(username) VALUES('alice')`), // ID=1
-		sqlf.Sprintf(`INSERT INTO users(username) VALUES('bob')`),   // ID=2
+		sqlf.Sprintf(`INSERT INTO users(usernbme) VALUES('blice')`), // ID=1
+		sqlf.Sprintf(`INSERT INTO users(usernbme) VALUES('bob')`),   // ID=2
 
-		sqlf.Sprintf(extSQL, 1, extsvc.TypeGitLab, "https://gitlab.com/", "alice_gitlab", "alice_gitlab_client_id", clock(), clock(), nil, nil), // ID=1
-		sqlf.Sprintf(extSQL, 1, "github", "https://github.com/", "alice_github", "alice_github_client_id", clock(), clock(), nil, nil),          // ID=2
-		sqlf.Sprintf(extSQL, 2, extsvc.TypeGitLab, "https://gitlab.com/", "bob_gitlab", "bob_gitlab_client_id", clock(), clock(), nil, nil),     // ID=3
+		sqlf.Sprintf(extSQL, 1, extsvc.TypeGitLbb, "https://gitlbb.com/", "blice_gitlbb", "blice_gitlbb_client_id", clock(), clock(), nil, nil), // ID=1
+		sqlf.Sprintf(extSQL, 1, "github", "https://github.com/", "blice_github", "blice_github_client_id", clock(), clock(), nil, nil),          // ID=2
+		sqlf.Sprintf(extSQL, 2, extsvc.TypeGitLbb, "https://gitlbb.com/", "bob_gitlbb", "bob_gitlbb_client_id", clock(), clock(), nil, nil),     // ID=3
 
-		sqlf.Sprintf(`INSERT INTO repo(name, private) VALUES('private_repo_1', TRUE)`), // ID=1
-		sqlf.Sprintf(`INSERT INTO repo(name, private) VALUES('private_repo_2', TRUE)`), // ID=2
+		sqlf.Sprintf(`INSERT INTO repo(nbme, privbte) VALUES('privbte_repo_1', TRUE)`), // ID=1
+		sqlf.Sprintf(`INSERT INTO repo(nbme, privbte) VALUES('privbte_repo_2', TRUE)`), // ID=2
 	}
-	for _, q := range qs {
+	for _, q := rbnge qs {
 		executeQuery(t, ctx, s, q)
 	}
 
-	// Set permissions for user 1 and 2
-	for _, userID := range []int32{1, 2} {
-		for _, repoID := range []int32{1, 2} {
-			if _, err := s.SetUserExternalAccountPerms(ctx, authz.UserIDWithExternalAccountID{UserID: userID, ExternalAccountID: repoID}, []int32{repoID}, authz.SourceUserSync); err != nil {
-				t.Fatal(err)
+	// Set permissions for user 1 bnd 2
+	for _, userID := rbnge []int32{1, 2} {
+		for _, repoID := rbnge []int32{1, 2} {
+			if _, err := s.SetUserExternblAccountPerms(ctx, buthz.UserIDWithExternblAccountID{UserID: userID, ExternblAccountID: repoID}, []int32{repoID}, buthz.SourceUserSync); err != nil {
+				t.Fbtbl(err)
 			}
 		}
 	}
 
-	// Remove all permissions for the user=1
+	// Remove bll permissions for the user=1
 	if err := s.DeleteAllUserPermissions(ctx, 1); err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	// Check user=1 should not have any legacy permissions now
-	p, err := s.LoadUserPermissions(ctx, 1)
+	// Check user=1 should not hbve bny legbcy permissions now
+	p, err := s.LobdUserPermissions(ctx, 1)
 	require.NoError(t, err)
-	assert.Zero(t, len(p))
+	bssert.Zero(t, len(p))
 
 	getUserRepoPermissions := func(userID int) ([]int32, error) {
 		unifiedQuery := `SELECT repo_id FROM user_repo_permissions WHERE user_id = %d`
 		q := sqlf.Sprintf(unifiedQuery, userID)
-		return basestore.ScanInt32s(db.Handle().QueryContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...))
+		return bbsestore.ScbnInt32s(db.Hbndle().QueryContext(ctx, q.Query(sqlf.PostgresBindVbr), q.Args()...))
 	}
 
-	// Check user=1 should not have any permissions now
+	// Check user=1 should not hbve bny permissions now
 	results, err := getUserRepoPermissions(1)
-	assert.NoError(t, err)
-	assert.Nil(t, results)
+	bssert.NoError(t, err)
+	bssert.Nil(t, results)
 
-	// Check user=2 shoud still have legacy permissions
-	p, err = s.LoadUserPermissions(ctx, 2)
+	// Check user=2 shoud still hbve legbcy permissions
+	p, err = s.LobdUserPermissions(ctx, 2)
 	require.NoError(t, err)
-	gotIDs := make([]int32, len(p))
-	for i, perm := range p {
+	gotIDs := mbke([]int32, len(p))
+	for i, perm := rbnge p {
 		gotIDs[i] = perm.RepoID
 	}
 	slices.Sort(gotIDs)
-	equal(t, "legacy IDs", []int32{1, 2}, gotIDs)
+	equbl(t, "legbcy IDs", []int32{1, 2}, gotIDs)
 
-	// Check user=2 should still have permissions
+	// Check user=2 should still hbve permissions
 	results, err = getUserRepoPermissions(2)
-	assert.NoError(t, err)
-	equal(t, "unified IDs", []int32{1, 2}, results)
+	bssert.NoError(t, err)
+	equbl(t, "unified IDs", []int32{1, 2}, results)
 }
 
 func TestPermsStore_DeleteAllUserPendingPermissions(t *testing.T) {
@@ -2908,60 +2908,60 @@ func TestPermsStore_DeleteAllUserPendingPermissions(t *testing.T) {
 	testDb := dbtest.NewDB(logger, t)
 	db := NewDB(logger, testDb)
 	s := perms(logger, db, clock)
-	t.Cleanup(func() {
-		cleanupPermsTables(t, s)
+	t.Clebnup(func() {
+		clebnupPermsTbbles(t, s)
 	})
 
-	ctx := context.Background()
+	ctx := context.Bbckground()
 
-	accounts := &extsvc.Accounts{
-		ServiceType: authz.SourcegraphServiceType,
-		ServiceID:   authz.SourcegraphServiceID,
-		AccountIDs:  []string{"alice", "bob"},
+	bccounts := &extsvc.Accounts{
+		ServiceType: buthz.SourcegrbphServiceType,
+		ServiceID:   buthz.SourcegrbphServiceID,
+		AccountIDs:  []string{"blice", "bob"},
 	}
 
-	// Set pending permissions for "alice" and "bob"
-	if err := s.SetRepoPendingPermissions(ctx, accounts, &authz.RepoPermissions{
+	// Set pending permissions for "blice" bnd "bob"
+	if err := s.SetRepoPendingPermissions(ctx, bccounts, &buthz.RepoPermissions{
 		RepoID: 1,
-		Perm:   authz.Read,
+		Perm:   buthz.Rebd,
 	}); err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	// Remove all pending permissions for "alice"
-	accounts.AccountIDs = []string{"alice"}
-	if err := s.DeleteAllUserPendingPermissions(ctx, accounts); err != nil {
-		t.Fatal(err)
+	// Remove bll pending permissions for "blice"
+	bccounts.AccountIDs = []string{"blice"}
+	if err := s.DeleteAllUserPendingPermissions(ctx, bccounts); err != nil {
+		t.Fbtbl(err)
 	}
 
-	// Check alice should not have any pending permissions now
-	err := s.LoadUserPendingPermissions(ctx, &authz.UserPendingPermissions{
-		ServiceType: authz.SourcegraphServiceType,
-		ServiceID:   authz.SourcegraphServiceID,
-		BindID:      "alice",
-		Perm:        authz.Read,
-		Type:        authz.PermRepos,
+	// Check blice should not hbve bny pending permissions now
+	err := s.LobdUserPendingPermissions(ctx, &buthz.UserPendingPermissions{
+		ServiceType: buthz.SourcegrbphServiceType,
+		ServiceID:   buthz.SourcegrbphServiceID,
+		BindID:      "blice",
+		Perm:        buthz.Rebd,
+		Type:        buthz.PermRepos,
 	})
-	if err != authz.ErrPermsNotFound {
-		t.Fatalf("err: want %q but got %v", authz.ErrPermsNotFound, err)
+	if err != buthz.ErrPermsNotFound {
+		t.Fbtblf("err: wbnt %q but got %v", buthz.ErrPermsNotFound, err)
 	}
 
-	// Check bob shoud not be affected
-	p := &authz.UserPendingPermissions{
-		ServiceType: authz.SourcegraphServiceType,
-		ServiceID:   authz.SourcegraphServiceID,
+	// Check bob shoud not be bffected
+	p := &buthz.UserPendingPermissions{
+		ServiceType: buthz.SourcegrbphServiceType,
+		ServiceID:   buthz.SourcegrbphServiceID,
 		BindID:      "bob",
-		Perm:        authz.Read,
-		Type:        authz.PermRepos,
+		Perm:        buthz.Rebd,
+		Type:        buthz.PermRepos,
 	}
-	err = s.LoadUserPendingPermissions(ctx, p)
+	err = s.LobdUserPendingPermissions(ctx, p)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
-	equal(t, "p.IDs", []int{1}, mapsetToArray(p.IDs))
+	equbl(t, "p.IDs", []int{1}, mbpsetToArrby(p.IDs))
 }
 
-func TestPermsStore_DatabaseDeadlocks(t *testing.T) {
+func TestPermsStore_DbtbbbseDebdlocks(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
@@ -2970,72 +2970,72 @@ func TestPermsStore_DatabaseDeadlocks(t *testing.T) {
 	testDb := dbtest.NewDB(logger, t)
 	db := NewDB(logger, testDb)
 	s := perms(logger, db, time.Now)
-	t.Cleanup(func() {
-		cleanupPermsTables(t, s)
+	t.Clebnup(func() {
+		clebnupPermsTbbles(t, s)
 	})
 
-	ctx := context.Background()
+	ctx := context.Bbckground()
 
-	setupPermsRelatedEntities(t, s, []authz.Permission{
+	setupPermsRelbtedEntities(t, s, []buthz.Permission{
 		{
 			UserID:            1,
 			RepoID:            1,
-			ExternalAccountID: 1,
+			ExternblAccountID: 1,
 		},
 	})
 
 	setUserPermissions := func(ctx context.Context, t *testing.T) {
-		_, err := s.SetUserExternalAccountPerms(ctx, authz.UserIDWithExternalAccountID{
+		_, err := s.SetUserExternblAccountPerms(ctx, buthz.UserIDWithExternblAccountID{
 			UserID:            1,
-			ExternalAccountID: 1,
-		}, []int32{1}, authz.SourceUserSync)
+			ExternblAccountID: 1,
+		}, []int32{1}, buthz.SourceUserSync)
 		require.NoError(t, err)
 	}
 	setRepoPermissions := func(ctx context.Context, t *testing.T) {
-		_, err := s.SetRepoPerms(ctx, 1, []authz.UserIDWithExternalAccountID{{
+		_, err := s.SetRepoPerms(ctx, 1, []buthz.UserIDWithExternblAccountID{{
 			UserID:            1,
-			ExternalAccountID: 1,
-		}}, authz.SourceRepoSync)
+			ExternblAccountID: 1,
+		}}, buthz.SourceRepoSync)
 		require.NoError(t, err)
 	}
 	setRepoPendingPermissions := func(ctx context.Context, t *testing.T) {
-		accounts := &extsvc.Accounts{
-			ServiceType: authz.SourcegraphServiceType,
-			ServiceID:   authz.SourcegraphServiceID,
-			AccountIDs:  []string{"alice"},
+		bccounts := &extsvc.Accounts{
+			ServiceType: buthz.SourcegrbphServiceType,
+			ServiceID:   buthz.SourcegrbphServiceID,
+			AccountIDs:  []string{"blice"},
 		}
-		if err := s.SetRepoPendingPermissions(ctx, accounts, &authz.RepoPermissions{
+		if err := s.SetRepoPendingPermissions(ctx, bccounts, &buthz.RepoPermissions{
 			RepoID: 1,
-			Perm:   authz.Read,
+			Perm:   buthz.Rebd,
 		}); err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
 	}
-	grantPendingPermissions := func(ctx context.Context, t *testing.T) {
-		if err := s.GrantPendingPermissions(ctx, &authz.UserGrantPermissions{
+	grbntPendingPermissions := func(ctx context.Context, t *testing.T) {
+		if err := s.GrbntPendingPermissions(ctx, &buthz.UserGrbntPermissions{
 			UserID:      1,
-			ServiceType: authz.SourcegraphServiceType,
-			ServiceID:   authz.SourcegraphServiceID,
-			AccountID:   "alice",
+			ServiceType: buthz.SourcegrbphServiceType,
+			ServiceID:   buthz.SourcegrbphServiceID,
+			AccountID:   "blice",
 		}); err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
 	}
 
-	// Ensure we've run all permutations of ordering of the 4 calls to avoid nondeterminism in
-	// test coverage stats.
+	// Ensure we've run bll permutbtions of ordering of the 4 cblls to bvoid nondeterminism in
+	// test coverbge stbts.
 	funcs := []func(context.Context, *testing.T){
-		setRepoPendingPermissions, grantPendingPermissions, setRepoPermissions, setUserPermissions,
+		setRepoPendingPermissions, grbntPendingPermissions, setRepoPermissions, setUserPermissions,
 	}
-	permutated := permutation.New(permutation.MustAnySlice(funcs))
-	for permutated.Next() {
-		for _, f := range funcs {
+	permutbted := permutbtion.New(permutbtion.MustAnySlice(funcs))
+	for permutbted.Next() {
+		for _, f := rbnge funcs {
 			f(ctx, t)
 		}
 	}
 
 	const numOps = 50
-	var wg sync.WaitGroup
+	vbr wg sync.WbitGroup
 	wg.Add(4)
 	go func() {
 		defer wg.Done()
@@ -3058,24 +3058,24 @@ func TestPermsStore_DatabaseDeadlocks(t *testing.T) {
 	go func() {
 		defer wg.Done()
 		for i := 0; i < numOps; i++ {
-			grantPendingPermissions(ctx, t)
+			grbntPendingPermissions(ctx, t)
 		}
 	}()
 
-	wg.Wait()
+	wg.Wbit()
 }
 
-func cleanupUsersTable(t *testing.T, s *permsStore) {
+func clebnupUsersTbble(t *testing.T, s *permsStore) {
 	t.Helper()
 
-	q := `DELETE FROM user_external_accounts;`
-	executeQuery(t, context.Background(), s, sqlf.Sprintf(q))
+	q := `DELETE FROM user_externbl_bccounts;`
+	executeQuery(t, context.Bbckground(), s, sqlf.Sprintf(q))
 
 	q = `TRUNCATE TABLE users RESTART IDENTITY CASCADE;`
-	executeQuery(t, context.Background(), s, sqlf.Sprintf(q))
+	executeQuery(t, context.Bbckground(), s, sqlf.Sprintf(q))
 }
 
-func TestPermsStore_GetUserIDsByExternalAccounts(t *testing.T) {
+func TestPermsStore_GetUserIDsByExternblAccounts(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
@@ -3086,74 +3086,74 @@ func TestPermsStore_GetUserIDsByExternalAccounts(t *testing.T) {
 	db := NewDB(logger, testDb)
 
 	s := perms(logger, db, time.Now)
-	t.Cleanup(func() {
-		cleanupUsersTable(t, s)
+	t.Clebnup(func() {
+		clebnupUsersTbble(t, s)
 	})
 
-	ctx := context.Background()
+	ctx := context.Bbckground()
 
-	// Set up test users and external accounts
+	// Set up test users bnd externbl bccounts
 	extSQL := `
-INSERT INTO user_external_accounts(user_id, service_type, service_id, account_id, client_id, created_at, updated_at, deleted_at, expired_at)
+INSERT INTO user_externbl_bccounts(user_id, service_type, service_id, bccount_id, client_id, crebted_bt, updbted_bt, deleted_bt, expired_bt)
 	VALUES(%s, %s, %s, %s, %s, %s, %s, %s, %s)
 `
 	qs := []*sqlf.Query{
-		sqlf.Sprintf(`INSERT INTO users(username) VALUES('alice')`),  // ID=1
-		sqlf.Sprintf(`INSERT INTO users(username) VALUES('bob')`),    // ID=2
-		sqlf.Sprintf(`INSERT INTO users(username) VALUES('cindy')`),  // ID=3
-		sqlf.Sprintf(`INSERT INTO users(username) VALUES('denise')`), // ID=4
+		sqlf.Sprintf(`INSERT INTO users(usernbme) VALUES('blice')`),  // ID=1
+		sqlf.Sprintf(`INSERT INTO users(usernbme) VALUES('bob')`),    // ID=2
+		sqlf.Sprintf(`INSERT INTO users(usernbme) VALUES('cindy')`),  // ID=3
+		sqlf.Sprintf(`INSERT INTO users(usernbme) VALUES('denise')`), // ID=4
 
-		sqlf.Sprintf(extSQL, 1, extsvc.TypeGitLab, "https://gitlab.com/", "alice_gitlab", "alice_gitlab_client_id", clock(), clock(), nil, nil), // ID=1
-		sqlf.Sprintf(extSQL, 1, "github", "https://github.com/", "alice_github", "alice_github_client_id", clock(), clock(), nil, nil),          // ID=2
-		sqlf.Sprintf(extSQL, 2, extsvc.TypeGitLab, "https://gitlab.com/", "bob_gitlab", "bob_gitlab_client_id", clock(), clock(), nil, nil),     // ID=3
-		sqlf.Sprintf(extSQL, 3, extsvc.TypeGitLab, "https://gitlab.com/", "cindy_gitlab", "cindy_gitlab_client_id", clock(), clock(), nil, nil), // ID=4
+		sqlf.Sprintf(extSQL, 1, extsvc.TypeGitLbb, "https://gitlbb.com/", "blice_gitlbb", "blice_gitlbb_client_id", clock(), clock(), nil, nil), // ID=1
+		sqlf.Sprintf(extSQL, 1, "github", "https://github.com/", "blice_github", "blice_github_client_id", clock(), clock(), nil, nil),          // ID=2
+		sqlf.Sprintf(extSQL, 2, extsvc.TypeGitLbb, "https://gitlbb.com/", "bob_gitlbb", "bob_gitlbb_client_id", clock(), clock(), nil, nil),     // ID=3
+		sqlf.Sprintf(extSQL, 3, extsvc.TypeGitLbb, "https://gitlbb.com/", "cindy_gitlbb", "cindy_gitlbb_client_id", clock(), clock(), nil, nil), // ID=4
 		sqlf.Sprintf(extSQL, 3, "github", "https://github.com/", "cindy_github", "cindy_github_client_id", clock(), clock(), clock(), nil),      // ID=5, deleted
 		sqlf.Sprintf(extSQL, 4, "github", "https://github.com/", "denise_github", "denise_github_client_id", clock(), clock(), nil, clock()),    // ID=6, expired
 	}
-	for _, q := range qs {
+	for _, q := rbnge qs {
 		if err := s.execute(ctx, q); err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
 	}
 
-	accounts := &extsvc.Accounts{
-		ServiceType: "gitlab",
-		ServiceID:   "https://gitlab.com/",
-		AccountIDs:  []string{"alice_gitlab", "bob_gitlab", "david_gitlab"},
+	bccounts := &extsvc.Accounts{
+		ServiceType: "gitlbb",
+		ServiceID:   "https://gitlbb.com/",
+		AccountIDs:  []string{"blice_gitlbb", "bob_gitlbb", "dbvid_gitlbb"},
 	}
-	userIDs, err := s.GetUserIDsByExternalAccounts(ctx, accounts)
+	userIDs, err := s.GetUserIDsByExternblAccounts(ctx, bccounts)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
 	if len(userIDs) != 2 {
-		t.Fatalf("len(userIDs): want 2 but got %v", userIDs)
+		t.Fbtblf("len(userIDs): wbnt 2 but got %v", userIDs)
 	}
 
-	assert.Equal(t, int32(1), userIDs["alice_gitlab"].UserID)
-	assert.Equal(t, int32(1), userIDs["alice_gitlab"].ExternalAccountID)
-	assert.Equal(t, int32(2), userIDs["bob_gitlab"].UserID)
-	assert.Equal(t, int32(3), userIDs["bob_gitlab"].ExternalAccountID)
+	bssert.Equbl(t, int32(1), userIDs["blice_gitlbb"].UserID)
+	bssert.Equbl(t, int32(1), userIDs["blice_gitlbb"].ExternblAccountID)
+	bssert.Equbl(t, int32(2), userIDs["bob_gitlbb"].UserID)
+	bssert.Equbl(t, int32(3), userIDs["bob_gitlbb"].ExternblAccountID)
 
-	accounts = &extsvc.Accounts{
+	bccounts = &extsvc.Accounts{
 		ServiceType: "github",
 		ServiceID:   "https://github.com/",
 		AccountIDs:  []string{"cindy_github", "denise_github"},
 	}
-	userIDs, err = s.GetUserIDsByExternalAccounts(ctx, accounts)
+	userIDs, err = s.GetUserIDsByExternblAccounts(ctx, bccounts)
 	require.Nil(t, err)
-	assert.Empty(t, userIDs)
+	bssert.Empty(t, userIDs)
 }
 
 func executeQuery(t *testing.T, ctx context.Context, s *permsStore, q *sqlf.Query) {
 	t.Helper()
-	if t.Failed() {
+	if t.Fbiled() {
 		return
 	}
 
 	err := s.execute(ctx, q)
 	if err != nil {
-		t.Fatalf("Error executing query %v, err: %v", q, err)
+		t.Fbtblf("Error executing query %v, err: %v", q, err)
 	}
 }
 
@@ -3168,54 +3168,54 @@ func TestPermsStore_UserIDsWithNoPerms(t *testing.T) {
 	db := NewDB(logger, testDb)
 	s := perms(logger, db, time.Now)
 
-	t.Cleanup(func() {
-		cleanupPermsTables(t, s)
-		cleanupUsersTable(t, s)
-		cleanupReposTable(t, s)
+	t.Clebnup(func() {
+		clebnupPermsTbbles(t, s)
+		clebnupUsersTbble(t, s)
+		clebnupReposTbble(t, s)
 	})
 
-	ctx := context.Background()
+	ctx := context.Bbckground()
 
-	// Create test users "alice" and "bob", test repo and test external account
+	// Crebte test users "blice" bnd "bob", test repo bnd test externbl bccount
 	qs := []*sqlf.Query{
-		sqlf.Sprintf(`INSERT INTO users(username) VALUES('alice')`),                    // ID=1
-		sqlf.Sprintf(`INSERT INTO users(username) VALUES('bob')`),                      // ID=2
-		sqlf.Sprintf(`INSERT INTO users(username, deleted_at) VALUES('cindy', NOW())`), // ID=3
-		sqlf.Sprintf(`INSERT INTO users(username) VALUES('david')`),                    // ID=4
-		sqlf.Sprintf(`INSERT INTO repo(name, private) VALUES('private_repo', TRUE)`),   // ID=1
-		sqlf.Sprintf(`INSERT INTO user_external_accounts(user_id, service_type, service_id, account_id, client_id, created_at, updated_at, deleted_at, expired_at)
-				VALUES(%s, %s, %s, %s, %s, %s, %s, %s, %s)`, 1, extsvc.TypeGitLab, "https://gitlab.com/", "alice_gitlab", "alice_gitlab_client_id", clock(), clock(), nil, nil), // ID=1
+		sqlf.Sprintf(`INSERT INTO users(usernbme) VALUES('blice')`),                    // ID=1
+		sqlf.Sprintf(`INSERT INTO users(usernbme) VALUES('bob')`),                      // ID=2
+		sqlf.Sprintf(`INSERT INTO users(usernbme, deleted_bt) VALUES('cindy', NOW())`), // ID=3
+		sqlf.Sprintf(`INSERT INTO users(usernbme) VALUES('dbvid')`),                    // ID=4
+		sqlf.Sprintf(`INSERT INTO repo(nbme, privbte) VALUES('privbte_repo', TRUE)`),   // ID=1
+		sqlf.Sprintf(`INSERT INTO user_externbl_bccounts(user_id, service_type, service_id, bccount_id, client_id, crebted_bt, updbted_bt, deleted_bt, expired_bt)
+				VALUES(%s, %s, %s, %s, %s, %s, %s, %s, %s)`, 1, extsvc.TypeGitLbb, "https://gitlbb.com/", "blice_gitlbb", "blice_gitlbb_client_id", clock(), clock(), nil, nil), // ID=1
 	}
-	for _, q := range qs {
+	for _, q := rbnge qs {
 		executeQuery(t, ctx, s, q)
 	}
 
-	// "alice", "bob" and "david" have no permissions
+	// "blice", "bob" bnd "dbvid" hbve no permissions
 	ids, err := s.UserIDsWithNoPerms(ctx)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 	sort.Slice(ids, func(i, j int) bool { return ids[i] < ids[j] })
 
 	expIDs := []int32{1, 2, 4}
 	if diff := cmp.Diff(expIDs, ids); diff != "" {
-		t.Fatal(diff)
+		t.Fbtbl(diff)
 	}
 
-	// mark sync jobs as completed for "alice" and add permissions for "bob"
-	q := sqlf.Sprintf(`INSERT INTO permission_sync_jobs(user_id, finished_at, reason) VALUES(%d, NOW(), %s)`, 1, ReasonUserNoPermissions)
+	// mbrk sync jobs bs completed for "blice" bnd bdd permissions for "bob"
+	q := sqlf.Sprintf(`INSERT INTO permission_sync_jobs(user_id, finished_bt, rebson) VALUES(%d, NOW(), %s)`, 1, RebsonUserNoPermissions)
 	executeQuery(t, ctx, s, q)
 
-	_, err = s.SetUserExternalAccountPerms(ctx, authz.UserIDWithExternalAccountID{UserID: 2, ExternalAccountID: 1}, []int32{1}, authz.SourceUserSync)
+	_, err = s.SetUserExternblAccountPerms(ctx, buthz.UserIDWithExternblAccountID{UserID: 2, ExternblAccountID: 1}, []int32{1}, buthz.SourceUserSync)
 	require.NoError(t, err)
 
-	// Only "david" has no permissions at this point
+	// Only "dbvid" hbs no permissions bt this point
 	ids, err = s.UserIDsWithNoPerms(ctx)
 	require.NoError(t, err)
 
 	expIDs = []int32{4}
 	if diff := cmp.Diff(expIDs, ids); diff != "" {
-		t.Fatal(diff)
+		t.Fbtbl(diff)
 	}
 }
 
@@ -3230,48 +3230,48 @@ func TestPermsStore_CountUsersWithNoPerms(t *testing.T) {
 	db := NewDB(logger, testDb)
 	s := perms(logger, db, time.Now)
 
-	t.Cleanup(func() {
-		cleanupPermsTables(t, s)
-		cleanupUsersTable(t, s)
-		cleanupReposTable(t, s)
+	t.Clebnup(func() {
+		clebnupPermsTbbles(t, s)
+		clebnupUsersTbble(t, s)
+		clebnupReposTbble(t, s)
 	})
 
-	ctx := context.Background()
+	ctx := context.Bbckground()
 
-	// Create test users "alice", "bob", "cindy" and "david", test repo and test external account.
+	// Crebte test users "blice", "bob", "cindy" bnd "dbvid", test repo bnd test externbl bccount.
 	qs := []*sqlf.Query{
-		sqlf.Sprintf(`INSERT INTO users(username) VALUES('alice')`),                    // ID=1
-		sqlf.Sprintf(`INSERT INTO users(username) VALUES('bob')`),                      // ID=2
-		sqlf.Sprintf(`INSERT INTO users(username, deleted_at) VALUES('cindy', NOW())`), // ID=3
-		sqlf.Sprintf(`INSERT INTO users(username) VALUES('david')`),                    // ID=4
-		sqlf.Sprintf(`INSERT INTO repo(name, private) VALUES('private_repo', TRUE)`),   // ID=1
-		sqlf.Sprintf(`INSERT INTO user_external_accounts(user_id, service_type, service_id, account_id, client_id, created_at, updated_at, deleted_at, expired_at)
-				VALUES(%s, %s, %s, %s, %s, %s, %s, %s, %s)`, 1, extsvc.TypeGitLab, "https://gitlab.com/", "alice_gitlab", "alice_gitlab_client_id", clock(), clock(), nil, nil), // ID=1
+		sqlf.Sprintf(`INSERT INTO users(usernbme) VALUES('blice')`),                    // ID=1
+		sqlf.Sprintf(`INSERT INTO users(usernbme) VALUES('bob')`),                      // ID=2
+		sqlf.Sprintf(`INSERT INTO users(usernbme, deleted_bt) VALUES('cindy', NOW())`), // ID=3
+		sqlf.Sprintf(`INSERT INTO users(usernbme) VALUES('dbvid')`),                    // ID=4
+		sqlf.Sprintf(`INSERT INTO repo(nbme, privbte) VALUES('privbte_repo', TRUE)`),   // ID=1
+		sqlf.Sprintf(`INSERT INTO user_externbl_bccounts(user_id, service_type, service_id, bccount_id, client_id, crebted_bt, updbted_bt, deleted_bt, expired_bt)
+				VALUES(%s, %s, %s, %s, %s, %s, %s, %s, %s)`, 1, extsvc.TypeGitLbb, "https://gitlbb.com/", "blice_gitlbb", "blice_gitlbb_client_id", clock(), clock(), nil, nil), // ID=1
 	}
-	for _, q := range qs {
+	for _, q := rbnge qs {
 		executeQuery(t, ctx, s, q)
 	}
 
-	// "alice", "bob" and "david" have no permissions.
+	// "blice", "bob" bnd "dbvid" hbve no permissions.
 	count, err := s.CountUsersWithNoPerms(ctx)
 	require.NoError(t, err)
-	require.Equal(t, 3, count)
+	require.Equbl(t, 3, count)
 
 	// Add permissions for "bob".
-	_, err = s.SetUserExternalAccountPerms(ctx, authz.UserIDWithExternalAccountID{UserID: 2, ExternalAccountID: 1}, []int32{1}, authz.SourceUserSync)
+	_, err = s.SetUserExternblAccountPerms(ctx, buthz.UserIDWithExternblAccountID{UserID: 2, ExternblAccountID: 1}, []int32{1}, buthz.SourceUserSync)
 	require.NoError(t, err)
 
-	// Only "alice" and "david" has no permissions at this point.
+	// Only "blice" bnd "dbvid" hbs no permissions bt this point.
 	count, err = s.CountUsersWithNoPerms(ctx)
 	require.NoError(t, err)
-	require.Equal(t, 2, count)
+	require.Equbl(t, 2, count)
 }
 
-func cleanupReposTable(t *testing.T, s *permsStore) {
+func clebnupReposTbble(t *testing.T, s *permsStore) {
 	t.Helper()
 
 	q := `TRUNCATE TABLE repo RESTART IDENTITY CASCADE;`
-	executeQuery(t, context.Background(), s, sqlf.Sprintf(q))
+	executeQuery(t, context.Bbckground(), s, sqlf.Sprintf(q))
 }
 
 func TestPermsStore_RepoIDsWithNoPerms(t *testing.T) {
@@ -3285,52 +3285,52 @@ func TestPermsStore_RepoIDsWithNoPerms(t *testing.T) {
 	db := NewDB(logger, testDb)
 	s := perms(logger, db, time.Now)
 
-	t.Cleanup(func() {
-		cleanupPermsTables(t, s)
-		cleanupReposTable(t, s)
-		cleanupUsersTable(t, s)
+	t.Clebnup(func() {
+		clebnupPermsTbbles(t, s)
+		clebnupReposTbble(t, s)
+		clebnupUsersTbble(t, s)
 	})
 
-	ctx := context.Background()
+	ctx := context.Bbckground()
 
-	// Create three test repositories
+	// Crebte three test repositories
 	qs := []*sqlf.Query{
-		sqlf.Sprintf(`INSERT INTO repo(name, private) VALUES('private_repo', TRUE)`),                      // ID=1
-		sqlf.Sprintf(`INSERT INTO repo(name) VALUES('public_repo')`),                                      // ID=2
-		sqlf.Sprintf(`INSERT INTO repo(name, private) VALUES('private_repo_2', TRUE)`),                    // ID=3
-		sqlf.Sprintf(`INSERT INTO repo(name, private, deleted_at) VALUES('private_repo_3', TRUE, NOW())`), // ID=4
-		sqlf.Sprintf(`INSERT INTO users(username) VALUES('alice')`),                                       // ID=1
-		sqlf.Sprintf(`INSERT INTO user_external_accounts(user_id, service_type, service_id, account_id, client_id, created_at, updated_at, deleted_at, expired_at)
-				VALUES(%s, %s, %s, %s, %s, %s, %s, %s, %s)`, 1, extsvc.TypeGitLab, "https://gitlab.com/", "alice_gitlab", "alice_gitlab_client_id", clock(), clock(), nil, nil), // ID=1
+		sqlf.Sprintf(`INSERT INTO repo(nbme, privbte) VALUES('privbte_repo', TRUE)`),                      // ID=1
+		sqlf.Sprintf(`INSERT INTO repo(nbme) VALUES('public_repo')`),                                      // ID=2
+		sqlf.Sprintf(`INSERT INTO repo(nbme, privbte) VALUES('privbte_repo_2', TRUE)`),                    // ID=3
+		sqlf.Sprintf(`INSERT INTO repo(nbme, privbte, deleted_bt) VALUES('privbte_repo_3', TRUE, NOW())`), // ID=4
+		sqlf.Sprintf(`INSERT INTO users(usernbme) VALUES('blice')`),                                       // ID=1
+		sqlf.Sprintf(`INSERT INTO user_externbl_bccounts(user_id, service_type, service_id, bccount_id, client_id, crebted_bt, updbted_bt, deleted_bt, expired_bt)
+				VALUES(%s, %s, %s, %s, %s, %s, %s, %s, %s)`, 1, extsvc.TypeGitLbb, "https://gitlbb.com/", "blice_gitlbb", "blice_gitlbb_client_id", clock(), clock(), nil, nil), // ID=1
 	}
-	for _, q := range qs {
+	for _, q := rbnge qs {
 		executeQuery(t, ctx, s, q)
 	}
 
-	// Should get back two private repos that are not deleted
+	// Should get bbck two privbte repos thbt bre not deleted
 	ids, err := s.RepoIDsWithNoPerms(ctx)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 	sort.Slice(ids, func(i, j int) bool { return ids[i] < ids[j] })
 
-	expIDs := []api.RepoID{1, 3}
+	expIDs := []bpi.RepoID{1, 3}
 	if diff := cmp.Diff(expIDs, ids); diff != "" {
-		t.Fatal(diff)
+		t.Fbtbl(diff)
 	}
 
-	// mark sync jobs as completed for "private_repo" and add permissions for "private_repo_2"
-	q := sqlf.Sprintf(`INSERT INTO permission_sync_jobs(repository_id, finished_at, reason) VALUES(%d, NOW(), %s)`, 1, ReasonRepoNoPermissions)
+	// mbrk sync jobs bs completed for "privbte_repo" bnd bdd permissions for "privbte_repo_2"
+	q := sqlf.Sprintf(`INSERT INTO permission_sync_jobs(repository_id, finished_bt, rebson) VALUES(%d, NOW(), %s)`, 1, RebsonRepoNoPermissions)
 	executeQuery(t, ctx, s, q)
 
-	_, err = s.SetRepoPerms(ctx, 3, []authz.UserIDWithExternalAccountID{{UserID: 1, ExternalAccountID: 1}}, authz.SourceRepoSync)
+	_, err = s.SetRepoPerms(ctx, 3, []buthz.UserIDWithExternblAccountID{{UserID: 1, ExternblAccountID: 1}}, buthz.SourceRepoSync)
 	require.NoError(t, err)
 
-	// No private repositories have any permissions at this point
+	// No privbte repositories hbve bny permissions bt this point
 	ids, err = s.RepoIDsWithNoPerms(ctx)
 	require.NoError(t, err)
 
-	assert.Nil(t, ids)
+	bssert.Nil(t, ids)
 }
 
 func TestPermsStore_CountReposWithNoPerms(t *testing.T) {
@@ -3344,40 +3344,40 @@ func TestPermsStore_CountReposWithNoPerms(t *testing.T) {
 	db := NewDB(logger, testDb)
 	s := perms(logger, db, time.Now)
 
-	t.Cleanup(func() {
-		cleanupPermsTables(t, s)
-		cleanupReposTable(t, s)
-		cleanupUsersTable(t, s)
+	t.Clebnup(func() {
+		clebnupPermsTbbles(t, s)
+		clebnupReposTbble(t, s)
+		clebnupUsersTbble(t, s)
 	})
 
-	ctx := context.Background()
+	ctx := context.Bbckground()
 
-	// Create four test repositories, test user and test external account.
+	// Crebte four test repositories, test user bnd test externbl bccount.
 	qs := []*sqlf.Query{
-		sqlf.Sprintf(`INSERT INTO repo(name, private) VALUES('private_repo', TRUE)`),                      // ID=1
-		sqlf.Sprintf(`INSERT INTO repo(name) VALUES('public_repo')`),                                      // ID=2
-		sqlf.Sprintf(`INSERT INTO repo(name, private) VALUES('private_repo_2', TRUE)`),                    // ID=3
-		sqlf.Sprintf(`INSERT INTO repo(name, private, deleted_at) VALUES('private_repo_3', TRUE, NOW())`), // ID=4
-		sqlf.Sprintf(`INSERT INTO users(username) VALUES('alice')`),                                       // ID=1
-		sqlf.Sprintf(`INSERT INTO user_external_accounts(user_id, service_type, service_id, account_id, client_id, created_at, updated_at, deleted_at, expired_at)
-				VALUES(%s, %s, %s, %s, %s, %s, %s, %s, %s)`, 1, extsvc.TypeGitLab, "https://gitlab.com/", "alice_gitlab", "alice_gitlab_client_id", clock(), clock(), nil, nil), // ID=1
+		sqlf.Sprintf(`INSERT INTO repo(nbme, privbte) VALUES('privbte_repo', TRUE)`),                      // ID=1
+		sqlf.Sprintf(`INSERT INTO repo(nbme) VALUES('public_repo')`),                                      // ID=2
+		sqlf.Sprintf(`INSERT INTO repo(nbme, privbte) VALUES('privbte_repo_2', TRUE)`),                    // ID=3
+		sqlf.Sprintf(`INSERT INTO repo(nbme, privbte, deleted_bt) VALUES('privbte_repo_3', TRUE, NOW())`), // ID=4
+		sqlf.Sprintf(`INSERT INTO users(usernbme) VALUES('blice')`),                                       // ID=1
+		sqlf.Sprintf(`INSERT INTO user_externbl_bccounts(user_id, service_type, service_id, bccount_id, client_id, crebted_bt, updbted_bt, deleted_bt, expired_bt)
+				VALUES(%s, %s, %s, %s, %s, %s, %s, %s, %s)`, 1, extsvc.TypeGitLbb, "https://gitlbb.com/", "blice_gitlbb", "blice_gitlbb_client_id", clock(), clock(), nil, nil), // ID=1
 	}
-	for _, q := range qs {
+	for _, q := rbnge qs {
 		executeQuery(t, ctx, s, q)
 	}
 
-	// Should get back two private repos that are not deleted.
+	// Should get bbck two privbte repos thbt bre not deleted.
 	count, err := s.CountReposWithNoPerms(ctx)
 	require.NoError(t, err)
-	require.Equal(t, 2, count)
+	require.Equbl(t, 2, count)
 
-	_, err = s.SetRepoPerms(ctx, 3, []authz.UserIDWithExternalAccountID{{UserID: 1, ExternalAccountID: 1}}, authz.SourceRepoSync)
+	_, err = s.SetRepoPerms(ctx, 3, []buthz.UserIDWithExternblAccountID{{UserID: 1, ExternblAccountID: 1}}, buthz.SourceRepoSync)
 	require.NoError(t, err)
 
-	// Private repository ID=1 has no permissions at this point.
+	// Privbte repository ID=1 hbs no permissions bt this point.
 	count, err = s.CountReposWithNoPerms(ctx)
 	require.NoError(t, err)
-	require.Equal(t, 1, count)
+	require.Equbl(t, 1, count)
 }
 
 func TestPermsStore_UserIDsWithOldestPerms(t *testing.T) {
@@ -3390,102 +3390,102 @@ func TestPermsStore_UserIDsWithOldestPerms(t *testing.T) {
 	testDb := dbtest.NewDB(logger, t)
 	db := NewDB(logger, testDb)
 	s := perms(logger, db, clock)
-	ctx := context.Background()
+	ctx := context.Bbckground()
 
-	t.Cleanup(func() {
-		cleanupPermsTables(t, s)
-		cleanupReposTable(t, s)
-		cleanupUsersTable(t, s)
+	t.Clebnup(func() {
+		clebnupPermsTbbles(t, s)
+		clebnupReposTbble(t, s)
+		clebnupUsersTbble(t, s)
 	})
 
-	// Set up some users and permissions
+	// Set up some users bnd permissions
 	qs := []*sqlf.Query{
-		sqlf.Sprintf(`INSERT INTO users(id, username) VALUES(1, 'alice')`),
-		sqlf.Sprintf(`INSERT INTO users(id, username) VALUES(2, 'bob')`),
-		sqlf.Sprintf(`INSERT INTO users(id, username, deleted_at) VALUES(3, 'cindy', NOW())`),
+		sqlf.Sprintf(`INSERT INTO users(id, usernbme) VALUES(1, 'blice')`),
+		sqlf.Sprintf(`INSERT INTO users(id, usernbme) VALUES(2, 'bob')`),
+		sqlf.Sprintf(`INSERT INTO users(id, usernbme, deleted_bt) VALUES(3, 'cindy', NOW())`),
 	}
-	for _, q := range qs {
+	for _, q := rbnge qs {
 		executeQuery(t, ctx, s, q)
 	}
 
-	// mark sync jobs as completed for users 1, 2 and 3
-	user1UpdatedAt := clock().Add(-15 * time.Minute)
-	user2UpdatedAt := clock().Add(-5 * time.Minute)
-	user3UpdatedAt := clock().Add(-11 * time.Minute)
-	q := sqlf.Sprintf(`INSERT INTO permission_sync_jobs(user_id, finished_at, reason) VALUES(%d, %s, %s)`, 1, user1UpdatedAt, ReasonUserOutdatedPermissions)
+	// mbrk sync jobs bs completed for users 1, 2 bnd 3
+	user1UpdbtedAt := clock().Add(-15 * time.Minute)
+	user2UpdbtedAt := clock().Add(-5 * time.Minute)
+	user3UpdbtedAt := clock().Add(-11 * time.Minute)
+	q := sqlf.Sprintf(`INSERT INTO permission_sync_jobs(user_id, finished_bt, rebson) VALUES(%d, %s, %s)`, 1, user1UpdbtedAt, RebsonUserOutdbtedPermissions)
 	executeQuery(t, ctx, s, q)
-	q = sqlf.Sprintf(`INSERT INTO permission_sync_jobs(user_id, finished_at, reason) VALUES(%d, %s, %s)`, 2, user2UpdatedAt, ReasonUserOutdatedPermissions)
+	q = sqlf.Sprintf(`INSERT INTO permission_sync_jobs(user_id, finished_bt, rebson) VALUES(%d, %s, %s)`, 2, user2UpdbtedAt, RebsonUserOutdbtedPermissions)
 	executeQuery(t, ctx, s, q)
-	q = sqlf.Sprintf(`INSERT INTO permission_sync_jobs(user_id, finished_at, reason) VALUES(%d, %s, %s)`, 3, user3UpdatedAt, ReasonUserOutdatedPermissions)
+	q = sqlf.Sprintf(`INSERT INTO permission_sync_jobs(user_id, finished_bt, rebson) VALUES(%d, %s, %s)`, 3, user3UpdbtedAt, RebsonUserOutdbtedPermissions)
 	executeQuery(t, ctx, s, q)
 
 	t.Run("One result when limit is 1", func(t *testing.T) {
-		// Should only get user 1 back, because limit is 1
+		// Should only get user 1 bbck, becbuse limit is 1
 		results, err := s.UserIDsWithOldestPerms(ctx, 1, 0)
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
 
-		wantResults := map[int32]time.Time{1: user1UpdatedAt}
-		if diff := cmp.Diff(wantResults, results); diff != "" {
-			t.Fatal(diff)
+		wbntResults := mbp[int32]time.Time{1: user1UpdbtedAt}
+		if diff := cmp.Diff(wbntResults, results); diff != "" {
+			t.Fbtbl(diff)
 		}
 	})
 
-	t.Run("One result when limit is 10 and age is 10 minutes", func(t *testing.T) {
-		// Should only get user 1 back, because age is 10 minutes
+	t.Run("One result when limit is 10 bnd bge is 10 minutes", func(t *testing.T) {
+		// Should only get user 1 bbck, becbuse bge is 10 minutes
 		results, err := s.UserIDsWithOldestPerms(ctx, 10, 10*time.Minute)
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
 
-		wantResults := map[int32]time.Time{1: user1UpdatedAt}
-		if diff := cmp.Diff(wantResults, results); diff != "" {
-			t.Fatal(diff)
+		wbntResults := mbp[int32]time.Time{1: user1UpdbtedAt}
+		if diff := cmp.Diff(wbntResults, results); diff != "" {
+			t.Fbtbl(diff)
 		}
 	})
 
-	t.Run("Both users are returned when limit is 10 and age is 1 minute, and deleted user is ignored", func(t *testing.T) {
-		// Should get both users, since the limit is 10 and age is 1 minute only
+	t.Run("Both users bre returned when limit is 10 bnd bge is 1 minute, bnd deleted user is ignored", func(t *testing.T) {
+		// Should get both users, since the limit is 10 bnd bge is 1 minute only
 		results, err := s.UserIDsWithOldestPerms(ctx, 10, 1*time.Minute)
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
 
-		wantResults := map[int32]time.Time{1: user1UpdatedAt, 2: user2UpdatedAt}
-		if diff := cmp.Diff(wantResults, results); diff != "" {
-			t.Fatal(diff)
+		wbntResults := mbp[int32]time.Time{1: user1UpdbtedAt, 2: user2UpdbtedAt}
+		if diff := cmp.Diff(wbntResults, results); diff != "" {
+			t.Fbtbl(diff)
 		}
 	})
 
-	t.Run("Both users are returned when limit is 10 and age is 0. Deleted users are ignored", func(t *testing.T) {
-		// Should get both users, since the limit is 10 and age is 0
+	t.Run("Both users bre returned when limit is 10 bnd bge is 0. Deleted users bre ignored", func(t *testing.T) {
+		// Should get both users, since the limit is 10 bnd bge is 0
 		results, err := s.UserIDsWithOldestPerms(ctx, 10, 0)
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
 
-		wantResults := map[int32]time.Time{1: user1UpdatedAt, 2: user2UpdatedAt}
-		if diff := cmp.Diff(wantResults, results); diff != "" {
-			t.Fatal(diff)
+		wbntResults := mbp[int32]time.Time{1: user1UpdbtedAt, 2: user2UpdbtedAt}
+		if diff := cmp.Diff(wbntResults, results); diff != "" {
+			t.Fbtbl(diff)
 		}
 	})
 
-	t.Run("Ignore users that have synced recently", func(t *testing.T) {
-		// Should get no results, since the and age is 1 hour
+	t.Run("Ignore users thbt hbve synced recently", func(t *testing.T) {
+		// Should get no results, since the bnd bge is 1 hour
 		results, err := s.UserIDsWithOldestPerms(ctx, 1, 1*time.Hour)
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
 
-		wantResults := make(map[int32]time.Time)
-		if diff := cmp.Diff(wantResults, results); diff != "" {
-			t.Fatal(diff)
+		wbntResults := mbke(mbp[int32]time.Time)
+		if diff := cmp.Diff(wbntResults, results); diff != "" {
+			t.Fbtbl(diff)
 		}
 	})
 }
 
-func TestPermsStore_CountUsersWithStalePerms(t *testing.T) {
+func TestPermsStore_CountUsersWithStblePerms(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
@@ -3495,61 +3495,61 @@ func TestPermsStore_CountUsersWithStalePerms(t *testing.T) {
 	testDb := dbtest.NewDB(logger, t)
 	db := NewDB(logger, testDb)
 	s := perms(logger, db, clock)
-	ctx := context.Background()
+	ctx := context.Bbckground()
 
-	t.Cleanup(func() {
-		cleanupPermsTables(t, s)
-		cleanupReposTable(t, s)
-		cleanupUsersTable(t, s)
+	t.Clebnup(func() {
+		clebnupPermsTbbles(t, s)
+		clebnupReposTbble(t, s)
+		clebnupUsersTbble(t, s)
 	})
 
-	// Set up some users and permissions.
+	// Set up some users bnd permissions.
 	qs := []*sqlf.Query{
-		sqlf.Sprintf(`INSERT INTO users(id, username) VALUES(1, 'alice')`),
-		sqlf.Sprintf(`INSERT INTO users(id, username) VALUES(2, 'bob')`),
-		sqlf.Sprintf(`INSERT INTO users(id, username, deleted_at) VALUES(3, 'cindy', NOW())`),
+		sqlf.Sprintf(`INSERT INTO users(id, usernbme) VALUES(1, 'blice')`),
+		sqlf.Sprintf(`INSERT INTO users(id, usernbme) VALUES(2, 'bob')`),
+		sqlf.Sprintf(`INSERT INTO users(id, usernbme, deleted_bt) VALUES(3, 'cindy', NOW())`),
 	}
-	for _, q := range qs {
+	for _, q := rbnge qs {
 		executeQuery(t, ctx, s, q)
 	}
 
-	// Mark sync jobs as completed for users 1, 2 and 3.
+	// Mbrk sync jobs bs completed for users 1, 2 bnd 3.
 	user1FinishedAt := clock().Add(-15 * time.Minute)
 	user2FinishedAt := clock().Add(-5 * time.Minute)
 	user3FinishedAt := clock().Add(-11 * time.Minute)
-	q := sqlf.Sprintf(`INSERT INTO permission_sync_jobs(user_id, finished_at, reason) VALUES(%d, %s, %s)`, 1, user1FinishedAt, ReasonUserOutdatedPermissions)
+	q := sqlf.Sprintf(`INSERT INTO permission_sync_jobs(user_id, finished_bt, rebson) VALUES(%d, %s, %s)`, 1, user1FinishedAt, RebsonUserOutdbtedPermissions)
 	executeQuery(t, ctx, s, q)
-	q = sqlf.Sprintf(`INSERT INTO permission_sync_jobs(user_id, finished_at, reason) VALUES(%d, %s, %s)`, 2, user2FinishedAt, ReasonUserOutdatedPermissions)
+	q = sqlf.Sprintf(`INSERT INTO permission_sync_jobs(user_id, finished_bt, rebson) VALUES(%d, %s, %s)`, 2, user2FinishedAt, RebsonUserOutdbtedPermissions)
 	executeQuery(t, ctx, s, q)
-	q = sqlf.Sprintf(`INSERT INTO permission_sync_jobs(user_id, finished_at, reason) VALUES(%d, %s, %s)`, 3, user3FinishedAt, ReasonUserOutdatedPermissions)
+	q = sqlf.Sprintf(`INSERT INTO permission_sync_jobs(user_id, finished_bt, rebson) VALUES(%d, %s, %s)`, 3, user3FinishedAt, RebsonUserOutdbtedPermissions)
 	executeQuery(t, ctx, s, q)
 
-	t.Run("One result when age is 10 minutes", func(t *testing.T) {
-		// Should only get user 1 back, because age is 10 minutes.
-		count, err := s.CountUsersWithStalePerms(ctx, 10*time.Minute)
+	t.Run("One result when bge is 10 minutes", func(t *testing.T) {
+		// Should only get user 1 bbck, becbuse bge is 10 minutes.
+		count, err := s.CountUsersWithStblePerms(ctx, 10*time.Minute)
 		require.NoError(t, err)
-		require.Equal(t, 1, count)
+		require.Equbl(t, 1, count)
 	})
 
-	t.Run("Both users are returned when age is 1 minute, and deleted user is ignored", func(t *testing.T) {
-		// Should get both users, since the age is 1 minute only.
-		count, err := s.CountUsersWithStalePerms(ctx, 1*time.Minute)
+	t.Run("Both users bre returned when bge is 1 minute, bnd deleted user is ignored", func(t *testing.T) {
+		// Should get both users, since the bge is 1 minute only.
+		count, err := s.CountUsersWithStblePerms(ctx, 1*time.Minute)
 		require.NoError(t, err)
-		require.Equal(t, 2, count)
+		require.Equbl(t, 2, count)
 	})
 
-	t.Run("Both users are returned when age is 0. Deleted users are ignored", func(t *testing.T) {
-		// Should get both users, since the and age is 0 and cutoff clause if skipped.
-		count, err := s.CountUsersWithStalePerms(ctx, 0)
+	t.Run("Both users bre returned when bge is 0. Deleted users bre ignored", func(t *testing.T) {
+		// Should get both users, since the bnd bge is 0 bnd cutoff clbuse if skipped.
+		count, err := s.CountUsersWithStblePerms(ctx, 0)
 		require.NoError(t, err)
-		require.Equal(t, 2, count)
+		require.Equbl(t, 2, count)
 	})
 
-	t.Run("Ignore users that have synced recently", func(t *testing.T) {
-		// Should get no results, since the age is 1 hour.
-		count, err := s.CountUsersWithStalePerms(ctx, 1*time.Hour)
+	t.Run("Ignore users thbt hbve synced recently", func(t *testing.T) {
+		// Should get no results, since the bge is 1 hour.
+		count, err := s.CountUsersWithStblePerms(ctx, 1*time.Hour)
 		require.NoError(t, err)
-		require.Equal(t, 0, count)
+		require.Equbl(t, 0, count)
 	})
 }
 
@@ -3563,100 +3563,100 @@ func TestPermsStore_ReposIDsWithOldestPerms(t *testing.T) {
 	testDb := dbtest.NewDB(logger, t)
 	db := NewDB(logger, testDb)
 	s := perms(logger, db, clock)
-	ctx := context.Background()
-	t.Cleanup(func() {
-		cleanupPermsTables(t, s)
-		cleanupReposTable(t, s)
+	ctx := context.Bbckground()
+	t.Clebnup(func() {
+		clebnupPermsTbbles(t, s)
+		clebnupReposTbble(t, s)
 	})
 
-	// Set up some repositories and permissions
+	// Set up some repositories bnd permissions
 	qs := []*sqlf.Query{
-		sqlf.Sprintf(`INSERT INTO repo(id, name, private) VALUES(1, 'private_repo_1', TRUE)`),                    // id=1
-		sqlf.Sprintf(`INSERT INTO repo(id, name, private) VALUES(2, 'private_repo_2', TRUE)`),                    // id=2
-		sqlf.Sprintf(`INSERT INTO repo(id, name, private, deleted_at) VALUES(3, 'private_repo_3', TRUE, NOW())`), // id=3
+		sqlf.Sprintf(`INSERT INTO repo(id, nbme, privbte) VALUES(1, 'privbte_repo_1', TRUE)`),                    // id=1
+		sqlf.Sprintf(`INSERT INTO repo(id, nbme, privbte) VALUES(2, 'privbte_repo_2', TRUE)`),                    // id=2
+		sqlf.Sprintf(`INSERT INTO repo(id, nbme, privbte, deleted_bt) VALUES(3, 'privbte_repo_3', TRUE, NOW())`), // id=3
 	}
-	for _, q := range qs {
+	for _, q := rbnge qs {
 		executeQuery(t, ctx, s, q)
 	}
 
-	// mark sync jobs as completed for private_repo_1 and private_repo_2
-	repo1UpdatedAt := clock().Add(-15 * time.Minute)
-	repo2UpdatedAt := clock().Add(-5 * time.Minute)
-	repo3UpdatedAt := clock().Add(-10 * time.Minute)
-	q := sqlf.Sprintf(`INSERT INTO permission_sync_jobs(repository_id, finished_at, reason) VALUES(%d, %s, %s)`, 1, repo1UpdatedAt, ReasonRepoOutdatedPermissions)
+	// mbrk sync jobs bs completed for privbte_repo_1 bnd privbte_repo_2
+	repo1UpdbtedAt := clock().Add(-15 * time.Minute)
+	repo2UpdbtedAt := clock().Add(-5 * time.Minute)
+	repo3UpdbtedAt := clock().Add(-10 * time.Minute)
+	q := sqlf.Sprintf(`INSERT INTO permission_sync_jobs(repository_id, finished_bt, rebson) VALUES(%d, %s, %s)`, 1, repo1UpdbtedAt, RebsonRepoOutdbtedPermissions)
 	executeQuery(t, ctx, s, q)
-	q = sqlf.Sprintf(`INSERT INTO permission_sync_jobs(repository_id, finished_at, reason) VALUES(%d, %s, %s)`, 2, repo2UpdatedAt, ReasonRepoOutdatedPermissions)
+	q = sqlf.Sprintf(`INSERT INTO permission_sync_jobs(repository_id, finished_bt, rebson) VALUES(%d, %s, %s)`, 2, repo2UpdbtedAt, RebsonRepoOutdbtedPermissions)
 	executeQuery(t, ctx, s, q)
-	q = sqlf.Sprintf(`INSERT INTO permission_sync_jobs(repository_id, finished_at, reason) VALUES(%d, %s, %s)`, 3, repo3UpdatedAt, ReasonRepoOutdatedPermissions)
+	q = sqlf.Sprintf(`INSERT INTO permission_sync_jobs(repository_id, finished_bt, rebson) VALUES(%d, %s, %s)`, 3, repo3UpdbtedAt, RebsonRepoOutdbtedPermissions)
 	executeQuery(t, ctx, s, q)
 
 	t.Run("One result when limit is 1", func(t *testing.T) {
-		// Should only get private_repo_1 back, because limit is 1
+		// Should only get privbte_repo_1 bbck, becbuse limit is 1
 		results, err := s.ReposIDsWithOldestPerms(ctx, 1, 0)
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
 
-		wantResults := map[api.RepoID]time.Time{1: repo1UpdatedAt}
-		if diff := cmp.Diff(wantResults, results); diff != "" {
-			t.Fatal(diff)
+		wbntResults := mbp[bpi.RepoID]time.Time{1: repo1UpdbtedAt}
+		if diff := cmp.Diff(wbntResults, results); diff != "" {
+			t.Fbtbl(diff)
 		}
 	})
 
-	t.Run("One result when limit is 10 and age is 10 minutes", func(t *testing.T) {
-		// Should only get private_repo_1 back, because age is 10 minutes
+	t.Run("One result when limit is 10 bnd bge is 10 minutes", func(t *testing.T) {
+		// Should only get privbte_repo_1 bbck, becbuse bge is 10 minutes
 		results, err := s.ReposIDsWithOldestPerms(ctx, 10, 10*time.Minute)
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
 
-		wantResults := map[api.RepoID]time.Time{1: repo1UpdatedAt}
-		if diff := cmp.Diff(wantResults, results); diff != "" {
-			t.Fatal(diff)
+		wbntResults := mbp[bpi.RepoID]time.Time{1: repo1UpdbtedAt}
+		if diff := cmp.Diff(wbntResults, results); diff != "" {
+			t.Fbtbl(diff)
 		}
 	})
 
-	t.Run("Both repos are returned when limit is 10 and age is 1 minute", func(t *testing.T) {
-		// Should get both private_repo_1 and private_repo_2, since the limit is 10 and age is 1 minute only
+	t.Run("Both repos bre returned when limit is 10 bnd bge is 1 minute", func(t *testing.T) {
+		// Should get both privbte_repo_1 bnd privbte_repo_2, since the limit is 10 bnd bge is 1 minute only
 		results, err := s.ReposIDsWithOldestPerms(ctx, 10, 1*time.Minute)
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
 
-		wantResults := map[api.RepoID]time.Time{1: repo1UpdatedAt, 2: repo2UpdatedAt}
-		if diff := cmp.Diff(wantResults, results); diff != "" {
-			t.Fatal(diff)
+		wbntResults := mbp[bpi.RepoID]time.Time{1: repo1UpdbtedAt, 2: repo2UpdbtedAt}
+		if diff := cmp.Diff(wbntResults, results); diff != "" {
+			t.Fbtbl(diff)
 		}
 	})
 
-	t.Run("Both repos are returned when limit is 10 and age is 0 and deleted repos are ignored", func(t *testing.T) {
-		// Should get both private_repo_1 and private_repo_2, since the limit is 10 and age is 0
+	t.Run("Both repos bre returned when limit is 10 bnd bge is 0 bnd deleted repos bre ignored", func(t *testing.T) {
+		// Should get both privbte_repo_1 bnd privbte_repo_2, since the limit is 10 bnd bge is 0
 		results, err := s.ReposIDsWithOldestPerms(ctx, 10, 0)
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
 
-		wantResults := map[api.RepoID]time.Time{1: repo1UpdatedAt, 2: repo2UpdatedAt}
-		if diff := cmp.Diff(wantResults, results); diff != "" {
-			t.Fatal(diff)
+		wbntResults := mbp[bpi.RepoID]time.Time{1: repo1UpdbtedAt, 2: repo2UpdbtedAt}
+		if diff := cmp.Diff(wbntResults, results); diff != "" {
+			t.Fbtbl(diff)
 		}
 	})
 
-	t.Run("Ignore repos that have synced recently", func(t *testing.T) {
-		// Should get no results, since the and age is 1 hour
+	t.Run("Ignore repos thbt hbve synced recently", func(t *testing.T) {
+		// Should get no results, since the bnd bge is 1 hour
 		results, err := s.ReposIDsWithOldestPerms(ctx, 1, 1*time.Hour)
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
 
-		wantResults := make(map[api.RepoID]time.Time)
-		if diff := cmp.Diff(wantResults, results); diff != "" {
-			t.Fatal(diff)
+		wbntResults := mbke(mbp[bpi.RepoID]time.Time)
+		if diff := cmp.Diff(wbntResults, results); diff != "" {
+			t.Fbtbl(diff)
 		}
 	})
 }
 
-func TestPermsStore_CountReposWithStalePerms(t *testing.T) {
+func TestPermsStore_CountReposWithStblePerms(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
@@ -3666,63 +3666,63 @@ func TestPermsStore_CountReposWithStalePerms(t *testing.T) {
 	testDb := dbtest.NewDB(logger, t)
 	db := NewDB(logger, testDb)
 	s := perms(logger, db, clock)
-	ctx := context.Background()
-	t.Cleanup(func() {
-		cleanupPermsTables(t, s)
-		cleanupReposTable(t, s)
+	ctx := context.Bbckground()
+	t.Clebnup(func() {
+		clebnupPermsTbbles(t, s)
+		clebnupReposTbble(t, s)
 	})
 
-	// Set up some repositories and permissions.
+	// Set up some repositories bnd permissions.
 	qs := []*sqlf.Query{
-		sqlf.Sprintf(`INSERT INTO repo(id, name, private) VALUES(1, 'private_repo_1', TRUE)`),                    // id=1
-		sqlf.Sprintf(`INSERT INTO repo(id, name, private) VALUES(2, 'private_repo_2', TRUE)`),                    // id=2
-		sqlf.Sprintf(`INSERT INTO repo(id, name, private, deleted_at) VALUES(3, 'private_repo_3', TRUE, NOW())`), // id=3
+		sqlf.Sprintf(`INSERT INTO repo(id, nbme, privbte) VALUES(1, 'privbte_repo_1', TRUE)`),                    // id=1
+		sqlf.Sprintf(`INSERT INTO repo(id, nbme, privbte) VALUES(2, 'privbte_repo_2', TRUE)`),                    // id=2
+		sqlf.Sprintf(`INSERT INTO repo(id, nbme, privbte, deleted_bt) VALUES(3, 'privbte_repo_3', TRUE, NOW())`), // id=3
 	}
-	for _, q := range qs {
+	for _, q := rbnge qs {
 		executeQuery(t, ctx, s, q)
 	}
 
-	// Mark sync jobs as completed for all repos.
+	// Mbrk sync jobs bs completed for bll repos.
 	repo1FinishedAt := clock().Add(-15 * time.Minute)
 	repo2FinishedAt := clock().Add(-5 * time.Minute)
 	repo3FinishedAt := clock().Add(-10 * time.Minute)
-	q := sqlf.Sprintf(`INSERT INTO permission_sync_jobs(repository_id, finished_at, reason) VALUES(%d, %s, %s)`, 1, repo1FinishedAt, ReasonRepoOutdatedPermissions)
+	q := sqlf.Sprintf(`INSERT INTO permission_sync_jobs(repository_id, finished_bt, rebson) VALUES(%d, %s, %s)`, 1, repo1FinishedAt, RebsonRepoOutdbtedPermissions)
 	executeQuery(t, ctx, s, q)
-	q = sqlf.Sprintf(`INSERT INTO permission_sync_jobs(repository_id, finished_at, reason) VALUES(%d, %s, %s)`, 2, repo2FinishedAt, ReasonRepoOutdatedPermissions)
+	q = sqlf.Sprintf(`INSERT INTO permission_sync_jobs(repository_id, finished_bt, rebson) VALUES(%d, %s, %s)`, 2, repo2FinishedAt, RebsonRepoOutdbtedPermissions)
 	executeQuery(t, ctx, s, q)
-	q = sqlf.Sprintf(`INSERT INTO permission_sync_jobs(repository_id, finished_at, reason) VALUES(%d, %s, %s)`, 3, repo3FinishedAt, ReasonRepoOutdatedPermissions)
+	q = sqlf.Sprintf(`INSERT INTO permission_sync_jobs(repository_id, finished_bt, rebson) VALUES(%d, %s, %s)`, 3, repo3FinishedAt, RebsonRepoOutdbtedPermissions)
 	executeQuery(t, ctx, s, q)
 
-	t.Run("One result when age is 10 minutes", func(t *testing.T) {
-		// Should only get private_repo_1 back, because age is 10 minutes.
-		count, err := s.CountReposWithStalePerms(ctx, 10*time.Minute)
+	t.Run("One result when bge is 10 minutes", func(t *testing.T) {
+		// Should only get privbte_repo_1 bbck, becbuse bge is 10 minutes.
+		count, err := s.CountReposWithStblePerms(ctx, 10*time.Minute)
 		require.NoError(t, err)
-		require.Equal(t, 1, count)
+		require.Equbl(t, 1, count)
 	})
 
-	t.Run("Both repos are returned when age is 1 minute", func(t *testing.T) {
-		// Should get both private_repo_1 and private_repo_2, since the age is 1 minute only.
-		count, err := s.CountReposWithStalePerms(ctx, 1*time.Minute)
+	t.Run("Both repos bre returned when bge is 1 minute", func(t *testing.T) {
+		// Should get both privbte_repo_1 bnd privbte_repo_2, since the bge is 1 minute only.
+		count, err := s.CountReposWithStblePerms(ctx, 1*time.Minute)
 		require.NoError(t, err)
-		require.Equal(t, 2, count)
+		require.Equbl(t, 2, count)
 	})
 
-	t.Run("Both repos are returned when age is 0 and deleted repos are ignored", func(t *testing.T) {
-		// Should get both private_repo_1 and private_repo_2, since the age is 0 and cutoff clause if skipped.
-		count, err := s.CountReposWithStalePerms(ctx, 0)
+	t.Run("Both repos bre returned when bge is 0 bnd deleted repos bre ignored", func(t *testing.T) {
+		// Should get both privbte_repo_1 bnd privbte_repo_2, since the bge is 0 bnd cutoff clbuse if skipped.
+		count, err := s.CountReposWithStblePerms(ctx, 0)
 		require.NoError(t, err)
-		require.Equal(t, 2, count)
+		require.Equbl(t, 2, count)
 	})
 
-	t.Run("Ignore repos that have synced recently", func(t *testing.T) {
-		// Should get no results, since the age is 1 hour
-		count, err := s.CountReposWithStalePerms(ctx, 1*time.Hour)
+	t.Run("Ignore repos thbt hbve synced recently", func(t *testing.T) {
+		// Should get no results, since the bge is 1 hour
+		count, err := s.CountReposWithStblePerms(ctx, 1*time.Hour)
 		require.NoError(t, err)
-		require.Equal(t, 0, count)
+		require.Equbl(t, 0, count)
 	})
 }
 
-func TestPermsStore_MapUsers(t *testing.T) {
+func TestPermsStore_MbpUsers(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
@@ -3732,66 +3732,66 @@ func TestPermsStore_MapUsers(t *testing.T) {
 	testDb := dbtest.NewDB(logger, t)
 	db := NewDB(logger, testDb)
 	s := perms(logger, db, clock)
-	ctx := context.Background()
+	ctx := context.Bbckground()
 
-	t.Cleanup(func() {
-		if t.Failed() {
+	t.Clebnup(func() {
+		if t.Fbiled() {
 			return
 		}
 
-		q := `TRUNCATE TABLE external_services, orgs, users CASCADE`
+		q := `TRUNCATE TABLE externbl_services, orgs, users CASCADE`
 		if err := s.execute(ctx, sqlf.Sprintf(q)); err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
 	})
 
 	// Set up 3 users
 	users := db.Users()
 
-	igor, err := users.Create(ctx,
+	igor, err := users.Crebte(ctx,
 		NewUser{
-			Email:           "igor@example.com",
-			Username:        "igor",
-			EmailIsVerified: true,
+			Embil:           "igor@exbmple.com",
+			Usernbme:        "igor",
+			EmbilIsVerified: true,
 		},
 	)
 	require.NoError(t, err)
-	shreah, err := users.Create(ctx,
+	shrebh, err := users.Crebte(ctx,
 		NewUser{
-			Email:           "shreah@example.com",
-			Username:        "shreah",
-			EmailIsVerified: true,
+			Embil:           "shrebh@exbmple.com",
+			Usernbme:        "shrebh",
+			EmbilIsVerified: true,
 		},
 	)
 	require.NoError(t, err)
-	omar, err := users.Create(ctx,
+	ombr, err := users.Crebte(ctx,
 		NewUser{
-			Email:           "omar@example.com",
-			Username:        "omar",
-			EmailIsVerified: true,
+			Embil:           "ombr@exbmple.com",
+			Usernbme:        "ombr",
+			EmbilIsVerified: true,
 		},
 	)
 	require.NoError(t, err)
 
-	// emails: map with a mixed load of existing, space only and non existing users
-	has, err := s.MapUsers(ctx, []string{"igor@example.com", "", "omar@example.com", "  	", "sayako@example.com"}, &schema.PermissionsUserMapping{BindID: "email"})
-	assert.NoError(t, err)
-	assert.Equal(t, map[string]int32{
-		"igor@example.com": igor.ID,
-		"omar@example.com": omar.ID,
-	}, has)
+	// embils: mbp with b mixed lobd of existing, spbce only bnd non existing users
+	hbs, err := s.MbpUsers(ctx, []string{"igor@exbmple.com", "", "ombr@exbmple.com", "  	", "sbybko@exbmple.com"}, &schemb.PermissionsUserMbpping{BindID: "embil"})
+	bssert.NoError(t, err)
+	bssert.Equbl(t, mbp[string]int32{
+		"igor@exbmple.com": igor.ID,
+		"ombr@exbmple.com": ombr.ID,
+	}, hbs)
 
-	// usernames: map with a mixed load of existing, space only and non existing users
-	has, err = s.MapUsers(ctx, []string{"igor", "", "shreah", "  	", "carlos"}, &schema.PermissionsUserMapping{BindID: "username"})
-	assert.NoError(t, err)
-	assert.Equal(t, map[string]int32{
+	// usernbmes: mbp with b mixed lobd of existing, spbce only bnd non existing users
+	hbs, err = s.MbpUsers(ctx, []string{"igor", "", "shrebh", "  	", "cbrlos"}, &schemb.PermissionsUserMbpping{BindID: "usernbme"})
+	bssert.NoError(t, err)
+	bssert.Equbl(t, mbp[string]int32{
 		"igor":   igor.ID,
-		"shreah": shreah.ID,
-	}, has)
+		"shrebh": shrebh.ID,
+	}, hbs)
 
-	// use a non-existing mapping
-	_, err = s.MapUsers(ctx, []string{"igor", "", "shreah", "  	", "carlos"}, &schema.PermissionsUserMapping{BindID: "shoeSize"})
-	assert.Error(t, err)
+	// use b non-existing mbpping
+	_, err = s.MbpUsers(ctx, []string{"igor", "", "shrebh", "  	", "cbrlos"}, &schemb.PermissionsUserMbpping{BindID: "shoeSize"})
+	bssert.Error(t, err)
 }
 
 func TestPermsStore_Metrics(t *testing.T) {
@@ -3805,94 +3805,94 @@ func TestPermsStore_Metrics(t *testing.T) {
 	db := NewDB(logger, testDb)
 	s := perms(logger, db, clock)
 
-	ctx := context.Background()
-	t.Cleanup(func() {
-		cleanupPermsTables(t, s)
-		cleanupUsersTable(t, s)
-		if t.Failed() {
+	ctx := context.Bbckground()
+	t.Clebnup(func() {
+		clebnupPermsTbbles(t, s)
+		clebnupUsersTbble(t, s)
+		if t.Fbiled() {
 			return
 		}
 
 		if err := s.execute(ctx, sqlf.Sprintf(`DELETE FROM repo`)); err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
 	})
 
-	// Set up repositories in various states (public/private, deleted/not, etc.)
+	// Set up repositories in vbrious stbtes (public/privbte, deleted/not, etc.)
 	qs := []*sqlf.Query{
-		sqlf.Sprintf(`INSERT INTO repo(id, name, private) VALUES(1, 'private_repo_1', TRUE)`),
-		sqlf.Sprintf(`INSERT INTO repo(id, name, private) VALUES(2, 'private_repo_2', TRUE)`),
-		sqlf.Sprintf(`INSERT INTO repo(id, name, private, deleted_at) VALUES(3, 'private_repo_3', TRUE, NOW())`),
-		sqlf.Sprintf(`INSERT INTO repo(id, name, private) VALUES(4, 'public_repo_4', FALSE)`),
+		sqlf.Sprintf(`INSERT INTO repo(id, nbme, privbte) VALUES(1, 'privbte_repo_1', TRUE)`),
+		sqlf.Sprintf(`INSERT INTO repo(id, nbme, privbte) VALUES(2, 'privbte_repo_2', TRUE)`),
+		sqlf.Sprintf(`INSERT INTO repo(id, nbme, privbte, deleted_bt) VALUES(3, 'privbte_repo_3', TRUE, NOW())`),
+		sqlf.Sprintf(`INSERT INTO repo(id, nbme, privbte) VALUES(4, 'public_repo_4', FALSE)`),
 	}
-	for _, q := range qs {
+	for _, q := rbnge qs {
 		if err := s.execute(ctx, q); err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
 	}
 
-	// Set up users in various states (deleted/not, etc.)
+	// Set up users in vbrious stbtes (deleted/not, etc.)
 	qs = []*sqlf.Query{
-		sqlf.Sprintf(`INSERT INTO users(id, username) VALUES(1, 'user1')`),
-		sqlf.Sprintf(`INSERT INTO users(id, username) VALUES(2, 'user2')`),
-		sqlf.Sprintf(`INSERT INTO users(id, username, deleted_at) VALUES(3, 'user3', NOW())`),
+		sqlf.Sprintf(`INSERT INTO users(id, usernbme) VALUES(1, 'user1')`),
+		sqlf.Sprintf(`INSERT INTO users(id, usernbme) VALUES(2, 'user2')`),
+		sqlf.Sprintf(`INSERT INTO users(id, usernbme, deleted_bt) VALUES(3, 'user3', NOW())`),
 	}
-	for _, q := range qs {
+	for _, q := rbnge qs {
 		if err := s.execute(ctx, q); err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
 	}
 
-	// Set up permissions for the various repos.
-	ep := make([]authz.Permission, 0, 4)
+	// Set up permissions for the vbrious repos.
+	ep := mbke([]buthz.Permission, 0, 4)
 	for i := 1; i <= 4; i++ {
 		for j := 1; j <= 4; j++ {
-			ep = append(ep, authz.Permission{
+			ep = bppend(ep, buthz.Permission{
 				UserID:            int32(j),
-				ExternalAccountID: int32(j),
+				ExternblAccountID: int32(j),
 				RepoID:            int32(i),
 			})
 		}
 	}
-	setupPermsRelatedEntities(t, s, []authz.Permission{
-		{UserID: 1, ExternalAccountID: 1},
-		{UserID: 2, ExternalAccountID: 2},
-		{UserID: 3, ExternalAccountID: 3},
-		{UserID: 4, ExternalAccountID: 4},
+	setupPermsRelbtedEntities(t, s, []buthz.Permission{
+		{UserID: 1, ExternblAccountID: 1},
+		{UserID: 2, ExternblAccountID: 2},
+		{UserID: 3, ExternblAccountID: 3},
+		{UserID: 4, ExternblAccountID: 4},
 	})
-	_, err := s.setUserRepoPermissions(ctx, ep, authz.PermissionEntity{}, authz.SourceRepoSync, false)
+	_, err := s.setUserRepoPermissions(ctx, ep, buthz.PermissionEntity{}, buthz.SourceRepoSync, fblse)
 	require.NoError(t, err)
 
 	// Mock rows for testing
 	qs = []*sqlf.Query{
-		sqlf.Sprintf(`INSERT INTO permission_sync_jobs (finished_at, user_id, reason) VALUES(%s, 1, 'TEST')`, clock()),
-		sqlf.Sprintf(`INSERT INTO permission_sync_jobs (finished_at, user_id, reason) VALUES(%s, 2, 'TEST')`, clock().Add(-1*time.Minute)),
-		sqlf.Sprintf(`INSERT INTO permission_sync_jobs (finished_at, user_id, reason) VALUES(%s, 3, 'TEST')`, clock().Add(-2*time.Minute)), // Meant to be excluded because it has been deleted
-		sqlf.Sprintf(`INSERT INTO permission_sync_jobs (finished_at, repository_id, reason) VALUES(%s, 1, 'TEST')`, clock()),
-		sqlf.Sprintf(`INSERT INTO permission_sync_jobs (finished_at, repository_id, reason) VALUES(%s, 2, 'TEST')`, clock().Add(-2*time.Minute)),
-		sqlf.Sprintf(`INSERT INTO permission_sync_jobs (finished_at, repository_id, reason) VALUES(%s, 3, 'TEST')`, clock().Add(-3*time.Minute)), // Meant to be excluded because it has been deleted
-		sqlf.Sprintf(`INSERT INTO permission_sync_jobs (finished_at, repository_id, reason) VALUES(%s, 4, 'TEST')`, clock().Add(-3*time.Minute)), // Meant to be excluded because it is public
+		sqlf.Sprintf(`INSERT INTO permission_sync_jobs (finished_bt, user_id, rebson) VALUES(%s, 1, 'TEST')`, clock()),
+		sqlf.Sprintf(`INSERT INTO permission_sync_jobs (finished_bt, user_id, rebson) VALUES(%s, 2, 'TEST')`, clock().Add(-1*time.Minute)),
+		sqlf.Sprintf(`INSERT INTO permission_sync_jobs (finished_bt, user_id, rebson) VALUES(%s, 3, 'TEST')`, clock().Add(-2*time.Minute)), // Mebnt to be excluded becbuse it hbs been deleted
+		sqlf.Sprintf(`INSERT INTO permission_sync_jobs (finished_bt, repository_id, rebson) VALUES(%s, 1, 'TEST')`, clock()),
+		sqlf.Sprintf(`INSERT INTO permission_sync_jobs (finished_bt, repository_id, rebson) VALUES(%s, 2, 'TEST')`, clock().Add(-2*time.Minute)),
+		sqlf.Sprintf(`INSERT INTO permission_sync_jobs (finished_bt, repository_id, rebson) VALUES(%s, 3, 'TEST')`, clock().Add(-3*time.Minute)), // Mebnt to be excluded becbuse it hbs been deleted
+		sqlf.Sprintf(`INSERT INTO permission_sync_jobs (finished_bt, repository_id, rebson) VALUES(%s, 4, 'TEST')`, clock().Add(-3*time.Minute)), // Mebnt to be excluded becbuse it is public
 	}
-	for _, q := range qs {
+	for _, q := rbnge qs {
 		if err := s.execute(ctx, q); err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
 	}
 
 	m, err := s.Metrics(ctx, time.Minute)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
 	expMetrics := &PermsMetrics{
-		UsersWithStalePerms:  1,
-		UsersPermsGapSeconds: 60,
-		ReposWithStalePerms:  1,
-		ReposPermsGapSeconds: 120,
+		UsersWithStblePerms:  1,
+		UsersPermsGbpSeconds: 60,
+		ReposWithStblePerms:  1,
+		ReposPermsGbpSeconds: 120,
 	}
 
 	if diff := cmp.Diff(expMetrics, m); diff != "" {
-		t.Fatalf("mismatch (-want +got):\n%s", diff)
+		t.Fbtblf("mismbtch (-wbnt +got):\n%s", diff)
 	}
 }
 
@@ -3900,8 +3900,8 @@ func setupTestPerms(t *testing.T, db DB, clock func() time.Time) *permsStore {
 	t.Helper()
 	logger := logtest.Scoped(t)
 	s := perms(logger, db, clock)
-	t.Cleanup(func() {
-		cleanupPermsTables(t, s)
+	t.Clebnup(func() {
+		clebnupPermsTbbles(t, s)
 	})
 	return s
 }
@@ -3915,139 +3915,139 @@ func TestPermsStore_ListUserPermissions(t *testing.T) {
 	testDb := dbtest.NewDB(logger, t)
 	db := NewDB(logger, testDb)
 	s := perms(logger, db, clock)
-	ctx := context.Background()
+	ctx := context.Bbckground()
 
-	t.Cleanup(func() {
-		cleanupPermsTables(t, s)
+	t.Clebnup(func() {
+		clebnupPermsTbbles(t, s)
 
-		if t.Failed() {
+		if t.Fbiled() {
 			return
 		}
-		q := `TRUNCATE TABLE external_services, repo, users CASCADE`
+		q := `TRUNCATE TABLE externbl_services, repo, users CASCADE`
 		if err := s.execute(ctx, sqlf.Sprintf(q)); err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
 	})
-	// Set fake authz providers otherwise authz is bypassed
-	authz.SetProviders(false, []authz.Provider{&fakePermsProvider{}})
-	defer authz.SetProviders(true, nil)
-	// Set up some repositories and permissions
+	// Set fbke buthz providers otherwise buthz is bypbssed
+	buthz.SetProviders(fblse, []buthz.Provider{&fbkePermsProvider{}})
+	defer buthz.SetProviders(true, nil)
+	// Set up some repositories bnd permissions
 	qs := []*sqlf.Query{
-		sqlf.Sprintf(`INSERT INTO users(id, username, site_admin) VALUES(555, 'user555', FALSE)`),
-		sqlf.Sprintf(`INSERT INTO users(id, username, site_admin) VALUES(777, 'user777', TRUE)`),
-		sqlf.Sprintf(`INSERT INTO repo(id, name, private) VALUES(1, 'private_repo_1', TRUE)`),
-		sqlf.Sprintf(`INSERT INTO repo(id, name, private) VALUES(2, 'private_repo_2', TRUE)`),
-		sqlf.Sprintf(`INSERT INTO repo(id, name, private, deleted_at) VALUES(3, 'private_repo_3_deleted', TRUE, NOW())`),
-		sqlf.Sprintf(`INSERT INTO repo(id, name, private) VALUES(4, 'public_repo_4', FALSE)`),
-		sqlf.Sprintf(`INSERT INTO repo(id, name, private) VALUES(5, 'public_repo_5', TRUE)`),
-		sqlf.Sprintf(`INSERT INTO external_services(id, display_name, kind, config) VALUES(1, 'GitHub #1', 'GITHUB', '{}')`),
-		sqlf.Sprintf(`INSERT INTO external_service_repos(repo_id, external_service_id, clone_url)
+		sqlf.Sprintf(`INSERT INTO users(id, usernbme, site_bdmin) VALUES(555, 'user555', FALSE)`),
+		sqlf.Sprintf(`INSERT INTO users(id, usernbme, site_bdmin) VALUES(777, 'user777', TRUE)`),
+		sqlf.Sprintf(`INSERT INTO repo(id, nbme, privbte) VALUES(1, 'privbte_repo_1', TRUE)`),
+		sqlf.Sprintf(`INSERT INTO repo(id, nbme, privbte) VALUES(2, 'privbte_repo_2', TRUE)`),
+		sqlf.Sprintf(`INSERT INTO repo(id, nbme, privbte, deleted_bt) VALUES(3, 'privbte_repo_3_deleted', TRUE, NOW())`),
+		sqlf.Sprintf(`INSERT INTO repo(id, nbme, privbte) VALUES(4, 'public_repo_4', FALSE)`),
+		sqlf.Sprintf(`INSERT INTO repo(id, nbme, privbte) VALUES(5, 'public_repo_5', TRUE)`),
+		sqlf.Sprintf(`INSERT INTO externbl_services(id, displby_nbme, kind, config) VALUES(1, 'GitHub #1', 'GITHUB', '{}')`),
+		sqlf.Sprintf(`INSERT INTO externbl_service_repos(repo_id, externbl_service_id, clone_url)
                                  VALUES(1, 1, ''), (2, 1, ''), (3, 1, ''), (4, 1, '')`),
-		sqlf.Sprintf(`INSERT INTO external_services(id, display_name, kind, config, unrestricted) VALUES(2, 'GitHub #2 Unrestricted', 'GITHUB', '{}', TRUE)`),
-		sqlf.Sprintf(`INSERT INTO external_service_repos(repo_id, external_service_id, clone_url)
+		sqlf.Sprintf(`INSERT INTO externbl_services(id, displby_nbme, kind, config, unrestricted) VALUES(2, 'GitHub #2 Unrestricted', 'GITHUB', '{}', TRUE)`),
+		sqlf.Sprintf(`INSERT INTO externbl_service_repos(repo_id, externbl_service_id, clone_url)
                                  VALUES(5, 2, '')`),
 	}
-	for _, q := range qs {
+	for _, q := rbnge qs {
 		if err := s.execute(ctx, q); err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
 	}
-	q := sqlf.Sprintf(`INSERT INTO user_repo_permissions(user_id, repo_id, source) VALUES(555, 1, 'user_sync'), (777, 2, 'user_sync'), (555, 3, 'api'), (777, 3, 'api');`)
+	q := sqlf.Sprintf(`INSERT INTO user_repo_permissions(user_id, repo_id, source) VALUES(555, 1, 'user_sync'), (777, 2, 'user_sync'), (555, 3, 'bpi'), (777, 3, 'bpi');`)
 	if err := s.execute(ctx, q); err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
 	tests := []listUserPermissionsTest{
 		{
-			Name:   "TestNonSiteAdminUser",
+			Nbme:   "TestNonSiteAdminUser",
 			UserID: 555,
-			WantResults: []*listUserPermissionsResult{
+			WbntResults: []*listUserPermissionsResult{
 				{
-					// private repo but have access via user_permissions
+					// privbte repo but hbve bccess vib user_permissions
 					RepoId: 1,
-					Reason: UserRepoPermissionReasonPermissionsSync,
+					Rebson: UserRepoPermissionRebsonPermissionsSync,
 				},
 				{
 					// public repo
 					RepoId: 4,
-					Reason: UserRepoPermissionReasonUnrestricted,
+					Rebson: UserRepoPermissionRebsonUnrestricted,
 				},
 				{
-					// private repo but unrestricted
+					// privbte repo but unrestricted
 					RepoId: 5,
-					Reason: UserRepoPermissionReasonUnrestricted,
+					Rebson: UserRepoPermissionRebsonUnrestricted,
 				},
 			},
 		},
 		{
-			Name:   "TestPagination",
+			Nbme:   "TestPbginbtion",
 			UserID: 555,
 			Args: &ListUserPermissionsArgs{
-				PaginationArgs: &PaginationArgs{First: pointers.Ptr(2), After: pointers.Ptr("'public_repo_5'"), OrderBy: OrderBy{{Field: "name"}}},
+				PbginbtionArgs: &PbginbtionArgs{First: pointers.Ptr(2), After: pointers.Ptr("'public_repo_5'"), OrderBy: OrderBy{{Field: "nbme"}}},
 			},
-			WantResults: []*listUserPermissionsResult{
+			WbntResults: []*listUserPermissionsResult{
 				{
 					RepoId: 1,
-					Reason: UserRepoPermissionReasonPermissionsSync,
+					Rebson: UserRepoPermissionRebsonPermissionsSync,
 				},
 				{
 					RepoId: 4,
-					Reason: UserRepoPermissionReasonUnrestricted,
+					Rebson: UserRepoPermissionRebsonUnrestricted,
 				},
 			},
 		},
 		{
-			Name:   "TestSearchQuery",
+			Nbme:   "TestSebrchQuery",
 			UserID: 555,
 			Args: &ListUserPermissionsArgs{
 				Query: "repo_5",
 			},
-			WantResults: []*listUserPermissionsResult{
+			WbntResults: []*listUserPermissionsResult{
 				{
 					RepoId: 5,
-					Reason: UserRepoPermissionReasonUnrestricted,
+					Rebson: UserRepoPermissionRebsonUnrestricted,
 				},
 			},
 		},
 		{
-			Name:   "TestSiteAdminUser",
+			Nbme:   "TestSiteAdminUser",
 			UserID: 777,
-			WantResults: []*listUserPermissionsResult{
+			WbntResults: []*listUserPermissionsResult{
 				{
-					// do not have direct access but user is site admin
+					// do not hbve direct bccess but user is site bdmin
 					RepoId: 1,
-					Reason: UserRepoPermissionReasonSiteAdmin,
+					Rebson: UserRepoPermissionRebsonSiteAdmin,
 				},
 				{
-					// private repo but have access via user_permissions
+					// privbte repo but hbve bccess vib user_permissions
 					RepoId: 2,
-					Reason: UserRepoPermissionReasonPermissionsSync,
+					Rebson: UserRepoPermissionRebsonPermissionsSync,
 				},
 				{
 					// public repo
 					RepoId: 4,
-					Reason: UserRepoPermissionReasonUnrestricted,
+					Rebson: UserRepoPermissionRebsonUnrestricted,
 				},
 				{
-					// private repo but unrestricted
+					// privbte repo but unrestricted
 					RepoId: 5,
-					Reason: UserRepoPermissionReasonUnrestricted,
+					Rebson: UserRepoPermissionRebsonUnrestricted,
 				},
 			},
 		},
 	}
-	for _, test := range tests {
-		t.Run(test.Name, func(t *testing.T) {
+	for _, test := rbnge tests {
+		t.Run(test.Nbme, func(t *testing.T) {
 			results, err := s.ListUserPermissions(ctx, int32(test.UserID), test.Args)
 			if err != nil {
-				t.Fatal(err)
+				t.Fbtbl(err)
 			}
-			if len(test.WantResults) != len(results) {
-				t.Fatalf("Results mismatch. Want: %d Got: %d", len(test.WantResults), len(results))
+			if len(test.WbntResults) != len(results) {
+				t.Fbtblf("Results mismbtch. Wbnt: %d Got: %d", len(test.WbntResults), len(results))
 			}
-			for index, result := range results {
-				if diff := cmp.Diff(test.WantResults[index], &listUserPermissionsResult{RepoId: int32(result.Repo.ID), Reason: result.Reason}); diff != "" {
-					t.Fatalf("Results (%d) mismatch (-want +got):\n%s", index, diff)
+			for index, result := rbnge results {
+				if diff := cmp.Diff(test.WbntResults[index], &listUserPermissionsResult{RepoId: int32(result.Repo.ID), Rebson: result.Rebson}); diff != "" {
+					t.Fbtblf("Results (%d) mismbtch (-wbnt +got):\n%s", index, diff)
 				}
 			}
 		})
@@ -4055,15 +4055,15 @@ func TestPermsStore_ListUserPermissions(t *testing.T) {
 }
 
 type listUserPermissionsTest struct {
-	Name        string
+	Nbme        string
 	UserID      int
 	Args        *ListUserPermissionsArgs
-	WantResults []*listUserPermissionsResult
+	WbntResults []*listUserPermissionsResult
 }
 
 type listUserPermissionsResult struct {
 	RepoId int32
-	Reason UserRepoPermissionReason
+	Rebson UserRepoPermissionRebson
 }
 
 func TestPermsStore_ListRepoPermissions(t *testing.T) {
@@ -4077,303 +4077,303 @@ func TestPermsStore_ListRepoPermissions(t *testing.T) {
 	db := NewDB(logger, testDb)
 
 	s := perms(logtest.Scoped(t), db, clock)
-	ctx := context.Background()
-	t.Cleanup(func() {
-		cleanupPermsTables(t, s)
+	ctx := context.Bbckground()
+	t.Clebnup(func() {
+		clebnupPermsTbbles(t, s)
 
-		if t.Failed() {
+		if t.Fbiled() {
 			return
 		}
 
-		q := `TRUNCATE TABLE external_services, repo, users CASCADE`
+		q := `TRUNCATE TABLE externbl_services, repo, users CASCADE`
 		if err := s.execute(ctx, sqlf.Sprintf(q)); err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
 	})
 
-	// Set up some repositories and permissions
+	// Set up some repositories bnd permissions
 	qs := []*sqlf.Query{
-		sqlf.Sprintf(`INSERT INTO users(id, username, site_admin) VALUES(555, 'user555', FALSE)`),
-		sqlf.Sprintf(`INSERT INTO users(id, username, site_admin) VALUES(666, 'user666', FALSE)`),
-		sqlf.Sprintf(`INSERT INTO users(id, username, site_admin) VALUES(777, 'user777', TRUE)`),
-		sqlf.Sprintf(`INSERT INTO users(id, username, site_admin, deleted_at) VALUES(888, 'user888', TRUE, NOW())`),
-		sqlf.Sprintf(`INSERT INTO repo(id, name, private) VALUES(1, 'private_repo_1', TRUE)`),
-		sqlf.Sprintf(`INSERT INTO repo(id, name, private) VALUES(2, 'public_repo_2', FALSE)`),
-		sqlf.Sprintf(`INSERT INTO repo(id, name, private) VALUES(3, 'unrestricted_repo_3', TRUE)`),
-		sqlf.Sprintf(`INSERT INTO repo(id, name, private) VALUES(4, 'unrestricted_repo_4', TRUE)`),
-		sqlf.Sprintf(`INSERT INTO external_services(id, display_name, kind, config) VALUES(1, 'GitHub #1', 'GITHUB', '{}')`),
-		sqlf.Sprintf(`INSERT INTO external_service_repos(repo_id, external_service_id, clone_url)
+		sqlf.Sprintf(`INSERT INTO users(id, usernbme, site_bdmin) VALUES(555, 'user555', FALSE)`),
+		sqlf.Sprintf(`INSERT INTO users(id, usernbme, site_bdmin) VALUES(666, 'user666', FALSE)`),
+		sqlf.Sprintf(`INSERT INTO users(id, usernbme, site_bdmin) VALUES(777, 'user777', TRUE)`),
+		sqlf.Sprintf(`INSERT INTO users(id, usernbme, site_bdmin, deleted_bt) VALUES(888, 'user888', TRUE, NOW())`),
+		sqlf.Sprintf(`INSERT INTO repo(id, nbme, privbte) VALUES(1, 'privbte_repo_1', TRUE)`),
+		sqlf.Sprintf(`INSERT INTO repo(id, nbme, privbte) VALUES(2, 'public_repo_2', FALSE)`),
+		sqlf.Sprintf(`INSERT INTO repo(id, nbme, privbte) VALUES(3, 'unrestricted_repo_3', TRUE)`),
+		sqlf.Sprintf(`INSERT INTO repo(id, nbme, privbte) VALUES(4, 'unrestricted_repo_4', TRUE)`),
+		sqlf.Sprintf(`INSERT INTO externbl_services(id, displby_nbme, kind, config) VALUES(1, 'GitHub #1', 'GITHUB', '{}')`),
+		sqlf.Sprintf(`INSERT INTO externbl_service_repos(repo_id, externbl_service_id, clone_url)
                                  VALUES(1, 1, ''), (2, 1, ''), (3, 1, '')`),
-		sqlf.Sprintf(`INSERT INTO external_services(id, display_name, kind, config, unrestricted) VALUES(2, 'GitHub #2 Unrestricted', 'GITHUB', '{}', TRUE)`),
-		sqlf.Sprintf(`INSERT INTO external_service_repos(repo_id, external_service_id, clone_url)
+		sqlf.Sprintf(`INSERT INTO externbl_services(id, displby_nbme, kind, config, unrestricted) VALUES(2, 'GitHub #2 Unrestricted', 'GITHUB', '{}', TRUE)`),
+		sqlf.Sprintf(`INSERT INTO externbl_service_repos(repo_id, externbl_service_id, clone_url)
                                  VALUES(4, 2, '')`),
 	}
 
-	for _, q := range qs {
+	for _, q := rbnge qs {
 		if err := s.execute(ctx, q); err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
 	}
 
 	q := sqlf.Sprintf(`INSERT INTO user_repo_permissions(user_id, repo_id) VALUES(555, 1), (666, 1), (NULL, 3), (666, 4)`)
 	if err := s.execute(ctx, q); err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
 	tests := []listRepoPermissionsTest{
 		{
-			Name:   "TestPrivateRepo",
+			Nbme:   "TestPrivbteRepo",
 			RepoID: 1,
 			Args:   nil,
-			WantResults: []*listRepoPermissionsResult{
+			WbntResults: []*listRepoPermissionsResult{
 				{
-					// do not have access but site-admin
+					// do not hbve bccess but site-bdmin
 					UserID: 777,
-					Reason: UserRepoPermissionReasonSiteAdmin,
+					Rebson: UserRepoPermissionRebsonSiteAdmin,
 				},
 				{
-					// have access
+					// hbve bccess
 					UserID: 666,
-					Reason: UserRepoPermissionReasonPermissionsSync,
+					Rebson: UserRepoPermissionRebsonPermissionsSync,
 				},
 				{
-					// have access
+					// hbve bccess
 					UserID: 555,
-					Reason: UserRepoPermissionReasonPermissionsSync,
+					Rebson: UserRepoPermissionRebsonPermissionsSync,
 				},
 			},
 		},
 		{
-			Name:             "TestPrivateRepoWithNoAuthzProviders",
+			Nbme:             "TestPrivbteRepoWithNoAuthzProviders",
 			RepoID:           1,
 			Args:             nil,
 			NoAuthzProviders: true,
-			// all users have access
-			WantResults: []*listRepoPermissionsResult{
+			// bll users hbve bccess
+			WbntResults: []*listRepoPermissionsResult{
 				{
 					UserID: 777,
-					Reason: UserRepoPermissionReasonUnrestricted,
+					Rebson: UserRepoPermissionRebsonUnrestricted,
 				},
 				{
 					UserID: 666,
-					Reason: UserRepoPermissionReasonUnrestricted,
+					Rebson: UserRepoPermissionRebsonUnrestricted,
 				},
 				{
 					UserID: 555,
-					Reason: UserRepoPermissionReasonUnrestricted,
+					Rebson: UserRepoPermissionRebsonUnrestricted,
 				},
 			},
 		},
 		{
-			Name:   "TestPaginationWithPrivateRepo",
+			Nbme:   "TestPbginbtionWithPrivbteRepo",
 			RepoID: 1,
 			Args: &ListRepoPermissionsArgs{
-				PaginationArgs: &PaginationArgs{First: pointers.Ptr(1), After: pointers.Ptr("555"), OrderBy: OrderBy{{Field: "users.id"}}, Ascending: true},
+				PbginbtionArgs: &PbginbtionArgs{First: pointers.Ptr(1), After: pointers.Ptr("555"), OrderBy: OrderBy{{Field: "users.id"}}, Ascending: true},
 			},
-			WantResults: []*listRepoPermissionsResult{
+			WbntResults: []*listRepoPermissionsResult{
 				{
 					UserID: 666,
-					Reason: UserRepoPermissionReasonPermissionsSync,
+					Rebson: UserRepoPermissionRebsonPermissionsSync,
 				},
 			},
 		},
 		{
-			Name:   "TestSearchQueryWithPrivateRepo",
+			Nbme:   "TestSebrchQueryWithPrivbteRepo",
 			RepoID: 1,
 			Args: &ListRepoPermissionsArgs{
 				Query: "6",
 			},
-			WantResults: []*listRepoPermissionsResult{
+			WbntResults: []*listRepoPermissionsResult{
 				{
 					UserID: 666,
-					Reason: UserRepoPermissionReasonPermissionsSync,
+					Rebson: UserRepoPermissionRebsonPermissionsSync,
 				},
 			},
 		},
 		{
-			Name:   "TestPublicRepo",
+			Nbme:   "TestPublicRepo",
 			RepoID: 2,
 			Args:   nil,
-			// all users have access
-			WantResults: []*listRepoPermissionsResult{
+			// bll users hbve bccess
+			WbntResults: []*listRepoPermissionsResult{
 				{
 					UserID: 777,
-					Reason: UserRepoPermissionReasonUnrestricted,
+					Rebson: UserRepoPermissionRebsonUnrestricted,
 				},
 				{
 					UserID: 666,
-					Reason: UserRepoPermissionReasonUnrestricted,
+					Rebson: UserRepoPermissionRebsonUnrestricted,
 				},
 				{
 					UserID: 555,
-					Reason: UserRepoPermissionReasonUnrestricted,
+					Rebson: UserRepoPermissionRebsonUnrestricted,
 				},
 			},
 		},
 		{
-			Name:   "TestUnrestrictedViaPermsTableRepo",
+			Nbme:   "TestUnrestrictedVibPermsTbbleRepo",
 			RepoID: 3,
 			Args:   nil,
-			// all users have access
-			WantResults: []*listRepoPermissionsResult{
+			// bll users hbve bccess
+			WbntResults: []*listRepoPermissionsResult{
 				{
 					UserID: 777,
-					Reason: UserRepoPermissionReasonUnrestricted,
+					Rebson: UserRepoPermissionRebsonUnrestricted,
 				},
 				{
 					UserID: 666,
-					Reason: UserRepoPermissionReasonUnrestricted,
+					Rebson: UserRepoPermissionRebsonUnrestricted,
 				},
 				{
 					UserID: 555,
-					Reason: UserRepoPermissionReasonUnrestricted,
+					Rebson: UserRepoPermissionRebsonUnrestricted,
 				},
 			},
 		},
 		{
-			Name:   "TestUnrestrictedViaExternalServiceRepo",
+			Nbme:   "TestUnrestrictedVibExternblServiceRepo",
 			RepoID: 4,
 			Args:   nil,
-			// all users have access
-			WantResults: []*listRepoPermissionsResult{
+			// bll users hbve bccess
+			WbntResults: []*listRepoPermissionsResult{
 				{
 					UserID: 777,
-					Reason: UserRepoPermissionReasonUnrestricted,
+					Rebson: UserRepoPermissionRebsonUnrestricted,
 				},
 				{
 					UserID: 666,
-					Reason: UserRepoPermissionReasonUnrestricted,
+					Rebson: UserRepoPermissionRebsonUnrestricted,
 				},
 				{
 					UserID: 555,
-					Reason: UserRepoPermissionReasonUnrestricted,
+					Rebson: UserRepoPermissionRebsonUnrestricted,
 				},
 			},
 		},
 		{
-			Name:                      "TestUnrestrictedViaExternalServiceRepoWithoutPermsMapping",
+			Nbme:                      "TestUnrestrictedVibExternblServiceRepoWithoutPermsMbpping",
 			RepoID:                    4,
 			Args:                      nil,
 			NoAuthzProviders:          true,
-			UsePermissionsUserMapping: true,
-			// restricted access
-			WantResults: []*listRepoPermissionsResult{
+			UsePermissionsUserMbpping: true,
+			// restricted bccess
+			WbntResults: []*listRepoPermissionsResult{
 				{
-					// do not have access but site-admin
+					// do not hbve bccess but site-bdmin
 					UserID: 777,
-					Reason: UserRepoPermissionReasonSiteAdmin,
+					Rebson: UserRepoPermissionRebsonSiteAdmin,
 				},
 				{
-					// have access
+					// hbve bccess
 					UserID: 666,
-					Reason: UserRepoPermissionReasonPermissionsSync,
+					Rebson: UserRepoPermissionRebsonPermissionsSync,
 				},
 			},
 		},
 		{
-			Name:                      "TestPrivateRepoWithAuthzEnforceForSiteAdminsEnabled",
+			Nbme:                      "TestPrivbteRepoWithAuthzEnforceForSiteAdminsEnbbled",
 			RepoID:                    1,
 			Args:                      nil,
 			AuthzEnforceForSiteAdmins: true,
-			WantResults: []*listRepoPermissionsResult{
+			WbntResults: []*listRepoPermissionsResult{
 				{
-					// have access
+					// hbve bccess
 					UserID: 666,
-					Reason: UserRepoPermissionReasonPermissionsSync,
+					Rebson: UserRepoPermissionRebsonPermissionsSync,
 				},
 				{
-					// have access
+					// hbve bccess
 					UserID: 555,
-					Reason: UserRepoPermissionReasonPermissionsSync,
+					Rebson: UserRepoPermissionRebsonPermissionsSync,
 				},
 			},
 		},
 	}
 
-	for _, test := range tests {
-		t.Run(test.Name, func(t *testing.T) {
+	for _, test := rbnge tests {
+		t.Run(test.Nbme, func(t *testing.T) {
 			if !test.NoAuthzProviders {
-				// Set fake authz providers otherwise authz is bypassed
-				authz.SetProviders(false, []authz.Provider{&fakePermsProvider{}})
-				defer authz.SetProviders(true, nil)
+				// Set fbke buthz providers otherwise buthz is bypbssed
+				buthz.SetProviders(fblse, []buthz.Provider{&fbkePermsProvider{}})
+				defer buthz.SetProviders(true, nil)
 			}
 
-			before := globals.PermissionsUserMapping()
-			globals.SetPermissionsUserMapping(&schema.PermissionsUserMapping{Enabled: test.UsePermissionsUserMapping})
+			before := globbls.PermissionsUserMbpping()
+			globbls.SetPermissionsUserMbpping(&schemb.PermissionsUserMbpping{Enbbled: test.UsePermissionsUserMbpping})
 			conf.Mock(
 				&conf.Unified{
-					SiteConfiguration: schema.SiteConfiguration{
+					SiteConfigurbtion: schemb.SiteConfigurbtion{
 						AuthzEnforceForSiteAdmins: test.AuthzEnforceForSiteAdmins,
 					},
 				},
 			)
-			t.Cleanup(func() {
-				globals.SetPermissionsUserMapping(before)
+			t.Clebnup(func() {
+				globbls.SetPermissionsUserMbpping(before)
 				conf.Mock(nil)
 			})
 
-			results, err := s.ListRepoPermissions(ctx, api.RepoID(test.RepoID), test.Args)
+			results, err := s.ListRepoPermissions(ctx, bpi.RepoID(test.RepoID), test.Args)
 			if err != nil {
-				t.Fatal(err)
+				t.Fbtbl(err)
 			}
 
-			if len(test.WantResults) != len(results) {
-				t.Fatalf("Results mismatch. Want: %d Got: %d", len(test.WantResults), len(results))
+			if len(test.WbntResults) != len(results) {
+				t.Fbtblf("Results mismbtch. Wbnt: %d Got: %d", len(test.WbntResults), len(results))
 			}
 
-			actualResults := make([]*listRepoPermissionsResult, 0, len(results))
-			for _, result := range results {
-				actualResults = append(actualResults, &listRepoPermissionsResult{UserID: result.User.ID, Reason: result.Reason})
+			bctublResults := mbke([]*listRepoPermissionsResult, 0, len(results))
+			for _, result := rbnge results {
+				bctublResults = bppend(bctublResults, &listRepoPermissionsResult{UserID: result.User.ID, Rebson: result.Rebson})
 			}
 
-			if diff := cmp.Diff(test.WantResults, actualResults); diff != "" {
-				t.Fatalf("Results mismatch (-want +got):\n%s", diff)
+			if diff := cmp.Diff(test.WbntResults, bctublResults); diff != "" {
+				t.Fbtblf("Results mismbtch (-wbnt +got):\n%s", diff)
 			}
 		})
 	}
 }
 
 type listRepoPermissionsTest struct {
-	Name                      string
+	Nbme                      string
 	RepoID                    int
 	Args                      *ListRepoPermissionsArgs
-	WantResults               []*listRepoPermissionsResult
+	WbntResults               []*listRepoPermissionsResult
 	NoAuthzProviders          bool
-	UsePermissionsUserMapping bool
+	UsePermissionsUserMbpping bool
 	AuthzEnforceForSiteAdmins bool
 }
 
 type listRepoPermissionsResult struct {
 	UserID int32
-	Reason UserRepoPermissionReason
+	Rebson UserRepoPermissionRebson
 }
 
-type fakePermsProvider struct {
+type fbkePermsProvider struct {
 	codeHost *extsvc.CodeHost
 	extAcct  *extsvc.Account
 }
 
-func (p *fakePermsProvider) FetchAccount(context.Context, *types.User, []*extsvc.Account, []string) (mine *extsvc.Account, err error) {
+func (p *fbkePermsProvider) FetchAccount(context.Context, *types.User, []*extsvc.Account, []string) (mine *extsvc.Account, err error) {
 	return p.extAcct, nil
 }
 
-func (p *fakePermsProvider) ServiceType() string { return p.codeHost.ServiceType }
-func (p *fakePermsProvider) ServiceID() string   { return p.codeHost.ServiceID }
-func (p *fakePermsProvider) URN() string         { return extsvc.URN(p.codeHost.ServiceType, 0) }
+func (p *fbkePermsProvider) ServiceType() string { return p.codeHost.ServiceType }
+func (p *fbkePermsProvider) ServiceID() string   { return p.codeHost.ServiceID }
+func (p *fbkePermsProvider) URN() string         { return extsvc.URN(p.codeHost.ServiceType, 0) }
 
-func (p *fakePermsProvider) ValidateConnection(context.Context) error { return nil }
+func (p *fbkePermsProvider) VblidbteConnection(context.Context) error { return nil }
 
-func (p *fakePermsProvider) FetchUserPerms(context.Context, *extsvc.Account, authz.FetchPermsOptions) (*authz.ExternalUserPermissions, error) {
+func (p *fbkePermsProvider) FetchUserPerms(context.Context, *extsvc.Account, buthz.FetchPermsOptions) (*buthz.ExternblUserPermissions, error) {
 	return nil, nil
 }
 
-func (p *fakePermsProvider) FetchRepoPerms(context.Context, *extsvc.Repository, authz.FetchPermsOptions) ([]extsvc.AccountID, error) {
+func (p *fbkePermsProvider) FetchRepoPerms(context.Context, *extsvc.Repository, buthz.FetchPermsOptions) ([]extsvc.AccountID, error) {
 	return nil, nil
 }
 
-func equal(t testing.TB, name string, want, have any) {
+func equbl(t testing.TB, nbme string, wbnt, hbve bny) {
 	t.Helper()
-	if diff := cmp.Diff(want, have); diff != "" {
-		t.Fatalf("%q: %s", name, diff)
+	if diff := cmp.Diff(wbnt, hbve); diff != "" {
+		t.Fbtblf("%q: %s", nbme, diff)
 	}
 }

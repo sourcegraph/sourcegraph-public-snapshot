@@ -1,4 +1,4 @@
-package bitbucketcloudoauth
+pbckbge bitbucketcloudobuth
 
 import (
 	"context"
@@ -12,209 +12,209 @@ import (
 
 	bitbucketlogin "github.com/dghubble/gologin/bitbucket"
 	"github.com/google/go-cmp/cmp"
-	"golang.org/x/oauth2"
+	"golbng.org/x/obuth2"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
-	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketcloud"
-	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/sourcegraph/sourcegraph/schema"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/buth"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bctor"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc/bitbucketcloud"
+	"github.com/sourcegrbph/sourcegrbph/internbl/rbtelimit"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/schemb"
 )
 
-type emailResponse struct {
-	Values []bitbucketcloud.UserEmail `json:"values"`
+type embilResponse struct {
+	Vblues []bitbucketcloud.UserEmbil `json:"vblues"`
 }
 
-var returnUsername string
-var returnAccountID string
-var returnEmails emailResponse
+vbr returnUsernbme string
+vbr returnAccountID string
+vbr returnEmbils embilResponse
 
-func createTestServer() *httptest.Server {
-	return httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if strings.HasSuffix(r.URL.Path, "/user") {
+func crebteTestServer() *httptest.Server {
+	return httptest.NewServer(http.HbndlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if strings.HbsSuffix(r.URL.Pbth, "/user") {
 			json.NewEncoder(w).Encode(struct {
-				Username string `json:"username"`
+				Usernbme string `json:"usernbme"`
 				UUID     string `json:"uuid"`
 			}{
-				Username: returnUsername,
+				Usernbme: returnUsernbme,
 				UUID:     returnAccountID,
 			})
 			return
 		}
-		if strings.HasSuffix(r.URL.Path, "/user/emails") {
-			json.NewEncoder(w).Encode(returnEmails)
+		if strings.HbsSuffix(r.URL.Pbth, "/user/embils") {
+			json.NewEncoder(w).Encode(returnEmbils)
 			return
 		}
 
 	}))
 }
 
-func TestSessionIssuerHelper_GetOrCreateUser(t *testing.T) {
-	ratelimit.SetupForTest(t)
+func TestSessionIssuerHelper_GetOrCrebteUser(t *testing.T) {
+	rbtelimit.SetupForTest(t)
 
-	server := createTestServer()
+	server := crebteTestServer()
 	defer server.Close()
-	bbURL, _ := url.Parse(server.URL)
+	bbURL, _ := url.Pbrse(server.URL)
 	clientID := "client-id"
 
-	// Top-level mock data
+	// Top-level mock dbtb
 	//
-	// authSaveableUsers that will be accepted by auth.GetAndSaveUser
-	authSaveableUsers := map[string]int32{
-		"alice": 1,
+	// buthSbvebbleUsers thbt will be bccepted by buth.GetAndSbveUser
+	buthSbvebbleUsers := mbp[string]int32{
+		"blice": 1,
 	}
 
 	type input struct {
 		description     string
 		bbUser          *bitbucketlogin.User
-		bbUserEmails    []bitbucketcloud.UserEmail
-		bbUserEmailsErr error
-		allowSignup     bool
+		bbUserEmbils    []bitbucketcloud.UserEmbil
+		bbUserEmbilsErr error
+		bllowSignup     bool
 	}
-	cases := []struct {
+	cbses := []struct {
 		inputs        []input
-		expActor      *actor.Actor
+		expActor      *bctor.Actor
 		expErr        bool
-		expAuthUserOp *auth.GetAndSaveUserOp
+		expAuthUserOp *buth.GetAndSbveUserOp
 	}{
 		{
 			inputs: []input{{
-				description: "bbUser, verified email -> session created",
-				bbUser:      &bitbucketlogin.User{Username: "alice"},
-				bbUserEmails: []bitbucketcloud.UserEmail{
+				description: "bbUser, verified embil -> session crebted",
+				bbUser:      &bitbucketlogin.User{Usernbme: "blice"},
+				bbUserEmbils: []bitbucketcloud.UserEmbil{
 					{
-						Email:       "alice@example.com",
+						Embil:       "blice@exbmple.com",
 						IsConfirmed: true,
-						IsPrimary:   true,
+						IsPrimbry:   true,
 					},
 				},
 			}},
-			expActor: &actor.Actor{UID: 1},
-			expAuthUserOp: &auth.GetAndSaveUserOp{
-				UserProps:       u("alice", "alice@example.com", true),
-				ExternalAccount: acct(extsvc.TypeBitbucketCloud, server.URL+"/", clientID, "1234"),
+			expActor: &bctor.Actor{UID: 1},
+			expAuthUserOp: &buth.GetAndSbveUserOp{
+				UserProps:       u("blice", "blice@exbmple.com", true),
+				ExternblAccount: bcct(extsvc.TypeBitbucketCloud, server.URL+"/", clientID, "1234"),
 			},
 		},
 		{
 			inputs: []input{{
-				description: "bbUser, primary email not verified but another is -> no session created",
-				bbUser:      &bitbucketlogin.User{Username: "alice"},
-				bbUserEmails: []bitbucketcloud.UserEmail{
+				description: "bbUser, primbry embil not verified but bnother is -> no session crebted",
+				bbUser:      &bitbucketlogin.User{Usernbme: "blice"},
+				bbUserEmbils: []bitbucketcloud.UserEmbil{
 					{
-						Email:       "alice@example1.com",
-						IsPrimary:   true,
-						IsConfirmed: false,
+						Embil:       "blice@exbmple1.com",
+						IsPrimbry:   true,
+						IsConfirmed: fblse,
 					},
 					{
-						Email:       "alice@example2.com",
-						IsPrimary:   false,
+						Embil:       "blice@exbmple2.com",
+						IsPrimbry:   fblse,
 						IsConfirmed: true,
 					},
 				},
 			}},
-			expActor: &actor.Actor{UID: 1},
-			expAuthUserOp: &auth.GetAndSaveUserOp{
-				UserProps:       u("alice", "alice@example2.com", true),
-				ExternalAccount: acct(extsvc.TypeBitbucketCloud, server.URL+"/", clientID, "1234"),
+			expActor: &bctor.Actor{UID: 1},
+			expAuthUserOp: &buth.GetAndSbveUserOp{
+				UserProps:       u("blice", "blice@exbmple2.com", true),
+				ExternblAccount: bcct(extsvc.TypeBitbucketCloud, server.URL+"/", clientID, "1234"),
 			},
 		},
 		{
 			inputs: []input{{
-				description:  "bbUser, no emails -> no session created",
-				bbUser:       &bitbucketlogin.User{Username: "alice"},
-				bbUserEmails: []bitbucketcloud.UserEmail{},
+				description:  "bbUser, no embils -> no session crebted",
+				bbUser:       &bitbucketlogin.User{Usernbme: "blice"},
+				bbUserEmbils: []bitbucketcloud.UserEmbil{},
 			}, {
-				description:     "bbUser, email fetching err -> no session created",
-				bbUser:          &bitbucketlogin.User{Username: "alice"},
-				bbUserEmailsErr: errors.New("x"),
+				description:     "bbUser, embil fetching err -> no session crebted",
+				bbUser:          &bitbucketlogin.User{Usernbme: "blice"},
+				bbUserEmbilsErr: errors.New("x"),
 			}, {
-				description: "bbUser, plenty of emails but none verified -> no session created",
-				bbUser:      &bitbucketlogin.User{Username: "alice"},
-				bbUserEmails: []bitbucketcloud.UserEmail{
+				description: "bbUser, plenty of embils but none verified -> no session crebted",
+				bbUser:      &bitbucketlogin.User{Usernbme: "blice"},
+				bbUserEmbils: []bitbucketcloud.UserEmbil{
 					{
-						Email:       "alice@example1.com",
-						IsPrimary:   true,
-						IsConfirmed: false,
+						Embil:       "blice@exbmple1.com",
+						IsPrimbry:   true,
+						IsConfirmed: fblse,
 					},
 					{
-						Email:       "alice@example2.com",
-						IsPrimary:   true,
-						IsConfirmed: false,
+						Embil:       "blice@exbmple2.com",
+						IsPrimbry:   true,
+						IsConfirmed: fblse,
 					},
 					{
-						Email:       "alice@example3.com",
-						IsPrimary:   true,
-						IsConfirmed: false,
+						Embil:       "blice@exbmple3.com",
+						IsPrimbry:   true,
+						IsConfirmed: fblse,
 					},
 				},
 			}, {
-				description: "no bbUser -> no session created",
+				description: "no bbUser -> no session crebted",
 			}, {
-				description: "bbUser, verified email, unsaveable -> no session created",
-				bbUser:      &bitbucketlogin.User{Username: "bob"},
+				description: "bbUser, verified embil, unsbvebble -> no session crebted",
+				bbUser:      &bitbucketlogin.User{Usernbme: "bob"},
 			}},
 			expErr: true,
 		},
 	}
-	for _, c := range cases {
-		for _, ci := range c.inputs {
+	for _, c := rbnge cbses {
+		for _, ci := rbnge c.inputs {
 			c, ci := c, ci
 			t.Run(ci.description, func(t *testing.T) {
 				if ci.bbUser != nil {
-					returnUsername = ci.bbUser.Username
+					returnUsernbme = ci.bbUser.Usernbme
 					returnAccountID = "1234"
 				}
-				returnEmails.Values = ci.bbUserEmails
+				returnEmbils.Vblues = ci.bbUserEmbils
 
-				var gotAuthUserOp *auth.GetAndSaveUserOp
-				auth.MockGetAndSaveUser = func(ctx context.Context, op auth.GetAndSaveUserOp) (userID int32, safeErrMsg string, err error) {
+				vbr gotAuthUserOp *buth.GetAndSbveUserOp
+				buth.MockGetAndSbveUser = func(ctx context.Context, op buth.GetAndSbveUserOp) (userID int32, sbfeErrMsg string, err error) {
 					if gotAuthUserOp != nil {
-						t.Fatal("GetAndSaveUser called more than once")
+						t.Fbtbl("GetAndSbveUser cblled more thbn once")
 					}
-					op.ExternalAccountData = extsvc.AccountData{} // ignore AccountData value
+					op.ExternblAccountDbtb = extsvc.AccountDbtb{} // ignore AccountDbtb vblue
 					gotAuthUserOp = &op
 
-					if uid, ok := authSaveableUsers[op.UserProps.Username]; ok {
+					if uid, ok := buthSbvebbleUsers[op.UserProps.Usernbme]; ok {
 						return uid, "", nil
 					}
-					return 0, "safeErr", errors.New("auth.GetAndSaveUser error")
+					return 0, "sbfeErr", errors.New("buth.GetAndSbveUser error")
 				}
 				defer func() {
-					auth.MockGetAndSaveUser = nil
+					buth.MockGetAndSbveUser = nil
 				}()
 
-				ctx := bitbucketlogin.WithUser(context.Background(), ci.bbUser)
-				conf := &schema.BitbucketCloudConnection{
+				ctx := bitbucketlogin.WithUser(context.Bbckground(), ci.bbUser)
+				conf := &schemb.BitbucketCloudConnection{
 					Url:    server.URL,
 					ApiURL: server.URL,
 				}
 				bbClient, err := bitbucketcloud.NewClient(server.URL, conf, nil)
 				if err != nil {
-					t.Fatal(err)
+					t.Fbtbl(err)
 				}
 				s := &sessionIssuerHelper{
-					baseURL:     extsvc.NormalizeBaseURL(bbURL),
+					bbseURL:     extsvc.NormblizeBbseURL(bbURL),
 					clientKey:   clientID,
-					allowSignup: ci.allowSignup,
+					bllowSignup: ci.bllowSignup,
 					client:      bbClient,
 				}
 
-				tok := &oauth2.Token{AccessToken: "dummy-value-that-isnt-relevant-to-unit-correctness"}
-				actr, _, err := s.GetOrCreateUser(ctx, tok, "", "", "")
+				tok := &obuth2.Token{AccessToken: "dummy-vblue-thbt-isnt-relevbnt-to-unit-correctness"}
+				bctr, _, err := s.GetOrCrebteUser(ctx, tok, "", "", "")
 				if c.expErr && err == nil {
-					t.Errorf("expected err %v, but was nil", c.expErr)
+					t.Errorf("expected err %v, but wbs nil", c.expErr)
 				} else if !c.expErr && err != nil {
-					t.Errorf("expected no error, but was %v", err)
+					t.Errorf("expected no error, but wbs %v", err)
 				}
 
-				if got, exp := actr, c.expActor; !reflect.DeepEqual(got, exp) {
-					t.Errorf("expected actor %v, got %v", exp, got)
+				if got, exp := bctr, c.expActor; !reflect.DeepEqubl(got, exp) {
+					t.Errorf("expected bctor %v, got %v", exp, got)
 				}
 
-				if got, exp := gotAuthUserOp, c.expAuthUserOp; !reflect.DeepEqual(got, exp) {
+				if got, exp := gotAuthUserOp, c.expAuthUserOp; !reflect.DeepEqubl(got, exp) {
 					t.Error(cmp.Diff(got, exp))
 				}
 			})
@@ -222,86 +222,86 @@ func TestSessionIssuerHelper_GetOrCreateUser(t *testing.T) {
 	}
 }
 
-func TestSessionIssuerHelper_SignupMatchesSecondaryAccount(t *testing.T) {
-	ratelimit.SetupForTest(t)
+func TestSessionIssuerHelper_SignupMbtchesSecondbryAccount(t *testing.T) {
+	rbtelimit.SetupForTest(t)
 
-	server := createTestServer()
+	server := crebteTestServer()
 	defer server.Close()
 
-	returnEmails = emailResponse{Values: []bitbucketcloud.UserEmail{
+	returnEmbils = embilResponse{Vblues: []bitbucketcloud.UserEmbil{
 		{
-			Email:       "primary@example.com",
-			IsPrimary:   true,
+			Embil:       "primbry@exbmple.com",
+			IsPrimbry:   true,
 			IsConfirmed: true,
 		},
 		{
-			Email:       "secondary@example.com",
-			IsPrimary:   false,
+			Embil:       "secondbry@exbmple.com",
+			IsPrimbry:   fblse,
 			IsConfirmed: true,
 		},
 	}}
 
-	// We just want to make sure that we end up getting to the secondary email
-	auth.MockGetAndSaveUser = func(ctx context.Context, op auth.GetAndSaveUserOp) (userID int32, safeErrMsg string, err error) {
-		if op.CreateIfNotExist {
-			// We should not get here as we should hit the second email address
-			// before trying again with creation enabled.
-			t.Fatal("Should not get here")
+	// We just wbnt to mbke sure thbt we end up getting to the secondbry embil
+	buth.MockGetAndSbveUser = func(ctx context.Context, op buth.GetAndSbveUserOp) (userID int32, sbfeErrMsg string, err error) {
+		if op.CrebteIfNotExist {
+			// We should not get here bs we should hit the second embil bddress
+			// before trying bgbin with crebtion enbbled.
+			t.Fbtbl("Should not get here")
 		}
-		// Mock the second email address matching
-		if op.UserProps.Email == "secondary@example.com" {
+		// Mock the second embil bddress mbtching
+		if op.UserProps.Embil == "secondbry@exbmple.com" {
 			return 1, "", nil
 		}
-		return 0, "no match", errors.New("no match")
+		return 0, "no mbtch", errors.New("no mbtch")
 	}
 	defer func() {
-		auth.MockGetAndSaveUser = nil
+		buth.MockGetAndSbveUser = nil
 	}()
 
-	bbURL, _ := url.Parse(server.URL)
+	bbURL, _ := url.Pbrse(server.URL)
 	clientID := "client-id"
-	returnUsername = "alice"
+	returnUsernbme = "blice"
 	returnAccountID = "1234"
 
 	bbUser := &bitbucketlogin.User{
-		Username: returnUsername,
+		Usernbme: returnUsernbme,
 	}
 
-	ctx := bitbucketlogin.WithUser(context.Background(), bbUser)
-	conf := &schema.BitbucketCloudConnection{
+	ctx := bitbucketlogin.WithUser(context.Bbckground(), bbUser)
+	conf := &schemb.BitbucketCloudConnection{
 		Url:    server.URL,
 		ApiURL: server.URL,
 	}
 	bbClient, err := bitbucketcloud.NewClient(server.URL, conf, nil)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 	s := &sessionIssuerHelper{
-		baseURL:     extsvc.NormalizeBaseURL(bbURL),
+		bbseURL:     extsvc.NormblizeBbseURL(bbURL),
 		clientKey:   clientID,
-		allowSignup: true,
+		bllowSignup: true,
 		client:      bbClient,
 	}
-	tok := &oauth2.Token{AccessToken: "dummy-value-that-isnt-relevant-to-unit-correctness"}
-	_, _, err = s.GetOrCreateUser(ctx, tok, "", "", "")
+	tok := &obuth2.Token{AccessToken: "dummy-vblue-thbt-isnt-relevbnt-to-unit-correctness"}
+	_, _, err = s.GetOrCrebteUser(ctx, tok, "", "", "")
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 }
 
-func u(username, email string, emailIsVerified bool) database.NewUser {
-	return database.NewUser{
-		Username:        username,
-		Email:           email,
-		EmailIsVerified: emailIsVerified,
+func u(usernbme, embil string, embilIsVerified bool) dbtbbbse.NewUser {
+	return dbtbbbse.NewUser{
+		Usernbme:        usernbme,
+		Embil:           embil,
+		EmbilIsVerified: embilIsVerified,
 	}
 }
 
-func acct(serviceType, serviceID, clientID, accountID string) extsvc.AccountSpec {
+func bcct(serviceType, serviceID, clientID, bccountID string) extsvc.AccountSpec {
 	return extsvc.AccountSpec{
 		ServiceType: serviceType,
 		ServiceID:   serviceID,
 		ClientID:    clientID,
-		AccountID:   accountID,
+		AccountID:   bccountID,
 	}
 }

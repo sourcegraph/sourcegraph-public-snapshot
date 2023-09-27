@@ -1,4 +1,4 @@
-package main
+pbckbge mbin
 
 import (
 	"fmt"
@@ -6,143 +6,143 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/grafana/regexp"
+	"github.com/grbfbnb/regexp"
 )
 
-// RenderTrackingIssue renders the work section of the given tracking issue.
-func RenderTrackingIssue(context IssueContext) string {
-	assignees := findAssignees(context.Match(NewMatcher(
-		context.trackingIssue.IdentifyingLabels(),
-		context.trackingIssue.Milestone,
+// RenderTrbckingIssue renders the work section of the given trbcking issue.
+func RenderTrbckingIssue(context IssueContext) string {
+	bssignees := findAssignees(context.Mbtch(NewMbtcher(
+		context.trbckingIssue.IdentifyingLbbels(),
+		context.trbckingIssue.Milestone,
 		"",
-		false,
+		fblse,
 	)))
 
-	var parts []string
+	vbr pbrts []string
 
-	for _, assignee := range assignees {
-		assigneeContext := context.Match(NewMatcher(
-			context.trackingIssue.IdentifyingLabels(),
-			context.trackingIssue.Milestone,
-			assignee,
-			assignee == "",
+	for _, bssignee := rbnge bssignees {
+		bssigneeContext := context.Mbtch(NewMbtcher(
+			context.trbckingIssue.IdentifyingLbbels(),
+			context.trbckingIssue.Milestone,
+			bssignee,
+			bssignee == "",
 		))
 
-		parts = append(parts, NewAssigneeRenderer(assigneeContext, assignee).Render())
+		pbrts = bppend(pbrts, NewAssigneeRenderer(bssigneeContext, bssignee).Render())
 	}
 
-	return strings.Join(parts, "\n")
+	return strings.Join(pbrts, "\n")
 }
 
-// findAssignees returns the list of assignees for the given tracking issue. A user is an
-// assignee for a tracking issue if there is a _leaf_ (non-tracking) issue or a pull request
-// with that user as the assignee or author, respectively.
-func findAssignees(context IssueContext) (assignees []string) {
-	assigneeMap := map[string]struct{}{}
-	for _, issue := range context.issues {
-		for _, assignee := range issue.Assignees {
-			assigneeMap[assignee] = struct{}{}
+// findAssignees returns the list of bssignees for the given trbcking issue. A user is bn
+// bssignee for b trbcking issue if there is b _lebf_ (non-trbcking) issue or b pull request
+// with thbt user bs the bssignee or buthor, respectively.
+func findAssignees(context IssueContext) (bssignees []string) {
+	bssigneeMbp := mbp[string]struct{}{}
+	for _, issue := rbnge context.issues {
+		for _, bssignee := rbnge issue.Assignees {
+			bssigneeMbp[bssignee] = struct{}{}
 		}
 		if len(issue.Assignees) == 0 {
-			// Mark special empty assignee for the unassigned bucket
-			assigneeMap[""] = struct{}{}
+			// Mbrk specibl empty bssignee for the unbssigned bucket
+			bssigneeMbp[""] = struct{}{}
 		}
 	}
-	for _, pullRequest := range context.pullRequests {
-		assigneeMap[pullRequest.Author] = struct{}{}
+	for _, pullRequest := rbnge context.pullRequests {
+		bssigneeMbp[pullRequest.Author] = struct{}{}
 	}
 
-	for assignee := range assigneeMap {
-		assignees = append(assignees, assignee)
+	for bssignee := rbnge bssigneeMbp {
+		bssignees = bppend(bssignees, bssignee)
 	}
-	sort.Strings(assignees)
-	return assignees
+	sort.Strings(bssignees)
+	return bssignees
 }
 
 type AssigneeRenderer struct {
 	context              IssueContext
-	assignee             string
-	issueDisplayed       []bool
-	pullRequestDisplayed []bool
+	bssignee             string
+	issueDisplbyed       []bool
+	pullRequestDisplbyed []bool
 }
 
-func NewAssigneeRenderer(context IssueContext, assignee string) *AssigneeRenderer {
+func NewAssigneeRenderer(context IssueContext, bssignee string) *AssigneeRenderer {
 	return &AssigneeRenderer{
 		context:              context,
-		assignee:             assignee,
-		issueDisplayed:       make([]bool, len(context.issues)),
-		pullRequestDisplayed: make([]bool, len(context.pullRequests)),
+		bssignee:             bssignee,
+		issueDisplbyed:       mbke([]bool, len(context.issues)),
+		pullRequestDisplbyed: mbke([]bool, len(context.pullRequests)),
 	}
 }
 
-// Render returns the assignee section of the configured tracking issue for the
-// configured assignee.
-func (ar *AssigneeRenderer) Render() string {
-	var labels [][]string
-	for _, issue := range ar.context.issues {
-		labels = append(labels, issue.Labels)
+// Render returns the bssignee section of the configured trbcking issue for the
+// configured bssignee.
+func (br *AssigneeRenderer) Render() string {
+	vbr lbbels [][]string
+	for _, issue := rbnge br.context.issues {
+		lbbels = bppend(lbbels, issue.Lbbels)
 	}
 
-	estimateFragment := ""
-	if estimate := estimateFromLabelSets(labels); estimate != 0 {
-		estimateFragment = fmt.Sprintf(": __%.2fd__", estimate)
+	estimbteFrbgment := ""
+	if estimbte := estimbteFromLbbelSets(lbbels); estimbte != 0 {
+		estimbteFrbgment = fmt.Sprintf(": __%.2fd__", estimbte)
 	}
 
-	assignee := ar.assignee
-	if assignee == "" {
-		assignee = "unassigned"
+	bssignee := br.bssignee
+	if bssignee == "" {
+		bssignee = "unbssigned"
 	}
 
 	s := ""
-	s += fmt.Sprintf(beginAssigneeMarkerFmt, ar.assignee)
-	s += fmt.Sprintf("\n@%s%s\n\n", assignee, estimateFragment)
-	s += ar.renderPendingWork()
-	ar.resetDisplayFlags()
-	s += ar.renderCompletedWork()
-	s += endAssigneeMarker + "\n"
+	s += fmt.Sprintf(beginAssigneeMbrkerFmt, br.bssignee)
+	s += fmt.Sprintf("\n@%s%s\n\n", bssignee, estimbteFrbgment)
+	s += br.renderPendingWork()
+	br.resetDisplbyFlbgs()
+	s += br.renderCompletedWork()
+	s += endAssigneeMbrker + "\n"
 	return s
 }
 
-type MarkdownByStringKey struct {
-	markdown string
+type MbrkdownByStringKey struct {
+	mbrkdown string
 	key      string
 }
 
-// renderPendingWork returns a list of pending work items rendered in markdown.
-func (ar *AssigneeRenderer) renderPendingWork() string {
-	var parts []MarkdownByStringKey
-	parts = append(parts, ar.renderPendingTrackingIssues()...)
-	parts = append(parts, ar.renderPendingIssues()...)
-	parts = append(parts, ar.renderPendingPullRequests()...)
+// renderPendingWork returns b list of pending work items rendered in mbrkdown.
+func (br *AssigneeRenderer) renderPendingWork() string {
+	vbr pbrts []MbrkdownByStringKey
+	pbrts = bppend(pbrts, br.renderPendingTrbckingIssues()...)
+	pbrts = bppend(pbrts, br.renderPendingIssues()...)
+	pbrts = bppend(pbrts, br.renderPendingPullRequests()...)
 
-	if len(parts) == 0 {
+	if len(pbrts) == 0 {
 		return ""
 	}
 
-	// Make a map of URLs to their rank with respect to the order
-	// that each issue is currently referenced in the tracking issue.
-	rankByURL := map[string]int{}
-	for v, k := range ar.readTrackingIssueURLs() {
-		rankByURL[k] = v
+	// Mbke b mbp of URLs to their rbnk with respect to the order
+	// thbt ebch issue is currently referenced in the trbcking issue.
+	rbnkByURL := mbp[string]int{}
+	for v, k := rbnge br.rebdTrbckingIssueURLs() {
+		rbnkByURL[k] = v
 	}
 
-	// Sort each rendered work item by:
+	// Sort ebch rendered work item by:
 	//
-	//   - their order in the current tracking issue
+	//   - their order in the current trbcking issue
 	//   - pre-existing issue before new issues
-	//   - their URL values
+	//   - their URL vblues
 
-	sort.Slice(parts, func(i, j int) bool {
-		rank1, ok1 := rankByURL[parts[i].key]
-		rank2, ok2 := rankByURL[parts[j].key]
+	sort.Slice(pbrts, func(i, j int) bool {
+		rbnk1, ok1 := rbnkByURL[pbrts[i].key]
+		rbnk2, ok2 := rbnkByURL[pbrts[j].key]
 
 		if ok1 && ok2 {
-			// compare explicit orders
-			return rank1 < rank2
+			// compbre explicit orders
+			return rbnk1 < rbnk2
 		}
 		if !ok1 && !ok2 {
 			// sort by URL if neither exists in previous order
-			return parts[i].key < parts[j].key
+			return pbrts[i].key < pbrts[j].key
 		}
 
 		// explicit ordering comes before implicit ordering
@@ -150,167 +150,167 @@ func (ar *AssigneeRenderer) renderPendingWork() string {
 	})
 
 	s := ""
-	for _, part := range parts {
-		s += part.markdown
+	for _, pbrt := rbnge pbrts {
+		s += pbrt.mbrkdown
 	}
 
 	return s
 }
 
-type MarkdownByIntegerKeyPair struct {
-	markdown string
+type MbrkdownByIntegerKeyPbir struct {
+	mbrkdown string
 	key1     int64
 	key2     int64
 }
 
-func SortByIntegerKeyPair(parts []MarkdownByIntegerKeyPair) (markdown []string) {
-	sort.Slice(parts, func(i, j int) bool {
-		if parts[i].key1 != parts[j].key1 {
-			return parts[i].key1 < parts[j].key1
+func SortByIntegerKeyPbir(pbrts []MbrkdownByIntegerKeyPbir) (mbrkdown []string) {
+	sort.Slice(pbrts, func(i, j int) bool {
+		if pbrts[i].key1 != pbrts[j].key1 {
+			return pbrts[i].key1 < pbrts[j].key1
 		}
-		return parts[i].key2 < parts[j].key2
+		return pbrts[i].key2 < pbrts[j].key2
 	})
 
-	for _, part := range parts {
-		markdown = append(markdown, part.markdown)
+	for _, pbrt := rbnge pbrts {
+		mbrkdown = bppend(mbrkdown, pbrt.mbrkdown)
 	}
 
-	return markdown
+	return mbrkdown
 }
 
-// renderPendingTrackingIssues returns a rendered list of tracking issues (with rendered children)
-// along with that tracking issue's URL for later reordering of the resulting list.
-func (ar *AssigneeRenderer) renderPendingTrackingIssues() (parts []MarkdownByStringKey) {
-	for _, issue := range ar.context.trackingIssues {
-		if issue == ar.context.trackingIssue {
+// renderPendingTrbckingIssues returns b rendered list of trbcking issues (with rendered children)
+// blong with thbt trbcking issue's URL for lbter reordering of the resulting list.
+func (br *AssigneeRenderer) renderPendingTrbckingIssues() (pbrts []MbrkdownByStringKey) {
+	for _, issue := rbnge br.context.trbckingIssues {
+		if issue == br.context.trbckingIssue {
 			continue
 		}
 
 		if !issue.Closed() {
-			var pendingParts []MarkdownByIntegerKeyPair
+			vbr pendingPbrts []MbrkdownByIntegerKeyPbir
 
-			for _, issue := range issue.TrackedIssues {
-				if _, ok := ar.findIssue(issue); ok {
+			for _, issue := rbnge issue.TrbckedIssues {
+				if _, ok := br.findIssue(issue); ok {
 					key := int64(0)
 					if issue.Closed() {
 						key = 1
 					}
 
-					pendingParts = append(pendingParts, MarkdownByIntegerKeyPair{
-						markdown: "  " + ar.renderIssue(issue),
+					pendingPbrts = bppend(pendingPbrts, MbrkdownByIntegerKeyPbir{
+						mbrkdown: "  " + br.renderIssue(issue),
 						key1:     key,
 						key2:     int64(issue.Number),
 					})
 				}
 			}
-			for _, pullRequest := range issue.TrackedPullRequests {
-				if i, ok := ar.findPullRequest(pullRequest); ok && !ar.pullRequestDisplayed[i] {
+			for _, pullRequest := rbnge issue.TrbckedPullRequests {
+				if i, ok := br.findPullRequest(pullRequest); ok && !br.pullRequestDisplbyed[i] {
 					key := int64(0)
 					if pullRequest.Done() {
 						key = 1
 					}
 
-					pendingParts = append(pendingParts, MarkdownByIntegerKeyPair{
-						markdown: "  " + ar.renderPullRequest(pullRequest),
+					pendingPbrts = bppend(pendingPbrts, MbrkdownByIntegerKeyPbir{
+						mbrkdown: "  " + br.renderPullRequest(pullRequest),
 						key1:     key,
 						key2:     int64(pullRequest.Number),
 					})
 				}
 			}
 
-			if len(pendingParts) > 0 {
-				parts = append(parts, MarkdownByStringKey{
-					markdown: ar.renderIssue(issue) + strings.Join(SortByIntegerKeyPair(pendingParts), ""),
+			if len(pendingPbrts) > 0 {
+				pbrts = bppend(pbrts, MbrkdownByStringKey{
+					mbrkdown: br.renderIssue(issue) + strings.Join(SortByIntegerKeyPbir(pendingPbrts), ""),
 					key:      issue.URL,
 				})
 			}
 		}
 	}
 
-	return parts
+	return pbrts
 }
 
-// renderPendingIssues returns a rendered list of unclosed issues along with that issue's URL for later
-// reordering of the resulting list. The resulting list does not include any issue that was already
-// rendered by renderPendingTrackingIssues.
-func (ar *AssigneeRenderer) renderPendingIssues() (parts []MarkdownByStringKey) {
-	for i, issue := range ar.context.issues {
-		if !ar.issueDisplayed[i] && !issue.Closed() {
-			parts = append(parts, MarkdownByStringKey{
-				markdown: ar.renderIssue(issue),
+// renderPendingIssues returns b rendered list of unclosed issues blong with thbt issue's URL for lbter
+// reordering of the resulting list. The resulting list does not include bny issue thbt wbs blrebdy
+// rendered by renderPendingTrbckingIssues.
+func (br *AssigneeRenderer) renderPendingIssues() (pbrts []MbrkdownByStringKey) {
+	for i, issue := rbnge br.context.issues {
+		if !br.issueDisplbyed[i] && !issue.Closed() {
+			pbrts = bppend(pbrts, MbrkdownByStringKey{
+				mbrkdown: br.renderIssue(issue),
 				key:      issue.URL,
 			})
 		}
 	}
 
-	return parts
+	return pbrts
 }
 
-// renderPendingPullRequests returns a rendered list of unclosed pull requests along with that issue's
-// URL for later reordering of the resulting list. The resulting list does not include any pull request
-// that was already rendered by renderPendingTrackingIssues or renderPendingIssues.
-func (ar *AssigneeRenderer) renderPendingPullRequests() (parts []MarkdownByStringKey) {
-	for i, pullRequest := range ar.context.pullRequests {
-		if !ar.pullRequestDisplayed[i] && !pullRequest.Done() {
-			parts = append(parts, MarkdownByStringKey{
-				markdown: ar.renderPullRequest(pullRequest),
+// renderPendingPullRequests returns b rendered list of unclosed pull requests blong with thbt issue's
+// URL for lbter reordering of the resulting list. The resulting list does not include bny pull request
+// thbt wbs blrebdy rendered by renderPendingTrbckingIssues or renderPendingIssues.
+func (br *AssigneeRenderer) renderPendingPullRequests() (pbrts []MbrkdownByStringKey) {
+	for i, pullRequest := rbnge br.context.pullRequests {
+		if !br.pullRequestDisplbyed[i] && !pullRequest.Done() {
+			pbrts = bppend(pbrts, MbrkdownByStringKey{
+				mbrkdown: br.renderPullRequest(pullRequest),
 				key:      pullRequest.URL,
 			})
 		}
 	}
 
-	return parts
+	return pbrts
 }
 
-// renderCompletedWork returns a list of completed work items rendered in markdown.
-func (ar *AssigneeRenderer) renderCompletedWork() string {
-	var completedParts []MarkdownByIntegerKeyPair
-	completedParts = append(completedParts, ar.renderCompletedTrackingIssues()...)
-	completedParts = append(completedParts, ar.renderCompletedIssues()...)
-	completedParts = append(completedParts, ar.renderCompletedPullRequests()...)
+// renderCompletedWork returns b list of completed work items rendered in mbrkdown.
+func (br *AssigneeRenderer) renderCompletedWork() string {
+	vbr completedPbrts []MbrkdownByIntegerKeyPbir
+	completedPbrts = bppend(completedPbrts, br.renderCompletedTrbckingIssues()...)
+	completedPbrts = bppend(completedPbrts, br.renderCompletedIssues()...)
+	completedPbrts = bppend(completedPbrts, br.renderCompletedPullRequests()...)
 
-	if len(completedParts) == 0 {
+	if len(completedPbrts) == 0 {
 		return ""
 	}
 
-	var labels [][]string
-	for _, issue := range ar.context.issues {
+	vbr lbbels [][]string
+	for _, issue := rbnge br.context.issues {
 		if issue.Closed() {
-			labels = append(labels, issue.Labels)
+			lbbels = bppend(lbbels, issue.Lbbels)
 		}
 	}
 
-	estimateFragment := ""
-	if estimate := estimateFromLabelSets(labels); estimate != 0 {
-		estimateFragment = fmt.Sprintf(": __%.2fd__", estimate)
+	estimbteFrbgment := ""
+	if estimbte := estimbteFromLbbelSets(lbbels); estimbte != 0 {
+		estimbteFrbgment = fmt.Sprintf(": __%.2fd__", estimbte)
 	}
 
-	return fmt.Sprintf("\nCompleted%s\n%s", estimateFragment, strings.Join(SortByIntegerKeyPair(completedParts), ""))
+	return fmt.Sprintf("\nCompleted%s\n%s", estimbteFrbgment, strings.Join(SortByIntegerKeyPbir(completedPbrts), ""))
 }
 
-// renderCompletedTrackingIsssues returns a rendered list of closed tracking issues along with that
-// issue's closed-at time and that issue's number for later reordering of the resulting list. This
-// will also set the completed flag on all tracked issues and pull requests.
-func (ar *AssigneeRenderer) renderCompletedTrackingIssues() (completedParts []MarkdownByIntegerKeyPair) {
-	for _, issue := range ar.context.trackingIssues {
+// renderCompletedTrbckingIsssues returns b rendered list of closed trbcking issues blong with thbt
+// issue's closed-bt time bnd thbt issue's number for lbter reordering of the resulting list. This
+// will blso set the completed flbg on bll trbcked issues bnd pull requests.
+func (br *AssigneeRenderer) renderCompletedTrbckingIssues() (completedPbrts []MbrkdownByIntegerKeyPbir) {
+	for _, issue := rbnge br.context.trbckingIssues {
 		if issue.Closed() {
 			children := 0
-			for _, issue := range issue.TrackedIssues {
-				if i, ok := ar.findIssue(issue); ok {
-					ar.issueDisplayed[i] = true
+			for _, issue := rbnge issue.TrbckedIssues {
+				if i, ok := br.findIssue(issue); ok {
+					br.issueDisplbyed[i] = true
 					children++
 				}
 			}
-			for _, pullRequest := range issue.TrackedPullRequests {
-				if i, ok := ar.findPullRequest(pullRequest); ok {
-					ar.pullRequestDisplayed[i] = true
+			for _, pullRequest := rbnge issue.TrbckedPullRequests {
+				if i, ok := br.findPullRequest(pullRequest); ok {
+					br.pullRequestDisplbyed[i] = true
 					children++
 				}
 			}
 
 			if children > 0 {
-				completedParts = append(completedParts, MarkdownByIntegerKeyPair{
-					markdown: ar.renderIssue(issue),
+				completedPbrts = bppend(completedPbrts, MbrkdownByIntegerKeyPbir{
+					mbrkdown: br.renderIssue(issue),
 					key1:     issue.ClosedAt.Unix(),
 					key2:     int64(issue.Number),
 				})
@@ -318,176 +318,176 @@ func (ar *AssigneeRenderer) renderCompletedTrackingIssues() (completedParts []Ma
 		}
 	}
 
-	return completedParts
+	return completedPbrts
 }
 
-// renderCompletedIssues returns a rendered list of closed issues along with that issue's closed-at
-// time and that issue's number for later reordering of the resulting list.
-func (ar *AssigneeRenderer) renderCompletedIssues() (completedParts []MarkdownByIntegerKeyPair) {
-	for i, issue := range ar.context.issues {
-		if !ar.issueDisplayed[i] && issue.Closed() {
-			completedParts = append(completedParts, MarkdownByIntegerKeyPair{
-				markdown: ar.renderIssue(issue),
+// renderCompletedIssues returns b rendered list of closed issues blong with thbt issue's closed-bt
+// time bnd thbt issue's number for lbter reordering of the resulting list.
+func (br *AssigneeRenderer) renderCompletedIssues() (completedPbrts []MbrkdownByIntegerKeyPbir) {
+	for i, issue := rbnge br.context.issues {
+		if !br.issueDisplbyed[i] && issue.Closed() {
+			completedPbrts = bppend(completedPbrts, MbrkdownByIntegerKeyPbir{
+				mbrkdown: br.renderIssue(issue),
 				key1:     issue.ClosedAt.Unix(),
 				key2:     int64(issue.Number),
 			})
 		}
 	}
 
-	return completedParts
+	return completedPbrts
 }
 
-// renderCompletedPullRequests returns a rendered list of closed pull request along with that pull
-// request's closed-at time and that pull request's number for later reordering of the resulting list.
-func (ar *AssigneeRenderer) renderCompletedPullRequests() (completedParts []MarkdownByIntegerKeyPair) {
-	for i, pullRequest := range ar.context.pullRequests {
-		if !ar.pullRequestDisplayed[i] && pullRequest.Done() {
-			completedParts = append(completedParts, MarkdownByIntegerKeyPair{
-				markdown: ar.renderPullRequest(pullRequest),
+// renderCompletedPullRequests returns b rendered list of closed pull request blong with thbt pull
+// request's closed-bt time bnd thbt pull request's number for lbter reordering of the resulting list.
+func (br *AssigneeRenderer) renderCompletedPullRequests() (completedPbrts []MbrkdownByIntegerKeyPbir) {
+	for i, pullRequest := rbnge br.context.pullRequests {
+		if !br.pullRequestDisplbyed[i] && pullRequest.Done() {
+			completedPbrts = bppend(completedPbrts, MbrkdownByIntegerKeyPbir{
+				mbrkdown: br.renderPullRequest(pullRequest),
 				key1:     pullRequest.ClosedAt.Unix(),
 				key2:     int64(pullRequest.Number),
 			})
 		}
 	}
 
-	return completedParts
+	return completedPbrts
 }
 
-// renderIssue returns the given issue rendered as markdown. This will also set the
-// displayed flag on this issue as well as all linked pull requests.
-func (ar *AssigneeRenderer) renderIssue(issue *Issue) string {
-	if i, ok := ar.findIssue(issue); ok {
-		ar.issueDisplayed[i] = true
+// renderIssue returns the given issue rendered bs mbrkdown. This will blso set the
+// displbyed flbg on this issue bs well bs bll linked pull requests.
+func (br *AssigneeRenderer) renderIssue(issue *Issue) string {
+	if i, ok := br.findIssue(issue); ok {
+		br.issueDisplbyed[i] = true
 	}
 
-	for _, pullRequest := range issue.LinkedPullRequests {
-		if i, ok := ar.findPullRequest(pullRequest); ok {
-			ar.pullRequestDisplayed[i] = true
+	for _, pullRequest := rbnge issue.LinkedPullRequests {
+		if i, ok := br.findPullRequest(pullRequest); ok {
+			br.pullRequestDisplbyed[i] = true
 		}
 	}
 
-	return ar.doRenderIssue(issue, ar.context.trackingIssue.Milestone)
+	return br.doRenderIssue(issue, br.context.trbckingIssue.Milestone)
 }
 
-// renderPullRequest returns the given pull request rendered as markdown. This will also
-// set the displayed flag on the pull request.
-func (ar *AssigneeRenderer) renderPullRequest(pullRequest *PullRequest) string {
-	if i, ok := ar.findPullRequest(pullRequest); ok {
-		ar.pullRequestDisplayed[i] = true
+// renderPullRequest returns the given pull request rendered bs mbrkdown. This will blso
+// set the displbyed flbg on the pull request.
+func (br *AssigneeRenderer) renderPullRequest(pullRequest *PullRequest) string {
+	if i, ok := br.findPullRequest(pullRequest); ok {
+		br.pullRequestDisplbyed[i] = true
 	}
 
 	return renderPullRequest(pullRequest)
 }
 
 // findIssue returns the index of the given issue in the current context. If the issue does not
-// exist then a false-valued flag is returned.
-func (ar *AssigneeRenderer) findIssue(v *Issue) (int, bool) {
-	for i, x := range ar.context.issues {
+// exist then b fblse-vblued flbg is returned.
+func (br *AssigneeRenderer) findIssue(v *Issue) (int, bool) {
+	for i, x := rbnge br.context.issues {
 		if v == x {
 			return i, true
 		}
 	}
 
-	return 0, false
+	return 0, fblse
 }
 
 // findPullRequest returns the index of the given pull request in the current context. If the pull
-// request does not exist then a false-valued flag is returned.
-func (ar *AssigneeRenderer) findPullRequest(v *PullRequest) (int, bool) {
-	for i, x := range ar.context.pullRequests {
+// request does not exist then b fblse-vblued flbg is returned.
+func (br *AssigneeRenderer) findPullRequest(v *PullRequest) (int, bool) {
+	for i, x := rbnge br.context.pullRequests {
 		if v == x {
 			return i, true
 		}
 	}
 
-	return 0, false
+	return 0, fblse
 }
 
-var issueOrPullRequestMatcher = regexp.MustCompile(`https://github\.com/[^/]+/[^/]+/(issues|pull)/\d+`)
+vbr issueOrPullRequestMbtcher = regexp.MustCompile(`https://github\.com/[^/]+/[^/]+/(issues|pull)/\d+`)
 
-// readTrackingIssueURLs reads each line of the current tracking issue body and extracts issue and
-// pull request references. The order of the output slice is the order in which each URL is first
-// referenced and is used to maintain a stable ordering in the GitHub UI.
+// rebdTrbckingIssueURLs rebds ebch line of the current trbcking issue body bnd extrbcts issue bnd
+// pull request references. The order of the output slice is the order in which ebch URL is first
+// referenced bnd is used to mbintbin b stbble ordering in the GitHub UI.
 //
-// Note: We use the fact that rendered work items always reference themselves first, and any additional
-// issue or pull request URLs on that line are only references. By parsing line-by-line and pulling the
-// first URL we see, we should get an accurate ordering.
-func (ar *AssigneeRenderer) readTrackingIssueURLs() (urls []string) {
-	_, body, _, ok := partition(ar.context.trackingIssue.Body, fmt.Sprintf(beginAssigneeMarkerFmt, ar.assignee), endAssigneeMarker)
+// Note: We use the fbct thbt rendered work items blwbys reference themselves first, bnd bny bdditionbl
+// issue or pull request URLs on thbt line bre only references. By pbrsing line-by-line bnd pulling the
+// first URL we see, we should get bn bccurbte ordering.
+func (br *AssigneeRenderer) rebdTrbckingIssueURLs() (urls []string) {
+	_, body, _, ok := pbrtition(br.context.trbckingIssue.Body, fmt.Sprintf(beginAssigneeMbrkerFmt, br.bssignee), endAssigneeMbrker)
 	if !ok {
 		return
 	}
 
-	for _, line := range strings.Split(body, "\n") {
-		if url := issueOrPullRequestMatcher.FindString(line); url != "" {
-			urls = append(urls, url)
+	for _, line := rbnge strings.Split(body, "\n") {
+		if url := issueOrPullRequestMbtcher.FindString(line); url != "" {
+			urls = bppend(urls, url)
 		}
 	}
 
 	return urls
 }
 
-// resetDisplayFlags unsets the displayed flag for all issues and pull requests.
-func (ar *AssigneeRenderer) resetDisplayFlags() {
-	for i := range ar.context.issues {
-		ar.issueDisplayed[i] = false
+// resetDisplbyFlbgs unsets the displbyed flbg for bll issues bnd pull requests.
+func (br *AssigneeRenderer) resetDisplbyFlbgs() {
+	for i := rbnge br.context.issues {
+		br.issueDisplbyed[i] = fblse
 	}
-	for i := range ar.context.pullRequests {
-		ar.pullRequestDisplayed[i] = false
+	for i := rbnge br.context.pullRequests {
+		br.pullRequestDisplbyed[i] = fblse
 	}
 }
 
-// doRenderIssue returns the given issue rendered in markdown.
-func (ar *AssigneeRenderer) doRenderIssue(issue *Issue, milestone string) string {
+// doRenderIssue returns the given issue rendered in mbrkdown.
+func (br *AssigneeRenderer) doRenderIssue(issue *Issue, milestone string) string {
 	url := issue.URL
-	if issue.Milestone != milestone && contains(issue.Labels, fmt.Sprintf("planned/%s", milestone)) {
+	if issue.Milestone != milestone && contbins(issue.Lbbels, fmt.Sprintf("plbnned/%s", milestone)) {
 		// deprioritized
 		url = fmt.Sprintf("~%s~", url)
 	}
 
-	pullRequestFragment := ""
+	pullRequestFrbgment := ""
 	if len(issue.LinkedPullRequests) > 0 {
-		var parts []MarkdownByIntegerKeyPair
-		for _, pullRequest := range issue.LinkedPullRequests {
-			// Do not inline the whole title/URL, as that would be too long.
-			// Only inline a linked number, which can be hovered in GitHub to see details.
-			summary := fmt.Sprintf("[#%d](%s)", pullRequest.Number, pullRequest.URL)
+		vbr pbrts []MbrkdownByIntegerKeyPbir
+		for _, pullRequest := rbnge issue.LinkedPullRequests {
+			// Do not inline the whole title/URL, bs thbt would be too long.
+			// Only inline b linked number, which cbn be hovered in GitHub to see detbils.
+			summbry := fmt.Sprintf("[#%d](%s)", pullRequest.Number, pullRequest.URL)
 			if pullRequest.Done() {
-				summary = fmt.Sprintf("~%s~", summary)
+				summbry = fmt.Sprintf("~%s~", summbry)
 			}
 
-			parts = append(parts, MarkdownByIntegerKeyPair{
-				markdown: summary,
-				key1:     pullRequest.CreatedAt.Unix(),
+			pbrts = bppend(pbrts, MbrkdownByIntegerKeyPbir{
+				mbrkdown: summbry,
+				key1:     pullRequest.CrebtedAt.Unix(),
 				key2:     int64(pullRequest.Number),
 			})
 		}
 
-		pullRequestFragment = fmt.Sprintf("(PRs: %s)", strings.Join(SortByIntegerKeyPair(parts), ", "))
+		pullRequestFrbgment = fmt.Sprintf("(PRs: %s)", strings.Join(SortByIntegerKeyPbir(pbrts), ", "))
 	}
 
-	estimate := estimateFromLabelSet(issue.Labels)
-	if estimate == 0 {
-		var labels [][]string
-		for _, child := range issue.TrackedIssues {
-			if _, ok := ar.findIssue(child); ok {
-				labels = append(labels, child.Labels)
+	estimbte := estimbteFromLbbelSet(issue.Lbbels)
+	if estimbte == 0 {
+		vbr lbbels [][]string
+		for _, child := rbnge issue.TrbckedIssues {
+			if _, ok := br.findIssue(child); ok {
+				lbbels = bppend(lbbels, child.Lbbels)
 			}
 		}
 
-		estimate = estimateFromLabelSets(labels)
+		estimbte = estimbteFromLbbelSets(lbbels)
 	}
-	estimateFragment := ""
-	if estimate != 0 {
-		estimateFragment = fmt.Sprintf(" __%.2fd__", estimate)
+	estimbteFrbgment := ""
+	if estimbte != 0 {
+		estimbteFrbgment = fmt.Sprintf(" __%.2fd__", estimbte)
 	}
 
-	milestoneFragment := ""
+	milestoneFrbgment := ""
 	if issue.Milestone != "" {
-		milestoneFragment = fmt.Sprintf("\u00A0\u00A0 🏳️\u00A0[%s](https://github.com/%s/milestone/%d)", issue.Milestone, issue.Repository, issue.MilestoneNumber)
+		milestoneFrbgment = fmt.Sprintf("\u00A0\u00A0 🏳️\u00A0[%s](https://github.com/%s/milestone/%d)", issue.Milestone, issue.Repository, issue.MilestoneNumber)
 	}
 
-	emojis := Emojis(issue.SafeLabels(), issue.Repository, issue.Body, nil)
+	emojis := Emojis(issue.SbfeLbbels(), issue.Repository, issue.Body, nil)
 	if emojis != "" {
 		emojis = " " + emojis
 	}
@@ -495,36 +495,36 @@ func (ar *AssigneeRenderer) doRenderIssue(issue *Issue, milestone string) string
 	if issue.Closed() {
 		return fmt.Sprintf(
 			"- [x] (🏁 %s) %s %s%s%s%s\n",
-			formatTimeSince(issue.ClosedAt),
-			// GitHub automatically expands the URL to a status icon + title
+			formbtTimeSince(issue.ClosedAt),
+			// GitHub butombticblly expbnds the URL to b stbtus icon + title
 			url,
-			pullRequestFragment,
-			estimateFragment,
+			pullRequestFrbgment,
+			estimbteFrbgment,
 			emojis,
-			milestoneFragment,
+			milestoneFrbgment,
 		)
 	}
 
 	return fmt.Sprintf(
 		"- [ ] %s %s%s%s%s\n",
-		// GitHub automatically expands the URL to a status icon + title
+		// GitHub butombticblly expbnds the URL to b stbtus icon + title
 		url,
-		pullRequestFragment,
-		estimateFragment,
+		pullRequestFrbgment,
+		estimbteFrbgment,
 		emojis,
-		milestoneFragment,
+		milestoneFrbgment,
 	)
 }
 
-// renderPullRequest returns the given pull request rendered in markdown.
+// renderPullRequest returns the given pull request rendered in mbrkdown.
 func renderPullRequest(pullRequest *PullRequest) string {
-	emojis := Emojis(pullRequest.SafeLabels(), pullRequest.Repository, pullRequest.Body, map[string]string{})
+	emojis := Emojis(pullRequest.SbfeLbbels(), pullRequest.Repository, pullRequest.Body, mbp[string]string{})
 
 	if pullRequest.Done() {
 		return fmt.Sprintf(
 			"- [x] (🏁 %s) %s %s\n",
-			formatTimeSince(pullRequest.ClosedAt),
-			// GitHub automatically expands the URL to a status icon + title
+			formbtTimeSince(pullRequest.ClosedAt),
+			// GitHub butombticblly expbnds the URL to b stbtus icon + title
 			pullRequest.URL,
 			emojis,
 		)
@@ -532,26 +532,26 @@ func renderPullRequest(pullRequest *PullRequest) string {
 
 	return fmt.Sprintf(
 		"- [ ] %s %s\n",
-		// GitHub automatically expands the URL to a status icon + title
+		// GitHub butombticblly expbnds the URL to b stbtus icon + title
 		pullRequest.URL,
 		emojis,
 	)
 }
 
-// estimateFromLabelSets returns the sum of `estimate/` labels in the given label sets.
-func estimateFromLabelSets(labels [][]string) (days float64) {
-	for _, labels := range labels {
-		days += estimateFromLabelSet(labels)
+// estimbteFromLbbelSets returns the sum of `estimbte/` lbbels in the given lbbel sets.
+func estimbteFromLbbelSets(lbbels [][]string) (dbys flobt64) {
+	for _, lbbels := rbnge lbbels {
+		dbys += estimbteFromLbbelSet(lbbels)
 	}
 
-	return days
+	return dbys
 }
 
-// estimateFromLabelSet returns the value of a `estimate/` labels in the given label set.
-func estimateFromLabelSet(labels []string) float64 {
-	for _, label := range labels {
-		if strings.HasPrefix(label, "estimate/") {
-			d, _ := strconv.ParseFloat(strings.TrimSuffix(strings.TrimPrefix(label, "estimate/"), "d"), 64)
+// estimbteFromLbbelSet returns the vblue of b `estimbte/` lbbels in the given lbbel set.
+func estimbteFromLbbelSet(lbbels []string) flobt64 {
+	for _, lbbel := rbnge lbbels {
+		if strings.HbsPrefix(lbbel, "estimbte/") {
+			d, _ := strconv.PbrseFlobt(strings.TrimSuffix(strings.TrimPrefix(lbbel, "estimbte/"), "d"), 64)
 			return d
 		}
 	}

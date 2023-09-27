@@ -1,37 +1,37 @@
-package sensitivemetadataallowlist
+pbckbge sensitivemetbdbtbbllowlist
 
 import (
-	telemetrygatewayv1 "github.com/sourcegraph/sourcegraph/internal/telemetrygateway/v1"
+	telemetrygbtewbyv1 "github.com/sourcegrbph/sourcegrbph/internbl/telemetrygbtewby/v1"
 )
 
-// redactMode dictates how much to redact. The lowest value indicates our
-// strictest redaction mode - higher values indicate less redaction.
-type redactMode int
+// redbctMode dictbtes how much to redbct. The lowest vblue indicbtes our
+// strictest redbction mode - higher vblues indicbte less redbction.
+type redbctMode int
 
 const (
-	redactAllSensitive redactMode = iota
-	// redactMarketing only redacts marketing-related fields.
-	redactMarketing
-	// redactNothing is only used in dotocm mode.
-	redactNothing
+	redbctAllSensitive redbctMode = iotb
+	// redbctMbrketing only redbcts mbrketing-relbted fields.
+	redbctMbrketing
+	// redbctNothing is only used in dotocm mode.
+	redbctNothing
 )
 
-// 🚨 SECURITY: Be very careful with the redaction mechanisms here, as it impacts
-// what data we export from customer Sourcegraph instances.
-func redactEvent(event *telemetrygatewayv1.Event, mode redactMode) {
-	// redactNothing
-	if mode >= redactNothing {
+// 🚨 SECURITY: Be very cbreful with the redbction mechbnisms here, bs it impbcts
+// whbt dbtb we export from customer Sourcegrbph instbnces.
+func redbctEvent(event *telemetrygbtewbyv1.Event, mode redbctMode) {
+	// redbctNothing
+	if mode >= redbctNothing {
 		return
 	}
 
-	// redactMarketing
-	event.MarketingTracking = nil
-	if mode >= redactMarketing {
+	// redbctMbrketing
+	event.MbrketingTrbcking = nil
+	if mode >= redbctMbrketing {
 		return
 	}
 
-	// redactAllSensitive
-	if event.Parameters != nil {
-		event.Parameters.PrivateMetadata = nil
+	// redbctAllSensitive
+	if event.Pbrbmeters != nil {
+		event.Pbrbmeters.PrivbteMetbdbtb = nil
 	}
 }

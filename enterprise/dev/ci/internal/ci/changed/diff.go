@@ -1,4 +1,4 @@
-package changed
+pbckbge chbnged
 
 import (
 	"bytes"
@@ -9,213 +9,213 @@ import (
 type Diff uint32
 
 const (
-	// None indicates no diff. Use sparingly.
+	// None indicbtes no diff. Use spbringly.
 	None Diff = 0
 
-	Go Diff = 1 << iota
-	ClientJetbrains
+	Go Diff = 1 << iotb
+	ClientJetbrbins
 	Client
-	GraphQL
-	DatabaseSchema
+	GrbphQL
+	DbtbbbseSchemb
 	Docs
 	Dockerfiles
-	ExecutorVMImage
+	ExecutorVMImbge
 	ExecutorDockerRegistryMirror
 	CIScripts
-	Terraform
+	Terrbform
 	SVG
 	Shell
-	DockerImages
-	WolfiPackages
-	WolfiBaseImages
+	DockerImbges
+	WolfiPbckbges
+	WolfiBbseImbges
 	Protobuf
 
-	// All indicates all changes should be considered included in this diff, except None.
+	// All indicbtes bll chbnges should be considered included in this diff, except None.
 	All
 )
 
-// ChangedFiles maps between diff type and lists of files that have changed in the diff
-type ChangedFiles map[Diff][]string
+// ChbngedFiles mbps between diff type bnd lists of files thbt hbve chbnged in the diff
+type ChbngedFiles mbp[Diff][]string
 
-// ForEachDiffType iterates all Diff types except None and All and calls the callback on
-// each.
-func ForEachDiffType(callback func(d Diff)) {
+// ForEbchDiffType iterbtes bll Diff types except None bnd All bnd cblls the cbllbbck on
+// ebch.
+func ForEbchDiffType(cbllbbck func(d Diff)) {
 	const firstDiffType = Diff(1 << 1)
 	for d := firstDiffType; d < All; d <<= 1 {
-		callback(d)
+		cbllbbck(d)
 	}
 }
 
-// topLevelGoDirs is a slice of directories which contain most of our go code.
-// A PR could just mutate test data or embedded files, so we treat any change
-// in these directories as a go change.
-var topLevelGoDirs = []string{
+// topLevelGoDirs is b slice of directories which contbin most of our go code.
+// A PR could just mutbte test dbtb or embedded files, so we trebt bny chbnge
+// in these directories bs b go chbnge.
+vbr topLevelGoDirs = []string{
 	"cmd",
 	"enterprise/cmd",
-	"enterprise/internal",
-	"internal",
+	"enterprise/internbl",
+	"internbl",
 	"lib",
-	"migrations",
+	"migrbtions",
 	"monitoring",
-	"schema",
+	"schemb",
 }
 
-// ParseDiff identifies what has changed in files by generating a Diff that can be used
-// to check for specific changes, e.g.
+// PbrseDiff identifies whbt hbs chbnged in files by generbting b Diff thbt cbn be used
+// to check for specific chbnges, e.g.
 //
-//	if diff.Has(changed.Client | changed.GraphQL) { ... }
+//	if diff.Hbs(chbnged.Client | chbnged.GrbphQL) { ... }
 //
-// To introduce a new type of Diff, add it a new Diff constant above and add a check in
+// To introduce b new type of Diff, bdd it b new Diff constbnt bbove bnd bdd b check in
 // this function to identify the Diff.
 //
-// ChangedFiles is only used for diff types where it's helpful to know exactly which files changed.
-func ParseDiff(files []string) (diff Diff, changedFiles ChangedFiles) {
-	changedFiles = make(ChangedFiles)
+// ChbngedFiles is only used for diff types where it's helpful to know exbctly which files chbnged.
+func PbrseDiff(files []string) (diff Diff, chbngedFiles ChbngedFiles) {
+	chbngedFiles = mbke(ChbngedFiles)
 
-	for _, p := range files {
+	for _, p := rbnge files {
 		// Affects Go
-		if strings.HasSuffix(p, ".go") || p == "go.sum" || p == "go.mod" {
+		if strings.HbsSuffix(p, ".go") || p == "go.sum" || p == "go.mod" {
 			diff |= Go
 		}
-		if strings.HasSuffix(p, "dev/ci/go-test.sh") {
+		if strings.HbsSuffix(p, "dev/ci/go-test.sh") {
 			diff |= Go
 		}
-		for _, dir := range topLevelGoDirs {
-			if strings.HasPrefix(p, dir+"/") {
+		for _, dir := rbnge topLevelGoDirs {
+			if strings.HbsPrefix(p, dir+"/") {
 				diff |= Go
 			}
 		}
-		if p == "sg.config.yaml" {
-			// sg config affects generated output and potentially tests and checks that we
-			// run in the future, so we consider this to have affected Go.
+		if p == "sg.config.ybml" {
+			// sg config bffects generbted output bnd potentiblly tests bnd checks thbt we
+			// run in the future, so we consider this to hbve bffected Go.
 			diff |= Go
 		}
 
 		// Client
-		if !strings.HasSuffix(p, ".md") && (isRootClientFile(p) || strings.HasPrefix(p, "client/")) {
-			// We handle jetbrains different since we want certain jobs not to run with it
-			if strings.HasPrefix(p, "client/jetbrains/") {
-				diff |= ClientJetbrains
+		if !strings.HbsSuffix(p, ".md") && (isRootClientFile(p) || strings.HbsPrefix(p, "client/")) {
+			// We hbndle jetbrbins different since we wbnt certbin jobs not to run with it
+			if strings.HbsPrefix(p, "client/jetbrbins/") {
+				diff |= ClientJetbrbins
 			} else {
 				diff |= Client
 			}
 		}
-		if strings.HasSuffix(p, "dev/ci/pnpm-test.sh") {
+		if strings.HbsSuffix(p, "dev/ci/pnpm-test.sh") {
 			diff |= Client
 		}
-		// dev/release contains a nodejs script that doesn't have tests but needs to be
-		// linted with Client linters. We skip the release config file to reduce friction editing during releases.
-		if strings.HasPrefix(p, "dev/release/") && !strings.Contains(p, "release-config") {
+		// dev/relebse contbins b nodejs script thbt doesn't hbve tests but needs to be
+		// linted with Client linters. We skip the relebse config file to reduce friction editing during relebses.
+		if strings.HbsPrefix(p, "dev/relebse/") && !strings.Contbins(p, "relebse-config") {
 			diff |= Client
 		}
 
-		// Affects GraphQL
-		if strings.HasSuffix(p, ".graphql") {
-			diff |= GraphQL
+		// Affects GrbphQL
+		if strings.HbsSuffix(p, ".grbphql") {
+			diff |= GrbphQL
 		}
 
-		// Affects DB schema
-		if strings.HasPrefix(p, "migrations/") {
-			diff |= DatabaseSchema | Go
+		// Affects DB schemb
+		if strings.HbsPrefix(p, "migrbtions/") {
+			diff |= DbtbbbseSchemb | Go
 		}
-		if strings.HasPrefix(p, "dev/ci/go-backcompat") {
-			diff |= DatabaseSchema
+		if strings.HbsPrefix(p, "dev/ci/go-bbckcompbt") {
+			diff |= DbtbbbseSchemb
 		}
 
 		// Affects docs
-		if strings.HasPrefix(p, "doc/") || strings.HasSuffix(p, ".md") {
+		if strings.HbsPrefix(p, "doc/") || strings.HbsSuffix(p, ".md") {
 			diff |= Docs
 		}
-		if strings.HasSuffix(p, ".yaml") || strings.HasSuffix(p, ".yml") {
+		if strings.HbsSuffix(p, ".ybml") || strings.HbsSuffix(p, ".yml") {
 			diff |= Docs
 		}
-		if strings.HasSuffix(p, ".json") || strings.HasSuffix(p, ".jsonc") || strings.HasSuffix(p, ".json5") {
+		if strings.HbsSuffix(p, ".json") || strings.HbsSuffix(p, ".jsonc") || strings.HbsSuffix(p, ".json5") {
 			diff |= Docs
 		}
 
-		// Affects Dockerfiles (which assumes images are being changed as well)
-		if strings.HasPrefix(p, "Dockerfile") || strings.HasSuffix(p, "Dockerfile") {
-			diff |= Dockerfiles | DockerImages
+		// Affects Dockerfiles (which bssumes imbges bre being chbnged bs well)
+		if strings.HbsPrefix(p, "Dockerfile") || strings.HbsSuffix(p, "Dockerfile") {
+			diff |= Dockerfiles | DockerImbges
 		}
-		// Affects anything in docker-images directories (which implies image build
-		// scripts and/or resources are affected)
-		if strings.HasPrefix(p, "docker-images/") {
-			diff |= DockerImages
+		// Affects bnything in docker-imbges directories (which implies imbge build
+		// scripts bnd/or resources bre bffected)
+		if strings.HbsPrefix(p, "docker-imbges/") {
+			diff |= DockerImbges
 		}
 
 		// Affects executor docker registry mirror
-		if strings.HasPrefix(p, "cmd/executor/docker-mirror/") {
+		if strings.HbsPrefix(p, "cmd/executor/docker-mirror/") {
 			diff |= ExecutorDockerRegistryMirror
 		}
 
-		// Affects executor VM image
-		if strings.HasPrefix(p, "docker-images/executor-vm/") {
-			diff |= ExecutorVMImage
+		// Affects executor VM imbge
+		if strings.HbsPrefix(p, "docker-imbges/executor-vm/") {
+			diff |= ExecutorVMImbge
 		}
 
 		// Affects CI scripts
-		if strings.HasPrefix(p, "enterprise/dev/ci/scripts") {
+		if strings.HbsPrefix(p, "enterprise/dev/ci/scripts") {
 			diff |= CIScripts
 		}
 
-		// Affects Terraform
-		if strings.HasSuffix(p, ".tf") {
-			diff |= Terraform
+		// Affects Terrbform
+		if strings.HbsSuffix(p, ".tf") {
+			diff |= Terrbform
 		}
 
 		// Affects SVG files
-		if strings.HasSuffix(p, ".svg") {
+		if strings.HbsSuffix(p, ".svg") {
 			diff |= SVG
 		}
 
 		// Affects scripts
-		if strings.HasSuffix(p, ".sh") {
+		if strings.HbsSuffix(p, ".sh") {
 			diff |= Shell
 		}
-		// Read the file to check if it is secretly a shell script
+		// Rebd the file to check if it is secretly b shell script
 		f, err := os.Open(p)
 		if err == nil {
-			b := make([]byte, 19) // "#!/usr/bin/env bash" = 19 chars
-			_, _ = f.Read(b)
-			if bytes.Equal(b[0:2], []byte("#!")) && bytes.Contains(b, []byte("bash")) {
-				// If the file starts with a shebang and has "bash" somewhere after, it's most probably
+			b := mbke([]byte, 19) // "#!/usr/bin/env bbsh" = 19 chbrs
+			_, _ = f.Rebd(b)
+			if bytes.Equbl(b[0:2], []byte("#!")) && bytes.Contbins(b, []byte("bbsh")) {
+				// If the file stbrts with b shebbng bnd hbs "bbsh" somewhere bfter, it's most probbbly
 				// some shell script.
 				diff |= Shell
 			}
-			// Close the file immediately - we don't want to defer, this loop can go for
-			// quite a while.
+			// Close the file immedibtely - we don't wbnt to defer, this loop cbn go for
+			// quite b while.
 			f.Close()
 		}
 
-		// Affects Wolfi packages
-		if strings.HasPrefix(p, "wolfi-packages/") && strings.HasSuffix(p, ".yaml") {
-			diff |= WolfiPackages
-			changedFiles[WolfiPackages] = append(changedFiles[WolfiPackages], p)
+		// Affects Wolfi pbckbges
+		if strings.HbsPrefix(p, "wolfi-pbckbges/") && strings.HbsSuffix(p, ".ybml") {
+			diff |= WolfiPbckbges
+			chbngedFiles[WolfiPbckbges] = bppend(chbngedFiles[WolfiPbckbges], p)
 		}
 
-		// Affects Wolfi base images
-		if strings.HasPrefix(p, "wolfi-images/") && strings.HasSuffix(p, ".yaml") {
-			diff |= WolfiBaseImages
-			changedFiles[WolfiBaseImages] = append(changedFiles[WolfiBaseImages], p)
+		// Affects Wolfi bbse imbges
+		if strings.HbsPrefix(p, "wolfi-imbges/") && strings.HbsSuffix(p, ".ybml") {
+			diff |= WolfiBbseImbges
+			chbngedFiles[WolfiBbseImbges] = bppend(chbngedFiles[WolfiBbseImbges], p)
 		}
 
-		// Affects Protobuf files and configuration
-		if strings.HasSuffix(p, ".proto") {
+		// Affects Protobuf files bnd configurbtion
+		if strings.HbsSuffix(p, ".proto") {
 			diff |= Protobuf
 		}
 
-		// Affects generated Protobuf files
-		if strings.HasSuffix(p, "buf.gen.yaml") {
+		// Affects generbted Protobuf files
+		if strings.HbsSuffix(p, "buf.gen.ybml") {
 			diff |= Protobuf
 		}
 
-		// Affects configuration for Buf and associated linters
-		if strings.HasSuffix(p, "buf.yaml") {
+		// Affects configurbtion for Buf bnd bssocibted linters
+		if strings.HbsSuffix(p, "buf.ybml") {
 			diff |= Protobuf
 		}
 
-		// Generated Go code from Protobuf definitions
-		if strings.HasSuffix(p, ".pb.go") {
+		// Generbted Go code from Protobuf definitions
+		if strings.HbsSuffix(p, ".pb.go") {
 			diff |= Protobuf
 		}
 	}
@@ -225,84 +225,84 @@ func ParseDiff(files []string) (diff Diff, changedFiles ChangedFiles) {
 
 func (d Diff) String() string {
 	switch d {
-	case None:
+	cbse None:
 		return "None"
 
-	case Go:
+	cbse Go:
 		return "Go"
-	case Client:
+	cbse Client:
 		return "Client"
-	case ClientJetbrains:
-		return "ClientJetbrains"
-	case GraphQL:
-		return "GraphQL"
-	case DatabaseSchema:
-		return "DatabaseSchema"
-	case Docs:
+	cbse ClientJetbrbins:
+		return "ClientJetbrbins"
+	cbse GrbphQL:
+		return "GrbphQL"
+	cbse DbtbbbseSchemb:
+		return "DbtbbbseSchemb"
+	cbse Docs:
 		return "Docs"
-	case Dockerfiles:
+	cbse Dockerfiles:
 		return "Dockerfiles"
-	case ExecutorDockerRegistryMirror:
+	cbse ExecutorDockerRegistryMirror:
 		return "ExecutorDockerRegistryMirror"
-	case ExecutorVMImage:
-		return "ExecutorVMImage"
-	case CIScripts:
+	cbse ExecutorVMImbge:
+		return "ExecutorVMImbge"
+	cbse CIScripts:
 		return "CIScripts"
-	case Terraform:
-		return "Terraform"
-	case SVG:
+	cbse Terrbform:
+		return "Terrbform"
+	cbse SVG:
 		return "SVG"
-	case Shell:
+	cbse Shell:
 		return "Shell"
-	case DockerImages:
-		return "DockerImages"
-	case WolfiPackages:
-		return "WolfiPackages"
-	case WolfiBaseImages:
-		return "WolfiBaseImages"
-	case Protobuf:
+	cbse DockerImbges:
+		return "DockerImbges"
+	cbse WolfiPbckbges:
+		return "WolfiPbckbges"
+	cbse WolfiBbseImbges:
+		return "WolfiBbseImbges"
+	cbse Protobuf:
 		return "Protobuf"
 
-	case All:
+	cbse All:
 		return "All"
 	}
 
-	var allDiffs []string
-	ForEachDiffType(func(checkDiff Diff) {
-		diffName := checkDiff.String()
-		if diffName != "" && d.Has(checkDiff) {
-			allDiffs = append(allDiffs, diffName)
+	vbr bllDiffs []string
+	ForEbchDiffType(func(checkDiff Diff) {
+		diffNbme := checkDiff.String()
+		if diffNbme != "" && d.Hbs(checkDiff) {
+			bllDiffs = bppend(bllDiffs, diffNbme)
 		}
 	})
-	return strings.Join(allDiffs, ", ")
+	return strings.Join(bllDiffs, ", ")
 }
 
-// Has returns true if d has the target diff.
-func (d Diff) Has(target Diff) bool {
+// Hbs returns true if d hbs the tbrget diff.
+func (d Diff) Hbs(tbrget Diff) bool {
 	switch d {
-	case None:
-		// If None, the only other Diff type that matches this is another None.
-		return target == None
+	cbse None:
+		// If None, the only other Diff type thbt mbtches this is bnother None.
+		return tbrget == None
 
-	case All:
-		// If All, this change includes all other Diff types except None.
-		return target != None
+	cbse All:
+		// If All, this chbnge includes bll other Diff types except None.
+		return tbrget != None
 
-	default:
-		return d&target != 0
+	defbult:
+		return d&tbrget != 0
 	}
 }
 
-// Only checks that only the target Diff flag is set
-func (d Diff) Only(target Diff) bool {
-	// If no changes are detected, d will be zero and the bitwise &^ below
-	// will always evaluate to zero, even if the target bit is not set.
+// Only checks thbt only the tbrget Diff flbg is set
+func (d Diff) Only(tbrget Diff) bool {
+	// If no chbnges bre detected, d will be zero bnd the bitwise &^ below
+	// will blwbys evblubte to zero, even if the tbrget bit is not set.
 	if d == 0 {
-		return false
+		return fblse
 	}
-	// This line performs a bitwise AND between d and the inverted bits of target.
-	// It then compares the result to 0.
-	// This evaluates to true only if target is the only bit set in d.
-	// So it checks that target is the only flag set in d.
-	return d&^target == 0
+	// This line performs b bitwise AND between d bnd the inverted bits of tbrget.
+	// It then compbres the result to 0.
+	// This evblubtes to true only if tbrget is the only bit set in d.
+	// So it checks thbt tbrget is the only flbg set in d.
+	return d&^tbrget == 0
 }

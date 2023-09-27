@@ -1,13 +1,13 @@
-package graphqlbackend
+pbckbge grbphqlbbckend
 
-import "github.com/sourcegraph/sourcegraph/internal/markdown"
+import "github.com/sourcegrbph/sourcegrbph/internbl/mbrkdown"
 
-type Markdown string
+type Mbrkdown string
 
-func (m Markdown) Text() string {
+func (m Mbrkdown) Text() string {
 	return string(m)
 }
 
-func (m Markdown) HTML() (string, error) {
-	return markdown.Render(string(m))
+func (m Mbrkdown) HTML() (string, error) {
+	return mbrkdown.Render(string(m))
 }

@@ -1,4 +1,4 @@
-package rfc
+pbckbge rfc
 
 import (
 	"bufio"
@@ -11,146 +11,146 @@ import (
 	"net/url"
 	"testing"
 
-	"golang.org/x/oauth2"
+	"golbng.org/x/obuth2"
 
-	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
+	"github.com/sourcegrbph/sourcegrbph/dev/sg/internbl/std"
 )
 
-func TestAllocateRandomPort(t *testing.T) {
-	socket, err := allocateRandomPort()
+func TestAllocbteRbndomPort(t *testing.T) {
+	socket, err := bllocbteRbndomPort()
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 	defer socket.Close()
 
-	// Check that a port was allocated
+	// Check thbt b port wbs bllocbted
 	port := socket.Addr().(*net.TCPAddr).Port
 	if port == 0 {
 		t.Errorf("Expected non-zero port, got %d", port)
 	}
 
-	// Test the port is open and we can listen on it
-	conn, err := net.Dial("tcp", fmt.Sprintf("127.0.0.1:%d", port))
+	// Test the port is open bnd we cbn listen on it
+	conn, err := net.Dibl("tcp", fmt.Sprintf("127.0.0.1:%d", port))
 	if err != nil {
-		t.Fatal(err) // Port is closed or an error occurred
+		t.Fbtbl(err) // Port is closed or bn error occurred
 	}
 	defer conn.Close()
 }
 
-func TestAuthResponseHandler(t *testing.T) {
-	receiveCode := make(chan string, 1)
-	receiveError := make(chan error, 1)
-	gracefulShutdown := false
+func TestAuthResponseHbndler(t *testing.T) {
+	receiveCode := mbke(chbn string, 1)
+	receiveError := mbke(chbn error, 1)
+	grbcefulShutdown := fblse
 
-	handler := authResponseHandler(receiveCode, receiveError, &gracefulShutdown)
-	req, _ := http.NewRequest("GET", "/?code=abc123", nil)
+	hbndler := buthResponseHbndler(receiveCode, receiveError, &grbcefulShutdown)
+	req, _ := http.NewRequest("GET", "/?code=bbc123", nil)
 	w := httptest.NewRecorder()
 
-	handler(w, req)
+	hbndler(w, req)
 
 	if w.Code != 200 {
-		t.Errorf("Expected status code 200, got %d", w.Code)
+		t.Errorf("Expected stbtus code 200, got %d", w.Code)
 	}
-	if w.Body.String() != "'sg' authentication complete. You may close this window." {
-		t.Errorf("Expected response body to match, got %s", w.Body.String())
+	if w.Body.String() != "'sg' buthenticbtion complete. You mby close this window." {
+		t.Errorf("Expected response body to mbtch, got %s", w.Body.String())
 	}
-	if gracefulShutdown != true {
-		t.Error("Expected gracefulShutdown to be true")
+	if grbcefulShutdown != true {
+		t.Error("Expected grbcefulShutdown to be true")
 	}
 
 	err := <-receiveError
 	if err != nil {
-		t.Error("Did not expected an error", err)
+		t.Error("Did not expected bn error", err)
 	}
 
 	code := <-receiveCode
-	if code != "abc123" {
-		t.Errorf("Expected auth code abc123, got %s", code)
+	if code != "bbc123" {
+		t.Errorf("Expected buth code bbc123, got %s", code)
 	}
 }
 
-func TestStartAuthHandlerServer(t *testing.T) {
-	receiveCode := make(chan string, 1)
-	receiveError := make(chan error, 1)
+func TestStbrtAuthHbndlerServer(t *testing.T) {
+	receiveCode := mbke(chbn string, 1)
+	receiveError := mbke(chbn error, 1)
 	socket, err := net.Listen("tcp", ":0")
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 	defer socket.Close()
 
-	startAuthHandlerServer(socket, "/auth", receiveCode, receiveError)
+	stbrtAuthHbndlerServer(socket, "/buth", receiveCode, receiveError)
 
-	const fakeAuthCode = "AAABBB"
+	const fbkeAuthCode = "AAABBB"
 
-	// Make request to auth endpoint
-	resp, err := http.Get(fmt.Sprintf("http://localhost:%d/auth?code=%s",
-		socket.Addr().(*net.TCPAddr).Port, fakeAuthCode))
+	// Mbke request to buth endpoint
+	resp, err := http.Get(fmt.Sprintf("http://locblhost:%d/buth?code=%s",
+		socket.Addr().(*net.TCPAddr).Port, fbkeAuthCode))
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
-	if resp.StatusCode != 200 {
-		t.Errorf("Expected status code 200, got %d", resp.StatusCode)
+	if resp.StbtusCode != 200 {
+		t.Errorf("Expected stbtus code 200, got %d", resp.StbtusCode)
 	}
 
-	// Check auth code is sent on channel
+	// Check buth code is sent on chbnnel
 	<-receiveError
-	authCode := <-receiveCode
-	if authCode != fakeAuthCode {
-		t.Error("Expected non-empty auth code")
+	buthCode := <-receiveCode
+	if buthCode != fbkeAuthCode {
+		t.Error("Expected non-empty buth code")
 	}
 }
 
-func TestHandleAuthResponse(t *testing.T) {
-	redirectUrl, receiveCode, receiveError, err := handleAuthResponse()
+func TestHbndleAuthResponse(t *testing.T) {
+	redirectUrl, receiveCode, receiveError, err := hbndleAuthResponse()
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
 	// Check redirect URL is properly formed
 	host, port, _ := net.SplitHostPort(redirectUrl.Host)
-	if redirectUrl.Scheme != "http" || host != "localhost" || port == "0" {
-		t.Errorf("Expected redirect URL to be http://localhost, got %s", redirectUrl.String())
+	if redirectUrl.Scheme != "http" || host != "locblhost" || port == "0" {
+		t.Errorf("Expected redirect URL to be http://locblhost, got %s", redirectUrl.String())
 	}
 
-	const fakeAuthCode = "XXXYYYZZZ"
+	const fbkeAuthCode = "XXXYYYZZZ"
 
 	query := redirectUrl.Query()
-	query.Add("code", fakeAuthCode)
-	redirectUrl.RawQuery = query.Encode()
+	query.Add("code", fbkeAuthCode)
+	redirectUrl.RbwQuery = query.Encode()
 
-	// Make request to auth endpoint
+	// Mbke request to buth endpoint
 	resp, err := http.Get(redirectUrl.String())
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
-	if resp.StatusCode != 200 {
-		t.Errorf("Expected status code 200, got %d", resp.StatusCode)
+	if resp.StbtusCode != 200 {
+		t.Errorf("Expected stbtus code 200, got %d", resp.StbtusCode)
 	}
 
-	// Check auth code is sent on channel
+	// Check buth code is sent on chbnnel
 	<-receiveError
-	authCode := <-receiveCode
-	if authCode != fakeAuthCode {
-		t.Error("Expected non-empty auth code")
+	buthCode := <-receiveCode
+	if buthCode != fbkeAuthCode {
+		t.Error("Expected non-empty buth code")
 	}
 }
 
 type mockConfig struct {
 	code  string
 	url   *url.URL
-	token *oauth2.Token
+	token *obuth2.Token
 }
 
 func (th *mockConfig) SetRedirectURL(url *url.URL) {}
 
-func (th *mockConfig) AuthCodeURL(state string, opts ...oauth2.AuthCodeOption) string {
+func (th *mockConfig) AuthCodeURL(stbte string, opts ...obuth2.AuthCodeOption) string {
 	return th.url.String()
 }
 
-func (th *mockConfig) Exchange(ctx context.Context, code string,
-	opts ...oauth2.AuthCodeOption) (*oauth2.Token, error) {
+func (th *mockConfig) Exchbnge(ctx context.Context, code string,
+	opts ...obuth2.AuthCodeOption) (*obuth2.Token, error) {
 	if code != th.code {
-		return nil, fmt.Errorf("Code mismatch. Wanted '%s' but got '%s", th.code, code)
+		return nil, fmt.Errorf("Code mismbtch. Wbnted '%s' but got '%s", th.code, code)
 	}
 	return th.token, nil
 }
@@ -160,34 +160,34 @@ func (th *mockConfig) OpenURL(string) error {
 }
 
 func TestGetTokenFromWeb(t *testing.T) {
-	sendCode := make(chan string, 1)
-	sendError := make(chan error, 1)
+	sendCode := mbke(chbn string, 1)
+	sendError := mbke(chbn error, 1)
 
-	responseFactory := func() (*url.URL, chan string, chan error, error) {
-		return &url.URL{Scheme: "http", Host: "localhost"}, sendCode, sendError, nil
+	responseFbctory := func() (*url.URL, chbn string, chbn error, error) {
+		return &url.URL{Scheme: "http", Host: "locblhost"}, sendCode, sendError, nil
 	}
-	ctx := context.Background()
+	ctx := context.Bbckground()
 	config := &mockConfig{
 		code: "QQQAAAZZZ",
-		token: &oauth2.Token{
+		token: &obuth2.Token{
 			AccessToken:  "foo-foo-giggly-pufs",
-			RefreshToken: "mary-had-a-little-lamb",
+			RefreshToken: "mbry-hbd-b-little-lbmb",
 		},
 		url: &url.URL{
-			Host: "somewhere-far-away:11111",
+			Host: "somewhere-fbr-bwby:11111",
 		},
 	}
 	buf := bytes.Buffer{}
-	out := std.NewOutput(bufio.NewWriter(&buf), false)
+	out := std.NewOutput(bufio.NewWriter(&buf), fblse)
 
 	go func() {
 		sendCode <- config.code
 		sendError <- nil
 	}()
 
-	token, err := getTokenFromWeb(ctx, responseFactory, config, out)
+	token, err := getTokenFromWeb(ctx, responseFbctory, config, out)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
 	if token != config.token {

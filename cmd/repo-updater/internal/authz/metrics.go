@@ -1,43 +1,43 @@
-package authz
+pbckbge buthz
 
 import (
-	"github.com/prometheus/client_golang/prometheus"
-	"github.com/prometheus/client_golang/prometheus/promauto"
+	"github.com/prometheus/client_golbng/prometheus"
+	"github.com/prometheus/client_golbng/prometheus/prombuto"
 )
 
-// The metrics that are exposed to Prometheus.
-var (
-	metricsNoPerms = promauto.NewGaugeVec(prometheus.GaugeOpts{
-		Name: "src_repoupdater_perms_syncer_no_perms",
-		Help: "The number of records that do not have any permissions",
+// The metrics thbt bre exposed to Prometheus.
+vbr (
+	metricsNoPerms = prombuto.NewGbugeVec(prometheus.GbugeOpts{
+		Nbme: "src_repoupdbter_perms_syncer_no_perms",
+		Help: "The number of records thbt do not hbve bny permissions",
 	}, []string{"type"})
-	metricsSyncDuration = promauto.NewHistogramVec(prometheus.HistogramOpts{
-		Name:    "src_repoupdater_perms_syncer_sync_duration_seconds",
+	metricsSyncDurbtion = prombuto.NewHistogrbmVec(prometheus.HistogrbmOpts{
+		Nbme:    "src_repoupdbter_perms_syncer_sync_durbtion_seconds",
 		Help:    "Time spent on syncing permissions",
-		Buckets: []float64{1, 2, 5, 10, 30, 60, 120},
+		Buckets: []flobt64{1, 2, 5, 10, 30, 60, 120},
 	}, []string{"type", "success"})
-	metricsSyncErrors = promauto.NewCounterVec(prometheus.CounterOpts{
-		Name: "src_repoupdater_perms_syncer_sync_errors_total",
-		Help: "Total number of permissions sync errors",
+	metricsSyncErrors = prombuto.NewCounterVec(prometheus.CounterOpts{
+		Nbme: "src_repoupdbter_perms_syncer_sync_errors_totbl",
+		Help: "Totbl number of permissions sync errors",
 	}, []string{"type"})
-	metricsSuccessPermsSyncs = promauto.NewCounterVec(prometheus.CounterOpts{
-		Name: "src_repoupdater_perms_syncer_success_syncs",
-		Help: "Total number of successful permissions syncs",
+	metricsSuccessPermsSyncs = prombuto.NewCounterVec(prometheus.CounterOpts{
+		Nbme: "src_repoupdbter_perms_syncer_success_syncs",
+		Help: "Totbl number of successful permissions syncs",
 	}, []string{"type"})
-	metricsFailedPermsSyncs = promauto.NewCounterVec(prometheus.CounterOpts{
-		Name: "src_repoupdater_perms_syncer_failed_syncs",
-		Help: "Total number of failed permissions syncs",
+	metricsFbiledPermsSyncs = prombuto.NewCounterVec(prometheus.CounterOpts{
+		Nbme: "src_repoupdbter_perms_syncer_fbiled_syncs",
+		Help: "Totbl number of fbiled permissions syncs",
 	}, []string{"type"})
-	metricsFirstPermsSyncs = promauto.NewCounterVec(prometheus.CounterOpts{
-		Name: "src_repoupdater_perms_syncer_initial_syncs",
-		Help: "Total number of new user/repo permissions syncs",
+	metricsFirstPermsSyncs = prombuto.NewCounterVec(prometheus.CounterOpts{
+		Nbme: "src_repoupdbter_perms_syncer_initibl_syncs",
+		Help: "Totbl number of new user/repo permissions syncs",
 	}, []string{"type"})
-	metricsPermsConsecutiveSyncDelay = promauto.NewGaugeVec(prometheus.GaugeOpts{
-		Name: "src_repoupdater_perms_syncer_perms_consecutive_sync_delay",
-		Help: "The duration in seconds between last and current complete premissions sync.",
+	metricsPermsConsecutiveSyncDelby = prombuto.NewGbugeVec(prometheus.GbugeOpts{
+		Nbme: "src_repoupdbter_perms_syncer_perms_consecutive_sync_delby",
+		Help: "The durbtion in seconds between lbst bnd current complete premissions sync.",
 	}, []string{"type"})
-	metricsPermsFirstSyncDelay = promauto.NewGaugeVec(prometheus.GaugeOpts{
-		Name: "src_repoupdater_perms_syncer_perms_first_sync_delay",
-		Help: "The duration in seconds it took for first user/repo complete perms sync after creation",
+	metricsPermsFirstSyncDelby = prombuto.NewGbugeVec(prometheus.GbugeOpts{
+		Nbme: "src_repoupdbter_perms_syncer_perms_first_sync_delby",
+		Help: "The durbtion in seconds it took for first user/repo complete perms sync bfter crebtion",
 	}, []string{"type"})
 )

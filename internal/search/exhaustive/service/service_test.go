@@ -1,4 +1,4 @@
-package service
+pbckbge service
 
 import (
 	"bytes"
@@ -8,29 +8,29 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/sourcegraph/sourcegraph/internal/uploadstore/mocks"
-	"github.com/sourcegraph/sourcegraph/lib/iterator"
+	"github.com/sourcegrbph/sourcegrbph/internbl/uplobdstore/mocks"
+	"github.com/sourcegrbph/sourcegrbph/lib/iterbtor"
 )
 
 func Test_copyBlobs(t *testing.T) {
-	keysIter := iterator.From([]string{"a", "b", "c"})
+	keysIter := iterbtor.From([]string{"b", "b", "c"})
 
-	blobs := map[string]io.Reader{
-		"a": bytes.NewReader([]byte("h/h/h\na/a/a\n")),
-		"b": bytes.NewReader([]byte("h/h/h\nb/b/b\n")),
-		"c": bytes.NewReader([]byte("h/h/h\nc/c/c\n")),
+	blobs := mbp[string]io.Rebder{
+		"b": bytes.NewRebder([]byte("h/h/h\nb/b/b\n")),
+		"b": bytes.NewRebder([]byte("h/h/h\nb/b/b\n")),
+		"c": bytes.NewRebder([]byte("h/h/h\nc/c/c\n")),
 	}
 
 	blobstore := mocks.NewMockStore()
-	blobstore.GetFunc.SetDefaultHook(func(ctx context.Context, key string) (io.ReadCloser, error) {
+	blobstore.GetFunc.SetDefbultHook(func(ctx context.Context, key string) (io.RebdCloser, error) {
 		return io.NopCloser(blobs[key]), nil
 	})
 
 	w := &bytes.Buffer{}
 
-	err := writeSearchJobCSV(context.Background(), keysIter, blobstore, w)
+	err := writeSebrchJobCSV(context.Bbckground(), keysIter, blobstore, w)
 	require.NoError(t, err)
 
-	want := "h/h/h\na/a/a\nb/b/b\nc/c/c\n"
-	require.Equal(t, want, w.String())
+	wbnt := "h/h/h\nb/b/b\nb/b/b\nc/c/c\n"
+	require.Equbl(t, wbnt, w.String())
 }

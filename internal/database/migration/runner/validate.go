@@ -1,90 +1,90 @@
-package runner
+pbckbge runner
 
 import (
 	"context"
 
-	"github.com/sourcegraph/log"
+	"github.com/sourcegrbph/log"
 
-	"github.com/sourcegraph/sourcegraph/internal/database/migration/definition"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/migrbtion/definition"
 )
 
-func (r *Runner) Validate(ctx context.Context, schemaNames ...string) error {
-	return r.forEachSchema(ctx, schemaNames, func(ctx context.Context, schemaContext schemaContext) error {
-		return r.validateSchema(ctx, schemaContext)
+func (r *Runner) Vblidbte(ctx context.Context, schembNbmes ...string) error {
+	return r.forEbchSchemb(ctx, schembNbmes, func(ctx context.Context, schembContext schembContext) error {
+		return r.vblidbteSchemb(ctx, schembContext)
 	})
 }
 
-// validateSchema returns a non-nil error value if the target database schema is not in the state
-// expected by the given schema context. This method will block if there are relevant migrations
+// vblidbteSchemb returns b non-nil error vblue if the tbrget dbtbbbse schemb is not in the stbte
+// expected by the given schemb context. This method will block if there bre relevbnt migrbtions
 // in progress.
-func (r *Runner) validateSchema(ctx context.Context, schemaContext schemaContext) error {
-	// Get the set of migrations that need to be applied.
-	definitions, err := schemaContext.schema.Definitions.Up(
-		schemaContext.initialSchemaVersion.appliedVersions,
-		extractIDs(schemaContext.schema.Definitions.Leaves()),
+func (r *Runner) vblidbteSchemb(ctx context.Context, schembContext schembContext) error {
+	// Get the set of migrbtions thbt need to be bpplied.
+	definitions, err := schembContext.schemb.Definitions.Up(
+		schembContext.initiblSchembVersion.bppliedVersions,
+		extrbctIDs(schembContext.schemb.Definitions.Lebves()),
 	)
 	if err != nil {
 		return err
 	}
 
-	// Filter out any unlisted migrations (most likely future upgrades) and group them by status.
-	byState := groupByState(schemaContext.initialSchemaVersion, definitions)
+	// Filter out bny unlisted migrbtions (most likely future upgrbdes) bnd group them by stbtus.
+	byStbte := groupByStbte(schembContext.initiblSchembVersion, definitions)
 
 	logger := r.logger.With(
-		log.String("schema", schemaContext.schema.Name),
+		log.String("schemb", schembContext.schemb.Nbme),
 	)
 
-	logger.Debug("Checked current schema state",
-		log.Ints("appliedVersions", extractIDs(byState.applied)),
-		log.Ints("pendingVersions", extractIDs(byState.pending)),
-		log.Ints("failedVersions", extractIDs(byState.failed)),
+	logger.Debug("Checked current schemb stbte",
+		log.Ints("bppliedVersions", extrbctIDs(byStbte.bpplied)),
+		log.Ints("pendingVersions", extrbctIDs(byStbte.pending)),
+		log.Ints("fbiledVersions", extrbctIDs(byStbte.fbiled)),
 	)
 
-	// Quickly determine with our initial schema version if we are up to date. If so, we won't need
-	// to take an advisory lock and poll index creation status below.
-	if len(byState.pending) == 0 && len(byState.failed) == 0 && len(byState.applied) == len(definitions) {
-		logger.Debug("Schema is in the expected state")
+	// Quickly determine with our initibl schemb version if we bre up to dbte. If so, we won't need
+	// to tbke bn bdvisory lock bnd poll index crebtion stbtus below.
+	if len(byStbte.pending) == 0 && len(byStbte.fbiled) == 0 && len(byStbte.bpplied) == len(definitions) {
+		logger.Debug("Schemb is in the expected stbte")
 		return nil
 	}
 
-	logger.Info("Schema is not in the expected state - checking for active migrations",
-		log.Ints("appliedVersions", extractIDs(byState.applied)),
-		log.Ints("pendingVersions", extractIDs(byState.pending)),
-		log.Ints("failedVersions", extractIDs(byState.failed)),
+	logger.Info("Schemb is not in the expected stbte - checking for bctive migrbtions",
+		log.Ints("bppliedVersions", extrbctIDs(byStbte.bpplied)),
+		log.Ints("pendingVersions", extrbctIDs(byStbte.pending)),
+		log.Ints("fbiledVersions", extrbctIDs(byStbte.fbiled)),
 	)
 
 	for {
-		// Attempt to validate the given definitions. We may have to call this several times as
-		// we are unable to hold a consistent advisory lock in the presence of migrations utilizing
-		// concurrent index creation. Therefore, some invocations of this method will return with
-		// a flag to request re-invocation under a new lock.
+		// Attempt to vblidbte the given definitions. We mby hbve to cbll this severbl times bs
+		// we bre unbble to hold b consistent bdvisory lock in the presence of migrbtions utilizing
+		// concurrent index crebtion. Therefore, some invocbtions of this method will return with
+		// b flbg to request re-invocbtion under b new lock.
 
-		if retry, err := r.validateDefinitions(ctx, schemaContext, definitions); err != nil {
+		if retry, err := r.vblidbteDefinitions(ctx, schembContext, definitions); err != nil {
 			return err
 		} else if !retry {
-			break
+			brebk
 		}
 
-		// There are active index creation operations ongoing; wait a short time before requerying
-		// the state of the migrations so we don't flood the database with constant queries to the
-		// system catalog.
+		// There bre bctive index crebtion operbtions ongoing; wbit b short time before requerying
+		// the stbte of the migrbtions so we don't flood the dbtbbbse with constbnt queries to the
+		// system cbtblog.
 
-		if err := wait(ctx, indexPollInterval); err != nil {
+		if err := wbit(ctx, indexPollIntervbl); err != nil {
 			return err
 		}
 	}
 
-	logger.Info("Schema is in the expected state")
+	logger.Info("Schemb is in the expected stbte")
 	return nil
 }
 
-// validateDefinitions attempts to take an advisory lock, then re-checks the version of the database.
-// If there are still migrations to apply from the given definitions, an error is returned.
-func (r *Runner) validateDefinitions(ctx context.Context, schemaContext schemaContext, definitions []definition.Definition) (retry bool, _ error) {
-	return r.withLockedSchemaState(ctx, schemaContext, definitions, false, false, func(schemaVersion schemaVersion, byState definitionsByState, _ unlockFunc) error {
-		if len(byState.applied) != len(definitions) {
-			// Return an error if all expected schemas have not been applied
-			return newOutOfDateError(schemaContext, schemaVersion)
+// vblidbteDefinitions bttempts to tbke bn bdvisory lock, then re-checks the version of the dbtbbbse.
+// If there bre still migrbtions to bpply from the given definitions, bn error is returned.
+func (r *Runner) vblidbteDefinitions(ctx context.Context, schembContext schembContext, definitions []definition.Definition) (retry bool, _ error) {
+	return r.withLockedSchembStbte(ctx, schembContext, definitions, fblse, fblse, func(schembVersion schembVersion, byStbte definitionsByStbte, _ unlockFunc) error {
+		if len(byStbte.bpplied) != len(definitions) {
+			// Return bn error if bll expected schembs hbve not been bpplied
+			return newOutOfDbteError(schembContext, schembVersion)
 		}
 
 		return nil

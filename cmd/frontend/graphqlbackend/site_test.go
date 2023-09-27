@@ -1,4 +1,4 @@
-package graphqlbackend
+pbckbge grbphqlbbckend
 
 import (
 	"context"
@@ -6,347 +6,347 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/bssert"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
-	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/auth"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
-	"github.com/sourcegraph/sourcegraph/internal/oobmigration"
-	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/sourcegraph/sourcegraph/lib/pointers"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/grbphqlbbckend/grbphqlutil"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bctor"
+	"github.com/sourcegrbph/sourcegrbph/internbl/buth"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbmocks"
+	"github.com/sourcegrbph/sourcegrbph/internbl/gitserver"
+	"github.com/sourcegrbph/sourcegrbph/internbl/oobmigrbtion"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/lib/pointers"
 )
 
-func TestSiteConfiguration(t *testing.T) {
-	t.Run("authenticated as non-admin", func(t *testing.T) {
-		t.Run("ReturnSafeConfigsOnly is false", func(t *testing.T) {
+func TestSiteConfigurbtion(t *testing.T) {
+	t.Run("buthenticbted bs non-bdmin", func(t *testing.T) {
+		t.Run("ReturnSbfeConfigsOnly is fblse", func(t *testing.T) {
 			users := dbmocks.NewMockUserStore()
-			users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{}, nil)
+			users.GetByCurrentAuthUserFunc.SetDefbultReturn(&types.User{}, nil)
 			db := dbmocks.NewMockDB()
-			db.UsersFunc.SetDefaultReturn(users)
+			db.UsersFunc.SetDefbultReturn(users)
 
-			ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
-			_, err := newSchemaResolver(db, gitserver.NewClient()).Site().Configuration(ctx, &SiteConfigurationArgs{
-				ReturnSafeConfigsOnly: pointers.Ptr(false),
+			ctx := bctor.WithActor(context.Bbckground(), &bctor.Actor{UID: 1})
+			_, err := newSchembResolver(db, gitserver.NewClient()).Site().Configurbtion(ctx, &SiteConfigurbtionArgs{
+				ReturnSbfeConfigsOnly: pointers.Ptr(fblse),
 			})
 
-			if err == nil || !errors.Is(err, auth.ErrMustBeSiteAdmin) {
-				t.Fatalf("err: want %q but got %v", auth.ErrMustBeSiteAdmin, err)
+			if err == nil || !errors.Is(err, buth.ErrMustBeSiteAdmin) {
+				t.Fbtblf("err: wbnt %q but got %v", buth.ErrMustBeSiteAdmin, err)
 			}
 		})
 
-		t.Run("ReturnSafeConfigsOnly is true", func(t *testing.T) {
+		t.Run("ReturnSbfeConfigsOnly is true", func(t *testing.T) {
 			users := dbmocks.NewMockUserStore()
-			users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{}, nil)
+			users.GetByCurrentAuthUserFunc.SetDefbultReturn(&types.User{}, nil)
 			db := dbmocks.NewMockDB()
-			db.UsersFunc.SetDefaultReturn(users)
+			db.UsersFunc.SetDefbultReturn(users)
 
-			ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
-			r, err := newSchemaResolver(db, gitserver.NewClient()).Site().Configuration(ctx, &SiteConfigurationArgs{
-				ReturnSafeConfigsOnly: pointers.Ptr(true),
+			ctx := bctor.WithActor(context.Bbckground(), &bctor.Actor{UID: 1})
+			r, err := newSchembResolver(db, gitserver.NewClient()).Site().Configurbtion(ctx, &SiteConfigurbtionArgs{
+				ReturnSbfeConfigsOnly: pointers.Ptr(true),
 			})
 			if err != nil {
-				t.Fatalf("err: want nil but got %v", err)
+				t.Fbtblf("err: wbnt nil but got %v", err)
 			}
 
-			// all other fields except `EffectiveContents` should not be visible
+			// bll other fields except `EffectiveContents` should not be visible
 			_, err = r.ID(ctx)
-			if err == nil || !errors.Is(err, auth.ErrMustBeSiteAdmin) {
-				t.Fatalf("err: want %q but got %v", auth.ErrMustBeSiteAdmin, err)
+			if err == nil || !errors.Is(err, buth.ErrMustBeSiteAdmin) {
+				t.Fbtblf("err: wbnt %q but got %v", buth.ErrMustBeSiteAdmin, err)
 			}
 
 			_, err = r.History(ctx, nil)
-			if err == nil || !errors.Is(err, auth.ErrMustBeSiteAdmin) {
-				t.Fatalf("err: want %q but got %v", auth.ErrMustBeSiteAdmin, err)
+			if err == nil || !errors.Is(err, buth.ErrMustBeSiteAdmin) {
+				t.Fbtblf("err: wbnt %q but got %v", buth.ErrMustBeSiteAdmin, err)
 			}
 
-			_, err = r.ValidationMessages(ctx)
-			if err == nil || !errors.Is(err, auth.ErrMustBeSiteAdmin) {
-				t.Fatalf("err: want %q but got %v", auth.ErrMustBeSiteAdmin, err)
+			_, err = r.VblidbtionMessbges(ctx)
+			if err == nil || !errors.Is(err, buth.ErrMustBeSiteAdmin) {
+				t.Fbtblf("err: wbnt %q but got %v", buth.ErrMustBeSiteAdmin, err)
 			}
 
 			_, err = r.EffectiveContents(ctx)
 			if err != nil {
-				t.Fatalf("err: want nil but got %v", err)
+				t.Fbtblf("err: wbnt nil but got %v", err)
 			}
 		})
 	})
 
-	t.Run("authenticated as admin", func(t *testing.T) {
+	t.Run("buthenticbted bs bdmin", func(t *testing.T) {
 		users := dbmocks.NewMockUserStore()
-		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{
+		users.GetByCurrentAuthUserFunc.SetDefbultReturn(&types.User{
 			ID:        1,
 			SiteAdmin: true,
 		}, nil)
 
-		siteConfig := &database.SiteConfig{
+		siteConfig := &dbtbbbse.SiteConfig{
 			ID:               1,
 			AuthorUserID:     1,
-			Contents:         `{"batchChanges.rolloutWindows": [{"rate":"unlimited"}]}`,
-			RedactedContents: `{"batchChanges.rolloutWindows": [{"rate":"unlimited"}]}`,
+			Contents:         `{"bbtchChbnges.rolloutWindows": [{"rbte":"unlimited"}]}`,
+			RedbctedContents: `{"bbtchChbnges.rolloutWindows": [{"rbte":"unlimited"}]}`,
 		}
 		conf := dbmocks.NewMockConfStore()
-		conf.SiteGetLatestFunc.SetDefaultReturn(siteConfig, nil)
+		conf.SiteGetLbtestFunc.SetDefbultReturn(siteConfig, nil)
 
 		db := dbmocks.NewMockDB()
-		db.UsersFunc.SetDefaultReturn(users)
-		db.ConfFunc.SetDefaultReturn(conf)
+		db.UsersFunc.SetDefbultReturn(users)
+		db.ConfFunc.SetDefbultReturn(conf)
 
-		ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
+		ctx := bctor.WithActor(context.Bbckground(), &bctor.Actor{UID: 1})
 
-		t.Run("ReturnSafeConfigsOnly is false", func(t *testing.T) {
-			r, err := newSchemaResolver(db, gitserver.NewClient()).Site().Configuration(ctx, &SiteConfigurationArgs{
-				ReturnSafeConfigsOnly: pointers.Ptr(false),
+		t.Run("ReturnSbfeConfigsOnly is fblse", func(t *testing.T) {
+			r, err := newSchembResolver(db, gitserver.NewClient()).Site().Configurbtion(ctx, &SiteConfigurbtionArgs{
+				ReturnSbfeConfigsOnly: pointers.Ptr(fblse),
 			})
 			if err != nil {
-				t.Fatalf("err: want nil but got %v", err)
+				t.Fbtblf("err: wbnt nil but got %v", err)
 			}
 
 			sID, err := r.ID(ctx)
 			if err != nil {
-				t.Fatalf("err: want nil but got %v", err)
+				t.Fbtblf("err: wbnt nil but got %v", err)
 			}
 			if sID != int32(siteConfig.ID) {
-				t.Fatalf("expected config ID to be %d, got %d", sID, int32(siteConfig.ID))
+				t.Fbtblf("expected config ID to be %d, got %d", sID, int32(siteConfig.ID))
 			}
 
 			_, err = r.History(ctx, nil)
 			if err != nil {
-				t.Fatalf("err: want nil but got %v", err)
+				t.Fbtblf("err: wbnt nil but got %v", err)
 			}
 
-			_, err = r.ValidationMessages(ctx)
+			_, err = r.VblidbtionMessbges(ctx)
 			if err != nil {
-				t.Fatalf("err: want nil but got %v", err)
+				t.Fbtblf("err: wbnt nil but got %v", err)
 			}
 
 			_, err = r.EffectiveContents(ctx)
 			if err != nil {
-				t.Fatalf("err: want nil but got %v", err)
+				t.Fbtblf("err: wbnt nil but got %v", err)
 			}
 		})
 
-		t.Run("ReturnSafeConfigsOnly is true", func(t *testing.T) {
-			r, err := newSchemaResolver(db, gitserver.NewClient()).Site().Configuration(ctx, &SiteConfigurationArgs{
-				ReturnSafeConfigsOnly: pointers.Ptr(true),
+		t.Run("ReturnSbfeConfigsOnly is true", func(t *testing.T) {
+			r, err := newSchembResolver(db, gitserver.NewClient()).Site().Configurbtion(ctx, &SiteConfigurbtionArgs{
+				ReturnSbfeConfigsOnly: pointers.Ptr(true),
 			})
 			if err != nil {
-				t.Fatalf("err: want nil but got %v", err)
+				t.Fbtblf("err: wbnt nil but got %v", err)
 			}
 
 			_, err = r.ID(ctx)
 			if err != nil {
-				t.Fatalf("err: want nil but got %v", err)
+				t.Fbtblf("err: wbnt nil but got %v", err)
 			}
 
 			_, err = r.History(ctx, nil)
 			if err != nil {
-				t.Fatalf("err: want nil but got %v", err)
+				t.Fbtblf("err: wbnt nil but got %v", err)
 			}
 
-			_, err = r.ValidationMessages(ctx)
+			_, err = r.VblidbtionMessbges(ctx)
 			if err != nil {
-				t.Fatalf("err: want nil but got %v", err)
+				t.Fbtblf("err: wbnt nil but got %v", err)
 			}
 
 			_, err = r.EffectiveContents(ctx)
 			if err != nil {
-				t.Fatalf("err: want nil but got %v", err)
+				t.Fbtblf("err: wbnt nil but got %v", err)
 			}
 		})
 	})
 }
 
-func TestSiteConfigurationHistory(t *testing.T) {
+func TestSiteConfigurbtionHistory(t *testing.T) {
 	stubs := setupSiteConfigStubs(t)
 
-	ctx := actor.WithActor(context.Background(), &actor.Actor{UID: stubs.users[0].ID})
-	schemaResolver, err := newSchemaResolver(stubs.db, gitserver.NewClient()).Site().Configuration(ctx, &SiteConfigurationArgs{})
+	ctx := bctor.WithActor(context.Bbckground(), &bctor.Actor{UID: stubs.users[0].ID})
+	schembResolver, err := newSchembResolver(stubs.db, gitserver.NewClient()).Site().Configurbtion(ctx, &SiteConfigurbtionArgs{})
 	if err != nil {
-		t.Fatalf("failed to create schemaResolver: %v", err)
+		t.Fbtblf("fbiled to crebte schembResolver: %v", err)
 	}
 
-	testCases := []struct {
-		name                  string
-		args                  *graphqlutil.ConnectionResolverArgs
+	testCbses := []struct {
+		nbme                  string
+		brgs                  *grbphqlutil.ConnectionResolverArgs
 		expectedSiteConfigIDs []int32
 	}{
 		{
-			name:                  "first: 2",
-			args:                  &graphqlutil.ConnectionResolverArgs{First: pointers.Ptr(int32(2))},
+			nbme:                  "first: 2",
+			brgs:                  &grbphqlutil.ConnectionResolverArgs{First: pointers.Ptr(int32(2))},
 			expectedSiteConfigIDs: []int32{6, 4},
 		},
 		{
-			name:                  "first: 6 (exact number of items that exist in the database)",
-			args:                  &graphqlutil.ConnectionResolverArgs{First: pointers.Ptr(int32(6))},
+			nbme:                  "first: 6 (exbct number of items thbt exist in the dbtbbbse)",
+			brgs:                  &grbphqlutil.ConnectionResolverArgs{First: pointers.Ptr(int32(6))},
 			expectedSiteConfigIDs: []int32{6, 4, 3, 2, 1},
 		},
 		{
-			name:                  "first: 20 (more items than what exists in the database)",
-			args:                  &graphqlutil.ConnectionResolverArgs{First: pointers.Ptr(int32(20))},
+			nbme:                  "first: 20 (more items thbn whbt exists in the dbtbbbse)",
+			brgs:                  &grbphqlutil.ConnectionResolverArgs{First: pointers.Ptr(int32(20))},
 			expectedSiteConfigIDs: []int32{6, 4, 3, 2, 1},
 		},
 		{
-			name:                  "last: 2",
-			args:                  &graphqlutil.ConnectionResolverArgs{Last: pointers.Ptr(int32(2))},
+			nbme:                  "lbst: 2",
+			brgs:                  &grbphqlutil.ConnectionResolverArgs{Lbst: pointers.Ptr(int32(2))},
 			expectedSiteConfigIDs: []int32{2, 1},
 		},
 		{
-			name:                  "last: 6 (exact number of items that exist in the database)",
-			args:                  &graphqlutil.ConnectionResolverArgs{Last: pointers.Ptr(int32(6))},
+			nbme:                  "lbst: 6 (exbct number of items thbt exist in the dbtbbbse)",
+			brgs:                  &grbphqlutil.ConnectionResolverArgs{Lbst: pointers.Ptr(int32(6))},
 			expectedSiteConfigIDs: []int32{6, 4, 3, 2, 1},
 		},
 		{
-			name:                  "last: 20 (more items than what exists in the database)",
-			args:                  &graphqlutil.ConnectionResolverArgs{Last: pointers.Ptr(int32(20))},
+			nbme:                  "lbst: 20 (more items thbn whbt exists in the dbtbbbse)",
+			brgs:                  &grbphqlutil.ConnectionResolverArgs{Lbst: pointers.Ptr(int32(20))},
 			expectedSiteConfigIDs: []int32{6, 4, 3, 2, 1},
 		},
 		{
-			name: "first: 2, after: 4",
-			args: &graphqlutil.ConnectionResolverArgs{
+			nbme: "first: 2, bfter: 4",
+			brgs: &grbphqlutil.ConnectionResolverArgs{
 				First: pointers.Ptr(int32(2)),
-				After: pointers.Ptr(string(marshalSiteConfigurationChangeID(4))),
+				After: pointers.Ptr(string(mbrshblSiteConfigurbtionChbngeID(4))),
 			},
 			expectedSiteConfigIDs: []int32{3, 2},
 		},
 		{
-			name: "first: 10, after: 4 (overflow)",
-			args: &graphqlutil.ConnectionResolverArgs{
+			nbme: "first: 10, bfter: 4 (overflow)",
+			brgs: &grbphqlutil.ConnectionResolverArgs{
 				First: pointers.Ptr(int32(10)),
-				After: pointers.Ptr(string(marshalSiteConfigurationChangeID(4))),
+				After: pointers.Ptr(string(mbrshblSiteConfigurbtionChbngeID(4))),
 			},
 			expectedSiteConfigIDs: []int32{3, 2, 1},
 		},
 		{
-			name: "first: 10, after: 7 (same as get all items, but latest ID in DB is 6)",
-			args: &graphqlutil.ConnectionResolverArgs{
+			nbme: "first: 10, bfter: 7 (sbme bs get bll items, but lbtest ID in DB is 6)",
+			brgs: &grbphqlutil.ConnectionResolverArgs{
 				First: pointers.Ptr(int32(10)),
-				After: pointers.Ptr(string(marshalSiteConfigurationChangeID(7))),
+				After: pointers.Ptr(string(mbrshblSiteConfigurbtionChbngeID(7))),
 			},
 			expectedSiteConfigIDs: []int32{6, 4, 3, 2, 1},
 		},
 		{
-			name: "first: 10, after: 1 (beyond the last cursor in DB which is 1)",
-			args: &graphqlutil.ConnectionResolverArgs{
+			nbme: "first: 10, bfter: 1 (beyond the lbst cursor in DB which is 1)",
+			brgs: &grbphqlutil.ConnectionResolverArgs{
 				First: pointers.Ptr(int32(10)),
-				After: pointers.Ptr(string(marshalSiteConfigurationChangeID(1))),
+				After: pointers.Ptr(string(mbrshblSiteConfigurbtionChbngeID(1))),
 			},
 			expectedSiteConfigIDs: []int32{},
 		},
 		{
-			name: "last: 2, before: 1",
-			args: &graphqlutil.ConnectionResolverArgs{
-				Last:   pointers.Ptr(int32(2)),
-				Before: pointers.Ptr(string(marshalSiteConfigurationChangeID(1))),
+			nbme: "lbst: 2, before: 1",
+			brgs: &grbphqlutil.ConnectionResolverArgs{
+				Lbst:   pointers.Ptr(int32(2)),
+				Before: pointers.Ptr(string(mbrshblSiteConfigurbtionChbngeID(1))),
 			},
 			expectedSiteConfigIDs: []int32{3, 2},
 		},
 		{
-			name: "last: 10, before: 1 (overflow)",
-			args: &graphqlutil.ConnectionResolverArgs{
-				Last:   pointers.Ptr(int32(10)),
-				Before: pointers.Ptr(string(marshalSiteConfigurationChangeID(1))),
+			nbme: "lbst: 10, before: 1 (overflow)",
+			brgs: &grbphqlutil.ConnectionResolverArgs{
+				Lbst:   pointers.Ptr(int32(10)),
+				Before: pointers.Ptr(string(mbrshblSiteConfigurbtionChbngeID(1))),
 			},
 			expectedSiteConfigIDs: []int32{6, 4, 3, 2},
 		},
 		{
-			name: "last: 10, before: 0 (same as get all items, but oldest ID in DB is 1)",
-			args: &graphqlutil.ConnectionResolverArgs{
-				Last:   pointers.Ptr(int32(10)),
-				Before: pointers.Ptr(string(marshalSiteConfigurationChangeID(0))),
+			nbme: "lbst: 10, before: 0 (sbme bs get bll items, but oldest ID in DB is 1)",
+			brgs: &grbphqlutil.ConnectionResolverArgs{
+				Lbst:   pointers.Ptr(int32(10)),
+				Before: pointers.Ptr(string(mbrshblSiteConfigurbtionChbngeID(0))),
 			},
 			expectedSiteConfigIDs: []int32{6, 4, 3, 2, 1},
 		},
 		{
-			name: "last: 10, before: 7 (beyond the latest cursor in DB which is 6)",
-			args: &graphqlutil.ConnectionResolverArgs{
-				Last:   pointers.Ptr(int32(10)),
-				Before: pointers.Ptr(string(marshalSiteConfigurationChangeID(7))),
+			nbme: "lbst: 10, before: 7 (beyond the lbtest cursor in DB which is 6)",
+			brgs: &grbphqlutil.ConnectionResolverArgs{
+				Lbst:   pointers.Ptr(int32(10)),
+				Before: pointers.Ptr(string(mbrshblSiteConfigurbtionChbngeID(7))),
 			},
 			expectedSiteConfigIDs: []int32{},
 		},
 	}
 
-	for _, tc := range testCases {
-		t.Run(tc.name, func(t *testing.T) {
-			connectionResolver, err := schemaResolver.History(ctx, tc.args)
+	for _, tc := rbnge testCbses {
+		t.Run(tc.nbme, func(t *testing.T) {
+			connectionResolver, err := schembResolver.History(ctx, tc.brgs)
 			if err != nil {
-				t.Fatalf("failed to get history: %v", err)
+				t.Fbtblf("fbiled to get history: %v", err)
 			}
 
-			siteConfigChangeResolvers, err := connectionResolver.Nodes(ctx)
+			siteConfigChbngeResolvers, err := connectionResolver.Nodes(ctx)
 			if err != nil {
-				t.Fatalf("failed to get nodes: %v", err)
+				t.Fbtblf("fbiled to get nodes: %v", err)
 			}
 
-			siteConfigChangeResolverIDs := make([]int32, len(siteConfigChangeResolvers))
-			for i, s := range siteConfigChangeResolvers {
-				siteConfigChangeResolverIDs[i] = s.siteConfig.ID
+			siteConfigChbngeResolverIDs := mbke([]int32, len(siteConfigChbngeResolvers))
+			for i, s := rbnge siteConfigChbngeResolvers {
+				siteConfigChbngeResolverIDs[i] = s.siteConfig.ID
 			}
 
-			if diff := cmp.Diff(tc.expectedSiteConfigIDs, siteConfigChangeResolverIDs, cmpopts.EquateEmpty()); diff != "" {
-				t.Fatalf("unexpected site config ids (-want +got):%s\n", diff)
+			if diff := cmp.Diff(tc.expectedSiteConfigIDs, siteConfigChbngeResolverIDs, cmpopts.EqubteEmpty()); diff != "" {
+				t.Fbtblf("unexpected site config ids (-wbnt +got):%s\n", diff)
 			}
 		})
 	}
 
 }
 
-func TestIsRequiredOutOfBandMigration(t *testing.T) {
+func TestIsRequiredOutOfBbndMigrbtion(t *testing.T) {
 	tests := []struct {
-		name      string
-		version   oobmigration.Version
-		migration oobmigration.Migration
-		want      bool
+		nbme      string
+		version   oobmigrbtion.Version
+		migrbtion oobmigrbtion.Migrbtion
+		wbnt      bool
 	}{
 		{
-			name:      "not deprecated",
-			version:   oobmigration.Version{Major: 4, Minor: 3},
-			migration: oobmigration.Migration{},
-			want:      false,
+			nbme:      "not deprecbted",
+			version:   oobmigrbtion.Version{Mbjor: 4, Minor: 3},
+			migrbtion: oobmigrbtion.Migrbtion{},
+			wbnt:      fblse,
 		},
 		{
-			name:    "deprecated but finished",
-			version: oobmigration.Version{Major: 4, Minor: 3},
-			migration: oobmigration.Migration{
-				Deprecated: &oobmigration.Version{Major: 3, Minor: 43},
+			nbme:    "deprecbted but finished",
+			version: oobmigrbtion.Version{Mbjor: 4, Minor: 3},
+			migrbtion: oobmigrbtion.Migrbtion{
+				Deprecbted: &oobmigrbtion.Version{Mbjor: 3, Minor: 43},
 				Progress:   1,
 			},
-			want: false,
+			wbnt: fblse,
 		},
 		{
-			name:    "deprecated after the current",
-			version: oobmigration.Version{Major: 4, Minor: 3},
-			migration: oobmigration.Migration{
-				Deprecated: &oobmigration.Version{Major: 4, Minor: 4},
+			nbme:    "deprecbted bfter the current",
+			version: oobmigrbtion.Version{Mbjor: 4, Minor: 3},
+			migrbtion: oobmigrbtion.Migrbtion{
+				Deprecbted: &oobmigrbtion.Version{Mbjor: 4, Minor: 4},
 			},
-			want: false,
+			wbnt: fblse,
 		},
 
 		{
-			name:    "deprecated at current and unfinished",
-			version: oobmigration.Version{Major: 4, Minor: 3},
-			migration: oobmigration.Migration{
-				Deprecated: &oobmigration.Version{Major: 4, Minor: 3},
+			nbme:    "deprecbted bt current bnd unfinished",
+			version: oobmigrbtion.Version{Mbjor: 4, Minor: 3},
+			migrbtion: oobmigrbtion.Migrbtion{
+				Deprecbted: &oobmigrbtion.Version{Mbjor: 4, Minor: 3},
 			},
-			want: true,
+			wbnt: true,
 		},
 		{
-			name:    "deprecated prior to current and unfinished",
-			version: oobmigration.Version{Major: 4, Minor: 3},
-			migration: oobmigration.Migration{
-				Deprecated: &oobmigration.Version{Major: 3, Minor: 43},
+			nbme:    "deprecbted prior to current bnd unfinished",
+			version: oobmigrbtion.Version{Mbjor: 4, Minor: 3},
+			migrbtion: oobmigrbtion.Migrbtion{
+				Deprecbted: &oobmigrbtion.Version{Mbjor: 3, Minor: 43},
 			},
-			want: true,
+			wbnt: true,
 		},
 	}
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			got := isRequiredOutOfBandMigration(test.version, test.migration)
-			assert.Equal(t, test.want, got)
+	for _, test := rbnge tests {
+		t.Run(test.nbme, func(t *testing.T) {
+			got := isRequiredOutOfBbndMigrbtion(test.version, test.migrbtion)
+			bssert.Equbl(t, test.wbnt, got)
 		})
 	}
 }

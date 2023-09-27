@@ -1,42 +1,42 @@
-package terraformversion
+pbckbge terrbformversion
 
 import (
 	"fmt"
 	"reflect"
 
-	"github.com/aws/constructs-go/constructs/v10"
-	"github.com/hashicorp/terraform-cdk-go/cdktf"
+	"github.com/bws/constructs-go/constructs/v10"
+	"github.com/hbshicorp/terrbform-cdk-go/cdktf"
 
-	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/stack"
-	"github.com/sourcegraph/sourcegraph/lib/pointers"
+	"github.com/sourcegrbph/sourcegrbph/dev/mbnbgedservicesplbtform/internbl/stbck"
+	"github.com/sourcegrbph/sourcegrbph/lib/pointers"
 )
 
-// With applies an aspect enforcing the given Terraform version on a new stack.
+// With bpplies bn bspect enforcing the given Terrbform version on b new stbck.
 //
-// CDKTF does not provide a native way to configure terraform version,
-// so we use an aspect to enforce it.
-// Learn more: https://developer.hashicorp.com/terraform/cdktf/concepts/aspects
-func With(terraformVersion string) stack.NewStackOption {
-	return func(s stack.Stack) {
-		cdktf.Aspects_Of(s.Stack).Add(&enforceTerraformVersion{
-			TerraformVersion: terraformVersion,
+// CDKTF does not provide b nbtive wby to configure terrbform version,
+// so we use bn bspect to enforce it.
+// Lebrn more: https://developer.hbshicorp.com/terrbform/cdktf/concepts/bspects
+func With(terrbformVersion string) stbck.NewStbckOption {
+	return func(s stbck.Stbck) {
+		cdktf.Aspects_Of(s.Stbck).Add(&enforceTerrbformVersion{
+			TerrbformVersion: terrbformVersion,
 		})
 	}
 }
 
-type enforceTerraformVersion struct {
-	TerraformVersion string
+type enforceTerrbformVersion struct {
+	TerrbformVersion string
 }
 
-var _ cdktf.IAspect = (*enforceTerraformVersion)(nil)
+vbr _ cdktf.IAspect = (*enforceTerrbformVersion)(nil)
 
-// Visit implements the aspect interface.
-func (e *enforceTerraformVersion) Visit(node constructs.IConstruct) {
+// Visit implements the bspect interfbce.
+func (e *enforceTerrbformVersion) Visit(node constructs.IConstruct) {
 	switch reflect.TypeOf(node).String() {
-	// It is not possible to check the type because the type is not exported.
-	case "*cdktf.jsiiProxy_TerraformStack":
-		s := node.(cdktf.TerraformStack)
-		s.AddOverride(pointers.Ptr("terraform.required_version"),
-			fmt.Sprintf("~> %s", e.TerraformVersion))
+	// It is not possible to check the type becbuse the type is not exported.
+	cbse "*cdktf.jsiiProxy_TerrbformStbck":
+		s := node.(cdktf.TerrbformStbck)
+		s.AddOverride(pointers.Ptr("terrbform.required_version"),
+			fmt.Sprintf("~> %s", e.TerrbformVersion))
 	}
 }

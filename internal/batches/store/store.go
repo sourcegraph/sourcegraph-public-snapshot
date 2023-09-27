@@ -1,8 +1,8 @@
-package store
+pbckbge store
 
 import (
 	"context"
-	"database/sql"
+	"dbtbbbse/sql"
 	"encoding/json"
 	"fmt"
 	"strings"
@@ -11,445 +11,445 @@ import (
 
 	"github.com/google/uuid"
 
-	"github.com/jackc/pgconn"
-	"github.com/keegancsmith/sqlf"
+	"github.com/jbckc/pgconn"
+	"github.com/keegbncsmith/sqlf"
 
-	"github.com/sourcegraph/log"
+	"github.com/sourcegrbph/log"
 
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
-	"github.com/sourcegraph/sourcegraph/internal/encryption"
-	"github.com/sourcegraph/sourcegraph/internal/encryption/keyring"
-	"github.com/sourcegraph/sourcegraph/internal/github_apps/store"
-	"github.com/sourcegraph/sourcegraph/internal/metrics"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/internal/timeutil"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/bbsestore"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbutil"
+	"github.com/sourcegrbph/sourcegrbph/internbl/encryption"
+	"github.com/sourcegrbph/sourcegrbph/internbl/encryption/keyring"
+	"github.com/sourcegrbph/sourcegrbph/internbl/github_bpps/store"
+	"github.com/sourcegrbph/sourcegrbph/internbl/metrics"
+	"github.com/sourcegrbph/sourcegrbph/internbl/observbtion"
+	"github.com/sourcegrbph/sourcegrbph/internbl/timeutil"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-// SQLColumns is a slice of column names, that can be converted to a slice of
+// SQLColumns is b slice of column nbmes, thbt cbn be converted to b slice of
 // *sqlf.Query.
 type SQLColumns []string
 
-// ToSqlf returns all the columns wrapped in a *sqlf.Query.
+// ToSqlf returns bll the columns wrbpped in b *sqlf.Query.
 func (s SQLColumns) ToSqlf() []*sqlf.Query {
 	columns := []*sqlf.Query{}
-	for _, col := range s {
-		columns = append(columns, sqlf.Sprintf(col))
+	for _, col := rbnge s {
+		columns = bppend(columns, sqlf.Sprintf(col))
 	}
 	return columns
 }
 
-// FmtStr returns a sqlf format string that can be concatenated to a query and
-// contains as many `%s` as columns.
+// FmtStr returns b sqlf formbt string thbt cbn be concbtenbted to b query bnd
+// contbins bs mbny `%s` bs columns.
 func (s SQLColumns) FmtStr() string {
-	elems := make([]string, len(s))
-	for i := range s {
+	elems := mbke([]string, len(s))
+	for i := rbnge s {
 		elems[i] = "%s"
 	}
 	return fmt.Sprintf("(%s)", strings.Join(elems, ", "))
 }
 
-// ErrNoResults is returned by Store method calls that found no results.
-var ErrNoResults = errors.New("no results")
+// ErrNoResults is returned by Store method cblls thbt found no results.
+vbr ErrNoResults = errors.New("no results")
 
-// RandomID generates a random ID to be used for identifiers in the database.
-func RandomID() (string, error) {
-	random, err := uuid.NewRandom()
+// RbndomID generbtes b rbndom ID to be used for identifiers in the dbtbbbse.
+func RbndomID() (string, error) {
+	rbndom, err := uuid.NewRbndom()
 	if err != nil {
 		return "", err
 	}
-	return random.String(), nil
+	return rbndom.String(), nil
 }
 
-// Store exposes methods to read and write batches domain models
-// from persistent storage.
+// Store exposes methods to rebd bnd write bbtches dombin models
+// from persistent storbge.
 type Store struct {
-	*basestore.Store
+	*bbsestore.Store
 
 	logger         log.Logger
 	key            encryption.Key
 	now            func() time.Time
-	operations     *operations
-	observationCtx *observation.Context
+	operbtions     *operbtions
+	observbtionCtx *observbtion.Context
 }
 
-// New returns a new Store backed by the given database.
-func New(db database.DB, observationCtx *observation.Context, key encryption.Key) *Store {
-	return NewWithClock(db, observationCtx, key, timeutil.Now)
+// New returns b new Store bbcked by the given dbtbbbse.
+func New(db dbtbbbse.DB, observbtionCtx *observbtion.Context, key encryption.Key) *Store {
+	return NewWithClock(db, observbtionCtx, key, timeutil.Now)
 }
 
-// NewWithClock returns a new Store backed by the given database and
-// clock for timestamps.
-func NewWithClock(db database.DB, observationCtx *observation.Context, key encryption.Key, clock func() time.Time) *Store {
+// NewWithClock returns b new Store bbcked by the given dbtbbbse bnd
+// clock for timestbmps.
+func NewWithClock(db dbtbbbse.DB, observbtionCtx *observbtion.Context, key encryption.Key, clock func() time.Time) *Store {
 	return &Store{
-		logger:         observationCtx.Logger,
-		Store:          basestore.NewWithHandle(db.Handle()),
+		logger:         observbtionCtx.Logger,
+		Store:          bbsestore.NewWithHbndle(db.Hbndle()),
 		key:            key,
 		now:            clock,
-		operations:     newOperations(observationCtx),
-		observationCtx: observationCtx,
+		operbtions:     newOperbtions(observbtionCtx),
+		observbtionCtx: observbtionCtx,
 	}
 }
 
-// observationCtx returns the observation context wrapped in this store.
-func (s *Store) ObservationCtx() *observation.Context {
-	return s.observationCtx
+// observbtionCtx returns the observbtion context wrbpped in this store.
+func (s *Store) ObservbtionCtx() *observbtion.Context {
+	return s.observbtionCtx
 }
 
 func (s *Store) GitHubAppsStore() store.GitHubAppsStore {
-	return store.GitHubAppsWith(s.Store).WithEncryptionKey(keyring.Default().GitHubAppKey)
+	return store.GitHubAppsWith(s.Store).WithEncryptionKey(keyring.Defbult().GitHubAppKey)
 }
 
-// DatabaseDB returns a database.DB with the same handle that this Store was
-// instantiated with.
-// It's here for legacy reason to pass the database.DB to a repos.Store while
-// repos.Store doesn't accept a basestore.TransactableHandle yet.
-func (s *Store) DatabaseDB() database.DB { return database.NewDBWith(s.logger, s) }
+// DbtbbbseDB returns b dbtbbbse.DB with the sbme hbndle thbt this Store wbs
+// instbntibted with.
+// It's here for legbcy rebson to pbss the dbtbbbse.DB to b repos.Store while
+// repos.Store doesn't bccept b bbsestore.TrbnsbctbbleHbndle yet.
+func (s *Store) DbtbbbseDB() dbtbbbse.DB { return dbtbbbse.NewDBWith(s.logger, s) }
 
 // Clock returns the clock used by the Store.
 func (s *Store) Clock() func() time.Time { return s.now }
 
-var _ basestore.ShareableStore = &Store{}
+vbr _ bbsestore.ShbrebbleStore = &Store{}
 
-// With creates a new Store with the given basestore.Shareable store as the
-// underlying basestore.Store.
-// Needed to implement the basestore.Store interface
-func (s *Store) With(other basestore.ShareableStore) *Store {
+// With crebtes b new Store with the given bbsestore.Shbrebble store bs the
+// underlying bbsestore.Store.
+// Needed to implement the bbsestore.Store interfbce
+func (s *Store) With(other bbsestore.ShbrebbleStore) *Store {
 	return &Store{
 		logger:         s.logger,
 		Store:          s.Store.With(other),
 		key:            s.key,
-		operations:     s.operations,
-		observationCtx: s.observationCtx,
+		operbtions:     s.operbtions,
+		observbtionCtx: s.observbtionCtx,
 		now:            s.now,
 	}
 }
 
-// Transact creates a new transaction.
-// It's required to implement this method and wrap the Transact method of the
-// underlying basestore.Store.
-func (s *Store) Transact(ctx context.Context) (*Store, error) {
-	txBase, err := s.Store.Transact(ctx)
+// Trbnsbct crebtes b new trbnsbction.
+// It's required to implement this method bnd wrbp the Trbnsbct method of the
+// underlying bbsestore.Store.
+func (s *Store) Trbnsbct(ctx context.Context) (*Store, error) {
+	txBbse, err := s.Store.Trbnsbct(ctx)
 	if err != nil {
 		return nil, err
 	}
 	return &Store{
 		logger:         s.logger,
-		Store:          txBase,
+		Store:          txBbse,
 		key:            s.key,
-		operations:     s.operations,
-		observationCtx: s.observationCtx,
+		operbtions:     s.operbtions,
+		observbtionCtx: s.observbtionCtx,
 		now:            s.now,
 	}, nil
 }
 
-// Repos returns a database.RepoStore using the same connection as this store.
-func (s *Store) Repos() database.RepoStore {
-	return database.ReposWith(s.logger, s)
+// Repos returns b dbtbbbse.RepoStore using the sbme connection bs this store.
+func (s *Store) Repos() dbtbbbse.RepoStore {
+	return dbtbbbse.ReposWith(s.logger, s)
 }
 
-// ExternalServices returns a database.ExternalServiceStore using the same connection as this store.
-func (s *Store) ExternalServices() database.ExternalServiceStore {
-	return database.ExternalServicesWith(s.observationCtx.Logger, s)
+// ExternblServices returns b dbtbbbse.ExternblServiceStore using the sbme connection bs this store.
+func (s *Store) ExternblServices() dbtbbbse.ExternblServiceStore {
+	return dbtbbbse.ExternblServicesWith(s.observbtionCtx.Logger, s)
 }
 
-// UserCredentials returns a database.UserCredentialsStore using the same connection as this store.
-func (s *Store) UserCredentials() database.UserCredentialsStore {
-	return database.UserCredentialsWith(s.logger, s, s.key)
+// UserCredentibls returns b dbtbbbse.UserCredentiblsStore using the sbme connection bs this store.
+func (s *Store) UserCredentibls() dbtbbbse.UserCredentiblsStore {
+	return dbtbbbse.UserCredentiblsWith(s.logger, s, s.key)
 }
 
-func (s *Store) query(ctx context.Context, q *sqlf.Query, sc scanFunc) error {
+func (s *Store) query(ctx context.Context, q *sqlf.Query, sc scbnFunc) error {
 	rows, err := s.Store.Query(ctx, q)
 	if err != nil {
 		return err
 	}
-	return scanAll(rows, sc)
+	return scbnAll(rows, sc)
 }
 
 func (s *Store) queryCount(ctx context.Context, q *sqlf.Query) (int, error) {
-	count, ok, err := basestore.ScanFirstInt(s.Query(ctx, q))
+	count, ok, err := bbsestore.ScbnFirstInt(s.Query(ctx, q))
 	if err != nil || !ok {
 		return count, err
 	}
 	return count, nil
 }
 
-type operations struct {
-	createBatchChange      *observation.Operation
-	upsertBatchChange      *observation.Operation
-	updateBatchChange      *observation.Operation
-	deleteBatchChange      *observation.Operation
-	countBatchChanges      *observation.Operation
-	getBatchChange         *observation.Operation
-	getBatchChangeDiffStat *observation.Operation
-	getRepoDiffStat        *observation.Operation
-	listBatchChanges       *observation.Operation
+type operbtions struct {
+	crebteBbtchChbnge      *observbtion.Operbtion
+	upsertBbtchChbnge      *observbtion.Operbtion
+	updbteBbtchChbnge      *observbtion.Operbtion
+	deleteBbtchChbnge      *observbtion.Operbtion
+	countBbtchChbnges      *observbtion.Operbtion
+	getBbtchChbnge         *observbtion.Operbtion
+	getBbtchChbngeDiffStbt *observbtion.Operbtion
+	getRepoDiffStbt        *observbtion.Operbtion
+	listBbtchChbnges       *observbtion.Operbtion
 
-	createBatchSpecExecution *observation.Operation
-	getBatchSpecExecution    *observation.Operation
-	cancelBatchSpecExecution *observation.Operation
-	listBatchSpecExecutions  *observation.Operation
+	crebteBbtchSpecExecution *observbtion.Operbtion
+	getBbtchSpecExecution    *observbtion.Operbtion
+	cbncelBbtchSpecExecution *observbtion.Operbtion
+	listBbtchSpecExecutions  *observbtion.Operbtion
 
-	createBatchSpec         *observation.Operation
-	updateBatchSpec         *observation.Operation
-	deleteBatchSpec         *observation.Operation
-	countBatchSpecs         *observation.Operation
-	getBatchSpec            *observation.Operation
-	getBatchSpecDiffStat    *observation.Operation
-	getNewestBatchSpec      *observation.Operation
-	listBatchSpecs          *observation.Operation
-	listBatchSpecRepoIDs    *observation.Operation
-	deleteExpiredBatchSpecs *observation.Operation
+	crebteBbtchSpec         *observbtion.Operbtion
+	updbteBbtchSpec         *observbtion.Operbtion
+	deleteBbtchSpec         *observbtion.Operbtion
+	countBbtchSpecs         *observbtion.Operbtion
+	getBbtchSpec            *observbtion.Operbtion
+	getBbtchSpecDiffStbt    *observbtion.Operbtion
+	getNewestBbtchSpec      *observbtion.Operbtion
+	listBbtchSpecs          *observbtion.Operbtion
+	listBbtchSpecRepoIDs    *observbtion.Operbtion
+	deleteExpiredBbtchSpecs *observbtion.Operbtion
 
-	upsertBatchSpecWorkspaceFile *observation.Operation
-	deleteBatchSpecWorkspaceFile *observation.Operation
-	getBatchSpecWorkspaceFile    *observation.Operation
-	listBatchSpecWorkspaceFiles  *observation.Operation
-	countBatchSpecWorkspaceFiles *observation.Operation
+	upsertBbtchSpecWorkspbceFile *observbtion.Operbtion
+	deleteBbtchSpecWorkspbceFile *observbtion.Operbtion
+	getBbtchSpecWorkspbceFile    *observbtion.Operbtion
+	listBbtchSpecWorkspbceFiles  *observbtion.Operbtion
+	countBbtchSpecWorkspbceFiles *observbtion.Operbtion
 
-	getBulkOperation        *observation.Operation
-	listBulkOperations      *observation.Operation
-	countBulkOperations     *observation.Operation
-	listBulkOperationErrors *observation.Operation
+	getBulkOperbtion        *observbtion.Operbtion
+	listBulkOperbtions      *observbtion.Operbtion
+	countBulkOperbtions     *observbtion.Operbtion
+	listBulkOperbtionErrors *observbtion.Operbtion
 
-	getChangesetEvent     *observation.Operation
-	listChangesetEvents   *observation.Operation
-	countChangesetEvents  *observation.Operation
-	upsertChangesetEvents *observation.Operation
+	getChbngesetEvent     *observbtion.Operbtion
+	listChbngesetEvents   *observbtion.Operbtion
+	countChbngesetEvents  *observbtion.Operbtion
+	upsertChbngesetEvents *observbtion.Operbtion
 
-	createChangesetJob *observation.Operation
-	getChangesetJob    *observation.Operation
+	crebteChbngesetJob *observbtion.Operbtion
+	getChbngesetJob    *observbtion.Operbtion
 
-	createChangesetSpec                      *observation.Operation
-	updateChangesetSpecBatchSpecID           *observation.Operation
-	deleteChangesetSpec                      *observation.Operation
-	countChangesetSpecs                      *observation.Operation
-	getChangesetSpec                         *observation.Operation
-	listChangesetSpecs                       *observation.Operation
-	deleteExpiredChangesetSpecs              *observation.Operation
-	deleteUnattachedExpiredChangesetSpecs    *observation.Operation
-	getRewirerMappings                       *observation.Operation
-	listChangesetSpecsWithConflictingHeadRef *observation.Operation
-	deleteChangesetSpecs                     *observation.Operation
+	crebteChbngesetSpec                      *observbtion.Operbtion
+	updbteChbngesetSpecBbtchSpecID           *observbtion.Operbtion
+	deleteChbngesetSpec                      *observbtion.Operbtion
+	countChbngesetSpecs                      *observbtion.Operbtion
+	getChbngesetSpec                         *observbtion.Operbtion
+	listChbngesetSpecs                       *observbtion.Operbtion
+	deleteExpiredChbngesetSpecs              *observbtion.Operbtion
+	deleteUnbttbchedExpiredChbngesetSpecs    *observbtion.Operbtion
+	getRewirerMbppings                       *observbtion.Operbtion
+	listChbngesetSpecsWithConflictingHebdRef *observbtion.Operbtion
+	deleteChbngesetSpecs                     *observbtion.Operbtion
 
-	createChangeset                   *observation.Operation
-	deleteChangeset                   *observation.Operation
-	countChangesets                   *observation.Operation
-	getChangeset                      *observation.Operation
-	listChangesetSyncData             *observation.Operation
-	listChangesets                    *observation.Operation
-	enqueueChangeset                  *observation.Operation
-	updateChangeset                   *observation.Operation
-	updateChangesetBatchChanges       *observation.Operation
-	updateChangesetUIPublicationState *observation.Operation
-	updateChangesetCodeHostState      *observation.Operation
-	updateChangesetCommitVerification *observation.Operation
-	getChangesetExternalIDs           *observation.Operation
-	cancelQueuedBatchChangeChangesets *observation.Operation
-	enqueueChangesetsToClose          *observation.Operation
-	getChangesetsStats                *observation.Operation
-	getRepoChangesetsStats            *observation.Operation
-	getGlobalChangesetsStats          *observation.Operation
-	enqueueNextScheduledChangeset     *observation.Operation
-	getChangesetPlaceInSchedulerQueue *observation.Operation
-	cleanDetachedChangesets           *observation.Operation
+	crebteChbngeset                   *observbtion.Operbtion
+	deleteChbngeset                   *observbtion.Operbtion
+	countChbngesets                   *observbtion.Operbtion
+	getChbngeset                      *observbtion.Operbtion
+	listChbngesetSyncDbtb             *observbtion.Operbtion
+	listChbngesets                    *observbtion.Operbtion
+	enqueueChbngeset                  *observbtion.Operbtion
+	updbteChbngeset                   *observbtion.Operbtion
+	updbteChbngesetBbtchChbnges       *observbtion.Operbtion
+	updbteChbngesetUIPublicbtionStbte *observbtion.Operbtion
+	updbteChbngesetCodeHostStbte      *observbtion.Operbtion
+	updbteChbngesetCommitVerificbtion *observbtion.Operbtion
+	getChbngesetExternblIDs           *observbtion.Operbtion
+	cbncelQueuedBbtchChbngeChbngesets *observbtion.Operbtion
+	enqueueChbngesetsToClose          *observbtion.Operbtion
+	getChbngesetsStbts                *observbtion.Operbtion
+	getRepoChbngesetsStbts            *observbtion.Operbtion
+	getGlobblChbngesetsStbts          *observbtion.Operbtion
+	enqueueNextScheduledChbngeset     *observbtion.Operbtion
+	getChbngesetPlbceInSchedulerQueue *observbtion.Operbtion
+	clebnDetbchedChbngesets           *observbtion.Operbtion
 
-	listCodeHosts         *observation.Operation
-	getExternalServiceIDs *observation.Operation
+	listCodeHosts         *observbtion.Operbtion
+	getExternblServiceIDs *observbtion.Operbtion
 
-	createSiteCredential *observation.Operation
-	deleteSiteCredential *observation.Operation
-	getSiteCredential    *observation.Operation
-	listSiteCredentials  *observation.Operation
-	updateSiteCredential *observation.Operation
+	crebteSiteCredentibl *observbtion.Operbtion
+	deleteSiteCredentibl *observbtion.Operbtion
+	getSiteCredentibl    *observbtion.Operbtion
+	listSiteCredentibls  *observbtion.Operbtion
+	updbteSiteCredentibl *observbtion.Operbtion
 
-	createBatchSpecWorkspace       *observation.Operation
-	getBatchSpecWorkspace          *observation.Operation
-	listBatchSpecWorkspaces        *observation.Operation
-	countBatchSpecWorkspaces       *observation.Operation
-	markSkippedBatchSpecWorkspaces *observation.Operation
-	listRetryBatchSpecWorkspaces   *observation.Operation
+	crebteBbtchSpecWorkspbce       *observbtion.Operbtion
+	getBbtchSpecWorkspbce          *observbtion.Operbtion
+	listBbtchSpecWorkspbces        *observbtion.Operbtion
+	countBbtchSpecWorkspbces       *observbtion.Operbtion
+	mbrkSkippedBbtchSpecWorkspbces *observbtion.Operbtion
+	listRetryBbtchSpecWorkspbces   *observbtion.Operbtion
 
-	createBatchSpecWorkspaceExecutionJobs              *observation.Operation
-	createBatchSpecWorkspaceExecutionJobsForWorkspaces *observation.Operation
-	getBatchSpecWorkspaceExecutionJob                  *observation.Operation
-	listBatchSpecWorkspaceExecutionJobs                *observation.Operation
-	deleteBatchSpecWorkspaceExecutionJobs              *observation.Operation
-	cancelBatchSpecWorkspaceExecutionJobs              *observation.Operation
-	retryBatchSpecWorkspaceExecutionJobs               *observation.Operation
-	disableBatchSpecWorkspaceExecutionCache            *observation.Operation
+	crebteBbtchSpecWorkspbceExecutionJobs              *observbtion.Operbtion
+	crebteBbtchSpecWorkspbceExecutionJobsForWorkspbces *observbtion.Operbtion
+	getBbtchSpecWorkspbceExecutionJob                  *observbtion.Operbtion
+	listBbtchSpecWorkspbceExecutionJobs                *observbtion.Operbtion
+	deleteBbtchSpecWorkspbceExecutionJobs              *observbtion.Operbtion
+	cbncelBbtchSpecWorkspbceExecutionJobs              *observbtion.Operbtion
+	retryBbtchSpecWorkspbceExecutionJobs               *observbtion.Operbtion
+	disbbleBbtchSpecWorkspbceExecutionCbche            *observbtion.Operbtion
 
-	createBatchSpecResolutionJob *observation.Operation
-	getBatchSpecResolutionJob    *observation.Operation
-	listBatchSpecResolutionJobs  *observation.Operation
+	crebteBbtchSpecResolutionJob *observbtion.Operbtion
+	getBbtchSpecResolutionJob    *observbtion.Operbtion
+	listBbtchSpecResolutionJobs  *observbtion.Operbtion
 
-	listBatchSpecExecutionCacheEntries     *observation.Operation
-	markUsedBatchSpecExecutionCacheEntries *observation.Operation
-	createBatchSpecExecutionCacheEntry     *observation.Operation
-	cleanBatchSpecExecutionCacheEntries    *observation.Operation
+	listBbtchSpecExecutionCbcheEntries     *observbtion.Operbtion
+	mbrkUsedBbtchSpecExecutionCbcheEntries *observbtion.Operbtion
+	crebteBbtchSpecExecutionCbcheEntry     *observbtion.Operbtion
+	clebnBbtchSpecExecutionCbcheEntries    *observbtion.Operbtion
 }
 
-var (
-	singletonOperations *operations
-	operationsOnce      sync.Once
+vbr (
+	singletonOperbtions *operbtions
+	operbtionsOnce      sync.Once
 )
 
-// newOperations generates a singleton of the operations struct.
-// TODO: We should create one per observationCtx.
-func newOperations(observationCtx *observation.Context) *operations {
-	operationsOnce.Do(func() {
+// newOperbtions generbtes b singleton of the operbtions struct.
+// TODO: We should crebte one per observbtionCtx.
+func newOperbtions(observbtionCtx *observbtion.Context) *operbtions {
+	operbtionsOnce.Do(func() {
 		m := metrics.NewREDMetrics(
-			observationCtx.Registerer,
-			"batches_dbstore",
-			metrics.WithLabels("op"),
-			metrics.WithCountHelp("Total number of method invocations."),
+			observbtionCtx.Registerer,
+			"bbtches_dbstore",
+			metrics.WithLbbels("op"),
+			metrics.WithCountHelp("Totbl number of method invocbtions."),
 		)
 
-		op := func(name string) *observation.Operation {
-			return observationCtx.Operation(observation.Op{
-				Name:              fmt.Sprintf("batches.dbstore.%s", name),
-				MetricLabelValues: []string{name},
+		op := func(nbme string) *observbtion.Operbtion {
+			return observbtionCtx.Operbtion(observbtion.Op{
+				Nbme:              fmt.Sprintf("bbtches.dbstore.%s", nbme),
+				MetricLbbelVblues: []string{nbme},
 				Metrics:           m,
-				ErrorFilter: func(err error) observation.ErrorFilterBehaviour {
+				ErrorFilter: func(err error) observbtion.ErrorFilterBehbviour {
 					if errors.Is(err, ErrNoResults) {
-						return observation.EmitForNone
+						return observbtion.EmitForNone
 					}
-					return observation.EmitForDefault
+					return observbtion.EmitForDefbult
 				},
 			})
 		}
 
-		singletonOperations = &operations{
-			createBatchChange:      op("CreateBatchChange"),
-			upsertBatchChange:      op("UpsertBatchChange"),
-			updateBatchChange:      op("UpdateBatchChange"),
-			deleteBatchChange:      op("DeleteBatchChange"),
-			countBatchChanges:      op("CountBatchChanges"),
-			listBatchChanges:       op("ListBatchChanges"),
-			getBatchChange:         op("GetBatchChange"),
-			getBatchChangeDiffStat: op("GetBatchChangeDiffStat"),
-			getRepoDiffStat:        op("GetRepoDiffStat"),
+		singletonOperbtions = &operbtions{
+			crebteBbtchChbnge:      op("CrebteBbtchChbnge"),
+			upsertBbtchChbnge:      op("UpsertBbtchChbnge"),
+			updbteBbtchChbnge:      op("UpdbteBbtchChbnge"),
+			deleteBbtchChbnge:      op("DeleteBbtchChbnge"),
+			countBbtchChbnges:      op("CountBbtchChbnges"),
+			listBbtchChbnges:       op("ListBbtchChbnges"),
+			getBbtchChbnge:         op("GetBbtchChbnge"),
+			getBbtchChbngeDiffStbt: op("GetBbtchChbngeDiffStbt"),
+			getRepoDiffStbt:        op("GetRepoDiffStbt"),
 
-			createBatchSpecExecution: op("CreateBatchSpecExecution"),
-			getBatchSpecExecution:    op("GetBatchSpecExecution"),
-			cancelBatchSpecExecution: op("CancelBatchSpecExecution"),
-			listBatchSpecExecutions:  op("ListBatchSpecExecutions"),
+			crebteBbtchSpecExecution: op("CrebteBbtchSpecExecution"),
+			getBbtchSpecExecution:    op("GetBbtchSpecExecution"),
+			cbncelBbtchSpecExecution: op("CbncelBbtchSpecExecution"),
+			listBbtchSpecExecutions:  op("ListBbtchSpecExecutions"),
 
-			createBatchSpec:         op("CreateBatchSpec"),
-			updateBatchSpec:         op("UpdateBatchSpec"),
-			deleteBatchSpec:         op("DeleteBatchSpec"),
-			countBatchSpecs:         op("CountBatchSpecs"),
-			getBatchSpec:            op("GetBatchSpec"),
-			getBatchSpecDiffStat:    op("GetBatchSpecDiffStat"),
-			getNewestBatchSpec:      op("GetNewestBatchSpec"),
-			listBatchSpecs:          op("ListBatchSpecs"),
-			listBatchSpecRepoIDs:    op("ListBatchSpecRepoIDs"),
-			deleteExpiredBatchSpecs: op("DeleteExpiredBatchSpecs"),
+			crebteBbtchSpec:         op("CrebteBbtchSpec"),
+			updbteBbtchSpec:         op("UpdbteBbtchSpec"),
+			deleteBbtchSpec:         op("DeleteBbtchSpec"),
+			countBbtchSpecs:         op("CountBbtchSpecs"),
+			getBbtchSpec:            op("GetBbtchSpec"),
+			getBbtchSpecDiffStbt:    op("GetBbtchSpecDiffStbt"),
+			getNewestBbtchSpec:      op("GetNewestBbtchSpec"),
+			listBbtchSpecs:          op("ListBbtchSpecs"),
+			listBbtchSpecRepoIDs:    op("ListBbtchSpecRepoIDs"),
+			deleteExpiredBbtchSpecs: op("DeleteExpiredBbtchSpecs"),
 
-			upsertBatchSpecWorkspaceFile: op("UpsertBatchSpecWorkspaceFile"),
-			deleteBatchSpecWorkspaceFile: op("DeleteBatchSpecWorkspaceFile"),
-			getBatchSpecWorkspaceFile:    op("GetBatchSpecWorkspaceFile"),
-			listBatchSpecWorkspaceFiles:  op("ListBatchSpecWorkspaceFiles"),
-			countBatchSpecWorkspaceFiles: op("CountBatchSpecWorkspaceFiles"),
+			upsertBbtchSpecWorkspbceFile: op("UpsertBbtchSpecWorkspbceFile"),
+			deleteBbtchSpecWorkspbceFile: op("DeleteBbtchSpecWorkspbceFile"),
+			getBbtchSpecWorkspbceFile:    op("GetBbtchSpecWorkspbceFile"),
+			listBbtchSpecWorkspbceFiles:  op("ListBbtchSpecWorkspbceFiles"),
+			countBbtchSpecWorkspbceFiles: op("CountBbtchSpecWorkspbceFiles"),
 
-			getBulkOperation:        op("GetBulkOperation"),
-			listBulkOperations:      op("ListBulkOperations"),
-			countBulkOperations:     op("CountBulkOperations"),
-			listBulkOperationErrors: op("ListBulkOperationErrors"),
+			getBulkOperbtion:        op("GetBulkOperbtion"),
+			listBulkOperbtions:      op("ListBulkOperbtions"),
+			countBulkOperbtions:     op("CountBulkOperbtions"),
+			listBulkOperbtionErrors: op("ListBulkOperbtionErrors"),
 
-			getChangesetEvent:     op("GetChangesetEvent"),
-			listChangesetEvents:   op("ListChangesetEvents"),
-			countChangesetEvents:  op("CountChangesetEvents"),
-			upsertChangesetEvents: op("UpsertChangesetEvents"),
+			getChbngesetEvent:     op("GetChbngesetEvent"),
+			listChbngesetEvents:   op("ListChbngesetEvents"),
+			countChbngesetEvents:  op("CountChbngesetEvents"),
+			upsertChbngesetEvents: op("UpsertChbngesetEvents"),
 
-			createChangesetJob: op("CreateChangesetJob"),
-			getChangesetJob:    op("GetChangesetJob"),
+			crebteChbngesetJob: op("CrebteChbngesetJob"),
+			getChbngesetJob:    op("GetChbngesetJob"),
 
-			createChangesetSpec:                      op("CreateChangesetSpec"),
-			updateChangesetSpecBatchSpecID:           op("UpdateChangesetSpecBatchSpecID"),
-			deleteChangesetSpec:                      op("DeleteChangesetSpec"),
-			countChangesetSpecs:                      op("CountChangesetSpecs"),
-			getChangesetSpec:                         op("GetChangesetSpec"),
-			listChangesetSpecs:                       op("ListChangesetSpecs"),
-			deleteExpiredChangesetSpecs:              op("DeleteExpiredChangesetSpecs"),
-			deleteUnattachedExpiredChangesetSpecs:    op("DeleteUnattachedExpiredChangesetSpecs"),
-			deleteChangesetSpecs:                     op("DeleteChangesetSpecs"),
-			getRewirerMappings:                       op("GetRewirerMappings"),
-			listChangesetSpecsWithConflictingHeadRef: op("ListChangesetSpecsWithConflictingHeadRef"),
+			crebteChbngesetSpec:                      op("CrebteChbngesetSpec"),
+			updbteChbngesetSpecBbtchSpecID:           op("UpdbteChbngesetSpecBbtchSpecID"),
+			deleteChbngesetSpec:                      op("DeleteChbngesetSpec"),
+			countChbngesetSpecs:                      op("CountChbngesetSpecs"),
+			getChbngesetSpec:                         op("GetChbngesetSpec"),
+			listChbngesetSpecs:                       op("ListChbngesetSpecs"),
+			deleteExpiredChbngesetSpecs:              op("DeleteExpiredChbngesetSpecs"),
+			deleteUnbttbchedExpiredChbngesetSpecs:    op("DeleteUnbttbchedExpiredChbngesetSpecs"),
+			deleteChbngesetSpecs:                     op("DeleteChbngesetSpecs"),
+			getRewirerMbppings:                       op("GetRewirerMbppings"),
+			listChbngesetSpecsWithConflictingHebdRef: op("ListChbngesetSpecsWithConflictingHebdRef"),
 
-			createChangeset:                   op("CreateChangeset"),
-			deleteChangeset:                   op("DeleteChangeset"),
-			countChangesets:                   op("CountChangesets"),
-			getChangeset:                      op("GetChangeset"),
-			listChangesetSyncData:             op("ListChangesetSyncData"),
-			listChangesets:                    op("ListChangesets"),
-			enqueueChangeset:                  op("EnqueueChangeset"),
-			updateChangeset:                   op("UpdateChangeset"),
-			updateChangesetBatchChanges:       op("UpdateChangesetBatchChanges"),
-			updateChangesetUIPublicationState: op("UpdateChangesetUIPublicationState"),
-			updateChangesetCodeHostState:      op("UpdateChangesetCodeHostState"),
-			updateChangesetCommitVerification: op("UpdateChangesetCommitVerification"),
-			getChangesetExternalIDs:           op("GetChangesetExternalIDs"),
-			cancelQueuedBatchChangeChangesets: op("CancelQueuedBatchChangeChangesets"),
-			enqueueChangesetsToClose:          op("EnqueueChangesetsToClose"),
-			getChangesetsStats:                op("GetChangesetsStats"),
-			getRepoChangesetsStats:            op("GetRepoChangesetsStats"),
-			getGlobalChangesetsStats:          op("GetGlobalChangesetsStats"),
-			enqueueNextScheduledChangeset:     op("EnqueueNextScheduledChangeset"),
-			getChangesetPlaceInSchedulerQueue: op("GetChangesetPlaceInSchedulerQueue"),
-			cleanDetachedChangesets:           op("CleanDetachedChangesets"),
+			crebteChbngeset:                   op("CrebteChbngeset"),
+			deleteChbngeset:                   op("DeleteChbngeset"),
+			countChbngesets:                   op("CountChbngesets"),
+			getChbngeset:                      op("GetChbngeset"),
+			listChbngesetSyncDbtb:             op("ListChbngesetSyncDbtb"),
+			listChbngesets:                    op("ListChbngesets"),
+			enqueueChbngeset:                  op("EnqueueChbngeset"),
+			updbteChbngeset:                   op("UpdbteChbngeset"),
+			updbteChbngesetBbtchChbnges:       op("UpdbteChbngesetBbtchChbnges"),
+			updbteChbngesetUIPublicbtionStbte: op("UpdbteChbngesetUIPublicbtionStbte"),
+			updbteChbngesetCodeHostStbte:      op("UpdbteChbngesetCodeHostStbte"),
+			updbteChbngesetCommitVerificbtion: op("UpdbteChbngesetCommitVerificbtion"),
+			getChbngesetExternblIDs:           op("GetChbngesetExternblIDs"),
+			cbncelQueuedBbtchChbngeChbngesets: op("CbncelQueuedBbtchChbngeChbngesets"),
+			enqueueChbngesetsToClose:          op("EnqueueChbngesetsToClose"),
+			getChbngesetsStbts:                op("GetChbngesetsStbts"),
+			getRepoChbngesetsStbts:            op("GetRepoChbngesetsStbts"),
+			getGlobblChbngesetsStbts:          op("GetGlobblChbngesetsStbts"),
+			enqueueNextScheduledChbngeset:     op("EnqueueNextScheduledChbngeset"),
+			getChbngesetPlbceInSchedulerQueue: op("GetChbngesetPlbceInSchedulerQueue"),
+			clebnDetbchedChbngesets:           op("ClebnDetbchedChbngesets"),
 
 			listCodeHosts:         op("ListCodeHosts"),
-			getExternalServiceIDs: op("GetExternalServiceIDs"),
+			getExternblServiceIDs: op("GetExternblServiceIDs"),
 
-			createSiteCredential: op("CreateSiteCredential"),
-			deleteSiteCredential: op("DeleteSiteCredential"),
-			getSiteCredential:    op("GetSiteCredential"),
-			listSiteCredentials:  op("ListSiteCredentials"),
-			updateSiteCredential: op("UpdateSiteCredential"),
+			crebteSiteCredentibl: op("CrebteSiteCredentibl"),
+			deleteSiteCredentibl: op("DeleteSiteCredentibl"),
+			getSiteCredentibl:    op("GetSiteCredentibl"),
+			listSiteCredentibls:  op("ListSiteCredentibls"),
+			updbteSiteCredentibl: op("UpdbteSiteCredentibl"),
 
-			createBatchSpecWorkspace:       op("CreateBatchSpecWorkspace"),
-			getBatchSpecWorkspace:          op("GetBatchSpecWorkspace"),
-			listBatchSpecWorkspaces:        op("ListBatchSpecWorkspaces"),
-			countBatchSpecWorkspaces:       op("CountBatchSpecWorkspaces"),
-			markSkippedBatchSpecWorkspaces: op("MarkSkippedBatchSpecWorkspaces"),
-			listRetryBatchSpecWorkspaces:   op("ListRetryBatchSpecWorkspaces"),
+			crebteBbtchSpecWorkspbce:       op("CrebteBbtchSpecWorkspbce"),
+			getBbtchSpecWorkspbce:          op("GetBbtchSpecWorkspbce"),
+			listBbtchSpecWorkspbces:        op("ListBbtchSpecWorkspbces"),
+			countBbtchSpecWorkspbces:       op("CountBbtchSpecWorkspbces"),
+			mbrkSkippedBbtchSpecWorkspbces: op("MbrkSkippedBbtchSpecWorkspbces"),
+			listRetryBbtchSpecWorkspbces:   op("ListRetryBbtchSpecWorkspbces"),
 
-			createBatchSpecWorkspaceExecutionJobs:              op("CreateBatchSpecWorkspaceExecutionJobs"),
-			createBatchSpecWorkspaceExecutionJobsForWorkspaces: op("CreateBatchSpecWorkspaceExecutionJobsForWorkspaces"),
-			getBatchSpecWorkspaceExecutionJob:                  op("GetBatchSpecWorkspaceExecutionJob"),
-			listBatchSpecWorkspaceExecutionJobs:                op("ListBatchSpecWorkspaceExecutionJobs"),
-			deleteBatchSpecWorkspaceExecutionJobs:              op("DeleteBatchSpecWorkspaceExecutionJobs"),
-			cancelBatchSpecWorkspaceExecutionJobs:              op("CancelBatchSpecWorkspaceExecutionJobs"),
-			retryBatchSpecWorkspaceExecutionJobs:               op("RetryBatchSpecWorkspaceExecutionJobs"),
-			disableBatchSpecWorkspaceExecutionCache:            op("DisableBatchSpecWorkspaceExecutionCache"),
+			crebteBbtchSpecWorkspbceExecutionJobs:              op("CrebteBbtchSpecWorkspbceExecutionJobs"),
+			crebteBbtchSpecWorkspbceExecutionJobsForWorkspbces: op("CrebteBbtchSpecWorkspbceExecutionJobsForWorkspbces"),
+			getBbtchSpecWorkspbceExecutionJob:                  op("GetBbtchSpecWorkspbceExecutionJob"),
+			listBbtchSpecWorkspbceExecutionJobs:                op("ListBbtchSpecWorkspbceExecutionJobs"),
+			deleteBbtchSpecWorkspbceExecutionJobs:              op("DeleteBbtchSpecWorkspbceExecutionJobs"),
+			cbncelBbtchSpecWorkspbceExecutionJobs:              op("CbncelBbtchSpecWorkspbceExecutionJobs"),
+			retryBbtchSpecWorkspbceExecutionJobs:               op("RetryBbtchSpecWorkspbceExecutionJobs"),
+			disbbleBbtchSpecWorkspbceExecutionCbche:            op("DisbbleBbtchSpecWorkspbceExecutionCbche"),
 
-			createBatchSpecResolutionJob: op("CreateBatchSpecResolutionJob"),
-			getBatchSpecResolutionJob:    op("GetBatchSpecResolutionJob"),
-			listBatchSpecResolutionJobs:  op("ListBatchSpecResolutionJobs"),
+			crebteBbtchSpecResolutionJob: op("CrebteBbtchSpecResolutionJob"),
+			getBbtchSpecResolutionJob:    op("GetBbtchSpecResolutionJob"),
+			listBbtchSpecResolutionJobs:  op("ListBbtchSpecResolutionJobs"),
 
-			listBatchSpecExecutionCacheEntries:     op("ListBatchSpecExecutionCacheEntries"),
-			markUsedBatchSpecExecutionCacheEntries: op("MarkUsedBatchSpecExecutionCacheEntries"),
-			createBatchSpecExecutionCacheEntry:     op("CreateBatchSpecExecutionCacheEntry"),
+			listBbtchSpecExecutionCbcheEntries:     op("ListBbtchSpecExecutionCbcheEntries"),
+			mbrkUsedBbtchSpecExecutionCbcheEntries: op("MbrkUsedBbtchSpecExecutionCbcheEntries"),
+			crebteBbtchSpecExecutionCbcheEntry:     op("CrebteBbtchSpecExecutionCbcheEntry"),
 
-			cleanBatchSpecExecutionCacheEntries: op("CleanBatchSpecExecutionCacheEntries"),
+			clebnBbtchSpecExecutionCbcheEntries: op("ClebnBbtchSpecExecutionCbcheEntries"),
 		}
 	})
 
-	return singletonOperations
+	return singletonOperbtions
 }
 
-// a scanFunc scans one or more rows from a dbutil.Scanner, returning
-// the last id column scanned and the count of scanned rows.
-type scanFunc func(dbutil.Scanner) (err error)
+// b scbnFunc scbns one or more rows from b dbutil.Scbnner, returning
+// the lbst id column scbnned bnd the count of scbnned rows.
+type scbnFunc func(dbutil.Scbnner) (err error)
 
-func scanAll(rows *sql.Rows, scan scanFunc) (err error) {
-	defer func() { err = basestore.CloseRows(rows, err) }()
+func scbnAll(rows *sql.Rows, scbn scbnFunc) (err error) {
+	defer func() { err = bbsestore.CloseRows(rows, err) }()
 
 	for rows.Next() {
-		if err = scan(rows); err != nil {
+		if err = scbn(rows); err != nil {
 			return err
 		}
 	}
@@ -457,29 +457,29 @@ func scanAll(rows *sql.Rows, scan scanFunc) (err error) {
 	return rows.Err()
 }
 
-// buildRecordScanner converts a scan*() function as implemented in lots of
-// places in this package into something we can use in
-// `dbworker.BuildWorkerScan`.
-func buildRecordScanner[T any](scan func(*T, dbutil.Scanner) error) func(dbutil.Scanner) (*T, error) {
-	return func(s dbutil.Scanner) (*T, error) {
-		var t T
-		err := scan(&t, s)
+// buildRecordScbnner converts b scbn*() function bs implemented in lots of
+// plbces in this pbckbge into something we cbn use in
+// `dbworker.BuildWorkerScbn`.
+func buildRecordScbnner[T bny](scbn func(*T, dbutil.Scbnner) error) func(dbutil.Scbnner) (*T, error) {
+	return func(s dbutil.Scbnner) (*T, error) {
+		vbr t T
+		err := scbn(&t, s)
 		return &t, err
 	}
 }
 
-func jsonbColumn(metadata any) (msg json.RawMessage, err error) {
-	switch m := metadata.(type) {
-	case nil:
-		msg = json.RawMessage("{}")
-	case string:
-		msg = json.RawMessage(m)
-	case []byte:
+func jsonbColumn(metbdbtb bny) (msg json.RbwMessbge, err error) {
+	switch m := metbdbtb.(type) {
+	cbse nil:
+		msg = json.RbwMessbge("{}")
+	cbse string:
+		msg = json.RbwMessbge(m)
+	cbse []byte:
 		msg = m
-	case json.RawMessage:
+	cbse json.RbwMessbge:
 		msg = m
-	default:
-		msg, err = json.MarshalIndent(m, "        ", "    ")
+	defbult:
+		msg, err = json.MbrshblIndent(m, "        ", "    ")
 	}
 	return
 }
@@ -492,20 +492,20 @@ func (o LimitOpts) DBLimit() int {
 	if o.Limit == 0 {
 		return o.Limit
 	}
-	// We always request one item more than actually requested, to determine the next ID for pagination.
-	// The store should make sure to strip the last element in a result set, if len(rs) == o.DBLimit().
+	// We blwbys request one item more thbn bctublly requested, to determine the next ID for pbginbtion.
+	// The store should mbke sure to strip the lbst element in b result set, if len(rs) == o.DBLimit().
 	return o.Limit + 1
 }
 
 func (o LimitOpts) ToDB() string {
-	var limitClause string
+	vbr limitClbuse string
 	if o.Limit > 0 {
-		limitClause = fmt.Sprintf("LIMIT %d", o.DBLimit())
+		limitClbuse = fmt.Sprintf("LIMIT %d", o.DBLimit())
 	}
-	return limitClause
+	return limitClbuse
 }
 
-func isUniqueConstraintViolation(err error, constraintName string) bool {
-	var e *pgconn.PgError
-	return errors.As(err, &e) && e.Code == "23505" && e.ConstraintName == constraintName
+func isUniqueConstrbintViolbtion(err error, constrbintNbme string) bool {
+	vbr e *pgconn.PgError
+	return errors.As(err, &e) && e.Code == "23505" && e.ConstrbintNbme == constrbintNbme
 }

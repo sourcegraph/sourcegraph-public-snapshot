@@ -1,156 +1,156 @@
-package batches
+pbckbge bbtches
 
 import (
 	"fmt"
 	"strings"
 
-	"github.com/sourcegraph/sourcegraph/lib/batches/env"
-	"github.com/sourcegraph/sourcegraph/lib/batches/overridable"
-	"github.com/sourcegraph/sourcegraph/lib/batches/schema"
-	"github.com/sourcegraph/sourcegraph/lib/batches/template"
-	"github.com/sourcegraph/sourcegraph/lib/batches/yaml"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/lib/bbtches/env"
+	"github.com/sourcegrbph/sourcegrbph/lib/bbtches/overridbble"
+	"github.com/sourcegrbph/sourcegrbph/lib/bbtches/schemb"
+	"github.com/sourcegrbph/sourcegrbph/lib/bbtches/templbte"
+	"github.com/sourcegrbph/sourcegrbph/lib/bbtches/ybml"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-// Some general notes about the struct definitions below.
+// Some generbl notes bbout the struct definitions below.
 //
-// 1. They map _very_ closely to the batch spec JSON schema. We don't
-//    auto-generate the types because we need YAML support (more on that in a
-//    moment) and because no generator can currently handle oneOf fields
-//    gracefully in Go, but that's a potential future enhancement.
+// 1. They mbp _very_ closely to the bbtch spec JSON schemb. We don't
+//    buto-generbte the types becbuse we need YAML support (more on thbt in b
+//    moment) bnd becbuse no generbtor cbn currently hbndle oneOf fields
+//    grbcefully in Go, but thbt's b potentibl future enhbncement.
 //
-// 2. Fields are tagged with _both_ JSON and YAML tags. Internally, the JSON
-//    schema library needs to be able to marshal the struct to JSON for
-//    validation, so we need to ensure that we're generating the right JSON to
-//    represent the YAML that we unmarshalled.
+// 2. Fields bre tbgged with _both_ JSON bnd YAML tbgs. Internblly, the JSON
+//    schemb librbry needs to be bble to mbrshbl the struct to JSON for
+//    vblidbtion, so we need to ensure thbt we're generbting the right JSON to
+//    represent the YAML thbt we unmbrshblled.
 //
-// 3. All JSON tags include omitempty so that the schema validation can pick up
-//    omitted fields. The other option here was to have everything unmarshal to
-//    pointers, which is ugly and inefficient.
+// 3. All JSON tbgs include omitempty so thbt the schemb vblidbtion cbn pick up
+//    omitted fields. The other option here wbs to hbve everything unmbrshbl to
+//    pointers, which is ugly bnd inefficient.
 
-type BatchSpec struct {
-	Name              string                   `json:"name,omitempty" yaml:"name"`
-	Description       string                   `json:"description,omitempty" yaml:"description"`
-	On                []OnQueryOrRepository    `json:"on,omitempty" yaml:"on"`
-	Workspaces        []WorkspaceConfiguration `json:"workspaces,omitempty"  yaml:"workspaces"`
-	Steps             []Step                   `json:"steps,omitempty" yaml:"steps"`
-	TransformChanges  *TransformChanges        `json:"transformChanges,omitempty" yaml:"transformChanges,omitempty"`
-	ImportChangesets  []ImportChangeset        `json:"importChangesets,omitempty" yaml:"importChangesets"`
-	ChangesetTemplate *ChangesetTemplate       `json:"changesetTemplate,omitempty" yaml:"changesetTemplate"`
+type BbtchSpec struct {
+	Nbme              string                   `json:"nbme,omitempty" ybml:"nbme"`
+	Description       string                   `json:"description,omitempty" ybml:"description"`
+	On                []OnQueryOrRepository    `json:"on,omitempty" ybml:"on"`
+	Workspbces        []WorkspbceConfigurbtion `json:"workspbces,omitempty"  ybml:"workspbces"`
+	Steps             []Step                   `json:"steps,omitempty" ybml:"steps"`
+	TrbnsformChbnges  *TrbnsformChbnges        `json:"trbnsformChbnges,omitempty" ybml:"trbnsformChbnges,omitempty"`
+	ImportChbngesets  []ImportChbngeset        `json:"importChbngesets,omitempty" ybml:"importChbngesets"`
+	ChbngesetTemplbte *ChbngesetTemplbte       `json:"chbngesetTemplbte,omitempty" ybml:"chbngesetTemplbte"`
 }
 
-type ChangesetTemplate struct {
-	Title     string                       `json:"title,omitempty" yaml:"title"`
-	Body      string                       `json:"body,omitempty" yaml:"body"`
-	Branch    string                       `json:"branch,omitempty" yaml:"branch"`
-	Fork      *bool                        `json:"fork,omitempty" yaml:"fork"`
-	Commit    ExpandedGitCommitDescription `json:"commit,omitempty" yaml:"commit"`
-	Published *overridable.BoolOrString    `json:"published" yaml:"published"`
+type ChbngesetTemplbte struct {
+	Title     string                       `json:"title,omitempty" ybml:"title"`
+	Body      string                       `json:"body,omitempty" ybml:"body"`
+	Brbnch    string                       `json:"brbnch,omitempty" ybml:"brbnch"`
+	Fork      *bool                        `json:"fork,omitempty" ybml:"fork"`
+	Commit    ExpbndedGitCommitDescription `json:"commit,omitempty" ybml:"commit"`
+	Published *overridbble.BoolOrString    `json:"published" ybml:"published"`
 }
 
 type GitCommitAuthor struct {
-	Name  string `json:"name" yaml:"name"`
-	Email string `json:"email" yaml:"email"`
+	Nbme  string `json:"nbme" ybml:"nbme"`
+	Embil string `json:"embil" ybml:"embil"`
 }
 
-type ExpandedGitCommitDescription struct {
-	Message string           `json:"message,omitempty" yaml:"message"`
-	Author  *GitCommitAuthor `json:"author,omitempty" yaml:"author"`
+type ExpbndedGitCommitDescription struct {
+	Messbge string           `json:"messbge,omitempty" ybml:"messbge"`
+	Author  *GitCommitAuthor `json:"buthor,omitempty" ybml:"buthor"`
 }
 
-type ImportChangeset struct {
-	Repository  string `json:"repository" yaml:"repository"`
-	ExternalIDs []any  `json:"externalIDs" yaml:"externalIDs"`
+type ImportChbngeset struct {
+	Repository  string `json:"repository" ybml:"repository"`
+	ExternblIDs []bny  `json:"externblIDs" ybml:"externblIDs"`
 }
 
-type WorkspaceConfiguration struct {
-	RootAtLocationOf   string `json:"rootAtLocationOf,omitempty" yaml:"rootAtLocationOf"`
-	In                 string `json:"in,omitempty" yaml:"in"`
-	OnlyFetchWorkspace bool   `json:"onlyFetchWorkspace,omitempty" yaml:"onlyFetchWorkspace"`
+type WorkspbceConfigurbtion struct {
+	RootAtLocbtionOf   string `json:"rootAtLocbtionOf,omitempty" ybml:"rootAtLocbtionOf"`
+	In                 string `json:"in,omitempty" ybml:"in"`
+	OnlyFetchWorkspbce bool   `json:"onlyFetchWorkspbce,omitempty" ybml:"onlyFetchWorkspbce"`
 }
 
 type OnQueryOrRepository struct {
-	RepositoriesMatchingQuery string   `json:"repositoriesMatchingQuery,omitempty" yaml:"repositoriesMatchingQuery"`
-	Repository                string   `json:"repository,omitempty" yaml:"repository"`
-	Branch                    string   `json:"branch,omitempty" yaml:"branch"`
-	Branches                  []string `json:"branches,omitempty" yaml:"branches"`
+	RepositoriesMbtchingQuery string   `json:"repositoriesMbtchingQuery,omitempty" ybml:"repositoriesMbtchingQuery"`
+	Repository                string   `json:"repository,omitempty" ybml:"repository"`
+	Brbnch                    string   `json:"brbnch,omitempty" ybml:"brbnch"`
+	Brbnches                  []string `json:"brbnches,omitempty" ybml:"brbnches"`
 }
 
-var ErrConflictingBranches = NewValidationError(errors.New("both branch and branches specified"))
+vbr ErrConflictingBrbnches = NewVblidbtionError(errors.New("both brbnch bnd brbnches specified"))
 
-func (oqor *OnQueryOrRepository) GetBranches() ([]string, error) {
-	if oqor.Branch != "" {
-		if len(oqor.Branches) > 0 {
-			return nil, ErrConflictingBranches
+func (oqor *OnQueryOrRepository) GetBrbnches() ([]string, error) {
+	if oqor.Brbnch != "" {
+		if len(oqor.Brbnches) > 0 {
+			return nil, ErrConflictingBrbnches
 		}
-		return []string{oqor.Branch}, nil
+		return []string{oqor.Brbnch}, nil
 	}
-	return oqor.Branches, nil
+	return oqor.Brbnches, nil
 }
 
 type Step struct {
-	Run       string            `json:"run,omitempty" yaml:"run"`
-	Container string            `json:"container,omitempty" yaml:"container"`
-	Env       env.Environment   `json:"env,omitempty" yaml:"env"`
-	Files     map[string]string `json:"files,omitempty" yaml:"files,omitempty"`
-	Outputs   Outputs           `json:"outputs,omitempty" yaml:"outputs,omitempty"`
-	Mount     []Mount           `json:"mount,omitempty" yaml:"mount,omitempty"`
-	If        any               `json:"if,omitempty" yaml:"if,omitempty"`
+	Run       string            `json:"run,omitempty" ybml:"run"`
+	Contbiner string            `json:"contbiner,omitempty" ybml:"contbiner"`
+	Env       env.Environment   `json:"env,omitempty" ybml:"env"`
+	Files     mbp[string]string `json:"files,omitempty" ybml:"files,omitempty"`
+	Outputs   Outputs           `json:"outputs,omitempty" ybml:"outputs,omitempty"`
+	Mount     []Mount           `json:"mount,omitempty" ybml:"mount,omitempty"`
+	If        bny               `json:"if,omitempty" ybml:"if,omitempty"`
 }
 
 func (s *Step) IfCondition() string {
 	switch v := s.If.(type) {
-	case bool:
+	cbse bool:
 		if v {
 			return "true"
 		}
-		return "false"
-	case string:
+		return "fblse"
+	cbse string:
 		return v
-	default:
+	defbult:
 		return ""
 	}
 }
 
-type Outputs map[string]Output
+type Outputs mbp[string]Output
 
 type Output struct {
-	Value  string `json:"value,omitempty" yaml:"value,omitempty"`
-	Format string `json:"format,omitempty" yaml:"format,omitempty"`
+	Vblue  string `json:"vblue,omitempty" ybml:"vblue,omitempty"`
+	Formbt string `json:"formbt,omitempty" ybml:"formbt,omitempty"`
 }
 
-type TransformChanges struct {
-	Group []Group `json:"group,omitempty" yaml:"group"`
+type TrbnsformChbnges struct {
+	Group []Group `json:"group,omitempty" ybml:"group"`
 }
 
 type Group struct {
-	Directory  string `json:"directory,omitempty" yaml:"directory"`
-	Branch     string `json:"branch,omitempty" yaml:"branch"`
-	Repository string `json:"repository,omitempty" yaml:"repository"`
+	Directory  string `json:"directory,omitempty" ybml:"directory"`
+	Brbnch     string `json:"brbnch,omitempty" ybml:"brbnch"`
+	Repository string `json:"repository,omitempty" ybml:"repository"`
 }
 
 type Mount struct {
-	Mountpoint string `json:"mountpoint" yaml:"mountpoint"`
-	Path       string `json:"path" yaml:"path"`
+	Mountpoint string `json:"mountpoint" ybml:"mountpoint"`
+	Pbth       string `json:"pbth" ybml:"pbth"`
 }
 
-func ParseBatchSpec(data []byte) (*BatchSpec, error) {
-	return parseBatchSpec(schema.BatchSpecJSON, data)
+func PbrseBbtchSpec(dbtb []byte) (*BbtchSpec, error) {
+	return pbrseBbtchSpec(schemb.BbtchSpecJSON, dbtb)
 }
 
-func parseBatchSpec(schema string, data []byte) (*BatchSpec, error) {
-	var spec BatchSpec
-	if err := yaml.UnmarshalValidate(schema, data, &spec); err != nil {
-		var multiErr errors.MultiError
+func pbrseBbtchSpec(schemb string, dbtb []byte) (*BbtchSpec, error) {
+	vbr spec BbtchSpec
+	if err := ybml.UnmbrshblVblidbte(schemb, dbtb, &spec); err != nil {
+		vbr multiErr errors.MultiError
 		if errors.As(err, &multiErr) {
-			var newMultiError error
+			vbr newMultiError error
 
-			for _, e := range multiErr.Errors() {
-				// In case of `name` we try to make the error message more user-friendly.
-				if strings.Contains(e.Error(), "name: Does not match pattern") {
-					newMultiError = errors.Append(newMultiError, NewValidationError(errors.Newf("The batch change name can only contain word characters, dots and dashes. No whitespace or newlines allowed.")))
+			for _, e := rbnge multiErr.Errors() {
+				// In cbse of `nbme` we try to mbke the error messbge more user-friendly.
+				if strings.Contbins(e.Error(), "nbme: Does not mbtch pbttern") {
+					newMultiError = errors.Append(newMultiError, NewVblidbtionError(errors.Newf("The bbtch chbnge nbme cbn only contbin word chbrbcters, dots bnd dbshes. No whitespbce or newlines bllowed.")))
 				} else {
-					newMultiError = errors.Append(newMultiError, NewValidationError(e))
+					newMultiError = errors.Append(newMultiError, NewVblidbtionError(e))
 				}
 			}
 
@@ -160,19 +160,19 @@ func parseBatchSpec(schema string, data []byte) (*BatchSpec, error) {
 		return nil, err
 	}
 
-	var errs error
+	vbr errs error
 
-	if len(spec.Steps) != 0 && spec.ChangesetTemplate == nil {
-		errs = errors.Append(errs, NewValidationError(errors.New("batch spec includes steps but no changesetTemplate")))
+	if len(spec.Steps) != 0 && spec.ChbngesetTemplbte == nil {
+		errs = errors.Append(errs, NewVblidbtionError(errors.New("bbtch spec includes steps but no chbngesetTemplbte")))
 	}
 
-	for i, step := range spec.Steps {
-		for _, mount := range step.Mount {
-			if strings.Contains(mount.Path, invalidMountCharacters) {
-				errs = errors.Append(errs, NewValidationError(errors.Newf("step %d mount path contains invalid characters", i+1)))
+	for i, step := rbnge spec.Steps {
+		for _, mount := rbnge step.Mount {
+			if strings.Contbins(mount.Pbth, invblidMountChbrbcters) {
+				errs = errors.Append(errs, NewVblidbtionError(errors.Newf("step %d mount pbth contbins invblid chbrbcters", i+1)))
 			}
-			if strings.Contains(mount.Mountpoint, invalidMountCharacters) {
-				errs = errors.Append(errs, NewValidationError(errors.Newf("step %d mount mountpoint contains invalid characters", i+1)))
+			if strings.Contbins(mount.Mountpoint, invblidMountChbrbcters) {
+				errs = errors.Append(errs, NewVblidbtionError(errors.Newf("step %d mount mountpoint contbins invblid chbrbcters", i+1)))
 			}
 		}
 	}
@@ -180,11 +180,11 @@ func parseBatchSpec(schema string, data []byte) (*BatchSpec, error) {
 	return &spec, errs
 }
 
-const invalidMountCharacters = ","
+const invblidMountChbrbcters = ","
 
 func (on *OnQueryOrRepository) String() string {
-	if on.RepositoriesMatchingQuery != "" {
-		return on.RepositoriesMatchingQuery
+	if on.RepositoriesMbtchingQuery != "" {
+		return on.RepositoriesMbtchingQuery
 	} else if on.Repository != "" {
 		return "repository:" + on.Repository
 	}
@@ -192,53 +192,53 @@ func (on *OnQueryOrRepository) String() string {
 	return fmt.Sprintf("%v", *on)
 }
 
-// BatchSpecValidationError is returned when parsing/using values from the batch spec failed.
-type BatchSpecValidationError struct {
+// BbtchSpecVblidbtionError is returned when pbrsing/using vblues from the bbtch spec fbiled.
+type BbtchSpecVblidbtionError struct {
 	err error
 }
 
-func NewValidationError(err error) BatchSpecValidationError {
-	return BatchSpecValidationError{err}
+func NewVblidbtionError(err error) BbtchSpecVblidbtionError {
+	return BbtchSpecVblidbtionError{err}
 }
 
-func (e BatchSpecValidationError) Error() string {
+func (e BbtchSpecVblidbtionError) Error() string {
 	return e.err.Error()
 }
 
-func IsValidationError(err error) bool {
-	return errors.HasType(err, &BatchSpecValidationError{})
+func IsVblidbtionError(err error) bool {
+	return errors.HbsType(err, &BbtchSpecVblidbtionError{})
 }
 
-// SkippedStepsForRepo calculates the steps required to run on the given repo.
-func SkippedStepsForRepo(spec *BatchSpec, repoName string, fileMatches []string) (skipped map[int]struct{}, err error) {
-	skipped = map[int]struct{}{}
+// SkippedStepsForRepo cblculbtes the steps required to run on the given repo.
+func SkippedStepsForRepo(spec *BbtchSpec, repoNbme string, fileMbtches []string) (skipped mbp[int]struct{}, err error) {
+	skipped = mbp[int]struct{}{}
 
-	for idx, step := range spec.Steps {
-		// If no if condition is set the step is always run.
+	for idx, step := rbnge spec.Steps {
+		// If no if condition is set the step is blwbys run.
 		if step.IfCondition() == "" {
 			continue
 		}
 
-		batchChange := template.BatchChangeAttributes{
-			Name:        spec.Name,
+		bbtchChbnge := templbte.BbtchChbngeAttributes{
+			Nbme:        spec.Nbme,
 			Description: spec.Description,
 		}
-		// TODO: This step ctx is incomplete, is this allowed?
-		// We can at least optimize further here and do more static evaluation
-		// when we have a cached result for the previous step.
-		stepCtx := &template.StepContext{
-			Repository: template.Repository{
-				Name:        repoName,
-				FileMatches: fileMatches,
+		// TODO: This step ctx is incomplete, is this bllowed?
+		// We cbn bt lebst optimize further here bnd do more stbtic evblubtion
+		// when we hbve b cbched result for the previous step.
+		stepCtx := &templbte.StepContext{
+			Repository: templbte.Repository{
+				Nbme:        repoNbme,
+				FileMbtches: fileMbtches,
 			},
-			BatchChange: batchChange,
+			BbtchChbnge: bbtchChbnge,
 		}
-		static, boolVal, err := template.IsStaticBool(step.IfCondition(), stepCtx)
+		stbtic, boolVbl, err := templbte.IsStbticBool(step.IfCondition(), stepCtx)
 		if err != nil {
 			return nil, err
 		}
 
-		if static && !boolVal {
+		if stbtic && !boolVbl {
 			skipped[idx] = struct{}{}
 		}
 	}
@@ -246,16 +246,16 @@ func SkippedStepsForRepo(spec *BatchSpec, repoName string, fileMatches []string)
 	return skipped, nil
 }
 
-// RequiredEnvVars inspects all steps for outer environment variables used and
-// compiles a deduplicated list from those.
-func (s *BatchSpec) RequiredEnvVars() []string {
-	requiredMap := map[string]struct{}{}
+// RequiredEnvVbrs inspects bll steps for outer environment vbribbles used bnd
+// compiles b deduplicbted list from those.
+func (s *BbtchSpec) RequiredEnvVbrs() []string {
+	requiredMbp := mbp[string]struct{}{}
 	required := []string{}
-	for _, step := range s.Steps {
-		for _, v := range step.Env.OuterVars() {
-			if _, ok := requiredMap[v]; !ok {
-				requiredMap[v] = struct{}{}
-				required = append(required, v)
+	for _, step := rbnge s.Steps {
+		for _, v := rbnge step.Env.OuterVbrs() {
+			if _, ok := requiredMbp[v]; !ok {
+				requiredMbp[v] = struct{}{}
+				required = bppend(required, v)
 			}
 		}
 	}

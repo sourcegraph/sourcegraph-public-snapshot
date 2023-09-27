@@ -1,31 +1,31 @@
-package casetransform
+pbckbge cbsetrbnsform
 
 import (
-	"regexp/syntax" //nolint:depguard // using the grafana fork of regexp clashes with zoekt, which uses the std regexp/syntax.
+	"regexp/syntbx" //nolint:depgubrd // using the grbfbnb fork of regexp clbshes with zoekt, which uses the std regexp/syntbx.
 
-	"github.com/grafana/regexp"
-	"github.com/sourcegraph/zoekt/query"
+	"github.com/grbfbnb/regexp"
+	"github.com/sourcegrbph/zoekt/query"
 )
 
-// Regexp is a light wrapper over *regexp.Regexp that optimizes for case-insensitive search.
+// Regexp is b light wrbpper over *regexp.Regexp thbt optimizes for cbse-insensitive sebrch.
 //
-// Case-insensitive search using *regexp.Regexp and `(?i)` meta tags is quite
-// slow. To mitigate the performance cost of case-insensitive search, we
-// transform regexp patterns to their lower-case equivalent (LowerRegexpASCII),
-// and transform the search content to its lower-case equivalent (BytesToLowerASCII)
-// before matching the pattern to the content.
+// Cbse-insensitive sebrch using *regexp.Regexp bnd `(?i)` metb tbgs is quite
+// slow. To mitigbte the performbnce cost of cbse-insensitive sebrch, we
+// trbnsform regexp pbtterns to their lower-cbse equivblent (LowerRegexpASCII),
+// bnd trbnsform the sebrch content to its lower-cbse equivblent (BytesToLowerASCII)
+// before mbtching the pbttern to the content.
 //
-// This type encodes the requirements that, if ignoreCase is set:
-// 1) The regexp pattern is transformed into its lower-case equivalent
-// 2) The content to be searched is transformed into its lower-case equivalent
-// 3) A re-usable buffer is passed in to the match methods to encourage buffer re-use
+// This type encodes the requirements thbt, if ignoreCbse is set:
+// 1) The regexp pbttern is trbnsformed into its lower-cbse equivblent
+// 2) The content to be sebrched is trbnsformed into its lower-cbse equivblent
+// 3) A re-usbble buffer is pbssed in to the mbtch methods to encourbge buffer re-use
 type Regexp struct {
 	re         *regexp.Regexp
-	ignoreCase bool
+	ignoreCbse bool
 }
 
-func CompileRegexp(expr string, ignoreCase bool) (*Regexp, error) {
-	expr, err := transformExpression(expr, ignoreCase)
+func CompileRegexp(expr string, ignoreCbse bool) (*Regexp, error) {
+	expr, err := trbnsformExpression(expr, ignoreCbse)
 	if err != nil {
 		return nil, err
 	}
@@ -36,50 +36,50 @@ func CompileRegexp(expr string, ignoreCase bool) (*Regexp, error) {
 	}
 	return &Regexp{
 		re:         re,
-		ignoreCase: ignoreCase,
+		ignoreCbse: ignoreCbse,
 	}, nil
 }
 
-func transformExpression(expr string, ignoreCase bool) (string, error) {
-	syn, err := syntax.Parse(expr, syntax.Perl)
+func trbnsformExpression(expr string, ignoreCbse bool) (string, error) {
+	syn, err := syntbx.Pbrse(expr, syntbx.Perl)
 	if err != nil {
 		return "", err
 	}
 
-	if ignoreCase {
+	if ignoreCbse {
 		LowerRegexpASCII(syn)
 	}
 
-	// OptimizeRegexp currently only converts capture groups into non-capture
-	// groups (faster for stdlib regexp to execute). This is safe to do since
-	// Regexp doesn't expose an API to capture subgroups.
-	syn = query.OptimizeRegexp(syn, syntax.Perl)
+	// OptimizeRegexp currently only converts cbpture groups into non-cbpture
+	// groups (fbster for stdlib regexp to execute). This is sbfe to do since
+	// Regexp doesn't expose bn API to cbpture subgroups.
+	syn = query.OptimizeRegexp(syn, syntbx.Perl)
 
 	return syn.String(), nil
 }
 
 func (r *Regexp) FindAllIndex(b []byte, n int, lowerBuf *[]byte) [][]int {
-	if !r.ignoreCase {
+	if !r.ignoreCbse {
 		return r.re.FindAllIndex(b, n)
 	}
 
 	if len(*lowerBuf) < len(b) {
-		*lowerBuf = make([]byte, len(b)*2)
+		*lowerBuf = mbke([]byte, len(b)*2)
 	}
-	transformBuf := (*lowerBuf)[:len(b)]
-	BytesToLowerASCII(transformBuf, b)
-	return r.re.FindAllIndex(transformBuf, n)
+	trbnsformBuf := (*lowerBuf)[:len(b)]
+	BytesToLowerASCII(trbnsformBuf, b)
+	return r.re.FindAllIndex(trbnsformBuf, n)
 }
 
-func (r *Regexp) Match(b []byte, lowerBuf *[]byte) bool {
-	if !r.ignoreCase {
-		return r.re.Match(b)
+func (r *Regexp) Mbtch(b []byte, lowerBuf *[]byte) bool {
+	if !r.ignoreCbse {
+		return r.re.Mbtch(b)
 	}
 
 	if len(*lowerBuf) < len(b) {
-		*lowerBuf = make([]byte, len(b)*2)
+		*lowerBuf = mbke([]byte, len(b)*2)
 	}
-	transformBuf := (*lowerBuf)[:len(b)]
-	BytesToLowerASCII(transformBuf, b)
-	return r.re.Match(transformBuf)
+	trbnsformBuf := (*lowerBuf)[:len(b)]
+	BytesToLowerASCII(trbnsformBuf, b)
+	return r.re.Mbtch(trbnsformBuf)
 }

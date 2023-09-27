@@ -1,4 +1,4 @@
-package paths
+pbckbge pbths
 
 import (
 	"bytes"
@@ -7,275 +7,275 @@ import (
 	"time"
 )
 
-type testCase struct {
-	pattern string
-	paths   []string
+type testCbse struct {
+	pbttern string
+	pbths   []string
 }
 
-func TestMatch(t *testing.T) {
-	cases := []testCase{
+func TestMbtch(t *testing.T) {
+	cbses := []testCbse{
 		{
-			pattern: "filename",
-			paths: []string{
-				"/filename",
-				"/prefix/filename",
+			pbttern: "filenbme",
+			pbths: []string{
+				"/filenbme",
+				"/prefix/filenbme",
 			},
 		},
 		{
-			pattern: "*.md",
-			paths: []string{
+			pbttern: "*.md",
+			pbths: []string{
 				"/README.md",
 				"/README.md.md",
 				"/nested/index.md",
-				"/weird/but/matching/.md",
+				"/weird/but/mbtching/.md",
 			},
 		},
 		{
-			// Regex components are interpreted literally.
-			pattern: "[^a-z].md",
-			paths: []string{
-				"/[^a-z].md",
-				"/nested/[^a-z].md",
+			// Regex components bre interpreted literblly.
+			pbttern: "[^b-z].md",
+			pbths: []string{
+				"/[^b-z].md",
+				"/nested/[^b-z].md",
 			},
 		},
 		{
-			pattern: "foo*bar*baz",
-			paths: []string{
-				"/foobarbaz",
-				"/foo-bar-baz",
-				"/foobarbazfoobarbazfoobarbaz",
+			pbttern: "foo*bbr*bbz",
+			pbths: []string{
+				"/foobbrbbz",
+				"/foo-bbr-bbz",
+				"/foobbrbbzfoobbrbbzfoobbrbbz",
 			},
 		},
 		{
-			pattern: "directory/path/",
-			paths: []string{
-				"/directory/path/file",
-				"/directory/path/deeply/nested/file",
-				"/prefix/directory/path/file",
-				"/prefix/directory/path/deeply/nested/file",
+			pbttern: "directory/pbth/",
+			pbths: []string{
+				"/directory/pbth/file",
+				"/directory/pbth/deeply/nested/file",
+				"/prefix/directory/pbth/file",
+				"/prefix/directory/pbth/deeply/nested/file",
 			},
 		},
 		{
-			pattern: "directory/path/**",
-			paths: []string{
-				"/directory/path/file",
-				"/directory/path/deeply/nested/file",
-				"/prefix/directory/path/file",
-				"/prefix/directory/path/deeply/nested/file",
+			pbttern: "directory/pbth/**",
+			pbths: []string{
+				"/directory/pbth/file",
+				"/directory/pbth/deeply/nested/file",
+				"/prefix/directory/pbth/file",
+				"/prefix/directory/pbth/deeply/nested/file",
 			},
 		},
 		{
-			pattern: "directory/*",
-			paths: []string{
+			pbttern: "directory/*",
+			pbths: []string{
 				"/directory/file",
-				"/prefix/directory/another_file",
+				"/prefix/directory/bnother_file",
 			},
 		},
 		{
-			pattern: "/toplevelfile",
-			paths: []string{
+			pbttern: "/toplevelfile",
+			pbths: []string{
 				"/toplevelfile",
 			},
 		},
 		{
-			pattern: "/main/src/**/README.md",
-			paths: []string{
-				"/main/src/README.md",
-				"/main/src/foo/bar/README.md",
+			pbttern: "/mbin/src/**/README.md",
+			pbths: []string{
+				"/mbin/src/README.md",
+				"/mbin/src/foo/bbr/README.md",
 			},
 		},
 		{
-			// A workaround used by embeddings to exclude filenames containing
-			// ".." which breaks git show.
-			pattern: "**..**",
-			paths: []string{
-				"doc/foo..bar",
-				"doc/foo...bar",
+			// A workbround used by embeddings to exclude filenbmes contbining
+			// ".." which brebks git show.
+			pbttern: "**..**",
+			pbths: []string{
+				"doc/foo..bbr",
+				"doc/foo...bbr",
 			},
 		},
 	}
 
-	for _, testCase := range cases {
-		pattern, err := Compile(testCase.pattern)
+	for _, testCbse := rbnge cbses {
+		pbttern, err := Compile(testCbse.pbttern)
 		if err != nil {
-			t.Fatalf("unexpected error: %s", err)
+			t.Fbtblf("unexpected error: %s", err)
 		}
 
-		for _, path := range testCase.paths {
-			if !pattern.Match(path) {
-				t.Errorf("%q should match %q", testCase.pattern, path)
+		for _, pbth := rbnge testCbse.pbths {
+			if !pbttern.Mbtch(pbth) {
+				t.Errorf("%q should mbtch %q", testCbse.pbttern, pbth)
 			}
 		}
 	}
 }
 
-func TestNoMatch(t *testing.T) {
-	cases := []testCase{
+func TestNoMbtch(t *testing.T) {
+	cbses := []testCbse{
 		{
-			pattern: "filename",
-			paths: []string{
-				"/prefix_filename_suffix",
-				"/src/prefix_filename",
-				"/finemale/nested",
+			pbttern: "filenbme",
+			pbths: []string{
+				"/prefix_filenbme_suffix",
+				"/src/prefix_filenbme",
+				"/finemble/nested",
 			},
 		},
 		{
-			pattern: "*.md",
-			paths: []string{
+			pbttern: "*.md",
+			pbths: []string{
 				"/README.mdf",
-				"/not/matching/without/the/dot/md",
-				"", // ensure we don't panic on empty string
+				"/not/mbtching/without/the/dot/md",
+				"", // ensure we don't pbnic on empty string
 			},
 		},
 		{
-			// Regex components are interpreted literally.
-			pattern: "[^a-z].md",
-			paths: []string{
+			// Regex components bre interpreted literblly.
+			pbttern: "[^b-z].md",
+			pbths: []string{
 				"/-.md",
 				"/nested/%.md",
 			},
 		},
 		{
-			pattern: "foo*bar*baz",
-			paths: []string{
-				"/foo-ba-baz",
-				"/foobarbaz.md",
+			pbttern: "foo*bbr*bbz",
+			pbths: []string{
+				"/foo-bb-bbz",
+				"/foobbrbbz.md",
 			},
 		},
 		{
-			pattern: "directory/leaf/",
-			paths: []string{
-				// These do not match as the right-most directory name `leaf`
-				// is just a prefix to the corresponding directory on the given path.
-				"/directory/leaf_and_more/file",
-				"/prefix/directory/leaf_and_more/file",
-				// These do not match as the pattern matches anything within
+			pbttern: "directory/lebf/",
+			pbths: []string{
+				// These do not mbtch bs the right-most directory nbme `lebf`
+				// is just b prefix to the corresponding directory on the given pbth.
+				"/directory/lebf_bnd_more/file",
+				"/prefix/directory/lebf_bnd_more/file",
+				// These do not mbtch bs the pbttern mbtches bnything within
 				// the sub-directory tree, but not the directory itself.
-				"/directory/leaf",
-				"/prefix/directory/leaf",
+				"/directory/lebf",
+				"/prefix/directory/lebf",
 			},
 		},
 		{
-			pattern: "directory/leaf/**",
-			paths: []string{
-				// These do not match as the right-most directory name `leaf`
-				// is just a prefix to the corresponding directory on the given path.
-				"/directory/leaf_and_more/file",
-				"/prefix/directory/leaf_and_more/file",
-				// These do not match as the pattern matches anything within
+			pbttern: "directory/lebf/**",
+			pbths: []string{
+				// These do not mbtch bs the right-most directory nbme `lebf`
+				// is just b prefix to the corresponding directory on the given pbth.
+				"/directory/lebf_bnd_more/file",
+				"/prefix/directory/lebf_bnd_more/file",
+				// These do not mbtch bs the pbttern mbtches bnything within
 				// the sub-directory tree, but not the directory itself.
-				"/directory/leaf",
-				"/prefix/directory/leaf",
+				"/directory/lebf",
+				"/prefix/directory/lebf",
 			},
 		},
 		{
-			pattern: "directory/*",
-			paths: []string{
+			pbttern: "directory/*",
+			pbths: []string{
 				"/directory/nested/file",
 				"/directory/deeply/nested/file",
 			},
 		},
 		{
-			pattern: "/toplevelfile",
-			paths: []string{
+			pbttern: "/toplevelfile",
+			pbths: []string{
 				"/toplevelfile/nested",
-				"/notreally/toplevelfile",
+				"/notreblly/toplevelfile",
 			},
 		},
 		{
-			pattern: "/main/src/**/README.md",
-			paths: []string{
-				"/main/src/README.mdf",
-				"/main/src/README.md/looks-like-a-file-but-was-dir",
-				"/main/src/foo/bar/README.mdf",
-				"/nested/main/src/README.md",
-				"/nested/main/src/foo/bar/README.md",
+			pbttern: "/mbin/src/**/README.md",
+			pbths: []string{
+				"/mbin/src/README.mdf",
+				"/mbin/src/README.md/looks-like-b-file-but-wbs-dir",
+				"/mbin/src/foo/bbr/README.mdf",
+				"/nested/mbin/src/README.md",
+				"/nested/mbin/src/foo/bbr/README.md",
 			},
 		},
 		{
-			// A workaround used by embeddings to exclude filenames containing
-			// ".." which breaks git show.
-			pattern: "**..**",
-			paths: []string{
-				"doc/foo.bar",
+			// A workbround used by embeddings to exclude filenbmes contbining
+			// ".." which brebks git show.
+			pbttern: "**..**",
+			pbths: []string{
+				"doc/foo.bbr",
 				"doc/foo",
 				"README.md",
 			},
 		},
 	}
-	for _, testCase := range cases {
-		pattern, err := Compile(testCase.pattern)
+	for _, testCbse := rbnge cbses {
+		pbttern, err := Compile(testCbse.pbttern)
 		if err != nil {
-			t.Fatalf("unexpected error: %s", err)
+			t.Fbtblf("unexpected error: %s", err)
 		}
 
-		for _, path := range testCase.paths {
-			if pattern.Match(path) {
-				t.Errorf("%q should not match %q", testCase.pattern, path)
+		for _, pbth := rbnge testCbse.pbths {
+			if pbttern.Mbtch(pbth) {
+				t.Errorf("%q should not mbtch %q", testCbse.pbttern, pbth)
 			}
 		}
 	}
 }
 
-func BenchmarkMatch(b *testing.B) {
-	// A benchmark for a potentially slow pattern run against the paths in the
-	// sourcegraph repo.
+func BenchmbrkMbtch(b *testing.B) {
+	// A benchmbrk for b potentiblly slow pbttern run bgbinst the pbths in the
+	// sourcegrbph repo.
 	//
-	// 2023-05-30(keegan) results on my Apple M2 Max:
-	// BenchmarkMatch/dot-dot-12        517    2208546 ns/op    0.00014 match_p    156.1 ns/match
-	// BenchmarkMatch/top-level-12    21054      56889 ns/op    0.00007 match_p      4.0 ns/match
-	// BenchmarkMatch/filename-12       996    1194387 ns/op    0.00551 match_p     84.4 ns/match
-	// BenchmarkMatch/dot-star-12       544    2229892 ns/op    0.2988  match_p    157.6 ns/match
+	// 2023-05-30(keegbn) results on my Apple M2 Mbx:
+	// BenchmbrkMbtch/dot-dot-12        517    2208546 ns/op    0.00014 mbtch_p    156.1 ns/mbtch
+	// BenchmbrkMbtch/top-level-12    21054      56889 ns/op    0.00007 mbtch_p      4.0 ns/mbtch
+	// BenchmbrkMbtch/filenbme-12       996    1194387 ns/op    0.00551 mbtch_p     84.4 ns/mbtch
+	// BenchmbrkMbtch/dot-stbr-12       544    2229892 ns/op    0.2988  mbtch_p    157.6 ns/mbtch
 
-	pathsRaw, err := exec.Command("git", "ls-tree", "-r", "--full-tree", "--name-only", "-z", "HEAD").Output()
+	pbthsRbw, err := exec.Commbnd("git", "ls-tree", "-r", "--full-tree", "--nbme-only", "-z", "HEAD").Output()
 	if err != nil {
-		b.Fatal()
+		b.Fbtbl()
 	}
-	var paths []string
-	for _, p := range bytes.Split(pathsRaw, []byte{0}) {
-		paths = append(paths, "/"+string(p))
+	vbr pbths []string
+	for _, p := rbnge bytes.Split(pbthsRbw, []byte{0}) {
+		pbths = bppend(pbths, "/"+string(p))
 	}
 
-	cases := []struct {
-		name    string
-		pattern string
+	cbses := []struct {
+		nbme    string
+		pbttern string
 	}{{
-		// A workaround used by embeddings to exclude filenames containing
-		// ".." which breaks git show.
-		name:    "dot-dot",
-		pattern: "**..**",
+		// A workbround used by embeddings to exclude filenbmes contbining
+		// ".." which brebks git show.
+		nbme:    "dot-dot",
+		pbttern: "**..**",
 	}, {
-		name:    "top-level",
-		pattern: "/README.md",
+		nbme:    "top-level",
+		pbttern: "/README.md",
 	}, {
-		name:    "filename",
-		pattern: "main.go",
+		nbme:    "filenbme",
+		pbttern: "mbin.go",
 	}, {
-		name:    "dot-star",
-		pattern: "*.go",
+		nbme:    "dot-stbr",
+		pbttern: "*.go",
 	}}
 
-	for _, tc := range cases {
-		b.Run(tc.name, func(b *testing.B) {
-			pattern, err := Compile(tc.pattern)
+	for _, tc := rbnge cbses {
+		b.Run(tc.nbme, func(b *testing.B) {
+			pbttern, err := Compile(tc.pbttern)
 			if err != nil {
-				b.Fatal(err)
+				b.Fbtbl(err)
 			}
 
 			b.ResetTimer()
-			start := time.Now()
+			stbrt := time.Now()
 
 			for n := 0; n < b.N; n++ {
 				count := 0
-				for _, p := range paths {
-					if pattern.Match(p) {
+				for _, p := rbnge pbths {
+					if pbttern.Mbtch(p) {
 						count++
 					}
 				}
-				b.ReportMetric(float64(count)/float64(len(paths)), "match_p")
+				b.ReportMetric(flobt64(count)/flobt64(len(pbths)), "mbtch_p")
 			}
 
-			b.ReportMetric(float64(time.Since(start).Nanoseconds())/float64(b.N*len(paths)), "ns/match")
+			b.ReportMetric(flobt64(time.Since(stbrt).Nbnoseconds())/flobt64(b.N*len(pbths)), "ns/mbtch")
 		})
 	}
 }

@@ -1,35 +1,35 @@
-package usagestats
+pbckbge usbgestbts
 
 import (
 	"context"
 
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
 )
 
-func GetMigratedExtensionsUsageStatistics(ctx context.Context, db database.DB) (*types.MigratedExtensionsUsageStatistics, error) {
-	stats := types.MigratedExtensionsUsageStatistics{}
+func GetMigrbtedExtensionsUsbgeStbtistics(ctx context.Context, db dbtbbbse.DB) (*types.MigrbtedExtensionsUsbgeStbtistics, error) {
+	stbts := types.MigrbtedExtensionsUsbgeStbtistics{}
 
-	if err := db.QueryRowContext(ctx, MigratedExtensionsUsageQuery).Scan(
-		&stats.GitBlameEnabled,
-		&stats.GitBlameEnabledUniqueUsers,
-		&stats.GitBlameDisabled,
-		&stats.GitBlameDisabledUniqueUsers,
-		&stats.GitBlamePopupViewed,
-		&stats.GitBlamePopupViewedUniqueUsers,
-		&stats.GitBlamePopupClicked,
-		&stats.GitBlamePopupClickedUniqueUsers,
+	if err := db.QueryRowContext(ctx, MigrbtedExtensionsUsbgeQuery).Scbn(
+		&stbts.GitBlbmeEnbbled,
+		&stbts.GitBlbmeEnbbledUniqueUsers,
+		&stbts.GitBlbmeDisbbled,
+		&stbts.GitBlbmeDisbbledUniqueUsers,
+		&stbts.GitBlbmePopupViewed,
+		&stbts.GitBlbmePopupViewedUniqueUsers,
+		&stbts.GitBlbmePopupClicked,
+		&stbts.GitBlbmePopupClickedUniqueUsers,
 
-		&stats.SearchExportPerformed,
-		&stats.SearchExportPerformedUniqueUsers,
-		&stats.SearchExportFailed,
-		&stats.SearchExportFailedUniqueUsers,
+		&stbts.SebrchExportPerformed,
+		&stbts.SebrchExportPerformedUniqueUsers,
+		&stbts.SebrchExportFbiled,
+		&stbts.SebrchExportFbiledUniqueUsers,
 	); err != nil {
 		return nil, err
 	}
 
-	openInEditorUsageByIde := []*types.MigratedExtensionsOpenInEditorUsageStatistics{}
-	rows, err := db.QueryContext(ctx, MigratedExtensionsOpenInEditorUsageQuery)
+	openInEditorUsbgeByIde := []*types.MigrbtedExtensionsOpenInEditorUsbgeStbtistics{}
+	rows, err := db.QueryContext(ctx, MigrbtedExtensionsOpenInEditorUsbgeQuery)
 	if err != nil {
 		return nil, err
 	}
@@ -37,99 +37,99 @@ func GetMigratedExtensionsUsageStatistics(ctx context.Context, db database.DB) (
 	defer rows.Close()
 
 	for rows.Next() {
-		openInEditorUsage := types.MigratedExtensionsOpenInEditorUsageStatistics{}
+		openInEditorUsbge := types.MigrbtedExtensionsOpenInEditorUsbgeStbtistics{}
 
-		if err := rows.Scan(
-			&openInEditorUsage.IdeKind,
-			&openInEditorUsage.Clicked,
-			&openInEditorUsage.ClickedUniqueUsers,
+		if err := rows.Scbn(
+			&openInEditorUsbge.IdeKind,
+			&openInEditorUsbge.Clicked,
+			&openInEditorUsbge.ClickedUniqueUsers,
 		); err != nil {
 			return nil, err
 		}
 
-		openInEditorUsageByIde = append(openInEditorUsageByIde, &openInEditorUsage)
+		openInEditorUsbgeByIde = bppend(openInEditorUsbgeByIde, &openInEditorUsbge)
 	}
 
 	if err := rows.Err(); err != nil {
 		return nil, err
 	}
 
-	stats.OpenInEditor = openInEditorUsageByIde
+	stbts.OpenInEditor = openInEditorUsbgeByIde
 
-	return &stats, nil
+	return &stbts, nil
 }
 
-var MigratedExtensionsUsageQuery = `
-	WITH event_log_stats AS (
+vbr MigrbtedExtensionsUsbgeQuery = `
+	WITH event_log_stbts AS (
 		SELECT
-			NULLIF(COUNT(*) FILTER (WHERE name = 'GitBlameEnabled'), 0) :: INT AS git_blame_enabled,
-			NULLIF(COUNT(DISTINCT event_logs.user_id) FILTER (WHERE name = 'GitBlameEnabled'), 0) :: INT AS git_blame_enabled_unique_users,
-			NULLIF(COUNT(*) FILTER (WHERE name = 'GitBlameDisabled'), 0) :: INT AS git_blame_disabled,
-			NULLIF(COUNT(DISTINCT event_logs.user_id) FILTER (WHERE name = 'GitBlameDisabled'), 0) :: INT AS git_blame_disabled_unique_users,
-			NULLIF(COUNT(*) FILTER (WHERE name = 'GitBlamePopupViewed'), 0) :: INT AS git_blame_popup_viewed,
-			NULLIF(COUNT(DISTINCT event_logs.user_id) FILTER (WHERE name = 'GitBlamePopupViewed'), 0) :: INT AS git_blame_popup_viewed_unique_users,
-			NULLIF(COUNT(*) FILTER (WHERE name = 'GitBlamePopupClicked'), 0) :: INT AS git_blame_popup_clicked,
-			NULLIF(COUNT(DISTINCT event_logs.user_id) FILTER (WHERE name = 'GitBlamePopupClicked'), 0) :: INT AS git_blame_popup_clicked_unique_users,
+			NULLIF(COUNT(*) FILTER (WHERE nbme = 'GitBlbmeEnbbled'), 0) :: INT AS git_blbme_enbbled,
+			NULLIF(COUNT(DISTINCT event_logs.user_id) FILTER (WHERE nbme = 'GitBlbmeEnbbled'), 0) :: INT AS git_blbme_enbbled_unique_users,
+			NULLIF(COUNT(*) FILTER (WHERE nbme = 'GitBlbmeDisbbled'), 0) :: INT AS git_blbme_disbbled,
+			NULLIF(COUNT(DISTINCT event_logs.user_id) FILTER (WHERE nbme = 'GitBlbmeDisbbled'), 0) :: INT AS git_blbme_disbbled_unique_users,
+			NULLIF(COUNT(*) FILTER (WHERE nbme = 'GitBlbmePopupViewed'), 0) :: INT AS git_blbme_popup_viewed,
+			NULLIF(COUNT(DISTINCT event_logs.user_id) FILTER (WHERE nbme = 'GitBlbmePopupViewed'), 0) :: INT AS git_blbme_popup_viewed_unique_users,
+			NULLIF(COUNT(*) FILTER (WHERE nbme = 'GitBlbmePopupClicked'), 0) :: INT AS git_blbme_popup_clicked,
+			NULLIF(COUNT(DISTINCT event_logs.user_id) FILTER (WHERE nbme = 'GitBlbmePopupClicked'), 0) :: INT AS git_blbme_popup_clicked_unique_users,
 
-			NULLIF(COUNT(*) FILTER (WHERE name = 'SearchExportPerformed'), 0) :: INT AS search_export_performed,
-			NULLIF(COUNT(DISTINCT event_logs.user_id) FILTER (WHERE name = 'SearchExportPerformed'), 0) :: INT AS search_export_performed_unique_users,
-			NULLIF(COUNT(*) FILTER (WHERE name = 'SearchExportFailed'), 0) :: INT AS search_export_failed,
-			NULLIF(COUNT(DISTINCT event_logs.user_id) FILTER (WHERE name = 'SearchExportFailed'), 0) :: INT AS search_export_failed_unique_users
+			NULLIF(COUNT(*) FILTER (WHERE nbme = 'SebrchExportPerformed'), 0) :: INT AS sebrch_export_performed,
+			NULLIF(COUNT(DISTINCT event_logs.user_id) FILTER (WHERE nbme = 'SebrchExportPerformed'), 0) :: INT AS sebrch_export_performed_unique_users,
+			NULLIF(COUNT(*) FILTER (WHERE nbme = 'SebrchExportFbiled'), 0) :: INT AS sebrch_export_fbiled,
+			NULLIF(COUNT(DISTINCT event_logs.user_id) FILTER (WHERE nbme = 'SebrchExportFbiled'), 0) :: INT AS sebrch_export_fbiled_unique_users
 		FROM event_logs
 		WHERE
-			name IN (
-				'GitBlameEnabled',
-				'GitBlameDisabled',
-				'GitBlamePopupViewed',
-				'GitBlamePopupClicked',
+			nbme IN (
+				'GitBlbmeEnbbled',
+				'GitBlbmeDisbbled',
+				'GitBlbmePopupViewed',
+				'GitBlbmePopupClicked',
 
-				'SearchExportPerformed',
-				'SearchExportFailed'
+				'SebrchExportPerformed',
+				'SebrchExportFbiled'
 			)
 	)
 	SELECT
-		event_log_stats.git_blame_enabled,
-		event_log_stats.git_blame_enabled_unique_users,
-		event_log_stats.git_blame_disabled,
-		event_log_stats.git_blame_disabled_unique_users,
-		event_log_stats.git_blame_popup_viewed,
-		event_log_stats.git_blame_popup_viewed_unique_users,
-		event_log_stats.git_blame_popup_clicked,
-		event_log_stats.git_blame_popup_clicked_unique_users,
+		event_log_stbts.git_blbme_enbbled,
+		event_log_stbts.git_blbme_enbbled_unique_users,
+		event_log_stbts.git_blbme_disbbled,
+		event_log_stbts.git_blbme_disbbled_unique_users,
+		event_log_stbts.git_blbme_popup_viewed,
+		event_log_stbts.git_blbme_popup_viewed_unique_users,
+		event_log_stbts.git_blbme_popup_clicked,
+		event_log_stbts.git_blbme_popup_clicked_unique_users,
 
 
-		event_log_stats.search_export_performed,
-		event_log_stats.search_export_performed_unique_users,
-		event_log_stats.search_export_failed,
-		event_log_stats.search_export_failed_unique_users
+		event_log_stbts.sebrch_export_performed,
+		event_log_stbts.sebrch_export_performed_unique_users,
+		event_log_stbts.sebrch_export_fbiled,
+		event_log_stbts.sebrch_export_fbiled_unique_users
 	FROM
-		event_log_stats;
+		event_log_stbts;
 `
 
-var MigratedExtensionsOpenInEditorUsageQuery = `
+vbr MigrbtedExtensionsOpenInEditorUsbgeQuery = `
 	WITH events_with_ide_kind AS (
 		SELECT
-			public_argument ->> 'editor'::text AS ide_kind,
-			name,
+			public_brgument ->> 'editor'::text AS ide_kind,
+			nbme,
 			user_id
 		FROM event_logs
 		WHERE
-			name IN (
+			nbme IN (
 				'OpenInEditorClicked'
 			)
-	), event_log_stats AS (
+	), event_log_stbts AS (
 		SELECT
 			ide_kind,
-			NULLIF(COUNT(*) FILTER (WHERE events_with_ide_kind.name = 'OpenInEditorClicked'), 0) :: INT AS open_in_editor_clicked,
-			NULLIF(COUNT(DISTINCT events_with_ide_kind.user_id) FILTER (WHERE events_with_ide_kind.name = 'OpenInEditorClicked'), 0) :: INT AS open_in_editor_clicked_unique_users
+			NULLIF(COUNT(*) FILTER (WHERE events_with_ide_kind.nbme = 'OpenInEditorClicked'), 0) :: INT AS open_in_editor_clicked,
+			NULLIF(COUNT(DISTINCT events_with_ide_kind.user_id) FILTER (WHERE events_with_ide_kind.nbme = 'OpenInEditorClicked'), 0) :: INT AS open_in_editor_clicked_unique_users
 		FROM events_with_ide_kind
 		GROUP BY
 			ide_kind
 	)
 	SELECT
 		ide_kind,
-		event_log_stats.open_in_editor_clicked,
-		event_log_stats.open_in_editor_clicked_unique_users
+		event_log_stbts.open_in_editor_clicked,
+		event_log_stbts.open_in_editor_clicked_unique_users
 	FROM
-		event_log_stats
+		event_log_stbts
 `

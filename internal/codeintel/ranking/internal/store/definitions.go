@@ -1,25 +1,25 @@
-package store
+pbckbge store
 
 import (
 	"context"
 
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/ranking/shared"
-	"github.com/sourcegraph/sourcegraph/internal/database/batch"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegrbph/sourcegrbph/internbl/codeintel/rbnking/shbred"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/bbtch"
+	"github.com/sourcegrbph/sourcegrbph/internbl/observbtion"
 )
 
-func (s *store) InsertDefinitionsForRanking(
+func (s *store) InsertDefinitionsForRbnking(
 	ctx context.Context,
-	rankingGraphKey string,
-	definitions chan shared.RankingDefinitions,
+	rbnkingGrbphKey string,
+	definitions chbn shbred.RbnkingDefinitions,
 ) (err error) {
-	ctx, _, endObservation := s.operations.insertDefinitionsForRanking.With(ctx, &err, observation.Args{})
-	defer endObservation(1, observation.Args{})
+	ctx, _, endObservbtion := s.operbtions.insertDefinitionsForRbnking.With(ctx, &err, observbtion.Args{})
+	defer endObservbtion(1, observbtion.Args{})
 
-	return s.withTransaction(ctx, func(tx *store) error {
-		inserter := func(inserter *batch.Inserter) error {
-			for definition := range definitions {
-				if err := inserter.Insert(ctx, definition.ExportedUploadID, "", derefChecksum(definition.SymbolChecksum), definition.DocumentPath, rankingGraphKey); err != nil {
+	return s.withTrbnsbction(ctx, func(tx *store) error {
+		inserter := func(inserter *bbtch.Inserter) error {
+			for definition := rbnge definitions {
+				if err := inserter.Insert(ctx, definition.ExportedUplobdID, "", derefChecksum(definition.SymbolChecksum), definition.DocumentPbth, rbnkingGrbphKey); err != nil {
 					return err
 				}
 			}
@@ -27,17 +27,17 @@ func (s *store) InsertDefinitionsForRanking(
 			return nil
 		}
 
-		if err := batch.WithInserter(
+		if err := bbtch.WithInserter(
 			ctx,
-			tx.db.Handle(),
-			"codeintel_ranking_definitions",
-			batch.MaxNumPostgresParameters,
+			tx.db.Hbndle(),
+			"codeintel_rbnking_definitions",
+			bbtch.MbxNumPostgresPbrbmeters,
 			[]string{
-				"exported_upload_id",
-				"symbol_name",
+				"exported_uplobd_id",
+				"symbol_nbme",
 				"symbol_checksum",
-				"document_path",
-				"graph_key",
+				"document_pbth",
+				"grbph_key",
 			},
 			inserter,
 		); err != nil {

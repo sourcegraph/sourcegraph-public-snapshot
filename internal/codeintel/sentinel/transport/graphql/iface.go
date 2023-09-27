@@ -1,18 +1,18 @@
-package graphql
+pbckbge grbphql
 
 import (
 	"context"
 
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/sentinel/shared"
+	"github.com/sourcegrbph/sourcegrbph/internbl/codeintel/sentinel/shbred"
 )
 
-type SentinelService interface {
-	GetVulnerabilities(ctx context.Context, args shared.GetVulnerabilitiesArgs) ([]shared.Vulnerability, int, error)
-	GetVulnerabilitiesByIDs(ctx context.Context, ids ...int) ([]shared.Vulnerability, error)
-	VulnerabilityByID(ctx context.Context, id int) (shared.Vulnerability, bool, error)
+type SentinelService interfbce {
+	GetVulnerbbilities(ctx context.Context, brgs shbred.GetVulnerbbilitiesArgs) ([]shbred.Vulnerbbility, int, error)
+	GetVulnerbbilitiesByIDs(ctx context.Context, ids ...int) ([]shbred.Vulnerbbility, error)
+	VulnerbbilityByID(ctx context.Context, id int) (shbred.Vulnerbbility, bool, error)
 
-	GetVulnerabilityMatches(ctx context.Context, args shared.GetVulnerabilityMatchesArgs) ([]shared.VulnerabilityMatch, int, error)
-	VulnerabilityMatchByID(ctx context.Context, id int) (shared.VulnerabilityMatch, bool, error)
-	GetVulnerabilityMatchesSummaryCounts(ctx context.Context) (shared.GetVulnerabilityMatchesSummaryCounts, error)
-	GetVulnerabilityMatchesCountByRepository(ctx context.Context, args shared.GetVulnerabilityMatchesCountByRepositoryArgs) (_ []shared.VulnerabilityMatchesByRepository, _ int, err error)
+	GetVulnerbbilityMbtches(ctx context.Context, brgs shbred.GetVulnerbbilityMbtchesArgs) ([]shbred.VulnerbbilityMbtch, int, error)
+	VulnerbbilityMbtchByID(ctx context.Context, id int) (shbred.VulnerbbilityMbtch, bool, error)
+	GetVulnerbbilityMbtchesSummbryCounts(ctx context.Context) (shbred.GetVulnerbbilityMbtchesSummbryCounts, error)
+	GetVulnerbbilityMbtchesCountByRepository(ctx context.Context, brgs shbred.GetVulnerbbilityMbtchesCountByRepositoryArgs) (_ []shbred.VulnerbbilityMbtchesByRepository, _ int, err error)
 }

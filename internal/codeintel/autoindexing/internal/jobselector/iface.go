@@ -1,12 +1,12 @@
-package jobselector
+pbckbge jobselector
 
 import (
 	"context"
 
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing/shared"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi"
+	"github.com/sourcegrbph/sourcegrbph/internbl/codeintel/butoindexing/shbred"
 )
 
-type InferenceService interface {
-	InferIndexJobs(ctx context.Context, repo api.RepoName, commit, overrideScript string) (*shared.InferenceResult, error)
+type InferenceService interfbce {
+	InferIndexJobs(ctx context.Context, repo bpi.RepoNbme, commit, overrideScript string) (*shbred.InferenceResult, error)
 }

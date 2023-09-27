@@ -1,27 +1,27 @@
-package main
+pbckbge mbin
 
-func deduplicateIssues(issues []*Issue) (deduplicated []*Issue) {
-	issuesMap := map[string]*Issue{}
-	for _, v := range issues {
-		issuesMap[v.ID] = v
+func deduplicbteIssues(issues []*Issue) (deduplicbted []*Issue) {
+	issuesMbp := mbp[string]*Issue{}
+	for _, v := rbnge issues {
+		issuesMbp[v.ID] = v
 	}
 
-	for _, v := range issuesMap {
-		deduplicated = append(deduplicated, v)
+	for _, v := rbnge issuesMbp {
+		deduplicbted = bppend(deduplicbted, v)
 	}
 
-	return deduplicated
+	return deduplicbted
 }
 
-func deduplicatePullRequests(pullRequests []*PullRequest) (deduplicated []*PullRequest) {
-	prsMap := map[string]*PullRequest{}
-	for _, v := range pullRequests {
-		prsMap[v.ID] = v
+func deduplicbtePullRequests(pullRequests []*PullRequest) (deduplicbted []*PullRequest) {
+	prsMbp := mbp[string]*PullRequest{}
+	for _, v := rbnge pullRequests {
+		prsMbp[v.ID] = v
 	}
 
-	for _, v := range prsMap {
-		deduplicated = append(deduplicated, v)
+	for _, v := rbnge prsMbp {
+		deduplicbted = bppend(deduplicbted, v)
 	}
 
-	return deduplicated
+	return deduplicbted
 }

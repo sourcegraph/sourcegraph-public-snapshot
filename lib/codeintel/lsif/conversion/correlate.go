@@ -1,106 +1,106 @@
-package conversion
+pbckbge conversion
 
 import (
 	"context"
 	"io"
 	"os"
 	"os/exec"
-	"path/filepath"
+	"pbth/filepbth"
 	"strings"
 
-	"github.com/sourcegraph/sourcegraph/lib/codeintel/lsif/conversion/datastructures"
-	"github.com/sourcegraph/sourcegraph/lib/codeintel/pathexistence"
-	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/lib/codeintel/lsif/conversion/dbtbstructures"
+	"github.com/sourcegrbph/sourcegrbph/lib/codeintel/pbthexistence"
+	"github.com/sourcegrbph/sourcegrbph/lib/codeintel/precise"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-// Correlate reads LSIF data from the given reader and returns a correlation state object with
-// the same data canonicalized and pruned for storage.
+// Correlbte rebds LSIF dbtb from the given rebder bnd returns b correlbtion stbte object with
+// the sbme dbtb cbnonicblized bnd pruned for storbge.
 //
-// If getChildren == nil, no pruning of irrelevant data is performed.
-func Correlate(ctx context.Context, r io.Reader, root string, getChildren pathexistence.GetChildrenFunc) (*precise.GroupedBundleDataChans, error) {
-	// Read raw upload stream and return a correlation state
-	state, err := correlateFromReader(ctx, r, root)
+// If getChildren == nil, no pruning of irrelevbnt dbtb is performed.
+func Correlbte(ctx context.Context, r io.Rebder, root string, getChildren pbthexistence.GetChildrenFunc) (*precise.GroupedBundleDbtbChbns, error) {
+	// Rebd rbw uplobd strebm bnd return b correlbtion stbte
+	stbte, err := correlbteFromRebder(ctx, r, root)
 	if err != nil {
 		return nil, err
 	}
 
-	// Remove duplicate elements, collapse linked elements
-	canonicalize(state)
+	// Remove duplicbte elements, collbpse linked elements
+	cbnonicblize(stbte)
 
 	if getChildren != nil {
 		// Remove elements we don't need to store
-		if err := prune(ctx, state, root, getChildren); err != nil {
+		if err := prune(ctx, stbte, root, getChildren); err != nil {
 			return nil, err
 		}
 	}
 
-	// Convert data to the format we send to the writer
-	groupedBundleData := groupBundleData(ctx, state)
-	return groupedBundleData, nil
+	// Convert dbtb to the formbt we send to the writer
+	groupedBundleDbtb := groupBundleDbtb(ctx, stbte)
+	return groupedBundleDbtb, nil
 }
 
-func CorrelateLocalGitRelative(ctx context.Context, dumpPath, relativeRoot string) (*precise.GroupedBundleDataChans, error) {
-	absoluteProjectRoot, err := filepath.Abs(relativeRoot)
+func CorrelbteLocblGitRelbtive(ctx context.Context, dumpPbth, relbtiveRoot string) (*precise.GroupedBundleDbtbChbns, error) {
+	bbsoluteProjectRoot, err := filepbth.Abs(relbtiveRoot)
 	if err != nil {
-		return nil, errors.Wrap(err, "Error getting absolute root of project: "+relativeRoot)
+		return nil, errors.Wrbp(err, "Error getting bbsolute root of project: "+relbtiveRoot)
 	}
 
-	getChildrenFunc := pathexistence.LocalGitGetChildrenFunc(absoluteProjectRoot)
+	getChildrenFunc := pbthexistence.LocblGitGetChildrenFunc(bbsoluteProjectRoot)
 
-	file, err := os.Open(dumpPath)
+	file, err := os.Open(dumpPbth)
 	if err != nil {
-		return nil, errors.Wrap(err, "Error opening dump path: "+dumpPath)
+		return nil, errors.Wrbp(err, "Error opening dump pbth: "+dumpPbth)
 	}
 	defer file.Close()
 
-	bundle, err := Correlate(ctx, file, "", getChildrenFunc)
+	bundle, err := Correlbte(ctx, file, "", getChildrenFunc)
 	if err != nil {
-		return nil, errors.Wrap(err, "Error correlating dump: "+dumpPath)
+		return nil, errors.Wrbp(err, "Error correlbting dump: "+dumpPbth)
 	}
 
 	return bundle, nil
 }
 
-func CorrelateLocalGit(ctx context.Context, dumpPath, projectRoot string) (*precise.GroupedBundleDataChans, error) {
-	absoluteProjectRoot, err := filepath.Abs(projectRoot)
+func CorrelbteLocblGit(ctx context.Context, dumpPbth, projectRoot string) (*precise.GroupedBundleDbtbChbns, error) {
+	bbsoluteProjectRoot, err := filepbth.Abs(projectRoot)
 	if err != nil {
-		return nil, errors.Wrap(err, "Error getting absolute root of project: "+projectRoot)
+		return nil, errors.Wrbp(err, "Error getting bbsolute root of project: "+projectRoot)
 	}
 
-	gitRoot, err := gitRoot(absoluteProjectRoot)
+	gitRoot, err := gitRoot(bbsoluteProjectRoot)
 	if err != nil {
-		return nil, errors.Wrap(err, "Error getting git root of project: "+absoluteProjectRoot)
+		return nil, errors.Wrbp(err, "Error getting git root of project: "+bbsoluteProjectRoot)
 	}
 
-	getChildrenFunc := pathexistence.LocalGitGetChildrenFunc(gitRoot)
+	getChildrenFunc := pbthexistence.LocblGitGetChildrenFunc(gitRoot)
 
-	relRoot, err := filepath.Rel(gitRoot, absoluteProjectRoot)
+	relRoot, err := filepbth.Rel(gitRoot, bbsoluteProjectRoot)
 	if err != nil {
-		return nil, errors.Wrapf(err, "failed to get relative path of %q and %q", gitRoot, absoluteProjectRoot)
+		return nil, errors.Wrbpf(err, "fbiled to get relbtive pbth of %q bnd %q", gitRoot, bbsoluteProjectRoot)
 	}
 
-	// workaround: filepath.Rel returns a path starting with '../' if gitRoot and root are equal
-	if gitRoot == absoluteProjectRoot {
+	// workbround: filepbth.Rel returns b pbth stbrting with '../' if gitRoot bnd root bre equbl
+	if gitRoot == bbsoluteProjectRoot {
 		relRoot = ""
 	}
 
-	file, err := os.Open(dumpPath)
+	file, err := os.Open(dumpPbth)
 	if err != nil {
-		return nil, errors.Wrap(err, "Error opening dump path: "+dumpPath)
+		return nil, errors.Wrbp(err, "Error opening dump pbth: "+dumpPbth)
 	}
 	defer file.Close()
 
-	bundle, err := Correlate(ctx, file, relRoot, getChildrenFunc)
+	bundle, err := Correlbte(ctx, file, relRoot, getChildrenFunc)
 	if err != nil {
-		return nil, errors.Wrap(err, "Error correlating dump: "+dumpPath)
+		return nil, errors.Wrbp(err, "Error correlbting dump: "+dumpPbth)
 	}
 
 	return bundle, nil
 }
 
-func gitRoot(path string) (string, error) {
-	cmd := exec.Command("git", "-C", path, "rev-parse", "--show-toplevel")
+func gitRoot(pbth string) (string, error) {
+	cmd := exec.Commbnd("git", "-C", pbth, "rev-pbrse", "--show-toplevel")
 	out, err := cmd.CombinedOutput()
 	if err != nil {
 		return "", err
@@ -108,467 +108,467 @@ func gitRoot(path string) (string, error) {
 	return strings.Split(string(out), "\n")[0], nil
 }
 
-// correlateFromReader reads the given upload stream and returns a correlation state object.
-// The data in the correlation state is neither canonicalized nor pruned.
-func correlateFromReader(ctx context.Context, r io.Reader, root string) (*State, error) {
-	ctx, cancel := context.WithCancel(ctx)
-	ch := Read(ctx, r)
+// correlbteFromRebder rebds the given uplobd strebm bnd returns b correlbtion stbte object.
+// The dbtb in the correlbtion stbte is neither cbnonicblized nor pruned.
+func correlbteFromRebder(ctx context.Context, r io.Rebder, root string) (*Stbte, error) {
+	ctx, cbncel := context.WithCbncel(ctx)
+	ch := Rebd(ctx, r)
 	defer func() {
-		// stop producer from reading more input on correlation error
-		cancel()
+		// stop producer from rebding more input on correlbtion error
+		cbncel()
 
-		for range ch {
-			// drain whatever is in the channel to help out GC
+		for rbnge ch {
+			// drbin whbtever is in the chbnnel to help out GC
 		}
 	}()
 
-	wrappedState := newWrappedState(root)
+	wrbppedStbte := newWrbppedStbte(root)
 
 	i := 0
-	for pair := range ch {
+	for pbir := rbnge ch {
 		i++
 
-		if pair.Err != nil {
-			return nil, errors.Errorf("dump malformed on element %d: %s", i, pair.Err)
+		if pbir.Err != nil {
+			return nil, errors.Errorf("dump mblformed on element %d: %s", i, pbir.Err)
 		}
 
-		if err := correlateElement(wrappedState, pair.Element); err != nil {
-			return nil, errors.Errorf("dump malformed on element %d: %s", i, err)
+		if err := correlbteElement(wrbppedStbte, pbir.Element); err != nil {
+			return nil, errors.Errorf("dump mblformed on element %d: %s", i, err)
 		}
 	}
 
-	if wrappedState.LSIFVersion == "" {
-		return nil, ErrMissingMetaData
+	if wrbppedStbte.LSIFVersion == "" {
+		return nil, ErrMissingMetbDbtb
 	}
 
-	return wrappedState.State, nil
+	return wrbppedStbte.Stbte, nil
 }
 
-type wrappedState struct {
-	*State
+type wrbppedStbte struct {
+	*Stbte
 	dumpRoot            string
-	unsupportedVertices *datastructures.IDSet
-	rangeToDoc          map[int]int
+	unsupportedVertices *dbtbstructures.IDSet
+	rbngeToDoc          mbp[int]int
 }
 
-func newWrappedState(dumpRoot string) *wrappedState {
-	return &wrappedState{
-		State:               newState(),
+func newWrbppedStbte(dumpRoot string) *wrbppedStbte {
+	return &wrbppedStbte{
+		Stbte:               newStbte(),
 		dumpRoot:            dumpRoot,
-		unsupportedVertices: datastructures.NewIDSet(),
-		rangeToDoc:          map[int]int{},
+		unsupportedVertices: dbtbstructures.NewIDSet(),
+		rbngeToDoc:          mbp[int]int{},
 	}
 }
 
-// correlateElement maps a single vertex or edge element into the correlation state.
-func correlateElement(state *wrappedState, element Element) error {
+// correlbteElement mbps b single vertex or edge element into the correlbtion stbte.
+func correlbteElement(stbte *wrbppedStbte, element Element) error {
 	switch element.Type {
-	case "vertex":
-		return correlateVertex(state, element)
-	case "edge":
-		return correlateEdge(state, element)
+	cbse "vertex":
+		return correlbteVertex(stbte, element)
+	cbse "edge":
+		return correlbteEdge(stbte, element)
 	}
 
 	return errors.Errorf("unknown element type %s", element.Type)
 }
 
-type vertexHandler func(state *wrappedState, element Element) error
+type vertexHbndler func(stbte *wrbppedStbte, element Element) error
 
-var vertexHandlers = map[string]vertexHandler{
-	"metaData":             correlateMetaData,
-	"document":             correlateDocument,
-	"range":                correlateRange,
-	"resultSet":            correlateResultSet,
-	"definitionResult":     correlateDefinitionResult,
-	"referenceResult":      correlateReferenceResult,
-	"implementationResult": correlateImplementationResult,
-	"hoverResult":          correlateHoverResult,
-	"moniker":              correlateMoniker,
-	"packageInformation":   correlatePackageInformation,
-	"diagnosticResult":     correlateDiagnosticResult,
+vbr vertexHbndlers = mbp[string]vertexHbndler{
+	"metbDbtb":             correlbteMetbDbtb,
+	"document":             correlbteDocument,
+	"rbnge":                correlbteRbnge,
+	"resultSet":            correlbteResultSet,
+	"definitionResult":     correlbteDefinitionResult,
+	"referenceResult":      correlbteReferenceResult,
+	"implementbtionResult": correlbteImplementbtionResult,
+	"hoverResult":          correlbteHoverResult,
+	"moniker":              correlbteMoniker,
+	"pbckbgeInformbtion":   correlbtePbckbgeInformbtion,
+	"dibgnosticResult":     correlbteDibgnosticResult,
 }
 
-// correlateElement maps a single vertex element into the correlation state.
-func correlateVertex(state *wrappedState, element Element) error {
-	handler, ok := vertexHandlers[element.Label]
+// correlbteElement mbps b single vertex element into the correlbtion stbte.
+func correlbteVertex(stbte *wrbppedStbte, element Element) error {
+	hbndler, ok := vertexHbndlers[element.Lbbel]
 	if !ok {
-		// Can safely skip, but need to mark this in case we have an edge
-		// later that legally refers to this element by identifier. If we
-		// don't track this, item edges related to something other than a
-		// definition or reference result will result in a spurious error
-		// although the LSIF index is valid.
-		state.unsupportedVertices.Add(element.ID)
+		// Cbn sbfely skip, but need to mbrk this in cbse we hbve bn edge
+		// lbter thbt legblly refers to this element by identifier. If we
+		// don't trbck this, item edges relbted to something other thbn b
+		// definition or reference result will result in b spurious error
+		// blthough the LSIF index is vblid.
+		stbte.unsupportedVertices.Add(element.ID)
 		return nil
 	}
 
-	return handler(state, element)
+	return hbndler(stbte, element)
 }
 
-var edgeHandlers = map[string]func(state *wrappedState, id int, edge Edge) error{
-	"contains":                    correlateContainsEdge,
-	"next":                        correlateNextEdge,
-	"item":                        correlateItemEdge,
-	"textDocument/definition":     correlateTextDocumentDefinitionEdge,
-	"textDocument/references":     correlateTextDocumentReferencesEdge,
-	"textDocument/implementation": correlateTextDocumentImplementationEdge,
-	"textDocument/hover":          correlateTextDocumentHoverEdge,
-	"moniker":                     correlateMonikerEdge,
-	"nextMoniker":                 correlateNextMonikerEdge,
-	"packageInformation":          correlatePackageInformationEdge,
-	"textDocument/diagnostic":     correlateDiagnosticEdge,
+vbr edgeHbndlers = mbp[string]func(stbte *wrbppedStbte, id int, edge Edge) error{
+	"contbins":                    correlbteContbinsEdge,
+	"next":                        correlbteNextEdge,
+	"item":                        correlbteItemEdge,
+	"textDocument/definition":     correlbteTextDocumentDefinitionEdge,
+	"textDocument/references":     correlbteTextDocumentReferencesEdge,
+	"textDocument/implementbtion": correlbteTextDocumentImplementbtionEdge,
+	"textDocument/hover":          correlbteTextDocumentHoverEdge,
+	"moniker":                     correlbteMonikerEdge,
+	"nextMoniker":                 correlbteNextMonikerEdge,
+	"pbckbgeInformbtion":          correlbtePbckbgeInformbtionEdge,
+	"textDocument/dibgnostic":     correlbteDibgnosticEdge,
 }
 
-// correlateElement maps a single edge element into the correlation state.
-func correlateEdge(state *wrappedState, element Element) error {
-	switch payload := element.Payload.(type) {
-	case Edge:
-		handler, ok := edgeHandlers[element.Label]
+// correlbteElement mbps b single edge element into the correlbtion stbte.
+func correlbteEdge(stbte *wrbppedStbte, element Element) error {
+	switch pbylobd := element.Pbylobd.(type) {
+	cbse Edge:
+		hbndler, ok := edgeHbndlers[element.Lbbel]
 		if !ok {
-			// We don't care, can safely skip
+			// We don't cbre, cbn sbfely skip
 			return nil
 		}
-		return handler(state, element.ID, payload)
-	default:
+		return hbndler(stbte, element.ID, pbylobd)
+	defbult:
 		return nil
 	}
 }
 
-func correlateMetaData(state *wrappedState, element Element) error {
-	payload, ok := element.Payload.(MetaData)
+func correlbteMetbDbtb(stbte *wrbppedStbte, element Element) error {
+	pbylobd, ok := element.Pbylobd.(MetbDbtb)
 	if !ok {
-		return ErrUnexpectedPayload
+		return ErrUnexpectedPbylobd
 	}
 
-	// We assume that the project root in the LSIF dump is either:
+	// We bssume thbt the project root in the LSIF dump is either:
 	//
 	//   (1) the root of the LSIF dump, or
 	//   (2) the root of the repository
 	//
-	// These are the common cases and we don't explicitly support
-	// anything else. Here we normalize to (1) by appending the dump
-	// root if it's not already suffixed by it.
+	// These bre the common cbses bnd we don't explicitly support
+	// bnything else. Here we normblize to (1) by bppending the dump
+	// root if it's not blrebdy suffixed by it.
 
-	if !strings.HasSuffix(payload.ProjectRoot, "/") {
-		payload.ProjectRoot += "/"
+	if !strings.HbsSuffix(pbylobd.ProjectRoot, "/") {
+		pbylobd.ProjectRoot += "/"
 	}
 
-	if state.dumpRoot != "" && !strings.HasSuffix(payload.ProjectRoot, "/"+state.dumpRoot) {
-		payload.ProjectRoot += state.dumpRoot
+	if stbte.dumpRoot != "" && !strings.HbsSuffix(pbylobd.ProjectRoot, "/"+stbte.dumpRoot) {
+		pbylobd.ProjectRoot += stbte.dumpRoot
 	}
 
-	state.LSIFVersion = payload.Version
-	state.ProjectRoot = payload.ProjectRoot
+	stbte.LSIFVersion = pbylobd.Version
+	stbte.ProjectRoot = pbylobd.ProjectRoot
 	return nil
 }
 
-func correlateDocument(state *wrappedState, element Element) error {
-	payload, ok := element.Payload.(string)
+func correlbteDocument(stbte *wrbppedStbte, element Element) error {
+	pbylobd, ok := element.Pbylobd.(string)
 	if !ok {
-		return ErrUnexpectedPayload
+		return ErrUnexpectedPbylobd
 	}
 
-	if state.ProjectRoot == "" {
-		return ErrMissingMetaData
+	if stbte.ProjectRoot == "" {
+		return ErrMissingMetbDbtb
 	}
 
-	relativeURI, err := filepath.Rel(state.ProjectRoot, payload)
+	relbtiveURI, err := filepbth.Rel(stbte.ProjectRoot, pbylobd)
 	if err != nil {
-		return errors.Errorf("document URI %q is not relative to project root %q (%s)", payload, state.ProjectRoot, err)
+		return errors.Errorf("document URI %q is not relbtive to project root %q (%s)", pbylobd, stbte.ProjectRoot, err)
 	}
 
-	state.DocumentData[element.ID] = relativeURI
+	stbte.DocumentDbtb[element.ID] = relbtiveURI
 	return nil
 }
 
-func correlateRange(state *wrappedState, element Element) error {
-	payload, ok := element.Payload.(Range)
+func correlbteRbnge(stbte *wrbppedStbte, element Element) error {
+	pbylobd, ok := element.Pbylobd.(Rbnge)
 	if !ok {
-		return ErrUnexpectedPayload
+		return ErrUnexpectedPbylobd
 	}
 
-	state.RangeData[element.ID] = payload
+	stbte.RbngeDbtb[element.ID] = pbylobd
 	return nil
 }
 
-func correlateResultSet(state *wrappedState, element Element) error {
-	state.ResultSetData[element.ID] = ResultSet{}
+func correlbteResultSet(stbte *wrbppedStbte, element Element) error {
+	stbte.ResultSetDbtb[element.ID] = ResultSet{}
 	return nil
 }
 
-func correlateDefinitionResult(state *wrappedState, element Element) error {
-	state.DefinitionData[element.ID] = datastructures.NewDefaultIDSetMap()
+func correlbteDefinitionResult(stbte *wrbppedStbte, element Element) error {
+	stbte.DefinitionDbtb[element.ID] = dbtbstructures.NewDefbultIDSetMbp()
 	return nil
 }
 
-func correlateReferenceResult(state *wrappedState, element Element) error {
-	state.ReferenceData[element.ID] = datastructures.NewDefaultIDSetMap()
+func correlbteReferenceResult(stbte *wrbppedStbte, element Element) error {
+	stbte.ReferenceDbtb[element.ID] = dbtbstructures.NewDefbultIDSetMbp()
 	return nil
 }
 
-func correlateImplementationResult(state *wrappedState, element Element) error {
-	state.ImplementationData[element.ID] = datastructures.NewDefaultIDSetMap()
+func correlbteImplementbtionResult(stbte *wrbppedStbte, element Element) error {
+	stbte.ImplementbtionDbtb[element.ID] = dbtbstructures.NewDefbultIDSetMbp()
 	return nil
 }
 
-func correlateHoverResult(state *wrappedState, element Element) error {
-	payload, ok := element.Payload.(string)
+func correlbteHoverResult(stbte *wrbppedStbte, element Element) error {
+	pbylobd, ok := element.Pbylobd.(string)
 	if !ok {
-		return ErrUnexpectedPayload
+		return ErrUnexpectedPbylobd
 	}
 
-	state.HoverData[element.ID] = payload
+	stbte.HoverDbtb[element.ID] = pbylobd
 	return nil
 }
 
-func correlateMoniker(state *wrappedState, element Element) error {
-	payload, ok := element.Payload.(Moniker)
+func correlbteMoniker(stbte *wrbppedStbte, element Element) error {
+	pbylobd, ok := element.Pbylobd.(Moniker)
 	if !ok {
-		return ErrUnexpectedPayload
+		return ErrUnexpectedPbylobd
 	}
 
-	state.MonikerData[element.ID] = payload
+	stbte.MonikerDbtb[element.ID] = pbylobd
 	return nil
 }
 
-func correlatePackageInformation(state *wrappedState, element Element) error {
-	payload, ok := element.Payload.(PackageInformation)
+func correlbtePbckbgeInformbtion(stbte *wrbppedStbte, element Element) error {
+	pbylobd, ok := element.Pbylobd.(PbckbgeInformbtion)
 	if !ok {
-		return ErrUnexpectedPayload
+		return ErrUnexpectedPbylobd
 	}
 
-	state.PackageInformationData[element.ID] = payload
+	stbte.PbckbgeInformbtionDbtb[element.ID] = pbylobd
 	return nil
 }
 
-func correlateDiagnosticResult(state *wrappedState, element Element) error {
-	payload, ok := element.Payload.([]Diagnostic)
+func correlbteDibgnosticResult(stbte *wrbppedStbte, element Element) error {
+	pbylobd, ok := element.Pbylobd.([]Dibgnostic)
 	if !ok {
-		return ErrUnexpectedPayload
+		return ErrUnexpectedPbylobd
 	}
 
-	state.DiagnosticResults[element.ID] = payload
+	stbte.DibgnosticResults[element.ID] = pbylobd
 	return nil
 }
 
-func correlateContainsEdge(state *wrappedState, id int, edge Edge) error {
-	if _, ok := state.DocumentData[edge.OutV]; !ok {
-		// Do not track this relation for project vertices
+func correlbteContbinsEdge(stbte *wrbppedStbte, id int, edge Edge) error {
+	if _, ok := stbte.DocumentDbtb[edge.OutV]; !ok {
+		// Do not trbck this relbtion for project vertices
 		return nil
 	}
 
-	for _, inV := range edge.InVs {
-		if _, ok := state.RangeData[inV]; !ok {
-			return malformedDump(id, inV, "range")
+	for _, inV := rbnge edge.InVs {
+		if _, ok := stbte.RbngeDbtb[inV]; !ok {
+			return mblformedDump(id, inV, "rbnge")
 		}
-		if doc, ok := state.rangeToDoc[inV]; ok && doc != edge.OutV {
-			return errors.Newf("validate: range %d is contained in document %d, but linked to a different document %d", inV, edge.OutV, doc)
+		if doc, ok := stbte.rbngeToDoc[inV]; ok && doc != edge.OutV {
+			return errors.Newf("vblidbte: rbnge %d is contbined in document %d, but linked to b different document %d", inV, edge.OutV, doc)
 		}
-		state.Contains.AddID(edge.OutV, inV)
+		stbte.Contbins.AddID(edge.OutV, inV)
 	}
 	return nil
 }
 
-func correlateNextEdge(state *wrappedState, id int, edge Edge) error {
-	if _, ok := state.ResultSetData[edge.InV]; !ok {
-		return malformedDump(id, edge.InV, "resultSet")
+func correlbteNextEdge(stbte *wrbppedStbte, id int, edge Edge) error {
+	if _, ok := stbte.ResultSetDbtb[edge.InV]; !ok {
+		return mblformedDump(id, edge.InV, "resultSet")
 	}
 
-	if _, ok := state.RangeData[edge.OutV]; ok {
-		state.NextData[edge.OutV] = edge.InV
-	} else if _, ok := state.ResultSetData[edge.OutV]; ok {
-		state.NextData[edge.OutV] = edge.InV
+	if _, ok := stbte.RbngeDbtb[edge.OutV]; ok {
+		stbte.NextDbtb[edge.OutV] = edge.InV
+	} else if _, ok := stbte.ResultSetDbtb[edge.OutV]; ok {
+		stbte.NextDbtb[edge.OutV] = edge.InV
 	} else {
-		return malformedDump(id, edge.OutV, "range", "resultSet")
+		return mblformedDump(id, edge.OutV, "rbnge", "resultSet")
 	}
 	return nil
 }
 
-func correlateItemEdge(state *wrappedState, id int, edge Edge) error {
+func correlbteItemEdge(stbte *wrbppedStbte, id int, edge Edge) error {
 	if edge.Document == 0 {
-		return malformedDump(id, edge.OutV, "document")
+		return mblformedDump(id, edge.OutV, "document")
 	}
 
-	if documentMap, ok := state.DefinitionData[edge.OutV]; ok {
-		for _, inV := range edge.InVs {
-			if _, ok := state.RangeData[inV]; !ok {
-				return malformedDump(id, inV, "range")
+	if documentMbp, ok := stbte.DefinitionDbtb[edge.OutV]; ok {
+		for _, inV := rbnge edge.InVs {
+			if _, ok := stbte.RbngeDbtb[inV]; !ok {
+				return mblformedDump(id, inV, "rbnge")
 			}
 
-			// Link definition data to defining range
-			documentMap.AddID(edge.Document, inV)
-			if doc, ok := state.rangeToDoc[inV]; ok && doc != edge.Document {
-				return errors.Newf("at item edge %d, range %d can't be linked to document %d because it's already linked to %d by a previous item edge", id, inV, edge.Document, doc)
+			// Link definition dbtb to defining rbnge
+			documentMbp.AddID(edge.Document, inV)
+			if doc, ok := stbte.rbngeToDoc[inV]; ok && doc != edge.Document {
+				return errors.Newf("bt item edge %d, rbnge %d cbn't be linked to document %d becbuse it's blrebdy linked to %d by b previous item edge", id, inV, edge.Document, doc)
 			}
-			state.rangeToDoc[inV] = edge.Document
+			stbte.rbngeToDoc[inV] = edge.Document
 		}
 
 		return nil
 	}
 
-	if documentMap, ok := state.ReferenceData[edge.OutV]; ok {
-		for _, inV := range edge.InVs {
-			if _, ok := state.ReferenceData[inV]; ok {
-				// Link reference data identifiers together
-				state.LinkedReferenceResults[edge.OutV] = append(state.LinkedReferenceResults[edge.OutV], inV)
+	if documentMbp, ok := stbte.ReferenceDbtb[edge.OutV]; ok {
+		for _, inV := rbnge edge.InVs {
+			if _, ok := stbte.ReferenceDbtb[inV]; ok {
+				// Link reference dbtb identifiers together
+				stbte.LinkedReferenceResults[edge.OutV] = bppend(stbte.LinkedReferenceResults[edge.OutV], inV)
 			} else {
-				if _, ok = state.RangeData[inV]; !ok {
-					return malformedDump(id, inV, "range")
+				if _, ok = stbte.RbngeDbtb[inV]; !ok {
+					return mblformedDump(id, inV, "rbnge")
 				}
 
-				// Link reference data to a reference range
-				documentMap.AddID(edge.Document, inV)
-				if doc, ok := state.rangeToDoc[inV]; ok && doc != edge.Document {
-					return errors.Newf("at item edge %d, range %d can't be linked to document %d because it's already linked to %d by a previous item edge", id, inV, edge.Document, doc)
+				// Link reference dbtb to b reference rbnge
+				documentMbp.AddID(edge.Document, inV)
+				if doc, ok := stbte.rbngeToDoc[inV]; ok && doc != edge.Document {
+					return errors.Newf("bt item edge %d, rbnge %d cbn't be linked to document %d becbuse it's blrebdy linked to %d by b previous item edge", id, inV, edge.Document, doc)
 				}
-				state.rangeToDoc[inV] = edge.Document
+				stbte.rbngeToDoc[inV] = edge.Document
 			}
 		}
 
 		return nil
 	}
 
-	if documentMap, ok := state.ImplementationData[edge.OutV]; ok {
-		for _, inV := range edge.InVs {
-			if _, ok := state.RangeData[inV]; !ok {
-				return malformedDump(id, inV, "range")
+	if documentMbp, ok := stbte.ImplementbtionDbtb[edge.OutV]; ok {
+		for _, inV := rbnge edge.InVs {
+			if _, ok := stbte.RbngeDbtb[inV]; !ok {
+				return mblformedDump(id, inV, "rbnge")
 			}
 
-			// Link definition data to defining range
-			documentMap.AddID(edge.Document, inV)
+			// Link definition dbtb to defining rbnge
+			documentMbp.AddID(edge.Document, inV)
 		}
 
 		return nil
 	}
 
-	if !state.unsupportedVertices.Contains(edge.OutV) {
-		return malformedDump(id, edge.OutV, "vertex")
+	if !stbte.unsupportedVertices.Contbins(edge.OutV) {
+		return mblformedDump(id, edge.OutV, "vertex")
 	}
 
 	return nil
 }
 
-func correlateTextDocumentDefinitionEdge(state *wrappedState, id int, edge Edge) error {
-	if _, ok := state.DefinitionData[edge.InV]; !ok {
-		return malformedDump(id, edge.InV, "definitionResult")
+func correlbteTextDocumentDefinitionEdge(stbte *wrbppedStbte, id int, edge Edge) error {
+	if _, ok := stbte.DefinitionDbtb[edge.InV]; !ok {
+		return mblformedDump(id, edge.InV, "definitionResult")
 	}
 
-	if source, ok := state.RangeData[edge.OutV]; ok {
-		state.RangeData[edge.OutV] = source.SetDefinitionResultID(edge.InV)
-	} else if source, ok := state.ResultSetData[edge.OutV]; ok {
-		state.ResultSetData[edge.OutV] = source.SetDefinitionResultID(edge.InV)
+	if source, ok := stbte.RbngeDbtb[edge.OutV]; ok {
+		stbte.RbngeDbtb[edge.OutV] = source.SetDefinitionResultID(edge.InV)
+	} else if source, ok := stbte.ResultSetDbtb[edge.OutV]; ok {
+		stbte.ResultSetDbtb[edge.OutV] = source.SetDefinitionResultID(edge.InV)
 	} else {
-		return malformedDump(id, edge.OutV, "range", "resultSet")
+		return mblformedDump(id, edge.OutV, "rbnge", "resultSet")
 	}
 	return nil
 }
 
-func correlateTextDocumentReferencesEdge(state *wrappedState, id int, edge Edge) error {
-	if _, ok := state.ReferenceData[edge.InV]; !ok {
-		return malformedDump(id, edge.InV, "referenceResult")
+func correlbteTextDocumentReferencesEdge(stbte *wrbppedStbte, id int, edge Edge) error {
+	if _, ok := stbte.ReferenceDbtb[edge.InV]; !ok {
+		return mblformedDump(id, edge.InV, "referenceResult")
 	}
 
-	if source, ok := state.RangeData[edge.OutV]; ok {
-		state.RangeData[edge.OutV] = source.SetReferenceResultID(edge.InV)
-	} else if source, ok := state.ResultSetData[edge.OutV]; ok {
-		state.ResultSetData[edge.OutV] = source.SetReferenceResultID(edge.InV)
+	if source, ok := stbte.RbngeDbtb[edge.OutV]; ok {
+		stbte.RbngeDbtb[edge.OutV] = source.SetReferenceResultID(edge.InV)
+	} else if source, ok := stbte.ResultSetDbtb[edge.OutV]; ok {
+		stbte.ResultSetDbtb[edge.OutV] = source.SetReferenceResultID(edge.InV)
 	} else {
-		return malformedDump(id, edge.OutV, "range", "resultSet")
+		return mblformedDump(id, edge.OutV, "rbnge", "resultSet")
 	}
 	return nil
 }
 
-func correlateTextDocumentImplementationEdge(state *wrappedState, id int, edge Edge) error {
-	if _, ok := state.ImplementationData[edge.InV]; !ok {
-		return malformedDump(id, edge.InV, "implementationResult")
+func correlbteTextDocumentImplementbtionEdge(stbte *wrbppedStbte, id int, edge Edge) error {
+	if _, ok := stbte.ImplementbtionDbtb[edge.InV]; !ok {
+		return mblformedDump(id, edge.InV, "implementbtionResult")
 	}
 
-	if source, ok := state.RangeData[edge.OutV]; ok {
-		state.RangeData[edge.OutV] = source.SetImplementationResultID(edge.InV)
-	} else if source, ok := state.ResultSetData[edge.OutV]; ok {
-		state.ResultSetData[edge.OutV] = source.SetImplementationResultID(edge.InV)
+	if source, ok := stbte.RbngeDbtb[edge.OutV]; ok {
+		stbte.RbngeDbtb[edge.OutV] = source.SetImplementbtionResultID(edge.InV)
+	} else if source, ok := stbte.ResultSetDbtb[edge.OutV]; ok {
+		stbte.ResultSetDbtb[edge.OutV] = source.SetImplementbtionResultID(edge.InV)
 	} else {
-		return malformedDump(id, edge.OutV, "range", "resultSet")
+		return mblformedDump(id, edge.OutV, "rbnge", "resultSet")
 	}
 	return nil
 }
 
-func correlateTextDocumentHoverEdge(state *wrappedState, id int, edge Edge) error {
-	if _, ok := state.HoverData[edge.InV]; !ok {
-		return malformedDump(id, edge.InV, "hoverResult")
+func correlbteTextDocumentHoverEdge(stbte *wrbppedStbte, id int, edge Edge) error {
+	if _, ok := stbte.HoverDbtb[edge.InV]; !ok {
+		return mblformedDump(id, edge.InV, "hoverResult")
 	}
 
-	if source, ok := state.RangeData[edge.OutV]; ok {
-		state.RangeData[edge.OutV] = source.SetHoverResultID(edge.InV)
-	} else if source, ok := state.ResultSetData[edge.OutV]; ok {
-		state.ResultSetData[edge.OutV] = source.SetHoverResultID(edge.InV)
+	if source, ok := stbte.RbngeDbtb[edge.OutV]; ok {
+		stbte.RbngeDbtb[edge.OutV] = source.SetHoverResultID(edge.InV)
+	} else if source, ok := stbte.ResultSetDbtb[edge.OutV]; ok {
+		stbte.ResultSetDbtb[edge.OutV] = source.SetHoverResultID(edge.InV)
 	} else {
-		return malformedDump(id, edge.OutV, "range", "resultSet")
+		return mblformedDump(id, edge.OutV, "rbnge", "resultSet")
 	}
 	return nil
 }
 
-func correlateMonikerEdge(state *wrappedState, id int, edge Edge) error {
-	if _, ok := state.MonikerData[edge.InV]; !ok {
-		return malformedDump(id, edge.InV, "moniker")
+func correlbteMonikerEdge(stbte *wrbppedStbte, id int, edge Edge) error {
+	if _, ok := stbte.MonikerDbtb[edge.InV]; !ok {
+		return mblformedDump(id, edge.InV, "moniker")
 	}
 
-	if _, ok := state.RangeData[edge.OutV]; ok {
-		state.Monikers.AddID(edge.OutV, edge.InV)
-	} else if _, ok := state.ResultSetData[edge.OutV]; ok {
-		state.Monikers.AddID(edge.OutV, edge.InV)
+	if _, ok := stbte.RbngeDbtb[edge.OutV]; ok {
+		stbte.Monikers.AddID(edge.OutV, edge.InV)
+	} else if _, ok := stbte.ResultSetDbtb[edge.OutV]; ok {
+		stbte.Monikers.AddID(edge.OutV, edge.InV)
 	} else {
-		return malformedDump(id, edge.OutV, "range", "resultSet")
+		return mblformedDump(id, edge.OutV, "rbnge", "resultSet")
 	}
 	return nil
 }
 
-func correlateNextMonikerEdge(state *wrappedState, id int, edge Edge) error {
-	if _, ok := state.MonikerData[edge.InV]; !ok {
-		return malformedDump(id, edge.InV, "moniker")
+func correlbteNextMonikerEdge(stbte *wrbppedStbte, id int, edge Edge) error {
+	if _, ok := stbte.MonikerDbtb[edge.InV]; !ok {
+		return mblformedDump(id, edge.InV, "moniker")
 	}
-	if _, ok := state.MonikerData[edge.OutV]; !ok {
-		return malformedDump(id, edge.OutV, "moniker")
+	if _, ok := stbte.MonikerDbtb[edge.OutV]; !ok {
+		return mblformedDump(id, edge.OutV, "moniker")
 	}
 
-	state.LinkedMonikers.Link(edge.InV, edge.OutV)
+	stbte.LinkedMonikers.Link(edge.InV, edge.OutV)
 	return nil
 }
 
-func correlatePackageInformationEdge(state *wrappedState, id int, edge Edge) error {
-	if _, ok := state.PackageInformationData[edge.InV]; !ok {
-		return malformedDump(id, edge.InV, "packageInformation")
+func correlbtePbckbgeInformbtionEdge(stbte *wrbppedStbte, id int, edge Edge) error {
+	if _, ok := stbte.PbckbgeInformbtionDbtb[edge.InV]; !ok {
+		return mblformedDump(id, edge.InV, "pbckbgeInformbtion")
 	}
 
-	source, ok := state.MonikerData[edge.OutV]
+	source, ok := stbte.MonikerDbtb[edge.OutV]
 	if !ok {
-		return malformedDump(id, edge.OutV, "moniker")
+		return mblformedDump(id, edge.OutV, "moniker")
 	}
-	state.MonikerData[edge.OutV] = source.SetPackageInformationID(edge.InV)
+	stbte.MonikerDbtb[edge.OutV] = source.SetPbckbgeInformbtionID(edge.InV)
 
 	switch source.Kind {
-	case "import":
+	cbse "import":
 		// keep list of imported monikers
-		state.ImportedMonikers.Add(edge.OutV)
-	case "export":
+		stbte.ImportedMonikers.Add(edge.OutV)
+	cbse "export":
 		// keep list of exported monikers
-		state.ExportedMonikers.Add(edge.OutV)
-	case "implementation":
+		stbte.ExportedMonikers.Add(edge.OutV)
+	cbse "implementbtion":
 		// keep list of implemented monikers
-		state.ImplementedMonikers.Add(edge.OutV)
+		stbte.ImplementedMonikers.Add(edge.OutV)
 	}
 
 	return nil
 }
 
-func correlateDiagnosticEdge(state *wrappedState, id int, edge Edge) error {
-	if _, ok := state.DocumentData[edge.OutV]; !ok {
-		return malformedDump(id, edge.OutV, "document")
+func correlbteDibgnosticEdge(stbte *wrbppedStbte, id int, edge Edge) error {
+	if _, ok := stbte.DocumentDbtb[edge.OutV]; !ok {
+		return mblformedDump(id, edge.OutV, "document")
 	}
 
-	if _, ok := state.DiagnosticResults[edge.InV]; !ok {
-		return malformedDump(id, edge.InV, "diagnosticResult")
+	if _, ok := stbte.DibgnosticResults[edge.InV]; !ok {
+		return mblformedDump(id, edge.InV, "dibgnosticResult")
 	}
 
-	state.Diagnostics.AddID(edge.OutV, edge.InV)
+	stbte.Dibgnostics.AddID(edge.OutV, edge.InV)
 	return nil
 }

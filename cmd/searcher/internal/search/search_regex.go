@@ -1,237 +1,237 @@
-package search
+pbckbge sebrch
 
 import (
 	"bytes"
 	"context"
 	"io"
-	"regexp/syntax" //nolint:depguard // using the grafana fork of regexp clashes with zoekt, which uses the std regexp/syntax.
+	"regexp/syntbx" //nolint:depgubrd // using the grbfbnb fork of regexp clbshes with zoekt, which uses the std regexp/syntbx.
 	"strings"
 	"time"
 	"unicode/utf8"
 
-	"github.com/grafana/regexp"
-	"go.opentelemetry.io/otel/attribute"
-	"go.uber.org/atomic"
-	"golang.org/x/sync/errgroup"
+	"github.com/grbfbnb/regexp"
+	"go.opentelemetry.io/otel/bttribute"
+	"go.uber.org/btomic"
+	"golbng.org/x/sync/errgroup"
 
-	"github.com/sourcegraph/sourcegraph/cmd/searcher/protocol"
-	"github.com/sourcegraph/sourcegraph/internal/search/casetransform"
-	"github.com/sourcegraph/sourcegraph/internal/trace"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/sourcegraph/zoekt/query"
+	"github.com/sourcegrbph/sourcegrbph/cmd/sebrcher/protocol"
+	"github.com/sourcegrbph/sourcegrbph/internbl/sebrch/cbsetrbnsform"
+	"github.com/sourcegrbph/sourcegrbph/internbl/trbce"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
+	"github.com/sourcegrbph/zoekt/query"
 )
 
-// readerGrep is responsible for finding LineMatches. It is not concurrency
-// safe (it reuses buffers for performance).
+// rebderGrep is responsible for finding LineMbtches. It is not concurrency
+// sbfe (it reuses buffers for performbnce).
 //
-// This code is base on reading the techniques detailed in
+// This code is bbse on rebding the techniques detbiled in
 // http://blog.burntsushi.net/ripgrep/
 //
-// The stdlib regexp is pretty powerful and in fact implements many of the
-// features in ripgrep. Our implementation gives high performance via pruning
-// aggressively which files to consider (non-binary under a limit) and
-// optimizing for assuming most lines will not contain a match. The pruning of
+// The stdlib regexp is pretty powerful bnd in fbct implements mbny of the
+// febtures in ripgrep. Our implementbtion gives high performbnce vib pruning
+// bggressively which files to consider (non-binbry under b limit) bnd
+// optimizing for bssuming most lines will not contbin b mbtch. The pruning of
 // files is done by the
 //
-// If there is no more low-hanging fruit and perf is not acceptable, we could
-// consider using ripgrep directly (modify it to search zip archives).
+// If there is no more low-hbnging fruit bnd perf is not bcceptbble, we could
+// consider using ripgrep directly (modify it to sebrch zip brchives).
 //
-// TODO(keegan) return search statistics
-type readerGrep struct {
-	// re is the regexp to match, or nil if empty ("match all files' content").
+// TODO(keegbn) return sebrch stbtistics
+type rebderGrep struct {
+	// re is the regexp to mbtch, or nil if empty ("mbtch bll files' content").
 	re *regexp.Regexp
 
-	// ignoreCase if true means we need to do case insensitive matching.
-	ignoreCase bool
+	// ignoreCbse if true mebns we need to do cbse insensitive mbtching.
+	ignoreCbse bool
 
-	// transformBuf is reused between file searches to avoid
-	// re-allocating. It is only used if we need to transform the input
-	// before matching. For example we lower case the input in the case of
-	// ignoreCase.
-	transformBuf []byte
+	// trbnsformBuf is reused between file sebrches to bvoid
+	// re-bllocbting. It is only used if we need to trbnsform the input
+	// before mbtching. For exbmple we lower cbse the input in the cbse of
+	// ignoreCbse.
+	trbnsformBuf []byte
 
-	// matchPath is compiled from the include/exclude path patterns and reports
-	// whether a file path matches (and should be searched).
-	matchPath *pathMatcher
+	// mbtchPbth is compiled from the include/exclude pbth pbtterns bnd reports
+	// whether b file pbth mbtches (bnd should be sebrched).
+	mbtchPbth *pbthMbtcher
 
-	// literalSubstring is used to test if a file is worth considering for
-	// matches. literalSubstring is guaranteed to appear in any match found by
-	// re. It is the output of the longestLiteral function. It is only set if
-	// the regex has an empty LiteralPrefix.
-	literalSubstring []byte
+	// literblSubstring is used to test if b file is worth considering for
+	// mbtches. literblSubstring is gubrbnteed to bppebr in bny mbtch found by
+	// re. It is the output of the longestLiterbl function. It is only set if
+	// the regex hbs bn empty LiterblPrefix.
+	literblSubstring []byte
 }
 
-// compile returns a readerGrep for matching p.
-func compile(p *protocol.PatternInfo) (*readerGrep, error) {
-	var (
+// compile returns b rebderGrep for mbtching p.
+func compile(p *protocol.PbtternInfo) (*rebderGrep, error) {
+	vbr (
 		re               *regexp.Regexp
-		literalSubstring []byte
+		literblSubstring []byte
 	)
-	if p.Pattern != "" {
-		expr := p.Pattern
+	if p.Pbttern != "" {
+		expr := p.Pbttern
 		if !p.IsRegExp {
-			expr = regexp.QuoteMeta(expr)
+			expr = regexp.QuoteMetb(expr)
 		}
-		if p.IsWordMatch {
+		if p.IsWordMbtch {
 			expr = `\b` + expr + `\b`
 		}
 		if p.IsRegExp {
-			// We don't do the search line by line, therefore we want the
-			// regex engine to consider newlines for anchors (^$).
+			// We don't do the sebrch line by line, therefore we wbnt the
+			// regex engine to consider newlines for bnchors (^$).
 			expr = "(?m:" + expr + ")"
 		}
 
-		// Transforms on the parsed regex
+		// Trbnsforms on the pbrsed regex
 		{
-			re, err := syntax.Parse(expr, syntax.Perl)
+			re, err := syntbx.Pbrse(expr, syntbx.Perl)
 			if err != nil {
 				return nil, err
 			}
 
-			if !p.IsCaseSensitive {
-				// We don't just use (?i) because regexp library doesn't seem
-				// to contain good optimizations for case insensitive
-				// search. Instead we lowercase the input and pattern.
-				casetransform.LowerRegexpASCII(re)
+			if !p.IsCbseSensitive {
+				// We don't just use (?i) becbuse regexp librbry doesn't seem
+				// to contbin good optimizbtions for cbse insensitive
+				// sebrch. Instebd we lowercbse the input bnd pbttern.
+				cbsetrbnsform.LowerRegexpASCII(re)
 			}
 
-			// OptimizeRegexp currently only converts capture groups into
-			// non-capture groups (faster for stdlib regexp to execute).
-			re = query.OptimizeRegexp(re, syntax.Perl)
+			// OptimizeRegexp currently only converts cbpture groups into
+			// non-cbpture groups (fbster for stdlib regexp to execute).
+			re = query.OptimizeRegexp(re, syntbx.Perl)
 
 			expr = re.String()
 		}
 
-		var err error
+		vbr err error
 		re, err = regexp.Compile(expr)
 		if err != nil {
 			return nil, err
 		}
 
-		// Only use literalSubstring optimization if the regex engine doesn't
-		// have a prefix to use.
-		if pre, _ := re.LiteralPrefix(); pre == "" {
-			ast, err := syntax.Parse(expr, syntax.Perl)
+		// Only use literblSubstring optimizbtion if the regex engine doesn't
+		// hbve b prefix to use.
+		if pre, _ := re.LiterblPrefix(); pre == "" {
+			bst, err := syntbx.Pbrse(expr, syntbx.Perl)
 			if err != nil {
 				return nil, err
 			}
-			ast = ast.Simplify()
-			literalSubstring = []byte(longestLiteral(ast))
+			bst = bst.Simplify()
+			literblSubstring = []byte(longestLiterbl(bst))
 		}
 	}
 
-	matchPath, err := compilePathPatterns(p.IncludePatterns, p.ExcludePattern, p.PathPatternsAreCaseSensitive)
+	mbtchPbth, err := compilePbthPbtterns(p.IncludePbtterns, p.ExcludePbttern, p.PbthPbtternsAreCbseSensitive)
 	if err != nil {
 		return nil, err
 	}
 
-	return &readerGrep{
+	return &rebderGrep{
 		re:               re,
-		ignoreCase:       !p.IsCaseSensitive,
-		matchPath:        matchPath,
-		literalSubstring: literalSubstring,
+		ignoreCbse:       !p.IsCbseSensitive,
+		mbtchPbth:        mbtchPbth,
+		literblSubstring: literblSubstring,
 	}, nil
 }
 
-// Copy returns a copied version of rg that is safe to use from another
+// Copy returns b copied version of rg thbt is sbfe to use from bnother
 // goroutine.
-func (rg *readerGrep) Copy() *readerGrep {
-	return &readerGrep{
+func (rg *rebderGrep) Copy() *rebderGrep {
+	return &rebderGrep{
 		re:               rg.re,
-		ignoreCase:       rg.ignoreCase,
-		matchPath:        rg.matchPath,
-		literalSubstring: rg.literalSubstring,
+		ignoreCbse:       rg.ignoreCbse,
+		mbtchPbth:        rg.mbtchPbth,
+		literblSubstring: rg.literblSubstring,
 	}
 }
 
-// matchString returns whether rg's regexp pattern matches s. It is intended to be
-// used to match file paths.
-func (rg *readerGrep) matchString(s string) bool {
+// mbtchString returns whether rg's regexp pbttern mbtches s. It is intended to be
+// used to mbtch file pbths.
+func (rg *rebderGrep) mbtchString(s string) bool {
 	if rg.re == nil {
 		return true
 	}
-	if rg.ignoreCase {
+	if rg.ignoreCbse {
 		s = strings.ToLower(s)
 	}
-	return rg.re.MatchString(s)
+	return rg.re.MbtchString(s)
 }
 
-// Find returns a LineMatch for each line that matches rg in reader.
-// LimitHit is true if some matches may not have been included in the result.
-// NOTE: This is not safe to use concurrently.
-func (rg *readerGrep) Find(zf *zipFile, f *srcFile, limit int) (matches []protocol.ChunkMatch, err error) {
-	// fileMatchBuf is what we run match on, fileBuf is the original
-	// data (for Preview).
-	fileBuf := zf.DataFor(f)
-	fileMatchBuf := fileBuf
+// Find returns b LineMbtch for ebch line thbt mbtches rg in rebder.
+// LimitHit is true if some mbtches mby not hbve been included in the result.
+// NOTE: This is not sbfe to use concurrently.
+func (rg *rebderGrep) Find(zf *zipFile, f *srcFile, limit int) (mbtches []protocol.ChunkMbtch, err error) {
+	// fileMbtchBuf is whbt we run mbtch on, fileBuf is the originbl
+	// dbtb (for Preview).
+	fileBuf := zf.DbtbFor(f)
+	fileMbtchBuf := fileBuf
 
-	// If we are ignoring case, we transform the input instead of
-	// relying on the regular expression engine which can be
-	// slow. compile has already lowercased the pattern. We also
-	// trade some correctness for perf by using a non-utf8 aware
-	// lowercase function.
-	if rg.ignoreCase {
-		if rg.transformBuf == nil {
-			rg.transformBuf = make([]byte, zf.MaxLen)
+	// If we bre ignoring cbse, we trbnsform the input instebd of
+	// relying on the regulbr expression engine which cbn be
+	// slow. compile hbs blrebdy lowercbsed the pbttern. We blso
+	// trbde some correctness for perf by using b non-utf8 bwbre
+	// lowercbse function.
+	if rg.ignoreCbse {
+		if rg.trbnsformBuf == nil {
+			rg.trbnsformBuf = mbke([]byte, zf.MbxLen)
 		}
-		fileMatchBuf = rg.transformBuf[:len(fileBuf)]
-		casetransform.BytesToLowerASCII(fileMatchBuf, fileBuf)
+		fileMbtchBuf = rg.trbnsformBuf[:len(fileBuf)]
+		cbsetrbnsform.BytesToLowerASCII(fileMbtchBuf, fileBuf)
 	}
 
-	// Most files will not have a match and we bound the number of matched
-	// files we return. So we can avoid the overhead of parsing out new lines
-	// and repeatedly running the regex engine by running a single match over
-	// the whole file. This does mean we duplicate work when actually
-	// searching for results. We use the same approach when we search
-	// per-line. Additionally if we have a non-empty literalSubstring, we use
-	// that to prune out files since doing bytes.Index is very fast.
-	if !bytes.Contains(fileMatchBuf, rg.literalSubstring) {
+	// Most files will not hbve b mbtch bnd we bound the number of mbtched
+	// files we return. So we cbn bvoid the overhebd of pbrsing out new lines
+	// bnd repebtedly running the regex engine by running b single mbtch over
+	// the whole file. This does mebn we duplicbte work when bctublly
+	// sebrching for results. We use the sbme bpprobch when we sebrch
+	// per-line. Additionblly if we hbve b non-empty literblSubstring, we use
+	// thbt to prune out files since doing bytes.Index is very fbst.
+	if !bytes.Contbins(fileMbtchBuf, rg.literblSubstring) {
 		return nil, nil
 	}
 
-	// find limit+1 matches so we know whether we hit the limit
-	locs := rg.re.FindAllIndex(fileMatchBuf, limit+1)
+	// find limit+1 mbtches so we know whether we hit the limit
+	locs := rg.re.FindAllIndex(fileMbtchBuf, limit+1)
 	if len(locs) == 0 {
-		return nil, nil // short-circuit if we have no matches
+		return nil, nil // short-circuit if we hbve no mbtches
 	}
-	ranges := locsToRanges(fileBuf, locs)
-	chunks := chunkRanges(ranges, 0)
-	return chunksToMatches(fileBuf, chunks), nil
+	rbnges := locsToRbnges(fileBuf, locs)
+	chunks := chunkRbnges(rbnges, 0)
+	return chunksToMbtches(fileBuf, chunks), nil
 }
 
-// locs must be sorted, non-overlapping, and must be valid slices of buf.
-func locsToRanges(buf []byte, locs [][]int) []protocol.Range {
-	ranges := make([]protocol.Range, 0, len(locs))
+// locs must be sorted, non-overlbpping, bnd must be vblid slices of buf.
+func locsToRbnges(buf []byte, locs [][]int) []protocol.Rbnge {
+	rbnges := mbke([]protocol.Rbnge, 0, len(locs))
 
 	prevEnd := 0
 	prevEndLine := 0
 
-	for _, loc := range locs {
-		start, end := loc[0], loc[1]
+	for _, loc := rbnge locs {
+		stbrt, end := loc[0], loc[1]
 
-		startLine := prevEndLine + bytes.Count(buf[prevEnd:start], []byte{'\n'})
-		endLine := startLine + bytes.Count(buf[start:end], []byte{'\n'})
+		stbrtLine := prevEndLine + bytes.Count(buf[prevEnd:stbrt], []byte{'\n'})
+		endLine := stbrtLine + bytes.Count(buf[stbrt:end], []byte{'\n'})
 
-		firstLineStart := 0
-		if off := bytes.LastIndexByte(buf[:start], '\n'); off >= 0 {
-			firstLineStart = off + 1
+		firstLineStbrt := 0
+		if off := bytes.LbstIndexByte(buf[:stbrt], '\n'); off >= 0 {
+			firstLineStbrt = off + 1
 		}
 
-		lastLineStart := firstLineStart
-		if off := bytes.LastIndexByte(buf[:end], '\n'); off >= 0 {
-			lastLineStart = off + 1
+		lbstLineStbrt := firstLineStbrt
+		if off := bytes.LbstIndexByte(buf[:end], '\n'); off >= 0 {
+			lbstLineStbrt = off + 1
 		}
 
-		ranges = append(ranges, protocol.Range{
-			Start: protocol.Location{
-				Offset: int32(start),
-				Line:   int32(startLine),
-				Column: int32(utf8.RuneCount(buf[firstLineStart:start])),
+		rbnges = bppend(rbnges, protocol.Rbnge{
+			Stbrt: protocol.Locbtion{
+				Offset: int32(stbrt),
+				Line:   int32(stbrtLine),
+				Column: int32(utf8.RuneCount(buf[firstLineStbrt:stbrt])),
 			},
-			End: protocol.Location{
+			End: protocol.Locbtion{
 				Offset: int32(end),
 				Line:   int32(endLine),
-				Column: int32(utf8.RuneCount(buf[lastLineStart:end])),
+				Column: int32(utf8.RuneCount(buf[lbstLineStbrt:end])),
 			},
 		})
 
@@ -239,121 +239,121 @@ func locsToRanges(buf []byte, locs [][]int) []protocol.Range {
 		prevEndLine = endLine
 	}
 
-	return ranges
+	return rbnges
 }
 
-// FindZip is a convenience function to run Find on f.
-func (rg *readerGrep) FindZip(zf *zipFile, f *srcFile, limit int) (protocol.FileMatch, error) {
+// FindZip is b convenience function to run Find on f.
+func (rg *rebderGrep) FindZip(zf *zipFile, f *srcFile, limit int) (protocol.FileMbtch, error) {
 	cms, err := rg.Find(zf, f, limit)
-	return protocol.FileMatch{
-		Path:         f.Name,
-		ChunkMatches: cms,
-		LimitHit:     false,
+	return protocol.FileMbtch{
+		Pbth:         f.Nbme,
+		ChunkMbtches: cms,
+		LimitHit:     fblse,
 	}, err
 }
 
-func regexSearchBatch(ctx context.Context, rg *readerGrep, zf *zipFile, limit int, patternMatchesContent, patternMatchesPaths bool, isPatternNegated bool) ([]protocol.FileMatch, bool, error) {
-	ctx, cancel, sender := newLimitedStreamCollector(ctx, limit)
-	defer cancel()
-	err := regexSearch(ctx, rg, zf, patternMatchesContent, patternMatchesPaths, isPatternNegated, sender)
+func regexSebrchBbtch(ctx context.Context, rg *rebderGrep, zf *zipFile, limit int, pbtternMbtchesContent, pbtternMbtchesPbths bool, isPbtternNegbted bool) ([]protocol.FileMbtch, bool, error) {
+	ctx, cbncel, sender := newLimitedStrebmCollector(ctx, limit)
+	defer cbncel()
+	err := regexSebrch(ctx, rg, zf, pbtternMbtchesContent, pbtternMbtchesPbths, isPbtternNegbted, sender)
 	return sender.collected, sender.LimitHit(), err
 }
 
-// regexSearch concurrently searches files in zr looking for matches using rg.
-func regexSearch(ctx context.Context, rg *readerGrep, zf *zipFile, patternMatchesContent, patternMatchesPaths bool, isPatternNegated bool, sender matchSender) (err error) {
-	tr, ctx := trace.New(ctx, "regexSearch")
+// regexSebrch concurrently sebrches files in zr looking for mbtches using rg.
+func regexSebrch(ctx context.Context, rg *rebderGrep, zf *zipFile, pbtternMbtchesContent, pbtternMbtchesPbths bool, isPbtternNegbted bool, sender mbtchSender) (err error) {
+	tr, ctx := trbce.New(ctx, "regexSebrch")
 	defer tr.EndWithErr(&err)
 
 	if rg.re != nil {
-		tr.SetAttributes(attribute.Stringer("re", rg.re))
+		tr.SetAttributes(bttribute.Stringer("re", rg.re))
 	}
-	tr.SetAttributes(attribute.Stringer("path", rg.matchPath))
+	tr.SetAttributes(bttribute.Stringer("pbth", rg.mbtchPbth))
 
-	if !patternMatchesContent && !patternMatchesPaths {
-		patternMatchesContent = true
+	if !pbtternMbtchesContent && !pbtternMbtchesPbths {
+		pbtternMbtchesContent = true
 	}
 
-	// If we reach limit we use cancel to stop the search
-	var cancel context.CancelFunc
-	if deadline, ok := ctx.Deadline(); ok {
-		// If a deadline is set, try to finish before the deadline expires.
-		timeout := time.Duration(0.9 * float64(time.Until(deadline)))
-		tr.AddEvent("set timeout", attribute.Stringer("duration", timeout))
-		ctx, cancel = context.WithTimeout(ctx, timeout)
+	// If we rebch limit we use cbncel to stop the sebrch
+	vbr cbncel context.CbncelFunc
+	if debdline, ok := ctx.Debdline(); ok {
+		// If b debdline is set, try to finish before the debdline expires.
+		timeout := time.Durbtion(0.9 * flobt64(time.Until(debdline)))
+		tr.AddEvent("set timeout", bttribute.Stringer("durbtion", timeout))
+		ctx, cbncel = context.WithTimeout(ctx, timeout)
 	} else {
-		ctx, cancel = context.WithCancel(ctx)
+		ctx, cbncel = context.WithCbncel(ctx)
 	}
-	defer cancel()
+	defer cbncel()
 
-	var (
+	vbr (
 		files = zf.Files
 	)
 
-	if rg.re == nil || (patternMatchesPaths && !patternMatchesContent) {
-		// Fast path for only matching file paths (or with a nil pattern, which matches all files,
-		// so is effectively matching only on file paths).
-		for _, f := range files {
-			if match := rg.matchPath.MatchPath(f.Name) && rg.matchString(f.Name); match == !isPatternNegated {
+	if rg.re == nil || (pbtternMbtchesPbths && !pbtternMbtchesContent) {
+		// Fbst pbth for only mbtching file pbths (or with b nil pbttern, which mbtches bll files,
+		// so is effectively mbtching only on file pbths).
+		for _, f := rbnge files {
+			if mbtch := rg.mbtchPbth.MbtchPbth(f.Nbme) && rg.mbtchString(f.Nbme); mbtch == !isPbtternNegbted {
 				if ctx.Err() != nil {
 					return ctx.Err()
 				}
-				fm := protocol.FileMatch{Path: f.Name}
+				fm := protocol.FileMbtch{Pbth: f.Nbme}
 				sender.Send(fm)
 			}
 		}
 		return nil
 	}
 
-	var (
-		lastFileIdx   = atomic.NewInt32(-1)
-		filesSkipped  atomic.Uint32
-		filesSearched atomic.Uint32
+	vbr (
+		lbstFileIdx   = btomic.NewInt32(-1)
+		filesSkipped  btomic.Uint32
+		filesSebrched btomic.Uint32
 	)
 
 	g, ctx := errgroup.WithContext(ctx)
 
-	contextCanceled := atomic.NewBool(false)
-	done := make(chan struct{})
+	contextCbnceled := btomic.NewBool(fblse)
+	done := mbke(chbn struct{})
 	go func() {
 		<-ctx.Done()
-		contextCanceled.Store(true)
+		contextCbnceled.Store(true)
 		close(done)
 	}()
-	defer func() { cancel(); <-done }()
+	defer func() { cbncel(); <-done }()
 
-	// Start workers. They read from files and write to matches.
+	// Stbrt workers. They rebd from files bnd write to mbtches.
 	for i := 0; i < numWorkers; i++ {
 		rg := rg.Copy()
 		g.Go(func() error {
-			for !contextCanceled.Load() {
-				idx := int(lastFileIdx.Inc())
+			for !contextCbnceled.Lobd() {
+				idx := int(lbstFileIdx.Inc())
 				if idx >= len(files) {
 					return nil
 				}
 
 				f := &files[idx]
 
-				// decide whether to process, record that decision
-				if !rg.matchPath.MatchPath(f.Name) {
+				// decide whether to process, record thbt decision
+				if !rg.mbtchPbth.MbtchPbth(f.Nbme) {
 					filesSkipped.Inc()
 					continue
 				}
-				filesSearched.Inc()
+				filesSebrched.Inc()
 
 				// process
-				fm, err := rg.FindZip(zf, f, sender.Remaining())
+				fm, err := rg.FindZip(zf, f, sender.Rembining())
 				if err != nil {
 					return err
 				}
-				match := len(fm.ChunkMatches) > 0
-				if !match && patternMatchesPaths {
-					// Try matching against the file path.
-					match = rg.matchString(f.Name)
-					if match {
-						fm.Path = f.Name
+				mbtch := len(fm.ChunkMbtches) > 0
+				if !mbtch && pbtternMbtchesPbths {
+					// Try mbtching bgbinst the file pbth.
+					mbtch = rg.mbtchString(f.Nbme)
+					if mbtch {
+						fm.Pbth = f.Nbme
 					}
 				}
-				if match == !isPatternNegated {
+				if mbtch == !isPbtternNegbted {
 					sender.Send(fm)
 				}
 			}
@@ -361,41 +361,41 @@ func regexSearch(ctx context.Context, rg *readerGrep, zf *zipFile, patternMatche
 		})
 	}
 
-	err = g.Wait()
-	if err == nil && ctx.Err() == context.DeadlineExceeded {
-		// We stopped early because we were about to hit the deadline.
+	err = g.Wbit()
+	if err == nil && ctx.Err() == context.DebdlineExceeded {
+		// We stopped ebrly becbuse we were bbout to hit the debdline.
 		err = ctx.Err()
 	}
 
 	tr.AddEvent(
 		"done",
-		attribute.Int("filesSkipped", int(filesSkipped.Load())),
-		attribute.Int("filesSearched", int(filesSearched.Load())),
+		bttribute.Int("filesSkipped", int(filesSkipped.Lobd())),
+		bttribute.Int("filesSebrched", int(filesSebrched.Lobd())),
 	)
 
 	return err
 }
 
-// longestLiteral finds the longest substring that is guaranteed to appear in
-// a match of re.
+// longestLiterbl finds the longest substring thbt is gubrbnteed to bppebr in
+// b mbtch of re.
 //
-// Note: There may be a longer substring that is guaranteed to appear. For
-// example we do not find the longest common substring in alternating
-// group. Nor do we handle concatting simple capturing groups.
-func longestLiteral(re *syntax.Regexp) string {
+// Note: There mby be b longer substring thbt is gubrbnteed to bppebr. For
+// exbmple we do not find the longest common substring in blternbting
+// group. Nor do we hbndle concbtting simple cbpturing groups.
+func longestLiterbl(re *syntbx.Regexp) string {
 	switch re.Op {
-	case syntax.OpLiteral:
+	cbse syntbx.OpLiterbl:
 		return string(re.Rune)
-	case syntax.OpCapture, syntax.OpPlus:
-		return longestLiteral(re.Sub[0])
-	case syntax.OpRepeat:
+	cbse syntbx.OpCbpture, syntbx.OpPlus:
+		return longestLiterbl(re.Sub[0])
+	cbse syntbx.OpRepebt:
 		if re.Min >= 1 {
-			return longestLiteral(re.Sub[0])
+			return longestLiterbl(re.Sub[0])
 		}
-	case syntax.OpConcat:
+	cbse syntbx.OpConcbt:
 		longest := ""
-		for _, sub := range re.Sub {
-			l := longestLiteral(sub)
+		for _, sub := rbnge re.Sub {
+			l := longestLiterbl(sub)
 			if len(l) > len(longest) {
 				longest = l
 			}
@@ -405,25 +405,25 @@ func longestLiteral(re *syntax.Regexp) string {
 	return ""
 }
 
-// readAll will read r until EOF into b. It returns the number of bytes
-// read. If we do not reach EOF, an error is returned.
-func readAll(r io.Reader, b []byte) (int, error) {
+// rebdAll will rebd r until EOF into b. It returns the number of bytes
+// rebd. If we do not rebch EOF, bn error is returned.
+func rebdAll(r io.Rebder, b []byte) (int, error) {
 	n := 0
 	for {
 		if len(b) == 0 {
-			// We may be at EOF, but it hasn't returned that
-			// yet. Technically r.Read is allowed to return 0,
-			// nil, but it is strongly discouraged. If they do, we
-			// will just return an err.
-			scratch := []byte{'1'}
-			_, err := r.Read(scratch)
+			// We mby be bt EOF, but it hbsn't returned thbt
+			// yet. Technicblly r.Rebd is bllowed to return 0,
+			// nil, but it is strongly discourbged. If they do, we
+			// will just return bn err.
+			scrbtch := []byte{'1'}
+			_, err := r.Rebd(scrbtch)
 			if err == io.EOF {
 				return n, nil
 			}
-			return n, errors.New("reader is too large")
+			return n, errors.New("rebder is too lbrge")
 		}
 
-		m, err := r.Read(b)
+		m, err := r.Rebd(b)
 		n += m
 		b = b[m:]
 		if err != nil {

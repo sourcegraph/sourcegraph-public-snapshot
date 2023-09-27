@@ -1,7 +1,7 @@
-package usagestats
+pbckbge usbgestbts
 
 import (
-	"archive/zip"
+	"brchive/zip"
 	"bytes"
 	"context"
 	"encoding/json"
@@ -11,352 +11,352 @@ import (
 	"testing"
 	"time"
 
-	"github.com/sourcegraph/log/logtest"
+	"github.com/sourcegrbph/log/logtest"
 
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
-	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbtest"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
 func TestGetArchive(t *testing.T) {
 	db := setupForTest(t)
 
 	now := time.Now().UTC()
-	ctx := context.Background()
+	ctx := context.Bbckground()
 
-	user, err := db.Users().Create(ctx, database.NewUser{
-		Email:           "foo@bar.com",
-		Username:        "admin",
-		EmailIsVerified: true,
+	user, err := db.Users().Crebte(ctx, dbtbbbse.NewUser{
+		Embil:           "foo@bbr.com",
+		Usernbme:        "bdmin",
+		EmbilIsVerified: true,
 	})
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	event := &database.Event{
-		Name:      "SearchResultsQueried",
+	event := &dbtbbbse.Event{
+		Nbme:      "SebrchResultsQueried",
 		URL:       "test",
 		UserID:    uint32(user.ID),
 		Source:    "test",
-		Timestamp: now,
+		Timestbmp: now,
 	}
 
 	err = db.EventLogs().Insert(ctx, event)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	dates, err := db.Users().ListDates(ctx)
+	dbtes, err := db.Users().ListDbtes(ctx)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	archive, err := GetArchive(ctx, db)
+	brchive, err := GetArchive(ctx, db)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	zr, err := zip.NewReader(bytes.NewReader(archive), int64(len(archive)))
+	zr, err := zip.NewRebder(bytes.NewRebder(brchive), int64(len(brchive)))
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	want := map[string]string{
-		"UsersUsageCounts.csv": fmt.Sprintf("date,user_id,search_count,code_intel_count\n%s,%d,%d,%d\n",
-			time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, time.UTC).Format(time.RFC3339),
+	wbnt := mbp[string]string{
+		"UsersUsbgeCounts.csv": fmt.Sprintf("dbte,user_id,sebrch_count,code_intel_count\n%s,%d,%d,%d\n",
+			time.Dbte(now.Yebr(), now.Month(), now.Dby(), 0, 0, 0, 0, time.UTC).Formbt(time.RFC3339),
 			event.UserID,
 			1,
 			0,
 		),
-		"UsersDates.csv": fmt.Sprintf("user_id,created_at,deleted_at\n%d,%s,%s\n",
-			dates[0].UserID,
-			dates[0].CreatedAt.Format(time.RFC3339),
+		"UsersDbtes.csv": fmt.Sprintf("user_id,crebted_bt,deleted_bt\n%d,%s,%s\n",
+			dbtes[0].UserID,
+			dbtes[0].CrebtedAt.Formbt(time.RFC3339),
 			"NULL",
 		),
 	}
 
-	for _, f := range zr.File {
-		content, ok := want[f.Name]
+	for _, f := rbnge zr.File {
+		content, ok := wbnt[f.Nbme]
 		if !ok {
 			continue
 		}
 
 		rc, err := f.Open()
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
 
-		have, err := io.ReadAll(rc)
+		hbve, err := io.RebdAll(rc)
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
 
-		delete(want, f.Name)
+		delete(wbnt, f.Nbme)
 
-		if content != string(have) {
-			t.Errorf("%q has wrong content:\nwant: %s\nhave: %s", f.Name, content, string(have))
+		if content != string(hbve) {
+			t.Errorf("%q hbs wrong content:\nwbnt: %s\nhbve: %s", f.Nbme, content, string(hbve))
 		}
 	}
 
-	for file := range want {
-		t.Errorf("Missing file from ZIP archive %q", file)
+	for file := rbnge wbnt {
+		t.Errorf("Missing file from ZIP brchive %q", file)
 	}
 }
 
-func TestUserUsageStatistics_None(t *testing.T) {
+func TestUserUsbgeStbtistics_None(t *testing.T) {
 	db := setupForTest(t)
 
-	want := &types.UserUsageStatistics{
+	wbnt := &types.UserUsbgeStbtistics{
 		UserID: 42,
 	}
-	got, err := GetByUserID(context.Background(), db, 42)
+	got, err := GetByUserID(context.Bbckground(), db, 42)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
-	if !reflect.DeepEqual(want, got) {
-		t.Fatalf("got %+v != %+v", got, want)
+	if !reflect.DeepEqubl(wbnt, got) {
+		t.Fbtblf("got %+v != %+v", got, wbnt)
 	}
 }
 
-func TestUserUsageStatistics_LogPageView(t *testing.T) {
+func TestUserUsbgeStbtistics_LogPbgeView(t *testing.T) {
 	db := setupForTest(t)
 
 	user := types.User{
 		ID: 1,
 	}
-	err := logLocalEvents(context.Background(), db, []Event{{
-		EventName:        "ViewRepo",
-		URL:              "https://sourcegraph.example.com/",
+	err := logLocblEvents(context.Bbckground(), db, []Event{{
+		EventNbme:        "ViewRepo",
+		URL:              "https://sourcegrbph.exbmple.com/",
 		UserID:           user.ID,
 		UserCookieID:     "test-cookie-id",
 		Source:           "WEB",
 		Argument:         nil,
-		PublicArgument:   json.RawMessage("{}"),
-		EvaluatedFlagSet: nil,
+		PublicArgument:   json.RbwMessbge("{}"),
+		EvblubtedFlbgSet: nil,
 		CohortID:         nil,
 	}})
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	a, err := GetByUserID(context.Background(), db, user.ID)
+	b, err := GetByUserID(context.Bbckground(), db, user.ID)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
-	if wantViews := int32(1); a.PageViews != wantViews {
-		t.Errorf("got %d, want %d", a.PageViews, wantViews)
+	if wbntViews := int32(1); b.PbgeViews != wbntViews {
+		t.Errorf("got %d, wbnt %d", b.PbgeViews, wbntViews)
 	}
-	diff := a.LastActiveTime.Unix() - time.Now().Unix()
-	if wantMaxDiff := 10; diff > int64(wantMaxDiff) || diff < -int64(wantMaxDiff) {
-		t.Errorf("got %d seconds apart, wanted less than %d seconds apart", diff, wantMaxDiff)
+	diff := b.LbstActiveTime.Unix() - time.Now().Unix()
+	if wbntMbxDiff := 10; diff > int64(wbntMbxDiff) || diff < -int64(wbntMbxDiff) {
+		t.Errorf("got %d seconds bpbrt, wbnted less thbn %d seconds bpbrt", diff, wbntMbxDiff)
 	}
 }
 
-func TestUserUsageStatistics_LogSearchQuery(t *testing.T) {
+func TestUserUsbgeStbtistics_LogSebrchQuery(t *testing.T) {
 	db := setupForTest(t)
 
-	// Set searchOccurred to true to prevent using redis to log all-time stats during tests.
-	searchOccurred = 1
+	// Set sebrchOccurred to true to prevent using redis to log bll-time stbts during tests.
+	sebrchOccurred = 1
 	defer func() {
-		searchOccurred = 0
+		sebrchOccurred = 0
 	}()
 
 	user := types.User{
 		ID: 1,
 	}
-	err := logLocalEvents(context.Background(), db, []Event{{
-		EventName:        "SearchResultsQueried",
-		URL:              "https://sourcegraph.example.com/",
+	err := logLocblEvents(context.Bbckground(), db, []Event{{
+		EventNbme:        "SebrchResultsQueried",
+		URL:              "https://sourcegrbph.exbmple.com/",
 		UserID:           user.ID,
 		UserCookieID:     "test-cookie-id",
 		Source:           "WEB",
 		Argument:         nil,
-		PublicArgument:   json.RawMessage("{}"),
-		EvaluatedFlagSet: nil,
+		PublicArgument:   json.RbwMessbge("{}"),
+		EvblubtedFlbgSet: nil,
 		CohortID:         nil,
 	}})
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	a, err := GetByUserID(context.Background(), db, user.ID)
+	b, err := GetByUserID(context.Bbckground(), db, user.ID)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
-	if want := int32(1); a.SearchQueries != want {
-		t.Errorf("got %d, want %d", a.SearchQueries, want)
+	if wbnt := int32(1); b.SebrchQueries != wbnt {
+		t.Errorf("got %d, wbnt %d", b.SebrchQueries, wbnt)
 	}
 }
 
-func TestUserUsageStatistics_LogCodeIntelAction(t *testing.T) {
+func TestUserUsbgeStbtistics_LogCodeIntelAction(t *testing.T) {
 	db := setupForTest(t)
 
 	user := types.User{
 		ID: 1,
 	}
-	err := logLocalEvents(context.Background(), db, []Event{{
-		EventName:        "hover",
-		URL:              "https://sourcegraph.example.com/",
+	err := logLocblEvents(context.Bbckground(), db, []Event{{
+		EventNbme:        "hover",
+		URL:              "https://sourcegrbph.exbmple.com/",
 		UserID:           user.ID,
 		UserCookieID:     "test-cookie-id",
 		Source:           "WEB",
 		Argument:         nil,
 		PublicArgument:   nil,
-		EvaluatedFlagSet: nil,
+		EvblubtedFlbgSet: nil,
 		CohortID:         nil,
 	}})
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	a, err := GetByUserID(context.Background(), db, user.ID)
+	b, err := GetByUserID(context.Bbckground(), db, user.ID)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
-	if want := int32(1); a.CodeIntelligenceActions != want {
-		t.Errorf("got %d, want %d", a.CodeIntelligenceActions, want)
+	if wbnt := int32(1); b.CodeIntelligenceActions != wbnt {
+		t.Errorf("got %d, wbnt %d", b.CodeIntelligenceActions, wbnt)
 	}
 }
 
-func TestUserUsageStatistics_LogCodeHostIntegrationUsage(t *testing.T) {
+func TestUserUsbgeStbtistics_LogCodeHostIntegrbtionUsbge(t *testing.T) {
 	db := setupForTest(t)
 
 	user := types.User{
 		ID: 1,
 	}
-	err := logLocalEvents(context.Background(), db, []Event{{
-		EventName:        "hover",
-		URL:              "https://sourcegraph.example.com/",
+	err := logLocblEvents(context.Bbckground(), db, []Event{{
+		EventNbme:        "hover",
+		URL:              "https://sourcegrbph.exbmple.com/",
 		UserID:           user.ID,
 		UserCookieID:     "test-cookie-id",
 		Source:           "CODEHOSTINTEGRATION",
 		Argument:         nil,
 		PublicArgument:   nil,
-		EvaluatedFlagSet: nil,
+		EvblubtedFlbgSet: nil,
 		CohortID:         nil,
 	}})
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	a, err := GetByUserID(context.Background(), db, user.ID)
+	b, err := GetByUserID(context.Bbckground(), db, user.ID)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
-	diff := a.LastCodeHostIntegrationTime.Unix() - time.Now().Unix()
-	if wantMaxDiff := 10; diff > int64(wantMaxDiff) || diff < -int64(wantMaxDiff) {
-		t.Errorf("got %d seconds apart, wanted less than %d seconds apart", diff, wantMaxDiff)
+	diff := b.LbstCodeHostIntegrbtionTime.Unix() - time.Now().Unix()
+	if wbntMbxDiff := 10; diff > int64(wbntMbxDiff) || diff < -int64(wbntMbxDiff) {
+		t.Errorf("got %d seconds bpbrt, wbnted less thbn %d seconds bpbrt", diff, wbntMbxDiff)
 	}
 }
 
-func TestUserUsageStatistics_getUsersActiveToday(t *testing.T) {
+func TestUserUsbgeStbtistics_getUsersActiveTodby(t *testing.T) {
 	db := setupForTest(t)
 
-	ctx := context.Background()
+	ctx := context.Bbckground()
 
-	user1, err := db.Users().Create(ctx, database.NewUser{Username: "user1"})
+	user1, err := db.Users().Crebte(ctx, dbtbbbse.NewUser{Usernbme: "user1"})
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
-	user2, err := db.Users().Create(ctx, database.NewUser{Username: "user2"})
+	user2, err := db.Users().Crebte(ctx, dbtbbbse.NewUser{Usernbme: "user2"})
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
 	// Test single user
-	err = logLocalEvents(ctx, db, []Event{{
-		EventName:        "ViewBlob",
-		URL:              "https://sourcegraph.example.com/",
+	err = logLocblEvents(ctx, db, []Event{{
+		EventNbme:        "ViewBlob",
+		URL:              "https://sourcegrbph.exbmple.com/",
 		UserID:           user1.ID,
 		UserCookieID:     "test-cookie-id-1",
 		Source:           "WEB",
 		Argument:         nil,
 		PublicArgument:   nil,
-		EvaluatedFlagSet: nil,
+		EvblubtedFlbgSet: nil,
 		CohortID:         nil,
 	}})
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	n, err := GetUsersActiveTodayCount(ctx, db)
+	n, err := GetUsersActiveTodbyCount(ctx, db)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
-	if want := 1; n != want {
-		t.Errorf("got %d, want %d", n, want)
+	if wbnt := 1; n != wbnt {
+		t.Errorf("got %d, wbnt %d", n, wbnt)
 	}
 
-	// Test multiple users, with repeats
-	err = logLocalEvents(ctx, db, []Event{{
-		EventName:        "ViewBlob",
-		URL:              "https://sourcegraph.example.com/",
+	// Test multiple users, with repebts
+	err = logLocblEvents(ctx, db, []Event{{
+		EventNbme:        "ViewBlob",
+		URL:              "https://sourcegrbph.exbmple.com/",
 		UserID:           user2.ID,
 		UserCookieID:     "test-cookie-id-2",
 		Source:           "WEB",
 		Argument:         nil,
 		PublicArgument:   nil,
-		EvaluatedFlagSet: nil,
+		EvblubtedFlbgSet: nil,
 		CohortID:         nil,
 	}})
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
-	err = logLocalEvents(ctx, db, []Event{{
-		EventName:        "ViewBlob",
-		URL:              "https://sourcegraph.example.com/",
+	err = logLocblEvents(ctx, db, []Event{{
+		EventNbme:        "ViewBlob",
+		URL:              "https://sourcegrbph.exbmple.com/",
 		UserID:           user1.ID,
 		UserCookieID:     "test-cookie-id-1",
 		Source:           "WEB",
 		Argument:         nil,
 		PublicArgument:   nil,
-		EvaluatedFlagSet: nil,
+		EvblubtedFlbgSet: nil,
 		CohortID:         nil,
 	}})
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
-	err = logLocalEvents(ctx, db, []Event{{
-		EventName:        "ViewBlob",
-		URL:              "https://sourcegraph.example.com/",
+	err = logLocblEvents(ctx, db, []Event{{
+		EventNbme:        "ViewBlob",
+		URL:              "https://sourcegrbph.exbmple.com/",
 		UserID:           0,
 		UserCookieID:     "test-cookie-id-3",
 		Source:           "WEB",
 		Argument:         nil,
 		PublicArgument:   nil,
-		EvaluatedFlagSet: nil,
+		EvblubtedFlbgSet: nil,
 		CohortID:         nil,
 	}})
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
-	err = logLocalEvents(ctx, db, []Event{{
-		EventName:        "ViewBlob",
-		URL:              "https://sourcegraph.example.com/",
+	err = logLocblEvents(ctx, db, []Event{{
+		EventNbme:        "ViewBlob",
+		URL:              "https://sourcegrbph.exbmple.com/",
 		UserID:           user2.ID,
 		UserCookieID:     "test-cookie-id-2",
 		Source:           "WEB",
 		Argument:         nil,
 		PublicArgument:   nil,
-		EvaluatedFlagSet: nil,
+		EvblubtedFlbgSet: nil,
 		CohortID:         nil,
 	}})
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	n, err = GetUsersActiveTodayCount(ctx, db)
+	n, err = GetUsersActiveTodbyCount(ctx, db)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
-	if want := 3; n != want {
-		t.Errorf("got %d, want %d", n, want)
+	if wbnt := 3; n != wbnt {
+		t.Errorf("got %d, wbnt %d", n, wbnt)
 	}
 }
 
-func TestUserUsageStatistics_DAUs_WAUs_MAUs(t *testing.T) {
-	ctx := context.Background()
+func TestUserUsbgeStbtistics_DAUs_WAUs_MAUs(t *testing.T) {
+	ctx := context.Bbckground()
 
 	defer func() {
 		timeNow = time.Now
@@ -364,345 +364,345 @@ func TestUserUsageStatistics_DAUs_WAUs_MAUs(t *testing.T) {
 
 	db := setupForTest(t)
 
-	user1, err := db.Users().Create(ctx, database.NewUser{Username: "user1"})
+	user1, err := db.Users().Crebte(ctx, dbtbbbse.NewUser{Usernbme: "user1"})
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
-	user2, err := db.Users().Create(ctx, database.NewUser{Username: "user2"})
+	user2, err := db.Users().Crebte(ctx, dbtbbbse.NewUser{Usernbme: "user2"})
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	// hardcode "now" as 2018/03/31
-	now := time.Date(2018, 3, 31, 12, 0, 0, 0, time.UTC)
-	oneMonthFourDaysAgo := now.AddDate(0, -1, -4)
-	oneMonthThreeDaysAgo := now.AddDate(0, -1, -3)
-	twoWeeksTwoDaysAgo := now.AddDate(0, 0, -2*7-2)
-	twoWeeksAgo := now.AddDate(0, 0, -2*7)
-	fiveDaysAgo := now.AddDate(0, 0, -5)
-	threeDaysAgo := now.AddDate(0, 0, -3)
+	// hbrdcode "now" bs 2018/03/31
+	now := time.Dbte(2018, 3, 31, 12, 0, 0, 0, time.UTC)
+	oneMonthFourDbysAgo := now.AddDbte(0, -1, -4)
+	oneMonthThreeDbysAgo := now.AddDbte(0, -1, -3)
+	twoWeeksTwoDbysAgo := now.AddDbte(0, 0, -2*7-2)
+	twoWeeksAgo := now.AddDbte(0, 0, -2*7)
+	fiveDbysAgo := now.AddDbte(0, 0, -5)
+	threeDbysAgo := now.AddDbte(0, 0, -3)
 
 	// 2018/02/27 (2 users, 1 registered)
-	mockTimeNow(oneMonthFourDaysAgo)
-	err = logLocalEvents(ctx, db, []Event{{
-		EventName:        "ViewBlob",
-		URL:              "https://sourcegraph.example.com/",
+	mockTimeNow(oneMonthFourDbysAgo)
+	err = logLocblEvents(ctx, db, []Event{{
+		EventNbme:        "ViewBlob",
+		URL:              "https://sourcegrbph.exbmple.com/",
 		UserID:           user1.ID,
 		UserCookieID:     "test-cookie-id-1",
 		Source:           "WEB",
 		Argument:         nil,
 		PublicArgument:   nil,
-		EvaluatedFlagSet: nil,
+		EvblubtedFlbgSet: nil,
 		CohortID:         nil,
 	}})
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
-	err = logLocalEvents(ctx, db, []Event{{
-		EventName:        "ViewBlob",
-		URL:              "https://sourcegraph.example.com/",
+	err = logLocblEvents(ctx, db, []Event{{
+		EventNbme:        "ViewBlob",
+		URL:              "https://sourcegrbph.exbmple.com/",
 		UserID:           0,
-		UserCookieID:     "068ccbfa-8529-4fa7-859e-2c3514af2434",
+		UserCookieID:     "068ccbfb-8529-4fb7-859e-2c3514bf2434",
 		Source:           "WEB",
 		Argument:         nil,
 		PublicArgument:   nil,
-		EvaluatedFlagSet: nil,
+		EvblubtedFlbgSet: nil,
 		CohortID:         nil,
 	}})
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
-	err = logLocalEvents(ctx, db, []Event{{
-		EventName:        "hover",
-		URL:              "https://sourcegraph.example.com/",
+	err = logLocblEvents(ctx, db, []Event{{
+		EventNbme:        "hover",
+		URL:              "https://sourcegrbph.exbmple.com/",
 		UserID:           0,
-		UserCookieID:     "068ccbfa-8529-4fa7-859e-2c3514af2434",
+		UserCookieID:     "068ccbfb-8529-4fb7-859e-2c3514bf2434",
 		Source:           "CODEHOSTINTEGRATION",
 		Argument:         nil,
 		PublicArgument:   nil,
-		EvaluatedFlagSet: nil,
+		EvblubtedFlbgSet: nil,
 		CohortID:         nil,
 	}})
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
 	// 2018/02/28 (2 users, 1 registered)
-	mockTimeNow(oneMonthThreeDaysAgo)
-	err = logLocalEvents(ctx, db, []Event{{
-		EventName:        "ViewBlob",
-		URL:              "https://sourcegraph.example.com/",
+	mockTimeNow(oneMonthThreeDbysAgo)
+	err = logLocblEvents(ctx, db, []Event{{
+		EventNbme:        "ViewBlob",
+		URL:              "https://sourcegrbph.exbmple.com/",
 		UserID:           user1.ID,
 		UserCookieID:     "test-cookie-id-1",
 		Source:           "WEB",
 		Argument:         nil,
 		PublicArgument:   nil,
-		EvaluatedFlagSet: nil,
+		EvblubtedFlbgSet: nil,
 		CohortID:         nil,
 	}})
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
-	err = logLocalEvents(ctx, db, []Event{{
-		EventName:        "ViewBlob",
-		URL:              "https://sourcegraph.example.com/",
+	err = logLocblEvents(ctx, db, []Event{{
+		EventNbme:        "ViewBlob",
+		URL:              "https://sourcegrbph.exbmple.com/",
 		UserID:           0,
-		UserCookieID:     "30dd2661-2e73-4774-bc2b-7a126f360734",
+		UserCookieID:     "30dd2661-2e73-4774-bc2b-7b126f360734",
 		Source:           "WEB",
 		Argument:         nil,
 		PublicArgument:   nil,
-		EvaluatedFlagSet: nil,
+		EvblubtedFlbgSet: nil,
 		CohortID:         nil,
 	}})
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
 	// 2018/03/15 (2 users, 1 registered)
-	mockTimeNow(twoWeeksTwoDaysAgo)
-	err = logLocalEvents(ctx, db, []Event{{
-		EventName:        "ViewBlob",
-		URL:              "https://sourcegraph.example.com/",
+	mockTimeNow(twoWeeksTwoDbysAgo)
+	err = logLocblEvents(ctx, db, []Event{{
+		EventNbme:        "ViewBlob",
+		URL:              "https://sourcegrbph.exbmple.com/",
 		UserID:           user2.ID,
 		UserCookieID:     "test-cookie-id-2",
 		Source:           "WEB",
 		Argument:         nil,
 		PublicArgument:   nil,
-		EvaluatedFlagSet: nil,
+		EvblubtedFlbgSet: nil,
 		CohortID:         nil,
 	}})
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
-	err = logLocalEvents(ctx, db, []Event{{
-		EventName:        "ViewBlob",
-		URL:              "https://sourcegraph.example.com/",
+	err = logLocblEvents(ctx, db, []Event{{
+		EventNbme:        "ViewBlob",
+		URL:              "https://sourcegrbph.exbmple.com/",
 		UserID:           0,
-		UserCookieID:     "068ccbfa-8529-4fa7-859e-2c3514af2434",
+		UserCookieID:     "068ccbfb-8529-4fb7-859e-2c3514bf2434",
 		Source:           "WEB",
 		Argument:         nil,
 		PublicArgument:   nil,
-		EvaluatedFlagSet: nil,
+		EvblubtedFlbgSet: nil,
 		CohortID:         nil,
 	}})
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
 	// 2018/03/17 (2 users, 1 registered)
 	mockTimeNow(twoWeeksAgo)
-	err = logLocalEvents(ctx, db, []Event{{
-		EventName:        "ViewBlob",
-		URL:              "https://sourcegraph.example.com/",
+	err = logLocblEvents(ctx, db, []Event{{
+		EventNbme:        "ViewBlob",
+		URL:              "https://sourcegrbph.exbmple.com/",
 		UserID:           user2.ID,
 		UserCookieID:     "test-cookie-id-2",
 		Source:           "WEB",
 		Argument:         nil,
 		PublicArgument:   nil,
-		EvaluatedFlagSet: nil,
+		EvblubtedFlbgSet: nil,
 		CohortID:         nil,
 	}})
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
-	err = logLocalEvents(ctx, db, []Event{{
-		EventName:        "ViewBlob",
-		URL:              "https://sourcegraph.example.com/",
+	err = logLocblEvents(ctx, db, []Event{{
+		EventNbme:        "ViewBlob",
+		URL:              "https://sourcegrbph.exbmple.com/",
 		UserID:           0,
-		UserCookieID:     "b309dad0-b6f9-440d-bf0a-4cf38030ca70",
+		UserCookieID:     "b309dbd0-b6f9-440d-bf0b-4cf38030cb70",
 		Source:           "WEB",
 		Argument:         nil,
 		PublicArgument:   nil,
-		EvaluatedFlagSet: nil,
+		EvblubtedFlbgSet: nil,
 		CohortID:         nil,
 	}})
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
-	err = logLocalEvents(ctx, db, []Event{{
-		EventName:        "hover",
-		URL:              "https://sourcegraph.example.com/",
+	err = logLocblEvents(ctx, db, []Event{{
+		EventNbme:        "hover",
+		URL:              "https://sourcegrbph.exbmple.com/",
 		UserID:           user2.ID,
 		UserCookieID:     "test-cookie-id-2",
 		Source:           "CODEHOSTINTEGRATION",
 		Argument:         nil,
 		PublicArgument:   nil,
-		EvaluatedFlagSet: nil,
+		EvblubtedFlbgSet: nil,
 		CohortID:         nil,
 	}})
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
 	// 2018/03/26 (1 user, 1 registered)
-	mockTimeNow(fiveDaysAgo)
-	err = logLocalEvents(ctx, db, []Event{{
-		EventName:        "ViewBlob",
-		URL:              "https://sourcegraph.example.com/",
+	mockTimeNow(fiveDbysAgo)
+	err = logLocblEvents(ctx, db, []Event{{
+		EventNbme:        "ViewBlob",
+		URL:              "https://sourcegrbph.exbmple.com/",
 		UserID:           user1.ID,
 		UserCookieID:     "test-cookie-id-1",
 		Source:           "WEB",
 		Argument:         nil,
 		PublicArgument:   nil,
-		EvaluatedFlagSet: nil,
+		EvblubtedFlbgSet: nil,
 		CohortID:         nil,
 	}})
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
 	// 2018/03/28 (2 users, 2 registered)
-	mockTimeNow(threeDaysAgo)
-	err = logLocalEvents(ctx, db, []Event{{
-		EventName:        "ViewBlob",
-		URL:              "https://sourcegraph.example.com/",
+	mockTimeNow(threeDbysAgo)
+	err = logLocblEvents(ctx, db, []Event{{
+		EventNbme:        "ViewBlob",
+		URL:              "https://sourcegrbph.exbmple.com/",
 		UserID:           user1.ID,
 		UserCookieID:     "test-cookie-id-1",
 		Source:           "WEB",
 		Argument:         nil,
 		PublicArgument:   nil,
-		EvaluatedFlagSet: nil,
+		EvblubtedFlbgSet: nil,
 		CohortID:         nil,
 	}})
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
-	err = logLocalEvents(ctx, db, []Event{{
-		EventName:        "ViewBlob",
-		URL:              "https://sourcegraph.example.com/",
+	err = logLocblEvents(ctx, db, []Event{{
+		EventNbme:        "ViewBlob",
+		URL:              "https://sourcegrbph.exbmple.com/",
 		UserID:           user2.ID,
 		UserCookieID:     "test-cookie-id-2",
 		Source:           "WEB",
 		Argument:         nil,
 		PublicArgument:   nil,
-		EvaluatedFlagSet: nil,
+		EvblubtedFlbgSet: nil,
 		CohortID:         nil,
 	}})
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
-	err = logLocalEvents(ctx, db, []Event{{
-		EventName:        "hover",
-		URL:              "https://sourcegraph.example.com/",
+	err = logLocblEvents(ctx, db, []Event{{
+		EventNbme:        "hover",
+		URL:              "https://sourcegrbph.exbmple.com/",
 		UserID:           user1.ID,
 		UserCookieID:     "test-cookie-id-1",
 		Source:           "CODEHOSTINTEGRATION",
 		Argument:         nil,
 		PublicArgument:   nil,
-		EvaluatedFlagSet: nil,
+		EvblubtedFlbgSet: nil,
 		CohortID:         nil,
 	}})
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	wantMAUs := []*types.SiteActivityPeriod{
+	wbntMAUs := []*types.SiteActivityPeriod{
 		{
-			StartTime:           time.Date(2018, 3, 1, 0, 0, 0, 0, time.UTC),
+			StbrtTime:           time.Dbte(2018, 3, 1, 0, 0, 0, 0, time.UTC),
 			UserCount:           4,
 			RegisteredUserCount: 2,
 			AnonymousUserCount:  2,
-			// IntegrationUserCount deprecated, always returns zero.
-			IntegrationUserCount: 0,
+			// IntegrbtionUserCount deprecbted, blwbys returns zero.
+			IntegrbtionUserCount: 0,
 		},
 		{
-			StartTime:           time.Date(2018, 2, 1, 0, 0, 0, 0, time.UTC),
+			StbrtTime:           time.Dbte(2018, 2, 1, 0, 0, 0, 0, time.UTC),
 			UserCount:           3,
 			RegisteredUserCount: 1,
 			AnonymousUserCount:  2,
-			// IntegrationUserCount deprecated, always returns zero.
-			IntegrationUserCount: 0,
+			// IntegrbtionUserCount deprecbted, blwbys returns zero.
+			IntegrbtionUserCount: 0,
 		},
 		{
-			StartTime: time.Date(2018, 1, 1, 0, 0, 0, 0, time.UTC),
+			StbrtTime: time.Dbte(2018, 1, 1, 0, 0, 0, 0, time.UTC),
 		},
 	}
 
-	wantWAUs := []*types.SiteActivityPeriod{
+	wbntWAUs := []*types.SiteActivityPeriod{
 		{
-			StartTime:           time.Date(2018, 3, 25, 0, 0, 0, 0, time.UTC),
+			StbrtTime:           time.Dbte(2018, 3, 25, 0, 0, 0, 0, time.UTC),
 			UserCount:           2,
 			RegisteredUserCount: 2,
 			AnonymousUserCount:  0,
-			// IntegrationUserCount deprecated, always returns zero.
-			IntegrationUserCount: 0,
+			// IntegrbtionUserCount deprecbted, blwbys returns zero.
+			IntegrbtionUserCount: 0,
 		},
 		{
-			StartTime: time.Date(2018, 3, 18, 0, 0, 0, 0, time.UTC),
+			StbrtTime: time.Dbte(2018, 3, 18, 0, 0, 0, 0, time.UTC),
 		},
 		{
-			StartTime:           time.Date(2018, 3, 11, 0, 0, 0, 0, time.UTC),
+			StbrtTime:           time.Dbte(2018, 3, 11, 0, 0, 0, 0, time.UTC),
 			UserCount:           3,
 			RegisteredUserCount: 1,
 			AnonymousUserCount:  2,
-			// IntegrationUserCount deprecated, always returns zero.
-			IntegrationUserCount: 0,
+			// IntegrbtionUserCount deprecbted, blwbys returns zero.
+			IntegrbtionUserCount: 0,
 		},
 		{
-			StartTime: time.Date(2018, 3, 04, 0, 0, 0, 0, time.UTC),
+			StbrtTime: time.Dbte(2018, 3, 04, 0, 0, 0, 0, time.UTC),
 		},
 	}
 
-	wantDAUs := []*types.SiteActivityPeriod{
+	wbntDAUs := []*types.SiteActivityPeriod{
 		{
-			StartTime: time.Date(2018, 3, 31, 0, 0, 0, 0, time.UTC),
+			StbrtTime: time.Dbte(2018, 3, 31, 0, 0, 0, 0, time.UTC),
 		},
 		{
-			StartTime: time.Date(2018, 3, 30, 0, 0, 0, 0, time.UTC),
+			StbrtTime: time.Dbte(2018, 3, 30, 0, 0, 0, 0, time.UTC),
 		},
 		{
-			StartTime: time.Date(2018, 3, 29, 0, 0, 0, 0, time.UTC),
+			StbrtTime: time.Dbte(2018, 3, 29, 0, 0, 0, 0, time.UTC),
 		},
 		{
-			StartTime:           time.Date(2018, 3, 28, 0, 0, 0, 0, time.UTC),
+			StbrtTime:           time.Dbte(2018, 3, 28, 0, 0, 0, 0, time.UTC),
 			UserCount:           2,
 			RegisteredUserCount: 2,
 			AnonymousUserCount:  0,
-			// IntegrationUserCount deprecated, always returns zero.
-			IntegrationUserCount: 0,
+			// IntegrbtionUserCount deprecbted, blwbys returns zero.
+			IntegrbtionUserCount: 0,
 		},
 		{
-			StartTime: time.Date(2018, 3, 27, 0, 0, 0, 0, time.UTC),
+			StbrtTime: time.Dbte(2018, 3, 27, 0, 0, 0, 0, time.UTC),
 		},
 		{
-			StartTime:           time.Date(2018, 3, 26, 0, 0, 0, 0, time.UTC),
+			StbrtTime:           time.Dbte(2018, 3, 26, 0, 0, 0, 0, time.UTC),
 			UserCount:           1,
 			RegisteredUserCount: 1,
 			AnonymousUserCount:  0,
-			// IntegrationUserCount deprecated, always returns zero.
-			IntegrationUserCount: 0,
+			// IntegrbtionUserCount deprecbted, blwbys returns zero.
+			IntegrbtionUserCount: 0,
 		},
 		{
-			StartTime: time.Date(2018, 3, 25, 0, 0, 0, 0, time.UTC),
+			StbrtTime: time.Dbte(2018, 3, 25, 0, 0, 0, 0, time.UTC),
 		},
 	}
 
-	want := &types.SiteUsageStatistics{
-		DAUs: wantDAUs,
-		WAUs: wantWAUs,
-		MAUs: wantMAUs,
+	wbnt := &types.SiteUsbgeStbtistics{
+		DAUs: wbntDAUs,
+		WAUs: wbntWAUs,
+		MAUs: wbntMAUs,
 	}
 
 	mockTimeNow(now)
-	days, weeks, months := 7, 4, 3
-	siteActivity, err := GetSiteUsageStatistics(context.Background(), db, &SiteUsageStatisticsOptions{
-		DayPeriods:   &days,
+	dbys, weeks, months := 7, 4, 3
+	siteActivity, err := GetSiteUsbgeStbtistics(context.Bbckground(), db, &SiteUsbgeStbtisticsOptions{
+		DbyPeriods:   &dbys,
 		WeekPeriods:  &weeks,
 		MonthPeriods: &months,
 	})
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	err = siteActivityCompare(siteActivity, want)
+	err = siteActivityCompbre(siteActivity, wbnt)
 	if err != nil {
 		t.Error(err)
 	}
 }
 
-func setupForTest(t *testing.T) database.DB {
+func setupForTest(t *testing.T) dbtbbbse.DB {
 	logger := logtest.Scoped(t)
-	return database.NewDB(logger, dbtest.NewDB(logger, t))
+	return dbtbbbse.NewDB(logger, dbtest.NewDB(logger, t))
 }
 
 func mockTimeNow(t time.Time) {
@@ -711,49 +711,49 @@ func mockTimeNow(t time.Time) {
 	}
 }
 
-func siteActivityCompare(got, want *types.SiteUsageStatistics) error {
-	if got == nil || want == nil {
-		return errors.New("site activities can not be nil")
+func siteActivityCompbre(got, wbnt *types.SiteUsbgeStbtistics) error {
+	if got == nil || wbnt == nil {
+		return errors.New("site bctivities cbn not be nil")
 	}
-	if got == want {
+	if got == wbnt {
 		return nil
 	}
-	if len(got.DAUs) != len(want.DAUs) || len(got.WAUs) != len(want.WAUs) || len(got.MAUs) != len(want.MAUs) {
-		return errors.Errorf("site activities must be same length, got %d want %d (DAUs), got %d want %d (WAUs), got %d want %d (MAUs)", len(got.DAUs), len(want.DAUs), len(got.WAUs), len(want.WAUs), len(got.MAUs), len(want.MAUs))
+	if len(got.DAUs) != len(wbnt.DAUs) || len(got.WAUs) != len(wbnt.WAUs) || len(got.MAUs) != len(wbnt.MAUs) {
+		return errors.Errorf("site bctivities must be sbme length, got %d wbnt %d (DAUs), got %d wbnt %d (WAUs), got %d wbnt %d (MAUs)", len(got.DAUs), len(wbnt.DAUs), len(got.WAUs), len(wbnt.WAUs), len(got.MAUs), len(wbnt.MAUs))
 	}
-	if err := siteActivityPeriodSliceCompare("DAUs", got.DAUs, want.DAUs); err != nil {
+	if err := siteActivityPeriodSliceCompbre("DAUs", got.DAUs, wbnt.DAUs); err != nil {
 		return err
 	}
-	if err := siteActivityPeriodSliceCompare("WAUs", got.WAUs, want.WAUs); err != nil {
+	if err := siteActivityPeriodSliceCompbre("WAUs", got.WAUs, wbnt.WAUs); err != nil {
 		return err
 	}
-	if err := siteActivityPeriodSliceCompare("MAUs", got.MAUs, want.MAUs); err != nil {
+	if err := siteActivityPeriodSliceCompbre("MAUs", got.MAUs, wbnt.MAUs); err != nil {
 		return err
 	}
 	return nil
 }
 
-func siteActivityPeriodSliceCompare(label string, got, want []*types.SiteActivityPeriod) error {
-	if got == nil || want == nil {
-		return errors.Errorf("%v slices can not be nil", label)
+func siteActivityPeriodSliceCompbre(lbbel string, got, wbnt []*types.SiteActivityPeriod) error {
+	if got == nil || wbnt == nil {
+		return errors.Errorf("%v slices cbn not be nil", lbbel)
 	}
-	for i, v := range got {
-		if err := siteActivityPeriodCompare(label, v, want[i]); err != nil {
+	for i, v := rbnge got {
+		if err := siteActivityPeriodCompbre(lbbel, v, wbnt[i]); err != nil {
 			return err
 		}
 	}
 	return nil
 }
 
-func siteActivityPeriodCompare(label string, got, want *types.SiteActivityPeriod) error {
-	if got == nil || want == nil {
-		return errors.New("site activity periods can not be nil")
+func siteActivityPeriodCompbre(lbbel string, got, wbnt *types.SiteActivityPeriod) error {
+	if got == nil || wbnt == nil {
+		return errors.New("site bctivity periods cbn not be nil")
 	}
-	if got == want {
+	if got == wbnt {
 		return nil
 	}
-	if got.StartTime != want.StartTime || got.UserCount != want.UserCount || got.RegisteredUserCount != want.RegisteredUserCount || got.AnonymousUserCount != want.AnonymousUserCount || got.IntegrationUserCount != want.IntegrationUserCount {
-		return errors.Errorf("[%v] got %+v want %+v", label, got, want)
+	if got.StbrtTime != wbnt.StbrtTime || got.UserCount != wbnt.UserCount || got.RegisteredUserCount != wbnt.RegisteredUserCount || got.AnonymousUserCount != wbnt.AnonymousUserCount || got.IntegrbtionUserCount != wbnt.IntegrbtionUserCount {
+		return errors.Errorf("[%v] got %+v wbnt %+v", lbbel, got, wbnt)
 	}
 	return nil
 }

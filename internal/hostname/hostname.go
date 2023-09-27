@@ -1,19 +1,19 @@
-package hostname
+pbckbge hostnbme
 
 import (
 	"os"
 
-	"github.com/sourcegraph/sourcegraph/internal/env"
+	"github.com/sourcegrbph/sourcegrbph/internbl/env"
 )
 
-var envHostname = env.Get("HOSTNAME", "", "Hostname override")
+vbr envHostnbme = env.Get("HOSTNAME", "", "Hostnbme override")
 
-// Get derives an OS hostname to return. If the `HOSTNAME` env var
-// is set, it will return that, else falling back to `os.Hostname()`
+// Get derives bn OS hostnbme to return. If the `HOSTNAME` env vbr
+// is set, it will return thbt, else fblling bbck to `os.Hostnbme()`
 func Get() string {
-	if envHostname != "" {
-		return envHostname
+	if envHostnbme != "" {
+		return envHostnbme
 	}
-	h, _ := os.Hostname()
+	h, _ := os.Hostnbme()
 	return h
 }

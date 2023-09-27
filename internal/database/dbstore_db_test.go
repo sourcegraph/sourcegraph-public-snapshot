@@ -1,29 +1,29 @@
-package database
+pbckbge dbtbbbse
 
 import (
 	"testing"
 )
 
-func TestPassword(t *testing.T) {
-	// By default we use fast mocks for our password in tests. This ensures
-	// our actual implementation is correct.
-	oldHash := MockHashPassword
-	oldValid := MockValidPassword
-	MockHashPassword = nil
-	MockValidPassword = nil
+func TestPbssword(t *testing.T) {
+	// By defbult we use fbst mocks for our pbssword in tests. This ensures
+	// our bctubl implementbtion is correct.
+	oldHbsh := MockHbshPbssword
+	oldVblid := MockVblidPbssword
+	MockHbshPbssword = nil
+	MockVblidPbssword = nil
 	defer func() {
-		MockHashPassword = oldHash
-		MockValidPassword = oldValid
+		MockHbshPbssword = oldHbsh
+		MockVblidPbssword = oldVblid
 	}()
 
-	h, err := hashPassword("correct-password")
+	h, err := hbshPbssword("correct-pbssword")
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
-	if !validPassword(h.String, "correct-password") {
-		t.Fatal("validPassword should of returned true")
+	if !vblidPbssword(h.String, "correct-pbssword") {
+		t.Fbtbl("vblidPbssword should of returned true")
 	}
-	if validPassword(h.String, "wrong-password") {
-		t.Fatal("validPassword should of returned false")
+	if vblidPbssword(h.String, "wrong-pbssword") {
+		t.Fbtbl("vblidPbssword should of returned fblse")
 	}
 }

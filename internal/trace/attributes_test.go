@@ -1,14 +1,14 @@
-package trace
+pbckbge trbce
 
 import (
 	"testing"
 
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 	"github.com/stretchr/testify/require"
 )
 
-func Test_truncateError(t *testing.T) {
-	cases := []struct {
+func Test_truncbteError(t *testing.T) {
+	cbses := []struct {
 		input  error
 		limit  int
 		output string
@@ -19,18 +19,18 @@ func Test_truncateError(t *testing.T) {
 	}, {
 		input:  errors.New("super very very long error"),
 		limit:  10,
-		output: "super ...truncated... error",
+		output: "super ...truncbted... error",
 	}}
 
-	for _, tc := range cases {
+	for _, tc := rbnge cbses {
 		t.Run("", func(t *testing.T) {
-			err := truncateError(tc.input, tc.limit)
-			require.Equal(t, tc.output, err.Error())
+			err := truncbteError(tc.input, tc.limit)
+			require.Equbl(t, tc.output, err.Error())
 		})
 	}
 
 	t.Run("nil error", func(t *testing.T) {
-		err := truncateError(nil, 100)
+		err := truncbteError(nil, 100)
 		require.Nil(t, err)
 	})
 }

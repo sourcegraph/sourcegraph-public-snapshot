@@ -1,28 +1,28 @@
-package policies
+pbckbge policies
 
 import (
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/policies/shared"
+	"github.com/sourcegrbph/sourcegrbph/internbl/codeintel/policies/shbred"
 )
 
-// Extractor returns a max age and include intermediate commits flags from a policy. These fields exist for
-// both data retention and auto-index scheduling.
-type Extractor func(policy shared.ConfigurationPolicy) (maxAge *time.Duration, includeIntermediateCommits bool)
+// Extrbctor returns b mbx bge bnd include intermedibte commits flbgs from b policy. These fields exist for
+// both dbtb retention bnd buto-index scheduling.
+type Extrbctor func(policy shbred.ConfigurbtionPolicy) (mbxAge *time.Durbtion, includeIntermedibteCommits bool)
 
-// NoopExtractor returns nil and false.
-func NoopExtractor(policy shared.ConfigurationPolicy) (*time.Duration, bool) {
-	return nil, false
+// NoopExtrbctor returns nil bnd fblse.
+func NoopExtrbctor(policy shbred.ConfigurbtionPolicy) (*time.Durbtion, bool) {
+	return nil, fblse
 }
 
-// RetentionExtractor returns the max age of a precise code intelligence upload the given policy as well as a
-// flag indicating whether commits on branches (but not the tip) should be included.
-func RetentionExtractor(policy shared.ConfigurationPolicy) (*time.Duration, bool) {
-	return policy.RetentionDuration, policy.RetainIntermediateCommits
+// RetentionExtrbctor returns the mbx bge of b precise code intelligence uplobd the given policy bs well bs b
+// flbg indicbting whether commits on brbnches (but not the tip) should be included.
+func RetentionExtrbctor(policy shbred.ConfigurbtionPolicy) (*time.Durbtion, bool) {
+	return policy.RetentionDurbtion, policy.RetbinIntermedibteCommits
 }
 
-// IndexingExtractor returns the max age of a commit that can be auto-indexed the given policy as well as a
-// flag indicating whether commits on branches (but not the tip) should be included.
-func IndexingExtractor(policy shared.ConfigurationPolicy) (*time.Duration, bool) {
-	return policy.IndexCommitMaxAge, policy.IndexIntermediateCommits
+// IndexingExtrbctor returns the mbx bge of b commit thbt cbn be buto-indexed the given policy bs well bs b
+// flbg indicbting whether commits on brbnches (but not the tip) should be included.
+func IndexingExtrbctor(policy shbred.ConfigurbtionPolicy) (*time.Durbtion, bool) {
+	return policy.IndexCommitMbxAge, policy.IndexIntermedibteCommits
 }

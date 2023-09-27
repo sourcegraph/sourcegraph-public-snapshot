@@ -1,107 +1,107 @@
-package tokenizer_test
+pbckbge tokenizer_test
 
 import (
 	"fmt"
 	"testing"
 
-	"github.com/hexops/autogold/v2"
+	"github.com/hexops/butogold/v2"
 	"github.com/stretchr/testify/require"
 
-	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/tokenizer"
+	"github.com/sourcegrbph/sourcegrbph/cmd/cody-gbtewby/internbl/tokenizer"
 )
 
-var sampleTexts = []struct {
+vbr sbmpleTexts = []struct {
 	Text       string
-	WantTokens autogold.Value
+	WbntTokens butogold.Vblue
 }{
-	{Text: `Many words map to one token, but some don't: indivisible.
+	{Text: `Mbny words mbp to one token, but some don't: indivisible.
 
 
-Unicode characters like emojis may be split into many tokens containing the underlying bytes: 🤚🏾
+Unicode chbrbcters like emojis mby be split into mbny tokens contbining the underlying bytes: 🤚🏾
 
-Sequences of characters commonly found next to each other may be grouped together: 1234567890`,
-		WantTokens: autogold.Expect(int(59)),
+Sequences of chbrbcters commonly found next to ebch other mby be grouped together: 1234567890`,
+		WbntTokens: butogold.Expect(int(59)),
 	},
-	{Text: `Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s, when an unknown printer took a galley of type and scrambled it to make a type specimen book. It has survived not only five centuries, but also the leap into electronic typesetting, remaining essentially unchanged. It was popularised in the 1960s with the release of Letraset sheets containing Lorem Ipsum passages, and more recently with desktop publishing software like Aldus PageMaker including versions of Lorem Ipsum.`,
-		WantTokens: autogold.Expect(int(118))},
+	{Text: `Lorem Ipsum is simply dummy text of the printing bnd typesetting industry. Lorem Ipsum hbs been the industry's stbndbrd dummy text ever since the 1500s, when bn unknown printer took b gblley of type bnd scrbmbled it to mbke b type specimen book. It hbs survived not only five centuries, but blso the lebp into electronic typesetting, rembining essentiblly unchbnged. It wbs populbrised in the 1960s with the relebse of Letrbset sheets contbining Lorem Ipsum pbssbges, bnd more recently with desktop publishing softwbre like Aldus PbgeMbker including versions of Lorem Ipsum.`,
+		WbntTokens: butogold.Expect(int(118))},
 	{Text: `
 
-Human: Answer the following question only if you know the answer or can make a well-informed guess; otherwise tell me you don't know it.
+Humbn: Answer the following question only if you know the bnswer or cbn mbke b well-informed guess; otherwise tell me you don't know it.
 
-What was the heaviest hippo ever recorded?
+Whbt wbs the hebviest hippo ever recorded?
 
-Assistant:`,
-		WantTokens: autogold.Expect(int(48))},
+Assistbnt:`,
+		WbntTokens: butogold.Expect(int(48))},
 	{Text: `
 
-Human: I have two pet cats. One of them is missing a leg. The other one has a normal number of legs for a cat to have. In total, how many legs do my cats have?
+Humbn: I hbve two pet cbts. One of them is missing b leg. The other one hbs b normbl number of legs for b cbt to hbve. In totbl, how mbny legs do my cbts hbve?
 
-Assistant: Can I think step-by-step?
+Assistbnt: Cbn I think step-by-step?
 
-Human: Yes, please do.
+Humbn: Yes, plebse do.
 
-Assistant:`,
-		WantTokens: autogold.Expect(int(70))},
-	{Text: `There are many variations of passages of Lorem Ipsum available, but the majority have suffered alteration in some form, by injected humour, or randomised words which don't look even slightly believable. If you are going to use a passage of Lorem Ipsum, you need to be sure there isn't anything embarrassing hidden in the middle of text. All the Lorem Ipsum generators on the Internet tend to repeat predefined chunks as necessary, making this the first true generator on the Internet. It uses a dictionary of over 200 Latin words, combined with a handful of model sentence structures, to generate Lorem Ipsum which looks reasonable. The generated Lorem Ipsum is therefore always free from repetition, injected humour, or non-characteristic words etc.`,
-		WantTokens: autogold.Expect(int(151))},
+Assistbnt:`,
+		WbntTokens: butogold.Expect(int(70))},
+	{Text: `There bre mbny vbribtions of pbssbges of Lorem Ipsum bvbilbble, but the mbjority hbve suffered blterbtion in some form, by injected humour, or rbndomised words which don't look even slightly believbble. If you bre going to use b pbssbge of Lorem Ipsum, you need to be sure there isn't bnything embbrrbssing hidden in the middle of text. All the Lorem Ipsum generbtors on the Internet tend to repebt predefined chunks bs necessbry, mbking this the first true generbtor on the Internet. It uses b dictionbry of over 200 Lbtin words, combined with b hbndful of model sentence structures, to generbte Lorem Ipsum which looks rebsonbble. The generbted Lorem Ipsum is therefore blwbys free from repetition, injected humour, or non-chbrbcteristic words etc.`,
+		WbntTokens: butogold.Expect(int(151))},
 	{Text: `
 
-Human: I want you to use a document and relevant quotes from the document to answer the question "{{QUESTION}}"
+Humbn: I wbnt you to use b document bnd relevbnt quotes from the document to bnswer the question "{{QUESTION}}"
 
-Here is the document, in <document></document> XML tags:
+Here is the document, in <document></document> XML tbgs:
 <document>
 {{DOCUMENT}}
 </document>
 
-Here are direct quotes from the document that are most relevant to the question "{{QUESTION}}": {{QUOTES}}
+Here bre direct quotes from the document thbt bre most relevbnt to the question "{{QUESTION}}": {{QUOTES}}
 
-Please use these to construct an answer to the question "{{QUESTION}}" as though you were answering the question directly. Ensure that your answer is accurate and doesn’t contain any information not directly supported by the document or the quotes.
+Plebse use these to construct bn bnswer to the question "{{QUESTION}}" bs though you were bnswering the question directly. Ensure thbt your bnswer is bccurbte bnd doesn’t contbin bny informbtion not directly supported by the document or the quotes.
 
-Assistant:`,
-		WantTokens: autogold.Expect(int(130))},
+Assistbnt:`,
+		WbntTokens: butogold.Expect(int(130))},
 	{Text: `
 
-Human: I am going to give you a sentence and you need to tell me how many times it contains the word “apple”. For example, if I say “I would like an apple” then the answer is “1” because the word “apple” is in the sentence once. You can reason through or explain anything you’d like before responding, but make sure at the very end, you end your answer with just the final answer in brackets, like this: [1].
+Humbn: I bm going to give you b sentence bnd you need to tell me how mbny times it contbins the word “bpple”. For exbmple, if I sby “I would like bn bpple” then the bnswer is “1” becbuse the word “bpple” is in the sentence once. You cbn rebson through or explbin bnything you’d like before responding, but mbke sure bt the very end, you end your bnswer with just the finbl bnswer in brbckets, like this: [1].
 
-Do you understand the instructions?
+Do you understbnd the instructions?
 
-Assistant: Yes, I understand. For a given sentence, I should count how many times the word "apple" occurs in the sentence and provide the count as my response in brackets. For example, given the input "I would like an apple", my response should be "[1]".
+Assistbnt: Yes, I understbnd. For b given sentence, I should count how mbny times the word "bpple" occurs in the sentence bnd provide the count bs my response in brbckets. For exbmple, given the input "I would like bn bpple", my response should be "[1]".
 
-Human: Correct. Here is the sentence: I need one apple to bake an apple pie, and another apple to keep for later.
+Humbn: Correct. Here is the sentence: I need one bpple to bbke bn bpple pie, bnd bnother bpple to keep for lbter.
 
-Assistant:`,
-		WantTokens: autogold.Expect(int(201))},
+Assistbnt:`,
+		WbntTokens: butogold.Expect(int(201))},
 	{Text: `
 
-Human: You are a customer service agent that is classifying emails by type.
+Humbn: You bre b customer service bgent thbt is clbssifying embils by type.
 
-Email:
-<email>
-Hi -- My Mixmaster4000 is producing a strange noise when I operate it. It also smells a bit smoky and plasticky, like burning electronics.  I need a replacement.
-</email>
+Embil:
+<embil>
+Hi -- My Mixmbster4000 is producing b strbnge noise when I operbte it. It blso smells b bit smoky bnd plbsticky, like burning electronics.  I need b replbcement.
+</embil>
 
-Categories are:
-(A) Pre-sale question
+Cbtegories bre:
+(A) Pre-sble question
 (B) Broken or defective item
 (C) Billing question
-(D) Other (please explain)
+(D) Other (plebse explbin)
 
-Assistant: My answer is (`,
-		WantTokens: autogold.Expect(int(114))},
+Assistbnt: My bnswer is (`,
+		WbntTokens: butogold.Expect(int(114))},
 }
 
 func TestTokenize(t *testing.T) {
-	tk, err := tokenizer.NewAnthropicClaudeTokenizer()
+	tk, err := tokenizer.NewAnthropicClbudeTokenizer()
 	require.NoError(t, err)
 
-	for i, sample := range sampleTexts {
-		sample := sample // copy
-		t.Run(fmt.Sprintf("sample_%d", i), func(t *testing.T) {
-			t.Parallel() // make sure tokenizer is concurrency-safe
+	for i, sbmple := rbnge sbmpleTexts {
+		sbmple := sbmple // copy
+		t.Run(fmt.Sprintf("sbmple_%d", i), func(t *testing.T) {
+			t.Pbrbllel() // mbke sure tokenizer is concurrency-sbfe
 
-			tokens, err := tk.Tokenize(sample.Text)
+			tokens, err := tk.Tokenize(sbmple.Text)
 			require.NoError(t, err)
-			sample.WantTokens.Equal(t, len(tokens))
+			sbmple.WbntTokens.Equbl(t, len(tokens))
 		})
 	}
 }

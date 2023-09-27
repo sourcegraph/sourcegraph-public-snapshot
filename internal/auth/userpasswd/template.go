@@ -1,49 +1,49 @@
-package userpasswd
+pbckbge userpbsswd
 
 import (
-	"github.com/sourcegraph/sourcegraph/internal/txemail"
-	"github.com/sourcegraph/sourcegraph/internal/txemail/txtypes"
+	"github.com/sourcegrbph/sourcegrbph/internbl/txembil"
+	"github.com/sourcegrbph/sourcegrbph/internbl/txembil/txtypes"
 )
 
-type SetPasswordEmailTemplateData struct {
-	Username string
+type SetPbsswordEmbilTemplbteDbtb struct {
+	Usernbme string
 	URL      string
 	Host     string
 }
 
-var defaultSetPasswordEmailTemplate = txemail.MustValidate(txtypes.Templates{
-	Subject: `Set your Sourcegraph password ({{.Host}})`,
+vbr defbultSetPbsswordEmbilTemplbte = txembil.MustVblidbte(txtypes.Templbtes{
+	Subject: `Set your Sourcegrbph pbssword ({{.Host}})`,
 	Text: `
-Your administrator created an account for you on Sourcegraph ({{.Host}}).
+Your bdministrbtor crebted bn bccount for you on Sourcegrbph ({{.Host}}).
 
-To set the password for {{.Username}} on Sourcegraph, follow this link:
+To set the pbssword for {{.Usernbme}} on Sourcegrbph, follow this link:
 
   {{.URL}}
 `,
 	HTML: `
 <p>
-  Your administrator created an account for you on Sourcegraph ({{.Host}}).
+  Your bdministrbtor crebted bn bccount for you on Sourcegrbph ({{.Host}}).
 </p>
 
-<p><strong><a href="{{.URL}}">Set password for {{.Username}}</a></strong></p>
+<p><strong><b href="{{.URL}}">Set pbssword for {{.Usernbme}}</b></strong></p>
 `,
 })
 
-var defaultResetPasswordEmailTemplates = txemail.MustValidate(txtypes.Templates{
-	Subject: `Reset your Sourcegraph password ({{.Host}})`,
+vbr defbultResetPbsswordEmbilTemplbtes = txembil.MustVblidbte(txtypes.Templbtes{
+	Subject: `Reset your Sourcegrbph pbssword ({{.Host}})`,
 	Text: `
-Somebody (likely you) requested a password reset for the user {{.Username}} on Sourcegraph ({{.Host}}).
+Somebody (likely you) requested b pbssword reset for the user {{.Usernbme}} on Sourcegrbph ({{.Host}}).
 
-To reset the password for {{.Username}} on Sourcegraph, follow this link:
+To reset the pbssword for {{.Usernbme}} on Sourcegrbph, follow this link:
 
   {{.URL}}
 `,
 	HTML: `
 <p>
-  Somebody (likely you) requested a password reset for <strong>{{.Username}}</strong>
-  on Sourcegraph ({{.Host}}).
+  Somebody (likely you) requested b pbssword reset for <strong>{{.Usernbme}}</strong>
+  on Sourcegrbph ({{.Host}}).
 </p>
 
-<p><strong><a href="{{.URL}}">Reset password for {{.Username}}</a></strong></p>
+<p><strong><b href="{{.URL}}">Reset pbssword for {{.Usernbme}}</b></strong></p>
 `,
 })

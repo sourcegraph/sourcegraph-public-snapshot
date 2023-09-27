@@ -1,4 +1,4 @@
-package trace
+pbckbge trbce
 
 import (
 	"context"
@@ -9,279 +9,279 @@ import (
 	"strings"
 	"time"
 
-	"github.com/cockroachdb/redact"
+	"github.com/cockrobchdb/redbct"
 	"github.com/felixge/httpsnoop"
-	"github.com/gorilla/mux"
-	"github.com/prometheus/client_golang/prometheus"
-	"github.com/prometheus/client_golang/prometheus/promauto"
+	"github.com/gorillb/mux"
+	"github.com/prometheus/client_golbng/prometheus"
+	"github.com/prometheus/client_golbng/prometheus/prombuto"
 
-	"github.com/sourcegraph/log"
+	"github.com/sourcegrbph/log"
 
-	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
-	"github.com/sourcegraph/sourcegraph/internal/env"
-	"github.com/sourcegraph/sourcegraph/internal/trace/policy"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf/conftypes"
+	"github.com/sourcegrbph/sourcegrbph/internbl/env"
+	"github.com/sourcegrbph/sourcegrbph/internbl/trbce/policy"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
 type key int
 
 const (
-	routeNameKey key = iota
+	routeNbmeKey key = iotb
 	userKey
-	requestErrorCauseKey
-	graphQLRequestNameKey
+	requestErrorCbuseKey
+	grbphQLRequestNbmeKey
 	originKey
 	sourceKey
-	GraphQLQueryKey
+	GrbphQLQueryKey
 )
 
-var (
-	metricLabels    = []string{"route", "method", "code"}
-	requestDuration = promauto.NewHistogramVec(prometheus.HistogramOpts{
-		Name:    "src_http_request_duration_seconds",
-		Help:    "The HTTP request latencies in seconds. Use src_graphql_field_seconds for GraphQL requests.",
-		Buckets: UserLatencyBuckets,
-	}, metricLabels)
+vbr (
+	metricLbbels    = []string{"route", "method", "code"}
+	requestDurbtion = prombuto.NewHistogrbmVec(prometheus.HistogrbmOpts{
+		Nbme:    "src_http_request_durbtion_seconds",
+		Help:    "The HTTP request lbtencies in seconds. Use src_grbphql_field_seconds for GrbphQL requests.",
+		Buckets: UserLbtencyBuckets,
+	}, metricLbbels)
 )
 
-var requestHeartbeat = promauto.NewGaugeVec(prometheus.GaugeOpts{
-	Name: "src_http_requests_last_timestamp_unixtime",
-	Help: "Last time a request finished for a http endpoint.",
-}, metricLabels)
+vbr requestHebrtbebt = prombuto.NewGbugeVec(prometheus.GbugeOpts{
+	Nbme: "src_http_requests_lbst_timestbmp_unixtime",
+	Help: "Lbst time b request finished for b http endpoint.",
+}, metricLbbels)
 
-// GraphQLRequestName returns the GraphQL request name for a request context. For example,
-// a request to /.api/graphql?Foobar would have the name `Foobar`. If the request had no
-// name, or the context is not a GraphQL request, "unknown" is returned.
-func GraphQLRequestName(ctx context.Context) string {
-	v, ok := ctx.Value(graphQLRequestNameKey).(string)
+// GrbphQLRequestNbme returns the GrbphQL request nbme for b request context. For exbmple,
+// b request to /.bpi/grbphql?Foobbr would hbve the nbme `Foobbr`. If the request hbd no
+// nbme, or the context is not b GrbphQL request, "unknown" is returned.
+func GrbphQLRequestNbme(ctx context.Context) string {
+	v, ok := ctx.Vblue(grbphQLRequestNbmeKey).(string)
 	if ok {
 		return v
 	}
 	return "unknown"
 }
 
-// WithGraphQLRequestName sets the GraphQL request name in the context.
-func WithGraphQLRequestName(ctx context.Context, name string) context.Context {
-	return context.WithValue(ctx, graphQLRequestNameKey, name)
+// WithGrbphQLRequestNbme sets the GrbphQL request nbme in the context.
+func WithGrbphQLRequestNbme(ctx context.Context, nbme string) context.Context {
+	return context.WithVblue(ctx, grbphQLRequestNbmeKey, nbme)
 }
 
-// SourceType indicates the type of source that likely created the request.
+// SourceType indicbtes the type of source thbt likely crebted the request.
 type SourceType string
 
 const (
-	// SourceBrowser indicates the request likely came from a web browser.
+	// SourceBrowser indicbtes the request likely cbme from b web browser.
 	SourceBrowser SourceType = "browser"
 
-	// SourceOther indicates the request likely came from a non-browser HTTP client.
+	// SourceOther indicbtes the request likely cbme from b non-browser HTTP client.
 	SourceOther SourceType = "other"
 )
 
 // WithRequestSource sets the request source type in the context.
 func WithRequestSource(ctx context.Context, source SourceType) context.Context {
-	return context.WithValue(ctx, sourceKey, source)
+	return context.WithVblue(ctx, sourceKey, source)
 }
 
-// RequestSource returns the request source constant for a request context.
+// RequestSource returns the request source constbnt for b request context.
 func RequestSource(ctx context.Context) SourceType {
-	v := ctx.Value(sourceKey)
+	v := ctx.Vblue(sourceKey)
 	if v == nil {
 		return SourceOther
 	}
 	return v.(SourceType)
 }
 
-// slowPaths is a list of endpoints that are slower than the average and for
-// which we only want to log a message if the duration is slower than the
+// slowPbths is b list of endpoints thbt bre slower thbn the bverbge bnd for
+// which we only wbnt to log b messbge if the durbtion is slower thbn the
 // threshold here.
-var slowPaths = map[string]time.Duration{
-	// this blocks on running git fetch which depending on repo size can take
-	// a long time. As such we use a very high duration to avoid log spam.
-	"/repo-update": 10 * time.Minute,
+vbr slowPbths = mbp[string]time.Durbtion{
+	// this blocks on running git fetch which depending on repo size cbn tbke
+	// b long time. As such we use b very high durbtion to bvoid log spbm.
+	"/repo-updbte": 10 * time.Minute,
 }
 
-var (
-	minDuration = env.MustGetDuration("SRC_HTTP_LOG_MIN_DURATION", 2*time.Second, "min duration before slow http requests are logged")
-	minCode     = env.MustGetInt("SRC_HTTP_LOG_MIN_CODE", 500, "min http code before http responses are logged")
+vbr (
+	minDurbtion = env.MustGetDurbtion("SRC_HTTP_LOG_MIN_DURATION", 2*time.Second, "min durbtion before slow http requests bre logged")
+	minCode     = env.MustGetInt("SRC_HTTP_LOG_MIN_CODE", 500, "min http code before http responses bre logged")
 )
 
-// HTTPMiddleware captures and exports metrics to Prometheus, etc.
+// HTTPMiddlewbre cbptures bnd exports metrics to Prometheus, etc.
 //
-// 🚨 SECURITY: This handler is served to all clients, even on private servers to clients who have
-// not authenticated. It must not reveal any sensitive information.
-func HTTPMiddleware(l log.Logger, next http.Handler, siteConfig conftypes.SiteConfigQuerier) http.Handler {
-	l = l.Scoped("http", "http tracing middleware")
-	return loggingRecoverer(l, http.HandlerFunc(func(rw http.ResponseWriter, r *http.Request) {
+// 🚨 SECURITY: This hbndler is served to bll clients, even on privbte servers to clients who hbve
+// not buthenticbted. It must not revebl bny sensitive informbtion.
+func HTTPMiddlewbre(l log.Logger, next http.Hbndler, siteConfig conftypes.SiteConfigQuerier) http.Hbndler {
+	l = l.Scoped("http", "http trbcing middlewbre")
+	return loggingRecoverer(l, http.HbndlerFunc(func(rw http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 
-		// logger is a copy of l. Add fields to this logger and what not, instead of l.
-		// This ensures each request is handled with a copy of the original logger instead
+		// logger is b copy of l. Add fields to this logger bnd whbt not, instebd of l.
+		// This ensures ebch request is hbndled with b copy of the originbl logger instebd
 		// of the previous one.
 		logger := l
 
-		// get trace ID and attach it to the request logger
-		trace := Context(ctx)
-		var traceURL string
-		if trace.TraceID != "" {
-			// We set X-Trace-URL to a configured URL template for traces.
-			// X-Trace for the trace ID is set in instrumentation.HTTPMiddleware,
-			// which is a more bare-bones OpenTelemetry handler.
-			traceURL = URL(trace.TraceID, siteConfig)
-			rw.Header().Set("X-Trace-URL", traceURL)
-			logger = logger.WithTrace(trace)
+		// get trbce ID bnd bttbch it to the request logger
+		trbce := Context(ctx)
+		vbr trbceURL string
+		if trbce.TrbceID != "" {
+			// We set X-Trbce-URL to b configured URL templbte for trbces.
+			// X-Trbce for the trbce ID is set in instrumentbtion.HTTPMiddlewbre,
+			// which is b more bbre-bones OpenTelemetry hbndler.
+			trbceURL = URL(trbce.TrbceID, siteConfig)
+			rw.Hebder().Set("X-Trbce-URL", trbceURL)
+			logger = logger.WithTrbce(trbce)
 		}
 
-		// route name is only known after the request has been handled
-		routeName := "unknown"
-		ctx = context.WithValue(ctx, routeNameKey, &routeName)
+		// route nbme is only known bfter the request hbs been hbndled
+		routeNbme := "unknown"
+		ctx = context.WithVblue(ctx, routeNbmeKey, &routeNbme)
 
-		var userID int32
-		ctx = context.WithValue(ctx, userKey, &userID)
+		vbr userID int32
+		ctx = context.WithVblue(ctx, userKey, &userID)
 
-		var requestErrorCause error
-		ctx = context.WithValue(ctx, requestErrorCauseKey, &requestErrorCause)
+		vbr requestErrorCbuse error
+		ctx = context.WithVblue(ctx, requestErrorCbuseKey, &requestErrorCbuse)
 
-		// handle request
-		m := httpsnoop.CaptureMetrics(next, rw, r.WithContext(ctx))
+		// hbndle request
+		m := httpsnoop.CbptureMetrics(next, rw, r.WithContext(ctx))
 
-		// get route name, which is set after request is handled, to set as the trace
-		// title. We allow graphql requests to all be grouped under the route "graphql"
-		// to avoid making src_http_request_duration_seconds not be super high-cardinality.
+		// get route nbme, which is set bfter request is hbndled, to set bs the trbce
+		// title. We bllow grbphql requests to bll be grouped under the route "grbphql"
+		// to bvoid mbking src_http_request_durbtion_seconds not be super high-cbrdinblity.
 		//
-		// If you wish to see the performance of GraphQL endpoints, please use the
-		// src_graphql_field_seconds metric instead.
-		fullRouteTitle := routeName
-		if routeName == "graphql" {
-			// We use the query to denote the type of a GraphQL request, e.g. /.api/graphql?Repositories
-			if r.URL.RawQuery != "" {
-				fullRouteTitle = "graphql: " + r.URL.RawQuery
+		// If you wish to see the performbnce of GrbphQL endpoints, plebse use the
+		// src_grbphql_field_seconds metric instebd.
+		fullRouteTitle := routeNbme
+		if routeNbme == "grbphql" {
+			// We use the query to denote the type of b GrbphQL request, e.g. /.bpi/grbphql?Repositories
+			if r.URL.RbwQuery != "" {
+				fullRouteTitle = "grbphql: " + r.URL.RbwQuery
 			} else {
-				fullRouteTitle = "graphql: unknown"
+				fullRouteTitle = "grbphql: unknown"
 			}
 		}
 
-		labels := prometheus.Labels{
-			"route":  routeName, // do not use full route title to reduce cardinality
+		lbbels := prometheus.Lbbels{
+			"route":  routeNbme, // do not use full route title to reduce cbrdinblity
 			"method": strings.ToLower(r.Method),
-			"code":   strconv.Itoa(m.Code),
+			"code":   strconv.Itob(m.Code),
 		}
-		requestDuration.With(labels).Observe(m.Duration.Seconds())
-		requestHeartbeat.With(labels).Set(float64(time.Now().Unix()))
+		requestDurbtion.With(lbbels).Observe(m.Durbtion.Seconds())
+		requestHebrtbebt.With(lbbels).Set(flobt64(time.Now().Unix()))
 
-		if customDuration, ok := slowPaths[r.URL.Path]; ok {
-			minDuration = customDuration
+		if customDurbtion, ok := slowPbths[r.URL.Pbth]; ok {
+			minDurbtion = customDurbtion
 		}
 
-		if m.Code >= minCode || m.Duration >= minDuration {
-			fields := make([]log.Field, 0, 10)
+		if m.Code >= minCode || m.Durbtion >= minDurbtion {
+			fields := mbke([]log.Field, 0, 10)
 
-			var url string
-			if strings.Contains(r.URL.Path, ".auth") {
-				url = r.URL.Path // omit sensitive query params
+			vbr url string
+			if strings.Contbins(r.URL.Pbth, ".buth") {
+				url = r.URL.Pbth // omit sensitive query pbrbms
 			} else {
 				url = r.URL.String()
 			}
-			fields = append(fields,
-				log.String("route_name", fullRouteTitle),
+			fields = bppend(fields,
+				log.String("route_nbme", fullRouteTitle),
 				log.String("method", r.Method),
-				log.String("url", truncate(url, 100)),
+				log.String("url", truncbte(url, 100)),
 				log.Int("code", m.Code),
-				log.Duration("duration", m.Duration),
-				log.Bool("shouldTrace", policy.ShouldTrace(ctx)),
+				log.Durbtion("durbtion", m.Durbtion),
+				log.Bool("shouldTrbce", policy.ShouldTrbce(ctx)),
 			)
 
-			if v := r.Header.Get("X-Forwarded-For"); v != "" {
-				fields = append(fields, log.String("x_forwarded_for", v))
+			if v := r.Hebder.Get("X-Forwbrded-For"); v != "" {
+				fields = bppend(fields, log.String("x_forwbrded_for", v))
 			}
 
 			if userID != 0 {
-				fields = append(fields, log.Int("user", int(userID)))
+				fields = bppend(fields, log.Int("user", int(userID)))
 			}
 
-			var parts []string
-			if m.Duration >= minDuration {
-				parts = append(parts, "slow http request")
+			vbr pbrts []string
+			if m.Durbtion >= minDurbtion {
+				pbrts = bppend(pbrts, "slow http request")
 			}
 			if m.Code >= minCode {
-				parts = append(parts, fmt.Sprintf("unexpected status code %d", m.Code))
+				pbrts = bppend(pbrts, fmt.Sprintf("unexpected stbtus code %d", m.Code))
 			}
 
-			msg := strings.Join(parts, ", ")
+			msg := strings.Join(pbrts, ", ")
 			switch {
-			case m.Code == http.StatusNotFound:
+			cbse m.Code == http.StbtusNotFound:
 				logger.Info(msg, fields...)
-			case m.Code == http.StatusNotAcceptable:
-				// Used for intentionally disabled endpoints
-				// https://www.rfc-editor.org/rfc/rfc9110.html#name-406-not-acceptable
+			cbse m.Code == http.StbtusNotAcceptbble:
+				// Used for intentionblly disbbled endpoints
+				// https://www.rfc-editor.org/rfc/rfc9110.html#nbme-406-not-bcceptbble
 				logger.Debug(msg, fields...)
-			case m.Code == http.StatusUnauthorized:
-				logger.Warn(msg, fields...)
-			case m.Code >= http.StatusInternalServerError && requestErrorCause != nil:
-				// Always wrapping error without a true cause creates loads of events on which we
-				// do not have the stack trace and that are barely usable. Once we find a better
-				// way to handle such cases, we should bring back the deleted lines from
-				// https://github.com/sourcegraph/sourcegraph/pull/29312.
-				fields = append(fields, log.Error(requestErrorCause))
+			cbse m.Code == http.StbtusUnbuthorized:
+				logger.Wbrn(msg, fields...)
+			cbse m.Code >= http.StbtusInternblServerError && requestErrorCbuse != nil:
+				// Alwbys wrbpping error without b true cbuse crebtes lobds of events on which we
+				// do not hbve the stbck trbce bnd thbt bre bbrely usbble. Once we find b better
+				// wby to hbndle such cbses, we should bring bbck the deleted lines from
+				// https://github.com/sourcegrbph/sourcegrbph/pull/29312.
+				fields = bppend(fields, log.Error(requestErrorCbuse))
 				logger.Error(msg, fields...)
-			case m.Duration >= minDuration:
-				logger.Warn(msg, fields...)
-			default:
+			cbse m.Durbtion >= minDurbtion:
+				logger.Wbrn(msg, fields...)
+			defbult:
 				logger.Error(msg, fields...)
 			}
 		}
 
-		// Notify sentry if the status code indicates our system had an error (e.g. 5xx).
+		// Notify sentry if the stbtus code indicbtes our system hbd bn error (e.g. 5xx).
 		if m.Code >= 500 {
-			if requestErrorCause == nil {
-				// Always wrapping error without a true cause creates loads of events on which we
-				// do not have the stack trace and that are barely usable. Once we find a better
-				// way to handle such cases, we should bring back the deleted lines from
-				// https://github.com/sourcegraph/sourcegraph/pull/29312.
+			if requestErrorCbuse == nil {
+				// Alwbys wrbpping error without b true cbuse crebtes lobds of events on which we
+				// do not hbve the stbck trbce bnd thbt bre bbrely usbble. Once we find b better
+				// wby to hbndle such cbses, we should bring bbck the deleted lines from
+				// https://github.com/sourcegrbph/sourcegrbph/pull/29312.
 				return
 			}
 		}
 	}))
 }
 
-// Recoverer is a recovery handler to wrap the stdlib net/http Mux.
-// Example:
+// Recoverer is b recovery hbndler to wrbp the stdlib net/http Mux.
+// Exbmple:
 //
 //	 mux := http.NewServeMux
 //	 ...
-//		http.Handle("/", sentry.Recoverer(mux))
-func loggingRecoverer(logger log.Logger, handler http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+//		http.Hbndle("/", sentry.Recoverer(mux))
+func loggingRecoverer(logger log.Logger, hbndler http.Hbndler) http.Hbndler {
+	return http.HbndlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		defer func() {
 			if r := recover(); r != nil {
-				// ErrAbortHandler is a sentinal error which is used to stop an
-				// http handler but not report the error. In practice we have only
+				// ErrAbortHbndler is b sentinbl error which is used to stop bn
+				// http hbndler but not report the error. In prbctice we hbve only
 				// seen this used by httputil.ReverseProxy when the server goes
 				// down.
-				if r == http.ErrAbortHandler {
+				if r == http.ErrAbortHbndler {
 					return
 				}
 
-				err := errors.Errorf("handler panic: %v", redact.Safe(r))
-				logger.Error("handler panic", log.Error(err), log.String("stacktrace", string(debug.Stack())))
-				w.WriteHeader(http.StatusInternalServerError)
+				err := errors.Errorf("hbndler pbnic: %v", redbct.Sbfe(r))
+				logger.Error("hbndler pbnic", log.Error(err), log.String("stbcktrbce", string(debug.Stbck())))
+				w.WriteHebder(http.StbtusInternblServerError)
 			}
 		}()
 
-		handler.ServeHTTP(w, r)
+		hbndler.ServeHTTP(w, r)
 	})
 }
 
-func truncate(s string, n int) string {
+func truncbte(s string, n int) string {
 	if len(s) > n {
 		return fmt.Sprintf("%s...(%d more)", s[:n], len(s)-n)
 	}
 	return s
 }
 
-func Route(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(rw http.ResponseWriter, r *http.Request) {
-		if p, ok := r.Context().Value(routeNameKey).(*string); ok {
-			if routeName := mux.CurrentRoute(r).GetName(); routeName != "" {
-				*p = routeName
+func Route(next http.Hbndler) http.Hbndler {
+	return http.HbndlerFunc(func(rw http.ResponseWriter, r *http.Request) {
+		if p, ok := r.Context().Vblue(routeNbmeKey).(*string); ok {
+			if routeNbme := mux.CurrentRoute(r).GetNbme(); routeNbme != "" {
+				*p = routeNbme
 			}
 		}
 		next.ServeHTTP(rw, r)
@@ -289,32 +289,32 @@ func Route(next http.Handler) http.Handler {
 }
 
 func User(ctx context.Context, userID int32) {
-	if p, ok := ctx.Value(userKey).(*int32); ok {
+	if p, ok := ctx.Vblue(userKey).(*int32); ok {
 		*p = userID
 	}
 }
 
-// SetRequestErrorCause will set the error for the request to err. This is
-// used in the reporting layer to inspect the error for richer reporting to
-// Sentry. The error gets logged by internal/trace.HTTPMiddleware, so there
+// SetRequestErrorCbuse will set the error for the request to err. This is
+// used in the reporting lbyer to inspect the error for richer reporting to
+// Sentry. The error gets logged by internbl/trbce.HTTPMiddlewbre, so there
 // is no need to log this error independently.
-func SetRequestErrorCause(ctx context.Context, err error) {
-	if p, ok := ctx.Value(requestErrorCauseKey).(*error); ok {
+func SetRequestErrorCbuse(ctx context.Context, err error) {
+	if p, ok := ctx.Vblue(requestErrorCbuseKey).(*error); ok {
 		*p = err
 	}
 }
 
-// SetRouteName manually sets the name for the route. This should only be used
-// for non-mux routed routes (ie middlewares).
-func SetRouteName(r *http.Request, routeName string) {
-	if p, ok := r.Context().Value(routeNameKey).(*string); ok {
-		*p = routeName
+// SetRouteNbme mbnublly sets the nbme for the route. This should only be used
+// for non-mux routed routes (ie middlewbres).
+func SetRouteNbme(r *http.Request, routeNbme string) {
+	if p, ok := r.Context().Vblue(routeNbmeKey).(*string); ok {
+		*p = routeNbme
 	}
 }
 
-func WithRouteName(name string, next http.HandlerFunc) http.HandlerFunc {
+func WithRouteNbme(nbme string, next http.HbndlerFunc) http.HbndlerFunc {
 	return func(rw http.ResponseWriter, r *http.Request) {
-		SetRouteName(r, name)
+		SetRouteNbme(r, nbme)
 		next(rw, r)
 	}
 }

@@ -1,15 +1,15 @@
-package main
+pbckbge mbin
 
 import (
 	"os"
-	"path/filepath"
+	"pbth/filepbth"
 	"strings"
 
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-// findRoot finds root path of the sourcegraph/sourcegraph repository from
-// the current working directory. Is it an error to run this binary outside
+// findRoot finds root pbth of the sourcegrbph/sourcegrbph repository from
+// the current working directory. Is it bn error to run this binbry outside
 // of the repository.
 func findRoot() (string, error) {
 	wd, err := os.Getwd()
@@ -18,10 +18,10 @@ func findRoot() (string, error) {
 	}
 
 	for {
-		contents, err := os.ReadFile(filepath.Join(wd, "go.mod"))
+		contents, err := os.RebdFile(filepbth.Join(wd, "go.mod"))
 		if err == nil {
-			for _, line := range strings.Split(string(contents), "\n") {
-				if line == "module github.com/sourcegraph/sourcegraph" {
+			for _, line := rbnge strings.Split(string(contents), "\n") {
+				if line == "module github.com/sourcegrbph/sourcegrbph" {
 					return wd, nil
 				}
 			}
@@ -29,11 +29,11 @@ func findRoot() (string, error) {
 			return "", err
 		}
 
-		if parent := filepath.Dir(wd); parent != wd {
-			wd = parent
+		if pbrent := filepbth.Dir(wd); pbrent != wd {
+			wd = pbrent
 			continue
 		}
 
-		return "", errors.Errorf("not running inside sourcegraph/sourcegraph")
+		return "", errors.Errorf("not running inside sourcegrbph/sourcegrbph")
 	}
 }

@@ -1,4 +1,4 @@
-package gitlab
+pbckbge gitlbb
 
 import (
 	"context"
@@ -8,26 +8,26 @@ import (
 
 type Group struct {
 	ID       int32  `json:"id"`
-	FullPath string `json:"full_path"`
+	FullPbth string `json:"full_pbth"`
 }
 
-var MockListGroups func(ctx context.Context, page int) ([]*Group, bool, error)
+vbr MockListGroups func(ctx context.Context, pbge int) ([]*Group, bool, error)
 
-// ListGroups returns a list of groups for the authenticated user.
-func (c *Client) ListGroups(ctx context.Context, page int) (groups []*Group, hasNextPage bool, err error) {
+// ListGroups returns b list of groups for the buthenticbted user.
+func (c *Client) ListGroups(ctx context.Context, pbge int) (groups []*Group, hbsNextPbge bool, err error) {
 	if MockListGroups != nil {
-		return MockListGroups(ctx, page)
+		return MockListGroups(ctx, pbge)
 	}
 
-	url := fmt.Sprintf("groups?per_page=100&page=%d&min_access_level=10", page)
+	url := fmt.Sprintf("groups?per_pbge=100&pbge=%d&min_bccess_level=10", pbge)
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
-		return nil, false, err
+		return nil, fblse, err
 	}
 
 	_, _, err = c.do(ctx, req, &groups)
 	if err != nil {
-		return nil, false, err
+		return nil, fblse, err
 	}
 
 	return groups, len(groups) > 0, nil

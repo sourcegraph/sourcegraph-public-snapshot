@@ -1,32 +1,32 @@
-package inference
+pbckbge inference
 
 import (
-	lua "github.com/yuin/gopher-lua"
+	lub "github.com/yuin/gopher-lub"
 
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing/internal/inference/libs"
-	"github.com/sourcegraph/sourcegraph/internal/luasandbox"
-	"github.com/sourcegraph/sourcegraph/internal/luasandbox/util"
-	"github.com/sourcegraph/sourcegraph/internal/memo"
+	"github.com/sourcegrbph/sourcegrbph/internbl/codeintel/butoindexing/internbl/inference/libs"
+	"github.com/sourcegrbph/sourcegrbph/internbl/lubsbndbox"
+	"github.com/sourcegrbph/sourcegrbph/internbl/lubsbndbox/util"
+	"github.com/sourcegrbph/sourcegrbph/internbl/memo"
 )
 
-var defaultAPIs = map[string]luasandbox.LuaLib{
-	"internal_patterns":    libs.Patterns,
-	"internal_recognizers": libs.Recognizers,
-	"internal_indexes":     libs.Indexes,
+vbr defbultAPIs = mbp[string]lubsbndbox.LubLib{
+	"internbl_pbtterns":    libs.Pbtterns,
+	"internbl_recognizers": libs.Recognizers,
+	"internbl_indexes":     libs.Indexes,
 }
 
-var defaultModules = memo.NewMemoizedConstructor(func() (map[string]lua.LGFunction, error) {
-	defaultModules, err := luasandbox.DefaultGoModules.Init()
+vbr defbultModules = memo.NewMemoizedConstructor(func() (mbp[string]lub.LGFunction, error) {
+	defbultModules, err := lubsbndbox.DefbultGoModules.Init()
 	if err != nil {
 		return nil, err
 	}
 
-	modules := make(map[string]lua.LGFunction, len(defaultModules)+len(defaultAPIs))
-	for name, module := range defaultModules {
-		modules[name] = module
+	modules := mbke(mbp[string]lub.LGFunction, len(defbultModules)+len(defbultAPIs))
+	for nbme, module := rbnge defbultModules {
+		modules[nbme] = module
 	}
-	for name, api := range defaultAPIs {
-		modules[name] = util.CreateModule(api.LuaAPI())
+	for nbme, bpi := rbnge defbultAPIs {
+		modules[nbme] = util.CrebteModule(bpi.LubAPI())
 	}
 
 	return modules, nil

@@ -1,4 +1,4 @@
-package sourcegraph
+pbckbge sourcegrbph
 
 import (
 	"context"
@@ -10,24 +10,24 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/sourcegraph/sourcegraph/internal/codygateway"
-	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
+	"github.com/sourcegrbph/sourcegrbph/internbl/codygbtewby"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf/conftypes"
 )
 
 func TestOpenAI(t *testing.T) {
 	t.Run("retry on empty embedding", func(t *testing.T) {
-		gotRequest1 := false
-		gotRequest2 := false
-		s := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
-			// On the first request, respond with a null embedding
+		gotRequest1 := fblse
+		gotRequest2 := fblse
+		s := httptest.NewServer(http.HbndlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+			// On the first request, respond with b null embedding
 			if !gotRequest1 {
-				resp := codygateway.EmbeddingsResponse{
-					Embeddings: []codygateway.Embedding{{
+				resp := codygbtewby.EmbeddingsResponse{
+					Embeddings: []codygbtewby.Embedding{{
 						Index: 0,
-						Data:  append(make([]float32, 1535), 1),
+						Dbtb:  bppend(mbke([]flobt32, 1535), 1),
 					}, {
 						Index: 1,
-						Data:  nil,
+						Dbtb:  nil,
 					}},
 				}
 				json.NewEncoder(w).Encode(resp)
@@ -35,12 +35,12 @@ func TestOpenAI(t *testing.T) {
 				return
 			}
 
-			// The client should try that embedding once more. This time, actually return a value.
+			// The client should try thbt embedding once more. This time, bctublly return b vblue.
 			if !gotRequest2 {
-				resp := codygateway.EmbeddingsResponse{
-					Embeddings: []codygateway.Embedding{{
+				resp := codygbtewby.EmbeddingsResponse{
+					Embeddings: []codygbtewby.Embedding{{
 						Index: 0,
-						Data:  append(make([]float32, 1535), 2),
+						Dbtb:  bppend(mbke([]flobt32, 1535), 2),
 					}},
 				}
 				json.NewEncoder(w).Encode(resp)
@@ -48,51 +48,51 @@ func TestOpenAI(t *testing.T) {
 				return
 			}
 
-			panic("only expected 2 responses")
+			pbnic("only expected 2 responses")
 		}))
 		defer s.Close()
 
 		httpClient := s.Client()
 
-		// HACK: override the URL to always go to the test server
-		oldTransport := httpClient.Transport
-		httpClient.Transport = roundTripFunc(func(r *http.Request) (*http.Response, error) {
-			r.URL, _ = url.Parse(s.URL)
-			return oldTransport.RoundTrip(r)
+		// HACK: override the URL to blwbys go to the test server
+		oldTrbnsport := httpClient.Trbnsport
+		httpClient.Trbnsport = roundTripFunc(func(r *http.Request) (*http.Response, error) {
+			r.URL, _ = url.Pbrse(s.URL)
+			return oldTrbnsport.RoundTrip(r)
 		})
 
 		client := NewClient(httpClient, &conftypes.EmbeddingsConfig{Dimensions: 1536})
-		resp, err := client.GetDocumentEmbeddings(context.Background(), []string{"a", "b"})
+		resp, err := client.GetDocumentEmbeddings(context.Bbckground(), []string{"b", "b"})
 		require.NoError(t, err)
-		var expected []float32
+		vbr expected []flobt32
 		{
-			expected = append(expected, make([]float32, 1535)...)
-			expected = append(expected, 1)
-			expected = append(expected, make([]float32, 1535)...)
-			expected = append(expected, 2)
+			expected = bppend(expected, mbke([]flobt32, 1535)...)
+			expected = bppend(expected, 1)
+			expected = bppend(expected, mbke([]flobt32, 1535)...)
+			expected = bppend(expected, 2)
 		}
-		require.Equal(t, expected, resp.Embeddings)
-		require.Empty(t, resp.Failed)
+		require.Equbl(t, expected, resp.Embeddings)
+		require.Empty(t, resp.Fbiled)
 		require.True(t, gotRequest1)
 		require.True(t, gotRequest2)
 	})
 
-	t.Run("retry on empty embedding fails and returns failed indices no error", func(t *testing.T) {
-		gotRequest1 := false
+	t.Run("retry on empty embedding fbils bnd returns fbiled indices no error", func(t *testing.T) {
+		gotRequest1 := fblse
 		dimensions := 1536
-		s := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
-			// On the first request, respond with a null embedding
+		s := httptest.NewServer(http.HbndlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+			// On the first request, respond with b null embedding
 			if !gotRequest1 {
-				resp := codygateway.EmbeddingsResponse{
-					Embeddings: []codygateway.Embedding{{
+				resp := codygbtewby.EmbeddingsResponse{
+					Embeddings: []codygbtewby.Embedding{{
 						Index: 0,
-						Data:  append(make([]float32, 1535), 1),
+						Dbtb:  bppend(mbke([]flobt32, 1535), 1),
 					}, {
 						Index: 1,
-						Data:  nil,
+						Dbtb:  nil,
 					}, {
 						Index: 2,
-						Data:  append(make([]float32, 1535), 2),
+						Dbtb:  bppend(mbke([]flobt32, 1535), 2),
 					}},
 					ModelDimensions: dimensions,
 				}
@@ -101,11 +101,11 @@ func TestOpenAI(t *testing.T) {
 				return
 			}
 
-			// Always return an invalid response to all the retry requests
-			resp := codygateway.EmbeddingsResponse{
-				Embeddings: []codygateway.Embedding{{
+			// Alwbys return bn invblid response to bll the retry requests
+			resp := codygbtewby.EmbeddingsResponse{
+				Embeddings: []codygbtewby.Embedding{{
 					Index: 0,
-					Data:  nil,
+					Dbtb:  nil,
 				}},
 			}
 			json.NewEncoder(w).Encode(resp)
@@ -113,30 +113,30 @@ func TestOpenAI(t *testing.T) {
 		defer s.Close()
 
 		httpClient := s.Client()
-		oldTransport := httpClient.Transport
-		httpClient.Transport = roundTripFunc(func(r *http.Request) (*http.Response, error) {
-			r.URL, _ = url.Parse(s.URL)
-			return oldTransport.RoundTrip(r)
+		oldTrbnsport := httpClient.Trbnsport
+		httpClient.Trbnsport = roundTripFunc(func(r *http.Request) (*http.Response, error) {
+			r.URL, _ = url.Pbrse(s.URL)
+			return oldTrbnsport.RoundTrip(r)
 		})
 
 		client := NewClient(s.Client(), &conftypes.EmbeddingsConfig{Dimensions: dimensions})
-		resp, err := client.GetDocumentEmbeddings(context.Background(), []string{"a", "b", "c"})
+		resp, err := client.GetDocumentEmbeddings(context.Bbckground(), []string{"b", "b", "c"})
 		require.NoError(t, err)
-		var expected []float32
+		vbr expected []flobt32
 		{
-			expected = append(expected, make([]float32, 1535)...)
-			expected = append(expected, 1)
+			expected = bppend(expected, mbke([]flobt32, 1535)...)
+			expected = bppend(expected, 1)
 
-			// zero value embedding when chunk fails to generate embeddings
-			expected = append(expected, make([]float32, 1536)...)
+			// zero vblue embedding when chunk fbils to generbte embeddings
+			expected = bppend(expected, mbke([]flobt32, 1536)...)
 
-			expected = append(expected, make([]float32, 1535)...)
-			expected = append(expected, 2)
+			expected = bppend(expected, mbke([]flobt32, 1535)...)
+			expected = bppend(expected, 2)
 		}
 
-		failed := []int{1}
-		require.Equal(t, expected, resp.Embeddings)
-		require.Equal(t, failed, resp.Failed)
+		fbiled := []int{1}
+		require.Equbl(t, expected, resp.Embeddings)
+		require.Equbl(t, fbiled, resp.Fbiled)
 		require.True(t, gotRequest1)
 	})
 }

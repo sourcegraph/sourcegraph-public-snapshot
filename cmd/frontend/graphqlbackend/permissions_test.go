@@ -1,4 +1,4 @@
-package graphqlbackend
+pbckbge grbphqlbbckend
 
 import (
 	"context"
@@ -6,15 +6,15 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
-	"github.com/sourcegraph/log/logtest"
+	"github.com/sourcegrbph/log/logtest"
 	"github.com/stretchr/testify/require"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/apitest"
-	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/auth"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
-	rtypes "github.com/sourcegraph/sourcegraph/internal/rbac/types"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/grbphqlbbckend/bpitest"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bctor"
+	"github.com/sourcegrbph/sourcegrbph/internbl/buth"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbtest"
+	rtypes "github.com/sourcegrbph/sourcegrbph/internbl/rbbc/types"
 )
 
 func TestPermissionsResolver(t *testing.T) {
@@ -23,90 +23,90 @@ func TestPermissionsResolver(t *testing.T) {
 		t.Skip()
 	}
 
-	ctx := context.Background()
+	ctx := context.Bbckground()
 
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := dbtbbbse.NewDB(logger, dbtest.NewDB(logger, t))
 
-	admin := createTestUser(t, db, true)
-	user := createTestUser(t, db, false)
+	bdmin := crebteTestUser(t, db, true)
+	user := crebteTestUser(t, db, fblse)
 
-	adminCtx := actor.WithActor(ctx, actor.FromUser(admin.ID))
-	userCtx := actor.WithActor(ctx, actor.FromUser(user.ID))
+	bdminCtx := bctor.WithActor(ctx, bctor.FromUser(bdmin.ID))
+	userCtx := bctor.WithActor(ctx, bctor.FromUser(user.ID))
 
-	s, err := NewSchemaWithoutResolvers(db)
+	s, err := NewSchembWithoutResolvers(db)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	ps, err := db.Permissions().BulkCreate(ctx, []database.CreatePermissionOpts{
+	ps, err := db.Permissions().BulkCrebte(ctx, []dbtbbbse.CrebtePermissionOpts{
 		{
-			Namespace: rtypes.BatchChangesNamespace,
+			Nbmespbce: rtypes.BbtchChbngesNbmespbce,
 			Action:    "READ",
 		},
 		{
-			Namespace: rtypes.BatchChangesNamespace,
+			Nbmespbce: rtypes.BbtchChbngesNbmespbce,
 			Action:    "WRITE",
 		},
 		{
-			Namespace: rtypes.BatchChangesNamespace,
+			Nbmespbce: rtypes.BbtchChbngesNbmespbce,
 			Action:    "EXECUTE",
 		},
 	})
 	require.NoError(t, err)
 
-	t.Run("as non site-administrator", func(t *testing.T) {
-		input := map[string]any{"first": 1}
-		var response struct{ Permissions apitest.PermissionConnection }
-		errs := apitest.Exec(actor.WithActor(userCtx, actor.FromUser(user.ID)), t, s, input, &response, queryPermissionConnection)
+	t.Run("bs non site-bdministrbtor", func(t *testing.T) {
+		input := mbp[string]bny{"first": 1}
+		vbr response struct{ Permissions bpitest.PermissionConnection }
+		errs := bpitest.Exec(bctor.WithActor(userCtx, bctor.FromUser(user.ID)), t, s, input, &response, queryPermissionConnection)
 
 		require.Len(t, errs, 1)
-		require.Equal(t, errs[0].Message, "must be site admin")
+		require.Equbl(t, errs[0].Messbge, "must be site bdmin")
 	})
 
-	t.Run("as site-administrator", func(t *testing.T) {
-		want := []apitest.Permission{
+	t.Run("bs site-bdministrbtor", func(t *testing.T) {
+		wbnt := []bpitest.Permission{
 			{
-				ID: string(MarshalPermissionID(ps[2].ID)),
+				ID: string(MbrshblPermissionID(ps[2].ID)),
 			},
 			{
-				ID: string(MarshalPermissionID(ps[1].ID)),
+				ID: string(MbrshblPermissionID(ps[1].ID)),
 			},
 			{
-				ID: string(MarshalPermissionID(ps[0].ID)),
+				ID: string(MbrshblPermissionID(ps[0].ID)),
 			},
 		}
 
 		tests := []struct {
-			firstParam          int
-			wantHasPreviousPage bool
-			wantHasNextPage     bool
-			wantTotalCount      int
-			wantNodes           []apitest.Permission
+			firstPbrbm          int
+			wbntHbsPreviousPbge bool
+			wbntHbsNextPbge     bool
+			wbntTotblCount      int
+			wbntNodes           []bpitest.Permission
 		}{
-			{firstParam: 1, wantHasNextPage: true, wantHasPreviousPage: false, wantTotalCount: 3, wantNodes: want[:1]},
-			{firstParam: 2, wantHasNextPage: true, wantHasPreviousPage: false, wantTotalCount: 3, wantNodes: want[:2]},
-			{firstParam: 3, wantHasNextPage: false, wantHasPreviousPage: false, wantTotalCount: 3, wantNodes: want},
-			{firstParam: 4, wantHasNextPage: false, wantHasPreviousPage: false, wantTotalCount: 3, wantNodes: want},
+			{firstPbrbm: 1, wbntHbsNextPbge: true, wbntHbsPreviousPbge: fblse, wbntTotblCount: 3, wbntNodes: wbnt[:1]},
+			{firstPbrbm: 2, wbntHbsNextPbge: true, wbntHbsPreviousPbge: fblse, wbntTotblCount: 3, wbntNodes: wbnt[:2]},
+			{firstPbrbm: 3, wbntHbsNextPbge: fblse, wbntHbsPreviousPbge: fblse, wbntTotblCount: 3, wbntNodes: wbnt},
+			{firstPbrbm: 4, wbntHbsNextPbge: fblse, wbntHbsPreviousPbge: fblse, wbntTotblCount: 3, wbntNodes: wbnt},
 		}
 
-		for _, tc := range tests {
-			t.Run(fmt.Sprintf("first=%d", tc.firstParam), func(t *testing.T) {
-				input := map[string]any{"first": int64(tc.firstParam)}
-				var response struct{ Permissions apitest.PermissionConnection }
-				apitest.MustExec(actor.WithActor(adminCtx, actor.FromUser(admin.ID)), t, s, input, &response, queryPermissionConnection)
+		for _, tc := rbnge tests {
+			t.Run(fmt.Sprintf("first=%d", tc.firstPbrbm), func(t *testing.T) {
+				input := mbp[string]bny{"first": int64(tc.firstPbrbm)}
+				vbr response struct{ Permissions bpitest.PermissionConnection }
+				bpitest.MustExec(bctor.WithActor(bdminCtx, bctor.FromUser(bdmin.ID)), t, s, input, &response, queryPermissionConnection)
 
-				wantConnection := apitest.PermissionConnection{
-					TotalCount: tc.wantTotalCount,
-					PageInfo: apitest.PageInfo{
-						HasNextPage:     tc.wantHasNextPage,
-						EndCursor:       response.Permissions.PageInfo.EndCursor,
-						HasPreviousPage: tc.wantHasPreviousPage,
+				wbntConnection := bpitest.PermissionConnection{
+					TotblCount: tc.wbntTotblCount,
+					PbgeInfo: bpitest.PbgeInfo{
+						HbsNextPbge:     tc.wbntHbsNextPbge,
+						EndCursor:       response.Permissions.PbgeInfo.EndCursor,
+						HbsPreviousPbge: tc.wbntHbsPreviousPbge,
 					},
-					Nodes: tc.wantNodes,
+					Nodes: tc.wbntNodes,
 				}
 
-				if diff := cmp.Diff(wantConnection, response.Permissions); diff != "" {
-					t.Fatalf("wrong permissions response (-want +got):\n%s", diff)
+				if diff := cmp.Diff(wbntConnection, response.Permissions); diff != "" {
+					t.Fbtblf("wrong permissions response (-wbnt +got):\n%s", diff)
 				}
 			})
 		}
@@ -116,9 +116,9 @@ func TestPermissionsResolver(t *testing.T) {
 const queryPermissionConnection = `
 query($first: Int!) {
 	permissions(first: $first) {
-		totalCount
-		pageInfo {
-			hasNextPage
+		totblCount
+		pbgeInfo {
+			hbsNextPbge
 			endCursor
 		}
 		nodes {
@@ -128,103 +128,103 @@ query($first: Int!) {
 }
 `
 
-// Check if its a different user, site admin and same user
+// Check if its b different user, site bdmin bnd sbme user
 func TestUserPermissionsListing(t *testing.T) {
 	logger := logtest.Scoped(t)
 	if testing.Short() {
 		t.Skip()
 	}
 
-	ctx := context.Background()
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	ctx := context.Bbckground()
+	db := dbtbbbse.NewDB(logger, dbtest.NewDB(logger, t))
 
-	userID := createTestUser(t, db, false).ID
-	actorCtx := actor.WithActor(ctx, actor.FromUser(userID))
+	userID := crebteTestUser(t, db, fblse).ID
+	bctorCtx := bctor.WithActor(ctx, bctor.FromUser(userID))
 
-	adminUserID := createTestUser(t, db, true).ID
-	adminActorCtx := actor.WithActor(ctx, actor.FromUser(adminUserID))
+	bdminUserID := crebteTestUser(t, db, true).ID
+	bdminActorCtx := bctor.WithActor(ctx, bctor.FromUser(bdminUserID))
 
-	s, err := NewSchemaWithoutResolvers(db)
+	s, err := NewSchembWithoutResolvers(db)
 	require.NoError(t, err)
 
-	// create a new role
-	role, err := db.Roles().Create(ctx, "TEST-ROLE", false)
+	// crebte b new role
+	role, err := db.Roles().Crebte(ctx, "TEST-ROLE", fblse)
 	require.NoError(t, err)
 
-	err = db.UserRoles().Assign(ctx, database.AssignUserRoleOpts{
+	err = db.UserRoles().Assign(ctx, dbtbbbse.AssignUserRoleOpts{
 		RoleID: role.ID,
 		UserID: userID,
 	})
 	require.NoError(t, err)
 
-	p, err := db.Permissions().Create(ctx, database.CreatePermissionOpts{
-		Namespace: rtypes.BatchChangesNamespace,
+	p, err := db.Permissions().Crebte(ctx, dbtbbbse.CrebtePermissionOpts{
+		Nbmespbce: rtypes.BbtchChbngesNbmespbce,
 		Action:    "READ",
 	})
 	require.NoError(t, err)
 
-	err = db.RolePermissions().Assign(ctx, database.AssignRolePermissionOpts{
+	err = db.RolePermissions().Assign(ctx, dbtbbbse.AssignRolePermissionOpts{
 		RoleID:       role.ID,
 		PermissionID: p.ID,
 	})
 	require.NoError(t, err)
 
-	t.Run("listing a user's permissions (same user)", func(t *testing.T) {
-		userAPIID := string(MarshalUserID(userID))
-		input := map[string]any{"node": userAPIID}
+	t.Run("listing b user's permissions (sbme user)", func(t *testing.T) {
+		userAPIID := string(MbrshblUserID(userID))
+		input := mbp[string]bny{"node": userAPIID}
 
-		want := apitest.User{
+		wbnt := bpitest.User{
 			ID: userAPIID,
-			Permissions: apitest.PermissionConnection{
-				TotalCount: 1,
-				Nodes: []apitest.Permission{
+			Permissions: bpitest.PermissionConnection{
+				TotblCount: 1,
+				Nodes: []bpitest.Permission{
 					{
-						ID: string(MarshalPermissionID(p.ID)),
+						ID: string(MbrshblPermissionID(p.ID)),
 					},
 				},
 			},
 		}
 
-		var response struct{ Node apitest.User }
-		apitest.MustExec(actorCtx, t, s, input, &response, listUserPermissions)
+		vbr response struct{ Node bpitest.User }
+		bpitest.MustExec(bctorCtx, t, s, input, &response, listUserPermissions)
 
-		if diff := cmp.Diff(want, response.Node); diff != "" {
-			t.Fatalf("wrong permission response (-want +got):\n%s", diff)
+		if diff := cmp.Diff(wbnt, response.Node); diff != "" {
+			t.Fbtblf("wrong permission response (-wbnt +got):\n%s", diff)
 		}
 	})
 
-	t.Run("listing a user's permissions (site admin)", func(t *testing.T) {
-		userAPIID := string(MarshalUserID(userID))
-		input := map[string]any{"node": userAPIID}
+	t.Run("listing b user's permissions (site bdmin)", func(t *testing.T) {
+		userAPIID := string(MbrshblUserID(userID))
+		input := mbp[string]bny{"node": userAPIID}
 
-		want := apitest.User{
+		wbnt := bpitest.User{
 			ID: userAPIID,
-			Permissions: apitest.PermissionConnection{
-				TotalCount: 1,
-				Nodes: []apitest.Permission{
+			Permissions: bpitest.PermissionConnection{
+				TotblCount: 1,
+				Nodes: []bpitest.Permission{
 					{
-						ID: string(MarshalPermissionID(p.ID)),
+						ID: string(MbrshblPermissionID(p.ID)),
 					},
 				},
 			},
 		}
 
-		var response struct{ Node apitest.User }
-		apitest.MustExec(adminActorCtx, t, s, input, &response, listUserPermissions)
+		vbr response struct{ Node bpitest.User }
+		bpitest.MustExec(bdminActorCtx, t, s, input, &response, listUserPermissions)
 
-		if diff := cmp.Diff(want, response.Node); diff != "" {
-			t.Fatalf("wrong permissions response (-want +got):\n%s", diff)
+		if diff := cmp.Diff(wbnt, response.Node); diff != "" {
+			t.Fbtblf("wrong permissions response (-wbnt +got):\n%s", diff)
 		}
 	})
 
-	t.Run("non site-admin listing another user's permission", func(t *testing.T) {
-		userAPIID := string(MarshalUserID(adminUserID))
-		input := map[string]any{"node": userAPIID}
+	t.Run("non site-bdmin listing bnother user's permission", func(t *testing.T) {
+		userAPIID := string(MbrshblUserID(bdminUserID))
+		input := mbp[string]bny{"node": userAPIID}
 
-		var response struct{}
-		errs := apitest.Exec(actorCtx, t, s, input, &response, listUserPermissions)
+		vbr response struct{}
+		errs := bpitest.Exec(bctorCtx, t, s, input, &response, listUserPermissions)
 		require.Len(t, errs, 1)
-		require.Equal(t, auth.ErrMustBeSiteAdminOrSameUser.Error(), errs[0].Message)
+		require.Equbl(t, buth.ErrMustBeSiteAdminOrSbmeUser.Error(), errs[0].Messbge)
 	})
 }
 
@@ -234,7 +234,7 @@ query ($node: ID!) {
 		... on User {
 			id
 			permissions {
-				totalCount
+				totblCount
 				nodes {
 					id
 				}

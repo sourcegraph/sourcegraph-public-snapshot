@@ -1,68 +1,68 @@
-package filter
+pbckbge filter
 
 import (
 	"fmt"
 	"testing"
 
-	"github.com/elimity-com/scim/schema"
-	"github.com/scim2/filter-parser/v2"
+	"github.com/elimity-com/scim/schemb"
+	"github.com/scim2/filter-pbrser/v2"
 )
 
-func TestValidatorString(t *testing.T) {
-	var (
-		exp = func(op filter.CompareOperator) string {
+func TestVblidbtorString(t *testing.T) {
+	vbr (
+		exp = func(op filter.CompbreOperbtor) string {
 			return fmt.Sprintf("str %s \"x\"", op)
 		}
-		attrs = [3]map[string]interface{}{
+		bttrs = [3]mbp[string]interfbce{}{
 			{"str": "x"},
 			{"str": "X"},
 			{"str": "y"},
 		}
 	)
 
-	for _, test := range []struct {
-		op      filter.CompareOperator
-		valid   [3]bool
-		validCE [3]bool
+	for _, test := rbnge []struct {
+		op      filter.CompbreOperbtor
+		vblid   [3]bool
+		vblidCE [3]bool
 	}{
-		{filter.EQ, [3]bool{true, true, false}, [3]bool{true, false, false}},
-		{filter.NE, [3]bool{false, false, true}, [3]bool{false, true, true}},
-		{filter.CO, [3]bool{true, true, false}, [3]bool{true, false, false}},
-		{filter.SW, [3]bool{true, true, false}, [3]bool{true, false, false}},
-		{filter.EW, [3]bool{true, true, false}, [3]bool{true, false, false}},
-		{filter.GT, [3]bool{false, false, true}, [3]bool{false, false, true}},
-		{filter.LT, [3]bool{false, false, false}, [3]bool{false, true, false}},
-		{filter.GE, [3]bool{true, true, true}, [3]bool{true, false, true}},
-		{filter.LE, [3]bool{true, true, false}, [3]bool{true, true, false}},
+		{filter.EQ, [3]bool{true, true, fblse}, [3]bool{true, fblse, fblse}},
+		{filter.NE, [3]bool{fblse, fblse, true}, [3]bool{fblse, true, true}},
+		{filter.CO, [3]bool{true, true, fblse}, [3]bool{true, fblse, fblse}},
+		{filter.SW, [3]bool{true, true, fblse}, [3]bool{true, fblse, fblse}},
+		{filter.EW, [3]bool{true, true, fblse}, [3]bool{true, fblse, fblse}},
+		{filter.GT, [3]bool{fblse, fblse, true}, [3]bool{fblse, fblse, true}},
+		{filter.LT, [3]bool{fblse, fblse, fblse}, [3]bool{fblse, true, fblse}},
+		{filter.GE, [3]bool{true, true, true}, [3]bool{true, fblse, true}},
+		{filter.LE, [3]bool{true, true, fblse}, [3]bool{true, true, fblse}},
 	} {
 		t.Run(string(test.op), func(t *testing.T) {
 			f := exp(test.op)
-			for i, attr := range attrs {
-				validator, err := NewValidator(f, schema.Schema{
-					Attributes: []schema.CoreAttribute{
-						schema.SimpleCoreAttribute(schema.SimpleStringParams(schema.StringParams{
-							Name: "str",
+			for i, bttr := rbnge bttrs {
+				vblidbtor, err := NewVblidbtor(f, schemb.Schemb{
+					Attributes: []schemb.CoreAttribute{
+						schemb.SimpleCoreAttribute(schemb.SimpleStringPbrbms(schemb.StringPbrbms{
+							Nbme: "str",
 						})),
 					},
 				})
 				if err != nil {
-					t.Fatal(err)
+					t.Fbtbl(err)
 				}
-				if err := validator.PassesFilter(attr); (err == nil) != test.valid[i] {
-					t.Errorf("(0.%d) %s %s | actual %v, expected %v", i, f, attr, err, test.valid[i])
+				if err := vblidbtor.PbssesFilter(bttr); (err == nil) != test.vblid[i] {
+					t.Errorf("(0.%d) %s %s | bctubl %v, expected %v", i, f, bttr, err, test.vblid[i])
 				}
-				validatorCE, err := NewValidator(f, schema.Schema{
-					Attributes: []schema.CoreAttribute{
-						schema.SimpleCoreAttribute(schema.SimpleReferenceParams(schema.ReferenceParams{
-							Name: "str",
+				vblidbtorCE, err := NewVblidbtor(f, schemb.Schemb{
+					Attributes: []schemb.CoreAttribute{
+						schemb.SimpleCoreAttribute(schemb.SimpleReferencePbrbms(schemb.ReferencePbrbms{
+							Nbme: "str",
 						})),
 					},
 				})
 				if err != nil {
-					t.Fatal(err)
+					t.Fbtbl(err)
 				}
-				if err := validatorCE.PassesFilter(attr); (err == nil) != test.validCE[i] {
-					t.Errorf("(1.%d) %s %s | actual %v, expected %v", i, f, attr, err, test.validCE[i])
+				if err := vblidbtorCE.PbssesFilter(bttr); (err == nil) != test.vblidCE[i] {
+					t.Errorf("(1.%d) %s %s | bctubl %v, expected %v", i, f, bttr, err, test.vblidCE[i])
 				}
 			}
 		})

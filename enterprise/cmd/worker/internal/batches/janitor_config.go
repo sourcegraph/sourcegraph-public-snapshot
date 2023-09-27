@@ -1,27 +1,27 @@
-package batches
+pbckbge bbtches
 
 import (
-	"github.com/sourcegraph/sourcegraph/enterprise/cmd/worker/internal/executorqueue"
-	"github.com/sourcegraph/sourcegraph/internal/env"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/enterprise/cmd/worker/internbl/executorqueue"
+	"github.com/sourcegrbph/sourcegrbph/internbl/env"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-type janitorConfig struct {
-	env.BaseConfig
+type jbnitorConfig struct {
+	env.BbseConfig
 
 	MetricsConfig *executorqueue.Config
 }
 
-var janitorConfigInst = &janitorConfig{}
+vbr jbnitorConfigInst = &jbnitorConfig{}
 
-func (c *janitorConfig) Load() {
+func (c *jbnitorConfig) Lobd() {
 	c.MetricsConfig = executorqueue.InitMetricsConfig()
-	c.MetricsConfig.Load()
+	c.MetricsConfig.Lobd()
 }
 
-func (c *janitorConfig) Validate() error {
-	var errs error
-	errs = errors.Append(errs, c.BaseConfig.Validate())
-	errs = errors.Append(errs, c.MetricsConfig.Validate())
+func (c *jbnitorConfig) Vblidbte() error {
+	vbr errs error
+	errs = errors.Append(errs, c.BbseConfig.Vblidbte())
+	errs = errors.Append(errs, c.MetricsConfig.Vblidbte())
 	return errs
 }

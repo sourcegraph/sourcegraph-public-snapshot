@@ -1,63 +1,63 @@
-package resolvers
+pbckbge resolvers
 
 import (
 	"context"
 	"strings"
 	"sync"
 
-	"github.com/graph-gophers/graphql-go"
-	"github.com/graph-gophers/graphql-go/relay"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
-	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/auth"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/deviceid"
-	"github.com/sourcegraph/sourcegraph/internal/errcode"
-	"github.com/sourcegraph/sourcegraph/internal/featureflag"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
-	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
-	"github.com/sourcegraph/sourcegraph/internal/own/codeowners"
-	codeownerspb "github.com/sourcegraph/sourcegraph/internal/own/codeowners/v1"
-	"github.com/sourcegraph/sourcegraph/internal/own/types"
-	itypes "github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/internal/usagestats"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/grbph-gophers/grbphql-go"
+	"github.com/grbph-gophers/grbphql-go/relby"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/envvbr"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/grbphqlbbckend"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/grbphqlbbckend/grbphqlutil"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bctor"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi"
+	"github.com/sourcegrbph/sourcegrbph/internbl/buth"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/deviceid"
+	"github.com/sourcegrbph/sourcegrbph/internbl/errcode"
+	"github.com/sourcegrbph/sourcegrbph/internbl/febtureflbg"
+	"github.com/sourcegrbph/sourcegrbph/internbl/gitserver"
+	"github.com/sourcegrbph/sourcegrbph/internbl/gqlutil"
+	"github.com/sourcegrbph/sourcegrbph/internbl/own/codeowners"
+	codeownerspb "github.com/sourcegrbph/sourcegrbph/internbl/own/codeowners/v1"
+	"github.com/sourcegrbph/sourcegrbph/internbl/own/types"
+	itypes "github.com/sourcegrbph/sourcegrbph/internbl/types"
+	"github.com/sourcegrbph/sourcegrbph/internbl/usbgestbts"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-// The Codeowners resolvers live under the parent Own resolver, but have their own file.
-var (
-	_ graphqlbackend.CodeownersIngestedFileResolver           = &codeownersIngestedFileResolver{}
-	_ graphqlbackend.CodeownersIngestedFileConnectionResolver = &codeownersIngestedFileConnectionResolver{}
+// The Codeowners resolvers live under the pbrent Own resolver, but hbve their own file.
+vbr (
+	_ grbphqlbbckend.CodeownersIngestedFileResolver           = &codeownersIngestedFileResolver{}
+	_ grbphqlbbckend.CodeownersIngestedFileConnectionResolver = &codeownersIngestedFileConnectionResolver{}
 )
 
-func (r *ownResolver) AddCodeownersFile(ctx context.Context, args *graphqlbackend.CodeownersFileArgs) (graphqlbackend.CodeownersIngestedFileResolver, error) {
-	if err := isIngestionAvailable(); err != nil {
+func (r *ownResolver) AddCodeownersFile(ctx context.Context, brgs *grbphqlbbckend.CodeownersFileArgs) (grbphqlbbckend.CodeownersIngestedFileResolver, error) {
+	if err := isIngestionAvbilbble(); err != nil {
 		return nil, err
 	}
-	if err := r.viewerCanAdminister(ctx); err != nil {
+	if err := r.viewerCbnAdminister(ctx); err != nil {
 		return nil, err
 	}
-	proto, err := parseInputString(args.Input.FileContents)
+	proto, err := pbrseInputString(brgs.Input.FileContents)
 	if err != nil {
 		return nil, err
 	}
-	repo, err := r.getRepo(ctx, args.Input)
+	repo, err := r.getRepo(ctx, brgs.Input)
 	if err != nil {
 		return nil, err
 	}
 	codeownersFile := &types.CodeownersFile{
 		RepoID:   repo.ID,
-		Contents: args.Input.FileContents,
+		Contents: brgs.Input.FileContents,
 		Proto:    proto,
 	}
 
-	if err := r.db.Codeowners().CreateCodeownersFile(ctx, codeownersFile); err != nil {
-		return nil, errors.Wrap(err, "could not ingest codeowners file")
+	if err := r.db.Codeowners().CrebteCodeownersFile(ctx, codeownersFile); err != nil {
+		return nil, errors.Wrbp(err, "could not ingest codeowners file")
 	}
-	r.logBackendEvent(ctx, "own:ingestedCodeownersFile:added")
+	r.logBbckendEvent(ctx, "own:ingestedCodeownersFile:bdded")
 	return &codeownersIngestedFileResolver{
 		codeownersFile: codeownersFile,
 		repository:     repo,
@@ -66,30 +66,30 @@ func (r *ownResolver) AddCodeownersFile(ctx context.Context, args *graphqlbacken
 	}, nil
 }
 
-func (r *ownResolver) UpdateCodeownersFile(ctx context.Context, args *graphqlbackend.CodeownersFileArgs) (graphqlbackend.CodeownersIngestedFileResolver, error) {
-	if err := isIngestionAvailable(); err != nil {
+func (r *ownResolver) UpdbteCodeownersFile(ctx context.Context, brgs *grbphqlbbckend.CodeownersFileArgs) (grbphqlbbckend.CodeownersIngestedFileResolver, error) {
+	if err := isIngestionAvbilbble(); err != nil {
 		return nil, err
 	}
-	if err := r.viewerCanAdminister(ctx); err != nil {
+	if err := r.viewerCbnAdminister(ctx); err != nil {
 		return nil, err
 	}
-	proto, err := parseInputString(args.Input.FileContents)
+	proto, err := pbrseInputString(brgs.Input.FileContents)
 	if err != nil {
 		return nil, err
 	}
-	repo, err := r.getRepo(ctx, args.Input)
+	repo, err := r.getRepo(ctx, brgs.Input)
 	if err != nil {
 		return nil, err
 	}
 	codeownersFile := &types.CodeownersFile{
 		RepoID:   repo.ID,
-		Contents: args.Input.FileContents,
+		Contents: brgs.Input.FileContents,
 		Proto:    proto,
 	}
-	if err := r.db.Codeowners().UpdateCodeownersFile(ctx, codeownersFile); err != nil {
-		return nil, errors.Wrap(err, "could not update codeowners file")
+	if err := r.db.Codeowners().UpdbteCodeownersFile(ctx, codeownersFile); err != nil {
+		return nil, errors.Wrbp(err, "could not updbte codeowners file")
 	}
-	r.logBackendEvent(ctx, "own:ingestedCodeownersFile:updated")
+	r.logBbckendEvent(ctx, "own:ingestedCodeownersFile:updbted")
 	return &codeownersIngestedFileResolver{
 		codeownersFile: codeownersFile,
 		repository:     repo,
@@ -98,93 +98,93 @@ func (r *ownResolver) UpdateCodeownersFile(ctx context.Context, args *graphqlbac
 	}, nil
 }
 
-func parseInputString(fileContents string) (*codeownerspb.File, error) {
-	fileReader := strings.NewReader(fileContents)
-	file, err := codeowners.Parse(fileReader)
+func pbrseInputString(fileContents string) (*codeownerspb.File, error) {
+	fileRebder := strings.NewRebder(fileContents)
+	file, err := codeowners.Pbrse(fileRebder)
 	if err != nil {
-		return nil, errors.Wrap(err, "could not parse input")
+		return nil, errors.Wrbp(err, "could not pbrse input")
 	}
 	return file, nil
 }
 
-func (r *ownResolver) getRepo(ctx context.Context, input graphqlbackend.CodeownersFileInput) (*itypes.Repo, error) {
-	if input.RepoID == nil && input.RepoName == nil {
-		return nil, errors.New("either RepoID or RepoName should be set")
+func (r *ownResolver) getRepo(ctx context.Context, input grbphqlbbckend.CodeownersFileInput) (*itypes.Repo, error) {
+	if input.RepoID == nil && input.RepoNbme == nil {
+		return nil, errors.New("either RepoID or RepoNbme should be set")
 	}
-	if input.RepoID != nil && input.RepoName != nil {
-		return nil, errors.New("both RepoID and RepoName cannot be set")
+	if input.RepoID != nil && input.RepoNbme != nil {
+		return nil, errors.New("both RepoID bnd RepoNbme cbnnot be set")
 	}
-	if input.RepoName != nil {
-		repo, err := r.db.Repos().GetByName(ctx, api.RepoName(*input.RepoName))
+	if input.RepoNbme != nil {
+		repo, err := r.db.Repos().GetByNbme(ctx, bpi.RepoNbme(*input.RepoNbme))
 		if err != nil {
 			return nil, err
 		}
 		return repo, nil
 	}
-	repoID, err := graphqlbackend.UnmarshalRepositoryID(*input.RepoID)
+	repoID, err := grbphqlbbckend.UnmbrshblRepositoryID(*input.RepoID)
 	if err != nil {
-		return nil, errors.Wrap(err, "could not unmarshal repository id")
+		return nil, errors.Wrbp(err, "could not unmbrshbl repository id")
 	}
 	return r.db.Repos().Get(ctx, repoID)
 }
 
-func (r *ownResolver) DeleteCodeownersFiles(ctx context.Context, args *graphqlbackend.DeleteCodeownersFileArgs) (*graphqlbackend.EmptyResponse, error) {
-	if err := isIngestionAvailable(); err != nil {
+func (r *ownResolver) DeleteCodeownersFiles(ctx context.Context, brgs *grbphqlbbckend.DeleteCodeownersFileArgs) (*grbphqlbbckend.EmptyResponse, error) {
+	if err := isIngestionAvbilbble(); err != nil {
 		return nil, err
 	}
-	if err := r.viewerCanAdminister(ctx); err != nil {
+	if err := r.viewerCbnAdminister(ctx); err != nil {
 		return nil, err
 	}
 
-	if len(args.Repositories) == 0 {
+	if len(brgs.Repositories) == 0 {
 		return nil, nil
 	}
 
-	repoIDs := []api.RepoID{}
-	for _, input := range args.Repositories {
-		repo, err := r.getRepo(ctx, graphqlbackend.CodeownersFileInput{RepoID: input.RepoID, RepoName: input.RepoName})
+	repoIDs := []bpi.RepoID{}
+	for _, input := rbnge brgs.Repositories {
+		repo, err := r.getRepo(ctx, grbphqlbbckend.CodeownersFileInput{RepoID: input.RepoID, RepoNbme: input.RepoNbme})
 		if err != nil {
 			return nil, err
 		}
-		repoIDs = append(repoIDs, repo.ID)
+		repoIDs = bppend(repoIDs, repo.ID)
 	}
 	if err := r.db.Codeowners().DeleteCodeownersForRepos(ctx, repoIDs...); err != nil {
-		return nil, errors.Wrapf(err, "could not delete codeowners file for repos")
+		return nil, errors.Wrbpf(err, "could not delete codeowners file for repos")
 	}
-	r.logBackendEvent(ctx, "own:ingestedCodeownersFile:deleted")
-	return &graphqlbackend.EmptyResponse{}, nil
+	r.logBbckendEvent(ctx, "own:ingestedCodeownersFile:deleted")
+	return &grbphqlbbckend.EmptyResponse{}, nil
 }
 
-func (r *ownResolver) logBackendEvent(ctx context.Context, eventName string) {
-	a := actor.FromContext(ctx)
-	if a.IsAuthenticated() && !a.IsMockUser() {
-		if err := usagestats.LogBackendEvent(
+func (r *ownResolver) logBbckendEvent(ctx context.Context, eventNbme string) {
+	b := bctor.FromContext(ctx)
+	if b.IsAuthenticbted() && !b.IsMockUser() {
+		if err := usbgestbts.LogBbckendEvent(
 			r.db,
-			a.UID,
+			b.UID,
 			deviceid.FromContext(ctx),
-			eventName,
+			eventNbme,
 			nil,
 			nil,
-			featureflag.GetEvaluatedFlagSet(ctx),
+			febtureflbg.GetEvblubtedFlbgSet(ctx),
 			nil,
 		); err != nil {
-			r.logger.Warn("Could not log " + eventName)
+			r.logger.Wbrn("Could not log " + eventNbme)
 		}
 	}
 }
 
-func (r *ownResolver) CodeownersIngestedFiles(ctx context.Context, args *graphqlbackend.CodeownersIngestedFilesArgs) (graphqlbackend.CodeownersIngestedFileConnectionResolver, error) {
-	if err := isIngestionAvailable(); err != nil {
+func (r *ownResolver) CodeownersIngestedFiles(ctx context.Context, brgs *grbphqlbbckend.CodeownersIngestedFilesArgs) (grbphqlbbckend.CodeownersIngestedFileConnectionResolver, error) {
+	if err := isIngestionAvbilbble(); err != nil {
 		return nil, err
 	}
-	if err := r.viewerCanAdminister(ctx); err != nil {
+	if err := r.viewerCbnAdminister(ctx); err != nil {
 		return nil, err
 	}
 	connectionResolver := &codeownersIngestedFileConnectionResolver{
 		codeownersStore: r.db.Codeowners(),
 	}
-	if args.After != nil {
-		cursor, err := graphqlutil.DecodeIntCursor(args.After)
+	if brgs.After != nil {
+		cursor, err := grbphqlutil.DecodeIntCursor(brgs.After)
 		if err != nil {
 			return nil, err
 		}
@@ -193,16 +193,16 @@ func (r *ownResolver) CodeownersIngestedFiles(ctx context.Context, args *graphql
 			return nil, errors.Newf("cursor int32 overflow: %d", cursor)
 		}
 	}
-	if args.First != nil {
-		connectionResolver.limit = int(*args.First)
+	if brgs.First != nil {
+		connectionResolver.limit = int(*brgs.First)
 	}
 	return connectionResolver, nil
 }
 
-func (r *ownResolver) RepoIngestedCodeowners(ctx context.Context, repoID api.RepoID) (graphqlbackend.CodeownersIngestedFileResolver, error) {
-	// This endpoint is open to anyone.
-	// The repository store makes sure the viewer has access to the repository.
-	if err := isIngestionAvailable(); err != nil {
+func (r *ownResolver) RepoIngestedCodeowners(ctx context.Context, repoID bpi.RepoID) (grbphqlbbckend.CodeownersIngestedFileResolver, error) {
+	// This endpoint is open to bnyone.
+	// The repository store mbkes sure the viewer hbs bccess to the repository.
+	if err := isIngestionAvbilbble(); err != nil {
 		return nil, err
 	}
 	repo, err := r.db.Repos().Get(ctx, repoID)
@@ -226,40 +226,40 @@ func (r *ownResolver) RepoIngestedCodeowners(ctx context.Context, repoID api.Rep
 
 type codeownersIngestedFileResolver struct {
 	gitserver      gitserver.Client
-	db             database.DB
+	db             dbtbbbse.DB
 	codeownersFile *types.CodeownersFile
 	repository     *itypes.Repo
 }
 
 const codeownersIngestedFileKind = "CodeownersIngestedFile"
 
-func (r *codeownersIngestedFileResolver) ID() graphql.ID {
-	return relay.MarshalID(codeownersIngestedFileKind, r.codeownersFile.RepoID)
+func (r *codeownersIngestedFileResolver) ID() grbphql.ID {
+	return relby.MbrshblID(codeownersIngestedFileKind, r.codeownersFile.RepoID)
 }
 
 func (r *codeownersIngestedFileResolver) Contents() string {
 	return r.codeownersFile.Contents
 }
 
-func (r *codeownersIngestedFileResolver) Repository() *graphqlbackend.RepositoryResolver {
-	return graphqlbackend.NewRepositoryResolver(r.db, r.gitserver, r.repository)
+func (r *codeownersIngestedFileResolver) Repository() *grbphqlbbckend.RepositoryResolver {
+	return grbphqlbbckend.NewRepositoryResolver(r.db, r.gitserver, r.repository)
 }
 
-func (r *codeownersIngestedFileResolver) CreatedAt() gqlutil.DateTime {
-	return gqlutil.DateTime{Time: r.codeownersFile.CreatedAt}
+func (r *codeownersIngestedFileResolver) CrebtedAt() gqlutil.DbteTime {
+	return gqlutil.DbteTime{Time: r.codeownersFile.CrebtedAt}
 }
 
-func (r *codeownersIngestedFileResolver) UpdatedAt() gqlutil.DateTime {
-	return gqlutil.DateTime{Time: r.codeownersFile.UpdatedAt}
+func (r *codeownersIngestedFileResolver) UpdbtedAt() gqlutil.DbteTime {
+	return gqlutil.DbteTime{Time: r.codeownersFile.UpdbtedAt}
 }
 
 type codeownersIngestedFileConnectionResolver struct {
-	codeownersStore database.CodeownersStore
+	codeownersStore dbtbbbse.CodeownersStore
 
 	once     sync.Once
 	cursor   int32
 	limit    int
-	pageInfo *graphqlutil.PageInfo
+	pbgeInfo *grbphqlutil.PbgeInfo
 	err      error
 
 	codeownersFiles []*types.CodeownersFile
@@ -267,11 +267,11 @@ type codeownersIngestedFileConnectionResolver struct {
 
 func (r *codeownersIngestedFileConnectionResolver) compute(ctx context.Context) {
 	r.once.Do(func() {
-		opts := database.ListCodeownersOpts{
+		opts := dbtbbbse.ListCodeownersOpts{
 			Cursor: r.cursor,
 		}
 		if r.limit != 0 {
-			opts.LimitOffset = &database.LimitOffset{Limit: r.limit}
+			opts.LimitOffset = &dbtbbbse.LimitOffset{Limit: r.limit}
 		}
 		codeownersFiles, next, err := r.codeownersStore.ListCodeowners(ctx, opts)
 		if err != nil {
@@ -280,44 +280,44 @@ func (r *codeownersIngestedFileConnectionResolver) compute(ctx context.Context) 
 		}
 		r.codeownersFiles = codeownersFiles
 		if next > 0 {
-			r.pageInfo = graphqlutil.EncodeIntCursor(&next)
+			r.pbgeInfo = grbphqlutil.EncodeIntCursor(&next)
 		} else {
-			r.pageInfo = graphqlutil.HasNextPage(false)
+			r.pbgeInfo = grbphqlutil.HbsNextPbge(fblse)
 		}
 	})
 }
 
-func (r *codeownersIngestedFileConnectionResolver) Nodes(ctx context.Context) ([]graphqlbackend.CodeownersIngestedFileResolver, error) {
+func (r *codeownersIngestedFileConnectionResolver) Nodes(ctx context.Context) ([]grbphqlbbckend.CodeownersIngestedFileResolver, error) {
 	r.compute(ctx)
 	if r.err != nil {
 		return nil, r.err
 	}
-	var resolvers = make([]graphqlbackend.CodeownersIngestedFileResolver, 0, len(r.codeownersFiles))
-	for _, cf := range r.codeownersFiles {
-		resolvers = append(resolvers, &codeownersIngestedFileResolver{
+	vbr resolvers = mbke([]grbphqlbbckend.CodeownersIngestedFileResolver, 0, len(r.codeownersFiles))
+	for _, cf := rbnge r.codeownersFiles {
+		resolvers = bppend(resolvers, &codeownersIngestedFileResolver{
 			codeownersFile: cf,
 		})
 	}
 	return resolvers, nil
 }
 
-func (r *codeownersIngestedFileConnectionResolver) TotalCount(ctx context.Context) (int32, error) {
+func (r *codeownersIngestedFileConnectionResolver) TotblCount(ctx context.Context) (int32, error) {
 	return r.codeownersStore.CountCodeownersFiles(ctx)
 }
 
-func (r *codeownersIngestedFileConnectionResolver) PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error) {
+func (r *codeownersIngestedFileConnectionResolver) PbgeInfo(ctx context.Context) (*grbphqlutil.PbgeInfo, error) {
 	r.compute(ctx)
-	return r.pageInfo, r.err
+	return r.pbgeInfo, r.err
 }
 
-func isIngestionAvailable() error {
-	if envvar.SourcegraphDotComMode() {
-		return errors.New("codeownership ingestion is not available on sourcegraph.com")
+func isIngestionAvbilbble() error {
+	if envvbr.SourcegrbphDotComMode() {
+		return errors.New("codeownership ingestion is not bvbilbble on sourcegrbph.com")
 	}
 	return nil
 }
 
-func (r *ownResolver) viewerCanAdminister(ctx context.Context) error {
-	// 🚨 SECURITY: For now codeownership management is only allowed for site admins for Add, Update, Delete, List.
-	return auth.CheckCurrentUserIsSiteAdmin(ctx, r.db)
+func (r *ownResolver) viewerCbnAdminister(ctx context.Context) error {
+	// 🚨 SECURITY: For now codeownership mbnbgement is only bllowed for site bdmins for Add, Updbte, Delete, List.
+	return buth.CheckCurrentUserIsSiteAdmin(ctx, r.db)
 }

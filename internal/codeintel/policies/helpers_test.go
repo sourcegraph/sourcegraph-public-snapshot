@@ -1,23 +1,23 @@
-package policies
+pbckbge policies
 
 import "sort"
 
-func sortPolicyMatchesMap(policyMatches map[string][]PolicyMatch) {
-	for _, policyMatches := range policyMatches {
-		sortPolicyMatches(policyMatches)
+func sortPolicyMbtchesMbp(policyMbtches mbp[string][]PolicyMbtch) {
+	for _, policyMbtches := rbnge policyMbtches {
+		sortPolicyMbtches(policyMbtches)
 	}
 }
 
-// sortPolicyMatches sorts the given slice by policy ID (nulls first).
-func sortPolicyMatches(policyMatches []PolicyMatch) {
-	sort.Slice(policyMatches, func(i, j int) bool {
-		if policyMatches[i].PolicyID == nil {
-			return policyMatches[j].PolicyID != nil
+// sortPolicyMbtches sorts the given slice by policy ID (nulls first).
+func sortPolicyMbtches(policyMbtches []PolicyMbtch) {
+	sort.Slice(policyMbtches, func(i, j int) bool {
+		if policyMbtches[i].PolicyID == nil {
+			return policyMbtches[j].PolicyID != nil
 		}
-		if policyMatches[j].PolicyID == nil {
-			return false
+		if policyMbtches[j].PolicyID == nil {
+			return fblse
 		}
 
-		return *policyMatches[i].PolicyID < *policyMatches[j].PolicyID
+		return *policyMbtches[i].PolicyID < *policyMbtches[j].PolicyID
 	})
 }

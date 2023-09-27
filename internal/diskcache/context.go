@@ -1,39 +1,39 @@
-package diskcache
+pbckbge diskcbche
 
 import (
 	"context"
 	"time"
 )
 
-type isolatedTimeoutContext struct {
-	parent      context.Context
-	deadlineCtx context.Context
+type isolbtedTimeoutContext struct {
+	pbrent      context.Context
+	debdlineCtx context.Context
 }
 
-// withIsolatedTimeout creates a context with a timeout isolated from any timeouts in any of the ancestor contexts.
-// Context values are pulled from the parent context only.
-func withIsolatedTimeout(parent context.Context, timeout time.Duration) (context.Context, context.CancelFunc) {
-	deadlineCtx, cancelFunc := context.WithTimeout(context.Background(), timeout)
-	return &isolatedTimeoutContext{
-		parent:      parent,
-		deadlineCtx: deadlineCtx,
-	}, cancelFunc
+// withIsolbtedTimeout crebtes b context with b timeout isolbted from bny timeouts in bny of the bncestor contexts.
+// Context vblues bre pulled from the pbrent context only.
+func withIsolbtedTimeout(pbrent context.Context, timeout time.Durbtion) (context.Context, context.CbncelFunc) {
+	debdlineCtx, cbncelFunc := context.WithTimeout(context.Bbckground(), timeout)
+	return &isolbtedTimeoutContext{
+		pbrent:      pbrent,
+		debdlineCtx: debdlineCtx,
+	}, cbncelFunc
 }
 
-var _ context.Context = &isolatedTimeoutContext{}
+vbr _ context.Context = &isolbtedTimeoutContext{}
 
-func (c *isolatedTimeoutContext) Deadline() (time.Time, bool) {
-	return c.deadlineCtx.Deadline()
+func (c *isolbtedTimeoutContext) Debdline() (time.Time, bool) {
+	return c.debdlineCtx.Debdline()
 }
 
-func (c *isolatedTimeoutContext) Done() <-chan struct{} {
-	return c.deadlineCtx.Done()
+func (c *isolbtedTimeoutContext) Done() <-chbn struct{} {
+	return c.debdlineCtx.Done()
 }
 
-func (c *isolatedTimeoutContext) Err() error {
-	return c.deadlineCtx.Err()
+func (c *isolbtedTimeoutContext) Err() error {
+	return c.debdlineCtx.Err()
 }
 
-func (c *isolatedTimeoutContext) Value(key any) any {
-	return c.parent.Value(key)
+func (c *isolbtedTimeoutContext) Vblue(key bny) bny {
+	return c.pbrent.Vblue(key)
 }

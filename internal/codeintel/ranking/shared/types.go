@@ -1,37 +1,37 @@
-package shared
+pbckbge shbred
 
 import "time"
 
-type Summary struct {
-	GraphKey                string
+type Summbry struct {
+	GrbphKey                string
 	VisibleToZoekt          bool
-	PathMapperProgress      Progress
-	ReferenceMapperProgress Progress
+	PbthMbpperProgress      Progress
+	ReferenceMbpperProgress Progress
 	ReducerProgress         *Progress
 }
 
 type Progress struct {
-	StartedAt   time.Time
+	StbrtedAt   time.Time
 	CompletedAt *time.Time
 	Processed   int
-	Total       int
+	Totbl       int
 }
 
-type CoverageCounts struct {
-	NumTargetIndexes                   int
+type CoverbgeCounts struct {
+	NumTbrgetIndexes                   int
 	NumExportedIndexes                 int
-	NumRepositoriesWithoutCurrentRanks int
+	NumRepositoriesWithoutCurrentRbnks int
 }
 
-type RankingDefinitions struct {
-	UploadID         int
-	ExportedUploadID int
+type RbnkingDefinitions struct {
+	UplobdID         int
+	ExportedUplobdID int
 	SymbolChecksum   [16]byte
-	DocumentPath     string
+	DocumentPbth     string
 }
 
-type RankingReferences struct {
-	UploadID         int
-	ExportedUploadID int
+type RbnkingReferences struct {
+	UplobdID         int
+	ExportedUplobdID int
 	SymbolChecksums  [][16]byte
 }

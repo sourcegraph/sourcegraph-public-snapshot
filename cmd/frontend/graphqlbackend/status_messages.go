@@ -1,106 +1,106 @@
-package graphqlbackend
+pbckbge grbphqlbbckend
 
 import (
 	"context"
 
-	"github.com/sourcegraph/log"
+	"github.com/sourcegrbph/log"
 
-	"github.com/sourcegraph/sourcegraph/internal/auth"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/repos"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/internbl/buth"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/repos"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-func (r *schemaResolver) StatusMessages(ctx context.Context) ([]*statusMessageResolver, error) {
-	// 🚨 SECURITY: Only site admins can fetch status messages.
-	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+func (r *schembResolver) StbtusMessbges(ctx context.Context) ([]*stbtusMessbgeResolver, error) {
+	// 🚨 SECURITY: Only site bdmins cbn fetch stbtus messbges.
+	if err := buth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 		return nil, err
 	}
 
-	messages, err := repos.FetchStatusMessages(ctx, r.db, r.gitserverClient)
+	messbges, err := repos.FetchStbtusMessbges(ctx, r.db, r.gitserverClient)
 	if err != nil {
 		return nil, err
 	}
 
-	var messageResolvers []*statusMessageResolver
-	for _, m := range messages {
-		messageResolvers = append(messageResolvers, &statusMessageResolver{db: r.db, message: m})
+	vbr messbgeResolvers []*stbtusMessbgeResolver
+	for _, m := rbnge messbges {
+		messbgeResolvers = bppend(messbgeResolvers, &stbtusMessbgeResolver{db: r.db, messbge: m})
 	}
 
-	return messageResolvers, nil
+	return messbgeResolvers, nil
 }
 
-type statusMessageResolver struct {
-	message repos.StatusMessage
-	db      database.DB
+type stbtusMessbgeResolver struct {
+	messbge repos.StbtusMessbge
+	db      dbtbbbse.DB
 }
 
-func (r *statusMessageResolver) ToGitUpdatesDisabled() (*statusMessageResolver, bool) {
-	return r, r.message.GitUpdatesDisabled != nil
+func (r *stbtusMessbgeResolver) ToGitUpdbtesDisbbled() (*stbtusMessbgeResolver, bool) {
+	return r, r.messbge.GitUpdbtesDisbbled != nil
 }
 
-func (r *statusMessageResolver) ToNoRepositoriesDetected() (*statusMessageResolver, bool) {
-	return r, r.message.NoRepositoriesDetected != nil
+func (r *stbtusMessbgeResolver) ToNoRepositoriesDetected() (*stbtusMessbgeResolver, bool) {
+	return r, r.messbge.NoRepositoriesDetected != nil
 }
 
-func (r *statusMessageResolver) ToCloningProgress() (*statusMessageResolver, bool) {
-	return r, r.message.Cloning != nil
+func (r *stbtusMessbgeResolver) ToCloningProgress() (*stbtusMessbgeResolver, bool) {
+	return r, r.messbge.Cloning != nil
 }
 
-func (r *statusMessageResolver) ToExternalServiceSyncError() (*statusMessageResolver, bool) {
-	return r, r.message.ExternalServiceSyncError != nil
+func (r *stbtusMessbgeResolver) ToExternblServiceSyncError() (*stbtusMessbgeResolver, bool) {
+	return r, r.messbge.ExternblServiceSyncError != nil
 }
 
-func (r *statusMessageResolver) ToSyncError() (*statusMessageResolver, bool) {
-	return r, r.message.SyncError != nil
+func (r *stbtusMessbgeResolver) ToSyncError() (*stbtusMessbgeResolver, bool) {
+	return r, r.messbge.SyncError != nil
 }
 
-func (r *statusMessageResolver) ToIndexingProgress() (*indexingProgressMessageResolver, bool) {
-	if r.message.Indexing != nil {
-		return &indexingProgressMessageResolver{message: r.message.Indexing}, true
+func (r *stbtusMessbgeResolver) ToIndexingProgress() (*indexingProgressMessbgeResolver, bool) {
+	if r.messbge.Indexing != nil {
+		return &indexingProgressMessbgeResolver{messbge: r.messbge.Indexing}, true
 	}
-	return nil, false
+	return nil, fblse
 }
 
-func (r *statusMessageResolver) ToGitserverDiskThresholdReached() (*statusMessageResolver, bool) {
-	return r, r.message.GitserverDiskThresholdReached != nil
+func (r *stbtusMessbgeResolver) ToGitserverDiskThresholdRebched() (*stbtusMessbgeResolver, bool) {
+	return r, r.messbge.GitserverDiskThresholdRebched != nil
 }
 
-func (r *statusMessageResolver) Message() (string, error) {
-	if r.message.GitUpdatesDisabled != nil {
-		return r.message.GitUpdatesDisabled.Message, nil
+func (r *stbtusMessbgeResolver) Messbge() (string, error) {
+	if r.messbge.GitUpdbtesDisbbled != nil {
+		return r.messbge.GitUpdbtesDisbbled.Messbge, nil
 	}
-	if r.message.NoRepositoriesDetected != nil {
-		return r.message.NoRepositoriesDetected.Message, nil
+	if r.messbge.NoRepositoriesDetected != nil {
+		return r.messbge.NoRepositoriesDetected.Messbge, nil
 	}
-	if r.message.Cloning != nil {
-		return r.message.Cloning.Message, nil
+	if r.messbge.Cloning != nil {
+		return r.messbge.Cloning.Messbge, nil
 	}
-	if r.message.ExternalServiceSyncError != nil {
-		return r.message.ExternalServiceSyncError.Message, nil
+	if r.messbge.ExternblServiceSyncError != nil {
+		return r.messbge.ExternblServiceSyncError.Messbge, nil
 	}
-	if r.message.SyncError != nil {
-		return r.message.SyncError.Message, nil
+	if r.messbge.SyncError != nil {
+		return r.messbge.SyncError.Messbge, nil
 	}
-	if r.message.GitserverDiskThresholdReached != nil {
-		return r.message.GitserverDiskThresholdReached.Message, nil
+	if r.messbge.GitserverDiskThresholdRebched != nil {
+		return r.messbge.GitserverDiskThresholdRebched.Messbge, nil
 	}
-	return "", errors.New("status message is of unknown type")
+	return "", errors.New("stbtus messbge is of unknown type")
 }
 
-func (r *statusMessageResolver) ExternalService(ctx context.Context) (*externalServiceResolver, error) {
-	id := r.message.ExternalServiceSyncError.ExternalServiceId
-	externalService, err := r.db.ExternalServices().GetByID(ctx, id)
+func (r *stbtusMessbgeResolver) ExternblService(ctx context.Context) (*externblServiceResolver, error) {
+	id := r.messbge.ExternblServiceSyncError.ExternblServiceId
+	externblService, err := r.db.ExternblServices().GetByID(ctx, id)
 	if err != nil {
 		return nil, err
 	}
 
-	return &externalServiceResolver{logger: log.Scoped("externalServiceResolver", ""), db: r.db, externalService: externalService}, nil
+	return &externblServiceResolver{logger: log.Scoped("externblServiceResolver", ""), db: r.db, externblService: externblService}, nil
 }
 
-type indexingProgressMessageResolver struct {
-	message *repos.IndexingProgress
+type indexingProgressMessbgeResolver struct {
+	messbge *repos.IndexingProgress
 }
 
-func (r *indexingProgressMessageResolver) NotIndexed() int32 { return int32(r.message.NotIndexed) }
-func (r *indexingProgressMessageResolver) Indexed() int32    { return int32(r.message.Indexed) }
+func (r *indexingProgressMessbgeResolver) NotIndexed() int32 { return int32(r.messbge.NotIndexed) }
+func (r *indexingProgressMessbgeResolver) Indexed() int32    { return int32(r.messbge.Indexed) }

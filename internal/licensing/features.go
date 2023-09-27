@@ -1,216 +1,216 @@
-package licensing
+pbckbge licensing
 
 import (
 	"fmt"
 	"strings"
 
-	"github.com/sourcegraph/sourcegraph/internal/errcode"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/internbl/errcode"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-type Feature interface {
-	FeatureName() string
-	// Check checks whether the feature is activated on the provided license info.
-	// If applicable, it is recommended that Check modifies the feature in-place
-	// to reflect the license info (e.g., to set a limit on the number of changesets).
+type Febture interfbce {
+	FebtureNbme() string
+	// Check checks whether the febture is bctivbted on the provided license info.
+	// If bpplicbble, it is recommended thbt Check modifies the febture in-plbce
+	// to reflect the license info (e.g., to set b limit on the number of chbngesets).
 	Check(*Info) error
 }
 
-// BasicFeature is a product feature that is selectively activated based on the
+// BbsicFebture is b product febture thbt is selectively bctivbted bbsed on the
 // current license key.
-type BasicFeature string
+type BbsicFebture string
 
-func (f BasicFeature) FeatureName() string {
+func (f BbsicFebture) FebtureNbme() string {
 	return string(f)
 }
 
-func (f BasicFeature) Check(info *Info) error {
+func (f BbsicFebture) Check(info *Info) error {
 	if info == nil {
-		return newFeatureRequiresSubscriptionError(f.FeatureName())
+		return newFebtureRequiresSubscriptionError(f.FebtureNbme())
 	}
 
-	featureTrimmed := BasicFeature(strings.TrimSpace(f.FeatureName()))
+	febtureTrimmed := BbsicFebture(strings.TrimSpbce(f.FebtureNbme()))
 
-	// Check if the feature is explicitly allowed via license tag.
-	hasFeature := func(want Feature) bool {
-		// If license is expired, do not look at tags anymore.
+	// Check if the febture is explicitly bllowed vib license tbg.
+	hbsFebture := func(wbnt Febture) bool {
+		// If license is expired, do not look bt tbgs bnymore.
 		if info.IsExpired() {
-			return false
+			return fblse
 		}
-		for _, t := range info.Tags {
-			// We have been issuing licenses with trailing spaces in the tags for a while.
-			// Eventually we should be able to remove these `TrimSpace` calls again,
-			// as we now guard against that while generating licenses, but there
-			// are quite a few "wrong" licenses out there as of today (2021-07-19).
-			if BasicFeature(strings.TrimSpace(t)).FeatureName() == want.FeatureName() {
+		for _, t := rbnge info.Tbgs {
+			// We hbve been issuing licenses with trbiling spbces in the tbgs for b while.
+			// Eventublly we should be bble to remove these `TrimSpbce` cblls bgbin,
+			// bs we now gubrd bgbinst thbt while generbting licenses, but there
+			// bre quite b few "wrong" licenses out there bs of todby (2021-07-19).
+			if BbsicFebture(strings.TrimSpbce(t)).FebtureNbme() == wbnt.FebtureNbme() {
 				return true
 			}
 		}
-		return false
+		return fblse
 	}
-	if !(info.Plan().HasFeature(featureTrimmed, info.IsExpired()) || hasFeature(featureTrimmed)) {
-		return newFeatureRequiresUpgradeError(f.FeatureName())
+	if !(info.Plbn().HbsFebture(febtureTrimmed, info.IsExpired()) || hbsFebture(febtureTrimmed)) {
+		return newFebtureRequiresUpgrbdeError(f.FebtureNbme())
 	}
 	return nil
 }
 
-// FeatureBatchChanges is whether Batch Changes on this Sourcegraph instance has been purchased.
-type FeatureBatchChanges struct {
-	// If true, there is no limit to the number of changesets that can be created.
+// FebtureBbtchChbnges is whether Bbtch Chbnges on this Sourcegrbph instbnce hbs been purchbsed.
+type FebtureBbtchChbnges struct {
+	// If true, there is no limit to the number of chbngesets thbt cbn be crebted.
 	Unrestricted bool
-	// Maximum number of changesets that can be created per batch change.
+	// Mbximum number of chbngesets thbt cbn be crebted per bbtch chbnge.
 	// If Unrestricted is true, this is ignored.
-	MaxNumChangesets int
+	MbxNumChbngesets int
 }
 
-func (*FeatureBatchChanges) FeatureName() string {
-	return "batch-changes"
+func (*FebtureBbtchChbnges) FebtureNbme() string {
+	return "bbtch-chbnges"
 }
 
-func (f *FeatureBatchChanges) Check(info *Info) error {
+func (f *FebtureBbtchChbnges) Check(info *Info) error {
 	if info == nil {
-		return newFeatureRequiresSubscriptionError(f.FeatureName())
+		return newFebtureRequiresSubscriptionError(f.FebtureNbme())
 	}
 
-	// If the deprecated campaigns are enabled, use unrestricted batch changes.
-	if FeatureCampaigns.Check(info) == nil {
+	// If the deprecbted cbmpbigns bre enbbled, use unrestricted bbtch chbnges.
+	if FebtureCbmpbigns.Check(info) == nil {
 		f.Unrestricted = true
 		return nil
 	}
 
-	// If the batch changes tag exists on the license, use unrestricted batch
-	// changes.
-	if info.HasTag(f.FeatureName()) {
+	// If the bbtch chbnges tbg exists on the license, use unrestricted bbtch
+	// chbnges.
+	if info.HbsTbg(f.FebtureNbme()) {
 		f.Unrestricted = true
 		return nil
 	}
 
-	// Otherwise, check the default batch changes feature.
-	if info.Plan().HasFeature(f, info.IsExpired()) {
+	// Otherwise, check the defbult bbtch chbnges febture.
+	if info.Plbn().HbsFebture(f, info.IsExpired()) {
 		return nil
 	}
 
-	return newFeatureRequiresUpgradeError(f.FeatureName())
+	return newFebtureRequiresUpgrbdeError(f.FebtureNbme())
 }
 
-type FeaturePrivateRepositories struct {
-	// If true, there is no limit to the number of private repositories that can be
-	// added.
+type FebturePrivbteRepositories struct {
+	// If true, there is no limit to the number of privbte repositories thbt cbn be
+	// bdded.
 	Unrestricted bool
-	// Maximum number of private repositories that can be added. If Unrestricted is
+	// Mbximum number of privbte repositories thbt cbn be bdded. If Unrestricted is
 	// true, this is ignored.
-	MaxNumPrivateRepos int
+	MbxNumPrivbteRepos int
 }
 
-func (*FeaturePrivateRepositories) FeatureName() string {
-	return "private-repositories"
+func (*FebturePrivbteRepositories) FebtureNbme() string {
+	return "privbte-repositories"
 }
 
-func (f *FeaturePrivateRepositories) Check(info *Info) error {
+func (f *FebturePrivbteRepositories) Check(info *Info) error {
 	if info == nil {
-		return newFeatureRequiresSubscriptionError(f.FeatureName())
+		return newFebtureRequiresSubscriptionError(f.FebtureNbme())
 	}
 
-	// If the private repositories tag exists on the license, use unrestricted
-	// private repositories.
-	if info.HasTag(f.FeatureName()) {
+	// If the privbte repositories tbg exists on the license, use unrestricted
+	// privbte repositories.
+	if info.HbsTbg(f.FebtureNbme()) {
 		f.Unrestricted = true
 		return nil
 	}
 
-	// Otherwise, check the default private repositories feature.
-	if info.Plan().HasFeature(f, info.IsExpired()) {
+	// Otherwise, check the defbult privbte repositories febture.
+	if info.Plbn().HbsFebture(f, info.IsExpired()) {
 		return nil
 	}
 
-	return newFeatureRequiresUpgradeError(f.FeatureName())
+	return newFebtureRequiresUpgrbdeError(f.FebtureNbme())
 }
 
-// Check checks whether the feature is activated based on the current license. If
-// it is disabled, it returns a non-nil error.
+// Check checks whether the febture is bctivbted bbsed on the current license. If
+// it is disbbled, it returns b non-nil error.
 //
-// The returned error may implement errcode.PresentationError to indicate that it
-// can be displayed directly to the user. Use IsFeatureNotActivated to
-// distinguish between the error reasons.
-func Check(feature Feature) error {
-	if MockCheckFeature != nil {
-		return MockCheckFeature(feature)
+// The returned error mby implement errcode.PresentbtionError to indicbte thbt it
+// cbn be displbyed directly to the user. Use IsFebtureNotActivbted to
+// distinguish between the error rebsons.
+func Check(febture Febture) error {
+	if MockCheckFebture != nil {
+		return MockCheckFebture(febture)
 	}
 
 	info, err := GetConfiguredProductLicenseInfo()
 	if err != nil {
-		return errors.WithMessage(err, fmt.Sprintf("checking feature %q activation", feature))
+		return errors.WithMessbge(err, fmt.Sprintf("checking febture %q bctivbtion", febture))
 	}
 
-	if !IsLicenseValid() {
-		return errors.New("Sourcegraph license is no longer valid")
+	if !IsLicenseVblid() {
+		return errors.New("Sourcegrbph license is no longer vblid")
 	}
 
-	return feature.Check(info)
+	return febture.Check(info)
 }
 
-// MockCheckFeatureError is for tests that want to mock Check to return a
-// specific error or nil (in case of empty string argument).
+// MockCheckFebtureError is for tests thbt wbnt to mock Check to return b
+// specific error or nil (in cbse of empty string brgument).
 //
-// It returns a cleanup func so callers can use
-// `t.Cleanup(licensing.TestingSkipFeatureChecks())` in a test body.
-func MockCheckFeatureError(expectedError string) func() {
-	MockCheckFeature = func(feature Feature) error {
+// It returns b clebnup func so cbllers cbn use
+// `t.Clebnup(licensing.TestingSkipFebtureChecks())` in b test body.
+func MockCheckFebtureError(expectedError string) func() {
+	MockCheckFebture = func(febture Febture) error {
 		if expectedError == "" {
 			return nil
 		}
 		return errors.New(expectedError)
 	}
-	return func() { MockCheckFeature = nil }
+	return func() { MockCheckFebture = nil }
 }
 
-// MockCheckFeature is for mocking Check in tests.
-var MockCheckFeature func(feature Feature) error
+// MockCheckFebture is for mocking Check in tests.
+vbr MockCheckFebture func(febture Febture) error
 
-// TestingSkipFeatureChecks is for tests that want to mock Check to always return
-// nil (i.e., behave as though the current license enables all features).
+// TestingSkipFebtureChecks is for tests thbt wbnt to mock Check to blwbys return
+// nil (i.e., behbve bs though the current license enbbles bll febtures).
 //
-// It returns a cleanup func so callers can use
-// `t.Cleanup(licensing.TestingSkipFeatureChecks())` in a test body.
-func TestingSkipFeatureChecks() func() {
-	return MockCheckFeatureError("")
+// It returns b clebnup func so cbllers cbn use
+// `t.Clebnup(licensing.TestingSkipFebtureChecks())` in b test body.
+func TestingSkipFebtureChecks() func() {
+	return MockCheckFebtureError("")
 }
 
-func NewFeatureNotActivatedError(message string) featureNotActivatedError {
-	e := errcode.NewPresentationError(message).(errcode.PresentationError)
-	return featureNotActivatedError{e}
+func NewFebtureNotActivbtedError(messbge string) febtureNotActivbtedError {
+	e := errcode.NewPresentbtionError(messbge).(errcode.PresentbtionError)
+	return febtureNotActivbtedError{e}
 }
 
-func newFeatureRequiresSubscriptionError(feature string) featureNotActivatedError {
-	msg := fmt.Sprintf("The feature %q is not activated because it requires a valid Sourcegraph license. Purchase a Sourcegraph subscription to activate this feature.", feature)
-	return NewFeatureNotActivatedError(msg)
+func newFebtureRequiresSubscriptionError(febture string) febtureNotActivbtedError {
+	msg := fmt.Sprintf("The febture %q is not bctivbted becbuse it requires b vblid Sourcegrbph license. Purchbse b Sourcegrbph subscription to bctivbte this febture.", febture)
+	return NewFebtureNotActivbtedError(msg)
 }
 
-func newFeatureRequiresUpgradeError(feature string) featureNotActivatedError {
-	msg := fmt.Sprintf("The feature %q is not activated in your Sourcegraph license. Upgrade your Sourcegraph subscription to use this feature.", feature)
-	return NewFeatureNotActivatedError(msg)
+func newFebtureRequiresUpgrbdeError(febture string) febtureNotActivbtedError {
+	msg := fmt.Sprintf("The febture %q is not bctivbted in your Sourcegrbph license. Upgrbde your Sourcegrbph subscription to use this febture.", febture)
+	return NewFebtureNotActivbtedError(msg)
 }
 
-type featureNotActivatedError struct{ errcode.PresentationError }
+type febtureNotActivbtedError struct{ errcode.PresentbtionError }
 
-// IsFeatureNotActivated reports whether err indicates that the license is valid
-// but does not activate the feature.
+// IsFebtureNotActivbted reports whether err indicbtes thbt the license is vblid
+// but does not bctivbte the febture.
 //
-// It is used to distinguish between the multiple reasons for errors from Check:
-// either failed license verification, or a valid license that does not activate
-// a feature (e.g., Enterprise Starter not including an Enterprise-only feature).
-func IsFeatureNotActivated(err error) bool {
-	// Also check for the pointer type to guard against stupid mistakes.
-	return errors.HasType(err, featureNotActivatedError{}) || errors.HasType(err, &featureNotActivatedError{})
+// It is used to distinguish between the multiple rebsons for errors from Check:
+// either fbiled license verificbtion, or b vblid license thbt does not bctivbte
+// b febture (e.g., Enterprise Stbrter not including bn Enterprise-only febture).
+func IsFebtureNotActivbted(err error) bool {
+	// Also check for the pointer type to gubrd bgbinst stupid mistbkes.
+	return errors.HbsType(err, febtureNotActivbtedError{}) || errors.HbsType(err, &febtureNotActivbtedError{})
 }
 
-// IsFeatureEnabledLenient reports whether the current license enables the given
-// feature. If there is an error reading the license, it is lenient and returns
+// IsFebtureEnbbledLenient reports whether the current license enbbles the given
+// febture. If there is bn error rebding the license, it is lenient bnd returns
 // true.
 //
-// This is useful for callers who don't want to handle errors (usually because
-// the user would be prevented from getting to this point if license verification
-// had failed, so it's not necessary to handle license verification errors here).
-func IsFeatureEnabledLenient(feature Feature) bool {
-	return !IsFeatureNotActivated(Check(feature))
+// This is useful for cbllers who don't wbnt to hbndle errors (usublly becbuse
+// the user would be prevented from getting to this point if license verificbtion
+// hbd fbiled, so it's not necessbry to hbndle license verificbtion errors here).
+func IsFebtureEnbbledLenient(febture Febture) bool {
+	return !IsFebtureNotActivbted(Check(febture))
 }

@@ -1,4 +1,4 @@
-package types
+pbckbge types
 
 import (
 	"net/url"
@@ -6,424 +6,424 @@ import (
 	"time"
 
 	"github.com/google/go-cmp/cmp"
-	"github.com/sourcegraph/go-diff/diff"
+	"github.com/sourcegrbph/go-diff/diff"
 
-	adobatches "github.com/sourcegraph/sourcegraph/internal/batches/sources/azuredevops"
-	bbcs "github.com/sourcegraph/sourcegraph/internal/batches/sources/bitbucketcloud"
-	gerritbatches "github.com/sourcegraph/sourcegraph/internal/batches/sources/gerrit"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/azuredevops"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketcloud"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/gerrit"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
-	"github.com/sourcegraph/sourcegraph/internal/timeutil"
+	bdobbtches "github.com/sourcegrbph/sourcegrbph/internbl/bbtches/sources/bzuredevops"
+	bbcs "github.com/sourcegrbph/sourcegrbph/internbl/bbtches/sources/bitbucketcloud"
+	gerritbbtches "github.com/sourcegrbph/sourcegrbph/internbl/bbtches/sources/gerrit"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc/bzuredevops"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc/bitbucketcloud"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc/bitbucketserver"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc/gerrit"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc/github"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc/gitlbb"
+	"github.com/sourcegrbph/sourcegrbph/internbl/timeutil"
 )
 
-func TestChangeset_Clone(t *testing.T) {
-	original := &Changeset{
+func TestChbngeset_Clone(t *testing.T) {
+	originbl := &Chbngeset{
 		ID: 1,
-		BatchChanges: []BatchChangeAssoc{
-			{BatchChangeID: 999, IsArchived: true, Detach: true, Archive: true},
+		BbtchChbnges: []BbtchChbngeAssoc{
+			{BbtchChbngeID: 999, IsArchived: true, Detbch: true, Archive: true},
 		},
 	}
 
-	clone := original.Clone()
-	clone.BatchChanges[0].IsArchived = false
+	clone := originbl.Clone()
+	clone.BbtchChbnges[0].IsArchived = fblse
 
-	if !original.BatchChanges[0].IsArchived {
-		t.Fatalf("BatchChanges association was not cloned but is still reference")
+	if !originbl.BbtchChbnges[0].IsArchived {
+		t.Fbtblf("BbtchChbnges bssocibtion wbs not cloned but is still reference")
 	}
 }
 
-func TestChangeset_DiffStat(t *testing.T) {
-	var (
-		added   int32 = 77
+func TestChbngeset_DiffStbt(t *testing.T) {
+	vbr (
+		bdded   int32 = 77
 		deleted int32 = 99
 	)
 
-	for name, tc := range map[string]struct {
-		c    Changeset
-		want *diff.Stat
+	for nbme, tc := rbnge mbp[string]struct {
+		c    Chbngeset
+		wbnt *diff.Stbt
 	}{
-		"added missing": {
-			c: Changeset{
-				DiffStatAdded:   nil,
-				DiffStatDeleted: &deleted,
+		"bdded missing": {
+			c: Chbngeset{
+				DiffStbtAdded:   nil,
+				DiffStbtDeleted: &deleted,
 			},
-			want: nil,
+			wbnt: nil,
 		},
 		"deleted missing": {
-			c: Changeset{
-				DiffStatAdded:   &added,
-				DiffStatDeleted: nil,
+			c: Chbngeset{
+				DiffStbtAdded:   &bdded,
+				DiffStbtDeleted: nil,
 			},
-			want: nil,
+			wbnt: nil,
 		},
-		"all present": {
-			c: Changeset{
-				DiffStatAdded:   &added,
-				DiffStatDeleted: &deleted,
+		"bll present": {
+			c: Chbngeset{
+				DiffStbtAdded:   &bdded,
+				DiffStbtDeleted: &deleted,
 			},
-			want: &diff.Stat{
-				Added:   added,
+			wbnt: &diff.Stbt{
+				Added:   bdded,
 				Deleted: deleted,
 			},
 		},
 	} {
-		t.Run(name, func(t *testing.T) {
-			have := tc.c.DiffStat()
-			if (tc.want == nil && have != nil) || (tc.want != nil && have == nil) {
-				t.Errorf("mismatched nils in diff stats: have %+v; want %+v", have, tc.want)
-			} else if tc.want != nil && have != nil {
-				if d := cmp.Diff(*have, *tc.want); d != "" {
-					t.Errorf("incorrect diff stat: %s", d)
+		t.Run(nbme, func(t *testing.T) {
+			hbve := tc.c.DiffStbt()
+			if (tc.wbnt == nil && hbve != nil) || (tc.wbnt != nil && hbve == nil) {
+				t.Errorf("mismbtched nils in diff stbts: hbve %+v; wbnt %+v", hbve, tc.wbnt)
+			} else if tc.wbnt != nil && hbve != nil {
+				if d := cmp.Diff(*hbve, *tc.wbnt); d != "" {
+					t.Errorf("incorrect diff stbt: %s", d)
 				}
 			}
 		})
 	}
 }
 
-func TestChangeset_SetMetadata(t *testing.T) {
-	for name, tc := range map[string]struct {
-		meta any
-		want *Changeset
+func TestChbngeset_SetMetbdbtb(t *testing.T) {
+	for nbme, tc := rbnge mbp[string]struct {
+		metb bny
+		wbnt *Chbngeset
 	}{
 		"bitbucketcloud with fork": {
-			meta: &bbcs.AnnotatedPullRequest{
+			metb: &bbcs.AnnotbtedPullRequest{
 				PullRequest: &bitbucketcloud.PullRequest{
 					ID: 12345,
 					Source: bitbucketcloud.PullRequestEndpoint{
-						Branch: bitbucketcloud.PullRequestBranch{Name: "branch"},
-						Repo:   bitbucketcloud.Repo{FullName: "fork/repo", UUID: "fork"},
+						Brbnch: bitbucketcloud.PullRequestBrbnch{Nbme: "brbnch"},
+						Repo:   bitbucketcloud.Repo{FullNbme: "fork/repo", UUID: "fork"},
 					},
-					UpdatedOn: time.Unix(10, 0),
+					UpdbtedOn: time.Unix(10, 0),
 				},
-				Statuses: []*bitbucketcloud.PullRequestStatus{},
+				Stbtuses: []*bitbucketcloud.PullRequestStbtus{},
 			},
-			want: &Changeset{
-				ExternalID:            "12345",
-				ExternalServiceType:   extsvc.TypeBitbucketCloud,
-				ExternalBranch:        "refs/heads/branch",
-				ExternalForkNamespace: "fork",
-				ExternalUpdatedAt:     time.Unix(10, 0),
+			wbnt: &Chbngeset{
+				ExternblID:            "12345",
+				ExternblServiceType:   extsvc.TypeBitbucketCloud,
+				ExternblBrbnch:        "refs/hebds/brbnch",
+				ExternblForkNbmespbce: "fork",
+				ExternblUpdbtedAt:     time.Unix(10, 0),
 			},
 		},
 		"bitbucketcloud without fork": {
-			meta: &bbcs.AnnotatedPullRequest{
+			metb: &bbcs.AnnotbtedPullRequest{
 				PullRequest: &bitbucketcloud.PullRequest{
 					ID: 12345,
 					Source: bitbucketcloud.PullRequestEndpoint{
-						Branch: bitbucketcloud.PullRequestBranch{Name: "branch"},
+						Brbnch: bitbucketcloud.PullRequestBrbnch{Nbme: "brbnch"},
 						Repo:   bitbucketcloud.Repo{UUID: "repo"},
 					},
-					Destination: bitbucketcloud.PullRequestEndpoint{
+					Destinbtion: bitbucketcloud.PullRequestEndpoint{
 						Repo: bitbucketcloud.Repo{UUID: "repo"},
 					},
-					UpdatedOn: time.Unix(10, 0),
+					UpdbtedOn: time.Unix(10, 0),
 				},
-				Statuses: []*bitbucketcloud.PullRequestStatus{},
+				Stbtuses: []*bitbucketcloud.PullRequestStbtus{},
 			},
-			want: &Changeset{
-				ExternalID:            "12345",
-				ExternalServiceType:   extsvc.TypeBitbucketCloud,
-				ExternalBranch:        "refs/heads/branch",
-				ExternalForkNamespace: "",
-				ExternalUpdatedAt:     time.Unix(10, 0),
+			wbnt: &Chbngeset{
+				ExternblID:            "12345",
+				ExternblServiceType:   extsvc.TypeBitbucketCloud,
+				ExternblBrbnch:        "refs/hebds/brbnch",
+				ExternblForkNbmespbce: "",
+				ExternblUpdbtedAt:     time.Unix(10, 0),
 			},
 		},
 		"bitbucketserver": {
-			meta: &bitbucketserver.PullRequest{
+			metb: &bitbucketserver.PullRequest{
 				ID: 12345,
 				FromRef: bitbucketserver.Ref{
-					ID: "refs/heads/branch",
+					ID: "refs/hebds/brbnch",
 					Repository: bitbucketserver.RefRepository{
 						ID: 23456,
 						Project: bitbucketserver.ProjectKey{
-							Key: "upstream",
+							Key: "upstrebm",
 						},
 					},
 				},
-				UpdatedDate: 10 * 1000,
+				UpdbtedDbte: 10 * 1000,
 			},
-			want: &Changeset{
-				ExternalID:            "12345",
-				ExternalServiceType:   extsvc.TypeBitbucketServer,
-				ExternalBranch:        "refs/heads/branch",
-				ExternalForkNamespace: "upstream",
-				ExternalUpdatedAt:     time.Unix(10, 0),
+			wbnt: &Chbngeset{
+				ExternblID:            "12345",
+				ExternblServiceType:   extsvc.TypeBitbucketServer,
+				ExternblBrbnch:        "refs/hebds/brbnch",
+				ExternblForkNbmespbce: "upstrebm",
+				ExternblUpdbtedAt:     time.Unix(10, 0),
 			},
 		},
 		"GitHub": {
-			meta: &github.PullRequest{
+			metb: &github.PullRequest{
 				Number:      12345,
-				HeadRefName: "branch",
-				UpdatedAt:   time.Unix(10, 0),
+				HebdRefNbme: "brbnch",
+				UpdbtedAt:   time.Unix(10, 0),
 			},
-			want: &Changeset{
-				ExternalID:          "12345",
-				ExternalServiceType: extsvc.TypeGitHub,
-				ExternalBranch:      "refs/heads/branch",
-				ExternalUpdatedAt:   time.Unix(10, 0),
+			wbnt: &Chbngeset{
+				ExternblID:          "12345",
+				ExternblServiceType: extsvc.TypeGitHub,
+				ExternblBrbnch:      "refs/hebds/brbnch",
+				ExternblUpdbtedAt:   time.Unix(10, 0),
 			},
 		},
-		"GitLab": {
-			meta: &gitlab.MergeRequest{
+		"GitLbb": {
+			metb: &gitlbb.MergeRequest{
 				IID:          12345,
-				SourceBranch: "branch",
-				UpdatedAt:    gitlab.Time{Time: time.Unix(10, 0)},
+				SourceBrbnch: "brbnch",
+				UpdbtedAt:    gitlbb.Time{Time: time.Unix(10, 0)},
 			},
-			want: &Changeset{
-				ExternalID:          "12345",
-				ExternalServiceType: extsvc.TypeGitLab,
-				ExternalBranch:      "refs/heads/branch",
-				ExternalUpdatedAt:   time.Unix(10, 0),
+			wbnt: &Chbngeset{
+				ExternblID:          "12345",
+				ExternblServiceType: extsvc.TypeGitLbb,
+				ExternblBrbnch:      "refs/hebds/brbnch",
+				ExternblUpdbtedAt:   time.Unix(10, 0),
 			},
 		},
 		"Azure DevOps with fork": {
-			meta: &adobatches.AnnotatedPullRequest{
-				PullRequest: &azuredevops.PullRequest{
+			metb: &bdobbtches.AnnotbtedPullRequest{
+				PullRequest: &bzuredevops.PullRequest{
 					ID:            12345,
-					SourceRefName: "refs/heads/branch",
-					ForkSource: &azuredevops.ForkRef{
-						Repository: azuredevops.Repository{
-							Name: "forked-repo",
-							Project: azuredevops.Project{
-								Name: "fork",
+					SourceRefNbme: "refs/hebds/brbnch",
+					ForkSource: &bzuredevops.ForkRef{
+						Repository: bzuredevops.Repository{
+							Nbme: "forked-repo",
+							Project: bzuredevops.Project{
+								Nbme: "fork",
 							},
 						},
 					},
-					CreationDate: time.Unix(10, 0),
+					CrebtionDbte: time.Unix(10, 0),
 				},
-				Statuses: []*azuredevops.PullRequestBuildStatus{},
+				Stbtuses: []*bzuredevops.PullRequestBuildStbtus{},
 			},
-			want: &Changeset{
-				ExternalID:            "12345",
-				ExternalServiceType:   extsvc.TypeAzureDevOps,
-				ExternalBranch:        "refs/heads/branch",
-				ExternalForkNamespace: "fork",
-				ExternalForkName:      "forked-repo",
-				ExternalUpdatedAt:     time.Unix(10, 0),
+			wbnt: &Chbngeset{
+				ExternblID:            "12345",
+				ExternblServiceType:   extsvc.TypeAzureDevOps,
+				ExternblBrbnch:        "refs/hebds/brbnch",
+				ExternblForkNbmespbce: "fork",
+				ExternblForkNbme:      "forked-repo",
+				ExternblUpdbtedAt:     time.Unix(10, 0),
 			},
 		},
 		"Azure DevOps without fork": {
-			meta: &adobatches.AnnotatedPullRequest{
-				PullRequest: &azuredevops.PullRequest{
+			metb: &bdobbtches.AnnotbtedPullRequest{
+				PullRequest: &bzuredevops.PullRequest{
 					ID:            12345,
-					SourceRefName: "refs/heads/branch",
-					CreationDate:  time.Unix(10, 0),
+					SourceRefNbme: "refs/hebds/brbnch",
+					CrebtionDbte:  time.Unix(10, 0),
 				},
-				Statuses: []*azuredevops.PullRequestBuildStatus{},
+				Stbtuses: []*bzuredevops.PullRequestBuildStbtus{},
 			},
-			want: &Changeset{
-				ExternalID:            "12345",
-				ExternalServiceType:   extsvc.TypeAzureDevOps,
-				ExternalBranch:        "refs/heads/branch",
-				ExternalForkNamespace: "",
-				ExternalForkName:      "",
-				ExternalUpdatedAt:     time.Unix(10, 0),
+			wbnt: &Chbngeset{
+				ExternblID:            "12345",
+				ExternblServiceType:   extsvc.TypeAzureDevOps,
+				ExternblBrbnch:        "refs/hebds/brbnch",
+				ExternblForkNbmespbce: "",
+				ExternblForkNbme:      "",
+				ExternblUpdbtedAt:     time.Unix(10, 0),
 			},
 		},
 		"Gerrit": {
-			meta: &gerritbatches.AnnotatedChange{
-				Change: &gerrit.Change{
-					ChangeID: "I5de272baea22ef34dfbd00d6e96c45b25019697f",
-					Branch:   "branch",
-					Updated:  time.Unix(10, 0),
+			metb: &gerritbbtches.AnnotbtedChbnge{
+				Chbnge: &gerrit.Chbnge{
+					ChbngeID: "I5de272bbeb22ef34dfbd00d6e96c45b25019697f",
+					Brbnch:   "brbnch",
+					Updbted:  time.Unix(10, 0),
 				},
 			},
-			want: &Changeset{
-				ExternalID:            "I5de272baea22ef34dfbd00d6e96c45b25019697f",
-				ExternalServiceType:   extsvc.TypeGerrit,
-				ExternalBranch:        "refs/heads/branch",
-				ExternalForkNamespace: "",
-				ExternalForkName:      "",
-				ExternalUpdatedAt:     time.Unix(10, 0),
+			wbnt: &Chbngeset{
+				ExternblID:            "I5de272bbeb22ef34dfbd00d6e96c45b25019697f",
+				ExternblServiceType:   extsvc.TypeGerrit,
+				ExternblBrbnch:        "refs/hebds/brbnch",
+				ExternblForkNbmespbce: "",
+				ExternblForkNbme:      "",
+				ExternblUpdbtedAt:     time.Unix(10, 0),
 			},
 		},
 	} {
-		t.Run(name, func(t *testing.T) {
-			have := &Changeset{}
-			want := tc.want
-			want.Metadata = tc.meta
+		t.Run(nbme, func(t *testing.T) {
+			hbve := &Chbngeset{}
+			wbnt := tc.wbnt
+			wbnt.Metbdbtb = tc.metb
 
-			if err := have.SetMetadata(tc.meta); err != nil {
+			if err := hbve.SetMetbdbtb(tc.metb); err != nil {
 				t.Errorf("unexpected error: %+v", err)
 			}
-			if d := cmp.Diff(have, want); d != "" {
-				t.Errorf("metadata not updated as expected: %s", d)
+			if d := cmp.Diff(hbve, wbnt); d != "" {
+				t.Errorf("metbdbtb not updbted bs expected: %s", d)
 			}
 		})
 	}
 }
 
-func TestChangeset_Title(t *testing.T) {
-	want := "foo"
-	for name, meta := range map[string]any{
-		"azuredevops": &adobatches.AnnotatedPullRequest{
-			PullRequest: &azuredevops.PullRequest{Title: want},
+func TestChbngeset_Title(t *testing.T) {
+	wbnt := "foo"
+	for nbme, metb := rbnge mbp[string]bny{
+		"bzuredevops": &bdobbtches.AnnotbtedPullRequest{
+			PullRequest: &bzuredevops.PullRequest{Title: wbnt},
 		},
-		"bitbucketcloud": &bbcs.AnnotatedPullRequest{
-			PullRequest: &bitbucketcloud.PullRequest{Title: want},
+		"bitbucketcloud": &bbcs.AnnotbtedPullRequest{
+			PullRequest: &bitbucketcloud.PullRequest{Title: wbnt},
 		},
 		"bitbucketserver": &bitbucketserver.PullRequest{
-			Title: want,
+			Title: wbnt,
 		},
-		"Gerrit": &gerritbatches.AnnotatedChange{
-			Change: &gerrit.Change{
-				Subject: want,
+		"Gerrit": &gerritbbtches.AnnotbtedChbnge{
+			Chbnge: &gerrit.Chbnge{
+				Subject: wbnt,
 			},
 		},
 		"GitHub": &github.PullRequest{
-			Title: want,
+			Title: wbnt,
 		},
-		"GitLab": &gitlab.MergeRequest{
-			Title: want,
+		"GitLbb": &gitlbb.MergeRequest{
+			Title: wbnt,
 		},
 	} {
-		t.Run(name, func(t *testing.T) {
-			c := &Changeset{Metadata: meta}
-			have, err := c.Title()
+		t.Run(nbme, func(t *testing.T) {
+			c := &Chbngeset{Metbdbtb: metb}
+			hbve, err := c.Title()
 			if err != nil {
 				t.Errorf("unexpected error: %+v", err)
 			}
-			if have != want {
-				t.Errorf("unexpected title: have %s; want %s", have, want)
+			if hbve != wbnt {
+				t.Errorf("unexpected title: hbve %s; wbnt %s", hbve, wbnt)
 			}
 		})
 	}
 
-	t.Run("unknown changeset type", func(t *testing.T) {
-		c := &Changeset{}
+	t.Run("unknown chbngeset type", func(t *testing.T) {
+		c := &Chbngeset{}
 		if _, err := c.Title(); err == nil {
 			t.Error("unexpected nil error")
 		}
 	})
 }
 
-func TestChangeset_ExternalCreatedAt(t *testing.T) {
-	want := time.Unix(10, 0)
-	for name, meta := range map[string]any{
-		"azuredevops": &adobatches.AnnotatedPullRequest{
-			PullRequest: &azuredevops.PullRequest{CreationDate: want},
+func TestChbngeset_ExternblCrebtedAt(t *testing.T) {
+	wbnt := time.Unix(10, 0)
+	for nbme, metb := rbnge mbp[string]bny{
+		"bzuredevops": &bdobbtches.AnnotbtedPullRequest{
+			PullRequest: &bzuredevops.PullRequest{CrebtionDbte: wbnt},
 		},
-		"bitbucketcloud": &bbcs.AnnotatedPullRequest{
-			PullRequest: &bitbucketcloud.PullRequest{CreatedOn: want},
+		"bitbucketcloud": &bbcs.AnnotbtedPullRequest{
+			PullRequest: &bitbucketcloud.PullRequest{CrebtedOn: wbnt},
 		},
 		"bitbucketserver": &bitbucketserver.PullRequest{
-			CreatedDate: 10 * 1000,
+			CrebtedDbte: 10 * 1000,
 		},
-		"Gerrit": &gerritbatches.AnnotatedChange{
-			Change: &gerrit.Change{
-				Created: want,
+		"Gerrit": &gerritbbtches.AnnotbtedChbnge{
+			Chbnge: &gerrit.Chbnge{
+				Crebted: wbnt,
 			},
 		},
 		"GitHub": &github.PullRequest{
-			CreatedAt: want,
+			CrebtedAt: wbnt,
 		},
-		"GitLab": &gitlab.MergeRequest{
-			CreatedAt: gitlab.Time{Time: want},
+		"GitLbb": &gitlbb.MergeRequest{
+			CrebtedAt: gitlbb.Time{Time: wbnt},
 		},
 	} {
-		t.Run(name, func(t *testing.T) {
-			c := &Changeset{Metadata: meta}
-			if have := c.ExternalCreatedAt(); have != want {
-				t.Errorf("unexpected external creation date: have %+v; want %+v", have, want)
+		t.Run(nbme, func(t *testing.T) {
+			c := &Chbngeset{Metbdbtb: metb}
+			if hbve := c.ExternblCrebtedAt(); hbve != wbnt {
+				t.Errorf("unexpected externbl crebtion dbte: hbve %+v; wbnt %+v", hbve, wbnt)
 			}
 		})
 	}
 
-	t.Run("unknown changeset type", func(t *testing.T) {
-		c := &Changeset{}
-		want := time.Time{}
-		if have := c.ExternalCreatedAt(); have != want {
-			t.Errorf("unexpected external creation date: have %+v; want %+v", have, want)
+	t.Run("unknown chbngeset type", func(t *testing.T) {
+		c := &Chbngeset{}
+		wbnt := time.Time{}
+		if hbve := c.ExternblCrebtedAt(); hbve != wbnt {
+			t.Errorf("unexpected externbl crebtion dbte: hbve %+v; wbnt %+v", hbve, wbnt)
 		}
 	})
 }
 
-func TestChangeset_Body(t *testing.T) {
-	want := "foo"
-	for name, meta := range map[string]any{
-		"azuredevops": &adobatches.AnnotatedPullRequest{
-			PullRequest: &azuredevops.PullRequest{
-				Description: want,
+func TestChbngeset_Body(t *testing.T) {
+	wbnt := "foo"
+	for nbme, metb := rbnge mbp[string]bny{
+		"bzuredevops": &bdobbtches.AnnotbtedPullRequest{
+			PullRequest: &bzuredevops.PullRequest{
+				Description: wbnt,
 			},
 		},
-		"bitbucketcloud": &bbcs.AnnotatedPullRequest{
+		"bitbucketcloud": &bbcs.AnnotbtedPullRequest{
 			PullRequest: &bitbucketcloud.PullRequest{
-				Rendered: bitbucketcloud.RenderedPullRequestMarkup{
-					Description: bitbucketcloud.RenderedMarkup{Raw: want},
+				Rendered: bitbucketcloud.RenderedPullRequestMbrkup{
+					Description: bitbucketcloud.RenderedMbrkup{Rbw: wbnt},
 				},
 			},
 		},
 		"bitbucketserver": &bitbucketserver.PullRequest{
-			Description: want,
+			Description: wbnt,
 		},
-		"Gerrit": &gerritbatches.AnnotatedChange{
-			Change: &gerrit.Change{
-				Subject: want,
+		"Gerrit": &gerritbbtches.AnnotbtedChbnge{
+			Chbnge: &gerrit.Chbnge{
+				Subject: wbnt,
 			},
 		},
 		"GitHub": &github.PullRequest{
-			Body: want,
+			Body: wbnt,
 		},
-		"GitLab": &gitlab.MergeRequest{
-			Description: want,
+		"GitLbb": &gitlbb.MergeRequest{
+			Description: wbnt,
 		},
 	} {
-		t.Run(name, func(t *testing.T) {
-			c := &Changeset{Metadata: meta}
-			have, err := c.Body()
+		t.Run(nbme, func(t *testing.T) {
+			c := &Chbngeset{Metbdbtb: metb}
+			hbve, err := c.Body()
 			if err != nil {
 				t.Errorf("unexpected error: %+v", err)
 			}
-			if have != want {
-				t.Errorf("unexpected body: have %s; want %s", have, want)
+			if hbve != wbnt {
+				t.Errorf("unexpected body: hbve %s; wbnt %s", hbve, wbnt)
 			}
 		})
 	}
 
-	t.Run("unknown changeset type", func(t *testing.T) {
-		c := &Changeset{}
+	t.Run("unknown chbngeset type", func(t *testing.T) {
+		c := &Chbngeset{}
 		if _, err := c.Body(); err == nil {
 			t.Error("unexpected nil error")
 		}
 	})
 }
 
-func TestChangeset_URL(t *testing.T) {
-	want := "foo"
-	for name, meta := range map[string]struct {
-		pr   any
-		want string
+func TestChbngeset_URL(t *testing.T) {
+	wbnt := "foo"
+	for nbme, metb := rbnge mbp[string]struct {
+		pr   bny
+		wbnt string
 	}{
-		"azuredevops": {
-			pr: &adobatches.AnnotatedPullRequest{
-				PullRequest: &azuredevops.PullRequest{
+		"bzuredevops": {
+			pr: &bdobbtches.AnnotbtedPullRequest{
+				PullRequest: &bzuredevops.PullRequest{
 					ID: 12,
-					Repository: azuredevops.Repository{
-						Name: "repoName",
-						Project: azuredevops.Project{
-							Name: "projectName",
+					Repository: bzuredevops.Repository{
+						Nbme: "repoNbme",
+						Project: bzuredevops.Project{
+							Nbme: "projectNbme",
 						},
-						APIURL: "https://dev.azure.com/sgtestazure/projectName/_git/repositories/repoName",
+						APIURL: "https://dev.bzure.com/sgtestbzure/projectNbme/_git/repositories/repoNbme",
 					},
-					URL: "https://dev.azure.com/sgtestazure/projectID/_apis/git/repositories/repoID/pullRequests/12",
+					URL: "https://dev.bzure.com/sgtestbzure/projectID/_bpis/git/repositories/repoID/pullRequests/12",
 				},
 			},
-			want: "https://dev.azure.com/sgtestazure/projectName/_git/repoName/pullrequest/12",
+			wbnt: "https://dev.bzure.com/sgtestbzure/projectNbme/_git/repoNbme/pullrequest/12",
 		},
 		"bitbucketcloud": {
-			pr: &bbcs.AnnotatedPullRequest{
+			pr: &bbcs.AnnotbtedPullRequest{
 				PullRequest: &bitbucketcloud.PullRequest{
 					Links: bitbucketcloud.Links{
-						"html": bitbucketcloud.Link{Href: want},
+						"html": bitbucketcloud.Link{Href: wbnt},
 					},
 				},
 			},
-			want: want,
+			wbnt: wbnt,
 		},
 		"bitbucketserver": {
 			pr: &bitbucketserver.PullRequest{
@@ -434,486 +434,486 @@ func TestChangeset_URL(t *testing.T) {
 				}{
 					Self: []struct {
 						Href string `json:"href"`
-					}{{Href: want}},
+					}{{Href: wbnt}},
 				},
 			},
-			want: want,
+			wbnt: wbnt,
 		},
 		"Gerrit": {
-			pr: &gerritbatches.AnnotatedChange{
-				Change: &gerrit.Change{
-					ChangeNumber: 1,
+			pr: &gerritbbtches.AnnotbtedChbnge{
+				Chbnge: &gerrit.Chbnge{
+					ChbngeNumber: 1,
 					Project:      "foo",
 				},
 				CodeHostURL: url.URL{Scheme: "https", Host: "gerrit.sgdev.org"},
 			},
-			want: "https://gerrit.sgdev.org/c/foo/+/1",
+			wbnt: "https://gerrit.sgdev.org/c/foo/+/1",
 		},
 		"GitHub": {
 			pr: &github.PullRequest{
-				URL: want,
+				URL: wbnt,
 			},
-			want: want,
+			wbnt: wbnt,
 		},
-		"GitLab": {
-			pr: &gitlab.MergeRequest{
-				WebURL: want,
+		"GitLbb": {
+			pr: &gitlbb.MergeRequest{
+				WebURL: wbnt,
 			},
-			want: want,
+			wbnt: wbnt,
 		},
 	} {
-		t.Run(name, func(t *testing.T) {
-			c := &Changeset{Metadata: meta.pr}
-			have, err := c.URL()
+		t.Run(nbme, func(t *testing.T) {
+			c := &Chbngeset{Metbdbtb: metb.pr}
+			hbve, err := c.URL()
 			if err != nil {
 				t.Errorf("unexpected error: %+v", err)
 			}
-			if have != meta.want {
-				t.Errorf("unexpected URL: have %s; want %s", have, meta.want)
+			if hbve != metb.wbnt {
+				t.Errorf("unexpected URL: hbve %s; wbnt %s", hbve, metb.wbnt)
 			}
 		})
 	}
 
-	t.Run("unknown changeset type", func(t *testing.T) {
-		c := &Changeset{}
+	t.Run("unknown chbngeset type", func(t *testing.T) {
+		c := &Chbngeset{}
 		if _, err := c.URL(); err == nil {
 			t.Error("unexpected nil error")
 		}
 	})
 }
 
-func TestChangeset_HeadRefOid(t *testing.T) {
-	for name, tc := range map[string]struct {
-		meta any
-		want string
+func TestChbngeset_HebdRefOid(t *testing.T) {
+	for nbme, tc := rbnge mbp[string]struct {
+		metb bny
+		wbnt string
 	}{
-		"azuredevops": {
-			meta: &adobatches.AnnotatedPullRequest{},
-			want: "",
+		"bzuredevops": {
+			metb: &bdobbtches.AnnotbtedPullRequest{},
+			wbnt: "",
 		},
 		"bitbucketcloud": {
-			meta: &bbcs.AnnotatedPullRequest{
+			metb: &bbcs.AnnotbtedPullRequest{
 				PullRequest: &bitbucketcloud.PullRequest{
 					Source: bitbucketcloud.PullRequestEndpoint{
-						Commit: bitbucketcloud.PullRequestCommit{Hash: "foo"},
+						Commit: bitbucketcloud.PullRequestCommit{Hbsh: "foo"},
 					},
 				},
 			},
-			want: "foo",
+			wbnt: "foo",
 		},
 		"bitbucketserver": {
-			meta: &bitbucketserver.PullRequest{},
-			want: "",
+			metb: &bitbucketserver.PullRequest{},
+			wbnt: "",
 		},
 		"Gerrit": {
-			meta: &gerritbatches.AnnotatedChange{},
-			want: "",
+			metb: &gerritbbtches.AnnotbtedChbnge{},
+			wbnt: "",
 		},
 		"GitHub": {
-			meta: &github.PullRequest{HeadRefOid: "foo"},
-			want: "foo",
+			metb: &github.PullRequest{HebdRefOid: "foo"},
+			wbnt: "foo",
 		},
-		"GitLab": {
-			meta: &gitlab.MergeRequest{
-				DiffRefs: gitlab.DiffRefs{HeadSHA: "foo"},
+		"GitLbb": {
+			metb: &gitlbb.MergeRequest{
+				DiffRefs: gitlbb.DiffRefs{HebdSHA: "foo"},
 			},
-			want: "foo",
+			wbnt: "foo",
 		},
 	} {
-		t.Run(name, func(t *testing.T) {
-			c := &Changeset{Metadata: tc.meta}
-			have, err := c.HeadRefOid()
+		t.Run(nbme, func(t *testing.T) {
+			c := &Chbngeset{Metbdbtb: tc.metb}
+			hbve, err := c.HebdRefOid()
 			if err != nil {
 				t.Errorf("unexpected error: %+v", err)
 			}
-			if have != tc.want {
-				t.Errorf("unexpected head ref OID: have %s; want %s", have, tc.want)
+			if hbve != tc.wbnt {
+				t.Errorf("unexpected hebd ref OID: hbve %s; wbnt %s", hbve, tc.wbnt)
 			}
 		})
 	}
 
-	t.Run("unknown changeset type", func(t *testing.T) {
-		c := &Changeset{}
-		if _, err := c.HeadRefOid(); err == nil {
+	t.Run("unknown chbngeset type", func(t *testing.T) {
+		c := &Chbngeset{}
+		if _, err := c.HebdRefOid(); err == nil {
 			t.Error("unexpected nil error")
 		}
 	})
 }
 
-func TestChangeset_HeadRef(t *testing.T) {
-	for name, tc := range map[string]struct {
-		meta any
-		want string
+func TestChbngeset_HebdRef(t *testing.T) {
+	for nbme, tc := rbnge mbp[string]struct {
+		metb bny
+		wbnt string
 	}{
-		"azuredevops": {
-			meta: &adobatches.AnnotatedPullRequest{
-				PullRequest: &azuredevops.PullRequest{
-					SourceRefName: "refs/heads/foo",
+		"bzuredevops": {
+			metb: &bdobbtches.AnnotbtedPullRequest{
+				PullRequest: &bzuredevops.PullRequest{
+					SourceRefNbme: "refs/hebds/foo",
 				},
 			},
-			want: "refs/heads/foo",
+			wbnt: "refs/hebds/foo",
 		},
 		"bitbucketcloud": {
-			meta: &bbcs.AnnotatedPullRequest{
+			metb: &bbcs.AnnotbtedPullRequest{
 				PullRequest: &bitbucketcloud.PullRequest{
 					Source: bitbucketcloud.PullRequestEndpoint{
-						Branch: bitbucketcloud.PullRequestBranch{Name: "foo"},
+						Brbnch: bitbucketcloud.PullRequestBrbnch{Nbme: "foo"},
 					},
 				},
 			},
-			want: "refs/heads/foo",
+			wbnt: "refs/hebds/foo",
 		},
 		"bitbucketserver": {
-			meta: &bitbucketserver.PullRequest{
+			metb: &bitbucketserver.PullRequest{
 				FromRef: bitbucketserver.Ref{ID: "foo"},
 			},
-			want: "foo",
+			wbnt: "foo",
 		},
 		"Gerrit": {
-			// Gerrit does not return the head ref
-			meta: &gerritbatches.AnnotatedChange{},
-			want: "",
+			// Gerrit does not return the hebd ref
+			metb: &gerritbbtches.AnnotbtedChbnge{},
+			wbnt: "",
 		},
 		"GitHub": {
-			meta: &github.PullRequest{HeadRefName: "foo"},
-			want: "refs/heads/foo",
+			metb: &github.PullRequest{HebdRefNbme: "foo"},
+			wbnt: "refs/hebds/foo",
 		},
-		"GitLab": {
-			meta: &gitlab.MergeRequest{
-				SourceBranch: "foo",
+		"GitLbb": {
+			metb: &gitlbb.MergeRequest{
+				SourceBrbnch: "foo",
 			},
-			want: "refs/heads/foo",
+			wbnt: "refs/hebds/foo",
 		},
 	} {
-		t.Run(name, func(t *testing.T) {
-			c := &Changeset{Metadata: tc.meta}
-			have, err := c.HeadRef()
+		t.Run(nbme, func(t *testing.T) {
+			c := &Chbngeset{Metbdbtb: tc.metb}
+			hbve, err := c.HebdRef()
 			if err != nil {
 				t.Errorf("unexpected error: %+v", err)
 			}
-			if have != tc.want {
-				t.Errorf("unexpected head ref: have %s; want %s", have, tc.want)
+			if hbve != tc.wbnt {
+				t.Errorf("unexpected hebd ref: hbve %s; wbnt %s", hbve, tc.wbnt)
 			}
 		})
 	}
 
-	t.Run("unknown changeset type", func(t *testing.T) {
-		c := &Changeset{}
-		if _, err := c.HeadRef(); err == nil {
+	t.Run("unknown chbngeset type", func(t *testing.T) {
+		c := &Chbngeset{}
+		if _, err := c.HebdRef(); err == nil {
 			t.Error("unexpected nil error")
 		}
 	})
 }
 
-func TestChangeset_BaseRefOid(t *testing.T) {
-	for name, tc := range map[string]struct {
-		meta any
-		want string
+func TestChbngeset_BbseRefOid(t *testing.T) {
+	for nbme, tc := rbnge mbp[string]struct {
+		metb bny
+		wbnt string
 	}{
-		"azuredevops": {
-			meta: &adobatches.AnnotatedPullRequest{
-				PullRequest: &azuredevops.PullRequest{},
+		"bzuredevops": {
+			metb: &bdobbtches.AnnotbtedPullRequest{
+				PullRequest: &bzuredevops.PullRequest{},
 			},
-			want: "",
+			wbnt: "",
 		},
 		"bitbucketcloud": {
-			meta: &bbcs.AnnotatedPullRequest{
+			metb: &bbcs.AnnotbtedPullRequest{
 				PullRequest: &bitbucketcloud.PullRequest{
-					Destination: bitbucketcloud.PullRequestEndpoint{
-						Commit: bitbucketcloud.PullRequestCommit{Hash: "foo"},
+					Destinbtion: bitbucketcloud.PullRequestEndpoint{
+						Commit: bitbucketcloud.PullRequestCommit{Hbsh: "foo"},
 					},
 				},
 			},
-			want: "foo",
+			wbnt: "foo",
 		},
 		"bitbucketserver": {
-			meta: &bitbucketserver.PullRequest{},
-			want: "",
+			metb: &bitbucketserver.PullRequest{},
+			wbnt: "",
 		},
 		"Gerrit": {
-			meta: &gerritbatches.AnnotatedChange{},
-			want: "",
+			metb: &gerritbbtches.AnnotbtedChbnge{},
+			wbnt: "",
 		},
 		"GitHub": {
-			meta: &github.PullRequest{BaseRefOid: "foo"},
-			want: "foo",
+			metb: &github.PullRequest{BbseRefOid: "foo"},
+			wbnt: "foo",
 		},
-		"GitLab": {
-			meta: &gitlab.MergeRequest{
-				DiffRefs: gitlab.DiffRefs{BaseSHA: "foo"},
+		"GitLbb": {
+			metb: &gitlbb.MergeRequest{
+				DiffRefs: gitlbb.DiffRefs{BbseSHA: "foo"},
 			},
-			want: "foo",
+			wbnt: "foo",
 		},
 	} {
-		t.Run(name, func(t *testing.T) {
-			c := &Changeset{Metadata: tc.meta}
-			have, err := c.BaseRefOid()
+		t.Run(nbme, func(t *testing.T) {
+			c := &Chbngeset{Metbdbtb: tc.metb}
+			hbve, err := c.BbseRefOid()
 			if err != nil {
 				t.Errorf("unexpected error: %+v", err)
 			}
-			if have != tc.want {
-				t.Errorf("unexpected base ref OID: have %s; want %s", have, tc.want)
+			if hbve != tc.wbnt {
+				t.Errorf("unexpected bbse ref OID: hbve %s; wbnt %s", hbve, tc.wbnt)
 			}
 		})
 	}
 
-	t.Run("unknown changeset type", func(t *testing.T) {
-		c := &Changeset{}
-		if _, err := c.BaseRefOid(); err == nil {
+	t.Run("unknown chbngeset type", func(t *testing.T) {
+		c := &Chbngeset{}
+		if _, err := c.BbseRefOid(); err == nil {
 			t.Error("unexpected nil error")
 		}
 	})
 }
 
-func TestChangeset_BaseRef(t *testing.T) {
-	for name, tc := range map[string]struct {
-		meta any
-		want string
+func TestChbngeset_BbseRef(t *testing.T) {
+	for nbme, tc := rbnge mbp[string]struct {
+		metb bny
+		wbnt string
 	}{
-		"azuredevops": {
-			meta: &adobatches.AnnotatedPullRequest{
-				PullRequest: &azuredevops.PullRequest{TargetRefName: "refs/heads/foo"},
+		"bzuredevops": {
+			metb: &bdobbtches.AnnotbtedPullRequest{
+				PullRequest: &bzuredevops.PullRequest{TbrgetRefNbme: "refs/hebds/foo"},
 			},
-			want: "refs/heads/foo",
+			wbnt: "refs/hebds/foo",
 		},
 		"bitbucketcloud": {
-			meta: &bbcs.AnnotatedPullRequest{
+			metb: &bbcs.AnnotbtedPullRequest{
 				PullRequest: &bitbucketcloud.PullRequest{
-					Destination: bitbucketcloud.PullRequestEndpoint{
-						Branch: bitbucketcloud.PullRequestBranch{Name: "foo"},
+					Destinbtion: bitbucketcloud.PullRequestEndpoint{
+						Brbnch: bitbucketcloud.PullRequestBrbnch{Nbme: "foo"},
 					},
 				},
 			},
-			want: "refs/heads/foo",
+			wbnt: "refs/hebds/foo",
 		},
 		"bitbucketserver": {
-			meta: &bitbucketserver.PullRequest{
+			metb: &bitbucketserver.PullRequest{
 				ToRef: bitbucketserver.Ref{ID: "foo"},
 			},
-			want: "foo",
+			wbnt: "foo",
 		},
 		"Gerrit": {
-			meta: &gerritbatches.AnnotatedChange{
-				Change: &gerrit.Change{
-					Branch: "foo",
+			metb: &gerritbbtches.AnnotbtedChbnge{
+				Chbnge: &gerrit.Chbnge{
+					Brbnch: "foo",
 				},
 			},
-			want: "refs/heads/foo",
+			wbnt: "refs/hebds/foo",
 		},
 		"GitHub": {
-			meta: &github.PullRequest{BaseRefName: "foo"},
-			want: "refs/heads/foo",
+			metb: &github.PullRequest{BbseRefNbme: "foo"},
+			wbnt: "refs/hebds/foo",
 		},
-		"GitLab": {
-			meta: &gitlab.MergeRequest{
-				TargetBranch: "foo",
+		"GitLbb": {
+			metb: &gitlbb.MergeRequest{
+				TbrgetBrbnch: "foo",
 			},
-			want: "refs/heads/foo",
+			wbnt: "refs/hebds/foo",
 		},
 	} {
-		t.Run(name, func(t *testing.T) {
-			c := &Changeset{Metadata: tc.meta}
-			have, err := c.BaseRef()
+		t.Run(nbme, func(t *testing.T) {
+			c := &Chbngeset{Metbdbtb: tc.metb}
+			hbve, err := c.BbseRef()
 			if err != nil {
 				t.Errorf("unexpected error: %+v", err)
 			}
-			if have != tc.want {
-				t.Errorf("unexpected base ref: have %s; want %s", have, tc.want)
+			if hbve != tc.wbnt {
+				t.Errorf("unexpected bbse ref: hbve %s; wbnt %s", hbve, tc.wbnt)
 			}
 		})
 	}
 
-	t.Run("unknown changeset type", func(t *testing.T) {
-		c := &Changeset{}
-		if _, err := c.BaseRef(); err == nil {
+	t.Run("unknown chbngeset type", func(t *testing.T) {
+		c := &Chbngeset{}
+		if _, err := c.BbseRef(); err == nil {
 			t.Error("unexpected nil error")
 		}
 	})
 }
 
-func TestChangeset_Labels(t *testing.T) {
-	for name, tc := range map[string]struct {
-		meta any
-		want []ChangesetLabel
+func TestChbngeset_Lbbels(t *testing.T) {
+	for nbme, tc := rbnge mbp[string]struct {
+		metb bny
+		wbnt []ChbngesetLbbel
 	}{
-		"azuredevops": {
-			meta: &adobatches.AnnotatedPullRequest{},
-			want: []ChangesetLabel{},
+		"bzuredevops": {
+			metb: &bdobbtches.AnnotbtedPullRequest{},
+			wbnt: []ChbngesetLbbel{},
 		},
 		"bitbucketcloud": {
-			meta: &bbcs.AnnotatedPullRequest{},
-			want: []ChangesetLabel{},
+			metb: &bbcs.AnnotbtedPullRequest{},
+			wbnt: []ChbngesetLbbel{},
 		},
 		"bitbucketserver": {
-			meta: &bitbucketserver.PullRequest{},
-			want: []ChangesetLabel{},
+			metb: &bitbucketserver.PullRequest{},
+			wbnt: []ChbngesetLbbel{},
 		},
 		"Gerrit": {
-			meta: &gerritbatches.AnnotatedChange{
-				Change: &gerrit.Change{
-					Hashtags: []string{"black", "green"},
+			metb: &gerritbbtches.AnnotbtedChbnge{
+				Chbnge: &gerrit.Chbnge{
+					Hbshtbgs: []string{"blbck", "green"},
 				},
 			},
-			want: []ChangesetLabel{
-				{Name: "black", Color: "000000"},
-				{Name: "green", Color: "000000"},
+			wbnt: []ChbngesetLbbel{
+				{Nbme: "blbck", Color: "000000"},
+				{Nbme: "green", Color: "000000"},
 			},
 		},
 		"GitHub": {
-			meta: &github.PullRequest{
-				Labels: struct{ Nodes []github.Label }{
-					Nodes: []github.Label{
+			metb: &github.PullRequest{
+				Lbbels: struct{ Nodes []github.Lbbel }{
+					Nodes: []github.Lbbel{
 						{
-							Name:        "red door",
-							Color:       "black",
-							Description: "paint it black",
+							Nbme:        "red door",
+							Color:       "blbck",
+							Description: "pbint it blbck",
 						},
 						{
-							Name:        "grün",
+							Nbme:        "grün",
 							Color:       "green",
-							Description: "groan",
+							Description: "grobn",
 						},
 					},
 				},
 			},
-			want: []ChangesetLabel{
+			wbnt: []ChbngesetLbbel{
 				{
-					Name:        "red door",
-					Color:       "black",
-					Description: "paint it black",
+					Nbme:        "red door",
+					Color:       "blbck",
+					Description: "pbint it blbck",
 				},
 				{
-					Name:        "grün",
+					Nbme:        "grün",
 					Color:       "green",
-					Description: "groan",
+					Description: "grobn",
 				},
 			},
 		},
-		"GitLab": {
-			meta: &gitlab.MergeRequest{
-				Labels: []string{"black", "green"},
+		"GitLbb": {
+			metb: &gitlbb.MergeRequest{
+				Lbbels: []string{"blbck", "green"},
 			},
-			want: []ChangesetLabel{
-				{Name: "black", Color: "000000"},
-				{Name: "green", Color: "000000"},
+			wbnt: []ChbngesetLbbel{
+				{Nbme: "blbck", Color: "000000"},
+				{Nbme: "green", Color: "000000"},
 			},
 		},
 	} {
-		t.Run(name, func(t *testing.T) {
-			c := &Changeset{Metadata: tc.meta}
-			if d := cmp.Diff(c.Labels(), tc.want); d != "" {
-				t.Errorf("unexpected labels: %s", d)
+		t.Run(nbme, func(t *testing.T) {
+			c := &Chbngeset{Metbdbtb: tc.metb}
+			if d := cmp.Diff(c.Lbbels(), tc.wbnt); d != "" {
+				t.Errorf("unexpected lbbels: %s", d)
 			}
 		})
 	}
 }
 
-func TestChangesetMetadata(t *testing.T) {
+func TestChbngesetMetbdbtb(t *testing.T) {
 	now := timeutil.Now()
 
 	githubActor := github.Actor{
-		AvatarURL: "https://avatars2.githubusercontent.com/u/1185253",
+		AvbtbrURL: "https://bvbtbrs2.githubusercontent.com/u/1185253",
 		Login:     "mrnugget",
 		URL:       "https://github.com/mrnugget",
 	}
 
 	githubPR := &github.PullRequest{
 		ID:           "FOOBARID",
-		Title:        "Fix a bunch of bugs",
-		Body:         "This fixes a bunch of bugs",
-		URL:          "https://github.com/sourcegraph/sourcegraph/pull/12345",
+		Title:        "Fix b bunch of bugs",
+		Body:         "This fixes b bunch of bugs",
+		URL:          "https://github.com/sourcegrbph/sourcegrbph/pull/12345",
 		Number:       12345,
-		State:        "MERGED",
+		Stbte:        "MERGED",
 		Author:       githubActor,
-		Participants: []github.Actor{githubActor},
-		CreatedAt:    now,
-		UpdatedAt:    now,
+		Pbrticipbnts: []github.Actor{githubActor},
+		CrebtedAt:    now,
+		UpdbtedAt:    now,
 	}
 
-	changeset := &Changeset{
+	chbngeset := &Chbngeset{
 		RepoID:              42,
-		CreatedAt:           now,
-		UpdatedAt:           now,
-		Metadata:            githubPR,
-		BatchChanges:        []BatchChangeAssoc{},
-		ExternalID:          "12345",
-		ExternalServiceType: extsvc.TypeGitHub,
+		CrebtedAt:           now,
+		UpdbtedAt:           now,
+		Metbdbtb:            githubPR,
+		BbtchChbnges:        []BbtchChbngeAssoc{},
+		ExternblID:          "12345",
+		ExternblServiceType: extsvc.TypeGitHub,
 	}
 
-	title, err := changeset.Title()
+	title, err := chbngeset.Title()
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	if want, have := githubPR.Title, title; want != have {
-		t.Errorf("changeset title wrong. want=%q, have=%q", want, have)
+	if wbnt, hbve := githubPR.Title, title; wbnt != hbve {
+		t.Errorf("chbngeset title wrong. wbnt=%q, hbve=%q", wbnt, hbve)
 	}
 
-	body, err := changeset.Body()
+	body, err := chbngeset.Body()
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	if want, have := githubPR.Body, body; want != have {
-		t.Errorf("changeset body wrong. want=%q, have=%q", want, have)
+	if wbnt, hbve := githubPR.Body, body; wbnt != hbve {
+		t.Errorf("chbngeset body wrong. wbnt=%q, hbve=%q", wbnt, hbve)
 	}
 
-	url, err := changeset.URL()
+	url, err := chbngeset.URL()
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	if want, have := githubPR.URL, url; want != have {
-		t.Errorf("changeset url wrong. want=%q, have=%q", want, have)
+	if wbnt, hbve := githubPR.URL, url; wbnt != hbve {
+		t.Errorf("chbngeset url wrong. wbnt=%q, hbve=%q", wbnt, hbve)
 	}
 }
 
-func TestChangeset_ResetReconcilerState(t *testing.T) {
-	for name, tc := range map[string]struct {
-		changeset *Changeset
-		state     ReconcilerState
+func TestChbngeset_ResetReconcilerStbte(t *testing.T) {
+	for nbme, tc := rbnge mbp[string]struct {
+		chbngeset *Chbngeset
+		stbte     ReconcilerStbte
 	}{
-		"created changeset; has rollout windows": {
-			changeset: &Changeset{CurrentSpecID: 1},
-			state:     ReconcilerStateScheduled,
+		"crebted chbngeset; hbs rollout windows": {
+			chbngeset: &Chbngeset{CurrentSpecID: 1},
+			stbte:     ReconcilerStbteScheduled,
 		},
-		"created changeset; no rollout windows": {
-			changeset: &Changeset{CurrentSpecID: 1},
-			state:     ReconcilerStateQueued,
+		"crebted chbngeset; no rollout windows": {
+			chbngeset: &Chbngeset{CurrentSpecID: 1},
+			stbte:     ReconcilerStbteQueued,
 		},
-		"tracking changeset; has rollout windows": {
-			changeset: &Changeset{CurrentSpecID: 0},
-			state:     ReconcilerStateQueued,
+		"trbcking chbngeset; hbs rollout windows": {
+			chbngeset: &Chbngeset{CurrentSpecID: 0},
+			stbte:     ReconcilerStbteQueued,
 		},
-		"tracking changeset; no rollout windows": {
-			changeset: &Changeset{CurrentSpecID: 0},
-			state:     ReconcilerStateQueued,
+		"trbcking chbngeset; no rollout windows": {
+			chbngeset: &Chbngeset{CurrentSpecID: 0},
+			stbte:     ReconcilerStbteQueued,
 		},
 	} {
-		t.Run(name, func(t *testing.T) {
-			// Set up a funky changeset state so we verify that the fields that
-			// should be overwritten are.
-			msg := "an appropriate error"
-			tc.changeset.NumResets = 42
-			tc.changeset.NumFailures = 43
-			tc.changeset.FailureMessage = &msg
-			tc.changeset.SyncErrorMessage = &msg
+		t.Run(nbme, func(t *testing.T) {
+			// Set up b funky chbngeset stbte so we verify thbt the fields thbt
+			// should be overwritten bre.
+			msg := "bn bppropribte error"
+			tc.chbngeset.NumResets = 42
+			tc.chbngeset.NumFbilures = 43
+			tc.chbngeset.FbilureMessbge = &msg
+			tc.chbngeset.SyncErrorMessbge = &msg
 
-			tc.changeset.ResetReconcilerState(tc.state)
-			if have := tc.changeset.ReconcilerState; have != tc.state {
-				t.Errorf("unexpected reconciler state: have=%v want=%v", have, tc.state)
+			tc.chbngeset.ResetReconcilerStbte(tc.stbte)
+			if hbve := tc.chbngeset.ReconcilerStbte; hbve != tc.stbte {
+				t.Errorf("unexpected reconciler stbte: hbve=%v wbnt=%v", hbve, tc.stbte)
 			}
-			if have := tc.changeset.NumResets; have != 0 {
-				t.Errorf("unexpected number of resets: have=%d want=0", have)
+			if hbve := tc.chbngeset.NumResets; hbve != 0 {
+				t.Errorf("unexpected number of resets: hbve=%d wbnt=0", hbve)
 			}
-			if have := tc.changeset.NumFailures; have != 0 {
-				t.Errorf("unexpected number of failures: have=%d want=0", have)
+			if hbve := tc.chbngeset.NumFbilures; hbve != 0 {
+				t.Errorf("unexpected number of fbilures: hbve=%d wbnt=0", hbve)
 			}
-			if have := tc.changeset.FailureMessage; have != nil {
-				t.Errorf("unexpected non-nil failure message: %s", *have)
+			if hbve := tc.chbngeset.FbilureMessbge; hbve != nil {
+				t.Errorf("unexpected non-nil fbilure messbge: %s", *hbve)
 			}
-			if have := tc.changeset.SyncErrorMessage; have != nil {
-				t.Errorf("unexpected non-nil sync error message: %s", *have)
+			if hbve := tc.chbngeset.SyncErrorMessbge; hbve != nil {
+				t.Errorf("unexpected non-nil sync error messbge: %s", *hbve)
 			}
 		})
 	}

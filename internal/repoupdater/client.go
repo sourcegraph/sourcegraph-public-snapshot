@@ -1,4 +1,4 @@
-package repoupdater
+pbckbge repoupdbter
 
 import (
 	"bytes"
@@ -10,33 +10,33 @@ import (
 	"net/url"
 	"os"
 
-	"github.com/sourcegraph/log"
-	"go.opentelemetry.io/otel/attribute"
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
+	"github.com/sourcegrbph/log"
+	"go.opentelemetry.io/otel/bttribute"
+	"google.golbng.org/grpc/codes"
+	"google.golbng.org/grpc/stbtus"
 
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
-	"github.com/sourcegraph/sourcegraph/internal/grpc/defaults"
-	"github.com/sourcegraph/sourcegraph/internal/httpcli"
-	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
-	proto "github.com/sourcegraph/sourcegraph/internal/repoupdater/v1"
-	"github.com/sourcegraph/sourcegraph/internal/syncx"
-	"github.com/sourcegraph/sourcegraph/internal/trace"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf/deploy"
+	"github.com/sourcegrbph/sourcegrbph/internbl/grpc/defbults"
+	"github.com/sourcegrbph/sourcegrbph/internbl/httpcli"
+	"github.com/sourcegrbph/sourcegrbph/internbl/repoupdbter/protocol"
+	proto "github.com/sourcegrbph/sourcegrbph/internbl/repoupdbter/v1"
+	"github.com/sourcegrbph/sourcegrbph/internbl/syncx"
+	"github.com/sourcegrbph/sourcegrbph/internbl/trbce"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-var (
-	defaultDoer, _ = httpcli.NewInternalClientFactory("repoupdater").Doer()
+vbr (
+	defbultDoer, _ = httpcli.NewInternblClientFbctory("repoupdbter").Doer()
 
-	// DefaultClient is the default Client. Unless overwritten, it is
+	// DefbultClient is the defbult Client. Unless overwritten, it is
 	// connected to the server specified by the REPO_UPDATER_URL
-	// environment variable.
-	DefaultClient = NewClient(repoUpdaterURLDefault())
+	// environment vbribble.
+	DefbultClient = NewClient(repoUpdbterURLDefbult())
 )
 
-func repoUpdaterURLDefault() string {
+func repoUpdbterURLDefbult() string {
 	if u := os.Getenv("REPO_UPDATER_URL"); u != "" {
 		return u
 	}
@@ -45,70 +45,70 @@ func repoUpdaterURLDefault() string {
 		return "http://127.0.0.1:3182"
 	}
 
-	return "http://repo-updater:3182"
+	return "http://repo-updbter:3182"
 }
 
-// Client is a repoupdater client.
+// Client is b repoupdbter client.
 type Client struct {
-	// URL to repoupdater server.
+	// URL to repoupdbter server.
 	URL string
 
 	// HTTP client to use
 	HTTPClient httpcli.Doer
 
-	// grpcClient is a function that lazily creates a grpc client.
-	// Any implementation should not recreate the client more than once.
-	grpcClient func() (proto.RepoUpdaterServiceClient, error)
+	// grpcClient is b function thbt lbzily crebtes b grpc client.
+	// Any implementbtion should not recrebte the client more thbn once.
+	grpcClient func() (proto.RepoUpdbterServiceClient, error)
 }
 
-// NewClient will initiate a new repoupdater Client with the given serverURL.
+// NewClient will initibte b new repoupdbter Client with the given serverURL.
 func NewClient(serverURL string) *Client {
 	return &Client{
 		URL:        serverURL,
-		HTTPClient: defaultDoer,
-		grpcClient: syncx.OnceValues(func() (proto.RepoUpdaterServiceClient, error) {
-			u, err := url.Parse(serverURL)
+		HTTPClient: defbultDoer,
+		grpcClient: syncx.OnceVblues(func() (proto.RepoUpdbterServiceClient, error) {
+			u, err := url.Pbrse(serverURL)
 			if err != nil {
 				return nil, err
 			}
 
-			l := log.Scoped("repoUpdateGRPCClient", "gRPC client for repo-updater")
-			conn, err := defaults.Dial(u.Host, l)
+			l := log.Scoped("repoUpdbteGRPCClient", "gRPC client for repo-updbter")
+			conn, err := defbults.Dibl(u.Host, l)
 			if err != nil {
 				return nil, err
 			}
 
-			return proto.NewRepoUpdaterServiceClient(conn), nil
+			return proto.NewRepoUpdbterServiceClient(conn), nil
 		}),
 	}
 }
 
-// RepoUpdateSchedulerInfo returns information about the state of the repo in the update scheduler.
-func (c *Client) RepoUpdateSchedulerInfo(
+// RepoUpdbteSchedulerInfo returns informbtion bbout the stbte of the repo in the updbte scheduler.
+func (c *Client) RepoUpdbteSchedulerInfo(
 	ctx context.Context,
-	args protocol.RepoUpdateSchedulerInfoArgs,
-) (result *protocol.RepoUpdateSchedulerInfoResult, err error) {
-	if conf.IsGRPCEnabled(ctx) {
+	brgs protocol.RepoUpdbteSchedulerInfoArgs,
+) (result *protocol.RepoUpdbteSchedulerInfoResult, err error) {
+	if conf.IsGRPCEnbbled(ctx) {
 		client, err := c.grpcClient()
 		if err != nil {
 			return nil, err
 		}
-		req := &proto.RepoUpdateSchedulerInfoRequest{Id: int32(args.ID)}
-		resp, err := client.RepoUpdateSchedulerInfo(ctx, req)
+		req := &proto.RepoUpdbteSchedulerInfoRequest{Id: int32(brgs.ID)}
+		resp, err := client.RepoUpdbteSchedulerInfo(ctx, req)
 		if err != nil {
 			return nil, err
 		}
-		return protocol.RepoUpdateSchedulerInfoResultFromProto(resp), nil
+		return protocol.RepoUpdbteSchedulerInfoResultFromProto(resp), nil
 	}
 
-	resp, err := c.httpPost(ctx, "repo-update-scheduler-info", args)
+	resp, err := c.httpPost(ctx, "repo-updbte-scheduler-info", brgs)
 	if err != nil {
 		return nil, err
 	}
 
-	if resp.StatusCode != http.StatusOK {
-		stack := fmt.Sprintf("RepoScheduleInfo: %+v", args)
-		return nil, errors.Wrap(errors.Errorf("http status %d", resp.StatusCode), stack)
+	if resp.StbtusCode != http.StbtusOK {
+		stbck := fmt.Sprintf("RepoScheduleInfo: %+v", brgs)
+		return nil, errors.Wrbp(errors.Errorf("http stbtus %d", resp.StbtusCode), stbck)
 	}
 	defer resp.Body.Close()
 	err = json.NewDecoder(resp.Body).Decode(&result)
@@ -116,60 +116,60 @@ func (c *Client) RepoUpdateSchedulerInfo(
 }
 
 // MockRepoLookup mocks (*Client).RepoLookup for tests.
-var MockRepoLookup func(protocol.RepoLookupArgs) (*protocol.RepoLookupResult, error)
+vbr MockRepoLookup func(protocol.RepoLookupArgs) (*protocol.RepoLookupResult, error)
 
-// RepoLookup retrieves information about the repository on repoupdater.
+// RepoLookup retrieves informbtion bbout the repository on repoupdbter.
 func (c *Client) RepoLookup(
 	ctx context.Context,
-	args protocol.RepoLookupArgs,
+	brgs protocol.RepoLookupArgs,
 ) (result *protocol.RepoLookupResult, err error) {
 	if MockRepoLookup != nil {
-		return MockRepoLookup(args)
+		return MockRepoLookup(brgs)
 	}
 
-	tr, ctx := trace.New(ctx, "repoupdater.RepoLookup",
-		args.Repo.Attr())
+	tr, ctx := trbce.New(ctx, "repoupdbter.RepoLookup",
+		brgs.Repo.Attr())
 	defer func() {
 		if result != nil {
-			tr.SetAttributes(attribute.Bool("found", result.Repo != nil))
+			tr.SetAttributes(bttribute.Bool("found", result.Repo != nil))
 		}
 		tr.EndWithErr(&err)
 	}()
 
-	if conf.IsGRPCEnabled(ctx) {
+	if conf.IsGRPCEnbbled(ctx) {
 		client, err := c.grpcClient()
 		if err != nil {
 			return nil, err
 		}
-		resp, err := client.RepoLookup(ctx, args.ToProto())
+		resp, err := client.RepoLookup(ctx, brgs.ToProto())
 		if err != nil {
-			return nil, errors.Wrapf(err, "RepoLookup for %+v failed", args)
+			return nil, errors.Wrbpf(err, "RepoLookup for %+v fbiled", brgs)
 		}
 		res := protocol.RepoLookupResultFromProto(resp)
 		switch {
-		case resp.GetErrorNotFound():
-			return res, &ErrNotFound{Repo: args.Repo, IsNotFound: true}
-		case resp.GetErrorUnauthorized():
-			return res, &ErrUnauthorized{Repo: args.Repo, NoAuthz: true}
-		case resp.GetErrorTemporarilyUnavailable():
-			return res, &ErrTemporary{Repo: args.Repo, IsTemporary: true}
+		cbse resp.GetErrorNotFound():
+			return res, &ErrNotFound{Repo: brgs.Repo, IsNotFound: true}
+		cbse resp.GetErrorUnbuthorized():
+			return res, &ErrUnbuthorized{Repo: brgs.Repo, NoAuthz: true}
+		cbse resp.GetErrorTemporbrilyUnbvbilbble():
+			return res, &ErrTemporbry{Repo: brgs.Repo, IsTemporbry: true}
 		}
 		return res, nil
 	}
 
-	resp, err := c.httpPost(ctx, "repo-lookup", args)
+	resp, err := c.httpPost(ctx, "repo-lookup", brgs)
 	if err != nil {
 		return nil, err
 	}
 	defer resp.Body.Close()
 
-	if resp.StatusCode != http.StatusOK {
-		// best-effort inclusion of body in error message
-		body, _ := io.ReadAll(io.LimitReader(resp.Body, 200))
+	if resp.StbtusCode != http.StbtusOK {
+		// best-effort inclusion of body in error messbge
+		body, _ := io.RebdAll(io.LimitRebder(resp.Body, 200))
 		return nil, errors.Errorf(
-			"RepoLookup for %+v failed with http status %d: %s",
-			args,
-			resp.StatusCode,
+			"RepoLookup for %+v fbiled with http stbtus %d: %s",
+			brgs,
+			resp.StbtusCode,
 			string(body),
 		)
 	}
@@ -177,76 +177,76 @@ func (c *Client) RepoLookup(
 	err = json.NewDecoder(resp.Body).Decode(&result)
 	if err == nil && result != nil {
 		switch {
-		case result.ErrorNotFound:
+		cbse result.ErrorNotFound:
 			err = &ErrNotFound{
-				Repo:       args.Repo,
+				Repo:       brgs.Repo,
 				IsNotFound: true,
 			}
-		case result.ErrorUnauthorized:
-			err = &ErrUnauthorized{
-				Repo:    args.Repo,
+		cbse result.ErrorUnbuthorized:
+			err = &ErrUnbuthorized{
+				Repo:    brgs.Repo,
 				NoAuthz: true,
 			}
-		case result.ErrorTemporarilyUnavailable:
-			err = &ErrTemporary{
-				Repo:        args.Repo,
-				IsTemporary: true,
+		cbse result.ErrorTemporbrilyUnbvbilbble:
+			err = &ErrTemporbry{
+				Repo:        brgs.Repo,
+				IsTemporbry: true,
 			}
 		}
 	}
 	return result, err
 }
 
-// MockEnqueueRepoUpdate mocks (*Client).EnqueueRepoUpdate for tests.
-var MockEnqueueRepoUpdate func(ctx context.Context, repo api.RepoName) (*protocol.RepoUpdateResponse, error)
+// MockEnqueueRepoUpdbte mocks (*Client).EnqueueRepoUpdbte for tests.
+vbr MockEnqueueRepoUpdbte func(ctx context.Context, repo bpi.RepoNbme) (*protocol.RepoUpdbteResponse, error)
 
-// EnqueueRepoUpdate requests that the named repository be updated in the near
-// future. It does not wait for the update.
-func (c *Client) EnqueueRepoUpdate(ctx context.Context, repo api.RepoName) (*protocol.RepoUpdateResponse, error) {
-	if MockEnqueueRepoUpdate != nil {
-		return MockEnqueueRepoUpdate(ctx, repo)
+// EnqueueRepoUpdbte requests thbt the nbmed repository be updbted in the nebr
+// future. It does not wbit for the updbte.
+func (c *Client) EnqueueRepoUpdbte(ctx context.Context, repo bpi.RepoNbme) (*protocol.RepoUpdbteResponse, error) {
+	if MockEnqueueRepoUpdbte != nil {
+		return MockEnqueueRepoUpdbte(ctx, repo)
 	}
 
-	if conf.IsGRPCEnabled(ctx) {
+	if conf.IsGRPCEnbbled(ctx) {
 		client, err := c.grpcClient()
 		if err != nil {
 			return nil, err
 		}
 
-		req := proto.EnqueueRepoUpdateRequest{Repo: string(repo)}
-		resp, err := client.EnqueueRepoUpdate(ctx, &req)
+		req := proto.EnqueueRepoUpdbteRequest{Repo: string(repo)}
+		resp, err := client.EnqueueRepoUpdbte(ctx, &req)
 		if err != nil {
-			if s, ok := status.FromError(err); ok && s.Code() == codes.NotFound {
-				return nil, &repoNotFoundError{repo: string(repo), responseBody: s.Message()}
+			if s, ok := stbtus.FromError(err); ok && s.Code() == codes.NotFound {
+				return nil, &repoNotFoundError{repo: string(repo), responseBody: s.Messbge()}
 			}
 
 			return nil, err
 		}
 
-		return protocol.RepoUpdateResponseFromProto(resp), nil
+		return protocol.RepoUpdbteResponseFromProto(resp), nil
 	}
 
-	req := &protocol.RepoUpdateRequest{
+	req := &protocol.RepoUpdbteRequest{
 		Repo: repo,
 	}
 
-	resp, err := c.httpPost(ctx, "enqueue-repo-update", req)
+	resp, err := c.httpPost(ctx, "enqueue-repo-updbte", req)
 	if err != nil {
 		return nil, err
 	}
 	defer resp.Body.Close()
 
-	bs, err := io.ReadAll(resp.Body)
+	bs, err := io.RebdAll(resp.Body)
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to read response body")
+		return nil, errors.Wrbp(err, "fbiled to rebd response body")
 	}
 
-	var res protocol.RepoUpdateResponse
-	if resp.StatusCode == http.StatusNotFound {
+	vbr res protocol.RepoUpdbteResponse
+	if resp.StbtusCode == http.StbtusNotFound {
 		return nil, &repoNotFoundError{string(repo), string(bs)}
-	} else if resp.StatusCode < 200 || resp.StatusCode >= 400 {
+	} else if resp.StbtusCode < 200 || resp.StbtusCode >= 400 {
 		return nil, errors.New(string(bs))
-	} else if err = json.Unmarshal(bs, &res); err != nil {
+	} else if err = json.Unmbrshbl(bs, &res); err != nil {
 		return nil, err
 	}
 
@@ -263,41 +263,41 @@ func (e *repoNotFoundError) Error() string {
 	return fmt.Sprintf("repo %v not found with response: %v", e.repo, e.responseBody)
 }
 
-// MockEnqueueChangesetSync mocks (*Client).EnqueueChangesetSync for tests.
-var MockEnqueueChangesetSync func(ctx context.Context, ids []int64) error
+// MockEnqueueChbngesetSync mocks (*Client).EnqueueChbngesetSync for tests.
+vbr MockEnqueueChbngesetSync func(ctx context.Context, ids []int64) error
 
-func (c *Client) EnqueueChangesetSync(ctx context.Context, ids []int64) error {
-	if MockEnqueueChangesetSync != nil {
-		return MockEnqueueChangesetSync(ctx, ids)
+func (c *Client) EnqueueChbngesetSync(ctx context.Context, ids []int64) error {
+	if MockEnqueueChbngesetSync != nil {
+		return MockEnqueueChbngesetSync(ctx, ids)
 	}
 
-	if conf.IsGRPCEnabled(ctx) {
+	if conf.IsGRPCEnbbled(ctx) {
 		client, err := c.grpcClient()
 		if err != nil {
 			return err
 		}
 
-		// empty response can be ignored
-		_, err = client.EnqueueChangesetSync(ctx, &proto.EnqueueChangesetSyncRequest{Ids: ids})
+		// empty response cbn be ignored
+		_, err = client.EnqueueChbngesetSync(ctx, &proto.EnqueueChbngesetSyncRequest{Ids: ids})
 		return err
 	}
 
-	req := protocol.ChangesetSyncRequest{IDs: ids}
-	resp, err := c.httpPost(ctx, "enqueue-changeset-sync", req)
+	req := protocol.ChbngesetSyncRequest{IDs: ids}
+	resp, err := c.httpPost(ctx, "enqueue-chbngeset-sync", req)
 	if err != nil {
 		return err
 	}
 	defer resp.Body.Close()
 
-	bs, err := io.ReadAll(resp.Body)
+	bs, err := io.RebdAll(resp.Body)
 	if err != nil {
-		return errors.Wrap(err, "failed to read response body")
+		return errors.Wrbp(err, "fbiled to rebd response body")
 	}
 
-	var res protocol.ChangesetSyncResponse
-	if resp.StatusCode < 200 || resp.StatusCode >= 400 {
+	vbr res protocol.ChbngesetSyncResponse
+	if resp.StbtusCode < 200 || resp.StbtusCode >= 400 {
 		return errors.New(string(bs))
-	} else if err = json.Unmarshal(bs, &res); err != nil {
+	} else if err = json.Unmbrshbl(bs, &res); err != nil {
 		return err
 	}
 
@@ -307,44 +307,44 @@ func (c *Client) EnqueueChangesetSync(ctx context.Context, ids []int64) error {
 	return errors.New(res.Error)
 }
 
-// MockSyncExternalService mocks (*Client).SyncExternalService for tests.
-var MockSyncExternalService func(ctx context.Context, externalServiceID int64) (*protocol.ExternalServiceSyncResult, error)
+// MockSyncExternblService mocks (*Client).SyncExternblService for tests.
+vbr MockSyncExternblService func(ctx context.Context, externblServiceID int64) (*protocol.ExternblServiceSyncResult, error)
 
-// SyncExternalService requests the given external service to be synced.
-func (c *Client) SyncExternalService(ctx context.Context, externalServiceID int64) (*protocol.ExternalServiceSyncResult, error) {
-	if MockSyncExternalService != nil {
-		return MockSyncExternalService(ctx, externalServiceID)
+// SyncExternblService requests the given externbl service to be synced.
+func (c *Client) SyncExternblService(ctx context.Context, externblServiceID int64) (*protocol.ExternblServiceSyncResult, error) {
+	if MockSyncExternblService != nil {
+		return MockSyncExternblService(ctx, externblServiceID)
 	}
 
-	if conf.IsGRPCEnabled(ctx) {
+	if conf.IsGRPCEnbbled(ctx) {
 		client, err := c.grpcClient()
 		if err != nil {
 			return nil, err
 		}
 
-		// empty response can be ignored
-		_, err = client.SyncExternalService(ctx, &proto.SyncExternalServiceRequest{ExternalServiceId: externalServiceID})
+		// empty response cbn be ignored
+		_, err = client.SyncExternblService(ctx, &proto.SyncExternblServiceRequest{ExternblServiceId: externblServiceID})
 		return nil, err
 	}
 
-	req := &protocol.ExternalServiceSyncRequest{ExternalServiceID: externalServiceID}
-	resp, err := c.httpPost(ctx, "sync-external-service", req)
+	req := &protocol.ExternblServiceSyncRequest{ExternblServiceID: externblServiceID}
+	resp, err := c.httpPost(ctx, "sync-externbl-service", req)
 	if err != nil {
 		return nil, err
 	}
 	defer resp.Body.Close()
 
-	bs, err := io.ReadAll(resp.Body)
+	bs, err := io.RebdAll(resp.Body)
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to read response body")
+		return nil, errors.Wrbp(err, "fbiled to rebd response body")
 	}
 
-	var result protocol.ExternalServiceSyncResult
-	if resp.StatusCode < 200 || resp.StatusCode >= 400 {
+	vbr result protocol.ExternblServiceSyncResult
+	if resp.StbtusCode < 200 || resp.StbtusCode >= 400 {
 		return nil, errors.New(string(bs))
 	} else if len(bs) == 0 {
 		return &result, nil
-	} else if err = json.Unmarshal(bs, &result); err != nil {
+	} else if err = json.Unmbrshbl(bs, &result); err != nil {
 		return nil, err
 	}
 
@@ -354,30 +354,30 @@ func (c *Client) SyncExternalService(ctx context.Context, externalServiceID int6
 	return &result, nil
 }
 
-// MockExternalServiceNamespaces mocks (*Client).QueryExternalServiceNamespaces for tests.
-var MockExternalServiceNamespaces func(ctx context.Context, args protocol.ExternalServiceNamespacesArgs) (*protocol.ExternalServiceNamespacesResult, error)
+// MockExternblServiceNbmespbces mocks (*Client).QueryExternblServiceNbmespbces for tests.
+vbr MockExternblServiceNbmespbces func(ctx context.Context, brgs protocol.ExternblServiceNbmespbcesArgs) (*protocol.ExternblServiceNbmespbcesResult, error)
 
-// ExternalServiceNamespaces retrieves a list of namespaces available to the given external service configuration
-func (c *Client) ExternalServiceNamespaces(ctx context.Context, args protocol.ExternalServiceNamespacesArgs) (result *protocol.ExternalServiceNamespacesResult, err error) {
-	if MockExternalServiceNamespaces != nil {
-		return MockExternalServiceNamespaces(ctx, args)
+// ExternblServiceNbmespbces retrieves b list of nbmespbces bvbilbble to the given externbl service configurbtion
+func (c *Client) ExternblServiceNbmespbces(ctx context.Context, brgs protocol.ExternblServiceNbmespbcesArgs) (result *protocol.ExternblServiceNbmespbcesResult, err error) {
+	if MockExternblServiceNbmespbces != nil {
+		return MockExternblServiceNbmespbces(ctx, brgs)
 	}
 
-	if conf.IsGRPCEnabled(ctx) {
+	if conf.IsGRPCEnbbled(ctx) {
 		client, err := c.grpcClient()
 		if err != nil {
 			return nil, err
 		}
 
-		resp, err := client.ExternalServiceNamespaces(ctx, args.ToProto())
+		resp, err := client.ExternblServiceNbmespbces(ctx, brgs.ToProto())
 		if err != nil {
 			return nil, err
 		}
 
-		return protocol.ExternalServiceNamespacesResultFromProto(resp), nil
+		return protocol.ExternblServiceNbmespbcesResultFromProto(resp), nil
 	}
 
-	resp, err := c.httpPost(ctx, "external-service-namespaces", args)
+	resp, err := c.httpPost(ctx, "externbl-service-nbmespbces", brgs)
 	if err != nil {
 		return nil, err
 	}
@@ -390,30 +390,30 @@ func (c *Client) ExternalServiceNamespaces(ctx context.Context, args protocol.Ex
 	return result, err
 }
 
-// MockExternalServiceRepositories mocks (*Client).ExternalServiceRepositories for tests.
-var MockExternalServiceRepositories func(ctx context.Context, args protocol.ExternalServiceRepositoriesArgs) (*protocol.ExternalServiceRepositoriesResult, error)
+// MockExternblServiceRepositories mocks (*Client).ExternblServiceRepositories for tests.
+vbr MockExternblServiceRepositories func(ctx context.Context, brgs protocol.ExternblServiceRepositoriesArgs) (*protocol.ExternblServiceRepositoriesResult, error)
 
-// ExternalServiceRepositories retrieves a list of repositories sourced by the given external service configuration
-func (c *Client) ExternalServiceRepositories(ctx context.Context, args protocol.ExternalServiceRepositoriesArgs) (result *protocol.ExternalServiceRepositoriesResult, err error) {
-	if MockExternalServiceRepositories != nil {
-		return MockExternalServiceRepositories(ctx, args)
+// ExternblServiceRepositories retrieves b list of repositories sourced by the given externbl service configurbtion
+func (c *Client) ExternblServiceRepositories(ctx context.Context, brgs protocol.ExternblServiceRepositoriesArgs) (result *protocol.ExternblServiceRepositoriesResult, err error) {
+	if MockExternblServiceRepositories != nil {
+		return MockExternblServiceRepositories(ctx, brgs)
 	}
 
-	if conf.IsGRPCEnabled(ctx) {
+	if conf.IsGRPCEnbbled(ctx) {
 		client, err := c.grpcClient()
 		if err != nil {
 			return nil, err
 		}
 
-		resp, err := client.ExternalServiceRepositories(ctx, args.ToProto())
+		resp, err := client.ExternblServiceRepositories(ctx, brgs.ToProto())
 		if err != nil {
 			return nil, err
 		}
 
-		return protocol.ExternalServiceRepositoriesResultFromProto(resp), nil
+		return protocol.ExternblServiceRepositoriesResultFromProto(resp), nil
 	}
 
-	resp, err := c.httpPost(ctx, "external-service-repositories", args)
+	resp, err := c.httpPost(ctx, "externbl-service-repositories", brgs)
 
 	if err != nil {
 		return nil, err
@@ -427,13 +427,13 @@ func (c *Client) ExternalServiceRepositories(ctx context.Context, args protocol.
 	return result, err
 }
 
-func (c *Client) httpPost(ctx context.Context, method string, payload any) (resp *http.Response, err error) {
-	reqBody, err := json.Marshal(payload)
+func (c *Client) httpPost(ctx context.Context, method string, pbylobd bny) (resp *http.Response, err error) {
+	reqBody, err := json.Mbrshbl(pbylobd)
 	if err != nil {
 		return nil, err
 	}
 
-	req, err := http.NewRequest("POST", c.URL+"/"+method, bytes.NewReader(reqBody))
+	req, err := http.NewRequest("POST", c.URL+"/"+method, bytes.NewRebder(reqBody))
 	if err != nil {
 		return nil, err
 	}
@@ -442,15 +442,15 @@ func (c *Client) httpPost(ctx context.Context, method string, payload any) (resp
 }
 
 func (c *Client) do(ctx context.Context, req *http.Request) (_ *http.Response, err error) {
-	tr, ctx := trace.New(ctx, "repoupdater.do")
+	tr, ctx := trbce.New(ctx, "repoupdbter.do")
 	defer tr.EndWithErr(&err)
 
-	req.Header.Set("Content-Type", "application/json")
+	req.Hebder.Set("Content-Type", "bpplicbtion/json")
 
 	req = req.WithContext(ctx)
 
 	if c.HTTPClient != nil {
 		return c.HTTPClient.Do(req)
 	}
-	return http.DefaultClient.Do(req)
+	return http.DefbultClient.Do(req)
 }

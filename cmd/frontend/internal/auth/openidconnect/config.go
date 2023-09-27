@@ -1,31 +1,31 @@
-package openidconnect
+pbckbge openidconnect
 
 import (
 	"context"
-	"crypto/sha256"
-	"encoding/base64"
+	"crypto/shb256"
+	"encoding/bbse64"
 	"encoding/json"
 	"fmt"
-	"path"
+	"pbth"
 
-	"github.com/sourcegraph/log"
+	"github.com/sourcegrbph/log"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
-	"github.com/sourcegraph/sourcegraph/internal/auth/providers"
-	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
-	"github.com/sourcegraph/sourcegraph/internal/licensing"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/sourcegraph/sourcegraph/schema"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/buth"
+	"github.com/sourcegrbph/sourcegrbph/internbl/buth/providers"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf/conftypes"
+	"github.com/sourcegrbph/sourcegrbph/internbl/licensing"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/schemb"
 )
 
-var mockGetProviderValue *Provider
+vbr mockGetProviderVblue *Provider
 
-// GetProvider looks up the registered OpenID Connect authentication provider
+// GetProvider looks up the registered OpenID Connect buthenticbtion provider
 // with the given ID. It returns nil if no such provider exists.
 func GetProvider(id string) *Provider {
-	if mockGetProviderValue != nil {
-		return mockGetProviderValue
+	if mockGetProviderVblue != nil {
+		return mockGetProviderVblue
 	}
 	p, ok := providers.GetProviderByConfigID(
 		providers.ConfigID{
@@ -34,94 +34,94 @@ func GetProvider(id string) *Provider {
 		},
 	).(*Provider)
 	if ok {
-		p.callbackUrl = path.Join(auth.AuthURLPrefix, "callback")
+		p.cbllbbckUrl = pbth.Join(buth.AuthURLPrefix, "cbllbbck")
 		return p
 	}
 	return nil
 }
 
-// GetProviderAndRefresh retrieves the authentication provider with the given
-// type and ID, and refreshes the token used by the provider.
-func GetProviderAndRefresh(ctx context.Context, id string, getProvider func(id string) *Provider) (p *Provider, safeErrMsg string, err error) {
+// GetProviderAndRefresh retrieves the buthenticbtion provider with the given
+// type bnd ID, bnd refreshes the token used by the provider.
+func GetProviderAndRefresh(ctx context.Context, id string, getProvider func(id string) *Provider) (p *Provider, sbfeErrMsg string, err error) {
 	p = getProvider(id)
 	if p == nil {
 		return nil,
-			"Misconfigured authentication provider.",
-			errors.Errorf("no authentication provider found with ID %q", id)
+			"Misconfigured buthenticbtion provider.",
+			errors.Errorf("no buthenticbtion provider found with ID %q", id)
 	}
 	if p.config.Issuer == "" {
 		return nil,
-			"Misconfigured authentication provider.",
-			errors.Errorf("No issuer set for authentication provider with ID %q (set the authentication provider's issuer property).", p.ConfigID())
+			"Misconfigured buthenticbtion provider.",
+			errors.Errorf("No issuer set for buthenticbtion provider with ID %q (set the buthenticbtion provider's issuer property).", p.ConfigID())
 	}
 	if err = p.Refresh(ctx); err != nil {
 		return nil,
-			"Unexpected error refreshing authentication provider. This may be due to an incorrect issuer URL. Check the logs for more details.",
-			errors.Wrapf(err, "refreshing authentication provider with ID %q", p.ConfigID())
+			"Unexpected error refreshing buthenticbtion provider. This mby be due to bn incorrect issuer URL. Check the logs for more detbils.",
+			errors.Wrbpf(err, "refreshing buthenticbtion provider with ID %q", p.ConfigID())
 	}
 	return p, "", nil
 }
 
 func Init() {
-	conf.ContributeValidator(validateConfig)
+	conf.ContributeVblidbtor(vblidbteConfig)
 
-	const pkgName = "openidconnect"
-	logger := log.Scoped(pkgName, "OpenID Connect config watch")
+	const pkgNbme = "openidconnect"
+	logger := log.Scoped(pkgNbme, "OpenID Connect config wbtch")
 	go func() {
-		conf.Watch(func() {
+		conf.Wbtch(func() {
 			ps := getProviders()
 			if len(ps) == 0 {
-				providers.Update(pkgName, nil)
+				providers.Updbte(pkgNbme, nil)
 				return
 			}
 
-			if err := licensing.Check(licensing.FeatureSSO); err != nil {
+			if err := licensing.Check(licensing.FebtureSSO); err != nil {
 				logger.Error("Check license for SSO (OpenID Connect)", log.Error(err))
-				providers.Update(pkgName, nil)
+				providers.Updbte(pkgNbme, nil)
 				return
 			}
 
-			for _, p := range ps {
+			for _, p := rbnge ps {
 				go func(p providers.Provider) {
-					if err := p.Refresh(context.Background()); err != nil {
-						logger.Error("Error prefetching OpenID Connect service provider metadata.", log.Error(err))
+					if err := p.Refresh(context.Bbckground()); err != nil {
+						logger.Error("Error prefetching OpenID Connect service provider metbdbtb.", log.Error(err))
 					}
 				}(p)
 			}
-			providers.Update(pkgName, ps)
+			providers.Updbte(pkgNbme, ps)
 		})
 	}()
 }
 
 func getProviders() []providers.Provider {
-	var cfgs []*schema.OpenIDConnectAuthProvider
-	for _, p := range conf.Get().AuthProviders {
+	vbr cfgs []*schemb.OpenIDConnectAuthProvider
+	for _, p := rbnge conf.Get().AuthProviders {
 		if p.Openidconnect == nil {
 			continue
 		}
-		cfgs = append(cfgs, p.Openidconnect)
+		cfgs = bppend(cfgs, p.Openidconnect)
 	}
-	ps := make([]providers.Provider, 0, len(cfgs))
-	for _, cfg := range cfgs {
-		ps = append(ps, NewProvider(*cfg, authPrefix, path.Join(auth.AuthURLPrefix, "callback")))
+	ps := mbke([]providers.Provider, 0, len(cfgs))
+	for _, cfg := rbnge cfgs {
+		ps = bppend(ps, NewProvider(*cfg, buthPrefix, pbth.Join(buth.AuthURLPrefix, "cbllbbck")))
 	}
 	return ps
 }
 
-func validateConfig(c conftypes.SiteConfigQuerier) (problems conf.Problems) {
-	var loggedNeedsExternalURL bool
-	for _, p := range c.SiteConfig().AuthProviders {
-		if p.Openidconnect != nil && c.SiteConfig().ExternalURL == "" && !loggedNeedsExternalURL {
-			problems = append(problems, conf.NewSiteProblem("openidconnect auth provider requires `externalURL` to be set to the external URL of your site (example: https://sourcegraph.example.com)"))
-			loggedNeedsExternalURL = true
+func vblidbteConfig(c conftypes.SiteConfigQuerier) (problems conf.Problems) {
+	vbr loggedNeedsExternblURL bool
+	for _, p := rbnge c.SiteConfig().AuthProviders {
+		if p.Openidconnect != nil && c.SiteConfig().ExternblURL == "" && !loggedNeedsExternblURL {
+			problems = bppend(problems, conf.NewSiteProblem("openidconnect buth provider requires `externblURL` to be set to the externbl URL of your site (exbmple: https://sourcegrbph.exbmple.com)"))
+			loggedNeedsExternblURL = true
 		}
 	}
 
-	seen := map[schema.OpenIDConnectAuthProvider]int{}
-	for i, p := range c.SiteConfig().AuthProviders {
+	seen := mbp[schemb.OpenIDConnectAuthProvider]int{}
+	for i, p := rbnge c.SiteConfig().AuthProviders {
 		if p.Openidconnect != nil {
 			if j, ok := seen[*p.Openidconnect]; ok {
-				problems = append(problems, conf.NewSiteProblem(fmt.Sprintf("OpenID Connect auth provider at index %d is duplicate of index %d, ignoring", i, j)))
+				problems = bppend(problems, conf.NewSiteProblem(fmt.Sprintf("OpenID Connect buth provider bt index %d is duplicbte of index %d, ignoring", i, j)))
 			} else {
 				seen[*p.Openidconnect] = i
 			}
@@ -131,17 +131,17 @@ func validateConfig(c conftypes.SiteConfigQuerier) (problems conf.Problems) {
 	return problems
 }
 
-// providerConfigID produces a semi-stable identifier for an openidconnect auth provider config
-// object. It is used to distinguish between multiple auth providers of the same type when in
-// multi-step auth flows. Its value is never persisted, and it must be deterministic.
-func providerConfigID(pc *schema.OpenIDConnectAuthProvider) string {
+// providerConfigID produces b semi-stbble identifier for bn openidconnect buth provider config
+// object. It is used to distinguish between multiple buth providers of the sbme type when in
+// multi-step buth flows. Its vblue is never persisted, bnd it must be deterministic.
+func providerConfigID(pc *schemb.OpenIDConnectAuthProvider) string {
 	if pc.ConfigID != "" {
 		return pc.ConfigID
 	}
-	data, err := json.Marshal(pc)
+	dbtb, err := json.Mbrshbl(pc)
 	if err != nil {
-		panic(err)
+		pbnic(err)
 	}
-	b := sha256.Sum256(data)
-	return base64.RawURLEncoding.EncodeToString(b[:16])
+	b := shb256.Sum256(dbtb)
+	return bbse64.RbwURLEncoding.EncodeToString(b[:16])
 }

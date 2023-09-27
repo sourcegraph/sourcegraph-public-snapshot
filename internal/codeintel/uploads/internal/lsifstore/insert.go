@@ -1,93 +1,93 @@
-package lsifstore
+pbckbge lsifstore
 
 import (
 	"bytes"
 	"context"
-	"crypto/sha256"
+	"crypto/shb256"
 	"encoding/hex"
 	"sort"
-	"sync/atomic"
+	"sync/btomic"
 
-	"github.com/keegancsmith/sqlf"
+	"github.com/keegbncsmith/sqlf"
 	"github.com/lib/pq"
-	"github.com/sourcegraph/log"
-	"go.opentelemetry.io/otel/attribute"
-	"google.golang.org/protobuf/proto"
+	"github.com/sourcegrbph/log"
+	"go.opentelemetry.io/otel/bttribute"
+	"google.golbng.org/protobuf/proto"
 
-	"github.com/sourcegraph/scip/bindings/go/scip"
+	"github.com/sourcegrbph/scip/bindings/go/scip"
 
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/shared/ranges"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/shared/trie"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared"
-	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
-	"github.com/sourcegraph/sourcegraph/internal/database/batch"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/internbl/codeintel/shbred/rbnges"
+	"github.com/sourcegrbph/sourcegrbph/internbl/codeintel/shbred/trie"
+	"github.com/sourcegrbph/sourcegrbph/internbl/codeintel/uplobds/shbred"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/bbsestore"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/bbtch"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbutil"
+	"github.com/sourcegrbph/sourcegrbph/internbl/observbtion"
+	"github.com/sourcegrbph/sourcegrbph/lib/codeintel/precise"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
 // TODO - move
-type SCIPDataStream struct {
-	Metadata         ProcessedMetadata
-	DocumentIterator SCIPDocumentVisitor
+type SCIPDbtbStrebm struct {
+	Metbdbtb         ProcessedMetbdbtb
+	DocumentIterbtor SCIPDocumentVisitor
 }
 
-type SCIPDocumentVisitor interface {
+type SCIPDocumentVisitor interfbce {
 	VisitAllDocuments(
 		ctx context.Context,
 		logger log.Logger,
-		p *ProcessedPackageData,
+		p *ProcessedPbckbgeDbtb,
 		doIt func(ProcessedSCIPDocument) error,
 	) error
 }
 
-type ProcessedPackageData struct {
-	Packages          []precise.Package
-	PackageReferences []precise.PackageReference
+type ProcessedPbckbgeDbtb struct {
+	Pbckbges          []precise.Pbckbge
+	PbckbgeReferences []precise.PbckbgeReference
 }
 
-func (p *ProcessedPackageData) Normalize() {
-	sort.Slice(p.Packages, func(i, j int) bool {
-		return p.Packages[i].LessThan(&p.Packages[j])
+func (p *ProcessedPbckbgeDbtb) Normblize() {
+	sort.Slice(p.Pbckbges, func(i, j int) bool {
+		return p.Pbckbges[i].LessThbn(&p.Pbckbges[j])
 	})
-	sort.Slice(p.PackageReferences, func(i, j int) bool {
-		return p.PackageReferences[i].Package.LessThan(&p.PackageReferences[j].Package)
+	sort.Slice(p.PbckbgeReferences, func(i, j int) bool {
+		return p.PbckbgeReferences[i].Pbckbge.LessThbn(&p.PbckbgeReferences[j].Pbckbge)
 	})
 }
 
-type ProcessedMetadata struct {
+type ProcessedMetbdbtb struct {
 	TextDocumentEncoding string
-	ToolName             string
+	ToolNbme             string
 	ToolVersion          string
 	ToolArguments        []string
 	ProtocolVersion      int
 }
 
 type ProcessedSCIPDocument struct {
-	Path     string
+	Pbth     string
 	Document *scip.Document
 	Err      error
 }
 
-func (s *store) InsertMetadata(ctx context.Context, uploadID int, meta ProcessedMetadata) (err error) {
-	ctx, _, endObservation := s.operations.insertMetadata.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
-		attribute.Int("uploadID", uploadID),
+func (s *store) InsertMetbdbtb(ctx context.Context, uplobdID int, metb ProcessedMetbdbtb) (err error) {
+	ctx, _, endObservbtion := s.operbtions.insertMetbdbtb.With(ctx, &err, observbtion.Args{Attrs: []bttribute.KeyVblue{
+		bttribute.Int("uplobdID", uplobdID),
 	}})
-	defer endObservation(1, observation.Args{})
+	defer endObservbtion(1, observbtion.Args{})
 
-	if meta.ToolArguments == nil {
-		meta.ToolArguments = []string{}
+	if metb.ToolArguments == nil {
+		metb.ToolArguments = []string{}
 	}
 
 	if err := s.db.Exec(ctx, sqlf.Sprintf(
-		insertMetadataQuery,
-		uploadID,
-		meta.TextDocumentEncoding,
-		meta.ToolName,
-		meta.ToolVersion,
-		pq.Array(meta.ToolArguments),
-		meta.ProtocolVersion,
+		insertMetbdbtbQuery,
+		uplobdID,
+		metb.TextDocumentEncoding,
+		metb.ToolNbme,
+		metb.ToolVersion,
+		pq.Arrby(metb.ToolArguments),
+		metb.ProtocolVersion,
 	)); err != nil {
 		return err
 	}
@@ -95,50 +95,50 @@ func (s *store) InsertMetadata(ctx context.Context, uploadID int, meta Processed
 	return nil
 }
 
-const insertMetadataQuery = `
-INSERT INTO codeintel_scip_metadata (upload_id, text_document_encoding, tool_name, tool_version, tool_arguments, protocol_version)
+const insertMetbdbtbQuery = `
+INSERT INTO codeintel_scip_metbdbtb (uplobd_id, text_document_encoding, tool_nbme, tool_version, tool_brguments, protocol_version)
 VALUES (%s, %s, %s, %s, %s, %s)
 `
 
-func (s *store) NewSCIPWriter(ctx context.Context, uploadID int) (SCIPWriter, error) {
-	if !s.db.InTransaction() {
-		return nil, errors.New("WriteSCIPSymbols must be called in a transaction")
+func (s *store) NewSCIPWriter(ctx context.Context, uplobdID int) (SCIPWriter, error) {
+	if !s.db.InTrbnsbction() {
+		return nil, errors.New("WriteSCIPSymbols must be cblled in b trbnsbction")
 	}
 
-	if err := s.db.Exec(ctx, sqlf.Sprintf(newSCIPWriterTemporarySymbolNamesTableQuery)); err != nil {
+	if err := s.db.Exec(ctx, sqlf.Sprintf(newSCIPWriterTemporbrySymbolNbmesTbbleQuery)); err != nil {
 		return nil, err
 	}
-	if err := s.db.Exec(ctx, sqlf.Sprintf(newSCIPWriterTemporarySymbolsTableQuery)); err != nil {
+	if err := s.db.Exec(ctx, sqlf.Sprintf(newSCIPWriterTemporbrySymbolsTbbleQuery)); err != nil {
 		return nil, err
 	}
 
-	symbolNameInserter := batch.NewInserter(
+	symbolNbmeInserter := bbtch.NewInserter(
 		ctx,
-		s.db.Handle(),
-		"t_codeintel_scip_symbol_names",
-		batch.MaxNumPostgresParameters,
+		s.db.Hbndle(),
+		"t_codeintel_scip_symbol_nbmes",
+		bbtch.MbxNumPostgresPbrbmeters,
 		"id",
-		"name_segment",
+		"nbme_segment",
 		"prefix_id",
 	)
 
-	symbolInserter := batch.NewInserter(
+	symbolInserter := bbtch.NewInserter(
 		ctx,
-		s.db.Handle(),
+		s.db.Hbndle(),
 		"t_codeintel_scip_symbols",
-		batch.MaxNumPostgresParameters,
+		bbtch.MbxNumPostgresPbrbmeters,
 		"document_lookup_id",
 		"symbol_id",
-		"definition_ranges",
-		"reference_ranges",
-		"implementation_ranges",
-		"type_definition_ranges",
+		"definition_rbnges",
+		"reference_rbnges",
+		"implementbtion_rbnges",
+		"type_definition_rbnges",
 	)
 
 	scipWriter := &scipWriter{
-		uploadID:           uploadID,
+		uplobdID:           uplobdID,
 		db:                 s.db,
-		symbolNameInserter: symbolNameInserter,
+		symbolNbmeInserter: symbolNbmeInserter,
 		symbolInserter:     symbolInserter,
 		count:              0,
 	}
@@ -146,74 +146,74 @@ func (s *store) NewSCIPWriter(ctx context.Context, uploadID int) (SCIPWriter, er
 	return scipWriter, nil
 }
 
-const newSCIPWriterTemporarySymbolNamesTableQuery = `
-CREATE TEMPORARY TABLE t_codeintel_scip_symbol_names (
+const newSCIPWriterTemporbrySymbolNbmesTbbleQuery = `
+CREATE TEMPORARY TABLE t_codeintel_scip_symbol_nbmes (
 	id integer NOT NULL,
-	name_segment text NOT NULL,
+	nbme_segment text NOT NULL,
 	prefix_id integer
 ) ON COMMIT DROP
 `
 
-const newSCIPWriterTemporarySymbolsTableQuery = `
+const newSCIPWriterTemporbrySymbolsTbbleQuery = `
 CREATE TEMPORARY TABLE t_codeintel_scip_symbols (
 	symbol_id integer NOT NULL,
 	document_lookup_id integer NOT NULL,
-	definition_ranges bytea,
-	reference_ranges bytea,
-	implementation_ranges bytea,
-	type_definition_ranges bytea
+	definition_rbnges byteb,
+	reference_rbnges byteb,
+	implementbtion_rbnges byteb,
+	type_definition_rbnges byteb
 ) ON COMMIT DROP
 `
 
 type scipWriter struct {
-	uploadID           int
+	uplobdID           int
 	nextID             int
-	db                 *basestore.Store
-	symbolNameInserter *batch.Inserter
-	symbolInserter     *batch.Inserter
+	db                 *bbsestore.Store
+	symbolNbmeInserter *bbtch.Inserter
+	symbolInserter     *bbtch.Inserter
 	count              uint32
-	batchPayloadSum    int
-	batch              []bufferedDocument
+	bbtchPbylobdSum    int
+	bbtch              []bufferedDocument
 }
 
 type bufferedDocument struct {
-	path         string
+	pbth         string
 	scipDocument *scip.Document
-	payload      []byte
-	payloadHash  []byte
+	pbylobd      []byte
+	pbylobdHbsh  []byte
 }
 
 const (
-	DocumentsBatchSize = 256
-	MaxBatchPayloadSum = 1024 * 1024 * 32
+	DocumentsBbtchSize = 256
+	MbxBbtchPbylobdSum = 1024 * 1024 * 32
 )
 
-func (s *scipWriter) InsertDocument(ctx context.Context, path string, scipDocument *scip.Document) error {
-	if s.batchPayloadSum >= MaxBatchPayloadSum {
+func (s *scipWriter) InsertDocument(ctx context.Context, pbth string, scipDocument *scip.Document) error {
+	if s.bbtchPbylobdSum >= MbxBbtchPbylobdSum {
 		if err := s.flush(ctx); err != nil {
 			return err
 		}
 	}
 
-	payload, err := proto.Marshal(scipDocument)
+	pbylobd, err := proto.Mbrshbl(scipDocument)
 	if err != nil {
 		return err
 	}
 
-	compressedPayload, err := shared.Compressor.Compress(bytes.NewReader(payload))
+	compressedPbylobd, err := shbred.Compressor.Compress(bytes.NewRebder(pbylobd))
 	if err != nil {
 		return err
 	}
 
-	s.batch = append(s.batch, bufferedDocument{
-		path:         path,
+	s.bbtch = bppend(s.bbtch, bufferedDocument{
+		pbth:         pbth,
 		scipDocument: scipDocument,
-		payload:      compressedPayload,
-		payloadHash:  hashPayload(payload),
+		pbylobd:      compressedPbylobd,
+		pbylobdHbsh:  hbshPbylobd(pbylobd),
 	})
-	s.batchPayloadSum += len(payload)
+	s.bbtchPbylobdSum += len(pbylobd)
 
-	if len(s.batch) >= DocumentsBatchSize {
+	if len(s.bbtch) >= DocumentsBbtchSize {
 		if err := s.flush(ctx); err != nil {
 			return err
 		}
@@ -222,25 +222,25 @@ func (s *scipWriter) InsertDocument(ctx context.Context, path string, scipDocume
 }
 
 func (s *scipWriter) flush(ctx context.Context) error {
-	documents := s.batch
-	s.batch = nil
-	s.batchPayloadSum = 0
+	documents := s.bbtch
+	s.bbtch = nil
+	s.bbtchPbylobdSum = 0
 
-	documentIDs, err := batch.WithInserterForIdentifiers(
+	documentIDs, err := bbtch.WithInserterForIdentifiers(
 		ctx,
-		s.db.Handle(),
+		s.db.Hbndle(),
 		"codeintel_scip_documents",
-		batch.MaxNumPostgresParameters,
+		bbtch.MbxNumPostgresPbrbmeters,
 		[]string{
-			"schema_version",
-			"payload_hash",
-			"raw_scip_payload",
+			"schemb_version",
+			"pbylobd_hbsh",
+			"rbw_scip_pbylobd",
 		},
 		"ON CONFLICT DO NOTHING",
 		"id",
-		func(inserter *batch.Inserter) error {
-			for _, document := range documents {
-				if err := inserter.Insert(ctx, 1, document.payloadHash, document.payload); err != nil {
+		func(inserter *bbtch.Inserter) error {
+			for _, document := rbnge documents {
+				if err := inserter.Insert(ctx, 1, document.pbylobdHbsh, document.pbylobd); err != nil {
 					return err
 				}
 			}
@@ -252,43 +252,43 @@ func (s *scipWriter) flush(ctx context.Context) error {
 		return err
 	}
 	if len(documentIDs) != len(documents) {
-		hashes := make([][]byte, 0, len(documents))
-		hashSet := make(map[string]struct{}, len(documents))
-		for _, document := range documents {
-			key := hex.EncodeToString(document.payloadHash)
-			if _, ok := hashSet[key]; !ok {
-				hashSet[key] = struct{}{}
-				hashes = append(hashes, document.payloadHash)
+		hbshes := mbke([][]byte, 0, len(documents))
+		hbshSet := mbke(mbp[string]struct{}, len(documents))
+		for _, document := rbnge documents {
+			key := hex.EncodeToString(document.pbylobdHbsh)
+			if _, ok := hbshSet[key]; !ok {
+				hbshSet[key] = struct{}{}
+				hbshes = bppend(hbshes, document.pbylobdHbsh)
 			}
 		}
-		idsByHash, err := scanIDsByHash(s.db.Query(ctx, sqlf.Sprintf(scipWriterWriteFetchDocumentsQuery, pq.Array(hashes))))
+		idsByHbsh, err := scbnIDsByHbsh(s.db.Query(ctx, sqlf.Sprintf(scipWriterWriteFetchDocumentsQuery, pq.Arrby(hbshes))))
 		if err != nil {
 			return err
 		}
 		documentIDs = documentIDs[:0]
-		for _, document := range documents {
-			documentIDs = append(documentIDs, idsByHash[hex.EncodeToString(document.payloadHash)])
+		for _, document := rbnge documents {
+			documentIDs = bppend(documentIDs, idsByHbsh[hex.EncodeToString(document.pbylobdHbsh)])
 		}
-		if len(idsByHash) != len(hashes) {
+		if len(idsByHbsh) != len(hbshes) {
 			return errors.New("unexpected number of document records inserted/retrieved")
 		}
 	}
 
-	documentLookupIDs, err := batch.WithInserterForIdentifiers(
+	documentLookupIDs, err := bbtch.WithInserterForIdentifiers(
 		ctx,
-		s.db.Handle(),
+		s.db.Hbndle(),
 		"codeintel_scip_document_lookup",
-		batch.MaxNumPostgresParameters,
+		bbtch.MbxNumPostgresPbrbmeters,
 		[]string{
-			"upload_id",
-			"document_path",
+			"uplobd_id",
+			"document_pbth",
 			"document_id",
 		},
 		"",
 		"id",
-		func(inserter *batch.Inserter) error {
-			for i, document := range documents {
-				if err := inserter.Insert(ctx, s.uploadID, document.path, documentIDs[i]); err != nil {
+		func(inserter *bbtch.Inserter) error {
+			for i, document := rbnge documents {
+				if err := inserter.Insert(ctx, s.uplobdID, document.pbth, documentIDs[i]); err != nil {
 					return err
 				}
 			}
@@ -303,42 +303,42 @@ func (s *scipWriter) flush(ctx context.Context) error {
 		return errors.New("unexpected number of document lookup records inserted")
 	}
 
-	symbolNameMap := map[string]struct{}{}
-	invertedRangeIndexes := make([][]shared.InvertedRangeIndex, 0, len(documents))
-	for _, document := range documents {
-		index := shared.ExtractSymbolIndexes(document.scipDocument)
-		invertedRangeIndexes = append(invertedRangeIndexes, index)
+	symbolNbmeMbp := mbp[string]struct{}{}
+	invertedRbngeIndexes := mbke([][]shbred.InvertedRbngeIndex, 0, len(documents))
+	for _, document := rbnge documents {
+		index := shbred.ExtrbctSymbolIndexes(document.scipDocument)
+		invertedRbngeIndexes = bppend(invertedRbngeIndexes, index)
 
-		for _, invertedRange := range index {
-			symbolNameMap[invertedRange.SymbolName] = struct{}{}
+		for _, invertedRbnge := rbnge index {
+			symbolNbmeMbp[invertedRbnge.SymbolNbme] = struct{}{}
 		}
 	}
-	symbolNames := make([]string, 0, len(symbolNameMap))
-	for symbolName := range symbolNameMap {
-		symbolNames = append(symbolNames, symbolName)
+	symbolNbmes := mbke([]string, 0, len(symbolNbmeMbp))
+	for symbolNbme := rbnge symbolNbmeMbp {
+		symbolNbmes = bppend(symbolNbmes, symbolNbme)
 	}
-	sort.Strings(symbolNames)
+	sort.Strings(symbolNbmes)
 
-	var symbolNameTrie trie.Trie
-	symbolNameTrie, s.nextID = trie.NewTrie(symbolNames, s.nextID)
+	vbr symbolNbmeTrie trie.Trie
+	symbolNbmeTrie, s.nextID = trie.NewTrie(symbolNbmes, s.nextID)
 
-	symbolNameByIDs := map[int]string{}
-	idsBySymbolName := map[string]int{}
+	symbolNbmeByIDs := mbp[int]string{}
+	idsBySymbolNbme := mbp[string]int{}
 
-	if err := symbolNameTrie.Traverse(func(id int, parentID *int, prefix string) error {
-		name := prefix
-		if parentID != nil {
-			parentPrefix, ok := symbolNameByIDs[*parentID]
+	if err := symbolNbmeTrie.Trbverse(func(id int, pbrentID *int, prefix string) error {
+		nbme := prefix
+		if pbrentID != nil {
+			pbrentPrefix, ok := symbolNbmeByIDs[*pbrentID]
 			if !ok {
-				return errors.Newf("malformed trie - expected prefix with id=%d to exist", *parentID)
+				return errors.Newf("mblformed trie - expected prefix with id=%d to exist", *pbrentID)
 			}
 
-			name = parentPrefix + prefix
+			nbme = pbrentPrefix + prefix
 		}
-		symbolNameByIDs[id] = name
-		idsBySymbolName[name] = id
+		symbolNbmeByIDs[id] = nbme
+		idsBySymbolNbme[nbme] = id
 
-		if err := s.symbolNameInserter.Insert(ctx, id, prefix, parentID); err != nil {
+		if err := s.symbolNbmeInserter.Insert(ctx, id, prefix, pbrentID); err != nil {
 			return err
 		}
 
@@ -347,43 +347,43 @@ func (s *scipWriter) flush(ctx context.Context) error {
 		return err
 	}
 
-	for i, invertedRangeIndexes := range invertedRangeIndexes {
-		for _, index := range invertedRangeIndexes {
-			definitionRanges, err := ranges.EncodeRanges(index.DefinitionRanges)
+	for i, invertedRbngeIndexes := rbnge invertedRbngeIndexes {
+		for _, index := rbnge invertedRbngeIndexes {
+			definitionRbnges, err := rbnges.EncodeRbnges(index.DefinitionRbnges)
 			if err != nil {
 				return err
 			}
-			referenceRanges, err := ranges.EncodeRanges(index.ReferenceRanges)
+			referenceRbnges, err := rbnges.EncodeRbnges(index.ReferenceRbnges)
 			if err != nil {
 				return err
 			}
-			implementationRanges, err := ranges.EncodeRanges(index.ImplementationRanges)
+			implementbtionRbnges, err := rbnges.EncodeRbnges(index.ImplementbtionRbnges)
 			if err != nil {
 				return err
 			}
-			typeDefinitionRanges, err := ranges.EncodeRanges(index.TypeDefinitionRanges)
+			typeDefinitionRbnges, err := rbnges.EncodeRbnges(index.TypeDefinitionRbnges)
 			if err != nil {
 				return err
 			}
 
-			symbolID, ok := idsBySymbolName[index.SymbolName]
+			symbolID, ok := idsBySymbolNbme[index.SymbolNbme]
 			if !ok {
-				return errors.Newf("malformed trie - expected %q to be a member", index.SymbolName)
+				return errors.Newf("mblformed trie - expected %q to be b member", index.SymbolNbme)
 			}
 
 			if err := s.symbolInserter.Insert(
 				ctx,
 				documentLookupIDs[i],
 				symbolID,
-				definitionRanges,
-				referenceRanges,
-				implementationRanges,
-				typeDefinitionRanges,
+				definitionRbnges,
+				referenceRbnges,
+				implementbtionRbnges,
+				typeDefinitionRbnges,
 			); err != nil {
 				return err
 			}
 
-			atomic.AddUint32(&s.count, 1)
+			btomic.AddUint32(&s.count, 1)
 		}
 	}
 
@@ -392,83 +392,83 @@ func (s *scipWriter) flush(ctx context.Context) error {
 
 const scipWriterWriteFetchDocumentsQuery = `
 SELECT
-	encode(payload_hash, 'hex'),
+	encode(pbylobd_hbsh, 'hex'),
 	id
 FROM codeintel_scip_documents
-WHERE payload_hash = ANY(%s)
+WHERE pbylobd_hbsh = ANY(%s)
 `
 
 func (s *scipWriter) Flush(ctx context.Context) (uint32, error) {
-	// Flush all buffered documents
+	// Flush bll buffered documents
 	if err := s.flush(ctx); err != nil {
 		return 0, err
 	}
 
-	// Flush all data into temp tables
-	if err := s.symbolNameInserter.Flush(ctx); err != nil {
+	// Flush bll dbtb into temp tbbles
+	if err := s.symbolNbmeInserter.Flush(ctx); err != nil {
 		return 0, err
 	}
 	if err := s.symbolInserter.Flush(ctx); err != nil {
 		return 0, err
 	}
 
-	// Move all data from temp tables into target tables
-	if err := s.db.Exec(ctx, sqlf.Sprintf(scipWriterFlushSymbolNamesQuery, s.uploadID)); err != nil {
+	// Move bll dbtb from temp tbbles into tbrget tbbles
+	if err := s.db.Exec(ctx, sqlf.Sprintf(scipWriterFlushSymbolNbmesQuery, s.uplobdID)); err != nil {
 		return 0, err
 	}
-	if err := s.db.Exec(ctx, sqlf.Sprintf(scipWriterFlushSymbolsQuery, s.uploadID, 1)); err != nil {
+	if err := s.db.Exec(ctx, sqlf.Sprintf(scipWriterFlushSymbolsQuery, s.uplobdID, 1)); err != nil {
 		return 0, err
 	}
 
 	return s.count, nil
 }
 
-const scipWriterFlushSymbolNamesQuery = `
-INSERT INTO codeintel_scip_symbol_names (
-	upload_id,
+const scipWriterFlushSymbolNbmesQuery = `
+INSERT INTO codeintel_scip_symbol_nbmes (
+	uplobd_id,
 	id,
-	name_segment,
+	nbme_segment,
 	prefix_id
 )
 SELECT
 	%s,
 	source.id,
-	source.name_segment,
+	source.nbme_segment,
 	source.prefix_id
-FROM t_codeintel_scip_symbol_names source
+FROM t_codeintel_scip_symbol_nbmes source
 `
 
 const scipWriterFlushSymbolsQuery = `
 INSERT INTO codeintel_scip_symbols (
-	upload_id,
+	uplobd_id,
 	symbol_id,
 	document_lookup_id,
-	schema_version,
-	definition_ranges,
-	reference_ranges,
-	implementation_ranges,
-	type_definition_ranges
+	schemb_version,
+	definition_rbnges,
+	reference_rbnges,
+	implementbtion_rbnges,
+	type_definition_rbnges
 )
 SELECT
 	%s,
 	source.symbol_id,
 	source.document_lookup_id,
 	%s,
-	source.definition_ranges,
-	source.reference_ranges,
-	source.implementation_ranges,
-	source.type_definition_ranges
+	source.definition_rbnges,
+	source.reference_rbnges,
+	source.implementbtion_rbnges,
+	source.type_definition_rbnges
 FROM t_codeintel_scip_symbols source
 `
 
-// hashPayload returns a sha256 checksum of the given payload.
-func hashPayload(payload []byte) []byte {
-	hash := sha256.New()
-	_, _ = hash.Write(payload)
-	return hash.Sum(nil)
+// hbshPbylobd returns b shb256 checksum of the given pbylobd.
+func hbshPbylobd(pbylobd []byte) []byte {
+	hbsh := shb256.New()
+	_, _ = hbsh.Write(pbylobd)
+	return hbsh.Sum(nil)
 }
 
-var scanIDsByHash = basestore.NewMapScanner(func(s dbutil.Scanner) (hash string, id int, _ error) {
-	err := s.Scan(&hash, &id)
-	return hash, id, err
+vbr scbnIDsByHbsh = bbsestore.NewMbpScbnner(func(s dbutil.Scbnner) (hbsh string, id int, _ error) {
+	err := s.Scbn(&hbsh, &id)
+	return hbsh, id, err
 })

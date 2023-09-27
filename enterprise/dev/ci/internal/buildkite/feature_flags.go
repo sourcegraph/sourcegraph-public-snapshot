@@ -1,10 +1,10 @@
-package buildkite
+pbckbge buildkite
 
-type featureFlags struct {
+type febtureFlbgs struct {
 }
 
-// FeatureFlags are for experimenting with CI pipeline features. Use sparingly!
-var FeatureFlags = featureFlags{}
+// FebtureFlbgs bre for experimenting with CI pipeline febtures. Use spbringly!
+vbr FebtureFlbgs = febtureFlbgs{}
 
-func (f *featureFlags) ApplyEnv(env map[string]string) {
+func (f *febtureFlbgs) ApplyEnv(env mbp[string]string) {
 }

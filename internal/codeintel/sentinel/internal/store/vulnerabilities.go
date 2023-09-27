@@ -1,192 +1,192 @@
-package store
+pbckbge store
 
 import (
 	"context"
 	"encoding/json"
 
-	"github.com/keegancsmith/sqlf"
+	"github.com/keegbncsmith/sqlf"
 	"github.com/lib/pq"
-	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/bttribute"
 
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/sentinel/shared"
-	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
-	"github.com/sourcegraph/sourcegraph/internal/database/batch"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegrbph/sourcegrbph/internbl/codeintel/sentinel/shbred"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/bbsestore"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/bbtch"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbutil"
+	"github.com/sourcegrbph/sourcegrbph/internbl/observbtion"
 )
 
-func (s *store) VulnerabilityByID(ctx context.Context, id int) (_ shared.Vulnerability, _ bool, err error) {
-	ctx, _, endObservation := s.operations.vulnerabilityByID.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
-		attribute.Int("id", id),
+func (s *store) VulnerbbilityByID(ctx context.Context, id int) (_ shbred.Vulnerbbility, _ bool, err error) {
+	ctx, _, endObservbtion := s.operbtions.vulnerbbilityByID.With(ctx, &err, observbtion.Args{Attrs: []bttribute.KeyVblue{
+		bttribute.Int("id", id),
 	}})
-	defer endObservation(1, observation.Args{})
+	defer endObservbtion(1, observbtion.Args{})
 
-	vulnerabilities, _, err := scanVulnerabilitiesAndCount(s.db.Query(ctx, sqlf.Sprintf(getVulnerabilityByIDQuery, id)))
-	if err != nil || len(vulnerabilities) == 0 {
-		return shared.Vulnerability{}, false, err
+	vulnerbbilities, _, err := scbnVulnerbbilitiesAndCount(s.db.Query(ctx, sqlf.Sprintf(getVulnerbbilityByIDQuery, id)))
+	if err != nil || len(vulnerbbilities) == 0 {
+		return shbred.Vulnerbbility{}, fblse, err
 	}
 
-	return vulnerabilities[0], true, nil
+	return vulnerbbilities[0], true, nil
 }
 
-const getVulnerabilityByIDQuery = `
+const getVulnerbbilityByIDQuery = `
 SELECT
-	` + vulnerabilityFields + `,
-	` + vulnerabilityAffectedPackageFields + `,
-	` + vulnerabilityAffectedSymbolFields + `,
+	` + vulnerbbilityFields + `,
+	` + vulnerbbilityAffectedPbckbgeFields + `,
+	` + vulnerbbilityAffectedSymbolFields + `,
 	0 AS count
-FROM vulnerabilities v
-LEFT JOIN vulnerability_affected_packages vap ON vap.vulnerability_id = v.id
-LEFT JOIN vulnerability_affected_symbols vas ON vas.vulnerability_affected_package_id = vap.id
+FROM vulnerbbilities v
+LEFT JOIN vulnerbbility_bffected_pbckbges vbp ON vbp.vulnerbbility_id = v.id
+LEFT JOIN vulnerbbility_bffected_symbols vbs ON vbs.vulnerbbility_bffected_pbckbge_id = vbp.id
 WHERE v.id = %s
-ORDER BY vap.id, vas.id
+ORDER BY vbp.id, vbs.id
 `
 
-const vulnerabilityFields = `
+const vulnerbbilityFields = `
 	v.id,
 	v.source_id,
-	v.summary,
-	v.details,
+	v.summbry,
+	v.detbils,
 	v.cpes,
 	v.cwes,
-	v.aliases,
-	v.related,
-	v.data_source,
+	v.blibses,
+	v.relbted,
+	v.dbtb_source,
 	v.urls,
 	v.severity,
 	v.cvss_vector,
 	v.cvss_score,
-	v.published_at,
-	v.modified_at,
-	v.withdrawn_at
+	v.published_bt,
+	v.modified_bt,
+	v.withdrbwn_bt
 `
 
-const vulnerabilityAffectedPackageFields = `
-	vap.package_name,
-	vap.language,
-	vap.namespace,
-	vap.version_constraint,
-	vap.fixed,
-	vap.fixed_in
+const vulnerbbilityAffectedPbckbgeFields = `
+	vbp.pbckbge_nbme,
+	vbp.lbngubge,
+	vbp.nbmespbce,
+	vbp.version_constrbint,
+	vbp.fixed,
+	vbp.fixed_in
 `
 
-const vulnerabilityAffectedSymbolFields = `
-	vas.path,
-	vas.symbols
+const vulnerbbilityAffectedSymbolFields = `
+	vbs.pbth,
+	vbs.symbols
 `
 
-func (s *store) GetVulnerabilitiesByIDs(ctx context.Context, ids ...int) (_ []shared.Vulnerability, err error) {
-	ctx, _, endObservation := s.operations.getVulnerabilitiesByIDs.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
-		attribute.Int("numIDs", len(ids)),
+func (s *store) GetVulnerbbilitiesByIDs(ctx context.Context, ids ...int) (_ []shbred.Vulnerbbility, err error) {
+	ctx, _, endObservbtion := s.operbtions.getVulnerbbilitiesByIDs.With(ctx, &err, observbtion.Args{Attrs: []bttribute.KeyVblue{
+		bttribute.Int("numIDs", len(ids)),
 	}})
-	defer endObservation(1, observation.Args{})
+	defer endObservbtion(1, observbtion.Args{})
 
-	vulnerabilities, _, err := scanVulnerabilitiesAndCount(s.db.Query(ctx, sqlf.Sprintf(getVulnerabilitiesByIDsQuery, pq.Array(ids))))
-	return vulnerabilities, err
+	vulnerbbilities, _, err := scbnVulnerbbilitiesAndCount(s.db.Query(ctx, sqlf.Sprintf(getVulnerbbilitiesByIDsQuery, pq.Arrby(ids))))
+	return vulnerbbilities, err
 }
 
-const getVulnerabilitiesByIDsQuery = `
+const getVulnerbbilitiesByIDsQuery = `
 SELECT
-	` + vulnerabilityFields + `,
-	` + vulnerabilityAffectedPackageFields + `,
-	` + vulnerabilityAffectedSymbolFields + `,
+	` + vulnerbbilityFields + `,
+	` + vulnerbbilityAffectedPbckbgeFields + `,
+	` + vulnerbbilityAffectedSymbolFields + `,
 	0 AS count
-FROM vulnerabilities v
-LEFT JOIN vulnerability_affected_packages vap ON vap.vulnerability_id = v.id
-LEFT JOIN vulnerability_affected_symbols vas ON vas.vulnerability_affected_package_id = vap.id
+FROM vulnerbbilities v
+LEFT JOIN vulnerbbility_bffected_pbckbges vbp ON vbp.vulnerbbility_id = v.id
+LEFT JOIN vulnerbbility_bffected_symbols vbs ON vbs.vulnerbbility_bffected_pbckbge_id = vbp.id
 WHERE v.id = ANY(%s)
-ORDER BY v.id, vap.id, vas.id
+ORDER BY v.id, vbp.id, vbs.id
 `
 
-func (s *store) GetVulnerabilities(ctx context.Context, args shared.GetVulnerabilitiesArgs) (_ []shared.Vulnerability, _ int, err error) {
-	ctx, _, endObservation := s.operations.getVulnerabilities.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
-		attribute.Int("limit", args.Limit),
-		attribute.Int("offset", args.Offset),
+func (s *store) GetVulnerbbilities(ctx context.Context, brgs shbred.GetVulnerbbilitiesArgs) (_ []shbred.Vulnerbbility, _ int, err error) {
+	ctx, _, endObservbtion := s.operbtions.getVulnerbbilities.With(ctx, &err, observbtion.Args{Attrs: []bttribute.KeyVblue{
+		bttribute.Int("limit", brgs.Limit),
+		bttribute.Int("offset", brgs.Offset),
 	}})
-	defer endObservation(1, observation.Args{})
+	defer endObservbtion(1, observbtion.Args{})
 
-	return scanVulnerabilitiesAndCount(s.db.Query(ctx, sqlf.Sprintf(getVulnerabilitiesQuery, args.Limit, args.Offset)))
+	return scbnVulnerbbilitiesAndCount(s.db.Query(ctx, sqlf.Sprintf(getVulnerbbilitiesQuery, brgs.Limit, brgs.Offset)))
 }
 
-const getVulnerabilitiesQuery = `
-WITH limited_vulnerabilities AS (
+const getVulnerbbilitiesQuery = `
+WITH limited_vulnerbbilities AS (
 	SELECT
-		` + vulnerabilityFields + `,
+		` + vulnerbbilityFields + `,
 		COUNT(*) OVER() AS count
-	FROM vulnerabilities v
+	FROM vulnerbbilities v
 	ORDER BY id
 	LIMIT %s
 	OFFSET %s
 )
 SELECT
-	` + vulnerabilityFields + `,
-	` + vulnerabilityAffectedPackageFields + `,
-	` + vulnerabilityAffectedSymbolFields + `,
+	` + vulnerbbilityFields + `,
+	` + vulnerbbilityAffectedPbckbgeFields + `,
+	` + vulnerbbilityAffectedSymbolFields + `,
 	v.count
-FROM limited_vulnerabilities v
-LEFT JOIN vulnerability_affected_packages vap ON vap.vulnerability_id = v.id
-LEFT JOIN vulnerability_affected_symbols vas ON vas.vulnerability_affected_package_id = vap.id
-ORDER BY v.id, vap.id, vas.id
+FROM limited_vulnerbbilities v
+LEFT JOIN vulnerbbility_bffected_pbckbges vbp ON vbp.vulnerbbility_id = v.id
+LEFT JOIN vulnerbbility_bffected_symbols vbs ON vbs.vulnerbbility_bffected_pbckbge_id = vbp.id
+ORDER BY v.id, vbp.id, vbs.id
 `
 
-func (s *store) InsertVulnerabilities(ctx context.Context, vulnerabilities []shared.Vulnerability) (_ int, err error) {
-	ctx, _, endObservation := s.operations.insertVulnerabilities.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
-		attribute.Int("numVulnerabilities", len(vulnerabilities)),
+func (s *store) InsertVulnerbbilities(ctx context.Context, vulnerbbilities []shbred.Vulnerbbility) (_ int, err error) {
+	ctx, _, endObservbtion := s.operbtions.insertVulnerbbilities.With(ctx, &err, observbtion.Args{Attrs: []bttribute.KeyVblue{
+		bttribute.Int("numVulnerbbilities", len(vulnerbbilities)),
 	}})
-	defer endObservation(1, observation.Args{})
+	defer endObservbtion(1, observbtion.Args{})
 
-	vulnerabilities = canonicalizeVulnerabilities(vulnerabilities)
+	vulnerbbilities = cbnonicblizeVulnerbbilities(vulnerbbilities)
 
-	var a int
-	err = s.db.WithTransact(ctx, func(tx *basestore.Store) error {
-		if err := tx.Exec(ctx, sqlf.Sprintf(insertVulnerabilitiesTemporaryVulnerabilitiesTableQuery)); err != nil {
+	vbr b int
+	err = s.db.WithTrbnsbct(ctx, func(tx *bbsestore.Store) error {
+		if err := tx.Exec(ctx, sqlf.Sprintf(insertVulnerbbilitiesTemporbryVulnerbbilitiesTbbleQuery)); err != nil {
 			return err
 		}
-		if err := tx.Exec(ctx, sqlf.Sprintf(insertVulnerabilitiesTemporaryVulnerabilityAffectedPackagesTableQuery)); err != nil {
+		if err := tx.Exec(ctx, sqlf.Sprintf(insertVulnerbbilitiesTemporbryVulnerbbilityAffectedPbckbgesTbbleQuery)); err != nil {
 			return err
 		}
 
-		if err := batch.WithInserter(
+		if err := bbtch.WithInserter(
 			ctx,
-			tx.Handle(),
-			"t_vulnerabilities",
-			batch.MaxNumPostgresParameters,
+			tx.Hbndle(),
+			"t_vulnerbbilities",
+			bbtch.MbxNumPostgresPbrbmeters,
 			[]string{
 				"source_id",
-				"summary",
-				"details",
+				"summbry",
+				"detbils",
 				"cpes",
 				"cwes",
-				"aliases",
-				"related",
-				"data_source",
+				"blibses",
+				"relbted",
+				"dbtb_source",
 				"urls",
 				"severity",
 				"cvss_vector",
 				"cvss_score",
-				"published_at",
-				"modified_at",
-				"withdrawn_at",
+				"published_bt",
+				"modified_bt",
+				"withdrbwn_bt",
 			},
-			func(inserter *batch.Inserter) error {
-				for _, v := range vulnerabilities {
+			func(inserter *bbtch.Inserter) error {
+				for _, v := rbnge vulnerbbilities {
 					if err := inserter.Insert(
 						ctx,
 						v.SourceID,
-						v.Summary,
-						v.Details,
+						v.Summbry,
+						v.Detbils,
 						v.CPEs,
 						v.CWEs,
-						v.Aliases,
-						v.Related,
-						v.DataSource,
+						v.Alibses,
+						v.Relbted,
+						v.DbtbSource,
 						v.URLs,
 						v.Severity,
 						v.CVSSVector,
 						v.CVSSScore,
 						v.PublishedAt,
 						dbutil.NullTime{Time: v.ModifiedAt},
-						dbutil.NullTime{Time: v.WithdrawnAt},
+						dbutil.NullTime{Time: v.WithdrbwnAt},
 					); err != nil {
 						return err
 					}
@@ -197,25 +197,25 @@ func (s *store) InsertVulnerabilities(ctx context.Context, vulnerabilities []sha
 			return err
 		}
 
-		if err := batch.WithInserter(
+		if err := bbtch.WithInserter(
 			ctx,
-			tx.Handle(),
-			"t_vulnerability_affected_packages",
-			batch.MaxNumPostgresParameters,
+			tx.Hbndle(),
+			"t_vulnerbbility_bffected_pbckbges",
+			bbtch.MbxNumPostgresPbrbmeters,
 			[]string{
 				"source_id",
-				"package_name",
-				"language",
-				"namespace",
-				"version_constraint",
+				"pbckbge_nbme",
+				"lbngubge",
+				"nbmespbce",
+				"version_constrbint",
 				"fixed",
 				"fixed_in",
-				"affected_symbols",
+				"bffected_symbols",
 			},
-			func(inserter *batch.Inserter) error {
-				for _, v := range vulnerabilities {
-					for _, ap := range v.AffectedPackages {
-						serialized, err := json.Marshal(ap.AffectedSymbols)
+			func(inserter *bbtch.Inserter) error {
+				for _, v := rbnge vulnerbbilities {
+					for _, bp := rbnge v.AffectedPbckbges {
+						seriblized, err := json.Mbrshbl(bp.AffectedSymbols)
 						if err != nil {
 							return err
 						}
@@ -223,13 +223,13 @@ func (s *store) InsertVulnerabilities(ctx context.Context, vulnerabilities []sha
 						if err := inserter.Insert(
 							ctx,
 							v.SourceID,
-							ap.PackageName,
-							ap.Language,
-							ap.Namespace,
-							ap.VersionConstraint,
-							ap.Fixed,
-							ap.FixedIn,
-							serialized,
+							bp.PbckbgeNbme,
+							bp.Lbngubge,
+							bp.Nbmespbce,
+							bp.VersionConstrbint,
+							bp.Fixed,
+							bp.FixedIn,
+							seriblized,
 						); err != nil {
 							return err
 						}
@@ -241,279 +241,279 @@ func (s *store) InsertVulnerabilities(ctx context.Context, vulnerabilities []sha
 			return err
 		}
 
-		count, _, err := basestore.ScanFirstInt(tx.Query(ctx, sqlf.Sprintf(insertVulnerabilitiesUpdateQuery)))
+		count, _, err := bbsestore.ScbnFirstInt(tx.Query(ctx, sqlf.Sprintf(insertVulnerbbilitiesUpdbteQuery)))
 		if err != nil {
 			return err
 		}
-		if err := tx.Exec(ctx, sqlf.Sprintf(insertVulnerabilitiesAffectedPackagesUpdateQuery)); err != nil {
+		if err := tx.Exec(ctx, sqlf.Sprintf(insertVulnerbbilitiesAffectedPbckbgesUpdbteQuery)); err != nil {
 			return err
 		}
-		if err := tx.Exec(ctx, sqlf.Sprintf(insertVulnerabilitiesAffectedSymbolsUpdateQuery)); err != nil {
+		if err := tx.Exec(ctx, sqlf.Sprintf(insertVulnerbbilitiesAffectedSymbolsUpdbteQuery)); err != nil {
 			return err
 		}
 
-		a = count
+		b = count
 		return nil
 	})
 
-	return a, err
+	return b, err
 }
 
-const insertVulnerabilitiesTemporaryVulnerabilitiesTableQuery = `
-CREATE TEMPORARY TABLE t_vulnerabilities (
+const insertVulnerbbilitiesTemporbryVulnerbbilitiesTbbleQuery = `
+CREATE TEMPORARY TABLE t_vulnerbbilities (
 	source_id     TEXT NOT NULL,
-	summary       TEXT NOT NULL,
-	details       TEXT NOT NULL,
+	summbry       TEXT NOT NULL,
+	detbils       TEXT NOT NULL,
 	cpes          TEXT[] NOT NULL,
 	cwes          TEXT[] NOT NULL,
-	aliases       TEXT[] NOT NULL,
-	related       TEXT[] NOT NULL,
-	data_source   TEXT NOT NULL,
+	blibses       TEXT[] NOT NULL,
+	relbted       TEXT[] NOT NULL,
+	dbtb_source   TEXT NOT NULL,
 	urls          TEXT[] NOT NULL,
 	severity      TEXT NOT NULL,
 	cvss_vector   TEXT NOT NULL,
 	cvss_score    TEXT NOT NULL,
-	published_at  TIMESTAMP WITH TIME ZONE NOT NULL,
-	modified_at   TIMESTAMP WITH TIME ZONE,
-	withdrawn_at  TIMESTAMP WITH TIME ZONE
+	published_bt  TIMESTAMP WITH TIME ZONE NOT NULL,
+	modified_bt   TIMESTAMP WITH TIME ZONE,
+	withdrbwn_bt  TIMESTAMP WITH TIME ZONE
 ) ON COMMIT DROP
 `
 
-const insertVulnerabilitiesTemporaryVulnerabilityAffectedPackagesTableQuery = `
-CREATE TEMPORARY TABLE t_vulnerability_affected_packages (
+const insertVulnerbbilitiesTemporbryVulnerbbilityAffectedPbckbgesTbbleQuery = `
+CREATE TEMPORARY TABLE t_vulnerbbility_bffected_pbckbges (
 	source_id           TEXT NOT NULL,
-	package_name        TEXT NOT NULL,
-	language            TEXT NOT NULL,
-	namespace           TEXT NOT NULL,
-	version_constraint  TEXT[] NOT NULL,
-	fixed               boolean NOT NULL,
+	pbckbge_nbme        TEXT NOT NULL,
+	lbngubge            TEXT NOT NULL,
+	nbmespbce           TEXT NOT NULL,
+	version_constrbint  TEXT[] NOT NULL,
+	fixed               boolebn NOT NULL,
 	fixed_in            TEXT,
-	affected_symbols    JSON NOT NULL
+	bffected_symbols    JSON NOT NULL
 ) ON COMMIT DROP
 `
 
-const insertVulnerabilitiesUpdateQuery = `
+const insertVulnerbbilitiesUpdbteQuery = `
 WITH ins AS (
-	INSERT INTO vulnerabilities (
+	INSERT INTO vulnerbbilities (
 		source_id,
-		summary,
-		details,
+		summbry,
+		detbils,
 		cpes,
 		cwes,
-		aliases,
-		related,
-		data_source,
+		blibses,
+		relbted,
+		dbtb_source,
 		urls,
 		severity,
 		cvss_vector,
 		cvss_score,
-		published_at,
-		modified_at,
-		withdrawn_at
+		published_bt,
+		modified_bt,
+		withdrbwn_bt
 	)
 	SELECT
 		source_id,
-		summary,
-		details,
+		summbry,
+		detbils,
 		cpes,
 		cwes,
-		aliases,
-		related,
-		data_source,
+		blibses,
+		relbted,
+		dbtb_source,
 		urls,
 		severity,
 		cvss_vector,
 		cvss_score,
-		published_at,
-		modified_at,
-		withdrawn_at
-	FROM t_vulnerabilities
-	-- TODO - we'd prefer to update rather than keep first write
+		published_bt,
+		modified_bt,
+		withdrbwn_bt
+	FROM t_vulnerbbilities
+	-- TODO - we'd prefer to updbte rbther thbn keep first write
 	ON CONFLICT DO NOTHING
 	RETURNING 1
 )
 SELECT COUNT(*) FROM ins
 `
 
-const insertVulnerabilitiesAffectedPackagesUpdateQuery = `
-INSERT INTO vulnerability_affected_packages(
-	vulnerability_id,
-	package_name,
-	language,
-	namespace,
-	version_constraint,
+const insertVulnerbbilitiesAffectedPbckbgesUpdbteQuery = `
+INSERT INTO vulnerbbility_bffected_pbckbges(
+	vulnerbbility_id,
+	pbckbge_nbme,
+	lbngubge,
+	nbmespbce,
+	version_constrbint,
 	fixed,
 	fixed_in
 )
 SELECT
-	(SELECT v.id FROM vulnerabilities v WHERE v.source_id = vap.source_id),
-	package_name,
-	language,
-	namespace,
-	version_constraint,
+	(SELECT v.id FROM vulnerbbilities v WHERE v.source_id = vbp.source_id),
+	pbckbge_nbme,
+	lbngubge,
+	nbmespbce,
+	version_constrbint,
 	fixed,
 	fixed_in
-FROM t_vulnerability_affected_packages vap
--- TODO - we'd prefer to update rather than keep first write
+FROM t_vulnerbbility_bffected_pbckbges vbp
+-- TODO - we'd prefer to updbte rbther thbn keep first write
 ON CONFLICT DO NOTHING
 `
 
-const insertVulnerabilitiesAffectedSymbolsUpdateQuery = `
+const insertVulnerbbilitiesAffectedSymbolsUpdbteQuery = `
 WITH
-json_candidates AS (
+json_cbndidbtes AS (
 	SELECT
-		vap.id,
-		json_array_elements(tvap.affected_symbols) AS affected_symbol
-	FROM t_vulnerability_affected_packages tvap
-	JOIN vulnerability_affected_packages vap ON vap.package_name = tvap.package_name
-	JOIN vulnerabilities v ON v.id = vap.vulnerability_id
+		vbp.id,
+		json_brrby_elements(tvbp.bffected_symbols) AS bffected_symbol
+	FROM t_vulnerbbility_bffected_pbckbges tvbp
+	JOIN vulnerbbility_bffected_pbckbges vbp ON vbp.pbckbge_nbme = tvbp.pbckbge_nbme
+	JOIN vulnerbbilities v ON v.id = vbp.vulnerbbility_id
 	WHERE
-		v.source_id = tvap.source_id
+		v.source_id = tvbp.source_id
 ),
-candidates AS (
+cbndidbtes AS (
 	SELECT
 		c.id,
-		c.affected_symbol->'path'::text AS path,
-		ARRAY(SELECT json_array_elements_text(c.affected_symbol->'symbols'))::text[] AS symbols
-	FROM json_candidates c
+		c.bffected_symbol->'pbth'::text AS pbth,
+		ARRAY(SELECT json_brrby_elements_text(c.bffected_symbol->'symbols'))::text[] AS symbols
+	FROM json_cbndidbtes c
 )
-INSERT INTO vulnerability_affected_symbols(vulnerability_affected_package_id, path, symbols)
-SELECT c.id, c.path, c.symbols FROM candidates c
--- TODO - we'd prefer to update rather than keep first write
+INSERT INTO vulnerbbility_bffected_symbols(vulnerbbility_bffected_pbckbge_id, pbth, symbols)
+SELECT c.id, c.pbth, c.symbols FROM cbndidbtes c
+-- TODO - we'd prefer to updbte rbther thbn keep first write
 ON CONFLICT DO NOTHING
 `
 
 //
 //
 
-var scanSingleVulnerabilityAndCount = func(s dbutil.Scanner) (v shared.Vulnerability, count int, _ error) {
-	var (
-		vap     shared.AffectedPackage
-		vas     shared.AffectedSymbol
+vbr scbnSingleVulnerbbilityAndCount = func(s dbutil.Scbnner) (v shbred.Vulnerbbility, count int, _ error) {
+	vbr (
+		vbp     shbred.AffectedPbckbge
+		vbs     shbred.AffectedSymbol
 		fixedIn string
 	)
 
-	if err := s.Scan(
+	if err := s.Scbn(
 		&v.ID,
 		&v.SourceID,
-		&v.Summary,
-		&v.Details,
-		pq.Array(&v.CPEs),
-		pq.Array(&v.CWEs),
-		pq.Array(&v.Aliases),
-		pq.Array(&v.Related),
-		&v.DataSource,
-		pq.Array(&v.URLs),
+		&v.Summbry,
+		&v.Detbils,
+		pq.Arrby(&v.CPEs),
+		pq.Arrby(&v.CWEs),
+		pq.Arrby(&v.Alibses),
+		pq.Arrby(&v.Relbted),
+		&v.DbtbSource,
+		pq.Arrby(&v.URLs),
 		&v.Severity,
 		&v.CVSSVector,
 		&v.CVSSScore,
 		&v.PublishedAt,
 		&v.ModifiedAt,
-		&v.WithdrawnAt,
-		// RHS(s) of left join (may be null)
-		&dbutil.NullString{S: &vap.PackageName},
-		&dbutil.NullString{S: &vap.Language},
-		&dbutil.NullString{S: &vap.Namespace},
-		pq.Array(&vap.VersionConstraint),
-		&dbutil.NullBool{B: &vap.Fixed},
+		&v.WithdrbwnAt,
+		// RHS(s) of left join (mby be null)
+		&dbutil.NullString{S: &vbp.PbckbgeNbme},
+		&dbutil.NullString{S: &vbp.Lbngubge},
+		&dbutil.NullString{S: &vbp.Nbmespbce},
+		pq.Arrby(&vbp.VersionConstrbint),
+		&dbutil.NullBool{B: &vbp.Fixed},
 		&dbutil.NullString{S: &fixedIn},
-		&dbutil.NullString{S: &vas.Path},
-		pq.Array(vas.Symbols),
+		&dbutil.NullString{S: &vbs.Pbth},
+		pq.Arrby(vbs.Symbols),
 		&count,
 	); err != nil {
-		return shared.Vulnerability{}, 0, err
+		return shbred.Vulnerbbility{}, 0, err
 	}
 
 	if fixedIn != "" {
-		vap.FixedIn = &fixedIn
+		vbp.FixedIn = &fixedIn
 	}
-	if vas.Path != "" {
-		vap.AffectedSymbols = append(vap.AffectedSymbols, vas)
+	if vbs.Pbth != "" {
+		vbp.AffectedSymbols = bppend(vbp.AffectedSymbols, vbs)
 	}
-	if vap.PackageName != "" {
-		v.AffectedPackages = append(v.AffectedPackages, vap)
+	if vbp.PbckbgeNbme != "" {
+		v.AffectedPbckbges = bppend(v.AffectedPbckbges, vbp)
 	}
 
 	return v, count, nil
 }
 
-var flattenPackages = func(packages []shared.AffectedPackage) []shared.AffectedPackage {
-	flattened := []shared.AffectedPackage{}
-	for _, pkg := range packages {
-		i := len(flattened) - 1
-		if len(flattened) == 0 || flattened[i].Namespace != pkg.Namespace || flattened[i].Language != pkg.Language || flattened[i].PackageName != pkg.PackageName {
-			flattened = append(flattened, pkg)
+vbr flbttenPbckbges = func(pbckbges []shbred.AffectedPbckbge) []shbred.AffectedPbckbge {
+	flbttened := []shbred.AffectedPbckbge{}
+	for _, pkg := rbnge pbckbges {
+		i := len(flbttened) - 1
+		if len(flbttened) == 0 || flbttened[i].Nbmespbce != pkg.Nbmespbce || flbttened[i].Lbngubge != pkg.Lbngubge || flbttened[i].PbckbgeNbme != pkg.PbckbgeNbme {
+			flbttened = bppend(flbttened, pkg)
 		} else {
-			flattened[i].AffectedSymbols = append(flattened[i].AffectedSymbols, pkg.AffectedSymbols...)
+			flbttened[i].AffectedSymbols = bppend(flbttened[i].AffectedSymbols, pkg.AffectedSymbols...)
 		}
 	}
 
-	return flattened
+	return flbttened
 }
 
-var flattenVulnerabilities = func(vs []shared.Vulnerability) []shared.Vulnerability {
-	flattened := []shared.Vulnerability{}
-	for _, v := range vs {
-		i := len(flattened) - 1
-		if len(flattened) == 0 || flattened[i].ID != v.ID {
-			flattened = append(flattened, v)
+vbr flbttenVulnerbbilities = func(vs []shbred.Vulnerbbility) []shbred.Vulnerbbility {
+	flbttened := []shbred.Vulnerbbility{}
+	for _, v := rbnge vs {
+		i := len(flbttened) - 1
+		if len(flbttened) == 0 || flbttened[i].ID != v.ID {
+			flbttened = bppend(flbttened, v)
 		} else {
-			flattened[i].AffectedPackages = flattenPackages(append(flattened[i].AffectedPackages, v.AffectedPackages...))
+			flbttened[i].AffectedPbckbges = flbttenPbckbges(bppend(flbttened[i].AffectedPbckbges, v.AffectedPbckbges...))
 		}
 	}
 
-	return flattened
+	return flbttened
 }
 
-var scanVulnerabilitiesAndCount = func(rows basestore.Rows, queryErr error) ([]shared.Vulnerability, int, error) {
-	values, totalCount, err := basestore.NewSliceWithCountScanner(func(s dbutil.Scanner) (shared.Vulnerability, int, error) {
-		return scanSingleVulnerabilityAndCount(s)
+vbr scbnVulnerbbilitiesAndCount = func(rows bbsestore.Rows, queryErr error) ([]shbred.Vulnerbbility, int, error) {
+	vblues, totblCount, err := bbsestore.NewSliceWithCountScbnner(func(s dbutil.Scbnner) (shbred.Vulnerbbility, int, error) {
+		return scbnSingleVulnerbbilityAndCount(s)
 	})(rows, queryErr)
 	if err != nil {
 		return nil, 0, err
 	}
 
-	return flattenVulnerabilities(values), totalCount, nil
+	return flbttenVulnerbbilities(vblues), totblCount, nil
 }
 
-func canonicalizeVulnerabilities(vs []shared.Vulnerability) []shared.Vulnerability {
-	for i, v := range vs {
-		vs[i] = canonicalizeVulnerability(v)
+func cbnonicblizeVulnerbbilities(vs []shbred.Vulnerbbility) []shbred.Vulnerbbility {
+	for i, v := rbnge vs {
+		vs[i] = cbnonicblizeVulnerbbility(v)
 	}
 
 	return vs
 }
 
-func canonicalizeVulnerability(v shared.Vulnerability) shared.Vulnerability {
+func cbnonicblizeVulnerbbility(v shbred.Vulnerbbility) shbred.Vulnerbbility {
 	if v.CPEs == nil {
 		v.CPEs = []string{}
 	}
 	if v.CWEs == nil {
 		v.CWEs = []string{}
 	}
-	if v.Aliases == nil {
-		v.Aliases = []string{}
+	if v.Alibses == nil {
+		v.Alibses = []string{}
 	}
-	if v.Related == nil {
-		v.Related = []string{}
+	if v.Relbted == nil {
+		v.Relbted = []string{}
 	}
 	if v.URLs == nil {
 		v.URLs = []string{}
 	}
-	for i, ap := range v.AffectedPackages {
-		v.AffectedPackages[i] = canonicalizeAffectedPackage(ap)
+	for i, bp := rbnge v.AffectedPbckbges {
+		v.AffectedPbckbges[i] = cbnonicblizeAffectedPbckbge(bp)
 	}
 
 	return v
 }
 
-func canonicalizeAffectedPackage(ap shared.AffectedPackage) shared.AffectedPackage {
-	if ap.VersionConstraint == nil {
-		ap.VersionConstraint = []string{}
+func cbnonicblizeAffectedPbckbge(bp shbred.AffectedPbckbge) shbred.AffectedPbckbge {
+	if bp.VersionConstrbint == nil {
+		bp.VersionConstrbint = []string{}
 	}
-	if ap.AffectedSymbols == nil {
-		ap.AffectedSymbols = []shared.AffectedSymbol{}
+	if bp.AffectedSymbols == nil {
+		bp.AffectedSymbols = []shbred.AffectedSymbol{}
 	}
 
-	return ap
+	return bp
 }

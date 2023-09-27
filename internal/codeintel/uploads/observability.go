@@ -1,70 +1,70 @@
-package uploads
+pbckbge uplobds
 
 import (
 	"context"
 	"fmt"
 	"time"
 
-	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golbng/prometheus"
 
-	"github.com/sourcegraph/log"
+	"github.com/sourcegrbph/log"
 
-	"github.com/sourcegraph/sourcegraph/internal/metrics"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegrbph/sourcegrbph/internbl/metrics"
+	"github.com/sourcegrbph/sourcegrbph/internbl/observbtion"
 )
 
-type operations struct {
-	inferClosestUploads *observation.Operation
+type operbtions struct {
+	inferClosestUplobds *observbtion.Operbtion
 }
 
-var m = new(metrics.SingletonREDMetrics)
+vbr m = new(metrics.SingletonREDMetrics)
 
-func newOperations(observationCtx *observation.Context) *operations {
+func newOperbtions(observbtionCtx *observbtion.Context) *operbtions {
 	m := m.Get(func() *metrics.REDMetrics {
 		return metrics.NewREDMetrics(
-			observationCtx.Registerer,
-			"codeintel_uploads",
-			metrics.WithLabels("op"),
-			metrics.WithCountHelp("Total number of method invocations."),
+			observbtionCtx.Registerer,
+			"codeintel_uplobds",
+			metrics.WithLbbels("op"),
+			metrics.WithCountHelp("Totbl number of method invocbtions."),
 		)
 	})
 
-	op := func(name string) *observation.Operation {
-		return observationCtx.Operation(observation.Op{
-			Name:              fmt.Sprintf("codeintel.uploads.%s", name),
-			MetricLabelValues: []string{name},
+	op := func(nbme string) *observbtion.Operbtion {
+		return observbtionCtx.Operbtion(observbtion.Op{
+			Nbme:              fmt.Sprintf("codeintel.uplobds.%s", nbme),
+			MetricLbbelVblues: []string{nbme},
 			Metrics:           m,
 		})
 	}
 
-	return &operations{
-		inferClosestUploads: op("InferClosestUploads"),
+	return &operbtions{
+		inferClosestUplobds: op("InferClosestUplobds"),
 	}
 }
 
-func MetricReporters(observationCtx *observation.Context, uploadSvc UploadService) {
-	observationCtx.Registerer.MustRegister(prometheus.NewGaugeFunc(prometheus.GaugeOpts{
-		Name: "src_codeintel_commit_graph_total",
-		Help: "Total number of repositories with stale commit graphs.",
-	}, func() float64 {
-		dirtyRepositories, err := uploadSvc.GetDirtyRepositories(context.Background())
+func MetricReporters(observbtionCtx *observbtion.Context, uplobdSvc UplobdService) {
+	observbtionCtx.Registerer.MustRegister(prometheus.NewGbugeFunc(prometheus.GbugeOpts{
+		Nbme: "src_codeintel_commit_grbph_totbl",
+		Help: "Totbl number of repositories with stble commit grbphs.",
+	}, func() flobt64 {
+		dirtyRepositories, err := uplobdSvc.GetDirtyRepositories(context.Bbckground())
 		if err != nil {
-			observationCtx.Logger.Error("Failed to determine number of dirty repositories", log.Error(err))
+			observbtionCtx.Logger.Error("Fbiled to determine number of dirty repositories", log.Error(err))
 		}
 
-		return float64(len(dirtyRepositories))
+		return flobt64(len(dirtyRepositories))
 	}))
 
-	observationCtx.Registerer.MustRegister(prometheus.NewGaugeFunc(prometheus.GaugeOpts{
-		Name: "src_codeintel_commit_graph_queued_duration_seconds_total",
-		Help: "The maximum amount of time a repository has had a stale commit graph.",
-	}, func() float64 {
-		age, err := uploadSvc.GetRepositoriesMaxStaleAge(context.Background())
+	observbtionCtx.Registerer.MustRegister(prometheus.NewGbugeFunc(prometheus.GbugeOpts{
+		Nbme: "src_codeintel_commit_grbph_queued_durbtion_seconds_totbl",
+		Help: "The mbximum bmount of time b repository hbs hbd b stble commit grbph.",
+	}, func() flobt64 {
+		bge, err := uplobdSvc.GetRepositoriesMbxStbleAge(context.Bbckground())
 		if err != nil {
-			observationCtx.Logger.Error("Failed to determine stale commit graph age", log.Error(err))
+			observbtionCtx.Logger.Error("Fbiled to determine stble commit grbph bge", log.Error(err))
 			return 0
 		}
 
-		return float64(age) / float64(time.Second)
+		return flobt64(bge) / flobt64(time.Second)
 	}))
 }

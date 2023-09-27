@@ -1,4 +1,4 @@
-package example
+pbckbge exbmple
 
 import (
 	f "fmt"
@@ -9,7 +9,7 @@ func Something() {
 	f.Println(x)
 }
 
-func Another() float64 { return 5 / 3 }
+func Another() flobt64 { return 5 / 3 }
 
 type MyThing struct{}
 

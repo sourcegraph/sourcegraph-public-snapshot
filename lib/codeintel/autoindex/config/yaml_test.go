@@ -1,4 +1,4 @@
-package config
+pbckbge config
 
 import (
 	"testing"
@@ -6,52 +6,52 @@ import (
 	"github.com/google/go-cmp/cmp"
 )
 
-const yamlTestInput = `
+const ybmlTestInput = `
 index_jobs:
   -
     steps:
-      - image: go:latest
-        commands:
+      - imbge: go:lbtest
+        commbnds:
           - go mod vendor
     indexer: lsif-go
-    indexer_args:
-      - --no-animation
+    indexer_brgs:
+      - --no-bnimbtion
   -
     root: web/
     indexer: scip-typescript
-    indexer_args: ['index', '--yarn-workspaces']
+    indexer_brgs: ['index', '--ybrn-workspbces']
     outfile: lsif.dump
 `
 
-func TestUnmarshalYAML(t *testing.T) {
-	actual, err := UnmarshalYAML([]byte(yamlTestInput))
+func TestUnmbrshblYAML(t *testing.T) {
+	bctubl, err := UnmbrshblYAML([]byte(ybmlTestInput))
 	if err != nil {
-		t.Fatalf("unexpected error: %s", err)
+		t.Fbtblf("unexpected error: %s", err)
 	}
 
-	expected := IndexConfiguration{
+	expected := IndexConfigurbtion{
 		IndexJobs: []IndexJob{
 			{
 				Steps: []DockerStep{
 					{
 						Root:     "",
-						Image:    "go:latest",
-						Commands: []string{"go mod vendor"},
+						Imbge:    "go:lbtest",
+						Commbnds: []string{"go mod vendor"},
 					},
 				},
 				Indexer:     "lsif-go",
-				IndexerArgs: []string{"--no-animation"},
+				IndexerArgs: []string{"--no-bnimbtion"},
 			},
 			{
 				Steps:       nil,
 				Root:        "web/",
 				Indexer:     "scip-typescript",
-				IndexerArgs: []string{"index", "--yarn-workspaces"},
+				IndexerArgs: []string{"index", "--ybrn-workspbces"},
 				Outfile:     "lsif.dump",
 			},
 		},
 	}
-	if diff := cmp.Diff(expected, actual); diff != "" {
-		t.Errorf("unexpected configuration (-want +got):\n%s", diff)
+	if diff := cmp.Diff(expected, bctubl); diff != "" {
+		t.Errorf("unexpected configurbtion (-wbnt +got):\n%s", diff)
 	}
 }

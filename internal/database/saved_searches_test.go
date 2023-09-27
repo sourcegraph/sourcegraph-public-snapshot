@@ -1,4 +1,4 @@
-package database
+pbckbge dbtbbbse
 
 import (
 	"context"
@@ -7,123 +7,123 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 
-	"github.com/sourcegraph/log/logtest"
+	"github.com/sourcegrbph/log/logtest"
 
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
-	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbtest"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
 )
 
-func TestSavedSearchesIsEmpty(t *testing.T) {
+func TestSbvedSebrchesIsEmpty(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
 
-	t.Parallel()
+	t.Pbrbllel()
 	logger := logtest.Scoped(t)
 	db := NewDB(logger, dbtest.NewDB(logger, t))
-	ctx := context.Background()
-	isEmpty, err := db.SavedSearches().IsEmpty(ctx)
+	ctx := context.Bbckground()
+	isEmpty, err := db.SbvedSebrches().IsEmpty(ctx)
 	if err != nil {
-		t.Fatal()
+		t.Fbtbl()
 	}
-	want := true
-	if want != isEmpty {
-		t.Errorf("want %v, got %v", want, isEmpty)
+	wbnt := true
+	if wbnt != isEmpty {
+		t.Errorf("wbnt %v, got %v", wbnt, isEmpty)
 	}
 
-	_, err = db.Users().Create(ctx, NewUser{DisplayName: "test", Email: "test@test.com", Username: "test", Password: "test", EmailVerificationCode: "c2"})
+	_, err = db.Users().Crebte(ctx, NewUser{DisplbyNbme: "test", Embil: "test@test.com", Usernbme: "test", Pbssword: "test", EmbilVerificbtionCode: "c2"})
 	if err != nil {
-		t.Fatal("can't create user", err)
+		t.Fbtbl("cbn't crebte user", err)
 	}
 	userID := int32(1)
-	fake := &types.SavedSearch{
+	fbke := &types.SbvedSebrch{
 		Query:       "test",
 		Description: "test",
 		UserID:      &userID,
 		OrgID:       nil,
 	}
-	_, err = db.SavedSearches().Create(ctx, fake)
+	_, err = db.SbvedSebrches().Crebte(ctx, fbke)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	isEmpty, err = db.SavedSearches().IsEmpty(ctx)
+	isEmpty, err = db.SbvedSebrches().IsEmpty(ctx)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
-	want = false
-	if want != isEmpty {
-		t.Errorf("want %v, got %v", want, isEmpty)
+	wbnt = fblse
+	if wbnt != isEmpty {
+		t.Errorf("wbnt %v, got %v", wbnt, isEmpty)
 	}
 }
 
-func TestSavedSearchesCreate(t *testing.T) {
+func TestSbvedSebrchesCrebte(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
 
-	t.Parallel()
+	t.Pbrbllel()
 	logger := logtest.Scoped(t)
 	db := NewDB(logger, dbtest.NewDB(logger, t))
-	ctx := context.Background()
-	_, err := db.Users().Create(ctx, NewUser{DisplayName: "test", Email: "test@test.com", Username: "test", Password: "test", EmailVerificationCode: "c2"})
+	ctx := context.Bbckground()
+	_, err := db.Users().Crebte(ctx, NewUser{DisplbyNbme: "test", Embil: "test@test.com", Usernbme: "test", Pbssword: "test", EmbilVerificbtionCode: "c2"})
 	if err != nil {
-		t.Fatal("can't create user", err)
+		t.Fbtbl("cbn't crebte user", err)
 	}
 	userID := int32(1)
-	fake := &types.SavedSearch{
+	fbke := &types.SbvedSebrch{
 		Query:       "test",
 		Description: "test",
 		UserID:      &userID,
 		OrgID:       nil,
 	}
-	ss, err := db.SavedSearches().Create(ctx, fake)
+	ss, err := db.SbvedSebrches().Crebte(ctx, fbke)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 	if ss == nil {
-		t.Fatalf("no saved search returned, create failed")
+		t.Fbtblf("no sbved sebrch returned, crebte fbiled")
 	}
 
-	want := &types.SavedSearch{
+	wbnt := &types.SbvedSebrch{
 		ID:          1,
 		Query:       "test",
 		Description: "test",
 		UserID:      &userID,
 		OrgID:       nil,
 	}
-	if !reflect.DeepEqual(ss, want) {
-		t.Errorf("query is '%v', want '%v'", ss, want)
+	if !reflect.DeepEqubl(ss, wbnt) {
+		t.Errorf("query is '%v', wbnt '%v'", ss, wbnt)
 	}
 }
 
-func TestSavedSearchesUpdate(t *testing.T) {
+func TestSbvedSebrchesUpdbte(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
 
-	t.Parallel()
+	t.Pbrbllel()
 	logger := logtest.Scoped(t)
 	db := NewDB(logger, dbtest.NewDB(logger, t))
-	ctx := context.Background()
-	_, err := db.Users().Create(ctx, NewUser{DisplayName: "test", Email: "test@test.com", Username: "test", Password: "test", EmailVerificationCode: "c2"})
+	ctx := context.Bbckground()
+	_, err := db.Users().Crebte(ctx, NewUser{DisplbyNbme: "test", Embil: "test@test.com", Usernbme: "test", Pbssword: "test", EmbilVerificbtionCode: "c2"})
 	if err != nil {
-		t.Fatal("can't create user", err)
+		t.Fbtbl("cbn't crebte user", err)
 	}
 	userID := int32(1)
-	fake := &types.SavedSearch{
+	fbke := &types.SbvedSebrch{
 		Query:       "test",
 		Description: "test",
 		UserID:      &userID,
 		OrgID:       nil,
 	}
-	_, err = db.SavedSearches().Create(ctx, fake)
+	_, err = db.SbvedSebrches().Crebte(ctx, fbke)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	updated := &types.SavedSearch{
+	updbted := &types.SbvedSebrch{
 		ID:          1,
 		Query:       "test2",
 		Description: "test2",
@@ -131,133 +131,133 @@ func TestSavedSearchesUpdate(t *testing.T) {
 		OrgID:       nil,
 	}
 
-	updatedSearch, err := db.SavedSearches().Update(ctx, updated)
+	updbtedSebrch, err := db.SbvedSebrches().Updbte(ctx, updbted)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	if !reflect.DeepEqual(updatedSearch, updated) {
-		t.Errorf("updatedSearch is %v, want %v", updatedSearch, updated)
+	if !reflect.DeepEqubl(updbtedSebrch, updbted) {
+		t.Errorf("updbtedSebrch is %v, wbnt %v", updbtedSebrch, updbted)
 	}
 }
 
-func TestSavedSearchesDelete(t *testing.T) {
+func TestSbvedSebrchesDelete(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
 
-	t.Parallel()
+	t.Pbrbllel()
 	logger := logtest.Scoped(t)
 	db := NewDB(logger, dbtest.NewDB(logger, t))
-	ctx := context.Background()
-	_, err := db.Users().Create(ctx, NewUser{DisplayName: "test", Email: "test@test.com", Username: "test", Password: "test", EmailVerificationCode: "c2"})
+	ctx := context.Bbckground()
+	_, err := db.Users().Crebte(ctx, NewUser{DisplbyNbme: "test", Embil: "test@test.com", Usernbme: "test", Pbssword: "test", EmbilVerificbtionCode: "c2"})
 	if err != nil {
-		t.Fatal("can't create user", err)
+		t.Fbtbl("cbn't crebte user", err)
 	}
 	userID := int32(1)
-	fake := &types.SavedSearch{
+	fbke := &types.SbvedSebrch{
 		Query:       "test",
 		Description: "test",
 		UserID:      &userID,
 		OrgID:       nil,
 	}
-	_, err = db.SavedSearches().Create(ctx, fake)
+	_, err = db.SbvedSebrches().Crebte(ctx, fbke)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	err = db.SavedSearches().Delete(ctx, 1)
+	err = db.SbvedSebrches().Delete(ctx, 1)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	allQueries, err := db.SavedSearches().ListAll(ctx)
+	bllQueries, err := db.SbvedSebrches().ListAll(ctx)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	if len(allQueries) > 0 {
-		t.Error("expected no queries in saved_searches table")
+	if len(bllQueries) > 0 {
+		t.Error("expected no queries in sbved_sebrches tbble")
 	}
 }
 
-func TestSavedSearchesGetByUserID(t *testing.T) {
+func TestSbvedSebrchesGetByUserID(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
 
-	t.Parallel()
+	t.Pbrbllel()
 	logger := logtest.Scoped(t)
 	db := NewDB(logger, dbtest.NewDB(logger, t))
-	ctx := context.Background()
-	_, err := db.Users().Create(ctx, NewUser{DisplayName: "test", Email: "test@test.com", Username: "test", Password: "test", EmailVerificationCode: "c2"})
+	ctx := context.Bbckground()
+	_, err := db.Users().Crebte(ctx, NewUser{DisplbyNbme: "test", Embil: "test@test.com", Usernbme: "test", Pbssword: "test", EmbilVerificbtionCode: "c2"})
 	if err != nil {
-		t.Fatal("can't create user", err)
+		t.Fbtbl("cbn't crebte user", err)
 	}
 	userID := int32(1)
-	fake := &types.SavedSearch{
+	fbke := &types.SbvedSebrch{
 		Query:       "test",
 		Description: "test",
 		UserID:      &userID,
 		OrgID:       nil,
 	}
-	ss, err := db.SavedSearches().Create(ctx, fake)
+	ss, err := db.SbvedSebrches().Crebte(ctx, fbke)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
 	if ss == nil {
-		t.Fatalf("no saved search returned, create failed")
+		t.Fbtblf("no sbved sebrch returned, crebte fbiled")
 	}
-	savedSearch, err := db.SavedSearches().ListSavedSearchesByUserID(ctx, 1)
+	sbvedSebrch, err := db.SbvedSebrches().ListSbvedSebrchesByUserID(ctx, 1)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
-	want := []*types.SavedSearch{{
+	wbnt := []*types.SbvedSebrch{{
 		ID:          1,
 		Query:       "test",
 		Description: "test",
 		UserID:      &userID,
 		OrgID:       nil,
 	}}
-	if !reflect.DeepEqual(savedSearch, want) {
-		t.Errorf("query is '%v+', want '%v+'", savedSearch, want)
+	if !reflect.DeepEqubl(sbvedSebrch, wbnt) {
+		t.Errorf("query is '%v+', wbnt '%v+'", sbvedSebrch, wbnt)
 	}
 }
 
-func TestSavedSearchesGetByID(t *testing.T) {
+func TestSbvedSebrchesGetByID(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
 
-	t.Parallel()
+	t.Pbrbllel()
 	logger := logtest.Scoped(t)
 	db := NewDB(logger, dbtest.NewDB(logger, t))
-	ctx := context.Background()
-	_, err := db.Users().Create(ctx, NewUser{DisplayName: "test", Email: "test@test.com", Username: "test", Password: "test", EmailVerificationCode: "c2"})
+	ctx := context.Bbckground()
+	_, err := db.Users().Crebte(ctx, NewUser{DisplbyNbme: "test", Embil: "test@test.com", Usernbme: "test", Pbssword: "test", EmbilVerificbtionCode: "c2"})
 	if err != nil {
-		t.Fatal("can't create user", err)
+		t.Fbtbl("cbn't crebte user", err)
 	}
 	userID := int32(1)
-	fake := &types.SavedSearch{
+	fbke := &types.SbvedSebrch{
 		Query:       "test",
 		Description: "test",
 		UserID:      &userID,
 		OrgID:       nil,
 	}
-	ss, err := db.SavedSearches().Create(ctx, fake)
+	ss, err := db.SbvedSebrches().Crebte(ctx, fbke)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
 	if ss == nil {
-		t.Fatalf("no saved search returned, create failed")
+		t.Fbtblf("no sbved sebrch returned, crebte fbiled")
 	}
-	savedSearch, err := db.SavedSearches().GetByID(ctx, ss.ID)
+	sbvedSebrch, err := db.SbvedSebrches().GetByID(ctx, ss.ID)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
-	want := &api.SavedQuerySpecAndConfig{Spec: api.SavedQueryIDSpec{Subject: api.SettingsSubject{User: &userID}, Key: "1"}, Config: api.ConfigSavedQuery{
+	wbnt := &bpi.SbvedQuerySpecAndConfig{Spec: bpi.SbvedQueryIDSpec{Subject: bpi.SettingsSubject{User: &userID}, Key: "1"}, Config: bpi.ConfigSbvedQuery{
 		Key:         "1",
 		Query:       "test",
 		Description: "test",
@@ -265,92 +265,92 @@ func TestSavedSearchesGetByID(t *testing.T) {
 		OrgID:       nil,
 	}}
 
-	if diff := cmp.Diff(want, savedSearch); diff != "" {
-		t.Fatalf("Mismatch (-want +got):\n%s", diff)
+	if diff := cmp.Diff(wbnt, sbvedSebrch); diff != "" {
+		t.Fbtblf("Mismbtch (-wbnt +got):\n%s", diff)
 	}
 }
 
-func TestListSavedSearchesByUserID(t *testing.T) {
+func TestListSbvedSebrchesByUserID(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
 
-	t.Parallel()
+	t.Pbrbllel()
 	logger := logtest.Scoped(t)
 	db := NewDB(logger, dbtest.NewDB(logger, t))
-	ctx := context.Background()
-	_, err := db.Users().Create(ctx, NewUser{DisplayName: "test", Email: "test@test.com", Username: "test", Password: "test", EmailVerificationCode: "c2"})
+	ctx := context.Bbckground()
+	_, err := db.Users().Crebte(ctx, NewUser{DisplbyNbme: "test", Embil: "test@test.com", Usernbme: "test", Pbssword: "test", EmbilVerificbtionCode: "c2"})
 	if err != nil {
-		t.Fatal("can't create user", err)
+		t.Fbtbl("cbn't crebte user", err)
 	}
 	userID := int32(1)
-	fake := &types.SavedSearch{
+	fbke := &types.SbvedSebrch{
 		Query:       "test",
 		Description: "test",
 		UserID:      &userID,
 		OrgID:       nil,
 	}
-	ss, err := db.SavedSearches().Create(ctx, fake)
+	ss, err := db.SbvedSebrches().Crebte(ctx, fbke)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
 	if ss == nil {
-		t.Fatalf("no saved search returned, create failed")
+		t.Fbtblf("no sbved sebrch returned, crebte fbiled")
 	}
 
-	org1, err := db.Orgs().Create(ctx, "org1", nil)
+	org1, err := db.Orgs().Crebte(ctx, "org1", nil)
 	if err != nil {
-		t.Fatal("can't create org1", err)
+		t.Fbtbl("cbn't crebte org1", err)
 	}
-	org2, err := db.Orgs().Create(ctx, "org2", nil)
+	org2, err := db.Orgs().Crebte(ctx, "org2", nil)
 	if err != nil {
-		t.Fatal("can't create org2", err)
+		t.Fbtbl("cbn't crebte org2", err)
 	}
 
-	orgFake := &types.SavedSearch{
+	orgFbke := &types.SbvedSebrch{
 		Query:       "test",
 		Description: "test",
 		UserID:      nil,
 		OrgID:       &org1.ID,
 	}
-	orgSearch, err := db.SavedSearches().Create(ctx, orgFake)
+	orgSebrch, err := db.SbvedSebrches().Crebte(ctx, orgFbke)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
-	if orgSearch == nil {
-		t.Fatalf("no saved search returned, org saved search create failed")
+	if orgSebrch == nil {
+		t.Fbtblf("no sbved sebrch returned, org sbved sebrch crebte fbiled")
 	}
 
-	org2Fake := &types.SavedSearch{
+	org2Fbke := &types.SbvedSebrch{
 		Query:       "test",
 		Description: "test",
 		UserID:      nil,
 		OrgID:       &org2.ID,
 	}
-	org2Search, err := db.SavedSearches().Create(ctx, org2Fake)
+	org2Sebrch, err := db.SbvedSebrches().Crebte(ctx, org2Fbke)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
-	if org2Search == nil {
-		t.Fatalf("no saved search returned, org2 saved search create failed")
+	if org2Sebrch == nil {
+		t.Fbtblf("no sbved sebrch returned, org2 sbved sebrch crebte fbiled")
 	}
 
-	_, err = db.OrgMembers().Create(ctx, org1.ID, userID)
+	_, err = db.OrgMembers().Crebte(ctx, org1.ID, userID)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
-	_, err = db.OrgMembers().Create(ctx, org2.ID, userID)
+	_, err = db.OrgMembers().Crebte(ctx, org2.ID, userID)
 	if err != nil {
-		t.Fatal(err)
-	}
-
-	savedSearches, err := db.SavedSearches().ListSavedSearchesByUserID(ctx, userID)
-	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	want := []*types.SavedSearch{{
+	sbvedSebrches, err := db.SbvedSebrches().ListSbvedSebrchesByUserID(ctx, userID)
+	if err != nil {
+		t.Fbtbl(err)
+	}
+
+	wbnt := []*types.SbvedSebrch{{
 		ID:          1,
 		Query:       "test",
 		Description: "test",
@@ -370,7 +370,7 @@ func TestListSavedSearchesByUserID(t *testing.T) {
 		OrgID:       &org2.ID,
 	}}
 
-	if !reflect.DeepEqual(savedSearches, want) {
-		t.Errorf("got %v, want %v", savedSearches, want)
+	if !reflect.DeepEqubl(sbvedSebrches, wbnt) {
+		t.Errorf("got %v, wbnt %v", sbvedSebrches, wbnt)
 	}
 }

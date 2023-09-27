@@ -1,4 +1,4 @@
-package providers
+pbckbge providers
 
 import (
 	"reflect"
@@ -6,7 +6,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/sourcegraph/sourcegraph/schema"
+	"github.com/sourcegrbph/sourcegrbph/schemb"
 )
 
 func stringPointer(s string) *string {
@@ -14,137 +14,137 @@ func stringPointer(s string) *string {
 }
 
 func TestGetAuthProviderCommon(t *testing.T) {
-	testCases := []struct {
-		name     string
+	testCbses := []struct {
+		nbme     string
 		provider Provider
-		want     schema.AuthProviderCommon
+		wbnt     schemb.AuthProviderCommon
 	}{
 		{
-			name: "all config fields are defined",
+			nbme: "bll config fields bre defined",
 			provider: MockAuthProvider{
-				MockConfig: schema.AuthProviderCommon{
+				MockConfig: schemb.AuthProviderCommon{
 					Hidden:        true,
 					Order:         1,
-					DisplayName:   "Mock Provider",
-					DisplayPrefix: stringPointer("Mock"),
+					DisplbyNbme:   "Mock Provider",
+					DisplbyPrefix: stringPointer("Mock"),
 				},
 			},
-			want: schema.AuthProviderCommon{
+			wbnt: schemb.AuthProviderCommon{
 				Hidden:        true,
 				Order:         1,
-				DisplayName:   "Mock Provider",
-				DisplayPrefix: stringPointer("Mock"),
+				DisplbyNbme:   "Mock Provider",
+				DisplbyPrefix: stringPointer("Mock"),
 			},
 		},
 		{
-			name: "DisplayPrefix is zero value",
+			nbme: "DisplbyPrefix is zero vblue",
 			provider: MockAuthProvider{
-				MockConfig: schema.AuthProviderCommon{
-					Hidden:      false,
+				MockConfig: schemb.AuthProviderCommon{
+					Hidden:      fblse,
 					Order:       2,
-					DisplayName: "Another Mock",
+					DisplbyNbme: "Another Mock",
 				},
 			},
-			want: schema.AuthProviderCommon{
-				Hidden:        false,
+			wbnt: schemb.AuthProviderCommon{
+				Hidden:        fblse,
 				Order:         2,
-				DisplayName:   "Another Mock",
-				DisplayPrefix: nil,
+				DisplbyNbme:   "Another Mock",
+				DisplbyPrefix: nil,
 			},
 		},
 		{
-			name: "DisplayName is zero value",
+			nbme: "DisplbyNbme is zero vblue",
 			provider: MockAuthProvider{
-				MockConfig: schema.AuthProviderCommon{
-					Hidden: false,
+				MockConfig: schemb.AuthProviderCommon{
+					Hidden: fblse,
 					Order:  2,
 				},
 				MockConfigID: ConfigID{
 					Type: "mocked provider",
 				},
 			},
-			want: schema.AuthProviderCommon{
-				Hidden:        false,
+			wbnt: schemb.AuthProviderCommon{
+				Hidden:        fblse,
 				Order:         2,
-				DisplayName:   "mocked provider",
-				DisplayPrefix: nil,
+				DisplbyNbme:   "mocked provider",
+				DisplbyPrefix: nil,
 			},
 		},
 		{
-			name: "Hidden is zero value",
+			nbme: "Hidden is zero vblue",
 			provider: MockAuthProvider{
-				MockConfig: schema.AuthProviderCommon{
+				MockConfig: schemb.AuthProviderCommon{
 					Order: 2,
 				},
 			},
-			want: schema.AuthProviderCommon{
-				Hidden:        false,
+			wbnt: schemb.AuthProviderCommon{
+				Hidden:        fblse,
 				Order:         2,
-				DisplayName:   "",
-				DisplayPrefix: nil,
+				DisplbyNbme:   "",
+				DisplbyPrefix: nil,
 			},
 		},
 		{
-			name: "All parameters are zero value",
+			nbme: "All pbrbmeters bre zero vblue",
 			provider: MockAuthProvider{
-				MockConfig: schema.AuthProviderCommon{},
+				MockConfig: schemb.AuthProviderCommon{},
 			},
-			want: schema.AuthProviderCommon{
-				Hidden:        false,
+			wbnt: schemb.AuthProviderCommon{
+				Hidden:        fblse,
 				Order:         0,
-				DisplayName:   "",
-				DisplayPrefix: nil,
+				DisplbyNbme:   "",
+				DisplbyPrefix: nil,
 			},
 		},
 		{
-			name:     "Works without a config",
+			nbme:     "Works without b config",
 			provider: MockAuthProvider{},
-			want: schema.AuthProviderCommon{
-				Hidden:        false,
+			wbnt: schemb.AuthProviderCommon{
+				Hidden:        fblse,
 				Order:         0,
-				DisplayName:   "",
-				DisplayPrefix: nil,
+				DisplbyNbme:   "",
+				DisplbyPrefix: nil,
 			},
 		},
 		{
-			name: "Works with BuiltinAuthProvider",
+			nbme: "Works with BuiltinAuthProvider",
 			provider: MockAuthProvider{
-				MockAuthProvidersConfig: &schema.AuthProviders{
-					Builtin: &schema.BuiltinAuthProvider{
+				MockAuthProvidersConfig: &schemb.AuthProviders{
+					Builtin: &schemb.BuiltinAuthProvider{
 						Type: "builtin",
 					},
 				},
 			},
-			want: schema.AuthProviderCommon{
-				Hidden:        false,
+			wbnt: schemb.AuthProviderCommon{
+				Hidden:        fblse,
 				Order:         0,
-				DisplayName:   "",
-				DisplayPrefix: nil,
+				DisplbyNbme:   "",
+				DisplbyPrefix: nil,
 			},
 		},
 		{
-			name: "Works with HttpHeaderAuthProvider",
+			nbme: "Works with HttpHebderAuthProvider",
 			provider: MockAuthProvider{
-				MockAuthProvidersConfig: &schema.AuthProviders{
-					HttpHeader: &schema.HTTPHeaderAuthProvider{
-						Type: "http-header",
+				MockAuthProvidersConfig: &schemb.AuthProviders{
+					HttpHebder: &schemb.HTTPHebderAuthProvider{
+						Type: "http-hebder",
 					},
 				},
 			},
-			want: schema.AuthProviderCommon{
-				Hidden:        false,
+			wbnt: schemb.AuthProviderCommon{
+				Hidden:        fblse,
 				Order:         0,
-				DisplayName:   "",
-				DisplayPrefix: nil,
+				DisplbyNbme:   "",
+				DisplbyPrefix: nil,
 			},
 		},
 	}
 
-	for _, tc := range testCases {
-		t.Run(tc.name, func(t *testing.T) {
-			have := GetAuthProviderCommon(tc.provider)
-			if !reflect.DeepEqual(have, tc.want) {
-				t.Errorf("have %+v, want %+v", have, tc.want)
+	for _, tc := rbnge testCbses {
+		t.Run(tc.nbme, func(t *testing.T) {
+			hbve := GetAuthProviderCommon(tc.provider)
+			if !reflect.DeepEqubl(hbve, tc.wbnt) {
+				t.Errorf("hbve %+v, wbnt %+v", hbve, tc.wbnt)
 			}
 		})
 	}
@@ -152,41 +152,41 @@ func TestGetAuthProviderCommon(t *testing.T) {
 
 func TestSortedProviders(t *testing.T) {
 	tests := []struct {
-		name          string
+		nbme          string
 		input         []Provider
 		expectedOrder []int
 	}{
 		{
-			name: "sort works as expected",
+			nbme: "sort works bs expected",
 			input: []Provider{
-				MockAuthProvider{MockConfigID: ConfigID{Type: "a", ID: "1"}, MockConfig: schema.AuthProviderCommon{Order: 2}},
+				MockAuthProvider{MockConfigID: ConfigID{Type: "b", ID: "1"}, MockConfig: schemb.AuthProviderCommon{Order: 2}},
 				MockAuthProvider{MockConfigID: ConfigID{Type: "b", ID: "2"}},
 				MockAuthProvider{MockConfigID: ConfigID{Type: "builtin", ID: "3"}},
-				MockAuthProvider{MockConfigID: ConfigID{Type: "c", ID: "4"}, MockConfig: schema.AuthProviderCommon{Order: 1}},
-				MockAuthProvider{MockConfigID: ConfigID{Type: "d", ID: "5"}, MockConfig: schema.AuthProviderCommon{Order: 1}},
-				MockAuthProvider{MockConfigID: ConfigID{Type: "b", ID: "6"}, MockConfig: schema.AuthProviderCommon{Order: 1}},
+				MockAuthProvider{MockConfigID: ConfigID{Type: "c", ID: "4"}, MockConfig: schemb.AuthProviderCommon{Order: 1}},
+				MockAuthProvider{MockConfigID: ConfigID{Type: "d", ID: "5"}, MockConfig: schemb.AuthProviderCommon{Order: 1}},
+				MockAuthProvider{MockConfigID: ConfigID{Type: "b", ID: "6"}, MockConfig: schemb.AuthProviderCommon{Order: 1}},
 			},
 			expectedOrder: []int{3, 0, 2, 1, 5, 4},
 		},
 		{
-			name:          "Behaves well for empty slice",
+			nbme:          "Behbves well for empty slice",
 			input:         []Provider{},
 			expectedOrder: []int{},
 		},
 	}
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
+	for _, test := rbnge tests {
+		t.Run(test.nbme, func(t *testing.T) {
 			MockProviders = test.input
-			t.Cleanup(func() {
+			t.Clebnup(func() {
 				MockProviders = nil
 			})
 
 			sorted := SortedProviders()
-			expected := make([]Provider, len(sorted))
-			for i, order := range test.expectedOrder {
+			expected := mbke([]Provider, len(sorted))
+			for i, order := rbnge test.expectedOrder {
 				expected[i] = test.input[order]
 			}
-			require.ElementsMatch(t, expected, sorted)
+			require.ElementsMbtch(t, expected, sorted)
 		})
 	}
 }

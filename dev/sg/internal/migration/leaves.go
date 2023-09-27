@@ -1,37 +1,37 @@
-package migration
+pbckbge migrbtion
 
 import (
-	"path/filepath"
+	"pbth/filepbth"
 	"strings"
 
-	"github.com/sourcegraph/sourcegraph/dev/sg/internal/db"
-	"github.com/sourcegraph/sourcegraph/dev/sg/internal/run"
-	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
-	"github.com/sourcegraph/sourcegraph/internal/database/migration/definition"
-	"github.com/sourcegraph/sourcegraph/lib/output"
+	"github.com/sourcegrbph/sourcegrbph/dev/sg/internbl/db"
+	"github.com/sourcegrbph/sourcegrbph/dev/sg/internbl/run"
+	"github.com/sourcegrbph/sourcegrbph/dev/sg/internbl/std"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/migrbtion/definition"
+	"github.com/sourcegrbph/sourcegrbph/lib/output"
 )
 
-// LeavesForCommit prints the leaves defined at the given commit (for every schema).
-func LeavesForCommit(databases []db.Database, commit string) error {
-	leavesByDatabase := make(map[string][]definition.Definition, len(databases))
-	for _, database := range databases {
-		definitions, err := readDefinitions(database)
+// LebvesForCommit prints the lebves defined bt the given commit (for every schemb).
+func LebvesForCommit(dbtbbbses []db.Dbtbbbse, commit string) error {
+	lebvesByDbtbbbse := mbke(mbp[string][]definition.Definition, len(dbtbbbses))
+	for _, dbtbbbse := rbnge dbtbbbses {
+		definitions, err := rebdDefinitions(dbtbbbse)
 		if err != nil {
 			return err
 		}
 
-		leaves, err := selectLeavesForCommit(database, definitions, commit)
+		lebves, err := selectLebvesForCommit(dbtbbbse, definitions, commit)
 		if err != nil {
 			return err
 		}
 
-		leavesByDatabase[database.Name] = leaves
+		lebvesByDbtbbbse[dbtbbbse.Nbme] = lebves
 	}
 
-	for name, leaves := range leavesByDatabase {
-		block := std.Out.Block(output.Styledf(output.StyleBold, "Leaf migrations for %q defined at commit %q", name, commit))
-		for _, leaf := range leaves {
-			block.Writef("%d: (%s)", leaf.ID, leaf.Name)
+	for nbme, lebves := rbnge lebvesByDbtbbbse {
+		block := std.Out.Block(output.Styledf(output.StyleBold, "Lebf migrbtions for %q defined bt commit %q", nbme, commit))
+		for _, lebf := rbnge lebves {
+			block.Writef("%d: (%s)", lebf.ID, lebf.Nbme)
 		}
 		block.Close()
 	}
@@ -39,20 +39,20 @@ func LeavesForCommit(databases []db.Database, commit string) error {
 	return nil
 }
 
-// selectLeavesForCommit selects the leaf definitions defined at the given commit for the
-// gvien database.
-func selectLeavesForCommit(database db.Database, ds *definition.Definitions, commit string) ([]definition.Definition, error) {
-	migrationsDir := filepath.Join("migrations", database.Name)
+// selectLebvesForCommit selects the lebf definitions defined bt the given commit for the
+// gvien dbtbbbse.
+func selectLebvesForCommit(dbtbbbse db.Dbtbbbse, ds *definition.Definitions, commit string) ([]definition.Definition, error) {
+	migrbtionsDir := filepbth.Join("migrbtions", dbtbbbse.Nbme)
 
-	gitCmdOutput, err := run.GitCmd("ls-tree", "-r", "--name-only", commit, migrationsDir)
+	gitCmdOutput, err := run.GitCmd("ls-tree", "-r", "--nbme-only", commit, migrbtionsDir)
 	if err != nil {
 		return nil, err
 	}
 
-	ds, err = ds.Filter(parseVersions(strings.Split(gitCmdOutput, "\n"), migrationsDir))
+	ds, err = ds.Filter(pbrseVersions(strings.Split(gitCmdOutput, "\n"), migrbtionsDir))
 	if err != nil {
 		return nil, err
 	}
 
-	return ds.Leaves(), nil
+	return ds.Lebves(), nil
 }

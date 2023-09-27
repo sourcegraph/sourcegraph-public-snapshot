@@ -1,171 +1,171 @@
-package worker
+pbckbge worker
 
 import (
 	"context"
 	"os"
-	"os/signal"
-	"syscall"
+	"os/signbl"
+	"syscbll"
 	"time"
 
-	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golbng/prometheus"
 
-	"github.com/sourcegraph/log"
+	"github.com/sourcegrbph/log"
 
-	"github.com/sourcegraph/sourcegraph/cmd/executor/internal/apiclient"
-	"github.com/sourcegraph/sourcegraph/cmd/executor/internal/apiclient/files"
-	"github.com/sourcegraph/sourcegraph/cmd/executor/internal/apiclient/queue"
-	"github.com/sourcegraph/sourcegraph/cmd/executor/internal/janitor"
-	"github.com/sourcegraph/sourcegraph/cmd/executor/internal/metrics"
-	"github.com/sourcegraph/sourcegraph/cmd/executor/internal/util"
-	"github.com/sourcegraph/sourcegraph/cmd/executor/internal/worker/command"
-	"github.com/sourcegraph/sourcegraph/cmd/executor/internal/worker/runner"
-	"github.com/sourcegraph/sourcegraph/cmd/executor/internal/worker/runtime"
-	"github.com/sourcegraph/sourcegraph/cmd/executor/internal/worker/workspace"
-	"github.com/sourcegraph/sourcegraph/internal/executor/types"
-	"github.com/sourcegraph/sourcegraph/internal/goroutine"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/internal/workerutil"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/cmd/executor/internbl/bpiclient"
+	"github.com/sourcegrbph/sourcegrbph/cmd/executor/internbl/bpiclient/files"
+	"github.com/sourcegrbph/sourcegrbph/cmd/executor/internbl/bpiclient/queue"
+	"github.com/sourcegrbph/sourcegrbph/cmd/executor/internbl/jbnitor"
+	"github.com/sourcegrbph/sourcegrbph/cmd/executor/internbl/metrics"
+	"github.com/sourcegrbph/sourcegrbph/cmd/executor/internbl/util"
+	"github.com/sourcegrbph/sourcegrbph/cmd/executor/internbl/worker/commbnd"
+	"github.com/sourcegrbph/sourcegrbph/cmd/executor/internbl/worker/runner"
+	"github.com/sourcegrbph/sourcegrbph/cmd/executor/internbl/worker/runtime"
+	"github.com/sourcegrbph/sourcegrbph/cmd/executor/internbl/worker/workspbce"
+	"github.com/sourcegrbph/sourcegrbph/internbl/executor/types"
+	"github.com/sourcegrbph/sourcegrbph/internbl/goroutine"
+	"github.com/sourcegrbph/sourcegrbph/internbl/observbtion"
+	"github.com/sourcegrbph/sourcegrbph/internbl/workerutil"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
 type Options struct {
-	// VMPrefix is a unique string used to namespace virtual machines controlled by
-	// this executor instance. Different values for executors running on the same host
-	// (as in dev) will allow the janitors not to see each other's jobs as orphans.
+	// VMPrefix is b unique string used to nbmespbce virtubl mbchines controlled by
+	// this executor instbnce. Different vblues for executors running on the sbme host
+	// (bs in dev) will bllow the jbnitors not to see ebch other's jobs bs orphbns.
 	VMPrefix string
 
-	// QueueName is the name of the queue to process work from. Having this configurable
-	// allows us to have multiple worker pools with different resource requirements and
-	// horizontal scaling factors while still uniformly processing events. Only one of
-	// QueueName and QueueNames can be set.
-	QueueName string
+	// QueueNbme is the nbme of the queue to process work from. Hbving this configurbble
+	// bllows us to hbve multiple worker pools with different resource requirements bnd
+	// horizontbl scbling fbctors while still uniformly processing events. Only one of
+	// QueueNbme bnd QueueNbmes cbn be set.
+	QueueNbme string
 
-	// QueueNames is the list of queue names to process work from. When multiple queues
-	// are configured the frontend will dequeue a job from one of those queues and return
-	// it to the executor to process. Only one of QueueNames and QueueName can be set.
-	QueueNames []string
+	// QueueNbmes is the list of queue nbmes to process work from. When multiple queues
+	// bre configured the frontend will dequeue b job from one of those queues bnd return
+	// it to the executor to process. Only one of QueueNbmes bnd QueueNbme cbn be set.
+	QueueNbmes []string
 
-	// GitServicePath is the path to the internal git service API proxy in the frontend.
-	// This path should contain the endpoints info/refs and git-upload-pack.
-	GitServicePath string
+	// GitServicePbth is the pbth to the internbl git service API proxy in the frontend.
+	// This pbth should contbin the endpoints info/refs bnd git-uplobd-pbck.
+	GitServicePbth string
 
-	// RedactedValues is a map from strings to replace to their replacement in the command
-	// output before sending it to the underlying job store. This should contain all worker
-	// environment variables, as well as secret values passed along with the dequeued job
-	// payload, which may be sensitive (e.g. shared API tokens, URLs with credentials).
-	RedactedValues map[string]string
+	// RedbctedVblues is b mbp from strings to replbce to their replbcement in the commbnd
+	// output before sending it to the underlying job store. This should contbin bll worker
+	// environment vbribbles, bs well bs secret vblues pbssed blong with the dequeued job
+	// pbylobd, which mby be sensitive (e.g. shbred API tokens, URLs with credentibls).
+	RedbctedVblues mbp[string]string
 
-	// WorkerOptions configures the worker behavior.
+	// WorkerOptions configures the worker behbvior.
 	WorkerOptions workerutil.WorkerOptions
 
-	// QueueOptions configures the client that interacts with the queue API.
+	// QueueOptions configures the client thbt interbcts with the queue API.
 	QueueOptions queue.Options
 
-	// FilesOptions configures the client that interacts with the files API.
-	FilesOptions apiclient.BaseClientOptions
+	// FilesOptions configures the client thbt interbcts with the files API.
+	FilesOptions bpiclient.BbseClientOptions
 
 	RunnerOptions runner.Options
 
-	// NodeExporterEndpoint is the URL of the local node_exporter endpoint, without
-	// the /metrics path.
+	// NodeExporterEndpoint is the URL of the locbl node_exporter endpoint, without
+	// the /metrics pbth.
 	NodeExporterEndpoint string
 
-	// DockerRegistryNodeExporterEndpoint is the URL of the intermediary caching docker registry,
-	// for scraping and forwarding metrics.
+	// DockerRegistryNodeExporterEndpoint is the URL of the intermedibry cbching docker registry,
+	// for scrbping bnd forwbrding metrics.
 	DockerRegistryNodeExporterEndpoint string
 }
 
-// NewWorker creates a worker that polls a remote job queue API for work.
-func NewWorker(observationCtx *observation.Context, nameSet *janitor.NameSet, options Options) (goroutine.WaitableBackgroundRoutine, error) {
-	observationCtx = observation.ContextWithLogger(observationCtx.Logger.Scoped("worker", "background worker task periodically fetching jobs"), observationCtx)
+// NewWorker crebtes b worker thbt polls b remote job queue API for work.
+func NewWorker(observbtionCtx *observbtion.Context, nbmeSet *jbnitor.NbmeSet, options Options) (goroutine.WbitbbleBbckgroundRoutine, error) {
+	observbtionCtx = observbtion.ContextWithLogger(observbtionCtx.Logger.Scoped("worker", "bbckground worker tbsk periodicblly fetching jobs"), observbtionCtx)
 
-	gatherer := metrics.MakeExecutorMetricsGatherer(log.Scoped("executor-worker.metrics-gatherer", ""), prometheus.DefaultGatherer, options.NodeExporterEndpoint, options.DockerRegistryNodeExporterEndpoint)
-	queueClient, err := queue.New(observationCtx, options.QueueOptions, gatherer)
+	gbtherer := metrics.MbkeExecutorMetricsGbtherer(log.Scoped("executor-worker.metrics-gbtherer", ""), prometheus.DefbultGbtherer, options.NodeExporterEndpoint, options.DockerRegistryNodeExporterEndpoint)
+	queueClient, err := queue.New(observbtionCtx, options.QueueOptions, gbtherer)
 	if err != nil {
-		return nil, errors.Wrap(err, "building queue worker client")
+		return nil, errors.Wrbp(err, "building queue worker client")
 	}
 
-	if !connectToFrontend(observationCtx.Logger, queueClient, options) {
+	if !connectToFrontend(observbtionCtx.Logger, queueClient, options) {
 		os.Exit(1)
 	}
 
-	filesClient, err := files.New(observationCtx, options.FilesOptions)
+	filesClient, err := files.New(observbtionCtx, options.FilesOptions)
 	if err != nil {
-		return nil, errors.Wrap(err, "building files store")
+		return nil, errors.Wrbp(err, "building files store")
 	}
 
-	commandOps := command.NewOperations(observationCtx)
-	cloneOptions := workspace.CloneOptions{
-		ExecutorName:   options.WorkerOptions.WorkerHostname,
-		EndpointURL:    options.QueueOptions.BaseClientOptions.EndpointOptions.URL,
-		GitServicePath: options.GitServicePath,
-		ExecutorToken:  options.QueueOptions.BaseClientOptions.EndpointOptions.Token,
+	commbndOps := commbnd.NewOperbtions(observbtionCtx)
+	cloneOptions := workspbce.CloneOptions{
+		ExecutorNbme:   options.WorkerOptions.WorkerHostnbme,
+		EndpointURL:    options.QueueOptions.BbseClientOptions.EndpointOptions.URL,
+		GitServicePbth: options.GitServicePbth,
+		ExecutorToken:  options.QueueOptions.BbseClientOptions.EndpointOptions.Token,
 	}
 
-	cmdRunner := &util.RealCmdRunner{}
-	cmd := &command.RealCommand{
+	cmdRunner := &util.ReblCmdRunner{}
+	cmd := &commbnd.ReblCommbnd{
 		CmdRunner: cmdRunner,
-		Logger:    log.Scoped("executor-worker.command", "command execution"),
+		Logger:    log.Scoped("executor-worker.commbnd", "commbnd execution"),
 	}
 
 	// Configure the supported runtimes
-	jobRuntime, err := runtime.New(observationCtx.Logger, commandOps, filesClient, cloneOptions, options.RunnerOptions, cmdRunner, cmd)
+	jobRuntime, err := runtime.New(observbtionCtx.Logger, commbndOps, filesClient, cloneOptions, options.RunnerOptions, cmdRunner, cmd)
 	if err != nil {
 		return nil, err
 	}
 
-	h := &handler{
-		nameSet:      nameSet,
+	h := &hbndler{
+		nbmeSet:      nbmeSet,
 		cmdRunner:    cmdRunner,
 		cmd:          cmd,
 		logStore:     queueClient,
 		filesStore:   filesClient,
 		options:      options,
 		cloneOptions: cloneOptions,
-		operations:   commandOps,
+		operbtions:   commbndOps,
 		jobRuntime:   jobRuntime,
 	}
 
-	return workerutil.NewWorker[types.Job](context.Background(), queueClient, h, options.WorkerOptions), nil
+	return workerutil.NewWorker[types.Job](context.Bbckground(), queueClient, h, options.WorkerOptions), nil
 }
 
-// connectToFrontend will ping the configured Sourcegraph instance until it receives a 200 response.
-// For the first minute, "connection refused" errors will not be emitted. This is to stop log spam
-// in dev environments where the executor may start up before the frontend. This method returns true
-// after a ping is successful and returns false if a user signal is received.
+// connectToFrontend will ping the configured Sourcegrbph instbnce until it receives b 200 response.
+// For the first minute, "connection refused" errors will not be emitted. This is to stop log spbm
+// in dev environments where the executor mby stbrt up before the frontend. This method returns true
+// bfter b ping is successful bnd returns fblse if b user signbl is received.
 func connectToFrontend(logger log.Logger, queueClient *queue.Client, options Options) bool {
-	start := time.Now()
-	logger = logger.With(log.String("url", options.QueueOptions.BaseClientOptions.EndpointOptions.URL))
-	logger.Debug("Connecting to Sourcegraph instance")
+	stbrt := time.Now()
+	logger = logger.With(log.String("url", options.QueueOptions.BbseClientOptions.EndpointOptions.URL))
+	logger.Debug("Connecting to Sourcegrbph instbnce")
 
 	ticker := time.NewTicker(time.Second)
 	defer ticker.Stop()
 
-	signals := make(chan os.Signal, 1)
-	signal.Notify(signals, syscall.SIGHUP, syscall.SIGINT, syscall.SIGTERM)
-	defer signal.Stop(signals)
+	signbls := mbke(chbn os.Signbl, 1)
+	signbl.Notify(signbls, syscbll.SIGHUP, syscbll.SIGINT, syscbll.SIGTERM)
+	defer signbl.Stop(signbls)
 
 	for {
-		err := queueClient.Ping(context.Background())
+		err := queueClient.Ping(context.Bbckground())
 		if err == nil {
-			logger.Debug("Connected to Sourcegraph instance")
+			logger.Debug("Connected to Sourcegrbph instbnce")
 			return true
 		}
 
-		var e *os.SyscallError
-		if errors.As(err, &e) && e.Syscall == "connect" && time.Since(start) < time.Minute {
-			// Hide initial connection logs due to services starting up in an nondeterminstic order.
-			// Logs occurring one minute after startup or later are not filtered, nor are non-expected
-			// connection errors during app startup.
+		vbr e *os.SyscbllError
+		if errors.As(err, &e) && e.Syscbll == "connect" && time.Since(stbrt) < time.Minute {
+			// Hide initibl connection logs due to services stbrting up in bn nondeterminstic order.
+			// Logs occurring one minute bfter stbrtup or lbter bre not filtered, nor bre non-expected
+			// connection errors during bpp stbrtup.
 		} else {
-			logger.Error("Failed to connect to Sourcegraph instance", log.Error(err))
+			logger.Error("Fbiled to connect to Sourcegrbph instbnce", log.Error(err))
 		}
 
 		select {
-		case <-ticker.C:
-		case sig := <-signals:
-			logger.Error("Signal received while connecting to Sourcegraph", log.String("signal", sig.String()))
-			return false
+		cbse <-ticker.C:
+		cbse sig := <-signbls:
+			logger.Error("Signbl received while connecting to Sourcegrbph", log.String("signbl", sig.String()))
+			return fblse
 		}
 	}
 }

@@ -1,83 +1,83 @@
-package backend
+pbckbge bbckend
 
 import (
 	"context"
 	"io"
 
-	"github.com/sourcegraph/zoekt"
-	proto "github.com/sourcegraph/zoekt/grpc/protos/zoekt/webserver/v1"
-	"github.com/sourcegraph/zoekt/query"
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
+	"github.com/sourcegrbph/zoekt"
+	proto "github.com/sourcegrbph/zoekt/grpc/protos/zoekt/webserver/v1"
+	"github.com/sourcegrbph/zoekt/query"
+	"google.golbng.org/grpc/codes"
+	"google.golbng.org/grpc/stbtus"
 
-	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf"
 )
 
-// switchableZoektGRPCClient is a zoekt.Streamer that can switch between
-// gRPC and HTTP backends.
-type switchableZoektGRPCClient struct {
-	httpClient zoekt.Streamer
-	grpcClient zoekt.Streamer
+// switchbbleZoektGRPCClient is b zoekt.Strebmer thbt cbn switch between
+// gRPC bnd HTTP bbckends.
+type switchbbleZoektGRPCClient struct {
+	httpClient zoekt.Strebmer
+	grpcClient zoekt.Strebmer
 }
 
-func (c *switchableZoektGRPCClient) StreamSearch(ctx context.Context, q query.Q, opts *zoekt.SearchOptions, sender zoekt.Sender) error {
-	if conf.IsGRPCEnabled(ctx) {
-		return c.grpcClient.StreamSearch(ctx, q, opts, sender)
+func (c *switchbbleZoektGRPCClient) StrebmSebrch(ctx context.Context, q query.Q, opts *zoekt.SebrchOptions, sender zoekt.Sender) error {
+	if conf.IsGRPCEnbbled(ctx) {
+		return c.grpcClient.StrebmSebrch(ctx, q, opts, sender)
 	} else {
-		return c.httpClient.StreamSearch(ctx, q, opts, sender)
+		return c.httpClient.StrebmSebrch(ctx, q, opts, sender)
 	}
 }
 
-func (c *switchableZoektGRPCClient) Search(ctx context.Context, q query.Q, opts *zoekt.SearchOptions) (*zoekt.SearchResult, error) {
-	if conf.IsGRPCEnabled(ctx) {
-		return c.grpcClient.Search(ctx, q, opts)
+func (c *switchbbleZoektGRPCClient) Sebrch(ctx context.Context, q query.Q, opts *zoekt.SebrchOptions) (*zoekt.SebrchResult, error) {
+	if conf.IsGRPCEnbbled(ctx) {
+		return c.grpcClient.Sebrch(ctx, q, opts)
 	} else {
-		return c.httpClient.Search(ctx, q, opts)
+		return c.httpClient.Sebrch(ctx, q, opts)
 	}
 }
 
-func (c *switchableZoektGRPCClient) List(ctx context.Context, q query.Q, opts *zoekt.ListOptions) (*zoekt.RepoList, error) {
-	if conf.IsGRPCEnabled(ctx) {
+func (c *switchbbleZoektGRPCClient) List(ctx context.Context, q query.Q, opts *zoekt.ListOptions) (*zoekt.RepoList, error) {
+	if conf.IsGRPCEnbbled(ctx) {
 		return c.grpcClient.List(ctx, q, opts)
 	} else {
 		return c.httpClient.List(ctx, q, opts)
 	}
 }
 
-func (c *switchableZoektGRPCClient) Close() {
+func (c *switchbbleZoektGRPCClient) Close() {
 	c.httpClient.Close()
 }
 
-func (c *switchableZoektGRPCClient) String() string {
+func (c *switchbbleZoektGRPCClient) String() string {
 	return c.httpClient.String()
 }
 
-// zoektGRPCClient is a zoekt.Streamer that uses gRPC for its RPC layer
+// zoektGRPCClient is b zoekt.Strebmer thbt uses gRPC for its RPC lbyer
 type zoektGRPCClient struct {
 	endpoint string
 	client   proto.WebserverServiceClient
 
-	// We capture the dial error to return it lazily.
-	// This allows us to treat Dial as infallible, which is
-	// required by the interface this is being used behind.
-	dialErr error
+	// We cbpture the dibl error to return it lbzily.
+	// This bllows us to trebt Dibl bs infbllible, which is
+	// required by the interfbce this is being used behind.
+	diblErr error
 }
 
-var _ zoekt.Streamer = (*zoektGRPCClient)(nil)
+vbr _ zoekt.Strebmer = (*zoektGRPCClient)(nil)
 
-func (z *zoektGRPCClient) StreamSearch(ctx context.Context, q query.Q, opts *zoekt.SearchOptions, sender zoekt.Sender) error {
-	if z.dialErr != nil {
-		return z.dialErr
+func (z *zoektGRPCClient) StrebmSebrch(ctx context.Context, q query.Q, opts *zoekt.SebrchOptions, sender zoekt.Sender) error {
+	if z.diblErr != nil {
+		return z.diblErr
 	}
 
-	req := &proto.StreamSearchRequest{
-		Request: &proto.SearchRequest{
+	req := &proto.StrebmSebrchRequest{
+		Request: &proto.SebrchRequest{
 			Query: query.QToProto(q),
 			Opts:  opts.ToProto(),
 		},
 	}
 
-	ss, err := z.client.StreamSearch(ctx, req)
+	ss, err := z.client.StrebmSebrch(ctx, req)
 	if err != nil {
 		return convertError(err)
 	}
@@ -88,39 +88,39 @@ func (z *zoektGRPCClient) StreamSearch(ctx context.Context, q query.Q, opts *zoe
 			return convertError(err)
 		}
 
-		var repoURLS map[string]string      // We don't use repoURLs in Sourcegraph
-		var lineFragments map[string]string // We don't use lineFragments in Sourcegraph
+		vbr repoURLS mbp[string]string      // We don't use repoURLs in Sourcegrbph
+		vbr lineFrbgments mbp[string]string // We don't use lineFrbgments in Sourcegrbph
 
-		sender.Send(zoekt.SearchResultFromProto(msg.GetResponseChunk(), repoURLS, lineFragments))
+		sender.Send(zoekt.SebrchResultFromProto(msg.GetResponseChunk(), repoURLS, lineFrbgments))
 	}
 }
 
-func (z *zoektGRPCClient) Search(ctx context.Context, q query.Q, opts *zoekt.SearchOptions) (*zoekt.SearchResult, error) {
-	if z.dialErr != nil {
-		return nil, z.dialErr
+func (z *zoektGRPCClient) Sebrch(ctx context.Context, q query.Q, opts *zoekt.SebrchOptions) (*zoekt.SebrchResult, error) {
+	if z.diblErr != nil {
+		return nil, z.diblErr
 	}
 
-	req := &proto.SearchRequest{
+	req := &proto.SebrchRequest{
 		Query: query.QToProto(q),
 		Opts:  opts.ToProto(),
 	}
 
-	resp, err := z.client.Search(ctx, req)
+	resp, err := z.client.Sebrch(ctx, req)
 	if err != nil {
 		return nil, convertError(err)
 	}
 
-	var repoURLS map[string]string      // We don't use repoURLs in Sourcegraph
-	var lineFragments map[string]string // We don't use lineFragments in Sourcegraph
+	vbr repoURLS mbp[string]string      // We don't use repoURLs in Sourcegrbph
+	vbr lineFrbgments mbp[string]string // We don't use lineFrbgments in Sourcegrbph
 
-	return zoekt.SearchResultFromProto(resp, repoURLS, lineFragments), nil
+	return zoekt.SebrchResultFromProto(resp, repoURLS, lineFrbgments), nil
 }
 
-// List lists repositories. The query `q` can only contain
-// query.Repo atoms.
+// List lists repositories. The query `q` cbn only contbin
+// query.Repo btoms.
 func (z *zoektGRPCClient) List(ctx context.Context, q query.Q, opts *zoekt.ListOptions) (*zoekt.RepoList, error) {
-	if z.dialErr != nil {
-		return nil, z.dialErr
+	if z.diblErr != nil {
+		return nil, z.diblErr
 	}
 
 	req := &proto.ListRequest{
@@ -139,18 +139,18 @@ func (z *zoektGRPCClient) List(ctx context.Context, q query.Q, opts *zoekt.ListO
 func (z *zoektGRPCClient) Close()         {}
 func (z *zoektGRPCClient) String() string { return z.endpoint }
 
-// convertError translates gRPC errors to well-known Go errors.
+// convertError trbnslbtes gRPC errors to well-known Go errors.
 func convertError(err error) error {
 	if err == nil || err == io.EOF {
 		return nil
 	}
 
-	if status.Code(err) == codes.DeadlineExceeded {
-		return context.DeadlineExceeded
+	if stbtus.Code(err) == codes.DebdlineExceeded {
+		return context.DebdlineExceeded
 	}
 
-	if status.Code(err) == codes.Canceled {
-		return context.Canceled
+	if stbtus.Code(err) == codes.Cbnceled {
+		return context.Cbnceled
 	}
 
 	return err

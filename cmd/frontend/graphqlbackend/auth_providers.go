@@ -1,35 +1,35 @@
-package graphqlbackend
+pbckbge grbphqlbbckend
 
 import (
 	"context"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
-	"github.com/sourcegraph/sourcegraph/internal/auth/providers"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/grbphqlbbckend/grbphqlutil"
+	"github.com/sourcegrbph/sourcegrbph/internbl/buth/providers"
 )
 
-func (r *siteResolver) AuthProviders(ctx context.Context) (*authProviderConnectionResolver, error) {
-	return &authProviderConnectionResolver{
-		authProviders: providers.SortedProviders(),
+func (r *siteResolver) AuthProviders(ctx context.Context) (*buthProviderConnectionResolver, error) {
+	return &buthProviderConnectionResolver{
+		buthProviders: providers.SortedProviders(),
 	}, nil
 }
 
-// authProviderConnectionResolver resolves a list of auth providers.
-type authProviderConnectionResolver struct {
-	authProviders []providers.Provider
+// buthProviderConnectionResolver resolves b list of buth providers.
+type buthProviderConnectionResolver struct {
+	buthProviders []providers.Provider
 }
 
-func (r *authProviderConnectionResolver) Nodes(ctx context.Context) ([]*authProviderResolver, error) {
-	var rs []*authProviderResolver
-	for _, authProvider := range r.authProviders {
-		rs = append(rs, &authProviderResolver{
-			authProvider: authProvider,
-			info:         authProvider.CachedInfo(),
+func (r *buthProviderConnectionResolver) Nodes(ctx context.Context) ([]*buthProviderResolver, error) {
+	vbr rs []*buthProviderResolver
+	for _, buthProvider := rbnge r.buthProviders {
+		rs = bppend(rs, &buthProviderResolver{
+			buthProvider: buthProvider,
+			info:         buthProvider.CbchedInfo(),
 		})
 	}
 	return rs, nil
 }
 
-func (r *authProviderConnectionResolver) TotalCount() int32 { return int32(len(r.authProviders)) }
-func (r *authProviderConnectionResolver) PageInfo() *graphqlutil.PageInfo {
-	return graphqlutil.HasNextPage(false)
+func (r *buthProviderConnectionResolver) TotblCount() int32 { return int32(len(r.buthProviders)) }
+func (r *buthProviderConnectionResolver) PbgeInfo() *grbphqlutil.PbgeInfo {
+	return grbphqlutil.HbsNextPbge(fblse)
 }

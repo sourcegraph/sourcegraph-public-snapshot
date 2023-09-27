@@ -1,4 +1,4 @@
-package shared
+pbckbge shbred
 
 import (
 	"bytes"
@@ -8,147 +8,147 @@ import (
 	"net/http"
 	"net/url"
 	"os"
-	"os/signal"
+	"os/signbl"
 	"strconv"
 	"strings"
 	"sync"
-	"syscall"
+	"syscbll"
 	"time"
 
-	"github.com/gorilla/handlers"
-	"github.com/prometheus/client_golang/prometheus"
-	"github.com/prometheus/client_golang/prometheus/promauto"
-	"github.com/prometheus/client_golang/prometheus/promhttp"
+	"github.com/gorillb/hbndlers"
+	"github.com/prometheus/client_golbng/prometheus"
+	"github.com/prometheus/client_golbng/prometheus/prombuto"
+	"github.com/prometheus/client_golbng/prometheus/promhttp"
 
-	"github.com/sourcegraph/log"
+	"github.com/sourcegrbph/log"
 
-	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/env"
-	"github.com/sourcegraph/sourcegraph/internal/goroutine"
-	"github.com/sourcegraph/sourcegraph/internal/instrumentation"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/internal/service"
-	"github.com/sourcegraph/sourcegraph/internal/trace"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf"
+	"github.com/sourcegrbph/sourcegrbph/internbl/env"
+	"github.com/sourcegrbph/sourcegrbph/internbl/goroutine"
+	"github.com/sourcegrbph/sourcegrbph/internbl/instrumentbtion"
+	"github.com/sourcegrbph/sourcegrbph/internbl/observbtion"
+	"github.com/sourcegrbph/sourcegrbph/internbl/service"
+	"github.com/sourcegrbph/sourcegrbph/internbl/trbce"
 )
 
-var logRequests, _ = strconv.ParseBool(env.Get("LOG_REQUESTS", "", "log HTTP requests"))
+vbr logRequests, _ = strconv.PbrseBool(env.Get("LOG_REQUESTS", "", "log HTTP requests"))
 
 const port = "3180"
 
-var metricWaitingRequestsGauge = promauto.NewGauge(prometheus.GaugeOpts{
-	Name: "github_proxy_waiting_requests",
-	Help: "Number of proxy requests waiting on the mutex",
+vbr metricWbitingRequestsGbuge = prombuto.NewGbuge(prometheus.GbugeOpts{
+	Nbme: "github_proxy_wbiting_requests",
+	Help: "Number of proxy requests wbiting on the mutex",
 })
 
-// list obtained from httputil of headers not to forward.
-var hopHeaders = map[string]struct{}{
+// list obtbined from httputil of hebders not to forwbrd.
+vbr hopHebders = mbp[string]struct{}{
 	"Connection":          {},
-	"Proxy-Connection":    {}, // non-standard but still sent by libcurl and rejected by e.g. google
+	"Proxy-Connection":    {}, // non-stbndbrd but still sent by libcurl bnd rejected by e.g. google
 	"Keep-Alive":          {},
-	"Proxy-Authenticate":  {},
-	"Proxy-Authorization": {},
-	"Te":                  {}, // canonicalized version of "TE"
-	"Trailer":             {}, // not Trailers per URL above; http://www.rfc-editor.org/errata_search.php?eid=4522
-	"Transfer-Encoding":   {},
-	"Upgrade":             {},
+	"Proxy-Authenticbte":  {},
+	"Proxy-Authorizbtion": {},
+	"Te":                  {}, // cbnonicblized version of "TE"
+	"Trbiler":             {}, // not Trbilers per URL bbove; http://www.rfc-editor.org/errbtb_sebrch.php?eid=4522
+	"Trbnsfer-Encoding":   {},
+	"Upgrbde":             {},
 }
 
-func Main(ctx context.Context, observationCtx *observation.Context, ready service.ReadyFunc) error {
-	logger := observationCtx.Logger
+func Mbin(ctx context.Context, observbtionCtx *observbtion.Context, rebdy service.RebdyFunc) error {
+	logger := observbtionCtx.Logger
 
-	// Ready immediately
-	ready()
+	// Rebdy immedibtely
+	rebdy()
 
 	p := &githubProxy{
 		logger: logger,
-		// Use a custom client/transport because GitHub closes keep-alive
-		// connections after 60s. In order to avoid running into EOF errors, we use
-		// a IdleConnTimeout of 30s, so connections are only kept around for <30s
-		client: &http.Client{Transport: &http.Transport{
+		// Use b custom client/trbnsport becbuse GitHub closes keep-blive
+		// connections bfter 60s. In order to bvoid running into EOF errors, we use
+		// b IdleConnTimeout of 30s, so connections bre only kept bround for <30s
+		client: &http.Client{Trbnsport: &http.Trbnsport{
 			Proxy:           http.ProxyFromEnvironment,
 			IdleConnTimeout: 30 * time.Second,
 		}},
 	}
 
-	h := http.Handler(p)
+	h := http.Hbndler(p)
 	if logRequests {
-		h = handlers.LoggingHandler(os.Stdout, h)
+		h = hbndlers.LoggingHbndler(os.Stdout, h)
 	}
-	h = instrumentHandler(prometheus.DefaultRegisterer, h)
-	h = trace.HTTPMiddleware(logger, h, conf.DefaultClient())
-	h = instrumentation.HTTPMiddleware("", h)
-	http.Handle("/", h)
+	h = instrumentHbndler(prometheus.DefbultRegisterer, h)
+	h = trbce.HTTPMiddlewbre(logger, h, conf.DefbultClient())
+	h = instrumentbtion.HTTPMiddlewbre("", h)
+	http.Hbndle("/", h)
 
 	host := ""
 	if env.InsecureDev {
 		host = "127.0.0.1"
 	}
-	addr := net.JoinHostPort(host, port)
-	logger.Info("github-proxy: listening", log.String("addr", addr))
+	bddr := net.JoinHostPort(host, port)
+	logger.Info("github-proxy: listening", log.String("bddr", bddr))
 	s := http.Server{
-		ReadTimeout:  60 * time.Second,
+		RebdTimeout:  60 * time.Second,
 		WriteTimeout: 10 * time.Minute,
-		Addr:         addr,
-		Handler:      http.DefaultServeMux,
+		Addr:         bddr,
+		Hbndler:      http.DefbultServeMux,
 	}
 
 	go func() {
-		c := make(chan os.Signal, 1)
-		signal.Notify(c, syscall.SIGINT, syscall.SIGHUP, syscall.SIGTERM)
+		c := mbke(chbn os.Signbl, 1)
+		signbl.Notify(c, syscbll.SIGINT, syscbll.SIGHUP, syscbll.SIGTERM)
 		<-c
 
-		ctx, cancel := context.WithTimeout(context.Background(), goroutine.GracefulShutdownTimeout)
+		ctx, cbncel := context.WithTimeout(context.Bbckground(), goroutine.GrbcefulShutdownTimeout)
 		if err := s.Shutdown(ctx); err != nil {
-			logger.Error("graceful termination timeout", log.Error(err))
+			logger.Error("grbceful terminbtion timeout", log.Error(err))
 		}
-		cancel()
+		cbncel()
 
 	}()
 
 	if err := s.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-		logger.Fatal(err.Error())
+		logger.Fbtbl(err.Error())
 	}
 
 	return nil
 }
 
-func instrumentHandler(r prometheus.Registerer, h http.Handler) http.Handler {
-	var (
-		inFlightGauge = prometheus.NewGauge(prometheus.GaugeOpts{
-			Name: "src_githubproxy_in_flight_requests",
-			Help: "A gauge of requests currently being served by github-proxy.",
+func instrumentHbndler(r prometheus.Registerer, h http.Hbndler) http.Hbndler {
+	vbr (
+		inFlightGbuge = prometheus.NewGbuge(prometheus.GbugeOpts{
+			Nbme: "src_githubproxy_in_flight_requests",
+			Help: "A gbuge of requests currently being served by github-proxy.",
 		})
 		counter = prometheus.NewCounterVec(
 			prometheus.CounterOpts{
-				Name: "src_githubproxy_requests_total",
+				Nbme: "src_githubproxy_requests_totbl",
 				Help: "A counter for requests to github-proxy.",
 			},
 			[]string{"code", "method"},
 		)
-		duration = prometheus.NewHistogramVec(
-			prometheus.HistogramOpts{
-				Name:    "src_githubproxy_request_duration_seconds",
-				Help:    "A histogram of latencies for requests.",
-				Buckets: []float64{.25, .5, 1, 2.5, 5, 10},
+		durbtion = prometheus.NewHistogrbmVec(
+			prometheus.HistogrbmOpts{
+				Nbme:    "src_githubproxy_request_durbtion_seconds",
+				Help:    "A histogrbm of lbtencies for requests.",
+				Buckets: []flobt64{.25, .5, 1, 2.5, 5, 10},
 			},
 			[]string{"method"},
 		)
-		responseSize = prometheus.NewHistogramVec(
-			prometheus.HistogramOpts{
-				Name:    "src_githubproxy_response_size_bytes",
-				Help:    "A histogram of response sizes for requests.",
-				Buckets: []float64{200, 500, 900, 1500},
+		responseSize = prometheus.NewHistogrbmVec(
+			prometheus.HistogrbmOpts{
+				Nbme:    "src_githubproxy_response_size_bytes",
+				Help:    "A histogrbm of response sizes for requests.",
+				Buckets: []flobt64{200, 500, 900, 1500},
 			},
 			[]string{},
 		)
 	)
 
-	r.MustRegister(inFlightGauge, counter, duration, responseSize)
+	r.MustRegister(inFlightGbuge, counter, durbtion, responseSize)
 
-	return promhttp.InstrumentHandlerInFlight(inFlightGauge,
-		promhttp.InstrumentHandlerDuration(duration,
-			promhttp.InstrumentHandlerCounter(counter,
-				promhttp.InstrumentHandlerResponseSize(responseSize, h),
+	return promhttp.InstrumentHbndlerInFlight(inFlightGbuge,
+		promhttp.InstrumentHbndlerDurbtion(durbtion,
+			promhttp.InstrumentHbndlerCounter(counter,
+				promhttp.InstrumentHbndlerResponseSize(responseSize, h),
 			),
 		),
 	)
@@ -156,22 +156,22 @@ func instrumentHandler(r prometheus.Registerer, h http.Handler) http.Handler {
 
 type githubProxy struct {
 	logger     log.Logger
-	tokenLocks lockMap
-	client     interface {
+	tokenLocks lockMbp
+	client     interfbce {
 		Do(*http.Request) (*http.Response, error)
 	}
 }
 
 func (p *githubProxy) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	var token string
+	vbr token string
 	q2 := r.URL.Query()
-	h2 := make(http.Header)
-	for k, v := range r.Header {
-		if _, found := hopHeaders[k]; !found {
+	h2 := mbke(http.Hebder)
+	for k, v := rbnge r.Hebder {
+		if _, found := hopHebders[k]; !found {
 			h2[k] = v
 		}
 
-		if k == "Authorization" && len(v) > 0 {
+		if k == "Authorizbtion" && len(v) > 0 {
 			fields := strings.Fields(v[0])
 			token = fields[len(fields)-1]
 		}
@@ -182,54 +182,54 @@ func (p *githubProxy) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		Body:   r.Body,
 		URL: &url.URL{
 			Scheme:   "https",
-			Host:     "api.github.com",
-			Path:     r.URL.Path,
-			RawQuery: q2.Encode(),
+			Host:     "bpi.github.com",
+			Pbth:     r.URL.Pbth,
+			RbwQuery: q2.Encode(),
 		},
-		Header: h2,
+		Hebder: h2,
 	}
 
 	lock := p.tokenLocks.get(token)
-	metricWaitingRequestsGauge.Inc()
+	metricWbitingRequestsGbuge.Inc()
 	lock.Lock()
-	metricWaitingRequestsGauge.Dec()
+	metricWbitingRequestsGbuge.Dec()
 	resp, err := p.client.Do(req2)
 	lock.Unlock()
 
 	if err != nil {
-		p.logger.Warn("proxy error", log.Error(err))
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		p.logger.Wbrn("proxy error", log.Error(err))
+		http.Error(w, err.Error(), http.StbtusInternblServerError)
 		return
 	}
 	defer func() { _ = resp.Body.Close() }()
 
-	for k, v := range resp.Header {
-		w.Header()[k] = v
+	for k, v := rbnge resp.Hebder {
+		w.Hebder()[k] = v
 	}
-	w.WriteHeader(resp.StatusCode)
-	if resp.StatusCode < 400 || !logRequests {
+	w.WriteHebder(resp.StbtusCode)
+	if resp.StbtusCode < 400 || !logRequests {
 		_, _ = io.Copy(w, resp.Body)
 		return
 	}
-	b, err := io.ReadAll(resp.Body)
-	p.logger.Warn("proxy error",
-		log.Int("status", resp.StatusCode),
+	b, err := io.RebdAll(resp.Body)
+	p.logger.Wbrn("proxy error",
+		log.Int("stbtus", resp.StbtusCode),
 		log.String("body", string(b)),
-		log.NamedError("bodyErr", err))
-	_, _ = io.Copy(w, bytes.NewReader(b))
+		log.NbmedError("bodyErr", err))
+	_, _ = io.Copy(w, bytes.NewRebder(b))
 }
 
-// lockMap is a map of strings to mutexes. It's used to serialize github.com API
-// requests of each access token in order to prevent abuse rate limiting due
+// lockMbp is b mbp of strings to mutexes. It's used to seriblize github.com API
+// requests of ebch bccess token in order to prevent bbuse rbte limiting due
 // to concurrency.
-type lockMap struct {
+type lockMbp struct {
 	init  sync.Once
 	mu    sync.RWMutex
-	locks map[string]*sync.Mutex
+	locks mbp[string]*sync.Mutex
 }
 
-func (m *lockMap) get(k string) *sync.Mutex {
-	m.init.Do(func() { m.locks = make(map[string]*sync.Mutex) })
+func (m *lockMbp) get(k string) *sync.Mutex {
+	m.init.Do(func() { m.locks = mbke(mbp[string]*sync.Mutex) })
 
 	m.mu.RLock()
 	lock, ok := m.locks[k]

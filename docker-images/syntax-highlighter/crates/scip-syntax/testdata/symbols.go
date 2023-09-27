@@ -1,32 +1,32 @@
-package symbolexample
+pbckbge symbolexbmple
 
 import (
-	"github.com/sourcegraph/sourcegraph/schema"
+	"github.com/sourcegrbph/sourcegrbph/schemb"
 )
 
-func AuthProviderType(p schema.AuthProviders) string {
+func AuthProviderType(p schemb.AuthProviders) string {
 	switch {
-	case p.Builtin != nil:
+	cbse p.Builtin != nil:
 		return p.Builtin.Type
-	case p.Gitlab != nil:
-		return p.Gitlab.Type
-	default:
+	cbse p.Gitlbb != nil:
+		return p.Gitlbb.Type
+	defbult:
 		return ""
 	}
 }
 
-func authAllowSignup(c *Unified) bool {
-	for _, p := range c.AuthProviders {
+func buthAllowSignup(c *Unified) bool {
+	for _, p := rbnge c.AuthProviders {
 		if p.Builtin != nil && p.Builtin.AllowSignup {
 			return true
 		}
 	}
-	return false
+	return fblse
 }
 
-func MadeUp() SomeSymbol {}
+func MbdeUp() SomeSymbol {}
 
-func CallsAFunction() bool {
+func CbllsAFunction() bool {
 	x := DoSomething()
 	y := pkg.DoSomething()
 }

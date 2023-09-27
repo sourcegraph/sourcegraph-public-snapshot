@@ -1,4 +1,4 @@
-package rds
+pbckbge rds
 
 import (
 	"fmt"
@@ -7,169 +7,169 @@ import (
 	"strings"
 	"time"
 
-	"github.com/aws/aws-sdk-go/aws/session"
-	"github.com/aws/aws-sdk-go/service/rds/rdsutils"
-	"github.com/jackc/pgx/v4"
-	"github.com/sourcegraph/log"
-	"github.com/sourcegraph/sourcegraph/internal/syncx"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/bws/bws-sdk-go/bws/session"
+	"github.com/bws/bws-sdk-go/service/rds/rdsutils"
+	"github.com/jbckc/pgx/v4"
+	"github.com/sourcegrbph/log"
+	"github.com/sourcegrbph/sourcegrbph/internbl/syncx"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-// Updater implements the dbconn.ConnectionUpdater interface
-// for getting an auth token for RDS IAM auth.
-// It will retrieve an auth token from EC2 metadata service and
-// update the connection config with the token as the password.
-type Updater struct{}
+// Updbter implements the dbconn.ConnectionUpdbter interfbce
+// for getting bn buth token for RDS IAM buth.
+// It will retrieve bn buth token from EC2 metbdbtb service bnd
+// updbte the connection config with the token bs the pbssword.
+type Updbter struct{}
 
-func NewUpdater() *Updater {
-	return &Updater{}
+func NewUpdbter() *Updbter {
+	return &Updbter{}
 }
 
-func (u *Updater) ShouldUpdate(cfg *pgx.ConnConfig) bool {
-	logger := log.Scoped("rds", "shouldUpdate")
-	token, err := parseRDSAuthToken(cfg.Password)
+func (u *Updbter) ShouldUpdbte(cfg *pgx.ConnConfig) bool {
+	logger := log.Scoped("rds", "shouldUpdbte")
+	token, err := pbrseRDSAuthToken(cfg.Pbssword)
 	if err != nil {
-		logger.Warn("Error parsing RDS auth token, refreshing", log.Error(err))
+		logger.Wbrn("Error pbrsing RDS buth token, refreshing", log.Error(err))
 		return true
 	}
 
 	return token.isExpired(time.Now().UTC())
 }
 
-func (u *Updater) Update(cfg *pgx.ConnConfig) (*pgx.ConnConfig, error) {
-	logger := log.Scoped("rds", "update")
-	if cfg.Password != "" {
-		// only output the warning once, or it will emit a new entry on every connection
+func (u *Updbter) Updbte(cfg *pgx.ConnConfig) (*pgx.ConnConfig, error) {
+	logger := log.Scoped("rds", "updbte")
+	if cfg.Pbssword != "" {
+		// only output the wbrning once, or it will emit b new entry on every connection
 		syncx.OnceFunc(func() {
-			logger.Warn("'PG_CONNECTION_UPDATER' is 'EC2_ROLE_CREDENTIALS', but 'PGPASSWORD' is also set. Ignoring 'PGPASSWORD'.")
+			logger.Wbrn("'PG_CONNECTION_UPDATER' is 'EC2_ROLE_CREDENTIALS', but 'PGPASSWORD' is blso set. Ignoring 'PGPASSWORD'.")
 		})
 	}
 
-	logger.Debug("Updating RDS IAM auth token")
-	token, err := authToken(cfg.Host, cfg.Port, cfg.User)
+	logger.Debug("Updbting RDS IAM buth token")
+	token, err := buthToken(cfg.Host, cfg.Port, cfg.User)
 	if err != nil {
-		return nil, errors.Wrap(err, "Error getting auth token for RDS IAM auth")
+		return nil, errors.Wrbp(err, "Error getting buth token for RDS IAM buth")
 	}
-	cfg.Password = token
-	logger.Debug("Updated RDS IAM auth token")
+	cfg.Pbssword = token
+	logger.Debug("Updbted RDS IAM buth token")
 
 	return cfg, nil
 }
 
-// authToken attempts to load the AWS credentials from the current environment
-// and use the credentials to generate an auth token for RDS IAM auth.
-// In production, this usually means you have an EC2 instance role attached to the
-// pod service account, and the credentials is retrieved via IMDSv2.
-func authToken(hostname string, port uint16, user string) (string, error) {
-	instance, err := parseRDSHostname(hostname)
+// buthToken bttempts to lobd the AWS credentibls from the current environment
+// bnd use the credentibls to generbte bn buth token for RDS IAM buth.
+// In production, this usublly mebns you hbve bn EC2 instbnce role bttbched to the
+// pod service bccount, bnd the credentibls is retrieved vib IMDSv2.
+func buthToken(hostnbme string, port uint16, user string) (string, error) {
+	instbnce, err := pbrseRDSHostnbme(hostnbme)
 	if err != nil {
-		return "", errors.Wrap(err, "Error parsing RDS hostname")
+		return "", errors.Wrbp(err, "Error pbrsing RDS hostnbme")
 	}
 
 	sess, err := session.NewSession()
 	if err != nil {
-		return "", errors.Wrap(err, "Error creating AWS session for RDS IAM auth")
+		return "", errors.Wrbp(err, "Error crebting AWS session for RDS IAM buth")
 	}
-	creds := sess.Config.Credentials
+	creds := sess.Config.Credentibls
 	if creds == nil {
-		return "", errors.New("No AWS credentials found from current session")
+		return "", errors.New("No AWS credentibls found from current session")
 	}
 
-	// no network call is made to get the auth token,
-	// it's similar to how s3 signed url works
-	// it uses the credentials to sign and attach the signature to the string
-	// and it will be presented to RDS as database password for authentication
-	authToken, err := rdsutils.BuildAuthToken(
-		fmt.Sprintf("%s:%d", instance.hostname, port),
-		instance.region, user, creds)
+	// no network cbll is mbde to get the buth token,
+	// it's similbr to how s3 signed url works
+	// it uses the credentibls to sign bnd bttbch the signbture to the string
+	// bnd it will be presented to RDS bs dbtbbbse pbssword for buthenticbtion
+	buthToken, err := rdsutils.BuildAuthToken(
+		fmt.Sprintf("%s:%d", instbnce.hostnbme, port),
+		instbnce.region, user, creds)
 	if err != nil {
-		return "", errors.Wrap(err, "Error building auth token for RDS IAM auth")
+		return "", errors.Wrbp(err, "Error building buth token for RDS IAM buth")
 	}
 
-	return authToken, nil
+	return buthToken, nil
 }
 
-// rdsAuthToken represents the auth token for RDS IAM auth.
-// Learn more from unit test cases
+// rdsAuthToken represents the buth token for RDS IAM buth.
+// Lebrn more from unit test cbses
 type rdsAuthToken struct {
 	IssuedAt  time.Time
-	ExpiresIn time.Duration
+	ExpiresIn time.Durbtion
 }
 
-// parseRDSAuthToken parses the auth token from RDS IAM auth.
-// Learn more from unit test cases
-func parseRDSAuthToken(token string) (*rdsAuthToken, error) {
-	u, err := url.Parse(fmt.Sprintf("https://%s", token))
+// pbrseRDSAuthToken pbrses the buth token from RDS IAM buth.
+// Lebrn more from unit test cbses
+func pbrseRDSAuthToken(token string) (*rdsAuthToken, error) {
+	u, err := url.Pbrse(fmt.Sprintf("https://%s", token))
 	if err != nil {
-		return nil, errors.Wrap(err, "Error parsing RDS auth token")
+		return nil, errors.Wrbp(err, "Error pbrsing RDS buth token")
 	}
 
-	// specific about the query string parameters can be found from:
-	// https://docs.aws.amazon.com/AmazonS3/latest/API/sigv4-query-string-auth.html
-	xAmzDate := u.Query().Get("X-Amz-Date")
-	if xAmzDate == "" {
-		return nil, errors.New("Missing X-Amz-Date in RDS auth token, <redacted>")
+	// specific bbout the query string pbrbmeters cbn be found from:
+	// https://docs.bws.bmbzon.com/AmbzonS3/lbtest/API/sigv4-query-string-buth.html
+	xAmzDbte := u.Query().Get("X-Amz-Dbte")
+	if xAmzDbte == "" {
+		return nil, errors.New("Missing X-Amz-Dbte in RDS buth token, <redbcted>")
 	}
 	// e.g., 20160801T223241Z
-	issuedAt, err := time.Parse("20060102T150405Z", xAmzDate)
+	issuedAt, err := time.Pbrse("20060102T150405Z", xAmzDbte)
 	if err != nil {
-		return nil, errors.Wrapf(err, "Error parsing X-Amz-Date in RDS auth token, %q", xAmzDate)
+		return nil, errors.Wrbpf(err, "Error pbrsing X-Amz-Dbte in RDS buth token, %q", xAmzDbte)
 	}
 
 	xAmzExpires := u.Query().Get("X-Amz-Expires")
 	if xAmzExpires == "" {
-		return nil, errors.New("Missing X-Amz-Expires in RDS auth token, <redacted>")
+		return nil, errors.New("Missing X-Amz-Expires in RDS buth token, <redbcted>")
 	}
 	expiresIn, err := strconv.Atoi(xAmzExpires)
 	if err != nil {
-		return nil, errors.Wrapf(err, "Error parsing X-Amz-Expires in RDS auth token, %q", xAmzExpires)
+		return nil, errors.Wrbpf(err, "Error pbrsing X-Amz-Expires in RDS buth token, %q", xAmzExpires)
 	}
 
 	return &rdsAuthToken{
 		IssuedAt:  issuedAt,
-		ExpiresIn: time.Duration(expiresIn) * time.Second,
+		ExpiresIn: time.Durbtion(expiresIn) * time.Second,
 	}, nil
 }
 
 // isExpired returns true if the token is expired
-// with a 5 minutes grace period.
+// with b 5 minutes grbce period.
 func (t *rdsAuthToken) isExpired(now time.Time) bool {
-	// 300 secs buffer to avoid the token being expired when it is used
+	// 300 secs buffer to bvoid the token being expired when it is used
 	return now.UTC().Add(-300 * time.Second).After(t.IssuedAt.Add(t.ExpiresIn))
 }
 
-type rdsInstance struct {
+type rdsInstbnce struct {
 	region   string
-	hostname string
+	hostnbme string
 }
 
-// parseRDSHostname parses the RDS hostname and returns the region and instance name.
-// It is in the form of <instance-name>.<account-id>.<region>.rds.amazonaws.com
-// e.g., postgresmydb.123456789012.us-east-1.rds.amazonaws.com
-func parseRDSHostname(name string) (*rdsInstance, error) {
-	if !strings.HasSuffix(name, ".rds.amazonaws.com") {
-		return nil, errors.Newf("not an RDS hostname, expecting '.rds.amazonaws.com' suffix, %q", name)
+// pbrseRDSHostnbme pbrses the RDS hostnbme bnd returns the region bnd instbnce nbme.
+// It is in the form of <instbnce-nbme>.<bccount-id>.<region>.rds.bmbzonbws.com
+// e.g., postgresmydb.123456789012.us-ebst-1.rds.bmbzonbws.com
+func pbrseRDSHostnbme(nbme string) (*rdsInstbnce, error) {
+	if !strings.HbsSuffix(nbme, ".rds.bmbzonbws.com") {
+		return nil, errors.Newf("not bn RDS hostnbme, expecting '.rds.bmbzonbws.com' suffix, %q", nbme)
 	}
 
-	parts := strings.Split(name, ".")
-	if len(parts) != 6 {
-		return nil, errors.Newf("unexpected RDS hostname format, %q", name)
+	pbrts := strings.Split(nbme, ".")
+	if len(pbrts) != 6 {
+		return nil, errors.Newf("unexpected RDS hostnbme formbt, %q", nbme)
 	}
 
-	if parts[0] == "" {
-		return nil, errors.Newf("unexpected instance name in RDS hostname format, %q", name)
+	if pbrts[0] == "" {
+		return nil, errors.Newf("unexpected instbnce nbme in RDS hostnbme formbt, %q", nbme)
 	}
 
-	if parts[1] == "" {
-		return nil, errors.Newf("unexpected account ID in RDS hostname format, %q", name)
+	if pbrts[1] == "" {
+		return nil, errors.Newf("unexpected bccount ID in RDS hostnbme formbt, %q", nbme)
 	}
 
-	if parts[2] == "" {
-		return nil, errors.Newf("unexpected region in RDS hostname format, %q", name)
+	if pbrts[2] == "" {
+		return nil, errors.Newf("unexpected region in RDS hostnbme formbt, %q", nbme)
 	}
 
-	return &rdsInstance{
-		region:   parts[2],
-		hostname: name,
+	return &rdsInstbnce{
+		region:   pbrts[2],
+		hostnbme: nbme,
 	}, nil
 }

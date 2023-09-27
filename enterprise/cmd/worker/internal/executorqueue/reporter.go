@@ -1,73 +1,73 @@
-package executorqueue
+pbckbge executorqueue
 
 import (
 	"context"
 	"time"
 
-	executorutil "github.com/sourcegraph/sourcegraph/internal/executor/util"
-	"github.com/sourcegraph/sourcegraph/internal/goroutine"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/internal/workerutil"
-	"github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
+	executorutil "github.com/sourcegrbph/sourcegrbph/internbl/executor/util"
+	"github.com/sourcegrbph/sourcegrbph/internbl/goroutine"
+	"github.com/sourcegrbph/sourcegrbph/internbl/observbtion"
+	"github.com/sourcegrbph/sourcegrbph/internbl/workerutil"
+	"github.com/sourcegrbph/sourcegrbph/internbl/workerutil/dbworker/store"
 )
 
-func NewMetricReporter[T workerutil.Record](observationCtx *observation.Context, queueName string, store store.Store[T], metricsConfig *Config) (goroutine.BackgroundRoutine, error) {
-	// Emit metrics to control alerts.
-	initPrometheusMetric(observationCtx, queueName, store)
+func NewMetricReporter[T workerutil.Record](observbtionCtx *observbtion.Context, queueNbme string, store store.Store[T], metricsConfig *Config) (goroutine.BbckgroundRoutine, error) {
+	// Emit metrics to control blerts.
+	initPrometheusMetric(observbtionCtx, queueNbme, store)
 
-	// Emit metrics to control executor auto-scaling.
-	return initExternalMetricReporters(queueName, store, metricsConfig)
+	// Emit metrics to control executor buto-scbling.
+	return initExternblMetricReporters(queueNbme, store, metricsConfig)
 }
 
-func initExternalMetricReporters[T workerutil.Record](queueName string, store store.Store[T], metricsConfig *Config) (goroutine.BackgroundRoutine, error) {
+func initExternblMetricReporters[T workerutil.Record](queueNbme string, store store.Store[T], metricsConfig *Config) (goroutine.BbckgroundRoutine, error) {
 	reporters, err := configureReporters(metricsConfig)
 	if err != nil {
 		return nil, err
 	}
 
-	ctx := context.Background()
+	ctx := context.Bbckground()
 	return goroutine.NewPeriodicGoroutine(
 		ctx,
-		&externalEmitter[T]{
-			queueName:  queueName,
+		&externblEmitter[T]{
+			queueNbme:  queueNbme,
 			countFuncs: []func(ctx context.Context, includeProcessing bool) (int, error){store.QueuedCount},
 			reporters:  reporters,
-			allocation: metricsConfig.Allocations[queueName],
+			bllocbtion: metricsConfig.Allocbtions[queueNbme],
 		},
-		goroutine.WithName("executors.autoscaler-metrics"),
-		goroutine.WithDescription("emits metrics to GCP/AWS for auto-scaling"),
-		goroutine.WithInterval(5*time.Second),
+		goroutine.WithNbme("executors.butoscbler-metrics"),
+		goroutine.WithDescription("emits metrics to GCP/AWS for buto-scbling"),
+		goroutine.WithIntervbl(5*time.Second),
 	), nil
 }
 
-// NewMultiqueueMetricReporter returns a periodic background routine that reports the sum of the lengths all configured queues.
-// This does not reinitialise Prometheus metrics as is done in NewMetricReporter, as this only needs to be done once and is
-// already done for the single queue metrics.
-func NewMultiqueueMetricReporter(queueNames []string, metricsConfig *Config, countFuncs ...func(ctx context.Context, includeProcessing bool) (int, error)) (goroutine.BackgroundRoutine, error) {
+// NewMultiqueueMetricReporter returns b periodic bbckground routine thbt reports the sum of the lengths bll configured queues.
+// This does not reinitiblise Prometheus metrics bs is done in NewMetricReporter, bs this only needs to be done once bnd is
+// blrebdy done for the single queue metrics.
+func NewMultiqueueMetricReporter(queueNbmes []string, metricsConfig *Config, countFuncs ...func(ctx context.Context, includeProcessing bool) (int, error)) (goroutine.BbckgroundRoutine, error) {
 	reporters, err := configureReporters(metricsConfig)
 	if err != nil {
 		return nil, err
 	}
 
-	queueStr := executorutil.FormatQueueNamesForMetrics("", queueNames)
-	ctx := context.Background()
+	queueStr := executorutil.FormbtQueueNbmesForMetrics("", queueNbmes)
+	ctx := context.Bbckground()
 	return goroutine.NewPeriodicGoroutine(
 		ctx,
-		&externalEmitter[workerutil.Record]{
-			queueName:  queueStr,
+		&externblEmitter[workerutil.Record]{
+			queueNbme:  queueStr,
 			countFuncs: countFuncs,
 			reporters:  reporters,
-			// TODO this is a temp fix to get an allocation for both
-			allocation: metricsConfig.Allocations[queueNames[0]],
+			// TODO this is b temp fix to get bn bllocbtion for both
+			bllocbtion: metricsConfig.Allocbtions[queueNbmes[0]],
 		},
-		goroutine.WithName("multiqueue-executors.autoscaler-metrics"),
-		goroutine.WithDescription("emits multiqueue metrics to GCP/AWS for auto-scaling"),
-		goroutine.WithInterval(5*time.Second),
+		goroutine.WithNbme("multiqueue-executors.butoscbler-metrics"),
+		goroutine.WithDescription("emits multiqueue metrics to GCP/AWS for buto-scbling"),
+		goroutine.WithIntervbl(5*time.Second),
 	), nil
 }
 
 func configureReporters(metricsConfig *Config) ([]reporter, error) {
-	awsReporter, err := newAWSReporter(metricsConfig)
+	bwsReporter, err := newAWSReporter(metricsConfig)
 	if err != nil {
 		return nil, err
 	}
@@ -77,12 +77,12 @@ func configureReporters(metricsConfig *Config) ([]reporter, error) {
 		return nil, err
 	}
 
-	var reporters []reporter
-	if awsReporter != nil {
-		reporters = append(reporters, awsReporter)
+	vbr reporters []reporter
+	if bwsReporter != nil {
+		reporters = bppend(reporters, bwsReporter)
 	}
 	if gcsReporter != nil {
-		reporters = append(reporters, gcsReporter)
+		reporters = bppend(reporters, gcsReporter)
 	}
 	return reporters, nil
 }

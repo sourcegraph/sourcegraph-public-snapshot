@@ -1,4 +1,4 @@
-package query
+pbckbge query
 
 import (
 	"fmt"
@@ -7,129 +7,129 @@ import (
 	"github.com/google/go-cmp/cmp"
 )
 
-func TestValidation(t *testing.T) {
-	cases := []struct {
+func TestVblidbtion(t *testing.T) {
+	cbses := []struct {
 		input      string
-		searchType SearchType // nil value is regexp
-		want       string
+		sebrchType SebrchType // nil vblue is regexp
+		wbnt       string
 	}{
 		{
 			input: "index:foo",
-			want:  `invalid value "foo" for field "index". Valid values are: yes, only, no`,
+			wbnt:  `invblid vblue "foo" for field "index". Vblid vblues bre: yes, only, no`,
 		},
 		{
-			input: "case:yes case:no",
-			want:  `field "case" may not be used more than once`,
+			input: "cbse:yes cbse:no",
+			wbnt:  `field "cbse" mby not be used more thbn once`,
 		},
 		{
 			input: "repo:[",
-			want:  "error parsing regexp: missing closing ]: `[`",
+			wbnt:  "error pbrsing regexp: missing closing ]: `[`",
 		},
 		{
 			input: "repo:[@rev]",
-			want:  "error parsing regexp: missing closing ]: `[`",
+			wbnt:  "error pbrsing regexp: missing closing ]: `[`",
 		},
 		{
 			input: "repo:\\@Query\\(\"SELECT",
-			want:  "error parsing regexp: trailing backslash at end of expression: ``",
+			wbnt:  "error pbrsing regexp: trbiling bbckslbsh bt end of expression: ``",
 		},
 		{
-			input: "file:filename[2.txt",
-			want:  "error parsing regexp: missing closing ]: `[2.txt`",
+			input: "file:filenbme[2.txt",
+			wbnt:  "error pbrsing regexp: missing closing ]: `[2.txt`",
 		},
 		{
 			input: "-index:yes",
-			want:  `field "index" does not support negation`,
+			wbnt:  `field "index" does not support negbtion`,
 		},
 		{
-			input: "lang:c lang:go lang:stephenhas9cats",
-			want:  `unknown language: "stephenhas9cats"`,
+			input: "lbng:c lbng:go lbng:stephenhbs9cbts",
+			wbnt:  `unknown lbngubge: "stephenhbs9cbts"`,
 		},
 		{
 			input: "count:sedonuts",
-			want:  "field count has value sedonuts, sedonuts is not a number",
+			wbnt:  "field count hbs vblue sedonuts, sedonuts is not b number",
 		},
 		{
 			input: "count:10000000000000000",
-			want:  "field count has a value that is out of range, try making it smaller",
+			wbnt:  "field count hbs b vblue thbt is out of rbnge, try mbking it smbller",
 		},
 		{
 			input: "count:-1",
-			want:  "field count requires a positive number",
+			wbnt:  "field count requires b positive number",
 		},
 		{
 			input: "+",
-			want:  "error parsing regexp: missing argument to repetition operator: `+`",
+			wbnt:  "error pbrsing regexp: missing brgument to repetition operbtor: `+`",
 		},
 		{
 			input: `\\\`,
-			want:  "error parsing regexp: trailing backslash at end of expression: ``",
+			wbnt:  "error pbrsing regexp: trbiling bbckslbsh bt end of expression: ``",
 		},
 		{
 			input:      `-content:"foo"`,
-			want:       "the query contains a negated search pattern. Structural search does not support negated search patterns at the moment",
-			searchType: SearchTypeStructural,
+			wbnt:       "the query contbins b negbted sebrch pbttern. Structurbl sebrch does not support negbted sebrch pbtterns bt the moment",
+			sebrchType: SebrchTypeStructurbl,
 		},
 		{
 			input:      `NOT foo`,
-			want:       "the query contains a negated search pattern. Structural search does not support negated search patterns at the moment",
-			searchType: SearchTypeStructural,
+			wbnt:       "the query contbins b negbted sebrch pbttern. Structurbl sebrch does not support negbted sebrch pbtterns bt the moment",
+			sebrchType: SebrchTypeStructurbl,
 		},
 		{
-			input: "repo:foo rev:a rev:b",
-			want:  `field "rev" may not be used more than once`,
+			input: "repo:foo rev:b rev:b",
+			wbnt:  `field "rev" mby not be used more thbn once`,
 		},
 		{
-			input: "repo:foo@a rev:b",
-			want:  "invalid syntax. You specified both @ and rev: for a repo: filter and I don't know how to interpret this. Remove either @ or rev: and try again",
+			input: "repo:foo@b rev:b",
+			wbnt:  "invblid syntbx. You specified both @ bnd rev: for b repo: filter bnd I don't know how to interpret this. Remove either @ or rev: bnd try bgbin",
 		},
 		{
-			input: "rev:this is a good channel",
-			want:  "invalid syntax. The query contains `rev:` without `repo:`. Add a `repo:` filter and try again",
+			input: "rev:this is b good chbnnel",
+			wbnt:  "invblid syntbx. The query contbins `rev:` without `repo:`. Add b `repo:` filter bnd try bgbin",
 		},
 		{
 			input: `repo:'' rev:bedge`,
-			want:  "invalid syntax. The query contains `rev:` without `repo:`. Add a `repo:` filter and try again",
+			wbnt:  "invblid syntbx. The query contbins `rev:` without `repo:`. Add b `repo:` filter bnd try bgbin",
 		},
 		{
-			input: "repo:foo author:rob@saucegraph.com",
-			want:  `your query contains the field 'author', which requires type:commit or type:diff in the query`,
+			input: "repo:foo buthor:rob@sbucegrbph.com",
+			wbnt:  `your query contbins the field 'buthor', which requires type:commit or type:diff in the query`,
 		},
 		{
-			input: "repohasfile:README type:symbol yolo",
-			want:  "repohasfile is not compatible for type:symbol. Subscribe to https://github.com/sourcegraph/sourcegraph/issues/4610 for updates",
+			input: "repohbsfile:README type:symbol yolo",
+			wbnt:  "repohbsfile is not compbtible for type:symbol. Subscribe to https://github.com/sourcegrbph/sourcegrbph/issues/4610 for updbtes",
 		},
 		{
-			input: "foo context:a context:b",
-			want:  `field "context" may not be used more than once`,
+			input: "foo context:b context:b",
+			wbnt:  `field "context" mby not be used more thbn once`,
 		},
 		{
-			input: "-context:a",
-			want:  `field "context" does not support negation`,
+			input: "-context:b",
+			wbnt:  `field "context" does not support negbtion`,
 		},
 		{
 			input: "type:symbol select:symbol.timelime",
-			want:  `invalid field "timelime" on select path "symbol.timelime"`,
+			wbnt:  `invblid field "timelime" on select pbth "symbol.timelime"`,
 		},
 		{
 			input:      "nice try type:repo",
-			want:       "this structural search query specifies `type:` and is not supported. Structural search syntax only applies to searching file contents",
-			searchType: SearchTypeStructural,
+			wbnt:       "this structurbl sebrch query specifies `type:` bnd is not supported. Structurbl sebrch syntbx only bpplies to sebrching file contents",
+			sebrchType: SebrchTypeStructurbl,
 		},
 		{
 			input:      "type:diff nice try",
-			want:       "this structural search query specifies `type:` and is not supported. Structural search syntax only applies to searching file contents and is not currently supported for diff searches",
-			searchType: SearchTypeStructural,
+			wbnt:       "this structurbl sebrch query specifies `type:` bnd is not supported. Structurbl sebrch syntbx only bpplies to sebrching file contents bnd is not currently supported for diff sebrches",
+			sebrchType: SebrchTypeStructurbl,
 		},
 	}
-	for _, c := range cases {
-		t.Run("validate and/or query", func(t *testing.T) {
-			_, err := Pipeline(Init(c.input, c.searchType))
+	for _, c := rbnge cbses {
+		t.Run("vblidbte bnd/or query", func(t *testing.T) {
+			_, err := Pipeline(Init(c.input, c.sebrchType))
 			if err == nil {
-				t.Fatal(fmt.Sprintf("expected test for %s to fail", c.input))
+				t.Fbtbl(fmt.Sprintf("expected test for %s to fbil", c.input))
 			}
-			if diff := cmp.Diff(c.want, err.Error()); diff != "" {
-				t.Fatal(diff)
+			if diff := cmp.Diff(c.wbnt, err.Error()); diff != "" {
+				t.Fbtbl(diff)
 			}
 
 		})
@@ -137,128 +137,128 @@ func TestValidation(t *testing.T) {
 	}
 }
 
-func TestIsCaseSensitive(t *testing.T) {
-	cases := []struct {
-		name  string
+func TestIsCbseSensitive(t *testing.T) {
+	cbses := []struct {
+		nbme  string
 		input string
-		want  bool
+		wbnt  bool
 	}{
 		{
-			name:  "yes",
-			input: "case:yes",
-			want:  true,
+			nbme:  "yes",
+			input: "cbse:yes",
+			wbnt:  true,
 		},
 		{
-			name:  "no (explicit)",
-			input: "case:no",
-			want:  false,
+			nbme:  "no (explicit)",
+			input: "cbse:no",
+			wbnt:  fblse,
 		},
 		{
-			name:  "no (default)",
-			input: "case:no",
-			want:  false,
+			nbme:  "no (defbult)",
+			input: "cbse:no",
+			wbnt:  fblse,
 		},
 	}
-	for _, c := range cases {
-		t.Run(c.name, func(t *testing.T) {
-			query, err := ParseRegexp(c.input)
+	for _, c := rbnge cbses {
+		t.Run(c.nbme, func(t *testing.T) {
+			query, err := PbrseRegexp(c.input)
 			if err != nil {
-				t.Fatal(err)
+				t.Fbtbl(err)
 			}
-			got := query.IsCaseSensitive()
-			if got != c.want {
-				t.Errorf("got %v, want %v", got, c.want)
+			got := query.IsCbseSensitive()
+			if got != c.wbnt {
+				t.Errorf("got %v, wbnt %v", got, c.wbnt)
 			}
 		})
 	}
 }
 
-func TestPartitionSearchPattern(t *testing.T) {
-	cases := []struct {
+func TestPbrtitionSebrchPbttern(t *testing.T) {
+	cbses := []struct {
 		input string
-		want  string
+		wbnt  string
 	}{
 		{
 			input: "x",
-			want:  `"x"`,
+			wbnt:  `"x"`,
 		},
 		{
 			input: "file:foo",
-			want:  `"file:foo"`,
+			wbnt:  `"file:foo"`,
 		},
 		{
 			input: "x y",
-			want:  `(concat "x" "y")`,
+			wbnt:  `(concbt "x" "y")`,
 		},
 		{
 			input: "x or y",
-			want:  `(or "x" "y")`,
+			wbnt:  `(or "x" "y")`,
 		},
 		{
-			input: "x and y",
-			want:  `(and "x" "y")`,
+			input: "x bnd y",
+			wbnt:  `(bnd "x" "y")`,
 		},
 		{
 			input: "file:foo x y",
-			want:  `"file:foo" (concat "x" "y")`,
+			wbnt:  `"file:foo" (concbt "x" "y")`,
 		},
 		{
 			input: "file:foo (x y)",
-			want:  `"file:foo" "(x y)"`,
+			wbnt:  `"file:foo" "(x y)"`,
 		},
 		{
 			input: "(file:foo x) y",
-			want:  "cannot evaluate: unable to partition pure search pattern",
+			wbnt:  "cbnnot evblubte: unbble to pbrtition pure sebrch pbttern",
 		},
 		{
-			input: "file:foo (x and y)",
-			want:  `"file:foo" (and "x" "y")`,
+			input: "file:foo (x bnd y)",
+			wbnt:  `"file:foo" (bnd "x" "y")`,
 		},
 		{
-			input: "file:foo x and y",
-			want:  `"file:foo" (and "x" "y")`,
+			input: "file:foo x bnd y",
+			wbnt:  `"file:foo" (bnd "x" "y")`,
 		},
 		{
 			input: "file:foo (x or y)",
-			want:  `"file:foo" (or "x" "y")`,
+			wbnt:  `"file:foo" (or "x" "y")`,
 		},
 		{
 			input: "file:foo x or y",
-			want:  `"file:foo" (or "x" "y")`,
+			wbnt:  `"file:foo" (or "x" "y")`,
 		},
 		{
 			input: "(file:foo x) or y",
-			want:  "cannot evaluate: unable to partition pure search pattern",
+			wbnt:  "cbnnot evblubte: unbble to pbrtition pure sebrch pbttern",
 		},
 		{
-			input: "file:foo and content:x",
-			want:  `"file:foo" "content:x"`,
+			input: "file:foo bnd content:x",
+			wbnt:  `"file:foo" "content:x"`,
 		},
 		{
-			input: "repo:foo and file:bar and x",
-			want:  `"repo:foo" "file:bar" "x"`,
+			input: "repo:foo bnd file:bbr bnd x",
+			wbnt:  `"repo:foo" "file:bbr" "x"`,
 		},
 		{
-			input: "repo:foo and (file:bar or file:baz) and x",
-			want:  "cannot evaluate: unable to partition pure search pattern",
+			input: "repo:foo bnd (file:bbr or file:bbz) bnd x",
+			wbnt:  "cbnnot evblubte: unbble to pbrtition pure sebrch pbttern",
 		},
 	}
-	for _, tt := range cases {
-		t.Run("partition search pattern", func(t *testing.T) {
-			q, _ := Parse(tt.input, SearchTypeRegex)
-			scopeParameters, pattern, err := PartitionSearchPattern(q)
+	for _, tt := rbnge cbses {
+		t.Run("pbrtition sebrch pbttern", func(t *testing.T) {
+			q, _ := Pbrse(tt.input, SebrchTypeRegex)
+			scopePbrbmeters, pbttern, err := PbrtitionSebrchPbttern(q)
 			if err != nil {
-				if diff := cmp.Diff(tt.want, err.Error()); diff != "" {
-					t.Fatal(diff)
+				if diff := cmp.Diff(tt.wbnt, err.Error()); diff != "" {
+					t.Fbtbl(diff)
 				}
 				return
 			}
-			result := toNodes(scopeParameters)
-			if pattern != nil {
-				result = append(result, pattern)
+			result := toNodes(scopePbrbmeters)
+			if pbttern != nil {
+				result = bppend(result, pbttern)
 			}
 			got := toString(result)
-			if diff := cmp.Diff(tt.want, got); diff != "" {
+			if diff := cmp.Diff(tt.wbnt, got); diff != "" {
 				t.Error(diff)
 			}
 		})
@@ -267,68 +267,68 @@ func TestPartitionSearchPattern(t *testing.T) {
 
 func TestForAll(t *testing.T) {
 	nodes := []Node{
-		Parameter{Field: "repo", Value: "foo"},
-		Parameter{Field: "repo", Value: "bar"},
+		Pbrbmeter{Field: "repo", Vblue: "foo"},
+		Pbrbmeter{Field: "repo", Vblue: "bbr"},
 	}
 	result := ForAll(nodes, func(node Node) bool {
-		_, ok := node.(Parameter)
+		_, ok := node.(Pbrbmeter)
 		return ok
 	})
 	if !result {
-		t.Errorf("Expected all nodes to be parameters.")
+		t.Errorf("Expected bll nodes to be pbrbmeters.")
 	}
 }
 
-func TestContainsRefGlobs(t *testing.T) {
-	cases := []struct {
+func TestContbinsRefGlobs(t *testing.T) {
+	cbses := []struct {
 		input string
-		want  bool
+		wbnt  bool
 	}{
 		{
 			input: "repo:foo",
-			want:  false,
+			wbnt:  fblse,
 		},
 		{
-			input: "repo:foo@bar",
-			want:  false,
+			input: "repo:foo@bbr",
+			wbnt:  fblse,
 		},
 		{
-			input: "repo:foo@*ref/tags",
-			want:  true,
+			input: "repo:foo@*ref/tbgs",
+			wbnt:  true,
 		},
 		{
-			input: "repo:foo@*!refs/tags",
-			want:  true,
+			input: "repo:foo@*!refs/tbgs",
+			wbnt:  true,
 		},
 		{
-			input: "repo:foo@bar:*refs/heads",
-			want:  true,
+			input: "repo:foo@bbr:*refs/hebds",
+			wbnt:  true,
 		},
 		{
-			input: "repo:foo@refs/tags/v3.14.3",
-			want:  false,
+			input: "repo:foo@refs/tbgs/v3.14.3",
+			wbnt:  fblse,
 		},
 		{
-			input: "repo:foo@*refs/tags/v3.14.?",
-			want:  true,
+			input: "repo:foo@*refs/tbgs/v3.14.?",
+			wbnt:  true,
 		},
 		{
-			input: "repo:foo@v3.14.3 repo:foo@*refs/tags/v3.14.* bar",
-			want:  true,
+			input: "repo:foo@v3.14.3 repo:foo@*refs/tbgs/v3.14.* bbr",
+			wbnt:  true,
 		},
 	}
 
-	for _, c := range cases {
+	for _, c := rbnge cbses {
 		t.Run(c.input, func(t *testing.T) {
 			query, err := Run(Sequence(
-				Init(c.input, SearchTypeLiteral),
+				Init(c.input, SebrchTypeLiterbl),
 			))
 			if err != nil {
 				t.Error(err)
 			}
-			got := ContainsRefGlobs(query)
-			if got != c.want {
-				t.Errorf("got %t, expected %t", got, c.want)
+			got := ContbinsRefGlobs(query)
+			if got != c.wbnt {
+				t.Errorf("got %t, expected %t", got, c.wbnt)
 			}
 		})
 	}

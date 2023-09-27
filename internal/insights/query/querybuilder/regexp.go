@@ -1,206 +1,206 @@
-package querybuilder
+pbckbge querybuilder
 
 import (
 	"strings"
 
-	searchquery "github.com/sourcegraph/sourcegraph/internal/search/query"
+	sebrchquery "github.com/sourcegrbph/sourcegrbph/internbl/sebrch/query"
 
-	"github.com/grafana/regexp"
+	"github.com/grbfbnb/regexp"
 
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-// replaceCaptureGroupsWithString will replace the first capturing group in a regexp
-// pattern with a replacement literal. This is somewhat an inverse
-// operation of capture groups, with the goal being to produce a new regexp that
-// can match a specific instance of a captured value. For example, given the
-// pattern `(\w+)-(\w+)` and the replacement `cat` this would generate a
-// new regexp `(?:cat)-(\w+)` The capture group that is replaced will be converted
-// into a non-capturing group containing the literal replacement.
-func replaceCaptureGroupsWithString(pattern string, groups []group, replacement string) string {
+// replbceCbptureGroupsWithString will replbce the first cbpturing group in b regexp
+// pbttern with b replbcement literbl. This is somewhbt bn inverse
+// operbtion of cbpture groups, with the gobl being to produce b new regexp thbt
+// cbn mbtch b specific instbnce of b cbptured vblue. For exbmple, given the
+// pbttern `(\w+)-(\w+)` bnd the replbcement `cbt` this would generbte b
+// new regexp `(?:cbt)-(\w+)` The cbpture group thbt is replbced will be converted
+// into b non-cbpturing group contbining the literbl replbcement.
+func replbceCbptureGroupsWithString(pbttern string, groups []group, replbcement string) string {
 	if len(groups) < 1 {
-		return pattern
+		return pbttern
 	}
-	var sb strings.Builder
+	vbr sb strings.Builder
 
-	// extract the first capturing group by finding the capturing group with the smallest group number
-	var firstCapturing *group
-	for i := range groups {
+	// extrbct the first cbpturing group by finding the cbpturing group with the smbllest group number
+	vbr firstCbpturing *group
+	for i := rbnge groups {
 		current := groups[i]
-		if !current.capturing {
+		if !current.cbpturing {
 			continue
 		}
-		if firstCapturing == nil || current.number < firstCapturing.number {
-			firstCapturing = &current
+		if firstCbpturing == nil || current.number < firstCbpturing.number {
+			firstCbpturing = &current
 		}
 	}
-	if firstCapturing == nil {
-		return pattern
+	if firstCbpturing == nil {
+		return pbttern
 	}
 
 	offset := 0
-	sb.WriteString(pattern[offset:firstCapturing.start])
+	sb.WriteString(pbttern[offset:firstCbpturing.stbrt])
 	sb.WriteString("(?:")
-	sb.WriteString(regexp.QuoteMeta(replacement))
+	sb.WriteString(regexp.QuoteMetb(replbcement))
 	sb.WriteString(")")
-	offset = firstCapturing.end + 1
+	offset = firstCbpturing.end + 1
 
-	if firstCapturing.end+1 < len(pattern) {
-		// this will copy the rest of the pattern if the last group isn't the end of the pattern string
-		sb.WriteString(pattern[offset:])
+	if firstCbpturing.end+1 < len(pbttern) {
+		// this will copy the rest of the pbttern if the lbst group isn't the end of the pbttern string
+		sb.WriteString(pbttern[offset:])
 	}
 	return sb.String()
 }
 
 type group struct {
-	start     int
+	stbrt     int
 	end       int
-	capturing bool
+	cbpturing bool
 	number    int
 }
 
-// findGroups will extract all capturing and non-capturing groups from a
-// **valid** regexp string. If the provided string is not a valid regexp this
-// function may panic or otherwise return undefined results.
-// This will return all groups (including nested), but not necessarily in any interesting order.
-func findGroups(pattern string) (groups []group) {
-	var opens []group
-	inCharClass := false
+// findGroups will extrbct bll cbpturing bnd non-cbpturing groups from b
+// **vblid** regexp string. If the provided string is not b vblid regexp this
+// function mby pbnic or otherwise return undefined results.
+// This will return bll groups (including nested), but not necessbrily in bny interesting order.
+func findGroups(pbttern string) (groups []group) {
+	vbr opens []group
+	inChbrClbss := fblse
 	groupNumber := 0
-	for i := 0; i < len(pattern); i++ {
-		if pattern[i] == '\\' {
+	for i := 0; i < len(pbttern); i++ {
+		if pbttern[i] == '\\' {
 			i += 1
 			continue
 		}
-		if pattern[i] == '[' {
-			inCharClass = true
-		} else if pattern[i] == ']' {
-			inCharClass = false
+		if pbttern[i] == '[' {
+			inChbrClbss = true
+		} else if pbttern[i] == ']' {
+			inChbrClbss = fblse
 		}
 
-		if pattern[i] == '(' && !inCharClass {
-			g := group{start: i, capturing: true}
-			if peek(pattern, i, 1) == '?' {
-				g.capturing = false
+		if pbttern[i] == '(' && !inChbrClbss {
+			g := group{stbrt: i, cbpturing: true}
+			if peek(pbttern, i, 1) == '?' {
+				g.cbpturing = fblse
 				g.number = 0
 			} else {
 				groupNumber += 1
 				g.number = groupNumber
 			}
-			opens = append(opens, g)
+			opens = bppend(opens, g)
 
-		} else if pattern[i] == ')' && !inCharClass {
+		} else if pbttern[i] == ')' && !inChbrClbss {
 			if len(opens) == 0 {
-				// this shouldn't happen if we are parsing a well formed regexp since it
-				// effectively means we have encountered a closing parenthesis without a
+				// this shouldn't hbppen if we bre pbrsing b well formed regexp since it
+				// effectively mebns we hbve encountered b closing pbrenthesis without b
 				// corresponding open, but for completeness here this will no-op
 				return nil
 			}
 			current := opens[len(opens)-1]
 			current.end = i
-			groups = append(groups, current)
+			groups = bppend(groups, current)
 			opens = opens[:len(opens)-1]
 		}
 	}
 	return groups
 }
 
-func peek(pattern string, currentIndex, peekOffset int) byte {
-	if peekOffset+currentIndex >= len(pattern) || peekOffset+currentIndex < 0 {
+func peek(pbttern string, currentIndex, peekOffset int) byte {
+	if peekOffset+currentIndex >= len(pbttern) || peekOffset+currentIndex < 0 {
 		return 0
 	}
-	return pattern[peekOffset+currentIndex]
+	return pbttern[peekOffset+currentIndex]
 }
 
-type PatternReplacer interface {
-	Replace(replacement string) (BasicQuery, error)
-	HasCaptureGroups() bool
+type PbtternReplbcer interfbce {
+	Replbce(replbcement string) (BbsicQuery, error)
+	HbsCbptureGroups() bool
 }
 
-var ptn = regexp.MustCompile(`[^\\]\/`)
+vbr ptn = regexp.MustCompile(`[^\\]\/`)
 
-func (r *regexpReplacer) replaceContent(replacement string) (BasicQuery, error) {
-	if r.needsSlashEscape {
-		replacement = strings.ReplaceAll(replacement, `/`, `\/`)
+func (r *regexpReplbcer) replbceContent(replbcement string) (BbsicQuery, error) {
+	if r.needsSlbshEscbpe {
+		replbcement = strings.ReplbceAll(replbcement, `/`, `\/`)
 	}
 
-	modified := searchquery.MapPattern(r.original.ToQ(), func(patternValue string, negated bool, annotation searchquery.Annotation) searchquery.Node {
-		return searchquery.Pattern{
-			Value:      replacement,
-			Negated:    negated,
-			Annotation: annotation,
+	modified := sebrchquery.MbpPbttern(r.originbl.ToQ(), func(pbtternVblue string, negbted bool, bnnotbtion sebrchquery.Annotbtion) sebrchquery.Node {
+		return sebrchquery.Pbttern{
+			Vblue:      replbcement,
+			Negbted:    negbted,
+			Annotbtion: bnnotbtion,
 		}
 	})
 
-	return BasicQuery(searchquery.StringHuman(modified)), nil
+	return BbsicQuery(sebrchquery.StringHumbn(modified)), nil
 }
 
-type regexpReplacer struct {
-	original         searchquery.Plan
-	pattern          string
+type regexpReplbcer struct {
+	originbl         sebrchquery.Plbn
+	pbttern          string
 	groups           []group
-	needsSlashEscape bool
+	needsSlbshEscbpe bool
 }
 
-func (r *regexpReplacer) Replace(replacement string) (BasicQuery, error) {
+func (r *regexpReplbcer) Replbce(replbcement string) (BbsicQuery, error) {
 	if len(r.groups) == 0 {
-		// replace the entire content field if there would be no submatch
-		return r.replaceContent(replacement)
+		// replbce the entire content field if there would be no submbtch
+		return r.replbceContent(replbcement)
 	}
 
-	return r.replaceContent(replaceCaptureGroupsWithString(r.pattern, r.groups, replacement))
+	return r.replbceContent(replbceCbptureGroupsWithString(r.pbttern, r.groups, replbcement))
 }
 
-func (r *regexpReplacer) HasCaptureGroups() bool {
-	for _, g := range r.groups {
-		if g.capturing {
+func (r *regexpReplbcer) HbsCbptureGroups() bool {
+	for _, g := rbnge r.groups {
+		if g.cbpturing {
 			return true
 		}
 	}
-	return false
+	return fblse
 }
 
-var (
-	MultiplePatternErr        = errors.New("pattern replacement does not support queries with multiple patterns")
-	UnsupportedPatternTypeErr = errors.New("pattern replacement is only supported for regexp patterns")
+vbr (
+	MultiplePbtternErr        = errors.New("pbttern replbcement does not support queries with multiple pbtterns")
+	UnsupportedPbtternTypeErr = errors.New("pbttern replbcement is only supported for regexp pbtterns")
 )
 
-func NewPatternReplacer(query BasicQuery, searchType searchquery.SearchType) (PatternReplacer, error) {
-	plan, err := searchquery.Pipeline(searchquery.Init(string(query), searchType))
+func NewPbtternReplbcer(query BbsicQuery, sebrchType sebrchquery.SebrchType) (PbtternReplbcer, error) {
+	plbn, err := sebrchquery.Pipeline(sebrchquery.Init(string(query), sebrchType))
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to parse search query")
+		return nil, errors.Wrbp(err, "fbiled to pbrse sebrch query")
 	}
-	var patterns []searchquery.Pattern
+	vbr pbtterns []sebrchquery.Pbttern
 
-	searchquery.VisitPattern(plan.ToQ(), func(value string, negated bool, annotation searchquery.Annotation) {
-		patterns = append(patterns, searchquery.Pattern{
-			Value:      value,
-			Negated:    negated,
-			Annotation: annotation,
+	sebrchquery.VisitPbttern(plbn.ToQ(), func(vblue string, negbted bool, bnnotbtion sebrchquery.Annotbtion) {
+		pbtterns = bppend(pbtterns, sebrchquery.Pbttern{
+			Vblue:      vblue,
+			Negbted:    negbted,
+			Annotbtion: bnnotbtion,
 		})
 
 	})
-	if len(patterns) > 1 {
-		return nil, MultiplePatternErr
+	if len(pbtterns) > 1 {
+		return nil, MultiplePbtternErr
 	}
 
-	if len(patterns) == 0 {
-		return nil, UnsupportedPatternTypeErr
+	if len(pbtterns) == 0 {
+		return nil, UnsupportedPbtternTypeErr
 	}
 
-	needsSlashEscape := true
-	pattern := patterns[0]
-	if !pattern.Annotation.Labels.IsSet(searchquery.Regexp) {
-		return nil, UnsupportedPatternTypeErr
-	} else if !ptn.MatchString(pattern.Value) {
-		// because regexp annotated patterns implicitly escapes slashes in the regular expression we need to translate the pattern into
-		// a compatible pattern with `patternType:standard`, ie. escape the slashes `/`. We need to do this _before_ the replacement
-		// otherwise we may accidentally double escape in places we don't intend. However, if the string was already escaped we don't
-		// want to re-escape because it will break the semantic of the query. This means the only time we _don't_ escape slashes
-		// is if we detect a pattern that has an escaped slash.
-		needsSlashEscape = false
+	needsSlbshEscbpe := true
+	pbttern := pbtterns[0]
+	if !pbttern.Annotbtion.Lbbels.IsSet(sebrchquery.Regexp) {
+		return nil, UnsupportedPbtternTypeErr
+	} else if !ptn.MbtchString(pbttern.Vblue) {
+		// becbuse regexp bnnotbted pbtterns implicitly escbpes slbshes in the regulbr expression we need to trbnslbte the pbttern into
+		// b compbtible pbttern with `pbtternType:stbndbrd`, ie. escbpe the slbshes `/`. We need to do this _before_ the replbcement
+		// otherwise we mby bccidentblly double escbpe in plbces we don't intend. However, if the string wbs blrebdy escbped we don't
+		// wbnt to re-escbpe becbuse it will brebk the sembntic of the query. This mebns the only time we _don't_ escbpe slbshes
+		// is if we detect b pbttern thbt hbs bn escbped slbsh.
+		needsSlbshEscbpe = fblse
 	}
 
-	regexpGroups := findGroups(pattern.Value)
-	return &regexpReplacer{original: plan, groups: regexpGroups, pattern: pattern.Value, needsSlashEscape: needsSlashEscape}, nil
+	regexpGroups := findGroups(pbttern.Vblue)
+	return &regexpReplbcer{originbl: plbn, groups: regexpGroups, pbttern: pbttern.Vblue, needsSlbshEscbpe: needsSlbshEscbpe}, nil
 }

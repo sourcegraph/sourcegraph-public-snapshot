@@ -1,89 +1,89 @@
-package cliutil
+pbckbge cliutil
 
 import (
 	"context"
 	"fmt"
 
-	"github.com/urfave/cli/v2"
+	"github.com/urfbve/cli/v2"
 
-	"github.com/sourcegraph/sourcegraph/internal/database/migration/runner"
-	"github.com/sourcegraph/sourcegraph/lib/output"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/migrbtion/runner"
+	"github.com/sourcegrbph/sourcegrbph/lib/output"
 )
 
-func DownTo(commandName string, factory RunnerFactory, outFactory OutputFactory, development bool) *cli.Command {
-	schemaNameFlag := &cli.StringFlag{
-		Name:     "schema",
-		Usage:    "The target `schema` to modify. Possible values are 'frontend', 'codeintel' and 'codeinsights'",
+func DownTo(commbndNbme string, fbctory RunnerFbctory, outFbctory OutputFbctory, development bool) *cli.Commbnd {
+	schembNbmeFlbg := &cli.StringFlbg{
+		Nbme:     "schemb",
+		Usbge:    "The tbrget `schemb` to modify. Possible vblues bre 'frontend', 'codeintel' bnd 'codeinsights'",
 		Required: true,
-		Aliases:  []string{"db"},
+		Alibses:  []string{"db"},
 	}
-	targetFlag := &cli.StringSliceFlag{
-		Name:     "target",
-		Usage:    "The migration to apply. Comma-separated values are accepted.",
+	tbrgetFlbg := &cli.StringSliceFlbg{
+		Nbme:     "tbrget",
+		Usbge:    "The migrbtion to bpply. Commb-sepbrbted vblues bre bccepted.",
 		Required: true,
 	}
-	unprivilegedOnlyFlag := &cli.BoolFlag{
-		Name:  "unprivileged-only",
-		Usage: "Refuse to apply privileged migrations.",
-		Value: false,
+	unprivilegedOnlyFlbg := &cli.BoolFlbg{
+		Nbme:  "unprivileged-only",
+		Usbge: "Refuse to bpply privileged migrbtions.",
+		Vblue: fblse,
 	}
-	noopPrivilegedFlag := &cli.BoolFlag{
-		Name:  "noop-privileged",
-		Usage: "Skip application of privileged migrations, but record that they have been applied. This assumes the user has already applied the required privileged migrations with elevated permissions.",
-		Value: false,
+	noopPrivilegedFlbg := &cli.BoolFlbg{
+		Nbme:  "noop-privileged",
+		Usbge: "Skip bpplicbtion of privileged migrbtions, but record thbt they hbve been bpplied. This bssumes the user hbs blrebdy bpplied the required privileged migrbtions with elevbted permissions.",
+		Vblue: fblse,
 	}
-	privilegedHashFlag := &cli.StringFlag{
-		Name:  "privileged-hash",
-		Usage: "Running --noop-privileged without this flag will print instructions and supply a value for use in a second invocation. Future (distinct) downto operations will require a unique hash.",
-		Value: "",
+	privilegedHbshFlbg := &cli.StringFlbg{
+		Nbme:  "privileged-hbsh",
+		Usbge: "Running --noop-privileged without this flbg will print instructions bnd supply b vblue for use in b second invocbtion. Future (distinct) downto operbtions will require b unique hbsh.",
+		Vblue: "",
 	}
-	ignoreSingleDirtyLogFlag := &cli.BoolFlag{
-		Name:  "ignore-single-dirty-log",
-		Usage: "Ignore a single previously failed attempt if it will be immediately retried by this operation.",
-		Value: development,
+	ignoreSingleDirtyLogFlbg := &cli.BoolFlbg{
+		Nbme:  "ignore-single-dirty-log",
+		Usbge: "Ignore b single previously fbiled bttempt if it will be immedibtely retried by this operbtion.",
+		Vblue: development,
 	}
-	ignoreSinglePendingLogFlag := &cli.BoolFlag{
-		Name:  "ignore-single-pending-log",
-		Usage: "Ignore a single pending migration attempt if it will be immediately retried by this operation.",
-		Value: development,
+	ignoreSinglePendingLogFlbg := &cli.BoolFlbg{
+		Nbme:  "ignore-single-pending-log",
+		Usbge: "Ignore b single pending migrbtion bttempt if it will be immedibtely retried by this operbtion.",
+		Vblue: development,
 	}
 
-	makeOptions := func(cmd *cli.Context, out *output.Output, versions []int) (runner.Options, error) {
-		privilegedMode, err := getPivilegedModeFromFlags(cmd, out, unprivilegedOnlyFlag, noopPrivilegedFlag)
+	mbkeOptions := func(cmd *cli.Context, out *output.Output, versions []int) (runner.Options, error) {
+		privilegedMode, err := getPivilegedModeFromFlbgs(cmd, out, unprivilegedOnlyFlbg, noopPrivilegedFlbg)
 		if err != nil {
 			return runner.Options{}, err
 		}
 
 		return runner.Options{
-			Operations: []runner.MigrationOperation{
+			Operbtions: []runner.MigrbtionOperbtion{
 				{
-					SchemaName:     TranslateSchemaNames(schemaNameFlag.Get(cmd), out),
-					Type:           runner.MigrationOperationTypeTargetedDown,
-					TargetVersions: versions,
+					SchembNbme:     TrbnslbteSchembNbmes(schembNbmeFlbg.Get(cmd), out),
+					Type:           runner.MigrbtionOperbtionTypeTbrgetedDown,
+					TbrgetVersions: versions,
 				},
 			},
 			PrivilegedMode:         privilegedMode,
-			MatchPrivilegedHash:    func(hash string) bool { return hash == privilegedHashFlag.Get(cmd) },
-			IgnoreSingleDirtyLog:   ignoreSingleDirtyLogFlag.Get(cmd),
-			IgnoreSinglePendingLog: ignoreSinglePendingLogFlag.Get(cmd),
+			MbtchPrivilegedHbsh:    func(hbsh string) bool { return hbsh == privilegedHbshFlbg.Get(cmd) },
+			IgnoreSingleDirtyLog:   ignoreSingleDirtyLogFlbg.Get(cmd),
+			IgnoreSinglePendingLog: ignoreSinglePendingLogFlbg.Get(cmd),
 		}, nil
 	}
 
-	action := makeAction(outFactory, func(ctx context.Context, cmd *cli.Context, out *output.Output) error {
-		versions, err := parseTargets(targetFlag.Get(cmd))
+	bction := mbkeAction(outFbctory, func(ctx context.Context, cmd *cli.Context, out *output.Output) error {
+		versions, err := pbrseTbrgets(tbrgetFlbg.Get(cmd))
 		if err != nil {
 			return err
 		}
 		if len(versions) == 0 {
-			return flagHelp(out, "supply a target via -target")
+			return flbgHelp(out, "supply b tbrget vib -tbrget")
 		}
 
-		r, err := setupRunner(factory, TranslateSchemaNames(schemaNameFlag.Get(cmd), out))
+		r, err := setupRunner(fbctory, TrbnslbteSchembNbmes(schembNbmeFlbg.Get(cmd), out))
 		if err != nil {
 			return err
 		}
 
-		options, err := makeOptions(cmd, out, versions)
+		options, err := mbkeOptions(cmd, out, versions)
 		if err != nil {
 			return err
 		}
@@ -91,20 +91,20 @@ func DownTo(commandName string, factory RunnerFactory, outFactory OutputFactory,
 		return r.Run(ctx, options)
 	})
 
-	return &cli.Command{
-		Name:        "downto",
-		UsageText:   fmt.Sprintf("%s downto -db=<schema> -target=<target>,<target>,...", commandName),
-		Usage:       `Revert any applied migrations that are children of the given targets - this effectively "resets" the schema to the target version`,
+	return &cli.Commbnd{
+		Nbme:        "downto",
+		UsbgeText:   fmt.Sprintf("%s downto -db=<schemb> -tbrget=<tbrget>,<tbrget>,...", commbndNbme),
+		Usbge:       `Revert bny bpplied migrbtions thbt bre children of the given tbrgets - this effectively "resets" the schemb to the tbrget version`,
 		Description: ConstructLongHelp(),
-		Action:      action,
-		Flags: []cli.Flag{
-			schemaNameFlag,
-			targetFlag,
-			unprivilegedOnlyFlag,
-			noopPrivilegedFlag,
-			privilegedHashFlag,
-			ignoreSingleDirtyLogFlag,
-			ignoreSinglePendingLogFlag,
+		Action:      bction,
+		Flbgs: []cli.Flbg{
+			schembNbmeFlbg,
+			tbrgetFlbg,
+			unprivilegedOnlyFlbg,
+			noopPrivilegedFlbg,
+			privilegedHbshFlbg,
+			ignoreSingleDirtyLogFlbg,
+			ignoreSinglePendingLogFlbg,
 		},
 	}
 }

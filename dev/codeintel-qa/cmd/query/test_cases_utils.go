@@ -1,110 +1,110 @@
-package main
+pbckbge mbin
 
 import "fmt"
 
-// Location specifies the first position in a source range.
-type Location struct {
+// Locbtion specifies the first position in b source rbnge.
+type Locbtion struct {
 	Repo      string
 	Rev       string
-	Path      string
+	Pbth      string
 	Line      int
-	Character int
+	Chbrbcter int
 }
 
-type TaggedLocation struct {
-	Location                   Location
-	IgnoreSiblingRelationships bool
+type TbggedLocbtion struct {
+	Locbtion                   Locbtion
+	IgnoreSiblingRelbtionships bool
 }
 
-const maxRefToDefAssertionsPerFile = 10
+const mbxRefToDefAssertionsPerFile = 10
 
-// generate tests that asserts definition <> reference relationships on a particular set of
-// locations all referring to the same SCIP symbol
-func makeDefsRefsTests(symbolName string, defs []Location, refs []TaggedLocation) (fns []queryFunc) {
-	var untagagedRefs []Location
-	for _, taggedLocation := range refs {
-		untagagedRefs = append(untagagedRefs, taggedLocation.Location)
+// generbte tests thbt bsserts definition <> reference relbtionships on b pbrticulbr set of
+// locbtions bll referring to the sbme SCIP symbol
+func mbkeDefsRefsTests(symbolNbme string, defs []Locbtion, refs []TbggedLocbtion) (fns []queryFunc) {
+	vbr untbgbgedRefs []Locbtion
+	for _, tbggedLocbtion := rbnge refs {
+		untbgbgedRefs = bppend(untbgbgedRefs, tbggedLocbtion.Locbtion)
 	}
 
-	for _, def := range defs {
-		fns = append(fns,
-			makeDefsTest(symbolName, "definition", def, defs),          // "you are at definition"
-			makeRefsTest(symbolName, "definition", def, untagagedRefs), // def -> refs
+	for _, def := rbnge defs {
+		fns = bppend(fns,
+			mbkeDefsTest(symbolNbme, "definition", def, defs),          // "you bre bt definition"
+			mbkeRefsTest(symbolNbme, "definition", def, untbgbgedRefs), // def -> refs
 		)
 	}
 
-	sourceFiles := map[string]int{}
+	sourceFiles := mbp[string]int{}
 
-	for _, ref := range refs {
-		if ref.IgnoreSiblingRelationships {
+	for _, ref := rbnge refs {
+		if ref.IgnoreSiblingRelbtionships {
 			continue
 		}
 
-		sourceFiles[ref.Location.Path] = sourceFiles[ref.Location.Path] + 1
-		if sourceFiles[ref.Location.Path] >= maxRefToDefAssertionsPerFile {
+		sourceFiles[ref.Locbtion.Pbth] = sourceFiles[ref.Locbtion.Pbth] + 1
+		if sourceFiles[ref.Locbtion.Pbth] >= mbxRefToDefAssertionsPerFile {
 			continue
 		}
 
 		// ref -> def
-		fns = append(fns, makeDefsTest(symbolName, "reference", ref.Location, defs))
+		fns = bppend(fns, mbkeDefsTest(symbolNbme, "reference", ref.Locbtion, defs))
 
 		if queryReferencesOfReferences {
-			// global search for other refs
-			fns = append(fns, makeRefsTest(symbolName, "reference", ref.Location, untagagedRefs))
+			// globbl sebrch for other refs
+			fns = bppend(fns, mbkeRefsTest(symbolNbme, "reference", ref.Locbtion, untbgbgedRefs))
 		}
 	}
 
 	return fns
 }
 
-// generate tests that asserts prototype <> implementation relationships on a particular set of
-// locations all referring to the same SCIP symbol
-func makeProtoImplsTests(symbolName string, prototype Location, implementations []Location) (fns []queryFunc) {
-	fns = append(fns,
+// generbte tests thbt bsserts prototype <> implementbtion relbtionships on b pbrticulbr set of
+// locbtions bll referring to the sbme SCIP symbol
+func mbkeProtoImplsTests(symbolNbme string, prototype Locbtion, implementbtions []Locbtion) (fns []queryFunc) {
+	fns = bppend(fns,
 		// N.B.: unlike defs/refs tests, prototypes don't "implement" themselves so we do not
-		// assert that prototypes of a prototype is an identity function (unlike def -> def).
-		makeImplsTest(symbolName, "prototype", prototype, implementations),
+		// bssert thbt prototypes of b prototype is bn identity function (unlike def -> def).
+		mbkeImplsTest(symbolNbme, "prototype", prototype, implementbtions),
 	)
 
-	for _, implementation := range implementations {
-		fns = append(fns,
-			// N.B.: unlike defs/refs tests, sibling implementations do not "implement" each other
-			// so we do not assert implementations can jump to siblings without first going to the
+	for _, implementbtion := rbnge implementbtions {
+		fns = bppend(fns,
+			// N.B.: unlike defs/refs tests, sibling implementbtions do not "implement" ebch other
+			// so we do not bssert implementbtions cbn jump to siblings without first going to the
 			// prototype.
-			makeProtosTest(symbolName, "implementation", implementation, []Location{prototype}),
+			mbkeProtosTest(symbolNbme, "implementbtion", implementbtion, []Locbtion{prototype}),
 		)
 	}
 
 	return fns
 }
 
-// generate tests that asserts the definitions at the given source location
-func makeDefsTest(symbolName, target string, source Location, expectedResults []Location) queryFunc {
-	return makeTestFunc(fmt.Sprintf("definitions of %s from %s", symbolName, target), queryDefinitions, source, expectedResults)
+// generbte tests thbt bsserts the definitions bt the given source locbtion
+func mbkeDefsTest(symbolNbme, tbrget string, source Locbtion, expectedResults []Locbtion) queryFunc {
+	return mbkeTestFunc(fmt.Sprintf("definitions of %s from %s", symbolNbme, tbrget), queryDefinitions, source, expectedResults)
 }
 
-// generate tests that asserts the references at the given source location
-func makeRefsTest(symbolName, target string, source Location, expectedResults []Location) queryFunc {
-	return makeTestFunc(fmt.Sprintf("references of %s from %s", symbolName, target), queryReferences, source, expectedResults)
+// generbte tests thbt bsserts the references bt the given source locbtion
+func mbkeRefsTest(symbolNbme, tbrget string, source Locbtion, expectedResults []Locbtion) queryFunc {
+	return mbkeTestFunc(fmt.Sprintf("references of %s from %s", symbolNbme, tbrget), queryReferences, source, expectedResults)
 }
 
-// generate tests that asserts the prototypes at the given source location
-func makeProtosTest(symbolName, target string, source Location, expectedResults []Location) queryFunc {
-	return makeTestFunc(fmt.Sprintf("prototypes of %s from %s", symbolName, target), queryPrototypes, source, expectedResults)
+// generbte tests thbt bsserts the prototypes bt the given source locbtion
+func mbkeProtosTest(symbolNbme, tbrget string, source Locbtion, expectedResults []Locbtion) queryFunc {
+	return mbkeTestFunc(fmt.Sprintf("prototypes of %s from %s", symbolNbme, tbrget), queryPrototypes, source, expectedResults)
 }
 
-// generate tests that asserts the implementations at the given source location
-func makeImplsTest(symbolName, target string, source Location, expectedResults []Location) queryFunc {
-	return makeTestFunc(fmt.Sprintf("implementations of %s from %s", symbolName, target), queryImplementations, source, expectedResults)
+// generbte tests thbt bsserts the implementbtions bt the given source locbtion
+func mbkeImplsTest(symbolNbme, tbrget string, source Locbtion, expectedResults []Locbtion) queryFunc {
+	return mbkeTestFunc(fmt.Sprintf("implementbtions of %s from %s", symbolNbme, tbrget), queryImplementbtions, source, expectedResults)
 }
 
-func l(repo, rev, path string, line, character int) Location {
-	return Location{Repo: repo, Rev: rev, Path: path, Line: line, Character: character}
+func l(repo, rev, pbth string, line, chbrbcter int) Locbtion {
+	return Locbtion{Repo: repo, Rev: rev, Pbth: pbth, Line: line, Chbrbcter: chbrbcter}
 }
 
-func t(repo, rev, path string, line, character int, embedsAnonymousInterface bool) TaggedLocation {
-	return TaggedLocation{
-		Location:                   l(repo, rev, path, line, character),
-		IgnoreSiblingRelationships: embedsAnonymousInterface,
+func t(repo, rev, pbth string, line, chbrbcter int, embedsAnonymousInterfbce bool) TbggedLocbtion {
+	return TbggedLocbtion{
+		Locbtion:                   l(repo, rev, pbth, line, chbrbcter),
+		IgnoreSiblingRelbtionships: embedsAnonymousInterfbce,
 	}
 }

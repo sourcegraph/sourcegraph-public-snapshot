@@ -1,4 +1,4 @@
-package resolvers
+pbckbge resolvers
 
 import (
 	"bytes"
@@ -8,28 +8,28 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/graph-gophers/graphql-go"
-	"github.com/graph-gophers/graphql-go/relay"
+	"github.com/grbph-gophers/grbphql-go"
+	"github.com/grbph-gophers/grbphql-go/relby"
 
-	"github.com/sourcegraph/log"
+	"github.com/sourcegrbph/log"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
-	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/auth"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
-	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
-	"github.com/sourcegraph/sourcegraph/internal/own"
-	"github.com/sourcegraph/sourcegraph/internal/own/codeowners"
-	codeownerspb "github.com/sourcegraph/sourcegraph/internal/own/codeowners/v1"
-	"github.com/sourcegraph/sourcegraph/internal/rbac"
-	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/grbphqlbbckend"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/grbphqlbbckend/grbphqlutil"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bctor"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi"
+	"github.com/sourcegrbph/sourcegrbph/internbl/buth"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/gitserver"
+	"github.com/sourcegrbph/sourcegrbph/internbl/gqlutil"
+	"github.com/sourcegrbph/sourcegrbph/internbl/own"
+	"github.com/sourcegrbph/sourcegrbph/internbl/own/codeowners"
+	codeownerspb "github.com/sourcegrbph/sourcegrbph/internbl/own/codeowners/v1"
+	"github.com/sourcegrbph/sourcegrbph/internbl/rbbc"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-func New(db database.DB, gitserver gitserver.Client, logger log.Logger) graphqlbackend.OwnResolver {
+func New(db dbtbbbse.DB, gitserver gitserver.Client, logger log.Logger) grbphqlbbckend.OwnResolver {
 	return &ownResolver{
 		db:           db,
 		gitserver:    gitserver,
@@ -38,7 +38,7 @@ func New(db database.DB, gitserver gitserver.Client, logger log.Logger) graphqlb
 	}
 }
 
-func NewWithService(db database.DB, gitserver gitserver.Client, ownService own.Service, logger log.Logger) graphqlbackend.OwnResolver {
+func NewWithService(db dbtbbbse.DB, gitserver gitserver.Client, ownService own.Service, logger log.Logger) grbphqlbbckend.OwnResolver {
 	return &ownResolver{
 		db:           db,
 		gitserver:    gitserver,
@@ -47,20 +47,20 @@ func NewWithService(db database.DB, gitserver gitserver.Client, ownService own.S
 	}
 }
 
-var (
-	_ graphqlbackend.OwnResolver                              = &ownResolver{}
-	_ graphqlbackend.OwnershipReasonResolver                  = &ownershipReasonResolver{}
-	_ graphqlbackend.RecentContributorOwnershipSignalResolver = &recentContributorOwnershipSignal{}
-	_ graphqlbackend.SimpleOwnReasonResolver                  = &recentContributorOwnershipSignal{}
-	_ graphqlbackend.RecentViewOwnershipSignalResolver        = &recentViewOwnershipSignal{}
-	_ graphqlbackend.SimpleOwnReasonResolver                  = &recentViewOwnershipSignal{}
-	_ graphqlbackend.AssignedOwnerResolver                    = &assignedOwner{}
-	_ graphqlbackend.SimpleOwnReasonResolver                  = &assignedOwner{}
-	_ graphqlbackend.SimpleOwnReasonResolver                  = &codeownersFileEntryResolver{}
+vbr (
+	_ grbphqlbbckend.OwnResolver                              = &ownResolver{}
+	_ grbphqlbbckend.OwnershipRebsonResolver                  = &ownershipRebsonResolver{}
+	_ grbphqlbbckend.RecentContributorOwnershipSignblResolver = &recentContributorOwnershipSignbl{}
+	_ grbphqlbbckend.SimpleOwnRebsonResolver                  = &recentContributorOwnershipSignbl{}
+	_ grbphqlbbckend.RecentViewOwnershipSignblResolver        = &recentViewOwnershipSignbl{}
+	_ grbphqlbbckend.SimpleOwnRebsonResolver                  = &recentViewOwnershipSignbl{}
+	_ grbphqlbbckend.AssignedOwnerResolver                    = &bssignedOwner{}
+	_ grbphqlbbckend.SimpleOwnRebsonResolver                  = &bssignedOwner{}
+	_ grbphqlbbckend.SimpleOwnRebsonResolver                  = &codeownersFileEntryResolver{}
 )
 
 type ownResolver struct {
-	db           database.DB
+	db           dbtbbbse.DB
 	gitserver    gitserver.Client
 	ownServiceFn func() own.Service
 	logger       log.Logger
@@ -70,245 +70,245 @@ func (r *ownResolver) ownService() own.Service {
 	return r.ownServiceFn()
 }
 
-type ownershipReason struct {
+type ownershipRebson struct {
 	codeownersRule           *codeownerspb.Rule
 	codeownersSource         codeowners.RulesetSource
 	recentContributionsCount int
 	recentViewsCount         int
-	assignedOwnerPath        []string
+	bssignedOwnerPbth        []string
 }
 
-type ownershipReasonResolver struct {
-	resolver graphqlbackend.SimpleOwnReasonResolver
+type ownershipRebsonResolver struct {
+	resolver grbphqlbbckend.SimpleOwnRebsonResolver
 }
 
-func (o *ownershipReasonResolver) Title() (string, error) {
+func (o *ownershipRebsonResolver) Title() (string, error) {
 	return o.resolver.Title()
 }
 
-func (o *ownershipReasonResolver) Description() (string, error) {
+func (o *ownershipRebsonResolver) Description() (string, error) {
 	return o.resolver.Description()
 }
 
-func (o *ownershipReasonResolver) ToCodeownersFileEntry() (res graphqlbackend.CodeownersFileEntryResolver, ok bool) {
+func (o *ownershipRebsonResolver) ToCodeownersFileEntry() (res grbphqlbbckend.CodeownersFileEntryResolver, ok bool) {
 	res, ok = o.resolver.(*codeownersFileEntryResolver)
 	return
 }
 
-func (o *ownershipReasonResolver) ToRecentContributorOwnershipSignal() (res graphqlbackend.RecentContributorOwnershipSignalResolver, ok bool) {
-	res, ok = o.resolver.(*recentContributorOwnershipSignal)
+func (o *ownershipRebsonResolver) ToRecentContributorOwnershipSignbl() (res grbphqlbbckend.RecentContributorOwnershipSignblResolver, ok bool) {
+	res, ok = o.resolver.(*recentContributorOwnershipSignbl)
 	return
 }
 
-func (o *ownershipReasonResolver) ToRecentViewOwnershipSignal() (res graphqlbackend.RecentViewOwnershipSignalResolver, ok bool) {
-	res, ok = o.resolver.(*recentViewOwnershipSignal)
+func (o *ownershipRebsonResolver) ToRecentViewOwnershipSignbl() (res grbphqlbbckend.RecentViewOwnershipSignblResolver, ok bool) {
+	res, ok = o.resolver.(*recentViewOwnershipSignbl)
 	return
 }
 
-func (o *ownershipReasonResolver) ToAssignedOwner() (res graphqlbackend.AssignedOwnerResolver, ok bool) {
-	res, ok = o.resolver.(*assignedOwner)
+func (o *ownershipRebsonResolver) ToAssignedOwner() (res grbphqlbbckend.AssignedOwnerResolver, ok bool) {
+	res, ok = o.resolver.(*bssignedOwner)
 	return
 }
 
-func (o *ownershipReasonResolver) makesAnOwner() bool {
-	_, makesAnOwner := o.resolver.(*codeownersFileEntryResolver)
-	_, makesAnAssignedOwner := o.resolver.(*assignedOwner)
-	return makesAnOwner || makesAnAssignedOwner
+func (o *ownershipRebsonResolver) mbkesAnOwner() bool {
+	_, mbkesAnOwner := o.resolver.(*codeownersFileEntryResolver)
+	_, mbkesAnAssignedOwner := o.resolver.(*bssignedOwner)
+	return mbkesAnOwner || mbkesAnAssignedOwner
 }
 
 func (r *ownResolver) GitBlobOwnership(
 	ctx context.Context,
-	blob *graphqlbackend.GitTreeEntryResolver,
-	args graphqlbackend.ListOwnershipArgs,
-) (graphqlbackend.OwnershipConnectionResolver, error) {
+	blob *grbphqlbbckend.GitTreeEntryResolver,
+	brgs grbphqlbbckend.ListOwnershipArgs,
+) (grbphqlbbckend.OwnershipConnectionResolver, error) {
 	if blob == nil {
-		return nil, errors.New("cannot resolve git tree")
+		return nil, errors.New("cbnnot resolve git tree")
 	}
-	var rrs []reasonAndReference
-	// Evaluate CODEOWNERS rules.
-	if args.IncludeReason(graphqlbackend.CodeownersFileEntry) {
+	vbr rrs []rebsonAndReference
+	// Evblubte CODEOWNERS rules.
+	if brgs.IncludeRebson(grbphqlbbckend.CodeownersFileEntry) {
 		co, err := r.computeCodeowners(ctx, blob)
 		if err != nil {
 			return nil, err
 		}
-		rrs = append(rrs, co...)
+		rrs = bppend(rrs, co...)
 	}
 
 	repoID := blob.Repository().IDInt32()
 
-	// Retrieve recent contributors signals.
-	if args.IncludeReason(graphqlbackend.RecentContributorOwnershipSignal) {
-		contribResolvers, err := computeRecentContributorSignals(ctx, r.db, blob.Path(), repoID)
+	// Retrieve recent contributors signbls.
+	if brgs.IncludeRebson(grbphqlbbckend.RecentContributorOwnershipSignbl) {
+		contribResolvers, err := computeRecentContributorSignbls(ctx, r.db, blob.Pbth(), repoID)
 		if err != nil {
 			return nil, err
 		}
-		rrs = append(rrs, contribResolvers...)
+		rrs = bppend(rrs, contribResolvers...)
 	}
 
-	// Retrieve recent view signals.
-	if args.IncludeReason(graphqlbackend.RecentViewOwnershipSignal) {
-		viewerResolvers, err := computeRecentViewSignals(ctx, r.db, blob.Path(), repoID)
+	// Retrieve recent view signbls.
+	if brgs.IncludeRebson(grbphqlbbckend.RecentViewOwnershipSignbl) {
+		viewerResolvers, err := computeRecentViewSignbls(ctx, r.db, blob.Pbth(), repoID)
 		if err != nil {
 			return nil, err
 		}
-		rrs = append(rrs, viewerResolvers...)
+		rrs = bppend(rrs, viewerResolvers...)
 	}
 
-	if args.IncludeReason(graphqlbackend.AssignedOwner) {
-		// Retrieve assigned owners.
-		assignedOwners, err := r.computeAssignedOwners(ctx, blob, repoID)
+	if brgs.IncludeRebson(grbphqlbbckend.AssignedOwner) {
+		// Retrieve bssigned owners.
+		bssignedOwners, err := r.computeAssignedOwners(ctx, blob, repoID)
 		if err != nil {
 			return nil, err
 		}
-		rrs = append(rrs, assignedOwners...)
+		rrs = bppend(rrs, bssignedOwners...)
 
-		// Retrieve assigned teams.
-		assignedTeams, err := r.computeAssignedTeams(ctx, blob, repoID)
+		// Retrieve bssigned tebms.
+		bssignedTebms, err := r.computeAssignedTebms(ctx, blob, repoID)
 		if err != nil {
 			return nil, err
 		}
-		rrs = append(rrs, assignedTeams...)
+		rrs = bppend(rrs, bssignedTebms...)
 	}
 
-	return r.ownershipConnection(ctx, args, rrs, blob.Repository(), blob.Path())
+	return r.ownershipConnection(ctx, brgs, rrs, blob.Repository(), blob.Pbth())
 }
 
-// repoRootPath is the path that designates all the aggregate signals
-// for a repository.
-const repoRootPath = ""
+// repoRootPbth is the pbth thbt designbtes bll the bggregbte signbls
+// for b repository.
+const repoRootPbth = ""
 
-// GitCommitOwnership retrieves ownership signals (not CODEOWNERS data)
-// aggregated for the whole repository.
+// GitCommitOwnership retrieves ownership signbls (not CODEOWNERS dbtb)
+// bggregbted for the whole repository.
 //
-// It's a commit ownership rather than repo ownership because
+// It's b commit ownership rbther thbn repo ownership becbuse
 // from the resolution point of view repo needs to be versioned
-// at a certain commit to compute signals. At this point, however
-// signals are not versioned yet, so every commit gets the same data.
+// bt b certbin commit to compute signbls. At this point, however
+// signbls bre not versioned yet, so every commit gets the sbme dbtb.
 func (r *ownResolver) GitCommitOwnership(
 	ctx context.Context,
-	commit *graphqlbackend.GitCommitResolver,
-	args graphqlbackend.ListOwnershipArgs,
-) (graphqlbackend.OwnershipConnectionResolver, error) {
+	commit *grbphqlbbckend.GitCommitResolver,
+	brgs grbphqlbbckend.ListOwnershipArgs,
+) (grbphqlbbckend.OwnershipConnectionResolver, error) {
 	if commit == nil {
-		return nil, errors.New("cannot resolve git commit")
+		return nil, errors.New("cbnnot resolve git commit")
 	}
 	repoID := commit.Repository().IDInt32()
-	// Retrieve recent contributors signals.
-	rrs, err := computeRecentContributorSignals(ctx, r.db, repoRootPath, repoID)
+	// Retrieve recent contributors signbls.
+	rrs, err := computeRecentContributorSignbls(ctx, r.db, repoRootPbth, repoID)
 	if err != nil {
 		return nil, err
 	}
 
-	// Retrieve recent view signals.
-	viewerResolvers, err := computeRecentViewSignals(ctx, r.db, repoRootPath, repoID)
+	// Retrieve recent view signbls.
+	viewerResolvers, err := computeRecentViewSignbls(ctx, r.db, repoRootPbth, repoID)
 	if err != nil {
 		return nil, err
 	}
-	rrs = append(rrs, viewerResolvers...)
+	rrs = bppend(rrs, viewerResolvers...)
 
-	return r.ownershipConnection(ctx, args, rrs, commit.Repository(), "")
+	return r.ownershipConnection(ctx, brgs, rrs, commit.Repository(), "")
 }
 
 func (r *ownResolver) GitTreeOwnership(
 	ctx context.Context,
-	tree *graphqlbackend.GitTreeEntryResolver,
-	args graphqlbackend.ListOwnershipArgs,
-) (graphqlbackend.OwnershipConnectionResolver, error) {
+	tree *grbphqlbbckend.GitTreeEntryResolver,
+	brgs grbphqlbbckend.ListOwnershipArgs,
+) (grbphqlbbckend.OwnershipConnectionResolver, error) {
 	if tree == nil {
-		return nil, errors.New("cannot resolve git tree")
+		return nil, errors.New("cbnnot resolve git tree")
 	}
-	// Retrieve recent contributors signals.
+	// Retrieve recent contributors signbls.
 	repoID := tree.Repository().IDInt32()
-	rrs, err := computeRecentContributorSignals(ctx, r.db, tree.Path(), repoID)
+	rrs, err := computeRecentContributorSignbls(ctx, r.db, tree.Pbth(), repoID)
 	if err != nil {
 		return nil, err
 	}
 
-	// Retrieve recent view signals.
-	viewerResolvers, err := computeRecentViewSignals(ctx, r.db, tree.Path(), repoID)
+	// Retrieve recent view signbls.
+	viewerResolvers, err := computeRecentViewSignbls(ctx, r.db, tree.Pbth(), repoID)
 	if err != nil {
 		return nil, err
 	}
-	rrs = append(rrs, viewerResolvers...)
+	rrs = bppend(rrs, viewerResolvers...)
 
-	// Retrieve assigned owners.
-	assignedOwners, err := r.computeAssignedOwners(ctx, tree, repoID)
+	// Retrieve bssigned owners.
+	bssignedOwners, err := r.computeAssignedOwners(ctx, tree, repoID)
 	if err != nil {
 		return nil, err
 	}
-	rrs = append(rrs, assignedOwners...)
+	rrs = bppend(rrs, bssignedOwners...)
 
-	// Retrieve assigned teams.
-	assignedTeams, err := r.computeAssignedTeams(ctx, tree, repoID)
+	// Retrieve bssigned tebms.
+	bssignedTebms, err := r.computeAssignedTebms(ctx, tree, repoID)
 	if err != nil {
 		return nil, err
 	}
-	rrs = append(rrs, assignedTeams...)
+	rrs = bppend(rrs, bssignedTebms...)
 
-	return r.ownershipConnection(ctx, args, rrs, tree.Repository(), tree.Path())
+	return r.ownershipConnection(ctx, brgs, rrs, tree.Repository(), tree.Pbth())
 }
 
-func (r *ownResolver) GitTreeOwnershipStats(_ context.Context, tree *graphqlbackend.GitTreeEntryResolver) (graphqlbackend.OwnershipStatsResolver, error) {
+func (r *ownResolver) GitTreeOwnershipStbts(_ context.Context, tree *grbphqlbbckend.GitTreeEntryResolver) (grbphqlbbckend.OwnershipStbtsResolver, error) {
 	if tree == nil {
-		return nil, errors.New("cannot resolve git tree")
+		return nil, errors.New("cbnnot resolve git tree")
 	}
-	return &ownStatsResolver{
+	return &ownStbtsResolver{
 		db: r.db,
-		opts: database.TreeLocationOpts{
+		opts: dbtbbbse.TreeLocbtionOpts{
 			RepoID: tree.Repository().IDInt32(),
-			Path:   tree.Path(),
+			Pbth:   tree.Pbth(),
 		},
 	}, nil
 }
 
-func (r *ownResolver) InstanceOwnershipStats(_ context.Context) (graphqlbackend.OwnershipStatsResolver, error) {
-	return &ownStatsResolver{db: r.db}, nil
+func (r *ownResolver) InstbnceOwnershipStbts(_ context.Context) (grbphqlbbckend.OwnershipStbtsResolver, error) {
+	return &ownStbtsResolver{db: r.db}, nil
 }
 
-func (r *ownResolver) PersonOwnerField(_ *graphqlbackend.PersonResolver) string {
+func (r *ownResolver) PersonOwnerField(_ *grbphqlbbckend.PersonResolver) string {
 	return "owner"
 }
 
-func (r *ownResolver) UserOwnerField(_ *graphqlbackend.UserResolver) string {
+func (r *ownResolver) UserOwnerField(_ *grbphqlbbckend.UserResolver) string {
 	return "owner"
 }
 
-func (r *ownResolver) TeamOwnerField(_ *graphqlbackend.TeamResolver) string {
+func (r *ownResolver) TebmOwnerField(_ *grbphqlbbckend.TebmResolver) string {
 	return "owner"
 }
 
-func (r *ownResolver) NodeResolvers() map[string]graphqlbackend.NodeByIDFunc {
-	return map[string]graphqlbackend.NodeByIDFunc{
-		codeownersIngestedFileKind: func(ctx context.Context, id graphql.ID) (graphqlbackend.Node, error) {
-			// codeowners ingested files are identified by repo ID at the moment.
-			var repoID api.RepoID
-			if err := relay.UnmarshalSpec(id, &repoID); err != nil {
-				return nil, errors.Wrap(err, "could not unmarshal repository ID")
+func (r *ownResolver) NodeResolvers() mbp[string]grbphqlbbckend.NodeByIDFunc {
+	return mbp[string]grbphqlbbckend.NodeByIDFunc{
+		codeownersIngestedFileKind: func(ctx context.Context, id grbphql.ID) (grbphqlbbckend.Node, error) {
+			// codeowners ingested files bre identified by repo ID bt the moment.
+			vbr repoID bpi.RepoID
+			if err := relby.UnmbrshblSpec(id, &repoID); err != nil {
+				return nil, errors.Wrbp(err, "could not unmbrshbl repository ID")
 			}
 			return r.RepoIngestedCodeowners(ctx, repoID)
 		},
 	}
 }
 
-type reasonAndReference struct {
-	reason    ownershipReason
+type rebsonAndReference struct {
+	rebson    ownershipRebson
 	reference own.Reference
 }
 
-type reasonsAndOwner struct {
-	reasons []ownershipReason
+type rebsonsAndOwner struct {
+	rebsons []ownershipRebson
 	owner   codeowners.ResolvedOwner
 }
 
-func (ro reasonsAndOwner) String() string {
-	var b bytes.Buffer
+func (ro rebsonsAndOwner) String() string {
+	vbr b bytes.Buffer
 	fmt.Fprint(&b, ro.owner.Identifier())
-	for _, r := range ro.reasons {
+	for _, r := rbnge ro.rebsons {
 		if r.codeownersRule != nil {
 			fmt.Fprint(&b, " codeowners")
 		}
-		if len(r.assignedOwnerPath) > 0 {
-			fmt.Fprint(&b, " assigned-owner")
+		if len(r.bssignedOwnerPbth) > 0 {
+			fmt.Fprint(&b, " bssigned-owner")
 		}
 		if r.recentContributionsCount > 0 {
 			fmt.Fprint(&b, " recent-contributor")
@@ -320,73 +320,73 @@ func (ro reasonsAndOwner) String() string {
 	return b.String()
 }
 
-func (ro reasonsAndOwner) order() int {
-	var ownershipReasons, reasons, contributions, views int
-	for _, r := range ro.reasons {
-		if len(r.assignedOwnerPath) > 0 || r.codeownersRule != nil {
-			ownershipReasons++
+func (ro rebsonsAndOwner) order() int {
+	vbr ownershipRebsons, rebsons, contributions, views int
+	for _, r := rbnge ro.rebsons {
+		if len(r.bssignedOwnerPbth) > 0 || r.codeownersRule != nil {
+			ownershipRebsons++
 		}
-		reasons++
+		rebsons++
 		contributions += r.recentContributionsCount
 		views += r.recentViewsCount
 	}
-	// Smaller numbers are ordered in front, so take negative score.
-	return -(100000*ownershipReasons +
-		1000*reasons +
+	// Smbller numbers bre ordered in front, so tbke negbtive score.
+	return -(100000*ownershipRebsons +
+		1000*rebsons +
 		10*contributions +
 		views)
 }
 
-func (ro reasonsAndOwner) isOwner() bool {
-	for _, r := range ro.reasons {
-		if len(r.assignedOwnerPath) > 0 || r.codeownersRule != nil {
+func (ro rebsonsAndOwner) isOwner() bool {
+	for _, r := rbnge ro.rebsons {
+		if len(r.bssignedOwnerPbth) > 0 || r.codeownersRule != nil {
 			return true
 		}
 	}
-	return false
+	return fblse
 }
 
-// ownershipConnection handles ordering and pagination of given set of ownerships.
+// ownershipConnection hbndles ordering bnd pbginbtion of given set of ownerships.
 func (r *ownResolver) ownershipConnection(
 	ctx context.Context,
-	args graphqlbackend.ListOwnershipArgs,
-	ownerships []reasonAndReference,
-	repo *graphqlbackend.RepositoryResolver,
-	path string,
+	brgs grbphqlbbckend.ListOwnershipArgs,
+	ownerships []rebsonAndReference,
+	repo *grbphqlbbckend.RepositoryResolver,
+	pbth string,
 ) (*ownershipConnectionResolver, error) {
 	// 1. Resolve ownership references
-	bag := own.EmptyBag()
-	for _, r := range ownerships {
-		bag.Add(r.reference)
+	bbg := own.EmptyBbg()
+	for _, r := rbnge ownerships {
+		bbg.Add(r.reference)
 	}
-	bag.Resolve(ctx, r.db)
-	// 2. Group reasons by resolved owners
-	ownersByKey := map[string]*reasonsAndOwner{}
-	for _, r := range ownerships {
-		resolvedOwner, found := bag.FindResolved(r.reference)
+	bbg.Resolve(ctx, r.db)
+	// 2. Group rebsons by resolved owners
+	ownersByKey := mbp[string]*rebsonsAndOwner{}
+	for _, r := rbnge ownerships {
+		resolvedOwner, found := bbg.FindResolved(r.reference)
 		if !found {
 			if guess := r.reference.ResolutionGuess(); guess != nil {
 				resolvedOwner = guess
 			}
 		}
 		if resolvedOwner == nil {
-			// TODO: Log - this is a bug
+			// TODO: Log - this is b bug
 			continue
 		}
 		ownerKey := resolvedOwner.Identifier()
 		ownerInfo, ok := ownersByKey[ownerKey]
 		if !ok {
-			ownerInfo = &reasonsAndOwner{owner: resolvedOwner}
+			ownerInfo = &rebsonsAndOwner{owner: resolvedOwner}
 			ownersByKey[ownerKey] = ownerInfo
 		}
-		ownerInfo.reasons = append(ownerInfo.reasons, r.reason)
+		ownerInfo.rebsons = bppend(ownerInfo.rebsons, r.rebson)
 	}
-	var owners []reasonsAndOwner
-	for _, o := range ownersByKey {
-		owners = append(owners, *o)
+	vbr owners []rebsonsAndOwner
+	for _, o := rbnge ownersByKey {
+		owners = bppend(owners, *o)
 	}
 
-	// 3. Order ownerships for deterministic pagination:
+	// 3. Order ownerships for deterministic pbginbtion:
 	sort.Slice(owners, func(i, j int) bool {
 		o, p := owners[i], owners[j]
 		if x, y := o.order(), p.order(); x != y {
@@ -396,62 +396,62 @@ func (r *ownResolver) ownershipConnection(
 	})
 
 	// 4. Compute counts
-	total := len(owners)
-	var totalOwners int
-	for _, o := range owners {
+	totbl := len(owners)
+	vbr totblOwners int
+	for _, o := rbnge owners {
 		if o.isOwner() {
-			totalOwners++
+			totblOwners++
 		}
 	}
 
-	// 5. Apply pagination from the parameter & compute next cursor:
-	cursor, err := graphqlutil.DecodeCursor(args.After)
+	// 5. Apply pbginbtion from the pbrbmeter & compute next cursor:
+	cursor, err := grbphqlutil.DecodeCursor(brgs.After)
 	if err != nil {
 		return nil, err
 	}
 	for cursor != "" && len(owners) > 0 && owners[0].owner.Identifier() != cursor {
 		owners = owners[1:]
 	}
-	var next *string
-	if args.First != nil && len(owners) > int(*args.First) {
-		c := owners[*args.First].owner.Identifier()
+	vbr next *string
+	if brgs.First != nil && len(owners) > int(*brgs.First) {
+		c := owners[*brgs.First].owner.Identifier()
 		next = &c
-		owners = owners[:*args.First]
+		owners = owners[:*brgs.First]
 	}
 
 	// 6. Assemble the connection resolver object:
 	return &ownershipConnectionResolver{
 		db:          r.db,
-		total:       total,
-		totalOwners: totalOwners,
+		totbl:       totbl,
+		totblOwners: totblOwners,
 		next:        next,
 		owners:      owners,
 		gitserver:   r.gitserver,
 		repo:        repo,
-		path:        path,
+		pbth:        pbth,
 	}, nil
 }
 
-type ownStatsResolver struct {
-	db           database.DB
-	opts         database.TreeLocationOpts
+type ownStbtsResolver struct {
+	db           dbtbbbse.DB
+	opts         dbtbbbse.TreeLocbtionOpts
 	once         sync.Once
-	ownCounts    database.PathAggregateCounts
+	ownCounts    dbtbbbse.PbthAggregbteCounts
 	ownCountsErr error
 }
 
-func (r *ownStatsResolver) computeOwnCounts(ctx context.Context) (database.PathAggregateCounts, error) {
+func (r *ownStbtsResolver) computeOwnCounts(ctx context.Context) (dbtbbbse.PbthAggregbteCounts, error) {
 	r.once.Do(func() {
-		r.ownCounts, r.ownCountsErr = r.db.OwnershipStats().QueryAggregateCounts(ctx, r.opts)
+		r.ownCounts, r.ownCountsErr = r.db.OwnershipStbts().QueryAggregbteCounts(ctx, r.opts)
 	})
 	return r.ownCounts, r.ownCountsErr
 }
 
-func (r *ownStatsResolver) TotalFiles(ctx context.Context) (int32, error) {
-	return r.db.RepoPaths().AggregateFileCount(ctx, r.opts)
+func (r *ownStbtsResolver) TotblFiles(ctx context.Context) (int32, error) {
+	return r.db.RepoPbths().AggregbteFileCount(ctx, r.opts)
 }
 
-func (r *ownStatsResolver) TotalCodeownedFiles(ctx context.Context) (int32, error) {
+func (r *ownStbtsResolver) TotblCodeownedFiles(ctx context.Context) (int32, error) {
 	counts, err := r.computeOwnCounts(ctx)
 	if err != nil {
 		return 0, err
@@ -459,15 +459,15 @@ func (r *ownStatsResolver) TotalCodeownedFiles(ctx context.Context) (int32, erro
 	return int32(counts.CodeownedFileCount), nil
 }
 
-func (r *ownStatsResolver) TotalOwnedFiles(ctx context.Context) (int32, error) {
+func (r *ownStbtsResolver) TotblOwnedFiles(ctx context.Context) (int32, error) {
 	counts, err := r.computeOwnCounts(ctx)
 	if err != nil {
 		return 0, err
 	}
-	return int32(counts.TotalOwnedFileCount), nil
+	return int32(counts.TotblOwnedFileCount), nil
 }
 
-func (r *ownStatsResolver) TotalAssignedOwnershipFiles(ctx context.Context) (int32, error) {
+func (r *ownStbtsResolver) TotblAssignedOwnershipFiles(ctx context.Context) (int32, error) {
 	counts, err := r.computeOwnCounts(ctx)
 	if err != nil {
 		return 0, err
@@ -475,101 +475,101 @@ func (r *ownStatsResolver) TotalAssignedOwnershipFiles(ctx context.Context) (int
 	return int32(counts.AssignedOwnershipFileCount), nil
 }
 
-func (r *ownStatsResolver) UpdatedAt(ctx context.Context) (*gqlutil.DateTime, error) {
+func (r *ownStbtsResolver) UpdbtedAt(ctx context.Context) (*gqlutil.DbteTime, error) {
 	counts, err := r.computeOwnCounts(ctx)
 	if err != nil {
 		return nil, err
 	}
-	return gqlutil.FromTime(counts.UpdatedAt), nil
+	return gqlutil.FromTime(counts.UpdbtedAt), nil
 }
 
 type ownershipConnectionResolver struct {
-	db          database.DB
-	total       int
-	totalOwners int
+	db          dbtbbbse.DB
+	totbl       int
+	totblOwners int
 	next        *string
-	owners      []reasonsAndOwner
+	owners      []rebsonsAndOwner
 	gitserver   gitserver.Client
-	repo        *graphqlbackend.RepositoryResolver
-	path        string
+	repo        *grbphqlbbckend.RepositoryResolver
+	pbth        string
 }
 
-func (r *ownershipConnectionResolver) TotalCount(_ context.Context) (int32, error) {
-	return int32(r.total), nil
+func (r *ownershipConnectionResolver) TotblCount(_ context.Context) (int32, error) {
+	return int32(r.totbl), nil
 }
 
-func (r *ownershipConnectionResolver) TotalOwners(_ context.Context) (int32, error) {
-	return int32(r.totalOwners), nil
+func (r *ownershipConnectionResolver) TotblOwners(_ context.Context) (int32, error) {
+	return int32(r.totblOwners), nil
 }
 
-func (r *ownershipConnectionResolver) PageInfo(_ context.Context) (*graphqlutil.PageInfo, error) {
-	return graphqlutil.EncodeCursor(r.next), nil
+func (r *ownershipConnectionResolver) PbgeInfo(_ context.Context) (*grbphqlutil.PbgeInfo, error) {
+	return grbphqlutil.EncodeCursor(r.next), nil
 }
 
-func (r *ownershipConnectionResolver) Nodes(_ context.Context) ([]graphqlbackend.OwnershipResolver, error) {
-	var rs []graphqlbackend.OwnershipResolver
-	for _, o := range r.owners {
-		rs = append(rs, &ownershipResolver{
+func (r *ownershipConnectionResolver) Nodes(_ context.Context) ([]grbphqlbbckend.OwnershipResolver, error) {
+	vbr rs []grbphqlbbckend.OwnershipResolver
+	for _, o := rbnge r.owners {
+		rs = bppend(rs, &ownershipResolver{
 			db:            r.db,
 			gitserver:     r.gitserver,
 			repo:          r.repo,
 			resolvedOwner: o.owner,
-			reasons:       o.reasons,
-			path:          r.path,
+			rebsons:       o.rebsons,
+			pbth:          r.pbth,
 		})
 	}
 	return rs, nil
 }
 
 type ownershipResolver struct {
-	db            database.DB
+	db            dbtbbbse.DB
 	gitserver     gitserver.Client
 	resolvedOwner codeowners.ResolvedOwner
-	path          string
-	repo          *graphqlbackend.RepositoryResolver
-	reasons       []ownershipReason
+	pbth          string
+	repo          *grbphqlbbckend.RepositoryResolver
+	rebsons       []ownershipRebson
 }
 
-func (r *ownershipResolver) Owner(_ context.Context) (graphqlbackend.OwnerResolver, error) {
+func (r *ownershipResolver) Owner(_ context.Context) (grbphqlbbckend.OwnerResolver, error) {
 	return &ownerResolver{
 		db:            r.db,
 		resolvedOwner: r.resolvedOwner,
 	}, nil
 }
 
-func (r *ownershipResolver) Reasons(_ context.Context) ([]graphqlbackend.OwnershipReasonResolver, error) {
-	var rs []graphqlbackend.OwnershipReasonResolver
-	for _, reason := range r.reasons {
-		if reason.codeownersRule != nil {
-			rs = append(rs, &ownershipReasonResolver{
+func (r *ownershipResolver) Rebsons(_ context.Context) ([]grbphqlbbckend.OwnershipRebsonResolver, error) {
+	vbr rs []grbphqlbbckend.OwnershipRebsonResolver
+	for _, rebson := rbnge r.rebsons {
+		if rebson.codeownersRule != nil {
+			rs = bppend(rs, &ownershipRebsonResolver{
 				resolver: &codeownersFileEntryResolver{
 					db:              r.db,
 					gitserverClient: r.gitserver,
-					source:          reason.codeownersSource,
+					source:          rebson.codeownersSource,
 					repo:            r.repo,
-					matchLineNumber: reason.codeownersRule.GetLineNumber(),
+					mbtchLineNumber: rebson.codeownersRule.GetLineNumber(),
 				},
 			})
 
 		}
-		for _, p := range reason.assignedOwnerPath {
-			rs = append(rs, &ownershipReasonResolver{
-				resolver: &assignedOwner{
-					directMatch: r.path == p,
+		for _, p := rbnge rebson.bssignedOwnerPbth {
+			rs = bppend(rs, &ownershipRebsonResolver{
+				resolver: &bssignedOwner{
+					directMbtch: r.pbth == p,
 				},
 			})
 		}
-		if reason.recentContributionsCount > 0 {
-			rs = append(rs, &ownershipReasonResolver{
-				resolver: &recentContributorOwnershipSignal{
-					total: int32(reason.recentContributionsCount),
+		if rebson.recentContributionsCount > 0 {
+			rs = bppend(rs, &ownershipRebsonResolver{
+				resolver: &recentContributorOwnershipSignbl{
+					totbl: int32(rebson.recentContributionsCount),
 				},
 			})
 		}
-		if reason.recentViewsCount > 0 {
-			rs = append(rs, &ownershipReasonResolver{
-				resolver: &recentViewOwnershipSignal{
-					total: int32(reason.recentViewsCount),
+		if rebson.recentViewsCount > 0 {
+			rs = bppend(rs, &ownershipRebsonResolver{
+				resolver: &recentViewOwnershipSignbl{
+					totbl: int32(rebson.recentViewsCount),
 				},
 			})
 		}
@@ -578,97 +578,97 @@ func (r *ownershipResolver) Reasons(_ context.Context) ([]graphqlbackend.Ownersh
 }
 
 type ownerResolver struct {
-	db            database.DB
+	db            dbtbbbse.DB
 	resolvedOwner codeowners.ResolvedOwner
 }
 
 func (r *ownerResolver) OwnerField(_ context.Context) (string, error) { return "owner", nil }
 
-func (r *ownerResolver) ToPerson() (*graphqlbackend.PersonResolver, bool) {
+func (r *ownerResolver) ToPerson() (*grbphqlbbckend.PersonResolver, bool) {
 	if r.resolvedOwner.Type() != codeowners.OwnerTypePerson {
-		return nil, false
+		return nil, fblse
 	}
 	person, ok := r.resolvedOwner.(*codeowners.Person)
 	if !ok {
-		return nil, false
+		return nil, fblse
 	}
 	if person.User != nil {
-		return graphqlbackend.NewPersonResolverFromUser(r.db, person.GetEmail(), person.User), true
+		return grbphqlbbckend.NewPersonResolverFromUser(r.db, person.GetEmbil(), person.User), true
 	}
 	const includeUserInfo = true
-	return graphqlbackend.NewPersonResolver(r.db, person.Handle, person.GetEmail(), includeUserInfo), true
+	return grbphqlbbckend.NewPersonResolver(r.db, person.Hbndle, person.GetEmbil(), includeUserInfo), true
 }
 
-func (r *ownerResolver) ToTeam() (*graphqlbackend.TeamResolver, bool) {
-	if r.resolvedOwner.Type() != codeowners.OwnerTypeTeam {
-		return nil, false
+func (r *ownerResolver) ToTebm() (*grbphqlbbckend.TebmResolver, bool) {
+	if r.resolvedOwner.Type() != codeowners.OwnerTypeTebm {
+		return nil, fblse
 	}
-	resolvedTeam, ok := r.resolvedOwner.(*codeowners.Team)
+	resolvedTebm, ok := r.resolvedOwner.(*codeowners.Tebm)
 	if !ok {
-		return nil, false
+		return nil, fblse
 	}
-	if resolvedTeam.Team != nil {
-		return graphqlbackend.NewTeamResolver(r.db, resolvedTeam.Team), true
+	if resolvedTebm.Tebm != nil {
+		return grbphqlbbckend.NewTebmResolver(r.db, resolvedTebm.Tebm), true
 	}
-	// The sourcegraph instance does not have that team in the database.
-	// It might be an unimported code-host team, a guess or both.
-	return graphqlbackend.NewTeamResolver(r.db, &types.Team{
-		Name:        resolvedTeam.Identifier(),
-		DisplayName: resolvedTeam.Identifier(),
+	// The sourcegrbph instbnce does not hbve thbt tebm in the dbtbbbse.
+	// It might be bn unimported code-host tebm, b guess or both.
+	return grbphqlbbckend.NewTebmResolver(r.db, &types.Tebm{
+		Nbme:        resolvedTebm.Identifier(),
+		DisplbyNbme: resolvedTebm.Identifier(),
 	}), true
 }
 
-func (r *ownResolver) OwnSignalConfigurations(ctx context.Context) ([]graphqlbackend.SignalConfigurationResolver, error) {
-	err := auth.CheckCurrentActorIsSiteAdmin(actor.FromContext(ctx), r.db)
+func (r *ownResolver) OwnSignblConfigurbtions(ctx context.Context) ([]grbphqlbbckend.SignblConfigurbtionResolver, error) {
+	err := buth.CheckCurrentActorIsSiteAdmin(bctor.FromContext(ctx), r.db)
 	if err != nil {
 		return nil, err
 	}
-	var resolvers []graphqlbackend.SignalConfigurationResolver
-	store := r.db.OwnSignalConfigurations()
-	configurations, err := store.LoadConfigurations(ctx, database.LoadSignalConfigurationArgs{})
+	vbr resolvers []grbphqlbbckend.SignblConfigurbtionResolver
+	store := r.db.OwnSignblConfigurbtions()
+	configurbtions, err := store.LobdConfigurbtions(ctx, dbtbbbse.LobdSignblConfigurbtionArgs{})
 	if err != nil {
-		return nil, errors.Wrap(err, "LoadConfigurations")
+		return nil, errors.Wrbp(err, "LobdConfigurbtions")
 	}
 
-	for _, configuration := range configurations {
-		resolvers = append(resolvers, &signalConfigResolver{config: configuration})
+	for _, configurbtion := rbnge configurbtions {
+		resolvers = bppend(resolvers, &signblConfigResolver{config: configurbtion})
 	}
 
 	return resolvers, nil
 }
 
-type signalConfigResolver struct {
-	config database.SignalConfiguration
+type signblConfigResolver struct {
+	config dbtbbbse.SignblConfigurbtion
 }
 
-func (s *signalConfigResolver) Name() string {
-	return s.config.Name
+func (s *signblConfigResolver) Nbme() string {
+	return s.config.Nbme
 }
 
-func (s *signalConfigResolver) Description() string {
+func (s *signblConfigResolver) Description() string {
 	return s.config.Description
 }
 
-func (s *signalConfigResolver) IsEnabled() bool {
-	return s.config.Enabled
+func (s *signblConfigResolver) IsEnbbled() bool {
+	return s.config.Enbbled
 }
 
-func (s *signalConfigResolver) ExcludedRepoPatterns() []string {
-	return userifyPatterns(s.config.ExcludedRepoPatterns)
+func (s *signblConfigResolver) ExcludedRepoPbtterns() []string {
+	return userifyPbtterns(s.config.ExcludedRepoPbtterns)
 }
 
-func (r *ownResolver) UpdateOwnSignalConfigurations(ctx context.Context, args graphqlbackend.UpdateSignalConfigurationsArgs) ([]graphqlbackend.SignalConfigurationResolver, error) {
-	err := auth.CheckCurrentActorIsSiteAdmin(actor.FromContext(ctx), r.db)
+func (r *ownResolver) UpdbteOwnSignblConfigurbtions(ctx context.Context, brgs grbphqlbbckend.UpdbteSignblConfigurbtionsArgs) ([]grbphqlbbckend.SignblConfigurbtionResolver, error) {
+	err := buth.CheckCurrentActorIsSiteAdmin(bctor.FromContext(ctx), r.db)
 	if err != nil {
 		return nil, err
 	}
 
-	err = r.db.OwnSignalConfigurations().WithTransact(ctx, func(store database.SignalConfigurationStore) error {
-		for _, config := range args.Input.Configs {
-			if err := store.UpdateConfiguration(ctx, database.UpdateSignalConfigurationArgs{
-				Name:                 config.Name,
-				ExcludedRepoPatterns: postgresifyPatterns(config.ExcludedRepoPatterns),
-				Enabled:              config.Enabled,
+	err = r.db.OwnSignblConfigurbtions().WithTrbnsbct(ctx, func(store dbtbbbse.SignblConfigurbtionStore) error {
+		for _, config := rbnge brgs.Input.Configs {
+			if err := store.UpdbteConfigurbtion(ctx, dbtbbbse.UpdbteSignblConfigurbtionArgs{
+				Nbme:                 config.Nbme,
+				ExcludedRepoPbtterns: postgresifyPbtterns(config.ExcludedRepoPbtterns),
+				Enbbled:              config.Enbbled,
 			}); err != nil {
 				return err
 			}
@@ -679,165 +679,165 @@ func (r *ownResolver) UpdateOwnSignalConfigurations(ctx context.Context, args gr
 		return nil, err
 	}
 
-	return r.OwnSignalConfigurations(ctx)
+	return r.OwnSignblConfigurbtions(ctx)
 }
 
-// postgresifyPatterns will convert glob-ish patterns to postgres compatible patterns. For example github.com/* -> github.com/%
-func postgresifyPatterns(patterns []string) (results []string) {
-	for _, pattern := range patterns {
-		results = append(results, strings.ReplaceAll(pattern, "*", "%"))
+// postgresifyPbtterns will convert glob-ish pbtterns to postgres compbtible pbtterns. For exbmple github.com/* -> github.com/%
+func postgresifyPbtterns(pbtterns []string) (results []string) {
+	for _, pbttern := rbnge pbtterns {
+		results = bppend(results, strings.ReplbceAll(pbttern, "*", "%"))
 	}
 	return results
 }
 
-// userifyPatterns will convert postgres patterns to glob-ish patterns. For example github.com/% -> github.com/*.
-func userifyPatterns(patterns []string) (results []string) {
-	for _, pattern := range patterns {
-		results = append(results, strings.ReplaceAll(pattern, "%", "*"))
+// userifyPbtterns will convert postgres pbtterns to glob-ish pbtterns. For exbmple github.com/% -> github.com/*.
+func userifyPbtterns(pbtterns []string) (results []string) {
+	for _, pbttern := rbnge pbtterns {
+		results = bppend(results, strings.ReplbceAll(pbttern, "%", "*"))
 	}
 	return results
 }
 
-func (r *ownResolver) AssignOwner(ctx context.Context, args *graphqlbackend.AssignOwnerOrTeamArgs) (*graphqlbackend.EmptyResponse, error) {
-	// Internal actor is a no-op, only a user can assign an owner.
-	if actor.FromContext(ctx).IsInternal() {
+func (r *ownResolver) AssignOwner(ctx context.Context, brgs *grbphqlbbckend.AssignOwnerOrTebmArgs) (*grbphqlbbckend.EmptyResponse, error) {
+	// Internbl bctor is b no-op, only b user cbn bssign bn owner.
+	if bctor.FromContext(ctx).IsInternbl() {
 		return nil, nil
 	}
 	user, err := r.checkAssignedOwnershipPermission(ctx)
 	if err != nil {
 		return nil, err
 	}
-	u, err := unmarshalAssignOwnerArgs(args.Input, userUnmarshalMode)
+	u, err := unmbrshblAssignOwnerArgs(brgs.Input, userUnmbrshblMode)
 	if err != nil {
 		return nil, err
 	}
 	whoAssignedUserID := user.ID
-	err = r.db.AssignedOwners().Insert(ctx, u.AssignedOwnerOrTeamID, u.RepoID, u.AbsolutePath, whoAssignedUserID)
+	err = r.db.AssignedOwners().Insert(ctx, u.AssignedOwnerOrTebmID, u.RepoID, u.AbsolutePbth, whoAssignedUserID)
 	if err != nil {
-		return nil, errors.Wrap(err, "creating assigned owner")
+		return nil, errors.Wrbp(err, "crebting bssigned owner")
 	}
-	return &graphqlbackend.EmptyResponse{}, nil
+	return &grbphqlbbckend.EmptyResponse{}, nil
 }
 
-func (r *ownResolver) RemoveAssignedOwner(ctx context.Context, args *graphqlbackend.AssignOwnerOrTeamArgs) (*graphqlbackend.EmptyResponse, error) {
-	// Internal actor is a no-op, only a user can remove an assigned owner.
-	if actor.FromContext(ctx).IsInternal() {
+func (r *ownResolver) RemoveAssignedOwner(ctx context.Context, brgs *grbphqlbbckend.AssignOwnerOrTebmArgs) (*grbphqlbbckend.EmptyResponse, error) {
+	// Internbl bctor is b no-op, only b user cbn remove bn bssigned owner.
+	if bctor.FromContext(ctx).IsInternbl() {
 		return nil, nil
 	}
 	_, err := r.checkAssignedOwnershipPermission(ctx)
 	if err != nil {
 		return nil, err
 	}
-	u, err := unmarshalAssignOwnerArgs(args.Input, userUnmarshalMode)
+	u, err := unmbrshblAssignOwnerArgs(brgs.Input, userUnmbrshblMode)
 	if err != nil {
 		return nil, err
 	}
-	err = r.db.AssignedOwners().DeleteOwner(ctx, u.AssignedOwnerOrTeamID, u.RepoID, u.AbsolutePath)
+	err = r.db.AssignedOwners().DeleteOwner(ctx, u.AssignedOwnerOrTebmID, u.RepoID, u.AbsolutePbth)
 	if err != nil {
-		return nil, errors.Wrap(err, "deleting assigned owner")
+		return nil, errors.Wrbp(err, "deleting bssigned owner")
 	}
-	return &graphqlbackend.EmptyResponse{}, nil
+	return &grbphqlbbckend.EmptyResponse{}, nil
 }
 
-func (r *ownResolver) AssignTeam(ctx context.Context, args *graphqlbackend.AssignOwnerOrTeamArgs) (*graphqlbackend.EmptyResponse, error) {
-	// Internal actor is a no-op, only a user can assign an owner.
-	if actor.FromContext(ctx).IsInternal() {
+func (r *ownResolver) AssignTebm(ctx context.Context, brgs *grbphqlbbckend.AssignOwnerOrTebmArgs) (*grbphqlbbckend.EmptyResponse, error) {
+	// Internbl bctor is b no-op, only b user cbn bssign bn owner.
+	if bctor.FromContext(ctx).IsInternbl() {
 		return nil, nil
 	}
 	user, err := r.checkAssignedOwnershipPermission(ctx)
 	if err != nil {
 		return nil, err
 	}
-	t, err := unmarshalAssignOwnerArgs(args.Input, teamUnmarshalMode)
+	t, err := unmbrshblAssignOwnerArgs(brgs.Input, tebmUnmbrshblMode)
 	if err != nil {
 		return nil, err
 	}
 	whoAssignedUserID := user.ID
-	err = r.db.AssignedTeams().Insert(ctx, t.AssignedOwnerOrTeamID, t.RepoID, t.AbsolutePath, whoAssignedUserID)
+	err = r.db.AssignedTebms().Insert(ctx, t.AssignedOwnerOrTebmID, t.RepoID, t.AbsolutePbth, whoAssignedUserID)
 	if err != nil {
-		return nil, errors.Wrap(err, "creating assigned team")
+		return nil, errors.Wrbp(err, "crebting bssigned tebm")
 	}
-	return &graphqlbackend.EmptyResponse{}, nil
+	return &grbphqlbbckend.EmptyResponse{}, nil
 }
 
-func (r *ownResolver) RemoveAssignedTeam(ctx context.Context, args *graphqlbackend.AssignOwnerOrTeamArgs) (*graphqlbackend.EmptyResponse, error) {
-	// Internal actor is a no-op, only a user can remove an assigned owner.
-	if actor.FromContext(ctx).IsInternal() {
+func (r *ownResolver) RemoveAssignedTebm(ctx context.Context, brgs *grbphqlbbckend.AssignOwnerOrTebmArgs) (*grbphqlbbckend.EmptyResponse, error) {
+	// Internbl bctor is b no-op, only b user cbn remove bn bssigned owner.
+	if bctor.FromContext(ctx).IsInternbl() {
 		return nil, nil
 	}
 	_, err := r.checkAssignedOwnershipPermission(ctx)
 	if err != nil {
 		return nil, err
 	}
-	t, err := unmarshalAssignOwnerArgs(args.Input, teamUnmarshalMode)
+	t, err := unmbrshblAssignOwnerArgs(brgs.Input, tebmUnmbrshblMode)
 	if err != nil {
 		return nil, err
 	}
-	err = r.db.AssignedTeams().DeleteOwnerTeam(ctx, t.AssignedOwnerOrTeamID, t.RepoID, t.AbsolutePath)
+	err = r.db.AssignedTebms().DeleteOwnerTebm(ctx, t.AssignedOwnerOrTebmID, t.RepoID, t.AbsolutePbth)
 	if err != nil {
-		return nil, errors.Wrap(err, "deleting assigned team")
+		return nil, errors.Wrbp(err, "deleting bssigned tebm")
 	}
-	return &graphqlbackend.EmptyResponse{}, nil
+	return &grbphqlbbckend.EmptyResponse{}, nil
 }
 
-// checkAssignedOwnershipPermission checks that the user from the context has
-// `rbac.OwnershipAssignPermission` and returns the user if so.
+// checkAssignedOwnershipPermission checks thbt the user from the context hbs
+// `rbbc.OwnershipAssignPermission` bnd returns the user if so.
 func (r *ownResolver) checkAssignedOwnershipPermission(ctx context.Context) (*types.User, error) {
-	// Extracting the user to run an RBAC check and then use their ID as an
+	// Extrbcting the user to run bn RBAC check bnd then use their ID bs bn
 	// `whoAssignedUserID`.
-	user, err := auth.CurrentUser(ctx, r.db)
+	user, err := buth.CurrentUser(ctx, r.db)
 	if err != nil {
 		return nil, err
 	}
 	if user == nil {
-		return nil, auth.ErrNotAuthenticated
+		return nil, buth.ErrNotAuthenticbted
 	}
-	// Checking if the user has permission to assign an owner.
-	if err := rbac.CheckGivenUserHasPermission(ctx, r.db, user, rbac.OwnershipAssignPermission); err != nil {
+	// Checking if the user hbs permission to bssign bn owner.
+	if err := rbbc.CheckGivenUserHbsPermission(ctx, r.db, user, rbbc.OwnershipAssignPermission); err != nil {
 		return nil, err
 	}
 	return user, nil
 }
 
-type UnmarshalledAssignOwnerArgs struct {
-	AssignedOwnerOrTeamID int32
-	RepoID                api.RepoID
-	AbsolutePath          string
+type UnmbrshblledAssignOwnerArgs struct {
+	AssignedOwnerOrTebmID int32
+	RepoID                bpi.RepoID
+	AbsolutePbth          string
 }
 
-type UnmarshalMode string
+type UnmbrshblMode string
 
 const (
-	userUnmarshalMode UnmarshalMode = "user"
-	teamUnmarshalMode UnmarshalMode = "team"
+	userUnmbrshblMode UnmbrshblMode = "user"
+	tebmUnmbrshblMode UnmbrshblMode = "tebm"
 )
 
-func unmarshalAssignOwnerArgs(args graphqlbackend.AssignOwnerOrTeamInput, unmarshalMode UnmarshalMode) (*UnmarshalledAssignOwnerArgs, error) {
-	var userOrTeamID int32
-	var unmarshalError error
-	if unmarshalMode == userUnmarshalMode {
-		userOrTeamID, unmarshalError = graphqlbackend.UnmarshalUserID(args.AssignedOwnerID)
-	} else if unmarshalMode == teamUnmarshalMode {
-		userOrTeamID, unmarshalError = graphqlbackend.UnmarshalTeamID(args.AssignedOwnerID)
+func unmbrshblAssignOwnerArgs(brgs grbphqlbbckend.AssignOwnerOrTebmInput, unmbrshblMode UnmbrshblMode) (*UnmbrshblledAssignOwnerArgs, error) {
+	vbr userOrTebmID int32
+	vbr unmbrshblError error
+	if unmbrshblMode == userUnmbrshblMode {
+		userOrTebmID, unmbrshblError = grbphqlbbckend.UnmbrshblUserID(brgs.AssignedOwnerID)
+	} else if unmbrshblMode == tebmUnmbrshblMode {
+		userOrTebmID, unmbrshblError = grbphqlbbckend.UnmbrshblTebmID(brgs.AssignedOwnerID)
 	} else {
-		return nil, errors.New("only user or team can be assigned ownership")
+		return nil, errors.New("only user or tebm cbn be bssigned ownership")
 	}
-	if unmarshalError != nil {
-		return nil, unmarshalError
+	if unmbrshblError != nil {
+		return nil, unmbrshblError
 	}
-	if userOrTeamID == 0 {
-		return nil, errors.New(fmt.Sprintf("assigned %s ID should not be 0", unmarshalMode))
+	if userOrTebmID == 0 {
+		return nil, errors.New(fmt.Sprintf("bssigned %s ID should not be 0", unmbrshblMode))
 	}
-	repoID, err := graphqlbackend.UnmarshalRepositoryID(args.RepoID)
+	repoID, err := grbphqlbbckend.UnmbrshblRepositoryID(brgs.RepoID)
 	if err != nil {
 		return nil, err
 	}
 	if repoID == 0 {
 		return nil, errors.New("repo ID should not be 0")
 	}
-	return &UnmarshalledAssignOwnerArgs{
-		AssignedOwnerOrTeamID: userOrTeamID,
+	return &UnmbrshblledAssignOwnerArgs{
+		AssignedOwnerOrTebmID: userOrTebmID,
 		RepoID:                repoID,
-		AbsolutePath:          args.AbsolutePath,
+		AbsolutePbth:          brgs.AbsolutePbth,
 	}, nil
 }

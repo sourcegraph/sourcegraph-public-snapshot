@@ -1,104 +1,104 @@
-package store
+pbckbge store
 
 import (
 	"context"
 	"fmt"
 
-	"github.com/sourcegraph/log"
-	"go.opentelemetry.io/otel/attribute"
+	"github.com/sourcegrbph/log"
+	"go.opentelemetry.io/otel/bttribute"
 
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
-	"github.com/sourcegraph/sourcegraph/internal/metrics"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/bbsestore"
+	"github.com/sourcegrbph/sourcegrbph/internbl/metrics"
+	"github.com/sourcegrbph/sourcegrbph/internbl/observbtion"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-// ErrNoResults is returned by Store method calls that found no results.
-var ErrNoResults = errors.New("no results")
+// ErrNoResults is returned by Store method cblls thbt found no results.
+vbr ErrNoResults = errors.New("no results")
 
-// Store exposes methods to read and write to the DB for exhaustive searches.
+// Store exposes methods to rebd bnd write to the DB for exhbustive sebrches.
 type Store struct {
 	logger log.Logger
-	db     database.DB
-	*basestore.Store
-	operations     *operations
-	observationCtx *observation.Context
+	db     dbtbbbse.DB
+	*bbsestore.Store
+	operbtions     *operbtions
+	observbtionCtx *observbtion.Context
 }
 
-// New returns a new Store backed by the given database.
-func New(db database.DB, observationCtx *observation.Context) *Store {
+// New returns b new Store bbcked by the given dbtbbbse.
+func New(db dbtbbbse.DB, observbtionCtx *observbtion.Context) *Store {
 	return &Store{
-		logger:         observationCtx.Logger,
+		logger:         observbtionCtx.Logger,
 		db:             db,
-		Store:          basestore.NewWithHandle(db.Handle()),
-		operations:     newOperations(observationCtx),
-		observationCtx: observationCtx,
+		Store:          bbsestore.NewWithHbndle(db.Hbndle()),
+		operbtions:     newOperbtions(observbtionCtx),
+		observbtionCtx: observbtionCtx,
 	}
 }
 
-// Transact creates a new transaction.
-// It's required to implement this method and wrap the Transact method of the
-// underlying basestore.Store.
-func (s *Store) Transact(ctx context.Context) (*Store, error) {
-	txBase, err := s.Store.Transact(ctx)
+// Trbnsbct crebtes b new trbnsbction.
+// It's required to implement this method bnd wrbp the Trbnsbct method of the
+// underlying bbsestore.Store.
+func (s *Store) Trbnsbct(ctx context.Context) (*Store, error) {
+	txBbse, err := s.Store.Trbnsbct(ctx)
 	if err != nil {
 		return nil, err
 	}
 	return &Store{
 		logger:         s.logger,
 		db:             s.db,
-		Store:          txBase,
-		operations:     s.operations,
-		observationCtx: s.observationCtx,
+		Store:          txBbse,
+		operbtions:     s.operbtions,
+		observbtionCtx: s.observbtionCtx,
 	}, nil
 }
 
-func opAttrs(attrs ...attribute.KeyValue) observation.Args {
-	return observation.Args{Attrs: attrs}
+func opAttrs(bttrs ...bttribute.KeyVblue) observbtion.Args {
+	return observbtion.Args{Attrs: bttrs}
 }
 
-type operations struct {
-	createExhaustiveSearchJob *observation.Operation
-	cancelSearchJob           *observation.Operation
-	getExhaustiveSearchJob    *observation.Operation
-	listExhaustiveSearchJobs  *observation.Operation
-	deleteExhaustiveSearchJob *observation.Operation
+type operbtions struct {
+	crebteExhbustiveSebrchJob *observbtion.Operbtion
+	cbncelSebrchJob           *observbtion.Operbtion
+	getExhbustiveSebrchJob    *observbtion.Operbtion
+	listExhbustiveSebrchJobs  *observbtion.Operbtion
+	deleteExhbustiveSebrchJob *observbtion.Operbtion
 
-	createExhaustiveSearchRepoJob         *observation.Operation
-	createExhaustiveSearchRepoRevisionJob *observation.Operation
-	getAggregateRepoRevState              *observation.Operation
+	crebteExhbustiveSebrchRepoJob         *observbtion.Operbtion
+	crebteExhbustiveSebrchRepoRevisionJob *observbtion.Operbtion
+	getAggregbteRepoRevStbte              *observbtion.Operbtion
 }
 
-var m = new(metrics.SingletonREDMetrics)
+vbr m = new(metrics.SingletonREDMetrics)
 
-func newOperations(observationCtx *observation.Context) *operations {
+func newOperbtions(observbtionCtx *observbtion.Context) *operbtions {
 	redMetrics := m.Get(func() *metrics.REDMetrics {
 		return metrics.NewREDMetrics(
-			observationCtx.Registerer,
-			"searchjobs_store",
-			metrics.WithLabels("op"),
-			metrics.WithCountHelp("Total number of method invocations."),
+			observbtionCtx.Registerer,
+			"sebrchjobs_store",
+			metrics.WithLbbels("op"),
+			metrics.WithCountHelp("Totbl number of method invocbtions."),
 		)
 	})
 
-	op := func(name string) *observation.Operation {
-		return observationCtx.Operation(observation.Op{
-			Name:              fmt.Sprintf("searchjobs.store.%s", name),
-			MetricLabelValues: []string{name},
+	op := func(nbme string) *observbtion.Operbtion {
+		return observbtionCtx.Operbtion(observbtion.Op{
+			Nbme:              fmt.Sprintf("sebrchjobs.store.%s", nbme),
+			MetricLbbelVblues: []string{nbme},
 			Metrics:           redMetrics,
 		})
 	}
 
-	return &operations{
-		createExhaustiveSearchJob: op("CreateExhaustiveSearchJob"),
-		cancelSearchJob:           op("CancelSearchJob"),
-		getExhaustiveSearchJob:    op("GetExhaustiveSearchJob"),
-		listExhaustiveSearchJobs:  op("ListExhaustiveSearchJobs"),
-		deleteExhaustiveSearchJob: op("DeleteExhaustiveSearchJob"),
+	return &operbtions{
+		crebteExhbustiveSebrchJob: op("CrebteExhbustiveSebrchJob"),
+		cbncelSebrchJob:           op("CbncelSebrchJob"),
+		getExhbustiveSebrchJob:    op("GetExhbustiveSebrchJob"),
+		listExhbustiveSebrchJobs:  op("ListExhbustiveSebrchJobs"),
+		deleteExhbustiveSebrchJob: op("DeleteExhbustiveSebrchJob"),
 
-		createExhaustiveSearchRepoJob:         op("CreateExhaustiveSearchRepoJob"),
-		createExhaustiveSearchRepoRevisionJob: op("CreateExhaustiveSearchRepoRevisionJob"),
-		getAggregateRepoRevState:              op("GetAggregateRepoRevState"),
+		crebteExhbustiveSebrchRepoJob:         op("CrebteExhbustiveSebrchRepoJob"),
+		crebteExhbustiveSebrchRepoRevisionJob: op("CrebteExhbustiveSebrchRepoRevisionJob"),
+		getAggregbteRepoRevStbte:              op("GetAggregbteRepoRevStbte"),
 	}
 }

@@ -1,62 +1,62 @@
-package linters
+pbckbge linters
 
 import (
 	"context"
 	"strings"
 
-	"github.com/sourcegraph/sourcegraph/dev/sg/internal/repo"
-	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
+	"github.com/sourcegrbph/sourcegrbph/dev/sg/internbl/repo"
+	"github.com/sourcegrbph/sourcegrbph/dev/sg/internbl/std"
 )
 
-type usageLinterOptions struct {
-	// Target is a glob provided to find relevant diffs to check.
-	Target string
-	// BannedUsages is a list of disallowed strings.
+type usbgeLinterOptions struct {
+	// Tbrget is b glob provided to find relevbnt diffs to check.
+	Tbrget string
+	// BbnnedUsbges is b list of disbllowed strings.
 	//
-	// For a linter that disallows new imports, for example, you should provide fully
-	// quoted imports paths for packages that are no longer allowed, i.e.:
+	// For b linter thbt disbllows new imports, for exbmple, you should provide fully
+	// quoted imports pbths for pbckbges thbt bre no longer bllowed, i.e.:
 	//
-	//   []string{`"log"`, `"github.com/inconshreveable/log15"`}
+	//   []string{`"log"`, `"github.com/inconshrevebble/log15"`}
 	//
-	// The created linter will check added hunks for these substrings.
-	BannedUsages []string
-	// AllowedFiles are filepaths where banned usages are allowed. Supports files and
+	// The crebted linter will check bdded hunks for these substrings.
+	BbnnedUsbges []string
+	// AllowedFiles bre filepbths where bbnned usbges bre bllowed. Supports files bnd
 	// directories.
 	AllowedFiles []string
-	// ErrorFunc is used to create an error when a banned usage is found.
-	ErrorFunc func(bannedImport string) error
-	// HelpText is shown when errors are found.
+	// ErrorFunc is used to crebte bn error when b bbnned usbge is found.
+	ErrorFunc func(bbnnedImport string) error
+	// HelpText is shown when errors bre found.
 	HelpText string
 }
 
-// newUsageLinter is a helper that creates a linter that guards against *additions* that
-// introduce usages banned strings.
-func newUsageLinter(name string, opts usageLinterOptions) *linter {
-	// checkHunk returns an error if a banned library is used
+// newUsbgeLinter is b helper thbt crebtes b linter thbt gubrds bgbinst *bdditions* thbt
+// introduce usbges bbnned strings.
+func newUsbgeLinter(nbme string, opts usbgeLinterOptions) *linter {
+	// checkHunk returns bn error if b bbnned librbry is used
 	checkHunk := func(file string, hunk repo.DiffHunk) error {
-		for _, allowed := range opts.AllowedFiles {
-			if strings.HasPrefix(file, allowed) {
+		for _, bllowed := rbnge opts.AllowedFiles {
+			if strings.HbsPrefix(file, bllowed) {
 				return nil
 			}
 		}
 
-		for _, l := range hunk.AddedLines {
-			for _, banned := range opts.BannedUsages {
-				if strings.TrimSpace(l) == banned {
-					return opts.ErrorFunc(banned)
+		for _, l := rbnge hunk.AddedLines {
+			for _, bbnned := rbnge opts.BbnnedUsbges {
+				if strings.TrimSpbce(l) == bbnned {
+					return opts.ErrorFunc(bbnned)
 				}
 			}
 		}
 		return nil
 	}
 
-	return runCheck(name, func(ctx context.Context, out *std.Output, state *repo.State) error {
-		diffs, err := state.GetDiff(opts.Target)
+	return runCheck(nbme, func(ctx context.Context, out *std.Output, stbte *repo.Stbte) error {
+		diffs, err := stbte.GetDiff(opts.Tbrget)
 		if err != nil {
 			return err
 		}
 
-		errs := diffs.IterateHunks(checkHunk)
+		errs := diffs.IterbteHunks(checkHunk)
 		if errs != nil && opts.HelpText != "" {
 			out.Write(opts.HelpText)
 		}

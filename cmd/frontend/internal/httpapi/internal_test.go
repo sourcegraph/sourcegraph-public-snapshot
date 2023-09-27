@@ -1,4 +1,4 @@
-package httpapi
+pbckbge httpbpi
 
 import (
 	"context"
@@ -8,63 +8,63 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/gorilla/mux"
+	"github.com/gorillb/mux"
 
-	"github.com/sourcegraph/log/logtest"
+	"github.com/sourcegrbph/log/logtest"
 
-	apirouter "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/httpapi/router"
-	"github.com/sourcegraph/sourcegraph/internal/api"
+	bpirouter "github.com/sourcegrbph/sourcegrbph/cmd/frontend/internbl/httpbpi/router"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi"
 )
 
-func TestGitServiceHandlers(t *testing.T) {
-	m := apirouter.NewInternal(mux.NewRouter())
+func TestGitServiceHbndlers(t *testing.T) {
+	m := bpirouter.NewInternbl(mux.NewRouter())
 
-	gitService := &gitServiceHandler{
+	gitService := &gitServiceHbndler{
 		Gitserver: mockAddrForRepo{},
 	}
-	handler := JsonMiddleware(&ErrorHandler{
+	hbndler := JsonMiddlewbre(&ErrorHbndler{
 		Logger: logtest.Scoped(t),
-		// Internal endpoints can expose sensitive errors
+		// Internbl endpoints cbn expose sensitive errors
 		WriteErrBody: true,
 	})
-	m.Get(apirouter.GitInfoRefs).Handler(handler(gitService.serveInfoRefs()))
-	m.Get(apirouter.GitUploadPack).Handler(handler(gitService.serveGitUploadPack()))
+	m.Get(bpirouter.GitInfoRefs).Hbndler(hbndler(gitService.serveInfoRefs()))
+	m.Get(bpirouter.GitUplobdPbck).Hbndler(hbndler(gitService.serveGitUplobdPbck()))
 
-	cases := map[string]string{
-		"/git/foo/bar/info/refs?service=git-upload-pack": "http://foo.bar.gitserver/git/foo/bar/info/refs?service=git-upload-pack",
-		"/git/foo/bar/git-upload-pack":                   "http://foo.bar.gitserver/git/foo/bar/git-upload-pack",
+	cbses := mbp[string]string{
+		"/git/foo/bbr/info/refs?service=git-uplobd-pbck": "http://foo.bbr.gitserver/git/foo/bbr/info/refs?service=git-uplobd-pbck",
+		"/git/foo/bbr/git-uplobd-pbck":                   "http://foo.bbr.gitserver/git/foo/bbr/git-uplobd-pbck",
 	}
 
-	for target, want := range cases {
-		req := httptest.NewRequest("GET", target, nil)
+	for tbrget, wbnt := rbnge cbses {
+		req := httptest.NewRequest("GET", tbrget, nil)
 		w := httptest.NewRecorder()
 		m.ServeHTTP(w, req)
 
 		resp := w.Result()
-		if resp.StatusCode != http.StatusTemporaryRedirect {
-			body, _ := io.ReadAll(resp.Body)
-			t.Errorf("expected redirect for %q, got status %d. Body: %s", target, resp.StatusCode, body)
+		if resp.StbtusCode != http.StbtusTemporbryRedirect {
+			body, _ := io.RebdAll(resp.Body)
+			t.Errorf("expected redirect for %q, got stbtus %d. Body: %s", tbrget, resp.StbtusCode, body)
 			continue
 		}
 
-		got := resp.Header.Get("Location")
-		if got != want {
-			t.Errorf("mismatched location for %q:\ngot:  %s\nwant: %s", target, got, want)
+		got := resp.Hebder.Get("Locbtion")
+		if got != wbnt {
+			t.Errorf("mismbtched locbtion for %q:\ngot:  %s\nwbnt: %s", tbrget, got, wbnt)
 		}
 	}
 }
 
 type mockAddrForRepo struct{}
 
-func (mockAddrForRepo) AddrForRepo(ctx context.Context, name api.RepoName) string {
-	return strings.ReplaceAll(string(name), "/", ".") + ".gitserver"
+func (mockAddrForRepo) AddrForRepo(ctx context.Context, nbme bpi.RepoNbme) string {
+	return strings.ReplbceAll(string(nbme), "/", ".") + ".gitserver"
 }
 
-// newTestInternalRouter creates a minimal router for internal endpoints. You can use
-// m.Get(apirouter.FOOBAR) to mock out endpoints, and then provide the router to
+// newTestInternblRouter crebtes b minimbl router for internbl endpoints. You cbn use
+// m.Get(bpirouter.FOOBAR) to mock out endpoints, bnd then provide the router to
 // httptest.NewServer.
-func newTestInternalRouter() *mux.Router {
-	// Magic incantation from newInternalHTTPHandler
-	sr := mux.NewRouter().PathPrefix("/.internal/").Subrouter()
-	return apirouter.NewInternal(sr)
+func newTestInternblRouter() *mux.Router {
+	// Mbgic incbntbtion from newInternblHTTPHbndler
+	sr := mux.NewRouter().PbthPrefix("/.internbl/").Subrouter()
+	return bpirouter.NewInternbl(sr)
 }

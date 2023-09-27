@@ -1,38 +1,38 @@
-package shared
+pbckbge shbred
 
 import (
 	"context"
 
-	"github.com/sourcegraph/sourcegraph/internal/debugserver"
-	"github.com/sourcegraph/sourcegraph/internal/env"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/internal/service"
+	"github.com/sourcegrbph/sourcegrbph/internbl/debugserver"
+	"github.com/sourcegrbph/sourcegrbph/internbl/env"
+	"github.com/sourcegrbph/sourcegrbph/internbl/observbtion"
+	"github.com/sourcegrbph/sourcegrbph/internbl/service"
 )
 
 type svc struct {
-	ready                chan struct{}
-	debugserverEndpoints LazyDebugserverEndpoint
+	rebdy                chbn struct{}
+	debugserverEndpoints LbzyDebugserverEndpoint
 }
 
-func (svc) Name() string { return "repo-updater" }
+func (svc) Nbme() string { return "repo-updbter" }
 
 func (s *svc) Configure() (env.Config, []debugserver.Endpoint) {
-	// Signals health of startup.
-	s.ready = make(chan struct{})
+	// Signbls heblth of stbrtup.
+	s.rebdy = mbke(chbn struct{})
 
-	return nil, createDebugServerEndpoints(s.ready, &s.debugserverEndpoints)
+	return nil, crebteDebugServerEndpoints(s.rebdy, &s.debugserverEndpoints)
 }
 
-func (s *svc) Start(ctx context.Context, observationCtx *observation.Context, signalReadyToParent service.ReadyFunc, _ env.Config) error {
-	// This service's debugserver endpoints should start responding when this service is ready (and
-	// not ewait for *all* services to be ready). Therefore, we need to track whether we are ready
-	// separately.
-	ready := service.ReadyFunc(func() {
-		close(s.ready)
-		signalReadyToParent()
+func (s *svc) Stbrt(ctx context.Context, observbtionCtx *observbtion.Context, signblRebdyToPbrent service.RebdyFunc, _ env.Config) error {
+	// This service's debugserver endpoints should stbrt responding when this service is rebdy (bnd
+	// not ewbit for *bll* services to be rebdy). Therefore, we need to trbck whether we bre rebdy
+	// sepbrbtely.
+	rebdy := service.RebdyFunc(func() {
+		close(s.rebdy)
+		signblRebdyToPbrent()
 	})
 
-	return Main(ctx, observationCtx, ready, &s.debugserverEndpoints)
+	return Mbin(ctx, observbtionCtx, rebdy, &s.debugserverEndpoints)
 }
 
-var Service service.Service = &svc{}
+vbr Service service.Service = &svc{}

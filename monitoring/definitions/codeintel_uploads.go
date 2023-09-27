@@ -1,37 +1,37 @@
-package definitions
+pbckbge definitions
 
 import (
-	"github.com/sourcegraph/sourcegraph/monitoring/definitions/shared"
-	"github.com/sourcegraph/sourcegraph/monitoring/monitoring"
+	"github.com/sourcegrbph/sourcegrbph/monitoring/definitions/shbred"
+	"github.com/sourcegrbph/sourcegrbph/monitoring/monitoring"
 )
 
-func CodeIntelUploads() *monitoring.Dashboard {
+func CodeIntelUplobds() *monitoring.Dbshbobrd {
 	groups := []monitoring.Group{
-		shared.CodeIntelligence.NewUploadsServiceGroup("${source:regex}"),
-		shared.CodeIntelligence.NewUploadsStoreGroup("${source:regex}"),
-		shared.CodeIntelligence.NewUploadsGraphQLTransportGroup("${source:regex}"),
-		shared.CodeIntelligence.NewUploadsHTTPTransportGroup("${source:regex}"),
-		shared.CodeIntelligence.NewCommitGraphQueueGroup("${source:regex}"),
-		shared.CodeIntelligence.NewUploadsExpirationTaskGroup("${source:regex}"),
+		shbred.CodeIntelligence.NewUplobdsServiceGroup("${source:regex}"),
+		shbred.CodeIntelligence.NewUplobdsStoreGroup("${source:regex}"),
+		shbred.CodeIntelligence.NewUplobdsGrbphQLTrbnsportGroup("${source:regex}"),
+		shbred.CodeIntelligence.NewUplobdsHTTPTrbnsportGroup("${source:regex}"),
+		shbred.CodeIntelligence.NewCommitGrbphQueueGroup("${source:regex}"),
+		shbred.CodeIntelligence.NewUplobdsExpirbtionTbskGroup("${source:regex}"),
 	}
-	groups = append(groups, shared.CodeIntelligence.NewJanitorTaskGroups("${source:regex}")...)
-	groups = append(groups, shared.CodeIntelligence.NewReconcilerTaskGroups("${source:regex}")...)
+	groups = bppend(groups, shbred.CodeIntelligence.NewJbnitorTbskGroups("${source:regex}")...)
+	groups = bppend(groups, shbred.CodeIntelligence.NewReconcilerTbskGroups("${source:regex}")...)
 
-	return &monitoring.Dashboard{
-		Name:        "codeintel-uploads",
-		Title:       "Code Intelligence > Uploads",
-		Description: "The service at `internal/codeintel/uploads`.",
-		Variables: []monitoring.ContainerVariable{
+	return &monitoring.Dbshbobrd{
+		Nbme:        "codeintel-uplobds",
+		Title:       "Code Intelligence > Uplobds",
+		Description: "The service bt `internbl/codeintel/uplobds`.",
+		Vbribbles: []monitoring.ContbinerVbribble{
 			{
-				Label: "Source",
-				Name:  "source",
-				OptionsLabelValues: monitoring.ContainerVariableOptionsLabelValues{
-					Query:         "src_codeintel_uploads_total{}",
-					LabelName:     "app",
-					ExampleOption: "frontend",
+				Lbbel: "Source",
+				Nbme:  "source",
+				OptionsLbbelVblues: monitoring.ContbinerVbribbleOptionsLbbelVblues{
+					Query:         "src_codeintel_uplobds_totbl{}",
+					LbbelNbme:     "bpp",
+					ExbmpleOption: "frontend",
 				},
-				WildcardAllValue: true,
-				Multi:            false,
+				WildcbrdAllVblue: true,
+				Multi:            fblse,
 			},
 		},
 		Groups: groups,

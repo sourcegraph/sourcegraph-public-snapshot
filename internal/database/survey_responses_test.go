@@ -1,72 +1,72 @@
-package database
+pbckbge dbtbbbse
 
 import (
 	"context"
 	"testing"
 
-	"github.com/sourcegraph/log/logtest"
+	"github.com/sourcegrbph/log/logtest"
 
-	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbtest"
 )
 
-// TestSurveyResponses_Create_Count tests creation and counting of database survey responses
-func TestSurveyResponses_Create_Count(t *testing.T) {
+// TestSurveyResponses_Crebte_Count tests crebtion bnd counting of dbtbbbse survey responses
+func TestSurveyResponses_Crebte_Count(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	t.Parallel()
+	t.Pbrbllel()
 	logger := logtest.Scoped(t)
 	db := NewDB(logger, dbtest.NewDB(logger, t))
-	ctx := context.Background()
+	ctx := context.Bbckground()
 
 	count, err := SurveyResponses(db).Count(ctx)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 	if count != 0 {
-		t.Fatal("Expected Count to be 0.")
+		t.Fbtbl("Expected Count to be 0.")
 	}
 
-	_, err = SurveyResponses(db).Create(ctx, nil, nil, 10, nil, nil)
+	_, err = SurveyResponses(db).Crebte(ctx, nil, nil, 10, nil, nil)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	user, err := db.Users().Create(ctx, NewUser{
-		Email:                 "a@a.com",
-		Username:              "u",
-		Password:              "p",
-		EmailVerificationCode: "c",
+	user, err := db.Users().Crebte(ctx, NewUser{
+		Embil:                 "b@b.com",
+		Usernbme:              "u",
+		Pbssword:              "p",
+		EmbilVerificbtionCode: "c",
 	})
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	fakeResponse, fakeEmail := "lorem ipsum", "email@email.email"
+	fbkeResponse, fbkeEmbil := "lorem ipsum", "embil@embil.embil"
 
-	// Basic submission including use cases
-	_, err = SurveyResponses(db).Create(ctx, &user.ID, nil, 9, nil, nil)
+	// Bbsic submission including use cbses
+	_, err = SurveyResponses(db).Crebte(ctx, &user.ID, nil, 9, nil, nil)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	// Advanced submission with email and additional data
-	_, err = SurveyResponses(db).Create(ctx, &user.ID, &fakeEmail, 8, &fakeResponse, &fakeResponse)
+	// Advbnced submission with embil bnd bdditionbl dbtb
+	_, err = SurveyResponses(db).Crebte(ctx, &user.ID, &fbkeEmbil, 8, &fbkeResponse, &fbkeResponse)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	// Basic submission with email but no user ID
-	_, err = SurveyResponses(db).Create(ctx, nil, &fakeEmail, 8, nil, nil)
+	// Bbsic submission with embil but no user ID
+	_, err = SurveyResponses(db).Crebte(ctx, nil, &fbkeEmbil, 8, nil, nil)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
 	count, err = SurveyResponses(db).Count(ctx)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 	if count != 4 {
-		t.Fatal("Expected Count to be 4.")
+		t.Fbtbl("Expected Count to be 4.")
 	}
 }

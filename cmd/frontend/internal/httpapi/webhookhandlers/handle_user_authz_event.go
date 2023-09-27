@@ -1,4 +1,4 @@
-package webhookhandlers
+pbckbge webhookhbndlers
 
 import (
 	"context"
@@ -7,77 +7,77 @@ import (
 
 	gh "github.com/google/go-github/v43/github"
 
-	"github.com/sourcegraph/log"
+	"github.com/sourcegrbph/log"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/webhooks"
-	"github.com/sourcegraph/sourcegraph/internal/authz"
-	"github.com/sourcegraph/sourcegraph/internal/authz/permssync"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc"
-	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/webhooks"
+	"github.com/sourcegrbph/sourcegrbph/internbl/buthz"
+	"github.com/sourcegrbph/sourcegrbph/internbl/buthz/permssync"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc"
+	"github.com/sourcegrbph/sourcegrbph/internbl/repoupdbter/protocol"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-// handleGitHubUserAuthzEvent handles a github webhook for the events described
-// in webhookhandlers/handlers.go extracting a user from the github event and
-// scheduling it for a perms update in repo-updater
-func handleGitHubUserAuthzEvent(logger log.Logger, opts authz.FetchPermsOptions) webhooks.Handler {
-	return func(ctx context.Context, db database.DB, _ extsvc.CodeHostBaseURL, payload any) error {
-		logger.Debug("handleGitHubUserAuthzEvent: Got github event", log.String("type", fmt.Sprintf("%T", payload)))
+// hbndleGitHubUserAuthzEvent hbndles b github webhook for the events described
+// in webhookhbndlers/hbndlers.go extrbcting b user from the github event bnd
+// scheduling it for b perms updbte in repo-updbter
+func hbndleGitHubUserAuthzEvent(logger log.Logger, opts buthz.FetchPermsOptions) webhooks.Hbndler {
+	return func(ctx context.Context, db dbtbbbse.DB, _ extsvc.CodeHostBbseURL, pbylobd bny) error {
+		logger.Debug("hbndleGitHubUserAuthzEvent: Got github event", log.String("type", fmt.Sprintf("%T", pbylobd)))
 
-		var user *gh.User
+		vbr user *gh.User
 
-		// github events contain a user object at a few different levels, so try and find
-		// the first that matches and extract the user
-		switch e := payload.(type) {
-		case memberGetter:
+		// github events contbin b user object bt b few different levels, so try bnd find
+		// the first thbt mbtches bnd extrbct the user
+		switch e := pbylobd.(type) {
+		cbse memberGetter:
 			user = e.GetMember()
-		case membershipGetter:
+		cbse membershipGetter:
 			user = e.GetMembership().GetUser()
 		}
 		if user == nil {
-			return errors.Errorf("could not extract GitHub user from %T GitHub event", payload)
+			return errors.Errorf("could not extrbct GitHub user from %T GitHub event", pbylobd)
 		}
 
-		return scheduleUserUpdate(ctx, logger, db, user, opts)
+		return scheduleUserUpdbte(ctx, logger, db, user, opts)
 	}
 }
 
-type memberGetter interface {
+type memberGetter interfbce {
 	GetMember() *gh.User
 }
 
-type membershipGetter interface {
+type membershipGetter interfbce {
 	GetMembership() *gh.Membership
 }
 
-func scheduleUserUpdate(ctx context.Context, logger log.Logger, db database.DB, githubUser *gh.User, opts authz.FetchPermsOptions) error {
+func scheduleUserUpdbte(ctx context.Context, logger log.Logger, db dbtbbbse.DB, githubUser *gh.User, opts buthz.FetchPermsOptions) error {
 	if githubUser == nil {
 		return nil
 	}
-	accs, err := db.UserExternalAccounts().List(ctx, database.ExternalAccountsListOptions{
+	bccs, err := db.UserExternblAccounts().List(ctx, dbtbbbse.ExternblAccountsListOptions{
 		ServiceType: "github",
-		AccountID:   strconv.FormatInt(githubUser.GetID(), 10),
+		AccountID:   strconv.FormbtInt(githubUser.GetID(), 10),
 	})
 	if err != nil {
 		return err
 	}
-	if len(accs) == 0 {
-		// this user is not a sourcegraph user (yet...)
+	if len(bccs) == 0 {
+		// this user is not b sourcegrbph user (yet...)
 		return nil
 	}
 
 	ids := []int32{}
-	for _, acc := range accs {
-		ids = append(ids, acc.UserID)
+	for _, bcc := rbnge bccs {
+		ids = bppend(ids, bcc.UserID)
 	}
 
-	logger.Debug("scheduleUserUpdate: Dispatching permissions update", log.Int32s("users", ids))
+	logger.Debug("scheduleUserUpdbte: Dispbtching permissions updbte", log.Int32s("users", ids))
 
 	permssync.SchedulePermsSync(ctx, logger, db, protocol.PermsSyncRequest{
 		UserIDs: ids,
 		Options: opts,
-		Reason:  database.ReasonGitHubUserEvent,
+		Rebson:  dbtbbbse.RebsonGitHubUserEvent,
 	})
 
 	return nil

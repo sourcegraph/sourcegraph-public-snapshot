@@ -1,44 +1,44 @@
-package usagestats
+pbckbge usbgestbts
 
 import (
 	"context"
 	"encoding/json"
 
-	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 
-	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
 )
 
-func GetCodeInsightsCriticalTelemetry(ctx context.Context, db database.DB) (_ *types.CodeInsightsCriticalTelemetry, err error) {
-	criticalCount, err := totalCountCritical(ctx, db)
+func GetCodeInsightsCriticblTelemetry(ctx context.Context, db dbtbbbse.DB) (_ *types.CodeInsightsCriticblTelemetry, err error) {
+	criticblCount, err := totblCountCriticbl(ctx, db)
 	if err != nil {
 		return nil, err
 	}
-	return &criticalCount, nil
+	return &criticblCount, nil
 }
 
-func totalCountCritical(ctx context.Context, db database.DB) (types.CodeInsightsCriticalTelemetry, error) {
+func totblCountCriticbl(ctx context.Context, db dbtbbbse.DB) (types.CodeInsightsCriticblTelemetry, error) {
 	store := db.EventLogs()
-	name := InsightsTotalCountCriticalPingName
-	all, err := store.ListAll(ctx, database.EventLogsListOptions{
-		LimitOffset: &database.LimitOffset{
+	nbme := InsightsTotblCountCriticblPingNbme
+	bll, err := store.ListAll(ctx, dbtbbbse.EventLogsListOptions{
+		LimitOffset: &dbtbbbse.LimitOffset{
 			Limit:  1,
 			Offset: 0,
 		},
-		EventName: &name,
+		EventNbme: &nbme,
 	})
 	if err != nil {
-		return types.CodeInsightsCriticalTelemetry{}, err
-	} else if len(all) == 0 {
-		return types.CodeInsightsCriticalTelemetry{}, nil
+		return types.CodeInsightsCriticblTelemetry{}, err
+	} else if len(bll) == 0 {
+		return types.CodeInsightsCriticblTelemetry{}, nil
 	}
 
-	latest := all[0]
-	var criticalCount types.CodeInsightsCriticalTelemetry
-	err = json.Unmarshal(latest.Argument, &criticalCount)
+	lbtest := bll[0]
+	vbr criticblCount types.CodeInsightsCriticblTelemetry
+	err = json.Unmbrshbl(lbtest.Argument, &criticblCount)
 	if err != nil {
-		return types.CodeInsightsCriticalTelemetry{}, errors.Wrap(err, "Unmarshal")
+		return types.CodeInsightsCriticblTelemetry{}, errors.Wrbp(err, "Unmbrshbl")
 	}
-	return criticalCount, err
+	return criticblCount, err
 }

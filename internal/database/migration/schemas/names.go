@@ -1,9 +1,9 @@
-package schemas
+pbckbge schembs
 
-var SchemaNames []string
+vbr SchembNbmes []string
 
 func init() {
-	for _, schema := range Schemas {
-		SchemaNames = append(SchemaNames, schema.Name)
+	for _, schemb := rbnge Schembs {
+		SchembNbmes = bppend(SchembNbmes, schemb.Nbme)
 	}
 }

@@ -1,38 +1,38 @@
-package global
+pbckbge globbl
 
 import (
 	"testing"
 
-	bt "github.com/sourcegraph/sourcegraph/internal/batches/testing"
-	btypes "github.com/sourcegraph/sourcegraph/internal/batches/types"
-	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/schema"
+	bt "github.com/sourcegrbph/sourcegrbph/internbl/bbtches/testing"
+	btypes "github.com/sourcegrbph/sourcegrbph/internbl/bbtches/types"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf"
+	"github.com/sourcegrbph/sourcegrbph/schemb"
 )
 
-func TestDefaultReconcilerEnqueueState(t *testing.T) {
+func TestDefbultReconcilerEnqueueStbte(t *testing.T) {
 	t.Run("no windows", func(t *testing.T) {
 		bt.MockConfig(t, &conf.Unified{})
 
-		have := DefaultReconcilerEnqueueState()
-		want := btypes.ReconcilerStateQueued
-		if have != want {
-			t.Errorf("unexpected default state: have=%v want=%v", have, want)
+		hbve := DefbultReconcilerEnqueueStbte()
+		wbnt := btypes.ReconcilerStbteQueued
+		if hbve != wbnt {
+			t.Errorf("unexpected defbult stbte: hbve=%v wbnt=%v", hbve, wbnt)
 		}
 	})
 
 	t.Run("windows", func(t *testing.T) {
 		bt.MockConfig(t, &conf.Unified{
-			SiteConfiguration: schema.SiteConfiguration{
-				BatchChangesRolloutWindows: &[]*schema.BatchChangeRolloutWindow{
-					{Rate: "unlimited"},
+			SiteConfigurbtion: schemb.SiteConfigurbtion{
+				BbtchChbngesRolloutWindows: &[]*schemb.BbtchChbngeRolloutWindow{
+					{Rbte: "unlimited"},
 				},
 			},
 		})
 
-		have := DefaultReconcilerEnqueueState()
-		want := btypes.ReconcilerStateScheduled
-		if have != want {
-			t.Errorf("unexpected default state: have=%v want=%v", have, want)
+		hbve := DefbultReconcilerEnqueueStbte()
+		wbnt := btypes.ReconcilerStbteScheduled
+		if hbve != wbnt {
+			t.Errorf("unexpected defbult stbte: hbve=%v wbnt=%v", hbve, wbnt)
 		}
 	})
 }

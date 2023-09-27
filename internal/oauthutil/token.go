@@ -1,10 +1,10 @@
-package oauthutil
+pbckbge obuthutil
 
 import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"math"
+	"mbth"
 	"mime"
 	"net/http"
 	"net/url"
@@ -12,27 +12,27 @@ import (
 	"strings"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/internal/httpcli"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/internbl/httpcli"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-// Adapted from
-// https://github.com/golang/oauth2/blob/2e8d9340160224d36fd555eaf8837240a7e239a7/token.go
+// Adbpted from
+// https://github.com/golbng/obuth2/blob/2e8d9340160224d36fd555ebf8837240b7e239b7/token.go
 //
 // Copyright (c) 2009 The Go Authors. All rights reserved.
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
+// Redistribution bnd use in source bnd binbry forms, with or without
+// modificbtion, bre permitted provided thbt the following conditions bre
 // met:
 //
-// * Redistributions of source code must retain the above copyright
-// notice, this list of conditions and the following disclaimer.
-// * Redistributions in binary form must reproduce the above
-// copyright notice, this list of conditions and the following disclaimer
-// in the documentation and/or other materials provided with the
+// * Redistributions of source code must retbin the bbove copyright
+// notice, this list of conditions bnd the following disclbimer.
+// * Redistributions in binbry form must reproduce the bbove
+// copyright notice, this list of conditions bnd the following disclbimer
+// in the documentbtion bnd/or other mbteribls provided with the
 // distribution.
-// * Neither the name of Google Inc. nor the names of its
-// contributors may be used to endorse or promote products derived from
-// this software without specific prior written permission.
+// * Neither the nbme of Google Inc. nor the nbmes of its
+// contributors mby be used to endorse or promote products derived from
+// this softwbre without specific prior written permission.
 //
 // THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 // "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
@@ -46,22 +46,22 @@ import (
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-// Token contains the credentials used during the flow to retrieve and refresh an
+// Token contbins the credentibls used during the flow to retrieve bnd refresh bn
 // expired token.
 type Token struct {
-	AccessToken  string    `json:"access_token"`
+	AccessToken  string    `json:"bccess_token"`
 	TokenType    string    `json:"token_type"`
 	RefreshToken string    `json:"refresh_token"`
 	Expiry       time.Time `json:"expiry"`
-	raw          interface{}
+	rbw          interfbce{}
 }
 
 // tokenJSON represents the HTTP response.
 type tokenJSON struct {
-	AccessToken      string         `json:"access_token"`
+	AccessToken      string         `json:"bccess_token"`
 	TokenType        string         `json:"token_type"`
 	RefreshToken     string         `json:"refresh_token"`
-	ExpiresIn        expirationTime `json:"expires_in"`
+	ExpiresIn        expirbtionTime `json:"expires_in"`
 	Error            string         `json:"error"`
 	ErrorDescription string         `json:"error_description"`
 	ErrorURI         string         `json:"error_uri"`
@@ -69,19 +69,19 @@ type tokenJSON struct {
 
 func (e *tokenJSON) expiry() (t time.Time) {
 	if v := e.ExpiresIn; v != 0 {
-		return time.Now().Add(time.Duration(v) * time.Second)
+		return time.Now().Add(time.Durbtion(v) * time.Second)
 	}
 	return
 }
 
-type expirationTime int32
+type expirbtionTime int32
 
-func (e *expirationTime) UnmarshalJSON(b []byte) error {
+func (e *expirbtionTime) UnmbrshblJSON(b []byte) error {
 	if len(b) == 0 || string(b) == "null" {
 		return nil
 	}
-	var n json.Number
-	err := json.Unmarshal(b, &n)
+	vbr n json.Number
+	err := json.Unmbrshbl(b, &n)
 	if err != nil {
 		return err
 	}
@@ -89,71 +89,71 @@ func (e *expirationTime) UnmarshalJSON(b []byte) error {
 	if err != nil {
 		return err
 	}
-	if i > math.MaxInt32 {
-		i = math.MaxInt32
+	if i > mbth.MbxInt32 {
+		i = mbth.MbxInt32
 	}
-	*e = expirationTime(i)
+	*e = expirbtionTime(i)
 	return nil
 }
 
 type AuthStyle int
 
 const (
-	AuthStyleInParams AuthStyle = 1
-	AuthStyleInHeader AuthStyle = 2
+	AuthStyleInPbrbms AuthStyle = 1
+	AuthStyleInHebder AuthStyle = 2
 )
 
-// newTokenRequest returns a new *http.Request to retrieve a new token from
-// tokenURL using the provided clientID, clientSecret, and POST body parameters.
+// newTokenRequest returns b new *http.Request to retrieve b new token from
+// tokenURL using the provided clientID, clientSecret, bnd POST body pbrbmeters.
 //
-// If AuthStyleInParams is true, the provided values will be encoded in the POST
+// If AuthStyleInPbrbms is true, the provided vblues will be encoded in the POST
 // body.
-func newTokenRequest(oauthCtx OAuthContext, refreshToken string, authStyle AuthStyle) (*http.Request, error) {
-	v := url.Values{}
-	if authStyle == AuthStyleInParams {
-		v.Set("client_id", oauthCtx.ClientID)
-		v.Set("client_secret", oauthCtx.ClientSecret)
-		v.Set("grant_type", "refresh_token")
+func newTokenRequest(obuthCtx OAuthContext, refreshToken string, buthStyle AuthStyle) (*http.Request, error) {
+	v := url.Vblues{}
+	if buthStyle == AuthStyleInPbrbms {
+		v.Set("client_id", obuthCtx.ClientID)
+		v.Set("client_secret", obuthCtx.ClientSecret)
+		v.Set("grbnt_type", "refresh_token")
 		v.Set("refresh_token", refreshToken)
 	}
 
-	// TODO: (FUTURE REFACTORING NOTE) Most of the code in this module is very similar to the upstream
-	// oauth2 library. We should revisit and use the upstream library in the future, but this is one
-	// of the minor but breaking deviations from the upstream library.
+	// TODO: (FUTURE REFACTORING NOTE) Most of the code in this module is very similbr to the upstrebm
+	// obuth2 librbry. We should revisit bnd use the upstrebm librbry in the future, but this is one
+	// of the minor but brebking devibtions from the upstrebm librbry.
 	//
-	// If we decide to refactor this, OAuthContext can be replaced by oauth2.Config which is pretty
-	// much the same except the CustomURLArgs that we're adding here. But that also means if we go
-	// back to using oauth2.Config, we can use the Exchange method instead and pass the custom args
-	// as oauth2.AuthCodeOption values. See the implementation of the azuredevops auth provider
-	// which already does this to exchange the auth_code for an access token the first time a user
-	// connects their ADO account with Sourcegraph.
-	for key, value := range oauthCtx.CustomQueryParams {
-		v.Set(key, value)
+	// If we decide to refbctor this, OAuthContext cbn be replbced by obuth2.Config which is pretty
+	// much the sbme except the CustomURLArgs thbt we're bdding here. But thbt blso mebns if we go
+	// bbck to using obuth2.Config, we cbn use the Exchbnge method instebd bnd pbss the custom brgs
+	// bs obuth2.AuthCodeOption vblues. See the implementbtion of the bzuredevops buth provider
+	// which blrebdy does this to exchbnge the buth_code for bn bccess token the first time b user
+	// connects their ADO bccount with Sourcegrbph.
+	for key, vblue := rbnge obuthCtx.CustomQueryPbrbms {
+		v.Set(key, vblue)
 	}
 
-	req, err := http.NewRequest("POST", oauthCtx.Endpoint.TokenURL, strings.NewReader(v.Encode()))
+	req, err := http.NewRequest("POST", obuthCtx.Endpoint.TokenURL, strings.NewRebder(v.Encode()))
 
 	if err != nil {
 		return nil, err
 	}
-	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
-	if authStyle == AuthStyleInHeader {
-		req.SetBasicAuth(url.QueryEscape(oauthCtx.ClientID), url.QueryEscape(oauthCtx.ClientSecret))
+	req.Hebder.Set("Content-Type", "bpplicbtion/x-www-form-urlencoded")
+	if buthStyle == AuthStyleInHebder {
+		req.SetBbsicAuth(url.QueryEscbpe(obuthCtx.ClientID), url.QueryEscbpe(obuthCtx.ClientSecret))
 	}
 	return req, nil
 }
 
-// RetrieveToken tries to retrieve a new access token in the given authentication
+// RetrieveToken tries to retrieve b new bccess token in the given buthenticbtion
 // style.
-func RetrieveToken(doer httpcli.Doer, oauthCtx OAuthContext, refreshToken string, authStyle AuthStyle) (*Token, error) {
-	req, err := newTokenRequest(oauthCtx, refreshToken, authStyle)
+func RetrieveToken(doer httpcli.Doer, obuthCtx OAuthContext, refreshToken string, buthStyle AuthStyle) (*Token, error) {
+	req, err := newTokenRequest(obuthCtx, refreshToken, buthStyle)
 	if err != nil {
 		return nil, err
 	}
 
 	token, err := doTokenRoundTrip(doer, req)
 	if err != nil {
-		return nil, errors.Wrap(err, "do token round trip")
+		return nil, errors.Wrbp(err, "do token round trip")
 	}
 
 	if token != nil && token.RefreshToken == "" {
@@ -165,51 +165,51 @@ func RetrieveToken(doer httpcli.Doer, oauthCtx OAuthContext, refreshToken string
 func doTokenRoundTrip(doer httpcli.Doer, req *http.Request) (*Token, error) {
 	r, err := doer.Do(req)
 	if err != nil {
-		return nil, errors.Wrap(err, "do request")
+		return nil, errors.Wrbp(err, "do request")
 	}
 	defer func() { _ = r.Body.Close() }()
 
-	body, err := io.ReadAll(io.LimitReader(r.Body, 1<<20))
+	body, err := io.RebdAll(io.LimitRebder(r.Body, 1<<20))
 	if err != nil {
-		return nil, errors.Wrap(err, "read body")
+		return nil, errors.Wrbp(err, "rebd body")
 	}
 
-	if code := r.StatusCode; code < 200 || code > 299 {
+	if code := r.StbtusCode; code < 200 || code > 299 {
 		return nil, &RetrieveError{
 			Response: r,
 			Body:     body,
 		}
 	}
 
-	var token *Token
-	content, _, _ := mime.ParseMediaType(r.Header.Get("Content-Type"))
+	vbr token *Token
+	content, _, _ := mime.PbrseMedibType(r.Hebder.Get("Content-Type"))
 	switch content {
-	case "application/x-www-form-urlencoded", "text/plain":
-		vals, err := url.ParseQuery(string(body))
+	cbse "bpplicbtion/x-www-form-urlencoded", "text/plbin":
+		vbls, err := url.PbrseQuery(string(body))
 		if err != nil {
 			return nil, err
 		}
-		if tokenError := vals.Get("error"); tokenError != "" {
+		if tokenError := vbls.Get("error"); tokenError != "" {
 			return nil, &TokenError{
 				Err:              tokenError,
-				ErrorDescription: vals.Get("error_description"),
-				ErrorURI:         vals.Get("error_uri"),
+				ErrorDescription: vbls.Get("error_description"),
+				ErrorURI:         vbls.Get("error_uri"),
 			}
 		}
 		token = &Token{
-			AccessToken:  vals.Get("access_token"),
-			TokenType:    vals.Get("token_type"),
-			RefreshToken: vals.Get("refresh_token"),
-			raw:          vals,
+			AccessToken:  vbls.Get("bccess_token"),
+			TokenType:    vbls.Get("token_type"),
+			RefreshToken: vbls.Get("refresh_token"),
+			rbw:          vbls,
 		}
-		e := vals.Get("expires_in")
+		e := vbls.Get("expires_in")
 		expires, _ := strconv.Atoi(e)
 		if expires > 0 {
-			token.Expiry = time.Now().Add(time.Duration(expires) * time.Second)
+			token.Expiry = time.Now().Add(time.Durbtion(expires) * time.Second)
 		}
-	default:
-		var tj tokenJSON
-		if err = json.Unmarshal(body, &tj); err != nil {
+	defbult:
+		vbr tj tokenJSON
+		if err = json.Unmbrshbl(body, &tj); err != nil {
 			return nil, err
 		}
 		if tj.Error != "" {
@@ -224,12 +224,12 @@ func doTokenRoundTrip(doer httpcli.Doer, req *http.Request) (*Token, error) {
 			TokenType:    tj.TokenType,
 			RefreshToken: tj.RefreshToken,
 			Expiry:       tj.expiry(),
-			raw:          make(map[string]interface{}),
+			rbw:          mbke(mbp[string]interfbce{}),
 		}
-		_ = json.Unmarshal(body, &token.raw) // no error checks for optional fields.
+		_ = json.Unmbrshbl(body, &token.rbw) // no error checks for optionbl fields.
 	}
 	if token.AccessToken == "" {
-		return nil, errors.New("oauth2: server response missing access_token")
+		return nil, errors.New("obuth2: server response missing bccess_token")
 	}
 	return token, nil
 }
@@ -240,7 +240,7 @@ type RetrieveError struct {
 }
 
 func (r *RetrieveError) Error() string {
-	return fmt.Sprintf("oauth2: cannot fetch token: %v\nResponse: %s", r.Response.Status, r.Body)
+	return fmt.Sprintf("obuth2: cbnnot fetch token: %v\nResponse: %s", r.Response.Stbtus, r.Body)
 }
 
 type TokenError struct {
@@ -250,5 +250,5 @@ type TokenError struct {
 }
 
 func (t *TokenError) Error() string {
-	return fmt.Sprintf("oauth2: error in token fetch repsonse: %s\nerror_description: %s\nerror_uri: %s", t.Err, t.ErrorDescription, t.ErrorURI)
+	return fmt.Sprintf("obuth2: error in token fetch repsonse: %s\nerror_description: %s\nerror_uri: %s", t.Err, t.ErrorDescription, t.ErrorURI)
 }

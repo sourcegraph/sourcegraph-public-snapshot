@@ -1,57 +1,57 @@
-package resolvers
+pbckbge resolvers
 
 import (
 	"context"
 	"sync"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
-	"github.com/sourcegraph/sourcegraph/internal/batches/service"
-	"github.com/sourcegraph/sourcegraph/internal/batches/store"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/grbphqlbbckend"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bbtches/service"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bbtches/store"
+	"github.com/sourcegrbph/sourcegrbph/internbl/gitserver"
 )
 
-type resolvedBatchSpecWorkspaceResolver struct {
-	workspace *service.RepoWorkspace
+type resolvedBbtchSpecWorkspbceResolver struct {
+	workspbce *service.RepoWorkspbce
 	store     *store.Store
 
-	repoResolver     *graphqlbackend.RepositoryResolver
+	repoResolver     *grbphqlbbckend.RepositoryResolver
 	repoResolverOnce sync.Once
 }
 
-var _ graphqlbackend.ResolvedBatchSpecWorkspaceResolver = &resolvedBatchSpecWorkspaceResolver{}
+vbr _ grbphqlbbckend.ResolvedBbtchSpecWorkspbceResolver = &resolvedBbtchSpecWorkspbceResolver{}
 
-func (r *resolvedBatchSpecWorkspaceResolver) OnlyFetchWorkspace() bool {
-	return r.workspace.OnlyFetchWorkspace
+func (r *resolvedBbtchSpecWorkspbceResolver) OnlyFetchWorkspbce() bool {
+	return r.workspbce.OnlyFetchWorkspbce
 }
 
-func (r *resolvedBatchSpecWorkspaceResolver) Ignored() bool {
-	return r.workspace.Ignored
+func (r *resolvedBbtchSpecWorkspbceResolver) Ignored() bool {
+	return r.workspbce.Ignored
 }
 
-func (r *resolvedBatchSpecWorkspaceResolver) Unsupported() bool {
-	return r.workspace.Unsupported
+func (r *resolvedBbtchSpecWorkspbceResolver) Unsupported() bool {
+	return r.workspbce.Unsupported
 }
 
-func (r *resolvedBatchSpecWorkspaceResolver) Repository() *graphqlbackend.RepositoryResolver {
+func (r *resolvedBbtchSpecWorkspbceResolver) Repository() *grbphqlbbckend.RepositoryResolver {
 	return r.computeRepoResolver()
 }
 
-func (r *resolvedBatchSpecWorkspaceResolver) Branch(ctx context.Context) *graphqlbackend.GitRefResolver {
-	return graphqlbackend.NewGitRefResolver(r.computeRepoResolver(), r.workspace.Branch, graphqlbackend.GitObjectID(r.workspace.Commit))
+func (r *resolvedBbtchSpecWorkspbceResolver) Brbnch(ctx context.Context) *grbphqlbbckend.GitRefResolver {
+	return grbphqlbbckend.NewGitRefResolver(r.computeRepoResolver(), r.workspbce.Brbnch, grbphqlbbckend.GitObjectID(r.workspbce.Commit))
 }
 
-func (r *resolvedBatchSpecWorkspaceResolver) Path() string {
-	return r.workspace.Path
+func (r *resolvedBbtchSpecWorkspbceResolver) Pbth() string {
+	return r.workspbce.Pbth
 }
 
-func (r *resolvedBatchSpecWorkspaceResolver) SearchResultPaths() []string {
-	return r.workspace.FileMatches
+func (r *resolvedBbtchSpecWorkspbceResolver) SebrchResultPbths() []string {
+	return r.workspbce.FileMbtches
 }
 
-func (r *resolvedBatchSpecWorkspaceResolver) computeRepoResolver() *graphqlbackend.RepositoryResolver {
+func (r *resolvedBbtchSpecWorkspbceResolver) computeRepoResolver() *grbphqlbbckend.RepositoryResolver {
 	r.repoResolverOnce.Do(func() {
-		db := r.store.DatabaseDB()
-		r.repoResolver = graphqlbackend.NewRepositoryResolver(db, gitserver.NewClient(), r.workspace.Repo)
+		db := r.store.DbtbbbseDB()
+		r.repoResolver = grbphqlbbckend.NewRepositoryResolver(db, gitserver.NewClient(), r.workspbce.Repo)
 	})
 
 	return r.repoResolver

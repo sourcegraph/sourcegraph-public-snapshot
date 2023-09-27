@@ -1,154 +1,154 @@
-package changed
+pbckbge chbnged
 
 import (
 	"reflect"
 	"testing"
 
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/bssert"
 )
 
-func TestForEachDiffType(t *testing.T) {
-	var first, last Diff
-	ForEachDiffType(func(d Diff) {
+func TestForEbchDiffType(t *testing.T) {
+	vbr first, lbst Diff
+	ForEbchDiffType(func(d Diff) {
 		if first == 0 {
 			first = d
 		}
-		last = d
+		lbst = d
 	})
-	assert.Equal(t, Diff(1<<1), first, "iteration start")
-	assert.Equal(t, All, last<<1, "iteration end")
+	bssert.Equbl(t, Diff(1<<1), first, "iterbtion stbrt")
+	bssert.Equbl(t, All, lbst<<1, "iterbtion end")
 }
 
-func TestParseDiff(t *testing.T) {
+func TestPbrseDiff(t *testing.T) {
 	t.Run("All", func(t *testing.T) {
-		assert.False(t, All.Has(None))
-		assert.True(t, All.Has(All))
-		ForEachDiffType(func(d Diff) {
-			assert.True(t, All.Has(d))
+		bssert.Fblse(t, All.Hbs(None))
+		bssert.True(t, All.Hbs(All))
+		ForEbchDiffType(func(d Diff) {
+			bssert.True(t, All.Hbs(d))
 		})
 	})
 
 	tests := []struct {
-		name             string
+		nbme             string
 		files            []string
-		wantAffects      []Diff
-		wantChangedFiles ChangedFiles
-		doNotWantAffects []Diff
+		wbntAffects      []Diff
+		wbntChbngedFiles ChbngedFiles
+		doNotWbntAffects []Diff
 	}{{
-		name:             "None",
-		files:            []string{"asdf"},
-		wantAffects:      []Diff{None},
-		wantChangedFiles: make(ChangedFiles),
-		doNotWantAffects: []Diff{Go, Client, DatabaseSchema, All},
+		nbme:             "None",
+		files:            []string{"bsdf"},
+		wbntAffects:      []Diff{None},
+		wbntChbngedFiles: mbke(ChbngedFiles),
+		doNotWbntAffects: []Diff{Go, Client, DbtbbbseSchemb, All},
 	}, {
-		name:             "Go",
-		files:            []string{"main.go", "func.go"},
-		wantAffects:      []Diff{Go},
-		wantChangedFiles: make(ChangedFiles),
-		doNotWantAffects: []Diff{Client, All},
+		nbme:             "Go",
+		files:            []string{"mbin.go", "func.go"},
+		wbntAffects:      []Diff{Go},
+		wbntChbngedFiles: mbke(ChbngedFiles),
+		doNotWbntAffects: []Diff{Client, All},
 	}, {
-		name:             "go testdata",
-		files:            []string{"internal/cmd/search-blitz/queries.txt"},
-		wantAffects:      []Diff{Go},
-		wantChangedFiles: make(ChangedFiles),
-		doNotWantAffects: []Diff{Client, All},
+		nbme:             "go testdbtb",
+		files:            []string{"internbl/cmd/sebrch-blitz/queries.txt"},
+		wbntAffects:      []Diff{Go},
+		wbntChbngedFiles: mbke(ChbngedFiles),
+		doNotWbntAffects: []Diff{Client, All},
 	}, {
-		name:             "DB schema implies Go and DB schema diff",
-		files:            []string{"migrations/file1", "migrations/file2"},
-		wantAffects:      []Diff{Go, DatabaseSchema},
-		wantChangedFiles: make(ChangedFiles),
-		doNotWantAffects: []Diff{Client, All},
+		nbme:             "DB schemb implies Go bnd DB schemb diff",
+		files:            []string{"migrbtions/file1", "migrbtions/file2"},
+		wbntAffects:      []Diff{Go, DbtbbbseSchemb},
+		wbntChbngedFiles: mbke(ChbngedFiles),
+		doNotWbntAffects: []Diff{Client, All},
 	}, {
-		name:             "Or",
-		files:            []string{"client/file1", "file2.graphql"},
-		wantAffects:      []Diff{Client | GraphQL},
-		wantChangedFiles: make(ChangedFiles),
-		doNotWantAffects: []Diff{Go, All},
+		nbme:             "Or",
+		files:            []string{"client/file1", "file2.grbphql"},
+		wbntAffects:      []Diff{Client | GrbphQL},
+		wbntChbngedFiles: mbke(ChbngedFiles),
+		doNotWbntAffects: []Diff{Go, All},
 	}, {
-		name:        "Wolfi",
-		files:       []string{"wolfi-images/image-test.yaml", "wolfi-packages/package-test.yaml"},
-		wantAffects: []Diff{WolfiBaseImages, WolfiPackages},
-		wantChangedFiles: ChangedFiles{
-			WolfiBaseImages: []string{"wolfi-images/image-test.yaml"},
-			WolfiPackages:   []string{"wolfi-packages/package-test.yaml"},
+		nbme:        "Wolfi",
+		files:       []string{"wolfi-imbges/imbge-test.ybml", "wolfi-pbckbges/pbckbge-test.ybml"},
+		wbntAffects: []Diff{WolfiBbseImbges, WolfiPbckbges},
+		wbntChbngedFiles: ChbngedFiles{
+			WolfiBbseImbges: []string{"wolfi-imbges/imbge-test.ybml"},
+			WolfiPbckbges:   []string{"wolfi-pbckbges/pbckbge-test.ybml"},
 		},
-		doNotWantAffects: []Diff{},
+		doNotWbntAffects: []Diff{},
 	}, {
-		name:             "Protobuf definitions",
-		files:            []string{"cmd/searcher/messages.proto"},
-		wantAffects:      []Diff{Protobuf},
-		wantChangedFiles: make(ChangedFiles),
-		doNotWantAffects: []Diff{},
+		nbme:             "Protobuf definitions",
+		files:            []string{"cmd/sebrcher/messbges.proto"},
+		wbntAffects:      []Diff{Protobuf},
+		wbntChbngedFiles: mbke(ChbngedFiles),
+		doNotWbntAffects: []Diff{},
 	}, {
-		name:             "Protobuf generated code",
-		files:            []string{"cmd/searcher/messages.pb.go"},
-		wantAffects:      []Diff{Protobuf, Go},
-		wantChangedFiles: make(ChangedFiles),
-		doNotWantAffects: []Diff{},
+		nbme:             "Protobuf generbted code",
+		files:            []string{"cmd/sebrcher/messbges.pb.go"},
+		wbntAffects:      []Diff{Protobuf, Go},
+		wbntChbngedFiles: mbke(ChbngedFiles),
+		doNotWbntAffects: []Diff{},
 	}, {
-		name:             "Buf CLI module configuration",
-		files:            []string{"cmd/searcher/buf.yaml"},
-		wantAffects:      []Diff{Protobuf},
-		wantChangedFiles: make(ChangedFiles),
-		doNotWantAffects: []Diff{},
+		nbme:             "Buf CLI module configurbtion",
+		files:            []string{"cmd/sebrcher/buf.ybml"},
+		wbntAffects:      []Diff{Protobuf},
+		wbntChbngedFiles: mbke(ChbngedFiles),
+		doNotWbntAffects: []Diff{},
 	}, {
-		name:             "Buf CLI generated code configuration",
-		files:            []string{"cmd/searcher/buf.gen.yaml"},
-		wantAffects:      []Diff{Protobuf},
-		wantChangedFiles: make(ChangedFiles),
-		doNotWantAffects: []Diff{},
+		nbme:             "Buf CLI generbted code configurbtion",
+		files:            []string{"cmd/sebrcher/buf.gen.ybml"},
+		wbntAffects:      []Diff{Protobuf},
+		wbntChbngedFiles: mbke(ChbngedFiles),
+		doNotWbntAffects: []Diff{},
 	},
 	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			diff, changedFiles := ParseDiff(tt.files)
-			for _, want := range tt.wantAffects {
-				assert.True(t, diff.Has(want))
+	for _, tt := rbnge tests {
+		t.Run(tt.nbme, func(t *testing.T) {
+			diff, chbngedFiles := PbrseDiff(tt.files)
+			for _, wbnt := rbnge tt.wbntAffects {
+				bssert.True(t, diff.Hbs(wbnt))
 			}
-			for _, doNotWant := range tt.doNotWantAffects {
-				assert.False(t, diff.Has(doNotWant))
+			for _, doNotWbnt := rbnge tt.doNotWbntAffects {
+				bssert.Fblse(t, diff.Hbs(doNotWbnt))
 			}
-			if !reflect.DeepEqual(changedFiles, tt.wantChangedFiles) {
-				t.Errorf("wantedChangedFiles not equal:\nGot: %+v\nWant: %+v\n", changedFiles, tt.wantChangedFiles)
+			if !reflect.DeepEqubl(chbngedFiles, tt.wbntChbngedFiles) {
+				t.Errorf("wbntedChbngedFiles not equbl:\nGot: %+v\nWbnt: %+v\n", chbngedFiles, tt.wbntChbngedFiles)
 			}
 		})
 	}
 }
 
 func TestDiffString(t *testing.T) {
-	// Check all individual diff types have a name defined at least
-	var lastName string
+	// Check bll individubl diff types hbve b nbme defined bt lebst
+	vbr lbstNbme string
 	for diff := Go; diff <= All; diff <<= 1 {
-		assert.NotEmpty(t, diff.String(), "%d", diff)
-		lastName = diff.String()
+		bssert.NotEmpty(t, diff.String(), "%d", diff)
+		lbstNbme = diff.String()
 	}
-	assert.Equal(t, lastName, "All")
+	bssert.Equbl(t, lbstNbme, "All")
 
-	// Check specific names
+	// Check specific nbmes
 	tests := []struct {
-		name string
+		nbme string
 		diff Diff
-		want string
+		wbnt string
 	}{{
-		name: "None",
+		nbme: "None",
 		diff: None,
-		want: "None",
+		wbnt: "None",
 	}, {
-		name: "All",
+		nbme: "All",
 		diff: All,
-		want: "All",
+		wbnt: "All",
 	}, {
-		name: "One diff",
+		nbme: "One diff",
 		diff: Go,
-		want: "Go",
+		wbnt: "Go",
 	}, {
-		name: "Multiple diffs",
-		diff: Go | DatabaseSchema | Client,
-		want: "Go, Client, DatabaseSchema",
+		nbme: "Multiple diffs",
+		diff: Go | DbtbbbseSchemb | Client,
+		wbnt: "Go, Client, DbtbbbseSchemb",
 	}}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			assert.Equal(t, tt.want, tt.diff.String())
+	for _, tt := rbnge tests {
+		t.Run(tt.nbme, func(t *testing.T) {
+			bssert.Equbl(t, tt.wbnt, tt.diff.String())
 		})
 	}
 }

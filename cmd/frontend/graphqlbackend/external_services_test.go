@@ -1,4 +1,4 @@
-package graphqlbackend
+pbckbge grbphqlbbckend
 
 import (
 	"context"
@@ -10,84 +10,84 @@ import (
 	"time"
 
 	"github.com/google/go-cmp/cmp"
-	"github.com/graph-gophers/graphql-go"
-	gqlerrors "github.com/graph-gophers/graphql-go/errors"
-	"github.com/graph-gophers/graphql-go/relay"
+	"github.com/grbph-gophers/grbphql-go"
+	gqlerrors "github.com/grbph-gophers/grbphql-go/errors"
+	"github.com/grbph-gophers/grbphql-go/relby"
 
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/bssert"
 
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
-	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbmocks"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc/github"
+	"github.com/sourcegrbph/sourcegrbph/internbl/repoupdbter/protocol"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 
-	"github.com/sourcegraph/log/logtest"
+	"github.com/sourcegrbph/log/logtest"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
-	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/auth"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
-	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
-	"github.com/sourcegraph/sourcegraph/internal/timeutil"
-	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/schema"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/bbckend"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/grbphqlbbckend/grbphqlutil"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bctor"
+	"github.com/sourcegrbph/sourcegrbph/internbl/buth"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc"
+	"github.com/sourcegrbph/sourcegrbph/internbl/gitserver"
+	"github.com/sourcegrbph/sourcegrbph/internbl/repoupdbter"
+	"github.com/sourcegrbph/sourcegrbph/internbl/timeutil"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
+	"github.com/sourcegrbph/sourcegrbph/schemb"
 )
 
-func TestAddExternalService(t *testing.T) {
-	t.Run("authenticated as non-admin", func(t *testing.T) {
+func TestAddExternblService(t *testing.T) {
+	t.Run("buthenticbted bs non-bdmin", func(t *testing.T) {
 		users := dbmocks.NewMockUserStore()
-		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{ID: 1}, nil)
-		users.GetByIDFunc.SetDefaultReturn(&types.User{ID: 1}, nil)
+		users.GetByCurrentAuthUserFunc.SetDefbultReturn(&types.User{ID: 1}, nil)
+		users.GetByIDFunc.SetDefbultReturn(&types.User{ID: 1}, nil)
 
 		db := dbmocks.NewMockDB()
-		db.UsersFunc.SetDefaultReturn(users)
+		db.UsersFunc.SetDefbultReturn(users)
 
-		ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
-		result, err := newSchemaResolver(db, gitserver.NewClient()).AddExternalService(ctx, &addExternalServiceArgs{})
-		if want := auth.ErrMustBeSiteAdmin; err != want {
-			t.Errorf("err: want %q but got %q", want, err)
+		ctx := bctor.WithActor(context.Bbckground(), &bctor.Actor{UID: 1})
+		result, err := newSchembResolver(db, gitserver.NewClient()).AddExternblService(ctx, &bddExternblServiceArgs{})
+		if wbnt := buth.ErrMustBeSiteAdmin; err != wbnt {
+			t.Errorf("err: wbnt %q but got %q", wbnt, err)
 		}
 		if result != nil {
-			t.Errorf("result: want nil but got %v", result)
+			t.Errorf("result: wbnt nil but got %v", result)
 		}
 	})
 
 	users := dbmocks.NewMockUserStore()
-	users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{SiteAdmin: true}, nil)
+	users.GetByCurrentAuthUserFunc.SetDefbultReturn(&types.User{SiteAdmin: true}, nil)
 
-	externalServices := dbmocks.NewMockExternalServiceStore()
-	externalServices.CreateFunc.SetDefaultReturn(nil)
+	externblServices := dbmocks.NewMockExternblServiceStore()
+	externblServices.CrebteFunc.SetDefbultReturn(nil)
 
 	db := dbmocks.NewMockDB()
-	db.UsersFunc.SetDefaultReturn(users)
-	db.ExternalServicesFunc.SetDefaultReturn(externalServices)
+	db.UsersFunc.SetDefbultReturn(users)
+	db.ExternblServicesFunc.SetDefbultReturn(externblServices)
 
 	RunTests(t, []*Test{
 		{
-			Schema: mustParseGraphQLSchema(t, db),
+			Schemb: mustPbrseGrbphQLSchemb(t, db),
 			Query: `
-			mutation {
-				addExternalService(input: {
+			mutbtion {
+				bddExternblService(input: {
 					kind: GITHUB,
-					displayName: "GITHUB #1",
-					config: "{\"url\": \"https://github.com\", \"repositoryQuery\": [\"none\"], \"token\": \"abc\"}"
+					displbyNbme: "GITHUB #1",
+					config: "{\"url\": \"https://github.com\", \"repositoryQuery\": [\"none\"], \"token\": \"bbc\"}"
 				}) {
 					kind
-					displayName
+					displbyNbme
 					config
 				}
 			}
 		`,
 			ExpectedResult: `
 			{
-				"addExternalService": {
+				"bddExternblService": {
 					"kind": "GITHUB",
-					"displayName": "GITHUB #1",
-					"config":"{\n  \"url\": \"https://github.com\",\n  \"repositoryQuery\": [\n    \"none\"\n  ],\n  \"token\": \"` + types.RedactedSecret + `\"\n}"
+					"displbyNbme": "GITHUB #1",
+					"config":"{\n  \"url\": \"https://github.com\",\n  \"repositoryQuery\": [\n    \"none\"\n  ],\n  \"token\": \"` + types.RedbctedSecret + `\"\n}"
 				}
 			}
 		`,
@@ -95,130 +95,130 @@ func TestAddExternalService(t *testing.T) {
 	})
 }
 
-func TestUpdateExternalService(t *testing.T) {
-	t.Run("authenticated as non-admin", func(t *testing.T) {
+func TestUpdbteExternblService(t *testing.T) {
+	t.Run("buthenticbted bs non-bdmin", func(t *testing.T) {
 		users := dbmocks.NewMockUserStore()
-		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{ID: 1}, nil)
+		users.GetByCurrentAuthUserFunc.SetDefbultReturn(&types.User{ID: 1}, nil)
 
-		t.Run("cannot update external services", func(t *testing.T) {
+		t.Run("cbnnot updbte externbl services", func(t *testing.T) {
 			db := dbmocks.NewMockDB()
-			db.UsersFunc.SetDefaultReturn(users)
+			db.UsersFunc.SetDefbultReturn(users)
 
-			ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
-			result, err := newSchemaResolver(db, nil).UpdateExternalService(ctx, &updateExternalServiceArgs{
-				Input: updateExternalServiceInput{
-					ID: "RXh0ZXJuYWxTZXJ2aWNlOjQ=",
+			ctx := bctor.WithActor(context.Bbckground(), &bctor.Actor{UID: 1})
+			result, err := newSchembResolver(db, nil).UpdbteExternblService(ctx, &updbteExternblServiceArgs{
+				Input: updbteExternblServiceInput{
+					ID: "RXh0ZXJuYWxTZXJ2bWNlOjQ=",
 				},
 			})
-			if want := auth.ErrMustBeSiteAdmin; err != want {
-				t.Errorf("err: want %q but got %v", want, err)
+			if wbnt := buth.ErrMustBeSiteAdmin; err != wbnt {
+				t.Errorf("err: wbnt %q but got %v", wbnt, err)
 			}
 			if result != nil {
-				t.Errorf("result: want nil but got %v", result)
+				t.Errorf("result: wbnt nil but got %v", result)
 			}
 		})
 	})
 
 	t.Run("empty config", func(t *testing.T) {
 		users := dbmocks.NewMockUserStore()
-		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{SiteAdmin: true}, nil)
+		users.GetByCurrentAuthUserFunc.SetDefbultReturn(&types.User{SiteAdmin: true}, nil)
 
-		externalServices := dbmocks.NewMockExternalServiceStore()
-		externalServices.GetByIDFunc.SetDefaultHook(func(_ context.Context, id int64) (*types.ExternalService, error) {
-			return &types.ExternalService{
+		externblServices := dbmocks.NewMockExternblServiceStore()
+		externblServices.GetByIDFunc.SetDefbultHook(func(_ context.Context, id int64) (*types.ExternblService, error) {
+			return &types.ExternblService{
 				ID:     id,
 				Config: extsvc.NewEmptyConfig(),
 			}, nil
 		})
 
 		db := dbmocks.NewMockDB()
-		db.UsersFunc.SetDefaultReturn(users)
-		db.ExternalServicesFunc.SetDefaultReturn(externalServices)
+		db.UsersFunc.SetDefbultReturn(users)
+		db.ExternblServicesFunc.SetDefbultReturn(externblServices)
 
-		ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
-		result, err := newSchemaResolver(db, gitserver.NewClient()).UpdateExternalService(ctx, &updateExternalServiceArgs{
-			Input: updateExternalServiceInput{
-				ID:     "RXh0ZXJuYWxTZXJ2aWNlOjQ=",
+		ctx := bctor.WithActor(context.Bbckground(), &bctor.Actor{UID: 1})
+		result, err := newSchembResolver(db, gitserver.NewClient()).UpdbteExternblService(ctx, &updbteExternblServiceArgs{
+			Input: updbteExternblServiceInput{
+				ID:     "RXh0ZXJuYWxTZXJ2bWNlOjQ=",
 				Config: strptr(""),
 			},
 		})
 		gotErr := fmt.Sprintf("%v", err)
-		wantErr := "blank external service configuration is invalid (must be valid JSONC)"
-		if gotErr != wantErr {
-			t.Errorf("err: want %q but got %q", wantErr, gotErr)
+		wbntErr := "blbnk externbl service configurbtion is invblid (must be vblid JSONC)"
+		if gotErr != wbntErr {
+			t.Errorf("err: wbnt %q but got %q", wbntErr, gotErr)
 		}
 		if result != nil {
-			t.Errorf("result: want nil but got %v", result)
+			t.Errorf("result: wbnt nil but got %v", result)
 		}
 	})
 
 	users := dbmocks.NewMockUserStore()
-	users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{SiteAdmin: true}, nil)
+	users.GetByCurrentAuthUserFunc.SetDefbultReturn(&types.User{SiteAdmin: true}, nil)
 
-	externalServices := dbmocks.NewMockExternalServiceStore()
-	externalServices.UpdateFunc.SetDefaultHook(func(ctx context.Context, ps []schema.AuthProviders, id int64, update *database.ExternalServiceUpdate) error {
+	externblServices := dbmocks.NewMockExternblServiceStore()
+	externblServices.UpdbteFunc.SetDefbultHook(func(ctx context.Context, ps []schemb.AuthProviders, id int64, updbte *dbtbbbse.ExternblServiceUpdbte) error {
 		return nil
 	})
-	externalServices.GetByIDFunc.SetDefaultHook(func(_ context.Context, id int64) (*types.ExternalService, error) {
-		invocations := externalServices.UpdateFunc.History()
-		invocationsNumber := len(invocations)
-		if invocationsNumber == 0 {
-			return &types.ExternalService{
+	externblServices.GetByIDFunc.SetDefbultHook(func(_ context.Context, id int64) (*types.ExternblService, error) {
+		invocbtions := externblServices.UpdbteFunc.History()
+		invocbtionsNumber := len(invocbtions)
+		if invocbtionsNumber == 0 {
+			return &types.ExternblService{
 				ID:     id,
 				Kind:   extsvc.KindGitHub,
 				Config: extsvc.NewEmptyConfig(),
 			}, nil
 		}
-		update := invocations[invocationsNumber-1].Arg3
-		return &types.ExternalService{
+		updbte := invocbtions[invocbtionsNumber-1].Arg3
+		return &types.ExternblService{
 			ID:          id,
 			Kind:        extsvc.KindGitHub,
-			DisplayName: *update.DisplayName,
-			Config:      extsvc.NewUnencryptedConfig(*update.Config),
+			DisplbyNbme: *updbte.DisplbyNbme,
+			Config:      extsvc.NewUnencryptedConfig(*updbte.Config),
 		}, nil
 	})
 
 	db := dbmocks.NewMockDB()
-	db.UsersFunc.SetDefaultReturn(users)
-	db.ExternalServicesFunc.SetDefaultReturn(externalServices)
+	db.UsersFunc.SetDefbultReturn(users)
+	db.ExternblServicesFunc.SetDefbultReturn(externblServices)
 
 	RunTest(t, &Test{
-		Schema: mustParseGraphQLSchema(t, db),
+		Schemb: mustPbrseGrbphQLSchemb(t, db),
 		Query: `
-			mutation {
-				updateExternalService(input: {
-					id: "RXh0ZXJuYWxTZXJ2aWNlOjQ=",
-					displayName: "GITHUB #2",
+			mutbtion {
+				updbteExternblService(input: {
+					id: "RXh0ZXJuYWxTZXJ2bWNlOjQ=",
+					displbyNbme: "GITHUB #2",
 					config: "{\"url\": \"https://github.com\", \"repositoryQuery\": [\"none\"], \"token\": \"def\"}"
 				}) {
-					displayName
+					displbyNbme
 					config
 				}
 			}
 		`,
 		ExpectedResult: `
 			{
-				"updateExternalService": {
-				  "displayName": "GITHUB #2",
-				  "config":"{\n  \"url\": \"https://github.com\",\n  \"repositoryQuery\": [\n    \"none\"\n  ],\n  \"token\": \"` + types.RedactedSecret + `\"\n}"
+				"updbteExternblService": {
+				  "displbyNbme": "GITHUB #2",
+				  "config":"{\n  \"url\": \"https://github.com\",\n  \"repositoryQuery\": [\n    \"none\"\n  ],\n  \"token\": \"` + types.RedbctedSecret + `\"\n}"
 
 				}
 			}
 		`,
-		Context: actor.WithActor(context.Background(), &actor.Actor{UID: 1}),
+		Context: bctor.WithActor(context.Bbckground(), &bctor.Actor{UID: 1}),
 	})
 }
 
-func TestExcludeRepoFromExternalServices_ExternalServiceDoesntSupportRepoExclusion(t *testing.T) {
+func TestExcludeRepoFromExternblServices_ExternblServiceDoesntSupportRepoExclusion(t *testing.T) {
 	users := dbmocks.NewMockUserStore()
-	users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{SiteAdmin: true}, nil)
+	users.GetByCurrentAuthUserFunc.SetDefbultReturn(&types.User{SiteAdmin: true}, nil)
 
-	externalServices := dbmocks.NewMockExternalServiceStore()
-	externalServices.UpdateFunc.SetDefaultHook(func(ctx context.Context, ps []schema.AuthProviders, id int64, update *database.ExternalServiceUpdate) error {
+	externblServices := dbmocks.NewMockExternblServiceStore()
+	externblServices.UpdbteFunc.SetDefbultHook(func(ctx context.Context, ps []schemb.AuthProviders, id int64, updbte *dbtbbbse.ExternblServiceUpdbte) error {
 		return nil
 	})
-	externalServices.ListFunc.SetDefaultHook(func(_ context.Context, options database.ExternalServicesListOptions) ([]*types.ExternalService, error) {
-		return []*types.ExternalService{{
+	externblServices.ListFunc.SetDefbultHook(func(_ context.Context, options dbtbbbse.ExternblServicesListOptions) ([]*types.ExternblService, error) {
+		return []*types.ExternblService{{
 			ID:     options.IDs[0],
 			Kind:   extsvc.KindGerrit,
 			Config: extsvc.NewEmptyConfig(),
@@ -226,411 +226,411 @@ func TestExcludeRepoFromExternalServices_ExternalServiceDoesntSupportRepoExclusi
 	})
 
 	db := dbmocks.NewMockDB()
-	db.WithTransactFunc.SetDefaultHook(func(ctx context.Context, f func(database.DB) error) error {
+	db.WithTrbnsbctFunc.SetDefbultHook(func(ctx context.Context, f func(dbtbbbse.DB) error) error {
 		return f(db)
 	})
 
-	db.UsersFunc.SetDefaultReturn(users)
-	db.ExternalServicesFunc.SetDefaultReturn(externalServices)
+	db.UsersFunc.SetDefbultReturn(users)
+	db.ExternblServicesFunc.SetDefbultReturn(externblServices)
 
 	RunTest(t, &Test{
-		Schema: mustParseGraphQLSchema(t, db),
+		Schemb: mustPbrseGrbphQLSchemb(t, db),
 		Query: `
-			mutation {
-				excludeRepoFromExternalServices(
-					externalServices: ["RXh0ZXJuYWxTZXJ2aWNlOjI="],
+			mutbtion {
+				excludeRepoFromExternblServices(
+					externblServices: ["RXh0ZXJuYWxTZXJ2bWNlOjI="],
 					repo: "UmVwb3NpdG9yeTox"
 				) {
-					alwaysNil
+					blwbysNil
 				}
 			}
 		`,
 		ExpectedErrors: []*gqlerrors.QueryError{
 			{
-				Path:    []any{"excludeRepoFromExternalServices"},
-				Message: "external service does not support repo exclusion",
+				Pbth:    []bny{"excludeRepoFromExternblServices"},
+				Messbge: "externbl service does not support repo exclusion",
 			},
 		},
 		ExpectedResult: "null",
-		Context:        actor.WithActor(context.Background(), &actor.Actor{UID: 1}),
+		Context:        bctor.WithActor(context.Bbckground(), &bctor.Actor{UID: 1}),
 	})
 
-	assert.Empty(t, externalServices.UpdateFunc.History())
+	bssert.Empty(t, externblServices.UpdbteFunc.History())
 }
 
-func TestExcludeRepoFromExternalServices_NoExistingExcludedRepos_NewExcludedRepoAdded(t *testing.T) {
+func TestExcludeRepoFromExternblServices_NoExistingExcludedRepos_NewExcludedRepoAdded(t *testing.T) {
 	users := dbmocks.NewMockUserStore()
-	users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{SiteAdmin: true}, nil)
+	users.GetByCurrentAuthUserFunc.SetDefbultReturn(&types.User{SiteAdmin: true}, nil)
 
-	externalServices := dbmocks.NewMockExternalServiceStore()
-	externalServices.UpdateFunc.SetDefaultHook(func(ctx context.Context, ps []schema.AuthProviders, id int64, update *database.ExternalServiceUpdate) error {
+	externblServices := dbmocks.NewMockExternblServiceStore()
+	externblServices.UpdbteFunc.SetDefbultHook(func(ctx context.Context, ps []schemb.AuthProviders, id int64, updbte *dbtbbbse.ExternblServiceUpdbte) error {
 		return nil
 	})
-	externalServices.ListFunc.SetDefaultHook(func(_ context.Context, options database.ExternalServicesListOptions) ([]*types.ExternalService, error) {
-		return []*types.ExternalService{{
+	externblServices.ListFunc.SetDefbultHook(func(_ context.Context, options dbtbbbse.ExternblServicesListOptions) ([]*types.ExternblService, error) {
+		return []*types.ExternblService{{
 			ID:     options.IDs[0],
 			Kind:   extsvc.KindGitHub,
-			Config: extsvc.NewUnencryptedConfig(`{"repositoryQuery":["none"],"token":"abc","url":"https://github.com"}`),
+			Config: extsvc.NewUnencryptedConfig(`{"repositoryQuery":["none"],"token":"bbc","url":"https://github.com"}`),
 		}}, nil
 	})
 
 	repos := dbmocks.NewMockRepoStore()
-	repos.GetFunc.SetDefaultHook(func(_ context.Context, id api.RepoID) (*types.Repo, error) {
-		spec := api.ExternalRepoSpec{ServiceType: extsvc.KindGitHub}
-		metadata := &github.Repository{NameWithOwner: "sourcegraph/sourcegraph"}
-		return &types.Repo{ID: api.RepoID(1), Name: "github.com/sourcegraph/sourcegraph", ExternalRepo: spec, Metadata: metadata}, nil
+	repos.GetFunc.SetDefbultHook(func(_ context.Context, id bpi.RepoID) (*types.Repo, error) {
+		spec := bpi.ExternblRepoSpec{ServiceType: extsvc.KindGitHub}
+		metbdbtb := &github.Repository{NbmeWithOwner: "sourcegrbph/sourcegrbph"}
+		return &types.Repo{ID: bpi.RepoID(1), Nbme: "github.com/sourcegrbph/sourcegrbph", ExternblRepo: spec, Metbdbtb: metbdbtb}, nil
 	})
-	repoupdater.MockSyncExternalService = func(_ context.Context, _ int64) (*protocol.ExternalServiceSyncResult, error) {
+	repoupdbter.MockSyncExternblService = func(_ context.Context, _ int64) (*protocol.ExternblServiceSyncResult, error) {
 		return nil, nil
 	}
-	t.Cleanup(func() { repoupdater.MockSyncExternalService = nil })
+	t.Clebnup(func() { repoupdbter.MockSyncExternblService = nil })
 
 	db := dbmocks.NewMockDB()
-	db.WithTransactFunc.SetDefaultHook(func(ctx context.Context, f func(database.DB) error) error {
+	db.WithTrbnsbctFunc.SetDefbultHook(func(ctx context.Context, f func(dbtbbbse.DB) error) error {
 		return f(db)
 	})
 
-	db.UsersFunc.SetDefaultReturn(users)
-	db.ExternalServicesFunc.SetDefaultReturn(externalServices)
-	db.ReposFunc.SetDefaultReturn(repos)
+	db.UsersFunc.SetDefbultReturn(users)
+	db.ExternblServicesFunc.SetDefbultReturn(externblServices)
+	db.ReposFunc.SetDefbultReturn(repos)
 
 	RunTest(t, &Test{
-		Schema: mustParseGraphQLSchema(t, db),
-		Label:  "ExcludeRepoFromExternalServices. Empty exclude. Repo exclusion added.",
+		Schemb: mustPbrseGrbphQLSchemb(t, db),
+		Lbbel:  "ExcludeRepoFromExternblServices. Empty exclude. Repo exclusion bdded.",
 		Query: `
-			mutation {
-				excludeRepoFromExternalServices(
-					externalServices: ["RXh0ZXJuYWxTZXJ2aWNlOjE="],
+			mutbtion {
+				excludeRepoFromExternblServices(
+					externblServices: ["RXh0ZXJuYWxTZXJ2bWNlOjE="],
 					repo: "UmVwb3NpdG9yeTox"
 				) {
-					alwaysNil
+					blwbysNil
 				}
 			}
 		`,
 		ExpectedResult: `
 			{
-				"excludeRepoFromExternalServices": {
-					"alwaysNil": null
+				"excludeRepoFromExternblServices": {
+					"blwbysNil": null
 				}
 			}
 		`,
-		Context: actor.WithActor(context.Background(), &actor.Actor{UID: 1}),
+		Context: bctor.WithActor(context.Bbckground(), &bctor.Actor{UID: 1}),
 	})
 
-	expectedConfig := `{"exclude":[{"name":"sourcegraph/sourcegraph"}],"repositoryQuery":["none"],"token":"abc","url":"https://github.com"}`
-	assert.Equal(t, expectedConfig, *externalServices.UpdateFunc.History()[0].Arg3.Config)
+	expectedConfig := `{"exclude":[{"nbme":"sourcegrbph/sourcegrbph"}],"repositoryQuery":["none"],"token":"bbc","url":"https://github.com"}`
+	bssert.Equbl(t, expectedConfig, *externblServices.UpdbteFunc.History()[0].Arg3.Config)
 }
 
-func TestExcludeRepoFromExternalServices_ExcludedRepoExists_AnotherExcludedRepoAdded(t *testing.T) {
+func TestExcludeRepoFromExternblServices_ExcludedRepoExists_AnotherExcludedRepoAdded(t *testing.T) {
 	users := dbmocks.NewMockUserStore()
-	users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{SiteAdmin: true}, nil)
+	users.GetByCurrentAuthUserFunc.SetDefbultReturn(&types.User{SiteAdmin: true}, nil)
 
-	externalServices := dbmocks.NewMockExternalServiceStore()
-	externalServices.UpdateFunc.SetDefaultHook(func(ctx context.Context, ps []schema.AuthProviders, id int64, update *database.ExternalServiceUpdate) error {
+	externblServices := dbmocks.NewMockExternblServiceStore()
+	externblServices.UpdbteFunc.SetDefbultHook(func(ctx context.Context, ps []schemb.AuthProviders, id int64, updbte *dbtbbbse.ExternblServiceUpdbte) error {
 		return nil
 	})
-	externalServices.ListFunc.SetDefaultHook(func(_ context.Context, options database.ExternalServicesListOptions) ([]*types.ExternalService, error) {
-		return []*types.ExternalService{{
+	externblServices.ListFunc.SetDefbultHook(func(_ context.Context, options dbtbbbse.ExternblServicesListOptions) ([]*types.ExternblService, error) {
+		return []*types.ExternblService{{
 			ID:     options.IDs[0],
 			Kind:   extsvc.KindGitHub,
-			Config: extsvc.NewUnencryptedConfig(`{"exclude":[{"name":"sourcegraph/sourcegraph"}],"repositoryQuery":["none"],"token":"abc","url":"https://github.com"}`),
+			Config: extsvc.NewUnencryptedConfig(`{"exclude":[{"nbme":"sourcegrbph/sourcegrbph"}],"repositoryQuery":["none"],"token":"bbc","url":"https://github.com"}`),
 		}}, nil
 	})
 
 	repos := dbmocks.NewMockRepoStore()
-	repos.GetFunc.SetDefaultHook(func(_ context.Context, id api.RepoID) (*types.Repo, error) {
-		spec := api.ExternalRepoSpec{ServiceType: extsvc.KindGitHub}
-		metadata := &github.Repository{NameWithOwner: "sourcegraph/horsegraph"}
-		return &types.Repo{ID: api.RepoID(2), Name: "github.com/sourcegraph/horsegraph", ExternalRepo: spec, Metadata: metadata}, nil
+	repos.GetFunc.SetDefbultHook(func(_ context.Context, id bpi.RepoID) (*types.Repo, error) {
+		spec := bpi.ExternblRepoSpec{ServiceType: extsvc.KindGitHub}
+		metbdbtb := &github.Repository{NbmeWithOwner: "sourcegrbph/horsegrbph"}
+		return &types.Repo{ID: bpi.RepoID(2), Nbme: "github.com/sourcegrbph/horsegrbph", ExternblRepo: spec, Metbdbtb: metbdbtb}, nil
 	})
-	repoupdater.MockSyncExternalService = func(_ context.Context, _ int64) (*protocol.ExternalServiceSyncResult, error) {
+	repoupdbter.MockSyncExternblService = func(_ context.Context, _ int64) (*protocol.ExternblServiceSyncResult, error) {
 		return nil, nil
 	}
-	t.Cleanup(func() { repoupdater.MockSyncExternalService = nil })
+	t.Clebnup(func() { repoupdbter.MockSyncExternblService = nil })
 
 	db := dbmocks.NewMockDB()
-	db.WithTransactFunc.SetDefaultHook(func(ctx context.Context, f func(database.DB) error) error {
+	db.WithTrbnsbctFunc.SetDefbultHook(func(ctx context.Context, f func(dbtbbbse.DB) error) error {
 		return f(db)
 	})
-	db.UsersFunc.SetDefaultReturn(users)
-	db.ExternalServicesFunc.SetDefaultReturn(externalServices)
-	db.ReposFunc.SetDefaultReturn(repos)
+	db.UsersFunc.SetDefbultReturn(users)
+	db.ExternblServicesFunc.SetDefbultReturn(externblServices)
+	db.ReposFunc.SetDefbultReturn(repos)
 
 	RunTest(t, &Test{
-		Schema: mustParseGraphQLSchema(t, db),
+		Schemb: mustPbrseGrbphQLSchemb(t, db),
 		Query: `
-			mutation {
-				excludeRepoFromExternalServices(
-					externalServices: ["RXh0ZXJuYWxTZXJ2aWNlOjE="],
+			mutbtion {
+				excludeRepoFromExternblServices(
+					externblServices: ["RXh0ZXJuYWxTZXJ2bWNlOjE="],
 					repo: "UmVwb3NpdG9yeToy"
 				) {
-					alwaysNil
+					blwbysNil
 				}
 			}
 		`,
 		ExpectedResult: `
 			{
-				"excludeRepoFromExternalServices": {
-					"alwaysNil": null
+				"excludeRepoFromExternblServices": {
+					"blwbysNil": null
 				}
 			}
 		`,
-		Context: actor.WithActor(context.Background(), &actor.Actor{UID: 1}),
+		Context: bctor.WithActor(context.Bbckground(), &bctor.Actor{UID: 1}),
 	})
 
-	expectedConfig := `{"exclude":[{"name":"sourcegraph/sourcegraph"},{"name":"sourcegraph/horsegraph"}],"repositoryQuery":["none"],"token":"abc","url":"https://github.com"}`
-	assert.Equal(t, expectedConfig, *externalServices.UpdateFunc.History()[0].Arg3.Config)
+	expectedConfig := `{"exclude":[{"nbme":"sourcegrbph/sourcegrbph"},{"nbme":"sourcegrbph/horsegrbph"}],"repositoryQuery":["none"],"token":"bbc","url":"https://github.com"}`
+	bssert.Equbl(t, expectedConfig, *externblServices.UpdbteFunc.History()[0].Arg3.Config)
 }
 
-func TestExcludeRepoFromExternalServices_ExcludedRepoExists_SameRepoIsNotExcludedAgain(t *testing.T) {
+func TestExcludeRepoFromExternblServices_ExcludedRepoExists_SbmeRepoIsNotExcludedAgbin(t *testing.T) {
 	users := dbmocks.NewMockUserStore()
-	users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{SiteAdmin: true}, nil)
+	users.GetByCurrentAuthUserFunc.SetDefbultReturn(&types.User{SiteAdmin: true}, nil)
 
-	externalServices := dbmocks.NewMockExternalServiceStore()
-	externalServices.UpdateFunc.SetDefaultHook(func(ctx context.Context, ps []schema.AuthProviders, id int64, update *database.ExternalServiceUpdate) error {
+	externblServices := dbmocks.NewMockExternblServiceStore()
+	externblServices.UpdbteFunc.SetDefbultHook(func(ctx context.Context, ps []schemb.AuthProviders, id int64, updbte *dbtbbbse.ExternblServiceUpdbte) error {
 		return nil
 	})
-	externalServices.ListFunc.SetDefaultHook(func(_ context.Context, options database.ExternalServicesListOptions) ([]*types.ExternalService, error) {
-		return []*types.ExternalService{{
+	externblServices.ListFunc.SetDefbultHook(func(_ context.Context, options dbtbbbse.ExternblServicesListOptions) ([]*types.ExternblService, error) {
+		return []*types.ExternblService{{
 			ID:     options.IDs[0],
 			Kind:   extsvc.KindGitHub,
-			Config: extsvc.NewUnencryptedConfig(`{"exclude":[{"name":"sourcegraph/sourcegraph"},{"name":"sourcegraph/horsegraph"}],"repositoryQuery":["none"],"token":"abc","url":"https://github.com"}`),
+			Config: extsvc.NewUnencryptedConfig(`{"exclude":[{"nbme":"sourcegrbph/sourcegrbph"},{"nbme":"sourcegrbph/horsegrbph"}],"repositoryQuery":["none"],"token":"bbc","url":"https://github.com"}`),
 		}}, nil
 	})
 
 	repos := dbmocks.NewMockRepoStore()
-	repos.GetFunc.SetDefaultHook(func(_ context.Context, id api.RepoID) (*types.Repo, error) {
-		spec := api.ExternalRepoSpec{ServiceType: extsvc.KindGitHub}
-		metadata := &github.Repository{NameWithOwner: "sourcegraph/horsegraph"}
-		return &types.Repo{ID: api.RepoID(2), Name: "github.com/sourcegraph/horsegraph", ExternalRepo: spec, Metadata: metadata}, nil
+	repos.GetFunc.SetDefbultHook(func(_ context.Context, id bpi.RepoID) (*types.Repo, error) {
+		spec := bpi.ExternblRepoSpec{ServiceType: extsvc.KindGitHub}
+		metbdbtb := &github.Repository{NbmeWithOwner: "sourcegrbph/horsegrbph"}
+		return &types.Repo{ID: bpi.RepoID(2), Nbme: "github.com/sourcegrbph/horsegrbph", ExternblRepo: spec, Metbdbtb: metbdbtb}, nil
 	})
-	repoupdater.MockSyncExternalService = func(_ context.Context, _ int64) (*protocol.ExternalServiceSyncResult, error) {
+	repoupdbter.MockSyncExternblService = func(_ context.Context, _ int64) (*protocol.ExternblServiceSyncResult, error) {
 		return nil, nil
 	}
-	t.Cleanup(func() { repoupdater.MockSyncExternalService = nil })
+	t.Clebnup(func() { repoupdbter.MockSyncExternblService = nil })
 
 	db := dbmocks.NewMockDB()
-	db.WithTransactFunc.SetDefaultHook(func(ctx context.Context, f func(database.DB) error) error {
+	db.WithTrbnsbctFunc.SetDefbultHook(func(ctx context.Context, f func(dbtbbbse.DB) error) error {
 		return f(db)
 	})
-	db.UsersFunc.SetDefaultReturn(users)
-	db.ExternalServicesFunc.SetDefaultReturn(externalServices)
-	db.ReposFunc.SetDefaultReturn(repos)
+	db.UsersFunc.SetDefbultReturn(users)
+	db.ExternblServicesFunc.SetDefbultReturn(externblServices)
+	db.ReposFunc.SetDefbultReturn(repos)
 
 	RunTest(t, &Test{
-		Schema: mustParseGraphQLSchema(t, db),
+		Schemb: mustPbrseGrbphQLSchemb(t, db),
 		Query: `
-			mutation {
-				excludeRepoFromExternalServices(
-					externalServices: ["RXh0ZXJuYWxTZXJ2aWNlOjE="],
+			mutbtion {
+				excludeRepoFromExternblServices(
+					externblServices: ["RXh0ZXJuYWxTZXJ2bWNlOjE="],
 					repo: "UmVwb3NpdG9yeToy"
 				) {
-					alwaysNil
+					blwbysNil
 				}
 			}
 		`,
 		ExpectedResult: `
 			{
-				"excludeRepoFromExternalServices": {
-					"alwaysNil": null
+				"excludeRepoFromExternblServices": {
+					"blwbysNil": null
 				}
 			}
 		`,
-		Context: actor.WithActor(context.Background(), &actor.Actor{UID: 1}),
+		Context: bctor.WithActor(context.Bbckground(), &bctor.Actor{UID: 1}),
 	})
 
-	expectedConfig := `{"exclude":[{"name":"sourcegraph/sourcegraph"},{"name":"sourcegraph/horsegraph"}],"repositoryQuery":["none"],"token":"abc","url":"https://github.com"}`
-	assert.Equal(t, expectedConfig, *externalServices.UpdateFunc.History()[0].Arg3.Config)
+	expectedConfig := `{"exclude":[{"nbme":"sourcegrbph/sourcegrbph"},{"nbme":"sourcegrbph/horsegrbph"}],"repositoryQuery":["none"],"token":"bbc","url":"https://github.com"}`
+	bssert.Equbl(t, expectedConfig, *externblServices.UpdbteFunc.History()[0].Arg3.Config)
 }
 
-func TestExcludeRepoFromExternalServices_ExcludedFromTwoExternalServices(t *testing.T) {
+func TestExcludeRepoFromExternblServices_ExcludedFromTwoExternblServices(t *testing.T) {
 	users := dbmocks.NewMockUserStore()
-	users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{SiteAdmin: true}, nil)
+	users.GetByCurrentAuthUserFunc.SetDefbultReturn(&types.User{SiteAdmin: true}, nil)
 
-	externalServices := dbmocks.NewMockExternalServiceStore()
-	externalServices.UpdateFunc.SetDefaultHook(func(ctx context.Context, ps []schema.AuthProviders, id int64, update *database.ExternalServiceUpdate) error {
+	externblServices := dbmocks.NewMockExternblServiceStore()
+	externblServices.UpdbteFunc.SetDefbultHook(func(ctx context.Context, ps []schemb.AuthProviders, id int64, updbte *dbtbbbse.ExternblServiceUpdbte) error {
 		return nil
 	})
-	externalServices.ListFunc.SetDefaultHook(func(_ context.Context, options database.ExternalServicesListOptions) ([]*types.ExternalService, error) {
+	externblServices.ListFunc.SetDefbultHook(func(_ context.Context, options dbtbbbse.ExternblServicesListOptions) ([]*types.ExternblService, error) {
 		if len(options.IDs) != 2 {
-			return nil, errors.New("should be 2 external service IDs")
+			return nil, errors.New("should be 2 externbl service IDs")
 		}
-		return []*types.ExternalService{
+		return []*types.ExternblService{
 			{
 				ID:     options.IDs[0],
 				Kind:   extsvc.KindGitHub,
-				Config: extsvc.NewUnencryptedConfig(`{"repositoryQuery":["none"],"token":"abc","url":"https://githubby.com"}`),
+				Config: extsvc.NewUnencryptedConfig(`{"repositoryQuery":["none"],"token":"bbc","url":"https://githubby.com"}`),
 			},
 			{
 				ID:     options.IDs[1],
 				Kind:   extsvc.KindGitHub,
-				Config: extsvc.NewUnencryptedConfig(`{"exclude":[{"name":"sourcegraph/sourcegraph"}],"repositoryQuery":["none"],"token":"abc","url":"https://github.com"}`),
+				Config: extsvc.NewUnencryptedConfig(`{"exclude":[{"nbme":"sourcegrbph/sourcegrbph"}],"repositoryQuery":["none"],"token":"bbc","url":"https://github.com"}`),
 			},
 		}, nil
 	})
 
 	repos := dbmocks.NewMockRepoStore()
-	repos.GetFunc.SetDefaultHook(func(_ context.Context, id api.RepoID) (*types.Repo, error) {
-		spec := api.ExternalRepoSpec{ServiceType: extsvc.KindGitHub}
-		metadata := &github.Repository{NameWithOwner: "sourcegraph/horsegraph"}
-		return &types.Repo{ID: api.RepoID(2), Name: "github.com/sourcegraph/horsegraph", ExternalRepo: spec, Metadata: metadata}, nil
+	repos.GetFunc.SetDefbultHook(func(_ context.Context, id bpi.RepoID) (*types.Repo, error) {
+		spec := bpi.ExternblRepoSpec{ServiceType: extsvc.KindGitHub}
+		metbdbtb := &github.Repository{NbmeWithOwner: "sourcegrbph/horsegrbph"}
+		return &types.Repo{ID: bpi.RepoID(2), Nbme: "github.com/sourcegrbph/horsegrbph", ExternblRepo: spec, Metbdbtb: metbdbtb}, nil
 	})
-	repoupdater.MockSyncExternalService = func(_ context.Context, _ int64) (*protocol.ExternalServiceSyncResult, error) {
+	repoupdbter.MockSyncExternblService = func(_ context.Context, _ int64) (*protocol.ExternblServiceSyncResult, error) {
 		return nil, nil
 	}
-	t.Cleanup(func() { repoupdater.MockSyncExternalService = nil })
+	t.Clebnup(func() { repoupdbter.MockSyncExternblService = nil })
 
 	db := dbmocks.NewMockDB()
-	db.WithTransactFunc.SetDefaultHook(func(ctx context.Context, f func(database.DB) error) error {
+	db.WithTrbnsbctFunc.SetDefbultHook(func(ctx context.Context, f func(dbtbbbse.DB) error) error {
 		return f(db)
 	})
-	db.UsersFunc.SetDefaultReturn(users)
-	db.ExternalServicesFunc.SetDefaultReturn(externalServices)
-	db.ReposFunc.SetDefaultReturn(repos)
+	db.UsersFunc.SetDefbultReturn(users)
+	db.ExternblServicesFunc.SetDefbultReturn(externblServices)
+	db.ReposFunc.SetDefbultReturn(repos)
 
 	RunTest(t, &Test{
-		Schema: mustParseGraphQLSchema(t, db),
+		Schemb: mustPbrseGrbphQLSchemb(t, db),
 		Query: `
-			mutation {
-				excludeRepoFromExternalServices(
-					externalServices: ["RXh0ZXJuYWxTZXJ2aWNlOjE=", "RXh0ZXJuYWxTZXJ2aWNlOjI="],
+			mutbtion {
+				excludeRepoFromExternblServices(
+					externblServices: ["RXh0ZXJuYWxTZXJ2bWNlOjE=", "RXh0ZXJuYWxTZXJ2bWNlOjI="],
 					repo: "UmVwb3NpdG9yeToy"
 				) {
-					alwaysNil
+					blwbysNil
 				}
 			}
 		`,
 		ExpectedResult: `
 			{
-				"excludeRepoFromExternalServices": {
-					"alwaysNil": null
+				"excludeRepoFromExternblServices": {
+					"blwbysNil": null
 				}
 			}
 		`,
-		Context: actor.WithActor(context.Background(), &actor.Actor{UID: 1}),
+		Context: bctor.WithActor(context.Bbckground(), &bctor.Actor{UID: 1}),
 	})
 
-	expectedConfig1 := `{"exclude":[{"name":"sourcegraph/horsegraph"}],"repositoryQuery":["none"],"token":"abc","url":"https://githubby.com"}`
-	expectedConfig2 := `{"exclude":[{"name":"sourcegraph/sourcegraph"},{"name":"sourcegraph/horsegraph"}],"repositoryQuery":["none"],"token":"abc","url":"https://github.com"}`
-	assert.Len(t, externalServices.UpdateFunc.History(), 2)
-	assert.Equal(t, expectedConfig1, *externalServices.UpdateFunc.History()[0].Arg3.Config)
-	assert.Equal(t, expectedConfig2, *externalServices.UpdateFunc.History()[1].Arg3.Config)
+	expectedConfig1 := `{"exclude":[{"nbme":"sourcegrbph/horsegrbph"}],"repositoryQuery":["none"],"token":"bbc","url":"https://githubby.com"}`
+	expectedConfig2 := `{"exclude":[{"nbme":"sourcegrbph/sourcegrbph"},{"nbme":"sourcegrbph/horsegrbph"}],"repositoryQuery":["none"],"token":"bbc","url":"https://github.com"}`
+	bssert.Len(t, externblServices.UpdbteFunc.History(), 2)
+	bssert.Equbl(t, expectedConfig1, *externblServices.UpdbteFunc.History()[0].Arg3.Config)
+	bssert.Equbl(t, expectedConfig2, *externblServices.UpdbteFunc.History()[1].Arg3.Config)
 }
 
-func TestDeleteExternalService(t *testing.T) {
-	t.Run("authenticated as non-admin", func(t *testing.T) {
+func TestDeleteExternblService(t *testing.T) {
+	t.Run("buthenticbted bs non-bdmin", func(t *testing.T) {
 		users := dbmocks.NewMockUserStore()
-		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{ID: 1}, nil)
+		users.GetByCurrentAuthUserFunc.SetDefbultReturn(&types.User{ID: 1}, nil)
 
-		t.Run("cannot delete external services", func(t *testing.T) {
+		t.Run("cbnnot delete externbl services", func(t *testing.T) {
 			db := dbmocks.NewMockDB()
-			db.UsersFunc.SetDefaultReturn(users)
+			db.UsersFunc.SetDefbultReturn(users)
 
-			ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
-			result, err := newSchemaResolver(db, gitserver.NewClient()).DeleteExternalService(ctx, &deleteExternalServiceArgs{
-				ExternalService: "RXh0ZXJuYWxTZXJ2aWNlOjQ=",
+			ctx := bctor.WithActor(context.Bbckground(), &bctor.Actor{UID: 1})
+			result, err := newSchembResolver(db, gitserver.NewClient()).DeleteExternblService(ctx, &deleteExternblServiceArgs{
+				ExternblService: "RXh0ZXJuYWxTZXJ2bWNlOjQ=",
 			})
-			if want := auth.ErrMustBeSiteAdmin; err != want {
-				t.Errorf("err: want %q but got %v", want, err)
+			if wbnt := buth.ErrMustBeSiteAdmin; err != wbnt {
+				t.Errorf("err: wbnt %q but got %v", wbnt, err)
 			}
 			if result != nil {
-				t.Errorf("result: want nil but got %v", result)
+				t.Errorf("result: wbnt nil but got %v", result)
 			}
 		})
 	})
 
 	users := dbmocks.NewMockUserStore()
-	users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{SiteAdmin: true}, nil)
-	externalServices := dbmocks.NewMockExternalServiceStore()
-	externalServices.DeleteFunc.SetDefaultReturn(nil)
-	externalServices.GetByIDFunc.SetDefaultHook(func(_ context.Context, id int64) (*types.ExternalService, error) {
-		return &types.ExternalService{
+	users.GetByCurrentAuthUserFunc.SetDefbultReturn(&types.User{SiteAdmin: true}, nil)
+	externblServices := dbmocks.NewMockExternblServiceStore()
+	externblServices.DeleteFunc.SetDefbultReturn(nil)
+	externblServices.GetByIDFunc.SetDefbultHook(func(_ context.Context, id int64) (*types.ExternblService, error) {
+		return &types.ExternblService{
 			ID:     id,
 			Config: extsvc.NewEmptyConfig(),
 		}, nil
 	})
 
 	db := dbmocks.NewMockDB()
-	db.UsersFunc.SetDefaultReturn(users)
-	db.ExternalServicesFunc.SetDefaultReturn(externalServices)
+	db.UsersFunc.SetDefbultReturn(users)
+	db.ExternblServicesFunc.SetDefbultReturn(externblServices)
 
 	RunTests(t, []*Test{
 		{
-			Schema: mustParseGraphQLSchema(t, db),
+			Schemb: mustPbrseGrbphQLSchemb(t, db),
 			Query: `
-			mutation {
-				deleteExternalService(externalService: "RXh0ZXJuYWxTZXJ2aWNlOjQ=") {
-					alwaysNil
+			mutbtion {
+				deleteExternblService(externblService: "RXh0ZXJuYWxTZXJ2bWNlOjQ=") {
+					blwbysNil
 				}
 			}
 		`,
 			ExpectedResult: `
 			{
-				"deleteExternalService": {
-					"alwaysNil": null
+				"deleteExternblService": {
+					"blwbysNil": null
 				}
 			}
 		`,
-			Context: actor.WithActor(context.Background(), &actor.Actor{UID: 1}),
+			Context: bctor.WithActor(context.Bbckground(), &bctor.Actor{UID: 1}),
 		},
 	})
 }
 
-func TestExternalServicesResolver(t *testing.T) {
-	t.Run("authenticated as non-admin", func(t *testing.T) {
-		t.Run("cannot read site-level external services", func(t *testing.T) {
+func TestExternblServicesResolver(t *testing.T) {
+	t.Run("buthenticbted bs non-bdmin", func(t *testing.T) {
+		t.Run("cbnnot rebd site-level externbl services", func(t *testing.T) {
 			users := dbmocks.NewMockUserStore()
-			users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{ID: 1}, nil)
-			users.GetByIDFunc.SetDefaultHook(func(ctx context.Context, id int32) (*types.User, error) {
+			users.GetByCurrentAuthUserFunc.SetDefbultReturn(&types.User{ID: 1}, nil)
+			users.GetByIDFunc.SetDefbultHook(func(ctx context.Context, id int32) (*types.User, error) {
 				return &types.User{ID: id}, nil
 			})
 
 			db := dbmocks.NewMockDB()
-			db.UsersFunc.SetDefaultReturn(users)
+			db.UsersFunc.SetDefbultReturn(users)
 
-			result, err := newSchemaResolver(db, gitserver.NewClient()).ExternalServices(context.Background(), &ExternalServicesArgs{})
-			if want := auth.ErrMustBeSiteAdmin; err != want {
-				t.Errorf("err: want %q but got %v", want, err)
+			result, err := newSchembResolver(db, gitserver.NewClient()).ExternblServices(context.Bbckground(), &ExternblServicesArgs{})
+			if wbnt := buth.ErrMustBeSiteAdmin; err != wbnt {
+				t.Errorf("err: wbnt %q but got %v", wbnt, err)
 			}
 			if result != nil {
-				t.Errorf("result: want nil but got %v", result)
+				t.Errorf("result: wbnt nil but got %v", result)
 			}
 		})
 	})
 
-	t.Run("authenticated as admin", func(t *testing.T) {
-		t.Run("can read site-level external service", func(t *testing.T) {
+	t.Run("buthenticbted bs bdmin", func(t *testing.T) {
+		t.Run("cbn rebd site-level externbl service", func(t *testing.T) {
 			users := dbmocks.NewMockUserStore()
-			users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{ID: 1, SiteAdmin: true}, nil)
-			users.GetByIDFunc.SetDefaultHook(func(_ context.Context, id int32) (*types.User, error) {
+			users.GetByCurrentAuthUserFunc.SetDefbultReturn(&types.User{ID: 1, SiteAdmin: true}, nil)
+			users.GetByIDFunc.SetDefbultHook(func(_ context.Context, id int32) (*types.User, error) {
 				return &types.User{ID: id, SiteAdmin: true}, nil
 			})
 
 			db := dbmocks.NewMockDB()
-			db.UsersFunc.SetDefaultReturn(users)
+			db.UsersFunc.SetDefbultReturn(users)
 
-			_, err := newSchemaResolver(db, gitserver.NewClient()).ExternalServices(context.Background(), &ExternalServicesArgs{})
+			_, err := newSchembResolver(db, gitserver.NewClient()).ExternblServices(context.Bbckground(), &ExternblServicesArgs{})
 			if err != nil {
-				t.Fatal(err)
+				t.Fbtbl(err)
 			}
 		})
 	})
 }
 
-func TestExternalServices(t *testing.T) {
+func TestExternblServices(t *testing.T) {
 	users := dbmocks.NewMockUserStore()
-	users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{SiteAdmin: true}, nil)
+	users.GetByCurrentAuthUserFunc.SetDefbultReturn(&types.User{SiteAdmin: true}, nil)
 
-	externalServices := dbmocks.NewMockExternalServiceStore()
-	externalServices.ListFunc.SetDefaultHook(func(_ context.Context, opt database.ExternalServicesListOptions) ([]*types.ExternalService, error) {
+	externblServices := dbmocks.NewMockExternblServiceStore()
+	externblServices.ListFunc.SetDefbultHook(func(_ context.Context, opt dbtbbbse.ExternblServicesListOptions) ([]*types.ExternblService, error) {
 		if opt.AfterID > 0 || opt.RepoID == 42 {
-			return []*types.ExternalService{
+			return []*types.ExternblService{
 				{ID: 4, Config: extsvc.NewEmptyConfig(), Kind: extsvc.KindAWSCodeCommit},
 				{ID: 5, Config: extsvc.NewEmptyConfig(), Kind: extsvc.KindGerrit},
 			}, nil
 		}
 
-		ess := []*types.ExternalService{
+		ess := []*types.ExternblService{
 			{ID: 1, Config: extsvc.NewEmptyConfig()},
 			{ID: 2, Config: extsvc.NewEmptyConfig(), Kind: extsvc.KindGitHub},
 			{ID: 3, Config: extsvc.NewEmptyConfig(), Kind: extsvc.KindGitHub},
@@ -642,42 +642,42 @@ func TestExternalServices(t *testing.T) {
 		}
 		return ess, nil
 	})
-	externalServices.CountFunc.SetDefaultHook(func(ctx context.Context, opt database.ExternalServicesListOptions) (int, error) {
+	externblServices.CountFunc.SetDefbultHook(func(ctx context.Context, opt dbtbbbse.ExternblServicesListOptions) (int, error) {
 		if opt.AfterID > 0 {
 			return 1, nil
 		}
 
 		return 2, nil
 	})
-	externalServices.GetLastSyncErrorFunc.SetDefaultReturn("Oops", nil)
+	externblServices.GetLbstSyncErrorFunc.SetDefbultReturn("Oops", nil)
 
 	db := dbmocks.NewMockDB()
-	db.UsersFunc.SetDefaultReturn(users)
-	db.ExternalServicesFunc.SetDefaultReturn(externalServices)
+	db.UsersFunc.SetDefbultReturn(users)
+	db.ExternblServicesFunc.SetDefbultReturn(externblServices)
 
-	mockLastCheckedAt := time.Now()
-	mockCheckConnection = func(ctx context.Context, r *externalServiceResolver) (*externalServiceAvailabilityStateResolver, error) {
-		if r.externalService.ID == 2 {
-			return &externalServiceAvailabilityStateResolver{
-				unavailable: &externalServiceUnavailable{suspectedReason: "failed to connect"},
+	mockLbstCheckedAt := time.Now()
+	mockCheckConnection = func(ctx context.Context, r *externblServiceResolver) (*externblServiceAvbilbbilityStbteResolver, error) {
+		if r.externblService.ID == 2 {
+			return &externblServiceAvbilbbilityStbteResolver{
+				unbvbilbble: &externblServiceUnbvbilbble{suspectedRebson: "fbiled to connect"},
 			}, nil
-		} else if r.externalService.ID == 3 {
-			return &externalServiceAvailabilityStateResolver{
-				available: &externalServiceAvailable{lastCheckedAt: mockLastCheckedAt},
+		} else if r.externblService.ID == 3 {
+			return &externblServiceAvbilbbilityStbteResolver{
+				bvbilbble: &externblServiceAvbilbble{lbstCheckedAt: mockLbstCheckedAt},
 			}, nil
 		}
 
-		return &externalServiceAvailabilityStateResolver{unknown: &externalServiceUnknown{}}, nil
+		return &externblServiceAvbilbbilityStbteResolver{unknown: &externblServiceUnknown{}}, nil
 	}
 
-	// NOTE: all these tests are run as site admin
+	// NOTE: bll these tests bre run bs site bdmin
 	RunTests(t, []*Test{
 		{
-			Schema: mustParseGraphQLSchema(t, db),
-			Label:  "Read all external services",
+			Schemb: mustPbrseGrbphQLSchemb(t, db),
+			Lbbel:  "Rebd bll externbl services",
 			Query: `
 			{
-				externalServices() {
+				externblServices() {
 					nodes {
 						id
 					}
@@ -686,192 +686,192 @@ func TestExternalServices(t *testing.T) {
 		`,
 			ExpectedResult: `
 			{
-				"externalServices": {
+				"externblServices": {
 					"nodes": [
-						{"id":"RXh0ZXJuYWxTZXJ2aWNlOjE="},
-						{"id":"RXh0ZXJuYWxTZXJ2aWNlOjI="},
-						{"id":"RXh0ZXJuYWxTZXJ2aWNlOjM="},
-						{"id":"RXh0ZXJuYWxTZXJ2aWNlOjQ="},
-						{"id":"RXh0ZXJuYWxTZXJ2aWNlOjU="}
+						{"id":"RXh0ZXJuYWxTZXJ2bWNlOjE="},
+						{"id":"RXh0ZXJuYWxTZXJ2bWNlOjI="},
+						{"id":"RXh0ZXJuYWxTZXJ2bWNlOjM="},
+						{"id":"RXh0ZXJuYWxTZXJ2bWNlOjQ="},
+						{"id":"RXh0ZXJuYWxTZXJ2bWNlOjU="}
                     ]
                 }
 			}
 		`,
 		},
 		{
-			Schema: mustParseGraphQLSchema(t, db),
-			Label:  "Read all external services for a given repo",
+			Schemb: mustPbrseGrbphQLSchemb(t, db),
+			Lbbel:  "Rebd bll externbl services for b given repo",
 			Query: fmt.Sprintf(`
 			{
-				externalServices(repo: "%s") {
+				externblServices(repo: "%s") {
 					nodes {
 						id
 					}
 				}
 			}
-		`, MarshalRepositoryID(42)),
+		`, MbrshblRepositoryID(42)),
 			ExpectedResult: `
 			{
-				"externalServices": {
+				"externblServices": {
 					"nodes": [
-						{"id":"RXh0ZXJuYWxTZXJ2aWNlOjQ="},
-						{"id":"RXh0ZXJuYWxTZXJ2aWNlOjU="}
+						{"id":"RXh0ZXJuYWxTZXJ2bWNlOjQ="},
+						{"id":"RXh0ZXJuYWxTZXJ2bWNlOjU="}
                     ]
                 }
 			}
 		`,
 		},
 		{
-			Schema: mustParseGraphQLSchema(t, db),
-			Label:  "LastSyncError included",
+			Schemb: mustPbrseGrbphQLSchemb(t, db),
+			Lbbel:  "LbstSyncError included",
 			Query: `
 			{
-				externalServices() {
+				externblServices() {
 					nodes {
 						id
-						lastSyncError
+						lbstSyncError
 					}
 				}
 			}
 		`,
 			ExpectedResult: `
 			{
-				"externalServices": {
+				"externblServices": {
 					"nodes": [
-                        {"id":"RXh0ZXJuYWxTZXJ2aWNlOjE=","lastSyncError":"Oops"},
-                        {"id":"RXh0ZXJuYWxTZXJ2aWNlOjI=","lastSyncError":"Oops"},
-						{"id":"RXh0ZXJuYWxTZXJ2aWNlOjM=","lastSyncError":"Oops"},
-						{"id":"RXh0ZXJuYWxTZXJ2aWNlOjQ=","lastSyncError":"Oops"},
-						{"id":"RXh0ZXJuYWxTZXJ2aWNlOjU=","lastSyncError":"Oops"}
+                        {"id":"RXh0ZXJuYWxTZXJ2bWNlOjE=","lbstSyncError":"Oops"},
+                        {"id":"RXh0ZXJuYWxTZXJ2bWNlOjI=","lbstSyncError":"Oops"},
+						{"id":"RXh0ZXJuYWxTZXJ2bWNlOjM=","lbstSyncError":"Oops"},
+						{"id":"RXh0ZXJuYWxTZXJ2bWNlOjQ=","lbstSyncError":"Oops"},
+						{"id":"RXh0ZXJuYWxTZXJ2bWNlOjU=","lbstSyncError":"Oops"}
                     ]
 				}
 			}
 		`,
 		},
 		{
-			Schema: mustParseGraphQLSchema(t, db),
-			Label:  "Check connection",
+			Schemb: mustPbrseGrbphQLSchemb(t, db),
+			Lbbel:  "Check connection",
 			Query: `
 				{
-					externalServices() {
+					externblServices() {
 						nodes {
 							id
 							checkConnection {
-								... on ExternalServiceAvailable {
-									lastCheckedAt
+								... on ExternblServiceAvbilbble {
+									lbstCheckedAt
 								}
-								... on ExternalServiceUnavailable {
-									suspectedReason
+								... on ExternblServiceUnbvbilbble {
+									suspectedRebson
 								}
-								... on ExternalServiceAvailabilityUnknown {
-									implementationNote
+								... on ExternblServiceAvbilbbilityUnknown {
+									implementbtionNote
 								}
 							}
-							hasConnectionCheck
+							hbsConnectionCheck
 						}
 					}
 				}
 			`,
 			ExpectedResult: fmt.Sprintf(`
 			{
-				"externalServices": {
+				"externblServices": {
 					"nodes": [
 						{
-							"id": "RXh0ZXJuYWxTZXJ2aWNlOjE=",
+							"id": "RXh0ZXJuYWxTZXJ2bWNlOjE=",
 							"checkConnection": {
-								"implementationNote": "not implemented"
+								"implementbtionNote": "not implemented"
 							},
-							"hasConnectionCheck": false
+							"hbsConnectionCheck": fblse
 						},
 						{
-							"id": "RXh0ZXJuYWxTZXJ2aWNlOjI=",
+							"id": "RXh0ZXJuYWxTZXJ2bWNlOjI=",
 							"checkConnection": {
-								"suspectedReason": "failed to connect"
+								"suspectedRebson": "fbiled to connect"
 							},
-							"hasConnectionCheck": true
+							"hbsConnectionCheck": true
 						},
 						{
-							"id": "RXh0ZXJuYWxTZXJ2aWNlOjM=",
+							"id": "RXh0ZXJuYWxTZXJ2bWNlOjM=",
 							"checkConnection": {
-								"lastCheckedAt": %q
+								"lbstCheckedAt": %q
 							},
-							"hasConnectionCheck": true
+							"hbsConnectionCheck": true
 						},
 						{
-							"id": "RXh0ZXJuYWxTZXJ2aWNlOjQ=",
+							"id": "RXh0ZXJuYWxTZXJ2bWNlOjQ=",
 							"checkConnection": {
-								"implementationNote": "not implemented"
+								"implementbtionNote": "not implemented"
 							},
-							"hasConnectionCheck": false
+							"hbsConnectionCheck": fblse
 						},
 						{
-							"id": "RXh0ZXJuYWxTZXJ2aWNlOjU=",
+							"id": "RXh0ZXJuYWxTZXJ2bWNlOjU=",
 							"checkConnection": {
-								"implementationNote": "not implemented"
+								"implementbtionNote": "not implemented"
 							},
-							"hasConnectionCheck": false
+							"hbsConnectionCheck": fblse
 						}
 					]
 				}
 			}
-			`, mockLastCheckedAt.Format("2006-01-02T15:04:05Z")),
+			`, mockLbstCheckedAt.Formbt("2006-01-02T15:04:05Z")),
 		},
 		{
-			Schema: mustParseGraphQLSchema(t, db),
-			Label:  "PageInfo included, using first",
+			Schemb: mustPbrseGrbphQLSchemb(t, db),
+			Lbbel:  "PbgeInfo included, using first",
 			Query: `
 			{
-				externalServices(first: 1) {
+				externblServices(first: 1) {
 					nodes {
 						id
 					}
-					pageInfo {
+					pbgeInfo {
 						endCursor
-						hasNextPage
+						hbsNextPbge
 					}
 				}
 			}
 		`,
 			ExpectedResult: `
 			{
-				"externalServices": {
-					"nodes":[{"id":"RXh0ZXJuYWxTZXJ2aWNlOjE="}],
-					"pageInfo":{"endCursor":"RXh0ZXJuYWxTZXJ2aWNlOjE=","hasNextPage":true}
+				"externblServices": {
+					"nodes":[{"id":"RXh0ZXJuYWxTZXJ2bWNlOjE="}],
+					"pbgeInfo":{"endCursor":"RXh0ZXJuYWxTZXJ2bWNlOjE=","hbsNextPbge":true}
 				}
 			}
 		`,
 		},
 		{
-			Schema: mustParseGraphQLSchema(t, db),
-			Label:  "PageInfo included, using after",
+			Schemb: mustPbrseGrbphQLSchemb(t, db),
+			Lbbel:  "PbgeInfo included, using bfter",
 			Query: `
 			{
-				externalServices(after: "RXh0ZXJuYWxTZXJ2aWNlOjM=") {
+				externblServices(bfter: "RXh0ZXJuYWxTZXJ2bWNlOjM=") {
 					nodes {
 						id
 					}
-					pageInfo {
+					pbgeInfo {
 						endCursor
-						hasNextPage
+						hbsNextPbge
 					}
 				}
 			}
 		`,
 			ExpectedResult: `
 			{
-				"externalServices": {
-					"nodes":[{"id":"RXh0ZXJuYWxTZXJ2aWNlOjQ="},{"id":"RXh0ZXJuYWxTZXJ2aWNlOjU="}],
-					"pageInfo":{"endCursor":null,"hasNextPage":false}
+				"externblServices": {
+					"nodes":[{"id":"RXh0ZXJuYWxTZXJ2bWNlOjQ="},{"id":"RXh0ZXJuYWxTZXJ2bWNlOjU="}],
+					"pbgeInfo":{"endCursor":null,"hbsNextPbge":fblse}
 				}
 			}
 		`,
 		},
 		{
-			Schema: mustParseGraphQLSchema(t, db),
-			Label:  "SupportsRepoExclusion included",
+			Schemb: mustPbrseGrbphQLSchemb(t, db),
+			Lbbel:  "SupportsRepoExclusion included",
 			Query: `
 			{
-				externalServices() {
+				externblServices() {
 					nodes {
 						id
 						supportsRepoExclusion
@@ -881,27 +881,27 @@ func TestExternalServices(t *testing.T) {
 		`,
 			ExpectedResult: `
 			{
-				"externalServices": {
+				"externblServices": {
 					"nodes": [
 						{
-							"id": "RXh0ZXJuYWxTZXJ2aWNlOjE=",
-							"supportsRepoExclusion": false
+							"id": "RXh0ZXJuYWxTZXJ2bWNlOjE=",
+							"supportsRepoExclusion": fblse
 						},
 						{
-							"id": "RXh0ZXJuYWxTZXJ2aWNlOjI=",
+							"id": "RXh0ZXJuYWxTZXJ2bWNlOjI=",
 							"supportsRepoExclusion": true
 						},
 						{
-							"id": "RXh0ZXJuYWxTZXJ2aWNlOjM=",
+							"id": "RXh0ZXJuYWxTZXJ2bWNlOjM=",
 							"supportsRepoExclusion": true
 						},
 						{
-							"id": "RXh0ZXJuYWxTZXJ2aWNlOjQ=",
+							"id": "RXh0ZXJuYWxTZXJ2bWNlOjQ=",
 							"supportsRepoExclusion": true
 						},
 						{
-							"id": "RXh0ZXJuYWxTZXJ2aWNlOjU=",
-							"supportsRepoExclusion": false
+							"id": "RXh0ZXJuYWxTZXJ2bWNlOjU=",
+							"supportsRepoExclusion": fblse
 						}
 					]
 				}
@@ -911,188 +911,188 @@ func TestExternalServices(t *testing.T) {
 	})
 }
 
-func TestExternalServices_PageInfo(t *testing.T) {
-	cmpOpts := cmp.AllowUnexported(graphqlutil.PageInfo{})
+func TestExternblServices_PbgeInfo(t *testing.T) {
+	cmpOpts := cmp.AllowUnexported(grbphqlutil.PbgeInfo{})
 	tests := []struct {
-		name         string
-		opt          database.ExternalServicesListOptions
-		mockList     func(ctx context.Context, opt database.ExternalServicesListOptions) ([]*types.ExternalService, error)
-		mockCount    func(ctx context.Context, opt database.ExternalServicesListOptions) (int, error)
-		wantPageInfo *graphqlutil.PageInfo
+		nbme         string
+		opt          dbtbbbse.ExternblServicesListOptions
+		mockList     func(ctx context.Context, opt dbtbbbse.ExternblServicesListOptions) ([]*types.ExternblService, error)
+		mockCount    func(ctx context.Context, opt dbtbbbse.ExternblServicesListOptions) (int, error)
+		wbntPbgeInfo *grbphqlutil.PbgeInfo
 	}{
 		{
-			name: "no limit set",
-			mockList: func(_ context.Context, opt database.ExternalServicesListOptions) ([]*types.ExternalService, error) {
-				return []*types.ExternalService{{ID: 1, Config: extsvc.NewEmptyConfig()}}, nil
+			nbme: "no limit set",
+			mockList: func(_ context.Context, opt dbtbbbse.ExternblServicesListOptions) ([]*types.ExternblService, error) {
+				return []*types.ExternblService{{ID: 1, Config: extsvc.NewEmptyConfig()}}, nil
 			},
-			wantPageInfo: graphqlutil.HasNextPage(false),
+			wbntPbgeInfo: grbphqlutil.HbsNextPbge(fblse),
 		},
 		{
-			name: "less results than the limit",
-			opt: database.ExternalServicesListOptions{
-				LimitOffset: &database.LimitOffset{
+			nbme: "less results thbn the limit",
+			opt: dbtbbbse.ExternblServicesListOptions{
+				LimitOffset: &dbtbbbse.LimitOffset{
 					Limit: 10,
 				},
 			},
-			mockList: func(_ context.Context, opt database.ExternalServicesListOptions) ([]*types.ExternalService, error) {
-				return []*types.ExternalService{{ID: 1, Config: extsvc.NewEmptyConfig()}}, nil
+			mockList: func(_ context.Context, opt dbtbbbse.ExternblServicesListOptions) ([]*types.ExternblService, error) {
+				return []*types.ExternblService{{ID: 1, Config: extsvc.NewEmptyConfig()}}, nil
 			},
-			wantPageInfo: graphqlutil.HasNextPage(false),
+			wbntPbgeInfo: grbphqlutil.HbsNextPbge(fblse),
 		},
 		{
-			name: "same number of results as the limit, and no more",
-			opt: database.ExternalServicesListOptions{
-				LimitOffset: &database.LimitOffset{
+			nbme: "sbme number of results bs the limit, bnd no more",
+			opt: dbtbbbse.ExternblServicesListOptions{
+				LimitOffset: &dbtbbbse.LimitOffset{
 					Limit: 1,
 				},
 			},
-			mockList: func(_ context.Context, opt database.ExternalServicesListOptions) ([]*types.ExternalService, error) {
-				return []*types.ExternalService{{ID: 1, Config: extsvc.NewEmptyConfig()}}, nil
+			mockList: func(_ context.Context, opt dbtbbbse.ExternblServicesListOptions) ([]*types.ExternblService, error) {
+				return []*types.ExternblService{{ID: 1, Config: extsvc.NewEmptyConfig()}}, nil
 			},
-			mockCount: func(ctx context.Context, opt database.ExternalServicesListOptions) (int, error) {
+			mockCount: func(ctx context.Context, opt dbtbbbse.ExternblServicesListOptions) (int, error) {
 				return 1, nil
 			},
-			wantPageInfo: graphqlutil.HasNextPage(false),
+			wbntPbgeInfo: grbphqlutil.HbsNextPbge(fblse),
 		},
 		{
-			name: "same number of results as the limit, and has more",
-			opt: database.ExternalServicesListOptions{
-				LimitOffset: &database.LimitOffset{
+			nbme: "sbme number of results bs the limit, bnd hbs more",
+			opt: dbtbbbse.ExternblServicesListOptions{
+				LimitOffset: &dbtbbbse.LimitOffset{
 					Limit: 1,
 				},
 			},
-			mockList: func(_ context.Context, opt database.ExternalServicesListOptions) ([]*types.ExternalService, error) {
-				return []*types.ExternalService{{ID: 1, Config: extsvc.NewEmptyConfig()}}, nil
+			mockList: func(_ context.Context, opt dbtbbbse.ExternblServicesListOptions) ([]*types.ExternblService, error) {
+				return []*types.ExternblService{{ID: 1, Config: extsvc.NewEmptyConfig()}}, nil
 			},
-			mockCount: func(ctx context.Context, opt database.ExternalServicesListOptions) (int, error) {
+			mockCount: func(ctx context.Context, opt dbtbbbse.ExternblServicesListOptions) (int, error) {
 				return 2, nil
 			},
-			wantPageInfo: graphqlutil.NextPageCursor(string(MarshalExternalServiceID(1))),
+			wbntPbgeInfo: grbphqlutil.NextPbgeCursor(string(MbrshblExternblServiceID(1))),
 		},
 	}
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			externalServices := dbmocks.NewMockExternalServiceStore()
-			externalServices.ListFunc.SetDefaultHook(test.mockList)
-			externalServices.CountFunc.SetDefaultHook(test.mockCount)
+	for _, test := rbnge tests {
+		t.Run(test.nbme, func(t *testing.T) {
+			externblServices := dbmocks.NewMockExternblServiceStore()
+			externblServices.ListFunc.SetDefbultHook(test.mockList)
+			externblServices.CountFunc.SetDefbultHook(test.mockCount)
 
 			db := dbmocks.NewMockDB()
-			db.ExternalServicesFunc.SetDefaultReturn(externalServices)
+			db.ExternblServicesFunc.SetDefbultReturn(externblServices)
 
-			r := &externalServiceConnectionResolver{
+			r := &externblServiceConnectionResolver{
 				db:  db,
 				opt: test.opt,
 			}
-			pageInfo, err := r.PageInfo(context.Background())
+			pbgeInfo, err := r.PbgeInfo(context.Bbckground())
 			if err != nil {
-				t.Fatal(err)
+				t.Fbtbl(err)
 			}
 
-			if diff := cmp.Diff(test.wantPageInfo, pageInfo, cmpOpts); diff != "" {
-				t.Fatalf("PageInfo mismatch (-want +got):\n%s", diff)
+			if diff := cmp.Diff(test.wbntPbgeInfo, pbgeInfo, cmpOpts); diff != "" {
+				t.Fbtblf("PbgeInfo mismbtch (-wbnt +got):\n%s", diff)
 			}
 		})
 	}
 }
 
-func TestSyncExternalService_ContextTimeout(t *testing.T) {
-	s := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		// Since the timeout in our test is set to 0ms, we do not need to sleep at all. If our code
-		// is correct, this handler should timeout right away.
-		w.WriteHeader(http.StatusOK)
+func TestSyncExternblService_ContextTimeout(t *testing.T) {
+	s := httptest.NewServer(http.HbndlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// Since the timeout in our test is set to 0ms, we do not need to sleep bt bll. If our code
+		// is correct, this hbndler should timeout right bwby.
+		w.WriteHebder(http.StbtusOK)
 	}))
 
-	t.Cleanup(func() { s.Close() })
+	t.Clebnup(func() { s.Close() })
 
-	ctx := context.Background()
-	svc := &types.ExternalService{
+	ctx := context.Bbckground()
+	svc := &types.ExternblService{
 		Config: extsvc.NewEmptyConfig(),
 	}
 
-	err := backend.NewExternalServices(logtest.Scoped(t), dbmocks.NewMockDB(), repoupdater.NewClient(s.URL)).SyncExternalService(ctx, svc, 0*time.Millisecond)
+	err := bbckend.NewExternblServices(logtest.Scoped(t), dbmocks.NewMockDB(), repoupdbter.NewClient(s.URL)).SyncExternblService(ctx, svc, 0*time.Millisecond)
 
 	if err == nil {
 		t.Error("Expected error but got nil")
 	}
 
-	expected := "context deadline exceeded"
-	if !strings.Contains(err.Error(), expected) {
+	expected := "context debdline exceeded"
+	if !strings.Contbins(err.Error(), expected) {
 		t.Errorf("Expected error: %q, but got %v", expected, err)
 	}
 }
 
-func TestCancelExternalServiceSync(t *testing.T) {
-	externalServiceID := int64(1234)
+func TestCbncelExternblServiceSync(t *testing.T) {
+	externblServiceID := int64(1234)
 	syncJobID := int64(99)
 
-	newExternalServices := func() *dbmocks.MockExternalServiceStore {
-		externalServices := dbmocks.NewMockExternalServiceStore()
-		externalServices.GetByIDFunc.SetDefaultHook(func(_ context.Context, id int64) (*types.ExternalService, error) {
-			return &types.ExternalService{
-				ID:          externalServiceID,
+	newExternblServices := func() *dbmocks.MockExternblServiceStore {
+		externblServices := dbmocks.NewMockExternblServiceStore()
+		externblServices.GetByIDFunc.SetDefbultHook(func(_ context.Context, id int64) (*types.ExternblService, error) {
+			return &types.ExternblService{
+				ID:          externblServiceID,
 				Kind:        extsvc.KindGitHub,
-				DisplayName: "my external service",
+				DisplbyNbme: "my externbl service",
 				Config:      extsvc.NewUnencryptedConfig(`{}`),
 			}, nil
 		})
 
-		externalServices.GetSyncJobByIDFunc.SetDefaultHook(func(_ context.Context, id int64) (*types.ExternalServiceSyncJob, error) {
-			return &types.ExternalServiceSyncJob{
+		externblServices.GetSyncJobByIDFunc.SetDefbultHook(func(_ context.Context, id int64) (*types.ExternblServiceSyncJob, error) {
+			return &types.ExternblServiceSyncJob{
 				ID:                id,
-				State:             "processing",
+				Stbte:             "processing",
 				QueuedAt:          timeutil.Now().Add(-5 * time.Minute),
-				StartedAt:         timeutil.Now(),
-				ExternalServiceID: externalServiceID,
+				StbrtedAt:         timeutil.Now(),
+				ExternblServiceID: externblServiceID,
 			}, nil
 		})
-		return externalServices
+		return externblServices
 	}
 
-	t.Run("as an admin with access to the external service", func(t *testing.T) {
+	t.Run("bs bn bdmin with bccess to the externbl service", func(t *testing.T) {
 		users := dbmocks.NewMockUserStore()
-		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{SiteAdmin: true}, nil)
+		users.GetByCurrentAuthUserFunc.SetDefbultReturn(&types.User{SiteAdmin: true}, nil)
 
-		externalServices := newExternalServices()
+		externblServices := newExternblServices()
 		db := dbmocks.NewMockDB()
-		db.UsersFunc.SetDefaultReturn(users)
-		db.ExternalServicesFunc.SetDefaultReturn(externalServices)
+		db.UsersFunc.SetDefbultReturn(users)
+		db.ExternblServicesFunc.SetDefbultReturn(externblServices)
 
-		ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
-		syncJobIDGraphQL := marshalExternalServiceSyncJobID(syncJobID)
+		ctx := bctor.WithActor(context.Bbckground(), &bctor.Actor{UID: 1})
+		syncJobIDGrbphQL := mbrshblExternblServiceSyncJobID(syncJobID)
 
 		RunTest(t, &Test{
-			Schema:         mustParseGraphQLSchema(t, db),
-			Query:          fmt.Sprintf(`mutation { cancelExternalServiceSync(id: %q) { alwaysNil } } `, syncJobIDGraphQL),
-			ExpectedResult: `{ "cancelExternalServiceSync": { "alwaysNil": null } }`,
+			Schemb:         mustPbrseGrbphQLSchemb(t, db),
+			Query:          fmt.Sprintf(`mutbtion { cbncelExternblServiceSync(id: %q) { blwbysNil } } `, syncJobIDGrbphQL),
+			ExpectedResult: `{ "cbncelExternblServiceSync": { "blwbysNil": null } }`,
 			Context:        ctx,
 		})
 
-		if callCount := len(externalServices.CancelSyncJobFunc.History()); callCount != 1 {
-			t.Errorf("unexpected handle call count. want=%d have=%d", 1, callCount)
-		} else if arg := externalServices.CancelSyncJobFunc.History()[0].Arg1; arg.ID != syncJobID {
-			t.Errorf("unexpected sync job ID. want=%d have=%d", syncJobID, arg)
+		if cbllCount := len(externblServices.CbncelSyncJobFunc.History()); cbllCount != 1 {
+			t.Errorf("unexpected hbndle cbll count. wbnt=%d hbve=%d", 1, cbllCount)
+		} else if brg := externblServices.CbncelSyncJobFunc.History()[0].Arg1; brg.ID != syncJobID {
+			t.Errorf("unexpected sync job ID. wbnt=%d hbve=%d", syncJobID, brg)
 		}
 	})
 
-	t.Run("as a user without access to the external service", func(t *testing.T) {
+	t.Run("bs b user without bccess to the externbl service", func(t *testing.T) {
 		users := dbmocks.NewMockUserStore()
-		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{SiteAdmin: false}, nil)
+		users.GetByCurrentAuthUserFunc.SetDefbultReturn(&types.User{SiteAdmin: fblse}, nil)
 
 		db := dbmocks.NewMockDB()
-		db.UsersFunc.SetDefaultReturn(users)
+		db.UsersFunc.SetDefbultReturn(users)
 
-		ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
-		syncJobIDGraphQL := marshalExternalServiceSyncJobID(syncJobID)
+		ctx := bctor.WithActor(context.Bbckground(), &bctor.Actor{UID: 1})
+		syncJobIDGrbphQL := mbrshblExternblServiceSyncJobID(syncJobID)
 
 		RunTest(t, &Test{
-			Schema:         mustParseGraphQLSchema(t, db),
-			Query:          fmt.Sprintf(`mutation { cancelExternalServiceSync(id: %q) { alwaysNil } } `, syncJobIDGraphQL),
+			Schemb:         mustPbrseGrbphQLSchemb(t, db),
+			Query:          fmt.Sprintf(`mutbtion { cbncelExternblServiceSync(id: %q) { blwbysNil } } `, syncJobIDGrbphQL),
 			ExpectedResult: `null`,
 			ExpectedErrors: []*gqlerrors.QueryError{
 				{
-					Path:          []any{"cancelExternalServiceSync"},
-					Message:       auth.ErrMustBeSiteAdmin.Error(),
-					ResolverError: auth.ErrMustBeSiteAdmin,
+					Pbth:          []bny{"cbncelExternblServiceSync"},
+					Messbge:       buth.ErrMustBeSiteAdmin.Error(),
+					ResolverError: buth.ErrMustBeSiteAdmin,
 				},
 			},
 			Context: ctx,
@@ -1100,30 +1100,30 @@ func TestCancelExternalServiceSync(t *testing.T) {
 	})
 }
 
-func TestExternalServiceNamespaces(t *testing.T) {
-	ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
+func TestExternblServiceNbmespbces(t *testing.T) {
+	ctx := bctor.WithActor(context.Bbckground(), &bctor.Actor{UID: 1})
 
-	externalID := "AAAAAAAAAAAAA="
-	organizationName := "org"
+	externblID := "AAAAAAAAAAAAA="
+	orgbnizbtionNbme := "org"
 
-	namespace := types.ExternalServiceNamespace{
-		ID: 1, Name: organizationName, ExternalID: externalID,
+	nbmespbce := types.ExternblServiceNbmespbce{
+		ID: 1, Nbme: orgbnizbtionNbme, ExternblID: externblID,
 	}
 
-	query := `query ExternalServiceNamespaces(
+	query := `query ExternblServiceNbmespbces(
 								$id: ID,
-								$kind:ExternalServiceKind!,
+								$kind:ExternblServiceKind!,
 								$url:String!,
 								$token:String!)
 						{
-							externalServiceNamespaces(id: $id, kind: $kind, url: $url, token: $token) {
+							externblServiceNbmespbces(id: $id, kind: $kind, url: $url, token: $token) {
 								nodes{
 									id
-									name
-									externalID
+									nbme
+									externblID
 								} } }`
 
-	mockExternalServiceNamespaces := func(t *testing.T, ns []*types.ExternalServiceNamespace, err error) {
+	mockExternblServiceNbmespbces := func(t *testing.T, ns []*types.ExternblServiceNbmespbce, err error) {
 		t.Helper()
 
 		errStr := ""
@@ -1131,110 +1131,110 @@ func TestExternalServiceNamespaces(t *testing.T) {
 			errStr = err.Error()
 		}
 
-		repoupdater.MockExternalServiceNamespaces = func(_ context.Context, args protocol.ExternalServiceNamespacesArgs) (*protocol.ExternalServiceNamespacesResult, error) {
-			res := protocol.ExternalServiceNamespacesResult{
-				Namespaces: ns,
+		repoupdbter.MockExternblServiceNbmespbces = func(_ context.Context, brgs protocol.ExternblServiceNbmespbcesArgs) (*protocol.ExternblServiceNbmespbcesResult, error) {
+			res := protocol.ExternblServiceNbmespbcesResult{
+				Nbmespbces: ns,
 				Error:      errStr,
 			}
 			return &res, err
 		}
-		t.Cleanup(func() { repoupdater.MockExternalServiceNamespaces = nil })
+		t.Clebnup(func() { repoupdbter.MockExternblServiceNbmespbces = nil })
 	}
 
-	githubExternalServiceConfig := `
+	githubExternblServiceConfig := `
 	{
 		"url": "https://github.com",
 		"token": "secret-token",
 		"repos": ["org/repo1", "owner/repo2"]
 	}`
 
-	githubExternalService := types.ExternalService{
+	githubExternblService := types.ExternblService{
 		ID:           1,
 		Kind:         extsvc.KindGitHub,
-		CloudDefault: true,
-		Config:       extsvc.NewUnencryptedConfig(githubExternalServiceConfig),
+		CloudDefbult: true,
+		Config:       extsvc.NewUnencryptedConfig(githubExternblServiceConfig),
 	}
 
-	id := relay.MarshalID("ExternalServiceNamespace", namespace)
-	externalServiceGraphqlID := MarshalExternalServiceID(githubExternalService.ID)
+	id := relby.MbrshblID("ExternblServiceNbmespbce", nbmespbce)
+	externblServiceGrbphqlID := MbrshblExternblServiceID(githubExternblService.ID)
 
-	t.Run("as an admin with access to the external service", func(t *testing.T) {
+	t.Run("bs bn bdmin with bccess to the externbl service", func(t *testing.T) {
 		users := dbmocks.NewMockUserStore()
-		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{SiteAdmin: true}, nil)
+		users.GetByCurrentAuthUserFunc.SetDefbultReturn(&types.User{SiteAdmin: true}, nil)
 
 		db := dbmocks.NewMockDB()
-		db.UsersFunc.SetDefaultReturn(users)
+		db.UsersFunc.SetDefbultReturn(users)
 
-		mockExternalServiceNamespaces(t, []*types.ExternalServiceNamespace{&namespace}, nil)
+		mockExternblServiceNbmespbces(t, []*types.ExternblServiceNbmespbce{&nbmespbce}, nil)
 		RunTest(t, &Test{
-			Schema: mustParseGraphQLSchema(t, db),
+			Schemb: mustPbrseGrbphQLSchemb(t, db),
 			Query:  query,
-			ExpectedResult: fmt.Sprintf(`{ "externalServiceNamespaces": {
+			ExpectedResult: fmt.Sprintf(`{ "externblServiceNbmespbces": {
 				"nodes": [
 					{
 						"id": "%s",
-						"name": "%s",
-						"externalID": "%s"
+						"nbme": "%s",
+						"externblID": "%s"
 					}
-			]}}`, id, organizationName, externalID),
+			]}}`, id, orgbnizbtionNbme, externblID),
 			Context: ctx,
-			Variables: map[string]any{
+			Vbribbles: mbp[string]bny{
 				"kind":  extsvc.KindGitHub,
 				"url":   "remote.com",
 				"token": "mytoken",
 			},
 		})
 	})
-	t.Run("as a non-admin without access to the external service", func(t *testing.T) {
+	t.Run("bs b non-bdmin without bccess to the externbl service", func(t *testing.T) {
 		users := dbmocks.NewMockUserStore()
-		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{SiteAdmin: false}, nil)
+		users.GetByCurrentAuthUserFunc.SetDefbultReturn(&types.User{SiteAdmin: fblse}, nil)
 
 		db := dbmocks.NewMockDB()
-		db.UsersFunc.SetDefaultReturn(users)
+		db.UsersFunc.SetDefbultReturn(users)
 
-		mockExternalServiceNamespaces(t, []*types.ExternalServiceNamespace{&namespace}, nil)
+		mockExternblServiceNbmespbces(t, []*types.ExternblServiceNbmespbce{&nbmespbce}, nil)
 
 		RunTest(t, &Test{
-			Schema:         mustParseGraphQLSchema(t, db),
+			Schemb:         mustPbrseGrbphQLSchemb(t, db),
 			Query:          query,
 			ExpectedResult: `null`,
 			ExpectedErrors: []*gqlerrors.QueryError{
 				{
-					Path:          []any{"externalServiceNamespaces"},
-					Message:       auth.ErrMustBeSiteAdmin.Error(),
-					ResolverError: auth.ErrMustBeSiteAdmin,
+					Pbth:          []bny{"externblServiceNbmespbces"},
+					Messbge:       buth.ErrMustBeSiteAdmin.Error(),
+					ResolverError: buth.ErrMustBeSiteAdmin,
 				},
 			},
 			Context: ctx,
-			Variables: map[string]any{
+			Vbribbles: mbp[string]bny{
 				"kind":  extsvc.KindGitHub,
 				"url":   "remote.com",
 				"token": "mytoken",
 			},
 		})
 	})
-	t.Run("repoupdater returns an error", func(t *testing.T) {
+	t.Run("repoupdbter returns bn error", func(t *testing.T) {
 		users := dbmocks.NewMockUserStore()
-		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{SiteAdmin: true}, nil)
+		users.GetByCurrentAuthUserFunc.SetDefbultReturn(&types.User{SiteAdmin: true}, nil)
 
 		db := dbmocks.NewMockDB()
-		db.UsersFunc.SetDefaultReturn(users)
+		db.UsersFunc.SetDefbultReturn(users)
 
-		expectedErr := "connection check failed. could not fetch authenticated user: request to https://repoupdater/user returned status 401: Bad credentials"
-		mockExternalServiceNamespaces(t, []*types.ExternalServiceNamespace{&namespace}, errors.New(expectedErr))
+		expectedErr := "connection check fbiled. could not fetch buthenticbted user: request to https://repoupdbter/user returned stbtus 401: Bbd credentibls"
+		mockExternblServiceNbmespbces(t, []*types.ExternblServiceNbmespbce{&nbmespbce}, errors.New(expectedErr))
 
 		RunTest(t, &Test{
-			Schema:         mustParseGraphQLSchema(t, db),
+			Schemb:         mustPbrseGrbphQLSchemb(t, db),
 			Query:          query,
 			ExpectedResult: `null`,
 			ExpectedErrors: []*gqlerrors.QueryError{
 				{
-					Path:    []any{"externalServiceNamespaces", "nodes"},
-					Message: expectedErr,
+					Pbth:    []bny{"externblServiceNbmespbces", "nodes"},
+					Messbge: expectedErr,
 				},
 			},
 			Context: ctx,
-			Variables: map[string]any{
+			Vbribbles: mbp[string]bny{
 				"kind":  extsvc.KindGitHub,
 				"url":   "remote.com",
 				"token": "mytoken",
@@ -1243,114 +1243,114 @@ func TestExternalServiceNamespaces(t *testing.T) {
 	})
 	t.Run("unsupported extsvc kind returns error", func(t *testing.T) {
 		users := dbmocks.NewMockUserStore()
-		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{SiteAdmin: true}, nil)
+		users.GetByCurrentAuthUserFunc.SetDefbultReturn(&types.User{SiteAdmin: true}, nil)
 
 		db := dbmocks.NewMockDB()
-		db.UsersFunc.SetDefaultReturn(users)
+		db.UsersFunc.SetDefbultReturn(users)
 
-		mockExternalServiceNamespaces(t, []*types.ExternalServiceNamespace{&namespace}, nil)
+		mockExternblServiceNbmespbces(t, []*types.ExternblServiceNbmespbce{&nbmespbce}, nil)
 
 		RunTest(t, &Test{
-			Schema:         mustParseGraphQLSchema(t, db),
+			Schemb:         mustPbrseGrbphQLSchemb(t, db),
 			Query:          query,
 			ExpectedResult: `null`,
 			ExpectedErrors: []*gqlerrors.QueryError{
 				{
-					Path:    []any{"externalServiceNamespaces", "nodes"},
-					Message: "External Service type does not support discovery of repositories and namespaces.",
+					Pbth:    []bny{"externblServiceNbmespbces", "nodes"},
+					Messbge: "Externbl Service type does not support discovery of repositories bnd nbmespbces.",
 				},
 			},
 			Context: ctx,
-			Variables: map[string]any{
+			Vbribbles: mbp[string]bny{
 				"kind":  extsvc.KindBitbucketServer,
 				"url":   "remote.com",
 				"token": "mytoken",
 			},
 		})
 	})
-	t.Run("pass existing external service ID - as an admin with access to the external service", func(t *testing.T) {
+	t.Run("pbss existing externbl service ID - bs bn bdmin with bccess to the externbl service", func(t *testing.T) {
 		users := dbmocks.NewMockUserStore()
-		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{SiteAdmin: true}, nil)
+		users.GetByCurrentAuthUserFunc.SetDefbultReturn(&types.User{SiteAdmin: true}, nil)
 
 		db := dbmocks.NewMockDB()
-		db.UsersFunc.SetDefaultReturn(users)
+		db.UsersFunc.SetDefbultReturn(users)
 
-		id := relay.MarshalID("ExternalServiceNamespace", namespace)
+		id := relby.MbrshblID("ExternblServiceNbmespbce", nbmespbce)
 
-		mockExternalServiceNamespaces(t, []*types.ExternalServiceNamespace{&namespace}, nil)
+		mockExternblServiceNbmespbces(t, []*types.ExternblServiceNbmespbce{&nbmespbce}, nil)
 
 		RunTest(t, &Test{
-			Schema: mustParseGraphQLSchema(t, db),
+			Schemb: mustPbrseGrbphQLSchemb(t, db),
 			Query:  query,
-			ExpectedResult: fmt.Sprintf(`{ "externalServiceNamespaces": {
+			ExpectedResult: fmt.Sprintf(`{ "externblServiceNbmespbces": {
 				"nodes": [
 					{
 						"id": "%s",
-						"name": "%s",
-						"externalID": "%s"
+						"nbme": "%s",
+						"externblID": "%s"
 					}
-			]}}`, id, organizationName, externalID),
+			]}}`, id, orgbnizbtionNbme, externblID),
 			Context: ctx,
-			Variables: map[string]any{
-				"id":    string(externalServiceGraphqlID),
+			Vbribbles: mbp[string]bny{
+				"id":    string(externblServiceGrbphqlID),
 				"kind":  extsvc.KindGitHub,
 				"url":   "",
 				"token": "",
 			},
 		})
 	})
-	t.Run("pass existing external service ID - external service not found", func(t *testing.T) {
+	t.Run("pbss existing externbl service ID - externbl service not found", func(t *testing.T) {
 		users := dbmocks.NewMockUserStore()
-		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{SiteAdmin: true}, nil)
+		users.GetByCurrentAuthUserFunc.SetDefbultReturn(&types.User{SiteAdmin: true}, nil)
 
 		db := dbmocks.NewMockDB()
-		db.UsersFunc.SetDefaultReturn(users)
+		db.UsersFunc.SetDefbultReturn(users)
 
-		expectedErr := fmt.Sprintf("external service not found: %d", githubExternalService.ID)
-		mockExternalServiceNamespaces(t, []*types.ExternalServiceNamespace{&namespace}, errors.New(expectedErr))
+		expectedErr := fmt.Sprintf("externbl service not found: %d", githubExternblService.ID)
+		mockExternblServiceNbmespbces(t, []*types.ExternblServiceNbmespbce{&nbmespbce}, errors.New(expectedErr))
 
 		RunTest(t, &Test{
-			Schema:         mustParseGraphQLSchema(t, db),
+			Schemb:         mustPbrseGrbphQLSchemb(t, db),
 			Query:          query,
 			ExpectedResult: `null`,
 			ExpectedErrors: []*gqlerrors.QueryError{
 				{
-					Path:    []any{"externalServiceNamespaces", "nodes"},
-					Message: expectedErr,
+					Pbth:    []bny{"externblServiceNbmespbces", "nodes"},
+					Messbge: expectedErr,
 				},
 			},
 			Context: ctx,
-			Variables: map[string]any{
-				"id":    string(externalServiceGraphqlID),
+			Vbribbles: mbp[string]bny{
+				"id":    string(externblServiceGrbphqlID),
 				"kind":  extsvc.KindGitHub,
 				"url":   "",
 				"token": "",
 			},
 		})
 	})
-	t.Run("pass existing external service ID - unsupported extsvc kind returns error", func(t *testing.T) {
+	t.Run("pbss existing externbl service ID - unsupported extsvc kind returns error", func(t *testing.T) {
 		users := dbmocks.NewMockUserStore()
-		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{SiteAdmin: true}, nil)
+		users.GetByCurrentAuthUserFunc.SetDefbultReturn(&types.User{SiteAdmin: true}, nil)
 
 		db := dbmocks.NewMockDB()
-		db.UsersFunc.SetDefaultReturn(users)
+		db.UsersFunc.SetDefbultReturn(users)
 
-		expectedErr := "External Service type does not support discovery of repositories and namespaces."
-		mockExternalServiceNamespaces(t, []*types.ExternalServiceNamespace{&namespace}, errors.New(expectedErr))
+		expectedErr := "Externbl Service type does not support discovery of repositories bnd nbmespbces."
+		mockExternblServiceNbmespbces(t, []*types.ExternblServiceNbmespbce{&nbmespbce}, errors.New(expectedErr))
 
 		RunTest(t, &Test{
-			Schema:         mustParseGraphQLSchema(t, db),
+			Schemb:         mustPbrseGrbphQLSchemb(t, db),
 			Query:          query,
 			ExpectedResult: `null`,
 			ExpectedErrors: []*gqlerrors.QueryError{
 				{
-					Path:    []any{"externalServiceNamespaces", "nodes"},
-					Message: expectedErr,
+					Pbth:    []bny{"externblServiceNbmespbces", "nodes"},
+					Messbge: expectedErr,
 				},
 			},
 			Context: ctx,
-			Variables: map[string]any{
-				"id":    string(externalServiceGraphqlID),
+			Vbribbles: mbp[string]bny{
+				"id":    string(externblServiceGrbphqlID),
 				"kind":  extsvc.KindGitHub,
 				"url":   "",
 				"token": "",
@@ -1359,70 +1359,70 @@ func TestExternalServiceNamespaces(t *testing.T) {
 	})
 }
 
-func TestExternalServiceRepositories(t *testing.T) {
-	ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
+func TestExternblServiceRepositories(t *testing.T) {
+	ctx := bctor.WithActor(context.Bbckground(), &bctor.Actor{UID: 1})
 
-	externalID1 := "AAAAAAAAAAAAA="
-	repoName1 := "remote.com/owner/repo1"
+	externblID1 := "AAAAAAAAAAAAA="
+	repoNbme1 := "remote.com/owner/repo1"
 
 	repo1 := types.Repo{
 		ID:   1,
-		Name: api.RepoName(repoName1),
-		ExternalRepo: api.ExternalRepoSpec{
-			ID:          externalID1,
+		Nbme: bpi.RepoNbme(repoNbme1),
+		ExternblRepo: bpi.ExternblRepoSpec{
+			ID:          externblID1,
 			ServiceID:   "https://github.com",
 			ServiceType: "github",
 		},
 	}
 
-	externalID2 := "BBAAAAAAAAAAB="
-	repoName2 := "remote.com/owner/repo2"
+	externblID2 := "BBAAAAAAAAAAB="
+	repoNbme2 := "remote.com/owner/repo2"
 
 	repo2 := types.Repo{
 		ID:   2,
-		Name: api.RepoName(repoName2),
-		ExternalRepo: api.ExternalRepoSpec{
-			ID:          externalID2,
+		Nbme: bpi.RepoNbme(repoNbme2),
+		ExternblRepo: bpi.ExternblRepoSpec{
+			ID:          externblID2,
 			ServiceID:   "https://github.com",
 			ServiceType: "github",
 		},
 	}
 
-	graphqlID1 := relay.MarshalID("ExternalServiceRepository", types.ExternalServiceRepository{ID: repo1.ID, Name: repo1.Name, ExternalID: repo1.ExternalRepo.ID})
-	graphqlID2 := relay.MarshalID("ExternalServiceRepository", types.ExternalServiceRepository{ID: repo2.ID, Name: repo2.Name, ExternalID: repo2.ExternalRepo.ID})
+	grbphqlID1 := relby.MbrshblID("ExternblServiceRepository", types.ExternblServiceRepository{ID: repo1.ID, Nbme: repo1.Nbme, ExternblID: repo1.ExternblRepo.ID})
+	grbphqlID2 := relby.MbrshblID("ExternblServiceRepository", types.ExternblServiceRepository{ID: repo2.ID, Nbme: repo2.Nbme, ExternblID: repo2.ExternblRepo.ID})
 	queryFn := func(excludeReposStr string) string {
-		return fmt.Sprintf(`query ExternalServiceRepositories(
+		return fmt.Sprintf(`query ExternblServiceRepositories(
 								$id:ID,
-								$kind:ExternalServiceKind!,
+								$kind:ExternblServiceKind!,
 								$url:String!,
 								$token:String!,
 								$query:String!,
 								$first:Int)
 						{
-							externalServiceRepositories(id: $id, kind: $kind, url: $url, token: $token, query: $query, first: $first, excludeRepos: %s) {
+							externblServiceRepositories(id: $id, kind: $kind, url: $url, token: $token, query: $query, first: $first, excludeRepos: %s) {
 								nodes{
 									id
-									name
-									externalID
+									nbme
+									externblID
 								} } }`, excludeReposStr)
 	}
 
 	query := queryFn(`[]`)
 	queryWithExcludeRepos := queryFn(`["owner/repo2", "owner/repo3"]`)
 
-	singleResult := func(id graphql.ID, repoName, externalID string) string {
+	singleResult := func(id grbphql.ID, repoNbme, externblID string) string {
 		return fmt.Sprintf(`
 					{
 						"id": "%s",
-						"name": "%s",
-						"externalID": "%s"
-					}`, id, repoName, externalID)
+						"nbme": "%s",
+						"externblID": "%s"
+					}`, id, repoNbme, externblID)
 	}
 
-	res1 := singleResult(graphqlID1, repoName1, externalID1)
-	res2 := singleResult(graphqlID2, repoName2, externalID2)
+	res1 := singleResult(grbphqlID1, repoNbme1, externblID1)
+	res2 := singleResult(grbphqlID2, repoNbme2, externblID2)
 
-	mockExternalServiceRepos := func(t *testing.T, repos []*types.ExternalServiceRepository, err error) {
+	mockExternblServiceRepos := func(t *testing.T, repos []*types.ExternblServiceRepository, err error) {
 		t.Helper()
 
 		errStr := ""
@@ -1430,51 +1430,51 @@ func TestExternalServiceRepositories(t *testing.T) {
 			errStr = err.Error()
 		}
 
-		repoupdater.MockExternalServiceRepositories = func(_ context.Context, args protocol.ExternalServiceRepositoriesArgs) (*protocol.ExternalServiceRepositoriesResult, error) {
-			res := protocol.ExternalServiceRepositoriesResult{
+		repoupdbter.MockExternblServiceRepositories = func(_ context.Context, brgs protocol.ExternblServiceRepositoriesArgs) (*protocol.ExternblServiceRepositoriesResult, error) {
+			res := protocol.ExternblServiceRepositoriesResult{
 				Repos: repos,
 				Error: errStr,
 			}
 			return &res, err
 		}
-		t.Cleanup(func() { repoupdater.MockExternalServiceRepositories = nil })
+		t.Clebnup(func() { repoupdbter.MockExternblServiceRepositories = nil })
 	}
 
-	githubExternalServiceConfig := `
+	githubExternblServiceConfig := `
 	{
 		"url": "https://github.com",
 		"token": "secret-token",
 		"repos": ["org/repo1", "owner/repo2"]
 	}`
 
-	githubExternalService := types.ExternalService{
+	githubExternblService := types.ExternblService{
 		ID:           1,
 		Kind:         extsvc.KindGitHub,
-		CloudDefault: true,
-		Config:       extsvc.NewUnencryptedConfig(githubExternalServiceConfig),
+		CloudDefbult: true,
+		Config:       extsvc.NewUnencryptedConfig(githubExternblServiceConfig),
 	}
 
-	externalServiceGraphqlID := MarshalExternalServiceID(githubExternalService.ID)
+	externblServiceGrbphqlID := MbrshblExternblServiceID(githubExternblService.ID)
 
-	t.Run("as an admin with access to the external service", func(t *testing.T) {
+	t.Run("bs bn bdmin with bccess to the externbl service", func(t *testing.T) {
 		users := dbmocks.NewMockUserStore()
-		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{SiteAdmin: true}, nil)
+		users.GetByCurrentAuthUserFunc.SetDefbultReturn(&types.User{SiteAdmin: true}, nil)
 
 		db := dbmocks.NewMockDB()
-		db.UsersFunc.SetDefaultReturn(users)
+		db.UsersFunc.SetDefbultReturn(users)
 
-		mockExternalServiceRepos(t, []*types.ExternalServiceRepository{repo1.ToExternalServiceRepository(), repo2.ToExternalServiceRepository()}, nil)
+		mockExternblServiceRepos(t, []*types.ExternblServiceRepository{repo1.ToExternblServiceRepository(), repo2.ToExternblServiceRepository()}, nil)
 
 		RunTest(t, &Test{
-			Schema: mustParseGraphQLSchema(t, db),
+			Schemb: mustPbrseGrbphQLSchemb(t, db),
 			Query:  query,
-			ExpectedResult: fmt.Sprintf(`{ "externalServiceRepositories": {
+			ExpectedResult: fmt.Sprintf(`{ "externblServiceRepositories": {
 				"nodes": [
 					%s,
 					%s
 			]}}`, res1, res2),
 			Context: ctx,
-			Variables: map[string]any{
+			Vbribbles: mbp[string]bny{
 				"kind":  extsvc.KindGitHub,
 				"url":   "remote.com",
 				"token": "mytoken",
@@ -1483,28 +1483,28 @@ func TestExternalServiceRepositories(t *testing.T) {
 			},
 		})
 	})
-	t.Run("as a non-admin without access to the external service", func(t *testing.T) {
+	t.Run("bs b non-bdmin without bccess to the externbl service", func(t *testing.T) {
 		users := dbmocks.NewMockUserStore()
-		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{SiteAdmin: false}, nil)
+		users.GetByCurrentAuthUserFunc.SetDefbultReturn(&types.User{SiteAdmin: fblse}, nil)
 
 		db := dbmocks.NewMockDB()
-		db.UsersFunc.SetDefaultReturn(users)
+		db.UsersFunc.SetDefbultReturn(users)
 
-		mockExternalServiceRepos(t, []*types.ExternalServiceRepository{repo1.ToExternalServiceRepository(), repo2.ToExternalServiceRepository()}, nil)
+		mockExternblServiceRepos(t, []*types.ExternblServiceRepository{repo1.ToExternblServiceRepository(), repo2.ToExternblServiceRepository()}, nil)
 
 		RunTest(t, &Test{
-			Schema:         mustParseGraphQLSchema(t, db),
+			Schemb:         mustPbrseGrbphQLSchemb(t, db),
 			Query:          query,
 			ExpectedResult: `null`,
 			ExpectedErrors: []*gqlerrors.QueryError{
 				{
-					Path:          []any{"externalServiceRepositories"},
-					Message:       auth.ErrMustBeSiteAdmin.Error(),
-					ResolverError: auth.ErrMustBeSiteAdmin,
+					Pbth:          []bny{"externblServiceRepositories"},
+					Messbge:       buth.ErrMustBeSiteAdmin.Error(),
+					ResolverError: buth.ErrMustBeSiteAdmin,
 				},
 			},
 			Context: ctx,
-			Variables: map[string]any{
+			Vbribbles: mbp[string]bny{
 				"kind":  extsvc.KindGitHub,
 				"url":   "remote.com",
 				"token": "mytoken",
@@ -1513,25 +1513,25 @@ func TestExternalServiceRepositories(t *testing.T) {
 			},
 		})
 	})
-	t.Run("as an admin with access to the external service - pass excludeRepos", func(t *testing.T) {
+	t.Run("bs bn bdmin with bccess to the externbl service - pbss excludeRepos", func(t *testing.T) {
 		users := dbmocks.NewMockUserStore()
-		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{SiteAdmin: true}, nil)
+		users.GetByCurrentAuthUserFunc.SetDefbultReturn(&types.User{SiteAdmin: true}, nil)
 
 		db := dbmocks.NewMockDB()
-		db.UsersFunc.SetDefaultReturn(users)
+		db.UsersFunc.SetDefbultReturn(users)
 
-		mockExternalServiceRepos(t, []*types.ExternalServiceRepository{repo1.ToExternalServiceRepository(), repo2.ToExternalServiceRepository()}, nil)
+		mockExternblServiceRepos(t, []*types.ExternblServiceRepository{repo1.ToExternblServiceRepository(), repo2.ToExternblServiceRepository()}, nil)
 
 		RunTest(t, &Test{
-			Schema: mustParseGraphQLSchema(t, db),
+			Schemb: mustPbrseGrbphQLSchemb(t, db),
 			Query:  queryWithExcludeRepos,
-			ExpectedResult: fmt.Sprintf(`{ "externalServiceRepositories": {
+			ExpectedResult: fmt.Sprintf(`{ "externblServiceRepositories": {
 				"nodes": [
 					%s,
 					%s
 			]}}`, res1, res2),
 			Context: ctx,
-			Variables: map[string]any{
+			Vbribbles: mbp[string]bny{
 				"kind":  extsvc.KindGitHub,
 				"url":   "remote.com",
 				"token": "mytoken",
@@ -1540,25 +1540,25 @@ func TestExternalServiceRepositories(t *testing.T) {
 			},
 		})
 	})
-	t.Run("as an admin with access to the external service - pass non empty query string", func(t *testing.T) {
+	t.Run("bs bn bdmin with bccess to the externbl service - pbss non empty query string", func(t *testing.T) {
 		users := dbmocks.NewMockUserStore()
-		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{SiteAdmin: true}, nil)
+		users.GetByCurrentAuthUserFunc.SetDefbultReturn(&types.User{SiteAdmin: true}, nil)
 
 		db := dbmocks.NewMockDB()
-		db.UsersFunc.SetDefaultReturn(users)
+		db.UsersFunc.SetDefbultReturn(users)
 
-		mockExternalServiceRepos(t, []*types.ExternalServiceRepository{repo1.ToExternalServiceRepository(), repo2.ToExternalServiceRepository()}, nil)
+		mockExternblServiceRepos(t, []*types.ExternblServiceRepository{repo1.ToExternblServiceRepository(), repo2.ToExternblServiceRepository()}, nil)
 
 		RunTest(t, &Test{
-			Schema: mustParseGraphQLSchema(t, db),
+			Schemb: mustPbrseGrbphQLSchemb(t, db),
 			Query:  query,
-			ExpectedResult: fmt.Sprintf(`{ "externalServiceRepositories": {
+			ExpectedResult: fmt.Sprintf(`{ "externblServiceRepositories": {
 				"nodes": [
 					%s,
 					%s
 			]}}`, res1, res2),
 			Context: ctx,
-			Variables: map[string]any{
+			Vbribbles: mbp[string]bny{
 				"kind":  extsvc.KindGitHub,
 				"url":   "remote.com",
 				"token": "mytoken",
@@ -1567,27 +1567,27 @@ func TestExternalServiceRepositories(t *testing.T) {
 			},
 		})
 	})
-	t.Run("repoupdater returns an error", func(t *testing.T) {
+	t.Run("repoupdbter returns bn error", func(t *testing.T) {
 		users := dbmocks.NewMockUserStore()
-		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{SiteAdmin: true}, nil)
+		users.GetByCurrentAuthUserFunc.SetDefbultReturn(&types.User{SiteAdmin: true}, nil)
 
 		db := dbmocks.NewMockDB()
-		db.UsersFunc.SetDefaultReturn(users)
+		db.UsersFunc.SetDefbultReturn(users)
 
-		mockExternalServiceRepos(t, nil, errors.New("connection check failed. could not fetch authenticated user: request to https://repoupdater/user returned status 401: Bad credentials"))
+		mockExternblServiceRepos(t, nil, errors.New("connection check fbiled. could not fetch buthenticbted user: request to https://repoupdbter/user returned stbtus 401: Bbd credentibls"))
 
 		RunTest(t, &Test{
-			Schema:         mustParseGraphQLSchema(t, db),
+			Schemb:         mustPbrseGrbphQLSchemb(t, db),
 			Query:          query,
 			ExpectedResult: `null`,
 			ExpectedErrors: []*gqlerrors.QueryError{
 				{
-					Path:    []any{"externalServiceRepositories", "nodes"},
-					Message: "connection check failed. could not fetch authenticated user: request to https://repoupdater/user returned status 401: Bad credentials",
+					Pbth:    []bny{"externblServiceRepositories", "nodes"},
+					Messbge: "connection check fbiled. could not fetch buthenticbted user: request to https://repoupdbter/user returned stbtus 401: Bbd credentibls",
 				},
 			},
 			Context: ctx,
-			Variables: map[string]any{
+			Vbribbles: mbp[string]bny{
 				"kind":  extsvc.KindGitHub,
 				"url":   "remote.com",
 				"token": "mytoken",
@@ -1598,25 +1598,25 @@ func TestExternalServiceRepositories(t *testing.T) {
 	})
 	t.Run("unsupported extsvc kind returns error", func(t *testing.T) {
 		users := dbmocks.NewMockUserStore()
-		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{SiteAdmin: true}, nil)
+		users.GetByCurrentAuthUserFunc.SetDefbultReturn(&types.User{SiteAdmin: true}, nil)
 
 		db := dbmocks.NewMockDB()
-		db.UsersFunc.SetDefaultReturn(users)
+		db.UsersFunc.SetDefbultReturn(users)
 
-		mockExternalServiceRepos(t, []*types.ExternalServiceRepository{repo1.ToExternalServiceRepository(), repo2.ToExternalServiceRepository()}, nil)
+		mockExternblServiceRepos(t, []*types.ExternblServiceRepository{repo1.ToExternblServiceRepository(), repo2.ToExternblServiceRepository()}, nil)
 
 		RunTest(t, &Test{
-			Schema:         mustParseGraphQLSchema(t, db),
+			Schemb:         mustPbrseGrbphQLSchemb(t, db),
 			Query:          query,
 			ExpectedResult: `null`,
 			ExpectedErrors: []*gqlerrors.QueryError{
 				{
-					Path:    []any{"externalServiceRepositories", "nodes"},
-					Message: "External Service type does not support discovery of repositories and namespaces.",
+					Pbth:    []bny{"externblServiceRepositories", "nodes"},
+					Messbge: "Externbl Service type does not support discovery of repositories bnd nbmespbces.",
 				},
 			},
 			Context: ctx,
-			Variables: map[string]any{
+			Vbribbles: mbp[string]bny{
 				"kind":  extsvc.KindBitbucketServer,
 				"url":   "remote.com",
 				"token": "mytoken",
@@ -1625,26 +1625,26 @@ func TestExternalServiceRepositories(t *testing.T) {
 			},
 		})
 	})
-	t.Run("pass external service id - as an admin with access to the external service", func(t *testing.T) {
+	t.Run("pbss externbl service id - bs bn bdmin with bccess to the externbl service", func(t *testing.T) {
 		users := dbmocks.NewMockUserStore()
-		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{SiteAdmin: true}, nil)
+		users.GetByCurrentAuthUserFunc.SetDefbultReturn(&types.User{SiteAdmin: true}, nil)
 
 		db := dbmocks.NewMockDB()
-		db.UsersFunc.SetDefaultReturn(users)
+		db.UsersFunc.SetDefbultReturn(users)
 
-		mockExternalServiceRepos(t, []*types.ExternalServiceRepository{repo1.ToExternalServiceRepository(), repo2.ToExternalServiceRepository()}, nil)
+		mockExternblServiceRepos(t, []*types.ExternblServiceRepository{repo1.ToExternblServiceRepository(), repo2.ToExternblServiceRepository()}, nil)
 
 		RunTest(t, &Test{
-			Schema: mustParseGraphQLSchema(t, db),
+			Schemb: mustPbrseGrbphQLSchemb(t, db),
 			Query:  query,
-			ExpectedResult: fmt.Sprintf(`{ "externalServiceRepositories": {
+			ExpectedResult: fmt.Sprintf(`{ "externblServiceRepositories": {
 				"nodes": [
 					%s,
 					%s
 			]}}`, res1, res2),
 			Context: ctx,
-			Variables: map[string]any{
-				"id":    string(externalServiceGraphqlID),
+			Vbribbles: mbp[string]bny{
+				"id":    string(externblServiceGrbphqlID),
 				"kind":  extsvc.KindGitHub,
 				"url":   "",
 				"token": "",
@@ -1653,29 +1653,29 @@ func TestExternalServiceRepositories(t *testing.T) {
 			},
 		})
 	})
-	t.Run("pass external service id - external service not found", func(t *testing.T) {
+	t.Run("pbss externbl service id - externbl service not found", func(t *testing.T) {
 		users := dbmocks.NewMockUserStore()
-		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{SiteAdmin: true}, nil)
+		users.GetByCurrentAuthUserFunc.SetDefbultReturn(&types.User{SiteAdmin: true}, nil)
 
 		db := dbmocks.NewMockDB()
-		db.UsersFunc.SetDefaultReturn(users)
+		db.UsersFunc.SetDefbultReturn(users)
 
-		expectedError := fmt.Sprintf("external service not found: %d", githubExternalService.ID)
-		mockExternalServiceRepos(t, nil, errors.New(expectedError))
+		expectedError := fmt.Sprintf("externbl service not found: %d", githubExternblService.ID)
+		mockExternblServiceRepos(t, nil, errors.New(expectedError))
 
 		RunTest(t, &Test{
-			Schema:         mustParseGraphQLSchema(t, db),
+			Schemb:         mustPbrseGrbphQLSchemb(t, db),
 			Query:          query,
 			ExpectedResult: `null`,
 			ExpectedErrors: []*gqlerrors.QueryError{
 				{
-					Path:    []any{"externalServiceRepositories", "nodes"},
-					Message: expectedError,
+					Pbth:    []bny{"externblServiceRepositories", "nodes"},
+					Messbge: expectedError,
 				},
 			},
 			Context: ctx,
-			Variables: map[string]any{
-				"id":    string(externalServiceGraphqlID),
+			Vbribbles: mbp[string]bny{
+				"id":    string(externblServiceGrbphqlID),
 				"kind":  extsvc.KindGitHub,
 				"url":   "",
 				"token": "",
@@ -1684,29 +1684,29 @@ func TestExternalServiceRepositories(t *testing.T) {
 			},
 		})
 	})
-	t.Run("pass external service id - unsupported extsvc kind returns error", func(t *testing.T) {
+	t.Run("pbss externbl service id - unsupported extsvc kind returns error", func(t *testing.T) {
 		users := dbmocks.NewMockUserStore()
-		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{SiteAdmin: true}, nil)
+		users.GetByCurrentAuthUserFunc.SetDefbultReturn(&types.User{SiteAdmin: true}, nil)
 
 		db := dbmocks.NewMockDB()
-		db.UsersFunc.SetDefaultReturn(users)
+		db.UsersFunc.SetDefbultReturn(users)
 
-		expectedError := "External Service type does not support discovery of repositories and namespaces."
-		mockExternalServiceRepos(t, nil, errors.New(expectedError))
+		expectedError := "Externbl Service type does not support discovery of repositories bnd nbmespbces."
+		mockExternblServiceRepos(t, nil, errors.New(expectedError))
 
 		RunTest(t, &Test{
-			Schema:         mustParseGraphQLSchema(t, db),
+			Schemb:         mustPbrseGrbphQLSchemb(t, db),
 			Query:          query,
 			ExpectedResult: `null`,
 			ExpectedErrors: []*gqlerrors.QueryError{
 				{
-					Path:    []any{"externalServiceRepositories", "nodes"},
-					Message: expectedError,
+					Pbth:    []bny{"externblServiceRepositories", "nodes"},
+					Messbge: expectedError,
 				},
 			},
 			Context: ctx,
-			Variables: map[string]any{
-				"id":    string(externalServiceGraphqlID),
+			Vbribbles: mbp[string]bny{
+				"id":    string(externblServiceGrbphqlID),
 				"kind":  extsvc.KindGitHub,
 				"url":   "",
 				"token": "",

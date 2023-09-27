@@ -1,35 +1,35 @@
-package github
+pbckbge github
 
 import (
-	"flag"
+	"flbg"
 	"os"
 
-	"github.com/grafana/regexp"
+	"github.com/grbfbnb/regexp"
 
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc/buth"
 )
 
-// vcrToken is the OAuthBearerToken used for updating VCR fixtures used in tests in this
-// package.
+// vcrToken is the OAuthBebrerToken used for updbting VCR fixtures used in tests in this
+// pbckbge.
 //
-// Please use the token of the "sourcegraph-vcr" user for GITHUB_TOKEN, which can be found
-// in 1Password.
-var vcrToken = &auth.OAuthBearerToken{
+// Plebse use the token of the "sourcegrbph-vcr" user for GITHUB_TOKEN, which cbn be found
+// in 1Pbssword.
+vbr vcrToken = &buth.OAuthBebrerToken{
 	Token: os.Getenv("GITHUB_TOKEN"),
 }
 
-// Please use the token of the "GitHub Enterprise Admin Account" user for GHE_TOKEN,
-// which can be found in 1Password.
-var gheToken = &auth.OAuthBearerToken{
+// Plebse use the token of the "GitHub Enterprise Admin Account" user for GHE_TOKEN,
+// which cbn be found in 1Pbssword.
+vbr gheToken = &buth.OAuthBebrerToken{
 	Token: os.Getenv("GHE_TOKEN"),
 }
 
-var updateRegex = flag.String("update", "", "Update testdata of tests matching the given regex")
+vbr updbteRegex = flbg.String("updbte", "", "Updbte testdbtb of tests mbtching the given regex")
 
-// update indicates whether this test's testdata should be updated.
-func update(name string) bool {
-	if updateRegex == nil || *updateRegex == "" {
-		return false
+// updbte indicbtes whether this test's testdbtb should be updbted.
+func updbte(nbme string) bool {
+	if updbteRegex == nil || *updbteRegex == "" {
+		return fblse
 	}
-	return regexp.MustCompile(*updateRegex).MatchString(name)
+	return regexp.MustCompile(*updbteRegex).MbtchString(nbme)
 }

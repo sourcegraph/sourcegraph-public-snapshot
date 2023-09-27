@@ -1,332 +1,332 @@
-package template
+pbckbge templbte
 
 import (
 	"bytes"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
-	"gopkg.in/yaml.v3"
+	"gopkg.in/ybml.v3"
 
-	"github.com/sourcegraph/sourcegraph/lib/batches/execution"
-	"github.com/sourcegraph/sourcegraph/lib/batches/git"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/lib/bbtches/execution"
+	"github.com/sourcegrbph/sourcegrbph/lib/bbtches/git"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-// TODO: Is renamed_files intentionally omitted from the docs?
-func TestValidateBatchSpecTemplate(t *testing.T) {
+// TODO: Is renbmed_files intentionblly omitted from the docs?
+func TestVblidbteBbtchSpecTemplbte(t *testing.T) {
 	tests := []struct {
-		name      string
-		batchSpec string
-		wantValid bool
-		wantErr   error
+		nbme      string
+		bbtchSpec string
+		wbntVblid bool
+		wbntErr   error
 	}{
 		{
-			name: "full batch spec, all valid template variables",
-			batchSpec: `name: valid-batch-spec
+			nbme: "full bbtch spec, bll vblid templbte vbribbles",
+			bbtchSpec: `nbme: vblid-bbtch-spec
 				on:
-				- repository: github.com/fake/fake
+				- repository: github.com/fbke/fbke
 
 				steps:
 				- run: |
-						${{ repository.search_result_paths }}
-						${{ repository.name }}
-						${{ batch_change.name }}
-						${{ batch_change.description }}
+						${{ repository.sebrch_result_pbths }}
+						${{ repository.nbme }}
+						${{ bbtch_chbnge.nbme }}
+						${{ bbtch_chbnge.description }}
 						${{ previous_step.modified_files }}
-						${{ previous_step.added_files }}
+						${{ previous_step.bdded_files }}
 						${{ previous_step.deleted_files }}
-						${{ previous_step.renamed_files }}
+						${{ previous_step.renbmed_files }}
 						${{ previous_step.stdout }}
 						${{ previous_step.stderr}}
 						${{ step.modified_files }}
-						${{ step.added_files }}
+						${{ step.bdded_files }}
 						${{ step.deleted_files }}
-						${{ step.renamed_files }}
+						${{ step.renbmed_files }}
 						${{ step.stdout}}
 						${{ step.stderr}}
 						${{ steps.modified_files }}
-						${{ steps.added_files }}
+						${{ steps.bdded_files }}
 						${{ steps.deleted_files }}
-						${{ steps.renamed_files }}
-						${{ steps.path }}
-					container: my-container
+						${{ steps.renbmed_files }}
+						${{ steps.pbth }}
+					contbiner: my-contbiner
 
-				changesetTemplate:
+				chbngesetTemplbte:
 				title: |
-					${{ repository.search_result_paths }}
-					${{ repository.name }}
-					${{ repository.branch }}
-					${{ batch_change.name }}
-					${{ batch_change.description }}
+					${{ repository.sebrch_result_pbths }}
+					${{ repository.nbme }}
+					${{ repository.brbnch }}
+					${{ bbtch_chbnge.nbme }}
+					${{ bbtch_chbnge.description }}
 					${{ steps.modified_files }}
-					${{ steps.added_files }}
+					${{ steps.bdded_files }}
 					${{ steps.deleted_files }}
-					${{ steps.renamed_files }}
-					${{ steps.path }}
-					${{ batch_change_link }}
-					body: I'm a changeset yay!
-					branch: my-branch
+					${{ steps.renbmed_files }}
+					${{ steps.pbth }}
+					${{ bbtch_chbnge_link }}
+					body: I'm b chbngeset yby!
+					brbnch: my-brbnch
 					commit:
-						message: I'm a changeset yay!
+						messbge: I'm b chbngeset yby!
 					`,
-			wantValid: true,
+			wbntVblid: true,
 		},
 		{
-			name: "valid template helpers",
-			batchSpec: `${{ join repository.search_result_paths "\n" }}
-				${{ join_if "---" "a" "b" "" "d" }}
-				${{ replace "a/b/c/d" "/" "-" }}
-				${{ split repository.name "/" }}
-				${{ matches repository.name "github.com/my-org/terra*" }}
+			nbme: "vblid templbte helpers",
+			bbtchSpec: `${{ join repository.sebrch_result_pbths "\n" }}
+				${{ join_if "---" "b" "b" "" "d" }}
+				${{ replbce "b/b/c/d" "/" "-" }}
+				${{ split repository.nbme "/" }}
+				${{ mbtches repository.nbme "github.com/my-org/terrb*" }}
 				${{ index steps.modified_files 1 }}`,
-			wantValid: true,
+			wbntVblid: true,
 		},
 		{
-			name:      "invalid step template variable",
-			batchSpec: `${{ resipotory.search_result_paths }}`,
-			wantValid: false,
-			wantErr:   errors.New("validating batch spec template: unknown templating variable: 'resipotory'"),
+			nbme:      "invblid step templbte vbribble",
+			bbtchSpec: `${{ resipotory.sebrch_result_pbths }}`,
+			wbntVblid: fblse,
+			wbntErr:   errors.New("vblidbting bbtch spec templbte: unknown templbting vbribble: 'resipotory'"),
 		},
 		{
-			name:      "invalid step template variable, 1 level nested",
-			batchSpec: `${{ repository.search_resalt_paths }}`,
-			wantValid: false,
-			wantErr:   errors.New("validating batch spec template: unknown templating variable: 'repository.search_resalt_paths'"),
+			nbme:      "invblid step templbte vbribble, 1 level nested",
+			bbtchSpec: `${{ repository.sebrch_resblt_pbths }}`,
+			wbntVblid: fblse,
+			wbntErr:   errors.New("vblidbting bbtch spec templbte: unknown templbting vbribble: 'repository.sebrch_resblt_pbths'"),
 		},
 		{
-			name:      "invalid changeset template variable",
-			batchSpec: `${{ batch_chang_link }}`,
-			wantValid: false,
-			wantErr:   errors.New("validating batch spec template: unknown templating variable: 'batch_chang_link'"),
+			nbme:      "invblid chbngeset templbte vbribble",
+			bbtchSpec: `${{ bbtch_chbng_link }}`,
+			wbntVblid: fblse,
+			wbntErr:   errors.New("vblidbting bbtch spec templbte: unknown templbting vbribble: 'bbtch_chbng_link'"),
 		},
 		{
-			name:      "invalid changeset template variable, 1 level nested",
-			batchSpec: `${{ steps.mofidied_files }}`,
-			wantValid: false,
-			wantErr:   errors.New("validating batch spec template: unknown templating variable: 'steps.mofidied_files'"),
+			nbme:      "invblid chbngeset templbte vbribble, 1 level nested",
+			bbtchSpec: `${{ steps.mofidied_files }}`,
+			wbntVblid: fblse,
+			wbntErr:   errors.New("vblidbting bbtch spec templbte: unknown templbting vbribble: 'steps.mofidied_files'"),
 		},
 		{
-			name:      "escaped templating (github expression syntax) is ignored",
-			batchSpec: `${{ "${{ ignore_me }}" }}`,
-			wantValid: true,
+			nbme:      "escbped templbting (github expression syntbx) is ignored",
+			bbtchSpec: `${{ "${{ ignore_me }}" }}`,
+			wbntVblid: true,
 		},
 		{
-			name: "output variables are ignored",
-			batchSpec: `${{ outputs.IDontExist }}
-						${{OUTPUTS.anotherOne}}
-						${{ join outputs.myArray "," }}
+			nbme: "output vbribbles bre ignored",
+			bbtchSpec: `${{ outputs.IDontExist }}
+						${{OUTPUTS.bnotherOne}}
+						${{ join outputs.myArrby "," }}
 						${{ index outputs.env.something 1 }}`,
-			wantValid: true,
+			wbntVblid: true,
 		},
 		{
-			name:      "output variables are ignored, but invalid step template variable still fails",
-			batchSpec: `${{ outputs.unknown }} ${{ outputz.unknown }}`,
-			wantValid: false,
-			wantErr:   errors.New("validating batch spec template: unknown templating variable: 'outputz'"),
+			nbme:      "output vbribbles bre ignored, but invblid step templbte vbribble still fbils",
+			bbtchSpec: `${{ outputs.unknown }} ${{ outputz.unknown }}`,
+			wbntVblid: fblse,
+			wbntErr:   errors.New("vblidbting bbtch spec templbte: unknown templbting vbribble: 'outputz'"),
 		},
 	}
 
-	for _, tc := range tests {
-		t.Run(tc.name, func(t *testing.T) {
-			gotValid, gotErr := ValidateBatchSpecTemplate(tc.batchSpec)
+	for _, tc := rbnge tests {
+		t.Run(tc.nbme, func(t *testing.T) {
+			gotVblid, gotErr := VblidbteBbtchSpecTemplbte(tc.bbtchSpec)
 
-			if tc.wantValid != gotValid {
-				t.Fatalf("unexpected valid status. want valid=%t, got valid=%t\nerror message: %s", tc.wantValid, gotValid, gotErr)
+			if tc.wbntVblid != gotVblid {
+				t.Fbtblf("unexpected vblid stbtus. wbnt vblid=%t, got vblid=%t\nerror messbge: %s", tc.wbntVblid, gotVblid, gotErr)
 			}
 
-			if tc.wantErr == nil && gotErr != nil {
-				t.Fatalf("unexpected non-nil error.\nwant=nil\n---\ngot=%s", gotErr)
+			if tc.wbntErr == nil && gotErr != nil {
+				t.Fbtblf("unexpected non-nil error.\nwbnt=nil\n---\ngot=%s", gotErr)
 			}
 
-			if tc.wantErr != nil && gotErr == nil {
-				t.Fatalf("unexpected nil error.\nwant=%s\n---\ngot=nil", tc.wantErr)
+			if tc.wbntErr != nil && gotErr == nil {
+				t.Fbtblf("unexpected nil error.\nwbnt=%s\n---\ngot=nil", tc.wbntErr)
 			}
 
-			if tc.wantErr != nil && gotErr != nil && tc.wantErr.Error() != gotErr.Error() {
-				t.Fatalf("unexpected error message\nwant=%s\n---\ngot=%s", tc.wantErr, gotErr)
+			if tc.wbntErr != nil && gotErr != nil && tc.wbntErr.Error() != gotErr.Error() {
+				t.Fbtblf("unexpected error messbge\nwbnt=%s\n---\ngot=%s", tc.wbntErr, gotErr)
 			}
 		})
 	}
 }
 
-var testChanges = git.Changes{
+vbr testChbnges = git.Chbnges{
 	Modified: []string{"go.mod"},
-	Added:    []string{"main.go.swp"},
+	Added:    []string{"mbin.go.swp"},
 	Deleted:  []string{".DS_Store"},
-	Renamed:  []string{"new-filename.txt"},
+	Renbmed:  []string{"new-filenbme.txt"},
 }
 
-func TestEvalStepCondition(t *testing.T) {
+func TestEvblStepCondition(t *testing.T) {
 	stepCtx := &StepContext{
-		BatchChange: BatchChangeAttributes{
-			Name:        "test-batch-change",
-			Description: "This batch change is just an experiment",
+		BbtchChbnge: BbtchChbngeAttributes{
+			Nbme:        "test-bbtch-chbnge",
+			Description: "This bbtch chbnge is just bn experiment",
 		},
 		PreviousStep: execution.AfterStepResult{
-			ChangedFiles: testChanges,
+			ChbngedFiles: testChbnges,
 			Stdout:       "this is previous step's stdout",
 			Stderr:       "this is previous step's stderr",
 		},
 		Steps: StepsContext{
-			Changes: testChanges,
-			Path:    "sub/directory/of/repo",
+			Chbnges: testChbnges,
+			Pbth:    "sub/directory/of/repo",
 		},
-		Outputs: map[string]any{},
-		// Step is not set when evalStepCondition is called
+		Outputs: mbp[string]bny{},
+		// Step is not set when evblStepCondition is cblled
 		Repository: *testRepo1,
 	}
 
 	tests := []struct {
 		run  string
-		want bool
+		wbnt bool
 	}{
-		{run: `true`, want: true},
-		{run: `  true    `, want: true},
-		{run: `TRUE`, want: false},
-		{run: `false`, want: false},
-		{run: `FALSE`, want: false},
-		{run: `${{ eq repository.name "github.com/sourcegraph/src-cli" }}`, want: true},
-		{run: `${{ eq steps.path "sub/directory/of/repo" }}`, want: true},
-		{run: `${{ matches repository.name "github.com/sourcegraph/*" }}`, want: true},
+		{run: `true`, wbnt: true},
+		{run: `  true    `, wbnt: true},
+		{run: `TRUE`, wbnt: fblse},
+		{run: `fblse`, wbnt: fblse},
+		{run: `FALSE`, wbnt: fblse},
+		{run: `${{ eq repository.nbme "github.com/sourcegrbph/src-cli" }}`, wbnt: true},
+		{run: `${{ eq steps.pbth "sub/directory/of/repo" }}`, wbnt: true},
+		{run: `${{ mbtches repository.nbme "github.com/sourcegrbph/*" }}`, wbnt: true},
 	}
 
-	for _, tc := range tests {
-		got, err := EvalStepCondition(tc.run, stepCtx)
+	for _, tc := rbnge tests {
+		got, err := EvblStepCondition(tc.run, stepCtx)
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
 
-		if got != tc.want {
-			t.Fatalf("wrong value. want=%t, got=%t", tc.want, got)
+		if got != tc.wbnt {
+			t.Fbtblf("wrong vblue. wbnt=%t, got=%t", tc.wbnt, got)
 		}
 	}
 }
 
-const rawYaml = `dist: release
+const rbwYbml = `dist: relebse
 env:
   - GO111MODULE=on
   - CGO_ENABLED=0
 before:
   hooks:
-    - go mod download
+    - go mod downlobd
     - go mod tidy
-    - go generate ./schema
+    - go generbte ./schemb
 `
 
-func TestRenderStepTemplate(t *testing.T) {
-	// To avoid bugs due to differences between test setup and actual code, we
-	// do the actual parsing of YAML here to get an interface{} which we'll put
+func TestRenderStepTemplbte(t *testing.T) {
+	// To bvoid bugs due to differences between test setup bnd bctubl code, we
+	// do the bctubl pbrsing of YAML here to get bn interfbce{} which we'll put
 	// in the StepContext.
-	var parsedYaml any
-	if err := yaml.Unmarshal([]byte(rawYaml), &parsedYaml); err != nil {
-		t.Fatalf("failed to parse YAML: %s", err)
+	vbr pbrsedYbml bny
+	if err := ybml.Unmbrshbl([]byte(rbwYbml), &pbrsedYbml); err != nil {
+		t.Fbtblf("fbiled to pbrse YAML: %s", err)
 	}
 
 	stepCtx := &StepContext{
-		BatchChange: BatchChangeAttributes{
-			Name:        "test-batch-change",
-			Description: "This batch change is just an experiment",
+		BbtchChbnge: BbtchChbngeAttributes{
+			Nbme:        "test-bbtch-chbnge",
+			Description: "This bbtch chbnge is just bn experiment",
 		},
 		PreviousStep: execution.AfterStepResult{
-			ChangedFiles: testChanges,
+			ChbngedFiles: testChbnges,
 			Stdout:       "this is previous step's stdout",
 			Stderr:       "this is previous step's stderr",
 		},
-		Outputs: map[string]any{
-			"lastLine": "lastLine is this",
-			"project":  parsedYaml,
+		Outputs: mbp[string]bny{
+			"lbstLine": "lbstLine is this",
+			"project":  pbrsedYbml,
 		},
 		Step: execution.AfterStepResult{
-			ChangedFiles: testChanges,
+			ChbngedFiles: testChbnges,
 			Stdout:       "this is current step's stdout",
 			Stderr:       "this is current step's stderr",
 		},
-		Steps:      StepsContext{Changes: testChanges, Path: "sub/directory/of/repo"},
+		Steps:      StepsContext{Chbnges: testChbnges, Pbth: "sub/directory/of/repo"},
 		Repository: *testRepo1,
 	}
 
 	tests := []struct {
-		name    string
+		nbme    string
 		stepCtx *StepContext
 		run     string
-		want    string
+		wbnt    string
 	}{
 		{
-			name:    "lower-case aliases",
+			nbme:    "lower-cbse blibses",
 			stepCtx: stepCtx,
-			run: `${{ repository.search_result_paths }}
-${{ repository.name }}
-${{ batch_change.name }}
-${{ batch_change.description }}
+			run: `${{ repository.sebrch_result_pbths }}
+${{ repository.nbme }}
+${{ bbtch_chbnge.nbme }}
+${{ bbtch_chbnge.description }}
 ${{ previous_step.modified_files }}
-${{ previous_step.added_files }}
+${{ previous_step.bdded_files }}
 ${{ previous_step.deleted_files }}
-${{ previous_step.renamed_files }}
+${{ previous_step.renbmed_files }}
 ${{ previous_step.stdout }}
 ${{ previous_step.stderr}}
-${{ outputs.lastLine }}
+${{ outputs.lbstLine }}
 ${{ index outputs.project.env 1 }}
 ${{ step.modified_files }}
-${{ step.added_files }}
+${{ step.bdded_files }}
 ${{ step.deleted_files }}
-${{ step.renamed_files }}
+${{ step.renbmed_files }}
 ${{ step.stdout}}
 ${{ step.stderr}}
 ${{ steps.modified_files }}
-${{ steps.added_files }}
+${{ steps.bdded_files }}
 ${{ steps.deleted_files }}
-${{ steps.renamed_files }}
-${{ steps.path }}
+${{ steps.renbmed_files }}
+${{ steps.pbth }}
 `,
-			want: `README.md main.go
-github.com/sourcegraph/src-cli
-test-batch-change
-This batch change is just an experiment
+			wbnt: `README.md mbin.go
+github.com/sourcegrbph/src-cli
+test-bbtch-chbnge
+This bbtch chbnge is just bn experiment
 [go.mod]
-[main.go.swp]
+[mbin.go.swp]
 [.DS_Store]
-[new-filename.txt]
+[new-filenbme.txt]
 this is previous step's stdout
 this is previous step's stderr
-lastLine is this
+lbstLine is this
 CGO_ENABLED=0
 [go.mod]
-[main.go.swp]
+[mbin.go.swp]
 [.DS_Store]
-[new-filename.txt]
+[new-filenbme.txt]
 this is current step's stdout
 this is current step's stderr
 [go.mod]
-[main.go.swp]
+[mbin.go.swp]
 [.DS_Store]
-[new-filename.txt]
+[new-filenbme.txt]
 sub/directory/of/repo
 `,
 		},
 		{
-			name:    "empty context",
+			nbme:    "empty context",
 			stepCtx: &StepContext{},
-			run: `${{ repository.search_result_paths }}
-${{ repository.name }}
+			run: `${{ repository.sebrch_result_pbths }}
+${{ repository.nbme }}
 ${{ previous_step.modified_files }}
-${{ previous_step.added_files }}
+${{ previous_step.bdded_files }}
 ${{ previous_step.deleted_files }}
-${{ previous_step.renamed_files }}
+${{ previous_step.renbmed_files }}
 ${{ previous_step.stdout }}
 ${{ previous_step.stderr}}
 ${{ step.modified_files }}
-${{ step.added_files }}
+${{ step.bdded_files }}
 ${{ step.deleted_files }}
-${{ step.renamed_files }}
+${{ step.renbmed_files }}
 ${{ step.stdout}}
 ${{ step.stderr}}
 ${{ steps.modified_files }}
-${{ steps.added_files }}
+${{ steps.bdded_files }}
 ${{ steps.deleted_files }}
-${{ steps.renamed_files }}
-${{ steps.path }}
+${{ steps.renbmed_files }}
+${{ steps.pbth }}
 `,
-			want: `
+			wbnt: `
 
 []
 []
@@ -349,148 +349,148 @@ ${{ steps.path }}
 		},
 	}
 
-	for _, tc := range tests {
-		t.Run(tc.name, func(t *testing.T) {
-			var out bytes.Buffer
+	for _, tc := rbnge tests {
+		t.Run(tc.nbme, func(t *testing.T) {
+			vbr out bytes.Buffer
 
-			err := RenderStepTemplate("testing", tc.run, &out, tc.stepCtx)
+			err := RenderStepTemplbte("testing", tc.run, &out, tc.stepCtx)
 			if err != nil {
-				t.Fatal(err)
+				t.Fbtbl(err)
 			}
 
-			if out.String() != tc.want {
-				t.Fatalf("wrong output:\n%s", cmp.Diff(tc.want, out.String()))
+			if out.String() != tc.wbnt {
+				t.Fbtblf("wrong output:\n%s", cmp.Diff(tc.wbnt, out.String()))
 			}
 		})
 	}
 }
 
-func TestRenderStepMap(t *testing.T) {
+func TestRenderStepMbp(t *testing.T) {
 	stepCtx := &StepContext{
 		PreviousStep: execution.AfterStepResult{
-			ChangedFiles: testChanges,
+			ChbngedFiles: testChbnges,
 			Stdout:       "this is previous step's stdout",
 			Stderr:       "this is previous step's stderr",
 		},
-		Outputs:    map[string]any{},
+		Outputs:    mbp[string]bny{},
 		Repository: *testRepo1,
 	}
 
-	input := map[string]string{
+	input := mbp[string]string{
 		"/tmp/my-file.txt":        `${{ previous_step.modified_files }}`,
-		"/tmp/my-other-file.txt":  `${{ previous_step.added_files }}`,
+		"/tmp/my-other-file.txt":  `${{ previous_step.bdded_files }}`,
 		"/tmp/my-other-file2.txt": `${{ previous_step.deleted_files }}`,
 	}
 
-	have, err := RenderStepMap(input, stepCtx)
+	hbve, err := RenderStepMbp(input, stepCtx)
 	if err != nil {
-		t.Fatalf("unexpected error: %s", err)
+		t.Fbtblf("unexpected error: %s", err)
 	}
 
-	want := map[string]string{
+	wbnt := mbp[string]string{
 		"/tmp/my-file.txt":        "[go.mod]",
-		"/tmp/my-other-file.txt":  "[main.go.swp]",
+		"/tmp/my-other-file.txt":  "[mbin.go.swp]",
 		"/tmp/my-other-file2.txt": "[.DS_Store]",
 	}
 
-	if diff := cmp.Diff(want, have); diff != "" {
-		t.Fatalf("wrong output:\n%s", diff)
+	if diff := cmp.Diff(wbnt, hbve); diff != "" {
+		t.Fbtblf("wrong output:\n%s", diff)
 	}
 }
 
-func TestRenderChangesetTemplateField(t *testing.T) {
-	// To avoid bugs due to differences between test setup and actual code, we
-	// do the actual parsing of YAML here to get an interface{} which we'll put
+func TestRenderChbngesetTemplbteField(t *testing.T) {
+	// To bvoid bugs due to differences between test setup bnd bctubl code, we
+	// do the bctubl pbrsing of YAML here to get bn interfbce{} which we'll put
 	// in the StepContext.
-	var parsedYaml any
-	if err := yaml.Unmarshal([]byte(rawYaml), &parsedYaml); err != nil {
-		t.Fatalf("failed to parse YAML: %s", err)
+	vbr pbrsedYbml bny
+	if err := ybml.Unmbrshbl([]byte(rbwYbml), &pbrsedYbml); err != nil {
+		t.Fbtblf("fbiled to pbrse YAML: %s", err)
 	}
 
-	tmplCtx := &ChangesetTemplateContext{
-		BatchChangeAttributes: BatchChangeAttributes{
-			Name:        "test-batch-change",
-			Description: "This batch change is just an experiment",
+	tmplCtx := &ChbngesetTemplbteContext{
+		BbtchChbngeAttributes: BbtchChbngeAttributes{
+			Nbme:        "test-bbtch-chbnge",
+			Description: "This bbtch chbnge is just bn experiment",
 		},
-		Outputs: map[string]any{
-			"lastLine": "lastLine is this",
-			"project":  parsedYaml,
+		Outputs: mbp[string]bny{
+			"lbstLine": "lbstLine is this",
+			"project":  pbrsedYbml,
 		},
 		Repository: *testRepo1,
 		Steps: StepsContext{
-			Changes: git.Changes{
+			Chbnges: git.Chbnges{
 				Modified: []string{"modified-file.txt"},
-				Added:    []string{"added-file.txt"},
+				Added:    []string{"bdded-file.txt"},
 				Deleted:  []string{"deleted-file.txt"},
-				Renamed:  []string{"renamed-file.txt"},
+				Renbmed:  []string{"renbmed-file.txt"},
 			},
-			Path: "infrastructure/sub-project",
+			Pbth: "infrbstructure/sub-project",
 		},
 	}
 
 	tests := []struct {
-		name    string
-		tmplCtx *ChangesetTemplateContext
+		nbme    string
+		tmplCtx *ChbngesetTemplbteContext
 		tmpl    string
-		want    string
+		wbnt    string
 	}{
 		{
-			name:    "lower-case aliases",
+			nbme:    "lower-cbse blibses",
 			tmplCtx: tmplCtx,
-			tmpl: `${{ repository.search_result_paths }}
-${{ repository.name }}
-${{ batch_change.name }}
-${{ batch_change.description }}
-${{ outputs.lastLine }}
+			tmpl: `${{ repository.sebrch_result_pbths }}
+${{ repository.nbme }}
+${{ bbtch_chbnge.nbme }}
+${{ bbtch_chbnge.description }}
+${{ outputs.lbstLine }}
 ${{ index outputs.project.env 1 }}
 ${{ steps.modified_files }}
-${{ steps.added_files }}
+${{ steps.bdded_files }}
 ${{ steps.deleted_files }}
-${{ steps.renamed_files }}
-${{ steps.path }}
-${{ batch_change_link }}
+${{ steps.renbmed_files }}
+${{ steps.pbth }}
+${{ bbtch_chbnge_link }}
 `,
-			want: `README.md main.go
-github.com/sourcegraph/src-cli
-test-batch-change
-This batch change is just an experiment
-lastLine is this
+			wbnt: `README.md mbin.go
+github.com/sourcegrbph/src-cli
+test-bbtch-chbnge
+This bbtch chbnge is just bn experiment
+lbstLine is this
 CGO_ENABLED=0
 [modified-file.txt]
-[added-file.txt]
+[bdded-file.txt]
 [deleted-file.txt]
-[renamed-file.txt]
-infrastructure/sub-project
-${{ batch_change_link }}`,
+[renbmed-file.txt]
+infrbstructure/sub-project
+${{ bbtch_chbnge_link }}`,
 		},
 		{
-			name:    "empty context",
-			tmplCtx: &ChangesetTemplateContext{},
-			tmpl: `${{ repository.search_result_paths }}
-${{ repository.name }}
+			nbme:    "empty context",
+			tmplCtx: &ChbngesetTemplbteContext{},
+			tmpl: `${{ repository.sebrch_result_pbths }}
+${{ repository.nbme }}
 ${{ steps.modified_files }}
-${{ steps.added_files }}
+${{ steps.bdded_files }}
 ${{ steps.deleted_files }}
-${{ steps.renamed_files }}
-${{ batch_change_link }}
+${{ steps.renbmed_files }}
+${{ bbtch_chbnge_link }}
 `,
-			want: `[]
+			wbnt: `[]
 []
 []
 []
-${{ batch_change_link }}`,
+${{ bbtch_chbnge_link }}`,
 		},
 	}
 
-	for _, tc := range tests {
-		t.Run(tc.name, func(t *testing.T) {
-			out, err := RenderChangesetTemplateField("testing", tc.tmpl, tc.tmplCtx)
+	for _, tc := rbnge tests {
+		t.Run(tc.nbme, func(t *testing.T) {
+			out, err := RenderChbngesetTemplbteField("testing", tc.tmpl, tc.tmplCtx)
 			if err != nil {
-				t.Fatal(err)
+				t.Fbtbl(err)
 			}
 
-			if out != tc.want {
-				t.Fatalf("wrong output:\n%s", cmp.Diff(tc.want, out))
+			if out != tc.wbnt {
+				t.Fbtblf("wrong output:\n%s", cmp.Diff(tc.wbnt, out))
 			}
 		})
 	}

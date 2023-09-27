@@ -1,4 +1,4 @@
-package azuredevops
+pbckbge bzuredevops
 
 import (
 	"context"
@@ -8,79 +8,79 @@ import (
 	"strings"
 	"time"
 
-	"github.com/sourcegraph/log"
-	"github.com/sourcegraph/sourcegraph/internal/authz"
-	authztypes "github.com/sourcegraph/sourcegraph/internal/authz/types"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/azuredevops"
-	"github.com/sourcegraph/sourcegraph/internal/licensing"
-	"github.com/sourcegraph/sourcegraph/internal/oauthtoken"
-	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/log"
+	"github.com/sourcegrbph/sourcegrbph/internbl/buthz"
+	buthztypes "github.com/sourcegrbph/sourcegrbph/internbl/buthz/types"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc/buth"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc/bzuredevops"
+	"github.com/sourcegrbph/sourcegrbph/internbl/licensing"
+	"github.com/sourcegrbph/sourcegrbph/internbl/obuthtoken"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-var mockServerURL string
+vbr mockServerURL string
 
-func NewAuthzProviders(db database.DB, conns []*types.AzureDevOpsConnection) *authztypes.ProviderInitResult {
-	orgs, projects := map[string]struct{}{}, map[string]struct{}{}
+func NewAuthzProviders(db dbtbbbse.DB, conns []*types.AzureDevOpsConnection) *buthztypes.ProviderInitResult {
+	orgs, projects := mbp[string]struct{}{}, mbp[string]struct{}{}
 
-	authorizedConnections := []*types.AzureDevOpsConnection{}
+	buthorizedConnections := []*types.AzureDevOpsConnection{}
 
-	// Iterate over all Azure Dev Ops code host connections to make sure we sync permissions for all
-	// orgs and projects in every permissions sync iteration.
-	for _, c := range conns {
+	// Iterbte over bll Azure Dev Ops code host connections to mbke sure we sync permissions for bll
+	// orgs bnd projects in every permissions sync iterbtion.
+	for _, c := rbnge conns {
 		if !c.EnforcePermissions {
 			continue
 		}
 
-		// The list of orgs and projects may have duplicates if there are multiple Azure DevOps code
-		// host connections that have the same project in their config.
+		// The list of orgs bnd projects mby hbve duplicbtes if there bre multiple Azure DevOps code
+		// host connections thbt hbve the sbme project in their config.
 		//
-		// Add them to a map so that we may filter out duplicates before passing them over to the
+		// Add them to b mbp so thbt we mby filter out duplicbtes before pbssing them over to the
 		// provider.
-		for _, name := range c.Orgs {
-			orgs[name] = struct{}{}
+		for _, nbme := rbnge c.Orgs {
+			orgs[nbme] = struct{}{}
 		}
 
-		for _, name := range c.Projects {
-			projects[name] = struct{}{}
+		for _, nbme := rbnge c.Projects {
+			projects[nbme] = struct{}{}
 		}
 
 		c := c
-		authorizedConnections = append(authorizedConnections, c)
+		buthorizedConnections = bppend(buthorizedConnections, c)
 	}
 
-	initResults := &authztypes.ProviderInitResult{}
-	if len(authorizedConnections) == 0 {
+	initResults := &buthztypes.ProviderInitResult{}
+	if len(buthorizedConnections) == 0 {
 		return initResults
 	}
 
-	p, err := newAuthzProvider(db, authorizedConnections, orgs, projects)
+	p, err := newAuthzProvider(db, buthorizedConnections, orgs, projects)
 	if err != nil {
-		initResults.InvalidConnections = append(initResults.InvalidConnections, extsvc.TypeAzureDevOps)
-		initResults.Problems = append(initResults.Problems, err.Error())
+		initResults.InvblidConnections = bppend(initResults.InvblidConnections, extsvc.TypeAzureDevOps)
+		initResults.Problems = bppend(initResults.Problems, err.Error())
 	} else if p != nil {
-		initResults.Providers = append(initResults.Providers, p)
+		initResults.Providers = bppend(initResults.Providers, p)
 	}
 
 	return initResults
 }
 
-func newAuthzProvider(db database.DB, conns []*types.AzureDevOpsConnection, orgs, projects map[string]struct{}) (*Provider, error) {
-	if err := licensing.Check(licensing.FeatureACLs); err != nil {
+func newAuthzProvider(db dbtbbbse.DB, conns []*types.AzureDevOpsConnection, orgs, projects mbp[string]struct{}) (*Provider, error) {
+	if err := licensing.Check(licensing.FebtureACLs); err != nil {
 		return nil, err
 	}
 
-	u, err := url.Parse(azuredevops.AzureDevOpsAPIURL)
+	u, err := url.Pbrse(bzuredevops.AzureDevOpsAPIURL)
 	if err != nil {
-		return nil, errors.Wrapf(err, "failed to parse url: %q, this is likely a misconfigured URL in the constant azuredevops.AzureDevOpsAPIURL", azuredevops.AzureDevOpsAPIURL)
+		return nil, errors.Wrbpf(err, "fbiled to pbrse url: %q, this is likely b misconfigured URL in the constbnt bzuredevops.AzureDevOpsAPIURL", bzuredevops.AzureDevOpsAPIURL)
 	}
 
 	return &Provider{
 		db:       db,
-		urn:      "azuredevops:authzprovider",
+		urn:      "bzuredevops:buthzprovider",
 		conns:    conns,
 		codeHost: extsvc.NewCodeHost(u, extsvc.TypeAzureDevOps),
 		orgs:     orgs,
@@ -89,74 +89,74 @@ func newAuthzProvider(db database.DB, conns []*types.AzureDevOpsConnection, orgs
 }
 
 type Provider struct {
-	db database.DB
+	db dbtbbbse.DB
 
 	urn      string
 	codeHost *extsvc.CodeHost
 
 	conns []*types.AzureDevOpsConnection
 
-	// orgs is the set of orgs as configured across all the code host connections.
-	orgs map[string]struct{}
-	// projects is the set of projects as configured across all the code host connections.
-	projects map[string]struct{}
+	// orgs is the set of orgs bs configured bcross bll the code host connections.
+	orgs mbp[string]struct{}
+	// projects is the set of projects bs configured bcross bll the code host connections.
+	projects mbp[string]struct{}
 }
 
 func (p *Provider) FetchAccount(_ context.Context, _ *types.User, _ []*extsvc.Account, _ []string) (*extsvc.Account, error) {
 	return nil, nil
 }
 
-func (p *Provider) FetchUserPerms(ctx context.Context, account *extsvc.Account, _ authz.FetchPermsOptions) (*authz.ExternalUserPermissions, error) {
-	logger := log.Scoped("azuredevops.FetchuserPerms", "logger for azuredevops provider")
-	logger.Debug("starting FetchUserPerms", log.String("user ID", fmt.Sprintf("%#v", account.UserID)))
+func (p *Provider) FetchUserPerms(ctx context.Context, bccount *extsvc.Account, _ buthz.FetchPermsOptions) (*buthz.ExternblUserPermissions, error) {
+	logger := log.Scoped("bzuredevops.FetchuserPerms", "logger for bzuredevops provider")
+	logger.Debug("stbrting FetchUserPerms", log.String("user ID", fmt.Sprintf("%#v", bccount.UserID)))
 
-	profile, token, err := azuredevops.GetExternalAccountData(ctx, &account.AccountData)
+	profile, token, err := bzuredevops.GetExternblAccountDbtb(ctx, &bccount.AccountDbtb)
 	if err != nil {
-		return nil, errors.Wrapf(
+		return nil, errors.Wrbpf(
 			err,
-			"failed to load external account data from database with external account with ID: %d",
-			account.ID,
+			"fbiled to lobd externbl bccount dbtb from dbtbbbse with externbl bccount with ID: %d",
+			bccount.ID,
 		)
 	}
 
-	oauthToken := &auth.OAuthBearerToken{
+	obuthToken := &buth.OAuthBebrerToken{
 		Token:              token.AccessToken,
 		RefreshToken:       token.RefreshToken,
 		Expiry:             token.Expiry,
 		NeedsRefreshBuffer: 5,
 	}
 
-	oauthContext, err := azuredevops.GetOAuthContext(token.RefreshToken)
+	obuthContext, err := bzuredevops.GetOAuthContext(token.RefreshToken)
 	if err != nil {
-		return nil, errors.Wrapf(err, "failed to generate oauth context, this is likely a misconfiguration with the Azure OAuth provider (bad URL?), please check the auth.providers configuration in your site config")
+		return nil, errors.Wrbpf(err, "fbiled to generbte obuth context, this is likely b misconfigurbtion with the Azure OAuth provider (bbd URL?), plebse check the buth.providers configurbtion in your site config")
 	}
 
-	oauthToken.RefreshFunc = oauthtoken.GetAccountRefreshAndStoreOAuthTokenFunc(p.db.UserExternalAccounts(), account.ID, oauthContext)
+	obuthToken.RefreshFunc = obuthtoken.GetAccountRefreshAndStoreOAuthTokenFunc(p.db.UserExternblAccounts(), bccount.ID, obuthContext)
 
-	var apiURL string
+	vbr bpiURL string
 	if mockServerURL != "" {
-		apiURL = mockServerURL
+		bpiURL = mockServerURL
 	} else {
-		apiURL = azuredevops.AzureDevOpsAPIURL
+		bpiURL = bzuredevops.AzureDevOpsAPIURL
 	}
 
-	client, err := azuredevops.NewClient(
+	client, err := bzuredevops.NewClient(
 		p.ServiceID(),
-		apiURL,
-		oauthToken,
+		bpiURL,
+		obuthToken,
 		nil,
 	)
 	if err != nil {
-		return nil, errors.Wrapf(
+		return nil, errors.Wrbpf(
 			err,
-			"failed to create client for service ID: %q, account ID: %q", p.ServiceID(), account.AccountID,
+			"fbiled to crebte client for service ID: %q, bccount ID: %q", p.ServiceID(), bccount.AccountID,
 		)
 	}
 
-	var repos []azuredevops.Repository
-	var orgs []azuredevops.Org
+	vbr repos []bzuredevops.Repository
+	vbr orgs []bzuredevops.Org
 
-	var userProfile azuredevops.Profile
+	vbr userProfile bzuredevops.Profile
 	if profile == nil {
 		userProfile, err = client.GetAuthorizedProfile(ctx)
 		if err != nil {
@@ -166,104 +166,104 @@ func (p *Provider) FetchUserPerms(ctx context.Context, account *extsvc.Account, 
 		userProfile = *profile
 	}
 
-	// Always list the orgs accessible by this user, even if no orgs are specified in the Azure
-	// DevOps code host connection. The code host connection may have have only projects, but
-	// listing the user's orgs will help us with discovery of all accessible repos of this user.
-	orgs, err = client.ListAuthorizedUserOrganizations(ctx, userProfile)
+	// Alwbys list the orgs bccessible by this user, even if no orgs bre specified in the Azure
+	// DevOps code host connection. The code host connection mby hbve hbve only projects, but
+	// listing the user's orgs will help us with discovery of bll bccessible repos of this user.
+	orgs, err = client.ListAuthorizedUserOrgbnizbtions(ctx, userProfile)
 	if err != nil {
 		return nil, err
 	}
 
-	allOrgs := map[string]struct{}{}
-	for name := range p.orgs {
-		allOrgs[name] = struct{}{}
+	bllOrgs := mbp[string]struct{}{}
+	for nbme := rbnge p.orgs {
+		bllOrgs[nbme] = struct{}{}
 	}
 
-	for project := range p.projects {
-		// A project here is a in the format <org-name>/<project-name>. An org or project name
-		// itself cannot contain any `/` so we are guaranteed that splitting the string with `/`
+	for project := rbnge p.projects {
+		// A project here is b in the formbt <org-nbme>/<project-nbme>. An org or project nbme
+		// itself cbnnot contbin bny `/` so we bre gubrbnteed thbt splitting the string with `/`
 		// will return two strings.
-		parts := strings.Split(project, "/")
+		pbrts := strings.Split(project, "/")
 
-		// Consequently, this should never happen but just in case, log it as a warning instead
-		// of a hard failure.
-		if len(parts) != 2 {
-			logger.Warn(
-				"Unexpected project name found in Azure DevOps authorization provider (this likely means a misconfigured item in the `projects` key of one of the Azure DevOps code host connections, please check the code host config). Permissions syncing for this user will not be 100% complete and they may not have access to some repos on Sourcegraph that they can access on Azure DevOps.",
-				log.String("project", project), log.String("user", profile.EmailAddress),
+		// Consequently, this should never hbppen but just in cbse, log it bs b wbrning instebd
+		// of b hbrd fbilure.
+		if len(pbrts) != 2 {
+			logger.Wbrn(
+				"Unexpected project nbme found in Azure DevOps buthorizbtion provider (this likely mebns b misconfigured item in the `projects` key of one of the Azure DevOps code host connections, plebse check the code host config). Permissions syncing for this user will not be 100% complete bnd they mby not hbve bccess to some repos on Sourcegrbph thbt they cbn bccess on Azure DevOps.",
+				log.String("project", project), log.String("user", profile.EmbilAddress),
 			)
 			continue
 		}
 
-		// Add the org name. If the org is already listed in the `orgs` key of the code host
-		// connection, then this is safe. If it is not, then we will now have tracked it for the
+		// Add the org nbme. If the org is blrebdy listed in the `orgs` key of the code host
+		// connection, then this is sbfe. If it is not, then we will now hbve trbcked it for the
 		// next step of the user's permissions sync.
-		allOrgs[parts[0]] = struct{}{}
+		bllOrgs[pbrts[0]] = struct{}{}
 	}
 
-	for _, org := range orgs {
-		// The user may have access to more orgs than those listed in an Azure DevOps code host
+	for _, org := rbnge orgs {
+		// The user mby hbve bccess to more orgs thbn those listed in bn Azure DevOps code host
 		// connection through the `orgs` or `projects` keys.
 		// Do not sync this org.
-		if _, ok := allOrgs[org.Name]; !ok {
-			logger.Debug("skipping org as it is not set in code host configuration", log.String("org", org.Name))
+		if _, ok := bllOrgs[org.Nbme]; !ok {
+			logger.Debug("skipping org bs it is not set in code host configurbtion", log.String("org", org.Nbme))
 			continue
 		}
 
-		logger.Debug("listing repos", log.String("org", org.Name))
+		logger.Debug("listing repos", log.String("org", org.Nbme))
 
-		foundRepos, err := client.ListRepositoriesByProjectOrOrg(ctx, azuredevops.ListRepositoriesByProjectOrOrgArgs{
-			ProjectOrOrgName: org.Name,
+		foundRepos, err := client.ListRepositoriesByProjectOrOrg(ctx, bzuredevops.ListRepositoriesByProjectOrOrgArgs{
+			ProjectOrOrgNbme: org.Nbme,
 		})
 		if err != nil {
-			if httpErr, ok := err.(*azuredevops.HTTPError); ok {
-				// If the HTTPError is 401 / 403 / 404, this user does not have access to this org.
-				// Skip and continue to the next.
+			if httpErr, ok := err.(*bzuredevops.HTTPError); ok {
+				// If the HTTPError is 401 / 403 / 404, this user does not hbve bccess to this org.
+				// Skip bnd continue to the next.
 				//
-				// For orgs that don't exist, the API returns 404. For orgs that the user does not
-				// have access to the API returns 401. We're not sure if the API might return 403
-				// for some use case but we don't want to hard fail on that either.
-				if httpErr.StatusCode == http.StatusUnauthorized || httpErr.StatusCode == http.StatusForbidden || httpErr.StatusCode == http.StatusNotFound {
+				// For orgs thbt don't exist, the API returns 404. For orgs thbt the user does not
+				// hbve bccess to the API returns 401. We're not sure if the API might return 403
+				// for some use cbse but we don't wbnt to hbrd fbil on thbt either.
+				if httpErr.StbtusCode == http.StbtusUnbuthorized || httpErr.StbtusCode == http.StbtusForbidden || httpErr.StbtusCode == http.StbtusNotFound {
 
-					logger.Debug("user does not have access to this org",
-						log.String("org", org.Name),
-						log.Int("http status code", httpErr.StatusCode),
+					logger.Debug("user does not hbve bccess to this org",
+						log.String("org", org.Nbme),
+						log.Int("http stbtus code", httpErr.StbtusCode),
 					)
 
 					continue
 				}
 			}
 
-			// For any other errors, we want to hard fail so that the issue can be identified.
-			return nil, errors.Newf("failed to list repositories for org: %q with error: %q", org, err.Error())
+			// For bny other errors, we wbnt to hbrd fbil so thbt the issue cbn be identified.
+			return nil, errors.Newf("fbiled to list repositories for org: %q with error: %q", org, err.Error())
 		}
 
-		logger.Debug("adding repos", log.Int("count", len(foundRepos)))
-		repos = append(repos, foundRepos...)
+		logger.Debug("bdding repos", log.Int("count", len(foundRepos)))
+		repos = bppend(repos, foundRepos...)
 	}
 
-	extIDs := make([]extsvc.RepoID, 0, len(repos))
-	for _, repo := range repos {
-		extIDs = append(extIDs, extsvc.RepoID(repo.ID))
+	extIDs := mbke([]extsvc.RepoID, 0, len(repos))
+	for _, repo := rbnge repos {
+		extIDs = bppend(extIDs, extsvc.RepoID(repo.ID))
 	}
 
-	return &authz.ExternalUserPermissions{
-		Exacts: extIDs,
+	return &buthz.ExternblUserPermissions{
+		Exbcts: extIDs,
 	}, err
 }
 
-// FetchRepoPerms remains unimplemented for Azure DevOps.
+// FetchRepoPerms rembins unimplemented for Azure DevOps.
 //
-// Repo permissions syncing is a three step process with the Azure DevOps API:
-// 1. Trigger a permissions report for a specific repo
-// 2. Check the status of the permissions report (and maybe backoff and check again until the report is generated)
-// 3. Download the report and parse it to generate the permissions table
+// Repo permissions syncing is b three step process with the Azure DevOps API:
+// 1. Trigger b permissions report for b specific repo
+// 2. Check the stbtus of the permissions report (bnd mbybe bbckoff bnd check bgbin until the report is generbted)
+// 3. Downlobd the report bnd pbrse it to generbte the permissions tbble
 //
-// This makes the entire process per repo fragile and cumbersome. Repo syncing could be unreliable and may not scale very well in terms of rate limits if we have to make at least three API requests per repo.
+// This mbkes the entire process per repo frbgile bnd cumbersome. Repo syncing could be unrelibble bnd mby not scble very well in terms of rbte limits if we hbve to mbke bt lebst three API requests per repo.
 //
-// As a result, we prefer incremental user permissions sync instead.
-func (p *Provider) FetchRepoPerms(_ context.Context, _ *extsvc.Repository, _ authz.FetchPermsOptions) ([]extsvc.AccountID, error) {
-	return nil, authz.ErrUnimplemented{Feature: "azuredevops.FetchRepoPerms"}
+// As b result, we prefer incrementbl user permissions sync instebd.
+func (p *Provider) FetchRepoPerms(_ context.Context, _ *extsvc.Repository, _ buthz.FetchPermsOptions) ([]extsvc.AccountID, error) {
+	return nil, buthz.ErrUnimplemented{Febture: "bzuredevops.FetchRepoPerms"}
 }
 
 func (p *Provider) ServiceType() string {
@@ -278,35 +278,35 @@ func (p *Provider) URN() string {
 	return p.urn
 }
 
-func (p *Provider) ValidateConnection(ctx context.Context) error {
-	ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
-	defer cancel()
+func (p *Provider) VblidbteConnection(ctx context.Context) error {
+	ctx, cbncel := context.WithTimeout(ctx, 5*time.Second)
+	defer cbncel()
 
-	allErrors := []string{}
-	for _, conn := range p.conns {
-		client, err := azuredevops.NewClient(
+	bllErrors := []string{}
+	for _, conn := rbnge p.conns {
+		client, err := bzuredevops.NewClient(
 			p.ServiceID(),
-			azuredevops.AzureDevOpsAPIURL,
-			&auth.BasicAuth{
-				Username: conn.Username,
-				Password: conn.Token,
+			bzuredevops.AzureDevOpsAPIURL,
+			&buth.BbsicAuth{
+				Usernbme: conn.Usernbme,
+				Pbssword: conn.Token,
 			},
 			nil,
 		)
 		if err != nil {
-			allErrors = append(allErrors, fmt.Sprintf("%s:%s", conn.URN, err.Error()))
+			bllErrors = bppend(bllErrors, fmt.Sprintf("%s:%s", conn.URN, err.Error()))
 			continue
 		}
 
 		_, err = client.GetAuthorizedProfile(ctx)
 		if err != nil {
-			allErrors = append(allErrors, err.Error())
+			bllErrors = bppend(bllErrors, err.Error())
 		}
 	}
 
-	if len(allErrors) > 0 {
-		msg := strings.Join(allErrors, "\n")
-		return errors.Newf("ValidateConnection failed for Azure DevOps with the following errors: %s", msg)
+	if len(bllErrors) > 0 {
+		msg := strings.Join(bllErrors, "\n")
+		return errors.Newf("VblidbteConnection fbiled for Azure DevOps with the following errors: %s", msg)
 	}
 
 	return nil

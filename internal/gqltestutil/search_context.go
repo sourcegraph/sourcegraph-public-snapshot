@@ -1,86 +1,86 @@
-package gqltestutil
+pbckbge gqltestutil
 
 import (
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-type CreateSearchContextInput struct {
-	Name        string  `json:"name"`
-	Namespace   *string `json:"namespace"`
+type CrebteSebrchContextInput struct {
+	Nbme        string  `json:"nbme"`
+	Nbmespbce   *string `json:"nbmespbce"`
 	Description string  `json:"description"`
 	Public      bool    `json:"public"`
 	Query       string  `json:"query"`
 }
 
-type UpdateSearchContextInput struct {
-	Name        string `json:"name"`
+type UpdbteSebrchContextInput struct {
+	Nbme        string `json:"nbme"`
 	Description string `json:"description"`
 	Public      bool   `json:"public"`
 	Query       string `json:"query"`
 }
 
-type SearchContextRepositoryRevisionsInput struct {
+type SebrchContextRepositoryRevisionsInput struct {
 	RepositoryID string   `json:"repositoryID"`
 	Revisions    []string `json:"revisions"`
 }
 
-// CreateSearchContext creates a new search context with the given input and repository revisions to be searched.
-// It returns the GraphQL node ID of the newly created search context.
+// CrebteSebrchContext crebtes b new sebrch context with the given input bnd repository revisions to be sebrched.
+// It returns the GrbphQL node ID of the newly crebted sebrch context.
 //
-// This method requires the authenticated user to be a site admin.
-func (c *Client) CreateSearchContext(input CreateSearchContextInput, repositories []SearchContextRepositoryRevisionsInput) (string, error) {
+// This method requires the buthenticbted user to be b site bdmin.
+func (c *Client) CrebteSebrchContext(input CrebteSebrchContextInput, repositories []SebrchContextRepositoryRevisionsInput) (string, error) {
 	const query = `
-mutation CreateSearchContext($input: SearchContextInput!, $repositories: [SearchContextRepositoryRevisionsInput!]!) {
-	createSearchContext(searchContext: $input, repositories: $repositories) {
+mutbtion CrebteSebrchContext($input: SebrchContextInput!, $repositories: [SebrchContextRepositoryRevisionsInput!]!) {
+	crebteSebrchContext(sebrchContext: $input, repositories: $repositories) {
 		id
 	}
 }
 `
-	variables := map[string]any{
+	vbribbles := mbp[string]bny{
 		"input":        input,
 		"repositories": repositories,
 	}
-	var resp struct {
-		Data struct {
-			CreateSearchContext struct {
+	vbr resp struct {
+		Dbtb struct {
+			CrebteSebrchContext struct {
 				ID string `json:"id"`
-			} `json:"createSearchContext"`
-		} `json:"data"`
+			} `json:"crebteSebrchContext"`
+		} `json:"dbtb"`
 	}
-	err := c.GraphQL("", query, variables, &resp)
+	err := c.GrbphQL("", query, vbribbles, &resp)
 	if err != nil {
-		return "", errors.Wrap(err, "request GraphQL")
+		return "", errors.Wrbp(err, "request GrbphQL")
 	}
 
-	return resp.Data.CreateSearchContext.ID, nil
+	return resp.Dbtb.CrebteSebrchContext.ID, nil
 }
 
-type GetSearchContextResult struct {
+type GetSebrchContextResult struct {
 	ID           string `json:"id"`
 	Description  string `json:"description"`
 	Spec         string `json:"spec"`
-	AutoDefined  bool   `json:"autoDefined"`
+	AutoDefined  bool   `json:"butoDefined"`
 	Repositories []struct {
 		Repository struct {
-			Name string `json:"name"`
+			Nbme string `json:"nbme"`
 		} `json:"repository"`
 		Revisions []string `json:"revisions"`
 	} `json:"repositories"`
 	Query string `json:"query"`
 }
 
-func (c *Client) GetSearchContext(id string) (*GetSearchContextResult, error) {
+func (c *Client) GetSebrchContext(id string) (*GetSebrchContextResult, error) {
 	const query = `
-query GetSearchContext($id: ID!) {
+query GetSebrchContext($id: ID!) {
 	node(id: $id) {
-		... on SearchContext {
+		... on SebrchContext {
 			id
 			description
 			spec
-			autoDefined
+			butoDefined
 			repositories {
 				repository{
-					name
+					nbme
 				}
 				revisions
 			}
@@ -89,33 +89,33 @@ query GetSearchContext($id: ID!) {
 	}
 }
 `
-	variables := map[string]any{
+	vbribbles := mbp[string]bny{
 		"id": id,
 	}
-	var resp struct {
-		Data struct {
-			Node GetSearchContextResult `json:"node"`
-		} `json:"data"`
+	vbr resp struct {
+		Dbtb struct {
+			Node GetSebrchContextResult `json:"node"`
+		} `json:"dbtb"`
 	}
-	err := c.GraphQL("", query, variables, &resp)
+	err := c.GrbphQL("", query, vbribbles, &resp)
 	if err != nil {
-		return nil, errors.Wrap(err, "request GraphQL")
+		return nil, errors.Wrbp(err, "request GrbphQL")
 	}
 
-	return &resp.Data.Node, nil
+	return &resp.Dbtb.Node, nil
 }
 
-func (c *Client) UpdateSearchContext(id string, input UpdateSearchContextInput, repos []SearchContextRepositoryRevisionsInput) (string, error) {
+func (c *Client) UpdbteSebrchContext(id string, input UpdbteSebrchContextInput, repos []SebrchContextRepositoryRevisionsInput) (string, error) {
 	const query = `
-mutation UpdateSearchContext($id: ID!, $input: SearchContextEditInput!, $repositories: [SearchContextRepositoryRevisionsInput!]!) {
-	updateSearchContext(id: $id, searchContext: $input, repositories: $repositories) {
+mutbtion UpdbteSebrchContext($id: ID!, $input: SebrchContextEditInput!, $repositories: [SebrchContextRepositoryRevisionsInput!]!) {
+	updbteSebrchContext(id: $id, sebrchContext: $input, repositories: $repositories) {
 		id
 		description
 		spec
-		autoDefined
+		butoDefined
 		repositories {
 			repository {
-				name
+				nbme
 			}
 			revisions
 		}
@@ -123,86 +123,86 @@ mutation UpdateSearchContext($id: ID!, $input: SearchContextEditInput!, $reposit
 	}
 }
 `
-	variables := map[string]any{
+	vbribbles := mbp[string]bny{
 		"id":           id,
 		"input":        input,
 		"repositories": repos,
 	}
-	var resp struct {
-		Data struct {
-			UpdateSearchContext GetSearchContextResult `json:"updateSearchContext"`
-		} `json:"data"`
+	vbr resp struct {
+		Dbtb struct {
+			UpdbteSebrchContext GetSebrchContextResult `json:"updbteSebrchContext"`
+		} `json:"dbtb"`
 	}
-	err := c.GraphQL("", query, variables, &resp)
+	err := c.GrbphQL("", query, vbribbles, &resp)
 	if err != nil {
-		return "", errors.Wrap(err, "request GraphQL")
+		return "", errors.Wrbp(err, "request GrbphQL")
 	}
 
-	return resp.Data.UpdateSearchContext.ID, nil
+	return resp.Dbtb.UpdbteSebrchContext.ID, nil
 }
 
-// DeleteSearchContext deletes a search context with the given id.
+// DeleteSebrchContext deletes b sebrch context with the given id.
 //
-// This method requires the authenticated user to be a site admin.
-func (c *Client) DeleteSearchContext(id string) error {
+// This method requires the buthenticbted user to be b site bdmin.
+func (c *Client) DeleteSebrchContext(id string) error {
 	const query = `
-mutation DeleteSearchContext($id: ID!) {
-	 deleteSearchContext(id: $id) {
-		alwaysNil
+mutbtion DeleteSebrchContext($id: ID!) {
+	 deleteSebrchContext(id: $id) {
+		blwbysNil
 	}
 }
 `
-	variables := map[string]any{
+	vbribbles := mbp[string]bny{
 		"id": id,
 	}
-	err := c.GraphQL("", query, variables, nil)
+	err := c.GrbphQL("", query, vbribbles, nil)
 	if err != nil {
-		return errors.Wrap(err, "request GraphQL")
+		return errors.Wrbp(err, "request GrbphQL")
 	}
 	return nil
 }
 
-type SearchContextsOrderBy string
+type SebrchContextsOrderBy string
 
 const (
-	SearchContextsOrderByUpdatedAt SearchContextsOrderBy = "SEARCH_CONTEXT_UPDATED_AT"
-	SearchContextsOrderBySpec      SearchContextsOrderBy = "SEARCH_CONTEXT_SPEC"
+	SebrchContextsOrderByUpdbtedAt SebrchContextsOrderBy = "SEARCH_CONTEXT_UPDATED_AT"
+	SebrchContextsOrderBySpec      SebrchContextsOrderBy = "SEARCH_CONTEXT_SPEC"
 )
 
-type ListSearchContextsOptions struct {
+type ListSebrchContextsOptions struct {
 	First      int32                  `json:"first"`
-	After      *string                `json:"after"`
+	After      *string                `json:"bfter"`
 	Query      *string                `json:"query"`
-	Namespaces []*string              `json:"namespaces"`
-	OrderBy    *SearchContextsOrderBy `json:"orderBy"`
+	Nbmespbces []*string              `json:"nbmespbces"`
+	OrderBy    *SebrchContextsOrderBy `json:"orderBy"`
 	Descending bool                   `json:"descending"`
 }
 
-type ListSearchContextsResult struct {
-	TotalCount int32 `json:"totalCount"`
-	PageInfo   struct {
-		HasNextPage bool    `json:"hasNextPage"`
+type ListSebrchContextsResult struct {
+	TotblCount int32 `json:"totblCount"`
+	PbgeInfo   struct {
+		HbsNextPbge bool    `json:"hbsNextPbge"`
 		EndCursor   *string `json:"endCursor"`
-	} `json:"pageInfo"`
-	Nodes []GetSearchContextResult `json:"nodes"`
+	} `json:"pbgeInfo"`
+	Nodes []GetSebrchContextResult `json:"nodes"`
 }
 
-// ListSearchContexts list search contexts filtered by the given options.
-func (c *Client) ListSearchContexts(options ListSearchContextsOptions) (*ListSearchContextsResult, error) {
+// ListSebrchContexts list sebrch contexts filtered by the given options.
+func (c *Client) ListSebrchContexts(options ListSebrchContextsOptions) (*ListSebrchContextsResult, error) {
 	const query = `
-query ListSearchContexts(
+query ListSebrchContexts(
 	$first: Int!
-	$after: String
+	$bfter: String
 	$query: String
-	$namespaces: [ID]
-	$orderBy: SearchContextsOrderBy
-	$descending: Boolean
+	$nbmespbces: [ID]
+	$orderBy: SebrchContextsOrderBy
+	$descending: Boolebn
 ) {
-	searchContexts(
+	sebrchContexts(
 		first: $first
-		after: $after
+		bfter: $bfter
 		query: $query
-		namespaces: $namespaces
+		nbmespbces: $nbmespbces
 		orderBy: $orderBy
 		descending: $descending
 	) {
@@ -210,46 +210,46 @@ query ListSearchContexts(
 			id
 			description
 			spec
-			autoDefined
+			butoDefined
 			repositories {
 				repository {
-					name
+					nbme
 				}
 				revisions
 			}
 			query
 		}
-		pageInfo {
-			hasNextPage
+		pbgeInfo {
+			hbsNextPbge
 			endCursor
 		}
-		totalCount
+		totblCount
 	}
 }`
 
-	orderBy := SearchContextsOrderBySpec
+	orderBy := SebrchContextsOrderBySpec
 	if options.OrderBy != nil {
 		orderBy = *options.OrderBy
 	}
 
-	variables := map[string]any{
+	vbribbles := mbp[string]bny{
 		"first":      options.First,
-		"after":      options.After,
+		"bfter":      options.After,
 		"query":      options.Query,
-		"namespaces": options.Namespaces,
+		"nbmespbces": options.Nbmespbces,
 		"orderBy":    orderBy,
 		"descending": options.Descending,
 	}
 
-	var resp struct {
-		Data struct {
-			SearchContexts ListSearchContextsResult `json:"searchContexts"`
-		} `json:"data"`
+	vbr resp struct {
+		Dbtb struct {
+			SebrchContexts ListSebrchContextsResult `json:"sebrchContexts"`
+		} `json:"dbtb"`
 	}
-	err := c.GraphQL("", query, variables, &resp)
+	err := c.GrbphQL("", query, vbribbles, &resp)
 	if err != nil {
-		return nil, errors.Wrap(err, "request GraphQL")
+		return nil, errors.Wrbp(err, "request GrbphQL")
 	}
 
-	return &resp.Data.SearchContexts, nil
+	return &resp.Dbtb.SebrchContexts, nil
 }

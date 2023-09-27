@@ -1,271 +1,271 @@
-package graphqlbackend
+pbckbge grbphqlbbckend
 
 import (
 	"context"
 	"testing"
 
-	"github.com/graph-gophers/graphql-go/errors"
-	"github.com/stretchr/testify/assert"
+	"github.com/grbph-gophers/grbphql-go/errors"
+	"github.com/stretchr/testify/bssert"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
-	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
-	"github.com/sourcegraph/sourcegraph/internal/txemail"
-	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/schema"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/envvbr"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbmocks"
+	"github.com/sourcegrbph/sourcegrbph/internbl/txembil"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
+	"github.com/sourcegrbph/sourcegrbph/schemb"
 )
 
-func TestRandomizeUserPassword(t *testing.T) {
+func TestRbndomizeUserPbssword(t *testing.T) {
 	userID := int32(42)
-	userIDBase64 := string(MarshalUserID(userID))
+	userIDBbse64 := string(MbrshblUserID(userID))
 
-	var (
-		smtpEnabledConf = &conf.Unified{
-			SiteConfiguration: schema.SiteConfiguration{
-				AuthProviders: []schema.AuthProviders{{Builtin: &schema.BuiltinAuthProvider{}}},
-				EmailSmtp:     &schema.SMTPServerConfig{},
+	vbr (
+		smtpEnbbledConf = &conf.Unified{
+			SiteConfigurbtion: schemb.SiteConfigurbtion{
+				AuthProviders: []schemb.AuthProviders{{Builtin: &schemb.BuiltinAuthProvider{}}},
+				EmbilSmtp:     &schemb.SMTPServerConfig{},
 			}}
-		smtpDisabledConf = &conf.Unified{
-			SiteConfiguration: schema.SiteConfiguration{
-				AuthProviders: []schema.AuthProviders{{Builtin: &schema.BuiltinAuthProvider{}}},
+		smtpDisbbledConf = &conf.Unified{
+			SiteConfigurbtion: schemb.SiteConfigurbtion{
+				AuthProviders: []schemb.AuthProviders{{Builtin: &schemb.BuiltinAuthProvider{}}},
 			}}
 	)
 
 	db := dbmocks.NewMockDB()
-	t.Run("Errors when resetting passwords is not enabled", func(t *testing.T) {
+	t.Run("Errors when resetting pbsswords is not enbbled", func(t *testing.T) {
 		RunTests(t, []*Test{
 			{
-				Schema: mustParseGraphQLSchema(t, db),
+				Schemb: mustPbrseGrbphQLSchemb(t, db),
 				Query: `
-					mutation($user: ID!) {
-						randomizeUserPassword(user: $user) {
-							resetPasswordURL
+					mutbtion($user: ID!) {
+						rbndomizeUserPbssword(user: $user) {
+							resetPbsswordURL
 						}
 					}
 				`,
 				ExpectedResult: "null",
 				ExpectedErrors: []*errors.QueryError{
 					{
-						Message: "resetting passwords is not enabled",
-						Path:    []any{"randomizeUserPassword"},
+						Messbge: "resetting pbsswords is not enbbled",
+						Pbth:    []bny{"rbndomizeUserPbssword"},
 					},
 				},
-				Variables: map[string]any{"user": userIDBase64},
+				Vbribbles: mbp[string]bny{"user": userIDBbse64},
 			},
 		})
 	})
 
 	t.Run("DotCom mode", func(t *testing.T) {
 		// Test dotcom mode
-		orig := envvar.SourcegraphDotComMode()
-		envvar.MockSourcegraphDotComMode(true)
-		defer envvar.MockSourcegraphDotComMode(orig)
+		orig := envvbr.SourcegrbphDotComMode()
+		envvbr.MockSourcegrbphDotComMode(true)
+		defer envvbr.MockSourcegrbphDotComMode(orig)
 
-		t.Run("Errors on DotCom when sending emails is not enabled", func(t *testing.T) {
-			conf.Mock(smtpDisabledConf)
+		t.Run("Errors on DotCom when sending embils is not enbbled", func(t *testing.T) {
+			conf.Mock(smtpDisbbledConf)
 			defer conf.Mock(nil)
 
 			RunTests(t, []*Test{
 				{
-					Schema: mustParseGraphQLSchema(t, db),
+					Schemb: mustPbrseGrbphQLSchemb(t, db),
 					Query: `
-					mutation($user: ID!) {
-						randomizeUserPassword(user: $user) {
-							resetPasswordURL
+					mutbtion($user: ID!) {
+						rbndomizeUserPbssword(user: $user) {
+							resetPbsswordURL
 						}
 					}
 				`,
 					ExpectedResult: "null",
 					ExpectedErrors: []*errors.QueryError{
 						{
-							Message: "unable to reset password because email sending is not configured",
-							Path:    []any{"randomizeUserPassword"},
+							Messbge: "unbble to reset pbssword becbuse embil sending is not configured",
+							Pbth:    []bny{"rbndomizeUserPbssword"},
 						},
 					},
-					Variables: map[string]any{"user": userIDBase64},
+					Vbribbles: mbp[string]bny{"user": userIDBbse64},
 				},
 			})
 		})
 
-		t.Run("Does not return resetPasswordUrl when in Cloud", func(t *testing.T) {
-			// Enable SMTP
-			conf.Mock(smtpEnabledConf)
+		t.Run("Does not return resetPbsswordUrl when in Cloud", func(t *testing.T) {
+			// Enbble SMTP
+			conf.Mock(smtpEnbbledConf)
 			defer conf.Mock(nil)
 
 			users := dbmocks.NewMockUserStore()
-			users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{SiteAdmin: true}, nil)
-			users.RandomizePasswordAndClearPasswordResetRateLimitFunc.SetDefaultReturn(nil)
-			users.RenewPasswordResetCodeFunc.SetDefaultReturn("code", nil)
-			users.GetByIDFunc.SetDefaultReturn(&types.User{Username: "alice"}, nil)
+			users.GetByCurrentAuthUserFunc.SetDefbultReturn(&types.User{SiteAdmin: true}, nil)
+			users.RbndomizePbsswordAndClebrPbsswordResetRbteLimitFunc.SetDefbultReturn(nil)
+			users.RenewPbsswordResetCodeFunc.SetDefbultReturn("code", nil)
+			users.GetByIDFunc.SetDefbultReturn(&types.User{Usernbme: "blice"}, nil)
 
-			userEmails := dbmocks.NewMockUserEmailsStore()
-			userEmails.GetPrimaryEmailFunc.SetDefaultReturn("alice@foo.bar", false, nil)
+			userEmbils := dbmocks.NewMockUserEmbilsStore()
+			userEmbils.GetPrimbryEmbilFunc.SetDefbultReturn("blice@foo.bbr", fblse, nil)
 
-			db.UsersFunc.SetDefaultReturn(users)
-			db.UserEmailsFunc.SetDefaultReturn(userEmails)
+			db.UsersFunc.SetDefbultReturn(users)
+			db.UserEmbilsFunc.SetDefbultReturn(userEmbils)
 
-			txemail.MockSend = func(ctx context.Context, message txemail.Message) error {
+			txembil.MockSend = func(ctx context.Context, messbge txembil.Messbge) error {
 				return nil
 			}
 			defer func() {
-				txemail.MockSend = nil
+				txembil.MockSend = nil
 			}()
 
 			RunTests(t, []*Test{
 				{
-					Schema: mustParseGraphQLSchema(t, db),
+					Schemb: mustPbrseGrbphQLSchemb(t, db),
 					Query: `
-					mutation($user: ID!) {
-						randomizeUserPassword(user: $user) {
-							resetPasswordURL
+					mutbtion($user: ID!) {
+						rbndomizeUserPbssword(user: $user) {
+							resetPbsswordURL
 						}
 					}
 				`,
 					ExpectedResult: `{
-					"randomizeUserPassword": {
-						"resetPasswordURL": null
+					"rbndomizeUserPbssword": {
+						"resetPbsswordURL": null
 					}
 				}`,
-					Variables: map[string]any{"user": userIDBase64},
+					Vbribbles: mbp[string]bny{"user": userIDBbse64},
 				},
 			})
 		})
 	})
 
-	t.Run("Returns error if user is not site-admin", func(t *testing.T) {
-		conf.Mock(smtpDisabledConf)
+	t.Run("Returns error if user is not site-bdmin", func(t *testing.T) {
+		conf.Mock(smtpDisbbledConf)
 		defer conf.Mock(nil)
 
 		users := dbmocks.NewMockUserStore()
-		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{SiteAdmin: false}, nil)
-		db.UsersFunc.SetDefaultReturn(users)
+		users.GetByCurrentAuthUserFunc.SetDefbultReturn(&types.User{SiteAdmin: fblse}, nil)
+		db.UsersFunc.SetDefbultReturn(users)
 
 		RunTests(t, []*Test{
 			{
-				Schema: mustParseGraphQLSchema(t, db),
+				Schemb: mustPbrseGrbphQLSchemb(t, db),
 				Query: `
-					mutation($user: ID!) {
-						randomizeUserPassword(user: $user) {
-							resetPasswordURL
+					mutbtion($user: ID!) {
+						rbndomizeUserPbssword(user: $user) {
+							resetPbsswordURL
 						}
 					}
 				`,
 				ExpectedResult: "null",
 				ExpectedErrors: []*errors.QueryError{
 					{
-						Message: "must be site admin",
-						Path:    []any{"randomizeUserPassword"},
+						Messbge: "must be site bdmin",
+						Pbth:    []bny{"rbndomizeUserPbssword"},
 					},
 				},
-				Variables: map[string]any{"user": userIDBase64},
+				Vbribbles: mbp[string]bny{"user": userIDBbse64},
 			},
 		})
 	})
 
-	t.Run("Returns error when cannot parse user ID", func(t *testing.T) {
-		conf.Mock(smtpDisabledConf)
+	t.Run("Returns error when cbnnot pbrse user ID", func(t *testing.T) {
+		conf.Mock(smtpDisbbledConf)
 		defer conf.Mock(nil)
 
 		users := dbmocks.NewMockUserStore()
-		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{SiteAdmin: true}, nil)
-		db.UsersFunc.SetDefaultReturn(users)
+		users.GetByCurrentAuthUserFunc.SetDefbultReturn(&types.User{SiteAdmin: true}, nil)
+		db.UsersFunc.SetDefbultReturn(users)
 
 		RunTests(t, []*Test{
 			{
-				Schema: mustParseGraphQLSchema(t, db),
+				Schemb: mustPbrseGrbphQLSchemb(t, db),
 				Query: `
-					mutation($user: ID!) {
-						randomizeUserPassword(user: $user) {
-							resetPasswordURL
+					mutbtion($user: ID!) {
+						rbndomizeUserPbssword(user: $user) {
+							resetPbsswordURL
 						}
 					}
 				`,
 				ExpectedResult: "null",
 				ExpectedErrors: []*errors.QueryError{
 					{
-						Message: "cannot parse user ID: illegal base64 data at input byte 4",
-						Path:    []any{"randomizeUserPassword"},
+						Messbge: "cbnnot pbrse user ID: illegbl bbse64 dbtb bt input byte 4",
+						Pbth:    []bny{"rbndomizeUserPbssword"},
 					},
 				},
-				Variables: map[string]any{"user": "alice"},
+				Vbribbles: mbp[string]bny{"user": "blice"},
 			},
 		})
 	})
 
-	t.Run("Returns resetPasswordUrl if user is site-admin", func(t *testing.T) {
-		conf.Mock(smtpDisabledConf)
+	t.Run("Returns resetPbsswordUrl if user is site-bdmin", func(t *testing.T) {
+		conf.Mock(smtpDisbbledConf)
 		defer conf.Mock(nil)
 
 		users := dbmocks.NewMockUserStore()
-		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{SiteAdmin: true}, nil)
-		users.RandomizePasswordAndClearPasswordResetRateLimitFunc.SetDefaultReturn(nil)
-		users.RenewPasswordResetCodeFunc.SetDefaultReturn("code", nil)
-		db.UsersFunc.SetDefaultReturn(users)
+		users.GetByCurrentAuthUserFunc.SetDefbultReturn(&types.User{SiteAdmin: true}, nil)
+		users.RbndomizePbsswordAndClebrPbsswordResetRbteLimitFunc.SetDefbultReturn(nil)
+		users.RenewPbsswordResetCodeFunc.SetDefbultReturn("code", nil)
+		db.UsersFunc.SetDefbultReturn(users)
 
 		RunTests(t, []*Test{
 			{
-				Schema: mustParseGraphQLSchema(t, db),
+				Schemb: mustPbrseGrbphQLSchemb(t, db),
 				Query: `
-					mutation($user: ID!) {
-						randomizeUserPassword(user: $user) {
-							resetPasswordURL
+					mutbtion($user: ID!) {
+						rbndomizeUserPbssword(user: $user) {
+							resetPbsswordURL
 						}
 					}
 				`,
 				ExpectedResult: `{
-					"randomizeUserPassword": {
-						"resetPasswordURL": "http://example.com/password-reset?code=code&userID=42"
+					"rbndomizeUserPbssword": {
+						"resetPbsswordURL": "http://exbmple.com/pbssword-reset?code=code&userID=42"
 					}
 				}`,
-				Variables: map[string]any{"user": userIDBase64},
+				Vbribbles: mbp[string]bny{"user": userIDBbse64},
 			},
 		})
 	})
 
-	t.Run("Returns resetPasswordUrl and sends email if user is site-admin", func(t *testing.T) {
-		conf.Mock(smtpEnabledConf)
+	t.Run("Returns resetPbsswordUrl bnd sends embil if user is site-bdmin", func(t *testing.T) {
+		conf.Mock(smtpEnbbledConf)
 		defer conf.Mock(nil)
 
 		users := dbmocks.NewMockUserStore()
-		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{SiteAdmin: true}, nil)
-		users.RandomizePasswordAndClearPasswordResetRateLimitFunc.SetDefaultReturn(nil)
-		users.RenewPasswordResetCodeFunc.SetDefaultReturn("code", nil)
-		users.GetByIDFunc.SetDefaultReturn(&types.User{Username: "alice"}, nil)
+		users.GetByCurrentAuthUserFunc.SetDefbultReturn(&types.User{SiteAdmin: true}, nil)
+		users.RbndomizePbsswordAndClebrPbsswordResetRbteLimitFunc.SetDefbultReturn(nil)
+		users.RenewPbsswordResetCodeFunc.SetDefbultReturn("code", nil)
+		users.GetByIDFunc.SetDefbultReturn(&types.User{Usernbme: "blice"}, nil)
 
-		userEmails := dbmocks.NewMockUserEmailsStore()
-		userEmails.GetPrimaryEmailFunc.SetDefaultReturn("alice@foo.bar", false, nil)
+		userEmbils := dbmocks.NewMockUserEmbilsStore()
+		userEmbils.GetPrimbryEmbilFunc.SetDefbultReturn("blice@foo.bbr", fblse, nil)
 
-		db.UsersFunc.SetDefaultReturn(users)
-		db.UserEmailsFunc.SetDefaultReturn(userEmails)
+		db.UsersFunc.SetDefbultReturn(users)
+		db.UserEmbilsFunc.SetDefbultReturn(userEmbils)
 
-		sent := false
-		txemail.MockSend = func(ctx context.Context, message txemail.Message) error {
+		sent := fblse
+		txembil.MockSend = func(ctx context.Context, messbge txembil.Messbge) error {
 			sent = true
 			return nil
 		}
 		defer func() {
-			txemail.MockSend = nil
+			txembil.MockSend = nil
 		}()
 
 		RunTests(t, []*Test{
 			{
-				Schema: mustParseGraphQLSchema(t, db),
+				Schemb: mustPbrseGrbphQLSchemb(t, db),
 				Query: `
-					mutation($user: ID!) {
-						randomizeUserPassword(user: $user) {
-							resetPasswordURL
+					mutbtion($user: ID!) {
+						rbndomizeUserPbssword(user: $user) {
+							resetPbsswordURL
 						}
 					}
 				`,
 				ExpectedResult: `{
-					"randomizeUserPassword": {
-						"resetPasswordURL": "http://example.com/password-reset?code=code&userID=42"
+					"rbndomizeUserPbssword": {
+						"resetPbsswordURL": "http://exbmple.com/pbssword-reset?code=code&userID=42"
 					}
 				}`,
-				Variables: map[string]any{"user": userIDBase64},
+				Vbribbles: mbp[string]bny{"user": userIDBbse64},
 			},
 		})
 
-		assert.True(t, sent, "should have sent email")
+		bssert.True(t, sent, "should hbve sent embil")
 	})
 }

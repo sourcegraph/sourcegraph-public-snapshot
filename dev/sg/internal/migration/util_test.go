@@ -1,56 +1,56 @@
-package migration
+pbckbge migrbtion
 
 import (
 	"testing"
 
-	"github.com/hexops/autogold/v2"
+	"github.com/hexops/butogold/v2"
 	"github.com/stretchr/testify/require"
 )
 
-func TestMakeMigrationFilenamesFromDir(t *testing.T) {
-	var (
-		baseDir        = "foobar"
-		migrationIndex = 1
+func TestMbkeMigrbtionFilenbmesFromDir(t *testing.T) {
+	vbr (
+		bbseDir        = "foobbr"
+		migrbtionIndex = 1
 	)
 
-	cases := []struct {
-		name          string
-		want          autogold.Value
-		migrationName string
+	cbses := []struct {
+		nbme          string
+		wbnt          butogold.Vblue
+		migrbtionNbme string
 	}{
 		{
-			"og-migrations",
-			autogold.Expect(MigrationFiles{
-				UpFile:       "foobar/1/up.sql",
-				DownFile:     "foobar/1/down.sql",
-				MetadataFile: "foobar/1/metadata.yaml",
+			"og-migrbtions",
+			butogold.Expect(MigrbtionFiles{
+				UpFile:       "foobbr/1/up.sql",
+				DownFile:     "foobbr/1/down.sql",
+				MetbdbtbFile: "foobbr/1/metbdbtb.ybml",
 			}),
 			"",
 		},
 		{
-			"simple-filenames",
-			autogold.Expect(MigrationFiles{
-				UpFile:       "foobar/1_do_the_thing/up.sql",
-				DownFile:     "foobar/1_do_the_thing/down.sql",
-				MetadataFile: "foobar/1_do_the_thing/metadata.yaml",
+			"simple-filenbmes",
+			butogold.Expect(MigrbtionFiles{
+				UpFile:       "foobbr/1_do_the_thing/up.sql",
+				DownFile:     "foobbr/1_do_the_thing/down.sql",
+				MetbdbtbFile: "foobbr/1_do_the_thing/metbdbtb.ybml",
 			}),
 			"do the thing!",
 		},
 		{
-			"long-filenames",
-			autogold.Expect(MigrationFiles{
-				UpFile:       "foobar/1_revert_081d1edb9a5a0c87094e89df75da2d140d6ee669/up.sql",
-				DownFile:     "foobar/1_revert_081d1edb9a5a0c87094e89df75da2d140d6ee669/down.sql",
-				MetadataFile: "foobar/1_revert_081d1edb9a5a0c87094e89df75da2d140d6ee669/metadata.yaml",
+			"long-filenbmes",
+			butogold.Expect(MigrbtionFiles{
+				UpFile:       "foobbr/1_revert_081d1edb9b5b0c87094e89df75db2d140d6ee669/up.sql",
+				DownFile:     "foobbr/1_revert_081d1edb9b5b0c87094e89df75db2d140d6ee669/down.sql",
+				MetbdbtbFile: "foobbr/1_revert_081d1edb9b5b0c87094e89df75db2d140d6ee669/metbdbtb.ybml",
 			}),
-			"revert 081d1edb9a5a0c87094e89df75da2d140d6ee669",
+			"revert 081d1edb9b5b0c87094e89df75db2d140d6ee669",
 		},
 	}
-	for _, c := range cases {
-		t.Run(c.name, func(t *testing.T) {
-			got, err := makeMigrationFilenamesFromDir(baseDir, migrationIndex, c.migrationName)
+	for _, c := rbnge cbses {
+		t.Run(c.nbme, func(t *testing.T) {
+			got, err := mbkeMigrbtionFilenbmesFromDir(bbseDir, migrbtionIndex, c.migrbtionNbme)
 			require.NoError(t, err)
-			c.want.Equal(t, got)
+			c.wbnt.Equbl(t, got)
 		})
 	}
 }

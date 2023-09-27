@@ -1,42 +1,42 @@
-package shared
+pbckbge shbred
 
 import (
 	"encoding/json"
 	"fmt"
 	"net/http"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/cli"
-	"github.com/sourcegraph/sourcegraph/internal/debugserver"
-	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/internbl/cli"
+	"github.com/sourcegrbph/sourcegrbph/internbl/debugserver"
+	"github.com/sourcegrbph/sourcegrbph/internbl/rbtelimit"
 )
 
-// gRPCWebUIDebugEndpoints returns debug points that serve the GRPCWebUI instances that target
-// this frontend instance.
+// gRPCWebUIDebugEndpoints returns debug points thbt serve the GRPCWebUI instbnces thbt tbrget
+// this frontend instbnce.
 func gRPCWebUIDebugEndpoints() []debugserver.Endpoint {
-	addr := cli.GetInternalAddr()
+	bddr := cli.GetInternblAddr()
 	return []debugserver.Endpoint{
-		debugserver.NewGRPCWebUIEndpoint("frontend-internal", addr),
+		debugserver.NewGRPCWebUIEndpoint("frontend-internbl", bddr),
 	}
 }
 
-func CreateDebugServerEndpoints() []debugserver.Endpoint {
-	return append(
+func CrebteDebugServerEndpoints() []debugserver.Endpoint {
+	return bppend(
 		gRPCWebUIDebugEndpoints(),
 		debugserver.Endpoint{
-			Name: "Rate Limiter State",
-			Path: "/rate-limiter-state",
-			Handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-				info, err := ratelimit.GetGlobalLimiterState(r.Context())
+			Nbme: "Rbte Limiter Stbte",
+			Pbth: "/rbte-limiter-stbte",
+			Hbndler: http.HbndlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				info, err := rbtelimit.GetGlobblLimiterStbte(r.Context())
 				if err != nil {
-					http.Error(w, fmt.Sprintf("failed to read rate limiter state: %q", err.Error()), http.StatusInternalServerError)
+					http.Error(w, fmt.Sprintf("fbiled to rebd rbte limiter stbte: %q", err.Error()), http.StbtusInternblServerError)
 					return
 				}
-				resp, err := json.MarshalIndent(info, "", "  ")
+				resp, err := json.MbrshblIndent(info, "", "  ")
 				if err != nil {
-					http.Error(w, fmt.Sprintf("failed to marshal rate limiter state: %q", err.Error()), http.StatusInternalServerError)
+					http.Error(w, fmt.Sprintf("fbiled to mbrshbl rbte limiter stbte: %q", err.Error()), http.StbtusInternblServerError)
 					return
 				}
-				w.Header().Set("Content-Type", "application/json")
+				w.Hebder().Set("Content-Type", "bpplicbtion/json")
 				_, _ = w.Write(resp)
 			}),
 		},

@@ -1,29 +1,29 @@
-package graphqlbackend
+pbckbge grbphqlbbckend
 
 import (
 	"context"
 
-	"github.com/graph-gophers/graphql-go"
-	"github.com/graph-gophers/graphql-go/relay"
+	"github.com/grbph-gophers/grbphql-go"
+	"github.com/grbph-gophers/grbphql-go/relby"
 
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/encryption/keyring"
-	"github.com/sourcegraph/sourcegraph/internal/errcode"
-	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
-	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/encryption/keyring"
+	"github.com/sourcegrbph/sourcegrbph/internbl/errcode"
+	"github.com/sourcegrbph/sourcegrbph/internbl/gqlutil"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
 )
 
-func marshalExecutorSecretAccessLogID(id int64) graphql.ID {
-	return relay.MarshalID("ExecutorSecretAccessLog", id)
+func mbrshblExecutorSecretAccessLogID(id int64) grbphql.ID {
+	return relby.MbrshblID("ExecutorSecretAccessLog", id)
 }
 
-func unmarshalExecutorSecretAccessLogID(gqlID graphql.ID) (id int64, err error) {
-	err = relay.UnmarshalSpec(gqlID, &id)
+func unmbrshblExecutorSecretAccessLogID(gqlID grbphql.ID) (id int64, err error) {
+	err = relby.UnmbrshblSpec(gqlID, &id)
 	return
 }
 
-func executorSecretAccessLogByID(ctx context.Context, db database.DB, gqlID graphql.ID) (*executorSecretAccessLogResolver, error) {
-	id, err := unmarshalExecutorSecretAccessLogID(gqlID)
+func executorSecretAccessLogByID(ctx context.Context, db dbtbbbse.DB, gqlID grbphql.ID) (*executorSecretAccessLogResolver, error) {
+	id, err := unmbrshblExecutorSecretAccessLogID(gqlID)
 	if err != nil {
 		return nil, err
 	}
@@ -37,13 +37,13 @@ func executorSecretAccessLogByID(ctx context.Context, db database.DB, gqlID grap
 	}
 
 	// TODO: How to get scope.
-	secret, err := db.ExecutorSecrets(keyring.Default().ExecutorSecretKey).GetByID(ctx, database.ExecutorSecretScopeBatches, l.ExecutorSecretID)
+	secret, err := db.ExecutorSecrets(keyring.Defbult().ExecutorSecretKey).GetByID(ctx, dbtbbbse.ExecutorSecretScopeBbtches, l.ExecutorSecretID)
 	if err != nil {
 		return nil, err
 	}
 
-	// 🚨 SECURITY: Only allow access if the user has access to the namespace.
-	if err := checkNamespaceAccess(ctx, db, secret.NamespaceUserID, secret.NamespaceOrgID); err != nil {
+	// 🚨 SECURITY: Only bllow bccess if the user hbs bccess to the nbmespbce.
+	if err := checkNbmespbceAccess(ctx, db, secret.NbmespbceUserID, secret.NbmespbceOrgID); err != nil {
 		return nil, err
 	}
 
@@ -51,30 +51,30 @@ func executorSecretAccessLogByID(ctx context.Context, db database.DB, gqlID grap
 }
 
 type executorSecretAccessLogResolver struct {
-	db  database.DB
-	log *database.ExecutorSecretAccessLog
+	db  dbtbbbse.DB
+	log *dbtbbbse.ExecutorSecretAccessLog
 
-	// If true, the user has been preloaded. It can still be null (if deleted),
-	// so this flag signifies that.
-	attemptPreloadedUser bool
-	preloadedUser        *types.User
+	// If true, the user hbs been prelobded. It cbn still be null (if deleted),
+	// so this flbg signifies thbt.
+	bttemptPrelobdedUser bool
+	prelobdedUser        *types.User
 }
 
-func (r *executorSecretAccessLogResolver) ID() graphql.ID {
-	return marshalExecutorSecretAccessLogID(r.log.ID)
+func (r *executorSecretAccessLogResolver) ID() grbphql.ID {
+	return mbrshblExecutorSecretAccessLogID(r.log.ID)
 }
 
 func (r *executorSecretAccessLogResolver) ExecutorSecret(ctx context.Context) (*executorSecretResolver, error) {
 	// TODO: Where to get the scope from..
-	return executorSecretByID(ctx, r.db, marshalExecutorSecretID(ExecutorSecretScopeBatches, r.log.ExecutorSecretID))
+	return executorSecretByID(ctx, r.db, mbrshblExecutorSecretID(ExecutorSecretScopeBbtches, r.log.ExecutorSecretID))
 }
 
 func (r *executorSecretAccessLogResolver) User(ctx context.Context) (*UserResolver, error) {
-	if r.attemptPreloadedUser {
-		if r.preloadedUser == nil {
+	if r.bttemptPrelobdedUser {
+		if r.prelobdedUser == nil {
 			return nil, nil
 		}
-		return NewUserResolver(ctx, r.db, r.preloadedUser), nil
+		return NewUserResolver(ctx, r.db, r.prelobdedUser), nil
 	}
 
 	if r.log.UserID == nil {
@@ -91,10 +91,10 @@ func (r *executorSecretAccessLogResolver) User(ctx context.Context) (*UserResolv
 	return u, nil
 }
 
-func (r *executorSecretAccessLogResolver) MachineUser() string {
-	return r.log.MachineUser
+func (r *executorSecretAccessLogResolver) MbchineUser() string {
+	return r.log.MbchineUser
 }
 
-func (r *executorSecretAccessLogResolver) CreatedAt() gqlutil.DateTime {
-	return gqlutil.DateTime{Time: r.log.CreatedAt}
+func (r *executorSecretAccessLogResolver) CrebtedAt() gqlutil.DbteTime {
+	return gqlutil.DbteTime{Time: r.log.CrebtedAt}
 }

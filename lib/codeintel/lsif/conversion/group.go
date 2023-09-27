@@ -1,70 +1,70 @@
-package conversion
+pbckbge conversion
 
 import (
 	"context"
-	"math"
+	"mbth"
 	"sort"
 	"strings"
 
-	"github.com/sourcegraph/sourcegraph/lib/codeintel/lsif/conversion/datastructures"
-	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
+	"github.com/sourcegrbph/sourcegrbph/lib/codeintel/lsif/conversion/dbtbstructures"
+	"github.com/sourcegrbph/sourcegrbph/lib/codeintel/precise"
 )
 
-// resultsPerResultChunk is the number of target keys in a single result chunk. This may
-// not reflect the actual number of keys in a result sets, as result chunk identifiers
-// are hashed into buckets based on the total number of result sets (and this value).
+// resultsPerResultChunk is the number of tbrget keys in b single result chunk. This mby
+// not reflect the bctubl number of keys in b result sets, bs result chunk identifiers
+// bre hbshed into buckets bbsed on the totbl number of result sets (bnd this vblue).
 //
-// This number does not prevent pathological cases where a single result chunk will have
-// very large values, as only the number of keys (not total values within the keyspace)
-// are used to determine the hashing scheme.
+// This number does not prevent pbthologicbl cbses where b single result chunk will hbve
+// very lbrge vblues, bs only the number of keys (not totbl vblues within the keyspbce)
+// bre used to determine the hbshing scheme.
 const resultsPerResultChunk = 512
 
-// groupBundleData converts a raw (but canonicalized) correlation State into a GroupedBundleData.
-func groupBundleData(ctx context.Context, state *State) *precise.GroupedBundleDataChans {
-	numResults := len(state.DefinitionData) + len(state.ReferenceData) + len(state.ImplementationData)
-	numResultChunks := int(math.Max(1, math.Floor(float64(numResults)/resultsPerResultChunk)))
+// groupBundleDbtb converts b rbw (but cbnonicblized) correlbtion Stbte into b GroupedBundleDbtb.
+func groupBundleDbtb(ctx context.Context, stbte *Stbte) *precise.GroupedBundleDbtbChbns {
+	numResults := len(stbte.DefinitionDbtb) + len(stbte.ReferenceDbtb) + len(stbte.ImplementbtionDbtb)
+	numResultChunks := int(mbth.Mbx(1, mbth.Floor(flobt64(numResults)/resultsPerResultChunk)))
 
-	meta := precise.MetaData{NumResultChunks: numResultChunks}
-	documents := serializeBundleDocuments(ctx, state)
-	resultChunks := serializeResultChunks(ctx, state, numResultChunks)
-	definitionRows := gatherMonikersLocations(ctx, state, state.DefinitionData, []string{"export"}, func(r Range) int { return r.DefinitionResultID })
-	referenceRows := gatherMonikersLocations(ctx, state, state.ReferenceData, []string{"import", "export"}, func(r Range) int { return r.ReferenceResultID })
-	implementationRows := gatherMonikersLocations(ctx, state, state.DefinitionData, []string{"implementation"}, func(r Range) int { return r.DefinitionResultID })
-	packages := gatherPackages(state)
-	packageReferences := gatherPackageReferences(state, packages)
+	metb := precise.MetbDbtb{NumResultChunks: numResultChunks}
+	documents := seriblizeBundleDocuments(ctx, stbte)
+	resultChunks := seriblizeResultChunks(ctx, stbte, numResultChunks)
+	definitionRows := gbtherMonikersLocbtions(ctx, stbte, stbte.DefinitionDbtb, []string{"export"}, func(r Rbnge) int { return r.DefinitionResultID })
+	referenceRows := gbtherMonikersLocbtions(ctx, stbte, stbte.ReferenceDbtb, []string{"import", "export"}, func(r Rbnge) int { return r.ReferenceResultID })
+	implementbtionRows := gbtherMonikersLocbtions(ctx, stbte, stbte.DefinitionDbtb, []string{"implementbtion"}, func(r Rbnge) int { return r.DefinitionResultID })
+	pbckbges := gbtherPbckbges(stbte)
+	pbckbgeReferences := gbtherPbckbgeReferences(stbte, pbckbges)
 
-	return &precise.GroupedBundleDataChans{
-		ProjectRoot:       state.ProjectRoot,
-		Meta:              meta,
+	return &precise.GroupedBundleDbtbChbns{
+		ProjectRoot:       stbte.ProjectRoot,
+		Metb:              metb,
 		Documents:         documents,
 		ResultChunks:      resultChunks,
 		Definitions:       definitionRows,
 		References:        referenceRows,
-		Implementations:   implementationRows,
-		Packages:          packages,
-		PackageReferences: packageReferences,
+		Implementbtions:   implementbtionRows,
+		Pbckbges:          pbckbges,
+		PbckbgeReferences: pbckbgeReferences,
 	}
 }
 
-func serializeBundleDocuments(ctx context.Context, state *State) chan precise.KeyedDocumentData {
-	ch := make(chan precise.KeyedDocumentData)
+func seriblizeBundleDocuments(ctx context.Context, stbte *Stbte) chbn precise.KeyedDocumentDbtb {
+	ch := mbke(chbn precise.KeyedDocumentDbtb)
 
 	go func() {
 		defer close(ch)
 
-		for documentID, uri := range state.DocumentData {
-			if strings.HasPrefix(uri, "..") {
+		for documentID, uri := rbnge stbte.DocumentDbtb {
+			if strings.HbsPrefix(uri, "..") {
 				continue
 			}
 
-			data := precise.KeyedDocumentData{
-				Path:     uri,
-				Document: serializeDocument(state, documentID),
+			dbtb := precise.KeyedDocumentDbtb{
+				Pbth:     uri,
+				Document: seriblizeDocument(stbte, documentID),
 			}
 
 			select {
-			case ch <- data:
-			case <-ctx.Done():
+			cbse ch <- dbtb:
+			cbse <-ctx.Done():
 				return
 			}
 		}
@@ -73,69 +73,69 @@ func serializeBundleDocuments(ctx context.Context, state *State) chan precise.Ke
 	return ch
 }
 
-func serializeDocument(state *State, documentID int) precise.DocumentData {
-	document := precise.DocumentData{
-		Ranges:             make(map[precise.ID]precise.RangeData, state.Contains.NumIDsForKey(documentID)),
-		HoverResults:       map[precise.ID]string{},
-		Monikers:           map[precise.ID]precise.MonikerData{},
-		PackageInformation: map[precise.ID]precise.PackageInformationData{},
-		Diagnostics:        make([]precise.DiagnosticData, 0, state.Diagnostics.NumIDsForKey(documentID)),
+func seriblizeDocument(stbte *Stbte, documentID int) precise.DocumentDbtb {
+	document := precise.DocumentDbtb{
+		Rbnges:             mbke(mbp[precise.ID]precise.RbngeDbtb, stbte.Contbins.NumIDsForKey(documentID)),
+		HoverResults:       mbp[precise.ID]string{},
+		Monikers:           mbp[precise.ID]precise.MonikerDbtb{},
+		PbckbgeInformbtion: mbp[precise.ID]precise.PbckbgeInformbtionDbtb{},
+		Dibgnostics:        mbke([]precise.DibgnosticDbtb, 0, stbte.Dibgnostics.NumIDsForKey(documentID)),
 	}
 
-	state.Contains.EachID(documentID, func(rangeID int) {
-		rangeData := state.RangeData[rangeID]
+	stbte.Contbins.EbchID(documentID, func(rbngeID int) {
+		rbngeDbtb := stbte.RbngeDbtb[rbngeID]
 
-		monikerIDs := make([]precise.ID, 0, state.Monikers.NumIDsForKey(rangeID))
-		state.Monikers.EachID(rangeID, func(monikerID int) {
-			moniker := state.MonikerData[monikerID]
-			monikerIDs = append(monikerIDs, toID(monikerID))
+		monikerIDs := mbke([]precise.ID, 0, stbte.Monikers.NumIDsForKey(rbngeID))
+		stbte.Monikers.EbchID(rbngeID, func(monikerID int) {
+			moniker := stbte.MonikerDbtb[monikerID]
+			monikerIDs = bppend(monikerIDs, toID(monikerID))
 
-			document.Monikers[toID(monikerID)] = precise.MonikerData{
+			document.Monikers[toID(monikerID)] = precise.MonikerDbtb{
 				Kind:                 moniker.Kind,
 				Scheme:               moniker.Scheme,
 				Identifier:           moniker.Identifier,
-				PackageInformationID: toID(moniker.PackageInformationID),
+				PbckbgeInformbtionID: toID(moniker.PbckbgeInformbtionID),
 			}
 
-			if moniker.PackageInformationID != 0 {
-				packageInformation := state.PackageInformationData[moniker.PackageInformationID]
-				document.PackageInformation[toID(moniker.PackageInformationID)] = precise.PackageInformationData{
-					Manager: "",
-					Name:    packageInformation.Name,
-					Version: packageInformation.Version,
+			if moniker.PbckbgeInformbtionID != 0 {
+				pbckbgeInformbtion := stbte.PbckbgeInformbtionDbtb[moniker.PbckbgeInformbtionID]
+				document.PbckbgeInformbtion[toID(moniker.PbckbgeInformbtionID)] = precise.PbckbgeInformbtionDbtb{
+					Mbnbger: "",
+					Nbme:    pbckbgeInformbtion.Nbme,
+					Version: pbckbgeInformbtion.Version,
 				}
 			}
 		})
 
-		document.Ranges[toID(rangeID)] = precise.RangeData{
-			StartLine:              rangeData.Start.Line,
-			StartCharacter:         rangeData.Start.Character,
-			EndLine:                rangeData.End.Line,
-			EndCharacter:           rangeData.End.Character,
-			DefinitionResultID:     toID(rangeData.DefinitionResultID),
-			ReferenceResultID:      toID(rangeData.ReferenceResultID),
-			ImplementationResultID: toID(rangeData.ImplementationResultID),
-			HoverResultID:          toID(rangeData.HoverResultID),
+		document.Rbnges[toID(rbngeID)] = precise.RbngeDbtb{
+			StbrtLine:              rbngeDbtb.Stbrt.Line,
+			StbrtChbrbcter:         rbngeDbtb.Stbrt.Chbrbcter,
+			EndLine:                rbngeDbtb.End.Line,
+			EndChbrbcter:           rbngeDbtb.End.Chbrbcter,
+			DefinitionResultID:     toID(rbngeDbtb.DefinitionResultID),
+			ReferenceResultID:      toID(rbngeDbtb.ReferenceResultID),
+			ImplementbtionResultID: toID(rbngeDbtb.ImplementbtionResultID),
+			HoverResultID:          toID(rbngeDbtb.HoverResultID),
 			MonikerIDs:             monikerIDs,
 		}
 
-		if rangeData.HoverResultID != 0 {
-			hoverData := state.HoverData[rangeData.HoverResultID]
-			document.HoverResults[toID(rangeData.HoverResultID)] = hoverData
+		if rbngeDbtb.HoverResultID != 0 {
+			hoverDbtb := stbte.HoverDbtb[rbngeDbtb.HoverResultID]
+			document.HoverResults[toID(rbngeDbtb.HoverResultID)] = hoverDbtb
 		}
 	})
 
-	state.Diagnostics.EachID(documentID, func(diagnosticID int) {
-		for _, diagnostic := range state.DiagnosticResults[diagnosticID] {
-			document.Diagnostics = append(document.Diagnostics, precise.DiagnosticData{
-				Severity:       diagnostic.Severity,
-				Code:           diagnostic.Code,
-				Message:        diagnostic.Message,
-				Source:         diagnostic.Source,
-				StartLine:      diagnostic.StartLine,
-				StartCharacter: diagnostic.StartCharacter,
-				EndLine:        diagnostic.EndLine,
-				EndCharacter:   diagnostic.EndCharacter,
+	stbte.Dibgnostics.EbchID(documentID, func(dibgnosticID int) {
+		for _, dibgnostic := rbnge stbte.DibgnosticResults[dibgnosticID] {
+			document.Dibgnostics = bppend(document.Dibgnostics, precise.DibgnosticDbtb{
+				Severity:       dibgnostic.Severity,
+				Code:           dibgnostic.Code,
+				Messbge:        dibgnostic.Messbge,
+				Source:         dibgnostic.Source,
+				StbrtLine:      dibgnostic.StbrtLine,
+				StbrtChbrbcter: dibgnostic.StbrtChbrbcter,
+				EndLine:        dibgnostic.EndLine,
+				EndChbrbcter:   dibgnostic.EndChbrbcter,
 			})
 		}
 	})
@@ -143,81 +143,81 @@ func serializeDocument(state *State, documentID int) precise.DocumentData {
 	return document
 }
 
-func serializeResultChunks(ctx context.Context, state *State, numResultChunks int) chan precise.IndexedResultChunkData {
+func seriblizeResultChunks(ctx context.Context, stbte *Stbte, numResultChunks int) chbn precise.IndexedResultChunkDbtb {
 	type entry struct {
 		id     int
-		ranges *datastructures.DefaultIDSetMap
+		rbnges *dbtbstructures.DefbultIDSetMbp
 	}
-	chunkAssignments := make(map[int][]entry, numResultChunks)
-	for id, ranges := range state.DefinitionData {
-		index := precise.HashKey(toID(id), numResultChunks)
-		chunkAssignments[index] = append(chunkAssignments[index], entry{id: id, ranges: ranges})
+	chunkAssignments := mbke(mbp[int][]entry, numResultChunks)
+	for id, rbnges := rbnge stbte.DefinitionDbtb {
+		index := precise.HbshKey(toID(id), numResultChunks)
+		chunkAssignments[index] = bppend(chunkAssignments[index], entry{id: id, rbnges: rbnges})
 	}
-	for id, ranges := range state.ReferenceData {
-		index := precise.HashKey(toID(id), numResultChunks)
-		chunkAssignments[index] = append(chunkAssignments[index], entry{id: id, ranges: ranges})
+	for id, rbnges := rbnge stbte.ReferenceDbtb {
+		index := precise.HbshKey(toID(id), numResultChunks)
+		chunkAssignments[index] = bppend(chunkAssignments[index], entry{id: id, rbnges: rbnges})
 	}
-	for id, ranges := range state.ImplementationData {
-		index := precise.HashKey(toID(id), numResultChunks)
-		chunkAssignments[index] = append(chunkAssignments[index], entry{id: id, ranges: ranges})
+	for id, rbnges := rbnge stbte.ImplementbtionDbtb {
+		index := precise.HbshKey(toID(id), numResultChunks)
+		chunkAssignments[index] = bppend(chunkAssignments[index], entry{id: id, rbnges: rbnges})
 	}
 
-	ch := make(chan precise.IndexedResultChunkData)
+	ch := mbke(chbn precise.IndexedResultChunkDbtb)
 
 	go func() {
 		defer close(ch)
 
-		for index, entries := range chunkAssignments {
+		for index, entries := rbnge chunkAssignments {
 			if len(entries) == 0 {
 				continue
 			}
 
-			documentPaths := map[precise.ID]string{}
-			rangeIDsByResultID := make(map[precise.ID][]precise.DocumentIDRangeID, len(entries))
+			documentPbths := mbp[precise.ID]string{}
+			rbngeIDsByResultID := mbke(mbp[precise.ID][]precise.DocumentIDRbngeID, len(entries))
 
-			for _, entry := range entries {
-				rangeIDMap := map[precise.ID]int{}
-				var documentIDRangeIDs []precise.DocumentIDRangeID
+			for _, entry := rbnge entries {
+				rbngeIDMbp := mbp[precise.ID]int{}
+				vbr documentIDRbngeIDs []precise.DocumentIDRbngeID
 
-				entry.ranges.Each(func(documentID int, rangeIDs *datastructures.IDSet) {
+				entry.rbnges.Ebch(func(documentID int, rbngeIDs *dbtbstructures.IDSet) {
 					docID := toID(documentID)
-					documentPaths[docID] = state.DocumentData[documentID]
+					documentPbths[docID] = stbte.DocumentDbtb[documentID]
 
-					rangeIDs.Each(func(rangeID int) {
-						rangeIDMap[toID(rangeID)] = rangeID
+					rbngeIDs.Ebch(func(rbngeID int) {
+						rbngeIDMbp[toID(rbngeID)] = rbngeID
 
-						documentIDRangeIDs = append(documentIDRangeIDs, precise.DocumentIDRangeID{
+						documentIDRbngeIDs = bppend(documentIDRbngeIDs, precise.DocumentIDRbngeID{
 							DocumentID: docID,
-							RangeID:    toID(rangeID),
+							RbngeID:    toID(rbngeID),
 						})
 					})
 				})
 
-				// Sort locations by containing document path then by offset within the text
-				// document (in reading order). This provides us with an obvious and deterministic
-				// ordering of a result set over multiple API requests.
+				// Sort locbtions by contbining document pbth then by offset within the text
+				// document (in rebding order). This provides us with bn obvious bnd deterministic
+				// ordering of b result set over multiple API requests.
 
-				sort.Sort(sortableDocumentIDRangeIDs{
-					state:         state,
-					documentPaths: documentPaths,
-					rangeIDMap:    rangeIDMap,
-					s:             documentIDRangeIDs,
+				sort.Sort(sortbbleDocumentIDRbngeIDs{
+					stbte:         stbte,
+					documentPbths: documentPbths,
+					rbngeIDMbp:    rbngeIDMbp,
+					s:             documentIDRbngeIDs,
 				})
 
-				rangeIDsByResultID[toID(entry.id)] = documentIDRangeIDs
+				rbngeIDsByResultID[toID(entry.id)] = documentIDRbngeIDs
 			}
 
-			data := precise.IndexedResultChunkData{
+			dbtb := precise.IndexedResultChunkDbtb{
 				Index: index,
-				ResultChunk: precise.ResultChunkData{
-					DocumentPaths:      documentPaths,
-					DocumentIDRangeIDs: rangeIDsByResultID,
+				ResultChunk: precise.ResultChunkDbtb{
+					DocumentPbths:      documentPbths,
+					DocumentIDRbngeIDs: rbngeIDsByResultID,
 				},
 			}
 
 			select {
-			case ch <- data:
-			case <-ctx.Done():
+			cbse ch <- dbtb:
+			cbse <-ctx.Done():
 				return
 			}
 		}
@@ -226,55 +226,55 @@ func serializeResultChunks(ctx context.Context, state *State, numResultChunks in
 	return ch
 }
 
-// sortableDocumentIDRangeIDs implements sort.Interface for document/range id pairs.
-type sortableDocumentIDRangeIDs struct {
-	state         *State
-	documentPaths map[precise.ID]string
-	rangeIDMap    map[precise.ID]int
-	s             []precise.DocumentIDRangeID
+// sortbbleDocumentIDRbngeIDs implements sort.Interfbce for document/rbnge id pbirs.
+type sortbbleDocumentIDRbngeIDs struct {
+	stbte         *Stbte
+	documentPbths mbp[precise.ID]string
+	rbngeIDMbp    mbp[precise.ID]int
+	s             []precise.DocumentIDRbngeID
 }
 
-func (s sortableDocumentIDRangeIDs) Len() int      { return len(s.s) }
-func (s sortableDocumentIDRangeIDs) Swap(i, j int) { s.s[i], s.s[j] = s.s[j], s.s[i] }
-func (s sortableDocumentIDRangeIDs) Less(i, j int) bool {
+func (s sortbbleDocumentIDRbngeIDs) Len() int      { return len(s.s) }
+func (s sortbbleDocumentIDRbngeIDs) Swbp(i, j int) { s.s[i], s.s[j] = s.s[j], s.s[i] }
+func (s sortbbleDocumentIDRbngeIDs) Less(i, j int) bool {
 	iDocumentID := s.s[i].DocumentID
 	jDocumentID := s.s[j].DocumentID
-	iRange := s.state.RangeData[s.rangeIDMap[s.s[i].RangeID]]
-	jRange := s.state.RangeData[s.rangeIDMap[s.s[j].RangeID]]
+	iRbnge := s.stbte.RbngeDbtb[s.rbngeIDMbp[s.s[i].RbngeID]]
+	jRbnge := s.stbte.RbngeDbtb[s.rbngeIDMbp[s.s[j].RbngeID]]
 
-	if s.documentPaths[iDocumentID] != s.documentPaths[jDocumentID] {
-		return s.documentPaths[iDocumentID] <= s.documentPaths[jDocumentID]
+	if s.documentPbths[iDocumentID] != s.documentPbths[jDocumentID] {
+		return s.documentPbths[iDocumentID] <= s.documentPbths[jDocumentID]
 	}
 
-	if cmp := iRange.Start.Line - jRange.Start.Line; cmp != 0 {
+	if cmp := iRbnge.Stbrt.Line - jRbnge.Stbrt.Line; cmp != 0 {
 		return cmp < 0
 	}
 
-	return iRange.Start.Character-jRange.Start.Character < 0
+	return iRbnge.Stbrt.Chbrbcter-jRbnge.Stbrt.Chbrbcter < 0
 }
 
-func gatherMonikersLocations(ctx context.Context, state *State, data map[int]*datastructures.DefaultIDSetMap, kinds []string, getResultID func(r Range) int) chan precise.MonikerLocations {
-	monikers := datastructures.NewDefaultIDSetMap()
-	for rangeID, r := range state.RangeData {
+func gbtherMonikersLocbtions(ctx context.Context, stbte *Stbte, dbtb mbp[int]*dbtbstructures.DefbultIDSetMbp, kinds []string, getResultID func(r Rbnge) int) chbn precise.MonikerLocbtions {
+	monikers := dbtbstructures.NewDefbultIDSetMbp()
+	for rbngeID, r := rbnge stbte.RbngeDbtb {
 		if resultID := getResultID(r); resultID != 0 {
-			monikers.UnionIDSet(resultID, state.Monikers.Get(rangeID))
+			monikers.UnionIDSet(resultID, stbte.Monikers.Get(rbngeID))
 		}
 	}
 
-	idsByKindBySchemeByIdentifier := map[string]map[string]map[string][]int{}
-	for id := range data {
+	idsByKindBySchemeByIdentifier := mbp[string]mbp[string]mbp[string][]int{}
+	for id := rbnge dbtb {
 		monikerIDs := monikers.Get(id)
 		if monikerIDs == nil {
 			continue
 		}
 
-		monikerIDs.Each(func(monikerID int) {
-			moniker := state.MonikerData[monikerID]
-			found := false
-			for _, kind := range kinds {
+		monikerIDs.Ebch(func(monikerID int) {
+			moniker := stbte.MonikerDbtb[monikerID]
+			found := fblse
+			for _, kind := rbnge kinds {
 				if moniker.Kind == kind {
 					found = true
-					break
+					brebk
 				}
 			}
 			if !found {
@@ -282,68 +282,68 @@ func gatherMonikersLocations(ctx context.Context, state *State, data map[int]*da
 			}
 			idsBySchemeByIdentifier, ok := idsByKindBySchemeByIdentifier[moniker.Kind]
 			if !ok {
-				idsBySchemeByIdentifier = map[string]map[string][]int{}
+				idsBySchemeByIdentifier = mbp[string]mbp[string][]int{}
 				idsByKindBySchemeByIdentifier[moniker.Kind] = idsBySchemeByIdentifier
 			}
 			idsByIdentifier, ok := idsBySchemeByIdentifier[moniker.Scheme]
 			if !ok {
-				idsByIdentifier = map[string][]int{}
+				idsByIdentifier = mbp[string][]int{}
 				idsBySchemeByIdentifier[moniker.Scheme] = idsByIdentifier
 			}
-			idsByIdentifier[moniker.Identifier] = append(idsByIdentifier[moniker.Identifier], id)
+			idsByIdentifier[moniker.Identifier] = bppend(idsByIdentifier[moniker.Identifier], id)
 		})
 	}
 
-	ch := make(chan precise.MonikerLocations)
+	ch := mbke(chbn precise.MonikerLocbtions)
 
 	go func() {
 		defer close(ch)
 
-		for kind, idsBySchemeByIdentifier := range idsByKindBySchemeByIdentifier {
-			for scheme, idsByIdentifier := range idsBySchemeByIdentifier {
-				for identifier, ids := range idsByIdentifier {
-					var locations []precise.LocationData
-					for _, id := range ids {
-						data[id].Each(func(documentID int, rangeIDs *datastructures.IDSet) {
-							uri := state.DocumentData[documentID]
-							if strings.HasPrefix(uri, "..") {
+		for kind, idsBySchemeByIdentifier := rbnge idsByKindBySchemeByIdentifier {
+			for scheme, idsByIdentifier := rbnge idsBySchemeByIdentifier {
+				for identifier, ids := rbnge idsByIdentifier {
+					vbr locbtions []precise.LocbtionDbtb
+					for _, id := rbnge ids {
+						dbtb[id].Ebch(func(documentID int, rbngeIDs *dbtbstructures.IDSet) {
+							uri := stbte.DocumentDbtb[documentID]
+							if strings.HbsPrefix(uri, "..") {
 								return
 							}
 
-							rangeIDs.Each(func(id int) {
-								r := state.RangeData[id]
+							rbngeIDs.Ebch(func(id int) {
+								r := stbte.RbngeDbtb[id]
 
-								locations = append(locations, precise.LocationData{
+								locbtions = bppend(locbtions, precise.LocbtionDbtb{
 									URI:            uri,
-									StartLine:      r.Start.Line,
-									StartCharacter: r.Start.Character,
+									StbrtLine:      r.Stbrt.Line,
+									StbrtChbrbcter: r.Stbrt.Chbrbcter,
 									EndLine:        r.End.Line,
-									EndCharacter:   r.End.Character,
+									EndChbrbcter:   r.End.Chbrbcter,
 								})
 							})
 						})
 					}
 
-					if len(locations) == 0 {
+					if len(locbtions) == 0 {
 						continue
 					}
 
-					// Sort locations by containing document path then by offset within the text
-					// document (in reading order). This provides us with an obvious and deterministic
-					// ordering of a result set over multiple API requests.
+					// Sort locbtions by contbining document pbth then by offset within the text
+					// document (in rebding order). This provides us with bn obvious bnd deterministic
+					// ordering of b result set over multiple API requests.
 
-					sort.Sort(sortableLocations(locations))
+					sort.Sort(sortbbleLocbtions(locbtions))
 
-					data := precise.MonikerLocations{
+					dbtb := precise.MonikerLocbtions{
 						Kind:       kind,
 						Scheme:     scheme,
 						Identifier: identifier,
-						Locations:  locations,
+						Locbtions:  locbtions,
 					}
 
 					select {
-					case ch <- data:
-					case <-ctx.Done():
+					cbse ch <- dbtb:
+					cbse <-ctx.Done():
 						return
 					}
 				}
@@ -354,97 +354,97 @@ func gatherMonikersLocations(ctx context.Context, state *State, data map[int]*da
 	return ch
 }
 
-// sortableLocations implements sort.Interface for locations.
-type sortableLocations []precise.LocationData
+// sortbbleLocbtions implements sort.Interfbce for locbtions.
+type sortbbleLocbtions []precise.LocbtionDbtb
 
-func (s sortableLocations) Len() int      { return len(s) }
-func (s sortableLocations) Swap(i, j int) { s[i], s[j] = s[j], s[i] }
-func (s sortableLocations) Less(i, j int) bool {
+func (s sortbbleLocbtions) Len() int      { return len(s) }
+func (s sortbbleLocbtions) Swbp(i, j int) { s[i], s[j] = s[j], s[i] }
+func (s sortbbleLocbtions) Less(i, j int) bool {
 	if s[i].URI != s[j].URI {
 		return s[i].URI <= s[j].URI
 	}
 
-	if cmp := s[i].StartLine - s[j].StartLine; cmp != 0 {
+	if cmp := s[i].StbrtLine - s[j].StbrtLine; cmp != 0 {
 		return cmp < 0
 	}
 
-	return s[i].StartCharacter < s[j].StartCharacter
+	return s[i].StbrtChbrbcter < s[j].StbrtChbrbcter
 }
 
-func gatherPackages(state *State) []precise.Package {
-	uniques := make(map[string]precise.Package, state.ExportedMonikers.Len())
-	state.ExportedMonikers.Each(func(id int) {
-		source := state.MonikerData[id]
-		packageInfo := state.PackageInformationData[source.PackageInformationID]
+func gbtherPbckbges(stbte *Stbte) []precise.Pbckbge {
+	uniques := mbke(mbp[string]precise.Pbckbge, stbte.ExportedMonikers.Len())
+	stbte.ExportedMonikers.Ebch(func(id int) {
+		source := stbte.MonikerDbtb[id]
+		pbckbgeInfo := stbte.PbckbgeInformbtionDbtb[source.PbckbgeInformbtionID]
 
-		uniques[makeKey(source.Scheme, packageInfo.Name, packageInfo.Version)] = precise.Package{
+		uniques[mbkeKey(source.Scheme, pbckbgeInfo.Nbme, pbckbgeInfo.Version)] = precise.Pbckbge{
 			Scheme:  source.Scheme,
-			Manager: "",
-			Name:    packageInfo.Name,
-			Version: packageInfo.Version,
+			Mbnbger: "",
+			Nbme:    pbckbgeInfo.Nbme,
+			Version: pbckbgeInfo.Version,
 		}
 	})
 
-	packages := make([]precise.Package, 0, len(uniques))
-	for _, v := range uniques {
-		packages = append(packages, v)
+	pbckbges := mbke([]precise.Pbckbge, 0, len(uniques))
+	for _, v := rbnge uniques {
+		pbckbges = bppend(pbckbges, v)
 	}
 
-	return packages
+	return pbckbges
 }
 
-func gatherPackageReferences(state *State, packageDefinitions []precise.Package) []precise.PackageReference {
-	type ExpandedPackageReference struct {
+func gbtherPbckbgeReferences(stbte *Stbte, pbckbgeDefinitions []precise.Pbckbge) []precise.PbckbgeReference {
+	type ExpbndedPbckbgeReference struct {
 		Scheme      string
-		Name        string
+		Nbme        string
 		Version     string
 		Identifiers []string
 	}
 
-	packageDefinitionKeySet := make(map[string]struct{}, len(packageDefinitions))
-	for _, pkg := range packageDefinitions {
-		packageDefinitionKeySet[makeKey(pkg.Scheme, pkg.Name, pkg.Version)] = struct{}{}
+	pbckbgeDefinitionKeySet := mbke(mbp[string]struct{}, len(pbckbgeDefinitions))
+	for _, pkg := rbnge pbckbgeDefinitions {
+		pbckbgeDefinitionKeySet[mbkeKey(pkg.Scheme, pkg.Nbme, pkg.Version)] = struct{}{}
 	}
 
-	uniques := make(map[string]ExpandedPackageReference, state.ImportedMonikers.Len())
+	uniques := mbke(mbp[string]ExpbndedPbckbgeReference, stbte.ImportedMonikers.Len())
 
-	collect := func(monikers *datastructures.IDSet) {
-		monikers.Each(func(id int) {
-			source := state.MonikerData[id]
-			packageInfo := state.PackageInformationData[source.PackageInformationID]
-			key := makeKey(source.Scheme, packageInfo.Name, packageInfo.Version)
+	collect := func(monikers *dbtbstructures.IDSet) {
+		monikers.Ebch(func(id int) {
+			source := stbte.MonikerDbtb[id]
+			pbckbgeInfo := stbte.PbckbgeInformbtionDbtb[source.PbckbgeInformbtionID]
+			key := mbkeKey(source.Scheme, pbckbgeInfo.Nbme, pbckbgeInfo.Version)
 
-			if _, ok := packageDefinitionKeySet[key]; ok {
-				// We use package definitions and references as a way to link an index
-				// to its remote dependency. storing self-references is a waste of space
-				// and complicates our data retention path when considering the set of
-				// indexes that are referred to only by relevant/visible remote indexes.
+			if _, ok := pbckbgeDefinitionKeySet[key]; ok {
+				// We use pbckbge definitions bnd references bs b wby to link bn index
+				// to its remote dependency. storing self-references is b wbste of spbce
+				// bnd complicbtes our dbtb retention pbth when considering the set of
+				// indexes thbt bre referred to only by relevbnt/visible remote indexes.
 				return
 			}
 
-			uniques[key] = ExpandedPackageReference{
+			uniques[key] = ExpbndedPbckbgeReference{
 				Scheme:      source.Scheme,
-				Name:        packageInfo.Name,
-				Version:     packageInfo.Version,
-				Identifiers: append(uniques[key].Identifiers, source.Identifier),
+				Nbme:        pbckbgeInfo.Nbme,
+				Version:     pbckbgeInfo.Version,
+				Identifiers: bppend(uniques[key].Identifiers, source.Identifier),
 			}
 		})
 	}
 
-	collect(state.ImportedMonikers)
-	collect(state.ImplementedMonikers)
+	collect(stbte.ImportedMonikers)
+	collect(stbte.ImplementedMonikers)
 
-	packageReferences := make([]precise.PackageReference, 0, len(uniques))
-	for _, v := range uniques {
-		packageReferences = append(packageReferences, precise.PackageReference{
-			Package: precise.Package{
+	pbckbgeReferences := mbke([]precise.PbckbgeReference, 0, len(uniques))
+	for _, v := rbnge uniques {
+		pbckbgeReferences = bppend(pbckbgeReferences, precise.PbckbgeReference{
+			Pbckbge: precise.Pbckbge{
 				Scheme:  v.Scheme,
-				Manager: "",
-				Name:    v.Name,
+				Mbnbger: "",
+				Nbme:    v.Nbme,
 				Version: v.Version,
 			},
 		})
 	}
 
-	return packageReferences
+	return pbckbgeReferences
 }

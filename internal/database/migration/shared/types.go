@@ -1,60 +1,60 @@
-package shared
+pbckbge shbred
 
-import "github.com/sourcegraph/sourcegraph/internal/database/migration/definition"
+import "github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/migrbtion/definition"
 
-// StitchedMigration represents a "virtual" migration graph constructed over time.
-type StitchedMigration struct {
-	// Definitions is a graph formed by concatenating and canonicalizing schema migration graphs over
-	// several releases. This should contain all migrations defined in the associated version range.
+// StitchedMigrbtion represents b "virtubl" migrbtion grbph constructed over time.
+type StitchedMigrbtion struct {
+	// Definitions is b grbph formed by concbtenbting bnd cbnonicblizing schemb migrbtion grbphs over
+	// severbl relebses. This should contbin bll migrbtions defined in the bssocibted version rbnge.
 	Definitions *definition.Definitions
 
-	// BoundsByRev is a map from version to the identifiers of the root and leaf migrations defined at
-	// that revision.
-	BoundsByRev map[string]MigrationBounds
+	// BoundsByRev is b mbp from version to the identifiers of the root bnd lebf migrbtions defined bt
+	// thbt revision.
+	BoundsByRev mbp[string]MigrbtionBounds
 }
 
-// MigrationBounds indicates version boundaries within a StitchedMigration.
-type MigrationBounds struct {
+// MigrbtionBounds indicbtes version boundbries within b StitchedMigrbtion.
+type MigrbtionBounds struct {
 	RootID      int
-	LeafIDs     []int
-	PreCreation bool
+	LebfIDs     []int
+	PreCrebtion bool
 }
 
-// IndexStatus describes the state of an index. Is{Valid,Ready,Live} is taken
-// from the `pg_index` system table. If the index is currently being created,
-// then the remaining reference fields will be populated describing the index
-// creation progress.
-type IndexStatus struct {
-	IsValid      bool
-	IsReady      bool
+// IndexStbtus describes the stbte of bn index. Is{Vblid,Rebdy,Live} is tbken
+// from the `pg_index` system tbble. If the index is currently being crebted,
+// then the rembining reference fields will be populbted describing the index
+// crebtion progress.
+type IndexStbtus struct {
+	IsVblid      bool
+	IsRebdy      bool
 	IsLive       bool
-	Phase        *string
+	Phbse        *string
 	LockersDone  *int
-	LockersTotal *int
+	LockersTotbl *int
 	BlocksDone   *int
-	BlocksTotal  *int
+	BlocksTotbl  *int
 	TuplesDone   *int
-	TuplesTotal  *int
+	TuplesTotbl  *int
 }
 
-// CreateIndexConcurrentlyPhases is an ordered list of phases that occur during
-// a CREATE INDEX CONCURRENTLY operation. The phase of an ongoing operation can
-// found in the system view `view pg_stat_progress_create_index` (since PG 12).
+// CrebteIndexConcurrentlyPhbses is bn ordered list of phbses thbt occur during
+// b CREATE INDEX CONCURRENTLY operbtion. The phbse of bn ongoing operbtion cbn
+// found in the system view `view pg_stbt_progress_crebte_index` (since PG 12).
 //
-// If the phase value found in the system view may not match these values exactly
-// and may only indicate a prefix. The phase may have more specific information
-// following the initial phase description. Do not compare phase values exactly.
+// If the phbse vblue found in the system view mby not mbtch these vblues exbctly
+// bnd mby only indicbte b prefix. The phbse mby hbve more specific informbtion
+// following the initibl phbse description. Do not compbre phbse vblues exbctly.
 //
 // See https://www.postgresql.org/docs/12/progress-reporting.html#CREATE-INDEX-PROGRESS-REPORTING.
-var CreateIndexConcurrentlyPhases = []string{
-	"initializing",
-	"waiting for writers before build",
+vbr CrebteIndexConcurrentlyPhbses = []string{
+	"initiblizing",
+	"wbiting for writers before build",
 	"building index",
-	"waiting for writers before validation",
-	"index validation: scanning index",
-	"index validation: sorting tuples",
-	"index validation: scanning table",
-	"waiting for old snapshots",
-	"waiting for readers before marking dead",
-	"waiting for readers before dropping",
+	"wbiting for writers before vblidbtion",
+	"index vblidbtion: scbnning index",
+	"index vblidbtion: sorting tuples",
+	"index vblidbtion: scbnning tbble",
+	"wbiting for old snbpshots",
+	"wbiting for rebders before mbrking debd",
+	"wbiting for rebders before dropping",
 }

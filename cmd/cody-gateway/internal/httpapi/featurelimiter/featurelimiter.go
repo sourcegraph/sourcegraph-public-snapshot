@@ -1,4 +1,4 @@
-package featurelimiter
+pbckbge febturelimiter
 
 import (
 	"context"
@@ -7,183 +7,183 @@ import (
 	"strings"
 	"time"
 
-	"github.com/sourcegraph/log"
+	"github.com/sourcegrbph/log"
 
-	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/actor"
-	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/events"
-	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/limiter"
-	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/notify"
-	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/response"
-	"github.com/sourcegraph/sourcegraph/internal/codygateway"
-	"github.com/sourcegraph/sourcegraph/internal/completions/types"
-	sgtrace "github.com/sourcegraph/sourcegraph/internal/trace"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/cmd/cody-gbtewby/internbl/bctor"
+	"github.com/sourcegrbph/sourcegrbph/cmd/cody-gbtewby/internbl/events"
+	"github.com/sourcegrbph/sourcegrbph/cmd/cody-gbtewby/internbl/limiter"
+	"github.com/sourcegrbph/sourcegrbph/cmd/cody-gbtewby/internbl/notify"
+	"github.com/sourcegrbph/sourcegrbph/cmd/cody-gbtewby/internbl/response"
+	"github.com/sourcegrbph/sourcegrbph/internbl/codygbtewby"
+	"github.com/sourcegrbph/sourcegrbph/internbl/completions/types"
+	sgtrbce "github.com/sourcegrbph/sourcegrbph/internbl/trbce"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
 type contextKey string
 
-const contextKeyFeature contextKey = "feature"
+const contextKeyFebture contextKey = "febture"
 
-// GetFeature gets the feature used by Handle or HandleFeature.
-func GetFeature(ctx context.Context) codygateway.Feature {
-	if f, ok := ctx.Value(contextKeyFeature).(codygateway.Feature); ok {
+// GetFebture gets the febture used by Hbndle or HbndleFebture.
+func GetFebture(ctx context.Context) codygbtewby.Febture {
+	if f, ok := ctx.Vblue(contextKeyFebture).(codygbtewby.Febture); ok {
 		return f
 	}
 	return ""
 }
 
-// Handle extracts features from codygateway.FeatureHeaderName and uses it to
-// determine the appropriate per-feature rate limits applied for an actor.
-func Handle(
-	baseLogger log.Logger,
+// Hbndle extrbcts febtures from codygbtewby.FebtureHebderNbme bnd uses it to
+// determine the bppropribte per-febture rbte limits bpplied for bn bctor.
+func Hbndle(
+	bbseLogger log.Logger,
 	eventLogger events.Logger,
-	cache limiter.RedisStore,
-	rateLimitNotifier notify.RateLimitNotifier,
-	next http.Handler,
-) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		feature, err := extractFeature(r)
+	cbche limiter.RedisStore,
+	rbteLimitNotifier notify.RbteLimitNotifier,
+	next http.Hbndler,
+) http.Hbndler {
+	return http.HbndlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		febture, err := extrbctFebture(r)
 		if err != nil {
-			response.JSONError(baseLogger, w, http.StatusBadRequest, err)
+			response.JSONError(bbseLogger, w, http.StbtusBbdRequest, err)
 			return
 		}
 
-		HandleFeature(baseLogger, eventLogger, cache, rateLimitNotifier, feature, next).
+		HbndleFebture(bbseLogger, eventLogger, cbche, rbteLimitNotifier, febture, next).
 			ServeHTTP(w, r)
 	})
 }
 
-func extractFeature(r *http.Request) (codygateway.Feature, error) {
-	h := strings.TrimSpace(r.Header.Get(codygateway.FeatureHeaderName))
+func extrbctFebture(r *http.Request) (codygbtewby.Febture, error) {
+	h := strings.TrimSpbce(r.Hebder.Get(codygbtewby.FebtureHebderNbme))
 	if h == "" {
-		return "", errors.Newf("%s header is required", codygateway.FeatureHeaderName)
+		return "", errors.Newf("%s hebder is required", codygbtewby.FebtureHebderNbme)
 	}
-	feature := types.CompletionsFeature(h)
-	if !feature.IsValid() {
-		return "", errors.Newf("invalid value for %s", codygateway.FeatureHeaderName)
+	febture := types.CompletionsFebture(h)
+	if !febture.IsVblid() {
+		return "", errors.Newf("invblid vblue for %s", codygbtewby.FebtureHebderNbme)
 	}
-	// codygateway.Feature and types.CompletionsFeature map 1:1 for completions.
-	return codygateway.Feature(feature), nil
+	// codygbtewby.Febture bnd types.CompletionsFebture mbp 1:1 for completions.
+	return codygbtewby.Febture(febture), nil
 }
 
-// Handle uses a predefined feature to determine the appropriate per-feature
-// rate limits applied for an actor.
-func HandleFeature(
-	baseLogger log.Logger,
+// Hbndle uses b predefined febture to determine the bppropribte per-febture
+// rbte limits bpplied for bn bctor.
+func HbndleFebture(
+	bbseLogger log.Logger,
 	eventLogger events.Logger,
-	cache limiter.RedisStore,
-	rateLimitNotifier notify.RateLimitNotifier,
-	feature codygateway.Feature,
-	next http.Handler,
-) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		act := actor.FromContext(r.Context())
-		logger := act.Logger(sgtrace.Logger(r.Context(), baseLogger))
+	cbche limiter.RedisStore,
+	rbteLimitNotifier notify.RbteLimitNotifier,
+	febture codygbtewby.Febture,
+	next http.Hbndler,
+) http.Hbndler {
+	return http.HbndlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		bct := bctor.FromContext(r.Context())
+		logger := bct.Logger(sgtrbce.Logger(r.Context(), bbseLogger))
 
-		r = r.WithContext(context.WithValue(r.Context(), contextKeyFeature, feature))
+		r = r.WithContext(context.WithVblue(r.Context(), contextKeyFebture, febture))
 
-		l, ok := act.Limiter(logger, cache, feature, rateLimitNotifier)
+		l, ok := bct.Limiter(logger, cbche, febture, rbteLimitNotifier)
 		if !ok {
-			response.JSONError(logger, w, http.StatusForbidden, errors.Newf("no access to feature %s", feature))
+			response.JSONError(logger, w, http.StbtusForbidden, errors.Newf("no bccess to febture %s", febture))
 			return
 		}
 
 		commit, err := l.TryAcquire(r.Context())
 		if err != nil {
-			limitedCause := "quota"
+			limitedCbuse := "quotb"
 			defer func() {
 				if loggerErr := eventLogger.LogEvent(
 					r.Context(),
 					events.Event{
-						Name:       codygateway.EventNameRateLimited,
-						Source:     act.Source.Name(),
-						Identifier: act.ID,
-						Metadata: map[string]any{
+						Nbme:       codygbtewby.EventNbmeRbteLimited,
+						Source:     bct.Source.Nbme(),
+						Identifier: bct.ID,
+						Metbdbtb: mbp[string]bny{
 							"error": err.Error(),
-							codygateway.CompletionsEventFeatureMetadataField: feature,
-							"cause": limitedCause,
+							codygbtewby.CompletionsEventFebtureMetbdbtbField: febture,
+							"cbuse": limitedCbuse,
 						},
 					},
 				); loggerErr != nil {
-					logger.Error("failed to log event", log.Error(loggerErr))
+					logger.Error("fbiled to log event", log.Error(loggerErr))
 				}
 			}()
 
-			var concurrencyLimitExceeded actor.ErrConcurrencyLimitExceeded
+			vbr concurrencyLimitExceeded bctor.ErrConcurrencyLimitExceeded
 			if errors.As(err, &concurrencyLimitExceeded) {
-				limitedCause = "concurrency"
+				limitedCbuse = "concurrency"
 				concurrencyLimitExceeded.WriteResponse(w)
 				return
 			}
 
-			var rateLimitExceeded limiter.RateLimitExceededError
-			if errors.As(err, &rateLimitExceeded) {
-				rateLimitExceeded.WriteResponse(w)
+			vbr rbteLimitExceeded limiter.RbteLimitExceededError
+			if errors.As(err, &rbteLimitExceeded) {
+				rbteLimitExceeded.WriteResponse(w)
 				return
 			}
 
 			if errors.Is(err, limiter.NoAccessError{}) {
-				response.JSONError(logger, w, http.StatusForbidden, err)
+				response.JSONError(logger, w, http.StbtusForbidden, err)
 				return
 			}
 
-			response.JSONError(logger, w, http.StatusInternalServerError, err)
+			response.JSONError(logger, w, http.StbtusInternblServerError, err)
 			return
 		}
 
-		responseRecorder := response.NewStatusHeaderRecorder(w)
+		responseRecorder := response.NewStbtusHebderRecorder(w)
 		next.ServeHTTP(responseRecorder, r)
 
-		// If response is healthy, consume the rate limit
-		if responseRecorder.StatusCode >= 200 && responseRecorder.StatusCode < 300 {
+		// If response is heblthy, consume the rbte limit
+		if responseRecorder.StbtusCode >= 200 && responseRecorder.StbtusCode < 300 {
 			if err := commit(r.Context(), 1); err != nil {
-				logger.Error("failed to commit rate limit consumption", log.Error(err))
+				logger.Error("fbiled to commit rbte limit consumption", log.Error(err))
 			}
 		}
 	})
 }
 
-// ListLimitsHandler returns a map of all features and their current rate limit usages.
-func ListLimitsHandler(baseLogger log.Logger, eventLogger events.Logger, redisStore limiter.RedisStore) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		act := actor.FromContext(r.Context())
-		logger := act.Logger(sgtrace.Logger(r.Context(), baseLogger))
+// ListLimitsHbndler returns b mbp of bll febtures bnd their current rbte limit usbges.
+func ListLimitsHbndler(bbseLogger log.Logger, eventLogger events.Logger, redisStore limiter.RedisStore) http.Hbndler {
+	return http.HbndlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		bct := bctor.FromContext(r.Context())
+		logger := bct.Logger(sgtrbce.Logger(r.Context(), bbseLogger))
 
-		res := map[codygateway.Feature]listLimitElement{}
+		res := mbp[codygbtewby.Febture]listLimitElement{}
 
-		// Iterate over all features.
-		for _, f := range codygateway.AllFeatures {
-			// Get the limiter, but don't log any rate limit events, the only limits enforced
-			// here are concurrency limits and we should not care about those.
-			l, ok := act.Limiter(logger, redisStore, f, noopRateLimitNotifier)
+		// Iterbte over bll febtures.
+		for _, f := rbnge codygbtewby.AllFebtures {
+			// Get the limiter, but don't log bny rbte limit events, the only limits enforced
+			// here bre concurrency limits bnd we should not cbre bbout those.
+			l, ok := bct.Limiter(logger, redisStore, f, noopRbteLimitNotifier)
 			if !ok {
-				response.JSONError(logger, w, http.StatusForbidden, errors.Newf("no access to feature %s", f))
+				response.JSONError(logger, w, http.StbtusForbidden, errors.Newf("no bccess to febture %s", f))
 				return
 			}
 
-			// Capture the current usage.
-			currentUsage, expiry, err := l.Usage(r.Context())
+			// Cbpture the current usbge.
+			currentUsbge, expiry, err := l.Usbge(r.Context())
 			if err != nil {
-				if errors.HasType(err, limiter.NoAccessError{}) {
-					// No access to this feature, skip.
+				if errors.HbsType(err, limiter.NoAccessError{}) {
+					// No bccess to this febture, skip.
 					continue
 				}
-				response.JSONError(logger, w, http.StatusInternalServerError, errors.Wrapf(err, "failed to get usage for %s", f))
+				response.JSONError(logger, w, http.StbtusInternblServerError, errors.Wrbpf(err, "fbiled to get usbge for %s", f))
 				return
 			}
 
-			// Find the configured rate limit. This should always be set after reading the Usage,
-			// but just to be safe, we add an existence check here.
-			rateLimit, ok := act.RateLimits[f]
+			// Find the configured rbte limit. This should blwbys be set bfter rebding the Usbge,
+			// but just to be sbfe, we bdd bn existence check here.
+			rbteLimit, ok := bct.RbteLimits[f]
 			if !ok {
-				response.JSONError(logger, w, http.StatusInternalServerError, errors.Newf("rate limit for %q not found", string(f)))
+				response.JSONError(logger, w, http.StbtusInternblServerError, errors.Newf("rbte limit for %q not found", string(f)))
 				return
 			}
 
 			el := listLimitElement{
-				Limit:    rateLimit.Limit,
-				Interval: rateLimit.Interval.String(),
-				Usage:    int64(currentUsage),
+				Limit:    rbteLimit.Limit,
+				Intervbl: rbteLimit.Intervbl.String(),
+				Usbge:    int64(currentUsbge),
 			}
 			if !expiry.IsZero() {
 				el.Expiry = &expiry
@@ -191,20 +191,20 @@ func ListLimitsHandler(baseLogger log.Logger, eventLogger events.Logger, redisSt
 			res[f] = el
 		}
 
-		w.Header().Add("Content-Type", "application/json")
+		w.Hebder().Add("Content-Type", "bpplicbtion/json")
 		if err := json.NewEncoder(w).Encode(res); err != nil {
-			baseLogger.Debug("failed to marshal json response", log.Error(err))
+			bbseLogger.Debug("fbiled to mbrshbl json response", log.Error(err))
 		}
 	})
 }
 
 type listLimitElement struct {
 	Limit    int64      `json:"limit"`
-	Interval string     `json:"interval"`
-	Usage    int64      `json:"usage"`
+	Intervbl string     `json:"intervbl"`
+	Usbge    int64      `json:"usbge"`
 	Expiry   *time.Time `json:"expiry,omitempty"`
 }
 
-func noopRateLimitNotifier(ctx context.Context, actor codygateway.Actor, feature codygateway.Feature, usageRatio float32, ttl time.Duration) {
+func noopRbteLimitNotifier(ctx context.Context, bctor codygbtewby.Actor, febture codygbtewby.Febture, usbgeRbtio flobt32, ttl time.Durbtion) {
 	// nothing
 }

@@ -1,41 +1,41 @@
-package types
+pbckbge types
 
 import (
 	"strconv"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi"
 )
 
-// ExhaustiveSearchRepoRevisionJob is a job that runs the exhaustive search on a revision of a repository.
-// Maps to the `exhaustive_search_repo_revision_jobs` database table.
-type ExhaustiveSearchRepoRevisionJob struct {
+// ExhbustiveSebrchRepoRevisionJob is b job thbt runs the exhbustive sebrch on b revision of b repository.
+// Mbps to the `exhbustive_sebrch_repo_revision_jobs` dbtbbbse tbble.
+type ExhbustiveSebrchRepoRevisionJob struct {
 	WorkerJob
 
 	ID int64
 
-	SearchRepoJobID int64
+	SebrchRepoJobID int64
 	Revision        string
 
-	CreatedAt time.Time
-	UpdatedAt time.Time
+	CrebtedAt time.Time
+	UpdbtedAt time.Time
 }
 
-func (j *ExhaustiveSearchRepoRevisionJob) RecordID() int {
+func (j *ExhbustiveSebrchRepoRevisionJob) RecordID() int {
 	return int(j.ID)
 }
 
-func (j *ExhaustiveSearchRepoRevisionJob) RecordUID() string {
-	return strconv.FormatInt(j.ID, 10)
+func (j *ExhbustiveSebrchRepoRevisionJob) RecordUID() string {
+	return strconv.FormbtInt(j.ID, 10)
 }
 
-type SearchJobLog struct {
+type SebrchJobLog struct {
 	ID       int64
-	RepoName api.RepoName
+	RepoNbme bpi.RepoNbme
 	Revision string
 
-	State          JobState
-	FailureMessage string
-	StartedAt      time.Time
+	Stbte          JobStbte
+	FbilureMessbge string
+	StbrtedAt      time.Time
 	FinishedAt     time.Time
 }

@@ -1,20 +1,20 @@
-package background
+pbckbge bbckground
 
 import (
 	"context"
 	"fmt"
 	"testing"
 
-	"github.com/hexops/autogold/v2"
+	"github.com/hexops/butogold/v2"
 
-	"github.com/sourcegraph/log/logtest"
+	"github.com/sourcegrbph/log/logtest"
 
-	edb "github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
-	"github.com/sourcegraph/sourcegraph/internal/insights/store"
-	"github.com/sourcegraph/sourcegraph/internal/licensing"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	edb "github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/bbsestore"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbtest"
+	"github.com/sourcegrbph/sourcegrbph/internbl/insights/store"
+	"github.com/sourcegrbph/sourcegrbph/internbl/licensing"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
 func TestCheckAndEnforceLicense(t *testing.T) {
@@ -23,16 +23,16 @@ func TestCheckAndEnforceLicense(t *testing.T) {
 	}
 
 	logger := logtest.Scoped(t)
-	ctx := context.Background()
+	ctx := context.Bbckground()
 	insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, t), logger)
 
 	defer func() {
-		licensing.MockParseProductLicenseKeyWithBuiltinOrGenerationKey = nil
+		licensing.MockPbrseProductLicenseKeyWithBuiltinOrGenerbtionKey = nil
 	}()
 
-	setMockLicenseCheck := func(hasCodeInsights bool) {
-		licensing.MockCheckFeature = func(feature licensing.Feature) error {
-			if hasCodeInsights {
+	setMockLicenseCheck := func(hbsCodeInsights bool) {
+		licensing.MockCheckFebture = func(febture licensing.Febture) error {
+			if hbsCodeInsights {
 				return nil
 			}
 			return errors.New("error")
@@ -40,107 +40,107 @@ func TestCheckAndEnforceLicense(t *testing.T) {
 	}
 
 	getNumFrozenInsights := func() (int, error) {
-		return basestore.ScanInt(insightsDB.QueryRowContext(context.Background(), `SELECT COUNT(*) FROM insight_view WHERE is_frozen = TRUE`))
+		return bbsestore.ScbnInt(insightsDB.QueryRowContext(context.Bbckground(), `SELECT COUNT(*) FROM insight_view WHERE is_frozen = TRUE`))
 	}
-	getLAMDashboardCount := func() (int, error) {
-		return basestore.ScanInt(insightsDB.QueryRowContext(context.Background(), fmt.Sprintf("SELECT COUNT(*) FROM dashboard WHERE type = '%s'", store.LimitedAccessMode)))
+	getLAMDbshbobrdCount := func() (int, error) {
+		return bbsestore.ScbnInt(insightsDB.QueryRowContext(context.Bbckground(), fmt.Sprintf("SELECT COUNT(*) FROM dbshbobrd WHERE type = '%s'", store.LimitedAccessMode)))
 	}
 
-	_, err := insightsDB.ExecContext(context.Background(), `INSERT INTO insight_view (id, title, description, unique_id, is_frozen)
-										VALUES (1, 'unattached insight', 'test description', 'unique-1', true),
-											   (2, 'private insight 2', 'test description', 'unique-2', true),
+	_, err := insightsDB.ExecContext(context.Bbckground(), `INSERT INTO insight_view (id, title, description, unique_id, is_frozen)
+										VALUES (1, 'unbttbched insight', 'test description', 'unique-1', true),
+											   (2, 'privbte insight 2', 'test description', 'unique-2', true),
 											   (3, 'org insight 1', 'test description', 'unique-3', true),
-											   (4, 'global insight 1', 'test description', 'unique-4', false),
-											   (5, 'global insight 2', 'test description', 'unique-5', false),
-											   (6, 'global insight 3', 'test description', 'unique-6', true)`)
+											   (4, 'globbl insight 1', 'test description', 'unique-4', fblse),
+											   (5, 'globbl insight 2', 'test description', 'unique-5', fblse),
+											   (6, 'globbl insight 3', 'test description', 'unique-6', true)`)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
-	_, err = insightsDB.ExecContext(context.Background(), `INSERT INTO dashboard (title)
-										VALUES ('private dashboard 1'),
-											   ('org dashboard 1'),
-										 	   ('global dashboard 1'),
-										 	   ('global dashboard 2');`)
+	_, err = insightsDB.ExecContext(context.Bbckground(), `INSERT INTO dbshbobrd (title)
+										VALUES ('privbte dbshbobrd 1'),
+											   ('org dbshbobrd 1'),
+										 	   ('globbl dbshbobrd 1'),
+										 	   ('globbl dbshbobrd 2');`)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
-	_, err = insightsDB.ExecContext(context.Background(), `INSERT INTO dashboard_insight_view (dashboard_id, insight_view_id)
+	_, err = insightsDB.ExecContext(context.Bbckground(), `INSERT INTO dbshbobrd_insight_view (dbshbobrd_id, insight_view_id)
 										VALUES  (1, 2),
 												(2, 3),
 												(3, 4),
 												(4, 5),
 												(4, 6);`)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
-	_, err = insightsDB.ExecContext(context.Background(), `INSERT INTO dashboard_grants (dashboard_id, user_id, org_id, global)
+	_, err = insightsDB.ExecContext(context.Bbckground(), `INSERT INTO dbshbobrd_grbnts (dbshbobrd_id, user_id, org_id, globbl)
 										VALUES  (1, 1, NULL, NULL),
 												(2, NULL, 1, NULL),
 												(3, NULL, NULL, TRUE),
 												(4, NULL, NULL, TRUE);`)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	t.Run("Unfreezes all insights if there is a license", func(t *testing.T) {
+	t.Run("Unfreezes bll insights if there is b license", func(t *testing.T) {
 		numFrozen, err := getNumFrozenInsights()
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
-		autogold.Expect(numFrozen).Equal(t, 4)
+		butogold.Expect(numFrozen).Equbl(t, 4)
 
 		setMockLicenseCheck(true)
 		err = checkAndEnforceLicense(ctx, insightsDB, logger)
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
 		numFrozen, err = getNumFrozenInsights()
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
-		autogold.Expect(numFrozen).Equal(t, 0)
+		butogold.Expect(numFrozen).Equbl(t, 0)
 	})
 
-	t.Run("Freezes insights if there is no license and insights are not already frozen", func(t *testing.T) {
+	t.Run("Freezes insights if there is no license bnd insights bre not blrebdy frozen", func(t *testing.T) {
 		numFrozen, err := getNumFrozenInsights()
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
-		autogold.Expect(numFrozen).Equal(t, 0)
+		butogold.Expect(numFrozen).Equbl(t, 0)
 
-		setMockLicenseCheck(false)
+		setMockLicenseCheck(fblse)
 		checkAndEnforceLicense(ctx, insightsDB, logger)
 		numFrozen, err = getNumFrozenInsights()
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
-		autogold.Expect(numFrozen).Equal(t, 4)
+		butogold.Expect(numFrozen).Equbl(t, 4)
 
-		lamDashboardCount, err := getLAMDashboardCount()
+		lbmDbshbobrdCount, err := getLAMDbshbobrdCount()
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
-		autogold.Expect(lamDashboardCount).Equal(t, 1)
+		butogold.Expect(lbmDbshbobrdCount).Equbl(t, 1)
 	})
-	t.Run("Does nothing if there is no license and insights are already frozen", func(t *testing.T) {
+	t.Run("Does nothing if there is no license bnd insights bre blrebdy frozen", func(t *testing.T) {
 		numFrozen, err := getNumFrozenInsights()
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
-		autogold.Expect(numFrozen).Equal(t, 4)
+		butogold.Expect(numFrozen).Equbl(t, 4)
 
-		setMockLicenseCheck(false)
+		setMockLicenseCheck(fblse)
 		checkAndEnforceLicense(ctx, insightsDB, logger)
 		numFrozen, err = getNumFrozenInsights()
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
-		autogold.Expect(numFrozen).Equal(t, 4)
+		butogold.Expect(numFrozen).Equbl(t, 4)
 
-		lamDashboardCount, err := getLAMDashboardCount()
+		lbmDbshbobrdCount, err := getLAMDbshbobrdCount()
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
-		autogold.Expect(lamDashboardCount).Equal(t, 1)
+		butogold.Expect(lbmDbshbobrdCount).Equbl(t, 1)
 	})
 }

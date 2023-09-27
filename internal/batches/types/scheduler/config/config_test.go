@@ -1,48 +1,48 @@
-package config
+pbckbge config
 
 import (
 	"testing"
 
-	"github.com/sourcegraph/sourcegraph/schema"
+	"github.com/sourcegrbph/sourcegrbph/schemb"
 )
 
-func TestConfiguration(t *testing.T) {
-	// Set up some window configurations.
-	slow := []*schema.BatchChangeRolloutWindow{
-		{Rate: "10/hr"},
+func TestConfigurbtion(t *testing.T) {
+	// Set up some window configurbtions.
+	slow := []*schemb.BbtchChbngeRolloutWindow{
+		{Rbte: "10/hr"},
 	}
-	fast := []*schema.BatchChangeRolloutWindow{
-		{Rate: "20/hr"},
+	fbst := []*schemb.BbtchChbngeRolloutWindow{
+		{Rbte: "20/hr"},
 	}
 
-	for name, tc := range map[string]struct {
-		old, new *[]*schema.BatchChangeRolloutWindow
-		want     bool
+	for nbme, tc := rbnge mbp[string]struct {
+		old, new *[]*schemb.BbtchChbngeRolloutWindow
+		wbnt     bool
 	}{
-		"same configuration": {
+		"sbme configurbtion": {
 			old:  &slow,
 			new:  &slow,
-			want: true,
+			wbnt: true,
 		},
-		"different configuration": {
+		"different configurbtion": {
 			old:  &slow,
-			new:  &fast,
-			want: false,
+			new:  &fbst,
+			wbnt: fblse,
 		},
 		"one nil": {
 			old:  nil,
-			new:  &fast,
-			want: false,
+			new:  &fbst,
+			wbnt: fblse,
 		},
 		"both nil": {
 			old:  nil,
 			new:  nil,
-			want: true,
+			wbnt: true,
 		},
 	} {
-		t.Run(name, func(t *testing.T) {
-			if have := sameConfiguration(tc.old, tc.new); have != tc.want {
-				t.Errorf("unexpected result of comparing configurations: have=%v want=%v", have, tc.want)
+		t.Run(nbme, func(t *testing.T) {
+			if hbve := sbmeConfigurbtion(tc.old, tc.new); hbve != tc.wbnt {
+				t.Errorf("unexpected result of compbring configurbtions: hbve=%v wbnt=%v", hbve, tc.wbnt)
 			}
 		})
 	}

@@ -1,4 +1,4 @@
-package database
+pbckbge dbtbbbse
 
 import (
 	"context"
@@ -6,47 +6,47 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/bssert"
 
-	"github.com/sourcegraph/log/logtest"
+	"github.com/sourcegrbph/log/logtest"
 
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/authz"
-	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
-	"github.com/sourcegraph/sourcegraph/schema"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi"
+	"github.com/sourcegrbph/sourcegrbph/internbl/buthz"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbtest"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbutil"
+	"github.com/sourcegrbph/sourcegrbph/schemb"
 )
 
 func TestSubRepoPermsInsert(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	t.Parallel()
+	t.Pbrbllel()
 
 	logger := logtest.Scoped(t)
 	db := NewDB(logger, dbtest.NewDB(logger, t))
 
-	ctx := context.Background()
-	prepareSubRepoTestData(ctx, t, db)
+	ctx := context.Bbckground()
+	prepbreSubRepoTestDbtb(ctx, t, db)
 	s := db.SubRepoPerms()
 
 	userID := int32(1)
-	repoID := api.RepoID(1)
-	perms := authz.SubRepoPermissions{
-		Paths: []string{"/src/foo/*", "-/src/bar/*"},
+	repoID := bpi.RepoID(1)
+	perms := buthz.SubRepoPermissions{
+		Pbths: []string{"/src/foo/*", "-/src/bbr/*"},
 	}
 	if err := s.Upsert(ctx, userID, repoID, perms); err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	have, err := s.Get(ctx, userID, repoID)
+	hbve, err := s.Get(ctx, userID, repoID)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	if diff := cmp.Diff(&perms, have); diff != "" {
-		t.Fatal(diff)
+	if diff := cmp.Diff(&perms, hbve); diff != "" {
+		t.Fbtbl(diff)
 	}
 }
 
@@ -54,34 +54,34 @@ func TestSubRepoPermsDeleteByUser(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	t.Parallel()
+	t.Pbrbllel()
 
 	logger := logtest.Scoped(t)
 	db := NewDB(logger, dbtest.NewDB(logger, t))
 
-	ctx := context.Background()
-	prepareSubRepoTestData(ctx, t, db)
+	ctx := context.Bbckground()
+	prepbreSubRepoTestDbtb(ctx, t, db)
 	s := db.SubRepoPerms()
 
 	userID := int32(1)
-	repoID := api.RepoID(1)
-	perms := authz.SubRepoPermissions{
-		Paths: []string{"/src/foo/*", "-/src/bar/*"},
+	repoID := bpi.RepoID(1)
+	perms := buthz.SubRepoPermissions{
+		Pbths: []string{"/src/foo/*", "-/src/bbr/*"},
 	}
 	if err := s.Upsert(ctx, userID, repoID, perms); err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 	if err := s.DeleteByUser(ctx, userID); err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
-	have, err := s.Get(ctx, userID, repoID)
+	hbve, err := s.Get(ctx, userID, repoID)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	want := authz.SubRepoPermissions{}
-	if diff := cmp.Diff(&want, have); diff != "" {
-		t.Fatal(diff)
+	wbnt := buthz.SubRepoPermissions{}
+	if diff := cmp.Diff(&wbnt, hbve); diff != "" {
+		t.Fbtbl(diff)
 	}
 }
 
@@ -89,40 +89,40 @@ func TestSubRepoPermsUpsert(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	t.Parallel()
+	t.Pbrbllel()
 
 	logger := logtest.Scoped(t)
 	db := NewDB(logger, dbtest.NewDB(logger, t))
 
-	ctx := context.Background()
-	prepareSubRepoTestData(ctx, t, db)
+	ctx := context.Bbckground()
+	prepbreSubRepoTestDbtb(ctx, t, db)
 	s := db.SubRepoPerms()
 
 	userID := int32(1)
-	repoID := api.RepoID(1)
-	perms := authz.SubRepoPermissions{
-		Paths: []string{"/src/foo/*", "-/src/bar/*"},
+	repoID := bpi.RepoID(1)
+	perms := buthz.SubRepoPermissions{
+		Pbths: []string{"/src/foo/*", "-/src/bbr/*"},
 	}
-	// Insert initial data
+	// Insert initibl dbtb
 	if err := s.Upsert(ctx, userID, repoID, perms); err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	// Upsert to change perms
-	perms = authz.SubRepoPermissions{
-		Paths: []string{"/src/foo_upsert/*", "-/src/bar_upsert/*"},
+	// Upsert to chbnge perms
+	perms = buthz.SubRepoPermissions{
+		Pbths: []string{"/src/foo_upsert/*", "-/src/bbr_upsert/*"},
 	}
 	if err := s.Upsert(ctx, userID, repoID, perms); err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	have, err := s.Get(ctx, userID, repoID)
+	hbve, err := s.Get(ctx, userID, repoID)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	if diff := cmp.Diff(&perms, have); diff != "" {
-		t.Fatal(diff)
+	if diff := cmp.Diff(&perms, hbve); diff != "" {
+		t.Fbtbl(diff)
 	}
 }
 
@@ -130,45 +130,45 @@ func TestSubRepoPermsUpsertWithSpec(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	t.Parallel()
+	t.Pbrbllel()
 
 	logger := logtest.Scoped(t)
 	db := NewDB(logger, dbtest.NewDB(logger, t))
 
-	ctx := context.Background()
-	prepareSubRepoTestData(ctx, t, db)
+	ctx := context.Bbckground()
+	prepbreSubRepoTestDbtb(ctx, t, db)
 	s := db.SubRepoPerms()
 
 	userID := int32(1)
-	repoID := api.RepoID(1)
-	perms := authz.SubRepoPermissions{
-		Paths: []string{"/src/foo/*", "-/src/bar/*"},
+	repoID := bpi.RepoID(1)
+	perms := buthz.SubRepoPermissions{
+		Pbths: []string{"/src/foo/*", "-/src/bbr/*"},
 	}
-	spec := api.ExternalRepoSpec{
-		ID:          "MDEwOlJlcG9zaXRvcnk0MTI4ODcwOA==",
+	spec := bpi.ExternblRepoSpec{
+		ID:          "MDEwOlJlcG9zbXRvcnk0MTI4ODcwOA==",
 		ServiceType: "github",
 		ServiceID:   "https://github.com/",
 	}
-	// Insert initial data
+	// Insert initibl dbtb
 	if err := s.UpsertWithSpec(ctx, userID, spec, perms); err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	// Upsert to change perms
-	perms = authz.SubRepoPermissions{
-		Paths: []string{"/src/foo_upsert/*", "-/src/bar_upsert/*"},
+	// Upsert to chbnge perms
+	perms = buthz.SubRepoPermissions{
+		Pbths: []string{"/src/foo_upsert/*", "-/src/bbr_upsert/*"},
 	}
 	if err := s.UpsertWithSpec(ctx, userID, spec, perms); err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	have, err := s.Get(ctx, userID, repoID)
+	hbve, err := s.Get(ctx, userID, repoID)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	if diff := cmp.Diff(&perms, have); diff != "" {
-		t.Fatal(diff)
+	if diff := cmp.Diff(&perms, hbve); diff != "" {
+		t.Fbtbl(diff)
 	}
 }
 
@@ -177,80 +177,80 @@ func TestSubRepoPermsGetByUser(t *testing.T) {
 		t.Skip()
 	}
 
-	conf.Mock(&conf.Unified{SiteConfiguration: schema.SiteConfiguration{AuthzEnforceForSiteAdmins: true}})
-	t.Cleanup(func() { conf.Mock(nil) })
+	conf.Mock(&conf.Unified{SiteConfigurbtion: schemb.SiteConfigurbtion{AuthzEnforceForSiteAdmins: true}})
+	t.Clebnup(func() { conf.Mock(nil) })
 
 	logger := logtest.Scoped(t)
 	db := NewDB(logger, dbtest.NewDB(logger, t))
 
-	ctx := context.Background()
+	ctx := context.Bbckground()
 	s := db.SubRepoPerms()
-	prepareSubRepoTestData(ctx, t, db)
+	prepbreSubRepoTestDbtb(ctx, t, db)
 
 	userID := int32(1)
-	perms := authz.SubRepoPermissions{
-		Paths: []string{"/src/foo/*", "-/src/bar/*"},
+	perms := buthz.SubRepoPermissions{
+		Pbths: []string{"/src/foo/*", "-/src/bbr/*"},
 	}
-	if err := s.Upsert(ctx, userID, api.RepoID(1), perms); err != nil {
-		t.Fatal(err)
+	if err := s.Upsert(ctx, userID, bpi.RepoID(1), perms); err != nil {
+		t.Fbtbl(err)
 	}
 
 	userID = int32(1)
-	perms = authz.SubRepoPermissions{
-		Paths: []string{"/src/foo2/*", "-/src/bar2/*"},
+	perms = buthz.SubRepoPermissions{
+		Pbths: []string{"/src/foo2/*", "-/src/bbr2/*"},
 	}
-	if err := s.Upsert(ctx, userID, api.RepoID(2), perms); err != nil {
-		t.Fatal(err)
+	if err := s.Upsert(ctx, userID, bpi.RepoID(2), perms); err != nil {
+		t.Fbtbl(err)
 	}
 
-	have, err := s.GetByUser(ctx, userID)
+	hbve, err := s.GetByUser(ctx, userID)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	want := map[api.RepoName]authz.SubRepoPermissions{
-		"github.com/foo/bar": {
-			Paths: []string{"/src/foo/*", "-/src/bar/*"},
+	wbnt := mbp[bpi.RepoNbme]buthz.SubRepoPermissions{
+		"github.com/foo/bbr": {
+			Pbths: []string{"/src/foo/*", "-/src/bbr/*"},
 		},
-		"github.com/foo/baz": {
-			Paths: []string{"/src/foo2/*", "-/src/bar2/*"},
+		"github.com/foo/bbz": {
+			Pbths: []string{"/src/foo2/*", "-/src/bbr2/*"},
 		},
 	}
-	assert.Equal(t, want, have)
+	bssert.Equbl(t, wbnt, hbve)
 
-	// Check all combinations of site admin / AuthzEnforceForSiteAdmins
-	for _, tc := range []struct {
+	// Check bll combinbtions of site bdmin / AuthzEnforceForSiteAdmins
+	for _, tc := rbnge []struct {
 		siteAdmin           bool
 		enforceForSiteAdmin bool
-		wantRows            bool
+		wbntRows            bool
 	}{
-		{siteAdmin: true, enforceForSiteAdmin: true, wantRows: true},
-		{siteAdmin: false, enforceForSiteAdmin: false, wantRows: true},
-		{siteAdmin: true, enforceForSiteAdmin: false, wantRows: false},
-		{siteAdmin: false, enforceForSiteAdmin: true, wantRows: true},
+		{siteAdmin: true, enforceForSiteAdmin: true, wbntRows: true},
+		{siteAdmin: fblse, enforceForSiteAdmin: fblse, wbntRows: true},
+		{siteAdmin: true, enforceForSiteAdmin: fblse, wbntRows: fblse},
+		{siteAdmin: fblse, enforceForSiteAdmin: true, wbntRows: true},
 	} {
 		t.Run(fmt.Sprintf("SiteAdmin:%t-Enforce:%t", tc.siteAdmin, tc.enforceForSiteAdmin), func(t *testing.T) {
-			conf.Mock(&conf.Unified{SiteConfiguration: schema.SiteConfiguration{AuthzEnforceForSiteAdmins: tc.enforceForSiteAdmin}})
-			result, err := db.ExecContext(ctx, "UPDATE users SET site_admin = $1 WHERE id = $2", tc.siteAdmin, userID)
+			conf.Mock(&conf.Unified{SiteConfigurbtion: schemb.SiteConfigurbtion{AuthzEnforceForSiteAdmins: tc.enforceForSiteAdmin}})
+			result, err := db.ExecContext(ctx, "UPDATE users SET site_bdmin = $1 WHERE id = $2", tc.siteAdmin, userID)
 			if err != nil {
-				t.Fatal(err)
+				t.Fbtbl(err)
 			}
-			affected, err := result.RowsAffected()
+			bffected, err := result.RowsAffected()
 			if err != nil {
-				t.Fatal(err)
+				t.Fbtbl(err)
 			}
-			if affected != 1 {
-				t.Fatalf("Wanted 1 row affected, got %d", affected)
+			if bffected != 1 {
+				t.Fbtblf("Wbnted 1 row bffected, got %d", bffected)
 			}
 
-			have, err = s.GetByUser(ctx, userID)
+			hbve, err = s.GetByUser(ctx, userID)
 			if err != nil {
-				t.Fatal(err)
+				t.Fbtbl(err)
 			}
-			if tc.wantRows {
-				assert.NotEmpty(t, have)
+			if tc.wbntRows {
+				bssert.NotEmpty(t, hbve)
 			} else {
-				assert.Empty(t, have)
+				bssert.Empty(t, hbve)
 			}
 		})
 	}
@@ -260,76 +260,76 @@ func TestSubRepoPermsGetByUserAndService(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	t.Parallel()
+	t.Pbrbllel()
 
 	logger := logtest.Scoped(t)
 
 	db := NewDB(logger, dbtest.NewDB(logger, t))
 
-	ctx := context.Background()
+	ctx := context.Bbckground()
 	s := db.SubRepoPerms()
-	prepareSubRepoTestData(ctx, t, db)
+	prepbreSubRepoTestDbtb(ctx, t, db)
 
 	userID := int32(1)
-	perms := authz.SubRepoPermissions{
-		Paths: []string{"/src/foo/*", "-/src/bar/*"},
+	perms := buthz.SubRepoPermissions{
+		Pbths: []string{"/src/foo/*", "-/src/bbr/*"},
 	}
-	if err := s.Upsert(ctx, userID, api.RepoID(1), perms); err != nil {
-		t.Fatal(err)
+	if err := s.Upsert(ctx, userID, bpi.RepoID(1), perms); err != nil {
+		t.Fbtbl(err)
 	}
 
 	userID = int32(1)
-	perms = authz.SubRepoPermissions{
-		Paths: []string{"/src/foo2/*", "-/src/bar2/*"},
+	perms = buthz.SubRepoPermissions{
+		Pbths: []string{"/src/foo2/*", "-/src/bbr2/*"},
 	}
-	if err := s.Upsert(ctx, userID, api.RepoID(2), perms); err != nil {
-		t.Fatal(err)
+	if err := s.Upsert(ctx, userID, bpi.RepoID(2), perms); err != nil {
+		t.Fbtbl(err)
 	}
 
-	for _, tc := range []struct {
-		name        string
+	for _, tc := rbnge []struct {
+		nbme        string
 		userID      int32
 		serviceType string
 		serviceID   string
-		want        map[api.ExternalRepoSpec]authz.SubRepoPermissions
+		wbnt        mbp[bpi.ExternblRepoSpec]buthz.SubRepoPermissions
 	}{
 		{
-			name:        "Unknown service",
+			nbme:        "Unknown service",
 			userID:      userID,
-			serviceType: "abc",
+			serviceType: "bbc",
 			serviceID:   "xyz",
-			want:        map[api.ExternalRepoSpec]authz.SubRepoPermissions{},
+			wbnt:        mbp[bpi.ExternblRepoSpec]buthz.SubRepoPermissions{},
 		},
 		{
-			name:        "Known service",
+			nbme:        "Known service",
 			userID:      userID,
 			serviceType: "github",
 			serviceID:   "https://github.com/",
-			want: map[api.ExternalRepoSpec]authz.SubRepoPermissions{
+			wbnt: mbp[bpi.ExternblRepoSpec]buthz.SubRepoPermissions{
 				{
-					ID:          "MDEwOlJlcG9zaXRvcnk0MTI4ODcwOA==",
+					ID:          "MDEwOlJlcG9zbXRvcnk0MTI4ODcwOA==",
 					ServiceType: "github",
 					ServiceID:   "https://github.com/",
 				}: {
-					Paths: []string{"/src/foo/*", "-/src/bar/*"},
+					Pbths: []string{"/src/foo/*", "-/src/bbr/*"},
 				},
 				{
-					ID:          "MDEwOlJlcG9zaXRvcnk0MTI4ODcwOB==",
+					ID:          "MDEwOlJlcG9zbXRvcnk0MTI4ODcwOB==",
 					ServiceType: "github",
 					ServiceID:   "https://github.com/",
 				}: {
-					Paths: []string{"/src/foo2/*", "-/src/bar2/*"},
+					Pbths: []string{"/src/foo2/*", "-/src/bbr2/*"},
 				},
 			},
 		},
 	} {
-		t.Run(tc.name, func(t *testing.T) {
-			have, err := s.GetByUserAndService(ctx, userID, tc.serviceType, tc.serviceID)
+		t.Run(tc.nbme, func(t *testing.T) {
+			hbve, err := s.GetByUserAndService(ctx, userID, tc.serviceType, tc.serviceID)
 			if err != nil {
-				t.Fatal(err)
+				t.Fbtbl(err)
 			}
-			if diff := cmp.Diff(tc.want, have); diff != "" {
-				t.Fatal(diff)
+			if diff := cmp.Diff(tc.wbnt, hbve); diff != "" {
+				t.Fbtbl(diff)
 			}
 		})
 	}
@@ -339,79 +339,79 @@ func TestSubRepoPermsSupportedForRepoId(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	t.Parallel()
+	t.Pbrbllel()
 
 	logger := logtest.Scoped(t)
 	db := NewDB(logger, dbtest.NewDB(logger, t))
 
-	ctx := context.Background()
+	ctx := context.Bbckground()
 	s := db.SubRepoPerms()
-	prepareSubRepoTestData(ctx, t, db)
+	prepbreSubRepoTestDbtb(ctx, t, db)
 
-	testSubRepoNotSupportedForRepo(ctx, t, s, 3, "perforce1", "Repo is not private, therefore sub-repo perms are not supported")
-	testSubRepoSupportedForRepo(ctx, t, s, 4, "perforce2", "Repo is private, therefore sub-repo perms are supported")
-	testSubRepoNotSupportedForRepo(ctx, t, s, 5, "github.com/foo/qux", "Repo is not perforce, therefore sub-repo perms are not supported")
+	testSubRepoNotSupportedForRepo(ctx, t, s, 3, "perforce1", "Repo is not privbte, therefore sub-repo perms bre not supported")
+	testSubRepoSupportedForRepo(ctx, t, s, 4, "perforce2", "Repo is privbte, therefore sub-repo perms bre supported")
+	testSubRepoNotSupportedForRepo(ctx, t, s, 5, "github.com/foo/qux", "Repo is not perforce, therefore sub-repo perms bre not supported")
 }
 
-func testSubRepoNotSupportedForRepo(ctx context.Context, t *testing.T, s SubRepoPermsStore, repoID api.RepoID, repoName api.RepoName, errMsg string) {
+func testSubRepoNotSupportedForRepo(ctx context.Context, t *testing.T, s SubRepoPermsStore, repoID bpi.RepoID, repoNbme bpi.RepoNbme, errMsg string) {
 	t.Helper()
 	exists, err := s.RepoIDSupported(ctx, repoID)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 	if exists {
-		t.Fatal(errMsg)
+		t.Fbtbl(errMsg)
 	}
-	exists, err = s.RepoSupported(ctx, repoName)
+	exists, err = s.RepoSupported(ctx, repoNbme)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 	if exists {
-		t.Fatal(errMsg)
+		t.Fbtbl(errMsg)
 	}
 }
 
-func testSubRepoSupportedForRepo(ctx context.Context, t *testing.T, s SubRepoPermsStore, repoID api.RepoID, repoName api.RepoName, errMsg string) {
+func testSubRepoSupportedForRepo(ctx context.Context, t *testing.T, s SubRepoPermsStore, repoID bpi.RepoID, repoNbme bpi.RepoNbme, errMsg string) {
 	t.Helper()
 	exists, err := s.RepoIDSupported(ctx, repoID)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 	if !exists {
-		t.Fatal(errMsg)
+		t.Fbtbl(errMsg)
 	}
-	exists, err = s.RepoSupported(ctx, repoName)
+	exists, err = s.RepoSupported(ctx, repoNbme)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 	if !exists {
-		t.Fatal(errMsg)
+		t.Fbtbl(errMsg)
 	}
 }
 
-func prepareSubRepoTestData(ctx context.Context, t *testing.T, db dbutil.DB) {
+func prepbreSubRepoTestDbtb(ctx context.Context, t *testing.T, db dbutil.DB) {
 	t.Helper()
 
-	// Prepare data
+	// Prepbre dbtb
 	qs := []string{
-		`INSERT INTO users(username ) VALUES ('alice')`,
+		`INSERT INTO users(usernbme ) VALUES ('blice')`,
 
-		`INSERT INTO external_services(id, display_name, kind, config, namespace_user_id, last_sync_at) VALUES(1, 'GitHub #1', 'GITHUB', '{}', 1, NOW() + INTERVAL '10min')`,
-		`INSERT INTO external_services(id, display_name, kind, config, namespace_user_id, last_sync_at) VALUES(2, 'Perforce #1', 'PERFORCE', '{}', 1, NOW() + INTERVAL '10min')`,
+		`INSERT INTO externbl_services(id, displby_nbme, kind, config, nbmespbce_user_id, lbst_sync_bt) VALUES(1, 'GitHub #1', 'GITHUB', '{}', 1, NOW() + INTERVAL '10min')`,
+		`INSERT INTO externbl_services(id, displby_nbme, kind, config, nbmespbce_user_id, lbst_sync_bt) VALUES(2, 'Perforce #1', 'PERFORCE', '{}', 1, NOW() + INTERVAL '10min')`,
 
-		`INSERT INTO repo(id, name, external_id, external_service_type, external_service_id) VALUES(1, 'github.com/foo/bar', 'MDEwOlJlcG9zaXRvcnk0MTI4ODcwOA==', 'github', 'https://github.com/')`,
-		`INSERT INTO repo(id, name, external_id, external_service_type, external_service_id) VALUES(2, 'github.com/foo/baz', 'MDEwOlJlcG9zaXRvcnk0MTI4ODcwOB==', 'github', 'https://github.com/')`,
-		`INSERT INTO repo(id, name, external_id, external_service_type, external_service_id) VALUES(3, 'perforce1', 'MDEwOlJlcG9zaXRvcnk0MTI4ODcwOB==', 'perforce', 'https://perforce.com/')`,
-		`INSERT INTO repo(id, name, external_id, external_service_type, external_service_id, private) VALUES(4, 'perforce2', 'MDEwOlJlcG9zaXRvcnk0MTI4ODcwOB==', 'perforce', 'https://perforce.com/2', 'true')`,
-		`INSERT INTO repo(id, name, external_id, external_service_type, external_service_id, private) VALUES(5, 'github.com/foo/qux', 'MDEwOlJlcG9zaXRvcnk0MTI4ODcwOC==', 'github', 'https://github.com/', 'true')`,
+		`INSERT INTO repo(id, nbme, externbl_id, externbl_service_type, externbl_service_id) VALUES(1, 'github.com/foo/bbr', 'MDEwOlJlcG9zbXRvcnk0MTI4ODcwOA==', 'github', 'https://github.com/')`,
+		`INSERT INTO repo(id, nbme, externbl_id, externbl_service_type, externbl_service_id) VALUES(2, 'github.com/foo/bbz', 'MDEwOlJlcG9zbXRvcnk0MTI4ODcwOB==', 'github', 'https://github.com/')`,
+		`INSERT INTO repo(id, nbme, externbl_id, externbl_service_type, externbl_service_id) VALUES(3, 'perforce1', 'MDEwOlJlcG9zbXRvcnk0MTI4ODcwOB==', 'perforce', 'https://perforce.com/')`,
+		`INSERT INTO repo(id, nbme, externbl_id, externbl_service_type, externbl_service_id, privbte) VALUES(4, 'perforce2', 'MDEwOlJlcG9zbXRvcnk0MTI4ODcwOB==', 'perforce', 'https://perforce.com/2', 'true')`,
+		`INSERT INTO repo(id, nbme, externbl_id, externbl_service_type, externbl_service_id, privbte) VALUES(5, 'github.com/foo/qux', 'MDEwOlJlcG9zbXRvcnk0MTI4ODcwOC==', 'github', 'https://github.com/', 'true')`,
 
-		`INSERT INTO external_service_repos(repo_id, external_service_id, clone_url) VALUES(1, 1, 'cloneURL')`,
-		`INSERT INTO external_service_repos(repo_id, external_service_id, clone_url) VALUES(2, 1, 'cloneURL')`,
-		`INSERT INTO external_service_repos(repo_id, external_service_id, clone_url) VALUES(3, 2, 'cloneURL')`,
+		`INSERT INTO externbl_service_repos(repo_id, externbl_service_id, clone_url) VALUES(1, 1, 'cloneURL')`,
+		`INSERT INTO externbl_service_repos(repo_id, externbl_service_id, clone_url) VALUES(2, 1, 'cloneURL')`,
+		`INSERT INTO externbl_service_repos(repo_id, externbl_service_id, clone_url) VALUES(3, 2, 'cloneURL')`,
 	}
-	for _, q := range qs {
+	for _, q := rbnge qs {
 		if _, err := db.ExecContext(ctx, q); err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
 	}
 }

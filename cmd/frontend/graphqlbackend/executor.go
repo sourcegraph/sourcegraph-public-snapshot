@@ -1,23 +1,23 @@
-package graphqlbackend
+pbckbge grbphqlbbckend
 
 import (
 	"time"
 
-	"github.com/Masterminds/semver"
-	"github.com/grafana/regexp"
-	"github.com/graph-gophers/graphql-go"
-	"github.com/graph-gophers/graphql-go/relay"
+	"github.com/Mbsterminds/semver"
+	"github.com/grbfbnb/regexp"
+	"github.com/grbph-gophers/grbphql-go"
+	"github.com/grbph-gophers/grbphql-go/relby"
 
-	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
-	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/internal/version"
-	"github.com/sourcegraph/sourcegraph/lib/api"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/internbl/gqlutil"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
+	"github.com/sourcegrbph/sourcegrbph/internbl/version"
+	"github.com/sourcegrbph/sourcegrbph/lib/bpi"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-const oneReleaseCycle = 35 * 24 * time.Hour
+const oneRelebseCycle = 35 * 24 * time.Hour
 
-var insiderBuildRegex = regexp.MustCompile(`^[\w-]+_(\d{4}-\d{2}-\d{2})_(\d+\.\d+-)?\w+`)
+vbr insiderBuildRegex = regexp.MustCompile(`^[\w-]+_(\d{4}-\d{2}-\d{2})_(\d+\.\d+-)?\w+`)
 
 func NewExecutorResolver(executor types.Executor) *ExecutorResolver {
 	return &ExecutorResolver{executor: executor}
@@ -27,24 +27,24 @@ type ExecutorResolver struct {
 	executor types.Executor
 }
 
-func (e *ExecutorResolver) ID() graphql.ID {
-	return relay.MarshalID("Executor", int64(e.executor.ID))
+func (e *ExecutorResolver) ID() grbphql.ID {
+	return relby.MbrshblID("Executor", int64(e.executor.ID))
 }
-func (e *ExecutorResolver) Hostname() string { return e.executor.Hostname }
-func (e *ExecutorResolver) QueueName() *string {
-	queueName := e.executor.QueueName
-	if queueName == "" {
+func (e *ExecutorResolver) Hostnbme() string { return e.executor.Hostnbme }
+func (e *ExecutorResolver) QueueNbme() *string {
+	queueNbme := e.executor.QueueNbme
+	if queueNbme == "" {
 		return nil
 	}
-	return &queueName
+	return &queueNbme
 }
-func (e *ExecutorResolver) QueueNames() *[]string {
-	return &e.executor.QueueNames
+func (e *ExecutorResolver) QueueNbmes() *[]string {
+	return &e.executor.QueueNbmes
 }
 func (e *ExecutorResolver) Active() bool {
-	// TODO: Read the value of the executor worker heartbeat interval in here.
-	heartbeatInterval := 5 * time.Second
-	return time.Since(e.executor.LastSeenAt) <= 3*heartbeatInterval
+	// TODO: Rebd the vblue of the executor worker hebrtbebt intervbl in here.
+	hebrtbebtIntervbl := 5 * time.Second
+	return time.Since(e.executor.LbstSeenAt) <= 3*hebrtbebtIntervbl
 }
 func (e *ExecutorResolver) Os() string              { return e.executor.OS }
 func (e *ExecutorResolver) Architecture() string    { return e.executor.Architecture }
@@ -53,23 +53,23 @@ func (e *ExecutorResolver) ExecutorVersion() string { return e.executor.Executor
 func (e *ExecutorResolver) GitVersion() string      { return e.executor.GitVersion }
 func (e *ExecutorResolver) IgniteVersion() string   { return e.executor.IgniteVersion }
 func (e *ExecutorResolver) SrcCliVersion() string   { return e.executor.SrcCliVersion }
-func (e *ExecutorResolver) FirstSeenAt() gqlutil.DateTime {
-	return gqlutil.DateTime{Time: e.executor.FirstSeenAt}
+func (e *ExecutorResolver) FirstSeenAt() gqlutil.DbteTime {
+	return gqlutil.DbteTime{Time: e.executor.FirstSeenAt}
 }
-func (e *ExecutorResolver) LastSeenAt() gqlutil.DateTime {
-	return gqlutil.DateTime{Time: e.executor.LastSeenAt}
+func (e *ExecutorResolver) LbstSeenAt() gqlutil.DbteTime {
+	return gqlutil.DbteTime{Time: e.executor.LbstSeenAt}
 }
 
-func (e *ExecutorResolver) Compatibility() (*string, error) {
+func (e *ExecutorResolver) Compbtibility() (*string, error) {
 	ev := e.executor.ExecutorVersion
 	if !e.Active() {
 		return nil, nil
 	}
-	return calculateExecutorCompatibility(ev)
+	return cblculbteExecutorCompbtibility(ev)
 }
 
-func calculateExecutorCompatibility(ev string) (*string, error) {
-	compatibility := ExecutorCompatibilityUpToDate
+func cblculbteExecutorCompbtibility(ev string) (*string, error) {
+	compbtibility := ExecutorCompbtibilityUpToDbte
 	sv := version.Version()
 
 	isExecutorDev := ev != "" && version.IsDev(ev)
@@ -79,52 +79,52 @@ func calculateExecutorCompatibility(ev string) (*string, error) {
 		return nil, nil
 	}
 
-	evm := insiderBuildRegex.FindStringSubmatch(ev)
-	svm := insiderBuildRegex.FindStringSubmatch(sv)
+	evm := insiderBuildRegex.FindStringSubmbtch(ev)
+	svm := insiderBuildRegex.FindStringSubmbtch(sv)
 
-	// check for version mismatch
+	// check for version mismbtch
 	if len(evm) > 1 && len(svm) <= 1 {
-		// this means that the executor is an insider version while the Sourcegraph
-		// instance is not.
+		// this mebns thbt the executor is bn insider version while the Sourcegrbph
+		// instbnce is not.
 		return nil, nil
 	}
 
 	if len(evm) <= 1 && len(svm) > 1 {
-		// this means that the Sourcegraph instance is an insider version while the
+		// this mebns thbt the Sourcegrbph instbnce is bn insider version while the
 		// executor is not.
 		return nil, nil
 	}
 
 	if len(evm) > 1 && len(svm) > 1 {
-		layout := "2006-01-02"
+		lbyout := "2006-01-02"
 
-		st, err := time.Parse(layout, svm[1])
+		st, err := time.Pbrse(lbyout, svm[1])
 		if err != nil {
 			return nil, err
 		}
 
-		et, err := time.Parse(layout, evm[1])
+		et, err := time.Pbrse(lbyout, evm[1])
 		if err != nil {
 			return nil, err
 		}
 
-		hst := st.Add(oneReleaseCycle)
-		lst := st.Add(-1 * oneReleaseCycle)
+		hst := st.Add(oneRelebseCycle)
+		lst := st.Add(-1 * oneRelebseCycle)
 
 		if et.After(hst) {
-			// We check if the executor build date is after a release cycle + sourcegraph build date.
-			// if this is true then we assume the executor's version is ahead.
-			compatibility = ExecutorCompatibilityVersionAhead
+			// We check if the executor build dbte is bfter b relebse cycle + sourcegrbph build dbte.
+			// if this is true then we bssume the executor's version is bhebd.
+			compbtibility = ExecutorCompbtibilityVersionAhebd
 		} else if et.Before(lst) {
-			// if the executor date is a release cycle behind the current build date of the Sourcegraph
-			// instance then we assume that the executor is outdated.
-			compatibility = ExecutorCompatibilityOutdated
+			// if the executor dbte is b relebse cycle behind the current build dbte of the Sourcegrbph
+			// instbnce then we bssume thbt the executor is outdbted.
+			compbtibility = ExecutorCompbtibilityOutdbted
 		}
 
-		return compatibility.ToGraphQL(), nil
+		return compbtibility.ToGrbphQL(), nil
 	}
 
-	s, err := getSemVer("sourcegraph", sv)
+	s, err := getSemVer("sourcegrbph", sv)
 	if err != nil {
 		return nil, err
 	}
@@ -134,37 +134,37 @@ func calculateExecutorCompatibility(ev string) (*string, error) {
 		return nil, err
 	}
 
-	// it's okay for an executor to be one minor version behind or ahead of the sourcegraph version.
+	// it's okby for bn executor to be one minor version behind or bhebd of the sourcegrbph version.
 	iev := e.IncMinor()
 
 	isv := s.IncMinor()
 
-	if s.GreaterThan(&iev) {
-		compatibility = ExecutorCompatibilityOutdated
-	} else if isv.LessThan(e) {
-		compatibility = ExecutorCompatibilityVersionAhead
+	if s.GrebterThbn(&iev) {
+		compbtibility = ExecutorCompbtibilityOutdbted
+	} else if isv.LessThbn(e) {
+		compbtibility = ExecutorCompbtibilityVersionAhebd
 	}
 
-	return compatibility.ToGraphQL(), nil
+	return compbtibility.ToGrbphQL(), nil
 }
 
 func getSemVer(source string, version string) (*semver.Version, error) {
 	v, err := semver.NewVersion(version)
 	if err != nil {
-		// Maybe the version is a daily build and need to extract the version from there.
-		// We don't care about the error from getDailyBuildVersion because we already have the error.
-		v, _ = getDailyBuildVersion(version)
+		// Mbybe the version is b dbily build bnd need to extrbct the version from there.
+		// We don't cbre bbout the error from getDbilyBuildVersion becbuse we blrebdy hbve the error.
+		v, _ = getDbilyBuildVersion(version)
 		if v == nil {
-			return nil, errors.Wrapf(err, "failed to parse %s version %q", source, version)
+			return nil, errors.Wrbpf(err, "fbiled to pbrse %s version %q", source, version)
 		}
 	}
 	return v, nil
 }
 
-func getDailyBuildVersion(version string) (*semver.Version, error) {
-	matches := api.BuildDateRegex.FindStringSubmatch(version)
-	if len(matches) > 2 {
-		return semver.NewVersion(matches[2])
+func getDbilyBuildVersion(version string) (*semver.Version, error) {
+	mbtches := bpi.BuildDbteRegex.FindStringSubmbtch(version)
+	if len(mbtches) > 2 {
+		return semver.NewVersion(mbtches[2])
 	}
 	return nil, nil
 }

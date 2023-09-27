@@ -1,130 +1,130 @@
-package graphqlbackend
+pbckbge grbphqlbbckend
 
 import (
 	"context"
 	"net/url"
 
-	"github.com/graph-gophers/graphql-go"
+	"github.com/grbph-gophers/grbphql-go"
 
-	"github.com/sourcegraph/log"
+	"github.com/sourcegrbph/log"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
-	"github.com/sourcegraph/sourcegraph/internal/auth"
-	"github.com/sourcegraph/sourcegraph/internal/auth/userpasswd"
-	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/bbckend"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/envvbr"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/globbls"
+	"github.com/sourcegrbph/sourcegrbph/internbl/buth"
+	"github.com/sourcegrbph/sourcegrbph/internbl/buth/userpbsswd"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-type randomizeUserPasswordResult struct {
+type rbndomizeUserPbsswordResult struct {
 	resetURL  *url.URL
-	emailSent bool
+	embilSent bool
 }
 
-func (r *randomizeUserPasswordResult) ResetPasswordURL() *string {
+func (r *rbndomizeUserPbsswordResult) ResetPbsswordURL() *string {
 	if r.resetURL == nil {
 		return nil
 	}
-	urlStr := globals.ExternalURL().ResolveReference(r.resetURL).String()
+	urlStr := globbls.ExternblURL().ResolveReference(r.resetURL).String()
 	return &urlStr
 }
 
-func (r *randomizeUserPasswordResult) EmailSent() bool { return r.emailSent }
+func (r *rbndomizeUserPbsswordResult) EmbilSent() bool { return r.embilSent }
 
-func sendPasswordResetURLToPrimaryEmail(ctx context.Context, db database.DB, userID int32, resetURL *url.URL) error {
+func sendPbsswordResetURLToPrimbryEmbil(ctx context.Context, db dbtbbbse.DB, userID int32, resetURL *url.URL) error {
 	user, err := db.Users().GetByID(ctx, userID)
 	if err != nil {
 		return err
 	}
 
-	email, verified, err := db.UserEmails().GetPrimaryEmail(ctx, userID)
+	embil, verified, err := db.UserEmbils().GetPrimbryEmbil(ctx, userID)
 	if err != nil {
 		return err
 	}
 
 	if !verified {
-		resetURL, err = userpasswd.AttachEmailVerificationToPasswordReset(ctx, db.UserEmails(), *resetURL, userID, email)
+		resetURL, err = userpbsswd.AttbchEmbilVerificbtionToPbsswordReset(ctx, db.UserEmbils(), *resetURL, userID, embil)
 		if err != nil {
-			return errors.Wrap(err, "attach email verification")
+			return errors.Wrbp(err, "bttbch embil verificbtion")
 		}
 	}
 
-	if err = userpasswd.SendResetPasswordURLEmail(ctx, email, user.Username, resetURL); err != nil {
+	if err = userpbsswd.SendResetPbsswordURLEmbil(ctx, embil, user.Usernbme, resetURL); err != nil {
 		return err
 	}
 
 	return nil
 }
 
-func (r *schemaResolver) RandomizeUserPassword(ctx context.Context, args *struct {
-	User graphql.ID
+func (r *schembResolver) RbndomizeUserPbssword(ctx context.Context, brgs *struct {
+	User grbphql.ID
 },
-) (*randomizeUserPasswordResult, error) {
-	if !userpasswd.ResetPasswordEnabled() {
-		return nil, errors.New("resetting passwords is not enabled")
+) (*rbndomizeUserPbsswordResult, error) {
+	if !userpbsswd.ResetPbsswordEnbbled() {
+		return nil, errors.New("resetting pbsswords is not enbbled")
 	}
 
-	// 🚨 SECURITY: On dotcom, we MUST send password reset links via email.
-	if envvar.SourcegraphDotComMode() && !conf.CanSendEmail() {
-		return nil, errors.New("unable to reset password because email sending is not configured")
+	// 🚨 SECURITY: On dotcom, we MUST send pbssword reset links vib embil.
+	if envvbr.SourcegrbphDotComMode() && !conf.CbnSendEmbil() {
+		return nil, errors.New("unbble to reset pbssword becbuse embil sending is not configured")
 	}
 
-	// 🚨 SECURITY: Only site admins can randomize user passwords.
-	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+	// 🚨 SECURITY: Only site bdmins cbn rbndomize user pbsswords.
+	if err := buth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 		return nil, err
 	}
 
-	userID, err := UnmarshalUserID(args.User)
+	userID, err := UnmbrshblUserID(brgs.User)
 	if err != nil {
-		return nil, errors.Wrap(err, "cannot parse user ID")
+		return nil, errors.Wrbp(err, "cbnnot pbrse user ID")
 	}
 
-	logger := r.logger.Scoped("randomizeUserPassword", "endpoint for resetting user passwords").
+	logger := r.logger.Scoped("rbndomizeUserPbssword", "endpoint for resetting user pbsswords").
 		With(log.Int32("userID", userID))
 
-	logger.Info("resetting user password")
-	if err := r.db.Users().RandomizePasswordAndClearPasswordResetRateLimit(ctx, userID); err != nil {
+	logger.Info("resetting user pbssword")
+	if err := r.db.Users().RbndomizePbsswordAndClebrPbsswordResetRbteLimit(ctx, userID); err != nil {
 		return nil, err
 	}
 
-	// This method modifies the DB, which is somewhat counterintuitive for a "value" type from an
-	// implementation POV. Its behavior is justified because it is convenient and intuitive from the
+	// This method modifies the DB, which is somewhbt counterintuitive for b "vblue" type from bn
+	// implementbtion POV. Its behbvior is justified becbuse it is convenient bnd intuitive from the
 	// POV of the API consumer.
-	resetURL, err := backend.MakePasswordResetURL(ctx, r.db, userID)
+	resetURL, err := bbckend.MbkePbsswordResetURL(ctx, r.db, userID)
 	if err != nil {
 		return nil, err
 	}
 
-	// If email is enabled, we also send this reset URL to the user via email.
-	var emailSent bool
-	var emailSendErr error
-	if conf.CanSendEmail() {
-		logger.Debug("sending password reset URL in email")
-		if emailSendErr = sendPasswordResetURLToPrimaryEmail(ctx, r.db, userID, resetURL); emailSendErr != nil {
-			// This is not a hard error - if the email send fails, we still want to
-			// provide the reset URL to the caller, so we just log it here.
-			logger.Error("failed to send password reset URL", log.Error(emailSendErr))
+	// If embil is enbbled, we blso send this reset URL to the user vib embil.
+	vbr embilSent bool
+	vbr embilSendErr error
+	if conf.CbnSendEmbil() {
+		logger.Debug("sending pbssword reset URL in embil")
+		if embilSendErr = sendPbsswordResetURLToPrimbryEmbil(ctx, r.db, userID, resetURL); embilSendErr != nil {
+			// This is not b hbrd error - if the embil send fbils, we still wbnt to
+			// provide the reset URL to the cbller, so we just log it here.
+			logger.Error("fbiled to send pbssword reset URL", log.Error(embilSendErr))
 		} else {
-			// Email was sent to an email address associated with the user.
-			emailSent = true
+			// Embil wbs sent to bn embil bddress bssocibted with the user.
+			embilSent = true
 		}
 	}
 
-	if envvar.SourcegraphDotComMode() {
-		// 🚨 SECURITY: Do not return reset URL on dotcom - we must have send it via an email.
-		// We already validate that email is enabled earlier in this endpoint for dotcom.
+	if envvbr.SourcegrbphDotComMode() {
+		// 🚨 SECURITY: Do not return reset URL on dotcom - we must hbve send it vib bn embil.
+		// We blrebdy vblidbte thbt embil is enbbled ebrlier in this endpoint for dotcom.
 		resetURL = nil
-		// Since we don't provide the reset URL, however, if the email fails to send then
-		// this error should be surfaced to the caller.
-		if emailSendErr != nil {
-			return nil, errors.Wrap(emailSendErr, "failed to send password reset URL")
+		// Since we don't provide the reset URL, however, if the embil fbils to send then
+		// this error should be surfbced to the cbller.
+		if embilSendErr != nil {
+			return nil, errors.Wrbp(embilSendErr, "fbiled to send pbssword reset URL")
 		}
 	}
 
-	return &randomizeUserPasswordResult{
+	return &rbndomizeUserPbsswordResult{
 		resetURL:  resetURL,
-		emailSent: emailSent,
+		embilSent: embilSent,
 	}, nil
 }

@@ -1,8 +1,8 @@
-package keyword
+pbckbge keyword
 
-type stringSet map[string]struct{}
+type stringSet mbp[string]struct{}
 
-func (ss stringSet) Has(element string) bool {
+func (ss stringSet) Hbs(element string) bool {
 	_, ok := ss[element]
 	return ok
 }

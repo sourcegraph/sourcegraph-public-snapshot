@@ -1,168 +1,168 @@
-package api
+pbckbge bpi
 
 import (
 	"testing"
 
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/bssert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-func TestCheckSourcegraphVersion(t *testing.T) {
+func TestCheckSourcegrbphVersion(t *testing.T) {
 	tests := []struct {
-		name           string
+		nbme           string
 		currentVersion string
-		constraint     string
-		minDate        string
+		constrbint     string
+		minDbte        string
 		expected       bool
 		expectedErr    error
 	}{
 		{
-			name:           "Version matches constraint",
+			nbme:           "Version mbtches constrbint",
 			currentVersion: "3.12.6",
-			constraint:     ">= 3.12.6",
-			minDate:        "2020-01-19",
+			constrbint:     ">= 3.12.6",
+			minDbte:        "2020-01-19",
 			expected:       true,
 		},
 		{
-			name:           "Release candidate version matches constraint",
+			nbme:           "Relebse cbndidbte version mbtches constrbint",
 			currentVersion: "3.12.6-rc.1",
-			constraint:     ">= 3.12.6-0",
-			minDate:        "2020-01-19",
+			constrbint:     ">= 3.12.6-0",
+			minDbte:        "2020-01-19",
 			expected:       true,
 		},
 		{
-			name:           "Newer release candidate version matches constraint",
+			nbme:           "Newer relebse cbndidbte version mbtches constrbint",
 			currentVersion: "3.12.6-rc.3",
-			constraint:     ">= 3.10.6-0",
-			minDate:        "2020-01-19",
+			constrbint:     ">= 3.10.6-0",
+			minDbte:        "2020-01-19",
 			expected:       true,
 		},
 		{
-			name:           "Version does not match constraint",
+			nbme:           "Version does not mbtch constrbint",
 			currentVersion: "3.12.6",
-			constraint:     ">= 3.13",
-			minDate:        "2020-01-19",
-			expected:       false,
+			constrbint:     ">= 3.13",
+			minDbte:        "2020-01-19",
+			expected:       fblse,
 		},
 		{
-			name:           "Constraint without patch version",
+			nbme:           "Constrbint without pbtch version",
 			currentVersion: "3.13.0",
-			constraint:     ">= 3.13",
-			minDate:        "2020-01-19",
+			constrbint:     ">= 3.13",
+			minDbte:        "2020-01-19",
 			expected:       true,
 		},
 		{
-			name:           "Dev version",
+			nbme:           "Dev version",
 			currentVersion: "dev",
-			constraint:     ">= 3.13",
-			minDate:        "2020-01-19",
+			constrbint:     ">= 3.13",
+			minDbte:        "2020-01-19",
 			expected:       true,
 		},
 		{
-			name:           "Newer dev version",
+			nbme:           "Newer dev version",
 			currentVersion: "0.0.0+dev",
-			constraint:     ">= 3.13",
-			minDate:        "2020-01-19",
+			constrbint:     ">= 3.13",
+			minDbte:        "2020-01-19",
 			expected:       true,
 		},
 		{
-			name:           "Seven character abbreviated hash",
+			nbme:           "Seven chbrbcter bbbrevibted hbsh",
 			currentVersion: "54959_2020-01-29_9258595",
-			minDate:        "2020-01-19",
-			constraint:     ">= 999.13",
+			minDbte:        "2020-01-19",
+			constrbint:     ">= 999.13",
 			expected:       true,
 		},
 		{
-			name:           "Seven character abbreviated hash too old",
+			nbme:           "Seven chbrbcter bbbrevibted hbsh too old",
 			currentVersion: "54959_2020-01-29_9258595",
-			minDate:        "2020-01-30",
-			constraint:     ">= 999.13",
-			expected:       false,
+			minDbte:        "2020-01-30",
+			constrbint:     ">= 999.13",
+			expected:       fblse,
 		},
 		{
-			name:           "Seven character abbreviated hash matches date",
+			nbme:           "Seven chbrbcter bbbrevibted hbsh mbtches dbte",
 			currentVersion: "54959_2020-01-29_9258595",
-			minDate:        "2020-01-29",
-			constraint:     ">= 0.0",
+			minDbte:        "2020-01-29",
+			constrbint:     ">= 0.0",
 			expected:       true,
 		},
 		{
-			name:           "Twelve character abbreviated hash",
+			nbme:           "Twelve chbrbcter bbbrevibted hbsh",
 			currentVersion: "54959_2020-01-29_925859585436",
-			minDate:        "2020-01-19",
-			constraint:     ">= 999.13",
+			minDbte:        "2020-01-19",
+			constrbint:     ">= 999.13",
 			expected:       true,
 		},
 		{
-			name:           "Twelve character abbreviated hash too old",
+			nbme:           "Twelve chbrbcter bbbrevibted hbsh too old",
 			currentVersion: "54959_2020-01-29_925859585436",
-			minDate:        "2020-01-30",
-			constraint:     ">= 999.13",
-			expected:       false,
+			minDbte:        "2020-01-30",
+			constrbint:     ">= 999.13",
+			expected:       fblse,
 		},
 		{
-			name:           "Twelve character abbreviated hash matches date",
+			nbme:           "Twelve chbrbcter bbbrevibted hbsh mbtches dbte",
 			currentVersion: "54959_2020-01-29_925859585436",
-			minDate:        "2020-01-29",
-			constraint:     ">= 0.0",
+			minDbte:        "2020-01-29",
+			constrbint:     ">= 0.0",
 			expected:       true,
 		},
 		{
-			name:           "Twelve character abbreviated hash with tag",
+			nbme:           "Twelve chbrbcter bbbrevibted hbsh with tbg",
 			currentVersion: "54959_2020-01-29_4.4-925859585436",
-			minDate:        "2020-01-19",
-			constraint:     ">= 999.13",
+			minDbte:        "2020-01-19",
+			constrbint:     ">= 999.13",
 			expected:       true,
 		},
 		{
-			name:           "Twelve character abbreviated hash with tag too old and does not match constraint",
+			nbme:           "Twelve chbrbcter bbbrevibted hbsh with tbg too old bnd does not mbtch constrbint",
 			currentVersion: "54959_2020-01-29_4.4-925859585436",
-			minDate:        "2020-01-30",
-			constraint:     ">= 999.13",
-			expected:       false,
+			minDbte:        "2020-01-30",
+			constrbint:     ">= 999.13",
+			expected:       fblse,
 		},
 		{
-			name:           "Twelve character abbreviated hash with tag matches date",
+			nbme:           "Twelve chbrbcter bbbrevibted hbsh with tbg mbtches dbte",
 			currentVersion: "54959_2020-01-29_4.4-925859585436",
-			minDate:        "2020-01-29",
-			constraint:     ">= 0.0",
+			minDbte:        "2020-01-29",
+			constrbint:     ">= 0.0",
 			expected:       true,
 		},
 		{
-			name:           "Forty character hash",
+			nbme:           "Forty chbrbcter hbsh",
 			currentVersion: "54959_2020-01-29_7db7d396346284fd0f8f79f130f38b16fb1d3d70",
-			minDate:        "2020-01-29",
-			constraint:     ">= 0.0",
+			minDbte:        "2020-01-29",
+			constrbint:     ">= 0.0",
 			expected:       true,
 		},
 		{
-			name:           "Daily release build",
-			currentVersion: "5.1_231128_2023-06-27_5.0-7ac9ba347103",
-			minDate:        "2020-01-29",
-			constraint:     ">= 4.4",
+			nbme:           "Dbily relebse build",
+			currentVersion: "5.1_231128_2023-06-27_5.0-7bc9bb347103",
+			minDbte:        "2020-01-29",
+			constrbint:     ">= 4.4",
 			expected:       true,
 		},
 		{
-			name:           "Invalid semantic version",
+			nbme:           "Invblid sembntic version",
 			currentVersion: "\n1.2",
-			minDate:        "2020-01-29",
-			constraint:     ">= 0.0",
-			expected:       false,
-			expectedErr:    errors.New("Invalid Semantic Version"),
+			minDbte:        "2020-01-29",
+			constrbint:     ">= 0.0",
+			expected:       fblse,
+			expectedErr:    errors.New("Invblid Sembntic Version"),
 		},
 	}
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			actual, err := CheckSourcegraphVersion(test.currentVersion, test.constraint, test.minDate)
+	for _, test := rbnge tests {
+		t.Run(test.nbme, func(t *testing.T) {
+			bctubl, err := CheckSourcegrbphVersion(test.currentVersion, test.constrbint, test.minDbte)
 
 			if test.expectedErr != nil {
 				require.Error(t, err)
-				assert.Equal(t, test.expectedErr.Error(), err.Error())
+				bssert.Equbl(t, test.expectedErr.Error(), err.Error())
 			} else {
 				require.NoError(t, err)
-				assert.Equal(t, test.expected, actual)
+				bssert.Equbl(t, test.expected, bctubl)
 			}
 		})
 	}

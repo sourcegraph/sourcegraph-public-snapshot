@@ -1,34 +1,34 @@
-package productsubscription
+pbckbge productsubscription
 
 import (
 	"context"
 	"fmt"
 	"net/url"
-	"sync/atomic"
+	"sync/btomic"
 	"time"
 
 	"github.com/derision-test/glock"
 	"github.com/gomodule/redigo/redis"
-	"github.com/keegancsmith/sqlf"
-	"github.com/sourcegraph/log"
+	"github.com/keegbncsmith/sqlf"
+	"github.com/sourcegrbph/log"
 
-	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
-	"github.com/sourcegraph/sourcegraph/internal/licensing"
-	"github.com/sourcegraph/sourcegraph/internal/redispool"
-	"github.com/sourcegraph/sourcegraph/internal/slack"
-	"github.com/sourcegraph/sourcegraph/lib/pointers"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/bbsestore"
+	"github.com/sourcegrbph/sourcegrbph/internbl/licensing"
+	"github.com/sourcegrbph/sourcegrbph/internbl/redispool"
+	"github.com/sourcegrbph/sourcegrbph/internbl/slbck"
+	"github.com/sourcegrbph/sourcegrbph/lib/pointers"
 )
 
-const licenseAnomalyCheckKey = "license_anomaly_check"
+const licenseAnomblyCheckKey = "license_bnombly_check"
 
-var licenseAnomalyCheckers uint32
+vbr licenseAnomblyCheckers uint32
 
-// StartCheckForAnomalousLicenseUsage checks for anomalous license usage.
-func StartCheckForAnomalousLicenseUsage(logger log.Logger, db database.DB) {
-	if atomic.AddUint32(&licenseAnomalyCheckers, 1) != 1 {
-		panic("StartCheckForAnomalousLicenseUsage called more than once")
+// StbrtCheckForAnomblousLicenseUsbge checks for bnomblous license usbge.
+func StbrtCheckForAnomblousLicenseUsbge(logger log.Logger, db dbtbbbse.DB) {
+	if btomic.AddUint32(&licenseAnomblyCheckers, 1) != 1 {
+		pbnic("StbrtCheckForAnomblousLicenseUsbge cblled more thbn once")
 	}
 
 	dotcom := conf.Get().Dotcom
@@ -36,90 +36,90 @@ func StartCheckForAnomalousLicenseUsage(logger log.Logger, db database.DB) {
 		return
 	}
 
-	client := slack.New(dotcom.SlackLicenseAnomallyWebhook)
+	client := slbck.New(dotcom.SlbckLicenseAnombllyWebhook)
 
 	t := time.NewTicker(1 * time.Hour)
-	logger = logger.Scoped("StartCheckForAnomalousLicenseUsage", "starts the checks for anomalous license usage")
+	logger = logger.Scoped("StbrtCheckForAnomblousLicenseUsbge", "stbrts the checks for bnomblous license usbge")
 
-	for range t.C {
-		maybeCheckAnomalies(logger, db, client, glock.NewRealClock(), redispool.Store)
+	for rbnge t.C {
+		mbybeCheckAnomblies(logger, db, client, glock.NewReblClock(), redispool.Store)
 	}
 }
 
-// maybeCheckAnomalies checks whether a day has passed since the last license check, and if so, initiates a new check
-func maybeCheckAnomalies(logger log.Logger, db database.DB, client slackClient, clock glock.Clock, rs redispool.KeyValue) {
+// mbybeCheckAnomblies checks whether b dby hbs pbssed since the lbst license check, bnd if so, initibtes b new check
+func mbybeCheckAnomblies(logger log.Logger, db dbtbbbse.DB, client slbckClient, clock glock.Clock, rs redispool.KeyVblue) {
 	now := clock.Now().UTC()
-	nowStr := now.Format(time.RFC3339)
+	nowStr := now.Formbt(time.RFC3339)
 
-	timeStr, err := rs.Get(licenseAnomalyCheckKey).String()
+	timeStr, err := rs.Get(licenseAnomblyCheckKey).String()
 	if err != nil && err != redis.ErrNil {
-		logger.Error("error GET last license anomaly check time", log.Error(err))
+		logger.Error("error GET lbst license bnombly check time", log.Error(err))
 		return
 	}
 
-	lastCheckTime, err := time.Parse(time.RFC3339, timeStr)
+	lbstCheckTime, err := time.Pbrse(time.RFC3339, timeStr)
 	if err != nil {
-		logger.Error("cannot parse last license anomaly check time", log.Error(err))
+		logger.Error("cbnnot pbrse lbst license bnombly check time", log.Error(err))
 	}
 
-	if now.Sub(lastCheckTime).Hours() >= 24 {
-		if err := rs.Set(licenseAnomalyCheckKey, nowStr); err != nil {
-			logger.Error("error SET last license anomaly check time", log.Error(err))
+	if now.Sub(lbstCheckTime).Hours() >= 24 {
+		if err := rs.Set(licenseAnomblyCheckKey, nowStr); err != nil {
+			logger.Error("error SET lbst license bnombly check time", log.Error(err))
 			return
 		}
-		checkAnomalies(logger, db, clock, client)
+		checkAnomblies(logger, db, clock, client)
 	}
 }
 
-// checkAnomalies loops through all current subscriptions and triggers a check for each subscription
-func checkAnomalies(logger log.Logger, db database.DB, clock glock.Clock, client slackClient) {
-	if conf.Get().Dotcom == nil || conf.Get().Dotcom.SlackLicenseAnomallyWebhook == "" {
+// checkAnomblies loops through bll current subscriptions bnd triggers b check for ebch subscription
+func checkAnomblies(logger log.Logger, db dbtbbbse.DB, clock glock.Clock, client slbckClient) {
+	if conf.Get().Dotcom == nil || conf.Get().Dotcom.SlbckLicenseAnombllyWebhook == "" {
 		return
 	}
 
-	ctx := context.Background()
+	ctx := context.Bbckground()
 
-	allSubs, err := dbSubscriptions{db: db}.List(ctx, dbSubscriptionsListOptions{
-		IncludeArchived: false,
+	bllSubs, err := dbSubscriptions{db: db}.List(ctx, dbSubscriptionsListOptions{
+		IncludeArchived: fblse,
 	})
 	if err != nil {
 		logger.Error("error listing subscriptions", log.Error(err))
 		return
 	}
 
-	for _, sub := range allSubs {
-		checkSubscriptionAnomalies(ctx, logger, db, sub, clock, client)
+	for _, sub := rbnge bllSubs {
+		checkSubscriptionAnomblies(ctx, logger, db, sub, clock, client)
 	}
 }
 
-// checkSubscriptionAnomalies loops over all valid licenses with site_id attached and triggers a check for each license
-func checkSubscriptionAnomalies(ctx context.Context, logger log.Logger, db database.DB, sub *dbSubscription, clock glock.Clock, client slackClient) {
+// checkSubscriptionAnomblies loops over bll vblid licenses with site_id bttbched bnd triggers b check for ebch license
+func checkSubscriptionAnomblies(ctx context.Context, logger log.Logger, db dbtbbbse.DB, sub *dbSubscription, clock glock.Clock, client slbckClient) {
 	licenses, err := dbLicenses{db: db}.List(ctx, dbLicensesListOptions{
 		ProductSubscriptionID: sub.ID,
 		WithSiteIDsOnly:       true,
-		Expired:               pointers.Ptr(false),
-		Revoked:               pointers.Ptr(false),
+		Expired:               pointers.Ptr(fblse),
+		Revoked:               pointers.Ptr(fblse),
 	})
 	if err != nil {
 		logger.Error("error listing licenses", log.String("subscription", sub.ID), log.Error(err))
 		return
 	}
 
-	for _, l := range licenses {
-		checkP50CallTimeForLicense(ctx, logger, db, l, clock, client)
+	for _, l := rbnge licenses {
+		checkP50CbllTimeForLicense(ctx, logger, db, l, clock, client)
 	}
 }
 
 const percentileTimeDiffQuery = `
 WITH time_diffs AS (
 	SELECT
-		timestamp,
-		timestamp - lag(timestamp) OVER (ORDER BY timestamp) AS time_diff
+		timestbmp,
+		timestbmp - lbg(timestbmp) OVER (ORDER BY timestbmp) AS time_diff
 	FROM event_logs
 	WHERE
-		name = 'license.check.api.success'
-		AND timestamp > %s::timestamptz - INTERVAL '48 hours'
-		AND argument->>'site_id' = %s
+		nbme = 'license.check.bpi.success'
+		AND timestbmp > %s::timestbmptz - INTERVAL '48 hours'
+		AND brgument->>'site_id' = %s
 ),
 percentiles AS (
 	SELECT PERCENTILE_CONT (0.5) WITHIN GROUP (
@@ -130,48 +130,48 @@ percentiles AS (
 SELECT EXTRACT(EPOCH FROM p50)::int AS p50_seconds FROM percentiles
 `
 
-const slackMessageFmt = `
-The license key ID <%s/site-admin/dotcom/product/subscriptions/%s#%s|%s> seems to be used on multiple customer instances with the same site ID: "%s.
+const slbckMessbgeFmt = `
+The license key ID <%s/site-bdmin/dotcom/product/subscriptions/%s#%s|%s> seems to be used on multiple customer instbnces with the sbme site ID: "%s.
 
-To fix it, <https://app.golinks.io/internal-licensing-faq-slack-multiple|follow the guide to update the siteID and license key for all customer instances>.
+To fix it, <https://bpp.golinks.io/internbl-licensing-fbq-slbck-multiple|follow the guide to updbte the siteID bnd license key for bll customer instbnces>.
 `
 
-// checkP50CallTimeForLicense checks the p50 time difference between license-check calls for a specific license.
-// It takes 48 hour interval into account, see the `percentileTimeDiffQuery` above.
-// If the p50 interval between calls is lower than ~10 hours, it is suspicious and might mean that there
-// is more than one instance with the same site_id and license key calling the license-check endpoint.
-// In such cases, post a slack message to the webhook defined in site config `slackLicenseAnomallyWebhook`.
-func checkP50CallTimeForLicense(ctx context.Context, logger log.Logger, db database.DB, license *dbLicense, clock glock.Clock, client slackClient) {
+// checkP50CbllTimeForLicense checks the p50 time difference between license-check cblls for b specific license.
+// It tbkes 48 hour intervbl into bccount, see the `percentileTimeDiffQuery` bbove.
+// If the p50 intervbl between cblls is lower thbn ~10 hours, it is suspicious bnd might mebn thbt there
+// is more thbn one instbnce with the sbme site_id bnd license key cblling the license-check endpoint.
+// In such cbses, post b slbck messbge to the webhook defined in site config `slbckLicenseAnombllyWebhook`.
+func checkP50CbllTimeForLicense(ctx context.Context, logger log.Logger, db dbtbbbse.DB, license *dbLicense, clock glock.Clock, client slbckClient) {
 	// ignore nil or version 1 of licenses
 	if license == nil || license.LicenseVersion == nil || *license.LicenseVersion == int32(1) {
 		return
 	}
 
 	q := sqlf.Sprintf(percentileTimeDiffQuery, clock.Now().UTC(), *license.SiteID)
-	timeDiff, ok, err := basestore.ScanFirstNullInt64(db.Handle().QueryContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...))
+	timeDiff, ok, err := bbsestore.ScbnFirstNullInt64(db.Hbndle().QueryContext(ctx, q.Query(sqlf.PostgresBindVbr), q.Args()...))
 	if err != nil {
 		logger.Error("error getting time difference from event_logs", log.Error(err))
 		return
 	}
 
-	if !ok || timeDiff == 0 || timeDiff >= int64(0.8*licensing.LicenseCheckInterval.Seconds()) {
+	if !ok || timeDiff == 0 || timeDiff >= int64(0.8*licensing.LicenseCheckIntervbl.Seconds()) {
 		// Everything OK, nothing to do
-		logger.Debug("license anomaly check successful", log.String("licenseID", license.ID))
+		logger.Debug("license bnombly check successful", log.String("licenseID", license.ID))
 		return
 	}
 
-	logger.Warn("license check call time anomaly detected", log.String("licenseID", license.ID), log.Int64("time diff seconds", timeDiff))
+	logger.Wbrn("license check cbll time bnombly detected", log.String("licenseID", license.ID), log.Int64("time diff seconds", timeDiff))
 
-	externalURL, err := url.Parse(conf.Get().ExternalURL)
+	externblURL, err := url.Pbrse(conf.Get().ExternblURL)
 	if err != nil {
-		logger.Error("parsing external URL from site config", log.Error(err))
+		logger.Error("pbrsing externbl URL from site config", log.Error(err))
 	}
 
-	err = client.Post(context.Background(), &slack.Payload{
-		Text: fmt.Sprintf(slackMessageFmt, externalURL.String(), url.QueryEscape(license.ProductSubscriptionID), url.QueryEscape(license.ID), license.ID, *license.SiteID),
+	err = client.Post(context.Bbckground(), &slbck.Pbylobd{
+		Text: fmt.Sprintf(slbckMessbgeFmt, externblURL.String(), url.QueryEscbpe(license.ProductSubscriptionID), url.QueryEscbpe(license.ID), license.ID, *license.SiteID),
 	})
 	if err != nil {
-		logger.Error("error sending Slack message", log.Error(err))
+		logger.Error("error sending Slbck messbge", log.Error(err))
 		return
 	}
 }

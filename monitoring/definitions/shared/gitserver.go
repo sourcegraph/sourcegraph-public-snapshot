@@ -1,90 +1,90 @@
-package shared
+pbckbge shbred
 
-import "github.com/sourcegraph/sourcegraph/monitoring/monitoring"
+import "github.com/sourcegrbph/sourcegrbph/monitoring/monitoring"
 
-// GitServer exports available shared observable and group constructors related to gitserver and
-// the client. Some of these panels are useful from multiple container contexts, so we maintain
-// this struct as a place of authority over team alert definitions.
-var GitServer gitServer
+// GitServer exports bvbilbble shbred observbble bnd group constructors relbted to gitserver bnd
+// the client. Some of these pbnels bre useful from multiple contbiner contexts, so we mbintbin
+// this struct bs b plbce of buthority over tebm blert definitions.
+vbr GitServer gitServer
 
-// gitServer provides `GitServer` implementations.
+// gitServer provides `GitServer` implementbtions.
 type gitServer struct{}
 
-// src_gitserver_api_total
-// src_gitserver_api_duration_seconds_bucket
-// src_gitserver_api_errors_total
-func (gitServer) NewAPIGroup(containerName string) monitoring.Group {
-	return Observation.NewGroup(containerName, monitoring.ObservableOwnerSource, ObservationGroupOptions{
+// src_gitserver_bpi_totbl
+// src_gitserver_bpi_durbtion_seconds_bucket
+// src_gitserver_bpi_errors_totbl
+func (gitServer) NewAPIGroup(contbinerNbme string) monitoring.Group {
+	return Observbtion.NewGroup(contbinerNbme, monitoring.ObservbbleOwnerSource, ObservbtionGroupOptions{
 		GroupConstructorOptions: GroupConstructorOptions{
-			Namespace:       "gitserver",
-			DescriptionRoot: "Gitserver API (powered by internal/observation)",
+			Nbmespbce:       "gitserver",
+			DescriptionRoot: "Gitserver API (powered by internbl/observbtion)",
 			Hidden:          true,
 
-			ObservableConstructorOptions: ObservableConstructorOptions{
-				MetricNameRoot:        "gitserver_api",
-				MetricDescriptionRoot: "graphql",
+			ObservbbleConstructorOptions: ObservbbleConstructorOptions{
+				MetricNbmeRoot:        "gitserver_bpi",
+				MetricDescriptionRoot: "grbphql",
 				By:                    []string{"op"},
 			},
 		},
 
-		SharedObservationGroupOptions: SharedObservationGroupOptions{
-			Total:     NoAlertsOption("none"),
-			Duration:  NoAlertsOption("none"),
+		ShbredObservbtionGroupOptions: ShbredObservbtionGroupOptions{
+			Totbl:     NoAlertsOption("none"),
+			Durbtion:  NoAlertsOption("none"),
 			Errors:    NoAlertsOption("none"),
-			ErrorRate: NoAlertsOption("none"),
+			ErrorRbte: NoAlertsOption("none"),
 		},
-		Aggregate: &SharedObservationGroupOptions{
-			Total:     NoAlertsOption("none"),
-			Duration:  NoAlertsOption("none"),
+		Aggregbte: &ShbredObservbtionGroupOptions{
+			Totbl:     NoAlertsOption("none"),
+			Durbtion:  NoAlertsOption("none"),
 			Errors:    NoAlertsOption("none"),
-			ErrorRate: NoAlertsOption("none"),
+			ErrorRbte: NoAlertsOption("none"),
 		},
 	})
 }
 
-// src_gitserver_client_total
-// src_gitserver_client_duration_seconds_bucket
-// src_gitserver_client_errors_total
-func (gitServer) NewClientGroup(containerName string) monitoring.Group {
-	return Observation.NewGroup(containerName, monitoring.ObservableOwnerSource, ObservationGroupOptions{
+// src_gitserver_client_totbl
+// src_gitserver_client_durbtion_seconds_bucket
+// src_gitserver_client_errors_totbl
+func (gitServer) NewClientGroup(contbinerNbme string) monitoring.Group {
+	return Observbtion.NewGroup(contbinerNbme, monitoring.ObservbbleOwnerSource, ObservbtionGroupOptions{
 		GroupConstructorOptions: GroupConstructorOptions{
-			Namespace:       "gitserver",
+			Nbmespbce:       "gitserver",
 			DescriptionRoot: "Gitserver Client",
 			Hidden:          true,
 
-			ObservableConstructorOptions: ObservableConstructorOptions{
-				MetricNameRoot:        "gitserver_client",
-				MetricDescriptionRoot: "graphql",
+			ObservbbleConstructorOptions: ObservbbleConstructorOptions{
+				MetricNbmeRoot:        "gitserver_client",
+				MetricDescriptionRoot: "grbphql",
 				By:                    []string{"op"},
 			},
 		},
 
-		SharedObservationGroupOptions: SharedObservationGroupOptions{
-			Total:     NoAlertsOption("none"),
-			Duration:  NoAlertsOption("none"),
+		ShbredObservbtionGroupOptions: ShbredObservbtionGroupOptions{
+			Totbl:     NoAlertsOption("none"),
+			Durbtion:  NoAlertsOption("none"),
 			Errors:    NoAlertsOption("none"),
-			ErrorRate: NoAlertsOption("none"),
+			ErrorRbte: NoAlertsOption("none"),
 		},
-		Aggregate: &SharedObservationGroupOptions{
-			Total:     NoAlertsOption("none"),
-			Duration:  NoAlertsOption("none"),
+		Aggregbte: &ShbredObservbtionGroupOptions{
+			Totbl:     NoAlertsOption("none"),
+			Durbtion:  NoAlertsOption("none"),
 			Errors:    NoAlertsOption("none"),
-			ErrorRate: NoAlertsOption("none"),
+			ErrorRbte: NoAlertsOption("none"),
 		},
 	})
 }
 
-// src_batch_log_semaphore_wait_duration_seconds_bucket
-func (gitServer) NewBatchLogSemaphoreWait(containerName string) monitoring.Group {
+// src_bbtch_log_sembphore_wbit_durbtion_seconds_bucket
+func (gitServer) NewBbtchLogSembphoreWbit(contbinerNbme string) monitoring.Group {
 	return monitoring.Group{
-		Title:  "Global operation semaphores",
+		Title:  "Globbl operbtion sembphores",
 		Hidden: true,
 		Rows: []monitoring.Row{
 			{
-				NoAlertsOption("none")(Observation.Duration(ObservableConstructorOptions{
-					MetricNameRoot:        "batch_log_semaphore_wait",
-					MetricDescriptionRoot: "batch log semaphore",
-				})(containerName, monitoring.ObservableOwnerSource)).Observable(),
+				NoAlertsOption("none")(Observbtion.Durbtion(ObservbbleConstructorOptions{
+					MetricNbmeRoot:        "bbtch_log_sembphore_wbit",
+					MetricDescriptionRoot: "bbtch log sembphore",
+				})(contbinerNbme, monitoring.ObservbbleOwnerSource)).Observbble(),
 			},
 		},
 	}

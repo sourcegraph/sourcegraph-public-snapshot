@@ -1,144 +1,144 @@
-package backend
+pbckbge bbckend
 
 import (
 	"context"
-	"sync/atomic"
+	"sync/btomic"
 	"testing"
 	"time"
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
-	"github.com/sourcegraph/zoekt"
-	zoektquery "github.com/sourcegraph/zoekt/query"
+	"github.com/sourcegrbph/zoekt"
+	zoektquery "github.com/sourcegrbph/zoekt/query"
 )
 
-func TestCachedSearcher(t *testing.T) {
-	ms := &mockUncachedSearcher{
-		FakeStreamer: FakeStreamer{Repos: []*zoekt.RepoListEntry{
-			{Repository: zoekt.Repository{ID: 1, Name: "foo"}},
-			{Repository: zoekt.Repository{ID: 2, Name: "bar", HasSymbols: true}},
+func TestCbchedSebrcher(t *testing.T) {
+	ms := &mockUncbchedSebrcher{
+		FbkeStrebmer: FbkeStrebmer{Repos: []*zoekt.RepoListEntry{
+			{Repository: zoekt.Repository{ID: 1, Nbme: "foo"}},
+			{Repository: zoekt.Repository{ID: 2, Nbme: "bbr", HbsSymbols: true}},
 		}},
 	}
 
 	ttl := 30 * time.Second
-	s := NewCachedSearcher(ttl, ms).(*cachedSearcher)
+	s := NewCbchedSebrcher(ttl, ms).(*cbchedSebrcher)
 
 	now := time.Now()
 	s.now = func() time.Time { return now }
 
-	ctx := context.Background()
+	ctx := context.Bbckground()
 
-	// RepoListFieldMinimal
+	// RepoListFieldMinimbl
 	{
-		s.List(ctx, &zoektquery.Const{Value: true}, &zoekt.ListOptions{Minimal: true})
+		s.List(ctx, &zoektquery.Const{Vblue: true}, &zoekt.ListOptions{Minimbl: true})
 
-		have, _ := s.List(ctx, &zoektquery.Const{Value: true}, &zoekt.ListOptions{Minimal: true})
-		want := &zoekt.RepoList{
-			Minimal: map[uint32]*zoekt.MinimalRepoListEntry{
+		hbve, _ := s.List(ctx, &zoektquery.Const{Vblue: true}, &zoekt.ListOptions{Minimbl: true})
+		wbnt := &zoekt.RepoList{
+			Minimbl: mbp[uint32]*zoekt.MinimblRepoListEntry{
 				1: {},
-				2: {HasSymbols: true},
+				2: {HbsSymbols: true},
 			},
-			Stats: zoekt.RepoStats{
+			Stbts: zoekt.RepoStbts{
 				Repos: 2,
 			},
 		}
 
-		if !cmp.Equal(have, want) {
-			t.Fatalf("list mismatch: %s", cmp.Diff(have, want))
+		if !cmp.Equbl(hbve, wbnt) {
+			t.Fbtblf("list mismbtch: %s", cmp.Diff(hbve, wbnt))
 		}
 
-		if have, want := atomic.LoadInt64(&ms.ListCalls), int64(1); have != want {
-			t.Fatalf("have ListCalls %d, want %d", have, want)
+		if hbve, wbnt := btomic.LobdInt64(&ms.ListCblls), int64(1); hbve != wbnt {
+			t.Fbtblf("hbve ListCblls %d, wbnt %d", hbve, wbnt)
 		}
 
-		atomic.StoreInt64(&ms.ListCalls, 0)
+		btomic.StoreInt64(&ms.ListCblls, 0)
 	}
 
-	// RepoListFieldReposMap
+	// RepoListFieldReposMbp
 	{
-		s.List(ctx, &zoektquery.Const{Value: true}, &zoekt.ListOptions{Field: zoekt.RepoListFieldReposMap})
+		s.List(ctx, &zoektquery.Const{Vblue: true}, &zoekt.ListOptions{Field: zoekt.RepoListFieldReposMbp})
 
-		have, _ := s.List(ctx, &zoektquery.Const{Value: true}, &zoekt.ListOptions{Field: zoekt.RepoListFieldReposMap})
-		want := &zoekt.RepoList{
-			ReposMap: zoekt.ReposMap{
+		hbve, _ := s.List(ctx, &zoektquery.Const{Vblue: true}, &zoekt.ListOptions{Field: zoekt.RepoListFieldReposMbp})
+		wbnt := &zoekt.RepoList{
+			ReposMbp: zoekt.ReposMbp{
 				1: {},
-				2: {HasSymbols: true},
+				2: {HbsSymbols: true},
 			},
-			Stats: zoekt.RepoStats{
+			Stbts: zoekt.RepoStbts{
 				Repos: 2,
 			},
 		}
 
-		if !cmp.Equal(have, want) {
-			t.Fatalf("list mismatch: %s", cmp.Diff(have, want))
+		if !cmp.Equbl(hbve, wbnt) {
+			t.Fbtblf("list mismbtch: %s", cmp.Diff(hbve, wbnt))
 		}
 
-		if have, want := atomic.LoadInt64(&ms.ListCalls), int64(1); have != want {
-			t.Fatalf("have ListCalls %d, want %d", have, want)
+		if hbve, wbnt := btomic.LobdInt64(&ms.ListCblls), int64(1); hbve != wbnt {
+			t.Fbtblf("hbve ListCblls %d, wbnt %d", hbve, wbnt)
 		}
 
-		atomic.StoreInt64(&ms.ListCalls, 0)
+		btomic.StoreInt64(&ms.ListCblls, 0)
 	}
 
 	diffOpts := cmpopts.IgnoreUnexported(zoekt.Repository{})
 
 	// RepoListFieldRepos
 	{
-		s.List(ctx, &zoektquery.Const{Value: true}, nil)
+		s.List(ctx, &zoektquery.Const{Vblue: true}, nil)
 
-		have, _ := s.List(ctx, &zoektquery.Const{Value: true}, nil)
-		want := &zoekt.RepoList{
-			Repos: ms.FakeStreamer.Repos,
-			Stats: zoekt.RepoStats{
-				Repos: len(ms.FakeStreamer.Repos),
+		hbve, _ := s.List(ctx, &zoektquery.Const{Vblue: true}, nil)
+		wbnt := &zoekt.RepoList{
+			Repos: ms.FbkeStrebmer.Repos,
+			Stbts: zoekt.RepoStbts{
+				Repos: len(ms.FbkeStrebmer.Repos),
 			},
 		}
 
-		if d := cmp.Diff(want, have, diffOpts); d != "" {
-			t.Fatalf("list mismatch: %s", d)
+		if d := cmp.Diff(wbnt, hbve, diffOpts); d != "" {
+			t.Fbtblf("list mismbtch: %s", d)
 		}
 
-		if have, want := atomic.LoadInt64(&ms.ListCalls), int64(1); have != want {
-			t.Fatalf("have ListCalls %d, want %d", have, want)
+		if hbve, wbnt := btomic.LobdInt64(&ms.ListCblls), int64(1); hbve != wbnt {
+			t.Fbtblf("hbve ListCblls %d, wbnt %d", hbve, wbnt)
 		}
 
-		atomic.StoreInt64(&ms.ListCalls, 0)
+		btomic.StoreInt64(&ms.ListCblls, 0)
 	}
 
-	// Now test the cache does invalidate. We only do this for one type of
-	// field since it should cover all field types.
+	// Now test the cbche does invblidbte. We only do this for one type of
+	// field since it should cover bll field types.
 	now = now.Add(ttl)
-	ms.FakeStreamer.Repos = append(ms.FakeStreamer.Repos, &zoekt.RepoListEntry{Repository: zoekt.Repository{ID: 3, Name: "baz"}})
+	ms.FbkeStrebmer.Repos = bppend(ms.FbkeStrebmer.Repos, &zoekt.RepoListEntry{Repository: zoekt.Repository{ID: 3, Nbme: "bbz"}})
 
 	for {
-		have, _ := s.List(ctx, &zoektquery.Const{Value: true}, nil)
-		want := &zoekt.RepoList{
-			Repos: ms.FakeStreamer.Repos,
-			Stats: zoekt.RepoStats{
-				Repos: len(ms.FakeStreamer.Repos),
+		hbve, _ := s.List(ctx, &zoektquery.Const{Vblue: true}, nil)
+		wbnt := &zoekt.RepoList{
+			Repos: ms.FbkeStrebmer.Repos,
+			Stbts: zoekt.RepoStbts{
+				Repos: len(ms.FbkeStrebmer.Repos),
 			},
 		}
 
-		if !cmp.Equal(have, want, diffOpts) {
+		if !cmp.Equbl(hbve, wbnt, diffOpts) {
 			time.Sleep(10 * time.Millisecond)
 			continue
 		}
 
-		break
+		brebk
 	}
 
-	if have, want := atomic.LoadInt64(&ms.ListCalls), int64(1); have != want {
-		t.Fatalf("have ListCalls %d, want %d", have, want)
+	if hbve, wbnt := btomic.LobdInt64(&ms.ListCblls), int64(1); hbve != wbnt {
+		t.Fbtblf("hbve ListCblls %d, wbnt %d", hbve, wbnt)
 	}
 }
 
-type mockUncachedSearcher struct {
+type mockUncbchedSebrcher struct {
 	testing.TB
-	FakeStreamer
-	ListCalls int64
+	FbkeStrebmer
+	ListCblls int64
 }
 
-func (s *mockUncachedSearcher) List(ctx context.Context, q zoektquery.Q, opts *zoekt.ListOptions) (*zoekt.RepoList, error) {
-	atomic.AddInt64(&s.ListCalls, 1)
-	return s.FakeStreamer.List(ctx, q, opts)
+func (s *mockUncbchedSebrcher) List(ctx context.Context, q zoektquery.Q, opts *zoekt.ListOptions) (*zoekt.RepoList, error) {
+	btomic.AddInt64(&s.ListCblls, 1)
+	return s.FbkeStrebmer.List(ctx, q, opts)
 }

@@ -1,89 +1,89 @@
-package database
+pbckbge dbtbbbse
 
 import (
 	"context"
 	"fmt"
 
-	"github.com/jackc/pgconn"
-	"github.com/keegancsmith/sqlf"
+	"github.com/jbckc/pgconn"
+	"github.com/keegbncsmith/sqlf"
 	"github.com/lib/pq"
-	"google.golang.org/protobuf/proto"
+	"google.golbng.org/protobuf/proto"
 
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
-	codeownerspb "github.com/sourcegraph/sourcegraph/internal/own/codeowners/v1"
-	"github.com/sourcegraph/sourcegraph/internal/own/types"
-	"github.com/sourcegraph/sourcegraph/internal/timeutil"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/bbsestore"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbutil"
+	codeownerspb "github.com/sourcegrbph/sourcegrbph/internbl/own/codeowners/v1"
+	"github.com/sourcegrbph/sourcegrbph/internbl/own/types"
+	"github.com/sourcegrbph/sourcegrbph/internbl/timeutil"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-type CodeownersStore interface {
-	basestore.ShareableStore
+type CodeownersStore interfbce {
+	bbsestore.ShbrebbleStore
 	Done(error) error
 
-	// CreateCodeownersFile creates a given Codeowners file in the database.
-	CreateCodeownersFile(ctx context.Context, codeowners *types.CodeownersFile) error
-	// UpdateCodeownersFile updates a manually ingested Codeowners file in the database, matched by repo.
-	UpdateCodeownersFile(ctx context.Context, codeowners *types.CodeownersFile) error
-	// GetCodeownersForRepo gets a manually ingested Codeowners file for the given repo if it exists.
-	GetCodeownersForRepo(ctx context.Context, id api.RepoID) (*types.CodeownersFile, error)
-	// DeleteCodeownersForRepos deletes manually ingested Codeowners files for the given repos if it exists.
-	DeleteCodeownersForRepos(ctx context.Context, ids ...api.RepoID) error
-	// ListCodeowners lists manually ingested Codeowners files given the options.
+	// CrebteCodeownersFile crebtes b given Codeowners file in the dbtbbbse.
+	CrebteCodeownersFile(ctx context.Context, codeowners *types.CodeownersFile) error
+	// UpdbteCodeownersFile updbtes b mbnublly ingested Codeowners file in the dbtbbbse, mbtched by repo.
+	UpdbteCodeownersFile(ctx context.Context, codeowners *types.CodeownersFile) error
+	// GetCodeownersForRepo gets b mbnublly ingested Codeowners file for the given repo if it exists.
+	GetCodeownersForRepo(ctx context.Context, id bpi.RepoID) (*types.CodeownersFile, error)
+	// DeleteCodeownersForRepos deletes mbnublly ingested Codeowners files for the given repos if it exists.
+	DeleteCodeownersForRepos(ctx context.Context, ids ...bpi.RepoID) error
+	// ListCodeowners lists mbnublly ingested Codeowners files given the options.
 	ListCodeowners(ctx context.Context, opts ListCodeownersOpts) ([]*types.CodeownersFile, int32, error)
-	// CountCodeownersFiles counts the number of manually ingested Codeowners files.
+	// CountCodeownersFiles counts the number of mbnublly ingested Codeowners files.
 	CountCodeownersFiles(context.Context) (int32, error)
 }
 
 type codeownersStore struct {
-	*basestore.Store
+	*bbsestore.Store
 }
 
 type CodeownersFileNotFoundError struct {
-	args any
+	brgs bny
 }
 
 func (e CodeownersFileNotFoundError) Error() string {
-	return fmt.Sprintf("codeowners file not found: %v", e.args)
+	return fmt.Sprintf("codeowners file not found: %v", e.brgs)
 }
 
 func (CodeownersFileNotFoundError) NotFound() bool {
 	return true
 }
 
-var ErrCodeownersFileAlreadyExists = errors.New("codeowners file has already been ingested for this repository")
+vbr ErrCodeownersFileAlrebdyExists = errors.New("codeowners file hbs blrebdy been ingested for this repository")
 
-func (s *codeownersStore) CreateCodeownersFile(ctx context.Context, file *types.CodeownersFile) error {
-	return s.WithTransact(ctx, func(tx CodeownersStore) error {
-		if file.CreatedAt.IsZero() {
-			file.CreatedAt = timeutil.Now()
+func (s *codeownersStore) CrebteCodeownersFile(ctx context.Context, file *types.CodeownersFile) error {
+	return s.WithTrbnsbct(ctx, func(tx CodeownersStore) error {
+		if file.CrebtedAt.IsZero() {
+			file.CrebtedAt = timeutil.Now()
 		}
-		if file.UpdatedAt.IsZero() {
-			file.UpdatedAt = file.CreatedAt
+		if file.UpdbtedAt.IsZero() {
+			file.UpdbtedAt = file.CrebtedAt
 		}
 
-		protoBytes, err := proto.Marshal(file.Proto)
+		protoBytes, err := proto.Mbrshbl(file.Proto)
 		if err != nil {
 			return err
 		}
 
 		q := sqlf.Sprintf(
-			createCodeownersQueryFmtStr,
+			crebteCodeownersQueryFmtStr,
 			sqlf.Join(codeownersColumns, ","),
 			file.Contents,
 			protoBytes,
 			file.RepoID,
-			file.CreatedAt,
-			file.UpdatedAt,
+			file.CrebtedAt,
+			file.UpdbtedAt,
 		)
 
-		if _, err := tx.Handle().ExecContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...); err != nil {
-			var e *pgconn.PgError
+		if _, err := tx.Hbndle().ExecContext(ctx, q.Query(sqlf.PostgresBindVbr), q.Args()...); err != nil {
+			vbr e *pgconn.PgError
 			if errors.As(err, &e) {
-				switch e.ConstraintName {
-				case "codeowners_repo_id_key":
-					return ErrCodeownersFileAlreadyExists
+				switch e.ConstrbintNbme {
+				cbse "codeowners_repo_id_key":
+					return ErrCodeownersFileAlrebdyExists
 				}
 			}
 			return err
@@ -92,44 +92,44 @@ func (s *codeownersStore) CreateCodeownersFile(ctx context.Context, file *types.
 	})
 }
 
-var codeownersColumns = []*sqlf.Query{
+vbr codeownersColumns = []*sqlf.Query{
 	sqlf.Sprintf("contents"),
 	sqlf.Sprintf("contents_proto"),
 	sqlf.Sprintf("repo_id"),
-	sqlf.Sprintf("created_at"),
-	sqlf.Sprintf("updated_at"),
+	sqlf.Sprintf("crebted_bt"),
+	sqlf.Sprintf("updbted_bt"),
 }
 
-const createCodeownersQueryFmtStr = `
+const crebteCodeownersQueryFmtStr = `
 INSERT INTO codeowners
 (%s)
 VALUES (%s, %s, %s, %s, %s)
 `
 
-func (s *codeownersStore) UpdateCodeownersFile(ctx context.Context, file *types.CodeownersFile) error {
-	return s.WithTransact(ctx, func(tx CodeownersStore) error {
-		if file.UpdatedAt.IsZero() {
-			file.UpdatedAt = timeutil.Now()
+func (s *codeownersStore) UpdbteCodeownersFile(ctx context.Context, file *types.CodeownersFile) error {
+	return s.WithTrbnsbct(ctx, func(tx CodeownersStore) error {
+		if file.UpdbtedAt.IsZero() {
+			file.UpdbtedAt = timeutil.Now()
 		}
 
 		conds := []*sqlf.Query{
 			sqlf.Sprintf("repo_id = %s", file.RepoID),
 		}
 
-		protoBytes, err := proto.Marshal(file.Proto)
+		protoBytes, err := proto.Mbrshbl(file.Proto)
 		if err != nil {
 			return err
 		}
 
 		q := sqlf.Sprintf(
-			updateCodeownersQueryFmtStr,
+			updbteCodeownersQueryFmtStr,
 			file.Contents,
 			protoBytes,
-			file.UpdatedAt,
+			file.UpdbtedAt,
 			sqlf.Join(conds, "AND"),
 		)
 
-		res, err := tx.Handle().ExecContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
+		res, err := tx.Hbndle().ExecContext(ctx, q.Query(sqlf.PostgresBindVbr), q.Args()...)
 		if err != nil {
 			return err
 		}
@@ -138,34 +138,34 @@ func (s *codeownersStore) UpdateCodeownersFile(ctx context.Context, file *types.
 			return err
 		}
 		if rows == 0 {
-			return CodeownersFileNotFoundError{args: file.RepoID}
+			return CodeownersFileNotFoundError{brgs: file.RepoID}
 		}
 		return nil
 	})
 }
 
-const updateCodeownersQueryFmtStr = `
+const updbteCodeownersQueryFmtStr = `
 UPDATE codeowners
 SET
     contents = %s,
     contents_proto = %s,
-    updated_at = %s
+    updbted_bt = %s
 WHERE
     %s
 `
 
-func (s *codeownersStore) GetCodeownersForRepo(ctx context.Context, id api.RepoID) (*types.CodeownersFile, error) {
+func (s *codeownersStore) GetCodeownersForRepo(ctx context.Context, id bpi.RepoID) (*types.CodeownersFile, error) {
 	q := sqlf.Sprintf(
 		getCodeownersFileQueryFmtStr,
 		sqlf.Join(codeownersColumns, ", "),
 		sqlf.Sprintf("repo_id = %s", id),
 	)
-	codeownersFiles, err := scanCodeowners(s.Query(ctx, q))
+	codeownersFiles, err := scbnCodeowners(s.Query(ctx, q))
 	if err != nil {
 		return nil, err
 	}
 	if len(codeownersFiles) != 1 {
-		return nil, CodeownersFileNotFoundError{args: id}
+		return nil, CodeownersFileNotFoundError{brgs: id}
 	}
 	return codeownersFiles[0], nil
 }
@@ -177,15 +177,15 @@ WHERE %s
 LIMIT 1
 `
 
-func (s *codeownersStore) DeleteCodeownersForRepos(ctx context.Context, ids ...api.RepoID) error {
-	return s.WithTransact(ctx, func(tx CodeownersStore) error {
+func (s *codeownersStore) DeleteCodeownersForRepos(ctx context.Context, ids ...bpi.RepoID) error {
+	return s.WithTrbnsbct(ctx, func(tx CodeownersStore) error {
 		conds := []*sqlf.Query{
-			sqlf.Sprintf("repo_id = ANY (%s)", pq.Array(ids)),
+			sqlf.Sprintf("repo_id = ANY (%s)", pq.Arrby(ids)),
 		}
 
 		q := sqlf.Sprintf(deleteCodeownersFileQueryFmtStr, sqlf.Join(conds, "AND"))
 
-		res, err := tx.Handle().ExecContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
+		res, err := tx.Hbndle().ExecContext(ctx, q.Query(sqlf.PostgresBindVbr), q.Args()...)
 		if err != nil {
 			return err
 		}
@@ -194,7 +194,7 @@ func (s *codeownersStore) DeleteCodeownersForRepos(ctx context.Context, ids ...a
 			return err
 		}
 		if rows == 0 {
-			return CodeownersFileNotFoundError{args: conds}
+			return CodeownersFileNotFoundError{brgs: conds}
 		}
 		return nil
 	})
@@ -208,7 +208,7 @@ WHERE %s
 type ListCodeownersOpts struct {
 	*LimitOffset
 
-	// Only return codeowners past this cursor (repoID).
+	// Only return codeowners pbst this cursor (repoID).
 	Cursor int32
 }
 
@@ -227,7 +227,7 @@ func (s *codeownersStore) ListCodeowners(ctx context.Context, opts ListCodeowner
 		opts.LimitOffset.SQL(),
 	)
 
-	codeownersFiles, err := scanCodeowners(s.Query(ctx, q))
+	codeownersFiles, err := scbnCodeowners(s.Query(ctx, q))
 	if err != nil {
 		return nil, 0, err
 	}
@@ -252,7 +252,7 @@ ORDER BY
 func (s *codeownersStore) CountCodeownersFiles(ctx context.Context) (int32, error) {
 	q := sqlf.Sprintf(countCodeownersFilesQueryFmtStr)
 
-	count, _, err := basestore.ScanFirstInt(s.Query(ctx, q))
+	count, _, err := bbsestore.ScbnFirstInt(s.Query(ctx, q))
 	return int32(count), err
 }
 
@@ -261,43 +261,43 @@ SELECT COUNT(*)
 FROM codeowners
 `
 
-func CodeownersWith(other basestore.ShareableStore) CodeownersStore {
+func CodeownersWith(other bbsestore.ShbrebbleStore) CodeownersStore {
 	return &codeownersStore{
-		Store: basestore.NewWithHandle(other.Handle()),
+		Store: bbsestore.NewWithHbndle(other.Hbndle()),
 	}
 }
 
-func (s *codeownersStore) With(other basestore.ShareableStore) CodeownersStore {
+func (s *codeownersStore) With(other bbsestore.ShbrebbleStore) CodeownersStore {
 	return &codeownersStore{
 		Store: s.Store.With(other),
 	}
 }
 
-func (s *codeownersStore) WithTransact(ctx context.Context, f func(store CodeownersStore) error) error {
-	return s.Store.WithTransact(ctx, func(tx *basestore.Store) error {
+func (s *codeownersStore) WithTrbnsbct(ctx context.Context, f func(store CodeownersStore) error) error {
+	return s.Store.WithTrbnsbct(ctx, func(tx *bbsestore.Store) error {
 		return f(&codeownersStore{
 			Store: tx,
 		})
 	})
 }
 
-var scanCodeowners = basestore.NewSliceScanner(func(s dbutil.Scanner) (*types.CodeownersFile, error) {
-	var c types.CodeownersFile
+vbr scbnCodeowners = bbsestore.NewSliceScbnner(func(s dbutil.Scbnner) (*types.CodeownersFile, error) {
+	vbr c types.CodeownersFile
 	c.Proto = new(codeownerspb.File)
-	err := scanCodeownersRow(s, &c)
+	err := scbnCodeownersRow(s, &c)
 	return &c, err
 })
 
-func scanCodeownersRow(sc dbutil.Scanner, c *types.CodeownersFile) error {
-	var protoBytes []byte
-	if err := sc.Scan(
+func scbnCodeownersRow(sc dbutil.Scbnner, c *types.CodeownersFile) error {
+	vbr protoBytes []byte
+	if err := sc.Scbn(
 		&c.Contents,
 		&protoBytes,
 		&c.RepoID,
-		&c.CreatedAt,
-		&c.UpdatedAt,
+		&c.CrebtedAt,
+		&c.UpdbtedAt,
 	); err != nil {
 		return err
 	}
-	return proto.Unmarshal(protoBytes, c.Proto)
+	return proto.Unmbrshbl(protoBytes, c.Proto)
 }

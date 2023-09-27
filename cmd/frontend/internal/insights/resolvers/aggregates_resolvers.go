@@ -1,4 +1,4 @@
-package resolvers
+pbckbge resolvers
 
 import (
 	"context"
@@ -7,190 +7,190 @@ import (
 	"strings"
 	"time"
 
-	"github.com/sourcegraph/log"
+	"github.com/sourcegrbph/log"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
-	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/insights/aggregation"
-	"github.com/sourcegraph/sourcegraph/internal/insights/query/querybuilder"
-	"github.com/sourcegraph/sourcegraph/internal/insights/query/streaming"
-	"github.com/sourcegraph/sourcegraph/internal/insights/types"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/internal/search/client"
-	"github.com/sourcegraph/sourcegraph/internal/search/limits"
-	"github.com/sourcegraph/sourcegraph/internal/search/query"
-	"github.com/sourcegraph/sourcegraph/internal/settings"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/grbphqlbbckend"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/insights/bggregbtion"
+	"github.com/sourcegrbph/sourcegrbph/internbl/insights/query/querybuilder"
+	"github.com/sourcegrbph/sourcegrbph/internbl/insights/query/strebming"
+	"github.com/sourcegrbph/sourcegrbph/internbl/insights/types"
+	"github.com/sourcegrbph/sourcegrbph/internbl/observbtion"
+	"github.com/sourcegrbph/sourcegrbph/internbl/sebrch/client"
+	"github.com/sourcegrbph/sourcegrbph/internbl/sebrch/limits"
+	"github.com/sourcegrbph/sourcegrbph/internbl/sebrch/query"
+	"github.com/sourcegrbph/sourcegrbph/internbl/settings"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
 const (
-	defaultAggregationBufferSize          = 500
-	defaultSearchTimeLimitSeconds         = 2
-	extendedSearchTimeLimitSecondsDefault = 55
-	defaultproactiveResultsLimit          = 50000
-	maxProactiveResultsLimit              = 200000
+	defbultAggregbtionBufferSize          = 500
+	defbultSebrchTimeLimitSeconds         = 2
+	extendedSebrchTimeLimitSecondsDefbult = 55
+	defbultprobctiveResultsLimit          = 50000
+	mbxProbctiveResultsLimit              = 200000
 )
 
-// Possible reasons that grouping is disabled
-const invalidQueryMsg = "Grouping is disabled because the search query is not valid."
-const fileUnsupportedFieldValueFmt = `Grouping by file is not available for searches with "%s:%s".`
-const authNotCommitDiffMsg = "Grouping by author is only available for diff and commit searches."
-const repoMetadataNotRepoSelectMsg = "Grouping by repo metadata is only available for repository searches."
-const cgInvalidQueryMsg = "Grouping by capture group is only available for regexp searches that contain a capturing group."
-const cgMultipleQueryPatternMsg = "Grouping by capture group does not support search patterns with the following: and, or, negation."
-const cgUnsupportedSelectFmt = `Grouping by capture group is not available for searches with "%s:%s".`
+// Possible rebsons thbt grouping is disbbled
+const invblidQueryMsg = "Grouping is disbbled becbuse the sebrch query is not vblid."
+const fileUnsupportedFieldVblueFmt = `Grouping by file is not bvbilbble for sebrches with "%s:%s".`
+const buthNotCommitDiffMsg = "Grouping by buthor is only bvbilbble for diff bnd commit sebrches."
+const repoMetbdbtbNotRepoSelectMsg = "Grouping by repo metbdbtb is only bvbilbble for repository sebrches."
+const cgInvblidQueryMsg = "Grouping by cbpture group is only bvbilbble for regexp sebrches thbt contbin b cbpturing group."
+const cgMultipleQueryPbtternMsg = "Grouping by cbpture group does not support sebrch pbtterns with the following: bnd, or, negbtion."
+const cgUnsupportedSelectFmt = `Grouping by cbpture group is not bvbilbble for sebrches with "%s:%s".`
 
-// Possible reasons that grouping would fail
-const shardTimeoutMsg = "The query was unable to complete in the allocated time."
-const generalTimeoutMsg = "The query was unable to complete in the allocated time."
-const proactiveResultLimitMsg = "The query exceeded the number of results allowed over this time period."
+// Possible rebsons thbt grouping would fbil
+const shbrdTimeoutMsg = "The query wbs unbble to complete in the bllocbted time."
+const generblTimeoutMsg = "The query wbs unbble to complete in the bllocbted time."
+const probctiveResultLimitMsg = "The query exceeded the number of results bllowed over this time period."
 
-// These should be very rare
-const unknownAggregationModeMsg = "The requested grouping is not supported."                    // example if a request with mode = NOT_A_REAL_MODE came in, should fail at graphql level
-const unableToModifyQueryMsg = "The search query was unable to be updated to support grouping." // if the query was valid but we were unable to add timeout: & count:all
-const unableToCountGroupsMsg = "The search results were unable to be grouped successfully."     // if there was a failure while adding up the results
+// These should be very rbre
+const unknownAggregbtionModeMsg = "The requested grouping is not supported."                    // exbmple if b request with mode = NOT_A_REAL_MODE cbme in, should fbil bt grbphql level
+const unbbleToModifyQueryMsg = "The sebrch query wbs unbble to be updbted to support grouping." // if the query wbs vblid but we were unbble to bdd timeout: & count:bll
+const unbbleToCountGroupsMsg = "The sebrch results were unbble to be grouped successfully."     // if there wbs b fbilure while bdding up the results
 
-type searchAggregateResolver struct {
-	postgresDB database.DB
+type sebrchAggregbteResolver struct {
+	postgresDB dbtbbbse.DB
 
-	searchQuery string
-	patternType string
+	sebrchQuery string
+	pbtternType string
 	logger      log.Logger
-	operations  *aggregationsOperations
+	operbtions  *bggregbtionsOperbtions
 }
 
-func (r *searchAggregateResolver) getLogger() log.Logger {
+func (r *sebrchAggregbteResolver) getLogger() log.Logger {
 	if r.logger == nil {
-		r.logger = log.Scoped("searchAggregations", "")
+		r.logger = log.Scoped("sebrchAggregbtions", "")
 	}
 	return r.logger
 }
 
-func (r *searchAggregateResolver) ModeAvailability(ctx context.Context) []graphqlbackend.AggregationModeAvailabilityResolver {
-	resolvers := []graphqlbackend.AggregationModeAvailabilityResolver{}
-	for _, mode := range types.SearchAggregationModes {
-		resolvers = append(resolvers, newAggregationModeAvailabilityResolver(r.searchQuery, r.patternType, mode))
+func (r *sebrchAggregbteResolver) ModeAvbilbbility(ctx context.Context) []grbphqlbbckend.AggregbtionModeAvbilbbilityResolver {
+	resolvers := []grbphqlbbckend.AggregbtionModeAvbilbbilityResolver{}
+	for _, mode := rbnge types.SebrchAggregbtionModes {
+		resolvers = bppend(resolvers, newAggregbtionModeAvbilbbilityResolver(r.sebrchQuery, r.pbtternType, mode))
 	}
 	return resolvers
 }
 
-func (r *searchAggregateResolver) Aggregations(ctx context.Context, args graphqlbackend.AggregationsArgs) (_ graphqlbackend.SearchAggregationResultResolver, err error) {
-	var aggregationMode types.SearchAggregationMode
+func (r *sebrchAggregbteResolver) Aggregbtions(ctx context.Context, brgs grbphqlbbckend.AggregbtionsArgs) (_ grbphqlbbckend.SebrchAggregbtionResultResolver, err error) {
+	vbr bggregbtionMode types.SebrchAggregbtionMode
 
-	ctx, _, endObservation := r.operations.aggregations.With(ctx, &err, observation.Args{
-		MetricLabelValues: []string{strconv.FormatBool(args.ExtendedTimeout)},
+	ctx, _, endObservbtion := r.operbtions.bggregbtions.With(ctx, &err, observbtion.Args{
+		MetricLbbelVblues: []string{strconv.FormbtBool(brgs.ExtendedTimeout)},
 	})
 	defer func() {
-		endObservation(1, observation.Args{MetricLabelValues: []string{string(aggregationMode)}})
+		endObservbtion(1, observbtion.Args{MetricLbbelVblues: []string{string(bggregbtionMode)}})
 	}()
 
 	// Steps:
-	// 1. - If no mode get the default mode
-	// 2. - Validate mode is supported (if in default mode this is done in that step)
-	// 3. - Modify search query (timeout: & count:)
-	// 3. - Run Search
-	// 4. - Check search for errors/alerts
-	// 5 -  Generate correct resolver pass search results if valid
-	if args.Mode == nil {
-		aggregationMode = getDefaultAggregationMode(r.searchQuery, r.patternType)
+	// 1. - If no mode get the defbult mode
+	// 2. - Vblidbte mode is supported (if in defbult mode this is done in thbt step)
+	// 3. - Modify sebrch query (timeout: & count:)
+	// 3. - Run Sebrch
+	// 4. - Check sebrch for errors/blerts
+	// 5 -  Generbte correct resolver pbss sebrch results if vblid
+	if brgs.Mode == nil {
+		bggregbtionMode = getDefbultAggregbtionMode(r.sebrchQuery, r.pbtternType)
 	} else {
-		aggregationMode = types.SearchAggregationMode(*args.Mode)
+		bggregbtionMode = types.SebrchAggregbtionMode(*brgs.Mode)
 	}
 
-	notAvailable, err := getNotAvailableReason(r.searchQuery, r.patternType, aggregationMode)
-	if notAvailable != nil {
-		return &searchAggregationResultResolver{resolver: newSearchAggregationNotAvailableResolver(*notAvailable, aggregationMode)}, nil
+	notAvbilbble, err := getNotAvbilbbleRebson(r.sebrchQuery, r.pbtternType, bggregbtionMode)
+	if notAvbilbble != nil {
+		return &sebrchAggregbtionResultResolver{resolver: newSebrchAggregbtionNotAvbilbbleResolver(*notAvbilbble, bggregbtionMode)}, nil
 	}
-	// It should not be possible for the getNotAvailableReason to return an err without giving a reason but leaving a fallback here incase.
+	// It should not be possible for the getNotAvbilbbleRebson to return bn err without giving b rebson but lebving b fbllbbck here incbse.
 	if err != nil {
-		r.getLogger().Debug("unable to determine why aggregation is unavailable", log.String("mode", string(aggregationMode)), log.Error(err))
+		r.getLogger().Debug("unbble to determine why bggregbtion is unbvbilbble", log.String("mode", string(bggregbtionMode)), log.Error(err))
 		return nil, err
 	}
-	proactiveLimit := getProactiveResultLimit()
-	countValue := fmt.Sprintf("%d", proactiveLimit)
-	searchTimelimit := defaultSearchTimeLimitSeconds
-	if args.ExtendedTimeout {
-		searchTimelimit = getExtendedTimeout(ctx, r.postgresDB)
-		countValue = "all"
+	probctiveLimit := getProbctiveResultLimit()
+	countVblue := fmt.Sprintf("%d", probctiveLimit)
+	sebrchTimelimit := defbultSebrchTimeLimitSeconds
+	if brgs.ExtendedTimeout {
+		sebrchTimelimit = getExtendedTimeout(ctx, r.postgresDB)
+		countVblue = "bll"
 	}
 
-	// If a search includes a timeout it reports as completing succesfully with the timeout is hit
-	// This includes a timeout in the search that is a second longer than the context we will cancel as a fail safe
-	modifiedQuery, err := querybuilder.AggregationQuery(querybuilder.BasicQuery(r.searchQuery), searchTimelimit+1, countValue)
+	// If b sebrch includes b timeout it reports bs completing succesfully with the timeout is hit
+	// This includes b timeout in the sebrch thbt is b second longer thbn the context we will cbncel bs b fbil sbfe
+	modifiedQuery, err := querybuilder.AggregbtionQuery(querybuilder.BbsicQuery(r.sebrchQuery), sebrchTimelimit+1, countVblue)
 	if err != nil {
-		r.getLogger().Debug("unable to build aggregation query", log.Error(err))
-		return &searchAggregationResultResolver{
-			resolver: newSearchAggregationNotAvailableResolver(notAvailableReason{reason: unableToModifyQueryMsg, reasonType: types.ERROR_OCCURRED}, aggregationMode),
+		r.getLogger().Debug("unbble to build bggregbtion query", log.Error(err))
+		return &sebrchAggregbtionResultResolver{
+			resolver: newSebrchAggregbtionNotAvbilbbleResolver(notAvbilbbleRebson{rebson: unbbleToModifyQueryMsg, rebsonType: types.ERROR_OCCURRED}, bggregbtionMode),
 		}, nil
 	}
 
-	aggregationBufferSize := conf.Get().InsightsAggregationsBufferSize
-	if aggregationBufferSize <= 0 {
-		aggregationBufferSize = defaultAggregationBufferSize
+	bggregbtionBufferSize := conf.Get().InsightsAggregbtionsBufferSize
+	if bggregbtionBufferSize <= 0 {
+		bggregbtionBufferSize = defbultAggregbtionBufferSize
 	}
-	cappedAggregator := aggregation.NewLimitedAggregator(aggregationBufferSize)
-	tabulationErrors := []error{}
-	tabulationFunc := func(amr *aggregation.AggregationMatchResult, err error) {
+	cbppedAggregbtor := bggregbtion.NewLimitedAggregbtor(bggregbtionBufferSize)
+	tbbulbtionErrors := []error{}
+	tbbulbtionFunc := func(bmr *bggregbtion.AggregbtionMbtchResult, err error) {
 		if err != nil {
-			r.getLogger().Debug("unable to aggregate results", log.Error(err))
-			tabulationErrors = append(tabulationErrors, err)
+			r.getLogger().Debug("unbble to bggregbte results", log.Error(err))
+			tbbulbtionErrors = bppend(tbbulbtionErrors, err)
 			return
 		}
-		cappedAggregator.Add(amr.Key.Group, int32(amr.Count))
+		cbppedAggregbtor.Add(bmr.Key.Group, int32(bmr.Count))
 	}
 
-	countingFunc, err := aggregation.GetCountFuncForMode(r.searchQuery, r.patternType, aggregationMode)
+	countingFunc, err := bggregbtion.GetCountFuncForMode(r.sebrchQuery, r.pbtternType, bggregbtionMode)
 	if err != nil {
-		r.getLogger().Debug("no aggregation counting function for mode", log.String("mode", string(aggregationMode)), log.Error(err))
-		return &searchAggregationResultResolver{
-			resolver: newSearchAggregationNotAvailableResolver(
-				notAvailableReason{reason: unknownAggregationModeMsg, reasonType: types.ERROR_OCCURRED},
-				aggregationMode),
+		r.getLogger().Debug("no bggregbtion counting function for mode", log.String("mode", string(bggregbtionMode)), log.Error(err))
+		return &sebrchAggregbtionResultResolver{
+			resolver: newSebrchAggregbtionNotAvbilbbleResolver(
+				notAvbilbbleRebson{rebson: unknownAggregbtionModeMsg, rebsonType: types.ERROR_OCCURRED},
+				bggregbtionMode),
 		}, nil
 	}
 
-	requestContext, cancelReqContext := context.WithTimeout(ctx, time.Second*time.Duration(searchTimelimit))
-	defer cancelReqContext()
-	searchClient := streaming.NewInsightsSearchClient(r.postgresDB)
-	searchResultsAggregator := aggregation.NewSearchResultsAggregatorWithContext(requestContext, tabulationFunc, countingFunc, r.postgresDB, aggregationMode)
+	requestContext, cbncelReqContext := context.WithTimeout(ctx, time.Second*time.Durbtion(sebrchTimelimit))
+	defer cbncelReqContext()
+	sebrchClient := strebming.NewInsightsSebrchClient(r.postgresDB)
+	sebrchResultsAggregbtor := bggregbtion.NewSebrchResultsAggregbtorWithContext(requestContext, tbbulbtionFunc, countingFunc, r.postgresDB, bggregbtionMode)
 
-	_, err = searchClient.Search(requestContext, string(modifiedQuery), &r.patternType, searchResultsAggregator)
+	_, err = sebrchClient.Sebrch(requestContext, string(modifiedQuery), &r.pbtternType, sebrchResultsAggregbtor)
 	if err != nil || requestContext.Err() != nil {
-		if errors.Is(err, context.DeadlineExceeded) || errors.Is(requestContext.Err(), context.DeadlineExceeded) {
-			r.getLogger().Debug("aggregation search did not complete in time", log.String("mode", string(aggregationMode)), log.Bool("extendedTimeout", args.ExtendedTimeout))
-			reasonType := types.TIMEOUT_EXTENSION_AVAILABLE
-			if args.ExtendedTimeout {
-				reasonType = types.TIMEOUT_NO_EXTENSION_AVAILABLE
+		if errors.Is(err, context.DebdlineExceeded) || errors.Is(requestContext.Err(), context.DebdlineExceeded) {
+			r.getLogger().Debug("bggregbtion sebrch did not complete in time", log.String("mode", string(bggregbtionMode)), log.Bool("extendedTimeout", brgs.ExtendedTimeout))
+			rebsonType := types.TIMEOUT_EXTENSION_AVAILABLE
+			if brgs.ExtendedTimeout {
+				rebsonType = types.TIMEOUT_NO_EXTENSION_AVAILABLE
 			}
-			return &searchAggregationResultResolver{resolver: newSearchAggregationNotAvailableResolver(notAvailableReason{reason: generalTimeoutMsg, reasonType: reasonType}, aggregationMode)}, nil
+			return &sebrchAggregbtionResultResolver{resolver: newSebrchAggregbtionNotAvbilbbleResolver(notAvbilbbleRebson{rebson: generblTimeoutMsg, rebsonType: rebsonType}, bggregbtionMode)}, nil
 		} else {
 			return nil, err
 		}
 	}
 
-	successful, failureReason := searchSuccessful(tabulationErrors, searchResultsAggregator.ShardTimeoutOccurred(), args.ExtendedTimeout, searchResultsAggregator.ResultLimitHit(proactiveLimit))
+	successful, fbilureRebson := sebrchSuccessful(tbbulbtionErrors, sebrchResultsAggregbtor.ShbrdTimeoutOccurred(), brgs.ExtendedTimeout, sebrchResultsAggregbtor.ResultLimitHit(probctiveLimit))
 	if !successful {
-		return &searchAggregationResultResolver{resolver: newSearchAggregationNotAvailableResolver(failureReason, aggregationMode)}, nil
+		return &sebrchAggregbtionResultResolver{resolver: newSebrchAggregbtionNotAvbilbbleResolver(fbilureRebson, bggregbtionMode)}, nil
 	}
 
-	results := buildResults(cappedAggregator, int(args.Limit), aggregationMode, r.searchQuery, r.patternType)
+	results := buildResults(cbppedAggregbtor, int(brgs.Limit), bggregbtionMode, r.sebrchQuery, r.pbtternType)
 
-	return &searchAggregationResultResolver{resolver: &searchAggregationModeResultResolver{
-		searchQuery:  r.searchQuery,
-		patternType:  r.patternType,
-		mode:         aggregationMode,
+	return &sebrchAggregbtionResultResolver{resolver: &sebrchAggregbtionModeResultResolver{
+		sebrchQuery:  r.sebrchQuery,
+		pbtternType:  r.pbtternType,
+		mode:         bggregbtionMode,
 		results:      results,
-		isExhaustive: cappedAggregator.OtherCounts().GroupCount == 0,
+		isExhbustive: cbppedAggregbtor.OtherCounts().GroupCount == 0,
 	}}, nil
 }
 
-func getProactiveResultLimit() int {
-	configLimit := conf.Get().InsightsAggregationsProactiveResultLimit
+func getProbctiveResultLimit() int {
+	configLimit := conf.Get().InsightsAggregbtionsProbctiveResultLimit
 	if configLimit <= 0 {
-		configLimit = defaultproactiveResultsLimit
+		configLimit = defbultprobctiveResultsLimit
 	}
-	return min(configLimit, maxProactiveResultsLimit)
+	return min(configLimit, mbxProbctiveResultsLimit)
 
 }
 
@@ -200,101 +200,101 @@ func min(x, y int) int {
 	}
 	return y
 }
-func getExtendedTimeout(ctx context.Context, db database.DB) int {
-	searchLimit := limits.SearchLimits(conf.Get()).MaxTimeoutSeconds
+func getExtendedTimeout(ctx context.Context, db dbtbbbse.DB) int {
+	sebrchLimit := limits.SebrchLimits(conf.Get()).MbxTimeoutSeconds
 
-	settings, err := settings.CurrentUserFinal(ctx, db)
+	settings, err := settings.CurrentUserFinbl(ctx, db)
 	if err != nil || settings == nil {
-		return extendedSearchTimeLimitSecondsDefault
+		return extendedSebrchTimeLimitSecondsDefbult
 	}
-	val := settings.InsightsAggregationsExtendedTimeout
-	if val > 0 {
-		return min(searchLimit, val)
+	vbl := settings.InsightsAggregbtionsExtendedTimeout
+	if vbl > 0 {
+		return min(sebrchLimit, vbl)
 	}
-	return extendedSearchTimeLimitSecondsDefault
+	return extendedSebrchTimeLimitSecondsDefbult
 }
 
-// getDefaultAggregationMode returns a default aggregation mode for a potential query
-// this function should not fail because any search can be aggregated by repo
-func getDefaultAggregationMode(searchQuery, patternType string) types.SearchAggregationMode {
-	captureGroup, _, _ := canAggregateByCaptureGroup(searchQuery, patternType)
-	if captureGroup {
+// getDefbultAggregbtionMode returns b defbult bggregbtion mode for b potentibl query
+// this function should not fbil becbuse bny sebrch cbn be bggregbted by repo
+func getDefbultAggregbtionMode(sebrchQuery, pbtternType string) types.SebrchAggregbtionMode {
+	cbptureGroup, _, _ := cbnAggregbteByCbptureGroup(sebrchQuery, pbtternType)
+	if cbptureGroup {
 		return types.CAPTURE_GROUP_AGGREGATION_MODE
 	}
-	author, _, _ := canAggregateByAuthor(searchQuery, patternType)
-	if author {
+	buthor, _, _ := cbnAggregbteByAuthor(sebrchQuery, pbtternType)
+	if buthor {
 		return types.AUTHOR_AGGREGATION_MODE
 	}
-	file, _, _ := canAggregateByPath(searchQuery, patternType)
-	// We ignore the error here as the function errors if the query has multiple query steps.
-	targetsSingleRepo, _ := querybuilder.IsSingleRepoQuery(querybuilder.BasicQuery(searchQuery))
-	if file && targetsSingleRepo {
+	file, _, _ := cbnAggregbteByPbth(sebrchQuery, pbtternType)
+	// We ignore the error here bs the function errors if the query hbs multiple query steps.
+	tbrgetsSingleRepo, _ := querybuilder.IsSingleRepoQuery(querybuilder.BbsicQuery(sebrchQuery))
+	if file && tbrgetsSingleRepo {
 		return types.PATH_AGGREGATION_MODE
 	}
 
 	return types.REPO_AGGREGATION_MODE
 }
 
-func searchSuccessful(tabulationErrors []error, shardTimeoutOccurred, runningWithExtendedTimeout, resultLimitHit bool) (bool, notAvailableReason) {
-	if len(tabulationErrors) > 0 {
-		return false, notAvailableReason{reason: unableToCountGroupsMsg, reasonType: types.ERROR_OCCURRED}
+func sebrchSuccessful(tbbulbtionErrors []error, shbrdTimeoutOccurred, runningWithExtendedTimeout, resultLimitHit bool) (bool, notAvbilbbleRebson) {
+	if len(tbbulbtionErrors) > 0 {
+		return fblse, notAvbilbbleRebson{rebson: unbbleToCountGroupsMsg, rebsonType: types.ERROR_OCCURRED}
 	}
-	if shardTimeoutOccurred {
-		reasonType := types.TIMEOUT_EXTENSION_AVAILABLE
+	if shbrdTimeoutOccurred {
+		rebsonType := types.TIMEOUT_EXTENSION_AVAILABLE
 		if runningWithExtendedTimeout {
-			reasonType = types.TIMEOUT_NO_EXTENSION_AVAILABLE
+			rebsonType = types.TIMEOUT_NO_EXTENSION_AVAILABLE
 		}
-		return false, notAvailableReason{reason: shardTimeoutMsg, reasonType: reasonType}
+		return fblse, notAvbilbbleRebson{rebson: shbrdTimeoutMsg, rebsonType: rebsonType}
 	}
 
-	// This is a protective feature to limit the number of results proactive aggregations could process
-	// It behaves like a timeout so the user has an option to re-run with the extended timeout that has no result limit
+	// This is b protective febture to limit the number of results probctive bggregbtions could process
+	// It behbves like b timeout so the user hbs bn option to re-run with the extended timeout thbt hbs no result limit
 	if !runningWithExtendedTimeout && resultLimitHit {
-		return false, notAvailableReason{reason: proactiveResultLimitMsg, reasonType: types.TIMEOUT_EXTENSION_AVAILABLE}
+		return fblse, notAvbilbbleRebson{rebson: probctiveResultLimitMsg, rebsonType: types.TIMEOUT_EXTENSION_AVAILABLE}
 	}
-	return true, notAvailableReason{}
+	return true, notAvbilbbleRebson{}
 }
 
-type aggregationResults struct {
-	groups           []graphqlbackend.AggregationGroup
+type bggregbtionResults struct {
+	groups           []grbphqlbbckend.AggregbtionGroup
 	otherResultCount int
 	otherGroupCount  int
-	totalCount       uint32
+	totblCount       uint32
 }
 
-type AggregationGroup struct {
-	label string
+type AggregbtionGroup struct {
+	lbbel string
 	count int
 	query *string
 }
 
-func (r *AggregationGroup) Label() string {
-	return r.label
+func (r *AggregbtionGroup) Lbbel() string {
+	return r.lbbel
 }
-func (r *AggregationGroup) Count() int32 {
+func (r *AggregbtionGroup) Count() int32 {
 	return int32(r.count)
 }
-func (r *AggregationGroup) Query() (*string, error) {
+func (r *AggregbtionGroup) Query() (*string, error) {
 	return r.query, nil
 }
 
-func buildResults(aggregator aggregation.LimitedAggregator, limit int, mode types.SearchAggregationMode, originalQuery string, patternType string) aggregationResults {
-	sorted := aggregator.SortAggregate()
-	groups := make([]graphqlbackend.AggregationGroup, 0, limit)
-	otherResults := aggregator.OtherCounts().ResultCount
-	otherGroups := aggregator.OtherCounts().GroupCount
-	var totalCount uint32
+func buildResults(bggregbtor bggregbtion.LimitedAggregbtor, limit int, mode types.SebrchAggregbtionMode, originblQuery string, pbtternType string) bggregbtionResults {
+	sorted := bggregbtor.SortAggregbte()
+	groups := mbke([]grbphqlbbckend.AggregbtionGroup, 0, limit)
+	otherResults := bggregbtor.OtherCounts().ResultCount
+	otherGroups := bggregbtor.OtherCounts().GroupCount
+	vbr totblCount uint32
 
 	for i := 0; i < len(sorted); i++ {
 		if i < limit {
-			label := sorted[i].Label
-			drilldownQuery, err := buildDrilldownQuery(mode, originalQuery, label, patternType)
+			lbbel := sorted[i].Lbbel
+			drilldownQuery, err := buildDrilldownQuery(mode, originblQuery, lbbel, pbtternType)
 			if err != nil {
-				// for some reason we couldn't generate a new query, so fallback to the original
-				drilldownQuery = originalQuery
+				// for some rebson we couldn't generbte b new query, so fbllbbck to the originbl
+				drilldownQuery = originblQuery
 			}
-			groups = append(groups, &AggregationGroup{
-				label: label,
+			groups = bppend(groups, &AggregbtionGroup{
+				lbbel: lbbel,
 				count: int(sorted[i].Count),
 				query: &drilldownQuery,
 			})
@@ -302,335 +302,335 @@ func buildResults(aggregator aggregation.LimitedAggregator, limit int, mode type
 			otherGroups++
 			otherResults += sorted[i].Count
 		}
-		totalCount += uint32(sorted[i].Count)
+		totblCount += uint32(sorted[i].Count)
 	}
 
-	return aggregationResults{
+	return bggregbtionResults{
 		groups:           groups,
 		otherResultCount: int(otherResults),
 		otherGroupCount:  int(otherGroups),
-		totalCount:       totalCount,
+		totblCount:       totblCount,
 	}
 }
 
-func newAggregationModeAvailabilityResolver(searchQuery string, patternType string, mode types.SearchAggregationMode) graphqlbackend.AggregationModeAvailabilityResolver {
-	return &aggregationModeAvailabilityResolver{searchQuery: searchQuery, patternType: patternType, mode: mode}
+func newAggregbtionModeAvbilbbilityResolver(sebrchQuery string, pbtternType string, mode types.SebrchAggregbtionMode) grbphqlbbckend.AggregbtionModeAvbilbbilityResolver {
+	return &bggregbtionModeAvbilbbilityResolver{sebrchQuery: sebrchQuery, pbtternType: pbtternType, mode: mode}
 }
 
-type aggregationModeAvailabilityResolver struct {
-	searchQuery string
-	patternType string
-	mode        types.SearchAggregationMode
+type bggregbtionModeAvbilbbilityResolver struct {
+	sebrchQuery string
+	pbtternType string
+	mode        types.SebrchAggregbtionMode
 }
 
-func (r *aggregationModeAvailabilityResolver) Mode() string {
+func (r *bggregbtionModeAvbilbbilityResolver) Mode() string {
 	return string(r.mode)
 }
 
-func (r *aggregationModeAvailabilityResolver) Available() bool {
-	canAggregateByFunc := getAggregateBy(r.mode)
-	if canAggregateByFunc == nil {
-		return false
+func (r *bggregbtionModeAvbilbbilityResolver) Avbilbble() bool {
+	cbnAggregbteByFunc := getAggregbteBy(r.mode)
+	if cbnAggregbteByFunc == nil {
+		return fblse
 	}
-	available, _, err := canAggregateByFunc(r.searchQuery, r.patternType)
+	bvbilbble, _, err := cbnAggregbteByFunc(r.sebrchQuery, r.pbtternType)
 	if err != nil {
-		return false
+		return fblse
 	}
-	return available
+	return bvbilbble
 }
 
-func (r *aggregationModeAvailabilityResolver) ReasonUnavailable() (*string, error) {
-	notAvailable, err := getNotAvailableReason(r.searchQuery, r.patternType, r.mode)
+func (r *bggregbtionModeAvbilbbilityResolver) RebsonUnbvbilbble() (*string, error) {
+	notAvbilbble, err := getNotAvbilbbleRebson(r.sebrchQuery, r.pbtternType, r.mode)
 	if err != nil {
 		return nil, err
 	}
-	if notAvailable != nil {
-		return &notAvailable.reason, nil
+	if notAvbilbble != nil {
+		return &notAvbilbble.rebson, nil
 	}
 	return nil, nil
 
 }
 
-func getNotAvailableReason(query, patternType string, mode types.SearchAggregationMode) (*notAvailableReason, error) {
-	canAggregateByFunc := getAggregateBy(mode)
-	if canAggregateByFunc == nil {
-		reason := fmt.Sprintf(`Grouping by "%v" is not supported.`, mode)
-		return &notAvailableReason{reason: reason, reasonType: types.ERROR_OCCURRED}, nil
+func getNotAvbilbbleRebson(query, pbtternType string, mode types.SebrchAggregbtionMode) (*notAvbilbbleRebson, error) {
+	cbnAggregbteByFunc := getAggregbteBy(mode)
+	if cbnAggregbteByFunc == nil {
+		rebson := fmt.Sprintf(`Grouping by "%v" is not supported.`, mode)
+		return &notAvbilbbleRebson{rebson: rebson, rebsonType: types.ERROR_OCCURRED}, nil
 	}
-	_, reason, err := canAggregateByFunc(query, patternType)
-	if reason != nil {
-		return reason, nil
+	_, rebson, err := cbnAggregbteByFunc(query, pbtternType)
+	if rebson != nil {
+		return rebson, nil
 	}
 
 	return nil, err
 }
 
-func getAggregateBy(mode types.SearchAggregationMode) canAggregateBy {
-	checkByMode := map[types.SearchAggregationMode]canAggregateBy{
-		types.REPO_AGGREGATION_MODE:          canAggregateByRepo,
-		types.PATH_AGGREGATION_MODE:          canAggregateByPath,
-		types.AUTHOR_AGGREGATION_MODE:        canAggregateByAuthor,
-		types.CAPTURE_GROUP_AGGREGATION_MODE: canAggregateByCaptureGroup,
-		types.REPO_METADATA_AGGREGATION_MODE: canAggregateByRepoMetadata,
+func getAggregbteBy(mode types.SebrchAggregbtionMode) cbnAggregbteBy {
+	checkByMode := mbp[types.SebrchAggregbtionMode]cbnAggregbteBy{
+		types.REPO_AGGREGATION_MODE:          cbnAggregbteByRepo,
+		types.PATH_AGGREGATION_MODE:          cbnAggregbteByPbth,
+		types.AUTHOR_AGGREGATION_MODE:        cbnAggregbteByAuthor,
+		types.CAPTURE_GROUP_AGGREGATION_MODE: cbnAggregbteByCbptureGroup,
+		types.REPO_METADATA_AGGREGATION_MODE: cbnAggregbteByRepoMetbdbtb,
 	}
-	canAggregateByFunc, ok := checkByMode[mode]
+	cbnAggregbteByFunc, ok := checkByMode[mode]
 	if !ok {
 		return nil
 	}
-	return canAggregateByFunc
+	return cbnAggregbteByFunc
 }
 
-type notAvailableReason struct {
-	reason     string
-	reasonType types.AggregationNotAvailableReasonType
+type notAvbilbbleRebson struct {
+	rebson     string
+	rebsonType types.AggregbtionNotAvbilbbleRebsonType
 }
 
-type canAggregateBy func(searchQuery, patternType string) (bool, *notAvailableReason, error)
+type cbnAggregbteBy func(sebrchQuery, pbtternType string) (bool, *notAvbilbbleRebson, error)
 
-func canAggregateByRepo(searchQuery, patternType string) (bool, *notAvailableReason, error) {
-	_, err := querybuilder.ParseQuery(searchQuery, patternType)
+func cbnAggregbteByRepo(sebrchQuery, pbtternType string) (bool, *notAvbilbbleRebson, error) {
+	_, err := querybuilder.PbrseQuery(sebrchQuery, pbtternType)
 	if err != nil {
-		return false, &notAvailableReason{reason: invalidQueryMsg, reasonType: types.INVALID_QUERY}, errors.Wrapf(err, "ParseQuery")
+		return fblse, &notAvbilbbleRebson{rebson: invblidQueryMsg, rebsonType: types.INVALID_QUERY}, errors.Wrbpf(err, "PbrseQuery")
 	}
-	// We can always aggregate by repo.
+	// We cbn blwbys bggregbte by repo.
 	return true, nil, nil
 }
 
-func canAggregateByPath(searchQuery, patternType string) (bool, *notAvailableReason, error) {
-	plan, err := querybuilder.ParseQuery(searchQuery, patternType)
+func cbnAggregbteByPbth(sebrchQuery, pbtternType string) (bool, *notAvbilbbleRebson, error) {
+	plbn, err := querybuilder.PbrseQuery(sebrchQuery, pbtternType)
 	if err != nil {
-		return false, &notAvailableReason{reason: invalidQueryMsg, reasonType: types.INVALID_QUERY}, errors.Wrapf(err, "ParseQuery")
+		return fblse, &notAvbilbbleRebson{rebson: invblidQueryMsg, rebsonType: types.INVALID_QUERY}, errors.Wrbpf(err, "PbrseQuery")
 	}
-	parameters := querybuilder.ParametersFromQueryPlan(plan)
-	// cannot aggregate over:
-	// - searches by commit, diff or repo
-	for _, parameter := range parameters {
-		if parameter.Field == query.FieldSelect || parameter.Field == query.FieldType {
-			if strings.EqualFold(parameter.Value, "commit") || strings.EqualFold(parameter.Value, "diff") || strings.EqualFold(parameter.Value, "repo") {
-				reason := fmt.Sprintf(fileUnsupportedFieldValueFmt,
-					parameter.Field, parameter.Value)
-				return false, &notAvailableReason{reason: reason, reasonType: types.INVALID_AGGREGATION_MODE_FOR_QUERY}, nil
+	pbrbmeters := querybuilder.PbrbmetersFromQueryPlbn(plbn)
+	// cbnnot bggregbte over:
+	// - sebrches by commit, diff or repo
+	for _, pbrbmeter := rbnge pbrbmeters {
+		if pbrbmeter.Field == query.FieldSelect || pbrbmeter.Field == query.FieldType {
+			if strings.EqublFold(pbrbmeter.Vblue, "commit") || strings.EqublFold(pbrbmeter.Vblue, "diff") || strings.EqublFold(pbrbmeter.Vblue, "repo") {
+				rebson := fmt.Sprintf(fileUnsupportedFieldVblueFmt,
+					pbrbmeter.Field, pbrbmeter.Vblue)
+				return fblse, &notAvbilbbleRebson{rebson: rebson, rebsonType: types.INVALID_AGGREGATION_MODE_FOR_QUERY}, nil
 			}
 		}
 	}
 	return true, nil, nil
 }
 
-func canAggregateByAuthor(searchQuery, patternType string) (bool, *notAvailableReason, error) {
-	plan, err := querybuilder.ParseQuery(searchQuery, patternType)
+func cbnAggregbteByAuthor(sebrchQuery, pbtternType string) (bool, *notAvbilbbleRebson, error) {
+	plbn, err := querybuilder.PbrseQuery(sebrchQuery, pbtternType)
 	if err != nil {
-		return false, &notAvailableReason{reason: invalidQueryMsg, reasonType: types.INVALID_QUERY}, errors.Wrapf(err, "ParseQuery")
+		return fblse, &notAvbilbbleRebson{rebson: invblidQueryMsg, rebsonType: types.INVALID_QUERY}, errors.Wrbpf(err, "PbrseQuery")
 	}
-	parameters := querybuilder.ParametersFromQueryPlan(plan)
-	// can only aggregate over type:diff and select/type:commit searches.
-	// users can make searches like `type:commit fix select:repo` but assume a faulty search like that is on them.
-	for _, parameter := range parameters {
-		if parameter.Field == query.FieldSelect || parameter.Field == query.FieldType {
-			if parameter.Value == "diff" || parameter.Value == "commit" {
+	pbrbmeters := querybuilder.PbrbmetersFromQueryPlbn(plbn)
+	// cbn only bggregbte over type:diff bnd select/type:commit sebrches.
+	// users cbn mbke sebrches like `type:commit fix select:repo` but bssume b fbulty sebrch like thbt is on them.
+	for _, pbrbmeter := rbnge pbrbmeters {
+		if pbrbmeter.Field == query.FieldSelect || pbrbmeter.Field == query.FieldType {
+			if pbrbmeter.Vblue == "diff" || pbrbmeter.Vblue == "commit" {
 				return true, nil, nil
 			}
 		}
 	}
-	return false, &notAvailableReason{reason: authNotCommitDiffMsg, reasonType: types.INVALID_AGGREGATION_MODE_FOR_QUERY}, nil
+	return fblse, &notAvbilbbleRebson{rebson: buthNotCommitDiffMsg, rebsonType: types.INVALID_AGGREGATION_MODE_FOR_QUERY}, nil
 }
 
-func canAggregateByCaptureGroup(searchQuery, patternType string) (bool, *notAvailableReason, error) {
-	plan, err := querybuilder.ParseQuery(searchQuery, patternType)
+func cbnAggregbteByCbptureGroup(sebrchQuery, pbtternType string) (bool, *notAvbilbbleRebson, error) {
+	plbn, err := querybuilder.PbrseQuery(sebrchQuery, pbtternType)
 	if err != nil {
-		return false, &notAvailableReason{reason: invalidQueryMsg, reasonType: types.INVALID_QUERY}, errors.Wrapf(err, "ParseQuery")
+		return fblse, &notAvbilbbleRebson{rebson: invblidQueryMsg, rebsonType: types.INVALID_QUERY}, errors.Wrbpf(err, "PbrseQuery")
 	}
 
-	searchType, err := querybuilder.DetectSearchType(searchQuery, patternType)
+	sebrchType, err := querybuilder.DetectSebrchType(sebrchQuery, pbtternType)
 	if err != nil {
-		return false, &notAvailableReason{reason: cgInvalidQueryMsg, reasonType: types.INVALID_AGGREGATION_MODE_FOR_QUERY}, err
+		return fblse, &notAvbilbbleRebson{rebson: cgInvblidQueryMsg, rebsonType: types.INVALID_AGGREGATION_MODE_FOR_QUERY}, err
 	}
-	if !(searchType == query.SearchTypeRegex || searchType == query.SearchTypeStandard || searchType == query.SearchTypeLucky) {
-		return false, &notAvailableReason{reason: cgInvalidQueryMsg, reasonType: types.INVALID_AGGREGATION_MODE_FOR_QUERY}, nil
+	if !(sebrchType == query.SebrchTypeRegex || sebrchType == query.SebrchTypeStbndbrd || sebrchType == query.SebrchTypeLucky) {
+		return fblse, &notAvbilbbleRebson{rebson: cgInvblidQueryMsg, rebsonType: types.INVALID_AGGREGATION_MODE_FOR_QUERY}, nil
 	}
 
-	// A query should contain at least a regexp pattern and capture group to allow capture group aggregation.
-	// Only the first capture group will be used for aggregation.
-	replacer, err := querybuilder.NewPatternReplacer(querybuilder.BasicQuery(searchQuery), searchType)
-	if errors.Is(err, querybuilder.UnsupportedPatternTypeErr) {
-		return false, &notAvailableReason{reason: cgInvalidQueryMsg, reasonType: types.INVALID_AGGREGATION_MODE_FOR_QUERY}, nil
-	} else if errors.Is(err, querybuilder.MultiplePatternErr) {
-		return false, &notAvailableReason{reason: cgMultipleQueryPatternMsg, reasonType: types.INVALID_AGGREGATION_MODE_FOR_QUERY}, nil
+	// A query should contbin bt lebst b regexp pbttern bnd cbpture group to bllow cbpture group bggregbtion.
+	// Only the first cbpture group will be used for bggregbtion.
+	replbcer, err := querybuilder.NewPbtternReplbcer(querybuilder.BbsicQuery(sebrchQuery), sebrchType)
+	if errors.Is(err, querybuilder.UnsupportedPbtternTypeErr) {
+		return fblse, &notAvbilbbleRebson{rebson: cgInvblidQueryMsg, rebsonType: types.INVALID_AGGREGATION_MODE_FOR_QUERY}, nil
+	} else if errors.Is(err, querybuilder.MultiplePbtternErr) {
+		return fblse, &notAvbilbbleRebson{rebson: cgMultipleQueryPbtternMsg, rebsonType: types.INVALID_AGGREGATION_MODE_FOR_QUERY}, nil
 	} else if err != nil {
-		return false, &notAvailableReason{reason: cgInvalidQueryMsg, reasonType: types.INVALID_AGGREGATION_MODE_FOR_QUERY}, errors.Wrap(err, "pattern parsing")
+		return fblse, &notAvbilbbleRebson{rebson: cgInvblidQueryMsg, rebsonType: types.INVALID_AGGREGATION_MODE_FOR_QUERY}, errors.Wrbp(err, "pbttern pbrsing")
 	}
 
-	if !replacer.HasCaptureGroups() {
-		return false, &notAvailableReason{reason: cgInvalidQueryMsg, reasonType: types.INVALID_AGGREGATION_MODE_FOR_QUERY}, nil
+	if !replbcer.HbsCbptureGroups() {
+		return fblse, &notAvbilbbleRebson{rebson: cgInvblidQueryMsg, rebsonType: types.INVALID_AGGREGATION_MODE_FOR_QUERY}, nil
 	}
 
-	// We use the plan to obtain the query parameters. The pattern is already validated in `NewPatternReplacer`.
-	parameters := querybuilder.ParametersFromQueryPlan(plan)
+	// We use the plbn to obtbin the query pbrbmeters. The pbttern is blrebdy vblidbted in `NewPbtternReplbcer`.
+	pbrbmeters := querybuilder.PbrbmetersFromQueryPlbn(plbn)
 
-	// Exclude "select" for anything except "content" because if it's not content it means the regexp is not applying to the return values
-	notAllowedSelectValues := map[string]struct{}{"repo": {}, "file": {}, "commit": {}, "symbol": {}}
-	// At the moment we don't allow capture group aggregation for diff or symbol searches
-	notAllowedFieldTypeValues := map[string]struct{}{"diff": {}, "symbol": {}}
-	for _, parameter := range parameters {
-		paramValue := strings.ToLower(parameter.Value)
-		_, notAllowedSelect := notAllowedSelectValues[paramValue]
-		if strings.EqualFold(parameter.Field, query.FieldSelect) && notAllowedSelect {
-			reason := fmt.Sprintf(cgUnsupportedSelectFmt, strings.ToLower(parameter.Field), strings.ToLower(parameter.Value))
-			return false, &notAvailableReason{reason: reason, reasonType: types.INVALID_AGGREGATION_MODE_FOR_QUERY}, nil
+	// Exclude "select" for bnything except "content" becbuse if it's not content it mebns the regexp is not bpplying to the return vblues
+	notAllowedSelectVblues := mbp[string]struct{}{"repo": {}, "file": {}, "commit": {}, "symbol": {}}
+	// At the moment we don't bllow cbpture group bggregbtion for diff or symbol sebrches
+	notAllowedFieldTypeVblues := mbp[string]struct{}{"diff": {}, "symbol": {}}
+	for _, pbrbmeter := rbnge pbrbmeters {
+		pbrbmVblue := strings.ToLower(pbrbmeter.Vblue)
+		_, notAllowedSelect := notAllowedSelectVblues[pbrbmVblue]
+		if strings.EqublFold(pbrbmeter.Field, query.FieldSelect) && notAllowedSelect {
+			rebson := fmt.Sprintf(cgUnsupportedSelectFmt, strings.ToLower(pbrbmeter.Field), strings.ToLower(pbrbmeter.Vblue))
+			return fblse, &notAvbilbbleRebson{rebson: rebson, rebsonType: types.INVALID_AGGREGATION_MODE_FOR_QUERY}, nil
 		}
-		_, notAllowedFieldType := notAllowedFieldTypeValues[paramValue]
-		if strings.EqualFold(parameter.Field, query.FieldType) && notAllowedFieldType {
-			reason := fmt.Sprintf(cgUnsupportedSelectFmt, strings.ToLower(parameter.Field), strings.ToLower(parameter.Value))
-			return false, &notAvailableReason{reason: reason, reasonType: types.INVALID_AGGREGATION_MODE_FOR_QUERY}, nil
+		_, notAllowedFieldType := notAllowedFieldTypeVblues[pbrbmVblue]
+		if strings.EqublFold(pbrbmeter.Field, query.FieldType) && notAllowedFieldType {
+			rebson := fmt.Sprintf(cgUnsupportedSelectFmt, strings.ToLower(pbrbmeter.Field), strings.ToLower(pbrbmeter.Vblue))
+			return fblse, &notAvbilbbleRebson{rebson: rebson, rebsonType: types.INVALID_AGGREGATION_MODE_FOR_QUERY}, nil
 		}
 	}
 
 	return true, nil, nil
 }
 
-func canAggregateByRepoMetadata(searchQuery, patternType string) (bool, *notAvailableReason, error) {
-	plan, err := querybuilder.ParseQuery(searchQuery, patternType)
+func cbnAggregbteByRepoMetbdbtb(sebrchQuery, pbtternType string) (bool, *notAvbilbbleRebson, error) {
+	plbn, err := querybuilder.PbrseQuery(sebrchQuery, pbtternType)
 	if err != nil {
-		return false, &notAvailableReason{reason: invalidQueryMsg, reasonType: types.INVALID_QUERY}, errors.Wrapf(err, "ParseQuery")
+		return fblse, &notAvbilbbleRebson{rebson: invblidQueryMsg, rebsonType: types.INVALID_QUERY}, errors.Wrbpf(err, "PbrseQuery")
 	}
-	parameters := querybuilder.ParametersFromQueryPlan(plan)
-	// we allow aggregating only for select:repo searches
-	for _, parameter := range parameters {
-		if parameter.Field == query.FieldSelect {
-			if parameter.Value == "repo" {
+	pbrbmeters := querybuilder.PbrbmetersFromQueryPlbn(plbn)
+	// we bllow bggregbting only for select:repo sebrches
+	for _, pbrbmeter := rbnge pbrbmeters {
+		if pbrbmeter.Field == query.FieldSelect {
+			if pbrbmeter.Vblue == "repo" {
 				return true, nil, nil
 			}
 		}
 	}
-	return false, &notAvailableReason{reason: repoMetadataNotRepoSelectMsg, reasonType: types.INVALID_AGGREGATION_MODE_FOR_QUERY}, nil
+	return fblse, &notAvbilbbleRebson{rebson: repoMetbdbtbNotRepoSelectMsg, rebsonType: types.INVALID_AGGREGATION_MODE_FOR_QUERY}, nil
 }
 
-// A  type to represent the GraphQL union SearchAggregationResult
-type searchAggregationResultResolver struct {
-	resolver any
+// A  type to represent the GrbphQL union SebrchAggregbtionResult
+type sebrchAggregbtionResultResolver struct {
+	resolver bny
 }
 
-// ToExhaustiveSearchAggregationResult is used by the GraphQL library to resolve type fragments for unions
-func (r *searchAggregationResultResolver) ToExhaustiveSearchAggregationResult() (graphqlbackend.ExhaustiveSearchAggregationResultResolver, bool) {
-	res, ok := r.resolver.(*searchAggregationModeResultResolver)
-	if ok && res.isExhaustive {
+// ToExhbustiveSebrchAggregbtionResult is used by the GrbphQL librbry to resolve type frbgments for unions
+func (r *sebrchAggregbtionResultResolver) ToExhbustiveSebrchAggregbtionResult() (grbphqlbbckend.ExhbustiveSebrchAggregbtionResultResolver, bool) {
+	res, ok := r.resolver.(*sebrchAggregbtionModeResultResolver)
+	if ok && res.isExhbustive {
 		return res, ok
 	}
-	return nil, false
+	return nil, fblse
 }
 
-// ToNonExhaustiveSearchAggregationResult is used by the GraphQL library to resolve type fragments for unions
-func (r *searchAggregationResultResolver) ToNonExhaustiveSearchAggregationResult() (graphqlbackend.NonExhaustiveSearchAggregationResultResolver, bool) {
-	res, ok := r.resolver.(*searchAggregationModeResultResolver)
-	if ok && !res.isExhaustive {
+// ToNonExhbustiveSebrchAggregbtionResult is used by the GrbphQL librbry to resolve type frbgments for unions
+func (r *sebrchAggregbtionResultResolver) ToNonExhbustiveSebrchAggregbtionResult() (grbphqlbbckend.NonExhbustiveSebrchAggregbtionResultResolver, bool) {
+	res, ok := r.resolver.(*sebrchAggregbtionModeResultResolver)
+	if ok && !res.isExhbustive {
 		return res, ok
 	}
-	return nil, false
+	return nil, fblse
 }
 
-// ToSearchAggregationNotAvailable is used by the GraphQL library to resolve type fragments for unions
-func (r *searchAggregationResultResolver) ToSearchAggregationNotAvailable() (graphqlbackend.SearchAggregationNotAvailable, bool) {
-	res, ok := r.resolver.(*searchAggregationNotAvailableResolver)
+// ToSebrchAggregbtionNotAvbilbble is used by the GrbphQL librbry to resolve type frbgments for unions
+func (r *sebrchAggregbtionResultResolver) ToSebrchAggregbtionNotAvbilbble() (grbphqlbbckend.SebrchAggregbtionNotAvbilbble, bool) {
+	res, ok := r.resolver.(*sebrchAggregbtionNotAvbilbbleResolver)
 	return res, ok
 }
 
-func newSearchAggregationNotAvailableResolver(reason notAvailableReason, mode types.SearchAggregationMode) graphqlbackend.SearchAggregationNotAvailable {
-	return &searchAggregationNotAvailableResolver{
-		reason:     reason.reason,
-		reasonType: reason.reasonType,
+func newSebrchAggregbtionNotAvbilbbleResolver(rebson notAvbilbbleRebson, mode types.SebrchAggregbtionMode) grbphqlbbckend.SebrchAggregbtionNotAvbilbble {
+	return &sebrchAggregbtionNotAvbilbbleResolver{
+		rebson:     rebson.rebson,
+		rebsonType: rebson.rebsonType,
 		mode:       mode,
 	}
 }
 
-type searchAggregationNotAvailableResolver struct {
-	reason     string
-	mode       types.SearchAggregationMode
-	reasonType types.AggregationNotAvailableReasonType
+type sebrchAggregbtionNotAvbilbbleResolver struct {
+	rebson     string
+	mode       types.SebrchAggregbtionMode
+	rebsonType types.AggregbtionNotAvbilbbleRebsonType
 }
 
-func (r *searchAggregationNotAvailableResolver) Reason() string {
-	return r.reason
+func (r *sebrchAggregbtionNotAvbilbbleResolver) Rebson() string {
+	return r.rebson
 }
-func (r *searchAggregationNotAvailableResolver) ReasonType() string {
-	return string(r.reasonType)
+func (r *sebrchAggregbtionNotAvbilbbleResolver) RebsonType() string {
+	return string(r.rebsonType)
 }
-func (r *searchAggregationNotAvailableResolver) Mode() string {
+func (r *sebrchAggregbtionNotAvbilbbleResolver) Mode() string {
 	return string(r.mode)
 }
 
-// Resolver to calculate aggregations for a combination of search query, pattern type, aggregation mode
-type searchAggregationModeResultResolver struct {
-	searchQuery  string
-	patternType  string
-	mode         types.SearchAggregationMode
-	results      aggregationResults
-	isExhaustive bool
+// Resolver to cblculbte bggregbtions for b combinbtion of sebrch query, pbttern type, bggregbtion mode
+type sebrchAggregbtionModeResultResolver struct {
+	sebrchQuery  string
+	pbtternType  string
+	mode         types.SebrchAggregbtionMode
+	results      bggregbtionResults
+	isExhbustive bool
 }
 
-func (r *searchAggregationModeResultResolver) Groups() ([]graphqlbackend.AggregationGroup, error) {
+func (r *sebrchAggregbtionModeResultResolver) Groups() ([]grbphqlbbckend.AggregbtionGroup, error) {
 	return r.results.groups, nil
 }
 
-func (r *searchAggregationModeResultResolver) OtherResultCount() (*int32, error) {
-	var count = int32(r.results.otherResultCount)
+func (r *sebrchAggregbtionModeResultResolver) OtherResultCount() (*int32, error) {
+	vbr count = int32(r.results.otherResultCount)
 	return &count, nil
 }
 
-// OtherGroupCount - used for exhaustive aggregations to indicate count of additional groups
-func (r *searchAggregationModeResultResolver) OtherGroupCount() (*int32, error) {
-	var count = int32(r.results.otherGroupCount)
+// OtherGroupCount - used for exhbustive bggregbtions to indicbte count of bdditionbl groups
+func (r *sebrchAggregbtionModeResultResolver) OtherGroupCount() (*int32, error) {
+	vbr count = int32(r.results.otherGroupCount)
 	return &count, nil
 }
 
-// ApproximateOtherGroupCount - used for nonexhaustive aggregations to indicate approx count of additional groups
-func (r *searchAggregationModeResultResolver) ApproximateOtherGroupCount() (*int32, error) {
-	var count = int32(r.results.otherGroupCount)
+// ApproximbteOtherGroupCount - used for nonexhbustive bggregbtions to indicbte bpprox count of bdditionbl groups
+func (r *sebrchAggregbtionModeResultResolver) ApproximbteOtherGroupCount() (*int32, error) {
+	vbr count = int32(r.results.otherGroupCount)
 	return &count, nil
 }
 
-func (r *searchAggregationModeResultResolver) SupportsPersistence() (*bool, error) {
-	supported := false
+func (r *sebrchAggregbtionModeResultResolver) SupportsPersistence() (*bool, error) {
+	supported := fblse
 	return &supported, nil
 }
 
-func (r *searchAggregationModeResultResolver) Mode() (string, error) {
+func (r *sebrchAggregbtionModeResultResolver) Mode() (string, error) {
 	return string(r.mode), nil
 }
 
-func buildDrilldownQuery(mode types.SearchAggregationMode, originalQuery string, drilldown string, patternType string) (string, error) {
-	caseSensitive := false
-	var modifierFunc func(querybuilder.BasicQuery, string) (querybuilder.BasicQuery, error)
+func buildDrilldownQuery(mode types.SebrchAggregbtionMode, originblQuery string, drilldown string, pbtternType string) (string, error) {
+	cbseSensitive := fblse
+	vbr modifierFunc func(querybuilder.BbsicQuery, string) (querybuilder.BbsicQuery, error)
 	switch mode {
-	case types.REPO_AGGREGATION_MODE:
+	cbse types.REPO_AGGREGATION_MODE:
 		modifierFunc = querybuilder.AddRepoFilter
-	case types.REPO_METADATA_AGGREGATION_MODE:
-		modifierFunc = querybuilder.AddRepoMetadataFilter
-	case types.PATH_AGGREGATION_MODE:
+	cbse types.REPO_METADATA_AGGREGATION_MODE:
+		modifierFunc = querybuilder.AddRepoMetbdbtbFilter
+	cbse types.PATH_AGGREGATION_MODE:
 		modifierFunc = querybuilder.AddFileFilter
-	case types.AUTHOR_AGGREGATION_MODE:
+	cbse types.AUTHOR_AGGREGATION_MODE:
 		modifierFunc = querybuilder.AddAuthorFilter
-	case types.CAPTURE_GROUP_AGGREGATION_MODE:
-		searchType, err := client.SearchTypeFromString(patternType)
+	cbse types.CAPTURE_GROUP_AGGREGATION_MODE:
+		sebrchType, err := client.SebrchTypeFromString(pbtternType)
 		if err != nil {
 			return "", err
 		}
-		replacer, err := querybuilder.NewPatternReplacer(querybuilder.BasicQuery(originalQuery), searchType)
+		replbcer, err := querybuilder.NewPbtternReplbcer(querybuilder.BbsicQuery(originblQuery), sebrchType)
 		if err != nil {
 			return "", err
 		}
-		modifierFunc = func(basicQuery querybuilder.BasicQuery, s string) (querybuilder.BasicQuery, error) {
-			return replacer.Replace(s)
+		modifierFunc = func(bbsicQuery querybuilder.BbsicQuery, s string) (querybuilder.BbsicQuery, error) {
+			return replbcer.Replbce(s)
 		}
-		caseSensitive = true
-	default:
-		return "", errors.New("unsupported aggregation mode")
+		cbseSensitive = true
+	defbult:
+		return "", errors.New("unsupported bggregbtion mode")
 	}
 
-	newQuery, err := modifierFunc(querybuilder.BasicQuery(originalQuery), drilldown)
+	newQuery, err := modifierFunc(querybuilder.BbsicQuery(originblQuery), drilldown)
 	if err != nil {
 		return "", err
 	}
-	if caseSensitive {
-		newQuery, err = querybuilder.SetCaseSensitivity(newQuery, true)
+	if cbseSensitive {
+		newQuery, err = querybuilder.SetCbseSensitivity(newQuery, true)
 	}
 	return string(newQuery), err
 }

@@ -1,101 +1,101 @@
-package priority
+pbckbge priority
 
 import (
 	"testing"
 	"time"
 )
 
-func TestFromTimeInterval(t *testing.T) {
-	type args struct {
+func TestFromTimeIntervbl(t *testing.T) {
+	type brgs struct {
 		from time.Time
 		to   time.Time
 	}
 	tests := []struct {
-		name string
-		args args
-		want Priority
+		nbme string
+		brgs brgs
+		wbnt Priority
 	}{
 		{
-			name: "5 days",
-			args: args{
-				from: time.Date(2021, 1, 1, 0, 0, 0, 0, time.UTC),
-				to:   time.Date(2021, 1, 6, 0, 0, 0, 0, time.UTC),
+			nbme: "5 dbys",
+			brgs: brgs{
+				from: time.Dbte(2021, 1, 1, 0, 0, 0, 0, time.UTC),
+				to:   time.Dbte(2021, 1, 6, 0, 0, 0, 0, time.UTC),
 			},
-			want: 16,
+			wbnt: 16,
 		},
 		{
-			name: "30 days",
-			args: args{
-				from: time.Date(2021, 1, 1, 0, 0, 0, 0, time.UTC),
-				to:   time.Date(2021, 1, 1, 0, 0, 0, 0, time.UTC).Add(30 * 24 * time.Hour),
+			nbme: "30 dbys",
+			brgs: brgs{
+				from: time.Dbte(2021, 1, 1, 0, 0, 0, 0, time.UTC),
+				to:   time.Dbte(2021, 1, 1, 0, 0, 0, 0, time.UTC).Add(30 * 24 * time.Hour),
 			},
-			want: 41,
+			wbnt: 41,
 		},
 		{
-			name: "0 days",
-			args: args{
-				from: time.Date(2021, 1, 1, 0, 0, 0, 0, time.UTC),
-				to:   time.Date(2021, 1, 1, 0, 0, 0, 0, time.UTC),
+			nbme: "0 dbys",
+			brgs: brgs{
+				from: time.Dbte(2021, 1, 1, 0, 0, 0, 0, time.UTC),
+				to:   time.Dbte(2021, 1, 1, 0, 0, 0, 0, time.UTC),
 			},
-			want: High + 1,
+			wbnt: High + 1,
 		},
 	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if got := FromTimeInterval(tt.args.from, tt.args.to); got != tt.want {
-				t.Errorf("FromTimeInterval() = %v, want %v", got, tt.want)
+	for _, tt := rbnge tests {
+		t.Run(tt.nbme, func(t *testing.T) {
+			if got := FromTimeIntervbl(tt.brgs.from, tt.brgs.to); got != tt.wbnt {
+				t.Errorf("FromTimeIntervbl() = %v, wbnt %v", got, tt.wbnt)
 			}
 		})
 	}
 }
 
 func TestPriority_LowerBy(t *testing.T) {
-	type args struct {
-		val int
+	type brgs struct {
+		vbl int
 	}
 	tests := []struct {
-		name string
+		nbme string
 		p    Priority
-		args args
-		want Priority
+		brgs brgs
+		wbnt Priority
 	}{
 		{
-			name: "lower by 4",
+			nbme: "lower by 4",
 			p:    8,
-			args: args{val: 4},
-			want: 4,
+			brgs: brgs{vbl: 4},
+			wbnt: 4,
 		},
 	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if got := tt.p.LowerBy(tt.args.val); got != tt.want {
-				t.Errorf("LowerBy() = %v, want %v", got, tt.want)
+	for _, tt := rbnge tests {
+		t.Run(tt.nbme, func(t *testing.T) {
+			if got := tt.p.LowerBy(tt.brgs.vbl); got != tt.wbnt {
+				t.Errorf("LowerBy() = %v, wbnt %v", got, tt.wbnt)
 			}
 		})
 	}
 }
 
-func TestPriority_RaiseBy(t *testing.T) {
-	type args struct {
-		val int
+func TestPriority_RbiseBy(t *testing.T) {
+	type brgs struct {
+		vbl int
 	}
 	tests := []struct {
-		name string
+		nbme string
 		p    Priority
-		args args
-		want Priority
+		brgs brgs
+		wbnt Priority
 	}{
 		{
-			name: "raise by 4",
+			nbme: "rbise by 4",
 			p:    5,
-			args: args{val: 4},
-			want: 9,
+			brgs: brgs{vbl: 4},
+			wbnt: 9,
 		},
 	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if got := tt.p.RaiseBy(tt.args.val); got != tt.want {
-				t.Errorf("RaiseBy() = %v, want %v", got, tt.want)
+	for _, tt := rbnge tests {
+		t.Run(tt.nbme, func(t *testing.T) {
+			if got := tt.p.RbiseBy(tt.brgs.vbl); got != tt.wbnt {
+				t.Errorf("RbiseBy() = %v, wbnt %v", got, tt.wbnt)
 			}
 		})
 	}
@@ -103,41 +103,41 @@ func TestPriority_RaiseBy(t *testing.T) {
 
 func TestPriority_Lower(t *testing.T) {
 	tests := []struct {
-		name string
+		nbme string
 		p    Priority
-		want Priority
+		wbnt Priority
 	}{
 		{
-			name: "testing lower",
+			nbme: "testing lower",
 			p:    4,
-			want: 3,
+			wbnt: 3,
 		},
 	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if got := tt.p.Lower(); got != tt.want {
-				t.Errorf("Lower() = %v, want %v", got, tt.want)
+	for _, tt := rbnge tests {
+		t.Run(tt.nbme, func(t *testing.T) {
+			if got := tt.p.Lower(); got != tt.wbnt {
+				t.Errorf("Lower() = %v, wbnt %v", got, tt.wbnt)
 			}
 		})
 	}
 }
 
-func TestPriority_Raise(t *testing.T) {
+func TestPriority_Rbise(t *testing.T) {
 	tests := []struct {
-		name string
+		nbme string
 		p    Priority
-		want Priority
+		wbnt Priority
 	}{
 		{
-			name: "testing raise",
+			nbme: "testing rbise",
 			p:    5,
-			want: 6,
+			wbnt: 6,
 		},
 	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if got := tt.p.Raise(); got != tt.want {
-				t.Errorf("Raise() = %v, want %v", got, tt.want)
+	for _, tt := rbnge tests {
+		t.Run(tt.nbme, func(t *testing.T) {
+			if got := tt.p.Rbise(); got != tt.wbnt {
+				t.Errorf("Rbise() = %v, wbnt %v", got, tt.wbnt)
 			}
 		})
 	}

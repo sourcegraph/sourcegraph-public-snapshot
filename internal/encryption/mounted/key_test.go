@@ -1,186 +1,186 @@
-package mounted
+pbckbge mounted
 
 import (
 	"context"
 	"os"
 	"testing"
 
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/bssert"
 	"github.com/stretchr/testify/require"
-	"k8s.io/apimachinery/pkg/util/rand"
+	"k8s.io/bpimbchinery/pkg/util/rbnd"
 
-	"github.com/sourcegraph/sourcegraph/schema"
+	"github.com/sourcegrbph/sourcegrbph/schemb"
 )
 
 func TestRoundTrip(t *testing.T) {
-	var tcs = []struct {
-		name   string
-		config schema.MountedEncryptionKey
+	vbr tcs = []struct {
+		nbme   string
+		config schemb.MountedEncryptionKey
 		setup  func(t *testing.T)
 	}{
 		{
-			name: "env_var",
-			config: schema.MountedEncryptionKey{
+			nbme: "env_vbr",
+			config: schemb.MountedEncryptionKey{
 				Type:       "mounted",
-				Keyname:    "testkey/env_var",
-				EnvVarName: "testroundtrip_testkey_env_var",
+				Keynbme:    "testkey/env_vbr",
+				EnvVbrNbme: "testroundtrip_testkey_env_vbr",
 			},
 			setup: func(t *testing.T) {
-				t.Setenv("testroundtrip_testkey_env_var", rand.String(32))
+				t.Setenv("testroundtrip_testkey_env_vbr", rbnd.String(32))
 			},
 		},
 		{
-			name: "file_name",
-			config: schema.MountedEncryptionKey{
+			nbme: "file_nbme",
+			config: schemb.MountedEncryptionKey{
 				Type:     "mounted",
-				Keyname:  "testkey/env_var",
-				Filepath: "/tmp/testroundtrip_testkey_file",
+				Keynbme:  "testkey/env_vbr",
+				Filepbth: "/tmp/testroundtrip_testkey_file",
 			},
 			setup: func(t *testing.T) {
-				require.NoError(t, os.WriteFile("/tmp/testroundtrip_testkey_file", []byte(rand.String(32)), 0644))
+				require.NoError(t, os.WriteFile("/tmp/testroundtrip_testkey_file", []byte(rbnd.String(32)), 0644))
 
-				t.Cleanup(func() {
+				t.Clebnup(func() {
 					os.Remove("/tmp/testroundtrip_testkey_file")
 				})
 			},
 		},
 	}
 
-	for _, tc := range tcs {
-		t.Run(tc.name, func(t *testing.T) {
+	for _, tc := rbnge tcs {
+		t.Run(tc.nbme, func(t *testing.T) {
 			if tc.setup != nil {
 				tc.setup(t)
 			}
 
-			ctx := context.Background()
+			ctx := context.Bbckground()
 			k, err := NewKey(ctx, tc.config)
 			require.NoError(t, err)
 
-			var plaintext = theScriptOfBeeMovie
+			vbr plbintext = theScriptOfBeeMovie
 
-			ciphertext, err := k.Encrypt(ctx, []byte(plaintext))
+			ciphertext, err := k.Encrypt(ctx, []byte(plbintext))
 			require.NoError(t, err)
 
-			assert.NotEqual(t, string(ciphertext), plaintext)
+			bssert.NotEqubl(t, string(ciphertext), plbintext)
 
 			secret, err := k.Decrypt(ctx, ciphertext)
 			require.NoError(t, err)
 
-			assert.Equal(t, plaintext, secret.Secret())
+			bssert.Equbl(t, plbintext, secret.Secret())
 
 		})
 	}
 
 }
 
-var theScriptOfBeeMovie = `According to all known laws
-	of aviation,
-	there is no way a bee
-	should be able to fly.
-	Its wings are too small to get
-	its fat little body off the ground.
-	The bee, of course, flies anyway
-	because bees don't care
-	what humans think is impossible.
-	Yellow, black. Yellow, black.
-	Yellow, black. Yellow, black.
-	Ooh, black and yellow!
-	Let's shake it up a little.
-	Barry! Breakfast is ready!
+vbr theScriptOfBeeMovie = `According to bll known lbws
+	of bvibtion,
+	there is no wby b bee
+	should be bble to fly.
+	Its wings bre too smbll to get
+	its fbt little body off the ground.
+	The bee, of course, flies bnywby
+	becbuse bees don't cbre
+	whbt humbns think is impossible.
+	Yellow, blbck. Yellow, blbck.
+	Yellow, blbck. Yellow, blbck.
+	Ooh, blbck bnd yellow!
+	Let's shbke it up b little.
+	Bbrry! Brebkfbst is rebdy!
 	Coming!
-	Hang on a second.
+	Hbng on b second.
 	Hello?
-	- Barry?
-	- Adam?
-	- Oan you believe this is happening?
-	- I can't. I'll pick you up.
-	Looking sharp.
-	Use the stairs. Your father
-	paid good money for those.
+	- Bbrry?
+	- Adbm?
+	- Obn you believe this is hbppening?
+	- I cbn't. I'll pick you up.
+	Looking shbrp.
+	Use the stbirs. Your fbther
+	pbid good money for those.
 	Sorry. I'm excited.
-	Here's the graduate.
+	Here's the grbdubte.
 	We're very proud of you, son.
-	A perfect report card, all B's.
+	A perfect report cbrd, bll B's.
 	Very proud.
-	Ma! I got a thing going here.
+	Mb! I got b thing going here.
 	- You got lint on your fuzz.
-	- Ow! That's me!
-	- Wave to us! We'll be in row 118,000.
+	- Ow! Thbt's me!
+	- Wbve to us! We'll be in row 118,000.
 	- Bye!
-	Barry, I told you,
+	Bbrry, I told you,
 	stop flying in the house!
-	- Hey, Adam.
-	- Hey, Barry.
-	- Is that fuzz gel?
-	- A little. Special day, graduation.
-	Never thought I'd make it.
-	Three days grade school,
-	three days high school.
-	Those were awkward.
-	Three days college. I'm glad I took
-	a day and hitchhiked around the hive.
-	You did come back different.
-	- Hi, Barry.
-	- Artie, growing a mustache? Looks good.
-	- Hear about Frankie?
-	- Yeah.
-	- You going to the funeral?
+	- Hey, Adbm.
+	- Hey, Bbrry.
+	- Is thbt fuzz gel?
+	- A little. Specibl dby, grbdubtion.
+	Never thought I'd mbke it.
+	Three dbys grbde school,
+	three dbys high school.
+	Those were bwkwbrd.
+	Three dbys college. I'm glbd I took
+	b dby bnd hitchhiked bround the hive.
+	You did come bbck different.
+	- Hi, Bbrry.
+	- Artie, growing b mustbche? Looks good.
+	- Hebr bbout Frbnkie?
+	- Yebh.
+	- You going to the funerbl?
 	- No, I'm not going.
 	Everybody knows,
 	sting someone, you die.
-	Don't waste it on a squirrel.
-	Such a hothead.
-	I guess he could have
-	just gotten out of the way.
-	I love this incorporating
-	an amusement park into our day.
-	That's why we don't need vacations.
-	Boy, quite a bit of pomp...
-	under the circumstances.
-	- Well, Adam, today we are men.
-	- We are!
+	Don't wbste it on b squirrel.
+	Such b hothebd.
+	I guess he could hbve
+	just gotten out of the wby.
+	I love this incorporbting
+	bn bmusement pbrk into our dby.
+	Thbt's why we don't need vbcbtions.
+	Boy, quite b bit of pomp...
+	under the circumstbnces.
+	- Well, Adbm, todby we bre men.
+	- We bre!
 	- Bee-men.
 	- Amen!
-	Hallelujah!
-	Students, faculty, distinguished bees,
-	please welcome Dean Buzzwell.
+	Hbllelujbh!
+	Students, fbculty, distinguished bees,
+	plebse welcome Debn Buzzwell.
 	Welcome, New Hive City
-	graduating class of...
+	grbdubting clbss of...
 	...9:15.
-	That concludes our ceremonies.
-	And begins your career
-	at Honex Industries!
-	Will we pick ourjob today?
-	I heard it's just orientation.
-	Heads up! Here we go.
-	Keep your hands and antennas
-	inside the tram at all times.
-	- Wonder what it'll be like?
-	- A little scary.
+	Thbt concludes our ceremonies.
+	And begins your cbreer
+	bt Honex Industries!
+	Will we pick ourjob todby?
+	I hebrd it's just orientbtion.
+	Hebds up! Here we go.
+	Keep your hbnds bnd bntennbs
+	inside the trbm bt bll times.
+	- Wonder whbt it'll be like?
+	- A little scbry.
 	Welcome to Honex,
-	a division of Honesco
-	and a part of the Hexagon Group.
+	b division of Honesco
+	bnd b pbrt of the Hexbgon Group.
 	This is it!
 	Wow.
 	Wow.
-	We know that you, as a bee,
-	have worked your whole life
+	We know thbt you, bs b bee,
+	hbve worked your whole life
 	to get to the point where you
-	can work for your whole life.
-	Honey begins when our valiant Pollen
-	Jocks bring the nectar to the hive.
-	Our top-secret formula
-	is automatically color-corrected,
-	scent-adjusted and bubble-contoured
+	cbn work for your whole life.
+	Honey begins when our vblibnt Pollen
+	Jocks bring the nectbr to the hive.
+	Our top-secret formulb
+	is butombticblly color-corrected,
+	scent-bdjusted bnd bubble-contoured
 	into this soothing sweet syrup
 	with its distinctive
-	golden glow you know as...
+	golden glow you know bs...
 	Honey!
-	- That girl was hot.
+	- Thbt girl wbs hot.
 	- She's my cousin!
 	- She is?
-	- Yes, we're all cousins.
+	- Yes, we're bll cousins.
 	- Right. You're right.
-	- At Honex, we constantly strive
-	to improve every aspect
+	- At Honex, we constbntly strive
+	to improve every bspect
 	of bee existence.`

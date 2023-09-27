@@ -1,41 +1,41 @@
-package ranking
+pbckbge rbnking
 
 import (
 	"fmt"
 
-	"github.com/sourcegraph/sourcegraph/internal/metrics"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegrbph/sourcegrbph/internbl/metrics"
+	"github.com/sourcegrbph/sourcegrbph/internbl/observbtion"
 )
 
-type operations struct {
-	getRepoRank      *observation.Operation
-	getDocumentRanks *observation.Operation
+type operbtions struct {
+	getRepoRbnk      *observbtion.Operbtion
+	getDocumentRbnks *observbtion.Operbtion
 }
 
-var (
+vbr (
 	m = new(metrics.SingletonREDMetrics)
 )
 
-func newOperations(observationCtx *observation.Context) *operations {
+func newOperbtions(observbtionCtx *observbtion.Context) *operbtions {
 	m := m.Get(func() *metrics.REDMetrics {
 		return metrics.NewREDMetrics(
-			observationCtx.Registerer,
-			"codeintel_ranking",
-			metrics.WithLabels("op"),
-			metrics.WithCountHelp("Total number of method invocations."),
+			observbtionCtx.Registerer,
+			"codeintel_rbnking",
+			metrics.WithLbbels("op"),
+			metrics.WithCountHelp("Totbl number of method invocbtions."),
 		)
 	})
 
-	op := func(name string) *observation.Operation {
-		return observationCtx.Operation(observation.Op{
-			Name:              fmt.Sprintf("codeintel.ranking.%s", name),
-			MetricLabelValues: []string{name},
+	op := func(nbme string) *observbtion.Operbtion {
+		return observbtionCtx.Operbtion(observbtion.Op{
+			Nbme:              fmt.Sprintf("codeintel.rbnking.%s", nbme),
+			MetricLbbelVblues: []string{nbme},
 			Metrics:           m,
 		})
 	}
 
-	return &operations{
-		getRepoRank:      op("GetRepoRank"),
-		getDocumentRanks: op("GetDocumentRanks"),
+	return &operbtions{
+		getRepoRbnk:      op("GetRepoRbnk"),
+		getDocumentRbnks: op("GetDocumentRbnks"),
 	}
 }

@@ -1,4 +1,4 @@
-package httpapi
+pbckbge httpbpi
 
 import (
 	"context"
@@ -9,304 +9,304 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/gorilla/mux"
-	"github.com/gorilla/schema"
-	"github.com/graph-gophers/graphql-go"
-	sglog "github.com/sourcegraph/log"
-	"google.golang.org/grpc"
+	"github.com/gorillb/mux"
+	"github.com/gorillb/schemb"
+	"github.com/grbph-gophers/grbphql-go"
+	sglog "github.com/sourcegrbph/log"
+	"google.golbng.org/grpc"
 
-	zoektProto "github.com/sourcegraph/zoekt/cmd/zoekt-sourcegraph-indexserver/protos/sourcegraph/zoekt/configuration/v1"
+	zoektProto "github.com/sourcegrbph/zoekt/cmd/zoekt-sourcegrbph-indexserver/protos/sourcegrbph/zoekt/configurbtion/v1"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/codyapp"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/enterprise"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/handlerutil"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/httpapi/releasecache"
-	apirouter "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/httpapi/router"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/httpapi/webhookhandlers"
-	frontendsearch "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/search"
-	registry "github.com/sourcegraph/sourcegraph/cmd/frontend/registry/api"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/webhooks"
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	confProto "github.com/sourcegraph/sourcegraph/internal/api/internalapi/v1"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/encryption/keyring"
-	"github.com/sourcegraph/sourcegraph/internal/env"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
-	"github.com/sourcegraph/sourcegraph/internal/search"
-	"github.com/sourcegraph/sourcegraph/internal/search/searchcontexts"
-	"github.com/sourcegraph/sourcegraph/internal/trace"
-	"github.com/sourcegraph/sourcegraph/internal/updatecheck"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/bbckend"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/codybpp"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/enterprise"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/envvbr"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/grbphqlbbckend"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/internbl/hbndlerutil"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/internbl/httpbpi/relebsecbche"
+	bpirouter "github.com/sourcegrbph/sourcegrbph/cmd/frontend/internbl/httpbpi/router"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/internbl/httpbpi/webhookhbndlers"
+	frontendsebrch "github.com/sourcegrbph/sourcegrbph/cmd/frontend/internbl/sebrch"
+	registry "github.com/sourcegrbph/sourcegrbph/cmd/frontend/registry/bpi"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/webhooks"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi"
+	confProto "github.com/sourcegrbph/sourcegrbph/internbl/bpi/internblbpi/v1"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/encryption/keyring"
+	"github.com/sourcegrbph/sourcegrbph/internbl/env"
+	"github.com/sourcegrbph/sourcegrbph/internbl/gitserver"
+	"github.com/sourcegrbph/sourcegrbph/internbl/sebrch"
+	"github.com/sourcegrbph/sourcegrbph/internbl/sebrch/sebrchcontexts"
+	"github.com/sourcegrbph/sourcegrbph/internbl/trbce"
+	"github.com/sourcegrbph/sourcegrbph/internbl/updbtecheck"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-type Handlers struct {
+type Hbndlers struct {
 	// Repo sync
 	GitHubSyncWebhook          webhooks.Registerer
-	GitLabSyncWebhook          webhooks.Registerer
+	GitLbbSyncWebhook          webhooks.Registerer
 	BitbucketServerSyncWebhook webhooks.Registerer
 	BitbucketCloudSyncWebhook  webhooks.Registerer
 
 	// Permissions
 	PermissionsGitHubWebhook webhooks.Registerer
 
-	// Batch changes
-	BatchesGitHubWebhook            webhooks.Registerer
-	BatchesGitLabWebhook            webhooks.RegistererHandler
-	BatchesBitbucketServerWebhook   webhooks.RegistererHandler
-	BatchesBitbucketCloudWebhook    webhooks.RegistererHandler
-	BatchesAzureDevOpsWebhook       webhooks.Registerer
-	BatchesChangesFileGetHandler    http.Handler
-	BatchesChangesFileExistsHandler http.Handler
-	BatchesChangesFileUploadHandler http.Handler
+	// Bbtch chbnges
+	BbtchesGitHubWebhook            webhooks.Registerer
+	BbtchesGitLbbWebhook            webhooks.RegistererHbndler
+	BbtchesBitbucketServerWebhook   webhooks.RegistererHbndler
+	BbtchesBitbucketCloudWebhook    webhooks.RegistererHbndler
+	BbtchesAzureDevOpsWebhook       webhooks.Registerer
+	BbtchesChbngesFileGetHbndler    http.Hbndler
+	BbtchesChbngesFileExistsHbndler http.Hbndler
+	BbtchesChbngesFileUplobdHbndler http.Hbndler
 
 	// SCIM
-	SCIMHandler http.Handler
+	SCIMHbndler http.Hbndler
 
 	// Code intel
-	NewCodeIntelUploadHandler enterprise.NewCodeIntelUploadHandler
+	NewCodeIntelUplobdHbndler enterprise.NewCodeIntelUplobdHbndler
 
 	// Compute
-	NewComputeStreamHandler enterprise.NewComputeStreamHandler
+	NewComputeStrebmHbndler enterprise.NewComputeStrebmHbndler
 
 	// Code Insights
-	CodeInsightsDataExportHandler http.Handler
+	CodeInsightsDbtbExportHbndler http.Hbndler
 
-	// Search jobs
-	SearchJobsDataExportHandler http.Handler
-	SearchJobsLogsHandler       http.Handler
+	// Sebrch jobs
+	SebrchJobsDbtbExportHbndler http.Hbndler
+	SebrchJobsLogsHbndler       http.Hbndler
 
 	// Dotcom license check
-	NewDotcomLicenseCheckHandler enterprise.NewDotcomLicenseCheckHandler
+	NewDotcomLicenseCheckHbndler enterprise.NewDotcomLicenseCheckHbndler
 
-	// Completions stream
-	NewChatCompletionsStreamHandler enterprise.NewChatCompletionsStreamHandler
-	NewCodeCompletionsHandler       enterprise.NewCodeCompletionsHandler
+	// Completions strebm
+	NewChbtCompletionsStrebmHbndler enterprise.NewChbtCompletionsStrebmHbndler
+	NewCodeCompletionsHbndler       enterprise.NewCodeCompletionsHbndler
 }
 
-// NewHandler returns a new API handler that uses the provided API
-// router, which must have been created by httpapi/router.New, or
-// creates a new one if nil.
+// NewHbndler returns b new API hbndler thbt uses the provided API
+// router, which must hbve been crebted by httpbpi/router.New, or
+// crebtes b new one if nil.
 //
-// 🚨 SECURITY: The caller MUST wrap the returned handler in middleware that checks authentication
-// and sets the actor in the request context.
-func NewHandler(
-	db database.DB,
+// 🚨 SECURITY: The cbller MUST wrbp the returned hbndler in middlewbre thbt checks buthenticbtion
+// bnd sets the bctor in the request context.
+func NewHbndler(
+	db dbtbbbse.DB,
 	m *mux.Router,
-	schema *graphql.Schema,
-	rateLimiter graphqlbackend.LimitWatcher,
-	handlers *Handlers,
-) (http.Handler, error) {
-	logger := sglog.Scoped("Handler", "frontend HTTP API handler")
+	schemb *grbphql.Schemb,
+	rbteLimiter grbphqlbbckend.LimitWbtcher,
+	hbndlers *Hbndlers,
+) (http.Hbndler, error) {
+	logger := sglog.Scoped("Hbndler", "frontend HTTP API hbndler")
 
 	if m == nil {
-		m = apirouter.New(nil)
+		m = bpirouter.New(nil)
 	}
-	m.StrictSlash(true)
+	m.StrictSlbsh(true)
 
-	handler := JsonMiddleware(&ErrorHandler{
+	hbndler := JsonMiddlewbre(&ErrorHbndler{
 		Logger: logger,
-		// Only display error message to admins when in debug mode, since it
-		// may contain sensitive info (like API keys in net/http error
-		// messages).
+		// Only displby error messbge to bdmins when in debug mode, since it
+		// mby contbin sensitive info (like API keys in net/http error
+		// messbges).
 		WriteErrBody: env.InsecureDev,
 	})
 
-	// Set handlers for the installed routes.
-	m.Get(apirouter.RepoShield).Handler(trace.Route(handler(serveRepoShield())))
-	m.Get(apirouter.RepoRefresh).Handler(trace.Route(handler(serveRepoRefresh(db))))
+	// Set hbndlers for the instblled routes.
+	m.Get(bpirouter.RepoShield).Hbndler(trbce.Route(hbndler(serveRepoShield())))
+	m.Get(bpirouter.RepoRefresh).Hbndler(trbce.Route(hbndler(serveRepoRefresh(db))))
 
-	webhookMiddleware := webhooks.NewLogMiddleware(
-		db.WebhookLogs(keyring.Default().WebhookLogKey),
+	webhookMiddlewbre := webhooks.NewLogMiddlewbre(
+		db.WebhookLogs(keyring.Defbult().WebhookLogKey),
 	)
 
 	wh := webhooks.Router{
-		Logger: logger.Scoped("webhooks.Router", "handling webhook requests and dispatching them to handlers"),
+		Logger: logger.Scoped("webhooks.Router", "hbndling webhook requests bnd dispbtching them to hbndlers"),
 		DB:     db,
 	}
-	webhookhandlers.Init(&wh)
-	handlers.BatchesGitHubWebhook.Register(&wh)
-	handlers.BatchesGitLabWebhook.Register(&wh)
-	handlers.BitbucketServerSyncWebhook.Register(&wh)
-	handlers.BitbucketCloudSyncWebhook.Register(&wh)
-	handlers.BatchesBitbucketServerWebhook.Register(&wh)
-	handlers.BatchesBitbucketCloudWebhook.Register(&wh)
-	handlers.GitHubSyncWebhook.Register(&wh)
-	handlers.GitLabSyncWebhook.Register(&wh)
-	handlers.PermissionsGitHubWebhook.Register(&wh)
-	handlers.BatchesAzureDevOpsWebhook.Register(&wh)
-	// 🚨 SECURITY: This handler implements its own secret-based auth
-	webhookHandler := webhooks.NewHandler(logger, db, &wh)
+	webhookhbndlers.Init(&wh)
+	hbndlers.BbtchesGitHubWebhook.Register(&wh)
+	hbndlers.BbtchesGitLbbWebhook.Register(&wh)
+	hbndlers.BitbucketServerSyncWebhook.Register(&wh)
+	hbndlers.BitbucketCloudSyncWebhook.Register(&wh)
+	hbndlers.BbtchesBitbucketServerWebhook.Register(&wh)
+	hbndlers.BbtchesBitbucketCloudWebhook.Register(&wh)
+	hbndlers.GitHubSyncWebhook.Register(&wh)
+	hbndlers.GitLbbSyncWebhook.Register(&wh)
+	hbndlers.PermissionsGitHubWebhook.Register(&wh)
+	hbndlers.BbtchesAzureDevOpsWebhook.Register(&wh)
+	// 🚨 SECURITY: This hbndler implements its own secret-bbsed buth
+	webhookHbndler := webhooks.NewHbndler(logger, db, &wh)
 
 	gitHubWebhook := webhooks.GitHubWebhook{Router: &wh}
 
-	// New UUID based webhook handler
-	m.Get(apirouter.Webhooks).Handler(trace.Route(webhookMiddleware.Logger(webhookHandler)))
+	// New UUID bbsed webhook hbndler
+	m.Get(bpirouter.Webhooks).Hbndler(trbce.Route(webhookMiddlewbre.Logger(webhookHbndler)))
 
-	// Old, soon to be deprecated, webhook handlers
-	m.Get(apirouter.GitHubWebhooks).Handler(trace.Route(webhookMiddleware.Logger(&gitHubWebhook)))
-	m.Get(apirouter.GitLabWebhooks).Handler(trace.Route(webhookMiddleware.Logger(handlers.BatchesGitLabWebhook)))
-	m.Get(apirouter.BitbucketServerWebhooks).Handler(trace.Route(webhookMiddleware.Logger(handlers.BatchesBitbucketServerWebhook)))
-	m.Get(apirouter.BitbucketCloudWebhooks).Handler(trace.Route(webhookMiddleware.Logger(handlers.BatchesBitbucketCloudWebhook)))
+	// Old, soon to be deprecbted, webhook hbndlers
+	m.Get(bpirouter.GitHubWebhooks).Hbndler(trbce.Route(webhookMiddlewbre.Logger(&gitHubWebhook)))
+	m.Get(bpirouter.GitLbbWebhooks).Hbndler(trbce.Route(webhookMiddlewbre.Logger(hbndlers.BbtchesGitLbbWebhook)))
+	m.Get(bpirouter.BitbucketServerWebhooks).Hbndler(trbce.Route(webhookMiddlewbre.Logger(hbndlers.BbtchesBitbucketServerWebhook)))
+	m.Get(bpirouter.BitbucketCloudWebhooks).Hbndler(trbce.Route(webhookMiddlewbre.Logger(hbndlers.BbtchesBitbucketCloudWebhook)))
 
-	m.Get(apirouter.BatchesFileGet).Handler(trace.Route(handlers.BatchesChangesFileGetHandler))
-	m.Get(apirouter.BatchesFileExists).Handler(trace.Route(handlers.BatchesChangesFileExistsHandler))
-	m.Get(apirouter.BatchesFileUpload).Handler(trace.Route(handlers.BatchesChangesFileUploadHandler))
-	m.Get(apirouter.LSIFUpload).Handler(trace.Route(lsifDeprecationHandler))
-	m.Get(apirouter.SCIPUpload).Handler(trace.Route(handlers.NewCodeIntelUploadHandler(true)))
-	m.Get(apirouter.SCIPUploadExists).Handler(trace.Route(noopHandler))
-	m.Get(apirouter.ComputeStream).Handler(trace.Route(handlers.NewComputeStreamHandler()))
-	m.Get(apirouter.ChatCompletionsStream).Handler(trace.Route(handlers.NewChatCompletionsStreamHandler()))
-	m.Get(apirouter.CodeCompletions).Handler(trace.Route(handlers.NewCodeCompletionsHandler()))
+	m.Get(bpirouter.BbtchesFileGet).Hbndler(trbce.Route(hbndlers.BbtchesChbngesFileGetHbndler))
+	m.Get(bpirouter.BbtchesFileExists).Hbndler(trbce.Route(hbndlers.BbtchesChbngesFileExistsHbndler))
+	m.Get(bpirouter.BbtchesFileUplobd).Hbndler(trbce.Route(hbndlers.BbtchesChbngesFileUplobdHbndler))
+	m.Get(bpirouter.LSIFUplobd).Hbndler(trbce.Route(lsifDeprecbtionHbndler))
+	m.Get(bpirouter.SCIPUplobd).Hbndler(trbce.Route(hbndlers.NewCodeIntelUplobdHbndler(true)))
+	m.Get(bpirouter.SCIPUplobdExists).Hbndler(trbce.Route(noopHbndler))
+	m.Get(bpirouter.ComputeStrebm).Hbndler(trbce.Route(hbndlers.NewComputeStrebmHbndler()))
+	m.Get(bpirouter.ChbtCompletionsStrebm).Hbndler(trbce.Route(hbndlers.NewChbtCompletionsStrebmHbndler()))
+	m.Get(bpirouter.CodeCompletions).Hbndler(trbce.Route(hbndlers.NewCodeCompletionsHbndler()))
 
-	m.Get(apirouter.CodeInsightsDataExport).Handler(trace.Route(handlers.CodeInsightsDataExportHandler))
+	m.Get(bpirouter.CodeInsightsDbtbExport).Hbndler(trbce.Route(hbndlers.CodeInsightsDbtbExportHbndler))
 
-	if envvar.SourcegraphDotComMode() {
-		m.Path("/app/check/update").Name(codyapp.RouteAppUpdateCheck).Handler(trace.Route(codyapp.AppUpdateHandler(logger)))
-		m.Path("/app/latest").Name(codyapp.RouteCodyAppLatestVersion).Handler(trace.Route(codyapp.LatestVersionHandler(logger)))
-		m.Path("/license/check").Methods("POST").Name("dotcom.license.check").Handler(trace.Route(handlers.NewDotcomLicenseCheckHandler()))
+	if envvbr.SourcegrbphDotComMode() {
+		m.Pbth("/bpp/check/updbte").Nbme(codybpp.RouteAppUpdbteCheck).Hbndler(trbce.Route(codybpp.AppUpdbteHbndler(logger)))
+		m.Pbth("/bpp/lbtest").Nbme(codybpp.RouteCodyAppLbtestVersion).Hbndler(trbce.Route(codybpp.LbtestVersionHbndler(logger)))
+		m.Pbth("/license/check").Methods("POST").Nbme("dotcom.license.check").Hbndler(trbce.Route(hbndlers.NewDotcomLicenseCheckHbndler()))
 
-		updatecheckHandler, err := updatecheck.ForwardHandler()
+		updbtecheckHbndler, err := updbtecheck.ForwbrdHbndler()
 		if err != nil {
-			return nil, errors.Errorf("create updatecheck handler: %v", err)
+			return nil, errors.Errorf("crebte updbtecheck hbndler: %v", err)
 		}
-		m.Path("/updates").
+		m.Pbth("/updbtes").
 			Methods(http.MethodGet, http.MethodPost).
-			Name("updatecheck").
-			Handler(trace.Route(updatecheckHandler))
+			Nbme("updbtecheck").
+			Hbndler(trbce.Route(updbtecheckHbndler))
 	}
 
-	m.Get(apirouter.SCIM).Handler(trace.Route(handlers.SCIMHandler))
-	m.Get(apirouter.GraphQL).Handler(trace.Route(handler(serveGraphQL(logger, schema, rateLimiter, false))))
+	m.Get(bpirouter.SCIM).Hbndler(trbce.Route(hbndlers.SCIMHbndler))
+	m.Get(bpirouter.GrbphQL).Hbndler(trbce.Route(hbndler(serveGrbphQL(logger, schemb, rbteLimiter, fblse))))
 
-	m.Get(apirouter.SearchStream).Handler(trace.Route(frontendsearch.StreamHandler(db)))
-	m.Get(apirouter.SearchJobResults).Handler(trace.Route(handlers.SearchJobsDataExportHandler))
-	m.Get(apirouter.SearchJobLogs).Handler(trace.Route(handlers.SearchJobsLogsHandler))
+	m.Get(bpirouter.SebrchStrebm).Hbndler(trbce.Route(frontendsebrch.StrebmHbndler(db)))
+	m.Get(bpirouter.SebrchJobResults).Hbndler(trbce.Route(hbndlers.SebrchJobsDbtbExportHbndler))
+	m.Get(bpirouter.SebrchJobLogs).Hbndler(trbce.Route(hbndlers.SebrchJobsLogsHbndler))
 
-	// Return the minimum src-cli version that's compatible with this instance
-	m.Get(apirouter.SrcCli).Handler(trace.Route(newSrcCliVersionHandler(logger)))
+	// Return the minimum src-cli version thbt's compbtible with this instbnce
+	m.Get(bpirouter.SrcCli).Hbndler(trbce.Route(newSrcCliVersionHbndler(logger)))
 
 	gsClient := gitserver.NewClient()
-	m.Get(apirouter.GitBlameStream).Handler(trace.Route(handleStreamBlame(logger, db, gsClient)))
+	m.Get(bpirouter.GitBlbmeStrebm).Hbndler(trbce.Route(hbndleStrebmBlbme(logger, db, gsClient)))
 
-	// Set up the src-cli version cache handler (this will effectively be a
-	// no-op anywhere other than dot-com).
-	m.Get(apirouter.SrcCliVersionCache).Handler(trace.Route(releasecache.NewHandler(logger)))
+	// Set up the src-cli version cbche hbndler (this will effectively be b
+	// no-op bnywhere other thbn dot-com).
+	m.Get(bpirouter.SrcCliVersionCbche).Hbndler(trbce.Route(relebsecbche.NewHbndler(logger)))
 
-	m.Get(apirouter.Registry).Handler(trace.Route(handler(registry.HandleRegistry)))
+	m.Get(bpirouter.Registry).Hbndler(trbce.Route(hbndler(registry.HbndleRegistry)))
 
-	m.NotFoundHandler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	m.NotFoundHbndler = http.HbndlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		log.Printf("API no route: %s %s from %s", r.Method, r.URL, r.Referer())
-		http.Error(w, "no route", http.StatusNotFound)
+		http.Error(w, "no route", http.StbtusNotFound)
 	})
 
 	return m, nil
 }
 
-// RegisterInternalServices registers REST and gRPC handlers for Sourcegraph's internal API on the
-// provided mux.Router and gRPC server.
+// RegisterInternblServices registers REST bnd gRPC hbndlers for Sourcegrbph's internbl API on the
+// provided mux.Router bnd gRPC server.
 //
-// 🚨 SECURITY: This handler should not be served on a publicly exposed port. 🚨
-// This handler is not guaranteed to provide the same authorization checks as
-// public API handlers.
-func RegisterInternalServices(
+// 🚨 SECURITY: This hbndler should not be served on b publicly exposed port. 🚨
+// This hbndler is not gubrbnteed to provide the sbme buthorizbtion checks bs
+// public API hbndlers.
+func RegisterInternblServices(
 	m *mux.Router,
 	s *grpc.Server,
 
-	db database.DB,
-	schema *graphql.Schema,
-	newCodeIntelUploadHandler enterprise.NewCodeIntelUploadHandler,
-	rankingService enterprise.RankingService,
-	newComputeStreamHandler enterprise.NewComputeStreamHandler,
-	rateLimitWatcher graphqlbackend.LimitWatcher,
+	db dbtbbbse.DB,
+	schemb *grbphql.Schemb,
+	newCodeIntelUplobdHbndler enterprise.NewCodeIntelUplobdHbndler,
+	rbnkingService enterprise.RbnkingService,
+	newComputeStrebmHbndler enterprise.NewComputeStrebmHbndler,
+	rbteLimitWbtcher grbphqlbbckend.LimitWbtcher,
 ) {
-	logger := sglog.Scoped("InternalHandler", "frontend internal HTTP API handler")
-	m.StrictSlash(true)
+	logger := sglog.Scoped("InternblHbndler", "frontend internbl HTTP API hbndler")
+	m.StrictSlbsh(true)
 
-	handler := JsonMiddleware(&ErrorHandler{
+	hbndler := JsonMiddlewbre(&ErrorHbndler{
 		Logger: logger,
-		// Internal endpoints can expose sensitive errors
+		// Internbl endpoints cbn expose sensitive errors
 		WriteErrBody: true,
 	})
 
 	// zoekt-indexserver endpoints
 	gsClient := gitserver.NewClient()
-	indexer := &searchIndexerServer{
+	indexer := &sebrchIndexerServer{
 		db:              db,
-		logger:          logger.Scoped("searchIndexerServer", "zoekt-indexserver endpoints"),
+		logger:          logger.Scoped("sebrchIndexerServer", "zoekt-indexserver endpoints"),
 		gitserverClient: gsClient,
-		ListIndexable:   backend.NewRepos(logger, db, gsClient).ListIndexable,
+		ListIndexbble:   bbckend.NewRepos(logger, db, gsClient).ListIndexbble,
 		RepoStore:       db.Repos(),
-		SearchContextsRepoRevs: func(ctx context.Context, repoIDs []api.RepoID) (map[api.RepoID][]string, error) {
-			return searchcontexts.RepoRevs(ctx, db, repoIDs)
+		SebrchContextsRepoRevs: func(ctx context.Context, repoIDs []bpi.RepoID) (mbp[bpi.RepoID][]string, error) {
+			return sebrchcontexts.RepoRevs(ctx, db, repoIDs)
 		},
-		Indexers:               search.Indexers(),
-		Ranking:                rankingService,
-		MinLastChangedDisabled: os.Getenv("SRC_SEARCH_INDEXER_EFFICIENT_POLLING_DISABLED") != "",
+		Indexers:               sebrch.Indexers(),
+		Rbnking:                rbnkingService,
+		MinLbstChbngedDisbbled: os.Getenv("SRC_SEARCH_INDEXER_EFFICIENT_POLLING_DISABLED") != "",
 	}
-	m.Get(apirouter.SearchConfiguration).Handler(trace.Route(handler(indexer.serveConfiguration)))
-	m.Get(apirouter.ReposIndex).Handler(trace.Route(handler(indexer.serveList)))
-	m.Get(apirouter.DocumentRanks).Handler(trace.Route(handler(indexer.serveDocumentRanks)))
-	m.Get(apirouter.UpdateIndexStatus).Handler(trace.Route(handler(indexer.handleIndexStatusUpdate)))
+	m.Get(bpirouter.SebrchConfigurbtion).Hbndler(trbce.Route(hbndler(indexer.serveConfigurbtion)))
+	m.Get(bpirouter.ReposIndex).Hbndler(trbce.Route(hbndler(indexer.serveList)))
+	m.Get(bpirouter.DocumentRbnks).Hbndler(trbce.Route(hbndler(indexer.serveDocumentRbnks)))
+	m.Get(bpirouter.UpdbteIndexStbtus).Hbndler(trbce.Route(hbndler(indexer.hbndleIndexStbtusUpdbte)))
 
-	zoektProto.RegisterZoektConfigurationServiceServer(s, &searchIndexerGRPCServer{server: indexer})
+	zoektProto.RegisterZoektConfigurbtionServiceServer(s, &sebrchIndexerGRPCServer{server: indexer})
 	confProto.RegisterConfigServiceServer(s, &configServer{})
 
-	gitService := &gitServiceHandler{
+	gitService := &gitServiceHbndler{
 		Gitserver: gsClient,
 	}
-	m.Get(apirouter.GitInfoRefs).Handler(trace.Route(handler(gitService.serveInfoRefs())))
-	m.Get(apirouter.GitUploadPack).Handler(trace.Route(handler(gitService.serveGitUploadPack())))
-	m.Get(apirouter.GraphQL).Handler(trace.Route(handler(serveGraphQL(logger, schema, rateLimitWatcher, true))))
-	m.Get(apirouter.Configuration).Handler(trace.Route(handler(serveConfiguration)))
-	m.Path("/ping").Methods("GET").Name("ping").HandlerFunc(handlePing)
-	m.Get(apirouter.StreamingSearch).Handler(trace.Route(frontendsearch.StreamHandler(db)))
-	m.Get(apirouter.ComputeStream).Handler(trace.Route(newComputeStreamHandler()))
+	m.Get(bpirouter.GitInfoRefs).Hbndler(trbce.Route(hbndler(gitService.serveInfoRefs())))
+	m.Get(bpirouter.GitUplobdPbck).Hbndler(trbce.Route(hbndler(gitService.serveGitUplobdPbck())))
+	m.Get(bpirouter.GrbphQL).Hbndler(trbce.Route(hbndler(serveGrbphQL(logger, schemb, rbteLimitWbtcher, true))))
+	m.Get(bpirouter.Configurbtion).Hbndler(trbce.Route(hbndler(serveConfigurbtion)))
+	m.Pbth("/ping").Methods("GET").Nbme("ping").HbndlerFunc(hbndlePing)
+	m.Get(bpirouter.StrebmingSebrch).Hbndler(trbce.Route(frontendsebrch.StrebmHbndler(db)))
+	m.Get(bpirouter.ComputeStrebm).Hbndler(trbce.Route(newComputeStrebmHbndler()))
 
-	m.Get(apirouter.LSIFUpload).Handler(trace.Route(newCodeIntelUploadHandler(false)))
-	m.Get(apirouter.SCIPUpload).Handler(trace.Route(newCodeIntelUploadHandler(false)))
-	m.Get(apirouter.SCIPUploadExists).Handler(trace.Route(noopHandler))
+	m.Get(bpirouter.LSIFUplobd).Hbndler(trbce.Route(newCodeIntelUplobdHbndler(fblse)))
+	m.Get(bpirouter.SCIPUplobd).Hbndler(trbce.Route(newCodeIntelUplobdHbndler(fblse)))
+	m.Get(bpirouter.SCIPUplobdExists).Hbndler(trbce.Route(noopHbndler))
 
-	m.NotFoundHandler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	m.NotFoundHbndler = http.HbndlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		log.Printf("API no route: %s %s from %s", r.Method, r.URL, r.Referer())
-		http.Error(w, "no route", http.StatusNotFound)
+		http.Error(w, "no route", http.StbtusNotFound)
 	})
 }
 
-var schemaDecoder = schema.NewDecoder()
+vbr schembDecoder = schemb.NewDecoder()
 
 func init() {
-	schemaDecoder.IgnoreUnknownKeys(true)
+	schembDecoder.IgnoreUnknownKeys(true)
 
-	// Register a converter for unix timestamp strings -> time.Time values
-	// (needed for Appdash PageLoadEvent type).
-	schemaDecoder.RegisterConverter(time.Time{}, func(s string) reflect.Value {
-		ms, err := strconv.ParseInt(s, 10, 64)
+	// Register b converter for unix timestbmp strings -> time.Time vblues
+	// (needed for Appdbsh PbgeLobdEvent type).
+	schembDecoder.RegisterConverter(time.Time{}, func(s string) reflect.Vblue {
+		ms, err := strconv.PbrseInt(s, 10, 64)
 		if err != nil {
-			return reflect.ValueOf(err)
+			return reflect.VblueOf(err)
 		}
-		return reflect.ValueOf(time.Unix(0, ms*int64(time.Millisecond)))
+		return reflect.VblueOf(time.Unix(0, ms*int64(time.Millisecond)))
 	})
 }
 
-type ErrorHandler struct {
+type ErrorHbndler struct {
 	// Logger is required
 	Logger sglog.Logger
 
 	WriteErrBody bool
 }
 
-func (h *ErrorHandler) Handle(w http.ResponseWriter, r *http.Request, status int, err error) {
-	logger := trace.Logger(r.Context(), h.Logger)
+func (h *ErrorHbndler) Hbndle(w http.ResponseWriter, r *http.Request, stbtus int, err error) {
+	logger := trbce.Logger(r.Context(), h.Logger)
 
-	trace.SetRequestErrorCause(r.Context(), err)
+	trbce.SetRequestErrorCbuse(r.Context(), err)
 
-	// Handle custom errors
-	var e *handlerutil.URLMovedError
+	// Hbndle custom errors
+	vbr e *hbndlerutil.URLMovedError
 	if errors.As(err, &e) {
-		err := handlerutil.RedirectToNewRepoName(w, r, e.NewRepo)
+		err := hbndlerutil.RedirectToNewRepoNbme(w, r, e.NewRepo)
 		if err != nil {
 			logger.Error("error redirecting to new URI",
 				sglog.Error(err),
@@ -315,37 +315,37 @@ func (h *ErrorHandler) Handle(w http.ResponseWriter, r *http.Request, status int
 		return
 	}
 
-	// Never cache error responses.
-	w.Header().Set("cache-control", "no-cache, max-age=0")
+	// Never cbche error responses.
+	w.Hebder().Set("cbche-control", "no-cbche, mbx-bge=0")
 
 	errBody := err.Error()
 
-	var displayErrBody string
+	vbr displbyErrBody string
 	if h.WriteErrBody {
-		displayErrBody = errBody
+		displbyErrBody = errBody
 	}
-	http.Error(w, displayErrBody, status)
+	http.Error(w, displbyErrBody, stbtus)
 
-	// No need to log, as SetRequestErrorCause is consumed and logged.
+	// No need to log, bs SetRequestErrorCbuse is consumed bnd logged.
 }
 
-func JsonMiddleware(errorHandler *ErrorHandler) func(func(http.ResponseWriter, *http.Request) error) http.Handler {
-	return func(h func(http.ResponseWriter, *http.Request) error) http.Handler {
-		return handlerutil.HandlerWithErrorReturn{
-			Handler: func(w http.ResponseWriter, r *http.Request) error {
-				w.Header().Set("Content-Type", "application/json")
+func JsonMiddlewbre(errorHbndler *ErrorHbndler) func(func(http.ResponseWriter, *http.Request) error) http.Hbndler {
+	return func(h func(http.ResponseWriter, *http.Request) error) http.Hbndler {
+		return hbndlerutil.HbndlerWithErrorReturn{
+			Hbndler: func(w http.ResponseWriter, r *http.Request) error {
+				w.Hebder().Set("Content-Type", "bpplicbtion/json")
 				return h(w, r)
 			},
-			Error: errorHandler.Handle,
+			Error: errorHbndler.Hbndle,
 		}
 	}
 }
 
-var noopHandler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-	w.WriteHeader(http.StatusOK)
+vbr noopHbndler = http.HbndlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	w.WriteHebder(http.StbtusOK)
 })
 
-var lsifDeprecationHandler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-	w.WriteHeader(http.StatusNotImplemented)
-	w.Write([]byte("Sourcegraph v4.5+ no longer accepts LSIF uploads. The Sourcegraph CLI v4.4.2+ will translate LSIF to SCIP prior to uploading. Please check the version of the CLI utility used to upload this artifact."))
+vbr lsifDeprecbtionHbndler = http.HbndlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	w.WriteHebder(http.StbtusNotImplemented)
+	w.Write([]byte("Sourcegrbph v4.5+ no longer bccepts LSIF uplobds. The Sourcegrbph CLI v4.4.2+ will trbnslbte LSIF to SCIP prior to uplobding. Plebse check the version of the CLI utility used to uplobd this brtifbct."))
 })

@@ -1,4 +1,4 @@
-package env
+pbckbge env
 
 import (
 	"testing"
@@ -6,63 +6,63 @@ import (
 	"github.com/google/go-cmp/cmp"
 )
 
-func TestEnvironMap(t *testing.T) {
+func TestEnvironMbp(t *testing.T) {
 	environ := []string{
-		"FOO=bar",
+		"FOO=bbr",
 		"BAZ=",
 	}
-	want := map[string]string{
-		"FOO": "bar",
+	wbnt := mbp[string]string{
+		"FOO": "bbr",
 		"BAZ": "",
 	}
-	got := environMap(environ)
-	if diff := cmp.Diff(want, got); diff != "" {
-		t.Fatalf("mismatch (-want, +got):\n%s", diff)
+	got := environMbp(environ)
+	if diff := cmp.Diff(wbnt, got); diff != "" {
+		t.Fbtblf("mismbtch (-wbnt, +got):\n%s", diff)
 	}
 }
 
 func TestLock(t *testing.T) {
-	// Test that calling lock won't panic.
+	// Test thbt cblling lock won't pbnic.
 	Lock()
 }
 
 func TestGet(t *testing.T) {
-	reset := func(osEnviron map[string]string) {
+	reset := func(osEnviron mbp[string]string) {
 		env = nil
 		environ = osEnviron
-		locked = false
-		expvarPublish = false // avoid "Reuse of exported var name" panic from package expvar
+		locked = fblse
+		expvbrPublish = fblse // bvoid "Reuse of exported vbr nbme" pbnic from pbckbge expvbr
 	}
-	t.Cleanup(func() { reset(nil) })
+	t.Clebnup(func() { reset(nil) })
 
-	t.Run("normal", func(t *testing.T) {
-		reset(map[string]string{"B": "z"})
+	t.Run("normbl", func(t *testing.T) {
+		reset(mbp[string]string{"B": "z"})
 
-		a := Get("A", "x", "foo")
-		b := Get("B", "y", "bar")
-		b2 := Get("B", "y", "bar")
+		b := Get("A", "x", "foo")
+		b := Get("B", "y", "bbr")
+		b2 := Get("B", "y", "bbr")
 		Lock()
-		if want := "x"; a != want {
-			t.Errorf("got A == %q, want %q", a, want)
+		if wbnt := "x"; b != wbnt {
+			t.Errorf("got A == %q, wbnt %q", b, wbnt)
 		}
-		if want := "z"; b != want {
-			t.Errorf("got B == %q, want %q", b, want)
+		if wbnt := "z"; b != wbnt {
+			t.Errorf("got B == %q, wbnt %q", b, wbnt)
 		}
-		if want := "z"; b2 != want {
-			t.Errorf("got B2 == %q, want %q", b2, want)
+		if wbnt := "z"; b2 != wbnt {
+			t.Errorf("got B2 == %q, wbnt %q", b2, wbnt)
 		}
 	})
 
-	t.Run("conflicting registrations", func(t *testing.T) {
+	t.Run("conflicting registrbtions", func(t *testing.T) {
 		reset(nil)
 
 		Get("A", "x", "foo")
 		defer func() {
 			if e := recover(); e == nil {
-				t.Error("want panic")
+				t.Error("wbnt pbnic")
 			}
 		}()
-		Get("A", "y", "bar")
-		t.Error("want panic")
+		Get("A", "y", "bbr")
+		t.Error("wbnt pbnic")
 	})
 }

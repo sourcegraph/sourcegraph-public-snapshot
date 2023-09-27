@@ -1,141 +1,141 @@
-package database
+pbckbge dbtbbbse
 
 import (
 	"context"
-	"database/sql/driver"
+	"dbtbbbse/sql/driver"
 	"encoding/json"
 
-	"github.com/sourcegraph/sourcegraph/internal/encryption"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/internbl/encryption"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc/buth"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc/bitbucketserver"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc/gitlbb"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-// AuthenticatorType defines all possible types of authenticators stored in the database.
-type AuthenticatorType string
+// AuthenticbtorType defines bll possible types of buthenticbtors stored in the dbtbbbse.
+type AuthenticbtorType string
 
-// Define credential type strings that we'll use when encoding credentials.
+// Define credentibl type strings thbt we'll use when encoding credentibls.
 const (
-	AuthenticatorTypeOAuthClient                        AuthenticatorType = "OAuthClient"
-	AuthenticatorTypeBasicAuth                          AuthenticatorType = "BasicAuth"
-	AuthenticatorTypeBasicAuthWithSSH                   AuthenticatorType = "BasicAuthWithSSH"
-	AuthenticatorTypeOAuthBearerToken                   AuthenticatorType = "OAuthBearerToken"
-	AuthenticatorTypeOAuthBearerTokenWithSSH            AuthenticatorType = "OAuthBearerTokenWithSSH"
-	AuthenticatorTypeBitbucketServerSudoableOAuthClient AuthenticatorType = "BitbucketSudoableOAuthClient"
-	AuthenticatorTypeGitLabSudoableToken                AuthenticatorType = "GitLabSudoableToken"
+	AuthenticbtorTypeOAuthClient                        AuthenticbtorType = "OAuthClient"
+	AuthenticbtorTypeBbsicAuth                          AuthenticbtorType = "BbsicAuth"
+	AuthenticbtorTypeBbsicAuthWithSSH                   AuthenticbtorType = "BbsicAuthWithSSH"
+	AuthenticbtorTypeOAuthBebrerToken                   AuthenticbtorType = "OAuthBebrerToken"
+	AuthenticbtorTypeOAuthBebrerTokenWithSSH            AuthenticbtorType = "OAuthBebrerTokenWithSSH"
+	AuthenticbtorTypeBitbucketServerSudobbleOAuthClient AuthenticbtorType = "BitbucketSudobbleOAuthClient"
+	AuthenticbtorTypeGitLbbSudobbleToken                AuthenticbtorType = "GitLbbSudobbleToken"
 )
 
-// NullAuthenticator represents an authenticator that may be null. It implements
-// the sql.Scanner interface so it can be used as a scan destination, similar to
-// sql.NullString. When the scanned value is null, the authenticator will be nil.
-// It handles marshalling and unmarshalling the authenticator from and to JSON.
-type NullAuthenticator struct{ A *auth.Authenticator }
+// NullAuthenticbtor represents bn buthenticbtor thbt mby be null. It implements
+// the sql.Scbnner interfbce so it cbn be used bs b scbn destinbtion, similbr to
+// sql.NullString. When the scbnned vblue is null, the buthenticbtor will be nil.
+// It hbndles mbrshblling bnd unmbrshblling the buthenticbtor from bnd to JSON.
+type NullAuthenticbtor struct{ A *buth.Authenticbtor }
 
-// Scan implements the Scanner interface.
-func (n *NullAuthenticator) Scan(value any) (err error) {
-	switch value := value.(type) {
-	case string:
-		*n.A, err = UnmarshalAuthenticator(value)
+// Scbn implements the Scbnner interfbce.
+func (n *NullAuthenticbtor) Scbn(vblue bny) (err error) {
+	switch vblue := vblue.(type) {
+	cbse string:
+		*n.A, err = UnmbrshblAuthenticbtor(vblue)
 		return err
-	case nil:
+	cbse nil:
 		return nil
-	default:
-		return errors.Errorf("value is not string: %T", value)
+	defbult:
+		return errors.Errorf("vblue is not string: %T", vblue)
 	}
 }
 
-// Value implements the driver Valuer interface.
-func (n NullAuthenticator) Value() (driver.Value, error) {
+// Vblue implements the driver Vbluer interfbce.
+func (n NullAuthenticbtor) Vblue() (driver.Vblue, error) {
 	if *n.A == nil {
 		return nil, nil
 	}
-	return MarshalAuthenticator(*n.A)
+	return MbrshblAuthenticbtor(*n.A)
 }
 
-// EncryptAuthenticator encodes an authenticator into a byte slice. If the given
-// key is non-nil, it will also be encrypted.
-func EncryptAuthenticator(ctx context.Context, key encryption.Key, a auth.Authenticator) ([]byte, string, error) {
-	raw, err := MarshalAuthenticator(a)
+// EncryptAuthenticbtor encodes bn buthenticbtor into b byte slice. If the given
+// key is non-nil, it will blso be encrypted.
+func EncryptAuthenticbtor(ctx context.Context, key encryption.Key, b buth.Authenticbtor) ([]byte, string, error) {
+	rbw, err := MbrshblAuthenticbtor(b)
 	if err != nil {
-		return nil, "", errors.Wrap(err, "marshalling authenticator")
+		return nil, "", errors.Wrbp(err, "mbrshblling buthenticbtor")
 	}
 
-	data, keyID, err := encryption.MaybeEncrypt(ctx, key, raw)
-	return []byte(data), keyID, err
+	dbtb, keyID, err := encryption.MbybeEncrypt(ctx, key, rbw)
+	return []byte(dbtb), keyID, err
 }
 
-// MarshalAuthenticator encodes an Authenticator into a JSON string.
-func MarshalAuthenticator(a auth.Authenticator) (string, error) {
-	var t AuthenticatorType
-	switch a.(type) {
-	case *auth.OAuthClient:
-		t = AuthenticatorTypeOAuthClient
-	case *auth.BasicAuth:
-		t = AuthenticatorTypeBasicAuth
-	case *auth.BasicAuthWithSSH:
-		t = AuthenticatorTypeBasicAuthWithSSH
-	case *auth.OAuthBearerToken:
-		t = AuthenticatorTypeOAuthBearerToken
-	case *auth.OAuthBearerTokenWithSSH:
-		t = AuthenticatorTypeOAuthBearerTokenWithSSH
-	case *bitbucketserver.SudoableOAuthClient:
-		t = AuthenticatorTypeBitbucketServerSudoableOAuthClient
-	case *gitlab.SudoableToken:
-		t = AuthenticatorTypeGitLabSudoableToken
-	default:
-		return "", errors.Errorf("unknown Authenticator implementation type: %T", a)
+// MbrshblAuthenticbtor encodes bn Authenticbtor into b JSON string.
+func MbrshblAuthenticbtor(b buth.Authenticbtor) (string, error) {
+	vbr t AuthenticbtorType
+	switch b.(type) {
+	cbse *buth.OAuthClient:
+		t = AuthenticbtorTypeOAuthClient
+	cbse *buth.BbsicAuth:
+		t = AuthenticbtorTypeBbsicAuth
+	cbse *buth.BbsicAuthWithSSH:
+		t = AuthenticbtorTypeBbsicAuthWithSSH
+	cbse *buth.OAuthBebrerToken:
+		t = AuthenticbtorTypeOAuthBebrerToken
+	cbse *buth.OAuthBebrerTokenWithSSH:
+		t = AuthenticbtorTypeOAuthBebrerTokenWithSSH
+	cbse *bitbucketserver.SudobbleOAuthClient:
+		t = AuthenticbtorTypeBitbucketServerSudobbleOAuthClient
+	cbse *gitlbb.SudobbleToken:
+		t = AuthenticbtorTypeGitLbbSudobbleToken
+	defbult:
+		return "", errors.Errorf("unknown Authenticbtor implementbtion type: %T", b)
 	}
 
-	raw, err := json.Marshal(struct {
-		Type AuthenticatorType
-		Auth auth.Authenticator
+	rbw, err := json.Mbrshbl(struct {
+		Type AuthenticbtorType
+		Auth buth.Authenticbtor
 	}{
 		Type: t,
-		Auth: a,
+		Auth: b,
 	})
 	if err != nil {
 		return "", err
 	}
 
-	return string(raw), nil
+	return string(rbw), nil
 }
 
-// UnmarshalAuthenticator decodes a JSON string into an Authenticator.
-func UnmarshalAuthenticator(raw string) (auth.Authenticator, error) {
-	// We do two unmarshals: the first just to get the type, and then the second
-	// to actually unmarshal the authenticator itself.
-	var partial struct {
-		Type AuthenticatorType
-		Auth json.RawMessage
+// UnmbrshblAuthenticbtor decodes b JSON string into bn Authenticbtor.
+func UnmbrshblAuthenticbtor(rbw string) (buth.Authenticbtor, error) {
+	// We do two unmbrshbls: the first just to get the type, bnd then the second
+	// to bctublly unmbrshbl the buthenticbtor itself.
+	vbr pbrtibl struct {
+		Type AuthenticbtorType
+		Auth json.RbwMessbge
 	}
-	if err := json.Unmarshal([]byte(raw), &partial); err != nil {
+	if err := json.Unmbrshbl([]byte(rbw), &pbrtibl); err != nil {
 		return nil, err
 	}
 
-	var a any
-	switch partial.Type {
-	case AuthenticatorTypeOAuthClient:
-		a = &auth.OAuthClient{}
-	case AuthenticatorTypeBasicAuth:
-		a = &auth.BasicAuth{}
-	case AuthenticatorTypeBasicAuthWithSSH:
-		a = &auth.BasicAuthWithSSH{}
-	case AuthenticatorTypeOAuthBearerToken:
-		a = &auth.OAuthBearerToken{}
-	case AuthenticatorTypeOAuthBearerTokenWithSSH:
-		a = &auth.OAuthBearerTokenWithSSH{}
-	case AuthenticatorTypeBitbucketServerSudoableOAuthClient:
-		a = &bitbucketserver.SudoableOAuthClient{}
-	case AuthenticatorTypeGitLabSudoableToken:
-		a = &gitlab.SudoableToken{}
-	default:
-		return nil, errors.Errorf("unknown credential type: %s", partial.Type)
+	vbr b bny
+	switch pbrtibl.Type {
+	cbse AuthenticbtorTypeOAuthClient:
+		b = &buth.OAuthClient{}
+	cbse AuthenticbtorTypeBbsicAuth:
+		b = &buth.BbsicAuth{}
+	cbse AuthenticbtorTypeBbsicAuthWithSSH:
+		b = &buth.BbsicAuthWithSSH{}
+	cbse AuthenticbtorTypeOAuthBebrerToken:
+		b = &buth.OAuthBebrerToken{}
+	cbse AuthenticbtorTypeOAuthBebrerTokenWithSSH:
+		b = &buth.OAuthBebrerTokenWithSSH{}
+	cbse AuthenticbtorTypeBitbucketServerSudobbleOAuthClient:
+		b = &bitbucketserver.SudobbleOAuthClient{}
+	cbse AuthenticbtorTypeGitLbbSudobbleToken:
+		b = &gitlbb.SudobbleToken{}
+	defbult:
+		return nil, errors.Errorf("unknown credentibl type: %s", pbrtibl.Type)
 	}
 
-	if err := json.Unmarshal(partial.Auth, &a); err != nil {
+	if err := json.Unmbrshbl(pbrtibl.Auth, &b); err != nil {
 		return nil, err
 	}
 
-	return a.(auth.Authenticator), nil
+	return b.(buth.Authenticbtor), nil
 }

@@ -1,107 +1,107 @@
-package searcher
+pbckbge sebrcher
 
 import (
 	"context"
 	"time"
 	"unicode/utf8"
 
-	"github.com/grafana/regexp"
-	"github.com/sourcegraph/log"
-	"go.opentelemetry.io/otel/attribute"
-	"golang.org/x/sync/errgroup"
+	"github.com/grbfbnb/regexp"
+	"github.com/sourcegrbph/log"
+	"go.opentelemetry.io/otel/bttribute"
+	"golbng.org/x/sync/errgroup"
 
-	"github.com/sourcegraph/sourcegraph/cmd/searcher/protocol"
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/endpoint"
-	"github.com/sourcegraph/sourcegraph/internal/errcode"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
-	"github.com/sourcegraph/sourcegraph/internal/grpc/defaults"
-	"github.com/sourcegraph/sourcegraph/internal/limiter"
-	"github.com/sourcegraph/sourcegraph/internal/search"
-	"github.com/sourcegraph/sourcegraph/internal/search/job"
-	"github.com/sourcegraph/sourcegraph/internal/search/result"
-	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
-	proto "github.com/sourcegraph/sourcegraph/internal/searcher/v1"
-	"github.com/sourcegraph/sourcegraph/internal/trace"
-	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegrbph/sourcegrbph/cmd/sebrcher/protocol"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf"
+	"github.com/sourcegrbph/sourcegrbph/internbl/endpoint"
+	"github.com/sourcegrbph/sourcegrbph/internbl/errcode"
+	"github.com/sourcegrbph/sourcegrbph/internbl/gitserver"
+	"github.com/sourcegrbph/sourcegrbph/internbl/grpc/defbults"
+	"github.com/sourcegrbph/sourcegrbph/internbl/limiter"
+	"github.com/sourcegrbph/sourcegrbph/internbl/sebrch"
+	"github.com/sourcegrbph/sourcegrbph/internbl/sebrch/job"
+	"github.com/sourcegrbph/sourcegrbph/internbl/sebrch/result"
+	"github.com/sourcegrbph/sourcegrbph/internbl/sebrch/strebming"
+	proto "github.com/sourcegrbph/sourcegrbph/internbl/sebrcher/v1"
+	"github.com/sourcegrbph/sourcegrbph/internbl/trbce"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
 )
 
-// A global limiter on number of concurrent searcher searches.
-var textSearchLimiter = limiter.NewMutable(32)
+// A globbl limiter on number of concurrent sebrcher sebrches.
+vbr textSebrchLimiter = limiter.NewMutbble(32)
 
-type TextSearchJob struct {
-	PatternInfo *search.TextPatternInfo
-	Repos       []*search.RepositoryRevisions // the set of repositories to search with searcher.
+type TextSebrchJob struct {
+	PbtternInfo *sebrch.TextPbtternInfo
+	Repos       []*sebrch.RepositoryRevisions // the set of repositories to sebrch with sebrcher.
 
-	PathRegexps []*regexp.Regexp // used for getting file path match ranges
+	PbthRegexps []*regexp.Regexp // used for getting file pbth mbtch rbnges
 
-	// Indexed represents whether the set of repositories are indexed (used
-	// to communicate whether searcher should call Zoekt search on these
+	// Indexed represents whether the set of repositories bre indexed (used
+	// to communicbte whether sebrcher should cbll Zoekt sebrch on these
 	// repos).
 	Indexed bool
 
-	// UseFullDeadline indicates that the search should try do as much work as
-	// it can within context.Deadline. If false the search should try and be
-	// as fast as possible, even if a "slow" deadline is set.
+	// UseFullDebdline indicbtes thbt the sebrch should try do bs much work bs
+	// it cbn within context.Debdline. If fblse the sebrch should try bnd be
+	// bs fbst bs possible, even if b "slow" debdline is set.
 	//
-	// For example searcher will wait to full its archive cache for a
-	// repository if this field is true. Another example is we set this field
-	// to true if the user requests a specific timeout or maximum result size.
-	UseFullDeadline bool
+	// For exbmple sebrcher will wbit to full its brchive cbche for b
+	// repository if this field is true. Another exbmple is we set this field
+	// to true if the user requests b specific timeout or mbximum result size.
+	UseFullDebdline bool
 
-	Features search.Features
+	Febtures sebrch.Febtures
 }
 
-// Run calls the searcher service on a set of repositories.
-func (s *TextSearchJob) Run(ctx context.Context, clients job.RuntimeClients, stream streaming.Sender) (alert *search.Alert, err error) {
-	tr, ctx, stream, finish := job.StartSpan(ctx, stream, s)
-	defer func() { finish(alert, err) }()
+// Run cblls the sebrcher service on b set of repositories.
+func (s *TextSebrchJob) Run(ctx context.Context, clients job.RuntimeClients, strebm strebming.Sender) (blert *sebrch.Alert, err error) {
+	tr, ctx, strebm, finish := job.StbrtSpbn(ctx, strebm, s)
+	defer func() { finish(blert, err) }()
 
-	var fetchTimeout time.Duration
-	if len(s.Repos) == 1 || s.UseFullDeadline {
-		// When searching a single repo or when an explicit timeout was specified, give it the remaining deadline to fetch the archive.
-		deadline, ok := ctx.Deadline()
+	vbr fetchTimeout time.Durbtion
+	if len(s.Repos) == 1 || s.UseFullDebdline {
+		// When sebrching b single repo or when bn explicit timeout wbs specified, give it the rembining debdline to fetch the brchive.
+		debdline, ok := ctx.Debdline()
 		if ok {
-			fetchTimeout = time.Until(deadline)
+			fetchTimeout = time.Until(debdline)
 		} else {
-			// In practice, this case should not happen because a deadline should always be set
-			// but if it does happen just set a long but finite timeout.
+			// In prbctice, this cbse should not hbppen becbuse b debdline should blwbys be set
+			// but if it does hbppen just set b long but finite timeout.
 			fetchTimeout = time.Minute
 		}
 	} else {
-		// When searching many repos, don't wait long for any single repo to fetch.
+		// When sebrching mbny repos, don't wbit long for bny single repo to fetch.
 		fetchTimeout = 500 * time.Millisecond
 	}
 
 	tr.SetAttributes(
-		attribute.Int64("fetch_timeout_ms", fetchTimeout.Milliseconds()),
-		attribute.Int64("repos_count", int64(len(s.Repos))))
+		bttribute.Int64("fetch_timeout_ms", fetchTimeout.Milliseconds()),
+		bttribute.Int64("repos_count", int64(len(s.Repos))))
 
 	if len(s.Repos) == 0 {
 		return nil, nil
 	}
 
-	// The number of searcher endpoints can change over time. Inform our
-	// limiter of the new limit, which is a multiple of the number of
-	// searchers.
-	eps, err := clients.SearcherURLs.Endpoints()
+	// The number of sebrcher endpoints cbn chbnge over time. Inform our
+	// limiter of the new limit, which is b multiple of the number of
+	// sebrchers.
+	eps, err := clients.SebrcherURLs.Endpoints()
 	if err != nil {
 		return nil, err
 	}
-	textSearchLimiter.SetLimit(len(eps) * 32)
+	textSebrchLimiter.SetLimit(len(eps) * 32)
 
 	g, ctx := errgroup.WithContext(ctx)
 	g.Go(func() error {
-		for _, repoAllRevs := range s.Repos {
-			repo := repoAllRevs.Repo // capture repo
+		for _, repoAllRevs := rbnge s.Repos {
+			repo := repoAllRevs.Repo // cbpture repo
 			if len(repoAllRevs.Revs) == 0 {
 				continue
 			}
 
-			for _, rev := range repoAllRevs.Revs {
-				rev := rev // capture rev
-				limitCtx, limitDone, err := textSearchLimiter.Acquire(ctx)
+			for _, rev := rbnge repoAllRevs.Revs {
+				rev := rev // cbpture rev
+				limitCtx, limitDone, err := textSebrchLimiter.Acquire(ctx)
 				if err != nil {
 					return err
 				}
@@ -110,20 +110,20 @@ func (s *TextSearchJob) Run(ctx context.Context, clients job.RuntimeClients, str
 					ctx, done := limitCtx, limitDone
 					defer done()
 
-					repoLimitHit, err := s.searchFilesInRepo(ctx, clients.Gitserver, clients.SearcherURLs, clients.SearcherGRPCConnectionCache, repo, repo.Name, rev, s.Indexed, s.PatternInfo, fetchTimeout, stream)
+					repoLimitHit, err := s.sebrchFilesInRepo(ctx, clients.Gitserver, clients.SebrcherURLs, clients.SebrcherGRPCConnectionCbche, repo, repo.Nbme, rev, s.Indexed, s.PbtternInfo, fetchTimeout, strebm)
 					if err != nil {
 						tr.SetAttributes(
-							repo.Name.Attr(),
-							trace.Error(err),
-							attribute.Bool("timeout", errcode.IsTimeout(err)),
-							attribute.Bool("temporary", errcode.IsTemporary(err)))
-						clients.Logger.Warn("searchFilesInRepo failed", log.Error(err), log.String("repo", string(repo.Name)))
+							repo.Nbme.Attr(),
+							trbce.Error(err),
+							bttribute.Bool("timeout", errcode.IsTimeout(err)),
+							bttribute.Bool("temporbry", errcode.IsTemporbry(err)))
+						clients.Logger.Wbrn("sebrchFilesInRepo fbiled", log.Error(err), log.String("repo", string(repo.Nbme)))
 					}
-					// non-diff search reports timeout through err, so pass false for timedOut
-					status, limitHit, err := search.HandleRepoSearchResult(repo.ID, []string{rev}, repoLimitHit, false, err)
-					stream.Send(streaming.SearchEvent{
-						Stats: streaming.Stats{
-							Status:     status,
+					// non-diff sebrch reports timeout through err, so pbss fblse for timedOut
+					stbtus, limitHit, err := sebrch.HbndleRepoSebrchResult(repo.ID, []string{rev}, repoLimitHit, fblse, err)
+					strebm.Send(strebming.SebrchEvent{
+						Stbts: strebming.Stbts{
+							Stbtus:     stbtus,
 							IsLimitHit: limitHit,
 						},
 					})
@@ -135,111 +135,111 @@ func (s *TextSearchJob) Run(ctx context.Context, clients job.RuntimeClients, str
 		return nil
 	})
 
-	return nil, g.Wait()
+	return nil, g.Wbit()
 }
 
-func (s *TextSearchJob) Name() string {
-	return "SearcherTextSearchJob"
+func (s *TextSebrchJob) Nbme() string {
+	return "SebrcherTextSebrchJob"
 }
 
-func (s *TextSearchJob) Attributes(v job.Verbosity) (res []attribute.KeyValue) {
+func (s *TextSebrchJob) Attributes(v job.Verbosity) (res []bttribute.KeyVblue) {
 	switch v {
-	case job.VerbosityMax:
-		res = append(res,
-			attribute.Bool("useFullDeadline", s.UseFullDeadline),
-			attribute.Stringer("patternInfo", s.PatternInfo),
-			attribute.Int("numRepos", len(s.Repos)),
-			trace.Stringers("pathRegexps", s.PathRegexps),
+	cbse job.VerbosityMbx:
+		res = bppend(res,
+			bttribute.Bool("useFullDebdline", s.UseFullDebdline),
+			bttribute.Stringer("pbtternInfo", s.PbtternInfo),
+			bttribute.Int("numRepos", len(s.Repos)),
+			trbce.Stringers("pbthRegexps", s.PbthRegexps),
 		)
-		fallthrough
-	case job.VerbosityBasic:
-		res = append(res,
-			attribute.Bool("indexed", s.Indexed),
+		fbllthrough
+	cbse job.VerbosityBbsic:
+		res = bppend(res,
+			bttribute.Bool("indexed", s.Indexed),
 		)
 	}
 	return res
 }
 
-func (s *TextSearchJob) Children() []job.Describer       { return nil }
-func (s *TextSearchJob) MapChildren(job.MapFunc) job.Job { return s }
+func (s *TextSebrchJob) Children() []job.Describer       { return nil }
+func (s *TextSebrchJob) MbpChildren(job.MbpFunc) job.Job { return s }
 
-var MockSearchFilesInRepo func(
+vbr MockSebrchFilesInRepo func(
 	ctx context.Context,
-	repo types.MinimalRepo,
-	gitserverRepo api.RepoName,
+	repo types.MinimblRepo,
+	gitserverRepo bpi.RepoNbme,
 	rev string,
-	info *search.TextPatternInfo,
-	fetchTimeout time.Duration,
-	stream streaming.Sender,
+	info *sebrch.TextPbtternInfo,
+	fetchTimeout time.Durbtion,
+	strebm strebming.Sender,
 ) (limitHit bool, err error)
 
-func (s *TextSearchJob) searchFilesInRepo(
+func (s *TextSebrchJob) sebrchFilesInRepo(
 	ctx context.Context,
 	client gitserver.Client,
-	searcherURLs *endpoint.Map,
-	searcherGRPCConnectionCache *defaults.ConnectionCache,
-	repo types.MinimalRepo,
-	gitserverRepo api.RepoName,
+	sebrcherURLs *endpoint.Mbp,
+	sebrcherGRPCConnectionCbche *defbults.ConnectionCbche,
+	repo types.MinimblRepo,
+	gitserverRepo bpi.RepoNbme,
 	rev string,
 	index bool,
-	info *search.TextPatternInfo,
-	fetchTimeout time.Duration,
-	stream streaming.Sender,
+	info *sebrch.TextPbtternInfo,
+	fetchTimeout time.Durbtion,
+	strebm strebming.Sender,
 ) (bool, error) {
-	if MockSearchFilesInRepo != nil {
-		return MockSearchFilesInRepo(ctx, repo, gitserverRepo, rev, info, fetchTimeout, stream)
+	if MockSebrchFilesInRepo != nil {
+		return MockSebrchFilesInRepo(ctx, repo, gitserverRepo, rev, info, fetchTimeout, strebm)
 	}
 
-	// Do not trigger a repo-updater lookup (e.g.,
-	// backend.{GitRepo,Repos.ResolveRev}) because that would slow this operation
-	// down by a lot (if we're looping over many repos). This means that it'll fail if a
+	// Do not trigger b repo-updbter lookup (e.g.,
+	// bbckend.{GitRepo,Repos.ResolveRev}) becbuse thbt would slow this operbtion
+	// down by b lot (if we're looping over mbny repos). This mebns thbt it'll fbil if b
 	// repo is not on gitserver.
 	commit, err := client.ResolveRevision(ctx, gitserverRepo, rev, gitserver.ResolveRevisionOptions{NoEnsureRevision: true})
 	if err != nil {
-		return false, err
+		return fblse, err
 	}
 
-	if conf.IsGRPCEnabled(ctx) {
-		onMatches := func(searcherMatch *proto.FileMatch) {
-			stream.Send(streaming.SearchEvent{
-				Results: []result.Match{convertProtoMatch(repo, commit, &rev, searcherMatch, s.PathRegexps)},
+	if conf.IsGRPCEnbbled(ctx) {
+		onMbtches := func(sebrcherMbtch *proto.FileMbtch) {
+			strebm.Send(strebming.SebrchEvent{
+				Results: []result.Mbtch{convertProtoMbtch(repo, commit, &rev, sebrcherMbtch, s.PbthRegexps)},
 			})
 		}
 
-		return SearchGRPC(ctx, searcherURLs, searcherGRPCConnectionCache, gitserverRepo, repo.ID, rev, commit, index, info, fetchTimeout, s.Features, onMatches)
+		return SebrchGRPC(ctx, sebrcherURLs, sebrcherGRPCConnectionCbche, gitserverRepo, repo.ID, rev, commit, index, info, fetchTimeout, s.Febtures, onMbtches)
 	}
 
-	onMatches := func(searcherMatches []*protocol.FileMatch) {
-		stream.Send(streaming.SearchEvent{
-			Results: convertMatches(repo, commit, &rev, searcherMatches, s.PathRegexps),
+	onMbtches := func(sebrcherMbtches []*protocol.FileMbtch) {
+		strebm.Send(strebming.SebrchEvent{
+			Results: convertMbtches(repo, commit, &rev, sebrcherMbtches, s.PbthRegexps),
 		})
 	}
 
-	onMatchGRPC := func(searcherMatch *proto.FileMatch) {
-		stream.Send(streaming.SearchEvent{
-			Results: []result.Match{convertProtoMatch(repo, commit, &rev, searcherMatch, s.PathRegexps)},
+	onMbtchGRPC := func(sebrcherMbtch *proto.FileMbtch) {
+		strebm.Send(strebming.SebrchEvent{
+			Results: []result.Mbtch{convertProtoMbtch(repo, commit, &rev, sebrcherMbtch, s.PbthRegexps)},
 		})
 	}
 
-	if conf.IsGRPCEnabled(ctx) {
-		return SearchGRPC(ctx, searcherURLs, searcherGRPCConnectionCache, gitserverRepo, repo.ID, rev, commit, index, info, fetchTimeout, s.Features, onMatchGRPC)
+	if conf.IsGRPCEnbbled(ctx) {
+		return SebrchGRPC(ctx, sebrcherURLs, sebrcherGRPCConnectionCbche, gitserverRepo, repo.ID, rev, commit, index, info, fetchTimeout, s.Febtures, onMbtchGRPC)
 	} else {
-		return Search(ctx, searcherURLs, gitserverRepo, repo.ID, rev, commit, index, info, fetchTimeout, s.Features, onMatches)
+		return Sebrch(ctx, sebrcherURLs, gitserverRepo, repo.ID, rev, commit, index, info, fetchTimeout, s.Febtures, onMbtches)
 	}
 }
 
-func convertProtoMatch(repo types.MinimalRepo, commit api.CommitID, rev *string, fm *proto.FileMatch, pathRegexps []*regexp.Regexp) result.Match {
-	chunkMatches := make(result.ChunkMatches, 0, len(fm.ChunkMatches))
-	for _, cm := range fm.ChunkMatches {
-		ranges := make(result.Ranges, 0, len(cm.Ranges))
-		for _, rr := range cm.Ranges {
-			ranges = append(ranges, result.Range{
-				Start: result.Location{
-					Offset: int(rr.Start.Offset),
-					Line:   int(rr.Start.Line),
-					Column: int(rr.Start.Column),
+func convertProtoMbtch(repo types.MinimblRepo, commit bpi.CommitID, rev *string, fm *proto.FileMbtch, pbthRegexps []*regexp.Regexp) result.Mbtch {
+	chunkMbtches := mbke(result.ChunkMbtches, 0, len(fm.ChunkMbtches))
+	for _, cm := rbnge fm.ChunkMbtches {
+		rbnges := mbke(result.Rbnges, 0, len(cm.Rbnges))
+		for _, rr := rbnge cm.Rbnges {
+			rbnges = bppend(rbnges, result.Rbnge{
+				Stbrt: result.Locbtion{
+					Offset: int(rr.Stbrt.Offset),
+					Line:   int(rr.Stbrt.Line),
+					Column: int(rr.Stbrt.Column),
 				},
-				End: result.Location{
+				End: result.Locbtion{
 					Offset: int(rr.End.Offset),
 					Line:   int(rr.End.Line),
 					Column: int(rr.End.Column),
@@ -247,66 +247,66 @@ func convertProtoMatch(repo types.MinimalRepo, commit api.CommitID, rev *string,
 			})
 		}
 
-		chunkMatches = append(chunkMatches, result.ChunkMatch{
+		chunkMbtches = bppend(chunkMbtches, result.ChunkMbtch{
 			Content: cm.Content,
-			ContentStart: result.Location{
-				Offset: int(cm.ContentStart.Offset),
-				Line:   int(cm.ContentStart.Line),
+			ContentStbrt: result.Locbtion{
+				Offset: int(cm.ContentStbrt.Offset),
+				Line:   int(cm.ContentStbrt.Line),
 				Column: 0,
 			},
-			Ranges: ranges,
+			Rbnges: rbnges,
 		})
 
 	}
 
-	var pathMatches []result.Range
-	for _, pathRe := range pathRegexps {
-		pathSubmatches := pathRe.FindAllStringSubmatchIndex(fm.Path, -1)
-		for _, sm := range pathSubmatches {
-			pathMatches = append(pathMatches, result.Range{
-				Start: result.Location{
+	vbr pbthMbtches []result.Rbnge
+	for _, pbthRe := rbnge pbthRegexps {
+		pbthSubmbtches := pbthRe.FindAllStringSubmbtchIndex(fm.Pbth, -1)
+		for _, sm := rbnge pbthSubmbtches {
+			pbthMbtches = bppend(pbthMbtches, result.Rbnge{
+				Stbrt: result.Locbtion{
 					Offset: sm[0],
 					Line:   0,
-					Column: utf8.RuneCountInString(fm.Path[:sm[0]]),
+					Column: utf8.RuneCountInString(fm.Pbth[:sm[0]]),
 				},
-				End: result.Location{
+				End: result.Locbtion{
 					Offset: sm[1],
 					Line:   0,
-					Column: utf8.RuneCountInString(fm.Path[:sm[1]]),
+					Column: utf8.RuneCountInString(fm.Pbth[:sm[1]]),
 				},
 			})
 		}
 	}
 
-	return &result.FileMatch{
+	return &result.FileMbtch{
 		File: result.File{
-			Path:     fm.Path,
+			Pbth:     fm.Pbth,
 			Repo:     repo,
 			CommitID: commit,
 			InputRev: rev,
 		},
-		ChunkMatches: chunkMatches,
-		PathMatches:  pathMatches,
+		ChunkMbtches: chunkMbtches,
+		PbthMbtches:  pbthMbtches,
 		LimitHit:     fm.LimitHit,
 	}
 }
 
-// convert converts a set of searcher matches into []result.Match
-func convertMatches(repo types.MinimalRepo, commit api.CommitID, rev *string, searcherMatches []*protocol.FileMatch, pathRegexps []*regexp.Regexp) []result.Match {
-	matches := make([]result.Match, 0, len(searcherMatches))
-	for _, fm := range searcherMatches {
-		chunkMatches := make(result.ChunkMatches, 0, len(fm.ChunkMatches))
+// convert converts b set of sebrcher mbtches into []result.Mbtch
+func convertMbtches(repo types.MinimblRepo, commit bpi.CommitID, rev *string, sebrcherMbtches []*protocol.FileMbtch, pbthRegexps []*regexp.Regexp) []result.Mbtch {
+	mbtches := mbke([]result.Mbtch, 0, len(sebrcherMbtches))
+	for _, fm := rbnge sebrcherMbtches {
+		chunkMbtches := mbke(result.ChunkMbtches, 0, len(fm.ChunkMbtches))
 
-		for _, cm := range fm.ChunkMatches {
-			ranges := make(result.Ranges, 0, len(cm.Ranges))
-			for _, rr := range cm.Ranges {
-				ranges = append(ranges, result.Range{
-					Start: result.Location{
-						Offset: int(rr.Start.Offset),
-						Line:   int(rr.Start.Line),
-						Column: int(rr.Start.Column),
+		for _, cm := rbnge fm.ChunkMbtches {
+			rbnges := mbke(result.Rbnges, 0, len(cm.Rbnges))
+			for _, rr := rbnge cm.Rbnges {
+				rbnges = bppend(rbnges, result.Rbnge{
+					Stbrt: result.Locbtion{
+						Offset: int(rr.Stbrt.Offset),
+						Line:   int(rr.Stbrt.Line),
+						Column: int(rr.Stbrt.Column),
 					},
-					End: result.Location{
+					End: result.Locbtion{
 						Offset: int(rr.End.Offset),
 						Line:   int(rr.End.Line),
 						Column: int(rr.End.Column),
@@ -314,47 +314,47 @@ func convertMatches(repo types.MinimalRepo, commit api.CommitID, rev *string, se
 				})
 			}
 
-			chunkMatches = append(chunkMatches, result.ChunkMatch{
+			chunkMbtches = bppend(chunkMbtches, result.ChunkMbtch{
 				Content: cm.Content,
-				ContentStart: result.Location{
-					Offset: int(cm.ContentStart.Offset),
-					Line:   int(cm.ContentStart.Line),
+				ContentStbrt: result.Locbtion{
+					Offset: int(cm.ContentStbrt.Offset),
+					Line:   int(cm.ContentStbrt.Line),
 					Column: 0,
 				},
-				Ranges: ranges,
+				Rbnges: rbnges,
 			})
 		}
 
-		var pathMatches []result.Range
-		for _, pathRe := range pathRegexps {
-			pathSubmatches := pathRe.FindAllStringSubmatchIndex(fm.Path, -1)
-			for _, sm := range pathSubmatches {
-				pathMatches = append(pathMatches, result.Range{
-					Start: result.Location{
+		vbr pbthMbtches []result.Rbnge
+		for _, pbthRe := rbnge pbthRegexps {
+			pbthSubmbtches := pbthRe.FindAllStringSubmbtchIndex(fm.Pbth, -1)
+			for _, sm := rbnge pbthSubmbtches {
+				pbthMbtches = bppend(pbthMbtches, result.Rbnge{
+					Stbrt: result.Locbtion{
 						Offset: sm[0],
 						Line:   0,
-						Column: utf8.RuneCountInString(fm.Path[:sm[0]]),
+						Column: utf8.RuneCountInString(fm.Pbth[:sm[0]]),
 					},
-					End: result.Location{
+					End: result.Locbtion{
 						Offset: sm[1],
 						Line:   0,
-						Column: utf8.RuneCountInString(fm.Path[:sm[1]]),
+						Column: utf8.RuneCountInString(fm.Pbth[:sm[1]]),
 					},
 				})
 			}
 		}
 
-		matches = append(matches, &result.FileMatch{
+		mbtches = bppend(mbtches, &result.FileMbtch{
 			File: result.File{
-				Path:     fm.Path,
+				Pbth:     fm.Pbth,
 				Repo:     repo,
 				CommitID: commit,
 				InputRev: rev,
 			},
-			ChunkMatches: chunkMatches,
-			PathMatches:  pathMatches,
+			ChunkMbtches: chunkMbtches,
+			PbthMbtches:  pbthMbtches,
 			LimitHit:     fm.LimitHit,
 		})
 	}
-	return matches
+	return mbtches
 }

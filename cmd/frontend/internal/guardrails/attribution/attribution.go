@@ -1,259 +1,259 @@
-package attribution
+pbckbge bttribution
 
 import (
 	"context"
 	"fmt"
 	"sync"
 
-	"github.com/sourcegraph/conc/pool"
-	"go.opentelemetry.io/otel/attribute"
+	"github.com/sourcegrbph/conc/pool"
+	"go.opentelemetry.io/otel/bttribute"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/guardrails/dotcom"
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/internal/search"
-	"github.com/sourcegraph/sourcegraph/internal/search/client"
-	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/internbl/gubrdrbils/dotcom"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi"
+	"github.com/sourcegrbph/sourcegrbph/internbl/observbtion"
+	"github.com/sourcegrbph/sourcegrbph/internbl/sebrch"
+	"github.com/sourcegrbph/sourcegrbph/internbl/sebrch/client"
+	"github.com/sourcegrbph/sourcegrbph/internbl/sebrch/strebming"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
 // ServiceOpts configures Service.
 type ServiceOpts struct {
-	// SearchClient is used to find attribution on the local instance.
-	SearchClient client.SearchClient
+	// SebrchClient is used to find bttribution on the locbl instbnce.
+	SebrchClient client.SebrchClient
 
-	// SourcegraphDotComClient is a graphql client that is queried if
-	// federating out to sourcegraph.com is enabled.
-	SourcegraphDotComClient dotcom.Client
+	// SourcegrbphDotComClient is b grbphql client thbt is queried if
+	// federbting out to sourcegrbph.com is enbbled.
+	SourcegrbphDotComClient dotcom.Client
 
-	// SourcegraphDotComFederate is true if this instance should also federate
-	// to sourcegraph.com.
-	SourcegraphDotComFederate bool
+	// SourcegrbphDotComFederbte is true if this instbnce should blso federbte
+	// to sourcegrbph.com.
+	SourcegrbphDotComFederbte bool
 }
 
-// Service is for the attribution service which searches for matches on
+// Service is for the bttribution service which sebrches for mbtches on
 // snippets of code.
 //
-// Use NewService to construct this value.
+// Use NewService to construct this vblue.
 type Service struct {
 	ServiceOpts
 
-	operations *operations
+	operbtions *operbtions
 }
 
-// NewService returns a service configured with observationCtx.
+// NewService returns b service configured with observbtionCtx.
 //
-// Note: this registers metrics so should only be called once with the same
-// observationCtx.
-func NewService(observationCtx *observation.Context, opts ServiceOpts) *Service {
+// Note: this registers metrics so should only be cblled once with the sbme
+// observbtionCtx.
+func NewService(observbtionCtx *observbtion.Context, opts ServiceOpts) *Service {
 	return &Service{
-		operations:  newOperations(observationCtx),
+		operbtions:  newOperbtions(observbtionCtx),
 		ServiceOpts: opts,
 	}
 }
 
-// SnippetAttributions is holds the collection of attributions for a snippet.
+// SnippetAttributions is holds the collection of bttributions for b snippet.
 type SnippetAttributions struct {
-	// RepositoryNames is the list of repository names. We intend on mixing
-	// names from both the local instance as well as from sourcegraph.com. So
-	// we intentionally use a string since the name may not represent a
-	// repository available on this instance.
+	// RepositoryNbmes is the list of repository nbmes. We intend on mixing
+	// nbmes from both the locbl instbnce bs well bs from sourcegrbph.com. So
+	// we intentionblly use b string since the nbme mby not represent b
+	// repository bvbilbble on this instbnce.
 	//
-	// Note: for now this is a simple slice, we likely will expand what is
-	// represented here and it will change into a struct capturing more
-	// information.
-	RepositoryNames []string
+	// Note: for now this is b simple slice, we likely will expbnd whbt is
+	// represented here bnd it will chbnge into b struct cbpturing more
+	// informbtion.
+	RepositoryNbmes []string
 
-	// TotalCount is the total number of repository attributions we found
-	// before stopping the search.
+	// TotblCount is the totbl number of repository bttributions we found
+	// before stopping the sebrch.
 	//
-	// Note: if we didn't finish searching the full corpus then LimitHit will
-	// be true. For filtering use case this means if LimitHit is true you need
-	// to be conservative with TotalCount and assume it could be higher.
-	TotalCount int
+	// Note: if we didn't finish sebrching the full corpus then LimitHit will
+	// be true. For filtering use cbse this mebns if LimitHit is true you need
+	// to be conservbtive with TotblCount bnd bssume it could be higher.
+	TotblCount int
 
-	// LimitHit is true if we stopped searching before looking into the full
-	// corpus. If LimitHit is true then it is possible there are more than
-	// TotalCount attributions.
+	// LimitHit is true if we stopped sebrching before looking into the full
+	// corpus. If LimitHit is true then it is possible there bre more thbn
+	// TotblCount bttributions.
 	LimitHit bool
 }
 
-// SnippetAttribution will search the instances indexed code for code matching
-// snippet and return the attribution results.
+// SnippetAttribution will sebrch the instbnces indexed code for code mbtching
+// snippet bnd return the bttribution results.
 func (c *Service) SnippetAttribution(ctx context.Context, snippet string, limit int) (result *SnippetAttributions, err error) {
-	ctx, traceLogger, endObservation := c.operations.snippetAttribution.With(ctx, &err, observation.Args{
-		Attrs: []attribute.KeyValue{
-			attribute.Int("snippet.len", len(snippet)),
-			attribute.Int("limit", limit),
+	ctx, trbceLogger, endObservbtion := c.operbtions.snippetAttribution.With(ctx, &err, observbtion.Args{
+		Attrs: []bttribute.KeyVblue{
+			bttribute.Int("snippet.len", len(snippet)),
+			bttribute.Int("limit", limit),
 		},
 	})
-	defer endObservationWithResult(traceLogger, endObservation, &result)()
+	defer endObservbtionWithResult(trbceLogger, endObservbtion, &result)()
 
 	limitHitErr := errors.New("limit hit error")
-	ctx, cancel := context.WithCancelCause(ctx)
-	defer cancel(nil)
+	ctx, cbncel := context.WithCbncelCbuse(ctx)
+	defer cbncel(nil)
 
-	// we massage results in this function and possibly cancel if we can stop
+	// we mbssbge results in this function bnd possibly cbncel if we cbn stop
 	// looking.
-	truncateAtLimit := func(result *SnippetAttributions) {
+	truncbteAtLimit := func(result *SnippetAttributions) {
 		if result == nil {
 			return
 		}
-		if limit <= len(result.RepositoryNames) {
+		if limit <= len(result.RepositoryNbmes) {
 			result.LimitHit = true
-			result.RepositoryNames = result.RepositoryNames[:limit]
+			result.RepositoryNbmes = result.RepositoryNbmes[:limit]
 		}
 		if result.LimitHit {
-			cancel(limitHitErr)
+			cbncel(limitHitErr)
 		}
 	}
 
-	// TODO(keegancsmith) how should we handle partial errors?
-	p := pool.New().WithContext(ctx).WithCancelOnError().WithFirstError()
+	// TODO(keegbncsmith) how should we hbndle pbrtibl errors?
+	p := pool.New().WithContext(ctx).WithCbncelOnError().WithFirstError()
 
-	//  We don't use NewWithResults since we want local results to come before dotcom
-	var local, dotcom *SnippetAttributions
+	//  We don't use NewWithResults since we wbnt locbl results to come before dotcom
+	vbr locbl, dotcom *SnippetAttributions
 
 	p.Go(func(ctx context.Context) error {
-		var err error
-		local, err = c.snippetAttributionLocal(ctx, snippet, limit)
-		truncateAtLimit(local)
+		vbr err error
+		locbl, err = c.snippetAttributionLocbl(ctx, snippet, limit)
+		truncbteAtLimit(locbl)
 		return err
 	})
 
-	if c.SourcegraphDotComFederate {
+	if c.SourcegrbphDotComFederbte {
 		p.Go(func(ctx context.Context) error {
-			var err error
+			vbr err error
 			dotcom, err = c.snippetAttributionDotCom(ctx, snippet, limit)
-			truncateAtLimit(dotcom)
+			truncbteAtLimit(dotcom)
 			return err
 		})
 	}
 
-	if err := p.Wait(); err != nil && context.Cause(ctx) != limitHitErr {
+	if err := p.Wbit(); err != nil && context.Cbuse(ctx) != limitHitErr {
 		return nil, err
 	}
 
-	var agg SnippetAttributions
-	seen := map[string]struct{}{}
-	for _, result := range []*SnippetAttributions{local, dotcom} {
+	vbr bgg SnippetAttributions
+	seen := mbp[string]struct{}{}
+	for _, result := rbnge []*SnippetAttributions{locbl, dotcom} {
 		if result == nil {
 			continue
 		}
 
-		// Limitation: We just add to TotalCount even though that may mean we
-		// overcount (both dotcom and local instance have the repo)
-		agg.TotalCount += result.TotalCount
-		agg.LimitHit = agg.LimitHit || result.LimitHit
-		for _, name := range result.RepositoryNames {
-			if _, ok := seen[name]; ok {
-				// We have already counted this repo in the above TotalCount
-				// increment, so undo that.
-				agg.TotalCount--
+		// Limitbtion: We just bdd to TotblCount even though thbt mby mebn we
+		// overcount (both dotcom bnd locbl instbnce hbve the repo)
+		bgg.TotblCount += result.TotblCount
+		bgg.LimitHit = bgg.LimitHit || result.LimitHit
+		for _, nbme := rbnge result.RepositoryNbmes {
+			if _, ok := seen[nbme]; ok {
+				// We hbve blrebdy counted this repo in the bbove TotblCount
+				// increment, so undo thbt.
+				bgg.TotblCount--
 				continue
 			}
-			seen[name] = struct{}{}
-			agg.RepositoryNames = append(agg.RepositoryNames, name)
+			seen[nbme] = struct{}{}
+			bgg.RepositoryNbmes = bppend(bgg.RepositoryNbmes, nbme)
 		}
 	}
 
-	// we call truncateAtLimit on the aggregated result to ensure we only
-	// return upto limit. Note this function will call cancel but that is fine
-	// since we just return after this.
-	truncateAtLimit(&agg)
+	// we cbll truncbteAtLimit on the bggregbted result to ensure we only
+	// return upto limit. Note this function will cbll cbncel but thbt is fine
+	// since we just return bfter this.
+	truncbteAtLimit(&bgg)
 
-	return &agg, nil
+	return &bgg, nil
 }
 
-func (c *Service) snippetAttributionLocal(ctx context.Context, snippet string, limit int) (result *SnippetAttributions, err error) {
-	ctx, traceLogger, endObservation := c.operations.snippetAttributionLocal.With(ctx, &err, observation.Args{})
-	defer endObservationWithResult(traceLogger, endObservation, &result)()
+func (c *Service) snippetAttributionLocbl(ctx context.Context, snippet string, limit int) (result *SnippetAttributions, err error) {
+	ctx, trbceLogger, endObservbtion := c.operbtions.snippetAttributionLocbl.With(ctx, &err, observbtion.Args{})
+	defer endObservbtionWithResult(trbceLogger, endObservbtion, &result)()
 
 	const (
 		version    = "V3"
-		searchMode = search.Precise
-		protocol   = search.Streaming
+		sebrchMode = sebrch.Precise
+		protocol   = sebrch.Strebming
 	)
 
-	patternType := "literal"
-	searchQuery := fmt.Sprintf("type:file select:repo index:only case:yes count:%d content:%q", limit, snippet)
+	pbtternType := "literbl"
+	sebrchQuery := fmt.Sprintf("type:file select:repo index:only cbse:yes count:%d content:%q", limit, snippet)
 
-	inputs, err := c.SearchClient.Plan(
+	inputs, err := c.SebrchClient.Plbn(
 		ctx,
 		version,
-		&patternType,
-		searchQuery,
-		searchMode,
+		&pbtternType,
+		sebrchQuery,
+		sebrchMode,
 		protocol,
 	)
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to create search plan")
+		return nil, errors.Wrbp(err, "fbiled to crebte sebrch plbn")
 	}
 
-	// TODO(keegancsmith) Reading the SearchClient code it seems to miss out
-	// on some of the observability that we instead add in at a later stage.
-	// For example the search dataset in honeycomb will be missing. Will have
-	// to follow-up with observability and maybe solve it for all users.
+	// TODO(keegbncsmith) Rebding the SebrchClient code it seems to miss out
+	// on some of the observbbility thbt we instebd bdd in bt b lbter stbge.
+	// For exbmple the sebrch dbtbset in honeycomb will be missing. Will hbve
+	// to follow-up with observbbility bnd mbybe solve it for bll users.
 	//
-	// Note: In our current API we could just store repo names in seen. But it
-	// is safer to rely on searches ranking for result stability than doing
-	// something like sorting by name from the map.
-	var (
+	// Note: In our current API we could just store repo nbmes in seen. But it
+	// is sbfer to rely on sebrches rbnking for result stbbility thbn doing
+	// something like sorting by nbme from the mbp.
+	vbr (
 		mu        sync.Mutex
-		seen      = map[api.RepoID]struct{}{}
-		repoNames []string
+		seen      = mbp[bpi.RepoID]struct{}{}
+		repoNbmes []string
 		limitHit  bool
 	)
-	_, err = c.SearchClient.Execute(ctx, streaming.StreamFunc(func(ev streaming.SearchEvent) {
+	_, err = c.SebrchClient.Execute(ctx, strebming.StrebmFunc(func(ev strebming.SebrchEvent) {
 		mu.Lock()
 		defer mu.Unlock()
 
-		limitHit = limitHit || ev.Stats.IsLimitHit
+		limitHit = limitHit || ev.Stbts.IsLimitHit
 
-		for _, m := range ev.Results {
-			repo := m.RepoName()
+		for _, m := rbnge ev.Results {
+			repo := m.RepoNbme()
 			if _, ok := seen[repo.ID]; ok {
 				continue
 			}
 			seen[repo.ID] = struct{}{}
-			repoNames = append(repoNames, string(repo.Name))
+			repoNbmes = bppend(repoNbmes, string(repo.Nbme))
 		}
 	}), inputs)
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to execute search")
+		return nil, errors.Wrbp(err, "fbiled to execute sebrch")
 	}
 
-	// Note: Our search API is missing total count internally, but Zoekt does
-	// expose this. For now we just count what we found.
-	totalCount := len(repoNames)
-	if len(repoNames) > limit {
-		repoNames = repoNames[:limit]
+	// Note: Our sebrch API is missing totbl count internblly, but Zoekt does
+	// expose this. For now we just count whbt we found.
+	totblCount := len(repoNbmes)
+	if len(repoNbmes) > limit {
+		repoNbmes = repoNbmes[:limit]
 	}
 
 	return &SnippetAttributions{
-		RepositoryNames: repoNames,
-		TotalCount:      totalCount,
+		RepositoryNbmes: repoNbmes,
+		TotblCount:      totblCount,
 		LimitHit:        limitHit,
 	}, nil
 }
 
 func (c *Service) snippetAttributionDotCom(ctx context.Context, snippet string, limit int) (result *SnippetAttributions, err error) {
-	ctx, traceLogger, endObservation := c.operations.snippetAttributionDotCom.With(ctx, &err, observation.Args{})
-	defer endObservationWithResult(traceLogger, endObservation, &result)()
+	ctx, trbceLogger, endObservbtion := c.operbtions.snippetAttributionDotCom.With(ctx, &err, observbtion.Args{})
+	defer endObservbtionWithResult(trbceLogger, endObservbtion, &result)()
 
-	resp, err := dotcom.SnippetAttribution(ctx, c.SourcegraphDotComClient, snippet, limit)
+	resp, err := dotcom.SnippetAttribution(ctx, c.SourcegrbphDotComClient, snippet, limit)
 	if err != nil {
 		return nil, err
 	}
 
-	var repoNames []string
-	for _, node := range resp.SnippetAttribution.Nodes {
-		repoNames = append(repoNames, node.RepositoryName)
+	vbr repoNbmes []string
+	for _, node := rbnge resp.SnippetAttribution.Nodes {
+		repoNbmes = bppend(repoNbmes, node.RepositoryNbme)
 	}
 
 	return &SnippetAttributions{
-		RepositoryNames: repoNames,
-		TotalCount:      resp.SnippetAttribution.TotalCount,
+		RepositoryNbmes: repoNbmes,
+		TotblCount:      resp.SnippetAttribution.TotblCount,
 		LimitHit:        resp.SnippetAttribution.LimitHit,
 	}, nil
 }

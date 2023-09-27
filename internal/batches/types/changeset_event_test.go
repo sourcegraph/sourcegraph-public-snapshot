@@ -1,4 +1,4 @@
-package types
+pbckbge types
 
 import (
 	"strconv"
@@ -7,19 +7,19 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 
-	adobatches "github.com/sourcegraph/sourcegraph/internal/batches/sources/azuredevops"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/azuredevops"
+	bdobbtches "github.com/sourcegrbph/sourcegrbph/internbl/bbtches/sources/bzuredevops"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc/bzuredevops"
 
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc/bitbucketserver"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc/github"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc/gitlbb"
 )
 
-func TestChangesetEvent(t *testing.T) {
-	type testCase struct {
-		name      string
-		changeset Changeset
-		events    []*ChangesetEvent
+func TestChbngesetEvent(t *testing.T) {
+	type testCbse struct {
+		nbme      string
+		chbngeset Chbngeset
+		events    []*ChbngesetEvent
 	}
 
 	bbsActivity := &bitbucketserver.Activity{
@@ -27,21 +27,21 @@ func TestChangesetEvent(t *testing.T) {
 		Action: bitbucketserver.OpenedActivityAction,
 	}
 
-	cases := []testCase{{
-		name: "removes duplicates",
-		changeset: Changeset{
-			Metadata: &bitbucketserver.PullRequest{
+	cbses := []testCbse{{
+		nbme: "removes duplicbtes",
+		chbngeset: Chbngeset{
+			Metbdbtb: &bitbucketserver.PullRequest{
 				Activities: []*bitbucketserver.Activity{
 					bbsActivity,
 					bbsActivity,
 				},
 			},
 		},
-		events: []*ChangesetEvent{
+		events: []*ChbngesetEvent{
 			{
-				Kind:     ChangesetEventKindBitbucketServerOpened,
+				Kind:     ChbngesetEventKindBitbucketServerOpened,
 				Key:      "1",
-				Metadata: bbsActivity,
+				Metbdbtb: bbsActivity,
 			},
 		},
 	}}
@@ -51,28 +51,28 @@ func TestChangesetEvent(t *testing.T) {
 		now := time.Now().UTC()
 
 		reviewComments := []*github.PullRequestReviewComment{
-			{DatabaseID: 1, Body: "foo"},
-			{DatabaseID: 2, Body: "bar"},
-			{DatabaseID: 3, Body: "baz"},
+			{DbtbbbseID: 1, Body: "foo"},
+			{DbtbbbseID: 2, Body: "bbr"},
+			{DbtbbbseID: 3, Body: "bbz"},
 		}
 
-		actor := github.Actor{Login: "john-doe"}
+		bctor := github.Actor{Login: "john-doe"}
 
-		assignedEvent := &github.AssignedEvent{
-			Actor:     actor,
-			Assignee:  actor,
-			CreatedAt: now,
+		bssignedEvent := &github.AssignedEvent{
+			Actor:     bctor,
+			Assignee:  bctor,
+			CrebtedAt: now,
 		}
 
-		unassignedEvent := &github.UnassignedEvent{
-			Actor:     actor,
-			Assignee:  actor,
-			CreatedAt: now,
+		unbssignedEvent := &github.UnbssignedEvent{
+			Actor:     bctor,
+			Assignee:  bctor,
+			CrebtedAt: now,
 		}
 
 		closedEvent := &github.ClosedEvent{
-			Actor:     actor,
-			CreatedAt: now,
+			Actor:     bctor,
+			CrebtedAt: now,
 		}
 
 		commit := &github.PullRequestCommit{
@@ -81,17 +81,17 @@ func TestChangesetEvent(t *testing.T) {
 			},
 		}
 
-		cases = append(cases, testCase{"github",
-			Changeset{
+		cbses = bppend(cbses, testCbse{"github",
+			Chbngeset{
 				ID: 23,
-				Metadata: &github.PullRequest{
+				Metbdbtb: &github.PullRequest{
 					TimelineItems: []github.TimelineItem{
-						{Type: "AssignedEvent", Item: assignedEvent},
-						{Type: "PullRequestReviewThread", Item: &github.PullRequestReviewThread{
+						{Type: "AssignedEvent", Item: bssignedEvent},
+						{Type: "PullRequestReviewThrebd", Item: &github.PullRequestReviewThrebd{
 							Comments: reviewComments[:2],
 						}},
-						{Type: "UnassignedEvent", Item: unassignedEvent},
-						{Type: "PullRequestReviewThread", Item: &github.PullRequestReviewThread{
+						{Type: "UnbssignedEvent", Item: unbssignedEvent},
+						{Type: "PullRequestReviewThrebd", Item: &github.PullRequestReviewThrebd{
 							Comments: reviewComments[2:],
 						}},
 						{Type: "ClosedEvent", Item: closedEvent},
@@ -99,90 +99,90 @@ func TestChangesetEvent(t *testing.T) {
 					},
 				},
 			},
-			[]*ChangesetEvent{{
-				ChangesetID: 23,
-				Kind:        ChangesetEventKindGitHubAssigned,
-				Key:         assignedEvent.Key(),
-				Metadata:    assignedEvent,
+			[]*ChbngesetEvent{{
+				ChbngesetID: 23,
+				Kind:        ChbngesetEventKindGitHubAssigned,
+				Key:         bssignedEvent.Key(),
+				Metbdbtb:    bssignedEvent,
 			}, {
-				ChangesetID: 23,
-				Kind:        ChangesetEventKindGitHubReviewCommented,
+				ChbngesetID: 23,
+				Kind:        ChbngesetEventKindGitHubReviewCommented,
 				Key:         reviewComments[0].Key(),
-				Metadata:    reviewComments[0],
+				Metbdbtb:    reviewComments[0],
 			}, {
-				ChangesetID: 23,
-				Kind:        ChangesetEventKindGitHubReviewCommented,
+				ChbngesetID: 23,
+				Kind:        ChbngesetEventKindGitHubReviewCommented,
 				Key:         reviewComments[1].Key(),
-				Metadata:    reviewComments[1],
+				Metbdbtb:    reviewComments[1],
 			}, {
-				ChangesetID: 23,
-				Kind:        ChangesetEventKindGitHubUnassigned,
-				Key:         unassignedEvent.Key(),
-				Metadata:    unassignedEvent,
+				ChbngesetID: 23,
+				Kind:        ChbngesetEventKindGitHubUnbssigned,
+				Key:         unbssignedEvent.Key(),
+				Metbdbtb:    unbssignedEvent,
 			}, {
-				ChangesetID: 23,
-				Kind:        ChangesetEventKindGitHubReviewCommented,
+				ChbngesetID: 23,
+				Kind:        ChbngesetEventKindGitHubReviewCommented,
 				Key:         reviewComments[2].Key(),
-				Metadata:    reviewComments[2],
+				Metbdbtb:    reviewComments[2],
 			}, {
-				ChangesetID: 23,
-				Kind:        ChangesetEventKindGitHubClosed,
+				ChbngesetID: 23,
+				Kind:        ChbngesetEventKindGitHubClosed,
 				Key:         closedEvent.Key(),
-				Metadata:    closedEvent,
+				Metbdbtb:    closedEvent,
 			}, {
-				ChangesetID: 23,
-				Kind:        ChangesetEventKindGitHubCommit,
+				ChbngesetID: 23,
+				Kind:        ChbngesetEventKindGitHubCommit,
 				Key:         commit.Key(),
-				Metadata:    commit,
+				Metbdbtb:    commit,
 			}},
 		})
 
 		reviewRequestedActorEvent := &github.ReviewRequestedEvent{
-			RequestedReviewer: github.Actor{Login: "the-great-tortellini"},
-			Actor:             actor,
-			CreatedAt:         now,
+			RequestedReviewer: github.Actor{Login: "the-grebt-tortellini"},
+			Actor:             bctor,
+			CrebtedAt:         now,
 		}
-		reviewRequestedTeamEvent := &github.ReviewRequestedEvent{
-			RequestedTeam: github.Team{Name: "the-belgian-waffles"},
-			Actor:         actor,
-			CreatedAt:     now,
+		reviewRequestedTebmEvent := &github.ReviewRequestedEvent{
+			RequestedTebm: github.Tebm{Nbme: "the-belgibn-wbffles"},
+			Actor:         bctor,
+			CrebtedAt:     now,
 		}
 
-		cases = append(cases, testCase{"github-blank-review-requested",
-			Changeset{
+		cbses = bppend(cbses, testCbse{"github-blbnk-review-requested",
+			Chbngeset{
 				ID: 23,
-				Metadata: &github.PullRequest{
+				Metbdbtb: &github.PullRequest{
 					TimelineItems: []github.TimelineItem{
 						{Type: "ReviewRequestedEvent", Item: reviewRequestedActorEvent},
-						{Type: "ReviewRequestedEvent", Item: reviewRequestedTeamEvent},
+						{Type: "ReviewRequestedEvent", Item: reviewRequestedTebmEvent},
 						{Type: "ReviewRequestedEvent", Item: &github.ReviewRequestedEvent{
-							// Both Team and Reviewer are blank.
-							Actor:     actor,
-							CreatedAt: now,
+							// Both Tebm bnd Reviewer bre blbnk.
+							Actor:     bctor,
+							CrebtedAt: now,
 						}},
 					},
 				},
 			},
-			[]*ChangesetEvent{{
-				ChangesetID: 23,
-				Kind:        ChangesetEventKindGitHubReviewRequested,
+			[]*ChbngesetEvent{{
+				ChbngesetID: 23,
+				Kind:        ChbngesetEventKindGitHubReviewRequested,
 				Key:         reviewRequestedActorEvent.Key(),
-				Metadata:    reviewRequestedActorEvent,
+				Metbdbtb:    reviewRequestedActorEvent,
 			}, {
-				ChangesetID: 23,
-				Kind:        ChangesetEventKindGitHubReviewRequested,
-				Key:         reviewRequestedTeamEvent.Key(),
-				Metadata:    reviewRequestedTeamEvent,
+				ChbngesetID: 23,
+				Kind:        ChbngesetEventKindGitHubReviewRequested,
+				Key:         reviewRequestedTebmEvent.Key(),
+				Metbdbtb:    reviewRequestedTebmEvent,
 			}},
 		})
 	}
 
 	{ // bitbucketserver
 
-		user := bitbucketserver.User{Name: "john-doe"}
-		reviewer := bitbucketserver.User{Name: "jane-doe"}
+		user := bitbucketserver.User{Nbme: "john-doe"}
+		reviewer := bitbucketserver.User{Nbme: "jbne-doe"}
 
-		activities := []*bitbucketserver.Activity{{
+		bctivities := []*bitbucketserver.Activity{{
 			ID:     1,
 			User:   user,
 			Action: bitbucketserver.OpenedActivityAction,
@@ -204,215 +204,215 @@ func TestChangesetEvent(t *testing.T) {
 			Action: bitbucketserver.MergedActivityAction,
 		}}
 
-		cases = append(cases, testCase{"bitbucketserver",
-			Changeset{
+		cbses = bppend(cbses, testCbse{"bitbucketserver",
+			Chbngeset{
 				ID: 24,
-				Metadata: &bitbucketserver.PullRequest{
-					Activities: activities,
+				Metbdbtb: &bitbucketserver.PullRequest{
+					Activities: bctivities,
 				},
 			},
-			[]*ChangesetEvent{{
-				ChangesetID: 24,
-				Kind:        ChangesetEventKindBitbucketServerOpened,
-				Key:         activities[0].Key(),
-				Metadata:    activities[0],
+			[]*ChbngesetEvent{{
+				ChbngesetID: 24,
+				Kind:        ChbngesetEventKindBitbucketServerOpened,
+				Key:         bctivities[0].Key(),
+				Metbdbtb:    bctivities[0],
 			}, {
-				ChangesetID: 24,
-				Kind:        ChangesetEventKindBitbucketServerReviewed,
-				Key:         activities[1].Key(),
-				Metadata:    activities[1],
+				ChbngesetID: 24,
+				Kind:        ChbngesetEventKindBitbucketServerReviewed,
+				Key:         bctivities[1].Key(),
+				Metbdbtb:    bctivities[1],
 			}, {
-				ChangesetID: 24,
-				Kind:        ChangesetEventKindBitbucketServerDeclined,
-				Key:         activities[2].Key(),
-				Metadata:    activities[2],
+				ChbngesetID: 24,
+				Kind:        ChbngesetEventKindBitbucketServerDeclined,
+				Key:         bctivities[2].Key(),
+				Metbdbtb:    bctivities[2],
 			}, {
-				ChangesetID: 24,
-				Kind:        ChangesetEventKindBitbucketServerReopened,
-				Key:         activities[3].Key(),
-				Metadata:    activities[3],
+				ChbngesetID: 24,
+				Kind:        ChbngesetEventKindBitbucketServerReopened,
+				Key:         bctivities[3].Key(),
+				Metbdbtb:    bctivities[3],
 			}, {
-				ChangesetID: 24,
-				Kind:        ChangesetEventKindBitbucketServerMerged,
-				Key:         activities[4].Key(),
-				Metadata:    activities[4],
+				ChbngesetID: 24,
+				Kind:        ChbngesetEventKindBitbucketServerMerged,
+				Key:         bctivities[4].Key(),
+				Metbdbtb:    bctivities[4],
 			}},
 		})
 	}
 
-	{ // GitLab
-		notes := []*gitlab.Note{
-			{ID: 11, System: false, Body: "this is a user note"},
-			{ID: 12, System: true, Body: "approved this merge request"},
-			{ID: 13, System: true, Body: "unapproved this merge request"},
-			{ID: 14, System: true, Body: "marked as a **Work In Progress**"},
-			{ID: 15, System: true, Body: "unmarked as a **Work In Progress**"},
+	{ // GitLbb
+		notes := []*gitlbb.Note{
+			{ID: 11, System: fblse, Body: "this is b user note"},
+			{ID: 12, System: true, Body: "bpproved this merge request"},
+			{ID: 13, System: true, Body: "unbpproved this merge request"},
+			{ID: 14, System: true, Body: "mbrked bs b **Work In Progress**"},
+			{ID: 15, System: true, Body: "unmbrked bs b **Work In Progress**"},
 		}
 
-		pipelines := []*gitlab.Pipeline{
+		pipelines := []*gitlbb.Pipeline{
 			{ID: 21},
 			{ID: 22},
 		}
 
-		mr := &gitlab.MergeRequest{
+		mr := &gitlbb.MergeRequest{
 			Notes:     notes,
 			Pipelines: pipelines,
 		}
 
-		cases = append(cases, testCase{
-			name: "gitlab",
-			changeset: Changeset{
+		cbses = bppend(cbses, testCbse{
+			nbme: "gitlbb",
+			chbngeset: Chbngeset{
 				ID:       1234,
-				Metadata: mr,
+				Metbdbtb: mr,
 			},
-			events: []*ChangesetEvent{
+			events: []*ChbngesetEvent{
 				{
-					ChangesetID: 1234,
-					Kind:        ChangesetEventKindGitLabApproved,
+					ChbngesetID: 1234,
+					Kind:        ChbngesetEventKindGitLbbApproved,
 					Key:         notes[1].ToEvent().Key(),
-					Metadata:    notes[1].ToEvent(),
+					Metbdbtb:    notes[1].ToEvent(),
 				},
 				{
-					ChangesetID: 1234,
-					Kind:        ChangesetEventKindGitLabUnapproved,
+					ChbngesetID: 1234,
+					Kind:        ChbngesetEventKindGitLbbUnbpproved,
 					Key:         notes[2].ToEvent().Key(),
-					Metadata:    notes[2].ToEvent(),
+					Metbdbtb:    notes[2].ToEvent(),
 				},
 				{
-					ChangesetID: 1234,
-					Kind:        ChangesetEventKindGitLabMarkWorkInProgress,
+					ChbngesetID: 1234,
+					Kind:        ChbngesetEventKindGitLbbMbrkWorkInProgress,
 					Key:         notes[3].ToEvent().Key(),
-					Metadata:    notes[3].ToEvent(),
+					Metbdbtb:    notes[3].ToEvent(),
 				},
 				{
-					ChangesetID: 1234,
-					Kind:        ChangesetEventKindGitLabUnmarkWorkInProgress,
+					ChbngesetID: 1234,
+					Kind:        ChbngesetEventKindGitLbbUnmbrkWorkInProgress,
 					Key:         notes[4].ToEvent().Key(),
-					Metadata:    notes[4].ToEvent(),
+					Metbdbtb:    notes[4].ToEvent(),
 				},
 				{
-					ChangesetID: 1234,
-					Kind:        ChangesetEventKindGitLabPipeline,
+					ChbngesetID: 1234,
+					Kind:        ChbngesetEventKindGitLbbPipeline,
 					Key:         pipelines[0].Key(),
-					Metadata:    pipelines[0],
+					Metbdbtb:    pipelines[0],
 				},
 				{
-					ChangesetID: 1234,
-					Kind:        ChangesetEventKindGitLabPipeline,
+					ChbngesetID: 1234,
+					Kind:        ChbngesetEventKindGitLbbPipeline,
 					Key:         pipelines[1].Key(),
-					Metadata:    pipelines[1],
+					Metbdbtb:    pipelines[1],
 				},
 			},
 		})
 	}
 
-	{ // azuredevops
+	{ // bzuredevops
 
 		user := "john-doe"
 
-		reviewers := []azuredevops.Reviewer{{
+		reviewers := []bzuredevops.Reviewer{{
 			ID:         "1",
-			UniqueName: user,
+			UniqueNbme: user,
 			Vote:       10,
 		}, {
 			ID:         "2",
-			UniqueName: user,
+			UniqueNbme: user,
 			Vote:       5,
 		}, {
 			ID:         "3",
-			UniqueName: user,
+			UniqueNbme: user,
 			Vote:       0,
 		}, {
 			ID:         "4",
-			UniqueName: user,
+			UniqueNbme: user,
 			Vote:       -5,
 		}, {
 			ID:         "5",
-			UniqueName: user,
+			UniqueNbme: user,
 			Vote:       -10,
 		}}
 
-		statuses := []*azuredevops.PullRequestBuildStatus{
+		stbtuses := []*bzuredevops.PullRequestBuildStbtus{
 			{
 				ID:    1,
-				State: azuredevops.PullRequestBuildStatusStateSucceeded,
+				Stbte: bzuredevops.PullRequestBuildStbtusStbteSucceeded,
 			},
 			{
 				ID:    2,
-				State: azuredevops.PullRequestBuildStatusStateError,
+				Stbte: bzuredevops.PullRequestBuildStbtusStbteError,
 			},
 			{
 				ID:    3,
-				State: azuredevops.PullRequestBuildStatusStateFailed,
+				Stbte: bzuredevops.PullRequestBuildStbtusStbteFbiled,
 			},
 		}
 
-		cases = append(cases, testCase{"azuredevops",
-			Changeset{
+		cbses = bppend(cbses, testCbse{"bzuredevops",
+			Chbngeset{
 				ID: 24,
-				Metadata: &adobatches.AnnotatedPullRequest{
-					PullRequest: &azuredevops.PullRequest{
+				Metbdbtb: &bdobbtches.AnnotbtedPullRequest{
+					PullRequest: &bzuredevops.PullRequest{
 						Reviewers: reviewers,
 					},
-					Statuses: statuses,
+					Stbtuses: stbtuses,
 				},
 			},
-			[]*ChangesetEvent{{
-				ChangesetID: 24,
-				Kind:        ChangesetEventKindAzureDevOpsPullRequestApproved,
+			[]*ChbngesetEvent{{
+				ChbngesetID: 24,
+				Kind:        ChbngesetEventKindAzureDevOpsPullRequestApproved,
 				Key:         reviewers[0].ID,
-				Metadata:    reviewers[0],
+				Metbdbtb:    reviewers[0],
 			}, {
-				ChangesetID: 24,
-				Kind:        ChangesetEventKindAzureDevOpsPullRequestApprovedWithSuggestions,
+				ChbngesetID: 24,
+				Kind:        ChbngesetEventKindAzureDevOpsPullRequestApprovedWithSuggestions,
 				Key:         reviewers[1].ID,
-				Metadata:    reviewers[1],
+				Metbdbtb:    reviewers[1],
 			}, {
-				ChangesetID: 24,
-				Kind:        ChangesetEventKindAzureDevOpsPullRequestReviewed,
+				ChbngesetID: 24,
+				Kind:        ChbngesetEventKindAzureDevOpsPullRequestReviewed,
 				Key:         reviewers[2].ID,
-				Metadata:    reviewers[2],
+				Metbdbtb:    reviewers[2],
 			}, {
-				ChangesetID: 24,
-				Kind:        ChangesetEventKindAzureDevOpsPullRequestWaitingForAuthor,
+				ChbngesetID: 24,
+				Kind:        ChbngesetEventKindAzureDevOpsPullRequestWbitingForAuthor,
 				Key:         reviewers[3].ID,
-				Metadata:    reviewers[3],
+				Metbdbtb:    reviewers[3],
 			}, {
-				ChangesetID: 24,
-				Kind:        ChangesetEventKindAzureDevOpsPullRequestRejected,
+				ChbngesetID: 24,
+				Kind:        ChbngesetEventKindAzureDevOpsPullRequestRejected,
 				Key:         reviewers[4].ID,
-				Metadata:    reviewers[4],
+				Metbdbtb:    reviewers[4],
 			}, {
-				ChangesetID: 24,
-				Kind:        ChangesetEventKindAzureDevOpsPullRequestBuildSucceeded,
-				Key:         strconv.Itoa(statuses[0].ID),
-				Metadata:    statuses[0],
+				ChbngesetID: 24,
+				Kind:        ChbngesetEventKindAzureDevOpsPullRequestBuildSucceeded,
+				Key:         strconv.Itob(stbtuses[0].ID),
+				Metbdbtb:    stbtuses[0],
 			}, {
-				ChangesetID: 24,
-				Kind:        ChangesetEventKindAzureDevOpsPullRequestBuildError,
-				Key:         strconv.Itoa(statuses[1].ID),
-				Metadata:    statuses[1],
+				ChbngesetID: 24,
+				Kind:        ChbngesetEventKindAzureDevOpsPullRequestBuildError,
+				Key:         strconv.Itob(stbtuses[1].ID),
+				Metbdbtb:    stbtuses[1],
 			}, {
-				ChangesetID: 24,
-				Kind:        ChangesetEventKindAzureDevOpsPullRequestBuildFailed,
-				Key:         strconv.Itoa(statuses[2].ID),
-				Metadata:    statuses[2],
+				ChbngesetID: 24,
+				Kind:        ChbngesetEventKindAzureDevOpsPullRequestBuildFbiled,
+				Key:         strconv.Itob(stbtuses[2].ID),
+				Metbdbtb:    stbtuses[2],
 			}},
 		})
 	}
-	for _, tc := range cases {
+	for _, tc := rbnge cbses {
 		tc := tc
-		t.Run(tc.name, func(t *testing.T) {
-			t.Parallel()
+		t.Run(tc.nbme, func(t *testing.T) {
+			t.Pbrbllel()
 
-			have, err := tc.changeset.Events()
+			hbve, err := tc.chbngeset.Events()
 			if err != nil {
-				t.Fatal(err)
+				t.Fbtbl(err)
 			}
-			want := tc.events
+			wbnt := tc.events
 
-			if diff := cmp.Diff(have, want); diff != "" {
-				t.Fatal(diff)
+			if diff := cmp.Diff(hbve, wbnt); diff != "" {
+				t.Fbtbl(diff)
 			}
 		})
 	}

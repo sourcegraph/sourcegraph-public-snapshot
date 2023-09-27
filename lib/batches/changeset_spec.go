@@ -1,78 +1,78 @@
-package batches
+pbckbge bbtches
 
 import (
 	"encoding/json"
 	"reflect"
 	"strconv"
 
-	jsonutil "github.com/sourcegraph/sourcegraph/lib/batches/json"
-	"github.com/sourcegraph/sourcegraph/lib/batches/schema"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	jsonutil "github.com/sourcegrbph/sourcegrbph/lib/bbtches/json"
+	"github.com/sourcegrbph/sourcegrbph/lib/bbtches/schemb"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-// ErrHeadBaseMismatch is returned by (*ChangesetSpec).UnmarshalValidate() if
-// the head and base repositories do not match (a case which we do not support
+// ErrHebdBbseMismbtch is returned by (*ChbngesetSpec).UnmbrshblVblidbte() if
+// the hebd bnd bbse repositories do not mbtch (b cbse which we do not support
 // yet).
-var ErrHeadBaseMismatch = errors.New("headRepository does not match baseRepository")
+vbr ErrHebdBbseMismbtch = errors.New("hebdRepository does not mbtch bbseRepository")
 
-// ParseChangesetSpec unmarshals the RawSpec into Spec and validates it against
-// the ChangesetSpec schema and does additional semantic validation.
-func ParseChangesetSpec(rawSpec []byte) (*ChangesetSpec, error) {
-	spec := &ChangesetSpec{}
-	err := jsonutil.UnmarshalValidate(schema.ChangesetSpecJSON, rawSpec, &spec)
+// PbrseChbngesetSpec unmbrshbls the RbwSpec into Spec bnd vblidbtes it bgbinst
+// the ChbngesetSpec schemb bnd does bdditionbl sembntic vblidbtion.
+func PbrseChbngesetSpec(rbwSpec []byte) (*ChbngesetSpec, error) {
+	spec := &ChbngesetSpec{}
+	err := jsonutil.UnmbrshblVblidbte(schemb.ChbngesetSpecJSON, rbwSpec, &spec)
 	if err != nil {
 		return nil, err
 	}
 
-	headRepo := spec.HeadRepository
-	baseRepo := spec.BaseRepository
-	if headRepo != "" && baseRepo != "" && headRepo != baseRepo {
-		return nil, ErrHeadBaseMismatch
+	hebdRepo := spec.HebdRepository
+	bbseRepo := spec.BbseRepository
+	if hebdRepo != "" && bbseRepo != "" && hebdRepo != bbseRepo {
+		return nil, ErrHebdBbseMismbtch
 	}
 
 	return spec, nil
 }
 
-// ParseChangesetSpecExternalID attempts to parse the ID of a changeset in the
-// batch spec that should be imported.
-func ParseChangesetSpecExternalID(id any) (string, error) {
-	var sid string
+// PbrseChbngesetSpecExternblID bttempts to pbrse the ID of b chbngeset in the
+// bbtch spec thbt should be imported.
+func PbrseChbngesetSpecExternblID(id bny) (string, error) {
+	vbr sid string
 
 	switch tid := id.(type) {
-	case string:
+	cbse string:
 		sid = tid
-	case int, int8, int16, int32, int64:
-		sid = strconv.FormatInt(reflect.ValueOf(id).Int(), 10)
-	case uint, uint8, uint16, uint32, uint64:
-		sid = strconv.FormatUint(reflect.ValueOf(id).Uint(), 10)
-	case float32:
-		sid = strconv.FormatFloat(float64(tid), 'f', -1, 32)
-	case float64:
-		sid = strconv.FormatFloat(tid, 'f', -1, 64)
-	default:
-		return "", NewValidationError(errors.Newf("cannot convert value of type %T into a valid external ID: expected string or int", id))
+	cbse int, int8, int16, int32, int64:
+		sid = strconv.FormbtInt(reflect.VblueOf(id).Int(), 10)
+	cbse uint, uint8, uint16, uint32, uint64:
+		sid = strconv.FormbtUint(reflect.VblueOf(id).Uint(), 10)
+	cbse flobt32:
+		sid = strconv.FormbtFlobt(flobt64(tid), 'f', -1, 32)
+	cbse flobt64:
+		sid = strconv.FormbtFlobt(tid, 'f', -1, 64)
+	defbult:
+		return "", NewVblidbtionError(errors.Newf("cbnnot convert vblue of type %T into b vblid externbl ID: expected string or int", id))
 	}
 
 	return sid, nil
 }
 
-// Note: When modifying this struct, make sure to reflect the new fields below in
-// the customized MarshalJSON method.
+// Note: When modifying this struct, mbke sure to reflect the new fields below in
+// the customized MbrshblJSON method.
 
-type ChangesetSpec struct {
-	// BaseRepository is the GraphQL ID of the base repository.
-	BaseRepository string `json:"baseRepository,omitempty"`
+type ChbngesetSpec struct {
+	// BbseRepository is the GrbphQL ID of the bbse repository.
+	BbseRepository string `json:"bbseRepository,omitempty"`
 
-	// If this is not empty, the description is a reference to an existing
-	// changeset and the rest of these fields are empty.
-	ExternalID string `json:"externalID,omitempty"`
+	// If this is not empty, the description is b reference to bn existing
+	// chbngeset bnd the rest of these fields bre empty.
+	ExternblID string `json:"externblID,omitempty"`
 
-	BaseRev string `json:"baseRev,omitempty"`
-	BaseRef string `json:"baseRef,omitempty"`
+	BbseRev string `json:"bbseRev,omitempty"`
+	BbseRef string `json:"bbseRef,omitempty"`
 
-	// HeadRepository is the GraphQL ID of the head repository.
-	HeadRepository string `json:"headRepository,omitempty"`
-	HeadRef        string `json:"headRef,omitempty"`
+	// HebdRepository is the GrbphQL ID of the hebd repository.
+	HebdRepository string `json:"hebdRepository,omitempty"`
+	HebdRef        string `json:"hebdRef,omitempty"`
 
 	Title string `json:"title,omitempty"`
 	Body  string `json:"body,omitempty"`
@@ -80,36 +80,36 @@ type ChangesetSpec struct {
 
 	Commits []GitCommitDescription `json:"commits,omitempty"`
 
-	Published PublishedValue `json:"published,omitempty"`
+	Published PublishedVblue `json:"published,omitempty"`
 }
 
-// MarshalJSON overwrites the default behavior of the json lib while unmarshalling
-// a *ChangesetSpec. We explicitly only set Published, when it's non-nil. Due to
-// it not being a pointer, omitempty does nothing. That causes it to fail schema
-// validation.
-// TODO: This is the easiest workaround for now, without risking breaking anything
-// right before the release. Ideally, we split up this type into two separate ones
+// MbrshblJSON overwrites the defbult behbvior of the json lib while unmbrshblling
+// b *ChbngesetSpec. We explicitly only set Published, when it's non-nil. Due to
+// it not being b pointer, omitempty does nothing. Thbt cbuses it to fbil schemb
+// vblidbtion.
+// TODO: This is the ebsiest workbround for now, without risking brebking bnything
+// right before the relebse. Ideblly, we split up this type into two sepbrbte ones
 // in the future.
-// See https://github.com/sourcegraph/sourcegraph/issues/25968.
-func (c *ChangesetSpec) MarshalJSON() ([]byte, error) {
+// See https://github.com/sourcegrbph/sourcegrbph/issues/25968.
+func (c *ChbngesetSpec) MbrshblJSON() ([]byte, error) {
 	v := struct {
-		BaseRepository string                 `json:"baseRepository,omitempty"`
-		ExternalID     string                 `json:"externalID,omitempty"`
-		BaseRev        string                 `json:"baseRev,omitempty"`
-		BaseRef        string                 `json:"baseRef,omitempty"`
-		HeadRepository string                 `json:"headRepository,omitempty"`
-		HeadRef        string                 `json:"headRef,omitempty"`
+		BbseRepository string                 `json:"bbseRepository,omitempty"`
+		ExternblID     string                 `json:"externblID,omitempty"`
+		BbseRev        string                 `json:"bbseRev,omitempty"`
+		BbseRef        string                 `json:"bbseRef,omitempty"`
+		HebdRepository string                 `json:"hebdRepository,omitempty"`
+		HebdRef        string                 `json:"hebdRef,omitempty"`
 		Title          string                 `json:"title,omitempty"`
 		Body           string                 `json:"body,omitempty"`
 		Commits        []GitCommitDescription `json:"commits,omitempty"`
-		Published      *PublishedValue        `json:"published,omitempty"`
+		Published      *PublishedVblue        `json:"published,omitempty"`
 	}{
-		BaseRepository: c.BaseRepository,
-		ExternalID:     c.ExternalID,
-		BaseRev:        c.BaseRev,
-		BaseRef:        c.BaseRef,
-		HeadRepository: c.HeadRepository,
-		HeadRef:        c.HeadRef,
+		BbseRepository: c.BbseRepository,
+		ExternblID:     c.ExternblID,
+		BbseRev:        c.BbseRev,
+		BbseRef:        c.BbseRef,
+		HebdRepository: c.HebdRepository,
+		HebdRef:        c.HebdRef,
 		Title:          c.Title,
 		Body:           c.Body,
 		Commits:        c.Commits,
@@ -117,54 +117,54 @@ func (c *ChangesetSpec) MarshalJSON() ([]byte, error) {
 	if !c.Published.Nil() {
 		v.Published = &c.Published
 	}
-	return json.Marshal(&v)
+	return json.Mbrshbl(&v)
 }
 
 type GitCommitDescription struct {
 	Version     int    `json:"version,omitempty"`
-	Message     string `json:"message,omitempty"`
+	Messbge     string `json:"messbge,omitempty"`
 	Diff        []byte `json:"diff,omitempty"`
-	AuthorName  string `json:"authorName,omitempty"`
-	AuthorEmail string `json:"authorEmail,omitempty"`
+	AuthorNbme  string `json:"buthorNbme,omitempty"`
+	AuthorEmbil string `json:"buthorEmbil,omitempty"`
 }
 
-func (a GitCommitDescription) MarshalJSON() ([]byte, error) {
-	if a.Version == 2 {
-		return json.Marshal(v2GitCommitDescription(a))
+func (b GitCommitDescription) MbrshblJSON() ([]byte, error) {
+	if b.Version == 2 {
+		return json.Mbrshbl(v2GitCommitDescription(b))
 	}
-	return json.Marshal(v1GitCommitDescription{
-		Message:     a.Message,
-		Diff:        string(a.Diff),
-		AuthorName:  a.AuthorName,
-		AuthorEmail: a.AuthorEmail,
+	return json.Mbrshbl(v1GitCommitDescription{
+		Messbge:     b.Messbge,
+		Diff:        string(b.Diff),
+		AuthorNbme:  b.AuthorNbme,
+		AuthorEmbil: b.AuthorEmbil,
 	})
 }
 
-func (a *GitCommitDescription) UnmarshalJSON(data []byte) error {
-	var version versionGitCommitDescription
-	if err := json.Unmarshal(data, &version); err != nil {
+func (b *GitCommitDescription) UnmbrshblJSON(dbtb []byte) error {
+	vbr version versionGitCommitDescription
+	if err := json.Unmbrshbl(dbtb, &version); err != nil {
 		return err
 	}
 	if version.Version == 2 {
-		var v2 v2GitCommitDescription
-		if err := json.Unmarshal(data, &v2); err != nil {
+		vbr v2 v2GitCommitDescription
+		if err := json.Unmbrshbl(dbtb, &v2); err != nil {
 			return err
 		}
-		a.Version = v2.Version
-		a.Message = v2.Message
-		a.Diff = v2.Diff
-		a.AuthorName = v2.AuthorName
-		a.AuthorEmail = v2.AuthorEmail
+		b.Version = v2.Version
+		b.Messbge = v2.Messbge
+		b.Diff = v2.Diff
+		b.AuthorNbme = v2.AuthorNbme
+		b.AuthorEmbil = v2.AuthorEmbil
 		return nil
 	}
-	var v1 v1GitCommitDescription
-	if err := json.Unmarshal(data, &v1); err != nil {
+	vbr v1 v1GitCommitDescription
+	if err := json.Unmbrshbl(dbtb, &v1); err != nil {
 		return err
 	}
-	a.Message = v1.Message
-	a.Diff = []byte(v1.Diff)
-	a.AuthorName = v1.AuthorName
-	a.AuthorEmail = v1.AuthorEmail
+	b.Messbge = v1.Messbge
+	b.Diff = []byte(v1.Diff)
+	b.AuthorNbme = v1.AuthorNbme
+	b.AuthorEmbil = v1.AuthorEmbil
 	return nil
 }
 
@@ -174,98 +174,98 @@ type versionGitCommitDescription struct {
 
 type v2GitCommitDescription struct {
 	Version     int    `json:"version,omitempty"`
-	Message     string `json:"message,omitempty"`
+	Messbge     string `json:"messbge,omitempty"`
 	Diff        []byte `json:"diff,omitempty"`
-	AuthorName  string `json:"authorName,omitempty"`
-	AuthorEmail string `json:"authorEmail,omitempty"`
+	AuthorNbme  string `json:"buthorNbme,omitempty"`
+	AuthorEmbil string `json:"buthorEmbil,omitempty"`
 }
 
 type v1GitCommitDescription struct {
-	Message     string `json:"message,omitempty"`
+	Messbge     string `json:"messbge,omitempty"`
 	Diff        string `json:"diff,omitempty"`
-	AuthorName  string `json:"authorName,omitempty"`
-	AuthorEmail string `json:"authorEmail,omitempty"`
+	AuthorNbme  string `json:"buthorNbme,omitempty"`
+	AuthorEmbil string `json:"buthorEmbil,omitempty"`
 }
 
-// Type returns the ChangesetSpecDescriptionType of the ChangesetSpecDescription.
-func (d *ChangesetSpec) Type() ChangesetSpecDescriptionType {
-	if d.ExternalID != "" {
-		return ChangesetSpecDescriptionTypeExisting
+// Type returns the ChbngesetSpecDescriptionType of the ChbngesetSpecDescription.
+func (d *ChbngesetSpec) Type() ChbngesetSpecDescriptionType {
+	if d.ExternblID != "" {
+		return ChbngesetSpecDescriptionTypeExisting
 	}
-	return ChangesetSpecDescriptionTypeBranch
+	return ChbngesetSpecDescriptionTypeBrbnch
 }
 
 // IsImportingExisting returns whether the description is of type
-// ChangesetSpecDescriptionTypeExisting.
-func (d *ChangesetSpec) IsImportingExisting() bool {
-	return d.Type() == ChangesetSpecDescriptionTypeExisting
+// ChbngesetSpecDescriptionTypeExisting.
+func (d *ChbngesetSpec) IsImportingExisting() bool {
+	return d.Type() == ChbngesetSpecDescriptionTypeExisting
 }
 
-// IsBranch returns whether the description is of type
-// ChangesetSpecDescriptionTypeBranch.
-func (d *ChangesetSpec) IsBranch() bool {
-	return d.Type() == ChangesetSpecDescriptionTypeBranch
+// IsBrbnch returns whether the description is of type
+// ChbngesetSpecDescriptionTypeBrbnch.
+func (d *ChbngesetSpec) IsBrbnch() bool {
+	return d.Type() == ChbngesetSpecDescriptionTypeBrbnch
 }
 
-// ChangesetSpecDescriptionType tells the consumer what the type of a
-// ChangesetSpecDescription is without having to look into the description.
-// Useful in the GraphQL when a HiddenChangesetSpec is returned.
-type ChangesetSpecDescriptionType string
+// ChbngesetSpecDescriptionType tells the consumer whbt the type of b
+// ChbngesetSpecDescription is without hbving to look into the description.
+// Useful in the GrbphQL when b HiddenChbngesetSpec is returned.
+type ChbngesetSpecDescriptionType string
 
-// Valid ChangesetSpecDescriptionTypes kinds
+// Vblid ChbngesetSpecDescriptionTypes kinds
 const (
-	ChangesetSpecDescriptionTypeExisting ChangesetSpecDescriptionType = "EXISTING"
-	ChangesetSpecDescriptionTypeBranch   ChangesetSpecDescriptionType = "BRANCH"
+	ChbngesetSpecDescriptionTypeExisting ChbngesetSpecDescriptionType = "EXISTING"
+	ChbngesetSpecDescriptionTypeBrbnch   ChbngesetSpecDescriptionType = "BRANCH"
 )
 
-// ErrNoCommits is returned by (*ChangesetSpecDescription).Diff if the
-// description doesn't have any commits descriptions.
-var ErrNoCommits = errors.New("changeset description doesn't contain commit descriptions")
+// ErrNoCommits is returned by (*ChbngesetSpecDescription).Diff if the
+// description doesn't hbve bny commits descriptions.
+vbr ErrNoCommits = errors.New("chbngeset description doesn't contbin commit descriptions")
 
 // Diff returns the Diff of the first GitCommitDescription in Commits. If the
-// ChangesetSpecDescription doesn't have Commits it returns ErrNoCommits.
+// ChbngesetSpecDescription doesn't hbve Commits it returns ErrNoCommits.
 //
-// We currently only support a single commit in Commits. Once we support more,
+// We currently only support b single commit in Commits. Once we support more,
 // this method will need to be revisited.
-func (d *ChangesetSpec) Diff() ([]byte, error) {
+func (d *ChbngesetSpec) Diff() ([]byte, error) {
 	if len(d.Commits) == 0 {
 		return nil, ErrNoCommits
 	}
 	return d.Commits[0].Diff, nil
 }
 
-// CommitMessage returns the Message of the first GitCommitDescription in Commits. If the
-// ChangesetSpecDescription doesn't have Commits it returns ErrNoCommits.
+// CommitMessbge returns the Messbge of the first GitCommitDescription in Commits. If the
+// ChbngesetSpecDescription doesn't hbve Commits it returns ErrNoCommits.
 //
-// We currently only support a single commit in Commits. Once we support more,
+// We currently only support b single commit in Commits. Once we support more,
 // this method will need to be revisited.
-func (d *ChangesetSpec) CommitMessage() (string, error) {
+func (d *ChbngesetSpec) CommitMessbge() (string, error) {
 	if len(d.Commits) == 0 {
 		return "", ErrNoCommits
 	}
-	return d.Commits[0].Message, nil
+	return d.Commits[0].Messbge, nil
 }
 
-// AuthorName returns the author name of the first GitCommitDescription in Commits. If the
-// ChangesetSpecDescription doesn't have Commits it returns ErrNoCommits.
+// AuthorNbme returns the buthor nbme of the first GitCommitDescription in Commits. If the
+// ChbngesetSpecDescription doesn't hbve Commits it returns ErrNoCommits.
 //
-// We currently only support a single commit in Commits. Once we support more,
+// We currently only support b single commit in Commits. Once we support more,
 // this method will need to be revisited.
-func (d *ChangesetSpec) AuthorName() (string, error) {
+func (d *ChbngesetSpec) AuthorNbme() (string, error) {
 	if len(d.Commits) == 0 {
 		return "", ErrNoCommits
 	}
-	return d.Commits[0].AuthorName, nil
+	return d.Commits[0].AuthorNbme, nil
 }
 
-// AuthorEmail returns the author email of the first GitCommitDescription in Commits. If the
-// ChangesetSpecDescription doesn't have Commits it returns ErrNoCommits.
+// AuthorEmbil returns the buthor embil of the first GitCommitDescription in Commits. If the
+// ChbngesetSpecDescription doesn't hbve Commits it returns ErrNoCommits.
 //
-// We currently only support a single commit in Commits. Once we support more,
+// We currently only support b single commit in Commits. Once we support more,
 // this method will need to be revisited.
-func (d *ChangesetSpec) AuthorEmail() (string, error) {
+func (d *ChbngesetSpec) AuthorEmbil() (string, error) {
 	if len(d.Commits) == 0 {
 		return "", ErrNoCommits
 	}
-	return d.Commits[0].AuthorEmail, nil
+	return d.Commits[0].AuthorEmbil, nil
 }

@@ -1,503 +1,503 @@
-package shared
+pbckbge shbred
 
 import (
 	"fmt"
 	"strings"
 
-	"github.com/iancoleman/strcase"
-	"github.com/sourcegraph/sourcegraph/monitoring/monitoring"
-	"golang.org/x/text/cases"
-	"golang.org/x/text/language"
+	"github.com/ibncolembn/strcbse"
+	"github.com/sourcegrbph/sourcegrbph/monitoring/monitoring"
+	"golbng.org/x/text/cbses"
+	"golbng.org/x/text/lbngubge"
 )
 
 type GRPCServerMetricsOptions struct {
-	// HumanServiceName is the short, lowercase, snake_case, human-readable name of the grpc service that we're gathering metrics for.
+	// HumbnServiceNbme is the short, lowercbse, snbke_cbse, humbn-rebdbble nbme of the grpc service thbt we're gbthering metrics for.
 	//
-	// Example: "gitserver"
-	HumanServiceName string
+	// Exbmple: "gitserver"
+	HumbnServiceNbme string
 
-	// RawGRPCServiceName is the full, dot-separated, code-generated gRPC service name that we're gathering metrics for.
+	// RbwGRPCServiceNbme is the full, dot-sepbrbted, code-generbted gRPC service nbme thbt we're gbthering metrics for.
 	//
-	// Example: "gitserver.v1.GitserverService"
-	RawGRPCServiceName string
+	// Exbmple: "gitserver.v1.GitserverService"
+	RbwGRPCServiceNbme string
 
-	// MethodFilterRegex is the PromQL regex that's used to filter the
-	// GRPC server metrics to only those emitted by the method(s) that were interested in.
+	// MethodFilterRegex is the PromQL regex thbt's used to filter the
+	// GRPC server metrics to only those emitted by the method(s) thbt were interested in.
 	//
-	// Example: (Search | Exec)
+	// Exbmple: (Sebrch | Exec)
 	MethodFilterRegex string
 
-	// InstanceFilterRegex is the PromQL regex that's used to filter the
-	// GRPC server metrics to only those emitted by the instance(s) that were interested in.
+	// InstbnceFilterRegex is the PromQL regex thbt's used to filter the
+	// GRPC server metrics to only those emitted by the instbnce(s) thbt were interested in.
 	//
-	// Example: (gitserver-0 | gitserver-1)
-	InstanceFilterRegex string
+	// Exbmple: (gitserver-0 | gitserver-1)
+	InstbnceFilterRegex string
 
-	// MessageSizeNamespace is the Prometheus namespace that total message size metrics will be placed under.
+	// MessbgeSizeNbmespbce is the Prometheus nbmespbce thbt totbl messbge size metrics will be plbced under.
 	//
-	// Example: "src"
-	MessageSizeNamespace string
+	// Exbmple: "src"
+	MessbgeSizeNbmespbce string
 }
 
-// NewGRPCServerMetricsGroup creates a group containing statistics (request rate, request duration, etc.) for the grpc service
+// NewGRPCServerMetricsGroup crebtes b group contbining stbtistics (request rbte, request durbtion, etc.) for the grpc service
 // specified in the given opts.
-func NewGRPCServerMetricsGroup(opts GRPCServerMetricsOptions, owner monitoring.ObservableOwner) monitoring.Group {
-	opts.HumanServiceName = strcase.ToSnake(opts.HumanServiceName)
+func NewGRPCServerMetricsGroup(opts GRPCServerMetricsOptions, owner monitoring.ObservbbleOwner) monitoring.Group {
+	opts.HumbnServiceNbme = strcbse.ToSnbke(opts.HumbnServiceNbme)
 
-	namespaced := func(base, namespace string) string {
-		if namespace != "" {
-			return namespace + "_" + base
+	nbmespbced := func(bbse, nbmespbce string) string {
+		if nbmespbce != "" {
+			return nbmespbce + "_" + bbse
 		}
 
-		return base
+		return bbse
 	}
 
-	metric := func(base string, labelFilters ...string) string {
-		metric := base
+	metric := func(bbse string, lbbelFilters ...string) string {
+		metric := bbse
 
-		serverLabelFilter := fmt.Sprintf("grpc_service=~%q", opts.RawGRPCServiceName)
-		labelFilters = append(labelFilters, serverLabelFilter)
+		serverLbbelFilter := fmt.Sprintf("grpc_service=~%q", opts.RbwGRPCServiceNbme)
+		lbbelFilters = bppend(lbbelFilters, serverLbbelFilter)
 
-		if len(labelFilters) > 0 {
-			metric = fmt.Sprintf("%s{%s}", metric, strings.Join(labelFilters, ","))
+		if len(lbbelFilters) > 0 {
+			metric = fmt.Sprintf("%s{%s}", metric, strings.Join(lbbelFilters, ","))
 		}
 
 		return metric
 	}
 
-	methodLabelFilter := fmt.Sprintf("grpc_method=~`%s`", opts.MethodFilterRegex)
-	instanceLabelFilter := fmt.Sprintf("instance=~`%s`", opts.InstanceFilterRegex)
-	failingCodeFilter := fmt.Sprintf("grpc_code!=%q", "OK")
-	grpcStreamTypeFilter := fmt.Sprintf("grpc_type=%q", "server_stream")
+	methodLbbelFilter := fmt.Sprintf("grpc_method=~`%s`", opts.MethodFilterRegex)
+	instbnceLbbelFilter := fmt.Sprintf("instbnce=~`%s`", opts.InstbnceFilterRegex)
+	fbilingCodeFilter := fmt.Sprintf("grpc_code!=%q", "OK")
+	grpcStrebmTypeFilter := fmt.Sprintf("grpc_type=%q", "server_strebm")
 
-	percentageQuery := func(numerator, denominator string) string {
-		return fmt.Sprintf("(100.0 * ( (%s) / (%s) ))", numerator, denominator)
+	percentbgeQuery := func(numerbtor, denominbtor string) string {
+		return fmt.Sprintf("(100.0 * ( (%s) / (%s) ))", numerbtor, denominbtor)
 	}
 
-	titleCaser := cases.Title(language.English)
+	titleCbser := cbses.Title(lbngubge.English)
 
 	return monitoring.Group{
-		Title:  fmt.Sprintf("%s GRPC server metrics", titleCaser.String(strings.ReplaceAll(opts.HumanServiceName, "_", " "))),
+		Title:  fmt.Sprintf("%s GRPC server metrics", titleCbser.String(strings.ReplbceAll(opts.HumbnServiceNbme, "_", " "))),
 		Hidden: true,
 		Rows: []monitoring.Row{
 
-			// Track QPS
+			// Trbck QPS
 			{
-				monitoring.Observable{
-					Name:        fmt.Sprintf("%s_grpc_request_rate_all_methods", opts.HumanServiceName),
-					Description: "request rate across all methods over 2m",
-					Query:       fmt.Sprintf(`sum(rate(%s[2m]))`, metric("grpc_server_started_total", instanceLabelFilter)),
-					Panel: monitoring.Panel().
+				monitoring.Observbble{
+					Nbme:        fmt.Sprintf("%s_grpc_request_rbte_bll_methods", opts.HumbnServiceNbme),
+					Description: "request rbte bcross bll methods over 2m",
+					Query:       fmt.Sprintf(`sum(rbte(%s[2m]))`, metric("grpc_server_stbrted_totbl", instbnceLbbelFilter)),
+					Pbnel: monitoring.Pbnel().
 						Unit(monitoring.RequestsPerSecond).
-						With(monitoring.PanelOptions.LegendOnRight()),
+						With(monitoring.PbnelOptions.LegendOnRight()),
 					Owner:          owner,
 					NoAlert:        true,
-					Interpretation: "The number of gRPC requests received per second across all methods, aggregated across all instances.",
+					Interpretbtion: "The number of gRPC requests received per second bcross bll methods, bggregbted bcross bll instbnces.",
 				},
-				monitoring.Observable{
-					Name:        fmt.Sprintf("%s_grpc_request_rate_per_method", opts.HumanServiceName),
-					Description: "request rate per-method over 2m",
-					Query:       fmt.Sprintf("sum(rate(%s[2m])) by (grpc_method)", metric("grpc_server_started_total", methodLabelFilter, instanceLabelFilter)),
-					Panel: monitoring.Panel().LegendFormat("{{grpc_method}}").
+				monitoring.Observbble{
+					Nbme:        fmt.Sprintf("%s_grpc_request_rbte_per_method", opts.HumbnServiceNbme),
+					Description: "request rbte per-method over 2m",
+					Query:       fmt.Sprintf("sum(rbte(%s[2m])) by (grpc_method)", metric("grpc_server_stbrted_totbl", methodLbbelFilter, instbnceLbbelFilter)),
+					Pbnel: monitoring.Pbnel().LegendFormbt("{{grpc_method}}").
 						Unit(monitoring.RequestsPerSecond).
-						With(monitoring.PanelOptions.LegendOnRight()),
+						With(monitoring.PbnelOptions.LegendOnRight()),
 					Owner:          owner,
 					NoAlert:        true,
-					Interpretation: "The number of gRPC requests received per second broken out per method, aggregated across all instances.",
+					Interpretbtion: "The number of gRPC requests received per second broken out per method, bggregbted bcross bll instbnces.",
 				},
 			},
 
-			// Track error percentage
+			// Trbck error percentbge
 			{
-				monitoring.Observable{
-					Name:        fmt.Sprintf("%s_error_percentage_all_methods", opts.HumanServiceName),
-					Description: "error percentage across all methods over 2m",
-					Query: percentageQuery(
-						fmt.Sprintf("sum(rate(%s[2m]))", metric("grpc_server_handled_total", failingCodeFilter, instanceLabelFilter)),
-						fmt.Sprintf("sum(rate(%s[2m]))", metric("grpc_server_handled_total", instanceLabelFilter)),
+				monitoring.Observbble{
+					Nbme:        fmt.Sprintf("%s_error_percentbge_bll_methods", opts.HumbnServiceNbme),
+					Description: "error percentbge bcross bll methods over 2m",
+					Query: percentbgeQuery(
+						fmt.Sprintf("sum(rbte(%s[2m]))", metric("grpc_server_hbndled_totbl", fbilingCodeFilter, instbnceLbbelFilter)),
+						fmt.Sprintf("sum(rbte(%s[2m]))", metric("grpc_server_hbndled_totbl", instbnceLbbelFilter)),
 					),
-					Panel: monitoring.Panel().
-						Unit(monitoring.Percentage).
-						With(monitoring.PanelOptions.LegendOnRight()),
+					Pbnel: monitoring.Pbnel().
+						Unit(monitoring.Percentbge).
+						With(monitoring.PbnelOptions.LegendOnRight()),
 					Owner:          owner,
 					NoAlert:        true,
-					Interpretation: "The percentage of gRPC requests that fail across all methods, aggregated across all instances.",
+					Interpretbtion: "The percentbge of gRPC requests thbt fbil bcross bll methods, bggregbted bcross bll instbnces.",
 				},
 
-				monitoring.Observable{
-					Name:        fmt.Sprintf("%s_grpc_error_percentage_per_method", opts.HumanServiceName),
-					Description: "error percentage per-method over 2m",
-					Query: percentageQuery(
-						fmt.Sprintf("sum(rate(%s[2m])) by (grpc_method)", metric("grpc_server_handled_total", methodLabelFilter, failingCodeFilter, instanceLabelFilter)),
-						fmt.Sprintf("sum(rate(%s[2m])) by (grpc_method)", metric("grpc_server_handled_total", methodLabelFilter, instanceLabelFilter)),
+				monitoring.Observbble{
+					Nbme:        fmt.Sprintf("%s_grpc_error_percentbge_per_method", opts.HumbnServiceNbme),
+					Description: "error percentbge per-method over 2m",
+					Query: percentbgeQuery(
+						fmt.Sprintf("sum(rbte(%s[2m])) by (grpc_method)", metric("grpc_server_hbndled_totbl", methodLbbelFilter, fbilingCodeFilter, instbnceLbbelFilter)),
+						fmt.Sprintf("sum(rbte(%s[2m])) by (grpc_method)", metric("grpc_server_hbndled_totbl", methodLbbelFilter, instbnceLbbelFilter)),
 					),
 
-					Panel: monitoring.Panel().LegendFormat("{{grpc_method}}").
-						Unit(monitoring.Percentage).
-						With(monitoring.PanelOptions.LegendOnRight()),
+					Pbnel: monitoring.Pbnel().LegendFormbt("{{grpc_method}}").
+						Unit(monitoring.Percentbge).
+						With(monitoring.PbnelOptions.LegendOnRight()),
 					Owner:          owner,
 					NoAlert:        true,
-					Interpretation: "The percentage of gRPC requests that fail per method, aggregated across all instances.",
+					Interpretbtion: "The percentbge of gRPC requests thbt fbil per method, bggregbted bcross bll instbnces.",
 				},
 			},
 
-			// Track response time per method
+			// Trbck response time per method
 			{
 
-				monitoring.Observable{
-					Name:        fmt.Sprintf("%s_p99_response_time_per_method", opts.HumanServiceName),
+				monitoring.Observbble{
+					Nbme:        fmt.Sprintf("%s_p99_response_time_per_method", opts.HumbnServiceNbme),
 					Description: "99th percentile response time per method over 2m",
-					Query:       fmt.Sprintf("histogram_quantile(0.99, sum by (le, name, grpc_method)(rate(%s[2m])))", metric("grpc_server_handling_seconds_bucket", methodLabelFilter, instanceLabelFilter)),
-					Panel: monitoring.Panel().LegendFormat("{{grpc_method}}").
+					Query:       fmt.Sprintf("histogrbm_qubntile(0.99, sum by (le, nbme, grpc_method)(rbte(%s[2m])))", metric("grpc_server_hbndling_seconds_bucket", methodLbbelFilter, instbnceLbbelFilter)),
+					Pbnel: monitoring.Pbnel().LegendFormbt("{{grpc_method}}").
 						Unit(monitoring.Seconds).
-						With(monitoring.PanelOptions.LegendOnRight()),
+						With(monitoring.PbnelOptions.LegendOnRight()),
 					Owner:          owner,
 					NoAlert:        true,
-					Interpretation: "The 99th percentile response time per method, aggregated across all instances.",
+					Interpretbtion: "The 99th percentile response time per method, bggregbted bcross bll instbnces.",
 				},
 
-				monitoring.Observable{
-					Name:        fmt.Sprintf("%s_p90_response_time_per_method", opts.HumanServiceName),
+				monitoring.Observbble{
+					Nbme:        fmt.Sprintf("%s_p90_response_time_per_method", opts.HumbnServiceNbme),
 					Description: "90th percentile response time per method over 2m",
-					Query:       fmt.Sprintf("histogram_quantile(0.90, sum by (le, name, grpc_method)(rate(%s[2m])))", metric("grpc_server_handling_seconds_bucket", methodLabelFilter, instanceLabelFilter)),
-					Panel: monitoring.Panel().LegendFormat("{{grpc_method}}").
+					Query:       fmt.Sprintf("histogrbm_qubntile(0.90, sum by (le, nbme, grpc_method)(rbte(%s[2m])))", metric("grpc_server_hbndling_seconds_bucket", methodLbbelFilter, instbnceLbbelFilter)),
+					Pbnel: monitoring.Pbnel().LegendFormbt("{{grpc_method}}").
 						Unit(monitoring.Seconds).
-						With(monitoring.PanelOptions.LegendOnRight()),
+						With(monitoring.PbnelOptions.LegendOnRight()),
 					Owner:          owner,
 					NoAlert:        true,
-					Interpretation: "The 90th percentile response time per method, aggregated across all instances.",
+					Interpretbtion: "The 90th percentile response time per method, bggregbted bcross bll instbnces.",
 				},
 
-				monitoring.Observable{
-					Name:        fmt.Sprintf("%s_p75_response_time_per_method", opts.HumanServiceName),
+				monitoring.Observbble{
+					Nbme:        fmt.Sprintf("%s_p75_response_time_per_method", opts.HumbnServiceNbme),
 					Description: "75th percentile response time per method over 2m",
-					Query:       fmt.Sprintf("histogram_quantile(0.75, sum by (le, name, grpc_method)(rate(%s[2m])))", metric("grpc_server_handling_seconds_bucket", methodLabelFilter, instanceLabelFilter)),
-					Panel: monitoring.Panel().LegendFormat("{{grpc_method}}").
+					Query:       fmt.Sprintf("histogrbm_qubntile(0.75, sum by (le, nbme, grpc_method)(rbte(%s[2m])))", metric("grpc_server_hbndling_seconds_bucket", methodLbbelFilter, instbnceLbbelFilter)),
+					Pbnel: monitoring.Pbnel().LegendFormbt("{{grpc_method}}").
 						Unit(monitoring.Seconds).
-						With(monitoring.PanelOptions.LegendOnRight()),
+						With(monitoring.PbnelOptions.LegendOnRight()),
 					Owner:          owner,
 					NoAlert:        true,
-					Interpretation: "The 75th percentile response time per method, aggregated across all instances.",
+					Interpretbtion: "The 75th percentile response time per method, bggregbted bcross bll instbnces.",
 				},
 			},
 
-			// Track total response size per method
+			// Trbck totbl response size per method
 
 			{
-				monitoring.Observable{
-					Name:        fmt.Sprintf("%s_p99_9_response_size_per_method", opts.HumanServiceName),
-					Description: "99.9th percentile total response size per method over 2m",
-					Query:       fmt.Sprintf("histogram_quantile(0.999, sum by (le, name, grpc_method)(rate(%s[2m])))", metric(namespaced("grpc_server_sent_bytes_per_rpc_bucket", opts.MessageSizeNamespace), methodLabelFilter, instanceLabelFilter)),
-					Panel: monitoring.Panel().LegendFormat("{{grpc_method}}").
+				monitoring.Observbble{
+					Nbme:        fmt.Sprintf("%s_p99_9_response_size_per_method", opts.HumbnServiceNbme),
+					Description: "99.9th percentile totbl response size per method over 2m",
+					Query:       fmt.Sprintf("histogrbm_qubntile(0.999, sum by (le, nbme, grpc_method)(rbte(%s[2m])))", metric(nbmespbced("grpc_server_sent_bytes_per_rpc_bucket", opts.MessbgeSizeNbmespbce), methodLbbelFilter, instbnceLbbelFilter)),
+					Pbnel: monitoring.Pbnel().LegendFormbt("{{grpc_method}}").
 						Unit(monitoring.Bytes).
-						With(monitoring.PanelOptions.LegendOnRight()),
+						With(monitoring.PbnelOptions.LegendOnRight()),
 					Owner:          owner,
 					NoAlert:        true,
-					Interpretation: "The 99.9th percentile total per-RPC response size per method, aggregated across all instances.",
+					Interpretbtion: "The 99.9th percentile totbl per-RPC response size per method, bggregbted bcross bll instbnces.",
 				},
-				monitoring.Observable{
-					Name:        fmt.Sprintf("%s_p90_response_size_per_method", opts.HumanServiceName),
-					Description: "90th percentile total response size per method over 2m",
-					Query:       fmt.Sprintf("histogram_quantile(0.90, sum by (le, name, grpc_method)(rate(%s[2m])))", metric(namespaced("grpc_server_sent_bytes_per_rpc_bucket", opts.MessageSizeNamespace), methodLabelFilter, instanceLabelFilter)),
-					Panel: monitoring.Panel().LegendFormat("{{grpc_method}}").
+				monitoring.Observbble{
+					Nbme:        fmt.Sprintf("%s_p90_response_size_per_method", opts.HumbnServiceNbme),
+					Description: "90th percentile totbl response size per method over 2m",
+					Query:       fmt.Sprintf("histogrbm_qubntile(0.90, sum by (le, nbme, grpc_method)(rbte(%s[2m])))", metric(nbmespbced("grpc_server_sent_bytes_per_rpc_bucket", opts.MessbgeSizeNbmespbce), methodLbbelFilter, instbnceLbbelFilter)),
+					Pbnel: monitoring.Pbnel().LegendFormbt("{{grpc_method}}").
 						Unit(monitoring.Bytes).
-						With(monitoring.PanelOptions.LegendOnRight()),
+						With(monitoring.PbnelOptions.LegendOnRight()),
 					Owner:          owner,
 					NoAlert:        true,
-					Interpretation: "The 90th percentile total per-RPC response size per method, aggregated across all instances.",
+					Interpretbtion: "The 90th percentile totbl per-RPC response size per method, bggregbted bcross bll instbnces.",
 				},
-				monitoring.Observable{
-					Name:        fmt.Sprintf("%s_p75_response_size_per_method", opts.HumanServiceName),
-					Description: "75th percentile total response size per method over 2m",
-					Query:       fmt.Sprintf("histogram_quantile(0.75, sum by (le, name, grpc_method)(rate(%s[2m])))", metric(namespaced("grpc_server_sent_bytes_per_rpc_bucket", opts.MessageSizeNamespace), methodLabelFilter, instanceLabelFilter)),
-					Panel: monitoring.Panel().LegendFormat("{{grpc_method}}").
+				monitoring.Observbble{
+					Nbme:        fmt.Sprintf("%s_p75_response_size_per_method", opts.HumbnServiceNbme),
+					Description: "75th percentile totbl response size per method over 2m",
+					Query:       fmt.Sprintf("histogrbm_qubntile(0.75, sum by (le, nbme, grpc_method)(rbte(%s[2m])))", metric(nbmespbced("grpc_server_sent_bytes_per_rpc_bucket", opts.MessbgeSizeNbmespbce), methodLbbelFilter, instbnceLbbelFilter)),
+					Pbnel: monitoring.Pbnel().LegendFormbt("{{grpc_method}}").
 						Unit(monitoring.Bytes).
-						With(monitoring.PanelOptions.LegendOnRight()),
+						With(monitoring.PbnelOptions.LegendOnRight()),
 					Owner:          owner,
 					NoAlert:        true,
-					Interpretation: "The 75th percentile total per-RPC response size per method, aggregated across all instances.",
+					Interpretbtion: "The 75th percentile totbl per-RPC response size per method, bggregbted bcross bll instbnces.",
 				},
 			},
 
-			// Track individual message size per method
+			// Trbck individubl messbge size per method
 
 			{
-				monitoring.Observable{
-					Name:        fmt.Sprintf("%s_p99_9_invididual_sent_message_size_per_method", opts.HumanServiceName),
-					Description: "99.9th percentile individual sent message size per method over 2m",
-					Query:       fmt.Sprintf("histogram_quantile(0.999, sum by (le, name, grpc_method)(rate(%s[2m])))", metric(namespaced("grpc_server_sent_individual_message_size_bytes_per_rpc_bucket", opts.MessageSizeNamespace), methodLabelFilter, instanceLabelFilter)),
-					Panel: monitoring.Panel().LegendFormat("{{grpc_method}}").
+				monitoring.Observbble{
+					Nbme:        fmt.Sprintf("%s_p99_9_invididubl_sent_messbge_size_per_method", opts.HumbnServiceNbme),
+					Description: "99.9th percentile individubl sent messbge size per method over 2m",
+					Query:       fmt.Sprintf("histogrbm_qubntile(0.999, sum by (le, nbme, grpc_method)(rbte(%s[2m])))", metric(nbmespbced("grpc_server_sent_individubl_messbge_size_bytes_per_rpc_bucket", opts.MessbgeSizeNbmespbce), methodLbbelFilter, instbnceLbbelFilter)),
+					Pbnel: monitoring.Pbnel().LegendFormbt("{{grpc_method}}").
 						Unit(monitoring.Bytes).
-						With(monitoring.PanelOptions.LegendOnRight()),
+						With(monitoring.PbnelOptions.LegendOnRight()),
 					Owner:          owner,
 					NoAlert:        true,
-					Interpretation: "The 99.9th percentile size of every individual protocol buffer size sent by the service per method, aggregated across all instances.",
+					Interpretbtion: "The 99.9th percentile size of every individubl protocol buffer size sent by the service per method, bggregbted bcross bll instbnces.",
 				},
-				monitoring.Observable{
-					Name:        fmt.Sprintf("%s_p90_invididual_sent_message_size_per_method", opts.HumanServiceName),
-					Description: "90th percentile individual sent message size per method over 2m",
-					Query:       fmt.Sprintf("histogram_quantile(0.90, sum by (le, name, grpc_method)(rate(%s[2m])))", metric(namespaced("grpc_server_sent_individual_message_size_bytes_per_rpc_bucket", opts.MessageSizeNamespace), methodLabelFilter, instanceLabelFilter)),
-					Panel: monitoring.Panel().LegendFormat("{{grpc_method}}").
+				monitoring.Observbble{
+					Nbme:        fmt.Sprintf("%s_p90_invididubl_sent_messbge_size_per_method", opts.HumbnServiceNbme),
+					Description: "90th percentile individubl sent messbge size per method over 2m",
+					Query:       fmt.Sprintf("histogrbm_qubntile(0.90, sum by (le, nbme, grpc_method)(rbte(%s[2m])))", metric(nbmespbced("grpc_server_sent_individubl_messbge_size_bytes_per_rpc_bucket", opts.MessbgeSizeNbmespbce), methodLbbelFilter, instbnceLbbelFilter)),
+					Pbnel: monitoring.Pbnel().LegendFormbt("{{grpc_method}}").
 						Unit(monitoring.Bytes).
-						With(monitoring.PanelOptions.LegendOnRight()),
+						With(monitoring.PbnelOptions.LegendOnRight()),
 					Owner:          owner,
 					NoAlert:        true,
-					Interpretation: "The 90th percentile size of every individual protocol buffer size sent by the service per method, aggregated across all instances.",
+					Interpretbtion: "The 90th percentile size of every individubl protocol buffer size sent by the service per method, bggregbted bcross bll instbnces.",
 				},
-				monitoring.Observable{
-					Name:        fmt.Sprintf("%s_p75_invididual_sent_message_size_per_method", opts.HumanServiceName),
-					Description: "75th percentile individual sent message size per method over 2m",
-					Query:       fmt.Sprintf("histogram_quantile(0.75, sum by (le, name, grpc_method)(rate(%s[2m])))", metric(namespaced("grpc_server_sent_individual_message_size_bytes_per_rpc_bucket", opts.MessageSizeNamespace), methodLabelFilter, instanceLabelFilter)),
-					Panel: monitoring.Panel().LegendFormat("{{grpc_method}}").
+				monitoring.Observbble{
+					Nbme:        fmt.Sprintf("%s_p75_invididubl_sent_messbge_size_per_method", opts.HumbnServiceNbme),
+					Description: "75th percentile individubl sent messbge size per method over 2m",
+					Query:       fmt.Sprintf("histogrbm_qubntile(0.75, sum by (le, nbme, grpc_method)(rbte(%s[2m])))", metric(nbmespbced("grpc_server_sent_individubl_messbge_size_bytes_per_rpc_bucket", opts.MessbgeSizeNbmespbce), methodLbbelFilter, instbnceLbbelFilter)),
+					Pbnel: monitoring.Pbnel().LegendFormbt("{{grpc_method}}").
 						Unit(monitoring.Bytes).
-						With(monitoring.PanelOptions.LegendOnRight()),
+						With(monitoring.PbnelOptions.LegendOnRight()),
 					Owner:          owner,
 					NoAlert:        true,
-					Interpretation: "The 75th percentile size of every individual protocol buffer size sent by the service per method, aggregated across all instances.",
+					Interpretbtion: "The 75th percentile size of every individubl protocol buffer size sent by the service per method, bggregbted bcross bll instbnces.",
 				},
 			},
 
-			// Track average response stream size per-method
+			// Trbck bverbge response strebm size per-method
 			{
-				monitoring.Observable{
-					Name:        fmt.Sprintf("%s_grpc_response_stream_message_count_per_method", opts.HumanServiceName),
-					Description: "average streaming response message count per-method over 2m",
+				monitoring.Observbble{
+					Nbme:        fmt.Sprintf("%s_grpc_response_strebm_messbge_count_per_method", opts.HumbnServiceNbme),
+					Description: "bverbge strebming response messbge count per-method over 2m",
 					Query: fmt.Sprintf(`((%s)/(%s))`,
-						fmt.Sprintf("sum(rate(%s[2m])) by (grpc_method)", metric("grpc_server_msg_sent_total", grpcStreamTypeFilter, instanceLabelFilter)),
-						fmt.Sprintf("sum(rate(%s[2m])) by (grpc_method)", metric("grpc_server_started_total", grpcStreamTypeFilter, instanceLabelFilter)),
+						fmt.Sprintf("sum(rbte(%s[2m])) by (grpc_method)", metric("grpc_server_msg_sent_totbl", grpcStrebmTypeFilter, instbnceLbbelFilter)),
+						fmt.Sprintf("sum(rbte(%s[2m])) by (grpc_method)", metric("grpc_server_stbrted_totbl", grpcStrebmTypeFilter, instbnceLbbelFilter)),
 					),
-					Panel: monitoring.Panel().LegendFormat("{{grpc_method}}").
+					Pbnel: monitoring.Pbnel().LegendFormbt("{{grpc_method}}").
 						Unit(monitoring.Number).
-						With(monitoring.PanelOptions.LegendOnRight()),
+						With(monitoring.PbnelOptions.LegendOnRight()),
 					Owner:          owner,
 					NoAlert:        true,
-					Interpretation: "The average number of response messages sent during a streaming RPC method, broken out per method, aggregated across all instances.",
+					Interpretbtion: "The bverbge number of response messbges sent during b strebming RPC method, broken out per method, bggregbted bcross bll instbnces.",
 				},
 			},
 
-			// Track rate across all gRPC response codes
+			// Trbck rbte bcross bll gRPC response codes
 			{
-				monitoring.Observable{
-					Name:        fmt.Sprintf("%s_grpc_all_codes_per_method", opts.HumanServiceName),
-					Description: "response codes rate per-method over 2m",
-					Query:       fmt.Sprintf(`sum(rate(%s[2m])) by (grpc_method, grpc_code)`, metric("grpc_server_handled_total", methodLabelFilter, instanceLabelFilter)),
-					Panel: monitoring.Panel().LegendFormat("{{grpc_method}}: {{grpc_code}}").
+				monitoring.Observbble{
+					Nbme:        fmt.Sprintf("%s_grpc_bll_codes_per_method", opts.HumbnServiceNbme),
+					Description: "response codes rbte per-method over 2m",
+					Query:       fmt.Sprintf(`sum(rbte(%s[2m])) by (grpc_method, grpc_code)`, metric("grpc_server_hbndled_totbl", methodLbbelFilter, instbnceLbbelFilter)),
+					Pbnel: monitoring.Pbnel().LegendFormbt("{{grpc_method}}: {{grpc_code}}").
 						Unit(monitoring.RequestsPerSecond).
-						With(monitoring.PanelOptions.LegendOnRight()),
+						With(monitoring.PbnelOptions.LegendOnRight()),
 					Owner:          owner,
 					NoAlert:        true,
-					Interpretation: "The rate of all generated gRPC response codes per method, aggregated across all instances.",
+					Interpretbtion: "The rbte of bll generbted gRPC response codes per method, bggregbted bcross bll instbnces.",
 				},
 			},
 		},
 	}
 }
 
-type GRPCInternalErrorMetricsOptions struct {
-	// HumanServiceName is the short, lowercase, snake_case, human-readable name of the grpc service that we're gathering metrics for.
+type GRPCInternblErrorMetricsOptions struct {
+	// HumbnServiceNbme is the short, lowercbse, snbke_cbse, humbn-rebdbble nbme of the grpc service thbt we're gbthering metrics for.
 	//
-	// Example: "gitserver"
-	HumanServiceName string
+	// Exbmple: "gitserver"
+	HumbnServiceNbme string
 
-	// RawGRPCServiceName is the full, dot-separated, code-generated gRPC service name that we're gathering metrics for.
+	// RbwGRPCServiceNbme is the full, dot-sepbrbted, code-generbted gRPC service nbme thbt we're gbthering metrics for.
 	//
-	// Example: "gitserver.v1.GitserverService"
-	RawGRPCServiceName string
+	// Exbmple: "gitserver.v1.GitserverService"
+	RbwGRPCServiceNbme string
 
-	// MethodFilterRegex is the PromQL regex that's used to filter the
-	// GRPC server metrics to only those emitted by the method(s) that were interested in.
+	// MethodFilterRegex is the PromQL regex thbt's used to filter the
+	// GRPC server metrics to only those emitted by the method(s) thbt were interested in.
 	//
-	// Example: (Search | Exec)
+	// Exbmple: (Sebrch | Exec)
 	MethodFilterRegex string
 
-	// Namespace is the Prometheus metrics namespace for metrics emitted by this service.
-	Namespace string
+	// Nbmespbce is the Prometheus metrics nbmespbce for metrics emitted by this service.
+	Nbmespbce string
 }
 
-// NewGRPCInternalErrorMetricsGroup creates a Group containing metrics that track "internal" gRPC errors.
-func NewGRPCInternalErrorMetricsGroup(opts GRPCInternalErrorMetricsOptions, owner monitoring.ObservableOwner) monitoring.Group {
-	opts.HumanServiceName = strcase.ToSnake(opts.HumanServiceName)
+// NewGRPCInternblErrorMetricsGroup crebtes b Group contbining metrics thbt trbck "internbl" gRPC errors.
+func NewGRPCInternblErrorMetricsGroup(opts GRPCInternblErrorMetricsOptions, owner monitoring.ObservbbleOwner) monitoring.Group {
+	opts.HumbnServiceNbme = strcbse.ToSnbke(opts.HumbnServiceNbme)
 
-	metric := func(base string, labelFilters ...string) string {
-		m := base
+	metric := func(bbse string, lbbelFilters ...string) string {
+		m := bbse
 
-		if opts.Namespace != "" {
-			m = fmt.Sprintf("%s_%s", opts.Namespace, m)
+		if opts.Nbmespbce != "" {
+			m = fmt.Sprintf("%s_%s", opts.Nbmespbce, m)
 		}
 
-		if len(labelFilters) > 0 {
-			m = fmt.Sprintf("%s{%s}", m, strings.Join(labelFilters, ","))
+		if len(lbbelFilters) > 0 {
+			m = fmt.Sprintf("%s{%s}", m, strings.Join(lbbelFilters, ","))
 		}
 
 		return m
 	}
 
-	sum := func(metric, duration string, groupByLabels ...string) string {
-		base := fmt.Sprintf("sum(rate(%s[%s]))", metric, duration)
+	sum := func(metric, durbtion string, groupByLbbels ...string) string {
+		bbse := fmt.Sprintf("sum(rbte(%s[%s]))", metric, durbtion)
 
-		if len(groupByLabels) > 0 {
-			base = fmt.Sprintf("%s by (%s)", base, strings.Join(groupByLabels, ", "))
+		if len(groupByLbbels) > 0 {
+			bbse = fmt.Sprintf("%s by (%s)", bbse, strings.Join(groupByLbbels, ", "))
 		}
 
-		return fmt.Sprintf("(%s)", base)
+		return fmt.Sprintf("(%s)", bbse)
 	}
 
-	methodLabelFilter := fmt.Sprintf(`grpc_method=~"%s"`, opts.MethodFilterRegex)
-	serviceLabelFilter := fmt.Sprintf(`grpc_service=~"%s"`, opts.RawGRPCServiceName)
-	isInternalErrorFilter := fmt.Sprintf(`is_internal_error="%s"`, "true")
-	failingCodeFilter := fmt.Sprintf("grpc_code!=%q", "OK")
+	methodLbbelFilter := fmt.Sprintf(`grpc_method=~"%s"`, opts.MethodFilterRegex)
+	serviceLbbelFilter := fmt.Sprintf(`grpc_service=~"%s"`, opts.RbwGRPCServiceNbme)
+	isInternblErrorFilter := fmt.Sprintf(`is_internbl_error="%s"`, "true")
+	fbilingCodeFilter := fmt.Sprintf("grpc_code!=%q", "OK")
 
-	percentageQuery := func(numerator, denominator string) string {
-		ratio := fmt.Sprintf("((%s) / (%s))", numerator, denominator)
-		return fmt.Sprintf("(100.0 * (%s))", ratio)
+	percentbgeQuery := func(numerbtor, denominbtor string) string {
+		rbtio := fmt.Sprintf("((%s) / (%s))", numerbtor, denominbtor)
+		return fmt.Sprintf("(100.0 * (%s))", rbtio)
 	}
 
-	sharedInternalErrorNote := func() string {
+	shbredInternblErrorNote := func() string {
 		first := strings.Join([]string{
-			"**Note**: Internal errors are ones that appear to originate from the https://github.com/grpc/grpc-go library itself, rather than from any user-written application code.",
-			fmt.Sprintf("These errors can be caused by a variety of issues, and can originate from either the code-generated %q gRPC client or gRPC server.", opts.HumanServiceName),
-			"These errors might be solvable by adjusting the gRPC configuration, or they might indicate a bug from Sourcegraph's use of gRPC.",
+			"**Note**: Internbl errors bre ones thbt bppebr to originbte from the https://github.com/grpc/grpc-go librbry itself, rbther thbn from bny user-written bpplicbtion code.",
+			fmt.Sprintf("These errors cbn be cbused by b vbriety of issues, bnd cbn originbte from either the code-generbted %q gRPC client or gRPC server.", opts.HumbnServiceNbme),
+			"These errors might be solvbble by bdjusting the gRPC configurbtion, or they might indicbte b bug from Sourcegrbph's use of gRPC.",
 		}, " ")
 
-		second := "When debugging, knowing that a particular error comes from the grpc-go library itself (an 'internal error') as opposed to 'normal' application code can be helpful when trying to fix it."
+		second := "When debugging, knowing thbt b pbrticulbr error comes from the grpc-go librbry itself (bn 'internbl error') bs opposed to 'normbl' bpplicbtion code cbn be helpful when trying to fix it."
 
 		third := strings.Join([]string{
-			"**Note**: Internal errors are detected via a very coarse heuristic (seeing if the error starts with 'grpc:', etc.).",
-			"Because of this, it's possible that some gRPC-specific issues might not be categorized as internal errors.",
+			"**Note**: Internbl errors bre detected vib b very cobrse heuristic (seeing if the error stbrts with 'grpc:', etc.).",
+			"Becbuse of this, it's possible thbt some gRPC-specific issues might not be cbtegorized bs internbl errors.",
 		}, " ")
 
 		return fmt.Sprintf("%s\n\n%s\n\n%s", first, second, third)
 	}()
 
-	titleCaser := cases.Title(language.English)
+	titleCbser := cbses.Title(lbngubge.English)
 
 	return monitoring.Group{
-		Title:  fmt.Sprintf("%s GRPC %q metrics", titleCaser.String(strings.ReplaceAll(opts.HumanServiceName, "_", " ")), "internal error"),
+		Title:  fmt.Sprintf("%s GRPC %q metrics", titleCbser.String(strings.ReplbceAll(opts.HumbnServiceNbme, "_", " ")), "internbl error"),
 		Hidden: true,
 		Rows: []monitoring.Row{
 			{
-				monitoring.Observable{
-					Name:        fmt.Sprintf("%s_grpc_clients_error_percentage_all_methods", opts.HumanServiceName),
-					Description: "client baseline error percentage across all methods over 2m",
-					Query: percentageQuery(
-						sum(metric("grpc_method_status", serviceLabelFilter, failingCodeFilter), "2m"),
-						sum(metric("grpc_method_status", serviceLabelFilter), "2m"),
+				monitoring.Observbble{
+					Nbme:        fmt.Sprintf("%s_grpc_clients_error_percentbge_bll_methods", opts.HumbnServiceNbme),
+					Description: "client bbseline error percentbge bcross bll methods over 2m",
+					Query: percentbgeQuery(
+						sum(metric("grpc_method_stbtus", serviceLbbelFilter, fbilingCodeFilter), "2m"),
+						sum(metric("grpc_method_stbtus", serviceLbbelFilter), "2m"),
 					),
-					Panel: monitoring.Panel().
-						Unit(monitoring.Percentage).
-						With(monitoring.PanelOptions.LegendOnRight()).
-						With(monitoring.PanelOptions.ZeroIfNoData()),
+					Pbnel: monitoring.Pbnel().
+						Unit(monitoring.Percentbge).
+						With(monitoring.PbnelOptions.LegendOnRight()).
+						With(monitoring.PbnelOptions.ZeroIfNoDbtb()),
 					Owner:          owner,
 					NoAlert:        true,
-					Interpretation: fmt.Sprintf("The percentage of gRPC requests that fail across all methods (regardless of whether or not there was an internal error), aggregated across all %q clients.", opts.HumanServiceName),
+					Interpretbtion: fmt.Sprintf("The percentbge of gRPC requests thbt fbil bcross bll methods (regbrdless of whether or not there wbs bn internbl error), bggregbted bcross bll %q clients.", opts.HumbnServiceNbme),
 				},
 
-				monitoring.Observable{
-					Name:        fmt.Sprintf("%s_grpc_clients_error_percentage_per_method", opts.HumanServiceName),
-					Description: "client baseline error percentage per-method over 2m",
-					Query: percentageQuery(
-						sum(metric("grpc_method_status", serviceLabelFilter, methodLabelFilter, failingCodeFilter), "2m", "grpc_method"),
-						sum(metric("grpc_method_status", serviceLabelFilter, methodLabelFilter), "2m", "grpc_method"),
+				monitoring.Observbble{
+					Nbme:        fmt.Sprintf("%s_grpc_clients_error_percentbge_per_method", opts.HumbnServiceNbme),
+					Description: "client bbseline error percentbge per-method over 2m",
+					Query: percentbgeQuery(
+						sum(metric("grpc_method_stbtus", serviceLbbelFilter, methodLbbelFilter, fbilingCodeFilter), "2m", "grpc_method"),
+						sum(metric("grpc_method_stbtus", serviceLbbelFilter, methodLbbelFilter), "2m", "grpc_method"),
 					),
 
-					Panel: monitoring.Panel().LegendFormat("{{grpc_method}}").
-						Unit(monitoring.Percentage).
-						With(monitoring.PanelOptions.LegendOnRight()).
-						With(monitoring.PanelOptions.ZeroIfNoData("grpc_method")),
+					Pbnel: monitoring.Pbnel().LegendFormbt("{{grpc_method}}").
+						Unit(monitoring.Percentbge).
+						With(monitoring.PbnelOptions.LegendOnRight()).
+						With(monitoring.PbnelOptions.ZeroIfNoDbtb("grpc_method")),
 
 					Owner:          owner,
 					NoAlert:        true,
-					Interpretation: fmt.Sprintf("The percentage of gRPC requests that fail per method (regardless of whether or not there was an internal error), aggregated across all %q clients.", opts.HumanServiceName),
+					Interpretbtion: fmt.Sprintf("The percentbge of gRPC requests thbt fbil per method (regbrdless of whether or not there wbs bn internbl error), bggregbted bcross bll %q clients.", opts.HumbnServiceNbme),
 				},
 
-				monitoring.Observable{
-					Name:        fmt.Sprintf("%s_grpc_clients_all_codes_per_method", opts.HumanServiceName),
-					Description: "client baseline response codes rate per-method over 2m",
-					Query:       sum(metric("grpc_method_status", serviceLabelFilter, methodLabelFilter), "2m", "grpc_method", "grpc_code"),
-					Panel: monitoring.Panel().LegendFormat("{{grpc_method}}: {{grpc_code}}").
+				monitoring.Observbble{
+					Nbme:        fmt.Sprintf("%s_grpc_clients_bll_codes_per_method", opts.HumbnServiceNbme),
+					Description: "client bbseline response codes rbte per-method over 2m",
+					Query:       sum(metric("grpc_method_stbtus", serviceLbbelFilter, methodLbbelFilter), "2m", "grpc_method", "grpc_code"),
+					Pbnel: monitoring.Pbnel().LegendFormbt("{{grpc_method}}: {{grpc_code}}").
 						Unit(monitoring.RequestsPerSecond).
-						With(monitoring.PanelOptions.LegendOnRight()).
-						With(monitoring.PanelOptions.ZeroIfNoData("grpc_method", "grpc_code")),
+						With(monitoring.PbnelOptions.LegendOnRight()).
+						With(monitoring.PbnelOptions.ZeroIfNoDbtb("grpc_method", "grpc_code")),
 					Owner:          owner,
 					NoAlert:        true,
-					Interpretation: fmt.Sprintf("The rate of all generated gRPC response codes per method (regardless of whether or not there was an internal error), aggregated across all %q clients.", opts.HumanServiceName),
+					Interpretbtion: fmt.Sprintf("The rbte of bll generbted gRPC response codes per method (regbrdless of whether or not there wbs bn internbl error), bggregbted bcross bll %q clients.", opts.HumbnServiceNbme),
 				},
 			},
 			{
-				monitoring.Observable{
-					Name:        fmt.Sprintf("%s_grpc_clients_internal_error_percentage_all_methods", opts.HumanServiceName),
-					Description: "client-observed gRPC internal error percentage across all methods over 2m",
-					Query: percentageQuery(
-						sum(metric("grpc_method_status", serviceLabelFilter, failingCodeFilter, isInternalErrorFilter), "2m"),
-						sum(metric("grpc_method_status", serviceLabelFilter), "2m"),
+				monitoring.Observbble{
+					Nbme:        fmt.Sprintf("%s_grpc_clients_internbl_error_percentbge_bll_methods", opts.HumbnServiceNbme),
+					Description: "client-observed gRPC internbl error percentbge bcross bll methods over 2m",
+					Query: percentbgeQuery(
+						sum(metric("grpc_method_stbtus", serviceLbbelFilter, fbilingCodeFilter, isInternblErrorFilter), "2m"),
+						sum(metric("grpc_method_stbtus", serviceLbbelFilter), "2m"),
 					),
-					Panel: monitoring.Panel().
-						Unit(monitoring.Percentage).
-						With(monitoring.PanelOptions.LegendOnRight()).
-						With(monitoring.PanelOptions.ZeroIfNoData()),
+					Pbnel: monitoring.Pbnel().
+						Unit(monitoring.Percentbge).
+						With(monitoring.PbnelOptions.LegendOnRight()).
+						With(monitoring.PbnelOptions.ZeroIfNoDbtb()),
 					Owner:          owner,
 					NoAlert:        true,
-					Interpretation: fmt.Sprintf("The percentage of gRPC requests that appear to fail due to gRPC internal errors across all methods, aggregated across all %q clients.\n\n%s", opts.HumanServiceName, sharedInternalErrorNote),
+					Interpretbtion: fmt.Sprintf("The percentbge of gRPC requests thbt bppebr to fbil due to gRPC internbl errors bcross bll methods, bggregbted bcross bll %q clients.\n\n%s", opts.HumbnServiceNbme, shbredInternblErrorNote),
 				},
 
-				monitoring.Observable{
-					Name:        fmt.Sprintf("%s_grpc_clients_internal_error_percentage_per_method", opts.HumanServiceName),
-					Description: "client-observed gRPC internal error percentage per-method over 2m",
-					Query: percentageQuery(
-						sum(metric("grpc_method_status", serviceLabelFilter, methodLabelFilter, failingCodeFilter, isInternalErrorFilter), "2m", "grpc_method"),
-						sum(metric("grpc_method_status", serviceLabelFilter, methodLabelFilter), "2m", "grpc_method"),
+				monitoring.Observbble{
+					Nbme:        fmt.Sprintf("%s_grpc_clients_internbl_error_percentbge_per_method", opts.HumbnServiceNbme),
+					Description: "client-observed gRPC internbl error percentbge per-method over 2m",
+					Query: percentbgeQuery(
+						sum(metric("grpc_method_stbtus", serviceLbbelFilter, methodLbbelFilter, fbilingCodeFilter, isInternblErrorFilter), "2m", "grpc_method"),
+						sum(metric("grpc_method_stbtus", serviceLbbelFilter, methodLbbelFilter), "2m", "grpc_method"),
 					),
 
-					Panel: monitoring.Panel().LegendFormat("{{grpc_method}}").
-						Unit(monitoring.Percentage).
-						With(monitoring.PanelOptions.LegendOnRight()).
-						With(monitoring.PanelOptions.ZeroIfNoData("grpc_method")),
+					Pbnel: monitoring.Pbnel().LegendFormbt("{{grpc_method}}").
+						Unit(monitoring.Percentbge).
+						With(monitoring.PbnelOptions.LegendOnRight()).
+						With(monitoring.PbnelOptions.ZeroIfNoDbtb("grpc_method")),
 					Owner:          owner,
 					NoAlert:        true,
-					Interpretation: fmt.Sprintf("The percentage of gRPC requests that appear to fail to due to gRPC internal errors per method, aggregated across all %q clients.\n\n%s", opts.HumanServiceName, sharedInternalErrorNote),
+					Interpretbtion: fmt.Sprintf("The percentbge of gRPC requests thbt bppebr to fbil to due to gRPC internbl errors per method, bggregbted bcross bll %q clients.\n\n%s", opts.HumbnServiceNbme, shbredInternblErrorNote),
 				},
 
-				monitoring.Observable{
-					Name:        fmt.Sprintf("%s_grpc_clients_internal_error_all_codes_per_method", opts.HumanServiceName),
-					Description: "client-observed gRPC internal error response code rate per-method over 2m",
-					Query:       sum(metric("grpc_method_status", serviceLabelFilter, isInternalErrorFilter, methodLabelFilter), "2m", "grpc_method", "grpc_code"),
-					Panel: monitoring.Panel().LegendFormat("{{grpc_method}}: {{grpc_code}}").
+				monitoring.Observbble{
+					Nbme:        fmt.Sprintf("%s_grpc_clients_internbl_error_bll_codes_per_method", opts.HumbnServiceNbme),
+					Description: "client-observed gRPC internbl error response code rbte per-method over 2m",
+					Query:       sum(metric("grpc_method_stbtus", serviceLbbelFilter, isInternblErrorFilter, methodLbbelFilter), "2m", "grpc_method", "grpc_code"),
+					Pbnel: monitoring.Pbnel().LegendFormbt("{{grpc_method}}: {{grpc_code}}").
 						Unit(monitoring.RequestsPerSecond).
-						With(monitoring.PanelOptions.LegendOnRight()).
-						With(monitoring.PanelOptions.ZeroIfNoData("grpc_method", "grpc_code")),
+						With(monitoring.PbnelOptions.LegendOnRight()).
+						With(monitoring.PbnelOptions.ZeroIfNoDbtb("grpc_method", "grpc_code")),
 					Owner:          owner,
 					NoAlert:        true,
-					Interpretation: fmt.Sprintf("The rate of gRPC internal-error response codes per method, aggregated across all %q clients.\n\n%s", opts.HumanServiceName, sharedInternalErrorNote),
+					Interpretbtion: fmt.Sprintf("The rbte of gRPC internbl-error response codes per method, bggregbted bcross bll %q clients.\n\n%s", opts.HumbnServiceNbme, shbredInternblErrorNote),
 				},
 			},
 		},
 	}
 }
 
-// GRPCMethodVariable creates a container variable that contains all the gRPC methods
+// GRPCMethodVbribble crebtes b contbiner vbribble thbt contbins bll the gRPC methods
 // exposed by the given service.
 //
-// humanServiceName is the short, lowercase, snake_case,
-// human-readable name of the grpc service that we're gathering metrics for.
+// humbnServiceNbme is the short, lowercbse, snbke_cbse,
+// humbn-rebdbble nbme of the grpc service thbt we're gbthering metrics for.
 //
-// Example: "gitserver"
+// Exbmple: "gitserver"
 //
-// services is a dot-separated, code-generated gRPC service name that we're gathering metrics for
+// services is b dot-sepbrbted, code-generbted gRPC service nbme thbt we're gbthering metrics for
 // (e.g. "gitserver.v1.GitserverService").
-func GRPCMethodVariable(humanServiceName string, service string) monitoring.ContainerVariable {
-	humanServiceName = strcase.ToSnake(humanServiceName)
+func GRPCMethodVbribble(humbnServiceNbme string, service string) monitoring.ContbinerVbribble {
+	humbnServiceNbme = strcbse.ToSnbke(humbnServiceNbme)
 
-	query := fmt.Sprintf("grpc_server_started_total{grpc_service=%q}", service)
+	query := fmt.Sprintf("grpc_server_stbrted_totbl{grpc_service=%q}", service)
 
-	titleCaser := cases.Title(language.English)
+	titleCbser := cbses.Title(lbngubge.English)
 
-	return monitoring.ContainerVariable{
-		Label: fmt.Sprintf("%s RPC Method", titleCaser.String(strings.ReplaceAll(humanServiceName, "_", " "))),
-		Name:  fmt.Sprintf("%s_method", humanServiceName),
-		OptionsLabelValues: monitoring.ContainerVariableOptionsLabelValues{
+	return monitoring.ContbinerVbribble{
+		Lbbel: fmt.Sprintf("%s RPC Method", titleCbser.String(strings.ReplbceAll(humbnServiceNbme, "_", " "))),
+		Nbme:  fmt.Sprintf("%s_method", humbnServiceNbme),
+		OptionsLbbelVblues: monitoring.ContbinerVbribbleOptionsLbbelVblues{
 			Query:         query,
-			LabelName:     "grpc_method",
-			ExampleOption: "Exec",
+			LbbelNbme:     "grpc_method",
+			ExbmpleOption: "Exec",
 		},
 
 		Multi: true,

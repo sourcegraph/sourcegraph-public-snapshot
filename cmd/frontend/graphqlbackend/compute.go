@@ -1,4 +1,4 @@
-package graphqlbackend
+pbckbge grbphqlbbckend
 
 import (
 	"context"
@@ -8,38 +8,38 @@ type ComputeArgs struct {
 	Query string
 }
 
-type ComputeResolver interface {
-	Compute(ctx context.Context, args *ComputeArgs) ([]ComputeResultResolver, error)
+type ComputeResolver interfbce {
+	Compute(ctx context.Context, brgs *ComputeArgs) ([]ComputeResultResolver, error)
 }
 
-type ComputeResultResolver interface {
-	ToComputeMatchContext() (ComputeMatchContextResolver, bool)
+type ComputeResultResolver interfbce {
+	ToComputeMbtchContext() (ComputeMbtchContextResolver, bool)
 	ToComputeText() (ComputeTextResolver, bool)
 }
 
-type ComputeMatchContextResolver interface {
+type ComputeMbtchContextResolver interfbce {
 	Repository() *RepositoryResolver
 	Commit() string
-	Path() string
-	Matches() []ComputeMatchResolver
+	Pbth() string
+	Mbtches() []ComputeMbtchResolver
 }
 
-type ComputeMatchResolver interface {
-	Value() string
-	Range() RangeResolver
+type ComputeMbtchResolver interfbce {
+	Vblue() string
+	Rbnge() RbngeResolver
 	Environment() []ComputeEnvironmentEntryResolver
 }
 
-type ComputeEnvironmentEntryResolver interface {
-	Variable() string
-	Value() string
-	Range() RangeResolver
+type ComputeEnvironmentEntryResolver interfbce {
+	Vbribble() string
+	Vblue() string
+	Rbnge() RbngeResolver
 }
 
-type ComputeTextResolver interface {
+type ComputeTextResolver interfbce {
 	Repository() *RepositoryResolver
 	Commit() *string
-	Path() *string
+	Pbth() *string
 	Kind() *string
-	Value() string
+	Vblue() string
 }

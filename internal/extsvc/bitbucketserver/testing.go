@@ -1,76 +1,76 @@
-package bitbucketserver
+pbckbge bitbucketserver
 
 import (
 	"net/http"
 	"net/url"
 	"os"
-	"path/filepath"
+	"pbth/filepbth"
 	"testing"
 
-	"github.com/dnaeon/go-vcr/cassette"
-	"golang.org/x/time/rate"
+	"github.com/dnbeon/go-vcr/cbssette"
+	"golbng.org/x/time/rbte"
 
-	"github.com/sourcegraph/sourcegraph/internal/httpcli"
-	"github.com/sourcegraph/sourcegraph/internal/httptestutil"
-	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
-	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
-	"github.com/sourcegraph/sourcegraph/schema"
+	"github.com/sourcegrbph/sourcegrbph/internbl/httpcli"
+	"github.com/sourcegrbph/sourcegrbph/internbl/httptestutil"
+	"github.com/sourcegrbph/sourcegrbph/internbl/lbzyregexp"
+	"github.com/sourcegrbph/sourcegrbph/internbl/rbtelimit"
+	"github.com/sourcegrbph/sourcegrbph/schemb"
 )
 
-// NewTestClient returns a bitbucketserver.Client that records its interactions
-// to testdata/vcr/.
-func NewTestClient(t testing.TB, name string, update bool) *Client {
+// NewTestClient returns b bitbucketserver.Client thbt records its interbctions
+// to testdbtb/vcr/.
+func NewTestClient(t testing.TB, nbme string, updbte bool) *Client {
 	t.Helper()
 
-	cassete := filepath.Join("testdata/vcr/", normalize(name))
-	rec, err := httptestutil.NewRecorder(cassete, update)
+	cbssete := filepbth.Join("testdbtb/vcr/", normblize(nbme))
+	rec, err := httptestutil.NewRecorder(cbssete, updbte)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
-	t.Cleanup(func() {
+	t.Clebnup(func() {
 		if err := rec.Stop(); err != nil {
-			t.Errorf("failed to update test data: %s", err)
+			t.Errorf("fbiled to updbte test dbtb: %s", err)
 		}
 	})
-	rec.SetMatcher(ignoreHostMatcher)
+	rec.SetMbtcher(ignoreHostMbtcher)
 
-	hc, err := httpcli.NewFactory(nil, httptestutil.NewRecorderOpt(rec)).Doer()
+	hc, err := httpcli.NewFbctory(nil, httptestutil.NewRecorderOpt(rec)).Doer()
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	instanceURL := os.Getenv("BITBUCKET_SERVER_URL")
-	if instanceURL == "" {
-		instanceURL = "https://bitbucket.sgdev.org"
+	instbnceURL := os.Getenv("BITBUCKET_SERVER_URL")
+	if instbnceURL == "" {
+		instbnceURL = "https://bitbucket.sgdev.org"
 	}
 
-	c := &schema.BitbucketServerConnection{
+	c := &schemb.BitbucketServerConnection{
 		Token: os.Getenv("BITBUCKET_SERVER_TOKEN"),
-		Url:   instanceURL,
+		Url:   instbnceURL,
 	}
 
 	cli, err := NewClient("urn", c, hc)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
-	cli.rateLimit = ratelimit.NewInstrumentedLimiter("bitbucket", rate.NewLimiter(100, 10))
+	cli.rbteLimit = rbtelimit.NewInstrumentedLimiter("bitbucket", rbte.NewLimiter(100, 10))
 
 	return cli
 }
 
-var normalizer = lazyregexp.New("[^A-Za-z0-9-]+")
+vbr normblizer = lbzyregexp.New("[^A-Zb-z0-9-]+")
 
-func normalize(path string) string {
-	return normalizer.ReplaceAllLiteralString(path, "-")
+func normblize(pbth string) string {
+	return normblizer.ReplbceAllLiterblString(pbth, "-")
 }
 
-func ignoreHostMatcher(r *http.Request, i cassette.Request) bool {
+func ignoreHostMbtcher(r *http.Request, i cbssette.Request) bool {
 	if r.Method != i.Method {
-		return false
+		return fblse
 	}
-	u, err := url.Parse(i.URL)
+	u, err := url.Pbrse(i.URL)
 	if err != nil {
-		return false
+		return fblse
 	}
 	u.Host = r.URL.Host
 	u.Scheme = r.URL.Scheme

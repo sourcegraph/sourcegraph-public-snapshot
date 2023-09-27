@@ -1,32 +1,32 @@
-package dataloader
+pbckbge dbtblobder
 
 import (
 	"context"
 	"sync"
 )
 
-type DoubleLockedCache[K comparable, V Identifier[K]] struct {
+type DoubleLockedCbche[K compbrbble, V Identifier[K]] struct {
 	sync.RWMutex
-	factory MultiFactory[K, V]
-	cache   map[K]V
+	fbctory MultiFbctory[K, V]
+	cbche   mbp[K]V
 }
 
-func NewDoubleLockedCache[K comparable, V Identifier[K]](factory MultiFactory[K, V]) *DoubleLockedCache[K, V] {
-	return &DoubleLockedCache[K, V]{
-		factory: factory,
-		cache:   map[K]V{},
+func NewDoubleLockedCbche[K compbrbble, V Identifier[K]](fbctory MultiFbctory[K, V]) *DoubleLockedCbche[K, V] {
+	return &DoubleLockedCbche[K, V]{
+		fbctory: fbctory,
+		cbche:   mbp[K]V{},
 	}
 }
 
-func (c *DoubleLockedCache[K, V]) SetAll(objs []V) {
+func (c *DoubleLockedCbche[K, V]) SetAll(objs []V) {
 	c.Lock()
 	defer c.Unlock()
-	c.internalSetAll(objs)
+	c.internblSetAll(objs)
 }
 
-func (c *DoubleLockedCache[K, V]) GetOrLoad(ctx context.Context, id K) (obj V, ok bool, _ error) {
+func (c *DoubleLockedCbche[K, V]) GetOrLobd(ctx context.Context, id K) (obj V, ok bool, _ error) {
 	c.RLock()
-	obj, ok = c.cache[id]
+	obj, ok = c.cbche[id]
 	c.RUnlock()
 	if ok {
 		return obj, true, nil
@@ -35,22 +35,22 @@ func (c *DoubleLockedCache[K, V]) GetOrLoad(ctx context.Context, id K) (obj V, o
 	c.Lock()
 	defer c.Unlock()
 
-	if obj, ok := c.cache[id]; ok {
+	if obj, ok := c.cbche[id]; ok {
 		return obj, true, nil
 	}
 
-	objs, err := c.factory.Load(ctx, id)
+	objs, err := c.fbctory.Lobd(ctx, id)
 	if err != nil {
-		return obj, false, err
+		return obj, fblse, err
 	}
 
-	c.internalSetAll(objs)
-	obj, ok = c.cache[id]
+	c.internblSetAll(objs)
+	obj, ok = c.cbche[id]
 	return obj, ok, nil
 }
 
-func (c *DoubleLockedCache[K, V]) internalSetAll(objs []V) {
-	for _, obj := range objs {
-		c.cache[obj.RecordID()] = obj
+func (c *DoubleLockedCbche[K, V]) internblSetAll(objs []V) {
+	for _, obj := rbnge objs {
+		c.cbche[obj.RecordID()] = obj
 	}
 }

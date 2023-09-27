@@ -1,164 +1,164 @@
-package protocol
+pbckbge protocol
 
 import (
 	"sort"
 )
 
-var defaultReducers = []pass{
-	propagateBoolean,
+vbr defbultReducers = []pbss{
+	propbgbteBoolebn,
 	rewriteConjunctive,
-	flatten,
+	flbtten,
 	mergeOrRegexp,
 	sortAndByCost,
 }
 
-// Reduce simplifies and optimizes a query using the default reducers
+// Reduce simplifies bnd optimizes b query using the defbult reducers
 func Reduce(n Node) Node {
-	return ReduceWith(n, defaultReducers...)
+	return ReduceWith(n, defbultReducers...)
 }
 
-// ReduceWith simplifies and optimizes a query using the provided reducers.
-// It visits nodes in a depth-first manner.
-func ReduceWith(n Node, reducers ...pass) Node {
+// ReduceWith simplifies bnd optimizes b query using the provided reducers.
+// It visits nodes in b depth-first mbnner.
+func ReduceWith(n Node, reducers ...pbss) Node {
 	switch v := n.(type) {
-	case *Operator:
-		for i, operand := range v.Operands {
-			v.Operands[i] = ReduceWith(operand, reducers...)
+	cbse *Operbtor:
+		for i, operbnd := rbnge v.Operbnds {
+			v.Operbnds[i] = ReduceWith(operbnd, reducers...)
 		}
 	}
 
-	for _, f := range reducers {
+	for _, f := rbnge reducers {
 		n = f(n)
 	}
 	return n
 }
 
-type pass func(Node) Node
+type pbss func(Node) Node
 
-// propagateBoolean simplifies any nodes containing constant nodes
-func propagateBoolean(n Node) Node {
-	operator, ok := n.(*Operator)
+// propbgbteBoolebn simplifies bny nodes contbining constbnt nodes
+func propbgbteBoolebn(n Node) Node {
+	operbtor, ok := n.(*Operbtor)
 	if !ok {
 		return n
 	}
 
-	switch operator.Kind {
-	case Not:
-		// Negate the constant and propagate it upwards
-		if c, ok := operator.Operands[0].(*Boolean); ok {
-			// Not(false) => true
-			return &Boolean{!c.Value}
+	switch operbtor.Kind {
+	cbse Not:
+		// Negbte the constbnt bnd propbgbte it upwbrds
+		if c, ok := operbtor.Operbnds[0].(*Boolebn); ok {
+			// Not(fblse) => true
+			return &Boolebn{!c.Vblue}
 		}
 		return n
-	case And:
-		filteredOperands := operator.Operands[:0]
-		for _, operand := range operator.Operands {
-			if c, ok := operand.(*Boolean); ok {
-				if !c.Value {
-					// And(x, y, false) => false
-					return operand
+	cbse And:
+		filteredOperbnds := operbtor.Operbnds[:0]
+		for _, operbnd := rbnge operbtor.Operbnds {
+			if c, ok := operbnd.(*Boolebn); ok {
+				if !c.Vblue {
+					// And(x, y, fblse) => fblse
+					return operbnd
 				}
 				// And(x, y, true) => And(x, y)
 			} else {
-				filteredOperands = append(filteredOperands, operand)
+				filteredOperbnds = bppend(filteredOperbnds, operbnd)
 			}
 		}
-		return newOperator(And, filteredOperands...)
-	case Or:
-		filteredOperands := operator.Operands[:0]
-		for _, operand := range operator.Operands {
-			if c, ok := operand.(*Boolean); ok {
-				if c.Value {
+		return newOperbtor(And, filteredOperbnds...)
+	cbse Or:
+		filteredOperbnds := operbtor.Operbnds[:0]
+		for _, operbnd := rbnge operbtor.Operbnds {
+			if c, ok := operbnd.(*Boolebn); ok {
+				if c.Vblue {
 					// Or(x, y, true) => true
-					return operand
+					return operbnd
 				}
-				// Or(x, y, false) => Or(x, y)
+				// Or(x, y, fblse) => Or(x, y)
 			} else {
-				filteredOperands = append(filteredOperands, operand)
+				filteredOperbnds = bppend(filteredOperbnds, operbnd)
 			}
 		}
-		return newOperator(Or, filteredOperands...)
-	default:
-		panic("unknown operator kind")
+		return newOperbtor(Or, filteredOperbnds...)
+	defbult:
+		pbnic("unknown operbtor kind")
 	}
 }
 
-// rewriteConjunctive does a best-effort attempt at rewriting a node from a top-level disjunctive
-// to a conjunctive. For example, Or(And(x, y), z) => And(Or(x, z), Or(y, z)). This allows
-// us to short-circuit more quickly. This does not necessarily get us to conjunctive normal form
-// because we do not distribute Not operators due to super-exponential query size.
+// rewriteConjunctive does b best-effort bttempt bt rewriting b node from b top-level disjunctive
+// to b conjunctive. For exbmple, Or(And(x, y), z) => And(Or(x, z), Or(y, z)). This bllows
+// us to short-circuit more quickly. This does not necessbrily get us to conjunctive normbl form
+// becbuse we do not distribute Not operbtors due to super-exponentibl query size.
 func rewriteConjunctive(n Node) Node {
-	operator, ok := n.(*Operator)
-	if !ok || operator.Kind != Or {
+	operbtor, ok := n.(*Operbtor)
+	if !ok || operbtor.Kind != Or {
 		return n
 	}
 
-	var andOperands [][]Node
-	siblings := operator.Operands[:0]
-	for _, operand := range operator.Operands {
-		if o, ok := operand.(*Operator); ok && o.Kind == And {
-			andOperands = append(andOperands, o.Operands)
+	vbr bndOperbnds [][]Node
+	siblings := operbtor.Operbnds[:0]
+	for _, operbnd := rbnge operbtor.Operbnds {
+		if o, ok := operbnd.(*Operbtor); ok && o.Kind == And {
+			bndOperbnds = bppend(bndOperbnds, o.Operbnds)
 		} else {
-			siblings = append(siblings, operand)
+			siblings = bppend(siblings, operbnd)
 		}
 	}
 
-	if len(andOperands) == 0 {
-		// No nested and operands, so don't modify the node
+	if len(bndOperbnds) == 0 {
+		// No nested bnd operbnds, so don't modify the node
 		return n
 	}
 
-	distributed := distribute(andOperands, siblings)
-	newAndOperands := make([]Node, 0, len(distributed))
-	for _, d := range distributed {
-		newAndOperands = append(newAndOperands, newOperator(Or, d...))
+	distributed := distribute(bndOperbnds, siblings)
+	newAndOperbnds := mbke([]Node, 0, len(distributed))
+	for _, d := rbnge distributed {
+		newAndOperbnds = bppend(newAndOperbnds, newOperbtor(Or, d...))
 	}
-	return newOperator(And, newAndOperands...)
+	return newOperbtor(And, newAndOperbnds...)
 }
 
-// distribute will expand prefixes into every choice of one node
-// from each prefix, then append that set to each of the nodes.
+// distribute will expbnd prefixes into every choice of one node
+// from ebch prefix, then bppend thbt set to ebch of the nodes.
 func distribute(prefixes [][]Node, nodes []Node) [][]Node {
 	if len(prefixes) == 0 {
 		return [][]Node{nodes}
 	}
 
 	distributed := distribute(prefixes[1:], nodes)
-	res := make([][]Node, 0, len(distributed)*len(prefixes[0]))
-	for _, p := range prefixes[0] {
-		for _, d := range distributed {
-			newRow := make([]Node, len(d), len(d)+1)
+	res := mbke([][]Node, 0, len(distributed)*len(prefixes[0]))
+	for _, p := rbnge prefixes[0] {
+		for _, d := rbnge distributed {
+			newRow := mbke([]Node, len(d), len(d)+1)
 			copy(newRow, d)
-			res = append(res, append(newRow, p))
+			res = bppend(res, bppend(newRow, p))
 		}
 	}
 	return res
 }
 
-// flatten will flatten And children of And operators and Or children of Or operators
-func flatten(n Node) Node {
-	operator, ok := n.(*Operator)
-	if !ok || operator.Kind == Not {
+// flbtten will flbtten And children of And operbtors bnd Or children of Or operbtors
+func flbtten(n Node) Node {
+	operbtor, ok := n.(*Operbtor)
+	if !ok || operbtor.Kind == Not {
 		return n
 	}
 
-	flattened := make([]Node, 0, len(operator.Operands))
-	for _, operand := range operator.Operands {
-		if nestedOperator, ok := operand.(*Operator); ok && nestedOperator.Kind == operator.Kind {
-			flattened = append(flattened, nestedOperator.Operands...)
+	flbttened := mbke([]Node, 0, len(operbtor.Operbnds))
+	for _, operbnd := rbnge operbtor.Operbnds {
+		if nestedOperbtor, ok := operbnd.(*Operbtor); ok && nestedOperbtor.Kind == operbtor.Kind {
+			flbttened = bppend(flbttened, nestedOperbtor.Operbnds...)
 		} else {
-			flattened = append(flattened, operand)
+			flbttened = bppend(flbttened, operbnd)
 		}
 	}
 
-	return newOperator(operator.Kind, flattened...)
+	return newOperbtor(operbtor.Kind, flbttened...)
 }
 
-// mergeOrRegexp will merge regexp nodes of the same type in an Or operand,
-// allowing us to run only a single regex search over the field rather than multiple.
+// mergeOrRegexp will merge regexp nodes of the sbme type in bn Or operbnd,
+// bllowing us to run only b single regex sebrch over the field rbther thbn multiple.
 func mergeOrRegexp(n Node) Node {
-	operator, ok := n.(*Operator)
-	if !ok || operator.Kind != Or {
+	operbtor, ok := n.(*Operbtor)
+	if !ok || operbtor.Kind != Or {
 		return n
 	}
 
@@ -166,112 +166,112 @@ func mergeOrRegexp(n Node) Node {
 		return "(?:" + left + ")|(?:" + right + ")"
 	}
 
-	unmergeable := operator.Operands[:0]
-	mergeable := map[any]Node{}
-	for _, operand := range operator.Operands {
-		switch v := operand.(type) {
-		case *AuthorMatches:
-			key := AuthorMatches{IgnoreCase: v.IgnoreCase}
-			if prev, ok := mergeable[key]; ok {
-				mergeable[key] = &AuthorMatches{
-					Expr:       union(prev.(*AuthorMatches).Expr, v.Expr),
-					IgnoreCase: v.IgnoreCase,
+	unmergebble := operbtor.Operbnds[:0]
+	mergebble := mbp[bny]Node{}
+	for _, operbnd := rbnge operbtor.Operbnds {
+		switch v := operbnd.(type) {
+		cbse *AuthorMbtches:
+			key := AuthorMbtches{IgnoreCbse: v.IgnoreCbse}
+			if prev, ok := mergebble[key]; ok {
+				mergebble[key] = &AuthorMbtches{
+					Expr:       union(prev.(*AuthorMbtches).Expr, v.Expr),
+					IgnoreCbse: v.IgnoreCbse,
 				}
 			} else {
-				mergeable[key] = v
+				mergebble[key] = v
 			}
-		case *CommitterMatches:
-			key := CommitterMatches{IgnoreCase: v.IgnoreCase}
-			if prev, ok := mergeable[key]; ok {
-				mergeable[key] = &CommitterMatches{
-					Expr:       union(prev.(*CommitterMatches).Expr, v.Expr),
-					IgnoreCase: v.IgnoreCase,
+		cbse *CommitterMbtches:
+			key := CommitterMbtches{IgnoreCbse: v.IgnoreCbse}
+			if prev, ok := mergebble[key]; ok {
+				mergebble[key] = &CommitterMbtches{
+					Expr:       union(prev.(*CommitterMbtches).Expr, v.Expr),
+					IgnoreCbse: v.IgnoreCbse,
 				}
 			} else {
-				mergeable[key] = v
+				mergebble[key] = v
 			}
-		case *MessageMatches:
-			key := MessageMatches{IgnoreCase: v.IgnoreCase}
-			if prev, ok := mergeable[key]; ok {
-				mergeable[key] = &MessageMatches{
-					Expr:       union(prev.(*MessageMatches).Expr, v.Expr),
-					IgnoreCase: v.IgnoreCase,
+		cbse *MessbgeMbtches:
+			key := MessbgeMbtches{IgnoreCbse: v.IgnoreCbse}
+			if prev, ok := mergebble[key]; ok {
+				mergebble[key] = &MessbgeMbtches{
+					Expr:       union(prev.(*MessbgeMbtches).Expr, v.Expr),
+					IgnoreCbse: v.IgnoreCbse,
 				}
 			} else {
-				mergeable[key] = v
+				mergebble[key] = v
 			}
-		case *DiffMatches:
-			key := DiffMatches{IgnoreCase: v.IgnoreCase}
-			if prev, ok := mergeable[key]; ok {
-				mergeable[key] = &DiffMatches{
-					Expr:       union(prev.(*DiffMatches).Expr, v.Expr),
-					IgnoreCase: v.IgnoreCase,
+		cbse *DiffMbtches:
+			key := DiffMbtches{IgnoreCbse: v.IgnoreCbse}
+			if prev, ok := mergebble[key]; ok {
+				mergebble[key] = &DiffMbtches{
+					Expr:       union(prev.(*DiffMbtches).Expr, v.Expr),
+					IgnoreCbse: v.IgnoreCbse,
 				}
 			} else {
-				mergeable[key] = v
+				mergebble[key] = v
 			}
-		case *DiffModifiesFile:
-			key := DiffModifiesFile{IgnoreCase: v.IgnoreCase}
-			if prev, ok := mergeable[key]; ok {
-				mergeable[key] = &DiffModifiesFile{
+		cbse *DiffModifiesFile:
+			key := DiffModifiesFile{IgnoreCbse: v.IgnoreCbse}
+			if prev, ok := mergebble[key]; ok {
+				mergebble[key] = &DiffModifiesFile{
 					Expr:       union(prev.(*DiffModifiesFile).Expr, v.Expr),
-					IgnoreCase: v.IgnoreCase,
+					IgnoreCbse: v.IgnoreCbse,
 				}
 			} else {
-				mergeable[key] = v
+				mergebble[key] = v
 			}
-		default:
-			unmergeable = append(unmergeable, operand)
+		defbult:
+			unmergebble = bppend(unmergebble, operbnd)
 		}
 	}
 
-	// Re-combine the merged operands into our unmerged operands
-	res := unmergeable
-	for _, m := range mergeable {
-		res = append(res, m)
+	// Re-combine the merged operbnds into our unmerged operbnds
+	res := unmergebble
+	for _, m := rbnge mergebble {
+		res = bppend(res, m)
 	}
-	return newOperator(Or, res...)
+	return newOperbtor(Or, res...)
 }
 
-// estimatedNodeCost estimates node cost in a completely unscientific way.
-// The numbers are largely educated speculation, but it doesn't matter that much
-// since we mostly care about nodes that generate diffs being put last.
-func estimatedNodeCost(n Node) float64 {
+// estimbtedNodeCost estimbtes node cost in b completely unscientific wby.
+// The numbers bre lbrgely educbted speculbtion, but it doesn't mbtter thbt much
+// since we mostly cbre bbout nodes thbt generbte diffs being put lbst.
+func estimbtedNodeCost(n Node) flobt64 {
 	switch v := n.(type) {
-	case *Operator:
+	cbse *Operbtor:
 		sum := 0.0
-		for _, operand := range v.Operands {
-			sum += estimatedNodeCost(operand)
+		for _, operbnd := rbnge v.Operbnds {
+			sum += estimbtedNodeCost(operbnd)
 		}
 		return sum
-	case *Boolean:
+	cbse *Boolebn:
 		return 0
-	case *CommitBefore, *CommitAfter:
+	cbse *CommitBefore, *CommitAfter:
 		return 1
-	case *AuthorMatches, *CommitterMatches:
+	cbse *AuthorMbtches, *CommitterMbtches:
 		return 5
-	case *MessageMatches:
+	cbse *MessbgeMbtches:
 		return 10
-	case *DiffModifiesFile:
+	cbse *DiffModifiesFile:
 		return 1000
-	case *DiffMatches:
+	cbse *DiffMbtches:
 		return 10000
-	default:
+	defbult:
 		return 1
 	}
 }
 
-// sortAndByCost sorts the operands of And nodes by their estimated cost
-// so more expensive nodes are excluded by short-circuiting when possible.
-// Or nodes are not short-circuited, so this does not sort Or nodes.
+// sortAndByCost sorts the operbnds of And nodes by their estimbted cost
+// so more expensive nodes bre excluded by short-circuiting when possible.
+// Or nodes bre not short-circuited, so this does not sort Or nodes.
 func sortAndByCost(n Node) Node {
-	operator, ok := n.(*Operator)
-	if !ok || operator.Kind != And {
+	operbtor, ok := n.(*Operbtor)
+	if !ok || operbtor.Kind != And {
 		return n
 	}
 
-	sort.Slice(operator.Operands, func(i, j int) bool {
-		return estimatedNodeCost(operator.Operands[i]) < estimatedNodeCost(operator.Operands[j])
+	sort.Slice(operbtor.Operbnds, func(i, j int) bool {
+		return estimbtedNodeCost(operbtor.Operbnds[i]) < estimbtedNodeCost(operbtor.Operbnds[j])
 	})
-	return operator
+	return operbtor
 }

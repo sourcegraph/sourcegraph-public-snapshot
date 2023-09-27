@@ -1,34 +1,34 @@
-package store
+pbckbge store
 
 import (
 	"context"
 	"fmt"
-	"math"
+	"mbth"
 	"sort"
 	"strings"
 	"testing"
 	"time"
 
 	"github.com/google/go-cmp/cmp"
-	"github.com/keegancsmith/sqlf"
+	"github.com/keegbncsmith/sqlf"
 	"github.com/lib/pq"
-	"github.com/sourcegraph/log/logtest"
+	"github.com/sourcegrbph/log/logtest"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/internal/commitgraph"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
-	"github.com/sourcegraph/sourcegraph/schema"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/globbls"
+	"github.com/sourcegrbph/sourcegrbph/internbl/codeintel/uplobds/internbl/commitgrbph"
+	"github.com/sourcegrbph/sourcegrbph/internbl/codeintel/uplobds/shbred"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbtest"
+	"github.com/sourcegrbph/sourcegrbph/internbl/observbtion"
+	"github.com/sourcegrbph/sourcegrbph/lib/codeintel/precise"
+	"github.com/sourcegrbph/sourcegrbph/schemb"
 )
 
-func TestGetUploads(t *testing.T) {
+func TestGetUplobds(t *testing.T) {
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
-	store := New(&observation.TestContext, db)
-	ctx := context.Background()
+	db := dbtbbbse.NewDB(logger, dbtest.NewDB(logger, t))
+	store := New(&observbtion.TestContext, db)
+	ctx := context.Bbckground()
 
 	t1 := time.Unix(1587396557, 0).UTC()
 	t2 := t1.Add(-time.Minute * 1)
@@ -41,97 +41,97 @@ func TestGetUploads(t *testing.T) {
 	t9 := t1.Add(-time.Minute * 8)
 	t10 := t1.Add(-time.Minute * 9)
 	t11 := t1.Add(-time.Minute * 10)
-	failureMessage := "unlucky 333"
+	fbilureMessbge := "unlucky 333"
 
-	insertUploads(t, db,
-		shared.Upload{ID: 1, Commit: makeCommit(3331), UploadedAt: t1, Root: "sub1/", State: "queued"},
-		shared.Upload{ID: 2, UploadedAt: t2, FinishedAt: &t1, State: "errored", FailureMessage: &failureMessage, Indexer: "scip-typescript"},
-		shared.Upload{ID: 3, Commit: makeCommit(3333), UploadedAt: t3, Root: "sub2/", State: "queued"},
-		shared.Upload{ID: 4, UploadedAt: t4, State: "queued", RepositoryID: 51, RepositoryName: "foo bar x"},
-		shared.Upload{ID: 5, Commit: makeCommit(3333), UploadedAt: t5, Root: "sub1/", State: "processing", Indexer: "scip-typescript"},
-		shared.Upload{ID: 6, UploadedAt: t6, Root: "sub2/", State: "processing", RepositoryID: 52, RepositoryName: "foo bar y"},
-		shared.Upload{ID: 7, UploadedAt: t7, FinishedAt: &t4, Root: "sub1/", Indexer: "scip-typescript"},
-		shared.Upload{ID: 8, UploadedAt: t8, FinishedAt: &t4, Indexer: "lsif-typescript"},
-		shared.Upload{ID: 9, UploadedAt: t9, State: "queued"},
-		shared.Upload{ID: 10, UploadedAt: t10, FinishedAt: &t6, Root: "sub1/", Indexer: "lsif-ocaml"},
-		shared.Upload{ID: 11, UploadedAt: t11, FinishedAt: &t6, Root: "sub1/", Indexer: "scip-typescript"},
+	insertUplobds(t, db,
+		shbred.Uplobd{ID: 1, Commit: mbkeCommit(3331), UplobdedAt: t1, Root: "sub1/", Stbte: "queued"},
+		shbred.Uplobd{ID: 2, UplobdedAt: t2, FinishedAt: &t1, Stbte: "errored", FbilureMessbge: &fbilureMessbge, Indexer: "scip-typescript"},
+		shbred.Uplobd{ID: 3, Commit: mbkeCommit(3333), UplobdedAt: t3, Root: "sub2/", Stbte: "queued"},
+		shbred.Uplobd{ID: 4, UplobdedAt: t4, Stbte: "queued", RepositoryID: 51, RepositoryNbme: "foo bbr x"},
+		shbred.Uplobd{ID: 5, Commit: mbkeCommit(3333), UplobdedAt: t5, Root: "sub1/", Stbte: "processing", Indexer: "scip-typescript"},
+		shbred.Uplobd{ID: 6, UplobdedAt: t6, Root: "sub2/", Stbte: "processing", RepositoryID: 52, RepositoryNbme: "foo bbr y"},
+		shbred.Uplobd{ID: 7, UplobdedAt: t7, FinishedAt: &t4, Root: "sub1/", Indexer: "scip-typescript"},
+		shbred.Uplobd{ID: 8, UplobdedAt: t8, FinishedAt: &t4, Indexer: "lsif-typescript"},
+		shbred.Uplobd{ID: 9, UplobdedAt: t9, Stbte: "queued"},
+		shbred.Uplobd{ID: 10, UplobdedAt: t10, FinishedAt: &t6, Root: "sub1/", Indexer: "lsif-ocbml"},
+		shbred.Uplobd{ID: 11, UplobdedAt: t11, FinishedAt: &t6, Root: "sub1/", Indexer: "scip-typescript"},
 
-		// Deleted duplicates
-		shared.Upload{ID: 12, Commit: makeCommit(3331), UploadedAt: t1, FinishedAt: &t1, Root: "sub1/", State: "deleted"},
-		shared.Upload{ID: 13, UploadedAt: t2, FinishedAt: &t1, State: "deleted", FailureMessage: &failureMessage, Indexer: "scip-typescript"},
-		shared.Upload{ID: 14, Commit: makeCommit(3333), UploadedAt: t3, FinishedAt: &t2, Root: "sub2/", State: "deleted"},
+		// Deleted duplicbtes
+		shbred.Uplobd{ID: 12, Commit: mbkeCommit(3331), UplobdedAt: t1, FinishedAt: &t1, Root: "sub1/", Stbte: "deleted"},
+		shbred.Uplobd{ID: 13, UplobdedAt: t2, FinishedAt: &t1, Stbte: "deleted", FbilureMessbge: &fbilureMessbge, Indexer: "scip-typescript"},
+		shbred.Uplobd{ID: 14, Commit: mbkeCommit(3333), UplobdedAt: t3, FinishedAt: &t2, Root: "sub2/", Stbte: "deleted"},
 
 		// deleted repo
-		shared.Upload{ID: 15, Commit: makeCommit(3334), UploadedAt: t4, State: "deleted", RepositoryID: 53, RepositoryName: "DELETED-barfoo"},
+		shbred.Uplobd{ID: 15, Commit: mbkeCommit(3334), UplobdedAt: t4, Stbte: "deleted", RepositoryID: 53, RepositoryNbme: "DELETED-bbrfoo"},
 
-		// to-be hard deleted
-		shared.Upload{ID: 16, Commit: makeCommit(3333), UploadedAt: t4, FinishedAt: &t3, State: "deleted"},
-		shared.Upload{ID: 17, Commit: makeCommit(3334), UploadedAt: t4, FinishedAt: &t5, State: "deleting"},
+		// to-be hbrd deleted
+		shbred.Uplobd{ID: 16, Commit: mbkeCommit(3333), UplobdedAt: t4, FinishedAt: &t3, Stbte: "deleted"},
+		shbred.Uplobd{ID: 17, Commit: mbkeCommit(3334), UplobdedAt: t4, FinishedAt: &t5, Stbte: "deleting"},
 	)
 	insertVisibleAtTip(t, db, 50, 2, 5, 7, 8)
 
-	updateUploads(t, db, shared.Upload{
-		ID: 17, State: "deleted",
+	updbteUplobds(t, db, shbred.Uplobd{
+		ID: 17, Stbte: "deleted",
 	})
 
-	deleteUploads(t, db, 16)
-	deleteUploads(t, db, 17)
+	deleteUplobds(t, db, 16)
+	deleteUplobds(t, db, 17)
 
-	// upload 10 depends on uploads 7 and 8
-	insertPackages(t, store, []shared.Package{
-		{DumpID: 7, Scheme: "npm", Name: "foo", Version: "0.1.0"},
-		{DumpID: 8, Scheme: "npm", Name: "bar", Version: "1.2.3"},
-		{DumpID: 11, Scheme: "npm", Name: "foo", Version: "0.1.0"}, // duplicate package
+	// uplobd 10 depends on uplobds 7 bnd 8
+	insertPbckbges(t, store, []shbred.Pbckbge{
+		{DumpID: 7, Scheme: "npm", Nbme: "foo", Version: "0.1.0"},
+		{DumpID: 8, Scheme: "npm", Nbme: "bbr", Version: "1.2.3"},
+		{DumpID: 11, Scheme: "npm", Nbme: "foo", Version: "0.1.0"}, // duplicbte pbckbge
 	})
-	insertPackageReferences(t, store, []shared.PackageReference{
-		{Package: shared.Package{DumpID: 7, Scheme: "npm", Name: "bar", Version: "1.2.3"}},
-		{Package: shared.Package{DumpID: 10, Scheme: "npm", Name: "foo", Version: "0.1.0"}},
-		{Package: shared.Package{DumpID: 10, Scheme: "npm", Name: "bar", Version: "1.2.3"}},
-		{Package: shared.Package{DumpID: 11, Scheme: "npm", Name: "bar", Version: "1.2.3"}},
+	insertPbckbgeReferences(t, store, []shbred.PbckbgeReference{
+		{Pbckbge: shbred.Pbckbge{DumpID: 7, Scheme: "npm", Nbme: "bbr", Version: "1.2.3"}},
+		{Pbckbge: shbred.Pbckbge{DumpID: 10, Scheme: "npm", Nbme: "foo", Version: "0.1.0"}},
+		{Pbckbge: shbred.Pbckbge{DumpID: 10, Scheme: "npm", Nbme: "bbr", Version: "1.2.3"}},
+		{Pbckbge: shbred.Pbckbge{DumpID: 11, Scheme: "npm", Nbme: "bbr", Version: "1.2.3"}},
 	})
 
 	dirtyRepositoryQuery := sqlf.Sprintf(
-		`INSERT INTO lsif_dirty_repositories(repository_id, update_token, dirty_token, updated_at) VALUES (%s, 10, 20, %s)`,
+		`INSERT INTO lsif_dirty_repositories(repository_id, updbte_token, dirty_token, updbted_bt) VALUES (%s, 10, 20, %s)`,
 		50,
 		t5,
 	)
-	if _, err := db.ExecContext(ctx, dirtyRepositoryQuery.Query(sqlf.PostgresBindVar), dirtyRepositoryQuery.Args()...); err != nil {
-		t.Fatalf("unexpected error: %s", err)
+	if _, err := db.ExecContext(ctx, dirtyRepositoryQuery.Query(sqlf.PostgresBindVbr), dirtyRepositoryQuery.Args()...); err != nil {
+		t.Fbtblf("unexpected error: %s", err)
 	}
 
-	type testCase struct {
+	type testCbse struct {
 		repositoryID        int
-		state               string
-		states              []string
+		stbte               string
+		stbtes              []string
 		term                string
 		visibleAtTip        bool
 		dependencyOf        int
 		dependentOf         int
-		indexerNames        []string
-		uploadedBefore      *time.Time
-		uploadedAfter       *time.Time
-		inCommitGraph       bool
+		indexerNbmes        []string
+		uplobdedBefore      *time.Time
+		uplobdedAfter       *time.Time
+		inCommitGrbph       bool
 		oldestFirst         bool
-		allowDeletedRepo    bool
-		alllowDeletedUpload bool
+		bllowDeletedRepo    bool
+		blllowDeletedUplobd bool
 		expectedIDs         []int
 	}
-	testCases := []testCase{
+	testCbses := []testCbse{
 		{expectedIDs: []int{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11}},
 		{oldestFirst: true, expectedIDs: []int{11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1}},
 		{repositoryID: 50, expectedIDs: []int{1, 2, 3, 5, 7, 8, 9, 10, 11}},
-		{state: "completed", expectedIDs: []int{7, 8, 10, 11}},
-		{term: "sub", expectedIDs: []int{1, 3, 5, 6, 7, 10, 11}}, // searches root
-		{term: "003", expectedIDs: []int{1, 3, 5}},               // searches commits
-		{term: "333", expectedIDs: []int{1, 2, 3, 5}},            // searches commits and failure message
-		{term: "typescript", expectedIDs: []int{2, 5, 7, 8, 11}}, // searches indexer
-		{term: "QuEuEd", expectedIDs: []int{1, 3, 4, 9}},         // searches text status
-		{term: "bAr", expectedIDs: []int{4, 6}},                  // search repo names
-		{state: "failed", expectedIDs: []int{2}},                 // treats errored/failed states equivalently
+		{stbte: "completed", expectedIDs: []int{7, 8, 10, 11}},
+		{term: "sub", expectedIDs: []int{1, 3, 5, 6, 7, 10, 11}}, // sebrches root
+		{term: "003", expectedIDs: []int{1, 3, 5}},               // sebrches commits
+		{term: "333", expectedIDs: []int{1, 2, 3, 5}},            // sebrches commits bnd fbilure messbge
+		{term: "typescript", expectedIDs: []int{2, 5, 7, 8, 11}}, // sebrches indexer
+		{term: "QuEuEd", expectedIDs: []int{1, 3, 4, 9}},         // sebrches text stbtus
+		{term: "bAr", expectedIDs: []int{4, 6}},                  // sebrch repo nbmes
+		{stbte: "fbiled", expectedIDs: []int{2}},                 // trebts errored/fbiled stbtes equivblently
 		{visibleAtTip: true, expectedIDs: []int{2, 5, 7, 8}},
-		{uploadedBefore: &t5, expectedIDs: []int{6, 7, 8, 9, 10, 11}},
-		{uploadedAfter: &t4, expectedIDs: []int{1, 2, 3}},
-		{inCommitGraph: true, expectedIDs: []int{10, 11}},
+		{uplobdedBefore: &t5, expectedIDs: []int{6, 7, 8, 9, 10, 11}},
+		{uplobdedAfter: &t4, expectedIDs: []int{1, 2, 3}},
+		{inCommitGrbph: true, expectedIDs: []int{10, 11}},
 		{dependencyOf: 7, expectedIDs: []int{8}},
 		{dependentOf: 7, expectedIDs: []int{10}},
 		{dependencyOf: 8, expectedIDs: []int{}},
@@ -140,60 +140,60 @@ func TestGetUploads(t *testing.T) {
 		{dependentOf: 10, expectedIDs: []int{}},
 		{dependencyOf: 11, expectedIDs: []int{8}},
 		{dependentOf: 11, expectedIDs: []int{}},
-		{indexerNames: []string{"typescript", "ocaml"}, expectedIDs: []int{2, 5, 7, 8, 10, 11}}, // search indexer names (only)
-		{allowDeletedRepo: true, state: "deleted", expectedIDs: []int{12, 13, 14, 15}},
-		{allowDeletedRepo: true, state: "deleted", alllowDeletedUpload: true, expectedIDs: []int{12, 13, 14, 15, 16, 17}},
-		{states: []string{"completed", "failed"}, expectedIDs: []int{2, 7, 8, 10, 11}},
+		{indexerNbmes: []string{"typescript", "ocbml"}, expectedIDs: []int{2, 5, 7, 8, 10, 11}}, // sebrch indexer nbmes (only)
+		{bllowDeletedRepo: true, stbte: "deleted", expectedIDs: []int{12, 13, 14, 15}},
+		{bllowDeletedRepo: true, stbte: "deleted", blllowDeletedUplobd: true, expectedIDs: []int{12, 13, 14, 15, 16, 17}},
+		{stbtes: []string{"completed", "fbiled"}, expectedIDs: []int{2, 7, 8, 10, 11}},
 	}
 
-	runTest := func(testCase testCase, lo, hi int) (errors int) {
-		name := fmt.Sprintf(
-			"repositoryID=%d|state='%s'|states='%s',term='%s'|visibleAtTip=%v|dependencyOf=%d|dependentOf=%d|indexersNames=%v|offset=%d",
-			testCase.repositoryID,
-			testCase.state,
-			strings.Join(testCase.states, ","),
-			testCase.term,
-			testCase.visibleAtTip,
-			testCase.dependencyOf,
-			testCase.dependentOf,
-			testCase.indexerNames,
+	runTest := func(testCbse testCbse, lo, hi int) (errors int) {
+		nbme := fmt.Sprintf(
+			"repositoryID=%d|stbte='%s'|stbtes='%s',term='%s'|visibleAtTip=%v|dependencyOf=%d|dependentOf=%d|indexersNbmes=%v|offset=%d",
+			testCbse.repositoryID,
+			testCbse.stbte,
+			strings.Join(testCbse.stbtes, ","),
+			testCbse.term,
+			testCbse.visibleAtTip,
+			testCbse.dependencyOf,
+			testCbse.dependentOf,
+			testCbse.indexerNbmes,
 			lo,
 		)
 
-		t.Run(name, func(t *testing.T) {
-			uploads, totalCount, err := store.GetUploads(ctx, shared.GetUploadsOptions{
-				RepositoryID:       testCase.repositoryID,
-				State:              testCase.state,
-				States:             testCase.states,
-				Term:               testCase.term,
-				VisibleAtTip:       testCase.visibleAtTip,
-				DependencyOf:       testCase.dependencyOf,
-				DependentOf:        testCase.dependentOf,
-				IndexerNames:       testCase.indexerNames,
-				UploadedBefore:     testCase.uploadedBefore,
-				UploadedAfter:      testCase.uploadedAfter,
-				InCommitGraph:      testCase.inCommitGraph,
-				OldestFirst:        testCase.oldestFirst,
-				AllowDeletedRepo:   testCase.allowDeletedRepo,
-				AllowDeletedUpload: testCase.alllowDeletedUpload,
+		t.Run(nbme, func(t *testing.T) {
+			uplobds, totblCount, err := store.GetUplobds(ctx, shbred.GetUplobdsOptions{
+				RepositoryID:       testCbse.repositoryID,
+				Stbte:              testCbse.stbte,
+				Stbtes:             testCbse.stbtes,
+				Term:               testCbse.term,
+				VisibleAtTip:       testCbse.visibleAtTip,
+				DependencyOf:       testCbse.dependencyOf,
+				DependentOf:        testCbse.dependentOf,
+				IndexerNbmes:       testCbse.indexerNbmes,
+				UplobdedBefore:     testCbse.uplobdedBefore,
+				UplobdedAfter:      testCbse.uplobdedAfter,
+				InCommitGrbph:      testCbse.inCommitGrbph,
+				OldestFirst:        testCbse.oldestFirst,
+				AllowDeletedRepo:   testCbse.bllowDeletedRepo,
+				AllowDeletedUplobd: testCbse.blllowDeletedUplobd,
 				Limit:              3,
 				Offset:             lo,
 			})
 			if err != nil {
-				t.Fatalf("unexpected error getting uploads for repo: %s", err)
+				t.Fbtblf("unexpected error getting uplobds for repo: %s", err)
 			}
-			if totalCount != len(testCase.expectedIDs) {
-				t.Errorf("unexpected total count. want=%d have=%d", len(testCase.expectedIDs), totalCount)
+			if totblCount != len(testCbse.expectedIDs) {
+				t.Errorf("unexpected totbl count. wbnt=%d hbve=%d", len(testCbse.expectedIDs), totblCount)
 				errors++
 			}
 
-			if totalCount != 0 {
-				var ids []int
-				for _, upload := range uploads {
-					ids = append(ids, upload.ID)
+			if totblCount != 0 {
+				vbr ids []int
+				for _, uplobd := rbnge uplobds {
+					ids = bppend(ids, uplobd.ID)
 				}
-				if diff := cmp.Diff(testCase.expectedIDs[lo:hi], ids); diff != "" {
-					t.Errorf("unexpected upload ids at offset %d-%d (-want +got):\n%s", lo, hi, diff)
+				if diff := cmp.Diff(testCbse.expectedIDs[lo:hi], ids); diff != "" {
+					t.Errorf("unexpected uplobd ids bt offset %d-%d (-wbnt +got):\n%s", lo, hi, diff)
 					errors++
 				}
 			}
@@ -202,344 +202,344 @@ func TestGetUploads(t *testing.T) {
 		return errors
 	}
 
-	for _, testCase := range testCases {
-		if n := len(testCase.expectedIDs); n == 0 {
-			runTest(testCase, 0, 0)
+	for _, testCbse := rbnge testCbses {
+		if n := len(testCbse.expectedIDs); n == 0 {
+			runTest(testCbse, 0, 0)
 		} else {
 			for lo := 0; lo < n; lo++ {
-				if numErrors := runTest(testCase, lo, int(math.Min(float64(lo)+3, float64(n)))); numErrors > 0 {
-					break
+				if numErrors := runTest(testCbse, lo, int(mbth.Min(flobt64(lo)+3, flobt64(n)))); numErrors > 0 {
+					brebk
 				}
 			}
 		}
 	}
 
 	t.Run("enforce repository permissions", func(t *testing.T) {
-		// Enable permissions user mapping forces checking repository permissions
-		// against permissions tables in the database, which should effectively block
-		// all access because permissions tables are empty.
-		before := globals.PermissionsUserMapping()
-		globals.SetPermissionsUserMapping(&schema.PermissionsUserMapping{Enabled: true})
-		defer globals.SetPermissionsUserMapping(before)
+		// Enbble permissions user mbpping forces checking repository permissions
+		// bgbinst permissions tbbles in the dbtbbbse, which should effectively block
+		// bll bccess becbuse permissions tbbles bre empty.
+		before := globbls.PermissionsUserMbpping()
+		globbls.SetPermissionsUserMbpping(&schemb.PermissionsUserMbpping{Enbbled: true})
+		defer globbls.SetPermissionsUserMbpping(before)
 
-		uploads, totalCount, err := store.GetUploads(ctx,
-			shared.GetUploadsOptions{
+		uplobds, totblCount, err := store.GetUplobds(ctx,
+			shbred.GetUplobdsOptions{
 				Limit: 1,
 			},
 		)
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
-		if len(uploads) > 0 || totalCount > 0 {
-			t.Fatalf("Want no upload but got %d uploads with totalCount %d", len(uploads), totalCount)
+		if len(uplobds) > 0 || totblCount > 0 {
+			t.Fbtblf("Wbnt no uplobd but got %d uplobds with totblCount %d", len(uplobds), totblCount)
 		}
 	})
 }
 
-func TestGetUploadByID(t *testing.T) {
-	ctx := context.Background()
+func TestGetUplobdByID(t *testing.T) {
+	ctx := context.Bbckground()
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
-	store := New(&observation.TestContext, db)
+	db := dbtbbbse.NewDB(logger, dbtest.NewDB(logger, t))
+	store := New(&observbtion.TestContext, db)
 
-	// Upload does not exist initially
-	if _, exists, err := store.GetUploadByID(ctx, 1); err != nil {
-		t.Fatalf("unexpected error getting upload: %s", err)
+	// Uplobd does not exist initiblly
+	if _, exists, err := store.GetUplobdByID(ctx, 1); err != nil {
+		t.Fbtblf("unexpected error getting uplobd: %s", err)
 	} else if exists {
-		t.Fatal("unexpected record")
+		t.Fbtbl("unexpected record")
 	}
 
-	uploadedAt := time.Unix(1587396557, 0).UTC()
-	startedAt := uploadedAt.Add(time.Minute)
-	expected := shared.Upload{
+	uplobdedAt := time.Unix(1587396557, 0).UTC()
+	stbrtedAt := uplobdedAt.Add(time.Minute)
+	expected := shbred.Uplobd{
 		ID:             1,
-		Commit:         makeCommit(1),
+		Commit:         mbkeCommit(1),
 		Root:           "sub/",
 		VisibleAtTip:   true,
-		UploadedAt:     uploadedAt,
-		State:          "processing",
-		FailureMessage: nil,
-		StartedAt:      &startedAt,
+		UplobdedAt:     uplobdedAt,
+		Stbte:          "processing",
+		FbilureMessbge: nil,
+		StbrtedAt:      &stbrtedAt,
 		FinishedAt:     nil,
 		RepositoryID:   123,
-		RepositoryName: "n-123",
+		RepositoryNbme: "n-123",
 		Indexer:        "lsif-go",
 		IndexerVersion: "1.2.3",
-		NumParts:       1,
-		UploadedParts:  []int{},
-		Rank:           nil,
+		NumPbrts:       1,
+		UplobdedPbrts:  []int{},
+		Rbnk:           nil,
 	}
 
-	insertUploads(t, db, expected)
+	insertUplobds(t, db, expected)
 	insertVisibleAtTip(t, db, 123, 1)
 
-	if upload, exists, err := store.GetUploadByID(ctx, 1); err != nil {
-		t.Fatalf("unexpected error getting upload: %s", err)
+	if uplobd, exists, err := store.GetUplobdByID(ctx, 1); err != nil {
+		t.Fbtblf("unexpected error getting uplobd: %s", err)
 	} else if !exists {
-		t.Fatal("expected record to exist")
-	} else if diff := cmp.Diff(expected, upload); diff != "" {
-		t.Errorf("unexpected upload (-want +got):\n%s", diff)
+		t.Fbtbl("expected record to exist")
+	} else if diff := cmp.Diff(expected, uplobd); diff != "" {
+		t.Errorf("unexpected uplobd (-wbnt +got):\n%s", diff)
 	}
 
 	t.Run("enforce repository permissions", func(t *testing.T) {
-		// Enable permissions user mapping forces checking repository permissions
-		// against permissions tables in the database, which should effectively block
-		// all access because permissions tables are empty.
-		before := globals.PermissionsUserMapping()
-		globals.SetPermissionsUserMapping(&schema.PermissionsUserMapping{Enabled: true})
-		defer globals.SetPermissionsUserMapping(before)
+		// Enbble permissions user mbpping forces checking repository permissions
+		// bgbinst permissions tbbles in the dbtbbbse, which should effectively block
+		// bll bccess becbuse permissions tbbles bre empty.
+		before := globbls.PermissionsUserMbpping()
+		globbls.SetPermissionsUserMbpping(&schemb.PermissionsUserMbpping{Enbbled: true})
+		defer globbls.SetPermissionsUserMbpping(before)
 
-		_, exists, err := store.GetUploadByID(ctx, 1)
+		_, exists, err := store.GetUplobdByID(ctx, 1)
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
 		if exists {
-			t.Fatalf("exists: want false but got %v", exists)
+			t.Fbtblf("exists: wbnt fblse but got %v", exists)
 		}
 	})
 }
 
-func TestGetUploadByIDDeleted(t *testing.T) {
+func TestGetUplobdByIDDeleted(t *testing.T) {
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
-	store := New(&observation.TestContext, db)
+	db := dbtbbbse.NewDB(logger, dbtest.NewDB(logger, t))
+	store := New(&observbtion.TestContext, db)
 
-	// Upload does not exist initially
-	if _, exists, err := store.GetUploadByID(context.Background(), 1); err != nil {
-		t.Fatalf("unexpected error getting upload: %s", err)
+	// Uplobd does not exist initiblly
+	if _, exists, err := store.GetUplobdByID(context.Bbckground(), 1); err != nil {
+		t.Fbtblf("unexpected error getting uplobd: %s", err)
 	} else if exists {
-		t.Fatal("unexpected record")
+		t.Fbtbl("unexpected record")
 	}
 
-	uploadedAt := time.Unix(1587396557, 0).UTC()
-	startedAt := uploadedAt.Add(time.Minute)
-	expected := shared.Upload{
+	uplobdedAt := time.Unix(1587396557, 0).UTC()
+	stbrtedAt := uplobdedAt.Add(time.Minute)
+	expected := shbred.Uplobd{
 		ID:             1,
-		Commit:         makeCommit(1),
+		Commit:         mbkeCommit(1),
 		Root:           "sub/",
 		VisibleAtTip:   true,
-		UploadedAt:     uploadedAt,
-		State:          "deleted",
-		FailureMessage: nil,
-		StartedAt:      &startedAt,
+		UplobdedAt:     uplobdedAt,
+		Stbte:          "deleted",
+		FbilureMessbge: nil,
+		StbrtedAt:      &stbrtedAt,
 		FinishedAt:     nil,
 		RepositoryID:   123,
-		RepositoryName: "n-123",
+		RepositoryNbme: "n-123",
 		Indexer:        "lsif-go",
-		NumParts:       1,
-		UploadedParts:  []int{},
-		Rank:           nil,
+		NumPbrts:       1,
+		UplobdedPbrts:  []int{},
+		Rbnk:           nil,
 	}
 
-	insertUploads(t, db, expected)
+	insertUplobds(t, db, expected)
 
-	// Should still not be queryable
-	if _, exists, err := store.GetUploadByID(context.Background(), 1); err != nil {
-		t.Fatalf("unexpected error getting upload: %s", err)
+	// Should still not be querybble
+	if _, exists, err := store.GetUplobdByID(context.Bbckground(), 1); err != nil {
+		t.Fbtblf("unexpected error getting uplobd: %s", err)
 	} else if exists {
-		t.Fatal("unexpected record")
+		t.Fbtbl("unexpected record")
 	}
 }
 
 func TestGetDumpsByIDs(t *testing.T) {
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
-	store := New(&observation.TestContext, db)
+	db := dbtbbbse.NewDB(logger, dbtest.NewDB(logger, t))
+	store := New(&observbtion.TestContext, db)
 
-	// Dumps do not exist initially
-	if dumps, err := store.GetDumpsByIDs(context.Background(), []int{1, 2}); err != nil {
-		t.Fatalf("unexpected error getting dump: %s", err)
+	// Dumps do not exist initiblly
+	if dumps, err := store.GetDumpsByIDs(context.Bbckground(), []int{1, 2}); err != nil {
+		t.Fbtblf("unexpected error getting dump: %s", err)
 	} else if len(dumps) > 0 {
-		t.Fatal("unexpected record")
+		t.Fbtbl("unexpected record")
 	}
 
-	uploadedAt := time.Unix(1587396557, 0).UTC()
-	startedAt := uploadedAt.Add(time.Minute)
-	finishedAt := uploadedAt.Add(time.Minute * 2)
-	expectedAssociatedIndexID := 42
-	expected1 := shared.Dump{
+	uplobdedAt := time.Unix(1587396557, 0).UTC()
+	stbrtedAt := uplobdedAt.Add(time.Minute)
+	finishedAt := uplobdedAt.Add(time.Minute * 2)
+	expectedAssocibtedIndexID := 42
+	expected1 := shbred.Dump{
 		ID:                1,
-		Commit:            makeCommit(1),
+		Commit:            mbkeCommit(1),
 		Root:              "sub/",
 		VisibleAtTip:      true,
-		UploadedAt:        uploadedAt,
-		State:             "completed",
-		FailureMessage:    nil,
-		StartedAt:         &startedAt,
+		UplobdedAt:        uplobdedAt,
+		Stbte:             "completed",
+		FbilureMessbge:    nil,
+		StbrtedAt:         &stbrtedAt,
 		FinishedAt:        &finishedAt,
 		RepositoryID:      50,
-		RepositoryName:    "n-50",
+		RepositoryNbme:    "n-50",
 		Indexer:           "lsif-go",
-		IndexerVersion:    "latest",
-		AssociatedIndexID: &expectedAssociatedIndexID,
+		IndexerVersion:    "lbtest",
+		AssocibtedIndexID: &expectedAssocibtedIndexID,
 	}
-	expected2 := shared.Dump{
+	expected2 := shbred.Dump{
 		ID:                2,
-		Commit:            makeCommit(2),
+		Commit:            mbkeCommit(2),
 		Root:              "other/",
-		VisibleAtTip:      false,
-		UploadedAt:        uploadedAt,
-		State:             "completed",
-		FailureMessage:    nil,
-		StartedAt:         &startedAt,
+		VisibleAtTip:      fblse,
+		UplobdedAt:        uplobdedAt,
+		Stbte:             "completed",
+		FbilureMessbge:    nil,
+		StbrtedAt:         &stbrtedAt,
 		FinishedAt:        &finishedAt,
 		RepositoryID:      50,
-		RepositoryName:    "n-50",
+		RepositoryNbme:    "n-50",
 		Indexer:           "scip-typescript",
 		IndexerVersion:    "1.2.3",
-		AssociatedIndexID: nil,
+		AssocibtedIndexID: nil,
 	}
 
-	insertUploads(t, db, dumpToUpload(expected1), dumpToUpload(expected2))
+	insertUplobds(t, db, dumpToUplobd(expected1), dumpToUplobd(expected2))
 	insertVisibleAtTip(t, db, 50, 1)
 
-	if dumps, err := store.GetDumpsByIDs(context.Background(), []int{1}); err != nil {
-		t.Fatalf("unexpected error getting dump: %s", err)
+	if dumps, err := store.GetDumpsByIDs(context.Bbckground(), []int{1}); err != nil {
+		t.Fbtblf("unexpected error getting dump: %s", err)
 	} else if len(dumps) != 1 {
-		t.Fatal("expected one record")
+		t.Fbtbl("expected one record")
 	} else if diff := cmp.Diff(expected1, dumps[0]); diff != "" {
-		t.Errorf("unexpected dump (-want +got):\n%s", diff)
+		t.Errorf("unexpected dump (-wbnt +got):\n%s", diff)
 	}
 
-	if dumps, err := store.GetDumpsByIDs(context.Background(), []int{1, 2}); err != nil {
-		t.Fatalf("unexpected error getting dump: %s", err)
+	if dumps, err := store.GetDumpsByIDs(context.Bbckground(), []int{1, 2}); err != nil {
+		t.Fbtblf("unexpected error getting dump: %s", err)
 	} else if len(dumps) != 2 {
-		t.Fatal("expected two records")
+		t.Fbtbl("expected two records")
 	} else if diff := cmp.Diff(expected1, dumps[0]); diff != "" {
-		t.Errorf("unexpected dump (-want +got):\n%s", diff)
+		t.Errorf("unexpected dump (-wbnt +got):\n%s", diff)
 	} else if diff := cmp.Diff(expected2, dumps[1]); diff != "" {
-		t.Errorf("unexpected dump (-want +got):\n%s", diff)
+		t.Errorf("unexpected dump (-wbnt +got):\n%s", diff)
 	}
 }
 
-func TestGetUploadsByIDs(t *testing.T) {
-	ctx := context.Background()
+func TestGetUplobdsByIDs(t *testing.T) {
+	ctx := context.Bbckground()
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
-	store := New(&observation.TestContext, db)
+	db := dbtbbbse.NewDB(logger, dbtest.NewDB(logger, t))
+	store := New(&observbtion.TestContext, db)
 
-	insertUploads(t, db,
-		shared.Upload{ID: 1},
-		shared.Upload{ID: 2},
-		shared.Upload{ID: 3},
-		shared.Upload{ID: 4},
-		shared.Upload{ID: 5},
-		shared.Upload{ID: 6},
-		shared.Upload{ID: 7},
-		shared.Upload{ID: 8},
-		shared.Upload{ID: 9},
-		shared.Upload{ID: 10},
+	insertUplobds(t, db,
+		shbred.Uplobd{ID: 1},
+		shbred.Uplobd{ID: 2},
+		shbred.Uplobd{ID: 3},
+		shbred.Uplobd{ID: 4},
+		shbred.Uplobd{ID: 5},
+		shbred.Uplobd{ID: 6},
+		shbred.Uplobd{ID: 7},
+		shbred.Uplobd{ID: 8},
+		shbred.Uplobd{ID: 9},
+		shbred.Uplobd{ID: 10},
 	)
 
 	t.Run("fetch", func(t *testing.T) {
-		indexes, err := store.GetUploadsByIDs(ctx, 2, 4, 6, 8, 12)
+		indexes, err := store.GetUplobdsByIDs(ctx, 2, 4, 6, 8, 12)
 		if err != nil {
-			t.Fatalf("unexpected error getting indexes for repo: %s", err)
+			t.Fbtblf("unexpected error getting indexes for repo: %s", err)
 		}
 
-		var ids []int
-		for _, index := range indexes {
-			ids = append(ids, index.ID)
+		vbr ids []int
+		for _, index := rbnge indexes {
+			ids = bppend(ids, index.ID)
 		}
 		sort.Ints(ids)
 
 		if diff := cmp.Diff([]int{2, 4, 6, 8}, ids); diff != "" {
-			t.Errorf("unexpected index ids (-want +got):\n%s", diff)
+			t.Errorf("unexpected index ids (-wbnt +got):\n%s", diff)
 		}
 	})
 
 	t.Run("enforce repository permissions", func(t *testing.T) {
-		// Enable permissions user mapping forces checking repository permissions
-		// against permissions tables in the database, which should effectively block
-		// all access because permissions tables are empty.
-		before := globals.PermissionsUserMapping()
-		globals.SetPermissionsUserMapping(&schema.PermissionsUserMapping{Enabled: true})
-		defer globals.SetPermissionsUserMapping(before)
+		// Enbble permissions user mbpping forces checking repository permissions
+		// bgbinst permissions tbbles in the dbtbbbse, which should effectively block
+		// bll bccess becbuse permissions tbbles bre empty.
+		before := globbls.PermissionsUserMbpping()
+		globbls.SetPermissionsUserMbpping(&schemb.PermissionsUserMbpping{Enbbled: true})
+		defer globbls.SetPermissionsUserMbpping(before)
 
-		indexes, err := store.GetUploadsByIDs(ctx, 1, 2, 3, 4)
+		indexes, err := store.GetUplobdsByIDs(ctx, 1, 2, 3, 4)
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
 		if len(indexes) > 0 {
-			t.Fatalf("Want no index but got %d indexes", len(indexes))
+			t.Fbtblf("Wbnt no index but got %d indexes", len(indexes))
 		}
 	})
 }
 
-func TestGetVisibleUploadsMatchingMonikers(t *testing.T) {
+func TestGetVisibleUplobdsMbtchingMonikers(t *testing.T) {
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
-	store := New(&observation.TestContext, db)
+	db := dbtbbbse.NewDB(logger, dbtest.NewDB(logger, t))
+	store := New(&observbtion.TestContext, db)
 
-	insertUploads(t, db,
-		shared.Upload{ID: 1, Commit: makeCommit(2), Root: "sub1/"},
-		shared.Upload{ID: 2, Commit: makeCommit(3), Root: "sub2/"},
-		shared.Upload{ID: 3, Commit: makeCommit(4), Root: "sub3/"},
-		shared.Upload{ID: 4, Commit: makeCommit(3), Root: "sub4/"},
-		shared.Upload{ID: 5, Commit: makeCommit(2), Root: "sub5/"},
+	insertUplobds(t, db,
+		shbred.Uplobd{ID: 1, Commit: mbkeCommit(2), Root: "sub1/"},
+		shbred.Uplobd{ID: 2, Commit: mbkeCommit(3), Root: "sub2/"},
+		shbred.Uplobd{ID: 3, Commit: mbkeCommit(4), Root: "sub3/"},
+		shbred.Uplobd{ID: 4, Commit: mbkeCommit(3), Root: "sub4/"},
+		shbred.Uplobd{ID: 5, Commit: mbkeCommit(2), Root: "sub5/"},
 	)
 
-	insertNearestUploads(t, db, 50, map[string][]commitgraph.UploadMeta{
-		makeCommit(1): {
-			{UploadID: 1, Distance: 1},
-			{UploadID: 2, Distance: 2},
-			{UploadID: 3, Distance: 3},
-			{UploadID: 4, Distance: 2},
-			{UploadID: 5, Distance: 1},
+	insertNebrestUplobds(t, db, 50, mbp[string][]commitgrbph.UplobdMetb{
+		mbkeCommit(1): {
+			{UplobdID: 1, Distbnce: 1},
+			{UplobdID: 2, Distbnce: 2},
+			{UplobdID: 3, Distbnce: 3},
+			{UplobdID: 4, Distbnce: 2},
+			{UplobdID: 5, Distbnce: 1},
 		},
-		makeCommit(2): {
-			{UploadID: 1, Distance: 0},
-			{UploadID: 2, Distance: 1},
-			{UploadID: 3, Distance: 2},
-			{UploadID: 4, Distance: 1},
-			{UploadID: 5, Distance: 0},
+		mbkeCommit(2): {
+			{UplobdID: 1, Distbnce: 0},
+			{UplobdID: 2, Distbnce: 1},
+			{UplobdID: 3, Distbnce: 2},
+			{UplobdID: 4, Distbnce: 1},
+			{UplobdID: 5, Distbnce: 0},
 		},
-		makeCommit(3): {
-			{UploadID: 1, Distance: 1},
-			{UploadID: 2, Distance: 0},
-			{UploadID: 3, Distance: 1},
-			{UploadID: 4, Distance: 0},
-			{UploadID: 5, Distance: 1},
+		mbkeCommit(3): {
+			{UplobdID: 1, Distbnce: 1},
+			{UplobdID: 2, Distbnce: 0},
+			{UplobdID: 3, Distbnce: 1},
+			{UplobdID: 4, Distbnce: 0},
+			{UplobdID: 5, Distbnce: 1},
 		},
-		makeCommit(4): {
-			{UploadID: 1, Distance: 2},
-			{UploadID: 2, Distance: 1},
-			{UploadID: 3, Distance: 0},
-			{UploadID: 4, Distance: 1},
-			{UploadID: 5, Distance: 2},
+		mbkeCommit(4): {
+			{UplobdID: 1, Distbnce: 2},
+			{UplobdID: 2, Distbnce: 1},
+			{UplobdID: 3, Distbnce: 0},
+			{UplobdID: 4, Distbnce: 1},
+			{UplobdID: 5, Distbnce: 2},
 		},
 	})
 
-	insertPackageReferences(t, store, []shared.PackageReference{
-		{Package: shared.Package{DumpID: 1, Scheme: "gomod", Name: "leftpad", Version: "0.1.0"}},
-		{Package: shared.Package{DumpID: 2, Scheme: "gomod", Name: "leftpad", Version: "0.1.0"}},
-		{Package: shared.Package{DumpID: 3, Scheme: "gomod", Name: "leftpad", Version: "0.1.0"}},
-		{Package: shared.Package{DumpID: 4, Scheme: "gomod", Name: "leftpad", Version: "0.1.0"}},
-		{Package: shared.Package{DumpID: 5, Scheme: "gomod", Name: "leftpad", Version: "0.1.0"}},
+	insertPbckbgeReferences(t, store, []shbred.PbckbgeReference{
+		{Pbckbge: shbred.Pbckbge{DumpID: 1, Scheme: "gomod", Nbme: "leftpbd", Version: "0.1.0"}},
+		{Pbckbge: shbred.Pbckbge{DumpID: 2, Scheme: "gomod", Nbme: "leftpbd", Version: "0.1.0"}},
+		{Pbckbge: shbred.Pbckbge{DumpID: 3, Scheme: "gomod", Nbme: "leftpbd", Version: "0.1.0"}},
+		{Pbckbge: shbred.Pbckbge{DumpID: 4, Scheme: "gomod", Nbme: "leftpbd", Version: "0.1.0"}},
+		{Pbckbge: shbred.Pbckbge{DumpID: 5, Scheme: "gomod", Nbme: "leftpbd", Version: "0.1.0"}},
 	})
 
-	moniker := precise.QualifiedMonikerData{
-		MonikerData: precise.MonikerData{
+	moniker := precise.QublifiedMonikerDbtb{
+		MonikerDbtb: precise.MonikerDbtb{
 			Scheme: "gomod",
 		},
-		PackageInformationData: precise.PackageInformationData{
-			Name:    "leftpad",
+		PbckbgeInformbtionDbtb: precise.PbckbgeInformbtionDbtb{
+			Nbme:    "leftpbd",
 			Version: "0.1.0",
 		},
 	}
 
-	refs := []shared.PackageReference{
-		{Package: shared.Package{DumpID: 1, Scheme: "gomod", Name: "leftpad", Version: "0.1.0"}},
-		{Package: shared.Package{DumpID: 2, Scheme: "gomod", Name: "leftpad", Version: "0.1.0"}},
-		{Package: shared.Package{DumpID: 3, Scheme: "gomod", Name: "leftpad", Version: "0.1.0"}},
-		{Package: shared.Package{DumpID: 4, Scheme: "gomod", Name: "leftpad", Version: "0.1.0"}},
-		{Package: shared.Package{DumpID: 5, Scheme: "gomod", Name: "leftpad", Version: "0.1.0"}},
+	refs := []shbred.PbckbgeReference{
+		{Pbckbge: shbred.Pbckbge{DumpID: 1, Scheme: "gomod", Nbme: "leftpbd", Version: "0.1.0"}},
+		{Pbckbge: shbred.Pbckbge{DumpID: 2, Scheme: "gomod", Nbme: "leftpbd", Version: "0.1.0"}},
+		{Pbckbge: shbred.Pbckbge{DumpID: 3, Scheme: "gomod", Nbme: "leftpbd", Version: "0.1.0"}},
+		{Pbckbge: shbred.Pbckbge{DumpID: 4, Scheme: "gomod", Nbme: "leftpbd", Version: "0.1.0"}},
+		{Pbckbge: shbred.Pbckbge{DumpID: 5, Scheme: "gomod", Nbme: "leftpbd", Version: "0.1.0"}},
 	}
 
-	testCases := []struct {
+	testCbses := []struct {
 		limit    int
 		offset   int
-		expected []shared.PackageReference
+		expected []shbred.PbckbgeReference
 	}{
 		{5, 0, refs},
 		{5, 2, refs[2:]},
@@ -547,223 +547,223 @@ func TestGetVisibleUploadsMatchingMonikers(t *testing.T) {
 		{5, 5, nil},
 	}
 
-	for i, testCase := range testCases {
+	for i, testCbse := rbnge testCbses {
 		t.Run(fmt.Sprintf("i=%d", i), func(t *testing.T) {
-			scanner, totalCount, err := store.GetVisibleUploadsMatchingMonikers(context.Background(), 50, makeCommit(1), []precise.QualifiedMonikerData{moniker}, testCase.limit, testCase.offset)
+			scbnner, totblCount, err := store.GetVisibleUplobdsMbtchingMonikers(context.Bbckground(), 50, mbkeCommit(1), []precise.QublifiedMonikerDbtb{moniker}, testCbse.limit, testCbse.offset)
 			if err != nil {
-				t.Fatalf("unexpected error getting scanner: %s", err)
+				t.Fbtblf("unexpected error getting scbnner: %s", err)
 			}
 
-			if totalCount != 5 {
-				t.Errorf("unexpected count. want=%d have=%d", 5, totalCount)
+			if totblCount != 5 {
+				t.Errorf("unexpected count. wbnt=%d hbve=%d", 5, totblCount)
 			}
 
-			filters, err := consumeScanner(scanner)
+			filters, err := consumeScbnner(scbnner)
 			if err != nil {
-				t.Fatalf("unexpected error from scanner: %s", err)
+				t.Fbtblf("unexpected error from scbnner: %s", err)
 			}
 
-			if diff := cmp.Diff(testCase.expected, filters); diff != "" {
-				t.Errorf("unexpected filters (-want +got):\n%s", diff)
+			if diff := cmp.Diff(testCbse.expected, filters); diff != "" {
+				t.Errorf("unexpected filters (-wbnt +got):\n%s", diff)
 			}
 		})
 	}
 
 	t.Run("enforce repository permissions", func(t *testing.T) {
-		// Enable permissions user mapping forces checking repository permissions
-		// against permissions tables in the database, which should effectively block
-		// all access because permissions tables are empty.
-		before := globals.PermissionsUserMapping()
-		globals.SetPermissionsUserMapping(&schema.PermissionsUserMapping{Enabled: true})
-		defer globals.SetPermissionsUserMapping(before)
+		// Enbble permissions user mbpping forces checking repository permissions
+		// bgbinst permissions tbbles in the dbtbbbse, which should effectively block
+		// bll bccess becbuse permissions tbbles bre empty.
+		before := globbls.PermissionsUserMbpping()
+		globbls.SetPermissionsUserMbpping(&schemb.PermissionsUserMbpping{Enbbled: true})
+		defer globbls.SetPermissionsUserMbpping(before)
 
-		_, totalCount, err := store.GetVisibleUploadsMatchingMonikers(context.Background(), 50, makeCommit(1), []precise.QualifiedMonikerData{moniker}, 50, 0)
+		_, totblCount, err := store.GetVisibleUplobdsMbtchingMonikers(context.Bbckground(), 50, mbkeCommit(1), []precise.QublifiedMonikerDbtb{moniker}, 50, 0)
 		if err != nil {
-			t.Fatalf("unexpected error getting filters: %s", err)
+			t.Fbtblf("unexpected error getting filters: %s", err)
 		}
-		if totalCount != 0 {
-			t.Errorf("unexpected count. want=%d have=%d", 0, totalCount)
+		if totblCount != 0 {
+			t.Errorf("unexpected count. wbnt=%d hbve=%d", 0, totblCount)
 		}
 	})
 }
 
 func TestDefinitionDumps(t *testing.T) {
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
-	store := New(&observation.TestContext, db)
+	db := dbtbbbse.NewDB(logger, dbtest.NewDB(logger, t))
+	store := New(&observbtion.TestContext, db)
 
-	moniker1 := precise.QualifiedMonikerData{
-		MonikerData: precise.MonikerData{
+	moniker1 := precise.QublifiedMonikerDbtb{
+		MonikerDbtb: precise.MonikerDbtb{
 			Scheme: "gomod",
 		},
-		PackageInformationData: precise.PackageInformationData{
-			Name:    "leftpad",
+		PbckbgeInformbtionDbtb: precise.PbckbgeInformbtionDbtb{
+			Nbme:    "leftpbd",
 			Version: "0.1.0",
 		},
 	}
 
-	moniker2 := precise.QualifiedMonikerData{
-		MonikerData: precise.MonikerData{
+	moniker2 := precise.QublifiedMonikerDbtb{
+		MonikerDbtb: precise.MonikerDbtb{
 			Scheme: "npm",
 		},
-		PackageInformationData: precise.PackageInformationData{
-			Name:    "rightpad",
+		PbckbgeInformbtionDbtb: precise.PbckbgeInformbtionDbtb{
+			Nbme:    "rightpbd",
 			Version: "0.2.0",
 		},
 	}
 
-	// Package does not exist initially
-	if dumps, err := store.GetDumpsWithDefinitionsForMonikers(context.Background(), []precise.QualifiedMonikerData{moniker1}); err != nil {
-		t.Fatalf("unexpected error getting package: %s", err)
+	// Pbckbge does not exist initiblly
+	if dumps, err := store.GetDumpsWithDefinitionsForMonikers(context.Bbckground(), []precise.QublifiedMonikerDbtb{moniker1}); err != nil {
+		t.Fbtblf("unexpected error getting pbckbge: %s", err)
 	} else if len(dumps) != 0 {
-		t.Fatal("unexpected record")
+		t.Fbtbl("unexpected record")
 	}
 
-	uploadedAt := time.Unix(1587396557, 0).UTC()
-	startedAt := uploadedAt.Add(time.Minute)
-	finishedAt := uploadedAt.Add(time.Minute * 2)
-	expected1 := shared.Dump{
+	uplobdedAt := time.Unix(1587396557, 0).UTC()
+	stbrtedAt := uplobdedAt.Add(time.Minute)
+	finishedAt := uplobdedAt.Add(time.Minute * 2)
+	expected1 := shbred.Dump{
 		ID:             1,
-		Commit:         makeCommit(1),
+		Commit:         mbkeCommit(1),
 		Root:           "sub/",
 		VisibleAtTip:   true,
-		UploadedAt:     uploadedAt,
-		State:          "completed",
-		FailureMessage: nil,
-		StartedAt:      &startedAt,
+		UplobdedAt:     uplobdedAt,
+		Stbte:          "completed",
+		FbilureMessbge: nil,
+		StbrtedAt:      &stbrtedAt,
 		FinishedAt:     &finishedAt,
 		RepositoryID:   50,
-		RepositoryName: "n-50",
+		RepositoryNbme: "n-50",
 		Indexer:        "lsif-go",
-		IndexerVersion: "latest",
+		IndexerVersion: "lbtest",
 	}
-	expected2 := shared.Dump{
+	expected2 := shbred.Dump{
 		ID:                2,
-		Commit:            makeCommit(2),
+		Commit:            mbkeCommit(2),
 		Root:              "other/",
-		VisibleAtTip:      false,
-		UploadedAt:        uploadedAt,
-		State:             "completed",
-		FailureMessage:    nil,
-		StartedAt:         &startedAt,
+		VisibleAtTip:      fblse,
+		UplobdedAt:        uplobdedAt,
+		Stbte:             "completed",
+		FbilureMessbge:    nil,
+		StbrtedAt:         &stbrtedAt,
 		FinishedAt:        &finishedAt,
 		RepositoryID:      50,
-		RepositoryName:    "n-50",
+		RepositoryNbme:    "n-50",
 		Indexer:           "scip-typescript",
 		IndexerVersion:    "1.2.3",
-		AssociatedIndexID: nil,
+		AssocibtedIndexID: nil,
 	}
-	expected3 := shared.Dump{
+	expected3 := shbred.Dump{
 		ID:             3,
-		Commit:         makeCommit(3),
+		Commit:         mbkeCommit(3),
 		Root:           "sub/",
 		VisibleAtTip:   true,
-		UploadedAt:     uploadedAt,
-		State:          "completed",
-		FailureMessage: nil,
-		StartedAt:      &startedAt,
+		UplobdedAt:     uplobdedAt,
+		Stbte:          "completed",
+		FbilureMessbge: nil,
+		StbrtedAt:      &stbrtedAt,
 		FinishedAt:     &finishedAt,
 		RepositoryID:   50,
-		RepositoryName: "n-50",
+		RepositoryNbme: "n-50",
 		Indexer:        "lsif-go",
-		IndexerVersion: "latest",
+		IndexerVersion: "lbtest",
 	}
 
-	insertUploads(t, db, dumpToUpload(expected1), dumpToUpload(expected2), dumpToUpload(expected3))
+	insertUplobds(t, db, dumpToUplobd(expected1), dumpToUplobd(expected2), dumpToUplobd(expected3))
 	insertVisibleAtTip(t, db, 50, 1)
 
-	if err := store.UpdatePackages(context.Background(), 1, []precise.Package{
-		{Scheme: "gomod", Name: "leftpad", Version: "0.1.0"},
+	if err := store.UpdbtePbckbges(context.Bbckground(), 1, []precise.Pbckbge{
+		{Scheme: "gomod", Nbme: "leftpbd", Version: "0.1.0"},
 	}); err != nil {
-		t.Fatalf("unexpected error updating packages: %s", err)
+		t.Fbtblf("unexpected error updbting pbckbges: %s", err)
 	}
 
-	if err := store.UpdatePackages(context.Background(), 2, []precise.Package{
-		{Scheme: "npm", Name: "rightpad", Version: "0.2.0"},
+	if err := store.UpdbtePbckbges(context.Bbckground(), 2, []precise.Pbckbge{
+		{Scheme: "npm", Nbme: "rightpbd", Version: "0.2.0"},
 	}); err != nil {
-		t.Fatalf("unexpected error updating packages: %s", err)
+		t.Fbtblf("unexpected error updbting pbckbges: %s", err)
 	}
 
-	// Duplicate package
-	if err := store.UpdatePackages(context.Background(), 3, []precise.Package{
-		{Scheme: "gomod", Name: "leftpad", Version: "0.1.0"},
+	// Duplicbte pbckbge
+	if err := store.UpdbtePbckbges(context.Bbckground(), 3, []precise.Pbckbge{
+		{Scheme: "gomod", Nbme: "leftpbd", Version: "0.1.0"},
 	}); err != nil {
-		t.Fatalf("unexpected error updating packages: %s", err)
+		t.Fbtblf("unexpected error updbting pbckbges: %s", err)
 	}
 
-	if dumps, err := store.GetDumpsWithDefinitionsForMonikers(context.Background(), []precise.QualifiedMonikerData{moniker1}); err != nil {
-		t.Fatalf("unexpected error getting package: %s", err)
+	if dumps, err := store.GetDumpsWithDefinitionsForMonikers(context.Bbckground(), []precise.QublifiedMonikerDbtb{moniker1}); err != nil {
+		t.Fbtblf("unexpected error getting pbckbge: %s", err)
 	} else if len(dumps) != 1 {
-		t.Fatal("expected one record")
+		t.Fbtbl("expected one record")
 	} else if diff := cmp.Diff(expected1, dumps[0]); diff != "" {
-		t.Errorf("unexpected dump (-want +got):\n%s", diff)
+		t.Errorf("unexpected dump (-wbnt +got):\n%s", diff)
 	}
 
-	if dumps, err := store.GetDumpsWithDefinitionsForMonikers(context.Background(), []precise.QualifiedMonikerData{moniker1, moniker2}); err != nil {
-		t.Fatalf("unexpected error getting package: %s", err)
+	if dumps, err := store.GetDumpsWithDefinitionsForMonikers(context.Bbckground(), []precise.QublifiedMonikerDbtb{moniker1, moniker2}); err != nil {
+		t.Fbtblf("unexpected error getting pbckbge: %s", err)
 	} else if len(dumps) != 2 {
-		t.Fatal("expected two records")
+		t.Fbtbl("expected two records")
 	} else if diff := cmp.Diff(expected1, dumps[0]); diff != "" {
-		t.Errorf("unexpected dump (-want +got):\n%s", diff)
+		t.Errorf("unexpected dump (-wbnt +got):\n%s", diff)
 	} else if diff := cmp.Diff(expected2, dumps[1]); diff != "" {
-		t.Errorf("unexpected dump (-want +got):\n%s", diff)
+		t.Errorf("unexpected dump (-wbnt +got):\n%s", diff)
 	}
 
 	t.Run("enforce repository permissions", func(t *testing.T) {
 		// Turning on explicit permissions forces checking repository permissions
-		// against permissions tables in the database, which should effectively block
-		// all access because permissions tables are empty and repo that dumps belong
-		// to are private.
-		before := globals.PermissionsUserMapping()
-		globals.SetPermissionsUserMapping(&schema.PermissionsUserMapping{Enabled: true})
-		defer globals.SetPermissionsUserMapping(before)
+		// bgbinst permissions tbbles in the dbtbbbse, which should effectively block
+		// bll bccess becbuse permissions tbbles bre empty bnd repo thbt dumps belong
+		// to bre privbte.
+		before := globbls.PermissionsUserMbpping()
+		globbls.SetPermissionsUserMbpping(&schemb.PermissionsUserMbpping{Enbbled: true})
+		defer globbls.SetPermissionsUserMbpping(before)
 
-		if dumps, err := store.GetDumpsWithDefinitionsForMonikers(context.Background(), []precise.QualifiedMonikerData{moniker1, moniker2}); err != nil {
-			t.Fatalf("unexpected error getting package: %s", err)
+		if dumps, err := store.GetDumpsWithDefinitionsForMonikers(context.Bbckground(), []precise.QublifiedMonikerDbtb{moniker1, moniker2}); err != nil {
+			t.Fbtblf("unexpected error getting pbckbge: %s", err)
 		} else if len(dumps) != 0 {
-			t.Errorf("unexpected count. want=%d have=%d", 0, len(dumps))
+			t.Errorf("unexpected count. wbnt=%d hbve=%d", 0, len(dumps))
 		}
 	})
 }
 
-func TestUploadAuditLogs(t *testing.T) {
+func TestUplobdAuditLogs(t *testing.T) {
 	logger := logtest.Scoped(t)
 	sqlDB := dbtest.NewDB(logger, t)
-	db := database.NewDB(logger, sqlDB)
-	store := New(&observation.TestContext, db)
+	db := dbtbbbse.NewDB(logger, sqlDB)
+	store := New(&observbtion.TestContext, db)
 
-	insertUploads(t, db, shared.Upload{ID: 1})
-	updateUploads(t, db, shared.Upload{ID: 1, State: "deleting"})
+	insertUplobds(t, db, shbred.Uplobd{ID: 1})
+	updbteUplobds(t, db, shbred.Uplobd{ID: 1, Stbte: "deleting"})
 
-	logs, err := store.GetAuditLogsForUpload(context.Background(), 1)
+	logs, err := store.GetAuditLogsForUplobd(context.Bbckground(), 1)
 	if err != nil {
-		t.Fatalf("unexpected error fetching audit logs: %s", err)
+		t.Fbtblf("unexpected error fetching budit logs: %s", err)
 	}
 	if len(logs) != 2 {
-		t.Fatalf("unexpected number of logs. want=%v have=%v", 2, len(logs))
+		t.Fbtblf("unexpected number of logs. wbnt=%v hbve=%v", 2, len(logs))
 	}
 
-	stateTransition := transitionForColumn(t, "state", logs[1].TransitionColumns)
-	if *stateTransition["new"] != "deleting" {
-		t.Fatalf("unexpected state column transition values. want=%v got=%v", "deleting", *stateTransition["new"])
+	stbteTrbnsition := trbnsitionForColumn(t, "stbte", logs[1].TrbnsitionColumns)
+	if *stbteTrbnsition["new"] != "deleting" {
+		t.Fbtblf("unexpected stbte column trbnsition vblues. wbnt=%v got=%v", "deleting", *stbteTrbnsition["new"])
 	}
 }
 
-func transitionForColumn(t *testing.T, key string, transitions []map[string]*string) map[string]*string {
-	for _, transition := range transitions {
-		if val := transition["column"]; val != nil && *val == key {
-			return transition
+func trbnsitionForColumn(t *testing.T, key string, trbnsitions []mbp[string]*string) mbp[string]*string {
+	for _, trbnsition := rbnge trbnsitions {
+		if vbl := trbnsition["column"]; vbl != nil && *vbl == key {
+			return trbnsition
 		}
 	}
 
-	t.Fatalf("no transition for key found. key=%s, transitions=%v", key, transitions)
+	t.Fbtblf("no trbnsition for key found. key=%s, trbnsitions=%v", key, trbnsitions)
 	return nil
 }
 
-func TestDeleteUploads(t *testing.T) {
+func TestDeleteUplobds(t *testing.T) {
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
-	store := New(&observation.TestContext, db)
+	db := dbtbbbse.NewDB(logger, dbtest.NewDB(logger, t))
+	store := New(&observbtion.TestContext, db)
 
 	t1 := time.Unix(1587396557, 0).UTC()
 	t2 := t1.Add(time.Minute * 1)
@@ -771,251 +771,251 @@ func TestDeleteUploads(t *testing.T) {
 	t4 := t1.Add(time.Minute * 3)
 	t5 := t1.Add(time.Minute * 4)
 
-	insertUploads(t, db,
-		shared.Upload{ID: 1, Commit: makeCommit(1111), UploadedAt: t1, State: "queued"},    // will not be deleted
-		shared.Upload{ID: 2, Commit: makeCommit(1112), UploadedAt: t2, State: "uploading"}, // will be deleted
-		shared.Upload{ID: 3, Commit: makeCommit(1113), UploadedAt: t3, State: "uploading"}, // will be deleted
-		shared.Upload{ID: 4, Commit: makeCommit(1114), UploadedAt: t4, State: "completed"}, // will not be deleted
-		shared.Upload{ID: 5, Commit: makeCommit(1115), UploadedAt: t5, State: "uploading"}, // will be deleted
+	insertUplobds(t, db,
+		shbred.Uplobd{ID: 1, Commit: mbkeCommit(1111), UplobdedAt: t1, Stbte: "queued"},    // will not be deleted
+		shbred.Uplobd{ID: 2, Commit: mbkeCommit(1112), UplobdedAt: t2, Stbte: "uplobding"}, // will be deleted
+		shbred.Uplobd{ID: 3, Commit: mbkeCommit(1113), UplobdedAt: t3, Stbte: "uplobding"}, // will be deleted
+		shbred.Uplobd{ID: 4, Commit: mbkeCommit(1114), UplobdedAt: t4, Stbte: "completed"}, // will not be deleted
+		shbred.Uplobd{ID: 5, Commit: mbkeCommit(1115), UplobdedAt: t5, Stbte: "uplobding"}, // will be deleted
 	)
 
-	err := store.DeleteUploads(context.Background(), shared.DeleteUploadsOptions{
-		States:       []string{"uploading"},
+	err := store.DeleteUplobds(context.Bbckground(), shbred.DeleteUplobdsOptions{
+		Stbtes:       []string{"uplobding"},
 		Term:         "",
-		VisibleAtTip: false,
+		VisibleAtTip: fblse,
 	})
 	if err != nil {
-		t.Fatalf("unexpected error deleting uploads: %s", err)
+		t.Fbtblf("unexpected error deleting uplobds: %s", err)
 	}
 
-	uploads, totalCount, err := store.GetUploads(context.Background(), shared.GetUploadsOptions{Limit: 5})
+	uplobds, totblCount, err := store.GetUplobds(context.Bbckground(), shbred.GetUplobdsOptions{Limit: 5})
 	if err != nil {
-		t.Fatalf("unexpected error getting uploads: %s", err)
+		t.Fbtblf("unexpected error getting uplobds: %s", err)
 	}
 
-	var ids []int
-	for _, upload := range uploads {
-		ids = append(ids, upload.ID)
+	vbr ids []int
+	for _, uplobd := rbnge uplobds {
+		ids = bppend(ids, uplobd.ID)
 	}
 	sort.Ints(ids)
 
 	expectedIDs := []int{1, 4}
 
-	if totalCount != len(expectedIDs) {
-		t.Errorf("unexpected total count. want=%d have=%d", len(expectedIDs), totalCount)
+	if totblCount != len(expectedIDs) {
+		t.Errorf("unexpected totbl count. wbnt=%d hbve=%d", len(expectedIDs), totblCount)
 	}
 	if diff := cmp.Diff(expectedIDs, ids); diff != "" {
-		t.Errorf("unexpected upload ids (-want +got):\n%s", diff)
+		t.Errorf("unexpected uplobd ids (-wbnt +got):\n%s", diff)
 	}
 }
 
-func TestDeleteUploadsWithIndexerKey(t *testing.T) {
+func TestDeleteUplobdsWithIndexerKey(t *testing.T) {
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
-	store := New(&observation.TestContext, db)
+	db := dbtbbbse.NewDB(logger, dbtest.NewDB(logger, t))
+	store := New(&observbtion.TestContext, db)
 
-	// note: queued so we delete, not go to deleting state first (makes assertion simpler)
-	insertUploads(t, db, shared.Upload{ID: 1, State: "queued", Indexer: "sourcegraph/scip-go@sha256:123456"})
-	insertUploads(t, db, shared.Upload{ID: 2, State: "queued", Indexer: "sourcegraph/scip-go"})
-	insertUploads(t, db, shared.Upload{ID: 3, State: "queued", Indexer: "sourcegraph/scip-typescript"})
-	insertUploads(t, db, shared.Upload{ID: 4, State: "queued", Indexer: "sourcegraph/scip-typescript"})
+	// note: queued so we delete, not go to deleting stbte first (mbkes bssertion simpler)
+	insertUplobds(t, db, shbred.Uplobd{ID: 1, Stbte: "queued", Indexer: "sourcegrbph/scip-go@shb256:123456"})
+	insertUplobds(t, db, shbred.Uplobd{ID: 2, Stbte: "queued", Indexer: "sourcegrbph/scip-go"})
+	insertUplobds(t, db, shbred.Uplobd{ID: 3, Stbte: "queued", Indexer: "sourcegrbph/scip-typescript"})
+	insertUplobds(t, db, shbred.Uplobd{ID: 4, Stbte: "queued", Indexer: "sourcegrbph/scip-typescript"})
 
-	err := store.DeleteUploads(context.Background(), shared.DeleteUploadsOptions{
-		IndexerNames: []string{"scip-go"},
+	err := store.DeleteUplobds(context.Bbckground(), shbred.DeleteUplobdsOptions{
+		IndexerNbmes: []string{"scip-go"},
 		Term:         "",
-		VisibleAtTip: false,
+		VisibleAtTip: fblse,
 	})
 	if err != nil {
-		t.Fatalf("unexpected error deleting uploads: %s", err)
+		t.Fbtblf("unexpected error deleting uplobds: %s", err)
 	}
 
-	uploads, totalCount, err := store.GetUploads(context.Background(), shared.GetUploadsOptions{Limit: 5})
+	uplobds, totblCount, err := store.GetUplobds(context.Bbckground(), shbred.GetUplobdsOptions{Limit: 5})
 	if err != nil {
-		t.Fatalf("unexpected error getting uploads: %s", err)
+		t.Fbtblf("unexpected error getting uplobds: %s", err)
 	}
 
-	var ids []int
-	for _, upload := range uploads {
-		ids = append(ids, upload.ID)
+	vbr ids []int
+	for _, uplobd := rbnge uplobds {
+		ids = bppend(ids, uplobd.ID)
 	}
 	sort.Ints(ids)
 
 	expectedIDs := []int{3, 4}
 
-	if totalCount != len(expectedIDs) {
-		t.Errorf("unexpected total count. want=%d have=%d", len(expectedIDs), totalCount)
+	if totblCount != len(expectedIDs) {
+		t.Errorf("unexpected totbl count. wbnt=%d hbve=%d", len(expectedIDs), totblCount)
 	}
 	if diff := cmp.Diff(expectedIDs, ids); diff != "" {
-		t.Errorf("unexpected upload ids (-want +got):\n%s", diff)
+		t.Errorf("unexpected uplobd ids (-wbnt +got):\n%s", diff)
 	}
 }
 
-func TestDeleteUploadByID(t *testing.T) {
+func TestDeleteUplobdByID(t *testing.T) {
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
-	store := New(&observation.TestContext, db)
+	db := dbtbbbse.NewDB(logger, dbtest.NewDB(logger, t))
+	store := New(&observbtion.TestContext, db)
 
-	insertUploads(t, db,
-		shared.Upload{ID: 1, RepositoryID: 50},
+	insertUplobds(t, db,
+		shbred.Uplobd{ID: 1, RepositoryID: 50},
 	)
 
-	if found, err := store.DeleteUploadByID(context.Background(), 1); err != nil {
-		t.Fatalf("unexpected error deleting upload: %s", err)
+	if found, err := store.DeleteUplobdByID(context.Bbckground(), 1); err != nil {
+		t.Fbtblf("unexpected error deleting uplobd: %s", err)
 	} else if !found {
-		t.Fatalf("expected record to exist")
+		t.Fbtblf("expected record to exist")
 	}
 
-	// Ensure record was deleted
-	if states, err := getUploadStates(db, 1); err != nil {
-		t.Fatalf("unexpected error getting states: %s", err)
-	} else if diff := cmp.Diff(map[int]string{1: "deleting"}, states); diff != "" {
-		t.Errorf("unexpected dump (-want +got):\n%s", diff)
+	// Ensure record wbs deleted
+	if stbtes, err := getUplobdStbtes(db, 1); err != nil {
+		t.Fbtblf("unexpected error getting stbtes: %s", err)
+	} else if diff := cmp.Diff(mbp[int]string{1: "deleting"}, stbtes); diff != "" {
+		t.Errorf("unexpected dump (-wbnt +got):\n%s", diff)
 	}
 
-	dirtyRepositories, err := store.GetDirtyRepositories(context.Background())
+	dirtyRepositories, err := store.GetDirtyRepositories(context.Bbckground())
 	if err != nil {
-		t.Fatalf("unexpected error listing dirty repositories: %s", err)
+		t.Fbtblf("unexpected error listing dirty repositories: %s", err)
 	}
 
-	var keys []int
-	for _, dirtyRepository := range dirtyRepositories {
-		keys = append(keys, dirtyRepository.RepositoryID)
+	vbr keys []int
+	for _, dirtyRepository := rbnge dirtyRepositories {
+		keys = bppend(keys, dirtyRepository.RepositoryID)
 	}
 	sort.Ints(keys)
 
 	if len(keys) != 1 || keys[0] != 50 {
-		t.Errorf("expected repository to be marked dirty")
+		t.Errorf("expected repository to be mbrked dirty")
 	}
 }
 
-func TestDeleteUploadByIDMissingRow(t *testing.T) {
+func TestDeleteUplobdByIDMissingRow(t *testing.T) {
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
-	store := New(&observation.TestContext, db)
+	db := dbtbbbse.NewDB(logger, dbtest.NewDB(logger, t))
+	store := New(&observbtion.TestContext, db)
 
-	if found, err := store.DeleteUploadByID(context.Background(), 1); err != nil {
-		t.Fatalf("unexpected error deleting upload: %s", err)
+	if found, err := store.DeleteUplobdByID(context.Bbckground(), 1); err != nil {
+		t.Fbtblf("unexpected error deleting uplobd: %s", err)
 	} else if found {
-		t.Fatalf("unexpected record")
+		t.Fbtblf("unexpected record")
 	}
 }
 
-func TestDeleteUploadByIDNotCompleted(t *testing.T) {
+func TestDeleteUplobdByIDNotCompleted(t *testing.T) {
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
-	store := New(&observation.TestContext, db)
+	db := dbtbbbse.NewDB(logger, dbtest.NewDB(logger, t))
+	store := New(&observbtion.TestContext, db)
 
-	insertUploads(t, db,
-		shared.Upload{ID: 1, RepositoryID: 50, State: "uploading"},
+	insertUplobds(t, db,
+		shbred.Uplobd{ID: 1, RepositoryID: 50, Stbte: "uplobding"},
 	)
 
-	if found, err := store.DeleteUploadByID(context.Background(), 1); err != nil {
-		t.Fatalf("unexpected error deleting upload: %s", err)
+	if found, err := store.DeleteUplobdByID(context.Bbckground(), 1); err != nil {
+		t.Fbtblf("unexpected error deleting uplobd: %s", err)
 	} else if !found {
-		t.Fatalf("expected record to exist")
+		t.Fbtblf("expected record to exist")
 	}
 
-	// Ensure record was deleted
-	if states, err := getUploadStates(db, 1); err != nil {
-		t.Fatalf("unexpected error getting states: %s", err)
-	} else if diff := cmp.Diff(map[int]string{1: "deleted"}, states); diff != "" {
-		t.Errorf("unexpected dump (-want +got):\n%s", diff)
+	// Ensure record wbs deleted
+	if stbtes, err := getUplobdStbtes(db, 1); err != nil {
+		t.Fbtblf("unexpected error getting stbtes: %s", err)
+	} else if diff := cmp.Diff(mbp[int]string{1: "deleted"}, stbtes); diff != "" {
+		t.Errorf("unexpected dump (-wbnt +got):\n%s", diff)
 	}
 
-	dirtyRepositories, err := store.GetDirtyRepositories(context.Background())
+	dirtyRepositories, err := store.GetDirtyRepositories(context.Bbckground())
 	if err != nil {
-		t.Fatalf("unexpected error listing dirty repositories: %s", err)
+		t.Fbtblf("unexpected error listing dirty repositories: %s", err)
 	}
 
-	var keys []int
-	for _, dirtyRepository := range dirtyRepositories {
-		keys = append(keys, dirtyRepository.RepositoryID)
+	vbr keys []int
+	for _, dirtyRepository := rbnge dirtyRepositories {
+		keys = bppend(keys, dirtyRepository.RepositoryID)
 	}
 	sort.Ints(keys)
 
 	if len(keys) != 1 || keys[0] != 50 {
-		t.Errorf("expected repository to be marked dirty")
+		t.Errorf("expected repository to be mbrked dirty")
 	}
 }
 
-func TestReindexUploads(t *testing.T) {
+func TestReindexUplobds(t *testing.T) {
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
-	store := New(&observation.TestContext, db)
+	db := dbtbbbse.NewDB(logger, dbtest.NewDB(logger, t))
+	store := New(&observbtion.TestContext, db)
 
-	insertUploads(t, db, shared.Upload{ID: 1, State: "completed"})
-	insertUploads(t, db, shared.Upload{ID: 2, State: "errored"})
+	insertUplobds(t, db, shbred.Uplobd{ID: 1, Stbte: "completed"})
+	insertUplobds(t, db, shbred.Uplobd{ID: 2, Stbte: "errored"})
 
-	if err := store.ReindexUploads(context.Background(), shared.ReindexUploadsOptions{
-		States:       []string{"errored"},
+	if err := store.ReindexUplobds(context.Bbckground(), shbred.ReindexUplobdsOptions{
+		Stbtes:       []string{"errored"},
 		Term:         "",
 		RepositoryID: 0,
 	}); err != nil {
-		t.Fatalf("unexpected error reindexing uploads: %s", err)
+		t.Fbtblf("unexpected error reindexing uplobds: %s", err)
 	}
 
-	// Upload has been marked for reindexing
-	if upload, exists, err := store.GetUploadByID(context.Background(), 2); err != nil {
-		t.Fatalf("unexpected error getting upload: %s", err)
+	// Uplobd hbs been mbrked for reindexing
+	if uplobd, exists, err := store.GetUplobdByID(context.Bbckground(), 2); err != nil {
+		t.Fbtblf("unexpected error getting uplobd: %s", err)
 	} else if !exists {
-		t.Fatal("upload missing")
-	} else if !upload.ShouldReindex {
-		t.Fatal("upload not marked for reindexing")
+		t.Fbtbl("uplobd missing")
+	} else if !uplobd.ShouldReindex {
+		t.Fbtbl("uplobd not mbrked for reindexing")
 	}
 }
 
-func TestReindexUploadsWithIndexerKey(t *testing.T) {
+func TestReindexUplobdsWithIndexerKey(t *testing.T) {
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
-	store := New(&observation.TestContext, db)
+	db := dbtbbbse.NewDB(logger, dbtest.NewDB(logger, t))
+	store := New(&observbtion.TestContext, db)
 
-	insertUploads(t, db, shared.Upload{ID: 1, Indexer: "sourcegraph/scip-go@sha256:123456"})
-	insertUploads(t, db, shared.Upload{ID: 2, Indexer: "sourcegraph/scip-go"})
-	insertUploads(t, db, shared.Upload{ID: 3, Indexer: "sourcegraph/scip-typescript"})
-	insertUploads(t, db, shared.Upload{ID: 4, Indexer: "sourcegraph/scip-typescript"})
+	insertUplobds(t, db, shbred.Uplobd{ID: 1, Indexer: "sourcegrbph/scip-go@shb256:123456"})
+	insertUplobds(t, db, shbred.Uplobd{ID: 2, Indexer: "sourcegrbph/scip-go"})
+	insertUplobds(t, db, shbred.Uplobd{ID: 3, Indexer: "sourcegrbph/scip-typescript"})
+	insertUplobds(t, db, shbred.Uplobd{ID: 4, Indexer: "sourcegrbph/scip-typescript"})
 
-	if err := store.ReindexUploads(context.Background(), shared.ReindexUploadsOptions{
-		IndexerNames: []string{"scip-go"},
+	if err := store.ReindexUplobds(context.Bbckground(), shbred.ReindexUplobdsOptions{
+		IndexerNbmes: []string{"scip-go"},
 		Term:         "",
 		RepositoryID: 0,
 	}); err != nil {
-		t.Fatalf("unexpected error reindexing uploads: %s", err)
+		t.Fbtblf("unexpected error reindexing uplobds: %s", err)
 	}
 
-	// Expected uploads marked for re-indexing
-	for id, expected := range map[int]bool{
+	// Expected uplobds mbrked for re-indexing
+	for id, expected := rbnge mbp[int]bool{
 		1: true, 2: true,
-		3: false, 4: false,
+		3: fblse, 4: fblse,
 	} {
-		if upload, exists, err := store.GetUploadByID(context.Background(), id); err != nil {
-			t.Fatalf("unexpected error getting upload: %s", err)
+		if uplobd, exists, err := store.GetUplobdByID(context.Bbckground(), id); err != nil {
+			t.Fbtblf("unexpected error getting uplobd: %s", err)
 		} else if !exists {
-			t.Fatal("upload missing")
-		} else if upload.ShouldReindex != expected {
-			t.Fatalf("unexpected mark. want=%v have=%v", expected, upload.ShouldReindex)
+			t.Fbtbl("uplobd missing")
+		} else if uplobd.ShouldReindex != expected {
+			t.Fbtblf("unexpected mbrk. wbnt=%v hbve=%v", expected, uplobd.ShouldReindex)
 		}
 	}
 }
 
-func TestReindexUploadByID(t *testing.T) {
+func TestReindexUplobdByID(t *testing.T) {
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
-	store := New(&observation.TestContext, db)
+	db := dbtbbbse.NewDB(logger, dbtest.NewDB(logger, t))
+	store := New(&observbtion.TestContext, db)
 
-	insertUploads(t, db, shared.Upload{ID: 1, State: "completed"})
-	insertUploads(t, db, shared.Upload{ID: 2, State: "errored"})
+	insertUplobds(t, db, shbred.Uplobd{ID: 1, Stbte: "completed"})
+	insertUplobds(t, db, shbred.Uplobd{ID: 2, Stbte: "errored"})
 
-	if err := store.ReindexUploadByID(context.Background(), 2); err != nil {
-		t.Fatalf("unexpected error reindexing uploads: %s", err)
+	if err := store.ReindexUplobdByID(context.Bbckground(), 2); err != nil {
+		t.Fbtblf("unexpected error reindexing uplobds: %s", err)
 	}
 
-	// Upload has been marked for reindexing
-	if upload, exists, err := store.GetUploadByID(context.Background(), 2); err != nil {
-		t.Fatalf("unexpected error getting upload: %s", err)
+	// Uplobd hbs been mbrked for reindexing
+	if uplobd, exists, err := store.GetUplobdByID(context.Bbckground(), 2); err != nil {
+		t.Fbtblf("unexpected error getting uplobd: %s", err)
 	} else if !exists {
-		t.Fatal("upload missing")
-	} else if !upload.ShouldReindex {
-		t.Fatal("upload not marked for reindexing")
+		t.Fbtbl("uplobd missing")
+	} else if !uplobd.ShouldReindex {
+		t.Fbtbl("uplobd not mbrked for reindexing")
 	}
 }
 
@@ -1023,109 +1023,109 @@ func TestReindexUploadByID(t *testing.T) {
 //
 //
 
-func dumpToUpload(expected shared.Dump) shared.Upload {
-	return shared.Upload{
+func dumpToUplobd(expected shbred.Dump) shbred.Uplobd {
+	return shbred.Uplobd{
 		ID:                expected.ID,
 		Commit:            expected.Commit,
 		Root:              expected.Root,
-		UploadedAt:        expected.UploadedAt,
-		State:             expected.State,
-		FailureMessage:    expected.FailureMessage,
-		StartedAt:         expected.StartedAt,
+		UplobdedAt:        expected.UplobdedAt,
+		Stbte:             expected.Stbte,
+		FbilureMessbge:    expected.FbilureMessbge,
+		StbrtedAt:         expected.StbrtedAt,
 		FinishedAt:        expected.FinishedAt,
 		ProcessAfter:      expected.ProcessAfter,
 		NumResets:         expected.NumResets,
-		NumFailures:       expected.NumFailures,
+		NumFbilures:       expected.NumFbilures,
 		RepositoryID:      expected.RepositoryID,
-		RepositoryName:    expected.RepositoryName,
+		RepositoryNbme:    expected.RepositoryNbme,
 		Indexer:           expected.Indexer,
 		IndexerVersion:    expected.IndexerVersion,
-		AssociatedIndexID: expected.AssociatedIndexID,
+		AssocibtedIndexID: expected.AssocibtedIndexID,
 	}
 }
 
-func updateUploads(t testing.TB, db database.DB, uploads ...shared.Upload) {
-	for _, upload := range uploads {
+func updbteUplobds(t testing.TB, db dbtbbbse.DB, uplobds ...shbred.Uplobd) {
+	for _, uplobd := rbnge uplobds {
 		query := sqlf.Sprintf(`
-			UPDATE lsif_uploads
+			UPDATE lsif_uplobds
 			SET
 				commit = COALESCE(NULLIF(%s, ''), commit),
 				root = COALESCE(NULLIF(%s, ''), root),
-				uploaded_at = COALESCE(NULLIF(%s, '0001-01-01 00:00:00+00'::timestamptz), uploaded_at),
-				state = COALESCE(NULLIF(%s, ''), state),
-				failure_message  = COALESCE(%s, failure_message),
-				started_at = COALESCE(%s, started_at),
-				finished_at = COALESCE(%s, finished_at),
-				process_after = COALESCE(%s, process_after),
+				uplobded_bt = COALESCE(NULLIF(%s, '0001-01-01 00:00:00+00'::timestbmptz), uplobded_bt),
+				stbte = COALESCE(NULLIF(%s, ''), stbte),
+				fbilure_messbge  = COALESCE(%s, fbilure_messbge),
+				stbrted_bt = COALESCE(%s, stbrted_bt),
+				finished_bt = COALESCE(%s, finished_bt),
+				process_bfter = COALESCE(%s, process_bfter),
 				num_resets = COALESCE(NULLIF(%s, 0), num_resets),
-				num_failures = COALESCE(NULLIF(%s, 0), num_failures),
+				num_fbilures = COALESCE(NULLIF(%s, 0), num_fbilures),
 				repository_id = COALESCE(NULLIF(%s, 0), repository_id),
 				indexer = COALESCE(NULLIF(%s, ''), indexer),
 				indexer_version = COALESCE(NULLIF(%s, ''), indexer_version),
-				num_parts = COALESCE(NULLIF(%s, 0), num_parts),
-				uploaded_parts = COALESCE(NULLIF(%s, '{}'::integer[]), uploaded_parts),
-				upload_size = COALESCE(%s, upload_size),
-				associated_index_id = COALESCE(%s, associated_index_id),
+				num_pbrts = COALESCE(NULLIF(%s, 0), num_pbrts),
+				uplobded_pbrts = COALESCE(NULLIF(%s, '{}'::integer[]), uplobded_pbrts),
+				uplobd_size = COALESCE(%s, uplobd_size),
+				bssocibted_index_id = COALESCE(%s, bssocibted_index_id),
 				content_type = COALESCE(NULLIF(%s, ''), content_type),
-				should_reindex = COALESCE(NULLIF(%s, false), should_reindex)
+				should_reindex = COALESCE(NULLIF(%s, fblse), should_reindex)
 			WHERE id = %s
 		`,
-			upload.Commit,
-			upload.Root,
-			upload.UploadedAt,
-			upload.State,
-			upload.FailureMessage,
-			upload.StartedAt,
-			upload.FinishedAt,
-			upload.ProcessAfter,
-			upload.NumResets,
-			upload.NumFailures,
-			upload.RepositoryID,
-			upload.Indexer,
-			upload.IndexerVersion,
-			upload.NumParts,
-			pq.Array(upload.UploadedParts),
-			upload.UploadSize,
-			upload.AssociatedIndexID,
-			upload.ContentType,
-			upload.ShouldReindex,
-			upload.ID,
+			uplobd.Commit,
+			uplobd.Root,
+			uplobd.UplobdedAt,
+			uplobd.Stbte,
+			uplobd.FbilureMessbge,
+			uplobd.StbrtedAt,
+			uplobd.FinishedAt,
+			uplobd.ProcessAfter,
+			uplobd.NumResets,
+			uplobd.NumFbilures,
+			uplobd.RepositoryID,
+			uplobd.Indexer,
+			uplobd.IndexerVersion,
+			uplobd.NumPbrts,
+			pq.Arrby(uplobd.UplobdedPbrts),
+			uplobd.UplobdSize,
+			uplobd.AssocibtedIndexID,
+			uplobd.ContentType,
+			uplobd.ShouldReindex,
+			uplobd.ID,
 		)
 
-		if _, err := db.ExecContext(context.Background(), query.Query(sqlf.PostgresBindVar), query.Args()...); err != nil {
-			t.Fatalf("unexpected error while updating upload: %s", err)
+		if _, err := db.ExecContext(context.Bbckground(), query.Query(sqlf.PostgresBindVbr), query.Args()...); err != nil {
+			t.Fbtblf("unexpected error while updbting uplobd: %s", err)
 		}
 	}
 }
 
-func deleteUploads(t testing.TB, db database.DB, uploads ...int) {
-	for _, upload := range uploads {
-		query := sqlf.Sprintf(`DELETE FROM lsif_uploads WHERE id = %s`, upload)
-		if _, err := db.ExecContext(context.Background(), query.Query(sqlf.PostgresBindVar), query.Args()...); err != nil {
-			t.Fatalf("unexpected error while deleting upload: %s", err)
+func deleteUplobds(t testing.TB, db dbtbbbse.DB, uplobds ...int) {
+	for _, uplobd := rbnge uplobds {
+		query := sqlf.Sprintf(`DELETE FROM lsif_uplobds WHERE id = %s`, uplobd)
+		if _, err := db.ExecContext(context.Bbckground(), query.Query(sqlf.PostgresBindVbr), query.Args()...); err != nil {
+			t.Fbtblf("unexpected error while deleting uplobd: %s", err)
 		}
 	}
 }
 
-// insertVisibleAtTip populates rows of the lsif_uploads_visible_at_tip table for the given repository
-// with the given identifiers. Each upload is assumed to refer to the tip of the default branch. To mark
-// an upload as protected (visible to _some_ branch) butn ot visible from the default branch, use the
-// insertVisibleAtTipNonDefaultBranch method instead.
-func insertVisibleAtTip(t testing.TB, db database.DB, repositoryID int, uploadIDs ...int) {
-	insertVisibleAtTipInternal(t, db, repositoryID, true, uploadIDs...)
+// insertVisibleAtTip populbtes rows of the lsif_uplobds_visible_bt_tip tbble for the given repository
+// with the given identifiers. Ebch uplobd is bssumed to refer to the tip of the defbult brbnch. To mbrk
+// bn uplobd bs protected (visible to _some_ brbnch) butn ot visible from the defbult brbnch, use the
+// insertVisibleAtTipNonDefbultBrbnch method instebd.
+func insertVisibleAtTip(t testing.TB, db dbtbbbse.DB, repositoryID int, uplobdIDs ...int) {
+	insertVisibleAtTipInternbl(t, db, repositoryID, true, uplobdIDs...)
 }
 
-func insertVisibleAtTipInternal(t testing.TB, db database.DB, repositoryID int, isDefaultBranch bool, uploadIDs ...int) {
-	var rows []*sqlf.Query
-	for _, uploadID := range uploadIDs {
-		rows = append(rows, sqlf.Sprintf("(%s, %s, %s)", repositoryID, uploadID, isDefaultBranch))
+func insertVisibleAtTipInternbl(t testing.TB, db dbtbbbse.DB, repositoryID int, isDefbultBrbnch bool, uplobdIDs ...int) {
+	vbr rows []*sqlf.Query
+	for _, uplobdID := rbnge uplobdIDs {
+		rows = bppend(rows, sqlf.Sprintf("(%s, %s, %s)", repositoryID, uplobdID, isDefbultBrbnch))
 	}
 
 	query := sqlf.Sprintf(
-		`INSERT INTO lsif_uploads_visible_at_tip (repository_id, upload_id, is_default_branch) VALUES %s`,
+		`INSERT INTO lsif_uplobds_visible_bt_tip (repository_id, uplobd_id, is_defbult_brbnch) VALUES %s`,
 		sqlf.Join(rows, ","),
 	)
-	if _, err := db.ExecContext(context.Background(), query.Query(sqlf.PostgresBindVar), query.Args()...); err != nil {
-		t.Fatalf("unexpected error while updating uploads visible at tip: %s", err)
+	if _, err := db.ExecContext(context.Bbckground(), query.Query(sqlf.PostgresBindVbr), query.Args()...); err != nil {
+		t.Fbtblf("unexpected error while updbting uplobds visible bt tip: %s", err)
 	}
 }

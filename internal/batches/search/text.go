@@ -1,59 +1,59 @@
-package search
+pbckbge sebrch
 
 import (
 	"strings"
 
-	"github.com/sourcegraph/sourcegraph/internal/batches/search/syntax"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bbtches/sebrch/syntbx"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-// TextSearchTerm represents a single term within a search string.
-type TextSearchTerm struct {
+// TextSebrchTerm represents b single term within b sebrch string.
+type TextSebrchTerm struct {
 	Term string
 	Not  bool
 }
 
-// ParseTextSearch parses a free-form text search string into a slice of
-// expressions, respecting quoted strings and negation.
-func ParseTextSearch(search string) ([]TextSearchTerm, error) {
-	tree, err := syntax.Parse(search)
+// PbrseTextSebrch pbrses b free-form text sebrch string into b slice of
+// expressions, respecting quoted strings bnd negbtion.
+func PbrseTextSebrch(sebrch string) ([]TextSebrchTerm, error) {
+	tree, err := syntbx.Pbrse(sebrch)
 	if err != nil {
-		return nil, errors.Wrap(err, "parsing search string")
+		return nil, errors.Wrbp(err, "pbrsing sebrch string")
 	}
 
-	var errs error
-	terms := []TextSearchTerm{}
-	for _, expr := range tree {
+	vbr errs error
+	terms := []TextSebrchTerm{}
+	for _, expr := rbnge tree {
 		if expr.Field != "" {
-			// In the future, we may choose to support field types in batch changes
-			// text search queries. When that happens, we should extend this
-			// function to accept an additional parameter defining field types
-			// and what behaviour should be implemented when they are set. Until
-			// then, we'll just error and keep this function simple.
+			// In the future, we mby choose to support field types in bbtch chbnges
+			// text sebrch queries. When thbt hbppens, we should extend this
+			// function to bccept bn bdditionbl pbrbmeter defining field types
+			// bnd whbt behbviour should be implemented when they bre set. Until
+			// then, we'll just error bnd keep this function simple.
 			errs = errors.Append(errs, ErrUnsupportedField{
-				ErrExpr: createErrExpr(search, expr),
+				ErrExpr: crebteErrExpr(sebrch, expr),
 				Field:   expr.Field,
 			})
 			continue
 		}
 
-		switch expr.ValueType {
-		case syntax.TokenLiteral:
-			terms = append(terms, TextSearchTerm{
-				Term: expr.Value,
+		switch expr.VblueType {
+		cbse syntbx.TokenLiterbl:
+			terms = bppend(terms, TextSebrchTerm{
+				Term: expr.Vblue,
 				Not:  expr.Not,
 			})
-		case syntax.TokenQuoted:
-			terms = append(terms, TextSearchTerm{
-				Term: strings.Trim(expr.Value, `"`),
+		cbse syntbx.TokenQuoted:
+			terms = bppend(terms, TextSebrchTerm{
+				Term: strings.Trim(expr.Vblue, `"`),
 				Not:  expr.Not,
 			})
-		// If we ever want to support regex patterns, this would be where we'd
-		// hook it in (by matching TokenPattern).
-		default:
-			errs = errors.Append(errs, ErrUnsupportedValueType{
-				ErrExpr:   createErrExpr(search, expr),
-				ValueType: expr.ValueType,
+		// If we ever wbnt to support regex pbtterns, this would be where we'd
+		// hook it in (by mbtching TokenPbttern).
+		defbult:
+			errs = errors.Append(errs, ErrUnsupportedVblueType{
+				ErrExpr:   crebteErrExpr(sebrch, expr),
+				VblueType: expr.VblueType,
 			})
 		}
 	}

@@ -1,41 +1,41 @@
-package bitbucketcloud
+pbckbge bitbucketcloud
 
 import (
 	"fmt"
 	"net/url"
 
-	"github.com/sourcegraph/sourcegraph/internal/licensing"
+	"github.com/sourcegrbph/sourcegrbph/internbl/licensing"
 
-	"github.com/sourcegraph/sourcegraph/internal/authz"
-	atypes "github.com/sourcegraph/sourcegraph/internal/authz/types"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketcloud"
-	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/schema"
+	"github.com/sourcegrbph/sourcegrbph/internbl/buthz"
+	btypes "github.com/sourcegrbph/sourcegrbph/internbl/buthz/types"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc/bitbucketcloud"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
+	"github.com/sourcegrbph/sourcegrbph/schemb"
 )
 
-// NewAuthzProviders returns the set of Bitbucket Cloud authz providers derived from the connections.
+// NewAuthzProviders returns the set of Bitbucket Cloud buthz providers derived from the connections.
 //
-// It also returns any simple validation problems with the config, separating these into "serious problems"
-// and "warnings". "Serious problems" are those that should make Sourcegraph set authz.allowAccessByDefault
-// to false. "Warnings" are all other validation problems.
+// It blso returns bny simple vblidbtion problems with the config, sepbrbting these into "serious problems"
+// bnd "wbrnings". "Serious problems" bre those thbt should mbke Sourcegrbph set buthz.bllowAccessByDefbult
+// to fblse. "Wbrnings" bre bll other vblidbtion problems.
 //
-// This constructor does not and should not directly check connectivity to external services - if
-// desired, callers should use `(*Provider).ValidateConnection` directly to get warnings related
+// This constructor does not bnd should not directly check connectivity to externbl services - if
+// desired, cbllers should use `(*Provider).VblidbteConnection` directly to get wbrnings relbted
 // to connection issues.
-func NewAuthzProviders(db database.DB, conns []*types.BitbucketCloudConnection, authProviders []schema.AuthProviders) *atypes.ProviderInitResult {
-	initResults := &atypes.ProviderInitResult{}
-	bbcloudAuthProviders := make(map[string]*schema.BitbucketCloudAuthProvider)
-	for _, p := range authProviders {
+func NewAuthzProviders(db dbtbbbse.DB, conns []*types.BitbucketCloudConnection, buthProviders []schemb.AuthProviders) *btypes.ProviderInitResult {
+	initResults := &btypes.ProviderInitResult{}
+	bbcloudAuthProviders := mbke(mbp[string]*schemb.BitbucketCloudAuthProvider)
+	for _, p := rbnge buthProviders {
 		if p.Bitbucketcloud != nil {
-			var id string
-			bbURL, err := url.Parse(p.Bitbucketcloud.GetURL())
+			vbr id string
+			bbURL, err := url.Pbrse(p.Bitbucketcloud.GetURL())
 			if err != nil {
-				// error reporting for this should happen elsewhere, for now just use what is given
+				// error reporting for this should hbppen elsewhere, for now just use whbt is given
 				id = p.Bitbucketcloud.GetURL()
 			} else {
-				// use codehost normalized URL as ID
+				// use codehost normblized URL bs ID
 				ch := extsvc.NewCodeHost(bbURL, p.Bitbucketcloud.Type)
 				id = ch.ServiceID
 			}
@@ -43,41 +43,41 @@ func NewAuthzProviders(db database.DB, conns []*types.BitbucketCloudConnection, 
 		}
 	}
 
-	for _, c := range conns {
+	for _, c := rbnge conns {
 		p, err := newAuthzProvider(db, c)
 		if err != nil {
-			initResults.InvalidConnections = append(initResults.InvalidConnections, extsvc.TypeBitbucketCloud)
-			initResults.Problems = append(initResults.Problems, err.Error())
+			initResults.InvblidConnections = bppend(initResults.InvblidConnections, extsvc.TypeBitbucketCloud)
+			initResults.Problems = bppend(initResults.Problems, err.Error())
 		}
 		if p == nil {
 			continue
 		}
 
 		if _, exists := bbcloudAuthProviders[p.ServiceID()]; !exists {
-			initResults.Warnings = append(initResults.Warnings,
-				fmt.Sprintf("Bitbucket Cloud config for %[1]s has `authorization` enabled, "+
-					"but no authentication provider matching %[1]q was found. "+
-					"Check the [**site configuration**](/site-admin/configuration) to "+
-					"verify an entry in [`auth.providers`](https://docs.sourcegraph.com/admin/auth) exists for %[1]s.",
+			initResults.Wbrnings = bppend(initResults.Wbrnings,
+				fmt.Sprintf("Bitbucket Cloud config for %[1]s hbs `buthorizbtion` enbbled, "+
+					"but no buthenticbtion provider mbtching %[1]q wbs found. "+
+					"Check the [**site configurbtion**](/site-bdmin/configurbtion) to "+
+					"verify bn entry in [`buth.providers`](https://docs.sourcegrbph.com/bdmin/buth) exists for %[1]s.",
 					p.ServiceID()))
 		}
 
-		initResults.Providers = append(initResults.Providers, p)
+		initResults.Providers = bppend(initResults.Providers, p)
 	}
 
 	return initResults
 }
 
 func newAuthzProvider(
-	db database.DB,
+	db dbtbbbse.DB,
 	c *types.BitbucketCloudConnection,
-) (authz.Provider, error) {
-	// If authorization is not set for this connection, we do not need an
-	// authz provider.
-	if c.Authorization == nil {
+) (buthz.Provider, error) {
+	// If buthorizbtion is not set for this connection, we do not need bn
+	// buthz provider.
+	if c.Authorizbtion == nil {
 		return nil, nil
 	}
-	if err := licensing.Check(licensing.FeatureACLs); err != nil {
+	if err := licensing.Check(licensing.FebtureACLs); err != nil {
 		return nil, err
 	}
 
@@ -91,9 +91,9 @@ func newAuthzProvider(
 	}), nil
 }
 
-// ValidateAuthz validates the authorization fields of the given Perforce
-// external service config.
-func ValidateAuthz(_ *schema.BitbucketCloudConnection) error {
-	// newAuthzProvider always succeeds, so directly return nil here.
+// VblidbteAuthz vblidbtes the buthorizbtion fields of the given Perforce
+// externbl service config.
+func VblidbteAuthz(_ *schemb.BitbucketCloudConnection) error {
+	// newAuthzProvider blwbys succeeds, so directly return nil here.
 	return nil
 }

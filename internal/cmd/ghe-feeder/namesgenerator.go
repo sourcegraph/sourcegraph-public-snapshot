@@ -1,103 +1,103 @@
-package main
+pbckbge mbin
 
 import (
 	"fmt"
-	"math/rand"
+	"mbth/rbnd"
 )
 
-var (
+vbr (
 	left = [...]string{
-		"admiring",
-		"adoring",
-		"affectionate",
-		"agitated",
-		"amazing",
-		"angry",
-		"awesome",
-		"beautiful",
+		"bdmiring",
+		"bdoring",
+		"bffectionbte",
+		"bgitbted",
+		"bmbzing",
+		"bngry",
+		"bwesome",
+		"bebutiful",
 		"blissful",
 		"bold",
 		"boring",
-		"brave",
+		"brbve",
 		"busy",
-		"charming",
+		"chbrming",
 		"clever",
 		"cool",
-		"compassionate",
+		"compbssionbte",
 		"competent",
 		"condescending",
 		"confident",
-		"cranky",
-		"crazy",
-		"dazzling",
+		"crbnky",
+		"crbzy",
+		"dbzzling",
 		"determined",
-		"distracted",
-		"dreamy",
-		"eager",
-		"ecstatic",
-		"elastic",
-		"elated",
-		"elegant",
+		"distrbcted",
+		"drebmy",
+		"ebger",
+		"ecstbtic",
+		"elbstic",
+		"elbted",
+		"elegbnt",
 		"eloquent",
 		"epic",
 		"exciting",
 		"fervent",
 		"festive",
-		"flamboyant",
+		"flbmboybnt",
 		"focused",
 		"friendly",
 		"frosty",
 		"funny",
-		"gallant",
+		"gbllbnt",
 		"gifted",
 		"goofy",
-		"gracious",
-		"great",
-		"happy",
-		"hardcore",
+		"grbcious",
+		"grebt",
+		"hbppy",
+		"hbrdcore",
 		"heuristic",
 		"hopeful",
 		"hungry",
-		"infallible",
+		"infbllible",
 		"inspiring",
 		"interesting",
 		"intelligent",
 		"jolly",
-		"jovial",
+		"jovibl",
 		"keen",
 		"kind",
-		"laughing",
+		"lbughing",
 		"loving",
 		"lucid",
-		"magical",
+		"mbgicbl",
 		"mystifying",
 		"modest",
 		"musing",
-		"naughty",
+		"nbughty",
 		"nervous",
 		"nice",
 		"nifty",
-		"nostalgic",
+		"nostblgic",
 		"objective",
 		"optimistic",
-		"peaceful",
-		"pedantic",
+		"pebceful",
+		"pedbntic",
 		"pensive",
-		"practical",
+		"prbcticbl",
 		"priceless",
 		"quirky",
-		"quizzical",
+		"quizzicbl",
 		"recursing",
-		"relaxed",
+		"relbxed",
 		"reverent",
-		"romantic",
-		"sad",
+		"rombntic",
+		"sbd",
 		"serene",
-		"sharp",
+		"shbrp",
 		"silly",
 		"sleepy",
 		"stoic",
-		"strange",
+		"strbnge",
 		"stupefied",
 		"suspicious",
 		"sweet",
@@ -105,748 +105,748 @@ var (
 		"thirsty",
 		"trusting",
 		"unruffled",
-		"upbeat",
-		"vibrant",
-		"vigilant",
+		"upbebt",
+		"vibrbnt",
+		"vigilbnt",
 		"vigorous",
-		"wizardly",
+		"wizbrdly",
 		"wonderful",
-		"xenodochial",
+		"xenodochibl",
 		"youthful",
-		"zealous",
+		"zeblous",
 		"zen",
 	}
 
-	// Docker, starting from 0.7.x, generates names from notable scientists and hackers.
-	// Please, for any amazing man that you add to the list, consider adding an equally amazing woman to it, and vice versa.
+	// Docker, stbrting from 0.7.x, generbtes nbmes from notbble scientists bnd hbckers.
+	// Plebse, for bny bmbzing mbn thbt you bdd to the list, consider bdding bn equblly bmbzing wombn to it, bnd vice versb.
 	right = [...]string{
-		// Muhammad ibn Jābir al-Ḥarrānī al-Battānī was a founding father of astronomy. https://en.wikipedia.org/wiki/Mu%E1%B8%A5ammad_ibn_J%C4%81bir_al-%E1%B8%A4arr%C4%81n%C4%AB_al-Batt%C4%81n%C4%AB
-		"albattani",
+		// Muhbmmbd ibn Jābir bl-Ḥbrrānī bl-Bbttānī wbs b founding fbther of bstronomy. https://en.wikipedib.org/wiki/Mu%E1%B8%A5bmmbd_ibn_J%C4%81bir_bl-%E1%B8%A4brr%C4%81n%C4%AB_bl-Bbtt%C4%81n%C4%AB
+		"blbbttbni",
 
-		// Frances E. Allen, became the first female IBM Fellow in 1989. In 2006, she became the first female recipient of the ACM's Turing Award. https://en.wikipedia.org/wiki/Frances_E._Allen
-		"allen",
+		// Frbnces E. Allen, becbme the first femble IBM Fellow in 1989. In 2006, she becbme the first femble recipient of the ACM's Turing Awbrd. https://en.wikipedib.org/wiki/Frbnces_E._Allen
+		"bllen",
 
-		// June Almeida - Scottish virologist who took the first pictures of the rubella virus - https://en.wikipedia.org/wiki/June_Almeida
-		"almeida",
+		// June Almeidb - Scottish virologist who took the first pictures of the rubellb virus - https://en.wikipedib.org/wiki/June_Almeidb
+		"blmeidb",
 
-		// Kathleen Antonelli, American computer programmer and one of the six original programmers of the ENIAC - https://en.wikipedia.org/wiki/Kathleen_Antonelli
-		"antonelli",
+		// Kbthleen Antonelli, Americbn computer progrbmmer bnd one of the six originbl progrbmmers of the ENIAC - https://en.wikipedib.org/wiki/Kbthleen_Antonelli
+		"bntonelli",
 
-		// Maria Gaetana Agnesi - Italian mathematician, philosopher, theologian and humanitarian. She was the first woman to write a mathematics handbook and the first woman appointed as a Mathematics Professor at a University. https://en.wikipedia.org/wiki/Maria_Gaetana_Agnesi
-		"agnesi",
+		// Mbrib Gbetbnb Agnesi - Itblibn mbthembticibn, philosopher, theologibn bnd humbnitbribn. She wbs the first wombn to write b mbthembtics hbndbook bnd the first wombn bppointed bs b Mbthembtics Professor bt b University. https://en.wikipedib.org/wiki/Mbrib_Gbetbnb_Agnesi
+		"bgnesi",
 
-		// Archimedes was a physicist, engineer and mathematician who invented too many things to list them here. https://en.wikipedia.org/wiki/Archimedes
-		"archimedes",
+		// Archimedes wbs b physicist, engineer bnd mbthembticibn who invented too mbny things to list them here. https://en.wikipedib.org/wiki/Archimedes
+		"brchimedes",
 
-		// Maria Ardinghelli - Italian translator, mathematician and physicist - https://en.wikipedia.org/wiki/Maria_Ardinghelli
-		"ardinghelli",
+		// Mbrib Ardinghelli - Itblibn trbnslbtor, mbthembticibn bnd physicist - https://en.wikipedib.org/wiki/Mbrib_Ardinghelli
+		"brdinghelli",
 
-		// Aryabhata - Ancient Indian mathematician-astronomer during 476-550 CE https://en.wikipedia.org/wiki/Aryabhata
-		"aryabhata",
+		// Arybbhbtb - Ancient Indibn mbthembticibn-bstronomer during 476-550 CE https://en.wikipedib.org/wiki/Arybbhbtb
+		"brybbhbtb",
 
-		// Wanda Austin - Wanda Austin is the President and CEO of The Aerospace Corporation, a leading architect for the US security space programs. https://en.wikipedia.org/wiki/Wanda_Austin
-		"austin",
+		// Wbndb Austin - Wbndb Austin is the President bnd CEO of The Aerospbce Corporbtion, b lebding brchitect for the US security spbce progrbms. https://en.wikipedib.org/wiki/Wbndb_Austin
+		"bustin",
 
-		// Charles Babbage invented the concept of a programmable computer. https://en.wikipedia.org/wiki/Charles_Babbage.
-		"babbage",
+		// Chbrles Bbbbbge invented the concept of b progrbmmbble computer. https://en.wikipedib.org/wiki/Chbrles_Bbbbbge.
+		"bbbbbge",
 
-		// Stefan Banach - Polish mathematician, was one of the founders of modern functional analysis. https://en.wikipedia.org/wiki/Stefan_Banach
-		"banach",
+		// Stefbn Bbnbch - Polish mbthembticibn, wbs one of the founders of modern functionbl bnblysis. https://en.wikipedib.org/wiki/Stefbn_Bbnbch
+		"bbnbch",
 
-		// Buckaroo Banzai and his mentor Dr. Hikita perfected the "oscillation overthruster", a device that allows one to pass through solid matter. - https://en.wikipedia.org/wiki/The_Adventures_of_Buckaroo_Banzai_Across_the_8th_Dimension
-		"banzai",
+		// Buckbroo Bbnzbi bnd his mentor Dr. Hikitb perfected the "oscillbtion overthruster", b device thbt bllows one to pbss through solid mbtter. - https://en.wikipedib.org/wiki/The_Adventures_of_Buckbroo_Bbnzbi_Across_the_8th_Dimension
+		"bbnzbi",
 
-		// John Bardeen co-invented the transistor - https://en.wikipedia.org/wiki/John_Bardeen
-		"bardeen",
+		// John Bbrdeen co-invented the trbnsistor - https://en.wikipedib.org/wiki/John_Bbrdeen
+		"bbrdeen",
 
-		// Jean Bartik, born Betty Jean Jennings, was one of the original programmers for the ENIAC computer. https://en.wikipedia.org/wiki/Jean_Bartik
-		"bartik",
+		// Jebn Bbrtik, born Betty Jebn Jennings, wbs one of the originbl progrbmmers for the ENIAC computer. https://en.wikipedib.org/wiki/Jebn_Bbrtik
+		"bbrtik",
 
-		// Laura Bassi, the world's first female professor https://en.wikipedia.org/wiki/Laura_Bassi
-		"bassi",
+		// Lburb Bbssi, the world's first femble professor https://en.wikipedib.org/wiki/Lburb_Bbssi
+		"bbssi",
 
-		// Hugh Beaver, British engineer, founder of the Guinness Book of World Records https://en.wikipedia.org/wiki/Hugh_Beaver
-		"beaver",
+		// Hugh Bebver, British engineer, founder of the Guinness Book of World Records https://en.wikipedib.org/wiki/Hugh_Bebver
+		"bebver",
 
-		// Alexander Graham Bell - an eminent Scottish-born scientist, inventor, engineer and innovator who is credited with inventing the first practical telephone - https://en.wikipedia.org/wiki/Alexander_Graham_Bell
+		// Alexbnder Grbhbm Bell - bn eminent Scottish-born scientist, inventor, engineer bnd innovbtor who is credited with inventing the first prbcticbl telephone - https://en.wikipedib.org/wiki/Alexbnder_Grbhbm_Bell
 		"bell",
 
-		// Karl Friedrich Benz - a German automobile engineer. Inventor of the first practical motorcar. https://en.wikipedia.org/wiki/Karl_Benz
+		// Kbrl Friedrich Benz - b Germbn butomobile engineer. Inventor of the first prbcticbl motorcbr. https://en.wikipedib.org/wiki/Kbrl_Benz
 		"benz",
 
-		// Homi J Bhabha - was an Indian nuclear physicist, founding director, and professor of physics at the Tata Institute of Fundamental Research. Colloquially known as "father of Indian nuclear programme"- https://en.wikipedia.org/wiki/Homi_J._Bhabha
-		"bhabha",
+		// Homi J Bhbbhb - wbs bn Indibn nuclebr physicist, founding director, bnd professor of physics bt the Tbtb Institute of Fundbmentbl Resebrch. Colloquiblly known bs "fbther of Indibn nuclebr progrbmme"- https://en.wikipedib.org/wiki/Homi_J._Bhbbhb
+		"bhbbhb",
 
-		// Bhaskara II - Ancient Indian mathematician-astronomer whose work on calculus predates Newton and Leibniz by over half a millennium - https://en.wikipedia.org/wiki/Bh%C4%81skara_II#Calculus
-		"bhaskara",
+		// Bhbskbrb II - Ancient Indibn mbthembticibn-bstronomer whose work on cblculus predbtes Newton bnd Leibniz by over hblf b millennium - https://en.wikipedib.org/wiki/Bh%C4%81skbrb_II#Cblculus
+		"bhbskbrb",
 
-		// Sue Black - British computer scientist and campaigner. She has been instrumental in saving Bletchley Park, the site of World War II codebreaking - https://en.wikipedia.org/wiki/Sue_Black_(computer_scientist)
-		"black",
+		// Sue Blbck - British computer scientist bnd cbmpbigner. She hbs been instrumentbl in sbving Bletchley Pbrk, the site of World Wbr II codebrebking - https://en.wikipedib.org/wiki/Sue_Blbck_(computer_scientist)
+		"blbck",
 
-		// Elizabeth Helen Blackburn - Australian-American Nobel laureate; best known for co-discovering telomerase. https://en.wikipedia.org/wiki/Elizabeth_Blackburn
-		"blackburn",
+		// Elizbbeth Helen Blbckburn - Austrblibn-Americbn Nobel lburebte; best known for co-discovering telomerbse. https://en.wikipedib.org/wiki/Elizbbeth_Blbckburn
+		"blbckburn",
 
-		// Elizabeth Blackwell - American doctor and first American woman to receive a medical degree - https://en.wikipedia.org/wiki/Elizabeth_Blackwell
-		"blackwell",
+		// Elizbbeth Blbckwell - Americbn doctor bnd first Americbn wombn to receive b medicbl degree - https://en.wikipedib.org/wiki/Elizbbeth_Blbckwell
+		"blbckwell",
 
-		// Niels Bohr is the father of quantum theory. https://en.wikipedia.org/wiki/Niels_Bohr.
+		// Niels Bohr is the fbther of qubntum theory. https://en.wikipedib.org/wiki/Niels_Bohr.
 		"bohr",
 
-		// Kathleen Booth, she's credited with writing the first assembly language. https://en.wikipedia.org/wiki/Kathleen_Booth
+		// Kbthleen Booth, she's credited with writing the first bssembly lbngubge. https://en.wikipedib.org/wiki/Kbthleen_Booth
 		"booth",
 
-		// Anita Borg - Anita Borg was the founding director of the Institute for Women and Technology (IWT). https://en.wikipedia.org/wiki/Anita_Borg
+		// Anitb Borg - Anitb Borg wbs the founding director of the Institute for Women bnd Technology (IWT). https://en.wikipedib.org/wiki/Anitb_Borg
 		"borg",
 
-		// Satyendra Nath Bose - He provided the foundation for Bose–Einstein statistics and the theory of the Bose–Einstein condensate. - https://en.wikipedia.org/wiki/Satyendra_Nath_Bose
+		// Sbtyendrb Nbth Bose - He provided the foundbtion for Bose–Einstein stbtistics bnd the theory of the Bose–Einstein condensbte. - https://en.wikipedib.org/wiki/Sbtyendrb_Nbth_Bose
 		"bose",
 
-		// Katherine Louise Bouman is an imaging scientist and Assistant Professor of Computer Science at the California Institute of Technology. She researches computational methods for imaging, and developed an algorithm that made possible the picture first visualization of a black hole using the Event Horizon Telescope. - https://en.wikipedia.org/wiki/Katie_Bouman
-		"bouman",
+		// Kbtherine Louise Boumbn is bn imbging scientist bnd Assistbnt Professor of Computer Science bt the Cblifornib Institute of Technology. She resebrches computbtionbl methods for imbging, bnd developed bn blgorithm thbt mbde possible the picture first visublizbtion of b blbck hole using the Event Horizon Telescope. - https://en.wikipedib.org/wiki/Kbtie_Boumbn
+		"boumbn",
 
-		// Evelyn Boyd Granville - She was one of the first African-American woman to receive a Ph.D. in mathematics; she earned it in 1949 from Yale University. https://en.wikipedia.org/wiki/Evelyn_Boyd_Granville
+		// Evelyn Boyd Grbnville - She wbs one of the first Africbn-Americbn wombn to receive b Ph.D. in mbthembtics; she ebrned it in 1949 from Yble University. https://en.wikipedib.org/wiki/Evelyn_Boyd_Grbnville
 		"boyd",
 
-		// Brahmagupta - Ancient Indian mathematician during 598-670 CE who gave rules to compute with zero - https://en.wikipedia.org/wiki/Brahmagupta#Zero
-		"brahmagupta",
+		// Brbhmbguptb - Ancient Indibn mbthembticibn during 598-670 CE who gbve rules to compute with zero - https://en.wikipedib.org/wiki/Brbhmbguptb#Zero
+		"brbhmbguptb",
 
-		// Walter Houser Brattain co-invented the transistor - https://en.wikipedia.org/wiki/Walter_Houser_Brattain
-		"brattain",
+		// Wblter Houser Brbttbin co-invented the trbnsistor - https://en.wikipedib.org/wiki/Wblter_Houser_Brbttbin
+		"brbttbin",
 
-		// Emmett Brown invented time travel. https://en.wikipedia.org/wiki/Emmett_Brown (thanks Brian Goff)
+		// Emmett Brown invented time trbvel. https://en.wikipedib.org/wiki/Emmett_Brown (thbnks Bribn Goff)
 		"brown",
 
-		// Linda Brown Buck - American biologist and Nobel laureate best known for her genetic and molecular analyses of the mechanisms of smell. https://en.wikipedia.org/wiki/Linda_B._Buck
+		// Lindb Brown Buck - Americbn biologist bnd Nobel lburebte best known for her genetic bnd moleculbr bnblyses of the mechbnisms of smell. https://en.wikipedib.org/wiki/Lindb_B._Buck
 		"buck",
 
-		// Dame Susan Jocelyn Bell Burnell - Northern Irish astrophysicist who discovered radio pulsars and was the first to analyse them. https://en.wikipedia.org/wiki/Jocelyn_Bell_Burnell
+		// Dbme Susbn Jocelyn Bell Burnell - Northern Irish bstrophysicist who discovered rbdio pulsbrs bnd wbs the first to bnblyse them. https://en.wikipedib.org/wiki/Jocelyn_Bell_Burnell
 		"burnell",
 
-		// Annie Jump Cannon - pioneering female astronomer who classified hundreds of thousands of stars and created the system we use to understand stars today. https://en.wikipedia.org/wiki/Annie_Jump_Cannon
-		"cannon",
+		// Annie Jump Cbnnon - pioneering femble bstronomer who clbssified hundreds of thousbnds of stbrs bnd crebted the system we use to understbnd stbrs todby. https://en.wikipedib.org/wiki/Annie_Jump_Cbnnon
+		"cbnnon",
 
-		// Rachel Carson - American marine biologist and conservationist, her book Silent Spring and other writings are credited with advancing the global environmental movement. https://en.wikipedia.org/wiki/Rachel_Carson
-		"carson",
+		// Rbchel Cbrson - Americbn mbrine biologist bnd conservbtionist, her book Silent Spring bnd other writings bre credited with bdvbncing the globbl environmentbl movement. https://en.wikipedib.org/wiki/Rbchel_Cbrson
+		"cbrson",
 
-		// Dame Mary Lucy Cartwright - British mathematician who was one of the first to study what is now known as chaos theory. Also known for Cartwright's theorem which finds applications in signal processing. https://en.wikipedia.org/wiki/Mary_Cartwright
-		"cartwright",
+		// Dbme Mbry Lucy Cbrtwright - British mbthembticibn who wbs one of the first to study whbt is now known bs chbos theory. Also known for Cbrtwright's theorem which finds bpplicbtions in signbl processing. https://en.wikipedib.org/wiki/Mbry_Cbrtwright
+		"cbrtwright",
 
-		// George Washington Carver - American agricultural scientist and inventor. He was the most prominent black scientist of the early 20th century. https://en.wikipedia.org/wiki/George_Washington_Carver
-		"carver",
+		// George Wbshington Cbrver - Americbn bgriculturbl scientist bnd inventor. He wbs the most prominent blbck scientist of the ebrly 20th century. https://en.wikipedib.org/wiki/George_Wbshington_Cbrver
+		"cbrver",
 
-		// Vinton Gray Cerf - American Internet pioneer, recognised as one of "the fathers of the Internet". With Robert Elliot Kahn, he designed TCP and IP, the primary data communication protocols of the Internet and other computer networks. https://en.wikipedia.org/wiki/Vint_Cerf
+		// Vinton Grby Cerf - Americbn Internet pioneer, recognised bs one of "the fbthers of the Internet". With Robert Elliot Kbhn, he designed TCP bnd IP, the primbry dbtb communicbtion protocols of the Internet bnd other computer networks. https://en.wikipedib.org/wiki/Vint_Cerf
 		"cerf",
 
-		// Subrahmanyan Chandrasekhar - Astrophysicist known for his mathematical theory on different stages and evolution in structures of the stars. He has won nobel prize for physics - https://en.wikipedia.org/wiki/Subrahmanyan_Chandrasekhar
-		"chandrasekhar",
+		// Subrbhmbnybn Chbndrbsekhbr - Astrophysicist known for his mbthembticbl theory on different stbges bnd evolution in structures of the stbrs. He hbs won nobel prize for physics - https://en.wikipedib.org/wiki/Subrbhmbnybn_Chbndrbsekhbr
+		"chbndrbsekhbr",
 
-		// Sergey Alexeyevich Chaplygin (Russian: Серге́й Алексе́евич Чаплы́гин; April 5, 1869 – October 8, 1942) was a Russian and Soviet physicist, mathematician, and mechanical engineer. He is known for mathematical formulas such as Chaplygin's equation and for a hypothetical substance in cosmology called Chaplygin gas, named after him. https://en.wikipedia.org/wiki/Sergey_Chaplygin
-		"chaplygin",
+		// Sergey Alexeyevich Chbplygin (Russibn: Серге́й Алексе́евич Чаплы́гин; April 5, 1869 – October 8, 1942) wbs b Russibn bnd Soviet physicist, mbthembticibn, bnd mechbnicbl engineer. He is known for mbthembticbl formulbs such bs Chbplygin's equbtion bnd for b hypotheticbl substbnce in cosmology cblled Chbplygin gbs, nbmed bfter him. https://en.wikipedib.org/wiki/Sergey_Chbplygin
+		"chbplygin",
 
-		// Émilie du Châtelet - French natural philosopher, mathematician, physicist, and author during the early 1730s, known for her translation of and commentary on Isaac Newton's book Principia containing basic laws of physics. https://en.wikipedia.org/wiki/%C3%89milie_du_Ch%C3%A2telet
-		"chatelet",
+		// Émilie du Châtelet - French nbturbl philosopher, mbthembticibn, physicist, bnd buthor during the ebrly 1730s, known for her trbnslbtion of bnd commentbry on Isbbc Newton's book Principib contbining bbsic lbws of physics. https://en.wikipedib.org/wiki/%C3%89milie_du_Ch%C3%A2telet
+		"chbtelet",
 
-		// Asima Chatterjee was an Indian organic chemist noted for her research on vinca alkaloids, development of drugs for treatment of epilepsy and malaria - https://en.wikipedia.org/wiki/Asima_Chatterjee
-		"chatterjee",
+		// Asimb Chbtterjee wbs bn Indibn orgbnic chemist noted for her resebrch on vincb blkbloids, development of drugs for trebtment of epilepsy bnd mblbrib - https://en.wikipedib.org/wiki/Asimb_Chbtterjee
+		"chbtterjee",
 
-		// Pafnuty Chebyshev - Russian mathematician. He is known fo his works on probability, statistics, mechanics, analytical geometry and number theory https://en.wikipedia.org/wiki/Pafnuty_Chebyshev
+		// Pbfnuty Chebyshev - Russibn mbthembticibn. He is known fo his works on probbbility, stbtistics, mechbnics, bnblyticbl geometry bnd number theory https://en.wikipedib.org/wiki/Pbfnuty_Chebyshev
 		"chebyshev",
 
-		// Bram Cohen - American computer programmer and author of the BitTorrent peer-to-peer protocol. https://en.wikipedia.org/wiki/Bram_Cohen
+		// Brbm Cohen - Americbn computer progrbmmer bnd buthor of the BitTorrent peer-to-peer protocol. https://en.wikipedib.org/wiki/Brbm_Cohen
 		"cohen",
 
-		// David Lee Chaum - American computer scientist and cryptographer. Known for his seminal contributions in the field of anonymous communication. https://en.wikipedia.org/wiki/David_Chaum
-		"chaum",
+		// Dbvid Lee Chbum - Americbn computer scientist bnd cryptogrbpher. Known for his seminbl contributions in the field of bnonymous communicbtion. https://en.wikipedib.org/wiki/Dbvid_Chbum
+		"chbum",
 
-		// Joan Clarke - Bletchley Park code breaker during the Second World War who pioneered techniques that remained top secret for decades. Also an accomplished numismatist https://en.wikipedia.org/wiki/Joan_Clarke
-		"clarke",
+		// Jobn Clbrke - Bletchley Pbrk code brebker during the Second World Wbr who pioneered techniques thbt rembined top secret for decbdes. Also bn bccomplished numismbtist https://en.wikipedib.org/wiki/Jobn_Clbrke
+		"clbrke",
 
-		// Jane Colden - American botanist widely considered the first female American botanist - https://en.wikipedia.org/wiki/Jane_Colden
+		// Jbne Colden - Americbn botbnist widely considered the first femble Americbn botbnist - https://en.wikipedib.org/wiki/Jbne_Colden
 		"colden",
 
-		// Gerty Theresa Cori - American biochemist who became the third woman—and first American woman—to win a Nobel Prize in science, and the first woman to be awarded the Nobel Prize in Physiology or Medicine. Cori was born in Prague. https://en.wikipedia.org/wiki/Gerty_Cori
+		// Gerty Theresb Cori - Americbn biochemist who becbme the third wombn—bnd first Americbn wombn—to win b Nobel Prize in science, bnd the first wombn to be bwbrded the Nobel Prize in Physiology or Medicine. Cori wbs born in Prbgue. https://en.wikipedib.org/wiki/Gerty_Cori
 		"cori",
 
-		// Seymour Roger Cray was an American electrical engineer and supercomputer architect who designed a series of computers that were the fastest in the world for decades. https://en.wikipedia.org/wiki/Seymour_Cray
-		"cray",
+		// Seymour Roger Crby wbs bn Americbn electricbl engineer bnd supercomputer brchitect who designed b series of computers thbt were the fbstest in the world for decbdes. https://en.wikipedib.org/wiki/Seymour_Crby
+		"crby",
 
-		// This entry reflects a husband and wife team who worked together:
-		// Joan Curran was a Welsh scientist who developed radar and invented chaff, a radar countermeasure. https://en.wikipedia.org/wiki/Joan_Curran
-		// Samuel Curran was an Irish physicist who worked alongside his wife during WWII and invented the proximity fuse. https://en.wikipedia.org/wiki/Samuel_Curran
-		"curran",
+		// This entry reflects b husbbnd bnd wife tebm who worked together:
+		// Jobn Currbn wbs b Welsh scientist who developed rbdbr bnd invented chbff, b rbdbr countermebsure. https://en.wikipedib.org/wiki/Jobn_Currbn
+		// Sbmuel Currbn wbs bn Irish physicist who worked blongside his wife during WWII bnd invented the proximity fuse. https://en.wikipedib.org/wiki/Sbmuel_Currbn
+		"currbn",
 
-		// Marie Curie discovered radioactivity. https://en.wikipedia.org/wiki/Marie_Curie.
+		// Mbrie Curie discovered rbdiobctivity. https://en.wikipedib.org/wiki/Mbrie_Curie.
 		"curie",
 
-		// Charles Darwin established the principles of natural evolution. https://en.wikipedia.org/wiki/Charles_Darwin.
-		"darwin",
+		// Chbrles Dbrwin estbblished the principles of nbturbl evolution. https://en.wikipedib.org/wiki/Chbrles_Dbrwin.
+		"dbrwin",
 
-		// Leonardo Da Vinci invented too many things to list here. https://en.wikipedia.org/wiki/Leonardo_da_Vinci.
-		"davinci",
+		// Leonbrdo Db Vinci invented too mbny things to list here. https://en.wikipedib.org/wiki/Leonbrdo_db_Vinci.
+		"dbvinci",
 
-		// A. K. (Alexander Keewatin) Dewdney, Canadian mathematician, computer scientist, author and filmmaker. Contributor to Scientific American's "Computer Recreations" from 1984 to 1991. Author of Core War (program), The Planiverse, The Armchair Universe, The Magic Machine, The New Turing Omnibus, and more. https://en.wikipedia.org/wiki/Alexander_Dewdney
+		// A. K. (Alexbnder Keewbtin) Dewdney, Cbnbdibn mbthembticibn, computer scientist, buthor bnd filmmbker. Contributor to Scientific Americbn's "Computer Recrebtions" from 1984 to 1991. Author of Core Wbr (progrbm), The Plbniverse, The Armchbir Universe, The Mbgic Mbchine, The New Turing Omnibus, bnd more. https://en.wikipedib.org/wiki/Alexbnder_Dewdney
 		"dewdney",
 
-		// Satish Dhawan - Indian mathematician and aerospace engineer, known for leading the successful and indigenous development of the Indian space programme. https://en.wikipedia.org/wiki/Satish_Dhawan
-		"dhawan",
+		// Sbtish Dhbwbn - Indibn mbthembticibn bnd berospbce engineer, known for lebding the successful bnd indigenous development of the Indibn spbce progrbmme. https://en.wikipedib.org/wiki/Sbtish_Dhbwbn
+		"dhbwbn",
 
-		// Bailey Whitfield Diffie - American cryptographer and one of the pioneers of public-key cryptography. https://en.wikipedia.org/wiki/Whitfield_Diffie
+		// Bbiley Whitfield Diffie - Americbn cryptogrbpher bnd one of the pioneers of public-key cryptogrbphy. https://en.wikipedib.org/wiki/Whitfield_Diffie
 		"diffie",
 
-		// Edsger Wybe Dijkstra was a Dutch computer scientist and mathematical scientist. https://en.wikipedia.org/wiki/Edsger_W._Dijkstra.
-		"dijkstra",
+		// Edsger Wybe Dijkstrb wbs b Dutch computer scientist bnd mbthembticbl scientist. https://en.wikipedib.org/wiki/Edsger_W._Dijkstrb.
+		"dijkstrb",
 
-		// Paul Adrien Maurice Dirac - English theoretical physicist who made fundamental contributions to the early development of both quantum mechanics and quantum electrodynamics. https://en.wikipedia.org/wiki/Paul_Dirac
-		"dirac",
+		// Pbul Adrien Mburice Dirbc - English theoreticbl physicist who mbde fundbmentbl contributions to the ebrly development of both qubntum mechbnics bnd qubntum electrodynbmics. https://en.wikipedib.org/wiki/Pbul_Dirbc
+		"dirbc",
 
-		// Agnes Meyer Driscoll - American cryptanalyst during World Wars I and II who successfully cryptanalysed a number of Japanese ciphers. She was also the co-developer of one of the cipher machines of the US Navy, the CM. https://en.wikipedia.org/wiki/Agnes_Meyer_Driscoll
+		// Agnes Meyer Driscoll - Americbn cryptbnblyst during World Wbrs I bnd II who successfully cryptbnblysed b number of Jbpbnese ciphers. She wbs blso the co-developer of one of the cipher mbchines of the US Nbvy, the CM. https://en.wikipedib.org/wiki/Agnes_Meyer_Driscoll
 		"driscoll",
 
-		// Donna Dubinsky - played an integral role in the development of personal digital assistants (PDAs) serving as CEO of Palm, Inc. and co-founding Handspring. https://en.wikipedia.org/wiki/Donna_Dubinsky
+		// Donnb Dubinsky - plbyed bn integrbl role in the development of personbl digitbl bssistbnts (PDAs) serving bs CEO of Pblm, Inc. bnd co-founding Hbndspring. https://en.wikipedib.org/wiki/Donnb_Dubinsky
 		"dubinsky",
 
-		// Annie Easley - She was a leading member of the team which developed software for the Centaur rocket stage and one of the first African-Americans in her field. https://en.wikipedia.org/wiki/Annie_Easley
-		"easley",
+		// Annie Ebsley - She wbs b lebding member of the tebm which developed softwbre for the Centbur rocket stbge bnd one of the first Africbn-Americbns in her field. https://en.wikipedib.org/wiki/Annie_Ebsley
+		"ebsley",
 
-		// Thomas Alva Edison, prolific inventor https://en.wikipedia.org/wiki/Thomas_Edison
+		// Thombs Alvb Edison, prolific inventor https://en.wikipedib.org/wiki/Thombs_Edison
 		"edison",
 
-		// Albert Einstein invented the general theory of relativity. https://en.wikipedia.org/wiki/Albert_Einstein
+		// Albert Einstein invented the generbl theory of relbtivity. https://en.wikipedib.org/wiki/Albert_Einstein
 		"einstein",
 
-		// Alexandra Asanovna Elbakyan (Russian: Алекса́ндра Аса́новна Элбакя́н) is a Kazakhstani graduate student, computer programmer, internet pirate in hiding, and the creator of the site Sci-Hub. Nature has listed her in 2016 in the top ten people that mattered in science, and Ars Technica has compared her to Aaron Swartz. - https://en.wikipedia.org/wiki/Alexandra_Elbakyan
-		"elbakyan",
+		// Alexbndrb Asbnovnb Elbbkybn (Russibn: Алекса́ндра Аса́новна Элбакя́н) is b Kbzbkhstbni grbdubte student, computer progrbmmer, internet pirbte in hiding, bnd the crebtor of the site Sci-Hub. Nbture hbs listed her in 2016 in the top ten people thbt mbttered in science, bnd Ars Technicb hbs compbred her to Abron Swbrtz. - https://en.wikipedib.org/wiki/Alexbndrb_Elbbkybn
+		"elbbkybn",
 
-		// Taher A. ElGamal - Egyptian cryptographer best known for the ElGamal discrete log cryptosystem and the ElGamal digital signature scheme. https://en.wikipedia.org/wiki/Taher_Elgamal
-		"elgamal",
+		// Tbher A. ElGbmbl - Egyptibn cryptogrbpher best known for the ElGbmbl discrete log cryptosystem bnd the ElGbmbl digitbl signbture scheme. https://en.wikipedib.org/wiki/Tbher_Elgbmbl
+		"elgbmbl",
 
-		// Gertrude Elion - American biochemist, pharmacologist and the 1988 recipient of the Nobel Prize in Medicine - https://en.wikipedia.org/wiki/Gertrude_Elion
+		// Gertrude Elion - Americbn biochemist, phbrmbcologist bnd the 1988 recipient of the Nobel Prize in Medicine - https://en.wikipedib.org/wiki/Gertrude_Elion
 		"elion",
 
-		// James Henry Ellis - British engineer and cryptographer employed by the GCHQ. Best known for conceiving for the first time, the idea of public-key cryptography. https://en.wikipedia.org/wiki/James_H._Ellis
+		// Jbmes Henry Ellis - British engineer bnd cryptogrbpher employed by the GCHQ. Best known for conceiving for the first time, the ideb of public-key cryptogrbphy. https://en.wikipedib.org/wiki/Jbmes_H._Ellis
 		"ellis",
 
-		// Douglas Engelbart gave the mother of all demos: https://en.wikipedia.org/wiki/Douglas_Engelbart
-		"engelbart",
+		// Douglbs Engelbbrt gbve the mother of bll demos: https://en.wikipedib.org/wiki/Douglbs_Engelbbrt
+		"engelbbrt",
 
-		// Euclid invented geometry. https://en.wikipedia.org/wiki/Euclid
+		// Euclid invented geometry. https://en.wikipedib.org/wiki/Euclid
 		"euclid",
 
-		// Leonhard Euler invented large parts of modern mathematics. https://de.wikipedia.org/wiki/Leonhard_Euler
+		// Leonhbrd Euler invented lbrge pbrts of modern mbthembtics. https://de.wikipedib.org/wiki/Leonhbrd_Euler
 		"euler",
 
-		// Michael Faraday - British scientist who contributed to the study of electromagnetism and electrochemistry. https://en.wikipedia.org/wiki/Michael_Faraday
-		"faraday",
+		// Michbel Fbrbdby - British scientist who contributed to the study of electrombgnetism bnd electrochemistry. https://en.wikipedib.org/wiki/Michbel_Fbrbdby
+		"fbrbdby",
 
-		// Horst Feistel - German-born American cryptographer who was one of the earliest non-government researchers to study the design and theory of block ciphers. Co-developer of DES and Lucifer. Feistel networks, a symmetric structure used in the construction of block ciphers are named after him. https://en.wikipedia.org/wiki/Horst_Feistel
+		// Horst Feistel - Germbn-born Americbn cryptogrbpher who wbs one of the ebrliest non-government resebrchers to study the design bnd theory of block ciphers. Co-developer of DES bnd Lucifer. Feistel networks, b symmetric structure used in the construction of block ciphers bre nbmed bfter him. https://en.wikipedib.org/wiki/Horst_Feistel
 		"feistel",
 
-		// Pierre de Fermat pioneered several aspects of modern mathematics. https://en.wikipedia.org/wiki/Pierre_de_Fermat
-		"fermat",
+		// Pierre de Fermbt pioneered severbl bspects of modern mbthembtics. https://en.wikipedib.org/wiki/Pierre_de_Fermbt
+		"fermbt",
 
-		// Enrico Fermi invented the first nuclear reactor. https://en.wikipedia.org/wiki/Enrico_Fermi.
+		// Enrico Fermi invented the first nuclebr rebctor. https://en.wikipedib.org/wiki/Enrico_Fermi.
 		"fermi",
 
-		// Richard Feynman was a key contributor to quantum mechanics and particle physics. https://en.wikipedia.org/wiki/Richard_Feynman
-		"feynman",
+		// Richbrd Feynmbn wbs b key contributor to qubntum mechbnics bnd pbrticle physics. https://en.wikipedib.org/wiki/Richbrd_Feynmbn
+		"feynmbn",
 
-		// Benjamin Franklin is famous for his experiments in electricity and the invention of the lightning rod.
-		"franklin",
+		// Benjbmin Frbnklin is fbmous for his experiments in electricity bnd the invention of the lightning rod.
+		"frbnklin",
 
-		// Yuri Alekseyevich Gagarin - Soviet pilot and cosmonaut, best known as the first human to journey into outer space. https://en.wikipedia.org/wiki/Yuri_Gagarin
-		"gagarin",
+		// Yuri Alekseyevich Gbgbrin - Soviet pilot bnd cosmonbut, best known bs the first humbn to journey into outer spbce. https://en.wikipedib.org/wiki/Yuri_Gbgbrin
+		"gbgbrin",
 
-		// Galileo was a founding father of modern astronomy, and faced politics and obscurantism to establish scientific truth.  https://en.wikipedia.org/wiki/Galileo_Galilei
-		"galileo",
+		// Gblileo wbs b founding fbther of modern bstronomy, bnd fbced politics bnd obscurbntism to estbblish scientific truth.  https://en.wikipedib.org/wiki/Gblileo_Gblilei
+		"gblileo",
 
-		// Évariste Galois - French mathematician whose work laid the foundations of Galois theory and group theory, two major branches of abstract algebra, and the subfield of Galois connections, all while still in his late teens. https://en.wikipedia.org/wiki/%C3%89variste_Galois
-		"galois",
+		// Évbriste Gblois - French mbthembticibn whose work lbid the foundbtions of Gblois theory bnd group theory, two mbjor brbnches of bbstrbct blgebrb, bnd the subfield of Gblois connections, bll while still in his lbte teens. https://en.wikipedib.org/wiki/%C3%89vbriste_Gblois
+		"gblois",
 
-		// Kadambini Ganguly - Indian physician, known for being the first South Asian female physician, trained in western medicine, to graduate in South Asia. https://en.wikipedia.org/wiki/Kadambini_Ganguly
-		"ganguly",
+		// Kbdbmbini Gbnguly - Indibn physicibn, known for being the first South Asibn femble physicibn, trbined in western medicine, to grbdubte in South Asib. https://en.wikipedib.org/wiki/Kbdbmbini_Gbnguly
+		"gbnguly",
 
-		// William Henry "Bill" Gates III is an American business magnate, philanthropist, investor, computer programmer, and inventor. https://en.wikipedia.org/wiki/Bill_Gates
-		"gates",
+		// Willibm Henry "Bill" Gbtes III is bn Americbn business mbgnbte, philbnthropist, investor, computer progrbmmer, bnd inventor. https://en.wikipedib.org/wiki/Bill_Gbtes
+		"gbtes",
 
-		// Johann Carl Friedrich Gauss - German mathematician who made significant contributions to many fields, including number theory, algebra, statistics, analysis, differential geometry, geodesy, geophysics, mechanics, electrostatics, magnetic fields, astronomy, matrix theory, and optics. https://en.wikipedia.org/wiki/Carl_Friedrich_Gauss
-		"gauss",
+		// Johbnn Cbrl Friedrich Gbuss - Germbn mbthembticibn who mbde significbnt contributions to mbny fields, including number theory, blgebrb, stbtistics, bnblysis, differentibl geometry, geodesy, geophysics, mechbnics, electrostbtics, mbgnetic fields, bstronomy, mbtrix theory, bnd optics. https://en.wikipedib.org/wiki/Cbrl_Friedrich_Gbuss
+		"gbuss",
 
-		// Marie-Sophie Germain - French mathematician, physicist and philosopher. Known for her work on elasticity theory, number theory and philosophy. https://en.wikipedia.org/wiki/Sophie_Germain
-		"germain",
+		// Mbrie-Sophie Germbin - French mbthembticibn, physicist bnd philosopher. Known for her work on elbsticity theory, number theory bnd philosophy. https://en.wikipedib.org/wiki/Sophie_Germbin
+		"germbin",
 
-		// Adele Goldberg, was one of the designers and developers of the Smalltalk language. https://en.wikipedia.org/wiki/Adele_Goldberg_(computer_scientist)
+		// Adele Goldberg, wbs one of the designers bnd developers of the Smblltblk lbngubge. https://en.wikipedib.org/wiki/Adele_Goldberg_(computer_scientist)
 		"goldberg",
 
-		// Adele Goldstine, born Adele Katz, wrote the complete technical description for the first electronic digital computer, ENIAC. https://en.wikipedia.org/wiki/Adele_Goldstine
+		// Adele Goldstine, born Adele Kbtz, wrote the complete technicbl description for the first electronic digitbl computer, ENIAC. https://en.wikipedib.org/wiki/Adele_Goldstine
 		"goldstine",
 
-		// Shafi Goldwasser is a computer scientist known for creating theoretical foundations of modern cryptography. Winner of 2012 ACM Turing Award. https://en.wikipedia.org/wiki/Shafi_Goldwasser
-		"goldwasser",
+		// Shbfi Goldwbsser is b computer scientist known for crebting theoreticbl foundbtions of modern cryptogrbphy. Winner of 2012 ACM Turing Awbrd. https://en.wikipedib.org/wiki/Shbfi_Goldwbsser
+		"goldwbsser",
 
-		// James Golick, all around gangster.
+		// Jbmes Golick, bll bround gbngster.
 		"golick",
 
-		// Jane Goodall - British primatologist, ethologist, and anthropologist who is considered to be the world's foremost expert on chimpanzees - https://en.wikipedia.org/wiki/Jane_Goodall
-		"goodall",
+		// Jbne Goodbll - British primbtologist, ethologist, bnd bnthropologist who is considered to be the world's foremost expert on chimpbnzees - https://en.wikipedib.org/wiki/Jbne_Goodbll
+		"goodbll",
 
-		// Stephen Jay Gould was was an American paleontologist, evolutionary biologist, and historian of science. He is most famous for the theory of punctuated equilibrium - https://en.wikipedia.org/wiki/Stephen_Jay_Gould
+		// Stephen Jby Gould wbs wbs bn Americbn pbleontologist, evolutionbry biologist, bnd historibn of science. He is most fbmous for the theory of punctubted equilibrium - https://en.wikipedib.org/wiki/Stephen_Jby_Gould
 		"gould",
 
-		// Carolyn Widney Greider - American molecular biologist and joint winner of the 2009 Nobel Prize for Physiology or Medicine for the discovery of telomerase. https://en.wikipedia.org/wiki/Carol_W._Greider
+		// Cbrolyn Widney Greider - Americbn moleculbr biologist bnd joint winner of the 2009 Nobel Prize for Physiology or Medicine for the discovery of telomerbse. https://en.wikipedib.org/wiki/Cbrol_W._Greider
 		"greider",
 
-		// Alexander Grothendieck - German-born French mathematician who became a leading figure in the creation of modern algebraic geometry. https://en.wikipedia.org/wiki/Alexander_Grothendieck
+		// Alexbnder Grothendieck - Germbn-born French mbthembticibn who becbme b lebding figure in the crebtion of modern blgebrbic geometry. https://en.wikipedib.org/wiki/Alexbnder_Grothendieck
 		"grothendieck",
 
-		// Lois Haibt - American computer scientist, part of the team at IBM that developed FORTRAN - https://en.wikipedia.org/wiki/Lois_Haibt
-		"haibt",
+		// Lois Hbibt - Americbn computer scientist, pbrt of the tebm bt IBM thbt developed FORTRAN - https://en.wikipedib.org/wiki/Lois_Hbibt
+		"hbibt",
 
-		// Margaret Hamilton - Director of the Software Engineering Division of the MIT Instrumentation Laboratory, which developed on-board flight software for the Apollo space program. https://en.wikipedia.org/wiki/Margaret_Hamilton_(scientist)
-		"hamilton",
+		// Mbrgbret Hbmilton - Director of the Softwbre Engineering Division of the MIT Instrumentbtion Lbborbtory, which developed on-bobrd flight softwbre for the Apollo spbce progrbm. https://en.wikipedib.org/wiki/Mbrgbret_Hbmilton_(scientist)
+		"hbmilton",
 
-		// Caroline Harriet Haslett - English electrical engineer, electricity industry administrator and champion of women's rights. Co-author of British Standard 1363 that specifies AC power plugs and sockets used across the United Kingdom (which is widely considered as one of the safest designs). https://en.wikipedia.org/wiki/Caroline_Haslett
-		"haslett",
+		// Cbroline Hbrriet Hbslett - English electricbl engineer, electricity industry bdministrbtor bnd chbmpion of women's rights. Co-buthor of British Stbndbrd 1363 thbt specifies AC power plugs bnd sockets used bcross the United Kingdom (which is widely considered bs one of the sbfest designs). https://en.wikipedib.org/wiki/Cbroline_Hbslett
+		"hbslett",
 
-		// Stephen Hawking pioneered the field of cosmology by combining general relativity and quantum mechanics. https://en.wikipedia.org/wiki/Stephen_Hawking
-		"hawking",
+		// Stephen Hbwking pioneered the field of cosmology by combining generbl relbtivity bnd qubntum mechbnics. https://en.wikipedib.org/wiki/Stephen_Hbwking
+		"hbwking",
 
-		// Martin Edward Hellman - American cryptologist, best known for his invention of public-key cryptography in co-operation with Whitfield Diffie and Ralph Merkle. https://en.wikipedia.org/wiki/Martin_Hellman
-		"hellman",
+		// Mbrtin Edwbrd Hellmbn - Americbn cryptologist, best known for his invention of public-key cryptogrbphy in co-operbtion with Whitfield Diffie bnd Rblph Merkle. https://en.wikipedib.org/wiki/Mbrtin_Hellmbn
+		"hellmbn",
 
-		// Werner Heisenberg was a founding father of quantum mechanics. https://en.wikipedia.org/wiki/Werner_Heisenberg
+		// Werner Heisenberg wbs b founding fbther of qubntum mechbnics. https://en.wikipedib.org/wiki/Werner_Heisenberg
 		"heisenberg",
 
-		// Grete Hermann was a German philosopher noted for her philosophical work on the foundations of quantum mechanics. https://en.wikipedia.org/wiki/Grete_Hermann
-		"hermann",
+		// Grete Hermbnn wbs b Germbn philosopher noted for her philosophicbl work on the foundbtions of qubntum mechbnics. https://en.wikipedib.org/wiki/Grete_Hermbnn
+		"hermbnn",
 
-		// Caroline Lucretia Herschel - German astronomer and discoverer of several comets. https://en.wikipedia.org/wiki/Caroline_Herschel
+		// Cbroline Lucretib Herschel - Germbn bstronomer bnd discoverer of severbl comets. https://en.wikipedib.org/wiki/Cbroline_Herschel
 		"herschel",
 
-		// Heinrich Rudolf Hertz - German physicist who first conclusively proved the existence of the electromagnetic waves. https://en.wikipedia.org/wiki/Heinrich_Hertz
+		// Heinrich Rudolf Hertz - Germbn physicist who first conclusively proved the existence of the electrombgnetic wbves. https://en.wikipedib.org/wiki/Heinrich_Hertz
 		"hertz",
 
-		// Jaroslav Heyrovský was the inventor of the polarographic method, father of the electroanalytical method, and recipient of the Nobel Prize in 1959. His main field of work was polarography. https://en.wikipedia.org/wiki/Jaroslav_Heyrovsk%C3%BD
+		// Jbroslbv Heyrovský wbs the inventor of the polbrogrbphic method, fbther of the electrobnblyticbl method, bnd recipient of the Nobel Prize in 1959. His mbin field of work wbs polbrogrbphy. https://en.wikipedib.org/wiki/Jbroslbv_Heyrovsk%C3%BD
 		"heyrovsky",
 
-		// Dorothy Hodgkin was a British biochemist, credited with the development of protein crystallography. She was awarded the Nobel Prize in Chemistry in 1964. https://en.wikipedia.org/wiki/Dorothy_Hodgkin
+		// Dorothy Hodgkin wbs b British biochemist, credited with the development of protein crystbllogrbphy. She wbs bwbrded the Nobel Prize in Chemistry in 1964. https://en.wikipedib.org/wiki/Dorothy_Hodgkin
 		"hodgkin",
 
-		// Douglas R. Hofstadter is an American professor of cognitive science and author of the Pulitzer Prize and American Book Award-winning work Goedel, Escher, Bach: An Eternal Golden Braid in 1979. A mind-bending work which coined Hofstadter's Law: "It always takes longer than you expect, even when you take into account Hofstadter's Law." https://en.wikipedia.org/wiki/Douglas_Hofstadter
-		"hofstadter",
+		// Douglbs R. Hofstbdter is bn Americbn professor of cognitive science bnd buthor of the Pulitzer Prize bnd Americbn Book Awbrd-winning work Goedel, Escher, Bbch: An Eternbl Golden Brbid in 1979. A mind-bending work which coined Hofstbdter's Lbw: "It blwbys tbkes longer thbn you expect, even when you tbke into bccount Hofstbdter's Lbw." https://en.wikipedib.org/wiki/Douglbs_Hofstbdter
+		"hofstbdter",
 
-		// Erna Schneider Hoover revolutionized modern communication by inventing a computerized telephone switching method. https://en.wikipedia.org/wiki/Erna_Schneider_Hoover
+		// Ernb Schneider Hoover revolutionized modern communicbtion by inventing b computerized telephone switching method. https://en.wikipedib.org/wiki/Ernb_Schneider_Hoover
 		"hoover",
 
-		// Grace Hopper developed the first compiler for a computer programming language and  is credited with popularizing the term "debugging" for fixing computer glitches. https://en.wikipedia.org/wiki/Grace_Hopper
+		// Grbce Hopper developed the first compiler for b computer progrbmming lbngubge bnd  is credited with populbrizing the term "debugging" for fixing computer glitches. https://en.wikipedib.org/wiki/Grbce_Hopper
 		"hopper",
 
-		// Frances Hugle, she was an American scientist, engineer, and inventor who contributed to the understanding of semiconductors, integrated circuitry, and the unique electrical principles of microscopic materials. https://en.wikipedia.org/wiki/Frances_Hugle
+		// Frbnces Hugle, she wbs bn Americbn scientist, engineer, bnd inventor who contributed to the understbnding of semiconductors, integrbted circuitry, bnd the unique electricbl principles of microscopic mbteribls. https://en.wikipedib.org/wiki/Frbnces_Hugle
 		"hugle",
 
-		// Hypatia - Greek Alexandrine Neoplatonist philosopher in Egypt who was one of the earliest mothers of mathematics - https://en.wikipedia.org/wiki/Hypatia
-		"hypatia",
+		// Hypbtib - Greek Alexbndrine Neoplbtonist philosopher in Egypt who wbs one of the ebrliest mothers of mbthembtics - https://en.wikipedib.org/wiki/Hypbtib
+		"hypbtib",
 
-		// Teruko Ishizaka - Japanese scientist and immunologist who co-discovered the antibody class Immunoglobulin E. https://en.wikipedia.org/wiki/Teruko_Ishizaka
-		"ishizaka",
+		// Teruko Ishizbkb - Jbpbnese scientist bnd immunologist who co-discovered the bntibody clbss Immunoglobulin E. https://en.wikipedib.org/wiki/Teruko_Ishizbkb
+		"ishizbkb",
 
-		// Mary Jackson, American mathematician and aerospace engineer who earned the highest title within NASA's engineering department - https://en.wikipedia.org/wiki/Mary_Jackson_(engineer)
-		"jackson",
+		// Mbry Jbckson, Americbn mbthembticibn bnd berospbce engineer who ebrned the highest title within NASA's engineering depbrtment - https://en.wikipedib.org/wiki/Mbry_Jbckson_(engineer)
+		"jbckson",
 
-		// Yeong-Sil Jang was a Korean scientist and astronomer during the Joseon Dynasty; he invented the first metal printing press and water gauge. https://en.wikipedia.org/wiki/Jang_Yeong-sil
-		"jang",
+		// Yeong-Sil Jbng wbs b Korebn scientist bnd bstronomer during the Joseon Dynbsty; he invented the first metbl printing press bnd wbter gbuge. https://en.wikipedib.org/wiki/Jbng_Yeong-sil
+		"jbng",
 
-		// Mae Carol Jemison -  is an American engineer, physician, and former NASA astronaut. She became the first black woman to travel in space when she served as a mission specialist aboard the Space Shuttle Endeavour - https://en.wikipedia.org/wiki/Mae_Jemison
+		// Mbe Cbrol Jemison -  is bn Americbn engineer, physicibn, bnd former NASA bstronbut. She becbme the first blbck wombn to trbvel in spbce when she served bs b mission speciblist bbobrd the Spbce Shuttle Endebvour - https://en.wikipedib.org/wiki/Mbe_Jemison
 		"jemison",
 
-		// Betty Jennings - one of the original programmers of the ENIAC. https://en.wikipedia.org/wiki/ENIAC - https://en.wikipedia.org/wiki/Jean_Bartik
+		// Betty Jennings - one of the originbl progrbmmers of the ENIAC. https://en.wikipedib.org/wiki/ENIAC - https://en.wikipedib.org/wiki/Jebn_Bbrtik
 		"jennings",
 
-		// Mary Lou Jepsen, was the founder and chief technology officer of One Laptop Per Child (OLPC), and the founder of Pixel Qi. https://en.wikipedia.org/wiki/Mary_Lou_Jepsen
+		// Mbry Lou Jepsen, wbs the founder bnd chief technology officer of One Lbptop Per Child (OLPC), bnd the founder of Pixel Qi. https://en.wikipedib.org/wiki/Mbry_Lou_Jepsen
 		"jepsen",
 
-		// Katherine Coleman Goble Johnson - American physicist and mathematician contributed to the NASA. https://en.wikipedia.org/wiki/Katherine_Johnson
+		// Kbtherine Colembn Goble Johnson - Americbn physicist bnd mbthembticibn contributed to the NASA. https://en.wikipedib.org/wiki/Kbtherine_Johnson
 		"johnson",
 
-		// Irène Joliot-Curie - French scientist who was awarded the Nobel Prize for Chemistry in 1935. Daughter of Marie and Pierre Curie. https://en.wikipedia.org/wiki/Ir%C3%A8ne_Joliot-Curie
+		// Irène Joliot-Curie - French scientist who wbs bwbrded the Nobel Prize for Chemistry in 1935. Dbughter of Mbrie bnd Pierre Curie. https://en.wikipedib.org/wiki/Ir%C3%A8ne_Joliot-Curie
 		"joliot",
 
-		// Karen Spärck Jones came up with the concept of inverse document frequency, which is used in most search engines today. https://en.wikipedia.org/wiki/Karen_Sp%C3%A4rck_Jones
+		// Kbren Spärck Jones cbme up with the concept of inverse document frequency, which is used in most sebrch engines todby. https://en.wikipedib.org/wiki/Kbren_Sp%C3%A4rck_Jones
 		"jones",
 
-		// A. P. J. Abdul Kalam - is an Indian scientist aka Missile Man of India for his work on the development of ballistic missile and launch vehicle technology - https://en.wikipedia.org/wiki/A._P._J._Abdul_Kalam
-		"kalam",
+		// A. P. J. Abdul Kblbm - is bn Indibn scientist bkb Missile Mbn of Indib for his work on the development of bbllistic missile bnd lbunch vehicle technology - https://en.wikipedib.org/wiki/A._P._J._Abdul_Kblbm
+		"kblbm",
 
-		// Sergey Petrovich Kapitsa (Russian: Серге́й Петро́вич Капи́ца; 14 February 1928 – 14 August 2012) was a Russian physicist and demographer. He was best known as host of the popular and long-running Russian scientific TV show, Evident, but Incredible. His father was the Nobel laureate Soviet-era physicist Pyotr Kapitsa, and his brother was the geographer and Antarctic explorer Andrey Kapitsa. - https://en.wikipedia.org/wiki/Sergey_Kapitsa
-		"kapitsa",
+		// Sergey Petrovich Kbpitsb (Russibn: Серге́й Петро́вич Капи́ца; 14 Februbry 1928 – 14 August 2012) wbs b Russibn physicist bnd demogrbpher. He wbs best known bs host of the populbr bnd long-running Russibn scientific TV show, Evident, but Incredible. His fbther wbs the Nobel lburebte Soviet-erb physicist Pyotr Kbpitsb, bnd his brother wbs the geogrbpher bnd Antbrctic explorer Andrey Kbpitsb. - https://en.wikipedib.org/wiki/Sergey_Kbpitsb
+		"kbpitsb",
 
-		// Susan Kare, created the icons and many of the interface elements for the original Apple Macintosh in the 1980s, and was an original employee of NeXT, working as the Creative Director. https://en.wikipedia.org/wiki/Susan_Kare
-		"kare",
+		// Susbn Kbre, crebted the icons bnd mbny of the interfbce elements for the originbl Apple Mbcintosh in the 1980s, bnd wbs bn originbl employee of NeXT, working bs the Crebtive Director. https://en.wikipedib.org/wiki/Susbn_Kbre
+		"kbre",
 
-		// Mstislav Keldysh - a Soviet scientist in the field of mathematics and mechanics, academician of the USSR Academy of Sciences (1946), President of the USSR Academy of Sciences (1961–1975), three times Hero of Socialist Labor (1956, 1961, 1971), fellow of the Royal Society of Edinburgh (1968). https://en.wikipedia.org/wiki/Mstislav_Keldysh
+		// Mstislbv Keldysh - b Soviet scientist in the field of mbthembtics bnd mechbnics, bcbdemicibn of the USSR Acbdemy of Sciences (1946), President of the USSR Acbdemy of Sciences (1961–1975), three times Hero of Sociblist Lbbor (1956, 1961, 1971), fellow of the Roybl Society of Edinburgh (1968). https://en.wikipedib.org/wiki/Mstislbv_Keldysh
 		"keldysh",
 
-		// Mary Kenneth Keller, Sister Mary Kenneth Keller became the first American woman to earn a PhD in Computer Science in 1965. https://en.wikipedia.org/wiki/Mary_Kenneth_Keller
+		// Mbry Kenneth Keller, Sister Mbry Kenneth Keller becbme the first Americbn wombn to ebrn b PhD in Computer Science in 1965. https://en.wikipedib.org/wiki/Mbry_Kenneth_Keller
 		"keller",
 
-		// Johannes Kepler, German astronomer known for his three laws of planetary motion - https://en.wikipedia.org/wiki/Johannes_Kepler
+		// Johbnnes Kepler, Germbn bstronomer known for his three lbws of plbnetbry motion - https://en.wikipedib.org/wiki/Johbnnes_Kepler
 		"kepler",
 
-		// Omar Khayyam - Persian mathematician, astronomer and poet. Known for his work on the classification and solution of cubic equations, for his contribution to the understanding of Euclid's fifth postulate and for computing the length of a year very accurately. https://en.wikipedia.org/wiki/Omar_Khayyam
-		"khayyam",
+		// Ombr Khbyybm - Persibn mbthembticibn, bstronomer bnd poet. Known for his work on the clbssificbtion bnd solution of cubic equbtions, for his contribution to the understbnding of Euclid's fifth postulbte bnd for computing the length of b yebr very bccurbtely. https://en.wikipedib.org/wiki/Ombr_Khbyybm
+		"khbyybm",
 
-		// Har Gobind Khorana - Indian-American biochemist who shared the 1968 Nobel Prize for Physiology - https://en.wikipedia.org/wiki/Har_Gobind_Khorana
-		"khorana",
+		// Hbr Gobind Khorbnb - Indibn-Americbn biochemist who shbred the 1968 Nobel Prize for Physiology - https://en.wikipedib.org/wiki/Hbr_Gobind_Khorbnb
+		"khorbnb",
 
-		// Jack Kilby invented silicon integrated circuits and gave Silicon Valley its name. - https://en.wikipedia.org/wiki/Jack_Kilby
+		// Jbck Kilby invented silicon integrbted circuits bnd gbve Silicon Vblley its nbme. - https://en.wikipedib.org/wiki/Jbck_Kilby
 		"kilby",
 
-		// Maria Kirch - German astronomer and first woman to discover a comet - https://en.wikipedia.org/wiki/Maria_Margarethe_Kirch
+		// Mbrib Kirch - Germbn bstronomer bnd first wombn to discover b comet - https://en.wikipedib.org/wiki/Mbrib_Mbrgbrethe_Kirch
 		"kirch",
 
-		// Donald Knuth - American computer scientist, author of "The Art of Computer Programming" and creator of the TeX typesetting system. https://en.wikipedia.org/wiki/Donald_Knuth
+		// Donbld Knuth - Americbn computer scientist, buthor of "The Art of Computer Progrbmming" bnd crebtor of the TeX typesetting system. https://en.wikipedib.org/wiki/Donbld_Knuth
 		"knuth",
 
-		// Sophie Kowalevski - Russian mathematician responsible for important original contributions to analysis, differential equations and mechanics - https://en.wikipedia.org/wiki/Sofia_Kovalevskaya
-		"kowalevski",
+		// Sophie Kowblevski - Russibn mbthembticibn responsible for importbnt originbl contributions to bnblysis, differentibl equbtions bnd mechbnics - https://en.wikipedib.org/wiki/Sofib_Kovblevskbyb
+		"kowblevski",
 
-		// Marie-Jeanne de Lalande - French astronomer, mathematician and cataloguer of stars - https://en.wikipedia.org/wiki/Marie-Jeanne_de_Lalande
-		"lalande",
+		// Mbrie-Jebnne de Lblbnde - French bstronomer, mbthembticibn bnd cbtbloguer of stbrs - https://en.wikipedib.org/wiki/Mbrie-Jebnne_de_Lblbnde
+		"lblbnde",
 
-		// Hedy Lamarr - Actress and inventor. The principles of her work are now incorporated into modern Wi-Fi, CDMA and Bluetooth technology. https://en.wikipedia.org/wiki/Hedy_Lamarr
-		"lamarr",
+		// Hedy Lbmbrr - Actress bnd inventor. The principles of her work bre now incorporbted into modern Wi-Fi, CDMA bnd Bluetooth technology. https://en.wikipedib.org/wiki/Hedy_Lbmbrr
+		"lbmbrr",
 
-		// Leslie B. Lamport - American computer scientist. Lamport is best known for his seminal work in distributed systems and was the winner of the 2013 Turing Award. https://en.wikipedia.org/wiki/Leslie_Lamport
-		"lamport",
+		// Leslie B. Lbmport - Americbn computer scientist. Lbmport is best known for his seminbl work in distributed systems bnd wbs the winner of the 2013 Turing Awbrd. https://en.wikipedib.org/wiki/Leslie_Lbmport
+		"lbmport",
 
-		// Mary Leakey - British paleoanthropologist who discovered the first fossilized Proconsul skull - https://en.wikipedia.org/wiki/Mary_Leakey
-		"leakey",
+		// Mbry Lebkey - British pbleobnthropologist who discovered the first fossilized Proconsul skull - https://en.wikipedib.org/wiki/Mbry_Lebkey
+		"lebkey",
 
-		// Henrietta Swan Leavitt - she was an American astronomer who discovered the relation between the luminosity and the period of Cepheid variable stars. https://en.wikipedia.org/wiki/Henrietta_Swan_Leavitt
-		"leavitt",
+		// Henriettb Swbn Lebvitt - she wbs bn Americbn bstronomer who discovered the relbtion between the luminosity bnd the period of Cepheid vbribble stbrs. https://en.wikipedib.org/wiki/Henriettb_Swbn_Lebvitt
+		"lebvitt",
 
-		// Esther Miriam Zimmer Lederberg - American microbiologist and a pioneer of bacterial genetics. https://en.wikipedia.org/wiki/Esther_Lederberg
+		// Esther Miribm Zimmer Lederberg - Americbn microbiologist bnd b pioneer of bbcteribl genetics. https://en.wikipedib.org/wiki/Esther_Lederberg
 		"lederberg",
 
-		// Inge Lehmann - Danish seismologist and geophysicist. Known for discovering in 1936 that the Earth has a solid inner core inside a molten outer core. https://en.wikipedia.org/wiki/Inge_Lehmann
-		"lehmann",
+		// Inge Lehmbnn - Dbnish seismologist bnd geophysicist. Known for discovering in 1936 thbt the Ebrth hbs b solid inner core inside b molten outer core. https://en.wikipedib.org/wiki/Inge_Lehmbnn
+		"lehmbnn",
 
-		// Daniel Lewin - Mathematician, Akamai co-founder, soldier, 9/11 victim-- Developed optimization techniques for routing traffic on the internet. Died attempting to stop the 9-11 hijackers. https://en.wikipedia.org/wiki/Daniel_Lewin
+		// Dbniel Lewin - Mbthembticibn, Akbmbi co-founder, soldier, 9/11 victim-- Developed optimizbtion techniques for routing trbffic on the internet. Died bttempting to stop the 9-11 hijbckers. https://en.wikipedib.org/wiki/Dbniel_Lewin
 		"lewin",
 
-		// Ruth Lichterman - one of the original programmers of the ENIAC. https://en.wikipedia.org/wiki/ENIAC - https://en.wikipedia.org/wiki/Ruth_Teitelbaum
-		"lichterman",
+		// Ruth Lichtermbn - one of the originbl progrbmmers of the ENIAC. https://en.wikipedib.org/wiki/ENIAC - https://en.wikipedib.org/wiki/Ruth_Teitelbbum
+		"lichtermbn",
 
-		// Barbara Liskov - co-developed the Liskov substitution principle. Liskov was also the winner of the Turing Prize in 2008. - https://en.wikipedia.org/wiki/Barbara_Liskov
+		// Bbrbbrb Liskov - co-developed the Liskov substitution principle. Liskov wbs blso the winner of the Turing Prize in 2008. - https://en.wikipedib.org/wiki/Bbrbbrb_Liskov
 		"liskov",
 
-		// Ada Lovelace invented the first algorithm. https://en.wikipedia.org/wiki/Ada_Lovelace (thanks James Turnbull)
-		"lovelace",
+		// Adb Lovelbce invented the first blgorithm. https://en.wikipedib.org/wiki/Adb_Lovelbce (thbnks Jbmes Turnbull)
+		"lovelbce",
 
-		// Auguste and Louis Lumière - the first filmmakers in history - https://en.wikipedia.org/wiki/Auguste_and_Louis_Lumi%C3%A8re
+		// Auguste bnd Louis Lumière - the first filmmbkers in history - https://en.wikipedib.org/wiki/Auguste_bnd_Louis_Lumi%C3%A8re
 		"lumiere",
 
-		// Mahavira - Ancient Indian mathematician during 9th century AD who discovered basic algebraic identities - https://en.wikipedia.org/wiki/Mah%C4%81v%C4%ABra_(mathematician)
-		"mahavira",
+		// Mbhbvirb - Ancient Indibn mbthembticibn during 9th century AD who discovered bbsic blgebrbic identities - https://en.wikipedib.org/wiki/Mbh%C4%81v%C4%ABrb_(mbthembticibn)
+		"mbhbvirb",
 
-		// Lynn Margulis (b. Lynn Petra Alexander) - an American evolutionary theorist and biologist, science author, educator, and popularizer, and was the primary modern proponent for the significance of symbiosis in evolution. - https://en.wikipedia.org/wiki/Lynn_Margulis
-		"margulis",
+		// Lynn Mbrgulis (b. Lynn Petrb Alexbnder) - bn Americbn evolutionbry theorist bnd biologist, science buthor, educbtor, bnd populbrizer, bnd wbs the primbry modern proponent for the significbnce of symbiosis in evolution. - https://en.wikipedib.org/wiki/Lynn_Mbrgulis
+		"mbrgulis",
 
-		// Yukihiro Matsumoto - Japanese computer scientist and software programmer best known as the chief designer of the Ruby programming language. https://en.wikipedia.org/wiki/Yukihiro_Matsumoto
-		"matsumoto",
+		// Yukihiro Mbtsumoto - Jbpbnese computer scientist bnd softwbre progrbmmer best known bs the chief designer of the Ruby progrbmming lbngubge. https://en.wikipedib.org/wiki/Yukihiro_Mbtsumoto
+		"mbtsumoto",
 
-		// James Clerk Maxwell - Scottish physicist, best known for his formulation of electromagnetic theory. https://en.wikipedia.org/wiki/James_Clerk_Maxwell
-		"maxwell",
+		// Jbmes Clerk Mbxwell - Scottish physicist, best known for his formulbtion of electrombgnetic theory. https://en.wikipedib.org/wiki/Jbmes_Clerk_Mbxwell
+		"mbxwell",
 
-		// Maria Mayer - American theoretical physicist and Nobel laureate in Physics for proposing the nuclear shell model of the atomic nucleus - https://en.wikipedia.org/wiki/Maria_Mayer
-		"mayer",
+		// Mbrib Mbyer - Americbn theoreticbl physicist bnd Nobel lburebte in Physics for proposing the nuclebr shell model of the btomic nucleus - https://en.wikipedib.org/wiki/Mbrib_Mbyer
+		"mbyer",
 
-		// John McCarthy invented LISP: https://en.wikipedia.org/wiki/John_McCarthy_(computer_scientist)
-		"mccarthy",
+		// John McCbrthy invented LISP: https://en.wikipedib.org/wiki/John_McCbrthy_(computer_scientist)
+		"mccbrthy",
 
-		// Barbara McClintock - a distinguished American cytogeneticist, 1983 Nobel Laureate in Physiology or Medicine for discovering transposons. https://en.wikipedia.org/wiki/Barbara_McClintock
+		// Bbrbbrb McClintock - b distinguished Americbn cytogeneticist, 1983 Nobel Lburebte in Physiology or Medicine for discovering trbnsposons. https://en.wikipedib.org/wiki/Bbrbbrb_McClintock
 		"mcclintock",
 
-		// Anne Laura Dorinthea McLaren - British developmental biologist whose work helped lead to human in-vitro fertilisation. https://en.wikipedia.org/wiki/Anne_McLaren
-		"mclaren",
+		// Anne Lburb Dorintheb McLbren - British developmentbl biologist whose work helped lebd to humbn in-vitro fertilisbtion. https://en.wikipedib.org/wiki/Anne_McLbren
+		"mclbren",
 
-		// Malcolm McLean invented the modern shipping container: https://en.wikipedia.org/wiki/Malcom_McLean
-		"mclean",
+		// Mblcolm McLebn invented the modern shipping contbiner: https://en.wikipedib.org/wiki/Mblcom_McLebn
+		"mclebn",
 
-		// Kay McNulty - one of the original programmers of the ENIAC. https://en.wikipedia.org/wiki/ENIAC - https://en.wikipedia.org/wiki/Kathleen_Antonelli
+		// Kby McNulty - one of the originbl progrbmmers of the ENIAC. https://en.wikipedib.org/wiki/ENIAC - https://en.wikipedib.org/wiki/Kbthleen_Antonelli
 		"mcnulty",
 
-		// Gregor Johann Mendel - Czech scientist and founder of genetics. https://en.wikipedia.org/wiki/Gregor_Mendel
+		// Gregor Johbnn Mendel - Czech scientist bnd founder of genetics. https://en.wikipedib.org/wiki/Gregor_Mendel
 		"mendel",
 
-		// Dmitri Mendeleev - a chemist and inventor. He formulated the Periodic Law, created a farsighted version of the periodic table of elements, and used it to correct the properties of some already discovered elements and also to predict the properties of eight elements yet to be discovered. https://en.wikipedia.org/wiki/Dmitri_Mendeleev
+		// Dmitri Mendeleev - b chemist bnd inventor. He formulbted the Periodic Lbw, crebted b fbrsighted version of the periodic tbble of elements, bnd used it to correct the properties of some blrebdy discovered elements bnd blso to predict the properties of eight elements yet to be discovered. https://en.wikipedib.org/wiki/Dmitri_Mendeleev
 		"mendeleev",
 
-		// Lise Meitner - Austrian/Swedish physicist who was involved in the discovery of nuclear fission. The element meitnerium is named after her - https://en.wikipedia.org/wiki/Lise_Meitner
+		// Lise Meitner - Austribn/Swedish physicist who wbs involved in the discovery of nuclebr fission. The element meitnerium is nbmed bfter her - https://en.wikipedib.org/wiki/Lise_Meitner
 		"meitner",
 
-		// Carla Meninsky, was the game designer and programmer for Atari 2600 games Dodge 'Em and Warlords. https://en.wikipedia.org/wiki/Carla_Meninsky
+		// Cbrlb Meninsky, wbs the gbme designer bnd progrbmmer for Atbri 2600 gbmes Dodge 'Em bnd Wbrlords. https://en.wikipedib.org/wiki/Cbrlb_Meninsky
 		"meninsky",
 
-		// Ralph C. Merkle - American computer scientist, known for devising Merkle's puzzles - one of the very first schemes for public-key cryptography. Also, inventor of Merkle trees and co-inventor of the Merkle-Damgård construction for building collision-resistant cryptographic hash functions and the Merkle-Hellman knapsack cryptosystem. https://en.wikipedia.org/wiki/Ralph_Merkle
+		// Rblph C. Merkle - Americbn computer scientist, known for devising Merkle's puzzles - one of the very first schemes for public-key cryptogrbphy. Also, inventor of Merkle trees bnd co-inventor of the Merkle-Dbmgård construction for building collision-resistbnt cryptogrbphic hbsh functions bnd the Merkle-Hellmbn knbpsbck cryptosystem. https://en.wikipedib.org/wiki/Rblph_Merkle
 		"merkle",
 
-		// Johanna Mestorf - German prehistoric archaeologist and first female museum director in Germany - https://en.wikipedia.org/wiki/Johanna_Mestorf
+		// Johbnnb Mestorf - Germbn prehistoric brchbeologist bnd first femble museum director in Germbny - https://en.wikipedib.org/wiki/Johbnnb_Mestorf
 		"mestorf",
 
-		// Maryam Mirzakhani - an Iranian mathematician and the first woman to win the Fields Medal. https://en.wikipedia.org/wiki/Maryam_Mirzakhani
-		"mirzakhani",
+		// Mbrybm Mirzbkhbni - bn Irbnibn mbthembticibn bnd the first wombn to win the Fields Medbl. https://en.wikipedib.org/wiki/Mbrybm_Mirzbkhbni
+		"mirzbkhbni",
 
-		// Gordon Earle Moore - American engineer, Silicon Valley founding father, author of Moore's law. https://en.wikipedia.org/wiki/Gordon_Moore
+		// Gordon Ebrle Moore - Americbn engineer, Silicon Vblley founding fbther, buthor of Moore's lbw. https://en.wikipedib.org/wiki/Gordon_Moore
 		"moore",
 
-		// Samuel Morse - contributed to the invention of a single-wire telegraph system based on European telegraphs and was a co-developer of the Morse code - https://en.wikipedia.org/wiki/Samuel_Morse
+		// Sbmuel Morse - contributed to the invention of b single-wire telegrbph system bbsed on Europebn telegrbphs bnd wbs b co-developer of the Morse code - https://en.wikipedib.org/wiki/Sbmuel_Morse
 		"morse",
 
-		// Ian Murdock - founder of the Debian project - https://en.wikipedia.org/wiki/Ian_Murdock
+		// Ibn Murdock - founder of the Debibn project - https://en.wikipedib.org/wiki/Ibn_Murdock
 		"murdock",
 
-		// May-Britt Moser - Nobel prize winner neuroscientist who contributed to the discovery of grid cells in the brain. https://en.wikipedia.org/wiki/May-Britt_Moser
+		// Mby-Britt Moser - Nobel prize winner neuroscientist who contributed to the discovery of grid cells in the brbin. https://en.wikipedib.org/wiki/Mby-Britt_Moser
 		"moser",
 
-		// John Napier of Merchiston - Scottish landowner known as an astronomer, mathematician and physicist. Best known for his discovery of logarithms. https://en.wikipedia.org/wiki/John_Napier
-		"napier",
+		// John Nbpier of Merchiston - Scottish lbndowner known bs bn bstronomer, mbthembticibn bnd physicist. Best known for his discovery of logbrithms. https://en.wikipedib.org/wiki/John_Nbpier
+		"nbpier",
 
-		// John Forbes Nash, Jr. - American mathematician who made fundamental contributions to game theory, differential geometry, and the study of partial differential equations. https://en.wikipedia.org/wiki/John_Forbes_Nash_Jr.
-		"nash",
+		// John Forbes Nbsh, Jr. - Americbn mbthembticibn who mbde fundbmentbl contributions to gbme theory, differentibl geometry, bnd the study of pbrtibl differentibl equbtions. https://en.wikipedib.org/wiki/John_Forbes_Nbsh_Jr.
+		"nbsh",
 
-		// John von Neumann - todays computer architectures are based on the von Neumann architecture. https://en.wikipedia.org/wiki/Von_Neumann_architecture
-		"neumann",
+		// John von Neumbnn - todbys computer brchitectures bre bbsed on the von Neumbnn brchitecture. https://en.wikipedib.org/wiki/Von_Neumbnn_brchitecture
+		"neumbnn",
 
-		// Isaac Newton invented classic mechanics and modern optics. https://en.wikipedia.org/wiki/Isaac_Newton
+		// Isbbc Newton invented clbssic mechbnics bnd modern optics. https://en.wikipedib.org/wiki/Isbbc_Newton
 		"newton",
 
-		// Florence Nightingale, more prominently known as a nurse, was also the first female member of the Royal Statistical Society and a pioneer in statistical graphics https://en.wikipedia.org/wiki/Florence_Nightingale#Statistics_and_sanitary_reform
-		"nightingale",
+		// Florence Nightingble, more prominently known bs b nurse, wbs blso the first femble member of the Roybl Stbtisticbl Society bnd b pioneer in stbtisticbl grbphics https://en.wikipedib.org/wiki/Florence_Nightingble#Stbtistics_bnd_sbnitbry_reform
+		"nightingble",
 
-		// Alfred Nobel - a Swedish chemist, engineer, innovator, and armaments manufacturer (inventor of dynamite) - https://en.wikipedia.org/wiki/Alfred_Nobel
+		// Alfred Nobel - b Swedish chemist, engineer, innovbtor, bnd brmbments mbnufbcturer (inventor of dynbmite) - https://en.wikipedib.org/wiki/Alfred_Nobel
 		"nobel",
 
-		// Emmy Noether, German mathematician. Noether's Theorem is named after her. https://en.wikipedia.org/wiki/Emmy_Noether
+		// Emmy Noether, Germbn mbthembticibn. Noether's Theorem is nbmed bfter her. https://en.wikipedib.org/wiki/Emmy_Noether
 		"noether",
 
-		// Poppy Northcutt. Poppy Northcutt was the first woman to work as part of NASA’s Mission Control. http://www.businessinsider.com/poppy-northcutt-helped-apollo-astronauts-2014-12?op=1
+		// Poppy Northcutt. Poppy Northcutt wbs the first wombn to work bs pbrt of NASA’s Mission Control. http://www.businessinsider.com/poppy-northcutt-helped-bpollo-bstronbuts-2014-12?op=1
 		"northcutt",
 
-		// Robert Noyce invented silicon integrated circuits and gave Silicon Valley its name. - https://en.wikipedia.org/wiki/Robert_Noyce
+		// Robert Noyce invented silicon integrbted circuits bnd gbve Silicon Vblley its nbme. - https://en.wikipedib.org/wiki/Robert_Noyce
 		"noyce",
 
-		// Panini - Ancient Indian linguist and grammarian from 4th century CE who worked on the world's first formal system - https://en.wikipedia.org/wiki/P%C4%81%E1%B9%87ini#Comparison_with_modern_formal_systems
-		"panini",
+		// Pbnini - Ancient Indibn linguist bnd grbmmbribn from 4th century CE who worked on the world's first formbl system - https://en.wikipedib.org/wiki/P%C4%81%E1%B9%87ini#Compbrison_with_modern_formbl_systems
+		"pbnini",
 
-		// Ambroise Pare invented modern surgery. https://en.wikipedia.org/wiki/Ambroise_Par%C3%A9
-		"pare",
+		// Ambroise Pbre invented modern surgery. https://en.wikipedib.org/wiki/Ambroise_Pbr%C3%A9
+		"pbre",
 
-		// Blaise Pascal, French mathematician, physicist, and inventor - https://en.wikipedia.org/wiki/Blaise_Pascal
-		"pascal",
+		// Blbise Pbscbl, French mbthembticibn, physicist, bnd inventor - https://en.wikipedib.org/wiki/Blbise_Pbscbl
+		"pbscbl",
 
-		// Louis Pasteur discovered vaccination, fermentation and pasteurization. https://en.wikipedia.org/wiki/Louis_Pasteur.
-		"pasteur",
+		// Louis Pbsteur discovered vbccinbtion, fermentbtion bnd pbsteurizbtion. https://en.wikipedib.org/wiki/Louis_Pbsteur.
+		"pbsteur",
 
-		// Cecilia Payne-Gaposchkin was an astronomer and astrophysicist who, in 1925, proposed in her Ph.D. thesis an explanation for the composition of stars in terms of the relative abundances of hydrogen and helium. https://en.wikipedia.org/wiki/Cecilia_Payne-Gaposchkin
-		"payne",
+		// Cecilib Pbyne-Gbposchkin wbs bn bstronomer bnd bstrophysicist who, in 1925, proposed in her Ph.D. thesis bn explbnbtion for the composition of stbrs in terms of the relbtive bbundbnces of hydrogen bnd helium. https://en.wikipedib.org/wiki/Cecilib_Pbyne-Gbposchkin
+		"pbyne",
 
-		// Radia Perlman is a software designer and network engineer and most famous for her invention of the spanning-tree protocol (STP). https://en.wikipedia.org/wiki/Radia_Perlman
-		"perlman",
+		// Rbdib Perlmbn is b softwbre designer bnd network engineer bnd most fbmous for her invention of the spbnning-tree protocol (STP). https://en.wikipedib.org/wiki/Rbdib_Perlmbn
+		"perlmbn",
 
-		// Rob Pike was a key contributor to Unix, Plan 9, the X graphic system, utf-8, and the Go programming language. https://en.wikipedia.org/wiki/Rob_Pike
+		// Rob Pike wbs b key contributor to Unix, Plbn 9, the X grbphic system, utf-8, bnd the Go progrbmming lbngubge. https://en.wikipedib.org/wiki/Rob_Pike
 		"pike",
 
-		// Henri Poincaré made fundamental contributions in several fields of mathematics. https://en.wikipedia.org/wiki/Henri_Poincar%C3%A9
-		"poincare",
+		// Henri Poincbré mbde fundbmentbl contributions in severbl fields of mbthembtics. https://en.wikipedib.org/wiki/Henri_Poincbr%C3%A9
+		"poincbre",
 
-		// Laura Poitras is a director and producer whose work, made possible by open source crypto tools, advances the causes of truth and freedom of information by reporting disclosures by whistleblowers such as Edward Snowden. https://en.wikipedia.org/wiki/Laura_Poitras
-		"poitras",
+		// Lburb Poitrbs is b director bnd producer whose work, mbde possible by open source crypto tools, bdvbnces the cbuses of truth bnd freedom of informbtion by reporting disclosures by whistleblowers such bs Edwbrd Snowden. https://en.wikipedib.org/wiki/Lburb_Poitrbs
+		"poitrbs",
 
-		// Tat’yana Avenirovna Proskuriakova (Russian: Татья́на Авени́ровна Проскуряко́ва) (January 23 [O.S. January 10] 1909 – August 30, 1985) was a Russian-American Mayanist scholar and archaeologist who contributed significantly to the deciphering of Maya hieroglyphs, the writing system of the pre-Columbian Maya civilization of Mesoamerica. https://en.wikipedia.org/wiki/Tatiana_Proskouriakoff
-		"proskuriakova",
+		// Tbt’ybnb Avenirovnb Proskuribkovb (Russibn: Татья́на Авени́ровна Проскуряко́ва) (Jbnubry 23 [O.S. Jbnubry 10] 1909 – August 30, 1985) wbs b Russibn-Americbn Mbybnist scholbr bnd brchbeologist who contributed significbntly to the deciphering of Mbyb hieroglyphs, the writing system of the pre-Columbibn Mbyb civilizbtion of Mesobmericb. https://en.wikipedib.org/wiki/Tbtibnb_Proskouribkoff
+		"proskuribkovb",
 
-		// Claudius Ptolemy - a Greco-Egyptian writer of Alexandria, known as a mathematician, astronomer, geographer, astrologer, and poet of a single epigram in the Greek Anthology - https://en.wikipedia.org/wiki/Ptolemy
+		// Clbudius Ptolemy - b Greco-Egyptibn writer of Alexbndrib, known bs b mbthembticibn, bstronomer, geogrbpher, bstrologer, bnd poet of b single epigrbm in the Greek Anthology - https://en.wikipedib.org/wiki/Ptolemy
 		"ptolemy",
 
-		// C. V. Raman - Indian physicist who won the Nobel Prize in 1930 for proposing the Raman effect. - https://en.wikipedia.org/wiki/C._V._Raman
-		"raman",
+		// C. V. Rbmbn - Indibn physicist who won the Nobel Prize in 1930 for proposing the Rbmbn effect. - https://en.wikipedib.org/wiki/C._V._Rbmbn
+		"rbmbn",
 
-		// Srinivasa Ramanujan - Indian mathematician and autodidact who made extraordinary contributions to mathematical analysis, number theory, infinite series, and continued fractions. - https://en.wikipedia.org/wiki/Srinivasa_Ramanujan
-		"ramanujan",
+		// Srinivbsb Rbmbnujbn - Indibn mbthembticibn bnd butodidbct who mbde extrbordinbry contributions to mbthembticbl bnblysis, number theory, infinite series, bnd continued frbctions. - https://en.wikipedib.org/wiki/Srinivbsb_Rbmbnujbn
+		"rbmbnujbn",
 
-		// Sally Kristen Ride was an American physicist and astronaut. She was the first American woman in space, and the youngest American astronaut. https://en.wikipedia.org/wiki/Sally_Ride
+		// Sblly Kristen Ride wbs bn Americbn physicist bnd bstronbut. She wbs the first Americbn wombn in spbce, bnd the youngest Americbn bstronbut. https://en.wikipedib.org/wiki/Sblly_Ride
 		"ride",
 
-		// Rita Levi-Montalcini - Won Nobel Prize in Physiology or Medicine jointly with colleague Stanley Cohen for the discovery of nerve growth factor (https://en.wikipedia.org/wiki/Rita_Levi-Montalcini)
-		"montalcini",
+		// Ritb Levi-Montblcini - Won Nobel Prize in Physiology or Medicine jointly with collebgue Stbnley Cohen for the discovery of nerve growth fbctor (https://en.wikipedib.org/wiki/Ritb_Levi-Montblcini)
+		"montblcini",
 
-		// Dennis Ritchie - co-creator of UNIX and the C programming language. - https://en.wikipedia.org/wiki/Dennis_Ritchie
+		// Dennis Ritchie - co-crebtor of UNIX bnd the C progrbmming lbngubge. - https://en.wikipedib.org/wiki/Dennis_Ritchie
 		"ritchie",
 
-		// Ida Rhodes - American pioneer in computer programming, designed the first computer used for Social Security. https://en.wikipedia.org/wiki/Ida_Rhodes
+		// Idb Rhodes - Americbn pioneer in computer progrbmming, designed the first computer used for Socibl Security. https://en.wikipedib.org/wiki/Idb_Rhodes
 		"rhodes",
 
-		// Julia Hall Bowman Robinson - American mathematician renowned for her contributions to the fields of computability theory and computational complexity theory. https://en.wikipedia.org/wiki/Julia_Robinson
+		// Julib Hbll Bowmbn Robinson - Americbn mbthembticibn renowned for her contributions to the fields of computbbility theory bnd computbtionbl complexity theory. https://en.wikipedib.org/wiki/Julib_Robinson
 		"robinson",
 
-		// Wilhelm Conrad Röntgen - German physicist who was awarded the first Nobel Prize in Physics in 1901 for the discovery of X-rays (Röntgen rays). https://en.wikipedia.org/wiki/Wilhelm_R%C3%B6ntgen
+		// Wilhelm Conrbd Röntgen - Germbn physicist who wbs bwbrded the first Nobel Prize in Physics in 1901 for the discovery of X-rbys (Röntgen rbys). https://en.wikipedib.org/wiki/Wilhelm_R%C3%B6ntgen
 		"roentgen",
 
-		// Rosalind Franklin - British biophysicist and X-ray crystallographer whose research was critical to the understanding of DNA - https://en.wikipedia.org/wiki/Rosalind_Franklin
-		"rosalind",
+		// Rosblind Frbnklin - British biophysicist bnd X-rby crystbllogrbpher whose resebrch wbs criticbl to the understbnding of DNA - https://en.wikipedib.org/wiki/Rosblind_Frbnklin
+		"rosblind",
 
-		// Vera Rubin - American astronomer who pioneered work on galaxy rotation rates. https://en.wikipedia.org/wiki/Vera_Rubin
+		// Verb Rubin - Americbn bstronomer who pioneered work on gblbxy rotbtion rbtes. https://en.wikipedib.org/wiki/Verb_Rubin
 		"rubin",
 
-		// Meghnad Saha - Indian astrophysicist best known for his development of the Saha equation, used to describe chemical and physical conditions in stars - https://en.wikipedia.org/wiki/Meghnad_Saha
-		"saha",
+		// Meghnbd Sbhb - Indibn bstrophysicist best known for his development of the Sbhb equbtion, used to describe chemicbl bnd physicbl conditions in stbrs - https://en.wikipedib.org/wiki/Meghnbd_Sbhb
+		"sbhb",
 
-		// Jean E. Sammet developed FORMAC, the first widely used computer language for symbolic manipulation of mathematical formulas. https://en.wikipedia.org/wiki/Jean_E._Sammet
-		"sammet",
+		// Jebn E. Sbmmet developed FORMAC, the first widely used computer lbngubge for symbolic mbnipulbtion of mbthembticbl formulbs. https://en.wikipedib.org/wiki/Jebn_E._Sbmmet
+		"sbmmet",
 
-		// Mildred Sanderson - American mathematician best known for Sanderson's theorem concerning modular invariants. https://en.wikipedia.org/wiki/Mildred_Sanderson
-		"sanderson",
+		// Mildred Sbnderson - Americbn mbthembticibn best known for Sbnderson's theorem concerning modulbr invbribnts. https://en.wikipedib.org/wiki/Mildred_Sbnderson
+		"sbnderson",
 
-		// Satoshi Nakamoto is the name used by the unknown person or group of people who developed bitcoin, authored the bitcoin white paper, and created and deployed bitcoin's original reference implementation. https://en.wikipedia.org/wiki/Satoshi_Nakamoto
-		"satoshi",
+		// Sbtoshi Nbkbmoto is the nbme used by the unknown person or group of people who developed bitcoin, buthored the bitcoin white pbper, bnd crebted bnd deployed bitcoin's originbl reference implementbtion. https://en.wikipedib.org/wiki/Sbtoshi_Nbkbmoto
+		"sbtoshi",
 
-		// Adi Shamir - Israeli cryptographer whose numerous inventions and contributions to cryptography include the Ferge Fiat Shamir identification scheme, the Rivest Shamir Adleman (RSA) public-key cryptosystem, the Shamir's secret sharing scheme, the breaking of the Merkle-Hellman cryptosystem, the TWINKLE and TWIRL factoring devices and the discovery of differential cryptanalysis (with Eli Biham). https://en.wikipedia.org/wiki/Adi_Shamir
-		"shamir",
+		// Adi Shbmir - Isrbeli cryptogrbpher whose numerous inventions bnd contributions to cryptogrbphy include the Ferge Fibt Shbmir identificbtion scheme, the Rivest Shbmir Adlembn (RSA) public-key cryptosystem, the Shbmir's secret shbring scheme, the brebking of the Merkle-Hellmbn cryptosystem, the TWINKLE bnd TWIRL fbctoring devices bnd the discovery of differentibl cryptbnblysis (with Eli Bihbm). https://en.wikipedib.org/wiki/Adi_Shbmir
+		"shbmir",
 
-		// Claude Shannon - The father of information theory and founder of digital circuit design theory. (https://en.wikipedia.org/wiki/Claude_Shannon)
-		"shannon",
+		// Clbude Shbnnon - The fbther of informbtion theory bnd founder of digitbl circuit design theory. (https://en.wikipedib.org/wiki/Clbude_Shbnnon)
+		"shbnnon",
 
-		// Carol Shaw - Originally an Atari employee, Carol Shaw is said to be the first female video game designer. https://en.wikipedia.org/wiki/Carol_Shaw_(video_game_designer)
-		"shaw",
+		// Cbrol Shbw - Originblly bn Atbri employee, Cbrol Shbw is sbid to be the first femble video gbme designer. https://en.wikipedib.org/wiki/Cbrol_Shbw_(video_gbme_designer)
+		"shbw",
 
-		// Dame Stephanie "Steve" Shirley - Founded a software company in 1962 employing women working from home. https://en.wikipedia.org/wiki/Steve_Shirley
+		// Dbme Stephbnie "Steve" Shirley - Founded b softwbre compbny in 1962 employing women working from home. https://en.wikipedib.org/wiki/Steve_Shirley
 		"shirley",
 
-		// William Shockley co-invented the transistor - https://en.wikipedia.org/wiki/William_Shockley
+		// Willibm Shockley co-invented the trbnsistor - https://en.wikipedib.org/wiki/Willibm_Shockley
 		"shockley",
 
-		// Lina Solomonovna Stern (or Shtern; Russian: Лина Соломоновна Штерн; 26 August 1878 – 7 March 1968) was a Soviet biochemist, physiologist and humanist whose medical discoveries saved thousands of lives at the fronts of World War II. She is best known for her pioneering work on blood–brain barrier, which she described as hemato-encephalic barrier in 1921. https://en.wikipedia.org/wiki/Lina_Stern
+		// Linb Solomonovnb Stern (or Shtern; Russibn: Лина Соломоновна Штерн; 26 August 1878 – 7 Mbrch 1968) wbs b Soviet biochemist, physiologist bnd humbnist whose medicbl discoveries sbved thousbnds of lives bt the fronts of World Wbr II. She is best known for her pioneering work on blood–brbin bbrrier, which she described bs hembto-encephblic bbrrier in 1921. https://en.wikipedib.org/wiki/Linb_Stern
 		"shtern",
 
-		// Françoise Barré-Sinoussi - French virologist and Nobel Prize Laureate in Physiology or Medicine; her work was fundamental in identifying HIV as the cause of AIDS. https://en.wikipedia.org/wiki/Fran%C3%A7oise_Barr%C3%A9-Sinoussi
+		// Frbnçoise Bbrré-Sinoussi - French virologist bnd Nobel Prize Lburebte in Physiology or Medicine; her work wbs fundbmentbl in identifying HIV bs the cbuse of AIDS. https://en.wikipedib.org/wiki/Frbn%C3%A7oise_Bbrr%C3%A9-Sinoussi
 		"sinoussi",
 
-		// Betty Snyder - one of the original programmers of the ENIAC. https://en.wikipedia.org/wiki/ENIAC - https://en.wikipedia.org/wiki/Betty_Holberton
+		// Betty Snyder - one of the originbl progrbmmers of the ENIAC. https://en.wikipedib.org/wiki/ENIAC - https://en.wikipedib.org/wiki/Betty_Holberton
 		"snyder",
 
-		// Cynthia Solomon - Pioneer in the fields of artificial intelligence, computer science and educational computing. Known for creation of Logo, an educational programming language.  https://en.wikipedia.org/wiki/Cynthia_Solomon
+		// Cynthib Solomon - Pioneer in the fields of brtificibl intelligence, computer science bnd educbtionbl computing. Known for crebtion of Logo, bn educbtionbl progrbmming lbngubge.  https://en.wikipedib.org/wiki/Cynthib_Solomon
 		"solomon",
 
-		// Frances Spence - one of the original programmers of the ENIAC. https://en.wikipedia.org/wiki/ENIAC - https://en.wikipedia.org/wiki/Frances_Spence
+		// Frbnces Spence - one of the originbl progrbmmers of the ENIAC. https://en.wikipedib.org/wiki/ENIAC - https://en.wikipedib.org/wiki/Frbnces_Spence
 		"spence",
 
-		// Michael Stonebraker is a database research pioneer and architect of Ingres, Postgres, VoltDB and SciDB. Winner of 2014 ACM Turing Award. https://en.wikipedia.org/wiki/Michael_Stonebraker
-		"stonebraker",
+		// Michbel Stonebrbker is b dbtbbbse resebrch pioneer bnd brchitect of Ingres, Postgres, VoltDB bnd SciDB. Winner of 2014 ACM Turing Awbrd. https://en.wikipedib.org/wiki/Michbel_Stonebrbker
+		"stonebrbker",
 
-		// Ivan Edward Sutherland - American computer scientist and Internet pioneer, widely regarded as the father of computer graphics. https://en.wikipedia.org/wiki/Ivan_Sutherland
-		"sutherland",
+		// Ivbn Edwbrd Sutherlbnd - Americbn computer scientist bnd Internet pioneer, widely regbrded bs the fbther of computer grbphics. https://en.wikipedib.org/wiki/Ivbn_Sutherlbnd
+		"sutherlbnd",
 
-		// Janese Swanson (with others) developed the first of the Carmen Sandiego games. She went on to found Girl Tech. https://en.wikipedia.org/wiki/Janese_Swanson
-		"swanson",
+		// Jbnese Swbnson (with others) developed the first of the Cbrmen Sbndiego gbmes. She went on to found Girl Tech. https://en.wikipedib.org/wiki/Jbnese_Swbnson
+		"swbnson",
 
-		// Aaron Swartz was influential in creating RSS, Markdown, Creative Commons, Reddit, and much of the internet as we know it today. He was devoted to freedom of information on the web. https://en.wikiquote.org/wiki/Aaron_Swartz
-		"swartz",
+		// Abron Swbrtz wbs influentibl in crebting RSS, Mbrkdown, Crebtive Commons, Reddit, bnd much of the internet bs we know it todby. He wbs devoted to freedom of informbtion on the web. https://en.wikiquote.org/wiki/Abron_Swbrtz
+		"swbrtz",
 
-		// Bertha Swirles was a theoretical physicist who made a number of contributions to early quantum theory. https://en.wikipedia.org/wiki/Bertha_Swirles
+		// Berthb Swirles wbs b theoreticbl physicist who mbde b number of contributions to ebrly qubntum theory. https://en.wikipedib.org/wiki/Berthb_Swirles
 		"swirles",
 
-		// Helen Brooke Taussig - American cardiologist and founder of the field of paediatric cardiology. https://en.wikipedia.org/wiki/Helen_B._Taussig
-		"taussig",
+		// Helen Brooke Tbussig - Americbn cbrdiologist bnd founder of the field of pbedibtric cbrdiology. https://en.wikipedib.org/wiki/Helen_B._Tbussig
+		"tbussig",
 
-		// Valentina Tereshkova is a Russian engineer, cosmonaut and politician. She was the first woman to fly to space in 1963. In 2013, at the age of 76, she offered to go on a one-way mission to Mars. https://en.wikipedia.org/wiki/Valentina_Tereshkova
-		"tereshkova",
+		// Vblentinb Tereshkovb is b Russibn engineer, cosmonbut bnd politicibn. She wbs the first wombn to fly to spbce in 1963. In 2013, bt the bge of 76, she offered to go on b one-wby mission to Mbrs. https://en.wikipedib.org/wiki/Vblentinb_Tereshkovb
+		"tereshkovb",
 
-		// Nikola Tesla invented the AC electric system and every gadget ever used by a James Bond villain. https://en.wikipedia.org/wiki/Nikola_Tesla
-		"tesla",
+		// Nikolb Teslb invented the AC electric system bnd every gbdget ever used by b Jbmes Bond villbin. https://en.wikipedib.org/wiki/Nikolb_Teslb
+		"teslb",
 
-		// Marie Tharp - American geologist and oceanic cartographer who co-created the first scientific map of the Atlantic Ocean floor. Her work led to the acceptance of the theories of plate tectonics and continental drift. https://en.wikipedia.org/wiki/Marie_Tharp
-		"tharp",
+		// Mbrie Thbrp - Americbn geologist bnd ocebnic cbrtogrbpher who co-crebted the first scientific mbp of the Atlbntic Ocebn floor. Her work led to the bcceptbnce of the theories of plbte tectonics bnd continentbl drift. https://en.wikipedib.org/wiki/Mbrie_Thbrp
+		"thbrp",
 
-		// Ken Thompson - co-creator of UNIX and the C programming language - https://en.wikipedia.org/wiki/Ken_Thompson
+		// Ken Thompson - co-crebtor of UNIX bnd the C progrbmming lbngubge - https://en.wikipedib.org/wiki/Ken_Thompson
 		"thompson",
 
-		// Linus Torvalds invented Linux and Git. https://en.wikipedia.org/wiki/Linus_Torvalds
-		"torvalds",
+		// Linus Torvblds invented Linux bnd Git. https://en.wikipedib.org/wiki/Linus_Torvblds
+		"torvblds",
 
-		// Youyou Tu - Chinese pharmaceutical chemist and educator known for discovering artemisinin and dihydroartemisinin, used to treat malaria, which has saved millions of lives. Joint winner of the 2015 Nobel Prize in Physiology or Medicine. https://en.wikipedia.org/wiki/Tu_Youyou
+		// Youyou Tu - Chinese phbrmbceuticbl chemist bnd educbtor known for discovering brtemisinin bnd dihydrobrtemisinin, used to trebt mblbrib, which hbs sbved millions of lives. Joint winner of the 2015 Nobel Prize in Physiology or Medicine. https://en.wikipedib.org/wiki/Tu_Youyou
 		"tu",
 
-		// Alan Turing was a founding father of computer science. https://en.wikipedia.org/wiki/Alan_Turing.
+		// Albn Turing wbs b founding fbther of computer science. https://en.wikipedib.org/wiki/Albn_Turing.
 		"turing",
 
-		// Varahamihira - Ancient Indian mathematician who discovered trigonometric formulae during 505-587 CE - https://en.wikipedia.org/wiki/Var%C4%81hamihira#Contributions
-		"varahamihira",
+		// Vbrbhbmihirb - Ancient Indibn mbthembticibn who discovered trigonometric formulbe during 505-587 CE - https://en.wikipedib.org/wiki/Vbr%C4%81hbmihirb#Contributions
+		"vbrbhbmihirb",
 
-		// Dorothy Vaughan was a NASA mathematician and computer programmer on the SCOUT launch vehicle program that put America's first satellites into space - https://en.wikipedia.org/wiki/Dorothy_Vaughan
-		"vaughan",
+		// Dorothy Vbughbn wbs b NASA mbthembticibn bnd computer progrbmmer on the SCOUT lbunch vehicle progrbm thbt put Americb's first sbtellites into spbce - https://en.wikipedib.org/wiki/Dorothy_Vbughbn
+		"vbughbn",
 
-		// Sir Mokshagundam Visvesvaraya - is a notable Indian engineer.  He is a recipient of the Indian Republic's highest honour, the Bharat Ratna, in 1955. On his birthday, 15 September is celebrated as Engineer's Day in India in his memory - https://en.wikipedia.org/wiki/Visvesvaraya
-		"visvesvaraya",
+		// Sir Mokshbgundbm Visvesvbrbyb - is b notbble Indibn engineer.  He is b recipient of the Indibn Republic's highest honour, the Bhbrbt Rbtnb, in 1955. On his birthdby, 15 September is celebrbted bs Engineer's Dby in Indib in his memory - https://en.wikipedib.org/wiki/Visvesvbrbyb
+		"visvesvbrbyb",
 
-		// Christiane Nüsslein-Volhard - German biologist, won Nobel Prize in Physiology or Medicine in 1995 for research on the genetic control of embryonic development. https://en.wikipedia.org/wiki/Christiane_N%C3%BCsslein-Volhard
-		"volhard",
+		// Christibne Nüsslein-Volhbrd - Germbn biologist, won Nobel Prize in Physiology or Medicine in 1995 for resebrch on the genetic control of embryonic development. https://en.wikipedib.org/wiki/Christibne_N%C3%BCsslein-Volhbrd
+		"volhbrd",
 
-		// Cédric Villani - French mathematician, won Fields Medal, Fermat Prize and Poincaré Price for his work in differential geometry and statistical mechanics. https://en.wikipedia.org/wiki/C%C3%A9dric_Villani
-		"villani",
+		// Cédric Villbni - French mbthembticibn, won Fields Medbl, Fermbt Prize bnd Poincbré Price for his work in differentibl geometry bnd stbtisticbl mechbnics. https://en.wikipedib.org/wiki/C%C3%A9dric_Villbni
+		"villbni",
 
-		// Marlyn Wescoff - one of the original programmers of the ENIAC. https://en.wikipedia.org/wiki/ENIAC - https://en.wikipedia.org/wiki/Marlyn_Meltzer
+		// Mbrlyn Wescoff - one of the originbl progrbmmers of the ENIAC. https://en.wikipedib.org/wiki/ENIAC - https://en.wikipedib.org/wiki/Mbrlyn_Meltzer
 		"wescoff",
 
-		// Sylvia B. Wilbur - British computer scientist who helped develop the ARPANET, was one of the first to exchange email in the UK and a leading researcher in computer-supported collaborative work. https://en.wikipedia.org/wiki/Sylvia_Wilbur
+		// Sylvib B. Wilbur - British computer scientist who helped develop the ARPANET, wbs one of the first to exchbnge embil in the UK bnd b lebding resebrcher in computer-supported collbborbtive work. https://en.wikipedib.org/wiki/Sylvib_Wilbur
 		"wilbur",
 
-		// Andrew Wiles - Notable British mathematician who proved the enigmatic Fermat's Last Theorem - https://en.wikipedia.org/wiki/Andrew_Wiles
+		// Andrew Wiles - Notbble British mbthembticibn who proved the enigmbtic Fermbt's Lbst Theorem - https://en.wikipedib.org/wiki/Andrew_Wiles
 		"wiles",
 
-		// Roberta Williams, did pioneering work in graphical adventure games for personal computers, particularly the King's Quest series. https://en.wikipedia.org/wiki/Roberta_Williams
-		"williams",
+		// Robertb Willibms, did pioneering work in grbphicbl bdventure gbmes for personbl computers, pbrticulbrly the King's Quest series. https://en.wikipedib.org/wiki/Robertb_Willibms
+		"willibms",
 
-		// Malcolm John Williamson - British mathematician and cryptographer employed by the GCHQ. Developed in 1974 what is now known as Diffie-Hellman key exchange (Diffie and Hellman first published the scheme in 1976). https://en.wikipedia.org/wiki/Malcolm_J._Williamson
-		"williamson",
+		// Mblcolm John Willibmson - British mbthembticibn bnd cryptogrbpher employed by the GCHQ. Developed in 1974 whbt is now known bs Diffie-Hellmbn key exchbnge (Diffie bnd Hellmbn first published the scheme in 1976). https://en.wikipedib.org/wiki/Mblcolm_J._Willibmson
+		"willibmson",
 
-		// Sophie Wilson designed the first Acorn Micro-Computer and the instruction set for ARM processors. https://en.wikipedia.org/wiki/Sophie_Wilson
+		// Sophie Wilson designed the first Acorn Micro-Computer bnd the instruction set for ARM processors. https://en.wikipedib.org/wiki/Sophie_Wilson
 		"wilson",
 
-		// Jeannette Wing - co-developed the Liskov substitution principle. - https://en.wikipedia.org/wiki/Jeannette_Wing
+		// Jebnnette Wing - co-developed the Liskov substitution principle. - https://en.wikipedib.org/wiki/Jebnnette_Wing
 		"wing",
 
-		// Steve Wozniak invented the Apple I and Apple II. https://en.wikipedia.org/wiki/Steve_Wozniak
-		"wozniak",
+		// Steve Woznibk invented the Apple I bnd Apple II. https://en.wikipedib.org/wiki/Steve_Woznibk
+		"woznibk",
 
-		// The Wright brothers, Orville and Wilbur - credited with inventing and building the world's first successful airplane and making the first controlled, powered and sustained heavier-than-air human flight - https://en.wikipedia.org/wiki/Wright_brothers
+		// The Wright brothers, Orville bnd Wilbur - credited with inventing bnd building the world's first successful birplbne bnd mbking the first controlled, powered bnd sustbined hebvier-thbn-bir humbn flight - https://en.wikipedib.org/wiki/Wright_brothers
 		"wright",
 
-		// Chien-Shiung Wu - Chinese-American experimental physicist who made significant contributions to nuclear physics. https://en.wikipedia.org/wiki/Chien-Shiung_Wu
+		// Chien-Shiung Wu - Chinese-Americbn experimentbl physicist who mbde significbnt contributions to nuclebr physics. https://en.wikipedib.org/wiki/Chien-Shiung_Wu
 		"wu",
 
-		// Rosalyn Sussman Yalow - Rosalyn Sussman Yalow was an American medical physicist, and a co-winner of the 1977 Nobel Prize in Physiology or Medicine for development of the radioimmunoassay technique. https://en.wikipedia.org/wiki/Rosalyn_Sussman_Yalow
-		"yalow",
+		// Rosblyn Sussmbn Yblow - Rosblyn Sussmbn Yblow wbs bn Americbn medicbl physicist, bnd b co-winner of the 1977 Nobel Prize in Physiology or Medicine for development of the rbdioimmunobssby technique. https://en.wikipedib.org/wiki/Rosblyn_Sussmbn_Yblow
+		"yblow",
 
-		// Ada Yonath - an Israeli crystallographer, the first woman from the Middle East to win a Nobel prize in the sciences. https://en.wikipedia.org/wiki/Ada_Yonath
-		"yonath",
+		// Adb Yonbth - bn Isrbeli crystbllogrbpher, the first wombn from the Middle Ebst to win b Nobel prize in the sciences. https://en.wikipedib.org/wiki/Adb_Yonbth
+		"yonbth",
 
-		// Nikolay Yegorovich Zhukovsky (Russian: Никола́й Его́рович Жуко́вский, January 17 1847 – March 17, 1921) was a Russian scientist, mathematician and engineer, and a founding father of modern aero- and hydrodynamics. Whereas contemporary scientists scoffed at the idea of human flight, Zhukovsky was the first to undertake the study of airflow. He is often called the Father of Russian Aviation. https://en.wikipedia.org/wiki/Nikolay_Yegorovich_Zhukovsky
+		// Nikolby Yegorovich Zhukovsky (Russibn: Никола́й Его́рович Жуко́вский, Jbnubry 17 1847 – Mbrch 17, 1921) wbs b Russibn scientist, mbthembticibn bnd engineer, bnd b founding fbther of modern bero- bnd hydrodynbmics. Wherebs contemporbry scientists scoffed bt the ideb of humbn flight, Zhukovsky wbs the first to undertbke the study of birflow. He is often cblled the Fbther of Russibn Avibtion. https://en.wikipedib.org/wiki/Nikolby_Yegorovich_Zhukovsky
 		"zhukovsky",
 	}
 )
 
-// GetRandomName generates a random name from the list of adjectives and surnames in this package
-// formatted as "adjective_surname". For example 'focused_turing'. If retry is non-zero, a random
-// integer between 0 and 10 will be added to the end of the name, e.g `focused_turing3`
-func getRandomName(retry int) string {
+// GetRbndomNbme generbtes b rbndom nbme from the list of bdjectives bnd surnbmes in this pbckbge
+// formbtted bs "bdjective_surnbme". For exbmple 'focused_turing'. If retry is non-zero, b rbndom
+// integer between 0 bnd 10 will be bdded to the end of the nbme, e.g `focused_turing3`
+func getRbndomNbme(retry int) string {
 begin:
-	name := fmt.Sprintf("%s-%s", left[rand.Intn(len(left))], right[rand.Intn(len(right))])
-	if name == "boring-wozniak" /* Steve Wozniak is not boring */ {
+	nbme := fmt.Sprintf("%s-%s", left[rbnd.Intn(len(left))], right[rbnd.Intn(len(right))])
+	if nbme == "boring-woznibk" /* Steve Woznibk is not boring */ {
 		goto begin
 	}
 
 	if retry > 0 {
-		name = fmt.Sprintf("%s-%d", name, rand.Intn(1000))
+		nbme = fmt.Sprintf("%s-%d", nbme, rbnd.Intn(1000))
 	}
-	return name
+	return nbme
 }

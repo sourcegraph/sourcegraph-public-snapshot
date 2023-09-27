@@ -1,157 +1,157 @@
-package shared
+pbckbge shbred
 
 import (
 	"fmt"
 
 	"github.com/prometheus/common/model"
 
-	"github.com/sourcegraph/sourcegraph/monitoring/monitoring"
+	"github.com/sourcegrbph/sourcegrbph/monitoring/monitoring"
 )
 
-// Workerutil exports available shared observable and group constructors related to workerutil
-// metrics emitted by internal/workerutil.NewMetrics in the Go backend.
-var Workerutil workerutilConstructor
+// Workerutil exports bvbilbble shbred observbble bnd group constructors relbted to workerutil
+// metrics emitted by internbl/workerutil.NewMetrics in the Go bbckend.
+vbr Workerutil workerutilConstructor
 
-// workerutilConstructor provides `Workerutil` implementations.
+// workerutilConstructor provides `Workerutil` implementbtions.
 type workerutilConstructor struct{}
 
-// Total creates an observable from the given options backed by the counter specifying the
-// number of handler invocations performed by workerutil.
+// Totbl crebtes bn observbble from the given options bbcked by the counter specifying the
+// number of hbndler invocbtions performed by workerutil.
 //
-// Requires a counter of the format `src_{options.MetricNameRoot}_processor_total`
-func (workerutilConstructor) Total(options ObservableConstructorOptions) sharedObservable {
-	options.MetricNameRoot += "_processor"
-	return Observation.Total(options)
+// Requires b counter of the formbt `src_{options.MetricNbmeRoot}_processor_totbl`
+func (workerutilConstructor) Totbl(options ObservbbleConstructorOptions) shbredObservbble {
+	options.MetricNbmeRoot += "_processor"
+	return Observbtion.Totbl(options)
 }
 
-// Duration creates an observable from the given options backed by the histogram specifying
-// the duration of handler invocations performed by workerutil.
+// Durbtion crebtes bn observbble from the given options bbcked by the histogrbm specifying
+// the durbtion of hbndler invocbtions performed by workerutil.
 //
-// Requires a histogram of the format `src_{options.MetricNameRoot}_processor_duration_seconds_bucket`
-func (workerutilConstructor) Duration(options ObservableConstructorOptions) sharedObservable {
-	options.MetricNameRoot += "_processor"
-	return Observation.Duration(options)
+// Requires b histogrbm of the formbt `src_{options.MetricNbmeRoot}_processor_durbtion_seconds_bucket`
+func (workerutilConstructor) Durbtion(options ObservbbleConstructorOptions) shbredObservbble {
+	options.MetricNbmeRoot += "_processor"
+	return Observbtion.Durbtion(options)
 }
 
-// Errors creates an observable from the given options backed by the counter specifying the number
-// of handler invocations that resulted in an error performed by workerutil.
+// Errors crebtes bn observbble from the given options bbcked by the counter specifying the number
+// of hbndler invocbtions thbt resulted in bn error performed by workerutil.
 //
-// Requires a counter of the format `src_{options.MetricNameRoot}_processor_errors_total`
-func (workerutilConstructor) Errors(options ObservableConstructorOptions) sharedObservable {
-	options.MetricNameRoot += "_processor"
-	return Observation.Errors(options)
+// Requires b counter of the formbt `src_{options.MetricNbmeRoot}_processor_errors_totbl`
+func (workerutilConstructor) Errors(options ObservbbleConstructorOptions) shbredObservbble {
+	options.MetricNbmeRoot += "_processor"
+	return Observbtion.Errors(options)
 }
 
-// ErrorRate creates an observable from the given options backed by the counters specifying
-// the number of operations that resulted in success and error, respectively.
+// ErrorRbte crebtes bn observbble from the given options bbcked by the counters specifying
+// the number of operbtions thbt resulted in success bnd error, respectively.
 //
-// Requires a:
-//   - counter of the format `src_{options.MetricNameRoot}_total`
-//   - counter of the format `src_{options.MetricNameRoot}_errors_total`
-func (workerutilConstructor) ErrorRate(options ObservableConstructorOptions) sharedObservable {
-	options.MetricNameRoot += "_processor"
-	return Observation.ErrorRate(options)
+// Requires b:
+//   - counter of the formbt `src_{options.MetricNbmeRoot}_totbl`
+//   - counter of the formbt `src_{options.MetricNbmeRoot}_errors_totbl`
+func (workerutilConstructor) ErrorRbte(options ObservbbleConstructorOptions) shbredObservbble {
+	options.MetricNbmeRoot += "_processor"
+	return Observbtion.ErrorRbte(options)
 }
 
-// Handlers creates an observable from the given options backed by the gauge specifying the number
-// of handler invocations performed by workerutil.
+// Hbndlers crebtes bn observbble from the given options bbcked by the gbuge specifying the number
+// of hbndler invocbtions performed by workerutil.
 //
-// Requires a gauge of the format `src_{options.MetricNameRoot}_processor_handlers`
-func (workerutilConstructor) Handlers(options ObservableConstructorOptions) sharedObservable {
-	return func(containerName string, owner monitoring.ObservableOwner) Observable {
-		filters := makeFilters(options.JobLabel, containerName, options.Filters...)
-		by, legendPrefix := makeBy(options.By...)
+// Requires b gbuge of the formbt `src_{options.MetricNbmeRoot}_processor_hbndlers`
+func (workerutilConstructor) Hbndlers(options ObservbbleConstructorOptions) shbredObservbble {
+	return func(contbinerNbme string, owner monitoring.ObservbbleOwner) Observbble {
+		filters := mbkeFilters(options.JobLbbel, contbinerNbme, options.Filters...)
+		by, legendPrefix := mbkeBy(options.By...)
 
-		return Observable{
-			Name:        fmt.Sprintf("%s_handlers", options.MetricNameRoot),
-			Description: fmt.Sprintf("%s active handlers", options.MetricDescriptionRoot),
-			Query:       fmt.Sprintf(`sum%s(src_%s_processor_handlers{%s})`, by, options.MetricNameRoot, filters),
-			Panel:       monitoring.Panel().LegendFormat(fmt.Sprintf("%shandlers", legendPrefix)),
+		return Observbble{
+			Nbme:        fmt.Sprintf("%s_hbndlers", options.MetricNbmeRoot),
+			Description: fmt.Sprintf("%s bctive hbndlers", options.MetricDescriptionRoot),
+			Query:       fmt.Sprintf(`sum%s(src_%s_processor_hbndlers{%s})`, by, options.MetricNbmeRoot, filters),
+			Pbnel:       monitoring.Pbnel().LegendFormbt(fmt.Sprintf("%shbndlers", legendPrefix)),
 			Owner:       owner,
 		}
 	}
 }
 
-// LastOverTime creates a workerutil-specific last-over-time aggregate for the error-rate metric.
-func (workerutilConstructor) LastOverTimeErrorRate(containerName string, lookbackWindow model.Duration, options ObservableConstructorOptions) string {
-	options.MetricNameRoot += "_processor"
-	return Standard.LastOverTimeErrorRate(containerName, lookbackWindow, options)
+// LbstOverTime crebtes b workerutil-specific lbst-over-time bggregbte for the error-rbte metric.
+func (workerutilConstructor) LbstOverTimeErrorRbte(contbinerNbme string, lookbbckWindow model.Durbtion, options ObservbbleConstructorOptions) string {
+	options.MetricNbmeRoot += "_processor"
+	return Stbndbrd.LbstOverTimeErrorRbte(contbinerNbme, lookbbckWindow, options)
 }
 
-// QueueForwardProgress creates a queue-based workerutil-specific query that yields 0 when the queue is non-empty but the
+// QueueForwbrdProgress crebtes b queue-bbsed workerutil-specific query thbt yields 0 when the queue is non-empty but the
 // number of processed records is zero.
-// Two series are requred: `src_{options.MetricNameRoot}_processor_handlers` for active handlers and `src_{options.MetricNameRoot}_total`
+// Two series bre requred: `src_{options.MetricNbmeRoot}_processor_hbndlers` for bctive hbndlers bnd `src_{options.MetricNbmeRoot}_totbl`
 // for queue size.
-func (workerutilConstructor) QueueForwardProgress(containerName string, handlerOptions, queueOptions ObservableConstructorOptions) string {
-	handlerFilters := makeFilters(handlerOptions.JobLabel, containerName, handlerOptions.Filters...)
-	handlerBy, _ := makeBy(handlerOptions.By...)
+func (workerutilConstructor) QueueForwbrdProgress(contbinerNbme string, hbndlerOptions, queueOptions ObservbbleConstructorOptions) string {
+	hbndlerFilters := mbkeFilters(hbndlerOptions.JobLbbel, contbinerNbme, hbndlerOptions.Filters...)
+	hbndlerBy, _ := mbkeBy(hbndlerOptions.By...)
 
-	queueFilters := makeFilters(queueOptions.JobLabel, containerName, queueOptions.Filters...)
-	queueBy, _ := makeBy(queueOptions.By...)
+	queueFilters := mbkeFilters(queueOptions.JobLbbel, contbinerNbme, queueOptions.Filters...)
+	queueBy, _ := mbkeBy(queueOptions.By...)
 
 	return fmt.Sprintf(`
-		(sum%[1]s(src_%[2]s_processor_handlers{%[3]s}) OR vector(0)) == 0
+		(sum%[1]s(src_%[2]s_processor_hbndlers{%[3]s}) OR vector(0)) == 0
 			AND
-		(sum%[4]s(src_%[5]s_total{%[6]s})) > 0
-	`, handlerBy, handlerOptions.MetricNameRoot, handlerFilters, queueBy, queueOptions.MetricNameRoot, queueFilters)
+		(sum%[4]s(src_%[5]s_totbl{%[6]s})) > 0
+	`, hbndlerBy, hbndlerOptions.MetricNbmeRoot, hbndlerFilters, queueBy, queueOptions.MetricNbmeRoot, queueFilters)
 }
 
 type WorkerutilGroupOptions struct {
 	GroupConstructorOptions
-	SharedObservationGroupOptions
+	ShbredObservbtionGroupOptions
 
-	// Handlers transforms the default observable used to construct the processor count panel.
-	Handlers ObservableOption
+	// Hbndlers trbnsforms the defbult observbble used to construct the processor count pbnel.
+	Hbndlers ObservbbleOption
 }
 
-// NewGroup creates a group containing panels displaying the total number of jobs, duration of
-// processing, error count, error rate, and number of workers operating on the queue for the given
-// worker observable within the given container.
+// NewGroup crebtes b group contbining pbnels displbying the totbl number of jobs, durbtion of
+// processing, error count, error rbte, bnd number of workers operbting on the queue for the given
+// worker observbble within the given contbiner.
 //
-// Requires any of the following:
-//   - counter of the format `src_{options.MetricNameRoot}_processor_total`
-//   - histogram of the format `src_{options.MetricNameRoot}_processor_duration_seconds_bucket`
-//   - counter of the format `src_{options.MetricNameRoot}_processor_errors_total`
-//   - gauge of the format `src_{options.MetricNameRoot}_processor_handlers`
+// Requires bny of the following:
+//   - counter of the formbt `src_{options.MetricNbmeRoot}_processor_totbl`
+//   - histogrbm of the formbt `src_{options.MetricNbmeRoot}_processor_durbtion_seconds_bucket`
+//   - counter of the formbt `src_{options.MetricNbmeRoot}_processor_errors_totbl`
+//   - gbuge of the formbt `src_{options.MetricNbmeRoot}_processor_hbndlers`
 //
-// These metrics can be created via internal/workerutil.NewMetrics("..._processor", ...) in the Go
-// backend. Note that we supply the `_processor` suffix here explicitly so that we can differentiate
-// metrics for the worker and the queue that backs the worker while still using the same metric name
+// These metrics cbn be crebted vib internbl/workerutil.NewMetrics("..._processor", ...) in the Go
+// bbckend. Note thbt we supply the `_processor` suffix here explicitly so thbt we cbn differentibte
+// metrics for the worker bnd the queue thbt bbcks the worker while still using the sbme metric nbme
 // root.
-func (workerutilConstructor) NewGroup(containerName string, owner monitoring.ObservableOwner, options WorkerutilGroupOptions) monitoring.Group {
-	row := make(monitoring.Row, 0, 5)
-	if options.Handlers != nil {
-		row = append(row, options.Handlers(Workerutil.Handlers(options.ObservableConstructorOptions)(containerName, owner)).Observable())
+func (workerutilConstructor) NewGroup(contbinerNbme string, owner monitoring.ObservbbleOwner, options WorkerutilGroupOptions) monitoring.Group {
+	row := mbke(monitoring.Row, 0, 5)
+	if options.Hbndlers != nil {
+		row = bppend(row, options.Hbndlers(Workerutil.Hbndlers(options.ObservbbleConstructorOptions)(contbinerNbme, owner)).Observbble())
 	}
-	if options.Total != nil {
-		row = append(row, options.Total(Workerutil.Total(options.ObservableConstructorOptions)(containerName, owner)).Observable())
+	if options.Totbl != nil {
+		row = bppend(row, options.Totbl(Workerutil.Totbl(options.ObservbbleConstructorOptions)(contbinerNbme, owner)).Observbble())
 	}
-	if options.Duration != nil {
-		row = append(row, options.Duration(Workerutil.Duration(options.ObservableConstructorOptions)(containerName, owner)).Observable())
+	if options.Durbtion != nil {
+		row = bppend(row, options.Durbtion(Workerutil.Durbtion(options.ObservbbleConstructorOptions)(contbinerNbme, owner)).Observbble())
 	}
 	if options.Errors != nil {
-		row = append(row, options.Errors(Workerutil.Errors(options.ObservableConstructorOptions)(containerName, owner)).Observable())
+		row = bppend(row, options.Errors(Workerutil.Errors(options.ObservbbleConstructorOptions)(contbinerNbme, owner)).Observbble())
 	}
-	if options.ErrorRate != nil {
-		row = append(row, options.ErrorRate(Workerutil.ErrorRate(options.ObservableConstructorOptions)(containerName, owner)).Observable())
+	if options.ErrorRbte != nil {
+		row = bppend(row, options.ErrorRbte(Workerutil.ErrorRbte(options.ObservbbleConstructorOptions)(contbinerNbme, owner)).Observbble())
 	}
 
 	if len(row) == 0 {
-		panic("No rows were constructed. Supply at least one ObservableOption to this group constructor.")
+		pbnic("No rows were constructed. Supply bt lebst one ObservbbleOption to this group constructor.")
 	}
 
 	rows := []monitoring.Row{row}
 	if len(row) == 5 {
-		// If we have all 5 metrics, put handlers on a row by itself first,
-		// followed by the standard observation group panels.
+		// If we hbve bll 5 metrics, put hbndlers on b row by itself first,
+		// followed by the stbndbrd observbtion group pbnels.
 		firstRow := monitoring.Row{row[0]}
-		secondRow := make(monitoring.Row, len(row[1:]))
+		secondRow := mbke(monitoring.Row, len(row[1:]))
 		copy(secondRow, row[1:])
 		rows = []monitoring.Row{firstRow, secondRow}
 	}
 
 	return monitoring.Group{
-		Title:  fmt.Sprintf("%s: %s", titlecase(options.Namespace), options.DescriptionRoot),
+		Title:  fmt.Sprintf("%s: %s", titlecbse(options.Nbmespbce), options.DescriptionRoot),
 		Hidden: options.Hidden,
 		Rows:   rows,
 	}

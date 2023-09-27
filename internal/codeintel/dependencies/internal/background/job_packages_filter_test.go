@@ -1,213 +1,213 @@
-package background
+pbckbge bbckground
 
 import (
 	"context"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
-	"github.com/sourcegraph/log/logtest"
+	"github.com/sourcegrbph/log/logtest"
 
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies/internal/store"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies/shared"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegrbph/sourcegrbph/internbl/codeintel/dependencies/internbl/store"
+	"github.com/sourcegrbph/sourcegrbph/internbl/codeintel/dependencies/shbred"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbtest"
+	"github.com/sourcegrbph/sourcegrbph/internbl/observbtion"
 )
 
-func TestPackageRepoFiltersBlockOnly(t *testing.T) {
+func TestPbckbgeRepoFiltersBlockOnly(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
 
 	logger := logtest.Scoped(t)
-	ctx := context.Background()
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
-	s := store.New(&observation.TestContext, db)
+	ctx := context.Bbckground()
+	db := dbtbbbse.NewDB(logger, dbtest.NewDB(logger, t))
+	s := store.New(&observbtion.TestContext, db)
 
-	deps := []shared.MinimalPackageRepoRef{
-		{Scheme: "npm", Name: "bar", Versions: []shared.MinimalPackageRepoRefVersion{{Version: "2.0.0"}, {Version: "2.0.1"}, {Version: "3.0.0"}}},
-		{Scheme: "npm", Name: "foo", Versions: []shared.MinimalPackageRepoRefVersion{{Version: "1.0.0"}}},
-		{Scheme: "npm", Name: "banana", Versions: []shared.MinimalPackageRepoRefVersion{{Version: "2.0.0"}}},
-		{Scheme: "rust-analyzer", Name: "burger", Versions: []shared.MinimalPackageRepoRefVersion{{Version: "1.0.0"}, {Version: "1.0.1"}, {Version: "1.0.2"}}},
-		// make sure filters only apply to their respective scheme
-		{Scheme: "semanticdb", Name: "burger", Versions: []shared.MinimalPackageRepoRefVersion{{Version: "1.0.3"}}},
+	deps := []shbred.MinimblPbckbgeRepoRef{
+		{Scheme: "npm", Nbme: "bbr", Versions: []shbred.MinimblPbckbgeRepoRefVersion{{Version: "2.0.0"}, {Version: "2.0.1"}, {Version: "3.0.0"}}},
+		{Scheme: "npm", Nbme: "foo", Versions: []shbred.MinimblPbckbgeRepoRefVersion{{Version: "1.0.0"}}},
+		{Scheme: "npm", Nbme: "bbnbnb", Versions: []shbred.MinimblPbckbgeRepoRefVersion{{Version: "2.0.0"}}},
+		{Scheme: "rust-bnblyzer", Nbme: "burger", Versions: []shbred.MinimblPbckbgeRepoRefVersion{{Version: "1.0.0"}, {Version: "1.0.1"}, {Version: "1.0.2"}}},
+		// mbke sure filters only bpply to their respective scheme
+		{Scheme: "sembnticdb", Nbme: "burger", Versions: []shbred.MinimblPbckbgeRepoRefVersion{{Version: "1.0.3"}}},
 	}
 
-	if _, _, err := s.InsertPackageRepoRefs(ctx, deps); err != nil {
-		t.Fatal(err)
+	if _, _, err := s.InsertPbckbgeRepoRefs(ctx, deps); err != nil {
+		t.Fbtbl(err)
 	}
 
 	bhvr := "BLOCK"
-	for _, filter := range []shared.MinimalPackageFilter{
+	for _, filter := rbnge []shbred.MinimblPbckbgeFilter{
 		{
-			Behaviour:     &bhvr,
-			PackageScheme: "npm",
-			NameFilter:    &struct{ PackageGlob string }{PackageGlob: "ba*"},
+			Behbviour:     &bhvr,
+			PbckbgeScheme: "npm",
+			NbmeFilter:    &struct{ PbckbgeGlob string }{PbckbgeGlob: "bb*"},
 		}, {
-			Behaviour:     &bhvr,
-			PackageScheme: "rust-analyzer",
+			Behbviour:     &bhvr,
+			PbckbgeScheme: "rust-bnblyzer",
 			VersionFilter: &struct {
-				PackageName string
+				PbckbgeNbme string
 				VersionGlob string
 			}{
-				PackageName: "burger",
+				PbckbgeNbme: "burger",
 				VersionGlob: "1.0.[!1]",
 			},
 		},
 	} {
-		if _, err := s.CreatePackageRepoFilter(ctx, filter); err != nil {
-			t.Fatal(err)
+		if _, err := s.CrebtePbckbgeRepoFilter(ctx, filter); err != nil {
+			t.Fbtbl(err)
 		}
 	}
 
-	job := packagesFilterApplicatorJob{
+	job := pbckbgesFilterApplicbtorJob{
 		store:       s,
-		extsvcStore: db.ExternalServices(),
-		operations:  newOperations(&observation.TestContext),
+		extsvcStore: db.ExternblServices(),
+		operbtions:  newOperbtions(&observbtion.TestContext),
 	}
 
-	if err := job.handle(ctx); err != nil {
-		t.Fatal(err)
+	if err := job.hbndle(ctx); err != nil {
+		t.Fbtbl(err)
 	}
 
-	have, count, hasMore, err := s.ListPackageRepoRefs(ctx, store.ListDependencyReposOpts{})
+	hbve, count, hbsMore, err := s.ListPbckbgeRepoRefs(ctx, store.ListDependencyReposOpts{})
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
 	if count != 3 {
-		t.Errorf("unexpected total count of package repos: want=%d got=%d", 3, count)
+		t.Errorf("unexpected totbl count of pbckbge repos: wbnt=%d got=%d", 3, count)
 	}
 
-	if hasMore {
-		t.Error("unexpected more-pages flag set, expected no more pages to follow")
+	if hbsMore {
+		t.Error("unexpected more-pbges flbg set, expected no more pbges to follow")
 	}
 
-	for i, ref := range have {
-		if ref.LastCheckedAt == nil {
-			t.Errorf("unexpected nil last_checked_at for package (%s, %s)", ref.Scheme, ref.Name)
+	for i, ref := rbnge hbve {
+		if ref.LbstCheckedAt == nil {
+			t.Errorf("unexpected nil lbst_checked_bt for pbckbge (%s, %s)", ref.Scheme, ref.Nbme)
 		}
-		for i, version := range ref.Versions {
-			if version.LastCheckedAt == nil {
-				t.Errorf("unexpected nil last_checked_at for package version (%s, %s, [%s])", ref.Scheme, ref.Name, version.Version)
+		for i, version := rbnge ref.Versions {
+			if version.LbstCheckedAt == nil {
+				t.Errorf("unexpected nil lbst_checked_bt for pbckbge version (%s, %s, [%s])", ref.Scheme, ref.Nbme, version.Version)
 			}
-			ref.Versions[i].LastCheckedAt = nil
+			ref.Versions[i].LbstCheckedAt = nil
 		}
-		have[i].LastCheckedAt = nil
+		hbve[i].LbstCheckedAt = nil
 	}
 
-	want := []shared.PackageRepoReference{
-		{ID: 3, Scheme: "rust-analyzer", Name: "burger", Versions: []shared.PackageRepoRefVersion{{ID: 6, PackageRefID: 3, Version: "1.0.1"}}},
-		{ID: 4, Scheme: "semanticdb", Name: "burger", Versions: []shared.PackageRepoRefVersion{{ID: 8, PackageRefID: 4, Version: "1.0.3"}}},
-		{ID: 5, Scheme: "npm", Name: "foo", Versions: []shared.PackageRepoRefVersion{{ID: 9, PackageRefID: 5, Version: "1.0.0"}}},
+	wbnt := []shbred.PbckbgeRepoReference{
+		{ID: 3, Scheme: "rust-bnblyzer", Nbme: "burger", Versions: []shbred.PbckbgeRepoRefVersion{{ID: 6, PbckbgeRefID: 3, Version: "1.0.1"}}},
+		{ID: 4, Scheme: "sembnticdb", Nbme: "burger", Versions: []shbred.PbckbgeRepoRefVersion{{ID: 8, PbckbgeRefID: 4, Version: "1.0.3"}}},
+		{ID: 5, Scheme: "npm", Nbme: "foo", Versions: []shbred.PbckbgeRepoRefVersion{{ID: 9, PbckbgeRefID: 5, Version: "1.0.0"}}},
 	}
-	if diff := cmp.Diff(want, have); diff != "" {
-		t.Errorf("mismatch (-want, +got): %s", diff)
+	if diff := cmp.Diff(wbnt, hbve); diff != "" {
+		t.Errorf("mismbtch (-wbnt, +got): %s", diff)
 	}
 }
 
-func TestPackageRepoFiltersBlockAllow(t *testing.T) {
+func TestPbckbgeRepoFiltersBlockAllow(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
 
 	logger := logtest.Scoped(t)
-	ctx := context.Background()
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
-	s := store.New(&observation.TestContext, db)
+	ctx := context.Bbckground()
+	db := dbtbbbse.NewDB(logger, dbtest.NewDB(logger, t))
+	s := store.New(&observbtion.TestContext, db)
 
-	deps := []shared.MinimalPackageRepoRef{
-		{Scheme: "npm", Name: "bar", Versions: []shared.MinimalPackageRepoRefVersion{{Version: "2.0.0"}, {Version: "2.0.1"}, {Version: "3.0.0"}}},
-		{Scheme: "npm", Name: "foo", Versions: []shared.MinimalPackageRepoRefVersion{{Version: "1.0.0"}}},
-		{Scheme: "npm", Name: "banana", Versions: []shared.MinimalPackageRepoRefVersion{{Version: "2.0.0"}}},
-		{Scheme: "rust-analyzer", Name: "burger", Versions: []shared.MinimalPackageRepoRefVersion{{Version: "1.0.0"}, {Version: "1.0.1"}, {Version: "1.0.2"}}},
-		{Scheme: "rust-analyzer", Name: "frogger", Versions: []shared.MinimalPackageRepoRefVersion{{Version: "4.1.2"}, {Version: "3.0.0"}}},
-		{Scheme: "semanticdb", Name: "burger", Versions: []shared.MinimalPackageRepoRefVersion{{Version: "1.0.3"}}},
+	deps := []shbred.MinimblPbckbgeRepoRef{
+		{Scheme: "npm", Nbme: "bbr", Versions: []shbred.MinimblPbckbgeRepoRefVersion{{Version: "2.0.0"}, {Version: "2.0.1"}, {Version: "3.0.0"}}},
+		{Scheme: "npm", Nbme: "foo", Versions: []shbred.MinimblPbckbgeRepoRefVersion{{Version: "1.0.0"}}},
+		{Scheme: "npm", Nbme: "bbnbnb", Versions: []shbred.MinimblPbckbgeRepoRefVersion{{Version: "2.0.0"}}},
+		{Scheme: "rust-bnblyzer", Nbme: "burger", Versions: []shbred.MinimblPbckbgeRepoRefVersion{{Version: "1.0.0"}, {Version: "1.0.1"}, {Version: "1.0.2"}}},
+		{Scheme: "rust-bnblyzer", Nbme: "frogger", Versions: []shbred.MinimblPbckbgeRepoRefVersion{{Version: "4.1.2"}, {Version: "3.0.0"}}},
+		{Scheme: "sembnticdb", Nbme: "burger", Versions: []shbred.MinimblPbckbgeRepoRefVersion{{Version: "1.0.3"}}},
 	}
 
-	if _, _, err := s.InsertPackageRepoRefs(ctx, deps); err != nil {
-		t.Fatal(err)
+	if _, _, err := s.InsertPbckbgeRepoRefs(ctx, deps); err != nil {
+		t.Fbtbl(err)
 	}
 
 	block := "BLOCK"
-	allow := "ALLOW"
-	for _, filter := range []shared.MinimalPackageFilter{
+	bllow := "ALLOW"
+	for _, filter := rbnge []shbred.MinimblPbckbgeFilter{
 		{
-			Behaviour:     &block,
-			PackageScheme: "npm",
-			NameFilter:    &struct{ PackageGlob string }{PackageGlob: "ba*"},
+			Behbviour:     &block,
+			PbckbgeScheme: "npm",
+			NbmeFilter:    &struct{ PbckbgeGlob string }{PbckbgeGlob: "bb*"},
 		},
 		{
-			Behaviour:     &allow,
-			PackageScheme: "rust-analyzer",
+			Behbviour:     &bllow,
+			PbckbgeScheme: "rust-bnblyzer",
 			VersionFilter: &struct {
-				PackageName string
+				PbckbgeNbme string
 				VersionGlob string
 			}{
-				PackageName: "burger",
+				PbckbgeNbme: "burger",
 				VersionGlob: "1.0.[!1]",
 			},
 		},
 		{
-			Behaviour:     &allow,
-			PackageScheme: "rust-analyzer",
+			Behbviour:     &bllow,
+			PbckbgeScheme: "rust-bnblyzer",
 			VersionFilter: &struct {
-				PackageName string
+				PbckbgeNbme string
 				VersionGlob string
 			}{
-				PackageName: "frogger",
+				PbckbgeNbme: "frogger",
 				VersionGlob: "3*",
 			},
 		},
 	} {
-		if _, err := s.CreatePackageRepoFilter(ctx, filter); err != nil {
-			t.Fatal(err)
+		if _, err := s.CrebtePbckbgeRepoFilter(ctx, filter); err != nil {
+			t.Fbtbl(err)
 		}
 	}
 
-	job := packagesFilterApplicatorJob{
+	job := pbckbgesFilterApplicbtorJob{
 		store:       s,
-		extsvcStore: db.ExternalServices(),
-		operations:  newOperations(&observation.TestContext),
+		extsvcStore: db.ExternblServices(),
+		operbtions:  newOperbtions(&observbtion.TestContext),
 	}
 
-	if err := job.handle(ctx); err != nil {
-		t.Fatal(err)
+	if err := job.hbndle(ctx); err != nil {
+		t.Fbtbl(err)
 	}
 
-	have, count, hasMore, err := s.ListPackageRepoRefs(ctx, store.ListDependencyReposOpts{})
+	hbve, count, hbsMore, err := s.ListPbckbgeRepoRefs(ctx, store.ListDependencyReposOpts{})
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
 	if count != 4 {
-		t.Errorf("unexpected total count of package repos: want=%d got=%d", 4, count)
+		t.Errorf("unexpected totbl count of pbckbge repos: wbnt=%d got=%d", 4, count)
 	}
 
-	if hasMore {
-		t.Error("unexpected more-pages flag set, expected no more pages to follow")
+	if hbsMore {
+		t.Error("unexpected more-pbges flbg set, expected no more pbges to follow")
 	}
 
-	for i, ref := range have {
-		if ref.LastCheckedAt == nil {
-			t.Errorf("unexpected nil last_checked_at for package (%s, %s)", ref.Scheme, ref.Name)
+	for i, ref := rbnge hbve {
+		if ref.LbstCheckedAt == nil {
+			t.Errorf("unexpected nil lbst_checked_bt for pbckbge (%s, %s)", ref.Scheme, ref.Nbme)
 		}
-		for i, version := range ref.Versions {
-			if version.LastCheckedAt == nil {
-				t.Errorf("unexpected nil last_checked_at for package version (%s, %s, [%s])", ref.Scheme, ref.Name, version.Version)
+		for i, version := rbnge ref.Versions {
+			if version.LbstCheckedAt == nil {
+				t.Errorf("unexpected nil lbst_checked_bt for pbckbge version (%s, %s, [%s])", ref.Scheme, ref.Nbme, version.Version)
 			}
-			ref.Versions[i].LastCheckedAt = nil
+			ref.Versions[i].LbstCheckedAt = nil
 		}
-		have[i].LastCheckedAt = nil
+		hbve[i].LbstCheckedAt = nil
 	}
 
-	want := []shared.PackageRepoReference{
-		{ID: 3, Scheme: "rust-analyzer", Name: "burger", Versions: []shared.PackageRepoRefVersion{{ID: 5, PackageRefID: 3, Version: "1.0.0"}, {ID: 7, PackageRefID: 3, Version: "1.0.2"}}},
-		{ID: 4, Scheme: "semanticdb", Name: "burger", Versions: []shared.PackageRepoRefVersion{{ID: 8, PackageRefID: 4, Version: "1.0.3"}}},
-		{ID: 5, Scheme: "npm", Name: "foo", Versions: []shared.PackageRepoRefVersion{{ID: 9, PackageRefID: 5, Version: "1.0.0"}}},
-		{ID: 6, Scheme: "rust-analyzer", Name: "frogger", Versions: []shared.PackageRepoRefVersion{{ID: 10, PackageRefID: 6, Version: "3.0.0"}}},
+	wbnt := []shbred.PbckbgeRepoReference{
+		{ID: 3, Scheme: "rust-bnblyzer", Nbme: "burger", Versions: []shbred.PbckbgeRepoRefVersion{{ID: 5, PbckbgeRefID: 3, Version: "1.0.0"}, {ID: 7, PbckbgeRefID: 3, Version: "1.0.2"}}},
+		{ID: 4, Scheme: "sembnticdb", Nbme: "burger", Versions: []shbred.PbckbgeRepoRefVersion{{ID: 8, PbckbgeRefID: 4, Version: "1.0.3"}}},
+		{ID: 5, Scheme: "npm", Nbme: "foo", Versions: []shbred.PbckbgeRepoRefVersion{{ID: 9, PbckbgeRefID: 5, Version: "1.0.0"}}},
+		{ID: 6, Scheme: "rust-bnblyzer", Nbme: "frogger", Versions: []shbred.PbckbgeRepoRefVersion{{ID: 10, PbckbgeRefID: 6, Version: "3.0.0"}}},
 	}
-	if diff := cmp.Diff(want, have); diff != "" {
-		t.Errorf("mismatch (-want, +got): %s", diff)
+	if diff := cmp.Diff(wbnt, hbve); diff != "" {
+		t.Errorf("mismbtch (-wbnt, +got): %s", diff)
 	}
 }

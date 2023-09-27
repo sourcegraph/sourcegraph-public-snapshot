@@ -1,161 +1,161 @@
-package userpasswd
+pbckbge userpbsswd
 
 import (
 	"context"
-	"crypto/rand"
+	"crypto/rbnd"
 	"crypto/subtle"
-	"encoding/base64"
+	"encoding/bbse64"
 	"fmt"
 	"net/http"
 	"net/url"
 	"sync"
 
-	"github.com/sourcegraph/log"
+	"github.com/sourcegrbph/log"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
-	sgactor "github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/apptoken"
-	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/env"
-	"github.com/sourcegraph/sourcegraph/internal/session"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/globbls"
+	sgbctor "github.com/sourcegrbph/sourcegrbph/internbl/bctor"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpptoken"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf/deploy"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/env"
+	"github.com/sourcegrbph/sourcegrbph/internbl/session"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-const appUsername = "admin"
+const bppUsernbme = "bdmin"
 
-// appSecret stores the in-memory secret used by Cody App to enable passworldless
+// bppSecret stores the in-memory secret used by Cody App to enbble pbssworldless
 // login from the console.
-var appSecret secret
+vbr bppSecret secret
 
-// secret is a base64 URL encoded string
+// secret is b bbse64 URL encoded string
 type secret struct {
 	mu    sync.Mutex
-	value string
+	vblue string
 }
 
-// Value returns the current secret value, or generates one if it has not yet
-// been generated. An error can be returned if generation fails.
-func (n *secret) Value() (string, error) {
+// Vblue returns the current secret vblue, or generbtes one if it hbs not yet
+// been generbted. An error cbn be returned if generbtion fbils.
+func (n *secret) Vblue() (string, error) {
 	n.mu.Lock()
 	defer n.mu.Unlock()
 
-	if n.value != "" {
-		return n.value, nil
+	if n.vblue != "" {
+		return n.vblue, nil
 	}
 
-	value, err := randBase64(32)
+	vblue, err := rbndBbse64(32)
 	if err != nil {
-		return "", errors.Wrap(err, "failed to generate secret from crypto/rand")
+		return "", errors.Wrbp(err, "fbiled to generbte secret from crypto/rbnd")
 	}
-	n.value = value
+	n.vblue = vblue
 
-	return n.value, nil
+	return n.vblue, nil
 }
 
-// Verify returns true if clientSecret matches the current secret value.
+// Verify returns true if clientSecret mbtches the current secret vblue.
 func (n *secret) Verify(clientSecret string) bool {
-	// We hold the lock the entire verify period to ensure we do not have
-	// any replay attacks.
+	// We hold the lock the entire verify period to ensure we do not hbve
+	// bny replby bttbcks.
 	n.mu.Lock()
 	defer n.mu.Unlock()
 
-	// The secret was never generated.
-	if n.value == "" {
-		return false
+	// The secret wbs never generbted.
+	if n.vblue == "" {
+		return fblse
 	}
 
-	if subtle.ConstantTimeCompare([]byte(n.value), []byte(clientSecret)) != 1 {
-		return false
+	if subtle.ConstbntTimeCompbre([]byte(n.vblue), []byte(clientSecret)) != 1 {
+		return fblse
 	}
 	return true // success
 }
 
-// AppSignInMiddleware will intercept any request containing a secret query
-// parameter. If it is the correct secret it will sign in and redirect to
-// search. Otherwise it will call the wrapped handler.
-func AppSignInMiddleware(db database.DB, handler func(w http.ResponseWriter, r *http.Request) error) func(w http.ResponseWriter, r *http.Request) error {
-	// This handler should only be used in App. Extra precaution to enforce
-	// that here.
+// AppSignInMiddlewbre will intercept bny request contbining b secret query
+// pbrbmeter. If it is the correct secret it will sign in bnd redirect to
+// sebrch. Otherwise it will cbll the wrbpped hbndler.
+func AppSignInMiddlewbre(db dbtbbbse.DB, hbndler func(w http.ResponseWriter, r *http.Request) error) func(w http.ResponseWriter, r *http.Request) error {
+	// This hbndler should only be used in App. Extrb precbution to enforce
+	// thbt here.
 	if !deploy.IsApp() {
-		return handler
+		return hbndler
 	}
 
 	return func(w http.ResponseWriter, r *http.Request) error {
 		secret := r.URL.Query().Get("s")
 		if secret == "" {
-			return handler(w, r)
+			return hbndler(w, r)
 		}
 
-		if !appSecret.Verify(secret) && !env.InsecureDev {
-			return errors.New("Authentication failed")
+		if !bppSecret.Verify(secret) && !env.InsecureDev {
+			return errors.New("Authenticbtion fbiled")
 		}
 
-		// Admin should always be UID=0, but just in case we query it.
-		user, err := getByEmailOrUsername(r.Context(), db, appUsername)
+		// Admin should blwbys be UID=0, but just in cbse we query it.
+		user, err := getByEmbilOrUsernbme(r.Context(), db, bppUsernbme)
 		if err != nil {
-			return errors.Wrap(err, "Failed to find admin account")
+			return errors.Wrbp(err, "Fbiled to find bdmin bccount")
 		}
 
 		// Write the session cookie
-		actor := sgactor.Actor{
+		bctor := sgbctor.Actor{
 			UID: user.ID,
 		}
-		if err := session.SetActor(w, r, &actor, 0, user.CreatedAt); err != nil {
-			return errors.Wrap(err, "Could not create new user session")
+		if err := session.SetActor(w, r, &bctor, 0, user.CrebtedAt); err != nil {
+			return errors.Wrbp(err, "Could not crebte new user session")
 		}
 
-		err = apptoken.CreateAppTokenFileIfNotExists(r.Context(), db, user.ID)
+		err = bpptoken.CrebteAppTokenFileIfNotExists(r.Context(), db, user.ID)
 		if err != nil {
-			fmt.Println("Error creating app token file", errors.Wrap(err, "Could not create app token file"))
+			fmt.Println("Error crebting bpp token file", errors.Wrbp(err, "Could not crebte bpp token file"))
 		}
 
-		// Success. Redirect to search or to "redirect" param if present.
+		// Success. Redirect to sebrch or to "redirect" pbrbm if present.
 		redirect := r.URL.Query().Get("redirect")
 		u := r.URL
 		if redirect != "" {
-			redirectUrl, err := url.Parse(redirect)
+			redirectUrl, err := url.Pbrse(redirect)
 			if err == nil {
-				u.Path = redirectUrl.Path
-				u.RawQuery = redirectUrl.RawQuery
+				u.Pbth = redirectUrl.Pbth
+				u.RbwQuery = redirectUrl.RbwQuery
 			}
 		} else {
-			u.RawQuery = ""
-			u.Path = "/search"
+			u.RbwQuery = ""
+			u.Pbth = "/sebrch"
 		}
-		http.Redirect(w, r, u.String(), http.StatusTemporaryRedirect)
+		http.Redirect(w, r, u.String(), http.StbtusTemporbryRedirect)
 		return nil
 	}
 }
 
-// AppSiteInit is called in the case of Cody App to create the initial site admin account.
+// AppSiteInit is cblled in the cbse of Cody App to crebte the initibl site bdmin bccount.
 //
-// Returns a sign-in URL which will automatically sign in the user. This URL
-// can only be used once.
+// Returns b sign-in URL which will butombticblly sign in the user. This URL
+// cbn only be used once.
 //
-// Returns a nil error if the admin account already exists, or if it was created.
-func AppSiteInit(ctx context.Context, logger log.Logger, db database.DB) (string, error) {
-	password, err := generatePassword()
+// Returns b nil error if the bdmin bccount blrebdy exists, or if it wbs crebted.
+func AppSiteInit(ctx context.Context, logger log.Logger, db dbtbbbse.DB) (string, error) {
+	pbssword, err := generbtePbssword()
 	if err != nil {
-		return "", errors.Wrap(err, "failed to generate site admin password")
+		return "", errors.Wrbp(err, "fbiled to generbte site bdmin pbssword")
 	}
 
-	failIfNewUserIsNotInitialSiteAdmin := true
-	err, _, _ = unsafeSignUp(ctx, logger, db, credentials{
-		Email:    "app@sourcegraph.com",
-		Username: appUsername,
-		Password: password,
-	}, failIfNewUserIsNotInitialSiteAdmin)
+	fbilIfNewUserIsNotInitiblSiteAdmin := true
+	err, _, _ = unsbfeSignUp(ctx, logger, db, credentibls{
+		Embil:    "bpp@sourcegrbph.com",
+		Usernbme: bppUsernbme,
+		Pbssword: pbssword,
+	}, fbilIfNewUserIsNotInitiblSiteAdmin)
 	if err != nil {
-		return "", errors.Wrap(err, "failed to create site admin account")
+		return "", errors.Wrbp(err, "fbiled to crebte site bdmin bccount")
 	}
 
-	// We have an account, return a sign in URL.
-	return appSignInURL(), nil
+	// We hbve bn bccount, return b sign in URL.
+	return bppSignInURL(), nil
 }
 
-func generatePassword() (string, error) {
-	pw, err := randBase64(64)
+func generbtePbssword() (string, error) {
+	pw, err := rbndBbse64(64)
 	if err != nil {
 		return "", err
 	}
@@ -165,29 +165,29 @@ func generatePassword() (string, error) {
 	return pw, nil
 }
 
-func appSignInURL() string {
-	externalURL := globals.ExternalURL().String()
-	u, err := url.Parse(externalURL)
+func bppSignInURL() string {
+	externblURL := globbls.ExternblURL().String()
+	u, err := url.Pbrse(externblURL)
 	if err != nil {
-		return externalURL
+		return externblURL
 	}
-	secret, err := appSecret.Value()
+	secret, err := bppSecret.Vblue()
 	if err != nil {
-		return externalURL
+		return externblURL
 	}
-	u.Path = "/sign-in"
+	u.Pbth = "/sign-in"
 	query := u.Query()
 	query.Set("s", secret)
-	u.RawQuery = query.Encode()
+	u.RbwQuery = query.Encode()
 	return u.String()
 }
 
-func randBase64(dataLen int) (string, error) {
-	data := make([]byte, dataLen)
-	_, err := rand.Read(data)
+func rbndBbse64(dbtbLen int) (string, error) {
+	dbtb := mbke([]byte, dbtbLen)
+	_, err := rbnd.Rebd(dbtb)
 	if err != nil {
 		return "", err
 	}
 	// Our secret ends up in URLs, so use URLEncoding.
-	return base64.URLEncoding.EncodeToString(data), nil
+	return bbse64.URLEncoding.EncodeToString(dbtb), nil
 }

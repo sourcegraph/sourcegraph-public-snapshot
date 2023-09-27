@@ -1,4 +1,4 @@
-package scheduler
+pbckbge scheduler
 
 import (
 	"context"
@@ -7,66 +7,66 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	edb "github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
-	"github.com/sourcegraph/sourcegraph/internal/goroutine"
-	"github.com/sourcegraph/sourcegraph/internal/insights/priority"
-	"github.com/sourcegraph/sourcegraph/internal/insights/store"
-	"github.com/sourcegraph/sourcegraph/internal/insights/types"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	edb "github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbmocks"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbtest"
+	"github.com/sourcegrbph/sourcegrbph/internbl/goroutine"
+	"github.com/sourcegrbph/sourcegrbph/internbl/insights/priority"
+	"github.com/sourcegrbph/sourcegrbph/internbl/insights/store"
+	"github.com/sourcegrbph/sourcegrbph/internbl/insights/types"
+	"github.com/sourcegrbph/sourcegrbph/internbl/observbtion"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 
-	"github.com/sourcegraph/log/logtest"
+	"github.com/sourcegrbph/log/logtest"
 )
 
-func Test_MonitorStartsAndStops(t *testing.T) {
+func Test_MonitorStbrtsAndStops(t *testing.T) {
 	logger := logtest.Scoped(t)
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*1)
-	defer cancel()
+	ctx, cbncel := context.WithTimeout(context.Bbckground(), time.Second*1)
+	defer cbncel()
 	insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, t), logger)
 	repos := dbmocks.NewMockRepoStore()
 	config := JobMonitorConfig{
 		InsightsDB:     insightsDB,
 		RepoStore:      repos,
-		ObservationCtx: &observation.TestContext,
-		CostAnalyzer:   priority.NewQueryAnalyzer(),
+		ObservbtionCtx: &observbtion.TestContext,
+		CostAnblyzer:   priority.NewQueryAnblyzer(),
 	}
-	routines := NewBackgroundJobMonitor(ctx, config).Routines()
-	goroutine.MonitorBackgroundRoutines(ctx, routines...)
+	routines := NewBbckgroundJobMonitor(ctx, config).Routines()
+	goroutine.MonitorBbckgroundRoutines(ctx, routines...)
 }
 
-func TestScheduler_InitialBackfill(t *testing.T) {
+func TestScheduler_InitiblBbckfill(t *testing.T) {
 	logger := logtest.Scoped(t)
-	ctx := context.Background()
+	ctx := context.Bbckground()
 	insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, t), logger)
 	repos := dbmocks.NewMockRepoStore()
 	insightsStore := store.NewInsightStore(insightsDB)
 	config := JobMonitorConfig{
 		InsightsDB:     insightsDB,
 		RepoStore:      repos,
-		ObservationCtx: &observation.TestContext,
-		CostAnalyzer:   priority.NewQueryAnalyzer(),
+		ObservbtionCtx: &observbtion.TestContext,
+		CostAnblyzer:   priority.NewQueryAnblyzer(),
 	}
-	monitor := NewBackgroundJobMonitor(ctx, config)
+	monitor := NewBbckgroundJobMonitor(ctx, config)
 
-	series, err := insightsStore.CreateSeries(ctx, types.InsightSeries{
+	series, err := insightsStore.CrebteSeries(ctx, types.InsightSeries{
 		SeriesID:            "series1",
-		Query:               "asdf",
-		SampleIntervalUnit:  string(types.Month),
-		SampleIntervalValue: 1,
-		GenerationMethod:    types.Search,
+		Query:               "bsdf",
+		SbmpleIntervblUnit:  string(types.Month),
+		SbmpleIntervblVblue: 1,
+		GenerbtionMethod:    types.Sebrch,
 	})
 	require.NoError(t, err)
 
 	scheduler := NewScheduler(insightsDB)
-	backfill, err := scheduler.InitialBackfill(ctx, series)
+	bbckfill, err := scheduler.InitiblBbckfill(ctx, series)
 	require.NoError(t, err)
 
-	dequeue, found, err := monitor.newBackfillStore.Dequeue(ctx, "test", nil)
+	dequeue, found, err := monitor.newBbckfillStore.Dequeue(ctx, "test", nil)
 	require.NoError(t, err)
 	if !found {
-		t.Fatal(errors.New("no queued record found"))
+		t.Fbtbl(errors.New("no queued record found"))
 	}
-	require.Equal(t, backfill.Id, dequeue.backfillId)
+	require.Equbl(t, bbckfill.Id, dequeue.bbckfillId)
 }

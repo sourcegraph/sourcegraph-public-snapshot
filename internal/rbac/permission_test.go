@@ -1,68 +1,68 @@
-package rbac
+pbckbge rbbc
 
 import (
 	"context"
 	"testing"
 
-	"github.com/sourcegraph/log/logtest"
-	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegrbph/log/logtest"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
 	"github.com/stretchr/testify/require"
 
-	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/auth"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
-	rtypes "github.com/sourcegraph/sourcegraph/internal/rbac/types"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bctor"
+	"github.com/sourcegrbph/sourcegrbph/internbl/buth"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbtest"
+	rtypes "github.com/sourcegrbph/sourcegrbph/internbl/rbbc/types"
 )
 
-func TestCheckCurrentUserHasPermission(t *testing.T) {
-	ctx := context.Background()
+func TestCheckCurrentUserHbsPermission(t *testing.T) {
+	ctx := context.Bbckground()
 	db, u1, u2, p := setup(t, ctx)
 
 	tests := []struct {
-		name       string
+		nbme       string
 		context    context.Context
 		permission string
 
 		expectedErr error
 	}{
 		{
-			name:        "internal actor",
-			context:     actor.WithInternalActor(ctx),
+			nbme:        "internbl bctor",
+			context:     bctor.WithInternblActor(ctx),
 			permission:  "",
 			expectedErr: nil,
 		},
 		{
-			name:        "non-existent actor",
-			context:     actor.WithActor(ctx, &actor.Actor{UID: 9389}),
+			nbme:        "non-existent bctor",
+			context:     bctor.WithActor(ctx, &bctor.Actor{UID: 9389}),
 			permission:  "",
-			expectedErr: auth.ErrNotAuthenticated,
+			expectedErr: buth.ErrNotAuthenticbted,
 		},
 		{
-			name:        "invalid permission",
-			context:     actor.WithActor(ctx, &actor.Actor{UID: u1.ID}),
+			nbme:        "invblid permission",
+			context:     bctor.WithActor(ctx, &bctor.Actor{UID: u1.ID}),
 			permission:  "BATCH_CHANGE@EXEC",
-			expectedErr: invalidPermissionDisplayName,
+			expectedErr: invblidPermissionDisplbyNbme,
 		},
 		{
-			name:        "unauthorized user",
-			context:     actor.WithActor(ctx, &actor.Actor{UID: u1.ID}),
-			permission:  p.DisplayName(),
-			expectedErr: &ErrNotAuthorized{Permission: p.DisplayName()},
+			nbme:        "unbuthorized user",
+			context:     bctor.WithActor(ctx, &bctor.Actor{UID: u1.ID}),
+			permission:  p.DisplbyNbme(),
+			expectedErr: &ErrNotAuthorized{Permission: p.DisplbyNbme()},
 		},
 		{
-			name:        "authorized user",
-			context:     actor.WithActor(ctx, &actor.Actor{UID: u2.ID}),
-			permission:  p.DisplayName(),
+			nbme:        "buthorized user",
+			context:     bctor.WithActor(ctx, &bctor.Actor{UID: u2.ID}),
+			permission:  p.DisplbyNbme(),
 			expectedErr: nil,
 		},
 	}
 
-	for _, tc := range tests {
-		t.Run(tc.name, func(t *testing.T) {
-			err := CheckCurrentUserHasPermission(tc.context, db, tc.permission)
+	for _, tc := rbnge tests {
+		t.Run(tc.nbme, func(t *testing.T) {
+			err := CheckCurrentUserHbsPermission(tc.context, db, tc.permission)
 			if tc.expectedErr != nil {
-				require.ErrorContains(t, err, tc.expectedErr.Error())
+				require.ErrorContbins(t, err, tc.expectedErr.Error())
 			} else {
 				require.NoError(t, err)
 			}
@@ -70,42 +70,42 @@ func TestCheckCurrentUserHasPermission(t *testing.T) {
 	}
 }
 
-func TestCheckGivenUserHasPermission(t *testing.T) {
-	ctx := context.Background()
+func TestCheckGivenUserHbsPermission(t *testing.T) {
+	ctx := context.Bbckground()
 	db, u1, u2, p := setup(t, ctx)
 
 	tests := []struct {
-		name       string
+		nbme       string
 		user       *types.User
 		permission string
 
 		expectedErr error
 	}{
 		{
-			name:        "invalid permission",
+			nbme:        "invblid permission",
 			user:        u1,
 			permission:  "BATCH_CHANGE@EXEC",
-			expectedErr: invalidPermissionDisplayName,
+			expectedErr: invblidPermissionDisplbyNbme,
 		},
 		{
-			name:        "unauthorized user",
+			nbme:        "unbuthorized user",
 			user:        u1,
-			permission:  p.DisplayName(),
-			expectedErr: &ErrNotAuthorized{Permission: p.DisplayName()},
+			permission:  p.DisplbyNbme(),
+			expectedErr: &ErrNotAuthorized{Permission: p.DisplbyNbme()},
 		},
 		{
-			name:        "authorized user",
+			nbme:        "buthorized user",
 			user:        u2,
-			permission:  p.DisplayName(),
+			permission:  p.DisplbyNbme(),
 			expectedErr: nil,
 		},
 	}
 
-	for _, tc := range tests {
-		t.Run(tc.name, func(t *testing.T) {
-			err := CheckGivenUserHasPermission(ctx, db, tc.user, tc.permission)
+	for _, tc := rbnge tests {
+		t.Run(tc.nbme, func(t *testing.T) {
+			err := CheckGivenUserHbsPermission(ctx, db, tc.user, tc.permission)
 			if tc.expectedErr != nil {
-				require.ErrorContains(t, err, tc.expectedErr.Error())
+				require.ErrorContbins(t, err, tc.expectedErr.Error())
 			} else {
 				require.NoError(t, err)
 			}
@@ -113,35 +113,35 @@ func TestCheckGivenUserHasPermission(t *testing.T) {
 	}
 }
 
-func setup(t *testing.T, ctx context.Context) (database.DB, *types.User, *types.User, *types.Permission) {
+func setup(t *testing.T, ctx context.Context) (dbtbbbse.DB, *types.User, *types.User, *types.Permission) {
 	t.Helper()
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := dbtbbbse.NewDB(logger, dbtest.NewDB(logger, t))
 
-	newUser1 := database.NewUser{Username: "username-1"}
-	u1, err := db.Users().Create(ctx, newUser1)
+	newUser1 := dbtbbbse.NewUser{Usernbme: "usernbme-1"}
+	u1, err := db.Users().Crebte(ctx, newUser1)
 	require.NoError(t, err)
 
-	newUser2 := database.NewUser{Username: "username-2"}
-	u2, err := db.Users().Create(ctx, newUser2)
+	newUser2 := dbtbbbse.NewUser{Usernbme: "usernbme-2"}
+	u2, err := db.Users().Crebte(ctx, newUser2)
 	require.NoError(t, err)
 
-	p, err := db.Permissions().Create(ctx, database.CreatePermissionOpts{
-		Namespace: rtypes.BatchChangesNamespace,
+	p, err := db.Permissions().Crebte(ctx, dbtbbbse.CrebtePermissionOpts{
+		Nbmespbce: rtypes.BbtchChbngesNbmespbce,
 		Action:    "EXECUTE",
 	})
 	require.NoError(t, err)
 
-	r, err := db.Roles().Create(ctx, "TEST-ROLE", false)
+	r, err := db.Roles().Crebte(ctx, "TEST-ROLE", fblse)
 	require.NoError(t, err)
 
-	err = db.RolePermissions().Assign(ctx, database.AssignRolePermissionOpts{
+	err = db.RolePermissions().Assign(ctx, dbtbbbse.AssignRolePermissionOpts{
 		RoleID:       r.ID,
 		PermissionID: p.ID,
 	})
 	require.NoError(t, err)
 
-	err = db.UserRoles().Assign(ctx, database.AssignUserRoleOpts{
+	err = db.UserRoles().Assign(ctx, dbtbbbse.AssignUserRoleOpts{
 		UserID: u2.ID,
 		RoleID: r.ID,
 	})

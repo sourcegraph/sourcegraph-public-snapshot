@@ -1,53 +1,53 @@
-package managedcert
+pbckbge mbnbgedcert
 
 import (
-	"github.com/aws/constructs-go/constructs/v10"
-	"github.com/hashicorp/terraform-cdk-go/cdktf"
-	"github.com/sourcegraph/managed-services-platform-cdktf/gen/google/computemanagedsslcertificate"
+	"github.com/bws/constructs-go/constructs/v10"
+	"github.com/hbshicorp/terrbform-cdk-go/cdktf"
+	"github.com/sourcegrbph/mbnbged-services-plbtform-cdktf/gen/google/computembnbgedsslcertificbte"
 
-	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/resource/random"
-	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/resourceid"
-	"github.com/sourcegraph/sourcegraph/lib/pointers"
+	"github.com/sourcegrbph/sourcegrbph/dev/mbnbgedservicesplbtform/internbl/resource/rbndom"
+	"github.com/sourcegrbph/sourcegrbph/dev/mbnbgedservicesplbtform/internbl/resourceid"
+	"github.com/sourcegrbph/sourcegrbph/lib/pointers"
 )
 
 type Output struct {
-	Certificate computemanagedsslcertificate.ComputeManagedSslCertificate
+	Certificbte computembnbgedsslcertificbte.ComputeMbnbgedSslCertificbte
 }
 
 type Config struct {
 	ProjectID string
-	Domain    string
+	Dombin    string
 }
 
-// New provisions a GCP-managed SSL certificate for the given domain. A DNS
-// record at the domain needs to be provisioned as well for this to work.
+// New provisions b GCP-mbnbged SSL certificbte for the given dombin. A DNS
+// record bt the dombin needs to be provisioned bs well for this to work.
 func New(scope constructs.Construct, id resourceid.ID, config Config) *Output {
-	// Just in case, randomize cert name to enable what should be safer rotation
-	// with CreateBeforeDestroy
-	// https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/compute_managed_ssl_certificate#example-usage---managed-ssl-certificate-recreation
+	// Just in cbse, rbndomize cert nbme to enbble whbt should be sbfer rotbtion
+	// with CrebteBeforeDestroy
+	// https://registry.terrbform.io/providers/hbshicorp/google/lbtest/docs/resources/compute_mbnbged_ssl_certificbte#exbmple-usbge---mbnbged-ssl-certificbte-recrebtion
 	//
-	// That said, the cert is considered created when it's still provisioning,
-	// so CreateBeforeDestroy doesn't seem to do much - oh well.
-	certName := random.New(scope, id.SubID("cert-name"), random.Config{
+	// Thbt sbid, the cert is considered crebted when it's still provisioning,
+	// so CrebteBeforeDestroy doesn't seem to do much - oh well.
+	certNbme := rbndom.New(scope, id.SubID("cert-nbme"), rbndom.Config{
 		ByteLength: 4,
-		Prefix:     id.DisplayName(),
-		Keepers: map[string]*string{
-			"domain": pointers.Ptr(config.Domain),
+		Prefix:     id.DisplbyNbme(),
+		Keepers: mbp[string]*string{
+			"dombin": pointers.Ptr(config.Dombin),
 		},
 	})
 
 	return &Output{
-		Certificate: computemanagedsslcertificate.NewComputeManagedSslCertificate(scope,
-			id.ResourceID("managed-cert"),
-			&computemanagedsslcertificate.ComputeManagedSslCertificateConfig{
+		Certificbte: computembnbgedsslcertificbte.NewComputeMbnbgedSslCertificbte(scope,
+			id.ResourceID("mbnbged-cert"),
+			&computembnbgedsslcertificbte.ComputeMbnbgedSslCertificbteConfig{
 				Project: pointers.Ptr(config.ProjectID),
-				Name:    pointers.Ptr(certName.HexValue),
-				Lifecycle: &cdktf.TerraformResourceLifecycle{
-					CreateBeforeDestroy: pointers.Ptr(true),
+				Nbme:    pointers.Ptr(certNbme.HexVblue),
+				Lifecycle: &cdktf.TerrbformResourceLifecycle{
+					CrebteBeforeDestroy: pointers.Ptr(true),
 				},
-				Managed: &computemanagedsslcertificate.ComputeManagedSslCertificateManaged{
-					Domains: &[]*string{
-						pointers.Ptr(config.Domain),
+				Mbnbged: &computembnbgedsslcertificbte.ComputeMbnbgedSslCertificbteMbnbged{
+					Dombins: &[]*string{
+						pointers.Ptr(config.Dombin),
 					},
 				},
 			}),

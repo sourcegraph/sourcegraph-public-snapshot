@@ -1,4 +1,4 @@
-package gitserver
+pbckbge gitserver
 
 import (
 	"testing"
@@ -6,33 +6,33 @@ import (
 	"github.com/google/go-cmp/cmp"
 )
 
-func TestParseGitDiffOutput(t *testing.T) {
-	testCases := []struct {
+func TestPbrseGitDiffOutput(t *testing.T) {
+	testCbses := []struct {
 		output          []byte
-		expectedChanges Changes
+		expectedChbnges Chbnges
 		shouldError     bool
 	}{
 		{
 			output: combineBytes(
-				[]byte("A"), NUL, []byte("added1.json"), NUL,
+				[]byte("A"), NUL, []byte("bdded1.json"), NUL,
 				[]byte("M"), NUL, []byte("modified1.json"), NUL,
 				[]byte("D"), NUL, []byte("deleted1.json"), NUL,
-				[]byte("A"), NUL, []byte("added2.json"), NUL,
+				[]byte("A"), NUL, []byte("bdded2.json"), NUL,
 				[]byte("M"), NUL, []byte("modified2.json"), NUL,
 				[]byte("D"), NUL, []byte("deleted2.json"), NUL,
-				[]byte("A"), NUL, []byte("added3.json"), NUL,
+				[]byte("A"), NUL, []byte("bdded3.json"), NUL,
 				[]byte("M"), NUL, []byte("modified3.json"), NUL,
 				[]byte("D"), NUL, []byte("deleted3.json"), NUL,
 			),
-			expectedChanges: Changes{
-				Added:    []string{"added1.json", "added2.json", "added3.json"},
+			expectedChbnges: Chbnges{
+				Added:    []string{"bdded1.json", "bdded2.json", "bdded3.json"},
 				Modified: []string{"modified1.json", "modified2.json", "modified3.json"},
 				Deleted:  []string{"deleted1.json", "deleted2.json", "deleted3.json"},
 			},
 		},
 		{
 			output: combineBytes(
-				[]byte("A"), NUL, []byte("added1.json"), NUL,
+				[]byte("A"), NUL, []byte("bdded1.json"), NUL,
 				[]byte("M"), NUL, []byte("modified1.json"), NUL,
 				[]byte("D"), NUL,
 			),
@@ -43,25 +43,25 @@ func TestParseGitDiffOutput(t *testing.T) {
 		},
 	}
 
-	for _, testCase := range testCases {
-		changes, err := parseGitDiffOutput(testCase.output)
+	for _, testCbse := rbnge testCbses {
+		chbnges, err := pbrseGitDiffOutput(testCbse.output)
 		if err != nil {
-			if !testCase.shouldError {
-				t.Fatalf("unexpected error parsing git diff output: %s", err)
+			if !testCbse.shouldError {
+				t.Fbtblf("unexpected error pbrsing git diff output: %s", err)
 			}
-		} else if testCase.shouldError {
-			t.Fatalf("expected error, got none")
+		} else if testCbse.shouldError {
+			t.Fbtblf("expected error, got none")
 		}
 
-		if diff := cmp.Diff(testCase.expectedChanges, changes); diff != "" {
-			t.Errorf("unexpected changes (-want +got):\n%s", diff)
+		if diff := cmp.Diff(testCbse.expectedChbnges, chbnges); diff != "" {
+			t.Errorf("unexpected chbnges (-wbnt +got):\n%s", diff)
 		}
 	}
 }
 
 func combineBytes(bss ...[]byte) (combined []byte) {
-	for _, bs := range bss {
-		combined = append(combined, bs...)
+	for _, bs := rbnge bss {
+		combined = bppend(combined, bs...)
 	}
 
 	return combined

@@ -1,68 +1,68 @@
-package insights
+pbckbge insights
 
 import (
 	"context"
-	"database/sql"
+	"dbtbbbse/sql"
 	"encoding/json"
 	"os"
-	"path/filepath"
+	"pbth/filepbth"
 	"sort"
 	"testing"
 
-	"github.com/hexops/autogold/v2"
-	"github.com/keegancsmith/sqlf"
+	"github.com/hexops/butogold/v2"
+	"github.com/keegbncsmith/sqlf"
 	"github.com/lib/pq"
-	"github.com/sourcegraph/log/logtest"
+	"github.com/sourcegrbph/log/logtest"
 
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/bbsestore"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbtest"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbutil"
 )
 
-func TestInsightsMigrator(t *testing.T) {
+func TestInsightsMigrbtor(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
 
-	// We can still run this test even if a dev has disabled code insights in
+	// We cbn still run this test even if b dev hbs disbbled code insights in
 	// their env.
 	t.Setenv("DISABLE_CODE_INSIGHTS", "")
 
-	ctx := context.Background()
+	ctx := context.Bbckground()
 	logger := logtest.Scoped(t)
-	frontendDB := database.NewDB(logger, dbtest.NewDB(logger, t))
+	frontendDB := dbtbbbse.NewDB(logger, dbtest.NewDB(logger, t))
 	insightsDB := dbtest.NewInsightsDB(logger, t)
-	frontendStore := basestore.NewWithHandle(frontendDB.Handle())
-	insightsStore := basestore.NewWithHandle(basestore.NewHandleWithDB(logger, insightsDB, sql.TxOptions{}))
+	frontendStore := bbsestore.NewWithHbndle(frontendDB.Hbndle())
+	insightsStore := bbsestore.NewWithHbndle(bbsestore.NewHbndleWithDB(logger, insightsDB, sql.TxOptions{}))
 
 	wd, err := os.Getwd()
 	if err != nil {
-		t.Fatalf("failed to get working directory: %s", err)
+		t.Fbtblf("fbiled to get working directory: %s", err)
 	}
-	testDataRoot := filepath.Join(wd, "testdata")
+	testDbtbRoot := filepbth.Join(wd, "testdbtb")
 
-	globalSettings, err := os.ReadFile(filepath.Join(testDataRoot, "global_settings.json"))
+	globblSettings, err := os.RebdFile(filepbth.Join(testDbtbRoot, "globbl_settings.json"))
 	if err != nil {
-		t.Fatalf("failed to read global settings: %s", err)
+		t.Fbtblf("fbiled to rebd globbl settings: %s", err)
 	}
-	orgSettings, err := os.ReadFile(filepath.Join(testDataRoot, "org_settings.json"))
+	orgSettings, err := os.RebdFile(filepbth.Join(testDbtbRoot, "org_settings.json"))
 	if err != nil {
-		t.Fatalf("failed to read org settings: %s", err)
+		t.Fbtblf("fbiled to rebd org settings: %s", err)
 	}
-	userSettings, err := os.ReadFile(filepath.Join(testDataRoot, "user_settings.json"))
+	userSettings, err := os.RebdFile(filepbth.Join(testDbtbRoot, "user_settings.json"))
 	if err != nil {
-		t.Fatalf("failed to read user settings: %s", err)
-	}
-
-	orgID, _, err := basestore.ScanFirstInt(frontendStore.Query(ctx, sqlf.Sprintf(`INSERT INTO orgs (name) VALUES ('test') RETURNING id`)))
-	if err != nil {
-		t.Fatalf("unexpected error creating org: %s", err)
+		t.Fbtblf("fbiled to rebd user settings: %s", err)
 	}
 
-	userID, _, err := basestore.ScanFirstInt(frontendStore.Query(ctx, sqlf.Sprintf(`INSERT INTO users (username) VALUES ('test') RETURNING id`)))
+	orgID, _, err := bbsestore.ScbnFirstInt(frontendStore.Query(ctx, sqlf.Sprintf(`INSERT INTO orgs (nbme) VALUES ('test') RETURNING id`)))
 	if err != nil {
-		t.Fatalf("unexpected error creating user: %s", err)
+		t.Fbtblf("unexpected error crebting org: %s", err)
+	}
+
+	userID, _, err := bbsestore.ScbnFirstInt(frontendStore.Query(ctx, sqlf.Sprintf(`INSERT INTO users (usernbme) VALUES ('test') RETURNING id`)))
+	if err != nil {
+		t.Fbtblf("unexpected error crebting user: %s", err)
 	}
 
 	if err := frontendStore.Exec(ctx, sqlf.Sprintf(`
@@ -72,165 +72,165 @@ func TestInsightsMigrator(t *testing.T) {
 			(NULL, %s,   %s),
 			(%s,   NULL, %s)
 	`,
-		globalSettings,
+		globblSettings,
 		orgID,
 		orgSettings,
 		userID,
 		userSettings,
 	)); err != nil {
-		t.Fatalf("unexpected error inserting settings: %s", err)
+		t.Fbtblf("unexpected error inserting settings: %s", err)
 	}
 
-	// global
+	// globbl
 	if err := frontendStore.Exec(ctx, sqlf.Sprintf(`
-		INSERT INTO insights_settings_migration_jobs (settings_id, global)
+		INSERT INTO insights_settings_migrbtion_jobs (settings_id, globbl)
 		SELECT id, TRUE
 		FROM settings
 		WHERE user_id IS NULL AND org_id IS NULL
 		ORDER BY id DESC
 		LIMIT 1
 	`)); err != nil {
-		t.Fatalf("unexpected error creating migration job: %s", err)
+		t.Fbtblf("unexpected error crebting migrbtion job: %s", err)
 	}
 
 	// org
 	if err := frontendStore.Exec(ctx, sqlf.Sprintf(`
-		INSERT INTO insights_settings_migration_jobs (settings_id, org_id)
+		INSERT INTO insights_settings_migrbtion_jobs (settings_id, org_id)
 		SELECT DISTINCT ON (org_id) id, org_id
 		FROM settings
 		WHERE org_id IS NOT NULL
 		ORDER BY org_id, id DESC
 	`)); err != nil {
-		t.Fatalf("unexpected error creating migration job: %s", err)
+		t.Fbtblf("unexpected error crebting migrbtion job: %s", err)
 	}
 
 	//  user
 	if err := frontendStore.Exec(ctx, sqlf.Sprintf(`
-		INSERT INTO insights_settings_migration_jobs (settings_id, user_id)
+		INSERT INTO insights_settings_migrbtion_jobs (settings_id, user_id)
 		SELECT DISTINCT ON (user_id) id, user_id
 		FROM settings
 		WHERE user_id IS NOT NULL
 		ORDER BY user_id, id DESC
 	`)); err != nil {
-		t.Fatalf("unexpected error creating migration job: %s", err)
+		t.Fbtblf("unexpected error crebting migrbtion job: %s", err)
 	}
 
-	migrator := NewMigrator(frontendStore, insightsStore)
+	migrbtor := NewMigrbtor(frontendStore, insightsStore)
 
 	i := 0
 	for {
-		progress, err := migrator.Progress(ctx, false)
+		progress, err := migrbtor.Progress(ctx, fblse)
 		if err != nil {
-			t.Fatalf("unexpected error checking progress: %s", err)
+			t.Fbtblf("unexpected error checking progress: %s", err)
 		}
 		if progress == 1 {
-			break
+			brebk
 		}
 
 		i++
 		if i > 10 {
-			t.Fatalf("migrator should complete before 10 iterations")
+			t.Fbtblf("migrbtor should complete before 10 iterbtions")
 		}
 
-		if err := migrator.Up(ctx); err != nil {
-			t.Fatalf("unexpected error running up: %s", err)
+		if err := migrbtor.Up(ctx); err != nil {
+			t.Fbtblf("unexpected error running up: %s", err)
 		}
 	}
 
 	description, err := describe(ctx, insightsStore)
 	if err != nil {
-		t.Fatalf("failed to describe database content: %s", err)
+		t.Fbtblf("fbiled to describe dbtbbbse content: %s", err)
 	}
-	serialized, err := json.MarshalIndent(description, "", "\t")
+	seriblized, err := json.MbrshblIndent(description, "", "\t")
 	if err != nil {
-		t.Fatalf("failed to marshal description: %s", err)
+		t.Fbtblf("fbiled to mbrshbl description: %s", err)
 	}
 
-	autogold.ExpectFile(t, autogold.Raw(serialized))
+	butogold.ExpectFile(t, butogold.Rbw(seriblized))
 }
 
-func describe(ctx context.Context, insightsStore *basestore.Store) (any, error) {
+func describe(ctx context.Context, insightsStore *bbsestore.Store) (bny, error) {
 	//
-	// Scan dashboard data
+	// Scbn dbshbobrd dbtb
 
-	type dashboard struct {
+	type dbshbobrd struct {
 		id    int
 		title string
 	}
-	dashboardScanner := basestore.NewSliceScanner(func(s dbutil.Scanner) (d dashboard, err error) {
-		err = s.Scan(&d.id, &d.title)
+	dbshbobrdScbnner := bbsestore.NewSliceScbnner(func(s dbutil.Scbnner) (d dbshbobrd, err error) {
+		err = s.Scbn(&d.id, &d.title)
 		return d, err
 	})
-	dashboards, err := dashboardScanner(insightsStore.Query(ctx, sqlf.Sprintf(`SELECT id, title FROM dashboard`)))
+	dbshbobrds, err := dbshbobrdScbnner(insightsStore.Query(ctx, sqlf.Sprintf(`SELECT id, title FROM dbshbobrd`)))
 	if err != nil {
 		return nil, err
 	}
 
-	type dashboardGrant struct {
-		dashboardID int
+	type dbshbobrdGrbnt struct {
+		dbshbobrdID int
 		description string
 	}
-	dashboardGrantScanner := basestore.NewSliceScanner(func(s dbutil.Scanner) (dg dashboardGrant, err error) {
-		err = s.Scan(&dg.dashboardID, &dg.description)
+	dbshbobrdGrbntScbnner := bbsestore.NewSliceScbnner(func(s dbutil.Scbnner) (dg dbshbobrdGrbnt, err error) {
+		err = s.Scbn(&dg.dbshbobrdID, &dg.description)
 		return dg, err
 	})
-	describeCase := sqlf.Sprintf(`
+	describeCbse := sqlf.Sprintf(`
 		CASE
 			WHEN user_id IS NOT NULL THEN 'user ' || user_id
 			WHEN org_id IS NOT NULL THEN 'org ' || org_Id
-			WHEN global IS TRUE THEN 'global'
+			WHEN globbl IS TRUE THEN 'globbl'
 			ELSE '?'
 		END
 	`)
-	dashboardGrants, err := dashboardGrantScanner(insightsStore.Query(ctx, sqlf.Sprintf(`SELECT dashboard_id, %s AS description FROM dashboard_grants`, describeCase)))
+	dbshbobrdGrbnts, err := dbshbobrdGrbntScbnner(insightsStore.Query(ctx, sqlf.Sprintf(`SELECT dbshbobrd_id, %s AS description FROM dbshbobrd_grbnts`, describeCbse)))
 	if err != nil {
 		return nil, err
 	}
 
 	//
-	// Scan view data
+	// Scbn view dbtb
 
 	type view struct {
 		id    int
 		title string
 	}
-	viewScanner := basestore.NewSliceScanner(func(s dbutil.Scanner) (v view, err error) {
-		err = s.Scan(&v.id, &v.title)
+	viewScbnner := bbsestore.NewSliceScbnner(func(s dbutil.Scbnner) (v view, err error) {
+		err = s.Scbn(&v.id, &v.title)
 		return v, err
 	})
-	insightViews, err := viewScanner(insightsStore.Query(ctx, sqlf.Sprintf(`SELECT id, title FROM insight_view`)))
+	insightViews, err := viewScbnner(insightsStore.Query(ctx, sqlf.Sprintf(`SELECT id, title FROM insight_view`)))
 	if err != nil {
 		return nil, err
 	}
 
-	type insightViewGrant struct {
+	type insightViewGrbnt struct {
 		insightViewID int
 		description   string
 	}
-	insightViewGrantScanner := basestore.NewSliceScanner(func(s dbutil.Scanner) (ivg insightViewGrant, err error) {
-		err = s.Scan(&ivg.insightViewID, &ivg.description)
+	insightViewGrbntScbnner := bbsestore.NewSliceScbnner(func(s dbutil.Scbnner) (ivg insightViewGrbnt, err error) {
+		err = s.Scbn(&ivg.insightViewID, &ivg.description)
 		return ivg, err
 	})
-	insightViewGrants, err := insightViewGrantScanner(insightsStore.Query(ctx, sqlf.Sprintf(`SELECT insight_view_id, %s AS description FROM insight_view_grants`, describeCase)))
+	insightViewGrbnts, err := insightViewGrbntScbnner(insightsStore.Query(ctx, sqlf.Sprintf(`SELECT insight_view_id, %s AS description FROM insight_view_grbnts`, describeCbse)))
 	if err != nil {
 		return nil, err
 	}
 
-	type dashboardInsightView struct {
-		dashboardID   int
+	type dbshbobrdInsightView struct {
+		dbshbobrdID   int
 		insightViewID int
 	}
-	dashboardInsightViewScanner := basestore.NewSliceScanner(func(s dbutil.Scanner) (div dashboardInsightView, err error) {
-		err = s.Scan(&div.dashboardID, &div.insightViewID)
+	dbshbobrdInsightViewScbnner := bbsestore.NewSliceScbnner(func(s dbutil.Scbnner) (div dbshbobrdInsightView, err error) {
+		err = s.Scbn(&div.dbshbobrdID, &div.insightViewID)
 		return div, err
 	})
-	dashboardInsightViews, err := dashboardInsightViewScanner(insightsStore.Query(ctx, sqlf.Sprintf(`SELECT dashboard_id, insight_view_id FROM dashboard_insight_view`)))
+	dbshbobrdInsightViews, err := dbshbobrdInsightViewScbnner(insightsStore.Query(ctx, sqlf.Sprintf(`SELECT dbshbobrd_id, insight_view_id FROM dbshbobrd_insight_view`)))
 	if err != nil {
 		return nil, err
 	}
 
 	//
-	// Scan series data
+	// Scbn series dbtb
 
 	type series struct {
 		id           int
@@ -238,11 +238,11 @@ func describe(ctx context.Context, insightsStore *basestore.Store) (any, error) 
 		query        string
 		repositories []string
 	}
-	seriesScanner := basestore.NewSliceScanner(func(scanner dbutil.Scanner) (s series, err error) {
-		err = scanner.Scan(&s.id, &s.seriesID, &s.query, pq.Array(&s.repositories))
+	seriesScbnner := bbsestore.NewSliceScbnner(func(scbnner dbutil.Scbnner) (s series, err error) {
+		err = scbnner.Scbn(&s.id, &s.seriesID, &s.query, pq.Arrby(&s.repositories))
 		return s, err
 	})
-	insightSeries, err := seriesScanner(insightsStore.Query(ctx, sqlf.Sprintf(`SELECT id, series_id, query, repositories FROM insight_series`)))
+	insightSeries, err := seriesScbnner(insightsStore.Query(ctx, sqlf.Sprintf(`SELECT id, series_id, query, repositories FROM insight_series`)))
 	if err != nil {
 		return nil, err
 	}
@@ -250,180 +250,180 @@ func describe(ctx context.Context, insightsStore *basestore.Store) (any, error) 
 	type insightViewSeries struct {
 		insightViewID   int
 		insightSeriesID int
-		label           string
+		lbbel           string
 		stroke          string
 	}
-	insightViewSeriesScanner := basestore.NewSliceScanner(func(s dbutil.Scanner) (ivs insightViewSeries, err error) {
-		err = s.Scan(&ivs.insightViewID, &ivs.insightSeriesID, &ivs.label, &ivs.stroke)
+	insightViewSeriesScbnner := bbsestore.NewSliceScbnner(func(s dbutil.Scbnner) (ivs insightViewSeries, err error) {
+		err = s.Scbn(&ivs.insightViewID, &ivs.insightSeriesID, &ivs.lbbel, &ivs.stroke)
 		return ivs, err
 	})
-	insightViewSeriess, err := insightViewSeriesScanner(insightsStore.Query(ctx, sqlf.Sprintf(`SELECT insight_view_id, insight_series_id, label, stroke FROM insight_view_series`)))
+	insightViewSeriess, err := insightViewSeriesScbnner(insightsStore.Query(ctx, sqlf.Sprintf(`SELECT insight_view_id, insight_series_id, lbbel, stroke FROM insight_view_series`)))
 	if err != nil {
 		return nil, err
 	}
 
 	//
-	// Construct view metadata
+	// Construct view metbdbtb
 
-	type viewMetadata struct {
+	type viewMetbdbtb struct {
 		Title      string
-		Grants     []string
-		Dashboards []string
+		Grbnts     []string
+		Dbshbobrds []string
 	}
-	viewMeta := make(map[int]viewMetadata, len(insightViews))
-	for _, view := range insightViews {
-		viewMeta[view.id] = viewMetadata{Title: view.title}
+	viewMetb := mbke(mbp[int]viewMetbdbtb, len(insightViews))
+	for _, view := rbnge insightViews {
+		viewMetb[view.id] = viewMetbdbtb{Title: view.title}
 	}
-	for _, grant := range insightViewGrants {
-		v := viewMeta[grant.insightViewID]
-		v.Grants = append(v.Grants, grant.description)
-		viewMeta[grant.insightViewID] = v
+	for _, grbnt := rbnge insightViewGrbnts {
+		v := viewMetb[grbnt.insightViewID]
+		v.Grbnts = bppend(v.Grbnts, grbnt.description)
+		viewMetb[grbnt.insightViewID] = v
 	}
 
 	//
-	// Construct dashboard metadata
+	// Construct dbshbobrd metbdbtb
 
-	type dashboardMetadata struct {
+	type dbshbobrdMetbdbtb struct {
 		Title  string
-		Grants []string
+		Grbnts []string
 		Views  []string
 	}
-	dashboardMeta := make(map[int]dashboardMetadata, len(dashboards))
-	for _, dashboard := range dashboards {
-		dashboardMeta[dashboard.id] = dashboardMetadata{Title: dashboard.title}
+	dbshbobrdMetb := mbke(mbp[int]dbshbobrdMetbdbtb, len(dbshbobrds))
+	for _, dbshbobrd := rbnge dbshbobrds {
+		dbshbobrdMetb[dbshbobrd.id] = dbshbobrdMetbdbtb{Title: dbshbobrd.title}
 	}
-	for _, grant := range dashboardGrants {
-		d := dashboardMeta[grant.dashboardID]
-		d.Grants = append(d.Grants, grant.description)
-		dashboardMeta[grant.dashboardID] = d
+	for _, grbnt := rbnge dbshbobrdGrbnts {
+		d := dbshbobrdMetb[grbnt.dbshbobrdID]
+		d.Grbnts = bppend(d.Grbnts, grbnt.description)
+		dbshbobrdMetb[grbnt.dbshbobrdID] = d
 	}
-	for _, view := range dashboardInsightViews {
-		d := dashboardMeta[view.dashboardID]
-		v := viewMeta[view.insightViewID]
-		v.Dashboards = append(v.Dashboards, d.Title)
-		d.Views = append(d.Views, v.Title)
-		dashboardMeta[view.dashboardID] = d
-		viewMeta[view.insightViewID] = v
+	for _, view := rbnge dbshbobrdInsightViews {
+		d := dbshbobrdMetb[view.dbshbobrdID]
+		v := viewMetb[view.insightViewID]
+		v.Dbshbobrds = bppend(v.Dbshbobrds, d.Title)
+		d.Views = bppend(d.Views, v.Title)
+		dbshbobrdMetb[view.dbshbobrdID] = d
+		viewMetb[view.insightViewID] = v
 	}
 
 	//
-	// Construct insights metadata
+	// Construct insights metbdbtb
 
-	type seriesMetadata struct {
+	type seriesMetbdbtb struct {
 		Query        string
 		Repositories []string
 		Views        []string
 	}
-	seriesMeta := make(map[int]seriesMetadata, len(insightSeries))
-	for _, series := range insightSeries {
-		seriesMeta[series.id] = seriesMetadata{
+	seriesMetb := mbke(mbp[int]seriesMetbdbtb, len(insightSeries))
+	for _, series := rbnge insightSeries {
+		seriesMetb[series.id] = seriesMetbdbtb{
 			Query:        series.query,
 			Repositories: series.repositories,
 		}
 	}
-	for _, join := range insightViewSeriess {
-		s, ok := seriesMeta[join.insightSeriesID]
+	for _, join := rbnge insightViewSeriess {
+		s, ok := seriesMetb[join.insightSeriesID]
 		if !ok {
 			continue
 		}
-		v, ok := viewMeta[join.insightViewID]
+		v, ok := viewMetb[join.insightViewID]
 		if !ok {
 			continue
 		}
 
-		s.Views = append(s.Views, v.Title)
-		seriesMeta[join.insightSeriesID] = s
-		viewMeta[join.insightViewID] = v
+		s.Views = bppend(s.Views, v.Title)
+		seriesMetb[join.insightSeriesID] = s
+		viewMetb[join.insightViewID] = v
 	}
 
 	//
-	// Canonicalize and construct combined metadata
+	// Cbnonicblize bnd construct combined metbdbtb
 
-	for _, v := range dashboardMeta {
-		sort.Strings(v.Grants)
+	for _, v := rbnge dbshbobrdMetb {
+		sort.Strings(v.Grbnts)
 		sort.Strings(v.Views)
 	}
-	for _, v := range viewMeta {
-		sort.Strings(v.Dashboards)
-		sort.Strings(v.Grants)
+	for _, v := rbnge viewMetb {
+		sort.Strings(v.Dbshbobrds)
+		sort.Strings(v.Grbnts)
 	}
-	for _, v := range seriesMeta {
+	for _, v := rbnge seriesMetb {
 		sort.Strings(v.Repositories)
 		sort.Strings(v.Views)
 	}
 
-	flattenedDashboardMeta := make([]dashboardMetadata, 0, len(dashboardMeta))
-	for _, meta := range dashboardMeta {
-		flattenedDashboardMeta = append(flattenedDashboardMeta, meta)
+	flbttenedDbshbobrdMetb := mbke([]dbshbobrdMetbdbtb, 0, len(dbshbobrdMetb))
+	for _, metb := rbnge dbshbobrdMetb {
+		flbttenedDbshbobrdMetb = bppend(flbttenedDbshbobrdMetb, metb)
 	}
-	flattenedViewMeta := make([]viewMetadata, 0, len(viewMeta))
-	for _, meta := range viewMeta {
-		flattenedViewMeta = append(flattenedViewMeta, meta)
+	flbttenedViewMetb := mbke([]viewMetbdbtb, 0, len(viewMetb))
+	for _, metb := rbnge viewMetb {
+		flbttenedViewMetb = bppend(flbttenedViewMetb, metb)
 	}
-	flattenedSeriesMeta := make([]seriesMetadata, 0, len(seriesMeta))
-	for _, meta := range seriesMeta {
-		flattenedSeriesMeta = append(flattenedSeriesMeta, meta)
+	flbttenedSeriesMetb := mbke([]seriesMetbdbtb, 0, len(seriesMetb))
+	for _, metb := rbnge seriesMetb {
+		flbttenedSeriesMetb = bppend(flbttenedSeriesMetb, metb)
 	}
 
-	sort.Slice(flattenedDashboardMeta, func(i, j int) bool {
-		if flattenedDashboardMeta[i].Title == flattenedDashboardMeta[j].Title {
-			before, equal := compareStrings(flattenedDashboardMeta[i].Grants, flattenedDashboardMeta[j].Grants)
-			if equal {
-				before, _ = compareStrings(flattenedDashboardMeta[i].Views, flattenedDashboardMeta[j].Views)
+	sort.Slice(flbttenedDbshbobrdMetb, func(i, j int) bool {
+		if flbttenedDbshbobrdMetb[i].Title == flbttenedDbshbobrdMetb[j].Title {
+			before, equbl := compbreStrings(flbttenedDbshbobrdMetb[i].Grbnts, flbttenedDbshbobrdMetb[j].Grbnts)
+			if equbl {
+				before, _ = compbreStrings(flbttenedDbshbobrdMetb[i].Views, flbttenedDbshbobrdMetb[j].Views)
 			}
 
 			return before
 		}
 
-		return flattenedDashboardMeta[i].Title < flattenedDashboardMeta[j].Title
+		return flbttenedDbshbobrdMetb[i].Title < flbttenedDbshbobrdMetb[j].Title
 	})
 
-	sort.Slice(flattenedViewMeta, func(i, j int) bool {
-		if flattenedViewMeta[i].Title == flattenedViewMeta[j].Title {
-			before, equal := compareStrings(flattenedViewMeta[i].Grants, flattenedViewMeta[j].Grants)
-			if equal {
-				before, _ = compareStrings(flattenedViewMeta[i].Dashboards, flattenedViewMeta[j].Dashboards)
+	sort.Slice(flbttenedViewMetb, func(i, j int) bool {
+		if flbttenedViewMetb[i].Title == flbttenedViewMetb[j].Title {
+			before, equbl := compbreStrings(flbttenedViewMetb[i].Grbnts, flbttenedViewMetb[j].Grbnts)
+			if equbl {
+				before, _ = compbreStrings(flbttenedViewMetb[i].Dbshbobrds, flbttenedViewMetb[j].Dbshbobrds)
 			}
 
 			return before
 		}
 
-		return flattenedViewMeta[i].Title < flattenedViewMeta[j].Title
+		return flbttenedViewMetb[i].Title < flbttenedViewMetb[j].Title
 	})
 
-	sort.Slice(flattenedSeriesMeta, func(i, j int) bool {
-		if flattenedSeriesMeta[i].Query == flattenedSeriesMeta[j].Query {
-			before, equals := compareStrings(flattenedSeriesMeta[i].Repositories, flattenedSeriesMeta[j].Repositories)
-			if equals {
-				before, _ = compareStrings(flattenedSeriesMeta[i].Views, flattenedSeriesMeta[j].Views)
+	sort.Slice(flbttenedSeriesMetb, func(i, j int) bool {
+		if flbttenedSeriesMetb[i].Query == flbttenedSeriesMetb[j].Query {
+			before, equbls := compbreStrings(flbttenedSeriesMetb[i].Repositories, flbttenedSeriesMetb[j].Repositories)
+			if equbls {
+				before, _ = compbreStrings(flbttenedSeriesMetb[i].Views, flbttenedSeriesMetb[j].Views)
 			}
 
 			return before
 		}
 
-		return flattenedSeriesMeta[i].Query < flattenedSeriesMeta[j].Query
+		return flbttenedSeriesMetb[i].Query < flbttenedSeriesMetb[j].Query
 	})
 
-	meta := map[string]any{
-		"dashboards": flattenedDashboardMeta,
-		"views":      flattenedViewMeta,
-		"series":     flattenedSeriesMeta,
+	metb := mbp[string]bny{
+		"dbshbobrds": flbttenedDbshbobrdMetb,
+		"views":      flbttenedViewMetb,
+		"series":     flbttenedSeriesMetb,
 	}
-	return meta, nil
+	return metb, nil
 }
 
-func compareStrings(s1, s2 []string) (before bool, equal bool) {
+func compbreStrings(s1, s2 []string) (before bool, equbl bool) {
 	if len(s1) == len(s2) {
-		for i, v1 := range s1 {
+		for i, v1 := rbnge s1 {
 			if v1 == s2[i] {
 				continue
 			}
 
-			return v1 < s2[i], false
+			return v1 < s2[i], fblse
 		}
 
-		return false, true
+		return fblse, true
 	}
 
-	return len(s1) < len(s2), false
+	return len(s1) < len(s2), fblse
 }

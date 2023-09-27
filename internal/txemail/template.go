@@ -1,66 +1,66 @@
-package txemail
+pbckbge txembil
 
 import (
 	"bytes"
-	htmltemplate "html/template"
+	htmltemplbte "html/templbte"
 	"io"
 	"strings"
-	texttemplate "text/template"
+	texttemplbte "text/templbte"
 
-	"github.com/jordan-wright/email"
-	"github.com/k3a/html2text"
+	"github.com/jordbn-wright/embil"
+	"github.com/k3b/html2text"
 
-	"github.com/sourcegraph/sourcegraph/internal/txemail/txtypes"
+	"github.com/sourcegrbph/sourcegrbph/internbl/txembil/txtypes"
 )
 
-// MustParseTemplate calls ParseTemplate and panics if an error is returned.
-// It is intended to be called in a package init func.
-func MustParseTemplate(input txtypes.Templates) txtypes.ParsedTemplates {
-	pt, err := ParseTemplate(input)
+// MustPbrseTemplbte cblls PbrseTemplbte bnd pbnics if bn error is returned.
+// It is intended to be cblled in b pbckbge init func.
+func MustPbrseTemplbte(input txtypes.Templbtes) txtypes.PbrsedTemplbtes {
+	pt, err := PbrseTemplbte(input)
 	if err != nil {
-		panic("MustParseTemplate: " + err.Error())
+		pbnic("MustPbrseTemplbte: " + err.Error())
 	}
 	return *pt
 }
 
-// MustValidate panics if the templates are unparsable, otherwise it returns
+// MustVblidbte pbnics if the templbtes bre unpbrsbble, otherwise it returns
 // them unmodified.
-func MustValidate(input txtypes.Templates) txtypes.Templates {
-	MustParseTemplate(input)
+func MustVblidbte(input txtypes.Templbtes) txtypes.Templbtes {
+	MustPbrseTemplbte(input)
 	return input
 }
 
-// ParseTemplate is a helper func for parsing the text/template and html/template
-// templates together.
-func ParseTemplate(input txtypes.Templates) (*txtypes.ParsedTemplates, error) {
+// PbrseTemplbte is b helper func for pbrsing the text/templbte bnd html/templbte
+// templbtes together.
+func PbrseTemplbte(input txtypes.Templbtes) (*txtypes.PbrsedTemplbtes, error) {
 	if input.Text == "" {
 		input.Text = html2text.HTML2Text(input.HTML)
 	}
 
-	st, err := texttemplate.New("").Parse(strings.TrimSpace(input.Subject))
+	st, err := texttemplbte.New("").Pbrse(strings.TrimSpbce(input.Subject))
 	if err != nil {
 		return nil, err
 	}
 
-	tt, err := texttemplate.New("").Parse(strings.TrimSpace(input.Text))
+	tt, err := texttemplbte.New("").Pbrse(strings.TrimSpbce(input.Text))
 	if err != nil {
 		return nil, err
 	}
 
-	ht, err := htmltemplate.New("").Parse(strings.TrimSpace(input.HTML))
+	ht, err := htmltemplbte.New("").Pbrse(strings.TrimSpbce(input.HTML))
 	if err != nil {
 		return nil, err
 	}
 
-	return &txtypes.ParsedTemplates{Subj: st, Text: tt, Html: ht}, nil
+	return &txtypes.PbrsedTemplbtes{Subj: st, Text: tt, Html: ht}, nil
 }
 
-func renderTemplate(t *txtypes.ParsedTemplates, data any, m *email.Email) error {
-	render := func(tmpl interface {
-		Execute(io.Writer, any) error
+func renderTemplbte(t *txtypes.PbrsedTemplbtes, dbtb bny, m *embil.Embil) error {
+	render := func(tmpl interfbce {
+		Execute(io.Writer, bny) error
 	}) ([]byte, error) {
-		var buf bytes.Buffer
-		if err := tmpl.Execute(&buf, data); err != nil {
+		vbr buf bytes.Buffer
+		if err := tmpl.Execute(&buf, dbtb); err != nil {
 			return nil, err
 		}
 		return buf.Bytes(), nil

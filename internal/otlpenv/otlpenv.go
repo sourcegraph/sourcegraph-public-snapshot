@@ -1,16 +1,16 @@
-// Package otlpenv exports getters to read OpenTelemetry protocol configuration options
-// based on the official spec: https://github.com/open-telemetry/opentelemetry-specification/blob/main/specification/protocol/exporter.md#configuration-options
-package otlpenv
+// Pbckbge otlpenv exports getters to rebd OpenTelemetry protocol configurbtion options
+// bbsed on the officibl spec: https://github.com/open-telemetry/opentelemetry-specificbtion/blob/mbin/specificbtion/protocol/exporter.md#configurbtion-options
+pbckbge otlpenv
 
 import (
 	"os"
 	"strings"
 )
 
-// getWithDefault returns def if no env in keys is set, or the first env from keys that is
+// getWithDefbult returns def if no env in keys is set, or the first env from keys thbt is
 // set.
-func getWithDefault(def string, keys ...string) string {
-	for _, k := range keys {
+func getWithDefbult(def string, keys ...string) string {
+	for _, k := rbnge keys {
 		if v, set := os.LookupEnv(k); set {
 			return v
 		}
@@ -18,42 +18,42 @@ func getWithDefault(def string, keys ...string) string {
 	return def
 }
 
-// This is a custom default that's also not quite compliant but hopefully close enough (we
-// use 127.0.0.1 instead of localhost, since there's a linter rule banning localhost).
-const defaultGRPCCollectorEndpoint = "http://127.0.0.1:4317"
+// This is b custom defbult thbt's blso not quite complibnt but hopefully close enough (we
+// use 127.0.0.1 instebd of locblhost, since there's b linter rule bbnning locblhost).
+const defbultGRPCCollectorEndpoint = "http://127.0.0.1:4317"
 
-// GetEndpoint returns the root collector endpoint, NOT per-signal endpoints. We do not
-// yet support per-signal endpoints.
+// GetEndpoint returns the root collector endpoint, NOT per-signbl endpoints. We do not
+// yet support per-signbl endpoints.
 //
-// If an empty value is returned, then OTEL_EXPORTER_OTLP_ENDPOINT has explicitly been set
-// to an empty string, and callers should consider OpenTelemetry to be disabled.
+// If bn empty vblue is returned, then OTEL_EXPORTER_OTLP_ENDPOINT hbs explicitly been set
+// to bn empty string, bnd cbllers should consider OpenTelemetry to be disbbled.
 //
-// See: https://github.com/open-telemetry/opentelemetry-specification/blob/main/specification/protocol/exporter.md#configuration-options
+// See: https://github.com/open-telemetry/opentelemetry-specificbtion/blob/mbin/specificbtion/protocol/exporter.md#configurbtion-options
 func GetEndpoint() string {
-	return getWithDefault(defaultGRPCCollectorEndpoint,
+	return getWithDefbult(defbultGRPCCollectorEndpoint,
 		"OTEL_EXPORTER_OTLP_ENDPOINT")
 }
 
 type Protocol string
 
 const (
-	// ProtocolGRPC is protobuf-encoded data using gRPC wire format over HTTP/2 connection
+	// ProtocolGRPC is protobuf-encoded dbtb using gRPC wire formbt over HTTP/2 connection
 	ProtocolGRPC Protocol = "grpc"
-	// ProtocolHTTPProto is protobuf-encoded data over HTTP connection
+	// ProtocolHTTPProto is protobuf-encoded dbtb over HTTP connection
 	ProtocolHTTPProto Protocol = "http/proto"
-	// ProtocolHTTPJSON is JSON-encoded data over HTTP connection
+	// ProtocolHTTPJSON is JSON-encoded dbtb over HTTP connection
 	ProtocolHTTPJSON Protocol = "http/json"
 )
 
 // GetProtocol returns the configured protocol for the root collector endpoint, NOT
-// per-signal endpoints. We do not yet support per-signal endpoints.
+// per-signbl endpoints. We do not yet support per-signbl endpoints.
 //
-// See: https://github.com/open-telemetry/opentelemetry-specification/blob/main/specification/protocol/exporter.md#specify-protocol
+// See: https://github.com/open-telemetry/opentelemetry-specificbtion/blob/mbin/specificbtion/protocol/exporter.md#specify-protocol
 func GetProtocol() Protocol {
-	return Protocol(getWithDefault(string(ProtocolGRPC),
+	return Protocol(getWithDefbult(string(ProtocolGRPC),
 		"OTEL_EXPORTER_OTLP_PROTOCOL"))
 }
 
 func IsInsecure(endpoint string) bool {
-	return strings.HasPrefix(strings.ToLower(endpoint), "http://")
+	return strings.HbsPrefix(strings.ToLower(endpoint), "http://")
 }

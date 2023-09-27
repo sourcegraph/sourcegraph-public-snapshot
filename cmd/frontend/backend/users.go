@@ -1,30 +1,30 @@
-package backend
+pbckbge bbckend
 
 import (
 	"context"
 	"net/url"
 	"strconv"
 
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/randstring"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/rbndstring"
 )
 
-func MakeRandomHardToGuessPassword() string {
-	return randstring.NewLen(36)
+func MbkeRbndomHbrdToGuessPbssword() string {
+	return rbndstring.NewLen(36)
 }
 
-var MockMakePasswordResetURL func(ctx context.Context, userID int32) (*url.URL, error)
+vbr MockMbkePbsswordResetURL func(ctx context.Context, userID int32) (*url.URL, error)
 
-func MakePasswordResetURL(ctx context.Context, db database.DB, userID int32) (*url.URL, error) {
-	if MockMakePasswordResetURL != nil {
-		return MockMakePasswordResetURL(ctx, userID)
+func MbkePbsswordResetURL(ctx context.Context, db dbtbbbse.DB, userID int32) (*url.URL, error) {
+	if MockMbkePbsswordResetURL != nil {
+		return MockMbkePbsswordResetURL(ctx, userID)
 	}
-	resetCode, err := db.Users().RenewPasswordResetCode(ctx, userID)
+	resetCode, err := db.Users().RenewPbsswordResetCode(ctx, userID)
 	if err != nil {
 		return nil, err
 	}
-	query := url.Values{}
-	query.Set("userID", strconv.Itoa(int(userID)))
+	query := url.Vblues{}
+	query.Set("userID", strconv.Itob(int(userID)))
 	query.Set("code", resetCode)
-	return &url.URL{Path: "/password-reset", RawQuery: query.Encode()}, nil
+	return &url.URL{Pbth: "/pbssword-reset", RbwQuery: query.Encode()}, nil
 }

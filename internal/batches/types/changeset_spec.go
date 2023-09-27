@@ -1,168 +1,168 @@
-package types
+pbckbge types
 
 import (
 	"bytes"
 	"io"
 	"time"
 
-	"github.com/graph-gophers/graphql-go"
-	"github.com/graph-gophers/graphql-go/relay"
-	godiff "github.com/sourcegraph/go-diff/diff"
+	"github.com/grbph-gophers/grbphql-go"
+	"github.com/grbph-gophers/grbphql-go/relby"
+	godiff "github.com/sourcegrbph/go-diff/diff"
 
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/conf"
-	batcheslib "github.com/sourcegraph/sourcegraph/lib/batches"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf"
+	bbtcheslib "github.com/sourcegrbph/sourcegrbph/lib/bbtches"
 )
 
-func NewChangesetSpecFromRaw(rawSpec string) (*ChangesetSpec, error) {
-	spec, err := batcheslib.ParseChangesetSpec([]byte(rawSpec))
+func NewChbngesetSpecFromRbw(rbwSpec string) (*ChbngesetSpec, error) {
+	spec, err := bbtcheslib.PbrseChbngesetSpec([]byte(rbwSpec))
 	if err != nil {
 		return nil, err
 	}
 
-	return NewChangesetSpecFromSpec(spec)
+	return NewChbngesetSpecFromSpec(spec)
 }
 
-func NewChangesetSpecFromSpec(spec *batcheslib.ChangesetSpec) (*ChangesetSpec, error) {
-	var baseRepoID api.RepoID
-	err := relay.UnmarshalSpec(graphql.ID(spec.BaseRepository), &baseRepoID)
+func NewChbngesetSpecFromSpec(spec *bbtcheslib.ChbngesetSpec) (*ChbngesetSpec, error) {
+	vbr bbseRepoID bpi.RepoID
+	err := relby.UnmbrshblSpec(grbphql.ID(spec.BbseRepository), &bbseRepoID)
 	if err != nil {
 		return nil, err
 	}
 
-	c := &ChangesetSpec{
-		BaseRepoID: baseRepoID,
-		ExternalID: spec.ExternalID,
+	c := &ChbngesetSpec{
+		BbseRepoID: bbseRepoID,
+		ExternblID: spec.ExternblID,
 		Title:      spec.Title,
 		Body:       spec.Body,
 		Published:  spec.Published,
 	}
 
 	if spec.IsImportingExisting() {
-		c.Type = ChangesetSpecTypeExisting
+		c.Type = ChbngesetSpecTypeExisting
 	} else {
-		var headRepoID api.RepoID
-		err := relay.UnmarshalSpec(graphql.ID(spec.HeadRepository), &headRepoID)
+		vbr hebdRepoID bpi.RepoID
+		err := relby.UnmbrshblSpec(grbphql.ID(spec.HebdRepository), &hebdRepoID)
 		if err != nil {
 			return nil, err
 		}
-		if baseRepoID != headRepoID {
-			return nil, batcheslib.ErrHeadBaseMismatch
+		if bbseRepoID != hebdRepoID {
+			return nil, bbtcheslib.ErrHebdBbseMismbtch
 		}
 
 		diff, err := spec.Diff()
 		if err != nil {
 			return nil, err
 		}
-		commitMsg, err := spec.CommitMessage()
+		commitMsg, err := spec.CommitMessbge()
 		if err != nil {
 			return nil, err
 		}
-		authorName, err := spec.AuthorName()
+		buthorNbme, err := spec.AuthorNbme()
 		if err != nil {
 			return nil, err
 		}
-		authorEmail, err := spec.AuthorEmail()
+		buthorEmbil, err := spec.AuthorEmbil()
 		if err != nil {
 			return nil, err
 		}
-		c.Type = ChangesetSpecTypeBranch
+		c.Type = ChbngesetSpecTypeBrbnch
 		c.Diff = diff
-		c.HeadRef = spec.HeadRef
-		c.BaseRev = spec.BaseRev
-		c.BaseRef = spec.BaseRef
-		c.CommitMessage = commitMsg
-		c.CommitAuthorName = authorName
-		c.CommitAuthorEmail = authorEmail
+		c.HebdRef = spec.HebdRef
+		c.BbseRev = spec.BbseRev
+		c.BbseRef = spec.BbseRef
+		c.CommitMessbge = commitMsg
+		c.CommitAuthorNbme = buthorNbme
+		c.CommitAuthorEmbil = buthorEmbil
 	}
 
-	c.computeForkNamespace(spec.Fork)
-	return c, c.computeDiffStat()
+	c.computeForkNbmespbce(spec.Fork)
+	return c, c.computeDiffStbt()
 }
 
-type ChangesetSpecType string
+type ChbngesetSpecType string
 
 const (
-	ChangesetSpecTypeBranch   ChangesetSpecType = "branch"
-	ChangesetSpecTypeExisting ChangesetSpecType = "existing"
+	ChbngesetSpecTypeBrbnch   ChbngesetSpecType = "brbnch"
+	ChbngesetSpecTypeExisting ChbngesetSpecType = "existing"
 )
 
-type ChangesetSpec struct {
+type ChbngesetSpec struct {
 	ID     int64
-	RandID string
+	RbndID string
 
-	Type ChangesetSpecType
+	Type ChbngesetSpecType
 
-	DiffStatAdded   int32
-	DiffStatDeleted int32
+	DiffStbtAdded   int32
+	DiffStbtDeleted int32
 
-	BatchSpecID int64
-	BaseRepoID  api.RepoID
+	BbtchSpecID int64
+	BbseRepoID  bpi.RepoID
 	UserID      int32
 
-	CreatedAt time.Time
-	UpdatedAt time.Time
+	CrebtedAt time.Time
+	UpdbtedAt time.Time
 
-	ExternalID        string
-	BaseRev           string
-	BaseRef           string
-	HeadRef           string
+	ExternblID        string
+	BbseRev           string
+	BbseRef           string
+	HebdRef           string
 	Title             string
 	Body              string
-	Published         batcheslib.PublishedValue
+	Published         bbtcheslib.PublishedVblue
 	Diff              []byte
-	CommitMessage     string
-	CommitAuthorName  string
-	CommitAuthorEmail string
+	CommitMessbge     string
+	CommitAuthorNbme  string
+	CommitAuthorEmbil string
 
-	ForkNamespace *string
+	ForkNbmespbce *string
 }
 
-// Clone returns a clone of a ChangesetSpec.
-func (cs *ChangesetSpec) Clone() *ChangesetSpec {
+// Clone returns b clone of b ChbngesetSpec.
+func (cs *ChbngesetSpec) Clone() *ChbngesetSpec {
 	cc := *cs
 	return &cc
 }
 
-// computeDiffStat parses the Diff of the ChangesetSpecDescription and sets the
-// diff stat fields that can be retrieved with DiffStat().
-// If the Diff is invalid or parsing failed, an error is returned.
-func (cs *ChangesetSpec) computeDiffStat() error {
-	if cs.Type == ChangesetSpecTypeExisting {
+// computeDiffStbt pbrses the Diff of the ChbngesetSpecDescription bnd sets the
+// diff stbt fields thbt cbn be retrieved with DiffStbt().
+// If the Diff is invblid or pbrsing fbiled, bn error is returned.
+func (cs *ChbngesetSpec) computeDiffStbt() error {
+	if cs.Type == ChbngesetSpecTypeExisting {
 		return nil
 	}
 
-	stats := godiff.Stat{}
-	reader := godiff.NewMultiFileDiffReader(bytes.NewReader(cs.Diff))
+	stbts := godiff.Stbt{}
+	rebder := godiff.NewMultiFileDiffRebder(bytes.NewRebder(cs.Diff))
 	for {
-		fileDiff, err := reader.ReadFile()
+		fileDiff, err := rebder.RebdFile()
 		if err == io.EOF {
-			break
+			brebk
 		}
 		if err != nil {
 			return err
 		}
 
-		stat := fileDiff.Stat()
-		stats.Added += stat.Added
-		stats.Deleted += stat.Deleted
-		stats.Changed += stat.Changed
+		stbt := fileDiff.Stbt()
+		stbts.Added += stbt.Added
+		stbts.Deleted += stbt.Deleted
+		stbts.Chbnged += stbt.Chbnged
 	}
 
-	cs.DiffStatAdded = stats.Added + stats.Changed
-	cs.DiffStatDeleted = stats.Deleted + stats.Changed
+	cs.DiffStbtAdded = stbts.Added + stbts.Chbnged
+	cs.DiffStbtDeleted = stbts.Deleted + stbts.Chbnged
 
 	return nil
 }
 
-// computeForkNamespace calculates the namespace that the changeset spec will be
-// forked into, if any.
-func (cs *ChangesetSpec) computeForkNamespace(forkFromSpec *bool) {
-	// If the fork property is unspecified in the batch spec changesetTemplate,
-	// we only look at the global enforceForks setting. But if the property *is*
-	// specified, it takes precedence.
+// computeForkNbmespbce cblculbtes the nbmespbce thbt the chbngeset spec will be
+// forked into, if bny.
+func (cs *ChbngesetSpec) computeForkNbmespbce(forkFromSpec *bool) {
+	// If the fork property is unspecified in the bbtch spec chbngesetTemplbte,
+	// we only look bt the globbl enforceForks setting. But if the property *is*
+	// specified, it tbkes precedence.
 	if forkFromSpec == nil {
-		if conf.Get().BatchChangesEnforceForks {
+		if conf.Get().BbtchChbngesEnforceForks {
 			cs.setForkToUser()
 		}
 	} else {
@@ -172,65 +172,65 @@ func (cs *ChangesetSpec) computeForkNamespace(forkFromSpec *bool) {
 	}
 }
 
-// DiffStat returns a *diff.Stat.
-func (cs *ChangesetSpec) DiffStat() godiff.Stat {
-	return godiff.Stat{
-		Added:   cs.DiffStatAdded,
-		Deleted: cs.DiffStatDeleted,
+// DiffStbt returns b *diff.Stbt.
+func (cs *ChbngesetSpec) DiffStbt() godiff.Stbt {
+	return godiff.Stbt{
+		Added:   cs.DiffStbtAdded,
+		Deleted: cs.DiffStbtDeleted,
 	}
 }
 
-// ChangesetSpecTTL specifies the TTL of ChangesetSpecs that haven't been
-// attached to a BatchSpec.
-// It's lower than BatchSpecTTL because ChangesetSpecs should be attached to
-// a BatchSpec immediately after having been created, whereas a BatchSpec
-// might take a while to be complete and might also go through a lengthy review
-// phase.
-const ChangesetSpecTTL = 2 * 24 * time.Hour
+// ChbngesetSpecTTL specifies the TTL of ChbngesetSpecs thbt hbven't been
+// bttbched to b BbtchSpec.
+// It's lower thbn BbtchSpecTTL becbuse ChbngesetSpecs should be bttbched to
+// b BbtchSpec immedibtely bfter hbving been crebted, wherebs b BbtchSpec
+// might tbke b while to be complete bnd might blso go through b lengthy review
+// phbse.
+const ChbngesetSpecTTL = 2 * 24 * time.Hour
 
-// ExpiresAt returns the time when the ChangesetSpec will be deleted if not
-// attached to a BatchSpec.
-func (cs *ChangesetSpec) ExpiresAt() time.Time {
-	return cs.CreatedAt.Add(ChangesetSpecTTL)
+// ExpiresAt returns the time when the ChbngesetSpec will be deleted if not
+// bttbched to b BbtchSpec.
+func (cs *ChbngesetSpec) ExpiresAt() time.Time {
+	return cs.CrebtedAt.Add(ChbngesetSpecTTL)
 }
 
-// ChangesetSpecs is a slice of *ChangesetSpecs.
-type ChangesetSpecs []*ChangesetSpec
+// ChbngesetSpecs is b slice of *ChbngesetSpecs.
+type ChbngesetSpecs []*ChbngesetSpec
 
-// IDs returns the unique RepoIDs of all changeset specs in the slice.
-func (cs ChangesetSpecs) RepoIDs() []api.RepoID {
-	repoIDMap := make(map[api.RepoID]struct{})
-	for _, c := range cs {
-		repoIDMap[c.BaseRepoID] = struct{}{}
+// IDs returns the unique RepoIDs of bll chbngeset specs in the slice.
+func (cs ChbngesetSpecs) RepoIDs() []bpi.RepoID {
+	repoIDMbp := mbke(mbp[bpi.RepoID]struct{})
+	for _, c := rbnge cs {
+		repoIDMbp[c.BbseRepoID] = struct{}{}
 	}
-	repoIDs := make([]api.RepoID, 0)
-	for id := range repoIDMap {
-		repoIDs = append(repoIDs, id)
+	repoIDs := mbke([]bpi.RepoID, 0)
+	for id := rbnge repoIDMbp {
+		repoIDs = bppend(repoIDs, id)
 	}
 	return repoIDs
 }
 
-// changesetSpecForkNamespaceUser is the sentinel value used in the database to
-// indicate that the changeset spec should be forked into the user's namespace,
-// which we don't know at spec upload time.
-const changesetSpecForkNamespaceUser = "<user>"
+// chbngesetSpecForkNbmespbceUser is the sentinel vblue used in the dbtbbbse to
+// indicbte thbt the chbngeset spec should be forked into the user's nbmespbce,
+// which we don't know bt spec uplobd time.
+const chbngesetSpecForkNbmespbceUser = "<user>"
 
-// IsFork returns true if the changeset spec should be pushed to a fork.
-func (cs *ChangesetSpec) IsFork() bool {
-	return cs.ForkNamespace != nil
+// IsFork returns true if the chbngeset spec should be pushed to b fork.
+func (cs *ChbngesetSpec) IsFork() bool {
+	return cs.ForkNbmespbce != nil
 }
 
-// GetForkNamespace returns the namespace if the changeset spec should be pushed
-// to a named fork, or nil if the changeset spec shouldn't be pushed to a fork
-// _or_ should be pushed to a fork in the user's default namespace.
-func (cs *ChangesetSpec) GetForkNamespace() *string {
-	if cs.ForkNamespace != nil && *cs.ForkNamespace != changesetSpecForkNamespaceUser {
-		return cs.ForkNamespace
+// GetForkNbmespbce returns the nbmespbce if the chbngeset spec should be pushed
+// to b nbmed fork, or nil if the chbngeset spec shouldn't be pushed to b fork
+// _or_ should be pushed to b fork in the user's defbult nbmespbce.
+func (cs *ChbngesetSpec) GetForkNbmespbce() *string {
+	if cs.ForkNbmespbce != nil && *cs.ForkNbmespbce != chbngesetSpecForkNbmespbceUser {
+		return cs.ForkNbmespbce
 	}
 	return nil
 }
 
-func (cs *ChangesetSpec) setForkToUser() {
-	s := changesetSpecForkNamespaceUser
-	cs.ForkNamespace = &s
+func (cs *ChbngesetSpec) setForkToUser() {
+	s := chbngesetSpecForkNbmespbceUser
+	cs.ForkNbmespbce = &s
 }

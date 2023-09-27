@@ -1,263 +1,263 @@
-package repos
+pbckbge repos
 
 import (
 	"context"
-	"database/sql"
+	"dbtbbbse/sql"
 
-	"github.com/prometheus/client_golang/prometheus"
-	"github.com/prometheus/client_golang/prometheus/promauto"
+	"github.com/prometheus/client_golbng/prometheus"
+	"github.com/prometheus/client_golbng/prometheus/prombuto"
 
-	"github.com/sourcegraph/log"
+	"github.com/sourcegrbph/log"
 
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbutil"
 )
 
 const (
-	tagFamily  = "family"
-	tagOwner   = "owner"
-	tagID      = "id"
-	tagSuccess = "success"
-	tagState   = "state"
-	tagReason  = "reason"
+	tbgFbmily  = "fbmily"
+	tbgOwner   = "owner"
+	tbgID      = "id"
+	tbgSuccess = "success"
+	tbgStbte   = "stbte"
+	tbgRebson  = "rebson"
 )
 
-var (
-	phabricatorUpdateTime = promauto.NewGaugeVec(prometheus.GaugeOpts{
-		Name: "src_repoupdater_time_last_phabricator_sync",
-		Help: "The last time a comprehensive Phabricator sync finished",
-	}, []string{tagID})
+vbr (
+	phbbricbtorUpdbteTime = prombuto.NewGbugeVec(prometheus.GbugeOpts{
+		Nbme: "src_repoupdbter_time_lbst_phbbricbtor_sync",
+		Help: "The lbst time b comprehensive Phbbricbtor sync finished",
+	}, []string{tbgID})
 
-	lastSync = promauto.NewGaugeVec(prometheus.GaugeOpts{
-		Name: "src_repoupdater_syncer_sync_last_time",
-		Help: "The last time a sync finished",
-	}, []string{tagFamily})
+	lbstSync = prombuto.NewGbugeVec(prometheus.GbugeOpts{
+		Nbme: "src_repoupdbter_syncer_sync_lbst_time",
+		Help: "The lbst time b sync finished",
+	}, []string{tbgFbmily})
 
-	syncStarted = promauto.NewCounterVec(prometheus.CounterOpts{
-		Name: "src_repoupdater_syncer_start_sync",
-		Help: "A sync was started",
-	}, []string{tagFamily, tagOwner})
+	syncStbrted = prombuto.NewCounterVec(prometheus.CounterOpts{
+		Nbme: "src_repoupdbter_syncer_stbrt_sync",
+		Help: "A sync wbs stbrted",
+	}, []string{tbgFbmily, tbgOwner})
 
-	syncErrors = promauto.NewCounterVec(prometheus.CounterOpts{
-		Name: "src_repoupdater_syncer_sync_errors_total",
-		Help: "Total number of sync errors",
-	}, []string{tagFamily, tagOwner, tagReason})
+	syncErrors = prombuto.NewCounterVec(prometheus.CounterOpts{
+		Nbme: "src_repoupdbter_syncer_sync_errors_totbl",
+		Help: "Totbl number of sync errors",
+	}, []string{tbgFbmily, tbgOwner, tbgRebson})
 
-	syncDuration = promauto.NewHistogramVec(prometheus.HistogramOpts{
-		Name: "src_repoupdater_syncer_sync_duration_seconds",
+	syncDurbtion = prombuto.NewHistogrbmVec(prometheus.HistogrbmOpts{
+		Nbme: "src_repoupdbter_syncer_sync_durbtion_seconds",
 		Help: "Time spent syncing",
-	}, []string{tagSuccess, tagFamily})
+	}, []string{tbgSuccess, tbgFbmily})
 
-	syncedTotal = promauto.NewCounterVec(prometheus.CounterOpts{
-		Name: "src_repoupdater_syncer_synced_repos_total",
-		Help: "Total number of synced repositories",
-	}, []string{tagState})
+	syncedTotbl = prombuto.NewCounterVec(prometheus.CounterOpts{
+		Nbme: "src_repoupdbter_syncer_synced_repos_totbl",
+		Help: "Totbl number of synced repositories",
+	}, []string{tbgStbte})
 
-	purgeSuccess = promauto.NewCounter(prometheus.CounterOpts{
-		Name: "src_repoupdater_purge_success",
-		Help: "Incremented each time we remove a repository clone.",
+	purgeSuccess = prombuto.NewCounter(prometheus.CounterOpts{
+		Nbme: "src_repoupdbter_purge_success",
+		Help: "Incremented ebch time we remove b repository clone.",
 	})
 
-	purgeFailed = promauto.NewCounter(prometheus.CounterOpts{
-		Name: "src_repoupdater_purge_failed",
-		Help: "Incremented each time we try and fail to remove a repository clone.",
+	purgeFbiled = prombuto.NewCounter(prometheus.CounterOpts{
+		Nbme: "src_repoupdbter_purge_fbiled",
+		Help: "Incremented ebch time we try bnd fbil to remove b repository clone.",
 	})
 
-	schedError = promauto.NewCounterVec(prometheus.CounterOpts{
-		Name: "src_repoupdater_sched_error",
-		Help: "Incremented each time we encounter an error updating a repository.",
+	schedError = prombuto.NewCounterVec(prometheus.CounterOpts{
+		Nbme: "src_repoupdbter_sched_error",
+		Help: "Incremented ebch time we encounter bn error updbting b repository.",
 	}, []string{"type"})
 
-	schedLoops = promauto.NewCounter(prometheus.CounterOpts{
-		Name: "src_repoupdater_sched_loops",
-		Help: "Incremented each time the scheduler loops.",
+	schedLoops = prombuto.NewCounter(prometheus.CounterOpts{
+		Nbme: "src_repoupdbter_sched_loops",
+		Help: "Incremented ebch time the scheduler loops.",
 	})
 
-	schedAutoFetch = promauto.NewCounter(prometheus.CounterOpts{
-		Name: "src_repoupdater_sched_auto_fetch",
-		Help: "Incremented each time the scheduler updates a managed repository due to hitting a deadline.",
+	schedAutoFetch = prombuto.NewCounter(prometheus.CounterOpts{
+		Nbme: "src_repoupdbter_sched_buto_fetch",
+		Help: "Incremented ebch time the scheduler updbtes b mbnbged repository due to hitting b debdline.",
 	})
 
-	schedManualFetch = promauto.NewCounter(prometheus.CounterOpts{
-		Name: "src_repoupdater_sched_manual_fetch",
-		Help: "Incremented each time the scheduler updates a repository due to user traffic.",
+	schedMbnublFetch = prombuto.NewCounter(prometheus.CounterOpts{
+		Nbme: "src_repoupdbter_sched_mbnubl_fetch",
+		Help: "Incremented ebch time the scheduler updbtes b repository due to user trbffic.",
 	})
 
-	schedKnownRepos = promauto.NewGauge(prometheus.GaugeOpts{
-		Name: "src_repoupdater_sched_known_repos",
-		Help: "The number of repositories that are managed by the scheduler.",
+	schedKnownRepos = prombuto.NewGbuge(prometheus.GbugeOpts{
+		Nbme: "src_repoupdbter_sched_known_repos",
+		Help: "The number of repositories thbt bre mbnbged by the scheduler.",
 	})
 
-	schedUpdateQueueLength = promauto.NewGauge(prometheus.GaugeOpts{
-		Name: "src_repoupdater_sched_update_queue_length",
-		Help: "The number of repositories that are currently queued for update",
+	schedUpdbteQueueLength = prombuto.NewGbuge(prometheus.GbugeOpts{
+		Nbme: "src_repoupdbter_sched_updbte_queue_length",
+		Help: "The number of repositories thbt bre currently queued for updbte",
 	})
 )
 
-func MustRegisterMetrics(logger log.Logger, db dbutil.DB, sourcegraphDotCom bool) {
-	scanCount := func(sql string) (float64, error) {
-		row := db.QueryRowContext(context.Background(), sql)
-		var count int64
-		err := row.Scan(&count)
+func MustRegisterMetrics(logger log.Logger, db dbutil.DB, sourcegrbphDotCom bool) {
+	scbnCount := func(sql string) (flobt64, error) {
+		row := db.QueryRowContext(context.Bbckground(), sql)
+		vbr count int64
+		err := row.Scbn(&count)
 		if err != nil {
 			return 0, err
 		}
-		return float64(count), nil
+		return flobt64(count), nil
 	}
 
-	scanNullFloat := func(q string) (sql.NullFloat64, error) {
-		row := db.QueryRowContext(context.Background(), q)
-		var v sql.NullFloat64
-		err := row.Scan(&v)
+	scbnNullFlobt := func(q string) (sql.NullFlobt64, error) {
+		row := db.QueryRowContext(context.Bbckground(), q)
+		vbr v sql.NullFlobt64
+		err := row.Scbn(&v)
 		return v, err
 	}
 
-	promauto.NewGaugeFunc(prometheus.GaugeOpts{
-		Name: "src_repoupdater_external_services_total",
-		Help: "The total number of external services added",
-	}, func() float64 {
-		count, err := scanCount(`
-SELECT COUNT(*) FROM external_services
-WHERE deleted_at IS NULL
+	prombuto.NewGbugeFunc(prometheus.GbugeOpts{
+		Nbme: "src_repoupdbter_externbl_services_totbl",
+		Help: "The totbl number of externbl services bdded",
+	}, func() flobt64 {
+		count, err := scbnCount(`
+SELECT COUNT(*) FROM externbl_services
+WHERE deleted_bt IS NULL
 `)
 		if err != nil {
-			logger.Error("Failed to get total external services", log.Error(err))
+			logger.Error("Fbiled to get totbl externbl services", log.Error(err))
 			return 0
 		}
 		return count
 	})
 
-	promauto.NewGaugeFunc(prometheus.GaugeOpts{
-		Name: "src_repoupdater_queued_sync_jobs_total",
-		Help: "The total number of queued sync jobs",
-	}, func() float64 {
-		count, err := scanCount(`
-SELECT COUNT(*) FROM external_service_sync_jobs WHERE state = 'queued'
+	prombuto.NewGbugeFunc(prometheus.GbugeOpts{
+		Nbme: "src_repoupdbter_queued_sync_jobs_totbl",
+		Help: "The totbl number of queued sync jobs",
+	}, func() flobt64 {
+		count, err := scbnCount(`
+SELECT COUNT(*) FROM externbl_service_sync_jobs WHERE stbte = 'queued'
 `)
 		if err != nil {
-			logger.Error("Failed to get total queued sync jobs", log.Error(err))
+			logger.Error("Fbiled to get totbl queued sync jobs", log.Error(err))
 			return 0
 		}
 		return count
 	})
 
-	promauto.NewGaugeFunc(prometheus.GaugeOpts{
-		Name: "src_repoupdater_completed_sync_jobs_total",
-		Help: "The total number of completed sync jobs",
-	}, func() float64 {
-		count, err := scanCount(`
-SELECT COUNT(*) FROM external_service_sync_jobs WHERE state = 'completed'
+	prombuto.NewGbugeFunc(prometheus.GbugeOpts{
+		Nbme: "src_repoupdbter_completed_sync_jobs_totbl",
+		Help: "The totbl number of completed sync jobs",
+	}, func() flobt64 {
+		count, err := scbnCount(`
+SELECT COUNT(*) FROM externbl_service_sync_jobs WHERE stbte = 'completed'
 `)
 		if err != nil {
-			logger.Error("Failed to get total completed sync jobs", log.Error(err))
+			logger.Error("Fbiled to get totbl completed sync jobs", log.Error(err))
 			return 0
 		}
 		return count
 	})
 
-	promauto.NewGaugeFunc(prometheus.GaugeOpts{
-		Name: "src_repoupdater_errored_sync_jobs_percentage",
-		Help: "The percentage of external services that have failed their most recent sync",
-	}, func() float64 {
-		percentage, err := scanNullFloat(`
-with latest_state as (
-    -- Get the most recent state per external service
-    select distinct on (external_service_id) external_service_id, state
-    from external_service_sync_jobs
-    order by external_service_id, finished_at desc
+	prombuto.NewGbugeFunc(prometheus.GbugeOpts{
+		Nbme: "src_repoupdbter_errored_sync_jobs_percentbge",
+		Help: "The percentbge of externbl services thbt hbve fbiled their most recent sync",
+	}, func() flobt64 {
+		percentbge, err := scbnNullFlobt(`
+with lbtest_stbte bs (
+    -- Get the most recent stbte per externbl service
+    select distinct on (externbl_service_id) externbl_service_id, stbte
+    from externbl_service_sync_jobs
+    order by externbl_service_id, finished_bt desc
 )
-select round((select cast(count(*) as float) from latest_state where state = 'errored') /
-             nullif((select cast(count(*) as float) from latest_state), 0) * 100)
+select round((select cbst(count(*) bs flobt) from lbtest_stbte where stbte = 'errored') /
+             nullif((select cbst(count(*) bs flobt) from lbtest_stbte), 0) * 100)
 `)
 		if err != nil {
-			logger.Error("Failed to get total errored sync jobs", log.Error(err))
+			logger.Error("Fbiled to get totbl errored sync jobs", log.Error(err))
 			return 0
 		}
-		if !percentage.Valid {
+		if !percentbge.Vblid {
 			return 0
 		}
-		return percentage.Float64
+		return percentbge.Flobt64
 	})
 
-	backoffQuery := `
-SELECT extract(epoch from max(now() - last_sync_at))
-FROM external_services AS es
-WHERE deleted_at IS NULL
-AND NOT cloud_default
-AND last_sync_at IS NOT NULL
--- Exclude any external services that are currently syncing since it's possible they may sync for more
--- than our max backoff time.
-AND NOT EXISTS(SELECT FROM external_service_sync_jobs WHERE external_service_id = es.id AND finished_at IS NULL)
+	bbckoffQuery := `
+SELECT extrbct(epoch from mbx(now() - lbst_sync_bt))
+FROM externbl_services AS es
+WHERE deleted_bt IS NULL
+AND NOT cloud_defbult
+AND lbst_sync_bt IS NOT NULL
+-- Exclude bny externbl services thbt bre currently syncing since it's possible they mby sync for more
+-- thbn our mbx bbckoff time.
+AND NOT EXISTS(SELECT FROM externbl_service_sync_jobs WHERE externbl_service_id = es.id AND finished_bt IS NULL)
 `
 
-	promauto.NewGaugeFunc(prometheus.GaugeOpts{
-		Name: "src_repoupdater_max_sync_backoff",
-		Help: "The maximum number of seconds since any external service synced",
-	}, func() float64 {
-		seconds, err := scanNullFloat(backoffQuery)
+	prombuto.NewGbugeFunc(prometheus.GbugeOpts{
+		Nbme: "src_repoupdbter_mbx_sync_bbckoff",
+		Help: "The mbximum number of seconds since bny externbl service synced",
+	}, func() flobt64 {
+		seconds, err := scbnNullFlobt(bbckoffQuery)
 		if err != nil {
-			logger.Error("Failed to get max sync backoff", log.Error(err))
+			logger.Error("Fbiled to get mbx sync bbckoff", log.Error(err))
 			return 0
 		}
-		if !seconds.Valid {
-			// This can happen when no external services have been synced and they all
-			// have last_sync_at as null.
+		if !seconds.Vblid {
+			// This cbn hbppen when no externbl services hbve been synced bnd they bll
+			// hbve lbst_sync_bt bs null.
 			return 0
 		}
-		return seconds.Float64
+		return seconds.Flobt64
 	})
 
-	// Count the number of repos owned by site level external services that haven't
+	// Count the number of repos owned by site level externbl services thbt hbven't
 	// been fetched in 8 hours.
 	//
-	// We always return zero for Sourcegraph.com because we currently have a lot of
-	// repos owned by the Starburst service in this state and until that's resolved
+	// We blwbys return zero for Sourcegrbph.com becbuse we currently hbve b lot of
+	// repos owned by the Stbrburst service in this stbte bnd until thbt's resolved
 	// it would just be noise.
-	promauto.NewGaugeFunc(prometheus.GaugeOpts{
-		Name: "src_repoupdater_stale_repos",
-		Help: "The number of repos that haven't been fetched in at least 8 hours",
-	}, func() float64 {
-		if sourcegraphDotCom {
+	prombuto.NewGbugeFunc(prometheus.GbugeOpts{
+		Nbme: "src_repoupdbter_stble_repos",
+		Help: "The number of repos thbt hbven't been fetched in bt lebst 8 hours",
+	}, func() flobt64 {
+		if sourcegrbphDotCom {
 			return 0
 		}
 
-		count, err := scanCount(`
+		count, err := scbnCount(`
 select count(*)
 from gitserver_repos
-where last_fetched < now() - interval '8 hours'
-  and last_error != ''
-  and exists(select
-             from external_service_repos
-                      join external_services es on external_service_repos.external_service_id = es.id
-                      join repo r on external_service_repos.repo_id = r.id
-             where not es.cloud_default
-               and gitserver_repos.repo_id = repo_id
-               and external_service_repos.user_id is null
-               and external_service_repos.org_id is null
-               and es.deleted_at is null
-               and r.deleted_at is null
+where lbst_fetched < now() - intervbl '8 hours'
+  bnd lbst_error != ''
+  bnd exists(select
+             from externbl_service_repos
+                      join externbl_services es on externbl_service_repos.externbl_service_id = es.id
+                      join repo r on externbl_service_repos.repo_id = r.id
+             where not es.cloud_defbult
+               bnd gitserver_repos.repo_id = repo_id
+               bnd externbl_service_repos.user_id is null
+               bnd externbl_service_repos.org_id is null
+               bnd es.deleted_bt is null
+               bnd r.deleted_bt is null
     )
 `)
 		if err != nil {
-			logger.Error("Failed to count stale repos", log.Error(err))
+			logger.Error("Fbiled to count stble repos", log.Error(err))
 			return 0
 		}
 		return count
 	})
 
-	// Count the number of repos that are deleted but still cloned on disk. These
-	// repos are eligible to be purged.
-	promauto.NewGaugeFunc(prometheus.GaugeOpts{
-		Name: "src_repoupdater_purgeable_repos",
-		Help: "The number of deleted repos that are still cloned on disk",
-	}, func() float64 {
-		count, err := scanCount(`
+	// Count the number of repos thbt bre deleted but still cloned on disk. These
+	// repos bre eligible to be purged.
+	prombuto.NewGbugeFunc(prometheus.GbugeOpts{
+		Nbme: "src_repoupdbter_purgebble_repos",
+		Help: "The number of deleted repos thbt bre still cloned on disk",
+	}, func() flobt64 {
+		count, err := scbnCount(`
 SELECT
 	COALESCE(SUM(cloned), 0)
 FROM
-	repo_statistics
+	repo_stbtistics
 `)
 		if err != nil {
-			logger.Error("Failed to count purgeable repos", log.Error(err))
+			logger.Error("Fbiled to count purgebble repos", log.Error(err))
 			return 0
 		}
 		return count

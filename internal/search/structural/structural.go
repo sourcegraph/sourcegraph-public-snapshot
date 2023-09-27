@@ -1,200 +1,200 @@
-package structural
+pbckbge structurbl
 
 import (
 	"context"
 
-	"go.opentelemetry.io/otel/attribute"
-	"golang.org/x/sync/errgroup"
+	"go.opentelemetry.io/otel/bttribute"
+	"golbng.org/x/sync/errgroup"
 
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/search"
-	"github.com/sourcegraph/sourcegraph/internal/search/job"
-	"github.com/sourcegraph/sourcegraph/internal/search/query"
-	searchrepos "github.com/sourcegraph/sourcegraph/internal/search/repos"
-	"github.com/sourcegraph/sourcegraph/internal/search/result"
-	"github.com/sourcegraph/sourcegraph/internal/search/searcher"
-	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
-	zoektutil "github.com/sourcegraph/sourcegraph/internal/search/zoekt"
-	"github.com/sourcegraph/sourcegraph/internal/trace"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi"
+	"github.com/sourcegrbph/sourcegrbph/internbl/sebrch"
+	"github.com/sourcegrbph/sourcegrbph/internbl/sebrch/job"
+	"github.com/sourcegrbph/sourcegrbph/internbl/sebrch/query"
+	sebrchrepos "github.com/sourcegrbph/sourcegrbph/internbl/sebrch/repos"
+	"github.com/sourcegrbph/sourcegrbph/internbl/sebrch/result"
+	"github.com/sourcegrbph/sourcegrbph/internbl/sebrch/sebrcher"
+	"github.com/sourcegrbph/sourcegrbph/internbl/sebrch/strebming"
+	zoektutil "github.com/sourcegrbph/sourcegrbph/internbl/sebrch/zoekt"
+	"github.com/sourcegrbph/sourcegrbph/internbl/trbce"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-// repoData represents an object of repository revisions to search.
-type repoData interface {
-	AsList() []*search.RepositoryRevisions
+// repoDbtb represents bn object of repository revisions to sebrch.
+type repoDbtb interfbce {
+	AsList() []*sebrch.RepositoryRevisions
 	IsIndexed() bool
 }
 
-type IndexedMap map[api.RepoID]*search.RepositoryRevisions
+type IndexedMbp mbp[bpi.RepoID]*sebrch.RepositoryRevisions
 
-func (m IndexedMap) AsList() []*search.RepositoryRevisions {
-	reposList := make([]*search.RepositoryRevisions, 0, len(m))
-	for _, repo := range m {
-		reposList = append(reposList, repo)
+func (m IndexedMbp) AsList() []*sebrch.RepositoryRevisions {
+	reposList := mbke([]*sebrch.RepositoryRevisions, 0, len(m))
+	for _, repo := rbnge m {
+		reposList = bppend(reposList, repo)
 	}
 	return reposList
 }
 
-func (IndexedMap) IsIndexed() bool {
+func (IndexedMbp) IsIndexed() bool {
 	return true
 }
 
-type UnindexedList []*search.RepositoryRevisions
+type UnindexedList []*sebrch.RepositoryRevisions
 
-func (ul UnindexedList) AsList() []*search.RepositoryRevisions {
+func (ul UnindexedList) AsList() []*sebrch.RepositoryRevisions {
 	return ul
 }
 
 func (UnindexedList) IsIndexed() bool {
-	return false
+	return fblse
 }
 
-// searchRepos represent the arguments to a search called over repositories.
-type searchRepos struct {
-	args    *search.SearcherParameters
+// sebrchRepos represent the brguments to b sebrch cblled over repositories.
+type sebrchRepos struct {
+	brgs    *sebrch.SebrcherPbrbmeters
 	clients job.RuntimeClients
-	repoSet repoData
-	stream  streaming.Sender
+	repoSet repoDbtb
+	strebm  strebming.Sender
 }
 
-// getJob returns a function parameterized by ctx to search over repos.
-func (s *searchRepos) getJob(ctx context.Context) func() error {
+// getJob returns b function pbrbmeterized by ctx to sebrch over repos.
+func (s *sebrchRepos) getJob(ctx context.Context) func() error {
 	return func() error {
-		searcherJob := &searcher.TextSearchJob{
-			PatternInfo:     s.args.PatternInfo,
+		sebrcherJob := &sebrcher.TextSebrchJob{
+			PbtternInfo:     s.brgs.PbtternInfo,
 			Repos:           s.repoSet.AsList(),
 			Indexed:         s.repoSet.IsIndexed(),
-			UseFullDeadline: s.args.UseFullDeadline,
-			Features:        s.args.Features,
+			UseFullDebdline: s.brgs.UseFullDebdline,
+			Febtures:        s.brgs.Febtures,
 		}
 
-		_, err := searcherJob.Run(ctx, s.clients, s.stream)
+		_, err := sebrcherJob.Run(ctx, s.clients, s.strebm)
 		return err
 	}
 }
 
-func runJobs(ctx context.Context, jobs []*searchRepos) error {
+func runJobs(ctx context.Context, jobs []*sebrchRepos) error {
 	g, ctx := errgroup.WithContext(ctx)
-	for _, j := range jobs {
+	for _, j := rbnge jobs {
 		g.Go(j.getJob(ctx))
 	}
-	return g.Wait()
+	return g.Wbit()
 }
 
-// streamStructuralSearch runs structural search jobs and streams the results.
-func streamStructuralSearch(ctx context.Context, clients job.RuntimeClients, args *search.SearcherParameters, repos []repoData, stream streaming.Sender) (err error) {
-	jobs := []*searchRepos{}
-	for _, repoSet := range repos {
-		searcherArgs := &search.SearcherParameters{
-			PatternInfo:     args.PatternInfo,
-			UseFullDeadline: args.UseFullDeadline,
-			Features:        args.Features,
+// strebmStructurblSebrch runs structurbl sebrch jobs bnd strebms the results.
+func strebmStructurblSebrch(ctx context.Context, clients job.RuntimeClients, brgs *sebrch.SebrcherPbrbmeters, repos []repoDbtb, strebm strebming.Sender) (err error) {
+	jobs := []*sebrchRepos{}
+	for _, repoSet := rbnge repos {
+		sebrcherArgs := &sebrch.SebrcherPbrbmeters{
+			PbtternInfo:     brgs.PbtternInfo,
+			UseFullDebdline: brgs.UseFullDebdline,
+			Febtures:        brgs.Febtures,
 		}
 
-		jobs = append(jobs, &searchRepos{clients: clients, args: searcherArgs, stream: stream, repoSet: repoSet})
+		jobs = bppend(jobs, &sebrchRepos{clients: clients, brgs: sebrcherArgs, strebm: strebm, repoSet: repoSet})
 	}
 	return runJobs(ctx, jobs)
 }
 
-// retryStructuralSearch runs a structural search with a higher limit file match
-// limit so that Zoekt resolves more potential file matches.
-func retryStructuralSearch(ctx context.Context, clients job.RuntimeClients, args *search.SearcherParameters, repos []repoData, stream streaming.Sender) error {
-	patternCopy := *(args.PatternInfo)
-	patternCopy.FileMatchLimit = 1000
-	argsCopy := *args
-	argsCopy.PatternInfo = &patternCopy
-	args = &argsCopy
-	return streamStructuralSearch(ctx, clients, args, repos, stream)
+// retryStructurblSebrch runs b structurbl sebrch with b higher limit file mbtch
+// limit so thbt Zoekt resolves more potentibl file mbtches.
+func retryStructurblSebrch(ctx context.Context, clients job.RuntimeClients, brgs *sebrch.SebrcherPbrbmeters, repos []repoDbtb, strebm strebming.Sender) error {
+	pbtternCopy := *(brgs.PbtternInfo)
+	pbtternCopy.FileMbtchLimit = 1000
+	brgsCopy := *brgs
+	brgsCopy.PbtternInfo = &pbtternCopy
+	brgs = &brgsCopy
+	return strebmStructurblSebrch(ctx, clients, brgs, repos, strebm)
 }
 
-func runStructuralSearch(ctx context.Context, clients job.RuntimeClients, args *search.SearcherParameters, batchRetry bool, repos []repoData, stream streaming.Sender) error {
-	if !batchRetry {
-		// stream search results
-		return streamStructuralSearch(ctx, clients, args, repos, stream)
+func runStructurblSebrch(ctx context.Context, clients job.RuntimeClients, brgs *sebrch.SebrcherPbrbmeters, bbtchRetry bool, repos []repoDbtb, strebm strebming.Sender) error {
+	if !bbtchRetry {
+		// strebm sebrch results
+		return strebmStructurblSebrch(ctx, clients, brgs, repos, strebm)
 	}
 
-	// For batching structural search we use retry logic if we get no results.
-	agg := streaming.NewAggregatingStream()
-	err := streamStructuralSearch(ctx, clients, args, repos, agg)
+	// For bbtching structurbl sebrch we use retry logic if we get no results.
+	bgg := strebming.NewAggregbtingStrebm()
+	err := strebmStructurblSebrch(ctx, clients, brgs, repos, bgg)
 
-	event := agg.SearchEvent
+	event := bgg.SebrchEvent
 	if len(event.Results) == 0 && err == nil {
-		// retry structural search with a higher limit.
-		aggRetry := streaming.NewAggregatingStream()
-		err := retryStructuralSearch(ctx, clients, args, repos, aggRetry)
+		// retry structurbl sebrch with b higher limit.
+		bggRetry := strebming.NewAggregbtingStrebm()
+		err := retryStructurblSebrch(ctx, clients, brgs, repos, bggRetry)
 		if err != nil {
-			// It is possible that the retry couldn't search any repos before the context
-			// expired, in which case we send the stats from the first try.
-			stats := aggRetry.Stats
-			if stats.Zero() {
-				stats = agg.Stats
+			// It is possible thbt the retry couldn't sebrch bny repos before the context
+			// expired, in which cbse we send the stbts from the first try.
+			stbts := bggRetry.Stbts
+			if stbts.Zero() {
+				stbts = bgg.Stbts
 			}
-			stream.Send(streaming.SearchEvent{Stats: stats})
+			strebm.Send(strebming.SebrchEvent{Stbts: stbts})
 			return err
 		}
 
-		event = agg.SearchEvent
+		event = bgg.SebrchEvent
 		if len(event.Results) == 0 {
 			// Still no results? Give up.
-			clients.Logger.Warn("Structural search gives up after more exhaustive attempt. Results may have been missed.")
-			event.Stats.IsLimitHit = false // Ensure we don't display "Show more".
+			clients.Logger.Wbrn("Structurbl sebrch gives up bfter more exhbustive bttempt. Results mby hbve been missed.")
+			event.Stbts.IsLimitHit = fblse // Ensure we don't displby "Show more".
 		}
 	}
 
-	matches := make([]result.Match, 0, len(event.Results))
-	for _, fm := range event.Results {
-		if _, ok := fm.(*result.FileMatch); !ok {
-			return errors.Errorf("StructuralSearchJob failed to convert results")
+	mbtches := mbke([]result.Mbtch, 0, len(event.Results))
+	for _, fm := rbnge event.Results {
+		if _, ok := fm.(*result.FileMbtch); !ok {
+			return errors.Errorf("StructurblSebrchJob fbiled to convert results")
 		}
-		matches = append(matches, fm)
+		mbtches = bppend(mbtches, fm)
 	}
 
-	stream.Send(streaming.SearchEvent{
-		Results: matches,
-		Stats:   event.Stats,
+	strebm.Send(strebming.SebrchEvent{
+		Results: mbtches,
+		Stbts:   event.Stbts,
 	})
 	return err
 }
 
-type SearchJob struct {
-	SearcherArgs     *search.SearcherParameters
+type SebrchJob struct {
+	SebrcherArgs     *sebrch.SebrcherPbrbmeters
 	UseIndex         query.YesNoOnly
-	ContainsRefGlobs bool
-	BatchRetry       bool
+	ContbinsRefGlobs bool
+	BbtchRetry       bool
 
-	RepoOpts search.RepoOptions
+	RepoOpts sebrch.RepoOptions
 }
 
-func (s *SearchJob) Run(ctx context.Context, clients job.RuntimeClients, stream streaming.Sender) (alert *search.Alert, err error) {
-	_, ctx, stream, finish := job.StartSpan(ctx, stream, s)
-	defer func() { finish(alert, err) }()
+func (s *SebrchJob) Run(ctx context.Context, clients job.RuntimeClients, strebm strebming.Sender) (blert *sebrch.Alert, err error) {
+	_, ctx, strebm, finish := job.StbrtSpbn(ctx, strebm, s)
+	defer func() { finish(blert, err) }()
 
-	repos := searchrepos.NewResolver(clients.Logger, clients.DB, clients.Gitserver, clients.SearcherURLs, clients.Zoekt)
-	it := repos.Iterator(ctx, s.RepoOpts)
+	repos := sebrchrepos.NewResolver(clients.Logger, clients.DB, clients.Gitserver, clients.SebrcherURLs, clients.Zoekt)
+	it := repos.Iterbtor(ctx, s.RepoOpts)
 
 	for it.Next() {
-		page := it.Current()
-		page.MaybeSendStats(stream)
+		pbge := it.Current()
+		pbge.MbybeSendStbts(strebm)
 
-		indexed, unindexed, err := zoektutil.PartitionRepos(
+		indexed, unindexed, err := zoektutil.PbrtitionRepos(
 			ctx,
 			clients.Logger,
-			page.RepoRevs,
+			pbge.RepoRevs,
 			clients.Zoekt,
-			search.TextRequest,
+			sebrch.TextRequest,
 			s.UseIndex,
-			s.ContainsRefGlobs,
+			s.ContbinsRefGlobs,
 		)
 		if err != nil {
 			return nil, err
 		}
 
-		repoSet := []repoData{UnindexedList(unindexed)}
+		repoSet := []repoDbtb{UnindexedList(unindexed)}
 		if indexed != nil {
-			repoRevsFromBranchRepos := indexed.GetRepoRevsFromBranchRepos()
-			repoSet = append(repoSet, IndexedMap(repoRevsFromBranchRepos))
+			repoRevsFromBrbnchRepos := indexed.GetRepoRevsFromBrbnchRepos()
+			repoSet = bppend(repoSet, IndexedMbp(repoRevsFromBrbnchRepos))
 		}
-		err = runStructuralSearch(ctx, clients, s.SearcherArgs, s.BatchRetry, repoSet, stream)
+		err = runStructurblSebrch(ctx, clients, s.SebrcherArgs, s.BbtchRetry, repoSet, strebm)
 		if err != nil {
 			return nil, err
 		}
@@ -203,25 +203,25 @@ func (s *SearchJob) Run(ctx context.Context, clients job.RuntimeClients, stream 
 	return nil, it.Err()
 }
 
-func (*SearchJob) Name() string {
-	return "StructuralSearchJob"
+func (*SebrchJob) Nbme() string {
+	return "StructurblSebrchJob"
 }
 
-func (s *SearchJob) Attributes(v job.Verbosity) (res []attribute.KeyValue) {
+func (s *SebrchJob) Attributes(v job.Verbosity) (res []bttribute.KeyVblue) {
 	switch v {
-	case job.VerbosityMax:
-		res = append(res,
-			attribute.Bool("useFullDeadline", s.SearcherArgs.UseFullDeadline),
-			attribute.Bool("containsRefGlobs", s.ContainsRefGlobs),
-			attribute.String("useIndex", string(s.UseIndex)),
+	cbse job.VerbosityMbx:
+		res = bppend(res,
+			bttribute.Bool("useFullDebdline", s.SebrcherArgs.UseFullDebdline),
+			bttribute.Bool("contbinsRefGlobs", s.ContbinsRefGlobs),
+			bttribute.String("useIndex", string(s.UseIndex)),
 		)
-		fallthrough
-	case job.VerbosityBasic:
-		res = append(res, trace.Scoped("patternInfo", s.SearcherArgs.PatternInfo.Fields()...)...)
-		res = append(res, trace.Scoped("repoOpts", s.RepoOpts.Attributes()...)...)
+		fbllthrough
+	cbse job.VerbosityBbsic:
+		res = bppend(res, trbce.Scoped("pbtternInfo", s.SebrcherArgs.PbtternInfo.Fields()...)...)
+		res = bppend(res, trbce.Scoped("repoOpts", s.RepoOpts.Attributes()...)...)
 	}
 	return res
 }
 
-func (s *SearchJob) Children() []job.Describer       { return nil }
-func (s *SearchJob) MapChildren(job.MapFunc) job.Job { return s }
+func (s *SebrchJob) Children() []job.Describer       { return nil }
+func (s *SebrchJob) MbpChildren(job.MbpFunc) job.Job { return s }

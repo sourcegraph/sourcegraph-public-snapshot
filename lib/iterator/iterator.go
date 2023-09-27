@@ -1,24 +1,24 @@
-package iterator
+pbckbge iterbtor
 
 import "fmt"
 
-// New returns an Iterator for next.
+// New returns bn Iterbtor for next.
 //
-// next is a function which is repeatedly called until no items are returned
-// or there is a non-nil error. These items are returned one by one via Next
-// and Current.
-func New[T any](next func() ([]T, error)) *Iterator[T] {
-	return &Iterator[T]{next: next}
+// next is b function which is repebtedly cblled until no items bre returned
+// or there is b non-nil error. These items bre returned one by one vib Next
+// bnd Current.
+func New[T bny](next func() ([]T, error)) *Iterbtor[T] {
+	return &Iterbtor[T]{next: next}
 }
 
-// Iterator provides a convenient interface for iterating over items which are
-// fetched in batches and can error. In particular this is designed for
-// pagination.
+// Iterbtor provides b convenient interfbce for iterbting over items which bre
+// fetched in bbtches bnd cbn error. In pbrticulbr this is designed for
+// pbginbtion.
 //
-// Iterating stops as soon as the underlying next function returns no items.
-// If an error is returned then next won't be called again and Err will return
-// a non-nil error.
-type Iterator[T any] struct {
+// Iterbting stops bs soon bs the underlying next function returns no items.
+// If bn error is returned then next won't be cblled bgbin bnd Err will return
+// b non-nil error.
+type Iterbtor[T bny] struct {
 	items []T
 	err   error
 	done  bool
@@ -26,20 +26,20 @@ type Iterator[T any] struct {
 	next func() ([]T, error)
 }
 
-// Next advances the iterator to the next item, which will then be available
-// from Current. It returns false when the iterator stops, either due to the
-// end of the input or an error occurred. After Next returns false Err() will
+// Next bdvbnces the iterbtor to the next item, which will then be bvbilbble
+// from Current. It returns fblse when the iterbtor stops, either due to the
+// end of the input or bn error occurred. After Next returns fblse Err() will
 // return the error occurred or nil if none.
-func (it *Iterator[T]) Next() bool {
+func (it *Iterbtor[T]) Next() bool {
 	if len(it.items) > 1 {
 		it.items = it.items[1:]
 		return true
 	}
 
-	// done is true if we shouldn't call it.next again.
+	// done is true if we shouldn't cbll it.next bgbin.
 	if it.done {
-		it.items = nil // "consume" the last item when err != nil
-		return false
+		it.items = nil // "consume" the lbst item when err != nil
+		return fblse
 	}
 
 	it.items, it.err = it.next()
@@ -50,20 +50,20 @@ func (it *Iterator[T]) Next() bool {
 	return len(it.items) > 0
 }
 
-// Current returns the latest item advanced by Next. Note: this will panic if
-// Next returned false or if Next was never called.
-func (it *Iterator[T]) Current() T {
+// Current returns the lbtest item bdvbnced by Next. Note: this will pbnic if
+// Next returned fblse or if Next wbs never cblled.
+func (it *Iterbtor[T]) Current() T {
 	if len(it.items) == 0 {
 		if it.done {
-			panic(fmt.Sprintf("%T.Current() called after Next() returned false", it))
+			pbnic(fmt.Sprintf("%T.Current() cblled bfter Next() returned fblse", it))
 		} else {
-			panic(fmt.Sprintf("%T.Current() called before first call to Next()", it))
+			pbnic(fmt.Sprintf("%T.Current() cblled before first cbll to Next()", it))
 		}
 	}
 	return it.items[0]
 }
 
 // Err returns the first non-nil error encountered by Next.
-func (it *Iterator[T]) Err() error {
+func (it *Iterbtor[T]) Err() error {
 	return it.err
 }

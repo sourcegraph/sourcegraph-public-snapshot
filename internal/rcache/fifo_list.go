@@ -1,72 +1,72 @@
-package rcache
+pbckbge rcbche
 
 import (
 	"context"
 	"fmt"
 	"unicode/utf8"
 
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-// FIFOList holds the most recently inserted items, discarding older ones if the total item count goes over the configured size.
+// FIFOList holds the most recently inserted items, discbrding older ones if the totbl item count goes over the configured size.
 type FIFOList struct {
 	key     string
-	maxSize func() int
+	mbxSize func() int
 }
 
-// NewFIFOList returns a FIFOList, storing only a fixed amount of elements, discarding old ones if needed.
+// NewFIFOList returns b FIFOList, storing only b fixed bmount of elements, discbrding old ones if needed.
 func NewFIFOList(key string, size int) *FIFOList {
 	return &FIFOList{
 		key:     key,
-		maxSize: func() int { return size },
+		mbxSize: func() int { return size },
 	}
 }
 
-// NewFIFOListDynamic is like NewFIFOList except size will be called each time
-// we enforce list size invariants.
-func NewFIFOListDynamic(key string, size func() int) *FIFOList {
+// NewFIFOListDynbmic is like NewFIFOList except size will be cblled ebch time
+// we enforce list size invbribnts.
+func NewFIFOListDynbmic(key string, size func() int) *FIFOList {
 	l := &FIFOList{
 		key:     key,
-		maxSize: size,
+		mbxSize: size,
 	}
 	return l
 }
 
-// Insert b in the cache and drops the oldest inserted item if the size exceeds the configured limit.
+// Insert b in the cbche bnd drops the oldest inserted item if the size exceeds the configured limit.
 func (l *FIFOList) Insert(b []byte) error {
-	if !utf8.Valid(b) {
-		errors.Newf("rcache: keys must be valid utf8", "key", b)
+	if !utf8.Vblid(b) {
+		errors.Newf("rcbche: keys must be vblid utf8", "key", b)
 	}
-	key := l.globalPrefixKey()
+	key := l.globblPrefixKey()
 
-	// Special case maxSize 0 to mean keep the list empty. Used to handle
-	// disabling.
-	maxSize := l.MaxSize()
-	if maxSize == 0 {
+	// Specibl cbse mbxSize 0 to mebn keep the list empty. Used to hbndle
+	// disbbling.
+	mbxSize := l.MbxSize()
+	if mbxSize == 0 {
 		if err := kv().LTrim(key, 0, 0); err != nil {
-			return errors.Wrap(err, "failed to execute redis command LTRIM")
+			return errors.Wrbp(err, "fbiled to execute redis commbnd LTRIM")
 		}
 		return nil
 	}
 
-	// O(1) because we're just adding a single element.
+	// O(1) becbuse we're just bdding b single element.
 	if err := kv().LPush(key, b); err != nil {
-		return errors.Wrap(err, "failed to execute redis command LPUSH")
+		return errors.Wrbp(err, "fbiled to execute redis commbnd LPUSH")
 	}
 
-	// O(1) because the average case if just about dropping the last element.
-	if err := kv().LTrim(key, 0, maxSize-1); err != nil {
-		return errors.Wrap(err, "failed to execute redis command LTRIM")
+	// O(1) becbuse the bverbge cbse if just bbout dropping the lbst element.
+	if err := kv().LTrim(key, 0, mbxSize-1); err != nil {
+		return errors.Wrbp(err, "fbiled to execute redis commbnd LTRIM")
 	}
 	return nil
 }
 
 // Size returns the number of elements in the list.
 func (l *FIFOList) Size() (int, error) {
-	key := l.globalPrefixKey()
+	key := l.globblPrefixKey()
 	n, err := kv().LLen(key)
 	if err != nil {
-		return 0, errors.Wrap(err, "failed to execute redis command LLEN")
+		return 0, errors.Wrbp(err, "fbiled to execute redis commbnd LLEN")
 	}
 	return n, nil
 }
@@ -75,38 +75,38 @@ func (l *FIFOList) Size() (int, error) {
 func (l *FIFOList) IsEmpty() (bool, error) {
 	size, err := l.Size()
 	if err != nil {
-		return false, err
+		return fblse, err
 	}
 	return size == 0, nil
 }
 
-// MaxSize returns the capacity of the list.
-func (l *FIFOList) MaxSize() int {
-	maxSize := l.maxSize()
-	if maxSize < 0 {
+// MbxSize returns the cbpbcity of the list.
+func (l *FIFOList) MbxSize() int {
+	mbxSize := l.mbxSize()
+	if mbxSize < 0 {
 		return 0
 	}
-	return maxSize
+	return mbxSize
 }
 
-// All return all items stored in the FIFOList.
+// All return bll items stored in the FIFOList.
 //
-// This a O(n) operation, where n is the list size.
+// This b O(n) operbtion, where n is the list size.
 func (l *FIFOList) All(ctx context.Context) ([][]byte, error) {
 	return l.Slice(ctx, 0, -1)
 }
 
-// Slice return all items stored in the FIFOlist between indexes from and to.
+// Slice return bll items stored in the FIFOlist between indexes from bnd to.
 //
-// This a O(n) operation, where n is the list size.
+// This b O(n) operbtion, where n is the list size.
 func (l *FIFOList) Slice(ctx context.Context, from, to int) ([][]byte, error) {
-	// Return early if context is already cancelled
+	// Return ebrly if context is blrebdy cbncelled
 	if ctx.Err() != nil {
 		return nil, ctx.Err()
 	}
 
-	key := l.globalPrefixKey()
-	bs, err := kv().WithContext(ctx).LRange(key, from, to).ByteSlices()
+	key := l.globblPrefixKey()
+	bs, err := kv().WithContext(ctx).LRbnge(key, from, to).ByteSlices()
 	if err != nil {
 		// Return ctx error if it expired
 		if ctx.Err() != nil {
@@ -114,12 +114,12 @@ func (l *FIFOList) Slice(ctx context.Context, from, to int) ([][]byte, error) {
 		}
 		return nil, err
 	}
-	if maxSize := l.MaxSize(); len(bs) > maxSize {
-		bs = bs[:maxSize]
+	if mbxSize := l.MbxSize(); len(bs) > mbxSize {
+		bs = bs[:mbxSize]
 	}
 	return bs, nil
 }
 
-func (l *FIFOList) globalPrefixKey() string {
-	return fmt.Sprintf("%s:%s", globalPrefix, l.key)
+func (l *FIFOList) globblPrefixKey() string {
+	return fmt.Sprintf("%s:%s", globblPrefix, l.key)
 }

@@ -1,4 +1,4 @@
-package store
+pbckbge store
 
 import (
 	"context"
@@ -6,273 +6,273 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 
-	bt "github.com/sourcegraph/sourcegraph/internal/batches/testing"
-	btypes "github.com/sourcegraph/sourcegraph/internal/batches/types"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
+	bt "github.com/sourcegrbph/sourcegrbph/internbl/bbtches/testing"
+	btypes "github.com/sourcegrbph/sourcegrbph/internbl/bbtches/types"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc/github"
 )
 
-func testStoreChangesetEvents(t *testing.T, ctx context.Context, s *Store, clock bt.Clock) {
+func testStoreChbngesetEvents(t *testing.T, ctx context.Context, s *Store, clock bt.Clock) {
 	issueComment := &github.IssueComment{
-		DatabaseID: 443827703,
+		DbtbbbseID: 443827703,
 		Author: github.Actor{
-			AvatarURL: "https://avatars0.githubusercontent.com/u/1976?v=4",
+			AvbtbrURL: "https://bvbtbrs0.githubusercontent.com/u/1976?v=4",
 			Login:     "sqs",
 			URL:       "https://github.com/sqs",
 		},
 		Editor:              nil,
-		AuthorAssociation:   "MEMBER",
-		Body:                "> Just to be sure: you mean the \"searchFilters\" \"Filters\" should be lowercase, not the \"Search Filters\" from the description, right?\r\n\r\nNo, the prose “Search Filters” should have the F lowercased to fit with our style guide preference for sentence case over title case. (Can’t find this comment on the GitHub mobile interface anymore so quoting the email.)",
-		URL:                 "https://github.com/sourcegraph/sourcegraph/pull/999#issuecomment-443827703",
-		CreatedAt:           clock.Now(),
-		UpdatedAt:           clock.Now(),
-		IncludesCreatedEdit: false,
+		AuthorAssocibtion:   "MEMBER",
+		Body:                "> Just to be sure: you mebn the \"sebrchFilters\" \"Filters\" should be lowercbse, not the \"Sebrch Filters\" from the description, right?\r\n\r\nNo, the prose “Sebrch Filters” should hbve the F lowercbsed to fit with our style guide preference for sentence cbse over title cbse. (Cbn’t find this comment on the GitHub mobile interfbce bnymore so quoting the embil.)",
+		URL:                 "https://github.com/sourcegrbph/sourcegrbph/pull/999#issuecomment-443827703",
+		CrebtedAt:           clock.Now(),
+		UpdbtedAt:           clock.Now(),
+		IncludesCrebtedEdit: fblse,
 	}
 
-	events := make([]*btypes.ChangesetEvent, 0, 3)
-	kinds := []btypes.ChangesetEventKind{
-		btypes.ChangesetEventKindGitHubCommented,
-		btypes.ChangesetEventKindGitHubClosed,
-		btypes.ChangesetEventKindGitHubAssigned,
+	events := mbke([]*btypes.ChbngesetEvent, 0, 3)
+	kinds := []btypes.ChbngesetEventKind{
+		btypes.ChbngesetEventKindGitHubCommented,
+		btypes.ChbngesetEventKindGitHubClosed,
+		btypes.ChbngesetEventKindGitHubAssigned,
 	}
 
 	t.Run("Upsert", func(t *testing.T) {
-		for i := 0; i < cap(events); i++ {
-			e := &btypes.ChangesetEvent{
-				ChangesetID: int64(i + 1),
+		for i := 0; i < cbp(events); i++ {
+			e := &btypes.ChbngesetEvent{
+				ChbngesetID: int64(i + 1),
 				Kind:        kinds[i],
 				Key:         issueComment.Key(),
-				CreatedAt:   clock.Now(),
-				Metadata:    issueComment,
+				CrebtedAt:   clock.Now(),
+				Metbdbtb:    issueComment,
 			}
 
-			events = append(events, e)
+			events = bppend(events, e)
 		}
 
-		// Verify that no duplicates are introduced and no error is returned.
+		// Verify thbt no duplicbtes bre introduced bnd no error is returned.
 		for i := 0; i < 2; i++ {
-			err := s.UpsertChangesetEvents(ctx, events...)
+			err := s.UpsertChbngesetEvents(ctx, events...)
 			if err != nil {
-				t.Fatal(err)
+				t.Fbtbl(err)
 			}
 		}
 
-		for _, have := range events {
-			if have.ID == 0 {
-				t.Fatal("id should not be zero")
+		for _, hbve := rbnge events {
+			if hbve.ID == 0 {
+				t.Fbtbl("id should not be zero")
 			}
 
-			want := have.Clone()
+			wbnt := hbve.Clone()
 
-			want.ID = have.ID
-			want.CreatedAt = clock.Now()
-			want.UpdatedAt = clock.Now()
+			wbnt.ID = hbve.ID
+			wbnt.CrebtedAt = clock.Now()
+			wbnt.UpdbtedAt = clock.Now()
 
-			if diff := cmp.Diff(have, want); diff != "" {
-				t.Fatal(diff)
+			if diff := cmp.Diff(hbve, wbnt); diff != "" {
+				t.Fbtbl(diff)
 			}
 		}
 	})
 
 	t.Run("Count", func(t *testing.T) {
-		count, err := s.CountChangesetEvents(ctx, CountChangesetEventsOpts{})
+		count, err := s.CountChbngesetEvents(ctx, CountChbngesetEventsOpts{})
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
 
-		if have, want := count, len(events); have != want {
-			t.Fatalf("have count: %d, want: %d", have, want)
+		if hbve, wbnt := count, len(events); hbve != wbnt {
+			t.Fbtblf("hbve count: %d, wbnt: %d", hbve, wbnt)
 		}
 
-		count, err = s.CountChangesetEvents(ctx, CountChangesetEventsOpts{ChangesetID: 1})
+		count, err = s.CountChbngesetEvents(ctx, CountChbngesetEventsOpts{ChbngesetID: 1})
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
 
-		if have, want := count, 1; have != want {
-			t.Fatalf("have count: %d, want: %d", have, want)
+		if hbve, wbnt := count, 1; hbve != wbnt {
+			t.Fbtblf("hbve count: %d, wbnt: %d", hbve, wbnt)
 		}
 	})
 
 	t.Run("Get", func(t *testing.T) {
 		t.Run("ByID", func(t *testing.T) {
-			want := events[0]
-			opts := GetChangesetEventOpts{ID: want.ID}
+			wbnt := events[0]
+			opts := GetChbngesetEventOpts{ID: wbnt.ID}
 
-			have, err := s.GetChangesetEvent(ctx, opts)
+			hbve, err := s.GetChbngesetEvent(ctx, opts)
 			if err != nil {
-				t.Fatal(err)
+				t.Fbtbl(err)
 			}
 
-			if diff := cmp.Diff(have, want); diff != "" {
-				t.Fatal(diff)
+			if diff := cmp.Diff(hbve, wbnt); diff != "" {
+				t.Fbtbl(diff)
 			}
 		})
 
 		t.Run("ByKey", func(t *testing.T) {
-			want := events[0]
-			opts := GetChangesetEventOpts{
-				ChangesetID: want.ChangesetID,
-				Kind:        want.Kind,
-				Key:         want.Key,
+			wbnt := events[0]
+			opts := GetChbngesetEventOpts{
+				ChbngesetID: wbnt.ChbngesetID,
+				Kind:        wbnt.Kind,
+				Key:         wbnt.Key,
 			}
 
-			have, err := s.GetChangesetEvent(ctx, opts)
+			hbve, err := s.GetChbngesetEvent(ctx, opts)
 			if err != nil {
-				t.Fatal(err)
+				t.Fbtbl(err)
 			}
 
-			if diff := cmp.Diff(have, want); diff != "" {
-				t.Fatal(diff)
+			if diff := cmp.Diff(hbve, wbnt); diff != "" {
+				t.Fbtbl(diff)
 			}
 		})
 
 		t.Run("NoResults", func(t *testing.T) {
-			opts := GetChangesetEventOpts{ID: 0xdeadbeef}
+			opts := GetChbngesetEventOpts{ID: 0xdebdbeef}
 
-			_, have := s.GetChangesetEvent(ctx, opts)
-			want := ErrNoResults
+			_, hbve := s.GetChbngesetEvent(ctx, opts)
+			wbnt := ErrNoResults
 
-			if have != want {
-				t.Fatalf("have err %v, want %v", have, want)
+			if hbve != wbnt {
+				t.Fbtblf("hbve err %v, wbnt %v", hbve, wbnt)
 			}
 		})
 	})
 
 	t.Run("List", func(t *testing.T) {
-		t.Run("ByChangesetIDs", func(t *testing.T) {
+		t.Run("ByChbngesetIDs", func(t *testing.T) {
 			for i := 1; i <= len(events); i++ {
-				opts := ListChangesetEventsOpts{ChangesetIDs: []int64{int64(i)}}
+				opts := ListChbngesetEventsOpts{ChbngesetIDs: []int64{int64(i)}}
 
-				ts, next, err := s.ListChangesetEvents(ctx, opts)
+				ts, next, err := s.ListChbngesetEvents(ctx, opts)
 				if err != nil {
-					t.Fatal(err)
+					t.Fbtbl(err)
 				}
 
-				if have, want := next, int64(0); have != want {
-					t.Fatalf("opts: %+v: have next %v, want %v", opts, have, want)
+				if hbve, wbnt := next, int64(0); hbve != wbnt {
+					t.Fbtblf("opts: %+v: hbve next %v, wbnt %v", opts, hbve, wbnt)
 				}
 
-				have, want := ts, events[i-1:i]
-				if len(have) != len(want) {
-					t.Fatalf("listed %d events, want: %d", len(have), len(want))
+				hbve, wbnt := ts, events[i-1:i]
+				if len(hbve) != len(wbnt) {
+					t.Fbtblf("listed %d events, wbnt: %d", len(hbve), len(wbnt))
 				}
 
-				if diff := cmp.Diff(have, want); diff != "" {
-					t.Fatalf("opts: %+v, diff: %s", opts, diff)
+				if diff := cmp.Diff(hbve, wbnt); diff != "" {
+					t.Fbtblf("opts: %+v, diff: %s", opts, diff)
 				}
 			}
 
 			{
-				opts := ListChangesetEventsOpts{ChangesetIDs: []int64{}}
+				opts := ListChbngesetEventsOpts{ChbngesetIDs: []int64{}}
 
 				for i := 1; i <= len(events); i++ {
-					opts.ChangesetIDs = append(opts.ChangesetIDs, int64(i))
+					opts.ChbngesetIDs = bppend(opts.ChbngesetIDs, int64(i))
 				}
 
-				ts, next, err := s.ListChangesetEvents(ctx, opts)
+				ts, next, err := s.ListChbngesetEvents(ctx, opts)
 				if err != nil {
-					t.Fatal(err)
+					t.Fbtbl(err)
 				}
 
-				if have, want := next, int64(0); have != want {
-					t.Fatalf("opts: %+v: have next %v, want %v", opts, have, want)
+				if hbve, wbnt := next, int64(0); hbve != wbnt {
+					t.Fbtblf("opts: %+v: hbve next %v, wbnt %v", opts, hbve, wbnt)
 				}
 
-				have, want := ts, events
-				if len(have) != len(want) {
-					t.Fatalf("listed %d events, want: %d", len(have), len(want))
+				hbve, wbnt := ts, events
+				if len(hbve) != len(wbnt) {
+					t.Fbtblf("listed %d events, wbnt: %d", len(hbve), len(wbnt))
 				}
 			}
 		})
 
 		t.Run("ByKinds", func(t *testing.T) {
-			for _, k := range kinds {
-				opts := ListChangesetEventsOpts{Kinds: []btypes.ChangesetEventKind{k}}
+			for _, k := rbnge kinds {
+				opts := ListChbngesetEventsOpts{Kinds: []btypes.ChbngesetEventKind{k}}
 
-				ts, next, err := s.ListChangesetEvents(ctx, opts)
+				ts, next, err := s.ListChbngesetEvents(ctx, opts)
 				if err != nil {
-					t.Fatal(err)
+					t.Fbtbl(err)
 				}
 
-				if have, want := next, int64(0); have != want {
-					t.Fatalf("opts: %+v: have next %v, want %v", opts, have, want)
+				if hbve, wbnt := next, int64(0); hbve != wbnt {
+					t.Fbtblf("opts: %+v: hbve next %v, wbnt %v", opts, hbve, wbnt)
 				}
 
-				if have, want := len(ts), 1; have != want {
-					t.Fatalf("listed %d events for %q, want: %d", have, k, want)
+				if hbve, wbnt := len(ts), 1; hbve != wbnt {
+					t.Fbtblf("listed %d events for %q, wbnt: %d", hbve, k, wbnt)
 				}
 
-				if have, want := ts[0].Kind, k; have != want {
-					t.Fatalf("listed %q events, want of kind: %q", have, want)
+				if hbve, wbnt := ts[0].Kind, k; hbve != wbnt {
+					t.Fbtblf("listed %q events, wbnt of kind: %q", hbve, wbnt)
 				}
 			}
 
 			{
-				opts := ListChangesetEventsOpts{Kinds: []btypes.ChangesetEventKind{}}
+				opts := ListChbngesetEventsOpts{Kinds: []btypes.ChbngesetEventKind{}}
 
-				for _, e := range events {
-					opts.Kinds = append(opts.Kinds, e.Kind)
+				for _, e := rbnge events {
+					opts.Kinds = bppend(opts.Kinds, e.Kind)
 				}
 
-				ts, next, err := s.ListChangesetEvents(ctx, opts)
+				ts, next, err := s.ListChbngesetEvents(ctx, opts)
 				if err != nil {
-					t.Fatal(err)
+					t.Fbtbl(err)
 				}
 
-				if have, want := next, int64(0); have != want {
-					t.Fatalf("opts: %+v: have next %v, want %v", opts, have, want)
+				if hbve, wbnt := next, int64(0); hbve != wbnt {
+					t.Fbtblf("opts: %+v: hbve next %v, wbnt %v", opts, hbve, wbnt)
 				}
 
-				have, want := ts, events
-				if len(have) != len(want) {
-					t.Fatalf("listed %d events, want: %d", len(have), len(want))
+				hbve, wbnt := ts, events
+				if len(hbve) != len(wbnt) {
+					t.Fbtblf("listed %d events, wbnt: %d", len(hbve), len(wbnt))
 				}
 			}
 		})
 
 		t.Run("WithLimit", func(t *testing.T) {
 			for i := 1; i <= len(events); i++ {
-				cs, next, err := s.ListChangesetEvents(ctx, ListChangesetEventsOpts{LimitOpts: LimitOpts{Limit: i}})
+				cs, next, err := s.ListChbngesetEvents(ctx, ListChbngesetEventsOpts{LimitOpts: LimitOpts{Limit: i}})
 				if err != nil {
-					t.Fatal(err)
+					t.Fbtbl(err)
 				}
 
 				{
-					have, want := next, int64(0)
+					hbve, wbnt := next, int64(0)
 					if i < len(events) {
-						want = events[i].ID
+						wbnt = events[i].ID
 					}
 
-					if have != want {
-						t.Fatalf("limit: %v: have next %v, want %v", i, have, want)
+					if hbve != wbnt {
+						t.Fbtblf("limit: %v: hbve next %v, wbnt %v", i, hbve, wbnt)
 					}
 				}
 
 				{
-					have, want := cs, events[:i]
-					if len(have) != len(want) {
-						t.Fatalf("listed %d events, want: %d", len(have), len(want))
+					hbve, wbnt := cs, events[:i]
+					if len(hbve) != len(wbnt) {
+						t.Fbtblf("listed %d events, wbnt: %d", len(hbve), len(wbnt))
 					}
 
-					if diff := cmp.Diff(have, want); diff != "" {
-						t.Fatal(diff)
+					if diff := cmp.Diff(hbve, wbnt); diff != "" {
+						t.Fbtbl(diff)
 					}
 				}
 			}
 		})
 
 		t.Run("WithCursor", func(t *testing.T) {
-			var cursor int64
+			vbr cursor int64
 			for i := 1; i <= len(events); i++ {
-				opts := ListChangesetEventsOpts{Cursor: cursor, LimitOpts: LimitOpts{Limit: 1}}
-				have, next, err := s.ListChangesetEvents(ctx, opts)
+				opts := ListChbngesetEventsOpts{Cursor: cursor, LimitOpts: LimitOpts{Limit: 1}}
+				hbve, next, err := s.ListChbngesetEvents(ctx, opts)
 				if err != nil {
-					t.Fatal(err)
+					t.Fbtbl(err)
 				}
 
-				want := events[i-1 : i]
-				if diff := cmp.Diff(have, want); diff != "" {
-					t.Fatalf("opts: %+v, diff: %s", opts, diff)
+				wbnt := events[i-1 : i]
+				if diff := cmp.Diff(hbve, wbnt); diff != "" {
+					t.Fbtblf("opts: %+v, diff: %s", opts, diff)
 				}
 
 				cursor = next
@@ -280,19 +280,19 @@ func testStoreChangesetEvents(t *testing.T, ctx context.Context, s *Store, clock
 		})
 
 		t.Run("EmptyResultListingAll", func(t *testing.T) {
-			opts := ListChangesetEventsOpts{ChangesetIDs: []int64{99999}}
+			opts := ListChbngesetEventsOpts{ChbngesetIDs: []int64{99999}}
 
-			ts, next, err := s.ListChangesetEvents(ctx, opts)
+			ts, next, err := s.ListChbngesetEvents(ctx, opts)
 			if err != nil {
-				t.Fatal(err)
+				t.Fbtbl(err)
 			}
 
-			if have, want := next, int64(0); have != want {
-				t.Fatalf("opts: %+v: have next %v, want %v", opts, have, want)
+			if hbve, wbnt := next, int64(0); hbve != wbnt {
+				t.Fbtblf("opts: %+v: hbve next %v, wbnt %v", opts, hbve, wbnt)
 			}
 
 			if len(ts) != 0 {
-				t.Fatalf("listed %d events, want: %d", len(ts), 0)
+				t.Fbtblf("listed %d events, wbnt: %d", len(ts), 0)
 			}
 		})
 	})

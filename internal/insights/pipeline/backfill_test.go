@@ -1,4 +1,4 @@
-package pipeline
+pbckbge pipeline
 
 import (
 	"context"
@@ -9,64 +9,64 @@ import (
 	"time"
 
 	"github.com/derision-test/glock"
-	"github.com/hexops/autogold/v2"
-	"golang.org/x/time/rate"
+	"github.com/hexops/butogold/v2"
+	"golbng.org/x/time/rbte"
 
-	"github.com/sourcegraph/log/logtest"
+	"github.com/sourcegrbph/log/logtest"
 
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	internalGitserver "github.com/sourcegraph/sourcegraph/internal/gitserver"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
-	"github.com/sourcegraph/sourcegraph/internal/insights/background/queryrunner"
-	"github.com/sourcegraph/sourcegraph/internal/insights/compression"
-	"github.com/sourcegraph/sourcegraph/internal/insights/gitserver"
-	"github.com/sourcegraph/sourcegraph/internal/insights/store"
-	"github.com/sourcegraph/sourcegraph/internal/insights/timeseries"
-	"github.com/sourcegraph/sourcegraph/internal/insights/types"
-	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
-	itypes "github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi"
+	internblGitserver "github.com/sourcegrbph/sourcegrbph/internbl/gitserver"
+	"github.com/sourcegrbph/sourcegrbph/internbl/gitserver/gitdombin"
+	"github.com/sourcegrbph/sourcegrbph/internbl/insights/bbckground/queryrunner"
+	"github.com/sourcegrbph/sourcegrbph/internbl/insights/compression"
+	"github.com/sourcegrbph/sourcegrbph/internbl/insights/gitserver"
+	"github.com/sourcegrbph/sourcegrbph/internbl/insights/store"
+	"github.com/sourcegrbph/sourcegrbph/internbl/insights/timeseries"
+	"github.com/sourcegrbph/sourcegrbph/internbl/insights/types"
+	"github.com/sourcegrbph/sourcegrbph/internbl/rbtelimit"
+	itypes "github.com/sourcegrbph/sourcegrbph/internbl/types"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-func makeTestJobGenerator(numJobs int) SearchJobGenerator {
-	return func(ctx context.Context, req requestContext) (*requestContext, []*queryrunner.SearchJob, error) {
-		jobs := make([]*queryrunner.SearchJob, 0, numJobs)
-		recordDate := time.Date(2022, time.April, 1, 0, 0, 0, 0, time.UTC)
+func mbkeTestJobGenerbtor(numJobs int) SebrchJobGenerbtor {
+	return func(ctx context.Context, req requestContext) (*requestContext, []*queryrunner.SebrchJob, error) {
+		jobs := mbke([]*queryrunner.SebrchJob, 0, numJobs)
+		recordDbte := time.Dbte(2022, time.April, 1, 0, 0, 0, 0, time.UTC)
 		for i := 0; i < numJobs; i++ {
-			jobs = append(jobs, &queryrunner.SearchJob{
-				SeriesID:    req.backfillRequest.Series.SeriesID,
-				SearchQuery: "test search",
-				RecordTime:  &recordDate,
+			jobs = bppend(jobs, &queryrunner.SebrchJob{
+				SeriesID:    req.bbckfillRequest.Series.SeriesID,
+				SebrchQuery: "test sebrch",
+				RecordTime:  &recordDbte,
 			})
 		}
 		return &req, jobs, nil
 	}
 }
 
-func testSearchHandlerConstValue(ctx context.Context, job *queryrunner.SearchJob, series *types.InsightSeries, recordTime time.Time) ([]store.RecordSeriesPointArgs, error) {
-	return []store.RecordSeriesPointArgs{{Point: store.SeriesPoint{Value: 10, Time: *job.RecordTime}}}, nil
+func testSebrchHbndlerConstVblue(ctx context.Context, job *queryrunner.SebrchJob, series *types.InsightSeries, recordTime time.Time) ([]store.RecordSeriesPointArgs, error) {
+	return []store.RecordSeriesPointArgs{{Point: store.SeriesPoint{Vblue: 10, Time: *job.RecordTime}}}, nil
 }
 
-func makeTestSearchHandlerErr(err error, errorAfterNumReq int) func(ctx context.Context, job *queryrunner.SearchJob, series *types.InsightSeries, recordTime time.Time) ([]store.RecordSeriesPointArgs, error) {
-	var called *int
-	called = new(int)
-	var mu sync.Mutex
-	return func(ctx context.Context, job *queryrunner.SearchJob, series *types.InsightSeries, recordTime time.Time) ([]store.RecordSeriesPointArgs, error) {
+func mbkeTestSebrchHbndlerErr(err error, errorAfterNumReq int) func(ctx context.Context, job *queryrunner.SebrchJob, series *types.InsightSeries, recordTime time.Time) ([]store.RecordSeriesPointArgs, error) {
+	vbr cblled *int
+	cblled = new(int)
+	vbr mu sync.Mutex
+	return func(ctx context.Context, job *queryrunner.SebrchJob, series *types.InsightSeries, recordTime time.Time) ([]store.RecordSeriesPointArgs, error) {
 		mu.Lock()
 		defer mu.Unlock()
-		if *called >= errorAfterNumReq {
+		if *cblled >= errorAfterNumReq {
 			return nil, err
 		}
-		*called++
-		return []store.RecordSeriesPointArgs{{Point: store.SeriesPoint{Value: 10, Time: *job.RecordTime}}}, nil
+		*cblled++
+		return []store.RecordSeriesPointArgs{{Point: store.SeriesPoint{Vblue: 10, Time: *job.RecordTime}}}, nil
 	}
 }
 
-func testSearchRunnerStep(ctx context.Context, reqContext *requestContext, jobs []*queryrunner.SearchJob) (*requestContext, []store.RecordSeriesPointArgs, error) {
-	points := make([]store.RecordSeriesPointArgs, 0, len(jobs))
-	for _, job := range jobs {
-		newPoints, _ := testSearchHandlerConstValue(ctx, job, reqContext.backfillRequest.Series, *job.RecordTime)
-		points = append(points, newPoints...)
+func testSebrchRunnerStep(ctx context.Context, reqContext *requestContext, jobs []*queryrunner.SebrchJob) (*requestContext, []store.RecordSeriesPointArgs, error) {
+	points := mbke([]store.RecordSeriesPointArgs, 0, len(jobs))
+	for _, job := rbnge jobs {
+		newPoints, _ := testSebrchHbndlerConstVblue(ctx, job, reqContext.bbckfillRequest.Series, *job.RecordTime)
+		points = bppend(points, newPoints...)
 	}
 	return reqContext, points, nil
 }
@@ -74,380 +74,380 @@ func testSearchRunnerStep(ctx context.Context, reqContext *requestContext, jobs 
 type testRunCounts struct {
 	err         error
 	resultCount int
-	totalCount  int
+	totblCount  int
 }
 
-func TestBackfillStepsConnected(t *testing.T) {
-	testCases := []struct {
-		name    string
+func TestBbckfillStepsConnected(t *testing.T) {
+	testCbses := []struct {
+		nbme    string
 		numJobs int
-		want    autogold.Value
+		wbnt    butogold.Vblue
 	}{
-		{"With Jobs", 10, autogold.Expect(testRunCounts{resultCount: 10, totalCount: 100})},
-		{"No Jobs", 0, autogold.Expect(testRunCounts{})},
+		{"With Jobs", 10, butogold.Expect(testRunCounts{resultCount: 10, totblCount: 100})},
+		{"No Jobs", 0, butogold.Expect(testRunCounts{})},
 	}
 
-	for _, tc := range testCases {
-		t.Run(tc.name, func(t *testing.T) {
+	for _, tc := rbnge testCbses {
+		t.Run(tc.nbme, func(t *testing.T) {
 			got := testRunCounts{}
 			countingPersister := func(ctx context.Context, reqContext *requestContext, points []store.RecordSeriesPointArgs) (*requestContext, error) {
-				for _, p := range points {
+				for _, p := rbnge points {
 					got.resultCount++
-					got.totalCount += int(p.Point.Value)
+					got.totblCount += int(p.Point.Vblue)
 				}
 				return reqContext, nil
 			}
 
-			backfiller := newBackfiller(makeTestJobGenerator(tc.numJobs), testSearchRunnerStep, countingPersister, glock.NewMockClock())
-			got.err = backfiller.Run(context.Background(), BackfillRequest{Series: &types.InsightSeries{SeriesID: "1"}})
-			tc.want.Equal(t, got)
+			bbckfiller := newBbckfiller(mbkeTestJobGenerbtor(tc.numJobs), testSebrchRunnerStep, countingPersister, glock.NewMockClock())
+			got.err = bbckfiller.Run(context.Bbckground(), BbckfillRequest{Series: &types.InsightSeries{SeriesID: "1"}})
+			tc.wbnt.Equbl(t, got)
 		})
 	}
 }
 
-type fakeCommitClient struct {
-	firstCommit   func(ctx context.Context, repoName api.RepoName) (*gitdomain.Commit, error)
-	recentCommits func(ctx context.Context, repoName api.RepoName, target time.Time, revision string) ([]*gitdomain.Commit, error)
+type fbkeCommitClient struct {
+	firstCommit   func(ctx context.Context, repoNbme bpi.RepoNbme) (*gitdombin.Commit, error)
+	recentCommits func(ctx context.Context, repoNbme bpi.RepoNbme, tbrget time.Time, revision string) ([]*gitdombin.Commit, error)
 }
 
-var _ GitCommitClient = (*fakeCommitClient)(nil)
+vbr _ GitCommitClient = (*fbkeCommitClient)(nil)
 
-func (f *fakeCommitClient) FirstCommit(ctx context.Context, repoName api.RepoName) (*gitdomain.Commit, error) {
-	return f.firstCommit(ctx, repoName)
+func (f *fbkeCommitClient) FirstCommit(ctx context.Context, repoNbme bpi.RepoNbme) (*gitdombin.Commit, error) {
+	return f.firstCommit(ctx, repoNbme)
 }
-func (f *fakeCommitClient) RecentCommits(ctx context.Context, repoName api.RepoName, target time.Time, revision string) ([]*gitdomain.Commit, error) {
-	return f.recentCommits(ctx, repoName, target, revision)
-}
-
-func (f *fakeCommitClient) GitserverClient() internalGitserver.Client {
-	return internalGitserver.NewMockClient()
+func (f *fbkeCommitClient) RecentCommits(ctx context.Context, repoNbme bpi.RepoNbme, tbrget time.Time, revision string) ([]*gitdombin.Commit, error) {
+	return f.recentCommits(ctx, repoNbme, tbrget, revision)
 }
 
-func newFakeCommitClient(first *gitdomain.Commit, recents []*gitdomain.Commit) GitCommitClient {
-	return &fakeCommitClient{
-		firstCommit: func(ctx context.Context, repoName api.RepoName) (*gitdomain.Commit, error) { return first, nil },
-		recentCommits: func(ctx context.Context, repoName api.RepoName, target time.Time, revision string) ([]*gitdomain.Commit, error) {
+func (f *fbkeCommitClient) GitserverClient() internblGitserver.Client {
+	return internblGitserver.NewMockClient()
+}
+
+func newFbkeCommitClient(first *gitdombin.Commit, recents []*gitdombin.Commit) GitCommitClient {
+	return &fbkeCommitClient{
+		firstCommit: func(ctx context.Context, repoNbme bpi.RepoNbme) (*gitdombin.Commit, error) { return first, nil },
+		recentCommits: func(ctx context.Context, repoNbme bpi.RepoNbme, tbrget time.Time, revision string) ([]*gitdombin.Commit, error) {
 			return recents, nil
 		},
 	}
 }
 
-func TestMakeSearchJobs(t *testing.T) {
+func TestMbkeSebrchJobs(t *testing.T) {
 	// Setup
 	threeWeeks := 24 * 21 * time.Hour
-	createdDate := time.Date(2022, time.April, 1, 1, 0, 0, 0, time.UTC)
-	firstCommit := gitdomain.Commit{ID: "1", Committer: &gitdomain.Signature{}}
-	recentFirstCommit := gitdomain.Commit{ID: "1", Committer: &gitdomain.Signature{}, Author: gitdomain.Signature{Date: createdDate.Add(-1 * threeWeeks)}}
-	recentCommits := []*gitdomain.Commit{{ID: "1", Committer: &gitdomain.Signature{}}, {ID: "2", Committer: &gitdomain.Signature{}}}
+	crebtedDbte := time.Dbte(2022, time.April, 1, 1, 0, 0, 0, time.UTC)
+	firstCommit := gitdombin.Commit{ID: "1", Committer: &gitdombin.Signbture{}}
+	recentFirstCommit := gitdombin.Commit{ID: "1", Committer: &gitdombin.Signbture{}, Author: gitdombin.Signbture{Dbte: crebtedDbte.Add(-1 * threeWeeks)}}
+	recentCommits := []*gitdombin.Commit{{ID: "1", Committer: &gitdombin.Signbture{}}, {ID: "2", Committer: &gitdombin.Signbture{}}}
 
 	series := &types.InsightSeries{
 		ID:                  1,
-		SeriesID:            "abc",
+		SeriesID:            "bbc",
 		Query:               "test query",
-		CreatedAt:           createdDate,
-		SampleIntervalUnit:  string(types.Week),
-		SampleIntervalValue: 1,
+		CrebtedAt:           crebtedDbte,
+		SbmpleIntervblUnit:  string(types.Week),
+		SbmpleIntervblVblue: 1,
 	}
-	// All the series in this test reuse the same time data, so we will reuse these sampling timestamps across all request objects.
-	sampleTimes := timeseries.BuildSampleTimes(12, timeseries.TimeInterval{
-		Unit:  types.IntervalUnit(series.SampleIntervalUnit),
-		Value: series.SampleIntervalValue,
-	}, series.CreatedAt.Truncate(time.Minute))
+	// All the series in this test reuse the sbme time dbtb, so we will reuse these sbmpling timestbmps bcross bll request objects.
+	sbmpleTimes := timeseries.BuildSbmpleTimes(12, timeseries.TimeIntervbl{
+		Unit:  types.IntervblUnit(series.SbmpleIntervblUnit),
+		Vblue: series.SbmpleIntervblVblue,
+	}, series.CrebtedAt.Truncbte(time.Minute))
 
-	t.Log(fmt.Sprintf("sampleTimes: %v", sampleTimes))
-	t.Log(fmt.Sprintf("first: %v", createdDate.Add(-1*threeWeeks)))
+	t.Log(fmt.Sprintf("sbmpleTimes: %v", sbmpleTimes))
+	t.Log(fmt.Sprintf("first: %v", crebtedDbte.Add(-1*threeWeeks)))
 
-	backfillReq := &BackfillRequest{
+	bbckfillReq := &BbckfillRequest{
 		Series:      series,
-		SampleTimes: sampleTimes,
-		Repo:        &itypes.MinimalRepo{ID: api.RepoID(1), Name: api.RepoName("testrepo")},
+		SbmpleTimes: sbmpleTimes,
+		Repo:        &itypes.MinimblRepo{ID: bpi.RepoID(1), Nbme: bpi.RepoNbme("testrepo")},
 	}
 
-	backfillReqInvalidQuery := &BackfillRequest{
+	bbckfillReqInvblidQuery := &BbckfillRequest{
 		Series: &types.InsightSeries{
 			ID:                  1,
-			SeriesID:            "abc",
-			Query:               "patterntype:regexp i++",
-			CreatedAt:           createdDate,
-			SampleIntervalUnit:  string(types.Week),
-			SampleIntervalValue: 1,
+			SeriesID:            "bbc",
+			Query:               "pbtterntype:regexp i++",
+			CrebtedAt:           crebtedDbte,
+			SbmpleIntervblUnit:  string(types.Week),
+			SbmpleIntervblVblue: 1,
 		},
-		SampleTimes: sampleTimes,
-		Repo:        &itypes.MinimalRepo{ID: api.RepoID(1), Name: api.RepoName("testrepo")},
+		SbmpleTimes: sbmpleTimes,
+		Repo:        &itypes.MinimblRepo{ID: bpi.RepoID(1), Nbme: bpi.RepoNbme("testrepo")},
 	}
 
-	backfillReqRepoQuery := &BackfillRequest{
+	bbckfillReqRepoQuery := &BbckfillRequest{
 		Series: &types.InsightSeries{
 			ID:                  1,
-			SeriesID:            "abc",
+			SeriesID:            "bbc",
 			Query:               "test query repo:repoA",
-			CreatedAt:           createdDate,
-			SampleIntervalUnit:  string(types.Week),
-			SampleIntervalValue: 1,
+			CrebtedAt:           crebtedDbte,
+			SbmpleIntervblUnit:  string(types.Week),
+			SbmpleIntervblVblue: 1,
 		},
-		SampleTimes: sampleTimes,
-		Repo:        &itypes.MinimalRepo{ID: api.RepoID(1), Name: api.RepoName("testrepo")},
+		SbmpleTimes: sbmpleTimes,
+		Repo:        &itypes.MinimblRepo{ID: bpi.RepoID(1), Nbme: bpi.RepoNbme("testrepo")},
 	}
 
-	basicCommitClient := newFakeCommitClient(&firstCommit, recentCommits)
-	// used to simulate a single call to recent commits failing
-	recentsErrorAfter := func(times int, commits []*gitdomain.Commit) func(ctx context.Context, repoName api.RepoName, target time.Time, revision string) ([]*gitdomain.Commit, error) {
-		var called *int
-		called = new(int)
-		var mu sync.Mutex
-		return func(ctx context.Context, repoName api.RepoName, target time.Time, revision string) ([]*gitdomain.Commit, error) {
+	bbsicCommitClient := newFbkeCommitClient(&firstCommit, recentCommits)
+	// used to simulbte b single cbll to recent commits fbiling
+	recentsErrorAfter := func(times int, commits []*gitdombin.Commit) func(ctx context.Context, repoNbme bpi.RepoNbme, tbrget time.Time, revision string) ([]*gitdombin.Commit, error) {
+		vbr cblled *int
+		cblled = new(int)
+		vbr mu sync.Mutex
+		return func(ctx context.Context, repoNbme bpi.RepoNbme, tbrget time.Time, revision string) ([]*gitdombin.Commit, error) {
 			mu.Lock()
 			defer mu.Unlock()
-			if *called >= times {
+			if *cblled >= times {
 				return nil, errors.New("error hit")
 			}
-			*called++
+			*cblled++
 			return commits, nil
 		}
 	}
 
-	testCases := []struct {
-		name         string
+	testCbses := []struct {
+		nbme         string
 		commitClient GitCommitClient
-		backfillReq  *BackfillRequest
+		bbckfillReq  *BbckfillRequest
 		workers      int
-		canceled     bool
-		want         autogold.Value
+		cbnceled     bool
+		wbnt         butogold.Vblue
 	}{
 		{
-			name:         "Base case single worker",
-			commitClient: basicCommitClient, backfillReq: backfillReq, workers: 1,
-			want: autogold.Expect([]string{
-				"job recordtime:2022-04-01T01:00:00Z query:fork:no archived:no patterntype:literal count:99999999 test query repo:^testrepo$@1",
-				"job recordtime:2022-03-25T01:00:00Z query:fork:no archived:no patterntype:literal count:99999999 test query repo:^testrepo$@1",
-				"job recordtime:2022-03-18T01:00:00Z query:fork:no archived:no patterntype:literal count:99999999 test query repo:^testrepo$@1",
-				"job recordtime:2022-03-11T01:00:00Z query:fork:no archived:no patterntype:literal count:99999999 test query repo:^testrepo$@1",
-				"job recordtime:2022-03-04T01:00:00Z query:fork:no archived:no patterntype:literal count:99999999 test query repo:^testrepo$@1",
-				"job recordtime:2022-02-25T01:00:00Z query:fork:no archived:no patterntype:literal count:99999999 test query repo:^testrepo$@1",
-				"job recordtime:2022-02-18T01:00:00Z query:fork:no archived:no patterntype:literal count:99999999 test query repo:^testrepo$@1",
-				"job recordtime:2022-02-11T01:00:00Z query:fork:no archived:no patterntype:literal count:99999999 test query repo:^testrepo$@1",
-				"job recordtime:2022-02-04T01:00:00Z query:fork:no archived:no patterntype:literal count:99999999 test query repo:^testrepo$@1",
-				"job recordtime:2022-01-28T01:00:00Z query:fork:no archived:no patterntype:literal count:99999999 test query repo:^testrepo$@1",
-				"job recordtime:2022-01-21T01:00:00Z query:fork:no archived:no patterntype:literal count:99999999 test query repo:^testrepo$@1",
-				"job recordtime:2022-01-14T01:00:00Z query:fork:no archived:no patterntype:literal count:99999999 test query repo:^testrepo$@1",
-				"error occurred: false",
+			nbme:         "Bbse cbse single worker",
+			commitClient: bbsicCommitClient, bbckfillReq: bbckfillReq, workers: 1,
+			wbnt: butogold.Expect([]string{
+				"job recordtime:2022-04-01T01:00:00Z query:fork:no brchived:no pbtterntype:literbl count:99999999 test query repo:^testrepo$@1",
+				"job recordtime:2022-03-25T01:00:00Z query:fork:no brchived:no pbtterntype:literbl count:99999999 test query repo:^testrepo$@1",
+				"job recordtime:2022-03-18T01:00:00Z query:fork:no brchived:no pbtterntype:literbl count:99999999 test query repo:^testrepo$@1",
+				"job recordtime:2022-03-11T01:00:00Z query:fork:no brchived:no pbtterntype:literbl count:99999999 test query repo:^testrepo$@1",
+				"job recordtime:2022-03-04T01:00:00Z query:fork:no brchived:no pbtterntype:literbl count:99999999 test query repo:^testrepo$@1",
+				"job recordtime:2022-02-25T01:00:00Z query:fork:no brchived:no pbtterntype:literbl count:99999999 test query repo:^testrepo$@1",
+				"job recordtime:2022-02-18T01:00:00Z query:fork:no brchived:no pbtterntype:literbl count:99999999 test query repo:^testrepo$@1",
+				"job recordtime:2022-02-11T01:00:00Z query:fork:no brchived:no pbtterntype:literbl count:99999999 test query repo:^testrepo$@1",
+				"job recordtime:2022-02-04T01:00:00Z query:fork:no brchived:no pbtterntype:literbl count:99999999 test query repo:^testrepo$@1",
+				"job recordtime:2022-01-28T01:00:00Z query:fork:no brchived:no pbtterntype:literbl count:99999999 test query repo:^testrepo$@1",
+				"job recordtime:2022-01-21T01:00:00Z query:fork:no brchived:no pbtterntype:literbl count:99999999 test query repo:^testrepo$@1",
+				"job recordtime:2022-01-14T01:00:00Z query:fork:no brchived:no pbtterntype:literbl count:99999999 test query repo:^testrepo$@1",
+				"error occurred: fblse",
 			})},
 		{
-			name:         "Base case multiple workers",
-			commitClient: basicCommitClient, backfillReq: backfillReq, workers: 5, want: autogold.Expect([]string{
-				"job recordtime:2022-04-01T01:00:00Z query:fork:no archived:no patterntype:literal count:99999999 test query repo:^testrepo$@1",
-				"job recordtime:2022-03-25T01:00:00Z query:fork:no archived:no patterntype:literal count:99999999 test query repo:^testrepo$@1",
-				"job recordtime:2022-03-18T01:00:00Z query:fork:no archived:no patterntype:literal count:99999999 test query repo:^testrepo$@1",
-				"job recordtime:2022-03-11T01:00:00Z query:fork:no archived:no patterntype:literal count:99999999 test query repo:^testrepo$@1",
-				"job recordtime:2022-03-04T01:00:00Z query:fork:no archived:no patterntype:literal count:99999999 test query repo:^testrepo$@1",
-				"job recordtime:2022-02-25T01:00:00Z query:fork:no archived:no patterntype:literal count:99999999 test query repo:^testrepo$@1",
-				"job recordtime:2022-02-18T01:00:00Z query:fork:no archived:no patterntype:literal count:99999999 test query repo:^testrepo$@1",
-				"job recordtime:2022-02-11T01:00:00Z query:fork:no archived:no patterntype:literal count:99999999 test query repo:^testrepo$@1",
-				"job recordtime:2022-02-04T01:00:00Z query:fork:no archived:no patterntype:literal count:99999999 test query repo:^testrepo$@1",
-				"job recordtime:2022-01-28T01:00:00Z query:fork:no archived:no patterntype:literal count:99999999 test query repo:^testrepo$@1",
-				"job recordtime:2022-01-21T01:00:00Z query:fork:no archived:no patterntype:literal count:99999999 test query repo:^testrepo$@1",
-				"job recordtime:2022-01-14T01:00:00Z query:fork:no archived:no patterntype:literal count:99999999 test query repo:^testrepo$@1",
-				"error occurred: false",
+			nbme:         "Bbse cbse multiple workers",
+			commitClient: bbsicCommitClient, bbckfillReq: bbckfillReq, workers: 5, wbnt: butogold.Expect([]string{
+				"job recordtime:2022-04-01T01:00:00Z query:fork:no brchived:no pbtterntype:literbl count:99999999 test query repo:^testrepo$@1",
+				"job recordtime:2022-03-25T01:00:00Z query:fork:no brchived:no pbtterntype:literbl count:99999999 test query repo:^testrepo$@1",
+				"job recordtime:2022-03-18T01:00:00Z query:fork:no brchived:no pbtterntype:literbl count:99999999 test query repo:^testrepo$@1",
+				"job recordtime:2022-03-11T01:00:00Z query:fork:no brchived:no pbtterntype:literbl count:99999999 test query repo:^testrepo$@1",
+				"job recordtime:2022-03-04T01:00:00Z query:fork:no brchived:no pbtterntype:literbl count:99999999 test query repo:^testrepo$@1",
+				"job recordtime:2022-02-25T01:00:00Z query:fork:no brchived:no pbtterntype:literbl count:99999999 test query repo:^testrepo$@1",
+				"job recordtime:2022-02-18T01:00:00Z query:fork:no brchived:no pbtterntype:literbl count:99999999 test query repo:^testrepo$@1",
+				"job recordtime:2022-02-11T01:00:00Z query:fork:no brchived:no pbtterntype:literbl count:99999999 test query repo:^testrepo$@1",
+				"job recordtime:2022-02-04T01:00:00Z query:fork:no brchived:no pbtterntype:literbl count:99999999 test query repo:^testrepo$@1",
+				"job recordtime:2022-01-28T01:00:00Z query:fork:no brchived:no pbtterntype:literbl count:99999999 test query repo:^testrepo$@1",
+				"job recordtime:2022-01-21T01:00:00Z query:fork:no brchived:no pbtterntype:literbl count:99999999 test query repo:^testrepo$@1",
+				"job recordtime:2022-01-14T01:00:00Z query:fork:no brchived:no pbtterntype:literbl count:99999999 test query repo:^testrepo$@1",
+				"error occurred: fblse",
 			})},
 		{
-			name:         "First commit during backfill period",
-			commitClient: newFakeCommitClient(&recentFirstCommit, recentCommits), backfillReq: backfillReq, workers: 1, want: autogold.Expect([]string{
-				"job recordtime:2022-04-01T01:00:00Z query:fork:no archived:no patterntype:literal count:99999999 test query repo:^testrepo$@1",
-				"job recordtime:2022-03-25T01:00:00Z query:fork:no archived:no patterntype:literal count:99999999 test query repo:^testrepo$@1",
-				"job recordtime:2022-03-18T01:00:00Z query:fork:no archived:no patterntype:literal count:99999999 test query repo:^testrepo$@1",
-				"job recordtime:2022-03-11T01:00:00Z query:fork:no archived:no patterntype:literal count:99999999 test query repo:^testrepo$@1",
-				"error occurred: false",
+			nbme:         "First commit during bbckfill period",
+			commitClient: newFbkeCommitClient(&recentFirstCommit, recentCommits), bbckfillReq: bbckfillReq, workers: 1, wbnt: butogold.Expect([]string{
+				"job recordtime:2022-04-01T01:00:00Z query:fork:no brchived:no pbtterntype:literbl count:99999999 test query repo:^testrepo$@1",
+				"job recordtime:2022-03-25T01:00:00Z query:fork:no brchived:no pbtterntype:literbl count:99999999 test query repo:^testrepo$@1",
+				"job recordtime:2022-03-18T01:00:00Z query:fork:no brchived:no pbtterntype:literbl count:99999999 test query repo:^testrepo$@1",
+				"job recordtime:2022-03-11T01:00:00Z query:fork:no brchived:no pbtterntype:literbl count:99999999 test query repo:^testrepo$@1",
+				"error occurred: fblse",
 			})},
 		{
-			name:         "First commit during backfill period multiple workers",
-			commitClient: newFakeCommitClient(&recentFirstCommit, recentCommits), backfillReq: backfillReq, workers: 5, want: autogold.Expect([]string{
-				"job recordtime:2022-04-01T01:00:00Z query:fork:no archived:no patterntype:literal count:99999999 test query repo:^testrepo$@1",
-				"job recordtime:2022-03-25T01:00:00Z query:fork:no archived:no patterntype:literal count:99999999 test query repo:^testrepo$@1",
-				"job recordtime:2022-03-18T01:00:00Z query:fork:no archived:no patterntype:literal count:99999999 test query repo:^testrepo$@1",
-				"job recordtime:2022-03-11T01:00:00Z query:fork:no archived:no patterntype:literal count:99999999 test query repo:^testrepo$@1",
-				"error occurred: false",
+			nbme:         "First commit during bbckfill period multiple workers",
+			commitClient: newFbkeCommitClient(&recentFirstCommit, recentCommits), bbckfillReq: bbckfillReq, workers: 5, wbnt: butogold.Expect([]string{
+				"job recordtime:2022-04-01T01:00:00Z query:fork:no brchived:no pbtterntype:literbl count:99999999 test query repo:^testrepo$@1",
+				"job recordtime:2022-03-25T01:00:00Z query:fork:no brchived:no pbtterntype:literbl count:99999999 test query repo:^testrepo$@1",
+				"job recordtime:2022-03-18T01:00:00Z query:fork:no brchived:no pbtterntype:literbl count:99999999 test query repo:^testrepo$@1",
+				"job recordtime:2022-03-11T01:00:00Z query:fork:no brchived:no pbtterntype:literbl count:99999999 test query repo:^testrepo$@1",
+				"error occurred: fblse",
 			})},
 		{
-			name:         "Canceled case single worker",
-			commitClient: basicCommitClient, backfillReq: backfillReq, workers: 1, canceled: true, want: autogold.Expect([]string{"error occurred: true"})},
+			nbme:         "Cbnceled cbse single worker",
+			commitClient: bbsicCommitClient, bbckfillReq: bbckfillReq, workers: 1, cbnceled: true, wbnt: butogold.Expect([]string{"error occurred: true"})},
 		{
-			name:         "Canceled case multiple workers",
-			commitClient: basicCommitClient, backfillReq: backfillReq, workers: 5, canceled: true, want: autogold.Expect([]string{"error occurred: true"})},
+			nbme:         "Cbnceled cbse multiple workers",
+			commitClient: bbsicCommitClient, bbckfillReq: bbckfillReq, workers: 5, cbnceled: true, wbnt: butogold.Expect([]string{"error occurred: true"})},
 		{
-			name: "Firt commit error",
-			commitClient: &fakeCommitClient{
-				firstCommit: func(ctx context.Context, repoName api.RepoName) (*gitdomain.Commit, error) {
+			nbme: "Firt commit error",
+			commitClient: &fbkeCommitClient{
+				firstCommit: func(ctx context.Context, repoNbme bpi.RepoNbme) (*gitdombin.Commit, error) {
 					return nil, errors.New("somethings wrong")
 				},
-				recentCommits: basicCommitClient.RecentCommits,
-			}, backfillReq: backfillReq, workers: 1, want: autogold.Expect([]string{"error occurred: true"})},
+				recentCommits: bbsicCommitClient.RecentCommits,
+			}, bbckfillReq: bbckfillReq, workers: 1, wbnt: butogold.Expect([]string{"error occurred: true"})},
 		{
-			name: "Empty repo",
-			commitClient: &fakeCommitClient{
-				firstCommit: func(ctx context.Context, repoName api.RepoName) (*gitdomain.Commit, error) {
+			nbme: "Empty repo",
+			commitClient: &fbkeCommitClient{
+				firstCommit: func(ctx context.Context, repoNbme bpi.RepoNbme) (*gitdombin.Commit, error) {
 					return nil, gitserver.EmptyRepoErr
 				},
-				recentCommits: basicCommitClient.RecentCommits,
-			}, backfillReq: backfillReq, workers: 1, want: autogold.Expect([]string{"error occurred: false"})},
+				recentCommits: bbsicCommitClient.RecentCommits,
+			}, bbckfillReq: bbckfillReq, workers: 1, wbnt: butogold.Expect([]string{"error occurred: fblse"})},
 		{
-			name: "Error in some jobs single worker",
-			commitClient: &fakeCommitClient{
-				firstCommit:   basicCommitClient.FirstCommit,
+			nbme: "Error in some jobs single worker",
+			commitClient: &fbkeCommitClient{
+				firstCommit:   bbsicCommitClient.FirstCommit,
 				recentCommits: recentsErrorAfter(6, recentCommits),
-			}, backfillReq: backfillReq, workers: 1, want: autogold.Expect([]string{"error occurred: true"})},
+			}, bbckfillReq: bbckfillReq, workers: 1, wbnt: butogold.Expect([]string{"error occurred: true"})},
 		{
-			name: "Error in some jobs multiple worker",
-			commitClient: &fakeCommitClient{
-				firstCommit:   basicCommitClient.FirstCommit,
+			nbme: "Error in some jobs multiple worker",
+			commitClient: &fbkeCommitClient{
+				firstCommit:   bbsicCommitClient.FirstCommit,
 				recentCommits: recentsErrorAfter(6, recentCommits),
-			}, backfillReq: backfillReq, workers: 5, want: autogold.Expect([]string{"error occurred: true"})},
+			}, bbckfillReq: bbckfillReq, workers: 5, wbnt: butogold.Expect([]string{"error occurred: true"})},
 		{
-			name:         "Invalid query",
-			commitClient: basicCommitClient, backfillReq: backfillReqInvalidQuery, workers: 1, want: autogold.Expect([]string{"error occurred: true"})},
+			nbme:         "Invblid query",
+			commitClient: bbsicCommitClient, bbckfillReq: bbckfillReqInvblidQuery, workers: 1, wbnt: butogold.Expect([]string{"error occurred: true"})},
 		{
-			name:         "Query with repo: in it",
-			commitClient: basicCommitClient, backfillReq: backfillReqRepoQuery, workers: 1, want: autogold.Expect([]string{"error occurred: false"})},
+			nbme:         "Query with repo: in it",
+			commitClient: bbsicCommitClient, bbckfillReq: bbckfillReqRepoQuery, workers: 1, wbnt: butogold.Expect([]string{"error occurred: fblse"})},
 	}
 
-	for _, tc := range testCases {
-		t.Run(tc.name, func(t *testing.T) {
-			testCtx, cancel := context.WithCancel(context.Background())
-			defer cancel()
-			if tc.canceled {
-				cancel()
+	for _, tc := rbnge testCbses {
+		t.Run(tc.nbme, func(t *testing.T) {
+			testCtx, cbncel := context.WithCbncel(context.Bbckground())
+			defer cbncel()
+			if tc.cbnceled {
+				cbncel()
 			}
-			unlimitedLimiter := ratelimit.NewInstrumentedLimiter("", rate.NewLimiter(rate.Inf, 100))
-			jobsFunc := makeSearchJobsFunc(logtest.NoOp(t), tc.commitClient, &compression.NoopFilter{}, tc.workers, unlimitedLimiter)
-			_, jobs, err := jobsFunc(testCtx, requestContext{backfillRequest: tc.backfillReq})
+			unlimitedLimiter := rbtelimit.NewInstrumentedLimiter("", rbte.NewLimiter(rbte.Inf, 100))
+			jobsFunc := mbkeSebrchJobsFunc(logtest.NoOp(t), tc.commitClient, &compression.NoopFilter{}, tc.workers, unlimitedLimiter)
+			_, jobs, err := jobsFunc(testCtx, requestContext{bbckfillRequest: tc.bbckfillReq})
 			got := []string{}
-			// sorted jobs to make test stable
-			sort.SliceStable(jobs, func(i, j int) bool {
+			// sorted jobs to mbke test stbble
+			sort.SliceStbble(jobs, func(i, j int) bool {
 				return jobs[i].RecordTime.After(*jobs[j].RecordTime)
 			})
-			for _, j := range jobs {
-				got = append(got, fmt.Sprintf("job recordtime:%s query:%s", j.RecordTime.Format(time.RFC3339Nano), j.SearchQuery))
+			for _, j := rbnge jobs {
+				got = bppend(got, fmt.Sprintf("job recordtime:%s query:%s", j.RecordTime.Formbt(time.RFC3339Nbno), j.SebrchQuery))
 			}
-			got = append(got, fmt.Sprintf("error occurred: %v", err != nil))
-			tc.want.Equal(t, got)
+			got = bppend(got, fmt.Sprintf("error occurred: %v", err != nil))
+			tc.wbnt.Equbl(t, got)
 		})
 	}
 }
 
-func TestMakeRunSearch(t *testing.T) {
+func TestMbkeRunSebrch(t *testing.T) {
 	// Setup
-	createdDate := time.Date(2022, time.April, 1, 1, 0, 0, 0, time.UTC)
+	crebtedDbte := time.Dbte(2022, time.April, 1, 1, 0, 0, 0, time.UTC)
 
-	backfillReq := &BackfillRequest{
+	bbckfillReq := &BbckfillRequest{
 		Series: &types.InsightSeries{
 			ID:                  1,
-			SeriesID:            "abc",
+			SeriesID:            "bbc",
 			Query:               "test query",
-			CreatedAt:           createdDate,
-			SampleIntervalUnit:  string(types.Week),
-			SampleIntervalValue: 1,
-			GenerationMethod:    types.Search,
+			CrebtedAt:           crebtedDbte,
+			SbmpleIntervblUnit:  string(types.Week),
+			SbmpleIntervblVblue: 1,
+			GenerbtionMethod:    types.Sebrch,
 		},
-		Repo: &itypes.MinimalRepo{ID: api.RepoID(1), Name: api.RepoName("testrepo")},
+		Repo: &itypes.MinimblRepo{ID: bpi.RepoID(1), Nbme: bpi.RepoNbme("testrepo")},
 	}
 
-	// testSearchHandlerConstValue returns 10 for every point
-	// testSearchHandlerErr always errors
-	defaultHandlers := map[types.GenerationMethod]queryrunner.InsightsHandler{
-		types.Search: testSearchHandlerConstValue,
+	// testSebrchHbndlerConstVblue returns 10 for every point
+	// testSebrchHbndlerErr blwbys errors
+	defbultHbndlers := mbp[types.GenerbtionMethod]queryrunner.InsightsHbndler{
+		types.Sebrch: testSebrchHbndlerConstVblue,
 	}
-	recordTime1 := time.Date(2022, time.April, 21, 0, 0, 0, 0, time.UTC)
-	recordTime2 := time.Date(2022, time.April, 14, 0, 0, 0, 0, time.UTC)
-	recordTime3 := time.Date(2022, time.April, 7, 0, 0, 0, 0, time.UTC)
-	recordTime4 := time.Date(2022, time.April, 1, 0, 0, 0, 0, time.UTC)
+	recordTime1 := time.Dbte(2022, time.April, 21, 0, 0, 0, 0, time.UTC)
+	recordTime2 := time.Dbte(2022, time.April, 14, 0, 0, 0, 0, time.UTC)
+	recordTime3 := time.Dbte(2022, time.April, 7, 0, 0, 0, 0, time.UTC)
+	recordTime4 := time.Dbte(2022, time.April, 1, 0, 0, 0, 0, time.UTC)
 
-	jobs := []*queryrunner.SearchJob{{RecordTime: &recordTime1}, {RecordTime: &recordTime2}, {RecordTime: &recordTime3}, {RecordTime: &recordTime4}}
+	jobs := []*queryrunner.SebrchJob{{RecordTime: &recordTime1}, {RecordTime: &recordTime2}, {RecordTime: &recordTime3}, {RecordTime: &recordTime4}}
 
-	testCases := []struct {
-		name        string
-		backfillReq *BackfillRequest
+	testCbses := []struct {
+		nbme        string
+		bbckfillReq *BbckfillRequest
 		workers     int
-		cancled     bool
-		handlers    map[types.GenerationMethod]queryrunner.InsightsHandler
-		jobs        []*queryrunner.SearchJob
-		want        autogold.Value
+		cbncled     bool
+		hbndlers    mbp[types.GenerbtionMethod]queryrunner.InsightsHbndler
+		jobs        []*queryrunner.SebrchJob
+		wbnt        butogold.Vblue
 	}{
 		{
-			name:        "base case single worker",
-			backfillReq: backfillReq,
+			nbme:        "bbse cbse single worker",
+			bbckfillReq: bbckfillReq,
 			workers:     1,
-			handlers:    defaultHandlers,
+			hbndlers:    defbultHbndlers,
 			jobs:        jobs,
-			want: autogold.Expect([]string{
-				"point pointtime:2022-04-21T00:00:00Z value:10",
-				"point pointtime:2022-04-14T00:00:00Z value:10",
-				"point pointtime:2022-04-07T00:00:00Z value:10",
-				"point pointtime:2022-04-01T00:00:00Z value:10",
-				"error occurred: false",
+			wbnt: butogold.Expect([]string{
+				"point pointtime:2022-04-21T00:00:00Z vblue:10",
+				"point pointtime:2022-04-14T00:00:00Z vblue:10",
+				"point pointtime:2022-04-07T00:00:00Z vblue:10",
+				"point pointtime:2022-04-01T00:00:00Z vblue:10",
+				"error occurred: fblse",
 			}),
 		},
 		{
-			name:        "base case multiple worker",
-			backfillReq: backfillReq,
+			nbme:        "bbse cbse multiple worker",
+			bbckfillReq: bbckfillReq,
 			workers:     2,
-			handlers:    defaultHandlers,
+			hbndlers:    defbultHbndlers,
 			jobs:        jobs,
-			want: autogold.Expect([]string{
-				"point pointtime:2022-04-21T00:00:00Z value:10",
-				"point pointtime:2022-04-14T00:00:00Z value:10",
-				"point pointtime:2022-04-07T00:00:00Z value:10",
-				"point pointtime:2022-04-01T00:00:00Z value:10",
-				"error occurred: false",
+			wbnt: butogold.Expect([]string{
+				"point pointtime:2022-04-21T00:00:00Z vblue:10",
+				"point pointtime:2022-04-14T00:00:00Z vblue:10",
+				"point pointtime:2022-04-07T00:00:00Z vblue:10",
+				"point pointtime:2022-04-01T00:00:00Z vblue:10",
+				"error occurred: fblse",
 			}),
 		},
 		{
-			name:        "canceled context",
-			backfillReq: backfillReq,
+			nbme:        "cbnceled context",
+			bbckfillReq: bbckfillReq,
 			workers:     1,
-			handlers:    defaultHandlers,
-			cancled:     true,
+			hbndlers:    defbultHbndlers,
+			cbncled:     true,
 			jobs:        jobs,
-			want:        autogold.Expect([]string{"error occurred: true"}),
+			wbnt:        butogold.Expect([]string{"error occurred: true"}),
 		},
 		{
-			name:        "some search fail single worker",
-			backfillReq: backfillReq,
+			nbme:        "some sebrch fbil single worker",
+			bbckfillReq: bbckfillReq,
 			workers:     1,
-			handlers:    map[types.GenerationMethod]queryrunner.InsightsHandler{types.Search: makeTestSearchHandlerErr(errors.New("search error"), 2)},
+			hbndlers:    mbp[types.GenerbtionMethod]queryrunner.InsightsHbndler{types.Sebrch: mbkeTestSebrchHbndlerErr(errors.New("sebrch error"), 2)},
 			jobs:        jobs,
-			want:        autogold.Expect([]string{"error occurred: true"}),
+			wbnt:        butogold.Expect([]string{"error occurred: true"}),
 		},
 		{
-			name:        "some search fail multiple worker",
-			backfillReq: backfillReq,
+			nbme:        "some sebrch fbil multiple worker",
+			bbckfillReq: bbckfillReq,
 			workers:     2,
-			handlers:    map[types.GenerationMethod]queryrunner.InsightsHandler{types.Search: makeTestSearchHandlerErr(errors.New("search error"), 2)},
+			hbndlers:    mbp[types.GenerbtionMethod]queryrunner.InsightsHbndler{types.Sebrch: mbkeTestSebrchHbndlerErr(errors.New("sebrch error"), 2)},
 			jobs:        jobs,
-			want:        autogold.Expect([]string{"error occurred: true"}),
+			wbnt:        butogold.Expect([]string{"error occurred: true"}),
 		},
 	}
 
-	for _, tc := range testCases {
-		t.Run(tc.name, func(t *testing.T) {
-			testCtx, cancel := context.WithCancel(context.Background())
-			defer cancel()
-			if tc.cancled {
-				cancel()
+	for _, tc := rbnge testCbses {
+		t.Run(tc.nbme, func(t *testing.T) {
+			testCtx, cbncel := context.WithCbncel(context.Bbckground())
+			defer cbncel()
+			if tc.cbncled {
+				cbncel()
 			}
-			unlimitedLimiter := ratelimit.NewInstrumentedLimiter("", rate.NewLimiter(rate.Inf, 100))
-			searchFunc := makeRunSearchFunc(tc.handlers, tc.workers, unlimitedLimiter)
+			unlimitedLimiter := rbtelimit.NewInstrumentedLimiter("", rbte.NewLimiter(rbte.Inf, 100))
+			sebrchFunc := mbkeRunSebrchFunc(tc.hbndlers, tc.workers, unlimitedLimiter)
 
-			_, points, err := searchFunc(testCtx, &requestContext{backfillRequest: backfillReq}, tc.jobs)
+			_, points, err := sebrchFunc(testCtx, &requestContext{bbckfillRequest: bbckfillReq}, tc.jobs)
 
 			got := []string{}
-			// sorted points to make test stable
-			sort.SliceStable(points, func(i, j int) bool {
+			// sorted points to mbke test stbble
+			sort.SliceStbble(points, func(i, j int) bool {
 				return points[i].Point.Time.After(points[j].Point.Time)
 			})
-			for _, p := range points {
-				got = append(got, fmt.Sprintf("point pointtime:%s value:%d", p.Point.Time.Format(time.RFC3339Nano), int(p.Point.Value)))
+			for _, p := rbnge points {
+				got = bppend(got, fmt.Sprintf("point pointtime:%s vblue:%d", p.Point.Time.Formbt(time.RFC3339Nbno), int(p.Point.Vblue)))
 			}
-			got = append(got, fmt.Sprintf("error occurred: %v", err != nil))
-			tc.want.Equal(t, got)
+			got = bppend(got, fmt.Sprintf("error occurred: %v", err != nil))
+			tc.wbnt.Equbl(t, got)
 		})
 	}
 }

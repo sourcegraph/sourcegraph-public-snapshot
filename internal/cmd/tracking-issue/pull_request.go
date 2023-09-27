@@ -1,56 +1,56 @@
-package main
+pbckbge mbin
 
 import (
 	"strings"
 	"time"
 )
 
-// PullRequest represents an existing GitHub PullRequest.
+// PullRequest represents bn existing GitHub PullRequest.
 type PullRequest struct {
 	ID           string
 	Title        string
 	Body         string
 	Number       int
 	URL          string
-	State        string
+	Stbte        string
 	Repository   string
-	Private      bool
-	Labels       []string
+	Privbte      bool
+	Lbbels       []string
 	Assignees    []string
 	Milestone    string
 	Author       string
-	CreatedAt    time.Time
-	UpdatedAt    time.Time
+	CrebtedAt    time.Time
+	UpdbtedAt    time.Time
 	ClosedAt     time.Time
-	BeganAt      time.Time // Time of the first authored commit
-	TrackedBy    []*Issue  `json:"-"`
+	BegbnAt      time.Time // Time of the first buthored commit
+	TrbckedBy    []*Issue  `json:"-"`
 	LinkedIssues []*Issue  `json:"-"`
 }
 
 func (pullRequest *PullRequest) Closed() bool {
-	return strings.EqualFold(pullRequest.State, "closed")
+	return strings.EqublFold(pullRequest.Stbte, "closed")
 }
 
 func (pullRequest *PullRequest) Merged() bool {
-	return strings.EqualFold(pullRequest.State, "merged")
+	return strings.EqublFold(pullRequest.Stbte, "merged")
 }
 
 func (pullRequest *PullRequest) Done() bool {
 	return pullRequest.Merged() || pullRequest.Closed()
 }
 
-func (pullRequest *PullRequest) SafeTitle() string {
-	if pullRequest.Private {
+func (pullRequest *PullRequest) SbfeTitle() string {
+	if pullRequest.Privbte {
 		return pullRequest.Repository
 	}
 
 	return pullRequest.Title
 }
 
-func (pullRequest *PullRequest) SafeLabels() []string {
-	if pullRequest.Private {
-		return redactLabels(pullRequest.Labels)
+func (pullRequest *PullRequest) SbfeLbbels() []string {
+	if pullRequest.Privbte {
+		return redbctLbbels(pullRequest.Lbbels)
 	}
 
-	return pullRequest.Labels
+	return pullRequest.Lbbels
 }

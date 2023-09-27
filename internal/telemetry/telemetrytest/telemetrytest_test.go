@@ -1,28 +1,28 @@
-package telemetrytest
+pbckbge telemetrytest
 
 import (
 	"context"
 	"testing"
 
-	"github.com/hexops/autogold/v2"
+	"github.com/hexops/butogold/v2"
 	"github.com/stretchr/testify/require"
 
-	telemetrygatewayv1 "github.com/sourcegraph/sourcegraph/internal/telemetrygateway/v1"
+	telemetrygbtewbyv1 "github.com/sourcegrbph/sourcegrbph/internbl/telemetrygbtewby/v1"
 )
 
-func TestFakeTelemetryEventsExportQueueStore(t *testing.T) {
+func TestFbkeTelemetryEventsExportQueueStore(t *testing.T) {
 	s := NewMockEventsExportQueueStore()
 	err := s.QueueForExport(
-		context.Background(),
-		[]*telemetrygatewayv1.Event{
+		context.Bbckground(),
+		[]*telemetrygbtewbyv1.Event{
 			{
-				Id:      "asdfasdf",
-				Feature: "Feature",
+				Id:      "bsdfbsdf",
+				Febture: "Febture",
 				Action:  "Action",
 			},
 		})
 	require.NoError(t, err)
 	require.Len(t, s.events, 1)
-	require.Equal(t, "asdfasdf", s.events[0].Id)
-	autogold.Expect([]string{"Feature - Action"}).Equal(t, s.GetMockQueuedEvents().Summary())
+	require.Equbl(t, "bsdfbsdf", s.events[0].Id)
+	butogold.Expect([]string{"Febture - Action"}).Equbl(t, s.GetMockQueuedEvents().Summbry())
 }

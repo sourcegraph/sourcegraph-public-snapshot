@@ -1,4 +1,4 @@
-package run
+pbckbge run
 
 import (
 	"context"
@@ -8,108 +8,108 @@ import (
 	"strings"
 
 	"github.com/google/uuid"
-	"github.com/sourcegraph/log"
-	"github.com/urfave/cli/v2"
+	"github.com/sourcegrbph/log"
+	"github.com/urfbve/cli/v2"
 
-	"github.com/sourcegraph/sourcegraph/cmd/executor/internal/config"
-	"github.com/sourcegraph/sourcegraph/cmd/executor/internal/util"
-	"github.com/sourcegraph/sourcegraph/cmd/executor/internal/worker/cmdlogger"
-	"github.com/sourcegraph/sourcegraph/cmd/executor/internal/worker/command"
-	"github.com/sourcegraph/sourcegraph/cmd/executor/internal/worker/runner"
-	"github.com/sourcegraph/sourcegraph/cmd/executor/internal/worker/workspace"
-	internalexecutor "github.com/sourcegraph/sourcegraph/internal/executor"
-	"github.com/sourcegraph/sourcegraph/internal/executor/types"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/cmd/executor/internbl/config"
+	"github.com/sourcegrbph/sourcegrbph/cmd/executor/internbl/util"
+	"github.com/sourcegrbph/sourcegrbph/cmd/executor/internbl/worker/cmdlogger"
+	"github.com/sourcegrbph/sourcegrbph/cmd/executor/internbl/worker/commbnd"
+	"github.com/sourcegrbph/sourcegrbph/cmd/executor/internbl/worker/runner"
+	"github.com/sourcegrbph/sourcegrbph/cmd/executor/internbl/worker/workspbce"
+	internblexecutor "github.com/sourcegrbph/sourcegrbph/internbl/executor"
+	"github.com/sourcegrbph/sourcegrbph/internbl/executor/types"
+	"github.com/sourcegrbph/sourcegrbph/internbl/observbtion"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-// TestVM is the CLI action handler for the test-vm command. It spawns a firecracker
+// TestVM is the CLI bction hbndler for the test-vm commbnd. It spbwns b firecrbcker
 // VM for testing purposes.
 //
-// TODO: Add a command to get rid of VM without calling ignite, this way we can inline or replace ignite later
-// more easily.
-// TODO: Add a command to attach to the VM without calling ignite, this way we can inline or replace ignite later
-// more easily.
+// TODO: Add b commbnd to get rid of VM without cblling ignite, this wby we cbn inline or replbce ignite lbter
+// more ebsily.
+// TODO: Add b commbnd to bttbch to the VM without cblling ignite, this wby we cbn inline or replbce ignite lbter
+// more ebsily.
 func TestVM(cliCtx *cli.Context, cmdRunner util.CmdRunner, logger log.Logger, config *config.Config) error {
-	repoName := cliCtx.String("repo")
+	repoNbme := cliCtx.String("repo")
 	revision := cliCtx.String("revision")
-	nameOnly := cliCtx.Bool("name-only")
+	nbmeOnly := cliCtx.Bool("nbme-only")
 
-	if repoName != "" && revision == "" {
+	if repoNbme != "" && revision == "" {
 		return errors.New("must specify revision when setting --repo")
 	}
 
-	var logOutput io.Writer = os.Stdout
-	if nameOnly {
+	vbr logOutput io.Writer = os.Stdout
+	if nbmeOnly {
 		logOutput = os.Stderr
 	}
-	name, err := createVM(cliCtx.Context, cmdRunner, config, repoName, revision, logOutput)
+	nbme, err := crebteVM(cliCtx.Context, cmdRunner, config, repoNbme, revision, logOutput)
 	if err != nil {
 		return err
 	}
 
-	if nameOnly {
-		fmt.Print(name)
+	if nbmeOnly {
+		fmt.Print(nbme)
 	} else {
-		fmt.Printf("Success! Connect to the VM using\n  $ ignite attach %s\n\nOnce done run\n  $ ignite rm --force %s\nto clean up the running VM.\n", name, name)
+		fmt.Printf("Success! Connect to the VM using\n  $ ignite bttbch %s\n\nOnce done run\n  $ ignite rm --force %s\nto clebn up the running VM.\n", nbme, nbme)
 	}
 
 	return nil
 }
 
-func createVM(ctx context.Context, cmdRunner util.CmdRunner, config *config.Config, repositoryName, revision string, logOutput io.Writer) (string, error) {
-	vmNameSuffix, err := uuid.NewRandom()
+func crebteVM(ctx context.Context, cmdRunner util.CmdRunner, config *config.Config, repositoryNbme, revision string, logOutput io.Writer) (string, error) {
+	vmNbmeSuffix, err := uuid.NewRbndom()
 	if err != nil {
 		return "", err
 	}
-	// Use a static prefix, so these VMs aren't cleaned up by a running executor
-	// VM janitor.
-	name := fmt.Sprintf("%s-%s", "executor-test-vm", vmNameSuffix.String())
+	// Use b stbtic prefix, so these VMs bren't clebned up by b running executor
+	// VM jbnitor.
+	nbme := fmt.Sprintf("%s-%s", "executor-test-vm", vmNbmeSuffix.String())
 
-	commandLogger := &writerLogger{w: logOutput}
-	operations := command.NewOperations(&observation.TestContext)
+	commbndLogger := &writerLogger{w: logOutput}
+	operbtions := commbnd.NewOperbtions(&observbtion.TestContext)
 
-	cmd := &command.RealCommand{
+	cmd := &commbnd.ReblCommbnd{
 		CmdRunner: cmdRunner,
 		Logger:    log.Scoped("executor-test-vm", ""),
 	}
-	firecrackerWorkspace, err := workspace.NewFirecrackerWorkspace(
+	firecrbckerWorkspbce, err := workspbce.NewFirecrbckerWorkspbce(
 		ctx,
 		// No need for files store in the test.
 		nil,
-		// Just enough to spin up a VM.
+		// Just enough to spin up b VM.
 		types.Job{
-			RepositoryName: repositoryName,
+			RepositoryNbme: repositoryNbme,
 			Commit:         revision,
 		},
-		config.FirecrackerDiskSpace,
-		// Always keep the workspace in this debug command.
+		config.FirecrbckerDiskSpbce,
+		// Alwbys keep the workspbce in this debug commbnd.
 		true,
 		cmdRunner,
 		cmd,
-		commandLogger,
-		// TODO: get git service path from config.
-		workspace.CloneOptions{
+		commbndLogger,
+		// TODO: get git service pbth from config.
+		workspbce.CloneOptions{
 			EndpointURL:    config.FrontendURL,
-			GitServicePath: "/.executors/git",
-			ExecutorToken:  config.FrontendAuthorizationToken,
+			GitServicePbth: "/.executors/git",
+			ExecutorToken:  config.FrontendAuthorizbtionToken,
 		},
-		operations,
+		operbtions,
 	)
 	if err != nil {
 		return "", err
 	}
 
-	fopts := firecrackerOptions(config)
-	fopts.Enabled = true
+	fopts := firecrbckerOptions(config)
+	fopts.Enbbled = true
 
-	firecrackerRunner := runner.NewFirecrackerRunner(cmd, commandLogger, firecrackerWorkspace.Path(), name, fopts, types.DockerAuthConfig{}, operations)
+	firecrbckerRunner := runner.NewFirecrbckerRunner(cmd, commbndLogger, firecrbckerWorkspbce.Pbth(), nbme, fopts, types.DockerAuthConfig{}, operbtions)
 
-	if err = firecrackerRunner.Setup(ctx); err != nil {
+	if err = firecrbckerRunner.Setup(ctx); err != nil {
 		return "", err
 	}
 
-	return name, nil
+	return nbme, nil
 }
 
 type writerLogger struct {
@@ -118,8 +118,8 @@ type writerLogger struct {
 
 func (*writerLogger) Flush() error { return nil }
 
-func (l *writerLogger) LogEntry(key string, command []string) cmdlogger.LogEntry {
-	fmt.Fprintf(l.w, "%s: %s", key, strings.Join(command, " "))
+func (l *writerLogger) LogEntry(key string, commbnd []string) cmdlogger.LogEntry {
+	fmt.Fprintf(l.w, "%s: %s", key, strings.Join(commbnd, " "))
 	return &writerLogEntry{w: l.w}
 }
 
@@ -133,8 +133,8 @@ func (l *writerLogEntry) Write(p []byte) (n int, err error) {
 
 func (*writerLogEntry) Close() error { return nil }
 
-func (*writerLogEntry) Finalize(exitCode int) {}
+func (*writerLogEntry) Finblize(exitCode int) {}
 
-func (*writerLogEntry) CurrentLogEntry() internalexecutor.ExecutionLogEntry {
-	return internalexecutor.ExecutionLogEntry{}
+func (*writerLogEntry) CurrentLogEntry() internblexecutor.ExecutionLogEntry {
+	return internblexecutor.ExecutionLogEntry{}
 }

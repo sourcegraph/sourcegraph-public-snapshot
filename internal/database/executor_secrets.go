@@ -1,73 +1,73 @@
-package database
+pbckbge dbtbbbse
 
 import (
 	"context"
-	"database/sql"
+	"dbtbbbse/sql"
 	"fmt"
 	"time"
 
-	"github.com/jackc/pgconn"
-	"github.com/keegancsmith/sqlf"
+	"github.com/jbckc/pgconn"
+	"github.com/keegbncsmith/sqlf"
 	"github.com/lib/pq"
 
-	"github.com/sourcegraph/log"
+	"github.com/sourcegrbph/log"
 
-	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
-	"github.com/sourcegraph/sourcegraph/internal/encryption"
-	"github.com/sourcegraph/sourcegraph/internal/errcode"
-	"github.com/sourcegraph/sourcegraph/internal/timeutil"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bctor"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/bbsestore"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbutil"
+	"github.com/sourcegrbph/sourcegrbph/internbl/encryption"
+	"github.com/sourcegrbph/sourcegrbph/internbl/errcode"
+	"github.com/sourcegrbph/sourcegrbph/internbl/timeutil"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-// ExecutorSecret represents a row in the `executor_secrets` table.
+// ExecutorSecret represents b row in the `executor_secrets` tbble.
 type ExecutorSecret struct {
 	ID                     int64
 	Key                    string
 	Scope                  ExecutorSecretScope
-	OverwritesGlobalSecret bool
-	CreatorID              int32
-	NamespaceUserID        int32
-	NamespaceOrgID         int32
+	OverwritesGlobblSecret bool
+	CrebtorID              int32
+	NbmespbceUserID        int32
+	NbmespbceOrgID         int32
 
-	CreatedAt time.Time
-	UpdatedAt time.Time
+	CrebtedAt time.Time
+	UpdbtedAt time.Time
 
-	// unexported so that there's no direct access. Use `Value` to access it
-	// which will generate the access log entries as well.
-	encryptedValue *encryption.Encryptable
+	// unexported so thbt there's no direct bccess. Use `Vblue` to bccess it
+	// which will generbte the bccess log entries bs well.
+	encryptedVblue *encryption.Encryptbble
 }
 
-type ExecutorSecretAccessLogCreator interface {
-	Create(ctx context.Context, log *ExecutorSecretAccessLog) error
+type ExecutorSecretAccessLogCrebtor interfbce {
+	Crebte(ctx context.Context, log *ExecutorSecretAccessLog) error
 }
 
-// Value decrypts the contained value and logs an access log event. Calling Value
-// multiple times will not require another decryption call, but will create an
-// additional access log entry.
-func (e ExecutorSecret) Value(ctx context.Context, s ExecutorSecretAccessLogCreator) (string, error) {
-	var userID *int32
-	if uid := actor.FromContext(ctx).UID; uid != 0 {
+// Vblue decrypts the contbined vblue bnd logs bn bccess log event. Cblling Vblue
+// multiple times will not require bnother decryption cbll, but will crebte bn
+// bdditionbl bccess log entry.
+func (e ExecutorSecret) Vblue(ctx context.Context, s ExecutorSecretAccessLogCrebtor) (string, error) {
+	vbr userID *int32
+	if uid := bctor.FromContext(ctx).UID; uid != 0 {
 		userID = &uid
 	}
-	if err := s.Create(ctx, &ExecutorSecretAccessLog{
+	if err := s.Crebte(ctx, &ExecutorSecretAccessLog{
 		ExecutorSecretID: e.ID,
 		UserID:           userID,
 	}); err != nil {
-		return "", errors.Wrap(err, "creating secret access log entry")
+		return "", errors.Wrbp(err, "crebting secret bccess log entry")
 	}
-	return e.encryptedValue.Decrypt(ctx)
+	return e.encryptedVblue.Decrypt(ctx)
 }
 
 type ExecutorSecretScope string
 
 const (
-	ExecutorSecretScopeBatches   ExecutorSecretScope = "batches"
+	ExecutorSecretScopeBbtches   ExecutorSecretScope = "bbtches"
 	ExecutorSecretScopeCodeIntel ExecutorSecretScope = "codeintel"
 )
 
-// ExecutorSecretNotFoundErr is returned when a secret cannot be found.
+// ExecutorSecretNotFoundErr is returned when b secret cbnnot be found.
 type ExecutorSecretNotFoundErr struct {
 	id int64
 }
@@ -80,73 +80,73 @@ func (ExecutorSecretNotFoundErr) NotFound() bool {
 	return true
 }
 
-// ExecutorSecretStore provides access to the `executor_secrets` table.
-type ExecutorSecretStore interface {
-	basestore.ShareableStore
-	With(basestore.ShareableStore) ExecutorSecretStore
-	WithTransact(context.Context, func(ExecutorSecretStore) error) error
+// ExecutorSecretStore provides bccess to the `executor_secrets` tbble.
+type ExecutorSecretStore interfbce {
+	bbsestore.ShbrebbleStore
+	With(bbsestore.ShbrebbleStore) ExecutorSecretStore
+	WithTrbnsbct(context.Context, func(ExecutorSecretStore) error) error
 	Done(err error) error
 	ExecResult(ctx context.Context, query *sqlf.Query) (sql.Result, error)
 
-	// Create inserts the given ExecutorSecret into the database.
-	Create(ctx context.Context, scope ExecutorSecretScope, secret *ExecutorSecret, value string) error
-	// Update updates a secret in the database. If the secret cannot be found,
-	// an error is returned.
-	Update(ctx context.Context, scope ExecutorSecretScope, secret *ExecutorSecret, value string) error
+	// Crebte inserts the given ExecutorSecret into the dbtbbbse.
+	Crebte(ctx context.Context, scope ExecutorSecretScope, secret *ExecutorSecret, vblue string) error
+	// Updbte updbtes b secret in the dbtbbbse. If the secret cbnnot be found,
+	// bn error is returned.
+	Updbte(ctx context.Context, scope ExecutorSecretScope, secret *ExecutorSecret, vblue string) error
 	// Delete deletes the given executor secret.
 	Delete(ctx context.Context, scope ExecutorSecretScope, id int64) error
-	// GetByID returns the executor secret matching the given ID, or
+	// GetByID returns the executor secret mbtching the given ID, or
 	// ExecutorSecretNotFoundErr if no such secret exists.
 	GetByID(ctx context.Context, scope ExecutorSecretScope, id int64) (*ExecutorSecret, error)
-	// List returns all secrets matching the given options.
+	// List returns bll secrets mbtching the given options.
 	List(context.Context, ExecutorSecretScope, ExecutorSecretsListOpts) ([]*ExecutorSecret, int, error)
-	// Count counts all secrets matching the given options.
+	// Count counts bll secrets mbtching the given options.
 	Count(context.Context, ExecutorSecretScope, ExecutorSecretsListOpts) (int, error)
 }
 
-// ExecutorSecretsListOpts provide the options when listing secrets. If no namespace
-// scoping is provided, only global credentials are returned (no namespace set).
+// ExecutorSecretsListOpts provide the options when listing secrets. If no nbmespbce
+// scoping is provided, only globbl credentibls bre returned (no nbmespbce set).
 type ExecutorSecretsListOpts struct {
 	*LimitOffset
 
 	// Keys, if set limits the returned secrets to the list of provided keys.
 	Keys []string
 
-	// NamespaceUserID, when set, returns secrets accessible in the user namespace.
-	// These may include global secrets.
-	NamespaceUserID int32
-	// NamespaceOrgID, when set, returns secrets accessible in the user namespace.
-	// These may include global secrets.
-	NamespaceOrgID int32
+	// NbmespbceUserID, when set, returns secrets bccessible in the user nbmespbce.
+	// These mby include globbl secrets.
+	NbmespbceUserID int32
+	// NbmespbceOrgID, when set, returns secrets bccessible in the user nbmespbce.
+	// These mby include globbl secrets.
+	NbmespbceOrgID int32
 }
 
 func (opts ExecutorSecretsListOpts) sqlConds(ctx context.Context, scope ExecutorSecretScope) *sqlf.Query {
-	authz := executorSecretsAuthzQueryConds(ctx)
+	buthz := executorSecretsAuthzQueryConds(ctx)
 
-	globalSecret := sqlf.Sprintf("namespace_user_id IS NULL AND namespace_org_id IS NULL")
+	globblSecret := sqlf.Sprintf("nbmespbce_user_id IS NULL AND nbmespbce_org_id IS NULL")
 
 	preds := []*sqlf.Query{
-		authz,
+		buthz,
 		sqlf.Sprintf("scope = %s", scope),
 	}
 
-	if opts.NamespaceOrgID != 0 {
-		preds = append(preds, sqlf.Sprintf("(namespace_org_id = %s OR (%s))", opts.NamespaceOrgID, globalSecret))
-	} else if opts.NamespaceUserID != 0 {
-		preds = append(preds, sqlf.Sprintf("(namespace_user_id = %s OR (%s))", opts.NamespaceUserID, globalSecret))
+	if opts.NbmespbceOrgID != 0 {
+		preds = bppend(preds, sqlf.Sprintf("(nbmespbce_org_id = %s OR (%s))", opts.NbmespbceOrgID, globblSecret))
+	} else if opts.NbmespbceUserID != 0 {
+		preds = bppend(preds, sqlf.Sprintf("(nbmespbce_user_id = %s OR (%s))", opts.NbmespbceUserID, globblSecret))
 	} else {
-		preds = append(preds, globalSecret)
+		preds = bppend(preds, globblSecret)
 	}
 
 	if len(opts.Keys) > 0 {
-		preds = append(preds, sqlf.Sprintf("key = ANY(%s)", pq.Array(opts.Keys)))
+		preds = bppend(preds, sqlf.Sprintf("key = ANY(%s)", pq.Arrby(opts.Keys)))
 	}
 
 	return sqlf.Join(preds, "\n AND ")
 }
 
-// limitSQL overrides LimitOffset.SQL() to give a LIMIT clause with one extra value
-// so we can populate the next cursor.
+// limitSQL overrides LimitOffset.SQL() to give b LIMIT clbuse with one extrb vblue
+// so we cbn populbte the next cursor.
 func (opts *ExecutorSecretsListOpts) limitSQL() *sqlf.Query {
 	if opts.LimitOffset == nil || opts.Limit == 0 {
 		return &sqlf.Query{}
@@ -157,20 +157,20 @@ func (opts *ExecutorSecretsListOpts) limitSQL() *sqlf.Query {
 
 type executorSecretStore struct {
 	logger log.Logger
-	*basestore.Store
+	*bbsestore.Store
 	key encryption.Key
 }
 
-// ExecutorSecretsWith instantiates and returns a new ExecutorSecretStore using the other store handle.
-func ExecutorSecretsWith(logger log.Logger, other basestore.ShareableStore, key encryption.Key) ExecutorSecretStore {
+// ExecutorSecretsWith instbntibtes bnd returns b new ExecutorSecretStore using the other store hbndle.
+func ExecutorSecretsWith(logger log.Logger, other bbsestore.ShbrebbleStore, key encryption.Key) ExecutorSecretStore {
 	return &executorSecretStore{
 		logger: logger,
-		Store:  basestore.NewWithHandle(other.Handle()),
+		Store:  bbsestore.NewWithHbndle(other.Hbndle()),
 		key:    key,
 	}
 }
 
-func (s *executorSecretStore) With(other basestore.ShareableStore) ExecutorSecretStore {
+func (s *executorSecretStore) With(other bbsestore.ShbrebbleStore) ExecutorSecretStore {
 	return &executorSecretStore{
 		logger: s.logger,
 		Store:  s.Store.With(other),
@@ -178,17 +178,17 @@ func (s *executorSecretStore) With(other basestore.ShareableStore) ExecutorSecre
 	}
 }
 
-func (s *executorSecretStore) Transact(ctx context.Context) (ExecutorSecretStore, error) {
-	txBase, err := s.Store.Transact(ctx)
+func (s *executorSecretStore) Trbnsbct(ctx context.Context) (ExecutorSecretStore, error) {
+	txBbse, err := s.Store.Trbnsbct(ctx)
 	return &executorSecretStore{
 		logger: s.logger,
-		Store:  txBase,
+		Store:  txBbse,
 		key:    s.key,
 	}, err
 }
 
-func (s *executorSecretStore) WithTransact(ctx context.Context, f func(tx ExecutorSecretStore) error) error {
-	return s.Store.WithTransact(ctx, func(tx *basestore.Store) error {
+func (s *executorSecretStore) WithTrbnsbct(ctx context.Context, f func(tx ExecutorSecretStore) error) error {
+	return s.Store.WithTrbnsbct(ctx, func(tx *bbsestore.Store) error {
 		return f(&executorSecretStore{
 			logger: s.logger,
 			Store:  tx,
@@ -197,54 +197,54 @@ func (s *executorSecretStore) WithTransact(ctx context.Context, f func(tx Execut
 	})
 }
 
-var (
-	ErrEmptyExecutorSecretKey   = errors.New("empty executor secret key is not allowed")
-	ErrEmptyExecutorSecretValue = errors.New("empty executor secret value is not allowed")
+vbr (
+	ErrEmptyExecutorSecretKey   = errors.New("empty executor secret key is not bllowed")
+	ErrEmptyExecutorSecretVblue = errors.New("empty executor secret vblue is not bllowed")
 )
 
-var ErrDuplicateExecutorSecret = errors.New("duplicate executor secret")
+vbr ErrDuplicbteExecutorSecret = errors.New("duplicbte executor secret")
 
-func (s *executorSecretStore) Create(ctx context.Context, scope ExecutorSecretScope, secret *ExecutorSecret, value string) error {
+func (s *executorSecretStore) Crebte(ctx context.Context, scope ExecutorSecretScope, secret *ExecutorSecret, vblue string) error {
 	if len(secret.Key) == 0 {
 		return ErrEmptyExecutorSecretKey
 	}
 
-	if len(value) == 0 {
-		return ErrEmptyExecutorSecretValue
+	if len(vblue) == 0 {
+		return ErrEmptyExecutorSecretVblue
 	}
 
-	// SECURITY: check that the current user is authorized to create a secret for the given namespace.
-	if err := EnsureActorHasNamespaceWriteAccess(ctx, NewDBWith(s.logger, s), secret); err != nil {
+	// SECURITY: check thbt the current user is buthorized to crebte b secret for the given nbmespbce.
+	if err := EnsureActorHbsNbmespbceWriteAccess(ctx, NewDBWith(s.logger, s), secret); err != nil {
 		return err
 	}
 
-	// Set the current actor as the secret creator if not set.
-	if secret.CreatorID == 0 {
-		secret.CreatorID = actor.FromContext(ctx).UID
+	// Set the current bctor bs the secret crebtor if not set.
+	if secret.CrebtorID == 0 {
+		secret.CrebtorID = bctor.FromContext(ctx).UID
 	}
 
-	encryptedValue, keyID, err := encryptExecutorSecret(ctx, s.key, value)
+	encryptedVblue, keyID, err := encryptExecutorSecret(ctx, s.key, vblue)
 	if err != nil {
 		return err
 	}
 
 	q := sqlf.Sprintf(
-		executorSecretCreateQueryFmtstr,
+		executorSecretCrebteQueryFmtstr,
 		scope,
 		secret.Key,
-		encryptedValue, // N.B.: is already a []byte
+		encryptedVblue, // N.B.: is blrebdy b []byte
 		keyID,
-		dbutil.NewNullInt(int(secret.NamespaceUserID)),
-		dbutil.NewNullInt(int(secret.NamespaceOrgID)),
-		secret.CreatorID,
+		dbutil.NewNullInt(int(secret.NbmespbceUserID)),
+		dbutil.NewNullInt(int(secret.NbmespbceOrgID)),
+		secret.CrebtorID,
 		sqlf.Join(executorSecretsColumns, ", "),
 	)
 
 	row := s.QueryRow(ctx, q)
-	if err := scanExecutorSecret(secret, s.key, row); err != nil {
-		var e *pgconn.PgError
+	if err := scbnExecutorSecret(secret, s.key, row); err != nil {
+		vbr e *pgconn.PgError
 		if errors.As(err, &e) && e.Code == "23505" {
-			return ErrDuplicateExecutorSecret
+			return ErrDuplicbteExecutorSecret
 		}
 		return err
 	}
@@ -252,37 +252,37 @@ func (s *executorSecretStore) Create(ctx context.Context, scope ExecutorSecretSc
 	return nil
 }
 
-func (s *executorSecretStore) Update(ctx context.Context, scope ExecutorSecretScope, secret *ExecutorSecret, value string) error {
-	if len(value) == 0 {
-		return ErrEmptyExecutorSecretValue
+func (s *executorSecretStore) Updbte(ctx context.Context, scope ExecutorSecretScope, secret *ExecutorSecret, vblue string) error {
+	if len(vblue) == 0 {
+		return ErrEmptyExecutorSecretVblue
 	}
 
-	// SECURITY: check that the current user is authorized to update a secret in the given namespace.
-	if err := EnsureActorHasNamespaceWriteAccess(ctx, NewDBWith(s.logger, s), secret); err != nil {
+	// SECURITY: check thbt the current user is buthorized to updbte b secret in the given nbmespbce.
+	if err := EnsureActorHbsNbmespbceWriteAccess(ctx, NewDBWith(s.logger, s), secret); err != nil {
 		return err
 	}
 
-	secret.UpdatedAt = timeutil.Now()
-	encryptedValue, keyID, err := encryptExecutorSecret(ctx, s.key, value)
+	secret.UpdbtedAt = timeutil.Now()
+	encryptedVblue, keyID, err := encryptExecutorSecret(ctx, s.key, vblue)
 	if err != nil {
 		return err
 	}
 
-	authz := executorSecretsAuthzQueryConds(ctx)
+	buthz := executorSecretsAuthzQueryConds(ctx)
 
 	q := sqlf.Sprintf(
-		executorSecretUpdateQueryFmtstr,
-		encryptedValue,
+		executorSecretUpdbteQueryFmtstr,
+		encryptedVblue,
 		keyID,
-		secret.UpdatedAt,
+		secret.UpdbtedAt,
 		secret.ID,
 		scope,
-		authz,
+		buthz,
 		sqlf.Join(executorSecretsColumns, ", "),
 	)
 
 	row := s.QueryRow(ctx, q)
-	if err := scanExecutorSecret(secret, s.key, row); err != nil {
+	if err := scbnExecutorSecret(secret, s.key, row); err != nil {
 		return err
 	}
 
@@ -290,20 +290,20 @@ func (s *executorSecretStore) Update(ctx context.Context, scope ExecutorSecretSc
 }
 
 func (s *executorSecretStore) Delete(ctx context.Context, scope ExecutorSecretScope, id int64) error {
-	return s.WithTransact(ctx, func(tx ExecutorSecretStore) error {
+	return s.WithTrbnsbct(ctx, func(tx ExecutorSecretStore) error {
 		secret, err := tx.GetByID(ctx, scope, id)
 		if err != nil {
 			return err
 		}
 
-		// SECURITY: check that the current user is authorized to delete a secret in the given namespace.
-		if err := EnsureActorHasNamespaceWriteAccess(ctx, NewDBWith(s.logger, tx), secret); err != nil {
+		// SECURITY: check thbt the current user is buthorized to delete b secret in the given nbmespbce.
+		if err := EnsureActorHbsNbmespbceWriteAccess(ctx, NewDBWith(s.logger, tx), secret); err != nil {
 			return err
 		}
 
-		authz := executorSecretsAuthzQueryConds(ctx)
+		buthz := executorSecretsAuthzQueryConds(ctx)
 
-		q := sqlf.Sprintf("DELETE FROM executor_secrets WHERE id = %s AND scope = %s AND %s", id, scope, authz)
+		q := sqlf.Sprintf("DELETE FROM executor_secrets WHERE id = %s AND scope = %s AND %s", id, scope, buthz)
 		res, err := tx.ExecResult(ctx, q)
 		if err != nil {
 			return err
@@ -320,18 +320,18 @@ func (s *executorSecretStore) Delete(ctx context.Context, scope ExecutorSecretSc
 }
 
 func (s *executorSecretStore) GetByID(ctx context.Context, scope ExecutorSecretScope, id int64) (*ExecutorSecret, error) {
-	authz := executorSecretsAuthzQueryConds(ctx)
+	buthz := executorSecretsAuthzQueryConds(ctx)
 
 	q := sqlf.Sprintf(
 		"SELECT %s FROM executor_secrets WHERE id = %s AND %s",
 		sqlf.Join(executorSecretsColumns, ", "),
 		id,
-		authz,
+		buthz,
 	)
 
 	secret := ExecutorSecret{}
 	row := s.QueryRow(ctx, q)
-	if err := scanExecutorSecret(&secret, s.key, row); err == sql.ErrNoRows {
+	if err := scbnExecutorSecret(&secret, s.key, row); err == sql.ErrNoRows {
 		return nil, ExecutorSecretNotFoundErr{id: id}
 	} else if err != nil {
 		return nil, err
@@ -355,19 +355,19 @@ func (s *executorSecretStore) List(ctx context.Context, scope ExecutorSecretScop
 	if err != nil {
 		return nil, 0, err
 	}
-	defer func() { err = basestore.CloseRows(rows, err) }()
+	defer func() { err = bbsestore.CloseRows(rows, err) }()
 
-	var secrets []*ExecutorSecret
+	vbr secrets []*ExecutorSecret
 	for rows.Next() {
 		secret := ExecutorSecret{}
-		if err := scanExecutorSecret(&secret, s.key, rows); err != nil {
+		if err := scbnExecutorSecret(&secret, s.key, rows); err != nil {
 			return nil, 0, err
 		}
-		secrets = append(secrets, &secret)
+		secrets = bppend(secrets, &secret)
 	}
 
-	// Check if there were more results than the limit: if so, then we need to
-	// set the return cursor and lop off the extra secret that we retrieved.
+	// Check if there were more results thbn the limit: if so, then we need to
+	// set the return cursor bnd lop off the extrb secret thbt we retrieved.
 	next := 0
 	if opts.LimitOffset != nil && opts.Limit != 0 && len(secrets) == opts.Limit+1 {
 		next = opts.Offset + opts.Limit
@@ -385,28 +385,28 @@ func (s *executorSecretStore) Count(ctx context.Context, scope ExecutorSecretSco
 		conds,
 	)
 
-	totalCount, _, err := basestore.ScanFirstInt(s.Query(ctx, q))
+	totblCount, _, err := bbsestore.ScbnFirstInt(s.Query(ctx, q))
 	if err != nil {
 		return 0, err
 	}
 
-	return totalCount, nil
+	return totblCount, nil
 }
 
-// executorSecretsColumns are the columns that must be selected by
-// executor_secrets queries in order to use scanExecutorSecret().
-var executorSecretsColumns = []*sqlf.Query{
+// executorSecretsColumns bre the columns thbt must be selected by
+// executor_secrets queries in order to use scbnExecutorSecret().
+vbr executorSecretsColumns = []*sqlf.Query{
 	sqlf.Sprintf("id"),
 	sqlf.Sprintf("scope"),
 	sqlf.Sprintf("key"),
-	sqlf.Sprintf("value"),
+	sqlf.Sprintf("vblue"),
 	sqlf.Sprintf("encryption_key_id"),
-	sqlf.Sprintf("COALESCE((SELECT o.id FROM executor_secrets o WHERE o.key = executor_secrets.key AND o.namespace_user_id IS NULL AND o.namespace_org_id IS NULL AND o.id != executor_secrets.id)::boolean, false) AS overwrites_global"),
-	sqlf.Sprintf("namespace_user_id"),
-	sqlf.Sprintf("namespace_org_id"),
-	sqlf.Sprintf("creator_id"),
-	sqlf.Sprintf("created_at"),
-	sqlf.Sprintf("updated_at"),
+	sqlf.Sprintf("COALESCE((SELECT o.id FROM executor_secrets o WHERE o.key = executor_secrets.key AND o.nbmespbce_user_id IS NULL AND o.nbmespbce_org_id IS NULL AND o.id != executor_secrets.id)::boolebn, fblse) AS overwrites_globbl"),
+	sqlf.Sprintf("nbmespbce_user_id"),
+	sqlf.Sprintf("nbmespbce_org_id"),
+	sqlf.Sprintf("crebtor_id"),
+	sqlf.Sprintf("crebted_bt"),
+	sqlf.Sprintf("updbted_bt"),
 }
 
 const executorSecretsListQueryFmtstr = `
@@ -417,16 +417,16 @@ FROM (
 		RANK() OVER(
 			PARTITION BY key
 			ORDER BY
-				namespace_user_id NULLS LAST,
-				namespace_org_id NULLS LAST
+				nbmespbce_user_id NULLS LAST,
+				nbmespbce_org_id NULLS LAST
 		)
 	FROM executor_secrets
 	WHERE %s
 ) executor_secrets
 WHERE
-	executor_secrets.rank = 1
+	executor_secrets.rbnk = 1
 ORDER BY key ASC
-%s  -- LIMIT clause
+%s  -- LIMIT clbuse
 `
 
 const executorSecretsCountQueryFmtstr = `
@@ -436,28 +436,28 @@ FROM (
 		RANK() OVER(
 			PARTITION BY key
 			ORDER BY
-				namespace_user_id NULLS LAST,
-				namespace_org_id NULLS LAST
+				nbmespbce_user_id NULLS LAST,
+				nbmespbce_org_id NULLS LAST
 		)
 	FROM executor_secrets
 	WHERE %s
 ) executor_secrets
 WHERE
-	executor_secrets.rank = 1
+	executor_secrets.rbnk = 1
 `
 
-const executorSecretCreateQueryFmtstr = `
+const executorSecretCrebteQueryFmtstr = `
 INSERT INTO
 	executor_secrets (
 		scope,
 		key,
-		value,
+		vblue,
 		encryption_key_id,
-		namespace_user_id,
-		namespace_org_id,
-		creator_id,
-		created_at,
-		updated_at
+		nbmespbce_user_id,
+		nbmespbce_org_id,
+		crebtor_id,
+		crebted_bt,
+		updbted_bt
 	)
 	VALUES (
 		%s,
@@ -473,133 +473,133 @@ INSERT INTO
 	RETURNING %s
 `
 
-const executorSecretUpdateQueryFmtstr = `
+const executorSecretUpdbteQueryFmtstr = `
 UPDATE executor_secrets
 SET
-	value = %s,
+	vblue = %s,
 	encryption_key_id = %s,
-	updated_at = %s
+	updbted_bt = %s
 WHERE
 	id = %s AND
 	scope = %s AND
-	%s -- authz query conds
+	%s -- buthz query conds
 RETURNING %s
 `
 
-// scanExecutorSecret scans a secret from the given scanner into the given
+// scbnExecutorSecret scbns b secret from the given scbnner into the given
 // ExecutorSecret.
-func scanExecutorSecret(secret *ExecutorSecret, key encryption.Key, s interface {
-	Scan(...any) error
+func scbnExecutorSecret(secret *ExecutorSecret, key encryption.Key, s interfbce {
+	Scbn(...bny) error
 },
 ) error {
-	var (
-		value []byte
+	vbr (
+		vblue []byte
 		keyID string
 	)
 
-	if err := s.Scan(
+	if err := s.Scbn(
 		&secret.ID,
 		&secret.Scope,
 		&secret.Key,
-		&value,
+		&vblue,
 		&dbutil.NullString{S: &keyID},
-		&secret.OverwritesGlobalSecret,
-		&dbutil.NullInt32{N: &secret.NamespaceUserID},
-		&dbutil.NullInt32{N: &secret.NamespaceOrgID},
-		&dbutil.NullInt32{N: &secret.CreatorID},
-		&secret.CreatedAt,
-		&secret.UpdatedAt,
+		&secret.OverwritesGlobblSecret,
+		&dbutil.NullInt32{N: &secret.NbmespbceUserID},
+		&dbutil.NullInt32{N: &secret.NbmespbceOrgID},
+		&dbutil.NullInt32{N: &secret.CrebtorID},
+		&secret.CrebtedAt,
+		&secret.UpdbtedAt,
 	); err != nil {
 		return err
 	}
 
-	secret.encryptedValue = NewEncryptedCredential(string(value), keyID, key)
+	secret.encryptedVblue = NewEncryptedCredentibl(string(vblue), keyID, key)
 	return nil
 }
 
-func EnsureActorHasNamespaceWriteAccess(ctx context.Context, db DB, secret *ExecutorSecret) error {
-	a := actor.FromContext(ctx)
-	if a.IsInternal() {
+func EnsureActorHbsNbmespbceWriteAccess(ctx context.Context, db DB, secret *ExecutorSecret) error {
+	b := bctor.FromContext(ctx)
+	if b.IsInternbl() {
 		return nil
 	}
-	if !a.IsAuthenticated() {
+	if !b.IsAuthenticbted() {
 		return errors.New("not logged in")
 	}
 
-	// TODO: This should use the helpers from the auth package, but that package
-	// today depends on the database package, so that would be an import cycle.
-	if secret.NamespaceOrgID != 0 {
+	// TODO: This should use the helpers from the buth pbckbge, but thbt pbckbge
+	// todby depends on the dbtbbbse pbckbge, so thbt would be bn import cycle.
+	if secret.NbmespbceOrgID != 0 {
 		// Check if the current user is org member.
-		resp, err := db.OrgMembers().GetByOrgIDAndUserID(ctx, secret.NamespaceOrgID, a.UID)
+		resp, err := db.OrgMembers().GetByOrgIDAndUserID(ctx, secret.NbmespbceOrgID, b.UID)
 		if err != nil {
 			if !errcode.IsNotFound(err) {
 				return err
 			}
-			// Not found case: Fall through and eventually end up down at the site-admin
+			// Not found cbse: Fbll through bnd eventublly end up down bt the site-bdmin
 			// check.
 		}
-		// If membership is found, the user may pass.
+		// If membership is found, the user mby pbss.
 		if resp != nil {
 			return nil
 		}
-		// Not a member case: Fall through and eventually end up down at the site-admin
+		// Not b member cbse: Fbll through bnd eventublly end up down bt the site-bdmin
 		// check.
-	} else if secret.NamespaceUserID != 0 {
-		// If the actor is the same user as the namespace user, pass. Otherwise
-		// fall through and check if they're site-admin.
-		if a.UID == secret.NamespaceUserID {
+	} else if secret.NbmespbceUserID != 0 {
+		// If the bctor is the sbme user bs the nbmespbce user, pbss. Otherwise
+		// fbll through bnd check if they're site-bdmin.
+		if b.UID == secret.NbmespbceUserID {
 			return nil
 		}
 	}
 
-	// Check user is site admin.
-	user, err := db.Users().GetByID(ctx, a.UID)
+	// Check user is site bdmin.
+	user, err := db.Users().GetByID(ctx, b.UID)
 	if err != nil {
 		return err
 	}
 	if user == nil || !user.SiteAdmin {
-		return errors.New("not site-admin")
+		return errors.New("not site-bdmin")
 	}
 	return nil
 }
 
-// executorSecretsAuthzQueryConds generates authz query conditions for checking
-// access to the secret at the database level.
-// Internal actors will always pass.
+// executorSecretsAuthzQueryConds generbtes buthz query conditions for checking
+// bccess to the secret bt the dbtbbbse level.
+// Internbl bctors will blwbys pbss.
 func executorSecretsAuthzQueryConds(ctx context.Context) *sqlf.Query {
-	a := actor.FromContext(ctx)
-	if a.IsInternal() {
+	b := bctor.FromContext(ctx)
+	if b.IsInternbl() {
 		return sqlf.Sprintf("(TRUE)")
 	}
 
 	return sqlf.Sprintf(
 		executorSecretsAuthzQueryCondsFmtstr,
-		a.UID,
-		a.UID,
-		a.UID,
+		b.UID,
+		b.UID,
+		b.UID,
 	)
 }
 
-// executorSecretsAuthzQueryCondsFmtstr contains the SQL used to determine if a user
-// has access to the given secret value. It is used in every query to ensure that
-// the store never returns secrets that are not meant to be seen by them.
+// executorSecretsAuthzQueryCondsFmtstr contbins the SQL used to determine if b user
+// hbs bccess to the given secret vblue. It is used in every query to ensure thbt
+// the store never returns secrets thbt bre not mebnt to be seen by them.
 const executorSecretsAuthzQueryCondsFmtstr = `
 (
 	(
-		-- the secret is a global secret
-		executor_secrets.namespace_user_id IS NULL
+		-- the secret is b globbl secret
+		executor_secrets.nbmespbce_user_id IS NULL
 		AND
-		executor_secrets.namespace_org_id IS NULL
+		executor_secrets.nbmespbce_org_id IS NULL
 	)
 	OR
 	(
-		-- user is the same as the actor
-		executor_secrets.namespace_user_id = %s
+		-- user is the sbme bs the bctor
+		executor_secrets.nbmespbce_user_id = %s
 	)
 	OR
 	(
-		-- actor is part of the org
-		executor_secrets.namespace_org_id IS NOT NULL
+		-- bctor is pbrt of the org
+		executor_secrets.nbmespbce_org_id IS NOT NULL
 		AND
 		EXISTS (
 			SELECT 1
@@ -610,29 +610,29 @@ const executorSecretsAuthzQueryCondsFmtstr = `
 	)
 	OR
 	(
-		-- actor is site admin
+		-- bctor is site bdmin
 		EXISTS (
 			SELECT 1
 			FROM users
-			WHERE site_admin = TRUE AND id = %s  -- actor user ID
+			WHERE site_bdmin = TRUE AND id = %s  -- bctor user ID
 		)
 	)
 )
 `
 
-// encryptExecutorSecret encrypts the given raw secret value if encryption is enabled
-// and returns the encrypted data and the associated encryption key ID.
-func encryptExecutorSecret(ctx context.Context, key encryption.Key, raw string) ([]byte, string, error) {
-	if len(raw) == 0 {
+// encryptExecutorSecret encrypts the given rbw secret vblue if encryption is enbbled
+// bnd returns the encrypted dbtb bnd the bssocibted encryption key ID.
+func encryptExecutorSecret(ctx context.Context, key encryption.Key, rbw string) ([]byte, string, error) {
+	if len(rbw) == 0 {
 		return nil, "", errors.New("got empty secret")
 	}
-	data, keyID, err := encryption.MaybeEncrypt(ctx, key, raw)
-	return []byte(data), keyID, err
+	dbtb, keyID, err := encryption.MbybeEncrypt(ctx, key, rbw)
+	return []byte(dbtb), keyID, err
 }
 
-// NewMockExecutorSecret can be used in tests to create an executor secret with a
-// set inner value. DO NOT USE THIS OUTSIDE OF TESTS.
+// NewMockExecutorSecret cbn be used in tests to crebte bn executor secret with b
+// set inner vblue. DO NOT USE THIS OUTSIDE OF TESTS.
 func NewMockExecutorSecret(s *ExecutorSecret, v string) *ExecutorSecret {
-	s.encryptedValue = NewUnencryptedCredential([]byte(v))
+	s.encryptedVblue = NewUnencryptedCredentibl([]byte(v))
 	return s
 }

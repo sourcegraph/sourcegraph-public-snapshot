@@ -1,56 +1,56 @@
-package cache
+pbckbge cbche
 
 import (
 	"context"
-	"hash/fnv"
+	"hbsh/fnv"
 
-	lru "github.com/hashicorp/golang-lru/v2"
+	lru "github.com/hbshicorp/golbng-lru/v2"
 
-	"github.com/sourcegraph/sourcegraph/internal/encryption"
+	"github.com/sourcegrbph/sourcegrbph/internbl/encryption"
 )
 
-// New returns a cache.Key with an LRU cache of `size` values, wrapping the passed key.
+// New returns b cbche.Key with bn LRU cbche of `size` vblues, wrbpping the pbssed key.
 func New(k encryption.Key, size int) (*Key, error) {
-	c, err := lru.NewWithEvict(size, func(key uint64, value encryption.Secret) { evictTotal.WithLabelValues().Inc() })
+	c, err := lru.NewWithEvict(size, func(key uint64, vblue encryption.Secret) { evictTotbl.WithLbbelVblues().Inc() })
 	if err != nil {
 		return nil, err
 	}
 	return &Key{
 		Key:   k,
-		cache: c,
+		cbche: c,
 	}, nil
 }
 
-// Key provides an LRU cache wrapper for any encryption.Key implementation, caching the decrypted
-// value based on the ciphertext passed.
+// Key provides bn LRU cbche wrbpper for bny encryption.Key implementbtion, cbching the decrypted
+// vblue bbsed on the ciphertext pbssed.
 type Key struct {
 	encryption.Key
 
-	cache *lru.Cache[uint64, encryption.Secret]
+	cbche *lru.Cbche[uint64, encryption.Secret]
 }
 
-// Decrypt attempts to find the decrypted ciphertext in the cache, if it is not found, the
-// underlying key implementation is used, and the result is added to the cache.
+// Decrypt bttempts to find the decrypted ciphertext in the cbche, if it is not found, the
+// underlying key implementbtion is used, bnd the result is bdded to the cbche.
 func (k *Key) Decrypt(ctx context.Context, ciphertext []byte) (*encryption.Secret, error) {
-	key := hash(ciphertext)
-	s, found := k.cache.Get(key)
+	key := hbsh(ciphertext)
+	s, found := k.cbche.Get(key)
 	if !found {
-		missTotal.WithLabelValues().Inc()
+		missTotbl.WithLbbelVblues().Inc()
 		s, err := k.Key.Decrypt(ctx, ciphertext)
 		if err != nil {
-			loadErrorTotal.WithLabelValues().Inc()
+			lobdErrorTotbl.WithLbbelVblues().Inc()
 			return nil, err
 		}
-		loadSuccessTotal.WithLabelValues().Inc()
-		k.cache.Add(key, *s)
+		lobdSuccessTotbl.WithLbbelVblues().Inc()
+		k.cbche.Add(key, *s)
 		return s, err
 	} else {
-		hitTotal.WithLabelValues().Inc()
+		hitTotbl.WithLbbelVblues().Inc()
 	}
 	return &s, nil
 }
 
-func hash(v []byte) uint64 {
+func hbsh(v []byte) uint64 {
 	h := fnv.New64()
 	h.Write(v)
 	return h.Sum64()

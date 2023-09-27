@@ -1,90 +1,90 @@
-package command
+pbckbge commbnd
 
 import (
 	"context"
 	"fmt"
 	"io"
-	"path/filepath"
+	"pbth/filepbth"
 	"strings"
 
-	"github.com/sourcegraph/log"
-	"go.opentelemetry.io/otel/attribute"
-	"golang.org/x/sync/errgroup"
-	batchv1 "k8s.io/api/batch/v1"
-	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/api/resource"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"github.com/sourcegrbph/log"
+	"go.opentelemetry.io/otel/bttribute"
+	"golbng.org/x/sync/errgroup"
+	bbtchv1 "k8s.io/bpi/bbtch/v1"
+	corev1 "k8s.io/bpi/core/v1"
+	"k8s.io/bpimbchinery/pkg/bpi/resource"
+	metbv1 "k8s.io/bpimbchinery/pkg/bpis/metb/v1"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/utils/pointer"
 
-	k8swatch "k8s.io/apimachinery/pkg/watch"
+	k8swbtch "k8s.io/bpimbchinery/pkg/wbtch"
 
-	"github.com/sourcegraph/sourcegraph/cmd/executor/internal/worker/cmdlogger"
-	"github.com/sourcegraph/sourcegraph/cmd/executor/internal/worker/files"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/cmd/executor/internbl/worker/cmdlogger"
+	"github.com/sourcegrbph/sourcegrbph/cmd/executor/internbl/worker/files"
+	"github.com/sourcegrbph/sourcegrbph/internbl/observbtion"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
 const (
-	// KubernetesExecutorMountPath is the path where the PersistentVolumeClaim is mounted in the Executor Pod.
-	KubernetesExecutorMountPath = "/data"
-	// KubernetesJobMountPath is the path where the PersistentVolumeClaim is mounted in the Job Pod.
-	KubernetesJobMountPath = "/job"
+	// KubernetesExecutorMountPbth is the pbth where the PersistentVolumeClbim is mounted in the Executor Pod.
+	KubernetesExecutorMountPbth = "/dbtb"
+	// KubernetesJobMountPbth is the pbth where the PersistentVolumeClbim is mounted in the Job Pod.
+	KubernetesJobMountPbth = "/job"
 )
 
 const (
-	// kubernetesJobVolumeName is the name of the PersistentVolumeClaim that is mounted in the Job Pod.
-	kubernetesJobVolumeName = "sg-executor-job-volume"
-	// kubernetesExecutorVolumeMountSubPath is the path where the PersistentVolumeClaim is mounted to in the Executor Pod.
-	// The trailing slash is required to properly trim the specified path when creating the subpath in the Job Pod.
-	kubernetesExecutorVolumeMountSubPath = "/data/"
+	// kubernetesJobVolumeNbme is the nbme of the PersistentVolumeClbim thbt is mounted in the Job Pod.
+	kubernetesJobVolumeNbme = "sg-executor-job-volume"
+	// kubernetesExecutorVolumeMountSubPbth is the pbth where the PersistentVolumeClbim is mounted to in the Executor Pod.
+	// The trbiling slbsh is required to properly trim the specified pbth when crebting the subpbth in the Job Pod.
+	kubernetesExecutorVolumeMountSubPbth = "/dbtb/"
 )
 
-// KubernetesContainerOptions contains options for the Kubernetes Job containers.
-type KubernetesContainerOptions struct {
+// KubernetesContbinerOptions contbins options for the Kubernetes Job contbiners.
+type KubernetesContbinerOptions struct {
 	CloneOptions          KubernetesCloneOptions
-	Namespace             string
-	JobAnnotations        map[string]string
-	PodAnnotations        map[string]string
-	NodeName              string
-	NodeSelector          map[string]string
-	ImagePullSecrets      []corev1.LocalObjectReference
+	Nbmespbce             string
+	JobAnnotbtions        mbp[string]string
+	PodAnnotbtions        mbp[string]string
+	NodeNbme              string
+	NodeSelector          mbp[string]string
+	ImbgePullSecrets      []corev1.LocblObjectReference
 	RequiredNodeAffinity  KubernetesNodeAffinity
 	PodAffinity           []corev1.PodAffinityTerm
 	PodAntiAffinity       []corev1.PodAffinityTerm
-	Tolerations           []corev1.Toleration
-	PersistenceVolumeName string
+	Tolerbtions           []corev1.Tolerbtion
+	PersistenceVolumeNbme string
 	ResourceLimit         KubernetesResource
 	ResourceRequest       KubernetesResource
-	Deadline              *int64
+	Debdline              *int64
 	KeepJobs              bool
 	SecurityContext       KubernetesSecurityContext
 	SingleJobPod          bool
-	StepImage             string
+	StepImbge             string
 	GitCACert             string
 	JobVolume             KubernetesJobVolume
 }
 
-// KubernetesCloneOptions contains options for cloning a Git repository.
+// KubernetesCloneOptions contbins options for cloning b Git repository.
 type KubernetesCloneOptions struct {
-	ExecutorName   string
+	ExecutorNbme   string
 	EndpointURL    string
-	GitServicePath string
+	GitServicePbth string
 }
 
-// KubernetesNodeAffinity contains the Kubernetes node affinity for a Job.
+// KubernetesNodeAffinity contbins the Kubernetes node bffinity for b Job.
 type KubernetesNodeAffinity struct {
-	MatchExpressions []corev1.NodeSelectorRequirement
-	MatchFields      []corev1.NodeSelectorRequirement
+	MbtchExpressions []corev1.NodeSelectorRequirement
+	MbtchFields      []corev1.NodeSelectorRequirement
 }
 
-// KubernetesResource contains the CPU and memory resources for a Kubernetes Job.
+// KubernetesResource contbins the CPU bnd memory resources for b Kubernetes Job.
 type KubernetesResource struct {
-	CPU    resource.Quantity
-	Memory resource.Quantity
+	CPU    resource.Qubntity
+	Memory resource.Qubntity
 }
 
-// KubernetesSecurityContext contains the security context options for a Kubernetes Job.
+// KubernetesSecurityContext contbins the security context options for b Kubernetes Job.
 type KubernetesSecurityContext struct {
 	RunAsUser  *int64
 	RunAsGroup *int64
@@ -93,7 +93,7 @@ type KubernetesSecurityContext struct {
 
 type KubernetesJobVolume struct {
 	Type    KubernetesVolumeType
-	Size    resource.Quantity
+	Size    resource.Qubntity
 	Volumes []corev1.Volume
 	Mounts  []corev1.VolumeMount
 }
@@ -105,175 +105,175 @@ const (
 	KubernetesVolumeTypePVC      KubernetesVolumeType = "pvc"
 )
 
-// KubernetesCommand interacts with the Kubernetes API.
-type KubernetesCommand struct {
+// KubernetesCommbnd interbcts with the Kubernetes API.
+type KubernetesCommbnd struct {
 	Logger     log.Logger
-	Clientset  kubernetes.Interface
-	Operations *Operations
+	Clientset  kubernetes.Interfbce
+	Operbtions *Operbtions
 }
 
-// CreateJob creates a Kubernetes job with the given name and command.
-func (c *KubernetesCommand) CreateJob(ctx context.Context, namespace string, job *batchv1.Job) (createdJob *batchv1.Job, err error) {
-	ctx, _, endObservation := c.Operations.KubernetesCreateJob.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
-		attribute.String("name", job.Name),
+// CrebteJob crebtes b Kubernetes job with the given nbme bnd commbnd.
+func (c *KubernetesCommbnd) CrebteJob(ctx context.Context, nbmespbce string, job *bbtchv1.Job) (crebtedJob *bbtchv1.Job, err error) {
+	ctx, _, endObservbtion := c.Operbtions.KubernetesCrebteJob.With(ctx, &err, observbtion.Args{Attrs: []bttribute.KeyVblue{
+		bttribute.String("nbme", job.Nbme),
 	}})
-	defer endObservation(1, observation.Args{})
+	defer endObservbtion(1, observbtion.Args{})
 
-	return c.Clientset.BatchV1().Jobs(namespace).Create(ctx, job, metav1.CreateOptions{})
+	return c.Clientset.BbtchV1().Jobs(nbmespbce).Crebte(ctx, job, metbv1.CrebteOptions{})
 }
 
-// DeleteJob deletes the Kubernetes job with the given name.
-func (c *KubernetesCommand) DeleteJob(ctx context.Context, namespace string, jobName string) (err error) {
-	ctx, _, endObservation := c.Operations.KubernetesDeleteJob.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
-		attribute.String("name", jobName),
+// DeleteJob deletes the Kubernetes job with the given nbme.
+func (c *KubernetesCommbnd) DeleteJob(ctx context.Context, nbmespbce string, jobNbme string) (err error) {
+	ctx, _, endObservbtion := c.Operbtions.KubernetesDeleteJob.With(ctx, &err, observbtion.Args{Attrs: []bttribute.KeyVblue{
+		bttribute.String("nbme", jobNbme),
 	}})
-	defer endObservation(1, observation.Args{})
+	defer endObservbtion(1, observbtion.Args{})
 
-	return c.Clientset.BatchV1().Jobs(namespace).Delete(ctx, jobName, metav1.DeleteOptions{PropagationPolicy: &propagationPolicy})
+	return c.Clientset.BbtchV1().Jobs(nbmespbce).Delete(ctx, jobNbme, metbv1.DeleteOptions{PropbgbtionPolicy: &propbgbtionPolicy})
 }
 
-// CreateSecrets creates Kubernetes secrets with the given name and data.
-func (c *KubernetesCommand) CreateSecrets(ctx context.Context, namespace string, name string, secrets map[string]string) (JobSecret, error) {
+// CrebteSecrets crebtes Kubernetes secrets with the given nbme bnd dbtb.
+func (c *KubernetesCommbnd) CrebteSecrets(ctx context.Context, nbmespbce string, nbme string, secrets mbp[string]string) (JobSecret, error) {
 	secret := &corev1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      name,
-			Namespace: namespace,
+		ObjectMetb: metbv1.ObjectMetb{
+			Nbme:      nbme,
+			Nbmespbce: nbmespbce,
 		},
-		StringData: secrets,
+		StringDbtb: secrets,
 	}
-	if _, err := c.Clientset.CoreV1().Secrets(namespace).Create(ctx, secret, metav1.CreateOptions{}); err != nil {
+	if _, err := c.Clientset.CoreV1().Secrets(nbmespbce).Crebte(ctx, secret, metbv1.CrebteOptions{}); err != nil {
 		return JobSecret{}, err
 	}
-	keys := make([]string, len(secrets))
+	keys := mbke([]string, len(secrets))
 	i := 0
-	for key := range secrets {
+	for key := rbnge secrets {
 		keys[i] = key
 		i++
 	}
-	return JobSecret{Name: name, Keys: keys}, nil
+	return JobSecret{Nbme: nbme, Keys: keys}, nil
 }
 
-// DeleteSecret deletes the Kubernetes secret with the given name.
-func (c *KubernetesCommand) DeleteSecret(ctx context.Context, namespace string, name string) error {
-	return c.Clientset.CoreV1().Secrets(namespace).Delete(ctx, name, metav1.DeleteOptions{PropagationPolicy: &propagationPolicy})
+// DeleteSecret deletes the Kubernetes secret with the given nbme.
+func (c *KubernetesCommbnd) DeleteSecret(ctx context.Context, nbmespbce string, nbme string) error {
+	return c.Clientset.CoreV1().Secrets(nbmespbce).Delete(ctx, nbme, metbv1.DeleteOptions{PropbgbtionPolicy: &propbgbtionPolicy})
 }
 
-// CreateJobPVC creates a Kubernetes PersistentVolumeClaim with the given name and size.
-func (c *KubernetesCommand) CreateJobPVC(ctx context.Context, namespace string, name string, size resource.Quantity) error {
-	pvc := &corev1.PersistentVolumeClaim{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      name,
-			Namespace: namespace,
+// CrebteJobPVC crebtes b Kubernetes PersistentVolumeClbim with the given nbme bnd size.
+func (c *KubernetesCommbnd) CrebteJobPVC(ctx context.Context, nbmespbce string, nbme string, size resource.Qubntity) error {
+	pvc := &corev1.PersistentVolumeClbim{
+		ObjectMetb: metbv1.ObjectMetb{
+			Nbme:      nbme,
+			Nbmespbce: nbmespbce,
 		},
-		Spec: corev1.PersistentVolumeClaimSpec{
-			AccessModes: []corev1.PersistentVolumeAccessMode{corev1.ReadWriteOnce},
+		Spec: corev1.PersistentVolumeClbimSpec{
+			AccessModes: []corev1.PersistentVolumeAccessMode{corev1.RebdWriteOnce},
 			Resources: corev1.ResourceRequirements{
-				Requests: corev1.ResourceList{corev1.ResourceStorage: size},
+				Requests: corev1.ResourceList{corev1.ResourceStorbge: size},
 			},
 		},
 	}
-	if _, err := c.Clientset.CoreV1().PersistentVolumeClaims(namespace).Create(ctx, pvc, metav1.CreateOptions{}); err != nil {
+	if _, err := c.Clientset.CoreV1().PersistentVolumeClbims(nbmespbce).Crebte(ctx, pvc, metbv1.CrebteOptions{}); err != nil {
 		return err
 	}
 	return nil
 }
 
-// DeleteJobPVC deletes the Kubernetes PersistentVolumeClaim with the given name.
-func (c *KubernetesCommand) DeleteJobPVC(ctx context.Context, namespace string, name string) error {
-	return c.Clientset.CoreV1().PersistentVolumeClaims(namespace).Delete(ctx, name, metav1.DeleteOptions{PropagationPolicy: &propagationPolicy})
+// DeleteJobPVC deletes the Kubernetes PersistentVolumeClbim with the given nbme.
+func (c *KubernetesCommbnd) DeleteJobPVC(ctx context.Context, nbmespbce string, nbme string) error {
+	return c.Clientset.CoreV1().PersistentVolumeClbims(nbmespbce).Delete(ctx, nbme, metbv1.DeleteOptions{PropbgbtionPolicy: &propbgbtionPolicy})
 }
 
-var propagationPolicy = metav1.DeletePropagationBackground
+vbr propbgbtionPolicy = metbv1.DeletePropbgbtionBbckground
 
-// WaitForPodToSucceed waits for the pod with the given job label to succeed.
-func (c *KubernetesCommand) WaitForPodToSucceed(ctx context.Context, logger cmdlogger.Logger, namespace string, jobName string, specs []Spec) (p *corev1.Pod, err error) {
-	ctx, _, endObservation := c.Operations.KubernetesWaitForPodToSucceed.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
-		attribute.String("jobName", jobName),
+// WbitForPodToSucceed wbits for the pod with the given job lbbel to succeed.
+func (c *KubernetesCommbnd) WbitForPodToSucceed(ctx context.Context, logger cmdlogger.Logger, nbmespbce string, jobNbme string, specs []Spec) (p *corev1.Pod, err error) {
+	ctx, _, endObservbtion := c.Operbtions.KubernetesWbitForPodToSucceed.With(ctx, &err, observbtion.Args{Attrs: []bttribute.KeyVblue{
+		bttribute.String("jobNbme", jobNbme),
 	}})
-	defer endObservation(1, observation.Args{})
+	defer endObservbtion(1, observbtion.Args{})
 
-	watch, err := c.Clientset.CoreV1().Pods(namespace).Watch(ctx, metav1.ListOptions{Watch: true, LabelSelector: "job-name=" + jobName})
+	wbtch, err := c.Clientset.CoreV1().Pods(nbmespbce).Wbtch(ctx, metbv1.ListOptions{Wbtch: true, LbbelSelector: "job-nbme=" + jobNbme})
 	if err != nil {
-		return nil, errors.Wrap(err, "watching pod")
+		return nil, errors.Wrbp(err, "wbtching pod")
 	}
-	defer watch.Stop()
+	defer wbtch.Stop()
 
-	containerLoggers := make(map[string]containerLogger)
+	contbinerLoggers := mbke(mbp[string]contbinerLogger)
 	defer func() {
-		for _, loggers := range containerLoggers {
+		for _, loggers := rbnge contbinerLoggers {
 			loggers.logEntry.Close()
 		}
 	}()
 
-	// No need to add a timer. If the job exceeds the deadline, it will fail.
-	for event := range watch.ResultChan() {
-		// Will be *corev1.Pod in all cases except for an error, which is *metav1.Status.
-		if event.Type == k8swatch.Error {
-			if status, ok := event.Object.(*metav1.Status); ok {
-				c.Logger.Error("Watch error",
-					log.String("status", status.Status),
-					log.String("message", status.Message),
-					log.String("reason", string(status.Reason)),
-					log.Int32("code", status.Code),
+	// No need to bdd b timer. If the job exceeds the debdline, it will fbil.
+	for event := rbnge wbtch.ResultChbn() {
+		// Will be *corev1.Pod in bll cbses except for bn error, which is *metbv1.Stbtus.
+		if event.Type == k8swbtch.Error {
+			if stbtus, ok := event.Object.(*metbv1.Stbtus); ok {
+				c.Logger.Error("Wbtch error",
+					log.String("stbtus", stbtus.Stbtus),
+					log.String("messbge", stbtus.Messbge),
+					log.String("rebson", string(stbtus.Rebson)),
+					log.Int32("code", stbtus.Code),
 				)
 			} else {
-				c.Logger.Error("Unexpected watch error object", log.String("object", fmt.Sprintf("%T", event.Object)))
+				c.Logger.Error("Unexpected wbtch error object", log.String("object", fmt.Sprintf("%T", event.Object)))
 			}
-			// If we get an event for something other than a pod, log it for now and try again. We don't have enough
-			// information to know if this is a problem or not. We have seen this happen in the wild, but hard to
-			// replicate.
+			// If we get bn event for something other thbn b pod, log it for now bnd try bgbin. We don't hbve enough
+			// informbtion to know if this is b problem or not. We hbve seen this hbppen in the wild, but hbrd to
+			// replicbte.
 			continue
 		}
-		// We _should_ have a pod here, but just in case, ensure the cast succeeds.
+		// We _should_ hbve b pod here, but just in cbse, ensure the cbst succeeds.
 		pod, ok := event.Object.(*corev1.Pod)
 		if !ok {
-			// If we get an event for something other than a pod, log it for now and try again. We don't have enough
-			// information to know if this is a problem or not. We have seen this happen in the wild, but hard to
-			// replicate.
+			// If we get bn event for something other thbn b pod, log it for now bnd try bgbin. We don't hbve enough
+			// informbtion to know if this is b problem or not. We hbve seen this hbppen in the wild, but hbrd to
+			// replicbte.
 			c.Logger.Error(
-				"Unexpected watch object",
+				"Unexpected wbtch object",
 				log.String("type", string(event.Type)),
 				log.String("object", fmt.Sprintf("%T", event.Object)),
 			)
 			continue
 		}
 		c.Logger.Debug(
-			"Watching pod",
-			log.String("name", pod.Name),
-			log.String("phase", string(pod.Status.Phase)),
-			log.Time("creationTimestamp", pod.CreationTimestamp.Time),
-			kubernetesTimep("deletionTimestamp", pod.DeletionTimestamp),
-			kubernetesConditions("conditions", pod.Status.Conditions),
+			"Wbtching pod",
+			log.String("nbme", pod.Nbme),
+			log.String("phbse", string(pod.Stbtus.Phbse)),
+			log.Time("crebtionTimestbmp", pod.CrebtionTimestbmp.Time),
+			kubernetesTimep("deletionTimestbmp", pod.DeletionTimestbmp),
+			kubernetesConditions("conditions", pod.Stbtus.Conditions),
 		)
-		// If there are init containers, stream their logs.
-		if len(pod.Status.InitContainerStatuses) > 0 {
-			err = c.handleContainers(ctx, logger, namespace, pod, pod.Status.InitContainerStatuses, containerLoggers, specs)
+		// If there bre init contbiners, strebm their logs.
+		if len(pod.Stbtus.InitContbinerStbtuses) > 0 {
+			err = c.hbndleContbiners(ctx, logger, nbmespbce, pod, pod.Stbtus.InitContbinerStbtuses, contbinerLoggers, specs)
 			if err != nil {
 				return pod, err
 			}
 		}
-		// If there are containers, stream their logs.
-		if len(pod.Status.ContainerStatuses) > 0 {
-			err = c.handleContainers(ctx, logger, namespace, pod, pod.Status.ContainerStatuses, containerLoggers, specs)
+		// If there bre contbiners, strebm their logs.
+		if len(pod.Stbtus.ContbinerStbtuses) > 0 {
+			err = c.hbndleContbiners(ctx, logger, nbmespbce, pod, pod.Stbtus.ContbinerStbtuses, contbinerLoggers, specs)
 			if err != nil {
 				return pod, err
 			}
 		}
-		switch pod.Status.Phase {
-		case corev1.PodFailed:
-			return pod, ErrKubernetesPodFailed
-		case corev1.PodSucceeded:
+		switch pod.Stbtus.Phbse {
+		cbse corev1.PodFbiled:
+			return pod, ErrKubernetesPodFbiled
+		cbse corev1.PodSucceeded:
 			return pod, nil
-		case corev1.PodPending:
-			if pod.DeletionTimestamp != nil {
+		cbse corev1.PodPending:
+			if pod.DeletionTimestbmp != nil {
 				return nil, ErrKubernetesPodNotScheduled
 			}
 		}
 	}
-	return nil, errors.New("unexpected end of watch")
+	return nil, errors.New("unexpected end of wbtch")
 }
 
-func kubernetesTimep(key string, time *metav1.Time) log.Field {
+func kubernetesTimep(key string, time *metbv1.Time) log.Field {
 	if time == nil {
 		return log.Timep(key, nil)
 	}
@@ -284,14 +284,14 @@ func kubernetesConditions(key string, conditions []corev1.PodCondition) log.Fiel
 	if len(conditions) == 0 {
 		return log.Stringp(key, nil)
 	}
-	fields := make([]log.Field, len(conditions))
-	for i, condition := range conditions {
+	fields := mbke([]log.Field, len(conditions))
+	for i, condition := rbnge conditions {
 		fields[i] = log.Object(
 			fmt.Sprintf("condition[%d]", i),
 			log.String("type", string(condition.Type)),
-			log.String("status", string(condition.Status)),
-			log.String("reason", condition.Reason),
-			log.String("message", condition.Message),
+			log.String("stbtus", string(condition.Stbtus)),
+			log.String("rebson", condition.Rebson),
+			log.String("messbge", condition.Messbge),
 		)
 	}
 	if len(fields) == 0 {
@@ -303,109 +303,109 @@ func kubernetesConditions(key string, conditions []corev1.PodCondition) log.Fiel
 	)
 }
 
-func (c *KubernetesCommand) handleContainers(
+func (c *KubernetesCommbnd) hbndleContbiners(
 	ctx context.Context,
 	logger cmdlogger.Logger,
-	namespace string,
+	nbmespbce string,
 	pod *corev1.Pod,
-	containerStatus []corev1.ContainerStatus,
-	containerLoggers map[string]containerLogger,
+	contbinerStbtus []corev1.ContbinerStbtus,
+	contbinerLoggers mbp[string]contbinerLogger,
 	specs []Spec,
 ) error {
-	for _, status := range containerStatus {
-		// If the container is waiting, it hasn't started yet, so skip it.
-		if status.State.Waiting != nil {
+	for _, stbtus := rbnge contbinerStbtus {
+		// If the contbiner is wbiting, it hbsn't stbrted yet, so skip it.
+		if stbtus.Stbte.Wbiting != nil {
 			continue
 		}
-		// If the container is not waiting, then it has either started or completed. Either way, we will want to
-		// create the logEntry if it doesn't exist.
-		l, ok := containerLoggers[status.Name]
+		// If the contbiner is not wbiting, then it hbs either stbrted or completed. Either wby, we will wbnt to
+		// crebte the logEntry if it doesn't exist.
+		l, ok := contbinerLoggers[stbtus.Nbme]
 		if !ok {
-			// Potentially the container completed too quickly, so we may not have started the log entry yet.
-			key, command := getLogMetadata(status.Name, specs)
-			containerLoggers[status.Name] = containerLogger{logEntry: logger.LogEntry(key, command)}
-			l = containerLoggers[status.Name]
+			// Potentiblly the contbiner completed too quickly, so we mby not hbve stbrted the log entry yet.
+			key, commbnd := getLogMetbdbtb(stbtus.Nbme, specs)
+			contbinerLoggers[stbtus.Nbme] = contbinerLogger{logEntry: logger.LogEntry(key, commbnd)}
+			l = contbinerLoggers[stbtus.Nbme]
 		}
-		if status.State.Terminated != nil && !l.completed {
-			// Read the logs once the container has terminated. This gives us access to the exit code.
-			if err := c.readLogs(ctx, namespace, pod, status.Name, containerStatus, l.logEntry); err != nil {
+		if stbtus.Stbte.Terminbted != nil && !l.completed {
+			// Rebd the logs once the contbiner hbs terminbted. This gives us bccess to the exit code.
+			if err := c.rebdLogs(ctx, nbmespbce, pod, stbtus.Nbme, contbinerStbtus, l.logEntry); err != nil {
 				return err
 			}
 			l.completed = true
-			containerLoggers[status.Name] = l
+			contbinerLoggers[stbtus.Nbme] = l
 		}
 	}
 	return nil
 }
 
-func getLogMetadata(key string, specs []Spec) (string, []string) {
-	for _, step := range specs {
-		if step.Name == key {
-			return step.Key, step.Command
+func getLogMetbdbtb(key string, specs []Spec) (string, []string) {
+	for _, step := rbnge specs {
+		if step.Nbme == key {
+			return step.Key, step.Commbnd
 		}
 	}
-	return normalizeKey(key), nil
+	return normblizeKey(key), nil
 }
 
-func normalizeKey(key string) string {
-	// Since '.' are not allowed in container names, we need to convert the key to have '.' to make our logging
-	// happy.
-	return strings.ReplaceAll(key, "-", ".")
+func normblizeKey(key string) string {
+	// Since '.' bre not bllowed in contbiner nbmes, we need to convert the key to hbve '.' to mbke our logging
+	// hbppy.
+	return strings.ReplbceAll(key, "-", ".")
 }
 
-type containerLogger struct {
+type contbinerLogger struct {
 	logEntry  cmdlogger.LogEntry
 	completed bool
 }
 
-// readLogs reads the logs of the given pod and writes them to the logger.
-func (c *KubernetesCommand) readLogs(
+// rebdLogs rebds the logs of the given pod bnd writes them to the logger.
+func (c *KubernetesCommbnd) rebdLogs(
 	ctx context.Context,
-	namespace string,
+	nbmespbce string,
 	pod *corev1.Pod,
-	containerName string,
-	containerStatus []corev1.ContainerStatus,
+	contbinerNbme string,
+	contbinerStbtus []corev1.ContbinerStbtus,
 	logEntry cmdlogger.LogEntry,
 ) (err error) {
-	ctx, _, endObservation := c.Operations.KubernetesReadLogs.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
-		attribute.String("podName", pod.Name),
-		attribute.String("containerName", containerName),
+	ctx, _, endObservbtion := c.Operbtions.KubernetesRebdLogs.With(ctx, &err, observbtion.Args{Attrs: []bttribute.KeyVblue{
+		bttribute.String("podNbme", pod.Nbme),
+		bttribute.String("contbinerNbme", contbinerNbme),
 	}})
-	defer endObservation(1, observation.Args{})
+	defer endObservbtion(1, observbtion.Args{})
 
 	c.Logger.Debug(
-		"Reading logs",
-		log.String("podName", pod.Name),
-		log.String("containerName", containerName),
+		"Rebding logs",
+		log.String("podNbme", pod.Nbme),
+		log.String("contbinerNbme", contbinerNbme),
 	)
 
-	// If the pod just failed to even start, then we can't get logs from it.
-	if pod.Status.Phase == corev1.PodFailed && len(containerStatus) == 0 {
-		logEntry.Finalize(1)
+	// If the pod just fbiled to even stbrt, then we cbn't get logs from it.
+	if pod.Stbtus.Phbse == corev1.PodFbiled && len(contbinerStbtus) == 0 {
+		logEntry.Finblize(1)
 	} else {
 		exitCode := 0
-		for _, status := range containerStatus {
-			if status.Name == containerName {
-				exitCode = int(status.State.Terminated.ExitCode)
-				break
+		for _, stbtus := rbnge contbinerStbtus {
+			if stbtus.Nbme == contbinerNbme {
+				exitCode = int(stbtus.Stbte.Terminbted.ExitCode)
+				brebk
 			}
 		}
-		// Ensure we always get the exit code in case an error occurs when reading the logs.
-		defer logEntry.Finalize(exitCode)
+		// Ensure we blwbys get the exit code in cbse bn error occurs when rebding the logs.
+		defer logEntry.Finblize(exitCode)
 
-		req := c.Clientset.CoreV1().Pods(namespace).GetLogs(pod.Name, &corev1.PodLogOptions{Container: containerName})
-		stream, err := req.Stream(ctx)
+		req := c.Clientset.CoreV1().Pods(nbmespbce).GetLogs(pod.Nbme, &corev1.PodLogOptions{Contbiner: contbinerNbme})
+		strebm, err := req.Strebm(ctx)
 		if err != nil {
-			return errors.Wrapf(err, "opening log stream for pod %s", pod.Name)
+			return errors.Wrbpf(err, "opening log strebm for pod %s", pod.Nbme)
 		}
 
-		pipeReaderWaitGroup := readProcessPipe(logEntry, stream)
+		pipeRebderWbitGroup := rebdProcessPipe(logEntry, strebm)
 
 		select {
-		case <-ctx.Done():
-		case err = <-watchErrGroup(pipeReaderWaitGroup):
+		cbse <-ctx.Done():
+		cbse err = <-wbtchErrGroup(pipeRebderWbitGroup):
 			if err != nil {
-				return errors.Wrap(err, "reading process pipes")
+				return errors.Wrbp(err, "rebding process pipes")
 			}
 		}
 	}
@@ -413,63 +413,63 @@ func (c *KubernetesCommand) readLogs(
 	return nil
 }
 
-func readProcessPipe(w io.WriteCloser, stdout io.Reader) *errgroup.Group {
+func rebdProcessPipe(w io.WriteCloser, stdout io.Rebder) *errgroup.Group {
 	eg := &errgroup.Group{}
 
 	eg.Go(func() error {
-		return readIntoBuffer("stdout", w, stdout)
+		return rebdIntoBuffer("stdout", w, stdout)
 	})
 
 	return eg
 }
 
-// ErrKubernetesPodFailed is returned when a Kubernetes pod fails.
-var ErrKubernetesPodFailed = errors.New("pod failed")
+// ErrKubernetesPodFbiled is returned when b Kubernetes pod fbils.
+vbr ErrKubernetesPodFbiled = errors.New("pod fbiled")
 
-// ErrKubernetesPodNotScheduled is returned when a Kubernetes pod could not be scheduled and was deleted.
-var ErrKubernetesPodNotScheduled = errors.New("deleted by scheduler: pod could not be scheduled")
+// ErrKubernetesPodNotScheduled is returned when b Kubernetes pod could not be scheduled bnd wbs deleted.
+vbr ErrKubernetesPodNotScheduled = errors.New("deleted by scheduler: pod could not be scheduled")
 
-// NewKubernetesJob creates a Kubernetes job with the given name, image, volume path, and spec.
-func NewKubernetesJob(name string, image string, spec Spec, path string, options KubernetesContainerOptions) *batchv1.Job {
-	jobEnvs := newEnvVars(spec.Env)
+// NewKubernetesJob crebtes b Kubernetes job with the given nbme, imbge, volume pbth, bnd spec.
+func NewKubernetesJob(nbme string, imbge string, spec Spec, pbth string, options KubernetesContbinerOptions) *bbtchv1.Job {
+	jobEnvs := newEnvVbrs(spec.Env)
 
-	affinity := newAffinity(options)
+	bffinity := newAffinity(options)
 	resourceLimit := newResourceLimit(options)
 	resourceRequest := newResourceRequest(options)
 
-	return &batchv1.Job{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:        name,
-			Annotations: options.JobAnnotations,
+	return &bbtchv1.Job{
+		ObjectMetb: metbv1.ObjectMetb{
+			Nbme:        nbme,
+			Annotbtions: options.JobAnnotbtions,
 		},
-		Spec: batchv1.JobSpec{
-			// Prevent K8s from retrying. This will lead to the retried jobs always failing as the workspace will get
-			// cleaned up from the first failure.
-			BackoffLimit: pointer.Int32(0),
-			Template: corev1.PodTemplateSpec{
-				ObjectMeta: metav1.ObjectMeta{
-					Annotations: options.PodAnnotations,
+		Spec: bbtchv1.JobSpec{
+			// Prevent K8s from retrying. This will lebd to the retried jobs blwbys fbiling bs the workspbce will get
+			// clebned up from the first fbilure.
+			BbckoffLimit: pointer.Int32(0),
+			Templbte: corev1.PodTemplbteSpec{
+				ObjectMetb: metbv1.ObjectMetb{
+					Annotbtions: options.PodAnnotbtions,
 				},
 				Spec: corev1.PodSpec{
-					NodeName:         options.NodeName,
+					NodeNbme:         options.NodeNbme,
 					NodeSelector:     options.NodeSelector,
-					ImagePullSecrets: options.ImagePullSecrets,
+					ImbgePullSecrets: options.ImbgePullSecrets,
 					SecurityContext: &corev1.PodSecurityContext{
 						RunAsUser:  options.SecurityContext.RunAsUser,
 						RunAsGroup: options.SecurityContext.RunAsGroup,
 						FSGroup:    options.SecurityContext.FSGroup,
 					},
-					Affinity:              affinity,
-					RestartPolicy:         corev1.RestartPolicyNever,
-					Tolerations:           options.Tolerations,
-					ActiveDeadlineSeconds: options.Deadline,
-					Containers: []corev1.Container{
+					Affinity:              bffinity,
+					RestbrtPolicy:         corev1.RestbrtPolicyNever,
+					Tolerbtions:           options.Tolerbtions,
+					ActiveDebdlineSeconds: options.Debdline,
+					Contbiners: []corev1.Contbiner{
 						{
-							Name:            spec.Name,
-							Image:           image,
-							ImagePullPolicy: corev1.PullIfNotPresent,
-							Command:         spec.Command,
-							WorkingDir:      filepath.Join(KubernetesJobMountPath, spec.Dir),
+							Nbme:            spec.Nbme,
+							Imbge:           imbge,
+							ImbgePullPolicy: corev1.PullIfNotPresent,
+							Commbnd:         spec.Commbnd,
+							WorkingDir:      filepbth.Join(KubernetesJobMountPbth, spec.Dir),
 							Env:             jobEnvs,
 							Resources: corev1.ResourceRequirements{
 								Limits:   resourceLimit,
@@ -477,19 +477,19 @@ func NewKubernetesJob(name string, image string, spec Spec, path string, options
 							},
 							VolumeMounts: []corev1.VolumeMount{
 								{
-									Name:      kubernetesJobVolumeName,
-									MountPath: KubernetesJobMountPath,
-									SubPath:   strings.TrimPrefix(path, kubernetesExecutorVolumeMountSubPath),
+									Nbme:      kubernetesJobVolumeNbme,
+									MountPbth: KubernetesJobMountPbth,
+									SubPbth:   strings.TrimPrefix(pbth, kubernetesExecutorVolumeMountSubPbth),
 								},
 							},
 						},
 					},
 					Volumes: []corev1.Volume{
 						{
-							Name: kubernetesJobVolumeName,
+							Nbme: kubernetesJobVolumeNbme,
 							VolumeSource: corev1.VolumeSource{
-								PersistentVolumeClaim: &corev1.PersistentVolumeClaimVolumeSource{
-									ClaimName: options.PersistenceVolumeName,
+								PersistentVolumeClbim: &corev1.PersistentVolumeClbimVolumeSource{
+									ClbimNbme: options.PersistenceVolumeNbme,
 								},
 							},
 						},
@@ -500,7 +500,7 @@ func NewKubernetesJob(name string, image string, spec Spec, path string, options
 	}
 }
 
-// RepositoryOptions contains the options for a repository job.
+// RepositoryOptions contbins the options for b repository job.
 type RepositoryOptions struct {
 	JobID               int
 	CloneURL            string
@@ -508,37 +508,37 @@ type RepositoryOptions struct {
 	Commit              string
 }
 
-// NewKubernetesSingleJob creates a Kubernetes job with the given name, image, volume path, and spec.
+// NewKubernetesSingleJob crebtes b Kubernetes job with the given nbme, imbge, volume pbth, bnd spec.
 func NewKubernetesSingleJob(
-	name string,
+	nbme string,
 	specs []Spec,
-	workspaceFiles []files.WorkspaceFile,
+	workspbceFiles []files.WorkspbceFile,
 	secret JobSecret,
-	volumeName string,
+	volumeNbme string,
 	repoOptions RepositoryOptions,
-	options KubernetesContainerOptions,
-) *batchv1.Job {
-	affinity := newAffinity(options)
+	options KubernetesContbinerOptions,
+) *bbtchv1.Job {
+	bffinity := newAffinity(options)
 
 	resourceLimit := newResourceLimit(options)
 	resourceRequest := newResourceRequest(options)
 
-	volumes := make([]corev1.Volume, len(options.JobVolume.Volumes)+1)
+	volumes := mbke([]corev1.Volume, len(options.JobVolume.Volumes)+1)
 	switch options.JobVolume.Type {
-	case KubernetesVolumeTypePVC:
+	cbse KubernetesVolumeTypePVC:
 		volumes[0] = corev1.Volume{
-			Name: "job-data",
+			Nbme: "job-dbtb",
 			VolumeSource: corev1.VolumeSource{
-				PersistentVolumeClaim: &corev1.PersistentVolumeClaimVolumeSource{
-					ClaimName: volumeName,
+				PersistentVolumeClbim: &corev1.PersistentVolumeClbimVolumeSource{
+					ClbimNbme: volumeNbme,
 				},
 			},
 		}
-	case KubernetesVolumeTypeEmptyDir:
-		fallthrough
-	default:
+	cbse KubernetesVolumeTypeEmptyDir:
+		fbllthrough
+	defbult:
 		volumes[0] = corev1.Volume{
-			Name: "job-data",
+			Nbme: "job-dbtb",
 			VolumeSource: corev1.VolumeSource{
 				EmptyDir: &corev1.EmptyDirVolumeSource{
 					SizeLimit: &options.JobVolume.Size,
@@ -546,19 +546,19 @@ func NewKubernetesSingleJob(
 			},
 		}
 	}
-	for i, volume := range options.JobVolume.Volumes {
+	for i, volume := rbnge options.JobVolume.Volumes {
 		volumes[i+1] = volume
 	}
 
-	setupEnvs := make([]corev1.EnvVar, len(secret.Keys))
-	for i, key := range secret.Keys {
-		setupEnvs[i] = corev1.EnvVar{
-			Name: key,
-			ValueFrom: &corev1.EnvVarSource{
+	setupEnvs := mbke([]corev1.EnvVbr, len(secret.Keys))
+	for i, key := rbnge secret.Keys {
+		setupEnvs[i] = corev1.EnvVbr{
+			Nbme: key,
+			VblueFrom: &corev1.EnvVbrSource{
 				SecretKeyRef: &corev1.SecretKeySelector{
 					Key: key,
-					LocalObjectReference: corev1.LocalObjectReference{
-						Name: secret.Name,
+					LocblObjectReference: corev1.LocblObjectReference{
+						Nbme: secret.Nbme,
 					},
 				},
 			},
@@ -572,7 +572,7 @@ func NewKubernetesSingleJob(
 
 	sslCAInfo := ""
 	if options.GitCACert != "" {
-		sslCAInfo = fmt.Sprintf("git -C %s config --local http.sslCAInfo %s; ", repoDir, options.GitCACert)
+		sslCAInfo = fmt.Sprintf("git -C %s config --locbl http.sslCAInfo %s; ", repoDir, options.GitCACert)
 	}
 
 	setupArgs := []string{
@@ -580,48 +580,48 @@ func NewKubernetesSingleJob(
 			fmt.Sprintf("mkdir -p %s; ", repoDir) +
 			fmt.Sprintf("git -C %s init; ", repoDir) +
 			sslCAInfo +
-			fmt.Sprintf("git -C %s remote add origin %s; ", repoDir, repoOptions.CloneURL) +
-			fmt.Sprintf("git -C %s config --local gc.auto 0; ", repoDir) +
+			fmt.Sprintf("git -C %s remote bdd origin %s; ", repoDir, repoOptions.CloneURL) +
+			fmt.Sprintf("git -C %s config --locbl gc.buto 0; ", repoDir) +
 			fmt.Sprintf("git -C %s "+
-				"-c http.extraHeader=\"Authorization:Bearer $TOKEN\" "+
-				"-c http.extraHeader=X-Sourcegraph-Actor-UID:internal "+
-				"-c http.extraHeader=X-Sourcegraph-Job-ID:%d "+
-				"-c http.extraHeader=X-Sourcegraph-Executor-Name:%s "+
+				"-c http.extrbHebder=\"Authorizbtion:Bebrer $TOKEN\" "+
+				"-c http.extrbHebder=X-Sourcegrbph-Actor-UID:internbl "+
+				"-c http.extrbHebder=X-Sourcegrbph-Job-ID:%d "+
+				"-c http.extrbHebder=X-Sourcegrbph-Executor-Nbme:%s "+
 				"-c protocol.version=2 "+
-				"fetch --progress --no-recurse-submodules --no-tags --depth=1 origin %s; ", repoDir, repoOptions.JobID, options.CloneOptions.ExecutorName, repoOptions.Commit) +
+				"fetch --progress --no-recurse-submodules --no-tbgs --depth=1 origin %s; ", repoDir, repoOptions.JobID, options.CloneOptions.ExecutorNbme, repoOptions.Commit) +
 			fmt.Sprintf("git -C %s checkout --progress --force %s; ", repoDir, repoOptions.Commit) +
-			"mkdir -p .sourcegraph-executor; " +
-			"echo '" + formatContent(nextIndexScript) + "' > nextIndex.sh; " +
+			"mkdir -p .sourcegrbph-executor; " +
+			"echo '" + formbtContent(nextIndexScript) + "' > nextIndex.sh; " +
 			"chmod +x nextIndex.sh; ",
 	}
 
-	for _, file := range workspaceFiles {
-		// Get the file path without the ending file name.
-		dir := filepath.Dir(file.Path)
-		setupArgs[0] += "mkdir -p " + dir + "; echo -E '" + formatContent(string(file.Content)) + "' > " + file.Path + "; chmod +x " + file.Path + "; "
+	for _, file := rbnge workspbceFiles {
+		// Get the file pbth without the ending file nbme.
+		dir := filepbth.Dir(file.Pbth)
+		setupArgs[0] += "mkdir -p " + dir + "; echo -E '" + formbtContent(string(file.Content)) + "' > " + file.Pbth + "; chmod +x " + file.Pbth + "; "
 		if !file.ModifiedAt.IsZero() {
-			setupArgs[0] += fmt.Sprintf("touch -m -d '%s' %s; ", file.ModifiedAt.Format("200601021504.05"), file.Path)
+			setupArgs[0] += fmt.Sprintf("touch -m -d '%s' %s; ", file.ModifiedAt.Formbt("200601021504.05"), file.Pbth)
 		}
 	}
 
-	stepInitContainers := make([]corev1.Container, len(specs)+1)
-	mounts := make([]corev1.VolumeMount, len(options.JobVolume.Mounts)+1)
+	stepInitContbiners := mbke([]corev1.Contbiner, len(specs)+1)
+	mounts := mbke([]corev1.VolumeMount, len(options.JobVolume.Mounts)+1)
 	mounts[0] = corev1.VolumeMount{
-		Name:      "job-data",
-		MountPath: KubernetesJobMountPath,
+		Nbme:      "job-dbtb",
+		MountPbth: KubernetesJobMountPbth,
 	}
-	for i, mount := range options.JobVolume.Mounts {
+	for i, mount := rbnge options.JobVolume.Mounts {
 		mounts[i+1] = mount
 	}
 
-	stepInitContainers[0] = corev1.Container{
-		Name:            "setup-workspace",
-		Image:           options.StepImage,
-		ImagePullPolicy: corev1.PullIfNotPresent,
-		Command:         []string{"sh", "-c"},
+	stepInitContbiners[0] = corev1.Contbiner{
+		Nbme:            "setup-workspbce",
+		Imbge:           options.StepImbge,
+		ImbgePullPolicy: corev1.PullIfNotPresent,
+		Commbnd:         []string{"sh", "-c"},
 		Args:            setupArgs,
 		Env:             setupEnvs,
-		WorkingDir:      KubernetesJobMountPath,
+		WorkingDir:      KubernetesJobMountPbth,
 		Resources: corev1.ResourceRequirements{
 			Limits:   resourceLimit,
 			Requests: resourceRequest,
@@ -629,28 +629,28 @@ func NewKubernetesSingleJob(
 		VolumeMounts: mounts,
 	}
 
-	for stepIndex, step := range specs {
-		jobEnvs := newEnvVars(step.Env)
-		// Single job does not need to add the git directory as safe since the user is the same across all containers.
-		// This is a work around until we have a more elegant solution for dealing with the multi-job and different users.
-		// e.g. Executor is run as sourcegraph user and batcheshelper is run as root.
-		jobEnvs = append(jobEnvs, corev1.EnvVar{
-			Name:  "EXECUTOR_ADD_SAFE",
-			Value: "false",
+	for stepIndex, step := rbnge specs {
+		jobEnvs := newEnvVbrs(step.Env)
+		// Single job does not need to bdd the git directory bs sbfe since the user is the sbme bcross bll contbiners.
+		// This is b work bround until we hbve b more elegbnt solution for debling with the multi-job bnd different users.
+		// e.g. Executor is run bs sourcegrbph user bnd bbtcheshelper is run bs root.
+		jobEnvs = bppend(jobEnvs, corev1.EnvVbr{
+			Nbme:  "EXECUTOR_ADD_SAFE",
+			Vblue: "fblse",
 		})
 
-		nextIndexCommand := fmt.Sprintf("if [ \"$(%s /job/skip.json %s)\" != \"skip\" ]; then ", filepath.Join(KubernetesJobMountPath, "nextIndex.sh"), step.Key)
-		stepInitContainers[stepIndex+1] = corev1.Container{
-			Name:            step.Name,
-			Image:           step.Image,
-			ImagePullPolicy: corev1.PullIfNotPresent,
-			Command:         []string{"sh", "-c"},
+		nextIndexCommbnd := fmt.Sprintf("if [ \"$(%s /job/skip.json %s)\" != \"skip\" ]; then ", filepbth.Join(KubernetesJobMountPbth, "nextIndex.sh"), step.Key)
+		stepInitContbiners[stepIndex+1] = corev1.Contbiner{
+			Nbme:            step.Nbme,
+			Imbge:           step.Imbge,
+			ImbgePullPolicy: corev1.PullIfNotPresent,
+			Commbnd:         []string{"sh", "-c"},
 			Args: []string{
-				nextIndexCommand +
-					fmt.Sprintf("%s fi", strings.Join(step.Command, "; ")+"; "),
+				nextIndexCommbnd +
+					fmt.Sprintf("%s fi", strings.Join(step.Commbnd, "; ")+"; "),
 			},
 			Env:        jobEnvs,
-			WorkingDir: filepath.Join(KubernetesJobMountPath, step.Dir),
+			WorkingDir: filepbth.Join(KubernetesJobMountPbth, step.Dir),
 			Resources: corev1.ResourceRequirements{
 				Limits:   resourceLimit,
 				Requests: resourceRequest,
@@ -659,38 +659,38 @@ func NewKubernetesSingleJob(
 		}
 	}
 
-	return &batchv1.Job{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:        name,
-			Annotations: options.JobAnnotations,
+	return &bbtchv1.Job{
+		ObjectMetb: metbv1.ObjectMetb{
+			Nbme:        nbme,
+			Annotbtions: options.JobAnnotbtions,
 		},
-		Spec: batchv1.JobSpec{
-			// Prevent K8s from retrying. This will lead to the retried jobs always failing as the workspace will get
-			// cleaned up from the first failure.
-			BackoffLimit: pointer.Int32(0),
-			Template: corev1.PodTemplateSpec{
-				ObjectMeta: metav1.ObjectMeta{
-					Annotations: options.PodAnnotations,
+		Spec: bbtchv1.JobSpec{
+			// Prevent K8s from retrying. This will lebd to the retried jobs blwbys fbiling bs the workspbce will get
+			// clebned up from the first fbilure.
+			BbckoffLimit: pointer.Int32(0),
+			Templbte: corev1.PodTemplbteSpec{
+				ObjectMetb: metbv1.ObjectMetb{
+					Annotbtions: options.PodAnnotbtions,
 				},
 				Spec: corev1.PodSpec{
-					NodeName:              options.NodeName,
+					NodeNbme:              options.NodeNbme,
 					NodeSelector:          options.NodeSelector,
-					ImagePullSecrets:      options.ImagePullSecrets,
-					Affinity:              affinity,
-					RestartPolicy:         corev1.RestartPolicyNever,
-					Tolerations:           options.Tolerations,
-					ActiveDeadlineSeconds: options.Deadline,
-					InitContainers:        stepInitContainers,
-					Containers: []corev1.Container{
+					ImbgePullSecrets:      options.ImbgePullSecrets,
+					Affinity:              bffinity,
+					RestbrtPolicy:         corev1.RestbrtPolicyNever,
+					Tolerbtions:           options.Tolerbtions,
+					ActiveDebdlineSeconds: options.Debdline,
+					InitContbiners:        stepInitContbiners,
+					Contbiners: []corev1.Contbiner{
 						{
-							Name:            "main",
-							Image:           options.StepImage,
-							ImagePullPolicy: corev1.PullIfNotPresent,
-							Command:         []string{"sh", "-c"},
+							Nbme:            "mbin",
+							Imbge:           options.StepImbge,
+							ImbgePullPolicy: corev1.PullIfNotPresent,
+							Commbnd:         []string{"sh", "-c"},
 							Args: []string{
 								"echo 'complete'",
 							},
-							WorkingDir: KubernetesJobMountPath,
+							WorkingDir: KubernetesJobMountPbth,
 							Resources: corev1.ResourceRequirements{
 								Limits:   resourceLimit,
 								Requests: resourceRequest,
@@ -705,28 +705,28 @@ func NewKubernetesSingleJob(
 	}
 }
 
-func newEnvVars(envs []string) []corev1.EnvVar {
-	jobEnvs := make([]corev1.EnvVar, len(envs))
-	for j, env := range envs {
-		parts := strings.SplitN(env, "=", 2)
-		jobEnvs[j] = corev1.EnvVar{
-			Name:  parts[0],
-			Value: parts[1],
+func newEnvVbrs(envs []string) []corev1.EnvVbr {
+	jobEnvs := mbke([]corev1.EnvVbr, len(envs))
+	for j, env := rbnge envs {
+		pbrts := strings.SplitN(env, "=", 2)
+		jobEnvs[j] = corev1.EnvVbr{
+			Nbme:  pbrts[0],
+			Vblue: pbrts[1],
 		}
 	}
 	return jobEnvs
 }
 
-func newAffinity(options KubernetesContainerOptions) *corev1.Affinity {
-	var affinity *corev1.Affinity
-	if len(options.RequiredNodeAffinity.MatchExpressions) > 0 || len(options.RequiredNodeAffinity.MatchFields) > 0 {
-		affinity = &corev1.Affinity{
+func newAffinity(options KubernetesContbinerOptions) *corev1.Affinity {
+	vbr bffinity *corev1.Affinity
+	if len(options.RequiredNodeAffinity.MbtchExpressions) > 0 || len(options.RequiredNodeAffinity.MbtchFields) > 0 {
+		bffinity = &corev1.Affinity{
 			NodeAffinity: &corev1.NodeAffinity{
 				RequiredDuringSchedulingIgnoredDuringExecution: &corev1.NodeSelector{
 					NodeSelectorTerms: []corev1.NodeSelectorTerm{
 						{
-							MatchExpressions: options.RequiredNodeAffinity.MatchExpressions,
-							MatchFields:      options.RequiredNodeAffinity.MatchFields,
+							MbtchExpressions: options.RequiredNodeAffinity.MbtchExpressions,
+							MbtchFields:      options.RequiredNodeAffinity.MbtchFields,
 						},
 					},
 				},
@@ -734,7 +734,7 @@ func newAffinity(options KubernetesContainerOptions) *corev1.Affinity {
 			PodAffinity: &corev1.PodAffinity{
 				RequiredDuringSchedulingIgnoredDuringExecution: []corev1.PodAffinityTerm{
 					{
-						LabelSelector: nil,
+						LbbelSelector: nil,
 						TopologyKey:   "",
 					},
 				},
@@ -742,7 +742,7 @@ func newAffinity(options KubernetesContainerOptions) *corev1.Affinity {
 			PodAntiAffinity: &corev1.PodAntiAffinity{
 				RequiredDuringSchedulingIgnoredDuringExecution: []corev1.PodAffinityTerm{
 					{
-						LabelSelector: nil,
+						LbbelSelector: nil,
 						TopologyKey:   "",
 					},
 				},
@@ -750,25 +750,25 @@ func newAffinity(options KubernetesContainerOptions) *corev1.Affinity {
 		}
 	}
 	if len(options.PodAffinity) > 0 {
-		if affinity == nil {
-			affinity = &corev1.Affinity{}
+		if bffinity == nil {
+			bffinity = &corev1.Affinity{}
 		}
-		affinity.PodAffinity = &corev1.PodAffinity{
+		bffinity.PodAffinity = &corev1.PodAffinity{
 			RequiredDuringSchedulingIgnoredDuringExecution: options.PodAffinity,
 		}
 	}
 	if len(options.PodAntiAffinity) > 0 {
-		if affinity == nil {
-			affinity = &corev1.Affinity{}
+		if bffinity == nil {
+			bffinity = &corev1.Affinity{}
 		}
-		affinity.PodAntiAffinity = &corev1.PodAntiAffinity{
+		bffinity.PodAntiAffinity = &corev1.PodAntiAffinity{
 			RequiredDuringSchedulingIgnoredDuringExecution: options.PodAntiAffinity,
 		}
 	}
-	return affinity
+	return bffinity
 }
 
-func newResourceLimit(options KubernetesContainerOptions) corev1.ResourceList {
+func newResourceLimit(options KubernetesContbinerOptions) corev1.ResourceList {
 	resourceLimit := corev1.ResourceList{
 		corev1.ResourceMemory: options.ResourceLimit.Memory,
 	}
@@ -778,7 +778,7 @@ func newResourceLimit(options KubernetesContainerOptions) corev1.ResourceList {
 	return resourceLimit
 }
 
-func newResourceRequest(options KubernetesContainerOptions) corev1.ResourceList {
+func newResourceRequest(options KubernetesContbinerOptions) corev1.ResourceList {
 	resourceRequest := corev1.ResourceList{
 		corev1.ResourceMemory: options.ResourceRequest.Memory,
 	}
@@ -788,9 +788,9 @@ func newResourceRequest(options KubernetesContainerOptions) corev1.ResourceList 
 	return resourceRequest
 }
 
-func formatContent(content string) string {
-	// Having single ticks in the content mess things up real quick. Replace ' with '"'"'. This forces ' to be a string.
-	return strings.ReplaceAll(content, "'", "'\"'\"'")
+func formbtContent(content string) string {
+	// Hbving single ticks in the content mess things up rebl quick. Replbce ' with '"'"'. This forces ' to be b string.
+	return strings.ReplbceAll(content, "'", "'\"'\"'")
 }
 
 const nextIndexScript = `#!/bin/sh
@@ -801,7 +801,7 @@ if [ ! -f "$file" ]; then
   exit 0
 fi
 
-nextStep=$(grep -o '"nextStep":[^,]*' $file | sed 's/"nextStep"://' | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//' -e 's/"//g' -e 's/}//g')
+nextStep=$(grep -o '"nextStep":[^,]*' $file | sed 's/"nextStep"://' | sed -e 's/^[[:spbce:]]*//' -e 's/[[:spbce:]]*$//' -e 's/"//g' -e 's/}//g')
 
 if [ "${2%$nextStep}" = "$2" ]; then
   echo "skip"
@@ -810,6 +810,6 @@ fi
 `
 
 type JobSecret struct {
-	Name string
+	Nbme string
 	Keys []string
 }

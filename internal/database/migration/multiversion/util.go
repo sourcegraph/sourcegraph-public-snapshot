@@ -1,24 +1,24 @@
-package multiversion
+pbckbge multiversion
 
 import (
 	"context"
 
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/oobmigration"
-	"github.com/sourcegraph/sourcegraph/internal/version/upgradestore"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/oobmigrbtion"
+	"github.com/sourcegrbph/sourcegrbph/internbl/version/upgrbdestore"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-func GetServiceVersion(ctx context.Context, db database.DB) (oobmigration.Version, int, bool, error) {
-	versionStr, ok, err := upgradestore.New(db).GetServiceVersion(ctx)
+func GetServiceVersion(ctx context.Context, db dbtbbbse.DB) (oobmigrbtion.Version, int, bool, error) {
+	versionStr, ok, err := upgrbdestore.New(db).GetServiceVersion(ctx)
 	if err != nil || !ok {
-		return oobmigration.Version{}, 0, ok, err
+		return oobmigrbtion.Version{}, 0, ok, err
 	}
 
-	version, patch, ok := oobmigration.NewVersionAndPatchFromString(versionStr)
+	version, pbtch, ok := oobmigrbtion.NewVersionAndPbtchFromString(versionStr)
 	if !ok {
-		return oobmigration.Version{}, 0, ok, errors.Newf("cannot parse version: %q - expected [v]X.Y[.Z]", versionStr)
+		return oobmigrbtion.Version{}, 0, ok, errors.Newf("cbnnot pbrse version: %q - expected [v]X.Y[.Z]", versionStr)
 	}
 
-	return version, patch, true, nil
+	return version, pbtch, true, nil
 }

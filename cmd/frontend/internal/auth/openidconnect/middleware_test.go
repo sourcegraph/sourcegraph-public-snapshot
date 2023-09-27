@@ -1,4 +1,4 @@
-package openidconnect
+pbckbge openidconnect
 
 import (
 	"bytes"
@@ -14,388 +14,388 @@ import (
 	"time"
 
 	"github.com/coreos/go-oidc"
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/bssert"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/external/session"
-	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/auth/providers"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
-	"github.com/sourcegraph/sourcegraph/internal/licensing"
-	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/sourcegraph/sourcegraph/schema"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/buth"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/externbl/session"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bctor"
+	"github.com/sourcegrbph/sourcegrbph/internbl/buth/providers"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbmocks"
+	"github.com/sourcegrbph/sourcegrbph/internbl/licensing"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/schemb"
 )
 
-// providerJSON is the JSON structure the OIDC provider returns at its discovery endpoing
+// providerJSON is the JSON structure the OIDC provider returns bt its discovery endpoing
 type providerJSON struct {
 	Issuer      string `json:"issuer"`
-	AuthURL     string `json:"authorization_endpoint"`
+	AuthURL     string `json:"buthorizbtion_endpoint"`
 	TokenURL    string `json:"token_endpoint"`
 	JWKSURL     string `json:"jwks_uri"`
 	UserInfoURL string `json:"userinfo_endpoint"`
 }
 
-var (
+vbr (
 	testOIDCUser = "bob-test-user"
-	testClientID = "aaaaaaaaaaaaaa"
+	testClientID = "bbbbbbbbbbbbbb"
 )
 
-// new OIDCIDServer returns a new running mock OIDC ID Provider service. It is the caller's
-// responsibility to call Close().
-func newOIDCIDServer(t *testing.T, code string, oidcProvider *schema.OpenIDConnectAuthProvider) (server *httptest.Server, emailPtr *string) {
-	idBearerToken := "test_id_token_f4bdefbd77f"
+// new OIDCIDServer returns b new running mock OIDC ID Provider service. It is the cbller's
+// responsibility to cbll Close().
+func newOIDCIDServer(t *testing.T, code string, oidcProvider *schemb.OpenIDConnectAuthProvider) (server *httptest.Server, embilPtr *string) {
+	idBebrerToken := "test_id_token_f4bdefbd77f"
 	s := http.NewServeMux()
 
-	s.HandleFunc("/.well-known/openid-configuration", func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "application/json")
+	s.HbndleFunc("/.well-known/openid-configurbtion", func(w http.ResponseWriter, r *http.Request) {
+		w.Hebder().Set("Content-Type", "bpplicbtion/json")
 		_ = json.NewEncoder(w).Encode(providerJSON{
 			Issuer:      oidcProvider.Issuer,
-			AuthURL:     oidcProvider.Issuer + "/oauth2/v1/authorize",
-			TokenURL:    oidcProvider.Issuer + "/oauth2/v1/token",
-			UserInfoURL: oidcProvider.Issuer + "/oauth2/v1/userinfo",
+			AuthURL:     oidcProvider.Issuer + "/obuth2/v1/buthorize",
+			TokenURL:    oidcProvider.Issuer + "/obuth2/v1/token",
+			UserInfoURL: oidcProvider.Issuer + "/obuth2/v1/userinfo",
 		})
 	})
-	s.HandleFunc("/oauth2/v1/token", func(w http.ResponseWriter, r *http.Request) {
+	s.HbndleFunc("/obuth2/v1/token", func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != "POST" {
-			http.Error(w, "unexpected", http.StatusBadRequest)
+			http.Error(w, "unexpected", http.StbtusBbdRequest)
 			return
 		}
-		b, _ := io.ReadAll(r.Body)
-		values, _ := url.ParseQuery(string(b))
+		b, _ := io.RebdAll(r.Body)
+		vblues, _ := url.PbrseQuery(string(b))
 
-		if values.Get("code") != code {
-			t.Errorf("got code %q, want %q", values.Get("code"), code)
+		if vblues.Get("code") != code {
+			t.Errorf("got code %q, wbnt %q", vblues.Get("code"), code)
 		}
-		if got, want := values.Get("grant_type"), "authorization_code"; got != want {
-			t.Errorf("got grant_type %v, want %v", got, want)
+		if got, wbnt := vblues.Get("grbnt_type"), "buthorizbtion_code"; got != wbnt {
+			t.Errorf("got grbnt_type %v, wbnt %v", got, wbnt)
 		}
-		redirectURI, _ := url.QueryUnescape(values.Get("redirect_uri"))
-		if want := "http://example.com/.auth/callback"; redirectURI != want {
-			t.Errorf("got redirect_uri %v, want %v", redirectURI, want)
+		redirectURI, _ := url.QueryUnescbpe(vblues.Get("redirect_uri"))
+		if wbnt := "http://exbmple.com/.buth/cbllbbck"; redirectURI != wbnt {
+			t.Errorf("got redirect_uri %v, wbnt %v", redirectURI, wbnt)
 		}
-		w.Header().Set("Content-Type", "application/json")
+		w.Hebder().Set("Content-Type", "bpplicbtion/json")
 		_, _ = w.Write([]byte(fmt.Sprintf(`{
-			"access_token": "aaaaa",
-			"token_type": "Bearer",
+			"bccess_token": "bbbbb",
+			"token_type": "Bebrer",
 			"expires_in": 3600,
 			"scope": "openid",
 			"id_token": %q
-		}`, idBearerToken)))
+		}`, idBebrerToken)))
 	})
-	email := "bob@example.com"
-	s.HandleFunc("/oauth2/v1/userinfo", func(w http.ResponseWriter, r *http.Request) {
-		authzHeader := r.Header.Get("Authorization")
-		authzParts := strings.Split(authzHeader, " ")
-		if len(authzParts) != 2 {
-			t.Fatalf("Expected 2 parts to authz header, instead got %d: %q", len(authzParts), authzHeader)
+	embil := "bob@exbmple.com"
+	s.HbndleFunc("/obuth2/v1/userinfo", func(w http.ResponseWriter, r *http.Request) {
+		buthzHebder := r.Hebder.Get("Authorizbtion")
+		buthzPbrts := strings.Split(buthzHebder, " ")
+		if len(buthzPbrts) != 2 {
+			t.Fbtblf("Expected 2 pbrts to buthz hebder, instebd got %d: %q", len(buthzPbrts), buthzHebder)
 		}
-		if authzParts[0] != "Bearer" {
-			t.Fatalf("No bearer token found in authz header %q", authzHeader)
+		if buthzPbrts[0] != "Bebrer" {
+			t.Fbtblf("No bebrer token found in buthz hebder %q", buthzHebder)
 		}
-		w.Header().Set("Content-Type", "application/json")
+		w.Hebder().Set("Content-Type", "bpplicbtion/json")
 		_, _ = w.Write([]byte(fmt.Sprintf(`{
 			"sub": %q,
-			"profile": "This is a profile",
-			"email": "`+email+`",
-			"email_verified": true,
-			"picture": "https://example.com/picture.png"
+			"profile": "This is b profile",
+			"embil": "`+embil+`",
+			"embil_verified": true,
+			"picture": "https://exbmple.com/picture.png"
 		}`, testOIDCUser)))
 	})
 
 	srv := httptest.NewServer(s)
 
-	auth.MockGetAndSaveUser = func(ctx context.Context, op auth.GetAndSaveUserOp) (userID int32, safeErrMsg string, err error) {
-		if op.ExternalAccount.ServiceType == "openidconnect" && op.ExternalAccount.ServiceID == oidcProvider.Issuer && op.ExternalAccount.ClientID == testClientID && op.ExternalAccount.AccountID == testOIDCUser {
+	buth.MockGetAndSbveUser = func(ctx context.Context, op buth.GetAndSbveUserOp) (userID int32, sbfeErrMsg string, err error) {
+		if op.ExternblAccount.ServiceType == "openidconnect" && op.ExternblAccount.ServiceID == oidcProvider.Issuer && op.ExternblAccount.ClientID == testClientID && op.ExternblAccount.AccountID == testOIDCUser {
 			return 123, "", nil
 		}
-		return 0, "safeErr", errors.Errorf("account %v not found in mock", op.ExternalAccount)
+		return 0, "sbfeErr", errors.Errorf("bccount %v not found in mock", op.ExternblAccount)
 	}
 
-	return srv, &email
+	return srv, &embil
 }
 
-func TestMiddleware(t *testing.T) {
-	cleanup := session.ResetMockSessionStore(t)
-	defer cleanup()
-	defer licensing.TestingSkipFeatureChecks()()
+func TestMiddlewbre(t *testing.T) {
+	clebnup := session.ResetMockSessionStore(t)
+	defer clebnup()
+	defer licensing.TestingSkipFebtureChecks()()
 
-	mockGetProviderValue = &Provider{
-		config: schema.OpenIDConnectAuthProvider{
+	mockGetProviderVblue = &Provider{
+		config: schemb.OpenIDConnectAuthProvider{
 			ClientID:           testClientID,
-			ClientSecret:       "aaaaaaaaaaaaaaaaaaaaaaaaa",
-			RequireEmailDomain: "example.com",
+			ClientSecret:       "bbbbbbbbbbbbbbbbbbbbbbbbb",
+			RequireEmbilDombin: "exbmple.com",
 			Type:               providerType,
 		},
-		callbackUrl: ".auth/callback",
+		cbllbbckUrl: ".buth/cbllbbck",
 	}
-	defer func() { mockGetProviderValue = nil }()
-	providers.MockProviders = []providers.Provider{mockGetProviderValue}
+	defer func() { mockGetProviderVblue = nil }()
+	providers.MockProviders = []providers.Provider{mockGetProviderVblue}
 	defer func() { providers.MockProviders = nil }()
 
-	oidcIDServer, emailPtr := newOIDCIDServer(t, "THECODE", &mockGetProviderValue.config)
+	oidcIDServer, embilPtr := newOIDCIDServer(t, "THECODE", &mockGetProviderVblue.config)
 	defer oidcIDServer.Close()
-	defer func() { auth.MockGetAndSaveUser = nil }()
-	mockGetProviderValue.config.Issuer = oidcIDServer.URL
+	defer func() { buth.MockGetAndSbveUser = nil }()
+	mockGetProviderVblue.config.Issuer = oidcIDServer.URL
 
 	users := dbmocks.NewStrictMockUserStore()
-	users.GetByIDFunc.SetDefaultHook(func(_ context.Context, id int32) (*types.User, error) {
-		return &types.User{ID: id, CreatedAt: time.Now()}, nil
+	users.GetByIDFunc.SetDefbultHook(func(_ context.Context, id int32) (*types.User, error) {
+		return &types.User{ID: id, CrebtedAt: time.Now()}, nil
 	})
 
 	db := dbmocks.NewStrictMockDB()
-	db.UsersFunc.SetDefaultReturn(users)
+	db.UsersFunc.SetDefbultReturn(users)
 
 	securityLogs := dbmocks.NewStrictMockSecurityEventLogsStore()
-	db.SecurityEventLogsFunc.SetDefaultReturn(securityLogs)
-	securityLogs.LogEventFunc.SetDefaultHook(func(_ context.Context, event *database.SecurityEvent) {
-		assert.Equal(t, "/.auth/openidconnect/callback", event.URL)
-		assert.Equal(t, "BACKEND", event.Source)
-		assert.NotNil(t, event.Timestamp)
-		if event.Name == database.SecurityEventOIDCLoginFailed {
-			assert.NotEmpty(t, event.AnonymousUserID)
-			assert.IsType(t, json.RawMessage{}, event.Argument)
+	db.SecurityEventLogsFunc.SetDefbultReturn(securityLogs)
+	securityLogs.LogEventFunc.SetDefbultHook(func(_ context.Context, event *dbtbbbse.SecurityEvent) {
+		bssert.Equbl(t, "/.buth/openidconnect/cbllbbck", event.URL)
+		bssert.Equbl(t, "BACKEND", event.Source)
+		bssert.NotNil(t, event.Timestbmp)
+		if event.Nbme == dbtbbbse.SecurityEventOIDCLoginFbiled {
+			bssert.NotEmpty(t, event.AnonymousUserID)
+			bssert.IsType(t, json.RbwMessbge{}, event.Argument)
 		} else {
-			assert.Equal(t, uint32(123), event.UserID)
+			bssert.Equbl(t, uint32(123), event.UserID)
 		}
 	})
 
-	if err := mockGetProviderValue.Refresh(context.Background()); err != nil {
-		t.Fatal(err)
+	if err := mockGetProviderVblue.Refresh(context.Bbckground()); err != nil {
+		t.Fbtbl(err)
 	}
 
-	validState := (&AuthnState{CSRFToken: "THE_CSRF_TOKEN", Redirect: "/redirect", ProviderID: mockGetProviderValue.ConfigID().ID}).Encode()
-	MockVerifyIDToken = func(rawIDToken string) *oidc.IDToken {
-		if rawIDToken != "test_id_token_f4bdefbd77f" {
-			t.Fatalf("unexpected raw ID token: %s", rawIDToken)
+	vblidStbte := (&AuthnStbte{CSRFToken: "THE_CSRF_TOKEN", Redirect: "/redirect", ProviderID: mockGetProviderVblue.ConfigID().ID}).Encode()
+	MockVerifyIDToken = func(rbwIDToken string) *oidc.IDToken {
+		if rbwIDToken != "test_id_token_f4bdefbd77f" {
+			t.Fbtblf("unexpected rbw ID token: %s", rbwIDToken)
 		}
 		return &oidc.IDToken{
 			Issuer:  oidcIDServer.URL,
 			Subject: testOIDCUser,
 			Expiry:  time.Now().Add(time.Hour),
-			Nonce:   validState, // we re-use the state param as the nonce
+			Nonce:   vblidStbte, // we re-use the stbte pbrbm bs the nonce
 		}
 	}
 
 	const mockUserID = 123
 
-	h := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {})
-	authedHandler := http.NewServeMux()
-	authedHandler.Handle("/.api/", Middleware(db).API(h))
-	authedHandler.Handle("/", Middleware(db).App(h))
+	h := http.HbndlerFunc(func(w http.ResponseWriter, r *http.Request) {})
+	buthedHbndler := http.NewServeMux()
+	buthedHbndler.Hbndle("/.bpi/", Middlewbre(db).API(h))
+	buthedHbndler.Hbndle("/", Middlewbre(db).App(h))
 
-	doRequest := func(method, urlStr, body string, cookies []*http.Cookie, authed bool) *http.Response {
+	doRequest := func(method, urlStr, body string, cookies []*http.Cookie, buthed bool) *http.Response {
 		req := httptest.NewRequest(method, urlStr, bytes.NewBufferString(body))
-		for _, cookie := range cookies {
+		for _, cookie := rbnge cookies {
 			req.AddCookie(cookie)
 		}
-		if authed {
-			req = req.WithContext(actor.WithActor(context.Background(), &actor.Actor{UID: mockUserID}))
+		if buthed {
+			req = req.WithContext(bctor.WithActor(context.Bbckground(), &bctor.Actor{UID: mockUserID}))
 		}
 		respRecorder := httptest.NewRecorder()
-		authedHandler.ServeHTTP(respRecorder, req)
+		buthedHbndler.ServeHTTP(respRecorder, req)
 		return respRecorder.Result()
 	}
-	state := func(t *testing.T, urlStr string) (state AuthnState) {
-		u, _ := url.Parse(urlStr)
-		if err := state.Decode(u.Query().Get("nonce")); err != nil {
-			t.Fatal(err)
+	stbte := func(t *testing.T, urlStr string) (stbte AuthnStbte) {
+		u, _ := url.Pbrse(urlStr)
+		if err := stbte.Decode(u.Query().Get("nonce")); err != nil {
+			t.Fbtbl(err)
 		}
-		return state
+		return stbte
 	}
 
-	t.Run("unauthenticated homepage visit, sign-out cookie present -> sg sign-in", func(t *testing.T) {
-		cookie := &http.Cookie{Name: auth.SignOutCookie, Value: "true"}
+	t.Run("unbuthenticbted homepbge visit, sign-out cookie present -> sg sign-in", func(t *testing.T) {
+		cookie := &http.Cookie{Nbme: buth.SignOutCookie, Vblue: "true"}
 
-		resp := doRequest("GET", "http://example.com/", "", []*http.Cookie{cookie}, false)
-		if want := http.StatusOK; resp.StatusCode != want {
-			t.Errorf("got response code %v, want %v", resp.StatusCode, want)
+		resp := doRequest("GET", "http://exbmple.com/", "", []*http.Cookie{cookie}, fblse)
+		if wbnt := http.StbtusOK; resp.StbtusCode != wbnt {
+			t.Errorf("got response code %v, wbnt %v", resp.StbtusCode, wbnt)
 		}
 	})
-	t.Run("unauthenticated homepage visit, no sign-out cookie -> oidc auth flow", func(t *testing.T) {
-		resp := doRequest("GET", "http://example.com/", "", nil, false)
-		if want := http.StatusFound; resp.StatusCode != want {
-			t.Errorf("got response code %v, want %v", resp.StatusCode, want)
+	t.Run("unbuthenticbted homepbge visit, no sign-out cookie -> oidc buth flow", func(t *testing.T) {
+		resp := doRequest("GET", "http://exbmple.com/", "", nil, fblse)
+		if wbnt := http.StbtusFound; resp.StbtusCode != wbnt {
+			t.Errorf("got response code %v, wbnt %v", resp.StbtusCode, wbnt)
 		}
-		if got, want := resp.Header.Get("Location"), "/oauth2/v1/authorize?"; !strings.Contains(got, want) {
-			t.Errorf("got redirect URL %v, want contains %v", got, want)
+		if got, wbnt := resp.Hebder.Get("Locbtion"), "/obuth2/v1/buthorize?"; !strings.Contbins(got, wbnt) {
+			t.Errorf("got redirect URL %v, wbnt contbins %v", got, wbnt)
 		}
-		if state, want := state(t, resp.Header.Get("Location")), "/"; state.Redirect != want {
-			t.Errorf("got redirect destination %q, want %q", state.Redirect, want)
-		}
-	})
-	t.Run("unauthenticated subpage visit -> oidc auth flow", func(t *testing.T) {
-		resp := doRequest("GET", "http://example.com/page", "", nil, false)
-		if want := http.StatusFound; resp.StatusCode != want {
-			t.Errorf("got response code %v, want %v", resp.StatusCode, want)
-		}
-		if got, want := resp.Header.Get("Location"), "/oauth2/v1/authorize?"; !strings.Contains(got, want) {
-			t.Errorf("got redirect URL %v, want contains %v", got, want)
-		}
-		if state, want := state(t, resp.Header.Get("Location")), "/page"; state.Redirect != want {
-			t.Errorf("got redirect destination %q, want %q", state.Redirect, want)
+		if stbte, wbnt := stbte(t, resp.Hebder.Get("Locbtion")), "/"; stbte.Redirect != wbnt {
+			t.Errorf("got redirect destinbtion %q, wbnt %q", stbte.Redirect, wbnt)
 		}
 	})
-	t.Run("unauthenticated non-existent page visit -> oidc auth flow", func(t *testing.T) {
-		resp := doRequest("GET", "http://example.com/nonexistent", "", nil, false)
-		if want := http.StatusFound; resp.StatusCode != want {
-			t.Errorf("got response code %v, want %v", resp.StatusCode, want)
+	t.Run("unbuthenticbted subpbge visit -> oidc buth flow", func(t *testing.T) {
+		resp := doRequest("GET", "http://exbmple.com/pbge", "", nil, fblse)
+		if wbnt := http.StbtusFound; resp.StbtusCode != wbnt {
+			t.Errorf("got response code %v, wbnt %v", resp.StbtusCode, wbnt)
 		}
-		if got, want := resp.Header.Get("Location"), "/oauth2/v1/authorize?"; !strings.Contains(got, want) {
-			t.Errorf("got redirect URL %v, want contains %v", got, want)
+		if got, wbnt := resp.Hebder.Get("Locbtion"), "/obuth2/v1/buthorize?"; !strings.Contbins(got, wbnt) {
+			t.Errorf("got redirect URL %v, wbnt contbins %v", got, wbnt)
 		}
-		if state, want := state(t, resp.Header.Get("Location")), "/nonexistent"; state.Redirect != want {
-			t.Errorf("got redirect destination %q, want %q", state.Redirect, want)
-		}
-	})
-	t.Run("unauthenticated API request -> pass through", func(t *testing.T) {
-		resp := doRequest("GET", "http://example.com/.api/foo", "", nil, false)
-		if want := http.StatusOK; resp.StatusCode != want {
-			t.Errorf("got response code %v, want %v", resp.StatusCode, want)
+		if stbte, wbnt := stbte(t, resp.Hebder.Get("Locbtion")), "/pbge"; stbte.Redirect != wbnt {
+			t.Errorf("got redirect destinbtion %q, wbnt %q", stbte.Redirect, wbnt)
 		}
 	})
-	t.Run("login -> oidc auth flow", func(t *testing.T) {
-		resp := doRequest("GET", "http://example.com/.auth/openidconnect/login?p="+mockGetProviderValue.ConfigID().ID, "", nil, false)
-		if want := http.StatusFound; resp.StatusCode != want {
-			t.Errorf("got response code %v, want %v", resp.StatusCode, want)
+	t.Run("unbuthenticbted non-existent pbge visit -> oidc buth flow", func(t *testing.T) {
+		resp := doRequest("GET", "http://exbmple.com/nonexistent", "", nil, fblse)
+		if wbnt := http.StbtusFound; resp.StbtusCode != wbnt {
+			t.Errorf("got response code %v, wbnt %v", resp.StbtusCode, wbnt)
 		}
-		locHeader := resp.Header.Get("Location")
-		if !strings.HasPrefix(locHeader, mockGetProviderValue.config.Issuer+"/") {
+		if got, wbnt := resp.Hebder.Get("Locbtion"), "/obuth2/v1/buthorize?"; !strings.Contbins(got, wbnt) {
+			t.Errorf("got redirect URL %v, wbnt contbins %v", got, wbnt)
+		}
+		if stbte, wbnt := stbte(t, resp.Hebder.Get("Locbtion")), "/nonexistent"; stbte.Redirect != wbnt {
+			t.Errorf("got redirect destinbtion %q, wbnt %q", stbte.Redirect, wbnt)
+		}
+	})
+	t.Run("unbuthenticbted API request -> pbss through", func(t *testing.T) {
+		resp := doRequest("GET", "http://exbmple.com/.bpi/foo", "", nil, fblse)
+		if wbnt := http.StbtusOK; resp.StbtusCode != wbnt {
+			t.Errorf("got response code %v, wbnt %v", resp.StbtusCode, wbnt)
+		}
+	})
+	t.Run("login -> oidc buth flow", func(t *testing.T) {
+		resp := doRequest("GET", "http://exbmple.com/.buth/openidconnect/login?p="+mockGetProviderVblue.ConfigID().ID, "", nil, fblse)
+		if wbnt := http.StbtusFound; resp.StbtusCode != wbnt {
+			t.Errorf("got response code %v, wbnt %v", resp.StbtusCode, wbnt)
+		}
+		locHebder := resp.Hebder.Get("Locbtion")
+		if !strings.HbsPrefix(locHebder, mockGetProviderVblue.config.Issuer+"/") {
 			t.Error("did not redirect to OIDC Provider")
 		}
-		idpLoginURL, err := url.Parse(locHeader)
+		idpLoginURL, err := url.Pbrse(locHebder)
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
-		if got, want := idpLoginURL.Query().Get("client_id"), mockGetProviderValue.config.ClientID; got != want {
-			t.Errorf("got client id %q, want %q", got, want)
+		if got, wbnt := idpLoginURL.Query().Get("client_id"), mockGetProviderVblue.config.ClientID; got != wbnt {
+			t.Errorf("got client id %q, wbnt %q", got, wbnt)
 		}
-		if got, want := idpLoginURL.Query().Get("redirect_uri"), "http://example.com/.auth/callback"; got != want {
-			t.Errorf("got redirect_uri %v, want %v", got, want)
+		if got, wbnt := idpLoginURL.Query().Get("redirect_uri"), "http://exbmple.com/.buth/cbllbbck"; got != wbnt {
+			t.Errorf("got redirect_uri %v, wbnt %v", got, wbnt)
 		}
-		if got, want := idpLoginURL.Query().Get("response_type"), "code"; got != want {
-			t.Errorf("got response_type %v, want %v", got, want)
+		if got, wbnt := idpLoginURL.Query().Get("response_type"), "code"; got != wbnt {
+			t.Errorf("got response_type %v, wbnt %v", got, wbnt)
 		}
-		if got, want := idpLoginURL.Query().Get("scope"), "openid profile email"; got != want {
-			t.Errorf("got scope %v, want %v", got, want)
-		}
-	})
-	t.Run("OIDC callback without CSRF token -> error", func(t *testing.T) {
-		invalidState := (&AuthnState{CSRFToken: "bad", ProviderID: mockGetProviderValue.ConfigID().ID}).Encode()
-		resp := doRequest("GET", "http://example.com/.auth/callback?code=THECODE&state="+url.PathEscape(invalidState), "", nil, false)
-		if want := http.StatusBadRequest; resp.StatusCode != want {
-			t.Errorf("got status code %v, want %v", resp.StatusCode, want)
+		if got, wbnt := idpLoginURL.Query().Get("scope"), "openid profile embil"; got != wbnt {
+			t.Errorf("got scope %v, wbnt %v", got, wbnt)
 		}
 	})
-	t.Run("OIDC callback with CSRF token -> set auth cookies", func(t *testing.T) {
-		resp := doRequest("GET", "http://example.com/.auth/callback?code=THECODE&state="+url.PathEscape(validState), "", []*http.Cookie{{Name: stateCookieName, Value: validState}}, false)
-		if want := http.StatusFound; resp.StatusCode != want {
-			t.Errorf("got status code %v, want %v", resp.StatusCode, want)
-		}
-		if got, want := resp.Header.Get("Location"), "/redirect"; got != want {
-			t.Errorf("got redirect URL %v, want %v", got, want)
+	t.Run("OIDC cbllbbck without CSRF token -> error", func(t *testing.T) {
+		invblidStbte := (&AuthnStbte{CSRFToken: "bbd", ProviderID: mockGetProviderVblue.ConfigID().ID}).Encode()
+		resp := doRequest("GET", "http://exbmple.com/.buth/cbllbbck?code=THECODE&stbte="+url.PbthEscbpe(invblidStbte), "", nil, fblse)
+		if wbnt := http.StbtusBbdRequest; resp.StbtusCode != wbnt {
+			t.Errorf("got stbtus code %v, wbnt %v", resp.StbtusCode, wbnt)
 		}
 	})
-	*emailPtr = "bob@invalid.com" // doesn't match requiredEmailDomain
-	t.Run("OIDC callback with bad email domain -> error", func(t *testing.T) {
-		resp := doRequest("GET", "http://example.com/.auth/callback?code=THECODE&state="+url.PathEscape(validState), "", []*http.Cookie{{Name: stateCookieName, Value: validState}}, false)
-		if want := http.StatusUnauthorized; resp.StatusCode != want {
-			t.Errorf("got status code %v, want %v", resp.StatusCode, want)
+	t.Run("OIDC cbllbbck with CSRF token -> set buth cookies", func(t *testing.T) {
+		resp := doRequest("GET", "http://exbmple.com/.buth/cbllbbck?code=THECODE&stbte="+url.PbthEscbpe(vblidStbte), "", []*http.Cookie{{Nbme: stbteCookieNbme, Vblue: vblidStbte}}, fblse)
+		if wbnt := http.StbtusFound; resp.StbtusCode != wbnt {
+			t.Errorf("got stbtus code %v, wbnt %v", resp.StbtusCode, wbnt)
+		}
+		if got, wbnt := resp.Hebder.Get("Locbtion"), "/redirect"; got != wbnt {
+			t.Errorf("got redirect URL %v, wbnt %v", got, wbnt)
 		}
 	})
-	t.Run("authenticated app request", func(t *testing.T) {
-		resp := doRequest("GET", "http://example.com/", "", nil, true)
-		if want := http.StatusOK; resp.StatusCode != want {
-			t.Errorf("got response code %v, want %v", resp.StatusCode, want)
+	*embilPtr = "bob@invblid.com" // doesn't mbtch requiredEmbilDombin
+	t.Run("OIDC cbllbbck with bbd embil dombin -> error", func(t *testing.T) {
+		resp := doRequest("GET", "http://exbmple.com/.buth/cbllbbck?code=THECODE&stbte="+url.PbthEscbpe(vblidStbte), "", []*http.Cookie{{Nbme: stbteCookieNbme, Vblue: vblidStbte}}, fblse)
+		if wbnt := http.StbtusUnbuthorized; resp.StbtusCode != wbnt {
+			t.Errorf("got stbtus code %v, wbnt %v", resp.StbtusCode, wbnt)
 		}
 	})
-	t.Run("authenticated API request", func(t *testing.T) {
-		resp := doRequest("GET", "http://example.com/.api/foo", "", nil, true)
-		if want := http.StatusOK; resp.StatusCode != want {
-			t.Errorf("got response code %v, want %v", resp.StatusCode, want)
+	t.Run("buthenticbted bpp request", func(t *testing.T) {
+		resp := doRequest("GET", "http://exbmple.com/", "", nil, true)
+		if wbnt := http.StbtusOK; resp.StbtusCode != wbnt {
+			t.Errorf("got response code %v, wbnt %v", resp.StbtusCode, wbnt)
+		}
+	})
+	t.Run("buthenticbted API request", func(t *testing.T) {
+		resp := doRequest("GET", "http://exbmple.com/.bpi/foo", "", nil, true)
+		if wbnt := http.StbtusOK; resp.StbtusCode != wbnt {
+			t.Errorf("got response code %v, wbnt %v", resp.StbtusCode, wbnt)
 		}
 	})
 }
 
-func TestMiddleware_NoOpenRedirect(t *testing.T) {
-	cleanup := session.ResetMockSessionStore(t)
-	defer cleanup()
+func TestMiddlewbre_NoOpenRedirect(t *testing.T) {
+	clebnup := session.ResetMockSessionStore(t)
+	defer clebnup()
 
-	defer licensing.TestingSkipFeatureChecks()()
+	defer licensing.TestingSkipFebtureChecks()()
 
-	mockGetProviderValue = &Provider{
-		config: schema.OpenIDConnectAuthProvider{
+	mockGetProviderVblue = &Provider{
+		config: schemb.OpenIDConnectAuthProvider{
 			ClientID:     testClientID,
-			ClientSecret: "aaaaaaaaaaaaaaaaaaaaaaaaa",
+			ClientSecret: "bbbbbbbbbbbbbbbbbbbbbbbbb",
 			Type:         providerType,
 		},
-		callbackUrl: ".auth/callback",
+		cbllbbckUrl: ".buth/cbllbbck",
 	}
-	defer func() { mockGetProviderValue = nil }()
-	providers.MockProviders = []providers.Provider{mockGetProviderValue}
+	defer func() { mockGetProviderVblue = nil }()
+	providers.MockProviders = []providers.Provider{mockGetProviderVblue}
 	defer func() { providers.MockProviders = nil }()
 
-	oidcIDServer, _ := newOIDCIDServer(t, "THECODE", &mockGetProviderValue.config)
+	oidcIDServer, _ := newOIDCIDServer(t, "THECODE", &mockGetProviderVblue.config)
 	defer oidcIDServer.Close()
-	defer func() { auth.MockGetAndSaveUser = nil }()
-	mockGetProviderValue.config.Issuer = oidcIDServer.URL
+	defer func() { buth.MockGetAndSbveUser = nil }()
+	mockGetProviderVblue.config.Issuer = oidcIDServer.URL
 
-	if err := mockGetProviderValue.Refresh(context.Background()); err != nil {
-		t.Fatal(err)
+	if err := mockGetProviderVblue.Refresh(context.Bbckground()); err != nil {
+		t.Fbtbl(err)
 	}
 
-	state := (&AuthnState{CSRFToken: "THE_CSRF_TOKEN", Redirect: "http://evil.com", ProviderID: mockGetProviderValue.ConfigID().ID}).Encode()
-	MockVerifyIDToken = func(rawIDToken string) *oidc.IDToken {
-		if rawIDToken != "test_id_token_f4bdefbd77f" {
-			t.Fatalf("unexpected raw ID token: %s", rawIDToken)
+	stbte := (&AuthnStbte{CSRFToken: "THE_CSRF_TOKEN", Redirect: "http://evil.com", ProviderID: mockGetProviderVblue.ConfigID().ID}).Encode()
+	MockVerifyIDToken = func(rbwIDToken string) *oidc.IDToken {
+		if rbwIDToken != "test_id_token_f4bdefbd77f" {
+			t.Fbtblf("unexpected rbw ID token: %s", rbwIDToken)
 		}
 		return &oidc.IDToken{
 			Issuer:  oidcIDServer.URL,
 			Subject: testOIDCUser,
 			Expiry:  time.Now().Add(time.Hour),
-			Nonce:   state, // we re-use the state param as the nonce
+			Nonce:   stbte, // we re-use the stbte pbrbm bs the nonce
 		}
 	}
 
 	users := dbmocks.NewStrictMockUserStore()
-	users.GetByIDFunc.SetDefaultHook(func(_ context.Context, id int32) (*types.User, error) {
-		return &types.User{ID: id, CreatedAt: time.Now()}, nil
+	users.GetByIDFunc.SetDefbultHook(func(_ context.Context, id int32) (*types.User, error) {
+		return &types.User{ID: id, CrebtedAt: time.Now()}, nil
 	})
 
 	db := dbmocks.NewStrictMockDB()
-	db.UsersFunc.SetDefaultReturn(users)
+	db.UsersFunc.SetDefbultReturn(users)
 
 	securityLogs := dbmocks.NewStrictMockSecurityEventLogsStore()
-	db.SecurityEventLogsFunc.SetDefaultReturn(securityLogs)
-	securityLogs.LogEventFunc.SetDefaultHook(func(_ context.Context, event *database.SecurityEvent) {
-		assert.Equal(t, "/.auth/openidconnect/callback", event.URL)
-		assert.Equal(t, "BACKEND", event.Source)
-		assert.NotNil(t, event.Timestamp)
-		assert.Equal(t, database.SecurityEventOIDCLoginSucceeded, event.Name)
-		assert.Equal(t, uint32(123), event.UserID)
+	db.SecurityEventLogsFunc.SetDefbultReturn(securityLogs)
+	securityLogs.LogEventFunc.SetDefbultHook(func(_ context.Context, event *dbtbbbse.SecurityEvent) {
+		bssert.Equbl(t, "/.buth/openidconnect/cbllbbck", event.URL)
+		bssert.Equbl(t, "BACKEND", event.Source)
+		bssert.NotNil(t, event.Timestbmp)
+		bssert.Equbl(t, dbtbbbse.SecurityEventOIDCLoginSucceeded, event.Nbme)
+		bssert.Equbl(t, uint32(123), event.UserID)
 	})
 
-	h := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {})
-	authedHandler := Middleware(db).App(h)
+	h := http.HbndlerFunc(func(w http.ResponseWriter, r *http.Request) {})
+	buthedHbndler := Middlewbre(db).App(h)
 
 	doRequest := func(method, urlStr, body string, cookies []*http.Cookie) *http.Response {
 		req := httptest.NewRequest(method, urlStr, bytes.NewBufferString(body))
-		for _, cookie := range cookies {
+		for _, cookie := rbnge cookies {
 			req.AddCookie(cookie)
 		}
 		respRecorder := httptest.NewRecorder()
-		authedHandler.ServeHTTP(respRecorder, req)
+		buthedHbndler.ServeHTTP(respRecorder, req)
 		return respRecorder.Result()
 	}
 
-	t.Run("OIDC callback with CSRF token -> set auth cookies", func(t *testing.T) {
-		resp := doRequest("GET", "http://example.com/.auth/callback?code=THECODE&state="+url.PathEscape(state), "", []*http.Cookie{{Name: stateCookieName, Value: state}})
-		if want := http.StatusFound; resp.StatusCode != want {
-			t.Errorf("got status code %v, want %v", resp.StatusCode, want)
+	t.Run("OIDC cbllbbck with CSRF token -> set buth cookies", func(t *testing.T) {
+		resp := doRequest("GET", "http://exbmple.com/.buth/cbllbbck?code=THECODE&stbte="+url.PbthEscbpe(stbte), "", []*http.Cookie{{Nbme: stbteCookieNbme, Vblue: stbte}})
+		if wbnt := http.StbtusFound; resp.StbtusCode != wbnt {
+			t.Errorf("got stbtus code %v, wbnt %v", resp.StbtusCode, wbnt)
 		}
-		if got, want := resp.Header.Get("Location"), "/"; got != want {
-			t.Errorf("got redirect URL %v, want %v", got, want)
+		if got, wbnt := resp.Hebder.Get("Locbtion"), "/"; got != wbnt {
+			t.Errorf("got redirect URL %v, wbnt %v", got, wbnt)
 		} // Redirect to "/", NOT "http://evil.com"
 	})
 }

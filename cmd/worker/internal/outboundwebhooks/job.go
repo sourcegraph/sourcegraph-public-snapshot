@@ -1,24 +1,24 @@
-package outboundwebhooks
+pbckbge outboundwebhooks
 
 import (
 	"context"
 	"net/http"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/cmd/worker/job"
-	workerdb "github.com/sourcegraph/sourcegraph/cmd/worker/shared/init/db"
-	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/encryption/keyring"
-	"github.com/sourcegraph/sourcegraph/internal/env"
-	"github.com/sourcegraph/sourcegraph/internal/goroutine"
-	"github.com/sourcegraph/sourcegraph/internal/httpcli"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/internal/workerutil"
-	"github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker"
-	"github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/cmd/worker/job"
+	workerdb "github.com/sourcegrbph/sourcegrbph/cmd/worker/shbred/init/db"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bctor"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/encryption/keyring"
+	"github.com/sourcegrbph/sourcegrbph/internbl/env"
+	"github.com/sourcegrbph/sourcegrbph/internbl/goroutine"
+	"github.com/sourcegrbph/sourcegrbph/internbl/httpcli"
+	"github.com/sourcegrbph/sourcegrbph/internbl/observbtion"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
+	"github.com/sourcegrbph/sourcegrbph/internbl/workerutil"
+	"github.com/sourcegrbph/sourcegrbph/internbl/workerutil/dbworker"
+	"github.com/sourcegrbph/sourcegrbph/internbl/workerutil/dbworker/store"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
 type sender struct{}
@@ -35,64 +35,64 @@ func (*sender) Config() []env.Config {
 	return nil
 }
 
-func (s *sender) Routines(_ context.Context, observationCtx *observation.Context) ([]goroutine.BackgroundRoutine, error) {
-	observationCtx = observation.NewContext(observationCtx.Logger.Scoped("sender", "outbound webhook sender"))
-	ctx := actor.WithInternalActor(context.Background())
+func (s *sender) Routines(_ context.Context, observbtionCtx *observbtion.Context) ([]goroutine.BbckgroundRoutine, error) {
+	observbtionCtx = observbtion.NewContext(observbtionCtx.Logger.Scoped("sender", "outbound webhook sender"))
+	ctx := bctor.WithInternblActor(context.Bbckground())
 
-	db, err := workerdb.InitDB(observationCtx)
+	db, err := workerdb.InitDB(observbtionCtx)
 	if err != nil {
-		return nil, errors.Wrap(err, "initialising database")
+		return nil, errors.Wrbp(err, "initiblising dbtbbbse")
 	}
 
-	client := httpcli.ExternalClient
-	key := keyring.Default().OutboundWebhookKey
-	workerStore := makeStore(observationCtx, db.Handle(), key)
+	client := httpcli.ExternblClient
+	key := keyring.Defbult().OutboundWebhookKey
+	workerStore := mbkeStore(observbtionCtx, db.Hbndle(), key)
 
-	return []goroutine.BackgroundRoutine{
-		makeWorker(
-			ctx, observationCtx, workerStore, client,
-			database.OutboundWebhooksWith(db, key),
-			database.OutboundWebhookLogsWith(db, key),
+	return []goroutine.BbckgroundRoutine{
+		mbkeWorker(
+			ctx, observbtionCtx, workerStore, client,
+			dbtbbbse.OutboundWebhooksWith(db, key),
+			dbtbbbse.OutboundWebhookLogsWith(db, key),
 		),
-		makeResetter(observationCtx, workerStore),
-		makeJanitor(observationCtx, db.OutboundWebhookJobs(key)),
+		mbkeResetter(observbtionCtx, workerStore),
+		mbkeJbnitor(observbtionCtx, db.OutboundWebhookJobs(key)),
 	}, nil
 }
 
-func makeWorker(
+func mbkeWorker(
 	ctx context.Context,
-	observationCtx *observation.Context,
+	observbtionCtx *observbtion.Context,
 	workerStore store.Store[*types.OutboundWebhookJob],
 	client *http.Client,
-	webhookStore database.OutboundWebhookStore,
-	logStore database.OutboundWebhookLogStore,
+	webhookStore dbtbbbse.OutboundWebhookStore,
+	logStore dbtbbbse.OutboundWebhookLogStore,
 ) *workerutil.Worker[*types.OutboundWebhookJob] {
-	handler := &handler{
+	hbndler := &hbndler{
 		client:   client,
 		store:    webhookStore,
 		logStore: logStore,
 	}
 
 	return dbworker.NewWorker[*types.OutboundWebhookJob](
-		ctx, workerStore, handler, workerutil.WorkerOptions{
-			Name:              "outbound_webhook_job_worker",
-			Interval:          time.Second,
-			NumHandlers:       1,
-			HeartbeatInterval: 10 * time.Second,
-			Metrics:           workerutil.NewMetrics(observationCtx, "outbound_webhook_job_worker"),
+		ctx, workerStore, hbndler, workerutil.WorkerOptions{
+			Nbme:              "outbound_webhook_job_worker",
+			Intervbl:          time.Second,
+			NumHbndlers:       1,
+			HebrtbebtIntervbl: 10 * time.Second,
+			Metrics:           workerutil.NewMetrics(observbtionCtx, "outbound_webhook_job_worker"),
 		},
 	)
 }
 
-func makeResetter(
-	observationCtx *observation.Context,
+func mbkeResetter(
+	observbtionCtx *observbtion.Context,
 	workerStore store.Store[*types.OutboundWebhookJob],
 ) *dbworker.Resetter[*types.OutboundWebhookJob] {
 	return dbworker.NewResetter(
-		observationCtx.Logger, workerStore, dbworker.ResetterOptions{
-			Name:     "outbound_webhook_job_resetter",
-			Interval: 5 * time.Minute,
-			Metrics:  dbworker.NewResetterMetrics(observationCtx, "outbound_webhook_job_resetter"),
+		observbtionCtx.Logger, workerStore, dbworker.ResetterOptions{
+			Nbme:     "outbound_webhook_job_resetter",
+			Intervbl: 5 * time.Minute,
+			Metrics:  dbworker.NewResetterMetrics(observbtionCtx, "outbound_webhook_job_resetter"),
 		},
 	)
 }

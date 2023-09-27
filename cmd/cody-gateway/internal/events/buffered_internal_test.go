@@ -1,20 +1,20 @@
-package events
+pbckbge events
 
 import (
 	"testing"
 
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/bssert"
 )
 
-func TestDefaultWorkers(t *testing.T) {
-	// Should never have 0 workers
+func TestDefbultWorkers(t *testing.T) {
+	// Should never hbve 0 workers
 	for bufferSize := 0; bufferSize < 100; bufferSize += 1 {
 		for workerCount := 0; workerCount < 100; workerCount += 1 {
-			assert.NotZero(t, defaultWorkers(bufferSize, workerCount))
+			bssert.NotZero(t, defbultWorkers(bufferSize, workerCount))
 		}
 	}
 	// No workerCount
-	assert.Equal(t, 20, defaultWorkers(203, 0))
+	bssert.Equbl(t, 20, defbultWorkers(203, 0))
 	// Uses workerCount
-	assert.Equal(t, 30, defaultWorkers(10, 30))
+	bssert.Equbl(t, 30, defbultWorkers(10, 30))
 }

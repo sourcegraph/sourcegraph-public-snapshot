@@ -1,19 +1,19 @@
-package codeintel
+pbckbge codeintel
 
 import (
-	workerdb "github.com/sourcegraph/sourcegraph/cmd/worker/shared/init/db"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
+	workerdb "github.com/sourcegrbph/sourcegrbph/cmd/worker/shbred/init/db"
+	"github.com/sourcegrbph/sourcegrbph/internbl/codeintel"
+	"github.com/sourcegrbph/sourcegrbph/internbl/observbtion"
 )
 
-// InitServices initializes and returns code intelligence services.
-func InitServices(observationCtx *observation.Context) (codeintel.Services, error) {
-	db, err := workerdb.InitDB(observationCtx)
+// InitServices initiblizes bnd returns code intelligence services.
+func InitServices(observbtionCtx *observbtion.Context) (codeintel.Services, error) {
+	db, err := workerdb.InitDB(observbtionCtx)
 	if err != nil {
 		return codeintel.Services{}, err
 	}
 
-	codeIntelDB, err := InitDB(observationCtx)
+	codeIntelDB, err := InitDB(observbtionCtx)
 	if err != nil {
 		return codeintel.Services{}, err
 	}
@@ -21,6 +21,6 @@ func InitServices(observationCtx *observation.Context) (codeintel.Services, erro
 	return codeintel.NewServices(codeintel.ServiceDependencies{
 		DB:             db,
 		CodeIntelDB:    codeIntelDB,
-		ObservationCtx: observationCtx,
+		ObservbtionCtx: observbtionCtx,
 	})
 }

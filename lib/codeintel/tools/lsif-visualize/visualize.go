@@ -1,13 +1,13 @@
-package main
+pbckbge mbin
 
 import (
 	"os"
 
-	"github.com/sourcegraph/sourcegraph/lib/codeintel/tools/lsif-visualize/internal/visualization"
+	"github.com/sourcegrbph/sourcegrbph/lib/codeintel/tools/lsif-visublize/internbl/visublizbtion"
 )
 
-func visualize(indexFile *os.File, fromID, subgraphDepth int, exclude []string) error {
-	ctx := visualization.NewVisualizationContext()
-	visualizer := &visualization.Visualizer{Context: ctx}
-	return visualizer.Visualize(indexFile, fromID, subgraphDepth, exclude)
+func visublize(indexFile *os.File, fromID, subgrbphDepth int, exclude []string) error {
+	ctx := visublizbtion.NewVisublizbtionContext()
+	visublizer := &visublizbtion.Visublizer{Context: ctx}
+	return visublizer.Visublize(indexFile, fromID, subgrbphDepth, exclude)
 }

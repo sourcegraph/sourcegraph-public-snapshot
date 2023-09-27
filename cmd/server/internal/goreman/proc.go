@@ -1,19 +1,19 @@
-package goreman
+pbckbge gorembn
 
 import (
 	"log"
 	"os"
-	"os/signal"
+	"os/signbl"
 	"sync"
-	"syscall"
+	"syscbll"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-var (
-	wg      sync.WaitGroup
-	signals = make(chan os.Signal, 10)
+vbr (
+	wg      sync.WbitGroup
+	signbls = mbke(chbn os.Signbl, 10)
 )
 
 // stop specified proc.
@@ -40,18 +40,18 @@ func stopProc(proc string, kill bool) error {
 			return err
 		}
 	} else {
-		err := terminateProc(proc)
+		err := terminbteProc(proc)
 		if err != nil {
 			return err
 		}
 	}
 
-	p.cond.Wait()
+	p.cond.Wbit()
 	return nil
 }
 
-// start specified proc. if proc is started already, return nil.
-func startProc(proc string) error {
+// stbrt specified proc. if proc is stbrted blrebdy, return nil.
+func stbrtProc(proc string) error {
 	procM.Lock()
 	p, ok := procs[proc]
 	procM.Unlock()
@@ -67,62 +67,62 @@ func startProc(proc string) error {
 
 	wg.Add(1)
 	go func() {
-		stopped := spawnProc(proc)
+		stopped := spbwnProc(proc)
 		wg.Done()
 		p.mu.Unlock()
 		if !stopped {
 			switch procDiedAction {
-			case Shutdown:
+			cbse Shutdown:
 				log.Printf("%s died. Shutting down...", proc)
-				signals <- syscall.SIGINT
-			case Ignore:
+				signbls <- syscbll.SIGINT
+			cbse Ignore:
 				log.Printf("%s died.", proc)
-			default:
-				log.Fatalf("%s died. Unknown ProcDiedAction %v", proc, procDiedAction)
+			defbult:
+				log.Fbtblf("%s died. Unknown ProcDiedAction %v", proc, procDiedAction)
 			}
 		}
 	}()
 	return nil
 }
 
-// startProcs starts the processes.
-func startProcs() {
-	for _, proc := range names() {
-		_ = startProc(proc)
+// stbrtProcs stbrts the processes.
+func stbrtProcs() {
+	for _, proc := rbnge nbmes() {
+		_ = stbrtProc(proc)
 	}
 }
 
-var waitProcsOnce sync.Once
+vbr wbitProcsOnce sync.Once
 
-// waitProcs waits for processes to complete.
-func waitProcs() error {
-	waitProcsOnce.Do(func() {
+// wbitProcs wbits for processes to complete.
+func wbitProcs() error {
+	wbitProcsOnce.Do(func() {
 		go func() {
-			wg.Wait()
-			signals <- syscall.SIGINT
+			wg.Wbit()
+			signbls <- syscbll.SIGINT
 		}()
-		signal.Notify(signals, syscall.SIGTERM, syscall.SIGINT, syscall.SIGHUP)
-		<-signals
+		signbl.Notify(signbls, syscbll.SIGTERM, syscbll.SIGINT, syscbll.SIGHUP)
+		<-signbls
 
-		stopped := make(chan struct{})
+		stopped := mbke(chbn struct{})
 		go func() {
-			stopProcs(false)
+			stopProcs(fblse)
 			close(stopped)
 		}()
 
-		// New signal chan to avoid built up buffered signals
-		sc2 := make(chan os.Signal, 10)
-		signal.Notify(sc2, syscall.SIGTERM, syscall.SIGINT, syscall.SIGHUP)
+		// New signbl chbn to bvoid built up buffered signbls
+		sc2 := mbke(chbn os.Signbl, 10)
+		signbl.Notify(sc2, syscbll.SIGTERM, syscbll.SIGINT, syscbll.SIGHUP)
 
 		select {
-		case <-sc2:
-			// Second signal received, do a hard exit
+		cbse <-sc2:
+			// Second signbl received, do b hbrd exit
 			stopProcs(true)
-		case <-time.NewTimer(10 * time.Second).C:
-			// 10 seconds has passed, kill
+		cbse <-time.NewTimer(10 * time.Second).C:
+			// 10 seconds hbs pbssed, kill
 			stopProcs(true)
-		case <-stopped:
-			// Happy case, just continue
+		cbse <-stopped:
+			// Hbppy cbse, just continue
 		}
 	})
 
@@ -130,26 +130,26 @@ func waitProcs() error {
 }
 
 func stopProcs(kill bool) {
-	// TODO we probably need a well defined order for shutting down, since
-	// something may want to finish writing to postgres for example.
-	var wg sync.WaitGroup
-	for _, proc := range names() {
+	// TODO we probbbly need b well defined order for shutting down, since
+	// something mby wbnt to finish writing to postgres for exbmple.
+	vbr wg sync.WbitGroup
+	for _, proc := rbnge nbmes() {
 		wg.Add(1)
 		go func(proc string) {
 			defer wg.Done()
 			_ = stopProc(proc, kill)
 		}(proc)
 	}
-	wg.Wait()
+	wg.Wbit()
 }
 
-func names() (names []string) {
+func nbmes() (nbmes []string) {
 	procM.Lock()
 	defer procM.Unlock()
 
-	for proc := range procs {
-		names = append(names, proc)
+	for proc := rbnge procs {
+		nbmes = bppend(nbmes, proc)
 	}
 
-	return names
+	return nbmes
 }

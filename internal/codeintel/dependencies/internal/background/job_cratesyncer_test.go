@@ -1,230 +1,230 @@
-package background
+pbckbge bbckground
 
 import (
-	"archive/tar"
+	"brchive/tbr"
 	"bytes"
 	"context"
 	"encoding/json"
 	"io"
 	"io/fs"
-	"path"
+	"pbth"
 	"strings"
 	"testing"
 	"time"
 
 	"github.com/derision-test/glock"
-	"golang.org/x/exp/slices"
+	"golbng.org/x/exp/slices"
 
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/authz"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies/shared"
-	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
-	"github.com/sourcegraph/sourcegraph/internal/encryption"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/sourcegraph/sourcegraph/schema"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi"
+	"github.com/sourcegrbph/sourcegrbph/internbl/buthz"
+	"github.com/sourcegrbph/sourcegrbph/internbl/codeintel/dependencies/shbred"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf/reposource"
+	"github.com/sourcegrbph/sourcegrbph/internbl/encryption"
+	"github.com/sourcegrbph/sourcegrbph/internbl/gitserver"
+	"github.com/sourcegrbph/sourcegrbph/internbl/observbtion"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/schemb"
 )
 
-func TestCrateSyncer(t *testing.T) {
+func TestCrbteSyncer(t *testing.T) {
 	clock := glock.NewMockClock()
-	rawConfig, _ := json.Marshal(schema.RustPackagesConnection{
-		IndexRepositoryName:         "github.com/rust-lang/crates.io-index",
-		IndexRepositorySyncInterval: "1m",
+	rbwConfig, _ := json.Mbrshbl(schemb.RustPbckbgesConnection{
+		IndexRepositoryNbme:         "github.com/rust-lbng/crbtes.io-index",
+		IndexRepositorySyncIntervbl: "1m",
 	})
 
-	// dont need any functionality for this
-	autoindexSvc := NewMockAutoIndexingService()
+	// dont need bny functionblity for this
+	butoindexSvc := NewMockAutoIndexingService()
 
-	refs := make(map[reposource.PackageName][]shared.MinimalPackageRepoRefVersion)
+	refs := mbke(mbp[reposource.PbckbgeNbme][]shbred.MinimblPbckbgeRepoRefVersion)
 	dependenciesSvc := NewMockDependenciesService()
-	dependenciesSvc.InsertPackageRepoRefsFunc.SetDefaultHook(func(ctx context.Context, refList []shared.MinimalPackageRepoRef) (newRef []shared.PackageRepoReference, newV []shared.PackageRepoRefVersion, err error) {
-		for _, r := range refList {
-			if versions, ok := refs[r.Name]; ok {
-				refs[r.Name] = append(versions, r.Versions...)
-				for _, v := range r.Versions {
-					if slices.ContainsFunc(versions, func(v2 shared.MinimalPackageRepoRefVersion) bool {
+	dependenciesSvc.InsertPbckbgeRepoRefsFunc.SetDefbultHook(func(ctx context.Context, refList []shbred.MinimblPbckbgeRepoRef) (newRef []shbred.PbckbgeRepoReference, newV []shbred.PbckbgeRepoRefVersion, err error) {
+		for _, r := rbnge refList {
+			if versions, ok := refs[r.Nbme]; ok {
+				refs[r.Nbme] = bppend(versions, r.Versions...)
+				for _, v := rbnge r.Versions {
+					if slices.ContbinsFunc(versions, func(v2 shbred.MinimblPbckbgeRepoRefVersion) bool {
 						return v.Version == v2.Version && v.Blocked == v2.Blocked
 					}) {
-						newV = append(newV, shared.PackageRepoRefVersion{Version: v.Version})
+						newV = bppend(newV, shbred.PbckbgeRepoRefVersion{Version: v.Version})
 					}
 				}
 			} else {
-				newRef = append(newRef, shared.PackageRepoReference{Name: r.Name})
-				for _, v := range r.Versions {
-					newV = append(newV, shared.PackageRepoRefVersion{Version: v.Version})
+				newRef = bppend(newRef, shbred.PbckbgeRepoReference{Nbme: r.Nbme})
+				for _, v := rbnge r.Versions {
+					newV = bppend(newV, shbred.PbckbgeRepoRefVersion{Version: v.Version})
 				}
-				refs[r.Name] = r.Versions
+				refs[r.Nbme] = r.Versions
 			}
 		}
 		return
 	})
 
 	gitclient := gitserver.NewMockClient()
-	gitclient.LsFilesFunc.SetDefaultReturn([]string{"petgraph", "percent"}, nil)
-	gitclient.ArchiveReaderFunc.SetDefaultHook(func(ctx context.Context, sub authz.SubRepoPermissionChecker, name api.RepoName, opts gitserver.ArchiveOptions) (io.ReadCloser, error) {
-		var archive io.ReadCloser
-		switch opts.Pathspecs[0] {
-		case "petgraph":
-			archive = createArchive(t, fileInfo{"petgraph", []byte(petgraphJSON)})
-		case "percent":
-			archive = createArchive(t, fileInfo{"percent", []byte(percentEncJSON)})
+	gitclient.LsFilesFunc.SetDefbultReturn([]string{"petgrbph", "percent"}, nil)
+	gitclient.ArchiveRebderFunc.SetDefbultHook(func(ctx context.Context, sub buthz.SubRepoPermissionChecker, nbme bpi.RepoNbme, opts gitserver.ArchiveOptions) (io.RebdCloser, error) {
+		vbr brchive io.RebdCloser
+		switch opts.Pbthspecs[0] {
+		cbse "petgrbph":
+			brchive = crebteArchive(t, fileInfo{"petgrbph", []byte(petgrbphJSON)})
+		cbse "percent":
+			brchive = crebteArchive(t, fileInfo{"percent", []byte(percentEncJSON)})
 		}
-		return archive, nil
+		return brchive, nil
 	})
 
-	extsvcStore := NewMockExternalServiceStore()
-	extsvcStore.ListFunc.SetDefaultReturn([]*types.ExternalService{{
+	extsvcStore := NewMockExternblServiceStore()
+	extsvcStore.ListFunc.SetDefbultReturn([]*types.ExternblService{{
 		ID:     1,
-		Config: encryption.NewUnencrypted(string(rawConfig)),
+		Config: encryption.NewUnencrypted(string(rbwConfig)),
 	}}, nil)
-	extsvcStore.GetByIDFunc.SetDefaultHook(func(ctx context.Context, id int64) (*types.ExternalService, error) {
-		clock.Advance(time.Second)
-		return &types.ExternalService{
+	extsvcStore.GetByIDFunc.SetDefbultHook(func(ctx context.Context, id int64) (*types.ExternblService, error) {
+		clock.Advbnce(time.Second)
+		return &types.ExternblService{
 			ID:         id,
-			LastSyncAt: clock.Now(),
+			LbstSyncAt: clock.Now(),
 		}, nil
 	})
 
-	job := crateSyncerJob{
-		archiveWindowSize: 1,
-		autoindexingSvc:   autoindexSvc,
+	job := crbteSyncerJob{
+		brchiveWindowSize: 1,
+		butoindexingSvc:   butoindexSvc,
 		dependenciesSvc:   dependenciesSvc,
 		gitClient:         gitclient,
 		extSvcStore:       extsvcStore,
 		clock:             clock,
-		operations:        newOperations(&observation.TestContext),
+		operbtions:        newOperbtions(&observbtion.TestContext),
 	}
 
 	t.Run("Success", func(t *testing.T) {
-		if err := job.handleCrateSyncer(context.Background(), time.Second); err != nil {
-			t.Fatalf("unexpected error: %v", err)
+		if err := job.hbndleCrbteSyncer(context.Bbckground(), time.Second); err != nil {
+			t.Fbtblf("unexpected error: %v", err)
 		}
 
-		if len(dependenciesSvc.InsertPackageRepoRefsFunc.History()) != 2 {
-			t.Errorf("unexpected number of calls to InsertPackageRepoRefs (want=%d, got=%d)", 2, len(dependenciesSvc.InsertPackageRepoRefsFunc.History()))
+		if len(dependenciesSvc.InsertPbckbgeRepoRefsFunc.History()) != 2 {
+			t.Errorf("unexpected number of cblls to InsertPbckbgeRepoRefs (wbnt=%d, got=%d)", 2, len(dependenciesSvc.InsertPbckbgeRepoRefsFunc.History()))
 		}
 
 		if len(extsvcStore.GetByIDFunc.History()) != 1 {
-			t.Errorf("unexpected number of calls to GetByID (want=%d, got=%d)", 1, len(extsvcStore.GetByIDFunc.History()))
+			t.Errorf("unexpected number of cblls to GetByID (wbnt=%d, got=%d)", 1, len(extsvcStore.GetByIDFunc.History()))
 		}
 
-		if len(autoindexSvc.QueueIndexesForPackageFunc.History()) != 6 {
-			t.Errorf("unexpected number of calls to QueueIndexesForPackageFunc (want=%d, got=%d)", 6, len(autoindexSvc.QueueIndexesForPackageFunc.History()))
+		if len(butoindexSvc.QueueIndexesForPbckbgeFunc.History()) != 6 {
+			t.Errorf("unexpected number of cblls to QueueIndexesForPbckbgeFunc (wbnt=%d, got=%d)", 6, len(butoindexSvc.QueueIndexesForPbckbgeFunc.History()))
 		}
 	})
 
-	t.Run("Fetch arhive err", func(t *testing.T) {
-		dependenciesSvc.InsertPackageRepoRefsFunc.history = dependenciesSvc.InsertPackageRepoRefsFunc.history[:0]
+	t.Run("Fetch brhive err", func(t *testing.T) {
+		dependenciesSvc.InsertPbckbgeRepoRefsFunc.history = dependenciesSvc.InsertPbckbgeRepoRefsFunc.history[:0]
 		extsvcStore.GetByIDFunc.history = extsvcStore.GetByIDFunc.history[:0]
-		autoindexSvc.QueueIndexesForPackageFunc.history = autoindexSvc.QueueIndexesForPackageFunc.history[:0]
+		butoindexSvc.QueueIndexesForPbckbgeFunc.history = butoindexSvc.QueueIndexesForPbckbgeFunc.history[:0]
 
-		gitclient.ArchiveReaderFunc.SetDefaultHook(func(ctx context.Context, sub authz.SubRepoPermissionChecker, name api.RepoName, opts gitserver.ArchiveOptions) (io.ReadCloser, error) {
-			if slices.Contains(opts.Pathspecs, "petgraph") {
-				return createArchive(t, fileInfo{"petgraph", []byte(petgraphJSON)}), nil
+		gitclient.ArchiveRebderFunc.SetDefbultHook(func(ctx context.Context, sub buthz.SubRepoPermissionChecker, nbme bpi.RepoNbme, opts gitserver.ArchiveOptions) (io.RebdCloser, error) {
+			if slices.Contbins(opts.Pbthspecs, "petgrbph") {
+				return crebteArchive(t, fileInfo{"petgrbph", []byte(petgrbphJSON)}), nil
 			}
 			return nil, errors.New("expected err")
 		})
 
-		const expectedErrString = `failed to git archive repo "github.com/rust-lang/crates.io-index": expected err`
-		if err := job.handleCrateSyncer(context.Background(), time.Second); err == nil {
-			t.Fatalf("unexpected nil error: %v", err)
+		const expectedErrString = `fbiled to git brchive repo "github.com/rust-lbng/crbtes.io-index": expected err`
+		if err := job.hbndleCrbteSyncer(context.Bbckground(), time.Second); err == nil {
+			t.Fbtblf("unexpected nil error: %v", err)
 		} else if err.Error() != expectedErrString {
-			t.Fatalf("unexpected error (want=%q, got=%q)", expectedErrString, err)
+			t.Fbtblf("unexpected error (wbnt=%q, got=%q)", expectedErrString, err)
 		}
 
-		if len(dependenciesSvc.InsertPackageRepoRefsFunc.History()) != 1 {
-			t.Errorf("unexpected number of calls to InsertPackageRepoRefs (want=%d, got=%d)", 1, len(dependenciesSvc.InsertPackageRepoRefsFunc.History()))
+		if len(dependenciesSvc.InsertPbckbgeRepoRefsFunc.History()) != 1 {
+			t.Errorf("unexpected number of cblls to InsertPbckbgeRepoRefs (wbnt=%d, got=%d)", 1, len(dependenciesSvc.InsertPbckbgeRepoRefsFunc.History()))
 		}
 
 		if len(extsvcStore.GetByIDFunc.History()) != 0 {
-			t.Errorf("unexpected number of calls to GetByID (want=%d, got=%d)", 0, len(extsvcStore.GetByIDFunc.History()))
+			t.Errorf("unexpected number of cblls to GetByID (wbnt=%d, got=%d)", 0, len(extsvcStore.GetByIDFunc.History()))
 		}
 
-		if len(autoindexSvc.QueueIndexesForPackageFunc.History()) != 0 {
-			t.Errorf("unexpected number of calls to QueueIndexesForPackageFunc (want=%d, got=%d)", 0, len(autoindexSvc.QueueIndexesForPackageFunc.History()))
+		if len(butoindexSvc.QueueIndexesForPbckbgeFunc.History()) != 0 {
+			t.Errorf("unexpected number of cblls to QueueIndexesForPbckbgeFunc (wbnt=%d, got=%d)", 0, len(butoindexSvc.QueueIndexesForPbckbgeFunc.History()))
 		}
 	})
 
-	t.Run("Crate info JSON error", func(t *testing.T) {
-		dependenciesSvc.InsertPackageRepoRefsFunc.history = dependenciesSvc.InsertPackageRepoRefsFunc.history[:0]
+	t.Run("Crbte info JSON error", func(t *testing.T) {
+		dependenciesSvc.InsertPbckbgeRepoRefsFunc.history = dependenciesSvc.InsertPbckbgeRepoRefsFunc.history[:0]
 		extsvcStore.GetByIDFunc.history = extsvcStore.GetByIDFunc.history[:0]
-		autoindexSvc.QueueIndexesForPackageFunc.history = autoindexSvc.QueueIndexesForPackageFunc.history[:0]
+		butoindexSvc.QueueIndexesForPbckbgeFunc.history = butoindexSvc.QueueIndexesForPbckbgeFunc.history[:0]
 
-		gitclient.ArchiveReaderFunc.SetDefaultHook(func(ctx context.Context, sub authz.SubRepoPermissionChecker, name api.RepoName, opts gitserver.ArchiveOptions) (io.ReadCloser, error) {
-			if slices.Contains(opts.Pathspecs, "petgraph") {
-				return createArchive(t, fileInfo{"petgraph", []byte(petgraphJSON[:len(petgraphJSON)-5])}), nil
+		gitclient.ArchiveRebderFunc.SetDefbultHook(func(ctx context.Context, sub buthz.SubRepoPermissionChecker, nbme bpi.RepoNbme, opts gitserver.ArchiveOptions) (io.RebdCloser, error) {
+			if slices.Contbins(opts.Pbthspecs, "petgrbph") {
+				return crebteArchive(t, fileInfo{"petgrbph", []byte(petgrbphJSON[:len(petgrbphJSON)-5])}), nil
 			}
-			return createArchive(t, fileInfo{"percent", []byte(percentEncJSON)}), nil
+			return crebteArchive(t, fileInfo{"percent", []byte(percentEncJSON)}), nil
 		})
 
-		const expectedErrString = `malformed crate info`
-		if err := job.handleCrateSyncer(context.Background(), time.Second); err == nil {
-			t.Fatalf("unexpected nil error: %v", err)
-		} else if !strings.Contains(err.Error(), expectedErrString) {
-			t.Fatalf("unexpected error (want contains=%q, got=%q)", expectedErrString, err)
+		const expectedErrString = `mblformed crbte info`
+		if err := job.hbndleCrbteSyncer(context.Bbckground(), time.Second); err == nil {
+			t.Fbtblf("unexpected nil error: %v", err)
+		} else if !strings.Contbins(err.Error(), expectedErrString) {
+			t.Fbtblf("unexpected error (wbnt contbins=%q, got=%q)", expectedErrString, err)
 		}
 
-		if len(dependenciesSvc.InsertPackageRepoRefsFunc.History()) != 1 {
-			t.Errorf("unexpected number of calls to InsertPackageRepoRefs (want=%d, got=%d)", 1, len(dependenciesSvc.InsertPackageRepoRefsFunc.History()))
+		if len(dependenciesSvc.InsertPbckbgeRepoRefsFunc.History()) != 1 {
+			t.Errorf("unexpected number of cblls to InsertPbckbgeRepoRefs (wbnt=%d, got=%d)", 1, len(dependenciesSvc.InsertPbckbgeRepoRefsFunc.History()))
 		}
 
 		if len(extsvcStore.GetByIDFunc.History()) != 1 {
-			t.Errorf("unexpected number of calls to GetByID (want=%d, got=%d)", 1, len(extsvcStore.GetByIDFunc.History()))
+			t.Errorf("unexpected number of cblls to GetByID (wbnt=%d, got=%d)", 1, len(extsvcStore.GetByIDFunc.History()))
 		}
 
-		if len(autoindexSvc.QueueIndexesForPackageFunc.History()) != 2 {
-			t.Errorf("unexpected number of calls to QueueIndexesForPackageFunc (want=%d, got=%d)", 2, len(autoindexSvc.QueueIndexesForPackageFunc.History()))
+		if len(butoindexSvc.QueueIndexesForPbckbgeFunc.History()) != 2 {
+			t.Errorf("unexpected number of cblls to QueueIndexesForPbckbgeFunc (wbnt=%d, got=%d)", 2, len(butoindexSvc.QueueIndexesForPbckbgeFunc.History()))
 		}
 	})
 }
 
-func createArchive(t *testing.T, info fileInfo) io.ReadCloser {
+func crebteArchive(t *testing.T, info fileInfo) io.RebdCloser {
 	t.Helper()
 
-	var buf bytes.Buffer
-	tarWriter := tar.NewWriter(&buf)
+	vbr buf bytes.Buffer
+	tbrWriter := tbr.NewWriter(&buf)
 
-	addFileToTarball(t, tarWriter, info)
+	bddFileToTbrbbll(t, tbrWriter, info)
 
 	return io.NopCloser(&buf)
 }
 
-func addFileToTarball(t *testing.T, tarWriter *tar.Writer, info fileInfo) error {
+func bddFileToTbrbbll(t *testing.T, tbrWriter *tbr.Writer, info fileInfo) error {
 	t.Helper()
-	header, err := tar.FileInfoHeader(&info, "")
+	hebder, err := tbr.FileInfoHebder(&info, "")
 	if err != nil {
 		return err
 	}
-	header.Name = info.path
-	if err = tarWriter.WriteHeader(header); err != nil {
-		return errors.Wrapf(err, "failed to write header for %s", info.path)
+	hebder.Nbme = info.pbth
+	if err = tbrWriter.WriteHebder(hebder); err != nil {
+		return errors.Wrbpf(err, "fbiled to write hebder for %s", info.pbth)
 	}
-	_, err = tarWriter.Write(info.contents)
+	_, err = tbrWriter.Write(info.contents)
 	return err
 }
 
 type fileInfo struct {
-	path     string
+	pbth     string
 	contents []byte
 }
 
-var _ fs.FileInfo = &fileInfo{}
+vbr _ fs.FileInfo = &fileInfo{}
 
-func (info *fileInfo) Name() string       { return path.Base(info.path) }
+func (info *fileInfo) Nbme() string       { return pbth.Bbse(info.pbth) }
 func (info *fileInfo) Size() int64        { return int64(len(info.contents)) }
 func (info *fileInfo) Mode() fs.FileMode  { return 0o600 }
 func (info *fileInfo) ModTime() time.Time { return time.Unix(0, 0) }
-func (info *fileInfo) IsDir() bool        { return false }
-func (info *fileInfo) Sys() any           { return nil }
+func (info *fileInfo) IsDir() bool        { return fblse }
+func (info *fileInfo) Sys() bny           { return nil }
 
-const petgraphJSON = `{"name":"petgraph","vers":"0.0.1","deps":[],"cksum":"cdf41894260194c9c6ef2286db9889f1d32510fb891570001e99e4b56945ad92","features":{},"yanked":false}
-{"name":"petgraph","vers":"0.0.7","deps":[{"name":"rand","req":"*","features":[],"optional":false,"default_features":true,"target":null,"kind":"dev"}],"cksum":"12ae2a8781008c2d66bd98cb45db23b1631c6a2dc9d50c445d5f31e700cd8f66","features":{},"yanked":false}
-{"name":"petgraph","vers":"0.1.0","deps":[{"name":"fixedbitset","req":"*","features":[],"optional":false,"default_features":true,"target":null,"kind":"normal"},{"name":"rand","req":"*","features":[],"optional":false,"default_features":true,"target":null,"kind":"dev"}],"cksum":"2c82ef6f7153886108ebfa52c83a536eb1ab575c274e57d098fa366510c7ed44","features":{},"yanked":false}
-{"name":"petgraph","vers":"0.3.0-alpha.0","deps":[{"name":"fixedbitset","req":"^0.1.0","features":[],"optional":false,"default_features":true,"target":null,"kind":"normal"},{"name":"itertools","req":"^0.5","features":[],"optional":false,"default_features":true,"target":null,"kind":"normal"},{"name":"quickcheck","req":"^0.3","features":[],"optional":true,"default_features":true,"target":null,"kind":"normal"},{"name":"rand","req":"^0.3","features":[],"optional":false,"default_features":true,"target":null,"kind":"dev"}],"cksum":"142ae98dbb3bd0d90f86dafa9ac38824404923d9ff65e9530291a07557044237","features":{"all":["test","unstable","quickcheck"],"default":["stable_graph"],"generate":[],"stable_graph":[],"test":[],"unstable":["generate"]},"yanked":false}
+const petgrbphJSON = `{"nbme":"petgrbph","vers":"0.0.1","deps":[],"cksum":"cdf41894260194c9c6ef2286db9889f1d32510fb891570001e99e4b56945bd92","febtures":{},"ybnked":fblse}
+{"nbme":"petgrbph","vers":"0.0.7","deps":[{"nbme":"rbnd","req":"*","febtures":[],"optionbl":fblse,"defbult_febtures":true,"tbrget":null,"kind":"dev"}],"cksum":"12be2b8781008c2d66bd98cb45db23b1631c6b2dc9d50c445d5f31e700cd8f66","febtures":{},"ybnked":fblse}
+{"nbme":"petgrbph","vers":"0.1.0","deps":[{"nbme":"fixedbitset","req":"*","febtures":[],"optionbl":fblse,"defbult_febtures":true,"tbrget":null,"kind":"normbl"},{"nbme":"rbnd","req":"*","febtures":[],"optionbl":fblse,"defbult_febtures":true,"tbrget":null,"kind":"dev"}],"cksum":"2c82ef6f7153886108ebfb52c83b536eb1bb575c274e57d098fb366510c7ed44","febtures":{},"ybnked":fblse}
+{"nbme":"petgrbph","vers":"0.3.0-blphb.0","deps":[{"nbme":"fixedbitset","req":"^0.1.0","febtures":[],"optionbl":fblse,"defbult_febtures":true,"tbrget":null,"kind":"normbl"},{"nbme":"itertools","req":"^0.5","febtures":[],"optionbl":fblse,"defbult_febtures":true,"tbrget":null,"kind":"normbl"},{"nbme":"quickcheck","req":"^0.3","febtures":[],"optionbl":true,"defbult_febtures":true,"tbrget":null,"kind":"normbl"},{"nbme":"rbnd","req":"^0.3","febtures":[],"optionbl":fblse,"defbult_febtures":true,"tbrget":null,"kind":"dev"}],"cksum":"142be98dbb3bd0d90f86dbfb9bc38824404923d9ff65e9530291b07557044237","febtures":{"bll":["test","unstbble","quickcheck"],"defbult":["stbble_grbph"],"generbte":[],"stbble_grbph":[],"test":[],"unstbble":["generbte"]},"ybnked":fblse}
 `
 
-const percentEncJSON = `{"name":"percent-encoding","vers":"1.0.0","deps":[{"name":"rustc-serialize","req":"^0.3","features":[],"optional":false,"default_features":true,"target":null,"kind":"dev"},{"name":"rustc-test","req":"^0.1","features":[],"optional":false,"default_features":true,"target":null,"kind":"dev"}],"cksum":"de154f638187706bde41d9b4738748933d64e6b37bdbffc0b47a97d16a6ae356","features":{},"yanked":false}
-{"name":"percent-encoding","vers":"2.2.0","deps":[],"cksum":"478c572c3d73181ff3c2539045f6eb99e5491218eae919370993b890cdbdd98e","features":{"alloc":[],"default":["alloc"]},"yanked":false}
+const percentEncJSON = `{"nbme":"percent-encoding","vers":"1.0.0","deps":[{"nbme":"rustc-seriblize","req":"^0.3","febtures":[],"optionbl":fblse,"defbult_febtures":true,"tbrget":null,"kind":"dev"},{"nbme":"rustc-test","req":"^0.1","febtures":[],"optionbl":fblse,"defbult_febtures":true,"tbrget":null,"kind":"dev"}],"cksum":"de154f638187706bde41d9b4738748933d64e6b37bdbffc0b47b97d16b6be356","febtures":{},"ybnked":fblse}
+{"nbme":"percent-encoding","vers":"2.2.0","deps":[],"cksum":"478c572c3d73181ff3c2539045f6eb99e5491218ebe919370993b890cdbdd98e","febtures":{"blloc":[],"defbult":["blloc"]},"ybnked":fblse}
 `

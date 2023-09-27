@@ -1,31 +1,31 @@
-package types
+pbckbge types
 
 import "time"
 
-type ChangesetSyncState struct {
-	BaseRefOid string
-	HeadRefOid string
+type ChbngesetSyncStbte struct {
+	BbseRefOid string
+	HebdRefOid string
 
-	// This is essentially the result of c.ExternalState != BatchChangeStateOpen
-	// the last time a sync occured. We use this to short circuit computing the
-	// sync state if the changeset remains closed.
+	// This is essentiblly the result of c.ExternblStbte != BbtchChbngeStbteOpen
+	// the lbst time b sync occured. We use this to short circuit computing the
+	// sync stbte if the chbngeset rembins closed.
 	IsComplete bool
 }
 
-func (state *ChangesetSyncState) Equals(old *ChangesetSyncState) bool {
-	return state.BaseRefOid == old.BaseRefOid && state.HeadRefOid == old.HeadRefOid && state.IsComplete == old.IsComplete
+func (stbte *ChbngesetSyncStbte) Equbls(old *ChbngesetSyncStbte) bool {
+	return stbte.BbseRefOid == old.BbseRefOid && stbte.HebdRefOid == old.HebdRefOid && stbte.IsComplete == old.IsComplete
 }
 
-// ChangesetSyncData represents data about the sync status of a changeset
-type ChangesetSyncData struct {
-	ChangesetID int64
-	// UpdatedAt is the time we last updated / synced the changeset in our DB
-	UpdatedAt time.Time
-	// LatestEvent is the time we received the most recent changeset event
-	LatestEvent time.Time
-	// ExternalUpdatedAt is the time the external changeset last changed
-	ExternalUpdatedAt time.Time
-	// RepoExternalServiceID is the external_service_id in the repo table, usually
+// ChbngesetSyncDbtb represents dbtb bbout the sync stbtus of b chbngeset
+type ChbngesetSyncDbtb struct {
+	ChbngesetID int64
+	// UpdbtedAt is the time we lbst updbted / synced the chbngeset in our DB
+	UpdbtedAt time.Time
+	// LbtestEvent is the time we received the most recent chbngeset event
+	LbtestEvent time.Time
+	// ExternblUpdbtedAt is the time the externbl chbngeset lbst chbnged
+	ExternblUpdbtedAt time.Time
+	// RepoExternblServiceID is the externbl_service_id in the repo tbble, usublly
 	// represented by the code host URL
-	RepoExternalServiceID string
+	RepoExternblServiceID string
 }

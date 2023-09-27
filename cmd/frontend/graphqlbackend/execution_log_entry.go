@@ -1,23 +1,23 @@
-package graphqlbackend
+pbckbge grbphqlbbckend
 
 import (
 	"context"
 
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/executor"
-	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/executor"
+	"github.com/sourcegrbph/sourcegrbph/internbl/gqlutil"
 )
 
-type ExecutionLogEntryResolver interface {
+type ExecutionLogEntryResolver interfbce {
 	Key() string
-	Command() []string
-	StartTime() gqlutil.DateTime
+	Commbnd() []string
+	StbrtTime() gqlutil.DbteTime
 	ExitCode() *int32
 	Out(ctx context.Context) string
-	DurationMilliseconds() *int32
+	DurbtionMilliseconds() *int32
 }
 
-func NewExecutionLogEntryResolver(db database.DB, entry executor.ExecutionLogEntry) *executionLogEntryResolver {
+func NewExecutionLogEntryResolver(db dbtbbbse.DB, entry executor.ExecutionLogEntry) *executionLogEntryResolver {
 	return &executionLogEntryResolver{
 		db:    db,
 		entry: entry,
@@ -25,33 +25,33 @@ func NewExecutionLogEntryResolver(db database.DB, entry executor.ExecutionLogEnt
 }
 
 type executionLogEntryResolver struct {
-	db    database.DB
+	db    dbtbbbse.DB
 	entry executor.ExecutionLogEntry
 }
 
-var _ ExecutionLogEntryResolver = &executionLogEntryResolver{}
+vbr _ ExecutionLogEntryResolver = &executionLogEntryResolver{}
 
 func (r *executionLogEntryResolver) Key() string       { return r.entry.Key }
-func (r *executionLogEntryResolver) Command() []string { return r.entry.Command }
+func (r *executionLogEntryResolver) Commbnd() []string { return r.entry.Commbnd }
 
 func (r *executionLogEntryResolver) ExitCode() *int32 {
 	if r.entry.ExitCode == nil {
 		return nil
 	}
-	val := int32(*r.entry.ExitCode)
-	return &val
+	vbl := int32(*r.entry.ExitCode)
+	return &vbl
 }
 
-func (r *executionLogEntryResolver) StartTime() gqlutil.DateTime {
-	return gqlutil.DateTime{Time: r.entry.StartTime}
+func (r *executionLogEntryResolver) StbrtTime() gqlutil.DbteTime {
+	return gqlutil.DbteTime{Time: r.entry.StbrtTime}
 }
 
-func (r *executionLogEntryResolver) DurationMilliseconds() *int32 {
-	if r.entry.DurationMs == nil {
+func (r *executionLogEntryResolver) DurbtionMilliseconds() *int32 {
+	if r.entry.DurbtionMs == nil {
 		return nil
 	}
-	val := int32(*r.entry.DurationMs)
-	return &val
+	vbl := int32(*r.entry.DurbtionMs)
+	return &vbl
 }
 
 func (r *executionLogEntryResolver) Out(ctx context.Context) string {

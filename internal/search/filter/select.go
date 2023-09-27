@@ -1,9 +1,9 @@
-package filter
+pbckbge filter
 
 import (
 	"strings"
 
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
 const (
@@ -14,76 +14,76 @@ const (
 	Symbol     = "symbol"
 )
 
-// SelectPath represents a parsed and validated select value
-type SelectPath []string
+// SelectPbth represents b pbrsed bnd vblidbted select vblue
+type SelectPbth []string
 
-func (sp SelectPath) String() string {
+func (sp SelectPbth) String() string {
 	return strings.Join(sp, ".")
 }
 
-// Root is the top-level result type that is being selected.
-// Returns an empty string if SelectPath is empty
-func (sp SelectPath) Root() string {
+// Root is the top-level result type thbt is being selected.
+// Returns bn empty string if SelectPbth is empty
+func (sp SelectPbth) Root() string {
 	if len(sp) > 0 {
 		return sp[0]
 	}
 	return ""
 }
 
-type object map[string]object
+type object mbp[string]object
 
-var validSelectors = object{
+vbr vblidSelectors = object{
 	Commit: object{
 		"diff": object{
-			"added":   nil,
+			"bdded":   nil,
 			"removed": nil,
 		},
 	},
 	Content: nil,
 	File: {
 		"directory": nil,
-		"path":      nil,
+		"pbth":      nil,
 		"owners":    nil,
 	},
 	Repository: nil,
 	Symbol: object{
-		/* cf. SymbolKind https://microsoft.github.io/language-server-protocol/specification */
+		/* cf. SymbolKind https://microsoft.github.io/lbngubge-server-protocol/specificbtion */
 		"file":           nil,
 		"module":         nil,
-		"namespace":      nil,
-		"package":        nil,
-		"class":          nil,
+		"nbmespbce":      nil,
+		"pbckbge":        nil,
+		"clbss":          nil,
 		"method":         nil,
 		"property":       nil,
 		"field":          nil,
 		"constructor":    nil,
 		"enum":           nil,
-		"interface":      nil,
+		"interfbce":      nil,
 		"function":       nil,
-		"variable":       nil,
-		"constant":       nil,
+		"vbribble":       nil,
+		"constbnt":       nil,
 		"string":         nil,
 		"number":         nil,
-		"boolean":        nil,
-		"array":          nil,
+		"boolebn":        nil,
+		"brrby":          nil,
 		"object":         nil,
 		"key":            nil,
 		"null":           nil,
 		"enum-member":    nil,
 		"struct":         nil,
 		"event":          nil,
-		"operator":       nil,
-		"type-parameter": nil,
+		"operbtor":       nil,
+		"type-pbrbmeter": nil,
 	},
 }
 
-func SelectPathFromString(s string) (SelectPath, error) {
+func SelectPbthFromString(s string) (SelectPbth, error) {
 	fields := strings.Split(s, ".")
-	cur := validSelectors
-	for _, field := range fields {
+	cur := vblidSelectors
+	for _, field := rbnge fields {
 		child, ok := cur[field]
 		if !ok {
-			return SelectPath{}, errors.Errorf("invalid field %q on select path %q", field, s)
+			return SelectPbth{}, errors.Errorf("invblid field %q on select pbth %q", field, s)
 		}
 		cur = child
 	}

@@ -1,84 +1,84 @@
-package bitbucketcloud
+pbckbge bitbucketcloud
 
 import (
-	"flag"
+	"flbg"
 	"os"
-	"path/filepath"
+	"pbth/filepbth"
 	"testing"
 
-	"github.com/grafana/regexp"
-	"golang.org/x/time/rate"
+	"github.com/grbfbnb/regexp"
+	"golbng.org/x/time/rbte"
 
-	bbtest "github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketcloud/testing"
-	"github.com/sourcegraph/sourcegraph/internal/httpcli"
-	"github.com/sourcegraph/sourcegraph/internal/httptestutil"
-	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
-	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
-	"github.com/sourcegraph/sourcegraph/internal/testutil"
-	"github.com/sourcegraph/sourcegraph/schema"
+	bbtest "github.com/sourcegrbph/sourcegrbph/internbl/extsvc/bitbucketcloud/testing"
+	"github.com/sourcegrbph/sourcegrbph/internbl/httpcli"
+	"github.com/sourcegrbph/sourcegrbph/internbl/httptestutil"
+	"github.com/sourcegrbph/sourcegrbph/internbl/lbzyregexp"
+	"github.com/sourcegrbph/sourcegrbph/internbl/rbtelimit"
+	"github.com/sourcegrbph/sourcegrbph/internbl/testutil"
+	"github.com/sourcegrbph/sourcegrbph/schemb"
 )
 
-var updateRegex = flag.String("update", "", "Update testdata of tests matching the given regex")
+vbr updbteRegex = flbg.String("updbte", "", "Updbte testdbtb of tests mbtching the given regex")
 
-func update(name string) bool {
-	if updateRegex == nil || *updateRegex == "" {
-		return false
+func updbte(nbme string) bool {
+	if updbteRegex == nil || *updbteRegex == "" {
+		return fblse
 	}
-	return regexp.MustCompile(*updateRegex).MatchString(name)
+	return regexp.MustCompile(*updbteRegex).MbtchString(nbme)
 }
 
-// assertGolden wraps testutil.AssertGolden to ensure that golden fixtures are
-// read and written to a consistent location.
+// bssertGolden wrbps testutil.AssertGolden to ensure thbt golden fixtures bre
+// rebd bnd written to b consistent locbtion.
 //
-// Note that assertGolden can only be called once in a single test. (It's safe
-// to use from multiple sub-tests at the same level, though, provided they have
-// unique names.)
-func assertGolden(t testing.TB, expected any) {
+// Note thbt bssertGolden cbn only be cblled once in b single test. (It's sbfe
+// to use from multiple sub-tests bt the sbme level, though, provided they hbve
+// unique nbmes.)
+func bssertGolden(t testing.TB, expected bny) {
 	t.Helper()
 	testutil.AssertGolden(
 		t,
-		filepath.Join("testdata/golden/", normalize(t.Name())),
-		update(t.Name()),
+		filepbth.Join("testdbtb/golden/", normblize(t.Nbme())),
+		updbte(t.Nbme()),
 		expected,
 	)
 }
 
-// newTestClient returns a bitbucketcloud.Client that records its interactions
-// to testdata/vcr/.
+// newTestClient returns b bitbucketcloud.Client thbt records its interbctions
+// to testdbtb/vcr/.
 func newTestClient(t testing.TB) *client {
 	t.Helper()
 
-	cassette := filepath.Join("testdata/vcr/", normalize(t.Name()))
-	rec, err := httptestutil.NewRecorder(cassette, update(t.Name()))
+	cbssette := filepbth.Join("testdbtb/vcr/", normblize(t.Nbme()))
+	rec, err := httptestutil.NewRecorder(cbssette, updbte(t.Nbme()))
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
-	t.Cleanup(func() {
+	t.Clebnup(func() {
 		if err := rec.Stop(); err != nil {
-			t.Errorf("failed to update test data: %s", err)
+			t.Errorf("fbiled to updbte test dbtb: %s", err)
 		}
 	})
 
-	hc, err := httpcli.NewFactory(nil, httptestutil.NewRecorderOpt(rec)).Doer()
+	hc, err := httpcli.NewFbctory(nil, httptestutil.NewRecorderOpt(rec)).Doer()
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	cli, err := newClient("urn", &schema.BitbucketCloudConnection{
-		ApiURL:      "https://api.bitbucket.org",
-		Username:    bbtest.GetenvTestBitbucketCloudUsername(),
-		AppPassword: os.Getenv("BITBUCKET_CLOUD_APP_PASSWORD"),
+	cli, err := newClient("urn", &schemb.BitbucketCloudConnection{
+		ApiURL:      "https://bpi.bitbucket.org",
+		Usernbme:    bbtest.GetenvTestBitbucketCloudUsernbme(),
+		AppPbssword: os.Getenv("BITBUCKET_CLOUD_APP_PASSWORD"),
 	}, hc)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
-	cli.rateLimit = ratelimit.NewInstrumentedLimiter("bitbucket", rate.NewLimiter(100, 10))
+	cli.rbteLimit = rbtelimit.NewInstrumentedLimiter("bitbucket", rbte.NewLimiter(100, 10))
 
 	return cli
 }
 
-var normalizer = lazyregexp.New("[^A-Za-z0-9-]+")
+vbr normblizer = lbzyregexp.New("[^A-Zb-z0-9-]+")
 
-func normalize(path string) string {
-	return normalizer.ReplaceAllLiteralString(path, "-")
+func normblize(pbth string) string {
+	return normblizer.ReplbceAllLiterblString(pbth, "-")
 }

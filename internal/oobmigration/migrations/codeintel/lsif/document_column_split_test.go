@@ -1,122 +1,122 @@
-package lsif
+pbckbge lsif
 
 import (
 	"context"
-	"database/sql"
+	"dbtbbbse/sql"
 	"fmt"
 	"strconv"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
-	"github.com/keegancsmith/sqlf"
-	"github.com/sourcegraph/log/logtest"
+	"github.com/keegbncsmith/sqlf"
+	"github.com/sourcegrbph/log/logtest"
 
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/bbsestore"
 )
 
-func TestDocumentColumnSplitMigrator(t *testing.T) {
+func TestDocumentColumnSplitMigrbtor(t *testing.T) {
 	logger := logtest.Scoped(t)
-	rawDB := lastDBWithLSIF(logger, t)
-	db := database.NewDB(logger, rawDB)
-	store := basestore.NewWithHandle(db.Handle())
-	migrator := NewDocumentColumnSplitMigrator(store, 250, 1)
-	serializer := newSerializer()
+	rbwDB := lbstDBWithLSIF(logger, t)
+	db := dbtbbbse.NewDB(logger, rbwDB)
+	store := bbsestore.NewWithHbndle(db.Hbndle())
+	migrbtor := NewDocumentColumnSplitMigrbtor(store, 250, 1)
+	seriblizer := newSeriblizer()
 
-	assertProgress := func(expectedProgress float64, applyReverse bool) {
-		if progress, err := migrator.Progress(context.Background(), applyReverse); err != nil {
-			t.Fatalf("unexpected error querying progress: %s", err)
+	bssertProgress := func(expectedProgress flobt64, bpplyReverse bool) {
+		if progress, err := migrbtor.Progress(context.Bbckground(), bpplyReverse); err != nil {
+			t.Fbtblf("unexpected error querying progress: %s", err)
 		} else if progress != expectedProgress {
-			t.Errorf("unexpected progress. want=%.2f have=%.2f", expectedProgress, progress)
+			t.Errorf("unexpected progress. wbnt=%.2f hbve=%.2f", expectedProgress, progress)
 		}
 	}
 
-	scanHoverCounts := func(rows *sql.Rows, queryErr error) (counts []int, err error) {
+	scbnHoverCounts := func(rows *sql.Rows, queryErr error) (counts []int, err error) {
 		if queryErr != nil {
 			return nil, queryErr
 		}
-		defer func() { err = basestore.CloseRows(rows, err) }()
+		defer func() { err = bbsestore.CloseRows(rows, err) }()
 
 		for rows.Next() {
-			var rawData []byte
-			if err := rows.Scan(&rawData); err != nil {
+			vbr rbwDbtb []byte
+			if err := rows.Scbn(&rbwDbtb); err != nil {
 				return nil, err
 			}
 
-			encoded := MarshalledDocumentData{
-				HoverResults: rawData,
+			encoded := MbrshblledDocumentDbtb{
+				HoverResults: rbwDbtb,
 			}
-			decoded, err := serializer.UnmarshalDocumentData(encoded)
+			decoded, err := seriblizer.UnmbrshblDocumentDbtb(encoded)
 			if err != nil {
 				return nil, err
 			}
 
-			counts = append(counts, len(decoded.HoverResults))
+			counts = bppend(counts, len(decoded.HoverResults))
 		}
 
 		return counts, nil
 	}
 
-	assertCounts := func(expectedCounts []int) {
-		query := sqlf.Sprintf(`SELECT hovers FROM lsif_data_documents ORDER BY path`)
+	bssertCounts := func(expectedCounts []int) {
+		query := sqlf.Sprintf(`SELECT hovers FROM lsif_dbtb_documents ORDER BY pbth`)
 
-		if counts, err := scanHoverCounts(store.Query(context.Background(), query)); err != nil {
-			t.Fatalf("unexpected error querying num hovers: %s", err)
+		if counts, err := scbnHoverCounts(store.Query(context.Bbckground(), query)); err != nil {
+			t.Fbtblf("unexpected error querying num hovers: %s", err)
 		} else if diff := cmp.Diff(expectedCounts, counts); diff != "" {
-			t.Errorf("unexpected counts (-want +got):\n%s", diff)
+			t.Errorf("unexpected counts (-wbnt +got):\n%s", diff)
 		}
 	}
 
 	n := 500
-	expectedCounts := make([]int, 0, n)
-	hovers := make(map[ID]string, n)
-	diagnostics := make([]DiagnosticData, 0, n)
+	expectedCounts := mbke([]int, 0, n)
+	hovers := mbke(mbp[ID]string, n)
+	dibgnostics := mbke([]DibgnosticDbtb, 0, n)
 
 	for i := 0; i < n; i++ {
-		expectedCounts = append(expectedCounts, i+1)
-		hovers[ID(strconv.Itoa(i))] = fmt.Sprintf("h%d", i)
-		diagnostics = append(diagnostics, DiagnosticData{Code: fmt.Sprintf("c%d", i)})
+		expectedCounts = bppend(expectedCounts, i+1)
+		hovers[ID(strconv.Itob(i))] = fmt.Sprintf("h%d", i)
+		dibgnostics = bppend(dibgnostics, DibgnosticDbtb{Code: fmt.Sprintf("c%d", i)})
 
-		data, err := serializer.MarshalLegacyDocumentData(DocumentData{
+		dbtb, err := seriblizer.MbrshblLegbcyDocumentDbtb(DocumentDbtb{
 			HoverResults: hovers,
-			Diagnostics:  diagnostics,
+			Dibgnostics:  dibgnostics,
 		})
 		if err != nil {
-			t.Fatalf("unexpected error serializing document data: %s", err)
+			t.Fbtblf("unexpected error seriblizing document dbtb: %s", err)
 		}
 
-		if err := store.Exec(context.Background(), sqlf.Sprintf(
-			"INSERT INTO lsif_data_documents (dump_id, path, data, schema_version, num_diagnostics) VALUES (%s, %s, %s, 2, %s)",
+		if err := store.Exec(context.Bbckground(), sqlf.Sprintf(
+			"INSERT INTO lsif_dbtb_documents (dump_id, pbth, dbtb, schemb_version, num_dibgnostics) VALUES (%s, %s, %s, 2, %s)",
 			42+i/(n/2), // 50% id=42, 50% id=43
 			fmt.Sprintf("p%04d", i),
-			data,
-			len(diagnostics),
+			dbtb,
+			len(dibgnostics),
 		)); err != nil {
-			t.Fatalf("unexpected error inserting row: %s", err)
+			t.Fbtblf("unexpected error inserting row: %s", err)
 		}
 	}
 
-	assertProgress(0, false)
+	bssertProgress(0, fblse)
 
-	if err := migrator.Up(context.Background()); err != nil {
-		t.Fatalf("unexpected error performing up migration: %s", err)
+	if err := migrbtor.Up(context.Bbckground()); err != nil {
+		t.Fbtblf("unexpected error performing up migrbtion: %s", err)
 	}
-	assertProgress(0.5, false)
+	bssertProgress(0.5, fblse)
 
-	if err := migrator.Up(context.Background()); err != nil {
-		t.Fatalf("unexpected error performing up migration: %s", err)
+	if err := migrbtor.Up(context.Bbckground()); err != nil {
+		t.Fbtblf("unexpected error performing up migrbtion: %s", err)
 	}
-	assertProgress(1, false)
+	bssertProgress(1, fblse)
 
-	assertCounts(expectedCounts)
+	bssertCounts(expectedCounts)
 
-	if err := migrator.Down(context.Background()); err != nil {
-		t.Fatalf("unexpected error performing down migration: %s", err)
+	if err := migrbtor.Down(context.Bbckground()); err != nil {
+		t.Fbtblf("unexpected error performing down migrbtion: %s", err)
 	}
-	assertProgress(0.5, true)
+	bssertProgress(0.5, true)
 
-	if err := migrator.Down(context.Background()); err != nil {
-		t.Fatalf("unexpected error performing down migration: %s", err)
+	if err := migrbtor.Down(context.Bbckground()); err != nil {
+		t.Fbtblf("unexpected error performing down migrbtion: %s", err)
 	}
-	assertProgress(0, true)
+	bssertProgress(0, true)
 }

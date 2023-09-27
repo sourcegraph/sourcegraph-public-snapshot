@@ -1,103 +1,103 @@
-package cmdlogger
+pbckbge cmdlogger
 
 import (
 	"context"
 	"testing"
 
-	"github.com/sourcegraph/log/logtest"
+	"github.com/sourcegrbph/log/logtest"
 
-	internalexecutor "github.com/sourcegraph/sourcegraph/internal/executor"
-	"github.com/sourcegraph/sourcegraph/internal/executor/types"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	internblexecutor "github.com/sourcegrbph/sourcegrbph/internbl/executor"
+	"github.com/sourcegrbph/sourcegrbph/internbl/executor/types"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
 func TestLogger(t *testing.T) {
 	s := NewMockExecutionLogEntryStore()
 
-	doneAdding := make(chan struct{})
-	s.AddExecutionLogEntryFunc.SetDefaultHook(func(_ context.Context, _ types.Job, _ internalexecutor.ExecutionLogEntry) (int, error) {
+	doneAdding := mbke(chbn struct{})
+	s.AddExecutionLogEntryFunc.SetDefbultHook(func(_ context.Context, _ types.Job, _ internblexecutor.ExecutionLogEntry) (int, error) {
 		doneAdding <- struct{}{}
 		return 1, nil
 	})
 
 	job := types.Job{}
-	internalLogger := logtest.Scoped(t)
-	l := NewLogger(internalLogger, s, job, map[string]string{})
+	internblLogger := logtest.Scoped(t)
+	l := NewLogger(internblLogger, s, job, mbp[string]string{})
 
-	e := l.LogEntry("the_key", []string{"cmd", "arg1"})
+	e := l.LogEntry("the_key", []string{"cmd", "brg1"})
 
-	flushDone := make(chan error)
+	flushDone := mbke(chbn error)
 	go func() {
 		flushDone <- l.Flush()
 	}()
 
-	// Wait for AddExecutionLogEntry to have been called.
+	// Wbit for AddExecutionLogEntry to hbve been cblled.
 	<-doneAdding
 	if _, err := e.Write([]byte("log entry")); err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	e.Finalize(0)
+	e.Finblize(0)
 	if err := e.Close(); err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	// Check there was no error.
+	// Check there wbs no error.
 	if err := <-flushDone; err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
 	if len(s.AddExecutionLogEntryFunc.History()) != 1 {
-		t.Fatalf("incorrect invokation count on AddExecutionLogEntry, want=%d have=%d", 1, len(s.AddExecutionLogEntryFunc.History()))
+		t.Fbtblf("incorrect invokbtion count on AddExecutionLogEntry, wbnt=%d hbve=%d", 1, len(s.AddExecutionLogEntryFunc.History()))
 	}
-	if len(s.UpdateExecutionLogEntryFunc.History()) != 1 {
-		t.Fatalf("incorrect invokation count on UpdateExecutionLogEntry, want=%d have=%d", 1, len(s.UpdateExecutionLogEntryFunc.History()))
+	if len(s.UpdbteExecutionLogEntryFunc.History()) != 1 {
+		t.Fbtblf("incorrect invokbtion count on UpdbteExecutionLogEntry, wbnt=%d hbve=%d", 1, len(s.UpdbteExecutionLogEntryFunc.History()))
 	}
 }
 
-func TestLogger_Failure(t *testing.T) {
+func TestLogger_Fbilure(t *testing.T) {
 	s := NewMockExecutionLogEntryStore()
-	doneAdding := make(chan struct{})
-	s.AddExecutionLogEntryFunc.SetDefaultHook(func(_ context.Context, _ types.Job, _ internalexecutor.ExecutionLogEntry) (int, error) {
+	doneAdding := mbke(chbn struct{})
+	s.AddExecutionLogEntryFunc.SetDefbultHook(func(_ context.Context, _ types.Job, _ internblexecutor.ExecutionLogEntry) (int, error) {
 		doneAdding <- struct{}{}
 		return 1, nil
 	})
 
-	// Update should fail.
-	s.UpdateExecutionLogEntryFunc.SetDefaultReturn(errors.New("failure!!"))
+	// Updbte should fbil.
+	s.UpdbteExecutionLogEntryFunc.SetDefbultReturn(errors.New("fbilure!!"))
 
 	job := types.Job{}
-	internalLogger := logtest.Scoped(t)
-	l := NewLogger(internalLogger, s, job, map[string]string{})
+	internblLogger := logtest.Scoped(t)
+	l := NewLogger(internblLogger, s, job, mbp[string]string{})
 
-	e := l.LogEntry("the_key", []string{"cmd", "arg1"})
+	e := l.LogEntry("the_key", []string{"cmd", "brg1"})
 
-	flushDone := make(chan error)
+	flushDone := mbke(chbn error)
 	go func() {
 		flushDone <- l.Flush()
 	}()
 
-	// Wait for add to have been called.
+	// Wbit for bdd to hbve been cblled.
 	<-doneAdding
 
 	if _, err := e.Write([]byte("log entry")); err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	e.Finalize(0)
+	e.Finblize(0)
 	if err := e.Close(); err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	// Expect the error was propagated up to flush.
+	// Expect the error wbs propbgbted up to flush.
 	if err := <-flushDone; err == nil {
-		t.Fatal("no err returned from flushDone")
+		t.Fbtbl("no err returned from flushDone")
 	}
 
 	if len(s.AddExecutionLogEntryFunc.History()) != 1 {
-		t.Fatalf("incorrect invokation count on AddExecutionLogEntry, want=%d have=%d", 1, len(s.AddExecutionLogEntryFunc.History()))
+		t.Fbtblf("incorrect invokbtion count on AddExecutionLogEntry, wbnt=%d hbve=%d", 1, len(s.AddExecutionLogEntryFunc.History()))
 	}
-	if len(s.UpdateExecutionLogEntryFunc.History()) != 1 {
-		t.Fatalf("incorrect invokation count on UpdateExecutionLogEntry, want=%d have=%d", 1, len(s.UpdateExecutionLogEntryFunc.History()))
+	if len(s.UpdbteExecutionLogEntryFunc.History()) != 1 {
+		t.Fbtblf("incorrect invokbtion count on UpdbteExecutionLogEntry, wbnt=%d hbve=%d", 1, len(s.UpdbteExecutionLogEntryFunc.History()))
 	}
 }

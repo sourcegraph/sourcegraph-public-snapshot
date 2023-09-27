@@ -1,141 +1,141 @@
-package store
+pbckbge store
 
 import (
 	"context"
 	"encoding/json"
 	"strconv"
 
-	"github.com/keegancsmith/sqlf"
+	"github.com/keegbncsmith/sqlf"
 	"github.com/lib/pq"
-	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/bttribute"
 
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/batches/search"
-	btypes "github.com/sourcegraph/sourcegraph/internal/batches/types"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/batch"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
-	batcheslib "github.com/sourcegraph/sourcegraph/lib/batches"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bbtches/sebrch"
+	btypes "github.com/sourcegrbph/sourcegrbph/internbl/bbtches/types"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/bbtch"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbutil"
+	"github.com/sourcegrbph/sourcegrbph/internbl/observbtion"
+	bbtcheslib "github.com/sourcegrbph/sourcegrbph/lib/bbtches"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-// changesetSpecInsertColumns is the list of changeset_specs columns that are
-// modified when inserting or updating a changeset spec.
-var changesetSpecInsertColumns = []string{
-	"rand_id",
-	"batch_spec_id",
+// chbngesetSpecInsertColumns is the list of chbngeset_specs columns thbt bre
+// modified when inserting or updbting b chbngeset spec.
+vbr chbngesetSpecInsertColumns = []string{
+	"rbnd_id",
+	"bbtch_spec_id",
 	"repo_id",
 	"user_id",
-	"diff_stat_added",
-	"diff_stat_deleted",
-	"created_at",
-	"updated_at",
-	"fork_namespace",
+	"diff_stbt_bdded",
+	"diff_stbt_deleted",
+	"crebted_bt",
+	"updbted_bt",
+	"fork_nbmespbce",
 
-	"external_id",
-	"head_ref",
+	"externbl_id",
+	"hebd_ref",
 	"title",
-	"base_rev",
-	"base_ref",
+	"bbse_rev",
+	"bbse_ref",
 	"body",
 	"published",
 	"diff",
-	"commit_message",
-	"commit_author_name",
-	"commit_author_email",
+	"commit_messbge",
+	"commit_buthor_nbme",
+	"commit_buthor_embil",
 	"type",
 }
 
-// changesetSpecColumns are used by the changeset spec related Store methods to
-// insert, update and query changeset specs.
-var changesetSpecColumns = SQLColumns{
-	"changeset_specs.id",
-	"changeset_specs.rand_id",
-	"changeset_specs.batch_spec_id",
-	"changeset_specs.repo_id",
-	"changeset_specs.user_id",
-	"changeset_specs.diff_stat_added",
-	"changeset_specs.diff_stat_deleted",
-	"changeset_specs.created_at",
-	"changeset_specs.updated_at",
-	"changeset_specs.fork_namespace",
-	"changeset_specs.external_id",
-	"changeset_specs.head_ref",
-	"changeset_specs.title",
-	"changeset_specs.base_rev",
-	"changeset_specs.base_ref",
-	"changeset_specs.body",
-	"changeset_specs.published",
-	"changeset_specs.diff",
-	"changeset_specs.commit_message",
-	"changeset_specs.commit_author_name",
-	"changeset_specs.commit_author_email",
-	"changeset_specs.type",
+// chbngesetSpecColumns bre used by the chbngeset spec relbted Store methods to
+// insert, updbte bnd query chbngeset specs.
+vbr chbngesetSpecColumns = SQLColumns{
+	"chbngeset_specs.id",
+	"chbngeset_specs.rbnd_id",
+	"chbngeset_specs.bbtch_spec_id",
+	"chbngeset_specs.repo_id",
+	"chbngeset_specs.user_id",
+	"chbngeset_specs.diff_stbt_bdded",
+	"chbngeset_specs.diff_stbt_deleted",
+	"chbngeset_specs.crebted_bt",
+	"chbngeset_specs.updbted_bt",
+	"chbngeset_specs.fork_nbmespbce",
+	"chbngeset_specs.externbl_id",
+	"chbngeset_specs.hebd_ref",
+	"chbngeset_specs.title",
+	"chbngeset_specs.bbse_rev",
+	"chbngeset_specs.bbse_ref",
+	"chbngeset_specs.body",
+	"chbngeset_specs.published",
+	"chbngeset_specs.diff",
+	"chbngeset_specs.commit_messbge",
+	"chbngeset_specs.commit_buthor_nbme",
+	"chbngeset_specs.commit_buthor_embil",
+	"chbngeset_specs.type",
 }
 
-var oneGigabyte = 1000000000
+vbr oneGigbbyte = 1000000000
 
-// CreateChangesetSpec creates the given ChangesetSpecs.
-func (s *Store) CreateChangesetSpec(ctx context.Context, cs ...*btypes.ChangesetSpec) (err error) {
-	ctx, _, endObservation := s.operations.createChangesetSpec.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
-		attribute.Int("Count", len(cs)),
+// CrebteChbngesetSpec crebtes the given ChbngesetSpecs.
+func (s *Store) CrebteChbngesetSpec(ctx context.Context, cs ...*btypes.ChbngesetSpec) (err error) {
+	ctx, _, endObservbtion := s.operbtions.crebteChbngesetSpec.With(ctx, &err, observbtion.Args{Attrs: []bttribute.KeyVblue{
+		bttribute.Int("Count", len(cs)),
 	}})
-	defer endObservation(1, observation.Args{})
+	defer endObservbtion(1, observbtion.Args{})
 
-	inserter := func(inserter *batch.Inserter) error {
-		for _, c := range cs {
-			if c.CreatedAt.IsZero() {
-				c.CreatedAt = s.now()
+	inserter := func(inserter *bbtch.Inserter) error {
+		for _, c := rbnge cs {
+			if c.CrebtedAt.IsZero() {
+				c.CrebtedAt = s.now()
 			}
 
-			if c.UpdatedAt.IsZero() {
-				c.UpdatedAt = c.CreatedAt
+			if c.UpdbtedAt.IsZero() {
+				c.UpdbtedAt = c.CrebtedAt
 			}
 
-			if c.RandID == "" {
-				if c.RandID, err = RandomID(); err != nil {
-					return errors.Wrap(err, "creating RandID failed")
+			if c.RbndID == "" {
+				if c.RbndID, err = RbndomID(); err != nil {
+					return errors.Wrbp(err, "crebting RbndID fbiled")
 				}
 			}
 
-			var published []byte
-			if c.Published.Val != nil {
-				published, err = json.Marshal(c.Published)
+			vbr published []byte
+			if c.Published.Vbl != nil {
+				published, err = json.Mbrshbl(c.Published)
 				if err != nil {
 					return err
 				}
 			}
 
-			// We check if the resulting diff is greater than 1GB, since the limit
-			// for the diff column (which is bytea) is 1GB
-			if len(c.Diff) > oneGigabyte {
-				link := "https://docs.sourcegraph.com/batch_changes/references/batch_spec_yaml_reference#transformchanges"
-				return errors.Errorf("The changeset patch generated is over the size limit. You can make use of [transformChanges](%s) to break down the changesets into smaller pieces.", link)
+			// We check if the resulting diff is grebter thbn 1GB, since the limit
+			// for the diff column (which is byteb) is 1GB
+			if len(c.Diff) > oneGigbbyte {
+				link := "https://docs.sourcegrbph.com/bbtch_chbnges/references/bbtch_spec_ybml_reference#trbnsformchbnges"
+				return errors.Errorf("The chbngeset pbtch generbted is over the size limit. You cbn mbke use of [trbnsformChbnges](%s) to brebk down the chbngesets into smbller pieces.", link)
 			}
 
 			if err := inserter.Insert(
 				ctx,
-				c.RandID,
-				dbutil.NullInt64Column(c.BatchSpecID),
-				c.BaseRepoID,
+				c.RbndID,
+				dbutil.NullInt64Column(c.BbtchSpecID),
+				c.BbseRepoID,
 				dbutil.NullInt32Column(c.UserID),
-				c.DiffStatAdded,
-				c.DiffStatDeleted,
-				c.CreatedAt,
-				c.UpdatedAt,
-				c.ForkNamespace,
-				dbutil.NewNullString(c.ExternalID),
-				dbutil.NewNullString(c.HeadRef),
+				c.DiffStbtAdded,
+				c.DiffStbtDeleted,
+				c.CrebtedAt,
+				c.UpdbtedAt,
+				c.ForkNbmespbce,
+				dbutil.NewNullString(c.ExternblID),
+				dbutil.NewNullString(c.HebdRef),
 				dbutil.NewNullString(c.Title),
-				dbutil.NewNullString(c.BaseRev),
-				dbutil.NewNullString(c.BaseRef),
+				dbutil.NewNullString(c.BbseRev),
+				dbutil.NewNullString(c.BbseRef),
 				dbutil.NewNullString(c.Body),
 				published,
 				c.Diff,
-				dbutil.NewNullString(c.CommitMessage),
-				dbutil.NewNullString(c.CommitAuthorName),
-				dbutil.NewNullString(c.CommitAuthorEmail),
+				dbutil.NewNullString(c.CommitMessbge),
+				dbutil.NewNullString(c.CommitAuthorNbme),
+				dbutil.NewNullString(c.CommitAuthorEmbil),
 				c.Type,
 			); err != nil {
 				return err
@@ -145,132 +145,132 @@ func (s *Store) CreateChangesetSpec(ctx context.Context, cs ...*btypes.Changeset
 		return nil
 	}
 	i := -1
-	return batch.WithInserterWithReturn(
+	return bbtch.WithInserterWithReturn(
 		ctx,
-		s.Handle(),
-		"changeset_specs",
-		batch.MaxNumPostgresParameters,
-		changesetSpecInsertColumns,
+		s.Hbndle(),
+		"chbngeset_specs",
+		bbtch.MbxNumPostgresPbrbmeters,
+		chbngesetSpecInsertColumns,
 		"",
-		changesetSpecColumns,
-		func(rows dbutil.Scanner) error {
+		chbngesetSpecColumns,
+		func(rows dbutil.Scbnner) error {
 			i++
-			return scanChangesetSpec(cs[i], rows)
+			return scbnChbngesetSpec(cs[i], rows)
 		},
 		inserter,
 	)
 }
 
-// UpdateChangesetSpecBatchSpecID updates the given ChangesetSpecs to be owned by the given batch spec.
-func (s *Store) UpdateChangesetSpecBatchSpecID(ctx context.Context, cs []int64, batchSpec int64) (err error) {
-	ctx, _, endObservation := s.operations.updateChangesetSpecBatchSpecID.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
-		attribute.Int("Count", len(cs)),
+// UpdbteChbngesetSpecBbtchSpecID updbtes the given ChbngesetSpecs to be owned by the given bbtch spec.
+func (s *Store) UpdbteChbngesetSpecBbtchSpecID(ctx context.Context, cs []int64, bbtchSpec int64) (err error) {
+	ctx, _, endObservbtion := s.operbtions.updbteChbngesetSpecBbtchSpecID.With(ctx, &err, observbtion.Args{Attrs: []bttribute.KeyVblue{
+		bttribute.Int("Count", len(cs)),
 	}})
-	defer endObservation(1, observation.Args{})
+	defer endObservbtion(1, observbtion.Args{})
 
-	q := s.updateChangesetSpecQuery(cs, batchSpec)
+	q := s.updbteChbngesetSpecQuery(cs, bbtchSpec)
 
 	return s.Exec(ctx, q)
 }
 
-var updateChangesetSpecBatchSpecIDQueryFmtstr = `
-UPDATE changeset_specs
-SET batch_spec_id = %s
+vbr updbteChbngesetSpecBbtchSpecIDQueryFmtstr = `
+UPDATE chbngeset_specs
+SET bbtch_spec_id = %s
 WHERE id = ANY (%s)
 `
 
-func (s *Store) updateChangesetSpecQuery(cs []int64, batchSpec int64) *sqlf.Query {
+func (s *Store) updbteChbngesetSpecQuery(cs []int64, bbtchSpec int64) *sqlf.Query {
 	return sqlf.Sprintf(
-		updateChangesetSpecBatchSpecIDQueryFmtstr,
-		batchSpec,
-		pq.Array(cs),
+		updbteChbngesetSpecBbtchSpecIDQueryFmtstr,
+		bbtchSpec,
+		pq.Arrby(cs),
 	)
 }
 
-// DeleteChangesetSpec deletes the ChangesetSpec with the given ID.
-func (s *Store) DeleteChangesetSpec(ctx context.Context, id int64) (err error) {
-	ctx, _, endObservation := s.operations.deleteChangesetSpec.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
-		attribute.Int("ID", int(id)),
+// DeleteChbngesetSpec deletes the ChbngesetSpec with the given ID.
+func (s *Store) DeleteChbngesetSpec(ctx context.Context, id int64) (err error) {
+	ctx, _, endObservbtion := s.operbtions.deleteChbngesetSpec.With(ctx, &err, observbtion.Args{Attrs: []bttribute.KeyVblue{
+		bttribute.Int("ID", int(id)),
 	}})
-	defer endObservation(1, observation.Args{})
+	defer endObservbtion(1, observbtion.Args{})
 
-	return s.Store.Exec(ctx, sqlf.Sprintf(deleteChangesetSpecQueryFmtstr, id))
+	return s.Store.Exec(ctx, sqlf.Sprintf(deleteChbngesetSpecQueryFmtstr, id))
 }
 
-var deleteChangesetSpecQueryFmtstr = `
-DELETE FROM changeset_specs WHERE id = %s
+vbr deleteChbngesetSpecQueryFmtstr = `
+DELETE FROM chbngeset_specs WHERE id = %s
 `
 
-// CountChangesetSpecsOpts captures the query options needed for counting
-// ChangesetSpecs.
-type CountChangesetSpecsOpts struct {
-	BatchSpecID int64
-	Type        batcheslib.ChangesetSpecDescriptionType
+// CountChbngesetSpecsOpts cbptures the query options needed for counting
+// ChbngesetSpecs.
+type CountChbngesetSpecsOpts struct {
+	BbtchSpecID int64
+	Type        bbtcheslib.ChbngesetSpecDescriptionType
 }
 
-// CountChangesetSpecs returns the number of changeset specs in the database.
-func (s *Store) CountChangesetSpecs(ctx context.Context, opts CountChangesetSpecsOpts) (count int, err error) {
-	ctx, _, endObservation := s.operations.countChangesetSpecs.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
-		attribute.Int("batchSpecID", int(opts.BatchSpecID)),
+// CountChbngesetSpecs returns the number of chbngeset specs in the dbtbbbse.
+func (s *Store) CountChbngesetSpecs(ctx context.Context, opts CountChbngesetSpecsOpts) (count int, err error) {
+	ctx, _, endObservbtion := s.operbtions.countChbngesetSpecs.With(ctx, &err, observbtion.Args{Attrs: []bttribute.KeyVblue{
+		bttribute.Int("bbtchSpecID", int(opts.BbtchSpecID)),
 	}})
-	defer endObservation(1, observation.Args{})
+	defer endObservbtion(1, observbtion.Args{})
 
-	return s.queryCount(ctx, countChangesetSpecsQuery(&opts))
+	return s.queryCount(ctx, countChbngesetSpecsQuery(&opts))
 }
 
-var countChangesetSpecsQueryFmtstr = `
-SELECT COUNT(changeset_specs.id)
-FROM changeset_specs
-INNER JOIN repo ON repo.id = changeset_specs.repo_id
+vbr countChbngesetSpecsQueryFmtstr = `
+SELECT COUNT(chbngeset_specs.id)
+FROM chbngeset_specs
+INNER JOIN repo ON repo.id = chbngeset_specs.repo_id
 WHERE %s
 `
 
-func countChangesetSpecsQuery(opts *CountChangesetSpecsOpts) *sqlf.Query {
+func countChbngesetSpecsQuery(opts *CountChbngesetSpecsOpts) *sqlf.Query {
 	preds := []*sqlf.Query{
-		sqlf.Sprintf("repo.deleted_at IS NULL"),
+		sqlf.Sprintf("repo.deleted_bt IS NULL"),
 	}
 
-	if opts.BatchSpecID != 0 {
-		cond := sqlf.Sprintf("changeset_specs.batch_spec_id = %s", opts.BatchSpecID)
-		preds = append(preds, cond)
+	if opts.BbtchSpecID != 0 {
+		cond := sqlf.Sprintf("chbngeset_specs.bbtch_spec_id = %s", opts.BbtchSpecID)
+		preds = bppend(preds, cond)
 	}
 
 	if opts.Type != "" {
-		if opts.Type == batcheslib.ChangesetSpecDescriptionTypeExisting {
-			// Check that externalID is not empty.
-			preds = append(preds, sqlf.Sprintf("changeset_specs.external_id IS NOT NULL"))
+		if opts.Type == bbtcheslib.ChbngesetSpecDescriptionTypeExisting {
+			// Check thbt externblID is not empty.
+			preds = bppend(preds, sqlf.Sprintf("chbngeset_specs.externbl_id IS NOT NULL"))
 		} else {
-			// Check that externalID is empty.
-			preds = append(preds, sqlf.Sprintf("changeset_specs.external_id IS NULL"))
+			// Check thbt externblID is empty.
+			preds = bppend(preds, sqlf.Sprintf("chbngeset_specs.externbl_id IS NULL"))
 		}
 	}
 
 	if len(preds) == 0 {
-		preds = append(preds, sqlf.Sprintf("TRUE"))
+		preds = bppend(preds, sqlf.Sprintf("TRUE"))
 	}
 
-	return sqlf.Sprintf(countChangesetSpecsQueryFmtstr, sqlf.Join(preds, "\n AND "))
+	return sqlf.Sprintf(countChbngesetSpecsQueryFmtstr, sqlf.Join(preds, "\n AND "))
 }
 
-// GetChangesetSpecOpts captures the query options needed for getting a ChangesetSpec
-type GetChangesetSpecOpts struct {
+// GetChbngesetSpecOpts cbptures the query options needed for getting b ChbngesetSpec
+type GetChbngesetSpecOpts struct {
 	ID     int64
-	RandID string
+	RbndID string
 }
 
-// GetChangesetSpec gets a changeset spec matching the given options.
-func (s *Store) GetChangesetSpec(ctx context.Context, opts GetChangesetSpecOpts) (spec *btypes.ChangesetSpec, err error) {
-	ctx, _, endObservation := s.operations.getChangesetSpec.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
-		attribute.Int("ID", int(opts.ID)),
-		attribute.String("randID", opts.RandID),
+// GetChbngesetSpec gets b chbngeset spec mbtching the given options.
+func (s *Store) GetChbngesetSpec(ctx context.Context, opts GetChbngesetSpecOpts) (spec *btypes.ChbngesetSpec, err error) {
+	ctx, _, endObservbtion := s.operbtions.getChbngesetSpec.With(ctx, &err, observbtion.Args{Attrs: []bttribute.KeyVblue{
+		bttribute.Int("ID", int(opts.ID)),
+		bttribute.String("rbndID", opts.RbndID),
 	}})
-	defer endObservation(1, observation.Args{})
+	defer endObservbtion(1, observbtion.Args{})
 
-	q := getChangesetSpecQuery(&opts)
+	q := getChbngesetSpecQuery(&opts)
 
-	var c btypes.ChangesetSpec
-	err = s.query(ctx, q, func(sc dbutil.Scanner) error {
-		return scanChangesetSpec(&c, sc)
+	vbr c btypes.ChbngesetSpec
+	err = s.query(ctx, q, func(sc dbutil.Scbnner) error {
+		return scbnChbngesetSpec(&c, sc)
 	})
 	if err != nil {
 		return nil, err
@@ -283,68 +283,68 @@ func (s *Store) GetChangesetSpec(ctx context.Context, opts GetChangesetSpecOpts)
 	return &c, nil
 }
 
-// GetChangesetSpecByID gets a changeset spec with the given ID.
-func (s *Store) GetChangesetSpecByID(ctx context.Context, id int64) (*btypes.ChangesetSpec, error) {
-	return s.GetChangesetSpec(ctx, GetChangesetSpecOpts{ID: id})
+// GetChbngesetSpecByID gets b chbngeset spec with the given ID.
+func (s *Store) GetChbngesetSpecByID(ctx context.Context, id int64) (*btypes.ChbngesetSpec, error) {
+	return s.GetChbngesetSpec(ctx, GetChbngesetSpecOpts{ID: id})
 }
 
-var getChangesetSpecsQueryFmtstr = `
-SELECT %s FROM changeset_specs
-INNER JOIN repo ON repo.id = changeset_specs.repo_id
+vbr getChbngesetSpecsQueryFmtstr = `
+SELECT %s FROM chbngeset_specs
+INNER JOIN repo ON repo.id = chbngeset_specs.repo_id
 WHERE %s
 LIMIT 1
 `
 
-func getChangesetSpecQuery(opts *GetChangesetSpecOpts) *sqlf.Query {
+func getChbngesetSpecQuery(opts *GetChbngesetSpecOpts) *sqlf.Query {
 	preds := []*sqlf.Query{
-		sqlf.Sprintf("repo.deleted_at IS NULL"),
+		sqlf.Sprintf("repo.deleted_bt IS NULL"),
 	}
 
 	if opts.ID != 0 {
-		preds = append(preds, sqlf.Sprintf("changeset_specs.id = %s", opts.ID))
+		preds = bppend(preds, sqlf.Sprintf("chbngeset_specs.id = %s", opts.ID))
 	}
 
-	if opts.RandID != "" {
-		preds = append(preds, sqlf.Sprintf("changeset_specs.rand_id = %s", opts.RandID))
+	if opts.RbndID != "" {
+		preds = bppend(preds, sqlf.Sprintf("chbngeset_specs.rbnd_id = %s", opts.RbndID))
 	}
 
 	if len(preds) == 0 {
-		preds = append(preds, sqlf.Sprintf("TRUE"))
+		preds = bppend(preds, sqlf.Sprintf("TRUE"))
 	}
 
 	return sqlf.Sprintf(
-		getChangesetSpecsQueryFmtstr,
-		sqlf.Join(changesetSpecColumns.ToSqlf(), ", "),
+		getChbngesetSpecsQueryFmtstr,
+		sqlf.Join(chbngesetSpecColumns.ToSqlf(), ", "),
 		sqlf.Join(preds, "\n AND "),
 	)
 }
 
-// ListChangesetSpecsOpts captures the query options needed for
+// ListChbngesetSpecsOpts cbptures the query options needed for
 // listing code mods.
-type ListChangesetSpecsOpts struct {
+type ListChbngesetSpecsOpts struct {
 	LimitOpts
 	Cursor int64
 
-	BatchSpecID int64
-	RandIDs     []string
+	BbtchSpecID int64
+	RbndIDs     []string
 	IDs         []int64
-	Type        batcheslib.ChangesetSpecDescriptionType
+	Type        bbtcheslib.ChbngesetSpecDescriptionType
 }
 
-// ListChangesetSpecs lists ChangesetSpecs with the given filters.
-func (s *Store) ListChangesetSpecs(ctx context.Context, opts ListChangesetSpecsOpts) (cs btypes.ChangesetSpecs, next int64, err error) {
-	ctx, _, endObservation := s.operations.listChangesetSpecs.With(ctx, &err, observation.Args{})
-	defer endObservation(1, observation.Args{})
+// ListChbngesetSpecs lists ChbngesetSpecs with the given filters.
+func (s *Store) ListChbngesetSpecs(ctx context.Context, opts ListChbngesetSpecsOpts) (cs btypes.ChbngesetSpecs, next int64, err error) {
+	ctx, _, endObservbtion := s.operbtions.listChbngesetSpecs.With(ctx, &err, observbtion.Args{})
+	defer endObservbtion(1, observbtion.Args{})
 
-	q := listChangesetSpecsQuery(&opts)
+	q := listChbngesetSpecsQuery(&opts)
 
-	cs = make(btypes.ChangesetSpecs, 0, opts.DBLimit())
-	err = s.query(ctx, q, func(sc dbutil.Scanner) error {
-		var c btypes.ChangesetSpec
-		if err := scanChangesetSpec(&c, sc); err != nil {
+	cs = mbke(btypes.ChbngesetSpecs, 0, opts.DBLimit())
+	err = s.query(ctx, q, func(sc dbutil.Scbnner) error {
+		vbr c btypes.ChbngesetSpec
+		if err := scbnChbngesetSpec(&c, sc); err != nil {
 			return err
 		}
-		cs = append(cs, &c)
+		cs = bppend(cs, &c)
 		return nil
 	})
 
@@ -356,222 +356,222 @@ func (s *Store) ListChangesetSpecs(ctx context.Context, opts ListChangesetSpecsO
 	return cs, next, err
 }
 
-var listChangesetSpecsQueryFmtstr = `
-SELECT %s FROM changeset_specs
-INNER JOIN repo ON repo.id = changeset_specs.repo_id
+vbr listChbngesetSpecsQueryFmtstr = `
+SELECT %s FROM chbngeset_specs
+INNER JOIN repo ON repo.id = chbngeset_specs.repo_id
 WHERE %s
-ORDER BY changeset_specs.id ASC
+ORDER BY chbngeset_specs.id ASC
 `
 
-func listChangesetSpecsQuery(opts *ListChangesetSpecsOpts) *sqlf.Query {
+func listChbngesetSpecsQuery(opts *ListChbngesetSpecsOpts) *sqlf.Query {
 	preds := []*sqlf.Query{
-		sqlf.Sprintf("changeset_specs.id >= %s", opts.Cursor),
-		sqlf.Sprintf("repo.deleted_at IS NULL"),
+		sqlf.Sprintf("chbngeset_specs.id >= %s", opts.Cursor),
+		sqlf.Sprintf("repo.deleted_bt IS NULL"),
 	}
 
-	if opts.BatchSpecID != 0 {
-		preds = append(preds, sqlf.Sprintf("changeset_specs.batch_spec_id = %d", opts.BatchSpecID))
+	if opts.BbtchSpecID != 0 {
+		preds = bppend(preds, sqlf.Sprintf("chbngeset_specs.bbtch_spec_id = %d", opts.BbtchSpecID))
 	}
 
-	if len(opts.RandIDs) != 0 {
-		preds = append(preds, sqlf.Sprintf("changeset_specs.rand_id = ANY (%s)", pq.Array(opts.RandIDs)))
+	if len(opts.RbndIDs) != 0 {
+		preds = bppend(preds, sqlf.Sprintf("chbngeset_specs.rbnd_id = ANY (%s)", pq.Arrby(opts.RbndIDs)))
 	}
 
 	if len(opts.IDs) != 0 {
-		preds = append(preds, sqlf.Sprintf("changeset_specs.id = ANY (%s)", pq.Array(opts.IDs)))
+		preds = bppend(preds, sqlf.Sprintf("chbngeset_specs.id = ANY (%s)", pq.Arrby(opts.IDs)))
 	}
 
 	if opts.Type != "" {
-		if opts.Type == batcheslib.ChangesetSpecDescriptionTypeExisting {
-			// Check that externalID is not empty.
-			preds = append(preds, sqlf.Sprintf("changeset_specs.external_id IS NOT NULL"))
+		if opts.Type == bbtcheslib.ChbngesetSpecDescriptionTypeExisting {
+			// Check thbt externblID is not empty.
+			preds = bppend(preds, sqlf.Sprintf("chbngeset_specs.externbl_id IS NOT NULL"))
 		} else {
-			// Check that externalID is empty.
-			preds = append(preds, sqlf.Sprintf("changeset_specs.external_id IS NULL"))
+			// Check thbt externblID is empty.
+			preds = bppend(preds, sqlf.Sprintf("chbngeset_specs.externbl_id IS NULL"))
 		}
 	}
 
 	return sqlf.Sprintf(
-		listChangesetSpecsQueryFmtstr+opts.LimitOpts.ToDB(),
-		sqlf.Join(changesetSpecColumns.ToSqlf(), ", "),
+		listChbngesetSpecsQueryFmtstr+opts.LimitOpts.ToDB(),
+		sqlf.Join(chbngesetSpecColumns.ToSqlf(), ", "),
 		sqlf.Join(preds, "\n AND "),
 	)
 }
 
-type ChangesetSpecHeadRefConflict struct {
-	RepoID  api.RepoID
-	HeadRef string
+type ChbngesetSpecHebdRefConflict struct {
+	RepoID  bpi.RepoID
+	HebdRef string
 	Count   int
 }
 
-var listChangesetSpecsWithConflictingHeadQueryFmtstr = `
+vbr listChbngesetSpecsWithConflictingHebdQueryFmtstr = `
 SELECT
 	repo_id,
-	head_ref,
+	hebd_ref,
 	COUNT(*) AS count
 FROM
-	changeset_specs
+	chbngeset_specs
 WHERE
-	batch_spec_id = %s
+	bbtch_spec_id = %s
 AND
-	head_ref IS NOT NULL
+	hebd_ref IS NOT NULL
 GROUP BY
-	repo_id, head_ref
+	repo_id, hebd_ref
 HAVING COUNT(*) > 1
-ORDER BY repo_id ASC, head_ref ASC
+ORDER BY repo_id ASC, hebd_ref ASC
 `
 
-func (s *Store) ListChangesetSpecsWithConflictingHeadRef(ctx context.Context, batchSpecID int64) (conflicts []ChangesetSpecHeadRefConflict, err error) {
-	ctx, _, endObservation := s.operations.listChangesetSpecsWithConflictingHeadRef.With(ctx, &err, observation.Args{})
-	defer endObservation(1, observation.Args{})
+func (s *Store) ListChbngesetSpecsWithConflictingHebdRef(ctx context.Context, bbtchSpecID int64) (conflicts []ChbngesetSpecHebdRefConflict, err error) {
+	ctx, _, endObservbtion := s.operbtions.listChbngesetSpecsWithConflictingHebdRef.With(ctx, &err, observbtion.Args{})
+	defer endObservbtion(1, observbtion.Args{})
 
-	q := sqlf.Sprintf(listChangesetSpecsWithConflictingHeadQueryFmtstr, batchSpecID)
+	q := sqlf.Sprintf(listChbngesetSpecsWithConflictingHebdQueryFmtstr, bbtchSpecID)
 
-	err = s.query(ctx, q, func(sc dbutil.Scanner) error {
-		var c ChangesetSpecHeadRefConflict
-		if err := sc.Scan(&c.RepoID, &c.HeadRef, &c.Count); err != nil {
-			return errors.Wrap(err, "scanning head ref conflict")
+	err = s.query(ctx, q, func(sc dbutil.Scbnner) error {
+		vbr c ChbngesetSpecHebdRefConflict
+		if err := sc.Scbn(&c.RepoID, &c.HebdRef, &c.Count); err != nil {
+			return errors.Wrbp(err, "scbnning hebd ref conflict")
 		}
-		conflicts = append(conflicts, c)
+		conflicts = bppend(conflicts, c)
 		return nil
 	})
 
 	return conflicts, err
 }
 
-// DeleteUnattachedExpiredChangesetSpecs deletes each ChangesetSpec that has not been
-// attached to a BatchSpec within ChangesetSpecTTL.
-func (s *Store) DeleteUnattachedExpiredChangesetSpecs(ctx context.Context) (err error) {
-	ctx, _, endObservation := s.operations.deleteUnattachedExpiredChangesetSpecs.With(ctx, &err, observation.Args{})
-	defer endObservation(1, observation.Args{})
+// DeleteUnbttbchedExpiredChbngesetSpecs deletes ebch ChbngesetSpec thbt hbs not been
+// bttbched to b BbtchSpec within ChbngesetSpecTTL.
+func (s *Store) DeleteUnbttbchedExpiredChbngesetSpecs(ctx context.Context) (err error) {
+	ctx, _, endObservbtion := s.operbtions.deleteUnbttbchedExpiredChbngesetSpecs.With(ctx, &err, observbtion.Args{})
+	defer endObservbtion(1, observbtion.Args{})
 
-	changesetSpecTTLExpiration := s.now().Add(-btypes.ChangesetSpecTTL)
-	q := sqlf.Sprintf(deleteUnattachedExpiredChangesetSpecsQueryFmtstr, changesetSpecTTLExpiration)
+	chbngesetSpecTTLExpirbtion := s.now().Add(-btypes.ChbngesetSpecTTL)
+	q := sqlf.Sprintf(deleteUnbttbchedExpiredChbngesetSpecsQueryFmtstr, chbngesetSpecTTLExpirbtion)
 	return s.Store.Exec(ctx, q)
 }
 
-var deleteUnattachedExpiredChangesetSpecsQueryFmtstr = `
+vbr deleteUnbttbchedExpiredChbngesetSpecsQueryFmtstr = `
 DELETE FROM
-  changeset_specs
+  chbngeset_specs
 WHERE
-  -- The spec is older than the ChangesetSpecTTL
-  created_at < %s
+  -- The spec is older thbn the ChbngesetSpecTTL
+  crebted_bt < %s
   AND
-  -- and it was never attached to a batch_spec
-  batch_spec_id IS NULL
+  -- bnd it wbs never bttbched to b bbtch_spec
+  bbtch_spec_id IS NULL
 `
 
-// DeleteExpiredChangesetSpecs deletes each ChangesetSpec that is attached
-// to a BatchSpec that is not applied and is not attached to a Changeset
-// within BatchSpecTTL, and that hasn't been created by SSBC.
-func (s *Store) DeleteExpiredChangesetSpecs(ctx context.Context) (err error) {
-	ctx, _, endObservation := s.operations.deleteExpiredChangesetSpecs.With(ctx, &err, observation.Args{})
-	defer endObservation(1, observation.Args{})
+// DeleteExpiredChbngesetSpecs deletes ebch ChbngesetSpec thbt is bttbched
+// to b BbtchSpec thbt is not bpplied bnd is not bttbched to b Chbngeset
+// within BbtchSpecTTL, bnd thbt hbsn't been crebted by SSBC.
+func (s *Store) DeleteExpiredChbngesetSpecs(ctx context.Context) (err error) {
+	ctx, _, endObservbtion := s.operbtions.deleteExpiredChbngesetSpecs.With(ctx, &err, observbtion.Args{})
+	defer endObservbtion(1, observbtion.Args{})
 
-	batchSpecTTLExpiration := s.now().Add(-btypes.BatchSpecTTL)
-	q := sqlf.Sprintf(deleteExpiredChangesetSpecsQueryFmtstr, batchSpecTTLExpiration)
+	bbtchSpecTTLExpirbtion := s.now().Add(-btypes.BbtchSpecTTL)
+	q := sqlf.Sprintf(deleteExpiredChbngesetSpecsQueryFmtstr, bbtchSpecTTLExpirbtion)
 	return s.Store.Exec(ctx, q)
 }
 
-var deleteExpiredChangesetSpecsQueryFmtstr = `
-WITH candidates AS (
+vbr deleteExpiredChbngesetSpecsQueryFmtstr = `
+WITH cbndidbtes AS (
 	SELECT cs.id
-	FROM changeset_specs cs
-	JOIN batch_specs bs ON bs.id = cs.batch_spec_id
-	LEFT JOIN batch_changes bc ON bs.id = bc.batch_spec_id
-	LEFT JOIN changesets c ON (c.current_spec_id = cs.id OR c.previous_spec_id = cs.id)
+	FROM chbngeset_specs cs
+	JOIN bbtch_specs bs ON bs.id = cs.bbtch_spec_id
+	LEFT JOIN bbtch_chbnges bc ON bs.id = bc.bbtch_spec_id
+	LEFT JOIN chbngesets c ON (c.current_spec_id = cs.id OR c.previous_spec_id = cs.id)
 	WHERE
-		-- The spec is older than the BatchSpecTTL
-		cs.created_at < %s
-		-- and it is not created by SSBC
-		AND NOT bs.created_from_raw
-		-- and the batch spec it is attached to is not applied to a batch change
+		-- The spec is older thbn the BbtchSpecTTL
+		cs.crebted_bt < %s
+		-- bnd it is not crebted by SSBC
+		AND NOT bs.crebted_from_rbw
+		-- bnd the bbtch spec it is bttbched to is not bpplied to b bbtch chbnge
 		AND bc.id IS NULL
-		-- and it is not attached to a changeset
+		-- bnd it is not bttbched to b chbngeset
 		AND c.id IS NULL
 	FOR UPDATE OF cs
 )
-DELETE FROM changeset_specs
+DELETE FROM chbngeset_specs
 WHERE
-	id IN (SELECT id FROM candidates)
+	id IN (SELECT id FROM cbndidbtes)
 `
 
-type DeleteChangesetSpecsOpts struct {
-	BatchSpecID int64
+type DeleteChbngesetSpecsOpts struct {
+	BbtchSpecID int64
 	IDs         []int64
 }
 
-// DeleteChangesetSpecs deletes the ChangesetSpecs matching the given options.
-func (s *Store) DeleteChangesetSpecs(ctx context.Context, opts DeleteChangesetSpecsOpts) (err error) {
-	ctx, _, endObservation := s.operations.deleteChangesetSpecs.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
-		attribute.Int("batchSpecID", int(opts.BatchSpecID)),
+// DeleteChbngesetSpecs deletes the ChbngesetSpecs mbtching the given options.
+func (s *Store) DeleteChbngesetSpecs(ctx context.Context, opts DeleteChbngesetSpecsOpts) (err error) {
+	ctx, _, endObservbtion := s.operbtions.deleteChbngesetSpecs.With(ctx, &err, observbtion.Args{Attrs: []bttribute.KeyVblue{
+		bttribute.Int("bbtchSpecID", int(opts.BbtchSpecID)),
 	}})
-	defer endObservation(1, observation.Args{})
+	defer endObservbtion(1, observbtion.Args{})
 
-	if opts.BatchSpecID == 0 && len(opts.IDs) == 0 {
-		return errors.New("BatchSpecID is 0 and no IDs given")
+	if opts.BbtchSpecID == 0 && len(opts.IDs) == 0 {
+		return errors.New("BbtchSpecID is 0 bnd no IDs given")
 	}
 
-	q := deleteChangesetSpecsQuery(&opts)
+	q := deleteChbngesetSpecsQuery(&opts)
 	return s.Store.Exec(ctx, q)
 }
 
-var deleteChangesetSpecsQueryFmtstr = `
-DELETE FROM changeset_specs
+vbr deleteChbngesetSpecsQueryFmtstr = `
+DELETE FROM chbngeset_specs
 WHERE
   %s
 `
 
-func deleteChangesetSpecsQuery(opts *DeleteChangesetSpecsOpts) *sqlf.Query {
+func deleteChbngesetSpecsQuery(opts *DeleteChbngesetSpecsOpts) *sqlf.Query {
 	preds := []*sqlf.Query{}
 
-	if opts.BatchSpecID != 0 {
-		preds = append(preds, sqlf.Sprintf("changeset_specs.batch_spec_id = %s", opts.BatchSpecID))
+	if opts.BbtchSpecID != 0 {
+		preds = bppend(preds, sqlf.Sprintf("chbngeset_specs.bbtch_spec_id = %s", opts.BbtchSpecID))
 	}
 
 	if len(opts.IDs) != 0 {
-		preds = append(preds, sqlf.Sprintf("changeset_specs.id = ANY(%s)", pq.Array(opts.IDs)))
+		preds = bppend(preds, sqlf.Sprintf("chbngeset_specs.id = ANY(%s)", pq.Arrby(opts.IDs)))
 	}
 
-	return sqlf.Sprintf(deleteChangesetSpecsQueryFmtstr, sqlf.Join(preds, "\n AND "))
+	return sqlf.Sprintf(deleteChbngesetSpecsQueryFmtstr, sqlf.Join(preds, "\n AND "))
 }
 
-func scanChangesetSpec(c *btypes.ChangesetSpec, s dbutil.Scanner) error {
-	var published []byte
-	var typ string
+func scbnChbngesetSpec(c *btypes.ChbngesetSpec, s dbutil.Scbnner) error {
+	vbr published []byte
+	vbr typ string
 
-	err := s.Scan(
+	err := s.Scbn(
 		&c.ID,
-		&c.RandID,
-		&dbutil.NullInt64{N: &c.BatchSpecID},
-		&c.BaseRepoID,
+		&c.RbndID,
+		&dbutil.NullInt64{N: &c.BbtchSpecID},
+		&c.BbseRepoID,
 		&dbutil.NullInt32{N: &c.UserID},
-		&c.DiffStatAdded,
-		&c.DiffStatDeleted,
-		&c.CreatedAt,
-		&c.UpdatedAt,
-		&c.ForkNamespace,
-		&dbutil.NullString{S: &c.ExternalID},
-		&dbutil.NullString{S: &c.HeadRef},
+		&c.DiffStbtAdded,
+		&c.DiffStbtDeleted,
+		&c.CrebtedAt,
+		&c.UpdbtedAt,
+		&c.ForkNbmespbce,
+		&dbutil.NullString{S: &c.ExternblID},
+		&dbutil.NullString{S: &c.HebdRef},
 		&dbutil.NullString{S: &c.Title},
-		&dbutil.NullString{S: &c.BaseRev},
-		&dbutil.NullString{S: &c.BaseRef},
+		&dbutil.NullString{S: &c.BbseRev},
+		&dbutil.NullString{S: &c.BbseRef},
 		&dbutil.NullString{S: &c.Body},
 		&published,
 		&c.Diff,
-		&dbutil.NullString{S: &c.CommitMessage},
-		&dbutil.NullString{S: &c.CommitAuthorName},
-		&dbutil.NullString{S: &c.CommitAuthorEmail},
+		&dbutil.NullString{S: &c.CommitMessbge},
+		&dbutil.NullString{S: &c.CommitAuthorNbme},
+		&dbutil.NullString{S: &c.CommitAuthorEmbil},
 		&typ,
 	)
 	if err != nil {
-		return errors.Wrap(err, "scanning changeset spec")
+		return errors.Wrbp(err, "scbnning chbngeset spec")
 	}
 
-	c.Type = btypes.ChangesetSpecType(typ)
+	c.Type = btypes.ChbngesetSpecType(typ)
 
 	if len(published) != 0 {
-		if err := json.Unmarshal(published, &c.Published); err != nil {
+		if err := json.Unmbrshbl(published, &c.Published); err != nil {
 			return err
 		}
 	}
@@ -579,261 +579,261 @@ func scanChangesetSpec(c *btypes.ChangesetSpec, s dbutil.Scanner) error {
 	return nil
 }
 
-type GetRewirerMappingsOpts struct {
-	BatchSpecID   int64
-	BatchChangeID int64
+type GetRewirerMbppingsOpts struct {
+	BbtchSpecID   int64
+	BbtchChbngeID int64
 
-	LimitOffset  *database.LimitOffset
-	TextSearch   []search.TextSearchTerm
-	CurrentState *btypes.ChangesetState
+	LimitOffset  *dbtbbbse.LimitOffset
+	TextSebrch   []sebrch.TextSebrchTerm
+	CurrentStbte *btypes.ChbngesetStbte
 }
 
-// GetRewirerMappings returns RewirerMappings between changeset specs and changesets.
+// GetRewirerMbppings returns RewirerMbppings between chbngeset specs bnd chbngesets.
 //
-// We have two imaginary lists, the current changesets in the batch change and the new changeset specs:
+// We hbve two imbginbry lists, the current chbngesets in the bbtch chbnge bnd the new chbngeset specs:
 //
 // ┌───────────────────────────────────────┐   ┌───────────────────────────────┐
-// │Changeset 1 | Repo A | #111 | run-gofmt│   │  Spec 1 | Repo A | run-gofmt  │
+// │Chbngeset 1 | Repo A | #111 | run-gofmt│   │  Spec 1 | Repo A | run-gofmt  │
 // └───────────────────────────────────────┘   └───────────────────────────────┘
 // ┌───────────────────────────────────────┐   ┌───────────────────────────────┐
-// │Changeset 2 | Repo B |      | run-gofmt│   │  Spec 2 | Repo B | run-gofmt  │
+// │Chbngeset 2 | Repo B |      | run-gofmt│   │  Spec 2 | Repo B | run-gofmt  │
 // └───────────────────────────────────────┘   └───────────────────────────────┘
 // ┌───────────────────────────────────────┐   ┌───────────────────────────────────┐
-// │Changeset 3 | Repo C | #222 | run-gofmt│   │  Spec 3 | Repo C | run-goimports  │
+// │Chbngeset 3 | Repo C | #222 | run-gofmt│   │  Spec 3 | Repo C | run-goimports  │
 // └───────────────────────────────────────┘   └───────────────────────────────────┘
 // ┌───────────────────────────────────────┐   ┌───────────────────────────────┐
-// │Changeset 4 | Repo C | #333 | older-pr │   │    Spec 4 | Repo C | #333     │
+// │Chbngeset 4 | Repo C | #333 | older-pr │   │    Spec 4 | Repo C | #333     │
 // └───────────────────────────────────────┘   └───────────────────────────────┘
 //
 // We need to:
-//  1. Find out whether our new specs should _update_ an existing
-//     changeset (ChangesetSpec != 0, Changeset != 0), or whether we need to create a new one.
-//  2. Since we can have multiple changesets per repository, we need to match
-//     based on repo and external ID for imported changesets and on repo and head_ref for 'branch' changesets.
-//  3. If a changeset wasn't published yet, it doesn't have an external ID nor does it have an external head_ref.
-//     In that case, we need to check whether the branch on which we _might_
-//     push the commit (because the changeset might not be published
-//     yet) is the same or compare the external IDs in the current and new specs.
+//  1. Find out whether our new specs should _updbte_ bn existing
+//     chbngeset (ChbngesetSpec != 0, Chbngeset != 0), or whether we need to crebte b new one.
+//  2. Since we cbn hbve multiple chbngesets per repository, we need to mbtch
+//     bbsed on repo bnd externbl ID for imported chbngesets bnd on repo bnd hebd_ref for 'brbnch' chbngesets.
+//  3. If b chbngeset wbsn't published yet, it doesn't hbve bn externbl ID nor does it hbve bn externbl hebd_ref.
+//     In thbt cbse, we need to check whether the brbnch on which we _might_
+//     push the commit (becbuse the chbngeset might not be published
+//     yet) is the sbme or compbre the externbl IDs in the current bnd new specs.
 //
-// What we want:
+// Whbt we wbnt:
 //
 // ┌───────────────────────────────────────┐    ┌───────────────────────────────┐
-// │Changeset 1 | Repo A | #111 | run-gofmt│───▶│  Spec 1 | Repo A | run-gofmt  │
+// │Chbngeset 1 | Repo A | #111 | run-gofmt│───▶│  Spec 1 | Repo A | run-gofmt  │
 // └───────────────────────────────────────┘    └───────────────────────────────┘
 // ┌───────────────────────────────────────┐    ┌───────────────────────────────┐
-// │Changeset 2 | Repo B |      | run-gofmt│───▶│  Spec 2 | Repo B | run-gofmt  │
+// │Chbngeset 2 | Repo B |      | run-gofmt│───▶│  Spec 2 | Repo B | run-gofmt  │
 // └───────────────────────────────────────┘    └───────────────────────────────┘
 // ┌───────────────────────────────────────┐
-// │Changeset 3 | Repo C | #222 | run-gofmt│
+// │Chbngeset 3 | Repo C | #222 | run-gofmt│
 // └───────────────────────────────────────┘
 // ┌───────────────────────────────────────┐    ┌───────────────────────────────┐
-// │Changeset 4 | Repo C | #333 | older-pr │───▶│    Spec 4 | Repo C | #333     │
+// │Chbngeset 4 | Repo C | #333 | older-pr │───▶│    Spec 4 | Repo C | #333     │
 // └───────────────────────────────────────┘    └───────────────────────────────┘
 // ┌───────────────────────────────────────┐    ┌───────────────────────────────────┐
-// │Changeset 5 | Repo C | | run-goimports │───▶│  Spec 3 | Repo C | run-goimports  │
+// │Chbngeset 5 | Repo C | | run-goimports │───▶│  Spec 3 | Repo C | run-goimports  │
 // └───────────────────────────────────────┘    └───────────────────────────────────┘
 //
-// Spec 1 should be attached to Changeset 1 and (possibly) update its title/body/diff. (ChangesetSpec = 1, Changeset = 1)
-// Spec 2 should be attached to Changeset 2 and publish it on the code host. (ChangesetSpec = 2, Changeset = 2)
-// Spec 3 should get a new Changeset, since its branch doesn't match Changeset 3's branch. (ChangesetSpec = 3, Changeset = 0)
-// Spec 4 should be attached to Changeset 4, since it tracks PR #333 in Repo C. (ChangesetSpec = 4, Changeset = 4)
-// Changeset 3 doesn't have a matching spec and should be detached from the batch change (and closed) (ChangesetSpec == 0, Changeset = 3).
-func (s *Store) GetRewirerMappings(ctx context.Context, opts GetRewirerMappingsOpts) (mappings btypes.RewirerMappings, err error) {
-	ctx, _, endObservation := s.operations.getRewirerMappings.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
-		attribute.Int("batchSpecID", int(opts.BatchSpecID)),
-		attribute.Int("batchChangeID", int(opts.BatchChangeID)),
+// Spec 1 should be bttbched to Chbngeset 1 bnd (possibly) updbte its title/body/diff. (ChbngesetSpec = 1, Chbngeset = 1)
+// Spec 2 should be bttbched to Chbngeset 2 bnd publish it on the code host. (ChbngesetSpec = 2, Chbngeset = 2)
+// Spec 3 should get b new Chbngeset, since its brbnch doesn't mbtch Chbngeset 3's brbnch. (ChbngesetSpec = 3, Chbngeset = 0)
+// Spec 4 should be bttbched to Chbngeset 4, since it trbcks PR #333 in Repo C. (ChbngesetSpec = 4, Chbngeset = 4)
+// Chbngeset 3 doesn't hbve b mbtching spec bnd should be detbched from the bbtch chbnge (bnd closed) (ChbngesetSpec == 0, Chbngeset = 3).
+func (s *Store) GetRewirerMbppings(ctx context.Context, opts GetRewirerMbppingsOpts) (mbppings btypes.RewirerMbppings, err error) {
+	ctx, _, endObservbtion := s.operbtions.getRewirerMbppings.With(ctx, &err, observbtion.Args{Attrs: []bttribute.KeyVblue{
+		bttribute.Int("bbtchSpecID", int(opts.BbtchSpecID)),
+		bttribute.Int("bbtchChbngeID", int(opts.BbtchChbngeID)),
 	}})
-	defer endObservation(1, observation.Args{})
+	defer endObservbtion(1, observbtion.Args{})
 
-	q := getRewirerMappingsQuery(opts)
+	q := getRewirerMbppingsQuery(opts)
 
-	if err = s.query(ctx, q, func(sc dbutil.Scanner) error {
-		var c btypes.RewirerMapping
-		if err := sc.Scan(&c.ChangesetSpecID, &c.ChangesetID, &c.RepoID); err != nil {
+	if err = s.query(ctx, q, func(sc dbutil.Scbnner) error {
+		vbr c btypes.RewirerMbpping
+		if err := sc.Scbn(&c.ChbngesetSpecID, &c.ChbngesetID, &c.RepoID); err != nil {
 			return err
 		}
-		mappings = append(mappings, &c)
+		mbppings = bppend(mbppings, &c)
 		return nil
 	}); err != nil {
 		return nil, err
 	}
 
-	// Hydrate the rewirer mappings:
-	changesetsByID := map[int64]*btypes.Changeset{}
-	changesetSpecsByID := map[int64]*btypes.ChangesetSpec{}
+	// Hydrbte the rewirer mbppings:
+	chbngesetsByID := mbp[int64]*btypes.Chbngeset{}
+	chbngesetSpecsByID := mbp[int64]*btypes.ChbngesetSpec{}
 
-	changesetSpecIDs := mappings.ChangesetSpecIDs()
-	if len(changesetSpecIDs) > 0 {
-		changesetSpecs, _, err := s.ListChangesetSpecs(ctx, ListChangesetSpecsOpts{
-			IDs: changesetSpecIDs,
+	chbngesetSpecIDs := mbppings.ChbngesetSpecIDs()
+	if len(chbngesetSpecIDs) > 0 {
+		chbngesetSpecs, _, err := s.ListChbngesetSpecs(ctx, ListChbngesetSpecsOpts{
+			IDs: chbngesetSpecIDs,
 		})
 		if err != nil {
 			return nil, err
 		}
-		for _, c := range changesetSpecs {
-			changesetSpecsByID[c.ID] = c
+		for _, c := rbnge chbngesetSpecs {
+			chbngesetSpecsByID[c.ID] = c
 		}
 	}
 
-	changesetIDs := mappings.ChangesetIDs()
-	if len(changesetIDs) > 0 {
-		changesets, _, err := s.ListChangesets(ctx, ListChangesetsOpts{IDs: changesetIDs})
+	chbngesetIDs := mbppings.ChbngesetIDs()
+	if len(chbngesetIDs) > 0 {
+		chbngesets, _, err := s.ListChbngesets(ctx, ListChbngesetsOpts{IDs: chbngesetIDs})
 		if err != nil {
 			return nil, err
 		}
-		for _, c := range changesets {
-			changesetsByID[c.ID] = c
+		for _, c := rbnge chbngesets {
+			chbngesetsByID[c.ID] = c
 		}
 	}
 
-	accessibleReposByID, err := s.Repos().GetReposSetByIDs(ctx, mappings.RepoIDs()...)
+	bccessibleReposByID, err := s.Repos().GetReposSetByIDs(ctx, mbppings.RepoIDs()...)
 	if err != nil {
 		return nil, err
 	}
 
-	for _, m := range mappings {
-		if m.ChangesetID != 0 {
-			m.Changeset = changesetsByID[m.ChangesetID]
+	for _, m := rbnge mbppings {
+		if m.ChbngesetID != 0 {
+			m.Chbngeset = chbngesetsByID[m.ChbngesetID]
 		}
-		if m.ChangesetSpecID != 0 {
-			m.ChangesetSpec = changesetSpecsByID[m.ChangesetSpecID]
+		if m.ChbngesetSpecID != 0 {
+			m.ChbngesetSpec = chbngesetSpecsByID[m.ChbngesetSpecID]
 		}
 		if m.RepoID != 0 {
-			// This can be nil, but that's okay. It just means the ctx actor has no access to the repo.
-			m.Repo = accessibleReposByID[m.RepoID]
+			// This cbn be nil, but thbt's okby. It just mebns the ctx bctor hbs no bccess to the repo.
+			m.Repo = bccessibleReposByID[m.RepoID]
 		}
 	}
 
-	return mappings, err
+	return mbppings, err
 }
 
-func getRewirerMappingsQuery(opts GetRewirerMappingsOpts) *sqlf.Query {
-	// If there's a text search, we want to add the appropriate WHERE clauses to
-	// the query. Note that we need to use different WHERE clauses depending on
-	// which part of the big UNION below we're in; more detail on that is
-	// documented in getRewirerMappingsTextSearch().
-	detachTextSearch, viewTextSearch := getRewirerMappingTextSearch(opts.TextSearch)
+func getRewirerMbppingsQuery(opts GetRewirerMbppingsOpts) *sqlf.Query {
+	// If there's b text sebrch, we wbnt to bdd the bppropribte WHERE clbuses to
+	// the query. Note thbt we need to use different WHERE clbuses depending on
+	// which pbrt of the big UNION below we're in; more detbil on thbt is
+	// documented in getRewirerMbppingsTextSebrch().
+	detbchTextSebrch, viewTextSebrch := getRewirerMbppingTextSebrch(opts.TextSebrch)
 
-	// Happily, current state is simpler. Less happily, it can error.
-	currentState := sqlf.Sprintf("")
-	if opts.CurrentState != nil {
-		currentState = sqlf.Sprintf("AND computed_state = %s", *opts.CurrentState)
+	// Hbppily, current stbte is simpler. Less hbppily, it cbn error.
+	currentStbte := sqlf.Sprintf("")
+	if opts.CurrentStbte != nil {
+		currentStbte = sqlf.Sprintf("AND computed_stbte = %s", *opts.CurrentStbte)
 	}
 
 	return sqlf.Sprintf(
-		getRewirerMappingsQueryFmtstr,
-		opts.BatchSpecID,
-		viewTextSearch,
-		currentState,
-		opts.BatchChangeID,
-		opts.BatchSpecID,
-		viewTextSearch,
-		currentState,
-		opts.BatchSpecID,
-		opts.BatchChangeID,
-		opts.BatchSpecID,
-		strconv.Itoa(int(opts.BatchChangeID)),
-		strconv.Itoa(int(opts.BatchChangeID)),
-		detachTextSearch,
-		currentState,
+		getRewirerMbppingsQueryFmtstr,
+		opts.BbtchSpecID,
+		viewTextSebrch,
+		currentStbte,
+		opts.BbtchChbngeID,
+		opts.BbtchSpecID,
+		viewTextSebrch,
+		currentStbte,
+		opts.BbtchSpecID,
+		opts.BbtchChbngeID,
+		opts.BbtchSpecID,
+		strconv.Itob(int(opts.BbtchChbngeID)),
+		strconv.Itob(int(opts.BbtchChbngeID)),
+		detbchTextSebrch,
+		currentStbte,
 		opts.LimitOffset.SQL(),
 	)
 }
 
-func getRewirerMappingTextSearch(terms []search.TextSearchTerm) (detachTextSearch, viewTextSearch *sqlf.Query) {
-	// This gets a little tricky: we want to search both the changeset name and
-	// the repository name. These are exposed somewhat differently depending on
-	// which subquery we're adding the clause to in the big UNION query that's
-	// going to get run: the two views expose changeset_name and repo_name
-	// fields, whereas the detached changeset subquery has to query the fields
-	// directly, since it's just a simple JOIN. As a result, we need two sets of
+func getRewirerMbppingTextSebrch(terms []sebrch.TextSebrchTerm) (detbchTextSebrch, viewTextSebrch *sqlf.Query) {
+	// This gets b little tricky: we wbnt to sebrch both the chbngeset nbme bnd
+	// the repository nbme. These bre exposed somewhbt differently depending on
+	// which subquery we're bdding the clbuse to in the big UNION query thbt's
+	// going to get run: the two views expose chbngeset_nbme bnd repo_nbme
+	// fields, wherebs the detbched chbngeset subquery hbs to query the fields
+	// directly, since it's just b simple JOIN. As b result, we need two sets of
 	// everything.
 	if len(terms) > 0 {
-		detachSearches := make([]*sqlf.Query, len(terms))
-		viewSearches := make([]*sqlf.Query, len(terms))
+		detbchSebrches := mbke([]*sqlf.Query, len(terms))
+		viewSebrches := mbke([]*sqlf.Query, len(terms))
 
-		for i, term := range terms {
-			detachSearches[i] = textSearchTermToClause(
+		for i, term := rbnge terms {
+			detbchSebrches[i] = textSebrchTermToClbuse(
 				term,
-				sqlf.Sprintf("changesets.external_title"),
-				sqlf.Sprintf("repo.name"),
+				sqlf.Sprintf("chbngesets.externbl_title"),
+				sqlf.Sprintf("repo.nbme"),
 			)
 
-			viewSearches[i] = textSearchTermToClause(
+			viewSebrches[i] = textSebrchTermToClbuse(
 				term,
-				sqlf.Sprintf("COALESCE(changeset_name, '')"),
-				sqlf.Sprintf("repo_name"),
+				sqlf.Sprintf("COALESCE(chbngeset_nbme, '')"),
+				sqlf.Sprintf("repo_nbme"),
 			)
 		}
 
-		detachTextSearch = sqlf.Sprintf("AND %s", sqlf.Join(detachSearches, " AND "))
-		viewTextSearch = sqlf.Sprintf("AND %s", sqlf.Join(viewSearches, " AND "))
+		detbchTextSebrch = sqlf.Sprintf("AND %s", sqlf.Join(detbchSebrches, " AND "))
+		viewTextSebrch = sqlf.Sprintf("AND %s", sqlf.Join(viewSebrches, " AND "))
 	} else {
-		detachTextSearch = sqlf.Sprintf("")
-		viewTextSearch = sqlf.Sprintf("")
+		detbchTextSebrch = sqlf.Sprintf("")
+		viewTextSebrch = sqlf.Sprintf("")
 	}
 
-	return detachTextSearch, viewTextSearch
+	return detbchTextSebrch, viewTextSebrch
 }
 
-var getRewirerMappingsQueryFmtstr = `
-SELECT mappings.changeset_spec_id, mappings.changeset_id, mappings.repo_id FROM (
-	-- Fetch all changeset specs in the batch spec that want to import/track an ChangesetSpecDescriptionTypeExisting changeset.
-	-- Match the entries to changesets in the target batch change by external ID and repo.
+vbr getRewirerMbppingsQueryFmtstr = `
+SELECT mbppings.chbngeset_spec_id, mbppings.chbngeset_id, mbppings.repo_id FROM (
+	-- Fetch bll chbngeset specs in the bbtch spec thbt wbnt to import/trbck bn ChbngesetSpecDescriptionTypeExisting chbngeset.
+	-- Mbtch the entries to chbngesets in the tbrget bbtch chbnge by externbl ID bnd repo.
 	SELECT
-		changeset_spec_id, changeset_id, repo_id
+		chbngeset_spec_id, chbngeset_id, repo_id
 	FROM
-		tracking_changeset_specs_and_changesets
+		trbcking_chbngeset_specs_bnd_chbngesets
 	WHERE
-		batch_spec_id = %s
-		%s -- text search query, if provided
-		%s -- current state, if provided
+		bbtch_spec_id = %s
+		%s -- text sebrch query, if provided
+		%s -- current stbte, if provided
 
 	UNION ALL
 
-	-- Fetch all changeset specs in the batch spec that are of type ChangesetSpecDescriptionTypeBranch.
-	-- Match the entries to changesets in the target batch change by head ref and repo.
+	-- Fetch bll chbngeset specs in the bbtch spec thbt bre of type ChbngesetSpecDescriptionTypeBrbnch.
+	-- Mbtch the entries to chbngesets in the tbrget bbtch chbnge by hebd ref bnd repo.
 	SELECT
-		changeset_spec_id, MAX(CASE WHEN owner_batch_change_id = %s THEN changeset_id ELSE 0 END), repo_id
+		chbngeset_spec_id, MAX(CASE WHEN owner_bbtch_chbnge_id = %s THEN chbngeset_id ELSE 0 END), repo_id
 	FROM
-		branch_changeset_specs_and_changesets
+		brbnch_chbngeset_specs_bnd_chbngesets
 	WHERE
-		batch_spec_id = %s
-		%s -- text search query, if provided
-		%s -- current state, if provided
-	GROUP BY changeset_spec_id, repo_id
+		bbtch_spec_id = %s
+		%s -- text sebrch query, if provided
+		%s -- current stbte, if provided
+	GROUP BY chbngeset_spec_id, repo_id
 
 	UNION ALL
 
-	-- Finally, fetch all changesets that didn't match a changeset spec in the batch spec and that aren't part of tracked_mappings and branch_mappings. Those are to be closed or detached.
-	SELECT 0 as changeset_spec_id, changesets.id as changeset_id, changesets.repo_id as repo_id
-	FROM changesets
-	INNER JOIN repo ON changesets.repo_id = repo.id
+	-- Finblly, fetch bll chbngesets thbt didn't mbtch b chbngeset spec in the bbtch spec bnd thbt bren't pbrt of trbcked_mbppings bnd brbnch_mbppings. Those bre to be closed or detbched.
+	SELECT 0 bs chbngeset_spec_id, chbngesets.id bs chbngeset_id, chbngesets.repo_id bs repo_id
+	FROM chbngesets
+	INNER JOIN repo ON chbngesets.repo_id = repo.id
 	WHERE
-		repo.deleted_at IS NULL AND
-		changesets.id NOT IN (
+		repo.deleted_bt IS NULL AND
+		chbngesets.id NOT IN (
 				SELECT
-					changeset_id
+					chbngeset_id
 				FROM
-					tracking_changeset_specs_and_changesets
+					trbcking_chbngeset_specs_bnd_chbngesets
 				WHERE
-					batch_spec_id = %s
+					bbtch_spec_id = %s
 			UNION
 				SELECT
-					MAX(CASE WHEN owner_batch_change_id = %s THEN changeset_id ELSE 0 END)
+					MAX(CASE WHEN owner_bbtch_chbnge_id = %s THEN chbngeset_id ELSE 0 END)
 				FROM
-					branch_changeset_specs_and_changesets
+					brbnch_chbngeset_specs_bnd_chbngesets
 				WHERE
-					batch_spec_id = %s
-				GROUP BY changeset_spec_id, repo_id
+					bbtch_spec_id = %s
+				GROUP BY chbngeset_spec_id, repo_id
 		) AND
-		changesets.batch_change_ids ? %s
+		chbngesets.bbtch_chbnge_ids ? %s
 		AND
-		NOT COALESCE((changesets.batch_change_ids->%s->>'isArchived')::bool, false)
-		%s -- text search query, if provided
-		%s -- current state, if provided
-) AS mappings
-ORDER BY mappings.changeset_spec_id ASC, mappings.changeset_id ASC
+		NOT COALESCE((chbngesets.bbtch_chbnge_ids->%s->>'isArchived')::bool, fblse)
+		%s -- text sebrch query, if provided
+		%s -- current stbte, if provided
+) AS mbppings
+ORDER BY mbppings.chbngeset_spec_id ASC, mbppings.chbngeset_id ASC
 -- LIMIT, OFFSET
 %s
 `

@@ -1,9 +1,9 @@
-package main
+pbckbge mbin
 
 import (
 	"fmt"
 	"net/url"
-	"path"
+	"pbth"
 	"strconv"
 	"strings"
 	"time"
@@ -11,53 +11,53 @@ import (
 	"github.com/google/go-github/v41/github"
 	"github.com/honeycombio/libhoney-go"
 
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-const traceVersion = "dev"
+const trbceVersion = "dev"
 
-func newTraceEvent(traceID string, r *DeploymentReport) *libhoney.Event {
+func newTrbceEvent(trbceID string, r *DeploymentReport) *libhoney.Event {
 	event := libhoney.NewEvent()
-	event.Add(map[string]string{
+	event.Add(mbp[string]string{
 		// Honeycomb fields
-		"meta.version":   traceVersion,
-		"trace.trace_id": traceID,
+		"metb.version":   trbceVersion,
+		"trbce.trbce_id": trbceID,
 
-		// Metadata related to reployment
+		// Metbdbtb relbted to reployment
 		"environment":         r.Environment,
 		"buildkite.build_url": r.BuildkiteBuildURL,
-		"manifest.revision":   r.ManifestRevision,
-		"deployed.at":         r.DeployedAt,
+		"mbnifest.revision":   r.MbnifestRevision,
+		"deployed.bt":         r.DeployedAt,
 	})
 	return event
 }
 
-func newSpanID(root string, components ...string) string {
-	for _, c := range components {
+func newSpbnID(root string, components ...string) string {
+	for _, c := rbnge components {
 		root += fmt.Sprintf("/%s", c)
 	}
 	return root
 }
 
 const (
-	// spans representing deploys (suffixed with '/$env')
-	spanServiceNameDeploy = "deploy"
-	// spans representing pull requests
-	spanServiceNamePullRequest = "pull_request"
-	// spans representing Sourcegraph services
-	spanServiceNameService = "service"
+	// spbns representing deploys (suffixed with '/$env')
+	spbnServiceNbmeDeploy = "deploy"
+	// spbns representing pull requests
+	spbnServiceNbmePullRequest = "pull_request"
+	// spbns representing Sourcegrbph services
+	spbnServiceNbmeService = "service"
 )
 
-type DeploymentTrace struct {
+type DeploymentTrbce struct {
 	Root *libhoney.Event
 	ID   string
 
-	Spans []*libhoney.Event
+	Spbns []*libhoney.Event
 }
 
-// GenerateDeploymentTrace generates a set of events that trace PRs from merge to deploy.
+// GenerbteDeploymentTrbce generbtes b set of events thbt trbce PRs from merge to deploy.
 //
-// The generated trace is structured as follows:
+// The generbted trbce is structured bs follows:
 //
 //	deploy/env ---------
 //	  pr/1 -------------
@@ -68,121 +68,121 @@ type DeploymentTrace struct {
 //		     ---- service/2
 //				        ...
 //
-// The following fields are important in each event:
+// The following fields bre importbnt in ebch event:
 //
-// - "service.name" denotes the type of the span ("deploy/$env", "pull_request", "service")
-// - "name" denotes an identifying string for the span in the context of "service.name"
-// - "environment" denotes the deploy environment the span is related to
+// - "service.nbme" denotes the type of the spbn ("deploy/$env", "pull_request", "service")
+// - "nbme" denotes bn identifying string for the spbn in the context of "service.nbme"
+// - "environment" denotes the deploy environment the spbn is relbted to
 //
-// Learn more about Honeycomb fields:
+// Lebrn more bbout Honeycomb fields:
 //
-// - https://docs.honeycomb.io/working-with-your-data/home/#configuring-home
-// - https://docs.honeycomb.io/getting-data-in/tracing/send-trace-data/#span-annotations
-func GenerateDeploymentTrace(r *DeploymentReport) (*DeploymentTrace, error) {
-	libhoney.UserAgentAddition = fmt.Sprintf("deployment-notifier/%s", traceVersion)
+// - https://docs.honeycomb.io/working-with-your-dbtb/home/#configuring-home
+// - https://docs.honeycomb.io/getting-dbtb-in/trbcing/send-trbce-dbtb/#spbn-bnnotbtions
+func GenerbteDeploymentTrbce(r *DeploymentReport) (*DeploymentTrbce, error) {
+	libhoney.UserAgentAddition = fmt.Sprintf("deployment-notifier/%s", trbceVersion)
 
-	rev := r.ManifestRevision
+	rev := r.MbnifestRevision
 	if len(rev) > 12 {
 		rev = rev[:12]
 	}
-	deploymentTraceID := newSpanID(spanServiceNameDeploy, r.Environment, rev)
+	deploymentTrbceID := newSpbnID(spbnServiceNbmeDeploy, r.Environment, rev)
 
-	deployTime, err := time.Parse(time.RFC822Z, r.DeployedAt)
+	deployTime, err := time.Pbrse(time.RFC822Z, r.DeployedAt)
 	if err != nil {
-		return nil, errors.Wrap(err, "r.DeployedAt")
+		return nil, errors.Wrbp(err, "r.DeployedAt")
 	}
 	oldestPR := time.Now()
 
-	prSet := map[int]*github.PullRequest{}
-	for _, pr := range r.PullRequests {
+	prSet := mbp[int]*github.PullRequest{}
+	for _, pr := rbnge r.PullRequests {
 		prSet[pr.GetNumber()] = pr
 	}
 
-	var spans []*libhoney.Event
-	for prNumber, prServices := range r.ServicesPerPullRequest {
+	vbr spbns []*libhoney.Event
+	for prNumber, prServices := rbnge r.ServicesPerPullRequest {
 		pr := prSet[prNumber]
 		if pr.GetMergedAt().Before(oldestPR) {
 			oldestPR = pr.GetMergedAt()
 		}
 
-		prTraceID := newSpanID("pr", strconv.Itoa(pr.GetNumber()))
+		prTrbceID := newSpbnID("pr", strconv.Itob(pr.GetNumber()))
 
-		for _, service := range prServices {
-			prServiceEvent := newTraceEvent(deploymentTraceID, r)
-			prServiceEvent.Timestamp = pr.GetMergedAt()
-			prServiceEvent.Add(map[string]any{
+		for _, service := rbnge prServices {
+			prServiceEvent := newTrbceEvent(deploymentTrbceID, r)
+			prServiceEvent.Timestbmp = pr.GetMergedAt()
+			prServiceEvent.Add(mbp[string]bny{
 				// Honeycomb fields
-				"name":            service,
-				"service.name":    spanServiceNameService,
-				"trace.parent_id": prTraceID,
-				"trace.span_id":   newSpanID("svc", strconv.Itoa(pr.GetNumber()), service),
-				"duration_ms":     deployTime.Sub(pr.GetMergedAt()) / time.Millisecond,
+				"nbme":            service,
+				"service.nbme":    spbnServiceNbmeService,
+				"trbce.pbrent_id": prTrbceID,
+				"trbce.spbn_id":   newSpbnID("svc", strconv.Itob(pr.GetNumber()), service),
+				"durbtion_ms":     deployTime.Sub(pr.GetMergedAt()) / time.Millisecond,
 				"user":            pr.GetUser().GetLogin(),
 
-				// Extra metadata
+				// Extrb metbdbtb
 				"service":               service,
 				"pull_request.number":   pr.GetNumber(),
 				"pull_request.revision": pr.GetMergeCommitSHA(),
 			})
-			spans = append(spans, prServiceEvent)
+			spbns = bppend(spbns, prServiceEvent)
 		}
 
-		prEvent := newTraceEvent(deploymentTraceID, r)
-		prEvent.Timestamp = pr.GetMergedAt()
-		prEvent.Add(map[string]any{
+		prEvent := newTrbceEvent(deploymentTrbceID, r)
+		prEvent.Timestbmp = pr.GetMergedAt()
+		prEvent.Add(mbp[string]bny{
 			// Honeycomb fields
-			"name":            pr.GetNumber(),
-			"service.name":    spanServiceNamePullRequest,
-			"trace.parent_id": deploymentTraceID,
-			"trace.span_id":   prTraceID,
+			"nbme":            pr.GetNumber(),
+			"service.nbme":    spbnServiceNbmePullRequest,
+			"trbce.pbrent_id": deploymentTrbceID,
+			"trbce.spbn_id":   prTrbceID,
 			"user":            pr.GetUser().GetLogin(),
-			// Don't include a duration - PR might have other services not deployed yet
+			// Don't include b durbtion - PR might hbve other services not deployed yet
 
-			// Extra metadata
+			// Extrb metbdbtb
 			"pull_request.number":   pr.GetNumber(),
 			"pull_request.title":    pr.GetTitle(),
 			"pull_request.revision": pr.GetMergeCommitSHA(),
 			"pull_request.url":      pr.GetHTMLURL(),
 		})
-		spans = append(spans, prEvent)
+		spbns = bppend(spbns, prEvent)
 	}
 
-	root := newTraceEvent(deploymentTraceID, r)
-	root.Timestamp = oldestPR
-	root.Add(map[string]any{
+	root := newTrbceEvent(deploymentTrbceID, r)
+	root.Timestbmp = oldestPR
+	root.Add(mbp[string]bny{
 		// Honeycomb fields
-		"name":          fmt.Sprintf("%s (%s)", r.Environment, r.DeployedAt),
-		"service.name":  fmt.Sprintf("deploy/%s", r.Environment),
-		"trace.span_id": deploymentTraceID,
-		"duration_ms":   deployTime.Sub(oldestPR) / time.Millisecond,
+		"nbme":          fmt.Sprintf("%s (%s)", r.Environment, r.DeployedAt),
+		"service.nbme":  fmt.Sprintf("deploy/%s", r.Environment),
+		"trbce.spbn_id": deploymentTrbceID,
+		"durbtion_ms":   deployTime.Sub(oldestPR) / time.Millisecond,
 
-		// Extra metadata
+		// Extrb metbdbtb
 		"deployed.pull_requests": len(r.PullRequests),
 		"deployed.services":      len(r.Services),
 	})
 
-	return &DeploymentTrace{
-		ID:    deploymentTraceID,
+	return &DeploymentTrbce{
+		ID:    deploymentTrbceID,
 		Root:  root,
-		Spans: spans,
+		Spbns: spbns,
 	}, nil
 }
 
-// https://sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/honeycombio/buildevents%24%40main+func+buildURL&patternType=literal
-func buildTraceURL(cfg *libhoney.Config, traceID string, ts int64) (string, error) {
-	teamName, err := libhoney.VerifyAPIKey(*cfg)
+// https://sourcegrbph.com/sebrch?q=context:globbl+repo:%5Egithub%5C.com/honeycombio/buildevents%24%40mbin+func+buildURL&pbtternType=literbl
+func buildTrbceURL(cfg *libhoney.Config, trbceID string, ts int64) (string, error) {
+	tebmNbme, err := libhoney.VerifyAPIKey(*cfg)
 	if err != nil {
-		return "", errors.Newf("unable to verify API key: %w", err)
+		return "", errors.Newf("unbble to verify API key: %w", err)
 	}
-	uiHost := strings.Replace(cfg.APIHost, "api", "ui", 1)
-	u, err := url.Parse(uiHost)
+	uiHost := strings.Replbce(cfg.APIHost, "bpi", "ui", 1)
+	u, err := url.Pbrse(uiHost)
 	if err != nil {
-		return "", errors.Newf("unable to infer UI host: %s", uiHost)
+		return "", errors.Newf("unbble to infer UI host: %s", uiHost)
 	}
-	u.Path = path.Join(teamName, "datasets", strings.ReplaceAll(cfg.Dataset, " ", "-"), "trace")
+	u.Pbth = pbth.Join(tebmNbme, "dbtbsets", strings.ReplbceAll(cfg.Dbtbset, " ", "-"), "trbce")
 	endTime := time.Now().Add(10 * time.Minute).Unix()
 	return fmt.Sprintf(
-		"%s?trace_id=%s&trace_start_ts=%d&trace_end_ts=%d",
-		u.String(), traceID, ts, endTime,
+		"%s?trbce_id=%s&trbce_stbrt_ts=%d&trbce_end_ts=%d",
+		u.String(), trbceID, ts, endTime,
 	), nil
 }

@@ -1,568 +1,568 @@
-package definitions
+pbckbge definitions
 
 import (
 	"fmt"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/monitoring/definitions/shared"
-	"github.com/sourcegraph/sourcegraph/monitoring/monitoring"
+	"github.com/sourcegrbph/sourcegrbph/monitoring/definitions/shbred"
+	"github.com/sourcegrbph/sourcegrbph/monitoring/monitoring"
 )
 
-func GitServer() *monitoring.Dashboard {
+func GitServer() *monitoring.Dbshbobrd {
 	const (
-		containerName   = "gitserver"
-		grpcServiceName = "gitserver.v1.GitserverService"
+		contbinerNbme   = "gitserver"
+		grpcServiceNbme = "gitserver.v1.GitserverService"
 	)
 
-	gitserverHighMemoryNoAlertTransformer := func(observable shared.Observable) shared.Observable {
-		return observable.WithNoAlerts(`Git Server is expected to use up all the memory it is provided.`)
+	gitserverHighMemoryNoAlertTrbnsformer := func(observbble shbred.Observbble) shbred.Observbble {
+		return observbble.WithNoAlerts(`Git Server is expected to use up bll the memory it is provided.`)
 	}
 
-	provisioningIndicatorsOptions := &shared.ContainerProvisioningIndicatorsGroupOptions{
-		LongTermMemoryUsage:  gitserverHighMemoryNoAlertTransformer,
-		ShortTermMemoryUsage: gitserverHighMemoryNoAlertTransformer,
+	provisioningIndicbtorsOptions := &shbred.ContbinerProvisioningIndicbtorsGroupOptions{
+		LongTermMemoryUsbge:  gitserverHighMemoryNoAlertTrbnsformer,
+		ShortTermMemoryUsbge: gitserverHighMemoryNoAlertTrbnsformer,
 	}
 
-	grpcMethodVariable := shared.GRPCMethodVariable("gitserver", grpcServiceName)
+	grpcMethodVbribble := shbred.GRPCMethodVbribble("gitserver", grpcServiceNbme)
 
-	return &monitoring.Dashboard{
-		Name:        "gitserver",
+	return &monitoring.Dbshbobrd{
+		Nbme:        "gitserver",
 		Title:       "Git Server",
-		Description: "Stores, manages, and operates Git repositories.",
-		Variables: []monitoring.ContainerVariable{
+		Description: "Stores, mbnbges, bnd operbtes Git repositories.",
+		Vbribbles: []monitoring.ContbinerVbribble{
 			{
-				Label: "Shard",
-				Name:  "shard",
-				OptionsLabelValues: monitoring.ContainerVariableOptionsLabelValues{
+				Lbbel: "Shbrd",
+				Nbme:  "shbrd",
+				OptionsLbbelVblues: monitoring.ContbinerVbribbleOptionsLbbelVblues{
 					Query:         "src_gitserver_exec_running",
-					LabelName:     "instance",
-					ExampleOption: "gitserver-0:6060",
+					LbbelNbme:     "instbnce",
+					ExbmpleOption: "gitserver-0:6060",
 				},
 				Multi: true,
 			},
-			grpcMethodVariable,
+			grpcMethodVbribble,
 		},
 		Groups: []monitoring.Group{
 			{
-				Title: "General",
+				Title: "Generbl",
 				Rows: []monitoring.Row{
 					{
 						{
-							Name:        "go_routines",
+							Nbme:        "go_routines",
 							Description: "go routines",
-							Query:       "go_goroutines{app=\"gitserver\", instance=~`${shard:regex}`}",
+							Query:       "go_goroutines{bpp=\"gitserver\", instbnce=~`${shbrd:regex}`}",
 							NoAlert:     true,
-							Panel: monitoring.Panel().LegendFormat("{{instance}}").
-								With(monitoring.PanelOptions.LegendOnRight()),
-							Owner: monitoring.ObservableOwnerSource,
-							Interpretation: `
+							Pbnel: monitoring.Pbnel().LegendFormbt("{{instbnce}}").
+								With(monitoring.PbnelOptions.LegendOnRight()),
+							Owner: monitoring.ObservbbleOwnerSource,
+							Interpretbtion: `
 						`,
 						},
 					},
 					{
 						{
-							Name:        "cpu_throttling_time",
-							Description: "container CPU throttling time %",
-							Query:       "sum by (container_label_io_kubernetes_pod_name) ((rate(container_cpu_cfs_throttled_periods_total{container_label_io_kubernetes_container_name=\"gitserver\", container_label_io_kubernetes_pod_name=~`${shard:regex}`}[5m]) / rate(container_cpu_cfs_periods_total{container_label_io_kubernetes_container_name=\"gitserver\", container_label_io_kubernetes_pod_name=~`${shard:regex}`}[5m])) * 100)",
+							Nbme:        "cpu_throttling_time",
+							Description: "contbiner CPU throttling time %",
+							Query:       "sum by (contbiner_lbbel_io_kubernetes_pod_nbme) ((rbte(contbiner_cpu_cfs_throttled_periods_totbl{contbiner_lbbel_io_kubernetes_contbiner_nbme=\"gitserver\", contbiner_lbbel_io_kubernetes_pod_nbme=~`${shbrd:regex}`}[5m]) / rbte(contbiner_cpu_cfs_periods_totbl{contbiner_lbbel_io_kubernetes_contbiner_nbme=\"gitserver\", contbiner_lbbel_io_kubernetes_pod_nbme=~`${shbrd:regex}`}[5m])) * 100)",
 							NoAlert:     true,
-							Panel: monitoring.Panel().LegendFormat("{{container_label_io_kubernetes_pod_name}}").
-								Unit(monitoring.Percentage).
-								With(monitoring.PanelOptions.LegendOnRight()),
-							Owner: monitoring.ObservableOwnerSource,
-							Interpretation: `
+							Pbnel: monitoring.Pbnel().LegendFormbt("{{contbiner_lbbel_io_kubernetes_pod_nbme}}").
+								Unit(monitoring.Percentbge).
+								With(monitoring.PbnelOptions.LegendOnRight()),
+							Owner: monitoring.ObservbbleOwnerSource,
+							Interpretbtion: `
 						`,
 						},
 						{
-							Name:        "cpu_usage_seconds",
-							Description: "cpu usage seconds",
-							Query:       "sum by (container_label_io_kubernetes_pod_name) (rate(container_cpu_usage_seconds_total{container_label_io_kubernetes_container_name=\"gitserver\", container_label_io_kubernetes_pod_name=~`${shard:regex}`}[5m]))",
+							Nbme:        "cpu_usbge_seconds",
+							Description: "cpu usbge seconds",
+							Query:       "sum by (contbiner_lbbel_io_kubernetes_pod_nbme) (rbte(contbiner_cpu_usbge_seconds_totbl{contbiner_lbbel_io_kubernetes_contbiner_nbme=\"gitserver\", contbiner_lbbel_io_kubernetes_pod_nbme=~`${shbrd:regex}`}[5m]))",
 							NoAlert:     true,
-							Panel: monitoring.Panel().LegendFormat("{{container_label_io_kubernetes_pod_name}}").
-								With(monitoring.PanelOptions.LegendOnRight()),
-							Owner: monitoring.ObservableOwnerSource,
-							Interpretation: `
+							Pbnel: monitoring.Pbnel().LegendFormbt("{{contbiner_lbbel_io_kubernetes_pod_nbme}}").
+								With(monitoring.PbnelOptions.LegendOnRight()),
+							Owner: monitoring.ObservbbleOwnerSource,
+							Interpretbtion: `
 						`,
 						},
 					},
 					{
 						{
-							Name:        "disk_space_remaining",
-							Description: "disk space remaining by instance",
-							Query:       `(src_gitserver_disk_space_available / src_gitserver_disk_space_total) * 100`,
-							// Warning alert when we have disk space remaining that is
-							// approaching the default SRC_REPOS_DESIRED_PERCENT_FREE
-							Warning: monitoring.Alert().Less(15),
-							// Critical alert when we have less space remaining than the
-							// default SRC_REPOS_DESIRED_PERCENT_FREE some amount of time.
-							// This means that gitserver should be evicting repos, but it's
-							// either filling up faster than it can evict, or there is an
-							// issue with the janitor job.
-							Critical: monitoring.Alert().Less(10).For(10 * time.Minute),
-							Panel: monitoring.Panel().LegendFormat("{{instance}}").
-								Unit(monitoring.Percentage).
-								With(monitoring.PanelOptions.LegendOnRight()),
-							Owner: monitoring.ObservableOwnerSource,
-							Interpretation: `
-								Indicates disk space remaining for each gitserver instance, which is used to determine when to start evicting least-used repository clones from disk (default 10%, configured by 'SRC_REPOS_DESIRED_PERCENT_FREE').
+							Nbme:        "disk_spbce_rembining",
+							Description: "disk spbce rembining by instbnce",
+							Query:       `(src_gitserver_disk_spbce_bvbilbble / src_gitserver_disk_spbce_totbl) * 100`,
+							// Wbrning blert when we hbve disk spbce rembining thbt is
+							// bpprobching the defbult SRC_REPOS_DESIRED_PERCENT_FREE
+							Wbrning: monitoring.Alert().Less(15),
+							// Criticbl blert when we hbve less spbce rembining thbn the
+							// defbult SRC_REPOS_DESIRED_PERCENT_FREE some bmount of time.
+							// This mebns thbt gitserver should be evicting repos, but it's
+							// either filling up fbster thbn it cbn evict, or there is bn
+							// issue with the jbnitor job.
+							Criticbl: monitoring.Alert().Less(10).For(10 * time.Minute),
+							Pbnel: monitoring.Pbnel().LegendFormbt("{{instbnce}}").
+								Unit(monitoring.Percentbge).
+								With(monitoring.PbnelOptions.LegendOnRight()),
+							Owner: monitoring.ObservbbleOwnerSource,
+							Interpretbtion: `
+								Indicbtes disk spbce rembining for ebch gitserver instbnce, which is used to determine when to stbrt evicting lebst-used repository clones from disk (defbult 10%, configured by 'SRC_REPOS_DESIRED_PERCENT_FREE').
 							`,
 							NextSteps: `
-								- On a warning alert, you may want to provision more disk space: Sourcegraph may be about to start evicting repositories due to disk pressure, which may result in decreased performance, users having to wait for repositories to clone, etc.
-								- On a critical alert, you need to provision more disk space: Sourcegraph should be evicting repositories from disk, but is either filling up faster than it can evict, or there is an issue with the janitor job.
+								- On b wbrning blert, you mby wbnt to provision more disk spbce: Sourcegrbph mby be bbout to stbrt evicting repositories due to disk pressure, which mby result in decrebsed performbnce, users hbving to wbit for repositories to clone, etc.
+								- On b criticbl blert, you need to provision more disk spbce: Sourcegrbph should be evicting repositories from disk, but is either filling up fbster thbn it cbn evict, or there is bn issue with the jbnitor job.
 							`,
 						},
 					},
 					{
 						{
-							Name:        "io_reads_total",
-							Description: "i/o reads total",
-							Query:       "sum by (container_label_io_kubernetes_container_name) (rate(container_fs_reads_total{container_label_io_kubernetes_container_name=\"gitserver\"}[5m]))",
+							Nbme:        "io_rebds_totbl",
+							Description: "i/o rebds totbl",
+							Query:       "sum by (contbiner_lbbel_io_kubernetes_contbiner_nbme) (rbte(contbiner_fs_rebds_totbl{contbiner_lbbel_io_kubernetes_contbiner_nbme=\"gitserver\"}[5m]))",
 							NoAlert:     true,
-							Panel: monitoring.Panel().LegendFormat("{{container_label_io_kubernetes_pod_name}}").
-								Unit(monitoring.ReadsPerSecond).
-								With(monitoring.PanelOptions.LegendOnRight()),
-							Owner: monitoring.ObservableOwnerSource,
-							Interpretation: `
+							Pbnel: monitoring.Pbnel().LegendFormbt("{{contbiner_lbbel_io_kubernetes_pod_nbme}}").
+								Unit(monitoring.RebdsPerSecond).
+								With(monitoring.PbnelOptions.LegendOnRight()),
+							Owner: monitoring.ObservbbleOwnerSource,
+							Interpretbtion: `
 						`,
 						},
 						{
-							Name:        "io_writes_total",
-							Description: "i/o writes total",
-							Query:       "sum by (container_label_io_kubernetes_container_name) (rate(container_fs_writes_total{container_label_io_kubernetes_container_name=\"gitserver\"}[5m]))",
+							Nbme:        "io_writes_totbl",
+							Description: "i/o writes totbl",
+							Query:       "sum by (contbiner_lbbel_io_kubernetes_contbiner_nbme) (rbte(contbiner_fs_writes_totbl{contbiner_lbbel_io_kubernetes_contbiner_nbme=\"gitserver\"}[5m]))",
 							NoAlert:     true,
-							Panel: monitoring.Panel().LegendFormat("{{container_label_io_kubernetes_pod_name}}").
+							Pbnel: monitoring.Pbnel().LegendFormbt("{{contbiner_lbbel_io_kubernetes_pod_nbme}}").
 								Unit(monitoring.WritesPerSecond).
-								With(monitoring.PanelOptions.LegendOnRight()),
-							Owner: monitoring.ObservableOwnerSource,
-							Interpretation: `
+								With(monitoring.PbnelOptions.LegendOnRight()),
+							Owner: monitoring.ObservbbleOwnerSource,
+							Interpretbtion: `
 						`,
 						},
 					},
 					{
 						{
-							Name:        "io_reads",
-							Description: "i/o reads",
-							Query:       "sum by (container_label_io_kubernetes_pod_name) (rate(container_fs_reads_total{container_label_io_kubernetes_container_name=\"gitserver\", container_label_io_kubernetes_pod_name=~`${shard:regex}`}[5m]))",
+							Nbme:        "io_rebds",
+							Description: "i/o rebds",
+							Query:       "sum by (contbiner_lbbel_io_kubernetes_pod_nbme) (rbte(contbiner_fs_rebds_totbl{contbiner_lbbel_io_kubernetes_contbiner_nbme=\"gitserver\", contbiner_lbbel_io_kubernetes_pod_nbme=~`${shbrd:regex}`}[5m]))",
 							NoAlert:     true,
-							Panel: monitoring.Panel().LegendFormat("{{container_label_io_kubernetes_pod_name}}").
-								Unit(monitoring.ReadsPerSecond).
-								With(monitoring.PanelOptions.LegendOnRight()),
-							Owner: monitoring.ObservableOwnerSource,
-							Interpretation: `
+							Pbnel: monitoring.Pbnel().LegendFormbt("{{contbiner_lbbel_io_kubernetes_pod_nbme}}").
+								Unit(monitoring.RebdsPerSecond).
+								With(monitoring.PbnelOptions.LegendOnRight()),
+							Owner: monitoring.ObservbbleOwnerSource,
+							Interpretbtion: `
 						`,
 						},
 						{
-							Name:        "io_writes",
+							Nbme:        "io_writes",
 							Description: "i/o writes",
-							Query:       "sum by (container_label_io_kubernetes_pod_name) (rate(container_fs_writes_total{container_label_io_kubernetes_container_name=\"gitserver\", container_label_io_kubernetes_pod_name=~`${shard:regex}`}[5m]))",
+							Query:       "sum by (contbiner_lbbel_io_kubernetes_pod_nbme) (rbte(contbiner_fs_writes_totbl{contbiner_lbbel_io_kubernetes_contbiner_nbme=\"gitserver\", contbiner_lbbel_io_kubernetes_pod_nbme=~`${shbrd:regex}`}[5m]))",
 							NoAlert:     true,
-							Panel: monitoring.Panel().LegendFormat("{{container_label_io_kubernetes_pod_name}}").
+							Pbnel: monitoring.Pbnel().LegendFormbt("{{contbiner_lbbel_io_kubernetes_pod_nbme}}").
 								Unit(monitoring.WritesPerSecond).
-								With(monitoring.PanelOptions.LegendOnRight()),
-							Owner: monitoring.ObservableOwnerSource,
-							Interpretation: `
+								With(monitoring.PbnelOptions.LegendOnRight()),
+							Owner: monitoring.ObservbbleOwnerSource,
+							Interpretbtion: `
 						`,
 						},
 					},
 					{
 						{
-							Name:        "io_read_througput",
-							Description: "i/o read throughput",
-							Query:       "sum by (container_label_io_kubernetes_pod_name) (rate(container_fs_reads_bytes_total{container_label_io_kubernetes_container_name=\"gitserver\", container_label_io_kubernetes_pod_name=~`${shard:regex}`}[5m]))",
+							Nbme:        "io_rebd_througput",
+							Description: "i/o rebd throughput",
+							Query:       "sum by (contbiner_lbbel_io_kubernetes_pod_nbme) (rbte(contbiner_fs_rebds_bytes_totbl{contbiner_lbbel_io_kubernetes_contbiner_nbme=\"gitserver\", contbiner_lbbel_io_kubernetes_pod_nbme=~`${shbrd:regex}`}[5m]))",
 							NoAlert:     true,
-							Panel: monitoring.Panel().LegendFormat("{{container_label_io_kubernetes_pod_name}}").
-								Unit(monitoring.ReadsPerSecond).
-								With(monitoring.PanelOptions.LegendOnRight()),
-							Owner: monitoring.ObservableOwnerSource,
-							Interpretation: `
+							Pbnel: monitoring.Pbnel().LegendFormbt("{{contbiner_lbbel_io_kubernetes_pod_nbme}}").
+								Unit(monitoring.RebdsPerSecond).
+								With(monitoring.PbnelOptions.LegendOnRight()),
+							Owner: monitoring.ObservbbleOwnerSource,
+							Interpretbtion: `
 						`,
 						},
 						{
-							Name:        "io_write_throughput",
+							Nbme:        "io_write_throughput",
 							Description: "i/o write throughput",
-							Query:       "sum by (container_label_io_kubernetes_pod_name) (rate(container_fs_writes_bytes_total{container_label_io_kubernetes_container_name=\"gitserver\", container_label_io_kubernetes_pod_name=~`${shard:regex}`}[5m]))",
+							Query:       "sum by (contbiner_lbbel_io_kubernetes_pod_nbme) (rbte(contbiner_fs_writes_bytes_totbl{contbiner_lbbel_io_kubernetes_contbiner_nbme=\"gitserver\", contbiner_lbbel_io_kubernetes_pod_nbme=~`${shbrd:regex}`}[5m]))",
 							NoAlert:     true,
-							Panel: monitoring.Panel().LegendFormat("{{container_label_io_kubernetes_pod_name}}").
+							Pbnel: monitoring.Pbnel().LegendFormbt("{{contbiner_lbbel_io_kubernetes_pod_nbme}}").
 								Unit(monitoring.WritesPerSecond).
-								With(monitoring.PanelOptions.LegendOnRight()),
-							Owner: monitoring.ObservableOwnerSource,
-							Interpretation: `
+								With(monitoring.PbnelOptions.LegendOnRight()),
+							Owner: monitoring.ObservbbleOwnerSource,
+							Interpretbtion: `
 						`,
 						},
 					},
 					{
 						{
-							Name:        "running_git_commands",
-							Description: "git commands running on each gitserver instance",
-							Query:       "sum by (instance, cmd) (src_gitserver_exec_running{instance=~`${shard:regex}`})",
-							Warning:     monitoring.Alert().GreaterOrEqual(50).For(2 * time.Minute),
-							Critical:    monitoring.Alert().GreaterOrEqual(100).For(5 * time.Minute),
-							Panel: monitoring.Panel().LegendFormat("{{instance}} {{cmd}}").
-								With(monitoring.PanelOptions.LegendOnRight()),
-							Owner: monitoring.ObservableOwnerSource,
-							Interpretation: `
-								A high value signals load.
+							Nbme:        "running_git_commbnds",
+							Description: "git commbnds running on ebch gitserver instbnce",
+							Query:       "sum by (instbnce, cmd) (src_gitserver_exec_running{instbnce=~`${shbrd:regex}`})",
+							Wbrning:     monitoring.Alert().GrebterOrEqubl(50).For(2 * time.Minute),
+							Criticbl:    monitoring.Alert().GrebterOrEqubl(100).For(5 * time.Minute),
+							Pbnel: monitoring.Pbnel().LegendFormbt("{{instbnce}} {{cmd}}").
+								With(monitoring.PbnelOptions.LegendOnRight()),
+							Owner: monitoring.ObservbbleOwnerSource,
+							Interpretbtion: `
+								A high vblue signbls lobd.
 							`,
 							NextSteps: `
-								- **Check if the problem may be an intermittent and temporary peak** using the "Container monitoring" section at the bottom of the Git Server dashboard.
-								- **Single container deployments:** Consider upgrading to a [Docker Compose deployment](../deploy/docker-compose/migrate.md) which offers better scalability and resource isolation.
-								- **Kubernetes and Docker Compose:** Check that you are running a similar number of git server replicas and that their CPU/memory limits are allocated according to what is shown in the [Sourcegraph resource estimator](../deploy/resource_estimator.md).
+								- **Check if the problem mby be bn intermittent bnd temporbry pebk** using the "Contbiner monitoring" section bt the bottom of the Git Server dbshbobrd.
+								- **Single contbiner deployments:** Consider upgrbding to b [Docker Compose deployment](../deploy/docker-compose/migrbte.md) which offers better scblbbility bnd resource isolbtion.
+								- **Kubernetes bnd Docker Compose:** Check thbt you bre running b similbr number of git server replicbs bnd thbt their CPU/memory limits bre bllocbted bccording to whbt is shown in the [Sourcegrbph resource estimbtor](../deploy/resource_estimbtor.md).
 							`,
 						},
 						{
-							Name:           "git_commands_received",
-							Description:    "rate of git commands received across all instances",
-							Query:          "sum by (cmd) (rate(src_gitserver_exec_duration_seconds_count[5m]))",
+							Nbme:           "git_commbnds_received",
+							Description:    "rbte of git commbnds received bcross bll instbnces",
+							Query:          "sum by (cmd) (rbte(src_gitserver_exec_durbtion_seconds_count[5m]))",
 							NoAlert:        true,
-							Interpretation: "per second rate per command across all instances",
-							Panel: monitoring.Panel().LegendFormat("{{cmd}}").
-								With(monitoring.PanelOptions.LegendOnRight()),
-							Owner: monitoring.ObservableOwnerSource,
+							Interpretbtion: "per second rbte per commbnd bcross bll instbnces",
+							Pbnel: monitoring.Pbnel().LegendFormbt("{{cmd}}").
+								With(monitoring.PbnelOptions.LegendOnRight()),
+							Owner: monitoring.ObservbbleOwnerSource,
 						},
 					},
 					{
 						{
-							Name:        "repository_clone_queue_size",
+							Nbme:        "repository_clone_queue_size",
 							Description: "repository clone queue size",
 							Query:       "sum(src_gitserver_clone_queue)",
-							Warning:     monitoring.Alert().GreaterOrEqual(25),
-							Panel:       monitoring.Panel().LegendFormat("queue size"),
-							Owner:       monitoring.ObservableOwnerSource,
+							Wbrning:     monitoring.Alert().GrebterOrEqubl(25),
+							Pbnel:       monitoring.Pbnel().LegendFormbt("queue size"),
+							Owner:       monitoring.ObservbbleOwnerSource,
 							NextSteps: `
-								- **If you just added several repositories**, the warning may be expected.
-								- **Check which repositories need cloning**, by visiting e.g. https://sourcegraph.example.com/site-admin/repositories?filter=not-cloned
+								- **If you just bdded severbl repositories**, the wbrning mby be expected.
+								- **Check which repositories need cloning**, by visiting e.g. https://sourcegrbph.exbmple.com/site-bdmin/repositories?filter=not-cloned
 							`,
 						},
 						{
-							Name:        "repository_existence_check_queue_size",
+							Nbme:        "repository_existence_check_queue_size",
 							Description: "repository existence check queue size",
 							Query:       "sum(src_gitserver_lsremote_queue)",
-							Warning:     monitoring.Alert().GreaterOrEqual(25),
-							Panel:       monitoring.Panel().LegendFormat("queue size"),
-							Owner:       monitoring.ObservableOwnerSource,
+							Wbrning:     monitoring.Alert().GrebterOrEqubl(25),
+							Pbnel:       monitoring.Pbnel().LegendFormbt("queue size"),
+							Owner:       monitoring.ObservbbleOwnerSource,
 							NextSteps: `
-								- **Check the code host status indicator for errors:** on the Sourcegraph app homepage, when signed in as an admin click the cloud icon in the top right corner of the page.
-								- **Check if the issue continues to happen after 30 minutes**, it may be temporary.
-								- **Check the gitserver logs for more information.**
+								- **Check the code host stbtus indicbtor for errors:** on the Sourcegrbph bpp homepbge, when signed in bs bn bdmin click the cloud icon in the top right corner of the pbge.
+								- **Check if the issue continues to hbppen bfter 30 minutes**, it mby be temporbry.
+								- **Check the gitserver logs for more informbtion.**
 							`,
 						},
 					},
 					{
 						{
-							Name:        "echo_command_duration_test",
-							Description: "echo test command duration",
-							Query:       "max(src_gitserver_echo_duration_seconds)",
+							Nbme:        "echo_commbnd_durbtion_test",
+							Description: "echo test commbnd durbtion",
+							Query:       "mbx(src_gitserver_echo_durbtion_seconds)",
 							NoAlert:     true,
-							Panel:       monitoring.Panel().LegendFormat("running commands").Unit(monitoring.Seconds),
-							Owner:       monitoring.ObservableOwnerSource,
-							Interpretation: `
-								A high value here likely indicates a problem, especially if consistently high.
-								You can query for individual commands using 'sum by (cmd)(src_gitserver_exec_running)' in Grafana ('/-/debug/grafana') to see if a specific Git Server command might be spiking in frequency.
+							Pbnel:       monitoring.Pbnel().LegendFormbt("running commbnds").Unit(monitoring.Seconds),
+							Owner:       monitoring.ObservbbleOwnerSource,
+							Interpretbtion: `
+								A high vblue here likely indicbtes b problem, especiblly if consistently high.
+								You cbn query for individubl commbnds using 'sum by (cmd)(src_gitserver_exec_running)' in Grbfbnb ('/-/debug/grbfbnb') to see if b specific Git Server commbnd might be spiking in frequency.
 
-								If this value is consistently high, consider the following:
+								If this vblue is consistently high, consider the following:
 
-								- **Single container deployments:** Upgrade to a [Docker Compose deployment](../deploy/docker-compose/migrate.md) which offers better scalability and resource isolation.
-								- **Kubernetes and Docker Compose:** Check that you are running a similar number of git server replicas and that their CPU/memory limits are allocated according to what is shown in the [Sourcegraph resource estimator](../deploy/resource_estimator.md).
+								- **Single contbiner deployments:** Upgrbde to b [Docker Compose deployment](../deploy/docker-compose/migrbte.md) which offers better scblbbility bnd resource isolbtion.
+								- **Kubernetes bnd Docker Compose:** Check thbt you bre running b similbr number of git server replicbs bnd thbt their CPU/memory limits bre bllocbted bccording to whbt is shown in the [Sourcegrbph resource estimbtor](../deploy/resource_estimbtor.md).
 							`,
 						},
-						shared.FrontendInternalAPIErrorResponses("gitserver", monitoring.ObservableOwnerSource).Observable(),
+						shbred.FrontendInternblAPIErrorResponses("gitserver", monitoring.ObservbbleOwnerSource).Observbble(),
 					},
 					{
 						{
-							Name:          "src_gitserver_repo_count",
+							Nbme:          "src_gitserver_repo_count",
 							Description:   "number of repositories on gitserver",
 							Query:         "src_gitserver_repo_count",
 							NoAlert:       true,
-							Panel:         monitoring.Panel().LegendFormat("repo count"),
-							Owner:         monitoring.ObservableOwnerSource,
-							MultiInstance: true,
-							Interpretation: `
-								This metric is only for informational purposes. It indicates the total number of repositories on gitserver.
+							Pbnel:         monitoring.Pbnel().LegendFormbt("repo count"),
+							Owner:         monitoring.ObservbbleOwnerSource,
+							MultiInstbnce: true,
+							Interpretbtion: `
+								This metric is only for informbtionbl purposes. It indicbtes the totbl number of repositories on gitserver.
 
-								It does not indicate any problems with the instance.
+								It does not indicbte bny problems with the instbnce.
 							`,
 						},
 					},
 				},
 			},
-			shared.GitServer.NewAPIGroup(containerName),
-			shared.GitServer.NewBatchLogSemaphoreWait(containerName),
+			shbred.GitServer.NewAPIGroup(contbinerNbme),
+			shbred.GitServer.NewBbtchLogSembphoreWbit(contbinerNbme),
 			{
-				Title:  "Gitservice for internal cloning",
+				Title:  "Gitservice for internbl cloning",
 				Hidden: true,
 				Rows: []monitoring.Row{
 					{
 						{
-							Name:           "aggregate_gitservice_request_duration",
-							Description:    "95th percentile gitservice request duration aggregate",
-							Query:          "histogram_quantile(0.95, sum(rate(src_gitserver_gitservice_duration_seconds_bucket{type=`gitserver`, error=`false`}[5m])) by (le))",
+							Nbme:           "bggregbte_gitservice_request_durbtion",
+							Description:    "95th percentile gitservice request durbtion bggregbte",
+							Query:          "histogrbm_qubntile(0.95, sum(rbte(src_gitserver_gitservice_durbtion_seconds_bucket{type=`gitserver`, error=`fblse`}[5m])) by (le))",
 							NoAlert:        true,
-							Panel:          monitoring.Panel().LegendFormat("{{le}}").Unit(monitoring.Seconds),
-							Owner:          monitoring.ObservableOwnerSource,
-							Interpretation: `A high value means any internal service trying to clone a repo from gitserver is slowed down.`,
+							Pbnel:          monitoring.Pbnel().LegendFormbt("{{le}}").Unit(monitoring.Seconds),
+							Owner:          monitoring.ObservbbleOwnerSource,
+							Interpretbtion: `A high vblue mebns bny internbl service trying to clone b repo from gitserver is slowed down.`,
 						},
 						{
-							Name:           "gitservice_request_duration",
-							Description:    "95th percentile gitservice request duration per shard",
-							Query:          "histogram_quantile(0.95, sum(rate(src_gitserver_gitservice_duration_seconds_bucket{type=`gitserver`, error=`false`, instance=~`${shard:regex}`}[5m])) by (le, instance))",
+							Nbme:           "gitservice_request_durbtion",
+							Description:    "95th percentile gitservice request durbtion per shbrd",
+							Query:          "histogrbm_qubntile(0.95, sum(rbte(src_gitserver_gitservice_durbtion_seconds_bucket{type=`gitserver`, error=`fblse`, instbnce=~`${shbrd:regex}`}[5m])) by (le, instbnce))",
 							NoAlert:        true,
-							Panel:          monitoring.Panel().LegendFormat("{{instance}}").Unit(monitoring.Seconds),
-							Owner:          monitoring.ObservableOwnerSource,
-							Interpretation: `A high value means any internal service trying to clone a repo from gitserver is slowed down.`,
-						},
-					},
-					{
-						{
-							Name:           "aggregate_gitservice_error_request_duration",
-							Description:    "95th percentile gitservice error request duration aggregate",
-							Query:          "histogram_quantile(0.95, sum(rate(src_gitserver_gitservice_duration_seconds_bucket{type=`gitserver`, error=`true`}[5m])) by (le))",
-							NoAlert:        true,
-							Panel:          monitoring.Panel().LegendFormat("{{le}}").Unit(monitoring.Seconds),
-							Owner:          monitoring.ObservableOwnerSource,
-							Interpretation: `95th percentile gitservice error request duration aggregate`,
-						},
-						{
-							Name:           "gitservice_request_duration",
-							Description:    "95th percentile gitservice error request duration per shard",
-							Query:          "histogram_quantile(0.95, sum(rate(src_gitserver_gitservice_duration_seconds_bucket{type=`gitserver`, error=`true`, instance=~`${shard:regex}`}[5m])) by (le, instance))",
-							NoAlert:        true,
-							Panel:          monitoring.Panel().LegendFormat("{{instance}}").Unit(monitoring.Seconds),
-							Owner:          monitoring.ObservableOwnerSource,
-							Interpretation: `95th percentile gitservice error request duration per shard`,
+							Pbnel:          monitoring.Pbnel().LegendFormbt("{{instbnce}}").Unit(monitoring.Seconds),
+							Owner:          monitoring.ObservbbleOwnerSource,
+							Interpretbtion: `A high vblue mebns bny internbl service trying to clone b repo from gitserver is slowed down.`,
 						},
 					},
 					{
 						{
-							Name:           "aggregate_gitservice_request_rate",
-							Description:    "aggregate gitservice request rate",
-							Query:          "sum(rate(src_gitserver_gitservice_duration_seconds_count{type=`gitserver`, error=`false`}[5m]))",
+							Nbme:           "bggregbte_gitservice_error_request_durbtion",
+							Description:    "95th percentile gitservice error request durbtion bggregbte",
+							Query:          "histogrbm_qubntile(0.95, sum(rbte(src_gitserver_gitservice_durbtion_seconds_bucket{type=`gitserver`, error=`true`}[5m])) by (le))",
 							NoAlert:        true,
-							Panel:          monitoring.Panel().LegendFormat("gitservers").Unit(monitoring.RequestsPerSecond),
-							Owner:          monitoring.ObservableOwnerSource,
-							Interpretation: `Aggregate gitservice request rate`,
+							Pbnel:          monitoring.Pbnel().LegendFormbt("{{le}}").Unit(monitoring.Seconds),
+							Owner:          monitoring.ObservbbleOwnerSource,
+							Interpretbtion: `95th percentile gitservice error request durbtion bggregbte`,
 						},
 						{
-							Name:           "gitservice_request_rate",
-							Description:    "gitservice request rate per shard",
-							Query:          "sum(rate(src_gitserver_gitservice_duration_seconds_count{type=`gitserver`, error=`false`, instance=~`${shard:regex}`}[5m]))",
+							Nbme:           "gitservice_request_durbtion",
+							Description:    "95th percentile gitservice error request durbtion per shbrd",
+							Query:          "histogrbm_qubntile(0.95, sum(rbte(src_gitserver_gitservice_durbtion_seconds_bucket{type=`gitserver`, error=`true`, instbnce=~`${shbrd:regex}`}[5m])) by (le, instbnce))",
 							NoAlert:        true,
-							Panel:          monitoring.Panel().LegendFormat("{{instance}}").Unit(monitoring.RequestsPerSecond),
-							Owner:          monitoring.ObservableOwnerSource,
-							Interpretation: `Per shard gitservice request rate`,
-						},
-					},
-					{
-						{
-							Name:           "aggregate_gitservice_request_error_rate",
-							Description:    "aggregate gitservice request error rate",
-							Query:          "sum(rate(src_gitserver_gitservice_duration_seconds_count{type=`gitserver`, error=`true`}[5m]))",
-							NoAlert:        true,
-							Panel:          monitoring.Panel().LegendFormat("gitservers").Unit(monitoring.RequestsPerSecond),
-							Owner:          monitoring.ObservableOwnerSource,
-							Interpretation: `Aggregate gitservice request error rate`,
-						},
-						{
-							Name:           "gitservice_request_error_rate",
-							Description:    "gitservice request error rate per shard",
-							Query:          "sum(rate(src_gitserver_gitservice_duration_seconds_count{type=`gitserver`, error=`true`, instance=~`${shard:regex}`}[5m]))",
-							NoAlert:        true,
-							Panel:          monitoring.Panel().LegendFormat("{{instance}}").Unit(monitoring.RequestsPerSecond),
-							Owner:          monitoring.ObservableOwnerSource,
-							Interpretation: `Per shard gitservice request error rate`,
+							Pbnel:          monitoring.Pbnel().LegendFormbt("{{instbnce}}").Unit(monitoring.Seconds),
+							Owner:          monitoring.ObservbbleOwnerSource,
+							Interpretbtion: `95th percentile gitservice error request durbtion per shbrd`,
 						},
 					},
 					{
 						{
-							Name:           "aggregate_gitservice_requests_running",
-							Description:    "aggregate gitservice requests running",
+							Nbme:           "bggregbte_gitservice_request_rbte",
+							Description:    "bggregbte gitservice request rbte",
+							Query:          "sum(rbte(src_gitserver_gitservice_durbtion_seconds_count{type=`gitserver`, error=`fblse`}[5m]))",
+							NoAlert:        true,
+							Pbnel:          monitoring.Pbnel().LegendFormbt("gitservers").Unit(monitoring.RequestsPerSecond),
+							Owner:          monitoring.ObservbbleOwnerSource,
+							Interpretbtion: `Aggregbte gitservice request rbte`,
+						},
+						{
+							Nbme:           "gitservice_request_rbte",
+							Description:    "gitservice request rbte per shbrd",
+							Query:          "sum(rbte(src_gitserver_gitservice_durbtion_seconds_count{type=`gitserver`, error=`fblse`, instbnce=~`${shbrd:regex}`}[5m]))",
+							NoAlert:        true,
+							Pbnel:          monitoring.Pbnel().LegendFormbt("{{instbnce}}").Unit(monitoring.RequestsPerSecond),
+							Owner:          monitoring.ObservbbleOwnerSource,
+							Interpretbtion: `Per shbrd gitservice request rbte`,
+						},
+					},
+					{
+						{
+							Nbme:           "bggregbte_gitservice_request_error_rbte",
+							Description:    "bggregbte gitservice request error rbte",
+							Query:          "sum(rbte(src_gitserver_gitservice_durbtion_seconds_count{type=`gitserver`, error=`true`}[5m]))",
+							NoAlert:        true,
+							Pbnel:          monitoring.Pbnel().LegendFormbt("gitservers").Unit(monitoring.RequestsPerSecond),
+							Owner:          monitoring.ObservbbleOwnerSource,
+							Interpretbtion: `Aggregbte gitservice request error rbte`,
+						},
+						{
+							Nbme:           "gitservice_request_error_rbte",
+							Description:    "gitservice request error rbte per shbrd",
+							Query:          "sum(rbte(src_gitserver_gitservice_durbtion_seconds_count{type=`gitserver`, error=`true`, instbnce=~`${shbrd:regex}`}[5m]))",
+							NoAlert:        true,
+							Pbnel:          monitoring.Pbnel().LegendFormbt("{{instbnce}}").Unit(monitoring.RequestsPerSecond),
+							Owner:          monitoring.ObservbbleOwnerSource,
+							Interpretbtion: `Per shbrd gitservice request error rbte`,
+						},
+					},
+					{
+						{
+							Nbme:           "bggregbte_gitservice_requests_running",
+							Description:    "bggregbte gitservice requests running",
 							Query:          "sum(src_gitserver_gitservice_running{type=`gitserver`})",
 							NoAlert:        true,
-							Panel:          monitoring.Panel().LegendFormat("gitservers").Unit(monitoring.Number),
-							Owner:          monitoring.ObservableOwnerSource,
-							Interpretation: `Aggregate gitservice requests running`,
+							Pbnel:          monitoring.Pbnel().LegendFormbt("gitservers").Unit(monitoring.Number),
+							Owner:          monitoring.ObservbbleOwnerSource,
+							Interpretbtion: `Aggregbte gitservice requests running`,
 						},
 						{
-							Name:           "gitservice_requests_running",
-							Description:    "gitservice requests running per shard",
-							Query:          "sum(src_gitserver_gitservice_running{type=`gitserver`, instance=~`${shard:regex}`}) by (instance)",
+							Nbme:           "gitservice_requests_running",
+							Description:    "gitservice requests running per shbrd",
+							Query:          "sum(src_gitserver_gitservice_running{type=`gitserver`, instbnce=~`${shbrd:regex}`}) by (instbnce)",
 							NoAlert:        true,
-							Panel:          monitoring.Panel().LegendFormat("{{instance}}").Unit(monitoring.RequestsPerSecond),
-							Owner:          monitoring.ObservableOwnerSource,
-							Interpretation: `Per shard gitservice requests running`,
+							Pbnel:          monitoring.Pbnel().LegendFormbt("{{instbnce}}").Unit(monitoring.RequestsPerSecond),
+							Owner:          monitoring.ObservbbleOwnerSource,
+							Interpretbtion: `Per shbrd gitservice requests running`,
 						},
 					},
 				},
 			},
 			{
-				Title:  "Gitserver cleanup jobs",
+				Title:  "Gitserver clebnup jobs",
 				Hidden: true,
 				Rows: []monitoring.Row{
 					{
 						{
-							Name:           "janitor_running",
-							Description:    "if the janitor process is running",
-							Query:          "max by (instance) (src_gitserver_janitor_running)",
+							Nbme:           "jbnitor_running",
+							Description:    "if the jbnitor process is running",
+							Query:          "mbx by (instbnce) (src_gitserver_jbnitor_running)",
 							NoAlert:        true,
-							Panel:          monitoring.Panel().LegendFormat("janitor process running").Unit(monitoring.Number),
-							Owner:          monitoring.ObservableOwnerSource,
-							Interpretation: "1, if the janitor process is currently running",
+							Pbnel:          monitoring.Pbnel().LegendFormbt("jbnitor process running").Unit(monitoring.Number),
+							Owner:          monitoring.ObservbbleOwnerSource,
+							Interpretbtion: "1, if the jbnitor process is currently running",
 						},
 					},
 					{
 						{
-							Name:           "janitor_job_duration",
-							Description:    "95th percentile job run duration",
-							Query:          "histogram_quantile(0.95, sum(rate(src_gitserver_janitor_job_duration_seconds_bucket[5m])) by (le, job_name))",
+							Nbme:           "jbnitor_job_durbtion",
+							Description:    "95th percentile job run durbtion",
+							Query:          "histogrbm_qubntile(0.95, sum(rbte(src_gitserver_jbnitor_job_durbtion_seconds_bucket[5m])) by (le, job_nbme))",
 							NoAlert:        true,
-							Panel:          monitoring.Panel().LegendFormat("{{job_name}}").Unit(monitoring.Seconds),
-							Owner:          monitoring.ObservableOwnerSource,
-							Interpretation: "95th percentile job run duration",
+							Pbnel:          monitoring.Pbnel().LegendFormbt("{{job_nbme}}").Unit(monitoring.Seconds),
+							Owner:          monitoring.ObservbbleOwnerSource,
+							Interpretbtion: "95th percentile job run durbtion",
 						},
 					},
 					{
 						{
-							Name:           "janitor_job_failures",
-							Description:    "failures over 5m (by job)",
-							Query:          `sum by (job_name) (rate(src_gitserver_janitor_job_duration_seconds_count{success="false"}[5m]))`,
+							Nbme:           "jbnitor_job_fbilures",
+							Description:    "fbilures over 5m (by job)",
+							Query:          `sum by (job_nbme) (rbte(src_gitserver_jbnitor_job_durbtion_seconds_count{success="fblse"}[5m]))`,
 							NoAlert:        true,
-							Panel:          monitoring.Panel().LegendFormat("{{job_name}}").Unit(monitoring.Number),
-							Owner:          monitoring.ObservableOwnerSource,
-							Interpretation: "the rate of failures over 5m (by job)",
+							Pbnel:          monitoring.Pbnel().LegendFormbt("{{job_nbme}}").Unit(monitoring.Number),
+							Owner:          monitoring.ObservbbleOwnerSource,
+							Interpretbtion: "the rbte of fbilures over 5m (by job)",
 						},
 					},
 					{
 						{
-							Name:           "repos_removed",
+							Nbme:           "repos_removed",
 							Description:    "repositories removed due to disk pressure",
-							Query:          "sum by (instance) (rate(src_gitserver_repos_removed_disk_pressure[5m]))",
+							Query:          "sum by (instbnce) (rbte(src_gitserver_repos_removed_disk_pressure[5m]))",
 							NoAlert:        true,
-							Panel:          monitoring.Panel().LegendFormat("{{instance}}").Unit(monitoring.Number),
-							Owner:          monitoring.ObservableOwnerSource,
-							Interpretation: "Repositories removed due to disk pressure",
+							Pbnel:          monitoring.Pbnel().LegendFormbt("{{instbnce}}").Unit(monitoring.Number),
+							Owner:          monitoring.ObservbbleOwnerSource,
+							Interpretbtion: "Repositories removed due to disk pressure",
 						},
 					},
 					{
 						{
-							Name:           "non_existent_repos_removed",
-							Description:    "repositories removed because they are not defined in the DB",
-							Query:          "sum by (instance) (increase(src_gitserver_non_existing_repos_removed[5m]))",
+							Nbme:           "non_existent_repos_removed",
+							Description:    "repositories removed becbuse they bre not defined in the DB",
+							Query:          "sum by (instbnce) (increbse(src_gitserver_non_existing_repos_removed[5m]))",
 							NoAlert:        true,
-							Panel:          monitoring.Panel().LegendFormat("{{instance}}").Unit(monitoring.Number),
-							Owner:          monitoring.ObservableOwnerSource,
-							Interpretation: "Repositoriess removed because they are not defined in the DB",
+							Pbnel:          monitoring.Pbnel().LegendFormbt("{{instbnce}}").Unit(monitoring.Number),
+							Owner:          monitoring.ObservbbleOwnerSource,
+							Interpretbtion: "Repositoriess removed becbuse they bre not defined in the DB",
 						},
 					},
 					{
 						{
-							Name:           "sg_maintenance_reason",
-							Description:    "successful sg maintenance jobs over 1h (by reason)",
-							Query:          `sum by (reason) (rate(src_gitserver_maintenance_status{success="true"}[1h]))`,
+							Nbme:           "sg_mbintenbnce_rebson",
+							Description:    "successful sg mbintenbnce jobs over 1h (by rebson)",
+							Query:          `sum by (rebson) (rbte(src_gitserver_mbintenbnce_stbtus{success="true"}[1h]))`,
 							NoAlert:        true,
-							Panel:          monitoring.Panel().LegendFormat("{{reason}}").Unit(monitoring.Number),
-							Owner:          monitoring.ObservableOwnerSource,
-							Interpretation: "the rate of successful sg maintenance jobs and the reason why they were triggered",
+							Pbnel:          monitoring.Pbnel().LegendFormbt("{{rebson}}").Unit(monitoring.Number),
+							Owner:          monitoring.ObservbbleOwnerSource,
+							Interpretbtion: "the rbte of successful sg mbintenbnce jobs bnd the rebson why they were triggered",
 						},
 					},
 					{
 						{
-							Name:           "git_prune_skipped",
+							Nbme:           "git_prune_skipped",
 							Description:    "successful git prune jobs over 1h",
-							Query:          `sum by (skipped) (rate(src_gitserver_prune_status{success="true"}[1h]))`,
+							Query:          `sum by (skipped) (rbte(src_gitserver_prune_stbtus{success="true"}[1h]))`,
 							NoAlert:        true,
-							Panel:          monitoring.Panel().LegendFormat("skipped={{skipped}}").Unit(monitoring.Number),
-							Owner:          monitoring.ObservableOwnerSource,
-							Interpretation: "the rate of successful git prune jobs over 1h and whether they were skipped",
+							Pbnel:          monitoring.Pbnel().LegendFormbt("skipped={{skipped}}").Unit(monitoring.Number),
+							Owner:          monitoring.ObservbbleOwnerSource,
+							Interpretbtion: "the rbte of successful git prune jobs over 1h bnd whether they were skipped",
 						},
 					},
 				},
 			},
 
 			{
-				Title:  "Search",
+				Title:  "Sebrch",
 				Hidden: true,
 				Rows: []monitoring.Row{
 					{
 						{
-							Name:           "search_latency",
-							Description:    "mean time until first result is sent",
-							Query:          "rate(src_gitserver_search_latency_seconds_sum[5m]) / rate(src_gitserver_search_latency_seconds_count[5m])",
+							Nbme:           "sebrch_lbtency",
+							Description:    "mebn time until first result is sent",
+							Query:          "rbte(src_gitserver_sebrch_lbtency_seconds_sum[5m]) / rbte(src_gitserver_sebrch_lbtency_seconds_count[5m])",
 							NoAlert:        true,
-							Panel:          monitoring.Panel().Unit(monitoring.Seconds),
-							Owner:          monitoring.ObservableOwnerSearch,
-							Interpretation: "Mean latency (time to first result) of gitserver search requests",
+							Pbnel:          monitoring.Pbnel().Unit(monitoring.Seconds),
+							Owner:          monitoring.ObservbbleOwnerSebrch,
+							Interpretbtion: "Mebn lbtency (time to first result) of gitserver sebrch requests",
 						},
 						{
-							Name:           "search_duration",
-							Description:    "mean search duration",
-							Query:          "rate(src_gitserver_search_duration_seconds_sum[5m]) / rate(src_gitserver_search_duration_seconds_count[5m])",
+							Nbme:           "sebrch_durbtion",
+							Description:    "mebn sebrch durbtion",
+							Query:          "rbte(src_gitserver_sebrch_durbtion_seconds_sum[5m]) / rbte(src_gitserver_sebrch_durbtion_seconds_count[5m])",
 							NoAlert:        true,
-							Panel:          monitoring.Panel().Unit(monitoring.Seconds),
-							Owner:          monitoring.ObservableOwnerSearch,
-							Interpretation: "Mean duration of gitserver search requests",
+							Pbnel:          monitoring.Pbnel().Unit(monitoring.Seconds),
+							Owner:          monitoring.ObservbbleOwnerSebrch,
+							Interpretbtion: "Mebn durbtion of gitserver sebrch requests",
 						},
 					},
 					{
 						{
-							Name:           "search_rate",
-							Description:    "rate of searches run by pod",
-							Query:          "rate(src_gitserver_search_latency_seconds_count{instance=~`${shard:regex}`}[5m])",
+							Nbme:           "sebrch_rbte",
+							Description:    "rbte of sebrches run by pod",
+							Query:          "rbte(src_gitserver_sebrch_lbtency_seconds_count{instbnce=~`${shbrd:regex}`}[5m])",
 							NoAlert:        true,
-							Panel:          monitoring.Panel().LegendFormat("{{instance}}").Unit(monitoring.RequestsPerSecond),
-							Owner:          monitoring.ObservableOwnerSearch,
-							Interpretation: "The rate of searches executed on gitserver by pod",
+							Pbnel:          monitoring.Pbnel().LegendFormbt("{{instbnce}}").Unit(monitoring.RequestsPerSecond),
+							Owner:          monitoring.ObservbbleOwnerSebrch,
+							Interpretbtion: "The rbte of sebrches executed on gitserver by pod",
 						},
 						{
-							Name:           "running_searches",
-							Description:    "number of searches currently running by pod",
-							Query:          "sum by (instance) (src_gitserver_search_running{instance=~`${shard:regex}`})",
+							Nbme:           "running_sebrches",
+							Description:    "number of sebrches currently running by pod",
+							Query:          "sum by (instbnce) (src_gitserver_sebrch_running{instbnce=~`${shbrd:regex}`})",
 							NoAlert:        true,
-							Panel:          monitoring.Panel().LegendFormat("{{instance}}").Unit(monitoring.Number),
-							Owner:          monitoring.ObservableOwnerSearch,
-							Interpretation: "The number of searches currently executing on gitserver by pod",
+							Pbnel:          monitoring.Pbnel().LegendFormbt("{{instbnce}}").Unit(monitoring.Number),
+							Owner:          monitoring.ObservbbleOwnerSebrch,
+							Interpretbtion: "The number of sebrches currently executing on gitserver by pod",
 						},
 					},
 				},
 			},
-			shared.NewDiskMetricsGroup(
-				shared.DiskMetricsGroupOptions{
+			shbred.NewDiskMetricsGroup(
+				shbred.DiskMetricsGroupOptions{
 					DiskTitle: "repos",
 
-					MetricMountNameLabel: "reposDir",
-					MetricNamespace:      "gitserver",
+					MetricMountNbmeLbbel: "reposDir",
+					MetricNbmespbce:      "gitserver",
 
-					ServiceName:         "gitserver",
-					InstanceFilterRegex: `${shard:regex}`,
+					ServiceNbme:         "gitserver",
+					InstbnceFilterRegex: `${shbrd:regex}`,
 				},
-				monitoring.ObservableOwnerSource,
+				monitoring.ObservbbleOwnerSource,
 			),
 
-			shared.NewGRPCServerMetricsGroup(
-				shared.GRPCServerMetricsOptions{
-					HumanServiceName:   "gitserver",
-					RawGRPCServiceName: grpcServiceName,
+			shbred.NewGRPCServerMetricsGroup(
+				shbred.GRPCServerMetricsOptions{
+					HumbnServiceNbme:   "gitserver",
+					RbwGRPCServiceNbme: grpcServiceNbme,
 
-					MethodFilterRegex:    fmt.Sprintf("${%s:regex}", grpcMethodVariable.Name),
-					InstanceFilterRegex:  `${shard:regex}`,
-					MessageSizeNamespace: "src",
-				}, monitoring.ObservableOwnerSearchCore),
+					MethodFilterRegex:    fmt.Sprintf("${%s:regex}", grpcMethodVbribble.Nbme),
+					InstbnceFilterRegex:  `${shbrd:regex}`,
+					MessbgeSizeNbmespbce: "src",
+				}, monitoring.ObservbbleOwnerSebrchCore),
 
-			shared.NewGRPCInternalErrorMetricsGroup(
-				shared.GRPCInternalErrorMetricsOptions{
-					HumanServiceName:   "gitserver",
-					RawGRPCServiceName: grpcServiceName,
-					Namespace:          "src",
+			shbred.NewGRPCInternblErrorMetricsGroup(
+				shbred.GRPCInternblErrorMetricsOptions{
+					HumbnServiceNbme:   "gitserver",
+					RbwGRPCServiceNbme: grpcServiceNbme,
+					Nbmespbce:          "src",
 
-					MethodFilterRegex: fmt.Sprintf("${%s:regex}", grpcMethodVariable.Name),
-				}, monitoring.ObservableOwnerSearchCore),
+					MethodFilterRegex: fmt.Sprintf("${%s:regex}", grpcMethodVbribble.Nbme),
+				}, monitoring.ObservbbleOwnerSebrchCore),
 
-			shared.CodeIntelligence.NewCoursierGroup(containerName),
-			shared.CodeIntelligence.NewNpmGroup(containerName),
+			shbred.CodeIntelligence.NewCoursierGroup(contbinerNbme),
+			shbred.CodeIntelligence.NewNpmGroup(contbinerNbme),
 
-			shared.HTTP.NewHandlersGroup(containerName),
-			shared.NewDatabaseConnectionsMonitoringGroup(containerName),
-			shared.NewContainerMonitoringGroup(containerName, monitoring.ObservableOwnerSource, nil),
-			shared.NewProvisioningIndicatorsGroup(containerName, monitoring.ObservableOwnerSource, provisioningIndicatorsOptions),
-			shared.NewGolangMonitoringGroup(containerName, monitoring.ObservableOwnerSource, nil),
-			shared.NewKubernetesMonitoringGroup(containerName, monitoring.ObservableOwnerSource, nil),
+			shbred.HTTP.NewHbndlersGroup(contbinerNbme),
+			shbred.NewDbtbbbseConnectionsMonitoringGroup(contbinerNbme),
+			shbred.NewContbinerMonitoringGroup(contbinerNbme, monitoring.ObservbbleOwnerSource, nil),
+			shbred.NewProvisioningIndicbtorsGroup(contbinerNbme, monitoring.ObservbbleOwnerSource, provisioningIndicbtorsOptions),
+			shbred.NewGolbngMonitoringGroup(contbinerNbme, monitoring.ObservbbleOwnerSource, nil),
+			shbred.NewKubernetesMonitoringGroup(contbinerNbme, monitoring.ObservbbleOwnerSource, nil),
 		},
 	}
 }

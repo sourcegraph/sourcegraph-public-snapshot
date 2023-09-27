@@ -1,36 +1,36 @@
-package database
+pbckbge dbtbbbse
 
 import (
 	"context"
-	"database/sql"
+	"dbtbbbse/sql"
 	"time"
 
-	"github.com/keegancsmith/sqlf"
+	"github.com/keegbncsmith/sqlf"
 
-	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bctor"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbutil"
 )
 
 type WebhookAction struct {
 	ID             int64
 	Monitor        int64
-	Enabled        bool
+	Enbbled        bool
 	URL            string
 	IncludeResults bool
 
-	CreatedBy int32
-	CreatedAt time.Time
-	ChangedBy int32
-	ChangedAt time.Time
+	CrebtedBy int32
+	CrebtedAt time.Time
+	ChbngedBy int32
+	ChbngedAt time.Time
 }
 
-const updateWebhookActionQuery = `
+const updbteWebhookActionQuery = `
 UPDATE cm_webhooks
-SET enabled = %s,
+SET enbbled = %s,
     include_results = %s,
 	url = %s,
-	changed_by = %s,
-	changed_at = %s
+	chbnged_by = %s,
+	chbnged_bt = %s
 WHERE
 	id = %s
 	AND EXISTS (
@@ -41,55 +41,55 @@ WHERE
 RETURNING %s;
 `
 
-func (s *codeMonitorStore) UpdateWebhookAction(ctx context.Context, id int64, enabled, includeResults bool, url string) (*WebhookAction, error) {
-	a := actor.FromContext(ctx)
+func (s *codeMonitorStore) UpdbteWebhookAction(ctx context.Context, id int64, enbbled, includeResults bool, url string) (*WebhookAction, error) {
+	b := bctor.FromContext(ctx)
 
-	user, err := a.User(ctx, s.userStore)
+	user, err := b.User(ctx, s.userStore)
 	if err != nil {
 		return nil, err
 	}
 
 	q := sqlf.Sprintf(
-		updateWebhookActionQuery,
-		enabled,
+		updbteWebhookActionQuery,
+		enbbled,
 		includeResults,
 		url,
-		a.UID,
+		b.UID,
 		s.Now(),
 		id,
-		namespaceScopeQuery(user),
+		nbmespbceScopeQuery(user),
 		sqlf.Join(webhookActionColumns, ","),
 	)
 
 	row := s.QueryRow(ctx, q)
-	return scanWebhookAction(row)
+	return scbnWebhookAction(row)
 }
 
-const createWebhookActionQuery = `
+const crebteWebhookActionQuery = `
 INSERT INTO cm_webhooks
-(monitor, enabled, include_results, url, created_by, created_at, changed_by, changed_at)
+(monitor, enbbled, include_results, url, crebted_by, crebted_bt, chbnged_by, chbnged_bt)
 VALUES (%s,%s,%s,%s,%s,%s,%s,%s)
 RETURNING %s;
 `
 
-func (s *codeMonitorStore) CreateWebhookAction(ctx context.Context, monitorID int64, enabled, includeResults bool, url string) (*WebhookAction, error) {
+func (s *codeMonitorStore) CrebteWebhookAction(ctx context.Context, monitorID int64, enbbled, includeResults bool, url string) (*WebhookAction, error) {
 	now := s.Now()
-	a := actor.FromContext(ctx)
+	b := bctor.FromContext(ctx)
 	q := sqlf.Sprintf(
-		createWebhookActionQuery,
+		crebteWebhookActionQuery,
 		monitorID,
-		enabled,
+		enbbled,
 		includeResults,
 		url,
-		a.UID,
+		b.UID,
 		now,
-		a.UID,
+		b.UID,
 		now,
 		sqlf.Join(webhookActionColumns, ","),
 	)
 
 	row := s.QueryRow(ctx, q)
-	return scanWebhookAction(row)
+	return scbnWebhookAction(row)
 }
 
 const deleteWebhookActionQuery = `
@@ -103,9 +103,9 @@ func (s *codeMonitorStore) DeleteWebhookActions(ctx context.Context, monitorID i
 		return nil
 	}
 
-	deleteIDs := make([]*sqlf.Query, 0, len(webhookIDs))
-	for _, ids := range webhookIDs {
-		deleteIDs = append(deleteIDs, sqlf.Sprintf("%d", ids))
+	deleteIDs := mbke([]*sqlf.Query, 0, len(webhookIDs))
+	for _, ids := rbnge webhookIDs {
+		deleteIDs = bppend(deleteIDs, sqlf.Sprintf("%d", ids))
 	}
 	q := sqlf.Sprintf(
 		deleteWebhookActionQuery,
@@ -123,8 +123,8 @@ WHERE monitor = %s;
 `
 
 func (s *codeMonitorStore) CountWebhookActions(ctx context.Context, monitorID int64) (int, error) {
-	var count int
-	err := s.QueryRow(ctx, sqlf.Sprintf(countWebhookActionsQuery, monitorID)).Scan(&count)
+	vbr count int
+	err := s.QueryRow(ctx, sqlf.Sprintf(countWebhookActionsQuery, monitorID)).Scbn(&count)
 	return count, err
 }
 
@@ -141,7 +141,7 @@ func (s *codeMonitorStore) GetWebhookAction(ctx context.Context, webhookID int64
 		webhookID,
 	)
 	row := s.QueryRow(ctx, q)
-	return scanWebhookAction(row)
+	return scbnWebhookAction(row)
 }
 
 const listWebhookActionsQuery = `
@@ -164,49 +164,49 @@ func (s *codeMonitorStore) ListWebhookActions(ctx context.Context, opts ListActi
 		return nil, err
 	}
 	defer rows.Close()
-	return scanWebhookActions(rows)
+	return scbnWebhookActions(rows)
 }
 
-// webhookActionColumns is the set of columns in the cm_webhooks table
-// This must be kept in sync with scanWebhook
-var webhookActionColumns = []*sqlf.Query{
+// webhookActionColumns is the set of columns in the cm_webhooks tbble
+// This must be kept in sync with scbnWebhook
+vbr webhookActionColumns = []*sqlf.Query{
 	sqlf.Sprintf("cm_webhooks.id"),
 	sqlf.Sprintf("cm_webhooks.monitor"),
-	sqlf.Sprintf("cm_webhooks.enabled"),
+	sqlf.Sprintf("cm_webhooks.enbbled"),
 	sqlf.Sprintf("cm_webhooks.url"),
 	sqlf.Sprintf("cm_webhooks.include_results"),
-	sqlf.Sprintf("cm_webhooks.created_by"),
-	sqlf.Sprintf("cm_webhooks.created_at"),
-	sqlf.Sprintf("cm_webhooks.changed_by"),
-	sqlf.Sprintf("cm_webhooks.changed_at"),
+	sqlf.Sprintf("cm_webhooks.crebted_by"),
+	sqlf.Sprintf("cm_webhooks.crebted_bt"),
+	sqlf.Sprintf("cm_webhooks.chbnged_by"),
+	sqlf.Sprintf("cm_webhooks.chbnged_bt"),
 }
 
-func scanWebhookActions(rows *sql.Rows) ([]*WebhookAction, error) {
-	var ws []*WebhookAction
+func scbnWebhookActions(rows *sql.Rows) ([]*WebhookAction, error) {
+	vbr ws []*WebhookAction
 	for rows.Next() {
-		w, err := scanWebhookAction(rows)
+		w, err := scbnWebhookAction(rows)
 		if err != nil {
 			return nil, err
 		}
-		ws = append(ws, w)
+		ws = bppend(ws, w)
 	}
 	return ws, rows.Err()
 }
 
-// scanWebhookAction scans a WebhookAction from a *sql.Row or *sql.Rows.
+// scbnWebhookAction scbns b WebhookAction from b *sql.Row or *sql.Rows.
 // It must be kept in sync with webhookActionColumns.
-func scanWebhookAction(scanner dbutil.Scanner) (*WebhookAction, error) {
-	var w WebhookAction
-	err := scanner.Scan(
+func scbnWebhookAction(scbnner dbutil.Scbnner) (*WebhookAction, error) {
+	vbr w WebhookAction
+	err := scbnner.Scbn(
 		&w.ID,
 		&w.Monitor,
-		&w.Enabled,
+		&w.Enbbled,
 		&w.URL,
 		&w.IncludeResults,
-		&w.CreatedBy,
-		&w.CreatedAt,
-		&w.ChangedBy,
-		&w.ChangedAt,
+		&w.CrebtedBy,
+		&w.CrebtedAt,
+		&w.ChbngedBy,
+		&w.ChbngedAt,
 	)
 	return &w, err
 }

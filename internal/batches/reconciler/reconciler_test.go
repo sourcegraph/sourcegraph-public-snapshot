@@ -1,187 +1,187 @@
-package reconciler
+pbckbge reconciler
 
 import (
 	"context"
 	"testing"
 	"time"
 
-	"github.com/sourcegraph/log/logtest"
+	"github.com/sourcegrbph/log/logtest"
 
-	"github.com/sourcegraph/sourcegraph/internal/actor"
-	stesting "github.com/sourcegraph/sourcegraph/internal/batches/sources/testing"
-	bstore "github.com/sourcegraph/sourcegraph/internal/batches/store"
-	bt "github.com/sourcegraph/sourcegraph/internal/batches/testing"
-	btypes "github.com/sourcegraph/sourcegraph/internal/batches/types"
-	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
-	gitprotocol "github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bctor"
+	stesting "github.com/sourcegrbph/sourcegrbph/internbl/bbtches/sources/testing"
+	bstore "github.com/sourcegrbph/sourcegrbph/internbl/bbtches/store"
+	bt "github.com/sourcegrbph/sourcegrbph/internbl/bbtches/testing"
+	btypes "github.com/sourcegrbph/sourcegrbph/internbl/bbtches/types"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbtest"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc/buth"
+	"github.com/sourcegrbph/sourcegrbph/internbl/gitserver/gitdombin"
+	gitprotocol "github.com/sourcegrbph/sourcegrbph/internbl/gitserver/protocol"
+	"github.com/sourcegrbph/sourcegrbph/internbl/observbtion"
+	"github.com/sourcegrbph/sourcegrbph/internbl/repoupdbter/protocol"
 )
 
-func TestReconcilerProcess_IntegrationTest(t *testing.T) {
+func TestReconcilerProcess_IntegrbtionTest(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
 
-	ctx := actor.WithInternalActor(context.Background())
+	ctx := bctor.WithInternblActor(context.Bbckground())
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := dbtbbbse.NewDB(logger, dbtest.NewDB(logger, t))
 
-	store := bstore.New(db, &observation.TestContext, nil)
+	store := bstore.New(db, &observbtion.TestContext, nil)
 
-	admin := bt.CreateTestUser(t, db, true)
+	bdmin := bt.CrebteTestUser(t, db, true)
 
-	repo, extSvc := bt.CreateTestRepo(t, ctx, db)
-	bt.CreateTestSiteCredential(t, store, repo)
+	repo, extSvc := bt.CrebteTestRepo(t, ctx, db)
+	bt.CrebteTestSiteCredentibl(t, store, repo)
 
-	state := bt.MockChangesetSyncState(&protocol.RepoInfo{
-		Name: repo.Name,
+	stbte := bt.MockChbngesetSyncStbte(&protocol.RepoInfo{
+		Nbme: repo.Nbme,
 		VCS:  protocol.VCSInfo{URL: repo.URI},
 	})
-	defer state.Unmock()
+	defer stbte.Unmock()
 
-	mockExternalURL(t, "https://sourcegraph.test")
+	mockExternblURL(t, "https://sourcegrbph.test")
 
-	githubPR := buildGithubPR(time.Now(), btypes.ChangesetExternalStateOpen)
-	githubHeadRef := gitdomain.EnsureRefPrefix(githubPR.HeadRefName)
+	githubPR := buildGithubPR(time.Now(), btypes.ChbngesetExternblStbteOpen)
+	githubHebdRef := gitdombin.EnsureRefPrefix(githubPR.HebdRefNbme)
 
-	type testCase struct {
-		changeset    bt.TestChangesetOpts
+	type testCbse struct {
+		chbngeset    bt.TestChbngesetOpts
 		currentSpec  *bt.TestSpecOpts
 		previousSpec *bt.TestSpecOpts
 
-		wantChangeset bt.ChangesetAssertions
+		wbntChbngeset bt.ChbngesetAssertions
 	}
 
-	tests := map[string]testCase{
-		"update a published changeset": {
+	tests := mbp[string]testCbse{
+		"updbte b published chbngeset": {
 			currentSpec: &bt.TestSpecOpts{
-				HeadRef:   "refs/heads/head-ref-on-github",
-				Typ:       btypes.ChangesetSpecTypeBranch,
+				HebdRef:   "refs/hebds/hebd-ref-on-github",
+				Typ:       btypes.ChbngesetSpecTypeBrbnch,
 				Published: true,
 			},
 
 			previousSpec: &bt.TestSpecOpts{
-				HeadRef:   "refs/heads/head-ref-on-github",
-				Typ:       btypes.ChangesetSpecTypeBranch,
+				HebdRef:   "refs/hebds/hebd-ref-on-github",
+				Typ:       btypes.ChbngesetSpecTypeBrbnch,
 				Published: true,
 
 				Title:         "old title",
 				Body:          "old body",
 				CommitDiff:    []byte("old diff"),
-				CommitMessage: "old message",
+				CommitMessbge: "old messbge",
 			},
 
-			changeset: bt.TestChangesetOpts{
-				PublicationState: btypes.ChangesetPublicationStatePublished,
-				ExternalID:       "12345",
-				ExternalBranch:   "head-ref-on-github",
+			chbngeset: bt.TestChbngesetOpts{
+				PublicbtionStbte: btypes.ChbngesetPublicbtionStbtePublished,
+				ExternblID:       "12345",
+				ExternblBrbnch:   "hebd-ref-on-github",
 			},
 
-			wantChangeset: bt.ChangesetAssertions{
-				PublicationState: btypes.ChangesetPublicationStatePublished,
-				ExternalID:       githubPR.ID,
-				ExternalBranch:   githubHeadRef,
-				ExternalState:    btypes.ChangesetExternalStateOpen,
-				DiffStat:         state.DiffStat,
-				// We update the title/body but want the title/body returned by the code host.
+			wbntChbngeset: bt.ChbngesetAssertions{
+				PublicbtionStbte: btypes.ChbngesetPublicbtionStbtePublished,
+				ExternblID:       githubPR.ID,
+				ExternblBrbnch:   githubHebdRef,
+				ExternblStbte:    btypes.ChbngesetExternblStbteOpen,
+				DiffStbt:         stbte.DiffStbt,
+				// We updbte the title/body but wbnt the title/body returned by the code host.
 				Title: githubPR.Title,
 				Body:  githubPR.Body,
 			},
 		},
 	}
 
-	for name, tc := range tests {
-		t.Run(name, func(t *testing.T) {
-			// Create necessary associations.
-			previousBatchSpec := bt.CreateBatchSpec(t, ctx, store, "reconciler-test-batch-change", admin.ID, 0)
-			batchSpec := bt.CreateBatchSpec(t, ctx, store, "reconciler-test-batch-change", admin.ID, 0)
-			batchChange := bt.CreateBatchChange(t, ctx, store, "reconciler-test-batch-change", admin.ID, batchSpec.ID)
+	for nbme, tc := rbnge tests {
+		t.Run(nbme, func(t *testing.T) {
+			// Crebte necessbry bssocibtions.
+			previousBbtchSpec := bt.CrebteBbtchSpec(t, ctx, store, "reconciler-test-bbtch-chbnge", bdmin.ID, 0)
+			bbtchSpec := bt.CrebteBbtchSpec(t, ctx, store, "reconciler-test-bbtch-chbnge", bdmin.ID, 0)
+			bbtchChbnge := bt.CrebteBbtchChbnge(t, ctx, store, "reconciler-test-bbtch-chbnge", bdmin.ID, bbtchSpec.ID)
 
-			// Create the specs.
+			// Crebte the specs.
 			specOpts := *tc.currentSpec
-			specOpts.User = admin.ID
+			specOpts.User = bdmin.ID
 			specOpts.Repo = repo.ID
-			specOpts.BatchSpec = batchSpec.ID
-			changesetSpec := bt.CreateChangesetSpec(t, ctx, store, specOpts)
+			specOpts.BbtchSpec = bbtchSpec.ID
+			chbngesetSpec := bt.CrebteChbngesetSpec(t, ctx, store, specOpts)
 
 			previousSpecOpts := *tc.previousSpec
-			previousSpecOpts.User = admin.ID
+			previousSpecOpts.User = bdmin.ID
 			previousSpecOpts.Repo = repo.ID
-			previousSpecOpts.BatchSpec = previousBatchSpec.ID
-			previousSpec := bt.CreateChangesetSpec(t, ctx, store, previousSpecOpts)
+			previousSpecOpts.BbtchSpec = previousBbtchSpec.ID
+			previousSpec := bt.CrebteChbngesetSpec(t, ctx, store, previousSpecOpts)
 
-			// Create the changeset with correct associations.
-			changesetOpts := tc.changeset
-			changesetOpts.Repo = repo.ID
-			changesetOpts.BatchChanges = []btypes.BatchChangeAssoc{{BatchChangeID: batchChange.ID}}
-			changesetOpts.OwnedByBatchChange = batchChange.ID
-			if changesetSpec != nil {
-				changesetOpts.CurrentSpec = changesetSpec.ID
+			// Crebte the chbngeset with correct bssocibtions.
+			chbngesetOpts := tc.chbngeset
+			chbngesetOpts.Repo = repo.ID
+			chbngesetOpts.BbtchChbnges = []btypes.BbtchChbngeAssoc{{BbtchChbngeID: bbtchChbnge.ID}}
+			chbngesetOpts.OwnedByBbtchChbnge = bbtchChbnge.ID
+			if chbngesetSpec != nil {
+				chbngesetOpts.CurrentSpec = chbngesetSpec.ID
 			}
 			if previousSpec != nil {
-				changesetOpts.PreviousSpec = previousSpec.ID
+				chbngesetOpts.PreviousSpec = previousSpec.ID
 			}
-			changeset := bt.CreateChangeset(t, ctx, store, changesetOpts)
+			chbngeset := bt.CrebteChbngeset(t, ctx, store, chbngesetOpts)
 
-			state.MockClient.CreateCommitFromPatchFunc.SetDefaultHook(func(context.Context, gitprotocol.CreateCommitFromPatchRequest) (*gitprotocol.CreateCommitFromPatchResponse, error) {
-				resp := new(gitprotocol.CreateCommitFromPatchResponse)
-				if changesetSpec != nil {
-					resp.Rev = changesetSpec.HeadRef
+			stbte.MockClient.CrebteCommitFromPbtchFunc.SetDefbultHook(func(context.Context, gitprotocol.CrebteCommitFromPbtchRequest) (*gitprotocol.CrebteCommitFromPbtchResponse, error) {
+				resp := new(gitprotocol.CrebteCommitFromPbtchResponse)
+				if chbngesetSpec != nil {
+					resp.Rev = chbngesetSpec.HebdRef
 					return resp, nil
 				}
 				return resp, nil
 			})
 
-			// Setup the sourcer that's used to create a Source with which
-			// to create/update a changeset.
-			fakeSource := &stesting.FakeChangesetSource{
+			// Setup the sourcer thbt's used to crebte b Source with which
+			// to crebte/updbte b chbngeset.
+			fbkeSource := &stesting.FbkeChbngesetSource{
 				Svc:                  extSvc,
-				FakeMetadata:         githubPR,
-				CurrentAuthenticator: &auth.OAuthBearerTokenWithSSH{},
+				FbkeMetbdbtb:         githubPR,
+				CurrentAuthenticbtor: &buth.OAuthBebrerTokenWithSSH{},
 			}
-			if changesetSpec != nil {
-				fakeSource.WantHeadRef = changesetSpec.HeadRef
-				fakeSource.WantBaseRef = changesetSpec.BaseRef
+			if chbngesetSpec != nil {
+				fbkeSource.WbntHebdRef = chbngesetSpec.HebdRef
+				fbkeSource.WbntBbseRef = chbngesetSpec.BbseRef
 			}
 
-			sourcer := stesting.NewFakeSourcer(nil, fakeSource)
+			sourcer := stesting.NewFbkeSourcer(nil, fbkeSource)
 
 			// Run the reconciler
 			rec := Reconciler{
 				noSleepBeforeSync: true,
-				client:            state.MockClient,
+				client:            stbte.MockClient,
 				sourcer:           sourcer,
 				store:             store,
 			}
-			_, err := rec.process(ctx, logger, store, changeset)
+			_, err := rec.process(ctx, logger, store, chbngeset)
 			if err != nil {
-				t.Fatalf("reconciler process failed: %s", err)
+				t.Fbtblf("reconciler process fbiled: %s", err)
 			}
 
-			// Assert that the changeset in the database looks like we want
-			assertions := tc.wantChangeset
-			assertions.Repo = repo.ID
-			assertions.OwnedByBatchChange = changesetOpts.OwnedByBatchChange
-			assertions.AttachedTo = []int64{batchChange.ID}
-			assertions.CurrentSpec = changesetSpec.ID
-			assertions.PreviousSpec = previousSpec.ID
-			bt.ReloadAndAssertChangeset(t, ctx, store, changeset, assertions)
+			// Assert thbt the chbngeset in the dbtbbbse looks like we wbnt
+			bssertions := tc.wbntChbngeset
+			bssertions.Repo = repo.ID
+			bssertions.OwnedByBbtchChbnge = chbngesetOpts.OwnedByBbtchChbnge
+			bssertions.AttbchedTo = []int64{bbtchChbnge.ID}
+			bssertions.CurrentSpec = chbngesetSpec.ID
+			bssertions.PreviousSpec = previousSpec.ID
+			bt.RelobdAndAssertChbngeset(t, ctx, store, chbngeset, bssertions)
 		})
 
-		// Clean up database.
-		bt.TruncateTables(t, db, "changeset_events", "changesets", "batch_changes", "batch_specs", "changeset_specs")
+		// Clebn up dbtbbbse.
+		bt.TruncbteTbbles(t, db, "chbngeset_events", "chbngesets", "bbtch_chbnges", "bbtch_specs", "chbngeset_specs")
 	}
 }
 
-func mockExternalURL(t *testing.T, url string) {
+func mockExternblURL(t *testing.T, url string) {
 	oldConf := conf.Get()
 	newConf := *oldConf
-	newConf.ExternalURL = url
+	newConf.ExternblURL = url
 	conf.Mock(&newConf)
-	t.Cleanup(func() { conf.Mock(oldConf) })
+	t.Clebnup(func() { conf.Mock(oldConf) })
 }

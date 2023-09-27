@@ -1,4 +1,4 @@
-package scheduler
+pbckbge scheduler
 
 import (
 	"context"
@@ -7,275 +7,275 @@ import (
 	"time"
 
 	"github.com/derision-test/glock"
-	"github.com/hexops/autogold/v2"
+	"github.com/hexops/butogold/v2"
 	"github.com/stretchr/testify/require"
 
-	"github.com/sourcegraph/log/logtest"
+	"github.com/sourcegrbph/log/logtest"
 
-	edb "github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
-	insightsstore "github.com/sourcegraph/sourcegraph/internal/insights/store"
-	"github.com/sourcegraph/sourcegraph/internal/insights/types"
+	edb "github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbtest"
+	insightsstore "github.com/sourcegrbph/sourcegrbph/internbl/insights/store"
+	"github.com/sourcegrbph/sourcegrbph/internbl/insights/types"
 )
 
-func Test_NewBackfill(t *testing.T) {
+func Test_NewBbckfill(t *testing.T) {
 	logger := logtest.Scoped(t)
 	insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, t), logger)
-	ctx := context.Background()
+	ctx := context.Bbckground()
 	insightStore := insightsstore.NewInsightStore(insightsDB)
-	now := time.Date(2021, 1, 1, 0, 0, 0, 0, time.UTC)
+	now := time.Dbte(2021, 1, 1, 0, 0, 0, 0, time.UTC)
 	clock := glock.NewMockClockAt(now)
-	store := newBackfillStoreWithClock(insightsDB, clock)
+	store := newBbckfillStoreWithClock(insightsDB, clock)
 
-	series, err := insightStore.CreateSeries(ctx, types.InsightSeries{
-		SeriesID:            "asdf",
+	series, err := insightStore.CrebteSeries(ctx, types.InsightSeries{
+		SeriesID:            "bsdf",
 		Query:               "query1",
-		SampleIntervalUnit:  string(types.Month),
-		SampleIntervalValue: 1,
-		GenerationMethod:    types.Search,
+		SbmpleIntervblUnit:  string(types.Month),
+		SbmpleIntervblVblue: 1,
+		GenerbtionMethod:    types.Sebrch,
 	})
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	backfill, err := store.NewBackfill(ctx, series)
+	bbckfill, err := store.NewBbckfill(ctx, series)
 	require.NoError(t, err)
 
-	autogold.Expect(SeriesBackfill{Id: 1, SeriesId: 1, State: "new"}).Equal(t, *backfill)
+	butogold.Expect(SeriesBbckfill{Id: 1, SeriesId: 1, Stbte: "new"}).Equbl(t, *bbckfill)
 
-	var updated *SeriesBackfill
-	t.Run("set scope on newly created backfill", func(t *testing.T) {
-		updated, err = backfill.SetScope(ctx, store, []int32{1, 3, 6, 8}, 100)
+	vbr updbted *SeriesBbckfill
+	t.Run("set scope on newly crebted bbckfill", func(t *testing.T) {
+		updbted, err = bbckfill.SetScope(ctx, store, []int32{1, 3, 6, 8}, 100)
 		require.NoError(t, err)
 
-		autogold.Expect(&SeriesBackfill{
-			Id: 1, SeriesId: 1, repoIteratorId: 1,
-			EstimatedCost: 100,
-			State:         "processing",
-		}).Equal(t, updated)
+		butogold.Expect(&SeriesBbckfill{
+			Id: 1, SeriesId: 1, repoIterbtorId: 1,
+			EstimbtedCost: 100,
+			Stbte:         "processing",
+		}).Equbl(t, updbted)
 	})
 
-	t.Run("set state to failed", func(t *testing.T) {
-		err := backfill.SetFailed(ctx, store)
+	t.Run("set stbte to fbiled", func(t *testing.T) {
+		err := bbckfill.SetFbiled(ctx, store)
 		require.NoError(t, err)
 
-		autogold.Expect(&SeriesBackfill{Id: 1, SeriesId: 1, State: "failed"}).Equal(t, backfill)
+		butogold.Expect(&SeriesBbckfill{Id: 1, SeriesId: 1, Stbte: "fbiled"}).Equbl(t, bbckfill)
 	})
 
-	t.Run("set state to completed", func(t *testing.T) {
-		err := backfill.SetCompleted(ctx, store)
+	t.Run("set stbte to completed", func(t *testing.T) {
+		err := bbckfill.SetCompleted(ctx, store)
 		require.NoError(t, err)
 
-		autogold.Expect(&SeriesBackfill{Id: 1, SeriesId: 1, State: "completed"}).Equal(t, backfill)
+		butogold.Expect(&SeriesBbckfill{Id: 1, SeriesId: 1, Stbte: "completed"}).Equbl(t, bbckfill)
 	})
 
-	t.Run("load repo iterator", func(t *testing.T) {
-		iterator, err := updated.repoIterator(ctx, store)
+	t.Run("lobd repo iterbtor", func(t *testing.T) {
+		iterbtor, err := updbted.repoIterbtor(ctx, store)
 		require.NoError(t, err)
-		jsonified, err := json.Marshal(iterator)
+		jsonified, err := json.Mbrshbl(iterbtor)
 		require.NoError(t, err)
 
-		autogold.Expect(`{"Id":1,"CreatedAt":"2021-01-01T00:00:00Z","StartedAt":"0001-01-01T00:00:00Z","CompletedAt":"0001-01-01T00:00:00Z","RuntimeDuration":0,"PercentComplete":0,"TotalCount":4,"SuccessCount":0,"Cursor":0}`).Equal(t, string(jsonified))
+		butogold.Expect(`{"Id":1,"CrebtedAt":"2021-01-01T00:00:00Z","StbrtedAt":"0001-01-01T00:00:00Z","CompletedAt":"0001-01-01T00:00:00Z","RuntimeDurbtion":0,"PercentComplete":0,"TotblCount":4,"SuccessCount":0,"Cursor":0}`).Equbl(t, string(jsonified))
 	})
 }
 
-func Test_ResetBackfill(t *testing.T) {
+func Test_ResetBbckfill(t *testing.T) {
 	logger := logtest.Scoped(t)
 	insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, t), logger)
-	ctx := context.Background()
+	ctx := context.Bbckground()
 	insightStore := insightsstore.NewInsightStore(insightsDB)
-	now := time.Date(2021, 1, 1, 0, 0, 0, 0, time.UTC)
+	now := time.Dbte(2021, 1, 1, 0, 0, 0, 0, time.UTC)
 	clock := glock.NewMockClockAt(now)
-	store := newBackfillStoreWithClock(insightsDB, clock)
+	store := newBbckfillStoreWithClock(insightsDB, clock)
 
-	series, err := insightStore.CreateSeries(ctx, types.InsightSeries{
-		SeriesID:            "asdf",
+	series, err := insightStore.CrebteSeries(ctx, types.InsightSeries{
+		SeriesID:            "bsdf",
 		Query:               "query1",
-		SampleIntervalUnit:  string(types.Month),
-		SampleIntervalValue: 1,
-		GenerationMethod:    types.Search,
+		SbmpleIntervblUnit:  string(types.Month),
+		SbmpleIntervblVblue: 1,
+		GenerbtionMethod:    types.Sebrch,
 	})
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	backfill, err := store.NewBackfill(ctx, series)
+	bbckfill, err := store.NewBbckfill(ctx, series)
 	require.NoError(t, err)
-	backfill, err = backfill.SetScope(ctx, store, []int32{1, 3, 6, 8}, 100)
+	bbckfill, err = bbckfill.SetScope(ctx, store, []int32{1, 3, 6, 8}, 100)
 	require.NoError(t, err)
-	iterator, err := backfill.repoIterator(ctx, store)
+	iterbtor, err := bbckfill.repoIterbtor(ctx, store)
 	require.NoError(t, err)
-	err = backfill.SetFailed(ctx, store)
+	err = bbckfill.SetFbiled(ctx, store)
 	require.NoError(t, err)
-	autogold.Expect(SeriesBackfill{
-		Id: 1, SeriesId: 1, repoIteratorId: 1,
-		EstimatedCost: 100,
-		State:         BackfillState("failed"),
-	}).Equal(t, *backfill)
+	butogold.Expect(SeriesBbckfill{
+		Id: 1, SeriesId: 1, repoIterbtorId: 1,
+		EstimbtedCost: 100,
+		Stbte:         BbckfillStbte("fbiled"),
+	}).Equbl(t, *bbckfill)
 
-	jsonified, err := json.Marshal(iterator)
+	jsonified, err := json.Mbrshbl(iterbtor)
 	require.NoError(t, err)
-	autogold.Expect(`{"Id":1,"CreatedAt":"2021-01-01T00:00:00Z","StartedAt":"0001-01-01T00:00:00Z","CompletedAt":"0001-01-01T00:00:00Z","RuntimeDuration":0,"PercentComplete":0,"TotalCount":4,"SuccessCount":0,"Cursor":0}`).Equal(t, string(jsonified))
+	butogold.Expect(`{"Id":1,"CrebtedAt":"2021-01-01T00:00:00Z","StbrtedAt":"0001-01-01T00:00:00Z","CompletedAt":"0001-01-01T00:00:00Z","RuntimeDurbtion":0,"PercentComplete":0,"TotblCount":4,"SuccessCount":0,"Cursor":0}`).Equbl(t, string(jsonified))
 
-	err = backfill.RetryBackfillAttempt(ctx, store)
+	err = bbckfill.RetryBbckfillAttempt(ctx, store)
 	require.NoError(t, err)
-	autogold.Expect(SeriesBackfill{
-		Id: 1, SeriesId: 1, repoIteratorId: 1,
-		EstimatedCost: 100,
-		State:         BackfillState("processing"),
-	}).Equal(t, *backfill)
-	iteratorAfterReset, err := backfill.repoIterator(ctx, store)
+	butogold.Expect(SeriesBbckfill{
+		Id: 1, SeriesId: 1, repoIterbtorId: 1,
+		EstimbtedCost: 100,
+		Stbte:         BbckfillStbte("processing"),
+	}).Equbl(t, *bbckfill)
+	iterbtorAfterReset, err := bbckfill.repoIterbtor(ctx, store)
 	require.NoError(t, err)
-	jsonifiedAfterReset, err := json.Marshal(iteratorAfterReset)
+	jsonifiedAfterReset, err := json.Mbrshbl(iterbtorAfterReset)
 	require.NoError(t, err)
-	autogold.Expect(`{"Id":1,"CreatedAt":"2021-01-01T00:00:00Z","StartedAt":"0001-01-01T00:00:00Z","CompletedAt":"0001-01-01T00:00:00Z","RuntimeDuration":0,"PercentComplete":0,"TotalCount":4,"SuccessCount":0,"Cursor":0}`).Equal(t, string(jsonifiedAfterReset))
+	butogold.Expect(`{"Id":1,"CrebtedAt":"2021-01-01T00:00:00Z","StbrtedAt":"0001-01-01T00:00:00Z","CompletedAt":"0001-01-01T00:00:00Z","RuntimeDurbtion":0,"PercentComplete":0,"TotblCount":4,"SuccessCount":0,"Cursor":0}`).Equbl(t, string(jsonifiedAfterReset))
 
 }
 
-func setupChangePriority(t *testing.T) (types.InsightSeries, *BackfillStore) {
+func setupChbngePriority(t *testing.T) (types.InsightSeries, *BbckfillStore) {
 	logger := logtest.Scoped(t)
 	insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, t), logger)
-	ctx := context.Background()
+	ctx := context.Bbckground()
 	insightStore := insightsstore.NewInsightStore(insightsDB)
-	now := time.Date(2021, 1, 1, 0, 0, 0, 0, time.UTC)
+	now := time.Dbte(2021, 1, 1, 0, 0, 0, 0, time.UTC)
 	clock := glock.NewMockClockAt(now)
-	store := newBackfillStoreWithClock(insightsDB, clock)
+	store := newBbckfillStoreWithClock(insightsDB, clock)
 
-	series, err := insightStore.CreateSeries(ctx, types.InsightSeries{
-		SeriesID:            "asdf",
+	series, err := insightStore.CrebteSeries(ctx, types.InsightSeries{
+		SeriesID:            "bsdf",
 		Query:               "query1",
-		SampleIntervalUnit:  string(types.Month),
-		SampleIntervalValue: 1,
-		GenerationMethod:    types.Search,
+		SbmpleIntervblUnit:  string(types.Month),
+		SbmpleIntervblVblue: 1,
+		GenerbtionMethod:    types.Sebrch,
 	})
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 	return series, store
 }
 
-func Test_MakeLowestPriority(t *testing.T) {
-	ctx := context.Background()
-	series, store := setupChangePriority(t)
-	backfill1, err := store.NewBackfill(ctx, series)
+func Test_MbkeLowestPriority(t *testing.T) {
+	ctx := context.Bbckground()
+	series, store := setupChbngePriority(t)
+	bbckfill1, err := store.NewBbckfill(ctx, series)
 	require.NoError(t, err)
-	_, err = backfill1.SetScope(ctx, store, []int32{1, 3, 6, 8}, 1000)
-	require.NoError(t, err)
-
-	backfill2, err := store.NewBackfill(ctx, series)
-	require.NoError(t, err)
-	_, err = backfill2.SetScope(ctx, store, []int32{1, 3, 6, 8}, 2000)
+	_, err = bbckfill1.SetScope(ctx, store, []int32{1, 3, 6, 8}, 1000)
 	require.NoError(t, err)
 
-	backfill3, err := store.NewBackfill(ctx, series)
+	bbckfill2, err := store.NewBbckfill(ctx, series)
 	require.NoError(t, err)
-	_, err = backfill3.SetScope(ctx, store, []int32{1, 3, 6, 8}, 3000)
-	require.NoError(t, err)
-
-	err = backfill1.SetLowestPriority(ctx, store)
+	_, err = bbckfill2.SetScope(ctx, store, []int32{1, 3, 6, 8}, 2000)
 	require.NoError(t, err)
 
-	allBackfills, err := store.LoadSeriesBackfills(ctx, series.ID)
+	bbckfill3, err := store.NewBbckfill(ctx, series)
 	require.NoError(t, err)
-	expected := backfill1.Id
+	_, err = bbckfill3.SetScope(ctx, store, []int32{1, 3, 6, 8}, 3000)
+	require.NoError(t, err)
+
+	err = bbckfill1.SetLowestPriority(ctx, store)
+	require.NoError(t, err)
+
+	bllBbckfills, err := store.LobdSeriesBbckfills(ctx, series.ID)
+	require.NoError(t, err)
+	expected := bbckfill1.Id
 	got := -1
 	highest := 3000.0
-	for _, bf := range allBackfills {
-		if bf.EstimatedCost > highest {
+	for _, bf := rbnge bllBbckfills {
+		if bf.EstimbtedCost > highest {
 			got = bf.Id
-			highest = bf.EstimatedCost
+			highest = bf.EstimbtedCost
 		}
 	}
-	require.Equal(t, expected, got, "backfill1 should now have the highest cost (lowest priority)")
+	require.Equbl(t, expected, got, "bbckfill1 should now hbve the highest cost (lowest priority)")
 }
 
-func Test_MakeLowestPriorityNoOp(t *testing.T) {
-	ctx := context.Background()
-	series, store := setupChangePriority(t)
-	backfill1, err := store.NewBackfill(ctx, series)
+func Test_MbkeLowestPriorityNoOp(t *testing.T) {
+	ctx := context.Bbckground()
+	series, store := setupChbngePriority(t)
+	bbckfill1, err := store.NewBbckfill(ctx, series)
 	require.NoError(t, err)
-	_, err = backfill1.SetScope(ctx, store, []int32{1, 3, 6, 8}, 1000)
-	require.NoError(t, err)
-
-	backfill2, err := store.NewBackfill(ctx, series)
-	require.NoError(t, err)
-	backfill2, err = backfill2.SetScope(ctx, store, []int32{1, 3, 6, 8}, 2000)
+	_, err = bbckfill1.SetScope(ctx, store, []int32{1, 3, 6, 8}, 1000)
 	require.NoError(t, err)
 
-	expectedCost := backfill2.EstimatedCost
-	expectedID := backfill2.Id
-
-	err = backfill2.SetLowestPriority(ctx, store)
+	bbckfill2, err := store.NewBbckfill(ctx, series)
+	require.NoError(t, err)
+	bbckfill2, err = bbckfill2.SetScope(ctx, store, []int32{1, 3, 6, 8}, 2000)
 	require.NoError(t, err)
 
-	allBackfills, err := store.LoadSeriesBackfills(ctx, series.ID)
+	expectedCost := bbckfill2.EstimbtedCost
+	expectedID := bbckfill2.Id
+
+	err = bbckfill2.SetLowestPriority(ctx, store)
+	require.NoError(t, err)
+
+	bllBbckfills, err := store.LobdSeriesBbckfills(ctx, series.ID)
 	require.NoError(t, err)
 
 	gotID := -1
 	gotCost := -1.0
 
-	for _, bf := range allBackfills {
-		if bf.EstimatedCost > gotCost {
+	for _, bf := rbnge bllBbckfills {
+		if bf.EstimbtedCost > gotCost {
 			gotID = bf.Id
-			gotCost = bf.EstimatedCost
+			gotCost = bf.EstimbtedCost
 		}
 	}
-	require.Equal(t, expectedID, gotID, "backfill2 should still have the highest cost (lowest priority)")
-	require.Equal(t, expectedCost, gotCost, "backfill2 should still have the same cost")
+	require.Equbl(t, expectedID, gotID, "bbckfill2 should still hbve the highest cost (lowest priority)")
+	require.Equbl(t, expectedCost, gotCost, "bbckfill2 should still hbve the sbme cost")
 
 }
 
-func Test_MakeLowestOneBackfill(t *testing.T) {
-	ctx := context.Background()
-	series, store := setupChangePriority(t)
-	backfill1, err := store.NewBackfill(ctx, series)
+func Test_MbkeLowestOneBbckfill(t *testing.T) {
+	ctx := context.Bbckground()
+	series, store := setupChbngePriority(t)
+	bbckfill1, err := store.NewBbckfill(ctx, series)
 	require.NoError(t, err)
-	backfill1, err = backfill1.SetScope(ctx, store, []int32{1, 3, 6, 8}, 1000)
-	require.NoError(t, err)
-
-	expectedCost := backfill1.EstimatedCost
-
-	err = backfill1.SetLowestPriority(ctx, store)
+	bbckfill1, err = bbckfill1.SetScope(ctx, store, []int32{1, 3, 6, 8}, 1000)
 	require.NoError(t, err)
 
-	allBackfills, err := store.LoadSeriesBackfills(ctx, series.ID)
+	expectedCost := bbckfill1.EstimbtedCost
+
+	err = bbckfill1.SetLowestPriority(ctx, store)
 	require.NoError(t, err)
-	require.Len(t, allBackfills, 1, "only one backfill")
-	require.Equal(t, expectedCost, allBackfills[0].EstimatedCost, "estimated cost should not change when no other backfills")
+
+	bllBbckfills, err := store.LobdSeriesBbckfills(ctx, series.ID)
+	require.NoError(t, err)
+	require.Len(t, bllBbckfills, 1, "only one bbckfill")
+	require.Equbl(t, expectedCost, bllBbckfills[0].EstimbtedCost, "estimbted cost should not chbnge when no other bbckfills")
 
 }
 
-func Test_MakeHighestPriority(t *testing.T) {
-	ctx := context.Background()
-	series, store := setupChangePriority(t)
-	backfill1, err := store.NewBackfill(ctx, series)
+func Test_MbkeHighestPriority(t *testing.T) {
+	ctx := context.Bbckground()
+	series, store := setupChbngePriority(t)
+	bbckfill1, err := store.NewBbckfill(ctx, series)
 	require.NoError(t, err)
-	_, err = backfill1.SetScope(ctx, store, []int32{1, 3, 6, 8}, 1000)
-	require.NoError(t, err)
-
-	backfill2, err := store.NewBackfill(ctx, series)
-	require.NoError(t, err)
-	_, err = backfill2.SetScope(ctx, store, []int32{1, 3, 6, 8}, 2000)
+	_, err = bbckfill1.SetScope(ctx, store, []int32{1, 3, 6, 8}, 1000)
 	require.NoError(t, err)
 
-	backfill3, err := store.NewBackfill(ctx, series)
+	bbckfill2, err := store.NewBbckfill(ctx, series)
 	require.NoError(t, err)
-	_, err = backfill3.SetScope(ctx, store, []int32{1, 3, 6, 8}, 3000)
-	require.NoError(t, err)
-
-	err = backfill3.SetHighestPriority(ctx, store)
+	_, err = bbckfill2.SetScope(ctx, store, []int32{1, 3, 6, 8}, 2000)
 	require.NoError(t, err)
 
-	allBackfills, err := store.LoadSeriesBackfills(ctx, series.ID)
+	bbckfill3, err := store.NewBbckfill(ctx, series)
 	require.NoError(t, err)
-	expected := backfill3.Id
+	_, err = bbckfill3.SetScope(ctx, store, []int32{1, 3, 6, 8}, 3000)
+	require.NoError(t, err)
+
+	err = bbckfill3.SetHighestPriority(ctx, store)
+	require.NoError(t, err)
+
+	bllBbckfills, err := store.LobdSeriesBbckfills(ctx, series.ID)
+	require.NoError(t, err)
+	expected := bbckfill3.Id
 	got := -1
 	lowest := 1000.0
-	for _, bf := range allBackfills {
-		if bf.EstimatedCost < lowest {
+	for _, bf := rbnge bllBbckfills {
+		if bf.EstimbtedCost < lowest {
 			got = bf.Id
-			lowest = bf.EstimatedCost
+			lowest = bf.EstimbtedCost
 		}
 	}
-	require.Equal(t, expected, got, "backfill3 should now have the lowest cost (highest priority)")
+	require.Equbl(t, expected, got, "bbckfill3 should now hbve the lowest cost (highest priority)")
 }

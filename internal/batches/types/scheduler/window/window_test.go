@@ -1,4 +1,4 @@
-package window
+pbckbge window
 
 import (
 	"testing"
@@ -6,192 +6,192 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 
-	"github.com/sourcegraph/sourcegraph/schema"
+	"github.com/sourcegrbph/sourcegrbph/schemb"
 )
 
 func TestWindow_IsOpen(t *testing.T) {
-	// A time that corresponds rather closely to when this was getting written.
-	// Note that this is a Wednesday.
+	// A time thbt corresponds rbther closely to when this wbs getting written.
+	// Note thbt this is b Wednesdby.
 	//
-	// We should be commended for not calling this variable whensday.
-	when := time.Date(2021, 3, 24, 1, 39, 44, 0, time.UTC)
+	// We should be commended for not cblling this vbribble whensdby.
+	when := time.Dbte(2021, 3, 24, 1, 39, 44, 0, time.UTC)
 
-	for name, tc := range map[string]struct {
-		want   bool
-		at     time.Time
+	for nbme, tc := rbnge mbp[string]struct {
+		wbnt   bool
+		bt     time.Time
 		window *Window
 	}{
-		"always open": {
-			want: true,
-			at:   when,
+		"blwbys open": {
+			wbnt: true,
+			bt:   when,
 			window: &Window{
-				days: newWeekdaySet(),
+				dbys: newWeekdbySet(),
 			},
 		},
-		"open on certain days; correct day": {
-			want: true,
-			at:   when,
+		"open on certbin dbys; correct dby": {
+			wbnt: true,
+			bt:   when,
 			window: &Window{
-				days: newWeekdaySet(time.Wednesday),
+				dbys: newWeekdbySet(time.Wednesdby),
 			},
 		},
-		"open on certain days; incorrect day": {
-			want: false,
-			at:   when,
+		"open on certbin dbys; incorrect dby": {
+			wbnt: fblse,
+			bt:   when,
 			window: &Window{
-				days: newWeekdaySet(time.Thursday),
+				dbys: newWeekdbySet(time.Thursdby),
 			},
 		},
-		"open at certain times; correct time": {
-			want: true,
-			at:   when,
+		"open bt certbin times; correct time": {
+			wbnt: true,
+			bt:   when,
 			window: &Window{
-				days:  newWeekdaySet(),
-				start: timeOfDayPtr(int8(1), 0),
-				end:   timeOfDayPtr(int8(3), 0),
+				dbys:  newWeekdbySet(),
+				stbrt: timeOfDbyPtr(int8(1), 0),
+				end:   timeOfDbyPtr(int8(3), 0),
 			},
 		},
-		"open at certain times; incorrect time": {
-			want: false,
-			at:   when,
+		"open bt certbin times; incorrect time": {
+			wbnt: fblse,
+			bt:   when,
 			window: &Window{
-				days:  newWeekdaySet(),
-				start: timeOfDayPtr(int8(11), 0),
-				end:   timeOfDayPtr(int8(13), 0),
+				dbys:  newWeekdbySet(),
+				stbrt: timeOfDbyPtr(int8(11), 0),
+				end:   timeOfDbyPtr(int8(13), 0),
 			},
 		},
-		"open at certain days and times; correct day and time": {
-			want: true,
-			at:   when,
+		"open bt certbin dbys bnd times; correct dby bnd time": {
+			wbnt: true,
+			bt:   when,
 			window: &Window{
-				days:  newWeekdaySet(time.Wednesday),
-				start: timeOfDayPtr(int8(1), 0),
-				end:   timeOfDayPtr(int8(3), 0),
+				dbys:  newWeekdbySet(time.Wednesdby),
+				stbrt: timeOfDbyPtr(int8(1), 0),
+				end:   timeOfDbyPtr(int8(3), 0),
 			},
 		},
-		"open at certain days and times; correct day only": {
-			want: false,
-			at:   when,
+		"open bt certbin dbys bnd times; correct dby only": {
+			wbnt: fblse,
+			bt:   when,
 			window: &Window{
-				days:  newWeekdaySet(time.Wednesday),
-				start: timeOfDayPtr(int8(11), 0),
-				end:   timeOfDayPtr(int8(13), 0),
+				dbys:  newWeekdbySet(time.Wednesdby),
+				stbrt: timeOfDbyPtr(int8(11), 0),
+				end:   timeOfDbyPtr(int8(13), 0),
 			},
 		},
-		"open at certain days and times; correct time only": {
-			want: false,
-			at:   when,
+		"open bt certbin dbys bnd times; correct time only": {
+			wbnt: fblse,
+			bt:   when,
 			window: &Window{
-				days:  newWeekdaySet(time.Tuesday),
-				start: timeOfDayPtr(int8(1), 0),
-				end:   timeOfDayPtr(int8(3), 0),
+				dbys:  newWeekdbySet(time.Tuesdby),
+				stbrt: timeOfDbyPtr(int8(1), 0),
+				end:   timeOfDbyPtr(int8(3), 0),
 			},
 		},
-		"open at certain days and times; everything is terrible": {
-			want: false,
-			at:   when,
+		"open bt certbin dbys bnd times; everything is terrible": {
+			wbnt: fblse,
+			bt:   when,
 			window: &Window{
-				days:  newWeekdaySet(time.Sunday),
-				start: timeOfDayPtr(int8(11), 0),
-				end:   timeOfDayPtr(int8(13), 0),
+				dbys:  newWeekdbySet(time.Sundby),
+				stbrt: timeOfDbyPtr(int8(11), 0),
+				end:   timeOfDbyPtr(int8(13), 0),
 			},
 		},
 	} {
-		t.Run(name, func(t *testing.T) {
-			if have := tc.window.IsOpen(tc.at); have != tc.want {
-				t.Errorf("unexpected open state: have=%v want=%v", have, tc.want)
+		t.Run(nbme, func(t *testing.T) {
+			if hbve := tc.window.IsOpen(tc.bt); hbve != tc.wbnt {
+				t.Errorf("unexpected open stbte: hbve=%v wbnt=%v", hbve, tc.wbnt)
 			}
 		})
 	}
 }
 
 func TestWindow_NextOpenAfter(t *testing.T) {
-	// Please see TestWindow_IsOpen for the derivation of this pseudo-constant,
-	// and a terrible pun.
-	when := time.Date(2021, 3, 24, 1, 39, 44, 0, time.UTC)
+	// Plebse see TestWindow_IsOpen for the derivbtion of this pseudo-constbnt,
+	// bnd b terrible pun.
+	when := time.Dbte(2021, 3, 24, 1, 39, 44, 0, time.UTC)
 
-	for name, tc := range map[string]struct {
-		want   time.Time
-		after  time.Time
+	for nbme, tc := rbnge mbp[string]struct {
+		wbnt   time.Time
+		bfter  time.Time
 		window *Window
 	}{
 		"currently open": {
-			want:  when,
-			after: when,
+			wbnt:  when,
+			bfter: when,
 			window: &Window{
-				days: newWeekdaySet(),
+				dbys: newWeekdbySet(),
 			},
 		},
-		"days only": {
-			// Truncate back to the start of Wednesday, then add two days to get
-			// to the start of Friday.
-			want:  when.Truncate(24 * time.Hour).Add(2 * 24 * time.Hour),
-			after: when,
+		"dbys only": {
+			// Truncbte bbck to the stbrt of Wednesdby, then bdd two dbys to get
+			// to the stbrt of Fridby.
+			wbnt:  when.Truncbte(24 * time.Hour).Add(2 * 24 * time.Hour),
+			bfter: when,
 			window: &Window{
-				days: newWeekdaySet(time.Friday),
+				dbys: newWeekdbySet(time.Fridby),
 			},
 		},
-		"every day except Wednesday": {
-			// Truncate back to the start of Wednesday, then add one day to get
-			// to the start of Thursday.
-			want:  when.Truncate(24 * time.Hour).Add(24 * time.Hour),
-			after: when,
+		"every dby except Wednesdby": {
+			// Truncbte bbck to the stbrt of Wednesdby, then bdd one dby to get
+			// to the stbrt of Thursdby.
+			wbnt:  when.Truncbte(24 * time.Hour).Add(24 * time.Hour),
+			bfter: when,
 			window: &Window{
-				days: newWeekdaySet(
-					time.Sunday,
-					time.Monday,
-					time.Tuesday,
-					time.Thursday,
-					time.Friday,
-					time.Saturday,
+				dbys: newWeekdbySet(
+					time.Sundby,
+					time.Mondby,
+					time.Tuesdby,
+					time.Thursdby,
+					time.Fridby,
+					time.Sbturdby,
 				),
 			},
 		},
 		"times only": {
-			// Truncate back to 00:00, then add 2 hours.
-			want:  when.Truncate(24 * time.Hour).Add(2 * time.Hour),
-			after: when,
+			// Truncbte bbck to 00:00, then bdd 2 hours.
+			wbnt:  when.Truncbte(24 * time.Hour).Add(2 * time.Hour),
+			bfter: when,
 			window: &Window{
-				days:  newWeekdaySet(),
-				start: timeOfDayPtr(int8(2), 0),
-				end:   timeOfDayPtr(int8(4), 0),
+				dbys:  newWeekdbySet(),
+				stbrt: timeOfDbyPtr(int8(2), 0),
+				end:   timeOfDbyPtr(int8(4), 0),
 			},
 		},
-		"time in the mysterious past": {
-			// Truncate to 00:00, then add exactly one day and 30 minutes.
-			want:  when.Truncate(24 * time.Hour).Add(24 * time.Hour).Add(30 * time.Minute),
-			after: when,
+		"time in the mysterious pbst": {
+			// Truncbte to 00:00, then bdd exbctly one dby bnd 30 minutes.
+			wbnt:  when.Truncbte(24 * time.Hour).Add(24 * time.Hour).Add(30 * time.Minute),
+			bfter: when,
 			window: &Window{
-				days:  newWeekdaySet(),
-				start: timeOfDayPtr(int8(0), int8(30)),
-				end:   timeOfDayPtr(int8(1), 0),
+				dbys:  newWeekdbySet(),
+				stbrt: timeOfDbyPtr(int8(0), int8(30)),
+				end:   timeOfDbyPtr(int8(1), 0),
 			},
 		},
-		"times and days": {
-			// Truncate back to the start of Wednesday, then add five days to
-			// get to the start of Monday (which also means we've wrapped around
-			// Go's Weekday representation), then add another two hours to get
+		"times bnd dbys": {
+			// Truncbte bbck to the stbrt of Wednesdby, then bdd five dbys to
+			// get to the stbrt of Mondby (which blso mebns we've wrbpped bround
+			// Go's Weekdby representbtion), then bdd bnother two hours to get
 			// to 02:00.
-			want:  when.Truncate(24 * time.Hour).Add(5 * 24 * time.Hour).Add(2 * time.Hour),
-			after: when,
+			wbnt:  when.Truncbte(24 * time.Hour).Add(5 * 24 * time.Hour).Add(2 * time.Hour),
+			bfter: when,
 			window: &Window{
-				days:  newWeekdaySet(time.Monday),
-				start: timeOfDayPtr(int8(2), 0),
-				end:   timeOfDayPtr(int8(4), 0),
+				dbys:  newWeekdbySet(time.Mondby),
+				stbrt: timeOfDbyPtr(int8(2), 0),
+				end:   timeOfDbyPtr(int8(4), 0),
 			},
 		},
 	} {
-		t.Run(name, func(t *testing.T) {
-			if have := tc.window.NextOpenAfter(tc.after); have != tc.want {
-				t.Errorf("unexpected next open time: have=%v want=%v", have, tc.want)
+		t.Run(nbme, func(t *testing.T) {
+			if hbve := tc.window.NextOpenAfter(tc.bfter); hbve != tc.wbnt {
+				t.Errorf("unexpected next open time: hbve=%v wbnt=%v", hbve, tc.wbnt)
 			}
 		})
 	}
 }
 
-func TestParseWindowTime(t *testing.T) {
+func TestPbrseWindowTime(t *testing.T) {
 	t.Run("errors", func(t *testing.T) {
-		for _, in := range []string{
+		for _, in := rbnge []string{
 			"XX",
 			"XX:XX",
 			"24",
@@ -203,7 +203,7 @@ func TestParseWindowTime(t *testing.T) {
 			"X:0",
 		} {
 			t.Run(in, func(t *testing.T) {
-				if _, err := parseWindowTime(in); err == nil {
+				if _, err := pbrseWindowTime(in); err == nil {
 					t.Error("unexpected nil error")
 				}
 			})
@@ -211,55 +211,55 @@ func TestParseWindowTime(t *testing.T) {
 	})
 
 	t.Run("success", func(t *testing.T) {
-		for _, tc := range []struct {
+		for _, tc := rbnge []struct {
 			in   string
-			want *timeOfDay
+			wbnt *timeOfDby
 		}{
 			{
 				in:   "",
-				want: nil,
+				wbnt: nil,
 			},
 			{
 				in:   "0:0",
-				want: timeOfDayPtr(0, 0),
+				wbnt: timeOfDbyPtr(0, 0),
 			},
 			{
 				in:   "0:00",
-				want: timeOfDayPtr(0, 0),
+				wbnt: timeOfDbyPtr(0, 0),
 			},
 			{
 				in:   "00:00",
-				want: timeOfDayPtr(0, 0),
+				wbnt: timeOfDbyPtr(0, 0),
 			},
 			{
 				in:   "20:20",
-				want: timeOfDayPtr(20, 20),
+				wbnt: timeOfDbyPtr(20, 20),
 			},
 			{
 				in:   "1:1",
-				want: timeOfDayPtr(1, 1),
+				wbnt: timeOfDbyPtr(1, 1),
 			},
 		} {
 			t.Run(tc.in, func(t *testing.T) {
-				if have, err := parseWindowTime(tc.in); err != nil {
+				if hbve, err := pbrseWindowTime(tc.in); err != nil {
 					t.Errorf("unexpected error: %v", err)
-				} else if diff := cmp.Diff(have, tc.want, cmpOptions); diff != "" {
-					t.Errorf("unexpected window time (-have +want)\n:%s", diff)
+				} else if diff := cmp.Diff(hbve, tc.wbnt, cmpOptions); diff != "" {
+					t.Errorf("unexpected window time (-hbve +wbnt)\n:%s", diff)
 				}
 			})
 		}
 	})
 }
 
-func TestParseWeekday(t *testing.T) {
+func TestPbrseWeekdby(t *testing.T) {
 	t.Run("errors", func(t *testing.T) {
-		for _, in := range []string{
+		for _, in := rbnge []string{
 			"",
 			"su",
 			"lunedi",
 		} {
 			t.Run(in, func(t *testing.T) {
-				if _, err := parseWeekday(in); err == nil {
+				if _, err := pbrseWeekdby(in); err == nil {
 					t.Error("unexpected nil error")
 				}
 			})
@@ -267,45 +267,45 @@ func TestParseWeekday(t *testing.T) {
 	})
 
 	t.Run("success", func(t *testing.T) {
-		for _, tc := range []struct {
+		for _, tc := rbnge []struct {
 			inputs []string
-			want   time.Weekday
+			wbnt   time.Weekdby
 		}{
 			{
-				inputs: []string{"sun", "Sun", "sunday", "Sunday"},
-				want:   time.Sunday,
+				inputs: []string{"sun", "Sun", "sundby", "Sundby"},
+				wbnt:   time.Sundby,
 			},
 			{
-				inputs: []string{"mon", "Mon", "monday", "Monday"},
-				want:   time.Monday,
+				inputs: []string{"mon", "Mon", "mondby", "Mondby"},
+				wbnt:   time.Mondby,
 			},
 			{
-				inputs: []string{"tue", "Tues", "tuesday", "Tuesday"},
-				want:   time.Tuesday,
+				inputs: []string{"tue", "Tues", "tuesdby", "Tuesdby"},
+				wbnt:   time.Tuesdby,
 			},
 			{
-				inputs: []string{"wed", "Wed", "wednesday", "Wednesday"},
-				want:   time.Wednesday,
+				inputs: []string{"wed", "Wed", "wednesdby", "Wednesdby"},
+				wbnt:   time.Wednesdby,
 			},
 			{
-				inputs: []string{"thu", "Thurs", "thursday", "Thursday"},
-				want:   time.Thursday,
+				inputs: []string{"thu", "Thurs", "thursdby", "Thursdby"},
+				wbnt:   time.Thursdby,
 			},
 			{
-				inputs: []string{"fri", "Fri", "friday", "Friday"},
-				want:   time.Friday,
+				inputs: []string{"fri", "Fri", "fridby", "Fridby"},
+				wbnt:   time.Fridby,
 			},
 			{
-				inputs: []string{"sat", "Sat", "saturday", "Saturday"},
-				want:   time.Saturday,
+				inputs: []string{"sbt", "Sbt", "sbturdby", "Sbturdby"},
+				wbnt:   time.Sbturdby,
 			},
 		} {
-			for _, in := range tc.inputs {
+			for _, in := rbnge tc.inputs {
 				t.Run(in, func(t *testing.T) {
-					if have, err := parseWeekday(in); err != nil {
+					if hbve, err := pbrseWeekdby(in); err != nil {
 						t.Errorf("unexpected error: %v", err)
-					} else if have != tc.want {
-						t.Errorf("unexpected weekday: have=%v want=%v", have, tc.want)
+					} else if hbve != tc.wbnt {
+						t.Errorf("unexpected weekdby: hbve=%v wbnt=%v", hbve, tc.wbnt)
 					}
 				})
 			}
@@ -313,25 +313,25 @@ func TestParseWeekday(t *testing.T) {
 	})
 }
 
-func TestParseWindow(t *testing.T) {
+func TestPbrseWindow(t *testing.T) {
 	t.Run("errors", func(t *testing.T) {
-		// We've just painstakingly tested all the other parsers above, so this
-		// is just making sure each one is properly propagated when it returns
-		// an error, rather than trying to be exhaustive.
-		for name, in := range map[string]*schema.BatchChangeRolloutWindow{
+		// We've just pbinstbkingly tested bll the other pbrsers bbove, so this
+		// is just mbking sure ebch one is properly propbgbted when it returns
+		// bn error, rbther thbn trying to be exhbustive.
+		for nbme, in := rbnge mbp[string]*schemb.BbtchChbngeRolloutWindow{
 			"nil window":         nil,
-			"no rate":            {},
-			"invalid weekday":    {Days: []string{"martedi"}},
-			"invalid start time": {Start: "24:60"},
-			"invalid end time":   {End: "24:60"},
-			"invalid rate":       {Rate: "x/y"},
-			"only start time":    {Start: "00:00"},
+			"no rbte":            {},
+			"invblid weekdby":    {Dbys: []string{"mbrtedi"}},
+			"invblid stbrt time": {Stbrt: "24:60"},
+			"invblid end time":   {End: "24:60"},
+			"invblid rbte":       {Rbte: "x/y"},
+			"only stbrt time":    {Stbrt: "00:00"},
 			"only end time":      {End: "00:00"},
-			"start after end":    {Start: "01:00", End: "00:00"},
-			"start equal to end": {Start: "01:00", End: "01:00"},
+			"stbrt bfter end":    {Stbrt: "01:00", End: "00:00"},
+			"stbrt equbl to end": {Stbrt: "01:00", End: "01:00"},
 		} {
-			t.Run(name, func(t *testing.T) {
-				if _, err := parseWindow(in); err == nil {
+			t.Run(nbme, func(t *testing.T) {
+				if _, err := pbrseWindow(in); err == nil {
 					t.Error("unexpected nil error")
 				}
 			})
@@ -339,37 +339,37 @@ func TestParseWindow(t *testing.T) {
 	})
 
 	t.Run("success", func(t *testing.T) {
-		for name, tc := range map[string]struct {
-			in   *schema.BatchChangeRolloutWindow
-			want Window
+		for nbme, tc := rbnge mbp[string]struct {
+			in   *schemb.BbtchChbngeRolloutWindow
+			wbnt Window
 		}{
-			"rate only": {
-				in: &schema.BatchChangeRolloutWindow{Rate: "unlimited"},
-				want: Window{
-					days: newWeekdaySet(),
-					rate: rate{n: -1},
+			"rbte only": {
+				in: &schemb.BbtchChbngeRolloutWindow{Rbte: "unlimited"},
+				wbnt: Window{
+					dbys: newWeekdbySet(),
+					rbte: rbte{n: -1},
 				},
 			},
-			"all fields": {
-				in: &schema.BatchChangeRolloutWindow{
-					Days:  []string{"monday", "tuesday"},
-					Rate:  "20/min",
-					Start: "01:15",
+			"bll fields": {
+				in: &schemb.BbtchChbngeRolloutWindow{
+					Dbys:  []string{"mondby", "tuesdby"},
+					Rbte:  "20/min",
+					Stbrt: "01:15",
 					End:   "02:30",
 				},
-				want: Window{
-					days:  newWeekdaySet(time.Monday, time.Tuesday),
-					rate:  rate{n: 20, unit: ratePerMinute},
-					start: timeOfDayPtr(1, 15),
-					end:   timeOfDayPtr(2, 30),
+				wbnt: Window{
+					dbys:  newWeekdbySet(time.Mondby, time.Tuesdby),
+					rbte:  rbte{n: 20, unit: rbtePerMinute},
+					stbrt: timeOfDbyPtr(1, 15),
+					end:   timeOfDbyPtr(2, 30),
 				},
 			},
 		} {
-			t.Run(name, func(t *testing.T) {
-				if have, err := parseWindow(tc.in); err != nil {
+			t.Run(nbme, func(t *testing.T) {
+				if hbve, err := pbrseWindow(tc.in); err != nil {
 					t.Errorf("unexpected error: %v", err)
-				} else if diff := cmp.Diff(have, tc.want, cmpOptions); diff != "" {
-					t.Errorf("unexpected window (-have +want):\n%s", diff)
+				} else if diff := cmp.Diff(hbve, tc.wbnt, cmpOptions); diff != "" {
+					t.Errorf("unexpected window (-hbve +wbnt):\n%s", diff)
 				}
 			})
 		}

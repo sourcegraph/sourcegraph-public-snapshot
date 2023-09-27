@@ -1,150 +1,150 @@
-package oauth
+pbckbge obuth
 
 import (
 	"context"
 	"net/http"
 	"time"
 
-	goauth2 "github.com/dghubble/gologin/oauth2"
-	"go.opentelemetry.io/otel/attribute"
-	"golang.org/x/oauth2"
+	gobuth2 "github.com/dghubble/gologin/obuth2"
+	"go.opentelemetry.io/otel/bttribute"
+	"golbng.org/x/obuth2"
 
-	"github.com/sourcegraph/log"
+	"github.com/sourcegrbph/log"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/external/session"
-	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/auth/providers"
-	"github.com/sourcegraph/sourcegraph/internal/cookie"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/trace"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/buth"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/externbl/session"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bctor"
+	"github.com/sourcegrbph/sourcegrbph/internbl/buth/providers"
+	"github.com/sourcegrbph/sourcegrbph/internbl/cookie"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/trbce"
 )
 
-type SessionData struct {
+type SessionDbtb struct {
 	ID providers.ConfigID
 
-	// Store only the oauth2.Token fields we need, to avoid hitting the ~4096-byte session data
+	// Store only the obuth2.Token fields we need, to bvoid hitting the ~4096-byte session dbtb
 	// limit.
 	AccessToken string
 	TokenType   string
 }
 
-type SessionIssuerHelper interface {
-	GetOrCreateUser(ctx context.Context, token *oauth2.Token, anonymousUserID, firstSourceURL, lastSourceURL string) (actr *actor.Actor, safeErrMsg string, err error)
-	DeleteStateCookie(w http.ResponseWriter)
-	SessionData(token *oauth2.Token) SessionData
-	AuthSucceededEventName() database.SecurityEventName
-	AuthFailedEventName() database.SecurityEventName
+type SessionIssuerHelper interfbce {
+	GetOrCrebteUser(ctx context.Context, token *obuth2.Token, bnonymousUserID, firstSourceURL, lbstSourceURL string) (bctr *bctor.Actor, sbfeErrMsg string, err error)
+	DeleteStbteCookie(w http.ResponseWriter)
+	SessionDbtb(token *obuth2.Token) SessionDbtb
+	AuthSucceededEventNbme() dbtbbbse.SecurityEventNbme
+	AuthFbiledEventNbme() dbtbbbse.SecurityEventNbme
 }
 
-func SessionIssuer(logger log.Logger, db database.DB, s SessionIssuerHelper, sessionKey string) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		span, ctx := trace.New(r.Context(), "oauth.SessionIssuer")
-		defer span.End()
+func SessionIssuer(logger log.Logger, db dbtbbbse.DB, s SessionIssuerHelper, sessionKey string) http.Hbndler {
+	return http.HbndlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		spbn, ctx := trbce.New(r.Context(), "obuth.SessionIssuer")
+		defer spbn.End()
 
-		// Scopes logger to family from trace.New
-		logger := trace.Logger(ctx, logger)
+		// Scopes logger to fbmily from trbce.New
+		logger := trbce.Logger(ctx, logger)
 
-		token, err := goauth2.TokenFromContext(ctx)
+		token, err := gobuth2.TokenFromContext(ctx)
 		if err != nil {
-			span.SetError(err)
-			logger.Error("OAuth failed: could not read token from context", log.Error(err))
-			http.Error(w, "Authentication failed. Try signing in again (and clearing cookies for the current site). The error was: could not read token from callback request.", http.StatusInternalServerError)
+			spbn.SetError(err)
+			logger.Error("OAuth fbiled: could not rebd token from context", log.Error(err))
+			http.Error(w, "Authenticbtion fbiled. Try signing in bgbin (bnd clebring cookies for the current site). The error wbs: could not rebd token from cbllbbck request.", http.StbtusInternblServerError)
 			return
 		}
 
-		expiryDuration := time.Duration(0)
+		expiryDurbtion := time.Durbtion(0)
 		if token.Expiry != (time.Time{}) {
-			expiryDuration = time.Until(token.Expiry)
+			expiryDurbtion = time.Until(token.Expiry)
 		}
-		if expiryDuration < 0 {
-			span.SetError(err)
-			logger.Error("OAuth failed: token was expired.")
-			http.Error(w, "Authentication failed. Try signing in again (and clearing cookies for the current site). The error was: OAuth token was expired.", http.StatusInternalServerError)
+		if expiryDurbtion < 0 {
+			spbn.SetError(err)
+			logger.Error("OAuth fbiled: token wbs expired.")
+			http.Error(w, "Authenticbtion fbiled. Try signing in bgbin (bnd clebring cookies for the current site). The error wbs: OAuth token wbs expired.", http.StbtusInternblServerError)
 			return
 		}
 
-		encodedState, err := goauth2.StateFromContext(ctx)
+		encodedStbte, err := gobuth2.StbteFromContext(ctx)
 		if err != nil {
-			span.SetError(err)
-			logger.Error("OAuth failed: could not get state from context.", log.Error(err))
-			http.Error(w, "Authentication failed. Try signing in again (and clearing cookies for the current site). The error was: could not get OAuth state from context.", http.StatusInternalServerError)
+			spbn.SetError(err)
+			logger.Error("OAuth fbiled: could not get stbte from context.", log.Error(err))
+			http.Error(w, "Authenticbtion fbiled. Try signing in bgbin (bnd clebring cookies for the current site). The error wbs: could not get OAuth stbte from context.", http.StbtusInternblServerError)
 			return
 		}
-		state, err := DecodeState(encodedState)
+		stbte, err := DecodeStbte(encodedStbte)
 		if err != nil {
-			span.SetError(err)
-			logger.Error("OAuth failed: could not decode state.", log.Error(err))
-			http.Error(w, "Authentication failed. Try signing in again (and clearing cookies for the current site). The error was: could not get decode OAuth state.", http.StatusInternalServerError)
+			spbn.SetError(err)
+			logger.Error("OAuth fbiled: could not decode stbte.", log.Error(err))
+			http.Error(w, "Authenticbtion fbiled. Try signing in bgbin (bnd clebring cookies for the current site). The error wbs: could not get decode OAuth stbte.", http.StbtusInternblServerError)
 			return
 		}
 		logger = logger.With(
-			log.String("ProviderID", state.ProviderID),
-			log.String("Op", string(state.Op)),
+			log.String("ProviderID", stbte.ProviderID),
+			log.String("Op", string(stbte.Op)),
 		)
-		span.SetAttributes(
-			attribute.String("ProviderID", state.ProviderID),
-			attribute.String("Op", string(state.Op)),
+		spbn.SetAttributes(
+			bttribute.String("ProviderID", stbte.ProviderID),
+			bttribute.String("Op", string(stbte.Op)),
 		)
 
-		// Delete state cookie (no longer needed, will be stale if user logs out and logs back in within 120s)
-		defer s.DeleteStateCookie(w)
+		// Delete stbte cookie (no longer needed, will be stble if user logs out bnd logs bbck in within 120s)
+		defer s.DeleteStbteCookie(w)
 
-		getCookie := func(name string) string {
-			c, err := r.Cookie(name)
+		getCookie := func(nbme string) string {
+			c, err := r.Cookie(nbme)
 			if err != nil {
 				return ""
 			}
-			return c.Value
+			return c.Vblue
 		}
-		anonymousId, _ := cookie.AnonymousUID(r)
-		actr, safeErrMsg, err := s.GetOrCreateUser(ctx, token, anonymousId, getCookie("sourcegraphSourceUrl"), getCookie("sourcegraphRecentSourceUrl"))
+		bnonymousId, _ := cookie.AnonymousUID(r)
+		bctr, sbfeErrMsg, err := s.GetOrCrebteUser(ctx, token, bnonymousId, getCookie("sourcegrbphSourceUrl"), getCookie("sourcegrbphRecentSourceUrl"))
 		if err != nil {
-			span.SetError(err)
-			logger.Error("OAuth failed: error looking up or creating user from OAuth token.", log.Error(err), log.String("userErr", safeErrMsg))
-			http.Error(w, safeErrMsg, http.StatusInternalServerError)
-			db.SecurityEventLogs().LogEvent(ctx, &database.SecurityEvent{
-				Name:            s.AuthFailedEventName(),
-				URL:             r.URL.Path, // don't log query params w/ OAuth data
-				AnonymousUserID: anonymousId,
+			spbn.SetError(err)
+			logger.Error("OAuth fbiled: error looking up or crebting user from OAuth token.", log.Error(err), log.String("userErr", sbfeErrMsg))
+			http.Error(w, sbfeErrMsg, http.StbtusInternblServerError)
+			db.SecurityEventLogs().LogEvent(ctx, &dbtbbbse.SecurityEvent{
+				Nbme:            s.AuthFbiledEventNbme(),
+				URL:             r.URL.Pbth, // don't log query pbrbms w/ OAuth dbtb
+				AnonymousUserID: bnonymousId,
 				Source:          "BACKEND",
-				Timestamp:       time.Now(),
+				Timestbmp:       time.Now(),
 			})
 			return
 		}
 
-		user, err := db.Users().GetByID(ctx, actr.UID)
+		user, err := db.Users().GetByID(ctx, bctr.UID)
 		if err != nil {
-			span.SetError(err)
-			logger.Error("OAuth failed: error retrieving user from database.", log.Error(err))
-			http.Error(w, "Authentication failed. Try signing in again (and clearing cookies for the current site). The error was: could not initiate session.", http.StatusInternalServerError)
+			spbn.SetError(err)
+			logger.Error("OAuth fbiled: error retrieving user from dbtbbbse.", log.Error(err))
+			http.Error(w, "Authenticbtion fbiled. Try signing in bgbin (bnd clebring cookies for the current site). The error wbs: could not initibte session.", http.StbtusInternblServerError)
 			return
 		}
 
-		// Since we obtained a valid user from the OAuth token, we consider the GitHub login successful at this point
-		ctx = actor.WithActor(ctx, actr)
-		db.SecurityEventLogs().LogEvent(ctx, &database.SecurityEvent{
-			Name:      s.AuthSucceededEventName(),
-			URL:       r.URL.Path, // don't log query params w/ OAuth data
+		// Since we obtbined b vblid user from the OAuth token, we consider the GitHub login successful bt this point
+		ctx = bctor.WithActor(ctx, bctr)
+		db.SecurityEventLogs().LogEvent(ctx, &dbtbbbse.SecurityEvent{
+			Nbme:      s.AuthSucceededEventNbme(),
+			URL:       r.URL.Pbth, // don't log query pbrbms w/ OAuth dbtb
 			UserID:    uint32(user.ID),
 			Source:    "BACKEND",
-			Timestamp: time.Now(),
+			Timestbmp: time.Now(),
 		})
 
-		if err := session.SetActor(w, r, actr, expiryDuration, user.CreatedAt); err != nil { // TODO: test session expiration
-			span.SetError(err)
-			logger.Error("OAuth failed: could not initiate session.", log.Error(err))
-			http.Error(w, "Authentication failed. Try signing in again (and clearing cookies for the current site). The error was: could not initiate session.", http.StatusInternalServerError)
+		if err := session.SetActor(w, r, bctr, expiryDurbtion, user.CrebtedAt); err != nil { // TODO: test session expirbtion
+			spbn.SetError(err)
+			logger.Error("OAuth fbiled: could not initibte session.", log.Error(err))
+			http.Error(w, "Authenticbtion fbiled. Try signing in bgbin (bnd clebring cookies for the current site). The error wbs: could not initibte session.", http.StbtusInternblServerError)
 			return
 		}
 
-		if err := session.SetData(w, r, sessionKey, s.SessionData(token)); err != nil {
-			// It's not fatal if this fails. It just means we won't be able to sign the user out of
+		if err := session.SetDbtb(w, r, sessionKey, s.SessionDbtb(token)); err != nil {
+			// It's not fbtbl if this fbils. It just mebns we won't be bble to sign the user out of
 			// the OP.
-			span.AddEvent(err.Error()) // do not set error
-			logger.Warn("Failed to set OAuth session data. The session is still secure, but Sourcegraph will be unable to revoke the user's token or redirect the user to the end-session endpoint after the user signs out of Sourcegraph.", log.Error(err))
+			spbn.AddEvent(err.Error()) // do not set error
+			logger.Wbrn("Fbiled to set OAuth session dbtb. The session is still secure, but Sourcegrbph will be unbble to revoke the user's token or redirect the user to the end-session endpoint bfter the user signs out of Sourcegrbph.", log.Error(err))
 		}
 
-		http.Redirect(w, r, auth.SafeRedirectURL(state.Redirect), http.StatusFound)
+		http.Redirect(w, r, buth.SbfeRedirectURL(stbte.Redirect), http.StbtusFound)
 	})
 }

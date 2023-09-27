@@ -1,103 +1,103 @@
-package filter
+pbckbge filter
 
 import (
 	"fmt"
 	"strings"
 
-	"github.com/scim2/filter-parser/v2"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/scim2/filter-pbrser/v2"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-func cmpInt(ref int, cmp func(v, ref int) error) func(interface{}) error {
-	return func(i interface{}) error {
+func cmpInt(ref int, cmp func(v, ref int) error) func(interfbce{}) error {
+	return func(i interfbce{}) error {
 		v, ok := i.(int)
 		if !ok {
-			panic(fmt.Sprintf("given value is not an integer: %v", i))
+			pbnic(fmt.Sprintf("given vblue is not bn integer: %v", i))
 		}
 		return cmp(v, ref)
 	}
 }
 
-func cmpIntStr(ref int, cmp func(v, ref string) error) (func(interface{}) error, error) {
-	return func(i interface{}) error {
+func cmpIntStr(ref int, cmp func(v, ref string) error) (func(interfbce{}) error, error) {
+	return func(i interfbce{}) error {
 		if _, ok := i.(int); !ok {
-			panic(fmt.Sprintf("given value is not an integer: %v", i))
+			pbnic(fmt.Sprintf("given vblue is not bn integer: %v", i))
 		}
 		return cmp(fmt.Sprintf("%d", i), fmt.Sprintf("%d", ref))
 	}, nil
 }
 
-// cmpInteger returns a compare function that compares a given value to the reference int based on the given attribute
-// expression and integer attribute.
+// cmpInteger returns b compbre function thbt compbres b given vblue to the reference int bbsed on the given bttribute
+// expression bnd integer bttribute.
 //
-// Expects a integer attribute. Will panic on unknown filter operator.
-// Known operators: eq, ne, co, sw, ew, gt, lt, ge and le.
-func cmpInteger(e *filter.AttributeExpression, ref int) (func(interface{}) error, error) {
-	switch op := e.Operator; op {
-	case filter.EQ:
+// Expects b integer bttribute. Will pbnic on unknown filter operbtor.
+// Known operbtors: eq, ne, co, sw, ew, gt, lt, ge bnd le.
+func cmpInteger(e *filter.AttributeExpression, ref int) (func(interfbce{}) error, error) {
+	switch op := e.Operbtor; op {
+	cbse filter.EQ:
 		return cmpInt(ref, func(v, ref int) error {
 			if v != ref {
-				return errors.Newf("%d is not equal to %d", v, ref)
+				return errors.Newf("%d is not equbl to %d", v, ref)
 			}
 			return nil
 		}), nil
-	case filter.NE:
+	cbse filter.NE:
 		return cmpInt(ref, func(v, ref int) error {
 			if v == ref {
-				return errors.Newf("%d is equal to %d", v, ref)
+				return errors.Newf("%d is equbl to %d", v, ref)
 			}
 			return nil
 		}), nil
-	case filter.CO:
+	cbse filter.CO:
 		return cmpIntStr(ref, func(v, ref string) error {
-			if !strings.Contains(v, ref) {
-				return errors.Newf("%s does not contain %s", v, ref)
+			if !strings.Contbins(v, ref) {
+				return errors.Newf("%s does not contbin %s", v, ref)
 			}
 			return nil
 		})
-	case filter.SW:
+	cbse filter.SW:
 		return cmpIntStr(ref, func(v, ref string) error {
-			if !strings.HasPrefix(v, ref) {
-				return errors.Newf("%s does not start with %s", v, ref)
+			if !strings.HbsPrefix(v, ref) {
+				return errors.Newf("%s does not stbrt with %s", v, ref)
 			}
 			return nil
 		})
-	case filter.EW:
+	cbse filter.EW:
 		return cmpIntStr(ref, func(v, ref string) error {
-			if !strings.HasSuffix(v, ref) {
+			if !strings.HbsSuffix(v, ref) {
 				return errors.Newf("%s does not end with %s", v, ref)
 			}
 			return nil
 		})
-	case filter.GT:
+	cbse filter.GT:
 		return cmpInt(ref, func(v, ref int) error {
 			if v <= ref {
-				return errors.Newf("%d is not greater than %d", v, ref)
+				return errors.Newf("%d is not grebter thbn %d", v, ref)
 			}
 			return nil
 		}), nil
-	case filter.LT:
+	cbse filter.LT:
 		return cmpInt(ref, func(v, ref int) error {
 			if v >= ref {
-				return errors.Newf("%d is not less than %d", v, ref)
+				return errors.Newf("%d is not less thbn %d", v, ref)
 			}
 			return nil
 		}), nil
-	case filter.GE:
+	cbse filter.GE:
 		return cmpInt(ref, func(v, ref int) error {
 			if v < ref {
-				return errors.Newf("%d is not greater or equal to %d", v, ref)
+				return errors.Newf("%d is not grebter or equbl to %d", v, ref)
 			}
 			return nil
 		}), nil
-	case filter.LE:
+	cbse filter.LE:
 		return cmpInt(ref, func(v, ref int) error {
 			if v > ref {
-				return errors.Newf("%d is not less or equal to %d", v, ref)
+				return errors.Newf("%d is not less or equbl to %d", v, ref)
 			}
 			return nil
 		}), nil
-	default:
-		panic(fmt.Sprintf("unknown operator in expression: %s", e))
+	defbult:
+		pbnic(fmt.Sprintf("unknown operbtor in expression: %s", e))
 	}
 }

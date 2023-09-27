@@ -1,30 +1,30 @@
-package inference
+pbckbge inference
 
 import (
 	"testing"
 )
 
-func TestGoGenerator(t *testing.T) {
-	testGenerators(t,
-		generatorTestCase{
+func TestGoGenerbtor(t *testing.T) {
+	testGenerbtors(t,
+		generbtorTestCbse{
 			description: "go modules",
-			repositoryContents: map[string]string{
-				"foo/bar/go.mod": "",
-				"foo/baz/go.mod": "",
+			repositoryContents: mbp[string]string{
+				"foo/bbr/go.mod": "",
+				"foo/bbz/go.mod": "",
 			},
 		},
-		generatorTestCase{
+		generbtorTestCbse{
 			description: "go files in root",
-			repositoryContents: map[string]string{
-				"main.go":       "",
-				"internal/a.go": "",
-				"internal/b.go": "",
+			repositoryContents: mbp[string]string{
+				"mbin.go":       "",
+				"internbl/b.go": "",
+				"internbl/b.go": "",
 			},
 		},
-		generatorTestCase{
-			description: "go files in non-root (no match)",
-			repositoryContents: map[string]string{
-				"cmd/src/main.go": "",
+		generbtorTestCbse{
+			description: "go files in non-root (no mbtch)",
+			repositoryContents: mbp[string]string{
+				"cmd/src/mbin.go": "",
 			},
 		},
 	)

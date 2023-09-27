@@ -1,2 +1,2 @@
-// Package github implements a GitHub API client.
-package github
+// Pbckbge github implements b GitHub API client.
+pbckbge github

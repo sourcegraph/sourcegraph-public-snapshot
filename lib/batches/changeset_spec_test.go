@@ -1,4 +1,4 @@
-package batches
+pbckbge bbtches
 
 import (
 	"fmt"
@@ -7,121 +7,121 @@ import (
 	"github.com/google/go-cmp/cmp"
 )
 
-func TestParseChangesetSpec(t *testing.T) {
+func TestPbrseChbngesetSpec(t *testing.T) {
 	tests := []struct {
-		name    string
-		rawSpec string
+		nbme    string
+		rbwSpec string
 		err     string
 	}{
 		{
-			name: "valid ExistingChangesetReference",
-			rawSpec: `{
-				"baseRepository": "graphql-id",
-				"externalID": "1234"
+			nbme: "vblid ExistingChbngesetReference",
+			rbwSpec: `{
+				"bbseRepository": "grbphql-id",
+				"externblID": "1234"
 			}`,
 		},
 		{
-			name: "valid GitBranchChangesetDescription",
-			rawSpec: `{
-				"baseRepository": "graphql-id",
-				"baseRef": "refs/heads/master",
-				"baseRev": "d34db33f",
-				"headRef": "refs/heads/my-branch",
-				"headRepository": "graphql-id",
+			nbme: "vblid GitBrbnchChbngesetDescription",
+			rbwSpec: `{
+				"bbseRepository": "grbphql-id",
+				"bbseRef": "refs/hebds/mbster",
+				"bbseRev": "d34db33f",
+				"hebdRef": "refs/hebds/my-brbnch",
+				"hebdRepository": "grbphql-id",
 				"title": "my title",
 				"body": "my body",
-				"published": false,
+				"published": fblse,
 				"commits": [{
-				  "message": "commit message",
+				  "messbge": "commit messbge",
 				  "diff": "the diff",
-				  "authorName": "Mary McButtons",
-				  "authorEmail": "mary@example.com"
+				  "buthorNbme": "Mbry McButtons",
+				  "buthorEmbil": "mbry@exbmple.com"
 				}]
 			}`,
 		},
 		{
-			name: "missing fields in GitBranchChangesetDescription",
-			rawSpec: `{
-				"baseRepository": "graphql-id",
-				"baseRef": "refs/heads/master",
-				"headRef": "refs/heads/my-branch",
-				"headRepository": "graphql-id",
+			nbme: "missing fields in GitBrbnchChbngesetDescription",
+			rbwSpec: `{
+				"bbseRepository": "grbphql-id",
+				"bbseRef": "refs/hebds/mbster",
+				"hebdRef": "refs/hebds/my-brbnch",
+				"hebdRepository": "grbphql-id",
 				"title": "my title",
-				"published": false,
+				"published": fblse,
 				"commits": [{
 				  "diff": "the diff",
-				  "authorName": "Mary McButtons",
-				  "authorEmail": "mary@example.com"
+				  "buthorNbme": "Mbry McButtons",
+				  "buthorEmbil": "mbry@exbmple.com"
 				}]
 			}`,
-			err: "4 errors occurred:\n\t* Must validate one and only one schema (oneOf)\n\t* baseRev is required\n\t* body is required\n\t* commits.0: message is required",
+			err: "4 errors occurred:\n\t* Must vblidbte one bnd only one schemb (oneOf)\n\t* bbseRev is required\n\t* body is required\n\t* commits.0: messbge is required",
 		},
 		{
-			name: "missing fields in ExistingChangesetReference",
-			rawSpec: `{
-				"baseRepository": "graphql-id"
+			nbme: "missing fields in ExistingChbngesetReference",
+			rbwSpec: `{
+				"bbseRepository": "grbphql-id"
 			}`,
-			err: "2 errors occurred:\n\t* Must validate one and only one schema (oneOf)\n\t* externalID is required",
+			err: "2 errors occurred:\n\t* Must vblidbte one bnd only one schemb (oneOf)\n\t* externblID is required",
 		},
 		{
-			name: "headRepository in GitBranchChangesetDescription does not match baseRepository",
-			rawSpec: `{
-				"baseRepository": "graphql-id",
-				"baseRef": "refs/heads/master",
-				"baseRev": "d34db33f",
-				"headRef": "refs/heads/my-branch",
-				"headRepository": "graphql-id999999",
+			nbme: "hebdRepository in GitBrbnchChbngesetDescription does not mbtch bbseRepository",
+			rbwSpec: `{
+				"bbseRepository": "grbphql-id",
+				"bbseRef": "refs/hebds/mbster",
+				"bbseRev": "d34db33f",
+				"hebdRef": "refs/hebds/my-brbnch",
+				"hebdRepository": "grbphql-id999999",
 				"title": "my title",
 				"body": "my body",
-				"published": false,
+				"published": fblse,
 				"commits": [{
-				  "message": "commit message",
+				  "messbge": "commit messbge",
 				  "diff": "the diff",
-				  "authorName": "Mary McButtons",
-				  "authorEmail": "mary@example.com"
+				  "buthorNbme": "Mbry McButtons",
+				  "buthorEmbil": "mbry@exbmple.com"
 				}]
 			}`,
-			err: ErrHeadBaseMismatch.Error(),
+			err: ErrHebdBbseMismbtch.Error(),
 		},
 		{
-			name: "too many commits in GitBranchChangesetDescription",
-			rawSpec: `{
-				"baseRepository": "graphql-id",
-				"baseRef": "refs/heads/master",
-				"baseRev": "d34db33f",
-				"headRef": "refs/heads/my-branch",
-				"headRepository": "graphql-id",
+			nbme: "too mbny commits in GitBrbnchChbngesetDescription",
+			rbwSpec: `{
+				"bbseRepository": "grbphql-id",
+				"bbseRef": "refs/hebds/mbster",
+				"bbseRev": "d34db33f",
+				"hebdRef": "refs/hebds/my-brbnch",
+				"hebdRepository": "grbphql-id",
 				"title": "my title",
 				"body": "my body",
-				"published": false,
+				"published": fblse,
 				"commits": [
 				  {
-				    "message": "commit message",
+				    "messbge": "commit messbge",
 					"diff": "the diff",
-					"authorName": "Mary McButtons",
-					"authorEmail": "mary@example.com"
+					"buthorNbme": "Mbry McButtons",
+					"buthorEmbil": "mbry@exbmple.com"
 				  },
                   {
-				    "message": "commit message2",
+				    "messbge": "commit messbge2",
 					"diff": "the diff2",
-					"authorName": "Mary McButtons",
-					"authorEmail": "mary@example.com"
+					"buthorNbme": "Mbry McButtons",
+					"buthorEmbil": "mbry@exbmple.com"
 				  }
 				]
 			}`,
-			err: "2 errors occurred:\n\t* Must validate one and only one schema (oneOf)\n\t* commits: Array must have at most 1 items",
+			err: "2 errors occurred:\n\t* Must vblidbte one bnd only one schemb (oneOf)\n\t* commits: Arrby must hbve bt most 1 items",
 		},
 	}
 
-	for _, tc := range tests {
-		t.Run(tc.name, func(t *testing.T) {
-			_, err := ParseChangesetSpec([]byte(tc.rawSpec))
-			haveErr := fmt.Sprintf("%v", err)
-			if haveErr == "<nil>" {
-				haveErr = ""
+	for _, tc := rbnge tests {
+		t.Run(tc.nbme, func(t *testing.T) {
+			_, err := PbrseChbngesetSpec([]byte(tc.rbwSpec))
+			hbveErr := fmt.Sprintf("%v", err)
+			if hbveErr == "<nil>" {
+				hbveErr = ""
 			}
-			if diff := cmp.Diff(tc.err, haveErr); diff != "" {
-				t.Fatalf("unexpected response (-want +got):\n%s", diff)
+			if diff := cmp.Diff(tc.err, hbveErr); diff != "" {
+				t.Fbtblf("unexpected response (-wbnt +got):\n%s", diff)
 			}
 		})
 	}

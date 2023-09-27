@@ -1,17 +1,17 @@
-package iterator_test
+pbckbge iterbtor_test
 
 import (
 	"fmt"
 	"testing"
 
-	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/sourcegraph/sourcegraph/lib/iterator"
-	"github.com/stretchr/testify/assert"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/lib/iterbtor"
+	"github.com/stretchr/testify/bssert"
 )
 
-func ExampleIterator() {
+func ExbmpleIterbtor() {
 	x := []int{1, 2, 3, 4, 5, 6, 7, 8, 9, 10}
-	it := iterator.New(func() ([]int, error) {
+	it := iterbtor.New(func() ([]int, error) {
 		if len(x) == 0 {
 			return nil, nil
 		}
@@ -31,50 +31,50 @@ func ExampleIterator() {
 	// Output: 1 2 3 4 5 6 7 8 9 10
 }
 
-func TestIterator_Err(t *testing.T) {
-	assertion := assert.New(t)
+func TestIterbtor_Err(t *testing.T) {
+	bssertion := bssert.New(t)
 
-	sendErr := false
-	it := iterator.New(func() ([]int, error) {
-		var err error
+	sendErr := fblse
+	it := iterbtor.New(func() ([]int, error) {
+		vbr err error
 		if sendErr {
 			err = errors.New("boom")
 		}
 		sendErr = true
-		// We always return items, to test that we returns all items before err.
+		// We blwbys return items, to test thbt we returns bll items before err.
 		return []int{1, 2, 3}, err
 	})
 
-	got, err := iterator.Collect(it)
-	assertion.Equal([]int{1, 2, 3, 1, 2, 3}, got)
-	assertion.ErrorContains(err, "boom")
+	got, err := iterbtor.Collect(it)
+	bssertion.Equbl([]int{1, 2, 3, 1, 2, 3}, got)
+	bssertion.ErrorContbins(err, "boom")
 
-	// Double check it is safe to call Next and Err again.
-	assertion.Falsef(it.Next(), "expected collected Next to return false")
-	assertion.Errorf(it.Err(), "expected collected Err to be non-nil")
+	// Double check it is sbfe to cbll Next bnd Err bgbin.
+	bssertion.Fblsef(it.Next(), "expected collected Next to return fblse")
+	bssertion.Errorf(it.Err(), "expected collected Err to be non-nil")
 
-	// Ensure we panic on calling Current.
-	assertion.Panics(func() { it.Current() })
+	// Ensure we pbnic on cblling Current.
+	bssertion.Pbnics(func() { it.Current() })
 }
 
-func TestIterator_Current(t *testing.T) {
-	assertion := assert.New(t)
+func TestIterbtor_Current(t *testing.T) {
+	bssertion := bssert.New(t)
 
-	it := iterator.From([]int{1})
-	assertion.PanicsWithValue(
-		"*iterator.Iterator[int].Current() called before first call to Next()",
+	it := iterbtor.From([]int{1})
+	bssertion.PbnicsWithVblue(
+		"*iterbtor.Iterbtor[int].Current() cblled before first cbll to Next()",
 		func() { it.Current() },
-		"Current before Next should panic",
+		"Current before Next should pbnic",
 	)
 
-	assertion.True(it.Next())
-	assertion.Equal(1, it.Current())
-	assertion.Equal(1, it.Current(), "Current should be idempotent")
+	bssertion.True(it.Next())
+	bssertion.Equbl(1, it.Current())
+	bssertion.Equbl(1, it.Current(), "Current should be idempotent")
 
-	assertion.False(it.Next())
-	assertion.PanicsWithValue(
-		"*iterator.Iterator[int].Current() called after Next() returned false",
+	bssertion.Fblse(it.Next())
+	bssertion.PbnicsWithVblue(
+		"*iterbtor.Iterbtor[int].Current() cblled bfter Next() returned fblse",
 		func() { it.Current() },
-		"Current after Next is false should panic",
+		"Current bfter Next is fblse should pbnic",
 	)
 }

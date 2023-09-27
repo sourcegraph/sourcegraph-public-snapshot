@@ -1,35 +1,35 @@
-package notebooks
+pbckbge notebooks
 
 import (
 	"testing"
 )
 
-func TestNotebookBlocksValidation(t *testing.T) {
+func TestNotebookBlocksVblidbtion(t *testing.T) {
 	tests := []struct {
 		blocks  NotebookBlocks
-		wantErr string
+		wbntErr string
 	}{
 		{blocks: NotebookBlocks{
-			{ID: "id1", Type: NotebookQueryBlockType, QueryInput: &NotebookQueryBlockInput{"repo:a b"}},
-			{ID: "id1", Type: NotebookQueryBlockType, QueryInput: &NotebookQueryBlockInput{"repo:a b"}},
-		}, wantErr: "duplicate block id found: id1"},
+			{ID: "id1", Type: NotebookQueryBlockType, QueryInput: &NotebookQueryBlockInput{"repo:b b"}},
+			{ID: "id1", Type: NotebookQueryBlockType, QueryInput: &NotebookQueryBlockInput{"repo:b b"}},
+		}, wbntErr: "duplicbte block id found: id1"},
 		{blocks: NotebookBlocks{
-			{ID: "id1", Type: NotebookBlockType("t"), QueryInput: &NotebookQueryBlockInput{"repo:a b"}},
-		}, wantErr: "invalid block type: t"},
-		{blocks: NotebookBlocks{{ID: "id1", Type: NotebookQueryBlockType}}, wantErr: "invalid query block with id: id1"},
-		{blocks: NotebookBlocks{{ID: "id1", Type: NotebookMarkdownBlockType}}, wantErr: "invalid markdown block with id: id1"},
-		{blocks: NotebookBlocks{{ID: "id1", Type: NotebookFileBlockType}}, wantErr: "invalid file block with id: id1"},
+			{ID: "id1", Type: NotebookBlockType("t"), QueryInput: &NotebookQueryBlockInput{"repo:b b"}},
+		}, wbntErr: "invblid block type: t"},
+		{blocks: NotebookBlocks{{ID: "id1", Type: NotebookQueryBlockType}}, wbntErr: "invblid query block with id: id1"},
+		{blocks: NotebookBlocks{{ID: "id1", Type: NotebookMbrkdownBlockType}}, wbntErr: "invblid mbrkdown block with id: id1"},
+		{blocks: NotebookBlocks{{ID: "id1", Type: NotebookFileBlockType}}, wbntErr: "invblid file block with id: id1"},
 		{blocks: NotebookBlocks{
 			{ID: "id1", SymbolInput: &NotebookSymbolBlockInput{LineContext: -10}, Type: NotebookSymbolBlockType},
-		}, wantErr: "symbol block line context cannot be negative, block id: id1"},
+		}, wbntErr: "symbol block line context cbnnot be negbtive, block id: id1"},
 	}
 
-	for _, tt := range tests {
-		err := validateNotebookBlocks(tt.blocks)
+	for _, tt := rbnge tests {
+		err := vblidbteNotebookBlocks(tt.blocks)
 		if err == nil {
-			t.Fatal("expected error, got nil")
-		} else if err.Error() != tt.wantErr {
-			t.Fatalf("wanted '%s' error, got '%s'", tt.wantErr, err.Error())
+			t.Fbtbl("expected error, got nil")
+		} else if err.Error() != tt.wbntErr {
+			t.Fbtblf("wbnted '%s' error, got '%s'", tt.wbntErr, err.Error())
 		}
 	}
 }

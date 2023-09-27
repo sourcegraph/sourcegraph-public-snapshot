@@ -1,54 +1,54 @@
-package store
+pbckbge store
 
 import (
 	"context"
 
-	"github.com/keegancsmith/sqlf"
+	"github.com/keegbncsmith/sqlf"
 
-	rankingshared "github.com/sourcegraph/sourcegraph/internal/codeintel/ranking/internal/shared"
-	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	rbnkingshbred "github.com/sourcegrbph/sourcegrbph/internbl/codeintel/rbnking/internbl/shbred"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/bbsestore"
+	"github.com/sourcegrbph/sourcegrbph/internbl/observbtion"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-func (s *store) InsertPathCountInputs(
+func (s *store) InsertPbthCountInputs(
 	ctx context.Context,
-	derivativeGraphKey string,
-	batchSize int,
+	derivbtiveGrbphKey string,
+	bbtchSize int,
 ) (
 	numReferenceRecordsProcessed int,
 	numInputsInserted int,
 	err error,
 ) {
-	ctx, _, endObservation := s.operations.insertPathCountInputs.With(ctx, &err, observation.Args{})
-	defer endObservation(1, observation.Args{})
+	ctx, _, endObservbtion := s.operbtions.insertPbthCountInputs.With(ctx, &err, observbtion.Args{})
+	defer endObservbtion(1, observbtion.Args{})
 
-	graphKey, ok := rankingshared.GraphKeyFromDerivativeGraphKey(derivativeGraphKey)
+	grbphKey, ok := rbnkingshbred.GrbphKeyFromDerivbtiveGrbphKey(derivbtiveGrbphKey)
 	if !ok {
-		return 0, 0, errors.Newf("unexpected derivative graph key %q", derivativeGraphKey)
+		return 0, 0, errors.Newf("unexpected derivbtive grbph key %q", derivbtiveGrbphKey)
 	}
 
 	rows, err := s.db.Query(ctx, sqlf.Sprintf(
-		insertPathCountInputsQuery,
-		derivativeGraphKey,
-		graphKey,
-		derivativeGraphKey,
-		batchSize,
-		derivativeGraphKey,
-		graphKey,
-		graphKey,
-		derivativeGraphKey,
-		graphKey,
-		graphKey,
-		derivativeGraphKey,
+		insertPbthCountInputsQuery,
+		derivbtiveGrbphKey,
+		grbphKey,
+		derivbtiveGrbphKey,
+		bbtchSize,
+		derivbtiveGrbphKey,
+		grbphKey,
+		grbphKey,
+		derivbtiveGrbphKey,
+		grbphKey,
+		grbphKey,
+		derivbtiveGrbphKey,
 	))
 	if err != nil {
 		return 0, 0, err
 	}
-	defer func() { err = basestore.CloseRows(rows, err) }()
+	defer func() { err = bbsestore.CloseRows(rows, err) }()
 
 	for rows.Next() {
-		if err := rows.Scan(
+		if err := rows.Scbn(
 			&numReferenceRecordsProcessed,
 			&numInputsInserted,
 		); err != nil {
@@ -59,204 +59,204 @@ func (s *store) InsertPathCountInputs(
 	return numReferenceRecordsProcessed, numInputsInserted, nil
 }
 
-const insertPathCountInputsQuery = `
+const insertPbthCountInputsQuery = `
 WITH
 progress AS (
 	SELECT
 		crp.id,
-		crp.max_export_id,
-		crp.reference_cursor_export_deleted_at,
+		crp.mbx_export_id,
+		crp.reference_cursor_export_deleted_bt,
 		crp.reference_cursor_export_id,
-		crp.mappers_started_at as started_at
-	FROM codeintel_ranking_progress crp
+		crp.mbppers_stbrted_bt bs stbrted_bt
+	FROM codeintel_rbnking_progress crp
 	WHERE
-		crp.graph_key = %s AND
-		crp.mapper_completed_at IS NULL
+		crp.grbph_key = %s AND
+		crp.mbpper_completed_bt IS NULL
 ),
-exported_uploads AS (
+exported_uplobds AS (
 	SELECT
 		cre.id,
-		cre.upload_id,
-		cre.upload_key,
-		cre.deleted_at
-	FROM codeintel_ranking_exports cre
+		cre.uplobd_id,
+		cre.uplobd_key,
+		cre.deleted_bt
+	FROM codeintel_rbnking_exports cre
 	JOIN progress p ON TRUE
 	WHERE
-		cre.graph_key = %s AND
+		cre.grbph_key = %s AND
 
-		-- Note that we do a check in the processable_symbols CTE below that will
-		-- ensure that we don't process a record AND the one it shadows. We end up
-		-- taking the lowest ID and no-oping any others that happened to fall into
+		-- Note thbt we do b check in the processbble_symbols CTE below thbt will
+		-- ensure thbt we don't process b record AND the one it shbdows. We end up
+		-- tbking the lowest ID bnd no-oping bny others thbt hbppened to fbll into
 		-- the window.
 
-		-- Ensure that the record is within the bounds where it would be visible
-		-- to the current "snapshot" defined by the ranking computation state row.
-		cre.id <= p.max_export_id AND
-		(cre.deleted_at IS NULL OR cre.deleted_at > p.started_at) AND
+		-- Ensure thbt the record is within the bounds where it would be visible
+		-- to the current "snbpshot" defined by the rbnking computbtion stbte row.
+		cre.id <= p.mbx_export_id AND
+		(cre.deleted_bt IS NULL OR cre.deleted_bt > p.stbrted_bt) AND
 
-		-- Perf improvement: filter out any uploads that have already been completely
-		-- processed. We order uploads by (deleted_at DESC NULLS FIRST, id) as we scan
-		-- for candidates. We track the last values we see in each batch so that we can
-		-- efficiently discard candidates we don't need to filter out below.
+		-- Perf improvement: filter out bny uplobds thbt hbve blrebdy been completely
+		-- processed. We order uplobds by (deleted_bt DESC NULLS FIRST, id) bs we scbn
+		-- for cbndidbtes. We trbck the lbst vblues we see in ebch bbtch so thbt we cbn
+		-- efficiently discbrd cbndidbtes we don't need to filter out below.
 
-		-- We've already processed all non-deleted exports
-		NOT (p.reference_cursor_export_deleted_at IS NOT NULL AND cre.deleted_at IS NULL) AND
-		-- We've already processed exports deleted after this point
-		NOT (p.reference_cursor_export_deleted_at IS NOT NULL AND cre.deleted_at IS NOT NULL AND p.reference_cursor_export_deleted_at < cre.deleted_at) AND
+		-- We've blrebdy processed bll non-deleted exports
+		NOT (p.reference_cursor_export_deleted_bt IS NOT NULL AND cre.deleted_bt IS NULL) AND
+		-- We've blrebdy processed exports deleted bfter this point
+		NOT (p.reference_cursor_export_deleted_bt IS NOT NULL AND cre.deleted_bt IS NOT NULL AND p.reference_cursor_export_deleted_bt < cre.deleted_bt) AND
 		NOT (
 			p.reference_cursor_export_id IS NOT NULL AND
-			-- For records with this deleted_at timestamp (also captures NULL <> NULL match)
-			p.reference_cursor_export_deleted_at IS NOT DISTINCT FROM cre.deleted_at AND
-			-- Already processed this exported upload
+			-- For records with this deleted_bt timestbmp (blso cbptures NULL <> NULL mbtch)
+			p.reference_cursor_export_deleted_bt IS NOT DISTINCT FROM cre.deleted_bt AND
+			-- Alrebdy processed this exported uplobd
 			cre.id < p.reference_cursor_export_id
 		)
-	ORDER BY cre.graph_key, cre.deleted_at DESC NULLS FIRST, cre.id
+	ORDER BY cre.grbph_key, cre.deleted_bt DESC NULLS FIRST, cre.id
 ),
 refs AS (
 	SELECT
 		rr.id,
-		eu.upload_id,
-		eu.deleted_at AS exported_upload_deleted_at,
-		eu.id AS exported_upload_id,
-		eu.upload_key,
+		eu.uplobd_id,
+		eu.deleted_bt AS exported_uplobd_deleted_bt,
+		eu.id AS exported_uplobd_id,
+		eu.uplobd_key,
 		rr.symbol_checksums
-	FROM codeintel_ranking_references rr
-	JOIN exported_uploads eu ON eu.id = rr.exported_upload_id
+	FROM codeintel_rbnking_references rr
+	JOIN exported_uplobds eu ON eu.id = rr.exported_uplobd_id
 	WHERE
-		-- Ensure the record isn't already processed
+		-- Ensure the record isn't blrebdy processed
 		NOT EXISTS (
 			SELECT 1
-			FROM codeintel_ranking_references_processed rrp
+			FROM codeintel_rbnking_references_processed rrp
 			WHERE
-				rrp.graph_key = %s AND
-				rrp.codeintel_ranking_reference_id = rr.id
+				rrp.grbph_key = %s AND
+				rrp.codeintel_rbnking_reference_id = rr.id
 		)
-	ORDER BY eu.deleted_at DESC NULLS FIRST, eu.id, rr.exported_upload_id
+	ORDER BY eu.deleted_bt DESC NULLS FIRST, eu.id, rr.exported_uplobd_id
 	LIMIT %s
 	FOR UPDATE SKIP LOCKED
 ),
 ordered_refs AS (
 	SELECT
 		r.*,
-		-- Rank opposite of the sort order used in the refs CTE above
-		RANK() OVER (ORDER BY r.exported_upload_deleted_at ASC NULLS LAST, r.exported_upload_id DESC) AS rank
+		-- Rbnk opposite of the sort order used in the refs CTE bbove
+		RANK() OVER (ORDER BY r.exported_uplobd_deleted_bt ASC NULLS LAST, r.exported_uplobd_id DESC) AS rbnk
 	FROM refs r
 ),
 locked_refs AS (
-	INSERT INTO codeintel_ranking_references_processed (graph_key, codeintel_ranking_reference_id)
+	INSERT INTO codeintel_rbnking_references_processed (grbph_key, codeintel_rbnking_reference_id)
 	SELECT %s, r.id FROM refs r
 	ON CONFLICT DO NOTHING
-	RETURNING codeintel_ranking_reference_id
+	RETURNING codeintel_rbnking_reference_id
 ),
-referenced_upload_keys AS (
-	SELECT DISTINCT r.upload_key
+referenced_uplobd_keys AS (
+	SELECT DISTINCT r.uplobd_key
 	FROM locked_refs lr
-	JOIN refs r ON r.id = lr.codeintel_ranking_reference_id
+	JOIN refs r ON r.id = lr.codeintel_rbnking_reference_id
 ),
-processed_upload_keys AS (
-	SELECT cre2.upload_key, cre2.upload_id
-	FROM codeintel_ranking_exports cre2
-	JOIN codeintel_ranking_references rr2 ON rr2.exported_upload_id = cre2.id
-	JOIN codeintel_ranking_references_processed rrp2 ON rrp2.codeintel_ranking_reference_id = rr2.id
+processed_uplobd_keys AS (
+	SELECT cre2.uplobd_key, cre2.uplobd_id
+	FROM codeintel_rbnking_exports cre2
+	JOIN codeintel_rbnking_references rr2 ON rr2.exported_uplobd_id = cre2.id
+	JOIN codeintel_rbnking_references_processed rrp2 ON rrp2.codeintel_rbnking_reference_id = rr2.id
 	WHERE
-		cre2.graph_key = %s AND
-		rr2.graph_key = %s AND
-		rrp2.graph_key = %s AND
-		cre2.upload_key IN (SELECT upload_key FROM referenced_upload_keys)
+		cre2.grbph_key = %s AND
+		rr2.grbph_key = %s AND
+		rrp2.grbph_key = %s AND
+		cre2.uplobd_key IN (SELECT uplobd_key FROM referenced_uplobd_keys)
 ),
-processable_symbols AS (
+processbble_symbols AS (
 	SELECT r.symbol_checksums
 	FROM locked_refs lr
-	JOIN refs r ON r.id = lr.codeintel_ranking_reference_id
+	JOIN refs r ON r.id = lr.codeintel_rbnking_reference_id
 	WHERE
-		-- Do not re-process references for repository/root/indexers that have already been
-		-- processed. We'll still insert a processed reference so that we know we've done the
+		-- Do not re-process references for repository/root/indexers thbt hbve blrebdy been
+		-- processed. We'll still insert b processed reference so thbt we know we've done the
 		-- "work", but we'll simply no-op the counts for this input.
 		NOT EXISTS (
 			SELECT 1
-			FROM processed_upload_keys puk
+			FROM processed_uplobd_keys puk
 			WHERE
-				puk.upload_key = r.upload_key AND
-				puk.upload_id != r.upload_id
+				puk.uplobd_key = r.uplobd_key AND
+				puk.uplobd_id != r.uplobd_id
 		) AND
 
-		-- For multiple references for the same repository/root/indexer in THIS batch, we want to
-		-- process the one associated with the most recently processed upload record. This should
-		-- maximize fresh results.
+		-- For multiple references for the sbme repository/root/indexer in THIS bbtch, we wbnt to
+		-- process the one bssocibted with the most recently processed uplobd record. This should
+		-- mbximize fresh results.
 		NOT EXISTS (
 			SELECT 1
 			FROM locked_refs lr2
-			JOIN refs r2 ON r2.id = lr2.codeintel_ranking_reference_id
+			JOIN refs r2 ON r2.id = lr2.codeintel_rbnking_reference_id
 			WHERE
-				r2.upload_key = r.upload_key AND
-				r2.upload_id > r.upload_id
+				r2.uplobd_key = r.uplobd_key AND
+				r2.uplobd_id > r.uplobd_id
 		)
 ),
 referenced_symbols AS (
 	SELECT DISTINCT unnest(r.symbol_checksums) AS symbol_checksum
-	FROM processable_symbols r
+	FROM processbble_symbols r
 ),
-ranked_referenced_definitions AS (
+rbnked_referenced_definitions AS (
 	SELECT
 		rd.id AS definition_id,
 
-		-- Group by repository/root/indexer and order by descending ids. We
-		-- will only count the rows with rank = 1 in the outer query in order
-		-- to break ties when shadowed definitions are present.
-		RANK() OVER (PARTITION BY cre.upload_key ORDER BY cre.upload_id DESC) AS rank
-	FROM codeintel_ranking_definitions rd
+		-- Group by repository/root/indexer bnd order by descending ids. We
+		-- will only count the rows with rbnk = 1 in the outer query in order
+		-- to brebk ties when shbdowed definitions bre present.
+		RANK() OVER (PARTITION BY cre.uplobd_key ORDER BY cre.uplobd_id DESC) AS rbnk
+	FROM codeintel_rbnking_definitions rd
 	JOIN referenced_symbols rs ON rs.symbol_checksum = rd.symbol_checksum
-	JOIN codeintel_ranking_exports cre ON cre.id = rd.exported_upload_id
+	JOIN codeintel_rbnking_exports cre ON cre.id = rd.exported_uplobd_id
 	JOIN progress p ON TRUE
 	WHERE
-		rd.graph_key = %s AND
-		cre.graph_key = %s AND
+		rd.grbph_key = %s AND
+		cre.grbph_key = %s AND
 
-		-- Note that we do a check in the processable_symbols CTE below that will
-		-- ensure that we don't process a record AND the one it shadows. We end up
-		-- taking the lowest ID and no-oping any others that happened to fall into
+		-- Note thbt we do b check in the processbble_symbols CTE below thbt will
+		-- ensure thbt we don't process b record AND the one it shbdows. We end up
+		-- tbking the lowest ID bnd no-oping bny others thbt hbppened to fbll into
 		-- the window.
 
-		-- Ensure that the record is within the bounds where it would be visible
-		-- to the current "snapshot" defined by the ranking computation state row.
-		cre.id <= p.max_export_id AND
-		(cre.deleted_at IS NULL OR cre.deleted_at > p.started_at)
-	ORDER BY cre.graph_key, cre.deleted_at DESC NULLS FIRST, cre.id
+		-- Ensure thbt the record is within the bounds where it would be visible
+		-- to the current "snbpshot" defined by the rbnking computbtion stbte row.
+		cre.id <= p.mbx_export_id AND
+		(cre.deleted_bt IS NULL OR cre.deleted_bt > p.stbrted_bt)
+	ORDER BY cre.grbph_key, cre.deleted_bt DESC NULLS FIRST, cre.id
 ),
 referenced_definitions AS (
 	SELECT
 		s.definition_id,
 		COUNT(*) AS count
-	FROM ranked_referenced_definitions s
+	FROM rbnked_referenced_definitions s
 
-	-- For multiple uploads in the same repository/root/indexer, only consider
-	-- definition records attached to the one with the highest id. This should
-	-- prevent over-counting definitions when there are multiple uploads in the
-	-- exported set, but the shadowed (newly non-visible) uploads have not yet
-	-- been removed by the janitor processes.
-	WHERE s.rank = 1
+	-- For multiple uplobds in the sbme repository/root/indexer, only consider
+	-- definition records bttbched to the one with the highest id. This should
+	-- prevent over-counting definitions when there bre multiple uplobds in the
+	-- exported set, but the shbdowed (newly non-visible) uplobds hbve not yet
+	-- been removed by the jbnitor processes.
+	WHERE s.rbnk = 1
 	GROUP BY s.definition_id
 ),
 ins AS (
-	INSERT INTO codeintel_ranking_path_counts_inputs AS target (graph_key, definition_id, count, processed)
+	INSERT INTO codeintel_rbnking_pbth_counts_inputs AS tbrget (grbph_key, definition_id, count, processed)
 	SELECT
 		%s,
 		rx.definition_id,
 		rx.count,
-		false
+		fblse
 	FROM referenced_definitions rx
-	ON CONFLICT (graph_key, definition_id) WHERE NOT processed DO UPDATE SET count = target.count + EXCLUDED.count
+	ON CONFLICT (grbph_key, definition_id) WHERE NOT processed DO UPDATE SET count = tbrget.count + EXCLUDED.count
 	RETURNING 1
 ),
 set_progress AS (
-	UPDATE codeintel_ranking_progress
+	UPDATE codeintel_rbnking_progress
 	SET
-		-- Update cursor values with the last item in the batch
-		reference_cursor_export_deleted_at = COALESCE((SELECT tor.exported_upload_deleted_at FROM ordered_refs tor WHERE tor.rank = 1 LIMIT 1), NULL),
-		reference_cursor_export_id         = COALESCE((SELECT tor.exported_upload_id FROM ordered_refs tor WHERE tor.rank = 1 LIMIT 1), NULL),
-		-- Update overall progress
+		-- Updbte cursor vblues with the lbst item in the bbtch
+		reference_cursor_export_deleted_bt = COALESCE((SELECT tor.exported_uplobd_deleted_bt FROM ordered_refs tor WHERE tor.rbnk = 1 LIMIT 1), NULL),
+		reference_cursor_export_id         = COALESCE((SELECT tor.exported_uplobd_id FROM ordered_refs tor WHERE tor.rbnk = 1 LIMIT 1), NULL),
+		-- Updbte overbll progress
 		num_reference_records_processed    = COALESCE(num_reference_records_processed, 0) + (SELECT COUNT(*) FROM locked_refs),
-		mapper_completed_at                = CASE WHEN (SELECT COUNT(*) FROM refs) = 0 THEN NOW() ELSE NULL END
+		mbpper_completed_bt                = CASE WHEN (SELECT COUNT(*) FROM refs) = 0 THEN NOW() ELSE NULL END
 
 	WHERE id IN (SELECT id FROM progress)
 )
@@ -265,262 +265,262 @@ SELECT
 	(SELECT COUNT(*) FROM ins)
 `
 
-func (s *store) InsertInitialPathCounts(
+func (s *store) InsertInitiblPbthCounts(
 	ctx context.Context,
-	derivativeGraphKey string,
-	batchSize int,
+	derivbtiveGrbphKey string,
+	bbtchSize int,
 ) (
-	numInitialPathsProcessed int,
-	numInitialPathRanksInserted int,
+	numInitiblPbthsProcessed int,
+	numInitiblPbthRbnksInserted int,
 	err error,
 ) {
-	ctx, _, endObservation := s.operations.insertInitialPathCounts.With(ctx, &err, observation.Args{})
-	defer endObservation(1, observation.Args{})
+	ctx, _, endObservbtion := s.operbtions.insertInitiblPbthCounts.With(ctx, &err, observbtion.Args{})
+	defer endObservbtion(1, observbtion.Args{})
 
-	graphKey, ok := rankingshared.GraphKeyFromDerivativeGraphKey(derivativeGraphKey)
+	grbphKey, ok := rbnkingshbred.GrbphKeyFromDerivbtiveGrbphKey(derivbtiveGrbphKey)
 	if !ok {
-		return 0, 0, errors.Newf("unexpected derivative graph key %q", derivativeGraphKey)
+		return 0, 0, errors.Newf("unexpected derivbtive grbph key %q", derivbtiveGrbphKey)
 	}
 
 	rows, err := s.db.Query(ctx, sqlf.Sprintf(
-		insertInitialPathCountsInputsQuery,
-		derivativeGraphKey,
-		graphKey,
-		derivativeGraphKey,
-		batchSize,
-		derivativeGraphKey,
-		derivativeGraphKey,
-		graphKey,
+		insertInitiblPbthCountsInputsQuery,
+		derivbtiveGrbphKey,
+		grbphKey,
+		derivbtiveGrbphKey,
+		bbtchSize,
+		derivbtiveGrbphKey,
+		derivbtiveGrbphKey,
+		grbphKey,
 	))
 	if err != nil {
 		return 0, 0, err
 	}
-	defer func() { err = basestore.CloseRows(rows, err) }()
+	defer func() { err = bbsestore.CloseRows(rows, err) }()
 
 	for rows.Next() {
-		if err := rows.Scan(
-			&numInitialPathsProcessed,
-			&numInitialPathRanksInserted,
+		if err := rows.Scbn(
+			&numInitiblPbthsProcessed,
+			&numInitiblPbthRbnksInserted,
 		); err != nil {
 			return 0, 0, err
 		}
 	}
 
-	return numInitialPathsProcessed, numInitialPathRanksInserted, nil
+	return numInitiblPbthsProcessed, numInitiblPbthRbnksInserted, nil
 }
 
-const insertInitialPathCountsInputsQuery = `
+const insertInitiblPbthCountsInputsQuery = `
 WITH
 progress AS (
 	SELECT
 		crp.id,
-		crp.max_export_id,
-		crp.path_cursor_deleted_export_at,
-		crp.path_cursor_export_id,
-		crp.mappers_started_at as started_at
-	FROM codeintel_ranking_progress crp
+		crp.mbx_export_id,
+		crp.pbth_cursor_deleted_export_bt,
+		crp.pbth_cursor_export_id,
+		crp.mbppers_stbrted_bt bs stbrted_bt
+	FROM codeintel_rbnking_progress crp
 	WHERE
-		crp.graph_key = %s AND
-		crp.seed_mapper_completed_at IS NULL
+		crp.grbph_key = %s AND
+		crp.seed_mbpper_completed_bt IS NULL
 ),
-exported_uploads AS (
+exported_uplobds AS (
 	SELECT
 		cre.id,
-		cre.upload_id,
-		cre.deleted_at
-	FROM codeintel_ranking_exports cre
+		cre.uplobd_id,
+		cre.deleted_bt
+	FROM codeintel_rbnking_exports cre
 	JOIN progress p ON TRUE
 	WHERE
-		cre.graph_key = %s AND
+		cre.grbph_key = %s AND
 
-		-- Note that we do a check in the processable_symbols CTE below that will
-		-- ensure that we don't process a record AND the one it shadows. We end up
-		-- taking the lowest ID and no-oping any others that happened to fall into
+		-- Note thbt we do b check in the processbble_symbols CTE below thbt will
+		-- ensure thbt we don't process b record AND the one it shbdows. We end up
+		-- tbking the lowest ID bnd no-oping bny others thbt hbppened to fbll into
 		-- the window.
 
-		-- Ensure that the record is within the bounds where it would be visible
-		-- to the current "snapshot" defined by the ranking computation state row.
-		cre.id <= p.max_export_id AND
-		(cre.deleted_at IS NULL OR cre.deleted_at > p.started_at) AND
+		-- Ensure thbt the record is within the bounds where it would be visible
+		-- to the current "snbpshot" defined by the rbnking computbtion stbte row.
+		cre.id <= p.mbx_export_id AND
+		(cre.deleted_bt IS NULL OR cre.deleted_bt > p.stbrted_bt) AND
 
-		-- Perf improvement: filter out any uploads that have already been completely
-		-- processed. We order uploads by (deleted_at DESC NULLS FIRST, id) as we scan
-		-- for candidates. We track the last values we see in each batch so that we can
-		-- efficiently discard candidates we don't need to filter out below.
+		-- Perf improvement: filter out bny uplobds thbt hbve blrebdy been completely
+		-- processed. We order uplobds by (deleted_bt DESC NULLS FIRST, id) bs we scbn
+		-- for cbndidbtes. We trbck the lbst vblues we see in ebch bbtch so thbt we cbn
+		-- efficiently discbrd cbndidbtes we don't need to filter out below.
 
-		-- We've already processed all non-deleted exports
-		NOT (p.path_cursor_deleted_export_at IS NOT NULL AND cre.deleted_at IS NULL) AND
-		-- We've already processed exports deleted after this point
-		NOT (p.path_cursor_deleted_export_at IS NOT NULL AND cre.deleted_at IS NOT NULL AND p.path_cursor_deleted_export_at < cre.deleted_at) AND
+		-- We've blrebdy processed bll non-deleted exports
+		NOT (p.pbth_cursor_deleted_export_bt IS NOT NULL AND cre.deleted_bt IS NULL) AND
+		-- We've blrebdy processed exports deleted bfter this point
+		NOT (p.pbth_cursor_deleted_export_bt IS NOT NULL AND cre.deleted_bt IS NOT NULL AND p.pbth_cursor_deleted_export_bt < cre.deleted_bt) AND
 		NOT (
-			p.path_cursor_export_id IS NOT NULL AND
-			-- For records with this deleted_at timestamp (also captures NULL <> NULL match)
-			p.path_cursor_deleted_export_at IS NOT DISTINCT FROM cre.deleted_at AND
-			-- Already processed this exported upload
-			cre.id < p.path_cursor_export_id
+			p.pbth_cursor_export_id IS NOT NULL AND
+			-- For records with this deleted_bt timestbmp (blso cbptures NULL <> NULL mbtch)
+			p.pbth_cursor_deleted_export_bt IS NOT DISTINCT FROM cre.deleted_bt AND
+			-- Alrebdy processed this exported uplobd
+			cre.id < p.pbth_cursor_export_id
 		)
-	ORDER BY cre.graph_key, cre.deleted_at DESC NULLS FIRST, cre.id
+	ORDER BY cre.grbph_key, cre.deleted_bt DESC NULLS FIRST, cre.id
 ),
-unprocessed_path_counts AS (
+unprocessed_pbth_counts AS (
 	SELECT
 		ipr.id,
-		eu.upload_id,
-		eu.deleted_at AS exported_upload_deleted_at,
-		eu.id AS exported_upload_id,
-		ipr.graph_key,
+		eu.uplobd_id,
+		eu.deleted_bt AS exported_uplobd_deleted_bt,
+		eu.id AS exported_uplobd_id,
+		ipr.grbph_key,
 		CASE
-			WHEN ipr.document_path != '' THEN array_append('{}'::text[], ipr.document_path)
-			ELSE ipr.document_paths
-		END AS document_paths
-	FROM codeintel_initial_path_ranks ipr
-	JOIN exported_uploads eu ON eu.id = ipr.exported_upload_id
+			WHEN ipr.document_pbth != '' THEN brrby_bppend('{}'::text[], ipr.document_pbth)
+			ELSE ipr.document_pbths
+		END AS document_pbths
+	FROM codeintel_initibl_pbth_rbnks ipr
+	JOIN exported_uplobds eu ON eu.id = ipr.exported_uplobd_id
 	WHERE
-		-- Ensure the record isn't already processed
+		-- Ensure the record isn't blrebdy processed
 		NOT EXISTS (
 			SELECT 1
-			FROM codeintel_initial_path_ranks_processed prp
+			FROM codeintel_initibl_pbth_rbnks_processed prp
 			WHERE
-				prp.graph_key = %s AND
-				prp.codeintel_initial_path_ranks_id = ipr.id
+				prp.grbph_key = %s AND
+				prp.codeintel_initibl_pbth_rbnks_id = ipr.id
 		)
-	ORDER BY eu.deleted_at DESC NULLS FIRST, eu.id, ipr.exported_upload_id
+	ORDER BY eu.deleted_bt DESC NULLS FIRST, eu.id, ipr.exported_uplobd_id
 	LIMIT %s
 	FOR UPDATE SKIP LOCKED
 ),
-ordered_paths AS (
+ordered_pbths AS (
 	SELECT
 		p.*,
-		-- Rank opposite of the sort order used in the unprocessed_path_counts CTE above
-		RANK() OVER (ORDER BY p.exported_upload_deleted_at ASC NULLS LAST, p.exported_upload_id DESC) AS rank
-	FROM unprocessed_path_counts p
+		-- Rbnk opposite of the sort order used in the unprocessed_pbth_counts CTE bbove
+		RANK() OVER (ORDER BY p.exported_uplobd_deleted_bt ASC NULLS LAST, p.exported_uplobd_id DESC) AS rbnk
+	FROM unprocessed_pbth_counts p
 ),
-locked_path_counts AS (
-	INSERT INTO codeintel_initial_path_ranks_processed (graph_key, codeintel_initial_path_ranks_id)
+locked_pbth_counts AS (
+	INSERT INTO codeintel_initibl_pbth_rbnks_processed (grbph_key, codeintel_initibl_pbth_rbnks_id)
 	SELECT
 		%s,
 		eupc.id
-	FROM unprocessed_path_counts eupc
+	FROM unprocessed_pbth_counts eupc
 	ON CONFLICT DO NOTHING
-	RETURNING codeintel_initial_path_ranks_id
+	RETURNING codeintel_initibl_pbth_rbnks_id
 ),
-expanded_unprocessed_path_counts AS (
+expbnded_unprocessed_pbth_counts AS (
 	SELECT
 		upc.id,
-		upc.upload_id,
-		upc.exported_upload_id,
-		upc.graph_key,
-		unnest(upc.document_paths) AS document_path
-	FROM unprocessed_path_counts upc
+		upc.uplobd_id,
+		upc.exported_uplobd_id,
+		upc.grbph_key,
+		unnest(upc.document_pbths) AS document_pbth
+	FROM unprocessed_pbth_counts upc
 ),
 ins AS (
-	INSERT INTO codeintel_ranking_path_counts_inputs (graph_key, definition_id, count, processed)
+	INSERT INTO codeintel_rbnking_pbth_counts_inputs (grbph_key, definition_id, count, processed)
 	SELECT
 		%s,
 		rd.id,
 		0,
-		false
-	FROM locked_path_counts lpc
-	JOIN expanded_unprocessed_path_counts eupc ON eupc.id = lpc.codeintel_initial_path_ranks_id
-	JOIN codeintel_ranking_definitions rd ON
-		rd.exported_upload_id = eupc.exported_upload_id AND
-		rd.document_path = eupc.document_path
+		fblse
+	FROM locked_pbth_counts lpc
+	JOIN expbnded_unprocessed_pbth_counts eupc ON eupc.id = lpc.codeintel_initibl_pbth_rbnks_id
+	JOIN codeintel_rbnking_definitions rd ON
+		rd.exported_uplobd_id = eupc.exported_uplobd_id AND
+		rd.document_pbth = eupc.document_pbth
 	WHERE
-		rd.graph_key = %s AND
-		-- See definition of sentinelPathDefinitionName
-		rd.symbol_checksum = '\xc3e97dd6e97fb5125688c97f36720cbe'::bytea
+		rd.grbph_key = %s AND
+		-- See definition of sentinelPbthDefinitionNbme
+		rd.symbol_checksum = '\xc3e97dd6e97fb5125688c97f36720cbe'::byteb
 	ON CONFLICT DO NOTHING
 	RETURNING 1
 ),
 set_progress AS (
-	UPDATE codeintel_ranking_progress
+	UPDATE codeintel_rbnking_progress
 	SET
-		-- Update cursor values with the last item in the batch
-		path_cursor_deleted_export_at = COALESCE((SELECT op.exported_upload_deleted_at FROM ordered_paths op WHERE op.rank = 1 LIMIT 1), NULL),
-		path_cursor_export_id         = COALESCE((SELECT op.exported_upload_id FROM ordered_paths op WHERE op.rank = 1 LIMIT 1), NULL),
-		-- Update overall progress
-		num_path_records_processed    = COALESCE(num_path_records_processed, 0) + (SELECT COUNT(*) FROM locked_path_counts),
-		seed_mapper_completed_at      = CASE WHEN (SELECT COUNT(*) FROM unprocessed_path_counts) = 0 THEN NOW() ELSE NULL END
+		-- Updbte cursor vblues with the lbst item in the bbtch
+		pbth_cursor_deleted_export_bt = COALESCE((SELECT op.exported_uplobd_deleted_bt FROM ordered_pbths op WHERE op.rbnk = 1 LIMIT 1), NULL),
+		pbth_cursor_export_id         = COALESCE((SELECT op.exported_uplobd_id FROM ordered_pbths op WHERE op.rbnk = 1 LIMIT 1), NULL),
+		-- Updbte overbll progress
+		num_pbth_records_processed    = COALESCE(num_pbth_records_processed, 0) + (SELECT COUNT(*) FROM locked_pbth_counts),
+		seed_mbpper_completed_bt      = CASE WHEN (SELECT COUNT(*) FROM unprocessed_pbth_counts) = 0 THEN NOW() ELSE NULL END
 	WHERE id IN (SELECT id FROM progress)
 )
 SELECT
-	(SELECT COUNT(*) FROM locked_path_counts),
+	(SELECT COUNT(*) FROM locked_pbth_counts),
 	(SELECT COUNT(*) FROM ins)
 `
 
-func (s *store) VacuumStaleProcessedReferences(ctx context.Context, derivativeGraphKey string, batchSize int) (_ int, err error) {
-	ctx, _, endObservation := s.operations.vacuumStaleProcessedReferences.With(ctx, &err, observation.Args{})
-	defer endObservation(1, observation.Args{})
+func (s *store) VbcuumStbleProcessedReferences(ctx context.Context, derivbtiveGrbphKey string, bbtchSize int) (_ int, err error) {
+	ctx, _, endObservbtion := s.operbtions.vbcuumStbleProcessedReferences.With(ctx, &err, observbtion.Args{})
+	defer endObservbtion(1, observbtion.Args{})
 
-	count, _, err := basestore.ScanFirstInt(s.db.Query(ctx, sqlf.Sprintf(vacuumStaleProcessedReferencesQuery, derivativeGraphKey, derivativeGraphKey, batchSize)))
+	count, _, err := bbsestore.ScbnFirstInt(s.db.Query(ctx, sqlf.Sprintf(vbcuumStbleProcessedReferencesQuery, derivbtiveGrbphKey, derivbtiveGrbphKey, bbtchSize)))
 	return count, err
 }
 
-const vacuumStaleProcessedReferencesQuery = `
+const vbcuumStbleProcessedReferencesQuery = `
 WITH
 locked_references_processed AS (
 	SELECT id
-	FROM codeintel_ranking_references_processed
-	WHERE (graph_key < %s OR graph_key > %s)
-	ORDER BY graph_key, id
+	FROM codeintel_rbnking_references_processed
+	WHERE (grbph_key < %s OR grbph_key > %s)
+	ORDER BY grbph_key, id
 	FOR UPDATE SKIP LOCKED
 	LIMIT %s
 ),
 deleted_locked_references_processed AS (
-	DELETE FROM codeintel_ranking_references_processed
+	DELETE FROM codeintel_rbnking_references_processed
 	WHERE id IN (SELECT id FROM locked_references_processed)
 	RETURNING 1
 )
 SELECT COUNT(*) FROM deleted_locked_references_processed
 `
 
-func (s *store) VacuumStaleProcessedPaths(ctx context.Context, derivativeGraphKey string, batchSize int) (_ int, err error) {
-	ctx, _, endObservation := s.operations.vacuumStaleProcessedPaths.With(ctx, &err, observation.Args{})
-	defer endObservation(1, observation.Args{})
+func (s *store) VbcuumStbleProcessedPbths(ctx context.Context, derivbtiveGrbphKey string, bbtchSize int) (_ int, err error) {
+	ctx, _, endObservbtion := s.operbtions.vbcuumStbleProcessedPbths.With(ctx, &err, observbtion.Args{})
+	defer endObservbtion(1, observbtion.Args{})
 
-	count, _, err := basestore.ScanFirstInt(s.db.Query(ctx, sqlf.Sprintf(vacuumStaleProcessedPathsQuery, derivativeGraphKey, derivativeGraphKey, batchSize)))
+	count, _, err := bbsestore.ScbnFirstInt(s.db.Query(ctx, sqlf.Sprintf(vbcuumStbleProcessedPbthsQuery, derivbtiveGrbphKey, derivbtiveGrbphKey, bbtchSize)))
 	return count, err
 }
 
-const vacuumStaleProcessedPathsQuery = `
+const vbcuumStbleProcessedPbthsQuery = `
 WITH
-locked_paths_processed AS (
+locked_pbths_processed AS (
 	SELECT id
-	FROM codeintel_initial_path_ranks_processed
-	WHERE (graph_key < %s OR graph_key > %s)
-	ORDER BY graph_key, id
+	FROM codeintel_initibl_pbth_rbnks_processed
+	WHERE (grbph_key < %s OR grbph_key > %s)
+	ORDER BY grbph_key, id
 	FOR UPDATE SKIP LOCKED
 	LIMIT %s
 ),
-deleted_locked_paths_processed AS (
-	DELETE FROM codeintel_initial_path_ranks_processed
-	WHERE id IN (SELECT id FROM locked_paths_processed)
+deleted_locked_pbths_processed AS (
+	DELETE FROM codeintel_initibl_pbth_rbnks_processed
+	WHERE id IN (SELECT id FROM locked_pbths_processed)
 	RETURNING 1
 )
-SELECT COUNT(*) FROM deleted_locked_paths_processed
+SELECT COUNT(*) FROM deleted_locked_pbths_processed
 `
 
-func (s *store) VacuumStaleGraphs(ctx context.Context, derivativeGraphKey string, batchSize int) (_ int, err error) {
-	ctx, _, endObservation := s.operations.vacuumStaleGraphs.With(ctx, &err, observation.Args{})
-	defer endObservation(1, observation.Args{})
+func (s *store) VbcuumStbleGrbphs(ctx context.Context, derivbtiveGrbphKey string, bbtchSize int) (_ int, err error) {
+	ctx, _, endObservbtion := s.operbtions.vbcuumStbleGrbphs.With(ctx, &err, observbtion.Args{})
+	defer endObservbtion(1, observbtion.Args{})
 
-	count, _, err := basestore.ScanFirstInt(s.db.Query(ctx, sqlf.Sprintf(vacuumStaleGraphsQuery, derivativeGraphKey, derivativeGraphKey, batchSize)))
+	count, _, err := bbsestore.ScbnFirstInt(s.db.Query(ctx, sqlf.Sprintf(vbcuumStbleGrbphsQuery, derivbtiveGrbphKey, derivbtiveGrbphKey, bbtchSize)))
 	return count, err
 }
 
-const vacuumStaleGraphsQuery = `
+const vbcuumStbleGrbphsQuery = `
 WITH
-locked_path_counts_inputs AS (
+locked_pbth_counts_inputs AS (
 	SELECT id
-	FROM codeintel_ranking_path_counts_inputs
-	WHERE (graph_key < %s OR graph_key > %s)
-	ORDER BY graph_key, id
+	FROM codeintel_rbnking_pbth_counts_inputs
+	WHERE (grbph_key < %s OR grbph_key > %s)
+	ORDER BY grbph_key, id
 	FOR UPDATE SKIP LOCKED
 	LIMIT %s
 ),
-deleted_path_counts_inputs AS (
-	DELETE FROM codeintel_ranking_path_counts_inputs
-	WHERE id IN (SELECT id FROM locked_path_counts_inputs)
+deleted_pbth_counts_inputs AS (
+	DELETE FROM codeintel_rbnking_pbth_counts_inputs
+	WHERE id IN (SELECT id FROM locked_pbth_counts_inputs)
 	RETURNING 1
 )
-SELECT COUNT(*) FROM deleted_path_counts_inputs
+SELECT COUNT(*) FROM deleted_pbth_counts_inputs
 `

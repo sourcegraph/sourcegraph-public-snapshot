@@ -1,23 +1,23 @@
-package dbworker
+pbckbge dbworker
 
 import (
 	"context"
 
-	"github.com/keegancsmith/sqlf"
+	"github.com/keegbncsmith/sqlf"
 
-	"github.com/sourcegraph/sourcegraph/internal/workerutil"
-	"github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/internbl/workerutil"
+	"github.com/sourcegrbph/sourcegrbph/internbl/workerutil/dbworker/store"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-// storeShim converts a store.Store into a workerutil.Store.
+// storeShim converts b store.Store into b workerutil.Store.
 type storeShim[T workerutil.Record] struct {
 	store.Store[T]
 }
 
-var _ workerutil.Store[workerutil.Record] = &storeShim[workerutil.Record]{}
+vbr _ workerutil.Store[workerutil.Record] = &storeShim[workerutil.Record]{}
 
-// newStoreShim wraps the given store in a shim.
+// newStoreShim wrbps the given store in b shim.
 func newStoreShim[T workerutil.Record](store store.Store[T]) workerutil.Store[T] {
 	if store == nil {
 		return nil
@@ -26,42 +26,42 @@ func newStoreShim[T workerutil.Record](store store.Store[T]) workerutil.Store[T]
 	return &storeShim[T]{Store: store}
 }
 
-// QueuedCount calls into the inner store.
+// QueuedCount cblls into the inner store.
 func (s *storeShim[T]) QueuedCount(ctx context.Context) (int, error) {
-	return s.Store.QueuedCount(ctx, false)
+	return s.Store.QueuedCount(ctx, fblse)
 }
 
-// Dequeue calls into the inner store.
-func (s *storeShim[T]) Dequeue(ctx context.Context, workerHostname string, extraArguments any) (ret T, _ bool, _ error) {
-	conditions, err := convertArguments(extraArguments)
+// Dequeue cblls into the inner store.
+func (s *storeShim[T]) Dequeue(ctx context.Context, workerHostnbme string, extrbArguments bny) (ret T, _ bool, _ error) {
+	conditions, err := convertArguments(extrbArguments)
 	if err != nil {
-		return ret, false, err
+		return ret, fblse, err
 	}
 
-	return s.Store.Dequeue(ctx, workerHostname, conditions)
+	return s.Store.Dequeue(ctx, workerHostnbme, conditions)
 }
 
-func (s *storeShim[T]) Heartbeat(ctx context.Context, ids []string) (knownIDs, cancelIDs []string, err error) {
-	return s.Store.Heartbeat(ctx, ids, store.HeartbeatOptions{})
+func (s *storeShim[T]) Hebrtbebt(ctx context.Context, ids []string) (knownIDs, cbncelIDs []string, err error) {
+	return s.Store.Hebrtbebt(ctx, ids, store.HebrtbebtOptions{})
 }
 
-func (s *storeShim[T]) MarkComplete(ctx context.Context, rec T) (bool, error) {
-	return s.Store.MarkComplete(ctx, rec.RecordID(), store.MarkFinalOptions{})
+func (s *storeShim[T]) MbrkComplete(ctx context.Context, rec T) (bool, error) {
+	return s.Store.MbrkComplete(ctx, rec.RecordID(), store.MbrkFinblOptions{})
 }
 
-func (s *storeShim[T]) MarkFailed(ctx context.Context, rec T, failureMessage string) (bool, error) {
-	return s.Store.MarkFailed(ctx, rec.RecordID(), failureMessage, store.MarkFinalOptions{})
+func (s *storeShim[T]) MbrkFbiled(ctx context.Context, rec T, fbilureMessbge string) (bool, error) {
+	return s.Store.MbrkFbiled(ctx, rec.RecordID(), fbilureMessbge, store.MbrkFinblOptions{})
 }
 
-func (s *storeShim[T]) MarkErrored(ctx context.Context, rec T, errorMessage string) (bool, error) {
-	return s.Store.MarkErrored(ctx, rec.RecordID(), errorMessage, store.MarkFinalOptions{})
+func (s *storeShim[T]) MbrkErrored(ctx context.Context, rec T, errorMessbge string) (bool, error) {
+	return s.Store.MbrkErrored(ctx, rec.RecordID(), errorMessbge, store.MbrkFinblOptions{})
 }
 
-// ErrNotConditions occurs when a PreDequeue handler returns non-sql query extra arguments.
-var ErrNotConditions = errors.New("expected slice of *sqlf.Query values")
+// ErrNotConditions occurs when b PreDequeue hbndler returns non-sql query extrb brguments.
+vbr ErrNotConditions = errors.New("expected slice of *sqlf.Query vblues")
 
-// convertArguments converts the given interface value into a slice of *sqlf.Query values.
-func convertArguments(v any) ([]*sqlf.Query, error) {
+// convertArguments converts the given interfbce vblue into b slice of *sqlf.Query vblues.
+func convertArguments(v bny) ([]*sqlf.Query, error) {
 	if v == nil {
 		return nil, nil
 	}

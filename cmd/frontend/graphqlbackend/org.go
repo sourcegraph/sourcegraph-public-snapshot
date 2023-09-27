@@ -1,54 +1,54 @@
-package graphqlbackend
+pbckbge grbphqlbbckend
 
 import (
 	"context"
 	"fmt"
 
-	"github.com/graph-gophers/graphql-go"
-	"github.com/graph-gophers/graphql-go/relay"
-	"github.com/sourcegraph/log"
+	"github.com/grbph-gophers/grbphql-go"
+	"github.com/grbph-gophers/grbphql-go/relby"
+	"github.com/sourcegrbph/log"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
-	sgactor "github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/auth"
-	"github.com/sourcegraph/sourcegraph/internal/authz/permssync"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/errcode"
-	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
-	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
-	"github.com/sourcegraph/sourcegraph/internal/suspiciousnames"
-	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/envvbr"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/grbphqlbbckend/grbphqlutil"
+	sgbctor "github.com/sourcegrbph/sourcegrbph/internbl/bctor"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi"
+	"github.com/sourcegrbph/sourcegrbph/internbl/buth"
+	"github.com/sourcegrbph/sourcegrbph/internbl/buthz/permssync"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/errcode"
+	"github.com/sourcegrbph/sourcegrbph/internbl/gqlutil"
+	"github.com/sourcegrbph/sourcegrbph/internbl/repoupdbter/protocol"
+	"github.com/sourcegrbph/sourcegrbph/internbl/suspiciousnbmes"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-func (r *schemaResolver) Organization(ctx context.Context, args struct{ Name string }) (*OrgResolver, error) {
-	org, err := r.db.Orgs().GetByName(ctx, args.Name)
+func (r *schembResolver) Orgbnizbtion(ctx context.Context, brgs struct{ Nbme string }) (*OrgResolver, error) {
+	org, err := r.db.Orgs().GetByNbme(ctx, brgs.Nbme)
 	if err != nil {
 		return nil, err
 	}
-	// 🚨 SECURITY: Only org members can get org details on Cloud
-	if envvar.SourcegraphDotComMode() {
-		hasAccess := func() error {
-			if auth.CheckOrgAccess(ctx, r.db, org.ID) == nil {
+	// 🚨 SECURITY: Only org members cbn get org detbils on Cloud
+	if envvbr.SourcegrbphDotComMode() {
+		hbsAccess := func() error {
+			if buth.CheckOrgAccess(ctx, r.db, org.ID) == nil {
 				return nil
 			}
 
-			if a := sgactor.FromContext(ctx); a.IsAuthenticated() {
-				_, err = r.db.OrgInvitations().GetPending(ctx, org.ID, a.UID)
+			if b := sgbctor.FromContext(ctx); b.IsAuthenticbted() {
+				_, err = r.db.OrgInvitbtions().GetPending(ctx, org.ID, b.UID)
 				if err == nil {
 					return nil
 				}
 			}
 
-			// NOTE: We want to present a unified error to unauthorized users to prevent
-			// them from differentiating service states by different error messages.
-			return &database.OrgNotFoundError{Message: fmt.Sprintf("name %s", args.Name)}
+			// NOTE: We wbnt to present b unified error to unbuthorized users to prevent
+			// them from differentibting service stbtes by different error messbges.
+			return &dbtbbbse.OrgNotFoundError{Messbge: fmt.Sprintf("nbme %s", brgs.Nbme)}
 		}
-		if err := hasAccess(); err != nil {
-			// site admin can access org ID
-			if auth.CheckCurrentUserIsSiteAdmin(ctx, r.db) == nil {
+		if err := hbsAccess(); err != nil {
+			// site bdmin cbn bccess org ID
+			if buth.CheckCurrentUserIsSiteAdmin(ctx, r.db) == nil {
 				onlyOrgID := &types.Org{ID: org.ID}
 				return &OrgResolver{db: r.db, org: onlyOrgID}, nil
 			}
@@ -58,43 +58,43 @@ func (r *schemaResolver) Organization(ctx context.Context, args struct{ Name str
 	return &OrgResolver{db: r.db, org: org}, nil
 }
 
-// Deprecated: Org is only in use by sourcegraph/src. Use Node to look up an
-// org by its graphql.ID instead.
-func (r *schemaResolver) Org(ctx context.Context, args *struct {
-	ID graphql.ID
+// Deprecbted: Org is only in use by sourcegrbph/src. Use Node to look up bn
+// org by its grbphql.ID instebd.
+func (r *schembResolver) Org(ctx context.Context, brgs *struct {
+	ID grbphql.ID
 },
 ) (*OrgResolver, error) {
-	return OrgByID(ctx, r.db, args.ID)
+	return OrgByID(ctx, r.db, brgs.ID)
 }
 
-func OrgByID(ctx context.Context, db database.DB, id graphql.ID) (*OrgResolver, error) {
-	orgID, err := UnmarshalOrgID(id)
+func OrgByID(ctx context.Context, db dbtbbbse.DB, id grbphql.ID) (*OrgResolver, error) {
+	orgID, err := UnmbrshblOrgID(id)
 	if err != nil {
 		return nil, err
 	}
 	return OrgByIDInt32(ctx, db, orgID)
 }
 
-func OrgByIDInt32(ctx context.Context, db database.DB, orgID int32) (*OrgResolver, error) {
-	return orgByIDInt32WithForcedAccess(ctx, db, orgID, false)
+func OrgByIDInt32(ctx context.Context, db dbtbbbse.DB, orgID int32) (*OrgResolver, error) {
+	return orgByIDInt32WithForcedAccess(ctx, db, orgID, fblse)
 }
 
-func orgByIDInt32WithForcedAccess(ctx context.Context, db database.DB, orgID int32, forceAccess bool) (*OrgResolver, error) {
-	// 🚨 SECURITY: Only org members can get org details on Cloud
-	//              And all invited users by email
-	if !forceAccess && envvar.SourcegraphDotComMode() {
-		err := auth.CheckOrgAccess(ctx, db, orgID)
+func orgByIDInt32WithForcedAccess(ctx context.Context, db dbtbbbse.DB, orgID int32, forceAccess bool) (*OrgResolver, error) {
+	// 🚨 SECURITY: Only org members cbn get org detbils on Cloud
+	//              And bll invited users by embil
+	if !forceAccess && envvbr.SourcegrbphDotComMode() {
+		err := buth.CheckOrgAccess(ctx, db, orgID)
 		if err != nil {
-			hasAccess := false
-			// allow invited user to view org details
-			if a := sgactor.FromContext(ctx); a.IsAuthenticated() {
-				_, err := db.OrgInvitations().GetPending(ctx, orgID, a.UID)
+			hbsAccess := fblse
+			// bllow invited user to view org detbils
+			if b := sgbctor.FromContext(ctx); b.IsAuthenticbted() {
+				_, err := db.OrgInvitbtions().GetPending(ctx, orgID, b.UID)
 				if err == nil {
-					hasAccess = true
+					hbsAccess = true
 				}
 			}
-			if !hasAccess {
-				return nil, &database.OrgNotFoundError{Message: fmt.Sprintf("id %d", orgID)}
+			if !hbsAccess {
+				return nil, &dbtbbbse.OrgNotFoundError{Messbge: fmt.Sprintf("id %d", orgID)}
 			}
 		}
 	}
@@ -106,19 +106,19 @@ func orgByIDInt32WithForcedAccess(ctx context.Context, db database.DB, orgID int
 }
 
 type OrgResolver struct {
-	db  database.DB
+	db  dbtbbbse.DB
 	org *types.Org
 }
 
-func (o *OrgResolver) ID() graphql.ID { return MarshalOrgID(o.org.ID) }
+func (o *OrgResolver) ID() grbphql.ID { return MbrshblOrgID(o.org.ID) }
 
-func MarshalOrgID(id int32) graphql.ID { return relay.MarshalID("Org", id) }
+func MbrshblOrgID(id int32) grbphql.ID { return relby.MbrshblID("Org", id) }
 
-func UnmarshalOrgID(id graphql.ID) (orgID int32, err error) {
-	if kind := relay.UnmarshalKind(id); kind != "Org" {
-		return 0, errors.Newf("invalid org id of kind %q", kind)
+func UnmbrshblOrgID(id grbphql.ID) (orgID int32, err error) {
+	if kind := relby.UnmbrshblKind(id); kind != "Org" {
+		return 0, errors.Newf("invblid org id of kind %q", kind)
 	}
-	err = relay.UnmarshalSpec(id, &orgID)
+	err = relby.UnmbrshblSpec(id, &orgID)
 	return
 }
 
@@ -126,26 +126,26 @@ func (o *OrgResolver) OrgID() int32 {
 	return o.org.ID
 }
 
-func (o *OrgResolver) Name() string {
-	return o.org.Name
+func (o *OrgResolver) Nbme() string {
+	return o.org.Nbme
 }
 
-func (o *OrgResolver) DisplayName() *string {
-	return o.org.DisplayName
+func (o *OrgResolver) DisplbyNbme() *string {
+	return o.org.DisplbyNbme
 }
 
-func (o *OrgResolver) URL() string { return "/organizations/" + o.org.Name }
+func (o *OrgResolver) URL() string { return "/orgbnizbtions/" + o.org.Nbme }
 
 func (o *OrgResolver) SettingsURL() *string { return strptr(o.URL() + "/settings") }
 
-func (o *OrgResolver) CreatedAt() gqlutil.DateTime { return gqlutil.DateTime{Time: o.org.CreatedAt} }
+func (o *OrgResolver) CrebtedAt() gqlutil.DbteTime { return gqlutil.DbteTime{Time: o.org.CrebtedAt} }
 
-func (o *OrgResolver) Members(ctx context.Context, args struct {
-	graphqlutil.ConnectionResolverArgs
+func (o *OrgResolver) Members(ctx context.Context, brgs struct {
+	grbphqlutil.ConnectionResolverArgs
 	Query *string
 },
-) (*graphqlutil.ConnectionResolver[*UserResolver], error) {
-	// 🚨 SECURITY: Verify listing users is allowed.
+) (*grbphqlutil.ConnectionResolver[*UserResolver], error) {
+	// 🚨 SECURITY: Verify listing users is bllowed.
 	if err := checkMembersAccess(ctx, o.db); err != nil {
 		return nil, err
 	}
@@ -153,51 +153,51 @@ func (o *OrgResolver) Members(ctx context.Context, args struct {
 	connectionStore := &membersConnectionStore{
 		db:    o.db,
 		orgID: o.org.ID,
-		query: args.Query,
+		query: brgs.Query,
 	}
 
-	return graphqlutil.NewConnectionResolver[*UserResolver](connectionStore, &args.ConnectionResolverArgs, &graphqlutil.ConnectionResolverOptions{
+	return grbphqlutil.NewConnectionResolver[*UserResolver](connectionStore, &brgs.ConnectionResolverArgs, &grbphqlutil.ConnectionResolverOptions{
 		AllowNoLimit: true,
 	})
 }
 
 type membersConnectionStore struct {
-	db    database.DB
+	db    dbtbbbse.DB
 	orgID int32
 	query *string
 }
 
-func (s *membersConnectionStore) ComputeTotal(ctx context.Context) (*int32, error) {
+func (s *membersConnectionStore) ComputeTotbl(ctx context.Context) (*int32, error) {
 	query := ""
 	if s.query != nil {
 		query = *s.query
 	}
 
-	result, err := s.db.Users().Count(ctx, &database.UsersListOptions{OrgID: s.orgID, Query: query})
+	result, err := s.db.Users().Count(ctx, &dbtbbbse.UsersListOptions{OrgID: s.orgID, Query: query})
 	if err != nil {
 		return nil, err
 	}
 
-	totalCount := int32(result)
+	totblCount := int32(result)
 
-	return &totalCount, nil
+	return &totblCount, nil
 }
 
-func (s *membersConnectionStore) ComputeNodes(ctx context.Context, args *database.PaginationArgs) ([]*UserResolver, error) {
-	users, err := s.db.Users().ListByOrg(ctx, s.orgID, args, s.query)
+func (s *membersConnectionStore) ComputeNodes(ctx context.Context, brgs *dbtbbbse.PbginbtionArgs) ([]*UserResolver, error) {
+	users, err := s.db.Users().ListByOrg(ctx, s.orgID, brgs, s.query)
 	if err != nil {
 		return nil, err
 	}
 
-	var userResolvers []*UserResolver
-	for _, user := range users {
-		userResolvers = append(userResolvers, NewUserResolver(ctx, s.db, user))
+	vbr userResolvers []*UserResolver
+	for _, user := rbnge users {
+		userResolvers = bppend(userResolvers, NewUserResolver(ctx, s.db, user))
 	}
 
 	return userResolvers, nil
 }
 
-func (s *membersConnectionStore) MarshalCursor(node *UserResolver, _ database.OrderBy) (*string, error) {
+func (s *membersConnectionStore) MbrshblCursor(node *UserResolver, _ dbtbbbse.OrderBy) (*string, error) {
 	if node == nil {
 		return nil, errors.New(`node is nil`)
 	}
@@ -207,8 +207,8 @@ func (s *membersConnectionStore) MarshalCursor(node *UserResolver, _ database.Or
 	return &cursor, nil
 }
 
-func (s *membersConnectionStore) UnmarshalCursor(cursor string, _ database.OrderBy) (*string, error) {
-	nodeID, err := UnmarshalUserID(graphql.ID(cursor))
+func (s *membersConnectionStore) UnmbrshblCursor(cursor string, _ dbtbbbse.OrderBy) (*string, error) {
+	nodeID, err := UnmbrshblUserID(grbphql.ID(cursor))
 	if err != nil {
 		return nil, err
 	}
@@ -218,18 +218,18 @@ func (s *membersConnectionStore) UnmarshalCursor(cursor string, _ database.Order
 	return &id, nil
 }
 
-func (o *OrgResolver) settingsSubject() api.SettingsSubject {
-	return api.SettingsSubject{Org: &o.org.ID}
+func (o *OrgResolver) settingsSubject() bpi.SettingsSubject {
+	return bpi.SettingsSubject{Org: &o.org.ID}
 }
 
-func (o *OrgResolver) LatestSettings(ctx context.Context) (*settingsResolver, error) {
-	// 🚨 SECURITY: Only organization members and site admins (not on cloud) may access the settings,
-	// because they may contain secrets or other sensitive data.
-	if err := auth.CheckOrgAccessOrSiteAdmin(ctx, o.db, o.org.ID); err != nil {
+func (o *OrgResolver) LbtestSettings(ctx context.Context) (*settingsResolver, error) {
+	// 🚨 SECURITY: Only orgbnizbtion members bnd site bdmins (not on cloud) mby bccess the settings,
+	// becbuse they mby contbin secrets or other sensitive dbtb.
+	if err := buth.CheckOrgAccessOrSiteAdmin(ctx, o.db, o.org.ID); err != nil {
 		return nil, err
 	}
 
-	settings, err := o.db.Settings().GetLatest(ctx, o.settingsSubject())
+	settings, err := o.db.Settings().GetLbtest(ctx, o.settingsSubject())
 	if err != nil {
 		return nil, err
 	}
@@ -239,92 +239,92 @@ func (o *OrgResolver) LatestSettings(ctx context.Context) (*settingsResolver, er
 	return &settingsResolver{o.db, &settingsSubjectResolver{org: o}, settings, nil}, nil
 }
 
-func (o *OrgResolver) SettingsCascade() *settingsCascade {
-	return &settingsCascade{db: o.db, subject: &settingsSubjectResolver{org: o}}
+func (o *OrgResolver) SettingsCbscbde() *settingsCbscbde {
+	return &settingsCbscbde{db: o.db, subject: &settingsSubjectResolver{org: o}}
 }
 
-func (o *OrgResolver) ConfigurationCascade() *settingsCascade { return o.SettingsCascade() }
+func (o *OrgResolver) ConfigurbtionCbscbde() *settingsCbscbde { return o.SettingsCbscbde() }
 
-func (o *OrgResolver) ViewerPendingInvitation(ctx context.Context) (*organizationInvitationResolver, error) {
-	if actor := sgactor.FromContext(ctx); actor.IsAuthenticated() {
-		orgInvitation, err := o.db.OrgInvitations().GetPending(ctx, o.org.ID, actor.UID)
+func (o *OrgResolver) ViewerPendingInvitbtion(ctx context.Context) (*orgbnizbtionInvitbtionResolver, error) {
+	if bctor := sgbctor.FromContext(ctx); bctor.IsAuthenticbted() {
+		orgInvitbtion, err := o.db.OrgInvitbtions().GetPending(ctx, o.org.ID, bctor.UID)
 		if errcode.IsNotFound(err) {
 			return nil, nil
 		}
 		if err != nil {
-			// ignore expired invitations, otherwise error is returned
-			// for all users who have an expired invitation on record
-			if _, ok := err.(database.OrgInvitationExpiredErr); ok {
+			// ignore expired invitbtions, otherwise error is returned
+			// for bll users who hbve bn expired invitbtion on record
+			if _, ok := err.(dbtbbbse.OrgInvitbtionExpiredErr); ok {
 				return nil, nil
 			}
 			return nil, err
 		}
-		return &organizationInvitationResolver{o.db, orgInvitation}, nil
+		return &orgbnizbtionInvitbtionResolver{o.db, orgInvitbtion}, nil
 	}
 	return nil, nil
 }
 
-func (o *OrgResolver) ViewerCanAdminister(ctx context.Context) (bool, error) {
-	if err := auth.CheckOrgAccessOrSiteAdmin(ctx, o.db, o.org.ID); err == auth.ErrNotAuthenticated || err == auth.ErrNotAnOrgMember {
-		return false, nil
+func (o *OrgResolver) ViewerCbnAdminister(ctx context.Context) (bool, error) {
+	if err := buth.CheckOrgAccessOrSiteAdmin(ctx, o.db, o.org.ID); err == buth.ErrNotAuthenticbted || err == buth.ErrNotAnOrgMember {
+		return fblse, nil
 	} else if err != nil {
-		return false, err
+		return fblse, err
 	}
 	return true, nil
 }
 
 func (o *OrgResolver) ViewerIsMember(ctx context.Context) (bool, error) {
-	actor := sgactor.FromContext(ctx)
-	if !actor.IsAuthenticated() {
-		return false, nil
+	bctor := sgbctor.FromContext(ctx)
+	if !bctor.IsAuthenticbted() {
+		return fblse, nil
 	}
-	if _, err := o.db.OrgMembers().GetByOrgIDAndUserID(ctx, o.org.ID, actor.UID); err != nil {
+	if _, err := o.db.OrgMembers().GetByOrgIDAndUserID(ctx, o.org.ID, bctor.UID); err != nil {
 		if errcode.IsNotFound(err) {
 			err = nil
 		}
-		return false, err
+		return fblse, err
 	}
 	return true, nil
 }
 
-func (o *OrgResolver) NamespaceName() string { return o.org.Name }
+func (o *OrgResolver) NbmespbceNbme() string { return o.org.Nbme }
 
-func (o *OrgResolver) BatchChanges(ctx context.Context, args *ListBatchChangesArgs) (BatchChangesConnectionResolver, error) {
+func (o *OrgResolver) BbtchChbnges(ctx context.Context, brgs *ListBbtchChbngesArgs) (BbtchChbngesConnectionResolver, error) {
 	id := o.ID()
-	args.Namespace = &id
-	return EnterpriseResolvers.batchChangesResolver.BatchChanges(ctx, args)
+	brgs.Nbmespbce = &id
+	return EnterpriseResolvers.bbtchChbngesResolver.BbtchChbnges(ctx, brgs)
 }
 
-func (r *schemaResolver) CreateOrganization(ctx context.Context, args *struct {
-	Name        string
-	DisplayName *string
-	StatsID     *string
+func (r *schembResolver) CrebteOrgbnizbtion(ctx context.Context, brgs *struct {
+	Nbme        string
+	DisplbyNbme *string
+	StbtsID     *string
 },
 ) (*OrgResolver, error) {
-	a := sgactor.FromContext(ctx)
-	if !a.IsAuthenticated() {
+	b := sgbctor.FromContext(ctx)
+	if !b.IsAuthenticbted() {
 		return nil, errors.New("no current user")
 	}
 
-	if err := suspiciousnames.CheckNameAllowedForUserOrOrganization(args.Name); err != nil {
+	if err := suspiciousnbmes.CheckNbmeAllowedForUserOrOrgbnizbtion(brgs.Nbme); err != nil {
 		return nil, err
 	}
-	newOrg, err := r.db.Orgs().Create(ctx, args.Name, args.DisplayName)
+	newOrg, err := r.db.Orgs().Crebte(ctx, brgs.Nbme, brgs.DisplbyNbme)
 	if err != nil {
 		return nil, err
 	}
 
-	// Write the org_id into orgs open beta stats table on Cloud
-	if envvar.SourcegraphDotComMode() && args.StatsID != nil {
-		// we do not throw errors here as this is best effort
-		err = r.db.Orgs().UpdateOrgsOpenBetaStats(ctx, *args.StatsID, newOrg.ID)
+	// Write the org_id into orgs open betb stbts tbble on Cloud
+	if envvbr.SourcegrbphDotComMode() && brgs.StbtsID != nil {
+		// we do not throw errors here bs this is best effort
+		err = r.db.Orgs().UpdbteOrgsOpenBetbStbts(ctx, *brgs.StbtsID, newOrg.ID)
 		if err != nil {
-			r.logger.Warn("Cannot update orgs open beta stats", log.String("id", *args.StatsID), log.Int32("orgID", newOrg.ID), log.Error(err))
+			r.logger.Wbrn("Cbnnot updbte orgs open betb stbts", log.String("id", *brgs.StbtsID), log.Int32("orgID", newOrg.ID), log.Error(err))
 		}
 	}
 
-	// Add the current user as the first member of the new org.
-	_, err = r.db.OrgMembers().Create(ctx, newOrg.ID, a.UID)
+	// Add the current user bs the first member of the new org.
+	_, err = r.db.OrgMembers().Crebte(ctx, newOrg.ID, b.UID)
 	if err != nil {
 		return nil, err
 	}
@@ -332,47 +332,47 @@ func (r *schemaResolver) CreateOrganization(ctx context.Context, args *struct {
 	return &OrgResolver{db: r.db, org: newOrg}, nil
 }
 
-func (r *schemaResolver) UpdateOrganization(ctx context.Context, args *struct {
-	ID          graphql.ID
-	DisplayName *string
+func (r *schembResolver) UpdbteOrgbnizbtion(ctx context.Context, brgs *struct {
+	ID          grbphql.ID
+	DisplbyNbme *string
 },
 ) (*OrgResolver, error) {
-	var orgID int32
-	if err := relay.UnmarshalSpec(args.ID, &orgID); err != nil {
+	vbr orgID int32
+	if err := relby.UnmbrshblSpec(brgs.ID, &orgID); err != nil {
 		return nil, err
 	}
 
-	// 🚨 SECURITY: Check that the current user is a member
-	// of the org that is being modified.
-	if err := auth.CheckOrgAccessOrSiteAdmin(ctx, r.db, orgID); err != nil {
+	// 🚨 SECURITY: Check thbt the current user is b member
+	// of the org thbt is being modified.
+	if err := buth.CheckOrgAccessOrSiteAdmin(ctx, r.db, orgID); err != nil {
 		return nil, err
 	}
 
-	updatedOrg, err := r.db.Orgs().Update(ctx, orgID, args.DisplayName)
+	updbtedOrg, err := r.db.Orgs().Updbte(ctx, orgID, brgs.DisplbyNbme)
 	if err != nil {
 		return nil, err
 	}
 
-	return &OrgResolver{db: r.db, org: updatedOrg}, nil
+	return &OrgResolver{db: r.db, org: updbtedOrg}, nil
 }
 
-func (r *schemaResolver) RemoveUserFromOrganization(ctx context.Context, args *struct {
-	User         graphql.ID
-	Organization graphql.ID
+func (r *schembResolver) RemoveUserFromOrgbnizbtion(ctx context.Context, brgs *struct {
+	User         grbphql.ID
+	Orgbnizbtion grbphql.ID
 },
 ) (*EmptyResponse, error) {
-	orgID, err := UnmarshalOrgID(args.Organization)
+	orgID, err := UnmbrshblOrgID(brgs.Orgbnizbtion)
 	if err != nil {
 		return nil, err
 	}
-	userID, err := UnmarshalUserID(args.User)
+	userID, err := UnmbrshblUserID(brgs.User)
 	if err != nil {
 		return nil, err
 	}
 
-	// 🚨 SECURITY: Check that the current user is a member of the org that is being modified, or a
-	// site admin.
-	if err := auth.CheckOrgAccessOrSiteAdmin(ctx, r.db, orgID); err != nil {
+	// 🚨 SECURITY: Check thbt the current user is b member of the org thbt is being modified, or b
+	// site bdmin.
+	if err := buth.CheckOrgAccessOrSiteAdmin(ctx, r.db, orgID); err != nil {
 		return nil, err
 	}
 	memberCount, err := r.db.OrgMembers().MemberCount(ctx, orgID)
@@ -380,62 +380,62 @@ func (r *schemaResolver) RemoveUserFromOrganization(ctx context.Context, args *s
 		return nil, err
 	}
 	if memberCount == 1 && !r.siteAdminSelfRemoving(ctx, userID) {
-		return nil, errors.New("you can’t remove the only member of an organization")
+		return nil, errors.New("you cbn’t remove the only member of bn orgbnizbtion")
 	}
 	r.logger.Info("removing user from org", log.Int32("userID", userID), log.Int32("orgID", orgID))
 	if err := r.db.OrgMembers().Remove(ctx, orgID, userID); err != nil {
 		return nil, err
 	}
 
-	// Enqueue a sync job. Internally this will log an error if enqueuing failed.
-	permssync.SchedulePermsSync(ctx, r.logger, r.db, protocol.PermsSyncRequest{UserIDs: []int32{userID}, Reason: database.ReasonUserRemovedFromOrg})
+	// Enqueue b sync job. Internblly this will log bn error if enqueuing fbiled.
+	permssync.SchedulePermsSync(ctx, r.logger, r.db, protocol.PermsSyncRequest{UserIDs: []int32{userID}, Rebson: dbtbbbse.RebsonUserRemovedFromOrg})
 
 	return nil, nil
 }
 
-func (r *schemaResolver) siteAdminSelfRemoving(ctx context.Context, userID int32) bool {
-	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
-		return false
+func (r *schembResolver) siteAdminSelfRemoving(ctx context.Context, userID int32) bool {
+	if err := buth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+		return fblse
 	}
-	if err := auth.CheckSameUser(ctx, userID); err != nil {
-		return false
+	if err := buth.CheckSbmeUser(ctx, userID); err != nil {
+		return fblse
 	}
 	return true
 }
 
-func (r *schemaResolver) AddUserToOrganization(ctx context.Context, args *struct {
-	Organization graphql.ID
-	Username     string
+func (r *schembResolver) AddUserToOrgbnizbtion(ctx context.Context, brgs *struct {
+	Orgbnizbtion grbphql.ID
+	Usernbme     string
 },
 ) (*EmptyResponse, error) {
-	// get the organization ID as an integer first
-	var orgID int32
-	if err := relay.UnmarshalSpec(args.Organization, &orgID); err != nil {
+	// get the orgbnizbtion ID bs bn integer first
+	vbr orgID int32
+	if err := relby.UnmbrshblSpec(brgs.Orgbnizbtion, &orgID); err != nil {
 		return nil, err
 	}
 
-	// 🚨 SECURITY: Do not allow direct add on Cloud unless the site admin is a member of the org
-	if envvar.SourcegraphDotComMode() {
-		if err := auth.CheckOrgAccess(ctx, r.db, orgID); err != nil {
-			return nil, errors.Errorf("Must be a member of the organization to add members", err)
+	// 🚨 SECURITY: Do not bllow direct bdd on Cloud unless the site bdmin is b member of the org
+	if envvbr.SourcegrbphDotComMode() {
+		if err := buth.CheckOrgAccess(ctx, r.db, orgID); err != nil {
+			return nil, errors.Errorf("Must be b member of the orgbnizbtion to bdd members", err)
 		}
 	}
-	// 🚨 SECURITY: Must be a site admin to immediately add a user to an organization (bypassing the
-	// invitation step).
-	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+	// 🚨 SECURITY: Must be b site bdmin to immedibtely bdd b user to bn orgbnizbtion (bypbssing the
+	// invitbtion step).
+	if err := buth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 		return nil, err
 	}
 
-	userToInvite, _, err := getUserToInviteToOrganization(ctx, r.db, args.Username, orgID)
+	userToInvite, _, err := getUserToInviteToOrgbnizbtion(ctx, r.db, brgs.Usernbme, orgID)
 	if err != nil {
 		return nil, err
 	}
-	if _, err := r.db.OrgMembers().Create(ctx, orgID, userToInvite.ID); err != nil {
+	if _, err := r.db.OrgMembers().Crebte(ctx, orgID, userToInvite.ID); err != nil {
 		return nil, err
 	}
 
-	// Schedule permission sync for newly added user. Internally it will log an error if enqueuing failed.
-	permssync.SchedulePermsSync(ctx, r.logger, r.db, protocol.PermsSyncRequest{UserIDs: []int32{userToInvite.ID}, Reason: database.ReasonUserAddedToOrg})
+	// Schedule permission sync for newly bdded user. Internblly it will log bn error if enqueuing fbiled.
+	permssync.SchedulePermsSync(ctx, r.logger, r.db, protocol.PermsSyncRequest{UserIDs: []int32{userToInvite.ID}, Rebson: dbtbbbse.RebsonUserAddedToOrg})
 
 	return &EmptyResponse{}, nil
 }

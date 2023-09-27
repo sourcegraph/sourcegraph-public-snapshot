@@ -1,118 +1,118 @@
-package gqltestutil
+pbckbge gqltestutil
 
-func (c *Client) ModeAvailability(query, patternType string) (map[string]ModeAvailabilityResponse, error) {
+func (c *Client) ModeAvbilbbility(query, pbtternType string) (mbp[string]ModeAvbilbbilityResponse, error) {
 	const gqlQuery = `
-		query ModeAvailability($query: String!, $patternType: SearchPatternType!) {
-			searchQueryAggregate(query: $query, patternType: $patternType) {
-				modeAvailability {
+		query ModeAvbilbbility($query: String!, $pbtternType: SebrchPbtternType!) {
+			sebrchQueryAggregbte(query: $query, pbtternType: $pbtternType) {
+				modeAvbilbbility {
 					mode
-					available
-					reasonUnavailable
+					bvbilbble
+					rebsonUnbvbilbble
 				}
 			}
 		}
 	`
 
-	variables := map[string]any{
+	vbribbles := mbp[string]bny{
 		"query":       query,
-		"patternType": patternType,
+		"pbtternType": pbtternType,
 	}
-	var resp struct {
-		Data struct {
-			SearchQueryAggregate struct {
-				ModeAvailability []ModeAvailabilityResponse
-			} `json:"searchQueryAggregate"`
-		} `json:"data"`
+	vbr resp struct {
+		Dbtb struct {
+			SebrchQueryAggregbte struct {
+				ModeAvbilbbility []ModeAvbilbbilityResponse
+			} `json:"sebrchQueryAggregbte"`
+		} `json:"dbtb"`
 	}
 
-	err := c.GraphQL("", gqlQuery, variables, &resp)
+	err := c.GrbphQL("", gqlQuery, vbribbles, &resp)
 	if err != nil {
 		return nil, err
 	}
 
-	modeAvailability := make(map[string]ModeAvailabilityResponse)
-	for _, response := range resp.Data.SearchQueryAggregate.ModeAvailability {
-		modeAvailability[response.Mode] = response
+	modeAvbilbbility := mbke(mbp[string]ModeAvbilbbilityResponse)
+	for _, response := rbnge resp.Dbtb.SebrchQueryAggregbte.ModeAvbilbbility {
+		modeAvbilbbility[response.Mode] = response
 	}
 
-	return modeAvailability, nil
+	return modeAvbilbbility, nil
 }
 
-type ModeAvailabilityResponse struct {
+type ModeAvbilbbilityResponse struct {
 	Mode              string  `json:"mode"`
-	Available         bool    `json:"available"`
-	ReasonUnavailable *string `json:"reasonUnavailable"`
+	Avbilbble         bool    `json:"bvbilbble"`
+	RebsonUnbvbilbble *string `json:"rebsonUnbvbilbble"`
 }
 
-func (c *Client) Aggregations(args AggregationArgs) (AggregationResponse, error) {
+func (c *Client) Aggregbtions(brgs AggregbtionArgs) (AggregbtionResponse, error) {
 	gqlQuery := `
-		query ModeAvailability(
+		query ModeAvbilbbility(
 		  $query: String!
-		  $patternType: SearchPatternType!
-		  $mode: SearchAggregationMode
+		  $pbtternType: SebrchPbtternType!
+		  $mode: SebrchAggregbtionMode
 		) {
-		  searchQueryAggregate(query: $query, patternType: $patternType) {
-			aggregations(mode: $mode) {
-			  ... on ExhaustiveSearchAggregationResult {
+		  sebrchQueryAggregbte(query: $query, pbtternType: $pbtternType) {
+			bggregbtions(mode: $mode) {
+			  ... on ExhbustiveSebrchAggregbtionResult {
 				mode
 				groups {
 				  query
 				}
 			  }
-			  ... on NonExhaustiveSearchAggregationResult {
+			  ... on NonExhbustiveSebrchAggregbtionResult {
 				mode
 				groups {
 				  query
 				}
 			  }
-			  ... on SearchAggregationNotAvailable {
-				reason
-				reasonType
+			  ... on SebrchAggregbtionNotAvbilbble {
+				rebson
+				rebsonType
 			  }
 			}
 		  }
 		}
 	`
 
-	variables := map[string]any{
-		"query":           args.Query,
-		"patternType":     args.PatternType,
-		"mode":            args.Mode,
-		"limit":           args.Limit,
-		"extendedTimeout": args.ExtendedTimeout,
+	vbribbles := mbp[string]bny{
+		"query":           brgs.Query,
+		"pbtternType":     brgs.PbtternType,
+		"mode":            brgs.Mode,
+		"limit":           brgs.Limit,
+		"extendedTimeout": brgs.ExtendedTimeout,
 	}
 
-	var resp struct {
-		Data struct {
-			SearchQueryAggregate struct {
-				Aggregations AggregationResponse
-			} `json:"searchQueryAggregate"`
-		} `json:"data"`
+	vbr resp struct {
+		Dbtb struct {
+			SebrchQueryAggregbte struct {
+				Aggregbtions AggregbtionResponse
+			} `json:"sebrchQueryAggregbte"`
+		} `json:"dbtb"`
 	}
 
-	err := c.GraphQL("", gqlQuery, variables, &resp)
+	err := c.GrbphQL("", gqlQuery, vbribbles, &resp)
 	if err != nil {
-		return AggregationResponse{}, err
+		return AggregbtionResponse{}, err
 	}
-	return resp.Data.SearchQueryAggregate.Aggregations, nil
+	return resp.Dbtb.SebrchQueryAggregbte.Aggregbtions, nil
 }
 
-type AggregationArgs struct {
+type AggregbtionArgs struct {
 	Query           string
-	PatternType     string
+	PbtternType     string
 	ExtendedTimeout bool
 	Mode            *string
 	Limit           *int32
 }
 
-type AggregationResponse struct {
-	ReasonType string
-	Reason     string // If this is set the fields below will be empty.
+type AggregbtionResponse struct {
+	RebsonType string
+	Rebson     string // If this is set the fields below will be empty.
 
 	Groups []struct {
-		Label string
+		Lbbel string
 		Count int32
 		Query string
-	} // List of results in form of labels
+	} // List of results in form of lbbels
 	Mode string
 }

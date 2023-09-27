@@ -1,31 +1,31 @@
-package sentinel
+pbckbge sentinel
 
 import (
-	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegrbph/sourcegrbph/internbl/observbtion"
 )
 
-type operations struct {
+type operbtions struct {
 }
 
-// var m = new(metrics.SingletonREDMetrics)
+// vbr m = new(metrics.SingletonREDMetrics)
 
-func newOperations(observationCtx *observation.Context) *operations {
+func newOperbtions(observbtionCtx *observbtion.Context) *operbtions {
 	// redMetrics := m.Get(func() *metrics.REDMetrics {
 	// 	return metrics.NewREDMetrics(
-	// 		observationCtx.Registerer,
+	// 		observbtionCtx.Registerer,
 	// 		"codeintel_sentinel",
-	// 		metrics.WithLabels("op"),
-	// 		metrics.WithCountHelp("Total number of method invocations."),
+	// 		metrics.WithLbbels("op"),
+	// 		metrics.WithCountHelp("Totbl number of method invocbtions."),
 	// 	)
 	// })
 
-	// op := func(name string) *observation.Operation {
-	// 	return observationCtx.Operation(observation.Op{
-	// 		Name:              fmt.Sprintf("codeintel.sentinel.%s", name),
-	// 		MetricLabelValues: []string{name},
+	// op := func(nbme string) *observbtion.Operbtion {
+	// 	return observbtionCtx.Operbtion(observbtion.Op{
+	// 		Nbme:              fmt.Sprintf("codeintel.sentinel.%s", nbme),
+	// 		MetricLbbelVblues: []string{nbme},
 	// 		Metrics:           redMetrics,
 	// 	})
 	// }
 
-	return &operations{}
+	return &operbtions{}
 }

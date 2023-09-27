@@ -1,4 +1,4 @@
-package main
+pbckbge mbin
 
 import (
 	"context"
@@ -6,119 +6,119 @@ import (
 	"time"
 
 	"github.com/google/go-github/v41/github"
-	"github.com/sourcegraph/conc/pool"
+	"github.com/sourcegrbph/conc/pool"
 )
 
-// getGitHubRepos fetches the current repos on the GitHub instance for the given org name.
-func getGitHubRepos(ctx context.Context, orgName string) []*github.Repository {
-	p := pool.NewWithResults[[]*github.Repository]().WithMaxGoroutines(250)
-	// 200k repos + some buffer space returning empty pages
+// getGitHubRepos fetches the current repos on the GitHub instbnce for the given org nbme.
+func getGitHubRepos(ctx context.Context, orgNbme string) []*github.Repository {
+	p := pool.NewWithResults[[]*github.Repository]().WithMbxGoroutines(250)
+	// 200k repos + some buffer spbce returning empty pbges
 	for i := 0; i < 2050; i++ {
-		writeInfo(out, "Fetching repo page %d", i)
-		page := i
+		writeInfo(out, "Fetching repo pbge %d", i)
+		pbge := i
 		p.Go(func() []*github.Repository {
-			var resp *github.Response
-			var reposPage []*github.Repository
-			var err error
+			vbr resp *github.Response
+			vbr reposPbge []*github.Repository
+			vbr err error
 
 		retryListByOrg:
-			if reposPage, resp, err = gh.Repositories.ListByOrg(ctx, orgName, &github.RepositoryListByOrgOptions{
-				Type: "private",
+			if reposPbge, resp, err = gh.Repositories.ListByOrg(ctx, orgNbme, &github.RepositoryListByOrgOptions{
+				Type: "privbte",
 				ListOptions: github.ListOptions{
-					Page:    page,
-					PerPage: 100,
+					Pbge:    pbge,
+					PerPbge: 100,
 				},
 			}); err != nil {
-				log.Printf("Failed getting repo page %d for org %s: %s", page, orgName, err)
+				log.Printf("Fbiled getting repo pbge %d for org %s: %s", pbge, orgNbme, err)
 			}
-			if resp != nil && (resp.StatusCode == 502 || resp.StatusCode == 504) {
+			if resp != nil && (resp.StbtusCode == 502 || resp.StbtusCode == 504) {
 				time.Sleep(30 * time.Second)
 				goto retryListByOrg
 			}
 
-			return reposPage
+			return reposPbge
 		})
 	}
-	var repos []*github.Repository
-	for _, rr := range p.Wait() {
-		repos = append(repos, rr...)
+	vbr repos []*github.Repository
+	for _, rr := rbnge p.Wbit() {
+		repos = bppend(repos, rr...)
 	}
 	return repos
 }
 
-// getGitHubUsers fetches the existing users on the GitHub instance.
+// getGitHubUsers fetches the existing users on the GitHub instbnce.
 func getGitHubUsers(ctx context.Context) []*github.User {
-	var users []*github.User
-	var since int64
+	vbr users []*github.User
+	vbr since int64
 	for {
-		//writeInfo(out, "Fetching user page, last ID seen is %d", since)
-		usersPage, _, err := gh.Users.ListAll(ctx, &github.UserListOptions{
+		//writeInfo(out, "Fetching user pbge, lbst ID seen is %d", since)
+		usersPbge, _, err := gh.Users.ListAll(ctx, &github.UserListOptions{
 			Since:       since,
-			ListOptions: github.ListOptions{PerPage: 100},
+			ListOptions: github.ListOptions{PerPbge: 100},
 		})
 		if err != nil {
-			log.Fatal(err)
+			log.Fbtbl(err)
 		}
-		if len(usersPage) != 0 {
-			since = *usersPage[len(usersPage)-1].ID
-			users = append(users, usersPage...)
+		if len(usersPbge) != 0 {
+			since = *usersPbge[len(usersPbge)-1].ID
+			users = bppend(users, usersPbge...)
 		} else {
-			break
+			brebk
 		}
 	}
 
 	return users
 }
 
-// getGitHubTeams fetches the current teams on the GitHub instance for the given orgs.
-func getGitHubTeams(ctx context.Context, orgs []*org) []*github.Team {
-	var teams []*github.Team
-	var currentPage int
-	for _, o := range orgs {
+// getGitHubTebms fetches the current tebms on the GitHub instbnce for the given orgs.
+func getGitHubTebms(ctx context.Context, orgs []*org) []*github.Tebm {
+	vbr tebms []*github.Tebm
+	vbr currentPbge int
+	for _, o := rbnge orgs {
 		for {
-			//writeInfo(out, "Fetching team page %d for org %s", currentPage, o.Login)
-			teamsPage, _, err := gh.Teams.ListTeams(ctx, o.Login, &github.ListOptions{
-				Page:    currentPage,
-				PerPage: 100,
+			//writeInfo(out, "Fetching tebm pbge %d for org %s", currentPbge, o.Login)
+			tebmsPbge, _, err := gh.Tebms.ListTebms(ctx, o.Login, &github.ListOptions{
+				Pbge:    currentPbge,
+				PerPbge: 100,
 			})
-			// not returned in API response but necessary
-			for _, t := range teamsPage {
-				t.Organization = &github.Organization{Login: &o.Login}
+			// not returned in API response but necessbry
+			for _, t := rbnge tebmsPbge {
+				t.Orgbnizbtion = &github.Orgbnizbtion{Login: &o.Login}
 			}
 			if err != nil {
-				log.Fatal(err)
+				log.Fbtbl(err)
 			}
-			if len(teamsPage) != 0 {
-				currentPage++
-				teams = append(teams, teamsPage...)
+			if len(tebmsPbge) != 0 {
+				currentPbge++
+				tebms = bppend(tebms, tebmsPbge...)
 			} else {
-				break
+				brebk
 			}
 		}
-		currentPage = 0
+		currentPbge = 0
 	}
 
-	return teams
+	return tebms
 }
 
-// getGitHubOrgs fetches the current orgs on the GitHub instance.
-func getGitHubOrgs(ctx context.Context) []*github.Organization {
-	var orgs []*github.Organization
-	var since int64
+// getGitHubOrgs fetches the current orgs on the GitHub instbnce.
+func getGitHubOrgs(ctx context.Context) []*github.Orgbnizbtion {
+	vbr orgs []*github.Orgbnizbtion
+	vbr since int64
 	for {
-		//writeInfo(out, "Fetching org page, last ID seen is %d", since)
-		orgsPage, _, err := gh.Organizations.ListAll(ctx, &github.OrganizationsListOptions{
+		//writeInfo(out, "Fetching org pbge, lbst ID seen is %d", since)
+		orgsPbge, _, err := gh.Orgbnizbtions.ListAll(ctx, &github.OrgbnizbtionsListOptions{
 			Since:       since,
-			ListOptions: github.ListOptions{PerPage: 100},
+			ListOptions: github.ListOptions{PerPbge: 100},
 		})
 		if err != nil {
-			log.Fatal(err)
+			log.Fbtbl(err)
 		}
-		if len(orgsPage) != 0 {
-			since = *orgsPage[len(orgsPage)-1].ID
-			orgs = append(orgs, orgsPage...)
+		if len(orgsPbge) != 0 {
+			since = *orgsPbge[len(orgsPbge)-1].ID
+			orgs = bppend(orgs, orgsPbge...)
 		} else {
-			break
+			brebk
 		}
 	}
 

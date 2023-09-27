@@ -1,44 +1,44 @@
-package processor
+pbckbge processor
 
 import (
-	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golbng/prometheus"
 
-	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegrbph/sourcegrbph/internbl/observbtion"
 )
 
 type resetterMetrics struct {
-	numUploadResets        prometheus.Counter
-	numUploadResetFailures prometheus.Counter
-	numUploadResetErrors   prometheus.Counter
+	numUplobdResets        prometheus.Counter
+	numUplobdResetFbilures prometheus.Counter
+	numUplobdResetErrors   prometheus.Counter
 }
 
-func NewResetterMetrics(observationCtx *observation.Context) *resetterMetrics {
-	counter := func(name, help string) prometheus.Counter {
+func NewResetterMetrics(observbtionCtx *observbtion.Context) *resetterMetrics {
+	counter := func(nbme, help string) prometheus.Counter {
 		counter := prometheus.NewCounter(prometheus.CounterOpts{
-			Name: name,
+			Nbme: nbme,
 			Help: help,
 		})
 
-		observationCtx.Registerer.MustRegister(counter)
+		observbtionCtx.Registerer.MustRegister(counter)
 		return counter
 	}
 
-	numUploadResets := counter(
-		"src_codeintel_background_upload_record_resets_total",
-		"The number of upload record resets.",
+	numUplobdResets := counter(
+		"src_codeintel_bbckground_uplobd_record_resets_totbl",
+		"The number of uplobd record resets.",
 	)
-	numUploadResetFailures := counter(
-		"src_codeintel_background_upload_record_reset_failures_total",
-		"The number of upload reset failures.",
+	numUplobdResetFbilures := counter(
+		"src_codeintel_bbckground_uplobd_record_reset_fbilures_totbl",
+		"The number of uplobd reset fbilures.",
 	)
-	numUploadResetErrors := counter(
-		"src_codeintel_background_upload_record_reset_errors_total",
-		"The number of errors that occur during upload record resets.",
+	numUplobdResetErrors := counter(
+		"src_codeintel_bbckground_uplobd_record_reset_errors_totbl",
+		"The number of errors thbt occur during uplobd record resets.",
 	)
 
 	return &resetterMetrics{
-		numUploadResets:        numUploadResets,
-		numUploadResetFailures: numUploadResetFailures,
-		numUploadResetErrors:   numUploadResetErrors,
+		numUplobdResets:        numUplobdResets,
+		numUplobdResetFbilures: numUplobdResetFbilures,
+		numUplobdResetErrors:   numUplobdResetErrors,
 	}
 }

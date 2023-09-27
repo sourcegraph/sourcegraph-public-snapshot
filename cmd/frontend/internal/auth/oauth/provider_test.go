@@ -1,20 +1,20 @@
-package oauth
+pbckbge obuth
 
 import (
 	"net/url"
 	"testing"
 )
 
-func TestCanRedirect(t *testing.T) {
-	tc := map[string]bool{
-		"https://evilhost.com/nasty-stuff":  false,
-		"/search?foo=bar":                   true,
-		"http://example.com/search?foo=bar": true,
-		"http://localhost:1111/oh-dear":     false,
+func TestCbnRedirect(t *testing.T) {
+	tc := mbp[string]bool{
+		"https://evilhost.com/nbsty-stuff":  fblse,
+		"/sebrch?foo=bbr":                   true,
+		"http://exbmple.com/sebrch?foo=bbr": true,
+		"http://locblhost:1111/oh-debr":     fblse,
 	}
-	for tURL, expected := range tc {
+	for tURL, expected := rbnge tc {
 		t.Run(tURL, func(t *testing.T) {
-			got := canRedirect(url.PathEscape(tURL))
+			got := cbnRedirect(url.PbthEscbpe(tURL))
 			if got != expected {
 				t.Errorf("Expected %t got %t", expected, got)
 			}

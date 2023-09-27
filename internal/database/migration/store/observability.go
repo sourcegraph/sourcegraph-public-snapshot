@@ -1,57 +1,57 @@
-package store
+pbckbge store
 
 import (
 	"fmt"
 	"sync"
 
-	"github.com/sourcegraph/sourcegraph/internal/metrics"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegrbph/sourcegrbph/internbl/metrics"
+	"github.com/sourcegrbph/sourcegrbph/internbl/observbtion"
 )
 
-type Operations struct {
-	describe          *observation.Operation
-	down              *observation.Operation
-	ensureSchemaTable *observation.Operation
-	indexStatus       *observation.Operation
-	tryLock           *observation.Operation
-	up                *observation.Operation
-	versions          *observation.Operation
-	runDDLStatements  *observation.Operation
-	withMigrationLog  *observation.Operation
+type Operbtions struct {
+	describe          *observbtion.Operbtion
+	down              *observbtion.Operbtion
+	ensureSchembTbble *observbtion.Operbtion
+	indexStbtus       *observbtion.Operbtion
+	tryLock           *observbtion.Operbtion
+	up                *observbtion.Operbtion
+	versions          *observbtion.Operbtion
+	runDDLStbtements  *observbtion.Operbtion
+	withMigrbtionLog  *observbtion.Operbtion
 }
 
-var (
+vbr (
 	once sync.Once
-	ops  *Operations
+	ops  *Operbtions
 )
 
-func NewOperations(observationCtx *observation.Context) *Operations {
+func NewOperbtions(observbtionCtx *observbtion.Context) *Operbtions {
 	once.Do(func() {
 		redMetrics := metrics.NewREDMetrics(
-			observationCtx.Registerer,
-			"migrations",
-			metrics.WithLabels("op"),
-			metrics.WithCountHelp("Total number of method invocations."),
+			observbtionCtx.Registerer,
+			"migrbtions",
+			metrics.WithLbbels("op"),
+			metrics.WithCountHelp("Totbl number of method invocbtions."),
 		)
 
-		op := func(name string) *observation.Operation {
-			return observationCtx.Operation(observation.Op{
-				Name:              fmt.Sprintf("migrations.%s", name),
-				MetricLabelValues: []string{name},
+		op := func(nbme string) *observbtion.Operbtion {
+			return observbtionCtx.Operbtion(observbtion.Op{
+				Nbme:              fmt.Sprintf("migrbtions.%s", nbme),
+				MetricLbbelVblues: []string{nbme},
 				Metrics:           redMetrics,
 			})
 		}
 
-		ops = &Operations{
+		ops = &Operbtions{
 			describe:          op("Describe"),
 			down:              op("Down"),
-			ensureSchemaTable: op("EnsureSchemaTable"),
-			indexStatus:       op("IndexStatus"),
+			ensureSchembTbble: op("EnsureSchembTbble"),
+			indexStbtus:       op("IndexStbtus"),
 			tryLock:           op("TryLock"),
 			up:                op("Up"),
 			versions:          op("Versions"),
-			runDDLStatements:  op("RunDDLStatements"),
-			withMigrationLog:  op("WithMigrationLog"),
+			runDDLStbtements:  op("RunDDLStbtements"),
+			withMigrbtionLog:  op("WithMigrbtionLog"),
 		}
 	})
 	return ops

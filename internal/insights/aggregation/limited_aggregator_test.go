@@ -1,206 +1,206 @@
-package aggregation
+pbckbge bggregbtion
 
 import (
 	"testing"
 
-	"github.com/hexops/autogold/v2"
+	"github.com/hexops/butogold/v2"
 )
 
-func TestAddAggregate(t *testing.T) {
-	testCases := []struct {
-		name  string
-		have  limitedAggregator
-		value string
+func TestAddAggregbte(t *testing.T) {
+	testCbses := []struct {
+		nbme  string
+		hbve  limitedAggregbtor
+		vblue string
 		count int32
-		want  limitedAggregator
+		wbnt  limitedAggregbtor
 	}{
 		{
-			name: "invalid buffer size does nothing",
-			have: limitedAggregator{
+			nbme: "invblid buffer size does nothing",
+			hbve: limitedAggregbtor{
 				resultBufferSize: -1,
 			},
-			value: "B",
+			vblue: "B",
 			count: 9,
-			want: limitedAggregator{
+			wbnt: limitedAggregbtor{
 				resultBufferSize: -1,
 			},
 		},
 		{
-			name: "adds up other count",
-			have: limitedAggregator{
+			nbme: "bdds up other count",
+			hbve: limitedAggregbtor{
 				resultBufferSize: 1,
-				Results:          map[string]int32{"A": 12},
-				smallestResult:   &Aggregate{"A", 12},
+				Results:          mbp[string]int32{"A": 12},
+				smbllestResult:   &Aggregbte{"A", 12},
 			},
-			value: "B",
+			vblue: "B",
 			count: 9,
-			want: limitedAggregator{
+			wbnt: limitedAggregbtor{
 				resultBufferSize: 1,
-				Results:          map[string]int32{"A": 12},
-				smallestResult:   &Aggregate{"A", 12},
+				Results:          mbp[string]int32{"A": 12},
+				smbllestResult:   &Aggregbte{"A", 12},
 				OtherCount:       OtherCount{ResultCount: 9, GroupCount: 1},
 			},
 		},
 		{
-			name: "adds new result",
-			have: limitedAggregator{
+			nbme: "bdds new result",
+			hbve: limitedAggregbtor{
 				resultBufferSize: 2,
-				Results:          map[string]int32{"A": 24},
-				smallestResult:   &Aggregate{"A", 24},
+				Results:          mbp[string]int32{"A": 24},
+				smbllestResult:   &Aggregbte{"A", 24},
 			},
-			value: "B",
+			vblue: "B",
 			count: 32,
-			want: limitedAggregator{
+			wbnt: limitedAggregbtor{
 				resultBufferSize: 2,
-				Results:          map[string]int32{"A": 24, "B": 32},
-				smallestResult:   &Aggregate{"A", 24},
+				Results:          mbp[string]int32{"A": 24, "B": 32},
+				smbllestResult:   &Aggregbte{"A", 24},
 			},
 		},
 		{
-			name: "updates existing results",
-			have: limitedAggregator{
+			nbme: "updbtes existing results",
+			hbve: limitedAggregbtor{
 				resultBufferSize: 1,
-				Results:          map[string]int32{"C": 5},
-				smallestResult:   &Aggregate{"C", 5},
+				Results:          mbp[string]int32{"C": 5},
+				smbllestResult:   &Aggregbte{"C", 5},
 			},
-			value: "C",
+			vblue: "C",
 			count: 11,
-			want: limitedAggregator{
+			wbnt: limitedAggregbtor{
 				resultBufferSize: 1,
-				Results:          map[string]int32{"C": 16},
-				smallestResult:   &Aggregate{"C", 16},
+				Results:          mbp[string]int32{"C": 16},
+				smbllestResult:   &Aggregbte{"C", 16},
 			},
 		},
 		{
-			name: "ejects smallest result",
-			have: limitedAggregator{
+			nbme: "ejects smbllest result",
+			hbve: limitedAggregbtor{
 				resultBufferSize: 1,
-				Results:          map[string]int32{"C": 5},
-				smallestResult:   &Aggregate{"C", 5},
+				Results:          mbp[string]int32{"C": 5},
+				smbllestResult:   &Aggregbte{"C", 5},
 			},
-			value: "A",
+			vblue: "A",
 			count: 15,
-			want: limitedAggregator{
+			wbnt: limitedAggregbtor{
 				resultBufferSize: 1,
-				Results:          map[string]int32{"A": 15},
-				smallestResult:   &Aggregate{"A", 15},
+				Results:          mbp[string]int32{"A": 15},
+				smbllestResult:   &Aggregbte{"A", 15},
 				OtherCount:       OtherCount{ResultCount: 5, GroupCount: 1},
 			},
 		},
 		{
-			name: "adds up other group count",
-			have: limitedAggregator{
+			nbme: "bdds up other group count",
+			hbve: limitedAggregbtor{
 				resultBufferSize: 1,
-				Results:          map[string]int32{"A": 12},
-				smallestResult:   &Aggregate{"A", 12},
+				Results:          mbp[string]int32{"A": 12},
+				smbllestResult:   &Aggregbte{"A", 12},
 				OtherCount:       OtherCount{ResultCount: 9, GroupCount: 1},
 			},
-			value: "B",
+			vblue: "B",
 			count: 9,
-			want: limitedAggregator{
+			wbnt: limitedAggregbtor{
 				resultBufferSize: 1,
-				Results:          map[string]int32{"A": 12},
-				smallestResult:   &Aggregate{"A", 12},
+				Results:          mbp[string]int32{"A": 12},
+				smbllestResult:   &Aggregbte{"A", 12},
 				OtherCount:       OtherCount{ResultCount: 18, GroupCount: 2},
 			},
 		},
 		{
-			name: "first result becomes smallest result",
-			have: limitedAggregator{
+			nbme: "first result becomes smbllest result",
+			hbve: limitedAggregbtor{
 				resultBufferSize: 1,
-				Results:          map[string]int32{},
+				Results:          mbp[string]int32{},
 			},
-			value: "new",
+			vblue: "new",
 			count: 1,
-			want: limitedAggregator{
+			wbnt: limitedAggregbtor{
 				resultBufferSize: 1,
-				Results:          map[string]int32{"new": 1},
-				smallestResult:   &Aggregate{"new", 1},
+				Results:          mbp[string]int32{"new": 1},
+				smbllestResult:   &Aggregbte{"new", 1},
 			},
 		},
 	}
-	for _, tc := range testCases {
-		t.Run(tc.name, func(t *testing.T) {
-			tc.have.Add(tc.value, tc.count)
-			autogold.Expect(tc.want).Equal(t, tc.have)
+	for _, tc := rbnge testCbses {
+		t.Run(tc.nbme, func(t *testing.T) {
+			tc.hbve.Add(tc.vblue, tc.count)
+			butogold.Expect(tc.wbnt).Equbl(t, tc.hbve)
 		})
 	}
 }
 
-func TestFindSmallestAggregate(t *testing.T) {
-	testCases := []struct {
-		name string
-		have limitedAggregator
-		want *Aggregate
+func TestFindSmbllestAggregbte(t *testing.T) {
+	testCbses := []struct {
+		nbme string
+		hbve limitedAggregbtor
+		wbnt *Aggregbte
 	}{
 		{
-			name: "returns nil for empty results",
-			want: nil,
+			nbme: "returns nil for empty results",
+			wbnt: nil,
 		},
 		{
-			name: "one result is smallest",
-			have: limitedAggregator{
-				Results: map[string]int32{"myresult": 20},
+			nbme: "one result is smbllest",
+			hbve: limitedAggregbtor{
+				Results: mbp[string]int32{"myresult": 20},
 			},
-			want: &Aggregate{"myresult", 20},
+			wbnt: &Aggregbte{"myresult", 20},
 		},
 		{
-			name: "finds smallest result by count",
-			have: limitedAggregator{
-				Results: map[string]int32{"high": 20, "low": 5, "mid": 10},
+			nbme: "finds smbllest result by count",
+			hbve: limitedAggregbtor{
+				Results: mbp[string]int32{"high": 20, "low": 5, "mid": 10},
 			},
-			want: &Aggregate{"low", 5},
+			wbnt: &Aggregbte{"low", 5},
 		},
 		{
-			name: "finds smallest result by label",
-			have: limitedAggregator{
-				Results: map[string]int32{"outsider": 5, "abc/1": 5, "abcd": 5, "abc/2": 5},
+			nbme: "finds smbllest result by lbbel",
+			hbve: limitedAggregbtor{
+				Results: mbp[string]int32{"outsider": 5, "bbc/1": 5, "bbcd": 5, "bbc/2": 5},
 			},
-			want: &Aggregate{"abc/1", 5},
+			wbnt: &Aggregbte{"bbc/1", 5},
 		},
 	}
-	for _, tc := range testCases {
-		t.Run(tc.name, func(t *testing.T) {
-			got := tc.have.findSmallestAggregate()
-			autogold.Expect(tc.want).Equal(t, got)
+	for _, tc := rbnge testCbses {
+		t.Run(tc.nbme, func(t *testing.T) {
+			got := tc.hbve.findSmbllestAggregbte()
+			butogold.Expect(tc.wbnt).Equbl(t, got)
 		})
 	}
 }
 
-func TestSortAggregate(t *testing.T) {
-	a := limitedAggregator{
-		Results:          make(map[string]int32),
+func TestSortAggregbte(t *testing.T) {
+	b := limitedAggregbtor{
+		Results:          mbke(mbp[string]int32),
 		resultBufferSize: 5,
 	}
 
-	// Add 5 distinct elements. Update 1 existing.
-	a.Add("sg/1", 5)
-	a.Add("sg/2", 10)
-	a.Add("sg/3", 8)
-	a.Add("sg/1", 3)
-	a.Add("sg/4", 22)
-	a.Add("sg/5", 60)
+	// Add 5 distinct elements. Updbte 1 existing.
+	b.Add("sg/1", 5)
+	b.Add("sg/2", 10)
+	b.Add("sg/3", 8)
+	b.Add("sg/1", 3)
+	b.Add("sg/4", 22)
+	b.Add("sg/5", 60)
 
 	// Add two more elements.
-	a.Add("sg/will-eject", 12)
-	a.Add("sg/lost", 1)
+	b.Add("sg/will-eject", 12)
+	b.Add("sg/lost", 1)
 
-	// Update another one.
-	a.Add("sg/2", 5)
+	// Updbte bnother one.
+	b.Add("sg/2", 5)
 
-	// Update the smallest result, and then not.
-	a.Add("sg/3", 1)
-	a.Add("sg/will-eject", 1)
+	// Updbte the smbllest result, bnd then not.
+	b.Add("sg/3", 1)
+	b.Add("sg/will-eject", 1)
 
-	autogold.Expect(int32(9)).Equal(t, a.OtherCount.ResultCount)
-	autogold.Expect(int32(2)).Equal(t, a.OtherCount.GroupCount)
+	butogold.Expect(int32(9)).Equbl(t, b.OtherCount.ResultCount)
+	butogold.Expect(int32(2)).Equbl(t, b.OtherCount.GroupCount)
 
-	want := []*Aggregate{
+	wbnt := []*Aggregbte{
 		{"sg/5", 60},
 		{"sg/4", 22},
 		{"sg/2", 15},
 		{"sg/will-eject", 13},
 		{"sg/3", 9},
 	}
-	autogold.Expect(want).Equal(t, a.SortAggregate())
+	butogold.Expect(wbnt).Equbl(t, b.SortAggregbte())
 }

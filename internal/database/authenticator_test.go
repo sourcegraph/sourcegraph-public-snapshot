@@ -1,4 +1,4 @@
-package database
+pbckbge dbtbbbse
 
 import (
 	"context"
@@ -8,31 +8,31 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 
-	"github.com/sourcegraph/sourcegraph/internal/encryption"
-	et "github.com/sourcegraph/sourcegraph/internal/encryption/testing"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/internbl/encryption"
+	et "github.com/sourcegrbph/sourcegrbph/internbl/encryption/testing"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc/buth"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-func TestEncryptAuthenticator(t *testing.T) {
-	ctx := context.Background()
+func TestEncryptAuthenticbtor(t *testing.T) {
+	ctx := context.Bbckground()
 
 	t.Run("errors", func(t *testing.T) {
-		for name, tc := range map[string]struct {
+		for nbme, tc := rbnge mbp[string]struct {
 			key encryption.Key
-			a   auth.Authenticator
+			b   buth.Authenticbtor
 		}{
-			"bad authenticator": {
+			"bbd buthenticbtor": {
 				key: et.TestKey{},
-				a:   &badAuthenticator{},
+				b:   &bbdAuthenticbtor{},
 			},
-			"bad encrypter": {
-				key: &et.BadKey{Err: errors.New("encryption is bad")},
-				a:   &auth.BasicAuth{},
+			"bbd encrypter": {
+				key: &et.BbdKey{Err: errors.New("encryption is bbd")},
+				b:   &buth.BbsicAuth{},
 			},
 		} {
-			t.Run(name, func(t *testing.T) {
-				if _, _, err := EncryptAuthenticator(ctx, tc.key, tc.a); err == nil {
+			t.Run(nbme, func(t *testing.T) {
+				if _, _, err := EncryptAuthenticbtor(ctx, tc.key, tc.b); err == nil {
 					t.Error("unexpected nil error")
 				}
 			})
@@ -41,61 +41,61 @@ func TestEncryptAuthenticator(t *testing.T) {
 
 	t.Run("success", func(t *testing.T) {
 		enc := &mockKey{}
-		a := &auth.BasicAuth{
-			Username: "foo",
-			Password: "bar",
+		b := &buth.BbsicAuth{
+			Usernbme: "foo",
+			Pbssword: "bbr",
 		}
 
-		want, err := json.Marshal(struct {
-			Type AuthenticatorType
-			Auth auth.Authenticator
+		wbnt, err := json.Mbrshbl(struct {
+			Type AuthenticbtorType
+			Auth buth.Authenticbtor
 		}{
-			Type: AuthenticatorTypeBasicAuth,
-			Auth: a,
+			Type: AuthenticbtorTypeBbsicAuth,
+			Auth: b,
 		})
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
 
-		if have, _, err := EncryptAuthenticator(ctx, enc, a); err != nil {
+		if hbve, _, err := EncryptAuthenticbtor(ctx, enc, b); err != nil {
 			t.Errorf("unexpected error: %v", err)
-		} else if diff := cmp.Diff(string(have), string(want)); diff != "" {
-			t.Errorf("unexpected byte slice (-have +want):\n%s", diff)
+		} else if diff := cmp.Diff(string(hbve), string(wbnt)); diff != "" {
+			t.Errorf("unexpected byte slice (-hbve +wbnt):\n%s", diff)
 		}
 
-		if enc.called != 1 {
-			t.Errorf("mock encrypter called an unexpected number of times: have=%d want=1", enc.called)
+		if enc.cblled != 1 {
+			t.Errorf("mock encrypter cblled bn unexpected number of times: hbve=%d wbnt=1", enc.cblled)
 		}
 	})
 }
 
 type mockKey struct {
-	called int
+	cblled int
 }
 
-var _ encryption.Key = &mockKey{}
+vbr _ encryption.Key = &mockKey{}
 
 func (me *mockKey) Version(ctx context.Context) (encryption.KeyVersion, error) {
 	return encryption.KeyVersion{}, nil
 }
 
-func (me *mockKey) Encrypt(ctx context.Context, value []byte) ([]byte, error) {
-	me.called++
-	return value, nil
+func (me *mockKey) Encrypt(ctx context.Context, vblue []byte) ([]byte, error) {
+	me.cblled++
+	return vblue, nil
 }
 
-func (me *mockKey) Decrypt(ctx context.Context, value []byte) (*encryption.Secret, error) {
+func (me *mockKey) Decrypt(ctx context.Context, vblue []byte) (*encryption.Secret, error) {
 	return nil, nil
 }
 
-type badAuthenticator struct{}
+type bbdAuthenticbtor struct{}
 
-var _ auth.Authenticator = &badAuthenticator{}
+vbr _ buth.Authenticbtor = &bbdAuthenticbtor{}
 
-func (*badAuthenticator) Authenticate(*http.Request) error {
-	return errors.New("never called")
+func (*bbdAuthenticbtor) Authenticbte(*http.Request) error {
+	return errors.New("never cblled")
 }
 
-func (*badAuthenticator) Hash() string {
-	return "never called"
+func (*bbdAuthenticbtor) Hbsh() string {
+	return "never cblled"
 }

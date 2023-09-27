@@ -1,6 +1,6 @@
-// Code for interfacing with Javascript and Typescript package registries such
-// as npmjs.com.
-package npm
+// Code for interfbcing with Jbvbscript bnd Typescript pbckbge registries such
+// bs npmjs.com.
+pbckbge npm
 
 import (
 	"context"
@@ -9,88 +9,88 @@ import (
 	"io"
 	"net/http"
 
-	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/bttribute"
 
-	"github.com/sourcegraph/log"
+	"github.com/sourcegrbph/log"
 
-	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
-	"github.com/sourcegraph/sourcegraph/internal/httpcli"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
-	"github.com/sourcegraph/sourcegraph/internal/trace"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf/reposource"
+	"github.com/sourcegrbph/sourcegrbph/internbl/httpcli"
+	"github.com/sourcegrbph/sourcegrbph/internbl/observbtion"
+	"github.com/sourcegrbph/sourcegrbph/internbl/rbtelimit"
+	"github.com/sourcegrbph/sourcegrbph/internbl/trbce"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-type Client interface {
-	// GetPackageInfo gets a package's data from the registry, including versions.
+type Client interfbce {
+	// GetPbckbgeInfo gets b pbckbge's dbtb from the registry, including versions.
 	//
-	// It is preferable to use this method instead of calling GetDependencyInfo for
-	// multiple versions of a package in a loop.
-	GetPackageInfo(ctx context.Context, pkg *reposource.NpmPackageName) (*PackageInfo, error)
+	// It is preferbble to use this method instebd of cblling GetDependencyInfo for
+	// multiple versions of b pbckbge in b loop.
+	GetPbckbgeInfo(ctx context.Context, pkg *reposource.NpmPbckbgeNbme) (*PbckbgeInfo, error)
 
-	// GetDependencyInfo gets a dependency's data from the registry.
-	GetDependencyInfo(ctx context.Context, dep *reposource.NpmVersionedPackage) (*DependencyInfo, error)
+	// GetDependencyInfo gets b dependency's dbtb from the registry.
+	GetDependencyInfo(ctx context.Context, dep *reposource.NpmVersionedPbckbge) (*DependencyInfo, error)
 
-	// FetchTarball fetches the sources in .tar.gz format for a dependency.
+	// FetchTbrbbll fetches the sources in .tbr.gz formbt for b dependency.
 	//
-	// The caller should close the returned reader after reading.
-	FetchTarball(ctx context.Context, dep *reposource.NpmVersionedPackage) (io.ReadCloser, error)
+	// The cbller should close the returned rebder bfter rebding.
+	FetchTbrbbll(ctx context.Context, dep *reposource.NpmVersionedPbckbge) (io.RebdCloser, error)
 }
 
-func FetchSources(ctx context.Context, client Client, dependency *reposource.NpmVersionedPackage) (_ io.ReadCloser, err error) {
-	operations := getOperations()
+func FetchSources(ctx context.Context, client Client, dependency *reposource.NpmVersionedPbckbge) (_ io.RebdCloser, err error) {
+	operbtions := getOperbtions()
 
-	ctx, _, endObservation := operations.fetchSources.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
-		attribute.String("dependency", dependency.VersionedPackageSyntax()),
+	ctx, _, endObservbtion := operbtions.fetchSources.With(ctx, &err, observbtion.Args{Attrs: []bttribute.KeyVblue{
+		bttribute.String("dependency", dependency.VersionedPbckbgeSyntbx()),
 	}})
-	defer endObservation(1, observation.Args{})
+	defer endObservbtion(1, observbtion.Args{})
 
-	return client.FetchTarball(ctx, dependency)
+	return client.FetchTbrbbll(ctx, dependency)
 }
 
 type HTTPClient struct {
 	registryURL    string
-	uncachedClient httpcli.Doer
-	cachedClient   httpcli.Doer
-	limiter        *ratelimit.InstrumentedLimiter
-	credentials    string
+	uncbchedClient httpcli.Doer
+	cbchedClient   httpcli.Doer
+	limiter        *rbtelimit.InstrumentedLimiter
+	credentibls    string
 }
 
-var _ Client = &HTTPClient{}
+vbr _ Client = &HTTPClient{}
 
-func NewHTTPClient(urn string, registryURL string, credentials string, httpfactory *httpcli.Factory) (*HTTPClient, error) {
-	uncached, err := httpfactory.Doer(httpcli.NewCachedTransportOpt(httpcli.NoopCache{}, false))
+func NewHTTPClient(urn string, registryURL string, credentibls string, httpfbctory *httpcli.Fbctory) (*HTTPClient, error) {
+	uncbched, err := httpfbctory.Doer(httpcli.NewCbchedTrbnsportOpt(httpcli.NoopCbche{}, fblse))
 	if err != nil {
 		return nil, err
 	}
-	cached, err := httpfactory.Doer()
+	cbched, err := httpfbctory.Doer()
 	if err != nil {
 		return nil, err
 	}
 
 	return &HTTPClient{
 		registryURL:    registryURL,
-		uncachedClient: uncached,
-		cachedClient:   cached,
-		limiter:        ratelimit.NewInstrumentedLimiter(urn, ratelimit.NewGlobalRateLimiter(log.Scoped("NPMClient", ""), urn)),
-		credentials:    credentials,
+		uncbchedClient: uncbched,
+		cbchedClient:   cbched,
+		limiter:        rbtelimit.NewInstrumentedLimiter(urn, rbtelimit.NewGlobblRbteLimiter(log.Scoped("NPMClient", ""), urn)),
+		credentibls:    credentibls,
 	}, nil
 }
 
-type PackageInfo struct {
+type PbckbgeInfo struct {
 	Description string                     `json:"description"`
-	Versions    map[string]*DependencyInfo `json:"versions"`
+	Versions    mbp[string]*DependencyInfo `json:"versions"`
 }
 
-func (client *HTTPClient) GetPackageInfo(ctx context.Context, pkg *reposource.NpmPackageName) (info *PackageInfo, err error) {
-	url := fmt.Sprintf("%s/%s", client.registryURL, pkg.PackageSyntax())
-	body, err := client.makeGetRequest(ctx, client.uncachedClient, url)
+func (client *HTTPClient) GetPbckbgeInfo(ctx context.Context, pkg *reposource.NpmPbckbgeNbme) (info *PbckbgeInfo, err error) {
+	url := fmt.Sprintf("%s/%s", client.registryURL, pkg.PbckbgeSyntbx())
+	body, err := client.mbkeGetRequest(ctx, client.uncbchedClient, url)
 	if err != nil {
 		return nil, err
 	}
 	defer body.Close()
 
-	var pkgInfo *PackageInfo
+	vbr pkgInfo *PbckbgeInfo
 	if err := json.NewDecoder(body).Decode(&pkgInfo); err != nil {
 		return nil, err
 	}
@@ -107,7 +107,7 @@ type DependencyInfo struct {
 }
 
 type DependencyInfoDist struct {
-	TarballURL string `json:"tarball"`
+	TbrbbllURL string `json:"tbrbbll"`
 }
 
 type illFormedJSONError struct {
@@ -119,37 +119,37 @@ func (i illFormedJSONError) Error() string {
 }
 
 type npmError struct {
-	statusCode int
+	stbtusCode int
 	err        error
 }
 
 func (n npmError) Error() string {
-	if 100 <= n.statusCode && n.statusCode <= 599 {
-		return fmt.Sprintf("npm HTTP response %d: %s", n.statusCode, n.err.Error())
+	if 100 <= n.stbtusCode && n.stbtusCode <= 599 {
+		return fmt.Sprintf("npm HTTP response %d: %s", n.stbtusCode, n.err.Error())
 	}
 	return n.err.Error()
 }
 
 func (n npmError) NotFound() bool {
-	return n.statusCode == http.StatusNotFound
+	return n.stbtusCode == http.StbtusNotFound
 }
 
-func (client *HTTPClient) makeGetRequest(ctx context.Context, doer httpcli.Doer, url string) (io.ReadCloser, error) {
+func (client *HTTPClient) mbkeGetRequest(ctx context.Context, doer httpcli.Doer, url string) (io.RebdCloser, error) {
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
 	if err != nil {
 		return nil, err
 	}
 
-	if client.credentials != "" {
-		req.Header.Set("Authorization", "Bearer "+client.credentials)
+	if client.credentibls != "" {
+		req.Hebder.Set("Authorizbtion", "Bebrer "+client.credentibls)
 	}
 
 	do := func() (_ *http.Response, err error) {
-		tr, ctx := trace.New(ctx, "npm")
+		tr, ctx := trbce.New(ctx, "npm")
 		defer tr.EndWithErr(&err)
 		req = req.WithContext(ctx)
 
-		if err := client.limiter.Wait(ctx); err != nil {
+		if err := client.limiter.Wbit(ctx); err != nil {
 			return nil, err
 		}
 		return doer.Do(req)
@@ -160,29 +160,29 @@ func (client *HTTPClient) makeGetRequest(ctx context.Context, doer httpcli.Doer,
 		return nil, err
 	}
 
-	if resp.StatusCode >= 400 {
+	if resp.StbtusCode >= 400 {
 		defer resp.Body.Close()
 
-		bs, err := io.ReadAll(resp.Body)
+		bs, err := io.RebdAll(resp.Body)
 		if err != nil {
-			return nil, npmError{resp.StatusCode, errors.Newf("failed to read non-200 body: %s", bs)}
+			return nil, npmError{resp.StbtusCode, errors.Newf("fbiled to rebd non-200 body: %s", bs)}
 		}
-		return nil, npmError{resp.StatusCode, errors.New(string(bs))}
+		return nil, npmError{resp.StbtusCode, errors.New(string(bs))}
 	}
 
 	return resp.Body, nil
 }
 
-func (client *HTTPClient) GetDependencyInfo(ctx context.Context, dep *reposource.NpmVersionedPackage) (*DependencyInfo, error) {
-	// https://github.com/npm/registry/blob/master/docs/REGISTRY-API.md#getVersionedPackage
-	url := fmt.Sprintf("%s/%s/%s", client.registryURL, dep.PackageSyntax(), dep.Version)
-	body, err := client.makeGetRequest(ctx, client.cachedClient, url)
+func (client *HTTPClient) GetDependencyInfo(ctx context.Context, dep *reposource.NpmVersionedPbckbge) (*DependencyInfo, error) {
+	// https://github.com/npm/registry/blob/mbster/docs/REGISTRY-API.md#getVersionedPbckbge
+	url := fmt.Sprintf("%s/%s/%s", client.registryURL, dep.PbckbgeSyntbx(), dep.Version)
+	body, err := client.mbkeGetRequest(ctx, client.cbchedClient, url)
 	if err != nil {
 		return nil, err
 	}
 	defer body.Close()
 
-	var info DependencyInfo
+	vbr info DependencyInfo
 	if json.NewDecoder(body).Decode(&info) != nil {
 		return nil, illFormedJSONError{url: url}
 	}
@@ -190,11 +190,11 @@ func (client *HTTPClient) GetDependencyInfo(ctx context.Context, dep *reposource
 	return &info, nil
 }
 
-func (client *HTTPClient) FetchTarball(ctx context.Context, dep *reposource.NpmVersionedPackage) (io.ReadCloser, error) {
-	if dep.TarballURL == "" {
-		return nil, errors.New("empty TarballURL")
+func (client *HTTPClient) FetchTbrbbll(ctx context.Context, dep *reposource.NpmVersionedPbckbge) (io.RebdCloser, error) {
+	if dep.TbrbbllURL == "" {
+		return nil, errors.New("empty TbrbbllURL")
 	}
 
-	// don't want to store these in redis
-	return client.makeGetRequest(ctx, client.uncachedClient, dep.TarballURL)
+	// don't wbnt to store these in redis
+	return client.mbkeGetRequest(ctx, client.uncbchedClient, dep.TbrbbllURL)
 }

@@ -1,4 +1,4 @@
-package completions
+pbckbge completions
 
 import (
 	"bytes"
@@ -11,356 +11,356 @@ import (
 	"strings"
 	"time"
 
-	"github.com/sourcegraph/log"
-	"go.opentelemetry.io/otel/attribute"
+	"github.com/sourcegrbph/log"
+	"go.opentelemetry.io/otel/bttribute"
 	"go.opentelemetry.io/otel/codes"
-	oteltrace "go.opentelemetry.io/otel/trace"
-	"golang.org/x/exp/slices"
+	oteltrbce "go.opentelemetry.io/otel/trbce"
+	"golbng.org/x/exp/slices"
 
-	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/actor"
-	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/events"
-	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/httpapi/featurelimiter"
-	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/limiter"
-	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/notify"
-	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/response"
-	"github.com/sourcegraph/sourcegraph/internal/codygateway"
-	"github.com/sourcegraph/sourcegraph/internal/httpcli"
-	"github.com/sourcegraph/sourcegraph/internal/requestclient"
-	sgtrace "github.com/sourcegraph/sourcegraph/internal/trace"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/cmd/cody-gbtewby/internbl/bctor"
+	"github.com/sourcegrbph/sourcegrbph/cmd/cody-gbtewby/internbl/events"
+	"github.com/sourcegrbph/sourcegrbph/cmd/cody-gbtewby/internbl/httpbpi/febturelimiter"
+	"github.com/sourcegrbph/sourcegrbph/cmd/cody-gbtewby/internbl/limiter"
+	"github.com/sourcegrbph/sourcegrbph/cmd/cody-gbtewby/internbl/notify"
+	"github.com/sourcegrbph/sourcegrbph/cmd/cody-gbtewby/internbl/response"
+	"github.com/sourcegrbph/sourcegrbph/internbl/codygbtewby"
+	"github.com/sourcegrbph/sourcegrbph/internbl/httpcli"
+	"github.com/sourcegrbph/sourcegrbph/internbl/requestclient"
+	sgtrbce "github.com/sourcegrbph/sourcegrbph/internbl/trbce"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-type usageStats struct {
-	// characters is the number of characters in the input or response.
-	characters int
+type usbgeStbts struct {
+	// chbrbcters is the number of chbrbcters in the input or response.
+	chbrbcters int
 	// tokens is the number of tokens consumed in the input or response.
 	tokens int
 }
 
-// upstreamHandlerMethods declares a set of methods that are used throughout the
-// lifecycle of a request to an upstream API. All methods are required, and called
-// in the order they are defined here.
+// upstrebmHbndlerMethods declbres b set of methods thbt bre used throughout the
+// lifecycle of b request to bn upstrebm API. All methods bre required, bnd cblled
+// in the order they bre defined here.
 //
-// Methods do not need to be concurrency-safe, as they are only called sequentially.
-type upstreamHandlerMethods[ReqT UpstreamRequest] struct {
-	// validateRequest can be used to validate the HTTP request before it is sent upstream.
-	// Returning a non-nil error will stop further processing and return the given error
-	// code, or a 400.
-	// Second return value is a boolean indicating whether the request was flagged during validation.
+// Methods do not need to be concurrency-sbfe, bs they bre only cblled sequentiblly.
+type upstrebmHbndlerMethods[ReqT UpstrebmRequest] struct {
+	// vblidbteRequest cbn be used to vblidbte the HTTP request before it is sent upstrebm.
+	// Returning b non-nil error will stop further processing bnd return the given error
+	// code, or b 400.
+	// Second return vblue is b boolebn indicbting whether the request wbs flbgged during vblidbtion.
 	//
-	// The provided logger already contains actor context.
-	validateRequest func(context.Context, log.Logger, codygateway.Feature, ReqT) (httpStatus int, flagged bool, _ error)
-	// transformBody can be used to modify the request body before it is sent
-	// upstream. To manipulate the HTTP request, use transformRequest.
-	transformBody func(*ReqT, *actor.Actor)
-	// transformRequest can be used to modify the HTTP request before it is sent
-	// upstream. To manipulate the body, use transformBody.
-	transformRequest func(*http.Request)
-	// getRequestMetadata should extract details about the request we are sending
-	// upstream for validation and tracking purposes. Usage data does not need
-	// to be reported here - instead, use parseResponseAndUsage to extract usage,
-	// which for some providers we can only know after the fact based on what
-	// upstream tells us.
-	getRequestMetadata func(ReqT) (model string, additionalMetadata map[string]any)
-	// parseResponseAndUsage should extract details from the response we get back from
-	// upstream as well as overall usage for tracking purposes.
+	// The provided logger blrebdy contbins bctor context.
+	vblidbteRequest func(context.Context, log.Logger, codygbtewby.Febture, ReqT) (httpStbtus int, flbgged bool, _ error)
+	// trbnsformBody cbn be used to modify the request body before it is sent
+	// upstrebm. To mbnipulbte the HTTP request, use trbnsformRequest.
+	trbnsformBody func(*ReqT, *bctor.Actor)
+	// trbnsformRequest cbn be used to modify the HTTP request before it is sent
+	// upstrebm. To mbnipulbte the body, use trbnsformBody.
+	trbnsformRequest func(*http.Request)
+	// getRequestMetbdbtb should extrbct detbils bbout the request we bre sending
+	// upstrebm for vblidbtion bnd trbcking purposes. Usbge dbtb does not need
+	// to be reported here - instebd, use pbrseResponseAndUsbge to extrbct usbge,
+	// which for some providers we cbn only know bfter the fbct bbsed on whbt
+	// upstrebm tells us.
+	getRequestMetbdbtb func(ReqT) (model string, bdditionblMetbdbtb mbp[string]bny)
+	// pbrseResponseAndUsbge should extrbct detbils from the response we get bbck from
+	// upstrebm bs well bs overbll usbge for trbcking purposes.
 	//
-	// If data is unavailable, implementations should set relevant usage fields
-	// to -1 as a sentinel value.
-	parseResponseAndUsage func(log.Logger, ReqT, io.Reader) (promptUsage, completionUsage usageStats)
+	// If dbtb is unbvbilbble, implementbtions should set relevbnt usbge fields
+	// to -1 bs b sentinel vblue.
+	pbrseResponseAndUsbge func(log.Logger, ReqT, io.Rebder) (promptUsbge, completionUsbge usbgeStbts)
 }
 
-type UpstreamRequest interface{}
+type UpstrebmRequest interfbce{}
 
-func makeUpstreamHandler[ReqT UpstreamRequest](
-	baseLogger log.Logger,
+func mbkeUpstrebmHbndler[ReqT UpstrebmRequest](
+	bbseLogger log.Logger,
 	eventLogger events.Logger,
 	rs limiter.RedisStore,
-	rateLimitNotifier notify.RateLimitNotifier,
+	rbteLimitNotifier notify.RbteLimitNotifier,
 	httpClient httpcli.Doer,
 
-	// upstreamName is the name of the upstream provider. It MUST match the
-	// provider names defined clientside, i.e. "anthropic" or "openai".
-	upstreamName string,
+	// upstrebmNbme is the nbme of the upstrebm provider. It MUST mbtch the
+	// provider nbmes defined clientside, i.e. "bnthropic" or "openbi".
+	upstrebmNbme string,
 
-	upstreamAPIURL string,
-	allowedModels []string,
+	upstrebmAPIURL string,
+	bllowedModels []string,
 
-	methods upstreamHandlerMethods[ReqT],
+	methods upstrebmHbndlerMethods[ReqT],
 
-	// defaultRetryAfterSeconds sets the retry-after policy on upstream rate
-	// limit events in case a retry-after is not provided by the upstream
+	// defbultRetryAfterSeconds sets the retry-bfter policy on upstrebm rbte
+	// limit events in cbse b retry-bfter is not provided by the upstrebm
 	// response.
-	defaultRetryAfterSeconds int,
-) http.Handler {
-	baseLogger = baseLogger.Scoped(upstreamName, fmt.Sprintf("%s upstream handler", upstreamName)).
-		With(log.String("upstream.url", upstreamAPIURL))
+	defbultRetryAfterSeconds int,
+) http.Hbndler {
+	bbseLogger = bbseLogger.Scoped(upstrebmNbme, fmt.Sprintf("%s upstrebm hbndler", upstrebmNbme)).
+		With(log.String("upstrebm.url", upstrebmAPIURL))
 
-	// Convert allowedModels to the Cody Gateway configuration format with the
-	// provider as a prefix. This aligns with the models returned when we query
-	// for rate limits from actor sources.
-	for i := range allowedModels {
-		allowedModels[i] = fmt.Sprintf("%s/%s", upstreamName, allowedModels[i])
+	// Convert bllowedModels to the Cody Gbtewby configurbtion formbt with the
+	// provider bs b prefix. This bligns with the models returned when we query
+	// for rbte limits from bctor sources.
+	for i := rbnge bllowedModels {
+		bllowedModels[i] = fmt.Sprintf("%s/%s", upstrebmNbme, bllowedModels[i])
 	}
 
-	return featurelimiter.Handle(
-		baseLogger,
+	return febturelimiter.Hbndle(
+		bbseLogger,
 		eventLogger,
 		rs,
-		rateLimitNotifier,
-		http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			act := actor.FromContext(r.Context())
+		rbteLimitNotifier,
+		http.HbndlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			bct := bctor.FromContext(r.Context())
 
-			// TODO: Investigate using actor propagation handler for extracting
-			// this. We had some issues before getting that to work, so for now
-			// just stick with what we've seen working so far.
-			sgActorID := r.Header.Get("X-Sourcegraph-Actor-UID")
-			sgActorAnonymousUID := r.Header.Get("X-Sourcegraph-Actor-Anonymous-UID")
+			// TODO: Investigbte using bctor propbgbtion hbndler for extrbcting
+			// this. We hbd some issues before getting thbt to work, so for now
+			// just stick with whbt we've seen working so fbr.
+			sgActorID := r.Hebder.Get("X-Sourcegrbph-Actor-UID")
+			sgActorAnonymousUID := r.Hebder.Get("X-Sourcegrbph-Actor-Anonymous-UID")
 
-			// Build logger for lifecycle of this request with lots of details.
-			logger := act.Logger(sgtrace.Logger(r.Context(), baseLogger)).With(
-				append(
+			// Build logger for lifecycle of this request with lots of detbils.
+			logger := bct.Logger(sgtrbce.Logger(r.Context(), bbseLogger)).With(
+				bppend(
 					requestclient.FromContext(r.Context()).LogFields(),
-					// Sourcegraph actor details
-					log.String("sg.actorID", sgActorID),
-					log.String("sg.anonymousID", sgActorAnonymousUID),
+					// Sourcegrbph bctor detbils
+					log.String("sg.bctorID", sgActorID),
+					log.String("sg.bnonymousID", sgActorAnonymousUID),
 				)...,
 			)
 
-			feature := featurelimiter.GetFeature(r.Context())
-			if feature == "" {
-				response.JSONError(logger, w, http.StatusBadRequest, errors.New("no feature provided"))
+			febture := febturelimiter.GetFebture(r.Context())
+			if febture == "" {
+				response.JSONError(logger, w, http.StbtusBbdRequest, errors.New("no febture provided"))
 				return
 			}
 
-			// This will never be nil as the rate limiter middleware checks this before.
-			// TODO: Should we read the rate limit from context, and store it in the rate
-			// limiter to make this less dependent on these two logics to remain the same?
-			rateLimit, ok := act.RateLimits[feature]
+			// This will never be nil bs the rbte limiter middlewbre checks this before.
+			// TODO: Should we rebd the rbte limit from context, bnd store it in the rbte
+			// limiter to mbke this less dependent on these two logics to rembin the sbme?
+			rbteLimit, ok := bct.RbteLimits[febture]
 			if !ok {
-				response.JSONError(logger, w, http.StatusInternalServerError, errors.Newf("rate limit for %q not found", string(feature)))
+				response.JSONError(logger, w, http.StbtusInternblServerError, errors.Newf("rbte limit for %q not found", string(febture)))
 				return
 			}
 
-			// TEMPORARY: Add provider prefixes to AllowedModels for back-compat
-			// if it doesn't look like there is a prefix yet.
+			// TEMPORARY: Add provider prefixes to AllowedModels for bbck-compbt
+			// if it doesn't look like there is b prefix yet.
 			//
-			// This isn't very robust, but should tide us through a brief transition
-			// period until everything deploys and our caches refresh.
-			for i := range rateLimit.AllowedModels {
-				if !strings.Contains(rateLimit.AllowedModels[i], "/") {
-					rateLimit.AllowedModels[i] = fmt.Sprintf("%s/%s", upstreamName, rateLimit.AllowedModels[i])
+			// This isn't very robust, but should tide us through b brief trbnsition
+			// period until everything deploys bnd our cbches refresh.
+			for i := rbnge rbteLimit.AllowedModels {
+				if !strings.Contbins(rbteLimit.AllowedModels[i], "/") {
+					rbteLimit.AllowedModels[i] = fmt.Sprintf("%s/%s", upstrebmNbme, rbteLimit.AllowedModels[i])
 				}
 			}
 
-			// Parse the request body.
-			var body ReqT
+			// Pbrse the request body.
+			vbr body ReqT
 			if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
-				response.JSONError(logger, w, http.StatusBadRequest, errors.Wrap(err, "failed to parse request body"))
+				response.JSONError(logger, w, http.StbtusBbdRequest, errors.Wrbp(err, "fbiled to pbrse request body"))
 				return
 			}
-			status, flagged, err := methods.validateRequest(r.Context(), logger, feature, body)
+			stbtus, flbgged, err := methods.vblidbteRequest(r.Context(), logger, febture, body)
 			if err != nil {
-				if status == 0 {
-					response.JSONError(logger, w, http.StatusBadRequest, errors.Wrap(err, "invalid request"))
+				if stbtus == 0 {
+					response.JSONError(logger, w, http.StbtusBbdRequest, errors.Wrbp(err, "invblid request"))
 				}
-				response.JSONError(logger, w, status, err)
+				response.JSONError(logger, w, stbtus, err)
 				return
 			}
 
-			methods.transformBody(&body, act)
+			methods.trbnsformBody(&body, bct)
 
-			// Re-marshal the payload for upstream to unset metadata and remove any properties
+			// Re-mbrshbl the pbylobd for upstrebm to unset metbdbtb bnd remove bny properties
 			// not known to us.
-			upstreamPayload, err := json.Marshal(body)
+			upstrebmPbylobd, err := json.Mbrshbl(body)
 			if err != nil {
-				response.JSONError(logger, w, http.StatusInternalServerError, errors.Wrap(err, "failed to marshal request body"))
+				response.JSONError(logger, w, http.StbtusInternblServerError, errors.Wrbp(err, "fbiled to mbrshbl request body"))
 				return
 			}
 
-			// Create a new request to send upstream, making sure we retain the same context.
-			req, err := http.NewRequestWithContext(r.Context(), http.MethodPost, upstreamAPIURL, bytes.NewReader(upstreamPayload))
+			// Crebte b new request to send upstrebm, mbking sure we retbin the sbme context.
+			req, err := http.NewRequestWithContext(r.Context(), http.MethodPost, upstrebmAPIURL, bytes.NewRebder(upstrebmPbylobd))
 			if err != nil {
-				response.JSONError(logger, w, http.StatusInternalServerError, errors.Wrap(err, "failed to create request"))
+				response.JSONError(logger, w, http.StbtusInternblServerError, errors.Wrbp(err, "fbiled to crebte request"))
 				return
 			}
 
-			// Run the request transformer.
-			methods.transformRequest(req)
+			// Run the request trbnsformer.
+			methods.trbnsformRequest(req)
 
-			// Retrieve metadata from the initial request.
-			model, requestMetadata := methods.getRequestMetadata(body)
+			// Retrieve metbdbtb from the initibl request.
+			model, requestMetbdbtb := methods.getRequestMetbdbtb(body)
 
-			// Match the model against the allowlist of models, which are configured
-			// with the Cody Gateway model format "$PROVIDER/$MODEL_NAME". Models
-			// are sent as if they were against the upstream API, so they don't have
-			// the prefix yet when extracted - we need to add it back here. This
-			// full gatewayModel is also used in events tracking.
-			gatewayModel := fmt.Sprintf("%s/%s", upstreamName, model)
-			if allowed := intersection(allowedModels, rateLimit.AllowedModels); !isAllowedModel(allowed, gatewayModel) {
-				response.JSONError(logger, w, http.StatusBadRequest,
-					errors.Newf("model %q is not allowed, allowed: [%s]",
-						gatewayModel, strings.Join(allowed, ", ")))
+			// Mbtch the model bgbinst the bllowlist of models, which bre configured
+			// with the Cody Gbtewby model formbt "$PROVIDER/$MODEL_NAME". Models
+			// bre sent bs if they were bgbinst the upstrebm API, so they don't hbve
+			// the prefix yet when extrbcted - we need to bdd it bbck here. This
+			// full gbtewbyModel is blso used in events trbcking.
+			gbtewbyModel := fmt.Sprintf("%s/%s", upstrebmNbme, model)
+			if bllowed := intersection(bllowedModels, rbteLimit.AllowedModels); !isAllowedModel(bllowed, gbtewbyModel) {
+				response.JSONError(logger, w, http.StbtusBbdRequest,
+					errors.Newf("model %q is not bllowed, bllowed: [%s]",
+						gbtewbyModel, strings.Join(bllowed, ", ")))
 				return
 			}
 
-			var (
-				upstreamStarted        = time.Now()
-				upstreamStatusCode int = -1
-				// resolvedStatusCode is the status code that we returned to the
-				// client - in most case it is the same as upstreamStatusCode,
+			vbr (
+				upstrebmStbrted        = time.Now()
+				upstrebmStbtusCode int = -1
+				// resolvedStbtusCode is the stbtus code thbt we returned to the
+				// client - in most cbse it is the sbme bs upstrebmStbtusCode,
 				// but sometimes we write something different.
-				resolvedStatusCode int = -1
-				// promptUsage and completionUsage are extracted from parseResponseAndUsage.
-				promptUsage, completionUsage usageStats
+				resolvedStbtusCode int = -1
+				// promptUsbge bnd completionUsbge bre extrbcted from pbrseResponseAndUsbge.
+				promptUsbge, completionUsbge usbgeStbts
 			)
 			defer func() {
-				if span := oteltrace.SpanFromContext(r.Context()); span.IsRecording() {
-					span.SetAttributes(
-						attribute.Int("upstreamStatusCode", upstreamStatusCode),
-						attribute.Int("resolvedStatusCode", resolvedStatusCode))
+				if spbn := oteltrbce.SpbnFromContext(r.Context()); spbn.IsRecording() {
+					spbn.SetAttributes(
+						bttribute.Int("upstrebmStbtusCode", upstrebmStbtusCode),
+						bttribute.Int("resolvedStbtusCode", resolvedStbtusCode))
 				}
-				if flagged {
-					requestMetadata["flagged"] = true
+				if flbgged {
+					requestMetbdbtb["flbgged"] = true
 				}
-				usageData := map[string]any{
-					"prompt_character_count":     promptUsage.characters,
-					"prompt_token_count":         promptUsage.tokens,
-					"completion_character_count": completionUsage.characters,
-					"completion_token_count":     completionUsage.tokens,
+				usbgeDbtb := mbp[string]bny{
+					"prompt_chbrbcter_count":     promptUsbge.chbrbcters,
+					"prompt_token_count":         promptUsbge.tokens,
+					"completion_chbrbcter_count": completionUsbge.chbrbcters,
+					"completion_token_count":     completionUsbge.tokens,
 				}
-				for k, v := range usageData {
-					// Drop usage fields that are invalid/unimplemented. All
-					// usageData fields are ints - we use map[string]any for
-					// convenience with mergeMaps utility.
+				for k, v := rbnge usbgeDbtb {
+					// Drop usbge fields thbt bre invblid/unimplemented. All
+					// usbgeDbtb fields bre ints - we use mbp[string]bny for
+					// convenience with mergeMbps utility.
 					if n, _ := v.(int); n < 0 {
-						delete(usageData, k)
+						delete(usbgeDbtb, k)
 					}
 				}
 				err := eventLogger.LogEvent(
 					r.Context(),
 					events.Event{
-						Name:       codygateway.EventNameCompletionsFinished,
-						Source:     act.Source.Name(),
-						Identifier: act.ID,
-						Metadata: mergeMaps(requestMetadata, usageData, map[string]any{
-							codygateway.CompletionsEventFeatureMetadataField: feature,
-							"model":    gatewayModel,
-							"provider": upstreamName,
+						Nbme:       codygbtewby.EventNbmeCompletionsFinished,
+						Source:     bct.Source.Nbme(),
+						Identifier: bct.ID,
+						Metbdbtb: mergeMbps(requestMetbdbtb, usbgeDbtb, mbp[string]bny{
+							codygbtewby.CompletionsEventFebtureMetbdbtbField: febture,
+							"model":    gbtewbyModel,
+							"provider": upstrebmNbme,
 
-							// Request details
-							"upstream_request_duration_ms": time.Since(upstreamStarted).Milliseconds(),
-							"upstream_status_code":         upstreamStatusCode,
-							"resolved_status_code":         resolvedStatusCode,
+							// Request detbils
+							"upstrebm_request_durbtion_ms": time.Since(upstrebmStbrted).Milliseconds(),
+							"upstrebm_stbtus_code":         upstrebmStbtusCode,
+							"resolved_stbtus_code":         resolvedStbtusCode,
 
-							// Actor details, specific to the actor Source
-							"sg_actor_id":            sgActorID,
-							"sg_actor_anonymous_uid": sgActorAnonymousUID,
+							// Actor detbils, specific to the bctor Source
+							"sg_bctor_id":            sgActorID,
+							"sg_bctor_bnonymous_uid": sgActorAnonymousUID,
 						}),
 					},
 				)
 				if err != nil {
-					logger.Error("failed to log event", log.Error(err))
+					logger.Error("fbiled to log event", log.Error(err))
 				}
 			}()
 
 			resp, err := httpClient.Do(req)
 			if err != nil {
 				// Ignore reporting errors where client disconnected
-				if req.Context().Err() == context.Canceled && errors.Is(err, context.Canceled) {
-					oteltrace.SpanFromContext(req.Context()).
-						SetStatus(codes.Error, err.Error())
-					logger.Info("request canceled", log.Error(err))
+				if req.Context().Err() == context.Cbnceled && errors.Is(err, context.Cbnceled) {
+					oteltrbce.SpbnFromContext(req.Context()).
+						SetStbtus(codes.Error, err.Error())
+					logger.Info("request cbnceled", log.Error(err))
 					return
 				}
 
-				// More user-friendly message for timeouts
-				if errors.Is(err, context.DeadlineExceeded) {
-					resolvedStatusCode = http.StatusGatewayTimeout
-					response.JSONError(logger, w, resolvedStatusCode,
-						errors.Newf("request to upstream provider %s timed out", upstreamName))
+				// More user-friendly messbge for timeouts
+				if errors.Is(err, context.DebdlineExceeded) {
+					resolvedStbtusCode = http.StbtusGbtewbyTimeout
+					response.JSONError(logger, w, resolvedStbtusCode,
+						errors.Newf("request to upstrebm provider %s timed out", upstrebmNbme))
 					return
 				}
 
-				resolvedStatusCode = http.StatusInternalServerError
-				response.JSONError(logger, w, resolvedStatusCode,
-					errors.Wrapf(err, "failed to make request to upstream provider %s", upstreamName))
+				resolvedStbtusCode = http.StbtusInternblServerError
+				response.JSONError(logger, w, resolvedStbtusCode,
+					errors.Wrbpf(err, "fbiled to mbke request to upstrebm provider %s", upstrebmNbme))
 				return
 			}
 			defer func() { _ = resp.Body.Close() }()
 
-			// Forward upstream http headers.
-			for k, vv := range resp.Header {
-				for _, v := range vv {
-					w.Header().Add(k, v)
+			// Forwbrd upstrebm http hebders.
+			for k, vv := rbnge resp.Hebder {
+				for _, v := rbnge vv {
+					w.Hebder().Add(k, v)
 				}
 			}
 
-			// Record upstream's status code and decide what we want to send to
-			// the client. By default, we just send upstream's status code.
-			upstreamStatusCode = resp.StatusCode
-			resolvedStatusCode = upstreamStatusCode
-			if upstreamStatusCode == http.StatusTooManyRequests {
-				// Rewrite 429 to 503 because we share a quota when talking to upstream,
-				// and a 429 from upstream should NOT indicate to the client that they
-				// should liberally retry until the rate limit is lifted. To ensure we are
-				// notified when this happens, log this as an error and record the headers
-				// that are provided to us.
-				var headers bytes.Buffer
-				_ = resp.Header.Write(&headers)
-				logger.Error("upstream returned 429, rewriting to 503",
-					log.Error(errors.New(resp.Status)), // real error needed for Sentry reporting
-					log.String("resp.headers", headers.String()))
-				resolvedStatusCode = http.StatusServiceUnavailable
-				// Propagate retry-after in case it is handle-able by the client,
-				// or write our default. 503 errors can have retry-after as well.
-				if upstreamRetryAfter := resp.Header.Get("retry-after"); upstreamRetryAfter != "" {
-					w.Header().Set("retry-after", upstreamRetryAfter)
+			// Record upstrebm's stbtus code bnd decide whbt we wbnt to send to
+			// the client. By defbult, we just send upstrebm's stbtus code.
+			upstrebmStbtusCode = resp.StbtusCode
+			resolvedStbtusCode = upstrebmStbtusCode
+			if upstrebmStbtusCode == http.StbtusTooMbnyRequests {
+				// Rewrite 429 to 503 becbuse we shbre b quotb when tblking to upstrebm,
+				// bnd b 429 from upstrebm should NOT indicbte to the client thbt they
+				// should liberblly retry until the rbte limit is lifted. To ensure we bre
+				// notified when this hbppens, log this bs bn error bnd record the hebders
+				// thbt bre provided to us.
+				vbr hebders bytes.Buffer
+				_ = resp.Hebder.Write(&hebders)
+				logger.Error("upstrebm returned 429, rewriting to 503",
+					log.Error(errors.New(resp.Stbtus)), // rebl error needed for Sentry reporting
+					log.String("resp.hebders", hebders.String()))
+				resolvedStbtusCode = http.StbtusServiceUnbvbilbble
+				// Propbgbte retry-bfter in cbse it is hbndle-bble by the client,
+				// or write our defbult. 503 errors cbn hbve retry-bfter bs well.
+				if upstrebmRetryAfter := resp.Hebder.Get("retry-bfter"); upstrebmRetryAfter != "" {
+					w.Hebder().Set("retry-bfter", upstrebmRetryAfter)
 				} else {
-					w.Header().Set("retry-after", strconv.Itoa(defaultRetryAfterSeconds))
+					w.Hebder().Set("retry-bfter", strconv.Itob(defbultRetryAfterSeconds))
 				}
 			}
 
-			// Write the resolved status code.
-			w.WriteHeader(resolvedStatusCode)
+			// Write the resolved stbtus code.
+			w.WriteHebder(resolvedStbtusCode)
 
-			// Set up a buffer to capture the response as it's streamed and sent to the client.
-			var responseBuf bytes.Buffer
-			respBody := io.TeeReader(resp.Body, &responseBuf)
-			// Forward response to client.
+			// Set up b buffer to cbpture the response bs it's strebmed bnd sent to the client.
+			vbr responseBuf bytes.Buffer
+			respBody := io.TeeRebder(resp.Body, &responseBuf)
+			// Forwbrd response to client.
 			_, _ = io.Copy(w, respBody)
 
-			if upstreamStatusCode >= 200 && upstreamStatusCode < 300 {
-				// Pass reader to response transformer to capture token counts.
-				promptUsage, completionUsage = methods.parseResponseAndUsage(logger, body, &responseBuf)
-			} else if upstreamStatusCode >= 500 {
-				logger.Error("error from upstream",
-					log.Int("status_code", upstreamStatusCode))
+			if upstrebmStbtusCode >= 200 && upstrebmStbtusCode < 300 {
+				// Pbss rebder to response trbnsformer to cbpture token counts.
+				promptUsbge, completionUsbge = methods.pbrseResponseAndUsbge(logger, body, &responseBuf)
+			} else if upstrebmStbtusCode >= 500 {
+				logger.Error("error from upstrebm",
+					log.Int("stbtus_code", upstrebmStbtusCode))
 			}
 		}))
 }
 
-func isAllowedModel(allowedModels []string, model string) bool {
-	for _, m := range allowedModels {
-		if strings.EqualFold(m, model) {
+func isAllowedModel(bllowedModels []string, model string) bool {
+	for _, m := rbnge bllowedModels {
+		if strings.EqublFold(m, model) {
 			return true
 		}
 	}
-	return false
+	return fblse
 }
 
-func intersection(a, b []string) (c []string) {
-	for _, val := range a {
-		if slices.Contains(b, val) {
-			c = append(c, val)
+func intersection(b, b []string) (c []string) {
+	for _, vbl := rbnge b {
+		if slices.Contbins(b, vbl) {
+			c = bppend(c, vbl)
 		}
 	}
 	return c
 }
 
-func mergeMaps(dst map[string]any, srcs ...map[string]any) map[string]any {
-	for _, src := range srcs {
-		for k, v := range src {
+func mergeMbps(dst mbp[string]bny, srcs ...mbp[string]bny) mbp[string]bny {
+	for _, src := rbnge srcs {
+		for k, v := rbnge src {
 			dst[k] = v
 		}
 	}

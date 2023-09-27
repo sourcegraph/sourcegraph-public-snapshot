@@ -1,59 +1,59 @@
-package store
+pbckbge store
 
 import (
 	"fmt"
 
-	"github.com/sourcegraph/sourcegraph/internal/metrics"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegrbph/sourcegrbph/internbl/metrics"
+	"github.com/sourcegrbph/sourcegrbph/internbl/observbtion"
 )
 
-type operations struct {
-	listPackageRepoRefs              *observation.Operation
-	insertPackageRepoRefs            *observation.Operation
-	deletePackageRepoRefsByID        *observation.Operation
-	deletePackageRepoRefVersionsByID *observation.Operation
+type operbtions struct {
+	listPbckbgeRepoRefs              *observbtion.Operbtion
+	insertPbckbgeRepoRefs            *observbtion.Operbtion
+	deletePbckbgeRepoRefsByID        *observbtion.Operbtion
+	deletePbckbgeRepoRefVersionsByID *observbtion.Operbtion
 
-	listPackageRepoFilters  *observation.Operation
-	createPackageRepoFilter *observation.Operation
-	updatePackageRepoFilter *observation.Operation
-	deletePackageRepoFilter *observation.Operation
+	listPbckbgeRepoFilters  *observbtion.Operbtion
+	crebtePbckbgeRepoFilter *observbtion.Operbtion
+	updbtePbckbgeRepoFilter *observbtion.Operbtion
+	deletePbckbgeRepoFilter *observbtion.Operbtion
 
-	shouldRefilterPackageRepoRefs *observation.Operation
-	updateAllBlockedStatuses      *observation.Operation
+	shouldRefilterPbckbgeRepoRefs *observbtion.Operbtion
+	updbteAllBlockedStbtuses      *observbtion.Operbtion
 }
 
-var m = new(metrics.SingletonREDMetrics)
+vbr m = new(metrics.SingletonREDMetrics)
 
-func newOperations(observationCtx *observation.Context) *operations {
+func newOperbtions(observbtionCtx *observbtion.Context) *operbtions {
 	redMetrics := m.Get(func() *metrics.REDMetrics {
 		return metrics.NewREDMetrics(
-			observationCtx.Registerer,
+			observbtionCtx.Registerer,
 			"codeintel_dependencies_store",
-			metrics.WithLabels("op"),
-			metrics.WithCountHelp("Total number of method invocations."),
+			metrics.WithLbbels("op"),
+			metrics.WithCountHelp("Totbl number of method invocbtions."),
 		)
 	})
 
-	op := func(name string) *observation.Operation {
-		return observationCtx.Operation(observation.Op{
-			Name:              fmt.Sprintf("codeintel.dependencies.store.%s", name),
-			MetricLabelValues: []string{name},
+	op := func(nbme string) *observbtion.Operbtion {
+		return observbtionCtx.Operbtion(observbtion.Op{
+			Nbme:              fmt.Sprintf("codeintel.dependencies.store.%s", nbme),
+			MetricLbbelVblues: []string{nbme},
 			Metrics:           redMetrics,
 		})
 	}
 
-	return &operations{
-		listPackageRepoRefs:              op("ListDependencyRepos"),
-		insertPackageRepoRefs:            op("InsertDependencyRepos"),
-		deletePackageRepoRefsByID:        op("DeleteDependencyRepoRefsByID"),
-		deletePackageRepoRefVersionsByID: op("DeletePackageRepoRefVersionsByID"),
+	return &operbtions{
+		listPbckbgeRepoRefs:              op("ListDependencyRepos"),
+		insertPbckbgeRepoRefs:            op("InsertDependencyRepos"),
+		deletePbckbgeRepoRefsByID:        op("DeleteDependencyRepoRefsByID"),
+		deletePbckbgeRepoRefVersionsByID: op("DeletePbckbgeRepoRefVersionsByID"),
 
-		listPackageRepoFilters:  op("ListPackageRepoFilters"),
-		createPackageRepoFilter: op("CreatePackageRepoFilter"),
-		updatePackageRepoFilter: op("UpdatePackageRepoFilter"),
-		deletePackageRepoFilter: op("DeletePackageRepoFilter"),
+		listPbckbgeRepoFilters:  op("ListPbckbgeRepoFilters"),
+		crebtePbckbgeRepoFilter: op("CrebtePbckbgeRepoFilter"),
+		updbtePbckbgeRepoFilter: op("UpdbtePbckbgeRepoFilter"),
+		deletePbckbgeRepoFilter: op("DeletePbckbgeRepoFilter"),
 
-		shouldRefilterPackageRepoRefs: op("ShouldRefilterPackageRepoRefs"),
-		updateAllBlockedStatuses:      op("UpdateAllBlockedStatuses"),
+		shouldRefilterPbckbgeRepoRefs: op("ShouldRefilterPbckbgeRepoRefs"),
+		updbteAllBlockedStbtuses:      op("UpdbteAllBlockedStbtuses"),
 	}
 }

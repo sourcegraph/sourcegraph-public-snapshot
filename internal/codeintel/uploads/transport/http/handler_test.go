@@ -1,4 +1,4 @@
-package http
+pbckbge http
 
 import (
 	"bytes"
@@ -8,159 +8,159 @@ import (
 	"net/url"
 	"testing"
 
-	"github.com/keegancsmith/sqlf"
-	"github.com/sourcegraph/log/logtest"
+	"github.com/keegbncsmith/sqlf"
+	"github.com/sourcegrbph/log/logtest"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
-	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/transport/http/auth"
-	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/internal/uploadhandler"
-	uploadstoremocks "github.com/sourcegraph/sourcegraph/internal/uploadstore/mocks"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/sourcegraph/sourcegraph/schema"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/bbckend"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bctor"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi"
+	"github.com/sourcegrbph/sourcegrbph/internbl/codeintel/uplobds"
+	"github.com/sourcegrbph/sourcegrbph/internbl/codeintel/uplobds/trbnsport/http/buth"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbtest"
+	"github.com/sourcegrbph/sourcegrbph/internbl/gitserver"
+	"github.com/sourcegrbph/sourcegrbph/internbl/observbtion"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
+	"github.com/sourcegrbph/sourcegrbph/internbl/uplobdhbndler"
+	uplobdstoremocks "github.com/sourcegrbph/sourcegrbph/internbl/uplobdstore/mocks"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/schemb"
 )
 
-const testCommit = "deadbeef01deadbeef02deadbeef03deadbeef04"
+const testCommit = "debdbeef01debdbeef02debdbeef03debdbeef04"
 
-func TestHandleEnqueueAuth(t *testing.T) {
+func TestHbndleEnqueueAuth(t *testing.T) {
 	setupRepoMocks(t)
 
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
-	repoStore := backend.NewRepos(logger, db, gitserver.NewMockClient())
-	mockDBStore := NewMockDBStore[uploads.UploadMetadata]()
-	mockUploadStore := uploadstoremocks.NewMockStore()
+	db := dbtbbbse.NewDB(logger, dbtest.NewDB(logger, t))
+	repoStore := bbckend.NewRepos(logger, db, gitserver.NewMockClient())
+	mockDBStore := NewMockDBStore[uplobds.UplobdMetbdbtb]()
+	mockUplobdStore := uplobdstoremocks.NewMockStore()
 
 	conf.Mock(&conf.Unified{
-		SiteConfiguration: schema.SiteConfiguration{
+		SiteConfigurbtion: schemb.SiteConfigurbtion{
 			LsifEnforceAuth: true,
 		},
 	})
-	t.Cleanup(func() { conf.Mock(nil) })
+	t.Clebnup(func() { conf.Mock(nil) })
 
-	mockDBStore.WithTransactionFunc.SetDefaultHook(func(ctx context.Context, f func(tx uploadhandler.DBStore[uploads.UploadMetadata]) error) error {
+	mockDBStore.WithTrbnsbctionFunc.SetDefbultHook(func(ctx context.Context, f func(tx uplobdhbndler.DBStore[uplobds.UplobdMetbdbtb]) error) error {
 		return f(mockDBStore)
 	})
-	mockDBStore.InsertUploadFunc.SetDefaultReturn(42, nil)
+	mockDBStore.InsertUplobdFunc.SetDefbultReturn(42, nil)
 
-	testURL, err := url.Parse("http://test.com/upload")
+	testURL, err := url.Pbrse("http://test.com/uplobd")
 	if err != nil {
-		t.Fatalf("unexpected error constructing url: %s", err)
+		t.Fbtblf("unexpected error constructing url: %s", err)
 	}
-	testURL.RawQuery = (url.Values{
+	testURL.RbwQuery = (url.Vblues{
 		"commit":      []string{testCommit},
 		"root":        []string{"proj/"},
 		"repository":  []string{"github.com/test/test"},
-		"indexerName": []string{"lsif-go"},
+		"indexerNbme": []string{"lsif-go"},
 	}).Encode()
 
 	users := []struct {
-		name       string
+		nbme       string
 		siteAdmin  bool
 		noUser     bool
-		statusCode int
+		stbtusCode int
 	}{
 		{
-			name:       "chad",
+			nbme:       "chbd",
 			siteAdmin:  true,
-			statusCode: http.StatusAccepted,
+			stbtusCode: http.StbtusAccepted,
 		},
 		{
-			name:       "owning-user",
-			siteAdmin:  false,
-			statusCode: http.StatusAccepted,
+			nbme:       "owning-user",
+			siteAdmin:  fblse,
+			stbtusCode: http.StbtusAccepted,
 		},
 		{
-			name:       "non-owning-user",
-			siteAdmin:  false,
-			statusCode: http.StatusUnauthorized,
+			nbme:       "non-owning-user",
+			siteAdmin:  fblse,
+			stbtusCode: http.StbtusUnbuthorized,
 		},
 		{
 			noUser:     true,
-			statusCode: http.StatusUnauthorized,
+			stbtusCode: http.StbtusUnbuthorized,
 		},
 	}
 
-	for _, user := range users {
-		var expectedContents []byte
+	for _, user := rbnge users {
+		vbr expectedContents []byte
 		for i := 0; i < 20000; i++ {
-			expectedContents = append(expectedContents, byte(i))
+			expectedContents = bppend(expectedContents, byte(i))
 		}
 
 		w := httptest.NewRecorder()
-		r, err := http.NewRequest("POST", testURL.String(), bytes.NewReader(expectedContents))
+		r, err := http.NewRequest("POST", testURL.String(), bytes.NewRebder(expectedContents))
 		if err != nil {
-			t.Fatalf("unexpected error constructing request: %s", err)
+			t.Fbtblf("unexpected error constructing request: %s", err)
 		}
 
 		if !user.noUser {
-			userID := insertTestUser(t, db, user.name, user.siteAdmin)
-			r = r.WithContext(actor.WithActor(r.Context(), actor.FromUser(userID)))
+			userID := insertTestUser(t, db, user.nbme, user.siteAdmin)
+			r = r.WithContext(bctor.WithActor(r.Context(), bctor.FromUser(userID)))
 		}
 
-		authValidators := auth.AuthValidatorMap{
-			"github": func(context.Context, url.Values, string) (int, error) {
-				if user.name != "owning-user" {
-					return http.StatusUnauthorized, errors.New("sample text import cycle")
+		buthVblidbtors := buth.AuthVblidbtorMbp{
+			"github": func(context.Context, url.Vblues, string) (int, error) {
+				if user.nbme != "owning-user" {
+					return http.StbtusUnbuthorized, errors.New("sbmple text import cycle")
 				}
 				return 200, nil
 			},
 		}
 
-		auth.AuthMiddleware(
-			newHandler(
+		buth.AuthMiddlewbre(
+			newHbndler(
 				repoStore,
-				mockUploadStore,
+				mockUplobdStore,
 				mockDBStore,
-				uploadhandler.NewOperations(&observation.TestContext, "test"),
+				uplobdhbndler.NewOperbtions(&observbtion.TestContext, "test"),
 			),
 			db.Users(),
-			authValidators,
-			newOperations(&observation.TestContext).authMiddleware,
+			buthVblidbtors,
+			newOperbtions(&observbtion.TestContext).buthMiddlewbre,
 		).ServeHTTP(w, r)
 
-		if w.Code != user.statusCode {
-			t.Errorf("unexpected status code for user %s. want=%d have=%d", user.name, user.statusCode, w.Code)
+		if w.Code != user.stbtusCode {
+			t.Errorf("unexpected stbtus code for user %s. wbnt=%d hbve=%d", user.nbme, user.stbtusCode, w.Code)
 		}
 	}
 }
 
 func setupRepoMocks(t testing.TB) {
-	t.Cleanup(func() {
-		backend.Mocks.Repos.GetByName = nil
-		backend.Mocks.Repos.ResolveRev = nil
+	t.Clebnup(func() {
+		bbckend.Mocks.Repos.GetByNbme = nil
+		bbckend.Mocks.Repos.ResolveRev = nil
 	})
 
-	backend.Mocks.Repos.GetByName = func(ctx context.Context, name api.RepoName) (*types.Repo, error) {
-		if name != "github.com/test/test" {
-			t.Errorf("unexpected repository name. want=%s have=%s", "github.com/test/test", name)
+	bbckend.Mocks.Repos.GetByNbme = func(ctx context.Context, nbme bpi.RepoNbme) (*types.Repo, error) {
+		if nbme != "github.com/test/test" {
+			t.Errorf("unexpected repository nbme. wbnt=%s hbve=%s", "github.com/test/test", nbme)
 		}
 		return &types.Repo{ID: 50}, nil
 	}
 
-	backend.Mocks.Repos.ResolveRev = func(ctx context.Context, repo *types.Repo, rev string) (api.CommitID, error) {
+	bbckend.Mocks.Repos.ResolveRev = func(ctx context.Context, repo *types.Repo, rev string) (bpi.CommitID, error) {
 		if rev != testCommit {
-			t.Errorf("unexpected commit. want=%s have=%s", testCommit, rev)
+			t.Errorf("unexpected commit. wbnt=%s hbve=%s", testCommit, rev)
 		}
 		return "", nil
 	}
 }
 
-func insertTestUser(t *testing.T, db database.DB, name string, isAdmin bool) (userID int32) {
+func insertTestUser(t *testing.T, db dbtbbbse.DB, nbme string, isAdmin bool) (userID int32) {
 	t.Helper()
 
-	q := sqlf.Sprintf("INSERT INTO users (username, site_admin) VALUES (%s, %t) RETURNING id", name, isAdmin)
-	err := db.QueryRowContext(context.Background(), q.Query(sqlf.PostgresBindVar), q.Args()...).Scan(&userID)
+	q := sqlf.Sprintf("INSERT INTO users (usernbme, site_bdmin) VALUES (%s, %t) RETURNING id", nbme, isAdmin)
+	err := db.QueryRowContext(context.Bbckground(), q.Query(sqlf.PostgresBindVbr), q.Args()...).Scbn(&userID)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 	return userID
 }

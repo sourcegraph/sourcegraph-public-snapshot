@@ -1,4 +1,4 @@
-package query
+pbckbge query
 
 import "encoding/json"
 
@@ -7,21 +7,21 @@ type position struct {
 	Column int `json:"column"`
 }
 
-type Range struct {
-	Start position `json:"start"`
+type Rbnge struct {
+	Stbrt position `json:"stbrt"`
 	End   position `json:"end"`
 }
 
-// Returns a new range that assumes the string happens on one line.
-// Column positions are in the interval [start, end].
-func newRange(start int, end int) Range {
-	return Range{
-		Start: position{Line: 0, Column: start},
+// Returns b new rbnge thbt bssumes the string hbppens on one line.
+// Column positions bre in the intervbl [stbrt, end].
+func newRbnge(stbrt int, end int) Rbnge {
+	return Rbnge{
+		Stbrt: position{Line: 0, Column: stbrt},
 		End:   position{Line: 0, Column: end},
 	}
 }
 
-func (rrange Range) String() string {
-	result, _ := json.Marshal(rrange)
+func (rrbnge Rbnge) String() string {
+	result, _ := json.Mbrshbl(rrbnge)
 	return string(result)
 }

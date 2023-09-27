@@ -1,4 +1,4 @@
-package repos
+pbckbge repos
 
 import (
 	"context"
@@ -8,100 +8,100 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/keegancsmith/sqlf"
-	"github.com/stretchr/testify/assert"
+	"github.com/keegbncsmith/sqlf"
+	"github.com/stretchr/testify/bssert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/sourcegraph/log/logtest"
-	"github.com/sourcegraph/zoekt"
+	"github.com/sourcegrbph/log/logtest"
+	"github.com/sourcegrbph/zoekt"
 
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/internal/timeutil"
-	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/sourcegraph/sourcegraph/lib/pointers"
-	"github.com/sourcegraph/sourcegraph/schema"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbmocks"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbtest"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc"
+	"github.com/sourcegrbph/sourcegrbph/internbl/gitserver"
+	"github.com/sourcegrbph/sourcegrbph/internbl/observbtion"
+	"github.com/sourcegrbph/sourcegrbph/internbl/timeutil"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/lib/pointers"
+	"github.com/sourcegrbph/sourcegrbph/schemb"
 )
 
-func TestStatusMessages(t *testing.T) {
+func TestStbtusMessbges(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
 
 	logger := logtest.Scoped(t)
-	ctx := context.Background()
+	ctx := context.Bbckground()
 
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := dbtbbbse.NewDB(logger, dbtest.NewDB(logger, t))
 	store := NewStore(logtest.Scoped(t), db)
 
 	mockGitserverClient := gitserver.NewMockClient()
 
-	extSvc := &types.ExternalService{
+	extSvc := &types.ExternblService{
 		ID:          1,
-		Config:      extsvc.NewUnencryptedConfig(`{"url": "https://github.com", "token": "beef", "repos": ["owner/name"]}`),
+		Config:      extsvc.NewUnencryptedConfig(`{"url": "https://github.com", "token": "beef", "repos": ["owner/nbme"]}`),
 		Kind:        extsvc.KindGitHub,
-		DisplayName: "github.com - site",
+		DisplbyNbme: "github.com - site",
 	}
-	err := db.ExternalServices().Upsert(ctx, extSvc)
+	err := db.ExternblServices().Upsert(ctx, extSvc)
 	require.NoError(t, err)
 
-	testCases := []struct {
+	testCbses := []struct {
 		testSetup func()
-		name      string
+		nbme      string
 		repos     types.Repos
-		// maps repoName to CloneStatus
-		cloneStatus map[string]types.CloneStatus
-		// indexed is list of repo names that are indexed
+		// mbps repoNbme to CloneStbtus
+		cloneStbtus mbp[string]types.CloneStbtus
+		// indexed is list of repo nbmes thbt bre indexed
 		indexed          []string
-		gitserverFailure map[string]bool
+		gitserverFbilure mbp[string]bool
 		sourcerErr       error
-		res              []StatusMessage
+		res              []StbtusMessbge
 		err              string
 	}{
 		{
 			testSetup: func() {
 				conf.Mock(&conf.Unified{
-					SiteConfiguration: schema.SiteConfiguration{
-						DisableAutoGitUpdates: true,
+					SiteConfigurbtion: schemb.SiteConfigurbtion{
+						DisbbleAutoGitUpdbtes: true,
 					},
 				})
 			},
-			name: "disableAutoGitUpdates set to true",
-			res: []StatusMessage{
+			nbme: "disbbleAutoGitUpdbtes set to true",
+			res: []StbtusMessbge{
 				{
-					GitUpdatesDisabled: &GitUpdatesDisabled{
-						Message: "Repositories will not be cloned or updated.",
+					GitUpdbtesDisbbled: &GitUpdbtesDisbbled{
+						Messbge: "Repositories will not be cloned or updbted.",
 					},
 				},
 				{
 					NoRepositoriesDetected: &NoRepositoriesDetected{
-						Message: "No repositories have been added to Sourcegraph.",
+						Messbge: "No repositories hbve been bdded to Sourcegrbph.",
 					},
 				},
 			},
 		},
 		{
-			name:        "site-admin: all cloned and indexed",
-			cloneStatus: map[string]types.CloneStatus{"foobar": types.CloneStatusCloned},
-			indexed:     []string{"foobar"},
-			repos:       []*types.Repo{{Name: "foobar"}},
+			nbme:        "site-bdmin: bll cloned bnd indexed",
+			cloneStbtus: mbp[string]types.CloneStbtus{"foobbr": types.CloneStbtusCloned},
+			indexed:     []string{"foobbr"},
+			repos:       []*types.Repo{{Nbme: "foobbr"}},
 			res:         nil,
 		},
 		{
-			name:        "site-admin: one repository not cloned",
-			repos:       []*types.Repo{{Name: "foobar"}},
-			cloneStatus: map[string]types.CloneStatus{},
-			res: []StatusMessage{
+			nbme:        "site-bdmin: one repository not cloned",
+			repos:       []*types.Repo{{Nbme: "foobbr"}},
+			cloneStbtus: mbp[string]types.CloneStbtus{},
+			res: []StbtusMessbge{
 				{
 					Cloning: &CloningProgress{
-						Message: "1 repository enqueued for cloning.",
+						Messbge: "1 repository enqueued for cloning.",
 					},
 				},
 				{
@@ -110,13 +110,13 @@ func TestStatusMessages(t *testing.T) {
 			},
 		},
 		{
-			name:        "site-admin: one repository cloning",
-			repos:       []*types.Repo{{Name: "foobar"}},
-			cloneStatus: map[string]types.CloneStatus{"foobar": types.CloneStatusCloning},
-			res: []StatusMessage{
+			nbme:        "site-bdmin: one repository cloning",
+			repos:       []*types.Repo{{Nbme: "foobbr"}},
+			cloneStbtus: mbp[string]types.CloneStbtus{"foobbr": types.CloneStbtusCloning},
+			res: []StbtusMessbge{
 				{
 					Cloning: &CloningProgress{
-						Message: "1 repository currently cloning...",
+						Messbge: "1 repository currently cloning...",
 					},
 				},
 				{
@@ -125,13 +125,13 @@ func TestStatusMessages(t *testing.T) {
 			},
 		},
 		{
-			name:        "site-admin: one not cloned, one cloning",
-			repos:       []*types.Repo{{Name: "foobar"}, {Name: "barfoo"}},
-			cloneStatus: map[string]types.CloneStatus{"foobar": types.CloneStatusCloning, "barfoo": types.CloneStatusNotCloned},
-			res: []StatusMessage{
+			nbme:        "site-bdmin: one not cloned, one cloning",
+			repos:       []*types.Repo{{Nbme: "foobbr"}, {Nbme: "bbrfoo"}},
+			cloneStbtus: mbp[string]types.CloneStbtus{"foobbr": types.CloneStbtusCloning, "bbrfoo": types.CloneStbtusNotCloned},
+			res: []StbtusMessbge{
 				{
 					Cloning: &CloningProgress{
-						Message: "1 repository enqueued for cloning. 1 repository currently cloning...",
+						Messbge: "1 repository enqueued for cloning. 1 repository currently cloning...",
 					},
 				},
 				{
@@ -140,28 +140,28 @@ func TestStatusMessages(t *testing.T) {
 			},
 		},
 		{
-			name: "site-admin: multiple not cloned, multiple cloning, multiple cloned",
+			nbme: "site-bdmin: multiple not cloned, multiple cloning, multiple cloned",
 			repos: []*types.Repo{
-				{Name: "repo-1"},
-				{Name: "repo-2"},
-				{Name: "repo-3"},
-				{Name: "repo-4"},
-				{Name: "repo-5"},
-				{Name: "repo-6"},
+				{Nbme: "repo-1"},
+				{Nbme: "repo-2"},
+				{Nbme: "repo-3"},
+				{Nbme: "repo-4"},
+				{Nbme: "repo-5"},
+				{Nbme: "repo-6"},
 			},
-			cloneStatus: map[string]types.CloneStatus{
-				"repo-1": types.CloneStatusCloning,
-				"repo-2": types.CloneStatusCloning,
-				"repo-3": types.CloneStatusNotCloned,
-				"repo-4": types.CloneStatusNotCloned,
-				"repo-5": types.CloneStatusCloned,
-				"repo-6": types.CloneStatusCloned,
+			cloneStbtus: mbp[string]types.CloneStbtus{
+				"repo-1": types.CloneStbtusCloning,
+				"repo-2": types.CloneStbtusCloning,
+				"repo-3": types.CloneStbtusNotCloned,
+				"repo-4": types.CloneStbtusNotCloned,
+				"repo-5": types.CloneStbtusCloned,
+				"repo-6": types.CloneStbtusCloned,
 			},
 			indexed: []string{"repo-6"},
-			res: []StatusMessage{
+			res: []StbtusMessbge{
 				{
 					Cloning: &CloningProgress{
-						Message: "2 repositories enqueued for cloning. 2 repositories currently cloning...",
+						Messbge: "2 repositories enqueued for cloning. 2 repositories currently cloning...",
 					},
 				},
 				{
@@ -170,59 +170,59 @@ func TestStatusMessages(t *testing.T) {
 			},
 		},
 		{
-			name:       "site-admin: no repos detected",
+			nbme:       "site-bdmin: no repos detected",
 			repos:      []*types.Repo{},
 			sourcerErr: nil,
-			res: []StatusMessage{
+			res: []StbtusMessbge{
 				{
 					NoRepositoriesDetected: &NoRepositoriesDetected{
-						Message: "No repositories have been added to Sourcegraph.",
+						Messbge: "No repositories hbve been bdded to Sourcegrbph.",
 					},
 				},
 			},
 		},
 		{
-			name:  "site-admin: one repo failed to sync",
-			repos: []*types.Repo{{Name: "foobar"}, {Name: "barfoo"}},
-			cloneStatus: map[string]types.CloneStatus{
-				"foobar": types.CloneStatusCloned,
-				"barfoo": types.CloneStatusCloned,
+			nbme:  "site-bdmin: one repo fbiled to sync",
+			repos: []*types.Repo{{Nbme: "foobbr"}, {Nbme: "bbrfoo"}},
+			cloneStbtus: mbp[string]types.CloneStbtus{
+				"foobbr": types.CloneStbtusCloned,
+				"bbrfoo": types.CloneStbtusCloned,
 			},
-			indexed:          []string{"foobar", "barfoo"},
-			gitserverFailure: map[string]bool{"foobar": true},
-			res: []StatusMessage{
+			indexed:          []string{"foobbr", "bbrfoo"},
+			gitserverFbilure: mbp[string]bool{"foobbr": true},
+			res: []StbtusMessbge{
 				{
 					SyncError: &SyncError{
-						Message: "1 repository failed last attempt to sync content from code host",
+						Messbge: "1 repository fbiled lbst bttempt to sync content from code host",
 					},
 				},
 			},
 		},
 		{
-			name:  "site-admin: two repos failed to sync",
-			repos: []*types.Repo{{Name: "foobar"}, {Name: "barfoo"}},
-			cloneStatus: map[string]types.CloneStatus{
-				"foobar": types.CloneStatusCloned,
-				"barfoo": types.CloneStatusCloned,
+			nbme:  "site-bdmin: two repos fbiled to sync",
+			repos: []*types.Repo{{Nbme: "foobbr"}, {Nbme: "bbrfoo"}},
+			cloneStbtus: mbp[string]types.CloneStbtus{
+				"foobbr": types.CloneStbtusCloned,
+				"bbrfoo": types.CloneStbtusCloned,
 			},
-			indexed:          []string{"foobar", "barfoo"},
-			gitserverFailure: map[string]bool{"foobar": true, "barfoo": true},
-			res: []StatusMessage{
+			indexed:          []string{"foobbr", "bbrfoo"},
+			gitserverFbilure: mbp[string]bool{"foobbr": true, "bbrfoo": true},
+			res: []StbtusMessbge{
 				{
 					SyncError: &SyncError{
-						Message: "2 repositories failed last attempt to sync content from code host",
+						Messbge: "2 repositories fbiled lbst bttempt to sync content from code host",
 					},
 				},
 			},
 		},
 		{
-			name:       "one external service syncer err",
+			nbme:       "one externbl service syncer err",
 			sourcerErr: errors.New("github is down"),
-			res: []StatusMessage{
+			res: []StbtusMessbge{
 				{
-					ExternalServiceSyncError: &ExternalServiceSyncError{
-						Message:           "github is down",
-						ExternalServiceId: extSvc.ID,
+					ExternblServiceSyncError: &ExternblServiceSyncError{
+						Messbge:           "github is down",
+						ExternblServiceId: extSvc.ID,
 					},
 				},
 			},
@@ -230,12 +230,12 @@ func TestStatusMessages(t *testing.T) {
 		{
 			testSetup: func() {
 				conf.Mock(&conf.Unified{
-					SiteConfiguration: schema.SiteConfiguration{
-						GitserverDiskUsageWarningThreshold: pointers.Ptr(10),
+					SiteConfigurbtion: schemb.SiteConfigurbtion{
+						GitserverDiskUsbgeWbrningThreshold: pointers.Ptr(10),
 					},
 				})
 
-				mockGitserverClient.SystemsInfoFunc.SetDefaultReturn([]gitserver.SystemInfo{
+				mockGitserverClient.SystemsInfoFunc.SetDefbultReturn([]gitserver.SystemInfo{
 					{
 						Address:     "gitserver-0",
 						PercentUsed: 75.10345,
@@ -243,21 +243,21 @@ func TestStatusMessages(t *testing.T) {
 				}, nil)
 
 			},
-			name:        "site-admin: gitserver disk threshold reached (configured threshold)",
-			cloneStatus: map[string]types.CloneStatus{"foobar": types.CloneStatusCloned},
-			indexed:     []string{"foobar"},
-			repos:       []*types.Repo{{Name: "foobar"}},
-			res: []StatusMessage{
+			nbme:        "site-bdmin: gitserver disk threshold rebched (configured threshold)",
+			cloneStbtus: mbp[string]types.CloneStbtus{"foobbr": types.CloneStbtusCloned},
+			indexed:     []string{"foobbr"},
+			repos:       []*types.Repo{{Nbme: "foobbr"}},
+			res: []StbtusMessbge{
 				{
-					GitserverDiskThresholdReached: &GitserverDiskThresholdReached{
-						Message: "The disk usage on gitserver \"gitserver-0\" is over 10% (75.10% used).",
+					GitserverDiskThresholdRebched: &GitserverDiskThresholdRebched{
+						Messbge: "The disk usbge on gitserver \"gitserver-0\" is over 10% (75.10% used).",
 					},
 				},
 			},
 		},
 		{
 			testSetup: func() {
-				mockGitserverClient.SystemsInfoFunc.SetDefaultReturn([]gitserver.SystemInfo{
+				mockGitserverClient.SystemsInfoFunc.SetDefbultReturn([]gitserver.SystemInfo{
 					{
 						Address:     "gitserver-0",
 						PercentUsed: 95.10345,
@@ -265,151 +265,151 @@ func TestStatusMessages(t *testing.T) {
 				}, nil)
 
 			},
-			name:        "site-admin: gitserver disk threshold reached (default threshold)",
-			cloneStatus: map[string]types.CloneStatus{"foobar": types.CloneStatusCloned},
-			indexed:     []string{"foobar"},
-			repos:       []*types.Repo{{Name: "foobar"}},
-			res: []StatusMessage{
+			nbme:        "site-bdmin: gitserver disk threshold rebched (defbult threshold)",
+			cloneStbtus: mbp[string]types.CloneStbtus{"foobbr": types.CloneStbtusCloned},
+			indexed:     []string{"foobbr"},
+			repos:       []*types.Repo{{Nbme: "foobbr"}},
+			res: []StbtusMessbge{
 				{
-					GitserverDiskThresholdReached: &GitserverDiskThresholdReached{
-						Message: "The disk usage on gitserver \"gitserver-0\" is over 90% (95.10% used).",
+					GitserverDiskThresholdRebched: &GitserverDiskThresholdRebched{
+						Messbge: "The disk usbge on gitserver \"gitserver-0\" is over 90% (95.10% used).",
 					},
 				},
 			},
 		},
 	}
 
-	for _, tc := range testCases {
+	for _, tc := rbnge testCbses {
 		tc := tc
 
-		t.Run(tc.name, func(t *testing.T) {
+		t.Run(tc.nbme, func(t *testing.T) {
 			if tc.testSetup != nil {
 				tc.testSetup()
 			}
 
 			stored := tc.repos.Clone()
-			for _, r := range stored {
-				r.ExternalRepo = api.ExternalRepoSpec{
+			for _, r := rbnge stored {
+				r.ExternblRepo = bpi.ExternblRepoSpec{
 					ID:          uuid.New().String(),
 					ServiceType: extsvc.TypeGitHub,
 					ServiceID:   "https://github.com/",
 				}
 			}
 
-			err := db.Repos().Create(ctx, stored...)
+			err := db.Repos().Crebte(ctx, stored...)
 			require.NoError(t, err)
 
-			t.Cleanup(func() {
+			t.Clebnup(func() {
 				conf.Mock(nil)
 
-				ids := make([]api.RepoID, 0, len(stored))
-				for _, r := range stored {
-					ids = append(ids, r.ID)
+				ids := mbke([]bpi.RepoID, 0, len(stored))
+				for _, r := rbnge stored {
+					ids = bppend(ids, r.ID)
 				}
 				err := db.Repos().Delete(ctx, ids...)
 				require.NoError(t, err)
 			})
 
-			idMapping := make(map[api.RepoName]api.RepoID)
-			for _, r := range stored {
-				lower := strings.ToLower(string(r.Name))
-				idMapping[api.RepoName(lower)] = r.ID
+			idMbpping := mbke(mbp[bpi.RepoNbme]bpi.RepoID)
+			for _, r := rbnge stored {
+				lower := strings.ToLower(string(r.Nbme))
+				idMbpping[bpi.RepoNbme(lower)] = r.ID
 			}
 
 			// Add gitserver_repos rows
-			for repoName, cloneStatus := range tc.cloneStatus {
-				id := idMapping[api.RepoName(repoName)]
+			for repoNbme, cloneStbtus := rbnge tc.cloneStbtus {
+				id := idMbpping[bpi.RepoNbme(repoNbme)]
 				if id == 0 {
 					continue
 				}
-				lastError := ""
-				if tc.gitserverFailure != nil && tc.gitserverFailure[repoName] {
-					lastError = "Oops"
+				lbstError := ""
+				if tc.gitserverFbilure != nil && tc.gitserverFbilure[repoNbme] {
+					lbstError = "Oops"
 				}
-				err := db.GitserverRepos().Update(ctx, &types.GitserverRepo{
+				err := db.GitserverRepos().Updbte(ctx, &types.GitserverRepo{
 					RepoID:      id,
-					ShardID:     "test",
-					CloneStatus: cloneStatus,
-					LastError:   lastError,
+					ShbrdID:     "test",
+					CloneStbtus: cloneStbtus,
+					LbstError:   lbstError,
 				})
 				require.NoError(t, err)
 			}
-			for _, repoName := range tc.indexed {
-				id := uint32(idMapping[api.RepoName(repoName)])
+			for _, repoNbme := rbnge tc.indexed {
+				id := uint32(idMbpping[bpi.RepoNbme(repoNbme)])
 				if id == 0 {
 					continue
 				}
-				err := db.ZoektRepos().UpdateIndexStatuses(ctx, zoekt.ReposMap{
+				err := db.ZoektRepos().UpdbteIndexStbtuses(ctx, zoekt.ReposMbp{
 					id: {
-						Branches: []zoekt.RepositoryBranch{{Name: "main", Version: "d34db33f"}},
+						Brbnches: []zoekt.RepositoryBrbnch{{Nbme: "mbin", Version: "d34db33f"}},
 					},
 				})
 				require.NoError(t, err)
 			}
 
 			// Set up ownership of repos
-			for _, repo := range stored {
+			for _, repo := rbnge stored {
 				q := sqlf.Sprintf(`
-						INSERT INTO external_service_repos(external_service_id, repo_id, clone_url)
-						VALUES (%s, %s, 'example.com')
+						INSERT INTO externbl_service_repos(externbl_service_id, repo_id, clone_url)
+						VALUES (%s, %s, 'exbmple.com')
 					`, extSvc.ID, repo.ID)
-				_, err = store.Handle().ExecContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
+				_, err = store.Hbndle().ExecContext(ctx, q.Query(sqlf.PostgresBindVbr), q.Args()...)
 				require.NoError(t, err)
 
-				t.Cleanup(func() {
-					q := sqlf.Sprintf(`DELETE FROM external_service_repos WHERE external_service_id = %s`, extSvc.ID)
-					_, err = store.Handle().ExecContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
+				t.Clebnup(func() {
+					q := sqlf.Sprintf(`DELETE FROM externbl_service_repos WHERE externbl_service_id = %s`, extSvc.ID)
+					_, err = store.Hbndle().ExecContext(ctx, q.Query(sqlf.PostgresBindVbr), q.Args()...)
 					require.NoError(t, err)
 				})
 			}
 
-			clock := timeutil.NewFakeClock(time.Now(), 0)
+			clock := timeutil.NewFbkeClock(time.Now(), 0)
 			syncer := &Syncer{
-				ObsvCtx: observation.TestContextTB(t),
+				ObsvCtx: observbtion.TestContextTB(t),
 				Store:   store,
 				Now:     clock.Now,
 			}
 
 			mockDB := dbmocks.NewMockDBFrom(db)
 			if tc.sourcerErr != nil {
-				sourcer := NewFakeSourcer(tc.sourcerErr, NewFakeSource(extSvc, nil))
+				sourcer := NewFbkeSourcer(tc.sourcerErr, NewFbkeSource(extSvc, nil))
 				syncer.Sourcer = sourcer
 
-				noopRecorder := func(ctx context.Context, progress SyncProgress, final bool) error {
+				noopRecorder := func(ctx context.Context, progress SyncProgress, finbl bool) error {
 					return nil
 				}
-				err = syncer.SyncExternalService(ctx, extSvc.ID, time.Millisecond, noopRecorder)
-				// In prod, SyncExternalService is kicked off by a worker queue. Any error
-				// returned will be stored in the external_service_sync_jobs table, so we fake
-				// that here.
+				err = syncer.SyncExternblService(ctx, extSvc.ID, time.Millisecond, noopRecorder)
+				// In prod, SyncExternblService is kicked off by b worker queue. Any error
+				// returned will be stored in the externbl_service_sync_jobs tbble, so we fbke
+				// thbt here.
 				if err != nil {
-					externalServices := dbmocks.NewMockExternalServiceStore()
-					externalServices.GetLatestSyncErrorsFunc.SetDefaultReturn(
-						[]*database.SyncError{
-							{ServiceID: extSvc.ID, Message: err.Error()},
+					externblServices := dbmocks.NewMockExternblServiceStore()
+					externblServices.GetLbtestSyncErrorsFunc.SetDefbultReturn(
+						[]*dbtbbbse.SyncError{
+							{ServiceID: extSvc.ID, Messbge: err.Error()},
 						},
 						nil,
 					)
-					mockDB.ExternalServicesFunc.SetDefaultReturn(externalServices)
+					mockDB.ExternblServicesFunc.SetDefbultReturn(externblServices)
 				}
 			}
 
 			if len(tc.repos) < 1 && tc.sourcerErr == nil {
-				externalServices := dbmocks.NewMockExternalServiceStore()
-				externalServices.GetLatestSyncErrorsFunc.SetDefaultReturn(
-					[]*database.SyncError{},
+				externblServices := dbmocks.NewMockExternblServiceStore()
+				externblServices.GetLbtestSyncErrorsFunc.SetDefbultReturn(
+					[]*dbtbbbse.SyncError{},
 					nil,
 				)
-				mockDB.ExternalServicesFunc.SetDefaultReturn(externalServices)
+				mockDB.ExternblServicesFunc.SetDefbultReturn(externblServices)
 			}
 
 			if tc.err == "" {
 				tc.err = "<nil>"
 			}
 
-			res, err := FetchStatusMessages(ctx, mockDB, mockGitserverClient)
-			assert.Equal(t, tc.err, fmt.Sprint(err))
-			assert.Equal(t, tc.res, res)
+			res, err := FetchStbtusMessbges(ctx, mockDB, mockGitserverClient)
+			bssert.Equbl(t, tc.err, fmt.Sprint(err))
+			bssert.Equbl(t, tc.res, res)
 		})
 	}
 }

@@ -1,4 +1,4 @@
-package notify
+pbckbge notify
 
 import (
 	"context"
@@ -7,175 +7,175 @@ import (
 	"time"
 
 	"github.com/gomodule/redigo/redis"
-	"github.com/slack-go/slack"
-	"github.com/sourcegraph/log"
+	"github.com/slbck-go/slbck"
+	"github.com/sourcegrbph/log"
 	"go.opentelemetry.io/otel"
-	"go.opentelemetry.io/otel/attribute"
-	"go.opentelemetry.io/otel/trace"
+	"go.opentelemetry.io/otel/bttribute"
+	"go.opentelemetry.io/otel/trbce"
 
-	"github.com/sourcegraph/sourcegraph/internal/codygateway"
-	"github.com/sourcegraph/sourcegraph/internal/redislock"
-	"github.com/sourcegraph/sourcegraph/internal/redispool"
-	sgtrace "github.com/sourcegraph/sourcegraph/internal/trace"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/internbl/codygbtewby"
+	"github.com/sourcegrbph/sourcegrbph/internbl/redislock"
+	"github.com/sourcegrbph/sourcegrbph/internbl/redispool"
+	sgtrbce "github.com/sourcegrbph/sourcegrbph/internbl/trbce"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-var tracer = otel.Tracer("internal/notify")
+vbr trbcer = otel.Trbcer("internbl/notify")
 
-// RateLimitNotifier is a function that sends notifications when usage rate hits
-// given thresholds. At most one notification will be sent per actor per
-// threshold until the TTL is reached (that clears the counter). It is best to
-// align the TTL with the rate limit window.
-type RateLimitNotifier func(ctx context.Context, actor codygateway.Actor, feature codygateway.Feature, usageRatio float32, ttl time.Duration)
+// RbteLimitNotifier is b function thbt sends notificbtions when usbge rbte hits
+// given thresholds. At most one notificbtion will be sent per bctor per
+// threshold until the TTL is rebched (thbt clebrs the counter). It is best to
+// blign the TTL with the rbte limit window.
+type RbteLimitNotifier func(ctx context.Context, bctor codygbtewby.Actor, febture codygbtewby.Febture, usbgeRbtio flobt32, ttl time.Durbtion)
 
-// Thresholds map actor sources to percentage rate limit usage increments
-// to notify on. Each threshold will only trigger the notification once during
-// the same rate limit window.
-type Thresholds map[codygateway.ActorSource][]int
+// Thresholds mbp bctor sources to percentbge rbte limit usbge increments
+// to notify on. Ebch threshold will only trigger the notificbtion once during
+// the sbme rbte limit window.
+type Thresholds mbp[codygbtewby.ActorSource][]int
 
-// Get retrieves thresholds for the actor source if set, otherwise provides
-// defaults. The returned thresholds are sorted.
-func (t Thresholds) Get(actorSource codygateway.ActorSource) []int {
-	if thresholds, ok := t[actorSource]; ok {
+// Get retrieves thresholds for the bctor source if set, otherwise provides
+// defbults. The returned thresholds bre sorted.
+func (t Thresholds) Get(bctorSource codygbtewby.ActorSource) []int {
+	if thresholds, ok := t[bctorSource]; ok {
 		sort.Ints(thresholds)
 		return thresholds
 	}
-	return []int{} // no notifications by default to avoid noise
+	return []int{} // no notificbtions by defbult to bvoid noise
 }
 
-// NewSlackRateLimitNotifier returns a RateLimitNotifier that sends Slack
-// notifications when usage rate hits given thresholds.
-func NewSlackRateLimitNotifier(
-	baseLogger log.Logger,
-	rs redispool.KeyValue,
+// NewSlbckRbteLimitNotifier returns b RbteLimitNotifier thbt sends Slbck
+// notificbtions when usbge rbte hits given thresholds.
+func NewSlbckRbteLimitNotifier(
+	bbseLogger log.Logger,
+	rs redispool.KeyVblue,
 	dotcomURL string,
-	actorSourceThresholds Thresholds,
-	slackWebhookURL string,
-	slackSender func(ctx context.Context, url string, msg *slack.WebhookMessage) error,
-) RateLimitNotifier {
-	baseLogger = baseLogger.Scoped("slackRateLimitNotifier", "notifications for usage rate limit approaching thresholds")
+	bctorSourceThresholds Thresholds,
+	slbckWebhookURL string,
+	slbckSender func(ctx context.Context, url string, msg *slbck.WebhookMessbge) error,
+) RbteLimitNotifier {
+	bbseLogger = bbseLogger.Scoped("slbckRbteLimitNotifier", "notificbtions for usbge rbte limit bpprobching thresholds")
 
-	return func(ctx context.Context, actor codygateway.Actor, feature codygateway.Feature, usageRatio float32, ttl time.Duration) {
-		thresholds := actorSourceThresholds.Get(actor.GetSource())
+	return func(ctx context.Context, bctor codygbtewby.Actor, febture codygbtewby.Febture, usbgeRbtio flobt32, ttl time.Durbtion) {
+		thresholds := bctorSourceThresholds.Get(bctor.GetSource())
 		if len(thresholds) == 0 {
 			return
 		}
 
-		usagePercentage := int(usageRatio * 100)
-		if usagePercentage < thresholds[0] {
+		usbgePercentbge := int(usbgeRbtio * 100)
+		if usbgePercentbge < thresholds[0] {
 			return
 		}
 
-		var span trace.Span
-		ctx, span = tracer.Start(ctx, "slackRateLimitNotification",
-			trace.WithAttributes(
-				attribute.Float64("usagePercentage", float64(usageRatio)),
-				attribute.Float64("alert.ttlSeconds", ttl.Seconds())))
-		logger := sgtrace.Logger(ctx, baseLogger)
+		vbr spbn trbce.Spbn
+		ctx, spbn = trbcer.Stbrt(ctx, "slbckRbteLimitNotificbtion",
+			trbce.WithAttributes(
+				bttribute.Flobt64("usbgePercentbge", flobt64(usbgeRbtio)),
+				bttribute.Flobt64("blert.ttlSeconds", ttl.Seconds())))
+		logger := sgtrbce.Logger(ctx, bbseLogger)
 
-		if err := handleNotify(ctx, logger, rs, dotcomURL, thresholds, slackWebhookURL, slackSender, actor, feature, usagePercentage, ttl); err != nil {
-			span.RecordError(err)
-			logger.Error("failed to notification", log.Error(err))
+		if err := hbndleNotify(ctx, logger, rs, dotcomURL, thresholds, slbckWebhookURL, slbckSender, bctor, febture, usbgePercentbge, ttl); err != nil {
+			spbn.RecordError(err)
+			logger.Error("fbiled to notificbtion", log.Error(err))
 		}
 
-		span.End()
+		spbn.End()
 	}
 }
 
-func handleNotify(
+func hbndleNotify(
 	ctx context.Context,
 	logger log.Logger,
 
-	rs redispool.KeyValue,
+	rs redispool.KeyVblue,
 	dotcomURL string,
 	thresholds []int,
-	slackWebhookURL string,
-	slackSender func(ctx context.Context, url string, msg *slack.WebhookMessage) error,
+	slbckWebhookURL string,
+	slbckSender func(ctx context.Context, url string, msg *slbck.WebhookMessbge) error,
 
-	actor codygateway.Actor,
-	feature codygateway.Feature,
-	usagePercentage int,
-	ttl time.Duration,
+	bctor codygbtewby.Actor,
+	febture codygbtewby.Febture,
+	usbgePercentbge int,
+	ttl time.Durbtion,
 ) error {
-	span := trace.SpanFromContext(ctx)
+	spbn := trbce.SpbnFromContext(ctx)
 
-	lockKey := fmt.Sprintf("rate_limit:%s:alert:lock:%s", feature, actor.GetID())
-	acquired, release, err := redislock.TryAcquire(rs, lockKey, 30*time.Second)
-	span.SetAttributes(attribute.Bool("lock.acquired", acquired))
+	lockKey := fmt.Sprintf("rbte_limit:%s:blert:lock:%s", febture, bctor.GetID())
+	bcquired, relebse, err := redislock.TryAcquire(rs, lockKey, 30*time.Second)
+	spbn.SetAttributes(bttribute.Bool("lock.bcquired", bcquired))
 	if err != nil {
-		return errors.Wrap(err, "failed to acquire lock")
-	} else if !acquired {
+		return errors.Wrbp(err, "fbiled to bcquire lock")
+	} else if !bcquired {
 		return nil
 	}
-	defer release()
+	defer relebse()
 
 	bucket := 0
-	for _, threshold := range thresholds {
-		if usagePercentage < threshold {
-			break
+	for _, threshold := rbnge thresholds {
+		if usbgePercentbge < threshold {
+			brebk
 		}
 		bucket = threshold
 	}
-	span.SetAttributes(attribute.Int("bucket", bucket))
+	spbn.SetAttributes(bttribute.Int("bucket", bucket))
 
-	key := fmt.Sprintf("rate_limit:%s:alert:%s", feature, actor.GetID())
-	lastBucket, err := rs.Get(key).Int()
+	key := fmt.Sprintf("rbte_limit:%s:blert:%s", febture, bctor.GetID())
+	lbstBucket, err := rs.Get(key).Int()
 	if err != nil && err != redis.ErrNil {
-		return errors.Wrap(err, "failed to get last alert bucket")
+		return errors.Wrbp(err, "fbiled to get lbst blert bucket")
 	}
 
-	if bucket <= lastBucket {
-		span.SetAttributes(attribute.Bool("skipped", true))
+	if bucket <= lbstBucket {
+		spbn.SetAttributes(bttribute.Bool("skipped", true))
 		return nil
 	}
 
 	defer func() {
 		err := rs.SetEx(key, int(ttl.Seconds()), bucket)
 		if err != nil {
-			logger.Error("failed to set last alerted time", log.Error(err))
+			logger.Error("fbiled to set lbst blerted time", log.Error(err))
 		}
 	}()
 
-	if slackWebhookURL == "" {
-		logger.Debug("new usage alert",
-			log.Object("actor",
-				log.String("id", actor.GetID()),
-				log.String("source", string(actor.GetSource())),
+	if slbckWebhookURL == "" {
+		logger.Debug("new usbge blert",
+			log.Object("bctor",
+				log.String("id", bctor.GetID()),
+				log.String("source", string(bctor.GetSource())),
 			),
-			log.String("feature", string(feature)),
-			log.Int("usagePercentage", usagePercentage),
+			log.String("febture", string(febture)),
+			log.Int("usbgePercentbge", usbgePercentbge),
 		)
 		return nil
 	}
 
-	var actorLink string
-	switch actor.GetSource() {
-	case codygateway.ActorSourceProductSubscription:
-		actorLink = fmt.Sprintf("<%s/site-admin/dotcom/product/subscriptions/%s|%s>", dotcomURL, actor.GetID(), actor.GetName())
-	default:
-		actorLink = fmt.Sprintf("`%s`", actor.GetID())
+	vbr bctorLink string
+	switch bctor.GetSource() {
+	cbse codygbtewby.ActorSourceProductSubscription:
+		bctorLink = fmt.Sprintf("<%s/site-bdmin/dotcom/product/subscriptions/%s|%s>", dotcomURL, bctor.GetID(), bctor.GetNbme())
+	defbult:
+		bctorLink = fmt.Sprintf("`%s`", bctor.GetID())
 	}
-	span.SetAttributes(
-		attribute.String("actor.link", actorLink),
-		attribute.Bool("sendToSlack", true))
+	spbn.SetAttributes(
+		bttribute.String("bctor.link", bctorLink),
+		bttribute.Bool("sendToSlbck", true))
 
-	text := fmt.Sprintf("The actor %s from %q has exceeded *%d%%* of its rate limit quota for `%s`. The quota will reset in `%s` at `%s`.",
-		actorLink, actor.GetSource(), usagePercentage, feature, ttl.String(), time.Now().Add(ttl).Format(time.RFC3339))
+	text := fmt.Sprintf("The bctor %s from %q hbs exceeded *%d%%* of its rbte limit quotb for `%s`. The quotb will reset in `%s` bt `%s`.",
+		bctorLink, bctor.GetSource(), usbgePercentbge, febture, ttl.String(), time.Now().Add(ttl).Formbt(time.RFC3339))
 
-	// NOTE: The context timeout must below the lock timeout we set above (30 seconds
-	// ) to make sure the lock doesn't expire when we release it, i.e. avoid
-	// releasing someone else's lock.
-	var cancel func()
-	ctx, cancel = context.WithTimeout(ctx, 15*time.Second)
-	defer cancel()
-	return slackSender(
+	// NOTE: The context timeout must below the lock timeout we set bbove (30 seconds
+	// ) to mbke sure the lock doesn't expire when we relebse it, i.e. bvoid
+	// relebsing someone else's lock.
+	vbr cbncel func()
+	ctx, cbncel = context.WithTimeout(ctx, 15*time.Second)
+	defer cbncel()
+	return slbckSender(
 		ctx,
-		slackWebhookURL,
-		&slack.WebhookMessage{
-			Blocks: &slack.Blocks{
-				BlockSet: []slack.Block{
-					slack.NewSectionBlock(
-						slack.NewTextBlockObject("mrkdwn", text, false, false),
+		slbckWebhookURL,
+		&slbck.WebhookMessbge{
+			Blocks: &slbck.Blocks{
+				BlockSet: []slbck.Block{
+					slbck.NewSectionBlock(
+						slbck.NewTextBlockObject("mrkdwn", text, fblse, fblse),
 						nil,
 						nil,
 					),

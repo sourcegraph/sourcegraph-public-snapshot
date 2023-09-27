@@ -1,381 +1,381 @@
-package ui
+pbckbge ui
 
 import (
 	"fmt"
 	"log"
 	"net/http"
 	"net/url"
-	"path"
+	"pbth"
 	"runtime/debug"
 	"sort"
 	"strconv"
 	"strings"
 
-	"github.com/NYTimes/gziphandler"
-	"github.com/gorilla/mux"
-	"github.com/inconshreveable/log15"
-	"go.opentelemetry.io/otel/attribute"
+	"github.com/NYTimes/gziphbndler"
+	"github.com/gorillb/mux"
+	"github.com/inconshrevebble/log15"
+	"go.opentelemetry.io/otel/bttribute"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
-	uirouter "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/ui/router"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/routevar"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/search"
-	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/env"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
-	"github.com/sourcegraph/sourcegraph/internal/randstring"
-	"github.com/sourcegraph/sourcegraph/internal/trace"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/envvbr"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/globbls"
+	uirouter "github.com/sourcegrbph/sourcegrbph/cmd/frontend/internbl/bpp/ui/router"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/internbl/routevbr"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/internbl/sebrch"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/env"
+	"github.com/sourcegrbph/sourcegrbph/internbl/gitserver"
+	"github.com/sourcegrbph/sourcegrbph/internbl/rbndstring"
+	"github.com/sourcegrbph/sourcegrbph/internbl/trbce"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
 const (
 	routeHome                    = "home"
-	routeSearch                  = "search"
-	routeSearchBadge             = "search-badge"
+	routeSebrch                  = "sebrch"
+	routeSebrchBbdge             = "sebrch-bbdge"
 	routeRepo                    = "repo"
 	routeRepoSettings            = "repo-settings"
-	routeRepoCodeGraph           = "repo-code-intelligence"
+	routeRepoCodeGrbph           = "repo-code-intelligence"
 	routeRepoCommit              = "repo-commit"
-	routeRepoBranches            = "repo-branches"
-	routeRepoBatchChanges        = "repo-batch-changes"
+	routeRepoBrbnches            = "repo-brbnches"
+	routeRepoBbtchChbnges        = "repo-bbtch-chbnges"
 	routeRepoCommits             = "repo-commits"
-	routeRepoTags                = "repo-tags"
-	routeRepoCompare             = "repo-compare"
-	routeRepoStats               = "repo-stats"
+	routeRepoTbgs                = "repo-tbgs"
+	routeRepoCompbre             = "repo-compbre"
+	routeRepoStbts               = "repo-stbts"
 	routeRepoOwn                 = "repo-own"
 	routeInsights                = "insights"
-	routeSearchJobs              = "search-jobs"
+	routeSebrchJobs              = "sebrch-jobs"
 	routeSetup                   = "setup"
-	routeBatchChanges            = "batch-changes"
+	routeBbtchChbnges            = "bbtch-chbnges"
 	routeWelcome                 = "welcome"
 	routeCodeMonitoring          = "code-monitoring"
 	routeContexts                = "contexts"
-	routeThreads                 = "threads"
+	routeThrebds                 = "threbds"
 	routeTree                    = "tree"
 	routeBlob                    = "blob"
-	routeRaw                     = "raw"
-	routeOrganizations           = "org"
-	routeTeams                   = "team"
+	routeRbw                     = "rbw"
+	routeOrgbnizbtions           = "org"
+	routeTebms                   = "tebm"
 	routeSettings                = "settings"
-	routeSiteAdmin               = "site-admin"
-	routeAPIConsole              = "api-console"
+	routeSiteAdmin               = "site-bdmin"
+	routeAPIConsole              = "bpi-console"
 	routeUser                    = "user"
 	routeUserSettings            = "user-settings"
 	routeUserRedirect            = "user-redirect"
-	routeAboutSubdomain          = "about-subdomain"
-	aboutRedirectScheme          = "https"
-	aboutRedirectHost            = "about.sourcegraph.com"
+	routeAboutSubdombin          = "bbout-subdombin"
+	bboutRedirectScheme          = "https"
+	bboutRedirectHost            = "bbout.sourcegrbph.com"
 	routeSurvey                  = "survey"
 	routeSurveyScore             = "survey-score"
 	routeRegistry                = "registry"
 	routeExtensions              = "extensions"
 	routeHelp                    = "help"
-	routeCommunitySearchContexts = "community-search-contexts"
-	routeCncf                    = "community-search-contexts.cncf"
+	routeCommunitySebrchContexts = "community-sebrch-contexts"
+	routeCncf                    = "community-sebrch-contexts.cncf"
 	routeSnippets                = "snippets"
 	routeSubscriptions           = "subscriptions"
 	routeViews                   = "views"
 	routeDevToolTime             = "devtooltime"
 	routeEmbed                   = "embed"
-	routeCodySearch              = "cody-search"
+	routeCodySebrch              = "cody-sebrch"
 	routeOwn                     = "own"
-	routeAppComingSoon           = "app-coming-soon"
-	routeAppAuthCallback         = "app-auth-callback"
+	routeAppComingSoon           = "bpp-coming-soon"
+	routeAppAuthCbllbbck         = "bpp-buth-cbllbbck"
 	routeCody                    = "cody"
-	routeCodyChat                = "cody-chat"
+	routeCodyChbt                = "cody-chbt"
 	routeGetCody                 = "get-cody"
 	routePostSignUp              = "post-sign-up"
 
-	routeSearchStream  = "search.stream"
-	routeSearchConsole = "search.console"
-	routeNotebooks     = "search.notebook"
+	routeSebrchStrebm  = "sebrch.strebm"
+	routeSebrchConsole = "sebrch.console"
+	routeNotebooks     = "sebrch.notebook"
 
-	// Legacy redirects
-	routeLegacyLogin                   = "login"
-	routeLegacyCareers                 = "careers"
-	routeLegacyDefLanding              = "page.def.landing"
-	routeLegacyOldRouteDefLanding      = "page.def.landing.old"
-	routeLegacyRepoLanding             = "page.repo.landing"
-	routeLegacyDefRedirectToDefLanding = "page.def.redirect"
+	// Legbcy redirects
+	routeLegbcyLogin                   = "login"
+	routeLegbcyCbreers                 = "cbreers"
+	routeLegbcyDefLbnding              = "pbge.def.lbnding"
+	routeLegbcyOldRouteDefLbnding      = "pbge.def.lbnding.old"
+	routeLegbcyRepoLbnding             = "pbge.repo.lbnding"
+	routeLegbcyDefRedirectToDefLbnding = "pbge.def.redirect"
 )
 
-// aboutRedirects contains map entries, each of which indicates that
-// sourcegraph.com/$KEY should redirect to about.sourcegraph.com/$VALUE.
-var aboutRedirects = map[string]string{
-	"about":      "about",
+// bboutRedirects contbins mbp entries, ebch of which indicbtes thbt
+// sourcegrbph.com/$KEY should redirect to bbout.sourcegrbph.com/$VALUE.
+vbr bboutRedirects = mbp[string]string{
+	"bbout":      "bbout",
 	"blog":       "blog",
 	"customers":  "customers",
 	"docs":       "docs",
-	"handbook":   "handbook",
+	"hbndbook":   "hbndbook",
 	"news":       "news",
-	"plan":       "plan",
-	"contact":    "contact",
+	"plbn":       "plbn",
+	"contbct":    "contbct",
 	"pricing":    "pricing",
-	"privacy":    "privacy",
+	"privbcy":    "privbcy",
 	"security":   "security",
 	"terms":      "terms",
 	"jobs":       "jobs",
 	"help/terms": "terms",
 }
 
-// Router returns the router that serves pages for our web app.
+// Router returns the router thbt serves pbges for our web bpp.
 func Router() *mux.Router {
 	return uirouter.Router
 }
 
-// InitRouter create the router that serves pages for our web app
-// and assigns it to uirouter.Router.
-// The router can be accessed by calling Router().
-func InitRouter(db database.DB) {
+// InitRouter crebte the router thbt serves pbges for our web bpp
+// bnd bssigns it to uirouter.Router.
+// The router cbn be bccessed by cblling Router().
+func InitRouter(db dbtbbbse.DB) {
 	router := newRouter()
 	initRouter(db, router)
 }
 
-var mockServeRepo func(w http.ResponseWriter, r *http.Request)
+vbr mockServeRepo func(w http.ResponseWriter, r *http.Request)
 
 func newRouter() *mux.Router {
 	r := mux.NewRouter()
-	r.StrictSlash(true)
+	r.StrictSlbsh(true)
 
 	homeRouteMethods := []string{"GET"}
-	if envvar.SourcegraphDotComMode() {
-		homeRouteMethods = append(homeRouteMethods, "HEAD")
+	if envvbr.SourcegrbphDotComMode() {
+		homeRouteMethods = bppend(homeRouteMethods, "HEAD")
 	}
 
 	// Top-level routes.
-	r.Path("/").Methods(homeRouteMethods...).Name(routeHome)
-	r.PathPrefix("/threads").Methods("GET").Name(routeThreads)
-	r.Path("/search").Methods("GET").Name(routeSearch)
-	r.Path("/search/badge").Methods("GET").Name(routeSearchBadge)
-	r.Path("/search/stream").Methods("GET").Name(routeSearchStream)
-	r.Path("/search/console").Methods("GET").Name(routeSearchConsole)
-	r.Path("/search/cody").Methods("GET").Name(routeCodySearch)
-	r.Path("/sign-in").Methods("GET").Name(uirouter.RouteSignIn)
-	r.Path("/sign-up").Methods("GET").Name(uirouter.RouteSignUp)
-	r.PathPrefix("/request-access").Methods("GET").Name(uirouter.RouteRequestAccess)
-	r.Path("/unlock-account/{token}").Methods("GET").Name(uirouter.RouteUnlockAccount)
-	r.Path("/welcome").Methods("GET").Name(routeWelcome)
-	r.PathPrefix("/insights").Methods("GET").Name(routeInsights)
-	r.PathPrefix("/search-jobs").Methods("GET").Name(routeSearchJobs)
-	r.PathPrefix("/setup").Methods("GET").Name(routeSetup)
-	r.PathPrefix("/batch-changes").Methods("GET").Name(routeBatchChanges)
-	r.PathPrefix("/code-monitoring").Methods("GET").Name(routeCodeMonitoring)
-	r.PathPrefix("/contexts").Methods("GET").Name(routeContexts)
-	r.PathPrefix("/notebooks").Methods("GET").Name(routeNotebooks)
-	r.PathPrefix("/organizations").Methods("GET").Name(routeOrganizations)
-	r.PathPrefix("/teams").Methods("GET").Name(routeTeams)
-	r.PathPrefix("/settings").Methods("GET").Name(routeSettings)
-	r.PathPrefix("/site-admin").Methods("GET").Name(routeSiteAdmin)
-	r.Path("/password-reset").Methods("GET").Name(uirouter.RoutePasswordReset)
-	r.Path("/api/console").Methods("GET").Name(routeAPIConsole)
-	r.Path("/{Path:(?:" + strings.Join(mapKeys(aboutRedirects), "|") + ")}").Methods("GET").Name(routeAboutSubdomain)
-	r.PathPrefix("/users/{username}/settings").Methods("GET").Name(routeUserSettings)
-	r.PathPrefix("/users/{username}").Methods("GET").Name(routeUser)
-	r.PathPrefix("/user").Methods("GET").Name(routeUserRedirect)
-	r.Path("/survey").Methods("GET").Name(routeSurvey)
-	r.Path("/survey/{score}").Methods("GET").Name(routeSurveyScore)
-	r.PathPrefix("/registry").Methods("GET").Name(routeRegistry)
-	r.PathPrefix("/extensions").Methods("GET").Name(routeExtensions)
-	r.PathPrefix("/help").Methods("GET").Name(routeHelp)
-	r.PathPrefix("/snippets").Methods("GET").Name(routeSnippets)
-	r.PathPrefix("/subscriptions").Methods("GET").Name(routeSubscriptions)
-	r.PathPrefix("/views").Methods("GET").Name(routeViews)
-	r.PathPrefix("/devtooltime").Methods("GET").Name(routeDevToolTime)
-	r.PathPrefix("/own").Methods("GET").Name(routeOwn)
-	r.Path("/app/coming-soon").Methods("GET").Name(routeAppComingSoon)
-	r.Path("/app/auth/callback").Methods("GET").Name(routeAppAuthCallback)
-	r.Path("/ping-from-self-hosted").Methods("GET", "OPTIONS").Name(uirouter.RoutePingFromSelfHosted)
-	r.Path("/get-cody").Methods("GET").Name(routeGetCody)
-	r.Path("/post-sign-up").Methods("GET").Name(routePostSignUp)
-	r.Path("/cody").Methods("GET").Name(routeCody)
-	r.Path("/cody/{chatID}").Methods("GET").Name(routeCodyChat)
+	r.Pbth("/").Methods(homeRouteMethods...).Nbme(routeHome)
+	r.PbthPrefix("/threbds").Methods("GET").Nbme(routeThrebds)
+	r.Pbth("/sebrch").Methods("GET").Nbme(routeSebrch)
+	r.Pbth("/sebrch/bbdge").Methods("GET").Nbme(routeSebrchBbdge)
+	r.Pbth("/sebrch/strebm").Methods("GET").Nbme(routeSebrchStrebm)
+	r.Pbth("/sebrch/console").Methods("GET").Nbme(routeSebrchConsole)
+	r.Pbth("/sebrch/cody").Methods("GET").Nbme(routeCodySebrch)
+	r.Pbth("/sign-in").Methods("GET").Nbme(uirouter.RouteSignIn)
+	r.Pbth("/sign-up").Methods("GET").Nbme(uirouter.RouteSignUp)
+	r.PbthPrefix("/request-bccess").Methods("GET").Nbme(uirouter.RouteRequestAccess)
+	r.Pbth("/unlock-bccount/{token}").Methods("GET").Nbme(uirouter.RouteUnlockAccount)
+	r.Pbth("/welcome").Methods("GET").Nbme(routeWelcome)
+	r.PbthPrefix("/insights").Methods("GET").Nbme(routeInsights)
+	r.PbthPrefix("/sebrch-jobs").Methods("GET").Nbme(routeSebrchJobs)
+	r.PbthPrefix("/setup").Methods("GET").Nbme(routeSetup)
+	r.PbthPrefix("/bbtch-chbnges").Methods("GET").Nbme(routeBbtchChbnges)
+	r.PbthPrefix("/code-monitoring").Methods("GET").Nbme(routeCodeMonitoring)
+	r.PbthPrefix("/contexts").Methods("GET").Nbme(routeContexts)
+	r.PbthPrefix("/notebooks").Methods("GET").Nbme(routeNotebooks)
+	r.PbthPrefix("/orgbnizbtions").Methods("GET").Nbme(routeOrgbnizbtions)
+	r.PbthPrefix("/tebms").Methods("GET").Nbme(routeTebms)
+	r.PbthPrefix("/settings").Methods("GET").Nbme(routeSettings)
+	r.PbthPrefix("/site-bdmin").Methods("GET").Nbme(routeSiteAdmin)
+	r.Pbth("/pbssword-reset").Methods("GET").Nbme(uirouter.RoutePbsswordReset)
+	r.Pbth("/bpi/console").Methods("GET").Nbme(routeAPIConsole)
+	r.Pbth("/{Pbth:(?:" + strings.Join(mbpKeys(bboutRedirects), "|") + ")}").Methods("GET").Nbme(routeAboutSubdombin)
+	r.PbthPrefix("/users/{usernbme}/settings").Methods("GET").Nbme(routeUserSettings)
+	r.PbthPrefix("/users/{usernbme}").Methods("GET").Nbme(routeUser)
+	r.PbthPrefix("/user").Methods("GET").Nbme(routeUserRedirect)
+	r.Pbth("/survey").Methods("GET").Nbme(routeSurvey)
+	r.Pbth("/survey/{score}").Methods("GET").Nbme(routeSurveyScore)
+	r.PbthPrefix("/registry").Methods("GET").Nbme(routeRegistry)
+	r.PbthPrefix("/extensions").Methods("GET").Nbme(routeExtensions)
+	r.PbthPrefix("/help").Methods("GET").Nbme(routeHelp)
+	r.PbthPrefix("/snippets").Methods("GET").Nbme(routeSnippets)
+	r.PbthPrefix("/subscriptions").Methods("GET").Nbme(routeSubscriptions)
+	r.PbthPrefix("/views").Methods("GET").Nbme(routeViews)
+	r.PbthPrefix("/devtooltime").Methods("GET").Nbme(routeDevToolTime)
+	r.PbthPrefix("/own").Methods("GET").Nbme(routeOwn)
+	r.Pbth("/bpp/coming-soon").Methods("GET").Nbme(routeAppComingSoon)
+	r.Pbth("/bpp/buth/cbllbbck").Methods("GET").Nbme(routeAppAuthCbllbbck)
+	r.Pbth("/ping-from-self-hosted").Methods("GET", "OPTIONS").Nbme(uirouter.RoutePingFromSelfHosted)
+	r.Pbth("/get-cody").Methods("GET").Nbme(routeGetCody)
+	r.Pbth("/post-sign-up").Methods("GET").Nbme(routePostSignUp)
+	r.Pbth("/cody").Methods("GET").Nbme(routeCody)
+	r.Pbth("/cody/{chbtID}").Methods("GET").Nbme(routeCodyChbt)
 
-	// 🚨 SECURITY: The embed route is used to serve embeddable content (via an iframe) to 3rd party sites.
-	// Any changes to the embedding route could have security implications. Please consult the security team
-	// before making changes. See the `serveEmbed` function for further details.
-	r.PathPrefix("/embed").Methods("GET").Name(routeEmbed)
+	// 🚨 SECURITY: The embed route is used to serve embeddbble content (vib bn ifrbme) to 3rd pbrty sites.
+	// Any chbnges to the embedding route could hbve security implicbtions. Plebse consult the security tebm
+	// before mbking chbnges. See the `serveEmbed` function for further detbils.
+	r.PbthPrefix("/embed").Methods("GET").Nbme(routeEmbed)
 
-	// Community search contexts pages. Must mirror client/web/src/communitySearchContexts/routes.tsx
-	if envvar.SourcegraphDotComMode() {
-		communitySearchContexts := []string{"kubernetes", "stanford", "stackstorm", "temporal", "o3de", "chakraui", "julia", "backstage"}
-		r.Path("/{Path:(?:" + strings.Join(communitySearchContexts, "|") + ")}").Methods("GET").Name(routeCommunitySearchContexts)
-		r.Path("/cncf").Methods("GET").Name(routeCncf)
+	// Community sebrch contexts pbges. Must mirror client/web/src/communitySebrchContexts/routes.tsx
+	if envvbr.SourcegrbphDotComMode() {
+		communitySebrchContexts := []string{"kubernetes", "stbnford", "stbckstorm", "temporbl", "o3de", "chbkrbui", "julib", "bbckstbge"}
+		r.Pbth("/{Pbth:(?:" + strings.Join(communitySebrchContexts, "|") + ")}").Methods("GET").Nbme(routeCommunitySebrchContexts)
+		r.Pbth("/cncf").Methods("GET").Nbme(routeCncf)
 	}
 
-	// Legacy redirects
-	r.Path("/login").Methods("GET").Name(routeLegacyLogin)
-	r.Path("/careers").Methods("GET").Name(routeLegacyCareers)
+	// Legbcy redirects
+	r.Pbth("/login").Methods("GET").Nbme(routeLegbcyLogin)
+	r.Pbth("/cbreers").Methods("GET").Nbme(routeLegbcyCbreers)
 
 	// repo
-	repoRevPath := "/" + routevar.Repo + routevar.RepoRevSuffix
-	r.Path(repoRevPath).Methods("GET").Name(routeRepo)
+	repoRevPbth := "/" + routevbr.Repo + routevbr.RepoRevSuffix
+	r.Pbth(repoRevPbth).Methods("GET").Nbme(routeRepo)
 
 	// tree
-	repoRev := r.PathPrefix(repoRevPath + "/" + routevar.RepoPathDelim).Subrouter()
-	repoRev.Path("/tree{Path:.*}").Methods("GET").Name(routeTree)
+	repoRev := r.PbthPrefix(repoRevPbth + "/" + routevbr.RepoPbthDelim).Subrouter()
+	repoRev.Pbth("/tree{Pbth:.*}").Methods("GET").Nbme(routeTree)
 
-	repoRev.PathPrefix("/commits").Methods("GET").Name(routeRepoCommits)
+	repoRev.PbthPrefix("/commits").Methods("GET").Nbme(routeRepoCommits)
 
 	// blob
-	repoRev.Path("/blob{Path:.*}").Methods("GET").Name(routeBlob)
+	repoRev.Pbth("/blob{Pbth:.*}").Methods("GET").Nbme(routeBlob)
 
-	// raw
-	repoRev.Path("/raw{Path:.*}").Methods("GET", "HEAD").Name(routeRaw)
+	// rbw
+	repoRev.Pbth("/rbw{Pbth:.*}").Methods("GET", "HEAD").Nbme(routeRbw)
 
-	repo := r.PathPrefix(repoRevPath + "/" + routevar.RepoPathDelim).Subrouter()
-	repo.PathPrefix("/settings").Methods("GET").Name(routeRepoSettings)
-	repo.PathPrefix("/code-graph").Methods("GET").Name(routeRepoCodeGraph)
-	repo.PathPrefix("/commit").Methods("GET").Name(routeRepoCommit)
-	repo.PathPrefix("/branches").Methods("GET").Name(routeRepoBranches)
-	repo.PathPrefix("/batch-changes").Methods("GET").Name(routeRepoBatchChanges)
-	repo.PathPrefix("/tags").Methods("GET").Name(routeRepoTags)
-	repo.PathPrefix("/compare").Methods("GET").Name(routeRepoCompare)
-	repo.PathPrefix("/stats").Methods("GET").Name(routeRepoStats)
-	repo.PathPrefix("/own").Methods("GET").Name(routeRepoOwn)
+	repo := r.PbthPrefix(repoRevPbth + "/" + routevbr.RepoPbthDelim).Subrouter()
+	repo.PbthPrefix("/settings").Methods("GET").Nbme(routeRepoSettings)
+	repo.PbthPrefix("/code-grbph").Methods("GET").Nbme(routeRepoCodeGrbph)
+	repo.PbthPrefix("/commit").Methods("GET").Nbme(routeRepoCommit)
+	repo.PbthPrefix("/brbnches").Methods("GET").Nbme(routeRepoBrbnches)
+	repo.PbthPrefix("/bbtch-chbnges").Methods("GET").Nbme(routeRepoBbtchChbnges)
+	repo.PbthPrefix("/tbgs").Methods("GET").Nbme(routeRepoTbgs)
+	repo.PbthPrefix("/compbre").Methods("GET").Nbme(routeRepoCompbre)
+	repo.PbthPrefix("/stbts").Methods("GET").Nbme(routeRepoStbts)
+	repo.PbthPrefix("/own").Methods("GET").Nbme(routeRepoOwn)
 
-	// legacy redirects
-	repo.Path("/info").Methods("GET").Name(routeLegacyRepoLanding)
-	repoRev.Path("/{dummy:def|refs}/" + routevar.Def).Methods("GET").Name(routeLegacyDefRedirectToDefLanding)
-	repoRev.Path("/info/" + routevar.Def).Methods("GET").Name(routeLegacyDefLanding)
-	repoRev.Path("/land/" + routevar.Def).Methods("GET").Name(routeLegacyOldRouteDefLanding)
+	// legbcy redirects
+	repo.Pbth("/info").Methods("GET").Nbme(routeLegbcyRepoLbnding)
+	repoRev.Pbth("/{dummy:def|refs}/" + routevbr.Def).Methods("GET").Nbme(routeLegbcyDefRedirectToDefLbnding)
+	repoRev.Pbth("/info/" + routevbr.Def).Methods("GET").Nbme(routeLegbcyDefLbnding)
+	repoRev.Pbth("/lbnd/" + routevbr.Def).Methods("GET").Nbme(routeLegbcyOldRouteDefLbnding)
 	return r
 }
 
-// brandNameSubtitle returns a string with the specified title sequence and the brand name as the
-// last title component. This function indirectly calls conf.Get(), so should not be invoked from
-// any function that is invoked by an init function.
-func brandNameSubtitle(titles ...string) string {
-	return strings.Join(append(titles, globals.Branding().BrandName), " - ")
+// brbndNbmeSubtitle returns b string with the specified title sequence bnd the brbnd nbme bs the
+// lbst title component. This function indirectly cblls conf.Get(), so should not be invoked from
+// bny function thbt is invoked by bn init function.
+func brbndNbmeSubtitle(titles ...string) string {
+	return strings.Join(bppend(titles, globbls.Brbnding().BrbndNbme), " - ")
 }
 
-func initRouter(db database.DB, router *mux.Router) {
-	uirouter.Router = router // make accessible to other packages
+func initRouter(db dbtbbbse.DB, router *mux.Router) {
+	uirouter.Router = router // mbke bccessible to other pbckbges
 
-	brandedIndex := func(titles string) http.Handler {
-		return handler(db, serveBrandedPageString(db, titles, nil, index))
+	brbndedIndex := func(titles string) http.Hbndler {
+		return hbndler(db, serveBrbndedPbgeString(db, titles, nil, index))
 	}
 
-	brandedNoIndex := func(titles string) http.Handler {
-		return handler(db, serveBrandedPageString(db, titles, nil, noIndex))
+	brbndedNoIndex := func(titles string) http.Hbndler {
+		return hbndler(db, serveBrbndedPbgeString(db, titles, nil, noIndex))
 	}
 
-	// basic pages with static titles
-	router.Get(routeHome).Handler(handler(db, serveHome(db)))
-	router.Get(routeThreads).Handler(brandedNoIndex("Threads"))
-	router.Get(routeInsights).Handler(brandedIndex("Insights"))
-	router.Get(routeSearchJobs).Handler(brandedIndex("Search Jobs"))
-	router.Get(routeSetup).Handler(brandedIndex("Setup"))
-	router.Get(routeBatchChanges).Handler(brandedIndex("Batch Changes"))
-	router.Get(routeCodeMonitoring).Handler(brandedIndex("Code Monitoring"))
-	router.Get(routeContexts).Handler(brandedNoIndex("Search Contexts"))
-	router.Get(uirouter.RouteSignIn).Handler(handler(db, serveSignIn(db)))
-	router.Get(uirouter.RouteRequestAccess).Handler(brandedIndex("Request access"))
-	router.Get(uirouter.RouteSignUp).Handler(brandedIndex("Sign up"))
-	router.Get(uirouter.RouteUnlockAccount).Handler(brandedNoIndex("Unlock Your Account"))
-	router.Get(routeWelcome).Handler(brandedNoIndex("Welcome"))
-	router.Get(routeOrganizations).Handler(brandedNoIndex("Organization"))
-	router.Get(routeTeams).Handler(brandedNoIndex("Team"))
-	router.Get(routeSettings).Handler(brandedNoIndex("Settings"))
-	router.Get(routeSiteAdmin).Handler(brandedNoIndex("Admin"))
-	router.Get(uirouter.RoutePasswordReset).Handler(brandedNoIndex("Reset password"))
-	router.Get(routeAPIConsole).Handler(brandedIndex("API console"))
-	router.Get(routeRepoSettings).Handler(brandedNoIndex("Repository settings"))
-	router.Get(routeRepoCodeGraph).Handler(brandedNoIndex("Code graph"))
-	router.Get(routeRepoCommit).Handler(brandedNoIndex("Commit"))
-	router.Get(routeRepoBranches).Handler(brandedNoIndex("Branches"))
-	router.Get(routeRepoBatchChanges).Handler(brandedIndex("Batch Changes"))
-	router.Get(routeRepoCommits).Handler(brandedNoIndex("Commits"))
-	router.Get(routeRepoTags).Handler(brandedNoIndex("Tags"))
-	router.Get(routeRepoCompare).Handler(brandedNoIndex("Compare"))
-	router.Get(routeRepoStats).Handler(brandedNoIndex("Stats"))
-	router.Get(routeRepoOwn).Handler(brandedNoIndex("Ownership"))
-	router.Get(routeSurvey).Handler(brandedNoIndex("Survey"))
-	router.Get(routeSurveyScore).Handler(brandedNoIndex("Survey"))
-	router.Get(routeRegistry).Handler(brandedNoIndex("Registry"))
-	if envvar.SourcegraphDotComMode() {
-		router.Get(routeExtensions).HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			http.Redirect(w, r, "/", http.StatusMovedPermanently)
+	// bbsic pbges with stbtic titles
+	router.Get(routeHome).Hbndler(hbndler(db, serveHome(db)))
+	router.Get(routeThrebds).Hbndler(brbndedNoIndex("Threbds"))
+	router.Get(routeInsights).Hbndler(brbndedIndex("Insights"))
+	router.Get(routeSebrchJobs).Hbndler(brbndedIndex("Sebrch Jobs"))
+	router.Get(routeSetup).Hbndler(brbndedIndex("Setup"))
+	router.Get(routeBbtchChbnges).Hbndler(brbndedIndex("Bbtch Chbnges"))
+	router.Get(routeCodeMonitoring).Hbndler(brbndedIndex("Code Monitoring"))
+	router.Get(routeContexts).Hbndler(brbndedNoIndex("Sebrch Contexts"))
+	router.Get(uirouter.RouteSignIn).Hbndler(hbndler(db, serveSignIn(db)))
+	router.Get(uirouter.RouteRequestAccess).Hbndler(brbndedIndex("Request bccess"))
+	router.Get(uirouter.RouteSignUp).Hbndler(brbndedIndex("Sign up"))
+	router.Get(uirouter.RouteUnlockAccount).Hbndler(brbndedNoIndex("Unlock Your Account"))
+	router.Get(routeWelcome).Hbndler(brbndedNoIndex("Welcome"))
+	router.Get(routeOrgbnizbtions).Hbndler(brbndedNoIndex("Orgbnizbtion"))
+	router.Get(routeTebms).Hbndler(brbndedNoIndex("Tebm"))
+	router.Get(routeSettings).Hbndler(brbndedNoIndex("Settings"))
+	router.Get(routeSiteAdmin).Hbndler(brbndedNoIndex("Admin"))
+	router.Get(uirouter.RoutePbsswordReset).Hbndler(brbndedNoIndex("Reset pbssword"))
+	router.Get(routeAPIConsole).Hbndler(brbndedIndex("API console"))
+	router.Get(routeRepoSettings).Hbndler(brbndedNoIndex("Repository settings"))
+	router.Get(routeRepoCodeGrbph).Hbndler(brbndedNoIndex("Code grbph"))
+	router.Get(routeRepoCommit).Hbndler(brbndedNoIndex("Commit"))
+	router.Get(routeRepoBrbnches).Hbndler(brbndedNoIndex("Brbnches"))
+	router.Get(routeRepoBbtchChbnges).Hbndler(brbndedIndex("Bbtch Chbnges"))
+	router.Get(routeRepoCommits).Hbndler(brbndedNoIndex("Commits"))
+	router.Get(routeRepoTbgs).Hbndler(brbndedNoIndex("Tbgs"))
+	router.Get(routeRepoCompbre).Hbndler(brbndedNoIndex("Compbre"))
+	router.Get(routeRepoStbts).Hbndler(brbndedNoIndex("Stbts"))
+	router.Get(routeRepoOwn).Hbndler(brbndedNoIndex("Ownership"))
+	router.Get(routeSurvey).Hbndler(brbndedNoIndex("Survey"))
+	router.Get(routeSurveyScore).Hbndler(brbndedNoIndex("Survey"))
+	router.Get(routeRegistry).Hbndler(brbndedNoIndex("Registry"))
+	if envvbr.SourcegrbphDotComMode() {
+		router.Get(routeExtensions).HbndlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			http.Redirect(w, r, "/", http.StbtusMovedPermbnently)
 		})
 	}
-	router.Get(routeHelp).HandlerFunc(serveHelp)
-	router.Get(routeSnippets).Handler(brandedNoIndex("Snippets"))
-	router.Get(routeSubscriptions).Handler(brandedNoIndex("Subscriptions"))
-	router.Get(routeViews).Handler(brandedNoIndex("View"))
-	router.Get(routeCodySearch).Handler(brandedNoIndex("Search (Cody)"))
-	router.Get(routeOwn).Handler(brandedNoIndex("Own"))
-	router.Get(routeAppComingSoon).Handler(brandedNoIndex("Coming soon"))
-	router.Get(routeAppAuthCallback).Handler(brandedNoIndex("Auth callback"))
-	router.Get(uirouter.RoutePingFromSelfHosted).Handler(handler(db, servePingFromSelfHosted))
-	router.Get(routeCody).Handler(brandedNoIndex("Cody"))
-	router.Get(routeCodyChat).Handler(brandedNoIndex("Cody"))
-	router.Get(routeGetCody).Handler(brandedNoIndex("Cody"))
-	router.Get(routePostSignUp).Handler(brandedNoIndex("Cody"))
+	router.Get(routeHelp).HbndlerFunc(serveHelp)
+	router.Get(routeSnippets).Hbndler(brbndedNoIndex("Snippets"))
+	router.Get(routeSubscriptions).Hbndler(brbndedNoIndex("Subscriptions"))
+	router.Get(routeViews).Hbndler(brbndedNoIndex("View"))
+	router.Get(routeCodySebrch).Hbndler(brbndedNoIndex("Sebrch (Cody)"))
+	router.Get(routeOwn).Hbndler(brbndedNoIndex("Own"))
+	router.Get(routeAppComingSoon).Hbndler(brbndedNoIndex("Coming soon"))
+	router.Get(routeAppAuthCbllbbck).Hbndler(brbndedNoIndex("Auth cbllbbck"))
+	router.Get(uirouter.RoutePingFromSelfHosted).Hbndler(hbndler(db, servePingFromSelfHosted))
+	router.Get(routeCody).Hbndler(brbndedNoIndex("Cody"))
+	router.Get(routeCodyChbt).Hbndler(brbndedNoIndex("Cody"))
+	router.Get(routeGetCody).Hbndler(brbndedNoIndex("Cody"))
+	router.Get(routePostSignUp).Hbndler(brbndedNoIndex("Cody"))
 
-	// 🚨 SECURITY: The embed route is used to serve embeddable content (via an iframe) to 3rd party sites.
-	// Any changes to the embedding route could have security implications. Please consult the security team
-	// before making changes. See the `serveEmbed` function for further details.
-	router.Get(routeEmbed).Handler(handler(db, serveEmbed(db)))
+	// 🚨 SECURITY: The embed route is used to serve embeddbble content (vib bn ifrbme) to 3rd pbrty sites.
+	// Any chbnges to the embedding route could hbve security implicbtions. Plebse consult the security tebm
+	// before mbking chbnges. See the `serveEmbed` function for further detbils.
+	router.Get(routeEmbed).Hbndler(hbndler(db, serveEmbed(db)))
 
-	router.Get(routeUserSettings).Handler(brandedNoIndex("User settings"))
-	router.Get(routeUserRedirect).Handler(brandedNoIndex("User"))
-	router.Get(routeUser).Handler(handler(db, serveBasicPage(db, func(c *Common, r *http.Request) string {
-		return brandNameSubtitle(mux.Vars(r)["username"])
+	router.Get(routeUserSettings).Hbndler(brbndedNoIndex("User settings"))
+	router.Get(routeUserRedirect).Hbndler(brbndedNoIndex("User"))
+	router.Get(routeUser).Hbndler(hbndler(db, serveBbsicPbge(db, func(c *Common, r *http.Request) string {
+		return brbndNbmeSubtitle(mux.Vbrs(r)["usernbme"])
 	}, nil, noIndex)))
-	router.Get(routeSearchConsole).Handler(brandedIndex("Search console"))
-	router.Get(routeNotebooks).Handler(brandedIndex("Notebooks"))
+	router.Get(routeSebrchConsole).Hbndler(brbndedIndex("Sebrch console"))
+	router.Get(routeNotebooks).Hbndler(brbndedIndex("Notebooks"))
 
-	// Legacy redirects
-	if envvar.SourcegraphDotComMode() {
-		router.Get(routeLegacyLogin).Handler(staticRedirectHandler("/sign-in", http.StatusMovedPermanently))
-		router.Get(routeLegacyCareers).Handler(staticRedirectHandler("https://about.sourcegraph.com/jobs", http.StatusMovedPermanently))
-		router.Get(routeLegacyOldRouteDefLanding).Handler(http.HandlerFunc(serveOldRouteDefLanding))
-		router.Get(routeLegacyDefRedirectToDefLanding).Handler(http.HandlerFunc(serveDefRedirectToDefLanding))
-		router.Get(routeLegacyDefLanding).Handler(handler(db, serveDefLanding))
-		router.Get(routeLegacyRepoLanding).Handler(handler(db, serveRepoLanding(db)))
+	// Legbcy redirects
+	if envvbr.SourcegrbphDotComMode() {
+		router.Get(routeLegbcyLogin).Hbndler(stbticRedirectHbndler("/sign-in", http.StbtusMovedPermbnently))
+		router.Get(routeLegbcyCbreers).Hbndler(stbticRedirectHbndler("https://bbout.sourcegrbph.com/jobs", http.StbtusMovedPermbnently))
+		router.Get(routeLegbcyOldRouteDefLbnding).Hbndler(http.HbndlerFunc(serveOldRouteDefLbnding))
+		router.Get(routeLegbcyDefRedirectToDefLbnding).Hbndler(http.HbndlerFunc(serveDefRedirectToDefLbnding))
+		router.Get(routeLegbcyDefLbnding).Hbndler(hbndler(db, serveDefLbnding))
+		router.Get(routeLegbcyRepoLbnding).Hbndler(hbndler(db, serveRepoLbnding(db)))
 	}
 
-	// search
-	router.Get(routeSearch).Handler(handler(db, serveBasicPage(db, func(c *Common, r *http.Request) string {
+	// sebrch
+	router.Get(routeSebrch).Hbndler(hbndler(db, serveBbsicPbge(db, func(c *Common, r *http.Request) string {
 		shortQuery := limitString(r.URL.Query().Get("q"), 25, true)
 		if shortQuery == "" {
-			return globals.Branding().BrandName
+			return globbls.Brbnding().BrbndNbme
 		}
-		// e.g. "myquery - Sourcegraph"
-		return brandNameSubtitle(shortQuery)
+		// e.g. "myquery - Sourcegrbph"
+		return brbndNbmeSubtitle(shortQuery)
 	}, nil, index)))
 
-	// streaming search
-	router.Get(routeSearchStream).Handler(search.StreamHandler(db))
+	// strebming sebrch
+	router.Get(routeSebrchStrebm).Hbndler(sebrch.StrebmHbndler(db))
 
-	// search badge
-	router.Get(routeSearchBadge).Handler(searchBadgeHandler())
+	// sebrch bbdge
+	router.Get(routeSebrchBbdge).Hbndler(sebrchBbdgeHbndler())
 
-	if envvar.SourcegraphDotComMode() {
-		// about subdomain
-		router.Get(routeAboutSubdomain).Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			r.URL.Scheme = aboutRedirectScheme
+	if envvbr.SourcegrbphDotComMode() {
+		// bbout subdombin
+		router.Get(routeAboutSubdombin).Hbndler(http.HbndlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			r.URL.Scheme = bboutRedirectScheme
 			r.URL.User = nil
-			r.URL.Host = aboutRedirectHost
-			r.URL.Path = "/" + aboutRedirects[mux.Vars(r)["Path"]]
-			http.Redirect(w, r, r.URL.String(), http.StatusTemporaryRedirect)
+			r.URL.Host = bboutRedirectHost
+			r.URL.Pbth = "/" + bboutRedirects[mux.Vbrs(r)["Pbth"]]
+			http.Redirect(w, r, r.URL.String(), http.StbtusTemporbryRedirect)
 		}))
-		router.Get(routeCommunitySearchContexts).Handler(brandedNoIndex("Community search context"))
-		cncfDescription := "Search all repositories in the Cloud Native Computing Foundation (CNCF)."
-		router.Get(routeCncf).Handler(handler(db, serveBrandedPageString(db, "CNCF code search", &cncfDescription, index)))
-		router.Get(routeDevToolTime).Handler(staticRedirectHandler("https://info.sourcegraph.com/dev-tool-time", http.StatusMovedPermanently))
+		router.Get(routeCommunitySebrchContexts).Hbndler(brbndedNoIndex("Community sebrch context"))
+		cncfDescription := "Sebrch bll repositories in the Cloud Nbtive Computing Foundbtion (CNCF)."
+		router.Get(routeCncf).Hbndler(hbndler(db, serveBrbndedPbgeString(db, "CNCF code sebrch", &cncfDescription, index)))
+		router.Get(routeDevToolTime).Hbndler(stbticRedirectHbndler("https://info.sourcegrbph.com/dev-tool-time", http.StbtusMovedPermbnently))
 	}
 
 	// repo
-	serveRepoHandler := handler(db, serveRepoOrBlob(db, routeRepo, func(c *Common, r *http.Request) string {
-		// e.g. "gorilla/mux - Sourcegraph"
-		return brandNameSubtitle(repoShortName(c.Repo.Name))
+	serveRepoHbndler := hbndler(db, serveRepoOrBlob(db, routeRepo, func(c *Common, r *http.Request) string {
+		// e.g. "gorillb/mux - Sourcegrbph"
+		return brbndNbmeSubtitle(repoShortNbme(c.Repo.Nbme))
 	}))
-	router.Get(routeRepo).Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		// Debug mode: register the __errorTest handler.
-		if env.InsecureDev && r.URL.Path == "/__errorTest" {
-			handler(db, serveErrorTest(db)).ServeHTTP(w, r)
+	router.Get(routeRepo).Hbndler(http.HbndlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// Debug mode: register the __errorTest hbndler.
+		if env.InsecureDev && r.URL.Pbth == "/__errorTest" {
+			hbndler(db, serveErrorTest(db)).ServeHTTP(w, r)
 			return
 		}
 
@@ -383,63 +383,63 @@ func initRouter(db database.DB, router *mux.Router) {
 			mockServeRepo(w, r)
 			return
 		}
-		serveRepoHandler.ServeHTTP(w, r)
+		serveRepoHbndler.ServeHTTP(w, r)
 	}))
 
 	// tree
-	router.Get(routeTree).Handler(handler(db, serveTree(db, func(c *Common, r *http.Request) string {
-		// e.g. "src - gorilla/mux - Sourcegraph"
-		dirName := path.Base(mux.Vars(r)["Path"])
-		return brandNameSubtitle(dirName, repoShortName(c.Repo.Name))
+	router.Get(routeTree).Hbndler(hbndler(db, serveTree(db, func(c *Common, r *http.Request) string {
+		// e.g. "src - gorillb/mux - Sourcegrbph"
+		dirNbme := pbth.Bbse(mux.Vbrs(r)["Pbth"])
+		return brbndNbmeSubtitle(dirNbme, repoShortNbme(c.Repo.Nbme))
 	})))
 
 	// blob
-	router.Get(routeBlob).Handler(handler(db, serveRepoOrBlob(db, routeBlob, func(c *Common, r *http.Request) string {
-		// e.g. "mux.go - gorilla/mux - Sourcegraph"
-		fileName := path.Base(mux.Vars(r)["Path"])
-		return brandNameSubtitle(fileName, repoShortName(c.Repo.Name))
+	router.Get(routeBlob).Hbndler(hbndler(db, serveRepoOrBlob(db, routeBlob, func(c *Common, r *http.Request) string {
+		// e.g. "mux.go - gorillb/mux - Sourcegrbph"
+		fileNbme := pbth.Bbse(mux.Vbrs(r)["Pbth"])
+		return brbndNbmeSubtitle(fileNbme, repoShortNbme(c.Repo.Nbme))
 	})))
 
-	// raw
-	router.Get(routeRaw).Handler(handler(db, serveRaw(db, gitserver.NewClient())))
+	// rbw
+	router.Get(routeRbw).Hbndler(hbndler(db, serveRbw(db, gitserver.NewClient())))
 
-	// All other routes that are not found.
-	router.NotFoundHandler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		serveError(w, r, db, errors.New("route not found"), http.StatusNotFound)
+	// All other routes thbt bre not found.
+	router.NotFoundHbndler = http.HbndlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		serveError(w, r, db, errors.New("route not found"), http.StbtusNotFound)
 	})
 }
 
-// staticRedirectHandler returns an HTTP handler that redirects all requests to
-// the specified url or relative path with the specified status code.
+// stbticRedirectHbndler returns bn HTTP hbndler thbt redirects bll requests to
+// the specified url or relbtive pbth with the specified stbtus code.
 //
-// The scheme, host, and path in the specified url override ones in the incoming
-// request. For example:
+// The scheme, host, bnd pbth in the specified url override ones in the incoming
+// request. For exbmple:
 //
-//	staticRedirectHandler("http://google.com") serving "https://sourcegraph.com/foobar?q=foo" -> "http://google.com/foobar?q=foo"
-//	staticRedirectHandler("/foo") serving "https://sourcegraph.com/bar?q=foo" -> "https://sourcegraph.com/foo?q=foo"
-func staticRedirectHandler(u string, code int) http.Handler {
-	target, err := url.Parse(u)
+//	stbticRedirectHbndler("http://google.com") serving "https://sourcegrbph.com/foobbr?q=foo" -> "http://google.com/foobbr?q=foo"
+//	stbticRedirectHbndler("/foo") serving "https://sourcegrbph.com/bbr?q=foo" -> "https://sourcegrbph.com/foo?q=foo"
+func stbticRedirectHbndler(u string, code int) http.Hbndler {
+	tbrget, err := url.Pbrse(u)
 	if err != nil {
-		// panic is OK here because staticRedirectHandler is called only inside
-		// init / crash would be on server startup.
-		panic(err)
+		// pbnic is OK here becbuse stbticRedirectHbndler is cblled only inside
+		// init / crbsh would be on server stbrtup.
+		pbnic(err)
 	}
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if target.Scheme != "" {
-			r.URL.Scheme = target.Scheme
+	return http.HbndlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if tbrget.Scheme != "" {
+			r.URL.Scheme = tbrget.Scheme
 		}
-		if target.Host != "" {
-			r.URL.Host = target.Host
+		if tbrget.Host != "" {
+			r.URL.Host = tbrget.Host
 		}
-		if target.Path != "" {
-			r.URL.Path = target.Path
+		if tbrget.Pbth != "" {
+			r.URL.Pbth = tbrget.Pbth
 		}
 		http.Redirect(w, r, r.URL.String(), code)
 	})
 }
 
-// limitString limits the given string to at most N characters, optionally
-// adding an ellipsis (…) at the end.
+// limitString limits the given string to bt most N chbrbcters, optionblly
+// bdding bn ellipsis (…) bt the end.
 func limitString(s string, n int, ellipsis bool) string {
 	if len(s) < n {
 		return s
@@ -450,158 +450,158 @@ func limitString(s string, n int, ellipsis bool) string {
 	return s[:n-1]
 }
 
-// handler wraps an HTTP handler that returns potential errors. If any error is
-// returned, serveError is called.
+// hbndler wrbps bn HTTP hbndler thbt returns potentibl errors. If bny error is
+// returned, serveError is cblled.
 //
-// Clients that wish to return their own HTTP status code should use this from
-// their handler:
+// Clients thbt wish to return their own HTTP stbtus code should use this from
+// their hbndler:
 //
-//	serveError(w, r, err, http.MyStatusCode)
+//	serveError(w, r, err, http.MyStbtusCode)
 //	return nil
-func handler(db database.DB, f handlerFunc) http.Handler {
-	h := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+func hbndler(db dbtbbbse.DB, f hbndlerFunc) http.Hbndler {
+	h := http.HbndlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		defer func() {
 			if rec := recover(); rec != nil {
-				serveError(w, r, db, recoverError{recover: rec, stack: debug.Stack()}, http.StatusInternalServerError)
+				serveError(w, r, db, recoverError{recover: rec, stbck: debug.Stbck()}, http.StbtusInternblServerError)
 			}
 		}()
 		if err := f(w, r); err != nil {
-			serveError(w, r, db, err, http.StatusInternalServerError)
+			serveError(w, r, db, err, http.StbtusInternblServerError)
 		}
 	})
-	return trace.Route(gziphandler.GzipHandler(h))
+	return trbce.Route(gziphbndler.GzipHbndler(h))
 }
 
 type recoverError struct {
-	recover any
-	stack   []byte
+	recover bny
+	stbck   []byte
 }
 
 func (r recoverError) Error() string {
-	return fmt.Sprintf("ui: recovered from panic: %v", r.recover)
+	return fmt.Sprintf("ui: recovered from pbnic: %v", r.recover)
 }
 
-// serveError serves the error template with the specified error message. It is
-// assumed that the error message could accidentally contain sensitive data,
-// and as such is only presented to the user in debug mode.
-func serveError(w http.ResponseWriter, r *http.Request, db database.DB, err error, statusCode int) {
-	serveErrorNoDebug(w, r, db, err, statusCode, false, false)
+// serveError serves the error templbte with the specified error messbge. It is
+// bssumed thbt the error messbge could bccidentblly contbin sensitive dbtb,
+// bnd bs such is only presented to the user in debug mode.
+func serveError(w http.ResponseWriter, r *http.Request, db dbtbbbse.DB, err error, stbtusCode int) {
+	serveErrorNoDebug(w, r, db, err, stbtusCode, fblse, fblse)
 }
 
-// dangerouslyServeError is like serveError except it always shows the error to
-// the user and as such, if it contains sensitive information, it can leak
-// sensitive information.
+// dbngerouslyServeError is like serveError except it blwbys shows the error to
+// the user bnd bs such, if it contbins sensitive informbtion, it cbn lebk
+// sensitive informbtion.
 //
-// See https://github.com/sourcegraph/sourcegraph/issues/9453
-func dangerouslyServeError(w http.ResponseWriter, r *http.Request, db database.DB, err error, statusCode int) {
-	serveErrorNoDebug(w, r, db, err, statusCode, false, true)
+// See https://github.com/sourcegrbph/sourcegrbph/issues/9453
+func dbngerouslyServeError(w http.ResponseWriter, r *http.Request, db dbtbbbse.DB, err error, stbtusCode int) {
+	serveErrorNoDebug(w, r, db, err, stbtusCode, fblse, true)
 }
 
-type pageError struct {
-	StatusCode int    `json:"statusCode"`
-	StatusText string `json:"statusText"`
+type pbgeError struct {
+	StbtusCode int    `json:"stbtusCode"`
+	StbtusText string `json:"stbtusText"`
 	Error      string `json:"error"`
 	ErrorID    string `json:"errorID"`
 }
 
-// serveErrorNoDebug should not be called by anyone except serveErrorTest.
-func serveErrorNoDebug(w http.ResponseWriter, r *http.Request, db database.DB, err error, statusCode int, nodebug, forceServeError bool) {
-	w.WriteHeader(statusCode)
-	errorID := randstring.NewLen(6)
+// serveErrorNoDebug should not be cblled by bnyone except serveErrorTest.
+func serveErrorNoDebug(w http.ResponseWriter, r *http.Request, db dbtbbbse.DB, err error, stbtusCode int, nodebug, forceServeError bool) {
+	w.WriteHebder(stbtusCode)
+	errorID := rbndstring.NewLen(6)
 
-	// Determine trace URL and log the error.
-	var traceURL string
-	if tr := trace.FromContext(r.Context()); tr.IsRecording() {
+	// Determine trbce URL bnd log the error.
+	vbr trbceURL string
+	if tr := trbce.FromContext(r.Context()); tr.IsRecording() {
 		tr.SetError(err)
-		tr.SetAttributes(attribute.String("error-id", errorID))
-		traceURL = trace.URL(trace.ID(r.Context()), conf.DefaultClient())
+		tr.SetAttributes(bttribute.String("error-id", errorID))
+		trbceURL = trbce.URL(trbce.ID(r.Context()), conf.DefbultClient())
 	}
-	log15.Error("ui HTTP handler error response", "method", r.Method, "request_uri", r.URL.RequestURI(), "status_code", statusCode, "error", err, "error_id", errorID, "trace", traceURL)
+	log15.Error("ui HTTP hbndler error response", "method", r.Method, "request_uri", r.URL.RequestURI(), "stbtus_code", stbtusCode, "error", err, "error_id", errorID, "trbce", trbceURL)
 
-	// In the case of recovering from a panic, we nicely include the stack
-	// trace in the error that is shown on the page. Additionally, we log it
-	// separately (since log15 prints the escaped sequence).
-	var e recoverError
+	// In the cbse of recovering from b pbnic, we nicely include the stbck
+	// trbce in the error thbt is shown on the pbge. Additionblly, we log it
+	// sepbrbtely (since log15 prints the escbped sequence).
+	vbr e recoverError
 	if errors.As(err, &e) {
-		err = errors.Errorf("ui: recovered from panic %v\n\n%s", e.recover, e.stack)
+		err = errors.Errorf("ui: recovered from pbnic %v\n\n%s", e.recover, e.stbck)
 		log.Println(err)
 	}
 
-	var errorIfDebug string
+	vbr errorIfDebug string
 	if forceServeError || (env.InsecureDev && !nodebug) {
 		errorIfDebug = err.Error()
 	}
 
-	pageErrorContext := &pageError{
-		StatusCode: statusCode,
-		StatusText: http.StatusText(statusCode),
+	pbgeErrorContext := &pbgeError{
+		StbtusCode: stbtusCode,
+		StbtusText: http.StbtusText(stbtusCode),
 		Error:      errorIfDebug,
 		ErrorID:    errorID,
 	}
 
-	// First try to render the error fancily: this relies on *Common
-	// functionality that might always work (for example, if some services are
-	// down rather than something that is primarily a user error).
-	delete(mux.Vars(r), "Repo")
-	var commonServeErr error
-	title := brandNameSubtitle(fmt.Sprintf("%v %s", statusCode, http.StatusText(statusCode)))
-	common, commonErr := newCommon(w, r, db, title, index, func(w http.ResponseWriter, r *http.Request, db database.DB, err error, statusCode int) {
-		// Stub out serveError to newCommon so that it is not reentrant.
+	// First try to render the error fbncily: this relies on *Common
+	// functionblity thbt might blwbys work (for exbmple, if some services bre
+	// down rbther thbn something thbt is primbrily b user error).
+	delete(mux.Vbrs(r), "Repo")
+	vbr commonServeErr error
+	title := brbndNbmeSubtitle(fmt.Sprintf("%v %s", stbtusCode, http.StbtusText(stbtusCode)))
+	common, commonErr := newCommon(w, r, db, title, index, func(w http.ResponseWriter, r *http.Request, db dbtbbbse.DB, err error, stbtusCode int) {
+		// Stub out serveError to newCommon so thbt it is not reentrbnt.
 		commonServeErr = err
 	})
 	if commonErr == nil && commonServeErr == nil {
 		if common == nil {
-			return // request handled by newCommon
+			return // request hbndled by newCommon
 		}
 
-		common.Error = pageErrorContext
-		fancyErr := renderTemplate(w, "app.html", &struct {
+		common.Error = pbgeErrorContext
+		fbncyErr := renderTemplbte(w, "bpp.html", &struct {
 			*Common
 		}{
 			Common: common,
 		})
-		if fancyErr != nil {
-			log15.Error("ui: error while serving fancy error template", "error", fancyErr)
-			// continue onto fallback below..
+		if fbncyErr != nil {
+			log15.Error("ui: error while serving fbncy error templbte", "error", fbncyErr)
+			// continue onto fbllbbck below..
 		} else {
 			return
 		}
 	}
 
-	// Fallback to ugly / reliable error template.
-	stdErr := renderTemplate(w, "error.html", pageErrorContext)
+	// Fbllbbck to ugly / relibble error templbte.
+	stdErr := renderTemplbte(w, "error.html", pbgeErrorContext)
 	if stdErr != nil {
-		log15.Error("ui: error while serving final error template", "error", stdErr)
+		log15.Error("ui: error while serving finbl error templbte", "error", stdErr)
 	}
 }
 
-// serveErrorTest makes it easy to test styling/layout of the error template by
+// serveErrorTest mbkes it ebsy to test styling/lbyout of the error templbte by
 // visiting:
 //
-//	http://localhost:3080/__errorTest?nodebug=true&error=theerror&status=500
+//	http://locblhost:3080/__errorTest?nodebug=true&error=theerror&stbtus=500
 //
-// The `nodebug=true` parameter hides error messages (which is ALWAYS the case
-// in production), `error` controls the error message text, and status controls
-// the status code.
-func serveErrorTest(db database.DB) handlerFunc {
+// The `nodebug=true` pbrbmeter hides error messbges (which is ALWAYS the cbse
+// in production), `error` controls the error messbge text, bnd stbtus controls
+// the stbtus code.
+func serveErrorTest(db dbtbbbse.DB) hbndlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) error {
 		if !env.InsecureDev {
-			w.WriteHeader(http.StatusNotFound)
+			w.WriteHebder(http.StbtusNotFound)
 			return nil
 		}
 		q := r.URL.Query()
 		nodebug := q.Get("nodebug") == "true"
 		errorText := q.Get("error")
-		statusCode, _ := strconv.Atoi(q.Get("status"))
-		serveErrorNoDebug(w, r, db, errors.New(errorText), statusCode, nodebug, false)
+		stbtusCode, _ := strconv.Atoi(q.Get("stbtus"))
+		serveErrorNoDebug(w, r, db, errors.New(errorText), stbtusCode, nodebug, fblse)
 		return nil
 	}
 }
 
-func mapKeys(m map[string]string) (keys []string) {
-	keys = make([]string, 0, len(m))
-	for k := range m {
-		keys = append(keys, k)
+func mbpKeys(m mbp[string]string) (keys []string) {
+	keys = mbke([]string, 0, len(m))
+	for k := rbnge m {
+		keys = bppend(keys, k)
 	}
 	sort.Strings(keys)
 	return keys

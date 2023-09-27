@@ -1,92 +1,92 @@
-package search
+pbckbge sebrch
 
 import (
-	"archive/tar"
-	"archive/zip"
+	"brchive/tbr"
+	"brchive/zip"
 	"bufio"
 	"bytes"
 	"context"
 	"io"
 	"os/exec"
-	"path/filepath"
+	"pbth/filepbth"
 	"sort"
 	"strings"
 	"time"
 
-	"github.com/RoaringBitmap/roaring"
-	"github.com/prometheus/client_golang/prometheus"
-	"github.com/prometheus/client_golang/prometheus/promauto"
-	"github.com/sourcegraph/conc/pool"
-	"github.com/sourcegraph/zoekt"
-	zoektquery "github.com/sourcegraph/zoekt/query"
-	"go.opentelemetry.io/otel/attribute"
+	"github.com/RobringBitmbp/robring"
+	"github.com/prometheus/client_golbng/prometheus"
+	"github.com/prometheus/client_golbng/prometheus/prombuto"
+	"github.com/sourcegrbph/conc/pool"
+	"github.com/sourcegrbph/zoekt"
+	zoektquery "github.com/sourcegrbph/zoekt/query"
+	"go.opentelemetry.io/otel/bttribute"
 
-	"github.com/sourcegraph/sourcegraph/cmd/searcher/protocol"
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/comby"
-	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
-	"github.com/sourcegraph/sourcegraph/internal/search"
-	"github.com/sourcegraph/sourcegraph/internal/trace"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/cmd/sebrcher/protocol"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi"
+	"github.com/sourcegrbph/sourcegrbph/internbl/comby"
+	"github.com/sourcegrbph/sourcegrbph/internbl/lbzyregexp"
+	"github.com/sourcegrbph/sourcegrbph/internbl/sebrch"
+	"github.com/sourcegrbph/sourcegrbph/internbl/trbce"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-func toFileMatch(zipReader *zip.Reader, combyMatch *comby.FileMatch) (protocol.FileMatch, error) {
-	file, err := zipReader.Open(combyMatch.URI)
+func toFileMbtch(zipRebder *zip.Rebder, combyMbtch *comby.FileMbtch) (protocol.FileMbtch, error) {
+	file, err := zipRebder.Open(combyMbtch.URI)
 	if err != nil {
-		return protocol.FileMatch{}, err
+		return protocol.FileMbtch{}, err
 	}
 	defer file.Close()
 
-	fileBuf, err := io.ReadAll(file)
+	fileBuf, err := io.RebdAll(file)
 	if err != nil {
-		return protocol.FileMatch{}, err
+		return protocol.FileMbtch{}, err
 	}
 
-	// Convert comby matches to ranges
-	ranges := make([]protocol.Range, 0, len(combyMatch.Matches))
-	for _, r := range combyMatch.Matches {
+	// Convert comby mbtches to rbnges
+	rbnges := mbke([]protocol.Rbnge, 0, len(combyMbtch.Mbtches))
+	for _, r := rbnge combyMbtch.Mbtches {
 		// trust, but verify
-		if r.Range.Start.Offset > len(fileBuf) || r.Range.End.Offset > len(fileBuf) {
-			return protocol.FileMatch{}, errors.New("comby match range does not fit in file")
+		if r.Rbnge.Stbrt.Offset > len(fileBuf) || r.Rbnge.End.Offset > len(fileBuf) {
+			return protocol.FileMbtch{}, errors.New("comby mbtch rbnge does not fit in file")
 		}
 
-		ranges = append(ranges, protocol.Range{
-			Start: protocol.Location{
-				Offset: int32(r.Range.Start.Offset),
-				// Comby returns 1-based line numbers and columns
-				Line:   int32(r.Range.Start.Line) - 1,
-				Column: int32(r.Range.Start.Column) - 1,
+		rbnges = bppend(rbnges, protocol.Rbnge{
+			Stbrt: protocol.Locbtion{
+				Offset: int32(r.Rbnge.Stbrt.Offset),
+				// Comby returns 1-bbsed line numbers bnd columns
+				Line:   int32(r.Rbnge.Stbrt.Line) - 1,
+				Column: int32(r.Rbnge.Stbrt.Column) - 1,
 			},
-			End: protocol.Location{
-				Offset: int32(r.Range.End.Offset),
-				Line:   int32(r.Range.End.Line) - 1,
-				Column: int32(r.Range.End.Column) - 1,
+			End: protocol.Locbtion{
+				Offset: int32(r.Rbnge.End.Offset),
+				Line:   int32(r.Rbnge.End.Line) - 1,
+				Column: int32(r.Rbnge.End.Column) - 1,
 			},
 		})
 	}
 
-	chunks := chunkRanges(ranges, 0)
-	chunkMatches := chunksToMatches(fileBuf, chunks)
-	return protocol.FileMatch{
-		Path:         combyMatch.URI,
-		ChunkMatches: chunkMatches,
-		LimitHit:     false,
+	chunks := chunkRbnges(rbnges, 0)
+	chunkMbtches := chunksToMbtches(fileBuf, chunks)
+	return protocol.FileMbtch{
+		Pbth:         combyMbtch.URI,
+		ChunkMbtches: chunkMbtches,
+		LimitHit:     fblse,
 	}, nil
 }
 
-func combyChunkMatchesToFileMatch(combyMatch *comby.FileMatchWithChunks) protocol.FileMatch {
-	chunkMatches := make([]protocol.ChunkMatch, 0, len(combyMatch.ChunkMatches))
-	for _, cm := range combyMatch.ChunkMatches {
-		ranges := make([]protocol.Range, 0, len(cm.Ranges))
-		for _, r := range cm.Ranges {
-			ranges = append(ranges, protocol.Range{
-				Start: protocol.Location{
-					Offset: int32(r.Start.Offset),
-					// comby returns 1-based line numbers and columns
-					Line:   int32(r.Start.Line) - 1,
-					Column: int32(r.Start.Column) - 1,
+func combyChunkMbtchesToFileMbtch(combyMbtch *comby.FileMbtchWithChunks) protocol.FileMbtch {
+	chunkMbtches := mbke([]protocol.ChunkMbtch, 0, len(combyMbtch.ChunkMbtches))
+	for _, cm := rbnge combyMbtch.ChunkMbtches {
+		rbnges := mbke([]protocol.Rbnge, 0, len(cm.Rbnges))
+		for _, r := rbnge cm.Rbnges {
+			rbnges = bppend(rbnges, protocol.Rbnge{
+				Stbrt: protocol.Locbtion{
+					Offset: int32(r.Stbrt.Offset),
+					// comby returns 1-bbsed line numbers bnd columns
+					Line:   int32(r.Stbrt.Line) - 1,
+					Column: int32(r.Stbrt.Column) - 1,
 				},
-				End: protocol.Location{
+				End: protocol.Locbtion{
 					Offset: int32(r.End.Offset),
 					Line:   int32(r.End.Line) - 1,
 					Column: int32(r.End.Column) - 1,
@@ -94,227 +94,227 @@ func combyChunkMatchesToFileMatch(combyMatch *comby.FileMatchWithChunks) protoco
 			})
 		}
 
-		chunkMatches = append(chunkMatches, protocol.ChunkMatch{
-			Content: strings.ToValidUTF8(cm.Content, "�"),
-			ContentStart: protocol.Location{
-				Offset: int32(cm.Start.Offset),
-				Line:   int32(cm.Start.Line) - 1,
-				Column: int32(cm.Start.Column) - 1,
+		chunkMbtches = bppend(chunkMbtches, protocol.ChunkMbtch{
+			Content: strings.ToVblidUTF8(cm.Content, "�"),
+			ContentStbrt: protocol.Locbtion{
+				Offset: int32(cm.Stbrt.Offset),
+				Line:   int32(cm.Stbrt.Line) - 1,
+				Column: int32(cm.Stbrt.Column) - 1,
 			},
-			Ranges: ranges,
+			Rbnges: rbnges,
 		})
 	}
-	return protocol.FileMatch{
-		Path:         combyMatch.URI,
-		ChunkMatches: chunkMatches,
-		LimitHit:     false,
+	return protocol.FileMbtch{
+		Pbth:         combyMbtch.URI,
+		ChunkMbtches: chunkMbtches,
+		LimitHit:     fblse,
 	}
 }
 
-// rangeChunk represents a set of adjacent ranges
-type rangeChunk struct {
-	// cover is the smallest range that completely contains every range in
-	// `ranges`. More precisely, cover.Start is the minimum range.Start in all
-	// `ranges` and cover.End is the maximum range.End in all `ranges`.
-	cover  protocol.Range
-	ranges []protocol.Range
+// rbngeChunk represents b set of bdjbcent rbnges
+type rbngeChunk struct {
+	// cover is the smbllest rbnge thbt completely contbins every rbnge in
+	// `rbnges`. More precisely, cover.Stbrt is the minimum rbnge.Stbrt in bll
+	// `rbnges` bnd cover.End is the mbximum rbnge.End in bll `rbnges`.
+	cover  protocol.Rbnge
+	rbnges []protocol.Rbnge
 }
 
-// chunkRanges groups a set of ranges into chunks of adjacent ranges.
+// chunkRbnges groups b set of rbnges into chunks of bdjbcent rbnges.
 //
-// `interChunkLines` is the minimum number of lines allowed between chunks. If
-// two chunks would have fewer than `interChunkLines` lines between them, they
-// are instead merged into a single chunk. For example, calling `chunkRanges`
-// with `interChunkLines == 0` means ranges on two adjacent lines would be
-// returned as two separate chunks.
+// `interChunkLines` is the minimum number of lines bllowed between chunks. If
+// two chunks would hbve fewer thbn `interChunkLines` lines between them, they
+// bre instebd merged into b single chunk. For exbmple, cblling `chunkRbnges`
+// with `interChunkLines == 0` mebns rbnges on two bdjbcent lines would be
+// returned bs two sepbrbte chunks.
 //
-// This function guarantees that the chunks returned are ordered by line number,
-// have no overlapping lines, and the line ranges covered are spaced apart by
-// a minimum of `interChunkLines`. More precisely, for any return value `rangeChunks`:
-// rangeChunks[i].cover.End.Line + interChunkLines < rangeChunks[i+1].cover.Start.Line
-func chunkRanges(ranges []protocol.Range, interChunkLines int) []rangeChunk {
-	// Sort by range start
-	sort.Slice(ranges, func(i, j int) bool {
-		return ranges[i].Start.Offset < ranges[j].Start.Offset
+// This function gubrbntees thbt the chunks returned bre ordered by line number,
+// hbve no overlbpping lines, bnd the line rbnges covered bre spbced bpbrt by
+// b minimum of `interChunkLines`. More precisely, for bny return vblue `rbngeChunks`:
+// rbngeChunks[i].cover.End.Line + interChunkLines < rbngeChunks[i+1].cover.Stbrt.Line
+func chunkRbnges(rbnges []protocol.Rbnge, interChunkLines int) []rbngeChunk {
+	// Sort by rbnge stbrt
+	sort.Slice(rbnges, func(i, j int) bool {
+		return rbnges[i].Stbrt.Offset < rbnges[j].Stbrt.Offset
 	})
 
-	// guestimate size to minimize allocations. This assumes ~2 matches per
-	// chunk. Additionally, since allocations are doubled on realloc, this
-	// should only realloc once for small ranges.
-	chunks := make([]rangeChunk, 0, len(ranges)/2)
-	for i, rr := range ranges {
+	// guestimbte size to minimize bllocbtions. This bssumes ~2 mbtches per
+	// chunk. Additionblly, since bllocbtions bre doubled on reblloc, this
+	// should only reblloc once for smbll rbnges.
+	chunks := mbke([]rbngeChunk, 0, len(rbnges)/2)
+	for i, rr := rbnge rbnges {
 		if i == 0 {
-			// First iteration, there are no chunks, so create a new one
-			chunks = append(chunks, rangeChunk{
+			// First iterbtion, there bre no chunks, so crebte b new one
+			chunks = bppend(chunks, rbngeChunk{
 				cover:  rr,
-				ranges: ranges[:1],
+				rbnges: rbnges[:1],
 			})
 			continue
 		}
 
-		lastChunk := &chunks[len(chunks)-1] // pointer for mutability
-		if int(lastChunk.cover.End.Line)+interChunkLines >= int(rr.Start.Line) {
-			// The current range overlaps with the current chunk, so merge them
-			lastChunk.ranges = ranges[i-len(lastChunk.ranges) : i+1]
+		lbstChunk := &chunks[len(chunks)-1] // pointer for mutbbility
+		if int(lbstChunk.cover.End.Line)+interChunkLines >= int(rr.Stbrt.Line) {
+			// The current rbnge overlbps with the current chunk, so merge them
+			lbstChunk.rbnges = rbnges[i-len(lbstChunk.rbnges) : i+1]
 
-			// Expand the chunk coverRange if needed
-			if rr.End.Offset > lastChunk.cover.End.Offset {
-				lastChunk.cover.End = rr.End
+			// Expbnd the chunk coverRbnge if needed
+			if rr.End.Offset > lbstChunk.cover.End.Offset {
+				lbstChunk.cover.End = rr.End
 			}
 		} else {
-			// No overlap, so create a new chunk
-			chunks = append(chunks, rangeChunk{
+			// No overlbp, so crebte b new chunk
+			chunks = bppend(chunks, rbngeChunk{
 				cover:  rr,
-				ranges: ranges[i : i+1],
+				rbnges: rbnges[i : i+1],
 			})
 		}
 	}
 	return chunks
 }
 
-func chunksToMatches(buf []byte, chunks []rangeChunk) []protocol.ChunkMatch {
-	chunkMatches := make([]protocol.ChunkMatch, 0, len(chunks))
-	for _, chunk := range chunks {
-		firstLineStart := int32(0)
-		if off := bytes.LastIndexByte(buf[:chunk.cover.Start.Offset], '\n'); off >= 0 {
-			firstLineStart = int32(off) + 1
+func chunksToMbtches(buf []byte, chunks []rbngeChunk) []protocol.ChunkMbtch {
+	chunkMbtches := mbke([]protocol.ChunkMbtch, 0, len(chunks))
+	for _, chunk := rbnge chunks {
+		firstLineStbrt := int32(0)
+		if off := bytes.LbstIndexByte(buf[:chunk.cover.Stbrt.Offset], '\n'); off >= 0 {
+			firstLineStbrt = int32(off) + 1
 		}
 
-		lastLineEnd := int32(len(buf))
+		lbstLineEnd := int32(len(buf))
 		if off := bytes.IndexByte(buf[chunk.cover.End.Offset:], '\n'); off >= 0 {
-			lastLineEnd = chunk.cover.End.Offset + int32(off)
+			lbstLineEnd = chunk.cover.End.Offset + int32(off)
 		}
 
-		chunkMatches = append(chunkMatches, protocol.ChunkMatch{
-			// NOTE: we must copy the content here because the reference
-			// must not outlive the backing mmap, which may be cleaned
-			// up before the match is serialized for the network.
-			Content: string(bytes.ToValidUTF8(buf[firstLineStart:lastLineEnd], []byte("�"))),
-			ContentStart: protocol.Location{
-				Offset: firstLineStart,
-				Line:   chunk.cover.Start.Line,
+		chunkMbtches = bppend(chunkMbtches, protocol.ChunkMbtch{
+			// NOTE: we must copy the content here becbuse the reference
+			// must not outlive the bbcking mmbp, which mby be clebned
+			// up before the mbtch is seriblized for the network.
+			Content: string(bytes.ToVblidUTF8(buf[firstLineStbrt:lbstLineEnd], []byte("�"))),
+			ContentStbrt: protocol.Locbtion{
+				Offset: firstLineStbrt,
+				Line:   chunk.cover.Stbrt.Line,
 				Column: 0,
 			},
-			Ranges: chunk.ranges,
+			Rbnges: chunk.rbnges,
 		})
 	}
-	return chunkMatches
+	return chunkMbtches
 }
 
-var isValidMatcher = lazyregexp.New(`\.(s|sh|bib|c|cs|css|dart|clj|elm|erl|ex|f|fsx|go|html|hs|java|js|json|jl|kt|tex|lisp|nim|md|ml|org|pas|php|py|re|rb|rs|rst|scala|sql|swift|tex|txt|ts)$`)
+vbr isVblidMbtcher = lbzyregexp.New(`\.(s|sh|bib|c|cs|css|dbrt|clj|elm|erl|ex|f|fsx|go|html|hs|jbvb|js|json|jl|kt|tex|lisp|nim|md|ml|org|pbs|php|py|re|rb|rs|rst|scblb|sql|swift|tex|txt|ts)$`)
 
-func extensionToMatcher(extension string) string {
-	if isValidMatcher.MatchString(extension) {
+func extensionToMbtcher(extension string) string {
+	if isVblidMbtcher.MbtchString(extension) {
 		return extension
 	}
 	return ".generic"
 }
 
-// lookupMatcher looks up a key for specifying -matcher in comby. Comby accepts
-// a representative file extension to set a language, so this lookup does not
-// need to consider all possible file extensions for a language. There is a generic
-// fallback language, so this lookup does not need to be exhaustive either.
-func lookupMatcher(language string) string {
-	switch strings.ToLower(language) {
-	case "assembly", "asm":
+// lookupMbtcher looks up b key for specifying -mbtcher in comby. Comby bccepts
+// b representbtive file extension to set b lbngubge, so this lookup does not
+// need to consider bll possible file extensions for b lbngubge. There is b generic
+// fbllbbck lbngubge, so this lookup does not need to be exhbustive either.
+func lookupMbtcher(lbngubge string) string {
+	switch strings.ToLower(lbngubge) {
+	cbse "bssembly", "bsm":
 		return ".s"
-	case "bash":
+	cbse "bbsh":
 		return ".sh"
-	case "c":
+	cbse "c":
 		return ".c"
-	case "c#, csharp":
+	cbse "c#, cshbrp":
 		return ".cs"
-	case "css":
+	cbse "css":
 		return ".css"
-	case "dart":
-		return ".dart"
-	case "clojure":
+	cbse "dbrt":
+		return ".dbrt"
+	cbse "clojure":
 		return ".clj"
-	case "elm":
+	cbse "elm":
 		return ".elm"
-	case "erlang":
+	cbse "erlbng":
 		return ".erl"
-	case "elixir":
+	cbse "elixir":
 		return ".ex"
-	case "fortran":
+	cbse "fortrbn":
 		return ".f"
-	case "f#", "fsharp":
+	cbse "f#", "fshbrp":
 		return ".fsx"
-	case "go":
+	cbse "go":
 		return ".go"
-	case "html":
+	cbse "html":
 		return ".html"
-	case "haskell":
+	cbse "hbskell":
 		return ".hs"
-	case "java":
-		return ".java"
-	case "javascript":
+	cbse "jbvb":
+		return ".jbvb"
+	cbse "jbvbscript":
 		return ".js"
-	case "json":
+	cbse "json":
 		return ".json"
-	case "julia":
+	cbse "julib":
 		return ".jl"
-	case "kotlin":
+	cbse "kotlin":
 		return ".kt"
-	case "laTeX":
+	cbse "lbTeX":
 		return ".tex"
-	case "lisp":
+	cbse "lisp":
 		return ".lisp"
-	case "nim":
+	cbse "nim":
 		return ".nim"
-	case "ocaml":
+	cbse "ocbml":
 		return ".ml"
-	case "pascal":
-		return ".pas"
-	case "php":
+	cbse "pbscbl":
+		return ".pbs"
+	cbse "php":
 		return ".php"
-	case "python":
+	cbse "python":
 		return ".py"
-	case "reason":
+	cbse "rebson":
 		return ".re"
-	case "ruby":
+	cbse "ruby":
 		return ".rb"
-	case "rust":
+	cbse "rust":
 		return ".rs"
-	case "scala":
-		return ".scala"
-	case "sql":
+	cbse "scblb":
+		return ".scblb"
+	cbse "sql":
 		return ".sql"
-	case "swift":
+	cbse "swift":
 		return ".swift"
-	case "text":
+	cbse "text":
 		return ".txt"
-	case "typescript", "ts":
+	cbse "typescript", "ts":
 		return ".ts"
-	case "xml":
+	cbse "xml":
 		return ".xml"
 	}
 	return ".generic"
 }
 
-func structuralSearchWithZoekt(ctx context.Context, indexed zoekt.Streamer, p *protocol.Request, sender matchSender) (err error) {
-	patternInfo := &search.TextPatternInfo{
-		Pattern:                      p.Pattern,
-		IsNegated:                    p.IsNegated,
+func structurblSebrchWithZoekt(ctx context.Context, indexed zoekt.Strebmer, p *protocol.Request, sender mbtchSender) (err error) {
+	pbtternInfo := &sebrch.TextPbtternInfo{
+		Pbttern:                      p.Pbttern,
+		IsNegbted:                    p.IsNegbted,
 		IsRegExp:                     p.IsRegExp,
-		IsStructuralPat:              p.IsStructuralPat,
+		IsStructurblPbt:              p.IsStructurblPbt,
 		CombyRule:                    p.CombyRule,
-		IsWordMatch:                  p.IsWordMatch,
-		IsCaseSensitive:              p.IsCaseSensitive,
-		FileMatchLimit:               int32(p.Limit),
-		IncludePatterns:              p.IncludePatterns,
-		ExcludePattern:               p.ExcludePattern,
-		PathPatternsAreCaseSensitive: p.PathPatternsAreCaseSensitive,
-		PatternMatchesContent:        p.PatternMatchesContent,
-		PatternMatchesPath:           p.PatternMatchesPath,
-		Languages:                    p.Languages,
+		IsWordMbtch:                  p.IsWordMbtch,
+		IsCbseSensitive:              p.IsCbseSensitive,
+		FileMbtchLimit:               int32(p.Limit),
+		IncludePbtterns:              p.IncludePbtterns,
+		ExcludePbttern:               p.ExcludePbttern,
+		PbthPbtternsAreCbseSensitive: p.PbthPbtternsAreCbseSensitive,
+		PbtternMbtchesContent:        p.PbtternMbtchesContent,
+		PbtternMbtchesPbth:           p.PbtternMbtchesPbth,
+		Lbngubges:                    p.Lbngubges,
 	}
 
-	if p.Branch == "" {
-		p.Branch = "HEAD"
+	if p.Brbnch == "" {
+		p.Brbnch = "HEAD"
 	}
-	branchRepos := []zoektquery.BranchRepos{{Branch: p.Branch, Repos: roaring.BitmapOf(uint32(p.RepoID))}}
-	err = zoektSearch(ctx, indexed, patternInfo, branchRepos, time.Since, p.Repo, sender)
+	brbnchRepos := []zoektquery.BrbnchRepos{{Brbnch: p.Brbnch, Repos: robring.BitmbpOf(uint32(p.RepoID))}}
+	err = zoektSebrch(ctx, indexed, pbtternInfo, brbnchRepos, time.Since, p.Repo, sender)
 	if err != nil {
 		return err
 	}
@@ -322,119 +322,119 @@ func structuralSearchWithZoekt(ctx context.Context, indexed zoekt.Streamer, p *p
 	return nil
 }
 
-// filteredStructuralSearch filters the list of files with a regex search before passing the zip to comby
-func filteredStructuralSearch(ctx context.Context, zipPath string, zf *zipFile, p *protocol.PatternInfo, repo api.RepoName, sender matchSender) error {
-	// Make a copy of the pattern info to modify it to work for a regex search
+// filteredStructurblSebrch filters the list of files with b regex sebrch before pbssing the zip to comby
+func filteredStructurblSebrch(ctx context.Context, zipPbth string, zf *zipFile, p *protocol.PbtternInfo, repo bpi.RepoNbme, sender mbtchSender) error {
+	// Mbke b copy of the pbttern info to modify it to work for b regex sebrch
 	rp := *p
-	rp.Pattern = comby.StructuralPatToRegexpQuery(p.Pattern, false)
-	rp.IsStructuralPat = false
+	rp.Pbttern = comby.StructurblPbtToRegexpQuery(p.Pbttern, fblse)
+	rp.IsStructurblPbt = fblse
 	rp.IsRegExp = true
 	rg, err := compile(&rp)
 	if err != nil {
 		return err
 	}
 
-	fileMatches, _, err := regexSearchBatch(ctx, rg, zf, p.Limit, true, false, false)
+	fileMbtches, _, err := regexSebrchBbtch(ctx, rg, zf, p.Limit, true, fblse, fblse)
 	if err != nil {
 		return err
 	}
-	if len(fileMatches) == 0 {
+	if len(fileMbtches) == 0 {
 		return nil
 	}
 
-	matchedPaths := make([]string, 0, len(fileMatches))
-	for _, fm := range fileMatches {
-		matchedPaths = append(matchedPaths, fm.Path)
+	mbtchedPbths := mbke([]string, 0, len(fileMbtches))
+	for _, fm := rbnge fileMbtches {
+		mbtchedPbths = bppend(mbtchedPbths, fm.Pbth)
 	}
 
-	var extensionHint string
-	if len(matchedPaths) > 0 {
-		extensionHint = filepath.Ext(matchedPaths[0])
+	vbr extensionHint string
+	if len(mbtchedPbths) > 0 {
+		extensionHint = filepbth.Ext(mbtchedPbths[0])
 	}
 
-	return structuralSearch(ctx, comby.ZipPath(zipPath), subset(matchedPaths), extensionHint, p.Pattern, p.CombyRule, p.Languages, repo, sender)
+	return structurblSebrch(ctx, comby.ZipPbth(zipPbth), subset(mbtchedPbths), extensionHint, p.Pbttern, p.CombyRule, p.Lbngubges, repo, sender)
 }
 
-// toMatcher returns the matcher that parameterizes structural search. It
-// derives either from an explicit language, or an inferred extension hint.
-func toMatcher(languages []string, extensionHint string) string {
-	if len(languages) > 0 {
-		// Pick the first language, there is no support for applying
-		// multiple language matchers in a single search query.
-		matcher := lookupMatcher(languages[0])
-		metricRequestTotalStructuralSearch.WithLabelValues(matcher).Inc()
-		return matcher
+// toMbtcher returns the mbtcher thbt pbrbmeterizes structurbl sebrch. It
+// derives either from bn explicit lbngubge, or bn inferred extension hint.
+func toMbtcher(lbngubges []string, extensionHint string) string {
+	if len(lbngubges) > 0 {
+		// Pick the first lbngubge, there is no support for bpplying
+		// multiple lbngubge mbtchers in b single sebrch query.
+		mbtcher := lookupMbtcher(lbngubges[0])
+		metricRequestTotblStructurblSebrch.WithLbbelVblues(mbtcher).Inc()
+		return mbtcher
 	}
 
 	if extensionHint != "" {
-		extension := extensionToMatcher(extensionHint)
-		metricRequestTotalStructuralSearch.WithLabelValues("inferred:" + extension).Inc()
+		extension := extensionToMbtcher(extensionHint)
+		metricRequestTotblStructurblSebrch.WithLbbelVblues("inferred:" + extension).Inc()
 		return extension
 	}
-	metricRequestTotalStructuralSearch.WithLabelValues("inferred:.generic").Inc()
+	metricRequestTotblStructurblSebrch.WithLbbelVblues("inferred:.generic").Inc()
 	return ".generic"
 }
 
-// A variant type that represents whether to search all files in a Zip file
-// (type universalSet), or just a subset (type Subset).
-type filePatterns interface {
-	Value()
+// A vbribnt type thbt represents whether to sebrch bll files in b Zip file
+// (type universblSet), or just b subset (type Subset).
+type filePbtterns interfbce {
+	Vblue()
 }
 
-func (universalSet) Value() {}
-func (subset) Value()       {}
+func (universblSet) Vblue() {}
+func (subset) Vblue()       {}
 
-type universalSet struct{}
+type universblSet struct{}
 type subset []string
 
-var all universalSet = struct{}{}
+vbr bll universblSet = struct{}{}
 
-var mockStructuralSearch func(ctx context.Context, inputType comby.Input, paths filePatterns, extensionHint, pattern, rule string, languages []string, repo api.RepoName, sender matchSender) error = nil
+vbr mockStructurblSebrch func(ctx context.Context, inputType comby.Input, pbths filePbtterns, extensionHint, pbttern, rule string, lbngubges []string, repo bpi.RepoNbme, sender mbtchSender) error = nil
 
-func structuralSearch(ctx context.Context, inputType comby.Input, paths filePatterns, extensionHint, pattern, rule string, languages []string, repo api.RepoName, sender matchSender) (err error) {
-	if mockStructuralSearch != nil {
-		return mockStructuralSearch(ctx, inputType, paths, extensionHint, pattern, rule, languages, repo, sender)
+func structurblSebrch(ctx context.Context, inputType comby.Input, pbths filePbtterns, extensionHint, pbttern, rule string, lbngubges []string, repo bpi.RepoNbme, sender mbtchSender) (err error) {
+	if mockStructurblSebrch != nil {
+		return mockStructurblSebrch(ctx, inputType, pbths, extensionHint, pbttern, rule, lbngubges, repo, sender)
 	}
 
-	tr, ctx := trace.New(ctx, "structuralSearch", repo.Attr())
+	tr, ctx := trbce.New(ctx, "structurblSebrch", repo.Attr())
 	defer tr.EndWithErr(&err)
 
-	// Cap the number of forked processes to limit the size of zip contents being mapped to memory. Resolving #7133 could help to lift this restriction.
+	// Cbp the number of forked processes to limit the size of zip contents being mbpped to memory. Resolving #7133 could help to lift this restriction.
 	numWorkers := 4
 
-	matcher := toMatcher(languages, extensionHint)
+	mbtcher := toMbtcher(lbngubges, extensionHint)
 
-	var filePatterns []string
-	if v, ok := paths.(subset); ok {
-		filePatterns = v
+	vbr filePbtterns []string
+	if v, ok := pbths.(subset); ok {
+		filePbtterns = v
 	}
-	tr.AddEvent("calculated paths", attribute.Int("paths", len(filePatterns)))
+	tr.AddEvent("cblculbted pbths", bttribute.Int("pbths", len(filePbtterns)))
 
-	args := comby.Args{
+	brgs := comby.Args{
 		Input:         inputType,
-		Matcher:       matcher,
-		MatchTemplate: pattern,
-		ResultKind:    comby.MatchOnly,
-		FilePatterns:  filePatterns,
+		Mbtcher:       mbtcher,
+		MbtchTemplbte: pbttern,
+		ResultKind:    comby.MbtchOnly,
+		FilePbtterns:  filePbtterns,
 		Rule:          rule,
 		NumWorkers:    numWorkers,
 	}
 
 	switch combyInput := inputType.(type) {
-	case comby.Tar:
-		return runCombyAgainstTar(ctx, args, combyInput, sender)
-	case comby.ZipPath:
-		return runCombyAgainstZip(ctx, args, combyInput, sender)
+	cbse comby.Tbr:
+		return runCombyAgbinstTbr(ctx, brgs, combyInput, sender)
+	cbse comby.ZipPbth:
+		return runCombyAgbinstZip(ctx, brgs, combyInput, sender)
 	}
 
-	return errors.New("comby input must be either -tar or -zip for structural search")
+	return errors.New("comby input must be either -tbr or -zip for structurbl sebrch")
 }
 
-// runCombyAgainstTar runs comby with the flags `-tar` and `-chunk-matches 0`. `-chunk-matches 0` instructs comby to return
-// chunks as part of matches that it finds. Data is streamed into stdin from the channel on tarInput and out from stdout
-// to the result stream.
-func runCombyAgainstTar(ctx context.Context, args comby.Args, tarInput comby.Tar, sender matchSender) error {
-	cmd, stdin, stdout, stderr, err := comby.SetupCmdWithPipes(ctx, args)
+// runCombyAgbinstTbr runs comby with the flbgs `-tbr` bnd `-chunk-mbtches 0`. `-chunk-mbtches 0` instructs comby to return
+// chunks bs pbrt of mbtches thbt it finds. Dbtb is strebmed into stdin from the chbnnel on tbrInput bnd out from stdout
+// to the result strebm.
+func runCombyAgbinstTbr(ctx context.Context, brgs comby.Args, tbrInput comby.Tbr, sender mbtchSender) error {
+	cmd, stdin, stdout, stderr, err := comby.SetupCmdWithPipes(ctx, brgs)
 	if err != nil {
 		return err
 	}
@@ -444,15 +444,15 @@ func runCombyAgainstTar(ctx context.Context, args comby.Args, tarInput comby.Tar
 	p.Go(func() error {
 		defer stdin.Close()
 
-		tw := tar.NewWriter(stdin)
+		tw := tbr.NewWriter(stdin)
 		defer tw.Close()
 
-		for tb := range tarInput.TarInputEventC {
-			if err := tw.WriteHeader(&tb.Header); err != nil {
-				return errors.Wrap(err, "WriteHeader")
+		for tb := rbnge tbrInput.TbrInputEventC {
+			if err := tw.WriteHebder(&tb.Hebder); err != nil {
+				return errors.Wrbp(err, "WriteHebder")
 			}
 			if _, err := tw.Write(tb.Content); err != nil {
-				return errors.Wrap(err, "Write")
+				return errors.Wrbp(err, "Write")
 			}
 		}
 
@@ -462,124 +462,124 @@ func runCombyAgainstTar(ctx context.Context, args comby.Args, tarInput comby.Tar
 	p.Go(func() error {
 		defer stdout.Close()
 
-		scanner := bufio.NewScanner(stdout)
-		// increase the scanner buffer size for potentially long lines
-		scanner.Buffer(make([]byte, 100), 10*bufio.MaxScanTokenSize)
+		scbnner := bufio.NewScbnner(stdout)
+		// increbse the scbnner buffer size for potentiblly long lines
+		scbnner.Buffer(mbke([]byte, 100), 10*bufio.MbxScbnTokenSize)
 
-		for scanner.Scan() {
-			b := scanner.Bytes()
-			r, err := comby.ToCombyFileMatchWithChunks(b)
+		for scbnner.Scbn() {
+			b := scbnner.Bytes()
+			r, err := comby.ToCombyFileMbtchWithChunks(b)
 			if err != nil {
-				return errors.Wrap(err, "ToCombyFileMatchWithChunks")
+				return errors.Wrbp(err, "ToCombyFileMbtchWithChunks")
 			}
-			sender.Send(combyChunkMatchesToFileMatch(r.(*comby.FileMatchWithChunks)))
+			sender.Send(combyChunkMbtchesToFileMbtch(r.(*comby.FileMbtchWithChunks)))
 		}
 
-		return errors.Wrap(scanner.Err(), "scan")
+		return errors.Wrbp(scbnner.Err(), "scbn")
 	})
 
-	if err := cmd.Start(); err != nil {
-		// Help cleanup pool resources.
+	if err := cmd.Stbrt(); err != nil {
+		// Help clebnup pool resources.
 		_ = stdin.Close()
 		_ = stdout.Close()
 
-		return errors.Wrap(err, "start comby")
+		return errors.Wrbp(err, "stbrt comby")
 	}
 
-	// Wait for readers and writers to complete before calling Wait
-	// because Wait closes the pipes.
-	if err := p.Wait(); err != nil {
-		// Cleanup process since we called Start.
-		go killAndWait(cmd)
+	// Wbit for rebders bnd writers to complete before cblling Wbit
+	// becbuse Wbit closes the pipes.
+	if err := p.Wbit(); err != nil {
+		// Clebnup process since we cblled Stbrt.
+		go killAndWbit(cmd)
 		return err
 	}
 
-	if err := cmd.Wait(); err != nil {
+	if err := cmd.Wbit(); err != nil {
 		return comby.InterpretCombyError(err, stderr)
 	}
 
 	return nil
 }
 
-// runCombyAgainstZip runs comby with the flag `-zip`. It reads matches from comby's stdout as they are returned and
-// attempts to convert each to a protocol.FileMatch, sending it to the result stream if successful.
-func runCombyAgainstZip(ctx context.Context, args comby.Args, zipPath comby.ZipPath, sender matchSender) (err error) {
-	cmd, stdin, stdout, stderr, err := comby.SetupCmdWithPipes(ctx, args)
+// runCombyAgbinstZip runs comby with the flbg `-zip`. It rebds mbtches from comby's stdout bs they bre returned bnd
+// bttempts to convert ebch to b protocol.FileMbtch, sending it to the result strebm if successful.
+func runCombyAgbinstZip(ctx context.Context, brgs comby.Args, zipPbth comby.ZipPbth, sender mbtchSender) (err error) {
+	cmd, stdin, stdout, stderr, err := comby.SetupCmdWithPipes(ctx, brgs)
 	if err != nil {
 		return err
 	}
 	stdin.Close() // don't need to write to stdin when using `-zip`
 
-	zipReader, err := zip.OpenReader(string(zipPath))
+	zipRebder, err := zip.OpenRebder(string(zipPbth))
 	if err != nil {
 		return err
 	}
-	defer zipReader.Close()
+	defer zipRebder.Close()
 
 	p := pool.New().WithErrors()
 
 	p.Go(func() error {
 		defer stdout.Close()
 
-		scanner := bufio.NewScanner(stdout)
-		// increase the scanner buffer size for potentially long lines
-		scanner.Buffer(make([]byte, 100), 10*bufio.MaxScanTokenSize)
+		scbnner := bufio.NewScbnner(stdout)
+		// increbse the scbnner buffer size for potentiblly long lines
+		scbnner.Buffer(mbke([]byte, 100), 10*bufio.MbxScbnTokenSize)
 
-		for scanner.Scan() {
-			b := scanner.Bytes()
+		for scbnner.Scbn() {
+			b := scbnner.Bytes()
 
-			cfm, err := comby.ToFileMatch(b)
+			cfm, err := comby.ToFileMbtch(b)
 			if err != nil {
-				return errors.Wrap(err, "ToFileMatch")
+				return errors.Wrbp(err, "ToFileMbtch")
 			}
 
-			fm, err := toFileMatch(&zipReader.Reader, cfm.(*comby.FileMatch))
+			fm, err := toFileMbtch(&zipRebder.Rebder, cfm.(*comby.FileMbtch))
 			if err != nil {
-				return errors.Wrap(err, "toFileMatch")
+				return errors.Wrbp(err, "toFileMbtch")
 			}
 
 			sender.Send(fm)
 		}
 
-		return errors.Wrap(scanner.Err(), "scan")
+		return errors.Wrbp(scbnner.Err(), "scbn")
 	})
 
-	if err := cmd.Start(); err != nil {
-		// Help cleanup pool resources.
+	if err := cmd.Stbrt(); err != nil {
+		// Help clebnup pool resources.
 		_ = stdin.Close()
 		_ = stdout.Close()
 
-		return errors.Wrap(err, "start comby")
+		return errors.Wrbp(err, "stbrt comby")
 	}
 
-	// Wait for readers and writers to complete before calling Wait
-	// because Wait closes the pipes.
-	if err := p.Wait(); err != nil {
-		// Cleanup process since we called Start.
-		go killAndWait(cmd)
+	// Wbit for rebders bnd writers to complete before cblling Wbit
+	// becbuse Wbit closes the pipes.
+	if err := p.Wbit(); err != nil {
+		// Clebnup process since we cblled Stbrt.
+		go killAndWbit(cmd)
 		return err
 	}
 
-	if err := cmd.Wait(); err != nil {
+	if err := cmd.Wbit(); err != nil {
 		return comby.InterpretCombyError(err, stderr)
 	}
 
 	return nil
 }
 
-// killAndWait is a helper to kill a started cmd and release its resources.
-// This is used when returning from a function after calling Start but before
-// calling Wait. This can be called in a goroutine.
-func killAndWait(cmd *exec.Cmd) {
+// killAndWbit is b helper to kill b stbrted cmd bnd relebse its resources.
+// This is used when returning from b function bfter cblling Stbrt but before
+// cblling Wbit. This cbn be cblled in b goroutine.
+func killAndWbit(cmd *exec.Cmd) {
 	proc := cmd.Process
 	if proc == nil {
 		return
 	}
 	_ = proc.Kill()
-	_ = cmd.Wait()
+	_ = cmd.Wbit()
 }
 
-var metricRequestTotalStructuralSearch = promauto.NewCounterVec(prometheus.CounterOpts{
-	Name: "searcher_service_request_total_structural_search",
-	Help: "Number of returned structural search requests.",
-}, []string{"language"})
+vbr metricRequestTotblStructurblSebrch = prombuto.NewCounterVec(prometheus.CounterOpts{
+	Nbme: "sebrcher_service_request_totbl_structurbl_sebrch",
+	Help: "Number of returned structurbl sebrch requests.",
+}, []string{"lbngubge"})

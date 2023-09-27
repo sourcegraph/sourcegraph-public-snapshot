@@ -1,461 +1,461 @@
-package reconciler
+pbckbge reconciler
 
 import (
 	"testing"
 
-	bt "github.com/sourcegraph/sourcegraph/internal/batches/testing"
-	btypes "github.com/sourcegraph/sourcegraph/internal/batches/types"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc"
-	"github.com/sourcegraph/sourcegraph/lib/pointers"
+	bt "github.com/sourcegrbph/sourcegrbph/internbl/bbtches/testing"
+	btypes "github.com/sourcegrbph/sourcegrbph/internbl/bbtches/types"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc"
+	"github.com/sourcegrbph/sourcegrbph/lib/pointers"
 )
 
-func TestDetermineReconcilerPlan(t *testing.T) {
-	t.Parallel()
+func TestDetermineReconcilerPlbn(t *testing.T) {
+	t.Pbrbllel()
 
 	tcs := []struct {
-		name           string
+		nbme           string
 		previousSpec   *bt.TestSpecOpts
 		currentSpec    *bt.TestSpecOpts
-		changeset      bt.TestChangesetOpts
-		wantOperations Operations
+		chbngeset      bt.TestChbngesetOpts
+		wbntOperbtions Operbtions
 	}{
 		{
-			name:        "publish true",
+			nbme:        "publish true",
 			currentSpec: &bt.TestSpecOpts{Published: true},
-			changeset: bt.TestChangesetOpts{
-				PublicationState: btypes.ChangesetPublicationStateUnpublished,
+			chbngeset: bt.TestChbngesetOpts{
+				PublicbtionStbte: btypes.ChbngesetPublicbtionStbteUnpublished,
 			},
-			wantOperations: Operations{
-				btypes.ReconcilerOperationPush,
-				btypes.ReconcilerOperationPublish,
+			wbntOperbtions: Operbtions{
+				btypes.ReconcilerOperbtionPush,
+				btypes.ReconcilerOperbtionPublish,
 			},
 		},
 		{
-			name:        "publish as draft",
-			currentSpec: &bt.TestSpecOpts{Published: "draft"},
-			changeset: bt.TestChangesetOpts{
-				PublicationState: btypes.ChangesetPublicationStateUnpublished,
+			nbme:        "publish bs drbft",
+			currentSpec: &bt.TestSpecOpts{Published: "drbft"},
+			chbngeset: bt.TestChbngesetOpts{
+				PublicbtionStbte: btypes.ChbngesetPublicbtionStbteUnpublished,
 			},
-			wantOperations: Operations{btypes.ReconcilerOperationPush, btypes.ReconcilerOperationPublishDraft},
+			wbntOperbtions: Operbtions{btypes.ReconcilerOperbtionPush, btypes.ReconcilerOperbtionPublishDrbft},
 		},
 		{
-			name:        "publish false",
-			currentSpec: &bt.TestSpecOpts{Published: false},
-			changeset: bt.TestChangesetOpts{
-				PublicationState: btypes.ChangesetPublicationStateUnpublished,
+			nbme:        "publish fblse",
+			currentSpec: &bt.TestSpecOpts{Published: fblse},
+			chbngeset: bt.TestChbngesetOpts{
+				PublicbtionStbte: btypes.ChbngesetPublicbtionStbteUnpublished,
 			},
-			wantOperations: Operations{},
+			wbntOperbtions: Operbtions{},
 		},
 		{
-			name:        "draft but unsupported",
-			currentSpec: &bt.TestSpecOpts{Published: "draft"},
-			changeset: bt.TestChangesetOpts{
-				ExternalServiceType: extsvc.TypeBitbucketServer,
-				PublicationState:    btypes.ChangesetPublicationStateUnpublished,
+			nbme:        "drbft but unsupported",
+			currentSpec: &bt.TestSpecOpts{Published: "drbft"},
+			chbngeset: bt.TestChbngesetOpts{
+				ExternblServiceType: extsvc.TypeBitbucketServer,
+				PublicbtionStbte:    btypes.ChbngesetPublicbtionStbteUnpublished,
 			},
-			// should be a noop
-			wantOperations: Operations{},
+			// should be b noop
+			wbntOperbtions: Operbtions{},
 		},
 		{
-			name:         "draft to publish true",
-			previousSpec: &bt.TestSpecOpts{Published: "draft"},
+			nbme:         "drbft to publish true",
+			previousSpec: &bt.TestSpecOpts{Published: "drbft"},
 			currentSpec:  &bt.TestSpecOpts{Published: true},
-			changeset: bt.TestChangesetOpts{
-				PublicationState: btypes.ChangesetPublicationStatePublished,
+			chbngeset: bt.TestChbngesetOpts{
+				PublicbtionStbte: btypes.ChbngesetPublicbtionStbtePublished,
 			},
-			wantOperations: Operations{btypes.ReconcilerOperationUndraft},
+			wbntOperbtions: Operbtions{btypes.ReconcilerOperbtionUndrbft},
 		},
 		{
-			name:         "draft to publish true on unpublished changeset",
-			previousSpec: &bt.TestSpecOpts{Published: "draft"},
+			nbme:         "drbft to publish true on unpublished chbngeset",
+			previousSpec: &bt.TestSpecOpts{Published: "drbft"},
 			currentSpec:  &bt.TestSpecOpts{Published: true},
-			changeset: bt.TestChangesetOpts{
-				PublicationState: btypes.ChangesetPublicationStateUnpublished,
+			chbngeset: bt.TestChbngesetOpts{
+				PublicbtionStbte: btypes.ChbngesetPublicbtionStbteUnpublished,
 			},
-			wantOperations: Operations{btypes.ReconcilerOperationPush, btypes.ReconcilerOperationPublish},
+			wbntOperbtions: Operbtions{btypes.ReconcilerOperbtionPush, btypes.ReconcilerOperbtionPublish},
 		},
 		{
-			name:        "publish nil; no ui state",
+			nbme:        "publish nil; no ui stbte",
 			currentSpec: &bt.TestSpecOpts{Published: nil},
-			changeset: bt.TestChangesetOpts{
-				PublicationState: btypes.ChangesetPublicationStateUnpublished,
+			chbngeset: bt.TestChbngesetOpts{
+				PublicbtionStbte: btypes.ChbngesetPublicbtionStbteUnpublished,
 			},
-			wantOperations: Operations{},
+			wbntOperbtions: Operbtions{},
 		},
 		{
-			name:        "publish nil; unpublished ui state",
+			nbme:        "publish nil; unpublished ui stbte",
 			currentSpec: &bt.TestSpecOpts{Published: nil},
-			changeset: bt.TestChangesetOpts{
-				PublicationState:   btypes.ChangesetPublicationStateUnpublished,
-				UiPublicationState: pointers.Ptr(btypes.ChangesetUiPublicationStateUnpublished),
+			chbngeset: bt.TestChbngesetOpts{
+				PublicbtionStbte:   btypes.ChbngesetPublicbtionStbteUnpublished,
+				UiPublicbtionStbte: pointers.Ptr(btypes.ChbngesetUiPublicbtionStbteUnpublished),
 			},
-			wantOperations: Operations{},
+			wbntOperbtions: Operbtions{},
 		},
 		{
-			name:        "publish nil; draft ui state",
+			nbme:        "publish nil; drbft ui stbte",
 			currentSpec: &bt.TestSpecOpts{Published: nil},
-			changeset: bt.TestChangesetOpts{
-				PublicationState:   btypes.ChangesetPublicationStateUnpublished,
-				UiPublicationState: pointers.Ptr(btypes.ChangesetUiPublicationStateDraft),
+			chbngeset: bt.TestChbngesetOpts{
+				PublicbtionStbte:   btypes.ChbngesetPublicbtionStbteUnpublished,
+				UiPublicbtionStbte: pointers.Ptr(btypes.ChbngesetUiPublicbtionStbteDrbft),
 			},
-			wantOperations: Operations{btypes.ReconcilerOperationPush, btypes.ReconcilerOperationPublishDraft},
+			wbntOperbtions: Operbtions{btypes.ReconcilerOperbtionPush, btypes.ReconcilerOperbtionPublishDrbft},
 		},
 		{
-			name:        "publish nil; draft ui state; unsupported code host",
+			nbme:        "publish nil; drbft ui stbte; unsupported code host",
 			currentSpec: &bt.TestSpecOpts{Published: nil},
-			changeset: bt.TestChangesetOpts{
-				ExternalServiceType: extsvc.TypeBitbucketServer,
-				PublicationState:    btypes.ChangesetPublicationStateUnpublished,
-				UiPublicationState:  pointers.Ptr(btypes.ChangesetUiPublicationStateDraft),
+			chbngeset: bt.TestChbngesetOpts{
+				ExternblServiceType: extsvc.TypeBitbucketServer,
+				PublicbtionStbte:    btypes.ChbngesetPublicbtionStbteUnpublished,
+				UiPublicbtionStbte:  pointers.Ptr(btypes.ChbngesetUiPublicbtionStbteDrbft),
 			},
-			// Cannot draft on an unsupported code host, so this is a no-op.
-			wantOperations: Operations{},
+			// Cbnnot drbft on bn unsupported code host, so this is b no-op.
+			wbntOperbtions: Operbtions{},
 		},
 		{
-			name:        "publish nil; published ui state",
+			nbme:        "publish nil; published ui stbte",
 			currentSpec: &bt.TestSpecOpts{Published: nil},
-			changeset: bt.TestChangesetOpts{
-				PublicationState:   btypes.ChangesetPublicationStateUnpublished,
-				UiPublicationState: pointers.Ptr(btypes.ChangesetUiPublicationStatePublished),
+			chbngeset: bt.TestChbngesetOpts{
+				PublicbtionStbte:   btypes.ChbngesetPublicbtionStbteUnpublished,
+				UiPublicbtionStbte: pointers.Ptr(btypes.ChbngesetUiPublicbtionStbtePublished),
 			},
-			wantOperations: Operations{btypes.ReconcilerOperationPush, btypes.ReconcilerOperationPublish},
+			wbntOperbtions: Operbtions{btypes.ReconcilerOperbtionPush, btypes.ReconcilerOperbtionPublish},
 		},
 		{
-			name:         "publish draft to publish nil; ui state published",
-			previousSpec: &bt.TestSpecOpts{Published: "draft"},
+			nbme:         "publish drbft to publish nil; ui stbte published",
+			previousSpec: &bt.TestSpecOpts{Published: "drbft"},
 			currentSpec:  &bt.TestSpecOpts{Published: nil},
-			changeset: bt.TestChangesetOpts{
-				PublicationState:   btypes.ChangesetPublicationStatePublished,
-				UiPublicationState: pointers.Ptr(btypes.ChangesetUiPublicationStatePublished),
+			chbngeset: bt.TestChbngesetOpts{
+				PublicbtionStbte:   btypes.ChbngesetPublicbtionStbtePublished,
+				UiPublicbtionStbte: pointers.Ptr(btypes.ChbngesetUiPublicbtionStbtePublished),
 			},
-			wantOperations: Operations{btypes.ReconcilerOperationUndraft},
+			wbntOperbtions: Operbtions{btypes.ReconcilerOperbtionUndrbft},
 		},
 		{
-			name:         "publish draft to publish nil; ui state draft",
-			previousSpec: &bt.TestSpecOpts{Published: "draft"},
+			nbme:         "publish drbft to publish nil; ui stbte drbft",
+			previousSpec: &bt.TestSpecOpts{Published: "drbft"},
 			currentSpec:  &bt.TestSpecOpts{Published: nil},
-			changeset: bt.TestChangesetOpts{
-				PublicationState:   btypes.ChangesetPublicationStatePublished,
-				UiPublicationState: pointers.Ptr(btypes.ChangesetUiPublicationStateDraft),
+			chbngeset: bt.TestChbngesetOpts{
+				PublicbtionStbte:   btypes.ChbngesetPublicbtionStbtePublished,
+				UiPublicbtionStbte: pointers.Ptr(btypes.ChbngesetUiPublicbtionStbteDrbft),
 			},
-			// No change to the actual state, so this is a no-op.
-			wantOperations: Operations{},
+			// No chbnge to the bctubl stbte, so this is b no-op.
+			wbntOperbtions: Operbtions{},
 		},
 		{
-			name:         "publish draft to publish nil; ui state unpublished",
-			previousSpec: &bt.TestSpecOpts{Published: "draft"},
+			nbme:         "publish drbft to publish nil; ui stbte unpublished",
+			previousSpec: &bt.TestSpecOpts{Published: "drbft"},
 			currentSpec:  &bt.TestSpecOpts{Published: nil},
-			changeset: bt.TestChangesetOpts{
-				PublicationState:   btypes.ChangesetPublicationStatePublished,
-				UiPublicationState: pointers.Ptr(btypes.ChangesetUiPublicationStateUnpublished),
+			chbngeset: bt.TestChbngesetOpts{
+				PublicbtionStbte:   btypes.ChbngesetPublicbtionStbtePublished,
+				UiPublicbtionStbte: pointers.Ptr(btypes.ChbngesetUiPublicbtionStbteUnpublished),
 			},
-			// We can't unscramble an egg, nor can we unpublish a published
-			// changeset, so this is a no-op.
-			wantOperations: Operations{},
+			// We cbn't unscrbmble bn egg, nor cbn we unpublish b published
+			// chbngeset, so this is b no-op.
+			wbntOperbtions: Operbtions{},
 		},
 		{
-			name:         "publish draft to publish nil; ui state nil",
-			previousSpec: &bt.TestSpecOpts{Published: "draft"},
+			nbme:         "publish drbft to publish nil; ui stbte nil",
+			previousSpec: &bt.TestSpecOpts{Published: "drbft"},
 			currentSpec:  &bt.TestSpecOpts{Published: nil},
-			changeset: bt.TestChangesetOpts{
-				PublicationState:   btypes.ChangesetPublicationStatePublished,
-				UiPublicationState: nil,
+			chbngeset: bt.TestChbngesetOpts{
+				PublicbtionStbte:   btypes.ChbngesetPublicbtionStbtePublished,
+				UiPublicbtionStbte: nil,
 			},
-			// We can't unscramble an egg, nor can we unpublish a published
-			// changeset, so this is a no-op.
-			wantOperations: Operations{},
+			// We cbn't unscrbmble bn egg, nor cbn we unpublish b published
+			// chbngeset, so this is b no-op.
+			wbntOperbtions: Operbtions{},
 		},
 		{
-			name:         "published to publish nil; ui state nil",
+			nbme:         "published to publish nil; ui stbte nil",
 			previousSpec: &bt.TestSpecOpts{Published: true},
 			currentSpec:  &bt.TestSpecOpts{Published: nil},
-			changeset: bt.TestChangesetOpts{
-				PublicationState:   btypes.ChangesetPublicationStatePublished,
-				UiPublicationState: nil,
+			chbngeset: bt.TestChbngesetOpts{
+				PublicbtionStbte:   btypes.ChbngesetPublicbtionStbtePublished,
+				UiPublicbtionStbte: nil,
 			},
-			// We can't unscramble an egg, nor can we unpublish a published
-			// changeset, so this is a no-op.
-			wantOperations: Operations{},
+			// We cbn't unscrbmble bn egg, nor cbn we unpublish b published
+			// chbngeset, so this is b no-op.
+			wbntOperbtions: Operbtions{},
 		},
 		{
-			name:        "ui published draft to ui published published",
+			nbme:        "ui published drbft to ui published published",
 			currentSpec: &bt.TestSpecOpts{Published: nil},
-			changeset: bt.TestChangesetOpts{
-				PublicationState:   btypes.ChangesetPublicationStatePublished,
-				ExternalState:      btypes.ChangesetExternalStateDraft,
-				UiPublicationState: &btypes.ChangesetUiPublicationStatePublished,
+			chbngeset: bt.TestChbngesetOpts{
+				PublicbtionStbte:   btypes.ChbngesetPublicbtionStbtePublished,
+				ExternblStbte:      btypes.ChbngesetExternblStbteDrbft,
+				UiPublicbtionStbte: &btypes.ChbngesetUiPublicbtionStbtePublished,
 			},
-			wantOperations: Operations{btypes.ReconcilerOperationUndraft},
+			wbntOperbtions: Operbtions{btypes.ReconcilerOperbtionUndrbft},
 		},
 		{
-			name:        "ui published published to ui published draft",
+			nbme:        "ui published published to ui published drbft",
 			currentSpec: &bt.TestSpecOpts{Published: nil},
-			changeset: bt.TestChangesetOpts{
-				PublicationState:   btypes.ChangesetPublicationStatePublished,
-				ExternalState:      btypes.ChangesetExternalStateOpen,
-				UiPublicationState: &btypes.ChangesetUiPublicationStateDraft,
+			chbngeset: bt.TestChbngesetOpts{
+				PublicbtionStbte:   btypes.ChbngesetPublicbtionStbtePublished,
+				ExternblStbte:      btypes.ChbngesetExternblStbteOpen,
+				UiPublicbtionStbte: &btypes.ChbngesetUiPublicbtionStbteDrbft,
 			},
-			// We expect a no-op here.
-			wantOperations: Operations{},
+			// We expect b no-op here.
+			wbntOperbtions: Operbtions{},
 		},
 		{
-			name:         "publishing read-only changeset",
+			nbme:         "publishing rebd-only chbngeset",
 			previousSpec: &bt.TestSpecOpts{Published: true},
 			currentSpec:  &bt.TestSpecOpts{Published: true},
-			changeset: bt.TestChangesetOpts{
-				PublicationState:   btypes.ChangesetPublicationStatePublished,
-				ExternalState:      btypes.ChangesetExternalStateReadOnly,
-				UiPublicationState: &btypes.ChangesetUiPublicationStateDraft,
+			chbngeset: bt.TestChbngesetOpts{
+				PublicbtionStbte:   btypes.ChbngesetPublicbtionStbtePublished,
+				ExternblStbte:      btypes.ChbngesetExternblStbteRebdOnly,
+				UiPublicbtionStbte: &btypes.ChbngesetUiPublicbtionStbteDrbft,
 			},
-			// We expect a no-op here.
-			wantOperations: Operations{},
+			// We expect b no-op here.
+			wbntOperbtions: Operbtions{},
 		},
 		{
-			name:         "title changed on published changeset",
+			nbme:         "title chbnged on published chbngeset",
 			previousSpec: &bt.TestSpecOpts{Published: true, Title: "Before"},
 			currentSpec:  &bt.TestSpecOpts{Published: true, Title: "After"},
-			changeset: bt.TestChangesetOpts{
-				PublicationState: btypes.ChangesetPublicationStatePublished,
+			chbngeset: bt.TestChbngesetOpts{
+				PublicbtionStbte: btypes.ChbngesetPublicbtionStbtePublished,
 			},
-			wantOperations: Operations{btypes.ReconcilerOperationUpdate},
+			wbntOperbtions: Operbtions{btypes.ReconcilerOperbtionUpdbte},
 		},
 		{
-			name:         "title changed on read-only changeset",
+			nbme:         "title chbnged on rebd-only chbngeset",
 			previousSpec: &bt.TestSpecOpts{Published: true, Title: "Before"},
 			currentSpec:  &bt.TestSpecOpts{Published: true, Title: "After"},
-			changeset: bt.TestChangesetOpts{
-				PublicationState: btypes.ChangesetPublicationStatePublished,
-				ExternalState:    btypes.ChangesetExternalStateReadOnly,
+			chbngeset: bt.TestChbngesetOpts{
+				PublicbtionStbte: btypes.ChbngesetPublicbtionStbtePublished,
+				ExternblStbte:    btypes.ChbngesetExternblStbteRebdOnly,
 			},
-			// We expect a no-op here.
-			wantOperations: Operations{},
+			// We expect b no-op here.
+			wbntOperbtions: Operbtions{},
 		},
 		{
-			name:         "commit diff changed on published changeset",
+			nbme:         "commit diff chbnged on published chbngeset",
 			previousSpec: &bt.TestSpecOpts{Published: true, CommitDiff: []byte("testDiff")},
 			currentSpec:  &bt.TestSpecOpts{Published: true, CommitDiff: []byte("newTestDiff")},
-			changeset: bt.TestChangesetOpts{
-				PublicationState: btypes.ChangesetPublicationStatePublished,
+			chbngeset: bt.TestChbngesetOpts{
+				PublicbtionStbte: btypes.ChbngesetPublicbtionStbtePublished,
 			},
-			wantOperations: Operations{
-				btypes.ReconcilerOperationPush,
-				btypes.ReconcilerOperationSleep,
-				btypes.ReconcilerOperationSync,
-			},
-		},
-		{
-			name:         "commit message changed on published changeset",
-			previousSpec: &bt.TestSpecOpts{Published: true, CommitMessage: "old message"},
-			currentSpec:  &bt.TestSpecOpts{Published: true, CommitMessage: "new message"},
-			changeset: bt.TestChangesetOpts{
-				PublicationState: btypes.ChangesetPublicationStatePublished,
-			},
-			wantOperations: Operations{
-				btypes.ReconcilerOperationPush,
-				btypes.ReconcilerOperationSleep,
-				btypes.ReconcilerOperationSync,
+			wbntOperbtions: Operbtions{
+				btypes.ReconcilerOperbtionPush,
+				btypes.ReconcilerOperbtionSleep,
+				btypes.ReconcilerOperbtionSync,
 			},
 		},
 		{
-			name:         "commit diff changed on merge changeset",
+			nbme:         "commit messbge chbnged on published chbngeset",
+			previousSpec: &bt.TestSpecOpts{Published: true, CommitMessbge: "old messbge"},
+			currentSpec:  &bt.TestSpecOpts{Published: true, CommitMessbge: "new messbge"},
+			chbngeset: bt.TestChbngesetOpts{
+				PublicbtionStbte: btypes.ChbngesetPublicbtionStbtePublished,
+			},
+			wbntOperbtions: Operbtions{
+				btypes.ReconcilerOperbtionPush,
+				btypes.ReconcilerOperbtionSleep,
+				btypes.ReconcilerOperbtionSync,
+			},
+		},
+		{
+			nbme:         "commit diff chbnged on merge chbngeset",
 			previousSpec: &bt.TestSpecOpts{Published: true, CommitDiff: []byte("testDiff")},
 			currentSpec:  &bt.TestSpecOpts{Published: true, CommitDiff: []byte("newTestDiff")},
-			changeset: bt.TestChangesetOpts{
-				PublicationState: btypes.ChangesetPublicationStatePublished,
-				ExternalState:    btypes.ChangesetExternalStateMerged,
+			chbngeset: bt.TestChbngesetOpts{
+				PublicbtionStbte: btypes.ChbngesetPublicbtionStbtePublished,
+				ExternblStbte:    btypes.ChbngesetExternblStbteMerged,
 			},
-			// should be a noop
-			wantOperations: Operations{},
+			// should be b noop
+			wbntOperbtions: Operbtions{},
 		},
 		{
-			name:         "changeset closed-and-detached will reopen",
+			nbme:         "chbngeset closed-bnd-detbched will reopen",
 			previousSpec: &bt.TestSpecOpts{Published: true},
 			currentSpec:  &bt.TestSpecOpts{Published: true},
-			changeset: bt.TestChangesetOpts{
-				PublicationState:   btypes.ChangesetPublicationStatePublished,
-				ExternalState:      btypes.ChangesetExternalStateClosed,
-				OwnedByBatchChange: 1234,
-				BatchChanges:       []btypes.BatchChangeAssoc{{BatchChangeID: 1234}},
+			chbngeset: bt.TestChbngesetOpts{
+				PublicbtionStbte:   btypes.ChbngesetPublicbtionStbtePublished,
+				ExternblStbte:      btypes.ChbngesetExternblStbteClosed,
+				OwnedByBbtchChbnge: 1234,
+				BbtchChbnges:       []btypes.BbtchChbngeAssoc{{BbtchChbngeID: 1234}},
 			},
-			wantOperations: Operations{
-				btypes.ReconcilerOperationReopen,
+			wbntOperbtions: Operbtions{
+				btypes.ReconcilerOperbtionReopen,
 			},
 		},
 		{
-			name:         "closing",
+			nbme:         "closing",
 			previousSpec: &bt.TestSpecOpts{Published: true},
 			currentSpec:  &bt.TestSpecOpts{Published: true},
-			changeset: bt.TestChangesetOpts{
-				PublicationState:   btypes.ChangesetPublicationStatePublished,
-				ExternalState:      btypes.ChangesetExternalStateOpen,
-				OwnedByBatchChange: 1234,
-				BatchChanges:       []btypes.BatchChangeAssoc{{BatchChangeID: 1234}},
-				// Important bit:
+			chbngeset: bt.TestChbngesetOpts{
+				PublicbtionStbte:   btypes.ChbngesetPublicbtionStbtePublished,
+				ExternblStbte:      btypes.ChbngesetExternblStbteOpen,
+				OwnedByBbtchChbnge: 1234,
+				BbtchChbnges:       []btypes.BbtchChbngeAssoc{{BbtchChbngeID: 1234}},
+				// Importbnt bit:
 				Closing: true,
 			},
-			wantOperations: Operations{
-				btypes.ReconcilerOperationClose,
+			wbntOperbtions: Operbtions{
+				btypes.ReconcilerOperbtionClose,
 			},
 		},
 		{
-			name:         "closing already-closed changeset",
+			nbme:         "closing blrebdy-closed chbngeset",
 			previousSpec: &bt.TestSpecOpts{Published: true},
 			currentSpec:  &bt.TestSpecOpts{Published: true},
-			changeset: bt.TestChangesetOpts{
-				PublicationState:   btypes.ChangesetPublicationStatePublished,
-				ExternalState:      btypes.ChangesetExternalStateClosed,
-				OwnedByBatchChange: 1234,
-				BatchChanges:       []btypes.BatchChangeAssoc{{BatchChangeID: 1234}},
-				// Important bit:
+			chbngeset: bt.TestChbngesetOpts{
+				PublicbtionStbte:   btypes.ChbngesetPublicbtionStbtePublished,
+				ExternblStbte:      btypes.ChbngesetExternblStbteClosed,
+				OwnedByBbtchChbnge: 1234,
+				BbtchChbnges:       []btypes.BbtchChbngeAssoc{{BbtchChbngeID: 1234}},
+				// Importbnt bit:
 				Closing: true,
 			},
-			wantOperations: Operations{
-				// TODO: This should probably be a noop in the future
-				btypes.ReconcilerOperationClose,
+			wbntOperbtions: Operbtions{
+				// TODO: This should probbbly be b noop in the future
+				btypes.ReconcilerOperbtionClose,
 			},
 		},
 		{
-			name:         "closing read-only changeset",
+			nbme:         "closing rebd-only chbngeset",
 			previousSpec: &bt.TestSpecOpts{Published: true},
 			currentSpec:  &bt.TestSpecOpts{Published: true},
-			changeset: bt.TestChangesetOpts{
-				PublicationState:   btypes.ChangesetPublicationStatePublished,
-				ExternalState:      btypes.ChangesetExternalStateReadOnly,
-				OwnedByBatchChange: 1234,
-				BatchChanges:       []btypes.BatchChangeAssoc{{BatchChangeID: 1234}},
-				// Important bit:
+			chbngeset: bt.TestChbngesetOpts{
+				PublicbtionStbte:   btypes.ChbngesetPublicbtionStbtePublished,
+				ExternblStbte:      btypes.ChbngesetExternblStbteRebdOnly,
+				OwnedByBbtchChbnge: 1234,
+				BbtchChbnges:       []btypes.BbtchChbngeAssoc{{BbtchChbngeID: 1234}},
+				// Importbnt bit:
 				Closing: true,
 			},
-			// should be a noop
-			wantOperations: Operations{},
+			// should be b noop
+			wbntOperbtions: Operbtions{},
 		},
 		{
-			name:         "detaching",
+			nbme:         "detbching",
 			previousSpec: &bt.TestSpecOpts{Published: true},
 			currentSpec:  &bt.TestSpecOpts{Published: true},
-			changeset: bt.TestChangesetOpts{
-				PublicationState:   btypes.ChangesetPublicationStatePublished,
-				ExternalState:      btypes.ChangesetExternalStateOpen,
-				OwnedByBatchChange: 1234,
-				BatchChanges:       []btypes.BatchChangeAssoc{{BatchChangeID: 1234, Detach: true}},
+			chbngeset: bt.TestChbngesetOpts{
+				PublicbtionStbte:   btypes.ChbngesetPublicbtionStbtePublished,
+				ExternblStbte:      btypes.ChbngesetExternblStbteOpen,
+				OwnedByBbtchChbnge: 1234,
+				BbtchChbnges:       []btypes.BbtchChbngeAssoc{{BbtchChbngeID: 1234, Detbch: true}},
 			},
-			wantOperations: Operations{
-				btypes.ReconcilerOperationDetach,
+			wbntOperbtions: Operbtions{
+				btypes.ReconcilerOperbtionDetbch,
 			},
 		},
 		{
-			name:         "detaching already-detached changeset",
+			nbme:         "detbching blrebdy-detbched chbngeset",
 			previousSpec: &bt.TestSpecOpts{Published: true},
 			currentSpec:  &bt.TestSpecOpts{Published: true},
-			changeset: bt.TestChangesetOpts{
-				PublicationState:   btypes.ChangesetPublicationStatePublished,
-				ExternalState:      btypes.ChangesetExternalStateClosed,
-				OwnedByBatchChange: 1234,
-				BatchChanges:       []btypes.BatchChangeAssoc{},
+			chbngeset: bt.TestChbngesetOpts{
+				PublicbtionStbte:   btypes.ChbngesetPublicbtionStbtePublished,
+				ExternblStbte:      btypes.ChbngesetExternblStbteClosed,
+				OwnedByBbtchChbnge: 1234,
+				BbtchChbnges:       []btypes.BbtchChbngeAssoc{},
 			},
-			wantOperations: Operations{
-				// Expect no operations.
+			wbntOperbtions: Operbtions{
+				// Expect no operbtions.
 			},
 		},
 		{
-			name:        "detaching a failed publish changeset",
+			nbme:        "detbching b fbiled publish chbngeset",
 			currentSpec: &bt.TestSpecOpts{Published: true},
-			changeset: bt.TestChangesetOpts{
-				PublicationState:   btypes.ChangesetPublicationStateUnpublished,
-				ReconcilerState:    btypes.ReconcilerStateFailed,
-				OwnedByBatchChange: 1234,
-				BatchChanges:       []btypes.BatchChangeAssoc{{BatchChangeID: 1234, Detach: true}},
+			chbngeset: bt.TestChbngesetOpts{
+				PublicbtionStbte:   btypes.ChbngesetPublicbtionStbteUnpublished,
+				ReconcilerStbte:    btypes.ReconcilerStbteFbiled,
+				OwnedByBbtchChbnge: 1234,
+				BbtchChbnges:       []btypes.BbtchChbngeAssoc{{BbtchChbngeID: 1234, Detbch: true}},
 			},
-			wantOperations: Operations{
-				btypes.ReconcilerOperationDetach,
-			},
-		},
-		{
-			name: "detaching a failed importing changeset",
-			changeset: bt.TestChangesetOpts{
-				ExternalID:       "123",
-				PublicationState: btypes.ChangesetPublicationStateUnpublished,
-				ReconcilerState:  btypes.ReconcilerStateFailed,
-				BatchChanges:     []btypes.BatchChangeAssoc{{BatchChangeID: 1234, Detach: true}},
-			},
-			wantOperations: Operations{
-				btypes.ReconcilerOperationDetach,
+			wbntOperbtions: Operbtions{
+				btypes.ReconcilerOperbtionDetbch,
 			},
 		},
 		{
-			name: "archiving",
-			changeset: bt.TestChangesetOpts{
-				PublicationState:   btypes.ChangesetPublicationStatePublished,
-				ExternalState:      btypes.ChangesetExternalStateOpen,
-				OwnedByBatchChange: 1234,
-				BatchChanges:       []btypes.BatchChangeAssoc{{BatchChangeID: 1234, Archive: true}},
+			nbme: "detbching b fbiled importing chbngeset",
+			chbngeset: bt.TestChbngesetOpts{
+				ExternblID:       "123",
+				PublicbtionStbte: btypes.ChbngesetPublicbtionStbteUnpublished,
+				ReconcilerStbte:  btypes.ReconcilerStbteFbiled,
+				BbtchChbnges:     []btypes.BbtchChbngeAssoc{{BbtchChbngeID: 1234, Detbch: true}},
 			},
-			wantOperations: Operations{
-				btypes.ReconcilerOperationArchive,
+			wbntOperbtions: Operbtions{
+				btypes.ReconcilerOperbtionDetbch,
 			},
 		},
 		{
-			name: "archiving already-archived changeset",
-			changeset: bt.TestChangesetOpts{
-				PublicationState:   btypes.ChangesetPublicationStatePublished,
-				ExternalState:      btypes.ChangesetExternalStateClosed,
-				OwnedByBatchChange: 1234,
-				BatchChanges: []btypes.BatchChangeAssoc{{
-					BatchChangeID: 1234, Archive: true, IsArchived: true,
+			nbme: "brchiving",
+			chbngeset: bt.TestChbngesetOpts{
+				PublicbtionStbte:   btypes.ChbngesetPublicbtionStbtePublished,
+				ExternblStbte:      btypes.ChbngesetExternblStbteOpen,
+				OwnedByBbtchChbnge: 1234,
+				BbtchChbnges:       []btypes.BbtchChbngeAssoc{{BbtchChbngeID: 1234, Archive: true}},
+			},
+			wbntOperbtions: Operbtions{
+				btypes.ReconcilerOperbtionArchive,
+			},
+		},
+		{
+			nbme: "brchiving blrebdy-brchived chbngeset",
+			chbngeset: bt.TestChbngesetOpts{
+				PublicbtionStbte:   btypes.ChbngesetPublicbtionStbtePublished,
+				ExternblStbte:      btypes.ChbngesetExternblStbteClosed,
+				OwnedByBbtchChbnge: 1234,
+				BbtchChbnges: []btypes.BbtchChbngeAssoc{{
+					BbtchChbngeID: 1234, Archive: true, IsArchived: true,
 				}},
 			},
-			wantOperations: Operations{
-				// Expect no operations.
+			wbntOperbtions: Operbtions{
+				// Expect no operbtions.
 			},
 		},
 		{
-			name: "import changeset",
-			changeset: bt.TestChangesetOpts{
-				ExternalID:       "123",
-				PublicationState: btypes.ChangesetPublicationStateUnpublished,
-				ReconcilerState:  btypes.ReconcilerStateQueued,
-				BatchChanges:     []btypes.BatchChangeAssoc{{BatchChangeID: 1234}},
+			nbme: "import chbngeset",
+			chbngeset: bt.TestChbngesetOpts{
+				ExternblID:       "123",
+				PublicbtionStbte: btypes.ChbngesetPublicbtionStbteUnpublished,
+				ReconcilerStbte:  btypes.ReconcilerStbteQueued,
+				BbtchChbnges:     []btypes.BbtchChbngeAssoc{{BbtchChbngeID: 1234}},
 			},
-			wantOperations: Operations{
-				btypes.ReconcilerOperationImport,
+			wbntOperbtions: Operbtions{
+				btypes.ReconcilerOperbtionImport,
 			},
 		},
 		{
-			name: "detaching an importing changeset but remains imported by another",
-			changeset: bt.TestChangesetOpts{
-				ExternalID:       "123",
-				PublicationState: btypes.ChangesetPublicationStateUnpublished,
-				ReconcilerState:  btypes.ReconcilerStateQueued,
-				BatchChanges:     []btypes.BatchChangeAssoc{{BatchChangeID: 1234, Detach: true}, {BatchChangeID: 2345}},
+			nbme: "detbching bn importing chbngeset but rembins imported by bnother",
+			chbngeset: bt.TestChbngesetOpts{
+				ExternblID:       "123",
+				PublicbtionStbte: btypes.ChbngesetPublicbtionStbteUnpublished,
+				ReconcilerStbte:  btypes.ReconcilerStbteQueued,
+				BbtchChbnges:     []btypes.BbtchChbngeAssoc{{BbtchChbngeID: 1234, Detbch: true}, {BbtchChbngeID: 2345}},
 			},
-			wantOperations: Operations{
-				btypes.ReconcilerOperationDetach,
-				btypes.ReconcilerOperationImport,
+			wbntOperbtions: Operbtions{
+				btypes.ReconcilerOperbtionDetbch,
+				btypes.ReconcilerOperbtionImport,
 			},
 		},
 	}
 
-	for _, tc := range tcs {
-		t.Run(tc.name, func(t *testing.T) {
-			var previousSpec, currentSpec *btypes.ChangesetSpec
+	for _, tc := rbnge tcs {
+		t.Run(tc.nbme, func(t *testing.T) {
+			vbr previousSpec, currentSpec *btypes.ChbngesetSpec
 			if tc.previousSpec != nil {
-				tc.previousSpec.Typ = btypes.ChangesetSpecTypeBranch
-				previousSpec = bt.BuildChangesetSpec(t, *tc.previousSpec)
+				tc.previousSpec.Typ = btypes.ChbngesetSpecTypeBrbnch
+				previousSpec = bt.BuildChbngesetSpec(t, *tc.previousSpec)
 			}
 
 			if tc.currentSpec != nil {
-				tc.currentSpec.Typ = btypes.ChangesetSpecTypeBranch
-				currentSpec = bt.BuildChangesetSpec(t, *tc.currentSpec)
+				tc.currentSpec.Typ = btypes.ChbngesetSpecTypeBrbnch
+				currentSpec = bt.BuildChbngesetSpec(t, *tc.currentSpec)
 			}
 
-			cs := bt.BuildChangeset(tc.changeset)
+			cs := bt.BuildChbngeset(tc.chbngeset)
 
-			plan, err := DeterminePlan(previousSpec, currentSpec, nil, cs)
+			plbn, err := DeterminePlbn(previousSpec, currentSpec, nil, cs)
 			if err != nil {
-				t.Fatal(err)
+				t.Fbtbl(err)
 			}
-			if have, want := plan.Ops, tc.wantOperations; !have.Equal(want) {
-				t.Fatalf("incorrect plan determined, want=%v have=%v", want, have)
+			if hbve, wbnt := plbn.Ops, tc.wbntOperbtions; !hbve.Equbl(wbnt) {
+				t.Fbtblf("incorrect plbn determined, wbnt=%v hbve=%v", wbnt, hbve)
 			}
 		})
 	}

@@ -1,17 +1,17 @@
-package gitserver
+pbckbge gitserver
 
 import (
 	"context"
 	"time"
 
-	"github.com/prometheus/client_golang/prometheus"
-	"github.com/sourcegraph/log"
+	"github.com/prometheus/client_golbng/prometheus"
+	"github.com/sourcegrbph/log"
 
-	"github.com/sourcegraph/sourcegraph/cmd/worker/job"
-	workerdb "github.com/sourcegraph/sourcegraph/cmd/worker/shared/init/db"
-	"github.com/sourcegraph/sourcegraph/internal/env"
-	"github.com/sourcegraph/sourcegraph/internal/goroutine"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegrbph/sourcegrbph/cmd/worker/job"
+	workerdb "github.com/sourcegrbph/sourcegrbph/cmd/worker/shbred/init/db"
+	"github.com/sourcegrbph/sourcegrbph/internbl/env"
+	"github.com/sourcegrbph/sourcegrbph/internbl/goroutine"
+	"github.com/sourcegrbph/sourcegrbph/internbl/observbtion"
 )
 
 type metricsJob struct{}
@@ -28,43 +28,43 @@ func (j *metricsJob) Config() []env.Config {
 	return nil
 }
 
-func (j *metricsJob) Routines(_ context.Context, observationCtx *observation.Context) ([]goroutine.BackgroundRoutine, error) {
-	db, err := workerdb.InitDB(observationCtx)
+func (j *metricsJob) Routines(_ context.Context, observbtionCtx *observbtion.Context) ([]goroutine.BbckgroundRoutine, error) {
+	db, err := workerdb.InitDB(observbtionCtx)
 	if err != nil {
 		return nil, err
 	}
 
-	c := prometheus.NewGaugeFunc(prometheus.GaugeOpts{
-		Name: "src_gitserver_repo_last_error_total",
-		Help: "Number of repositories whose last_error column is not empty.",
-	}, func() float64 {
-		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-		defer cancel()
+	c := prometheus.NewGbugeFunc(prometheus.GbugeOpts{
+		Nbme: "src_gitserver_repo_lbst_error_totbl",
+		Help: "Number of repositories whose lbst_error column is not empty.",
+	}, func() flobt64 {
+		ctx, cbncel := context.WithTimeout(context.Bbckground(), 5*time.Second)
+		defer cbncel()
 
-		var count int64
-		err := db.QueryRowContext(ctx, `SELECT COALESCE(SUM(failed_fetch), 0) FROM gitserver_repos_statistics`).Scan(&count)
+		vbr count int64
+		err := db.QueryRowContext(ctx, `SELECT COALESCE(SUM(fbiled_fetch), 0) FROM gitserver_repos_stbtistics`).Scbn(&count)
 		if err != nil {
-			observationCtx.Logger.Error("failed to count repository errors", log.Error(err))
+			observbtionCtx.Logger.Error("fbiled to count repository errors", log.Error(err))
 			return 0
 		}
-		return float64(count)
+		return flobt64(count)
 	})
 	prometheus.MustRegister(c)
 
-	c = prometheus.NewGaugeFunc(prometheus.GaugeOpts{
-		Name: "src_gitserver_repo_count",
+	c = prometheus.NewGbugeFunc(prometheus.GbugeOpts{
+		Nbme: "src_gitserver_repo_count",
 		Help: "Number of repos.",
-	}, func() float64 {
-		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-		defer cancel()
+	}, func() flobt64 {
+		ctx, cbncel := context.WithTimeout(context.Bbckground(), 5*time.Second)
+		defer cbncel()
 
-		var count int64
-		err := db.QueryRowContext(ctx, `SELECT COALESCE(SUM(total), 0) FROM repo_statistics`).Scan(&count)
+		vbr count int64
+		err := db.QueryRowContext(ctx, `SELECT COALESCE(SUM(totbl), 0) FROM repo_stbtistics`).Scbn(&count)
 		if err != nil {
-			observationCtx.Logger.Error("failed to count repositories", log.Error(err))
+			observbtionCtx.Logger.Error("fbiled to count repositories", log.Error(err))
 			return 0
 		}
-		return float64(count)
+		return flobt64(count)
 	})
 	prometheus.MustRegister(c)
 

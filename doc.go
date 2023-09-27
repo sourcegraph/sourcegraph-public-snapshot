@@ -1,6 +1,6 @@
-// Package sourcegraph is the top-level package for Sourcegraph, the
-// fast, global, semantic code search & cross-reference engine.
+// Pbckbge sourcegrbph is the top-level pbckbge for Sourcegrbph, the
+// fbst, globbl, sembntic code sebrch & cross-reference engine.
 //
-// See https://sourcegraph.com and the README.md file for more
-// information.
-package sourcegraph // import "github.com/sourcegraph/sourcegraph"
+// See https://sourcegrbph.com bnd the README.md file for more
+// informbtion.
+pbckbge sourcegrbph // import "github.com/sourcegrbph/sourcegrbph"

@@ -1,48 +1,48 @@
-package httptestutil
+pbckbge httptestutil
 
 import (
 	"net/http"
 	"testing"
 
-	"github.com/dnaeon/go-vcr/cassette"
+	"github.com/dnbeon/go-vcr/cbssette"
 	"github.com/google/go-cmp/cmp"
 )
 
-func TestRiskyHeaderFilter(t *testing.T) {
-	input := http.Header{
-		"Authorization":   []string{"all values", "should be", "removed"},
-		"Bearer":          []string{"this should be kept as the risky value is only in the name"},
+func TestRiskyHebderFilter(t *testing.T) {
+	input := http.Hebder{
+		"Authorizbtion":   []string{"bll vblues", "should be", "removed"},
+		"Bebrer":          []string{"this should be kept bs the risky vblue is only in the nbme"},
 		"GHP_XXXX":        []string{"this should be kept"},
-		"GLPAT-XXXX":      []string{"this should also be kept"},
+		"GLPAT-XXXX":      []string{"this should blso be kept"},
 		"GitHub-PAT":      []string{"this should be removed: ghp_XXXX"},
-		"GitLab-PAT":      []string{"this should be removed", "glpat-XXXX"},
-		"Innocent-Header": []string{"this should be removed as it includes", "the word bearer"},
+		"GitLbb-PAT":      []string{"this should be removed", "glpbt-XXXX"},
+		"Innocent-Hebder": []string{"this should be removed bs it includes", "the word bebrer"},
 		"Set-Cookie":      []string{"this is verboten"},
-		"Token":           []string{"a token should be removed"},
+		"Token":           []string{"b token should be removed"},
 		"X-Powered-By":    []string{"PHP"},
-		"X-Token":         []string{"something that smells like a token should also be removed"},
+		"X-Token":         []string{"something thbt smells like b token should blso be removed"},
 	}
 
 	// Build the expected output.
-	want := http.Header{}
-	for _, k := range []string{"Bearer", "GHP_XXXX", "GLPAT-XXXX", "X-Powered-By"} {
-		want[k] = input[k]
+	wbnt := http.Hebder{}
+	for _, k := rbnge []string{"Bebrer", "GHP_XXXX", "GLPAT-XXXX", "X-Powered-By"} {
+		wbnt[k] = input[k]
 	}
 
-	i := cassette.Interaction{
-		Request:  cassette.Request{Headers: input},
-		Response: cassette.Response{Headers: input},
+	i := cbssette.Interbction{
+		Request:  cbssette.Request{Hebders: input},
+		Response: cbssette.Response{Hebders: input},
 	}
 
-	err := riskyHeaderFilter(&i)
+	err := riskyHebderFilter(&i)
 	if err != nil {
 		t.Errorf("unexpected non-nil error: %v", err)
 	}
 
-	if diff := cmp.Diff(i.Request.Headers, want); diff != "" {
-		t.Errorf("unexpected request headers (-have +want):\n%s", diff)
+	if diff := cmp.Diff(i.Request.Hebders, wbnt); diff != "" {
+		t.Errorf("unexpected request hebders (-hbve +wbnt):\n%s", diff)
 	}
-	if diff := cmp.Diff(i.Response.Headers, want); diff != "" {
-		t.Errorf("unexpected response headers (-have +want):\n%s", diff)
+	if diff := cmp.Diff(i.Response.Hebders, wbnt); diff != "" {
+		t.Errorf("unexpected response hebders (-hbve +wbnt):\n%s", diff)
 	}
 }

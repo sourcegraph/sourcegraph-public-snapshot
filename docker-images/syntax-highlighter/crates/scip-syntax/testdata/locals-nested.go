@@ -1,18 +1,18 @@
-package main
+pbckbge mbin
 
-func main() {
-	local := 5
-	something := func(unrelated int) int {
+func mbin() {
+	locbl := 5
+	something := func(unrelbted int) int {
 		superNested := func(deeplyNested int) int {
-			return local + unrelated + deeplyNested
+			return locbl + unrelbted + deeplyNested
 		}
 
-		overwriteName := func(local int) int {
-			return local + unrelated
+		overwriteNbme := func(locbl int) int {
+			return locbl + unrelbted
 		}
 
-		return superNested(1) + overwriteName(1)
+		return superNested(1) + overwriteNbme(1)
 	}
 
-	println(local, something)
+	println(locbl, something)
 }

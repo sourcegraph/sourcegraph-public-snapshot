@@ -1,4 +1,4 @@
-package resolvers
+pbckbge resolvers
 
 import (
 	"context"
@@ -6,26 +6,26 @@ import (
 	"strings"
 	"time"
 
-	"github.com/graph-gophers/graphql-go"
+	"github.com/grbph-gophers/grbphql-go"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
-	"github.com/sourcegraph/sourcegraph/internal/actor"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/grbphqlbbckend/grbphqlutil"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bctor"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/authz"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
-	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/grbphqlbbckend"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi"
+	"github.com/sourcegrbph/sourcegrbph/internbl/buthz"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/gitserver"
+	"github.com/sourcegrbph/sourcegrbph/internbl/gqlutil"
 )
 
 type permissionsInfoResolver struct {
-	db           database.DB
+	db           dbtbbbse.DB
 	userID       int32
-	repoID       api.RepoID
-	perms        authz.Perms
+	repoID       bpi.RepoID
+	perms        buthz.Perms
 	syncedAt     time.Time
-	updatedAt    time.Time
+	updbtedAt    time.Time
 	source       *string
 	unrestricted bool
 }
@@ -34,15 +34,15 @@ func (r *permissionsInfoResolver) Permissions() []string {
 	return strings.Split(strings.ToUpper(r.perms.String()), ",")
 }
 
-func (r *permissionsInfoResolver) SyncedAt() *gqlutil.DateTime {
+func (r *permissionsInfoResolver) SyncedAt() *gqlutil.DbteTime {
 	if r.syncedAt.IsZero() {
 		return nil
 	}
-	return &gqlutil.DateTime{Time: r.syncedAt}
+	return &gqlutil.DbteTime{Time: r.syncedAt}
 }
 
-func (r *permissionsInfoResolver) UpdatedAt() *gqlutil.DateTime {
-	return gqlutil.FromTime(r.updatedAt)
+func (r *permissionsInfoResolver) UpdbtedAt() *gqlutil.DbteTime {
+	return gqlutil.FromTime(r.updbtedAt)
 }
 
 func (r *permissionsInfoResolver) Source() *string {
@@ -53,22 +53,22 @@ func (r *permissionsInfoResolver) Unrestricted(_ context.Context) bool {
 	return r.unrestricted
 }
 
-var permissionsInfoRepositoryConnectionMaxPageSize = 100
+vbr permissionsInfoRepositoryConnectionMbxPbgeSize = 100
 
-var permissionsInfoRepositoryConnectionOptions = &graphqlutil.ConnectionResolverOptions{
-	OrderBy:     database.OrderBy{{Field: "repo.name"}},
+vbr permissionsInfoRepositoryConnectionOptions = &grbphqlutil.ConnectionResolverOptions{
+	OrderBy:     dbtbbbse.OrderBy{{Field: "repo.nbme"}},
 	Ascending:   true,
-	MaxPageSize: &permissionsInfoRepositoryConnectionMaxPageSize,
+	MbxPbgeSize: &permissionsInfoRepositoryConnectionMbxPbgeSize,
 }
 
-func (r *permissionsInfoResolver) Repositories(_ context.Context, args graphqlbackend.PermissionsInfoRepositoriesArgs) (*graphqlutil.ConnectionResolver[graphqlbackend.PermissionsInfoRepositoryResolver], error) {
+func (r *permissionsInfoResolver) Repositories(_ context.Context, brgs grbphqlbbckend.PermissionsInfoRepositoriesArgs) (*grbphqlutil.ConnectionResolver[grbphqlbbckend.PermissionsInfoRepositoryResolver], error) {
 	if r.userID == 0 {
 		return nil, nil
 	}
 
 	query := ""
-	if args.Query != nil {
-		query = *args.Query
+	if brgs.Query != nil {
+		query = *brgs.Query
 	}
 
 	connectionStore := &permissionsInfoRepositoriesStore{
@@ -77,88 +77,88 @@ func (r *permissionsInfoResolver) Repositories(_ context.Context, args graphqlba
 		query:  query,
 	}
 
-	return graphqlutil.NewConnectionResolver[graphqlbackend.PermissionsInfoRepositoryResolver](connectionStore, &args.ConnectionResolverArgs, permissionsInfoRepositoryConnectionOptions)
+	return grbphqlutil.NewConnectionResolver[grbphqlbbckend.PermissionsInfoRepositoryResolver](connectionStore, &brgs.ConnectionResolverArgs, permissionsInfoRepositoryConnectionOptions)
 }
 
 type permissionsInfoRepositoriesStore struct {
 	userID int32
-	db     database.DB
+	db     dbtbbbse.DB
 	query  string
 }
 
-func (s *permissionsInfoRepositoriesStore) MarshalCursor(node graphqlbackend.PermissionsInfoRepositoryResolver, _ database.OrderBy) (*string, error) {
-	cursor := node.Repository().Name()
+func (s *permissionsInfoRepositoriesStore) MbrshblCursor(node grbphqlbbckend.PermissionsInfoRepositoryResolver, _ dbtbbbse.OrderBy) (*string, error) {
+	cursor := node.Repository().Nbme()
 
 	return &cursor, nil
 }
 
-func (s *permissionsInfoRepositoriesStore) UnmarshalCursor(cursor string, _ database.OrderBy) (*string, error) {
+func (s *permissionsInfoRepositoriesStore) UnmbrshblCursor(cursor string, _ dbtbbbse.OrderBy) (*string, error) {
 	cursorSQL := fmt.Sprintf("'%s'", cursor)
 
 	return &cursorSQL, nil
 }
 
-func (s *permissionsInfoRepositoriesStore) ComputeTotal(ctx context.Context) (*int32, error) {
-	count, err := s.db.Repos().Count(actor.WithActor(ctx, actor.FromUser(s.userID)), database.ReposListOptions{Query: s.query})
+func (s *permissionsInfoRepositoriesStore) ComputeTotbl(ctx context.Context) (*int32, error) {
+	count, err := s.db.Repos().Count(bctor.WithActor(ctx, bctor.FromUser(s.userID)), dbtbbbse.ReposListOptions{Query: s.query})
 	if err != nil {
 		return nil, err
 	}
 
-	total := int32(count)
-	return &total, nil
+	totbl := int32(count)
+	return &totbl, nil
 }
 
-func (s *permissionsInfoRepositoriesStore) ComputeNodes(ctx context.Context, args *database.PaginationArgs) ([]graphqlbackend.PermissionsInfoRepositoryResolver, error) {
-	permissions, err := s.db.Perms().ListUserPermissions(ctx, s.userID, &database.ListUserPermissionsArgs{Query: s.query, PaginationArgs: args})
+func (s *permissionsInfoRepositoriesStore) ComputeNodes(ctx context.Context, brgs *dbtbbbse.PbginbtionArgs) ([]grbphqlbbckend.PermissionsInfoRepositoryResolver, error) {
+	permissions, err := s.db.Perms().ListUserPermissions(ctx, s.userID, &dbtbbbse.ListUserPermissionsArgs{Query: s.query, PbginbtionArgs: brgs})
 	if err != nil {
 		return nil, err
 	}
 
-	var permissionResolvers []graphqlbackend.PermissionsInfoRepositoryResolver
-	for _, perm := range permissions {
-		permissionResolvers = append(permissionResolvers, permissionsInfoRepositoryResolver{perm: perm, db: s.db})
+	vbr permissionResolvers []grbphqlbbckend.PermissionsInfoRepositoryResolver
+	for _, perm := rbnge permissions {
+		permissionResolvers = bppend(permissionResolvers, permissionsInfoRepositoryResolver{perm: perm, db: s.db})
 	}
 
 	return permissionResolvers, nil
 }
 
 type permissionsInfoRepositoryResolver struct {
-	db   database.DB
-	perm *database.UserPermission
+	db   dbtbbbse.DB
+	perm *dbtbbbse.UserPermission
 }
 
-func (r permissionsInfoRepositoryResolver) ID() graphql.ID {
-	return graphqlbackend.MarshalRepositoryID(r.perm.Repo.ID)
+func (r permissionsInfoRepositoryResolver) ID() grbphql.ID {
+	return grbphqlbbckend.MbrshblRepositoryID(r.perm.Repo.ID)
 }
 
-func (r permissionsInfoRepositoryResolver) Repository() *graphqlbackend.RepositoryResolver {
-	return graphqlbackend.NewRepositoryResolver(r.db, gitserver.NewClient(), r.perm.Repo)
+func (r permissionsInfoRepositoryResolver) Repository() *grbphqlbbckend.RepositoryResolver {
+	return grbphqlbbckend.NewRepositoryResolver(r.db, gitserver.NewClient(), r.perm.Repo)
 }
 
-func (r permissionsInfoRepositoryResolver) Reason() string {
-	return string(r.perm.Reason)
+func (r permissionsInfoRepositoryResolver) Rebson() string {
+	return string(r.perm.Rebson)
 }
 
-func (r permissionsInfoRepositoryResolver) UpdatedAt() *gqlutil.DateTime {
-	return gqlutil.FromTime(r.perm.UpdatedAt)
+func (r permissionsInfoRepositoryResolver) UpdbtedAt() *gqlutil.DbteTime {
+	return gqlutil.FromTime(r.perm.UpdbtedAt)
 }
 
-var permissionsInfoUserConnectionMaxPageSize = 100
+vbr permissionsInfoUserConnectionMbxPbgeSize = 100
 
-var permissionsInfoUserConnectionOptions = &graphqlutil.ConnectionResolverOptions{
-	OrderBy:     database.OrderBy{{Field: "users.username"}},
+vbr permissionsInfoUserConnectionOptions = &grbphqlutil.ConnectionResolverOptions{
+	OrderBy:     dbtbbbse.OrderBy{{Field: "users.usernbme"}},
 	Ascending:   true,
-	MaxPageSize: &permissionsInfoUserConnectionMaxPageSize,
+	MbxPbgeSize: &permissionsInfoUserConnectionMbxPbgeSize,
 }
 
-func (r *permissionsInfoResolver) Users(ctx context.Context, args graphqlbackend.PermissionsInfoUsersArgs) (*graphqlutil.ConnectionResolver[graphqlbackend.PermissionsInfoUserResolver], error) {
+func (r *permissionsInfoResolver) Users(ctx context.Context, brgs grbphqlbbckend.PermissionsInfoUsersArgs) (*grbphqlutil.ConnectionResolver[grbphqlbbckend.PermissionsInfoUserResolver], error) {
 	if r.repoID == 0 {
 		return nil, nil
 	}
 
 	query := ""
-	if args.Query != nil {
-		query = *args.Query
+	if brgs.Query != nil {
+		query = *brgs.Query
 	}
 
 	connectionStore := &permissionsInfoUsersStore{
@@ -168,64 +168,64 @@ func (r *permissionsInfoResolver) Users(ctx context.Context, args graphqlbackend
 		query:  query,
 	}
 
-	return graphqlutil.NewConnectionResolver[graphqlbackend.PermissionsInfoUserResolver](connectionStore, &args.ConnectionResolverArgs, permissionsInfoUserConnectionOptions)
+	return grbphqlutil.NewConnectionResolver[grbphqlbbckend.PermissionsInfoUserResolver](connectionStore, &brgs.ConnectionResolverArgs, permissionsInfoUserConnectionOptions)
 }
 
 type permissionsInfoUsersStore struct {
 	ctx    context.Context
-	repoID api.RepoID
-	db     database.DB
+	repoID bpi.RepoID
+	db     dbtbbbse.DB
 	query  string
 }
 
-func (s *permissionsInfoUsersStore) MarshalCursor(node graphqlbackend.PermissionsInfoUserResolver, _ database.OrderBy) (*string, error) {
-	cursor := node.User(s.ctx).Username()
+func (s *permissionsInfoUsersStore) MbrshblCursor(node grbphqlbbckend.PermissionsInfoUserResolver, _ dbtbbbse.OrderBy) (*string, error) {
+	cursor := node.User(s.ctx).Usernbme()
 
 	return &cursor, nil
 }
 
-func (s *permissionsInfoUsersStore) UnmarshalCursor(cursor string, _ database.OrderBy) (*string, error) {
+func (s *permissionsInfoUsersStore) UnmbrshblCursor(cursor string, _ dbtbbbse.OrderBy) (*string, error) {
 	cursorSQL := fmt.Sprintf("'%s'", cursor)
 
 	return &cursorSQL, nil
 }
 
-// TODO(naman): implement total count
-func (s *permissionsInfoUsersStore) ComputeTotal(ctx context.Context) (*int32, error) {
+// TODO(nbmbn): implement totbl count
+func (s *permissionsInfoUsersStore) ComputeTotbl(ctx context.Context) (*int32, error) {
 	return nil, nil
 }
 
-func (s *permissionsInfoUsersStore) ComputeNodes(ctx context.Context, args *database.PaginationArgs) ([]graphqlbackend.PermissionsInfoUserResolver, error) {
-	permissions, err := s.db.Perms().ListRepoPermissions(ctx, s.repoID, &database.ListRepoPermissionsArgs{Query: s.query, PaginationArgs: args})
+func (s *permissionsInfoUsersStore) ComputeNodes(ctx context.Context, brgs *dbtbbbse.PbginbtionArgs) ([]grbphqlbbckend.PermissionsInfoUserResolver, error) {
+	permissions, err := s.db.Perms().ListRepoPermissions(ctx, s.repoID, &dbtbbbse.ListRepoPermissionsArgs{Query: s.query, PbginbtionArgs: brgs})
 	if err != nil {
 		return nil, err
 	}
 
-	permissionResolvers := make([]graphqlbackend.PermissionsInfoUserResolver, 0, len(permissions))
-	for _, perm := range permissions {
-		permissionResolvers = append(permissionResolvers, permissionsInfoUserResolver{perm: perm, db: s.db})
+	permissionResolvers := mbke([]grbphqlbbckend.PermissionsInfoUserResolver, 0, len(permissions))
+	for _, perm := rbnge permissions {
+		permissionResolvers = bppend(permissionResolvers, permissionsInfoUserResolver{perm: perm, db: s.db})
 	}
 
 	return permissionResolvers, nil
 }
 
 type permissionsInfoUserResolver struct {
-	db   database.DB
-	perm *database.RepoPermission
+	db   dbtbbbse.DB
+	perm *dbtbbbse.RepoPermission
 }
 
-func (r permissionsInfoUserResolver) ID() graphql.ID {
-	return graphqlbackend.MarshalUserID(r.perm.User.ID)
+func (r permissionsInfoUserResolver) ID() grbphql.ID {
+	return grbphqlbbckend.MbrshblUserID(r.perm.User.ID)
 }
 
-func (r permissionsInfoUserResolver) User(ctx context.Context) *graphqlbackend.UserResolver {
-	return graphqlbackend.NewUserResolver(ctx, r.db, r.perm.User)
+func (r permissionsInfoUserResolver) User(ctx context.Context) *grbphqlbbckend.UserResolver {
+	return grbphqlbbckend.NewUserResolver(ctx, r.db, r.perm.User)
 }
 
-func (r permissionsInfoUserResolver) Reason() string {
-	return string(r.perm.Reason)
+func (r permissionsInfoUserResolver) Rebson() string {
+	return string(r.perm.Rebson)
 }
 
-func (r permissionsInfoUserResolver) UpdatedAt() *gqlutil.DateTime {
-	return gqlutil.FromTime(r.perm.UpdatedAt)
+func (r permissionsInfoUserResolver) UpdbtedAt() *gqlutil.DbteTime {
+	return gqlutil.FromTime(r.perm.UpdbtedAt)
 }

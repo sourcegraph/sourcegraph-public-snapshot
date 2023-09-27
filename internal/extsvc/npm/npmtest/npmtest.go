@@ -1,4 +1,4 @@
-package npmtest
+pbckbge npmtest
 
 import (
 	"bytes"
@@ -6,35 +6,35 @@ import (
 	"io"
 	"testing"
 
-	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/npm"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf/reposource"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc/npm"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
 type MockClient struct {
-	Packages map[reposource.PackageName]*npm.PackageInfo
-	Tarballs map[string]io.Reader
+	Pbckbges mbp[reposource.PbckbgeNbme]*npm.PbckbgeInfo
+	Tbrbblls mbp[string]io.Rebder
 }
 
 func NewMockClient(t testing.TB, deps ...string) *MockClient {
 	t.Helper()
 
-	packages := map[reposource.PackageName]*npm.PackageInfo{}
-	for _, dep := range deps {
-		d, err := reposource.ParseNpmVersionedPackage(dep)
+	pbckbges := mbp[reposource.PbckbgeNbme]*npm.PbckbgeInfo{}
+	for _, dep := rbnge deps {
+		d, err := reposource.PbrseNpmVersionedPbckbge(dep)
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
 
-		name := d.PackageSyntax()
-		info := packages[name]
+		nbme := d.PbckbgeSyntbx()
+		info := pbckbges[nbme]
 
 		if info == nil {
-			info = &npm.PackageInfo{Versions: map[string]*npm.DependencyInfo{}}
-			packages[name] = info
+			info = &npm.PbckbgeInfo{Versions: mbp[string]*npm.DependencyInfo{}}
+			pbckbges[nbme] = info
 		}
 
-		info.Description = string(name) + " description"
+		info.Description = string(nbme) + " description"
 		version := info.Versions[d.Version]
 		if version == nil {
 			version = &npm.DependencyInfo{}
@@ -42,53 +42,53 @@ func NewMockClient(t testing.TB, deps ...string) *MockClient {
 		}
 	}
 
-	return &MockClient{Packages: packages}
+	return &MockClient{Pbckbges: pbckbges}
 }
 
-var _ npm.Client = &MockClient{}
+vbr _ npm.Client = &MockClient{}
 
-func (m *MockClient) GetPackageInfo(ctx context.Context, pkg *reposource.NpmPackageName) (info *npm.PackageInfo, err error) {
-	info = m.Packages[pkg.PackageSyntax()]
+func (m *MockClient) GetPbckbgeInfo(ctx context.Context, pkg *reposource.NpmPbckbgeNbme) (info *npm.PbckbgeInfo, err error) {
+	info = m.Pbckbges[pkg.PbckbgeSyntbx()]
 	if info == nil {
-		return nil, errors.Newf("package not found: %s", pkg.PackageSyntax())
+		return nil, errors.Newf("pbckbge not found: %s", pkg.PbckbgeSyntbx())
 	}
 	return info, nil
 }
 
-func (m *MockClient) GetDependencyInfo(ctx context.Context, dep *reposource.NpmVersionedPackage) (info *npm.DependencyInfo, err error) {
-	pkg, err := m.GetPackageInfo(ctx, dep.NpmPackageName)
+func (m *MockClient) GetDependencyInfo(ctx context.Context, dep *reposource.NpmVersionedPbckbge) (info *npm.DependencyInfo, err error) {
+	pkg, err := m.GetPbckbgeInfo(ctx, dep.NpmPbckbgeNbme)
 	if err != nil {
 		return nil, err
 	}
 
 	info = pkg.Versions[dep.Version]
 	if info == nil {
-		return nil, errors.Newf("package version not found: %s", dep.VersionedPackageSyntax())
+		return nil, errors.Newf("pbckbge version not found: %s", dep.VersionedPbckbgeSyntbx())
 	}
 
 	return info, nil
 }
 
-func (m *MockClient) FetchTarball(_ context.Context, dep *reposource.NpmVersionedPackage) (io.ReadCloser, error) {
-	info, ok := m.Packages[dep.PackageSyntax()]
+func (m *MockClient) FetchTbrbbll(_ context.Context, dep *reposource.NpmVersionedPbckbge) (io.RebdCloser, error) {
+	info, ok := m.Pbckbges[dep.PbckbgeSyntbx()]
 	if !ok {
-		return nil, errors.Newf("Unknown dependency: %s", dep.VersionedPackageSyntax())
+		return nil, errors.Newf("Unknown dependency: %s", dep.VersionedPbckbgeSyntbx())
 	}
 
 	version, ok := info.Versions[dep.Version]
 	if !ok {
-		return nil, errors.Newf("Unknown dependency: %s", dep.VersionedPackageSyntax())
+		return nil, errors.Newf("Unknown dependency: %s", dep.VersionedPbckbgeSyntbx())
 	}
 
-	tgz, ok := m.Tarballs[version.Dist.TarballURL]
+	tgz, ok := m.Tbrbblls[version.Dist.TbrbbllURL]
 	if !ok {
-		return nil, errors.Newf("no tarball for %s", version.Dist.TarballURL)
+		return nil, errors.Newf("no tbrbbll for %s", version.Dist.TbrbbllURL)
 	}
 
-	// tee to a new buffer, to avoid EOF from reading the same one multiple times
-	var newTgz bytes.Buffer
-	tee := io.TeeReader(tgz, &newTgz)
-	m.Tarballs[version.Dist.TarballURL] = &newTgz
+	// tee to b new buffer, to bvoid EOF from rebding the sbme one multiple times
+	vbr newTgz bytes.Buffer
+	tee := io.TeeRebder(tgz, &newTgz)
+	m.Tbrbblls[version.Dist.TbrbbllURL] = &newTgz
 
 	return io.NopCloser(tee), nil
 }

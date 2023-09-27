@@ -1,24 +1,24 @@
-package types
+pbckbge types
 
 import (
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	codeownerspb "github.com/sourcegraph/sourcegraph/internal/own/codeowners/v1"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi"
+	codeownerspb "github.com/sourcegrbph/sourcegrbph/internbl/own/codeowners/v1"
 )
 
 type CodeownersFile struct {
-	CreatedAt time.Time
-	UpdatedAt time.Time
+	CrebtedAt time.Time
+	UpdbtedAt time.Time
 
-	RepoID   api.RepoID
+	RepoID   bpi.RepoID
 	Contents string
 	Proto    *codeownerspb.File
 }
 
-// These signal constants should match the names in the `own_signal_configurations` table
+// These signbl constbnts should mbtch the nbmes in the `own_signbl_configurbtions` tbble
 const (
-	SignalRecentContributors = "recent-contributors"
-	SignalRecentViews        = "recent-views"
-	Analytics                = "analytics"
+	SignblRecentContributors = "recent-contributors"
+	SignblRecentViews        = "recent-views"
+	Anblytics                = "bnblytics"
 )

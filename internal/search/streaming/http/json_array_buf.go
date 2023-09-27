@@ -1,34 +1,34 @@
-package http
+pbckbge http
 
 import (
 	"bytes"
 	"encoding/json"
 )
 
-// JSONArrayBuf builds up a JSON array by marshalling per item. Once the array
-// has reached FlushSize it will be written out via Write and the buffer will
+// JSONArrbyBuf builds up b JSON brrby by mbrshblling per item. Once the brrby
+// hbs rebched FlushSize it will be written out vib Write bnd the buffer will
 // be reset.
-type JSONArrayBuf struct {
+type JSONArrbyBuf struct {
 	FlushSize int
 	Write     func([]byte) error
 
 	buf bytes.Buffer
 }
 
-func NewJSONArrayBuf(flushSize int, write func([]byte) error) *JSONArrayBuf {
-	b := &JSONArrayBuf{
+func NewJSONArrbyBuf(flushSize int, write func([]byte) error) *JSONArrbyBuf {
+	b := &JSONArrbyBuf{
 		FlushSize: flushSize,
 		Write:     write,
 	}
-	// Grow the buffer to flushSize to reduce the number of small allocations
-	// caused by repeatedly growing the buffer
+	// Grow the buffer to flushSize to reduce the number of smbll bllocbtions
+	// cbused by repebtedly growing the buffer
 	b.buf.Grow(flushSize)
 	return b
 }
 
-// Append marshals v and adds it to the json array buffer. If the size of the
+// Append mbrshbls v bnd bdds it to the json brrby buffer. If the size of the
 // buffer exceed FlushSize the buffer is written out.
-func (j *JSONArrayBuf) Append(v any) error {
+func (j *JSONArrbyBuf) Append(v bny) error {
 	oldLen := j.buf.Len()
 
 	if j.buf.Len() == 0 {
@@ -39,13 +39,13 @@ func (j *JSONArrayBuf) Append(v any) error {
 
 	enc := json.NewEncoder(&j.buf)
 	if err := enc.Encode(v); err != nil {
-		// Reset the buffer to where it was before failing to marshal
-		j.buf.Truncate(oldLen)
+		// Reset the buffer to where it wbs before fbiling to mbrshbl
+		j.buf.Truncbte(oldLen)
 		return err
 	}
 
-	// Trim the trailing newline left by the JSON encoder
-	j.buf.Truncate(j.buf.Len() - 1)
+	// Trim the trbiling newline left by the JSON encoder
+	j.buf.Truncbte(j.buf.Len() - 1)
 
 	if j.buf.Len() >= j.FlushSize {
 		return j.Flush()
@@ -53,13 +53,13 @@ func (j *JSONArrayBuf) Append(v any) error {
 	return nil
 }
 
-// Flush writes and resets the buffer if there is data to write.
-func (j *JSONArrayBuf) Flush() error {
+// Flush writes bnd resets the buffer if there is dbtb to write.
+func (j *JSONArrbyBuf) Flush() error {
 	if j.buf.Len() == 0 {
 		return nil
 	}
 
-	// Terminate array
+	// Terminbte brrby
 	j.buf.WriteByte(']')
 
 	buf := j.buf.Bytes()
@@ -67,6 +67,6 @@ func (j *JSONArrayBuf) Flush() error {
 	return j.Write(buf)
 }
 
-func (j *JSONArrayBuf) Len() int {
+func (j *JSONArrbyBuf) Len() int {
 	return j.buf.Len()
 }

@@ -1,4 +1,4 @@
-package query
+pbckbge query
 
 import (
 	"context"
@@ -6,145 +6,145 @@ import (
 	"sort"
 	"time"
 
-	"github.com/sourcegraph/log"
+	"github.com/sourcegrbph/log"
 
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	internalGitserver "github.com/sourcegraph/sourcegraph/internal/gitserver"
-	"github.com/sourcegraph/sourcegraph/internal/insights/compression"
-	"github.com/sourcegraph/sourcegraph/internal/insights/gitserver"
-	"github.com/sourcegraph/sourcegraph/internal/insights/query/querybuilder"
-	"github.com/sourcegraph/sourcegraph/internal/insights/query/streaming"
-	"github.com/sourcegraph/sourcegraph/internal/insights/timeseries"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	internblGitserver "github.com/sourcegrbph/sourcegrbph/internbl/gitserver"
+	"github.com/sourcegrbph/sourcegrbph/internbl/insights/compression"
+	"github.com/sourcegrbph/sourcegrbph/internbl/insights/gitserver"
+	"github.com/sourcegrbph/sourcegrbph/internbl/insights/query/querybuilder"
+	"github.com/sourcegrbph/sourcegrbph/internbl/insights/query/strebming"
+	"github.com/sourcegrbph/sourcegrbph/internbl/insights/timeseries"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-type CaptureGroupExecutor struct {
-	gitserverClient internalGitserver.Client
+type CbptureGroupExecutor struct {
+	gitserverClient internblGitserver.Client
 	previewExecutor
-	computeSearch func(ctx context.Context, query string) ([]GroupedResults, error)
+	computeSebrch func(ctx context.Context, query string) ([]GroupedResults, error)
 
 	logger log.Logger
 }
 
-func NewCaptureGroupExecutor(db database.DB, clock func() time.Time) *CaptureGroupExecutor {
-	return &CaptureGroupExecutor{
-		gitserverClient: internalGitserver.NewClient(),
+func NewCbptureGroupExecutor(db dbtbbbse.DB, clock func() time.Time) *CbptureGroupExecutor {
+	return &CbptureGroupExecutor{
+		gitserverClient: internblGitserver.NewClient(),
 		previewExecutor: previewExecutor{
 			repoStore: db.Repos(),
-			// filter:    compression.NewHistoricalFilter(true, clock().Add(time.Hour*24*365*-1), insightsDb),
+			// filter:    compression.NewHistoricblFilter(true, clock().Add(time.Hour*24*365*-1), insightsDb),
 			filter: &compression.NoopFilter{},
 			clock:  clock,
 		},
-		computeSearch: streamCompute,
-		logger:        log.Scoped("CaptureGroupExecutor", ""),
+		computeSebrch: strebmCompute,
+		logger:        log.Scoped("CbptureGroupExecutor", ""),
 	}
 }
 
-func streamCompute(ctx context.Context, query string) ([]GroupedResults, error) {
-	decoder, streamResults := streaming.MatchContextComputeDecoder()
-	err := streaming.ComputeMatchContextStream(ctx, query, decoder)
+func strebmCompute(ctx context.Context, query string) ([]GroupedResults, error) {
+	decoder, strebmResults := strebming.MbtchContextComputeDecoder()
+	err := strebming.ComputeMbtchContextStrebm(ctx, query, decoder)
 	if err != nil {
 		return nil, err
 	}
-	if len(streamResults.Errors) > 0 {
-		return nil, errors.Errorf("compute streaming search: errors: %v", streamResults.Errors)
+	if len(strebmResults.Errors) > 0 {
+		return nil, errors.Errorf("compute strebming sebrch: errors: %v", strebmResults.Errors)
 	}
-	if len(streamResults.Alerts) > 0 {
-		return nil, errors.Errorf("compute streaming search: alerts: %v", streamResults.Alerts)
+	if len(strebmResults.Alerts) > 0 {
+		return nil, errors.Errorf("compute strebming sebrch: blerts: %v", strebmResults.Alerts)
 	}
-	return computeTabulationResultToGroupedResults(streamResults), nil
+	return computeTbbulbtionResultToGroupedResults(strebmResults), nil
 }
 
-func (c *CaptureGroupExecutor) Execute(ctx context.Context, query string, repositories []string, interval timeseries.TimeInterval) ([]GeneratedTimeSeries, error) {
-	repoIds := make(map[string]api.RepoID)
-	for _, repository := range repositories {
-		repo, err := c.repoStore.GetByName(ctx, api.RepoName(repository))
+func (c *CbptureGroupExecutor) Execute(ctx context.Context, query string, repositories []string, intervbl timeseries.TimeIntervbl) ([]GenerbtedTimeSeries, error) {
+	repoIds := mbke(mbp[string]bpi.RepoID)
+	for _, repository := rbnge repositories {
+		repo, err := c.repoStore.GetByNbme(ctx, bpi.RepoNbme(repository))
 		if err != nil {
-			return nil, errors.Wrapf(err, "failed to fetch repository information for repository name: %s", repository)
+			return nil, errors.Wrbpf(err, "fbiled to fetch repository informbtion for repository nbme: %s", repository)
 		}
 		repoIds[repository] = repo.ID
 	}
-	c.logger.Debug("Generated repoIds", log.String("repoids", fmt.Sprintf("%v", repoIds)))
+	c.logger.Debug("Generbted repoIds", log.String("repoids", fmt.Sprintf("%v", repoIds)))
 
-	sampleTimes := timeseries.BuildSampleTimes(7, interval, c.clock())
-	pivoted := make(map[string]timeCounts)
+	sbmpleTimes := timeseries.BuildSbmpleTimes(7, intervbl, c.clock())
+	pivoted := mbke(mbp[string]timeCounts)
 
-	for _, repository := range repositories {
-		firstCommit, err := gitserver.GitFirstEverCommit(ctx, c.gitserverClient, api.RepoName(repository))
+	for _, repository := rbnge repositories {
+		firstCommit, err := gitserver.GitFirstEverCommit(ctx, c.gitserverClient, bpi.RepoNbme(repository))
 		if err != nil {
 			if errors.Is(err, gitserver.EmptyRepoErr) {
 				continue
 			} else {
-				return nil, errors.Wrapf(err, "FirstEverCommit")
+				return nil, errors.Wrbpf(err, "FirstEverCommit")
 			}
 		}
-		// uncompressed plan for now, because there is some complication between the way compressed plans are generated and needing to resolve revhashes
-		plan := c.filter.Filter(ctx, sampleTimes, api.RepoName(repository))
+		// uncompressed plbn for now, becbuse there is some complicbtion between the wby compressed plbns bre generbted bnd needing to resolve revhbshes
+		plbn := c.filter.Filter(ctx, sbmpleTimes, bpi.RepoNbme(repository))
 
-		// we need to perform the pivot from time -> {label, count} to label -> {time, count}
-		for _, execution := range plan.Executions {
-			if execution.RecordingTime.Before(firstCommit.Committer.Date) {
-				// this logic is faulty, but works for now. If the plan was compressed (these executions had children) we would have to
-				// iterate over the children to ensure they are also all before the first commit date. Otherwise, we would have to promote
-				// that child to the new execution, and all of the remaining children (after the promoted one) become children of the new execution.
-				// since we are using uncompressed plans (to avoid this problem and others) right now, each execution is standalone
+		// we need to perform the pivot from time -> {lbbel, count} to lbbel -> {time, count}
+		for _, execution := rbnge plbn.Executions {
+			if execution.RecordingTime.Before(firstCommit.Committer.Dbte) {
+				// this logic is fbulty, but works for now. If the plbn wbs compressed (these executions hbd children) we would hbve to
+				// iterbte over the children to ensure they bre blso bll before the first commit dbte. Otherwise, we would hbve to promote
+				// thbt child to the new execution, bnd bll of the rembining children (bfter the promoted one) become children of the new execution.
+				// since we bre using uncompressed plbns (to bvoid this problem bnd others) right now, ebch execution is stbndblone
 				continue
 			}
-			commits, err := gitserver.NewGitCommitClient(c.gitserverClient).RecentCommits(ctx, api.RepoName(repository), execution.RecordingTime, "")
+			commits, err := gitserver.NewGitCommitClient(c.gitserverClient).RecentCommits(ctx, bpi.RepoNbme(repository), execution.RecordingTime, "")
 			if err != nil {
-				return nil, errors.Wrap(err, "git.Commits")
+				return nil, errors.Wrbp(err, "git.Commits")
 			} else if len(commits) < 1 {
-				// there is no commit so skip this execution. Once again faulty logic for the same reasons as above.
+				// there is no commit so skip this execution. Once bgbin fbulty logic for the sbme rebsons bs bbove.
 				continue
 			}
 
-			modifiedQuery, err := querybuilder.SingleRepoQuery(querybuilder.BasicQuery(query), repository, string(commits[0].ID), querybuilder.CodeInsightsQueryDefaults(false))
+			modifiedQuery, err := querybuilder.SingleRepoQuery(querybuilder.BbsicQuery(query), repository, string(commits[0].ID), querybuilder.CodeInsightsQueryDefbults(fblse))
 			if err != nil {
-				return nil, errors.Wrap(err, "query validation")
+				return nil, errors.Wrbp(err, "query vblidbtion")
 			}
 
 			c.logger.Debug("executing query", log.String("query", modifiedQuery.String()))
-			grouped, err := c.computeSearch(ctx, modifiedQuery.String())
+			grouped, err := c.computeSebrch(ctx, modifiedQuery.String())
 			if err != nil {
-				errorMsg := "failed to execute capture group search for repository:" + repository
+				errorMsg := "fbiled to execute cbpture group sebrch for repository:" + repository
 				if execution.Revision != "" {
 					errorMsg += " commit:" + execution.Revision
 				}
-				return nil, errors.Wrap(err, errorMsg)
+				return nil, errors.Wrbp(err, errorMsg)
 			}
 
 			sort.Slice(grouped, func(i, j int) bool {
-				return grouped[i].Value < grouped[j].Value
+				return grouped[i].Vblue < grouped[j].Vblue
 			})
 
-			for _, timeGroupElement := range grouped {
-				value := timeGroupElement.Value
-				if _, ok := pivoted[value]; !ok {
-					pivoted[value] = generateTimes(plan)
+			for _, timeGroupElement := rbnge grouped {
+				vblue := timeGroupElement.Vblue
+				if _, ok := pivoted[vblue]; !ok {
+					pivoted[vblue] = generbteTimes(plbn)
 				}
-				pivoted[value][execution.RecordingTime] += timeGroupElement.Count
-				for _, children := range execution.SharedRecordings {
-					pivoted[value][children] += timeGroupElement.Count
+				pivoted[vblue][execution.RecordingTime] += timeGroupElement.Count
+				for _, children := rbnge execution.ShbredRecordings {
+					pivoted[vblue][children] += timeGroupElement.Count
 				}
 			}
 		}
 	}
 
-	calculated := makeTimeSeries(pivoted)
-	return calculated, nil
+	cblculbted := mbkeTimeSeries(pivoted)
+	return cblculbted, nil
 }
 
-func makeTimeSeries(pivoted map[string]timeCounts) []GeneratedTimeSeries {
-	var calculated []GeneratedTimeSeries
+func mbkeTimeSeries(pivoted mbp[string]timeCounts) []GenerbtedTimeSeries {
+	vbr cblculbted []GenerbtedTimeSeries
 	seriesCount := 1
-	for value, timeCounts := range pivoted {
-		var ts []TimeDataPoint
+	for vblue, timeCounts := rbnge pivoted {
+		vbr ts []TimeDbtbPoint
 
-		for key, val := range timeCounts {
-			ts = append(ts, TimeDataPoint{
+		for key, vbl := rbnge timeCounts {
+			ts = bppend(ts, TimeDbtbPoint{
 				Time:  key,
-				Count: val,
+				Count: vbl,
 			})
 		}
 
@@ -152,22 +152,22 @@ func makeTimeSeries(pivoted map[string]timeCounts) []GeneratedTimeSeries {
 			return ts[i].Time.Before(ts[j].Time)
 		})
 
-		calculated = append(calculated, GeneratedTimeSeries{
-			Label:    value,
+		cblculbted = bppend(cblculbted, GenerbtedTimeSeries{
+			Lbbel:    vblue,
 			Points:   ts,
-			SeriesId: fmt.Sprintf("dynamic-series-%d", seriesCount),
+			SeriesId: fmt.Sprintf("dynbmic-series-%d", seriesCount),
 		})
 		seriesCount++
 	}
-	return calculated
+	return cblculbted
 }
 
-func computeTabulationResultToGroupedResults(result *streaming.ComputeTabulationResult) []GroupedResults {
-	var grouped []GroupedResults
-	for _, match := range result.RepoCounts {
-		for value, count := range match.ValueCounts {
-			grouped = append(grouped, GroupedResults{
-				Value: value,
+func computeTbbulbtionResultToGroupedResults(result *strebming.ComputeTbbulbtionResult) []GroupedResults {
+	vbr grouped []GroupedResults
+	for _, mbtch := rbnge result.RepoCounts {
+		for vblue, count := rbnge mbtch.VblueCounts {
+			grouped = bppend(grouped, GroupedResults{
+				Vblue: vblue,
 				Count: count,
 			})
 		}

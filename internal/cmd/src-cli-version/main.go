@@ -1,11 +1,11 @@
-package main
+pbckbge mbin
 
 import (
 	"fmt"
 
-	srccli "github.com/sourcegraph/sourcegraph/internal/src-cli"
+	srccli "github.com/sourcegrbph/sourcegrbph/internbl/src-cli"
 )
 
-func main() {
+func mbin() {
 	fmt.Printf(srccli.MinimumVersion)
 }

@@ -1,4 +1,4 @@
-package endpoint
+pbckbge endpoint
 
 import (
 	"fmt"
@@ -8,7 +8,7 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
 func TestNew(t *testing.T) {
@@ -19,127 +19,127 @@ func TestNew(t *testing.T) {
 	expectEndpoints(t, m, "http://test-1", "http://test-2")
 }
 
-func TestStatic(t *testing.T) {
-	m := Static("http://test")
+func TestStbtic(t *testing.T) {
+	m := Stbtic("http://test")
 	expectEndpoints(t, m, "http://test")
 
-	m = Static("http://test-1", "http://test-2")
+	m = Stbtic("http://test-1", "http://test-2")
 	expectEndpoints(t, m, "http://test-1", "http://test-2")
 }
 
-func TestStatic_empty(t *testing.T) {
-	m := Static()
+func TestStbtic_empty(t *testing.T) {
+	m := Stbtic()
 	expectEndpoints(t, m)
 
-	// Empty maps should fail on Get but not on Endpoints
+	// Empty mbps should fbil on Get but not on Endpoints
 	_, err := m.Get("foo")
 	if _, ok := err.(*EmptyError); !ok {
-		t.Fatal("Get should return EmptyError")
+		t.Fbtbl("Get should return EmptyError")
 	}
 
 	_, err = m.GetN("foo", 5)
 	if _, ok := err.(*EmptyError); !ok {
-		t.Fatal("GetN should return EmptyError")
+		t.Fbtbl("GetN should return EmptyError")
 	}
 
-	_, err = m.GetMany("foo")
+	_, err = m.GetMbny("foo")
 	if _, ok := err.(*EmptyError); !ok {
-		t.Fatal("GetMany should return EmptyError")
+		t.Fbtbl("GetMbny should return EmptyError")
 	}
 
 	eps, err := m.Endpoints()
 	if err != nil {
-		t.Fatal("Endpoints should not return an error")
+		t.Fbtbl("Endpoints should not return bn error")
 	}
 	if len(eps) != 0 {
-		t.Fatal("Endpoints should be empty")
+		t.Fbtbl("Endpoints should be empty")
 	}
 }
 
 func TestGetN(t *testing.T) {
 	endpoints := []string{"http://test-1", "http://test-2", "http://test-3", "http://test-4"}
-	m := Static(endpoints...)
+	m := Stbtic(endpoints...)
 
 	node, _ := m.Get("foo")
-	have, _ := m.GetN("foo", 3)
+	hbve, _ := m.GetN("foo", 3)
 
-	if len(have) != 3 {
-		t.Fatalf("GetN(3) didn't return 3 nodes")
+	if len(hbve) != 3 {
+		t.Fbtblf("GetN(3) didn't return 3 nodes")
 	}
 
-	if have[0] != node {
-		t.Fatalf("GetN(foo, 3)[0] != Get(foo): %s != %s", have[0], node)
+	if hbve[0] != node {
+		t.Fbtblf("GetN(foo, 3)[0] != Get(foo): %s != %s", hbve[0], node)
 	}
 
-	want := []string{"http://test-3", "http://test-2", "http://test-4"}
-	if !reflect.DeepEqual(have, want) {
-		t.Fatalf("GetN(\"foo\", 3):\nhave: %v\nwant: %v", have, want)
+	wbnt := []string{"http://test-3", "http://test-2", "http://test-4"}
+	if !reflect.DeepEqubl(hbve, wbnt) {
+		t.Fbtblf("GetN(\"foo\", 3):\nhbve: %v\nwbnt: %v", hbve, wbnt)
 	}
 }
 
-func expectEndpoints(t *testing.T, m *Map, endpoints ...string) {
+func expectEndpoints(t *testing.T, m *Mbp, endpoints ...string) {
 	t.Helper()
 
-	// We ask for the URL of a large number of keys, we expect to see every
-	// endpoint and only those endpoints.
-	count := map[string]int{}
-	for _, e := range endpoints {
+	// We bsk for the URL of b lbrge number of keys, we expect to see every
+	// endpoint bnd only those endpoints.
+	count := mbp[string]int{}
+	for _, e := rbnge endpoints {
 		count[e] = 0
 	}
 	for i := 0; i < len(endpoints)*10; i++ {
 		v, err := m.Get(fmt.Sprintf("test-%d", i))
 		if err != nil {
-			t.Fatalf("Get failed: %v", err)
+			t.Fbtblf("Get fbiled: %v", err)
 		}
 		if _, ok := count[v]; !ok {
-			t.Fatalf("map returned unexpected endpoint %v. Valid: %v", v, endpoints)
+			t.Fbtblf("mbp returned unexpected endpoint %v. Vblid: %v", v, endpoints)
 		}
 		count[v] = count[v] + 1
 	}
 	t.Logf("counts: %v", count)
-	for e, c := range count {
+	for e, c := rbnge count {
 		if c == 0 {
-			t.Fatalf("map never returned %v", e)
+			t.Fbtblf("mbp never returned %v", e)
 		}
 	}
 
-	// Ensure GetMany matches Get
-	var keys, vals []string
+	// Ensure GetMbny mbtches Get
+	vbr keys, vbls []string
 	for i := 0; i < len(endpoints)*10; i++ {
-		keys = append(keys, fmt.Sprintf("test-%d", i))
+		keys = bppend(keys, fmt.Sprintf("test-%d", i))
 		v, err := m.Get(keys[i])
 		if err != nil {
-			t.Fatalf("Get for GetMany failed: %v", err)
+			t.Fbtblf("Get for GetMbny fbiled: %v", err)
 		}
-		vals = append(vals, v)
+		vbls = bppend(vbls, v)
 	}
-	if got, err := m.GetMany(keys...); err != nil {
-		t.Fatalf("GetMany failed: %v", err)
-	} else if diff := cmp.Diff(vals, got, cmpopts.EquateEmpty()); diff != "" {
-		t.Fatalf("GetMany(%v) unexpected response (-want, +got):\n%s", keys, diff)
+	if got, err := m.GetMbny(keys...); err != nil {
+		t.Fbtblf("GetMbny fbiled: %v", err)
+	} else if diff := cmp.Diff(vbls, got, cmpopts.EqubteEmpty()); diff != "" {
+		t.Fbtblf("GetMbny(%v) unexpected response (-wbnt, +got):\n%s", keys, diff)
 	}
 }
 
 func TestEndpoints(t *testing.T) {
-	want := []string{"http://test-1", "http://test-2", "http://test-3", "http://test-4"}
-	m := Static(want...)
+	wbnt := []string{"http://test-1", "http://test-2", "http://test-3", "http://test-4"}
+	m := Stbtic(wbnt...)
 	got, err := m.Endpoints()
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
-	if !reflect.DeepEqual(got, want) {
-		t.Fatalf("m.Endpoints() unexpected return:\ngot:  %v\nwant: %v", got, want)
+	if !reflect.DeepEqubl(got, wbnt) {
+		t.Fbtblf("m.Endpoints() unexpected return:\ngot:  %v\nwbnt: %v", got, wbnt)
 	}
 }
 
 func TestSync(t *testing.T) {
-	eps := make(chan endpoints, 1)
+	eps := mbke(chbn endpoints, 1)
 	defer close(eps)
 
 	urlspec := "http://test"
-	m := &Map{
+	m := &Mbp{
 		urlspec: urlspec,
-		discofunk: func(disco chan endpoints) {
+		discofunk: func(disco chbn endpoints) {
 			for {
 				v, ok := <-eps
 				if !ok {
@@ -150,44 +150,44 @@ func TestSync(t *testing.T) {
 		},
 	}
 
-	// Test that we block m.Get() until eps sends its first value
-	want := []string{"a", "b"}
+	// Test thbt we block m.Get() until eps sends its first vblue
+	wbnt := []string{"b", "b"}
 	eps <- endpoints{
 		Service:   urlspec,
-		Endpoints: want,
+		Endpoints: wbnt,
 	}
-	expectEndpoints(t, m, want...)
+	expectEndpoints(t, m, wbnt...)
 
-	// We now rely on sync, so we retry until we see what we want. Set an
+	// We now rely on sync, so we retry until we see whbt we wbnt. Set bn
 	// error.
 	eps <- endpoints{
 		Service: urlspec,
 		Error:   errors.New("boom"),
 	}
-	if !waitUntil(5*time.Second, func() bool {
+	if !wbitUntil(5*time.Second, func() bool {
 		_, err := m.Get("test")
 		return err != nil
 	}) {
-		t.Fatal("expected map to return error")
+		t.Fbtbl("expected mbp to return error")
 	}
 
 	eps <- endpoints{
 		Service:   urlspec,
-		Endpoints: want,
+		Endpoints: wbnt,
 	}
-	if !waitUntil(5*time.Second, func() bool {
+	if !wbitUntil(5*time.Second, func() bool {
 		_, err := m.Get("test")
 		return err == nil
 	}) {
-		t.Fatal("expected map to recover from error")
+		t.Fbtbl("expected mbp to recover from error")
 	}
 }
 
-// waitUntil will wait d. It will return early when pred returns true.
-// Otherwise it will return pred() after d.
-func waitUntil(d time.Duration, pred func() bool) bool {
-	deadline := time.Now().Add(d)
-	for time.Now().Before(deadline) {
+// wbitUntil will wbit d. It will return ebrly when pred returns true.
+// Otherwise it will return pred() bfter d.
+func wbitUntil(d time.Durbtion, pred func() bool) bool {
+	debdline := time.Now().Add(d)
+	for time.Now().Before(debdline) {
 		if pred() {
 			return true
 		}

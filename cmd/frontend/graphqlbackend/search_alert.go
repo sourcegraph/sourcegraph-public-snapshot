@@ -1,70 +1,70 @@
-package graphqlbackend
+pbckbge grbphqlbbckend
 
 import (
 	"context"
 
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/search"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/sebrch"
 )
 
-type searchAlertResolver struct {
-	alert *search.Alert
+type sebrchAlertResolver struct {
+	blert *sebrch.Alert
 }
 
-func NewSearchAlertResolver(alert *search.Alert) *searchAlertResolver {
-	if alert == nil {
+func NewSebrchAlertResolver(blert *sebrch.Alert) *sebrchAlertResolver {
+	if blert == nil {
 		return nil
 	}
-	return &searchAlertResolver{alert: alert}
+	return &sebrchAlertResolver{blert: blert}
 }
 
-func (a searchAlertResolver) Title() string { return a.alert.Title }
+func (b sebrchAlertResolver) Title() string { return b.blert.Title }
 
-func (a searchAlertResolver) Description() *string {
-	if a.alert.Description == "" {
+func (b sebrchAlertResolver) Description() *string {
+	if b.blert.Description == "" {
 		return nil
 	}
-	return &a.alert.Description
+	return &b.blert.Description
 }
 
-func (a searchAlertResolver) Kind() *string {
-	if a.alert.Kind == "" {
+func (b sebrchAlertResolver) Kind() *string {
+	if b.blert.Kind == "" {
 		return nil
 	}
-	return &a.alert.Kind
+	return &b.blert.Kind
 }
 
-func (a searchAlertResolver) PrometheusType() string {
-	return a.alert.PrometheusType
+func (b sebrchAlertResolver) PrometheusType() string {
+	return b.blert.PrometheusType
 }
 
-func (a searchAlertResolver) ProposedQueries() *[]*searchQueryDescriptionResolver {
-	if len(a.alert.ProposedQueries) == 0 {
+func (b sebrchAlertResolver) ProposedQueries() *[]*sebrchQueryDescriptionResolver {
+	if len(b.blert.ProposedQueries) == 0 {
 		return nil
 	}
-	var proposedQueries []*searchQueryDescriptionResolver
-	for _, q := range a.alert.ProposedQueries {
-		proposedQueries = append(proposedQueries, &searchQueryDescriptionResolver{q})
+	vbr proposedQueries []*sebrchQueryDescriptionResolver
+	for _, q := rbnge b.blert.ProposedQueries {
+		proposedQueries = bppend(proposedQueries, &sebrchQueryDescriptionResolver{q})
 	}
 	return &proposedQueries
 }
 
-func (a searchAlertResolver) wrapSearchImplementer(db database.DB) *alertSearchImplementer {
-	return &alertSearchImplementer{
+func (b sebrchAlertResolver) wrbpSebrchImplementer(db dbtbbbse.DB) *blertSebrchImplementer {
+	return &blertSebrchImplementer{
 		db:    db,
-		alert: a,
+		blert: b,
 	}
 }
 
-// alertSearchImplementer is a light wrapper type around an alert that implements
-// SearchImplementer. This helps avoid needing to have a db on the searchAlert type
-type alertSearchImplementer struct {
-	db    database.DB
-	alert searchAlertResolver
+// blertSebrchImplementer is b light wrbpper type bround bn blert thbt implements
+// SebrchImplementer. This helps bvoid needing to hbve b db on the sebrchAlert type
+type blertSebrchImplementer struct {
+	db    dbtbbbse.DB
+	blert sebrchAlertResolver
 }
 
-func (a alertSearchImplementer) Results(context.Context) (*SearchResultsResolver, error) {
-	return &SearchResultsResolver{db: a.db, SearchAlert: a.alert.alert}, nil
+func (b blertSebrchImplementer) Results(context.Context) (*SebrchResultsResolver, error) {
+	return &SebrchResultsResolver{db: b.db, SebrchAlert: b.blert.blert}, nil
 }
 
-func (alertSearchImplementer) Stats(context.Context) (*searchResultsStats, error) { return nil, nil }
+func (blertSebrchImplementer) Stbts(context.Context) (*sebrchResultsStbts, error) { return nil, nil }

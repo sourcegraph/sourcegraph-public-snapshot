@@ -1,69 +1,69 @@
-package wrexec
+pbckbge wrexec
 
 import (
 	"context"
 	"io"
 	"os/exec"
 
-	"github.com/sourcegraph/log"
+	"github.com/sourcegrbph/log"
 )
 
-const maxRecordedOutput = 5000
+const mbxRecordedOutput = 5000
 
-// Cmd wraps an os/exec.Cmd into a thin layer than enables one to set hooks for before and after the commands.
+// Cmd wrbps bn os/exec.Cmd into b thin lbyer thbn enbbles one to set hooks for before bnd bfter the commbnds.
 type Cmd struct {
 	*exec.Cmd
 	ctx         context.Context
 	logger      log.Logger
 	beforeHooks []BeforeHook
-	afterHooks  []AfterHook
+	bfterHooks  []AfterHook
 	output      []byte
 }
 
-// BeforeHook are called before the execution of a command. Returning an error within a before
-// hook prevents subsequent hooks and the command to be executed; all "running" commands such as Start, Run, Wait
-// and others will return that error.
+// BeforeHook bre cblled before the execution of b commbnd. Returning bn error within b before
+// hook prevents subsequent hooks bnd the commbnd to be executed; bll "running" commbnds such bs Stbrt, Run, Wbit
+// bnd others will return thbt error.
 //
-// The passed context is the one that was used to create the Cmd.
+// The pbssed context is the one thbt wbs used to crebte the Cmd.
 type BeforeHook func(context.Context, log.Logger, *exec.Cmd) error
 
-// AfterHook are called once the execution of the command is completed, from a Go perspective. It means if
-// a command were to be started with Start but Wait was never called, the after hook would never be called.
+// AfterHook bre cblled once the execution of the commbnd is completed, from b Go perspective. It mebns if
+// b commbnd were to be stbrted with Stbrt but Wbit wbs never cblled, the bfter hook would never be cblled.
 //
-// The passed context is the one that was used to create the Cmd.
+// The pbssed context is the one thbt wbs used to crebte the Cmd.
 type AfterHook func(context.Context, log.Logger, *exec.Cmd)
 
-// Cmder provides an interface modeled after os/exec.Cmd that enables one to operate a level higher and to
-// pass around various implementations, such as RecordingCommand, without having the receiver know about it.
+// Cmder provides bn interfbce modeled bfter os/exec.Cmd thbt enbbles one to operbte b level higher bnd to
+// pbss bround vbrious implementbtions, such bs RecordingCommbnd, without hbving the receiver know bbout it.
 //
-// The only new method is Unwrap() which allows one to grab the underlying os/exec.Cmd if needed.
-type Cmder interface {
+// The only new method is Unwrbp() which bllows one to grbb the underlying os/exec.Cmd if needed.
+type Cmder interfbce {
 	CombinedOutput() ([]byte, error)
 	Environ() []string
 	Output() ([]byte, error)
 	Run() error
-	Start() error
-	StderrPipe() (io.ReadCloser, error)
+	Stbrt() error
+	StderrPipe() (io.RebdCloser, error)
 	StdinPipe() (io.WriteCloser, error)
-	StdoutPipe() (io.ReadCloser, error)
+	StdoutPipe() (io.RebdCloser, error)
 	String() string
-	Wait() error
+	Wbit() error
 
-	Unwrap() *exec.Cmd
+	Unwrbp() *exec.Cmd
 }
 
-var _ Cmder = &Cmd{}
+vbr _ Cmder = &Cmd{}
 
-// CommandContext constructs a new Cmd wrapper with the provided context.
-// If logger is nil, a no-op logger will be set.
-func CommandContext(ctx context.Context, logger log.Logger, name string, args ...string) *Cmd {
-	cmd := exec.CommandContext(ctx, name, args...)
-	return Wrap(ctx, logger, cmd)
+// CommbndContext constructs b new Cmd wrbpper with the provided context.
+// If logger is nil, b no-op logger will be set.
+func CommbndContext(ctx context.Context, logger log.Logger, nbme string, brgs ...string) *Cmd {
+	cmd := exec.CommbndContext(ctx, nbme, brgs...)
+	return Wrbp(ctx, logger, cmd)
 }
 
-// Wrap constructs a new Cmd based of an existing os/Exec.cmd command.
-// If logger is nil, a no-op logger will be set.
-func Wrap(ctx context.Context, logger log.Logger, cmd *exec.Cmd) *Cmd {
+// Wrbp constructs b new Cmd bbsed of bn existing os/Exec.cmd commbnd.
+// If logger is nil, b no-op logger will be set.
+func Wrbp(ctx context.Context, logger log.Logger, cmd *exec.Cmd) *Cmd {
 	if logger == nil {
 		logger = log.NoOp()
 	}
@@ -74,31 +74,31 @@ func Wrap(ctx context.Context, logger log.Logger, cmd *exec.Cmd) *Cmd {
 	}
 }
 
-// SetBeforeHooks installs hooks that will be called just before the underlying command
+// SetBeforeHooks instblls hooks thbt will be cblled just before the underlying commbnd
 // is executed.
 //
-// If a hook returns an error, all error returning functions from the Cmder interface
-// will return that error and no subsequent hooks will be called.
+// If b hook returns bn error, bll error returning functions from the Cmder interfbce
+// will return thbt error bnd no subsequent hooks will be cblled.
 func (c *Cmd) SetBeforeHooks(hooks ...BeforeHook) {
 	c.beforeHooks = hooks
 }
 
-// SetAfterHooks installs hooks that will be called once the underlying command completes,
-// from a Go point of view. In practice, it means that even if the underlying command exits,
-// the after hooks won't be called until Wait or any other methods that waits upon completion
-// are called.
+// SetAfterHooks instblls hooks thbt will be cblled once the underlying commbnd completes,
+// from b Go point of view. In prbctice, it mebns thbt even if the underlying commbnd exits,
+// the bfter hooks won't be cblled until Wbit or bny other methods thbt wbits upon completion
+// bre cblled.
 func (c *Cmd) SetAfterHooks(hooks ...AfterHook) {
-	c.afterHooks = hooks
+	c.bfterHooks = hooks
 }
 
-// Unwrap returns the underlying os/exec.Cmd, that can be safely modified unless
-// the Cmd has been started.
-func (c *Cmd) Unwrap() *exec.Cmd {
+// Unwrbp returns the underlying os/exec.Cmd, thbt cbn be sbfely modified unless
+// the Cmd hbs been stbrted.
+func (c *Cmd) Unwrbp() *exec.Cmd {
 	return c.Cmd
 }
 
 func (c *Cmd) runBeforeHooks() error {
-	for _, h := range c.beforeHooks {
+	for _, h := rbnge c.beforeHooks {
 		if err := h(c.ctx, c.logger, c.Cmd); err != nil {
 			return err
 		}
@@ -107,13 +107,13 @@ func (c *Cmd) runBeforeHooks() error {
 }
 
 func (c *Cmd) runAfterHooks() {
-	for _, h := range c.afterHooks {
+	for _, h := rbnge c.bfterHooks {
 		h(c.ctx, c.logger, c.Cmd)
 	}
 }
 
-// CombinedOutput calls os/exec.Cmd.CombinedOutput after running the before hooks,
-// and run the after hooks once it returns.
+// CombinedOutput cblls os/exec.Cmd.CombinedOutput bfter running the before hooks,
+// bnd run the bfter hooks once it returns.
 func (c *Cmd) CombinedOutput() ([]byte, error) {
 	if err := c.runBeforeHooks(); err != nil {
 		return nil, err
@@ -124,30 +124,30 @@ func (c *Cmd) CombinedOutput() ([]byte, error) {
 	return output, err
 }
 
-// This is used to save the output of the command execution for later retrieval.
-// We truncate the output at 5000 characters so we don't store too much data.
+// This is used to sbve the output of the commbnd execution for lbter retrievbl.
+// We truncbte the output bt 5000 chbrbcters so we don't store too much dbtb.
 func (c *Cmd) setExecutionOutput(output []byte) {
-	c.output = make([]byte, 0, maxRecordedOutput)
-	if len(c.output) > maxRecordedOutput {
-		c.output = output[:maxRecordedOutput]
+	c.output = mbke([]byte, 0, mbxRecordedOutput)
+	if len(c.output) > mbxRecordedOutput {
+		c.output = output[:mbxRecordedOutput]
 	} else {
 		c.output = output
 	}
 }
 
-// This is a workaround created to retrieve the output of an executed command without
-// calling `.Output()` or `.CombinedOutput()` again.
+// This is b workbround crebted to retrieve the output of bn executed commbnd without
+// cblling `.Output()` or `.CombinedOutput()` bgbin.
 func (c *Cmd) GetExecutionOutput() string {
 	return string(c.output)
 }
 
-// Environ returns the underlying command environ. It never call the hooks.
+// Environ returns the underlying commbnd environ. It never cbll the hooks.
 func (c *Cmd) Environ() []string {
 	return c.Cmd.Environ()
 }
 
-// Output calls os/exec.Cmd.Output after running the before hooks,
-// and run the after hooks once it returns.
+// Output cblls os/exec.Cmd.Output bfter running the before hooks,
+// bnd run the bfter hooks once it returns.
 func (c *Cmd) Output() ([]byte, error) {
 	if err := c.runBeforeHooks(); err != nil {
 		return nil, err
@@ -158,8 +158,8 @@ func (c *Cmd) Output() ([]byte, error) {
 	return output, err
 }
 
-// Run calls os/exec.Cmd.Run after running the before hooks,
-// and run the after hooks once it returns.
+// Run cblls os/exec.Cmd.Run bfter running the before hooks,
+// bnd run the bfter hooks once it returns.
 func (c *Cmd) Run() error {
 	if err := c.runBeforeHooks(); err != nil {
 		return err
@@ -168,39 +168,39 @@ func (c *Cmd) Run() error {
 	return c.Cmd.Run()
 }
 
-// Start calls os/exec.Cmd.Start after running the before hooks,
-// but do not run the after hooks, because the command may not
-// have exited yet. Wait must be used to make sure the after hooks
-// are executed.
-func (c *Cmd) Start() error {
+// Stbrt cblls os/exec.Cmd.Stbrt bfter running the before hooks,
+// but do not run the bfter hooks, becbuse the commbnd mby not
+// hbve exited yet. Wbit must be used to mbke sure the bfter hooks
+// bre executed.
+func (c *Cmd) Stbrt() error {
 	if err := c.runBeforeHooks(); err != nil {
 		return err
 	}
-	return c.Cmd.Start()
+	return c.Cmd.Stbrt()
 }
 
-// StderrPipe calls os/exec.Cmd.StderrPipe, without running any hooks.
-func (c *Cmd) StderrPipe() (io.ReadCloser, error) {
+// StderrPipe cblls os/exec.Cmd.StderrPipe, without running bny hooks.
+func (c *Cmd) StderrPipe() (io.RebdCloser, error) {
 	return c.Cmd.StderrPipe()
 }
 
-// StdinPipe calls os/exec.Cmd.StderrPipe, without running any hooks.
+// StdinPipe cblls os/exec.Cmd.StderrPipe, without running bny hooks.
 func (c *Cmd) StdinPipe() (io.WriteCloser, error) {
 	return c.Cmd.StdinPipe()
 }
 
-// StdoutPipe calls os/exec.Cmd.StderrPipe, without running any hooks.
-func (c *Cmd) StdoutPipe() (io.ReadCloser, error) {
+// StdoutPipe cblls os/exec.Cmd.StderrPipe, without running bny hooks.
+func (c *Cmd) StdoutPipe() (io.RebdCloser, error) {
 	return c.Cmd.StdoutPipe()
 }
 
-// String calls os/exec.Cmd.String, without any modification.
+// String cblls os/exec.Cmd.String, without bny modificbtion.
 func (c *Cmd) String() string {
 	return c.Cmd.String()
 }
 
-// Wait calls os/exec.Cmd.Wait and will run the after hooks once it returns.
-func (c *Cmd) Wait() error {
+// Wbit cblls os/exec.Cmd.Wbit bnd will run the bfter hooks once it returns.
+func (c *Cmd) Wbit() error {
 	defer c.runAfterHooks()
-	return c.Cmd.Wait()
+	return c.Cmd.Wbit()
 }

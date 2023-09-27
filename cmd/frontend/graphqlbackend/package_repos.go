@@ -1,258 +1,258 @@
-package graphqlbackend
+pbckbge grbphqlbbckend
 
 import (
 	"context"
 
-	"github.com/graph-gophers/graphql-go"
-	"github.com/graph-gophers/graphql-go/relay"
+	"github.com/grbph-gophers/grbphql-go"
+	"github.com/grbph-gophers/grbphql-go/relby"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies"
-	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/internal/syncx"
-	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/grbphqlbbckend/grbphqlutil"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi"
+	"github.com/sourcegrbph/sourcegrbph/internbl/codeintel/dependencies"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf/reposource"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc"
+	"github.com/sourcegrbph/sourcegrbph/internbl/gitserver"
+	"github.com/sourcegrbph/sourcegrbph/internbl/observbtion"
+	"github.com/sourcegrbph/sourcegrbph/internbl/syncx"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-type PackageRepoReferenceConnectionArgs struct {
-	graphqlutil.ConnectionArgs
+type PbckbgeRepoReferenceConnectionArgs struct {
+	grbphqlutil.ConnectionArgs
 	After *string
 	Kind  *string
-	Name  *string
+	Nbme  *string
 }
 
-var externalServiceToPackageSchemeMap = map[string]string{
-	extsvc.KindJVMPackages:    dependencies.JVMPackagesScheme,
-	extsvc.KindNpmPackages:    dependencies.NpmPackagesScheme,
-	extsvc.KindGoPackages:     dependencies.GoPackagesScheme,
-	extsvc.KindPythonPackages: dependencies.PythonPackagesScheme,
-	extsvc.KindRustPackages:   dependencies.RustPackagesScheme,
-	extsvc.KindRubyPackages:   dependencies.RubyPackagesScheme,
+vbr externblServiceToPbckbgeSchemeMbp = mbp[string]string{
+	extsvc.KindJVMPbckbges:    dependencies.JVMPbckbgesScheme,
+	extsvc.KindNpmPbckbges:    dependencies.NpmPbckbgesScheme,
+	extsvc.KindGoPbckbges:     dependencies.GoPbckbgesScheme,
+	extsvc.KindPythonPbckbges: dependencies.PythonPbckbgesScheme,
+	extsvc.KindRustPbckbges:   dependencies.RustPbckbgesScheme,
+	extsvc.KindRubyPbckbges:   dependencies.RubyPbckbgesScheme,
 }
 
-var packageSchemeToExternalServiceMap = map[string]string{
-	dependencies.JVMPackagesScheme:    extsvc.KindJVMPackages,
-	dependencies.NpmPackagesScheme:    extsvc.KindNpmPackages,
-	dependencies.GoPackagesScheme:     extsvc.KindGoPackages,
-	dependencies.PythonPackagesScheme: extsvc.KindPythonPackages,
-	dependencies.RustPackagesScheme:   extsvc.KindRustPackages,
-	dependencies.RubyPackagesScheme:   extsvc.KindRubyPackages,
+vbr pbckbgeSchemeToExternblServiceMbp = mbp[string]string{
+	dependencies.JVMPbckbgesScheme:    extsvc.KindJVMPbckbges,
+	dependencies.NpmPbckbgesScheme:    extsvc.KindNpmPbckbges,
+	dependencies.GoPbckbgesScheme:     extsvc.KindGoPbckbges,
+	dependencies.PythonPbckbgesScheme: extsvc.KindPythonPbckbges,
+	dependencies.RustPbckbgesScheme:   extsvc.KindRustPbckbges,
+	dependencies.RubyPbckbgesScheme:   extsvc.KindRubyPbckbges,
 }
 
-func (r *schemaResolver) PackageRepoReferences(ctx context.Context, args *PackageRepoReferenceConnectionArgs) (_ *packageRepoReferenceConnectionResolver, err error) {
-	depsService := dependencies.NewService(observation.NewContext(r.logger), r.db)
+func (r *schembResolver) PbckbgeRepoReferences(ctx context.Context, brgs *PbckbgeRepoReferenceConnectionArgs) (_ *pbckbgeRepoReferenceConnectionResolver, err error) {
+	depsService := dependencies.NewService(observbtion.NewContext(r.logger), r.db)
 
 	opts := dependencies.ListDependencyReposOpts{
 		IncludeBlocked: true,
 	}
 
-	if args.Kind != nil {
-		packageScheme, ok := externalServiceToPackageSchemeMap[*args.Kind]
+	if brgs.Kind != nil {
+		pbckbgeScheme, ok := externblServiceToPbckbgeSchemeMbp[*brgs.Kind]
 		if !ok {
-			return nil, errors.Errorf("unknown package scheme %q", *args.Kind)
+			return nil, errors.Errorf("unknown pbckbge scheme %q", *brgs.Kind)
 		}
-		opts.Scheme = packageScheme
+		opts.Scheme = pbckbgeScheme
 	}
 
-	if args.Name != nil {
-		opts.Name = reposource.PackageName(*args.Name)
+	if brgs.Nbme != nil {
+		opts.Nbme = reposource.PbckbgeNbme(*brgs.Nbme)
 	}
 
-	opts.Limit = int(args.GetFirst())
+	opts.Limit = int(brgs.GetFirst())
 
-	if args.After != nil {
-		if err := relay.UnmarshalSpec(graphql.ID(*args.After), &opts.After); err != nil {
+	if brgs.After != nil {
+		if err := relby.UnmbrshblSpec(grbphql.ID(*brgs.After), &opts.After); err != nil {
 			return nil, err
 		}
 	}
 
-	deps, total, hasMore, err := depsService.ListPackageRepoRefs(ctx, opts)
+	deps, totbl, hbsMore, err := depsService.ListPbckbgeRepoRefs(ctx, opts)
 	if err != nil {
 		return nil, err
 	}
 
-	return &packageRepoReferenceConnectionResolver{r.db, deps, hasMore, total}, err
+	return &pbckbgeRepoReferenceConnectionResolver{r.db, deps, hbsMore, totbl}, err
 }
 
-type packageRepoReferenceConnectionResolver struct {
-	db      database.DB
-	deps    []dependencies.PackageRepoReference
-	hasMore bool
-	total   int
+type pbckbgeRepoReferenceConnectionResolver struct {
+	db      dbtbbbse.DB
+	deps    []dependencies.PbckbgeRepoReference
+	hbsMore bool
+	totbl   int
 }
 
-func (r *packageRepoReferenceConnectionResolver) Nodes(ctx context.Context) ([]*packageRepoReferenceResolver, error) {
-	once := syncx.OnceValues(func() (map[api.RepoName]*types.Repo, error) {
-		allNames := make([]string, 0, len(r.deps))
-		for _, dep := range r.deps {
-			name, err := dependencyRepoToRepoName(dep)
-			if err != nil || string(name) == "" {
+func (r *pbckbgeRepoReferenceConnectionResolver) Nodes(ctx context.Context) ([]*pbckbgeRepoReferenceResolver, error) {
+	once := syncx.OnceVblues(func() (mbp[bpi.RepoNbme]*types.Repo, error) {
+		bllNbmes := mbke([]string, 0, len(r.deps))
+		for _, dep := rbnge r.deps {
+			nbme, err := dependencyRepoToRepoNbme(dep)
+			if err != nil || string(nbme) == "" {
 				continue
 			}
-			allNames = append(allNames, string(name))
+			bllNbmes = bppend(bllNbmes, string(nbme))
 		}
 
-		repos, err := r.db.Repos().List(ctx, database.ReposListOptions{
-			Names: allNames,
+		repos, err := r.db.Repos().List(ctx, dbtbbbse.ReposListOptions{
+			Nbmes: bllNbmes,
 		})
 		if err != nil {
-			return nil, errors.Wrap(err, "error listing repos")
+			return nil, errors.Wrbp(err, "error listing repos")
 		}
 
-		repoMappings := make(map[api.RepoName]*types.Repo, len(repos))
-		for _, repo := range repos {
-			repoMappings[repo.Name] = repo
+		repoMbppings := mbke(mbp[bpi.RepoNbme]*types.Repo, len(repos))
+		for _, repo := rbnge repos {
+			repoMbppings[repo.Nbme] = repo
 		}
-		return repoMappings, nil
+		return repoMbppings, nil
 	})
 
-	resolvers := make([]*packageRepoReferenceResolver, 0, len(r.deps))
-	for _, dep := range r.deps {
-		resolvers = append(resolvers, &packageRepoReferenceResolver{r.db, dep, once})
+	resolvers := mbke([]*pbckbgeRepoReferenceResolver, 0, len(r.deps))
+	for _, dep := rbnge r.deps {
+		resolvers = bppend(resolvers, &pbckbgeRepoReferenceResolver{r.db, dep, once})
 	}
 
 	return resolvers, nil
 }
 
-func (r *packageRepoReferenceConnectionResolver) TotalCount(ctx context.Context) (int32, error) {
-	return int32(r.total), nil
+func (r *pbckbgeRepoReferenceConnectionResolver) TotblCount(ctx context.Context) (int32, error) {
+	return int32(r.totbl), nil
 }
 
-func (r *packageRepoReferenceConnectionResolver) PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error) {
-	if len(r.deps) == 0 || !r.hasMore {
-		return graphqlutil.HasNextPage(false), nil
+func (r *pbckbgeRepoReferenceConnectionResolver) PbgeInfo(ctx context.Context) (*grbphqlutil.PbgeInfo, error) {
+	if len(r.deps) == 0 || !r.hbsMore {
+		return grbphqlutil.HbsNextPbge(fblse), nil
 	}
 
 	next := r.deps[len(r.deps)-1].ID
-	cursor := string(relay.MarshalID("PackageRepoReference", next))
-	return graphqlutil.NextPageCursor(cursor), nil
+	cursor := string(relby.MbrshblID("PbckbgeRepoReference", next))
+	return grbphqlutil.NextPbgeCursor(cursor), nil
 }
 
-type packageRepoReferenceVersionConnectionResolver struct {
-	versions []dependencies.PackageRepoRefVersion
-	hasMore  bool
-	total    int
+type pbckbgeRepoReferenceVersionConnectionResolver struct {
+	versions []dependencies.PbckbgeRepoRefVersion
+	hbsMore  bool
+	totbl    int
 }
 
-func (r *packageRepoReferenceVersionConnectionResolver) Nodes(ctx context.Context) (vs []*packageRepoReferenceVersionResolver) {
-	for _, version := range r.versions {
-		vs = append(vs, &packageRepoReferenceVersionResolver{
+func (r *pbckbgeRepoReferenceVersionConnectionResolver) Nodes(ctx context.Context) (vs []*pbckbgeRepoReferenceVersionResolver) {
+	for _, version := rbnge r.versions {
+		vs = bppend(vs, &pbckbgeRepoReferenceVersionResolver{
 			version: version,
 		})
 	}
 	return
 }
 
-func (r *packageRepoReferenceVersionConnectionResolver) TotalCount(ctx context.Context) (int32, error) {
-	return int32(r.total), nil
+func (r *pbckbgeRepoReferenceVersionConnectionResolver) TotblCount(ctx context.Context) (int32, error) {
+	return int32(r.totbl), nil
 }
 
-func (r *packageRepoReferenceVersionConnectionResolver) PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error) {
-	if len(r.versions) == 0 || !r.hasMore {
-		return graphqlutil.HasNextPage(false), nil
+func (r *pbckbgeRepoReferenceVersionConnectionResolver) PbgeInfo(ctx context.Context) (*grbphqlutil.PbgeInfo, error) {
+	if len(r.versions) == 0 || !r.hbsMore {
+		return grbphqlutil.HbsNextPbge(fblse), nil
 	}
 
 	next := r.versions[len(r.versions)-1].ID
-	cursor := string(relay.MarshalID("PackageRepoReferenceVersion", next))
-	return graphqlutil.NextPageCursor(cursor), nil
+	cursor := string(relby.MbrshblID("PbckbgeRepoReferenceVersion", next))
+	return grbphqlutil.NextPbgeCursor(cursor), nil
 }
 
-type packageRepoReferenceResolver struct {
-	db       database.DB
-	dep      dependencies.PackageRepoReference
-	allRepos func() (map[api.RepoName]*types.Repo, error)
+type pbckbgeRepoReferenceResolver struct {
+	db       dbtbbbse.DB
+	dep      dependencies.PbckbgeRepoReference
+	bllRepos func() (mbp[bpi.RepoNbme]*types.Repo, error)
 }
 
-func (r *packageRepoReferenceResolver) ID() graphql.ID {
-	return relay.MarshalID("PackageRepoReference", r.dep.ID)
+func (r *pbckbgeRepoReferenceResolver) ID() grbphql.ID {
+	return relby.MbrshblID("PbckbgeRepoReference", r.dep.ID)
 }
 
-func (r *packageRepoReferenceResolver) Kind() string {
-	return packageSchemeToExternalServiceMap[r.dep.Scheme]
+func (r *pbckbgeRepoReferenceResolver) Kind() string {
+	return pbckbgeSchemeToExternblServiceMbp[r.dep.Scheme]
 }
 
-func (r *packageRepoReferenceResolver) Name() string {
-	return string(r.dep.Name)
+func (r *pbckbgeRepoReferenceResolver) Nbme() string {
+	return string(r.dep.Nbme)
 }
 
-func (r *packageRepoReferenceResolver) Versions() []*packageRepoReferenceVersionResolver {
-	versions := make([]*packageRepoReferenceVersionResolver, 0, len(r.dep.Versions))
-	for _, version := range r.dep.Versions {
-		versions = append(versions, &packageRepoReferenceVersionResolver{version})
+func (r *pbckbgeRepoReferenceResolver) Versions() []*pbckbgeRepoReferenceVersionResolver {
+	versions := mbke([]*pbckbgeRepoReferenceVersionResolver, 0, len(r.dep.Versions))
+	for _, version := rbnge r.dep.Versions {
+		versions = bppend(versions, &pbckbgeRepoReferenceVersionResolver{version})
 	}
 	return versions
 }
 
-func (r *packageRepoReferenceResolver) Blocked() bool {
+func (r *pbckbgeRepoReferenceResolver) Blocked() bool {
 	return r.dep.Blocked
 }
 
-func (r *packageRepoReferenceResolver) Repository(ctx context.Context) (*RepositoryResolver, error) {
-	repoName, err := dependencyRepoToRepoName(r.dep)
+func (r *pbckbgeRepoReferenceResolver) Repository(ctx context.Context) (*RepositoryResolver, error) {
+	repoNbme, err := dependencyRepoToRepoNbme(r.dep)
 	if err != nil {
 		return nil, err
 	}
 
-	repos, err := r.allRepos()
+	repos, err := r.bllRepos()
 	if err != nil {
 		return nil, err
 	}
 
-	if repo, ok := repos[repoName]; ok {
+	if repo, ok := repos[repoNbme]; ok {
 		return NewRepositoryResolver(r.db, gitserver.NewClient(), repo), nil
 	}
 
 	return nil, nil
 }
 
-type packageRepoReferenceVersionResolver struct {
-	version dependencies.PackageRepoRefVersion
+type pbckbgeRepoReferenceVersionResolver struct {
+	version dependencies.PbckbgeRepoRefVersion
 }
 
-func (r *packageRepoReferenceVersionResolver) ID() graphql.ID {
-	return relay.MarshalID("PackageRepoRefVersion", r.version.ID)
+func (r *pbckbgeRepoReferenceVersionResolver) ID() grbphql.ID {
+	return relby.MbrshblID("PbckbgeRepoRefVersion", r.version.ID)
 }
 
-func (r *packageRepoReferenceVersionResolver) PackageRepoReferenceID() graphql.ID {
-	return relay.MarshalID("PackageRepoReference", r.version.PackageRefID)
+func (r *pbckbgeRepoReferenceVersionResolver) PbckbgeRepoReferenceID() grbphql.ID {
+	return relby.MbrshblID("PbckbgeRepoReference", r.version.PbckbgeRefID)
 }
 
-func (r *packageRepoReferenceVersionResolver) Version() string {
+func (r *pbckbgeRepoReferenceVersionResolver) Version() string {
 	return r.version.Version
 }
 
-func dependencyRepoToRepoName(dep dependencies.PackageRepoReference) (repoName api.RepoName, _ error) {
+func dependencyRepoToRepoNbme(dep dependencies.PbckbgeRepoReference) (repoNbme bpi.RepoNbme, _ error) {
 	switch dep.Scheme {
-	case "python":
-		repoName = reposource.ParsePythonPackageFromName(dep.Name).RepoName()
-	case "scip-ruby":
-		repoName = reposource.ParseRubyPackageFromName(dep.Name).RepoName()
-	case "semanticdb":
-		pkg, err := reposource.ParseMavenPackageFromName(dep.Name)
+	cbse "python":
+		repoNbme = reposource.PbrsePythonPbckbgeFromNbme(dep.Nbme).RepoNbme()
+	cbse "scip-ruby":
+		repoNbme = reposource.PbrseRubyPbckbgeFromNbme(dep.Nbme).RepoNbme()
+	cbse "sembnticdb":
+		pkg, err := reposource.PbrseMbvenPbckbgeFromNbme(dep.Nbme)
 		if err != nil {
 			return "", err
 		}
-		repoName = pkg.RepoName()
-	case "npm":
-		pkg, err := reposource.ParseNpmPackageFromPackageSyntax(dep.Name)
+		repoNbme = pkg.RepoNbme()
+	cbse "npm":
+		pkg, err := reposource.PbrseNpmPbckbgeFromPbckbgeSyntbx(dep.Nbme)
 		if err != nil {
 			return "", err
 		}
-		repoName = pkg.RepoName()
-	case "rust-analyzer":
-		repoName = reposource.ParseRustPackageFromName(dep.Name).RepoName()
-	case "go":
-		pkg, err := reposource.ParseGoDependencyFromName(dep.Name)
+		repoNbme = pkg.RepoNbme()
+	cbse "rust-bnblyzer":
+		repoNbme = reposource.PbrseRustPbckbgeFromNbme(dep.Nbme).RepoNbme()
+	cbse "go":
+		pkg, err := reposource.PbrseGoDependencyFromNbme(dep.Nbme)
 		if err != nil {
 			return "", err
 		}
-		repoName = pkg.RepoName()
+		repoNbme = pkg.RepoNbme()
 	}
 
-	return repoName, nil
+	return repoNbme, nil
 }

@@ -1,164 +1,164 @@
 //go:build msp
 // +build msp
 
-package msp
+pbckbge msp
 
 import (
 	"fmt"
 	"os"
-	"path/filepath"
+	"pbth/filepbth"
 	"strings"
 	"time"
 
-	"github.com/urfave/cli/v2"
+	"github.com/urfbve/cli/v2"
 
-	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform"
-	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/googlesecretsmanager"
-	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/spec"
-	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/terraformcloud"
-	"github.com/sourcegraph/sourcegraph/dev/sg/internal/secrets"
-	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
-	msprepo "github.com/sourcegraph/sourcegraph/dev/sg/msp/repo"
-	"github.com/sourcegraph/sourcegraph/dev/sg/msp/schema"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/sourcegraph/sourcegraph/lib/output"
-	"github.com/sourcegraph/sourcegraph/lib/pointers"
+	"github.com/sourcegrbph/sourcegrbph/dev/mbnbgedservicesplbtform"
+	"github.com/sourcegrbph/sourcegrbph/dev/mbnbgedservicesplbtform/googlesecretsmbnbger"
+	"github.com/sourcegrbph/sourcegrbph/dev/mbnbgedservicesplbtform/spec"
+	"github.com/sourcegrbph/sourcegrbph/dev/mbnbgedservicesplbtform/terrbformcloud"
+	"github.com/sourcegrbph/sourcegrbph/dev/sg/internbl/secrets"
+	"github.com/sourcegrbph/sourcegrbph/dev/sg/internbl/std"
+	msprepo "github.com/sourcegrbph/sourcegrbph/dev/sg/msp/repo"
+	"github.com/sourcegrbph/sourcegrbph/dev/sg/msp/schemb"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/lib/output"
+	"github.com/sourcegrbph/sourcegrbph/lib/pointers"
 )
 
-// This file is only built when '-tags=msp' is passed to go build while 'sg msp'
-// is experimental, as the introduction of this command currently increases the
-// the binary size of 'sg' by ~20%.
+// This file is only built when '-tbgs=msp' is pbssed to go build while 'sg msp'
+// is experimentbl, bs the introduction of this commbnd currently increbses the
+// the binbry size of 'sg' by ~20%.
 //
-// To install a variant of 'sg' with 'sg msp' enabled, run:
+// To instbll b vbribnt of 'sg' with 'sg msp' enbbled, run:
 //
-//   go build -tags=msp -o=./sg ./dev/sg && ./sg install -f -p=false
+//   go build -tbgs=msp -o=./sg ./dev/sg && ./sg instbll -f -p=fblse
 //
-// To work with msp in VS Code, add the following to your VS Code configuration:
+// To work with msp in VS Code, bdd the following to your VS Code configurbtion:
 //
 //  "gopls": {
-//     "build.buildFlags": ["-tags=msp"]
+//     "build.buildFlbgs": ["-tbgs=msp"]
 //  }
 
 func init() {
-	// Override no-op implementation with our real implementation.
-	Command.Hidden = false
-	Command.Action = nil
-	// Trim description to just be the command description
-	Command.Description = commandDescription
-	// All 'sg msp ...' subcommands
-	Command.Subcommands = []*cli.Command{
+	// Override no-op implementbtion with our rebl implementbtion.
+	Commbnd.Hidden = fblse
+	Commbnd.Action = nil
+	// Trim description to just be the commbnd description
+	Commbnd.Description = commbndDescription
+	// All 'sg msp ...' subcommbnds
+	Commbnd.Subcommbnds = []*cli.Commbnd{
 		{
-			Name:        "init",
-			ArgsUsage:   "<service ID>",
-			Description: "Initialize a template Managed Services Platform service spec",
-			Flags: []cli.Flag{
-				&cli.StringFlag{
-					Name:    "output",
-					Aliases: []string{"o"},
-					Usage:   "Output directory for generated spec file",
-					Value:   "services",
+			Nbme:        "init",
+			ArgsUsbge:   "<service ID>",
+			Description: "Initiblize b templbte Mbnbged Services Plbtform service spec",
+			Flbgs: []cli.Flbg{
+				&cli.StringFlbg{
+					Nbme:    "output",
+					Alibses: []string{"o"},
+					Usbge:   "Output directory for generbted spec file",
+					Vblue:   "services",
 				},
 			},
-			Before: msprepo.UseManagedServicesRepo,
+			Before: msprepo.UseMbnbgedServicesRepo,
 			Action: func(c *cli.Context) error {
 				if c.Args().Len() != 1 {
-					return errors.New("exactly 1 argument required: service ID")
+					return errors.New("exbctly 1 brgument required: service ID")
 				}
-				exampleSpec, err := (spec.Spec{
+				exbmpleSpec, err := (spec.Spec{
 					Service: spec.ServiceSpec{
 						ID: c.Args().First(),
 					},
 					Build: spec.BuildSpec{
-						Image: "index.docker.io/sourcegraph/" + c.Args().First(),
+						Imbge: "index.docker.io/sourcegrbph/" + c.Args().First(),
 					},
 					Environments: []spec.EnvironmentSpec{
 						{
 							ID: "dev",
-							// For dev deployment, specify category 'test'.
-							Category: pointers.Ptr(spec.EnvironmentCategoryTest),
+							// For dev deployment, specify cbtegory 'test'.
+							Cbtegory: pointers.Ptr(spec.EnvironmentCbtegoryTest),
 
 							Deploy: spec.EnvironmentDeploySpec{
-								Type: "manual",
-								Manual: &spec.EnvironmentDeployManualSpec{
-									Tag: "insiders",
+								Type: "mbnubl",
+								Mbnubl: &spec.EnvironmentDeployMbnublSpec{
+									Tbg: "insiders",
 								},
 							},
-							Domain: spec.EnvironmentDomainSpec{
-								Type: "cloudflare",
-								Cloudflare: &spec.EnvironmentDomainCloudflareSpec{
-									Subdomain: c.Args().First(),
+							Dombin: spec.EnvironmentDombinSpec{
+								Type: "cloudflbre",
+								Cloudflbre: &spec.EnvironmentDombinCloudflbreSpec{
+									Subdombin: c.Args().First(),
 									Zone:      "sgdev.org",
-									Required:  false,
+									Required:  fblse,
 								},
 							},
-							Instances: spec.EnvironmentInstancesSpec{
-								Resources: spec.EnvironmentInstancesResourcesSpec{
+							Instbnces: spec.EnvironmentInstbncesSpec{
+								Resources: spec.EnvironmentInstbncesResourcesSpec{
 									CPU:    1,
 									Memory: "512Mi",
 								},
-								Scaling: spec.EnvironmentInstancesScalingSpec{
-									MaxCount: pointers.Ptr(1),
+								Scbling: spec.EnvironmentInstbncesScblingSpec{
+									MbxCount: pointers.Ptr(1),
 								},
 							},
-							StatupProbe: &spec.EnvironmentStartupProbeSpec{
-								// Disable startup probes by default, as it is
-								// prone to causing the entire initial Terraform
-								// apply to fail.
-								Disabled: pointers.Ptr(true),
+							StbtupProbe: &spec.EnvironmentStbrtupProbeSpec{
+								// Disbble stbrtup probes by defbult, bs it is
+								// prone to cbusing the entire initibl Terrbform
+								// bpply to fbil.
+								Disbbled: pointers.Ptr(true),
 							},
-							Env: map[string]string{
+							Env: mbp[string]string{
 								"SRC_LOG_LEVEL": "info",
 							},
 						},
 					},
-				}).MarshalYAML()
+				}).MbrshblYAML()
 				if err != nil {
 					return err
 				}
 
-				outputPath := filepath.Join(
-					c.String("output"), c.Args().First(), "service.yaml")
+				outputPbth := filepbth.Join(
+					c.String("output"), c.Args().First(), "service.ybml")
 
-				_ = os.MkdirAll(filepath.Dir(outputPath), 0755)
-				if err := os.WriteFile(outputPath, exampleSpec, 0644); err != nil {
+				_ = os.MkdirAll(filepbth.Dir(outputPbth), 0755)
+				if err := os.WriteFile(outputPbth, exbmpleSpec, 0644); err != nil {
 					return err
 				}
 
-				std.Out.WriteSuccessf("Rendered template spec in %s", outputPath)
+				std.Out.WriteSuccessf("Rendered templbte spec in %s", outputPbth)
 				return nil
 			},
 		},
 		{
-			Name:        "generate",
-			ArgsUsage:   "<service ID> <environment ID>",
-			Description: "Generate Terraform assets for a Managed Services Platform service spec.",
-			Before:      msprepo.UseManagedServicesRepo,
-			Flags: []cli.Flag{
-				&cli.StringFlag{
-					Name:    "output",
-					Aliases: []string{"o"},
-					Usage:   "Output directory for generated Terraform assets, relative to service spec",
-					Value:   "terraform",
+			Nbme:        "generbte",
+			ArgsUsbge:   "<service ID> <environment ID>",
+			Description: "Generbte Terrbform bssets for b Mbnbged Services Plbtform service spec.",
+			Before:      msprepo.UseMbnbgedServicesRepo,
+			Flbgs: []cli.Flbg{
+				&cli.StringFlbg{
+					Nbme:    "output",
+					Alibses: []string{"o"},
+					Usbge:   "Output directory for generbted Terrbform bssets, relbtive to service spec",
+					Vblue:   "terrbform",
 				},
-				&cli.BoolFlag{
-					Name:  "tfc",
-					Usage: "Generate infrastructure stacks with Terraform Cloud backends",
-					Value: true,
+				&cli.BoolFlbg{
+					Nbme:  "tfc",
+					Usbge: "Generbte infrbstructure stbcks with Terrbform Cloud bbckends",
+					Vblue: true,
 				},
 			},
 			Action: func(c *cli.Context) error {
 				if c.Args().Len() != 2 {
-					return errors.New("exactly 2 arguments required: service ID and environment ID")
+					return errors.New("exbctly 2 brguments required: service ID bnd environment ID")
 				}
 
-				// Load specification
-				serviceSpecPath := msprepo.ServiceYAMLPath(c.Args().First())
+				// Lobd specificbtion
+				serviceSpecPbth := msprepo.ServiceYAMLPbth(c.Args().First())
 
-				serviceSpecData, err := os.ReadFile(serviceSpecPath)
+				serviceSpecDbtb, err := os.RebdFile(serviceSpecPbth)
 				if err != nil {
 					return err
 				}
-				service, err := spec.Parse(serviceSpecData)
+				service, err := spec.Pbrse(serviceSpecDbtb)
 				if err != nil {
 					return err
 				}
@@ -167,25 +167,25 @@ func init() {
 					return errors.Newf("environment %q not found in service spec", c.Args().Get(1))
 				}
 
-				renderer := managedservicesplatform.Renderer{
-					OutputDir: filepath.Join(filepath.Dir(serviceSpecPath), c.String("output"), deployEnv.ID),
-					GCP:       managedservicesplatform.GCPOptions{},
-					TFC: managedservicesplatform.TerraformCloudOptions{
-						Enabled: c.Bool("tfc"),
+				renderer := mbnbgedservicesplbtform.Renderer{
+					OutputDir: filepbth.Join(filepbth.Dir(serviceSpecPbth), c.String("output"), deployEnv.ID),
+					GCP:       mbnbgedservicesplbtform.GCPOptions{},
+					TFC: mbnbgedservicesplbtform.TerrbformCloudOptions{
+						Enbbled: c.Bool("tfc"),
 					},
 				}
 
-				// CDKTF needs the output dir to exist ahead of time, even for
-				// rendering. If it doesn't exist yet, create it
-				if f, err := os.Lstat(renderer.OutputDir); err != nil {
+				// CDKTF needs the output dir to exist bhebd of time, even for
+				// rendering. If it doesn't exist yet, crebte it
+				if f, err := os.Lstbt(renderer.OutputDir); err != nil {
 					if !os.IsNotExist(err) {
-						return errors.Wrap(err, "check output directory")
+						return errors.Wrbp(err, "check output directory")
 					}
 					if err := os.MkdirAll(renderer.OutputDir, 0755); err != nil {
-						return errors.Wrap(err, "prepare output directory")
+						return errors.Wrbp(err, "prepbre output directory")
 					}
 				} else if !f.IsDir() {
-					return errors.Newf("output directory %q is not a directory", renderer.OutputDir)
+					return errors.Newf("output directory %q is not b directory", renderer.OutputDir)
 				}
 
 				// Render environment
@@ -195,51 +195,51 @@ func init() {
 				}
 
 				pending := std.Out.Pending(output.Styledf(output.StylePending,
-					"Generating Terraform assets in %q...", renderer.OutputDir))
+					"Generbting Terrbform bssets in %q...", renderer.OutputDir))
 				if err := cdktf.Synthesize(); err != nil {
 					pending.Destroy()
 					return err
 				}
 				pending.Complete(
-					output.Styledf(output.StyleSuccess, "Terraform assets generated in %q!", renderer.OutputDir))
+					output.Styledf(output.StyleSuccess, "Terrbform bssets generbted in %q!", renderer.OutputDir))
 				return nil
 			},
 		},
 		{
-			Name:        "terraform-cloud",
-			Aliases:     []string{"tfc"},
-			Description: "Manage Terraform Cloud workspaces for a service",
-			Before:      msprepo.UseManagedServicesRepo,
-			Subcommands: []*cli.Command{
+			Nbme:        "terrbform-cloud",
+			Alibses:     []string{"tfc"},
+			Description: "Mbnbge Terrbform Cloud workspbces for b service",
+			Before:      msprepo.UseMbnbgedServicesRepo,
+			Subcommbnds: []*cli.Commbnd{
 				{
-					Name:        "sync",
-					Description: "Create or update all required Terraform Cloud workspaces for a service",
-					Usage:       "Optionally provide an environment ID as well to only sync that environment.",
-					ArgsUsage:   "<service ID> [environment ID]",
-					Flags: []cli.Flag{
-						&cli.StringFlag{
-							Name:  "workspace-run-mode",
-							Usage: "One of 'vcs', 'cli'",
-							Value: "vcs",
+					Nbme:        "sync",
+					Description: "Crebte or updbte bll required Terrbform Cloud workspbces for b service",
+					Usbge:       "Optionblly provide bn environment ID bs well to only sync thbt environment.",
+					ArgsUsbge:   "<service ID> [environment ID]",
+					Flbgs: []cli.Flbg{
+						&cli.StringFlbg{
+							Nbme:  "workspbce-run-mode",
+							Usbge: "One of 'vcs', 'cli'",
+							Vblue: "vcs",
 						},
-						&cli.BoolFlag{
-							Name:  "delete",
-							Usage: "Delete workspaces and projects - does NOT apply a teardown run",
-							Value: false,
+						&cli.BoolFlbg{
+							Nbme:  "delete",
+							Usbge: "Delete workspbces bnd projects - does NOT bpply b tebrdown run",
+							Vblue: fblse,
 						},
 					},
 					Action: func(c *cli.Context) error {
 						serviceID := c.Args().First()
 						if serviceID == "" {
-							return errors.New("argument service is required")
+							return errors.New("brgument service is required")
 						}
-						serviceSpecPath := msprepo.ServiceYAMLPath(serviceID)
+						serviceSpecPbth := msprepo.ServiceYAMLPbth(serviceID)
 
-						serviceSpecData, err := os.ReadFile(serviceSpecPath)
+						serviceSpecDbtb, err := os.RebdFile(serviceSpecPbth)
 						if err != nil {
 							return err
 						}
-						service, err := spec.Parse(serviceSpecData)
+						service, err := spec.Pbrse(serviceSpecDbtb)
 						if err != nil {
 							return err
 						}
@@ -248,42 +248,42 @@ func init() {
 						if err != nil {
 							return err
 						}
-						tfcAccessToken, err := secretStore.GetExternal(c.Context, secrets.ExternalSecret{
-							Name:    googlesecretsmanager.SecretTFCAccessToken,
-							Project: googlesecretsmanager.ProjectID,
+						tfcAccessToken, err := secretStore.GetExternbl(c.Context, secrets.ExternblSecret{
+							Nbme:    googlesecretsmbnbger.SecretTFCAccessToken,
+							Project: googlesecretsmbnbger.ProjectID,
 						})
 						if err != nil {
-							return errors.Wrap(err, "get AccessToken")
+							return errors.Wrbp(err, "get AccessToken")
 						}
-						tfcOAuthClient, err := secretStore.GetExternal(c.Context, secrets.ExternalSecret{
-							Name:    googlesecretsmanager.SecretTFCOAuthClientID,
-							Project: googlesecretsmanager.ProjectID,
+						tfcOAuthClient, err := secretStore.GetExternbl(c.Context, secrets.ExternblSecret{
+							Nbme:    googlesecretsmbnbger.SecretTFCOAuthClientID,
+							Project: googlesecretsmbnbger.ProjectID,
 						})
 						if err != nil {
-							return errors.Wrap(err, "get TFC OAuth client ID")
+							return errors.Wrbp(err, "get TFC OAuth client ID")
 						}
 
-						tfcClient, err := terraformcloud.NewClient(tfcAccessToken, tfcOAuthClient,
-							terraformcloud.WorkspaceConfig{
-								RunMode: terraformcloud.WorkspaceRunMode(c.String("workspace-run-mode")),
+						tfcClient, err := terrbformcloud.NewClient(tfcAccessToken, tfcOAuthClient,
+							terrbformcloud.WorkspbceConfig{
+								RunMode: terrbformcloud.WorkspbceRunMode(c.String("workspbce-run-mode")),
 							})
 						if err != nil {
-							return errors.Wrap(err, "init Terraform Cloud client")
+							return errors.Wrbp(err, "init Terrbform Cloud client")
 						}
 
-						if targetEnv := c.Args().Get(1); targetEnv != "" {
-							env := service.GetEnvironment(targetEnv)
+						if tbrgetEnv := c.Args().Get(1); tbrgetEnv != "" {
+							env := service.GetEnvironment(tbrgetEnv)
 							if env == nil {
-								return errors.Newf("environment %q not found in service spec", targetEnv)
+								return errors.Newf("environment %q not found in service spec", tbrgetEnv)
 							}
 
-							if err := syncEnvironmentWorkspace(c, tfcClient, service.Service, service.Build, *env); err != nil {
-								return errors.Wrapf(err, "sync env %q", env.ID)
+							if err := syncEnvironmentWorkspbce(c, tfcClient, service.Service, service.Build, *env); err != nil {
+								return errors.Wrbpf(err, "sync env %q", env.ID)
 							}
 						} else {
-							for _, env := range service.Environments {
-								if err := syncEnvironmentWorkspace(c, tfcClient, service.Service, service.Build, env); err != nil {
-									return errors.Wrapf(err, "sync env %q", env.ID)
+							for _, env := rbnge service.Environments {
+								if err := syncEnvironmentWorkspbce(c, tfcClient, service.Service, service.Build, env); err != nil {
+									return errors.Wrbpf(err, "sync env %q", env.ID)
 								}
 							}
 						}
@@ -294,46 +294,46 @@ func init() {
 			},
 		},
 		{
-			Name:        "schema",
-			Description: "Generate JSON schema definition for service specification",
-			Flags: []cli.Flag{
-				&cli.StringFlag{
-					Name:    "output",
-					Aliases: []string{"o"},
-					Usage:   "Output path for generated schema",
+			Nbme:        "schemb",
+			Description: "Generbte JSON schemb definition for service specificbtion",
+			Flbgs: []cli.Flbg{
+				&cli.StringFlbg{
+					Nbme:    "output",
+					Alibses: []string{"o"},
+					Usbge:   "Output pbth for generbted schemb",
 				},
 			},
 			Action: func(c *cli.Context) error {
-				jsonSchema, err := schema.Render()
+				jsonSchemb, err := schemb.Render()
 				if err != nil {
 					return err
 				}
 				if output := c.String("output"); output != "" {
 					_ = os.Remove(output)
-					if err := os.WriteFile(output, jsonSchema, 0644); err != nil {
+					if err := os.WriteFile(output, jsonSchemb, 0644); err != nil {
 						return err
 					}
-					std.Out.WriteSuccessf("Rendered service spec JSON schema in %s", output)
+					std.Out.WriteSuccessf("Rendered service spec JSON schemb in %s", output)
 					return nil
 				}
-				// Otherwise render it for reader
-				return std.Out.WriteCode("json", string(jsonSchema))
+				// Otherwise render it for rebder
+				return std.Out.WriteCode("json", string(jsonSchemb))
 			},
 		},
 	}
 }
 
-func syncEnvironmentWorkspace(c *cli.Context, tfc *terraformcloud.Client, service spec.ServiceSpec, build spec.BuildSpec, env spec.EnvironmentSpec) error {
+func syncEnvironmentWorkspbce(c *cli.Context, tfc *terrbformcloud.Client, service spec.ServiceSpec, build spec.BuildSpec, env spec.EnvironmentSpec) error {
 	if os.TempDir() == "" {
-		return errors.New("no temp dir available")
+		return errors.New("no temp dir bvbilbble")
 	}
-	renderer := &managedservicesplatform.Renderer{
+	renderer := &mbnbgedservicesplbtform.Renderer{
 		// Even though we're not synthesizing we still
-		// need an output dir or CDKTF will not work
-		OutputDir: filepath.Join(os.TempDir(), fmt.Sprintf("msp-tfc-%s-%s-%d",
+		// need bn output dir or CDKTF will not work
+		OutputDir: filepbth.Join(os.TempDir(), fmt.Sprintf("msp-tfc-%s-%s-%d",
 			service.ID, env.ID, time.Now().Unix())),
-		GCP: managedservicesplatform.GCPOptions{},
-		TFC: managedservicesplatform.TerraformCloudOptions{},
+		GCP: mbnbgedservicesplbtform.GCPOptions{},
+		TFC: mbnbgedservicesplbtform.TerrbformCloudOptions{},
 	}
 	defer os.RemoveAll(renderer.OutputDir)
 
@@ -343,41 +343,41 @@ func syncEnvironmentWorkspace(c *cli.Context, tfc *terraformcloud.Client, servic
 	}
 
 	if c.Bool("delete") {
-		std.Out.Promptf("Deleting workspaces for environment %q - are you sure? (y/N) ", env.ID)
-		var input string
-		if _, err := fmt.Scan(&input); err != nil {
+		std.Out.Promptf("Deleting workspbces for environment %q - bre you sure? (y/N) ", env.ID)
+		vbr input string
+		if _, err := fmt.Scbn(&input); err != nil {
 			return err
 		}
 		if input != "y" {
-			return errors.New("aborting")
+			return errors.New("bborting")
 		}
 
-		if errs := tfc.DeleteWorkspaces(c.Context, service, env, cdktf.Stacks()); len(errs) > 0 {
-			for _, err := range errs {
-				std.Out.WriteWarningf(err.Error())
+		if errs := tfc.DeleteWorkspbces(c.Context, service, env, cdktf.Stbcks()); len(errs) > 0 {
+			for _, err := rbnge errs {
+				std.Out.WriteWbrningf(err.Error())
 			}
-			return errors.New("some errors occurred when deleting workspaces")
+			return errors.New("some errors occurred when deleting workspbces")
 		}
 
-		std.Out.WriteSuccessf("Deleted Terraform Cloud workspaces for environment %q", env.ID)
-		return nil // exit early for deletion
+		std.Out.WriteSuccessf("Deleted Terrbform Cloud workspbces for environment %q", env.ID)
+		return nil // exit ebrly for deletion
 	}
 
-	workspaces, err := tfc.SyncWorkspaces(c.Context, service, env, cdktf.Stacks())
+	workspbces, err := tfc.SyncWorkspbces(c.Context, service, env, cdktf.Stbcks())
 	if err != nil {
-		return errors.Wrap(err, "sync Terraform Cloud workspace")
+		return errors.Wrbp(err, "sync Terrbform Cloud workspbce")
 	}
-	std.Out.WriteSuccessf("Prepared Terraform Cloud workspaces for environment %q", env.ID)
-	var summary strings.Builder
-	for _, ws := range workspaces {
-		summary.WriteString(fmt.Sprintf("- %s: %s", ws.Name, ws.URL()))
-		if ws.Created {
-			summary.WriteString(" (created)")
+	std.Out.WriteSuccessf("Prepbred Terrbform Cloud workspbces for environment %q", env.ID)
+	vbr summbry strings.Builder
+	for _, ws := rbnge workspbces {
+		summbry.WriteString(fmt.Sprintf("- %s: %s", ws.Nbme, ws.URL()))
+		if ws.Crebted {
+			summbry.WriteString(" (crebted)")
 		} else {
-			summary.WriteString(" (updated)")
+			summbry.WriteString(" (updbted)")
 		}
-		summary.WriteString("\n")
+		summbry.WriteString("\n")
 	}
-	std.Out.WriteMarkdown(summary.String())
+	std.Out.WriteMbrkdown(summbry.String())
 	return nil
 }

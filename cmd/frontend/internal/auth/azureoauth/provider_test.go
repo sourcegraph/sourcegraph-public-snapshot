@@ -1,273 +1,273 @@
-package azureoauth
+pbckbge bzureobuth
 
 import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
-	"github.com/sourcegraph/log/logtest"
-	"golang.org/x/oauth2"
+	"github.com/sourcegrbph/log/logtest"
+	"golbng.org/x/obuth2"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/auth/oauth"
-	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc"
-	"github.com/sourcegraph/sourcegraph/schema"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/internbl/buth/obuth"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbtest"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc"
+	"github.com/sourcegrbph/sourcegrbph/schemb"
 )
 
-func newOauthProvider(oauth2Config oauth2.Config) *oauth.Provider {
-	return &oauth.Provider{
-		ProviderOp: oauth.ProviderOp{
-			AuthPrefix:   "/.auth/azuredevops",
-			OAuth2Config: func() oauth2.Config { return oauth2Config },
-			StateConfig:  oauth.GetStateConfig(stateCookie),
-			ServiceID:    "https://dev.azure.com/",
+func newObuthProvider(obuth2Config obuth2.Config) *obuth.Provider {
+	return &obuth.Provider{
+		ProviderOp: obuth.ProviderOp{
+			AuthPrefix:   "/.buth/bzuredevops",
+			OAuth2Config: func() obuth2.Config { return obuth2Config },
+			StbteConfig:  obuth.GetStbteConfig(stbteCookie),
+			ServiceID:    "https://dev.bzure.com/",
 			ServiceType:  extsvc.TypeAzureDevOps,
 		},
 	}
 }
 
-func newUnifiedConfig(s schema.SiteConfiguration) conf.Unified {
-	return conf.Unified{SiteConfiguration: s}
+func newUnifiedConfig(s schemb.SiteConfigurbtion) conf.Unified {
+	return conf.Unified{SiteConfigurbtion: s}
 }
 
-func TestParseConfig(t *testing.T) {
+func TestPbrseConfig(t *testing.T) {
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := dbtbbbse.NewDB(logger, dbtest.NewDB(logger, t))
 
-	testCases := []struct {
-		name          string
+	testCbses := []struct {
+		nbme          string
 		config        conf.Unified
-		wantProviders []Provider
-		wantProblems  []string
+		wbntProviders []Provider
+		wbntProblems  []string
 	}{
 		{
-			name:          "empty config",
+			nbme:          "empty config",
 			config:        conf.Unified{},
-			wantProviders: []Provider(nil),
+			wbntProviders: []Provider(nil),
 		},
 		{
-			name: "Azure Dev Ops config with default scopes",
-			config: newUnifiedConfig(schema.SiteConfiguration{
-				ExternalURL: "https://example.com",
-				AuthProviders: []schema.AuthProviders{{
-					AzureDevOps: &schema.AzureDevOpsAuthProvider{
+			nbme: "Azure Dev Ops config with defbult scopes",
+			config: newUnifiedConfig(schemb.SiteConfigurbtion{
+				ExternblURL: "https://exbmple.com",
+				AuthProviders: []schemb.AuthProviders{{
+					AzureDevOps: &schemb.AzureDevOpsAuthProvider{
 						ClientID:     "myclientid",
 						ClientSecret: "myclientsecret",
-						DisplayName:  "Azure Dev Ops",
+						DisplbyNbme:  "Azure Dev Ops",
 						Type:         extsvc.TypeAzureDevOps,
 					},
 				}},
 			}),
-			wantProviders: []Provider{
+			wbntProviders: []Provider{
 				{
-					AzureDevOpsAuthProvider: &schema.AzureDevOpsAuthProvider{
+					AzureDevOpsAuthProvider: &schemb.AzureDevOpsAuthProvider{
 						ClientID:     "myclientid",
 						ClientSecret: "myclientsecret",
-						DisplayName:  "Azure Dev Ops",
+						DisplbyNbme:  "Azure Dev Ops",
 						Type:         extsvc.TypeAzureDevOps,
 						ApiScope:     "vso.code,vso.identity,vso.project",
 					},
-					Provider: newOauthProvider(oauth2.Config{
+					Provider: newObuthProvider(obuth2.Config{
 						ClientID:     "myclientid",
 						ClientSecret: "myclientsecret",
-						Endpoint: oauth2.Endpoint{
-							AuthURL:   "https://app.vssps.visualstudio.com/oauth2/authorize",
-							TokenURL:  "https://app.vssps.visualstudio.com/oauth2/token",
-							AuthStyle: oauth2.AuthStyleInParams,
+						Endpoint: obuth2.Endpoint{
+							AuthURL:   "https://bpp.vssps.visublstudio.com/obuth2/buthorize",
+							TokenURL:  "https://bpp.vssps.visublstudio.com/obuth2/token",
+							AuthStyle: obuth2.AuthStyleInPbrbms,
 						},
 						Scopes:      []string{"vso.code", "vso.identity", "vso.project"},
-						RedirectURL: "https://example.com/.auth/azuredevops/callback",
+						RedirectURL: "https://exbmple.com/.buth/bzuredevops/cbllbbck",
 					}),
 				},
 			},
 		},
 		{
-			name: "Azure Dev Ops config with custom scopes",
-			config: newUnifiedConfig(schema.SiteConfiguration{
-				ExternalURL: "https://example.com",
-				AuthProviders: []schema.AuthProviders{{
-					AzureDevOps: &schema.AzureDevOpsAuthProvider{
+			nbme: "Azure Dev Ops config with custom scopes",
+			config: newUnifiedConfig(schemb.SiteConfigurbtion{
+				ExternblURL: "https://exbmple.com",
+				AuthProviders: []schemb.AuthProviders{{
+					AzureDevOps: &schemb.AzureDevOpsAuthProvider{
 						ClientID:     "myclientid",
 						ClientSecret: "myclientsecret",
-						DisplayName:  "Azure Dev Ops",
+						DisplbyNbme:  "Azure Dev Ops",
 						Type:         extsvc.TypeAzureDevOps,
 						ApiScope:     "vso.code",
 					},
 				}},
 			}),
-			wantProviders: []Provider{
+			wbntProviders: []Provider{
 				{
-					AzureDevOpsAuthProvider: &schema.AzureDevOpsAuthProvider{
+					AzureDevOpsAuthProvider: &schemb.AzureDevOpsAuthProvider{
 						ClientID:     "myclientid",
 						ClientSecret: "myclientsecret",
-						DisplayName:  "Azure Dev Ops",
+						DisplbyNbme:  "Azure Dev Ops",
 						Type:         extsvc.TypeAzureDevOps,
 						ApiScope:     "vso.code",
 					},
-					Provider: newOauthProvider(oauth2.Config{
+					Provider: newObuthProvider(obuth2.Config{
 						ClientID:     "myclientid",
 						ClientSecret: "myclientsecret",
-						Endpoint: oauth2.Endpoint{
-							AuthURL:   "https://app.vssps.visualstudio.com/oauth2/authorize",
-							TokenURL:  "https://app.vssps.visualstudio.com/oauth2/token",
-							AuthStyle: oauth2.AuthStyleInParams,
+						Endpoint: obuth2.Endpoint{
+							AuthURL:   "https://bpp.vssps.visublstudio.com/obuth2/buthorize",
+							TokenURL:  "https://bpp.vssps.visublstudio.com/obuth2/token",
+							AuthStyle: obuth2.AuthStyleInPbrbms,
 						},
 						Scopes:      []string{"vso.code"},
-						RedirectURL: "https://example.com/.auth/azuredevops/callback",
+						RedirectURL: "https://exbmple.com/.buth/bzuredevops/cbllbbck",
 					}),
 				},
 			},
 		},
 		{
-			name: "Azure Dev Ops config with duplicate client ID config",
-			config: newUnifiedConfig(schema.SiteConfiguration{
-				ExternalURL: "https://example.com",
-				AuthProviders: []schema.AuthProviders{
+			nbme: "Azure Dev Ops config with duplicbte client ID config",
+			config: newUnifiedConfig(schemb.SiteConfigurbtion{
+				ExternblURL: "https://exbmple.com",
+				AuthProviders: []schemb.AuthProviders{
 					{
-						AzureDevOps: &schema.AzureDevOpsAuthProvider{
+						AzureDevOps: &schemb.AzureDevOpsAuthProvider{
 							ClientID:     "myclientid",
 							ClientSecret: "myclientsecret",
-							DisplayName:  "Azure Dev Ops",
+							DisplbyNbme:  "Azure Dev Ops",
 							Type:         extsvc.TypeAzureDevOps,
 						},
 					},
 					{
-						AzureDevOps: &schema.AzureDevOpsAuthProvider{
+						AzureDevOps: &schemb.AzureDevOpsAuthProvider{
 							ClientID:     "myclientid",
 							ClientSecret: "myclientsecret",
-							DisplayName:  "Azure Dev Ops The Second",
+							DisplbyNbme:  "Azure Dev Ops The Second",
 							Type:         extsvc.TypeAzureDevOps,
 						},
 					},
 				},
 			}),
-			wantProviders: []Provider{
+			wbntProviders: []Provider{
 				{
-					AzureDevOpsAuthProvider: &schema.AzureDevOpsAuthProvider{
+					AzureDevOpsAuthProvider: &schemb.AzureDevOpsAuthProvider{
 						ClientID:     "myclientid",
 						ClientSecret: "myclientsecret",
-						DisplayName:  "Azure Dev Ops",
+						DisplbyNbme:  "Azure Dev Ops",
 						Type:         extsvc.TypeAzureDevOps,
 						ApiScope:     "vso.code,vso.identity,vso.project",
 					},
-					Provider: newOauthProvider(oauth2.Config{
+					Provider: newObuthProvider(obuth2.Config{
 						ClientID:     "myclientid",
 						ClientSecret: "myclientsecret",
-						Endpoint: oauth2.Endpoint{
-							AuthURL:   "https://app.vssps.visualstudio.com/oauth2/authorize",
-							TokenURL:  "https://app.vssps.visualstudio.com/oauth2/token",
-							AuthStyle: oauth2.AuthStyleInParams,
+						Endpoint: obuth2.Endpoint{
+							AuthURL:   "https://bpp.vssps.visublstudio.com/obuth2/buthorize",
+							TokenURL:  "https://bpp.vssps.visublstudio.com/obuth2/token",
+							AuthStyle: obuth2.AuthStyleInPbrbms,
 						},
 						Scopes:      []string{"vso.code", "vso.identity", "vso.project"},
-						RedirectURL: "https://example.com/.auth/azuredevops/callback",
+						RedirectURL: "https://exbmple.com/.buth/bzuredevops/cbllbbck",
 					}),
 				},
 			},
-			wantProblems: []string{
-				"Cannot have more than one auth provider for Azure Dev Ops with Client ID \"myclientid\", only the first one will be used",
+			wbntProblems: []string{
+				"Cbnnot hbve more thbn one buth provider for Azure Dev Ops with Client ID \"myclientid\", only the first one will be used",
 			},
 		},
 		{
-			name: "Azure Dev Ops config with separate client ID config",
-			config: newUnifiedConfig(schema.SiteConfiguration{
-				ExternalURL: "https://example.com",
-				AuthProviders: []schema.AuthProviders{
+			nbme: "Azure Dev Ops config with sepbrbte client ID config",
+			config: newUnifiedConfig(schemb.SiteConfigurbtion{
+				ExternblURL: "https://exbmple.com",
+				AuthProviders: []schemb.AuthProviders{
 					{
-						AzureDevOps: &schema.AzureDevOpsAuthProvider{
+						AzureDevOps: &schemb.AzureDevOpsAuthProvider{
 							ClientID:     "myclientid",
 							ClientSecret: "myclientsecret",
-							DisplayName:  "Azure Dev Ops",
+							DisplbyNbme:  "Azure Dev Ops",
 							Type:         extsvc.TypeAzureDevOps,
 						},
 					},
 					{
-						AzureDevOps: &schema.AzureDevOpsAuthProvider{
+						AzureDevOps: &schemb.AzureDevOpsAuthProvider{
 							ClientID:     "myclientid-second",
 							ClientSecret: "myclientsecret",
-							DisplayName:  "Azure Dev Ops The Second",
+							DisplbyNbme:  "Azure Dev Ops The Second",
 							Type:         extsvc.TypeAzureDevOps,
 						},
 					},
 				},
 			}),
-			wantProviders: []Provider{
+			wbntProviders: []Provider{
 				{
-					AzureDevOpsAuthProvider: &schema.AzureDevOpsAuthProvider{
+					AzureDevOpsAuthProvider: &schemb.AzureDevOpsAuthProvider{
 						ClientID:     "myclientid",
 						ClientSecret: "myclientsecret",
-						DisplayName:  "Azure Dev Ops",
+						DisplbyNbme:  "Azure Dev Ops",
 						Type:         extsvc.TypeAzureDevOps,
 						ApiScope:     "vso.code,vso.identity,vso.project",
 					},
-					Provider: newOauthProvider(oauth2.Config{
+					Provider: newObuthProvider(obuth2.Config{
 						ClientID:     "myclientid",
 						ClientSecret: "myclientsecret",
-						Endpoint: oauth2.Endpoint{
-							AuthURL:   "https://app.vssps.visualstudio.com/oauth2/authorize",
-							TokenURL:  "https://app.vssps.visualstudio.com/oauth2/token",
-							AuthStyle: oauth2.AuthStyleInParams,
+						Endpoint: obuth2.Endpoint{
+							AuthURL:   "https://bpp.vssps.visublstudio.com/obuth2/buthorize",
+							TokenURL:  "https://bpp.vssps.visublstudio.com/obuth2/token",
+							AuthStyle: obuth2.AuthStyleInPbrbms,
 						},
 						Scopes:      []string{"vso.code", "vso.identity", "vso.project"},
-						RedirectURL: "https://example.com/.auth/azuredevops/callback",
+						RedirectURL: "https://exbmple.com/.buth/bzuredevops/cbllbbck",
 					}),
 				},
 				{
-					AzureDevOpsAuthProvider: &schema.AzureDevOpsAuthProvider{
+					AzureDevOpsAuthProvider: &schemb.AzureDevOpsAuthProvider{
 						ClientID:     "myclientid-second",
 						ClientSecret: "myclientsecret",
-						DisplayName:  "Azure Dev Ops The Second",
+						DisplbyNbme:  "Azure Dev Ops The Second",
 						Type:         extsvc.TypeAzureDevOps,
 						ApiScope:     "vso.code,vso.identity,vso.project",
 					},
-					Provider: newOauthProvider(oauth2.Config{
+					Provider: newObuthProvider(obuth2.Config{
 						ClientID:     "myclientid-second",
 						ClientSecret: "myclientsecret",
-						Endpoint: oauth2.Endpoint{
-							AuthURL:   "https://app.vssps.visualstudio.com/oauth2/authorize",
-							TokenURL:  "https://app.vssps.visualstudio.com/oauth2/token",
-							AuthStyle: oauth2.AuthStyleInParams,
+						Endpoint: obuth2.Endpoint{
+							AuthURL:   "https://bpp.vssps.visublstudio.com/obuth2/buthorize",
+							TokenURL:  "https://bpp.vssps.visublstudio.com/obuth2/token",
+							AuthStyle: obuth2.AuthStyleInPbrbms,
 						},
 						Scopes:      []string{"vso.code", "vso.identity", "vso.project"},
-						RedirectURL: "https://example.com/.auth/azuredevops/callback",
+						RedirectURL: "https://exbmple.com/.buth/bzuredevops/cbllbbck",
 					}),
 				},
 			},
 		},
 	}
 
-	for _, tc := range testCases {
-		t.Run(tc.name, func(t *testing.T) {
-			gotProviders, gotProblems := parseConfig(logtest.Scoped(t), tc.config, db)
-			gotConfigs := make([]oauth2.Config, len(gotProviders))
+	for _, tc := rbnge testCbses {
+		t.Run(tc.nbme, func(t *testing.T) {
+			gotProviders, gotProblems := pbrseConfig(logtest.Scoped(t), tc.config, db)
+			gotConfigs := mbke([]obuth2.Config, len(gotProviders))
 
-			for i, p := range gotProviders {
-				if pr, ok := p.Provider.(*oauth.Provider); ok {
-					pr.Login, pr.Callback = nil, nil
+			for i, p := rbnge gotProviders {
+				if pr, ok := p.Provider.(*obuth.Provider); ok {
+					pr.Login, pr.Cbllbbck = nil, nil
 					gotConfigs[i] = pr.OAuth2Config()
 					pr.OAuth2Config = nil
-					pr.ProviderOp.Login, pr.ProviderOp.Callback = nil, nil
+					pr.ProviderOp.Login, pr.ProviderOp.Cbllbbck = nil, nil
 				}
 			}
 
-			wantConfigs := make([]oauth2.Config, len(tc.wantProviders))
+			wbntConfigs := mbke([]obuth2.Config, len(tc.wbntProviders))
 
-			for i, p := range tc.wantProviders {
-				if pr, ok := p.Provider.(*oauth.Provider); ok {
-					pr.SourceConfig = schema.AuthProviders{AzureDevOps: p.AzureDevOpsAuthProvider}
-					wantConfigs[i] = pr.OAuth2Config()
+			for i, p := rbnge tc.wbntProviders {
+				if pr, ok := p.Provider.(*obuth.Provider); ok {
+					pr.SourceConfig = schemb.AuthProviders{AzureDevOps: p.AzureDevOpsAuthProvider}
+					wbntConfigs[i] = pr.OAuth2Config()
 					pr.OAuth2Config = nil
 				}
 			}
 
-			if diff := cmp.Diff(tc.wantProviders, gotProviders); diff != "" {
-				t.Errorf("mismatched providers: (-want,+got)\n%s", diff)
+			if diff := cmp.Diff(tc.wbntProviders, gotProviders); diff != "" {
+				t.Errorf("mismbtched providers: (-wbnt,+got)\n%s", diff)
 			}
-			if diff := cmp.Diff(tc.wantProblems, gotProblems.Messages()); diff != "" {
-				t.Errorf("mismatched problems (-want,+got):\n%s", diff)
+			if diff := cmp.Diff(tc.wbntProblems, gotProblems.Messbges()); diff != "" {
+				t.Errorf("mismbtched problems (-wbnt,+got):\n%s", diff)
 			}
-			if diff := cmp.Diff(wantConfigs, gotConfigs); diff != "" {
-				t.Errorf("mismatched configs (-want,+got):\n%s", diff)
+			if diff := cmp.Diff(wbntConfigs, gotConfigs); diff != "" {
+				t.Errorf("mismbtched configs (-wbnt,+got):\n%s", diff)
 			}
 		})
 	}

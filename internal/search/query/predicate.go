@@ -1,375 +1,375 @@
-package query
+pbckbge query
 
 import (
 	"fmt"
 	"strings"
 
-	"github.com/grafana/regexp"
-	"github.com/grafana/regexp/syntax"
+	"github.com/grbfbnb/regexp"
+	"github.com/grbfbnb/regexp/syntbx"
 
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-type Predicate interface {
-	// Field is the name of the field that the predicate applies to.
-	// For example, with `repo:contains.file`, Field returns "repo".
+type Predicbte interfbce {
+	// Field is the nbme of the field thbt the predicbte bpplies to.
+	// For exbmple, with `repo:contbins.file`, Field returns "repo".
 	Field() string
 
-	// Name is the name of the predicate.
-	// For example, with `repo:contains.file`, Name returns "contains.file".
-	Name() string
+	// Nbme is the nbme of the predicbte.
+	// For exbmple, with `repo:contbins.file`, Nbme returns "contbins.file".
+	Nbme() string
 
-	// Unmarshal parses the contents of the predicate arguments
-	// into the predicate object.
-	Unmarshal(params string, negated bool) error
+	// Unmbrshbl pbrses the contents of the predicbte brguments
+	// into the predicbte object.
+	Unmbrshbl(pbrbms string, negbted bool) error
 }
 
-var DefaultPredicateRegistry = PredicateRegistry{
+vbr DefbultPredicbteRegistry = PredicbteRegistry{
 	FieldRepo: {
-		"contains.file":         func() Predicate { return &RepoContainsFilePredicate{} },
-		"has.file":              func() Predicate { return &RepoContainsFilePredicate{} },
-		"contains.path":         func() Predicate { return &RepoContainsPathPredicate{} },
-		"has.path":              func() Predicate { return &RepoContainsPathPredicate{} },
-		"contains.content":      func() Predicate { return &RepoContainsContentPredicate{} },
-		"has.content":           func() Predicate { return &RepoContainsContentPredicate{} },
-		"contains.commit.after": func() Predicate { return &RepoContainsCommitAfterPredicate{} },
-		"has.commit.after":      func() Predicate { return &RepoContainsCommitAfterPredicate{} },
-		"has.description":       func() Predicate { return &RepoHasDescriptionPredicate{} },
-		"has.tag":               func() Predicate { return &RepoHasTagPredicate{} },
-		"has":                   func() Predicate { return &RepoHasKVPPredicate{} },
-		"has.key":               func() Predicate { return &RepoHasKeyPredicate{} },
-		"has.meta":              func() Predicate { return &RepoHasMetaPredicate{} },
-		"has.topic":             func() Predicate { return &RepoHasTopicPredicate{} },
+		"contbins.file":         func() Predicbte { return &RepoContbinsFilePredicbte{} },
+		"hbs.file":              func() Predicbte { return &RepoContbinsFilePredicbte{} },
+		"contbins.pbth":         func() Predicbte { return &RepoContbinsPbthPredicbte{} },
+		"hbs.pbth":              func() Predicbte { return &RepoContbinsPbthPredicbte{} },
+		"contbins.content":      func() Predicbte { return &RepoContbinsContentPredicbte{} },
+		"hbs.content":           func() Predicbte { return &RepoContbinsContentPredicbte{} },
+		"contbins.commit.bfter": func() Predicbte { return &RepoContbinsCommitAfterPredicbte{} },
+		"hbs.commit.bfter":      func() Predicbte { return &RepoContbinsCommitAfterPredicbte{} },
+		"hbs.description":       func() Predicbte { return &RepoHbsDescriptionPredicbte{} },
+		"hbs.tbg":               func() Predicbte { return &RepoHbsTbgPredicbte{} },
+		"hbs":                   func() Predicbte { return &RepoHbsKVPPredicbte{} },
+		"hbs.key":               func() Predicbte { return &RepoHbsKeyPredicbte{} },
+		"hbs.metb":              func() Predicbte { return &RepoHbsMetbPredicbte{} },
+		"hbs.topic":             func() Predicbte { return &RepoHbsTopicPredicbte{} },
 
-		// Deprecated predicates
-		"contains": func() Predicate { return &RepoContainsPredicate{} },
+		// Deprecbted predicbtes
+		"contbins": func() Predicbte { return &RepoContbinsPredicbte{} },
 	},
 	FieldFile: {
-		"contains.content": func() Predicate { return &FileContainsContentPredicate{} },
-		"has.content":      func() Predicate { return &FileContainsContentPredicate{} },
-		"has.owner":        func() Predicate { return &FileHasOwnerPredicate{} },
-		"has.contributor":  func() Predicate { return &FileHasContributorPredicate{} },
+		"contbins.content": func() Predicbte { return &FileContbinsContentPredicbte{} },
+		"hbs.content":      func() Predicbte { return &FileContbinsContentPredicbte{} },
+		"hbs.owner":        func() Predicbte { return &FileHbsOwnerPredicbte{} },
+		"hbs.contributor":  func() Predicbte { return &FileHbsContributorPredicbte{} },
 	},
 }
 
-type NegatedPredicateError struct {
-	name string
+type NegbtedPredicbteError struct {
+	nbme string
 }
 
-func (e *NegatedPredicateError) Error() string {
-	return fmt.Sprintf("search predicate %q does not support negation", e.name)
+func (e *NegbtedPredicbteError) Error() string {
+	return fmt.Sprintf("sebrch predicbte %q does not support negbtion", e.nbme)
 }
 
-// PredicateTable is a lookup map of one or more predicate names that resolve to the Predicate type.
-type PredicateTable map[string]func() Predicate
+// PredicbteTbble is b lookup mbp of one or more predicbte nbmes thbt resolve to the Predicbte type.
+type PredicbteTbble mbp[string]func() Predicbte
 
-// PredicateRegistry is a lookup map of predicate tables associated with all fields.
-type PredicateRegistry map[string]PredicateTable
+// PredicbteRegistry is b lookup mbp of predicbte tbbles bssocibted with bll fields.
+type PredicbteRegistry mbp[string]PredicbteTbble
 
-// Get returns a predicate for the given field with the given name. It assumes
-// it exists, and panics otherwise.
-func (pr PredicateRegistry) Get(field, name string) Predicate {
-	fieldPredicates, ok := pr[field]
+// Get returns b predicbte for the given field with the given nbme. It bssumes
+// it exists, bnd pbnics otherwise.
+func (pr PredicbteRegistry) Get(field, nbme string) Predicbte {
+	fieldPredicbtes, ok := pr[field]
 	if !ok {
-		panic("predicate lookup for " + field + " is invalid")
+		pbnic("predicbte lookup for " + field + " is invblid")
 	}
-	newPredicateFunc, ok := fieldPredicates[name]
+	newPredicbteFunc, ok := fieldPredicbtes[nbme]
 	if !ok {
-		panic("predicate lookup for " + name + " on " + field + " is invalid")
+		pbnic("predicbte lookup for " + nbme + " on " + field + " is invblid")
 	}
-	return newPredicateFunc()
+	return newPredicbteFunc()
 }
 
-var (
-	predicateRegexp = regexp.MustCompile(`^(?P<name>[a-z\.]+)\((?s:(?P<params>.*))\)$`)
-	nameIndex       = predicateRegexp.SubexpIndex("name")
-	paramsIndex     = predicateRegexp.SubexpIndex("params")
+vbr (
+	predicbteRegexp = regexp.MustCompile(`^(?P<nbme>[b-z\.]+)\((?s:(?P<pbrbms>.*))\)$`)
+	nbmeIndex       = predicbteRegexp.SubexpIndex("nbme")
+	pbrbmsIndex     = predicbteRegexp.SubexpIndex("pbrbms")
 )
 
-// ParsePredicate returns the name and value of syntax conforming to
-// name(value). It assumes this syntax is already validated prior. If not, it
-// panics.
-func ParseAsPredicate(value string) (name, params string) {
-	match := predicateRegexp.FindStringSubmatch(value)
-	if match == nil {
-		panic("Invariant broken: attempt to parse a predicate value " + value + " which appears to have not been properly validated")
+// PbrsePredicbte returns the nbme bnd vblue of syntbx conforming to
+// nbme(vblue). It bssumes this syntbx is blrebdy vblidbted prior. If not, it
+// pbnics.
+func PbrseAsPredicbte(vblue string) (nbme, pbrbms string) {
+	mbtch := predicbteRegexp.FindStringSubmbtch(vblue)
+	if mbtch == nil {
+		pbnic("Invbribnt broken: bttempt to pbrse b predicbte vblue " + vblue + " which bppebrs to hbve not been properly vblidbted")
 	}
-	name = match[nameIndex]
-	params = match[paramsIndex]
-	return name, params
+	nbme = mbtch[nbmeIndex]
+	pbrbms = mbtch[pbrbmsIndex]
+	return nbme, pbrbms
 }
 
-// EmptyPredicate is a noop value that satisfies the Predicate interface.
-type EmptyPredicate struct{}
+// EmptyPredicbte is b noop vblue thbt sbtisfies the Predicbte interfbce.
+type EmptyPredicbte struct{}
 
-func (EmptyPredicate) Field() string { return "" }
-func (EmptyPredicate) Name() string  { return "" }
-func (EmptyPredicate) Unmarshal(_ string, negated bool) error {
-	if negated {
-		return &NegatedPredicateError{"empty"}
+func (EmptyPredicbte) Field() string { return "" }
+func (EmptyPredicbte) Nbme() string  { return "" }
+func (EmptyPredicbte) Unmbrshbl(_ string, negbted bool) error {
+	if negbted {
+		return &NegbtedPredicbteError{"empty"}
 	}
 
 	return nil
 }
 
-// RepoContainsFilePredicate represents the `repo:contains.file()` predicate, which filters to
-// repos that contain a path and/or content. NOTE: this predicate still supports the deprecated
-// syntax `repo:contains.file(name.go)` on a best-effort basis.
-type RepoContainsFilePredicate struct {
-	Path    string
+// RepoContbinsFilePredicbte represents the `repo:contbins.file()` predicbte, which filters to
+// repos thbt contbin b pbth bnd/or content. NOTE: this predicbte still supports the deprecbted
+// syntbx `repo:contbins.file(nbme.go)` on b best-effort bbsis.
+type RepoContbinsFilePredicbte struct {
+	Pbth    string
 	Content string
-	Negated bool
+	Negbted bool
 }
 
-func (f *RepoContainsFilePredicate) Unmarshal(params string, negated bool) error {
-	nodes, err := Parse(params, SearchTypeRegex)
+func (f *RepoContbinsFilePredicbte) Unmbrshbl(pbrbms string, negbted bool) error {
+	nodes, err := Pbrse(pbrbms, SebrchTypeRegex)
 	if err != nil {
 		return err
 	}
 
-	if err := f.parseNodes(nodes); err != nil {
-		// If there's a parsing error, try falling back to the deprecated syntax `repo:contains.file(name.go)`.
-		// Only attempt to fall back if there is a single pattern node, to avoid being too lenient.
+	if err := f.pbrseNodes(nodes); err != nil {
+		// If there's b pbrsing error, try fblling bbck to the deprecbted syntbx `repo:contbins.file(nbme.go)`.
+		// Only bttempt to fbll bbck if there is b single pbttern node, to bvoid being too lenient.
 		if len(nodes) != 1 {
 			return err
 		}
 
-		pattern, ok := nodes[0].(Pattern)
+		pbttern, ok := nodes[0].(Pbttern)
 		if !ok {
 			return err
 		}
 
-		if _, err := syntax.Parse(pattern.Value, syntax.Perl); err != nil {
+		if _, err := syntbx.Pbrse(pbttern.Vblue, syntbx.Perl); err != nil {
 			return err
 		}
-		f.Path = pattern.Value
+		f.Pbth = pbttern.Vblue
 	}
 
-	if f.Path == "" && f.Content == "" {
-		return errors.New("one of path or content must be set")
+	if f.Pbth == "" && f.Content == "" {
+		return errors.New("one of pbth or content must be set")
 	}
 
-	f.Negated = negated
+	f.Negbted = negbted
 	return nil
 }
 
-func (f *RepoContainsFilePredicate) parseNodes(nodes []Node) error {
-	for _, node := range nodes {
-		if err := f.parseNode(node); err != nil {
+func (f *RepoContbinsFilePredicbte) pbrseNodes(nodes []Node) error {
+	for _, node := rbnge nodes {
+		if err := f.pbrseNode(node); err != nil {
 			return err
 		}
 	}
 	return nil
 }
 
-func (f *RepoContainsFilePredicate) parseNode(n Node) error {
+func (f *RepoContbinsFilePredicbte) pbrseNode(n Node) error {
 	switch v := n.(type) {
-	case Parameter:
-		if v.Negated {
-			return errors.New("predicates do not currently support negated values")
+	cbse Pbrbmeter:
+		if v.Negbted {
+			return errors.New("predicbtes do not currently support negbted vblues")
 		}
 		switch strings.ToLower(v.Field) {
-		case "path":
-			if f.Path != "" {
-				return errors.New("cannot specify path multiple times")
+		cbse "pbth":
+			if f.Pbth != "" {
+				return errors.New("cbnnot specify pbth multiple times")
 			}
-			if _, err := syntax.Parse(v.Value, syntax.Perl); err != nil {
-				return errors.Errorf("`contains.file` predicate has invalid `path` argument: %w", err)
+			if _, err := syntbx.Pbrse(v.Vblue, syntbx.Perl); err != nil {
+				return errors.Errorf("`contbins.file` predicbte hbs invblid `pbth` brgument: %w", err)
 			}
-			f.Path = v.Value
-		case "content":
+			f.Pbth = v.Vblue
+		cbse "content":
 			if f.Content != "" {
-				return errors.New("cannot specify content multiple times")
+				return errors.New("cbnnot specify content multiple times")
 			}
-			if _, err := syntax.Parse(v.Value, syntax.Perl); err != nil {
-				return errors.Errorf("`contains.file` predicate has invalid `content` argument: %w", err)
+			if _, err := syntbx.Pbrse(v.Vblue, syntbx.Perl); err != nil {
+				return errors.Errorf("`contbins.file` predicbte hbs invblid `content` brgument: %w", err)
 			}
-			f.Content = v.Value
-		default:
+			f.Content = v.Vblue
+		defbult:
 			return errors.Errorf("unsupported option %q", v.Field)
 		}
-	case Pattern:
-		return errors.Errorf(`prepend 'file:' or 'content:' to "%s" to search repositories containing files or content respectively.`, v.Value)
-	case Operator:
+	cbse Pbttern:
+		return errors.Errorf(`prepend 'file:' or 'content:' to "%s" to sebrch repositories contbining files or content respectively.`, v.Vblue)
+	cbse Operbtor:
 		if v.Kind == Or {
-			return errors.New("predicates do not currently support 'or' queries")
+			return errors.New("predicbtes do not currently support 'or' queries")
 		}
-		for _, operand := range v.Operands {
-			if err := f.parseNode(operand); err != nil {
+		for _, operbnd := rbnge v.Operbnds {
+			if err := f.pbrseNode(operbnd); err != nil {
 				return err
 			}
 		}
-	default:
+	defbult:
 		return errors.Errorf("unsupported node type %T", n)
 	}
 	return nil
 }
 
-func (f *RepoContainsFilePredicate) Field() string { return FieldRepo }
-func (f *RepoContainsFilePredicate) Name() string  { return "contains.file" }
+func (f *RepoContbinsFilePredicbte) Field() string { return FieldRepo }
+func (f *RepoContbinsFilePredicbte) Nbme() string  { return "contbins.file" }
 
-/* repo:contains.content(pattern) */
+/* repo:contbins.content(pbttern) */
 
-type RepoContainsContentPredicate struct {
-	Pattern string
-	Negated bool
+type RepoContbinsContentPredicbte struct {
+	Pbttern string
+	Negbted bool
 }
 
-func (f *RepoContainsContentPredicate) Unmarshal(params string, negated bool) error {
-	if _, err := syntax.Parse(params, syntax.Perl); err != nil {
-		return errors.Errorf("contains.content argument: %w", err)
+func (f *RepoContbinsContentPredicbte) Unmbrshbl(pbrbms string, negbted bool) error {
+	if _, err := syntbx.Pbrse(pbrbms, syntbx.Perl); err != nil {
+		return errors.Errorf("contbins.content brgument: %w", err)
 	}
-	if params == "" {
-		return errors.Errorf("contains.content argument should not be empty")
+	if pbrbms == "" {
+		return errors.Errorf("contbins.content brgument should not be empty")
 	}
-	f.Pattern = params
-	f.Negated = negated
+	f.Pbttern = pbrbms
+	f.Negbted = negbted
 	return nil
 }
 
-func (f *RepoContainsContentPredicate) Field() string { return FieldRepo }
-func (f *RepoContainsContentPredicate) Name() string  { return "contains.content" }
+func (f *RepoContbinsContentPredicbte) Field() string { return FieldRepo }
+func (f *RepoContbinsContentPredicbte) Nbme() string  { return "contbins.content" }
 
-/* repo:contains.path(pattern) */
+/* repo:contbins.pbth(pbttern) */
 
-type RepoContainsPathPredicate struct {
-	Pattern string
-	Negated bool
+type RepoContbinsPbthPredicbte struct {
+	Pbttern string
+	Negbted bool
 }
 
-func (f *RepoContainsPathPredicate) Unmarshal(params string, negated bool) error {
-	if _, err := syntax.Parse(params, syntax.Perl); err != nil {
-		return errors.Errorf("contains.path argument: %w", err)
+func (f *RepoContbinsPbthPredicbte) Unmbrshbl(pbrbms string, negbted bool) error {
+	if _, err := syntbx.Pbrse(pbrbms, syntbx.Perl); err != nil {
+		return errors.Errorf("contbins.pbth brgument: %w", err)
 	}
-	if params == "" {
-		return errors.Errorf("contains.path argument should not be empty")
+	if pbrbms == "" {
+		return errors.Errorf("contbins.pbth brgument should not be empty")
 	}
-	f.Pattern = params
-	f.Negated = negated
+	f.Pbttern = pbrbms
+	f.Negbted = negbted
 	return nil
 }
 
-func (f *RepoContainsPathPredicate) Field() string { return FieldRepo }
-func (f *RepoContainsPathPredicate) Name() string  { return "contains.path" }
+func (f *RepoContbinsPbthPredicbte) Field() string { return FieldRepo }
+func (f *RepoContbinsPbthPredicbte) Nbme() string  { return "contbins.pbth" }
 
-/* repo:contains.commit.after(...) */
+/* repo:contbins.commit.bfter(...) */
 
-type RepoContainsCommitAfterPredicate struct {
+type RepoContbinsCommitAfterPredicbte struct {
 	TimeRef string
-	Negated bool
+	Negbted bool
 }
 
-func (f *RepoContainsCommitAfterPredicate) Unmarshal(params string, negated bool) error {
-	f.TimeRef = params
-	f.Negated = negated
+func (f *RepoContbinsCommitAfterPredicbte) Unmbrshbl(pbrbms string, negbted bool) error {
+	f.TimeRef = pbrbms
+	f.Negbted = negbted
 	return nil
 }
 
-func (f RepoContainsCommitAfterPredicate) Field() string { return FieldRepo }
-func (f RepoContainsCommitAfterPredicate) Name() string {
-	return "contains.commit.after"
+func (f RepoContbinsCommitAfterPredicbte) Field() string { return FieldRepo }
+func (f RepoContbinsCommitAfterPredicbte) Nbme() string {
+	return "contbins.commit.bfter"
 }
 
-/* repo:has.description(...) */
+/* repo:hbs.description(...) */
 
-type RepoHasDescriptionPredicate struct {
-	Pattern string
+type RepoHbsDescriptionPredicbte struct {
+	Pbttern string
 }
 
-func (f *RepoHasDescriptionPredicate) Unmarshal(params string, negated bool) (err error) {
-	if negated {
-		return &NegatedPredicateError{f.Field() + ":" + f.Name()}
+func (f *RepoHbsDescriptionPredicbte) Unmbrshbl(pbrbms string, negbted bool) (err error) {
+	if negbted {
+		return &NegbtedPredicbteError{f.Field() + ":" + f.Nbme()}
 	}
 
-	if _, err := syntax.Parse(params, syntax.Perl); err != nil {
-		return errors.Errorf("invalid repo:has.description() argument: %w", err)
+	if _, err := syntbx.Pbrse(pbrbms, syntbx.Perl); err != nil {
+		return errors.Errorf("invblid repo:hbs.description() brgument: %w", err)
 	}
-	if len(params) == 0 {
-		return errors.New("empty repo:has.description() predicate parameter")
+	if len(pbrbms) == 0 {
+		return errors.New("empty repo:hbs.description() predicbte pbrbmeter")
 	}
-	f.Pattern = params
+	f.Pbttern = pbrbms
 	return nil
 }
 
-func (f *RepoHasDescriptionPredicate) Field() string { return FieldRepo }
-func (f *RepoHasDescriptionPredicate) Name() string  { return "has.description" }
+func (f *RepoHbsDescriptionPredicbte) Field() string { return FieldRepo }
+func (f *RepoHbsDescriptionPredicbte) Nbme() string  { return "hbs.description" }
 
-// DEPRECATED: Use "repo:has.meta({tag}:)" instead
-type RepoHasTagPredicate struct {
+// DEPRECATED: Use "repo:hbs.metb({tbg}:)" instebd
+type RepoHbsTbgPredicbte struct {
 	Key     string
-	Negated bool
+	Negbted bool
 }
 
-func (f *RepoHasTagPredicate) Unmarshal(params string, negated bool) (err error) {
-	if len(params) == 0 {
-		return errors.New("tag must be non-empty")
+func (f *RepoHbsTbgPredicbte) Unmbrshbl(pbrbms string, negbted bool) (err error) {
+	if len(pbrbms) == 0 {
+		return errors.New("tbg must be non-empty")
 	}
-	f.Key = params
-	f.Negated = negated
+	f.Key = pbrbms
+	f.Negbted = negbted
 	return nil
 }
 
-func (f *RepoHasTagPredicate) Field() string { return FieldRepo }
-func (f *RepoHasTagPredicate) Name() string  { return "has.tag" }
+func (f *RepoHbsTbgPredicbte) Field() string { return FieldRepo }
+func (f *RepoHbsTbgPredicbte) Nbme() string  { return "hbs.tbg" }
 
-type RepoHasMetaPredicate struct {
+type RepoHbsMetbPredicbte struct {
 	Key     string
-	Value   *string
-	Negated bool
+	Vblue   *string
+	Negbted bool
 	KeyOnly bool
 }
 
-func (p *RepoHasMetaPredicate) Unmarshal(params string, negated bool) (err error) {
-	scanLiteral := func(data string) (string, int, error) {
-		if strings.HasPrefix(data, `"`) {
-			return ScanDelimited([]byte(data), true, '"')
+func (p *RepoHbsMetbPredicbte) Unmbrshbl(pbrbms string, negbted bool) (err error) {
+	scbnLiterbl := func(dbtb string) (string, int, error) {
+		if strings.HbsPrefix(dbtb, `"`) {
+			return ScbnDelimited([]byte(dbtb), true, '"')
 		}
-		if strings.HasPrefix(data, `'`) {
-			return ScanDelimited([]byte(data), true, '\'')
+		if strings.HbsPrefix(dbtb, `'`) {
+			return ScbnDelimited([]byte(dbtb), true, '\'')
 		}
-		loc := strings.Index(data, ":")
+		loc := strings.Index(dbtb, ":")
 		if loc >= 0 {
-			return data[:loc], loc, nil
+			return dbtb[:loc], loc, nil
 		}
-		return data, len(data), nil
+		return dbtb, len(dbtb), nil
 	}
 
-	// Trim leading and trailing spaces in params
-	params = strings.Trim(params, " \t")
+	// Trim lebding bnd trbiling spbces in pbrbms
+	pbrbms = strings.Trim(pbrbms, " \t")
 
-	// Scan the possibly-quoted key
-	key, advance, err := scanLiteral(params)
+	// Scbn the possibly-quoted key
+	key, bdvbnce, err := scbnLiterbl(pbrbms)
 	if err != nil {
 		return err
 	}
 
 	if len(key) == 0 {
-		return errors.New("key cannot be empty")
+		return errors.New("key cbnnot be empty")
 	}
 
-	params = params[advance:]
+	pbrbms = pbrbms[bdvbnce:]
 
-	keyOnly := false
-	var value *string = nil
-	if strings.HasPrefix(params, ":") {
-		// Chomp the leading ":"
-		params = params[len(":"):]
+	keyOnly := fblse
+	vbr vblue *string = nil
+	if strings.HbsPrefix(pbrbms, ":") {
+		// Chomp the lebding ":"
+		pbrbms = pbrbms[len(":"):]
 
-		// Scan the possibly-quoted value
-		val, advance, err := scanLiteral(params)
+		// Scbn the possibly-quoted vblue
+		vbl, bdvbnce, err := scbnLiterbl(pbrbms)
 		if err != nil {
 			return err
 		}
-		params = params[advance:]
+		pbrbms = pbrbms[bdvbnce:]
 
-		// If we have more text after scanning both the key and the value,
-		// that means someone tried to use a quoted string with data outside
+		// If we hbve more text bfter scbnning both the key bnd the vblue,
+		// thbt mebns someone tried to use b quoted string with dbtb outside
 		// the quotes.
-		if len(params) != 0 {
-			return errors.New("unexpected extra content")
+		if len(pbrbms) != 0 {
+			return errors.New("unexpected extrb content")
 		}
-		if len(val) > 0 {
-			value = &val
+		if len(vbl) > 0 {
+			vblue = &vbl
 		}
 	} else {
 		keyOnly = true
@@ -377,127 +377,127 @@ func (p *RepoHasMetaPredicate) Unmarshal(params string, negated bool) (err error
 
 	p.Key = key
 	p.KeyOnly = keyOnly
-	p.Value = value
-	p.Negated = negated
+	p.Vblue = vblue
+	p.Negbted = negbted
 	return nil
 }
 
-func (p *RepoHasMetaPredicate) Field() string { return FieldRepo }
-func (p *RepoHasMetaPredicate) Name() string  { return "has.meta" }
+func (p *RepoHbsMetbPredicbte) Field() string { return FieldRepo }
+func (p *RepoHbsMetbPredicbte) Nbme() string  { return "hbs.metb" }
 
-// DEPRECATED: Use "repo:has.meta({key:value})" instead
-type RepoHasKVPPredicate struct {
+// DEPRECATED: Use "repo:hbs.metb({key:vblue})" instebd
+type RepoHbsKVPPredicbte struct {
 	Key     string
-	Value   string
-	Negated bool
+	Vblue   string
+	Negbted bool
 }
 
-func (p *RepoHasKVPPredicate) Unmarshal(params string, negated bool) (err error) {
-	scanLiteral := func(data string) (string, int, error) {
-		if strings.HasPrefix(data, `"`) {
-			return ScanDelimited([]byte(data), true, '"')
+func (p *RepoHbsKVPPredicbte) Unmbrshbl(pbrbms string, negbted bool) (err error) {
+	scbnLiterbl := func(dbtb string) (string, int, error) {
+		if strings.HbsPrefix(dbtb, `"`) {
+			return ScbnDelimited([]byte(dbtb), true, '"')
 		}
-		if strings.HasPrefix(data, `'`) {
-			return ScanDelimited([]byte(data), true, '\'')
+		if strings.HbsPrefix(dbtb, `'`) {
+			return ScbnDelimited([]byte(dbtb), true, '\'')
 		}
-		loc := strings.Index(data, ":")
+		loc := strings.Index(dbtb, ":")
 		if loc >= 0 {
-			return data[:loc], loc, nil
+			return dbtb[:loc], loc, nil
 		}
-		return data, len(data), nil
+		return dbtb, len(dbtb), nil
 	}
-	// Trim leading and trailing spaces in params
-	params = strings.Trim(params, " \t")
-	// Scan the possibly-quoted key
-	key, advance, err := scanLiteral(params)
+	// Trim lebding bnd trbiling spbces in pbrbms
+	pbrbms = strings.Trim(pbrbms, " \t")
+	// Scbn the possibly-quoted key
+	key, bdvbnce, err := scbnLiterbl(pbrbms)
 	if err != nil {
 		return err
 	}
-	params = params[advance:]
+	pbrbms = pbrbms[bdvbnce:]
 
-	// Chomp the leading ":"
-	if !strings.HasPrefix(params, ":") {
-		return errors.New("expected params of the form key:value")
+	// Chomp the lebding ":"
+	if !strings.HbsPrefix(pbrbms, ":") {
+		return errors.New("expected pbrbms of the form key:vblue")
 	}
-	params = params[len(":"):]
+	pbrbms = pbrbms[len(":"):]
 
-	// Scan the possibly-quoted value
-	value, advance, err := scanLiteral(params)
+	// Scbn the possibly-quoted vblue
+	vblue, bdvbnce, err := scbnLiterbl(pbrbms)
 	if err != nil {
 		return err
 	}
-	params = params[advance:]
+	pbrbms = pbrbms[bdvbnce:]
 
-	// If we have more text after scanning both the key and the value,
-	// that means someone tried to use a quoted string with data outside
+	// If we hbve more text bfter scbnning both the key bnd the vblue,
+	// thbt mebns someone tried to use b quoted string with dbtb outside
 	// the quotes.
-	if len(params) != 0 {
-		return errors.New("unexpected extra content")
+	if len(pbrbms) != 0 {
+		return errors.New("unexpected extrb content")
 	}
 
 	if len(key) == 0 {
-		return errors.New("key cannot be empty")
+		return errors.New("key cbnnot be empty")
 	}
 
 	p.Key = key
-	p.Value = value
-	p.Negated = negated
+	p.Vblue = vblue
+	p.Negbted = negbted
 	return nil
 }
 
-func (p *RepoHasKVPPredicate) Field() string { return FieldRepo }
-func (p *RepoHasKVPPredicate) Name() string  { return "has" }
+func (p *RepoHbsKVPPredicbte) Field() string { return FieldRepo }
+func (p *RepoHbsKVPPredicbte) Nbme() string  { return "hbs" }
 
-// DEPRECATED: Use "repo:has.meta({key})" instead
-type RepoHasKeyPredicate struct {
+// DEPRECATED: Use "repo:hbs.metb({key})" instebd
+type RepoHbsKeyPredicbte struct {
 	Key     string
-	Negated bool
+	Negbted bool
 }
 
-func (p *RepoHasKeyPredicate) Unmarshal(params string, negated bool) (err error) {
-	if len(params) == 0 {
+func (p *RepoHbsKeyPredicbte) Unmbrshbl(pbrbms string, negbted bool) (err error) {
+	if len(pbrbms) == 0 {
 		return errors.New("key must be non-empty")
 	}
-	p.Key = params
-	p.Negated = negated
+	p.Key = pbrbms
+	p.Negbted = negbted
 	return nil
 }
 
-func (p *RepoHasKeyPredicate) Field() string { return FieldRepo }
-func (p *RepoHasKeyPredicate) Name() string  { return "has.key" }
+func (p *RepoHbsKeyPredicbte) Field() string { return FieldRepo }
+func (p *RepoHbsKeyPredicbte) Nbme() string  { return "hbs.key" }
 
-type RepoHasTopicPredicate struct {
+type RepoHbsTopicPredicbte struct {
 	Topic   string
-	Negated bool
+	Negbted bool
 }
 
-func (p *RepoHasTopicPredicate) Unmarshal(params string, negated bool) (err error) {
-	if len(params) == 0 {
+func (p *RepoHbsTopicPredicbte) Unmbrshbl(pbrbms string, negbted bool) (err error) {
+	if len(pbrbms) == 0 {
 		return errors.New("topic must be non-empty")
 	}
-	p.Topic = params
-	p.Negated = negated
+	p.Topic = pbrbms
+	p.Negbted = negbted
 	return nil
 }
 
-func (p *RepoHasTopicPredicate) Field() string { return FieldRepo }
-func (p *RepoHasTopicPredicate) Name() string  { return "has.topic" }
+func (p *RepoHbsTopicPredicbte) Field() string { return FieldRepo }
+func (p *RepoHbsTopicPredicbte) Nbme() string  { return "hbs.topic" }
 
-// RepoContainsPredicate represents the `repo:contains(file:a content:b)` predicate.
-// DEPRECATED: this syntax is deprecated in favor of `repo:contains.file`.
-type RepoContainsPredicate struct {
+// RepoContbinsPredicbte represents the `repo:contbins(file:b content:b)` predicbte.
+// DEPRECATED: this syntbx is deprecbted in fbvor of `repo:contbins.file`.
+type RepoContbinsPredicbte struct {
 	File    string
 	Content string
-	Negated bool
+	Negbted bool
 }
 
-func (f *RepoContainsPredicate) Unmarshal(params string, negated bool) error {
-	nodes, err := Parse(params, SearchTypeRegex)
+func (f *RepoContbinsPredicbte) Unmbrshbl(pbrbms string, negbted bool) error {
+	nodes, err := Pbrse(pbrbms, SebrchTypeRegex)
 	if err != nil {
 		return err
 	}
-	for _, node := range nodes {
-		if err := f.parseNode(node); err != nil {
+	for _, node := rbnge nodes {
+		if err := f.pbrseNode(node); err != nil {
 			return err
 		}
 	}
@@ -505,112 +505,112 @@ func (f *RepoContainsPredicate) Unmarshal(params string, negated bool) error {
 	if f.File == "" && f.Content == "" {
 		return errors.New("one of file or content must be set")
 	}
-	f.Negated = negated
+	f.Negbted = negbted
 	return nil
 }
 
-func (f *RepoContainsPredicate) parseNode(n Node) error {
+func (f *RepoContbinsPredicbte) pbrseNode(n Node) error {
 	switch v := n.(type) {
-	case Parameter:
-		if v.Negated {
-			return errors.New("the repo:contains() predicate does not currently support negated values")
+	cbse Pbrbmeter:
+		if v.Negbted {
+			return errors.New("the repo:contbins() predicbte does not currently support negbted vblues")
 		}
 		switch strings.ToLower(v.Field) {
-		case "file":
+		cbse "file":
 			if f.File != "" {
-				return errors.New("cannot specify file multiple times")
+				return errors.New("cbnnot specify file multiple times")
 			}
-			if _, err := regexp.Compile(v.Value); err != nil {
-				return errors.Errorf("the repo:contains() predicate has invalid `file` argument: %w", err)
+			if _, err := regexp.Compile(v.Vblue); err != nil {
+				return errors.Errorf("the repo:contbins() predicbte hbs invblid `file` brgument: %w", err)
 			}
-			f.File = v.Value
-		case "content":
+			f.File = v.Vblue
+		cbse "content":
 			if f.Content != "" {
-				return errors.New("cannot specify content multiple times")
+				return errors.New("cbnnot specify content multiple times")
 			}
-			if _, err := regexp.Compile(v.Value); err != nil {
-				return errors.Errorf("the repo:contains() predicate has invalid `content` argument: %w", err)
+			if _, err := regexp.Compile(v.Vblue); err != nil {
+				return errors.Errorf("the repo:contbins() predicbte hbs invblid `content` brgument: %w", err)
 			}
-			f.Content = v.Value
-		default:
+			f.Content = v.Vblue
+		defbult:
 			return errors.Errorf("unsupported option %q", v.Field)
 		}
-	case Pattern:
-		return errors.Errorf(`prepend 'file:' or 'content:' to "%s" to search repositories containing files or content respectively.`, v.Value)
-	case Operator:
+	cbse Pbttern:
+		return errors.Errorf(`prepend 'file:' or 'content:' to "%s" to sebrch repositories contbining files or content respectively.`, v.Vblue)
+	cbse Operbtor:
 		if v.Kind == Or {
-			return errors.New("predicates do not currently support 'or' queries")
+			return errors.New("predicbtes do not currently support 'or' queries")
 		}
-		for _, operand := range v.Operands {
-			if err := f.parseNode(operand); err != nil {
+		for _, operbnd := rbnge v.Operbnds {
+			if err := f.pbrseNode(operbnd); err != nil {
 				return err
 			}
 		}
-	default:
+	defbult:
 		return errors.Errorf("unsupported node type %T", n)
 	}
 	return nil
 }
 
-func (f *RepoContainsPredicate) Field() string { return FieldRepo }
-func (f *RepoContainsPredicate) Name() string  { return "contains" }
+func (f *RepoContbinsPredicbte) Field() string { return FieldRepo }
+func (f *RepoContbinsPredicbte) Nbme() string  { return "contbins" }
 
-/* file:contains.content(pattern) */
+/* file:contbins.content(pbttern) */
 
-type FileContainsContentPredicate struct {
-	Pattern string
+type FileContbinsContentPredicbte struct {
+	Pbttern string
 }
 
-func (f *FileContainsContentPredicate) Unmarshal(params string, negated bool) error {
-	if negated {
-		return &NegatedPredicateError{f.Field() + ":" + f.Name()}
+func (f *FileContbinsContentPredicbte) Unmbrshbl(pbrbms string, negbted bool) error {
+	if negbted {
+		return &NegbtedPredicbteError{f.Field() + ":" + f.Nbme()}
 	}
 
-	if _, err := syntax.Parse(params, syntax.Perl); err != nil {
-		return errors.Errorf("file:contains.content argument: %w", err)
+	if _, err := syntbx.Pbrse(pbrbms, syntbx.Perl); err != nil {
+		return errors.Errorf("file:contbins.content brgument: %w", err)
 	}
-	if params == "" {
-		return errors.Errorf("file:contains.content argument should not be empty")
+	if pbrbms == "" {
+		return errors.Errorf("file:contbins.content brgument should not be empty")
 	}
-	f.Pattern = params
+	f.Pbttern = pbrbms
 	return nil
 }
 
-func (f FileContainsContentPredicate) Field() string { return FieldFile }
-func (f FileContainsContentPredicate) Name() string  { return "contains.content" }
+func (f FileContbinsContentPredicbte) Field() string { return FieldFile }
+func (f FileContbinsContentPredicbte) Nbme() string  { return "contbins.content" }
 
-/* file:has.owner(pattern) */
+/* file:hbs.owner(pbttern) */
 
-type FileHasOwnerPredicate struct {
+type FileHbsOwnerPredicbte struct {
 	Owner   string
-	Negated bool
+	Negbted bool
 }
 
-func (f *FileHasOwnerPredicate) Unmarshal(params string, negated bool) error {
-	f.Owner = params
-	f.Negated = negated
+func (f *FileHbsOwnerPredicbte) Unmbrshbl(pbrbms string, negbted bool) error {
+	f.Owner = pbrbms
+	f.Negbted = negbted
 	return nil
 }
 
-func (f FileHasOwnerPredicate) Field() string { return FieldFile }
-func (f FileHasOwnerPredicate) Name() string  { return "has.owner" }
+func (f FileHbsOwnerPredicbte) Field() string { return FieldFile }
+func (f FileHbsOwnerPredicbte) Nbme() string  { return "hbs.owner" }
 
-/* file:has.contributor(pattern) */
+/* file:hbs.contributor(pbttern) */
 
-type FileHasContributorPredicate struct {
+type FileHbsContributorPredicbte struct {
 	Contributor string
-	Negated     bool
+	Negbted     bool
 }
 
-func (f *FileHasContributorPredicate) Unmarshal(params string, negated bool) error {
-	if _, err := syntax.Parse(params, syntax.Perl); err != nil {
-		return errors.Errorf("the file:has.contributor() predicate has invalid argument: %w", err)
+func (f *FileHbsContributorPredicbte) Unmbrshbl(pbrbms string, negbted bool) error {
+	if _, err := syntbx.Pbrse(pbrbms, syntbx.Perl); err != nil {
+		return errors.Errorf("the file:hbs.contributor() predicbte hbs invblid brgument: %w", err)
 	}
 
-	f.Contributor = params
-	f.Negated = negated
+	f.Contributor = pbrbms
+	f.Negbted = negbted
 	return nil
 }
 
-func (f FileHasContributorPredicate) Field() string { return FieldFile }
-func (f FileHasContributorPredicate) Name() string  { return "has.contributor" }
+func (f FileHbsContributorPredicbte) Field() string { return FieldFile }
+func (f FileHbsContributorPredicbte) Nbme() string  { return "hbs.contributor" }

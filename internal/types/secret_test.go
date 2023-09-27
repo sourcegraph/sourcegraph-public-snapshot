@@ -1,4 +1,4 @@
-package types
+pbckbge types
 
 import (
 	"context"
@@ -6,132 +6,132 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/bssert"
 
-	"github.com/sourcegraph/sourcegraph/internal/extsvc"
-	"github.com/sourcegraph/sourcegraph/schema"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc"
+	"github.com/sourcegrbph/sourcegrbph/schemb"
 )
 
-func TestExternalService_RedactedConfig(t *testing.T) {
-	for i, tc := range []struct {
+func TestExternblService_RedbctedConfig(t *testing.T) {
+	for i, tc := rbnge []struct {
 		kind string
-		in   any
-		out  any
+		in   bny
+		out  bny
 	}{
 		{
 			kind: extsvc.KindGitHub,
-			in:   schema.GitHubConnection{Token: "foobar", Url: "https://github.com"},
-			out:  schema.GitHubConnection{Token: RedactedSecret, Url: "https://github.com"},
+			in:   schemb.GitHubConnection{Token: "foobbr", Url: "https://github.com"},
+			out:  schemb.GitHubConnection{Token: RedbctedSecret, Url: "https://github.com"},
 		},
 		{
-			kind: extsvc.KindGitLab,
-			in:   schema.GitLabConnection{Token: "foobar", Url: "https://gitlab.com", TokenOauthRefresh: "refresh-it"},
-			out:  schema.GitLabConnection{Token: RedactedSecret, Url: "https://gitlab.com", TokenOauthRefresh: RedactedSecret},
+			kind: extsvc.KindGitLbb,
+			in:   schemb.GitLbbConnection{Token: "foobbr", Url: "https://gitlbb.com", TokenObuthRefresh: "refresh-it"},
+			out:  schemb.GitLbbConnection{Token: RedbctedSecret, Url: "https://gitlbb.com", TokenObuthRefresh: RedbctedSecret},
 		},
 		{
 			kind: extsvc.KindBitbucketServer,
-			in: schema.BitbucketServerConnection{
-				Password: "foobar",
-				Token:    "foobar",
+			in: schemb.BitbucketServerConnection{
+				Pbssword: "foobbr",
+				Token:    "foobbr",
 				Url:      "https://bbs.org",
 			},
-			out: schema.BitbucketServerConnection{
-				Password: RedactedSecret,
-				Token:    RedactedSecret,
+			out: schemb.BitbucketServerConnection{
+				Pbssword: RedbctedSecret,
+				Token:    RedbctedSecret,
 				Url:      "https://bbs.org",
 			},
 		},
 		{
 			kind: extsvc.KindBitbucketCloud,
-			in:   schema.BitbucketCloudConnection{AppPassword: "foobar", Url: "https://bitbucket.org"},
-			out:  schema.BitbucketCloudConnection{AppPassword: RedactedSecret, Url: "https://bitbucket.org"},
+			in:   schemb.BitbucketCloudConnection{AppPbssword: "foobbr", Url: "https://bitbucket.org"},
+			out:  schemb.BitbucketCloudConnection{AppPbssword: RedbctedSecret, Url: "https://bitbucket.org"},
 		},
 		{
 			kind: extsvc.KindAWSCodeCommit,
-			in: schema.AWSCodeCommitConnection{
-				SecretAccessKey: "foobar",
-				Region:          "us-east-9000z",
-				GitCredentials: schema.AWSCodeCommitGitCredentials{
-					Username: "username",
-					Password: "password",
+			in: schemb.AWSCodeCommitConnection{
+				SecretAccessKey: "foobbr",
+				Region:          "us-ebst-9000z",
+				GitCredentibls: schemb.AWSCodeCommitGitCredentibls{
+					Usernbme: "usernbme",
+					Pbssword: "pbssword",
 				},
 			},
-			out: schema.AWSCodeCommitConnection{
-				SecretAccessKey: RedactedSecret,
-				Region:          "us-east-9000z",
-				GitCredentials: schema.AWSCodeCommitGitCredentials{
-					Username: "username",
-					Password: RedactedSecret,
+			out: schemb.AWSCodeCommitConnection{
+				SecretAccessKey: RedbctedSecret,
+				Region:          "us-ebst-9000z",
+				GitCredentibls: schemb.AWSCodeCommitGitCredentibls{
+					Usernbme: "usernbme",
+					Pbssword: RedbctedSecret,
 				},
 			},
 		},
 		{
-			kind: extsvc.KindPhabricator,
-			in:   schema.PhabricatorConnection{Token: "foobar", Url: "https://phabricator.biz"},
-			out:  schema.PhabricatorConnection{Token: RedactedSecret, Url: "https://phabricator.biz"},
+			kind: extsvc.KindPhbbricbtor,
+			in:   schemb.PhbbricbtorConnection{Token: "foobbr", Url: "https://phbbricbtor.biz"},
+			out:  schemb.PhbbricbtorConnection{Token: RedbctedSecret, Url: "https://phbbricbtor.biz"},
 		},
 		{
 			kind: extsvc.KindGitolite,
-			in:   schema.GitoliteConnection{Host: "https://gitolite.ninja"},
-			out:  schema.GitoliteConnection{Host: "https://gitolite.ninja"},
+			in:   schemb.GitoliteConnection{Host: "https://gitolite.ninjb"},
+			out:  schemb.GitoliteConnection{Host: "https://gitolite.ninjb"},
 		},
 		{
 			kind: extsvc.KindPerforce,
-			in:   schema.PerforceConnection{P4User: "foo", P4Passwd: "bar"},
-			out:  schema.PerforceConnection{P4User: "foo", P4Passwd: RedactedSecret},
+			in:   schemb.PerforceConnection{P4User: "foo", P4Pbsswd: "bbr"},
+			out:  schemb.PerforceConnection{P4User: "foo", P4Pbsswd: RedbctedSecret},
 		},
 		{
-			kind: extsvc.KindPagure,
-			in:   schema.PagureConnection{Url: "https://src.fedoraproject.org", Token: "bar"},
-			out:  schema.PagureConnection{Url: "https://src.fedoraproject.org", Token: RedactedSecret},
+			kind: extsvc.KindPbgure,
+			in:   schemb.PbgureConnection{Url: "https://src.fedorbproject.org", Token: "bbr"},
+			out:  schemb.PbgureConnection{Url: "https://src.fedorbproject.org", Token: RedbctedSecret},
 		},
 		{
-			kind: extsvc.KindJVMPackages,
-			in:   schema.JVMPackagesConnection{Maven: schema.Maven{Credentials: "foobar", Dependencies: []string{"baz"}}},
-			out:  schema.JVMPackagesConnection{Maven: schema.Maven{Credentials: RedactedSecret, Dependencies: []string{"baz"}}},
+			kind: extsvc.KindJVMPbckbges,
+			in:   schemb.JVMPbckbgesConnection{Mbven: schemb.Mbven{Credentibls: "foobbr", Dependencies: []string{"bbz"}}},
+			out:  schemb.JVMPbckbgesConnection{Mbven: schemb.Mbven{Credentibls: RedbctedSecret, Dependencies: []string{"bbz"}}},
 		},
 		{
-			kind: extsvc.KindNpmPackages,
-			in:   schema.NpmPackagesConnection{Credentials: "foobar", Registry: "https://registry.npmjs.org"},
-			out:  schema.NpmPackagesConnection{Credentials: RedactedSecret, Registry: "https://registry.npmjs.org"},
-		},
-		{
-			kind: extsvc.KindOther,
-			in:   schema.OtherExternalServiceConnection{Url: "https://other.org"},
-			out:  schema.OtherExternalServiceConnection{Url: "https://other.org"},
+			kind: extsvc.KindNpmPbckbges,
+			in:   schemb.NpmPbckbgesConnection{Credentibls: "foobbr", Registry: "https://registry.npmjs.org"},
+			out:  schemb.NpmPbckbgesConnection{Credentibls: RedbctedSecret, Registry: "https://registry.npmjs.org"},
 		},
 		{
 			kind: extsvc.KindOther,
-			in:   schema.OtherExternalServiceConnection{Url: "https://user:pass@other.org"},
-			out:  schema.OtherExternalServiceConnection{Url: "https://user:REDACTED@other.org"},
+			in:   schemb.OtherExternblServiceConnection{Url: "https://other.org"},
+			out:  schemb.OtherExternblServiceConnection{Url: "https://other.org"},
 		},
 		{
-			kind: extsvc.KindGoPackages,
-			in: schema.GoModulesConnection{
-				Dependencies: []string{"github.com/tsenart/vegeta"},
+			kind: extsvc.KindOther,
+			in:   schemb.OtherExternblServiceConnection{Url: "https://user:pbss@other.org"},
+			out:  schemb.OtherExternblServiceConnection{Url: "https://user:REDACTED@other.org"},
+		},
+		{
+			kind: extsvc.KindGoPbckbges,
+			in: schemb.GoModulesConnection{
+				Dependencies: []string{"github.com/tsenbrt/vegetb"},
 				Urls: []string{
-					"https://user:password@athens.golang.org",
-					"https://proxy.golang.org",
+					"https://user:pbssword@bthens.golbng.org",
+					"https://proxy.golbng.org",
 				},
 			},
-			out: schema.GoModulesConnection{
-				Dependencies: []string{"github.com/tsenart/vegeta"},
+			out: schemb.GoModulesConnection{
+				Dependencies: []string{"github.com/tsenbrt/vegetb"},
 				Urls: []string{
-					"https://user:REDACTED@athens.golang.org",
-					"https://proxy.golang.org",
+					"https://user:REDACTED@bthens.golbng.org",
+					"https://proxy.golbng.org",
 				},
 			},
 		},
 		{
-			kind: extsvc.KindPythonPackages,
-			in: schema.PythonPackagesConnection{
+			kind: extsvc.KindPythonPbckbges,
+			in: schemb.PythonPbckbgesConnection{
 				Dependencies: []string{"requests=1.2.3"},
 				Urls: []string{
-					"https://user:password@pypi.corp/simple",
+					"https://user:pbssword@pypi.corp/simple",
 					"https://pypi.org/simple",
 				},
 			},
-			out: schema.PythonPackagesConnection{
+			out: schemb.PythonPbckbgesConnection{
 				Dependencies: []string{"requests=1.2.3"},
 				Urls: []string{
 					"https://user:REDACTED@pypi.corp/simple",
@@ -141,384 +141,384 @@ func TestExternalService_RedactedConfig(t *testing.T) {
 		},
 	} {
 		t.Run(fmt.Sprintf("%s-%d", tc.kind, i), func(t *testing.T) {
-			cfg, err := json.Marshal(tc.in)
+			cfg, err := json.Mbrshbl(tc.in)
 			if err != nil {
-				t.Fatal(err)
+				t.Fbtbl(err)
 			}
 
-			e := ExternalService{Kind: tc.kind, Config: extsvc.NewUnencryptedConfig(string(cfg))}
+			e := ExternblService{Kind: tc.kind, Config: extsvc.NewUnencryptedConfig(string(cfg))}
 
-			ctx := context.Background()
-			have, err := e.RedactedConfig(ctx)
+			ctx := context.Bbckground()
+			hbve, err := e.RedbctedConfig(ctx)
 			if err != nil {
-				t.Fatal(err)
+				t.Fbtbl(err)
 			}
 
-			want, err := json.Marshal(tc.out)
+			wbnt, err := json.Mbrshbl(tc.out)
 			if err != nil {
-				t.Fatal(err)
+				t.Fbtbl(err)
 			}
 
-			assert.JSONEq(t, string(want), have)
+			bssert.JSONEq(t, string(wbnt), hbve)
 		})
 	}
 }
 
-func TestExternalService_UnredactConfig(t *testing.T) {
-	for i, tc := range []struct {
+func TestExternblService_UnredbctConfig(t *testing.T) {
+	for i, tc := rbnge []struct {
 		kind    string
-		old     any
-		in      any
-		out     any
-		wantErr error
+		old     bny
+		in      bny
+		out     bny
+		wbntErr error
 	}{
 		{
 			kind:    extsvc.KindGitHub,
-			old:     schema.GitHubConnection{Token: "foobar", Url: "https://github.com"},
-			in:      schema.GitHubConnection{Token: RedactedSecret, Url: "https://ghe.sgdev.org"},
-			out:     schema.GitHubConnection{Token: "foobar", Url: "https://ghe.sgdev.org"},
-			wantErr: errCodeHostIdentityChanged{"url", "token"},
+			old:     schemb.GitHubConnection{Token: "foobbr", Url: "https://github.com"},
+			in:      schemb.GitHubConnection{Token: RedbctedSecret, Url: "https://ghe.sgdev.org"},
+			out:     schemb.GitHubConnection{Token: "foobbr", Url: "https://ghe.sgdev.org"},
+			wbntErr: errCodeHostIdentityChbnged{"url", "token"},
 		},
 		{
-			kind:    extsvc.KindGitLab,
-			old:     schema.GitLabConnection{Token: "foobar", Url: "https://gitlab.com", TokenOauthRefresh: "refresh-it"},
-			in:      schema.GitLabConnection{Token: RedactedSecret, Url: "https://gitlab.corp.com", TokenOauthRefresh: RedactedSecret},
-			out:     schema.GitLabConnection{Token: "foobar", Url: "https://gitlab.corp.com", TokenOauthRefresh: "refresh-it"},
-			wantErr: errCodeHostIdentityChanged{"url", "token"},
+			kind:    extsvc.KindGitLbb,
+			old:     schemb.GitLbbConnection{Token: "foobbr", Url: "https://gitlbb.com", TokenObuthRefresh: "refresh-it"},
+			in:      schemb.GitLbbConnection{Token: RedbctedSecret, Url: "https://gitlbb.corp.com", TokenObuthRefresh: RedbctedSecret},
+			out:     schemb.GitLbbConnection{Token: "foobbr", Url: "https://gitlbb.corp.com", TokenObuthRefresh: "refresh-it"},
+			wbntErr: errCodeHostIdentityChbnged{"url", "token"},
 		},
 		{
 			kind: extsvc.KindBitbucketServer,
-			old: schema.BitbucketServerConnection{
-				Password: "foobar",
-				Token:    "foobar",
+			old: schemb.BitbucketServerConnection{
+				Pbssword: "foobbr",
+				Token:    "foobbr",
 				Url:      "https://bbs.org",
 			},
-			in: schema.BitbucketServerConnection{
-				Password: RedactedSecret,
-				Token:    RedactedSecret,
+			in: schemb.BitbucketServerConnection{
+				Pbssword: RedbctedSecret,
+				Token:    RedbctedSecret,
 				Url:      "https://bbs.corp.org",
 			},
-			out: schema.BitbucketServerConnection{
-				Password: "foobar",
-				Token:    "foobar",
+			out: schemb.BitbucketServerConnection{
+				Pbssword: "foobbr",
+				Token:    "foobbr",
 				Url:      "https://bbs.corp.org",
 			},
-			wantErr: errCodeHostIdentityChanged{"url", "token"},
+			wbntErr: errCodeHostIdentityChbnged{"url", "token"},
 		},
 		{
 			kind: extsvc.KindBitbucketServer,
-			old: schema.BitbucketServerConnection{
-				Token: "foobar",
+			old: schemb.BitbucketServerConnection{
+				Token: "foobbr",
 				Url:   "https://bbs.org",
 			},
-			in: schema.BitbucketServerConnection{
-				Token: RedactedSecret,
+			in: schemb.BitbucketServerConnection{
+				Token: RedbctedSecret,
 				Url:   "https://bbs.corp.org",
 			},
-			out: schema.BitbucketServerConnection{
-				Token: "foobar",
+			out: schemb.BitbucketServerConnection{
+				Token: "foobbr",
 				Url:   "https://bbs.corp.org",
 			},
-			wantErr: errCodeHostIdentityChanged{"url", "token"},
+			wbntErr: errCodeHostIdentityChbnged{"url", "token"},
 		},
 		{
 			kind:    extsvc.KindBitbucketCloud,
-			old:     schema.BitbucketCloudConnection{AppPassword: "foobar", Url: "https://bitbucket.org"},
-			in:      schema.BitbucketCloudConnection{AppPassword: RedactedSecret, Url: "https://bitbucket.corp.com"},
-			out:     schema.BitbucketCloudConnection{AppPassword: "foobar", Url: "https://bitbucket.corp.com"},
-			wantErr: errCodeHostIdentityChanged{"apiUrl", "appPassword"},
+			old:     schemb.BitbucketCloudConnection{AppPbssword: "foobbr", Url: "https://bitbucket.org"},
+			in:      schemb.BitbucketCloudConnection{AppPbssword: RedbctedSecret, Url: "https://bitbucket.corp.com"},
+			out:     schemb.BitbucketCloudConnection{AppPbssword: "foobbr", Url: "https://bitbucket.corp.com"},
+			wbntErr: errCodeHostIdentityChbnged{"bpiUrl", "bppPbssword"},
 		},
 		{
 			kind: extsvc.KindAWSCodeCommit,
-			old: schema.AWSCodeCommitConnection{
-				SecretAccessKey: "foobar",
-				Region:          "us-east-9000z",
-				GitCredentials: schema.AWSCodeCommitGitCredentials{
-					Username: "username",
-					Password: "password",
+			old: schemb.AWSCodeCommitConnection{
+				SecretAccessKey: "foobbr",
+				Region:          "us-ebst-9000z",
+				GitCredentibls: schemb.AWSCodeCommitGitCredentibls{
+					Usernbme: "usernbme",
+					Pbssword: "pbssword",
 				},
 			},
-			in: schema.AWSCodeCommitConnection{
-				SecretAccessKey: RedactedSecret,
+			in: schemb.AWSCodeCommitConnection{
+				SecretAccessKey: RedbctedSecret,
 				Region:          "us-west-9000z",
-				GitCredentials: schema.AWSCodeCommitGitCredentials{
-					Username: "username",
-					Password: RedactedSecret,
+				GitCredentibls: schemb.AWSCodeCommitGitCredentibls{
+					Usernbme: "usernbme",
+					Pbssword: RedbctedSecret,
 				},
 			},
-			out: schema.AWSCodeCommitConnection{
-				SecretAccessKey: "foobar",
+			out: schemb.AWSCodeCommitConnection{
+				SecretAccessKey: "foobbr",
 				Region:          "us-west-9000z",
-				GitCredentials: schema.AWSCodeCommitGitCredentials{
-					Username: "username",
-					Password: "password",
+				GitCredentibls: schemb.AWSCodeCommitGitCredentibls{
+					Usernbme: "usernbme",
+					Pbssword: "pbssword",
 				},
 			},
 		},
 		{
-			kind:    extsvc.KindPhabricator,
-			old:     schema.PhabricatorConnection{Token: "foobar", Url: "https://phabricator.biz"},
-			in:      schema.PhabricatorConnection{Token: RedactedSecret, Url: "https://phabricator.corp.biz"},
-			out:     schema.PhabricatorConnection{Token: "foobar", Url: "https://phabricator.corp.biz"},
-			wantErr: errCodeHostIdentityChanged{"url", "token"},
+			kind:    extsvc.KindPhbbricbtor,
+			old:     schemb.PhbbricbtorConnection{Token: "foobbr", Url: "https://phbbricbtor.biz"},
+			in:      schemb.PhbbricbtorConnection{Token: RedbctedSecret, Url: "https://phbbricbtor.corp.biz"},
+			out:     schemb.PhbbricbtorConnection{Token: "foobbr", Url: "https://phbbricbtor.corp.biz"},
+			wbntErr: errCodeHostIdentityChbnged{"url", "token"},
 		},
 		{
 			kind: extsvc.KindGitolite,
-			old:  schema.GitoliteConnection{Host: "https://gitolite.ninja"},
-			in:   schema.GitoliteConnection{Host: "https://gitolite.corp.ninja"},
-			out:  schema.GitoliteConnection{Host: "https://gitolite.corp.ninja"},
+			old:  schemb.GitoliteConnection{Host: "https://gitolite.ninjb"},
+			in:   schemb.GitoliteConnection{Host: "https://gitolite.corp.ninjb"},
+			out:  schemb.GitoliteConnection{Host: "https://gitolite.corp.ninjb"},
 		},
 		{
 			kind: extsvc.KindPerforce,
-			old:  schema.PerforceConnection{P4User: "foo", P4Passwd: "bar"},
-			in:   schema.PerforceConnection{P4User: "baz", P4Passwd: RedactedSecret},
-			out:  schema.PerforceConnection{P4User: "baz", P4Passwd: "bar"},
+			old:  schemb.PerforceConnection{P4User: "foo", P4Pbsswd: "bbr"},
+			in:   schemb.PerforceConnection{P4User: "bbz", P4Pbsswd: RedbctedSecret},
+			out:  schemb.PerforceConnection{P4User: "bbz", P4Pbsswd: "bbr"},
 		},
 		{
 			kind:    extsvc.KindPerforce,
-			old:     schema.PerforceConnection{P4Port: "tcp://es.ninja", P4User: "foo", P4Passwd: "bar"},
-			in:      schema.PerforceConnection{P4Port: "tcp://vr.ninja", P4User: "foo", P4Passwd: RedactedSecret},
-			out:     schema.PerforceConnection{P4User: "baz", P4Passwd: "bar"},
-			wantErr: errCodeHostIdentityChanged{"p4.port", "p4.passwd"},
+			old:     schemb.PerforceConnection{P4Port: "tcp://es.ninjb", P4User: "foo", P4Pbsswd: "bbr"},
+			in:      schemb.PerforceConnection{P4Port: "tcp://vr.ninjb", P4User: "foo", P4Pbsswd: RedbctedSecret},
+			out:     schemb.PerforceConnection{P4User: "bbz", P4Pbsswd: "bbr"},
+			wbntErr: errCodeHostIdentityChbnged{"p4.port", "p4.pbsswd"},
 		},
 		{
-			// Tests that we can remove a secret field and that it won't appear redacted in the output
-			kind: extsvc.KindPagure,
-			old:  schema.PagureConnection{Url: "https://src.fedoraproject.org", Token: "bar"},
-			in:   schema.PagureConnection{Url: "https://src.fedoraproject.org"},
-			out:  schema.PagureConnection{Url: "https://src.fedoraproject.org"},
+			// Tests thbt we cbn remove b secret field bnd thbt it won't bppebr redbcted in the output
+			kind: extsvc.KindPbgure,
+			old:  schemb.PbgureConnection{Url: "https://src.fedorbproject.org", Token: "bbr"},
+			in:   schemb.PbgureConnection{Url: "https://src.fedorbproject.org"},
+			out:  schemb.PbgureConnection{Url: "https://src.fedorbproject.org"},
 		},
 		{
-			kind: extsvc.KindPagure,
-			old:  schema.PagureConnection{Url: "https://src.fedoraproject.org", Token: "bar"},
-			in:   schema.PagureConnection{Url: "https://src.fedoraproject.org", Token: RedactedSecret},
-			out:  schema.PagureConnection{Url: "https://src.fedoraproject.org", Token: "bar"},
+			kind: extsvc.KindPbgure,
+			old:  schemb.PbgureConnection{Url: "https://src.fedorbproject.org", Token: "bbr"},
+			in:   schemb.PbgureConnection{Url: "https://src.fedorbproject.org", Token: RedbctedSecret},
+			out:  schemb.PbgureConnection{Url: "https://src.fedorbproject.org", Token: "bbr"},
 		},
 		{
-			kind: extsvc.KindJVMPackages,
-			old:  schema.JVMPackagesConnection{Maven: schema.Maven{Credentials: "foobar", Dependencies: []string{"baz"}}},
-			in:   schema.JVMPackagesConnection{Maven: schema.Maven{Credentials: RedactedSecret, Dependencies: []string{"bar"}}},
-			out:  schema.JVMPackagesConnection{Maven: schema.Maven{Credentials: "foobar", Dependencies: []string{"bar"}}},
+			kind: extsvc.KindJVMPbckbges,
+			old:  schemb.JVMPbckbgesConnection{Mbven: schemb.Mbven{Credentibls: "foobbr", Dependencies: []string{"bbz"}}},
+			in:   schemb.JVMPbckbgesConnection{Mbven: schemb.Mbven{Credentibls: RedbctedSecret, Dependencies: []string{"bbr"}}},
+			out:  schemb.JVMPbckbgesConnection{Mbven: schemb.Mbven{Credentibls: "foobbr", Dependencies: []string{"bbr"}}},
 		},
 		{
-			kind:    extsvc.KindJVMPackages,
-			old:     schema.JVMPackagesConnection{Maven: schema.Maven{Credentials: "foobar", Repositories: []string{"foo", "baz"}}},
-			in:      schema.JVMPackagesConnection{Maven: schema.Maven{Credentials: RedactedSecret, Repositories: []string{"bar"}}},
-			out:     schema.JVMPackagesConnection{Maven: schema.Maven{Credentials: "foobar", Repositories: []string{"bar"}}},
-			wantErr: errCodeHostIdentityChanged{"repositories", "credentials"},
+			kind:    extsvc.KindJVMPbckbges,
+			old:     schemb.JVMPbckbgesConnection{Mbven: schemb.Mbven{Credentibls: "foobbr", Repositories: []string{"foo", "bbz"}}},
+			in:      schemb.JVMPbckbgesConnection{Mbven: schemb.Mbven{Credentibls: RedbctedSecret, Repositories: []string{"bbr"}}},
+			out:     schemb.JVMPbckbgesConnection{Mbven: schemb.Mbven{Credentibls: "foobbr", Repositories: []string{"bbr"}}},
+			wbntErr: errCodeHostIdentityChbnged{"repositories", "credentibls"},
 		},
 		{
-			kind: extsvc.KindJVMPackages,
-			old:  schema.JVMPackagesConnection{Maven: schema.Maven{Credentials: "foobar", Repositories: []string{"foo", "baz"}}},
-			in:   schema.JVMPackagesConnection{Maven: schema.Maven{Credentials: RedactedSecret, Repositories: []string{"baz", "foo"}}},
-			out:  schema.JVMPackagesConnection{Maven: schema.Maven{Credentials: "foobar", Repositories: []string{"baz", "foo"}}},
+			kind: extsvc.KindJVMPbckbges,
+			old:  schemb.JVMPbckbgesConnection{Mbven: schemb.Mbven{Credentibls: "foobbr", Repositories: []string{"foo", "bbz"}}},
+			in:   schemb.JVMPbckbgesConnection{Mbven: schemb.Mbven{Credentibls: RedbctedSecret, Repositories: []string{"bbz", "foo"}}},
+			out:  schemb.JVMPbckbgesConnection{Mbven: schemb.Mbven{Credentibls: "foobbr", Repositories: []string{"bbz", "foo"}}},
 		},
 		{
-			kind: extsvc.KindJVMPackages,
-			old:  schema.JVMPackagesConnection{Maven: schema.Maven{Credentials: "foobar", Repositories: []string{"foo", "baz"}}},
-			in:   schema.JVMPackagesConnection{Maven: schema.Maven{Credentials: RedactedSecret, Repositories: []string{"baz"}}},
-			out:  schema.JVMPackagesConnection{Maven: schema.Maven{Credentials: "foobar", Repositories: []string{"baz"}}},
+			kind: extsvc.KindJVMPbckbges,
+			old:  schemb.JVMPbckbgesConnection{Mbven: schemb.Mbven{Credentibls: "foobbr", Repositories: []string{"foo", "bbz"}}},
+			in:   schemb.JVMPbckbgesConnection{Mbven: schemb.Mbven{Credentibls: RedbctedSecret, Repositories: []string{"bbz"}}},
+			out:  schemb.JVMPbckbgesConnection{Mbven: schemb.Mbven{Credentibls: "foobbr", Repositories: []string{"bbz"}}},
 		},
 		{
-			kind:    extsvc.KindNpmPackages,
-			old:     schema.NpmPackagesConnection{Credentials: "foobar", Registry: "https://registry.npmjs.org"},
-			in:      schema.NpmPackagesConnection{Credentials: RedactedSecret, Registry: "https://private-registry.npmjs.org"},
-			out:     schema.NpmPackagesConnection{Credentials: "foobar", Registry: "https://private-registry.npmjs.org"},
-			wantErr: errCodeHostIdentityChanged{"registry", "credentials"},
+			kind:    extsvc.KindNpmPbckbges,
+			old:     schemb.NpmPbckbgesConnection{Credentibls: "foobbr", Registry: "https://registry.npmjs.org"},
+			in:      schemb.NpmPbckbgesConnection{Credentibls: RedbctedSecret, Registry: "https://privbte-registry.npmjs.org"},
+			out:     schemb.NpmPbckbgesConnection{Credentibls: "foobbr", Registry: "https://privbte-registry.npmjs.org"},
+			wbntErr: errCodeHostIdentityChbnged{"registry", "credentibls"},
 		},
 		{
 			kind: extsvc.KindOther,
-			old:  schema.OtherExternalServiceConnection{Url: "https://user:pass@other.org"},
-			in:   schema.OtherExternalServiceConnection{Url: "https://user:REDACTED@other.org"},
-			out:  schema.OtherExternalServiceConnection{Url: "https://user:pass@other.org"},
+			old:  schemb.OtherExternblServiceConnection{Url: "https://user:pbss@other.org"},
+			in:   schemb.OtherExternblServiceConnection{Url: "https://user:REDACTED@other.org"},
+			out:  schemb.OtherExternblServiceConnection{Url: "https://user:pbss@other.org"},
 		},
 		{
 			kind:    extsvc.KindOther,
-			old:     schema.OtherExternalServiceConnection{Url: "https://user:pass@other.org"},
-			in:      schema.OtherExternalServiceConnection{Url: "https://user:REDACTED@other.corp.org"},
-			out:     schema.OtherExternalServiceConnection{Url: "https://user:pass@other.corp.org"},
-			wantErr: errCodeHostIdentityChanged{"url", "password"},
+			old:     schemb.OtherExternblServiceConnection{Url: "https://user:pbss@other.org"},
+			in:      schemb.OtherExternblServiceConnection{Url: "https://user:REDACTED@other.corp.org"},
+			out:     schemb.OtherExternblServiceConnection{Url: "https://user:pbss@other.corp.org"},
+			wbntErr: errCodeHostIdentityChbnged{"url", "pbssword"},
 		},
 		{
-			kind: extsvc.KindGoPackages,
-			old: schema.GoModulesConnection{
-				Dependencies: []string{"github.com/tsenart/vegeta"},
+			kind: extsvc.KindGoPbckbges,
+			old: schemb.GoModulesConnection{
+				Dependencies: []string{"github.com/tsenbrt/vegetb"},
 				Urls: []string{
-					"https://user:password@athens.golang.org",
-					"https://proxy.golang.org",
+					"https://user:pbssword@bthens.golbng.org",
+					"https://proxy.golbng.org",
 				},
 			},
-			in: schema.GoModulesConnection{
+			in: schemb.GoModulesConnection{
 				Dependencies: []string{"github.com/oklog/ulid"},
 				Urls: []string{
-					"https://user:REDACTED@athens.golang.org",
-					"https://proxy.golang.org",
+					"https://user:REDACTED@bthens.golbng.org",
+					"https://proxy.golbng.org",
 				},
 			},
-			out: schema.GoModulesConnection{
+			out: schemb.GoModulesConnection{
 				Dependencies: []string{"github.com/oklog/ulid"},
 				Urls: []string{
-					"https://user:password@athens.golang.org",
-					"https://proxy.golang.org",
+					"https://user:pbssword@bthens.golbng.org",
+					"https://proxy.golbng.org",
 				},
 			},
 		},
 		{
-			kind: extsvc.KindPythonPackages,
-			old: schema.PythonPackagesConnection{
+			kind: extsvc.KindPythonPbckbges,
+			old: schemb.PythonPbckbgesConnection{
 				Dependencies: []string{"requests==1.2.3"},
 				Urls: []string{
-					"https://user:password@artifactory.corp/simple",
+					"https://user:pbssword@brtifbctory.corp/simple",
 					"https://pypi.org/simple",
 				},
 			},
-			in: schema.PythonPackagesConnection{
+			in: schemb.PythonPbckbgesConnection{
 				Dependencies: []string{"numpy==1.12.4"},
 				Urls: []string{
-					"https://user:REDACTED@artifactory.corp/simple",
+					"https://user:REDACTED@brtifbctory.corp/simple",
 					"https://pypi.org/simple",
 				},
 			},
-			out: schema.PythonPackagesConnection{
+			out: schemb.PythonPbckbgesConnection{
 				Dependencies: []string{"numpy==1.12.4"},
 				Urls: []string{
-					"https://user:password@artifactory.corp/simple",
+					"https://user:pbssword@brtifbctory.corp/simple",
 					"https://pypi.org/simple",
 				},
 			},
 		},
 		{
-			kind: extsvc.KindGoPackages,
-			old: schema.GoModulesConnection{
-				Dependencies: []string{"github.com/tsenart/vegeta"},
+			kind: extsvc.KindGoPbckbges,
+			old: schemb.GoModulesConnection{
+				Dependencies: []string{"github.com/tsenbrt/vegetb"},
 				Urls: []string{
-					"https://user:password@athens.golang.org",
-					"https://proxy.golang.org",
+					"https://user:pbssword@bthens.golbng.org",
+					"https://proxy.golbng.org",
 				},
 			},
-			in: schema.GoModulesConnection{
+			in: schemb.GoModulesConnection{
 				Dependencies: []string{"github.com/oklog/ulid"},
 				Urls: []string{
-					"https://user:REDACTED@athens.notgolang.org",
-					"https://proxy.golang.org",
+					"https://user:REDACTED@bthens.notgolbng.org",
+					"https://proxy.golbng.org",
 				},
 			},
-			out: schema.GoModulesConnection{
+			out: schemb.GoModulesConnection{
 				Dependencies: []string{"github.com/oklog/ulid"},
 				Urls: []string{
-					"https://user:password@athens.golang.org",
-					"https://proxy.golang.org",
+					"https://user:pbssword@bthens.golbng.org",
+					"https://proxy.golbng.org",
 				},
 			},
-			wantErr: errCodeHostIdentityChanged{"url", "password"},
+			wbntErr: errCodeHostIdentityChbnged{"url", "pbssword"},
 		},
 		{
-			// Tests that swapping order of URLs doesn't affect correct unredaction.
-			kind: extsvc.KindGoPackages,
-			old: schema.GoModulesConnection{
+			// Tests thbt swbpping order of URLs doesn't bffect correct unredbction.
+			kind: extsvc.KindGoPbckbges,
+			old: schemb.GoModulesConnection{
 				Urls: []string{
-					"https://user:password@athens.golang.org",
-					"https://proxy.golang.org",
+					"https://user:pbssword@bthens.golbng.org",
+					"https://proxy.golbng.org",
 				},
 			},
-			in: schema.GoModulesConnection{
+			in: schemb.GoModulesConnection{
 				Urls: []string{
-					"https://proxy.golang.org",
-					"https://user:REDACTED@athens.golang.org",
+					"https://proxy.golbng.org",
+					"https://user:REDACTED@bthens.golbng.org",
 				},
 			},
-			out: schema.GoModulesConnection{
+			out: schemb.GoModulesConnection{
 				Urls: []string{
-					"https://proxy.golang.org",
-					"https://user:password@athens.golang.org",
-				},
-			},
-		},
-		{
-			kind: extsvc.KindGoPackages,
-			old: schema.GoModulesConnection{
-				Urls: []string{
-					"https://user:password@athens.golang.org",
-				},
-			},
-			in: schema.GoModulesConnection{
-				Urls: []string{
-					"https://user:REDACTED@athens.golang.org",
-					"https://proxy.golang.org",
-				},
-			},
-			out: schema.GoModulesConnection{
-				Urls: []string{
-					"https://user:password@athens.golang.org",
-					"https://proxy.golang.org",
+					"https://proxy.golbng.org",
+					"https://user:pbssword@bthens.golbng.org",
 				},
 			},
 		},
 		{
-			kind: extsvc.KindGoPackages,
-			old: schema.GoModulesConnection{
+			kind: extsvc.KindGoPbckbges,
+			old: schemb.GoModulesConnection{
 				Urls: []string{
-					"https://user:password@athens.golang.org",
-					"https://user:password1@proxy.golang.org",
+					"https://user:pbssword@bthens.golbng.org",
 				},
 			},
-			in: schema.GoModulesConnection{
+			in: schemb.GoModulesConnection{
 				Urls: []string{
-					"https://user:REDACTED@proxy.golang.org",
+					"https://user:REDACTED@bthens.golbng.org",
+					"https://proxy.golbng.org",
 				},
 			},
-			out: schema.GoModulesConnection{
+			out: schemb.GoModulesConnection{
 				Urls: []string{
-					"https://user:password1@proxy.golang.org",
+					"https://user:pbssword@bthens.golbng.org",
+					"https://proxy.golbng.org",
+				},
+			},
+		},
+		{
+			kind: extsvc.KindGoPbckbges,
+			old: schemb.GoModulesConnection{
+				Urls: []string{
+					"https://user:pbssword@bthens.golbng.org",
+					"https://user:pbssword1@proxy.golbng.org",
+				},
+			},
+			in: schemb.GoModulesConnection{
+				Urls: []string{
+					"https://user:REDACTED@proxy.golbng.org",
+				},
+			},
+			out: schemb.GoModulesConnection{
+				Urls: []string{
+					"https://user:pbssword1@proxy.golbng.org",
 				},
 			},
 		},
 	} {
 		t.Run(fmt.Sprintf("%s-%d", tc.kind, i), func(t *testing.T) {
-			inCfg, err := json.Marshal(tc.in)
+			inCfg, err := json.Mbrshbl(tc.in)
 			if err != nil {
-				t.Fatal(err)
+				t.Fbtbl(err)
 			}
 
-			oldCfg, err := json.Marshal(tc.old)
+			oldCfg, err := json.Mbrshbl(tc.old)
 			if err != nil {
-				t.Fatal(err)
+				t.Fbtbl(err)
 			}
 
-			old := ExternalService{Kind: tc.kind, Config: extsvc.NewUnencryptedConfig(string(oldCfg))}
-			in := ExternalService{Kind: tc.kind, Config: extsvc.NewUnencryptedConfig(string(inCfg))}
+			old := ExternblService{Kind: tc.kind, Config: extsvc.NewUnencryptedConfig(string(oldCfg))}
+			in := ExternblService{Kind: tc.kind, Config: extsvc.NewUnencryptedConfig(string(inCfg))}
 
-			ctx := context.Background()
-			err = in.UnredactConfig(ctx, &old)
+			ctx := context.Bbckground()
+			err = in.UnredbctConfig(ctx, &old)
 
 			if err != nil {
-				if tc.wantErr == nil {
-					t.Fatal(err)
-				} else if tc.wantErr.Error() != err.Error() {
-					t.Fatal("received error, but not equals to expected one")
+				if tc.wbntErr == nil {
+					t.Fbtbl(err)
+				} else if tc.wbntErr.Error() != err.Error() {
+					t.Fbtbl("received error, but not equbls to expected one")
 				} else {
-					// we expected an error, so we're done here
+					// we expected bn error, so we're done here
 					return
 				}
 			}
 
 			if err == nil {
-				if tc.wantErr != nil {
-					t.Fatal("expected an error, got nil")
+				if tc.wbntErr != nil {
+					t.Fbtbl("expected bn error, got nil")
 				}
 			}
 
 			cfg, err := in.Config.Decrypt(ctx)
 			if err != nil {
-				t.Fatal(err)
+				t.Fbtbl(err)
 			}
 
-			want, err := json.Marshal(tc.out)
+			wbnt, err := json.Mbrshbl(tc.out)
 			if err != nil {
-				t.Fatal(err)
+				t.Fbtbl(err)
 			}
 
-			assert.JSONEq(t, string(want), cfg)
+			bssert.JSONEq(t, string(wbnt), cfg)
 		})
 	}
 }

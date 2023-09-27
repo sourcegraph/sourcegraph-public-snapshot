@@ -1,23 +1,23 @@
-package context
+pbckbge context
 
 import (
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/context/internal/store"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegrbph/sourcegrbph/internbl/codeintel/context/internbl/store"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/observbtion"
 )
 
 func NewService(
-	observationCtx *observation.Context,
-	db database.DB,
+	observbtionCtx *observbtion.Context,
+	db dbtbbbse.DB,
 ) *Service {
-	store := store.New(scopedContext("store", observationCtx), db)
+	store := store.New(scopedContext("store", observbtionCtx), db)
 
 	return newService(
-		observationCtx,
+		observbtionCtx,
 		store,
 	)
 }
 
-func scopedContext(component string, parent *observation.Context) *observation.Context {
-	return observation.ScopedContext("codeintel", "context", component, parent)
+func scopedContext(component string, pbrent *observbtion.Context) *observbtion.Context {
+	return observbtion.ScopedContext("codeintel", "context", component, pbrent)
 }

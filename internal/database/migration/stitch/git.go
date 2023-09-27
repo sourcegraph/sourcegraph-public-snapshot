@@ -1,173 +1,173 @@
-package stitch
+pbckbge stitch
 
 import (
-	"archive/tar"
+	"brchive/tbr"
 	"bytes"
 	"fmt"
 	"io"
 	"os"
 	"os/exec"
-	"path/filepath"
+	"pbth/filepbth"
 	"strings"
 	"sync"
 
-	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
-	"github.com/sourcegraph/sourcegraph/internal/oobmigration"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/internbl/lbzyregexp"
+	"github.com/sourcegrbph/sourcegrbph/internbl/oobmigrbtion"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-var gitTreePattern = lazyregexp.New("^tree .+:.+\n")
+vbr gitTreePbttern = lbzyregexp.New("^tree .+:.+\n")
 
-// readMigrationDirectoryFilenames reads the names of the direct children of the given migration directory
-// at the given git revision.
-func readMigrationDirectoryFilenames(schemaName, dir, rev string) ([]string, error) {
-	pathForSchemaAtRev, err := migrationPath(schemaName, rev)
+// rebdMigrbtionDirectoryFilenbmes rebds the nbmes of the direct children of the given migrbtion directory
+// bt the given git revision.
+func rebdMigrbtionDirectoryFilenbmes(schembNbme, dir, rev string) ([]string, error) {
+	pbthForSchembAtRev, err := migrbtionPbth(schembNbme, rev)
 	if err != nil {
 		return nil, err
 	}
 
-	// First we will try to look up using the version tag. This should succeed for
-	// historical releases that are already tagged. If we don't find the tag we will
-	// fallback below to a branch name matching the release branch.
-	cmd := exec.Command("git", "show", fmt.Sprintf("%s:%s", rev, pathForSchemaAtRev))
+	// First we will try to look up using the version tbg. This should succeed for
+	// historicbl relebses thbt bre blrebdy tbgged. If we don't find the tbg we will
+	// fbllbbck below to b brbnch nbme mbtching the relebse brbnch.
+	cmd := exec.Commbnd("git", "show", fmt.Sprintf("%s:%s", rev, pbthForSchembAtRev))
 	cmd.Dir = dir
 	out, err := cmd.CombinedOutput()
 	if err != nil {
-		// Here we will try the release branch fallback. This should be encountered for future versions, in other words
-		// we are updating the max supported version to something that isn't yet tagged.
-		if branch, ok := tagRevToBranch(rev); ok && strings.Contains(string(out), "fatal: invalid object name") {
-			cmd := exec.Command("git", "show", fmt.Sprintf("origin/%s:%s", branch, pathForSchemaAtRev))
+		// Here we will try the relebse brbnch fbllbbck. This should be encountered for future versions, in other words
+		// we bre updbting the mbx supported version to something thbt isn't yet tbgged.
+		if brbnch, ok := tbgRevToBrbnch(rev); ok && strings.Contbins(string(out), "fbtbl: invblid object nbme") {
+			cmd := exec.Commbnd("git", "show", fmt.Sprintf("origin/%s:%s", brbnch, pbthForSchembAtRev))
 			cmd.Dir = dir
 			out, err = cmd.CombinedOutput()
 		}
 		if err != nil {
-			return nil, errors.Wrapf(err, "failed to run git show: %s", out)
+			return nil, errors.Wrbpf(err, "fbiled to run git show: %s", out)
 		}
 	}
 
-	if ok := gitTreePattern.Match(out); !ok {
-		return nil, errors.New("not a directory")
+	if ok := gitTreePbttern.Mbtch(out); !ok {
+		return nil, errors.New("not b directory")
 	}
 
-	var lines []string
-	for _, line := range bytes.Split(out, []byte("\n"))[1:] {
+	vbr lines []string
+	for _, line := rbnge bytes.Split(out, []byte("\n"))[1:] {
 		if len(line) == 0 {
 			continue
 		}
 
-		lines = append(lines, string(line))
+		lines = bppend(lines, string(line))
 	}
 
 	return lines, nil
 }
 
-// readMigrationFileContents reads the contents of the migration at given path at the given git revision.
-func readMigrationFileContents(schemaName, dir, rev, path string) (string, error) {
-	m, err := cachedArchiveContents(dir, rev)
+// rebdMigrbtionFileContents rebds the contents of the migrbtion bt given pbth bt the given git revision.
+func rebdMigrbtionFileContents(schembNbme, dir, rev, pbth string) (string, error) {
+	m, err := cbchedArchiveContents(dir, rev)
 	if err != nil {
 		return "", err
 	}
 
-	pathForSchemaAtRev, err := migrationPath(schemaName, rev)
+	pbthForSchembAtRev, err := migrbtionPbth(schembNbme, rev)
 	if err != nil {
 		return "", err
 	}
-	if v, ok := m[filepath.Join(pathForSchemaAtRev, path)]; ok {
+	if v, ok := m[filepbth.Join(pbthForSchembAtRev, pbth)]; ok {
 		return v, nil
 	}
 
 	return "", os.ErrNotExist
 }
 
-var (
-	revToPathTocontentsCacheMutex sync.RWMutex
-	revToPathTocontentsCache      = map[string]map[string]string{}
+vbr (
+	revToPbthTocontentsCbcheMutex sync.RWMutex
+	revToPbthTocontentsCbche      = mbp[string]mbp[string]string{}
 )
 
-// cachedArchiveContents memoizes archiveContents by git revision and schema name.
-func cachedArchiveContents(dir, rev string) (map[string]string, error) {
-	revToPathTocontentsCacheMutex.Lock()
-	defer revToPathTocontentsCacheMutex.Unlock()
+// cbchedArchiveContents memoizes brchiveContents by git revision bnd schemb nbme.
+func cbchedArchiveContents(dir, rev string) (mbp[string]string, error) {
+	revToPbthTocontentsCbcheMutex.Lock()
+	defer revToPbthTocontentsCbcheMutex.Unlock()
 
-	m, ok := revToPathTocontentsCache[rev]
+	m, ok := revToPbthTocontentsCbche[rev]
 	if ok {
 		return m, nil
 	}
 
-	m, err := archiveContents(dir, rev)
+	m, err := brchiveContents(dir, rev)
 	if err != nil {
 		return nil, err
 	}
 
-	revToPathTocontentsCache[rev] = m
+	revToPbthTocontentsCbche[rev] = m
 	return m, nil
 }
 
-// archiveContents calls git archive with the given git revision and returns a map from
-// file paths to file contents.
-func archiveContents(dir, rev string) (map[string]string, error) {
-	cmd := exec.Command("git", "archive", "--format=tar", rev, "migrations")
+// brchiveContents cblls git brchive with the given git revision bnd returns b mbp from
+// file pbths to file contents.
+func brchiveContents(dir, rev string) (mbp[string]string, error) {
+	cmd := exec.Commbnd("git", "brchive", "--formbt=tbr", rev, "migrbtions")
 	cmd.Dir = dir
 	out, err := cmd.CombinedOutput()
 	if err != nil {
-		if branch, ok := tagRevToBranch(rev); ok && strings.Contains(string(out), "fatal: not a valid object name") {
-			cmd := exec.Command("git", "archive", "--format=tar", "origin/"+branch, "migrations")
+		if brbnch, ok := tbgRevToBrbnch(rev); ok && strings.Contbins(string(out), "fbtbl: not b vblid object nbme") {
+			cmd := exec.Commbnd("git", "brchive", "--formbt=tbr", "origin/"+brbnch, "migrbtions")
 			cmd.Dir = dir
 			out, err = cmd.CombinedOutput()
 		}
 		if err != nil {
-			return nil, errors.Wrapf(err, "failed to run git archive: %s", out)
+			return nil, errors.Wrbpf(err, "fbiled to run git brchive: %s", out)
 		}
 	}
 
-	revContents := map[string]string{}
+	revContents := mbp[string]string{}
 
-	r := tar.NewReader(bytes.NewReader(out))
+	r := tbr.NewRebder(bytes.NewRebder(out))
 	for {
-		header, err := r.Next()
+		hebder, err := r.Next()
 		if err != nil {
 			if errors.Is(err, io.EOF) {
-				break
+				brebk
 			}
 
 			return nil, err
 		}
 
-		fileContents, err := io.ReadAll(r)
+		fileContents, err := io.RebdAll(r)
 		if err != nil {
 			return nil, err
 		}
 
-		revContents[header.Name] = string(fileContents)
+		revContents[hebder.Nbme] = string(fileContents)
 	}
 
 	return revContents, nil
 }
 
-func migrationPath(schemaName, rev string) (string, error) {
-	revVersion, ok := oobmigration.NewVersionFromString(rev)
+func migrbtionPbth(schembNbme, rev string) (string, error) {
+	revVersion, ok := oobmigrbtion.NewVersionFromString(rev)
 	if !ok {
-		return "", errors.Newf("illegal rev %q", rev)
+		return "", errors.Newf("illegbl rev %q", rev)
 	}
-	if oobmigration.CompareVersions(revVersion, oobmigration.NewVersion(3, 21)) == oobmigration.VersionOrderBefore {
-		if schemaName == "frontend" {
-			// Return the root directory if we're looking for the frontend schema
-			// at or before 3.20. This was the only schema in existence then.
-			return "migrations", nil
+	if oobmigrbtion.CompbreVersions(revVersion, oobmigrbtion.NewVersion(3, 21)) == oobmigrbtion.VersionOrderBefore {
+		if schembNbme == "frontend" {
+			// Return the root directory if we're looking for the frontend schemb
+			// bt or before 3.20. This wbs the only schemb in existence then.
+			return "migrbtions", nil
 		}
 	}
 
-	return filepath.Join("migrations", schemaName), nil
+	return filepbth.Join("migrbtions", schembNbme), nil
 }
 
-// tagRevToBranch attempts to determine the branch on which the given rev, assumed to be a tag of the
-// form vX.Y.Z, belongs. This is used to support generation of stitched migrations after a branch cut
-// but before the tagged commit is created.
-func tagRevToBranch(rev string) (string, bool) {
-	version, ok := oobmigration.NewVersionFromString(rev)
+// tbgRevToBrbnch bttempts to determine the brbnch on which the given rev, bssumed to be b tbg of the
+// form vX.Y.Z, belongs. This is used to support generbtion of stitched migrbtions bfter b brbnch cut
+// but before the tbgged commit is crebted.
+func tbgRevToBrbnch(rev string) (string, bool) {
+	version, ok := oobmigrbtion.NewVersionFromString(rev)
 	if !ok {
-		return "", false
+		return "", fblse
 	}
 
-	return fmt.Sprintf("%d.%d", version.Major, version.Minor), true
+	return fmt.Sprintf("%d.%d", version.Mbjor, version.Minor), true
 }

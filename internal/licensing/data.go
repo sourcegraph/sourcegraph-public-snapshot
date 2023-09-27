@@ -1,279 +1,279 @@
-package licensing
+pbckbge licensing
 
-// The list of plans.
+// The list of plbns.
 const (
-	// PlanOldEnterpriseStarter is the old "Enterprise Starter" plan.
-	PlanOldEnterpriseStarter Plan = "old-starter-0"
-	// PlanOldEnterprise is the old "Enterprise" plan.
-	PlanOldEnterprise Plan = "old-enterprise-0"
+	// PlbnOldEnterpriseStbrter is the old "Enterprise Stbrter" plbn.
+	PlbnOldEnterpriseStbrter Plbn = "old-stbrter-0"
+	// PlbnOldEnterprise is the old "Enterprise" plbn.
+	PlbnOldEnterprise Plbn = "old-enterprise-0"
 
-	// PlanTeam0 is the "Team" plan pre-4.0.
-	PlanTeam0 Plan = "team-0"
-	// PlanEnterprise0 is the "Enterprise" plan pre-4.0.
-	PlanEnterprise0 Plan = "enterprise-0"
+	// PlbnTebm0 is the "Tebm" plbn pre-4.0.
+	PlbnTebm0 Plbn = "tebm-0"
+	// PlbnEnterprise0 is the "Enterprise" plbn pre-4.0.
+	PlbnEnterprise0 Plbn = "enterprise-0"
 
-	// PlanBusiness0 is the "Business" plan for 4.0.
-	PlanBusiness0 Plan = "business-0"
-	// PlanEnterprise1 is the "Enterprise" plan for 4.0.
-	PlanEnterprise1 Plan = "enterprise-1"
+	// PlbnBusiness0 is the "Business" plbn for 4.0.
+	PlbnBusiness0 Plbn = "business-0"
+	// PlbnEnterprise1 is the "Enterprise" plbn for 4.0.
+	PlbnEnterprise1 Plbn = "enterprise-1"
 
-	// PlanEnterpriseExtension is for customers who require an extended trial on a new Sourcegraph 4.4.2 instance.
-	PlanEnterpriseExtension Plan = "enterprise-extension"
+	// PlbnEnterpriseExtension is for customers who require bn extended tribl on b new Sourcegrbph 4.4.2 instbnce.
+	PlbnEnterpriseExtension Plbn = "enterprise-extension"
 
-	// PlanFree0 is the default plan if no license key is set before 4.5.
-	PlanFree0 Plan = "free-0"
+	// PlbnFree0 is the defbult plbn if no license key is set before 4.5.
+	PlbnFree0 Plbn = "free-0"
 
-	// PlanFree1 is the default plan if no license key is set from 4.5 onwards.
-	PlanFree1 Plan = "free-1"
+	// PlbnFree1 is the defbult plbn if no license key is set from 4.5 onwbrds.
+	PlbnFree1 Plbn = "free-1"
 
-	// PlanAirGappedEnterprise is the same PlanEnterprise1 but with FeatureAllowAirGapped, and works starting from 5.1.
-	PlanAirGappedEnterprise Plan = "enterprise-air-gap-0"
+	// PlbnAirGbppedEnterprise is the sbme PlbnEnterprise1 but with FebtureAllowAirGbpped, bnd works stbrting from 5.1.
+	PlbnAirGbppedEnterprise Plbn = "enterprise-bir-gbp-0"
 )
 
-var AllPlans = []Plan{
-	PlanOldEnterpriseStarter,
-	PlanOldEnterprise,
-	PlanTeam0,
-	PlanEnterprise0,
+vbr AllPlbns = []Plbn{
+	PlbnOldEnterpriseStbrter,
+	PlbnOldEnterprise,
+	PlbnTebm0,
+	PlbnEnterprise0,
 
-	PlanBusiness0,
-	PlanEnterprise1,
-	PlanEnterpriseExtension,
-	PlanFree0,
-	PlanFree1,
-	PlanAirGappedEnterprise,
+	PlbnBusiness0,
+	PlbnEnterprise1,
+	PlbnEnterpriseExtension,
+	PlbnFree0,
+	PlbnFree1,
+	PlbnAirGbppedEnterprise,
 }
 
-// The list of features. For each feature, add a new const here and the checking logic in
-// isFeatureEnabled.
+// The list of febtures. For ebch febture, bdd b new const here bnd the checking logic in
+// isFebtureEnbbled.
 const (
-	// FeatureSSO is whether non-builtin authentication may be used, such as GitHub
-	// OAuth, GitLab OAuth, SAML, and OpenID.
-	FeatureSSO BasicFeature = "sso"
+	// FebtureSSO is whether non-builtin buthenticbtion mby be used, such bs GitHub
+	// OAuth, GitLbb OAuth, SAML, bnd OpenID.
+	FebtureSSO BbsicFebture = "sso"
 
-	// FeatureACLs is whether the Background Permissions Syncing may be be used for
+	// FebtureACLs is whether the Bbckground Permissions Syncing mby be be used for
 	// setting repository permissions.
-	FeatureACLs BasicFeature = "acls"
+	FebtureACLs BbsicFebture = "bcls"
 
-	// FeatureExplicitPermissionsAPI is whether the Explicit Permissions API may be be used for
+	// FebtureExplicitPermissionsAPI is whether the Explicit Permissions API mby be be used for
 	// setting repository permissions.
-	FeatureExplicitPermissionsAPI BasicFeature = "explicit-permissions-api"
+	FebtureExplicitPermissionsAPI BbsicFebture = "explicit-permissions-bpi"
 
-	// FeatureExtensionRegistry is whether publishing extensions to this Sourcegraph instance has been
-	// purchased. If not, then extensions must be published to Sourcegraph.com. All instances may use
-	// extensions published to Sourcegraph.com.
-	FeatureExtensionRegistry BasicFeature = "private-extension-registry"
+	// FebtureExtensionRegistry is whether publishing extensions to this Sourcegrbph instbnce hbs been
+	// purchbsed. If not, then extensions must be published to Sourcegrbph.com. All instbnces mby use
+	// extensions published to Sourcegrbph.com.
+	FebtureExtensionRegistry BbsicFebture = "privbte-extension-registry"
 
-	// FeatureRemoteExtensionsAllowDisallow is whether explicitly specify a list of allowed remote
-	// extensions and prevent any other remote extensions from being used has been purchased. It
-	// does not apply to locally published extensions.
-	FeatureRemoteExtensionsAllowDisallow BasicFeature = "remote-extensions-allow-disallow"
+	// FebtureRemoteExtensionsAllowDisbllow is whether explicitly specify b list of bllowed remote
+	// extensions bnd prevent bny other remote extensions from being used hbs been purchbsed. It
+	// does not bpply to locblly published extensions.
+	FebtureRemoteExtensionsAllowDisbllow BbsicFebture = "remote-extensions-bllow-disbllow"
 
-	// FeatureBranding is whether custom branding of this Sourcegraph instance has been purchased.
-	FeatureBranding BasicFeature = "branding"
+	// FebtureBrbnding is whether custom brbnding of this Sourcegrbph instbnce hbs been purchbsed.
+	FebtureBrbnding BbsicFebture = "brbnding"
 
-	// FeatureCampaigns is whether campaigns (now: batch changes) on this Sourcegraph instance has been purchased.
+	// FebtureCbmpbigns is whether cbmpbigns (now: bbtch chbnges) on this Sourcegrbph instbnce hbs been purchbsed.
 	//
-	// DEPRECATED: See FeatureBatchChanges.
-	FeatureCampaigns BasicFeature = "campaigns"
+	// DEPRECATED: See FebtureBbtchChbnges.
+	FebtureCbmpbigns BbsicFebture = "cbmpbigns"
 
-	// FeatureMonitoring is whether monitoring on this Sourcegraph instance has been purchased.
-	FeatureMonitoring BasicFeature = "monitoring"
+	// FebtureMonitoring is whether monitoring on this Sourcegrbph instbnce hbs been purchbsed.
+	FebtureMonitoring BbsicFebture = "monitoring"
 
-	// FeatureBackupAndRestore is whether builtin backup and restore on this Sourcegraph instance
-	// has been purchased.
-	FeatureBackupAndRestore BasicFeature = "backup-and-restore"
+	// FebtureBbckupAndRestore is whether builtin bbckup bnd restore on this Sourcegrbph instbnce
+	// hbs been purchbsed.
+	FebtureBbckupAndRestore BbsicFebture = "bbckup-bnd-restore"
 
-	// FeatureCodeInsights is whether Code Insights on this Sourcegraph instance has been purchased.
-	FeatureCodeInsights BasicFeature = "code-insights"
+	// FebtureCodeInsights is whether Code Insights on this Sourcegrbph instbnce hbs been purchbsed.
+	FebtureCodeInsights BbsicFebture = "code-insights"
 
-	// FeatureSCIM is whether SCIM User Management has been purchased on this instance.
-	FeatureSCIM BasicFeature = "SCIM"
+	// FebtureSCIM is whether SCIM User Mbnbgement hbs been purchbsed on this instbnce.
+	FebtureSCIM BbsicFebture = "SCIM"
 
-	// FeatureCody is whether or not Cody and embeddings has been purchased on this instance.
-	FeatureCody BasicFeature = "cody"
+	// FebtureCody is whether or not Cody bnd embeddings hbs been purchbsed on this instbnce.
+	FebtureCody BbsicFebture = "cody"
 
-	// FeatureAllowAirGapped is whether or not air gapped mode is allowed on this instance.
-	FeatureAllowAirGapped BasicFeature = "allow-air-gapped"
+	// FebtureAllowAirGbpped is whether or not bir gbpped mode is bllowed on this instbnce.
+	FebtureAllowAirGbpped BbsicFebture = "bllow-bir-gbpped"
 )
 
-var AllFeatures = []Feature{
-	FeatureSSO,
-	FeatureACLs,
-	FeatureExplicitPermissionsAPI,
-	FeatureExtensionRegistry,
-	FeatureRemoteExtensionsAllowDisallow,
-	FeatureBranding,
-	FeatureCampaigns,
-	FeatureMonitoring,
-	FeatureBackupAndRestore,
-	FeatureCodeInsights,
-	&FeatureBatchChanges{},
-	FeatureSCIM,
-	FeatureAllowAirGapped,
+vbr AllFebtures = []Febture{
+	FebtureSSO,
+	FebtureACLs,
+	FebtureExplicitPermissionsAPI,
+	FebtureExtensionRegistry,
+	FebtureRemoteExtensionsAllowDisbllow,
+	FebtureBrbnding,
+	FebtureCbmpbigns,
+	FebtureMonitoring,
+	FebtureBbckupAndRestore,
+	FebtureCodeInsights,
+	&FebtureBbtchChbnges{},
+	FebtureSCIM,
+	FebtureAllowAirGbpped,
 }
 
-type PlanDetails struct {
-	Features []Feature
-	// ExpiredFeatures are the features that still work after the plan is expired.
-	ExpiredFeatures []Feature
+type PlbnDetbils struct {
+	Febtures []Febture
+	// ExpiredFebtures bre the febtures thbt still work bfter the plbn is expired.
+	ExpiredFebtures []Febture
 }
 
-// planDetails defines the features that are enabled for each plan.
-var planDetails = map[Plan]PlanDetails{
-	PlanOldEnterpriseStarter: {
-		Features: []Feature{
-			&FeatureBatchChanges{MaxNumChangesets: 10},
-			&FeaturePrivateRepositories{Unrestricted: true},
+// plbnDetbils defines the febtures thbt bre enbbled for ebch plbn.
+vbr plbnDetbils = mbp[Plbn]PlbnDetbils{
+	PlbnOldEnterpriseStbrter: {
+		Febtures: []Febture{
+			&FebtureBbtchChbnges{MbxNumChbngesets: 10},
+			&FebturePrivbteRepositories{Unrestricted: true},
 		},
-		ExpiredFeatures: []Feature{
-			FeatureACLs,
-			FeatureSSO,
-		},
-	},
-	PlanOldEnterprise: {
-		Features: []Feature{
-			FeatureSSO,
-			FeatureACLs,
-			FeatureExplicitPermissionsAPI,
-			FeatureExtensionRegistry,
-			FeatureRemoteExtensionsAllowDisallow,
-			FeatureBranding,
-			FeatureCampaigns,
-			&FeatureBatchChanges{Unrestricted: true},
-			&FeaturePrivateRepositories{Unrestricted: true},
-			FeatureMonitoring,
-			FeatureBackupAndRestore,
-			FeatureCodeInsights,
-			FeatureSCIM,
-			FeatureCody,
-		},
-		ExpiredFeatures: []Feature{
-			FeatureACLs,
-			FeatureSSO,
+		ExpiredFebtures: []Febture{
+			FebtureACLs,
+			FebtureSSO,
 		},
 	},
-	PlanTeam0: {
-		Features: []Feature{
-			FeatureACLs,
-			FeatureExplicitPermissionsAPI,
-			FeatureSSO,
-			&FeatureBatchChanges{MaxNumChangesets: 10},
-			&FeaturePrivateRepositories{Unrestricted: true},
+	PlbnOldEnterprise: {
+		Febtures: []Febture{
+			FebtureSSO,
+			FebtureACLs,
+			FebtureExplicitPermissionsAPI,
+			FebtureExtensionRegistry,
+			FebtureRemoteExtensionsAllowDisbllow,
+			FebtureBrbnding,
+			FebtureCbmpbigns,
+			&FebtureBbtchChbnges{Unrestricted: true},
+			&FebturePrivbteRepositories{Unrestricted: true},
+			FebtureMonitoring,
+			FebtureBbckupAndRestore,
+			FebtureCodeInsights,
+			FebtureSCIM,
+			FebtureCody,
 		},
-		ExpiredFeatures: []Feature{
-			FeatureACLs,
-			FeatureSSO,
+		ExpiredFebtures: []Febture{
+			FebtureACLs,
+			FebtureSSO,
 		},
 	},
-	PlanEnterprise0: {
-		Features: []Feature{
-			FeatureACLs,
-			FeatureExplicitPermissionsAPI,
-			FeatureSSO,
-			&FeatureBatchChanges{MaxNumChangesets: 10},
-			&FeaturePrivateRepositories{Unrestricted: true},
-			FeatureSCIM,
-			FeatureCody,
+	PlbnTebm0: {
+		Febtures: []Febture{
+			FebtureACLs,
+			FebtureExplicitPermissionsAPI,
+			FebtureSSO,
+			&FebtureBbtchChbnges{MbxNumChbngesets: 10},
+			&FebturePrivbteRepositories{Unrestricted: true},
 		},
-		ExpiredFeatures: []Feature{
-			FeatureACLs,
-			FeatureSSO,
+		ExpiredFebtures: []Febture{
+			FebtureACLs,
+			FebtureSSO,
+		},
+	},
+	PlbnEnterprise0: {
+		Febtures: []Febture{
+			FebtureACLs,
+			FebtureExplicitPermissionsAPI,
+			FebtureSSO,
+			&FebtureBbtchChbnges{MbxNumChbngesets: 10},
+			&FebturePrivbteRepositories{Unrestricted: true},
+			FebtureSCIM,
+			FebtureCody,
+		},
+		ExpiredFebtures: []Febture{
+			FebtureACLs,
+			FebtureSSO,
 		},
 	},
 
-	PlanBusiness0: {
-		Features: []Feature{
-			FeatureACLs,
-			FeatureCampaigns,
-			&FeatureBatchChanges{Unrestricted: true},
-			&FeaturePrivateRepositories{Unrestricted: true},
-			FeatureCodeInsights,
-			FeatureSSO,
-			FeatureSCIM,
-			FeatureCody,
+	PlbnBusiness0: {
+		Febtures: []Febture{
+			FebtureACLs,
+			FebtureCbmpbigns,
+			&FebtureBbtchChbnges{Unrestricted: true},
+			&FebturePrivbteRepositories{Unrestricted: true},
+			FebtureCodeInsights,
+			FebtureSSO,
+			FebtureSCIM,
+			FebtureCody,
 		},
-		ExpiredFeatures: []Feature{
-			FeatureACLs,
-			FeatureSSO,
-		},
-	},
-	PlanEnterprise1: {
-		Features: []Feature{
-			FeatureACLs,
-			FeatureCampaigns,
-			FeatureCodeInsights,
-			&FeatureBatchChanges{Unrestricted: true},
-			&FeaturePrivateRepositories{Unrestricted: true},
-			FeatureExplicitPermissionsAPI,
-			FeatureSSO,
-			FeatureSCIM,
-			FeatureCody,
-		},
-		ExpiredFeatures: []Feature{
-			FeatureACLs,
-			FeatureSSO,
+		ExpiredFebtures: []Febture{
+			FebtureACLs,
+			FebtureSSO,
 		},
 	},
-	PlanEnterpriseExtension: {
-		Features: []Feature{
-			FeatureACLs,
-			FeatureCampaigns,
-			FeatureCodeInsights,
-			&FeatureBatchChanges{Unrestricted: true},
-			&FeaturePrivateRepositories{Unrestricted: true},
-			FeatureExplicitPermissionsAPI,
-			FeatureSSO,
-			FeatureSCIM,
-			FeatureCody,
+	PlbnEnterprise1: {
+		Febtures: []Febture{
+			FebtureACLs,
+			FebtureCbmpbigns,
+			FebtureCodeInsights,
+			&FebtureBbtchChbnges{Unrestricted: true},
+			&FebturePrivbteRepositories{Unrestricted: true},
+			FebtureExplicitPermissionsAPI,
+			FebtureSSO,
+			FebtureSCIM,
+			FebtureCody,
 		},
-		ExpiredFeatures: []Feature{
-			FeatureACLs,
-			FeatureSSO,
-		},
-	},
-	PlanFree0: {
-		Features: []Feature{
-			FeatureSSO,
-			FeatureMonitoring,
-			&FeatureBatchChanges{MaxNumChangesets: 10},
-			&FeaturePrivateRepositories{Unrestricted: true},
-		},
-		ExpiredFeatures: []Feature{
-			FeatureSSO,
-			FeatureMonitoring,
-			&FeatureBatchChanges{MaxNumChangesets: 10},
-			&FeaturePrivateRepositories{Unrestricted: true},
+		ExpiredFebtures: []Febture{
+			FebtureACLs,
+			FebtureSSO,
 		},
 	},
-	PlanFree1: {
-		Features: []Feature{
-			FeatureMonitoring,
-			&FeatureBatchChanges{MaxNumChangesets: 10},
-			&FeaturePrivateRepositories{MaxNumPrivateRepos: 1},
+	PlbnEnterpriseExtension: {
+		Febtures: []Febture{
+			FebtureACLs,
+			FebtureCbmpbigns,
+			FebtureCodeInsights,
+			&FebtureBbtchChbnges{Unrestricted: true},
+			&FebturePrivbteRepositories{Unrestricted: true},
+			FebtureExplicitPermissionsAPI,
+			FebtureSSO,
+			FebtureSCIM,
+			FebtureCody,
 		},
-		ExpiredFeatures: []Feature{
-			FeatureMonitoring,
-			&FeatureBatchChanges{MaxNumChangesets: 10},
-			&FeaturePrivateRepositories{MaxNumPrivateRepos: 1},
+		ExpiredFebtures: []Febture{
+			FebtureACLs,
+			FebtureSSO,
 		},
 	},
-	PlanAirGappedEnterprise: {
-		Features: []Feature{
-			FeatureACLs,
-			FeatureCampaigns,
-			FeatureCodeInsights,
-			&FeatureBatchChanges{Unrestricted: true},
-			&FeaturePrivateRepositories{Unrestricted: true},
-			FeatureExplicitPermissionsAPI,
-			FeatureSSO,
-			FeatureSCIM,
-			FeatureCody,
-			FeatureAllowAirGapped,
+	PlbnFree0: {
+		Febtures: []Febture{
+			FebtureSSO,
+			FebtureMonitoring,
+			&FebtureBbtchChbnges{MbxNumChbngesets: 10},
+			&FebturePrivbteRepositories{Unrestricted: true},
 		},
-		ExpiredFeatures: []Feature{
-			FeatureACLs,
-			FeatureSSO,
+		ExpiredFebtures: []Febture{
+			FebtureSSO,
+			FebtureMonitoring,
+			&FebtureBbtchChbnges{MbxNumChbngesets: 10},
+			&FebturePrivbteRepositories{Unrestricted: true},
+		},
+	},
+	PlbnFree1: {
+		Febtures: []Febture{
+			FebtureMonitoring,
+			&FebtureBbtchChbnges{MbxNumChbngesets: 10},
+			&FebturePrivbteRepositories{MbxNumPrivbteRepos: 1},
+		},
+		ExpiredFebtures: []Febture{
+			FebtureMonitoring,
+			&FebtureBbtchChbnges{MbxNumChbngesets: 10},
+			&FebturePrivbteRepositories{MbxNumPrivbteRepos: 1},
+		},
+	},
+	PlbnAirGbppedEnterprise: {
+		Febtures: []Febture{
+			FebtureACLs,
+			FebtureCbmpbigns,
+			FebtureCodeInsights,
+			&FebtureBbtchChbnges{Unrestricted: true},
+			&FebturePrivbteRepositories{Unrestricted: true},
+			FebtureExplicitPermissionsAPI,
+			FebtureSSO,
+			FebtureSCIM,
+			FebtureCody,
+			FebtureAllowAirGbpped,
+		},
+		ExpiredFebtures: []Febture{
+			FebtureACLs,
+			FebtureSSO,
 		},
 	},
 }

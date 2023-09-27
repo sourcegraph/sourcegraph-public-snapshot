@@ -1,41 +1,41 @@
-package protocol
+pbckbge protocol
 
-type PackageInformation struct {
+type PbckbgeInformbtion struct {
 	Vertex
-	Name    string `json:"name"`
-	Manager string `json:"manager"`
+	Nbme    string `json:"nbme"`
+	Mbnbger string `json:"mbnbger"`
 	Version string `json:"version"`
 }
 
-func NewPackageInformation(id uint64, name, manager, version string) PackageInformation {
-	return PackageInformation{
+func NewPbckbgeInformbtion(id uint64, nbme, mbnbger, version string) PbckbgeInformbtion {
+	return PbckbgeInformbtion{
 		Vertex: Vertex{
 			Element: Element{
 				ID:   id,
 				Type: ElementVertex,
 			},
-			Label: VertexPackageInformation,
+			Lbbel: VertexPbckbgeInformbtion,
 		},
-		Name:    name,
-		Manager: manager,
+		Nbme:    nbme,
+		Mbnbger: mbnbger,
 		Version: version,
 	}
 }
 
-type PackageInformationEdge struct {
+type PbckbgeInformbtionEdge struct {
 	Edge
 	OutV uint64 `json:"outV"`
 	InV  uint64 `json:"inV"`
 }
 
-func NewPackageInformationEdge(id, outV, inV uint64) PackageInformationEdge {
-	return PackageInformationEdge{
+func NewPbckbgeInformbtionEdge(id, outV, inV uint64) PbckbgeInformbtionEdge {
+	return PbckbgeInformbtionEdge{
 		Edge: Edge{
 			Element: Element{
 				ID:   id,
 				Type: ElementEdge,
 			},
-			Label: EdgePackageInformation,
+			Lbbel: EdgePbckbgeInformbtion,
 		},
 		OutV: outV,
 		InV:  inV,

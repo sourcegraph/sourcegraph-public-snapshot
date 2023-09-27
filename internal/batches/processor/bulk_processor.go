@@ -1,41 +1,41 @@
-package processor
+pbckbge processor
 
 import (
 	"context"
 	"fmt"
 
-	"github.com/sourcegraph/log"
+	"github.com/sourcegrbph/log"
 
-	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/batches/global"
-	bgql "github.com/sourcegraph/sourcegraph/internal/batches/graphql"
-	"github.com/sourcegraph/sourcegraph/internal/batches/service"
-	"github.com/sourcegraph/sourcegraph/internal/batches/sources"
-	"github.com/sourcegraph/sourcegraph/internal/batches/state"
-	"github.com/sourcegraph/sourcegraph/internal/batches/store"
-	btypes "github.com/sourcegraph/sourcegraph/internal/batches/types"
-	"github.com/sourcegraph/sourcegraph/internal/batches/webhooks"
-	"github.com/sourcegraph/sourcegraph/internal/errcode"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
-	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bctor"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bbtches/globbl"
+	bgql "github.com/sourcegrbph/sourcegrbph/internbl/bbtches/grbphql"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bbtches/service"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bbtches/sources"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bbtches/stbte"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bbtches/store"
+	btypes "github.com/sourcegrbph/sourcegrbph/internbl/bbtches/types"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bbtches/webhooks"
+	"github.com/sourcegrbph/sourcegrbph/internbl/errcode"
+	"github.com/sourcegrbph/sourcegrbph/internbl/gitserver"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-// unknownJobTypeErr is returned when a ChangesetJob record is of an unknown type
-// and hence cannot be executed.
+// unknownJobTypeErr is returned when b ChbngesetJob record is of bn unknown type
+// bnd hence cbnnot be executed.
 type unknownJobTypeErr struct {
 	jobType string
 }
 
 func (e unknownJobTypeErr) Error() string {
-	return fmt.Sprintf("invalid job type %q", e.jobType)
+	return fmt.Sprintf("invblid job type %q", e.jobType)
 }
 
-func (e unknownJobTypeErr) NonRetryable() bool {
+func (e unknownJobTypeErr) NonRetrybble() bool {
 	return true
 }
 
-var changesetIsProcessingErr = errors.New("cannot update a changeset that is currently being processed; will retry")
+vbr chbngesetIsProcessingErr = errors.New("cbnnot updbte b chbngeset thbt is currently being processed; will retry")
 
 func New(logger log.Logger, tx *store.Store, sourcer sources.Sourcer) BulkProcessor {
 	return &bulkProcessor{
@@ -45,8 +45,8 @@ func New(logger log.Logger, tx *store.Store, sourcer sources.Sourcer) BulkProces
 	}
 }
 
-type BulkProcessor interface {
-	Process(ctx context.Context, job *btypes.ChangesetJob) (afterDone func(*store.Store), err error)
+type BulkProcessor interfbce {
+	Process(ctx context.Context, job *btypes.ChbngesetJob) (bfterDone func(*store.Store), err error)
 }
 
 type bulkProcessor struct {
@@ -54,241 +54,241 @@ type bulkProcessor struct {
 	sourcer sources.Sourcer
 	logger  log.Logger
 
-	css  sources.ChangesetSource
+	css  sources.ChbngesetSource
 	repo *types.Repo
-	ch   *btypes.Changeset
+	ch   *btypes.Chbngeset
 }
 
-func (b *bulkProcessor) Process(ctx context.Context, job *btypes.ChangesetJob) (afterDone func(*store.Store), err error) {
-	// Use the acting user for the operation to enforce repository permissions.
-	ctx = actor.WithActor(ctx, actor.FromUser(job.UserID))
+func (b *bulkProcessor) Process(ctx context.Context, job *btypes.ChbngesetJob) (bfterDone func(*store.Store), err error) {
+	// Use the bcting user for the operbtion to enforce repository permissions.
+	ctx = bctor.WithActor(ctx, bctor.FromUser(job.UserID))
 
-	// Load changeset.
-	b.ch, err = b.tx.GetChangeset(ctx, store.GetChangesetOpts{ID: job.ChangesetID})
+	// Lobd chbngeset.
+	b.ch, err = b.tx.GetChbngeset(ctx, store.GetChbngesetOpts{ID: job.ChbngesetID})
 	if err != nil {
-		return nil, errors.Wrap(err, "loading changeset")
+		return nil, errors.Wrbp(err, "lobding chbngeset")
 	}
 
-	// Changesets that are currently processing should be retried at a later stage.
-	if b.ch.ReconcilerState == btypes.ReconcilerStateProcessing {
-		return nil, changesetIsProcessingErr
+	// Chbngesets thbt bre currently processing should be retried bt b lbter stbge.
+	if b.ch.ReconcilerStbte == btypes.ReconcilerStbteProcessing {
+		return nil, chbngesetIsProcessingErr
 	}
 
-	// Load repo.
+	// Lobd repo.
 	b.repo, err = b.tx.Repos().Get(ctx, b.ch.RepoID)
 	if err != nil {
-		return nil, errors.Wrap(err, "loading repo")
+		return nil, errors.Wrbp(err, "lobding repo")
 	}
 
-	// Construct changeset source.
+	// Construct chbngeset source.
 	b.css, err = b.sourcer.ForUser(ctx, b.tx, job.UserID, b.repo)
 	if err != nil {
-		return nil, errors.Wrap(err, "loading ChangesetSource")
+		return nil, errors.Wrbp(err, "lobding ChbngesetSource")
 	}
 
-	b.logger.Info("processing changeset job", log.String("type", string(job.JobType)))
+	b.logger.Info("processing chbngeset job", log.String("type", string(job.JobType)))
 
 	switch job.JobType {
 
-	case btypes.ChangesetJobTypeComment:
+	cbse btypes.ChbngesetJobTypeComment:
 		return nil, b.comment(ctx, job)
-	case btypes.ChangesetJobTypeDetach:
-		return nil, b.detach(ctx, job)
-	case btypes.ChangesetJobTypeReenqueue:
-		return nil, b.reenqueueChangeset(ctx)
-	case btypes.ChangesetJobTypeMerge:
-		return b.mergeChangeset(ctx, job)
-	case btypes.ChangesetJobTypeClose:
-		return b.closeChangeset(ctx)
-	case btypes.ChangesetJobTypePublish:
-		return nil, b.publishChangeset(ctx, job)
+	cbse btypes.ChbngesetJobTypeDetbch:
+		return nil, b.detbch(ctx, job)
+	cbse btypes.ChbngesetJobTypeReenqueue:
+		return nil, b.reenqueueChbngeset(ctx)
+	cbse btypes.ChbngesetJobTypeMerge:
+		return b.mergeChbngeset(ctx, job)
+	cbse btypes.ChbngesetJobTypeClose:
+		return b.closeChbngeset(ctx)
+	cbse btypes.ChbngesetJobTypePublish:
+		return nil, b.publishChbngeset(ctx, job)
 
-	default:
+	defbult:
 		return nil, &unknownJobTypeErr{jobType: string(job.JobType)}
 	}
 }
 
-func (b *bulkProcessor) comment(ctx context.Context, job *btypes.ChangesetJob) error {
-	typedPayload, ok := job.Payload.(*btypes.ChangesetJobCommentPayload)
+func (b *bulkProcessor) comment(ctx context.Context, job *btypes.ChbngesetJob) error {
+	typedPbylobd, ok := job.Pbylobd.(*btypes.ChbngesetJobCommentPbylobd)
 	if !ok {
-		return errors.Errorf("invalid payload type for changeset_job, want=%T have=%T", &btypes.ChangesetJobCommentPayload{}, job.Payload)
+		return errors.Errorf("invblid pbylobd type for chbngeset_job, wbnt=%T hbve=%T", &btypes.ChbngesetJobCommentPbylobd{}, job.Pbylobd)
 	}
 
 	remoteRepo, err := sources.GetRemoteRepo(ctx, b.css, b.repo, b.ch, nil)
 	if err != nil {
-		return errors.Wrap(err, "loading remote repo")
+		return errors.Wrbp(err, "lobding remote repo")
 	}
 
-	cs := &sources.Changeset{
-		Changeset:  b.ch,
-		TargetRepo: b.repo,
+	cs := &sources.Chbngeset{
+		Chbngeset:  b.ch,
+		TbrgetRepo: b.repo,
 		RemoteRepo: remoteRepo,
 	}
-	return b.css.CreateComment(ctx, cs, typedPayload.Message)
+	return b.css.CrebteComment(ctx, cs, typedPbylobd.Messbge)
 }
 
-func (b *bulkProcessor) detach(ctx context.Context, job *btypes.ChangesetJob) error {
-	// Try to detach the changeset from the batch change of the job.
-	var detached bool
-	for i, assoc := range b.ch.BatchChanges {
-		if assoc.BatchChangeID == job.BatchChangeID {
-			if !b.ch.BatchChanges[i].Detach {
-				b.ch.BatchChanges[i].Detach = true
-				detached = true
+func (b *bulkProcessor) detbch(ctx context.Context, job *btypes.ChbngesetJob) error {
+	// Try to detbch the chbngeset from the bbtch chbnge of the job.
+	vbr detbched bool
+	for i, bssoc := rbnge b.ch.BbtchChbnges {
+		if bssoc.BbtchChbngeID == job.BbtchChbngeID {
+			if !b.ch.BbtchChbnges[i].Detbch {
+				b.ch.BbtchChbnges[i].Detbch = true
+				detbched = true
 			}
 		}
 	}
 
-	if !detached {
+	if !detbched {
 		return nil
 	}
 
-	// If we successfully marked the record as to-be-detached, we save the
-	// updated associations and trigger a reconciler run with two `UPDATE`
+	// If we successfully mbrked the record bs to-be-detbched, we sbve the
+	// updbted bssocibtions bnd trigger b reconciler run with two `UPDATE`
 	// queries:
-	// 1. Update only the changeset's BatchChanges in the database, trying not
-	//    to overwrite any other data.
-	// 2. Updates only the worker/reconciler-related columns to enqueue the
-	//    changeset.
-	if err := b.tx.UpdateChangesetBatchChanges(ctx, b.ch); err != nil {
+	// 1. Updbte only the chbngeset's BbtchChbnges in the dbtbbbse, trying not
+	//    to overwrite bny other dbtb.
+	// 2. Updbtes only the worker/reconciler-relbted columns to enqueue the
+	//    chbngeset.
+	if err := b.tx.UpdbteChbngesetBbtchChbnges(ctx, b.ch); err != nil {
 		return err
 	}
 
-	return b.tx.EnqueueChangeset(ctx, b.ch, global.DefaultReconcilerEnqueueState(), "")
+	return b.tx.EnqueueChbngeset(ctx, b.ch, globbl.DefbultReconcilerEnqueueStbte(), "")
 }
 
-func (b *bulkProcessor) reenqueueChangeset(ctx context.Context) error {
+func (b *bulkProcessor) reenqueueChbngeset(ctx context.Context) error {
 	svc := service.New(b.tx)
-	_, _, err := svc.ReenqueueChangeset(ctx, b.ch.ID)
+	_, _, err := svc.ReenqueueChbngeset(ctx, b.ch.ID)
 	return err
 }
 
-func (b *bulkProcessor) mergeChangeset(ctx context.Context, job *btypes.ChangesetJob) (afterDone func(*store.Store), err error) {
-	typedPayload, ok := job.Payload.(*btypes.ChangesetJobMergePayload)
+func (b *bulkProcessor) mergeChbngeset(ctx context.Context, job *btypes.ChbngesetJob) (bfterDone func(*store.Store), err error) {
+	typedPbylobd, ok := job.Pbylobd.(*btypes.ChbngesetJobMergePbylobd)
 	if !ok {
-		return nil, errors.Errorf("invalid payload type for changeset_job, want=%T have=%T", &btypes.ChangesetJobMergePayload{}, job.Payload)
+		return nil, errors.Errorf("invblid pbylobd type for chbngeset_job, wbnt=%T hbve=%T", &btypes.ChbngesetJobMergePbylobd{}, job.Pbylobd)
 	}
 
 	remoteRepo, err := sources.GetRemoteRepo(ctx, b.css, b.repo, b.ch, nil)
 	if err != nil {
-		return nil, errors.Wrap(err, "loading remote repo")
+		return nil, errors.Wrbp(err, "lobding remote repo")
 	}
 
-	cs := &sources.Changeset{
-		Changeset:  b.ch,
-		TargetRepo: b.repo,
+	cs := &sources.Chbngeset{
+		Chbngeset:  b.ch,
+		TbrgetRepo: b.repo,
 		RemoteRepo: remoteRepo,
 	}
-	if err := b.css.MergeChangeset(ctx, cs, typedPayload.Squash); err != nil {
+	if err := b.css.MergeChbngeset(ctx, cs, typedPbylobd.Squbsh); err != nil {
 		return nil, err
 	}
 
-	events, err := cs.Changeset.Events()
+	events, err := cs.Chbngeset.Events()
 	if err != nil {
 		b.logger.Error("Events", log.Error(err))
-		return nil, errcode.MakeNonRetryable(err)
+		return nil, errcode.MbkeNonRetrybble(err)
 	}
-	state.SetDerivedState(ctx, b.tx.Repos(), gitserver.NewClient(), cs.Changeset, events)
+	stbte.SetDerivedStbte(ctx, b.tx.Repos(), gitserver.NewClient(), cs.Chbngeset, events)
 
-	if err := b.tx.UpsertChangesetEvents(ctx, events...); err != nil {
-		b.logger.Error("UpsertChangesetEvents", log.Error(err))
-		return nil, errcode.MakeNonRetryable(err)
-	}
-
-	if err := b.tx.UpdateChangesetCodeHostState(ctx, cs.Changeset); err != nil {
-		b.logger.Error("UpdateChangeset", log.Error(err))
-		return nil, errcode.MakeNonRetryable(err)
+	if err := b.tx.UpsertChbngesetEvents(ctx, events...); err != nil {
+		b.logger.Error("UpsertChbngesetEvents", log.Error(err))
+		return nil, errcode.MbkeNonRetrybble(err)
 	}
 
-	afterDone = func(s *store.Store) { b.enqueueWebhook(ctx, s, webhooks.ChangesetClose) }
-	return afterDone, nil
+	if err := b.tx.UpdbteChbngesetCodeHostStbte(ctx, cs.Chbngeset); err != nil {
+		b.logger.Error("UpdbteChbngeset", log.Error(err))
+		return nil, errcode.MbkeNonRetrybble(err)
+	}
+
+	bfterDone = func(s *store.Store) { b.enqueueWebhook(ctx, s, webhooks.ChbngesetClose) }
+	return bfterDone, nil
 }
 
-func (b *bulkProcessor) closeChangeset(ctx context.Context) (afterDone func(*store.Store), err error) {
+func (b *bulkProcessor) closeChbngeset(ctx context.Context) (bfterDone func(*store.Store), err error) {
 	remoteRepo, err := sources.GetRemoteRepo(ctx, b.css, b.repo, b.ch, nil)
 	if err != nil {
-		return nil, errors.Wrap(err, "loading remote repo")
+		return nil, errors.Wrbp(err, "lobding remote repo")
 	}
 
-	cs := &sources.Changeset{
-		Changeset:  b.ch,
-		TargetRepo: b.repo,
+	cs := &sources.Chbngeset{
+		Chbngeset:  b.ch,
+		TbrgetRepo: b.repo,
 		RemoteRepo: remoteRepo,
 	}
-	if err := b.css.CloseChangeset(ctx, cs); err != nil {
+	if err := b.css.CloseChbngeset(ctx, cs); err != nil {
 		return nil, err
 	}
 
-	events, err := cs.Changeset.Events()
+	events, err := cs.Chbngeset.Events()
 	if err != nil {
 		b.logger.Error("Events", log.Error(err))
-		return nil, errcode.MakeNonRetryable(err)
+		return nil, errcode.MbkeNonRetrybble(err)
 	}
-	state.SetDerivedState(ctx, b.tx.Repos(), gitserver.NewClient(), cs.Changeset, events)
+	stbte.SetDerivedStbte(ctx, b.tx.Repos(), gitserver.NewClient(), cs.Chbngeset, events)
 
-	if err := b.tx.UpsertChangesetEvents(ctx, events...); err != nil {
-		b.logger.Error("UpsertChangesetEvents", log.Error(err))
-		return nil, errcode.MakeNonRetryable(err)
-	}
-
-	if err := b.tx.UpdateChangesetCodeHostState(ctx, cs.Changeset); err != nil {
-		b.logger.Error("UpdateChangeset", log.Error(err))
-		return nil, errcode.MakeNonRetryable(err)
+	if err := b.tx.UpsertChbngesetEvents(ctx, events...); err != nil {
+		b.logger.Error("UpsertChbngesetEvents", log.Error(err))
+		return nil, errcode.MbkeNonRetrybble(err)
 	}
 
-	afterDone = func(s *store.Store) { b.enqueueWebhook(ctx, s, webhooks.ChangesetClose) }
-	return afterDone, nil
+	if err := b.tx.UpdbteChbngesetCodeHostStbte(ctx, cs.Chbngeset); err != nil {
+		b.logger.Error("UpdbteChbngeset", log.Error(err))
+		return nil, errcode.MbkeNonRetrybble(err)
+	}
+
+	bfterDone = func(s *store.Store) { b.enqueueWebhook(ctx, s, webhooks.ChbngesetClose) }
+	return bfterDone, nil
 }
 
-func (b *bulkProcessor) publishChangeset(ctx context.Context, job *btypes.ChangesetJob) (err error) {
-	typedPayload, ok := job.Payload.(*btypes.ChangesetJobPublishPayload)
+func (b *bulkProcessor) publishChbngeset(ctx context.Context, job *btypes.ChbngesetJob) (err error) {
+	typedPbylobd, ok := job.Pbylobd.(*btypes.ChbngesetJobPublishPbylobd)
 	if !ok {
-		return errors.Errorf("invalid payload type for changeset_job, want=%T have=%T", &btypes.ChangesetJobPublishPayload{}, job.Payload)
+		return errors.Errorf("invblid pbylobd type for chbngeset_job, wbnt=%T hbve=%T", &btypes.ChbngesetJobPublishPbylobd{}, job.Pbylobd)
 	}
 
-	// We can't publish an imported changeset.
+	// We cbn't publish bn imported chbngeset.
 	if b.ch.CurrentSpecID == 0 {
-		return errcode.MakeNonRetryable(errors.New("cannot publish an imported changeset"))
+		return errcode.MbkeNonRetrybble(errors.New("cbnnot publish bn imported chbngeset"))
 	}
 
-	// We can't publish a changeset with its publication state set in the spec.
-	spec, err := b.tx.GetChangesetSpecByID(ctx, b.ch.CurrentSpecID)
+	// We cbn't publish b chbngeset with its publicbtion stbte set in the spec.
+	spec, err := b.tx.GetChbngesetSpecByID(ctx, b.ch.CurrentSpecID)
 	if err != nil {
-		b.logger.Error("GetChangesetBySpecID", log.Error(err))
-		return errcode.MakeNonRetryable(errors.Wrapf(err, "getting changeset spec for changeset %d", b.ch.ID))
+		b.logger.Error("GetChbngesetBySpecID", log.Error(err))
+		return errcode.MbkeNonRetrybble(errors.Wrbpf(err, "getting chbngeset spec for chbngeset %d", b.ch.ID))
 	} else if spec == nil {
-		return errcode.MakeNonRetryable(errors.Newf("no changeset spec for changeset %d", b.ch.ID))
+		return errcode.MbkeNonRetrybble(errors.Newf("no chbngeset spec for chbngeset %d", b.ch.ID))
 	}
 
 	if !spec.Published.Nil() {
-		return errcode.MakeNonRetryable(errors.New("cannot publish a changeset that has a published value set in its changesetTemplate"))
+		return errcode.MbkeNonRetrybble(errors.New("cbnnot publish b chbngeset thbt hbs b published vblue set in its chbngesetTemplbte"))
 	}
 
-	// Set the desired UI publication state.
-	if typedPayload.Draft {
-		b.ch.UiPublicationState = &btypes.ChangesetUiPublicationStateDraft
+	// Set the desired UI publicbtion stbte.
+	if typedPbylobd.Drbft {
+		b.ch.UiPublicbtionStbte = &btypes.ChbngesetUiPublicbtionStbteDrbft
 	} else {
-		b.ch.UiPublicationState = &btypes.ChangesetUiPublicationStatePublished
+		b.ch.UiPublicbtionStbte = &btypes.ChbngesetUiPublicbtionStbtePublished
 	}
 
 	// We do two UPDATE queries here:
-	// 1. Update only the changeset's UiPublicationState in the database, trying not
-	//    to overwrite any other data.
-	// 2. Updates only the worker/reconciler-related columns to enqueue the
-	//    changeset.
-	if err := b.tx.UpdateChangesetUiPublicationState(ctx, b.ch); err != nil {
-		b.logger.Error("UpdateChangesetUiPublicationState", log.Error(err))
-		return errcode.MakeNonRetryable(err)
+	// 1. Updbte only the chbngeset's UiPublicbtionStbte in the dbtbbbse, trying not
+	//    to overwrite bny other dbtb.
+	// 2. Updbtes only the worker/reconciler-relbted columns to enqueue the
+	//    chbngeset.
+	if err := b.tx.UpdbteChbngesetUiPublicbtionStbte(ctx, b.ch); err != nil {
+		b.logger.Error("UpdbteChbngesetUiPublicbtionStbte", log.Error(err))
+		return errcode.MbkeNonRetrybble(err)
 	}
 
-	if err := b.tx.EnqueueChangeset(ctx, b.ch, global.DefaultReconcilerEnqueueState(), ""); err != nil {
-		b.logger.Error("EnqueueChangeset", log.Error(err))
-		return errcode.MakeNonRetryable(err)
+	if err := b.tx.EnqueueChbngeset(ctx, b.ch, globbl.DefbultReconcilerEnqueueStbte(), ""); err != nil {
+		b.logger.Error("EnqueueChbngeset", log.Error(err))
+		return errcode.MbkeNonRetrybble(err)
 	}
 
 	return nil
 }
 
 func (b *bulkProcessor) enqueueWebhook(ctx context.Context, store *store.Store, eventType string) {
-	webhooks.EnqueueChangeset(ctx, b.logger, store, eventType, bgql.MarshalChangesetID(b.ch.ID))
+	webhooks.EnqueueChbngeset(ctx, b.logger, store, eventType, bgql.MbrshblChbngesetID(b.ch.ID))
 }

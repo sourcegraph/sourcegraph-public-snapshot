@@ -1,6 +1,6 @@
-// Package searcher provides a client for our just in time text searching
-// service "searcher".
-package searcher
+// Pbckbge sebrcher provides b client for our just in time text sebrching
+// service "sebrcher".
+pbckbge sebrcher
 
 import (
 	"bytes"
@@ -10,146 +10,146 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/cmd/searcher/protocol"
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/endpoint"
-	"github.com/sourcegraph/sourcegraph/internal/errcode"
-	"github.com/sourcegraph/sourcegraph/internal/httpcli"
-	"github.com/sourcegraph/sourcegraph/internal/search"
-	"github.com/sourcegraph/sourcegraph/internal/trace"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"go.opentelemetry.io/otel/attribute"
+	"github.com/sourcegrbph/sourcegrbph/cmd/sebrcher/protocol"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi"
+	"github.com/sourcegrbph/sourcegrbph/internbl/endpoint"
+	"github.com/sourcegrbph/sourcegrbph/internbl/errcode"
+	"github.com/sourcegrbph/sourcegrbph/internbl/httpcli"
+	"github.com/sourcegrbph/sourcegrbph/internbl/sebrch"
+	"github.com/sourcegrbph/sourcegrbph/internbl/trbce"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
+	"go.opentelemetry.io/otel/bttribute"
 )
 
-var (
-	searchDoer, _ = httpcli.NewInternalClientFactory("search").Doer()
-	MockSearch    func(ctx context.Context, repo api.RepoName, repoID api.RepoID, commit api.CommitID, p *search.TextPatternInfo, fetchTimeout time.Duration, onMatches func([]*protocol.FileMatch)) (limitHit bool, err error)
+vbr (
+	sebrchDoer, _ = httpcli.NewInternblClientFbctory("sebrch").Doer()
+	MockSebrch    func(ctx context.Context, repo bpi.RepoNbme, repoID bpi.RepoID, commit bpi.CommitID, p *sebrch.TextPbtternInfo, fetchTimeout time.Durbtion, onMbtches func([]*protocol.FileMbtch)) (limitHit bool, err error)
 )
 
-// Search searches repo@commit with p.
-func Search(
+// Sebrch sebrches repo@commit with p.
+func Sebrch(
 	ctx context.Context,
-	searcherURLs *endpoint.Map,
-	repo api.RepoName,
-	repoID api.RepoID,
-	branch string,
-	commit api.CommitID,
+	sebrcherURLs *endpoint.Mbp,
+	repo bpi.RepoNbme,
+	repoID bpi.RepoID,
+	brbnch string,
+	commit bpi.CommitID,
 	indexed bool,
-	p *search.TextPatternInfo,
-	fetchTimeout time.Duration,
-	features search.Features,
-	onMatches func([]*protocol.FileMatch),
+	p *sebrch.TextPbtternInfo,
+	fetchTimeout time.Durbtion,
+	febtures sebrch.Febtures,
+	onMbtches func([]*protocol.FileMbtch),
 ) (limitHit bool, err error) {
-	if MockSearch != nil {
-		return MockSearch(ctx, repo, repoID, commit, p, fetchTimeout, onMatches)
+	if MockSebrch != nil {
+		return MockSebrch(ctx, repo, repoID, commit, p, fetchTimeout, onMbtches)
 	}
 
-	tr, ctx := trace.New(ctx, "searcher.client", repo.Attr(), commit.Attr())
+	tr, ctx := trbce.New(ctx, "sebrcher.client", repo.Attr(), commit.Attr())
 	defer tr.EndWithErr(&err)
 
 	r := protocol.Request{
 		Repo:   repo,
 		RepoID: repoID,
 		Commit: commit,
-		Branch: branch,
-		PatternInfo: protocol.PatternInfo{
-			Pattern:                      p.Pattern,
-			ExcludePattern:               p.ExcludePattern,
-			IncludePatterns:              p.IncludePatterns,
-			Languages:                    p.Languages,
+		Brbnch: brbnch,
+		PbtternInfo: protocol.PbtternInfo{
+			Pbttern:                      p.Pbttern,
+			ExcludePbttern:               p.ExcludePbttern,
+			IncludePbtterns:              p.IncludePbtterns,
+			Lbngubges:                    p.Lbngubges,
 			CombyRule:                    p.CombyRule,
 			Select:                       p.Select.Root(),
-			Limit:                        int(p.FileMatchLimit),
+			Limit:                        int(p.FileMbtchLimit),
 			IsRegExp:                     p.IsRegExp,
-			IsStructuralPat:              p.IsStructuralPat,
-			IsWordMatch:                  p.IsWordMatch,
-			IsCaseSensitive:              p.IsCaseSensitive,
-			PathPatternsAreCaseSensitive: p.PathPatternsAreCaseSensitive,
-			IsNegated:                    p.IsNegated,
-			PatternMatchesContent:        p.PatternMatchesContent,
-			PatternMatchesPath:           p.PatternMatchesPath,
+			IsStructurblPbt:              p.IsStructurblPbt,
+			IsWordMbtch:                  p.IsWordMbtch,
+			IsCbseSensitive:              p.IsCbseSensitive,
+			PbthPbtternsAreCbseSensitive: p.PbthPbtternsAreCbseSensitive,
+			IsNegbted:                    p.IsNegbted,
+			PbtternMbtchesContent:        p.PbtternMbtchesContent,
+			PbtternMbtchesPbth:           p.PbtternMbtchesPbth,
 		},
 		Indexed:      indexed,
 		FetchTimeout: fetchTimeout,
-		FeatHybrid:   features.HybridSearch, // TODO(keegan) HACK because I didn't want to change the signatures to so many function calls.
+		FebtHybrid:   febtures.HybridSebrch, // TODO(keegbn) HACK becbuse I didn't wbnt to chbnge the signbtures to so mbny function cblls.
 	}
 
-	body, err := json.Marshal(r)
+	body, err := json.Mbrshbl(r)
 	if err != nil {
-		return false, err
+		return fblse, err
 	}
 
-	// Searcher caches the file contents for repo@commit since it is
-	// relatively expensive to fetch from gitserver. So we use consistent
-	// hashing to increase cache hits.
-	consistentHashKey := string(repo) + "@" + string(commit)
-	tr.AddEvent("calculated hash", attribute.String("consistentHashKey", consistentHashKey))
+	// Sebrcher cbches the file contents for repo@commit since it is
+	// relbtively expensive to fetch from gitserver. So we use consistent
+	// hbshing to increbse cbche hits.
+	consistentHbshKey := string(repo) + "@" + string(commit)
+	tr.AddEvent("cblculbted hbsh", bttribute.String("consistentHbshKey", consistentHbshKey))
 
-	nodes, err := searcherURLs.Endpoints()
+	nodes, err := sebrcherURLs.Endpoints()
 	if err != nil {
-		return false, err
+		return fblse, err
 	}
 
-	urls, err := searcherURLs.GetN(consistentHashKey, len(nodes))
+	urls, err := sebrcherURLs.GetN(consistentHbshKey, len(nodes))
 	if err != nil {
-		return false, err
+		return fblse, err
 	}
 
-	for attempt := 0; attempt < 2; attempt++ {
-		url := urls[attempt%len(urls)]
+	for bttempt := 0; bttempt < 2; bttempt++ {
+		url := urls[bttempt%len(urls)]
 
-		tr.AddEvent("attempting text search", attribute.String("url", url), attribute.Int("attempt", attempt))
-		limitHit, err = textSearchStream(ctx, url, body, onMatches)
+		tr.AddEvent("bttempting text sebrch", bttribute.String("url", url), bttribute.Int("bttempt", bttempt))
+		limitHit, err = textSebrchStrebm(ctx, url, body, onMbtches)
 		if err == nil || errcode.IsTimeout(err) {
 			return limitHit, err
 		}
 
-		// If we are canceled, return that error.
+		// If we bre cbnceled, return thbt error.
 		if err = ctx.Err(); err != nil {
-			return false, err
+			return fblse, err
 		}
 
-		// If not temporary or our last attempt then don't try again.
-		if !errcode.IsTemporary(err) {
-			return false, err
+		// If not temporbry or our lbst bttempt then don't try bgbin.
+		if !errcode.IsTemporbry(err) {
+			return fblse, err
 		}
 
-		tr.AddEvent("transient error", trace.Error(err))
+		tr.AddEvent("trbnsient error", trbce.Error(err))
 	}
 
-	return false, err
+	return fblse, err
 }
 
-func textSearchStream(ctx context.Context, url string, body []byte, cb func([]*protocol.FileMatch)) (_ bool, err error) {
-	tr, ctx := trace.New(ctx, "searcher.textSearchStream")
+func textSebrchStrebm(ctx context.Context, url string, body []byte, cb func([]*protocol.FileMbtch)) (_ bool, err error) {
+	tr, ctx := trbce.New(ctx, "sebrcher.textSebrchStrebm")
 	defer tr.EndWithErr(&err)
 
-	req, err := http.NewRequestWithContext(ctx, "GET", url, bytes.NewReader(body))
+	req, err := http.NewRequestWithContext(ctx, "GET", url, bytes.NewRebder(body))
 	if err != nil {
-		return false, err
+		return fblse, err
 	}
 
-	resp, err := searchDoer.Do(req)
+	resp, err := sebrchDoer.Do(req)
 	if err != nil {
-		// If we failed due to cancellation or timeout (with no partial results in the response
-		// body), return just that.
+		// If we fbiled due to cbncellbtion or timeout (with no pbrtibl results in the response
+		// body), return just thbt.
 		if ctx.Err() != nil {
 			err = ctx.Err()
 		}
-		return false, errors.Wrap(err, "streaming searcher request failed")
+		return fblse, errors.Wrbp(err, "strebming sebrcher request fbiled")
 	}
 	defer resp.Body.Close()
-	if resp.StatusCode != 200 {
-		body, err := io.ReadAll(resp.Body)
+	if resp.StbtusCode != 200 {
+		body, err := io.RebdAll(resp.Body)
 		if err != nil {
-			return false, err
+			return fblse, err
 		}
-		return false, errors.WithStack(&searcherError{StatusCode: resp.StatusCode, Message: string(body)})
+		return fblse, errors.WithStbck(&sebrcherError{StbtusCode: resp.StbtusCode, Messbge: string(body)})
 	}
 
-	var ed EventDone
-	dec := StreamDecoder{
-		OnMatches: cb,
+	vbr ed EventDone
+	dec := StrebmDecoder{
+		OnMbtches: cb,
 		OnDone: func(e EventDone) {
 			ed = e
 		},
@@ -157,28 +157,28 @@ func textSearchStream(ctx context.Context, url string, body []byte, cb func([]*p
 			err = errors.Errorf("unknown event %q", event)
 		},
 	}
-	if err := dec.ReadAll(resp.Body); err != nil {
-		return false, err
+	if err := dec.RebdAll(resp.Body); err != nil {
+		return fblse, err
 	}
 	if ed.Error != "" {
-		return false, errors.New(ed.Error)
+		return fblse, errors.New(ed.Error)
 	}
 	return ed.LimitHit, err
 }
 
-type searcherError struct {
-	StatusCode int
-	Message    string
+type sebrcherError struct {
+	StbtusCode int
+	Messbge    string
 }
 
-func (e *searcherError) BadRequest() bool {
-	return e.StatusCode == http.StatusBadRequest
+func (e *sebrcherError) BbdRequest() bool {
+	return e.StbtusCode == http.StbtusBbdRequest
 }
 
-func (e *searcherError) Temporary() bool {
-	return e.StatusCode == http.StatusServiceUnavailable
+func (e *sebrcherError) Temporbry() bool {
+	return e.StbtusCode == http.StbtusServiceUnbvbilbble
 }
 
-func (e *searcherError) Error() string {
-	return e.Message
+func (e *sebrcherError) Error() string {
+	return e.Messbge
 }

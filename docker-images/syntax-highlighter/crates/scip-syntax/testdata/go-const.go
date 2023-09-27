@@ -1,3 +1,3 @@
-package exconst
+pbckbge exconst
 
 const myconst = 5

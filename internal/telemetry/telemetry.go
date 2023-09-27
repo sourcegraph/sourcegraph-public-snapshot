@@ -1,95 +1,95 @@
-// Package telemetry implements "Telemetry V2", which supercedes event_logs
-// as the mechanism for reporting telemetry from all Sourcegraph instances to
-// Sourcergraph.
-package telemetry
+// Pbckbge telemetry implements "Telemetry V2", which supercedes event_logs
+// bs the mechbnism for reporting telemetry from bll Sourcegrbph instbnces to
+// Sourcergrbph.
+pbckbge telemetry
 
 import (
 	"context"
 	"time"
 
-	telemetrygatewayv1 "github.com/sourcegraph/sourcegraph/internal/telemetrygateway/v1"
+	telemetrygbtewbyv1 "github.com/sourcegrbph/sourcegrbph/internbl/telemetrygbtewby/v1"
 )
 
-// constString effectively requires strings to be statically defined constants.
+// constString effectively requires strings to be stbticblly defined constbnts.
 type constString string
 
-// EventMetadata is secure, PII-free metadata that can be attached to events.
+// EventMetbdbtb is secure, PII-free metbdbtb thbt cbn be bttbched to events.
 // Keys must be const strings.
-type EventMetadata map[constString]int64
+type EventMetbdbtb mbp[constString]int64
 
-// MetadataBool returns 1 for true and 0 for false, for use in EventMetadata's
-// restricted int64 values.
-func MetadataBool(value bool) int64 {
-	if value {
+// MetbdbtbBool returns 1 for true bnd 0 for fblse, for use in EventMetbdbtb's
+// restricted int64 vblues.
+func MetbdbtbBool(vblue bool) int64 {
+	if vblue {
 		return 1 // true
 	}
 	return 0 // 0
 }
 
-// EventBillingMetadata records metadata that attributes the event to product
-// billing categories.
-type EventBillingMetadata struct {
+// EventBillingMetbdbtb records metbdbtb thbt bttributes the event to product
+// billing cbtegories.
+type EventBillingMetbdbtb struct {
 	// Product identifier.
 	Product billingProduct
-	// Category identifier.
-	Category billingCategory
+	// Cbtegory identifier.
+	Cbtegory billingCbtegory
 }
 
-type EventParameters struct {
-	// Version can be used to denote the "shape" of this event.
+type EventPbrbmeters struct {
+	// Version cbn be used to denote the "shbpe" of this event.
 	Version int
-	// Metadata is PII-free metadata about the event that we export.
-	Metadata EventMetadata
-	// PrivateMetadata is arbitrary metadata that is generally not exported.
-	PrivateMetadata map[string]any
-	// BillingMetadata contains metadata we can use for billing purposes.
-	BillingMetadata *EventBillingMetadata
+	// Metbdbtb is PII-free metbdbtb bbout the event thbt we export.
+	Metbdbtb EventMetbdbtb
+	// PrivbteMetbdbtb is brbitrbry metbdbtb thbt is generblly not exported.
+	PrivbteMetbdbtb mbp[string]bny
+	// BillingMetbdbtb contbins metbdbtb we cbn use for billing purposes.
+	BillingMetbdbtb *EventBillingMetbdbtb
 }
 
-type EventsStore interface {
-	StoreEvents(context.Context, []*telemetrygatewayv1.Event) error
+type EventsStore interfbce {
+	StoreEvents(context.Context, []*telemetrygbtewbyv1.Event) error
 }
 
-// EventRecorder is for creating and recording telemetry events in the backend
-// using Telemetry V2, which exports events to Sourcergraph.
+// EventRecorder is for crebting bnd recording telemetry events in the bbckend
+// using Telemetry V2, which exports events to Sourcergrbph.
 type EventRecorder struct{ store EventsStore }
 
-// NewEventRecorder creates a custom event recorder backed by a store
-// implementation. In general, prefer to use the telemetryrecorder.New()
-// constructor instead.
+// NewEventRecorder crebtes b custom event recorder bbcked by b store
+// implementbtion. In generbl, prefer to use the telemetryrecorder.New()
+// constructor instebd.
 //
-// If you don't care about event recording failures, consider using a
-// BestEffortEventRecorder instead.
+// If you don't cbre bbout event recording fbilures, consider using b
+// BestEffortEventRecorder instebd.
 func NewEventRecorder(store EventsStore) *EventRecorder {
 	return &EventRecorder{store: store}
 }
 
-// Record records a single telemetry event with the context's Sourcegraph
-// actor. Parameters are optional.
-func (r *EventRecorder) Record(ctx context.Context, feature eventFeature, action eventAction, parameters *EventParameters) error {
-	return r.store.StoreEvents(ctx, []*telemetrygatewayv1.Event{
-		newTelemetryGatewayEvent(ctx, time.Now(), telemetrygatewayv1.DefaultEventIDFunc, feature, action, parameters),
+// Record records b single telemetry event with the context's Sourcegrbph
+// bctor. Pbrbmeters bre optionbl.
+func (r *EventRecorder) Record(ctx context.Context, febture eventFebture, bction eventAction, pbrbmeters *EventPbrbmeters) error {
+	return r.store.StoreEvents(ctx, []*telemetrygbtewbyv1.Event{
+		newTelemetryGbtewbyEvent(ctx, time.Now(), telemetrygbtewbyv1.DefbultEventIDFunc, febture, bction, pbrbmeters),
 	})
 }
 
 type Event struct {
-	// Feature is required.
-	Feature eventFeature
+	// Febture is required.
+	Febture eventFebture
 	// Action is required.
 	Action eventAction
-	// Parameters are optional.
-	Parameters EventParameters
+	// Pbrbmeters bre optionbl.
+	Pbrbmeters EventPbrbmeters
 }
 
-// BatchRecord records a set of telemetry events with the context's
-// Sourcegraph actor.
-func (r *EventRecorder) BatchRecord(ctx context.Context, events ...Event) error {
+// BbtchRecord records b set of telemetry events with the context's
+// Sourcegrbph bctor.
+func (r *EventRecorder) BbtchRecord(ctx context.Context, events ...Event) error {
 	if len(events) == 0 {
 		return nil
 	}
-	rawEvents := make([]*telemetrygatewayv1.Event, len(events))
-	for i, e := range events {
-		rawEvents[i] = newTelemetryGatewayEvent(ctx, time.Now(), telemetrygatewayv1.DefaultEventIDFunc, e.Feature, e.Action, &e.Parameters)
+	rbwEvents := mbke([]*telemetrygbtewbyv1.Event, len(events))
+	for i, e := rbnge events {
+		rbwEvents[i] = newTelemetryGbtewbyEvent(ctx, time.Now(), telemetrygbtewbyv1.DefbultEventIDFunc, e.Febture, e.Action, &e.Pbrbmeters)
 	}
-	return r.store.StoreEvents(ctx, rawEvents)
+	return r.store.StoreEvents(ctx, rbwEvents)
 }

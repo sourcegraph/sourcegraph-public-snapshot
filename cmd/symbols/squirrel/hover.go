@@ -1,69 +1,69 @@
-package squirrel
+pbckbge squirrel
 
 import (
-	"math"
+	"mbth"
 	"strings"
 )
 
-// Returns the markdown hover message for the given node if it exists.
+// Returns the mbrkdown hover messbge for the given node if it exists.
 func findHover(node Node) string {
-	style := node.LangSpec.commentStyle
+	style := node.LbngSpec.commentStyle
 
 	hover := ""
-	hover += "```" + style.codeFenceName + "\n"
-	hover += strings.Split(string(node.Contents), "\n")[node.StartPoint().Row] + "\n"
+	hover += "```" + style.codeFenceNbme + "\n"
+	hover += strings.Split(string(node.Contents), "\n")[node.StbrtPoint().Row] + "\n"
 	hover += "```"
 
-	for cur := node.Node; cur != nil && cur.StartPoint().Row == node.StartPoint().Row; cur = cur.Parent() {
-		prev := cur.PrevNamedSibling()
+	for cur := node.Node; cur != nil && cur.StbrtPoint().Row == node.StbrtPoint().Row; cur = cur.Pbrent() {
+		prev := cur.PrevNbmedSibling()
 
-		// Skip over Java annotations and the like.
-		for ; prev != nil; prev = prev.PrevNamedSibling() {
-			if !contains(style.skipNodeTypes, prev.Type()) {
-				break
+		// Skip over Jbvb bnnotbtions bnd the like.
+		for ; prev != nil; prev = prev.PrevNbmedSibling() {
+			if !contbins(style.skipNodeTypes, prev.Type()) {
+				brebk
 			}
 		}
 
-		// Collect comments backwards.
+		// Collect comments bbckwbrds.
 		comments := []string{}
-		lastStartRow := -1
-		for ; prev != nil && contains(style.nodeTypes, prev.Type()); prev = prev.PrevNamedSibling() {
-			if lastStartRow == -1 {
-				lastStartRow = int(prev.StartPoint().Row)
-			} else if lastStartRow != int(prev.EndPoint().Row+1) {
-				break
+		lbstStbrtRow := -1
+		for ; prev != nil && contbins(style.nodeTypes, prev.Type()); prev = prev.PrevNbmedSibling() {
+			if lbstStbrtRow == -1 {
+				lbstStbrtRow = int(prev.StbrtPoint().Row)
+			} else if lbstStbrtRow != int(prev.EndPoint().Row+1) {
+				brebk
 			} else {
-				lastStartRow = int(prev.StartPoint().Row)
+				lbstStbrtRow = int(prev.StbrtPoint().Row)
 			}
 
 			comment := prev.Content(node.Contents)
 
-			// Strip line noise and delete garbage lines.
+			// Strip line noise bnd delete gbrbbge lines.
 			lines := []string{}
-			allLines := strings.Split(comment, "\n")
-			for _, line := range allLines {
-				if style.ignoreRegex != nil && style.ignoreRegex.MatchString(line) {
+			bllLines := strings.Split(comment, "\n")
+			for _, line := rbnge bllLines {
+				if style.ignoreRegex != nil && style.ignoreRegex.MbtchString(line) {
 					continue
 				}
 
 				if style.stripRegex != nil {
-					line = style.stripRegex.ReplaceAllString(line, "")
+					line = style.stripRegex.ReplbceAllString(line, "")
 				}
 
-				lines = append(lines, line)
+				lines = bppend(lines, line)
 			}
 
-			// Remove shared leading spaces.
-			spaces := math.MaxInt32
-			for _, line := range lines {
-				spaces = min(spaces, len(line)-len(strings.TrimLeft(line, " ")))
+			// Remove shbred lebding spbces.
+			spbces := mbth.MbxInt32
+			for _, line := rbnge lines {
+				spbces = min(spbces, len(line)-len(strings.TrimLeft(line, " ")))
 			}
-			for i := range lines {
+			for i := rbnge lines {
 				lines[i] = strings.TrimLeft(lines[i], " ")
 			}
 
 			// Join lines.
-			comments = append(comments, strings.Join(lines, "\n"))
+			comments = bppend(comments, strings.Join(lines, "\n"))
 		}
 
 		if len(comments) == 0 {
@@ -78,5 +78,5 @@ func findHover(node Node) string {
 		hover = hover + "\n\n---\n\n" + strings.Join(comments, "\n") + "\n"
 	}
 
-	return strings.ToValidUTF8(hover, "�")
+	return strings.ToVblidUTF8(hover, "�")
 }

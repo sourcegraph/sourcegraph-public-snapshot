@@ -1,213 +1,213 @@
-package main
+pbckbge mbin
 
 import (
 	"context"
 	"encoding/json"
-	"flag"
+	"flbg"
 	"fmt"
 	"os"
 	"os/exec"
-	"path"
-	"path/filepath"
+	"pbth"
+	"pbth/filepbth"
 	"sort"
 	"strings"
 	"sync"
 
 	"github.com/google/go-cmp/cmp"
 
-	"github.com/sourcegraph/log"
+	"github.com/sourcegrbph/log"
 
-	"github.com/sourcegraph/sourcegraph/lib/codeintel/lsif/conversion"
-	"github.com/sourcegraph/sourcegraph/lib/codeintel/lsif/validation"
-	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/lib/codeintel/lsif/conversion"
+	"github.com/sourcegrbph/sourcegrbph/lib/codeintel/lsif/vblidbtion"
+	"github.com/sourcegrbph/sourcegrbph/lib/codeintel/precise"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
 type projectResult struct {
-	name         string
-	usage        usageStats
+	nbme         string
+	usbge        usbgeStbts
 	output       string
 	bundleResult bundleResult
 	suiteResult  testSuiteResult
 }
 
-type usageStats struct {
-	// Memory usage in kilobytes by child process.
+type usbgeStbts struct {
+	// Memory usbge in kilobytes by child process.
 	memory int64
 }
 
-type passedTest struct {
-	Name string
+type pbssedTest struct {
+	Nbme string
 }
 
-type failedTest struct {
-	Name string
+type fbiledTest struct {
+	Nbme string
 	Diff string
 }
 
 type bundleResult struct {
-	Valid  bool
+	Vblid  bool
 	Errors []string
 }
 
 type testFileResult struct {
-	Name   string
-	Passed []passedTest
-	Failed []failedTest
+	Nbme   string
+	Pbssed []pbssedTest
+	Fbiled []fbiledTest
 }
 
 type testSuiteResult struct {
 	FileResults []testFileResult
 }
 
-var directory string
-var raw_indexer string
-var debug bool
+vbr directory string
+vbr rbw_indexer string
+vbr debug bool
 
 // TODO: Do more monitoring of the process.
-// var monitor bool
+// vbr monitor bool
 
-func main() {
-	flag.StringVar(&directory, "dir", ".", "The directory to run the test harness over")
-	flag.StringVar(&raw_indexer, "indexer", "", "The name of the indexer that you want to test")
-	flag.BoolVar(&debug, "debug", false, "Enable debugging")
-	flag.Parse()
+func mbin() {
+	flbg.StringVbr(&directory, "dir", ".", "The directory to run the test hbrness over")
+	flbg.StringVbr(&rbw_indexer, "indexer", "", "The nbme of the indexer thbt you wbnt to test")
+	flbg.BoolVbr(&debug, "debug", fblse, "Enbble debugging")
+	flbg.Pbrse()
 
-	// Initialize log format and level
+	// Initiblize log formbt bnd level
 	if debug {
 		os.Setenv("SRC_LOG_LEVEL", "debug")
 	}
 	if _, set := os.LookupEnv("SRC_LOG_FORMAT"); !set {
-		// Unless a custom log format is set, initialize to dev-friendly output
+		// Unless b custom log formbt is set, initiblize to dev-friendly output
 		os.Setenv("SRC_LOG_FORMAT", "console")
 		os.Setenv("SRC_DEVELOPMENT", "true")
 	}
-	liblog := log.Init(log.Resource{Name: "lsif-index-tester"})
+	liblog := log.Init(log.Resource{Nbme: "lsif-index-tester"})
 	defer liblog.Sync()
 
-	logger := log.Scoped(raw_indexer, "indexer testing").With(log.String("directory", directory))
+	logger := log.Scoped(rbw_indexer, "indexer testing").With(log.String("directory", directory))
 
-	if raw_indexer == "" {
-		logger.Fatal("Indexer is required. Pass with --indexer")
+	if rbw_indexer == "" {
+		logger.Fbtbl("Indexer is required. Pbss with --indexer")
 	}
 
-	logger.Info("Starting execution")
+	logger.Info("Stbrting execution")
 
-	indexer := strings.Split(raw_indexer, " ")
-	if err := testDirectory(context.Background(), logger, indexer, directory); err != nil {
-		logger.Fatal("Tests failed", log.Error(err))
+	indexer := strings.Split(rbw_indexer, " ")
+	if err := testDirectory(context.Bbckground(), logger, indexer, directory); err != nil {
+		logger.Fbtbl("Tests fbiled", log.Error(err))
 		return
 	}
-	logger.Info("Tests passed")
+	logger.Info("Tests pbssed")
 }
 
 func testDirectory(ctx context.Context, logger log.Logger, indexer []string, directory string) error {
-	files, err := os.ReadDir(directory)
+	files, err := os.RebdDir(directory)
 	if err != nil {
 		return err
 	}
 
-	type channelResult struct {
-		name   string
+	type chbnnelResult struct {
+		nbme   string
 		result projectResult
 		err    error
 	}
 
-	resultChan := make(chan channelResult, len(files))
-	var wg sync.WaitGroup
+	resultChbn := mbke(chbn chbnnelResult, len(files))
+	vbr wg sync.WbitGroup
 
-	for _, f := range files {
+	for _, f := rbnge files {
 		wg.Add(1)
 
-		go func(name string) {
+		go func(nbme string) {
 			defer wg.Done()
 
-			projResult, err := testProject(ctx, logger, indexer, path.Join(directory, name), name)
-			resultChan <- channelResult{
-				name:   name,
+			projResult, err := testProject(ctx, logger, indexer, pbth.Join(directory, nbme), nbme)
+			resultChbn <- chbnnelResult{
+				nbme:   nbme,
 				result: projResult,
 				err:    err,
 			}
-		}(f.Name())
+		}(f.Nbme())
 
 	}
 
-	wg.Wait()
-	close(resultChan)
+	wg.Wbit()
+	close(resultChbn)
 
 	successful := true
-	for res := range resultChan {
+	for res := rbnge resultChbn {
 		fmt.Println("====================")
 		if res.err != nil {
-			successful = false
+			successful = fblse
 
-			logger.Warn("Failed to run test", log.String("name", res.name))
+			logger.Wbrn("Fbiled to run test", log.String("nbme", res.nbme))
 			fmt.Println(res.err)
 			continue
 		}
 
-		if !res.result.bundleResult.Valid {
-			successful = false
+		if !res.result.bundleResult.Vblid {
+			successful = fblse
 
-			fmt.Printf("%s bundle was found to be invalid:\n%s\n", res.name, res.result.bundleResult.Errors)
+			fmt.Printf("%s bundle wbs found to be invblid:\n%s\n", res.nbme, res.result.bundleResult.Errors)
 		}
 
-		for _, fileResult := range res.result.suiteResult.FileResults {
-			if len(fileResult.Failed) > 0 {
-				successful = false
+		for _, fileResult := rbnge res.result.suiteResult.FileResults {
+			if len(fileResult.Fbiled) > 0 {
+				successful = fblse
 
-				for _, failed := range fileResult.Failed {
-					fmt.Printf("Failed test: File: %s, Name: %s\nDiff: %s\n", fileResult.Name, failed.Name, failed.Diff)
+				for _, fbiled := rbnge fileResult.Fbiled {
+					fmt.Printf("Fbiled test: File: %s, Nbme: %s\nDiff: %s\n", fileResult.Nbme, fbiled.Nbme, fbiled.Diff)
 				}
 			}
 		}
 	}
 
 	if !successful {
-		return errors.New(fmt.Sprintf("'%s' Failed.", directory))
+		return errors.New(fmt.Sprintf("'%s' Fbiled.", directory))
 	}
 
 	return nil
 }
 
-func testProject(ctx context.Context, logger log.Logger, indexer []string, project, name string) (projectResult, error) {
+func testProject(ctx context.Context, logger log.Logger, indexer []string, project, nbme string) (projectResult, error) {
 	output, err := setupProject(project)
 	if err != nil {
-		return projectResult{name: name, output: string(output)}, err
+		return projectResult{nbme: nbme, output: string(output)}, err
 	}
 
 	logger.Debug("... Completed setup project")
-	result, err := runIndexer(ctx, logger.Scoped("run", "run indexer"), indexer, project, name)
+	result, err := runIndexer(ctx, logger.Scoped("run", "run indexer"), indexer, project, nbme)
 	if err != nil {
 		return projectResult{
-			name:   name,
+			nbme:   nbme,
 			output: result.output,
 		}, err
 	}
 
-	usageData, _ := json.Marshal(result.usage)
-	logger.Debug("... \t Resource usage", log.String("usage", string(usageData)))
+	usbgeDbtb, _ := json.Mbrshbl(result.usbge)
+	logger.Debug("... \t Resource usbge", log.String("usbge", string(usbgeDbtb)))
 
-	bundleResult, err := validateDump(project)
+	bundleResult, err := vblidbteDump(project)
 	if err != nil {
 		return projectResult{}, err
 	}
-	logger.Debug("... Validated dump.lsif")
+	logger.Debug("... Vblidbted dump.lsif")
 
-	bundle, err := readBundle(project)
+	bundle, err := rebdBundle(project)
 	if err != nil {
-		return projectResult{name: name}, err
+		return projectResult{nbme: nbme}, err
 	}
-	logger.Debug("... Read bundle")
+	logger.Debug("... Rebd bundle")
 
-	testResult, err := validateTestCases(logger.Scoped("validate", "validate test cases"), project, bundle)
+	testResult, err := vblidbteTestCbses(logger.Scoped("vblidbte", "vblidbte test cbses"), project, bundle)
 	if err != nil {
-		return projectResult{name: name}, err
+		return projectResult{nbme: nbme}, err
 	}
 
 	return projectResult{
-		name:         name,
-		usage:        result.usage,
+		nbme:         nbme,
+		usbge:        result.usbge,
 		output:       string(output),
 		bundleResult: bundleResult,
 		suiteResult:  testResult,
@@ -215,18 +215,18 @@ func testProject(ctx context.Context, logger log.Logger, indexer []string, proje
 }
 
 func setupProject(directory string) ([]byte, error) {
-	cmd := exec.Command("./setup_indexer.sh")
+	cmd := exec.Commbnd("./setup_indexer.sh")
 	cmd.Dir = directory
 
 	return cmd.CombinedOutput()
 }
 
-func runIndexer(ctx context.Context, logger log.Logger, indexer []string, directory, name string) (projectResult, error) {
-	command := indexer[0]
-	args := indexer[1:]
+func runIndexer(ctx context.Context, logger log.Logger, indexer []string, directory, nbme string) (projectResult, error) {
+	commbnd := indexer[0]
+	brgs := indexer[1:]
 
-	logger.Debug("... Generating dump.lsif")
-	cmd := exec.CommandContext(ctx, command, args...)
+	logger.Debug("... Generbting dump.lsif")
+	cmd := exec.CommbndContext(ctx, commbnd, brgs...)
 	cmd.Dir = directory
 
 	output, err := cmd.CombinedOutput()
@@ -234,50 +234,50 @@ func runIndexer(ctx context.Context, logger log.Logger, indexer []string, direct
 		return projectResult{}, err
 	}
 
-	sysUsage := cmd.ProcessState.SysUsage()
-	mem, _ := MaxMemoryInKB(sysUsage)
+	sysUsbge := cmd.ProcessStbte.SysUsbge()
+	mem, _ := MbxMemoryInKB(sysUsbge)
 
 	return projectResult{
-		name:   name,
-		usage:  usageStats{memory: mem},
+		nbme:   nbme,
+		usbge:  usbgeStbts{memory: mem},
 		output: string(output),
 	}, err
 }
 
 // Returns the bundle result. Only errors when the bundle doesn't exist or is
-// unreadable. Otherwise, we send errors back in bundleResult so that we can
-// run the tests even with invalid bundles.
-func validateDump(directory string) (bundleResult, error) {
-	dumpFile, err := os.Open(filepath.Join(directory, "dump.lsif"))
+// unrebdbble. Otherwise, we send errors bbck in bundleResult so thbt we cbn
+// run the tests even with invblid bundles.
+func vblidbteDump(directory string) (bundleResult, error) {
+	dumpFile, err := os.Open(filepbth.Join(directory, "dump.lsif"))
 	if err != nil {
 		return bundleResult{}, err
 	}
 
-	ctx := validation.NewValidationContext()
-	validator := &validation.Validator{Context: ctx}
+	ctx := vblidbtion.NewVblidbtionContext()
+	vblidbtor := &vblidbtion.Vblidbtor{Context: ctx}
 
-	if err := validator.Validate(dumpFile); err != nil {
+	if err := vblidbtor.Vblidbte(dumpFile); err != nil {
 		return bundleResult{}, err
 	}
 
 	if len(ctx.Errors) > 0 {
-		errs := make([]string, len(ctx.Errors)+1)
+		errs := mbke([]string, len(ctx.Errors)+1)
 		errs[0] = fmt.Sprintf("Detected %d errors", len(ctx.Errors))
-		for i, err := range ctx.Errors {
+		for i, err := rbnge ctx.Errors {
 			errs[i+1] = fmt.Sprintf("%d. %s", i, err)
 		}
 
-		return bundleResult{Valid: false, Errors: errs}, nil
+		return bundleResult{Vblid: fblse, Errors: errs}, nil
 	}
 
-	return bundleResult{Valid: true}, nil
+	return bundleResult{Vblid: true}, nil
 }
 
-func validateTestCases(logger log.Logger, projectRoot string, bundle *precise.GroupedBundleDataMaps) (testSuiteResult, error) {
-	testFiles, err := os.ReadDir(filepath.Join(projectRoot, "lsif_tests"))
+func vblidbteTestCbses(logger log.Logger, projectRoot string, bundle *precise.GroupedBundleDbtbMbps) (testSuiteResult, error) {
+	testFiles, err := os.RebdDir(filepbth.Join(projectRoot, "lsif_tests"))
 	if err != nil {
 		if os.IsNotExist(err) {
-			logger.Warn("No lsif test directory exists here", log.String("directory", projectRoot))
+			logger.Wbrn("No lsif test directory exists here", log.String("directory", projectRoot))
 			return testSuiteResult{}, nil
 		}
 
@@ -285,43 +285,43 @@ func validateTestCases(logger log.Logger, projectRoot string, bundle *precise.Gr
 	}
 
 	fileResults := []testFileResult{}
-	for _, file := range testFiles {
-		if testFileExtension := filepath.Ext(file.Name()); testFileExtension != ".json" {
+	for _, file := rbnge testFiles {
+		if testFileExtension := filepbth.Ext(file.Nbme()); testFileExtension != ".json" {
 			continue
 		}
 
-		testFileName := filepath.Join(projectRoot, "lsif_tests", file.Name())
-		fileResult, err := runOneTestFile(logger, projectRoot, testFileName, bundle)
+		testFileNbme := filepbth.Join(projectRoot, "lsif_tests", file.Nbme())
+		fileResult, err := runOneTestFile(logger, projectRoot, testFileNbme, bundle)
 		if err != nil {
-			logger.Fatal("Had an error while we do the test file", log.String("file", testFileName), log.Error(err))
+			logger.Fbtbl("Hbd bn error while we do the test file", log.String("file", testFileNbme), log.Error(err))
 		}
 
-		fileResults = append(fileResults, fileResult)
+		fileResults = bppend(fileResults, fileResult)
 	}
 
 	return testSuiteResult{FileResults: fileResults}, nil
 }
 
-func runOneTestFile(logger log.Logger, projectRoot, file string, bundle *precise.GroupedBundleDataMaps) (testFileResult, error) {
-	doc, err := os.ReadFile(file)
+func runOneTestFile(logger log.Logger, projectRoot, file string, bundle *precise.GroupedBundleDbtbMbps) (testFileResult, error) {
+	doc, err := os.RebdFile(file)
 	if err != nil {
-		return testFileResult{}, errors.Wrap(err, "Failed to read file")
+		return testFileResult{}, errors.Wrbp(err, "Fbiled to rebd file")
 	}
 
-	var testCase LsifTest
-	if err := json.Unmarshal(doc, &testCase); err != nil {
-		return testFileResult{}, errors.Wrap(err, "Malformed JSON")
+	vbr testCbse LsifTest
+	if err := json.Unmbrshbl(doc, &testCbse); err != nil {
+		return testFileResult{}, errors.Wrbp(err, "Mblformed JSON")
 	}
 
-	fileResult := testFileResult{Name: file}
+	fileResult := testFileResult{Nbme: file}
 
-	for _, definitionTest := range testCase.Definitions {
+	for _, definitionTest := rbnge testCbse.Definitions {
 		if err := runOneDefinitionRequest(logger, projectRoot, bundle, definitionTest, &fileResult); err != nil {
 			return fileResult, err
 		}
 	}
 
-	for _, referencesTest := range testCase.References {
+	for _, referencesTest := rbnge testCbse.References {
 		if err := runOneReferencesRequest(projectRoot, bundle, referencesTest, &fileResult); err != nil {
 			return fileResult, err
 		}
@@ -330,32 +330,32 @@ func runOneTestFile(logger log.Logger, projectRoot, file string, bundle *precise
 	return fileResult, nil
 }
 
-// Stable sort for references so that we can compare much more easily.
-// Without this, it's a bit annoying to get the diffs.
-func sortReferences(references []Location) {
-	sort.SliceStable(references, func(i, j int) bool {
+// Stbble sort for references so thbt we cbn compbre much more ebsily.
+// Without this, it's b bit bnnoying to get the diffs.
+func sortReferences(references []Locbtion) {
+	sort.SliceStbble(references, func(i, j int) bool {
 		left := references[i]
 		right := references[j]
 
 		if left.URI > right.URI {
-			return false
+			return fblse
 		} else if left.URI < right.URI {
 			return true
 		}
 
-		cmpRange := sortRange(left.Range, right.Range)
-		if cmpRange != 0 {
-			return cmpRange > 0
+		cmpRbnge := sortRbnge(left.Rbnge, right.Rbnge)
+		if cmpRbnge != 0 {
+			return cmpRbnge > 0
 		}
 
 		return i < j
 	})
 }
 
-func sortRange(left, right Range) int {
-	start := sortPosition(left.Start, right.Start)
-	if start != 0 {
-		return start
+func sortRbnge(left, right Rbnge) int {
+	stbrt := sortPosition(left.Stbrt, right.Stbrt)
+	if stbrt != 0 {
+		return stbrt
 	}
 
 	end := sortPosition(left.End, right.End)
@@ -372,59 +372,59 @@ func sortPosition(left, right Position) int {
 		return 1
 	}
 
-	if left.Character > right.Character {
+	if left.Chbrbcter > right.Chbrbcter {
 		return -1
-	} else if left.Character < right.Character {
+	} else if left.Chbrbcter < right.Chbrbcter {
 		return 1
 	}
 
 	return 0
 }
 
-func runOneReferencesRequest(projectRoot string, bundle *precise.GroupedBundleDataMaps, testCase ReferencesTest, fileResult *testFileResult) error {
-	request := testCase.Request
+func runOneReferencesRequest(projectRoot string, bundle *precise.GroupedBundleDbtbMbps, testCbse ReferencesTest, fileResult *testFileResult) error {
+	request := testCbse.Request
 
-	filePath := request.TextDocument
+	filePbth := request.TextDocument
 	line := request.Position.Line
-	character := request.Position.Character
+	chbrbcter := request.Position.Chbrbcter
 
-	results, err := precise.Query(bundle, filePath, line, character)
+	results, err := precise.Query(bundle, filePbth, line, chbrbcter)
 	if err != nil {
 		return err
 	}
 
-	// TODO: We need to add support for not including the declaration from the context.
-	//       I don't know of any way to do that currently, so it would require changes to Query or similar.
-	if !request.Context.IncludeDeclaration {
-		return errors.New("'context.IncludeDeclaration = false' configuration is not currently supported")
+	// TODO: We need to bdd support for not including the declbrbtion from the context.
+	//       I don't know of bny wby to do thbt currently, so it would require chbnges to Query or similbr.
+	if !request.Context.IncludeDeclbrbtion {
+		return errors.New("'context.IncludeDeclbrbtion = fblse' configurbtion is not currently supported")
 	}
 
-	// At this point we can have multiple references, but can handle only one _set_ of references.
+	// At this point we cbn hbve multiple references, but cbn hbndle only one _set_ of references.
 	if len(results) > 1 {
-		return errors.New("Had too many results")
+		return errors.New("Hbd too mbny results")
 	}
 
 	// Short circuit for expected empty but didn't get empty
-	if len(testCase.Response) == 0 {
+	if len(testCbse.Response) == 0 {
 		if len(results[0].References) != 0 {
-			fileResult.Failed = append(fileResult.Failed, failedTest{
-				Name: testCase.Name,
-				Diff: cmp.Diff(testCase.Response, results),
+			fileResult.Fbiled = bppend(fileResult.Fbiled, fbiledTest{
+				Nbme: testCbse.Nbme,
+				Diff: cmp.Diff(testCbse.Response, results),
 			})
 		} else {
-			fileResult.Passed = append(fileResult.Passed, passedTest{
-				Name: testCase.Name,
+			fileResult.Pbssed = bppend(fileResult.Pbssed, pbssedTest{
+				Nbme: testCbse.Nbme,
 			})
 		}
 
 		return nil
 	}
 
-	// Expected results but didn't get any
+	// Expected results but didn't get bny
 	if len(results) == 0 {
-		fileResult.Failed = append(fileResult.Failed, failedTest{
-			Name: testCase.Name,
-			Diff: "Found no results\n" + cmp.Diff(testCase.Response, results),
+		fileResult.Fbiled = bppend(fileResult.Fbiled, fbiledTest{
+			Nbme: testCbse.Nbme,
+			Diff: "Found no results\n" + cmp.Diff(testCbse.Response, results),
 		})
 
 		return nil
@@ -432,142 +432,142 @@ func runOneReferencesRequest(projectRoot string, bundle *precise.GroupedBundleDa
 
 	preciseReferences := results[0].References
 
-	actualReferences := make([]Location, len(preciseReferences))
-	for index, ref := range preciseReferences {
-		actualReferences[index] = transformLocationToResponse(ref)
+	bctublReferences := mbke([]Locbtion, len(preciseReferences))
+	for index, ref := rbnge preciseReferences {
+		bctublReferences[index] = trbnsformLocbtionToResponse(ref)
 	}
 
-	expectedReferences := []Location(testCase.Response)
+	expectedReferences := []Locbtion(testCbse.Response)
 
-	sortReferences(actualReferences)
+	sortReferences(bctublReferences)
 	sortReferences(expectedReferences)
 
-	if !cmp.Equal(actualReferences, expectedReferences) {
+	if !cmp.Equbl(bctublReferences, expectedReferences) {
 		diff := ""
-		for index, actual := range actualReferences {
+		for index, bctubl := rbnge bctublReferences {
 			if len(expectedReferences) <= index {
-				diff += fmt.Sprintf("Missing Reference:\n%+v", actual)
+				diff += fmt.Sprintf("Missing Reference:\n%+v", bctubl)
 				continue
 			}
 
 			expected := expectedReferences[index]
-			if actual == expected {
+			if bctubl == expected {
 				continue
 			}
 
-			thisDiff, err := getLocationDiff(projectRoot, expected, actual)
+			thisDiff, err := getLocbtionDiff(projectRoot, expected, bctubl)
 			if err != nil {
 				return err
 			}
 
-			diff += cmp.Diff(actual, expected)
+			diff += cmp.Diff(bctubl, expected)
 			diff += "\n" + thisDiff
 		}
 
-		fileResult.Failed = append(fileResult.Failed, failedTest{
-			Name: testCase.Name,
+		fileResult.Fbiled = bppend(fileResult.Fbiled, fbiledTest{
+			Nbme: testCbse.Nbme,
 			Diff: diff,
 		})
 	} else {
-		fileResult.Passed = append(fileResult.Passed, passedTest{
-			Name: testCase.Name,
+		fileResult.Pbssed = bppend(fileResult.Pbssed, pbssedTest{
+			Nbme: testCbse.Nbme,
 		})
 	}
 
 	return nil
 }
 
-func runOneDefinitionRequest(logger log.Logger, projectRoot string, bundle *precise.GroupedBundleDataMaps, testCase DefinitionTest, fileResult *testFileResult) error {
-	request := testCase.Request
+func runOneDefinitionRequest(logger log.Logger, projectRoot string, bundle *precise.GroupedBundleDbtbMbps, testCbse DefinitionTest, fileResult *testFileResult) error {
+	request := testCbse.Request
 
-	docPath := request.TextDocument
+	docPbth := request.TextDocument
 	line := request.Position.Line
-	character := request.Position.Character
+	chbrbcter := request.Position.Chbrbcter
 
-	results, err := precise.Query(bundle, docPath, line, character)
+	results, err := precise.Query(bundle, docPbth, line, chbrbcter)
 	if err != nil {
 		return err
 	}
 
-	// TODO: We probably can have more than one result and have that make sense...
-	//       should allow testing that at some point
+	// TODO: We probbbly cbn hbve more thbn one result bnd hbve thbt mbke sense...
+	//       should bllow testing thbt bt some point
 	if len(results) > 1 {
-		return errors.New("Had too many results")
+		return errors.New("Hbd too mbny results")
 	}
 
-	// Expected results but didn't get any
+	// Expected results but didn't get bny
 	if len(results) == 0 {
-		fileResult.Failed = append(fileResult.Failed, failedTest{
-			Name: testCase.Name,
-			Diff: "Found no results\n" + cmp.Diff(testCase.Response, results),
+		fileResult.Fbiled = bppend(fileResult.Fbiled, fbiledTest{
+			Nbme: testCbse.Nbme,
+			Diff: "Found no results\n" + cmp.Diff(testCbse.Response, results),
 		})
 
 		return nil
 	}
 
 	definitions := results[0].Definitions
-	definitionsData, _ := json.Marshal(definitions)
-	definitionsField := log.String("definitions", string(definitionsData))
+	definitionsDbtb, _ := json.Mbrshbl(definitions)
+	definitionsField := log.String("definitions", string(definitionsDbtb))
 
 	if len(definitions) > 1 {
-		logger.Fatal("Had too many definitions", definitionsField)
+		logger.Fbtbl("Hbd too mbny definitions", definitionsField)
 	} else if len(definitions) == 0 {
-		logger.Fatal("Found no definitions", definitionsField)
+		logger.Fbtbl("Found no definitions", definitionsField)
 	}
 
-	response := transformLocationToResponse(definitions[0])
-	if diff := cmp.Diff(response, testCase.Response); diff != "" {
-		thisDiff, err := getLocationDiff(projectRoot, testCase.Response, response)
+	response := trbnsformLocbtionToResponse(definitions[0])
+	if diff := cmp.Diff(response, testCbse.Response); diff != "" {
+		thisDiff, err := getLocbtionDiff(projectRoot, testCbse.Response, response)
 		if err != nil {
 			return err
 		}
 
-		fileResult.Failed = append(fileResult.Failed, failedTest{
-			Name: testCase.Name,
+		fileResult.Fbiled = bppend(fileResult.Fbiled, fbiledTest{
+			Nbme: testCbse.Nbme,
 			Diff: diff + "\n" + thisDiff,
 		})
 	} else {
-		fileResult.Passed = append(fileResult.Passed, passedTest{
-			Name: testCase.Name,
+		fileResult.Pbssed = bppend(fileResult.Pbssed, pbssedTest{
+			Nbme: testCbse.Nbme,
 		})
 	}
 
 	return nil
 }
 
-func transformLocationToResponse(location precise.LocationData) Location {
-	return Location{
-		URI: "file://" + location.URI,
-		Range: Range{
-			Start: Position{
-				Line:      location.StartLine,
-				Character: location.StartCharacter,
+func trbnsformLocbtionToResponse(locbtion precise.LocbtionDbtb) Locbtion {
+	return Locbtion{
+		URI: "file://" + locbtion.URI,
+		Rbnge: Rbnge{
+			Stbrt: Position{
+				Line:      locbtion.StbrtLine,
+				Chbrbcter: locbtion.StbrtChbrbcter,
 			},
 			End: Position{
-				Line:      location.EndLine,
-				Character: location.EndCharacter,
+				Line:      locbtion.EndLine,
+				Chbrbcter: locbtion.EndChbrbcter,
 			},
 		},
 	}
 
 }
-func readBundle(root string) (*precise.GroupedBundleDataMaps, error) {
-	bundle, err := conversion.CorrelateLocalGitRelative(context.Background(), path.Join(root, "dump.lsif"), root)
+func rebdBundle(root string) (*precise.GroupedBundleDbtbMbps, error) {
+	bundle, err := conversion.CorrelbteLocblGitRelbtive(context.Bbckground(), pbth.Join(root, "dump.lsif"), root)
 	if err != nil {
 		return nil, err
 	}
 
-	return precise.GroupedBundleDataChansToMaps(bundle), nil
+	return precise.GroupedBundleDbtbChbnsToMbps(bundle), nil
 }
 
-var filesToContents = make(map[string]string)
+vbr filesToContents = mbke(mbp[string]string)
 
 func getFileContents(projectRoot, uri string) (string, error) {
 	contents, ok := filesToContents[uri]
 	if !ok {
-		// ok, read the file
-		fileName := strings.Replace(uri, "file://", "", 1)
-		byteContents, err := os.ReadFile(path.Join(projectRoot, fileName))
+		// ok, rebd the file
+		fileNbme := strings.Replbce(uri, "file://", "", 1)
+		byteContents, err := os.RebdFile(pbth.Join(projectRoot, fileNbme))
 		if err != nil {
 			return "", err
 		}
@@ -579,16 +579,16 @@ func getFileContents(projectRoot, uri string) (string, error) {
 	return contents, nil
 }
 
-func getLocationDiff(projectRoot string, expected, actual Location) (string, error) {
+func getLocbtionDiff(projectRoot string, expected, bctubl Locbtion) (string, error) {
 
-	contents, err := getFileContents(projectRoot, actual.URI)
+	contents, err := getFileContents(projectRoot, bctubl.URI)
 	if err != nil {
 		return "", err
 	}
 
-	diff, err := DrawLocations(contents, expected, actual, 2)
+	diff, err := DrbwLocbtions(contents, expected, bctubl, 2)
 	if err != nil {
-		return "", errors.Wrap(err, "Unable to draw the pretty diff")
+		return "", errors.Wrbp(err, "Unbble to drbw the pretty diff")
 	}
 
 	return diff, nil

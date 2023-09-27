@@ -1,60 +1,60 @@
-package reposource
+pbckbge reposource
 
 import (
 	"testing"
 
-	"github.com/sourcegraph/sourcegraph/schema"
+	"github.com/sourcegrbph/sourcegrbph/schemb"
 )
 
-func TestGitolite_cloneURLToRepoName(t *testing.T) {
+func TestGitolite_cloneURLToRepoNbme(t *testing.T) {
 	tests := []struct {
-		conn schema.GitoliteConnection
-		urls []urlToRepoName
+		conn schemb.GitoliteConnection
+		urls []urlToRepoNbme
 	}{{
-		conn: schema.GitoliteConnection{
+		conn: schemb.GitoliteConnection{
 			Host:   "git@gitolite.sgdev.org",
 			Prefix: "gitolite.sgdev.org/",
 		},
-		urls: []urlToRepoName{
-			{"git@gitolite.sgdev.org:bl/go/app.git", "gitolite.sgdev.org/bl/go/app"},
-			{"git@gitolite.sgdev.org:bl/go/app", "gitolite.sgdev.org/bl/go/app"},
+		urls: []urlToRepoNbme{
+			{"git@gitolite.sgdev.org:bl/go/bpp.git", "gitolite.sgdev.org/bl/go/bpp"},
+			{"git@gitolite.sgdev.org:bl/go/bpp", "gitolite.sgdev.org/bl/go/bpp"},
 
-			{"git@asdf.org:bl/go/app.git", ""},
-			{"git@asdf.org:bl/go/app", ""},
+			{"git@bsdf.org:bl/go/bpp.git", ""},
+			{"git@bsdf.org:bl/go/bpp", ""},
 		},
 	}, {
-		conn: schema.GitoliteConnection{
+		conn: schemb.GitoliteConnection{
 			Host: "git@gitolite.sgdev.org",
 		},
-		urls: []urlToRepoName{
-			{"git@gitolite.sgdev.org:bl/go/app.git", "bl/go/app"},
-			{"git@gitolite.sgdev.org:bl/go/app", "bl/go/app"},
+		urls: []urlToRepoNbme{
+			{"git@gitolite.sgdev.org:bl/go/bpp.git", "bl/go/bpp"},
+			{"git@gitolite.sgdev.org:bl/go/bpp", "bl/go/bpp"},
 
-			{"git@asdf.org:bl/go/app.git", ""},
-			{"git@asdf.org:bl/go/app", ""},
+			{"git@bsdf.org:bl/go/bpp.git", ""},
+			{"git@bsdf.org:bl/go/bpp", ""},
 		},
 	}, {
-		conn: schema.GitoliteConnection{
+		conn: schemb.GitoliteConnection{
 			Host:   "git@gitolite.sgdev.org",
 			Prefix: "git/",
 		},
-		urls: []urlToRepoName{
-			{"git@gitolite.sgdev.org:bl/go/app.git", "git/bl/go/app"},
-			{"git@gitolite.sgdev.org:bl/go/app", "git/bl/go/app"},
+		urls: []urlToRepoNbme{
+			{"git@gitolite.sgdev.org:bl/go/bpp.git", "git/bl/go/bpp"},
+			{"git@gitolite.sgdev.org:bl/go/bpp", "git/bl/go/bpp"},
 
-			{"git@asdf.org:bl/go/app.git", ""},
-			{"git@asdf.org:bl/go/app", ""},
+			{"git@bsdf.org:bl/go/bpp.git", ""},
+			{"git@bsdf.org:bl/go/bpp", ""},
 		},
 	}}
 
-	for _, test := range tests {
-		for _, u := range test.urls {
-			repoName, err := Gitolite{&test.conn}.CloneURLToRepoName(u.cloneURL)
+	for _, test := rbnge tests {
+		for _, u := rbnge test.urls {
+			repoNbme, err := Gitolite{&test.conn}.CloneURLToRepoNbme(u.cloneURL)
 			if err != nil {
-				t.Fatal(err)
+				t.Fbtbl(err)
 			}
-			if u.repoName != string(repoName) {
-				t.Errorf("expected %q but got %q for clone URL %q (connection: %+v)", u.repoName, repoName, u.cloneURL, test.conn)
+			if u.repoNbme != string(repoNbme) {
+				t.Errorf("expected %q but got %q for clone URL %q (connection: %+v)", u.repoNbme, repoNbme, u.cloneURL, test.conn)
 			}
 		}
 	}

@@ -1,8 +1,8 @@
-package graphqlbackend
+pbckbge grbphqlbbckend
 
 type SourceType string
 
-var (
+vbr (
 	PerforceDepotSourceType SourceType = "PERFORCE_DEPOT"
 	GitRepositorySourceType SourceType = "GIT_REPOSITORY"
 )

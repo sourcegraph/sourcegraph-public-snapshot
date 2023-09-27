@@ -1,101 +1,101 @@
-package store
+pbckbge store
 
 import "testing"
 
-func TestIsLiteralEquality(t *testing.T) {
-	for _, test := range []struct {
+func TestIsLiterblEqublity(t *testing.T) {
+	for _, test := rbnge []struct {
 		regex           string
-		noMatch         bool
-		expectedLiteral string
+		noMbtch         bool
+		expectedLiterbl string
 	}{
-		{regex: `^foo$`, expectedLiteral: "foo"},
-		{regex: `^[f]oo$`, expectedLiteral: `foo`},
-		{regex: `^\\$`, expectedLiteral: `\`},
-		{regex: `^\$`, noMatch: true},
-		{regex: `^\($`, expectedLiteral: `(`},
-		{regex: `\\`, noMatch: true},
-		{regex: `\$`, noMatch: true},
-		{regex: `\(`, noMatch: true},
-		{regex: `foo$`, noMatch: true},
-		{regex: `(^foo$|^bar$)`, noMatch: true},
+		{regex: `^foo$`, expectedLiterbl: "foo"},
+		{regex: `^[f]oo$`, expectedLiterbl: `foo`},
+		{regex: `^\\$`, expectedLiterbl: `\`},
+		{regex: `^\$`, noMbtch: true},
+		{regex: `^\($`, expectedLiterbl: `(`},
+		{regex: `\\`, noMbtch: true},
+		{regex: `\$`, noMbtch: true},
+		{regex: `\(`, noMbtch: true},
+		{regex: `foo$`, noMbtch: true},
+		{regex: `(^foo$|^bbr$)`, noMbtch: true},
 	} {
-		literal, ok, err := isLiteralEquality(test.regex)
+		literbl, ok, err := isLiterblEqublity(test.regex)
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
 		if !ok {
-			if !test.noMatch {
-				t.Errorf("exected a match")
+			if !test.noMbtch {
+				t.Errorf("exected b mbtch")
 			}
-		} else if test.noMatch {
-			t.Errorf("did not expect a match")
-		} else if literal != test.expectedLiteral {
+		} else if test.noMbtch {
+			t.Errorf("did not expect b mbtch")
+		} else if literbl != test.expectedLiterbl {
 			t.Errorf(
-				"unexpected literal for %q. want=%q have=%q",
+				"unexpected literbl for %q. wbnt=%q hbve=%q",
 				test.regex,
-				test.expectedLiteral,
-				literal,
+				test.expectedLiterbl,
+				literbl,
 			)
 		}
 	}
 }
 
-func TestIsLiteralPrefix(t *testing.T) {
-	for _, test := range []struct {
+func TestIsLiterblPrefix(t *testing.T) {
+	for _, test := rbnge []struct {
 		regex           string
-		noMatch         bool
-		expectedLiteral string
+		noMbtch         bool
+		expectedLiterbl string
 	}{
-		{regex: `^foo`, expectedLiteral: "foo"},
-		{regex: `^[f]oo`, expectedLiteral: `foo`},
-		{regex: `^\\`, expectedLiteral: `\`},
-		{regex: `^\(`, expectedLiteral: `(`},
-		{regex: `\\`, noMatch: true},
-		{regex: `\$`, noMatch: true},
-		{regex: `\(`, noMatch: true},
-		{regex: `foo$`, noMatch: true},
-		{regex: `(^foo$|^bar$)`, noMatch: true},
+		{regex: `^foo`, expectedLiterbl: "foo"},
+		{regex: `^[f]oo`, expectedLiterbl: `foo`},
+		{regex: `^\\`, expectedLiterbl: `\`},
+		{regex: `^\(`, expectedLiterbl: `(`},
+		{regex: `\\`, noMbtch: true},
+		{regex: `\$`, noMbtch: true},
+		{regex: `\(`, noMbtch: true},
+		{regex: `foo$`, noMbtch: true},
+		{regex: `(^foo$|^bbr$)`, noMbtch: true},
 	} {
-		literal, ok, err := isLiteralPrefix(test.regex)
+		literbl, ok, err := isLiterblPrefix(test.regex)
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
 		if !ok {
-			if !test.noMatch {
-				t.Errorf("exected a match")
+			if !test.noMbtch {
+				t.Errorf("exected b mbtch")
 			}
-		} else if test.noMatch {
-			t.Errorf("did not expect a match")
-		} else if literal != test.expectedLiteral {
+		} else if test.noMbtch {
+			t.Errorf("did not expect b mbtch")
+		} else if literbl != test.expectedLiterbl {
 			t.Errorf(
-				"unexpected literal for %q. want=%q have=%q",
+				"unexpected literbl for %q. wbnt=%q hbve=%q",
 				test.regex,
-				test.expectedLiteral,
-				literal,
+				test.expectedLiterbl,
+				literbl,
 			)
 		}
 	}
 }
 
-func TestEscapeGlob(t *testing.T) {
-	for _, test := range []struct {
+func TestEscbpeGlob(t *testing.T) {
+	for _, test := rbnge []struct {
 		str  string
-		want string
+		wbnt string
 	}{
-		{str: "", want: ""},
-		{str: "foo", want: "foo"},
-		{str: "*", want: "[*]"},
-		{str: "?", want: "[?]"},
-		{str: "[", want: "[[]"},
-		{str: "]", want: "[]]"},
-		{str: "**?foo]*[", want: "[*][*][?]foo[]][*][[]"},
+		{str: "", wbnt: ""},
+		{str: "foo", wbnt: "foo"},
+		{str: "*", wbnt: "[*]"},
+		{str: "?", wbnt: "[?]"},
+		{str: "[", wbnt: "[[]"},
+		{str: "]", wbnt: "[]]"},
+		{str: "**?foo]*[", wbnt: "[*][*][?]foo[]][*][[]"},
 	} {
-		got := globEscape(test.str)
-		if got != test.want {
+		got := globEscbpe(test.str)
+		if got != test.wbnt {
 			t.Errorf(
-				"unexpected result for escaping %q. want=%q got=%q",
+				"unexpected result for escbping %q. wbnt=%q got=%q",
 				test.str,
-				test.want,
+				test.wbnt,
 				got,
 			)
 		}

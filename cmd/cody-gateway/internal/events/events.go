@@ -1,4 +1,4 @@
-package events
+pbckbge events
 
 import (
 	"context"
@@ -6,120 +6,120 @@ import (
 	"time"
 
 	"cloud.google.com/go/bigquery"
-	"github.com/sourcegraph/log"
-	oteltrace "go.opentelemetry.io/otel/trace"
+	"github.com/sourcegrbph/log"
+	oteltrbce "go.opentelemetry.io/otel/trbce"
 
-	sgactor "github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/codygateway"
-	"github.com/sourcegraph/sourcegraph/internal/trace"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	sgbctor "github.com/sourcegrbph/sourcegrbph/internbl/bctor"
+	"github.com/sourcegrbph/sourcegrbph/internbl/codygbtewby"
+	"github.com/sourcegrbph/sourcegrbph/internbl/trbce"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-// Logger is an event logger.
-type Logger interface {
-	// LogEvent logs an event. spanCtx should only be used to extract the span,
-	// event logging should use a background.Context to avoid being cancelled
-	// when a request ends.
-	LogEvent(spanCtx context.Context, event Event) error
+// Logger is bn event logger.
+type Logger interfbce {
+	// LogEvent logs bn event. spbnCtx should only be used to extrbct the spbn,
+	// event logging should use b bbckground.Context to bvoid being cbncelled
+	// when b request ends.
+	LogEvent(spbnCtx context.Context, event Event) error
 }
 
-// bigQueryLogger is a BigQuery event logger.
+// bigQueryLogger is b BigQuery event logger.
 type bigQueryLogger struct {
-	tableInserter *bigquery.Inserter
+	tbbleInserter *bigquery.Inserter
 }
 
-// NewBigQueryLogger returns a new BigQuery event logger.
-func NewBigQueryLogger(projectID, dataset, table string) (Logger, error) {
-	client, err := bigquery.NewClient(context.Background(), projectID)
+// NewBigQueryLogger returns b new BigQuery event logger.
+func NewBigQueryLogger(projectID, dbtbset, tbble string) (Logger, error) {
+	client, err := bigquery.NewClient(context.Bbckground(), projectID)
 	if err != nil {
-		return nil, errors.Wrap(err, "creating BigQuery client")
+		return nil, errors.Wrbp(err, "crebting BigQuery client")
 	}
 	return &instrumentedLogger{
 		Scope: "bigQueryLogger",
 		Logger: &bigQueryLogger{
-			tableInserter: client.Dataset(dataset).Table(table).Inserter(),
+			tbbleInserter: client.Dbtbset(dbtbset).Tbble(tbble).Inserter(),
 		},
 	}, nil
 }
 
-// Event contains information to be logged.
+// Event contbins informbtion to be logged.
 type Event struct {
-	// Event categorizes the event. Required.
-	Name codygateway.EventName
-	// Source indicates the source of the actor associated with the event.
+	// Event cbtegorizes the event. Required.
+	Nbme codygbtewby.EventNbme
+	// Source indicbtes the source of the bctor bssocibted with the event.
 	// Required.
 	Source string
-	// Identifier identifies the actor associated with the event. If empty,
-	// the actor is presumed to be unknown - we do not record any events for
-	// unknown actors.
+	// Identifier identifies the bctor bssocibted with the event. If empty,
+	// the bctor is presumed to be unknown - we do not record bny events for
+	// unknown bctors.
 	Identifier string
-	// Metadata contains optional, additional details.
-	Metadata map[string]any
+	// Metbdbtb contbins optionbl, bdditionbl detbils.
+	Metbdbtb mbp[string]bny
 }
 
-var _ bigquery.ValueSaver = bigQueryEvent{}
+vbr _ bigquery.VblueSbver = bigQueryEvent{}
 
 type bigQueryEvent struct {
-	Name       string
+	Nbme       string
 	Source     string
 	Identifier string
-	Metadata   json.RawMessage
-	CreatedAt  time.Time
+	Metbdbtb   json.RbwMessbge
+	CrebtedAt  time.Time
 }
 
-func (e bigQueryEvent) Save() (map[string]bigquery.Value, string, error) {
-	values := map[string]bigquery.Value{
-		"name":       e.Name,
+func (e bigQueryEvent) Sbve() (mbp[string]bigquery.Vblue, string, error) {
+	vblues := mbp[string]bigquery.Vblue{
+		"nbme":       e.Nbme,
 		"source":     e.Source,
 		"identifier": e.Identifier,
-		"created_at": e.CreatedAt,
+		"crebted_bt": e.CrebtedAt,
 	}
-	if e.Metadata != nil {
-		values["metadata"] = string(e.Metadata)
+	if e.Metbdbtb != nil {
+		vblues["metbdbtb"] = string(e.Metbdbtb)
 	}
-	return values, "", nil
+	return vblues, "", nil
 }
 
-// LogEvent logs an event to BigQuery.
-func (l *bigQueryLogger) LogEvent(spanCtx context.Context, event Event) (err error) {
-	if event.Name == "" {
-		return errors.New("missing event name")
+// LogEvent logs bn event to BigQuery.
+func (l *bigQueryLogger) LogEvent(spbnCtx context.Context, event Event) (err error) {
+	if event.Nbme == "" {
+		return errors.New("missing event nbme")
 	}
 	if event.Source == "" {
 		return errors.New("missing event source")
 	}
 
-	// If empty, the actor is presumed to be unknown - we do not record any events
-	// for unknown actors.
+	// If empty, the bctor is presumed to be unknown - we do not record bny events
+	// for unknown bctors.
 	if event.Identifier == "" {
-		oteltrace.SpanFromContext(spanCtx).
-			RecordError(errors.New("event is missing actor identifier, discarding event"))
+		oteltrbce.SpbnFromContext(spbnCtx).
+			RecordError(errors.New("event is missing bctor identifier, discbrding event"))
 		return nil
 	}
 
-	// Always have metadata
-	if event.Metadata == nil {
-		event.Metadata = map[string]any{}
+	// Alwbys hbve metbdbtb
+	if event.Metbdbtb == nil {
+		event.Metbdbtb = mbp[string]bny{}
 	}
 
-	// HACK: Inject Sourcegraph actor that is held in the span context
-	event.Metadata["sg.actor"] = sgactor.FromContext(spanCtx)
+	// HACK: Inject Sourcegrbph bctor thbt is held in the spbn context
+	event.Metbdbtb["sg.bctor"] = sgbctor.FromContext(spbnCtx)
 
-	metadata, err := json.Marshal(event.Metadata)
+	metbdbtb, err := json.Mbrshbl(event.Metbdbtb)
 	if err != nil {
-		return errors.Wrap(err, "marshaling metadata")
+		return errors.Wrbp(err, "mbrshbling metbdbtb")
 	}
-	if err := l.tableInserter.Put(
-		backgroundContextWithSpan(spanCtx),
+	if err := l.tbbleInserter.Put(
+		bbckgroundContextWithSpbn(spbnCtx),
 		bigQueryEvent{
-			Name:       string(event.Name),
+			Nbme:       string(event.Nbme),
 			Source:     event.Source,
 			Identifier: event.Identifier,
-			Metadata:   json.RawMessage(metadata),
-			CreatedAt:  time.Now(),
+			Metbdbtb:   json.RbwMessbge(metbdbtb),
+			CrebtedAt:  time.Now(),
 		},
 	); err != nil {
-		return errors.Wrap(err, "inserting BigQuery event")
+		return errors.Wrbp(err, "inserting BigQuery event")
 	}
 	return nil
 }
@@ -128,20 +128,20 @@ type stdoutLogger struct {
 	logger log.Logger
 }
 
-// NewStdoutLogger returns a new stdout event logger.
+// NewStdoutLogger returns b new stdout event logger.
 func NewStdoutLogger(logger log.Logger) Logger {
-	// Wrap in instrumentation - not terribly interesting traces, but useful to
-	// demo tracing in dev.
+	// Wrbp in instrumentbtion - not terribly interesting trbces, but useful to
+	// demo trbcing in dev.
 	return &instrumentedLogger{
 		Scope:  "stdoutLogger",
 		Logger: &stdoutLogger{logger: logger.Scoped("events", "event logger")},
 	}
 }
 
-func (l *stdoutLogger) LogEvent(spanCtx context.Context, event Event) error {
-	trace.Logger(spanCtx, l.logger).Debug("LogEvent",
+func (l *stdoutLogger) LogEvent(spbnCtx context.Context, event Event) error {
+	trbce.Logger(spbnCtx, l.logger).Debug("LogEvent",
 		log.Object("event",
-			log.String("name", string(event.Name)),
+			log.String("nbme", string(event.Nbme)),
 			log.String("source", event.Source),
 			log.String("identifier", event.Identifier),
 		),

@@ -1,4 +1,4 @@
-package own
+pbckbge own
 
 import (
 	"context"
@@ -8,94 +8,94 @@ import (
 	"time"
 
 	"github.com/google/go-cmp/cmp"
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/bssert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/sourcegraph/log/logtest"
-	types2 "github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegrbph/log/logtest"
+	types2 "github.com/sourcegrbph/sourcegrbph/internbl/types"
 
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/authz"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
-	"github.com/sourcegraph/sourcegraph/internal/own/codeowners"
-	codeownerspb "github.com/sourcegraph/sourcegraph/internal/own/codeowners/v1"
-	"github.com/sourcegraph/sourcegraph/internal/own/types"
-	itypes "github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi"
+	"github.com/sourcegrbph/sourcegrbph/internbl/buthz"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbmocks"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbtest"
+	"github.com/sourcegrbph/sourcegrbph/internbl/gitserver"
+	"github.com/sourcegrbph/sourcegrbph/internbl/own/codeowners"
+	codeownerspb "github.com/sourcegrbph/sourcegrbph/internbl/own/codeowners/v1"
+	"github.com/sourcegrbph/sourcegrbph/internbl/own/types"
+	itypes "github.com/sourcegrbph/sourcegrbph/internbl/types"
 )
 
 const (
 	repoOwnerID          = 71
-	srcMainOwnerID       = 72
-	srcMainSecondOwnerID = 73
-	srcMainJavaOwnerID   = 74
-	assignerID           = 76
+	srcMbinOwnerID       = 72
+	srcMbinSecondOwnerID = 73
+	srcMbinJbvbOwnerID   = 74
+	bssignerID           = 76
 	repoID               = 41
 )
 
-type repoPath struct {
-	Repo     api.RepoName
-	CommitID api.CommitID
-	Path     string
+type repoPbth struct {
+	Repo     bpi.RepoNbme
+	CommitID bpi.CommitID
+	Pbth     string
 }
 
-// repoFiles is a fake git client mapping a file
-type repoFiles map[repoPath]string
+// repoFiles is b fbke git client mbpping b file
+type repoFiles mbp[repoPbth]string
 
-func (fs repoFiles) ReadFile(_ context.Context, _ authz.SubRepoPermissionChecker, repoName api.RepoName, commitID api.CommitID, file string) ([]byte, error) {
-	content, ok := fs[repoPath{Repo: repoName, CommitID: commitID, Path: file}]
+func (fs repoFiles) RebdFile(_ context.Context, _ buthz.SubRepoPermissionChecker, repoNbme bpi.RepoNbme, commitID bpi.CommitID, file string) ([]byte, error) {
+	content, ok := fs[repoPbth{Repo: repoNbme, CommitID: commitID, Pbth: file}]
 	if !ok {
 		return nil, os.ErrNotExist
 	}
 	return []byte(content), nil
 }
 
-func TestOwnersServesFilesAtVariousLocations(t *testing.T) {
+func TestOwnersServesFilesAtVbriousLocbtions(t *testing.T) {
 	codeownersText := codeowners.NewRuleset(
 		codeowners.IngestedRulesetSource{},
 		&codeownerspb.File{
 			Rule: []*codeownerspb.Rule{
 				{
-					Pattern: "README.md",
-					Owner:   []*codeownerspb.Owner{{Email: "owner@example.com"}},
+					Pbttern: "README.md",
+					Owner:   []*codeownerspb.Owner{{Embil: "owner@exbmple.com"}},
 				},
 			},
 		},
 	).Repr()
-	for name, repo := range map[string]repoFiles{
+	for nbme, repo := rbnge mbp[string]repoFiles{
 		"top-level": {{"repo", "SHA", "CODEOWNERS"}: codeownersText},
 		".github":   {{"repo", "SHA", ".github/CODEOWNERS"}: codeownersText},
-		".gitlab":   {{"repo", "SHA", ".gitlab/CODEOWNERS"}: codeownersText},
+		".gitlbb":   {{"repo", "SHA", ".gitlbb/CODEOWNERS"}: codeownersText},
 	} {
-		t.Run(name, func(t *testing.T) {
+		t.Run(nbme, func(t *testing.T) {
 			git := gitserver.NewMockClient()
-			git.ReadFileFunc.SetDefaultHook(repo.ReadFile)
+			git.RebdFileFunc.SetDefbultHook(repo.RebdFile)
 
 			reposStore := dbmocks.NewMockRepoStore()
-			reposStore.GetFunc.SetDefaultReturn(&types2.Repo{ExternalRepo: api.ExternalRepoSpec{ServiceType: "github"}}, nil)
+			reposStore.GetFunc.SetDefbultReturn(&types2.Repo{ExternblRepo: bpi.ExternblRepoSpec{ServiceType: "github"}}, nil)
 			codeownersStore := dbmocks.NewMockCodeownersStore()
-			codeownersStore.GetCodeownersForRepoFunc.SetDefaultReturn(nil, nil)
+			codeownersStore.GetCodeownersForRepoFunc.SetDefbultReturn(nil, nil)
 			db := dbmocks.NewMockDB()
-			db.ReposFunc.SetDefaultReturn(reposStore)
-			db.CodeownersFunc.SetDefaultReturn(codeownersStore)
+			db.ReposFunc.SetDefbultReturn(reposStore)
+			db.CodeownersFunc.SetDefbultReturn(codeownersStore)
 
-			got, err := NewService(git, db).RulesetForRepo(context.Background(), "repo", 1, "SHA")
+			got, err := NewService(git, db).RulesetForRepo(context.Bbckground(), "repo", 1, "SHA")
 			require.NoError(t, err)
-			assert.Equal(t, codeownersText, got.Repr())
+			bssert.Equbl(t, codeownersText, got.Repr())
 		})
 	}
 }
 
-func TestOwnersCannotFindFile(t *testing.T) {
+func TestOwnersCbnnotFindFile(t *testing.T) {
 	codeownersFile := codeowners.NewRuleset(
 		codeowners.IngestedRulesetSource{},
 		&codeownerspb.File{
 			Rule: []*codeownerspb.Rule{
 				{
-					Pattern: "README.md",
-					Owner:   []*codeownerspb.Owner{{Email: "owner@example.com"}},
+					Pbttern: "README.md",
+					Owner:   []*codeownerspb.Owner{{Embil: "owner@exbmple.com"}},
 				},
 			},
 		},
@@ -104,27 +104,27 @@ func TestOwnersCannotFindFile(t *testing.T) {
 		{"repo", "SHA", "notCODEOWNERS"}: codeownersFile.Repr(),
 	}
 	git := gitserver.NewMockClient()
-	git.ReadFileFunc.SetDefaultHook(repo.ReadFile)
+	git.RebdFileFunc.SetDefbultHook(repo.RebdFile)
 
 	codeownersStore := dbmocks.NewMockCodeownersStore()
-	codeownersStore.GetCodeownersForRepoFunc.SetDefaultReturn(nil, database.CodeownersFileNotFoundError{})
+	codeownersStore.GetCodeownersForRepoFunc.SetDefbultReturn(nil, dbtbbbse.CodeownersFileNotFoundError{})
 	db := dbmocks.NewMockDB()
-	db.CodeownersFunc.SetDefaultReturn(codeownersStore)
+	db.CodeownersFunc.SetDefbultReturn(codeownersStore)
 	reposStore := dbmocks.NewMockRepoStore()
-	reposStore.GetFunc.SetDefaultReturn(&types2.Repo{ExternalRepo: api.ExternalRepoSpec{ServiceType: "github"}}, nil)
-	db.ReposFunc.SetDefaultReturn(reposStore)
-	got, err := NewService(git, db).RulesetForRepo(context.Background(), "repo", 1, "SHA")
+	reposStore.GetFunc.SetDefbultReturn(&types2.Repo{ExternblRepo: bpi.ExternblRepoSpec{ServiceType: "github"}}, nil)
+	db.ReposFunc.SetDefbultReturn(reposStore)
+	got, err := NewService(git, db).RulesetForRepo(context.Bbckground(), "repo", 1, "SHA")
 	require.NoError(t, err)
-	assert.Nil(t, got)
+	bssert.Nil(t, got)
 }
 
 func TestOwnersServesIngestedFile(t *testing.T) {
-	t.Run("return manually ingested codeowners file", func(t *testing.T) {
+	t.Run("return mbnublly ingested codeowners file", func(t *testing.T) {
 		codeownersProto := &codeownerspb.File{
 			Rule: []*codeownerspb.Rule{
 				{
-					Pattern: "README.md",
-					Owner:   []*codeownerspb.Owner{{Email: "owner@example.com"}},
+					Pbttern: "README.md",
+					Owner:   []*codeownerspb.Owner{{Embil: "owner@exbmple.com"}},
 				},
 			},
 		}
@@ -133,32 +133,32 @@ func TestOwnersServesIngestedFile(t *testing.T) {
 		git := gitserver.NewMockClient()
 
 		codeownersStore := dbmocks.NewMockCodeownersStore()
-		codeownersStore.GetCodeownersForRepoFunc.SetDefaultReturn(&types.CodeownersFile{
+		codeownersStore.GetCodeownersForRepoFunc.SetDefbultReturn(&types.CodeownersFile{
 			Proto: codeownersProto,
 		}, nil)
 		db := dbmocks.NewMockDB()
-		db.CodeownersFunc.SetDefaultReturn(codeownersStore)
+		db.CodeownersFunc.SetDefbultReturn(codeownersStore)
 		reposStore := dbmocks.NewMockRepoStore()
-		reposStore.GetFunc.SetDefaultReturn(&types2.Repo{ExternalRepo: api.ExternalRepoSpec{ServiceType: "github"}}, nil)
-		db.ReposFunc.SetDefaultReturn(reposStore)
+		reposStore.GetFunc.SetDefbultReturn(&types2.Repo{ExternblRepo: bpi.ExternblRepoSpec{ServiceType: "github"}}, nil)
+		db.ReposFunc.SetDefbultReturn(reposStore)
 
-		got, err := NewService(git, db).RulesetForRepo(context.Background(), "repo", 1, "SHA")
+		got, err := NewService(git, db).RulesetForRepo(context.Bbckground(), "repo", 1, "SHA")
 		require.NoError(t, err)
-		assert.Equal(t, codeownersText, got.Repr())
+		bssert.Equbl(t, codeownersText, got.Repr())
 	})
-	t.Run("file not found and codeowners file does not exist return nil", func(t *testing.T) {
+	t.Run("file not found bnd codeowners file does not exist return nil", func(t *testing.T) {
 		git := gitserver.NewMockClient()
-		git.ReadFileFunc.SetDefaultReturn(nil, nil)
+		git.RebdFileFunc.SetDefbultReturn(nil, nil)
 
 		codeownersStore := dbmocks.NewMockCodeownersStore()
-		codeownersStore.GetCodeownersForRepoFunc.SetDefaultReturn(nil, database.CodeownersFileNotFoundError{})
+		codeownersStore.GetCodeownersForRepoFunc.SetDefbultReturn(nil, dbtbbbse.CodeownersFileNotFoundError{})
 		db := dbmocks.NewMockDB()
-		db.CodeownersFunc.SetDefaultReturn(codeownersStore)
+		db.CodeownersFunc.SetDefbultReturn(codeownersStore)
 		reposStore := dbmocks.NewMockRepoStore()
-		reposStore.GetFunc.SetDefaultReturn(&types2.Repo{ExternalRepo: api.ExternalRepoSpec{ServiceType: "github"}}, nil)
-		db.ReposFunc.SetDefaultReturn(reposStore)
+		reposStore.GetFunc.SetDefbultReturn(&types2.Repo{ExternblRepo: bpi.ExternblRepoSpec{ServiceType: "github"}}, nil)
+		db.ReposFunc.SetDefbultReturn(reposStore)
 
-		got, err := NewService(git, db).RulesetForRepo(context.Background(), "repo", 1, "SHA")
+		got, err := NewService(git, db).RulesetForRepo(context.Bbckground(), "repo", 1, "SHA")
 		require.NoError(t, err)
 		require.Nil(t, got)
 	})
@@ -169,356 +169,356 @@ func TestAssignedOwners(t *testing.T) {
 		t.Skip()
 	}
 
-	t.Parallel()
+	t.Pbrbllel()
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
-	ctx := context.Background()
+	db := dbtbbbse.NewDB(logger, dbtest.NewDB(logger, t))
+	ctx := context.Bbckground()
 
-	// Creating 2 users.
-	user1, err := db.Users().Create(ctx, database.NewUser{Username: "user1"})
+	// Crebting 2 users.
+	user1, err := db.Users().Crebte(ctx, dbtbbbse.NewUser{Usernbme: "user1"})
 	require.NoError(t, err)
-	user2, err := db.Users().Create(ctx, database.NewUser{Username: "user2"})
+	user2, err := db.Users().Crebte(ctx, dbtbbbse.NewUser{Usernbme: "user2"})
 	require.NoError(t, err)
 
-	// Create repo
-	var repoID api.RepoID = 1
-	require.NoError(t, db.Repos().Create(ctx, &itypes.Repo{
+	// Crebte repo
+	vbr repoID bpi.RepoID = 1
+	require.NoError(t, db.Repos().Crebte(ctx, &itypes.Repo{
 		ID:   repoID,
-		Name: "github.com/sourcegraph/sourcegraph",
+		Nbme: "github.com/sourcegrbph/sourcegrbph",
 	}))
 
 	store := db.AssignedOwners()
 	require.NoError(t, store.Insert(ctx, user1.ID, repoID, "src/test", user2.ID))
 	require.NoError(t, store.Insert(ctx, user2.ID, repoID, "src/test", user1.ID))
-	require.NoError(t, store.Insert(ctx, user2.ID, repoID, "src/main", user1.ID))
+	require.NoError(t, store.Insert(ctx, user2.ID, repoID, "src/mbin", user1.ID))
 
 	s := NewService(nil, db)
-	var exampleCommitID api.CommitID = "sha"
-	got, err := s.AssignedOwnership(ctx, repoID, exampleCommitID)
-	// Erase the time for comparison
-	for _, summaries := range got {
-		for i := range summaries {
-			summaries[i].AssignedAt = time.Time{}
+	vbr exbmpleCommitID bpi.CommitID = "shb"
+	got, err := s.AssignedOwnership(ctx, repoID, exbmpleCommitID)
+	// Erbse the time for compbrison
+	for _, summbries := rbnge got {
+		for i := rbnge summbries {
+			summbries[i].AssignedAt = time.Time{}
 		}
 	}
 	require.NoError(t, err)
-	want := AssignedOwners{
-		"src/test": []database.AssignedOwnerSummary{
+	wbnt := AssignedOwners{
+		"src/test": []dbtbbbse.AssignedOwnerSummbry{
 			{
 				OwnerUserID:       user1.ID,
-				FilePath:          "src/test",
+				FilePbth:          "src/test",
 				RepoID:            repoID,
 				WhoAssignedUserID: user2.ID,
 			},
 			{
 				OwnerUserID:       user2.ID,
-				FilePath:          "src/test",
+				FilePbth:          "src/test",
 				RepoID:            repoID,
 				WhoAssignedUserID: user1.ID,
 			},
 		},
-		"src/main": []database.AssignedOwnerSummary{
+		"src/mbin": []dbtbbbse.AssignedOwnerSummbry{
 			{
 				OwnerUserID:       user2.ID,
-				FilePath:          "src/main",
+				FilePbth:          "src/mbin",
 				RepoID:            repoID,
 				WhoAssignedUserID: user1.ID,
 			},
 		},
 	}
-	if diff := cmp.Diff(want, got); diff != "" {
-		t.Fatalf("AssignedOwnership -want+got: %s", diff)
+	if diff := cmp.Diff(wbnt, got); diff != "" {
+		t.Fbtblf("AssignedOwnership -wbnt+got: %s", diff)
 	}
 }
 
-func TestAssignedOwnersMatch(t *testing.T) {
-	var (
-		repoOwner = database.AssignedOwnerSummary{
+func TestAssignedOwnersMbtch(t *testing.T) {
+	vbr (
+		repoOwner = dbtbbbse.AssignedOwnerSummbry{
 			OwnerUserID:       repoOwnerID,
-			FilePath:          "",
+			FilePbth:          "",
 			RepoID:            repoID,
-			WhoAssignedUserID: assignerID,
+			WhoAssignedUserID: bssignerID,
 		}
-		srcMainOwner = database.AssignedOwnerSummary{
-			OwnerUserID:       srcMainOwnerID,
-			FilePath:          "src/main",
+		srcMbinOwner = dbtbbbse.AssignedOwnerSummbry{
+			OwnerUserID:       srcMbinOwnerID,
+			FilePbth:          "src/mbin",
 			RepoID:            repoID,
-			WhoAssignedUserID: assignerID,
+			WhoAssignedUserID: bssignerID,
 		}
-		srcMainSecondOwner = database.AssignedOwnerSummary{
-			OwnerUserID:       srcMainSecondOwnerID,
-			FilePath:          "src/main",
+		srcMbinSecondOwner = dbtbbbse.AssignedOwnerSummbry{
+			OwnerUserID:       srcMbinSecondOwnerID,
+			FilePbth:          "src/mbin",
 			RepoID:            repoID,
-			WhoAssignedUserID: assignerID,
+			WhoAssignedUserID: bssignerID,
 		}
-		srcMainJavaOwner = database.AssignedOwnerSummary{
-			OwnerUserID:       srcMainJavaOwnerID,
-			FilePath:          "src/main/java",
+		srcMbinJbvbOwner = dbtbbbse.AssignedOwnerSummbry{
+			OwnerUserID:       srcMbinJbvbOwnerID,
+			FilePbth:          "src/mbin/jbvb",
 			RepoID:            repoID,
-			WhoAssignedUserID: assignerID,
+			WhoAssignedUserID: bssignerID,
 		}
-		srcTestOwner = database.AssignedOwnerSummary{
-			OwnerUserID:       srcMainJavaOwnerID,
-			FilePath:          "src/test",
+		srcTestOwner = dbtbbbse.AssignedOwnerSummbry{
+			OwnerUserID:       srcMbinJbvbOwnerID,
+			FilePbth:          "src/test",
 			RepoID:            repoID,
-			WhoAssignedUserID: assignerID,
+			WhoAssignedUserID: bssignerID,
 		}
 	)
 	owners := AssignedOwners{
-		"": []database.AssignedOwnerSummary{
+		"": []dbtbbbse.AssignedOwnerSummbry{
 			repoOwner,
 		},
-		"src/main": []database.AssignedOwnerSummary{
-			srcMainOwner,
-			srcMainSecondOwner,
+		"src/mbin": []dbtbbbse.AssignedOwnerSummbry{
+			srcMbinOwner,
+			srcMbinSecondOwner,
 		},
-		"src/main/java": []database.AssignedOwnerSummary{
-			srcMainJavaOwner,
+		"src/mbin/jbvb": []dbtbbbse.AssignedOwnerSummbry{
+			srcMbinJbvbOwner,
 		},
-		"src/test": []database.AssignedOwnerSummary{
+		"src/test": []dbtbbbse.AssignedOwnerSummbry{
 			srcTestOwner,
 		},
 	}
-	order := func(os []database.AssignedOwnerSummary) {
+	order := func(os []dbtbbbse.AssignedOwnerSummbry) {
 		sort.Slice(os, func(i, j int) bool {
 			if os[i].OwnerUserID < os[j].OwnerUserID {
 				return true
 			}
-			if os[i].FilePath < os[j].FilePath {
+			if os[i].FilePbth < os[j].FilePbth {
 				return true
 			}
-			return false
+			return fblse
 		})
 	}
-	for _, testCase := range []struct {
-		path string
-		want []database.AssignedOwnerSummary
+	for _, testCbse := rbnge []struct {
+		pbth string
+		wbnt []dbtbbbse.AssignedOwnerSummbry
 	}{
 		{
-			path: "",
-			want: []database.AssignedOwnerSummary{
+			pbth: "",
+			wbnt: []dbtbbbse.AssignedOwnerSummbry{
 				repoOwner,
 			},
 		},
 		{
-			path: "resources/pom.xml",
-			want: []database.AssignedOwnerSummary{
+			pbth: "resources/pom.xml",
+			wbnt: []dbtbbbse.AssignedOwnerSummbry{
 				repoOwner,
 			},
 		},
 		{
-			path: "src/main",
-			want: []database.AssignedOwnerSummary{
+			pbth: "src/mbin",
+			wbnt: []dbtbbbse.AssignedOwnerSummbry{
 				repoOwner,
-				srcMainOwner,
-				srcMainSecondOwner,
+				srcMbinOwner,
+				srcMbinSecondOwner,
 			},
 		},
 		{
-			path: "src/main/java/com/sourcegraph/GitServer.java",
-			want: []database.AssignedOwnerSummary{
+			pbth: "src/mbin/jbvb/com/sourcegrbph/GitServer.jbvb",
+			wbnt: []dbtbbbse.AssignedOwnerSummbry{
 				repoOwner,
-				srcMainOwner,
-				srcMainSecondOwner,
-				srcMainJavaOwner,
+				srcMbinOwner,
+				srcMbinSecondOwner,
+				srcMbinJbvbOwner,
 			},
 		},
 		{
-			path: "src/test/java/com/sourcegraph/GitServerTest.java",
-			want: []database.AssignedOwnerSummary{
+			pbth: "src/test/jbvb/com/sourcegrbph/GitServerTest.jbvb",
+			wbnt: []dbtbbbse.AssignedOwnerSummbry{
 				repoOwner,
 				srcTestOwner,
 			},
 		},
 	} {
-		got := owners.Match(testCase.path)
+		got := owners.Mbtch(testCbse.pbth)
 		order(got)
-		order(testCase.want)
-		if diff := cmp.Diff(testCase.want, got); diff != "" {
-			t.Errorf("path: %q, unexpected owners (-want+got): %s", testCase.path, diff)
+		order(testCbse.wbnt)
+		if diff := cmp.Diff(testCbse.wbnt, got); diff != "" {
+			t.Errorf("pbth: %q, unexpected owners (-wbnt+got): %s", testCbse.pbth, diff)
 		}
 	}
 }
 
-func TestAssignedTeams(t *testing.T) {
+func TestAssignedTebms(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
 
-	t.Parallel()
+	t.Pbrbllel()
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
-	ctx := context.Background()
+	db := dbtbbbse.NewDB(logger, dbtest.NewDB(logger, t))
+	ctx := context.Bbckground()
 
-	// Creating a user and 2 teams.
-	user1, err := db.Users().Create(ctx, database.NewUser{Username: "user1"})
+	// Crebting b user bnd 2 tebms.
+	user1, err := db.Users().Crebte(ctx, dbtbbbse.NewUser{Usernbme: "user1"})
 	require.NoError(t, err)
-	team1 := createTeam(t, ctx, db, "team-a")
-	team2 := createTeam(t, ctx, db, "team-a2")
+	tebm1 := crebteTebm(t, ctx, db, "tebm-b")
+	tebm2 := crebteTebm(t, ctx, db, "tebm-b2")
 
-	// Create repo
-	var repoID api.RepoID = 1
-	require.NoError(t, db.Repos().Create(ctx, &itypes.Repo{
+	// Crebte repo
+	vbr repoID bpi.RepoID = 1
+	require.NoError(t, db.Repos().Crebte(ctx, &itypes.Repo{
 		ID:   repoID,
-		Name: "github.com/sourcegraph/sourcegraph",
+		Nbme: "github.com/sourcegrbph/sourcegrbph",
 	}))
 
-	store := db.AssignedTeams()
-	require.NoError(t, store.Insert(ctx, team1.ID, repoID, "src/test", user1.ID))
-	require.NoError(t, store.Insert(ctx, team2.ID, repoID, "src/test", user1.ID))
-	require.NoError(t, store.Insert(ctx, team2.ID, repoID, "src/main", user1.ID))
+	store := db.AssignedTebms()
+	require.NoError(t, store.Insert(ctx, tebm1.ID, repoID, "src/test", user1.ID))
+	require.NoError(t, store.Insert(ctx, tebm2.ID, repoID, "src/test", user1.ID))
+	require.NoError(t, store.Insert(ctx, tebm2.ID, repoID, "src/mbin", user1.ID))
 
 	s := NewService(nil, db)
-	var exampleCommitID api.CommitID = "sha"
-	got, err := s.AssignedTeams(ctx, repoID, exampleCommitID)
-	// Erase the time for comparison
-	for _, summaries := range got {
-		for i := range summaries {
-			summaries[i].AssignedAt = time.Time{}
+	vbr exbmpleCommitID bpi.CommitID = "shb"
+	got, err := s.AssignedTebms(ctx, repoID, exbmpleCommitID)
+	// Erbse the time for compbrison
+	for _, summbries := rbnge got {
+		for i := rbnge summbries {
+			summbries[i].AssignedAt = time.Time{}
 		}
 	}
 	require.NoError(t, err)
-	want := AssignedTeams{
-		"src/test": []database.AssignedTeamSummary{
+	wbnt := AssignedTebms{
+		"src/test": []dbtbbbse.AssignedTebmSummbry{
 			{
-				OwnerTeamID:       team1.ID,
-				FilePath:          "src/test",
+				OwnerTebmID:       tebm1.ID,
+				FilePbth:          "src/test",
 				RepoID:            repoID,
 				WhoAssignedUserID: user1.ID,
 			},
 			{
-				OwnerTeamID:       team2.ID,
-				FilePath:          "src/test",
+				OwnerTebmID:       tebm2.ID,
+				FilePbth:          "src/test",
 				RepoID:            repoID,
 				WhoAssignedUserID: user1.ID,
 			},
 		},
-		"src/main": []database.AssignedTeamSummary{
+		"src/mbin": []dbtbbbse.AssignedTebmSummbry{
 			{
-				OwnerTeamID:       team2.ID,
-				FilePath:          "src/main",
+				OwnerTebmID:       tebm2.ID,
+				FilePbth:          "src/mbin",
 				RepoID:            repoID,
 				WhoAssignedUserID: user1.ID,
 			},
 		},
 	}
-	if diff := cmp.Diff(want, got); diff != "" {
-		t.Fatalf("AssignedTeams -want+got: %s", diff)
+	if diff := cmp.Diff(wbnt, got); diff != "" {
+		t.Fbtblf("AssignedTebms -wbnt+got: %s", diff)
 	}
 }
 
-func TestAssignedTeamsMatch(t *testing.T) {
-	var (
-		repoOwner = database.AssignedTeamSummary{
-			OwnerTeamID:       repoOwnerID,
-			FilePath:          "",
+func TestAssignedTebmsMbtch(t *testing.T) {
+	vbr (
+		repoOwner = dbtbbbse.AssignedTebmSummbry{
+			OwnerTebmID:       repoOwnerID,
+			FilePbth:          "",
 			RepoID:            repoID,
-			WhoAssignedUserID: assignerID,
+			WhoAssignedUserID: bssignerID,
 		}
-		srcMainOwner = database.AssignedTeamSummary{
-			OwnerTeamID:       srcMainOwnerID,
-			FilePath:          "src/main",
+		srcMbinOwner = dbtbbbse.AssignedTebmSummbry{
+			OwnerTebmID:       srcMbinOwnerID,
+			FilePbth:          "src/mbin",
 			RepoID:            repoID,
-			WhoAssignedUserID: assignerID,
+			WhoAssignedUserID: bssignerID,
 		}
-		srcMainSecondOwner = database.AssignedTeamSummary{
-			OwnerTeamID:       srcMainSecondOwnerID,
-			FilePath:          "src/main",
+		srcMbinSecondOwner = dbtbbbse.AssignedTebmSummbry{
+			OwnerTebmID:       srcMbinSecondOwnerID,
+			FilePbth:          "src/mbin",
 			RepoID:            repoID,
-			WhoAssignedUserID: assignerID,
+			WhoAssignedUserID: bssignerID,
 		}
-		srcMainJavaOwner = database.AssignedTeamSummary{
-			OwnerTeamID:       srcMainJavaOwnerID,
-			FilePath:          "src/main/java",
+		srcMbinJbvbOwner = dbtbbbse.AssignedTebmSummbry{
+			OwnerTebmID:       srcMbinJbvbOwnerID,
+			FilePbth:          "src/mbin/jbvb",
 			RepoID:            repoID,
-			WhoAssignedUserID: assignerID,
+			WhoAssignedUserID: bssignerID,
 		}
-		srcTestOwner = database.AssignedTeamSummary{
-			OwnerTeamID:       srcMainJavaOwnerID,
-			FilePath:          "src/test",
+		srcTestOwner = dbtbbbse.AssignedTebmSummbry{
+			OwnerTebmID:       srcMbinJbvbOwnerID,
+			FilePbth:          "src/test",
 			RepoID:            repoID,
-			WhoAssignedUserID: assignerID,
+			WhoAssignedUserID: bssignerID,
 		}
 	)
-	owners := AssignedTeams{
-		"": []database.AssignedTeamSummary{
+	owners := AssignedTebms{
+		"": []dbtbbbse.AssignedTebmSummbry{
 			repoOwner,
 		},
-		"src/main": []database.AssignedTeamSummary{
-			srcMainOwner,
-			srcMainSecondOwner,
+		"src/mbin": []dbtbbbse.AssignedTebmSummbry{
+			srcMbinOwner,
+			srcMbinSecondOwner,
 		},
-		"src/main/java": []database.AssignedTeamSummary{
-			srcMainJavaOwner,
+		"src/mbin/jbvb": []dbtbbbse.AssignedTebmSummbry{
+			srcMbinJbvbOwner,
 		},
-		"src/test": []database.AssignedTeamSummary{
+		"src/test": []dbtbbbse.AssignedTebmSummbry{
 			srcTestOwner,
 		},
 	}
-	order := func(os []database.AssignedTeamSummary) {
+	order := func(os []dbtbbbse.AssignedTebmSummbry) {
 		sort.Slice(os, func(i, j int) bool {
-			if os[i].OwnerTeamID < os[j].OwnerTeamID {
+			if os[i].OwnerTebmID < os[j].OwnerTebmID {
 				return true
 			}
-			if os[i].FilePath < os[j].FilePath {
+			if os[i].FilePbth < os[j].FilePbth {
 				return true
 			}
-			return false
+			return fblse
 		})
 	}
-	for _, testCase := range []struct {
-		path string
-		want []database.AssignedTeamSummary
+	for _, testCbse := rbnge []struct {
+		pbth string
+		wbnt []dbtbbbse.AssignedTebmSummbry
 	}{
 		{
-			path: "",
-			want: []database.AssignedTeamSummary{
+			pbth: "",
+			wbnt: []dbtbbbse.AssignedTebmSummbry{
 				repoOwner,
 			},
 		},
 		{
-			path: "resources/pom.xml",
-			want: []database.AssignedTeamSummary{
+			pbth: "resources/pom.xml",
+			wbnt: []dbtbbbse.AssignedTebmSummbry{
 				repoOwner,
 			},
 		},
 		{
-			path: "src/main",
-			want: []database.AssignedTeamSummary{
+			pbth: "src/mbin",
+			wbnt: []dbtbbbse.AssignedTebmSummbry{
 				repoOwner,
-				srcMainOwner,
-				srcMainSecondOwner,
+				srcMbinOwner,
+				srcMbinSecondOwner,
 			},
 		},
 		{
-			path: "src/main/java/com/sourcegraph/GitServer.java",
-			want: []database.AssignedTeamSummary{
+			pbth: "src/mbin/jbvb/com/sourcegrbph/GitServer.jbvb",
+			wbnt: []dbtbbbse.AssignedTebmSummbry{
 				repoOwner,
-				srcMainOwner,
-				srcMainSecondOwner,
-				srcMainJavaOwner,
+				srcMbinOwner,
+				srcMbinSecondOwner,
+				srcMbinJbvbOwner,
 			},
 		},
 		{
-			path: "src/test/java/com/sourcegraph/GitServerTest.java",
-			want: []database.AssignedTeamSummary{
+			pbth: "src/test/jbvb/com/sourcegrbph/GitServerTest.jbvb",
+			wbnt: []dbtbbbse.AssignedTebmSummbry{
 				repoOwner,
 				srcTestOwner,
 			},
 		},
 	} {
-		got := owners.Match(testCase.path)
+		got := owners.Mbtch(testCbse.pbth)
 		order(got)
-		order(testCase.want)
-		if diff := cmp.Diff(testCase.want, got); diff != "" {
-			t.Errorf("path: %q, unexpected owners (-want+got): %s", testCase.path, diff)
+		order(testCbse.wbnt)
+		if diff := cmp.Diff(testCbse.wbnt, got); diff != "" {
+			t.Errorf("pbth: %q, unexpected owners (-wbnt+got): %s", testCbse.pbth, diff)
 		}
 	}
 }
 
-func createTeam(t *testing.T, ctx context.Context, db database.DB, teamName string) *itypes.Team {
+func crebteTebm(t *testing.T, ctx context.Context, db dbtbbbse.DB, tebmNbme string) *itypes.Tebm {
 	t.Helper()
-	team, err := db.Teams().CreateTeam(ctx, &itypes.Team{Name: teamName})
+	tebm, err := db.Tebms().CrebteTebm(ctx, &itypes.Tebm{Nbme: tebmNbme})
 	require.NoError(t, err)
-	return team
+	return tebm
 }

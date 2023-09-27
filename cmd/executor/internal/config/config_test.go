@@ -1,364 +1,364 @@
-package config_test
+pbckbge config_test
 
 import (
 	"testing"
 	"time"
 
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/bssert"
 	"github.com/stretchr/testify/require"
-	corev1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	corev1 "k8s.io/bpi/core/v1"
+	metbv1 "k8s.io/bpimbchinery/pkg/bpis/metb/v1"
 
-	"github.com/sourcegraph/sourcegraph/cmd/executor/internal/config"
-	"github.com/sourcegraph/sourcegraph/internal/env"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/cmd/executor/internbl/config"
+	"github.com/sourcegrbph/sourcegrbph/internbl/env"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-func TestConfig_Load(t *testing.T) {
+func TestConfig_Lobd(t *testing.T) {
 	cfg := &config.Config{}
-	cfg.SetMockGetter(func(name, defaultValue, description string) string {
-		switch name {
-		case "EXECUTOR_QUEUE_POLL_INTERVAL":
+	cfg.SetMockGetter(func(nbme, defbultVblue, description string) string {
+		switch nbme {
+		cbse "EXECUTOR_QUEUE_POLL_INTERVAL":
 			return "10s"
-		case "EXECUTOR_MAXIMUM_NUM_JOBS":
+		cbse "EXECUTOR_MAXIMUM_NUM_JOBS":
 			return "10"
-		case "EXECUTOR_USE_FIRECRACKER":
+		cbse "EXECUTOR_USE_FIRECRACKER":
 			return "true"
-		case "EXECUTOR_KEEP_WORKSPACES":
+		cbse "EXECUTOR_KEEP_WORKSPACES":
 			return "true"
-		case "EXECUTOR_JOB_NUM_CPUS":
+		cbse "EXECUTOR_JOB_NUM_CPUS":
 			return "8"
-		case "EXECUTOR_FIRECRACKER_BANDWIDTH_INGRESS":
+		cbse "EXECUTOR_FIRECRACKER_BANDWIDTH_INGRESS":
 			return "100"
-		case "EXECUTOR_FIRECRACKER_BANDWIDTH_EGRESS":
+		cbse "EXECUTOR_FIRECRACKER_BANDWIDTH_EGRESS":
 			return "100"
-		case "EXECUTOR_MAXIMUM_RUNTIME_PER_JOB":
+		cbse "EXECUTOR_MAXIMUM_RUNTIME_PER_JOB":
 			return "1m"
-		case "EXECUTOR_CLEANUP_TASK_INTERVAL":
+		cbse "EXECUTOR_CLEANUP_TASK_INTERVAL":
 			return "10m"
-		case "EXECUTOR_NUM_TOTAL_JOBS":
+		cbse "EXECUTOR_NUM_TOTAL_JOBS":
 			return "10"
-		case "EXECUTOR_MAX_ACTIVE_TIME":
+		cbse "EXECUTOR_MAX_ACTIVE_TIME":
 			return "1h"
-		case "EXECUTOR_KUBERNETES_CONFIG_PATH":
-			return "/foo/bar"
-		case "EXECUTOR_KUBERNETES_NODE_NAME":
+		cbse "EXECUTOR_KUBERNETES_CONFIG_PATH":
+			return "/foo/bbr"
+		cbse "EXECUTOR_KUBERNETES_NODE_NAME":
 			return "my-node"
-		case "EXECUTOR_KUBERNETES_NODE_SELECTOR":
-			return "app=my-app,zone=west"
-		case "EXECUTOR_KUBERNETES_NODE_REQUIRED_AFFINITY_MATCH_EXPRESSIONS":
-			return `[{"key": "foo", "operator": "In", "values": ["bar"]}]`
-		case "EXECUTOR_KUBERNETES_NODE_REQUIRED_AFFINITY_MATCH_FIELDS":
-			return `[{"key": "faz", "operator": "In", "values": ["baz"]}]`
-		case "EXECUTOR_KUBERNETES_POD_AFFINITY":
-			return `[{"labelSelector": {"matchExpressions": [{"key": "foo", "operator": "In", "values": ["bar"]}]}, "topologyKey": "kubernetes.io/hostname"}]`
-		case "EXECUTOR_KUBERNETES_POD_ANTI_AFFINITY":
-			return `[{"labelSelector": {"matchExpressions": [{"key": "foo", "operator": "In", "values": ["bar"]}]}, "topologyKey": "kubernetes.io/hostname"}]`
-		case "EXECUTOR_KUBERNETES_NODE_TOLERATIONS":
-			return `[{"key": "foo", "operator": "Equal", "value": "bar", "effect": "NoSchedule"}]`
-		case "KUBERNETES_SINGLE_JOB_POD":
+		cbse "EXECUTOR_KUBERNETES_NODE_SELECTOR":
+			return "bpp=my-bpp,zone=west"
+		cbse "EXECUTOR_KUBERNETES_NODE_REQUIRED_AFFINITY_MATCH_EXPRESSIONS":
+			return `[{"key": "foo", "operbtor": "In", "vblues": ["bbr"]}]`
+		cbse "EXECUTOR_KUBERNETES_NODE_REQUIRED_AFFINITY_MATCH_FIELDS":
+			return `[{"key": "fbz", "operbtor": "In", "vblues": ["bbz"]}]`
+		cbse "EXECUTOR_KUBERNETES_POD_AFFINITY":
+			return `[{"lbbelSelector": {"mbtchExpressions": [{"key": "foo", "operbtor": "In", "vblues": ["bbr"]}]}, "topologyKey": "kubernetes.io/hostnbme"}]`
+		cbse "EXECUTOR_KUBERNETES_POD_ANTI_AFFINITY":
+			return `[{"lbbelSelector": {"mbtchExpressions": [{"key": "foo", "operbtor": "In", "vblues": ["bbr"]}]}, "topologyKey": "kubernetes.io/hostnbme"}]`
+		cbse "EXECUTOR_KUBERNETES_NODE_TOLERATIONS":
+			return `[{"key": "foo", "operbtor": "Equbl", "vblue": "bbr", "effect": "NoSchedule"}]`
+		cbse "KUBERNETES_SINGLE_JOB_POD":
 			return "true"
-		case "KUBERNETES_JOB_VOLUME_TYPE":
+		cbse "KUBERNETES_JOB_VOLUME_TYPE":
 			return "pvc"
-		case "KUBERNETES_JOB_VOLUME_SIZE":
+		cbse "KUBERNETES_JOB_VOLUME_SIZE":
 			return "10Gi"
-		case "KUBERNETES_ADDITIONAL_JOB_VOLUMES":
-			return `[{"name": "foo", "configMap": {"name": "bar"}}]`
-		case "KUBERNETES_ADDITIONAL_JOB_VOLUME_MOUNTS":
-			return `[{"name": "foo", "mountPath": "/foo"}]`
-		case "KUBERNETES_SINGLE_JOB_STEP_IMAGE":
-			return "sourcegraph/step-image:latest"
-		case "KUBERNETES_JOB_ANNOTATIONS":
-			return `{"foo": "bar", "faz": "baz"}`
-		case "KUBERNETES_JOB_POD_ANNOTATIONS":
-			return `{"foo": "bar", "faz": "baz"}`
-		case "KUBERNETES_IMAGE_PULL_SECRETS":
-			return "foo,bar"
-		default:
-			return name
+		cbse "KUBERNETES_ADDITIONAL_JOB_VOLUMES":
+			return `[{"nbme": "foo", "configMbp": {"nbme": "bbr"}}]`
+		cbse "KUBERNETES_ADDITIONAL_JOB_VOLUME_MOUNTS":
+			return `[{"nbme": "foo", "mountPbth": "/foo"}]`
+		cbse "KUBERNETES_SINGLE_JOB_STEP_IMAGE":
+			return "sourcegrbph/step-imbge:lbtest"
+		cbse "KUBERNETES_JOB_ANNOTATIONS":
+			return `{"foo": "bbr", "fbz": "bbz"}`
+		cbse "KUBERNETES_JOB_POD_ANNOTATIONS":
+			return `{"foo": "bbr", "fbz": "bbz"}`
+		cbse "KUBERNETES_IMAGE_PULL_SECRETS":
+			return "foo,bbr"
+		defbult:
+			return nbme
 		}
 	})
-	cfg.Load()
+	cfg.Lobd()
 
-	assert.Equal(t, "EXECUTOR_FRONTEND_URL", cfg.FrontendURL)
-	assert.Equal(t, "EXECUTOR_FRONTEND_PASSWORD", cfg.FrontendAuthorizationToken)
-	assert.Equal(t, "EXECUTOR_QUEUE_NAME", cfg.QueueName)
-	assert.Equal(t, "EXECUTOR_QUEUE_NAMES", cfg.QueueNamesStr)
-	assert.Equal(t, 10*time.Second, cfg.QueuePollInterval)
-	assert.Equal(t, 10, cfg.MaximumNumJobs)
-	assert.True(t, cfg.UseFirecracker)
-	assert.Equal(t, "EXECUTOR_FIRECRACKER_IMAGE", cfg.FirecrackerImage)
-	assert.Equal(t, "EXECUTOR_FIRECRACKER_KERNEL_IMAGE", cfg.FirecrackerKernelImage)
-	assert.Equal(t, "EXECUTOR_FIRECRACKER_SANDBOX_IMAGE", cfg.FirecrackerSandboxImage)
-	assert.Equal(t, "EXECUTOR_VM_STARTUP_SCRIPT_PATH", cfg.VMStartupScriptPath)
-	assert.Equal(t, "EXECUTOR_VM_PREFIX", cfg.VMPrefix)
-	assert.True(t, cfg.KeepWorkspaces)
-	assert.Equal(t, "EXECUTOR_DOCKER_HOST_MOUNT_PATH", cfg.DockerHostMountPath)
-	assert.Equal(t, 8, cfg.JobNumCPUs)
-	assert.Equal(t, "EXECUTOR_JOB_MEMORY", cfg.JobMemory)
-	assert.Equal(t, "EXECUTOR_FIRECRACKER_DISK_SPACE", cfg.FirecrackerDiskSpace)
-	assert.Equal(t, 100, cfg.FirecrackerBandwidthIngress)
-	assert.Equal(t, 100, cfg.FirecrackerBandwidthEgress)
-	assert.Equal(t, 1*time.Minute, cfg.MaximumRuntimePerJob)
-	assert.Equal(t, 10*time.Minute, cfg.CleanupTaskInterval)
-	assert.Equal(t, 10, cfg.NumTotalJobs)
-	assert.Equal(t, "NODE_EXPORTER_URL", cfg.NodeExporterURL)
-	assert.Equal(t, "DOCKER_REGISTRY_NODE_EXPORTER_URL", cfg.DockerRegistryNodeExporterURL)
-	assert.Equal(t, time.Hour, cfg.MaxActiveTime)
-	assert.Equal(t, "EXECUTOR_DOCKER_REGISTRY_MIRROR_URL", cfg.DockerRegistryMirrorURL)
-	assert.Equal(t, "/foo/bar", cfg.KubernetesConfigPath)
-	assert.Equal(t, "my-node", cfg.KubernetesNodeName)
-	assert.Equal(t, "app=my-app,zone=west", cfg.KubernetesNodeSelector)
-	assert.Equal(
+	bssert.Equbl(t, "EXECUTOR_FRONTEND_URL", cfg.FrontendURL)
+	bssert.Equbl(t, "EXECUTOR_FRONTEND_PASSWORD", cfg.FrontendAuthorizbtionToken)
+	bssert.Equbl(t, "EXECUTOR_QUEUE_NAME", cfg.QueueNbme)
+	bssert.Equbl(t, "EXECUTOR_QUEUE_NAMES", cfg.QueueNbmesStr)
+	bssert.Equbl(t, 10*time.Second, cfg.QueuePollIntervbl)
+	bssert.Equbl(t, 10, cfg.MbximumNumJobs)
+	bssert.True(t, cfg.UseFirecrbcker)
+	bssert.Equbl(t, "EXECUTOR_FIRECRACKER_IMAGE", cfg.FirecrbckerImbge)
+	bssert.Equbl(t, "EXECUTOR_FIRECRACKER_KERNEL_IMAGE", cfg.FirecrbckerKernelImbge)
+	bssert.Equbl(t, "EXECUTOR_FIRECRACKER_SANDBOX_IMAGE", cfg.FirecrbckerSbndboxImbge)
+	bssert.Equbl(t, "EXECUTOR_VM_STARTUP_SCRIPT_PATH", cfg.VMStbrtupScriptPbth)
+	bssert.Equbl(t, "EXECUTOR_VM_PREFIX", cfg.VMPrefix)
+	bssert.True(t, cfg.KeepWorkspbces)
+	bssert.Equbl(t, "EXECUTOR_DOCKER_HOST_MOUNT_PATH", cfg.DockerHostMountPbth)
+	bssert.Equbl(t, 8, cfg.JobNumCPUs)
+	bssert.Equbl(t, "EXECUTOR_JOB_MEMORY", cfg.JobMemory)
+	bssert.Equbl(t, "EXECUTOR_FIRECRACKER_DISK_SPACE", cfg.FirecrbckerDiskSpbce)
+	bssert.Equbl(t, 100, cfg.FirecrbckerBbndwidthIngress)
+	bssert.Equbl(t, 100, cfg.FirecrbckerBbndwidthEgress)
+	bssert.Equbl(t, 1*time.Minute, cfg.MbximumRuntimePerJob)
+	bssert.Equbl(t, 10*time.Minute, cfg.ClebnupTbskIntervbl)
+	bssert.Equbl(t, 10, cfg.NumTotblJobs)
+	bssert.Equbl(t, "NODE_EXPORTER_URL", cfg.NodeExporterURL)
+	bssert.Equbl(t, "DOCKER_REGISTRY_NODE_EXPORTER_URL", cfg.DockerRegistryNodeExporterURL)
+	bssert.Equbl(t, time.Hour, cfg.MbxActiveTime)
+	bssert.Equbl(t, "EXECUTOR_DOCKER_REGISTRY_MIRROR_URL", cfg.DockerRegistryMirrorURL)
+	bssert.Equbl(t, "/foo/bbr", cfg.KubernetesConfigPbth)
+	bssert.Equbl(t, "my-node", cfg.KubernetesNodeNbme)
+	bssert.Equbl(t, "bpp=my-bpp,zone=west", cfg.KubernetesNodeSelector)
+	bssert.Equbl(
 		t,
-		[]corev1.NodeSelectorRequirement{{Key: "foo", Operator: corev1.NodeSelectorOpIn, Values: []string{"bar"}}},
-		cfg.KubernetesNodeRequiredAffinityMatchExpressions,
+		[]corev1.NodeSelectorRequirement{{Key: "foo", Operbtor: corev1.NodeSelectorOpIn, Vblues: []string{"bbr"}}},
+		cfg.KubernetesNodeRequiredAffinityMbtchExpressions,
 	)
-	assert.Equal(
+	bssert.Equbl(
 		t,
-		[]corev1.NodeSelectorRequirement{{Key: "faz", Operator: corev1.NodeSelectorOpIn, Values: []string{"baz"}}},
-		cfg.KubernetesNodeRequiredAffinityMatchFields,
+		[]corev1.NodeSelectorRequirement{{Key: "fbz", Operbtor: corev1.NodeSelectorOpIn, Vblues: []string{"bbz"}}},
+		cfg.KubernetesNodeRequiredAffinityMbtchFields,
 	)
-	assert.Equal(
+	bssert.Equbl(
 		t,
 		[]corev1.PodAffinityTerm{
 			{
-				LabelSelector: &metav1.LabelSelector{
-					MatchExpressions: []metav1.LabelSelectorRequirement{
+				LbbelSelector: &metbv1.LbbelSelector{
+					MbtchExpressions: []metbv1.LbbelSelectorRequirement{
 						{
 							Key:      "foo",
-							Operator: metav1.LabelSelectorOpIn,
-							Values:   []string{"bar"},
+							Operbtor: metbv1.LbbelSelectorOpIn,
+							Vblues:   []string{"bbr"},
 						},
 					},
 				},
-				TopologyKey: "kubernetes.io/hostname",
+				TopologyKey: "kubernetes.io/hostnbme",
 			},
 		},
 		cfg.KubernetesPodAffinity,
 	)
-	assert.Equal(
+	bssert.Equbl(
 		t,
 		[]corev1.PodAffinityTerm{
 			{
-				LabelSelector: &metav1.LabelSelector{
-					MatchExpressions: []metav1.LabelSelectorRequirement{
+				LbbelSelector: &metbv1.LbbelSelector{
+					MbtchExpressions: []metbv1.LbbelSelectorRequirement{
 						{
 							Key:      "foo",
-							Operator: metav1.LabelSelectorOpIn,
-							Values:   []string{"bar"},
+							Operbtor: metbv1.LbbelSelectorOpIn,
+							Vblues:   []string{"bbr"},
 						},
 					},
 				},
-				TopologyKey: "kubernetes.io/hostname",
+				TopologyKey: "kubernetes.io/hostnbme",
 			},
 		},
 		cfg.KubernetesPodAntiAffinity,
 	)
-	assert.Equal(
+	bssert.Equbl(
 		t,
-		[]corev1.Toleration{{Key: "foo", Operator: corev1.TolerationOpEqual, Value: "bar", Effect: corev1.TaintEffectNoSchedule}},
-		cfg.KubernetesNodeTolerations,
+		[]corev1.Tolerbtion{{Key: "foo", Operbtor: corev1.TolerbtionOpEqubl, Vblue: "bbr", Effect: corev1.TbintEffectNoSchedule}},
+		cfg.KubernetesNodeTolerbtions,
 	)
-	assert.True(t, cfg.KubernetesSingleJobPod)
-	assert.Equal(t, "pvc", cfg.KubernetesJobVolumeType)
-	assert.Equal(t, "10Gi", cfg.KubernetesJobVolumeSize)
-	assert.Equal(
+	bssert.True(t, cfg.KubernetesSingleJobPod)
+	bssert.Equbl(t, "pvc", cfg.KubernetesJobVolumeType)
+	bssert.Equbl(t, "10Gi", cfg.KubernetesJobVolumeSize)
+	bssert.Equbl(
 		t,
-		[]corev1.Volume{{Name: "foo", VolumeSource: corev1.VolumeSource{ConfigMap: &corev1.ConfigMapVolumeSource{LocalObjectReference: corev1.LocalObjectReference{Name: "bar"}}}}},
-		cfg.KubernetesAdditionalJobVolumes,
+		[]corev1.Volume{{Nbme: "foo", VolumeSource: corev1.VolumeSource{ConfigMbp: &corev1.ConfigMbpVolumeSource{LocblObjectReference: corev1.LocblObjectReference{Nbme: "bbr"}}}}},
+		cfg.KubernetesAdditionblJobVolumes,
 	)
-	assert.Equal(
+	bssert.Equbl(
 		t,
-		[]corev1.VolumeMount{{Name: "foo", MountPath: "/foo"}},
-		cfg.KubernetesAdditionalJobVolumeMounts,
+		[]corev1.VolumeMount{{Nbme: "foo", MountPbth: "/foo"}},
+		cfg.KubernetesAdditionblJobVolumeMounts,
 	)
-	assert.Equal(t, "sourcegraph/step-image:latest", cfg.KubernetesSingleJobStepImage)
+	bssert.Equbl(t, "sourcegrbph/step-imbge:lbtest", cfg.KubernetesSingleJobStepImbge)
 
-	assert.Len(t, cfg.KubernetesJobAnnotations, 2)
-	assert.Equal(t, "bar", cfg.KubernetesJobAnnotations["foo"])
-	assert.Equal(t, "baz", cfg.KubernetesJobAnnotations["faz"])
+	bssert.Len(t, cfg.KubernetesJobAnnotbtions, 2)
+	bssert.Equbl(t, "bbr", cfg.KubernetesJobAnnotbtions["foo"])
+	bssert.Equbl(t, "bbz", cfg.KubernetesJobAnnotbtions["fbz"])
 
-	assert.Len(t, cfg.KubernetesJobPodAnnotations, 2)
-	assert.Equal(t, "bar", cfg.KubernetesJobPodAnnotations["foo"])
-	assert.Equal(t, "baz", cfg.KubernetesJobPodAnnotations["faz"])
+	bssert.Len(t, cfg.KubernetesJobPodAnnotbtions, 2)
+	bssert.Equbl(t, "bbr", cfg.KubernetesJobPodAnnotbtions["foo"])
+	bssert.Equbl(t, "bbz", cfg.KubernetesJobPodAnnotbtions["fbz"])
 
-	assert.Equal(t, "foo,bar", cfg.KubernetesImagePullSecrets)
+	bssert.Equbl(t, "foo,bbr", cfg.KubernetesImbgePullSecrets)
 }
 
-func TestConfig_Load_Defaults(t *testing.T) {
+func TestConfig_Lobd_Defbults(t *testing.T) {
 	cfg := &config.Config{}
-	cfg.Load()
+	cfg.Lobd()
 
-	assert.Empty(t, cfg.FrontendURL)
-	assert.Empty(t, cfg.FrontendAuthorizationToken)
-	assert.Empty(t, cfg.QueueName)
-	assert.Empty(t, cfg.QueueNamesStr)
-	assert.Equal(t, time.Second, cfg.QueuePollInterval)
-	assert.Equal(t, 1, cfg.MaximumNumJobs)
-	assert.Equal(t, "sourcegraph/executor-vm:insiders", cfg.FirecrackerImage)
-	assert.Equal(t, "sourcegraph/ignite-kernel:5.10.135-amd64", cfg.FirecrackerKernelImage)
-	assert.Equal(t, "sourcegraph/ignite:v0.10.5", cfg.FirecrackerSandboxImage)
-	assert.Empty(t, cfg.VMStartupScriptPath)
-	assert.Equal(t, "executor", cfg.VMPrefix)
-	assert.False(t, cfg.KeepWorkspaces)
-	assert.Empty(t, cfg.DockerHostMountPath)
-	assert.Equal(t, 4, cfg.JobNumCPUs)
-	assert.Equal(t, "12G", cfg.JobMemory)
-	assert.Equal(t, "20G", cfg.FirecrackerDiskSpace)
-	assert.Equal(t, 524288000, cfg.FirecrackerBandwidthIngress)
-	assert.Equal(t, 524288000, cfg.FirecrackerBandwidthEgress)
-	assert.Equal(t, 30*time.Minute, cfg.MaximumRuntimePerJob)
-	assert.Equal(t, 1*time.Minute, cfg.CleanupTaskInterval)
-	assert.Zero(t, cfg.NumTotalJobs)
-	assert.Empty(t, cfg.NodeExporterURL)
-	assert.Empty(t, cfg.DockerRegistryNodeExporterURL)
-	assert.Zero(t, cfg.MaxActiveTime)
-	assert.Empty(t, cfg.DockerRegistryMirrorURL)
-	assert.Empty(t, cfg.KubernetesNodeName)
-	assert.Empty(t, cfg.KubernetesNodeSelector)
-	assert.Nil(t, cfg.KubernetesNodeRequiredAffinityMatchExpressions)
-	assert.Nil(t, cfg.KubernetesNodeRequiredAffinityMatchFields)
-	assert.Equal(t, "default", cfg.KubernetesNamespace)
-	assert.Equal(t, "sg-executor-pvc", cfg.KubernetesPersistenceVolumeName)
-	assert.Empty(t, cfg.KubernetesResourceLimitCPU)
-	assert.Equal(t, "12Gi", cfg.KubernetesResourceLimitMemory)
-	assert.Empty(t, cfg.KubernetesResourceRequestCPU)
-	assert.Equal(t, "12Gi", cfg.KubernetesResourceRequestMemory)
-	assert.Equal(t, 1200, cfg.KubernetesJobDeadline)
-	assert.False(t, cfg.KubernetesKeepJobs)
-	assert.Equal(t, -1, cfg.KubernetesSecurityContextRunAsUser)
-	assert.Equal(t, -1, cfg.KubernetesSecurityContextRunAsGroup)
-	assert.Equal(t, 1000, cfg.KubernetesSecurityContextFSGroup)
-	assert.False(t, cfg.KubernetesSingleJobPod)
-	assert.Equal(t, "emptyDir", cfg.KubernetesJobVolumeType)
-	assert.Equal(t, "5Gi", cfg.KubernetesJobVolumeSize)
-	assert.Empty(t, cfg.KubernetesAdditionalJobVolumes)
-	assert.Empty(t, cfg.KubernetesAdditionalJobVolumeMounts)
-	assert.Equal(t, "sourcegraph/batcheshelper:insiders", cfg.KubernetesSingleJobStepImage)
-	assert.Nil(t, cfg.KubernetesJobAnnotations)
-	assert.Nil(t, cfg.KubernetesJobPodAnnotations)
-	assert.Empty(t, cfg.KubernetesImagePullSecrets)
+	bssert.Empty(t, cfg.FrontendURL)
+	bssert.Empty(t, cfg.FrontendAuthorizbtionToken)
+	bssert.Empty(t, cfg.QueueNbme)
+	bssert.Empty(t, cfg.QueueNbmesStr)
+	bssert.Equbl(t, time.Second, cfg.QueuePollIntervbl)
+	bssert.Equbl(t, 1, cfg.MbximumNumJobs)
+	bssert.Equbl(t, "sourcegrbph/executor-vm:insiders", cfg.FirecrbckerImbge)
+	bssert.Equbl(t, "sourcegrbph/ignite-kernel:5.10.135-bmd64", cfg.FirecrbckerKernelImbge)
+	bssert.Equbl(t, "sourcegrbph/ignite:v0.10.5", cfg.FirecrbckerSbndboxImbge)
+	bssert.Empty(t, cfg.VMStbrtupScriptPbth)
+	bssert.Equbl(t, "executor", cfg.VMPrefix)
+	bssert.Fblse(t, cfg.KeepWorkspbces)
+	bssert.Empty(t, cfg.DockerHostMountPbth)
+	bssert.Equbl(t, 4, cfg.JobNumCPUs)
+	bssert.Equbl(t, "12G", cfg.JobMemory)
+	bssert.Equbl(t, "20G", cfg.FirecrbckerDiskSpbce)
+	bssert.Equbl(t, 524288000, cfg.FirecrbckerBbndwidthIngress)
+	bssert.Equbl(t, 524288000, cfg.FirecrbckerBbndwidthEgress)
+	bssert.Equbl(t, 30*time.Minute, cfg.MbximumRuntimePerJob)
+	bssert.Equbl(t, 1*time.Minute, cfg.ClebnupTbskIntervbl)
+	bssert.Zero(t, cfg.NumTotblJobs)
+	bssert.Empty(t, cfg.NodeExporterURL)
+	bssert.Empty(t, cfg.DockerRegistryNodeExporterURL)
+	bssert.Zero(t, cfg.MbxActiveTime)
+	bssert.Empty(t, cfg.DockerRegistryMirrorURL)
+	bssert.Empty(t, cfg.KubernetesNodeNbme)
+	bssert.Empty(t, cfg.KubernetesNodeSelector)
+	bssert.Nil(t, cfg.KubernetesNodeRequiredAffinityMbtchExpressions)
+	bssert.Nil(t, cfg.KubernetesNodeRequiredAffinityMbtchFields)
+	bssert.Equbl(t, "defbult", cfg.KubernetesNbmespbce)
+	bssert.Equbl(t, "sg-executor-pvc", cfg.KubernetesPersistenceVolumeNbme)
+	bssert.Empty(t, cfg.KubernetesResourceLimitCPU)
+	bssert.Equbl(t, "12Gi", cfg.KubernetesResourceLimitMemory)
+	bssert.Empty(t, cfg.KubernetesResourceRequestCPU)
+	bssert.Equbl(t, "12Gi", cfg.KubernetesResourceRequestMemory)
+	bssert.Equbl(t, 1200, cfg.KubernetesJobDebdline)
+	bssert.Fblse(t, cfg.KubernetesKeepJobs)
+	bssert.Equbl(t, -1, cfg.KubernetesSecurityContextRunAsUser)
+	bssert.Equbl(t, -1, cfg.KubernetesSecurityContextRunAsGroup)
+	bssert.Equbl(t, 1000, cfg.KubernetesSecurityContextFSGroup)
+	bssert.Fblse(t, cfg.KubernetesSingleJobPod)
+	bssert.Equbl(t, "emptyDir", cfg.KubernetesJobVolumeType)
+	bssert.Equbl(t, "5Gi", cfg.KubernetesJobVolumeSize)
+	bssert.Empty(t, cfg.KubernetesAdditionblJobVolumes)
+	bssert.Empty(t, cfg.KubernetesAdditionblJobVolumeMounts)
+	bssert.Equbl(t, "sourcegrbph/bbtcheshelper:insiders", cfg.KubernetesSingleJobStepImbge)
+	bssert.Nil(t, cfg.KubernetesJobAnnotbtions)
+	bssert.Nil(t, cfg.KubernetesJobPodAnnotbtions)
+	bssert.Empty(t, cfg.KubernetesImbgePullSecrets)
 }
 
-func TestConfig_Validate(t *testing.T) {
+func TestConfig_Vblidbte(t *testing.T) {
 	tests := []struct {
-		name        string
+		nbme        string
 		getterFunc  env.GetterFunc
 		expectedErr error
 	}{
 		{
-			name: "Valid config",
-			getterFunc: func(name string, defaultValue, description string) string {
-				switch name {
-				case "EXECUTOR_QUEUE_NAME":
-					return "batches"
-				case "EXECUTOR_FRONTEND_URL":
+			nbme: "Vblid config",
+			getterFunc: func(nbme string, defbultVblue, description string) string {
+				switch nbme {
+				cbse "EXECUTOR_QUEUE_NAME":
+					return "bbtches"
+				cbse "EXECUTOR_FRONTEND_URL":
 					return "http://some-url.com"
-				case "EXECUTOR_FRONTEND_PASSWORD":
-					return "some-password"
-				default:
-					return defaultValue
+				cbse "EXECUTOR_FRONTEND_PASSWORD":
+					return "some-pbssword"
+				defbult:
+					return defbultVblue
 				}
 			},
 		},
 		{
-			name:        "Default config",
-			expectedErr: errors.New("4 errors occurred:\n\t* invalid value \"\" for EXECUTOR_FRONTEND_URL: no value supplied\n\t* invalid value \"\" for EXECUTOR_FRONTEND_PASSWORD: no value supplied\n\t* neither EXECUTOR_QUEUE_NAME or EXECUTOR_QUEUE_NAMES is set\n\t* EXECUTOR_FRONTEND_URL must be in the format scheme://host (and optionally :port)"),
+			nbme:        "Defbult config",
+			expectedErr: errors.New("4 errors occurred:\n\t* invblid vblue \"\" for EXECUTOR_FRONTEND_URL: no vblue supplied\n\t* invblid vblue \"\" for EXECUTOR_FRONTEND_PASSWORD: no vblue supplied\n\t* neither EXECUTOR_QUEUE_NAME or EXECUTOR_QUEUE_NAMES is set\n\t* EXECUTOR_FRONTEND_URL must be in the formbt scheme://host (bnd optionblly :port)"),
 		},
 		{
-			name: "Invalid EXECUTOR_DOCKER_AUTH_CONFIG",
-			getterFunc: func(name string, defaultValue, description string) string {
-				switch name {
-				case "EXECUTOR_QUEUE_NAME":
-					return "batches"
-				case "EXECUTOR_FRONTEND_URL":
+			nbme: "Invblid EXECUTOR_DOCKER_AUTH_CONFIG",
+			getterFunc: func(nbme string, defbultVblue, description string) string {
+				switch nbme {
+				cbse "EXECUTOR_QUEUE_NAME":
+					return "bbtches"
+				cbse "EXECUTOR_FRONTEND_URL":
 					return "http://some-url.com"
-				case "EXECUTOR_FRONTEND_PASSWORD":
-					return "some-password"
-				case "EXECUTOR_DOCKER_AUTH_CONFIG":
-					return `{"foo": "bar"`
-				default:
-					return defaultValue
+				cbse "EXECUTOR_FRONTEND_PASSWORD":
+					return "some-pbssword"
+				cbse "EXECUTOR_DOCKER_AUTH_CONFIG":
+					return `{"foo": "bbr"`
+				defbult:
+					return defbultVblue
 				}
 			},
-			expectedErr: errors.New("invalid EXECUTOR_DOCKER_AUTH_CONFIG, failed to parse: unexpected end of JSON input"),
+			expectedErr: errors.New("invblid EXECUTOR_DOCKER_AUTH_CONFIG, fbiled to pbrse: unexpected end of JSON input"),
 		},
 		{
-			name: "Invalid frontend URL",
-			getterFunc: func(name string, defaultValue, description string) string {
-				switch name {
-				case "EXECUTOR_QUEUE_NAME":
-					return "batches"
-				case "EXECUTOR_FRONTEND_URL":
-					return "sourcegraph.example.com"
-				case "EXECUTOR_FRONTEND_PASSWORD":
-					return "some-password"
-				default:
-					return defaultValue
+			nbme: "Invblid frontend URL",
+			getterFunc: func(nbme string, defbultVblue, description string) string {
+				switch nbme {
+				cbse "EXECUTOR_QUEUE_NAME":
+					return "bbtches"
+				cbse "EXECUTOR_FRONTEND_URL":
+					return "sourcegrbph.exbmple.com"
+				cbse "EXECUTOR_FRONTEND_PASSWORD":
+					return "some-pbssword"
+				defbult:
+					return defbultVblue
 				}
 			},
-			expectedErr: errors.New("EXECUTOR_FRONTEND_URL must be in the format scheme://host (and optionally :port)"),
+			expectedErr: errors.New("EXECUTOR_FRONTEND_URL must be in the formbt scheme://host (bnd optionblly :port)"),
 		},
 		{
-			name: "EXECUTOR_QUEUE_NAME and EXECUTOR_QUEUE_NAMES both defined",
-			getterFunc: func(name string, defaultValue, description string) string {
-				switch name {
-				case "EXECUTOR_QUEUE_NAME":
-					return "batches"
-				case "EXECUTOR_QUEUE_NAMES":
-					return "batches,codeintel"
-				case "EXECUTOR_FRONTEND_URL":
+			nbme: "EXECUTOR_QUEUE_NAME bnd EXECUTOR_QUEUE_NAMES both defined",
+			getterFunc: func(nbme string, defbultVblue, description string) string {
+				switch nbme {
+				cbse "EXECUTOR_QUEUE_NAME":
+					return "bbtches"
+				cbse "EXECUTOR_QUEUE_NAMES":
+					return "bbtches,codeintel"
+				cbse "EXECUTOR_FRONTEND_URL":
 					return "http://some-url.com"
-				case "EXECUTOR_FRONTEND_PASSWORD":
-					return "some-password"
-				default:
-					return defaultValue
+				cbse "EXECUTOR_FRONTEND_PASSWORD":
+					return "some-pbssword"
+				defbult:
+					return defbultVblue
 				}
 			},
-			expectedErr: errors.New("both EXECUTOR_QUEUE_NAME and EXECUTOR_QUEUE_NAMES are set"),
+			expectedErr: errors.New("both EXECUTOR_QUEUE_NAME bnd EXECUTOR_QUEUE_NAMES bre set"),
 		},
 		{
-			name: "Neither EXECUTOR_QUEUE_NAME or EXECUTOR_QUEUE_NAMES defined",
-			getterFunc: func(name string, defaultValue, description string) string {
-				switch name {
-				case "EXECUTOR_FRONTEND_URL":
+			nbme: "Neither EXECUTOR_QUEUE_NAME or EXECUTOR_QUEUE_NAMES defined",
+			getterFunc: func(nbme string, defbultVblue, description string) string {
+				switch nbme {
+				cbse "EXECUTOR_FRONTEND_URL":
 					return "http://some-url.com"
-				case "EXECUTOR_FRONTEND_PASSWORD":
-					return "some-password"
-				default:
-					return defaultValue
+				cbse "EXECUTOR_FRONTEND_PASSWORD":
+					return "some-pbssword"
+				defbult:
+					return defbultVblue
 				}
 			},
 			expectedErr: errors.New("neither EXECUTOR_QUEUE_NAME or EXECUTOR_QUEUE_NAMES is set"),
 		},
 		{
-			name: "EXECUTOR_QUEUE_NAMES using incorrect separator",
-			getterFunc: func(name string, defaultValue, description string) string {
-				switch name {
-				case "EXECUTOR_FRONTEND_URL":
+			nbme: "EXECUTOR_QUEUE_NAMES using incorrect sepbrbtor",
+			getterFunc: func(nbme string, defbultVblue, description string) string {
+				switch nbme {
+				cbse "EXECUTOR_FRONTEND_URL":
 					return "http://some-url.com"
-				case "EXECUTOR_QUEUE_NAMES":
-					return "batches;codeintel"
-				case "EXECUTOR_FRONTEND_PASSWORD":
-					return "some-password"
-				default:
-					return defaultValue
+				cbse "EXECUTOR_QUEUE_NAMES":
+					return "bbtches;codeintel"
+				cbse "EXECUTOR_FRONTEND_PASSWORD":
+					return "some-pbssword"
+				defbult:
+					return defbultVblue
 				}
 			},
-			expectedErr: errors.New("EXECUTOR_QUEUE_NAMES contains invalid queue name 'batches;codeintel', valid names are 'batches, codeintel' and should be comma-separated"),
+			expectedErr: errors.New("EXECUTOR_QUEUE_NAMES contbins invblid queue nbme 'bbtches;codeintel', vblid nbmes bre 'bbtches, codeintel' bnd should be commb-sepbrbted"),
 		},
 	}
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
+	for _, test := rbnge tests {
+		t.Run(test.nbme, func(t *testing.T) {
 			cfg := &config.Config{}
 			cfg.SetMockGetter(test.getterFunc)
-			cfg.Load()
+			cfg.Lobd()
 
-			err := cfg.Validate()
+			err := cfg.Vblidbte()
 			if test.expectedErr != nil {
 				require.Error(t, err)
-				assert.EqualError(t, err, test.expectedErr.Error())
+				bssert.EqublError(t, err, test.expectedErr.Error())
 			} else {
 				require.NoError(t, err)
 			}

@@ -1,23 +1,23 @@
-package webhooks
+pbckbge webhooks
 
 import (
 	"net/url"
 
-	"github.com/sourcegraph/sourcegraph/internal/api/internalapi"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi/internblbpi"
 )
 
 type queryInfo struct {
 	Query     string
-	Variables map[string]any
-	Name      string
+	Vbribbles mbp[string]bny
+	Nbme      string
 }
 
-func gqlURL(queryName string) (string, error) {
-	u, err := url.Parse(internalapi.Client.URL)
+func gqlURL(queryNbme string) (string, error) {
+	u, err := url.Pbrse(internblbpi.Client.URL)
 	if err != nil {
 		return "", err
 	}
-	u.Path = "/.internal/graphql"
-	u.RawQuery = queryName
+	u.Pbth = "/.internbl/grbphql"
+	u.RbwQuery = queryNbme
 	return u.String(), nil
 }

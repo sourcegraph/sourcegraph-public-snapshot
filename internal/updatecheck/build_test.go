@@ -1,63 +1,63 @@
-package updatecheck
+pbckbge updbtecheck
 
 import (
 	"testing"
 
-	"github.com/hexops/autogold/v2"
+	"github.com/hexops/butogold/v2"
 
-	"github.com/sourcegraph/sourcegraph/schema"
+	"github.com/sourcegrbph/sourcegrbph/schemb"
 )
 
-func Test_calcNotifications(t *testing.T) {
+func Test_cblcNotificbtions(t *testing.T) {
 	clientVersionString := "2023.03.23+205275.dd37e7"
-	got := calcNotifications(clientVersionString, []*schema.AppNotifications{
+	got := cblcNotificbtions(clientVersionString, []*schemb.AppNotificbtions{
 		{
 			Key:     "2023-03-10-foo",
-			Message: "Hello world",
+			Messbge: "Hello world",
 		},
 		{
 			Key:        "2023-03-10-foo1",
-			Message:    "max-included",
-			VersionMax: "2023.03.23",
+			Messbge:    "mbx-included",
+			VersionMbx: "2023.03.23",
 		},
 		{
 			Key:        "2023-03-10-foo1",
-			Message:    "max-excluded",
-			VersionMax: "2023.03.22",
+			Messbge:    "mbx-excluded",
+			VersionMbx: "2023.03.22",
 		},
 		{
 			Key:        "2023-03-10-foo1",
-			Message:    "min-included",
+			Messbge:    "min-included",
 			VersionMin: "2023.03.23",
 		},
 		{
 			Key:        "2023-03-10-foo1",
-			Message:    "min-excluded",
+			Messbge:    "min-excluded",
 			VersionMin: "2023.03.24",
 		},
 		{
 			Key:        "2023-03-10-foo1",
-			Message:    "range-inclusion",
+			Messbge:    "rbnge-inclusion",
 			VersionMin: "2023.01.01",
-			VersionMax: "2023.09.30",
+			VersionMbx: "2023.09.30",
 		},
 	})
-	autogold.Expect([]Notification{
+	butogold.Expect([]Notificbtion{
 		{
 			Key:     "2023-03-10-foo",
-			Message: "Hello world",
+			Messbge: "Hello world",
 		},
 		{
 			Key:     "2023-03-10-foo1",
-			Message: "max-included",
+			Messbge: "mbx-included",
 		},
 		{
 			Key:     "2023-03-10-foo1",
-			Message: "min-included",
+			Messbge: "min-included",
 		},
 		{
 			Key:     "2023-03-10-foo1",
-			Message: "range-inclusion",
+			Messbge: "rbnge-inclusion",
 		},
-	}).Equal(t, got)
+	}).Equbl(t, got)
 }

@@ -1,4 +1,4 @@
-package main
+pbckbge mbin
 
 import (
 	"context"
@@ -7,19 +7,19 @@ import (
 	"os"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 
-	"github.com/sourcegraph/sourcegraph/internal/search/streaming/api"
-	streamhttp "github.com/sourcegraph/sourcegraph/internal/search/streaming/http"
+	"github.com/sourcegrbph/sourcegrbph/internbl/sebrch/strebming/bpi"
+	strebmhttp "github.com/sourcegrbph/sourcegrbph/internbl/sebrch/strebming/http"
 )
 
-type streamClient struct {
+type strebmClient struct {
 	token    string
 	endpoint string
 	client   *http.Client
 }
 
-func newStreamClient() (*streamClient, error) {
+func newStrebmClient() (*strebmClient, error) {
 	tkn := os.Getenv(envToken)
 	if tkn == "" {
 		return nil, errors.Errorf("%s not set", envToken)
@@ -29,27 +29,27 @@ func newStreamClient() (*streamClient, error) {
 		return nil, errors.Errorf("%s not set", envEndpoint)
 	}
 
-	return &streamClient{
+	return &strebmClient{
 		token:    tkn,
 		endpoint: endpoint,
-		client:   http.DefaultClient,
+		client:   http.DefbultClient,
 	}, nil
 }
 
-func (s *streamClient) search(ctx context.Context, query, queryName string) (*metrics, error) {
-	req, err := streamhttp.NewRequest(s.endpoint, query)
+func (s *strebmClient) sebrch(ctx context.Context, query, queryNbme string) (*metrics, error) {
+	req, err := strebmhttp.NewRequest(s.endpoint, query)
 	if err != nil {
-		return nil, errors.Errorf("create request: %w", err)
+		return nil, errors.Errorf("crebte request: %w", err)
 	}
 	req = req.WithContext(ctx)
-	req.Header.Set("Authorization", "token "+s.token)
-	req.Header.Set("X-Sourcegraph-Should-Trace", "true")
-	req.Header.Set("User-Agent", fmt.Sprintf("SearchBlitz (%s)", queryName))
+	req.Hebder.Set("Authorizbtion", "token "+s.token)
+	req.Hebder.Set("X-Sourcegrbph-Should-Trbce", "true")
+	req.Hebder.Set("User-Agent", fmt.Sprintf("SebrchBlitz (%s)", queryNbme))
 
-	var m metrics
+	vbr m metrics
 	first := true
 
-	start := time.Now()
+	stbrt := time.Now()
 
 	resp, err := s.client.Do(req)
 	if err != nil {
@@ -57,26 +57,26 @@ func (s *streamClient) search(ctx context.Context, query, queryName string) (*me
 	}
 	defer resp.Body.Close()
 
-	dec := streamhttp.FrontendStreamDecoder{
-		OnMatches: func(matches []streamhttp.EventMatch) {
-			if first && len(matches) > 0 {
-				m.firstResult = time.Since(start)
-				first = false
+	dec := strebmhttp.FrontendStrebmDecoder{
+		OnMbtches: func(mbtches []strebmhttp.EventMbtch) {
+			if first && len(mbtches) > 0 {
+				m.firstResult = time.Since(stbrt)
+				first = fblse
 			}
 		},
-		OnProgress: func(p *api.Progress) {
-			m.matchCount = p.MatchCount
+		OnProgress: func(p *bpi.Progress) {
+			m.mbtchCount = p.MbtchCount
 		},
 	}
 
-	if err := dec.ReadAll(resp.Body); err != nil {
+	if err := dec.RebdAll(resp.Body); err != nil {
 		return nil, err
 	}
 
-	m.took = time.Since(start)
-	m.trace = resp.Header.Get("x-trace")
+	m.took = time.Since(stbrt)
+	m.trbce = resp.Hebder.Get("x-trbce")
 
-	// If we have no results, we use the total time taken for first result
+	// If we hbve no results, we use the totbl time tbken for first result
 	// time.
 	if first {
 		m.firstResult = m.took
@@ -85,10 +85,10 @@ func (s *streamClient) search(ctx context.Context, query, queryName string) (*me
 	return &m, nil
 }
 
-func (s *streamClient) attribution(ctx context.Context, snippet, queryName string) (*metrics, error) {
-	return nil, errors.New("attribution not supported in stream client")
+func (s *strebmClient) bttribution(ctx context.Context, snippet, queryNbme string) (*metrics, error) {
+	return nil, errors.New("bttribution not supported in strebm client")
 }
 
-func (s *streamClient) clientType() string {
-	return "stream"
+func (s *strebmClient) clientType() string {
+	return "strebm"
 }

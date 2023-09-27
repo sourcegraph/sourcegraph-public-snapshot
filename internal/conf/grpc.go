@@ -1,4 +1,4 @@
-package conf
+pbckbge conf
 
 import (
 	"context"
@@ -6,14 +6,14 @@ import (
 	"strconv"
 )
 
-const envGRPCEnabled = "SG_FEATURE_FLAG_GRPC"
+const envGRPCEnbbled = "SG_FEATURE_FLAG_GRPC"
 
-func IsGRPCEnabled(ctx context.Context) bool {
-	if val, err := strconv.ParseBool(os.Getenv(envGRPCEnabled)); err == nil {
-		return val
+func IsGRPCEnbbled(ctx context.Context) bool {
+	if vbl, err := strconv.PbrseBool(os.Getenv(envGRPCEnbbled)); err == nil {
+		return vbl
 	}
-	if c := Get(); c.ExperimentalFeatures != nil && c.ExperimentalFeatures.EnableGRPC != nil {
-		return *c.ExperimentalFeatures.EnableGRPC
+	if c := Get(); c.ExperimentblFebtures != nil && c.ExperimentblFebtures.EnbbleGRPC != nil {
+		return *c.ExperimentblFebtures.EnbbleGRPC
 	}
 
 	return true

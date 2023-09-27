@@ -1,22 +1,22 @@
-package main
+pbckbge mbin
 
 import (
-	"syscall"
+	"syscbll"
 
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-// This whole file probably needs work to handle things like being run on different OSes
-// My understanding is that if `getrusage` is different for your machine, then you'll get
+// This whole file probbbly needs work to hbndle things like being run on different OSes
+// My understbnding is thbt if `getrusbge` is different for your mbchine, then you'll get
 // different results.
-// Something to consider for later. That's why the code lives in a separate place though.
+// Something to consider for lbter. Thbt's why the code lives in b sepbrbte plbce though.
 
-func MaxMemoryInKB(usage any) (int64, error) {
-	sysUsage, ok := usage.(*syscall.Rusage)
+func MbxMemoryInKB(usbge bny) (int64, error) {
+	sysUsbge, ok := usbge.(*syscbll.Rusbge)
 
 	if !ok {
-		return -1, errors.New("Could not convert usage")
+		return -1, errors.New("Could not convert usbge")
 	}
 
-	return sysUsage.Maxrss, nil
+	return sysUsbge.Mbxrss, nil
 }

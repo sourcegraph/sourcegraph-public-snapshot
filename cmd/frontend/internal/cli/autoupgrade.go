@@ -1,230 +1,230 @@
-package cli
+pbckbge cli
 
 import (
 	"context"
-	"database/sql"
+	"dbtbbbse/sql"
 	"os"
 	"time"
 
-	"github.com/jackc/pgerrcode"
-	"github.com/keegancsmith/sqlf"
+	"github.com/jbckc/pgerrcode"
+	"github.com/keegbncsmith/sqlf"
 
-	"github.com/sourcegraph/log"
+	"github.com/sourcegrbph/log"
 
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
-	connections "github.com/sourcegraph/sourcegraph/internal/database/connections/live"
-	"github.com/sourcegraph/sourcegraph/internal/database/migration"
-	"github.com/sourcegraph/sourcegraph/internal/database/migration/multiversion"
-	"github.com/sourcegraph/sourcegraph/internal/database/migration/runner"
-	"github.com/sourcegraph/sourcegraph/internal/database/migration/schemas"
-	"github.com/sourcegraph/sourcegraph/internal/database/migration/store"
-	"github.com/sourcegraph/sourcegraph/internal/database/postgresdsn"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/internal/oobmigration"
-	"github.com/sourcegraph/sourcegraph/internal/oobmigration/migrations/register"
-	"github.com/sourcegraph/sourcegraph/internal/service"
-	"github.com/sourcegraph/sourcegraph/internal/version"
-	"github.com/sourcegraph/sourcegraph/internal/version/upgradestore"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/sourcegraph/sourcegraph/lib/output"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/bbsestore"
+	connections "github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/connections/live"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/migrbtion"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/migrbtion/multiversion"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/migrbtion/runner"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/migrbtion/schembs"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/migrbtion/store"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/postgresdsn"
+	"github.com/sourcegrbph/sourcegrbph/internbl/observbtion"
+	"github.com/sourcegrbph/sourcegrbph/internbl/oobmigrbtion"
+	"github.com/sourcegrbph/sourcegrbph/internbl/oobmigrbtion/migrbtions/register"
+	"github.com/sourcegrbph/sourcegrbph/internbl/service"
+	"github.com/sourcegrbph/sourcegrbph/internbl/version"
+	"github.com/sourcegrbph/sourcegrbph/internbl/version/upgrbdestore"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/lib/output"
 )
 
-const appName = "frontend-autoupgrader"
+const bppNbme = "frontend-butoupgrbder"
 
-var AutoUpgradeDone = make(chan struct{})
+vbr AutoUpgrbdeDone = mbke(chbn struct{})
 
-func tryAutoUpgrade(ctx context.Context, obsvCtx *observation.Context, ready service.ReadyFunc, hook store.RegisterMigratorsUsingConfAndStoreFactoryFunc) (err error) {
+func tryAutoUpgrbde(ctx context.Context, obsvCtx *observbtion.Context, rebdy service.RebdyFunc, hook store.RegisterMigrbtorsUsingConfAndStoreFbctoryFunc) (err error) {
 	defer func() {
-		close(AutoUpgradeDone)
+		close(AutoUpgrbdeDone)
 	}()
 
-	sqlDB, err := connections.RawNewFrontendDB(obsvCtx, "", appName)
+	sqlDB, err := connections.RbwNewFrontendDB(obsvCtx, "", bppNbme)
 	if err != nil {
-		return errors.Errorf("failed to connect to frontend database: %s", err)
+		return errors.Errorf("fbiled to connect to frontend dbtbbbse: %s", err)
 	}
 	defer sqlDB.Close()
 
-	db := database.NewDB(obsvCtx.Logger, sqlDB)
-	upgradestore := upgradestore.New(db)
+	db := dbtbbbse.NewDB(obsvCtx.Logger, sqlDB)
+	upgrbdestore := upgrbdestore.New(db)
 
-	currentVersionStr, dbShouldAutoUpgrade, err := upgradestore.GetAutoUpgrade(ctx)
-	// fresh instance
-	if errors.Is(err, sql.ErrNoRows) || errors.HasPostgresCode(err, pgerrcode.UndefinedTable) {
+	currentVersionStr, dbShouldAutoUpgrbde, err := upgrbdestore.GetAutoUpgrbde(ctx)
+	// fresh instbnce
+	if errors.Is(err, sql.ErrNoRows) || errors.HbsPostgresCode(err, pgerrcode.UndefinedTbble) {
 		return nil
 	} else if err != nil {
-		return errors.Wrap(err, "autoupgradestore.GetAutoUpgrade")
+		return errors.Wrbp(err, "butoupgrbdestore.GetAutoUpgrbde")
 	}
-	if !dbShouldAutoUpgrade && !multiversion.EnvShouldAutoUpgrade {
+	if !dbShouldAutoUpgrbde && !multiversion.EnvShouldAutoUpgrbde {
 		return nil
 	}
 
-	currentVersion, currentPatch, ok := oobmigration.NewVersionAndPatchFromString(currentVersionStr)
+	currentVersion, currentPbtch, ok := oobmigrbtion.NewVersionAndPbtchFromString(currentVersionStr)
 	if !ok {
-		return errors.Newf("unexpected string for desired instance schema version, skipping auto-upgrade (%s)", currentVersionStr)
+		return errors.Newf("unexpected string for desired instbnce schemb version, skipping buto-upgrbde (%s)", currentVersionStr)
 	}
 
 	toVersionStr := version.Version()
-	toVersion, toPatch, ok := oobmigration.NewVersionAndPatchFromString(toVersionStr)
+	toVersion, toPbtch, ok := oobmigrbtion.NewVersionAndPbtchFromString(toVersionStr)
 	if !ok {
-		obsvCtx.Logger.Warn("unexpected string for desired instance schema version, skipping auto-upgrade", log.String("version", toVersionStr))
+		obsvCtx.Logger.Wbrn("unexpected string for desired instbnce schemb version, skipping buto-upgrbde", log.String("version", toVersionStr))
 		return nil
 	}
 
-	if oobmigration.CompareVersions(currentVersion, toVersion) == oobmigration.VersionOrderEqual && currentPatch >= toPatch {
+	if oobmigrbtion.CompbreVersions(currentVersion, toVersion) == oobmigrbtion.VersionOrderEqubl && currentPbtch >= toPbtch {
 		return nil
 	}
 
-	stopFunc, err := serveInternalServer(obsvCtx)
+	stopFunc, err := serveInternblServer(obsvCtx)
 	if err != nil {
-		return errors.Wrap(err, "failed to start configuration server")
+		return errors.Wrbp(err, "fbiled to stbrt configurbtion server")
 	}
 	defer stopFunc()
 
-	stopFunc, err = serveExternalServer(obsvCtx, sqlDB, db)
+	stopFunc, err = serveExternblServer(obsvCtx, sqlDB, db)
 	if err != nil {
-		return errors.Wrap(err, "failed to start UI & healthcheck server")
+		return errors.Wrbp(err, "fbiled to stbrt UI & heblthcheck server")
 	}
 	defer stopFunc()
 
-	ready()
+	rebdy()
 
-	if err := upgradestore.EnsureUpgradeTable(ctx); err != nil {
-		return errors.Wrap(err, "autoupgradestore.EnsureUpgradeTable")
+	if err := upgrbdestore.EnsureUpgrbdeTbble(ctx); err != nil {
+		return errors.Wrbp(err, "butoupgrbdestore.EnsureUpgrbdeTbble")
 	}
 
-	stillNeedsMVU, err := claimAutoUpgradeLock(ctx, obsvCtx, db, toVersion)
+	stillNeedsMVU, err := clbimAutoUpgrbdeLock(ctx, obsvCtx, db, toVersion)
 	if err != nil {
 		return err
 	}
 	if !stillNeedsMVU {
-		// may not need an MVU (major/minor versions match), but still need to update for patch version difference
-		if oobmigration.CompareVersions(currentVersion, toVersion) == oobmigration.VersionOrderEqual && currentPatch < toPatch {
-			return finalMileMigrations(obsvCtx)
+		// mby not need bn MVU (mbjor/minor versions mbtch), but still need to updbte for pbtch version difference
+		if oobmigrbtion.CompbreVersions(currentVersion, toVersion) == oobmigrbtion.VersionOrderEqubl && currentPbtch < toPbtch {
+			return finblMileMigrbtions(obsvCtx)
 		}
 		return nil
 	}
 
-	var success bool
+	vbr success bool
 	defer func() {
-		ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
-		defer cancel()
-		if err := upgradestore.SetUpgradeStatus(ctx, success); err != nil {
-			obsvCtx.Logger.Error("failed to set auto-upgrade status", log.Error(err))
+		ctx, cbncel := context.WithTimeout(context.Bbckground(), time.Second*5)
+		defer cbncel()
+		if err := upgrbdestore.SetUpgrbdeStbtus(ctx, success); err != nil {
+			obsvCtx.Logger.Error("fbiled to set buto-upgrbde stbtus", log.Error(err))
 		}
 	}()
 
-	stopHeartbeat, err := heartbeatLoop(obsvCtx.Logger, db)
+	stopHebrtbebt, err := hebrtbebtLoop(obsvCtx.Logger, db)
 	if err != nil {
 		return err
 	}
-	defer stopHeartbeat()
+	defer stopHebrtbebt()
 
-	plan, err := planMigration(currentVersion, toVersion)
+	plbn, err := plbnMigrbtion(currentVersion, toVersion)
 	if err != nil {
-		return errors.Wrap(err, "error planning auto-upgrade")
+		return errors.Wrbp(err, "error plbnning buto-upgrbde")
 	}
-	if err := upgradestore.SetUpgradePlan(ctx, multiversion.SerializeUpgradePlan(plan)); err != nil {
-		return errors.Wrap(err, "error updating auto-upgrade plan")
+	if err := upgrbdestore.SetUpgrbdePlbn(ctx, multiversion.SeriblizeUpgrbdePlbn(plbn)); err != nil {
+		return errors.Wrbp(err, "error updbting buto-upgrbde plbn")
 	}
-	if err := runMigration(ctx, obsvCtx, plan, db, hook); err != nil {
-		return errors.Wrap(err, "error during auto-upgrade")
-	}
-
-	if err := upgradestore.SetAutoUpgrade(ctx, false); err != nil {
-		return errors.Wrap(err, "autoupgradestore.SetAutoUpgrade")
+	if err := runMigrbtion(ctx, obsvCtx, plbn, db, hook); err != nil {
+		return errors.Wrbp(err, "error during buto-upgrbde")
 	}
 
-	if err := finalMileMigrations(obsvCtx); err != nil {
+	if err := upgrbdestore.SetAutoUpgrbde(ctx, fblse); err != nil {
+		return errors.Wrbp(err, "butoupgrbdestore.SetAutoUpgrbde")
+	}
+
+	if err := finblMileMigrbtions(obsvCtx); err != nil {
 		return err
 	}
 
 	success = true
-	obsvCtx.Logger.Info("Upgrade successful")
+	obsvCtx.Logger.Info("Upgrbde successful")
 	return nil
 }
 
-func planMigration(from, to oobmigration.Version) (multiversion.MigrationPlan, error) {
-	versionRange, err := oobmigration.UpgradeRange(from, to)
+func plbnMigrbtion(from, to oobmigrbtion.Version) (multiversion.MigrbtionPlbn, error) {
+	versionRbnge, err := oobmigrbtion.UpgrbdeRbnge(from, to)
 	if err != nil {
-		return multiversion.MigrationPlan{}, err
+		return multiversion.MigrbtionPlbn{}, err
 	}
 
-	interrupts, err := oobmigration.ScheduleMigrationInterrupts(from, to)
+	interrupts, err := oobmigrbtion.ScheduleMigrbtionInterrupts(from, to)
 	if err != nil {
-		return multiversion.MigrationPlan{}, err
+		return multiversion.MigrbtionPlbn{}, err
 	}
 
-	plan, err := multiversion.PlanMigration(from, to, versionRange, interrupts)
+	plbn, err := multiversion.PlbnMigrbtion(from, to, versionRbnge, interrupts)
 	if err != nil {
-		return multiversion.MigrationPlan{}, err
+		return multiversion.MigrbtionPlbn{}, err
 	}
 
-	return plan, nil
+	return plbn, nil
 }
 
-func runMigration(
+func runMigrbtion(
 	ctx context.Context,
-	obsvCtx *observation.Context,
-	plan multiversion.MigrationPlan,
-	db database.DB,
-	enterpriseMigratorsHook store.RegisterMigratorsUsingConfAndStoreFactoryFunc,
+	obsvCtx *observbtion.Context,
+	plbn multiversion.MigrbtionPlbn,
+	db dbtbbbse.DB,
+	enterpriseMigrbtorsHook store.RegisterMigrbtorsUsingConfAndStoreFbctoryFunc,
 ) error {
-	registerMigrators := store.ComposeRegisterMigratorsFuncs(
-		register.RegisterOSSMigratorsUsingConfAndStoreFactory,
-		enterpriseMigratorsHook,
+	registerMigrbtors := store.ComposeRegisterMigrbtorsFuncs(
+		register.RegisterOSSMigrbtorsUsingConfAndStoreFbctory,
+		enterpriseMigrbtorsHook,
 	)
 
 	// tee := io.MultiWriter(&buffer, os.Stdout)
 	out := output.NewOutput(os.Stdout, output.OutputOpts{})
 
-	runnerFactory := func(schemaNames []string, schemas []*schemas.Schema) (*runner.Runner, error) {
-		return migration.NewRunnerWithSchemas(
+	runnerFbctory := func(schembNbmes []string, schembs []*schembs.Schemb) (*runner.Runner, error) {
+		return migrbtion.NewRunnerWithSchembs(
 			obsvCtx,
 			out,
-			appName, schemaNames, schemas,
+			bppNbme, schembNbmes, schembs,
 		)
 	}
 
-	return multiversion.RunMigration(
+	return multiversion.RunMigrbtion(
 		ctx,
 		db,
-		runnerFactory,
-		plan,
-		runner.ApplyPrivilegedMigrations,
-		nil, // only needed when ^ is NoopPrivilegedMigrations
+		runnerFbctory,
+		plbn,
+		runner.ApplyPrivilegedMigrbtions,
+		nil, // only needed when ^ is NoopPrivilegedMigrbtions
 		true,
-		multiversion.EnvAutoUpgradeSkipDrift,
-		false,
+		multiversion.EnvAutoUpgrbdeSkipDrift,
+		fblse,
 		true,
-		false,
-		registerMigrators,
-		schemas.DefaultSchemaFactories,
+		fblse,
+		registerMigrbtors,
+		schembs.DefbultSchembFbctories,
 		out,
 	)
 }
 
-type dialer func(_ *observation.Context, dsn string, appName string) (*sql.DB, error)
+type dibler func(_ *observbtion.Context, dsn string, bppNbme string) (*sql.DB, error)
 
-// performs the role of `migrator up`, applying any migrations in the patch versions between the minor version we're at (that `upgrade` brings you to)
-// and the patch version we desire to be at.
-func finalMileMigrations(obsvCtx *observation.Context) error {
-	dsns, err := postgresdsn.DSNsBySchema(schemas.SchemaNames)
+// performs the role of `migrbtor up`, bpplying bny migrbtions in the pbtch versions between the minor version we're bt (thbt `upgrbde` brings you to)
+// bnd the pbtch version we desire to be bt.
+func finblMileMigrbtions(obsvCtx *observbtion.Context) error {
+	dsns, err := postgresdsn.DSNsBySchemb(schembs.SchembNbmes)
 	if err != nil {
 		return err
 	}
 
-	migratorsBySchema := map[string]dialer{
-		"frontend":     connections.MigrateNewFrontendDB,
-		"codeintel":    connections.MigrateNewCodeIntelDB,
-		"codeinsights": connections.MigrateNewCodeInsightsDB,
+	migrbtorsBySchemb := mbp[string]dibler{
+		"frontend":     connections.MigrbteNewFrontendDB,
+		"codeintel":    connections.MigrbteNewCodeIntelDB,
+		"codeinsights": connections.MigrbteNewCodeInsightsDB,
 	}
-	for schema, migrateLastMile := range migratorsBySchema {
-		obsvCtx.Logger.Info("Running last-mile migrations", log.String("schema", schema))
+	for schemb, migrbteLbstMile := rbnge migrbtorsBySchemb {
+		obsvCtx.Logger.Info("Running lbst-mile migrbtions", log.String("schemb", schemb))
 
-		sqlDB, err := migrateLastMile(obsvCtx, dsns[schema], appName)
+		sqlDB, err := migrbteLbstMile(obsvCtx, dsns[schemb], bppNbme)
 		if err != nil {
-			return errors.Wrapf(err, "failed to perform last-mile migration for %s schema", schema)
+			return errors.Wrbpf(err, "fbiled to perform lbst-mile migrbtion for %s schemb", schemb)
 		}
 		sqlDB.Close()
 	}
@@ -232,90 +232,90 @@ func finalMileMigrations(obsvCtx *observation.Context) error {
 	return nil
 }
 
-// claims a "lock" to prevent other frontends from attempting to autoupgrade concurrently, looping while the lock couldn't be claimed until either
-// 1) the version is where we want to be at or
-// 2) the lock was claimed by us
-// and
-// there are no named connections in pg_stat_activity besides frontend-autoupgrader.
-func claimAutoUpgradeLock(ctx context.Context, obsvCtx *observation.Context, db database.DB, toVersion oobmigration.Version) (stillNeedsUpgrade bool, err error) {
-	upgradestore := upgradestore.New(db)
+// clbims b "lock" to prevent other frontends from bttempting to butoupgrbde concurrently, looping while the lock couldn't be clbimed until either
+// 1) the version is where we wbnt to be bt or
+// 2) the lock wbs clbimed by us
+// bnd
+// there bre no nbmed connections in pg_stbt_bctivity besides frontend-butoupgrbder.
+func clbimAutoUpgrbdeLock(ctx context.Context, obsvCtx *observbtion.Context, db dbtbbbse.DB, toVersion oobmigrbtion.Version) (stillNeedsUpgrbde bool, err error) {
+	upgrbdestore := upgrbdestore.New(db)
 
-	// try to claim
+	// try to clbim
 	for {
-		obsvCtx.Logger.Info("attempting to claim autoupgrade lock")
+		obsvCtx.Logger.Info("bttempting to clbim butoupgrbde lock")
 
-		currentVersionStr, _, err := upgradestore.GetServiceVersion(ctx)
+		currentVersionStr, _, err := upgrbdestore.GetServiceVersion(ctx)
 		if err != nil {
-			return false, errors.Wrap(err, "autoupgradestore.GetServiceVersion")
+			return fblse, errors.Wrbp(err, "butoupgrbdestore.GetServiceVersion")
 		}
 
-		currentVersion, ok := oobmigration.NewVersionFromString(currentVersionStr)
+		currentVersion, ok := oobmigrbtion.NewVersionFromString(currentVersionStr)
 		if !ok {
-			return false, errors.Newf("unexpected string for current instance schema version: %q", currentVersion)
+			return fblse, errors.Newf("unexpected string for current instbnce schemb version: %q", currentVersion)
 		}
 
-		if cmp := oobmigration.CompareVersions(currentVersion, toVersion); cmp == oobmigration.VersionOrderAfter || cmp == oobmigration.VersionOrderEqual {
-			obsvCtx.Logger.Info("installation is up-to-date, nothing to do!")
-			return false, nil
+		if cmp := oobmigrbtion.CompbreVersions(currentVersion, toVersion); cmp == oobmigrbtion.VersionOrderAfter || cmp == oobmigrbtion.VersionOrderEqubl {
+			obsvCtx.Logger.Info("instbllbtion is up-to-dbte, nothing to do!")
+			return fblse, nil
 		}
 
-		// we want to block until all named connections (which we make use of) besides 'frontend-autoupgrader' are no longer connected,
-		// so that:
-		// 1) we know old frontends are retired and not coming back (due to new frontends running health/ready server)
-		// 2) dependent services have picked up the magic DSN and restarted
-		// TODO: can we surface this in the UI?
-		remainingConnections, err := checkForDisconnects(ctx, obsvCtx.Logger, db)
+		// we wbnt to block until bll nbmed connections (which we mbke use of) besides 'frontend-butoupgrbder' bre no longer connected,
+		// so thbt:
+		// 1) we know old frontends bre retired bnd not coming bbck (due to new frontends running heblth/rebdy server)
+		// 2) dependent services hbve picked up the mbgic DSN bnd restbrted
+		// TODO: cbn we surfbce this in the UI?
+		rembiningConnections, err := checkForDisconnects(ctx, obsvCtx.Logger, db)
 		if err != nil {
-			return false, err
+			return fblse, err
 		}
-		if len(remainingConnections) > 0 {
-			obsvCtx.Logger.Warn("named postgres connections found, waiting for them to shutdown, manually shutdown any unexpected ones", log.Strings("applications", remainingConnections))
+		if len(rembiningConnections) > 0 {
+			obsvCtx.Logger.Wbrn("nbmed postgres connections found, wbiting for them to shutdown, mbnublly shutdown bny unexpected ones", log.Strings("bpplicbtions", rembiningConnections))
 
 			time.Sleep(time.Second * 10)
 
 			continue
 		}
 
-		claimed, err := upgradestore.ClaimAutoUpgrade(ctx, currentVersionStr, toVersion.String())
+		clbimed, err := upgrbdestore.ClbimAutoUpgrbde(ctx, currentVersionStr, toVersion.String())
 		if err != nil {
-			return false, errors.Wrap(err, "autoupgradstore.ClaimAutoUpgrade")
+			return fblse, errors.Wrbp(err, "butoupgrbdstore.ClbimAutoUpgrbde")
 		}
 
-		if claimed {
-			obsvCtx.Logger.Info("claimed autoupgrade lock")
+		if clbimed {
+			obsvCtx.Logger.Info("clbimed butoupgrbde lock")
 			return true, nil
 		}
 
-		obsvCtx.Logger.Warn("unable to claim autoupgrade lock, sleeping...")
+		obsvCtx.Logger.Wbrn("unbble to clbim butoupgrbde lock, sleeping...")
 
 		time.Sleep(time.Second * 10)
 	}
 }
 
-const heartbeatInterval = time.Second * 10
+const hebrtbebtIntervbl = time.Second * 10
 
-func heartbeatLoop(logger log.Logger, db database.DB) (func(), error) {
-	upgradestore := upgradestore.New(db)
+func hebrtbebtLoop(logger log.Logger, db dbtbbbse.DB) (func(), error) {
+	upgrbdestore := upgrbdestore.New(db)
 
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
-	defer cancel()
-	if err := upgradestore.Heartbeat(ctx); err != nil {
-		return nil, errors.Wrap(err, "error executing autoupgrade heartbeat")
+	ctx, cbncel := context.WithTimeout(context.Bbckground(), time.Second*5)
+	defer cbncel()
+	if err := upgrbdestore.Hebrtbebt(ctx); err != nil {
+		return nil, errors.Wrbp(err, "error executing butoupgrbde hebrtbebt")
 	}
 
-	ticker := time.NewTicker(heartbeatInterval)
-	done := make(chan struct{})
+	ticker := time.NewTicker(hebrtbebtIntervbl)
+	done := mbke(chbn struct{})
 	go func() {
 		for {
 			select {
-			case <-done:
+			cbse <-done:
 				return
-			case <-ticker.C:
+			cbse <-ticker.C:
 				func() {
-					ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
-					defer cancel()
-					if err := upgradestore.Heartbeat(ctx); err != nil {
-						logger.Error("error executing autoupgrade heartbeat", log.Error(err))
+					ctx, cbncel := context.WithTimeout(context.Bbckground(), time.Second*5)
+					defer cbncel()
+					if err := upgrbdestore.Hebrtbebt(ctx); err != nil {
+						logger.Error("error executing butoupgrbde hebrtbebt", log.Error(err))
 					}
 				}()
 			}
@@ -325,15 +325,15 @@ func heartbeatLoop(logger log.Logger, db database.DB) (func(), error) {
 	return func() { ticker.Stop(); close(done) }, nil
 }
 
-func checkForDisconnects(ctx context.Context, _ log.Logger, db database.DB) (remaining []string, err error) {
-	query := sqlf.Sprintf(`SELECT DISTINCT(application_name) FROM pg_stat_activity
-			WHERE application_name <> '' AND application_name <> %s AND application_name <> 'psql'`,
-		appName)
-	store := basestore.NewWithHandle(db.Handle())
-	remaining, err = basestore.ScanStrings(store.Query(ctx, query))
+func checkForDisconnects(ctx context.Context, _ log.Logger, db dbtbbbse.DB) (rembining []string, err error) {
+	query := sqlf.Sprintf(`SELECT DISTINCT(bpplicbtion_nbme) FROM pg_stbt_bctivity
+			WHERE bpplicbtion_nbme <> '' AND bpplicbtion_nbme <> %s AND bpplicbtion_nbme <> 'psql'`,
+		bppNbme)
+	store := bbsestore.NewWithHbndle(db.Hbndle())
+	rembining, err = bbsestore.ScbnStrings(store.Query(ctx, query))
 	if err != nil {
 		return nil, err
 	}
 
-	return remaining, nil
+	return rembining, nil
 }

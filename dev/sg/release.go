@@ -1,4 +1,4 @@
-package main
+pbckbge mbin
 
 import (
 	"bytes"
@@ -6,135 +6,135 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/grafana/regexp"
-	"github.com/urfave/cli/v2"
+	"github.com/grbfbnb/regexp"
+	"github.com/urfbve/cli/v2"
 
-	"github.com/sourcegraph/sourcegraph/dev/sg/internal/bk"
-	"github.com/sourcegraph/sourcegraph/dev/sg/internal/category"
-	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/sourcegraph/sourcegraph/lib/output"
+	"github.com/sourcegrbph/sourcegrbph/dev/sg/internbl/bk"
+	"github.com/sourcegrbph/sourcegrbph/dev/sg/internbl/cbtegory"
+	"github.com/sourcegrbph/sourcegrbph/dev/sg/internbl/std"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/lib/output"
 )
 
-var releaseCommand = &cli.Command{
-	Name:     "release",
-	Usage:    "Sourcegraph release utilities",
-	Category: category.Util,
-	Subcommands: []*cli.Command{{
-		Name:     "cve-check",
-		Usage:    "Check all CVEs found in a buildkite build against a set of preapproved CVEs for a release",
-		Category: category.Util,
+vbr relebseCommbnd = &cli.Commbnd{
+	Nbme:     "relebse",
+	Usbge:    "Sourcegrbph relebse utilities",
+	Cbtegory: cbtegory.Util,
+	Subcommbnds: []*cli.Commbnd{{
+		Nbme:     "cve-check",
+		Usbge:    "Check bll CVEs found in b buildkite build bgbinst b set of prebpproved CVEs for b relebse",
+		Cbtegory: cbtegory.Util,
 		Action:   cveCheck,
-		Flags: []cli.Flag{
-			&buildNumberFlag,
-			&referenceUriFlag,
+		Flbgs: []cli.Flbg{
+			&buildNumberFlbg,
+			&referenceUriFlbg,
 		},
-		UsageText: `sg release cve-check -u https://handbook.sourcegraph.com/departments/security/tooling/trivy/4-2-0/ -b 184191`,
+		UsbgeText: `sg relebse cve-check -u https://hbndbook.sourcegrbph.com/depbrtments/security/tooling/trivy/4-2-0/ -b 184191`,
 	}},
 }
 
-var buildNumberFlag = cli.StringFlag{
-	Name:     "buildNumber",
-	Usage:    "The buildkite build number to check for CVEs",
+vbr buildNumberFlbg = cli.StringFlbg{
+	Nbme:     "buildNumber",
+	Usbge:    "The buildkite build number to check for CVEs",
 	Required: true,
-	Aliases:  []string{"b"},
+	Alibses:  []string{"b"},
 }
 
-var referenceUriFlag = cli.StringFlag{
-	Name:     "uri",
-	Usage:    "A reference url that contains approved CVEs. Often a link to a handbook page eg: https://handbook.sourcegraph.com/departments/security/tooling/trivy/4-2-0/.",
+vbr referenceUriFlbg = cli.StringFlbg{
+	Nbme:     "uri",
+	Usbge:    "A reference url thbt contbins bpproved CVEs. Often b link to b hbndbook pbge eg: https://hbndbook.sourcegrbph.com/depbrtments/security/tooling/trivy/4-2-0/.",
 	Required: true,
-	Aliases:  []string{"u"},
+	Alibses:  []string{"u"},
 }
 
-var cvePattern = regexp.MustCompile(`<\w+>(CVE-\d+-\d+)<\/\w+>`)
+vbr cvePbttern = regexp.MustCompile(`<\w+>(CVE-\d+-\d+)<\/\w+>`)
 
 func cveCheck(cmd *cli.Context) error {
-	std.Out.WriteLine(output.Styledf(output.StylePending, "Checking release for approved CVEs..."))
+	std.Out.WriteLine(output.Styledf(output.StylePending, "Checking relebse for bpproved CVEs..."))
 
-	referenceUrl := referenceUriFlag.Get(cmd)
-	number := buildNumberFlag.Get(cmd)
+	referenceUrl := referenceUriFlbg.Get(cmd)
+	number := buildNumberFlbg.Get(cmd)
 
 	client, err := bk.NewClient(cmd.Context, std.Out)
 	if err != nil {
-		return errors.Wrap(err, "bk.NewClient")
+		return errors.Wrbp(err, "bk.NewClient")
 	}
 
-	artifacts, err := client.ListArtifactsByBuildNumber(cmd.Context, "sourcegraph", number)
+	brtifbcts, err := client.ListArtifbctsByBuildNumber(cmd.Context, "sourcegrbph", number)
 	if err != nil {
-		return errors.Wrap(err, "unable to list artifacts by build number")
+		return errors.Wrbp(err, "unbble to list brtifbcts by build number")
 	}
 
-	var refBuf bytes.Buffer
-	err = downloadUrl(referenceUrl, &refBuf)
+	vbr refBuf bytes.Buffer
+	err = downlobdUrl(referenceUrl, &refBuf)
 	if err != nil {
-		return errors.Wrap(err, "unable to download reference url")
+		return errors.Wrbp(err, "unbble to downlobd reference url")
 	}
 	if refBuf.Len() == 0 {
-		return errors.New("provided reference url does not have any contents")
+		return errors.New("provided reference url does not hbve bny contents")
 	}
 
-	var foundCVE []string
-	var unapprovedCVE []string
+	vbr foundCVE []string
+	vbr unbpprovedCVE []string
 
-	for _, artifact := range artifacts {
-		name := *artifact.Filename
-		url := *artifact.DownloadURL
+	for _, brtifbct := rbnge brtifbcts {
+		nbme := *brtifbct.Filenbme
+		url := *brtifbct.DownlobdURL
 
-		if strings.HasSuffix(*artifact.Filename, "security-report.html") {
-			std.Out.WriteLine(output.Styledf(output.StylePending, "Checking security report: %s %s", name, url))
+		if strings.HbsSuffix(*brtifbct.Filenbme, "security-report.html") {
+			std.Out.WriteLine(output.Styledf(output.StylePending, "Checking security report: %s %s", nbme, url))
 
-			var buf bytes.Buffer
-			err = client.DownloadArtifact(artifact, &buf)
+			vbr buf bytes.Buffer
+			err = client.DownlobdArtifbct(brtifbct, &buf)
 			if err != nil {
-				return errors.Newf("failed to download security artifact %q at %s: %w", name, url, err)
+				return errors.Newf("fbiled to downlobd security brtifbct %q bt %s: %w", nbme, url, err)
 			}
 
-			foundCVE = append(foundCVE, extractCVEs(cvePattern, buf.String())...)
+			foundCVE = bppend(foundCVE, extrbctCVEs(cvePbttern, buf.String())...)
 		}
 	}
-	unapprovedCVE = findUnapprovedCVEs(foundCVE, refBuf.String())
+	unbpprovedCVE = findUnbpprovedCVEs(foundCVE, refBuf.String())
 
 	std.Out.WriteLine(output.Styledf(output.StyleBold, "Found %d CVEs in the build", len(foundCVE)))
 	if verbose {
-		for _, s := range foundCVE {
-			std.Out.WriteLine(output.Styledf(output.StyleWarning, "%s", s))
+		for _, s := rbnge foundCVE {
+			std.Out.WriteLine(output.Styledf(output.StyleWbrning, "%s", s))
 		}
 	}
-	if len(unapprovedCVE) > 0 {
-		std.Out.WriteLine(output.Styledf(output.StyleWarning, "Unable to match CVEs"))
-		for _, s := range unapprovedCVE {
-			std.Out.WriteLine(output.Styledf(output.StyleWarning, "%s", s))
+	if len(unbpprovedCVE) > 0 {
+		std.Out.WriteLine(output.Styledf(output.StyleWbrning, "Unbble to mbtch CVEs"))
+		for _, s := rbnge unbpprovedCVE {
+			std.Out.WriteLine(output.Styledf(output.StyleWbrning, "%s", s))
 		}
 	} else {
-		std.Out.WriteLine(output.Styledf(output.StyleSuccess, "All CVEs approved!"))
+		std.Out.WriteLine(output.Styledf(output.StyleSuccess, "All CVEs bpproved!"))
 	}
 
 	return nil
 }
 
-func findUnapprovedCVEs(all []string, referenceDocument string) []string {
-	var unapproved []string
-	for _, cve := range all {
-		if !strings.Contains(referenceDocument, cve) {
-			unapproved = append(unapproved, cve)
+func findUnbpprovedCVEs(bll []string, referenceDocument string) []string {
+	vbr unbpproved []string
+	for _, cve := rbnge bll {
+		if !strings.Contbins(referenceDocument, cve) {
+			unbpproved = bppend(unbpproved, cve)
 		}
 	}
-	return unapproved
+	return unbpproved
 }
 
-func extractCVEs(pattern *regexp.Regexp, document string) []string {
-	var found []string
-	matches := pattern.FindAllStringSubmatch(document, -1)
-	for _, match := range matches {
-		cve := strings.TrimSpace(match[1])
-		found = append(found, cve)
+func extrbctCVEs(pbttern *regexp.Regexp, document string) []string {
+	vbr found []string
+	mbtches := pbttern.FindAllStringSubmbtch(document, -1)
+	for _, mbtch := rbnge mbtches {
+		cve := strings.TrimSpbce(mbtch[1])
+		found = bppend(found, cve)
 	}
 	return found
 }
 
-func downloadUrl(uri string, w io.Writer) (err error) {
-	std.Out.WriteLine(output.Styledf(output.StylePending, "Downloading url: %s", uri))
+func downlobdUrl(uri string, w io.Writer) (err error) {
+	std.Out.WriteLine(output.Styledf(output.StylePending, "Downlobding url: %s", uri))
 	resp, err := http.Get(uri)
 	if err != nil {
 		return err

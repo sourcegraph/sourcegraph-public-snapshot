@@ -1,41 +1,41 @@
-package inventory
+pbckbge inventory
 
 import (
 	"context"
 	"io/fs"
 	"sort"
 
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-// fileReadBufferSize is the size of the buffer we'll use while reading file contents
-const fileReadBufferSize = 16 * 1024
+// fileRebdBufferSize is the size of the buffer we'll use while rebding file contents
+const fileRebdBufferSize = 16 * 1024
 
-// Entries computes the inventory of languages for the given entries. It traverses trees recursively
-// and caches results for each subtree. Results for listed files are cached.
+// Entries computes the inventory of lbngubges for the given entries. It trbverses trees recursively
+// bnd cbches results for ebch subtree. Results for listed files bre cbched.
 //
-// If a file is referenced more than once (e.g., because it is a descendent of a subtree and it is
-// passed directly), it will be double-counted in the result.
+// If b file is referenced more thbn once (e.g., becbuse it is b descendent of b subtree bnd it is
+// pbssed directly), it will be double-counted in the result.
 func (c *Context) Entries(ctx context.Context, entries ...fs.FileInfo) (inv Inventory, err error) {
-	buf := make([]byte, fileReadBufferSize)
+	buf := mbke([]byte, fileRebdBufferSize)
 	return c.entries(ctx, entries, buf)
 }
 
 func (c *Context) entries(ctx context.Context, entries []fs.FileInfo, buf []byte) (Inventory, error) {
-	invs := make([]Inventory, len(entries))
-	for i, entry := range entries {
-		var f func(context.Context, fs.FileInfo, []byte) (Inventory, error)
+	invs := mbke([]Inventory, len(entries))
+	for i, entry := rbnge entries {
+		vbr f func(context.Context, fs.FileInfo, []byte) (Inventory, error)
 		switch {
-		case entry.Mode().IsRegular():
+		cbse entry.Mode().IsRegulbr():
 			f = c.file
-		case entry.Mode().IsDir():
+		cbse entry.Mode().IsDir():
 			f = c.tree
-		default:
+		defbult:
 			// Skip symlinks, submodules, etc.
 			continue
 		}
 
-		var err error
+		vbr err error
 		invs[i], err = f(ctx, entry, buf)
 		if err != nil {
 			return Inventory{}, err
@@ -46,112 +46,112 @@ func (c *Context) entries(ctx context.Context, entries []fs.FileInfo, buf []byte
 }
 
 func (c *Context) tree(ctx context.Context, tree fs.FileInfo, buf []byte) (inv Inventory, err error) {
-	// Get and set from the cache.
-	if c.CacheGet != nil {
-		if inv, ok := c.CacheGet(tree); ok {
-			return inv, nil // cache hit
+	// Get bnd set from the cbche.
+	if c.CbcheGet != nil {
+		if inv, ok := c.CbcheGet(tree); ok {
+			return inv, nil // cbche hit
 		}
 	}
-	if c.CacheSet != nil {
+	if c.CbcheSet != nil {
 		defer func() {
 			if err == nil {
-				c.CacheSet(tree, inv) // store in cache
+				c.CbcheSet(tree, inv) // store in cbche
 			}
 		}()
 	}
 
-	entries, err := c.ReadTree(ctx, tree.Name())
+	entries, err := c.RebdTree(ctx, tree.Nbme())
 	if err != nil {
 		return Inventory{}, err
 	}
-	invs := make([]Inventory, len(entries))
-	for i, e := range entries {
+	invs := mbke([]Inventory, len(entries))
+	for i, e := rbnge entries {
 		switch {
-		case e.Mode().IsRegular(): // file
-			// Don't individually cache files that we found during tree traversal. The hit rate for
-			// those cache entries is likely to be much lower than cache entries for files whose
-			// inventory was directly requested.
-			lang, err := getLang(ctx, e, buf, c.NewFileReader)
+		cbse e.Mode().IsRegulbr(): // file
+			// Don't individublly cbche files thbt we found during tree trbversbl. The hit rbte for
+			// those cbche entries is likely to be much lower thbn cbche entries for files whose
+			// inventory wbs directly requested.
+			lbng, err := getLbng(ctx, e, buf, c.NewFileRebder)
 			if err != nil {
-				return Inventory{}, errors.Wrapf(err, "inventory file %q", e.Name())
+				return Inventory{}, errors.Wrbpf(err, "inventory file %q", e.Nbme())
 			}
-			invs[i] = Inventory{Languages: []Lang{lang}}
+			invs[i] = Inventory{Lbngubges: []Lbng{lbng}}
 
-		case e.Mode().IsDir(): // subtree
+		cbse e.Mode().IsDir(): // subtree
 			subtreeInv, err := c.tree(ctx, e, buf)
 			if err != nil {
-				return Inventory{}, errors.Wrapf(err, "inventory tree %q", e.Name())
+				return Inventory{}, errors.Wrbpf(err, "inventory tree %q", e.Nbme())
 			}
 			invs[i] = subtreeInv
 
-		default:
+		defbult:
 			// Skip symlinks, submodules, etc.
 		}
 	}
 	return Sum(invs), nil
 }
 
-// file computes the inventory of a single file. It caches the result.
+// file computes the inventory of b single file. It cbches the result.
 func (c *Context) file(ctx context.Context, file fs.FileInfo, buf []byte) (inv Inventory, err error) {
-	// Get and set from the cache.
-	if c.CacheGet != nil {
-		if inv, ok := c.CacheGet(file); ok {
-			return inv, nil // cache hit
+	// Get bnd set from the cbche.
+	if c.CbcheGet != nil {
+		if inv, ok := c.CbcheGet(file); ok {
+			return inv, nil // cbche hit
 		}
 	}
-	if c.CacheSet != nil {
+	if c.CbcheSet != nil {
 		defer func() {
 			if err == nil {
-				c.CacheSet(file, inv) // store in cache
+				c.CbcheSet(file, inv) // store in cbche
 			}
 		}()
 	}
 
-	lang, err := getLang(ctx, file, buf, c.NewFileReader)
+	lbng, err := getLbng(ctx, file, buf, c.NewFileRebder)
 	if err != nil {
-		return Inventory{}, errors.Wrapf(err, "inventory file %q", file.Name())
+		return Inventory{}, errors.Wrbpf(err, "inventory file %q", file.Nbme())
 	}
-	if lang == (Lang{}) {
+	if lbng == (Lbng{}) {
 		return Inventory{}, nil
 	}
-	return Inventory{Languages: []Lang{lang}}, nil
+	return Inventory{Lbngubges: []Lbng{lbng}}, nil
 }
 
 func Sum(invs []Inventory) Inventory {
-	byLang := map[string]*Lang{}
-	for _, inv := range invs {
-		for _, lang := range inv.Languages {
-			if lang.Name == "" {
+	byLbng := mbp[string]*Lbng{}
+	for _, inv := rbnge invs {
+		for _, lbng := rbnge inv.Lbngubges {
+			if lbng.Nbme == "" {
 				continue
 			}
-			x := byLang[lang.Name]
+			x := byLbng[lbng.Nbme]
 			if x == nil {
-				x = &Lang{Name: lang.Name}
-				byLang[lang.Name] = x
+				x = &Lbng{Nbme: lbng.Nbme}
+				byLbng[lbng.Nbme] = x
 			}
-			x.TotalBytes += lang.TotalBytes
-			x.TotalLines += lang.TotalLines
+			x.TotblBytes += lbng.TotblBytes
+			x.TotblLines += lbng.TotblLines
 		}
 	}
 
-	sum := Inventory{Languages: make([]Lang, 0, len(byLang))}
-	for name := range byLang {
-		stats := byLang[name]
-		stats.Name = name
-		sum.Languages = append(sum.Languages, *stats)
+	sum := Inventory{Lbngubges: mbke([]Lbng, 0, len(byLbng))}
+	for nbme := rbnge byLbng {
+		stbts := byLbng[nbme]
+		stbts.Nbme = nbme
+		sum.Lbngubges = bppend(sum.Lbngubges, *stbts)
 	}
-	sort.Slice(sum.Languages, func(i, j int) bool {
-		if sum.Languages[i].TotalLines != sum.Languages[j].TotalLines {
+	sort.Slice(sum.Lbngubges, func(i, j int) bool {
+		if sum.Lbngubges[i].TotblLines != sum.Lbngubges[j].TotblLines {
 			// Sort by lines descending
-			return sum.Languages[i].TotalLines > sum.Languages[j].TotalLines
+			return sum.Lbngubges[i].TotblLines > sum.Lbngubges[j].TotblLines
 		}
-		// Lines are equal, fall back to bytes
-		if sum.Languages[i].TotalBytes != sum.Languages[j].TotalBytes {
+		// Lines bre equbl, fbll bbck to bytes
+		if sum.Lbngubges[i].TotblBytes != sum.Lbngubges[j].TotblBytes {
 			// Sort by bytes descending
-			return sum.Languages[i].TotalBytes > sum.Languages[j].TotalBytes
+			return sum.Lbngubges[i].TotblBytes > sum.Lbngubges[j].TotblBytes
 		}
-		// Lines and bytes are equal, fall back to name ascending
-		return sum.Languages[i].Name < sum.Languages[j].Name
+		// Lines bnd bytes bre equbl, fbll bbck to nbme bscending
+		return sum.Lbngubges[i].Nbme < sum.Lbngubges[j].Nbme
 	})
 	return sum
 }

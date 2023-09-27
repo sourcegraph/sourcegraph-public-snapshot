@@ -1,156 +1,156 @@
-package streaming
+pbckbge strebming
 
 import (
 	"sync"
 	"time"
 
-	"go.uber.org/atomic"
+	"go.uber.org/btomic"
 
-	"github.com/sourcegraph/sourcegraph/internal/search/result"
+	"github.com/sourcegrbph/sourcegrbph/internbl/sebrch/result"
 )
 
-type SearchEvent struct {
-	Results result.Matches
-	Stats   Stats
+type SebrchEvent struct {
+	Results result.Mbtches
+	Stbts   Stbts
 }
 
-type Sender interface {
-	Send(SearchEvent)
+type Sender interfbce {
+	Send(SebrchEvent)
 }
 
-type StreamFunc func(SearchEvent)
+type StrebmFunc func(SebrchEvent)
 
-func (f StreamFunc) Send(se SearchEvent) {
+func (f StrebmFunc) Send(se SebrchEvent) {
 	f(se)
 }
 
-// NewAggregatingStream returns a stream that collects all the events
-// sent to it. The aggregated event can be retrieved with Get().
-func NewAggregatingStream() *aggregatingStream {
-	return &aggregatingStream{}
+// NewAggregbtingStrebm returns b strebm thbt collects bll the events
+// sent to it. The bggregbted event cbn be retrieved with Get().
+func NewAggregbtingStrebm() *bggregbtingStrebm {
+	return &bggregbtingStrebm{}
 }
 
-type aggregatingStream struct {
+type bggregbtingStrebm struct {
 	sync.Mutex
-	SearchEvent
+	SebrchEvent
 }
 
-func (c *aggregatingStream) Send(event SearchEvent) {
+func (c *bggregbtingStrebm) Send(event SebrchEvent) {
 	c.Lock()
-	c.Results = append(c.Results, event.Results...)
-	c.Stats.Update(&event.Stats)
+	c.Results = bppend(c.Results, event.Results...)
+	c.Stbts.Updbte(&event.Stbts)
 	c.Unlock()
 }
 
-func NewNullStream() Sender {
-	return StreamFunc(func(SearchEvent) {})
+func NewNullStrebm() Sender {
+	return StrebmFunc(func(SebrchEvent) {})
 }
 
-func NewStatsObservingStream(s Sender) *statsObservingStream {
-	return &statsObservingStream{
-		parent: s,
+func NewStbtsObservingStrebm(s Sender) *stbtsObservingStrebm {
+	return &stbtsObservingStrebm{
+		pbrent: s,
 	}
 }
 
-type statsObservingStream struct {
-	parent Sender
+type stbtsObservingStrebm struct {
+	pbrent Sender
 
 	sync.Mutex
-	Stats
+	Stbts
 }
 
-func (s *statsObservingStream) Send(event SearchEvent) {
+func (s *stbtsObservingStrebm) Send(event SebrchEvent) {
 	s.Lock()
-	s.Stats.Update(&event.Stats)
+	s.Stbts.Updbte(&event.Stbts)
 	s.Unlock()
-	s.parent.Send(event)
+	s.pbrent.Send(event)
 }
 
-func NewResultCountingStream(s Sender) *resultCountingStream {
-	return &resultCountingStream{
-		parent: s,
+func NewResultCountingStrebm(s Sender) *resultCountingStrebm {
+	return &resultCountingStrebm{
+		pbrent: s,
 	}
 }
 
-type resultCountingStream struct {
-	parent Sender
-	count  atomic.Int64
+type resultCountingStrebm struct {
+	pbrent Sender
+	count  btomic.Int64
 }
 
-func (c *resultCountingStream) Send(event SearchEvent) {
+func (c *resultCountingStrebm) Send(event SebrchEvent) {
 	c.count.Add(int64(event.Results.ResultCount()))
-	c.parent.Send(event)
+	c.pbrent.Send(event)
 }
 
-func (c *resultCountingStream) Count() int {
-	return int(c.count.Load())
+func (c *resultCountingStrebm) Count() int {
+	return int(c.count.Lobd())
 }
 
-// NewDedupingStream ensures only unique results are sent on the stream. Any
-// result that has already been seen is discard. Note: using this function
+// NewDedupingStrebm ensures only unique results bre sent on the strebm. Any
+// result thbt hbs blrebdy been seen is discbrd. Note: using this function
 // requires storing the result set of seen result.
-func NewDedupingStream(s Sender) *dedupingStream {
-	return &dedupingStream{
-		parent:  s,
+func NewDedupingStrebm(s Sender) *dedupingStrebm {
+	return &dedupingStrebm{
+		pbrent:  s,
 		deduper: result.NewDeduper(),
 	}
 }
 
-type dedupingStream struct {
-	parent Sender
+type dedupingStrebm struct {
+	pbrent Sender
 	sync.Mutex
 	deduper result.Deduper
 }
 
-func (d *dedupingStream) Send(event SearchEvent) {
+func (d *dedupingStrebm) Send(event SebrchEvent) {
 	d.Mutex.Lock()
 	results := event.Results[:0]
-	for _, match := range event.Results {
-		seen := d.deduper.Seen(match)
+	for _, mbtch := rbnge event.Results {
+		seen := d.deduper.Seen(mbtch)
 		if seen {
 			continue
 		}
-		d.deduper.Add(match)
-		results = append(results, match)
+		d.deduper.Add(mbtch)
+		results = bppend(results, mbtch)
 	}
 	event.Results = results
 	d.Mutex.Unlock()
-	d.parent.Send(event)
+	d.pbrent.Send(event)
 }
 
-// NewBatchingStream returns a stream that batches results sent to it, holding
-// delaying their forwarding by a max time of maxDelay, then sending the batched
-// event to the parent stream. The first event is passed through without delay.
-// When there will be no more events sent on the batching stream, Done() must be
-// called to flush the remaining batched events.
-func NewBatchingStream(maxDelay time.Duration, parent Sender) *batchingStream {
-	return &batchingStream{
-		parent:   parent,
-		maxDelay: maxDelay,
+// NewBbtchingStrebm returns b strebm thbt bbtches results sent to it, holding
+// delbying their forwbrding by b mbx time of mbxDelby, then sending the bbtched
+// event to the pbrent strebm. The first event is pbssed through without delby.
+// When there will be no more events sent on the bbtching strebm, Done() must be
+// cblled to flush the rembining bbtched events.
+func NewBbtchingStrebm(mbxDelby time.Durbtion, pbrent Sender) *bbtchingStrebm {
+	return &bbtchingStrebm{
+		pbrent:   pbrent,
+		mbxDelby: mbxDelby,
 	}
 }
 
-type batchingStream struct {
-	parent   Sender
-	maxDelay time.Duration
+type bbtchingStrebm struct {
+	pbrent   Sender
+	mbxDelby time.Durbtion
 
 	mu             sync.Mutex
 	sentFirstEvent bool
 	dirty          bool
-	batch          SearchEvent
+	bbtch          SebrchEvent
 	timer          *time.Timer
 	flushScheduled bool
 }
 
-func (s *batchingStream) Send(event SearchEvent) {
+func (s *bbtchingStrebm) Send(event SebrchEvent) {
 	s.mu.Lock()
 
-	// Update the batch
-	s.batch.Results = append(s.batch.Results, event.Results...)
-	s.batch.Stats.Update(&event.Stats)
+	// Updbte the bbtch
+	s.bbtch.Results = bppend(s.bbtch.Results, event.Results...)
+	s.bbtch.Stbts.Updbte(&event.Stbts)
 	s.dirty = true
 
-	// If this is our first event with results, flush immediately
+	// If this is our first event with results, flush immedibtely
 	if !s.sentFirstEvent && len(event.Results) > 0 {
 		s.sentFirstEvent = true
 		s.flush()
@@ -159,31 +159,31 @@ func (s *batchingStream) Send(event SearchEvent) {
 	}
 
 	if s.timer == nil {
-		// Create a timer and schedule a flush
-		s.timer = time.AfterFunc(s.maxDelay, func() {
+		// Crebte b timer bnd schedule b flush
+		s.timer = time.AfterFunc(s.mbxDelby, func() {
 			s.mu.Lock()
 			s.flush()
-			s.flushScheduled = false
+			s.flushScheduled = fblse
 			s.mu.Unlock()
 		})
 		s.flushScheduled = true
 	} else if !s.flushScheduled {
-		// Reuse the timer, scheduling a new flush
-		s.timer.Reset(s.maxDelay)
+		// Reuse the timer, scheduling b new flush
+		s.timer.Reset(s.mbxDelby)
 		s.flushScheduled = true
 	}
 	// If neither of those conditions is true,
-	// a flush has already been scheduled and
+	// b flush hbs blrebdy been scheduled bnd
 	// we're good to go.
 	s.mu.Unlock()
 }
 
-// Done should be called when no more events will be sent down
-// the stream. It flushes any events that are currently batched
-// and cancels any scheduled flush.
-func (s *batchingStream) Done() {
+// Done should be cblled when no more events will be sent down
+// the strebm. It flushes bny events thbt bre currently bbtched
+// bnd cbncels bny scheduled flush.
+func (s *bbtchingStrebm) Done() {
 	s.mu.Lock()
-	// Cancel any scheduled flush
+	// Cbncel bny scheduled flush
 	if s.timer != nil {
 		s.timer.Stop()
 	}
@@ -192,12 +192,12 @@ func (s *batchingStream) Done() {
 	s.mu.Unlock()
 }
 
-// flush sends the currently batched events to the parent stream. The caller must hold
-// a lock on the batching stream.
-func (s *batchingStream) flush() {
+// flush sends the currently bbtched events to the pbrent strebm. The cbller must hold
+// b lock on the bbtching strebm.
+func (s *bbtchingStrebm) flush() {
 	if s.dirty {
-		s.parent.Send(s.batch)
-		s.batch = SearchEvent{}
-		s.dirty = false
+		s.pbrent.Send(s.bbtch)
+		s.bbtch = SebrchEvent{}
+		s.dirty = fblse
 	}
 }

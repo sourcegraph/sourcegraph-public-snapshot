@@ -1,4 +1,4 @@
-package httpapi
+pbckbge httpbpi
 
 import (
 	"context"
@@ -6,13 +6,13 @@ import (
 	"strconv"
 	"testing"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/bbckend"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
 )
 
 func TestRepoShieldFmt(t *testing.T) {
-	want := map[int]string{
+	wbnt := mbp[int]string{
 		50:    " 50 projects",
 		100:   " 100 projects",
 		1000:  " 1.0k projects",
@@ -20,11 +20,11 @@ func TestRepoShieldFmt(t *testing.T) {
 		1500:  " 1.5k projects",
 		15410: " 15.4k projects",
 	}
-	for input, want := range want {
-		t.Run(strconv.Itoa(input), func(t *testing.T) {
-			got := badgeValueFmt(input)
-			if got != want {
-				t.Fatalf("input %d got %q want %q", input, got, want)
+	for input, wbnt := rbnge wbnt {
+		t.Run(strconv.Itob(input), func(t *testing.T) {
+			got := bbdgeVblueFmt(input)
+			if got != wbnt {
+				t.Fbtblf("input %d got %q wbnt %q", input, got, wbnt)
 			}
 		})
 	}
@@ -33,36 +33,36 @@ func TestRepoShieldFmt(t *testing.T) {
 func TestRepoShield(t *testing.T) {
 	c := newTest(t)
 
-	wantResp := map[string]any{
-		"value": " 200 projects",
+	wbntResp := mbp[string]bny{
+		"vblue": " 200 projects",
 	}
 
-	backend.Mocks.Repos.GetByName = func(ctx context.Context, name api.RepoName) (*types.Repo, error) {
-		switch name {
-		case "github.com/gorilla/mux":
-			return &types.Repo{ID: 2, Name: name}, nil
-		default:
-			panic("wrong path")
+	bbckend.Mocks.Repos.GetByNbme = func(ctx context.Context, nbme bpi.RepoNbme) (*types.Repo, error) {
+		switch nbme {
+		cbse "github.com/gorillb/mux":
+			return &types.Repo{ID: 2, Nbme: nbme}, nil
+		defbult:
+			pbnic("wrong pbth")
 		}
 	}
-	backend.Mocks.Repos.ResolveRev = func(ctx context.Context, repo *types.Repo, rev string) (api.CommitID, error) {
-		if repo.ID != 2 || rev != "master" {
-			t.Error("wrong arguments to ResolveRev")
+	bbckend.Mocks.Repos.ResolveRev = func(ctx context.Context, repo *types.Repo, rev string) (bpi.CommitID, error) {
+		if repo.ID != 2 || rev != "mbster" {
+			t.Error("wrong brguments to ResolveRev")
 		}
-		return "aed", nil
+		return "bed", nil
 	}
-	backend.MockCountGoImporters = func(ctx context.Context, source api.RepoName) (int, error) {
-		if source != "github.com/gorilla/mux" {
-			t.Error("wrong repo source to TotalRefs")
+	bbckend.MockCountGoImporters = func(ctx context.Context, source bpi.RepoNbme) (int, error) {
+		if source != "github.com/gorillb/mux" {
+			t.Error("wrong repo source to TotblRefs")
 		}
 		return 200, nil
 	}
 
-	var resp map[string]any
-	if err := c.GetJSON("/repos/github.com/gorilla/mux/-/shield", &resp); err != nil {
-		t.Fatal(err)
+	vbr resp mbp[string]bny
+	if err := c.GetJSON("/repos/github.com/gorillb/mux/-/shield", &resp); err != nil {
+		t.Fbtbl(err)
 	}
-	if !reflect.DeepEqual(resp, wantResp) {
-		t.Errorf("got %+v, want %+v", resp, wantResp)
+	if !reflect.DeepEqubl(resp, wbntResp) {
+		t.Errorf("got %+v, wbnt %+v", resp, wbntResp)
 	}
 }

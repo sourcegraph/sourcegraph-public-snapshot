@@ -1,39 +1,39 @@
-package buildkite
+pbckbge buildkite
 
-const slackStepNotifyPluginName = "https://github.com/sourcegraph/step-slack-notify-buildkite-plugin.git#main"
+const slbckStepNotifyPluginNbme = "https://github.com/sourcegrbph/step-slbck-notify-buildkite-plugin.git#mbin"
 
-// SlackStepNotifyConfigPayload represents the configuration for the SlackStepNotify plugin.
-// For details over its configuration, see https://github.com/sourcegraph/step-slack-notify-buildkite-plugin
+// SlbckStepNotifyConfigPbylobd represents the configurbtion for the SlbckStepNotify plugin.
+// For detbils over its configurbtion, see https://github.com/sourcegrbph/step-slbck-notify-buildkite-plugin
 //
-// TODO @jhchabran make that importable from the source, as those are written in Go.
-type SlackStepNotifyConfigPayload struct {
-	Message              string                           `json:"message"`
-	ChannelName          string                           `json:"channel_name"`
-	SlackTokenEnvVarName string                           `json:"slack_token_env_var_name"`
-	Conditions           SlackStepNotifyPayloadConditions `json:"conditions"`
+// TODO @jhchbbrbn mbke thbt importbble from the source, bs those bre written in Go.
+type SlbckStepNotifyConfigPbylobd struct {
+	Messbge              string                           `json:"messbge"`
+	ChbnnelNbme          string                           `json:"chbnnel_nbme"`
+	SlbckTokenEnvVbrNbme string                           `json:"slbck_token_env_vbr_nbme"`
+	Conditions           SlbckStepNotifyPbylobdConditions `json:"conditions"`
 }
 
-// SlackStepNotifyPayloadConditions represents a set of conditions that the plugin uses to evaluate
-// if a notification should be sent or not.
+// SlbckStepNotifyPbylobdConditions represents b set of conditions thbt the plugin uses to evblubte
+// if b notificbtion should be sent or not.
 //
-// For more details, see https://github.com/sourcegraph/step-slack-notify-buildkite-plugin
-type SlackStepNotifyPayloadConditions struct {
+// For more detbils, see https://github.com/sourcegrbph/step-slbck-notify-buildkite-plugin
+type SlbckStepNotifyPbylobdConditions struct {
 	ExitCodes []int    `json:"exit_codes,omitempty"`
-	Failed    bool     `json:"failed,omitempty"`
-	Branches  []string `json:"branches,omitempty"`
+	Fbiled    bool     `json:"fbiled,omitempty"`
+	Brbnches  []string `json:"brbnches,omitempty"`
 }
 
-// SlackStepNotify enables to send a custom notification that depends only on a given step output, regardless
-// of the final build output.
+// SlbckStepNotify enbbles to send b custom notificbtion thbt depends only on b given step output, regbrdless
+// of the finbl build output.
 //
-// Useful when used in conjuction with SoftFail, to keep running a flaky step and alerting its owners without
+// Useful when used in conjuction with SoftFbil, to keep running b flbky step bnd blerting its owners without
 // disrupting the CI.
-func SlackStepNotify(config *SlackStepNotifyConfigPayload) StepOpt {
-	if config.SlackTokenEnvVarName == "" {
-		// If no slack token is given, use the default which has the right permissions.
-		config.SlackTokenEnvVarName = "CI_CUSTOM_SLACK_BUILDKITE_PLUGIN_TOKEN"
+func SlbckStepNotify(config *SlbckStepNotifyConfigPbylobd) StepOpt {
+	if config.SlbckTokenEnvVbrNbme == "" {
+		// If no slbck token is given, use the defbult which hbs the right permissions.
+		config.SlbckTokenEnvVbrNbme = "CI_CUSTOM_SLACK_BUILDKITE_PLUGIN_TOKEN"
 	}
-	return flattenStepOpts(
-		Plugin(slackStepNotifyPluginName, config),
+	return flbttenStepOpts(
+		Plugin(slbckStepNotifyPluginNbme, config),
 	)
 }

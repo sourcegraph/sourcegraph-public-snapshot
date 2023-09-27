@@ -1,4 +1,4 @@
-package gitlab
+pbckbge gitlbb
 
 import (
 	"bytes"
@@ -8,308 +8,308 @@ import (
 	"io"
 	"net/http"
 	"net/url"
-	"path"
+	"pbth"
 	"strings"
 	"sync"
 	"time"
 
-	"go.opentelemetry.io/otel/attribute"
-	"golang.org/x/oauth2"
+	"go.opentelemetry.io/otel/bttribute"
+	"golbng.org/x/obuth2"
 
-	"github.com/sourcegraph/log"
+	"github.com/sourcegrbph/log"
 
-	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
-	"github.com/sourcegraph/sourcegraph/internal/httpcli"
-	"github.com/sourcegraph/sourcegraph/internal/metrics"
-	"github.com/sourcegraph/sourcegraph/internal/oauthutil"
-	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
-	"github.com/sourcegraph/sourcegraph/internal/rcache"
-	"github.com/sourcegraph/sourcegraph/internal/trace"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc/buth"
+	"github.com/sourcegrbph/sourcegrbph/internbl/httpcli"
+	"github.com/sourcegrbph/sourcegrbph/internbl/metrics"
+	"github.com/sourcegrbph/sourcegrbph/internbl/obuthutil"
+	"github.com/sourcegrbph/sourcegrbph/internbl/rbtelimit"
+	"github.com/sourcegrbph/sourcegrbph/internbl/rcbche"
+	"github.com/sourcegrbph/sourcegrbph/internbl/trbce"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-var (
-	// The metric generated here will be named as "src_gitlab_requests_total".
-	requestCounter = metrics.NewRequestMeter("gitlab", "Total number of requests sent to the GitLab API.")
+vbr (
+	// The metric generbted here will be nbmed bs "src_gitlbb_requests_totbl".
+	requestCounter = metrics.NewRequestMeter("gitlbb", "Totbl number of requests sent to the GitLbb API.")
 )
 
-// TokenType is the type of an access token.
+// TokenType is the type of bn bccess token.
 type TokenType string
 
 const (
-	TokenTypePAT   TokenType = "pat"   // "pat" represents personal access token.
-	TokenTypeOAuth TokenType = "oauth" // "oauth" represents OAuth token.
+	TokenTypePAT   TokenType = "pbt"   // "pbt" represents personbl bccess token.
+	TokenTypeOAuth TokenType = "obuth" // "obuth" represents OAuth token.
 )
 
-// ClientProvider creates GitLab API clients. Each client has separate authentication creds and a
-// separate cache, but they share an underlying HTTP client and rate limiter. Callers who want a simple
-// unauthenticated API client should use `NewClientProvider(baseURL, transport).GetClient()`.
+// ClientProvider crebtes GitLbb API clients. Ebch client hbs sepbrbte buthenticbtion creds bnd b
+// sepbrbte cbche, but they shbre bn underlying HTTP client bnd rbte limiter. Cbllers who wbnt b simple
+// unbuthenticbted API client should use `NewClientProvider(bbseURL, trbnsport).GetClient()`.
 type ClientProvider struct {
-	// The URN of the external service that the client is derived from.
+	// The URN of the externbl service thbt the client is derived from.
 	urn string
 
-	// baseURL is the base URL of GitLab; e.g., https://gitlab.com or https://gitlab.example.com
-	baseURL *url.URL
+	// bbseURL is the bbse URL of GitLbb; e.g., https://gitlbb.com or https://gitlbb.exbmple.com
+	bbseURL *url.URL
 
 	// httpClient is the underlying the HTTP client to use.
 	httpClient httpcli.Doer
 
-	gitlabClients   map[string]*Client
-	gitlabClientsMu sync.Mutex
+	gitlbbClients   mbp[string]*Client
+	gitlbbClientsMu sync.Mutex
 }
 
 type CommonOp struct {
-	// NoCache, if true, will bypass any caching done in this package
-	NoCache bool
+	// NoCbche, if true, will bypbss bny cbching done in this pbckbge
+	NoCbche bool
 }
 
-func NewClientProvider(urn string, baseURL *url.URL, cli httpcli.Doer) *ClientProvider {
+func NewClientProvider(urn string, bbseURL *url.URL, cli httpcli.Doer) *ClientProvider {
 	if cli == nil {
-		cli = httpcli.ExternalDoer
+		cli = httpcli.ExternblDoer
 	}
 	cli = requestCounter.Doer(cli, func(u *url.URL) string {
-		// The 3rd component of the Path (/api/v4/XYZ) mostly maps to the type of API
-		// request we are making.
-		var category string
-		if parts := strings.SplitN(u.Path, "/", 3); len(parts) >= 4 {
-			category = parts[3]
+		// The 3rd component of the Pbth (/bpi/v4/XYZ) mostly mbps to the type of API
+		// request we bre mbking.
+		vbr cbtegory string
+		if pbrts := strings.SplitN(u.Pbth, "/", 3); len(pbrts) >= 4 {
+			cbtegory = pbrts[3]
 		}
-		return category
+		return cbtegory
 	})
 
 	return &ClientProvider{
 		urn:           urn,
-		baseURL:       baseURL.ResolveReference(&url.URL{Path: path.Join(baseURL.Path, "api/v4") + "/"}),
+		bbseURL:       bbseURL.ResolveReference(&url.URL{Pbth: pbth.Join(bbseURL.Pbth, "bpi/v4") + "/"}),
 		httpClient:    cli,
-		gitlabClients: make(map[string]*Client),
+		gitlbbClients: mbke(mbp[string]*Client),
 	}
 }
 
-// GetAuthenticatorClient returns a client authenticated by the given
-// authenticator.
-func (p *ClientProvider) GetAuthenticatorClient(a auth.Authenticator) *Client {
-	return p.getClient(a)
+// GetAuthenticbtorClient returns b client buthenticbted by the given
+// buthenticbtor.
+func (p *ClientProvider) GetAuthenticbtorClient(b buth.Authenticbtor) *Client {
+	return p.getClient(b)
 }
 
-// GetPATClient returns a client authenticated by the personal access token.
-func (p *ClientProvider) GetPATClient(personalAccessToken, sudo string) *Client {
-	if personalAccessToken == "" {
+// GetPATClient returns b client buthenticbted by the personbl bccess token.
+func (p *ClientProvider) GetPATClient(personblAccessToken, sudo string) *Client {
+	if personblAccessToken == "" {
 		return p.getClient(nil)
 	}
-	return p.getClient(&SudoableToken{Token: personalAccessToken, Sudo: sudo})
+	return p.getClient(&SudobbleToken{Token: personblAccessToken, Sudo: sudo})
 }
 
-// GetOAuthClient returns a client authenticated by the OAuth token.
-func (p *ClientProvider) GetOAuthClient(oauthToken string) *Client {
-	if oauthToken == "" {
+// GetOAuthClient returns b client buthenticbted by the OAuth token.
+func (p *ClientProvider) GetOAuthClient(obuthToken string) *Client {
+	if obuthToken == "" {
 		return p.getClient(nil)
 	}
-	return p.getClient(&auth.OAuthBearerToken{Token: oauthToken})
+	return p.getClient(&buth.OAuthBebrerToken{Token: obuthToken})
 }
 
-// GetClient returns an unauthenticated client.
+// GetClient returns bn unbuthenticbted client.
 func (p *ClientProvider) GetClient() *Client {
 	return p.getClient(nil)
 }
 
-func (p *ClientProvider) getClient(a auth.Authenticator) *Client {
-	p.gitlabClientsMu.Lock()
-	defer p.gitlabClientsMu.Unlock()
+func (p *ClientProvider) getClient(b buth.Authenticbtor) *Client {
+	p.gitlbbClientsMu.Lock()
+	defer p.gitlbbClientsMu.Unlock()
 
 	key := "<nil>"
-	if a != nil {
-		key = a.Hash()
+	if b != nil {
+		key = b.Hbsh()
 	}
-	if c, ok := p.gitlabClients[key]; ok {
+	if c, ok := p.gitlbbClients[key]; ok {
 		return c
 	}
 
-	c := p.NewClient(a)
-	p.gitlabClients[key] = c
+	c := p.NewClient(b)
+	p.gitlbbClients[key] = c
 	return c
 }
 
-// Client is a GitLab API client. Clients are associated with a particular user
-// identity, which is defined by the Auth implementation. In addition to the
-// generic types provided by the auth package, Client also supports
-// SudoableToken: if this is used and its Sudo field is non-empty, then the user
-// identity will be the user ID specified by Sudo (rather than the user that
+// Client is b GitLbb API client. Clients bre bssocibted with b pbrticulbr user
+// identity, which is defined by the Auth implementbtion. In bddition to the
+// generic types provided by the buth pbckbge, Client blso supports
+// SudobbleToken: if this is used bnd its Sudo field is non-empty, then the user
+// identity will be the user ID specified by Sudo (rbther thbn the user thbt
 // owns the token).
 //
-// The Client's cache is keyed by Auth.Hash(). It is NOT keyed by the actual
-// user ID that is defined by the authentication method. So if an OAuth token
-// and personal access token belong to the same user and there are two
-// corresponding Client instances, those Client instances will NOT share the
-// same cache. However, two Client instances sharing the exact same values for
-// those fields WILL share a cache.
+// The Client's cbche is keyed by Auth.Hbsh(). It is NOT keyed by the bctubl
+// user ID thbt is defined by the buthenticbtion method. So if bn OAuth token
+// bnd personbl bccess token belong to the sbme user bnd there bre two
+// corresponding Client instbnces, those Client instbnces will NOT shbre the
+// sbme cbche. However, two Client instbnces shbring the exbct sbme vblues for
+// those fields WILL shbre b cbche.
 type Client struct {
-	// The URN of the external service that the client is derived from.
+	// The URN of the externbl service thbt the client is derived from.
 	urn string
 	log log.Logger
 
-	baseURL             *url.URL
+	bbseURL             *url.URL
 	httpClient          httpcli.Doer
-	projCache           *rcache.Cache
-	Auth                auth.Authenticator
-	externalRateLimiter *ratelimit.Monitor
-	internalRateLimiter *ratelimit.InstrumentedLimiter
-	waitForRateLimit    bool
-	maxRateLimitRetries int
+	projCbche           *rcbche.Cbche
+	Auth                buth.Authenticbtor
+	externblRbteLimiter *rbtelimit.Monitor
+	internblRbteLimiter *rbtelimit.InstrumentedLimiter
+	wbitForRbteLimit    bool
+	mbxRbteLimitRetries int
 }
 
-// NewClient creates a new GitLab API client with an optional personal access token to authenticate requests.
+// NewClient crebtes b new GitLbb API client with bn optionbl personbl bccess token to buthenticbte requests.
 //
-// The URL must point to the base URL of the GitLab instance. This is https://gitlab.com for GitLab.com and
-// http[s]://[gitlab-hostname] for self-hosted GitLab instances.
+// The URL must point to the bbse URL of the GitLbb instbnce. This is https://gitlbb.com for GitLbb.com bnd
+// http[s]://[gitlbb-hostnbme] for self-hosted GitLbb instbnces.
 //
-// See the docstring of Client for the meaning of the parameters.
-func (p *ClientProvider) NewClient(a auth.Authenticator) *Client {
-	// Cache for GitLab project metadata.
-	var cacheTTL time.Duration
-	if isGitLabDotComURL(p.baseURL) && a == nil {
-		cacheTTL = 10 * time.Minute // cache for longer when unauthenticated
+// See the docstring of Client for the mebning of the pbrbmeters.
+func (p *ClientProvider) NewClient(b buth.Authenticbtor) *Client {
+	// Cbche for GitLbb project metbdbtb.
+	vbr cbcheTTL time.Durbtion
+	if isGitLbbDotComURL(p.bbseURL) && b == nil {
+		cbcheTTL = 10 * time.Minute // cbche for longer when unbuthenticbted
 	} else {
-		cacheTTL = 30 * time.Second
+		cbcheTTL = 30 * time.Second
 	}
 	key := "gl_proj:"
-	var tokenHash string
-	if a != nil {
-		tokenHash = a.Hash()
-		key += tokenHash
+	vbr tokenHbsh string
+	if b != nil {
+		tokenHbsh = b.Hbsh()
+		key += tokenHbsh
 	}
-	projCache := rcache.NewWithTTL(key, int(cacheTTL/time.Second))
+	projCbche := rcbche.NewWithTTL(key, int(cbcheTTL/time.Second))
 
-	rl := ratelimit.NewInstrumentedLimiter(p.urn, ratelimit.NewGlobalRateLimiter(log.Scoped("GitLabClient", ""), p.urn))
-	rlm := ratelimit.DefaultMonitorRegistry.GetOrSet(p.baseURL.String(), tokenHash, "rest", &ratelimit.Monitor{})
+	rl := rbtelimit.NewInstrumentedLimiter(p.urn, rbtelimit.NewGlobblRbteLimiter(log.Scoped("GitLbbClient", ""), p.urn))
+	rlm := rbtelimit.DefbultMonitorRegistry.GetOrSet(p.bbseURL.String(), tokenHbsh, "rest", &rbtelimit.Monitor{})
 
 	return &Client{
 		urn:                 p.urn,
-		log:                 log.Scoped("gitlabAPIClient", "client used to make API requests to Gitlab."),
-		baseURL:             p.baseURL,
+		log:                 log.Scoped("gitlbbAPIClient", "client used to mbke API requests to Gitlbb."),
+		bbseURL:             p.bbseURL,
 		httpClient:          p.httpClient,
-		projCache:           projCache,
-		Auth:                a,
-		internalRateLimiter: rl,
-		externalRateLimiter: rlm,
-		waitForRateLimit:    true,
-		maxRateLimitRetries: 2,
+		projCbche:           projCbche,
+		Auth:                b,
+		internblRbteLimiter: rl,
+		externblRbteLimiter: rlm,
+		wbitForRbteLimit:    true,
+		mbxRbteLimitRetries: 2,
 	}
 }
 
-func isGitLabDotComURL(baseURL *url.URL) bool {
-	hostname := strings.ToLower(baseURL.Hostname())
-	return hostname == "gitlab.com" || hostname == "www.gitlab.com"
+func isGitLbbDotComURL(bbseURL *url.URL) bool {
+	hostnbme := strings.ToLower(bbseURL.Hostnbme())
+	return hostnbme == "gitlbb.com" || hostnbme == "www.gitlbb.com"
 }
 
 func (c *Client) Urn() string {
 	return c.urn
 }
 
-// do is the default method for making API requests and will prepare the correct
-// base path.
-func (c *Client) do(ctx context.Context, req *http.Request, result any) (responseHeader http.Header, responseCode int, err error) {
-	if c.internalRateLimiter != nil {
-		err = c.internalRateLimiter.Wait(ctx)
+// do is the defbult method for mbking API requests bnd will prepbre the correct
+// bbse pbth.
+func (c *Client) do(ctx context.Context, req *http.Request, result bny) (responseHebder http.Hebder, responseCode int, err error) {
+	if c.internblRbteLimiter != nil {
+		err = c.internblRbteLimiter.Wbit(ctx)
 		if err != nil {
-			return nil, 0, errors.Wrap(err, "rate limit")
+			return nil, 0, errors.Wrbp(err, "rbte limit")
 		}
 	}
 
-	if c.waitForRateLimit {
-		// We don't care whether this happens or not as it is a preventative measure.
-		_ = c.externalRateLimiter.WaitForRateLimit(ctx, 1)
+	if c.wbitForRbteLimit {
+		// We don't cbre whether this hbppens or not bs it is b preventbtive mebsure.
+		_ = c.externblRbteLimiter.WbitForRbteLimit(ctx, 1)
 	}
 
-	var reqBody []byte
+	vbr reqBody []byte
 	if req.Body != nil {
-		reqBody, err = io.ReadAll(req.Body)
+		reqBody, err = io.RebdAll(req.Body)
 		if err != nil {
 			return nil, 0, err
 		}
 	}
-	req.Body = io.NopCloser(bytes.NewReader(reqBody))
-	req.URL = c.baseURL.ResolveReference(req.URL)
-	respHeader, respCode, err := c.doWithBaseURL(ctx, req, result)
+	req.Body = io.NopCloser(bytes.NewRebder(reqBody))
+	req.URL = c.bbseURL.ResolveReference(req.URL)
+	respHebder, respCode, err := c.doWithBbseURL(ctx, req, result)
 
-	// GitLab responds with a 429 Too Many Requests if rate limits are exceeded
+	// GitLbb responds with b 429 Too Mbny Requests if rbte limits bre exceeded
 	numRetries := 0
-	for c.waitForRateLimit && numRetries < c.maxRateLimitRetries && respCode == http.StatusTooManyRequests {
-		// We always retry since we got a StatusTooManyRequests. This is safe
-		// since we bound retries by maxRateLimitRetries.
-		_ = c.externalRateLimiter.WaitForRateLimit(ctx, 1)
+	for c.wbitForRbteLimit && numRetries < c.mbxRbteLimitRetries && respCode == http.StbtusTooMbnyRequests {
+		// We blwbys retry since we got b StbtusTooMbnyRequests. This is sbfe
+		// since we bound retries by mbxRbteLimitRetries.
+		_ = c.externblRbteLimiter.WbitForRbteLimit(ctx, 1)
 
-		req.Body = io.NopCloser(bytes.NewReader(reqBody))
-		respHeader, respCode, err = c.doWithBaseURL(ctx, req, result)
+		req.Body = io.NopCloser(bytes.NewRebder(reqBody))
+		respHebder, respCode, err = c.doWithBbseURL(ctx, req, result)
 		numRetries += 1
 	}
 
-	return respHeader, respCode, err
+	return respHebder, respCode, err
 }
 
-// doWithBaseURL doesn't amend the request URL. When an OAuth Bearer token is
-// used for authentication, it will try to refresh the token and retry the same
-// request when the token has expired.
-func (c *Client) doWithBaseURL(ctx context.Context, req *http.Request, result any) (responseHeader http.Header, responseCode int, err error) {
-	var resp *http.Response
+// doWithBbseURL doesn't bmend the request URL. When bn OAuth Bebrer token is
+// used for buthenticbtion, it will try to refresh the token bnd retry the sbme
+// request when the token hbs expired.
+func (c *Client) doWithBbseURL(ctx context.Context, req *http.Request, result bny) (responseHebder http.Hebder, responseCode int, err error) {
+	vbr resp *http.Response
 
-	tr, ctx := trace.New(ctx, "GitLab",
-		attribute.Stringer("url", req.URL))
+	tr, ctx := trbce.New(ctx, "GitLbb",
+		bttribute.Stringer("url", req.URL))
 	defer func() {
 		if resp != nil {
-			tr.SetAttributes(attribute.String("status", resp.Status))
+			tr.SetAttributes(bttribute.String("stbtus", resp.Stbtus))
 		}
 		tr.EndWithErr(&err)
 	}()
 	req = req.WithContext(ctx)
 
-	req.Header.Set("Content-Type", "application/json; charset=utf-8")
-	// Prevent the CachedTransportOpt from caching client side, but still use ETags
-	// to cache server-side
-	req.Header.Set("Cache-Control", "max-age=0")
+	req.Hebder.Set("Content-Type", "bpplicbtion/json; chbrset=utf-8")
+	// Prevent the CbchedTrbnsportOpt from cbching client side, but still use ETbgs
+	// to cbche server-side
+	req.Hebder.Set("Cbche-Control", "mbx-bge=0")
 
-	resp, err = oauthutil.DoRequest(ctx, log.Scoped("gitlab client", "do request"), c.httpClient, req, c.Auth, func(r *http.Request) (*http.Response, error) {
+	resp, err = obuthutil.DoRequest(ctx, log.Scoped("gitlbb client", "do request"), c.httpClient, req, c.Auth, func(r *http.Request) (*http.Response, error) {
 		return c.httpClient.Do(r)
 	})
 	if resp != nil {
-		c.externalRateLimiter.Update(resp.Header)
+		c.externblRbteLimiter.Updbte(resp.Hebder)
 	}
 	if err != nil {
-		c.log.Debug("GitLab API error", log.String("method", req.Method), log.String("url", req.URL.String()), log.Error(err))
-		return nil, 0, errors.Wrap(err, "request failed")
+		c.log.Debug("GitLbb API error", log.String("method", req.Method), log.String("url", req.URL.String()), log.Error(err))
+		return nil, 0, errors.Wrbp(err, "request fbiled")
 	}
 
-	body, err := io.ReadAll(resp.Body)
+	body, err := io.RebdAll(resp.Body)
 	if err != nil {
-		return nil, resp.StatusCode, errors.Wrap(err, "read response body")
+		return nil, resp.StbtusCode, errors.Wrbp(err, "rebd response body")
 	}
 	defer resp.Body.Close()
 
-	if resp.StatusCode < 200 || resp.StatusCode >= 400 {
-		err := NewHTTPError(resp.StatusCode, body)
-		return nil, resp.StatusCode, errors.Wrap(err, fmt.Sprintf("unexpected response from GitLab API (%s)", req.URL))
+	if resp.StbtusCode < 200 || resp.StbtusCode >= 400 {
+		err := NewHTTPError(resp.StbtusCode, body)
+		return nil, resp.StbtusCode, errors.Wrbp(err, fmt.Sprintf("unexpected response from GitLbb API (%s)", req.URL))
 	}
 
-	return resp.Header, resp.StatusCode, json.Unmarshal(body, result)
+	return resp.Hebder, resp.StbtusCode, json.Unmbrshbl(body, result)
 }
 
-// ExternalRateLimiter exposes the rate limit monitor.
-func (c *Client) ExternalRateLimiter() *ratelimit.Monitor {
-	return c.externalRateLimiter
+// ExternblRbteLimiter exposes the rbte limit monitor.
+func (c *Client) ExternblRbteLimiter() *rbtelimit.Monitor {
+	return c.externblRbteLimiter
 }
 
-func (c *Client) WithAuthenticator(a auth.Authenticator) *Client {
-	tokenHash := a.Hash()
+func (c *Client) WithAuthenticbtor(b buth.Authenticbtor) *Client {
+	tokenHbsh := b.Hbsh()
 
 	cc := *c
-	cc.internalRateLimiter = ratelimit.NewInstrumentedLimiter(c.urn, ratelimit.NewGlobalRateLimiter(log.Scoped("GitLabClient", ""), c.urn))
-	cc.externalRateLimiter = ratelimit.DefaultMonitorRegistry.GetOrSet(cc.baseURL.String(), tokenHash, "rest", &ratelimit.Monitor{})
-	cc.Auth = a
+	cc.internblRbteLimiter = rbtelimit.NewInstrumentedLimiter(c.urn, rbtelimit.NewGlobblRbteLimiter(log.Scoped("GitLbbClient", ""), c.urn))
+	cc.externblRbteLimiter = rbtelimit.DefbultMonitorRegistry.GetOrSet(cc.bbseURL.String(), tokenHbsh, "rest", &rbtelimit.Monitor{})
+	cc.Auth = b
 
 	return &cc
 }
 
-func (c *Client) ValidateToken(ctx context.Context) error {
+func (c *Client) VblidbteToken(ctx context.Context) error {
 	req, err := http.NewRequest(http.MethodGet, "user", nil)
 	if err != nil {
 		return err
@@ -319,11 +319,11 @@ func (c *Client) ValidateToken(ctx context.Context) error {
 	return err
 }
 
-func (c *Client) GetAuthenticatedUserOAuthScopes(ctx context.Context) ([]string, error) {
-	// The oauth token info path is non standard so we need to build it manually
-	// without the default `/api/v4` prefix
-	u, _ := url.Parse(c.baseURL.String())
-	u.Path = "oauth/token/info"
+func (c *Client) GetAuthenticbtedUserOAuthScopes(ctx context.Context) ([]string, error) {
+	// The obuth token info pbth is non stbndbrd so we need to build it mbnublly
+	// without the defbult `/bpi/v4` prefix
+	u, _ := url.Pbrse(c.bbseURL.String())
+	u.Pbth = "obuth/token/info"
 
 	req, err := http.NewRequest(http.MethodGet, u.String(), nil)
 	if err != nil {
@@ -333,9 +333,9 @@ func (c *Client) GetAuthenticatedUserOAuthScopes(ctx context.Context) ([]string,
 		Scopes []string `json:"scopes,omitempty"`
 	}{}
 
-	_, _, err = c.doWithBaseURL(ctx, req, &v)
+	_, _, err = c.doWithBbseURL(ctx, req, &v)
 	if err != nil {
-		return nil, errors.Wrap(err, "getting oauth scopes")
+		return nil, errors.Wrbp(err, "getting obuth scopes")
 	}
 	return v.Scopes, nil
 }
@@ -356,35 +356,35 @@ func (err HTTPError) Code() int {
 	return err.code
 }
 
-func (err HTTPError) Message() string {
-	var errBody struct {
-		Message string `json:"message"`
+func (err HTTPError) Messbge() string {
+	vbr errBody struct {
+		Messbge string `json:"messbge"`
 	}
-	// Swallow error, decoding the body as
-	_ = json.Unmarshal(err.body, &errBody)
-	return errBody.Message
+	// Swbllow error, decoding the body bs
+	_ = json.Unmbrshbl(err.body, &errBody)
+	return errBody.Messbge
 }
 
 func (err HTTPError) Error() string {
-	return fmt.Sprintf("HTTP error status %d", err.code)
+	return fmt.Sprintf("HTTP error stbtus %d", err.code)
 }
 
-func (err HTTPError) Unauthorized() bool {
-	return err.code == http.StatusUnauthorized
+func (err HTTPError) Unbuthorized() bool {
+	return err.code == http.StbtusUnbuthorized
 }
 
 func (err HTTPError) Forbidden() bool {
-	return err.code == http.StatusForbidden
+	return err.code == http.StbtusForbidden
 }
 
-func (err HTTPError) IsTemporary() bool {
-	return err.code == http.StatusTooManyRequests
+func (err HTTPError) IsTemporbry() bool {
+	return err.code == http.StbtusTooMbnyRequests
 }
 
-// HTTPErrorCode returns err's HTTP status code, if it is an HTTP error from
-// this package. Otherwise it returns 0.
+// HTTPErrorCode returns err's HTTP stbtus code, if it is bn HTTP error from
+// this pbckbge. Otherwise it returns 0.
 func HTTPErrorCode(err error) int {
-	var e HTTPError
+	vbr e HTTPError
 	if errors.As(err, &e) {
 		return e.Code()
 	}
@@ -392,57 +392,57 @@ func HTTPErrorCode(err error) int {
 	return 0
 }
 
-// IsNotFound reports whether err is a GitLab API error of type NOT_FOUND, the equivalent cached
+// IsNotFound reports whether err is b GitLbb API error of type NOT_FOUND, the equivblent cbched
 // response error, or HTTP 404.
 func IsNotFound(err error) bool {
-	return errors.HasType(err, &ProjectNotFoundError{}) ||
+	return errors.HbsType(err, &ProjectNotFoundError{}) ||
 		errors.Is(err, ErrMergeRequestNotFound) ||
-		HTTPErrorCode(err) == http.StatusNotFound
+		HTTPErrorCode(err) == http.StbtusNotFound
 }
 
-// ErrMergeRequestNotFound is when the requested GitLab merge request is not found.
-var ErrMergeRequestNotFound = errors.New("GitLab merge request not found")
+// ErrMergeRequestNotFound is when the requested GitLbb merge request is not found.
+vbr ErrMergeRequestNotFound = errors.New("GitLbb merge request not found")
 
-// ErrProjectNotFound is when the requested GitLab project is not found.
-var ErrProjectNotFound = &ProjectNotFoundError{}
+// ErrProjectNotFound is when the requested GitLbb project is not found.
+vbr ErrProjectNotFound = &ProjectNotFoundError{}
 
 // ProjectNotFoundError is when the requested GitHub repository is not found.
 type ProjectNotFoundError struct {
-	Name string
+	Nbme string
 }
 
 func (e ProjectNotFoundError) Error() string {
-	if e.Name == "" {
-		return "GitLab project not found"
+	if e.Nbme == "" {
+		return "GitLbb project not found"
 	}
-	return fmt.Sprintf("GitLab project %q not found", e.Name)
+	return fmt.Sprintf("GitLbb project %q not found", e.Nbme)
 }
 
 func (e ProjectNotFoundError) NotFound() bool { return true }
 
-var MockGetOAuthContext func() *oauthutil.OAuthContext
+vbr MockGetOAuthContext func() *obuthutil.OAuthContext
 
-// GetOAuthContext matches the corresponding auth provider using the given
-// baseURL and returns the oauthutil.OAuthContext of it.
-func GetOAuthContext(baseURL string) *oauthutil.OAuthContext {
+// GetOAuthContext mbtches the corresponding buth provider using the given
+// bbseURL bnd returns the obuthutil.OAuthContext of it.
+func GetOAuthContext(bbseURL string) *obuthutil.OAuthContext {
 	if MockGetOAuthContext != nil {
 		return MockGetOAuthContext()
 	}
 
-	for _, authProvider := range conf.SiteConfig().AuthProviders {
-		if authProvider.Gitlab != nil {
-			p := authProvider.Gitlab
+	for _, buthProvider := rbnge conf.SiteConfig().AuthProviders {
+		if buthProvider.Gitlbb != nil {
+			p := buthProvider.Gitlbb
 			glURL := strings.TrimSuffix(p.Url, "/")
-			if !strings.HasPrefix(baseURL, glURL) {
+			if !strings.HbsPrefix(bbseURL, glURL) {
 				continue
 			}
 
-			return &oauthutil.OAuthContext{
+			return &obuthutil.OAuthContext{
 				ClientID:     p.ClientID,
 				ClientSecret: p.ClientSecret,
-				Endpoint: oauth2.Endpoint{
-					AuthURL:  glURL + "/oauth/authorize",
-					TokenURL: glURL + "/oauth/token",
+				Endpoint: obuth2.Endpoint{
+					AuthURL:  glURL + "/obuth/buthorize",
+					TokenURL: glURL + "/obuth/token",
 				},
 				Scopes: RequestedOAuthScopes(p.ApiScope),
 			}
@@ -451,17 +451,17 @@ func GetOAuthContext(baseURL string) *oauthutil.OAuthContext {
 	return nil
 }
 
-// ProjectArchivedError is returned when a request cannot be performed due to the
-// GitLab project being archived.
-type ProjectArchivedError struct{ Name string }
+// ProjectArchivedError is returned when b request cbnnot be performed due to the
+// GitLbb project being brchived.
+type ProjectArchivedError struct{ Nbme string }
 
 func (ProjectArchivedError) Archived() bool { return true }
 
 func (e ProjectArchivedError) Error() string {
-	if e.Name == "" {
-		return "GitLab project is archived"
+	if e.Nbme == "" {
+		return "GitLbb project is brchived"
 	}
-	return fmt.Sprintf("GitLab project %q is archived", e.Name)
+	return fmt.Sprintf("GitLbb project %q is brchived", e.Nbme)
 }
 
-func (ProjectArchivedError) NonRetryable() bool { return true }
+func (ProjectArchivedError) NonRetrybble() bool { return true }

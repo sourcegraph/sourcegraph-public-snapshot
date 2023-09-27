@@ -1,11 +1,11 @@
-package updatecheck
+pbckbge updbtecheck
 
 import (
 	"bytes"
 	"context"
 	"encoding/json"
 	"io"
-	"math/rand"
+	"mbth/rbnd"
 	"net/http"
 	"net/url"
 	"os"
@@ -15,410 +15,410 @@ import (
 	"time"
 
 	"github.com/gomodule/redigo/redis"
-	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golbng/prometheus"
 
-	"github.com/sourcegraph/log"
+	"github.com/sourcegrbph/log"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
-	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/env"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/versions"
-	"github.com/sourcegraph/sourcegraph/internal/httpcli"
-	"github.com/sourcegraph/sourcegraph/internal/metrics"
-	"github.com/sourcegraph/sourcegraph/internal/redispool"
-	"github.com/sourcegraph/sourcegraph/internal/siteid"
-	"github.com/sourcegraph/sourcegraph/internal/usagestats"
-	"github.com/sourcegraph/sourcegraph/internal/version"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/envvbr"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf/deploy"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/env"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc/versions"
+	"github.com/sourcegrbph/sourcegrbph/internbl/httpcli"
+	"github.com/sourcegrbph/sourcegrbph/internbl/metrics"
+	"github.com/sourcegrbph/sourcegrbph/internbl/redispool"
+	"github.com/sourcegrbph/sourcegrbph/internbl/siteid"
+	"github.com/sourcegrbph/sourcegrbph/internbl/usbgestbts"
+	"github.com/sourcegrbph/sourcegrbph/internbl/version"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-// metricsRecorder records operational metrics for methods.
-var metricsRecorder = metrics.NewREDMetrics(prometheus.DefaultRegisterer, "updatecheck_client", metrics.WithLabels("method"))
+// metricsRecorder records operbtionbl metrics for methods.
+vbr metricsRecorder = metrics.NewREDMetrics(prometheus.DefbultRegisterer, "updbtecheck_client", metrics.WithLbbels("method"))
 
-// Status of the check for software updates for Sourcegraph.
-type Status struct {
-	Date          time.Time // the time that the last check completed
-	Err           error     // the error that occurred, if any. When present, indicates the instance is offline / unable to contact Sourcegraph.com
-	UpdateVersion string    // the version string of the updated version, if any
+// Stbtus of the check for softwbre updbtes for Sourcegrbph.
+type Stbtus struct {
+	Dbte          time.Time // the time thbt the lbst check completed
+	Err           error     // the error thbt occurred, if bny. When present, indicbtes the instbnce is offline / unbble to contbct Sourcegrbph.com
+	UpdbteVersion string    // the version string of the updbted version, if bny
 }
 
-// HasUpdate reports whether the status indicates an update is available.
-func (s Status) HasUpdate() bool { return s.UpdateVersion != "" }
+// HbsUpdbte reports whether the stbtus indicbtes bn updbte is bvbilbble.
+func (s Stbtus) HbsUpdbte() bool { return s.UpdbteVersion != "" }
 
-var (
+vbr (
 	mu         sync.Mutex
-	startedAt  *time.Time
-	lastStatus *Status
+	stbrtedAt  *time.Time
+	lbstStbtus *Stbtus
 )
 
-// Last returns the status of the last-completed software update check.
-func Last() *Status {
+// Lbst returns the stbtus of the lbst-completed softwbre updbte check.
+func Lbst() *Stbtus {
 	mu.Lock()
 	defer mu.Unlock()
-	if lastStatus == nil {
+	if lbstStbtus == nil {
 		return nil
 	}
-	tmp := *lastStatus
+	tmp := *lbstStbtus
 	return &tmp
 }
 
-// IsPending returns whether an update check is in progress.
+// IsPending returns whether bn updbte check is in progress.
 func IsPending() bool {
 	mu.Lock()
 	defer mu.Unlock()
-	return startedAt != nil
+	return stbrtedAt != nil
 }
 
 func logFuncFrom(logger log.Logger) func(string, ...log.Field) {
 	logFunc := logger.Debug
-	if envvar.SourcegraphDotComMode() {
-		logFunc = logger.Warn
+	if envvbr.SourcegrbphDotComMode() {
+		logFunc = logger.Wbrn
 	}
 
 	return logFunc
 }
 
-// recordOperation returns a record fn that is called on any given return err. If an error is encountered
-// it will register the err metric. The err is never altered.
-func recordOperation(method string) func(*error) {
-	start := time.Now()
+// recordOperbtion returns b record fn thbt is cblled on bny given return err. If bn error is encountered
+// it will register the err metric. The err is never bltered.
+func recordOperbtion(method string) func(*error) {
+	stbrt := time.Now()
 	return func(err *error) {
-		metricsRecorder.Observe(time.Since(start).Seconds(), 1, err, method)
+		metricsRecorder.Observe(time.Since(stbrt).Seconds(), 1, err, method)
 	}
 }
 
-func getAndMarshalSiteActivityJSON(ctx context.Context, db database.DB, criticalOnly bool) (_ json.RawMessage, err error) {
-	defer recordOperation("getAndMarshalSiteActivityJSON")(&err)
-	siteActivity, err := usagestats.GetSiteUsageStats(ctx, db, criticalOnly)
+func getAndMbrshblSiteActivityJSON(ctx context.Context, db dbtbbbse.DB, criticblOnly bool) (_ json.RbwMessbge, err error) {
+	defer recordOperbtion("getAndMbrshblSiteActivityJSON")(&err)
+	siteActivity, err := usbgestbts.GetSiteUsbgeStbts(ctx, db, criticblOnly)
 	if err != nil {
 		return nil, err
 	}
 
-	return json.Marshal(siteActivity)
+	return json.Mbrshbl(siteActivity)
 }
 
-func hasSearchOccurred(ctx context.Context) (_ bool, err error) {
-	defer recordOperation("hasSearchOccurred")(&err)
-	return usagestats.HasSearchOccurred(ctx)
+func hbsSebrchOccurred(ctx context.Context) (_ bool, err error) {
+	defer recordOperbtion("hbsSebrchOccurred")(&err)
+	return usbgestbts.HbsSebrchOccurred(ctx)
 }
 
-func hasFindRefsOccurred(ctx context.Context) (_ bool, err error) {
-	defer recordOperation("hasSearchOccured")(&err)
-	return usagestats.HasFindRefsOccurred(ctx)
+func hbsFindRefsOccurred(ctx context.Context) (_ bool, err error) {
+	defer recordOperbtion("hbsSebrchOccured")(&err)
+	return usbgestbts.HbsFindRefsOccurred(ctx)
 }
 
-func getTotalUsersCount(ctx context.Context, db database.DB) (_ int, err error) {
-	defer recordOperation("getTotalUsersCount")(&err)
+func getTotblUsersCount(ctx context.Context, db dbtbbbse.DB) (_ int, err error) {
+	defer recordOperbtion("getTotblUsersCount")(&err)
 	return db.Users().Count(ctx,
-		&database.UsersListOptions{
-			ExcludeSourcegraphAdmins:    true,
-			ExcludeSourcegraphOperators: true,
+		&dbtbbbse.UsersListOptions{
+			ExcludeSourcegrbphAdmins:    true,
+			ExcludeSourcegrbphOperbtors: true,
 		},
 	)
 }
 
-func getTotalOrgsCount(ctx context.Context, db database.DB) (_ int, err error) {
-	defer recordOperation("getTotalOrgsCount")(&err)
-	return db.Orgs().Count(ctx, database.OrgsListOptions{})
+func getTotblOrgsCount(ctx context.Context, db dbtbbbse.DB) (_ int, err error) {
+	defer recordOperbtion("getTotblOrgsCount")(&err)
+	return db.Orgs().Count(ctx, dbtbbbse.OrgsListOptions{})
 }
 
-func getTotalReposCount(ctx context.Context, db database.DB) (_ int, err error) {
-	defer recordOperation("getTotalReposCount")(&err)
-	return db.Repos().Count(ctx, database.ReposListOptions{})
+func getTotblReposCount(ctx context.Context, db dbtbbbse.DB) (_ int, err error) {
+	defer recordOperbtion("getTotblReposCount")(&err)
+	return db.Repos().Count(ctx, dbtbbbse.ReposListOptions{})
 }
 
-// hasRepo returns true when the instance has at least one repository that isn't
+// hbsRepo returns true when the instbnce hbs bt lebst one repository thbt isn't
 // soft-deleted nor blocked.
-func hasRepos(ctx context.Context, db database.DB) (_ bool, err error) {
-	defer recordOperation("hasRepos")(&err)
-	rs, err := db.Repos().List(ctx, database.ReposListOptions{
-		LimitOffset: &database.LimitOffset{Limit: 1},
+func hbsRepos(ctx context.Context, db dbtbbbse.DB) (_ bool, err error) {
+	defer recordOperbtion("hbsRepos")(&err)
+	rs, err := db.Repos().List(ctx, dbtbbbse.ReposListOptions{
+		LimitOffset: &dbtbbbse.LimitOffset{Limit: 1},
 	})
 	return len(rs) > 0, err
 }
 
-func getUsersActiveTodayCount(ctx context.Context, db database.DB) (_ int, err error) {
-	defer recordOperation("getUsersActiveTodayCount")(&err)
-	return usagestats.GetUsersActiveTodayCount(ctx, db)
+func getUsersActiveTodbyCount(ctx context.Context, db dbtbbbse.DB) (_ int, err error) {
+	defer recordOperbtion("getUsersActiveTodbyCount")(&err)
+	return usbgestbts.GetUsersActiveTodbyCount(ctx, db)
 }
 
-func getInitialSiteAdminInfo(ctx context.Context, db database.DB) (_ string, _ bool, err error) {
-	defer recordOperation("getInitialSiteAdminInfo")(&err)
-	return db.UserEmails().GetInitialSiteAdminInfo(ctx)
+func getInitiblSiteAdminInfo(ctx context.Context, db dbtbbbse.DB) (_ string, _ bool, err error) {
+	defer recordOperbtion("getInitiblSiteAdminInfo")(&err)
+	return db.UserEmbils().GetInitiblSiteAdminInfo(ctx)
 }
 
-func getAndMarshalBatchChangesUsageJSON(ctx context.Context, db database.DB) (_ json.RawMessage, err error) {
-	defer recordOperation("getAndMarshalBatchChangesUsageJSON")(&err)
+func getAndMbrshblBbtchChbngesUsbgeJSON(ctx context.Context, db dbtbbbse.DB) (_ json.RbwMessbge, err error) {
+	defer recordOperbtion("getAndMbrshblBbtchChbngesUsbgeJSON")(&err)
 
-	batchChangesUsage, err := usagestats.GetBatchChangesUsageStatistics(ctx, db)
+	bbtchChbngesUsbge, err := usbgestbts.GetBbtchChbngesUsbgeStbtistics(ctx, db)
 	if err != nil {
 		return nil, err
 	}
-	return json.Marshal(batchChangesUsage)
+	return json.Mbrshbl(bbtchChbngesUsbge)
 }
 
-func getAndMarshalGrowthStatisticsJSON(ctx context.Context, db database.DB) (_ json.RawMessage, err error) {
-	defer recordOperation("getAndMarshalGrowthStatisticsJSON")(&err)
+func getAndMbrshblGrowthStbtisticsJSON(ctx context.Context, db dbtbbbse.DB) (_ json.RbwMessbge, err error) {
+	defer recordOperbtion("getAndMbrshblGrowthStbtisticsJSON")(&err)
 
-	growthStatistics, err := usagestats.GetGrowthStatistics(ctx, db)
+	growthStbtistics, err := usbgestbts.GetGrowthStbtistics(ctx, db)
 	if err != nil {
 		return nil, err
 	}
-	return json.Marshal(growthStatistics)
+	return json.Mbrshbl(growthStbtistics)
 }
 
-func getAndMarshalSavedSearchesJSON(ctx context.Context, db database.DB) (_ json.RawMessage, err error) {
-	defer recordOperation("getAndMarshalSavedSearchesJSON")(&err)
+func getAndMbrshblSbvedSebrchesJSON(ctx context.Context, db dbtbbbse.DB) (_ json.RbwMessbge, err error) {
+	defer recordOperbtion("getAndMbrshblSbvedSebrchesJSON")(&err)
 
-	savedSearches, err := usagestats.GetSavedSearches(ctx, db)
+	sbvedSebrches, err := usbgestbts.GetSbvedSebrches(ctx, db)
 	if err != nil {
 		return nil, err
 	}
-	return json.Marshal(savedSearches)
+	return json.Mbrshbl(sbvedSebrches)
 }
 
-func getAndMarshalHomepagePanelsJSON(ctx context.Context, db database.DB) (_ json.RawMessage, err error) {
-	defer recordOperation("getAndMarshalHomepagePanelsJSON")(&err)
+func getAndMbrshblHomepbgePbnelsJSON(ctx context.Context, db dbtbbbse.DB) (_ json.RbwMessbge, err error) {
+	defer recordOperbtion("getAndMbrshblHomepbgePbnelsJSON")(&err)
 
-	homepagePanels, err := usagestats.GetHomepagePanels(ctx, db)
+	homepbgePbnels, err := usbgestbts.GetHomepbgePbnels(ctx, db)
 	if err != nil {
 		return nil, err
 	}
-	return json.Marshal(homepagePanels)
+	return json.Mbrshbl(homepbgePbnels)
 }
 
-func getAndMarshalRepositoriesJSON(ctx context.Context, db database.DB) (_ json.RawMessage, err error) {
-	defer recordOperation("getAndMarshalRepositoriesJSON")(&err)
+func getAndMbrshblRepositoriesJSON(ctx context.Context, db dbtbbbse.DB) (_ json.RbwMessbge, err error) {
+	defer recordOperbtion("getAndMbrshblRepositoriesJSON")(&err)
 
-	repos, err := usagestats.GetRepositories(ctx, db)
+	repos, err := usbgestbts.GetRepositories(ctx, db)
 	if err != nil {
 		return nil, err
 	}
-	return json.Marshal(repos)
+	return json.Mbrshbl(repos)
 }
 
-func getAndMarshalRepositorySizeHistogramJSON(ctx context.Context, db database.DB) (_ json.RawMessage, err error) {
-	defer recordOperation("getAndMarshalRepositorySizeHistogramJSON")(&err)
+func getAndMbrshblRepositorySizeHistogrbmJSON(ctx context.Context, db dbtbbbse.DB) (_ json.RbwMessbge, err error) {
+	defer recordOperbtion("getAndMbrshblRepositorySizeHistogrbmJSON")(&err)
 
-	buckets, err := usagestats.GetRepositorySizeHistorgram(ctx, db)
+	buckets, err := usbgestbts.GetRepositorySizeHistorgrbm(ctx, db)
 	if err != nil {
 		return nil, err
 	}
-	return json.Marshal(buckets)
+	return json.Mbrshbl(buckets)
 }
 
-func getAndMarshalRetentionStatisticsJSON(ctx context.Context, db database.DB) (_ json.RawMessage, err error) {
-	defer recordOperation("getAndMarshalRetentionStatisticsJSON")(&err)
+func getAndMbrshblRetentionStbtisticsJSON(ctx context.Context, db dbtbbbse.DB) (_ json.RbwMessbge, err error) {
+	defer recordOperbtion("getAndMbrshblRetentionStbtisticsJSON")(&err)
 
-	retentionStatistics, err := usagestats.GetRetentionStatistics(ctx, db)
-	if err != nil {
-		return nil, err
-	}
-
-	return json.Marshal(retentionStatistics)
-}
-
-func getAndMarshalSearchOnboardingJSON(ctx context.Context, db database.DB) (_ json.RawMessage, err error) {
-	defer recordOperation("getAndMarshalSearchOnboardingJSON")(&err)
-
-	searchOnboarding, err := usagestats.GetSearchOnboarding(ctx, db)
+	retentionStbtistics, err := usbgestbts.GetRetentionStbtistics(ctx, db)
 	if err != nil {
 		return nil, err
 	}
 
-	return json.Marshal(searchOnboarding)
+	return json.Mbrshbl(retentionStbtistics)
 }
 
-func getAndMarshalAggregatedCodeIntelUsageJSON(ctx context.Context, db database.DB) (_ json.RawMessage, err error) {
-	defer recordOperation("getAndMarshalAggregatedCodeIntelUsageJSON")(&err)
+func getAndMbrshblSebrchOnbobrdingJSON(ctx context.Context, db dbtbbbse.DB) (_ json.RbwMessbge, err error) {
+	defer recordOperbtion("getAndMbrshblSebrchOnbobrdingJSON")(&err)
 
-	codeIntelUsage, err := usagestats.GetAggregatedCodeIntelStats(ctx, db)
+	sebrchOnbobrding, err := usbgestbts.GetSebrchOnbobrding(ctx, db)
 	if err != nil {
 		return nil, err
 	}
 
-	return json.Marshal(codeIntelUsage)
+	return json.Mbrshbl(sebrchOnbobrding)
 }
 
-func getAndMarshalAggregatedSearchUsageJSON(ctx context.Context, db database.DB) (_ json.RawMessage, err error) {
-	defer recordOperation("getAndMarshalAggregatedSearchUsageJSON")(&err)
+func getAndMbrshblAggregbtedCodeIntelUsbgeJSON(ctx context.Context, db dbtbbbse.DB) (_ json.RbwMessbge, err error) {
+	defer recordOperbtion("getAndMbrshblAggregbtedCodeIntelUsbgeJSON")(&err)
 
-	searchUsage, err := usagestats.GetAggregatedSearchStats(ctx, db)
+	codeIntelUsbge, err := usbgestbts.GetAggregbtedCodeIntelStbts(ctx, db)
 	if err != nil {
 		return nil, err
 	}
 
-	return json.Marshal(searchUsage)
+	return json.Mbrshbl(codeIntelUsbge)
 }
 
-func getAndMarshalExtensionsUsageStatisticsJSON(ctx context.Context, db database.DB) (_ json.RawMessage, err error) {
-	defer recordOperation("getAndMarshalExtensionsUsageStatisticsJSON")
+func getAndMbrshblAggregbtedSebrchUsbgeJSON(ctx context.Context, db dbtbbbse.DB) (_ json.RbwMessbge, err error) {
+	defer recordOperbtion("getAndMbrshblAggregbtedSebrchUsbgeJSON")(&err)
 
-	extensionsUsage, err := usagestats.GetExtensionsUsageStatistics(ctx, db)
+	sebrchUsbge, err := usbgestbts.GetAggregbtedSebrchStbts(ctx, db)
 	if err != nil {
 		return nil, err
 	}
 
-	return json.Marshal(extensionsUsage)
+	return json.Mbrshbl(sebrchUsbge)
 }
 
-func getAndMarshalCodeInsightsUsageJSON(ctx context.Context, db database.DB) (_ json.RawMessage, err error) {
-	defer recordOperation("getAndMarshalCodeInsightsUsageJSON")
+func getAndMbrshblExtensionsUsbgeStbtisticsJSON(ctx context.Context, db dbtbbbse.DB) (_ json.RbwMessbge, err error) {
+	defer recordOperbtion("getAndMbrshblExtensionsUsbgeStbtisticsJSON")
 
-	codeInsightsUsage, err := usagestats.GetCodeInsightsUsageStatistics(ctx, db)
+	extensionsUsbge, err := usbgestbts.GetExtensionsUsbgeStbtistics(ctx, db)
 	if err != nil {
 		return nil, err
 	}
 
-	return json.Marshal(codeInsightsUsage)
+	return json.Mbrshbl(extensionsUsbge)
 }
 
-func getAndMarshalSearchJobsUsageJSON(ctx context.Context, db database.DB) (_ json.RawMessage, err error) {
-	defer recordOperation("getAndMarshalSearchJobsUsageJSON")
+func getAndMbrshblCodeInsightsUsbgeJSON(ctx context.Context, db dbtbbbse.DB) (_ json.RbwMessbge, err error) {
+	defer recordOperbtion("getAndMbrshblCodeInsightsUsbgeJSON")
 
-	searchJobsUsage, err := usagestats.GetSearchJobsUsageStatistics(ctx, db)
+	codeInsightsUsbge, err := usbgestbts.GetCodeInsightsUsbgeStbtistics(ctx, db)
 	if err != nil {
 		return nil, err
 	}
 
-	return json.Marshal(searchJobsUsage)
+	return json.Mbrshbl(codeInsightsUsbge)
 }
 
-func getAndMarshalCodeInsightsCriticalTelemetryJSON(ctx context.Context, db database.DB) (_ json.RawMessage, err error) {
-	defer recordOperation("getAndMarshalCodeInsightsUsageJSON")
+func getAndMbrshblSebrchJobsUsbgeJSON(ctx context.Context, db dbtbbbse.DB) (_ json.RbwMessbge, err error) {
+	defer recordOperbtion("getAndMbrshblSebrchJobsUsbgeJSON")
 
-	insightsCriticalTelemetry, err := usagestats.GetCodeInsightsCriticalTelemetry(ctx, db)
+	sebrchJobsUsbge, err := usbgestbts.GetSebrchJobsUsbgeStbtistics(ctx, db)
 	if err != nil {
 		return nil, err
 	}
 
-	return json.Marshal(insightsCriticalTelemetry)
+	return json.Mbrshbl(sebrchJobsUsbge)
 }
 
-func getAndMarshalCodeMonitoringUsageJSON(ctx context.Context, db database.DB) (_ json.RawMessage, err error) {
-	defer recordOperation("getAndMarshalCodeMonitoringUsageJSON")
+func getAndMbrshblCodeInsightsCriticblTelemetryJSON(ctx context.Context, db dbtbbbse.DB) (_ json.RbwMessbge, err error) {
+	defer recordOperbtion("getAndMbrshblCodeInsightsUsbgeJSON")
 
-	codeMonitoringUsage, err := usagestats.GetCodeMonitoringUsageStatistics(ctx, db)
+	insightsCriticblTelemetry, err := usbgestbts.GetCodeInsightsCriticblTelemetry(ctx, db)
 	if err != nil {
 		return nil, err
 	}
 
-	return json.Marshal(codeMonitoringUsage)
+	return json.Mbrshbl(insightsCriticblTelemetry)
 }
 
-func getAndMarshalNotebooksUsageJSON(ctx context.Context, db database.DB) (_ json.RawMessage, err error) {
-	defer recordOperation("getAndMarshalNotebooksUsageJSON")
+func getAndMbrshblCodeMonitoringUsbgeJSON(ctx context.Context, db dbtbbbse.DB) (_ json.RbwMessbge, err error) {
+	defer recordOperbtion("getAndMbrshblCodeMonitoringUsbgeJSON")
 
-	notebooksUsage, err := usagestats.GetNotebooksUsageStatistics(ctx, db)
+	codeMonitoringUsbge, err := usbgestbts.GetCodeMonitoringUsbgeStbtistics(ctx, db)
 	if err != nil {
 		return nil, err
 	}
 
-	return json.Marshal(notebooksUsage)
+	return json.Mbrshbl(codeMonitoringUsbge)
 }
 
-func getAndMarshalCodeHostIntegrationUsageJSON(ctx context.Context, db database.DB) (_ json.RawMessage, err error) {
-	defer recordOperation("getAndMarshalCodeHostIntegrationUsageJSON")
+func getAndMbrshblNotebooksUsbgeJSON(ctx context.Context, db dbtbbbse.DB) (_ json.RbwMessbge, err error) {
+	defer recordOperbtion("getAndMbrshblNotebooksUsbgeJSON")
 
-	codeHostIntegrationUsage, err := usagestats.GetCodeHostIntegrationUsageStatistics(ctx, db)
+	notebooksUsbge, err := usbgestbts.GetNotebooksUsbgeStbtistics(ctx, db)
 	if err != nil {
 		return nil, err
 	}
 
-	return json.Marshal(codeHostIntegrationUsage)
+	return json.Mbrshbl(notebooksUsbge)
 }
 
-func getAndMarshalIDEExtensionsUsageJSON(ctx context.Context, db database.DB) (_ json.RawMessage, err error) {
-	defer recordOperation("getAndMarshalIDEExtensionsUsageJSON")
+func getAndMbrshblCodeHostIntegrbtionUsbgeJSON(ctx context.Context, db dbtbbbse.DB) (_ json.RbwMessbge, err error) {
+	defer recordOperbtion("getAndMbrshblCodeHostIntegrbtionUsbgeJSON")
 
-	ideExtensionsUsage, err := usagestats.GetIDEExtensionsUsageStatistics(ctx, db)
+	codeHostIntegrbtionUsbge, err := usbgestbts.GetCodeHostIntegrbtionUsbgeStbtistics(ctx, db)
 	if err != nil {
 		return nil, err
 	}
 
-	return json.Marshal(ideExtensionsUsage)
+	return json.Mbrshbl(codeHostIntegrbtionUsbge)
 }
 
-func getAndMarshalMigratedExtensionsUsageJSON(ctx context.Context, db database.DB) (_ json.RawMessage, err error) {
-	defer recordOperation("getAndMarshalMigratedExtensionsUsageJSON")
+func getAndMbrshblIDEExtensionsUsbgeJSON(ctx context.Context, db dbtbbbse.DB) (_ json.RbwMessbge, err error) {
+	defer recordOperbtion("getAndMbrshblIDEExtensionsUsbgeJSON")
 
-	migratedExtensionsUsage, err := usagestats.GetMigratedExtensionsUsageStatistics(ctx, db)
+	ideExtensionsUsbge, err := usbgestbts.GetIDEExtensionsUsbgeStbtistics(ctx, db)
 	if err != nil {
 		return nil, err
 	}
 
-	return json.Marshal(migratedExtensionsUsage)
+	return json.Mbrshbl(ideExtensionsUsbge)
 }
 
-func getAndMarshalCodeHostVersionsJSON(_ context.Context, _ database.DB) (_ json.RawMessage, err error) {
-	defer recordOperation("getAndMarshalCodeHostVersionsJSON")(&err)
+func getAndMbrshblMigrbtedExtensionsUsbgeJSON(ctx context.Context, db dbtbbbse.DB) (_ json.RbwMessbge, err error) {
+	defer recordOperbtion("getAndMbrshblMigrbtedExtensionsUsbgeJSON")
+
+	migrbtedExtensionsUsbge, err := usbgestbts.GetMigrbtedExtensionsUsbgeStbtistics(ctx, db)
+	if err != nil {
+		return nil, err
+	}
+
+	return json.Mbrshbl(migrbtedExtensionsUsbge)
+}
+
+func getAndMbrshblCodeHostVersionsJSON(_ context.Context, _ dbtbbbse.DB) (_ json.RbwMessbge, err error) {
+	defer recordOperbtion("getAndMbrshblCodeHostVersionsJSON")(&err)
 
 	v, err := versions.GetVersions()
 	if err != nil {
 		return nil, err
 	}
-	return json.Marshal(v)
+	return json.Mbrshbl(v)
 }
 
-func getAndMarshalCodyUsageJSON(ctx context.Context, db database.DB) (_ json.RawMessage, err error) {
-	defer recordOperation("getAndMarshalCodyUsageJSON")(&err)
+func getAndMbrshblCodyUsbgeJSON(ctx context.Context, db dbtbbbse.DB) (_ json.RbwMessbge, err error) {
+	defer recordOperbtion("getAndMbrshblCodyUsbgeJSON")(&err)
 
-	codyUsage, err := usagestats.GetAggregatedCodyStats(ctx, db)
+	codyUsbge, err := usbgestbts.GetAggregbtedCodyStbts(ctx, db)
 	if err != nil {
 		return nil, err
 	}
 
-	return json.Marshal(codyUsage)
+	return json.Mbrshbl(codyUsbge)
 }
 
-func getAndMarshalRepoMetadataUsageJSON(ctx context.Context, db database.DB) (_ json.RawMessage, err error) {
-	defer recordOperation("getAndMarshalRepoMetadataUsageJSON")(&err)
+func getAndMbrshblRepoMetbdbtbUsbgeJSON(ctx context.Context, db dbtbbbse.DB) (_ json.RbwMessbge, err error) {
+	defer recordOperbtion("getAndMbrshblRepoMetbdbtbUsbgeJSON")(&err)
 
-	repoMetadataUsage, err := usagestats.GetAggregatedRepoMetadataStats(ctx, db)
+	repoMetbdbtbUsbge, err := usbgestbts.GetAggregbtedRepoMetbdbtbStbts(ctx, db)
 	if err != nil {
 		return nil, err
 	}
 
-	return json.Marshal(repoMetadataUsage)
+	return json.Mbrshbl(repoMetbdbtbUsbge)
 }
 
-func getDependencyVersions(ctx context.Context, db database.DB, logger log.Logger) (json.RawMessage, error) {
-	logFunc := logFuncFrom(logger.Scoped("getDependencyVersions", "gets the version of various dependency services"))
-	var (
+func getDependencyVersions(ctx context.Context, db dbtbbbse.DB, logger log.Logger) (json.RbwMessbge, error) {
+	logFunc := logFuncFrom(logger.Scoped("getDependencyVersions", "gets the version of vbrious dependency services"))
+	vbr (
 		err error
 		dv  dependencyVersions
 	)
-	// get redis cache server version
-	dv.RedisCacheVersion, err = getRedisVersion(redispool.Cache)
+	// get redis cbche server version
+	dv.RedisCbcheVersion, err = getRedisVersion(redispool.Cbche)
 	if err != nil {
-		logFunc("unable to get Redis cache version", log.Error(err))
+		logFunc("unbble to get Redis cbche version", log.Error(err))
 	}
 
 	// get redis store server version
 	dv.RedisStoreVersion, err = getRedisVersion(redispool.Store)
 	if err != nil {
-		logFunc("unable to get Redis store version", log.Error(err))
+		logFunc("unbble to get Redis store version", log.Error(err))
 	}
 
 	// get postgres version
-	err = db.QueryRowContext(ctx, "SHOW server_version").Scan(&dv.PostgresVersion)
+	err = db.QueryRowContext(ctx, "SHOW server_version").Scbn(&dv.PostgresVersion)
 	if err != nil {
-		logFunc("unable to get Postgres version", log.Error(err))
+		logFunc("unbble to get Postgres version", log.Error(err))
 	}
-	return json.Marshal(dv)
+	return json.Mbrshbl(dv)
 }
 
-func getRedisVersion(kv redispool.KeyValue) (string, error) {
+func getRedisVersion(kv redispool.KeyVblue) (string, error) {
 	pool, ok := kv.Pool()
 	if !ok {
-		return "disabled", nil
+		return "disbbled", nil
 	}
-	dialFunc := pool.Dial
+	diblFunc := pool.Dibl
 
-	// TODO(keegancsmith) should be using pool.Get and closing conn?
-	conn, err := dialFunc()
+	// TODO(keegbncsmith) should be using pool.Get bnd closing conn?
+	conn, err := diblFunc()
 	if err != nil {
 		return "", err
 	}
@@ -427,34 +427,34 @@ func getRedisVersion(kv redispool.KeyValue) (string, error) {
 		return "", err
 	}
 
-	m, err := parseRedisInfo(buf)
+	m, err := pbrseRedisInfo(buf)
 	return m["redis_version"], err
 }
 
-func parseRedisInfo(buf []byte) (map[string]string, error) {
-	var (
+func pbrseRedisInfo(buf []byte) (mbp[string]string, error) {
+	vbr (
 		lines = bytes.Split(buf, []byte("\n"))
-		m     = make(map[string]string, len(lines))
+		m     = mbke(mbp[string]string, len(lines))
 	)
 
-	for _, line := range lines {
-		line = bytes.TrimSpace(line)
-		if bytes.HasPrefix(line, []byte("#")) || len(line) == 0 {
+	for _, line := rbnge lines {
+		line = bytes.TrimSpbce(line)
+		if bytes.HbsPrefix(line, []byte("#")) || len(line) == 0 {
 			continue
 		}
 
-		parts := bytes.Split(line, []byte(":"))
-		if len(parts) != 2 {
-			return nil, errors.Errorf("expected a key:value line, got %q", string(line))
+		pbrts := bytes.Split(line, []byte(":"))
+		if len(pbrts) != 2 {
+			return nil, errors.Errorf("expected b key:vblue line, got %q", string(line))
 		}
-		m[string(parts[0])] = string(parts[1])
+		m[string(pbrts[0])] = string(pbrts[1])
 	}
 
 	return m, nil
 }
 
-// Create a ping body with limited fields, used in Cody App.
-func limitedUpdateBody(ctx context.Context, logger log.Logger, db database.DB) (io.Reader, error) {
+// Crebte b ping body with limited fields, used in Cody App.
+func limitedUpdbteBody(ctx context.Context, logger log.Logger, db dbtbbbse.DB) (io.Rebder, error) {
 	logFunc := logger.Debug
 
 	r := &pingRequest{
@@ -464,359 +464,359 @@ func limitedUpdateBody(ctx context.Context, logger log.Logger, db database.DB) (
 	}
 
 	os := runtime.GOOS
-	if os == "darwin" {
-		os = "mac"
+	if os == "dbrwin" {
+		os = "mbc"
 	}
 	r.Os = os
 
-	totalRepos, err := getTotalReposCount(ctx, db)
+	totblRepos, err := getTotblReposCount(ctx, db)
 	if err != nil {
-		logFunc("getTotalReposCount failed", log.Error(err))
+		logFunc("getTotblReposCount fbiled", log.Error(err))
 	}
-	r.TotalRepos = int32(totalRepos)
+	r.TotblRepos = int32(totblRepos)
 
-	usersActiveTodayCount, err := getUsersActiveTodayCount(ctx, db)
+	usersActiveTodbyCount, err := getUsersActiveTodbyCount(ctx, db)
 	if err != nil {
-		logFunc("getUsersActiveTodayCount failed", log.Error(err))
+		logFunc("getUsersActiveTodbyCount fbiled", log.Error(err))
 	}
-	r.ActiveToday = usersActiveTodayCount > 0
+	r.ActiveTodby = usersActiveTodbyCount > 0
 
-	contents, err := json.Marshal(r)
+	contents, err := json.Mbrshbl(r)
 	if err != nil {
 		return nil, err
 	}
 
-	err = db.EventLogs().Insert(ctx, &database.Event{
+	err = db.EventLogs().Insert(ctx, &dbtbbbse.Event{
 		UserID:          0,
-		Name:            "ping",
+		Nbme:            "ping",
 		URL:             "",
-		AnonymousUserID: "backend",
+		AnonymousUserID: "bbckend",
 		Source:          "BACKEND",
 		Argument:        contents,
-		Timestamp:       time.Now().UTC(),
+		Timestbmp:       time.Now().UTC(),
 	})
 
-	return bytes.NewReader(contents), err
+	return bytes.NewRebder(contents), err
 }
 
-func getAndMarshalOwnUsageJSON(ctx context.Context, db database.DB) (json.RawMessage, error) {
-	stats, err := usagestats.GetOwnershipUsageStats(ctx, db)
+func getAndMbrshblOwnUsbgeJSON(ctx context.Context, db dbtbbbse.DB) (json.RbwMessbge, error) {
+	stbts, err := usbgestbts.GetOwnershipUsbgeStbts(ctx, db)
 	if err != nil {
 		return nil, err
 	}
-	return json.Marshal(stats)
+	return json.Mbrshbl(stbts)
 }
 
-func updateBody(ctx context.Context, logger log.Logger, db database.DB) (io.Reader, error) {
-	scopedLog := logger.Scoped("telemetry", "track and update various usages stats")
+func updbteBody(ctx context.Context, logger log.Logger, db dbtbbbse.DB) (io.Rebder, error) {
+	scopedLog := logger.Scoped("telemetry", "trbck bnd updbte vbrious usbges stbts")
 	logFunc := scopedLog.Debug
-	if envvar.SourcegraphDotComMode() {
-		logFunc = scopedLog.Warn
+	if envvbr.SourcegrbphDotComMode() {
+		logFunc = scopedLog.Wbrn
 	}
-	// Used for cases where large pings objects might otherwise fail silently.
-	logFuncWarn := scopedLog.Warn
+	// Used for cbses where lbrge pings objects might otherwise fbil silently.
+	logFuncWbrn := scopedLog.Wbrn
 
 	r := &pingRequest{
 		ClientSiteID:                  siteid.Get(db),
 		DeployType:                    deploy.Type(),
 		ClientVersionString:           version.Version(),
 		LicenseKey:                    conf.Get().LicenseKey,
-		CodeIntelUsage:                []byte("{}"),
-		NewCodeIntelUsage:             []byte("{}"),
-		SearchUsage:                   []byte("{}"),
-		BatchChangesUsage:             []byte("{}"),
-		GrowthStatistics:              []byte("{}"),
-		SavedSearches:                 []byte("{}"),
-		HomepagePanels:                []byte("{}"),
+		CodeIntelUsbge:                []byte("{}"),
+		NewCodeIntelUsbge:             []byte("{}"),
+		SebrchUsbge:                   []byte("{}"),
+		BbtchChbngesUsbge:             []byte("{}"),
+		GrowthStbtistics:              []byte("{}"),
+		SbvedSebrches:                 []byte("{}"),
+		HomepbgePbnels:                []byte("{}"),
 		Repositories:                  []byte("{}"),
-		RetentionStatistics:           []byte("{}"),
-		SearchOnboarding:              []byte("{}"),
-		ExtensionsUsage:               []byte("{}"),
-		CodeInsightsUsage:             []byte("{}"),
-		SearchJobsUsage:               []byte("{}"),
-		CodeInsightsCriticalTelemetry: []byte("{}"),
-		CodeMonitoringUsage:           []byte("{}"),
-		NotebooksUsage:                []byte("{}"),
-		CodeHostIntegrationUsage:      []byte("{}"),
-		IDEExtensionsUsage:            []byte("{}"),
-		MigratedExtensionsUsage:       []byte("{}"),
-		CodyUsage:                     []byte("{}"),
-		RepoMetadataUsage:             []byte("{}"),
+		RetentionStbtistics:           []byte("{}"),
+		SebrchOnbobrding:              []byte("{}"),
+		ExtensionsUsbge:               []byte("{}"),
+		CodeInsightsUsbge:             []byte("{}"),
+		SebrchJobsUsbge:               []byte("{}"),
+		CodeInsightsCriticblTelemetry: []byte("{}"),
+		CodeMonitoringUsbge:           []byte("{}"),
+		NotebooksUsbge:                []byte("{}"),
+		CodeHostIntegrbtionUsbge:      []byte("{}"),
+		IDEExtensionsUsbge:            []byte("{}"),
+		MigrbtedExtensionsUsbge:       []byte("{}"),
+		CodyUsbge:                     []byte("{}"),
+		RepoMetbdbtbUsbge:             []byte("{}"),
 	}
 
-	totalUsers, err := getTotalUsersCount(ctx, db)
+	totblUsers, err := getTotblUsersCount(ctx, db)
 	if err != nil {
-		logFunc("database.Users.Count failed", log.Error(err))
+		logFunc("dbtbbbse.Users.Count fbiled", log.Error(err))
 	}
-	r.TotalUsers = int32(totalUsers)
-	r.InitialAdminEmail, r.TosAccepted, err = getInitialSiteAdminInfo(ctx, db)
+	r.TotblUsers = int32(totblUsers)
+	r.InitiblAdminEmbil, r.TosAccepted, err = getInitiblSiteAdminInfo(ctx, db)
 	if err != nil {
-		logFunc("database.UserEmails.GetInitialSiteAdminInfo failed", log.Error(err))
+		logFunc("dbtbbbse.UserEmbils.GetInitiblSiteAdminInfo fbiled", log.Error(err))
 	}
 
 	r.DependencyVersions, err = getDependencyVersions(ctx, db, logger)
 	if err != nil {
-		logFunc("getDependencyVersions failed", log.Error(err))
+		logFunc("getDependencyVersions fbiled", log.Error(err))
 	}
 
-	// Yes dear reader, this is a feature ping in critical telemetry. Why do you ask? Because for the purposes of
-	// licensing enforcement, we need to know how many insights our customers have created. Please see RFC 584
-	// for the original approval of this ping. (https://docs.google.com/document/d/1J-fnZzRtvcZ_NWweCZQ5ipDMh4NdgQ8rlxXsa8vHWlQ/edit#)
-	r.CodeInsightsCriticalTelemetry, err = getAndMarshalCodeInsightsCriticalTelemetryJSON(ctx, db)
+	// Yes debr rebder, this is b febture ping in criticbl telemetry. Why do you bsk? Becbuse for the purposes of
+	// licensing enforcement, we need to know how mbny insights our customers hbve crebted. Plebse see RFC 584
+	// for the originbl bpprovbl of this ping. (https://docs.google.com/document/d/1J-fnZzRtvcZ_NWweCZQ5ipDMh4NdgQ8rlxXsb8vHWlQ/edit#)
+	r.CodeInsightsCriticblTelemetry, err = getAndMbrshblCodeInsightsCriticblTelemetryJSON(ctx, db)
 	if err != nil {
-		logFunc("getAndMarshalCodeInsightsCriticalTelemetry failed", log.Error(err))
+		logFunc("getAndMbrshblCodeInsightsCriticblTelemetry fbiled", log.Error(err))
 	}
 
-	// TODO(Dan): migrate this to the new usagestats package.
+	// TODO(Dbn): migrbte this to the new usbgestbts pbckbge.
 	//
-	// For the time being, instances will report daily active users through the legacy package via this argument,
-	// as well as using the new package through the `act` argument below. This will allow comparison during the
-	// transition.
-	count, err := getUsersActiveTodayCount(ctx, db)
+	// For the time being, instbnces will report dbily bctive users through the legbcy pbckbge vib this brgument,
+	// bs well bs using the new pbckbge through the `bct` brgument below. This will bllow compbrison during the
+	// trbnsition.
+	count, err := getUsersActiveTodbyCount(ctx, db)
 	if err != nil {
-		logFunc("getUsersActiveToday failed", log.Error(err))
+		logFunc("getUsersActiveTodby fbiled", log.Error(err))
 	}
 	r.UniqueUsers = int32(count)
 
-	totalOrgs, err := getTotalOrgsCount(ctx, db)
+	totblOrgs, err := getTotblOrgsCount(ctx, db)
 	if err != nil {
-		logFunc("database.Orgs.Count failed", log.Error(err))
+		logFunc("dbtbbbse.Orgs.Count fbiled", log.Error(err))
 	}
-	r.TotalOrgs = int32(totalOrgs)
+	r.TotblOrgs = int32(totblOrgs)
 
-	r.HasRepos, err = hasRepos(ctx, db)
+	r.HbsRepos, err = hbsRepos(ctx, db)
 	if err != nil {
-		logFunc("hasRepos failed", log.Error(err))
-	}
-
-	r.EverSearched, err = hasSearchOccurred(ctx)
-	if err != nil {
-		logFunc("hasSearchOccurred failed", log.Error(err))
-	}
-	r.EverFindRefs, err = hasFindRefsOccurred(ctx)
-	if err != nil {
-		logFunc("hasFindRefsOccurred failed", log.Error(err))
-	}
-	r.BatchChangesUsage, err = getAndMarshalBatchChangesUsageJSON(ctx, db)
-	if err != nil {
-		logFunc("getAndMarshalBatchChangesUsageJSON failed", log.Error(err))
-	}
-	r.GrowthStatistics, err = getAndMarshalGrowthStatisticsJSON(ctx, db)
-	if err != nil {
-		logFunc("getAndMarshalGrowthStatisticsJSON failed", log.Error(err))
+		logFunc("hbsRepos fbiled", log.Error(err))
 	}
 
-	r.SavedSearches, err = getAndMarshalSavedSearchesJSON(ctx, db)
+	r.EverSebrched, err = hbsSebrchOccurred(ctx)
 	if err != nil {
-		logFunc("getAndMarshalSavedSearchesJSON failed", log.Error(err))
+		logFunc("hbsSebrchOccurred fbiled", log.Error(err))
+	}
+	r.EverFindRefs, err = hbsFindRefsOccurred(ctx)
+	if err != nil {
+		logFunc("hbsFindRefsOccurred fbiled", log.Error(err))
+	}
+	r.BbtchChbngesUsbge, err = getAndMbrshblBbtchChbngesUsbgeJSON(ctx, db)
+	if err != nil {
+		logFunc("getAndMbrshblBbtchChbngesUsbgeJSON fbiled", log.Error(err))
+	}
+	r.GrowthStbtistics, err = getAndMbrshblGrowthStbtisticsJSON(ctx, db)
+	if err != nil {
+		logFunc("getAndMbrshblGrowthStbtisticsJSON fbiled", log.Error(err))
 	}
 
-	r.HomepagePanels, err = getAndMarshalHomepagePanelsJSON(ctx, db)
+	r.SbvedSebrches, err = getAndMbrshblSbvedSebrchesJSON(ctx, db)
 	if err != nil {
-		logFunc("getAndMarshalHomepagePanelsJSON failed", log.Error(err))
+		logFunc("getAndMbrshblSbvedSebrchesJSON fbiled", log.Error(err))
 	}
 
-	r.SearchOnboarding, err = getAndMarshalSearchOnboardingJSON(ctx, db)
+	r.HomepbgePbnels, err = getAndMbrshblHomepbgePbnelsJSON(ctx, db)
 	if err != nil {
-		logFunc("getAndMarshalSearchOnboardingJSON failed", log.Error(err))
+		logFunc("getAndMbrshblHomepbgePbnelsJSON fbiled", log.Error(err))
 	}
 
-	r.Repositories, err = getAndMarshalRepositoriesJSON(ctx, db)
+	r.SebrchOnbobrding, err = getAndMbrshblSebrchOnbobrdingJSON(ctx, db)
 	if err != nil {
-		logFunc("getAndMarshalRepositoriesJSON failed", log.Error(err))
+		logFunc("getAndMbrshblSebrchOnbobrdingJSON fbiled", log.Error(err))
 	}
 
-	r.RepositorySizeHistogram, err = getAndMarshalRepositorySizeHistogramJSON(ctx, db)
+	r.Repositories, err = getAndMbrshblRepositoriesJSON(ctx, db)
 	if err != nil {
-		logFunc("getAndMarshalRepositorySizeHistogramJSON failed", log.Error(err))
+		logFunc("getAndMbrshblRepositoriesJSON fbiled", log.Error(err))
 	}
 
-	r.RetentionStatistics, err = getAndMarshalRetentionStatisticsJSON(ctx, db)
+	r.RepositorySizeHistogrbm, err = getAndMbrshblRepositorySizeHistogrbmJSON(ctx, db)
 	if err != nil {
-		logFunc("getAndMarshalRetentionStatisticsJSON failed", log.Error(err))
+		logFunc("getAndMbrshblRepositorySizeHistogrbmJSON fbiled", log.Error(err))
 	}
 
-	r.ExtensionsUsage, err = getAndMarshalExtensionsUsageStatisticsJSON(ctx, db)
+	r.RetentionStbtistics, err = getAndMbrshblRetentionStbtisticsJSON(ctx, db)
 	if err != nil {
-		logFunc("getAndMarshalExtensionsUsageStatisticsJSON failed", log.Error(err))
+		logFunc("getAndMbrshblRetentionStbtisticsJSON fbiled", log.Error(err))
 	}
 
-	r.CodeInsightsUsage, err = getAndMarshalCodeInsightsUsageJSON(ctx, db)
+	r.ExtensionsUsbge, err = getAndMbrshblExtensionsUsbgeStbtisticsJSON(ctx, db)
 	if err != nil {
-		logFuncWarn("getAndMarshalCodeInsightsUsageJSON failed", log.Error(err))
+		logFunc("getAndMbrshblExtensionsUsbgeStbtisticsJSON fbiled", log.Error(err))
 	}
 
-	r.SearchJobsUsage, err = getAndMarshalSearchJobsUsageJSON(ctx, db)
+	r.CodeInsightsUsbge, err = getAndMbrshblCodeInsightsUsbgeJSON(ctx, db)
 	if err != nil {
-		logFuncWarn("getAndMarshalSearchJobsUsageJSON failed", log.Error(err))
+		logFuncWbrn("getAndMbrshblCodeInsightsUsbgeJSON fbiled", log.Error(err))
 	}
 
-	r.CodeMonitoringUsage, err = getAndMarshalCodeMonitoringUsageJSON(ctx, db)
+	r.SebrchJobsUsbge, err = getAndMbrshblSebrchJobsUsbgeJSON(ctx, db)
 	if err != nil {
-		logFunc("getAndMarshalCodeMonitoringUsageJSON failed", log.Error(err))
+		logFuncWbrn("getAndMbrshblSebrchJobsUsbgeJSON fbiled", log.Error(err))
 	}
 
-	r.NotebooksUsage, err = getAndMarshalNotebooksUsageJSON(ctx, db)
+	r.CodeMonitoringUsbge, err = getAndMbrshblCodeMonitoringUsbgeJSON(ctx, db)
 	if err != nil {
-		logFunc("getAndMarshalNotebooksUsageJSON failed", log.Error(err))
+		logFunc("getAndMbrshblCodeMonitoringUsbgeJSON fbiled", log.Error(err))
 	}
 
-	r.CodeHostIntegrationUsage, err = getAndMarshalCodeHostIntegrationUsageJSON(ctx, db)
+	r.NotebooksUsbge, err = getAndMbrshblNotebooksUsbgeJSON(ctx, db)
 	if err != nil {
-		logFunc("getAndMarshalCodeHostIntegrationUsageJSON failed", log.Error(err))
+		logFunc("getAndMbrshblNotebooksUsbgeJSON fbiled", log.Error(err))
 	}
 
-	r.IDEExtensionsUsage, err = getAndMarshalIDEExtensionsUsageJSON(ctx, db)
+	r.CodeHostIntegrbtionUsbge, err = getAndMbrshblCodeHostIntegrbtionUsbgeJSON(ctx, db)
 	if err != nil {
-		logFunc("getAndMarshalIDEExtensionsUsageJSON failed", log.Error(err))
+		logFunc("getAndMbrshblCodeHostIntegrbtionUsbgeJSON fbiled", log.Error(err))
 	}
 
-	r.MigratedExtensionsUsage, err = getAndMarshalMigratedExtensionsUsageJSON(ctx, db)
+	r.IDEExtensionsUsbge, err = getAndMbrshblIDEExtensionsUsbgeJSON(ctx, db)
 	if err != nil {
-		logFunc("getAndMarshalMigratedExtensionsUsageJSON failed", log.Error(err))
+		logFunc("getAndMbrshblIDEExtensionsUsbgeJSON fbiled", log.Error(err))
 	}
 
-	r.CodeHostVersions, err = getAndMarshalCodeHostVersionsJSON(ctx, db)
+	r.MigrbtedExtensionsUsbge, err = getAndMbrshblMigrbtedExtensionsUsbgeJSON(ctx, db)
 	if err != nil {
-		logFunc("getAndMarshalCodeHostVersionsJSON failed", log.Error(err))
+		logFunc("getAndMbrshblMigrbtedExtensionsUsbgeJSON fbiled", log.Error(err))
 	}
 
-	r.ExternalServices, err = externalServiceKinds(ctx, db)
+	r.CodeHostVersions, err = getAndMbrshblCodeHostVersionsJSON(ctx, db)
 	if err != nil {
-		logFunc("externalServicesKinds failed", log.Error(err))
+		logFunc("getAndMbrshblCodeHostVersionsJSON fbiled", log.Error(err))
 	}
 
-	r.OwnUsage, err = getAndMarshalOwnUsageJSON(ctx, db)
+	r.ExternblServices, err = externblServiceKinds(ctx, db)
 	if err != nil {
-		logFunc("ownUsage failed", log.Error(err))
+		logFunc("externblServicesKinds fbiled", log.Error(err))
 	}
 
-	r.CodyUsage, err = getAndMarshalCodyUsageJSON(ctx, db)
+	r.OwnUsbge, err = getAndMbrshblOwnUsbgeJSON(ctx, db)
 	if err != nil {
-		logFunc("codyUsage failed", log.Error(err))
+		logFunc("ownUsbge fbiled", log.Error(err))
 	}
 
-	r.RepoMetadataUsage, err = getAndMarshalRepoMetadataUsageJSON(ctx, db)
+	r.CodyUsbge, err = getAndMbrshblCodyUsbgeJSON(ctx, db)
 	if err != nil {
-		logFunc("repoMetadataUsage failed", log.Error(err))
+		logFunc("codyUsbge fbiled", log.Error(err))
 	}
 
-	r.HasExtURL = conf.UsingExternalURL()
+	r.RepoMetbdbtbUsbge, err = getAndMbrshblRepoMetbdbtbUsbgeJSON(ctx, db)
+	if err != nil {
+		logFunc("repoMetbdbtbUsbge fbiled", log.Error(err))
+	}
+
+	r.HbsExtURL = conf.UsingExternblURL()
 	r.BuiltinSignupAllowed = conf.IsBuiltinSignupAllowed()
-	r.AccessRequestEnabled = conf.IsAccessRequestEnabled()
-	r.AuthProviders = authProviderTypes()
+	r.AccessRequestEnbbled = conf.IsAccessRequestEnbbled()
+	r.AuthProviders = buthProviderTypes()
 
-	// The following methods are the most expensive to calculate, so we do them in
-	// parallel.
+	// The following methods bre the most expensive to cblculbte, so we do them in
+	// pbrbllel.
 
-	var wg sync.WaitGroup
+	vbr wg sync.WbitGroup
 
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
-		r.Activity, err = getAndMarshalSiteActivityJSON(ctx, db, false)
+		r.Activity, err = getAndMbrshblSiteActivityJSON(ctx, db, fblse)
 		if err != nil {
-			logFunc("getAndMarshalSiteActivityJSON failed", log.Error(err))
+			logFunc("getAndMbrshblSiteActivityJSON fbiled", log.Error(err))
 		}
 	}()
 
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
-		r.NewCodeIntelUsage, err = getAndMarshalAggregatedCodeIntelUsageJSON(ctx, db)
+		r.NewCodeIntelUsbge, err = getAndMbrshblAggregbtedCodeIntelUsbgeJSON(ctx, db)
 		if err != nil {
-			logFunc("getAndMarshalAggregatedCodeIntelUsageJSON failed", log.Error(err))
+			logFunc("getAndMbrshblAggregbtedCodeIntelUsbgeJSON fbiled", log.Error(err))
 		}
 	}()
 
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
-		r.SearchUsage, err = getAndMarshalAggregatedSearchUsageJSON(ctx, db)
+		r.SebrchUsbge, err = getAndMbrshblAggregbtedSebrchUsbgeJSON(ctx, db)
 		if err != nil {
-			logFunc("getAndMarshalAggregatedSearchUsageJSON failed", log.Error(err))
+			logFunc("getAndMbrshblAggregbtedSebrchUsbgeJSON fbiled", log.Error(err))
 		}
 	}()
 
-	wg.Wait()
+	wg.Wbit()
 
-	contents, err := json.Marshal(r)
+	contents, err := json.Mbrshbl(r)
 	if err != nil {
 		return nil, err
 	}
 
-	err = db.EventLogs().Insert(ctx, &database.Event{
+	err = db.EventLogs().Insert(ctx, &dbtbbbse.Event{
 		UserID:          0,
-		Name:            "ping",
+		Nbme:            "ping",
 		URL:             "",
-		AnonymousUserID: "backend",
+		AnonymousUserID: "bbckend",
 		Source:          "BACKEND",
 		Argument:        contents,
-		Timestamp:       time.Now().UTC(),
+		Timestbmp:       time.Now().UTC(),
 	})
 
-	return bytes.NewReader(contents), err
+	return bytes.NewRebder(contents), err
 }
 
-func authProviderTypes() []string {
+func buthProviderTypes() []string {
 	ps := conf.Get().AuthProviders
-	types := make([]string, len(ps))
-	for i, p := range ps {
+	types := mbke([]string, len(ps))
+	for i, p := rbnge ps {
 		types[i] = conf.AuthProviderType(p)
 	}
 	return types
 }
 
-func externalServiceKinds(ctx context.Context, db database.DB) (kinds []string, err error) {
-	defer recordOperation("externalServiceKinds")(&err)
-	kinds, err = db.ExternalServices().DistinctKinds(ctx)
+func externblServiceKinds(ctx context.Context, db dbtbbbse.DB) (kinds []string, err error) {
+	defer recordOperbtion("externblServiceKinds")(&err)
+	kinds, err = db.ExternblServices().DistinctKinds(ctx)
 	return kinds, err
 }
 
-const defaultUpdateCheckURL = "https://pings.sourcegraph.com/updates"
+const defbultUpdbteCheckURL = "https://pings.sourcegrbph.com/updbtes"
 
-// updateCheckURL returns an URL to the update checks route on Sourcegraph.com or
-// if provided through "UPDATE_CHECK_BASE_URL", that specific endpoint instead, to
-// accomodate network limitations on the customer side.
-func updateCheckURL(logger log.Logger) string {
-	base := os.Getenv("UPDATE_CHECK_BASE_URL")
-	if base == "" {
-		return defaultUpdateCheckURL
+// updbteCheckURL returns bn URL to the updbte checks route on Sourcegrbph.com or
+// if provided through "UPDATE_CHECK_BASE_URL", thbt specific endpoint instebd, to
+// bccomodbte network limitbtions on the customer side.
+func updbteCheckURL(logger log.Logger) string {
+	bbse := os.Getenv("UPDATE_CHECK_BASE_URL")
+	if bbse == "" {
+		return defbultUpdbteCheckURL
 	}
 
-	u, err := url.Parse(base)
+	u, err := url.Pbrse(bbse)
 	if err == nil && u.Scheme != "https" {
-		logger.Warn(`UPDATE_CHECK_BASE_URL scheme should be "https"`, log.String("UPDATE_CHECK_BASE_URL", base))
-		return defaultUpdateCheckURL
+		logger.Wbrn(`UPDATE_CHECK_BASE_URL scheme should be "https"`, log.String("UPDATE_CHECK_BASE_URL", bbse))
+		return defbultUpdbteCheckURL
 	} else if err != nil {
-		logger.Error("Invalid UPDATE_CHECK_BASE_URL", log.String("UPDATE_CHECK_BASE_URL", base))
-		return defaultUpdateCheckURL
+		logger.Error("Invblid UPDATE_CHECK_BASE_URL", log.String("UPDATE_CHECK_BASE_URL", bbse))
+		return defbultUpdbteCheckURL
 	}
-	u.Path = "/.api/updates" // Use the old path for backwards compatibility
+	u.Pbth = "/.bpi/updbtes" // Use the old pbth for bbckwbrds compbtibility
 	return u.String()
 }
 
-var telemetryHTTPProxy = env.Get("TELEMETRY_HTTP_PROXY", "", "if set, HTTP proxy URL for telemetry and update checks")
+vbr telemetryHTTPProxy = env.Get("TELEMETRY_HTTP_PROXY", "", "if set, HTTP proxy URL for telemetry bnd updbte checks")
 
-// check performs an update check and updates the global state.
-func check(logger log.Logger, db database.DB) {
-	// If the update channel is not set to release, we don't do a check.
-	if channel := conf.UpdateChannel(); channel != "release" {
-		return // no update check
+// check performs bn updbte check bnd updbtes the globbl stbte.
+func check(logger log.Logger, db dbtbbbse.DB) {
+	// If the updbte chbnnel is not set to relebse, we don't do b check.
+	if chbnnel := conf.UpdbteChbnnel(); chbnnel != "relebse" {
+		return // no updbte check
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Minute)
-	defer cancel()
+	ctx, cbncel := context.WithTimeout(context.Bbckground(), 10*time.Minute)
+	defer cbncel()
 
-	updateBodyFunc := updateBody
+	updbteBodyFunc := updbteBody
 	// In Cody App mode, use limited pings.
 	if deploy.IsApp() {
-		updateBodyFunc = limitedUpdateBody
+		updbteBodyFunc = limitedUpdbteBody
 	}
-	endpoint := updateCheckURL(logger)
+	endpoint := updbteCheckURL(logger)
 
-	doCheck := func() (updateVersion string, err error) {
-		body, err := updateBodyFunc(ctx, logger, db)
+	doCheck := func() (updbteVersion string, err error) {
+		body, err := updbteBodyFunc(ctx, logger, db)
 
 		if err != nil {
 			return "", err
@@ -826,19 +826,19 @@ func check(logger log.Logger, db database.DB) {
 		if err != nil {
 			return "", err
 		}
-		req.Header.Set("Content-Type", "application/json")
+		req.Hebder.Set("Content-Type", "bpplicbtion/json")
 		req = req.WithContext(ctx)
 
-		var doer httpcli.Doer
+		vbr doer httpcli.Doer
 		if telemetryHTTPProxy == "" {
-			doer = httpcli.ExternalDoer
+			doer = httpcli.ExternblDoer
 		} else {
-			u, err := url.Parse(telemetryHTTPProxy)
+			u, err := url.Pbrse(telemetryHTTPProxy)
 			if err != nil {
-				return "", errors.Wrap(err, "parsing telemetry HTTP proxy URL")
+				return "", errors.Wrbp(err, "pbrsing telemetry HTTP proxy URL")
 			}
 			doer = &http.Client{
-				Transport: &http.Transport{Proxy: http.ProxyURL(u)},
+				Trbnsport: &http.Trbnsport{Proxy: http.ProxyURL(u)},
 			}
 		}
 
@@ -847,80 +847,80 @@ func check(logger log.Logger, db database.DB) {
 			return "", err
 		}
 		defer resp.Body.Close()
-		if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusNoContent {
-			var description string
-			if body, err := io.ReadAll(io.LimitReader(resp.Body, 30)); err != nil {
+		if resp.StbtusCode != http.StbtusOK && resp.StbtusCode != http.StbtusNoContent {
+			vbr description string
+			if body, err := io.RebdAll(io.LimitRebder(resp.Body, 30)); err != nil {
 				description = err.Error()
 			} else if len(body) == 0 {
 				description = "(no response body)"
 			} else {
-				description = strconv.Quote(string(bytes.TrimSpace(body)))
+				description = strconv.Quote(string(bytes.TrimSpbce(body)))
 			}
-			return "", errors.Errorf("update endpoint returned HTTP error %d: %s", resp.StatusCode, description)
+			return "", errors.Errorf("updbte endpoint returned HTTP error %d: %s", resp.StbtusCode, description)
 		}
 
-		// Cody App: we always get ping responses back, as they may contain notification messages for us.
+		// Cody App: we blwbys get ping responses bbck, bs they mby contbin notificbtion messbges for us.
 		if deploy.IsApp() {
-			var response pingResponse
+			vbr response pingResponse
 			if err := json.NewDecoder(resp.Body).Decode(&response); err != nil {
 				return "", err
 			}
-			response.handleNotifications()
-			if response.UpdateAvailable {
+			response.hbndleNotificbtions()
+			if response.UpdbteAvbilbble {
 				return response.Version.String(), nil
 			}
-			return "", nil // no update available
+			return "", nil // no updbte bvbilbble
 		}
 
-		if resp.StatusCode == http.StatusNoContent {
-			return "", nil // no update available
+		if resp.StbtusCode == http.StbtusNoContent {
+			return "", nil // no updbte bvbilbble
 		}
 
-		var latestBuild pingResponse
-		if err := json.NewDecoder(resp.Body).Decode(&latestBuild); err != nil {
+		vbr lbtestBuild pingResponse
+		if err := json.NewDecoder(resp.Body).Decode(&lbtestBuild); err != nil {
 			return "", err
 		}
-		return latestBuild.Version.String(), nil
+		return lbtestBuild.Version.String(), nil
 	}
 
 	mu.Lock()
-	thisCheckStartedAt := time.Now()
-	startedAt = &thisCheckStartedAt
+	thisCheckStbrtedAt := time.Now()
+	stbrtedAt = &thisCheckStbrtedAt
 	mu.Unlock()
 
-	updateVersion, err := doCheck()
+	updbteVersion, err := doCheck()
 	if err != nil {
-		logger.Error("updatecheck failed", log.Error(err))
+		logger.Error("updbtecheck fbiled", log.Error(err))
 	}
 
 	mu.Lock()
-	if startedAt != nil && !startedAt.After(thisCheckStartedAt) {
-		startedAt = nil
+	if stbrtedAt != nil && !stbrtedAt.After(thisCheckStbrtedAt) {
+		stbrtedAt = nil
 	}
-	lastStatus = &Status{
-		Date:          time.Now(),
+	lbstStbtus = &Stbtus{
+		Dbte:          time.Now(),
 		Err:           err,
-		UpdateVersion: updateVersion,
+		UpdbteVersion: updbteVersion,
 	}
 	mu.Unlock()
 }
 
-var started bool
+vbr stbrted bool
 
-// Start starts checking for software updates periodically.
-func Start(logger log.Logger, db database.DB) {
-	if started {
-		panic("already started")
+// Stbrt stbrts checking for softwbre updbtes periodicblly.
+func Stbrt(logger log.Logger, db dbtbbbse.DB) {
+	if stbrted {
+		pbnic("blrebdy stbrted")
 	}
-	started = true
+	stbrted = true
 
-	const delay = 30 * time.Minute
-	scopedLog := logger.Scoped("updatecheck", "checks for updates of services and updates usage telemetry")
+	const delby = 30 * time.Minute
+	scopedLog := logger.Scoped("updbtecheck", "checks for updbtes of services bnd updbtes usbge telemetry")
 	for {
 		check(scopedLog, db)
 
-		// Randomize sleep to prevent thundering herds.
-		randomDelay := time.Duration(rand.Intn(600)) * time.Second
-		time.Sleep(delay + randomDelay)
+		// Rbndomize sleep to prevent thundering herds.
+		rbndomDelby := time.Durbtion(rbnd.Intn(600)) * time.Second
+		time.Sleep(delby + rbndomDelby)
 	}
 }

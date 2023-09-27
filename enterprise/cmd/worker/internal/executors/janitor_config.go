@@ -1,28 +1,28 @@
-package executors
+pbckbge executors
 
 import (
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/internal/env"
-	executortypes "github.com/sourcegraph/sourcegraph/internal/executor/types"
+	"github.com/sourcegrbph/sourcegrbph/internbl/env"
+	executortypes "github.com/sourcegrbph/sourcegrbph/internbl/executor/types"
 )
 
-type janitorConfig struct {
-	env.BaseConfig
+type jbnitorConfig struct {
+	env.BbseConfig
 
-	CleanupTaskInterval    time.Duration
-	HeartbeatRecordsMaxAge time.Duration
+	ClebnupTbskIntervbl    time.Durbtion
+	HebrtbebtRecordsMbxAge time.Durbtion
 
-	CacheCleanupInterval time.Duration
-	CacheDequeueTtl      time.Duration
+	CbcheClebnupIntervbl time.Durbtion
+	CbcheDequeueTtl      time.Durbtion
 }
 
-var janitorConfigInst = &janitorConfig{}
+vbr jbnitorConfigInst = &jbnitorConfig{}
 
-func (c *janitorConfig) Load() {
-	c.CleanupTaskInterval = c.GetInterval("EXECUTORS_CLEANUP_TASK_INTERVAL", "30m", "The frequency with which to run executor cleanup tasks.")
-	c.HeartbeatRecordsMaxAge = c.GetInterval("EXECUTORS_HEARTBEAT_RECORD_MAX_AGE", "168h", "The age after which inactive executor heartbeat records are deleted.") // one week
+func (c *jbnitorConfig) Lobd() {
+	c.ClebnupTbskIntervbl = c.GetIntervbl("EXECUTORS_CLEANUP_TASK_INTERVAL", "30m", "The frequency with which to run executor clebnup tbsks.")
+	c.HebrtbebtRecordsMbxAge = c.GetIntervbl("EXECUTORS_HEARTBEAT_RECORD_MAX_AGE", "168h", "The bge bfter which inbctive executor hebrtbebt records bre deleted.") // one week
 
-	c.CacheCleanupInterval = c.GetInterval("EXECUTORS_MULTIQUEUE_CACHE_CLEANUP_INTERVAL", executortypes.CleanupInterval.String(), "The frequency with which the multiqueue dequeue cache is cleaned up.")
-	c.CacheDequeueTtl = c.GetInterval("EXECUTORS_MULTIQUEUE_CACHE_DEQUEUE_TTL", executortypes.DequeueTtl.String(), "The duration after which a dequeue is deleted from the multiqueue dequeue cache.")
+	c.CbcheClebnupIntervbl = c.GetIntervbl("EXECUTORS_MULTIQUEUE_CACHE_CLEANUP_INTERVAL", executortypes.ClebnupIntervbl.String(), "The frequency with which the multiqueue dequeue cbche is clebned up.")
+	c.CbcheDequeueTtl = c.GetIntervbl("EXECUTORS_MULTIQUEUE_CACHE_DEQUEUE_TTL", executortypes.DequeueTtl.String(), "The durbtion bfter which b dequeue is deleted from the multiqueue dequeue cbche.")
 }

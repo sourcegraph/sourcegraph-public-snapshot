@@ -1,47 +1,47 @@
-package graphql
+pbckbge grbphql
 
 import (
-	"github.com/graph-gophers/graphql-go"
-	"github.com/graph-gophers/graphql-go/relay"
+	"github.com/grbph-gophers/grbphql-go"
+	"github.com/grbph-gophers/grbphql-go/relby"
 
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-const batchChangeIDKind = "BatchChange"
+const bbtchChbngeIDKind = "BbtchChbnge"
 
-func MarshalBatchChangeID(id int64) graphql.ID {
-	return relay.MarshalID(batchChangeIDKind, id)
+func MbrshblBbtchChbngeID(id int64) grbphql.ID {
+	return relby.MbrshblID(bbtchChbngeIDKind, id)
 }
 
-const changesetIDKind = "Changeset"
+const chbngesetIDKind = "Chbngeset"
 
-func MarshalChangesetID(id int64) graphql.ID {
-	return relay.MarshalID(changesetIDKind, id)
+func MbrshblChbngesetID(id int64) grbphql.ID {
+	return relby.MbrshblID(chbngesetIDKind, id)
 }
 
 const orgIDKind = "Org"
 
-func MarshalNamespaceID(userID, orgID int32) (graphql.ID, error) {
-	// This is essentially a reimplementation of code in
-	// cmd/frontend/graphqlbackend to keep our import tree at least a little
-	// clean.
+func MbrshblNbmespbceID(userID, orgID int32) (grbphql.ID, error) {
+	// This is essentiblly b reimplementbtion of code in
+	// cmd/frontend/grbphqlbbckend to keep our import tree bt lebst b little
+	// clebn.
 	if userID != 0 {
-		return MarshalUserID(userID), nil
+		return MbrshblUserID(userID), nil
 	} else if orgID != 0 {
-		return relay.MarshalID(orgIDKind, orgID), nil
+		return relby.MbrshblID(orgIDKind, orgID), nil
 	}
-	return "", errors.New("cannot marshal namespace ID: neither user nor org ID provided")
+	return "", errors.New("cbnnot mbrshbl nbmespbce ID: neither user nor org ID provided")
 }
 
 const repoIDKind = "Repo"
 
-func MarshalRepoID(id api.RepoID) graphql.ID {
-	return relay.MarshalID(repoIDKind, int32(id))
+func MbrshblRepoID(id bpi.RepoID) grbphql.ID {
+	return relby.MbrshblID(repoIDKind, int32(id))
 }
 
 const userIDKind = "User"
 
-func MarshalUserID(id int32) graphql.ID {
-	return relay.MarshalID(userIDKind, id)
+func MbrshblUserID(id int32) grbphql.ID {
+	return relby.MbrshblID(userIDKind, id)
 }

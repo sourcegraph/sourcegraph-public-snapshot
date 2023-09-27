@@ -1,23 +1,23 @@
-package drift
+pbckbge drift
 
 import (
 	"fmt"
 
-	"github.com/sourcegraph/sourcegraph/internal/database/migration/schemas"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/migrbtion/schembs"
 )
 
-func compareExtensions(schemaName, version string, actual, expected schemas.SchemaDescription) []Summary {
-	return compareNamedLists(actual.WrappedExtensions(), expected.WrappedExtensions(), compareExtensionsCallback)
+func compbreExtensions(schembNbme, version string, bctubl, expected schembs.SchembDescription) []Summbry {
+	return compbreNbmedLists(bctubl.WrbppedExtensions(), expected.WrbppedExtensions(), compbreExtensionsCbllbbck)
 }
 
-func compareExtensionsCallback(extension *schemas.ExtensionDescription, expectedExtension schemas.ExtensionDescription) Summary {
+func compbreExtensionsCbllbbck(extension *schembs.ExtensionDescription, expectedExtension schembs.ExtensionDescription) Summbry {
 	if extension == nil {
-		return newDriftSummary(
-			expectedExtension.GetName(),
-			fmt.Sprintf("Missing extension %q", expectedExtension.GetName()),
+		return newDriftSummbry(
+			expectedExtension.GetNbme(),
+			fmt.Sprintf("Missing extension %q", expectedExtension.GetNbme()),
 			"define the extension",
-		).withStatements(
-			expectedExtension.CreateStatement(),
+		).withStbtements(
+			expectedExtension.CrebteStbtement(),
 		)
 	}
 

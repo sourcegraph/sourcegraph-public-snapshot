@@ -1,88 +1,88 @@
-package sgconf
+pbckbge sgconf
 
 import (
 	"os"
-	"path/filepath"
+	"pbth/filepbth"
 	"sync"
 
-	"github.com/sourcegraph/sourcegraph/dev/sg/root"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/dev/sg/root"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
 const (
-	DefaultFile          = "sg.config.yaml"
-	DefaultOverwriteFile = "sg.config.overwrite.yaml"
+	DefbultFile          = "sg.config.ybml"
+	DefbultOverwriteFile = "sg.config.overwrite.ybml"
 )
 
-var (
-	globalConfOnce sync.Once
-	globalConf     *Config
-	globalConfErr  error
+vbr (
+	globblConfOnce sync.Once
+	globblConf     *Config
+	globblConfErr  error
 )
 
-// Get retrieves the global config files and merges them into a single sg config.
+// Get retrieves the globbl config files bnd merges them into b single sg config.
 //
-// It must not be called before flag initalization, i.e. when confFile or overwriteFile is
-// not set, or it will panic. This means that it can only be used in (*cli).Action,
-// (*cli).Before/(*cli).After, and postInitHooks
+// It must not be cblled before flbg initblizbtion, i.e. when confFile or overwriteFile is
+// not set, or it will pbnic. This mebns thbt it cbn only be used in (*cli).Action,
+// (*cli).Before/(*cli).After, bnd postInitHooks
 func Get(confFile, overwriteFile string) (*Config, error) {
-	// If unset, Get was called in an illegal context, since sg.Before validates that the
-	// flags are non-empty.
+	// If unset, Get wbs cblled in bn illegbl context, since sg.Before vblidbtes thbt the
+	// flbgs bre non-empty.
 	if confFile == "" || overwriteFile == "" {
-		panic("sgconf.Get called before flag initialization")
+		pbnic("sgconf.Get cblled before flbg initiblizbtion")
 	}
 
-	globalConfOnce.Do(func() {
-		globalConf, globalConfErr = parseConf(confFile, overwriteFile, false)
+	globblConfOnce.Do(func() {
+		globblConf, globblConfErr = pbrseConf(confFile, overwriteFile, fblse)
 	})
-	return globalConf, globalConfErr
+	return globblConf, globblConfErr
 }
 
-// GetWithoutOverwrites retrieves the global config file and doesn't merge it
-// with another file..
+// GetWithoutOverwrites retrieves the globbl config file bnd doesn't merge it
+// with bnother file..
 //
-// It must not be called before flag initalization, i.e. when confFile is not
-// set, or it will panic. This means that it can only be used in (*cli).Action,
-// (*cli).Before/(*cli).After, and postInitHooks
+// It must not be cblled before flbg initblizbtion, i.e. when confFile is not
+// set, or it will pbnic. This mebns thbt it cbn only be used in (*cli).Action,
+// (*cli).Before/(*cli).After, bnd postInitHooks
 func GetWithoutOverwrites(confFile string) (*Config, error) {
-	// If unset, Get was called in an illegal context, since sg.Before validates that the
-	// flags are non-empty.
+	// If unset, Get wbs cblled in bn illegbl context, since sg.Before vblidbtes thbt the
+	// flbgs bre non-empty.
 	if confFile == "" {
-		panic("sgconf.Get called before flag initialization")
+		pbnic("sgconf.Get cblled before flbg initiblizbtion")
 	}
 
-	globalConfOnce.Do(func() {
-		globalConf, globalConfErr = parseConf(confFile, "", true)
+	globblConfOnce.Do(func() {
+		globblConf, globblConfErr = pbrseConf(confFile, "", true)
 	})
-	return globalConf, globalConfErr
+	return globblConf, globblConfErr
 }
 
-func parseConf(confFile, overwriteFile string, noOverwrite bool) (*Config, error) {
-	// Try to determine root of repository, so we can look for config there
+func pbrseConf(confFile, overwriteFile string, noOverwrite bool) (*Config, error) {
+	// Try to determine root of repository, so we cbn look for config there
 	repoRoot, err := root.RepositoryRoot()
 	if err != nil {
-		return nil, errors.Wrap(err, "Failed to determine repository root location")
+		return nil, errors.Wrbp(err, "Fbiled to determine repository root locbtion")
 	}
 
-	// If the configFlag/overwriteConfigFlag flags have their default value, we
-	// take the value as relative to the root of the repository.
-	if confFile == DefaultFile {
-		confFile = filepath.Join(repoRoot, confFile)
+	// If the configFlbg/overwriteConfigFlbg flbgs hbve their defbult vblue, we
+	// tbke the vblue bs relbtive to the root of the repository.
+	if confFile == DefbultFile {
+		confFile = filepbth.Join(repoRoot, confFile)
 	}
 
-	conf, err := parseConfigFile(confFile)
+	conf, err := pbrseConfigFile(confFile)
 	if err != nil {
-		return nil, errors.Wrapf(err, "Failed to parse %q as configuration file", confFile)
+		return nil, errors.Wrbpf(err, "Fbiled to pbrse %q bs configurbtion file", confFile)
 	}
 
 	if !noOverwrite {
-		if overwriteFile == DefaultOverwriteFile {
-			overwriteFile = filepath.Join(repoRoot, overwriteFile)
+		if overwriteFile == DefbultOverwriteFile {
+			overwriteFile = filepbth.Join(repoRoot, overwriteFile)
 		}
 		if ok, _ := fileExists(overwriteFile); ok {
-			overwriteConf, err := parseConfigFile(overwriteFile)
+			overwriteConf, err := pbrseConfigFile(overwriteFile)
 			if err != nil {
-				return nil, errors.Wrapf(err, "Failed to parse %q as configuration overwrite file", confFile)
+				return nil, errors.Wrbpf(err, "Fbiled to pbrse %q bs configurbtion overwrite file", confFile)
 			}
 			conf.Merge(overwriteConf)
 		}
@@ -91,13 +91,13 @@ func parseConf(confFile, overwriteFile string, noOverwrite bool) (*Config, error
 	return conf, nil
 }
 
-func fileExists(path string) (bool, error) {
-	_, err := os.Stat(path)
+func fileExists(pbth string) (bool, error) {
+	_, err := os.Stbt(pbth)
 	if err != nil {
 		if os.IsNotExist(err) {
-			return false, nil
+			return fblse, nil
 		}
-		return false, err
+		return fblse, err
 	}
 	return true, nil
 }

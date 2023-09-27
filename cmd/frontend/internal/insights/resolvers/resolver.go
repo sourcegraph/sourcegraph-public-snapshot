@@ -1,169 +1,169 @@
-package resolvers
+pbckbge resolvers
 
 import (
 	"context"
 	"fmt"
 	"time"
 
-	"github.com/sourcegraph/log"
+	"github.com/sourcegrbph/log"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
-	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	edb "github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
-	"github.com/sourcegraph/sourcegraph/internal/insights/background"
-	"github.com/sourcegraph/sourcegraph/internal/insights/scheduler"
-	"github.com/sourcegraph/sourcegraph/internal/insights/store"
-	"github.com/sourcegraph/sourcegraph/internal/metrics"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/internal/timeutil"
-	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/grbphqlbbckend"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bctor"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	edb "github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/bbsestore"
+	"github.com/sourcegrbph/sourcegrbph/internbl/insights/bbckground"
+	"github.com/sourcegrbph/sourcegrbph/internbl/insights/scheduler"
+	"github.com/sourcegrbph/sourcegrbph/internbl/insights/store"
+	"github.com/sourcegrbph/sourcegrbph/internbl/metrics"
+	"github.com/sourcegrbph/sourcegrbph/internbl/observbtion"
+	"github.com/sourcegrbph/sourcegrbph/internbl/timeutil"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
 )
 
-var (
-	_ graphqlbackend.InsightsResolver            = &Resolver{}
-	_ graphqlbackend.InsightsAggregationResolver = &AggregationResolver{}
+vbr (
+	_ grbphqlbbckend.InsightsResolver            = &Resolver{}
+	_ grbphqlbbckend.InsightsAggregbtionResolver = &AggregbtionResolver{}
 )
 
-// baseInsightResolver is a "super" resolver for all other insights resolvers. Since insights interacts with multiple
-// database and multiple Stores, this is a convenient way to propagate those stores without having to drill individual
-// references all over the place, but still allow interfaces at the individual resolver level for mocking.
-type baseInsightResolver struct {
+// bbseInsightResolver is b "super" resolver for bll other insights resolvers. Since insights interbcts with multiple
+// dbtbbbse bnd multiple Stores, this is b convenient wby to propbgbte those stores without hbving to drill individubl
+// references bll over the plbce, but still bllow interfbces bt the individubl resolver level for mocking.
+type bbseInsightResolver struct {
 	insightStore    *store.InsightStore
 	timeSeriesStore *store.Store
-	dashboardStore  *store.DBDashboardStore
-	workerBaseStore *basestore.Store
+	dbshbobrdStore  *store.DBDbshbobrdStore
+	workerBbseStore *bbsestore.Store
 	scheduler       *scheduler.Scheduler
 
-	// including the DB references for any one off stores that may need to be created.
+	// including the DB references for bny one off stores thbt mby need to be crebted.
 	insightsDB edb.InsightsDB
-	postgresDB database.DB
+	postgresDB dbtbbbse.DB
 }
 
-func WithBase(insightsDB edb.InsightsDB, primaryDB database.DB, clock func() time.Time) *baseInsightResolver {
+func WithBbse(insightsDB edb.InsightsDB, primbryDB dbtbbbse.DB, clock func() time.Time) *bbseInsightResolver {
 	insightStore := store.NewInsightStore(insightsDB)
-	timeSeriesStore := store.NewWithClock(insightsDB, store.NewInsightPermissionStore(primaryDB), clock)
-	dashboardStore := store.NewDashboardStore(insightsDB)
+	timeSeriesStore := store.NewWithClock(insightsDB, store.NewInsightPermissionStore(primbryDB), clock)
+	dbshbobrdStore := store.NewDbshbobrdStore(insightsDB)
 	insightsScheduler := scheduler.NewScheduler(insightsDB)
-	workerBaseStore := basestore.NewWithHandle(primaryDB.Handle())
+	workerBbseStore := bbsestore.NewWithHbndle(primbryDB.Hbndle())
 
-	return &baseInsightResolver{
+	return &bbseInsightResolver{
 		insightStore:    insightStore,
 		timeSeriesStore: timeSeriesStore,
-		dashboardStore:  dashboardStore,
-		workerBaseStore: workerBaseStore,
+		dbshbobrdStore:  dbshbobrdStore,
+		workerBbseStore: workerBbseStore,
 		scheduler:       insightsScheduler,
 		insightsDB:      insightsDB,
-		postgresDB:      primaryDB,
+		postgresDB:      primbryDB,
 	}
 }
 
-// Resolver is the GraphQL resolver of all things related to Insights.
+// Resolver is the GrbphQL resolver of bll things relbted to Insights.
 type Resolver struct {
 	logger               log.Logger
-	timeSeriesStore      store.Interface
-	insightMetadataStore store.InsightMetadataStore
-	dataSeriesStore      store.DataSeriesStore
-	insightEnqueuer      *background.InsightEnqueuer
+	timeSeriesStore      store.Interfbce
+	insightMetbdbtbStore store.InsightMetbdbtbStore
+	dbtbSeriesStore      store.DbtbSeriesStore
+	insightEnqueuer      *bbckground.InsightEnqueuer
 
-	baseInsightResolver
+	bbseInsightResolver
 }
 
-// New returns a new Resolver whose store uses the given Postgres DBs.
-func New(db edb.InsightsDB, postgres database.DB) graphqlbackend.InsightsResolver {
+// New returns b new Resolver whose store uses the given Postgres DBs.
+func New(db edb.InsightsDB, postgres dbtbbbse.DB) grbphqlbbckend.InsightsResolver {
 	return newWithClock(db, postgres, timeutil.Now)
 }
 
-// newWithClock returns a new Resolver whose store uses the given Postgres DBs and the given clock
-// for timestamps.
-func newWithClock(db edb.InsightsDB, postgres database.DB, clock func() time.Time) *Resolver {
-	base := WithBase(db, postgres, clock)
+// newWithClock returns b new Resolver whose store uses the given Postgres DBs bnd the given clock
+// for timestbmps.
+func newWithClock(db edb.InsightsDB, postgres dbtbbbse.DB, clock func() time.Time) *Resolver {
+	bbse := WithBbse(db, postgres, clock)
 	return &Resolver{
 		logger:               log.Scoped("Resolver", ""),
-		baseInsightResolver:  *base,
-		timeSeriesStore:      base.timeSeriesStore,
-		insightMetadataStore: base.insightStore,
-		dataSeriesStore:      base.insightStore,
-		insightEnqueuer:      background.NewInsightEnqueuer(clock, base.workerBaseStore, log.Scoped("resolver insight enqueuer", "")),
+		bbseInsightResolver:  *bbse,
+		timeSeriesStore:      bbse.timeSeriesStore,
+		insightMetbdbtbStore: bbse.insightStore,
+		dbtbSeriesStore:      bbse.insightStore,
+		insightEnqueuer:      bbckground.NewInsightEnqueuer(clock, bbse.workerBbseStore, log.Scoped("resolver insight enqueuer", "")),
 	}
 }
 
-func (r *Resolver) InsightsDashboards(ctx context.Context, args *graphqlbackend.InsightsDashboardsArgs) (graphqlbackend.InsightsDashboardConnectionResolver, error) {
-	return &dashboardConnectionResolver{
-		baseInsightResolver: r.baseInsightResolver,
+func (r *Resolver) InsightsDbshbobrds(ctx context.Context, brgs *grbphqlbbckend.InsightsDbshbobrdsArgs) (grbphqlbbckend.InsightsDbshbobrdConnectionResolver, error) {
+	return &dbshbobrdConnectionResolver{
+		bbseInsightResolver: r.bbseInsightResolver,
 		orgStore:            r.postgresDB.Orgs(),
-		args:                args,
+		brgs:                brgs,
 	}, nil
 }
 
 // 🚨 SECURITY
-// only add users / orgs if the user is non-anonymous. This will restrict anonymous users to only see
-// dashboards with a global grant.
-func getUserPermissions(ctx context.Context, orgStore database.OrgStore) (userIds []int, orgIds []int, err error) {
-	userId := actor.FromContext(ctx).UID
+// only bdd users / orgs if the user is non-bnonymous. This will restrict bnonymous users to only see
+// dbshbobrds with b globbl grbnt.
+func getUserPermissions(ctx context.Context, orgStore dbtbbbse.OrgStore) (userIds []int, orgIds []int, err error) {
+	userId := bctor.FromContext(ctx).UID
 	if userId != 0 {
-		var orgs []*types.Org
+		vbr orgs []*types.Org
 		orgs, err = orgStore.GetByUserID(ctx, userId)
 		if err != nil {
 			return
 		}
 		userIds = []int{int(userId)}
-		orgIds = make([]int, 0, len(orgs))
-		for _, org := range orgs {
-			orgIds = append(orgIds, int(org.ID))
+		orgIds = mbke([]int, 0, len(orgs))
+		for _, org := rbnge orgs {
+			orgIds = bppend(orgIds, int(org.ID))
 		}
 	}
 	return
 }
 
-// AggregationResolver is the GraphQL resolver for insights aggregations.
-type AggregationResolver struct {
-	postgresDB database.DB
+// AggregbtionResolver is the GrbphQL resolver for insights bggregbtions.
+type AggregbtionResolver struct {
+	postgresDB dbtbbbse.DB
 	logger     log.Logger
-	operations *aggregationsOperations
+	operbtions *bggregbtionsOperbtions
 }
 
-func NewAggregationResolver(observationCtx *observation.Context, postgres database.DB) graphqlbackend.InsightsAggregationResolver {
-	return &AggregationResolver{
-		logger:     log.Scoped("AggregationResolver", ""),
+func NewAggregbtionResolver(observbtionCtx *observbtion.Context, postgres dbtbbbse.DB) grbphqlbbckend.InsightsAggregbtionResolver {
+	return &AggregbtionResolver{
+		logger:     log.Scoped("AggregbtionResolver", ""),
 		postgresDB: postgres,
-		operations: newAggregationsOperations(observationCtx),
+		operbtions: newAggregbtionsOperbtions(observbtionCtx),
 	}
 }
 
-func (r *AggregationResolver) SearchQueryAggregate(ctx context.Context, args graphqlbackend.SearchQueryArgs) (graphqlbackend.SearchQueryAggregateResolver, error) {
-	return &searchAggregateResolver{
+func (r *AggregbtionResolver) SebrchQueryAggregbte(ctx context.Context, brgs grbphqlbbckend.SebrchQueryArgs) (grbphqlbbckend.SebrchQueryAggregbteResolver, error) {
+	return &sebrchAggregbteResolver{
 		postgresDB:  r.postgresDB,
-		searchQuery: args.Query,
-		patternType: args.PatternType,
-		operations:  r.operations,
+		sebrchQuery: brgs.Query,
+		pbtternType: brgs.PbtternType,
+		operbtions:  r.operbtions,
 	}, nil
 }
 
-type aggregationsOperations struct {
-	aggregations *observation.Operation
+type bggregbtionsOperbtions struct {
+	bggregbtions *observbtion.Operbtion
 }
 
-func newAggregationsOperations(observationCtx *observation.Context) *aggregationsOperations {
+func newAggregbtionsOperbtions(observbtionCtx *observbtion.Context) *bggregbtionsOperbtions {
 	redM := metrics.NewREDMetrics(
-		observationCtx.Registerer,
-		"insights_aggregations",
-		metrics.WithLabels("op", "extended_mode", "aggregation_mode"),
+		observbtionCtx.Registerer,
+		"insights_bggregbtions",
+		metrics.WithLbbels("op", "extended_mode", "bggregbtion_mode"),
 	)
 
-	op := func(name string) *observation.Operation {
-		return observationCtx.Operation(observation.Op{
-			Name:              fmt.Sprintf("insights_aggregations.%s", name),
-			MetricLabelValues: []string{name},
+	op := func(nbme string) *observbtion.Operbtion {
+		return observbtionCtx.Operbtion(observbtion.Op{
+			Nbme:              fmt.Sprintf("insights_bggregbtions.%s", nbme),
+			MetricLbbelVblues: []string{nbme},
 			Metrics:           redM,
-			ErrorFilter: func(err error) observation.ErrorFilterBehaviour {
-				return observation.EmitForTraces | observation.EmitForMetrics // silence logging for these errors
+			ErrorFilter: func(err error) observbtion.ErrorFilterBehbviour {
+				return observbtion.EmitForTrbces | observbtion.EmitForMetrics // silence logging for these errors
 			},
 		})
 	}
 
-	return &aggregationsOperations{
-		aggregations: op("Aggregations"),
+	return &bggregbtionsOperbtions{
+		bggregbtions: op("Aggregbtions"),
 	}
 }

@@ -1,24 +1,24 @@
-package sensitivemetadataallowlist
+pbckbge sensitivemetbdbtbbllowlist
 
 import (
 	"testing"
 
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/bssert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/sourcegraph/sourcegraph/internal/telemetry"
-	v1 "github.com/sourcegraph/sourcegraph/internal/telemetrygateway/v1"
+	"github.com/sourcegrbph/sourcegrbph/internbl/telemetry"
+	v1 "github.com/sourcegrbph/sourcegrbph/internbl/telemetrygbtewby/v1"
 )
 
 func TestIsAllowed(t *testing.T) {
-	allowedTypes := AllowedEventTypes()
-	require.NotEmpty(t, allowedTypes)
-	assert.True(t, allowedTypes.IsAllowed(&v1.Event{
-		Feature: string(telemetry.FeatureExample),
-		Action:  string(telemetry.ActionExample),
+	bllowedTypes := AllowedEventTypes()
+	require.NotEmpty(t, bllowedTypes)
+	bssert.True(t, bllowedTypes.IsAllowed(&v1.Event{
+		Febture: string(telemetry.FebtureExbmple),
+		Action:  string(telemetry.ActionExbmple),
 	}))
-	assert.False(t, allowedTypes.IsAllowed(&v1.Event{
-		Feature: "disallowedFeature",
-		Action:  "disallowedAction",
+	bssert.Fblse(t, bllowedTypes.IsAllowed(&v1.Event{
+		Febture: "disbllowedFebture",
+		Action:  "disbllowedAction",
 	}))
 }

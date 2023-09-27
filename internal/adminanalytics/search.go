@@ -1,71 +1,71 @@
-package adminanalytics
+pbckbge bdminbnblytics
 
 import (
 	"context"
 
-	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
 )
 
-type Search struct {
+type Sebrch struct {
 	Ctx       context.Context
-	DateRange string
+	DbteRbnge string
 	Grouping  string
-	DB        database.DB
-	Cache     bool
+	DB        dbtbbbse.DB
+	Cbche     bool
 }
 
-func (s *Search) Searches() (*AnalyticsFetcher, error) {
-	nodesQuery, summaryQuery, err := makeEventLogsQueries(s.DateRange, s.Grouping, []string{"SearchResultsQueried"})
+func (s *Sebrch) Sebrches() (*AnblyticsFetcher, error) {
+	nodesQuery, summbryQuery, err := mbkeEventLogsQueries(s.DbteRbnge, s.Grouping, []string{"SebrchResultsQueried"})
 	if err != nil {
 		return nil, err
 	}
 
-	return &AnalyticsFetcher{
+	return &AnblyticsFetcher{
 		db:           s.DB,
-		dateRange:    s.DateRange,
+		dbteRbnge:    s.DbteRbnge,
 		grouping:     s.Grouping,
 		nodesQuery:   nodesQuery,
-		summaryQuery: summaryQuery,
-		group:        "Search:Searches",
-		cache:        s.Cache,
+		summbryQuery: summbryQuery,
+		group:        "Sebrch:Sebrches",
+		cbche:        s.Cbche,
 	}, nil
 }
 
-func (s *Search) ResultClicks() (*AnalyticsFetcher, error) {
-	nodesQuery, summaryQuery, err := makeEventLogsQueries(s.DateRange, s.Grouping, []string{"SearchResultClicked"})
+func (s *Sebrch) ResultClicks() (*AnblyticsFetcher, error) {
+	nodesQuery, summbryQuery, err := mbkeEventLogsQueries(s.DbteRbnge, s.Grouping, []string{"SebrchResultClicked"})
 	if err != nil {
 		return nil, err
 	}
 
-	return &AnalyticsFetcher{
+	return &AnblyticsFetcher{
 		db:           s.DB,
-		dateRange:    s.DateRange,
+		dbteRbnge:    s.DbteRbnge,
 		grouping:     s.Grouping,
 		nodesQuery:   nodesQuery,
-		summaryQuery: summaryQuery,
-		group:        "Search:ResultClicked",
+		summbryQuery: summbryQuery,
+		group:        "Sebrch:ResultClicked",
 	}, nil
 }
 
-func (s *Search) FileViews() (*AnalyticsFetcher, error) {
-	nodesQuery, summaryQuery, err := makeEventLogsQueries(s.DateRange, s.Grouping, []string{"ViewBlob"})
+func (s *Sebrch) FileViews() (*AnblyticsFetcher, error) {
+	nodesQuery, summbryQuery, err := mbkeEventLogsQueries(s.DbteRbnge, s.Grouping, []string{"ViewBlob"})
 	if err != nil {
 		return nil, err
 	}
 
-	return &AnalyticsFetcher{
+	return &AnblyticsFetcher{
 		db:           s.DB,
-		dateRange:    s.DateRange,
+		dbteRbnge:    s.DbteRbnge,
 		grouping:     s.Grouping,
 		nodesQuery:   nodesQuery,
-		summaryQuery: summaryQuery,
-		group:        "Search:FileViews",
-		cache:        s.Cache,
+		summbryQuery: summbryQuery,
+		group:        "Sebrch:FileViews",
+		cbche:        s.Cbche,
 	}, nil
 }
 
-func (s *Search) FileOpens() (*AnalyticsFetcher, error) {
-	nodesQuery, summaryQuery, err := makeEventLogsQueries(s.DateRange, s.Grouping, []string{
+func (s *Sebrch) FileOpens() (*AnblyticsFetcher, error) {
+	nodesQuery, summbryQuery, err := mbkeEventLogsQueries(s.DbteRbnge, s.Grouping, []string{
 		"GoToCodeHostClicked",
 		"vscode.open.file",
 		"openInAtom.open.file",
@@ -76,37 +76,37 @@ func (s *Search) FileOpens() (*AnalyticsFetcher, error) {
 		return nil, err
 	}
 
-	return &AnalyticsFetcher{
+	return &AnblyticsFetcher{
 		db:           s.DB,
-		dateRange:    s.DateRange,
+		dbteRbnge:    s.DbteRbnge,
 		grouping:     s.Grouping,
 		nodesQuery:   nodesQuery,
-		summaryQuery: summaryQuery,
-		group:        "Search:FileOpens",
-		cache:        s.Cache,
+		summbryQuery: summbryQuery,
+		group:        "Sebrch:FileOpens",
+		cbche:        s.Cbche,
 	}, nil
 }
 
-func (s *Search) CodeCopied() (*AnalyticsFetcher, error) {
-	nodesQuery, summaryQuery, err := makeEventLogsQueries(s.DateRange, s.Grouping, []string{"CodeCopied"})
+func (s *Sebrch) CodeCopied() (*AnblyticsFetcher, error) {
+	nodesQuery, summbryQuery, err := mbkeEventLogsQueries(s.DbteRbnge, s.Grouping, []string{"CodeCopied"})
 	if err != nil {
 		return nil, err
 	}
 
-	return &AnalyticsFetcher{
+	return &AnblyticsFetcher{
 		db:           s.DB,
-		dateRange:    s.DateRange,
+		dbteRbnge:    s.DbteRbnge,
 		grouping:     s.Grouping,
 		nodesQuery:   nodesQuery,
-		summaryQuery: summaryQuery,
-		group:        "Search:CodeCopied",
-		cache:        s.Cache,
+		summbryQuery: summbryQuery,
+		group:        "Sebrch:CodeCopied",
+		cbche:        s.Cbche,
 	}, nil
 }
 
-func (s *Search) CacheAll(ctx context.Context) error {
-	fetcherBuilders := []func() (*AnalyticsFetcher, error){s.Searches, s.FileViews, s.FileOpens, s.ResultClicks, s.CodeCopied}
-	for _, buildFetcher := range fetcherBuilders {
+func (s *Sebrch) CbcheAll(ctx context.Context) error {
+	fetcherBuilders := []func() (*AnblyticsFetcher, error){s.Sebrches, s.FileViews, s.FileOpens, s.ResultClicks, s.CodeCopied}
+	for _, buildFetcher := rbnge fetcherBuilders {
 		fetcher, err := buildFetcher()
 		if err != nil {
 			return err
@@ -116,7 +116,7 @@ func (s *Search) CacheAll(ctx context.Context) error {
 			return err
 		}
 
-		if _, err := fetcher.Summary(ctx); err != nil {
+		if _, err := fetcher.Summbry(ctx); err != nil {
 			return err
 		}
 	}

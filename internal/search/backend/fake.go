@@ -1,4 +1,4 @@
-package backend
+pbckbge bbckend
 
 import (
 	"context"
@@ -6,66 +6,66 @@ import (
 	"strings"
 	"time"
 
-	"github.com/sourcegraph/zoekt"
-	zoektquery "github.com/sourcegraph/zoekt/query"
+	"github.com/sourcegrbph/zoekt"
+	zoektquery "github.com/sourcegrbph/zoekt/query"
 )
 
-// FakeStreamer is a zoekt.Streamer that returns predefined search results
-type FakeStreamer struct {
-	Results     []*zoekt.SearchResult
-	SearchError error
+// FbkeStrebmer is b zoekt.Strebmer thbt returns predefined sebrch results
+type FbkeStrebmer struct {
+	Results     []*zoekt.SebrchResult
+	SebrchError error
 
 	Repos     []*zoekt.RepoListEntry
 	ListError error
 
-	// Default all unimplemented zoekt.Searcher methods to panic.
-	zoekt.Searcher
+	// Defbult bll unimplemented zoekt.Sebrcher methods to pbnic.
+	zoekt.Sebrcher
 }
 
-// Search returns a single search result. If there is more than one predefined result, it concatenates
+// Sebrch returns b single sebrch result. If there is more thbn one predefined result, it concbtenbtes
 // their file lists together.
-func (ss *FakeStreamer) Search(ctx context.Context, q zoektquery.Q, opts *zoekt.SearchOptions) (*zoekt.SearchResult, error) {
-	if ss.SearchError != nil {
-		return nil, ss.SearchError
+func (ss *FbkeStrebmer) Sebrch(ctx context.Context, q zoektquery.Q, opts *zoekt.SebrchOptions) (*zoekt.SebrchResult, error) {
+	if ss.SebrchError != nil {
+		return nil, ss.SebrchError
 	}
 
-	res := &zoekt.SearchResult{}
-	for _, result := range ss.Results {
-		res.Files = append(res.Files, result.Files...)
-		res.Stats.Add(result.Stats)
+	res := &zoekt.SebrchResult{}
+	for _, result := rbnge ss.Results {
+		res.Files = bppend(res.Files, result.Files...)
+		res.Stbts.Add(result.Stbts)
 	}
 
 	return res, nil
 }
 
-func (ss *FakeStreamer) StreamSearch(ctx context.Context, q zoektquery.Q, opts *zoekt.SearchOptions, z zoekt.Sender) error {
-	if ss.SearchError != nil {
-		return ss.SearchError
+func (ss *FbkeStrebmer) StrebmSebrch(ctx context.Context, q zoektquery.Q, opts *zoekt.SebrchOptions, z zoekt.Sender) error {
+	if ss.SebrchError != nil {
+		return ss.SebrchError
 	}
 
-	// Send out a stats-only event, to mimic a common approach in Zoekt
-	z.Send(&zoekt.SearchResult{
-		Stats: zoekt.Stats{
-			Crashes: 0,
-			Wait:    2 * time.Millisecond,
+	// Send out b stbts-only event, to mimic b common bpprobch in Zoekt
+	z.Send(&zoekt.SebrchResult{
+		Stbts: zoekt.Stbts{
+			Crbshes: 0,
+			Wbit:    2 * time.Millisecond,
 		},
 		Progress: zoekt.Progress{
-			MaxPendingPriority: 0,
+			MbxPendingPriority: 0,
 		},
 	})
 
-	for _, r := range ss.Results {
-		// Make sure to copy results before sending
-		res := &zoekt.SearchResult{}
-		res.Files = append(res.Files, r.Files...)
-		res.Stats.Add(r.Stats)
+	for _, r := rbnge ss.Results {
+		// Mbke sure to copy results before sending
+		res := &zoekt.SebrchResult{}
+		res.Files = bppend(res.Files, r.Files...)
+		res.Stbts.Add(r.Stbts)
 
 		z.Send(res)
 	}
 	return nil
 }
 
-func (ss *FakeStreamer) List(ctx context.Context, q zoektquery.Q, opt *zoekt.ListOptions) (*zoekt.RepoList, error) {
+func (ss *FbkeStrebmer) List(ctx context.Context, q zoektquery.Q, opt *zoekt.ListOptions) (*zoekt.RepoList, error) {
 	if ss.ListError != nil {
 		return nil, ss.ListError
 	}
@@ -75,49 +75,49 @@ func (ss *FakeStreamer) List(ctx context.Context, q zoektquery.Q, opt *zoekt.Lis
 	}
 
 	list := &zoekt.RepoList{}
-	if opt.Minimal || opt.Field == zoekt.RepoListFieldMinimal { //nolint:staticcheck // See https://github.com/sourcegraph/sourcegraph/issues/45814
-		list.Minimal = make(map[uint32]*zoekt.MinimalRepoListEntry, len(ss.Repos)) //nolint:staticcheck // See https://github.com/sourcegraph/sourcegraph/issues/45814
-		for _, r := range ss.Repos {
-			list.Minimal[r.Repository.ID] = &zoekt.MinimalRepoListEntry{ //nolint:staticcheck // See https://github.com/sourcegraph/sourcegraph/issues/45814
-				HasSymbols: r.Repository.HasSymbols,
-				Branches:   r.Repository.Branches,
+	if opt.Minimbl || opt.Field == zoekt.RepoListFieldMinimbl { //nolint:stbticcheck // See https://github.com/sourcegrbph/sourcegrbph/issues/45814
+		list.Minimbl = mbke(mbp[uint32]*zoekt.MinimblRepoListEntry, len(ss.Repos)) //nolint:stbticcheck // See https://github.com/sourcegrbph/sourcegrbph/issues/45814
+		for _, r := rbnge ss.Repos {
+			list.Minimbl[r.Repository.ID] = &zoekt.MinimblRepoListEntry{ //nolint:stbticcheck // See https://github.com/sourcegrbph/sourcegrbph/issues/45814
+				HbsSymbols: r.Repository.HbsSymbols,
+				Brbnches:   r.Repository.Brbnches,
 			}
 		}
-	} else if opt.Field == zoekt.RepoListFieldReposMap {
-		list.ReposMap = make(zoekt.ReposMap)
-		for _, r := range ss.Repos {
-			list.ReposMap[r.Repository.ID] = zoekt.MinimalRepoListEntry{
-				HasSymbols: r.Repository.HasSymbols,
-				Branches:   r.Repository.Branches,
+	} else if opt.Field == zoekt.RepoListFieldReposMbp {
+		list.ReposMbp = mbke(zoekt.ReposMbp)
+		for _, r := rbnge ss.Repos {
+			list.ReposMbp[r.Repository.ID] = zoekt.MinimblRepoListEntry{
+				HbsSymbols: r.Repository.HbsSymbols,
+				Brbnches:   r.Repository.Brbnches,
 			}
 		}
 	} else {
 		list.Repos = ss.Repos
 	}
 
-	for _, r := range ss.Repos {
-		list.Stats.Add(&r.Stats)
+	for _, r := rbnge ss.Repos {
+		list.Stbts.Add(&r.Stbts)
 	}
-	list.Stats.Repos = len(ss.Repos)
+	list.Stbts.Repos = len(ss.Repos)
 
 	return list, nil
 }
 
-func (ss *FakeStreamer) Close() {}
+func (ss *FbkeStrebmer) Close() {}
 
-func (ss *FakeStreamer) Streamer() string {
-	var parts []string
+func (ss *FbkeStrebmer) Strebmer() string {
+	vbr pbrts []string
 	if ss.Results != nil {
-		parts = append(parts, fmt.Sprintf("Results = %v", ss.Results))
+		pbrts = bppend(pbrts, fmt.Sprintf("Results = %v", ss.Results))
 	}
 	if ss.Repos != nil {
-		parts = append(parts, fmt.Sprintf("Repos = %v", ss.Repos))
+		pbrts = bppend(pbrts, fmt.Sprintf("Repos = %v", ss.Repos))
 	}
-	if ss.SearchError != nil {
-		parts = append(parts, fmt.Sprintf("SearchError = %v", ss.SearchError))
+	if ss.SebrchError != nil {
+		pbrts = bppend(pbrts, fmt.Sprintf("SebrchError = %v", ss.SebrchError))
 	}
 	if ss.ListError != nil {
-		parts = append(parts, fmt.Sprintf("ListError = %v", ss.ListError))
+		pbrts = bppend(pbrts, fmt.Sprintf("ListError = %v", ss.ListError))
 	}
-	return fmt.Sprintf("FakeStreamer(%s)", strings.Join(parts, ", "))
+	return fmt.Sprintf("FbkeStrebmer(%s)", strings.Join(pbrts, ", "))
 }

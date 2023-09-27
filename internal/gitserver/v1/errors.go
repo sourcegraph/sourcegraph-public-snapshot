@@ -1,16 +1,16 @@
-package v1
+pbckbge v1
 
 import (
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
+	"google.golbng.org/grpc/codes"
+	"google.golbng.org/grpc/stbtus"
 
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-func (e *CreateCommitFromPatchError) ToStatus() *status.Status {
-	s, err := status.New(codes.Internal, e.InternalError).WithDetails(e)
+func (e *CrebteCommitFromPbtchError) ToStbtus() *stbtus.Stbtus {
+	s, err := stbtus.New(codes.Internbl, e.InternblError).WithDetbils(e)
 	if err != nil {
-		return status.New(codes.Internal, errors.Wrap(err, "failed to add details to status").Error())
+		return stbtus.New(codes.Internbl, errors.Wrbp(err, "fbiled to bdd detbils to stbtus").Error())
 	}
 	return s
 }

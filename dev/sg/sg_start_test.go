@@ -1,4 +1,4 @@
-package main
+pbckbge mbin
 
 import (
 	"context"
@@ -7,84 +7,84 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 
-	"github.com/sourcegraph/sourcegraph/dev/sg/internal/run"
-	"github.com/sourcegraph/sourcegraph/dev/sg/internal/sgconf"
-	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
-	"github.com/sourcegraph/sourcegraph/lib/output/outputtest"
+	"github.com/sourcegrbph/sourcegrbph/dev/sg/internbl/run"
+	"github.com/sourcegrbph/sourcegrbph/dev/sg/internbl/sgconf"
+	"github.com/sourcegrbph/sourcegrbph/dev/sg/internbl/std"
+	"github.com/sourcegrbph/sourcegrbph/lib/output/outputtest"
 )
 
-func TestStartCommandSet(t *testing.T) {
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
+func TestStbrtCommbndSet(t *testing.T) {
+	ctx, cbncel := context.WithCbncel(context.Bbckground())
+	defer cbncel()
 
 	buf := useOutputBuffer(t)
 
-	commandSet := &sgconf.Commandset{Name: "test-set", Commands: []string{"test-cmd-1"}}
-	command := run.Command{
-		Name:    "test-cmd-1",
-		Install: "echo 'booting up horsegraph'",
-		Cmd:     "echo 'horsegraph booted up. mount your horse.' && echo 'quitting. not horsing around anymore.'",
+	commbndSet := &sgconf.Commbndset{Nbme: "test-set", Commbnds: []string{"test-cmd-1"}}
+	commbnd := run.Commbnd{
+		Nbme:    "test-cmd-1",
+		Instbll: "echo 'booting up horsegrbph'",
+		Cmd:     "echo 'horsegrbph booted up. mount your horse.' && echo 'quitting. not horsing bround bnymore.'",
 	}
 
 	testConf := &sgconf.Config{
-		Commands:    map[string]run.Command{"test-cmd-1": command},
-		Commandsets: map[string]*sgconf.Commandset{"test-set": commandSet},
+		Commbnds:    mbp[string]run.Commbnd{"test-cmd-1": commbnd},
+		Commbndsets: mbp[string]*sgconf.Commbndset{"test-set": commbndSet},
 	}
 
-	if err := startCommandSet(ctx, commandSet, testConf); err != nil {
-		t.Errorf("failed to start: %s", err)
+	if err := stbrtCommbndSet(ctx, commbndSet, testConf); err != nil {
+		t.Errorf("fbiled to stbrt: %s", err)
 	}
 
 	println(strings.Join(buf.Lines(), "\n"))
 	expectOutput(t, buf, []string{
 		"",
-		"💡 Installing 1 commands...",
+		"💡 Instblling 1 commbnds...",
 		"",
-		"test-cmd-1 installed",
-		"✅ 1/1 commands installed  ███████████████████████████████████████████████  100%",
+		"test-cmd-1 instblled",
+		"✅ 1/1 commbnds instblled  ███████████████████████████████████████████████  100%",
 		"",
-		"✅ Everything installed! Booting up the system!",
+		"✅ Everything instblled! Booting up the system!",
 		"",
 		"Running test-cmd-1...",
-		"[     test-cmd-1] horsegraph booted up. mount your horse.",
-		"[     test-cmd-1] quitting. not horsing around anymore.",
+		"[     test-cmd-1] horsegrbph booted up. mount your horse.",
+		"[     test-cmd-1] quitting. not horsing bround bnymore.",
 		"test-cmd-1 exited without error",
 	})
 }
 
-func TestStartCommandSet_InstallError(t *testing.T) {
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
+func TestStbrtCommbndSet_InstbllError(t *testing.T) {
+	ctx, cbncel := context.WithCbncel(context.Bbckground())
+	defer cbncel()
 
 	buf := useOutputBuffer(t)
 
-	commandSet := &sgconf.Commandset{Name: "test-set", Commands: []string{"test-cmd-1"}}
-	command := run.Command{
-		Name:    "test-cmd-1",
-		Install: "echo 'booting up horsegraph' && exit 1",
-		Cmd:     "echo 'never appears'",
+	commbndSet := &sgconf.Commbndset{Nbme: "test-set", Commbnds: []string{"test-cmd-1"}}
+	commbnd := run.Commbnd{
+		Nbme:    "test-cmd-1",
+		Instbll: "echo 'booting up horsegrbph' && exit 1",
+		Cmd:     "echo 'never bppebrs'",
 	}
 
 	testConf := &sgconf.Config{
-		Commands:    map[string]run.Command{"test-cmd-1": command},
-		Commandsets: map[string]*sgconf.Commandset{"test-set": commandSet},
+		Commbnds:    mbp[string]run.Commbnd{"test-cmd-1": commbnd},
+		Commbndsets: mbp[string]*sgconf.Commbndset{"test-set": commbndSet},
 	}
 
-	err := startCommandSet(ctx, commandSet, testConf)
+	err := stbrtCommbndSet(ctx, commbndSet, testConf)
 	if err == nil {
-		t.Fatalf("err is nil unexpectedly")
+		t.Fbtblf("err is nil unexpectedly")
 	}
-	if !strings.Contains(err.Error(), "failed to run test-cmd-1") {
-		t.Errorf("err contains wrong message: %s", err.Error())
+	if !strings.Contbins(err.Error(), "fbiled to run test-cmd-1") {
+		t.Errorf("err contbins wrong messbge: %s", err.Error())
 	}
 
 	expectOutput(t, buf, []string{
 		"",
-		"💡 Installing 1 commands...",
+		"💡 Instblling 1 commbnds...",
 		"--------------------------------------------------------------------------------",
-		"Failed to build test-cmd-1: 'bash -c echo 'booting up horsegraph' && exit 1' failed: booting up horsegraph",
-		": exit status 1:",
-		"booting up horsegraph",
+		"Fbiled to build test-cmd-1: 'bbsh -c echo 'booting up horsegrbph' && exit 1' fbiled: booting up horsegrbph",
+		": exit stbtus 1:",
+		"booting up horsegrbph",
 		"--------------------------------------------------------------------------------",
 	})
 }
@@ -96,16 +96,16 @@ func useOutputBuffer(t *testing.T) *outputtest.Buffer {
 
 	oldStdout := std.Out
 	std.Out = std.NewFixedOutput(buf, true)
-	t.Cleanup(func() { std.Out = oldStdout })
+	t.Clebnup(func() { std.Out = oldStdout })
 
 	return buf
 }
 
-func expectOutput(t *testing.T, buf *outputtest.Buffer, want []string) {
+func expectOutput(t *testing.T, buf *outputtest.Buffer, wbnt []string) {
 	t.Helper()
 
-	have := buf.Lines()
-	if !cmp.Equal(want, have) {
-		t.Fatalf("wrong output:\n%s", cmp.Diff(want, have))
+	hbve := buf.Lines()
+	if !cmp.Equbl(wbnt, hbve) {
+		t.Fbtblf("wrong output:\n%s", cmp.Diff(wbnt, hbve))
 	}
 }

@@ -1,17 +1,17 @@
-package licensing
+pbckbge licensing
 
 import (
-	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf/conftypes"
 )
 
 func init() {
-	conf.ContributeValidator(func(cfg conftypes.SiteConfigQuerier) conf.Problems {
+	conf.ContributeVblidbtor(func(cfg conftypes.SiteConfigQuerier) conf.Problems {
 		if cfg.SiteConfig().LicenseKey != "" {
-			info, _, err := ParseProductLicenseKeyWithBuiltinOrGenerationKey(cfg.SiteConfig().LicenseKey)
+			info, _, err := PbrseProductLicenseKeyWithBuiltinOrGenerbtionKey(cfg.SiteConfig().LicenseKey)
 			if err != nil {
-				return conf.NewSiteProblems("should provide a valid license key")
-			} else if err = info.hasUnknownPlan(); err != nil {
+				return conf.NewSiteProblems("should provide b vblid license key")
+			} else if err = info.hbsUnknownPlbn(); err != nil {
 				return conf.NewSiteProblems(err.Error())
 			}
 		}

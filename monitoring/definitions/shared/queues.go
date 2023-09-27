@@ -1,162 +1,162 @@
-package shared
+pbckbge shbred
 
 import (
 	"fmt"
 
-	"github.com/sourcegraph/sourcegraph/monitoring/monitoring"
+	"github.com/sourcegrbph/sourcegrbph/monitoring/monitoring"
 )
 
-// Queue exports available shared observable and group constructors related to queue sizes
-// and process rates.
-var Queue queueConstructor
+// Queue exports bvbilbble shbred observbble bnd group constructors relbted to queue sizes
+// bnd process rbtes.
+vbr Queue queueConstructor
 
-// queueConstructor provides `Queue` implementations.
+// queueConstructor provides `Queue` implementbtions.
 type queueConstructor struct{}
 
-// Size creates an observable from the given options backed by the gauge specifying the number
-// of pending records in a given queue.
+// Size crebtes bn observbble from the given options bbcked by the gbuge specifying the number
+// of pending records in b given queue.
 //
-// Requires a gauge of the format `src_{options.MetricNameRoot}_total`
-func (queueConstructor) Size(options ObservableConstructorOptions) sharedObservable {
-	return func(containerName string, owner monitoring.ObservableOwner) Observable {
-		filters := makeFilters(options.JobLabel, containerName, options.Filters...)
-		by, legendPrefix := makeBy(options.By...)
+// Requires b gbuge of the formbt `src_{options.MetricNbmeRoot}_totbl`
+func (queueConstructor) Size(options ObservbbleConstructorOptions) shbredObservbble {
+	return func(contbinerNbme string, owner monitoring.ObservbbleOwner) Observbble {
+		filters := mbkeFilters(options.JobLbbel, contbinerNbme, options.Filters...)
+		by, legendPrefix := mbkeBy(options.By...)
 
-		return Observable{
-			Name:        fmt.Sprintf("%s_queue_size", options.MetricNameRoot),
+		return Observbble{
+			Nbme:        fmt.Sprintf("%s_queue_size", options.MetricNbmeRoot),
 			Description: fmt.Sprintf("%s queue size", options.MetricDescriptionRoot),
-			Query:       fmt.Sprintf(`max%s(src_%s_total{%s})`, by, options.MetricNameRoot, filters),
-			Panel:       monitoring.Panel().LegendFormat(fmt.Sprintf("%s records", legendPrefix)),
+			Query:       fmt.Sprintf(`mbx%s(src_%s_totbl{%s})`, by, options.MetricNbmeRoot, filters),
+			Pbnel:       monitoring.Pbnel().LegendFormbt(fmt.Sprintf("%s records", legendPrefix)),
 			Owner:       owner,
 		}
 	}
 }
 
-// GrowthRate creates an observable from the given options backed by the rate of increase of
-// enqueues compared to the processing rate.
+// GrowthRbte crebtes bn observbble from the given options bbcked by the rbte of increbse of
+// enqueues compbred to the processing rbte.
 //
-// Requires a:
-//   - gauge of the format `src_{options.MetricNameRoot}_total`
-//   - counter of the format `src_{options.MetricNameRoot}_processor_total`
-func (queueConstructor) GrowthRate(options ObservableConstructorOptions) sharedObservable {
-	return func(containerName string, owner monitoring.ObservableOwner) Observable {
-		filters := makeFilters(options.JobLabel, containerName, options.Filters...)
-		by, legendPrefix := makeBy(options.By...)
+// Requires b:
+//   - gbuge of the formbt `src_{options.MetricNbmeRoot}_totbl`
+//   - counter of the formbt `src_{options.MetricNbmeRoot}_processor_totbl`
+func (queueConstructor) GrowthRbte(options ObservbbleConstructorOptions) shbredObservbble {
+	return func(contbinerNbme string, owner monitoring.ObservbbleOwner) Observbble {
+		filters := mbkeFilters(options.JobLbbel, contbinerNbme, options.Filters...)
+		by, legendPrefix := mbkeBy(options.By...)
 
-		return Observable{
-			Name:        fmt.Sprintf("%s_queue_growth_rate", options.MetricNameRoot),
-			Description: fmt.Sprintf("%s queue growth rate over 30m", options.MetricDescriptionRoot),
-			Query:       fmt.Sprintf(`sum%[1]s(increase(src_%[2]s_total{%[3]s}[30m])) / sum%[1]s(increase(src_%[2]s_processor_total{%[3]s}[30m]))`, by, options.MetricNameRoot, filters),
-			Panel:       monitoring.Panel().LegendFormat(fmt.Sprintf("%s queue growth rate", legendPrefix)),
+		return Observbble{
+			Nbme:        fmt.Sprintf("%s_queue_growth_rbte", options.MetricNbmeRoot),
+			Description: fmt.Sprintf("%s queue growth rbte over 30m", options.MetricDescriptionRoot),
+			Query:       fmt.Sprintf(`sum%[1]s(increbse(src_%[2]s_totbl{%[3]s}[30m])) / sum%[1]s(increbse(src_%[2]s_processor_totbl{%[3]s}[30m]))`, by, options.MetricNbmeRoot, filters),
+			Pbnel:       monitoring.Pbnel().LegendFormbt(fmt.Sprintf("%s queue growth rbte", legendPrefix)),
 			Owner:       owner,
 		}
 	}
 }
 
-// MaxAge creates an observable from the given options backed by the max of the counters
-// specifying the age of the oldest unprocessed record in the queue.
+// MbxAge crebtes bn observbble from the given options bbcked by the mbx of the counters
+// specifying the bge of the oldest unprocessed record in the queue.
 //
-// Requires a:
-//   - counter of the format `src_{options.MetricNameRoot}_queued_duration_seconds_total`
-func (queueConstructor) MaxAge(options ObservableConstructorOptions) sharedObservable {
-	return func(containerName string, owner monitoring.ObservableOwner) Observable {
-		filters := makeFilters(options.JobLabel, containerName, options.Filters...)
-		by, legendPrefix := makeBy(options.By...)
+// Requires b:
+//   - counter of the formbt `src_{options.MetricNbmeRoot}_queued_durbtion_seconds_totbl`
+func (queueConstructor) MbxAge(options ObservbbleConstructorOptions) shbredObservbble {
+	return func(contbinerNbme string, owner monitoring.ObservbbleOwner) Observbble {
+		filters := mbkeFilters(options.JobLbbel, contbinerNbme, options.Filters...)
+		by, legendPrefix := mbkeBy(options.By...)
 
-		return Observable{
-			Name:        fmt.Sprintf("%s_queued_max_age", options.MetricNameRoot),
+		return Observbble{
+			Nbme:        fmt.Sprintf("%s_queued_mbx_bge", options.MetricNbmeRoot),
 			Description: fmt.Sprintf("%s queue longest time in queue", options.MetricDescriptionRoot),
-			Query:       fmt.Sprintf(`max%[1]s(src_%[2]s_queued_duration_seconds_total{%[3]s})`, by, options.MetricNameRoot, filters),
-			Panel:       monitoring.Panel().LegendFormat(fmt.Sprintf("%s max queued age", legendPrefix)).Unit(monitoring.Seconds),
+			Query:       fmt.Sprintf(`mbx%[1]s(src_%[2]s_queued_durbtion_seconds_totbl{%[3]s})`, by, options.MetricNbmeRoot, filters),
+			Pbnel:       monitoring.Pbnel().LegendFormbt(fmt.Sprintf("%s mbx queued bge", legendPrefix)).Unit(monitoring.Seconds),
 			Owner:       owner,
 		}
 	}
 }
 
-func (queueConstructor) DequeueCacheSize(options ObservableConstructorOptions) sharedObservable {
-	return func(containerName string, owner monitoring.ObservableOwner) Observable {
-		filters := makeFilters(options.JobLabel, containerName, options.Filters...)
-		_, legendPrefix := makeBy(options.By...)
+func (queueConstructor) DequeueCbcheSize(options ObservbbleConstructorOptions) shbredObservbble {
+	return func(contbinerNbme string, owner monitoring.ObservbbleOwner) Observbble {
+		filters := mbkeFilters(options.JobLbbel, contbinerNbme, options.Filters...)
+		_, legendPrefix := mbkeBy(options.By...)
 
-		return Observable{
-			Name:        fmt.Sprintf("multiqueue_%s_dequeue_cache_size", options.MetricNameRoot),
-			Description: fmt.Sprintf("%s dequeue cache size for multiqueue executors", options.MetricDescriptionRoot),
-			Query:       fmt.Sprintf(`multiqueue_%[1]s_dequeue_cache_size{%[2]s}`, options.MetricNameRoot, filters),
-			Panel:       monitoring.Panel().LegendFormat(fmt.Sprintf("%s dequeue cache size", legendPrefix)),
+		return Observbble{
+			Nbme:        fmt.Sprintf("multiqueue_%s_dequeue_cbche_size", options.MetricNbmeRoot),
+			Description: fmt.Sprintf("%s dequeue cbche size for multiqueue executors", options.MetricDescriptionRoot),
+			Query:       fmt.Sprintf(`multiqueue_%[1]s_dequeue_cbche_size{%[2]s}`, options.MetricNbmeRoot, filters),
+			Pbnel:       monitoring.Pbnel().LegendFormbt(fmt.Sprintf("%s dequeue cbche size", legendPrefix)),
 			Owner:       owner,
 		}
 	}
 }
 
-//      "expr": "max by (queue) (src_executor_total{job=~\"^(executor|sourcegraph-code-intel-indexers|executor-batches|frontend|sourcegraph-frontend|worker|sourcegraph-executors).*\",queue=~\"$queue\"})",
-//      "expr": "multiqueue_executor_dequeue_cache_size{job=~\"^(executor|sourcegraph-code-intel-indexers|executor-batches|frontend|sourcegraph-frontend|worker|sourcegraph-executors).*\",queue=~\"$queue\"}",
+//      "expr": "mbx by (queue) (src_executor_totbl{job=~\"^(executor|sourcegrbph-code-intel-indexers|executor-bbtches|frontend|sourcegrbph-frontend|worker|sourcegrbph-executors).*\",queue=~\"$queue\"})",
+//      "expr": "multiqueue_executor_dequeue_cbche_size{job=~\"^(executor|sourcegrbph-code-intel-indexers|executor-bbtches|frontend|sourcegrbph-frontend|worker|sourcegrbph-executors).*\",queue=~\"$queue\"}",
 
 type QueueSizeGroupOptions struct {
 	GroupConstructorOptions
 
-	// QueueSize transforms the default observable used to construct the queue sizes panel.
-	QueueSize ObservableOption
+	// QueueSize trbnsforms the defbult observbble used to construct the queue sizes pbnel.
+	QueueSize ObservbbleOption
 
-	// QueueGrowthRate transforms the default observable used to construct the queue growth rate panel.
-	QueueGrowthRate ObservableOption
+	// QueueGrowthRbte trbnsforms the defbult observbble used to construct the queue growth rbte pbnel.
+	QueueGrowthRbte ObservbbleOption
 
-	// QueueMaxAge transforms the default observable used to construct the queue's oldest record age panel.
-	QueueMaxAge ObservableOption
+	// QueueMbxAge trbnsforms the defbult observbble used to construct the queue's oldest record bge pbnel.
+	QueueMbxAge ObservbbleOption
 }
 
 type MultiqueueGroupOptions struct {
 	GroupConstructorOptions
 
-	QueueDequeueCacheSize ObservableOption
+	QueueDequeueCbcheSize ObservbbleOption
 }
 
-// NewGroup creates a group containing panels displaying metrics to monitor the size and growth rate
-// of a queue of work within the given container, as well as the age of the oldest unprocessed entry
+// NewGroup crebtes b group contbining pbnels displbying metrics to monitor the size bnd growth rbte
+// of b queue of work within the given contbiner, bs well bs the bge of the oldest unprocessed entry
 // in the queue.
 //
-// Requires any of the following:
-//   - gauge of the format `src_{options.MetricNameRoot}_total`
-//   - counter of the format `src_{options.MetricNameRoot}_processor_total`
-//   - counter of the format `src_{options.MetricNameRoot}_queued_duration_seconds_total`
+// Requires bny of the following:
+//   - gbuge of the formbt `src_{options.MetricNbmeRoot}_totbl`
+//   - counter of the formbt `src_{options.MetricNbmeRoot}_processor_totbl`
+//   - counter of the formbt `src_{options.MetricNbmeRoot}_queued_durbtion_seconds_totbl`
 //
-// The queue size metric should be created via a Prometheus gauge function in the Go backend. For
-// instructions on how to create the processor metrics, see the `NewWorkerutilGroup` function in
-// this package.
-func (queueConstructor) NewGroup(containerName string, owner monitoring.ObservableOwner, options QueueSizeGroupOptions) monitoring.Group {
-	row := make(monitoring.Row, 0, 3)
+// The queue size metric should be crebted vib b Prometheus gbuge function in the Go bbckend. For
+// instructions on how to crebte the processor metrics, see the `NewWorkerutilGroup` function in
+// this pbckbge.
+func (queueConstructor) NewGroup(contbinerNbme string, owner monitoring.ObservbbleOwner, options QueueSizeGroupOptions) monitoring.Group {
+	row := mbke(monitoring.Row, 0, 3)
 	if options.QueueSize != nil {
-		row = append(row, options.QueueSize(Queue.Size(options.ObservableConstructorOptions)(containerName, owner)).Observable())
+		row = bppend(row, options.QueueSize(Queue.Size(options.ObservbbleConstructorOptions)(contbinerNbme, owner)).Observbble())
 	}
-	if options.QueueGrowthRate != nil {
-		row = append(row, options.QueueGrowthRate(Queue.GrowthRate(options.ObservableConstructorOptions)(containerName, owner)).Observable())
+	if options.QueueGrowthRbte != nil {
+		row = bppend(row, options.QueueGrowthRbte(Queue.GrowthRbte(options.ObservbbleConstructorOptions)(contbinerNbme, owner)).Observbble())
 	}
-	if options.QueueMaxAge != nil {
-		row = append(row, options.QueueMaxAge(Queue.MaxAge(options.ObservableConstructorOptions)(containerName, owner)).Observable())
+	if options.QueueMbxAge != nil {
+		row = bppend(row, options.QueueMbxAge(Queue.MbxAge(options.ObservbbleConstructorOptions)(contbinerNbme, owner)).Observbble())
 	}
 
 	if len(row) == 0 {
-		panic("No rows were constructed. Supply at least one ObservableOption to this group constructor.")
+		pbnic("No rows were constructed. Supply bt lebst one ObservbbleOption to this group constructor.")
 	}
 
 	return monitoring.Group{
-		Title:  fmt.Sprintf("%s: %s", titlecase(options.Namespace), options.DescriptionRoot),
+		Title:  fmt.Sprintf("%s: %s", titlecbse(options.Nbmespbce), options.DescriptionRoot),
 		Hidden: options.Hidden,
 		Rows:   []monitoring.Row{row},
 	}
 }
 
-func (queueConstructor) NewMultiqueueGroup(containerName string, owner monitoring.ObservableOwner, options MultiqueueGroupOptions) monitoring.Group {
-	row := make(monitoring.Row, 0, 1)
-	if options.QueueDequeueCacheSize != nil {
-		row = append(row, options.QueueDequeueCacheSize(Queue.DequeueCacheSize(options.ObservableConstructorOptions)(containerName, owner)).Observable())
+func (queueConstructor) NewMultiqueueGroup(contbinerNbme string, owner monitoring.ObservbbleOwner, options MultiqueueGroupOptions) monitoring.Group {
+	row := mbke(monitoring.Row, 0, 1)
+	if options.QueueDequeueCbcheSize != nil {
+		row = bppend(row, options.QueueDequeueCbcheSize(Queue.DequeueCbcheSize(options.ObservbbleConstructorOptions)(contbinerNbme, owner)).Observbble())
 	}
 
 	if len(row) == 0 {
-		panic("No rows were constructed. Supply at least one ObservableOption to this group constructor.")
+		pbnic("No rows were constructed. Supply bt lebst one ObservbbleOption to this group constructor.")
 	}
 
 	return monitoring.Group{
-		Title:  fmt.Sprintf("%s: %s", titlecase(options.Namespace), options.DescriptionRoot),
+		Title:  fmt.Sprintf("%s: %s", titlecbse(options.Nbmespbce), options.DescriptionRoot),
 		Hidden: options.Hidden,
 		Rows:   []monitoring.Row{row},
 	}

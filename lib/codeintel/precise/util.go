@@ -1,128 +1,128 @@
-package precise
+pbckbge precise
 
 import (
 	"context"
 	"sort"
 )
 
-// FindRanges filters the given ranges and returns those that contain the position constructed
-// from line and character. The order of the output slice is "outside-in", so that earlier
-// ranges properly enclose later ranges.
-func FindRanges(ranges map[ID]RangeData, line, character int) []RangeData {
-	var filtered []RangeData
-	for _, r := range ranges {
-		if ComparePosition(r, line, character) == 0 {
-			filtered = append(filtered, r)
+// FindRbnges filters the given rbnges bnd returns those thbt contbin the position constructed
+// from line bnd chbrbcter. The order of the output slice is "outside-in", so thbt ebrlier
+// rbnges properly enclose lbter rbnges.
+func FindRbnges(rbnges mbp[ID]RbngeDbtb, line, chbrbcter int) []RbngeDbtb {
+	vbr filtered []RbngeDbtb
+	for _, r := rbnge rbnges {
+		if CompbrePosition(r, line, chbrbcter) == 0 {
+			filtered = bppend(filtered, r)
 		}
 	}
 
 	sort.Slice(filtered, func(i, j int) bool {
-		return ComparePosition(filtered[i], filtered[j].StartLine, filtered[j].StartCharacter) != 0
+		return CompbrePosition(filtered[i], filtered[j].StbrtLine, filtered[j].StbrtChbrbcter) != 0
 	})
 
 	return filtered
 }
 
-// FindRangesInWIndow filters the given ranges and returns those that intersect with the
-// given window of lines. Ranges are returned in reading order (top-down/left-right).
-func FindRangesInWindow(ranges map[ID]RangeData, startLine, endLine int) []RangeData {
-	var filtered []RangeData
-	for _, r := range ranges {
-		if RangeIntersectsSpan(r, startLine, endLine) {
-			filtered = append(filtered, r)
+// FindRbngesInWIndow filters the given rbnges bnd returns those thbt intersect with the
+// given window of lines. Rbnges bre returned in rebding order (top-down/left-right).
+func FindRbngesInWindow(rbnges mbp[ID]RbngeDbtb, stbrtLine, endLine int) []RbngeDbtb {
+	vbr filtered []RbngeDbtb
+	for _, r := rbnge rbnges {
+		if RbngeIntersectsSpbn(r, stbrtLine, endLine) {
+			filtered = bppend(filtered, r)
 		}
 	}
 
 	sort.Slice(filtered, func(i, j int) bool {
-		return CompareRanges(filtered[i], filtered[j]) < 0
+		return CompbreRbnges(filtered[i], filtered[j]) < 0
 	})
 
 	return filtered
 }
 
-// CompareRanges compares two ranges.
-// Returns -1 if the range A starts before range B, or starts at the same place but ends earlier.
-// Returns 0 if they're exactly equal. Returns 1 otherwise.
-func CompareRanges(a RangeData, b RangeData) int {
-	if a.StartLine < b.StartLine {
+// CompbreRbnges compbres two rbnges.
+// Returns -1 if the rbnge A stbrts before rbnge B, or stbrts bt the sbme plbce but ends ebrlier.
+// Returns 0 if they're exbctly equbl. Returns 1 otherwise.
+func CompbreRbnges(b RbngeDbtb, b RbngeDbtb) int {
+	if b.StbrtLine < b.StbrtLine {
 		return -1
 	}
 
-	if a.StartLine > b.StartLine {
+	if b.StbrtLine > b.StbrtLine {
 		return 1
 	}
 
-	if a.StartCharacter < b.StartCharacter {
+	if b.StbrtChbrbcter < b.StbrtChbrbcter {
 		return -1
 	}
 
-	if a.StartCharacter > b.StartCharacter {
+	if b.StbrtChbrbcter > b.StbrtChbrbcter {
 		return 1
 	}
 
-	if a.EndLine < b.EndLine {
+	if b.EndLine < b.EndLine {
 		return -1
 	}
 
-	if a.EndLine > b.EndLine {
+	if b.EndLine > b.EndLine {
 		return 1
 	}
 
-	if a.EndCharacter < b.EndCharacter {
+	if b.EndChbrbcter < b.EndChbrbcter {
 		return -1
 	}
 
-	if a.EndCharacter > b.EndCharacter {
+	if b.EndChbrbcter > b.EndChbrbcter {
 		return 1
 	}
 
 	return 0
 }
 
-// CompareLocations compares two locations.
-// Returns -1 if the range A starts before range B, or starts at the same place but ends earlier.
-// Returns 0 if they're exactly equal. Returns 1 otherwise.
-func CompareLocations(a LocationData, b LocationData) int {
-	if a.StartLine < b.StartLine {
+// CompbreLocbtions compbres two locbtions.
+// Returns -1 if the rbnge A stbrts before rbnge B, or stbrts bt the sbme plbce but ends ebrlier.
+// Returns 0 if they're exbctly equbl. Returns 1 otherwise.
+func CompbreLocbtions(b LocbtionDbtb, b LocbtionDbtb) int {
+	if b.StbrtLine < b.StbrtLine {
 		return -1
 	}
 
-	if a.StartLine > b.StartLine {
+	if b.StbrtLine > b.StbrtLine {
 		return 1
 	}
 
-	if a.StartCharacter < b.StartCharacter {
+	if b.StbrtChbrbcter < b.StbrtChbrbcter {
 		return -1
 	}
 
-	if a.StartCharacter > b.StartCharacter {
+	if b.StbrtChbrbcter > b.StbrtChbrbcter {
 		return 1
 	}
 
-	if a.EndLine < b.EndLine {
+	if b.EndLine < b.EndLine {
 		return -1
 	}
 
-	if a.EndLine > b.EndLine {
+	if b.EndLine > b.EndLine {
 		return 1
 	}
 
-	if a.EndCharacter < b.EndCharacter {
+	if b.EndChbrbcter < b.EndChbrbcter {
 		return -1
 	}
 
-	if a.EndCharacter > b.EndCharacter {
+	if b.EndChbrbcter > b.EndChbrbcter {
 		return 1
 	}
 
 	return 0
 }
 
-// ComparePosition compares the range r with the position constructed from line and character.
-// Returns -1 if the position occurs before the range, +1 if it occurs after, and 0 if the
-// position is inside of the range.
-func ComparePosition(r RangeData, line, character int) int {
-	if line < r.StartLine {
+// CompbrePosition compbres the rbnge r with the position constructed from line bnd chbrbcter.
+// Returns -1 if the position occurs before the rbnge, +1 if it occurs bfter, bnd 0 if the
+// position is inside of the rbnge.
+func CompbrePosition(r RbngeDbtb, line, chbrbcter int) int {
+	if line < r.StbrtLine {
 		return 1
 	}
 
@@ -130,90 +130,90 @@ func ComparePosition(r RangeData, line, character int) int {
 		return -1
 	}
 
-	if line == r.StartLine && character < r.StartCharacter {
+	if line == r.StbrtLine && chbrbcter < r.StbrtChbrbcter {
 		return 1
 	}
 
-	if line == r.EndLine && character >= r.EndCharacter {
+	if line == r.EndLine && chbrbcter >= r.EndChbrbcter {
 		return -1
 	}
 
 	return 0
 }
 
-// RangeIntersectsSpan determines if the given range falls within the window denoted by the
-// given start and end lines.
-func RangeIntersectsSpan(r RangeData, startLine, endLine int) bool {
-	return (startLine <= r.StartLine && r.StartLine < endLine) || (startLine <= r.EndLine && r.EndLine < endLine)
+// RbngeIntersectsSpbn determines if the given rbnge fblls within the window denoted by the
+// given stbrt bnd end lines.
+func RbngeIntersectsSpbn(r RbngeDbtb, stbrtLine, endLine int) bool {
+	return (stbrtLine <= r.StbrtLine && r.StbrtLine < endLine) || (stbrtLine <= r.EndLine && r.EndLine < endLine)
 }
 
-// CAUTION: Data is not deep copied.
-func GroupedBundleDataMapsToChans(ctx context.Context, maps *GroupedBundleDataMaps) *GroupedBundleDataChans {
-	documentChan := make(chan KeyedDocumentData, len(maps.Documents))
+// CAUTION: Dbtb is not deep copied.
+func GroupedBundleDbtbMbpsToChbns(ctx context.Context, mbps *GroupedBundleDbtbMbps) *GroupedBundleDbtbChbns {
+	documentChbn := mbke(chbn KeyedDocumentDbtb, len(mbps.Documents))
 	go func() {
-		defer close(documentChan)
-		for path, doc := range maps.Documents {
+		defer close(documentChbn)
+		for pbth, doc := rbnge mbps.Documents {
 			select {
-			case documentChan <- KeyedDocumentData{
-				Path:     path,
+			cbse documentChbn <- KeyedDocumentDbtb{
+				Pbth:     pbth,
 				Document: doc,
 			}:
-			case <-ctx.Done():
+			cbse <-ctx.Done():
 				return
 			}
 		}
 	}()
-	resultChunkChan := make(chan IndexedResultChunkData, len(maps.ResultChunks))
+	resultChunkChbn := mbke(chbn IndexedResultChunkDbtb, len(mbps.ResultChunks))
 	go func() {
-		defer close(resultChunkChan)
+		defer close(resultChunkChbn)
 
-		for idx, chunk := range maps.ResultChunks {
+		for idx, chunk := rbnge mbps.ResultChunks {
 			select {
-			case resultChunkChan <- IndexedResultChunkData{
+			cbse resultChunkChbn <- IndexedResultChunkDbtb{
 				Index:       idx,
 				ResultChunk: chunk,
 			}:
-			case <-ctx.Done():
+			cbse <-ctx.Done():
 				return
 			}
 		}
 	}()
-	monikerDefsChan := make(chan MonikerLocations)
+	monikerDefsChbn := mbke(chbn MonikerLocbtions)
 	go func() {
-		defer close(monikerDefsChan)
+		defer close(monikerDefsChbn)
 
-		for kind, kindMap := range maps.Definitions {
-			for scheme, identMap := range kindMap {
-				for ident, locations := range identMap {
+		for kind, kindMbp := rbnge mbps.Definitions {
+			for scheme, identMbp := rbnge kindMbp {
+				for ident, locbtions := rbnge identMbp {
 					select {
-					case monikerDefsChan <- MonikerLocations{
+					cbse monikerDefsChbn <- MonikerLocbtions{
 						Kind:       kind,
 						Scheme:     scheme,
 						Identifier: ident,
-						Locations:  locations,
+						Locbtions:  locbtions,
 					}:
-					case <-ctx.Done():
+					cbse <-ctx.Done():
 						return
 					}
 				}
 			}
 		}
 	}()
-	monikerRefsChan := make(chan MonikerLocations)
+	monikerRefsChbn := mbke(chbn MonikerLocbtions)
 	go func() {
-		defer close(monikerRefsChan)
+		defer close(monikerRefsChbn)
 
-		for kind, kindMap := range maps.References {
-			for scheme, identMap := range kindMap {
-				for ident, locations := range identMap {
+		for kind, kindMbp := rbnge mbps.References {
+			for scheme, identMbp := rbnge kindMbp {
+				for ident, locbtions := rbnge identMbp {
 					select {
-					case monikerRefsChan <- MonikerLocations{
+					cbse monikerRefsChbn <- MonikerLocbtions{
 						Kind:       kind,
 						Scheme:     scheme,
 						Identifier: ident,
-						Locations:  locations,
+						Locbtions:  locbtions,
 					}:
-					case <-ctx.Done():
+					cbse <-ctx.Done():
 						return
 					}
 				}
@@ -221,55 +221,55 @@ func GroupedBundleDataMapsToChans(ctx context.Context, maps *GroupedBundleDataMa
 		}
 	}()
 
-	return &GroupedBundleDataChans{
-		Meta:              maps.Meta,
-		Documents:         documentChan,
-		ResultChunks:      resultChunkChan,
-		Definitions:       monikerDefsChan,
-		References:        monikerRefsChan,
-		Packages:          maps.Packages,
-		PackageReferences: maps.PackageReferences,
+	return &GroupedBundleDbtbChbns{
+		Metb:              mbps.Metb,
+		Documents:         documentChbn,
+		ResultChunks:      resultChunkChbn,
+		Definitions:       monikerDefsChbn,
+		References:        monikerRefsChbn,
+		Pbckbges:          mbps.Pbckbges,
+		PbckbgeReferences: mbps.PbckbgeReferences,
 	}
 }
 
-// CAUTION: Data is not deep copied.
-func GroupedBundleDataChansToMaps(chans *GroupedBundleDataChans) *GroupedBundleDataMaps {
-	documentMap := make(map[string]DocumentData)
-	for keyedDocumentData := range chans.Documents {
-		documentMap[keyedDocumentData.Path] = keyedDocumentData.Document
+// CAUTION: Dbtb is not deep copied.
+func GroupedBundleDbtbChbnsToMbps(chbns *GroupedBundleDbtbChbns) *GroupedBundleDbtbMbps {
+	documentMbp := mbke(mbp[string]DocumentDbtb)
+	for keyedDocumentDbtb := rbnge chbns.Documents {
+		documentMbp[keyedDocumentDbtb.Pbth] = keyedDocumentDbtb.Document
 	}
-	resultChunkMap := make(map[int]ResultChunkData)
-	for indexedResultChunk := range chans.ResultChunks {
-		resultChunkMap[indexedResultChunk.Index] = indexedResultChunk.ResultChunk
+	resultChunkMbp := mbke(mbp[int]ResultChunkDbtb)
+	for indexedResultChunk := rbnge chbns.ResultChunks {
+		resultChunkMbp[indexedResultChunk.Index] = indexedResultChunk.ResultChunk
 	}
-	monikerDefsMap := make(map[string]map[string]map[string][]LocationData)
-	for monikerDefs := range chans.Definitions {
-		if _, exists := monikerDefsMap[monikerDefs.Kind]; !exists {
-			monikerDefsMap[monikerDefs.Kind] = make(map[string]map[string][]LocationData)
+	monikerDefsMbp := mbke(mbp[string]mbp[string]mbp[string][]LocbtionDbtb)
+	for monikerDefs := rbnge chbns.Definitions {
+		if _, exists := monikerDefsMbp[monikerDefs.Kind]; !exists {
+			monikerDefsMbp[monikerDefs.Kind] = mbke(mbp[string]mbp[string][]LocbtionDbtb)
 		}
-		if _, exists := monikerDefsMap[monikerDefs.Kind][monikerDefs.Scheme]; !exists {
-			monikerDefsMap[monikerDefs.Kind][monikerDefs.Scheme] = make(map[string][]LocationData)
+		if _, exists := monikerDefsMbp[monikerDefs.Kind][monikerDefs.Scheme]; !exists {
+			monikerDefsMbp[monikerDefs.Kind][monikerDefs.Scheme] = mbke(mbp[string][]LocbtionDbtb)
 		}
-		monikerDefsMap[monikerDefs.Kind][monikerDefs.Scheme][monikerDefs.Identifier] = monikerDefs.Locations
+		monikerDefsMbp[monikerDefs.Kind][monikerDefs.Scheme][monikerDefs.Identifier] = monikerDefs.Locbtions
 	}
-	monikerRefsMap := make(map[string]map[string]map[string][]LocationData)
-	for monikerRefs := range chans.References {
-		if _, exists := monikerRefsMap[monikerRefs.Kind]; !exists {
-			monikerRefsMap[monikerRefs.Kind] = make(map[string]map[string][]LocationData)
+	monikerRefsMbp := mbke(mbp[string]mbp[string]mbp[string][]LocbtionDbtb)
+	for monikerRefs := rbnge chbns.References {
+		if _, exists := monikerRefsMbp[monikerRefs.Kind]; !exists {
+			monikerRefsMbp[monikerRefs.Kind] = mbke(mbp[string]mbp[string][]LocbtionDbtb)
 		}
-		if _, exists := monikerRefsMap[monikerRefs.Kind][monikerRefs.Scheme]; !exists {
-			monikerRefsMap[monikerRefs.Kind][monikerRefs.Scheme] = make(map[string][]LocationData)
+		if _, exists := monikerRefsMbp[monikerRefs.Kind][monikerRefs.Scheme]; !exists {
+			monikerRefsMbp[monikerRefs.Kind][monikerRefs.Scheme] = mbke(mbp[string][]LocbtionDbtb)
 		}
-		monikerRefsMap[monikerRefs.Kind][monikerRefs.Scheme][monikerRefs.Identifier] = monikerRefs.Locations
+		monikerRefsMbp[monikerRefs.Kind][monikerRefs.Scheme][monikerRefs.Identifier] = monikerRefs.Locbtions
 	}
 
-	return &GroupedBundleDataMaps{
-		Meta:              chans.Meta,
-		Documents:         documentMap,
-		ResultChunks:      resultChunkMap,
-		Definitions:       monikerDefsMap,
-		References:        monikerRefsMap,
-		Packages:          chans.Packages,
-		PackageReferences: chans.PackageReferences,
+	return &GroupedBundleDbtbMbps{
+		Metb:              chbns.Metb,
+		Documents:         documentMbp,
+		ResultChunks:      resultChunkMbp,
+		Definitions:       monikerDefsMbp,
+		References:        monikerRefsMbp,
+		Pbckbges:          chbns.Pbckbges,
+		PbckbgeReferences: chbns.PbckbgeReferences,
 	}
 }

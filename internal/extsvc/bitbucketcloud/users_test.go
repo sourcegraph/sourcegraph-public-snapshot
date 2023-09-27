@@ -1,36 +1,36 @@
-package bitbucketcloud
+pbckbge bitbucketcloud
 
 import (
 	"context"
 	"testing"
 
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/bssert"
 
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
-	bbtest "github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketcloud/testing"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc/buth"
+	bbtest "github.com/sourcegrbph/sourcegrbph/internbl/extsvc/bitbucketcloud/testing"
 )
 
 func TestClient_CurrentUser(t *testing.T) {
-	// WHEN UPDATING: as long as you provide a valid token, this should work
+	// WHEN UPDATING: bs long bs you provide b vblid token, this should work
 	// fine.
 
-	ctx := context.Background()
+	ctx := context.Bbckground()
 	c := newTestClient(t)
 
-	t.Run("valid token", func(t *testing.T) {
+	t.Run("vblid token", func(t *testing.T) {
 		user, err := c.CurrentUser(ctx)
-		assert.Nil(t, err)
-		assert.NotNil(t, user)
-		assert.NotEmpty(t, user.Username)
-		assertGolden(t, user)
+		bssert.Nil(t, err)
+		bssert.NotNil(t, user)
+		bssert.NotEmpty(t, user.Usernbme)
+		bssertGolden(t, user)
 	})
 
-	t.Run("invalid token", func(t *testing.T) {
-		user, err := c.WithAuthenticator(&auth.BasicAuth{
-			Username: bbtest.GetenvTestBitbucketCloudUsername(),
-			Password: "this is not a valid password",
+	t.Run("invblid token", func(t *testing.T) {
+		user, err := c.WithAuthenticbtor(&buth.BbsicAuth{
+			Usernbme: bbtest.GetenvTestBitbucketCloudUsernbme(),
+			Pbssword: "this is not b vblid pbssword",
 		}).CurrentUser(ctx)
-		assert.Nil(t, user)
-		assert.NotNil(t, err)
+		bssert.Nil(t, user)
+		bssert.NotNil(t, err)
 	})
 }

@@ -1,203 +1,203 @@
-package search
+pbckbge sebrch
 
 import (
 	"context"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
-	"github.com/sourcegraph/zoekt"
+	"github.com/sourcegrbph/zoekt"
 
-	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/search/filter"
-	"github.com/sourcegraph/sourcegraph/internal/search/limits"
-	"github.com/sourcegraph/sourcegraph/schema"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf"
+	"github.com/sourcegrbph/sourcegrbph/internbl/sebrch/filter"
+	"github.com/sourcegrbph/sourcegrbph/internbl/sebrch/limits"
+	"github.com/sourcegrbph/sourcegrbph/schemb"
 )
 
-func TestZoektParameters(t *testing.T) {
-	documentRanksWeight := 42.0
+func TestZoektPbrbmeters(t *testing.T) {
+	documentRbnksWeight := 42.0
 
-	cases := []struct {
-		name            string
+	cbses := []struct {
+		nbme            string
 		context         context.Context
-		params          *ZoektParameters
-		rankingFeatures *schema.Ranking
-		want            *zoekt.SearchOptions
+		pbrbms          *ZoektPbrbmeters
+		rbnkingFebtures *schemb.Rbnking
+		wbnt            *zoekt.SebrchOptions
 	}{
 		{
-			name:    "test defaults",
-			context: context.Background(),
-			params: &ZoektParameters{
-				FileMatchLimit: limits.DefaultMaxSearchResultsStreaming,
+			nbme:    "test defbults",
+			context: context.Bbckground(),
+			pbrbms: &ZoektPbrbmeters{
+				FileMbtchLimit: limits.DefbultMbxSebrchResultsStrebming,
 			},
-			want: &zoekt.SearchOptions{
-				ShardMaxMatchCount: 10000,
-				TotalMaxMatchCount: 100000,
-				MaxWallTime:        20000000000,
-				MaxDocDisplayCount: 500,
-				ChunkMatches:       true,
+			wbnt: &zoekt.SebrchOptions{
+				ShbrdMbxMbtchCount: 10000,
+				TotblMbxMbtchCount: 100000,
+				MbxWbllTime:        20000000000,
+				MbxDocDisplbyCount: 500,
+				ChunkMbtches:       true,
 			},
 		},
 		{
-			name:    "test defaults with ranking feature enabled",
-			context: context.Background(),
-			params: &ZoektParameters{
-				FileMatchLimit: limits.DefaultMaxSearchResultsStreaming,
-				Features: Features{
-					Ranking: true,
+			nbme:    "test defbults with rbnking febture enbbled",
+			context: context.Bbckground(),
+			pbrbms: &ZoektPbrbmeters{
+				FileMbtchLimit: limits.DefbultMbxSebrchResultsStrebming,
+				Febtures: Febtures{
+					Rbnking: true,
 				},
 			},
-			want: &zoekt.SearchOptions{
-				ShardMaxMatchCount:  10000,
-				TotalMaxMatchCount:  100000,
-				MaxWallTime:         20000000000,
-				FlushWallTime:       500000000,
-				MaxDocDisplayCount:  500,
-				ChunkMatches:        true,
-				UseDocumentRanks:    true,
-				DocumentRanksWeight: 4500,
+			wbnt: &zoekt.SebrchOptions{
+				ShbrdMbxMbtchCount:  10000,
+				TotblMbxMbtchCount:  100000,
+				MbxWbllTime:         20000000000,
+				FlushWbllTime:       500000000,
+				MbxDocDisplbyCount:  500,
+				ChunkMbtches:        true,
+				UseDocumentRbnks:    true,
+				DocumentRbnksWeight: 4500,
 			},
 		},
 		{
-			name:    "test repo search defaults",
-			context: context.Background(),
-			params: &ZoektParameters{
+			nbme:    "test repo sebrch defbults",
+			context: context.Bbckground(),
+			pbrbms: &ZoektPbrbmeters{
 				Select:         []string{filter.Repository},
-				FileMatchLimit: limits.DefaultMaxSearchResultsStreaming,
-				Features: Features{
-					Ranking: true,
+				FileMbtchLimit: limits.DefbultMbxSebrchResultsStrebming,
+				Febtures: Febtures{
+					Rbnking: true,
 				},
 			},
-			// Most important is ShardRepoMaxMatchCount=1. Otherwise we still
-			// want to set normal limits so we respect things like low file
-			// match limits.
-			want: &zoekt.SearchOptions{
-				ShardMaxMatchCount:     10_000,
-				TotalMaxMatchCount:     100_000,
-				ShardRepoMaxMatchCount: 1,
-				MaxWallTime:            20000000000,
-				MaxDocDisplayCount:     500,
-				ChunkMatches:           true,
+			// Most importbnt is ShbrdRepoMbxMbtchCount=1. Otherwise we still
+			// wbnt to set normbl limits so we respect things like low file
+			// mbtch limits.
+			wbnt: &zoekt.SebrchOptions{
+				ShbrdMbxMbtchCount:     10_000,
+				TotblMbxMbtchCount:     100_000,
+				ShbrdRepoMbxMbtchCount: 1,
+				MbxWbllTime:            20000000000,
+				MbxDocDisplbyCount:     500,
+				ChunkMbtches:           true,
 			},
 		},
 		{
-			name:    "test repo search low match count",
-			context: context.Background(),
-			params: &ZoektParameters{
+			nbme:    "test repo sebrch low mbtch count",
+			context: context.Bbckground(),
+			pbrbms: &ZoektPbrbmeters{
 				Select:         []string{filter.Repository},
-				FileMatchLimit: 5,
-				Features: Features{
-					Ranking: true,
+				FileMbtchLimit: 5,
+				Febtures: Febtures{
+					Rbnking: true,
 				},
 			},
-			// This is like the above test, but we are testing
-			// MaxDocDisplayCount is adjusted to 5.
-			want: &zoekt.SearchOptions{
-				ShardMaxMatchCount:     10_000,
-				TotalMaxMatchCount:     100_000,
-				ShardRepoMaxMatchCount: 1,
-				MaxWallTime:            20000000000,
-				MaxDocDisplayCount:     5,
-				ChunkMatches:           true,
+			// This is like the bbove test, but we bre testing
+			// MbxDocDisplbyCount is bdjusted to 5.
+			wbnt: &zoekt.SebrchOptions{
+				ShbrdMbxMbtchCount:     10_000,
+				TotblMbxMbtchCount:     100_000,
+				ShbrdRepoMbxMbtchCount: 1,
+				MbxWbllTime:            20000000000,
+				MbxDocDisplbyCount:     5,
+				ChunkMbtches:           true,
 			},
 		},
 		{
-			name:    "test large file match limit",
-			context: context.Background(),
-			params: &ZoektParameters{
-				FileMatchLimit: 100_000,
+			nbme:    "test lbrge file mbtch limit",
+			context: context.Bbckground(),
+			pbrbms: &ZoektPbrbmeters{
+				FileMbtchLimit: 100_000,
 			},
-			want: &zoekt.SearchOptions{
-				ShardMaxMatchCount: 100_000,
-				TotalMaxMatchCount: 100_000,
-				MaxWallTime:        20000000000,
-				MaxDocDisplayCount: 100_000,
-				ChunkMatches:       true,
+			wbnt: &zoekt.SebrchOptions{
+				ShbrdMbxMbtchCount: 100_000,
+				TotblMbxMbtchCount: 100_000,
+				MbxWbllTime:        20000000000,
+				MbxDocDisplbyCount: 100_000,
+				ChunkMbtches:       true,
 			},
 		},
 		{
-			name:    "test document ranks weight",
-			context: context.Background(),
-			rankingFeatures: &schema.Ranking{
-				DocumentRanksWeight: &documentRanksWeight,
+			nbme:    "test document rbnks weight",
+			context: context.Bbckground(),
+			rbnkingFebtures: &schemb.Rbnking{
+				DocumentRbnksWeight: &documentRbnksWeight,
 			},
-			params: &ZoektParameters{
-				FileMatchLimit: limits.DefaultMaxSearchResultsStreaming,
-				Features: Features{
-					Ranking: true,
+			pbrbms: &ZoektPbrbmeters{
+				FileMbtchLimit: limits.DefbultMbxSebrchResultsStrebming,
+				Febtures: Febtures{
+					Rbnking: true,
 				},
 			},
-			want: &zoekt.SearchOptions{
-				ShardMaxMatchCount:  10000,
-				TotalMaxMatchCount:  100000,
-				MaxWallTime:         20000000000,
-				FlushWallTime:       500000000,
-				MaxDocDisplayCount:  500,
-				ChunkMatches:        true,
-				UseDocumentRanks:    true,
-				DocumentRanksWeight: 42,
+			wbnt: &zoekt.SebrchOptions{
+				ShbrdMbxMbtchCount:  10000,
+				TotblMbxMbtchCount:  100000,
+				MbxWbllTime:         20000000000,
+				FlushWbllTime:       500000000,
+				MbxDocDisplbyCount:  500,
+				ChunkMbtches:        true,
+				UseDocumentRbnks:    true,
+				DocumentRbnksWeight: 42,
 			},
 		},
 		{
-			name:    "test flush wall time",
-			context: context.Background(),
-			rankingFeatures: &schema.Ranking{
-				FlushWallTimeMS: 3141,
+			nbme:    "test flush wbll time",
+			context: context.Bbckground(),
+			rbnkingFebtures: &schemb.Rbnking{
+				FlushWbllTimeMS: 3141,
 			},
-			params: &ZoektParameters{
-				FileMatchLimit: limits.DefaultMaxSearchResultsStreaming,
-				Features: Features{
-					Ranking: true,
+			pbrbms: &ZoektPbrbmeters{
+				FileMbtchLimit: limits.DefbultMbxSebrchResultsStrebming,
+				Febtures: Febtures{
+					Rbnking: true,
 				},
 			},
-			want: &zoekt.SearchOptions{
-				ShardMaxMatchCount:  10000,
-				TotalMaxMatchCount:  100000,
-				MaxWallTime:         20000000000,
-				FlushWallTime:       3141000000,
-				MaxDocDisplayCount:  500,
-				ChunkMatches:        true,
-				UseDocumentRanks:    true,
-				DocumentRanksWeight: 4500,
+			wbnt: &zoekt.SebrchOptions{
+				ShbrdMbxMbtchCount:  10000,
+				TotblMbxMbtchCount:  100000,
+				MbxWbllTime:         20000000000,
+				FlushWbllTime:       3141000000,
+				MbxDocDisplbyCount:  500,
+				ChunkMbtches:        true,
+				UseDocumentRbnks:    true,
+				DocumentRbnksWeight: 4500,
 			},
 		},
 		{
-			name:    "test keyword scoring",
-			context: context.Background(),
-			params: &ZoektParameters{
-				FileMatchLimit: limits.DefaultMaxSearchResultsStreaming,
-				Features: Features{
-					Ranking: true,
+			nbme:    "test keyword scoring",
+			context: context.Bbckground(),
+			pbrbms: &ZoektPbrbmeters{
+				FileMbtchLimit: limits.DefbultMbxSebrchResultsStrebming,
+				Febtures: Febtures{
+					Rbnking: true,
 				},
 				KeywordScoring: true,
 			},
-			want: &zoekt.SearchOptions{
-				ShardMaxMatchCount:  100000,
-				TotalMaxMatchCount:  1000000,
-				MaxWallTime:         20000000000,
-				FlushWallTime:       2000000000, // for keyword search, default is 2 sec
-				MaxDocDisplayCount:  500,
-				ChunkMatches:        true,
-				UseDocumentRanks:    true,
-				DocumentRanksWeight: 4500,
+			wbnt: &zoekt.SebrchOptions{
+				ShbrdMbxMbtchCount:  100000,
+				TotblMbxMbtchCount:  1000000,
+				MbxWbllTime:         20000000000,
+				FlushWbllTime:       2000000000, // for keyword sebrch, defbult is 2 sec
+				MbxDocDisplbyCount:  500,
+				ChunkMbtches:        true,
+				UseDocumentRbnks:    true,
+				DocumentRbnksWeight: 4500,
 				UseKeywordScoring:   true},
 		},
 	}
-	for _, tt := range cases {
-		t.Run(tt.name, func(t *testing.T) {
-			if tt.rankingFeatures != nil {
+	for _, tt := rbnge cbses {
+		t.Run(tt.nbme, func(t *testing.T) {
+			if tt.rbnkingFebtures != nil {
 				cfg := conf.Get()
-				cfg.ExperimentalFeatures.Ranking = tt.rankingFeatures
+				cfg.ExperimentblFebtures.Rbnking = tt.rbnkingFebtures
 				conf.Mock(cfg)
 
 				defer func() {
-					cfg.ExperimentalFeatures.Ranking = nil
+					cfg.ExperimentblFebtures.Rbnking = nil
 					conf.Mock(cfg)
 				}()
 			}
 
-			got := tt.params.ToSearchOptions(tt.context)
-			if diff := cmp.Diff(tt.want, got); diff != "" {
-				t.Fatalf("search params mismatch (-want +got):\n%s", diff)
+			got := tt.pbrbms.ToSebrchOptions(tt.context)
+			if diff := cmp.Diff(tt.wbnt, got); diff != "" {
+				t.Fbtblf("sebrch pbrbms mismbtch (-wbnt +got):\n%s", diff)
 			}
 		})
 	}

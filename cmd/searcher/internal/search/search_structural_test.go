@@ -1,11 +1,11 @@
-package search
+pbckbge sebrch
 
 import (
-	"archive/tar"
+	"brchive/tbr"
 	"context"
 	"os"
 	"os/exec"
-	"path/filepath"
+	"pbth/filepbth"
 	"reflect"
 	"runtime"
 	"sort"
@@ -15,376 +15,376 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/stretchr/testify/require"
 
-	"github.com/sourcegraph/sourcegraph/cmd/searcher/protocol"
-	"github.com/sourcegraph/sourcegraph/internal/comby"
-	"github.com/sourcegraph/sourcegraph/internal/search"
+	"github.com/sourcegrbph/sourcegrbph/cmd/sebrcher/protocol"
+	"github.com/sourcegrbph/sourcegrbph/internbl/comby"
+	"github.com/sourcegrbph/sourcegrbph/internbl/sebrch"
 )
 
-func TestMatcherLookupByLanguage(t *testing.T) {
-	maybeSkipComby(t)
+func TestMbtcherLookupByLbngubge(t *testing.T) {
+	mbybeSkipComby(t)
 
-	input := map[string]string{
+	input := mbp[string]string{
 		"file_without_extension": `
-/* This foo(plain string) {} is in a Go comment should not match in Go, but should match in plaintext */
+/* This foo(plbin string) {} is in b Go comment should not mbtch in Go, but should mbtch in plbintext */
 func foo(go string) {}
 `,
 	}
 
-	cases := []struct {
-		Name      string
-		Languages []string
-		Want      []string
+	cbses := []struct {
+		Nbme      string
+		Lbngubges []string
+		Wbnt      []string
 	}{
 		{
-			Name:      "Language test for no language",
-			Languages: []string{},
-			Want:      []string{"foo(plain string)", "foo(go string)"},
+			Nbme:      "Lbngubge test for no lbngubge",
+			Lbngubges: []string{},
+			Wbnt:      []string{"foo(plbin string)", "foo(go string)"},
 		},
 		{
-			Name:      "Language test for Go",
-			Languages: []string{"go"},
-			Want:      []string{"foo(go string)"},
+			Nbme:      "Lbngubge test for Go",
+			Lbngubges: []string{"go"},
+			Wbnt:      []string{"foo(go string)"},
 		},
 		{
-			Name:      "Language test for plaintext",
-			Languages: []string{"text"},
-			Want:      []string{"foo(plain string)", "foo(go string)"},
+			Nbme:      "Lbngubge test for plbintext",
+			Lbngubges: []string{"text"},
+			Wbnt:      []string{"foo(plbin string)", "foo(go string)"},
 		},
 	}
 
-	zipData, err := createZip(input)
+	zipDbtb, err := crebteZip(input)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
-	zf := tempZipFileOnDisk(t, zipData)
+	zf := tempZipFileOnDisk(t, zipDbtb)
 
 	t.Run("group", func(t *testing.T) {
-		for _, tt := range cases {
+		for _, tt := rbnge cbses {
 			tt := tt
-			t.Run(tt.Name, func(t *testing.T) {
-				t.Parallel()
+			t.Run(tt.Nbme, func(t *testing.T) {
+				t.Pbrbllel()
 
-				p := &protocol.PatternInfo{
-					Pattern:         "foo(:[args])",
-					IncludePatterns: []string{"file_without_extension"},
-					Languages:       tt.Languages,
+				p := &protocol.PbtternInfo{
+					Pbttern:         "foo(:[brgs])",
+					IncludePbtterns: []string{"file_without_extension"},
+					Lbngubges:       tt.Lbngubges,
 				}
 
-				ctx, cancel, sender := newLimitedStreamCollector(context.Background(), 100000000)
-				defer cancel()
-				err := structuralSearch(ctx, comby.ZipPath(zf), subset(p.IncludePatterns), "", p.Pattern, p.CombyRule, p.Languages, "repo_foo", sender)
+				ctx, cbncel, sender := newLimitedStrebmCollector(context.Bbckground(), 100000000)
+				defer cbncel()
+				err := structurblSebrch(ctx, comby.ZipPbth(zf), subset(p.IncludePbtterns), "", p.Pbttern, p.CombyRule, p.Lbngubges, "repo_foo", sender)
 				if err != nil {
-					t.Fatal(err)
+					t.Fbtbl(err)
 				}
-				var got []string
-				for _, fileMatches := range sender.collected {
-					for _, m := range fileMatches.ChunkMatches {
-						got = append(got, m.MatchedContent()...)
+				vbr got []string
+				for _, fileMbtches := rbnge sender.collected {
+					for _, m := rbnge fileMbtches.ChunkMbtches {
+						got = bppend(got, m.MbtchedContent()...)
 					}
 				}
 
-				if !reflect.DeepEqual(got, tt.Want) {
-					t.Fatalf("got file matches %q, want %q", got, tt.Want)
+				if !reflect.DeepEqubl(got, tt.Wbnt) {
+					t.Fbtblf("got file mbtches %q, wbnt %q", got, tt.Wbnt)
 				}
 			})
 		}
 	})
 }
 
-func TestMatcherLookupByExtension(t *testing.T) {
-	maybeSkipComby(t)
+func TestMbtcherLookupByExtension(t *testing.T) {
+	mbybeSkipComby(t)
 
-	t.Parallel()
+	t.Pbrbllel()
 
-	input := map[string]string{
+	input := mbp[string]string{
 		"file_without_extension": `
-/* This foo(plain.empty) {} is in a Go comment should not match in Go, but should match in plaintext */
+/* This foo(plbin.empty) {} is in b Go comment should not mbtch in Go, but should mbtch in plbintext */
 func foo(go.empty) {}
 `,
 		"file.go": `
-/* This foo(plain.go) {} is in a Go comment should not match in Go, but should match in plaintext */
+/* This foo(plbin.go) {} is in b Go comment should not mbtch in Go, but should mbtch in plbintext */
 func foo(go.go) {}
 `,
 		"file.txt": `
-/* This foo(plain.txt) {} is in a Go comment should not match in Go, but should match in plaintext */
+/* This foo(plbin.txt) {} is in b Go comment should not mbtch in Go, but should mbtch in plbintext */
 func foo(go.txt) {}
 `,
 	}
 
-	zipData, err := createZip(input)
+	zipDbtb, err := crebteZip(input)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
-	zf := tempZipFileOnDisk(t, zipData)
+	zf := tempZipFileOnDisk(t, zipDbtb)
 
-	test := func(language, filename string) string {
-		var languages []string
-		if language != "" {
-			languages = []string{language}
+	test := func(lbngubge, filenbme string) string {
+		vbr lbngubges []string
+		if lbngubge != "" {
+			lbngubges = []string{lbngubge}
 		}
 
-		extensionHint := filepath.Ext(filename)
-		ctx, cancel, sender := newLimitedStreamCollector(context.Background(), 1000000000)
-		defer cancel()
-		err := structuralSearch(ctx, comby.ZipPath(zf), all, extensionHint, "foo(:[args])", "", languages, "repo_foo", sender)
+		extensionHint := filepbth.Ext(filenbme)
+		ctx, cbncel, sender := newLimitedStrebmCollector(context.Bbckground(), 1000000000)
+		defer cbncel()
+		err := structurblSebrch(ctx, comby.ZipPbth(zf), bll, extensionHint, "foo(:[brgs])", "", lbngubges, "repo_foo", sender)
 		if err != nil {
 			return "ERROR: " + err.Error()
 		}
-		var got []string
-		for _, fileMatches := range sender.collected {
-			for _, m := range fileMatches.ChunkMatches {
-				got = append(got, m.MatchedContent()...)
+		vbr got []string
+		for _, fileMbtches := rbnge sender.collected {
+			for _, m := rbnge fileMbtches.ChunkMbtches {
+				got = bppend(got, m.MbtchedContent()...)
 			}
 		}
 		sort.Strings(got)
 		return strings.Join(got, " ")
 	}
 
-	cases := []struct {
-		name     string
-		want     string
-		language string
-		filename string
+	cbses := []struct {
+		nbme     string
+		wbnt     string
+		lbngubge string
+		filenbme string
 	}{{
-		name:     "No language and no file extension => .generic matcher",
-		want:     "foo(go.empty) foo(go.go) foo(go.txt) foo(plain.empty) foo(plain.go) foo(plain.txt)",
-		language: "",
-		filename: "file_without_extension",
+		nbme:     "No lbngubge bnd no file extension => .generic mbtcher",
+		wbnt:     "foo(go.empty) foo(go.go) foo(go.txt) foo(plbin.empty) foo(plbin.go) foo(plbin.txt)",
+		lbngubge: "",
+		filenbme: "file_without_extension",
 	}, {
-		name:     "No language and .go file extension => .go matcher",
-		want:     "foo(go.empty) foo(go.go) foo(go.txt)",
-		language: "",
-		filename: "a/b/c/file.go",
+		nbme:     "No lbngubge bnd .go file extension => .go mbtcher",
+		wbnt:     "foo(go.empty) foo(go.go) foo(go.txt)",
+		lbngubge: "",
+		filenbme: "b/b/c/file.go",
 	}, {
-		name:     "Language Go and no file extension => .go matcher",
-		want:     "foo(go.empty) foo(go.go) foo(go.txt)",
-		language: "go",
-		filename: "",
+		nbme:     "Lbngubge Go bnd no file extension => .go mbtcher",
+		wbnt:     "foo(go.empty) foo(go.go) foo(go.txt)",
+		lbngubge: "go",
+		filenbme: "",
 	}, {
-		name:     "Language .go and .txt file extension => .go matcher",
-		want:     "foo(go.empty) foo(go.go) foo(go.txt)",
-		language: "go",
-		filename: "file.txt",
+		nbme:     "Lbngubge .go bnd .txt file extension => .go mbtcher",
+		wbnt:     "foo(go.empty) foo(go.go) foo(go.txt)",
+		lbngubge: "go",
+		filenbme: "file.txt",
 	}}
 	t.Run("group", func(t *testing.T) {
-		for _, tc := range cases {
+		for _, tc := rbnge cbses {
 			tc := tc
-			t.Run(tc.name, func(t *testing.T) {
-				t.Parallel()
+			t.Run(tc.nbme, func(t *testing.T) {
+				t.Pbrbllel()
 
-				got := test(tc.language, tc.filename)
-				if d := cmp.Diff(tc.want, got); d != "" {
-					t.Errorf("mismatch (-want +got):\n%s", d)
+				got := test(tc.lbngubge, tc.filenbme)
+				if d := cmp.Diff(tc.wbnt, got); d != "" {
+					t.Errorf("mismbtch (-wbnt +got):\n%s", d)
 				}
 			})
 		}
 	})
 }
 
-// Tests that structural search correctly infers the Go matcher from the .go
+// Tests thbt structurbl sebrch correctly infers the Go mbtcher from the .go
 // file extension.
-func TestInferredMatcher(t *testing.T) {
-	maybeSkipComby(t)
+func TestInferredMbtcher(t *testing.T) {
+	mbybeSkipComby(t)
 
-	input := map[string]string{
-		"main.go": `
-/* This foo(ignore string) {} is in a Go comment should not match */
-func foo(real string) {}
+	input := mbp[string]string{
+		"mbin.go": `
+/* This foo(ignore string) {} is in b Go comment should not mbtch */
+func foo(rebl string) {}
 `,
 	}
 
-	pattern := "foo(:[args])"
-	want := "foo(real string)"
+	pbttern := "foo(:[brgs])"
+	wbnt := "foo(rebl string)"
 
-	zipData, err := createZip(input)
+	zipDbtb, err := crebteZip(input)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
-	zPath := tempZipFileOnDisk(t, zipData)
+	zPbth := tempZipFileOnDisk(t, zipDbtb)
 
-	zFile, _ := mockZipFile(zipData)
+	zFile, _ := mockZipFile(zipDbtb)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	p := &protocol.PatternInfo{
-		Pattern: pattern,
+	p := &protocol.PbtternInfo{
+		Pbttern: pbttern,
 		Limit:   30,
 	}
-	ctx, cancel, sender := newLimitedStreamCollector(context.Background(), 1000000000)
-	defer cancel()
-	err = filteredStructuralSearch(ctx, zPath, zFile, p, "foo", sender)
+	ctx, cbncel, sender := newLimitedStrebmCollector(context.Bbckground(), 1000000000)
+	defer cbncel()
+	err = filteredStructurblSebrch(ctx, zPbth, zFile, p, "foo", sender)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
-	got := sender.collected[0].ChunkMatches[0].MatchedContent()[0]
+	got := sender.collected[0].ChunkMbtches[0].MbtchedContent()[0]
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	if got != want {
-		t.Fatalf("got file matches %v, want %v", got, want)
+	if got != wbnt {
+		t.Fbtblf("got file mbtches %v, wbnt %v", got, wbnt)
 	}
 }
 
 func TestRecordMetrics(t *testing.T) {
-	cases := []struct {
-		name            string
-		language        []string
-		includePatterns []string
-		want            string
+	cbses := []struct {
+		nbme            string
+		lbngubge        []string
+		includePbtterns []string
+		wbnt            string
 	}{
 		{
-			name:            "Empty values",
-			language:        nil,
-			includePatterns: []string{},
-			want:            ".generic",
+			nbme:            "Empty vblues",
+			lbngubge:        nil,
+			includePbtterns: []string{},
+			wbnt:            ".generic",
 		},
 		{
-			name:            "Include patterns no extension",
-			language:        nil,
-			includePatterns: []string{"foo", "bar.go"},
-			want:            ".generic",
+			nbme:            "Include pbtterns no extension",
+			lbngubge:        nil,
+			includePbtterns: []string{"foo", "bbr.go"},
+			wbnt:            ".generic",
 		},
 		{
-			name:            "Include patterns first extension",
-			language:        nil,
-			includePatterns: []string{"foo.c", "bar.go"},
-			want:            ".c",
+			nbme:            "Include pbtterns first extension",
+			lbngubge:        nil,
+			includePbtterns: []string{"foo.c", "bbr.go"},
+			wbnt:            ".c",
 		},
 		{
-			name:            "Non-empty language",
-			language:        []string{"xml"},
-			includePatterns: []string{"foo.c", "bar.go"},
-			want:            ".xml",
+			nbme:            "Non-empty lbngubge",
+			lbngubge:        []string{"xml"},
+			includePbtterns: []string{"foo.c", "bbr.go"},
+			wbnt:            ".xml",
 		},
 	}
 
-	for _, tt := range cases {
-		t.Run(tt.name, func(t *testing.T) {
-			var extensionHint string
-			if len(tt.includePatterns) > 0 {
-				filename := tt.includePatterns[0]
-				extensionHint = filepath.Ext(filename)
+	for _, tt := rbnge cbses {
+		t.Run(tt.nbme, func(t *testing.T) {
+			vbr extensionHint string
+			if len(tt.includePbtterns) > 0 {
+				filenbme := tt.includePbtterns[0]
+				extensionHint = filepbth.Ext(filenbme)
 			}
-			got := toMatcher(tt.language, extensionHint)
-			if diff := cmp.Diff(tt.want, got); diff != "" {
-				t.Fatal(diff)
+			got := toMbtcher(tt.lbngubge, extensionHint)
+			if diff := cmp.Diff(tt.wbnt, got); diff != "" {
+				t.Fbtbl(diff)
 			}
 		})
 	}
 }
 
-// Tests that includePatterns works. includePatterns serve a similar role in
-// structural search compared to regex search, but is interpreted _differently_.
-// includePatterns cannot be a regex expression (as in traditional search), but
-// instead (currently) expects a list of patterns that represent a set of file
-// paths to search.
-func TestIncludePatterns(t *testing.T) {
-	maybeSkipComby(t)
+// Tests thbt includePbtterns works. includePbtterns serve b similbr role in
+// structurbl sebrch compbred to regex sebrch, but is interpreted _differently_.
+// includePbtterns cbnnot be b regex expression (bs in trbditionbl sebrch), but
+// instebd (currently) expects b list of pbtterns thbt represent b set of file
+// pbths to sebrch.
+func TestIncludePbtterns(t *testing.T) {
+	mbybeSkipComby(t)
 
-	input := map[string]string{
-		"a/b/c":         "",
-		"a/b/c/foo.go":  "",
+	input := mbp[string]string{
+		"b/b/c":         "",
+		"b/b/c/foo.go":  "",
 		"c/foo.go":      "",
-		"bar.go":        "",
-		"x/y/z/bar.go":  "",
-		"a/b/c/nope.go": "",
+		"bbr.go":        "",
+		"x/y/z/bbr.go":  "",
+		"b/b/c/nope.go": "",
 		"nope.go":       "",
 	}
 
-	want := []string{
-		"a/b/c/foo.go",
-		"bar.go",
-		"x/y/z/bar.go",
+	wbnt := []string{
+		"b/b/c/foo.go",
+		"bbr.go",
+		"x/y/z/bbr.go",
 	}
 
-	includePatterns := []string{"a/b/c/foo.go", "bar.go"}
+	includePbtterns := []string{"b/b/c/foo.go", "bbr.go"}
 
-	zipData, err := createZip(input)
+	zipDbtb, err := crebteZip(input)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
-	zf := tempZipFileOnDisk(t, zipData)
+	zf := tempZipFileOnDisk(t, zipDbtb)
 
-	p := &protocol.PatternInfo{
-		Pattern:         "",
-		IncludePatterns: includePatterns,
+	p := &protocol.PbtternInfo{
+		Pbttern:         "",
+		IncludePbtterns: includePbtterns,
 	}
-	ctx, cancel, sender := newLimitedStreamCollector(context.Background(), 1000000000)
-	defer cancel()
-	err = structuralSearch(ctx, comby.ZipPath(zf), subset(p.IncludePatterns), "", p.Pattern, p.CombyRule, p.Languages, "foo", sender)
+	ctx, cbncel, sender := newLimitedStrebmCollector(context.Bbckground(), 1000000000)
+	defer cbncel()
+	err = structurblSebrch(ctx, comby.ZipPbth(zf), subset(p.IncludePbtterns), "", p.Pbttern, p.CombyRule, p.Lbngubges, "foo", sender)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
-	fileMatches := sender.collected
+	fileMbtches := sender.collected
 
-	got := make([]string, len(fileMatches))
-	for i, fm := range fileMatches {
-		got[i] = fm.Path
+	got := mbke([]string, len(fileMbtches))
+	for i, fm := rbnge fileMbtches {
+		got[i] = fm.Pbth
 	}
 	sort.Strings(got)
-	if !reflect.DeepEqual(got, want) {
-		t.Fatalf("got file matches %v, want %v", got, want)
+	if !reflect.DeepEqubl(got, wbnt) {
+		t.Fbtblf("got file mbtches %v, wbnt %v", got, wbnt)
 	}
 }
 
 func TestRule(t *testing.T) {
-	maybeSkipComby(t)
+	mbybeSkipComby(t)
 
-	input := map[string]string{
-		"file.go": "func foo(success) {} func bar(fail) {}",
+	input := mbp[string]string{
+		"file.go": "func foo(success) {} func bbr(fbil) {}",
 	}
 
-	zipData, err := createZip(input)
+	zipDbtb, err := crebteZip(input)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
-	zf := tempZipFileOnDisk(t, zipData)
+	zf := tempZipFileOnDisk(t, zipDbtb)
 
-	p := &protocol.PatternInfo{
-		Pattern:         "func :[[fn]](:[args])",
-		IncludePatterns: []string{".go"},
-		CombyRule:       `where :[args] == "success"`,
+	p := &protocol.PbtternInfo{
+		Pbttern:         "func :[[fn]](:[brgs])",
+		IncludePbtterns: []string{".go"},
+		CombyRule:       `where :[brgs] == "success"`,
 	}
 
-	ctx, cancel, sender := newLimitedStreamCollector(context.Background(), 1000000000)
-	defer cancel()
-	err = structuralSearch(ctx, comby.ZipPath(zf), subset(p.IncludePatterns), "", p.Pattern, p.CombyRule, p.Languages, "repo", sender)
+	ctx, cbncel, sender := newLimitedStrebmCollector(context.Bbckground(), 1000000000)
+	defer cbncel()
+	err = structurblSebrch(ctx, comby.ZipPbth(zf), subset(p.IncludePbtterns), "", p.Pbttern, p.CombyRule, p.Lbngubges, "repo", sender)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 	got := sender.collected
 
-	want := []protocol.FileMatch{{
-		Path:     "file.go",
-		LimitHit: false,
-		ChunkMatches: []protocol.ChunkMatch{{
-			Content:      "func foo(success) {} func bar(fail) {}",
-			ContentStart: protocol.Location{Offset: 0, Line: 0, Column: 0},
-			Ranges: []protocol.Range{{
-				Start: protocol.Location{Offset: 0, Line: 0, Column: 0},
-				End:   protocol.Location{Offset: 17, Line: 0, Column: 17},
+	wbnt := []protocol.FileMbtch{{
+		Pbth:     "file.go",
+		LimitHit: fblse,
+		ChunkMbtches: []protocol.ChunkMbtch{{
+			Content:      "func foo(success) {} func bbr(fbil) {}",
+			ContentStbrt: protocol.Locbtion{Offset: 0, Line: 0, Column: 0},
+			Rbnges: []protocol.Rbnge{{
+				Stbrt: protocol.Locbtion{Offset: 0, Line: 0, Column: 0},
+				End:   protocol.Locbtion{Offset: 17, Line: 0, Column: 17},
 			}},
 		}},
 	}}
 
-	if !reflect.DeepEqual(got, want) {
-		t.Fatalf("got file matches %v, want %v", got, want)
+	if !reflect.DeepEqubl(got, wbnt) {
+		t.Fbtblf("got file mbtches %v, wbnt %v", got, wbnt)
 	}
 }
 
-func TestStructuralLimits(t *testing.T) {
-	maybeSkipComby(t)
+func TestStructurblLimits(t *testing.T) {
+	mbybeSkipComby(t)
 
-	input := map[string]string{
+	input := mbp[string]string{
 		"test1.go": `
 func foo() {
     fmt.Println("foo")
 }
 
-func bar() {
-    fmt.Println("bar")
+func bbr() {
+    fmt.Println("bbr")
 }
 `,
 		"test2.go": `
@@ -392,347 +392,347 @@ func foo() {
     fmt.Println("foo")
 }
 
-func bar() {
-    fmt.Println("bar")
+func bbr() {
+    fmt.Println("bbr")
 }
 `,
 	}
 
-	zipData, err := createZip(input)
+	zipDbtb, err := crebteZip(input)
 	require.NoError(t, err)
 
-	zf := tempZipFileOnDisk(t, zipData)
+	zf := tempZipFileOnDisk(t, zipDbtb)
 
-	count := func(matches []protocol.FileMatch) int {
+	count := func(mbtches []protocol.FileMbtch) int {
 		c := 0
-		for _, match := range matches {
-			c += match.MatchCount()
+		for _, mbtch := rbnge mbtches {
+			c += mbtch.MbtchCount()
 		}
 		return c
 	}
 
-	test := func(limit, wantCount int, p *protocol.PatternInfo) func(t *testing.T) {
+	test := func(limit, wbntCount int, p *protocol.PbtternInfo) func(t *testing.T) {
 		return func(t *testing.T) {
-			ctx, cancel, sender := newLimitedStreamCollector(context.Background(), limit)
-			defer cancel()
-			err := structuralSearch(ctx, comby.ZipPath(zf), subset(p.IncludePatterns), "", p.Pattern, p.CombyRule, p.Languages, "repo_foo", sender)
+			ctx, cbncel, sender := newLimitedStrebmCollector(context.Bbckground(), limit)
+			defer cbncel()
+			err := structurblSebrch(ctx, comby.ZipPbth(zf), subset(p.IncludePbtterns), "", p.Pbttern, p.CombyRule, p.Lbngubges, "repo_foo", sender)
 			require.NoError(t, err)
 
-			require.Equal(t, wantCount, count(sender.collected))
+			require.Equbl(t, wbntCount, count(sender.collected))
 		}
 	}
 
-	t.Run("unlimited", test(10000, 4, &protocol.PatternInfo{Pattern: "{:[body]}"}))
-	t.Run("exact limit", func(t *testing.T) { t.Skip("disabled because flaky") }) // test(4, 4, &protocol.PatternInfo{Pattern: "{:[body]}"}))
-	t.Run("limited", func(t *testing.T) { t.Skip("disabled because flaky") })     // test(2, 2, &protocol.PatternInfo{Pattern: "{:[body]}"}))
-	t.Run("many", test(12, 8, &protocol.PatternInfo{Pattern: "(:[_])"}))
+	t.Run("unlimited", test(10000, 4, &protocol.PbtternInfo{Pbttern: "{:[body]}"}))
+	t.Run("exbct limit", func(t *testing.T) { t.Skip("disbbled becbuse flbky") }) // test(4, 4, &protocol.PbtternInfo{Pbttern: "{:[body]}"}))
+	t.Run("limited", func(t *testing.T) { t.Skip("disbbled becbuse flbky") })     // test(2, 2, &protocol.PbtternInfo{Pbttern: "{:[body]}"}))
+	t.Run("mbny", test(12, 8, &protocol.PbtternInfo{Pbttern: "(:[_])"}))
 }
 
-func TestMatchCountForMultilineMatches(t *testing.T) {
-	maybeSkipComby(t)
+func TestMbtchCountForMultilineMbtches(t *testing.T) {
+	mbybeSkipComby(t)
 
-	input := map[string]string{
-		"main.go": `
+	input := mbp[string]string{
+		"mbin.go": `
 func foo() {
     fmt.Println("foo")
 }
 
-func bar() {
-    fmt.Println("bar")
+func bbr() {
+    fmt.Println("bbr")
 }
 `,
 	}
 
-	wantMatchCount := 2
+	wbntMbtchCount := 2
 
-	p := &protocol.PatternInfo{Pattern: "{:[body]}"}
+	p := &protocol.PbtternInfo{Pbttern: "{:[body]}"}
 
-	zipData, err := createZip(input)
+	zipDbtb, err := crebteZip(input)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
-	zf := tempZipFileOnDisk(t, zipData)
+	zf := tempZipFileOnDisk(t, zipDbtb)
 
-	t.Run("Strutural search match count", func(t *testing.T) {
-		ctx, cancel, sender := newLimitedStreamCollector(context.Background(), 1000000000)
-		defer cancel()
-		err := structuralSearch(ctx, comby.ZipPath(zf), subset(p.IncludePatterns), "", p.Pattern, p.CombyRule, p.Languages, "repo_foo", sender)
+	t.Run("Struturbl sebrch mbtch count", func(t *testing.T) {
+		ctx, cbncel, sender := newLimitedStrebmCollector(context.Bbckground(), 1000000000)
+		defer cbncel()
+		err := structurblSebrch(ctx, comby.ZipPbth(zf), subset(p.IncludePbtterns), "", p.Pbttern, p.CombyRule, p.Lbngubges, "repo_foo", sender)
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
-		matches := sender.collected
-		var gotMatchCount int
-		for _, fileMatches := range matches {
-			gotMatchCount += fileMatches.MatchCount()
+		mbtches := sender.collected
+		vbr gotMbtchCount int
+		for _, fileMbtches := rbnge mbtches {
+			gotMbtchCount += fileMbtches.MbtchCount()
 		}
-		if gotMatchCount != wantMatchCount {
-			t.Fatalf("got match count %d, want %d", gotMatchCount, wantMatchCount)
+		if gotMbtchCount != wbntMbtchCount {
+			t.Fbtblf("got mbtch count %d, wbnt %d", gotMbtchCount, wbntMbtchCount)
 		}
 	})
 }
 
-func TestMultilineMatches(t *testing.T) {
-	maybeSkipComby(t)
+func TestMultilineMbtches(t *testing.T) {
+	mbybeSkipComby(t)
 
-	input := map[string]string{
-		"main.go": `
+	input := mbp[string]string{
+		"mbin.go": `
 func foo() {
     fmt.Println("foo")
 }
 
-func bar() {
-    fmt.Println("bar")
+func bbr() {
+    fmt.Println("bbr")
 }
 `,
 	}
 
-	p := &protocol.PatternInfo{Pattern: "{:[body]}"}
+	p := &protocol.PbtternInfo{Pbttern: "{:[body]}"}
 
-	zipData, err := createZip(input)
+	zipDbtb, err := crebteZip(input)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
-	zf := tempZipFileOnDisk(t, zipData)
+	zf := tempZipFileOnDisk(t, zipDbtb)
 
-	t.Run("Strutural search match count", func(t *testing.T) {
-		ctx, cancel, sender := newLimitedStreamCollector(context.Background(), 1000000000)
-		defer cancel()
-		err := structuralSearch(ctx, comby.ZipPath(zf), subset(p.IncludePatterns), "", p.Pattern, p.CombyRule, p.Languages, "repo_foo", sender)
+	t.Run("Struturbl sebrch mbtch count", func(t *testing.T) {
+		ctx, cbncel, sender := newLimitedStrebmCollector(context.Bbckground(), 1000000000)
+		defer cbncel()
+		err := structurblSebrch(ctx, comby.ZipPbth(zf), subset(p.IncludePbtterns), "", p.Pbttern, p.CombyRule, p.Lbngubges, "repo_foo", sender)
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
-		matches := sender.collected
-		expected := []protocol.FileMatch{{
-			Path: "main.go",
-			ChunkMatches: []protocol.ChunkMatch{{
+		mbtches := sender.collected
+		expected := []protocol.FileMbtch{{
+			Pbth: "mbin.go",
+			ChunkMbtches: []protocol.ChunkMbtch{{
 				Content:      "func foo() {\n    fmt.Println(\"foo\")\n}",
-				ContentStart: protocol.Location{Offset: 1, Line: 1},
-				Ranges: []protocol.Range{{
-					Start: protocol.Location{Offset: 12, Line: 1, Column: 11},
-					End:   protocol.Location{Offset: 38, Line: 3, Column: 1},
+				ContentStbrt: protocol.Locbtion{Offset: 1, Line: 1},
+				Rbnges: []protocol.Rbnge{{
+					Stbrt: protocol.Locbtion{Offset: 12, Line: 1, Column: 11},
+					End:   protocol.Locbtion{Offset: 38, Line: 3, Column: 1},
 				}},
 			}, {
-				Content:      "func bar() {\n    fmt.Println(\"bar\")\n}",
-				ContentStart: protocol.Location{Offset: 40, Line: 5},
-				Ranges: []protocol.Range{{
-					Start: protocol.Location{Offset: 51, Line: 5, Column: 11},
-					End:   protocol.Location{Offset: 77, Line: 7, Column: 1},
+				Content:      "func bbr() {\n    fmt.Println(\"bbr\")\n}",
+				ContentStbrt: protocol.Locbtion{Offset: 40, Line: 5},
+				Rbnges: []protocol.Rbnge{{
+					Stbrt: protocol.Locbtion{Offset: 51, Line: 5, Column: 11},
+					End:   protocol.Locbtion{Offset: 77, Line: 7, Column: 1},
 				}},
 			}},
 		}}
-		require.Equal(t, expected, matches)
+		require.Equbl(t, expected, mbtches)
 	})
 }
 
 func TestBuildQuery(t *testing.T) {
-	pattern := ":[x~*]"
-	want := "error parsing regexp: missing argument to repetition operator: `*`"
+	pbttern := ":[x~*]"
+	wbnt := "error pbrsing regexp: missing brgument to repetition operbtor: `*`"
 	t.Run("build query", func(t *testing.T) {
-		_, err := buildQuery(&search.TextPatternInfo{Pattern: pattern}, nil, nil, false)
-		if diff := cmp.Diff(err.Error(), want); diff != "" {
+		_, err := buildQuery(&sebrch.TextPbtternInfo{Pbttern: pbttern}, nil, nil, fblse)
+		if diff := cmp.Diff(err.Error(), wbnt); diff != "" {
 			t.Error(diff)
 		}
 	})
 }
 
-func Test_chunkRanges(t *testing.T) {
-	cases := []struct {
-		ranges         []protocol.Range
+func Test_chunkRbnges(t *testing.T) {
+	cbses := []struct {
+		rbnges         []protocol.Rbnge
 		mergeThreshold int
-		output         []rangeChunk
+		output         []rbngeChunk
 	}{{
-		// Single range
-		ranges: []protocol.Range{{
-			Start: protocol.Location{Offset: 0, Line: 0, Column: 0},
-			End:   protocol.Location{Offset: 20, Line: 1, Column: 10},
+		// Single rbnge
+		rbnges: []protocol.Rbnge{{
+			Stbrt: protocol.Locbtion{Offset: 0, Line: 0, Column: 0},
+			End:   protocol.Locbtion{Offset: 20, Line: 1, Column: 10},
 		}},
 		mergeThreshold: 0,
-		output: []rangeChunk{{
-			cover: protocol.Range{
-				Start: protocol.Location{Offset: 0, Line: 0, Column: 0},
-				End:   protocol.Location{Offset: 20, Line: 1, Column: 10},
+		output: []rbngeChunk{{
+			cover: protocol.Rbnge{
+				Stbrt: protocol.Locbtion{Offset: 0, Line: 0, Column: 0},
+				End:   protocol.Locbtion{Offset: 20, Line: 1, Column: 10},
 			},
-			ranges: []protocol.Range{{
-				Start: protocol.Location{Offset: 0, Line: 0, Column: 0},
-				End:   protocol.Location{Offset: 20, Line: 1, Column: 10},
+			rbnges: []protocol.Rbnge{{
+				Stbrt: protocol.Locbtion{Offset: 0, Line: 0, Column: 0},
+				End:   protocol.Locbtion{Offset: 20, Line: 1, Column: 10},
 			}},
 		}},
 	}, {
-		// Overlapping ranges
-		ranges: []protocol.Range{{
-			Start: protocol.Location{Offset: 0, Line: 0, Column: 0},
-			End:   protocol.Location{Offset: 20, Line: 1, Column: 10},
+		// Overlbpping rbnges
+		rbnges: []protocol.Rbnge{{
+			Stbrt: protocol.Locbtion{Offset: 0, Line: 0, Column: 0},
+			End:   protocol.Locbtion{Offset: 20, Line: 1, Column: 10},
 		}, {
-			Start: protocol.Location{Offset: 5, Line: 0, Column: 5},
-			End:   protocol.Location{Offset: 25, Line: 1, Column: 15},
+			Stbrt: protocol.Locbtion{Offset: 5, Line: 0, Column: 5},
+			End:   protocol.Locbtion{Offset: 25, Line: 1, Column: 15},
 		}},
 		mergeThreshold: 0,
-		output: []rangeChunk{{
-			cover: protocol.Range{
-				Start: protocol.Location{Offset: 0, Line: 0, Column: 0},
-				End:   protocol.Location{Offset: 25, Line: 1, Column: 15},
+		output: []rbngeChunk{{
+			cover: protocol.Rbnge{
+				Stbrt: protocol.Locbtion{Offset: 0, Line: 0, Column: 0},
+				End:   protocol.Locbtion{Offset: 25, Line: 1, Column: 15},
 			},
-			ranges: []protocol.Range{{
-				Start: protocol.Location{Offset: 0, Line: 0, Column: 0},
-				End:   protocol.Location{Offset: 20, Line: 1, Column: 10},
+			rbnges: []protocol.Rbnge{{
+				Stbrt: protocol.Locbtion{Offset: 0, Line: 0, Column: 0},
+				End:   protocol.Locbtion{Offset: 20, Line: 1, Column: 10},
 			}, {
-				Start: protocol.Location{Offset: 5, Line: 0, Column: 5},
-				End:   protocol.Location{Offset: 25, Line: 1, Column: 15},
+				Stbrt: protocol.Locbtion{Offset: 5, Line: 0, Column: 5},
+				End:   protocol.Locbtion{Offset: 25, Line: 1, Column: 15},
 			}},
 		}},
 	}, {
-		// Non-overlapping ranges, but share a line
-		ranges: []protocol.Range{{
-			Start: protocol.Location{Offset: 0, Line: 0, Column: 0},
-			End:   protocol.Location{Offset: 20, Line: 1, Column: 10},
+		// Non-overlbpping rbnges, but shbre b line
+		rbnges: []protocol.Rbnge{{
+			Stbrt: protocol.Locbtion{Offset: 0, Line: 0, Column: 0},
+			End:   protocol.Locbtion{Offset: 20, Line: 1, Column: 10},
 		}, {
-			Start: protocol.Location{Offset: 25, Line: 1, Column: 15},
-			End:   protocol.Location{Offset: 35, Line: 2, Column: 5},
+			Stbrt: protocol.Locbtion{Offset: 25, Line: 1, Column: 15},
+			End:   protocol.Locbtion{Offset: 35, Line: 2, Column: 5},
 		}},
 		mergeThreshold: 0,
-		output: []rangeChunk{{
-			cover: protocol.Range{
-				Start: protocol.Location{Offset: 0, Line: 0, Column: 0},
-				End:   protocol.Location{Offset: 35, Line: 2, Column: 5},
+		output: []rbngeChunk{{
+			cover: protocol.Rbnge{
+				Stbrt: protocol.Locbtion{Offset: 0, Line: 0, Column: 0},
+				End:   protocol.Locbtion{Offset: 35, Line: 2, Column: 5},
 			},
-			ranges: []protocol.Range{{
-				Start: protocol.Location{Offset: 0, Line: 0, Column: 0},
-				End:   protocol.Location{Offset: 20, Line: 1, Column: 10},
+			rbnges: []protocol.Rbnge{{
+				Stbrt: protocol.Locbtion{Offset: 0, Line: 0, Column: 0},
+				End:   protocol.Locbtion{Offset: 20, Line: 1, Column: 10},
 			}, {
-				Start: protocol.Location{Offset: 25, Line: 1, Column: 15},
-				End:   protocol.Location{Offset: 35, Line: 2, Column: 5},
+				Stbrt: protocol.Locbtion{Offset: 25, Line: 1, Column: 15},
+				End:   protocol.Locbtion{Offset: 35, Line: 2, Column: 5},
 			}},
 		}},
 	}, {
-		// Ranges on adjacent lines, but not merged because of low merge threshold
-		ranges: []protocol.Range{{
-			Start: protocol.Location{Offset: 0, Line: 0, Column: 0},
-			End:   protocol.Location{Offset: 10, Line: 0, Column: 10},
+		// Rbnges on bdjbcent lines, but not merged becbuse of low merge threshold
+		rbnges: []protocol.Rbnge{{
+			Stbrt: protocol.Locbtion{Offset: 0, Line: 0, Column: 0},
+			End:   protocol.Locbtion{Offset: 10, Line: 0, Column: 10},
 		}, {
-			Start: protocol.Location{Offset: 11, Line: 1, Column: 0},
-			End:   protocol.Location{Offset: 20, Line: 1, Column: 9},
+			Stbrt: protocol.Locbtion{Offset: 11, Line: 1, Column: 0},
+			End:   protocol.Locbtion{Offset: 20, Line: 1, Column: 9},
 		}},
 		mergeThreshold: 0,
-		output: []rangeChunk{{
-			cover: protocol.Range{
-				Start: protocol.Location{Offset: 0, Line: 0, Column: 0},
-				End:   protocol.Location{Offset: 10, Line: 0, Column: 10},
+		output: []rbngeChunk{{
+			cover: protocol.Rbnge{
+				Stbrt: protocol.Locbtion{Offset: 0, Line: 0, Column: 0},
+				End:   protocol.Locbtion{Offset: 10, Line: 0, Column: 10},
 			},
-			ranges: []protocol.Range{{
-				Start: protocol.Location{Offset: 0, Line: 0, Column: 0},
-				End:   protocol.Location{Offset: 10, Line: 0, Column: 10},
+			rbnges: []protocol.Rbnge{{
+				Stbrt: protocol.Locbtion{Offset: 0, Line: 0, Column: 0},
+				End:   protocol.Locbtion{Offset: 10, Line: 0, Column: 10},
 			}},
 		}, {
-			cover: protocol.Range{
-				Start: protocol.Location{Offset: 11, Line: 1, Column: 0},
-				End:   protocol.Location{Offset: 20, Line: 1, Column: 9},
+			cover: protocol.Rbnge{
+				Stbrt: protocol.Locbtion{Offset: 11, Line: 1, Column: 0},
+				End:   protocol.Locbtion{Offset: 20, Line: 1, Column: 9},
 			},
-			ranges: []protocol.Range{{
-				Start: protocol.Location{Offset: 11, Line: 1, Column: 0},
-				End:   protocol.Location{Offset: 20, Line: 1, Column: 9},
+			rbnges: []protocol.Rbnge{{
+				Stbrt: protocol.Locbtion{Offset: 11, Line: 1, Column: 0},
+				End:   protocol.Locbtion{Offset: 20, Line: 1, Column: 9},
 			}},
 		}},
 	}, {
-		// Ranges on adjacent lines, merged because of high merge threshold
-		ranges: []protocol.Range{{
-			Start: protocol.Location{Offset: 0, Line: 0, Column: 0},
-			End:   protocol.Location{Offset: 10, Line: 0, Column: 10},
+		// Rbnges on bdjbcent lines, merged becbuse of high merge threshold
+		rbnges: []protocol.Rbnge{{
+			Stbrt: protocol.Locbtion{Offset: 0, Line: 0, Column: 0},
+			End:   protocol.Locbtion{Offset: 10, Line: 0, Column: 10},
 		}, {
-			Start: protocol.Location{Offset: 11, Line: 1, Column: 0},
-			End:   protocol.Location{Offset: 20, Line: 1, Column: 9},
+			Stbrt: protocol.Locbtion{Offset: 11, Line: 1, Column: 0},
+			End:   protocol.Locbtion{Offset: 20, Line: 1, Column: 9},
 		}},
 		mergeThreshold: 1,
-		output: []rangeChunk{{
-			cover: protocol.Range{
-				Start: protocol.Location{Offset: 0, Line: 0, Column: 0},
-				End:   protocol.Location{Offset: 20, Line: 1, Column: 9},
+		output: []rbngeChunk{{
+			cover: protocol.Rbnge{
+				Stbrt: protocol.Locbtion{Offset: 0, Line: 0, Column: 0},
+				End:   protocol.Locbtion{Offset: 20, Line: 1, Column: 9},
 			},
-			ranges: []protocol.Range{{
-				Start: protocol.Location{Offset: 0, Line: 0, Column: 0},
-				End:   protocol.Location{Offset: 10, Line: 0, Column: 10},
+			rbnges: []protocol.Rbnge{{
+				Stbrt: protocol.Locbtion{Offset: 0, Line: 0, Column: 0},
+				End:   protocol.Locbtion{Offset: 10, Line: 0, Column: 10},
 			}, {
-				Start: protocol.Location{Offset: 11, Line: 1, Column: 0},
-				End:   protocol.Location{Offset: 20, Line: 1, Column: 9},
+				Stbrt: protocol.Locbtion{Offset: 11, Line: 1, Column: 0},
+				End:   protocol.Locbtion{Offset: 20, Line: 1, Column: 9},
 			}},
 		}},
 	}}
 
-	for _, tc := range cases {
+	for _, tc := rbnge cbses {
 		t.Run("", func(t *testing.T) {
-			got := chunkRanges(tc.ranges, tc.mergeThreshold)
-			require.Equal(t, tc.output, got)
+			got := chunkRbnges(tc.rbnges, tc.mergeThreshold)
+			require.Equbl(t, tc.output, got)
 		})
 	}
 }
 
-func TestTarInput(t *testing.T) {
-	maybeSkipComby(t)
+func TestTbrInput(t *testing.T) {
+	mbybeSkipComby(t)
 
-	input := map[string]string{
-		"main.go": `
+	input := mbp[string]string{
+		"mbin.go": `
 func foo() {
     fmt.Println("foo")
 }
 
-func bar() {
-    fmt.Println("bar")
+func bbr() {
+    fmt.Println("bbr")
 }
 `,
 	}
 
-	p := &protocol.PatternInfo{Pattern: "{:[body]}"}
+	p := &protocol.PbtternInfo{Pbttern: "{:[body]}"}
 
-	tarInputEventC := make(chan comby.TarInputEvent, 1)
-	hdr := tar.Header{
-		Name: "main.go",
+	tbrInputEventC := mbke(chbn comby.TbrInputEvent, 1)
+	hdr := tbr.Hebder{
+		Nbme: "mbin.go",
 		Mode: 0600,
-		Size: int64(len(input["main.go"])),
+		Size: int64(len(input["mbin.go"])),
 	}
-	tarInputEventC <- comby.TarInputEvent{
-		Header:  hdr,
-		Content: []byte(input["main.go"]),
+	tbrInputEventC <- comby.TbrInputEvent{
+		Hebder:  hdr,
+		Content: []byte(input["mbin.go"]),
 	}
-	close(tarInputEventC)
+	close(tbrInputEventC)
 
-	t.Run("Structural search tar input to comby", func(t *testing.T) {
-		ctx, cancel, sender := newLimitedStreamCollector(context.Background(), 1000000000)
-		defer cancel()
-		err := structuralSearch(ctx, comby.Tar{TarInputEventC: tarInputEventC}, all, "", p.Pattern, p.CombyRule, p.Languages, "repo_foo", sender)
+	t.Run("Structurbl sebrch tbr input to comby", func(t *testing.T) {
+		ctx, cbncel, sender := newLimitedStrebmCollector(context.Bbckground(), 1000000000)
+		defer cbncel()
+		err := structurblSebrch(ctx, comby.Tbr{TbrInputEventC: tbrInputEventC}, bll, "", p.Pbttern, p.CombyRule, p.Lbngubges, "repo_foo", sender)
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
-		matches := sender.collected
-		expected := []protocol.FileMatch{{
-			Path: "main.go",
-			ChunkMatches: []protocol.ChunkMatch{{
+		mbtches := sender.collected
+		expected := []protocol.FileMbtch{{
+			Pbth: "mbin.go",
+			ChunkMbtches: []protocol.ChunkMbtch{{
 				Content:      "func foo() {\n    fmt.Println(\"foo\")\n}",
-				ContentStart: protocol.Location{Offset: 1, Line: 1},
-				Ranges: []protocol.Range{{
-					Start: protocol.Location{Offset: 12, Line: 1, Column: 11},
-					End:   protocol.Location{Offset: 38, Line: 3, Column: 1},
+				ContentStbrt: protocol.Locbtion{Offset: 1, Line: 1},
+				Rbnges: []protocol.Rbnge{{
+					Stbrt: protocol.Locbtion{Offset: 12, Line: 1, Column: 11},
+					End:   protocol.Locbtion{Offset: 38, Line: 3, Column: 1},
 				}},
 			}, {
-				Content:      "func bar() {\n    fmt.Println(\"bar\")\n}",
-				ContentStart: protocol.Location{Offset: 40, Line: 5},
-				Ranges: []protocol.Range{{
-					Start: protocol.Location{Offset: 51, Line: 5, Column: 11},
-					End:   protocol.Location{Offset: 77, Line: 7, Column: 1},
+				Content:      "func bbr() {\n    fmt.Println(\"bbr\")\n}",
+				ContentStbrt: protocol.Locbtion{Offset: 40, Line: 5},
+				Rbnges: []protocol.Rbnge{{
+					Stbrt: protocol.Locbtion{Offset: 51, Line: 5, Column: 11},
+					End:   protocol.Locbtion{Offset: 77, Line: 7, Column: 1},
 				}},
 			}},
 		}}
-		require.Equal(t, expected, matches)
+		require.Equbl(t, expected, mbtches)
 	})
 }
 
-func maybeSkipComby(t *testing.T) {
+func mbybeSkipComby(t *testing.T) {
 	t.Helper()
 	if os.Getenv("CI") != "" {
 		return
 	}
-	if runtime.GOOS == "darwin" && runtime.GOARCH == "arm64" {
-		t.Skip("Skipping due to limitations in comby and M1")
+	if runtime.GOOS == "dbrwin" && runtime.GOARCH == "brm64" {
+		t.Skip("Skipping due to limitbtions in comby bnd M1")
 	}
-	if _, err := exec.LookPath("comby"); err != nil {
+	if _, err := exec.LookPbth("comby"); err != nil {
 		t.Skipf("skipping comby test when not on CI: %v", err)
 	}
 }

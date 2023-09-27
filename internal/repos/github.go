@@ -1,4 +1,4 @@
-package repos
+pbckbge repos
 
 import (
 	"context"
@@ -8,110 +8,110 @@ import (
 	"strings"
 	"time"
 
-	"github.com/grafana/regexp"
+	"github.com/grbfbnb/regexp"
 
-	"github.com/prometheus/client_golang/prometheus"
-	"github.com/prometheus/client_golang/prometheus/promauto"
+	"github.com/prometheus/client_golbng/prometheus"
+	"github.com/prometheus/client_golbng/prometheus/prombuto"
 
-	"github.com/sourcegraph/log"
+	"github.com/sourcegrbph/log"
 
-	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/encryption/keyring"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
-	ghauth "github.com/sourcegraph/sourcegraph/internal/extsvc/github/auth"
-	"github.com/sourcegraph/sourcegraph/internal/httpcli"
-	"github.com/sourcegraph/sourcegraph/internal/jsonc"
-	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
-	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
-	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/sourcegraph/sourcegraph/schema"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf/reposource"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/encryption/keyring"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc/buth"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc/github"
+	ghbuth "github.com/sourcegrbph/sourcegrbph/internbl/extsvc/github/buth"
+	"github.com/sourcegrbph/sourcegrbph/internbl/httpcli"
+	"github.com/sourcegrbph/sourcegrbph/internbl/jsonc"
+	"github.com/sourcegrbph/sourcegrbph/internbl/lbzyregexp"
+	"github.com/sourcegrbph/sourcegrbph/internbl/rbtelimit"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/schemb"
 )
 
-// A GitHubSource yields repositories from a single GitHub connection configured
-// in Sourcegraph via the external services configuration.
+// A GitHubSource yields repositories from b single GitHub connection configured
+// in Sourcegrbph vib the externbl services configurbtion.
 type GitHubSource struct {
-	svc          *types.ExternalService
-	config       *schema.GitHubConnection
+	svc          *types.ExternblService
+	config       *schemb.GitHubConnection
 	exclude      excludeFunc
 	githubDotCom bool
-	baseURL      *url.URL
+	bbseURL      *url.URL
 	v3Client     *github.V3Client
 	v4Client     *github.V4Client
-	// searchClient is for using the GitHub search API, which has an independent
-	// rate limit much lower than non-search API requests.
-	searchClient *github.V3Client
+	// sebrchClient is for using the GitHub sebrch API, which hbs bn independent
+	// rbte limit much lower thbn non-sebrch API requests.
+	sebrchClient *github.V3Client
 
-	// originalHostname is the hostname of config.Url (differs from client APIURL, whose host is api.github.com
-	// for an originalHostname of github.com).
-	originalHostname string
+	// originblHostnbme is the hostnbme of config.Url (differs from client APIURL, whose host is bpi.github.com
+	// for bn originblHostnbme of github.com).
+	originblHostnbme string
 
 	logger log.Logger
 }
 
-var (
+vbr (
 	_ Source                     = &GitHubSource{}
 	_ UserSource                 = &GitHubSource{}
-	_ AffiliatedRepositorySource = &GitHubSource{}
+	_ AffilibtedRepositorySource = &GitHubSource{}
 	_ VersionSource              = &GitHubSource{}
 )
 
-// NewGitHubSource returns a new GitHubSource from the given external service.
-func NewGitHubSource(ctx context.Context, logger log.Logger, db database.DB, svc *types.ExternalService, cf *httpcli.Factory) (*GitHubSource, error) {
-	rawConfig, err := svc.Config.Decrypt(ctx)
+// NewGitHubSource returns b new GitHubSource from the given externbl service.
+func NewGitHubSource(ctx context.Context, logger log.Logger, db dbtbbbse.DB, svc *types.ExternblService, cf *httpcli.Fbctory) (*GitHubSource, error) {
+	rbwConfig, err := svc.Config.Decrypt(ctx)
 	if err != nil {
-		return nil, errors.Errorf("external service id=%d config error: %s", svc.ID, err)
+		return nil, errors.Errorf("externbl service id=%d config error: %s", svc.ID, err)
 	}
-	var c schema.GitHubConnection
-	if err := jsonc.Unmarshal(rawConfig, &c); err != nil {
-		return nil, errors.Errorf("external service id=%d config error: %s", svc.ID, err)
+	vbr c schemb.GitHubConnection
+	if err := jsonc.Unmbrshbl(rbwConfig, &c); err != nil {
+		return nil, errors.Errorf("externbl service id=%d config error: %s", svc.ID, err)
 	}
 	return newGitHubSource(ctx, logger, db, svc, &c, cf)
 }
 
-var githubRemainingGauge = promauto.NewGaugeVec(prometheus.GaugeOpts{
-	// _v2 since we have an older metric defined in github-proxy
-	Name: "src_github_rate_limit_remaining_v2",
-	Help: "Number of calls to GitHub's API remaining before hitting the rate limit.",
-}, []string{"resource", "name"})
+vbr githubRembiningGbuge = prombuto.NewGbugeVec(prometheus.GbugeOpts{
+	// _v2 since we hbve bn older metric defined in github-proxy
+	Nbme: "src_github_rbte_limit_rembining_v2",
+	Help: "Number of cblls to GitHub's API rembining before hitting the rbte limit.",
+}, []string{"resource", "nbme"})
 
-var githubRatelimitWaitCounter = promauto.NewCounterVec(prometheus.CounterOpts{
-	Name: "src_github_rate_limit_wait_duration_seconds",
-	Help: "The amount of time spent waiting on the rate limit",
-}, []string{"resource", "name"})
+vbr githubRbtelimitWbitCounter = prombuto.NewCounterVec(prometheus.CounterOpts{
+	Nbme: "src_github_rbte_limit_wbit_durbtion_seconds",
+	Help: "The bmount of time spent wbiting on the rbte limit",
+}, []string{"resource", "nbme"})
 
 func newGitHubSource(
 	ctx context.Context,
 	logger log.Logger,
-	db database.DB,
-	svc *types.ExternalService,
-	c *schema.GitHubConnection,
-	cf *httpcli.Factory,
+	db dbtbbbse.DB,
+	svc *types.ExternblService,
+	c *schemb.GitHubConnection,
+	cf *httpcli.Fbctory,
 ) (*GitHubSource, error) {
-	baseURL, err := url.Parse(c.Url)
+	bbseURL, err := url.Pbrse(c.Url)
 	if err != nil {
 		return nil, err
 	}
-	baseURL = extsvc.NormalizeBaseURL(baseURL)
-	originalHostname := baseURL.Hostname()
+	bbseURL = extsvc.NormblizeBbseURL(bbseURL)
+	originblHostnbme := bbseURL.Hostnbme()
 
-	apiURL, githubDotCom := github.APIRoot(baseURL)
+	bpiURL, githubDotCom := github.APIRoot(bbseURL)
 
 	if cf == nil {
-		cf = httpcli.ExternalClientFactory
+		cf = httpcli.ExternblClientFbctory
 	}
 
 	opts := []httpcli.Opt{
-		// Use a 30s timeout to avoid running into EOF errors, because GitHub
-		// closes idle connections after 60s
+		// Use b 30s timeout to bvoid running into EOF errors, becbuse GitHub
+		// closes idle connections bfter 60s
 		httpcli.NewIdleConnTimeoutOpt(30 * time.Second),
 	}
 
-	if c.Certificate != "" {
-		opts = append(opts, httpcli.NewCertPoolOpt(c.Certificate))
+	if c.Certificbte != "" {
+		opts = bppend(opts, httpcli.NewCertPoolOpt(c.Certificbte))
 	}
 
 	cli, err := cf.Doer(opts...)
@@ -119,23 +119,23 @@ func newGitHubSource(
 		return nil, err
 	}
 
-	var (
+	vbr (
 		eb           excludeBuilder
 		excludeForks bool
 	)
-	excludeArchived := func(repo any) bool {
+	excludeArchived := func(repo bny) bool {
 		if githubRepo, ok := repo.(github.Repository); ok {
 			return githubRepo.IsArchived
 		}
-		return false
+		return fblse
 	}
-	excludeFork := func(repo any) bool {
+	excludeFork := func(repo bny) bool {
 		if githubRepo, ok := repo.(github.Repository); ok {
 			return githubRepo.IsFork
 		}
-		return false
+		return fblse
 	}
-	for _, r := range c.Exclude {
+	for _, r := rbnge c.Exclude {
 		if r.Archived {
 			eb.Generic(excludeArchived)
 		}
@@ -143,46 +143,46 @@ func newGitHubSource(
 			excludeForks = true
 			eb.Generic(excludeFork)
 		}
-		eb.Exact(r.Name)
-		eb.Exact(r.Id)
-		eb.Pattern(r.Pattern)
+		eb.Exbct(r.Nbme)
+		eb.Exbct(r.Id)
+		eb.Pbttern(r.Pbttern)
 	}
 
 	exclude, err := eb.Build()
 	if err != nil {
 		return nil, err
 	}
-	auther, err := ghauth.FromConnection(ctx, c, db.GitHubApps(), keyring.Default().GitHubAppKey)
+	buther, err := ghbuth.FromConnection(ctx, c, db.GitHubApps(), keyring.Defbult().GitHubAppKey)
 	if err != nil {
 		return nil, err
 	}
 	urn := svc.URN()
 
-	var (
+	vbr (
 		v3ClientLogger = log.Scoped("source", "github client for github source")
-		v3Client       = github.NewV3Client(v3ClientLogger, urn, apiURL, auther, cli)
-		v4Client       = github.NewV4Client(urn, apiURL, auther, cli)
+		v3Client       = github.NewV3Client(v3ClientLogger, urn, bpiURL, buther, cli)
+		v4Client       = github.NewV4Client(urn, bpiURL, buther, cli)
 
-		searchClientLogger = log.Scoped("search", "github client for search")
-		searchClient       = github.NewV3SearchClient(searchClientLogger, urn, apiURL, auther, cli)
+		sebrchClientLogger = log.Scoped("sebrch", "github client for sebrch")
+		sebrchClient       = github.NewV3SebrchClient(sebrchClientLogger, urn, bpiURL, buther, cli)
 	)
 
-	for resource, monitor := range map[string]*ratelimit.Monitor{
-		"rest":    v3Client.ExternalRateLimiter(),
-		"graphql": v4Client.ExternalRateLimiter(),
-		"search":  searchClient.ExternalRateLimiter(),
+	for resource, monitor := rbnge mbp[string]*rbtelimit.Monitor{
+		"rest":    v3Client.ExternblRbteLimiter(),
+		"grbphql": v4Client.ExternblRbteLimiter(),
+		"sebrch":  sebrchClient.ExternblRbteLimiter(),
 	} {
-		// Copy the resource or funcs below will use the last one seen while iterating
-		// the map
+		// Copy the resource or funcs below will use the lbst one seen while iterbting
+		// the mbp
 		resource := resource
-		// Copy displayName so that the funcs below don't capture the svc pointer
-		displayName := svc.DisplayName
-		monitor.SetCollector(&ratelimit.MetricsCollector{
-			Remaining: func(n float64) {
-				githubRemainingGauge.WithLabelValues(resource, displayName).Set(n)
+		// Copy displbyNbme so thbt the funcs below don't cbpture the svc pointer
+		displbyNbme := svc.DisplbyNbme
+		monitor.SetCollector(&rbtelimit.MetricsCollector{
+			Rembining: func(n flobt64) {
+				githubRembiningGbuge.WithLbbelVblues(resource, displbyNbme).Set(n)
 			},
-			WaitDuration: func(n time.Duration) {
-				githubRatelimitWaitCounter.WithLabelValues(resource, displayName).Add(n.Seconds())
+			WbitDurbtion: func(n time.Durbtion) {
+				githubRbtelimitWbitCounter.WithLbbelVblues(resource, displbyNbme).Add(n.Seconds())
 			},
 		})
 	}
@@ -191,27 +191,27 @@ func newGitHubSource(
 		svc:              svc,
 		config:           c,
 		exclude:          exclude,
-		baseURL:          baseURL,
+		bbseURL:          bbseURL,
 		githubDotCom:     githubDotCom,
 		v3Client:         v3Client,
 		v4Client:         v4Client,
-		searchClient:     searchClient,
-		originalHostname: originalHostname,
+		sebrchClient:     sebrchClient,
+		originblHostnbme: originblHostnbme,
 		logger: logger.With(
 			log.Object("GitHubSource",
 				log.Bool("excludeForks", excludeForks),
 				log.Bool("githubDotCom", githubDotCom),
-				log.String("originalHostname", originalHostname),
+				log.String("originblHostnbme", originblHostnbme),
 			),
 		),
 	}, nil
 }
 
-func (s *GitHubSource) WithAuthenticator(a auth.Authenticator) (Source, error) {
+func (s *GitHubSource) WithAuthenticbtor(b buth.Authenticbtor) (Source, error) {
 	sc := *s
-	sc.v3Client = sc.v3Client.WithAuthenticator(a)
-	sc.v4Client = sc.v4Client.WithAuthenticator(a)
-	sc.searchClient = sc.searchClient.WithAuthenticator(a)
+	sc.v3Client = sc.v3Client.WithAuthenticbtor(b)
+	sc.v4Client = sc.v4Client.WithAuthenticbtor(b)
+	sc.sebrchClient = sc.sebrchClient.WithAuthenticbtor(b)
 
 	return &sc, nil
 }
@@ -221,9 +221,9 @@ type githubResult struct {
 	repo *github.Repository
 }
 
-func (s *GitHubSource) ValidateAuthenticator(ctx context.Context) error {
-	var err error
-	_, err = s.v3Client.GetAuthenticatedOAuthScopes(ctx)
+func (s *GitHubSource) VblidbteAuthenticbtor(ctx context.Context) error {
+	vbr err error
+	_, err = s.v3Client.GetAuthenticbtedOAuthScopes(ctx)
 	return err
 }
 
@@ -232,94 +232,94 @@ func (s *GitHubSource) Version(ctx context.Context) (string, error) {
 }
 
 func (s *GitHubSource) CheckConnection(ctx context.Context) (err error) {
-	if s.config.GitHubAppDetails == nil {
-		_, err = s.v3Client.GetAuthenticatedUser(ctx)
+	if s.config.GitHubAppDetbils == nil {
+		_, err = s.v3Client.GetAuthenticbtedUser(ctx)
 	} else {
-		_, _, _, err = s.v3Client.ListInstallationRepositories(ctx, 1)
+		_, _, _, err = s.v3Client.ListInstbllbtionRepositories(ctx, 1)
 	}
 	if err != nil {
-		return errors.Wrap(err, "connection check failed")
+		return errors.Wrbp(err, "connection check fbiled")
 	}
 	return nil
 }
 
-// ListRepos returns all Github repositories accessible to all connections configured
-// in Sourcegraph via the external services configuration.
-func (s *GitHubSource) ListRepos(ctx context.Context, results chan SourceResult) {
-	unfiltered := make(chan *githubResult)
+// ListRepos returns bll Github repositories bccessible to bll connections configured
+// in Sourcegrbph vib the externbl services configurbtion.
+func (s *GitHubSource) ListRepos(ctx context.Context, results chbn SourceResult) {
+	unfiltered := mbke(chbn *githubResult)
 	go func() {
 		s.listAllRepositories(ctx, unfiltered)
 		close(unfiltered)
 	}()
 
-	seen := make(map[int64]bool)
-	for res := range unfiltered {
+	seen := mbke(mbp[int64]bool)
+	for res := rbnge unfiltered {
 		if res.err != nil {
 			results <- SourceResult{Source: s, Err: res.err}
 			continue
 		}
 
-		s.logger.Debug("unfiltered", log.String("repo", res.repo.NameWithOwner))
-		if !seen[res.repo.DatabaseID] && !s.excludes(res.repo) {
-			results <- SourceResult{Source: s, Repo: s.makeRepo(res.repo)}
-			s.logger.Debug("sent to result", log.String("repo", res.repo.NameWithOwner))
-			seen[res.repo.DatabaseID] = true
+		s.logger.Debug("unfiltered", log.String("repo", res.repo.NbmeWithOwner))
+		if !seen[res.repo.DbtbbbseID] && !s.excludes(res.repo) {
+			results <- SourceResult{Source: s, Repo: s.mbkeRepo(res.repo)}
+			s.logger.Debug("sent to result", log.String("repo", res.repo.NbmeWithOwner))
+			seen[res.repo.DbtbbbseID] = true
 		}
 	}
 }
 
-// SearchRepositories returns the Github repositories matching the repositoryQuery and excluded repositories criteria.
-func (s *GitHubSource) SearchRepositories(ctx context.Context, query string, first int, excludedRepos []string, results chan SourceResult) {
-	// default to fetching affiliated repositories
+// SebrchRepositories returns the Github repositories mbtching the repositoryQuery bnd excluded repositories criterib.
+func (s *GitHubSource) SebrchRepositories(ctx context.Context, query string, first int, excludedRepos []string, results chbn SourceResult) {
+	// defbult to fetching bffilibted repositories
 	if query == "" {
-		s.fetchReposAffiliated(ctx, first, excludedRepos, results)
+		s.fetchReposAffilibted(ctx, first, excludedRepos, results)
 	} else {
-		s.searchReposSinglePage(ctx, query, first, excludedRepos, results)
+		s.sebrchReposSinglePbge(ctx, query, first, excludedRepos, results)
 	}
 }
 
-func (s *GitHubSource) searchReposSinglePage(ctx context.Context, query string, first int, excludedRepos []string, results chan SourceResult) {
-	unfiltered := make(chan *githubResult)
-	var queryWithExcludeBuilder strings.Builder
+func (s *GitHubSource) sebrchReposSinglePbge(ctx context.Context, query string, first int, excludedRepos []string, results chbn SourceResult) {
+	unfiltered := mbke(chbn *githubResult)
+	vbr queryWithExcludeBuilder strings.Builder
 	queryWithExcludeBuilder.WriteString(query)
-	for _, repo := range excludedRepos {
+	for _, repo := rbnge excludedRepos {
 		fmt.Fprintf(&queryWithExcludeBuilder, " -repo:%s", repo)
 	}
 
 	queryWithExclude := queryWithExcludeBuilder.String()
-	repoQuery := repositoryQuery{Query: queryWithExclude, First: first, Searcher: s.v4Client, Logger: s.logger}
+	repoQuery := repositoryQuery{Query: queryWithExclude, First: first, Sebrcher: s.v4Client, Logger: s.logger}
 
 	go func() {
 		repoQuery.DoSingleRequest(ctx, unfiltered)
 		close(unfiltered)
 	}()
 
-	s.logger.Debug("fetch github repos by search query", log.String("query", query), log.Int("excluded repos count", len(excludedRepos)))
-	for res := range unfiltered {
+	s.logger.Debug("fetch github repos by sebrch query", log.String("query", query), log.Int("excluded repos count", len(excludedRepos)))
+	for res := rbnge unfiltered {
 		if res.err != nil {
 			results <- SourceResult{Source: s, Err: res.err}
 			continue
 		}
 
-		results <- SourceResult{Source: s, Repo: s.makeRepo(res.repo)}
-		s.logger.Debug("sent to result", log.String("repo", res.repo.NameWithOwner))
+		results <- SourceResult{Source: s, Repo: s.mbkeRepo(res.repo)}
+		s.logger.Debug("sent to result", log.String("repo", res.repo.NbmeWithOwner))
 	}
 }
 
-func (s *GitHubSource) fetchReposAffiliated(ctx context.Context, first int, excludedRepos []string, results chan SourceResult) {
-	unfiltered := make(chan *githubResult)
+func (s *GitHubSource) fetchReposAffilibted(ctx context.Context, first int, excludedRepos []string, results chbn SourceResult) {
+	unfiltered := mbke(chbn *githubResult)
 
-	// request larger page of results to account for exclusion taking effect afterwards
+	// request lbrger pbge of results to bccount for exclusion tbking effect bfterwbrds
 	bufferedFirst := first + len(excludedRepos)
 	go func() {
-		s.listAffiliatedPage(ctx, bufferedFirst, unfiltered)
+		s.listAffilibtedPbge(ctx, bufferedFirst, unfiltered)
 		close(unfiltered)
 	}()
 
-	var eb excludeBuilder
-	// Only exclude on exact nameWithOwner match
-	for _, r := range excludedRepos {
-		eb.Exact(r)
+	vbr eb excludeBuilder
+	// Only exclude on exbct nbmeWithOwner mbtch
+	for _, r := rbnge excludedRepos {
+		eb.Exbct(r)
 	}
 	exclude, err := eb.Build()
 	if err != nil {
@@ -327,154 +327,154 @@ func (s *GitHubSource) fetchReposAffiliated(ctx context.Context, first int, excl
 		return
 	}
 
-	s.logger.Debug("fetch github repos by affiliation", log.Int("excluded repos count", len(excludedRepos)))
-	for res := range unfiltered {
+	s.logger.Debug("fetch github repos by bffilibtion", log.Int("excluded repos count", len(excludedRepos)))
+	for res := rbnge unfiltered {
 		if first < 1 {
-			continue // drain the remaining githubResults from unfiltered
+			continue // drbin the rembining githubResults from unfiltered
 		}
 		if res.err != nil {
 			results <- SourceResult{Source: s, Err: res.err}
 			continue
 		}
-		s.logger.Debug("unfiltered", log.String("repo", res.repo.NameWithOwner))
-		if !exclude(res.repo.NameWithOwner) {
-			results <- SourceResult{Source: s, Repo: s.makeRepo(res.repo)}
-			s.logger.Debug("sent to result", log.String("repo", res.repo.NameWithOwner))
+		s.logger.Debug("unfiltered", log.String("repo", res.repo.NbmeWithOwner))
+		if !exclude(res.repo.NbmeWithOwner) {
+			results <- SourceResult{Source: s, Repo: s.mbkeRepo(res.repo)}
+			s.logger.Debug("sent to result", log.String("repo", res.repo.NbmeWithOwner))
 			first--
 		}
 	}
 }
 
-// ExternalServices returns a singleton slice containing the external service.
-func (s *GitHubSource) ExternalServices() types.ExternalServices {
-	return types.ExternalServices{s.svc}
+// ExternblServices returns b singleton slice contbining the externbl service.
+func (s *GitHubSource) ExternblServices() types.ExternblServices {
+	return types.ExternblServices{s.svc}
 }
 
-// ListNamespaces returns all Github organizations accessible to the given source defined
-// via the external service configuration.
-func (s *GitHubSource) ListNamespaces(ctx context.Context, results chan SourceNamespaceResult) {
-	var err error
+// ListNbmespbces returns bll Github orgbnizbtions bccessible to the given source defined
+// vib the externbl service configurbtion.
+func (s *GitHubSource) ListNbmespbces(ctx context.Context, results chbn SourceNbmespbceResult) {
+	vbr err error
 
-	orgs := make([]*github.Org, 0)
-	hasNextPage := true
-	for page := 1; hasNextPage; page++ {
+	orgs := mbke([]*github.Org, 0)
+	hbsNextPbge := true
+	for pbge := 1; hbsNextPbge; pbge++ {
 		if err = ctx.Err(); err != nil {
-			results <- SourceNamespaceResult{Err: err}
+			results <- SourceNbmespbceResult{Err: err}
 			return
 		}
-		var pageOrgs []*github.Org
-		pageOrgs, hasNextPage, _, err = s.v3Client.GetAuthenticatedUserOrgsForPage(ctx, page)
+		vbr pbgeOrgs []*github.Org
+		pbgeOrgs, hbsNextPbge, _, err = s.v3Client.GetAuthenticbtedUserOrgsForPbge(ctx, pbge)
 		if err != nil {
-			results <- SourceNamespaceResult{Source: s, Err: err}
+			results <- SourceNbmespbceResult{Source: s, Err: err}
 			continue
 		}
-		orgs = append(orgs, pageOrgs...)
+		orgs = bppend(orgs, pbgeOrgs...)
 	}
-	for _, org := range orgs {
-		results <- SourceNamespaceResult{Source: s, Namespace: &types.ExternalServiceNamespace{ID: org.ID, Name: org.Login, ExternalID: org.NodeID}}
+	for _, org := rbnge orgs {
+		results <- SourceNbmespbceResult{Source: s, Nbmespbce: &types.ExternblServiceNbmespbce{ID: org.ID, Nbme: org.Login, ExternblID: org.NodeID}}
 	}
 }
 
-// GetRepo returns the GitHub repository with the given name and owner
-// ("org/repo-name")
-func (s *GitHubSource) GetRepo(ctx context.Context, nameWithOwner string) (*types.Repo, error) {
-	r, err := s.getRepository(ctx, nameWithOwner)
+// GetRepo returns the GitHub repository with the given nbme bnd owner
+// ("org/repo-nbme")
+func (s *GitHubSource) GetRepo(ctx context.Context, nbmeWithOwner string) (*types.Repo, error) {
+	r, err := s.getRepository(ctx, nbmeWithOwner)
 	if err != nil {
 		return nil, err
 	}
-	return s.makeRepo(r), nil
+	return s.mbkeRepo(r), nil
 }
 
-func sanitizeToUTF8(s string) string {
-	return strings.ToValidUTF8(strings.ReplaceAll(s, "\x00", ""), "")
+func sbnitizeToUTF8(s string) string {
+	return strings.ToVblidUTF8(strings.ReplbceAll(s, "\x00", ""), "")
 }
 
-func (s *GitHubSource) makeRepo(r *github.Repository) *types.Repo {
+func (s *GitHubSource) mbkeRepo(r *github.Repository) *types.Repo {
 	urn := s.svc.URN()
-	metadata := *r
-	// This field flip flops depending on which token was used to retrieve the repo
-	// so we don't want to store it.
-	metadata.ViewerPermission = ""
-	metadata.Description = sanitizeToUTF8(metadata.Description)
+	metbdbtb := *r
+	// This field flip flops depending on which token wbs used to retrieve the repo
+	// so we don't wbnt to store it.
+	metbdbtb.ViewerPermission = ""
+	metbdbtb.Description = sbnitizeToUTF8(metbdbtb.Description)
 	return &types.Repo{
-		Name: reposource.GitHubRepoName(
-			s.config.RepositoryPathPattern,
-			s.originalHostname,
-			r.NameWithOwner,
+		Nbme: reposource.GitHubRepoNbme(
+			s.config.RepositoryPbthPbttern,
+			s.originblHostnbme,
+			r.NbmeWithOwner,
 		),
-		URI: string(reposource.GitHubRepoName(
+		URI: string(reposource.GitHubRepoNbme(
 			"",
-			s.originalHostname,
-			r.NameWithOwner,
+			s.originblHostnbme,
+			r.NbmeWithOwner,
 		)),
-		ExternalRepo: github.ExternalRepoSpec(r, s.baseURL),
-		Description:  sanitizeToUTF8(r.Description),
+		ExternblRepo: github.ExternblRepoSpec(r, s.bbseURL),
+		Description:  sbnitizeToUTF8(r.Description),
 		Fork:         r.IsFork,
 		Archived:     r.IsArchived,
-		Stars:        r.StargazerCount,
-		Private:      r.IsPrivate,
-		Sources: map[string]*types.SourceInfo{
+		Stbrs:        r.StbrgbzerCount,
+		Privbte:      r.IsPrivbte,
+		Sources: mbp[string]*types.SourceInfo{
 			urn: {
 				ID:       urn,
 				CloneURL: s.remoteURL(r),
 			},
 		},
-		Metadata: &metadata,
+		Metbdbtb: &metbdbtb,
 	}
 }
 
 // remoteURL returns the repository's Git remote URL
 //
-// note: this used to contain credentials but that is no longer the case
-// if you need to get an authenticated clone url use repos.CloneURL
+// note: this used to contbin credentibls but thbt is no longer the cbse
+// if you need to get bn buthenticbted clone url use repos.CloneURL
 func (s *GitHubSource) remoteURL(repo *github.Repository) string {
 	if s.config.GitURLType == "ssh" {
-		assembledURL := fmt.Sprintf("git@%s:%s.git", s.originalHostname, repo.NameWithOwner)
-		return assembledURL
+		bssembledURL := fmt.Sprintf("git@%s:%s.git", s.originblHostnbme, repo.NbmeWithOwner)
+		return bssembledURL
 	}
 
 	return repo.URL
 }
 
 func (s *GitHubSource) excludes(r *github.Repository) bool {
-	if r.IsLocked || r.IsDisabled {
+	if r.IsLocked || r.IsDisbbled {
 		return true
 	}
 
-	if s.exclude(r.NameWithOwner) || s.exclude(r.ID) || s.exclude(*r) {
+	if s.exclude(r.NbmeWithOwner) || s.exclude(r.ID) || s.exclude(*r) {
 		return true
 	}
 
-	return false
+	return fblse
 }
 
-// repositoryPager is a function that returns repositories on a given `page`.
-// It also returns:
-// - `hasNext` bool: if there is a next page
-// - `cost` int: rate limit cost used to determine recommended wait before next call
+// repositoryPbger is b function thbt returns repositories on b given `pbge`.
+// It blso returns:
+// - `hbsNext` bool: if there is b next pbge
+// - `cost` int: rbte limit cost used to determine recommended wbit before next cbll
 // - `err` error: if something goes wrong
-type repositoryPager func(page int) (repos []*github.Repository, hasNext bool, cost int, err error)
+type repositoryPbger func(pbge int) (repos []*github.Repository, hbsNext bool, cost int, err error)
 
-// paginate returns all the repositories from the given repositoryPager.
-// It repeatedly calls `pager` with incrementing page count until it
-// returns false for hasNext.
-func paginate(ctx context.Context, results chan *githubResult, pager repositoryPager) {
-	hasNext := true
-	for page := 1; hasNext; page++ {
+// pbginbte returns bll the repositories from the given repositoryPbger.
+// It repebtedly cblls `pbger` with incrementing pbge count until it
+// returns fblse for hbsNext.
+func pbginbte(ctx context.Context, results chbn *githubResult, pbger repositoryPbger) {
+	hbsNext := true
+	for pbge := 1; hbsNext; pbge++ {
 		if err := ctx.Err(); err != nil {
 			results <- &githubResult{err: err}
 			return
 		}
 
-		var pageRepos []*github.Repository
-		var err error
-		pageRepos, hasNext, _, err = pager(page)
+		vbr pbgeRepos []*github.Repository
+		vbr err error
+		pbgeRepos, hbsNext, _, err = pbger(pbge)
 		if err != nil {
 			results <- &githubResult{err: err}
 			return
 		}
 
-		for _, r := range pageRepos {
+		for _, r := rbnge pbgeRepos {
 			if err := ctx.Err(); err != nil {
 				results <- &githubResult{err: err}
 				return
@@ -485,48 +485,48 @@ func paginate(ctx context.Context, results chan *githubResult, pager repositoryP
 	}
 }
 
-// listOrg handles the `org` config option.
-// It returns all the repositories belonging to the given organization
+// listOrg hbndles the `org` config option.
+// It returns bll the repositories belonging to the given orgbnizbtion
 // by hitting the /orgs/:org/repos endpoint.
 //
-// It returns an error if the request fails on the first page.
-func (s *GitHubSource) listOrg(ctx context.Context, org string, results chan *githubResult) {
-	dedupC := make(chan *githubResult)
+// It returns bn error if the request fbils on the first pbge.
+func (s *GitHubSource) listOrg(ctx context.Context, org string, results chbn *githubResult) {
+	dedupC := mbke(chbn *githubResult)
 
-	// Currently, the Github API doesn't return internal repos
-	// when calling it with the "all" type.
-	// We need to call it twice, once with the "all" type and
-	// once with the "internal" type.
-	// However, since we don't have any guarantee that this behavior
-	// will always remain the same and that Github will never fix this issue,
-	// we need to deduplicate the results before sending them to the results channel.
+	// Currently, the Github API doesn't return internbl repos
+	// when cblling it with the "bll" type.
+	// We need to cbll it twice, once with the "bll" type bnd
+	// once with the "internbl" type.
+	// However, since we don't hbve bny gubrbntee thbt this behbvior
+	// will blwbys rembin the sbme bnd thbt Github will never fix this issue,
+	// we need to deduplicbte the results before sending them to the results chbnnel.
 
 	getReposByType := func(tp string) error {
-		var oerr error
+		vbr oerr error
 
-		paginate(ctx, dedupC, func(page int) (repos []*github.Repository, hasNext bool, cost int, err error) {
+		pbginbte(ctx, dedupC, func(pbge int) (repos []*github.Repository, hbsNext bool, cost int, err error) {
 			defer func() {
-				if page == 1 {
-					var e *github.APIError
+				if pbge == 1 {
+					vbr e *github.APIError
 					if errors.As(err, &e) && e.Code == 404 {
-						oerr = errors.Errorf("organisation %q (specified in configuration) not found", org)
+						oerr = errors.Errorf("orgbnisbtion %q (specified in configurbtion) not found", org)
 						err = nil
 					}
 				}
 
-				remaining, reset, retry, _ := s.v3Client.ExternalRateLimiter().Get()
+				rembining, reset, retry, _ := s.v3Client.ExternblRbteLimiter().Get()
 				s.logger.Debug(
 					"github sync: ListOrgRepositories",
 					log.Int("repos", len(repos)),
-					log.Int("rateLimitCost", cost),
-					log.Int("rateLimitRemaining", remaining),
-					log.Duration("rateLimitReset", reset),
-					log.Duration("retryAfter", retry),
+					log.Int("rbteLimitCost", cost),
+					log.Int("rbteLimitRembining", rembining),
+					log.Durbtion("rbteLimitReset", reset),
+					log.Durbtion("retryAfter", retry),
 					log.String("type", tp),
 				)
 			}()
 
-			return s.v3Client.ListOrgRepositories(ctx, org, page, tp)
+			return s.v3Client.ListOrgRepositories(ctx, org, pbge, tp)
 		})
 
 		return oerr
@@ -535,8 +535,8 @@ func (s *GitHubSource) listOrg(ctx context.Context, org string, results chan *gi
 	go func() {
 		defer close(dedupC)
 
-		err := getReposByType("all")
-		// Handle 404 from org repos endpoint by trying user repos endpoint
+		err := getReposByType("bll")
+		// Hbndle 404 from org repos endpoint by trying user repos endpoint
 		if err != nil && ctx.Err() == nil {
 			if s.listUser(ctx, org, dedupC) != nil {
 				dedupC <- &githubResult{err: err}
@@ -549,16 +549,16 @@ func (s *GitHubSource) listOrg(ctx context.Context, org string, results chan *gi
 			return
 		}
 
-		// if the first call succeeded,
-		// call the same endpoint with the "internal" type
-		if err = getReposByType("internal"); err != nil {
+		// if the first cbll succeeded,
+		// cbll the sbme endpoint with the "internbl" type
+		if err = getReposByType("internbl"); err != nil {
 			dedupC <- &githubResult{err: err}
 		}
 	}()
 
-	seen := make(map[string]bool)
+	seen := mbke(mbp[string]bool)
 
-	for res := range dedupC {
+	for res := rbnge dedupC {
 		if res.err == nil {
 			if seen[res.repo.ID] {
 				continue
@@ -571,158 +571,158 @@ func (s *GitHubSource) listOrg(ctx context.Context, org string, results chan *gi
 	}
 }
 
-// listUser returns all the repositories belonging to the given user
+// listUser returns bll the repositories belonging to the given user
 // by hitting the /users/:user/repos endpoint.
 //
-// It returns an error if the request fails on the first page.
-func (s *GitHubSource) listUser(ctx context.Context, user string, results chan *githubResult) (fail error) {
-	paginate(ctx, results, func(page int) (repos []*github.Repository, hasNext bool, cost int, err error) {
+// It returns bn error if the request fbils on the first pbge.
+func (s *GitHubSource) listUser(ctx context.Context, user string, results chbn *githubResult) (fbil error) {
+	pbginbte(ctx, results, func(pbge int) (repos []*github.Repository, hbsNext bool, cost int, err error) {
 		defer func() {
-			if err != nil && page == 1 {
-				fail, err = err, nil
+			if err != nil && pbge == 1 {
+				fbil, err = err, nil
 			}
 
-			remaining, reset, retry, _ := s.v3Client.ExternalRateLimiter().Get()
+			rembining, reset, retry, _ := s.v3Client.ExternblRbteLimiter().Get()
 			s.logger.Debug(
 				"github sync: ListUserRepositories",
 				log.Int("repos", len(repos)),
-				log.Int("rateLimitCost", cost),
-				log.Int("rateLimitRemaining", remaining),
-				log.Duration("rateLimitReset", reset),
-				log.Duration("retryAfter", retry),
+				log.Int("rbteLimitCost", cost),
+				log.Int("rbteLimitRembining", rembining),
+				log.Durbtion("rbteLimitReset", reset),
+				log.Durbtion("retryAfter", retry),
 			)
 		}()
-		return s.v3Client.ListUserRepositories(ctx, user, page)
+		return s.v3Client.ListUserRepositories(ctx, user, pbge)
 	})
 	return
 }
 
-// listAppInstallation returns all the repositories belonging to the authenticated GitHub App installation
-// by hitting the /installation/repositories endpoint.
+// listAppInstbllbtion returns bll the repositories belonging to the buthenticbted GitHub App instbllbtion
+// by hitting the /instbllbtion/repositories endpoint.
 //
-// It returns an error if the request fails on the first page.
-func (s *GitHubSource) listAppInstallation(ctx context.Context, results chan *githubResult) (fail error) {
-	paginate(ctx, results, func(page int) (repos []*github.Repository, hasNext bool, cost int, err error) {
+// It returns bn error if the request fbils on the first pbge.
+func (s *GitHubSource) listAppInstbllbtion(ctx context.Context, results chbn *githubResult) (fbil error) {
+	pbginbte(ctx, results, func(pbge int) (repos []*github.Repository, hbsNext bool, cost int, err error) {
 		defer func() {
-			if err != nil && page == 1 {
-				fail, err = err, nil
+			if err != nil && pbge == 1 {
+				fbil, err = err, nil
 			}
 
-			remaining, reset, retry, _ := s.v3Client.ExternalRateLimiter().Get()
+			rembining, reset, retry, _ := s.v3Client.ExternblRbteLimiter().Get()
 			s.logger.Debug(
-				"github sync: ListInstallationRepositories",
+				"github sync: ListInstbllbtionRepositories",
 				log.Int("repos", len(repos)),
-				log.Int("rateLimitCost", cost),
-				log.Int("rateLimitRemaining", remaining),
-				log.Duration("rateLimitReset", reset),
-				log.Duration("retryAfter", retry),
+				log.Int("rbteLimitCost", cost),
+				log.Int("rbteLimitRembining", rembining),
+				log.Durbtion("rbteLimitReset", reset),
+				log.Durbtion("retryAfter", retry),
 			)
 		}()
-		return s.v3Client.ListInstallationRepositories(ctx, page)
+		return s.v3Client.ListInstbllbtionRepositories(ctx, pbge)
 	})
 	return
 }
 
-// listRepos returns the valid repositories from the given list of repository names.
-// This is done by hitting the /repos/:owner/:name endpoint for each of the given
-// repository names.
-func (s *GitHubSource) listRepos(ctx context.Context, repos []string, results chan *githubResult) {
-	if err := s.fetchAllRepositoriesInBatches(ctx, results); err == nil {
+// listRepos returns the vblid repositories from the given list of repository nbmes.
+// This is done by hitting the /repos/:owner/:nbme endpoint for ebch of the given
+// repository nbmes.
+func (s *GitHubSource) listRepos(ctx context.Context, repos []string, results chbn *githubResult) {
+	if err := s.fetchAllRepositoriesInBbtches(ctx, results); err == nil {
 		return
 	} else {
 		if err := ctx.Err(); err != nil {
 			return
 		}
-		// The way we fetch repositories in batches through the GraphQL API -
-		// using aliases to query multiple repositories in one query - is
-		// currently "undefined behaviour". Very rarely but unreproducibly it
+		// The wby we fetch repositories in bbtches through the GrbphQL API -
+		// using blibses to query multiple repositories in one query - is
+		// currently "undefined behbviour". Very rbrely but unreproducibly it
 		// resulted in EOF errors while testing. And since we rely on fetching
-		// to work, we fall back to the (slower) sequential fetching in case we
-		// run into an GraphQL API error
-		s.logger.Warn("github sync: fetching in batches failed, falling back to sequential fetch", log.Error(err))
+		// to work, we fbll bbck to the (slower) sequentibl fetching in cbse we
+		// run into bn GrbphQL API error
+		s.logger.Wbrn("github sync: fetching in bbtches fbiled, fblling bbck to sequentibl fetch", log.Error(err))
 	}
 
-	// Admins normally add to end of lists, so end of list most likely has new
-	// repos => stream them first.
+	// Admins normblly bdd to end of lists, so end of list most likely hbs new
+	// repos => strebm them first.
 	for i := len(repos) - 1; i >= 0; i-- {
-		nameWithOwner := repos[i]
+		nbmeWithOwner := repos[i]
 		if err := ctx.Err(); err != nil {
-			results <- &githubResult{err: errors.Wrapf(err, "context error for repository: namewithOwner=%s", nameWithOwner)}
+			results <- &githubResult{err: errors.Wrbpf(err, "context error for repository: nbmewithOwner=%s", nbmeWithOwner)}
 			return
 		}
 
-		owner, name, err := github.SplitRepositoryNameWithOwner(nameWithOwner)
+		owner, nbme, err := github.SplitRepositoryNbmeWithOwner(nbmeWithOwner)
 		if err != nil {
-			results <- &githubResult{err: errors.Newf("Invalid GitHub repository: nameWithOwner=%s", nameWithOwner)}
+			results <- &githubResult{err: errors.Newf("Invblid GitHub repository: nbmeWithOwner=%s", nbmeWithOwner)}
 			return
 		}
-		var repo *github.Repository
-		repo, err = s.v3Client.GetRepository(ctx, owner, name)
+		vbr repo *github.Repository
+		repo, err = s.v3Client.GetRepository(ctx, owner, nbme)
 		if err != nil {
-			// TODO(tsenart): When implementing dry-run, reconsider alternatives to return
-			// 404 errors on external service config validation.
+			// TODO(tsenbrt): When implementing dry-run, reconsider blternbtives to return
+			// 404 errors on externbl service config vblidbtion.
 			if github.IsNotFound(err) {
-				s.logger.Warn("skipping missing github.repos entry:", log.String("name", nameWithOwner), log.Error(err))
+				s.logger.Wbrn("skipping missing github.repos entry:", log.String("nbme", nbmeWithOwner), log.Error(err))
 			} else {
-				results <- &githubResult{err: errors.Wrapf(err, "Error getting GitHub repository: nameWithOwner=%s", nameWithOwner)}
+				results <- &githubResult{err: errors.Wrbpf(err, "Error getting GitHub repository: nbmeWithOwner=%s", nbmeWithOwner)}
 			}
 			continue
 		}
-		s.logger.Debug("github sync: GetRepository", log.String("repo", repo.NameWithOwner))
+		s.logger.Debug("github sync: GetRepository", log.String("repo", repo.NbmeWithOwner))
 
 		results <- &githubResult{repo: repo}
 	}
 }
 
-// listPublic handles the `public` keyword of the `repositoryQuery` config option.
+// listPublic hbndles the `public` keyword of the `repositoryQuery` config option.
 // It returns the public repositories listed on the /repositories endpoint.
-func (s *GitHubSource) listPublic(ctx context.Context, results chan *githubResult) {
+func (s *GitHubSource) listPublic(ctx context.Context, results chbn *githubResult) {
 	if s.githubDotCom {
-		results <- &githubResult{err: errors.New(`unsupported configuration "public" for "repositoryQuery" for github.com`)}
+		results <- &githubResult{err: errors.New(`unsupported configurbtion "public" for "repositoryQuery" for github.com`)}
 		return
 	}
 
-	// The regular Github API endpoint for listing public repos doesn't return whether the repo is archived, so we have to list
-	// all of the public archived repos first so we know if a repo is archived or not.
-	// TODO: Remove querying for archived repos first when https://github.com/orgs/community/discussions/12554 gets resolved
-	archivedReposChan := make(chan *githubResult)
-	archivedRepos := make(map[string]struct{})
-	archivedReposCtx, cancel := context.WithCancel(ctx)
-	defer cancel()
+	// The regulbr Github API endpoint for listing public repos doesn't return whether the repo is brchived, so we hbve to list
+	// bll of the public brchived repos first so we know if b repo is brchived or not.
+	// TODO: Remove querying for brchived repos first when https://github.com/orgs/community/discussions/12554 gets resolved
+	brchivedReposChbn := mbke(chbn *githubResult)
+	brchivedRepos := mbke(mbp[string]struct{})
+	brchivedReposCtx, cbncel := context.WithCbncel(ctx)
+	defer cbncel()
 
 	go func() {
-		s.listPublicArchivedRepos(archivedReposCtx, archivedReposChan)
-		close(archivedReposChan)
+		s.listPublicArchivedRepos(brchivedReposCtx, brchivedReposChbn)
+		close(brchivedReposChbn)
 	}()
 
-	for res := range archivedReposChan {
+	for res := rbnge brchivedReposChbn {
 		if res.err != nil {
-			results <- &githubResult{err: errors.Wrap(res.err, "failed to list public archived Github repositories")}
+			results <- &githubResult{err: errors.Wrbp(res.err, "fbiled to list public brchived Github repositories")}
 			return
 		}
-		archivedRepos[res.repo.ID] = struct{}{}
+		brchivedRepos[res.repo.ID] = struct{}{}
 	}
 
-	var sinceRepoID int64
+	vbr sinceRepoID int64
 	for {
 		if err := ctx.Err(); err != nil {
 			results <- &githubResult{err: err}
 			return
 		}
 
-		repos, hasNextPage, err := s.v3Client.ListPublicRepositories(ctx, sinceRepoID)
+		repos, hbsNextPbge, err := s.v3Client.ListPublicRepositories(ctx, sinceRepoID)
 		if err != nil {
-			apiError := &github.APIError{}
-			// If the error is a http.StatusNotFound, we have paginated past the last page
-			if errors.As(err, &apiError) && apiError.Code == http.StatusNotFound {
+			bpiError := &github.APIError{}
+			// If the error is b http.StbtusNotFound, we hbve pbginbted pbst the lbst pbge
+			if errors.As(err, &bpiError) && bpiError.Code == http.StbtusNotFound {
 				return
 			}
-			results <- &githubResult{err: errors.Wrapf(err, "failed to list public repositories: sinceRepoID=%d", sinceRepoID)}
+			results <- &githubResult{err: errors.Wrbpf(err, "fbiled to list public repositories: sinceRepoID=%d", sinceRepoID)}
 			return
 		}
 		s.logger.Debug("github sync public", log.Int("repos", len(repos)), log.Error(err))
-		for _, r := range repos {
-			_, isArchived := archivedRepos[r.ID]
+		for _, r := rbnge repos {
+			_, isArchived := brchivedRepos[r.ID]
 			r.IsArchived = isArchived
 			if err := ctx.Err(); err != nil {
 				results <- &githubResult{err: err}
@@ -730,54 +730,54 @@ func (s *GitHubSource) listPublic(ctx context.Context, results chan *githubResul
 			}
 
 			results <- &githubResult{repo: r}
-			if sinceRepoID < r.DatabaseID {
-				sinceRepoID = r.DatabaseID
+			if sinceRepoID < r.DbtbbbseID {
+				sinceRepoID = r.DbtbbbseID
 			}
 		}
-		if !hasNextPage {
+		if !hbsNextPbge {
 			return
 		}
 	}
 }
 
-// listPublicArchivedRepos returns all of the public archived repositories listed on the /search/repositories endpoint.
-// NOTE: There is a limitation on the search API that this uses, if there are more than 1000 public archived repos that
-// were created in the same time (to the second), this list will miss any repos that lie outside of the first 1000.
-func (s *GitHubSource) listPublicArchivedRepos(ctx context.Context, results chan *githubResult) {
-	s.listSearch(ctx, "archived:true is:public", results)
+// listPublicArchivedRepos returns bll of the public brchived repositories listed on the /sebrch/repositories endpoint.
+// NOTE: There is b limitbtion on the sebrch API thbt this uses, if there bre more thbn 1000 public brchived repos thbt
+// were crebted in the sbme time (to the second), this list will miss bny repos thbt lie outside of the first 1000.
+func (s *GitHubSource) listPublicArchivedRepos(ctx context.Context, results chbn *githubResult) {
+	s.listSebrch(ctx, "brchived:true is:public", results)
 }
 
-// listAffiliated handles the `affiliated` keyword of the `repositoryQuery` config option.
-// It returns the repositories affiliated with the client token by hitting the /user/repos
+// listAffilibted hbndles the `bffilibted` keyword of the `repositoryQuery` config option.
+// It returns the repositories bffilibted with the client token by hitting the /user/repos
 // endpoint.
 //
-// Affiliation is present if the user: (1) owns the repo, (2) is a part of an org that
-// the repo belongs to, or (3) is a collaborator.
-func (s *GitHubSource) listAffiliated(ctx context.Context, results chan *githubResult) {
-	paginate(ctx, results, func(page int) (repos []*github.Repository, hasNext bool, cost int, err error) {
+// Affilibtion is present if the user: (1) owns the repo, (2) is b pbrt of bn org thbt
+// the repo belongs to, or (3) is b collbborbtor.
+func (s *GitHubSource) listAffilibted(ctx context.Context, results chbn *githubResult) {
+	pbginbte(ctx, results, func(pbge int) (repos []*github.Repository, hbsNext bool, cost int, err error) {
 		defer func() {
-			remaining, reset, retry, _ := s.v3Client.ExternalRateLimiter().Get()
+			rembining, reset, retry, _ := s.v3Client.ExternblRbteLimiter().Get()
 			s.logger.Debug(
-				"github sync: ListAffiliated",
+				"github sync: ListAffilibted",
 				log.Int("repos", len(repos)),
-				log.Int("rateLimitCost", cost),
-				log.Int("rateLimitRemaining", remaining),
-				log.Duration("rateLimitReset", reset),
-				log.Duration("retryAfter", retry),
+				log.Int("rbteLimitCost", cost),
+				log.Int("rbteLimitRembining", rembining),
+				log.Durbtion("rbteLimitReset", reset),
+				log.Durbtion("retryAfter", retry),
 			)
 		}()
-		return s.v3Client.ListAffiliatedRepositories(ctx, github.VisibilityAll, page, 100)
+		return s.v3Client.ListAffilibtedRepositories(ctx, github.VisibilityAll, pbge, 100)
 	})
 }
 
-func (s *GitHubSource) listAffiliatedPage(ctx context.Context, first int, results chan *githubResult) {
-	repos, _, _, err := s.v3Client.ListAffiliatedRepositories(ctx, github.VisibilityAll, 0, first)
+func (s *GitHubSource) listAffilibtedPbge(ctx context.Context, first int, results chbn *githubResult) {
+	repos, _, _, err := s.v3Client.ListAffilibtedRepositories(ctx, github.VisibilityAll, 0, first)
 	if err != nil {
 		results <- &githubResult{err: err}
 		return
 	}
 
-	for _, r := range repos {
+	for _, r := rbnge repos {
 		if err := ctx.Err(); err != nil {
 			results <- &githubResult{err: err}
 			return
@@ -787,175 +787,175 @@ func (s *GitHubSource) listAffiliatedPage(ctx context.Context, first int, result
 	}
 }
 
-// listSearch handles the `repositoryQuery` config option when a keyword is not present.
-// It returns the repositories matching a GitHub's advanced repository search query
-// via the GraphQL API.
-func (s *GitHubSource) listSearch(ctx context.Context, q string, results chan *githubResult) {
+// listSebrch hbndles the `repositoryQuery` config option when b keyword is not present.
+// It returns the repositories mbtching b GitHub's bdvbnced repository sebrch query
+// vib the GrbphQL API.
+func (s *GitHubSource) listSebrch(ctx context.Context, q string, results chbn *githubResult) {
 	newRepositoryQuery(q, s.v4Client, s.logger).DoWithRefinedWindow(ctx, results)
 }
 
-// GitHub was founded on February 2008, so this minimum date covers all repos
-// created on it.
-var minCreated = time.Date(2007, time.June, 1, 0, 0, 0, 0, time.UTC)
+// GitHub wbs founded on Februbry 2008, so this minimum dbte covers bll repos
+// crebted on it.
+vbr minCrebted = time.Dbte(2007, time.June, 1, 0, 0, 0, 0, time.UTC)
 
-type dateRange struct{ From, To time.Time }
+type dbteRbnge struct{ From, To time.Time }
 
-var createdRegexp = regexp.MustCompile(`created:([^\s]+)`) // Matches the term "created:" followed by all non-white-space text
+vbr crebtedRegexp = regexp.MustCompile(`crebted:([^\s]+)`) // Mbtches the term "crebted:" followed by bll non-white-spbce text
 
-// stripDateRange strips the `created:` filter from the given string (modifying it in place)
-// and returns a pointer to the resulting dateRange object.
-// If no dateRange could be parsed from the string, nil is returned and the string is left unchanged.
-func stripDateRange(s *string) *dateRange {
-	matches := createdRegexp.FindStringSubmatch(*s)
-	if len(matches) < 2 {
+// stripDbteRbnge strips the `crebted:` filter from the given string (modifying it in plbce)
+// bnd returns b pointer to the resulting dbteRbnge object.
+// If no dbteRbnge could be pbrsed from the string, nil is returned bnd the string is left unchbnged.
+func stripDbteRbnge(s *string) *dbteRbnge {
+	mbtches := crebtedRegexp.FindStringSubmbtch(*s)
+	if len(mbtches) < 2 {
 		return nil
 	}
-	dateStr := matches[1]
+	dbteStr := mbtches[1]
 
-	parseDate := func(dateStr string, untilEndOfDay bool) (time.Time, error) {
-		if strings.Contains(dateStr, "T") {
-			if strings.Contains(dateStr, "+") || strings.Contains(dateStr, "Z") {
-				return time.Parse(time.RFC3339, dateStr)
+	pbrseDbte := func(dbteStr string, untilEndOfDby bool) (time.Time, error) {
+		if strings.Contbins(dbteStr, "T") {
+			if strings.Contbins(dbteStr, "+") || strings.Contbins(dbteStr, "Z") {
+				return time.Pbrse(time.RFC3339, dbteStr)
 			}
-			return time.Parse("2006-01-02T15:04:05", dateStr)
+			return time.Pbrse("2006-01-02T15:04:05", dbteStr)
 		}
-		t, err := time.Parse("2006-01-02", dateStr)
+		t, err := time.Pbrse("2006-01-02", dbteStr)
 		if err != nil {
 			return t, err
 		}
-		// If we need to match until the end of the day, the time should be 23:59:59
-		// This only applies if no time was specified
-		if untilEndOfDay {
+		// If we need to mbtch until the end of the dby, the time should be 23:59:59
+		// This only bpplies if no time wbs specified
+		if untilEndOfDby {
 			t = t.Add(24 * time.Hour).Add(-1 * time.Second)
 		}
 		return t, err
 	}
 
-	var fromDateStr, toDateStr string
-	var fromTimeAdd, toTimeAdd time.Duration // Time to add to the respective dates in case of exclusive bounds
-	var toEndOfDay bool                      // Whether or not the "To" date should include the entire day (for inclusive bounds checks)
+	vbr fromDbteStr, toDbteStr string
+	vbr fromTimeAdd, toTimeAdd time.Durbtion // Time to bdd to the respective dbtes in cbse of exclusive bounds
+	vbr toEndOfDby bool                      // Whether or not the "To" dbte should include the entire dby (for inclusive bounds checks)
 	switch {
-	case strings.HasPrefix(dateStr, ">="):
-		fromDateStr = dateStr[2:]
-	case strings.HasPrefix(dateStr, ">"):
-		fromDateStr = dateStr[1:]
+	cbse strings.HbsPrefix(dbteStr, ">="):
+		fromDbteStr = dbteStr[2:]
+	cbse strings.HbsPrefix(dbteStr, ">"):
+		fromDbteStr = dbteStr[1:]
 		fromTimeAdd = 1 * time.Second
-	case strings.HasPrefix(dateStr, "<="):
-		toDateStr = dateStr[2:]
-		toEndOfDay = true
-	case strings.HasPrefix(dateStr, "<"):
-		toDateStr = dateStr[1:]
+	cbse strings.HbsPrefix(dbteStr, "<="):
+		toDbteStr = dbteStr[2:]
+		toEndOfDby = true
+	cbse strings.HbsPrefix(dbteStr, "<"):
+		toDbteStr = dbteStr[1:]
 		toTimeAdd = -1 * time.Second
-	default:
-		rangeParts := strings.Split(dateStr, "..")
-		if len(rangeParts) != 2 {
+	defbult:
+		rbngePbrts := strings.Split(dbteStr, "..")
+		if len(rbngePbrts) != 2 {
 			return nil
 		}
-		fromDateStr = rangeParts[0]
-		toDateStr = rangeParts[1]
-		if toDateStr != "*" {
-			toEndOfDay = true
+		fromDbteStr = rbngePbrts[0]
+		toDbteStr = rbngePbrts[1]
+		if toDbteStr != "*" {
+			toEndOfDby = true
 		}
 	}
 
-	var err error
-	dr := &dateRange{}
-	if fromDateStr != "" && fromDateStr != "*" {
-		dr.From, err = parseDate(fromDateStr, false)
+	vbr err error
+	dr := &dbteRbnge{}
+	if fromDbteStr != "" && fromDbteStr != "*" {
+		dr.From, err = pbrseDbte(fromDbteStr, fblse)
 		if err != nil {
 			return nil
 		}
 		dr.From = dr.From.Add(fromTimeAdd)
 	}
-	if toDateStr != "" && toDateStr != "*" {
-		dr.To, err = parseDate(toDateStr, toEndOfDay)
+	if toDbteStr != "" && toDbteStr != "*" {
+		dr.To, err = pbrseDbte(toDbteStr, toEndOfDby)
 		if err != nil {
 			return nil
 		}
 		dr.To = dr.To.Add(toTimeAdd)
 	}
 
-	*s = strings.ReplaceAll(*s, matches[0], "")
+	*s = strings.ReplbceAll(*s, mbtches[0], "")
 	return dr
 }
 
-func (r dateRange) String() string {
-	const dateFormat = "2006-01-02T15:04:05-07:00"
+func (r dbteRbnge) String() string {
+	const dbteFormbt = "2006-01-02T15:04:05-07:00"
 
 	return fmt.Sprintf("%s..%s",
-		r.From.Format(dateFormat),
-		r.To.Format(dateFormat),
+		r.From.Formbt(dbteFormbt),
+		r.To.Formbt(dbteFormbt),
 	)
 }
 
-func (r dateRange) Size() time.Duration { return r.To.Sub(r.From) }
+func (r dbteRbnge) Size() time.Durbtion { return r.To.Sub(r.From) }
 
-type searchReposCount struct {
+type sebrchReposCount struct {
 	known bool
 	count int
 }
 
 type repositoryQuery struct {
 	Query     string
-	Created   *dateRange
+	Crebted   *dbteRbnge
 	Cursor    github.Cursor
 	First     int
 	Limit     int
-	Searcher  *github.V4Client
+	Sebrcher  *github.V4Client
 	Logger    log.Logger
-	RepoCount searchReposCount
+	RepoCount sebrchReposCount
 }
 
-func newRepositoryQuery(query string, searcher *github.V4Client, logger log.Logger) *repositoryQuery {
-	// First we need to parse the query to see if it is querying within a date range,
-	// and if so, strip that date range from the query.
-	dr := stripDateRange(&query)
+func newRepositoryQuery(query string, sebrcher *github.V4Client, logger log.Logger) *repositoryQuery {
+	// First we need to pbrse the query to see if it is querying within b dbte rbnge,
+	// bnd if so, strip thbt dbte rbnge from the query.
+	dr := stripDbteRbnge(&query)
 	if dr == nil {
-		dr = &dateRange{}
+		dr = &dbteRbnge{}
 	}
 	if dr.From.IsZero() {
-		dr.From = minCreated
+		dr.From = minCrebted
 	}
 	if dr.To.IsZero() {
 		dr.To = time.Now()
 	}
 	return &repositoryQuery{
 		Query:    query,
-		Searcher: searcher,
+		Sebrcher: sebrcher,
 		Logger:   logger,
-		Created:  dr,
+		Crebted:  dr,
 	}
 }
 
-// DoWithRefinedWindow attempts to retrieve all matching repositories by refining the window of acceptable Created dates
-// to smaller windows and re-running the search (down to a minimum window size)
-// and exiting once all repositories are returned.
-func (q *repositoryQuery) DoWithRefinedWindow(ctx context.Context, results chan *githubResult) {
+// DoWithRefinedWindow bttempts to retrieve bll mbtching repositories by refining the window of bcceptbble Crebted dbtes
+// to smbller windows bnd re-running the sebrch (down to b minimum window size)
+// bnd exiting once bll repositories bre returned.
+func (q *repositoryQuery) DoWithRefinedWindow(ctx context.Context, results chbn *githubResult) {
 	if q.First == 0 {
 		q.First = 100
 	}
 	if q.Limit == 0 {
-		// GitHub's search API returns a maximum of 1000 results
+		// GitHub's sebrch API returns b mbximum of 1000 results
 		q.Limit = 1000
 	}
-	if q.Created == nil {
-		q.Created = &dateRange{
-			From: minCreated,
+	if q.Crebted == nil {
+		q.Crebted = &dbteRbnge{
+			From: minCrebted,
 			To:   time.Now(),
 		}
 	}
 
 	if err := q.doRecursively(ctx, results); err != nil {
 		select {
-		case <-ctx.Done():
-		case results <- &githubResult{err: errors.Wrapf(err, "failed to search GitHub repositories with %q", q)}:
+		cbse <-ctx.Done():
+		cbse results <- &githubResult{err: errors.Wrbpf(err, "fbiled to sebrch GitHub repositories with %q", q)}:
 		}
 	}
 }
 
-// DoSingleRequest accepts the first n results and does not refine the search window on Created date.
-// Missing some repositories which match the criteria is acceptable.
-func (q *repositoryQuery) DoSingleRequest(ctx context.Context, results chan *githubResult) {
+// DoSingleRequest bccepts the first n results bnd does not refine the sebrch window on Crebted dbte.
+// Missing some repositories which mbtch the criterib is bcceptbble.
+func (q *repositoryQuery) DoSingleRequest(ctx context.Context, results chbn *githubResult) {
 	if q.First == 0 {
 		q.First = 100
 	}
@@ -963,65 +963,65 @@ func (q *repositoryQuery) DoSingleRequest(ctx context.Context, results chan *git
 	if err := ctx.Err(); err != nil {
 		results <- &githubResult{err: err}
 	}
-	res, err := q.Searcher.SearchRepos(ctx, github.SearchReposParams{
+	res, err := q.Sebrcher.SebrchRepos(ctx, github.SebrchReposPbrbms{
 		Query: q.String(),
 		First: q.First,
 		After: q.Cursor,
 	})
 	if err != nil {
 		select {
-		case <-ctx.Done():
-		case results <- &githubResult{err: errors.Wrapf(err, "failed to search GitHub repositories with %q", q)}:
+		cbse <-ctx.Done():
+		cbse results <- &githubResult{err: errors.Wrbpf(err, "fbiled to sebrch GitHub repositories with %q", q)}:
 		}
 	}
 
-	for i := range res.Repos {
+	for i := rbnge res.Repos {
 	out:
 		select {
-		case <-ctx.Done():
-			break out
-		case results <- &githubResult{repo: &res.Repos[i]}:
+		cbse <-ctx.Done():
+			brebk out
+		cbse results <- &githubResult{repo: &res.Repos[i]}:
 		}
 	}
 }
 
-func (q *repositoryQuery) split(ctx context.Context, results chan *githubResult) error {
-	middle := q.Created.From.Add(q.Created.To.Sub(q.Created.From) / 2)
+func (q *repositoryQuery) split(ctx context.Context, results chbn *githubResult) error {
+	middle := q.Crebted.From.Add(q.Crebted.To.Sub(q.Crebted.From) / 2)
 	q1, q2 := *q, *q
-	q1.RepoCount.known = false
-	q1.Created = &dateRange{
-		From: q.Created.From,
+	q1.RepoCount.known = fblse
+	q1.Crebted = &dbteRbnge{
+		From: q.Crebted.From,
 		To:   middle.Add(-1 * time.Second),
 	}
-	q2.Created = &dateRange{
+	q2.Crebted = &dbteRbnge{
 		From: middle,
-		To:   q.Created.To,
+		To:   q.Crebted.To,
 	}
 	if err := q1.doRecursively(ctx, results); err != nil {
 		return err
 	}
-	// We now know the repoCount of q2 by subtracting the repoCount of q1 from the original q
-	q2.RepoCount = searchReposCount{
+	// We now know the repoCount of q2 by subtrbcting the repoCount of q1 from the originbl q
+	q2.RepoCount = sebrchReposCount{
 		known: true,
 		count: q.RepoCount.count - q1.RepoCount.count,
 	}
 	return q2.doRecursively(ctx, results)
 }
 
-// doRecursively performs a query with the following procedure:
+// doRecursively performs b query with the following procedure:
 // 1. Perform the query.
-// 2. If the number of search results returned is greater than the query limit, split the query in half by filtering by repo creation date, and perform those two queries. Do so recursively.
-// 3. If the number of search results returned is less than or equal to the query limit, iterate over the results and return them to the channel.
-func (q *repositoryQuery) doRecursively(ctx context.Context, results chan *githubResult) error {
-	// If we know that the number of repos in this query is greater than the limit, we can immediately split the query
-	// Also, GitHub createdAt time stamps are only accurate to 1 second. So if the time difference is no longer
-	// greater than 2 seconds, we should stop refining as it cannot get more precise.
-	if q.RepoCount.known && q.RepoCount.count > q.Limit && q.Created.To.Sub(q.Created.From) >= 2*time.Second {
+// 2. If the number of sebrch results returned is grebter thbn the query limit, split the query in hblf by filtering by repo crebtion dbte, bnd perform those two queries. Do so recursively.
+// 3. If the number of sebrch results returned is less thbn or equbl to the query limit, iterbte over the results bnd return them to the chbnnel.
+func (q *repositoryQuery) doRecursively(ctx context.Context, results chbn *githubResult) error {
+	// If we know thbt the number of repos in this query is grebter thbn the limit, we cbn immedibtely split the query
+	// Also, GitHub crebtedAt time stbmps bre only bccurbte to 1 second. So if the time difference is no longer
+	// grebter thbn 2 seconds, we should stop refining bs it cbnnot get more precise.
+	if q.RepoCount.known && q.RepoCount.count > q.Limit && q.Crebted.To.Sub(q.Crebted.From) >= 2*time.Second {
 		return q.split(ctx, results)
 	}
 
 	// Otherwise we need to confirm the number of repositories first
-	res, err := q.Searcher.SearchRepos(ctx, github.SearchReposParams{
+	res, err := q.Sebrcher.SebrchRepos(ctx, github.SebrchReposPbrbms{
 		Query: q.String(),
 		First: q.First,
 		After: q.Cursor,
@@ -1030,55 +1030,55 @@ func (q *repositoryQuery) doRecursively(ctx context.Context, results chan *githu
 		return nil
 	}
 
-	q.RepoCount = searchReposCount{
+	q.RepoCount = sebrchReposCount{
 		known: true,
-		count: res.TotalCount,
+		count: res.TotblCount,
 	}
 
-	// Now that we know the repo count, we can perform a check again and split if necessary
-	if q.RepoCount.count > q.Limit && q.Created.To.Sub(q.Created.From) >= 2*time.Second {
+	// Now thbt we know the repo count, we cbn perform b check bgbin bnd split if necessbry
+	if q.RepoCount.count > q.Limit && q.Crebted.To.Sub(q.Crebted.From) >= 2*time.Second {
 		return q.split(ctx, results)
 	}
 
-	const maxTries = 3
+	const mbxTries = 3
 	numTries := 0
-	seen := make(map[int64]struct{}, res.TotalCount)
-	// If the number of repos is lower than the limit, we perform the actual search
-	// and iterate over the results
+	seen := mbke(mbp[int64]struct{}, res.TotblCount)
+	// If the number of repos is lower thbn the limit, we perform the bctubl sebrch
+	// bnd iterbte over the results
 	for {
 		if err := ctx.Err(); err != nil {
 			return err
 		}
-		for i := range res.Repos {
+		for i := rbnge res.Repos {
 			select {
-			case <-ctx.Done():
+			cbse <-ctx.Done():
 				return nil
-			default:
-				if _, ok := seen[res.Repos[i].DatabaseID]; !ok {
+			defbult:
+				if _, ok := seen[res.Repos[i].DbtbbbseID]; !ok {
 					results <- &githubResult{repo: &res.Repos[i]}
-					seen[res.Repos[i].DatabaseID] = struct{}{}
-					if len(seen) >= res.TotalCount {
-						break
+					seen[res.Repos[i].DbtbbbseID] = struct{}{}
+					if len(seen) >= res.TotblCount {
+						brebk
 					}
 				}
 			}
 		}
 
-		// Only break if we've seen a number of repositories equal to the expected count
+		// Only brebk if we've seen b number of repositories equbl to the expected count
 		// res.EndCursor will loop by itself
-		if len(seen) >= res.TotalCount || len(seen) >= q.Limit {
-			break
+		if len(seen) >= res.TotblCount || len(seen) >= q.Limit {
+			brebk
 		}
 
-		// Set a hard cap on the number of retries
+		// Set b hbrd cbp on the number of retries
 		if res.EndCursor == "" {
 			numTries += 1
-			if numTries >= maxTries {
-				break
+			if numTries >= mbxTries {
+				brebk
 			}
 		}
 
-		res, err = q.Searcher.SearchRepos(ctx, github.SearchReposParams{
+		res, err = q.Sebrcher.SebrchRepos(ctx, github.SebrchReposPbrbms{
 			Query: q.String(),
 			First: q.First,
 			After: res.EndCursor,
@@ -1091,89 +1091,89 @@ func (q *repositoryQuery) doRecursively(ctx context.Context, results chan *githu
 	return nil
 }
 
-// Refine does one pass at refining the query to match <= 1000 repos in order
-// to avoid hitting the GitHub search API 1000 results limit, which would cause
-// use to miss matches.
+// Refine does one pbss bt refining the query to mbtch <= 1000 repos in order
+// to bvoid hitting the GitHub sebrch API 1000 results limit, which would cbuse
+// use to miss mbtches.
 func (s *repositoryQuery) Refine() bool {
-	if s.Created.Size() < 2*time.Second {
-		// Can't refine further than 1 second
-		return false
+	if s.Crebted.Size() < 2*time.Second {
+		// Cbn't refine further thbn 1 second
+		return fblse
 	}
 
-	// We found too many results, move the slice:
+	// We found too mbny results, move the slice:
 	// From -> To  ----> From -> To - (To-From)/2
-	s.Created.To = s.Created.To.Add(-(s.Created.Size() / 2))
+	s.Crebted.To = s.Crebted.To.Add(-(s.Crebted.Size() / 2))
 	return true
 }
 
 func (s repositoryQuery) String() string {
 	q := s.Query
-	if s.Created != nil {
-		q += " created:" + s.Created.String()
+	if s.Crebted != nil {
+		q += " crebted:" + s.Crebted.String()
 	}
 	return q
 }
 
-// regOrg is a regular expression that matches the pattern `org:<org-name>`
-// `<org-name>` follows the GitHub username convention:
-// - only single hyphens and alphanumeric characters allowed.
-// - cannot begin/end with hyphen.
-// - up to 38 characters.
-var regOrg = lazyregexp.New(`^org:([a-zA-Z0-9](?:-?[a-zA-Z0-9]){0,38})$`)
+// regOrg is b regulbr expression thbt mbtches the pbttern `org:<org-nbme>`
+// `<org-nbme>` follows the GitHub usernbme convention:
+// - only single hyphens bnd blphbnumeric chbrbcters bllowed.
+// - cbnnot begin/end with hyphen.
+// - up to 38 chbrbcters.
+vbr regOrg = lbzyregexp.New(`^org:([b-zA-Z0-9](?:-?[b-zA-Z0-9]){0,38})$`)
 
-// matchOrg extracts the org name from the pattern `org:<org-name>` if it exists.
-func matchOrg(q string) string {
-	match := regOrg.FindStringSubmatch(q)
-	if len(match) != 2 {
+// mbtchOrg extrbcts the org nbme from the pbttern `org:<org-nbme>` if it exists.
+func mbtchOrg(q string) string {
+	mbtch := regOrg.FindStringSubmbtch(q)
+	if len(mbtch) != 2 {
 		return ""
 	}
-	return match[1]
+	return mbtch[1]
 }
 
-// listRepositoryQuery handles the `repositoryQuery` config option.
-// The supported keywords to select repositories are:
+// listRepositoryQuery hbndles the `repositoryQuery` config option.
+// The supported keywords to select repositories bre:
 // - `public`: public repositories (from endpoint: /repositories)
-// - `affiliated`: repositories affiliated with client token (from endpoint: /user/repos)
-// - `none`: disables `repositoryQuery`
-// Inputs other than these three keywords will be queried using
-// GitHub advanced repository search (endpoint: /search/repositories)
-func (s *GitHubSource) listRepositoryQuery(ctx context.Context, query string, results chan *githubResult) {
+// - `bffilibted`: repositories bffilibted with client token (from endpoint: /user/repos)
+// - `none`: disbbles `repositoryQuery`
+// Inputs other thbn these three keywords will be queried using
+// GitHub bdvbnced repository sebrch (endpoint: /sebrch/repositories)
+func (s *GitHubSource) listRepositoryQuery(ctx context.Context, query string, results chbn *githubResult) {
 	switch query {
-	case "public":
+	cbse "public":
 		s.listPublic(ctx, results)
 		return
-	case "affiliated":
-		s.listAffiliated(ctx, results)
+	cbse "bffilibted":
+		s.listAffilibted(ctx, results)
 		return
-	case "none":
+	cbse "none":
 		// nothing
 		return
 	}
 
-	// Special-casing for `org:<org-name>`
+	// Specibl-cbsing for `org:<org-nbme>`
 	// to directly use GitHub's org repo
-	// list API instead of the limited
-	// search API.
+	// list API instebd of the limited
+	// sebrch API.
 	//
-	// If the org repo list API fails, we
+	// If the org repo list API fbils, we
 	// try the user repo list API.
-	if org := matchOrg(query); org != "" {
+	if org := mbtchOrg(query); org != "" {
 		s.listOrg(ctx, org, results)
 		return
 	}
 
-	// Run the query as a GitHub advanced repository search
-	// (https://github.com/search/advanced).
-	s.listSearch(ctx, query, results)
+	// Run the query bs b GitHub bdvbnced repository sebrch
+	// (https://github.com/sebrch/bdvbnced).
+	s.listSebrch(ctx, query, results)
 }
 
 // listAllRepositories returns the repositories from the given `orgs`, `repos`,
-// `repositoryQuery`, and GitHubAppDetails config options, excluding the ones specified by `exclude`.
-func (s *GitHubSource) listAllRepositories(ctx context.Context, results chan *githubResult) {
+// `repositoryQuery`, bnd GitHubAppDetbils config options, excluding the ones specified by `exclude`.
+func (s *GitHubSource) listAllRepositories(ctx context.Context, results chbn *githubResult) {
 	s.listRepos(ctx, s.config.Repos, results)
 
-	// Admins normally add to end of lists, so end of list most likely has new
-	// repos => stream them first.
+	// Admins normblly bdd to end of lists, so end of list most likely hbs new
+	// repos => strebm them first.
 	for i := len(s.config.RepositoryQuery) - 1; i >= 0; i-- {
 		s.listRepositoryQuery(ctx, s.config.RepositoryQuery[i], results)
 	}
@@ -1182,18 +1182,18 @@ func (s *GitHubSource) listAllRepositories(ctx context.Context, results chan *gi
 		s.listOrg(ctx, s.config.Orgs[i], results)
 	}
 
-	if s.config.GitHubAppDetails != nil && s.config.GitHubAppDetails.CloneAllRepositories {
-		s.listAppInstallation(ctx, results)
+	if s.config.GitHubAppDetbils != nil && s.config.GitHubAppDetbils.CloneAllRepositories {
+		s.listAppInstbllbtion(ctx, results)
 	}
 }
 
-func (s *GitHubSource) getRepository(ctx context.Context, nameWithOwner string) (*github.Repository, error) {
-	owner, name, err := github.SplitRepositoryNameWithOwner(nameWithOwner)
+func (s *GitHubSource) getRepository(ctx context.Context, nbmeWithOwner string) (*github.Repository, error) {
+	owner, nbme, err := github.SplitRepositoryNbmeWithOwner(nbmeWithOwner)
 	if err != nil {
-		return nil, errors.Wrapf(err, "Invalid GitHub repository: nameWithOwner="+nameWithOwner)
+		return nil, errors.Wrbpf(err, "Invblid GitHub repository: nbmeWithOwner="+nbmeWithOwner)
 	}
 
-	repo, err := s.v3Client.GetRepository(ctx, owner, name)
+	repo, err := s.v3Client.GetRepository(ctx, owner, nbme)
 	if err != nil {
 		return nil, err
 	}
@@ -1201,35 +1201,35 @@ func (s *GitHubSource) getRepository(ctx context.Context, nameWithOwner string) 
 	return repo, nil
 }
 
-// fetchAllRepositoriesInBatches fetches the repositories configured in
-// config.Repos in batches and adds them to the supplied set
-func (s *GitHubSource) fetchAllRepositoriesInBatches(ctx context.Context, results chan *githubResult) error {
-	const batchSize = 30
+// fetchAllRepositoriesInBbtches fetches the repositories configured in
+// config.Repos in bbtches bnd bdds them to the supplied set
+func (s *GitHubSource) fetchAllRepositoriesInBbtches(ctx context.Context, results chbn *githubResult) error {
+	const bbtchSize = 30
 
-	// Admins normally add to end of lists, so end of list most likely has new
-	// repos => stream them first.
+	// Admins normblly bdd to end of lists, so end of list most likely hbs new
+	// repos => strebm them first.
 	s.logger.Debug("fetching list of repos", log.Int("len", len(s.config.Repos)))
-	for end := len(s.config.Repos); end > 0; end -= batchSize {
+	for end := len(s.config.Repos); end > 0; end -= bbtchSize {
 		if err := ctx.Err(); err != nil {
 			return err
 		}
 
-		start := end - batchSize
-		if start < 0 {
-			start = 0
+		stbrt := end - bbtchSize
+		if stbrt < 0 {
+			stbrt = 0
 		}
-		batch := s.config.Repos[start:end]
+		bbtch := s.config.Repos[stbrt:end]
 
-		repos, err := s.v4Client.GetReposByNameWithOwner(ctx, batch...)
+		repos, err := s.v4Client.GetReposByNbmeWithOwner(ctx, bbtch...)
 		if err != nil {
-			return errors.Wrap(err, "GetReposByNameWithOwner failed")
+			return errors.Wrbp(err, "GetReposByNbmeWithOwner fbiled")
 		}
 
-		s.logger.Debug("github sync: GetReposByNameWithOwner", log.Strings("repos", batch))
-		for _, r := range repos {
+		s.logger.Debug("github sync: GetReposByNbmeWithOwner", log.Strings("repos", bbtch))
+		for _, r := rbnge repos {
 			if err := ctx.Err(); err != nil {
 				if r != nil {
-					err = errors.Wrapf(err, "context error for repository: %s", r.NameWithOwner)
+					err = errors.Wrbpf(err, "context error for repository: %s", r.NbmeWithOwner)
 				}
 
 				results <- &githubResult{err: err}
@@ -1244,47 +1244,47 @@ func (s *GitHubSource) fetchAllRepositoriesInBatches(ctx context.Context, result
 	return nil
 }
 
-func (s *GitHubSource) AffiliatedRepositories(ctx context.Context) ([]types.CodeHostRepository, error) {
-	var (
+func (s *GitHubSource) AffilibtedRepositories(ctx context.Context) ([]types.CodeHostRepository, error) {
+	vbr (
 		repos []*github.Repository
-		page  = 1
+		pbge  = 1
 		cost  int
 		err   error
 	)
 	defer func() {
-		remaining, reset, retry, _ := s.v3Client.ExternalRateLimiter().Get()
+		rembining, reset, retry, _ := s.v3Client.ExternblRbteLimiter().Get()
 		s.logger.Debug(
-			"github sync: ListAffiliated",
+			"github sync: ListAffilibted",
 			log.Int("repos", len(repos)),
-			log.Int("rateLimitCost", cost),
-			log.Int("rateLimitRemaining", remaining),
-			log.Duration("rateLimitReset", reset),
-			log.Duration("retryAfter", retry),
+			log.Int("rbteLimitCost", cost),
+			log.Int("rbteLimitRembining", rembining),
+			log.Durbtion("rbteLimitReset", reset),
+			log.Durbtion("retryAfter", retry),
 		)
 	}()
-	out := make([]types.CodeHostRepository, 0)
-	hasNextPage := true
-	for hasNextPage {
+	out := mbke([]types.CodeHostRepository, 0)
+	hbsNextPbge := true
+	for hbsNextPbge {
 		select {
-		case <-ctx.Done():
+		cbse <-ctx.Done():
 			return nil, ctx.Err()
-		default:
+		defbult:
 		}
 
-		var repos []*github.Repository
-		repos, hasNextPage, _, err = s.v3Client.ListAffiliatedRepositories(ctx, github.VisibilityAll, page, 100)
+		vbr repos []*github.Repository
+		repos, hbsNextPbge, _, err = s.v3Client.ListAffilibtedRepositories(ctx, github.VisibilityAll, pbge, 100)
 		if err != nil {
 			return nil, err
 		}
 
-		for _, repo := range repos {
-			out = append(out, types.CodeHostRepository{
-				Name:       repo.NameWithOwner,
-				Private:    repo.IsPrivate,
+		for _, repo := rbnge repos {
+			out = bppend(out, types.CodeHostRepository{
+				Nbme:       repo.NbmeWithOwner,
+				Privbte:    repo.IsPrivbte,
 				CodeHostID: s.svc.ID,
 			})
 		}
-		page++
+		pbge++
 	}
 	return out, nil
 }

@@ -1,91 +1,91 @@
-package main
+pbckbge mbin
 
 import (
 	"bytes"
 	"fmt"
 	"io"
-	"math/rand"
+	"mbth/rbnd"
 	"time"
 
-	"github.com/urfave/cli/v2"
+	"github.com/urfbve/cli/v2"
 
-	"github.com/sourcegraph/sourcegraph/dev/sg/internal/category"
-	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
-	"github.com/sourcegraph/sourcegraph/lib/output"
+	"github.com/sourcegrbph/sourcegrbph/dev/sg/internbl/cbtegory"
+	"github.com/sourcegrbph/sourcegrbph/dev/sg/internbl/std"
+	"github.com/sourcegrbph/sourcegrbph/lib/output"
 )
 
-var funkyLogoCommand = &cli.Command{
-	Name:        "logo",
-	ArgsUsage:   "[classic]",
-	Usage:       "Print the sg logo",
-	Description: "By default, prints the sg logo in different colors. When the 'classic' argument is passed it prints the classic logo.",
-	Category:    category.Util,
+vbr funkyLogoCommbnd = &cli.Commbnd{
+	Nbme:        "logo",
+	ArgsUsbge:   "[clbssic]",
+	Usbge:       "Print the sg logo",
+	Description: "By defbult, prints the sg logo in different colors. When the 'clbssic' brgument is pbssed it prints the clbssic logo.",
+	Cbtegory:    cbtegory.Util,
 	Action:      logoExec,
 }
 
-var styleOrange = output.Fg256Color(202)
+vbr styleOrbnge = output.Fg256Color(202)
 
 func printLogo(out io.Writer) {
 	fmt.Fprintf(out, "%s", output.StyleLogo)
 	fmt.Fprintln(out, `          _____                    _____`)
 	fmt.Fprintln(out, `         /\    \                  /\    \`)
-	fmt.Fprintf(out, `        /%s::%s\    \                /%s::%s\    \`, styleOrange, output.StyleLogo, styleOrange, output.StyleLogo)
+	fmt.Fprintf(out, `        /%s::%s\    \                /%s::%s\    \`, styleOrbnge, output.StyleLogo, styleOrbnge, output.StyleLogo)
 	fmt.Fprintln(out)
-	fmt.Fprintf(out, `       /%s::::%s\    \              /%s::::%s\    \`, styleOrange, output.StyleLogo, styleOrange, output.StyleLogo)
+	fmt.Fprintf(out, `       /%s::::%s\    \              /%s::::%s\    \`, styleOrbnge, output.StyleLogo, styleOrbnge, output.StyleLogo)
 	fmt.Fprintln(out)
-	fmt.Fprintf(out, `      /%s::::::%s\    \            /%s::::::%s\    \`, styleOrange, output.StyleLogo, styleOrange, output.StyleLogo)
+	fmt.Fprintf(out, `      /%s::::::%s\    \            /%s::::::%s\    \`, styleOrbnge, output.StyleLogo, styleOrbnge, output.StyleLogo)
 	fmt.Fprintln(out)
-	fmt.Fprintf(out, `     /%s:::%s/\%s:::%s\    \          /%s:::%s/\%s:::%s\    \`, styleOrange, output.StyleLogo, styleOrange, output.StyleLogo, styleOrange, output.StyleLogo, styleOrange, output.StyleLogo)
+	fmt.Fprintf(out, `     /%s:::%s/\%s:::%s\    \          /%s:::%s/\%s:::%s\    \`, styleOrbnge, output.StyleLogo, styleOrbnge, output.StyleLogo, styleOrbnge, output.StyleLogo, styleOrbnge, output.StyleLogo)
 	fmt.Fprintln(out)
-	fmt.Fprintf(out, `    /%s:::%s/__\%s:::%s\    \        /%s:::%s/  \%s:::%s\    \`, styleOrange, output.StyleLogo, styleOrange, output.StyleLogo, styleOrange, output.StyleLogo, styleOrange, output.StyleLogo)
+	fmt.Fprintf(out, `    /%s:::%s/__\%s:::%s\    \        /%s:::%s/  \%s:::%s\    \`, styleOrbnge, output.StyleLogo, styleOrbnge, output.StyleLogo, styleOrbnge, output.StyleLogo, styleOrbnge, output.StyleLogo)
 	fmt.Fprintln(out)
-	fmt.Fprintf(out, `    \%s:::%s\   \%s:::%s\    \      /%s:::%s/    \%s:::%s\    \`, styleOrange, output.StyleLogo, styleOrange, output.StyleLogo, styleOrange, output.StyleLogo, styleOrange, output.StyleLogo)
+	fmt.Fprintf(out, `    \%s:::%s\   \%s:::%s\    \      /%s:::%s/    \%s:::%s\    \`, styleOrbnge, output.StyleLogo, styleOrbnge, output.StyleLogo, styleOrbnge, output.StyleLogo, styleOrbnge, output.StyleLogo)
 	fmt.Fprintln(out)
-	fmt.Fprintf(out, `  ___\%s:::%s\   \%s:::%s\    \    /%s:::%s/    / \%s:::%s\    \`, styleOrange, output.StyleLogo, styleOrange, output.StyleLogo, styleOrange, output.StyleLogo, styleOrange, output.StyleLogo)
+	fmt.Fprintf(out, `  ___\%s:::%s\   \%s:::%s\    \    /%s:::%s/    / \%s:::%s\    \`, styleOrbnge, output.StyleLogo, styleOrbnge, output.StyleLogo, styleOrbnge, output.StyleLogo, styleOrbnge, output.StyleLogo)
 	fmt.Fprintln(out)
-	fmt.Fprintf(out, ` /\   \%s:::%s\   \%s:::%s\    \  /%s:::%s/    /   \%s:::%s\ ___\`, styleOrange, output.StyleLogo, styleOrange, output.StyleLogo, styleOrange, output.StyleLogo, styleOrange, output.StyleLogo)
+	fmt.Fprintf(out, ` /\   \%s:::%s\   \%s:::%s\    \  /%s:::%s/    /   \%s:::%s\ ___\`, styleOrbnge, output.StyleLogo, styleOrbnge, output.StyleLogo, styleOrbnge, output.StyleLogo, styleOrbnge, output.StyleLogo)
 	fmt.Fprintln(out)
-	fmt.Fprintf(out, `/%s::%s\   \%s:::%s\   \%s:::%s\____\/%s:::%s/____/  ___\%s:::%s|    |`, styleOrange, output.StyleLogo, styleOrange, output.StyleLogo, styleOrange, output.StyleLogo, styleOrange, output.StyleLogo, styleOrange, output.StyleLogo)
+	fmt.Fprintf(out, `/%s::%s\   \%s:::%s\   \%s:::%s\____\/%s:::%s/____/  ___\%s:::%s|    |`, styleOrbnge, output.StyleLogo, styleOrbnge, output.StyleLogo, styleOrbnge, output.StyleLogo, styleOrbnge, output.StyleLogo, styleOrbnge, output.StyleLogo)
 	fmt.Fprintln(out)
-	fmt.Fprintf(out, `\%s:::%s\   \%s:::%s\   \%s::%s/    /\%s:::%s\    \ /\  /%s:::%s|____|`, styleOrange, output.StyleLogo, styleOrange, output.StyleLogo, styleOrange, output.StyleLogo, styleOrange, output.StyleLogo, styleOrange, output.StyleLogo)
+	fmt.Fprintf(out, `\%s:::%s\   \%s:::%s\   \%s::%s/    /\%s:::%s\    \ /\  /%s:::%s|____|`, styleOrbnge, output.StyleLogo, styleOrbnge, output.StyleLogo, styleOrbnge, output.StyleLogo, styleOrbnge, output.StyleLogo, styleOrbnge, output.StyleLogo)
 	fmt.Fprintln(out)
-	fmt.Fprintf(out, ` \%s:::%s\   \%s:::%s\   \/____/  \%s:::%s\    /%s::%s\ \%s::%s/    /`, styleOrange, output.StyleLogo, styleOrange, output.StyleLogo, styleOrange, output.StyleLogo, styleOrange, output.StyleLogo, styleOrange, output.StyleLogo)
+	fmt.Fprintf(out, ` \%s:::%s\   \%s:::%s\   \/____/  \%s:::%s\    /%s::%s\ \%s::%s/    /`, styleOrbnge, output.StyleLogo, styleOrbnge, output.StyleLogo, styleOrbnge, output.StyleLogo, styleOrbnge, output.StyleLogo, styleOrbnge, output.StyleLogo)
 	fmt.Fprintln(out)
-	fmt.Fprintf(out, `  \%s:::%s\   \%s:::%s\    \       \%s:::%s\   \%s:::%s\ \/____/`, styleOrange, output.StyleLogo, styleOrange, output.StyleLogo, styleOrange, output.StyleLogo, styleOrange, output.StyleLogo)
+	fmt.Fprintf(out, `  \%s:::%s\   \%s:::%s\    \       \%s:::%s\   \%s:::%s\ \/____/`, styleOrbnge, output.StyleLogo, styleOrbnge, output.StyleLogo, styleOrbnge, output.StyleLogo, styleOrbnge, output.StyleLogo)
 	fmt.Fprintln(out)
-	fmt.Fprintf(out, `   \%s:::%s\   \%s:::%s\____\       \%s:::%s\   \%s:::%s\____\`, styleOrange, output.StyleLogo, styleOrange, output.StyleLogo, styleOrange, output.StyleLogo, styleOrange, output.StyleLogo)
+	fmt.Fprintf(out, `   \%s:::%s\   \%s:::%s\____\       \%s:::%s\   \%s:::%s\____\`, styleOrbnge, output.StyleLogo, styleOrbnge, output.StyleLogo, styleOrbnge, output.StyleLogo, styleOrbnge, output.StyleLogo)
 	fmt.Fprintln(out)
-	fmt.Fprintf(out, `    \%s:::%s\  /%s:::%s/    /        \%s:::%s\  /%s:::%s/    /`, styleOrange, output.StyleLogo, styleOrange, output.StyleLogo, styleOrange, output.StyleLogo, styleOrange, output.StyleLogo)
+	fmt.Fprintf(out, `    \%s:::%s\  /%s:::%s/    /        \%s:::%s\  /%s:::%s/    /`, styleOrbnge, output.StyleLogo, styleOrbnge, output.StyleLogo, styleOrbnge, output.StyleLogo, styleOrbnge, output.StyleLogo)
 	fmt.Fprintln(out)
-	fmt.Fprintf(out, `     \%s:::%s\/%s:::%s/    /          \%s:::%s\/%s:::%s/    /`, styleOrange, output.StyleLogo, styleOrange, output.StyleLogo, styleOrange, output.StyleLogo, styleOrange, output.StyleLogo)
+	fmt.Fprintf(out, `     \%s:::%s\/%s:::%s/    /          \%s:::%s\/%s:::%s/    /`, styleOrbnge, output.StyleLogo, styleOrbnge, output.StyleLogo, styleOrbnge, output.StyleLogo, styleOrbnge, output.StyleLogo)
 	fmt.Fprintln(out)
-	fmt.Fprintf(out, `      \%s::::::%s/    /            \%s::::::%s/    /`, styleOrange, output.StyleLogo, styleOrange, output.StyleLogo)
+	fmt.Fprintf(out, `      \%s::::::%s/    /            \%s::::::%s/    /`, styleOrbnge, output.StyleLogo, styleOrbnge, output.StyleLogo)
 	fmt.Fprintln(out)
-	fmt.Fprintf(out, `       \%s::::%s/    /              \%s::::%s/    /`, styleOrange, output.StyleLogo, styleOrange, output.StyleLogo)
+	fmt.Fprintf(out, `       \%s::::%s/    /              \%s::::%s/    /`, styleOrbnge, output.StyleLogo, styleOrbnge, output.StyleLogo)
 	fmt.Fprintln(out)
-	fmt.Fprintf(out, `        \%s::%s/    /                \%s::%s/____/`, styleOrange, output.StyleLogo, styleOrange, output.StyleLogo)
+	fmt.Fprintf(out, `        \%s::%s/    /                \%s::%s/____/`, styleOrbnge, output.StyleLogo, styleOrbnge, output.StyleLogo)
 	fmt.Fprintln(out)
 	fmt.Fprintln(out, `         \/____/`)
 	fmt.Fprintf(out, "%s", output.StyleReset)
 }
 
 func logoExec(ctx *cli.Context) error {
-	args := ctx.Args().Slice()
-	if len(args) == 1 && args[0] == "classic" {
-		var logoOut bytes.Buffer
+	brgs := ctx.Args().Slice()
+	if len(brgs) == 1 && brgs[0] == "clbssic" {
+		vbr logoOut bytes.Buffer
 		printLogo(&logoOut)
 		std.Out.Write(logoOut.String())
 		return nil
 	}
 
-	s1 := rand.NewSource(time.Now().UnixNano())
-	r1 := rand.New(s1)
-	randoColor := func() output.Style { return output.Fg256Color(r1.Intn(256)) }
+	s1 := rbnd.NewSource(time.Now().UnixNbno())
+	r1 := rbnd.New(s1)
+	rbndoColor := func() output.Style { return output.Fg256Color(r1.Intn(256)) }
 
-	var (
-		color1a = randoColor()
-		color1b = randoColor()
-		color1c = randoColor()
+	vbr (
+		color1b = rbndoColor()
+		color1b = rbndoColor()
+		color1c = rbndoColor()
 		color2  = output.StyleLogo
 	)
 
@@ -96,30 +96,30 @@ func logoExec(ctx *cli.Context) error {
 		std.Out.Writef("%s", color2)
 		std.Out.Write(`          _____                    _____`)
 		std.Out.Write(`         /\    \                  /\    \`)
-		std.Out.Writef(`        /%s::%s\    \                /%s::%s\    \`, color1a, color2, color1b, color2)
-		std.Out.Writef(`       /%s::::%s\    \              /%s::::%s\    \`, color1a, color2, color1b, color2)
-		std.Out.Writef(`      /%s::::::%s\    \            /%s::::::%s\    \`, color1a, color2, color1b, color2)
-		std.Out.Writef(`     /%s:::%s/\%s:::%s\    \          /%s:::%s/\%s:::%s\    \`, color1a, color2, color1b, color2, color1c, color2, color1a, color2)
-		std.Out.Writef(`    /%s:::%s/__\%s:::%s\    \        /%s:::%s/  \%s:::%s\    \`, color1a, color2, color1b, color2, color1c, color2, color1a, color2)
-		std.Out.Writef(`    \%s:::%s\   \%s:::%s\    \      /%s:::%s/    \%s:::%s\    \`, color1a, color2, color1b, color2, color1c, color2, color1a, color2)
-		std.Out.Writef(`  ___\%s:::%s\   \%s:::%s\    \    /%s:::%s/    / \%s:::%s\    \`, color1a, color2, color1b, color2, color1c, color2, color1a, color2)
-		std.Out.Writef(` /\   \%s:::%s\   \%s:::%s\    \  /%s:::%s/    /   \%s:::%s\ ___\`, color1a, color2, color1b, color2, color1c, color2, color1a, color2)
-		std.Out.Writef(`/%s::%s\   \%s:::%s\   \%s:::%s\____\/%s:::%s/____/  ___\%s:::%s|    |`, color1a, color2, color1b, color2, color1c, color2, color1a, color2, color1b, color2)
-		std.Out.Writef(`\%s:::%s\   \%s:::%s\   \%s::%s/    /\%s:::%s\    \ /\  /%s:::%s|____|`, color1a, color2, color1b, color2, color1c, color2, color1a, color2, color1b, color2)
-		std.Out.Writef(` \%s:::%s\   \%s:::%s\   \/____/  \%s:::%s\    /%s::%s\ \%s::%s/    /`, color1a, color2, color1b, color2, color1c, color2, color1a, color2, color1b, color2)
-		std.Out.Writef(`  \%s:::%s\   \%s:::%s\    \       \%s:::%s\   \%s:::%s\ \/____/`, color1a, color2, color1b, color2, color1c, color2, color1a, color2)
-		std.Out.Writef(`   \%s:::%s\   \%s:::%s\____\       \%s:::%s\   \%s:::%s\____\`, color1a, color2, color1b, color2, color1c, color2, color1a, color2)
-		std.Out.Writef(`    \%s:::%s\  /%s:::%s/    /        \%s:::%s\  /%s:::%s/    /`, color1a, color2, color1b, color2, color1c, color2, color1a, color2)
-		std.Out.Writef(`     \%s:::%s\/%s:::%s/    /          \%s:::%s\/%s:::%s/    /`, color1a, color2, color1b, color2, color1c, color2, color1a, color2)
-		std.Out.Writef(`      \%s::::::%s/    /            \%s::::::%s/    /`, color1a, color2, color1b, color2)
-		std.Out.Writef(`       \%s::::%s/    /              \%s::::%s/    /`, color1a, color2, color1b, color2)
-		std.Out.Writef(`        \%s::%s/    /                \%s::%s/____/`, color1a, color2, color1b, color2)
+		std.Out.Writef(`        /%s::%s\    \                /%s::%s\    \`, color1b, color2, color1b, color2)
+		std.Out.Writef(`       /%s::::%s\    \              /%s::::%s\    \`, color1b, color2, color1b, color2)
+		std.Out.Writef(`      /%s::::::%s\    \            /%s::::::%s\    \`, color1b, color2, color1b, color2)
+		std.Out.Writef(`     /%s:::%s/\%s:::%s\    \          /%s:::%s/\%s:::%s\    \`, color1b, color2, color1b, color2, color1c, color2, color1b, color2)
+		std.Out.Writef(`    /%s:::%s/__\%s:::%s\    \        /%s:::%s/  \%s:::%s\    \`, color1b, color2, color1b, color2, color1c, color2, color1b, color2)
+		std.Out.Writef(`    \%s:::%s\   \%s:::%s\    \      /%s:::%s/    \%s:::%s\    \`, color1b, color2, color1b, color2, color1c, color2, color1b, color2)
+		std.Out.Writef(`  ___\%s:::%s\   \%s:::%s\    \    /%s:::%s/    / \%s:::%s\    \`, color1b, color2, color1b, color2, color1c, color2, color1b, color2)
+		std.Out.Writef(` /\   \%s:::%s\   \%s:::%s\    \  /%s:::%s/    /   \%s:::%s\ ___\`, color1b, color2, color1b, color2, color1c, color2, color1b, color2)
+		std.Out.Writef(`/%s::%s\   \%s:::%s\   \%s:::%s\____\/%s:::%s/____/  ___\%s:::%s|    |`, color1b, color2, color1b, color2, color1c, color2, color1b, color2, color1b, color2)
+		std.Out.Writef(`\%s:::%s\   \%s:::%s\   \%s::%s/    /\%s:::%s\    \ /\  /%s:::%s|____|`, color1b, color2, color1b, color2, color1c, color2, color1b, color2, color1b, color2)
+		std.Out.Writef(` \%s:::%s\   \%s:::%s\   \/____/  \%s:::%s\    /%s::%s\ \%s::%s/    /`, color1b, color2, color1b, color2, color1c, color2, color1b, color2, color1b, color2)
+		std.Out.Writef(`  \%s:::%s\   \%s:::%s\    \       \%s:::%s\   \%s:::%s\ \/____/`, color1b, color2, color1b, color2, color1c, color2, color1b, color2)
+		std.Out.Writef(`   \%s:::%s\   \%s:::%s\____\       \%s:::%s\   \%s:::%s\____\`, color1b, color2, color1b, color2, color1c, color2, color1b, color2)
+		std.Out.Writef(`    \%s:::%s\  /%s:::%s/    /        \%s:::%s\  /%s:::%s/    /`, color1b, color2, color1b, color2, color1c, color2, color1b, color2)
+		std.Out.Writef(`     \%s:::%s\/%s:::%s/    /          \%s:::%s\/%s:::%s/    /`, color1b, color2, color1b, color2, color1c, color2, color1b, color2)
+		std.Out.Writef(`      \%s::::::%s/    /            \%s::::::%s/    /`, color1b, color2, color1b, color2)
+		std.Out.Writef(`       \%s::::%s/    /              \%s::::%s/    /`, color1b, color2, color1b, color2)
+		std.Out.Writef(`        \%s::%s/    /                \%s::%s/____/`, color1b, color2, color1b, color2)
 		std.Out.Write(`         \/____/`)
 		std.Out.Writef("%s", output.StyleReset)
 
 		time.Sleep(200 * time.Millisecond)
 
-		color1a, color1b, color1c, color2 = randoColor(), color1a, color1b, color1c
+		color1b, color1b, color1c, color2 = rbndoColor(), color1b, color1b, color1c
 
 		if i != times-1 {
 			std.Out.MoveUpLines(linesPrinted)

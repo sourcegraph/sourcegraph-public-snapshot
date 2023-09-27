@@ -1,92 +1,92 @@
-package database
+pbckbge dbtbbbse
 
 import (
 	"context"
 	"encoding/json"
 	"testing"
 
-	"github.com/sourcegraph/log/logtest"
-	"github.com/stretchr/testify/assert"
+	"github.com/sourcegrbph/log/logtest"
+	"github.com/stretchr/testify/bssert"
 
-	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc"
-	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/schema"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbtest"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
+	"github.com/sourcegrbph/sourcegrbph/schemb"
 )
 
-func TestCreation(t *testing.T) {
-	t.Parallel()
+func TestCrebtion(t *testing.T) {
+	t.Pbrbllel()
 	logger := logtest.Scoped(t)
 	db := NewDB(logger, dbtest.NewDB(logger, t))
-	ctx := context.Background()
+	ctx := context.Bbckground()
 
-	p, err := db.Phabricator().Create(ctx, "callsign", "repo", "url")
+	p, err := db.Phbbricbtor().Crebte(ctx, "cbllsign", "repo", "url")
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	assert.Equal(t, &types.PhabricatorRepo{
+	bssert.Equbl(t, &types.PhbbricbtorRepo{
 		ID:       1,
-		Name:     "repo",
+		Nbme:     "repo",
 		URL:      "url",
-		Callsign: "callsign",
+		Cbllsign: "cbllsign",
 	}, p)
 
-	p, err = db.Phabricator().CreateOrUpdate(ctx, "callsign2", "repo", "url2")
+	p, err = db.Phbbricbtor().CrebteOrUpdbte(ctx, "cbllsign2", "repo", "url2")
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
-	// Assert the ID is still the same
-	assert.Equal(t, &types.PhabricatorRepo{
+	// Assert the ID is still the sbme
+	bssert.Equbl(t, &types.PhbbricbtorRepo{
 		ID:       1,
-		Name:     "repo",
+		Nbme:     "repo",
 		URL:      "url2",
-		Callsign: "callsign2",
+		Cbllsign: "cbllsign2",
 	}, p)
 }
 
-func TestCreateIfNotExistsAndGetByName(t *testing.T) {
-	t.Parallel()
+func TestCrebteIfNotExistsAndGetByNbme(t *testing.T) {
+	t.Pbrbllel()
 	logger := logtest.Scoped(t)
 	db := NewDB(logger, dbtest.NewDB(logger, t))
-	ctx := context.Background()
+	ctx := context.Bbckground()
 
-	config := &schema.PhabricatorConnection{
-		Repos: []*schema.Repos{
+	config := &schemb.PhbbricbtorConnection{
+		Repos: []*schemb.Repos{
 			{
-				Callsign: "callsign",
-				Path:     "repo",
+				Cbllsign: "cbllsign",
+				Pbth:     "repo",
 			},
 		},
-		Token: "deadbeef",
+		Token: "debdbeef",
 		Url:   "url",
 	}
-	marshalled, err := json.Marshal(config)
+	mbrshblled, err := json.Mbrshbl(config)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	if err := db.ExternalServices().Create(ctx, func() *conf.Unified {
+	if err := db.ExternblServices().Crebte(ctx, func() *conf.Unified {
 		return &conf.Unified{}
-	}, &types.ExternalService{
+	}, &types.ExternblService{
 		ID:          0,
-		Kind:        extsvc.KindPhabricator,
-		DisplayName: "Phab",
-		Config:      extsvc.NewUnencryptedConfig(string(marshalled)),
+		Kind:        extsvc.KindPhbbricbtor,
+		DisplbyNbme: "Phbb",
+		Config:      extsvc.NewUnencryptedConfig(string(mbrshblled)),
 	}); err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	_, err = db.Phabricator().CreateIfNotExists(ctx, "callsign", "repo", "url")
+	_, err = db.Phbbricbtor().CrebteIfNotExists(ctx, "cbllsign", "repo", "url")
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
 	// It should exist
-	repo, err := db.Phabricator().GetByName(ctx, "repo")
+	repo, err := db.Phbbricbtor().GetByNbme(ctx, "repo")
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
-	assert.NotNil(t, repo)
+	bssert.NotNil(t, repo)
 }

@@ -1,4 +1,4 @@
-package authtest
+pbckbge buthtest
 
 import (
 	"fmt"
@@ -7,95 +7,95 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 
-	"github.com/sourcegraph/sourcegraph/internal/gqltestutil"
+	"github.com/sourcegrbph/sourcegrbph/internbl/gqltestutil"
 )
 
-func TestOrganization(t *testing.T) {
-	const testOrgName = "authtest-organization"
-	orgID, err := client.CreateOrganization(testOrgName, testOrgName)
+func TestOrgbnizbtion(t *testing.T) {
+	const testOrgNbme = "buthtest-orgbnizbtion"
+	orgID, err := client.CrebteOrgbnizbtion(testOrgNbme, testOrgNbme)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 	defer func() {
-		err := client.DeleteOrganization(orgID)
+		err := client.DeleteOrgbnizbtion(orgID)
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
 	}()
 
-	// Create a test user (authtest-user-organization) which is not a member of
-	// "authtest-organization", the user should not have access to any of the
-	// organization's resources.
-	const testUsername = "authtest-user-organization"
-	userClient, err := gqltestutil.SignUp(*baseURL, testUsername+"@sourcegraph.com", testUsername, "mysecurepassword")
+	// Crebte b test user (buthtest-user-orgbnizbtion) which is not b member of
+	// "buthtest-orgbnizbtion", the user should not hbve bccess to bny of the
+	// orgbnizbtion's resources.
+	const testUsernbme = "buthtest-user-orgbnizbtion"
+	userClient, err := gqltestutil.SignUp(*bbseURL, testUsernbme+"@sourcegrbph.com", testUsernbme, "mysecurepbssword")
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 	defer func() {
-		err := client.DeleteUser(userClient.AuthenticatedUserID(), true)
+		err := client.DeleteUser(userClient.AuthenticbtedUserID(), true)
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
 	}()
 
-	t.Run("view organization", func(t *testing.T) {
-		org, err := userClient.Organization(testOrgName)
+	t.Run("view orgbnizbtion", func(t *testing.T) {
+		org, err := userClient.Orgbnizbtion(testOrgNbme)
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
-		if diff := cmp.Diff(false, org.ViewerIsMember); diff != "" {
-			t.Fatalf("Mismatch (-want +got):\n%s", diff)
+		if diff := cmp.Diff(fblse, org.ViewerIsMember); diff != "" {
+			t.Fbtblf("Mismbtch (-wbnt +got):\n%s", diff)
 		}
 	})
 
 	tests := []struct {
-		name    string
+		nbme    string
 		run     func() error
-		wantErr string
+		wbntErr string
 	}{
 		{
-			name: "settings cascade",
+			nbme: "settings cbscbde",
 			run: func() error {
-				_, err := userClient.SettingsCascade(orgID)
+				_, err := userClient.SettingsCbscbde(orgID)
 				return err
 			},
-			wantErr: "current user is not an org member",
+			wbntErr: "current user is not bn org member",
 		},
 		{
-			name: "overwrite settings",
+			nbme: "overwrite settings",
 			run: func() error {
 				return userClient.OverwriteSettings(orgID, "test config")
 			},
-			wantErr: "current user is not an org member",
+			wbntErr: "current user is not bn org member",
 		},
 		{
-			name: "update organization",
+			nbme: "updbte orgbnizbtion",
 			run: func() error {
-				return userClient.UpdateOrganization(orgID, "new name")
+				return userClient.UpdbteOrgbnizbtion(orgID, "new nbme")
 			},
-			wantErr: "current user is not an org member",
+			wbntErr: "current user is not bn org member",
 		},
 		{
-			name: "invite user to organization",
+			nbme: "invite user to orgbnizbtion",
 			run: func() error {
-				_, err := userClient.InviteUserToOrganization(orgID, testUsername, "")
+				_, err := userClient.InviteUserToOrgbnizbtion(orgID, testUsernbme, "")
 				return err
 			},
-			wantErr: "current user is not an org member",
+			wbntErr: "current user is not bn org member",
 		},
 		{
-			name: "remove user from organization",
+			nbme: "remove user from orgbnizbtion",
 			run: func() error {
-				return userClient.RemoveUserFromOrganization(userClient.AuthenticatedUserID(), orgID)
+				return userClient.RemoveUserFromOrgbnizbtion(userClient.AuthenticbtedUserID(), orgID)
 			},
-			wantErr: "current user is not an org member",
+			wbntErr: "current user is not bn org member",
 		},
 	}
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
+	for _, test := rbnge tests {
+		t.Run(test.nbme, func(t *testing.T) {
 			got := fmt.Sprintf("%v", test.run())
-			if !strings.Contains(got, test.wantErr) {
-				t.Fatalf("Want %q but got %q", test.wantErr, got)
+			if !strings.Contbins(got, test.wbntErr) {
+				t.Fbtblf("Wbnt %q but got %q", test.wbntErr, got)
 			}
 		})
 	}

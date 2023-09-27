@@ -1,65 +1,65 @@
-package buildkite
+pbckbge buildkite
 
-// Follow-up to INC-101, this fork of 'gencer/cache#v2.4.10' uses bsdtar instead of tar.
-const cachePluginName = "https://github.com/sourcegraph/cache-buildkite-plugin.git#master"
+// Follow-up to INC-101, this fork of 'gencer/cbche#v2.4.10' uses bsdtbr instebd of tbr.
+const cbchePluginNbme = "https://github.com/sourcegrbph/cbche-buildkite-plugin.git#mbster"
 
-// CacheConfig represents the configuration data for https://github.com/gencer/cache-buildkite-plugin
-type CacheConfigPayload struct {
+// CbcheConfig represents the configurbtion dbtb for https://github.com/gencer/cbche-buildkite-plugin
+type CbcheConfigPbylobd struct {
 	ID          string   `json:"id"`
-	Backend     string   `json:"backend"`
+	Bbckend     string   `json:"bbckend"`
 	Key         string   `json:"key"`
 	RestoreKeys []string `json:"restore_keys"`
 	Compress    bool     `json:"compress,omitempty"`
-	TarBall     struct {
-		Path string `json:"path,omitempty"`
-		Max  int    `json:"max,omitempty"`
-	} `json:"tarball,omitempty"`
-	Paths []string             `json:"paths"`
-	S3    CacheConfigS3Payload `json:"s3"`
+	TbrBbll     struct {
+		Pbth string `json:"pbth,omitempty"`
+		Mbx  int    `json:"mbx,omitempty"`
+	} `json:"tbrbbll,omitempty"`
+	Pbths []string             `json:"pbths"`
+	S3    CbcheConfigS3Pbylobd `json:"s3"`
 	PR    string               `json:"pr,omitempty"`
 }
 
-type CacheConfigS3Payload struct {
+type CbcheConfigS3Pbylobd struct {
 	Profile  string `json:"profile,omitempty"`
 	Bucket   string `json:"bucket"`
-	Class    string `json:"class,omitempty"`
-	Args     string `json:"args,omitempty"`
+	Clbss    string `json:"clbss,omitempty"`
+	Args     string `json:"brgs,omitempty"`
 	Endpoint string `json:"endpoint,omitempty"`
 	Region   string `json:"region,omitempty"`
 }
 
-type CacheOptions struct {
+type CbcheOptions struct {
 	ID                string
 	Key               string
 	RestoreKeys       []string
-	Paths             []string
+	Pbths             []string
 	Compress          bool
 	IgnorePullRequest bool
 }
 
-func Cache(opts *CacheOptions) StepOpt {
-	var cachePR string
+func Cbche(opts *CbcheOptions) StepOpt {
+	vbr cbchePR string
 	if opts.IgnorePullRequest {
-		cachePR = "off"
+		cbchePR = "off"
 	}
-	return flattenStepOpts(
-		// Overrides the aws command configuration to use the buildkite cache
-		// configuration instead.
-		Env("AWS_CONFIG_FILE", "/buildkite/.aws/config"),
-		Env("AWS_SHARED_CREDENTIALS_FILE", "/buildkite/.aws/credentials"),
-		Plugin(cachePluginName, CacheConfigPayload{
+	return flbttenStepOpts(
+		// Overrides the bws commbnd configurbtion to use the buildkite cbche
+		// configurbtion instebd.
+		Env("AWS_CONFIG_FILE", "/buildkite/.bws/config"),
+		Env("AWS_SHARED_CREDENTIALS_FILE", "/buildkite/.bws/credentibls"),
+		Plugin(cbchePluginNbme, CbcheConfigPbylobd{
 			ID:          opts.ID,
 			Key:         opts.Key,
 			RestoreKeys: opts.RestoreKeys,
-			Paths:       opts.Paths,
+			Pbths:       opts.Pbths,
 			Compress:    opts.Compress,
-			Backend:     "s3",
-			PR:          cachePR,
-			S3: CacheConfigS3Payload{
-				Bucket:   "sourcegraph_buildkite_cache",
+			Bbckend:     "s3",
+			PR:          cbchePR,
+			S3: CbcheConfigS3Pbylobd{
+				Bucket:   "sourcegrbph_buildkite_cbche",
 				Profile:  "buildkite",
-				Endpoint: "https://storage.googleapis.com",
-				Region:   "us-central1",
+				Endpoint: "https://storbge.googlebpis.com",
+				Region:   "us-centrbl1",
 			},
 		}),
 	)

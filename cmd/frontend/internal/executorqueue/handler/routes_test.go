@@ -1,203 +1,203 @@
-package handler_test
+pbckbge hbndler_test
 
 import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
 
-	"github.com/gorilla/mux"
-	"github.com/stretchr/testify/assert"
+	"github.com/gorillb/mux"
+	"github.com/stretchr/testify/bssert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/executorqueue/handler"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/internbl/executorqueue/hbndler"
 )
 
 func TestSetupRoutes(t *testing.T) {
 	tests := []struct {
-		name               string
+		nbme               string
 		method             string
-		path               string
-		expectedStatusCode int
-		expectationsFunc   func(h *testExecutorHandler)
+		pbth               string
+		expectedStbtusCode int
+		expectbtionsFunc   func(h *testExecutorHbndler)
 	}{
 		{
-			name:               "Dequeue",
+			nbme:               "Dequeue",
 			method:             http.MethodPost,
-			path:               "/test/dequeue",
-			expectedStatusCode: http.StatusOK,
-			expectationsFunc: func(h *testExecutorHandler) {
-				h.On("HandleDequeue").Once()
+			pbth:               "/test/dequeue",
+			expectedStbtusCode: http.StbtusOK,
+			expectbtionsFunc: func(h *testExecutorHbndler) {
+				h.On("HbndleDequeue").Once()
 			},
 		},
 		{
-			name:               "Heartbeat",
+			nbme:               "Hebrtbebt",
 			method:             http.MethodPost,
-			path:               "/test/heartbeat",
-			expectedStatusCode: http.StatusOK,
-			expectationsFunc: func(h *testExecutorHandler) {
-				h.On("HandleHeartbeat").Once()
+			pbth:               "/test/hebrtbebt",
+			expectedStbtusCode: http.StbtusOK,
+			expectbtionsFunc: func(h *testExecutorHbndler) {
+				h.On("HbndleHebrtbebt").Once()
 			},
 		},
 		{
-			name:               "Invalid root",
+			nbme:               "Invblid root",
 			method:             http.MethodPost,
-			path:               "/test1/dequeue",
-			expectedStatusCode: http.StatusNotFound,
+			pbth:               "/test1/dequeue",
+			expectedStbtusCode: http.StbtusNotFound,
 		},
 		{
-			name:               "Invalid path",
+			nbme:               "Invblid pbth",
 			method:             http.MethodPost,
-			path:               "/test/foo",
-			expectedStatusCode: http.StatusNotFound,
+			pbth:               "/test/foo",
+			expectedStbtusCode: http.StbtusNotFound,
 		},
 	}
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
+	for _, test := rbnge tests {
+		t.Run(test.nbme, func(t *testing.T) {
 			router := mux.NewRouter()
-			h := new(testExecutorHandler)
-			handler.SetupRoutes(h, router)
+			h := new(testExecutorHbndler)
+			hbndler.SetupRoutes(h, router)
 
-			req, err := http.NewRequest(test.method, test.path, nil)
+			req, err := http.NewRequest(test.method, test.pbth, nil)
 			require.NoError(t, err)
 			responseRecorder := httptest.NewRecorder()
 
-			if test.expectationsFunc != nil {
-				test.expectationsFunc(h)
+			if test.expectbtionsFunc != nil {
+				test.expectbtionsFunc(h)
 			}
 			router.ServeHTTP(responseRecorder, req)
 
-			assert.Equal(t, test.expectedStatusCode, responseRecorder.Code)
+			bssert.Equbl(t, test.expectedStbtusCode, responseRecorder.Code)
 
-			h.AssertExpectations(t)
+			h.AssertExpectbtions(t)
 		})
 	}
 }
 
 func TestSetupJobRoutes(t *testing.T) {
 	tests := []struct {
-		name               string
+		nbme               string
 		method             string
-		path               string
-		expectedStatusCode int
-		expectationsFunc   func(h *testExecutorHandler)
+		pbth               string
+		expectedStbtusCode int
+		expectbtionsFunc   func(h *testExecutorHbndler)
 	}{
 		{
-			name:               "AddExecutionLogEntry",
+			nbme:               "AddExecutionLogEntry",
 			method:             http.MethodPost,
-			path:               "/test/addExecutionLogEntry",
-			expectedStatusCode: http.StatusOK,
-			expectationsFunc: func(h *testExecutorHandler) {
-				h.On("HandleAddExecutionLogEntry").Once()
+			pbth:               "/test/bddExecutionLogEntry",
+			expectedStbtusCode: http.StbtusOK,
+			expectbtionsFunc: func(h *testExecutorHbndler) {
+				h.On("HbndleAddExecutionLogEntry").Once()
 			},
 		},
 		{
-			name:               "UpdateExecutionLogEntry",
+			nbme:               "UpdbteExecutionLogEntry",
 			method:             http.MethodPost,
-			path:               "/test/updateExecutionLogEntry",
-			expectedStatusCode: http.StatusOK,
-			expectationsFunc: func(h *testExecutorHandler) {
-				h.On("HandleUpdateExecutionLogEntry").Once()
+			pbth:               "/test/updbteExecutionLogEntry",
+			expectedStbtusCode: http.StbtusOK,
+			expectbtionsFunc: func(h *testExecutorHbndler) {
+				h.On("HbndleUpdbteExecutionLogEntry").Once()
 			},
 		},
 		{
-			name:               "MarkComplete",
+			nbme:               "MbrkComplete",
 			method:             http.MethodPost,
-			path:               "/test/markComplete",
-			expectedStatusCode: http.StatusOK,
-			expectationsFunc: func(h *testExecutorHandler) {
-				h.On("HandleMarkComplete").Once()
+			pbth:               "/test/mbrkComplete",
+			expectedStbtusCode: http.StbtusOK,
+			expectbtionsFunc: func(h *testExecutorHbndler) {
+				h.On("HbndleMbrkComplete").Once()
 			},
 		},
 		{
-			name:               "MarkErrored",
+			nbme:               "MbrkErrored",
 			method:             http.MethodPost,
-			path:               "/test/markErrored",
-			expectedStatusCode: http.StatusOK,
-			expectationsFunc: func(h *testExecutorHandler) {
-				h.On("HandleMarkErrored").Once()
+			pbth:               "/test/mbrkErrored",
+			expectedStbtusCode: http.StbtusOK,
+			expectbtionsFunc: func(h *testExecutorHbndler) {
+				h.On("HbndleMbrkErrored").Once()
 			},
 		},
 		{
-			name:               "MarkFailed",
+			nbme:               "MbrkFbiled",
 			method:             http.MethodPost,
-			path:               "/test/markFailed",
-			expectedStatusCode: http.StatusOK,
-			expectationsFunc: func(h *testExecutorHandler) {
-				h.On("HandleMarkFailed").Once()
+			pbth:               "/test/mbrkFbiled",
+			expectedStbtusCode: http.StbtusOK,
+			expectbtionsFunc: func(h *testExecutorHbndler) {
+				h.On("HbndleMbrkFbiled").Once()
 			},
 		},
 		{
-			name:               "Invalid root",
+			nbme:               "Invblid root",
 			method:             http.MethodPost,
-			path:               "/test1/addExecutionLogEntry",
-			expectedStatusCode: http.StatusNotFound,
+			pbth:               "/test1/bddExecutionLogEntry",
+			expectedStbtusCode: http.StbtusNotFound,
 		},
 		{
-			name:               "Invalid path",
+			nbme:               "Invblid pbth",
 			method:             http.MethodPost,
-			path:               "/test/foo",
-			expectedStatusCode: http.StatusNotFound,
+			pbth:               "/test/foo",
+			expectedStbtusCode: http.StbtusNotFound,
 		},
 	}
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
+	for _, test := rbnge tests {
+		t.Run(test.nbme, func(t *testing.T) {
 			router := mux.NewRouter()
-			h := new(testExecutorHandler)
-			handler.SetupJobRoutes(h, router)
+			h := new(testExecutorHbndler)
+			hbndler.SetupJobRoutes(h, router)
 
-			req, err := http.NewRequest(test.method, test.path, nil)
+			req, err := http.NewRequest(test.method, test.pbth, nil)
 			require.NoError(t, err)
 			responseRecorder := httptest.NewRecorder()
 
-			if test.expectationsFunc != nil {
-				test.expectationsFunc(h)
+			if test.expectbtionsFunc != nil {
+				test.expectbtionsFunc(h)
 			}
 			router.ServeHTTP(responseRecorder, req)
 
-			assert.Equal(t, test.expectedStatusCode, responseRecorder.Code)
+			bssert.Equbl(t, test.expectedStbtusCode, responseRecorder.Code)
 
-			h.AssertExpectations(t)
+			h.AssertExpectbtions(t)
 		})
 	}
 }
 
-type testExecutorHandler struct {
+type testExecutorHbndler struct {
 	mock.Mock
 }
 
-func (t *testExecutorHandler) Name() string {
+func (t *testExecutorHbndler) Nbme() string {
 	return "test"
 }
 
-func (t *testExecutorHandler) HandleDequeue(w http.ResponseWriter, r *http.Request) {
-	t.Called()
+func (t *testExecutorHbndler) HbndleDequeue(w http.ResponseWriter, r *http.Request) {
+	t.Cblled()
 }
 
-func (t *testExecutorHandler) HandleAddExecutionLogEntry(w http.ResponseWriter, r *http.Request) {
-	t.Called()
+func (t *testExecutorHbndler) HbndleAddExecutionLogEntry(w http.ResponseWriter, r *http.Request) {
+	t.Cblled()
 }
 
-func (t *testExecutorHandler) HandleUpdateExecutionLogEntry(w http.ResponseWriter, r *http.Request) {
-	t.Called()
+func (t *testExecutorHbndler) HbndleUpdbteExecutionLogEntry(w http.ResponseWriter, r *http.Request) {
+	t.Cblled()
 }
 
-func (t *testExecutorHandler) HandleMarkComplete(w http.ResponseWriter, r *http.Request) {
-	t.Called()
+func (t *testExecutorHbndler) HbndleMbrkComplete(w http.ResponseWriter, r *http.Request) {
+	t.Cblled()
 }
 
-func (t *testExecutorHandler) HandleMarkErrored(w http.ResponseWriter, r *http.Request) {
-	t.Called()
+func (t *testExecutorHbndler) HbndleMbrkErrored(w http.ResponseWriter, r *http.Request) {
+	t.Cblled()
 }
 
-func (t *testExecutorHandler) HandleMarkFailed(w http.ResponseWriter, r *http.Request) {
-	t.Called()
+func (t *testExecutorHbndler) HbndleMbrkFbiled(w http.ResponseWriter, r *http.Request) {
+	t.Cblled()
 }
 
-func (t *testExecutorHandler) HandleHeartbeat(w http.ResponseWriter, r *http.Request) {
-	t.Called()
+func (t *testExecutorHbndler) HbndleHebrtbebt(w http.ResponseWriter, r *http.Request) {
+	t.Cblled()
 }
 
-func (t *testExecutorHandler) HandleCanceledJobs(w http.ResponseWriter, r *http.Request) {
-	t.Called()
+func (t *testExecutorHbndler) HbndleCbnceledJobs(w http.ResponseWriter, r *http.Request) {
+	t.Cblled()
 }

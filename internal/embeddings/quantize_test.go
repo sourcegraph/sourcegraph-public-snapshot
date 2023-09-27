@@ -1,19 +1,19 @@
-package embeddings
+pbckbge embeddings
 
 import (
 	"testing"
 	"testing/quick"
 )
 
-func TestQuantize(t *testing.T) {
-	t.Run("buf doesn't affect output", func(t *testing.T) {
-		a := func(input []float32, buf []int8) []int8 {
-			return Quantize(input, buf)
+func TestQubntize(t *testing.T) {
+	t.Run("buf doesn't bffect output", func(t *testing.T) {
+		b := func(input []flobt32, buf []int8) []int8 {
+			return Qubntize(input, buf)
 		}
 
-		b := func(input []float32, buf []int8) []int8 {
-			return Quantize(input, nil)
+		b := func(input []flobt32, buf []int8) []int8 {
+			return Qubntize(input, nil)
 		}
-		quick.CheckEqual(a, b, nil)
+		quick.CheckEqubl(b, b, nil)
 	})
 }

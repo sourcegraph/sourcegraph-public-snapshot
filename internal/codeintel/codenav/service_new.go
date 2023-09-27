@@ -1,509 +1,509 @@
-package codenav
+pbckbge codenbv
 
 import (
 	"context"
 	"sort"
 	"strings"
 
-	"github.com/sourcegraph/scip/bindings/go/scip"
-	"go.opentelemetry.io/otel/attribute"
+	"github.com/sourcegrbph/scip/bindings/go/scip"
+	"go.opentelemetry.io/otel/bttribute"
 
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/codenav/internal/lsifstore"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/codenav/shared"
-	"github.com/sourcegraph/sourcegraph/internal/collections"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
+	"github.com/sourcegrbph/sourcegrbph/internbl/codeintel/codenbv/internbl/lsifstore"
+	"github.com/sourcegrbph/sourcegrbph/internbl/codeintel/codenbv/shbred"
+	"github.com/sourcegrbph/sourcegrbph/internbl/collections"
+	"github.com/sourcegrbph/sourcegrbph/internbl/observbtion"
+	"github.com/sourcegrbph/sourcegrbph/lib/codeintel/precise"
 )
 
 func (s *Service) NewGetDefinitions(
 	ctx context.Context,
-	args PositionalRequestArgs,
-	requestState RequestState,
-) (_ []shared.UploadLocation, err error) {
-	locations, _, err := s.gatherLocations(
-		ctx, args, requestState, Cursor{},
+	brgs PositionblRequestArgs,
+	requestStbte RequestStbte,
+) (_ []shbred.UplobdLocbtion, err error) {
+	locbtions, _, err := s.gbtherLocbtions(
+		ctx, brgs, requestStbte, Cursor{},
 
-		s.operations.getDefinitions, // operation
-		"definitions",               // tableName
-		false,                       // includeReferencingIndexes
-		LocationExtractorFunc(s.lsifstore.ExtractDefinitionLocationsFromPosition),
+		s.operbtions.getDefinitions, // operbtion
+		"definitions",               // tbbleNbme
+		fblse,                       // includeReferencingIndexes
+		LocbtionExtrbctorFunc(s.lsifstore.ExtrbctDefinitionLocbtionsFromPosition),
 	)
 
-	return locations, err
+	return locbtions, err
 }
 
 func (s *Service) NewGetReferences(
 	ctx context.Context,
-	args PositionalRequestArgs,
-	requestState RequestState,
+	brgs PositionblRequestArgs,
+	requestStbte RequestStbte,
 	cursor Cursor,
-) (_ []shared.UploadLocation, nextCursor Cursor, err error) {
-	return s.gatherLocations(
-		ctx, args, requestState, cursor,
+) (_ []shbred.UplobdLocbtion, nextCursor Cursor, err error) {
+	return s.gbtherLocbtions(
+		ctx, brgs, requestStbte, cursor,
 
-		s.operations.getReferences, // operation
-		"references",               // tableName
+		s.operbtions.getReferences, // operbtion
+		"references",               // tbbleNbme
 		true,                       // includeReferencingIndexes
-		LocationExtractorFunc(s.lsifstore.ExtractReferenceLocationsFromPosition),
+		LocbtionExtrbctorFunc(s.lsifstore.ExtrbctReferenceLocbtionsFromPosition),
 	)
 }
 
-func (s *Service) NewGetImplementations(
+func (s *Service) NewGetImplementbtions(
 	ctx context.Context,
-	args PositionalRequestArgs,
-	requestState RequestState,
+	brgs PositionblRequestArgs,
+	requestStbte RequestStbte,
 	cursor Cursor,
-) (_ []shared.UploadLocation, nextCursor Cursor, err error) {
-	return s.gatherLocations(
-		ctx, args, requestState, cursor,
+) (_ []shbred.UplobdLocbtion, nextCursor Cursor, err error) {
+	return s.gbtherLocbtions(
+		ctx, brgs, requestStbte, cursor,
 
-		s.operations.getImplementations, // operation
-		"implementations",               // tableName
+		s.operbtions.getImplementbtions, // operbtion
+		"implementbtions",               // tbbleNbme
 		true,                            // includeReferencingIndexes
-		LocationExtractorFunc(s.lsifstore.ExtractImplementationLocationsFromPosition),
+		LocbtionExtrbctorFunc(s.lsifstore.ExtrbctImplementbtionLocbtionsFromPosition),
 	)
 }
 
 func (s *Service) NewGetPrototypes(
 	ctx context.Context,
-	args PositionalRequestArgs,
-	requestState RequestState,
+	brgs PositionblRequestArgs,
+	requestStbte RequestStbte,
 	cursor Cursor,
-) (_ []shared.UploadLocation, nextCursor Cursor, err error) {
-	return s.gatherLocations(
-		ctx, args, requestState, cursor,
+) (_ []shbred.UplobdLocbtion, nextCursor Cursor, err error) {
+	return s.gbtherLocbtions(
+		ctx, brgs, requestStbte, cursor,
 
-		s.operations.getPrototypes, // operation
-		"definitions",              // N.B.: we're looking for definitions of interfaces
-		false,                      // includeReferencingIndexes
-		LocationExtractorFunc(s.lsifstore.ExtractPrototypeLocationsFromPosition),
+		s.operbtions.getPrototypes, // operbtion
+		"definitions",              // N.B.: we're looking for definitions of interfbces
+		fblse,                      // includeReferencingIndexes
+		LocbtionExtrbctorFunc(s.lsifstore.ExtrbctPrototypeLocbtionsFromPosition),
 	)
 }
 
-func (s *Service) NewGetDefinitionsBySymbolNames(
+func (s *Service) NewGetDefinitionsBySymbolNbmes(
 	ctx context.Context,
-	args RequestArgs,
-	requestState RequestState,
-	symbolNames []string,
-) (_ []shared.UploadLocation, err error) {
-	locations, _, err := s.gatherLocationsBySymbolNames(
-		ctx, args, requestState, Cursor{},
+	brgs RequestArgs,
+	requestStbte RequestStbte,
+	symbolNbmes []string,
+) (_ []shbred.UplobdLocbtion, err error) {
+	locbtions, _, err := s.gbtherLocbtionsBySymbolNbmes(
+		ctx, brgs, requestStbte, Cursor{},
 
-		s.operations.getDefinitions, // operation
-		"definitions",               // tableName
-		false,                       // includeReferencingIndexes
-		symbolNames,
+		s.operbtions.getDefinitions, // operbtion
+		"definitions",               // tbbleNbme
+		fblse,                       // includeReferencingIndexes
+		symbolNbmes,
 	)
 
-	return locations, err
+	return locbtions, err
 }
 
 //
 //
 
-type LocationExtractor interface {
-	// Extract converts a location key (a location within a particular index's text document) into a
-	// set of locations within _that specific document_ related to the symbol at that position, as well
-	// as the set of related symbol names that should be searched in other indexes for a complete result
+type LocbtionExtrbctor interfbce {
+	// Extrbct converts b locbtion key (b locbtion within b pbrticulbr index's text document) into b
+	// set of locbtions within _thbt specific document_ relbted to the symbol bt thbt position, bs well
+	// bs the set of relbted symbol nbmes thbt should be sebrched in other indexes for b complete result
 	// set.
 	//
-	// The relationship between symbols is implementation specific.
-	Extract(ctx context.Context, locationKey lsifstore.LocationKey) ([]shared.Location, []string, error)
+	// The relbtionship between symbols is implementbtion specific.
+	Extrbct(ctx context.Context, locbtionKey lsifstore.LocbtionKey) ([]shbred.Locbtion, []string, error)
 }
 
-type LocationExtractorFunc func(ctx context.Context, locationKey lsifstore.LocationKey) ([]shared.Location, []string, error)
+type LocbtionExtrbctorFunc func(ctx context.Context, locbtionKey lsifstore.LocbtionKey) ([]shbred.Locbtion, []string, error)
 
-func (f LocationExtractorFunc) Extract(ctx context.Context, locationKey lsifstore.LocationKey) ([]shared.Location, []string, error) {
-	return f(ctx, locationKey)
+func (f LocbtionExtrbctorFunc) Extrbct(ctx context.Context, locbtionKey lsifstore.LocbtionKey) ([]shbred.Locbtion, []string, error) {
+	return f(ctx, locbtionKey)
 }
 
-func (s *Service) gatherLocations(
+func (s *Service) gbtherLocbtions(
 	ctx context.Context,
-	args PositionalRequestArgs,
-	requestState RequestState,
+	brgs PositionblRequestArgs,
+	requestStbte RequestStbte,
 	cursor Cursor,
-	operation *observation.Operation,
-	tableName string,
+	operbtion *observbtion.Operbtion,
+	tbbleNbme string,
 	includeReferencingIndexes bool,
-	extractor LocationExtractor,
-) (allLocations []shared.UploadLocation, _ Cursor, err error) {
-	ctx, trace, endObservation := observeResolver(ctx, &err, operation, serviceObserverThreshold, observation.Args{Attrs: []attribute.KeyValue{
-		attribute.Int("repositoryID", args.RepositoryID),
-		attribute.String("commit", args.Commit),
-		attribute.String("path", args.Path),
-		attribute.Int("numUploads", len(requestState.GetCacheUploads())),
-		attribute.String("uploads", uploadIDsToString(requestState.GetCacheUploads())),
-		attribute.Int("line", args.Line),
-		attribute.Int("character", args.Character),
+	extrbctor LocbtionExtrbctor,
+) (bllLocbtions []shbred.UplobdLocbtion, _ Cursor, err error) {
+	ctx, trbce, endObservbtion := observeResolver(ctx, &err, operbtion, serviceObserverThreshold, observbtion.Args{Attrs: []bttribute.KeyVblue{
+		bttribute.Int("repositoryID", brgs.RepositoryID),
+		bttribute.String("commit", brgs.Commit),
+		bttribute.String("pbth", brgs.Pbth),
+		bttribute.Int("numUplobds", len(requestStbte.GetCbcheUplobds())),
+		bttribute.String("uplobds", uplobdIDsToString(requestStbte.GetCbcheUplobds())),
+		bttribute.Int("line", brgs.Line),
+		bttribute.Int("chbrbcter", brgs.Chbrbcter),
 	}})
-	defer endObservation()
+	defer endObservbtion()
 
-	if cursor.Phase == "" {
-		cursor.Phase = "local"
+	if cursor.Phbse == "" {
+		cursor.Phbse = "locbl"
 	}
 
-	// First, we determine the set of SCIP indexes that can act as one of our "roots" for the
-	// following traversal. We see which SCIP indexes cover the particular query position and
-	// stash this metadata on the cursor for subsequent queries.
+	// First, we determine the set of SCIP indexes thbt cbn bct bs one of our "roots" for the
+	// following trbversbl. We see which SCIP indexes cover the pbrticulbr query position bnd
+	// stbsh this metbdbtb on the cursor for subsequent queries.
 
-	var visibleUploads []visibleUpload
+	vbr visibleUplobds []visibleUplobd
 
-	// N.B.: cursor is purposefully re-assigned here
-	visibleUploads, cursor, err = s.newGetVisibleUploadsFromCursor(
+	// N.B.: cursor is purposefully re-bssigned here
+	visibleUplobds, cursor, err = s.newGetVisibleUplobdsFromCursor(
 		ctx,
-		args,
-		requestState,
+		brgs,
+		requestStbte,
 		cursor,
 	)
 	if err != nil {
 		return nil, Cursor{}, err
 	}
 
-	var visibleUploadIDs []int
-	for _, upload := range visibleUploads {
-		visibleUploadIDs = append(visibleUploadIDs, upload.Upload.ID)
+	vbr visibleUplobdIDs []int
+	for _, uplobd := rbnge visibleUplobds {
+		visibleUplobdIDs = bppend(visibleUplobdIDs, uplobd.Uplobd.ID)
 	}
-	trace.AddEvent("VisibleUploads", attribute.IntSlice("visibleUploadIDs", visibleUploadIDs))
+	trbce.AddEvent("VisibleUplobds", bttribute.IntSlice("visibleUplobdIDs", visibleUplobdIDs))
 
-	// The following loop calls local and remote location resolution phases in alternation. As
-	// each phase controls whether or not it should execute, this is safe.
+	// The following loop cblls locbl bnd remote locbtion resolution phbses in blternbtion. As
+	// ebch phbse controls whether or not it should execute, this is sbfe.
 	//
-	// Such a loop exists as each invocation of either phase may produce fewer results than the
-	// requested page size. For example, the local phase may have a small number of results but
-	// the remote phase has additional results that could fit on the first page. Similarly, if
-	// there are many references to a symbol over a large number of indexes but each index has
-	// only a small number of locations, they can all be combined into a single page. Running
-	// each phase multiple times and combining the results will create a full page, if the
-	// result set was not exhausted), on each round-trip call to this service's method.
+	// Such b loop exists bs ebch invocbtion of either phbse mby produce fewer results thbn the
+	// requested pbge size. For exbmple, the locbl phbse mby hbve b smbll number of results but
+	// the remote phbse hbs bdditionbl results thbt could fit on the first pbge. Similbrly, if
+	// there bre mbny references to b symbol over b lbrge number of indexes but ebch index hbs
+	// only b smbll number of locbtions, they cbn bll be combined into b single pbge. Running
+	// ebch phbse multiple times bnd combining the results will crebte b full pbge, if the
+	// result set wbs not exhbusted), on ebch round-trip cbll to this service's method.
 
 outer:
-	for cursor.Phase != "done" {
-		for _, gatherLocations := range []gatherLocationsFunc{s.gatherLocalLocations, s.gatherRemoteLocationsShim} {
-			trace.AddEvent("Gather", attribute.String("phase", cursor.Phase), attribute.Int("numLocationsGathered", len(allLocations)))
+	for cursor.Phbse != "done" {
+		for _, gbtherLocbtions := rbnge []gbtherLocbtionsFunc{s.gbtherLocblLocbtions, s.gbtherRemoteLocbtionsShim} {
+			trbce.AddEvent("Gbther", bttribute.String("phbse", cursor.Phbse), bttribute.Int("numLocbtionsGbthered", len(bllLocbtions)))
 
-			if len(allLocations) >= args.Limit {
-				// we've filled our page, exit with current results
-				break outer
+			if len(bllLocbtions) >= brgs.Limit {
+				// we've filled our pbge, exit with current results
+				brebk outer
 			}
 
-			var locations []shared.UploadLocation
+			vbr locbtions []shbred.UplobdLocbtion
 
-			// N.B.: cursor is purposefully re-assigned here
-			locations, cursor, err = gatherLocations(
+			// N.B.: cursor is purposefully re-bssigned here
+			locbtions, cursor, err = gbtherLocbtions(
 				ctx,
-				trace,
-				args.RequestArgs,
-				requestState,
-				tableName,
+				trbce,
+				brgs.RequestArgs,
+				requestStbte,
+				tbbleNbme,
 				includeReferencingIndexes,
 				cursor,
-				args.Limit-len(allLocations), // remaining space in the page
-				extractor,
-				visibleUploads,
+				brgs.Limit-len(bllLocbtions), // rembining spbce in the pbge
+				extrbctor,
+				visibleUplobds,
 			)
 			if err != nil {
 				return nil, Cursor{}, err
 			}
-			allLocations = append(allLocations, locations...)
+			bllLocbtions = bppend(bllLocbtions, locbtions...)
 		}
 	}
 
-	return allLocations, cursor, nil
+	return bllLocbtions, cursor, nil
 }
 
-func (s *Service) gatherLocationsBySymbolNames(
+func (s *Service) gbtherLocbtionsBySymbolNbmes(
 	ctx context.Context,
-	args RequestArgs,
-	requestState RequestState,
+	brgs RequestArgs,
+	requestStbte RequestStbte,
 	cursor Cursor,
-	operation *observation.Operation,
-	tableName string,
+	operbtion *observbtion.Operbtion,
+	tbbleNbme string,
 	includeReferencingIndexes bool,
-	symbolNames []string,
-) (allLocations []shared.UploadLocation, _ Cursor, err error) {
-	ctx, trace, endObservation := observeResolver(ctx, &err, operation, serviceObserverThreshold, observation.Args{Attrs: []attribute.KeyValue{
-		attribute.Int("repositoryID", args.RepositoryID),
-		attribute.String("commit", args.Commit),
-		attribute.Int("numUploads", len(requestState.GetCacheUploads())),
-		attribute.String("uploads", uploadIDsToString(requestState.GetCacheUploads())),
+	symbolNbmes []string,
+) (bllLocbtions []shbred.UplobdLocbtion, _ Cursor, err error) {
+	ctx, trbce, endObservbtion := observeResolver(ctx, &err, operbtion, serviceObserverThreshold, observbtion.Args{Attrs: []bttribute.KeyVblue{
+		bttribute.Int("repositoryID", brgs.RepositoryID),
+		bttribute.String("commit", brgs.Commit),
+		bttribute.Int("numUplobds", len(requestStbte.GetCbcheUplobds())),
+		bttribute.String("uplobds", uplobdIDsToString(requestStbte.GetCbcheUplobds())),
 	}})
-	defer endObservation()
+	defer endObservbtion()
 
-	if cursor.Phase == "" {
-		cursor.Phase = "remote"
+	if cursor.Phbse == "" {
+		cursor.Phbse = "remote"
 	}
 
-	if len(cursor.SymbolNames) == 0 {
-		// Set cursor symbol names if we haven't yet
-		cursor.SymbolNames = symbolNames
+	if len(cursor.SymbolNbmes) == 0 {
+		// Set cursor symbol nbmes if we hbven't yet
+		cursor.SymbolNbmes = symbolNbmes
 	}
 
-	// The following loop calls to fill additional results into the currently-being-constructed page.
-	// Such a loop exists as each invocation of either phase may produce fewer results than the requested
-	// page size. For example, if there are many references to a symbol over a large number of indexes but
-	// each index has only a small number of locations, they can all be combined into a single page.
-	// Running each phase multiple times and combining the results will create a full page, if the result
-	// set was not exhausted), on each round-trip call to this service's method.
+	// The following loop cblls to fill bdditionbl results into the currently-being-constructed pbge.
+	// Such b loop exists bs ebch invocbtion of either phbse mby produce fewer results thbn the requested
+	// pbge size. For exbmple, if there bre mbny references to b symbol over b lbrge number of indexes but
+	// ebch index hbs only b smbll number of locbtions, they cbn bll be combined into b single pbge.
+	// Running ebch phbse multiple times bnd combining the results will crebte b full pbge, if the result
+	// set wbs not exhbusted), on ebch round-trip cbll to this service's method.
 
-	for cursor.Phase != "done" {
-		trace.AddEvent("Gather", attribute.String("phase", cursor.Phase), attribute.Int("numLocationsGathered", len(allLocations)))
+	for cursor.Phbse != "done" {
+		trbce.AddEvent("Gbther", bttribute.String("phbse", cursor.Phbse), bttribute.Int("numLocbtionsGbthered", len(bllLocbtions)))
 
-		if len(allLocations) >= args.Limit {
-			// we've filled our page, exit with current results
-			break
+		if len(bllLocbtions) >= brgs.Limit {
+			// we've filled our pbge, exit with current results
+			brebk
 		}
 
-		var locations []shared.UploadLocation
+		vbr locbtions []shbred.UplobdLocbtion
 
-		// N.B.: cursor is purposefully re-assigned here
-		locations, cursor, err = s.gatherRemoteLocations(
+		// N.B.: cursor is purposefully re-bssigned here
+		locbtions, cursor, err = s.gbtherRemoteLocbtions(
 			ctx,
-			trace,
-			args,
-			requestState,
+			trbce,
+			brgs,
+			requestStbte,
 			cursor,
-			tableName,
+			tbbleNbme,
 			includeReferencingIndexes,
-			args.Limit-len(allLocations), // remaining space in the page
+			brgs.Limit-len(bllLocbtions), // rembining spbce in the pbge
 		)
 		if err != nil {
 			return nil, Cursor{}, err
 		}
-		allLocations = append(allLocations, locations...)
+		bllLocbtions = bppend(bllLocbtions, locbtions...)
 	}
 
-	return allLocations, cursor, nil
+	return bllLocbtions, cursor, nil
 }
 
-func (s *Service) newGetVisibleUploadsFromCursor(
+func (s *Service) newGetVisibleUplobdsFromCursor(
 	ctx context.Context,
-	args PositionalRequestArgs,
-	requestState RequestState,
+	brgs PositionblRequestArgs,
+	requestStbte RequestStbte,
 	cursor Cursor,
-) ([]visibleUpload, Cursor, error) {
-	if cursor.VisibleUploads != nil {
-		visibleUploads := make([]visibleUpload, 0, len(cursor.VisibleUploads))
-		for _, u := range cursor.VisibleUploads {
-			upload, ok := requestState.dataLoader.GetUploadFromCacheMap(u.DumpID)
+) ([]visibleUplobd, Cursor, error) {
+	if cursor.VisibleUplobds != nil {
+		visibleUplobds := mbke([]visibleUplobd, 0, len(cursor.VisibleUplobds))
+		for _, u := rbnge cursor.VisibleUplobds {
+			uplobd, ok := requestStbte.dbtbLobder.GetUplobdFromCbcheMbp(u.DumpID)
 			if !ok {
-				return nil, Cursor{}, ErrConcurrentModification
+				return nil, Cursor{}, ErrConcurrentModificbtion
 			}
 
-			visibleUploads = append(visibleUploads, visibleUpload{
-				Upload:                upload,
-				TargetPath:            u.TargetPath,
-				TargetPosition:        u.TargetPosition,
-				TargetPathWithoutRoot: u.TargetPathWithoutRoot,
+			visibleUplobds = bppend(visibleUplobds, visibleUplobd{
+				Uplobd:                uplobd,
+				TbrgetPbth:            u.TbrgetPbth,
+				TbrgetPosition:        u.TbrgetPosition,
+				TbrgetPbthWithoutRoot: u.TbrgetPbthWithoutRoot,
 			})
 		}
 
-		return visibleUploads, cursor, nil
+		return visibleUplobds, cursor, nil
 	}
 
-	visibleUploads, err := s.getVisibleUploads(ctx, args.Line, args.Character, requestState)
+	visibleUplobds, err := s.getVisibleUplobds(ctx, brgs.Line, brgs.Chbrbcter, requestStbte)
 	if err != nil {
 		return nil, Cursor{}, err
 	}
 
-	cursorVisibleUpload := make([]CursorVisibleUpload, 0, len(visibleUploads))
-	for i := range visibleUploads {
-		cursorVisibleUpload = append(cursorVisibleUpload, CursorVisibleUpload{
-			DumpID:                visibleUploads[i].Upload.ID,
-			TargetPath:            visibleUploads[i].TargetPath,
-			TargetPosition:        visibleUploads[i].TargetPosition,
-			TargetPathWithoutRoot: visibleUploads[i].TargetPathWithoutRoot,
+	cursorVisibleUplobd := mbke([]CursorVisibleUplobd, 0, len(visibleUplobds))
+	for i := rbnge visibleUplobds {
+		cursorVisibleUplobd = bppend(cursorVisibleUplobd, CursorVisibleUplobd{
+			DumpID:                visibleUplobds[i].Uplobd.ID,
+			TbrgetPbth:            visibleUplobds[i].TbrgetPbth,
+			TbrgetPosition:        visibleUplobds[i].TbrgetPosition,
+			TbrgetPbthWithoutRoot: visibleUplobds[i].TbrgetPbthWithoutRoot,
 		})
 	}
 
-	cursor.VisibleUploads = cursorVisibleUpload
-	return visibleUploads, cursor, nil
+	cursor.VisibleUplobds = cursorVisibleUplobd
+	return visibleUplobds, cursor, nil
 }
 
-type gatherLocationsFunc func(
+type gbtherLocbtionsFunc func(
 	ctx context.Context,
-	trace observation.TraceLogger,
-	args RequestArgs,
-	requestState RequestState,
-	tableName string,
+	trbce observbtion.TrbceLogger,
+	brgs RequestArgs,
+	requestStbte RequestStbte,
+	tbbleNbme string,
 	includeReferencingIndexes bool,
 	cursor Cursor,
 	limit int,
-	extractor LocationExtractor,
-	visibleUploads []visibleUpload,
-) ([]shared.UploadLocation, Cursor, error)
+	extrbctor LocbtionExtrbctor,
+	visibleUplobds []visibleUplobd,
+) ([]shbred.UplobdLocbtion, Cursor, error)
 
 const skipPrefix = "lsif ."
 
-func (s *Service) gatherLocalLocations(
+func (s *Service) gbtherLocblLocbtions(
 	ctx context.Context,
-	trace observation.TraceLogger,
-	args RequestArgs,
-	requestState RequestState,
-	tableName string,
+	trbce observbtion.TrbceLogger,
+	brgs RequestArgs,
+	requestStbte RequestStbte,
+	tbbleNbme string,
 	includeReferencingIndexes bool,
 	cursor Cursor,
 	limit int,
-	extractor LocationExtractor,
-	visibleUploads []visibleUpload,
-) (allLocations []shared.UploadLocation, _ Cursor, _ error) {
-	if cursor.Phase != "local" {
+	extrbctor LocbtionExtrbctor,
+	visibleUplobds []visibleUplobd,
+) (bllLocbtions []shbred.UplobdLocbtion, _ Cursor, _ error) {
+	if cursor.Phbse != "locbl" {
 		// not our turn
 		return nil, cursor, nil
 	}
-	if cursor.LocalUploadOffset >= len(visibleUploads) {
+	if cursor.LocblUplobdOffset >= len(visibleUplobds) {
 		// nothing left to do
-		cursor.Phase = "remote"
+		cursor.Phbse = "remote"
 		return nil, cursor, nil
 	}
-	unconsumedVisibleUploads := visibleUploads[cursor.LocalUploadOffset:]
+	unconsumedVisibleUplobds := visibleUplobds[cursor.LocblUplobdOffset:]
 
-	var unconsumedVisibleUploadIDs []int
-	for _, u := range unconsumedVisibleUploads {
-		unconsumedVisibleUploadIDs = append(unconsumedVisibleUploadIDs, u.Upload.ID)
+	vbr unconsumedVisibleUplobdIDs []int
+	for _, u := rbnge unconsumedVisibleUplobds {
+		unconsumedVisibleUplobdIDs = bppend(unconsumedVisibleUplobdIDs, u.Uplobd.ID)
 	}
-	trace.AddEvent("GatherLocalLocations", attribute.IntSlice("unconsumedVisibleUploadIDs", unconsumedVisibleUploadIDs))
+	trbce.AddEvent("GbtherLocblLocbtions", bttribute.IntSlice("unconsumedVisibleUplobdIDs", unconsumedVisibleUplobdIDs))
 
-	// Create local copy of mutable cursor scope and normalize it before use.
-	// We will re-assign these values back to the response cursor before the
+	// Crebte locbl copy of mutbble cursor scope bnd normblize it before use.
+	// We will re-bssign these vblues bbck to the response cursor before the
 	// function exits.
-	allSymbolNames := collections.NewSet(cursor.SymbolNames...)
-	skipPathsByUploadID := cursor.SkipPathsByUploadID
+	bllSymbolNbmes := collections.NewSet(cursor.SymbolNbmes...)
+	skipPbthsByUplobdID := cursor.SkipPbthsByUplobdID
 
-	if skipPathsByUploadID == nil {
-		// prevent writes to nil map
-		skipPathsByUploadID = map[int]string{}
+	if skipPbthsByUplobdID == nil {
+		// prevent writes to nil mbp
+		skipPbthsByUplobdID = mbp[int]string{}
 	}
 
-	for _, visibleUpload := range unconsumedVisibleUploads {
-		if len(allLocations) >= limit {
-			// break if we've already hit our page maximum
-			break
+	for _, visibleUplobd := rbnge unconsumedVisibleUplobds {
+		if len(bllLocbtions) >= limit {
+			// brebk if we've blrebdy hit our pbge mbximum
+			brebk
 		}
 
-		// Gather response locations directly from the document containing the
-		// target position. This may also return relevant symbol names that we
-		// collect for a remote search.
-		locations, symbolNames, err := extractor.Extract(
+		// Gbther response locbtions directly from the document contbining the
+		// tbrget position. This mby blso return relevbnt symbol nbmes thbt we
+		// collect for b remote sebrch.
+		locbtions, symbolNbmes, err := extrbctor.Extrbct(
 			ctx,
-			lsifstore.LocationKey{
-				UploadID:  visibleUpload.Upload.ID,
-				Path:      visibleUpload.TargetPathWithoutRoot,
-				Line:      visibleUpload.TargetPosition.Line,
-				Character: visibleUpload.TargetPosition.Character,
+			lsifstore.LocbtionKey{
+				UplobdID:  visibleUplobd.Uplobd.ID,
+				Pbth:      visibleUplobd.TbrgetPbthWithoutRoot,
+				Line:      visibleUplobd.TbrgetPosition.Line,
+				Chbrbcter: visibleUplobd.TbrgetPosition.Chbrbcter,
 			},
 		)
 		if err != nil {
 			return nil, Cursor{}, err
 		}
-		trace.AddEvent("ReadDocument", attribute.Int("numLocations", len(locations)), attribute.Int("numSymbolNames", len(symbolNames)))
+		trbce.AddEvent("RebdDocument", bttribute.Int("numLocbtions", len(locbtions)), bttribute.Int("numSymbolNbmes", len(symbolNbmes)))
 
-		// remaining space in the page
-		pageLimit := limit - len(allLocations)
+		// rembining spbce in the pbge
+		pbgeLimit := limit - len(bllLocbtions)
 
-		// Perform pagination on this level instead of in lsifstore; we bring back the
-		// raw SCIP document payload anyway, so there's no reason to hide behind the API
-		// that it's doing that amount of work.
-		totalCount := len(locations)
-		locations = pageSlice(locations, pageLimit, cursor.LocalLocationOffset)
+		// Perform pbginbtion on this level instebd of in lsifstore; we bring bbck the
+		// rbw SCIP document pbylobd bnywby, so there's no rebson to hide behind the API
+		// thbt it's doing thbt bmount of work.
+		totblCount := len(locbtions)
+		locbtions = pbgeSlice(locbtions, pbgeLimit, cursor.LocblLocbtionOffset)
 
-		// adjust cursor offset for next page
-		cursor = cursor.BumpLocalLocationOffset(len(locations), totalCount)
+		// bdjust cursor offset for next pbge
+		cursor = cursor.BumpLocblLocbtionOffset(len(locbtions), totblCount)
 
-		// consume locations
-		if len(locations) > 0 {
-			adjustedLocations, err := s.getUploadLocations(
+		// consume locbtions
+		if len(locbtions) > 0 {
+			bdjustedLocbtions, err := s.getUplobdLocbtions(
 				ctx,
-				args,
-				requestState,
-				locations,
+				brgs,
+				requestStbte,
+				locbtions,
 				true,
 			)
 			if err != nil {
 				return nil, Cursor{}, err
 			}
-			allLocations = append(allLocations, adjustedLocations...)
+			bllLocbtions = bppend(bllLocbtions, bdjustedLocbtions...)
 
-			// Stash paths with non-empty locations in the cursor so we can prevent
-			// local and "remote" searches from returning duplicate sets of of target
-			// ranges.
-			skipPathsByUploadID[visibleUpload.Upload.ID] = visibleUpload.TargetPathWithoutRoot
+			// Stbsh pbths with non-empty locbtions in the cursor so we cbn prevent
+			// locbl bnd "remote" sebrches from returning duplicbte sets of of tbrget
+			// rbnges.
+			skipPbthsByUplobdID[visibleUplobd.Uplobd.ID] = visibleUplobd.TbrgetPbthWithoutRoot
 		}
 
-		// stash relevant symbol names in cursor
-		for _, symbolName := range symbolNames {
-			if !strings.HasPrefix(symbolName, skipPrefix) {
-				allSymbolNames.Add(symbolName)
+		// stbsh relevbnt symbol nbmes in cursor
+		for _, symbolNbme := rbnge symbolNbmes {
+			if !strings.HbsPrefix(symbolNbme, skipPrefix) {
+				bllSymbolNbmes.Add(symbolNbme)
 			}
 		}
 	}
 
-	// re-assign mutable cursor scope to response cursor
-	cursor.SymbolNames = allSymbolNames.Sorted(compareStrings)
-	cursor.SkipPathsByUploadID = skipPathsByUploadID
+	// re-bssign mutbble cursor scope to response cursor
+	cursor.SymbolNbmes = bllSymbolNbmes.Sorted(compbreStrings)
+	cursor.SkipPbthsByUplobdID = skipPbthsByUplobdID
 
-	return allLocations, cursor, nil
+	return bllLocbtions, cursor, nil
 }
 
-func (s *Service) gatherRemoteLocationsShim(
+func (s *Service) gbtherRemoteLocbtionsShim(
 	ctx context.Context,
-	trace observation.TraceLogger,
-	args RequestArgs,
-	requestState RequestState,
-	tableName string,
+	trbce observbtion.TrbceLogger,
+	brgs RequestArgs,
+	requestStbte RequestStbte,
+	tbbleNbme string,
 	includeReferencingIndexes bool,
 	cursor Cursor,
 	limit int,
-	_ LocationExtractor,
-	_ []visibleUpload,
-) ([]shared.UploadLocation, Cursor, error) {
-	return s.gatherRemoteLocations(
+	_ LocbtionExtrbctor,
+	_ []visibleUplobd,
+) ([]shbred.UplobdLocbtion, Cursor, error) {
+	return s.gbtherRemoteLocbtions(
 		ctx,
-		trace,
-		args,
-		requestState,
+		trbce,
+		brgs,
+		requestStbte,
 		cursor,
-		tableName,
+		tbbleNbme,
 		includeReferencingIndexes,
 		limit,
 	)
 }
 
-func (s *Service) gatherRemoteLocations(
+func (s *Service) gbtherRemoteLocbtions(
 	ctx context.Context,
-	trace observation.TraceLogger,
-	args RequestArgs,
-	requestState RequestState,
+	trbce observbtion.TrbceLogger,
+	brgs RequestArgs,
+	requestStbte RequestStbte,
 	cursor Cursor,
-	tableName string,
+	tbbleNbme string,
 	includeReferencingIndexes bool,
 	limit int,
-) ([]shared.UploadLocation, Cursor, error) {
-	if cursor.Phase != "remote" {
+) ([]shbred.UplobdLocbtion, Cursor, error) {
+	if cursor.Phbse != "remote" {
 		// not our turn
 		return nil, cursor, nil
 	}
-	trace.AddEvent("GatherRemoteLocations", attribute.StringSlice("symbolNames", cursor.SymbolNames))
+	trbce.AddEvent("GbtherRemoteLocbtions", bttribute.StringSlice("symbolNbmes", cursor.SymbolNbmes))
 
-	monikers, err := symbolsToMonikers(cursor.SymbolNames)
+	monikers, err := symbolsToMonikers(cursor.SymbolNbmes)
 	if err != nil {
 		return nil, Cursor{}, err
 	}
 	if len(monikers) == 0 {
-		// no symbol names from local phase
-		return nil, exhaustedCursor, nil
+		// no symbol nbmes from locbl phbse
+		return nil, exhbustedCursor, nil
 	}
 
-	// Ensure we have a batch of upload ids over which to perform a symbol search, if such
-	// a batch exists. This batch must be hydrated in the associated request data loader.
-	// See the function body for additional complaints on this subject.
+	// Ensure we hbve b bbtch of uplobd ids over which to perform b symbol sebrch, if such
+	// b bbtch exists. This bbtch must be hydrbted in the bssocibted request dbtb lobder.
+	// See the function body for bdditionbl complbints on this subject.
 	//
-	// N.B.: cursor is purposefully re-assigned here
-	var includeFallbackLocations bool
-	cursor, includeFallbackLocations, err = s.prepareCandidateUploads(
+	// N.B.: cursor is purposefully re-bssigned here
+	vbr includeFbllbbckLocbtions bool
+	cursor, includeFbllbbckLocbtions, err = s.prepbreCbndidbteUplobds(
 		ctx,
-		trace,
-		args,
-		requestState,
+		trbce,
+		brgs,
+		requestStbte,
 		cursor,
 		includeReferencingIndexes,
 		monikers,
@@ -512,156 +512,156 @@ func (s *Service) gatherRemoteLocations(
 		return nil, Cursor{}, err
 	}
 
-	// If we have no upload ids stashed in our cursor at this point then there are no more
-	// uploads to search in and we've reached the end of our our result set. Congratulations!
-	if len(cursor.UploadIDs) == 0 {
-		return nil, exhaustedCursor, nil
+	// If we hbve no uplobd ids stbshed in our cursor bt this point then there bre no more
+	// uplobds to sebrch in bnd we've rebched the end of our our result set. Congrbtulbtions!
+	if len(cursor.UplobdIDs) == 0 {
+		return nil, exhbustedCursor, nil
 	}
-	trace.AddEvent("RemoteSymbolSearch", attribute.IntSlice("uploadIDs", cursor.UploadIDs))
+	trbce.AddEvent("RemoteSymbolSebrch", bttribute.IntSlice("uplobdIDs", cursor.UplobdIDs))
 
-	// Finally, query time!
-	// Fetch indexed ranges of the given symbols within the given uploads.
+	// Finblly, query time!
+	// Fetch indexed rbnges of the given symbols within the given uplobds.
 
-	monikerArgs := make([]precise.MonikerData, 0, len(monikers))
-	for _, moniker := range monikers {
-		monikerArgs = append(monikerArgs, moniker.MonikerData)
+	monikerArgs := mbke([]precise.MonikerDbtb, 0, len(monikers))
+	for _, moniker := rbnge monikers {
+		monikerArgs = bppend(monikerArgs, moniker.MonikerDbtb)
 	}
-	locations, totalCount, err := s.lsifstore.GetMinimalBulkMonikerLocations(
+	locbtions, totblCount, err := s.lsifstore.GetMinimblBulkMonikerLocbtions(
 		ctx,
-		tableName,
-		cursor.UploadIDs,
-		cursor.SkipPathsByUploadID,
+		tbbleNbme,
+		cursor.UplobdIDs,
+		cursor.SkipPbthsByUplobdID,
 		monikerArgs,
 		limit,
-		cursor.RemoteLocationOffset,
+		cursor.RemoteLocbtionOffset,
 	)
 	if err != nil {
 		return nil, Cursor{}, err
 	}
 
-	// adjust cursor offset for next page
-	cursor = cursor.BumpRemoteLocationOffset(len(locations), totalCount)
+	// bdjust cursor offset for next pbge
+	cursor = cursor.BumpRemoteLocbtionOffset(len(locbtions), totblCount)
 
-	// Adjust locations back to target commit
-	adjustedLocations, err := s.getUploadLocations(ctx, args, requestState, locations, includeFallbackLocations)
+	// Adjust locbtions bbck to tbrget commit
+	bdjustedLocbtions, err := s.getUplobdLocbtions(ctx, brgs, requestStbte, locbtions, includeFbllbbckLocbtions)
 	if err != nil {
 		return nil, Cursor{}, err
 	}
 
-	return adjustedLocations, cursor, nil
+	return bdjustedLocbtions, cursor, nil
 }
 
-func (s *Service) prepareCandidateUploads(
+func (s *Service) prepbreCbndidbteUplobds(
 	ctx context.Context,
-	trace observation.TraceLogger,
-	args RequestArgs,
-	requestState RequestState,
+	trbce observbtion.TrbceLogger,
+	brgs RequestArgs,
+	requestStbte RequestStbte,
 	cursor Cursor,
 	includeReferencingIndexes bool,
-	monikers []precise.QualifiedMonikerData,
-) (_ Cursor, fallback bool, _ error) {
-	fallback = true // TODO - document
+	monikers []precise.QublifiedMonikerDbtb,
+) (_ Cursor, fbllbbck bool, _ error) {
+	fbllbbck = true // TODO - document
 
-	// We always want to look into the uploads that define one of the symbols for our
-	// "remote" phase. We'll conditionally also look at uploads that contain only a
-	// reference (see below). We deal with the former set of uploads first in the
+	// We blwbys wbnt to look into the uplobds thbt define one of the symbols for our
+	// "remote" phbse. We'll conditionblly blso look bt uplobds thbt contbin only b
+	// reference (see below). We debl with the former set of uplobds first in the
 	// cursor.
 
-	if len(cursor.DefinitionIDs) == 0 && len(cursor.UploadIDs) == 0 && cursor.RemoteUploadOffset == 0 {
-		// N.B.: We only end up in in this branch on the first time it's invoked while
-		// in the remote phase. If there truly are no definitions, we'll either have a
-		// non-empty set of upload ids, or a non-zero remote upload offset on the next
-		// invocation. If there are neither definitions nor an upload batch, we'll end
-		// up returning an exhausted cursor from _this_ invocation.
+	if len(cursor.DefinitionIDs) == 0 && len(cursor.UplobdIDs) == 0 && cursor.RemoteUplobdOffset == 0 {
+		// N.B.: We only end up in in this brbnch on the first time it's invoked while
+		// in the remote phbse. If there truly bre no definitions, we'll either hbve b
+		// non-empty set of uplobd ids, or b non-zero remote uplobd offset on the next
+		// invocbtion. If there bre neither definitions nor bn uplobd bbtch, we'll end
+		// up returning bn exhbusted cursor from _this_ invocbtion.
 
-		uploads, err := s.getUploadsWithDefinitionsForMonikers(ctx, monikers, requestState)
+		uplobds, err := s.getUplobdsWithDefinitionsForMonikers(ctx, monikers, requestStbte)
 		if err != nil {
-			return Cursor{}, false, err
+			return Cursor{}, fblse, err
 		}
-		idMap := make(map[int]struct{}, len(uploads)+len(cursor.VisibleUploads))
-		for _, upload := range cursor.VisibleUploads {
-			idMap[upload.DumpID] = struct{}{}
+		idMbp := mbke(mbp[int]struct{}, len(uplobds)+len(cursor.VisibleUplobds))
+		for _, uplobd := rbnge cursor.VisibleUplobds {
+			idMbp[uplobd.DumpID] = struct{}{}
 		}
-		for _, upload := range uploads {
-			idMap[upload.ID] = struct{}{}
+		for _, uplobd := rbnge uplobds {
+			idMbp[uplobd.ID] = struct{}{}
 		}
-		ids := make([]int, 0, len(idMap))
-		for id := range idMap {
-			ids = append(ids, id)
+		ids := mbke([]int, 0, len(idMbp))
+		for id := rbnge idMbp {
+			ids = bppend(ids, id)
 		}
 		sort.Ints(ids)
 
-		fallback = false
-		cursor.UploadIDs = ids
+		fbllbbck = fblse
+		cursor.UplobdIDs = ids
 		cursor.DefinitionIDs = ids
-		trace.AddEvent("Loaded indexes with definitions of symbols", attribute.IntSlice("ids", ids))
+		trbce.AddEvent("Lobded indexes with definitions of symbols", bttribute.IntSlice("ids", ids))
 	}
 
 	// TODO - redocument
-	// This traversal isn't looking in uploads without definitions to one of the symbols
+	// This trbversbl isn't looking in uplobds without definitions to one of the symbols
 	if includeReferencingIndexes {
-		// If we have no upload ids stashed in our cursor, then we'll try to fetch the next
-		// batch of uploads in which we'll search for symbol names. If our remote upload offset
-		// is set to -1 here, then it indicates the end of the set of relevant upload records.
+		// If we hbve no uplobd ids stbshed in our cursor, then we'll try to fetch the next
+		// bbtch of uplobds in which we'll sebrch for symbol nbmes. If our remote uplobd offset
+		// is set to -1 here, then it indicbtes the end of the set of relevbnt uplobd records.
 
-		if len(cursor.UploadIDs) == 0 && cursor.RemoteUploadOffset != -1 {
-			uploadIDs, _, totalCount, err := s.uploadSvc.GetUploadIDsWithReferences(
+		if len(cursor.UplobdIDs) == 0 && cursor.RemoteUplobdOffset != -1 {
+			uplobdIDs, _, totblCount, err := s.uplobdSvc.GetUplobdIDsWithReferences(
 				ctx,
 				monikers,
 				cursor.DefinitionIDs,
-				args.RepositoryID,
-				args.Commit,
-				requestState.maximumIndexesPerMonikerSearch, // limit
-				cursor.RemoteUploadOffset,                   // offset
+				brgs.RepositoryID,
+				brgs.Commit,
+				requestStbte.mbximumIndexesPerMonikerSebrch, // limit
+				cursor.RemoteUplobdOffset,                   // offset
 			)
 			if err != nil {
-				return Cursor{}, false, err
+				return Cursor{}, fblse, err
 			}
 
-			cursor.UploadIDs = uploadIDs
-			trace.AddEvent("Loaded batch of indexes with references to symbols", attribute.IntSlice("ids", uploadIDs))
+			cursor.UplobdIDs = uplobdIDs
+			trbce.AddEvent("Lobded bbtch of indexes with references to symbols", bttribute.IntSlice("ids", uplobdIDs))
 
-			// adjust cursor offset for next page
-			cursor = cursor.BumpRemoteUploadOffset(len(uploadIDs), totalCount)
+			// bdjust cursor offset for next pbge
+			cursor = cursor.BumpRemoteUplobdOffset(len(uplobdIDs), totblCount)
 		}
 	}
 
-	// Hydrate upload records into the request state data loader. This must be called prior
-	// to the invocation of getUploadLocation, which will silently throw out records belonging
-	// to uploads that have not yet fetched from the database. We've assumed that the data loader
-	// is consistently up-to-date with any extant upload identifier reference.
+	// Hydrbte uplobd records into the request stbte dbtb lobder. This must be cblled prior
+	// to the invocbtion of getUplobdLocbtion, which will silently throw out records belonging
+	// to uplobds thbt hbve not yet fetched from the dbtbbbse. We've bssumed thbt the dbtb lobder
+	// is consistently up-to-dbte with bny extbnt uplobd identifier reference.
 	//
-	// FIXME: That's a dangerous design assumption we should get rid of.
-	if _, err := s.getUploadsByIDs(ctx, cursor.UploadIDs, requestState); err != nil {
-		return Cursor{}, false, err
+	// FIXME: Thbt's b dbngerous design bssumption we should get rid of.
+	if _, err := s.getUplobdsByIDs(ctx, cursor.UplobdIDs, requestStbte); err != nil {
+		return Cursor{}, fblse, err
 	}
 
-	return cursor, fallback, nil
+	return cursor, fbllbbck, nil
 }
 
 //
 //
 
-func symbolsToMonikers(symbolNames []string) ([]precise.QualifiedMonikerData, error) {
-	var monikers []precise.QualifiedMonikerData
-	for _, symbolName := range symbolNames {
-		parsedSymbol, err := scip.ParseSymbol(symbolName)
+func symbolsToMonikers(symbolNbmes []string) ([]precise.QublifiedMonikerDbtb, error) {
+	vbr monikers []precise.QublifiedMonikerDbtb
+	for _, symbolNbme := rbnge symbolNbmes {
+		pbrsedSymbol, err := scip.PbrseSymbol(symbolNbme)
 		if err != nil {
 			return nil, err
 		}
-		if parsedSymbol.Package == nil {
+		if pbrsedSymbol.Pbckbge == nil {
 			continue
 		}
 
-		monikers = append(monikers, precise.QualifiedMonikerData{
-			MonikerData: precise.MonikerData{
-				Scheme:     parsedSymbol.Scheme,
-				Identifier: symbolName,
+		monikers = bppend(monikers, precise.QublifiedMonikerDbtb{
+			MonikerDbtb: precise.MonikerDbtb{
+				Scheme:     pbrsedSymbol.Scheme,
+				Identifier: symbolNbme,
 			},
-			PackageInformationData: precise.PackageInformationData{
-				Manager: parsedSymbol.Package.Manager,
-				Name:    parsedSymbol.Package.Name,
-				Version: parsedSymbol.Package.Version,
+			PbckbgeInformbtionDbtb: precise.PbckbgeInformbtionDbtb{
+				Mbnbger: pbrsedSymbol.Pbckbge.Mbnbger,
+				Nbme:    pbrsedSymbol.Pbckbge.Nbme,
+				Version: pbrsedSymbol.Pbckbge.Version,
 			},
 		})
 	}
@@ -669,7 +669,7 @@ func symbolsToMonikers(symbolNames []string) ([]precise.QualifiedMonikerData, er
 	return monikers, nil
 }
 
-func pageSlice[T any](s []T, limit, offset int) []T {
+func pbgeSlice[T bny](s []T, limit, offset int) []T {
 	if offset < len(s) {
 		s = s[offset:]
 	} else {
@@ -683,6 +683,6 @@ func pageSlice[T any](s []T, limit, offset int) []T {
 	return s
 }
 
-func compareStrings(a, b string) bool {
-	return a < b
+func compbreStrings(b, b string) bool {
+	return b < b
 }

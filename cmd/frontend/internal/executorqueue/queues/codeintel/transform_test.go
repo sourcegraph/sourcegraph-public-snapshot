@@ -1,4 +1,4 @@
-package codeintel
+pbckbge codeintel
 
 import (
 	"context"
@@ -8,61 +8,61 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/executorqueue/handler"
-	uploadsshared "github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared"
-	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
-	apiclient "github.com/sourcegraph/sourcegraph/internal/executor/types"
-	srccli "github.com/sourcegraph/sourcegraph/internal/src-cli"
-	"github.com/sourcegraph/sourcegraph/schema"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/internbl/executorqueue/hbndler"
+	uplobdsshbred "github.com/sourcegrbph/sourcegrbph/internbl/codeintel/uplobds/shbred"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbmocks"
+	bpiclient "github.com/sourcegrbph/sourcegrbph/internbl/executor/types"
+	srccli "github.com/sourcegrbph/sourcegrbph/internbl/src-cli"
+	"github.com/sourcegrbph/sourcegrbph/schemb"
 )
 
-func TestTransformRecord(t *testing.T) {
+func TestTrbnsformRecord(t *testing.T) {
 	db := dbmocks.NewMockDB()
-	db.ExecutorSecretsFunc.SetDefaultReturn(dbmocks.NewMockExecutorSecretStore())
+	db.ExecutorSecretsFunc.SetDefbultReturn(dbmocks.NewMockExecutorSecretStore())
 
-	for _, testCase := range []struct {
-		name             string
-		resourceMetadata handler.ResourceMetadata
+	for _, testCbse := rbnge []struct {
+		nbme             string
+		resourceMetbdbtb hbndler.ResourceMetbdbtb
 		expected         []string
 	}{
 		{
-			name:             "Default resources",
-			resourceMetadata: handler.ResourceMetadata{},
+			nbme:             "Defbult resources",
+			resourceMetbdbtb: hbndler.ResourceMetbdbtb{},
 			expected: []string{
-				// Default resource variables
+				// Defbult resource vbribbles
 				"VM_MEM=12.0 GB", "VM_MEM_GB=12", "VM_MEM_MB=12288", "VM_DISK=20.0 GB", "VM_DISK_GB=20", "VM_DISK_MB=20480",
 			},
 		},
 		{
-			name:             "Non-default resources",
-			resourceMetadata: handler.ResourceMetadata{NumCPUs: 3, Memory: "3T"},
+			nbme:             "Non-defbult resources",
+			resourceMetbdbtb: hbndler.ResourceMetbdbtb{NumCPUs: 3, Memory: "3T"},
 			expected: []string{
-				// Explicitly supplied resource variables
+				// Explicitly supplied resource vbribbles
 				"VM_CPUS=3", "VM_MEM=3.0 TB", "VM_MEM_GB=3072", "VM_MEM_MB=3145728",
-				// Default resource variables
+				// Defbult resource vbribbles
 				"VM_DISK=20.0 GB", "VM_DISK_GB=20", "VM_DISK_MB=20480",
 			},
 		},
 		{
-			name:             "Unbounded resources",
-			resourceMetadata: handler.ResourceMetadata{DiskSpace: "0 KB"},
+			nbme:             "Unbounded resources",
+			resourceMetbdbtb: hbndler.ResourceMetbdbtb{DiskSpbce: "0 KB"},
 			expected: []string{
-				// Default resource variables (note: no disk)
+				// Defbult resource vbribbles (note: no disk)
 				"VM_MEM=12.0 GB", "VM_MEM_GB=12", "VM_MEM_MB=12288",
 			},
 		},
 	} {
-		t.Run(testCase.name, func(t *testing.T) {
-			index := uploadsshared.Index{
+		t.Run(testCbse.nbme, func(t *testing.T) {
+			index := uplobdsshbred.Index{
 				ID:             42,
-				Commit:         "deadbeef",
-				RepositoryName: "linux",
-				DockerSteps: []uploadsshared.DockerStep{
+				Commit:         "debdbeef",
+				RepositoryNbme: "linux",
+				DockerSteps: []uplobdsshbred.DockerStep{
 					{
-						Image:    "alpine",
-						Commands: []string{"yarn", "install"},
+						Imbge:    "blpine",
+						Commbnds: []string{"ybrn", "instbll"},
 						Root:     "web",
 					},
 				},
@@ -71,224 +71,224 @@ func TestTransformRecord(t *testing.T) {
 				IndexerArgs: []string{
 					"index",
 					"-p", ".",
-					// Verify args are properly shell quoted.
-					"-author", "Test User",
+					// Verify brgs bre properly shell quoted.
+					"-buthor", "Test User",
 				},
 				Outfile: "",
 			}
-			conf.Mock(&conf.Unified{SiteConfiguration: schema.SiteConfiguration{ExternalURL: "https://test.io"}})
-			t.Cleanup(func() {
+			conf.Mock(&conf.Unified{SiteConfigurbtion: schemb.SiteConfigurbtion{ExternblURL: "https://test.io"}})
+			t.Clebnup(func() {
 				conf.Mock(nil)
 			})
 
-			job, err := transformRecord(context.Background(), db, index, testCase.resourceMetadata, "hunter2")
+			job, err := trbnsformRecord(context.Bbckground(), db, index, testCbse.resourceMetbdbtb, "hunter2")
 			if err != nil {
-				t.Fatalf("unexpected error transforming record: %s", err)
+				t.Fbtblf("unexpected error trbnsforming record: %s", err)
 			}
 
-			expected := apiclient.Job{
+			expected := bpiclient.Job{
 				ID:                  42,
-				Commit:              "deadbeef",
-				RepositoryName:      "linux",
-				ShallowClone:        true,
-				FetchTags:           false,
-				VirtualMachineFiles: nil,
-				DockerSteps: []apiclient.DockerStep{
+				Commit:              "debdbeef",
+				RepositoryNbme:      "linux",
+				ShbllowClone:        true,
+				FetchTbgs:           fblse,
+				VirtublMbchineFiles: nil,
+				DockerSteps: []bpiclient.DockerStep{
 					{
 						Key:      "pre-index.0",
-						Image:    "alpine",
-						Commands: []string{"yarn", "install"},
+						Imbge:    "blpine",
+						Commbnds: []string{"ybrn", "instbll"},
 						Dir:      "web",
-						Env:      testCase.expected,
+						Env:      testCbse.expected,
 					},
 					{
 						Key:      "indexer",
-						Image:    "lsif-node",
-						Commands: []string{"index -p . -author 'Test User'"},
+						Imbge:    "lsif-node",
+						Commbnds: []string{"index -p . -buthor 'Test User'"},
 						Dir:      "web",
-						Env:      testCase.expected,
+						Env:      testCbse.expected,
 					},
 					{
-						Key:   "upload",
-						Image: fmt.Sprintf("sourcegraph/src-cli:%s", srccli.MinimumVersion),
-						Commands: []string{
+						Key:   "uplobd",
+						Imbge: fmt.Sprintf("sourcegrbph/src-cli:%s", srccli.MinimumVersion),
+						Commbnds: []string{
 							strings.Join(
 								[]string{
 									"src",
-									"lsif", "upload",
+									"lsif", "uplobd",
 									"-no-progress",
 									"-repo", "linux",
-									"-commit", "deadbeef",
+									"-commit", "debdbeef",
 									"-root", "web",
-									"-upload-route", "/.executors/lsif/upload",
+									"-uplobd-route", "/.executors/lsif/uplobd",
 									"-file", "dump.lsif",
-									"-associated-index-id", "42",
+									"-bssocibted-index-id", "42",
 								},
 								" ",
 							),
 						},
 						Dir: "web",
 						Env: []string{
-							// src-cli-specific variables
+							// src-cli-specific vbribbles
 							"SRC_ENDPOINT=https://test.io",
 							"SRC_HEADER_AUTHORIZATION=token-executor hunter2",
 						},
 					},
 				},
-				RedactedValues: map[string]string{
+				RedbctedVblues: mbp[string]string{
 					"hunter2":                "PASSWORD_REMOVED",
 					"token-executor hunter2": "token-executor REDACTED",
 				},
 			}
 			if diff := cmp.Diff(expected, job); diff != "" {
-				t.Errorf("unexpected job (-want +got):\n%s", diff)
+				t.Errorf("unexpected job (-wbnt +got):\n%s", diff)
 			}
 		})
 	}
 }
 
-func TestTransformRecordWithoutIndexer(t *testing.T) {
+func TestTrbnsformRecordWithoutIndexer(t *testing.T) {
 	db := dbmocks.NewMockDB()
-	db.ExecutorSecretsFunc.SetDefaultReturn(dbmocks.NewMockExecutorSecretStore())
+	db.ExecutorSecretsFunc.SetDefbultReturn(dbmocks.NewMockExecutorSecretStore())
 
-	index := uploadsshared.Index{
+	index := uplobdsshbred.Index{
 		ID:             42,
-		Commit:         "deadbeef",
-		RepositoryName: "linux",
-		DockerSteps: []uploadsshared.DockerStep{
+		Commit:         "debdbeef",
+		RepositoryNbme: "linux",
+		DockerSteps: []uplobdsshbred.DockerStep{
 			{
-				Image:    "alpine",
-				Commands: []string{"yarn", "install"},
+				Imbge:    "blpine",
+				Commbnds: []string{"ybrn", "instbll"},
 				Root:     "web",
 			},
 			{
-				Image:    "lsif-node",
-				Commands: []string{"index", "-p", "."},
+				Imbge:    "lsif-node",
+				Commbnds: []string{"index", "-p", "."},
 				Root:     "web",
 			},
 		},
 		Root:        "",
 		Indexer:     "",
 		IndexerArgs: nil,
-		Outfile:     "other/path/lsif.dump",
+		Outfile:     "other/pbth/lsif.dump",
 	}
-	conf.Mock(&conf.Unified{SiteConfiguration: schema.SiteConfiguration{ExternalURL: "https://test.io"}})
-	t.Cleanup(func() {
+	conf.Mock(&conf.Unified{SiteConfigurbtion: schemb.SiteConfigurbtion{ExternblURL: "https://test.io"}})
+	t.Clebnup(func() {
 		conf.Mock(nil)
 	})
 
-	job, err := transformRecord(context.Background(), db, index, handler.ResourceMetadata{}, "hunter2")
+	job, err := trbnsformRecord(context.Bbckground(), db, index, hbndler.ResourceMetbdbtb{}, "hunter2")
 	if err != nil {
-		t.Fatalf("unexpected error transforming record: %s", err)
+		t.Fbtblf("unexpected error trbnsforming record: %s", err)
 	}
 
-	expected := apiclient.Job{
+	expected := bpiclient.Job{
 		ID:                  42,
-		Commit:              "deadbeef",
-		RepositoryName:      "linux",
-		ShallowClone:        true,
-		FetchTags:           false,
-		VirtualMachineFiles: nil,
-		DockerSteps: []apiclient.DockerStep{
+		Commit:              "debdbeef",
+		RepositoryNbme:      "linux",
+		ShbllowClone:        true,
+		FetchTbgs:           fblse,
+		VirtublMbchineFiles: nil,
+		DockerSteps: []bpiclient.DockerStep{
 			{
 				Key:      "pre-index.0",
-				Image:    "alpine",
-				Commands: []string{"yarn", "install"},
+				Imbge:    "blpine",
+				Commbnds: []string{"ybrn", "instbll"},
 				Dir:      "web",
 				Env: []string{
-					// Default resource variables
+					// Defbult resource vbribbles
 					"VM_MEM=12.0 GB", "VM_MEM_GB=12", "VM_MEM_MB=12288", "VM_DISK=20.0 GB", "VM_DISK_GB=20", "VM_DISK_MB=20480",
 				},
 			},
 			{
 				Key:      "pre-index.1",
-				Image:    "lsif-node",
-				Commands: []string{"index", "-p", "."},
+				Imbge:    "lsif-node",
+				Commbnds: []string{"index", "-p", "."},
 				Dir:      "web",
 				Env: []string{
-					// Default resource variables
+					// Defbult resource vbribbles
 					"VM_MEM=12.0 GB", "VM_MEM_GB=12", "VM_MEM_MB=12288", "VM_DISK=20.0 GB", "VM_DISK_GB=20", "VM_DISK_MB=20480",
 				},
 			},
 			{
-				Key:   "upload",
-				Image: fmt.Sprintf("sourcegraph/src-cli:%s", srccli.MinimumVersion),
-				Commands: []string{
+				Key:   "uplobd",
+				Imbge: fmt.Sprintf("sourcegrbph/src-cli:%s", srccli.MinimumVersion),
+				Commbnds: []string{
 					strings.Join(
 						[]string{
 							"src",
-							"lsif", "upload",
+							"lsif", "uplobd",
 							"-no-progress",
 							"-repo", "linux",
-							"-commit", "deadbeef",
+							"-commit", "debdbeef",
 							"-root", ".",
-							"-upload-route", "/.executors/lsif/upload",
-							"-file", "other/path/lsif.dump",
-							"-associated-index-id", "42",
+							"-uplobd-route", "/.executors/lsif/uplobd",
+							"-file", "other/pbth/lsif.dump",
+							"-bssocibted-index-id", "42",
 						},
 						" ",
 					),
 				},
 				Dir: "",
 				Env: []string{
-					// src-cli-specific variables
+					// src-cli-specific vbribbles
 					"SRC_ENDPOINT=https://test.io",
 					"SRC_HEADER_AUTHORIZATION=token-executor hunter2",
 				},
 			},
 		},
-		RedactedValues: map[string]string{
+		RedbctedVblues: mbp[string]string{
 			"hunter2":                "PASSWORD_REMOVED",
 			"token-executor hunter2": "token-executor REDACTED",
 		},
 	}
 	if diff := cmp.Diff(expected, job); diff != "" {
-		t.Errorf("unexpected job (-want +got):\n%s", diff)
+		t.Errorf("unexpected job (-wbnt +got):\n%s", diff)
 	}
 }
 
-func TestTransformRecordWithSecrets(t *testing.T) {
+func TestTrbnsformRecordWithSecrets(t *testing.T) {
 	db := dbmocks.NewMockDB()
 	secs := dbmocks.NewMockExecutorSecretStore()
-	sal := dbmocks.NewMockExecutorSecretAccessLogStore()
-	db.ExecutorSecretsFunc.SetDefaultReturn(secs)
-	db.ExecutorSecretAccessLogsFunc.SetDefaultReturn(sal)
-	secs.ListFunc.SetDefaultHook(func(ctx context.Context, ess database.ExecutorSecretScope, eslo database.ExecutorSecretsListOpts) ([]*database.ExecutorSecret, int, error) {
+	sbl := dbmocks.NewMockExecutorSecretAccessLogStore()
+	db.ExecutorSecretsFunc.SetDefbultReturn(secs)
+	db.ExecutorSecretAccessLogsFunc.SetDefbultReturn(sbl)
+	secs.ListFunc.SetDefbultHook(func(ctx context.Context, ess dbtbbbse.ExecutorSecretScope, eslo dbtbbbse.ExecutorSecretsListOpts) ([]*dbtbbbse.ExecutorSecret, int, error) {
 		if len(eslo.Keys) == 1 && eslo.Keys[0] == "DOCKER_AUTH_CONFIG" {
 			return nil, 0, nil
 		}
-		return []*database.ExecutorSecret{
-			database.NewMockExecutorSecret(&database.ExecutorSecret{
+		return []*dbtbbbse.ExecutorSecret{
+			dbtbbbse.NewMockExecutorSecret(&dbtbbbse.ExecutorSecret{
 				Key:                    "NPM_TOKEN",
-				Scope:                  database.ExecutorSecretScopeCodeIntel,
-				OverwritesGlobalSecret: false,
-			}, "banana"),
+				Scope:                  dbtbbbse.ExecutorSecretScopeCodeIntel,
+				OverwritesGlobblSecret: fblse,
+			}, "bbnbnb"),
 		}, 1, nil
 	})
 
-	for _, testCase := range []struct {
-		name             string
-		resourceMetadata handler.ResourceMetadata
+	for _, testCbse := rbnge []struct {
+		nbme             string
+		resourceMetbdbtb hbndler.ResourceMetbdbtb
 		expected         []string
 	}{
 		{
-			name:             "Default resources",
-			resourceMetadata: handler.ResourceMetadata{},
+			nbme:             "Defbult resources",
+			resourceMetbdbtb: hbndler.ResourceMetbdbtb{},
 			expected: []string{
-				// Default resource variables
-				"VM_MEM=12.0 GB", "VM_MEM_GB=12", "VM_MEM_MB=12288", "VM_DISK=20.0 GB", "VM_DISK_GB=20", "VM_DISK_MB=20480", "NPM_TOKEN=banana",
+				// Defbult resource vbribbles
+				"VM_MEM=12.0 GB", "VM_MEM_GB=12", "VM_MEM_MB=12288", "VM_DISK=20.0 GB", "VM_DISK_GB=20", "VM_DISK_MB=20480", "NPM_TOKEN=bbnbnb",
 			},
 		},
 	} {
-		t.Run(testCase.name, func(t *testing.T) {
-			index := uploadsshared.Index{
+		t.Run(testCbse.nbme, func(t *testing.T) {
+			index := uplobdsshbred.Index{
 				ID:             42,
-				Commit:         "deadbeef",
-				RepositoryName: "linux",
-				DockerSteps: []uploadsshared.DockerStep{
+				Commit:         "debdbeef",
+				RepositoryNbme: "linux",
+				DockerSteps: []uplobdsshbred.DockerStep{
 					{
-						Image:    "alpine",
-						Commands: []string{"yarn", "install"},
+						Imbge:    "blpine",
+						Commbnds: []string{"ybrn", "instbll"},
 						Root:     "web",
 					},
 				},
@@ -297,131 +297,131 @@ func TestTransformRecordWithSecrets(t *testing.T) {
 				IndexerArgs: []string{
 					"index",
 					"-p", ".",
-					// Verify args are properly shell quoted.
-					"-author", "Test User",
+					// Verify brgs bre properly shell quoted.
+					"-buthor", "Test User",
 				},
 				Outfile:          "",
-				RequestedEnvVars: []string{"NPM_TOKEN"},
+				RequestedEnvVbrs: []string{"NPM_TOKEN"},
 			}
-			conf.Mock(&conf.Unified{SiteConfiguration: schema.SiteConfiguration{ExternalURL: "https://test.io"}})
-			t.Cleanup(func() {
+			conf.Mock(&conf.Unified{SiteConfigurbtion: schemb.SiteConfigurbtion{ExternblURL: "https://test.io"}})
+			t.Clebnup(func() {
 				conf.Mock(nil)
 			})
 
-			job, err := transformRecord(context.Background(), db, index, testCase.resourceMetadata, "hunter2")
+			job, err := trbnsformRecord(context.Bbckground(), db, index, testCbse.resourceMetbdbtb, "hunter2")
 			if err != nil {
-				t.Fatalf("unexpected error transforming record: %s", err)
+				t.Fbtblf("unexpected error trbnsforming record: %s", err)
 			}
 
-			if len(sal.CreateFunc.History()) != 1 {
-				t.Errorf("unexpected secrets access log creation count: want=%d got=%d", 1, len(sal.CreateFunc.History()))
+			if len(sbl.CrebteFunc.History()) != 1 {
+				t.Errorf("unexpected secrets bccess log crebtion count: wbnt=%d got=%d", 1, len(sbl.CrebteFunc.History()))
 			}
 
-			expected := apiclient.Job{
+			expected := bpiclient.Job{
 				ID:                  42,
-				Commit:              "deadbeef",
-				RepositoryName:      "linux",
-				ShallowClone:        true,
-				FetchTags:           false,
-				VirtualMachineFiles: nil,
-				DockerSteps: []apiclient.DockerStep{
+				Commit:              "debdbeef",
+				RepositoryNbme:      "linux",
+				ShbllowClone:        true,
+				FetchTbgs:           fblse,
+				VirtublMbchineFiles: nil,
+				DockerSteps: []bpiclient.DockerStep{
 					{
 						Key:      "pre-index.0",
-						Image:    "alpine",
-						Commands: []string{"yarn", "install"},
+						Imbge:    "blpine",
+						Commbnds: []string{"ybrn", "instbll"},
 						Dir:      "web",
-						Env:      testCase.expected,
+						Env:      testCbse.expected,
 					},
 					{
 						Key:      "indexer",
-						Image:    "lsif-node",
-						Commands: []string{"index -p . -author 'Test User'"},
+						Imbge:    "lsif-node",
+						Commbnds: []string{"index -p . -buthor 'Test User'"},
 						Dir:      "web",
-						Env:      testCase.expected,
+						Env:      testCbse.expected,
 					},
 					{
-						Key:   "upload",
-						Image: fmt.Sprintf("sourcegraph/src-cli:%s", srccli.MinimumVersion),
-						Commands: []string{
+						Key:   "uplobd",
+						Imbge: fmt.Sprintf("sourcegrbph/src-cli:%s", srccli.MinimumVersion),
+						Commbnds: []string{
 							strings.Join(
 								[]string{
 									"src",
-									"lsif", "upload",
+									"lsif", "uplobd",
 									"-no-progress",
 									"-repo", "linux",
-									"-commit", "deadbeef",
+									"-commit", "debdbeef",
 									"-root", "web",
-									"-upload-route", "/.executors/lsif/upload",
+									"-uplobd-route", "/.executors/lsif/uplobd",
 									"-file", "dump.lsif",
-									"-associated-index-id", "42",
+									"-bssocibted-index-id", "42",
 								},
 								" ",
 							),
 						},
 						Dir: "web",
 						Env: []string{
-							// src-cli-specific variables
+							// src-cli-specific vbribbles
 							"SRC_ENDPOINT=https://test.io",
 							"SRC_HEADER_AUTHORIZATION=token-executor hunter2",
 						},
 					},
 				},
-				RedactedValues: map[string]string{
-					"banana":                 "${{ secrets.NPM_TOKEN }}",
+				RedbctedVblues: mbp[string]string{
+					"bbnbnb":                 "${{ secrets.NPM_TOKEN }}",
 					"hunter2":                "PASSWORD_REMOVED",
 					"token-executor hunter2": "token-executor REDACTED",
 				},
 			}
 			if diff := cmp.Diff(expected, job); diff != "" {
-				t.Errorf("unexpected job (-want +got):\n%s", diff)
+				t.Errorf("unexpected job (-wbnt +got):\n%s", diff)
 			}
 		})
 	}
 }
 
-func TestTransformRecordDockerAuthConfig(t *testing.T) {
+func TestTrbnsformRecordDockerAuthConfig(t *testing.T) {
 	db := dbmocks.NewMockDB()
 	secstore := dbmocks.NewMockExecutorSecretStore()
-	db.ExecutorSecretsFunc.SetDefaultReturn(secstore)
-	secstore.ListFunc.PushReturn([]*database.ExecutorSecret{
-		database.NewMockExecutorSecret(&database.ExecutorSecret{
+	db.ExecutorSecretsFunc.SetDefbultReturn(secstore)
+	secstore.ListFunc.PushReturn([]*dbtbbbse.ExecutorSecret{
+		dbtbbbse.NewMockExecutorSecret(&dbtbbbse.ExecutorSecret{
 			Key:       "DOCKER_AUTH_CONFIG",
-			Scope:     database.ExecutorSecretScopeCodeIntel,
-			CreatorID: 1,
-		}, `{"auths": { "hub.docker.com": { "auth": "aHVudGVyOmh1bnRlcjI=" }}}`),
+			Scope:     dbtbbbse.ExecutorSecretScopeCodeIntel,
+			CrebtorID: 1,
+		}, `{"buths": { "hub.docker.com": { "buth": "bHVudGVyOmh1bnRlcjI=" }}}`),
 	}, 0, nil)
-	db.ExecutorSecretAccessLogsFunc.SetDefaultReturn(dbmocks.NewMockExecutorSecretAccessLogStore())
+	db.ExecutorSecretAccessLogsFunc.SetDefbultReturn(dbmocks.NewMockExecutorSecretAccessLogStore())
 
-	job, err := transformRecord(context.Background(), db, uploadsshared.Index{ID: 42}, handler.ResourceMetadata{}, "hunter2")
+	job, err := trbnsformRecord(context.Bbckground(), db, uplobdsshbred.Index{ID: 42}, hbndler.ResourceMetbdbtb{}, "hunter2")
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
-	expected := apiclient.Job{
+	expected := bpiclient.Job{
 		ID:                  42,
-		ShallowClone:        true,
-		FetchTags:           false,
-		VirtualMachineFiles: nil,
-		DockerSteps: []apiclient.DockerStep{
+		ShbllowClone:        true,
+		FetchTbgs:           fblse,
+		VirtublMbchineFiles: nil,
+		DockerSteps: []bpiclient.DockerStep{
 			{
-				Key:      "upload",
-				Image:    fmt.Sprintf("sourcegraph/src-cli:%s", srccli.MinimumVersion),
-				Commands: []string{"src lsif upload -no-progress -repo '' -commit '' -root . -upload-route /.executors/lsif/upload -file dump.lsif -associated-index-id 42"},
+				Key:      "uplobd",
+				Imbge:    fmt.Sprintf("sourcegrbph/src-cli:%s", srccli.MinimumVersion),
+				Commbnds: []string{"src lsif uplobd -no-progress -repo '' -commit '' -root . -uplobd-route /.executors/lsif/uplobd -file dump.lsif -bssocibted-index-id 42"},
 				Env:      []string{"SRC_ENDPOINT=", "SRC_HEADER_AUTHORIZATION=token-executor hunter2"},
 			},
 		},
-		RedactedValues: map[string]string{
+		RedbctedVblues: mbp[string]string{
 			"hunter2":                "PASSWORD_REMOVED",
 			"token-executor hunter2": "token-executor REDACTED",
 		},
-		DockerAuthConfig: apiclient.DockerAuthConfig{
-			Auths: apiclient.DockerAuthConfigAuths{
-				"hub.docker.com": apiclient.DockerAuthConfigAuth{
+		DockerAuthConfig: bpiclient.DockerAuthConfig{
+			Auths: bpiclient.DockerAuthConfigAuths{
+				"hub.docker.com": bpiclient.DockerAuthConfigAuth{
 					Auth: []byte("hunter:hunter2"),
 				},
 			},
 		},
 	}
 	if diff := cmp.Diff(expected, job); diff != "" {
-		t.Errorf("unexpected job (-want +got):\n%s", diff)
+		t.Errorf("unexpected job (-wbnt +got):\n%s", diff)
 	}
 }

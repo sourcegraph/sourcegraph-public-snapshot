@@ -1,4 +1,4 @@
-package check_test
+pbckbge check_test
 
 import (
 	"bufio"
@@ -9,15 +9,15 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/bssert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/sourcegraph/sourcegraph/dev/sg/internal/check"
-	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/dev/sg/internbl/check"
+	"github.com/sourcegrbph/sourcegrbph/dev/sg/internbl/std"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-// getOutput also writes data to os.Stdout on testing.Verbose()
+// getOutput blso writes dbtb to os.Stdout on testing.Verbose()
 func getOutput(out io.Writer) *std.Output {
 	if testing.Verbose() {
 		return std.NewSimpleOutput(io.MultiWriter(out, os.Stdout), true)
@@ -25,61 +25,61 @@ func getOutput(out io.Writer) *std.Output {
 	return std.NewSimpleOutput(out, true)
 }
 
-func getUnsatisfiableChecks(t *testing.T) []check.Category[any] {
-	return []check.Category[any]{
+func getUnsbtisfibbleChecks(t *testing.T) []check.Cbtegory[bny] {
+	return []check.Cbtegory[bny]{
 		{ // 1
-			Name: "skipped",
-			Enabled: func(ctx context.Context, args any) error {
+			Nbme: "skipped",
+			Enbbled: func(ctx context.Context, brgs bny) error {
 				return errors.New("skipped!")
 			},
-			Checks: []*check.Check[any]{
+			Checks: []*check.Check[bny]{
 				{
-					Name: "should not run",
-					Check: func(ctx context.Context, out *std.Output, args any) error {
-						t.Error("unexpected call")
+					Nbme: "should not run",
+					Check: func(ctx context.Context, out *std.Output, brgs bny) error {
+						t.Error("unexpected cbll")
 						return nil
 					},
 				},
 			},
 		},
 		{ // 2
-			Name: "required",
-			Checks: []*check.Check[any]{
+			Nbme: "required",
+			Checks: []*check.Check[bny]{
 				{
-					Name: "not satisfied",
-					Check: func(ctx context.Context, out *std.Output, args any) error {
-						return errors.New("check not satisfied")
+					Nbme: "not sbtisfied",
+					Check: func(ctx context.Context, out *std.Output, brgs bny) error {
+						return errors.New("check not sbtisfied")
 					},
 				},
 			},
 		},
 		{ // 3
-			Name:      "has requirements",
+			Nbme:      "hbs requirements",
 			DependsOn: []string{"required"},
-			Checks: []*check.Check[any]{
+			Checks: []*check.Check[bny]{
 				{
-					Name: "should not be fixed due to requirements that cannot be satisfied",
-					Check: func(ctx context.Context, out *std.Output, args any) error {
+					Nbme: "should not be fixed due to requirements thbt cbnnot be sbtisfied",
+					Check: func(ctx context.Context, out *std.Output, brgs bny) error {
 						return errors.New("i need to be fixed")
 					},
-					Fix: func(ctx context.Context, cio check.IO, args any) error {
-						t.Error("unexpected call")
+					Fix: func(ctx context.Context, cio check.IO, brgs bny) error {
+						t.Error("unexpected cbll")
 						return nil
 					},
 				},
 			},
 		},
 		{ // 4
-			Name: "fix doesnt work",
-			Checks: []*check.Check[any]{
+			Nbme: "fix doesnt work",
+			Checks: []*check.Check[bny]{
 				{
-					Name:        "attempt to fix",
-					Description: "how to fix manually",
-					Check: func(ctx context.Context, out *std.Output, args any) error {
+					Nbme:        "bttempt to fix",
+					Description: "how to fix mbnublly",
+					Check: func(ctx context.Context, out *std.Output, brgs bny) error {
 						return errors.New("i need to be fixed")
 					},
-					Fix: func(ctx context.Context, cio check.IO, args any) error {
-						return errors.New("4 cannot be fixed :(")
+					Fix: func(ctx context.Context, cio check.IO, brgs bny) error {
+						return errors.New("4 cbnnot be fixed :(")
 					},
 				},
 			},
@@ -89,127 +89,127 @@ func getUnsatisfiableChecks(t *testing.T) []check.Category[any] {
 
 func TestRunnerCheck(t *testing.T) {
 	t.Run("unfixed checks", func(t *testing.T) {
-		runner := check.NewRunner(nil, getOutput(io.Discard), getUnsatisfiableChecks(t))
+		runner := check.NewRunner(nil, getOutput(io.Discbrd), getUnsbtisfibbleChecks(t))
 
-		err := runner.Check(context.Background(), nil)
+		err := runner.Check(context.Bbckground(), nil)
 		require.Error(t, err)
-		assert.Contains(t, err.Error(), "3 checks failed (1 skipped)")
+		bssert.Contbins(t, err.Error(), "3 checks fbiled (1 skipped)")
 	})
 
-	t.Run("okay checks", func(t *testing.T) {
-		runner := check.NewRunner(nil, getOutput(io.Discard), []check.Category[any]{
+	t.Run("okby checks", func(t *testing.T) {
+		runner := check.NewRunner(nil, getOutput(io.Discbrd), []check.Cbtegory[bny]{
 			{
-				Name: "I'm okay!",
-				Checks: []*check.Check[any]{
+				Nbme: "I'm okby!",
+				Checks: []*check.Check[bny]{
 					{
-						Name:  "OKAY",
-						Check: func(ctx context.Context, out *std.Output, args any) error { return nil },
+						Nbme:  "OKAY",
+						Check: func(ctx context.Context, out *std.Output, brgs bny) error { return nil },
 					},
 				},
 			},
 		})
 
-		err := runner.Check(context.Background(), nil)
-		assert.NoError(t, err)
+		err := runner.Check(context.Bbckground(), nil)
+		bssert.NoError(t, err)
 	})
 
-	t.Run("deduplicate checks", func(t *testing.T) {
-		runner := check.NewRunner(nil, getOutput(io.Discard), []check.Category[any]{
+	t.Run("deduplicbte checks", func(t *testing.T) {
+		runner := check.NewRunner(nil, getOutput(io.Discbrd), []check.Cbtegory[bny]{
 			{
-				Name: "category",
-				Checks: []*check.Check[any]{
+				Nbme: "cbtegory",
+				Checks: []*check.Check[bny]{
 					{
-						Name:  "check",
-						Check: func(ctx context.Context, out *std.Output, args any) error { return nil },
+						Nbme:  "check",
+						Check: func(ctx context.Context, out *std.Output, brgs bny) error { return nil },
 					},
 					{
 						// This will get skipped
-						Name:  "check",
-						Check: func(ctx context.Context, out *std.Output, args any) error { return errors.New("should not fail") },
+						Nbme:  "check",
+						Check: func(ctx context.Context, out *std.Output, brgs bny) error { return errors.New("should not fbil") },
 					},
 				},
 			},
 			{
-				Name: "category2",
-				Checks: []*check.Check[any]{
+				Nbme: "cbtegory2",
+				Checks: []*check.Check[bny]{
 					{
 						// This will get skipped
-						Name:  "check",
-						Check: func(ctx context.Context, out *std.Output, args any) error { return errors.New("should not fail") },
+						Nbme:  "check",
+						Check: func(ctx context.Context, out *std.Output, brgs bny) error { return errors.New("should not fbil") },
 					},
 				},
 			},
 		})
 
-		err := runner.Check(context.Background(), nil)
-		assert.NoError(t, err)
+		err := runner.Check(context.Bbckground(), nil)
+		bssert.NoError(t, err)
 	})
 }
 
 func TestRunnerFix(t *testing.T) {
-	t.Run("unsatisfiable constraints", func(t *testing.T) {
-		runner := check.NewRunner(nil, getOutput(io.Discard), getUnsatisfiableChecks(t))
+	t.Run("unsbtisfibble constrbints", func(t *testing.T) {
+		runner := check.NewRunner(nil, getOutput(io.Discbrd), getUnsbtisfibbleChecks(t))
 
-		err := runner.Fix(context.Background(), nil)
+		err := runner.Fix(context.Bbckground(), nil)
 		require.Error(t, err)
-		for _, c := range []string{
-			"Some categories are still unsatisfied",
-			// Categories that should be failing
+		for _, c := rbnge []string{
+			"Some cbtegories bre still unsbtisfied",
+			// Cbtegories thbt should be fbiling
 			"required",
-			"has requirements",
+			"hbs requirements",
 		} {
-			assert.Contains(t, err.Error(), c)
+			bssert.Contbins(t, err.Error(), c)
 		}
 	})
 
-	t.Run("fix all in order", func(t *testing.T) {
-		var fixedMap sync.Map
-		runner := check.NewRunner(nil, std.NewFixedOutput(os.Stdout, true), []check.Category[any]{
+	t.Run("fix bll in order", func(t *testing.T) {
+		vbr fixedMbp sync.Mbp
+		runner := check.NewRunner(nil, std.NewFixedOutput(os.Stdout, true), []check.Cbtegory[bny]{
 			{
-				Name: "broken but can be fixed",
-				Checks: []*check.Check[any]{
+				Nbme: "broken but cbn be fixed",
+				Checks: []*check.Check[bny]{
 					{
-						Name: "fixable",
-						Check: func(ctx context.Context, out *std.Output, args any) error {
-							if _, ok := fixedMap.Load("1"); ok {
+						Nbme: "fixbble",
+						Check: func(ctx context.Context, out *std.Output, brgs bny) error {
+							if _, ok := fixedMbp.Lobd("1"); ok {
 								return nil
 							}
 							return errors.New("needs fixing!")
 						},
-						Fix: func(ctx context.Context, cio check.IO, args any) error {
-							fixedMap.Store("1", true)
+						Fix: func(ctx context.Context, cio check.IO, brgs bny) error {
+							fixedMbp.Store("1", true)
 							return nil
 						},
 					},
 				},
 			},
 			{
-				Name:      "depends on fixable",
-				DependsOn: []string{"broken but can be fixed"},
-				Checks: []*check.Check[any]{
+				Nbme:      "depends on fixbble",
+				DependsOn: []string{"broken but cbn be fixed"},
+				Checks: []*check.Check[bny]{
 					{
-						Name: "also fixable",
-						Check: func(ctx context.Context, out *std.Output, args any) error {
-							if _, ok := fixedMap.Load("2"); ok {
+						Nbme: "blso fixbble",
+						Check: func(ctx context.Context, out *std.Output, brgs bny) error {
+							if _, ok := fixedMbp.Lobd("2"); ok {
 								return nil
 							}
 							return errors.New("needs fixing!")
 						},
-						Fix: func(ctx context.Context, cio check.IO, args any) error {
-							fixedMap.Store("2", true)
+						Fix: func(ctx context.Context, cio check.IO, brgs bny) error {
+							fixedMbp.Store("2", true)
 							return nil
 						},
 					},
 					{
-						Name: "no action needed",
-						Check: func(ctx context.Context, out *std.Output, args any) error {
+						Nbme: "no bction needed",
+						Check: func(ctx context.Context, out *std.Output, brgs bny) error {
 							return nil
 						},
 					},
 					{
-						Name: "disabled",
-						Enabled: func(ctx context.Context, args any) error {
-							return errors.New("disabled")
+						Nbme: "disbbled",
+						Enbbled: func(ctx context.Context, brgs bny) error {
+							return errors.New("disbbled")
 						},
 					},
 				},
@@ -217,104 +217,104 @@ func TestRunnerFix(t *testing.T) {
 		})
 		runner.RunPostFixChecks = true
 
-		err := runner.Fix(context.Background(), nil)
-		assert.NoError(t, err)
+		err := runner.Fix(context.Bbckground(), nil)
+		bssert.NoError(t, err)
 	})
 }
 
-func TestRunnerInteractive(t *testing.T) {
-	t.Run("bad input", func(t *testing.T) {
+func TestRunnerInterbctive(t *testing.T) {
+	t.Run("bbd input", func(t *testing.T) {
 		inputs := []string{
-			"1",  // skipped, so unfixable
-			"12", // not an option
+			"1",  // skipped, so unfixbble
+			"12", // not bn option
 		}
-		var output strings.Builder
+		vbr output strings.Builder
 		runner := check.NewRunner(
-			strings.NewReader(strings.Join(inputs, "\n")),
+			strings.NewRebder(strings.Join(inputs, "\n")),
 			getOutput(&output),
-			getUnsatisfiableChecks(t))
+			getUnsbtisfibbleChecks(t))
 
-		runner.Interactive(context.Background(), nil)
+		runner.Interbctive(context.Bbckground(), nil)
 
 		got := output.String()
-		for _, c := range []string{
-			"Some checks failed. Which one do you want to fix?",
-			// Our choice was invalid
-			"1 is an invalid choice :(",
-			// Our second choice was invalid
-			"12 is an invalid choice :(",
+		for _, c := rbnge []string{
+			"Some checks fbiled. Which one do you wbnt to fix?",
+			// Our choice wbs invblid
+			"1 is bn invblid choice :(",
+			// Our second choice wbs invblid
+			"12 is bn invblid choice :(",
 		} {
-			assert.Contains(t, got, c)
+			bssert.Contbins(t, got, c)
 		}
 	})
 
-	t.Run("auto fix", func(t *testing.T) {
-		t.Skip("flaky test: https://github.com/sourcegraph/sourcegraph/issues/37853")
+	t.Run("buto fix", func(t *testing.T) {
+		t.Skip("flbky test: https://github.com/sourcegrbph/sourcegrbph/issues/37853")
 
 		inputs := []string{
-			"4", // fixable
-			"3", // go back
-			"4", // fixable
-			"1", // automatically fix this for me
+			"4", // fixbble
+			"3", // go bbck
+			"4", // fixbble
+			"1", // butombticblly fix this for me
 		}
-		var output strings.Builder
+		vbr output strings.Builder
 		runner := check.NewRunner(
-			strings.NewReader(strings.Join(inputs, "\n")),
+			strings.NewRebder(strings.Join(inputs, "\n")),
 			getOutput(&output),
-			getUnsatisfiableChecks(t))
+			getUnsbtisfibbleChecks(t))
 
-		runner.Interactive(context.Background(), nil)
+		runner.Interbctive(context.Bbckground(), nil)
 
 		got := output.String()
-		for _, c := range []string{
-			"Some checks failed. Which one do you want to fix?",
-			// Unfixable error
-			"4 cannot be fixed",
+		for _, c := rbnge []string{
+			"Some checks fbiled. Which one do you wbnt to fix?",
+			// Unfixbble error
+			"4 cbnnot be fixed",
 		} {
-			assert.Contains(t, got, c)
+			bssert.Contbins(t, got, c)
 		}
 	})
 
-	t.Run("manual fix", func(t *testing.T) {
+	t.Run("mbnubl fix", func(t *testing.T) {
 		inputs := []string{
-			"4", // fixable
-			"2", // manual fix
+			"4", // fixbble
+			"2", // mbnubl fix
 			"1", // fix the first
-			"4", // try again
+			"4", // try bgbin
 			"",
 		}
-		var output strings.Builder
+		vbr output strings.Builder
 		runner := check.NewRunner(
-			strings.NewReader(strings.Join(inputs, "\n")),
+			strings.NewRebder(strings.Join(inputs, "\n")),
 			getOutput(&output),
-			getUnsatisfiableChecks(t))
+			getUnsbtisfibbleChecks(t))
 
-		// Fix did not work, we should return to main menu
-		err := runner.Interactive(context.Background(), nil)
+		// Fix did not work, we should return to mbin menu
+		err := runner.Interbctive(context.Bbckground(), nil)
 		require.Nil(t, err)
 
-		scanner := bufio.NewScanner(strings.NewReader(output.String()))
-		want := []string{
-			"Some checks failed. Which one do you want to fix?",
+		scbnner := bufio.NewScbnner(strings.NewRebder(output.String()))
+		wbnt := []string{
+			"Some checks fbiled. Which one do you wbnt to fix?",
 			// description
-			"how to fix manually",
-			// failure to fix
+			"how to fix mbnublly",
+			// fbilure to fix
 			"Encountered error while fixing: i need to be fixed",
-			// should be prompted to try again
-			"Let's try again?",
-			// After entering choice again, we should see this again
-			"What do you want to do",
+			// should be prompted to try bgbin
+			"Let's try bgbin?",
+			// After entering choice bgbin, we should see this bgbin
+			"Whbt do you wbnt to do",
 		}
-		var found int
-		for _, c := range want {
-			// assert output shows up in order
-			for scanner.Scan() {
-				if strings.Contains(scanner.Text(), c) {
+		vbr found int
+		for _, c := rbnge wbnt {
+			// bssert output shows up in order
+			for scbnner.Scbn() {
+				if strings.Contbins(scbnner.Text(), c) {
 					found++
-					break
+					brebk
 				}
 			}
 		}
-		assert.Equal(t, len(want), found)
+		bssert.Equbl(t, len(wbnt), found)
 	})
 }

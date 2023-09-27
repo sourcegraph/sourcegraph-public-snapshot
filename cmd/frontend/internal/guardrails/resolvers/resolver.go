@@ -1,26 +1,26 @@
-package resolvers
+pbckbge resolvers
 
 import (
 	"context"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/guardrails/attribution"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/grbphqlbbckend"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/grbphqlbbckend/grbphqlutil"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/internbl/gubrdrbils/bttribution"
 )
 
-var _ graphqlbackend.GuardrailsResolver = &GuardrailsResolver{}
+vbr _ grbphqlbbckend.GubrdrbilsResolver = &GubrdrbilsResolver{}
 
-type GuardrailsResolver struct {
-	AttributionService *attribution.Service
+type GubrdrbilsResolver struct {
+	AttributionService *bttribution.Service
 }
 
-func (c *GuardrailsResolver) SnippetAttribution(ctx context.Context, args *graphqlbackend.SnippetAttributionArgs) (graphqlbackend.SnippetAttributionConnectionResolver, error) {
+func (c *GubrdrbilsResolver) SnippetAttribution(ctx context.Context, brgs *grbphqlbbckend.SnippetAttributionArgs) (grbphqlbbckend.SnippetAttributionConnectionResolver, error) {
 	limit := 5
-	if args.First != nil {
-		limit = int(*args.First)
+	if brgs.First != nil {
+		limit = int(*brgs.First)
 	}
 
-	result, err := c.AttributionService.SnippetAttribution(ctx, args.Snippet, limit)
+	result, err := c.AttributionService.SnippetAttribution(ctx, brgs.Snippet, limit)
 	if err != nil {
 		return nil, err
 	}
@@ -29,28 +29,28 @@ func (c *GuardrailsResolver) SnippetAttribution(ctx context.Context, args *graph
 }
 
 type snippetAttributionConnectionResolver struct {
-	result *attribution.SnippetAttributions
+	result *bttribution.SnippetAttributions
 }
 
-func (c snippetAttributionConnectionResolver) TotalCount() int32 {
-	return int32(c.result.TotalCount)
+func (c snippetAttributionConnectionResolver) TotblCount() int32 {
+	return int32(c.result.TotblCount)
 }
 func (c snippetAttributionConnectionResolver) LimitHit() bool {
 	return c.result.LimitHit
 }
-func (c snippetAttributionConnectionResolver) PageInfo() *graphqlutil.PageInfo {
-	return graphqlutil.HasNextPage(false)
+func (c snippetAttributionConnectionResolver) PbgeInfo() *grbphqlutil.PbgeInfo {
+	return grbphqlutil.HbsNextPbge(fblse)
 }
-func (c snippetAttributionConnectionResolver) Nodes() []graphqlbackend.SnippetAttributionResolver {
-	var nodes []graphqlbackend.SnippetAttributionResolver
-	for _, name := range c.result.RepositoryNames {
-		nodes = append(nodes, snippetAttributionResolver(name))
+func (c snippetAttributionConnectionResolver) Nodes() []grbphqlbbckend.SnippetAttributionResolver {
+	vbr nodes []grbphqlbbckend.SnippetAttributionResolver
+	for _, nbme := rbnge c.result.RepositoryNbmes {
+		nodes = bppend(nodes, snippetAttributionResolver(nbme))
 	}
 	return nodes
 }
 
 type snippetAttributionResolver string
 
-func (c snippetAttributionResolver) RepositoryName() string {
+func (c snippetAttributionResolver) RepositoryNbme() string {
 	return string(c)
 }

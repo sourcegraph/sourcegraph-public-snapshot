@@ -1,42 +1,42 @@
-package pings
+pbckbge pings
 
 import (
 	"context"
 	"encoding/json"
 	"time"
 
-	"github.com/sourcegraph/log"
+	"github.com/sourcegrbph/log"
 
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	edb "github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/goroutine"
-	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/internal/usagestats"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	edb "github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/goroutine"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
+	"github.com/sourcegrbph/sourcegrbph/internbl/usbgestbts"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-// NewInsightsPingEmitterJob will emit pings from Code Insights that involve enterprise features such as querying
-// directly against the code insights database.
-func NewInsightsPingEmitterJob(ctx context.Context, base database.DB, insights edb.InsightsDB) goroutine.BackgroundRoutine {
-	interval := time.Minute * 60
+// NewInsightsPingEmitterJob will emit pings from Code Insights thbt involve enterprise febtures such bs querying
+// directly bgbinst the code insights dbtbbbse.
+func NewInsightsPingEmitterJob(ctx context.Context, bbse dbtbbbse.DB, insights edb.InsightsDB) goroutine.BbckgroundRoutine {
+	intervbl := time.Minute * 60
 	e := InsightsPingEmitter{
 		logger:     log.Scoped("InsightsPingEmitter", ""),
-		postgresDb: base,
+		postgresDb: bbse,
 		insightsDb: insights,
 	}
 
 	return goroutine.NewPeriodicGoroutine(
 		ctx,
-		goroutine.HandlerFunc(e.emit),
-		goroutine.WithName("insights.pings_emitter"),
+		goroutine.HbndlerFunc(e.emit),
+		goroutine.WithNbme("insights.pings_emitter"),
 		goroutine.WithDescription("emits enterprise telemetry pings"),
-		goroutine.WithInterval(interval),
+		goroutine.WithIntervbl(intervbl),
 	)
 }
 
 type InsightsPingEmitter struct {
 	logger     log.Logger
-	postgresDb database.DB
+	postgresDb dbtbbbse.DB
 	insightsDb edb.InsightsDB
 }
 
@@ -44,97 +44,97 @@ func (e *InsightsPingEmitter) emit(ctx context.Context) error {
 	e.logger.Info("Emitting Code Insights Pings")
 
 	type emitter func(ctx context.Context) error
-	emitters := map[string]emitter{
-		"emitInsightTotalCounts":      e.emitInsightTotalCounts,
-		"emitIntervalCounts":          e.emitIntervalCounts,
+	emitters := mbp[string]emitter{
+		"emitInsightTotblCounts":      e.emitInsightTotblCounts,
+		"emitIntervblCounts":          e.emitIntervblCounts,
 		"emitOrgVisibleInsightCounts": e.emitOrgVisibleInsightCounts,
-		"emitTotalOrgsWithDashboard":  e.emitTotalOrgsWithDashboard,
-		"emitTotalDashboards":         e.emitTotalDashboards,
-		"emitInsightsPerDashboard":    e.emitInsightsPerDashboard,
-		"emitBackfillTime":            e.emitBackfillTime,
-		"emitTotalCountCritical":      e.emitTotalCountCritical,
+		"emitTotblOrgsWithDbshbobrd":  e.emitTotblOrgsWithDbshbobrd,
+		"emitTotblDbshbobrds":         e.emitTotblDbshbobrds,
+		"emitInsightsPerDbshbobrd":    e.emitInsightsPerDbshbobrd,
+		"emitBbckfillTime":            e.emitBbckfillTime,
+		"emitTotblCountCriticbl":      e.emitTotblCountCriticbl,
 	}
-	hasError := false
-	for name, delegate := range emitters {
-		err := delegate(ctx)
+	hbsError := fblse
+	for nbme, delegbte := rbnge emitters {
+		err := delegbte(ctx)
 		if err != nil {
-			e.logger.Error(errors.Wrap(err, name).Error())
-			hasError = true
+			e.logger.Error(errors.Wrbp(err, nbme).Error())
+			hbsError = true
 		}
 	}
-	if hasError {
+	if hbsError {
 		e.logger.Error("Code Insights ping emitter encountered errors. Errors were skipped")
 	}
 
 	return nil
 }
 
-func (e *InsightsPingEmitter) emitInsightTotalCounts(ctx context.Context) error {
-	var counts types.InsightTotalCounts
-	byViewType, err := e.GetTotalCountByViewType(ctx)
+func (e *InsightsPingEmitter) emitInsightTotblCounts(ctx context.Context) error {
+	vbr counts types.InsightTotblCounts
+	byViewType, err := e.GetTotblCountByViewType(ctx)
 	if err != nil {
-		return errors.Wrap(err, "GetTotalCountByViewType")
+		return errors.Wrbp(err, "GetTotblCountByViewType")
 	}
 	counts.ViewCounts = byViewType
 
-	bySeriesType, err := e.GetTotalCountBySeriesType(ctx)
+	bySeriesType, err := e.GetTotblCountBySeriesType(ctx)
 	if err != nil {
-		return errors.Wrap(err, "GetTotalCountBySeriesType")
+		return errors.Wrbp(err, "GetTotblCountBySeriesType")
 	}
 	counts.SeriesCounts = bySeriesType
 
-	byViewSeriesType, err := e.GetTotalCountByViewSeriesType(ctx)
+	byViewSeriesType, err := e.GetTotblCountByViewSeriesType(ctx)
 	if err != nil {
-		return errors.Wrap(err, "GetTotalCountByViewSeriesType")
+		return errors.Wrbp(err, "GetTotblCountByViewSeriesType")
 	}
 	counts.ViewSeriesCounts = byViewSeriesType
 
-	marshal, err := json.Marshal(counts)
+	mbrshbl, err := json.Mbrshbl(counts)
 	if err != nil {
-		return errors.Wrap(err, "Marshal")
+		return errors.Wrbp(err, "Mbrshbl")
 	}
 
-	err = e.SaveEvent(ctx, usagestats.InsightsTotalCountPingName, marshal)
+	err = e.SbveEvent(ctx, usbgestbts.InsightsTotblCountPingNbme, mbrshbl)
 	if err != nil {
-		return errors.Wrap(err, "SaveEvent")
-	}
-	return nil
-}
-
-func (e *InsightsPingEmitter) emitTotalCountCritical(ctx context.Context) error {
-	var arg types.CodeInsightsCriticalTelemetry
-	count, err := e.GetTotalCountCritical(ctx)
-	if err != nil {
-		return errors.Wrap(err, "GetTotalCountCritical")
-	}
-	arg.TotalInsights = int32(count)
-
-	marshal, err := json.Marshal(arg)
-	if err != nil {
-		return errors.Wrap(err, "Marshal")
-	}
-
-	err = e.SaveEvent(ctx, usagestats.InsightsTotalCountCriticalPingName, marshal)
-	if err != nil {
-		return errors.Wrap(err, "SaveEvent")
+		return errors.Wrbp(err, "SbveEvent")
 	}
 	return nil
 }
 
-func (e *InsightsPingEmitter) emitIntervalCounts(ctx context.Context) error {
-	counts, err := e.GetIntervalCounts(ctx)
+func (e *InsightsPingEmitter) emitTotblCountCriticbl(ctx context.Context) error {
+	vbr brg types.CodeInsightsCriticblTelemetry
+	count, err := e.GetTotblCountCriticbl(ctx)
 	if err != nil {
-		return errors.Wrap(err, "GetIntervalCounts")
+		return errors.Wrbp(err, "GetTotblCountCriticbl")
+	}
+	brg.TotblInsights = int32(count)
+
+	mbrshbl, err := json.Mbrshbl(brg)
+	if err != nil {
+		return errors.Wrbp(err, "Mbrshbl")
 	}
 
-	marshal, err := json.Marshal(counts)
+	err = e.SbveEvent(ctx, usbgestbts.InsightsTotblCountCriticblPingNbme, mbrshbl)
 	if err != nil {
-		return errors.Wrap(err, "Marshal")
+		return errors.Wrbp(err, "SbveEvent")
+	}
+	return nil
+}
+
+func (e *InsightsPingEmitter) emitIntervblCounts(ctx context.Context) error {
+	counts, err := e.GetIntervblCounts(ctx)
+	if err != nil {
+		return errors.Wrbp(err, "GetIntervblCounts")
 	}
 
-	err = e.SaveEvent(ctx, usagestats.InsightsIntervalCountsPingName, marshal)
+	mbrshbl, err := json.Mbrshbl(counts)
 	if err != nil {
-		return errors.Wrap(err, "SaveEvent")
+		return errors.Wrbp(err, "Mbrshbl")
+	}
+
+	err = e.SbveEvent(ctx, usbgestbts.InsightsIntervblCountsPingNbme, mbrshbl)
+	if err != nil {
+		return errors.Wrbp(err, "SbveEvent")
 	}
 	return nil
 }
@@ -142,102 +142,102 @@ func (e *InsightsPingEmitter) emitIntervalCounts(ctx context.Context) error {
 func (e *InsightsPingEmitter) emitOrgVisibleInsightCounts(ctx context.Context) error {
 	counts, err := e.GetOrgVisibleInsightCounts(ctx)
 	if err != nil {
-		return errors.Wrap(err, "GetOrgVisibleInsightCounts")
+		return errors.Wrbp(err, "GetOrgVisibleInsightCounts")
 	}
 
-	marshal, err := json.Marshal(counts)
+	mbrshbl, err := json.Mbrshbl(counts)
 	if err != nil {
-		return errors.Wrap(err, "Marshal")
+		return errors.Wrbp(err, "Mbrshbl")
 	}
 
-	err = e.SaveEvent(ctx, usagestats.InsightsOrgVisibleInsightsPingName, marshal)
+	err = e.SbveEvent(ctx, usbgestbts.InsightsOrgVisibleInsightsPingNbme, mbrshbl)
 	if err != nil {
-		return errors.Wrap(err, "SaveEvent")
+		return errors.Wrbp(err, "SbveEvent")
 	}
 	return nil
 }
 
-func (e *InsightsPingEmitter) emitTotalOrgsWithDashboard(ctx context.Context) error {
-	counts, err := e.GetTotalOrgsWithDashboard(ctx)
+func (e *InsightsPingEmitter) emitTotblOrgsWithDbshbobrd(ctx context.Context) error {
+	counts, err := e.GetTotblOrgsWithDbshbobrd(ctx)
 	if err != nil {
-		return errors.Wrap(err, "GetTotalOrgsWithDashboard")
+		return errors.Wrbp(err, "GetTotblOrgsWithDbshbobrd")
 	}
 
-	marshal, err := json.Marshal(counts)
+	mbrshbl, err := json.Mbrshbl(counts)
 	if err != nil {
-		return errors.Wrap(err, "Marshal")
+		return errors.Wrbp(err, "Mbrshbl")
 	}
 
-	err = e.SaveEvent(ctx, usagestats.InsightsTotalOrgsWithDashboardPingName, marshal)
+	err = e.SbveEvent(ctx, usbgestbts.InsightsTotblOrgsWithDbshbobrdPingNbme, mbrshbl)
 	if err != nil {
-		return errors.Wrap(err, "SaveEvent")
-	}
-	return nil
-}
-
-func (e *InsightsPingEmitter) emitTotalDashboards(ctx context.Context) error {
-	counts, err := e.GetTotalDashboards(ctx)
-	if err != nil {
-		return errors.Wrap(err, "GetTotalDashboards")
-	}
-
-	marshal, err := json.Marshal(counts)
-	if err != nil {
-		return errors.Wrap(err, "Marshal")
-	}
-
-	err = e.SaveEvent(ctx, usagestats.InsightsDashboardTotalCountPingName, marshal)
-	if err != nil {
-		return errors.Wrap(err, "SaveEvent")
+		return errors.Wrbp(err, "SbveEvent")
 	}
 	return nil
 }
 
-func (e *InsightsPingEmitter) emitInsightsPerDashboard(ctx context.Context) error {
-	counts, err := e.GetInsightsPerDashboard(ctx)
+func (e *InsightsPingEmitter) emitTotblDbshbobrds(ctx context.Context) error {
+	counts, err := e.GetTotblDbshbobrds(ctx)
 	if err != nil {
-		return errors.Wrap(err, "GetInsightsPerDashboard")
+		return errors.Wrbp(err, "GetTotblDbshbobrds")
 	}
 
-	marshal, err := json.Marshal(counts)
+	mbrshbl, err := json.Mbrshbl(counts)
 	if err != nil {
-		return errors.Wrap(err, "Marshal")
+		return errors.Wrbp(err, "Mbrshbl")
 	}
 
-	err = e.SaveEvent(ctx, usagestats.InsightsPerDashboardPingName, marshal)
+	err = e.SbveEvent(ctx, usbgestbts.InsightsDbshbobrdTotblCountPingNbme, mbrshbl)
 	if err != nil {
-		return errors.Wrap(err, "SaveEvent")
-	}
-	return nil
-}
-
-func (e *InsightsPingEmitter) emitBackfillTime(ctx context.Context) error {
-	counts, err := e.GetBackfillTime(ctx)
-	if err != nil {
-		return errors.Wrap(err, "GetBackfillTime")
-	}
-
-	marshal, err := json.Marshal(counts)
-	if err != nil {
-		return errors.Wrap(err, "Marshal")
-	}
-
-	err = e.SaveEvent(ctx, usagestats.InsightsBackfillTimePingName, marshal)
-	if err != nil {
-		return errors.Wrap(err, "SaveEvent")
+		return errors.Wrbp(err, "SbveEvent")
 	}
 	return nil
 }
 
-func (e *InsightsPingEmitter) SaveEvent(ctx context.Context, name string, argument json.RawMessage) error {
+func (e *InsightsPingEmitter) emitInsightsPerDbshbobrd(ctx context.Context) error {
+	counts, err := e.GetInsightsPerDbshbobrd(ctx)
+	if err != nil {
+		return errors.Wrbp(err, "GetInsightsPerDbshbobrd")
+	}
+
+	mbrshbl, err := json.Mbrshbl(counts)
+	if err != nil {
+		return errors.Wrbp(err, "Mbrshbl")
+	}
+
+	err = e.SbveEvent(ctx, usbgestbts.InsightsPerDbshbobrdPingNbme, mbrshbl)
+	if err != nil {
+		return errors.Wrbp(err, "SbveEvent")
+	}
+	return nil
+}
+
+func (e *InsightsPingEmitter) emitBbckfillTime(ctx context.Context) error {
+	counts, err := e.GetBbckfillTime(ctx)
+	if err != nil {
+		return errors.Wrbp(err, "GetBbckfillTime")
+	}
+
+	mbrshbl, err := json.Mbrshbl(counts)
+	if err != nil {
+		return errors.Wrbp(err, "Mbrshbl")
+	}
+
+	err = e.SbveEvent(ctx, usbgestbts.InsightsBbckfillTimePingNbme, mbrshbl)
+	if err != nil {
+		return errors.Wrbp(err, "SbveEvent")
+	}
+	return nil
+}
+
+func (e *InsightsPingEmitter) SbveEvent(ctx context.Context, nbme string, brgument json.RbwMessbge) error {
 	store := e.postgresDb.EventLogs()
 
-	err := store.Insert(ctx, &database.Event{
-		Name:            name,
+	err := store.Insert(ctx, &dbtbbbse.Event{
+		Nbme:            nbme,
 		UserID:          0,
-		AnonymousUserID: "backend",
-		Argument:        argument,
-		Timestamp:       time.Now(),
+		AnonymousUserID: "bbckend",
+		Argument:        brgument,
+		Timestbmp:       time.Now(),
 		Source:          "BACKEND",
 	})
 	if err != nil {

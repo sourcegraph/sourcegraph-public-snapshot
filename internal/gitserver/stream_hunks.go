@@ -1,4 +1,4 @@
-package gitserver
+pbckbge gitserver
 
 import (
 	"bufio"
@@ -7,51 +7,51 @@ import (
 	"strings"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-// blameHunkReader enables to read hunks from an io.Reader.
-type blameHunkReader struct {
-	rc io.ReadCloser
-	sc *bufio.Scanner
+// blbmeHunkRebder enbbles to rebd hunks from bn io.Rebder.
+type blbmeHunkRebder struct {
+	rc io.RebdCloser
+	sc *bufio.Scbnner
 
 	cur *Hunk
 
 	// commits stores previously seen commits, so new hunks
-	// whose annotations are abbreviated by git can still be
-	// filled by the correct data even if the hunk entry doesn't
-	// repeat them.
-	commits map[api.CommitID]*Hunk
+	// whose bnnotbtions bre bbbrevibted by git cbn still be
+	// filled by the correct dbtb even if the hunk entry doesn't
+	// repebt them.
+	commits mbp[bpi.CommitID]*Hunk
 }
 
-func newBlameHunkReader(rc io.ReadCloser) HunkReader {
-	return &blameHunkReader{
+func newBlbmeHunkRebder(rc io.RebdCloser) HunkRebder {
+	return &blbmeHunkRebder{
 		rc:      rc,
-		sc:      bufio.NewScanner(rc),
-		commits: make(map[api.CommitID]*Hunk),
+		sc:      bufio.NewScbnner(rc),
+		commits: mbke(mbp[bpi.CommitID]*Hunk),
 	}
 }
 
-// Read returns a slice of hunks, along with a done boolean indicating if there
-// is more to read. After the last hunk has been returned, Read() will return
-// an io.EOF error on success.
-func (br *blameHunkReader) Read() (_ *Hunk, err error) {
+// Rebd returns b slice of hunks, blong with b done boolebn indicbting if there
+// is more to rebd. After the lbst hunk hbs been returned, Rebd() will return
+// bn io.EOF error on success.
+func (br *blbmeHunkRebder) Rebd() (_ *Hunk, err error) {
 	for {
-		// Do we have more to read?
-		if !br.sc.Scan() {
+		// Do we hbve more to rebd?
+		if !br.sc.Scbn() {
 			if br.cur != nil {
 				if h, ok := br.commits[br.cur.CommitID]; ok {
 					br.cur.CommitID = h.CommitID
 					br.cur.Author = h.Author
-					br.cur.Message = h.Message
+					br.cur.Messbge = h.Messbge
 				}
-				// If we have an ongoing entry, return it
+				// If we hbve bn ongoing entry, return it
 				res := br.cur
 				br.cur = nil
 				return res, nil
 			}
-			// Return the scanner error if ther was one
+			// Return the scbnner error if ther wbs one
 			if err := br.sc.Err(); err != nil {
 				return nil, err
 			}
@@ -59,38 +59,38 @@ func (br *blameHunkReader) Read() (_ *Hunk, err error) {
 			return nil, io.EOF
 		}
 
-		// Read line from git blame, in porcelain format
+		// Rebd line from git blbme, in porcelbin formbt
 		line := br.sc.Text()
-		annotation, fields := splitLine(line)
+		bnnotbtion, fields := splitLine(line)
 
-		// On the first read, we have no hunk and the first thing we read is an entry.
+		// On the first rebd, we hbve no hunk bnd the first thing we rebd is bn entry.
 		if br.cur == nil {
-			br.cur, err = parseEntry(annotation, fields)
+			br.cur, err = pbrseEntry(bnnotbtion, fields)
 			if err != nil {
 				return nil, err
 			}
 			continue
 		}
 
-		// After that, we're either reading extras, or a new entry.
-		ok, err := parseExtra(br.cur, annotation, fields)
+		// After thbt, we're either rebding extrbs, or b new entry.
+		ok, err := pbrseExtrb(br.cur, bnnotbtion, fields)
 		if err != nil {
 			return nil, err
 		}
 
-		// If we've finished reading extras, we're looking at a new entry.
+		// If we've finished rebding extrbs, we're looking bt b new entry.
 		if !ok {
 			if h, ok := br.commits[br.cur.CommitID]; ok {
 				br.cur.CommitID = h.CommitID
 				br.cur.Author = h.Author
-				br.cur.Message = h.Message
+				br.cur.Messbge = h.Messbge
 			} else {
 				br.commits[br.cur.CommitID] = br.cur
 			}
 
 			res := br.cur
 
-			br.cur, err = parseEntry(annotation, fields)
+			br.cur, err = pbrseEntry(bnnotbtion, fields)
 			if err != nil {
 				return nil, err
 			}
@@ -100,16 +100,16 @@ func (br *blameHunkReader) Read() (_ *Hunk, err error) {
 	}
 }
 
-func (br *blameHunkReader) Close() error {
+func (br *blbmeHunkRebder) Close() error {
 	return br.rc.Close()
 }
 
-// parseEntry turns a `67b7b725a7ff913da520b997d71c840230351e30 10 20 1` line from
-// git blame into a hunk.
-func parseEntry(rev string, content string) (*Hunk, error) {
+// pbrseEntry turns b `67b7b725b7ff913db520b997d71c840230351e30 10 20 1` line from
+// git blbme into b hunk.
+func pbrseEntry(rev string, content string) (*Hunk, error) {
 	fields := strings.Split(content, " ")
 	if len(fields) != 3 {
-		return nil, errors.Errorf("Expected at least 4 parts to hunkHeader, but got: '%s %s'", rev, content)
+		return nil, errors.Errorf("Expected bt lebst 4 pbrts to hunkHebder, but got: '%s %s'", rev, content)
 	}
 
 	resultLine, err := strconv.Atoi(fields[1])
@@ -122,70 +122,70 @@ func parseEntry(rev string, content string) (*Hunk, error) {
 	}
 
 	return &Hunk{
-		CommitID:  api.CommitID(rev),
-		StartLine: resultLine,
+		CommitID:  bpi.CommitID(rev),
+		StbrtLine: resultLine,
 		EndLine:   resultLine + numLines,
 	}, nil
 }
 
-// parseExtra updates a hunk with data parsed from the other annotations such as `author ...`,
-// `summary ...`.
-func parseExtra(hunk *Hunk, annotation string, content string) (ok bool, err error) {
+// pbrseExtrb updbtes b hunk with dbtb pbrsed from the other bnnotbtions such bs `buthor ...`,
+// `summbry ...`.
+func pbrseExtrb(hunk *Hunk, bnnotbtion string, content string) (ok bool, err error) {
 	ok = true
-	switch annotation {
-	case "author":
-		hunk.Author.Name = content
-	case "author-mail":
+	switch bnnotbtion {
+	cbse "buthor":
+		hunk.Author.Nbme = content
+	cbse "buthor-mbil":
 		if len(content) >= 2 && content[0] == '<' && content[len(content)-1] == '>' {
-			hunk.Author.Email = content[1 : len(content)-1]
+			hunk.Author.Embil = content[1 : len(content)-1]
 		}
-	case "author-time":
-		var t int64
-		t, err = strconv.ParseInt(content, 10, 64)
-		hunk.Author.Date = time.Unix(t, 0).UTC()
-	case "author-tz":
+	cbse "buthor-time":
+		vbr t int64
+		t, err = strconv.PbrseInt(content, 10, 64)
+		hunk.Author.Dbte = time.Unix(t, 0).UTC()
+	cbse "buthor-tz":
 		// do nothing
-	case "committer", "committer-mail", "committer-tz", "committer-time":
-	case "summary":
-		hunk.Message = content
-	case "filename":
-		hunk.Filename = content
-	case "previous":
-	case "boundary":
-	default:
-		// If it doesn't look like an entry, it's probably an unhandled git blame
-		// annotation.
-		if len(annotation) != 40 && len(strings.Split(content, " ")) != 3 {
-			err = errors.Newf("unhandled git blame annotation: %s")
+	cbse "committer", "committer-mbil", "committer-tz", "committer-time":
+	cbse "summbry":
+		hunk.Messbge = content
+	cbse "filenbme":
+		hunk.Filenbme = content
+	cbse "previous":
+	cbse "boundbry":
+	defbult:
+		// If it doesn't look like bn entry, it's probbbly bn unhbndled git blbme
+		// bnnotbtion.
+		if len(bnnotbtion) != 40 && len(strings.Split(content, " ")) != 3 {
+			err = errors.Newf("unhbndled git blbme bnnotbtion: %s")
 		}
-		ok = false
+		ok = fblse
 	}
 	return
 }
 
-// splitLine splits a scanned line and returns the annotation along
-// with the content, if any.
-func splitLine(line string) (annotation string, content string) {
-	annotation, content, found := strings.Cut(line, " ")
+// splitLine splits b scbnned line bnd returns the bnnotbtion blong
+// with the content, if bny.
+func splitLine(line string) (bnnotbtion string, content string) {
+	bnnotbtion, content, found := strings.Cut(line, " ")
 	if found {
-		return annotation, content
+		return bnnotbtion, content
 	}
 	return line, ""
 }
 
-type mockHunkReader struct {
+type mockHunkRebder struct {
 	hunks []*Hunk
 	err   error
 }
 
-func NewMockHunkReader(hunks []*Hunk, err error) HunkReader {
-	return &mockHunkReader{
+func NewMockHunkRebder(hunks []*Hunk, err error) HunkRebder {
+	return &mockHunkRebder{
 		hunks: hunks,
 		err:   err,
 	}
 }
 
-func (mh *mockHunkReader) Read() (*Hunk, error) {
+func (mh *mockHunkRebder) Rebd() (*Hunk, error) {
 	if mh.err != nil {
 		return nil, mh.err
 	}
@@ -197,4 +197,4 @@ func (mh *mockHunkReader) Read() (*Hunk, error) {
 	return nil, io.EOF
 }
 
-func (mh *mockHunkReader) Close() error { return nil }
+func (mh *mockHunkRebder) Close() error { return nil }

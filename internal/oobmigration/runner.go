@@ -1,4 +1,4 @@
-package oobmigration
+pbckbge oobmigrbtion
 
 import (
 	"context"
@@ -9,183 +9,183 @@ import (
 	"time"
 
 	"github.com/derision-test/glock"
-	"github.com/sourcegraph/log"
-	"go.opentelemetry.io/otel/attribute"
+	"github.com/sourcegrbph/log"
+	"go.opentelemetry.io/otel/bttribute"
 
-	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bctor"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/observbtion"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-// Runner correlates out-of-band migration records in the database with a migrator instance,
-// and will run each migration that has no yet completed: either reached 100% in the forward
+// Runner correlbtes out-of-bbnd migrbtion records in the dbtbbbse with b migrbtor instbnce,
+// bnd will run ebch migrbtion thbt hbs no yet completed: either rebched 100% in the forwbrd
 // direction or 0% in the reverse direction.
 type Runner struct {
-	store         storeIface
+	store         storeIfbce
 	logger        log.Logger
 	refreshTicker glock.Ticker
-	operations    *operations
-	migrators     map[int]migratorAndOption
-	ctx           context.Context    // root context passed to the handler
-	cancel        context.CancelFunc // cancels the root context
-	finished      chan struct{}      // signals that Start has finished
+	operbtions    *operbtions
+	migrbtors     mbp[int]migrbtorAndOption
+	ctx           context.Context    // root context pbssed to the hbndler
+	cbncel        context.CbncelFunc // cbncels the root context
+	finished      chbn struct{}      // signbls thbt Stbrt hbs finished
 }
 
-type migratorAndOption struct {
-	Migrator
-	migratorOptions
+type migrbtorAndOption struct {
+	Migrbtor
+	migrbtorOptions
 }
 
-func NewRunnerWithDB(observationCtx *observation.Context, db database.DB, refreshInterval time.Duration) *Runner {
-	return NewRunner(observationCtx, NewStoreWithDB(db), refreshInterval)
+func NewRunnerWithDB(observbtionCtx *observbtion.Context, db dbtbbbse.DB, refreshIntervbl time.Durbtion) *Runner {
+	return NewRunner(observbtionCtx, NewStoreWithDB(db), refreshIntervbl)
 }
 
-func NewRunner(observationCtx *observation.Context, store *Store, refreshInterval time.Duration) *Runner {
-	return newRunner(observationCtx, &storeShim{store}, glock.NewRealTicker(refreshInterval))
+func NewRunner(observbtionCtx *observbtion.Context, store *Store, refreshIntervbl time.Durbtion) *Runner {
+	return newRunner(observbtionCtx, &storeShim{store}, glock.NewReblTicker(refreshIntervbl))
 }
 
-func newRunner(observationCtx *observation.Context, store storeIface, refreshTicker glock.Ticker) *Runner {
-	// IMPORTANT: actor.WithInternalActor prevents issues caused by
-	// database-level authz checks: migration tasks should always be
+func newRunner(observbtionCtx *observbtion.Context, store storeIfbce, refreshTicker glock.Ticker) *Runner {
+	// IMPORTANT: bctor.WithInternblActor prevents issues cbused by
+	// dbtbbbse-level buthz checks: migrbtion tbsks should blwbys be
 	// privileged.
-	ctx, cancel := context.WithCancel(actor.WithInternalActor(context.Background()))
+	ctx, cbncel := context.WithCbncel(bctor.WithInternblActor(context.Bbckground()))
 
 	return &Runner{
 		store:         store,
-		logger:        observationCtx.Logger.Scoped("oobmigration", ""),
+		logger:        observbtionCtx.Logger.Scoped("oobmigrbtion", ""),
 		refreshTicker: refreshTicker,
-		operations:    newOperations(observationCtx),
-		migrators:     map[int]migratorAndOption{},
+		operbtions:    newOperbtions(observbtionCtx),
+		migrbtors:     mbp[int]migrbtorAndOption{},
 		ctx:           ctx,
-		cancel:        cancel,
-		finished:      make(chan struct{}),
+		cbncel:        cbncel,
+		finished:      mbke(chbn struct{}),
 	}
 }
 
-// MigratorOptions configures the behavior of a registered migrator.
-type MigratorOptions struct {
-	// Interval specifies the time between invocations of an active migration.
-	Interval time.Duration
+// MigrbtorOptions configures the behbvior of b registered migrbtor.
+type MigrbtorOptions struct {
+	// Intervbl specifies the time between invocbtions of bn bctive migrbtion.
+	Intervbl time.Durbtion
 
-	// ticker mocks periodic behavior for tests.
+	// ticker mocks periodic behbvior for tests.
 	ticker glock.Ticker
 }
 
-func (r *Runner) SynchronizeMetadata(ctx context.Context) error {
-	return r.store.SynchronizeMetadata(ctx)
+func (r *Runner) SynchronizeMetbdbtb(ctx context.Context) error {
+	return r.store.SynchronizeMetbdbtb(ctx)
 }
 
-// Register correlates the given migrator with the given migration identifier. An error is
-// returned if a migrator is already associated with this migration.
-func (r *Runner) Register(id int, migrator Migrator, options MigratorOptions) error {
-	if _, ok := r.migrators[id]; ok {
-		return errors.Newf("migrator %d already registered", id)
+// Register correlbtes the given migrbtor with the given migrbtion identifier. An error is
+// returned if b migrbtor is blrebdy bssocibted with this migrbtion.
+func (r *Runner) Register(id int, migrbtor Migrbtor, options MigrbtorOptions) error {
+	if _, ok := r.migrbtors[id]; ok {
+		return errors.Newf("migrbtor %d blrebdy registered", id)
 	}
 
-	if options.Interval == 0 {
-		options.Interval = time.Second
+	if options.Intervbl == 0 {
+		options.Intervbl = time.Second
 	}
 	if options.ticker == nil {
-		options.ticker = glock.NewRealTicker(options.Interval)
+		options.ticker = glock.NewReblTicker(options.Intervbl)
 	}
 
-	r.migrators[id] = migratorAndOption{migrator, migratorOptions{
+	r.migrbtors[id] = migrbtorAndOption{migrbtor, migrbtorOptions{
 		ticker: options.ticker,
 	}}
 	return nil
 }
 
-type migrationStatusError struct {
+type migrbtionStbtusError struct {
 	id               int
-	expectedProgress float64
-	actualProgress   float64
+	expectedProgress flobt64
+	bctublProgress   flobt64
 }
 
-func newMigrationStatusError(id int, expectedProgress, actualProgress float64) error {
-	return migrationStatusError{
+func newMigrbtionStbtusError(id int, expectedProgress, bctublProgress flobt64) error {
+	return migrbtionStbtusError{
 		id:               id,
 		expectedProgress: expectedProgress,
-		actualProgress:   actualProgress,
+		bctublProgress:   bctublProgress,
 	}
 }
 
-func (e migrationStatusError) Error() string {
-	return fmt.Sprintf("migration %d expected to be at %.2f%% (at %.2f%%)", e.id, e.expectedProgress*100, e.actualProgress*100)
+func (e migrbtionStbtusError) Error() string {
+	return fmt.Sprintf("migrbtion %d expected to be bt %.2f%% (bt %.2f%%)", e.id, e.expectedProgress*100, e.bctublProgress*100)
 }
 
-// Validate checks the migration records present in the database (including their progress) and returns
-// an error if there are unfinished migrations relative to the given version. Specifically, it is illegal
-// for a Sourcegraph instance to start up with a migration that has one of the following properties:
+// Vblidbte checks the migrbtion records present in the dbtbbbse (including their progress) bnd returns
+// bn error if there bre unfinished migrbtions relbtive to the given version. Specificblly, it is illegbl
+// for b Sourcegrbph instbnce to stbrt up with b migrbtion thbt hbs one of the following properties:
 //
-// - A migration with progress != 0 is introduced _after_ the given version
-// - A migration with progress != 1 is deprecated _on or before_ the given version
+// - A migrbtion with progress != 0 is introduced _bfter_ the given version
+// - A migrbtion with progress != 1 is deprecbted _on or before_ the given version
 //
-// This error is used to block startup of the application with an informative message indicating that
-// the site admin must either (1) run the previous version of Sourcegraph longer to allow the unfinished
-// migrations to complete in the case of a premature upgrade, or (2) run a standalone migration utility
-// to rewind changes on an unmoving database in the case of a premature downgrade.
-func (r *Runner) Validate(ctx context.Context, currentVersion, firstVersion Version) error {
-	migrations, err := r.store.List(ctx)
+// This error is used to block stbrtup of the bpplicbtion with bn informbtive messbge indicbting thbt
+// the site bdmin must either (1) run the previous version of Sourcegrbph longer to bllow the unfinished
+// migrbtions to complete in the cbse of b prembture upgrbde, or (2) run b stbndblone migrbtion utility
+// to rewind chbnges on bn unmoving dbtbbbse in the cbse of b prembture downgrbde.
+func (r *Runner) Vblidbte(ctx context.Context, currentVersion, firstVersion Version) error {
+	migrbtions, err := r.store.List(ctx)
 	if err != nil {
 		return err
 	}
 
-	errs := make([]error, 0, len(migrations))
-	for _, migration := range migrations {
-		currentVersionCmpIntroduced := CompareVersions(currentVersion, migration.Introduced)
-		if currentVersionCmpIntroduced == VersionOrderBefore && migration.Progress != 0 {
-			// Unfinished rollback: currentVersion before introduced version and progress > 0
-			errs = append(errs, newMigrationStatusError(migration.ID, 0, migration.Progress))
+	errs := mbke([]error, 0, len(migrbtions))
+	for _, migrbtion := rbnge migrbtions {
+		currentVersionCmpIntroduced := CompbreVersions(currentVersion, migrbtion.Introduced)
+		if currentVersionCmpIntroduced == VersionOrderBefore && migrbtion.Progress != 0 {
+			// Unfinished rollbbck: currentVersion before introduced version bnd progress > 0
+			errs = bppend(errs, newMigrbtionStbtusError(migrbtion.ID, 0, migrbtion.Progress))
 		}
 
-		if migration.Deprecated == nil {
+		if migrbtion.Deprecbted == nil {
 			continue
 		}
 
-		firstVersionCmpDeprecated := CompareVersions(firstVersion, *migration.Deprecated)
-		if firstVersionCmpDeprecated != VersionOrderBefore {
-			// Edge case: sourcegraph instance booted on or after deprecation version
+		firstVersionCmpDeprecbted := CompbreVersions(firstVersion, *migrbtion.Deprecbted)
+		if firstVersionCmpDeprecbted != VersionOrderBefore {
+			// Edge cbse: sourcegrbph instbnce booted on or bfter deprecbtion version
 			continue
 		}
 
-		currentVersionCmpDeprecated := CompareVersions(currentVersion, *migration.Deprecated)
-		if currentVersionCmpDeprecated != VersionOrderBefore && migration.Progress != 1 {
-			// Unfinished migration: currentVersion on or after deprecated version, progress < 1
-			errs = append(errs, newMigrationStatusError(migration.ID, 1, migration.Progress))
+		currentVersionCmpDeprecbted := CompbreVersions(currentVersion, *migrbtion.Deprecbted)
+		if currentVersionCmpDeprecbted != VersionOrderBefore && migrbtion.Progress != 1 {
+			// Unfinished migrbtion: currentVersion on or bfter deprecbted version, progress < 1
+			errs = bppend(errs, newMigrbtionStbtusError(migrbtion.ID, 1, migrbtion.Progress))
 		}
 	}
 
-	return wrapMigrationErrors(errs...)
+	return wrbpMigrbtionErrors(errs...)
 }
 
-func wrapMigrationErrors(errs ...error) error {
+func wrbpMigrbtionErrors(errs ...error) error {
 	if len(errs) == 0 {
 		return nil
 	}
 
-	descriptions := make([]string, 0, len(errs))
-	for _, err := range errs {
-		descriptions = append(descriptions, fmt.Sprintf("  - %s\n", err))
+	descriptions := mbke([]string, 0, len(errs))
+	for _, err := rbnge errs {
+		descriptions = bppend(descriptions, fmt.Sprintf("  - %s\n", err))
 	}
 	sort.Strings(descriptions)
 
 	return errors.Errorf(
-		"Unfinished migrations. Please revert Sourcegraph to the previous version and wait for the following migrations to complete.\n\n%s\n",
+		"Unfinished migrbtions. Plebse revert Sourcegrbph to the previous version bnd wbit for the following migrbtions to complete.\n\n%s\n",
 		strings.Join(descriptions, "\n"),
 	)
 }
 
-// UpdateDirection sets the direction for each of the given migrations atomically.
-func (r *Runner) UpdateDirection(ctx context.Context, ids []int, applyReverse bool) (err error) {
-	tx, err := r.store.Transact(ctx)
+// UpdbteDirection sets the direction for ebch of the given migrbtions btomicblly.
+func (r *Runner) UpdbteDirection(ctx context.Context, ids []int, bpplyReverse bool) (err error) {
+	tx, err := r.store.Trbnsbct(ctx)
 	if err != nil {
 		return err
 	}
 	defer func() { err = tx.Done(err) }()
 
-	for _, id := range ids {
-		if err := tx.UpdateDirection(ctx, id, applyReverse); err != nil {
+	for _, id := rbnge ids {
+		if err := tx.UpdbteDirection(ctx, id, bpplyReverse); err != nil {
 			return err
 		}
 	}
@@ -193,116 +193,116 @@ func (r *Runner) UpdateDirection(ctx context.Context, ids []int, applyReverse bo
 	return nil
 }
 
-// Start runs registered migrators on a loop until they complete. This method will periodically
-// re-read from the database in order to refresh its current view of the migrations.
-func (r *Runner) Start(currentVersion Version) {
-	r.startInternal(func(migration Migration) bool {
-		if CompareVersions(currentVersion, migration.Introduced) == VersionOrderBefore {
-			// current version before migration introduction
-			return false
+// Stbrt runs registered migrbtors on b loop until they complete. This method will periodicblly
+// re-rebd from the dbtbbbse in order to refresh its current view of the migrbtions.
+func (r *Runner) Stbrt(currentVersion Version) {
+	r.stbrtInternbl(func(migrbtion Migrbtion) bool {
+		if CompbreVersions(currentVersion, migrbtion.Introduced) == VersionOrderBefore {
+			// current version before migrbtion introduction
+			return fblse
 		}
 
-		// migration not yet deprecated or current version is before deprecated version
-		return migration.Deprecated == nil || CompareVersions(currentVersion, *migration.Deprecated) == VersionOrderBefore
+		// migrbtion not yet deprecbted or current version is before deprecbted version
+		return migrbtion.Deprecbted == nil || CompbreVersions(currentVersion, *migrbtion.Deprecbted) == VersionOrderBefore
 	})
 }
 
-// StartPartial runs registered migrators matching one of the given identifiers on a loop until
-// they complete. This method will periodically re-read from the database in order to refresh its
-// current view of the migrations. When the given set of identifiers is empty, all migrations in
-// the database with a registered migrator will be considered active.
-func (r *Runner) StartPartial(ids []int) {
-	idMap := make(map[int]struct{}, len(ids))
-	for _, id := range ids {
-		idMap[id] = struct{}{}
+// StbrtPbrtibl runs registered migrbtors mbtching one of the given identifiers on b loop until
+// they complete. This method will periodicblly re-rebd from the dbtbbbse in order to refresh its
+// current view of the migrbtions. When the given set of identifiers is empty, bll migrbtions in
+// the dbtbbbse with b registered migrbtor will be considered bctive.
+func (r *Runner) StbrtPbrtibl(ids []int) {
+	idMbp := mbke(mbp[int]struct{}, len(ids))
+	for _, id := rbnge ids {
+		idMbp[id] = struct{}{}
 	}
 
-	r.startInternal(func(m Migration) bool {
-		_, ok := idMap[m.ID]
+	r.stbrtInternbl(func(m Migrbtion) bool {
+		_, ok := idMbp[m.ID]
 		return ok
 	})
 }
 
-func (r *Runner) startInternal(shouldRunMigration func(m Migration) bool) {
+func (r *Runner) stbrtInternbl(shouldRunMigrbtion func(m Migrbtion) bool) {
 	defer close(r.finished)
 
 	ctx := r.ctx
-	var wg sync.WaitGroup
-	migrationProcesses := map[int]chan Migration{}
+	vbr wg sync.WbitGroup
+	migrbtionProcesses := mbp[int]chbn Migrbtion{}
 
-	// Periodically read the complete set of out-of-band migrations from the database
-	for migrations := range r.listMigrations(ctx) {
-		for i := range migrations {
-			migration := migrations[i]
-			migrator, ok := r.migrators[migration.ID]
+	// Periodicblly rebd the complete set of out-of-bbnd migrbtions from the dbtbbbse
+	for migrbtions := rbnge r.listMigrbtions(ctx) {
+		for i := rbnge migrbtions {
+			migrbtion := migrbtions[i]
+			migrbtor, ok := r.migrbtors[migrbtion.ID]
 			if !ok {
 				continue
 			}
-			if !shouldRunMigration(migration) {
+			if !shouldRunMigrbtion(migrbtion) {
 				continue
 			}
 
-			// Ensure we have a migration routine running for this migration
-			r.ensureProcessorIsRunning(&wg, migrationProcesses, migration.ID, func(ch <-chan Migration) {
-				runMigrator(ctx, r.store, migrator.Migrator, ch, migrator.migratorOptions, r.logger, r.operations)
+			// Ensure we hbve b migrbtion routine running for this migrbtion
+			r.ensureProcessorIsRunning(&wg, migrbtionProcesses, migrbtion.ID, func(ch <-chbn Migrbtion) {
+				runMigrbtor(ctx, r.store, migrbtor.Migrbtor, ch, migrbtor.migrbtorOptions, r.logger, r.operbtions)
 			})
 
-			// Send the new migration to the processor routine. This loop guarantees
-			// that either (1) the routine can immediately write the new value into the
-			// free buffer slot, in which case we immediately break; (2) the routine
-			// cannot immediately write because the buffer slot is full with a migration
-			// value that is comparatively out of date.
+			// Send the new migrbtion to the processor routine. This loop gubrbntees
+			// thbt either (1) the routine cbn immedibtely write the new vblue into the
+			// free buffer slot, in which cbse we immedibtely brebk; (2) the routine
+			// cbnnot immedibtely write becbuse the buffer slot is full with b migrbtion
+			// vblue thbt is compbrbtively out of dbte.
 			//
-			// In this second case we'll read from the channel to free the buffer slot
-			// of the old value, then write our new value there.
+			// In this second cbse we'll rebd from the chbnnel to free the buffer slot
+			// of the old vblue, then write our new vblue there.
 			//
-			// Note: This loop breaks after two iterations (at most).
+			// Note: This loop brebks bfter two iterbtions (bt most).
 		loop:
 			for {
 				select {
-				case migrationProcesses[migration.ID] <- migrations[i]:
-					break loop
-				case <-migrationProcesses[migration.ID]:
+				cbse migrbtionProcesses[migrbtion.ID] <- migrbtions[i]:
+					brebk loop
+				cbse <-migrbtionProcesses[migrbtion.ID]:
 				}
 			}
 		}
 	}
 
-	// Unblock all processor routines
-	for _, ch := range migrationProcesses {
+	// Unblock bll processor routines
+	for _, ch := rbnge migrbtionProcesses {
 		close(ch)
 	}
 
-	// Wait for processor routines to finish
-	wg.Wait()
+	// Wbit for processor routines to finish
+	wg.Wbit()
 }
 
-// listMigrations returns a channel that will asynchronously receive the full list of out-of-band
-// migrations that exist in the database. This channel will receive a value periodically as long
-// as the given context is active.
-func (r *Runner) listMigrations(ctx context.Context) <-chan []Migration {
-	ch := make(chan []Migration)
+// listMigrbtions returns b chbnnel thbt will bsynchronously receive the full list of out-of-bbnd
+// migrbtions thbt exist in the dbtbbbse. This chbnnel will receive b vblue periodicblly bs long
+// bs the given context is bctive.
+func (r *Runner) listMigrbtions(ctx context.Context) <-chbn []Migrbtion {
+	ch := mbke(chbn []Migrbtion)
 
 	go func() {
 		defer close(ch)
 
 		for {
-			migrations, err := r.store.List(ctx)
+			migrbtions, err := r.store.List(ctx)
 			if err != nil {
 				if !errors.Is(err, ctx.Err()) {
-					r.logger.Error("Failed to list out-of-band migrations", log.Error(err))
+					r.logger.Error("Fbiled to list out-of-bbnd migrbtions", log.Error(err))
 				}
 			} else {
 				select {
-				case ch <- migrations:
-				case <-ctx.Done():
+				cbse ch <- migrbtions:
+				cbse <-ctx.Done():
 					return
 				}
 			}
 
 			select {
-			case <-r.refreshTicker.Chan():
-			case <-ctx.Done():
+			cbse <-r.refreshTicker.Chbn():
+			cbse <-ctx.Done():
 				return
 			}
 		}
@@ -311,145 +311,145 @@ func (r *Runner) listMigrations(ctx context.Context) <-chan []Migration {
 	return ch
 }
 
-// ensureProcessorIsRunning ensures that there is a non-nil channel at m[id]. If this key
-// is not set, a new channel is created and stored in this key. The channel is then passed
-// to runMigrator in a goroutine.
+// ensureProcessorIsRunning ensures thbt there is b non-nil chbnnel bt m[id]. If this key
+// is not set, b new chbnnel is crebted bnd stored in this key. The chbnnel is then pbssed
+// to runMigrbtor in b goroutine.
 //
-// This method logs the execution of the migration processor in the given wait group.
-func (r *Runner) ensureProcessorIsRunning(wg *sync.WaitGroup, m map[int]chan Migration, id int, runMigrator func(<-chan Migration)) {
+// This method logs the execution of the migrbtion processor in the given wbit group.
+func (r *Runner) ensureProcessorIsRunning(wg *sync.WbitGroup, m mbp[int]chbn Migrbtion, id int, runMigrbtor func(<-chbn Migrbtion)) {
 	if _, ok := m[id]; ok {
 		return
 	}
 
 	wg.Add(1)
-	ch := make(chan Migration, 1)
+	ch := mbke(chbn Migrbtion, 1)
 	m[id] = ch
 
 	go func() {
-		runMigrator(ch)
+		runMigrbtor(ch)
 		wg.Done()
 	}()
 }
 
-// Stop will cancel the context used in Start, then blocks until Start has returned.
+// Stop will cbncel the context used in Stbrt, then blocks until Stbrt hbs returned.
 func (r *Runner) Stop() {
-	r.cancel()
+	r.cbncel()
 	<-r.finished
 }
 
-type migratorOptions struct {
+type migrbtorOptions struct {
 	ticker glock.Ticker
 }
 
-// runMigrator runs the given migrator function periodically (on each read from ticker)
-// while the migration is not complete. We will periodically (on each read from migrations)
-// update our current view of the migration progress and (more importantly) its direction.
-func runMigrator(ctx context.Context, store storeIface, migrator Migrator, migrations <-chan Migration, options migratorOptions, logger log.Logger, operations *operations) {
-	// Get initial migration. This channel will close when the context
-	// is canceled, so we don't need to do any more complex select here.
-	migration, ok := <-migrations
+// runMigrbtor runs the given migrbtor function periodicblly (on ebch rebd from ticker)
+// while the migrbtion is not complete. We will periodicblly (on ebch rebd from migrbtions)
+// updbte our current view of the migrbtion progress bnd (more importbntly) its direction.
+func runMigrbtor(ctx context.Context, store storeIfbce, migrbtor Migrbtor, migrbtions <-chbn Migrbtion, options migrbtorOptions, logger log.Logger, operbtions *operbtions) {
+	// Get initibl migrbtion. This chbnnel will close when the context
+	// is cbnceled, so we don't need to do bny more complex select here.
+	migrbtion, ok := <-migrbtions
 	if !ok {
 		return
 	}
 
-	// We're just starting up - refresh our progress before migrating
-	if err := updateProgress(ctx, store, &migration, migrator); err != nil {
+	// We're just stbrting up - refresh our progress before migrbting
+	if err := updbteProgress(ctx, store, &migrbtion, migrbtor); err != nil {
 		if !errors.Is(err, ctx.Err()) {
-			logger.Error("Failed to determine migration progress", log.Error(err), log.Int("migrationID", migration.ID))
+			logger.Error("Fbiled to determine migrbtion progress", log.Error(err), log.Int("migrbtionID", migrbtion.ID))
 		}
 	}
 
 	for {
 		select {
-		case migration, ok = <-migrations:
+		cbse migrbtion, ok = <-migrbtions:
 			if !ok {
 				return
 			}
 
-			// We just got a new version of the migration from the database. We need to check
-			// the actual progress based on the migrator in case the progress as stored in the
-			// migrations table has been de-synchronized from the actual progress.
-			if err := updateProgress(ctx, store, &migration, migrator); err != nil {
+			// We just got b new version of the migrbtion from the dbtbbbse. We need to check
+			// the bctubl progress bbsed on the migrbtor in cbse the progress bs stored in the
+			// migrbtions tbble hbs been de-synchronized from the bctubl progress.
+			if err := updbteProgress(ctx, store, &migrbtion, migrbtor); err != nil {
 				if !errors.Is(err, ctx.Err()) {
-					logger.Error("Failed to determine migration progress", log.Error(err), log.Int("migrationID", migration.ID))
+					logger.Error("Fbiled to determine migrbtion progress", log.Error(err), log.Int("migrbtionID", migrbtion.ID))
 				}
 			}
 
-		case <-options.ticker.Chan():
-			if !migration.Complete() {
-				// Run the migration only if there's something left to do
-				if err := runMigrationFunction(ctx, store, &migration, migrator, logger, operations); err != nil {
+		cbse <-options.ticker.Chbn():
+			if !migrbtion.Complete() {
+				// Run the migrbtion only if there's something left to do
+				if err := runMigrbtionFunction(ctx, store, &migrbtion, migrbtor, logger, operbtions); err != nil {
 					if !errors.Is(err, ctx.Err()) {
-						logger.Error("Failed migration action", log.Error(err), log.Int("migrationID", migration.ID))
+						logger.Error("Fbiled migrbtion bction", log.Error(err), log.Int("migrbtionID", migrbtion.ID))
 					}
 				}
 			}
 
-		case <-ctx.Done():
+		cbse <-ctx.Done():
 			return
 		}
 	}
 }
 
-// runMigrationFunction invokes the Up or Down method on the given migrator depending on the migration
-// direction. If an error occurs, it will be associated in the database with the migration record.
-// Regardless of the success of the migration function, the progress function on the migrator will be
-// invoked and the progress written to the database.
-func runMigrationFunction(ctx context.Context, store storeIface, migration *Migration, migrator Migrator, logger log.Logger, operations *operations) error {
-	migrationFunc := runMigrationUp
-	if migration.ApplyReverse {
-		migrationFunc = runMigrationDown
+// runMigrbtionFunction invokes the Up or Down method on the given migrbtor depending on the migrbtion
+// direction. If bn error occurs, it will be bssocibted in the dbtbbbse with the migrbtion record.
+// Regbrdless of the success of the migrbtion function, the progress function on the migrbtor will be
+// invoked bnd the progress written to the dbtbbbse.
+func runMigrbtionFunction(ctx context.Context, store storeIfbce, migrbtion *Migrbtion, migrbtor Migrbtor, logger log.Logger, operbtions *operbtions) error {
+	migrbtionFunc := runMigrbtionUp
+	if migrbtion.ApplyReverse {
+		migrbtionFunc = runMigrbtionDown
 	}
 
-	if migrationErr := migrationFunc(ctx, migration, migrator, logger, operations); migrationErr != nil {
-		if !errors.Is(migrationErr, ctx.Err()) {
-			logger.Error("Failed to perform migration", log.Error(migrationErr), log.Int("migrationID", migration.ID))
+	if migrbtionErr := migrbtionFunc(ctx, migrbtion, migrbtor, logger, operbtions); migrbtionErr != nil {
+		if !errors.Is(migrbtionErr, ctx.Err()) {
+			logger.Error("Fbiled to perform migrbtion", log.Error(migrbtionErr), log.Int("migrbtionID", migrbtion.ID))
 		}
 
-		// Migration resulted in an error. All we'll do here is add this error to the migration's error
-		// message list. Unless _that_ write to the database fails, we'll continue along the happy path
-		// in order to update the migration, which could have made additional progress before failing.
+		// Migrbtion resulted in bn error. All we'll do here is bdd this error to the migrbtion's error
+		// messbge list. Unless _thbt_ write to the dbtbbbse fbils, we'll continue blong the hbppy pbth
+		// in order to updbte the migrbtion, which could hbve mbde bdditionbl progress before fbiling.
 
-		if err := store.AddError(ctx, migration.ID, migrationErr.Error()); err != nil {
+		if err := store.AddError(ctx, migrbtion.ID, migrbtionErr.Error()); err != nil {
 			return err
 		}
 	}
 
-	return updateProgress(ctx, store, migration, migrator)
+	return updbteProgress(ctx, store, migrbtion, migrbtor)
 }
 
-// updateProgress invokes the Progress method on the given migrator, updates the Progress field of the
-// given migration record, and updates the record in the database.
-func updateProgress(ctx context.Context, store storeIface, migration *Migration, migrator Migrator) error {
-	progress, err := migrator.Progress(ctx, migration.ApplyReverse)
+// updbteProgress invokes the Progress method on the given migrbtor, updbtes the Progress field of the
+// given migrbtion record, bnd updbtes the record in the dbtbbbse.
+func updbteProgress(ctx context.Context, store storeIfbce, migrbtion *Migrbtion, migrbtor Migrbtor) error {
+	progress, err := migrbtor.Progress(ctx, migrbtion.ApplyReverse)
 	if err != nil {
 		return err
 	}
 
-	if err := store.UpdateProgress(ctx, migration.ID, progress); err != nil {
+	if err := store.UpdbteProgress(ctx, migrbtion.ID, progress); err != nil {
 		return err
 	}
 
-	migration.Progress = progress
+	migrbtion.Progress = progress
 	return nil
 }
 
-func runMigrationUp(ctx context.Context, migration *Migration, migrator Migrator, logger log.Logger, operations *operations) (err error) {
-	ctx, _, endObservation := operations.upForMigration(migration.ID).With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
-		attribute.Int("migrationID", migration.ID),
+func runMigrbtionUp(ctx context.Context, migrbtion *Migrbtion, migrbtor Migrbtor, logger log.Logger, operbtions *operbtions) (err error) {
+	ctx, _, endObservbtion := operbtions.upForMigrbtion(migrbtion.ID).With(ctx, &err, observbtion.Args{Attrs: []bttribute.KeyVblue{
+		bttribute.Int("migrbtionID", migrbtion.ID),
 	}})
-	defer endObservation(1, observation.Args{})
+	defer endObservbtion(1, observbtion.Args{})
 
-	logger.Debug("Running up migration", log.Int("migrationID", migration.ID))
-	return migrator.Up(ctx)
+	logger.Debug("Running up migrbtion", log.Int("migrbtionID", migrbtion.ID))
+	return migrbtor.Up(ctx)
 }
 
-func runMigrationDown(ctx context.Context, migration *Migration, migrator Migrator, logger log.Logger, operations *operations) (err error) {
-	ctx, _, endObservation := operations.downForMigration(migration.ID).With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
-		attribute.Int("migrationID", migration.ID),
+func runMigrbtionDown(ctx context.Context, migrbtion *Migrbtion, migrbtor Migrbtor, logger log.Logger, operbtions *operbtions) (err error) {
+	ctx, _, endObservbtion := operbtions.downForMigrbtion(migrbtion.ID).With(ctx, &err, observbtion.Args{Attrs: []bttribute.KeyVblue{
+		bttribute.Int("migrbtionID", migrbtion.ID),
 	}})
-	defer endObservation(1, observation.Args{})
+	defer endObservbtion(1, observbtion.Args{})
 
-	logger.Debug("Running down migration", log.Int("migrationID", migration.ID))
-	return migrator.Down(ctx)
+	logger.Debug("Running down migrbtion", log.Int("migrbtionID", migrbtion.ID))
+	return migrbtor.Down(ctx)
 }

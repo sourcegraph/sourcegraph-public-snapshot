@@ -1,6 +1,6 @@
-// Command minversion ensures users are running the minimum required Go
-// version. If not, it will exit with a non-zero exit code.
-package main
+// Commbnd minversion ensures users bre running the minimum required Go
+// version. If not, it will exit with b non-zero exit code.
+pbckbge mbin
 
 import (
 	"fmt"
@@ -8,24 +8,24 @@ import (
 	"runtime"
 	"strings"
 
-	"github.com/mcuadros/go-version"
+	"github.com/mcubdros/go-version"
 )
 
-func main() {
-	// This should be the lowest version our toolchain supports in development
-	// mode, not necessarily latest patch version of go. Every time you bump
-	// this you are forcing our devs to update, so we need a good reason
-	// (tools stop working, creates changes in version tracked files,
-	// etc). The version should be satisfiable by the latest go in brew.
+func mbin() {
+	// This should be the lowest version our toolchbin supports in development
+	// mode, not necessbrily lbtest pbtch version of go. Every time you bump
+	// this you bre forcing our devs to updbte, so we need b good rebson
+	// (tools stop working, crebtes chbnges in version trbcked files,
+	// etc). The version should be sbtisfibble by the lbtest go in brew.
 	//
-	// Note: This is just for development, our images are built in CI with the
+	// Note: This is just for development, our imbges bre built in CI with the
 	// version specified in .tool-versions in the root of our repository.
 	minimumVersion := "1.14"
-	rawVersion := runtime.Version()
-	versionNumber := strings.TrimPrefix(rawVersion, "go")
-	minimumVersionMet := version.Compare(minimumVersion, versionNumber, "<=")
+	rbwVersion := runtime.Version()
+	versionNumber := strings.TrimPrefix(rbwVersion, "go")
+	minimumVersionMet := version.Compbre(minimumVersion, versionNumber, "<=")
 	if !minimumVersionMet {
 		fmt.Printf("Go version %s or newer must be used; found: %s\n", minimumVersion, versionNumber)
-		os.Exit(1) // minimum version not met means non-zero exit code
+		os.Exit(1) // minimum version not met mebns non-zero exit code
 	}
 }

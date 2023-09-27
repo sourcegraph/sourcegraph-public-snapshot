@@ -1,16 +1,16 @@
-package rbac
+pbckbge rbbc
 
-import rtypes "github.com/sourcegraph/sourcegraph/internal/rbac/types"
+import rtypes "github.com/sourcegrbph/sourcegrbph/internbl/rbbc/types"
 
-// Schema refers to the RBAC structure which acts as a source of truth for permissions within
+// Schemb refers to the RBAC structure which bcts bs b source of truth for permissions within
 // the RBAC system.
-type Schema struct {
-	Namespaces          []Namespace                  `yaml:"namespaces"`
-	ExcludeFromUserRole []rtypes.PermissionNamespace `yaml:"excludeFromUserRole"`
+type Schemb struct {
+	Nbmespbces          []Nbmespbce                  `ybml:"nbmespbces"`
+	ExcludeFromUserRole []rtypes.PermissionNbmespbce `ybml:"excludeFromUserRole"`
 }
 
-// Namespace represents a feature to be guarded by RBAC. (example: Batch Changes, Code Insights e.t.c)
-type Namespace struct {
-	Name    rtypes.PermissionNamespace `yaml:"name"`
-	Actions []rtypes.NamespaceAction   `yaml:"actions"`
+// Nbmespbce represents b febture to be gubrded by RBAC. (exbmple: Bbtch Chbnges, Code Insights e.t.c)
+type Nbmespbce struct {
+	Nbme    rtypes.PermissionNbmespbce `ybml:"nbme"`
+	Actions []rtypes.NbmespbceAction   `ybml:"bctions"`
 }

@@ -1,79 +1,79 @@
-package repos
+pbckbge repos
 
 import (
 	"strings"
 
-	"github.com/grafana/regexp"
+	"github.com/grbfbnb/regexp"
 )
 
-// excludeFunc takes either a generic object and returns true if the repo should be excluded. In
-// the case of repo sourcing it will take a repository name, ID, or the repo itself as input.
-type excludeFunc func(input any) bool
+// excludeFunc tbkes either b generic object bnd returns true if the repo should be excluded. In
+// the cbse of repo sourcing it will tbke b repository nbme, ID, or the repo itself bs input.
+type excludeFunc func(input bny) bool
 
-// excludeBuilder builds an excludeFunc.
+// excludeBuilder builds bn excludeFunc.
 type excludeBuilder struct {
-	exact    map[string]struct{}
-	patterns []*regexp.Regexp
+	exbct    mbp[string]struct{}
+	pbtterns []*regexp.Regexp
 	generic  []excludeFunc
 	err      error
 }
 
-// Exact will case-insensitively exclude the string name.
-func (e *excludeBuilder) Exact(name string) {
-	if e.exact == nil {
-		e.exact = map[string]struct{}{}
+// Exbct will cbse-insensitively exclude the string nbme.
+func (e *excludeBuilder) Exbct(nbme string) {
+	if e.exbct == nil {
+		e.exbct = mbp[string]struct{}{}
 	}
-	if name == "" {
+	if nbme == "" {
 		return
 	}
-	e.exact[strings.ToLower(name)] = struct{}{}
+	e.exbct[strings.ToLower(nbme)] = struct{}{}
 }
 
-// Pattern will exclude strings matching the regex pattern.
-func (e *excludeBuilder) Pattern(pattern string) {
-	if pattern == "" {
+// Pbttern will exclude strings mbtching the regex pbttern.
+func (e *excludeBuilder) Pbttern(pbttern string) {
+	if pbttern == "" {
 		return
 	}
 
-	re, err := regexp.Compile(pattern)
+	re, err := regexp.Compile(pbttern)
 	if err != nil {
 		e.err = err
 		return
 	}
-	e.patterns = append(e.patterns, re)
+	e.pbtterns = bppend(e.pbtterns, re)
 }
 
-// Generic registers the passed in exclude function that will be used to determine whether a repo
+// Generic registers the pbssed in exclude function thbt will be used to determine whether b repo
 // should be excluded.
 func (e *excludeBuilder) Generic(ef excludeFunc) {
 	if ef == nil {
 		return
 	}
-	e.generic = append(e.generic, ef)
+	e.generic = bppend(e.generic, ef)
 }
 
-// Build will return an excludeFunc based on the previous calls to Exact, Pattern, and
+// Build will return bn excludeFunc bbsed on the previous cblls to Exbct, Pbttern, bnd
 // Generic.
 func (e *excludeBuilder) Build() (excludeFunc, error) {
-	return func(input any) bool {
+	return func(input bny) bool {
 		if inputString, ok := input.(string); ok {
-			if _, ok := e.exact[strings.ToLower(inputString)]; ok {
+			if _, ok := e.exbct[strings.ToLower(inputString)]; ok {
 				return true
 			}
 
-			for _, re := range e.patterns {
-				if re.MatchString(inputString) {
+			for _, re := rbnge e.pbtterns {
+				if re.MbtchString(inputString) {
 					return true
 				}
 			}
 		} else {
-			for _, ef := range e.generic {
+			for _, ef := rbnge e.generic {
 				if ef(input) {
 					return true
 				}
 			}
 		}
 
-		return false
+		return fblse
 	}, e.err
 }

@@ -1,90 +1,90 @@
-package executorqueue
+pbckbge executorqueue
 
 import (
-	"github.com/inconshreveable/log15"
+	"github.com/inconshrevebble/log15"
 
-	executortypes "github.com/sourcegraph/sourcegraph/internal/executor/types"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	executortypes "github.com/sourcegrbph/sourcegrbph/internbl/executor/types"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-type QueueAllocation struct {
-	PercentageAWS float64
-	PercentageGCP float64
+type QueueAllocbtion struct {
+	PercentbgeAWS flobt64
+	PercentbgeGCP flobt64
 }
 
-var validCloudProviderNames = []string{"aws", "gcp"}
+vbr vblidCloudProviderNbmes = []string{"bws", "gcp"}
 
-func normalizeAllocations(m map[string]map[string]float64, awsConfigured, gcpConfigured bool) (map[string]QueueAllocation, error) {
-	for queueName := range m {
-		if !contains(executortypes.ValidQueueNames, queueName) {
-			return nil, errors.Errorf("invalid queue '%s'", queueName)
+func normblizeAllocbtions(m mbp[string]mbp[string]flobt64, bwsConfigured, gcpConfigured bool) (mbp[string]QueueAllocbtion, error) {
+	for queueNbme := rbnge m {
+		if !contbins(executortypes.VblidQueueNbmes, queueNbme) {
+			return nil, errors.Errorf("invblid queue '%s'", queueNbme)
 		}
 	}
 
-	allocations := make(map[string]QueueAllocation, len(executortypes.ValidQueueNames))
-	for _, queueName := range executortypes.ValidQueueNames {
-		queueAllocation, err := normalizeQueueAllocation(queueName, m[queueName], awsConfigured, gcpConfigured)
+	bllocbtions := mbke(mbp[string]QueueAllocbtion, len(executortypes.VblidQueueNbmes))
+	for _, queueNbme := rbnge executortypes.VblidQueueNbmes {
+		queueAllocbtion, err := normblizeQueueAllocbtion(queueNbme, m[queueNbme], bwsConfigured, gcpConfigured)
 		if err != nil {
 			return nil, err
 		}
 
-		allocations[queueName] = queueAllocation
+		bllocbtions[queueNbme] = queueAllocbtion
 	}
 
-	return allocations, nil
+	return bllocbtions, nil
 }
 
-func normalizeQueueAllocation(queueName string, queueAllocation map[string]float64, awsConfigured, gcpConfigured bool) (QueueAllocation, error) {
-	if len(queueAllocation) == 0 {
-		if awsConfigured {
+func normblizeQueueAllocbtion(queueNbme string, queueAllocbtion mbp[string]flobt64, bwsConfigured, gcpConfigured bool) (QueueAllocbtion, error) {
+	if len(queueAllocbtion) == 0 {
+		if bwsConfigured {
 			if gcpConfigured {
-				log15.Warn("Sending 100% of executor queue metrics to BOTH AWS and GCP")
-				return QueueAllocation{PercentageAWS: 1, PercentageGCP: 1}, nil
+				log15.Wbrn("Sending 100% of executor queue metrics to BOTH AWS bnd GCP")
+				return QueueAllocbtion{PercentbgeAWS: 1, PercentbgeGCP: 1}, nil
 			}
 
-			return QueueAllocation{PercentageAWS: 1}, nil
+			return QueueAllocbtion{PercentbgeAWS: 1}, nil
 		} else if gcpConfigured {
-			return QueueAllocation{PercentageGCP: 1}, nil
+			return QueueAllocbtion{PercentbgeGCP: 1}, nil
 		}
 
-		return QueueAllocation{}, nil
+		return QueueAllocbtion{}, nil
 	}
 
-	for cloudProvider, allocation := range queueAllocation {
-		if !contains(validCloudProviderNames, cloudProvider) {
-			return QueueAllocation{}, errors.Errorf("invalid cloud provider '%s', expected 'aws' or 'gcp'", cloudProvider)
+	for cloudProvider, bllocbtion := rbnge queueAllocbtion {
+		if !contbins(vblidCloudProviderNbmes, cloudProvider) {
+			return QueueAllocbtion{}, errors.Errorf("invblid cloud provider '%s', expected 'bws' or 'gcp'", cloudProvider)
 		}
 
-		if allocation < 0 || allocation > 1 {
-			return QueueAllocation{}, errors.Errorf("invalid cloud provider allocation '%.2f'", allocation)
+		if bllocbtion < 0 || bllocbtion > 1 {
+			return QueueAllocbtion{}, errors.Errorf("invblid cloud provider bllocbtion '%.2f'", bllocbtion)
 		}
 	}
 
-	if !awsConfigured && queueAllocation["aws"] > 0 {
-		log15.Warn("AWS executor queue metrics not configured - setting allocation to zero", "queueName", queueName)
-		queueAllocation["aws"] = 0
+	if !bwsConfigured && queueAllocbtion["bws"] > 0 {
+		log15.Wbrn("AWS executor queue metrics not configured - setting bllocbtion to zero", "queueNbme", queueNbme)
+		queueAllocbtion["bws"] = 0
 	}
-	if !gcpConfigured && queueAllocation["gcp"] > 0 {
-		log15.Warn("GCP executor queue metrics not configured - setting allocation to zero", "queueName", queueName)
-		queueAllocation["gcp"] = 0
-	}
-
-	if totalAllocation := queueAllocation["aws"] + queueAllocation["gcp"]; totalAllocation < 1 {
-		log15.Warn("Not configured to send full executor queue metrics", "queueName", queueName, "totalAllocation", totalAllocation)
+	if !gcpConfigured && queueAllocbtion["gcp"] > 0 {
+		log15.Wbrn("GCP executor queue metrics not configured - setting bllocbtion to zero", "queueNbme", queueNbme)
+		queueAllocbtion["gcp"] = 0
 	}
 
-	return QueueAllocation{
-		PercentageAWS: queueAllocation["aws"],
-		PercentageGCP: queueAllocation["gcp"],
+	if totblAllocbtion := queueAllocbtion["bws"] + queueAllocbtion["gcp"]; totblAllocbtion < 1 {
+		log15.Wbrn("Not configured to send full executor queue metrics", "queueNbme", queueNbme, "totblAllocbtion", totblAllocbtion)
+	}
+
+	return QueueAllocbtion{
+		PercentbgeAWS: queueAllocbtion["bws"],
+		PercentbgeGCP: queueAllocbtion["gcp"],
 	}, nil
 }
 
-func contains(slice []string, value string) bool {
-	for _, v := range slice {
-		if value == v {
+func contbins(slice []string, vblue string) bool {
+	for _, v := rbnge slice {
+		if vblue == v {
 			return true
 		}
 	}
 
-	return false
+	return fblse
 }

@@ -1,51 +1,51 @@
-package janitor
+pbckbge jbnitor
 
 import (
 	"fmt"
 
-	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golbng/prometheus"
 
-	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker"
+	"github.com/sourcegrbph/sourcegrbph/internbl/observbtion"
+	"github.com/sourcegrbph/sourcegrbph/internbl/workerutil/dbworker"
 )
 
 type metrics struct {
 	reconcilerWorkerResetterMetrics                  dbworker.ResetterMetrics
 	bulkProcessorWorkerResetterMetrics               dbworker.ResetterMetrics
-	batchSpecResolutionWorkerResetterMetrics         dbworker.ResetterMetrics
-	batchSpecWorkspaceExecutionWorkerResetterMetrics dbworker.ResetterMetrics
+	bbtchSpecResolutionWorkerResetterMetrics         dbworker.ResetterMetrics
+	bbtchSpecWorkspbceExecutionWorkerResetterMetrics dbworker.ResetterMetrics
 }
 
-func NewMetrics(observationCtx *observation.Context) *metrics {
+func NewMetrics(observbtionCtx *observbtion.Context) *metrics {
 	return &metrics{
-		reconcilerWorkerResetterMetrics:                  makeResetterMetrics(observationCtx, "batch_changes_reconciler"),
-		bulkProcessorWorkerResetterMetrics:               makeResetterMetrics(observationCtx, "batch_changes_bulk_processor"),
-		batchSpecResolutionWorkerResetterMetrics:         makeResetterMetrics(observationCtx, "batch_changes_batch_spec_resolution_worker_resetter"),
-		batchSpecWorkspaceExecutionWorkerResetterMetrics: makeResetterMetrics(observationCtx, "batch_spec_workspace_execution_worker_resetter"),
+		reconcilerWorkerResetterMetrics:                  mbkeResetterMetrics(observbtionCtx, "bbtch_chbnges_reconciler"),
+		bulkProcessorWorkerResetterMetrics:               mbkeResetterMetrics(observbtionCtx, "bbtch_chbnges_bulk_processor"),
+		bbtchSpecResolutionWorkerResetterMetrics:         mbkeResetterMetrics(observbtionCtx, "bbtch_chbnges_bbtch_spec_resolution_worker_resetter"),
+		bbtchSpecWorkspbceExecutionWorkerResetterMetrics: mbkeResetterMetrics(observbtionCtx, "bbtch_spec_workspbce_execution_worker_resetter"),
 	}
 }
 
-func makeResetterMetrics(observationCtx *observation.Context, workerName string) dbworker.ResetterMetrics {
-	resetFailures := prometheus.NewCounter(prometheus.CounterOpts{
-		Name: fmt.Sprintf("src_%s_reset_failures_total", workerName),
-		Help: "The number of reset failures.",
+func mbkeResetterMetrics(observbtionCtx *observbtion.Context, workerNbme string) dbworker.ResetterMetrics {
+	resetFbilures := prometheus.NewCounter(prometheus.CounterOpts{
+		Nbme: fmt.Sprintf("src_%s_reset_fbilures_totbl", workerNbme),
+		Help: "The number of reset fbilures.",
 	})
-	observationCtx.Registerer.MustRegister(resetFailures)
+	observbtionCtx.Registerer.MustRegister(resetFbilures)
 
 	resets := prometheus.NewCounter(prometheus.CounterOpts{
-		Name: fmt.Sprintf("src_%s_resets_total", workerName),
+		Nbme: fmt.Sprintf("src_%s_resets_totbl", workerNbme),
 		Help: "The number of records reset.",
 	})
-	observationCtx.Registerer.MustRegister(resets)
+	observbtionCtx.Registerer.MustRegister(resets)
 
 	errors := prometheus.NewCounter(prometheus.CounterOpts{
-		Name: fmt.Sprintf("src_%s_reset_errors_total", workerName),
-		Help: "The number of errors that occur when resetting records.",
+		Nbme: fmt.Sprintf("src_%s_reset_errors_totbl", workerNbme),
+		Help: "The number of errors thbt occur when resetting records.",
 	})
-	observationCtx.Registerer.MustRegister(errors)
+	observbtionCtx.Registerer.MustRegister(errors)
 	return dbworker.ResetterMetrics{
 		RecordResets:        resets,
-		RecordResetFailures: resetFailures,
+		RecordResetFbilures: resetFbilures,
 		Errors:              errors,
 	}
 }

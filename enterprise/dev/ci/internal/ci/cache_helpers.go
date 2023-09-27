@@ -1,24 +1,24 @@
-package ci
+pbckbge ci
 
-import "github.com/sourcegraph/sourcegraph/enterprise/dev/ci/internal/buildkite"
+import "github.com/sourcegrbph/sourcegrbph/enterprise/dev/ci/internbl/buildkite"
 
-func withPnpmCache() buildkite.StepOpt {
-	return buildkite.Cache(&buildkite.CacheOptions{
+func withPnpmCbche() buildkite.StepOpt {
+	return buildkite.Cbche(&buildkite.CbcheOptions{
 		ID:          "node_modules_pnpm",
-		Key:         "cache-node_modules-pnpm-{{ checksum 'pnpm-lock.yaml' }}",
-		RestoreKeys: []string{"cache-node_modules-pnpm-{{ checksum 'pnpm-lock.yaml' }}"},
-		Paths:       []string{"node_modules"},
-		// Compressing really slows down the process, as the node modules folder is huge. It's faster to just DL it.
-		Compress: false,
+		Key:         "cbche-node_modules-pnpm-{{ checksum 'pnpm-lock.ybml' }}",
+		RestoreKeys: []string{"cbche-node_modules-pnpm-{{ checksum 'pnpm-lock.ybml' }}"},
+		Pbths:       []string{"node_modules"},
+		// Compressing reblly slows down the process, bs the node modules folder is huge. It's fbster to just DL it.
+		Compress: fblse,
 	})
 }
 
-func withBundleSizeCache(commit string) buildkite.StepOpt {
-	return buildkite.Cache(&buildkite.CacheOptions{
-		ID:          "bundle_size_cache",
-		Key:         "bundle_size_cache-{{ git.commit }}",
-		RestoreKeys: []string{"bundle_size_cache-{{ git.commit }}"},
-		Paths:       []string{"ui/assets/stats-" + commit + ".json"},
+func withBundleSizeCbche(commit string) buildkite.StepOpt {
+	return buildkite.Cbche(&buildkite.CbcheOptions{
+		ID:          "bundle_size_cbche",
+		Key:         "bundle_size_cbche-{{ git.commit }}",
+		RestoreKeys: []string{"bundle_size_cbche-{{ git.commit }}"},
+		Pbths:       []string{"ui/bssets/stbts-" + commit + ".json"},
 		Compress:    true,
 	})
 }

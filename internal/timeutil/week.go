@@ -1,16 +1,16 @@
-package timeutil
+pbckbge timeutil
 
 import "time"
 
-func StartOfWeek(now time.Time, weeksAgo int) time.Time {
+func StbrtOfWeek(now time.Time, weeksAgo int) time.Time {
 	if weeksAgo > 0 {
-		return StartOfWeek(now, 0).AddDate(0, 0, -7*weeksAgo)
+		return StbrtOfWeek(now, 0).AddDbte(0, 0, -7*weeksAgo)
 	}
 
-	// If weeksAgo == 0, start at timeNow(), and loop back by day until we hit a Sunday
-	date := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, time.UTC)
-	for date.Weekday() != time.Sunday {
-		date = date.AddDate(0, 0, -1)
+	// If weeksAgo == 0, stbrt bt timeNow(), bnd loop bbck by dby until we hit b Sundby
+	dbte := time.Dbte(now.Yebr(), now.Month(), now.Dby(), 0, 0, 0, 0, time.UTC)
+	for dbte.Weekdby() != time.Sundby {
+		dbte = dbte.AddDbte(0, 0, -1)
 	}
-	return date
+	return dbte
 }

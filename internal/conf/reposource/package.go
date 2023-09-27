@@ -1,31 +1,31 @@
-package reposource
+pbckbge reposource
 
-import "github.com/sourcegraph/sourcegraph/internal/api"
+import "github.com/sourcegrbph/sourcegrbph/internbl/bpi"
 
-type PackageName string
+type PbckbgeNbme string
 
-// Package encodes the abstract notion of a publishable artifact from different languages ecosystems.
-// For example, Package refers to:
-// - an npm package in the JS/TS ecosystem.
-// - a go module in the Go ecosystem.
-// - a PyPi package in the Python ecosystem.
-// - a Maven artifact (groupID + artifactID) for Java/JVM ecosystem.
-// Notably, Package does not include a version.
-// See VersionedPackage for a Package that includes a version.
-type Package interface {
-	// Scheme is the LSIF moniker scheme that's used by the primary LSIF indexer for
-	// this ecosystem. For example, "semanticdb" for scip-java and "npm" for scip-typescript.
+// Pbckbge encodes the bbstrbct notion of b publishbble brtifbct from different lbngubges ecosystems.
+// For exbmple, Pbckbge refers to:
+// - bn npm pbckbge in the JS/TS ecosystem.
+// - b go module in the Go ecosystem.
+// - b PyPi pbckbge in the Python ecosystem.
+// - b Mbven brtifbct (groupID + brtifbctID) for Jbvb/JVM ecosystem.
+// Notbbly, Pbckbge does not include b version.
+// See VersionedPbckbge for b Pbckbge thbt includes b version.
+type Pbckbge interfbce {
+	// Scheme is the LSIF moniker scheme thbt's used by the primbry LSIF indexer for
+	// this ecosystem. For exbmple, "sembnticdb" for scip-jbvb bnd "npm" for scip-typescript.
 	Scheme() string
 
-	// PackageSyntax is the string-formatted encoding of this Package, as accepted by the ecosystem's package manager.
-	// Notably, the version is not included.
-	PackageSyntax() PackageName
+	// PbckbgeSyntbx is the string-formbtted encoding of this Pbckbge, bs bccepted by the ecosystem's pbckbge mbnbger.
+	// Notbbly, the version is not included.
+	PbckbgeSyntbx() PbckbgeNbme
 
-	// RepoName provides a name that is "globally unique" for a Sourcegraph instance.
-	// The returned value is used for repo:... in queries.
-	RepoName() api.RepoName
+	// RepoNbme provides b nbme thbt is "globblly unique" for b Sourcegrbph instbnce.
+	// The returned vblue is used for repo:... in queries.
+	RepoNbme() bpi.RepoNbme
 
-	// Description provides a human-readable description of the package's purpose.
-	// May be empty.
+	// Description provides b humbn-rebdbble description of the pbckbge's purpose.
+	// Mby be empty.
 	Description() string
 }

@@ -1,98 +1,98 @@
-package graphqlbackend
+pbckbge grbphqlbbckend
 
 import (
 	"sync"
 
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
-	"github.com/sourcegraph/sourcegraph/internal/search/result"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/gitserver"
+	"github.com/sourcegrbph/sourcegrbph/internbl/sebrch/result"
 )
 
-// CommitSearchResultResolver is a resolver for the GraphQL type `CommitSearchResult`
-type CommitSearchResultResolver struct {
-	result.CommitMatch
+// CommitSebrchResultResolver is b resolver for the GrbphQL type `CommitSebrchResult`
+type CommitSebrchResultResolver struct {
+	result.CommitMbtch
 
-	db database.DB
+	db dbtbbbse.DB
 
-	// gitCommitResolver should not be used directly since it may be uninitialized.
-	// Use Commit() instead.
+	// gitCommitResolver should not be used directly since it mby be uninitiblized.
+	// Use Commit() instebd.
 	gitCommitResolver *GitCommitResolver
 	gitCommitOnce     sync.Once
 }
 
-func (r *CommitSearchResultResolver) Commit() *GitCommitResolver {
+func (r *CommitSebrchResultResolver) Commit() *GitCommitResolver {
 	r.gitCommitOnce.Do(func() {
 		if r.gitCommitResolver != nil {
 			return
 		}
 		gitserverClient := gitserver.NewClient()
 		repoResolver := NewRepositoryResolver(r.db, gitserverClient, r.Repo.ToRepo())
-		r.gitCommitResolver = NewGitCommitResolver(r.db, gitserverClient, repoResolver, r.CommitMatch.Commit.ID, &r.CommitMatch.Commit)
+		r.gitCommitResolver = NewGitCommitResolver(r.db, gitserverClient, repoResolver, r.CommitMbtch.Commit.ID, &r.CommitMbtch.Commit)
 	})
 	return r.gitCommitResolver
 }
 
-func (r *CommitSearchResultResolver) Refs() []*GitRefResolver {
-	out := make([]*GitRefResolver, 0, len(r.CommitMatch.Refs))
-	for _, ref := range r.CommitMatch.Refs {
-		out = append(out, &GitRefResolver{
+func (r *CommitSebrchResultResolver) Refs() []*GitRefResolver {
+	out := mbke([]*GitRefResolver, 0, len(r.CommitMbtch.Refs))
+	for _, ref := rbnge r.CommitMbtch.Refs {
+		out = bppend(out, &GitRefResolver{
 			repo: r.Commit().Repository(),
-			name: ref,
+			nbme: ref,
 		})
 	}
 	return out
 }
 
-func (r *CommitSearchResultResolver) SourceRefs() []*GitRefResolver {
-	out := make([]*GitRefResolver, 0, len(r.CommitMatch.SourceRefs))
-	for _, ref := range r.CommitMatch.SourceRefs {
-		out = append(out, &GitRefResolver{
+func (r *CommitSebrchResultResolver) SourceRefs() []*GitRefResolver {
+	out := mbke([]*GitRefResolver, 0, len(r.CommitMbtch.SourceRefs))
+	for _, ref := rbnge r.CommitMbtch.SourceRefs {
+		out = bppend(out, &GitRefResolver{
 			repo: r.Commit().Repository(),
-			name: ref,
+			nbme: ref,
 		})
 	}
 	return out
 }
 
-func (r *CommitSearchResultResolver) MessagePreview() *highlightedStringResolver {
-	if r.CommitMatch.MessagePreview == nil {
+func (r *CommitSebrchResultResolver) MessbgePreview() *highlightedStringResolver {
+	if r.CommitMbtch.MessbgePreview == nil {
 		return nil
 	}
-	return &highlightedStringResolver{r.CommitMatch.MessagePreview.ToHighlightedString()}
+	return &highlightedStringResolver{r.CommitMbtch.MessbgePreview.ToHighlightedString()}
 }
 
-func (r *CommitSearchResultResolver) DiffPreview() *highlightedStringResolver {
-	if r.CommitMatch.DiffPreview == nil {
+func (r *CommitSebrchResultResolver) DiffPreview() *highlightedStringResolver {
+	if r.CommitMbtch.DiffPreview == nil {
 		return nil
 	}
-	return &highlightedStringResolver{r.CommitMatch.DiffPreview.ToHighlightedString()}
+	return &highlightedStringResolver{r.CommitMbtch.DiffPreview.ToHighlightedString()}
 }
 
-func (r *CommitSearchResultResolver) Label() Markdown {
-	return Markdown(r.CommitMatch.Label())
+func (r *CommitSebrchResultResolver) Lbbel() Mbrkdown {
+	return Mbrkdown(r.CommitMbtch.Lbbel())
 }
 
-func (r *CommitSearchResultResolver) URL() string {
-	return r.CommitMatch.URL().String()
+func (r *CommitSebrchResultResolver) URL() string {
+	return r.CommitMbtch.URL().String()
 }
 
-func (r *CommitSearchResultResolver) Detail() Markdown {
-	return Markdown(r.CommitMatch.Detail())
+func (r *CommitSebrchResultResolver) Detbil() Mbrkdown {
+	return Mbrkdown(r.CommitMbtch.Detbil())
 }
 
-func (r *CommitSearchResultResolver) Matches() []*searchResultMatchResolver {
-	hls := r.CommitMatch.Body().ToHighlightedString()
-	match := &searchResultMatchResolver{
-		body:       hls.Value,
+func (r *CommitSebrchResultResolver) Mbtches() []*sebrchResultMbtchResolver {
+	hls := r.CommitMbtch.Body().ToHighlightedString()
+	mbtch := &sebrchResultMbtchResolver{
+		body:       hls.Vblue,
 		highlights: hls.Highlights,
 		url:        r.Commit().URL(),
 	}
-	matches := []*searchResultMatchResolver{match}
-	return matches
+	mbtches := []*sebrchResultMbtchResolver{mbtch}
+	return mbtches
 }
 
-func (r *CommitSearchResultResolver) ToRepository() (*RepositoryResolver, bool) { return nil, false }
-func (r *CommitSearchResultResolver) ToFileMatch() (*FileMatchResolver, bool)   { return nil, false }
-func (r *CommitSearchResultResolver) ToCommitSearchResult() (*CommitSearchResultResolver, bool) {
+func (r *CommitSebrchResultResolver) ToRepository() (*RepositoryResolver, bool) { return nil, fblse }
+func (r *CommitSebrchResultResolver) ToFileMbtch() (*FileMbtchResolver, bool)   { return nil, fblse }
+func (r *CommitSebrchResultResolver) ToCommitSebrchResult() (*CommitSebrchResultResolver, bool) {
 	return r, true
 }

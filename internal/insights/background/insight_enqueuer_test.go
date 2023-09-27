@@ -1,4 +1,4 @@
-package background
+pbckbge bbckground
 
 import (
 	"context"
@@ -6,54 +6,54 @@ import (
 	"testing"
 	"time"
 
-	"github.com/sourcegraph/log/logtest"
+	"github.com/sourcegrbph/log/logtest"
 
-	"github.com/sourcegraph/sourcegraph/internal/insights/store"
-	"github.com/sourcegraph/sourcegraph/internal/insights/types"
+	"github.com/sourcegrbph/sourcegrbph/internbl/insights/store"
+	"github.com/sourcegrbph/sourcegrbph/internbl/insights/types"
 
-	"github.com/hexops/autogold/v2"
+	"github.com/hexops/butogold/v2"
 
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
-	"github.com/sourcegraph/sourcegraph/internal/insights/background/queryrunner"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/bbsestore"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbmocks"
+	"github.com/sourcegrbph/sourcegrbph/internbl/insights/bbckground/queryrunner"
 )
 
-var testRealGlobalSettings = &api.Settings{ID: 1, Contents: `{
+vbr testReblGlobblSettings = &bpi.Settings{ID: 1, Contents: `{
 	"insights": [
 		{
-		  "title": "fmt usage",
-		  "description": "errors.Errorf/fmt.Printf usage",
+		  "title": "fmt usbge",
+		  "description": "errors.Errorf/fmt.Printf usbge",
 		  "series": [
 			{
-			  "label": "errors.Errorf",
-			  "search": "errorf",
+			  "lbbel": "errors.Errorf",
+			  "sebrch": "errorf",
 			},
 			{
-			  "label": "printf",
-			  "search": "fmt.Printf",
+			  "lbbel": "printf",
+			  "sebrch": "fmt.Printf",
 			},
 			{
-			  "label": "duplicate",
-			  "search": "errorf",
+			  "lbbel": "duplicbte",
+			  "sebrch": "errorf",
 			}
 		  ]
 		},
 		{
-			"title": "gitserver usage",
-			"description": "gitserver exec & close usage",
+			"title": "gitserver usbge",
+			"description": "gitserver exec & close usbge",
 			"series": [
 			  {
-				"label": "exec",
-				"search": "gitserver.Exec",
+				"lbbel": "exec",
+				"sebrch": "gitserver.Exec",
 			  },
 			  {
-				"label": "close",
-				"search": "gitserver.Close",
+				"lbbel": "close",
+				"sebrch": "gitserver.Close",
 			  },
 			  {
-				"label": "duplicate",
-				"search": "gitserver.Close",
+				"lbbel": "duplicbte",
+				"sebrch": "gitserver.Close",
 			  }
 			]
 		  }
@@ -61,36 +61,36 @@ var testRealGlobalSettings = &api.Settings{ID: 1, Contents: `{
 	}
 `}
 
-// Test_discoverAndEnqueueInsights tests that insight discovery and job enqueueing works and
-// adheres to a few properties:
+// Test_discoverAndEnqueueInsights tests thbt insight discovery bnd job enqueueing works bnd
+// bdheres to b few properties:
 //
-// 1. Webhook insights are not enqueued (not yet supported.)
-// 2. Duplicate insights are deduplicated / do not submit multiple jobs.
-// 3. Jobs are scheduled not to all run at the same time.
+// 1. Webhook insights bre not enqueued (not yet supported.)
+// 2. Duplicbte insights bre deduplicbted / do not submit multiple jobs.
+// 3. Jobs bre scheduled not to bll run bt the sbme time.
 func Test_discoverAndEnqueueInsights(t *testing.T) {
-	// Setup the setting store and job enqueuer mocks.
-	ctx := context.Background()
-	var enqueued []*queryrunner.Job
+	// Setup the setting store bnd job enqueuer mocks.
+	ctx := context.Bbckground()
+	vbr enqueued []*queryrunner.Job
 	enqueueQueryRunnerJob := func(ctx context.Context, job *queryrunner.Job) error {
-		enqueued = append(enqueued, job)
+		enqueued = bppend(enqueued, job)
 		return nil
 	}
 
-	// Create a fake clock so the times reported in our test data do not change and can be easily verified.
-	now, err := time.Parse(time.RFC3339, "2020-03-01T00:00:00Z")
+	// Crebte b fbke clock so the times reported in our test dbtb do not chbnge bnd cbn be ebsily verified.
+	now, err := time.Pbrse(time.RFC3339, "2020-03-01T00:00:00Z")
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 	clock := func() time.Time { return now }
 
 	db := dbmocks.NewMockDB()
-	workerBaseStore := basestore.NewWithHandle(db.Handle())
-	ie := NewInsightEnqueuer(clock, workerBaseStore, logtest.Scoped(t))
+	workerBbseStore := bbsestore.NewWithHbndle(db.Hbndle())
+	ie := NewInsightEnqueuer(clock, workerBbseStore, logtest.Scoped(t))
 	ie.enqueueQueryRunnerJob = enqueueQueryRunnerJob
 
-	dataSeriesStore := store.NewMockDataSeriesStore()
+	dbtbSeriesStore := store.NewMockDbtbSeriesStore()
 
-	dataSeriesStore.GetDataSeriesFunc.SetDefaultReturn([]types.InsightSeries{
+	dbtbSeriesStore.GetDbtbSeriesFunc.SetDefbultReturn([]types.InsightSeries{
 		{
 			ID:                 1,
 			SeriesID:           "series1",
@@ -105,87 +105,87 @@ func Test_discoverAndEnqueueInsights(t *testing.T) {
 		},
 	}, nil)
 
-	if err := ie.discoverAndEnqueueInsights(ctx, dataSeriesStore); err != nil {
-		t.Fatal(err)
+	if err := ie.discoverAndEnqueueInsights(ctx, dbtbSeriesStore); err != nil {
+		t.Fbtbl(err)
 	}
 
-	// JSON marshal to keep times formatted nicely.
-	enqueuedJSON, err := json.MarshalIndent(enqueued, "", "  ")
+	// JSON mbrshbl to keep times formbtted nicely.
+	enqueuedJSON, err := json.MbrshblIndent(enqueued, "", "  ")
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
-	autogold.Expect(`[
+	butogold.Expect(`[
   {
     "SeriesID": "series1",
-    "SearchQuery": "fork:no archived:no patterntype:literal count:99999999 query1",
+    "SebrchQuery": "fork:no brchived:no pbtterntype:literbl count:99999999 query1",
     "RecordTime": null,
     "PersistMode": "record",
-    "DependentFrames": null,
+    "DependentFrbmes": null,
     "Cost": 500,
     "Priority": 10,
     "ID": 0,
-    "State": "queued",
-    "FailureMessage": null,
-    "StartedAt": null,
+    "Stbte": "queued",
+    "FbilureMessbge": null,
+    "StbrtedAt": null,
     "FinishedAt": null,
     "ProcessAfter": null,
     "NumResets": 0,
-    "NumFailures": 0,
+    "NumFbilures": 0,
     "ExecutionLogs": null
   },
   {
     "SeriesID": "series2",
-    "SearchQuery": "fork:no archived:no patterntype:literal count:99999999 query2",
+    "SebrchQuery": "fork:no brchived:no pbtterntype:literbl count:99999999 query2",
     "RecordTime": null,
     "PersistMode": "record",
-    "DependentFrames": null,
+    "DependentFrbmes": null,
     "Cost": 500,
     "Priority": 10,
     "ID": 0,
-    "State": "queued",
-    "FailureMessage": null,
-    "StartedAt": null,
+    "Stbte": "queued",
+    "FbilureMessbge": null,
+    "StbrtedAt": null,
     "FinishedAt": null,
     "ProcessAfter": null,
     "NumResets": 0,
-    "NumFailures": 0,
+    "NumFbilures": 0,
     "ExecutionLogs": null
   },
   {
     "SeriesID": "series1",
-    "SearchQuery": "fork:no archived:no patterntype:literal count:99999999 query1",
+    "SebrchQuery": "fork:no brchived:no pbtterntype:literbl count:99999999 query1",
     "RecordTime": null,
-    "PersistMode": "snapshot",
-    "DependentFrames": null,
+    "PersistMode": "snbpshot",
+    "DependentFrbmes": null,
     "Cost": 500,
     "Priority": 10,
     "ID": 0,
-    "State": "queued",
-    "FailureMessage": null,
-    "StartedAt": null,
+    "Stbte": "queued",
+    "FbilureMessbge": null,
+    "StbrtedAt": null,
     "FinishedAt": null,
     "ProcessAfter": null,
     "NumResets": 0,
-    "NumFailures": 0,
+    "NumFbilures": 0,
     "ExecutionLogs": null
   },
   {
     "SeriesID": "series2",
-    "SearchQuery": "fork:no archived:no patterntype:literal count:99999999 query2",
+    "SebrchQuery": "fork:no brchived:no pbtterntype:literbl count:99999999 query2",
     "RecordTime": null,
-    "PersistMode": "snapshot",
-    "DependentFrames": null,
+    "PersistMode": "snbpshot",
+    "DependentFrbmes": null,
     "Cost": 500,
     "Priority": 10,
     "ID": 0,
-    "State": "queued",
-    "FailureMessage": null,
-    "StartedAt": null,
+    "Stbte": "queued",
+    "FbilureMessbge": null,
+    "StbrtedAt": null,
     "FinishedAt": null,
     "ProcessAfter": null,
     "NumResets": 0,
-    "NumFailures": 0,
+    "NumFbilures": 0,
     "ExecutionLogs": null
   }
-]`).Equal(t, string(enqueuedJSON))
+]`).Equbl(t, string(enqueuedJSON))
 }

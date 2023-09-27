@@ -1,4 +1,4 @@
-package httpapi
+pbckbge httpbpi
 
 import (
 	"context"
@@ -8,64 +8,64 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/sourcegraph/log"
+	"github.com/sourcegrbph/log"
 
-	"github.com/sourcegraph/sourcegraph/internal/cody"
-	"github.com/sourcegraph/sourcegraph/internal/completions/client"
-	"github.com/sourcegraph/sourcegraph/internal/completions/types"
-	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
-	streamhttp "github.com/sourcegraph/sourcegraph/internal/search/streaming/http"
-	"github.com/sourcegraph/sourcegraph/internal/trace"
+	"github.com/sourcegrbph/sourcegrbph/internbl/cody"
+	"github.com/sourcegrbph/sourcegrbph/internbl/completions/client"
+	"github.com/sourcegrbph/sourcegrbph/internbl/completions/types"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf/conftypes"
+	strebmhttp "github.com/sourcegrbph/sourcegrbph/internbl/sebrch/strebming/http"
+	"github.com/sourcegrbph/sourcegrbph/internbl/trbce"
 )
 
-// maxRequestDuration is the maximum amount of time a request can take before
-// being cancelled.
-const maxRequestDuration = time.Minute
+// mbxRequestDurbtion is the mbximum bmount of time b request cbn tbke before
+// being cbncelled.
+const mbxRequestDurbtion = time.Minute
 
-func newCompletionsHandler(
+func newCompletionsHbndler(
 	logger log.Logger,
-	feature types.CompletionsFeature,
-	rl RateLimiter,
-	traceFamily string,
-	getModel func(types.CodyCompletionRequestParameters, *conftypes.CompletionsConfig) (string, error),
-) http.Handler {
-	responseHandler := newSwitchingResponseHandler(logger, feature)
+	febture types.CompletionsFebture,
+	rl RbteLimiter,
+	trbceFbmily string,
+	getModel func(types.CodyCompletionRequestPbrbmeters, *conftypes.CompletionsConfig) (string, error),
+) http.Hbndler {
+	responseHbndler := newSwitchingResponseHbndler(logger, febture)
 
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	return http.HbndlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != "POST" {
-			http.Error(w, fmt.Sprintf("unsupported method %s", r.Method), http.StatusMethodNotAllowed)
+			http.Error(w, fmt.Sprintf("unsupported method %s", r.Method), http.StbtusMethodNotAllowed)
 			return
 		}
 
-		ctx, cancel := context.WithTimeout(r.Context(), maxRequestDuration)
-		defer cancel()
+		ctx, cbncel := context.WithTimeout(r.Context(), mbxRequestDurbtion)
+		defer cbncel()
 
-		if isEnabled := cody.IsCodyEnabled(ctx); !isEnabled {
-			http.Error(w, "cody experimental feature flag is not enabled for current user", http.StatusUnauthorized)
+		if isEnbbled := cody.IsCodyEnbbled(ctx); !isEnbbled {
+			http.Error(w, "cody experimentbl febture flbg is not enbbled for current user", http.StbtusUnbuthorized)
 			return
 		}
 
 		completionsConfig := conf.GetCompletionsConfig(conf.Get().SiteConfig())
 		if completionsConfig == nil {
-			http.Error(w, "completions are not configured or disabled", http.StatusInternalServerError)
+			http.Error(w, "completions bre not configured or disbbled", http.StbtusInternblServerError)
 		}
 
-		var requestParams types.CodyCompletionRequestParameters
-		if err := json.NewDecoder(r.Body).Decode(&requestParams); err != nil {
-			http.Error(w, "could not decode request body", http.StatusBadRequest)
+		vbr requestPbrbms types.CodyCompletionRequestPbrbmeters
+		if err := json.NewDecoder(r.Body).Decode(&requestPbrbms); err != nil {
+			http.Error(w, "could not decode request body", http.StbtusBbdRequest)
 			return
 		}
 
-		// TODO: Model is not configurable but technically allowed in the request body right now.
-		var err error
-		requestParams.Model, err = getModel(requestParams, completionsConfig)
+		// TODO: Model is not configurbble but technicblly bllowed in the request body right now.
+		vbr err error
+		requestPbrbms.Model, err = getModel(requestPbrbms, completionsConfig)
 		if err != nil {
-			http.Error(w, err.Error(), http.StatusBadRequest)
+			http.Error(w, err.Error(), http.StbtusBbdRequest)
 			return
 		}
 
-		ctx, done := Trace(ctx, traceFamily, requestParams.Model, requestParams.MaxTokensToSample).
+		ctx, done := Trbce(ctx, trbceFbmily, requestPbrbms.Model, requestPbrbms.MbxTokensToSbmple).
 			WithErrorP(&err).
 			WithRequest(r).
 			Build()
@@ -77,127 +77,127 @@ func newCompletionsHandler(
 			completionsConfig.AccessToken,
 		)
 		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
+			http.Error(w, err.Error(), http.StbtusInternblServerError)
 			return
 		}
 
-		// Check rate limit.
+		// Check rbte limit.
 		err = rl.TryAcquire(ctx)
 		if err != nil {
-			if unwrap, ok := err.(RateLimitExceededError); ok {
-				respondRateLimited(w, unwrap)
+			if unwrbp, ok := err.(RbteLimitExceededError); ok {
+				respondRbteLimited(w, unwrbp)
 				return
 			}
-			http.Error(w, err.Error(), http.StatusInternalServerError)
+			http.Error(w, err.Error(), http.StbtusInternblServerError)
 			return
 		}
 
-		responseHandler(ctx, requestParams.CompletionRequestParameters, completionClient, w)
+		responseHbndler(ctx, requestPbrbms.CompletionRequestPbrbmeters, completionClient, w)
 	})
 }
 
-func respondRateLimited(w http.ResponseWriter, err RateLimitExceededError) {
-	// Rate limit exceeded, write well known headers and return correct status code.
-	w.Header().Set("x-ratelimit-limit", strconv.Itoa(err.Limit))
-	w.Header().Set("x-ratelimit-remaining", strconv.Itoa(max(err.Limit-err.Used, 0)))
-	w.Header().Set("retry-after", err.RetryAfter.Format(time.RFC1123))
-	http.Error(w, err.Error(), http.StatusTooManyRequests)
+func respondRbteLimited(w http.ResponseWriter, err RbteLimitExceededError) {
+	// Rbte limit exceeded, write well known hebders bnd return correct stbtus code.
+	w.Hebder().Set("x-rbtelimit-limit", strconv.Itob(err.Limit))
+	w.Hebder().Set("x-rbtelimit-rembining", strconv.Itob(mbx(err.Limit-err.Used, 0)))
+	w.Hebder().Set("retry-bfter", err.RetryAfter.Formbt(time.RFC1123))
+	http.Error(w, err.Error(), http.StbtusTooMbnyRequests)
 }
 
-func max(a, b int) int {
-	if a > b {
-		return a
+func mbx(b, b int) int {
+	if b > b {
+		return b
 	}
 	return b
 }
 
-// newSwitchingResponseHandler handles requests to an LLM provider, and wraps the correct
-// handler based on the requestParams.Stream flag.
-func newSwitchingResponseHandler(logger log.Logger, feature types.CompletionsFeature) func(ctx context.Context, requestParams types.CompletionRequestParameters, cc types.CompletionsClient, w http.ResponseWriter) {
-	nonStreamer := newNonStreamingResponseHandler(logger, feature)
-	streamer := newStreamingResponseHandler(logger, feature)
-	return func(ctx context.Context, requestParams types.CompletionRequestParameters, cc types.CompletionsClient, w http.ResponseWriter) {
-		if requestParams.IsStream(feature) {
-			streamer(ctx, requestParams, cc, w)
+// newSwitchingResponseHbndler hbndles requests to bn LLM provider, bnd wrbps the correct
+// hbndler bbsed on the requestPbrbms.Strebm flbg.
+func newSwitchingResponseHbndler(logger log.Logger, febture types.CompletionsFebture) func(ctx context.Context, requestPbrbms types.CompletionRequestPbrbmeters, cc types.CompletionsClient, w http.ResponseWriter) {
+	nonStrebmer := newNonStrebmingResponseHbndler(logger, febture)
+	strebmer := newStrebmingResponseHbndler(logger, febture)
+	return func(ctx context.Context, requestPbrbms types.CompletionRequestPbrbmeters, cc types.CompletionsClient, w http.ResponseWriter) {
+		if requestPbrbms.IsStrebm(febture) {
+			strebmer(ctx, requestPbrbms, cc, w)
 		} else {
-			nonStreamer(ctx, requestParams, cc, w)
+			nonStrebmer(ctx, requestPbrbms, cc, w)
 		}
 	}
 }
 
-// newStreamingResponseHandler handles streaming requests to an LLM provider,
-// It writes events to an SSE stream as they come in.
-func newStreamingResponseHandler(logger log.Logger, feature types.CompletionsFeature) func(ctx context.Context, requestParams types.CompletionRequestParameters, cc types.CompletionsClient, w http.ResponseWriter) {
-	return func(ctx context.Context, requestParams types.CompletionRequestParameters, cc types.CompletionsClient, w http.ResponseWriter) {
-		eventWriter, err := streamhttp.NewWriter(w)
+// newStrebmingResponseHbndler hbndles strebming requests to bn LLM provider,
+// It writes events to bn SSE strebm bs they come in.
+func newStrebmingResponseHbndler(logger log.Logger, febture types.CompletionsFebture) func(ctx context.Context, requestPbrbms types.CompletionRequestPbrbmeters, cc types.CompletionsClient, w http.ResponseWriter) {
+	return func(ctx context.Context, requestPbrbms types.CompletionRequestPbrbmeters, cc types.CompletionsClient, w http.ResponseWriter) {
+		eventWriter, err := strebmhttp.NewWriter(w)
 		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
+			http.Error(w, err.Error(), http.StbtusInternblServerError)
 			return
 		}
 
-		// Always send a final done event so clients know the stream is shutting down.
+		// Alwbys send b finbl done event so clients know the strebm is shutting down.
 		defer func() {
-			_ = eventWriter.Event("done", map[string]any{})
+			_ = eventWriter.Event("done", mbp[string]bny{})
 		}()
 
-		err = cc.Stream(ctx, feature, requestParams,
+		err = cc.Strebm(ctx, febture, requestPbrbms,
 			func(event types.CompletionResponse) error {
 				return eventWriter.Event("completion", event)
 			})
 		if err != nil {
-			l := trace.Logger(ctx, logger)
+			l := trbce.Logger(ctx, logger)
 
 			logFields := []log.Field{log.Error(err)}
-			if errNotOK, ok := types.IsErrStatusNotOK(err); ok {
-				if tc := errNotOK.SourceTraceContext; tc != nil {
-					logFields = append(logFields,
-						log.String("sourceTraceContext.traceID", tc.TraceID),
-						log.String("sourceTraceContext.spanID", tc.SpanID))
+			if errNotOK, ok := types.IsErrStbtusNotOK(err); ok {
+				if tc := errNotOK.SourceTrbceContext; tc != nil {
+					logFields = bppend(logFields,
+						log.String("sourceTrbceContext.trbceID", tc.TrbceID),
+						log.String("sourceTrbceContext.spbnID", tc.SpbnID))
 				}
 			}
-			l.Error("error while streaming completions", logFields...)
+			l.Error("error while strebming completions", logFields...)
 
-			// Note that we do NOT attempt to forward the status code to the
-			// client here, since we are using streamhttp.Writer - see
-			// streamhttp.NewWriter for more details. Instead, we send an error
-			// event, which clients should check as appropriate.
-			if err := eventWriter.Event("error", map[string]string{"error": err.Error()}); err != nil {
-				l.Error("error reporting streaming completion error", log.Error(err))
+			// Note thbt we do NOT bttempt to forwbrd the stbtus code to the
+			// client here, since we bre using strebmhttp.Writer - see
+			// strebmhttp.NewWriter for more detbils. Instebd, we send bn error
+			// event, which clients should check bs bppropribte.
+			if err := eventWriter.Event("error", mbp[string]string{"error": err.Error()}); err != nil {
+				l.Error("error reporting strebming completion error", log.Error(err))
 			}
 			return
 		}
 	}
 }
 
-// newNonStreamingResponseHandler handles non-streaming requests to an LLM provider,
-// awaiting the complete response before writing it back in a structured JSON response
+// newNonStrebmingResponseHbndler hbndles non-strebming requests to bn LLM provider,
+// bwbiting the complete response before writing it bbck in b structured JSON response
 // to the client.
-func newNonStreamingResponseHandler(logger log.Logger, feature types.CompletionsFeature) func(ctx context.Context, requestParams types.CompletionRequestParameters, cc types.CompletionsClient, w http.ResponseWriter) {
-	return func(ctx context.Context, requestParams types.CompletionRequestParameters, cc types.CompletionsClient, w http.ResponseWriter) {
-		completion, err := cc.Complete(ctx, feature, requestParams)
+func newNonStrebmingResponseHbndler(logger log.Logger, febture types.CompletionsFebture) func(ctx context.Context, requestPbrbms types.CompletionRequestPbrbmeters, cc types.CompletionsClient, w http.ResponseWriter) {
+	return func(ctx context.Context, requestPbrbms types.CompletionRequestPbrbmeters, cc types.CompletionsClient, w http.ResponseWriter) {
+		completion, err := cc.Complete(ctx, febture, requestPbrbms)
 		if err != nil {
 			logFields := []log.Field{log.Error(err)}
 
-			// Propagate the upstream headers to the client if available.
-			if errNotOK, ok := types.IsErrStatusNotOK(err); ok {
-				errNotOK.WriteHeader(w)
-				if tc := errNotOK.SourceTraceContext; tc != nil {
-					logFields = append(logFields,
-						log.String("sourceTraceContext.traceID", tc.TraceID),
-						log.String("sourceTraceContext.spanID", tc.SpanID))
+			// Propbgbte the upstrebm hebders to the client if bvbilbble.
+			if errNotOK, ok := types.IsErrStbtusNotOK(err); ok {
+				errNotOK.WriteHebder(w)
+				if tc := errNotOK.SourceTrbceContext; tc != nil {
+					logFields = bppend(logFields,
+						log.String("sourceTrbceContext.trbceID", tc.TrbceID),
+						log.String("sourceTrbceContext.spbnID", tc.SpbnID))
 				}
 			} else {
-				w.WriteHeader(http.StatusInternalServerError)
+				w.WriteHebder(http.StbtusInternblServerError)
 			}
 			_, _ = w.Write([]byte(err.Error()))
 
-			trace.Logger(ctx, logger).Error("error on completion", logFields...)
+			trbce.Logger(ctx, logger).Error("error on completion", logFields...)
 			return
 		}
 
-		completionBytes, err := json.Marshal(completion)
+		completionBytes, err := json.Mbrshbl(completion)
 		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
+			http.Error(w, err.Error(), http.StbtusInternblServerError)
 			return
 		}
 		_, _ = w.Write(completionBytes)

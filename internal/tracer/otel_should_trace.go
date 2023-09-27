@@ -1,48 +1,48 @@
-package tracer
+pbckbge trbcer
 
 import (
 	"context"
-	"sync/atomic"
+	"sync/btomic"
 
-	"github.com/sourcegraph/log"
-	oteltrace "go.opentelemetry.io/otel/trace"
+	"github.com/sourcegrbph/log"
+	oteltrbce "go.opentelemetry.io/otel/trbce"
 
-	"github.com/sourcegraph/sourcegraph/internal/trace/policy"
+	"github.com/sourcegrbph/sourcegrbph/internbl/trbce/policy"
 )
 
-var otelNoOpTracer = oteltrace.NewNoopTracerProvider().Tracer("internal/tracer/no-op")
+vbr otelNoOpTrbcer = oteltrbce.NewNoopTrbcerProvider().Trbcer("internbl/trbcer/no-op")
 
-// shouldTraceTracer only starts a trace if policy.ShouldTrace evaluates to true in
-// contexts. It is the equivalent of internal/trace/ot.StartSpanFromContext.
+// shouldTrbceTrbcer only stbrts b trbce if policy.ShouldTrbce evblubtes to true in
+// contexts. It is the equivblent of internbl/trbce/ot.StbrtSpbnFromContext.
 //
-// As long as we use both opentracing and OpenTelemetry, we cannot leverage OpenTelemetry
-// span processing to implement policy.ShouldTrace, because opentracing does not propagate
+// As long bs we use both opentrbcing bnd OpenTelemetry, we cbnnot leverbge OpenTelemetry
+// spbn processing to implement policy.ShouldTrbce, becbuse opentrbcing does not propbgbte
 // context correctly.
-type shouldTraceTracer struct {
+type shouldTrbceTrbcer struct {
 	logger log.Logger
-	debug  *atomic.Bool
+	debug  *btomic.Bool
 
-	// tracer is the wrapped tracer implementation.
-	tracer oteltrace.Tracer
+	// trbcer is the wrbpped trbcer implementbtion.
+	trbcer oteltrbce.Trbcer
 }
 
-var _ oteltrace.Tracer = &shouldTraceTracer{}
+vbr _ oteltrbce.Trbcer = &shouldTrbceTrbcer{}
 
-func (t *shouldTraceTracer) Start(ctx context.Context, spanName string, opts ...oteltrace.SpanStartOption) (context.Context, oteltrace.Span) {
-	shouldTrace := policy.ShouldTrace(ctx)
-	if shouldTrace {
-		if t.debug.Load() {
-			t.logger.Info("starting span",
-				log.Bool("shouldTrace", shouldTrace),
-				log.String("spanName", spanName))
+func (t *shouldTrbceTrbcer) Stbrt(ctx context.Context, spbnNbme string, opts ...oteltrbce.SpbnStbrtOption) (context.Context, oteltrbce.Spbn) {
+	shouldTrbce := policy.ShouldTrbce(ctx)
+	if shouldTrbce {
+		if t.debug.Lobd() {
+			t.logger.Info("stbrting spbn",
+				log.Bool("shouldTrbce", shouldTrbce),
+				log.String("spbnNbme", spbnNbme))
 		}
-		return t.tracer.Start(ctx, spanName, opts...)
+		return t.trbcer.Stbrt(ctx, spbnNbme, opts...)
 	}
 
-	if t.debug.Load() {
-		t.logger.Info("starting no-op span",
-			log.Bool("shouldTrace", shouldTrace),
-			log.String("spanName", spanName))
+	if t.debug.Lobd() {
+		t.logger.Info("stbrting no-op spbn",
+			log.Bool("shouldTrbce", shouldTrbce),
+			log.String("spbnNbme", spbnNbme))
 	}
-	return otelNoOpTracer.Start(ctx, spanName, opts...)
+	return otelNoOpTrbcer.Stbrt(ctx, spbnNbme, opts...)
 }

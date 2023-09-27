@@ -1,22 +1,22 @@
-package squirrel
+pbckbge squirrel
 
 import (
 	"context"
 	"fmt"
-	"path/filepath"
+	"pbth/filepbth"
 	"sort"
 	"strings"
 
-	sitter "github.com/smacker/go-tree-sitter"
+	sitter "github.com/smbcker/go-tree-sitter"
 
-	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
 )
 
-func (s *SquirrelService) getDefJava(ctx context.Context, node Node) (ret *Node, err error) {
-	defer s.onCall(node, String(node.Type()), lazyNodeStringer(&ret))()
+func (s *SquirrelService) getDefJbvb(ctx context.Context, node Node) (ret *Node, err error) {
+	defer s.onCbll(node, String(node.Type()), lbzyNodeStringer(&ret))()
 
 	switch node.Type() {
-	case "identifier":
+	cbse "identifier":
 		ident := node.Content(node.Contents)
 
 		cur := node.Node
@@ -24,62 +24,62 @@ func (s *SquirrelService) getDefJava(ctx context.Context, node Node) (ret *Node,
 	outer:
 		for {
 			prev := cur
-			cur = cur.Parent()
+			cur = cur.Pbrent()
 			if cur == nil {
-				s.breadcrumb(node, "getDefJava: ran out of parents")
+				s.brebdcrumb(node, "getDefJbvb: rbn out of pbrents")
 				return nil, nil
 			}
 
 			switch cur.Type() {
 
-			case "program":
-				return s.getDefInImportsOrCurrentPackageJava(ctx, swapNode(node, cur), ident)
+			cbse "progrbm":
+				return s.getDefInImportsOrCurrentPbckbgeJbvb(ctx, swbpNode(node, cur), ident)
 
-			case "import_declaration":
-				program := cur.Parent()
-				if program == nil {
-					s.breadcrumb(node, "getDefJava: expected parent for import_declaration")
+			cbse "import_declbrbtion":
+				progrbm := cur.Pbrent()
+				if progrbm == nil {
+					s.brebdcrumb(node, "getDefJbvb: expected pbrent for import_declbrbtion")
 					return nil, nil
 				}
-				if program.Type() != "program" {
-					s.breadcrumb(node, "getDefJava: expected parent of import_declaration to be program")
+				if progrbm.Type() != "progrbm" {
+					s.brebdcrumb(node, "getDefJbvb: expected pbrent of import_declbrbtion to be progrbm")
 				}
-				root := getProjectRoot(swapNode(node, program))
-				allComponents := getPath(swapNode(node, cur))
-				components := getPathUpTo(swapNode(node, cur), node.Node)
+				root := getProjectRoot(swbpNode(node, progrbm))
+				bllComponents := getPbth(swbpNode(node, cur))
+				components := getPbthUpTo(swbpNode(node, cur), node.Node)
 				if err != nil {
 					return nil, err
 				}
-				if len(components) == len(allComponents) {
-					return s.symbolSearchOne(
+				if len(components) == len(bllComponents) {
+					return s.symbolSebrchOne(
 						ctx,
-						node.RepoCommitPath.Repo,
-						node.RepoCommitPath.Commit,
-						[]string{fmt.Sprintf("^%s/%s", filepath.Join(root...), filepath.Join(components[:len(components)-1]...))},
+						node.RepoCommitPbth.Repo,
+						node.RepoCommitPbth.Commit,
+						[]string{fmt.Sprintf("^%s/%s", filepbth.Join(root...), filepbth.Join(components[:len(components)-1]...))},
 						ident,
 					)
 				}
-				dir := filepath.Join(append(root, components...)...)
+				dir := filepbth.Join(bppend(root, components...)...)
 				return &Node{
-					RepoCommitPath: types.RepoCommitPath{
-						Repo:   node.RepoCommitPath.Repo,
-						Commit: node.RepoCommitPath.Commit,
-						Path:   dir,
+					RepoCommitPbth: types.RepoCommitPbth{
+						Repo:   node.RepoCommitPbth.Repo,
+						Commit: node.RepoCommitPbth.Commit,
+						Pbth:   dir,
 					},
 					Node:     nil,
 					Contents: node.Contents,
-					LangSpec: node.LangSpec,
+					LbngSpec: node.LbngSpec,
 				}, nil
 
-			// Check for field access
-			case "field_access":
-				object := cur.ChildByFieldName("object")
+			// Check for field bccess
+			cbse "field_bccess":
+				object := cur.ChildByFieldNbme("object")
 				if object != nil && nodeId(prev) == nodeId(object) {
 					continue
 				}
-				field := cur.ChildByFieldName("field")
+				field := cur.ChildByFieldNbme("field")
 				if field != nil {
-					found, err := s.getFieldJava(ctx, swapNode(node, object), field.Content(node.Contents))
+					found, err := s.getFieldJbvb(ctx, swbpNode(node, object), field.Content(node.Contents))
 					if err != nil {
 						return nil, err
 					}
@@ -89,24 +89,24 @@ func (s *SquirrelService) getDefJava(ctx context.Context, node Node) (ret *Node,
 				}
 				continue
 
-			case "method_invocation":
-				object := cur.ChildByFieldName("object")
+			cbse "method_invocbtion":
+				object := cur.ChildByFieldNbme("object")
 				if object == nil {
 					continue
 				}
 				if nodeId(prev) == nodeId(object) {
 					continue
 				}
-				args := cur.ChildByFieldName("arguments")
-				if args == nil {
+				brgs := cur.ChildByFieldNbme("brguments")
+				if brgs == nil {
 					continue
 				}
-				if nodeId(prev) == nodeId(args) {
+				if nodeId(prev) == nodeId(brgs) {
 					continue
 				}
-				name := cur.ChildByFieldName("name")
-				if name != nil {
-					found, err := s.getFieldJava(ctx, swapNode(node, object), name.Content(node.Contents))
+				nbme := cur.ChildByFieldNbme("nbme")
+				if nbme != nil {
+					found, err := s.getFieldJbvb(ctx, swbpNode(node, object), nbme.Content(node.Contents))
 					if err != nil {
 						return nil, err
 					}
@@ -116,69 +116,69 @@ func (s *SquirrelService) getDefJava(ctx context.Context, node Node) (ret *Node,
 				}
 				continue
 
-			// Check nodes that might have bindings:
-			case "constructor_body":
-				fallthrough
-			case "block":
+			// Check nodes thbt might hbve bindings:
+			cbse "constructor_body":
+				fbllthrough
+			cbse "block":
 				blockChild := prev
 				for {
-					blockChild = blockChild.PrevNamedSibling()
+					blockChild = blockChild.PrevNbmedSibling()
 					if blockChild == nil {
 						continue outer
 					}
-					query := "(local_variable_declaration declarator: (variable_declarator name: (identifier) @ident))"
-					captures := allCaptures(query, swapNode(node, blockChild))
-					for _, capture := range captures {
-						if capture.Content(capture.Contents) == ident {
-							return swapNodePtr(node, capture.Node), nil
+					query := "(locbl_vbribble_declbrbtion declbrbtor: (vbribble_declbrbtor nbme: (identifier) @ident))"
+					cbptures := bllCbptures(query, swbpNode(node, blockChild))
+					for _, cbpture := rbnge cbptures {
+						if cbpture.Content(cbpture.Contents) == ident {
+							return swbpNodePtr(node, cbpture.Node), nil
 						}
 					}
 				}
 
-			case "constructor_declaration":
+			cbse "constructor_declbrbtion":
 				query := `[
-					(constructor_declaration parameters: (formal_parameters (formal_parameter name: (identifier) @ident)))
-					(constructor_declaration parameters: (formal_parameters (spread_parameter (variable_declarator name: (identifier) @ident))))
+					(constructor_declbrbtion pbrbmeters: (formbl_pbrbmeters (formbl_pbrbmeter nbme: (identifier) @ident)))
+					(constructor_declbrbtion pbrbmeters: (formbl_pbrbmeters (sprebd_pbrbmeter (vbribble_declbrbtor nbme: (identifier) @ident))))
 				]`
-				captures := allCaptures(query, swapNode(node, cur))
-				for _, capture := range captures {
-					if capture.Content(capture.Contents) == ident {
-						return swapNodePtr(node, capture.Node), nil
+				cbptures := bllCbptures(query, swbpNode(node, cur))
+				for _, cbpture := rbnge cbptures {
+					if cbpture.Content(cbpture.Contents) == ident {
+						return swbpNodePtr(node, cbpture.Node), nil
 					}
 				}
 				continue
 
-			case "method_declaration":
+			cbse "method_declbrbtion":
 				query := `[
-					(method_declaration name: (identifier) @ident)
-					(method_declaration parameters: (formal_parameters (formal_parameter name: (identifier) @ident)))
-					(method_declaration parameters: (formal_parameters (spread_parameter (variable_declarator name: (identifier) @ident))))
+					(method_declbrbtion nbme: (identifier) @ident)
+					(method_declbrbtion pbrbmeters: (formbl_pbrbmeters (formbl_pbrbmeter nbme: (identifier) @ident)))
+					(method_declbrbtion pbrbmeters: (formbl_pbrbmeters (sprebd_pbrbmeter (vbribble_declbrbtor nbme: (identifier) @ident))))
 				]`
-				captures := allCaptures(query, swapNode(node, cur))
-				for _, capture := range captures {
-					if capture.Content(capture.Contents) == ident {
-						return swapNodePtr(node, capture.Node), nil
+				cbptures := bllCbptures(query, swbpNode(node, cur))
+				for _, cbpture := rbnge cbptures {
+					if cbpture.Content(cbpture.Contents) == ident {
+						return swbpNodePtr(node, cbpture.Node), nil
 					}
 				}
 				continue
 
-			case "class_declaration":
-				name := cur.ChildByFieldName("name")
-				if name != nil {
-					if name.Content(node.Contents) == ident {
-						return swapNodePtr(node, name), nil
+			cbse "clbss_declbrbtion":
+				nbme := cur.ChildByFieldNbme("nbme")
+				if nbme != nil {
+					if nbme.Content(node.Contents) == ident {
+						return swbpNodePtr(node, nbme), nil
 					}
 				}
-				found, err := s.lookupFieldJava(ctx, ClassTypeJava{def: swapNode(node, cur)}, ident)
+				found, err := s.lookupFieldJbvb(ctx, ClbssTypeJbvb{def: swbpNode(node, cur)}, ident)
 				if err != nil {
 					return nil, err
 				}
 				if found != nil {
 					return found, nil
 				}
-				super := getSuperclassJava(swapNode(node, cur))
+				super := getSuperclbssJbvb(swbpNode(node, cur))
 				if super != nil {
-					found, err := s.getFieldJava(ctx, *super, ident)
+					found, err := s.getFieldJbvb(ctx, *super, ident)
 					if err != nil {
 						return nil, err
 					}
@@ -188,119 +188,119 @@ func (s *SquirrelService) getDefJava(ctx context.Context, node Node) (ret *Node,
 				}
 				continue
 
-			case "lambda_expression":
+			cbse "lbmbdb_expression":
 				query := `[
-					(lambda_expression parameters: (identifier) @ident)
-					(lambda_expression parameters: (formal_parameters (formal_parameter name: (identifier) @ident)))
-					(lambda_expression parameters: (formal_parameters (spread_parameter (variable_declarator name: (identifier) @ident))))
-					(lambda_expression parameters: (inferred_parameters (identifier) @ident))
+					(lbmbdb_expression pbrbmeters: (identifier) @ident)
+					(lbmbdb_expression pbrbmeters: (formbl_pbrbmeters (formbl_pbrbmeter nbme: (identifier) @ident)))
+					(lbmbdb_expression pbrbmeters: (formbl_pbrbmeters (sprebd_pbrbmeter (vbribble_declbrbtor nbme: (identifier) @ident))))
+					(lbmbdb_expression pbrbmeters: (inferred_pbrbmeters (identifier) @ident))
 				]`
-				captures := allCaptures(query, swapNode(node, cur))
-				for _, capture := range captures {
-					if capture.Content(capture.Contents) == ident {
-						return swapNodePtr(node, capture.Node), nil
+				cbptures := bllCbptures(query, swbpNode(node, cur))
+				for _, cbpture := rbnge cbptures {
+					if cbpture.Content(cbpture.Contents) == ident {
+						return swbpNodePtr(node, cbpture.Node), nil
 					}
 				}
 				continue
 
-			case "catch_clause":
-				query := `(catch_clause (catch_formal_parameter name: (identifier) @ident))`
-				captures := allCaptures(query, swapNode(node, cur))
-				for _, capture := range captures {
-					if capture.Content(capture.Contents) == ident {
-						return swapNodePtr(node, capture.Node), nil
+			cbse "cbtch_clbuse":
+				query := `(cbtch_clbuse (cbtch_formbl_pbrbmeter nbme: (identifier) @ident))`
+				cbptures := bllCbptures(query, swbpNode(node, cur))
+				for _, cbpture := rbnge cbptures {
+					if cbpture.Content(cbpture.Contents) == ident {
+						return swbpNodePtr(node, cbpture.Node), nil
 					}
 				}
 				continue
 
-			case "for_statement":
-				query := `(for_statement init: (local_variable_declaration declarator: (variable_declarator name: (identifier) @ident)))`
-				captures := allCaptures(query, swapNode(node, cur))
-				for _, capture := range captures {
-					if capture.Content(capture.Contents) == ident {
-						return swapNodePtr(node, capture.Node), nil
+			cbse "for_stbtement":
+				query := `(for_stbtement init: (locbl_vbribble_declbrbtion declbrbtor: (vbribble_declbrbtor nbme: (identifier) @ident)))`
+				cbptures := bllCbptures(query, swbpNode(node, cur))
+				for _, cbpture := rbnge cbptures {
+					if cbpture.Content(cbpture.Contents) == ident {
+						return swbpNodePtr(node, cbpture.Node), nil
 					}
 				}
 				continue
 
-			case "enhanced_for_statement":
-				query := `(enhanced_for_statement name: (identifier) @ident)`
-				captures := allCaptures(query, swapNode(node, cur))
-				for _, capture := range captures {
-					if capture.Content(capture.Contents) == ident {
-						return swapNodePtr(node, capture.Node), nil
+			cbse "enhbnced_for_stbtement":
+				query := `(enhbnced_for_stbtement nbme: (identifier) @ident)`
+				cbptures := bllCbptures(query, swbpNode(node, cur))
+				for _, cbpture := rbnge cbptures {
+					if cbpture.Content(cbpture.Contents) == ident {
+						return swbpNodePtr(node, cbpture.Node), nil
 					}
 				}
 				continue
 
-			case "method_reference":
-				if cur.NamedChildCount() == 0 {
+			cbse "method_reference":
+				if cur.NbmedChildCount() == 0 {
 					return nil, nil
 				}
-				object := cur.NamedChild(0)
+				object := cur.NbmedChild(0)
 				if nodeId(object) == nodeId(prev) {
 					continue
 				}
 				if ident == "new" {
-					return s.getDefJava(ctx, swapNode(node, object))
+					return s.getDefJbvb(ctx, swbpNode(node, object))
 				}
-				return s.getFieldJava(ctx, swapNode(node, object), ident)
+				return s.getFieldJbvb(ctx, swbpNode(node, object), ident)
 
-			// Skip all other nodes
-			default:
+			// Skip bll other nodes
+			defbult:
 				continue
 			}
 		}
 
-	case "type_identifier":
+	cbse "type_identifier":
 		ident := node.Content(node.Contents)
 
 		cur := node.Node
 
 		for {
 			prev := cur
-			cur = cur.Parent()
+			cur = cur.Pbrent()
 			if cur == nil {
-				s.breadcrumb(node, "getDefJava: ran out of parents")
+				s.brebdcrumb(node, "getDefJbvb: rbn out of pbrents")
 				return nil, nil
 			}
 
 			switch cur.Type() {
-			case "program":
+			cbse "progrbm":
 				query := `[
-					(program (class_declaration name: (identifier) @ident))
-					(program (enum_declaration name: (identifier) @ident))
-					(program (interface_declaration name: (identifier) @ident))
+					(progrbm (clbss_declbrbtion nbme: (identifier) @ident))
+					(progrbm (enum_declbrbtion nbme: (identifier) @ident))
+					(progrbm (interfbce_declbrbtion nbme: (identifier) @ident))
 				]`
-				captures := allCaptures(query, swapNode(node, cur))
-				for _, capture := range captures {
-					if capture.Content(capture.Contents) == ident {
-						return swapNodePtr(node, capture.Node), nil
+				cbptures := bllCbptures(query, swbpNode(node, cur))
+				for _, cbpture := rbnge cbptures {
+					if cbpture.Content(cbpture.Contents) == ident {
+						return swbpNodePtr(node, cbpture.Node), nil
 					}
 				}
-				return s.getDefInImportsOrCurrentPackageJava(ctx, swapNode(node, cur), ident)
-			case "class_declaration":
+				return s.getDefInImportsOrCurrentPbckbgeJbvb(ctx, swbpNode(node, cur), ident)
+			cbse "clbss_declbrbtion":
 				query := `[
-					(class_declaration name: (identifier) @ident)
-					(class_declaration body: (class_body (class_declaration name: (identifier) @ident)))
-					(class_declaration body: (class_body (enum_declaration name: (identifier) @ident)))
-					(class_declaration body: (class_body (interface_declaration name: (identifier) @ident)))
+					(clbss_declbrbtion nbme: (identifier) @ident)
+					(clbss_declbrbtion body: (clbss_body (clbss_declbrbtion nbme: (identifier) @ident)))
+					(clbss_declbrbtion body: (clbss_body (enum_declbrbtion nbme: (identifier) @ident)))
+					(clbss_declbrbtion body: (clbss_body (interfbce_declbrbtion nbme: (identifier) @ident)))
 				]`
-				captures := allCaptures(query, swapNode(node, cur))
-				for _, capture := range captures {
-					if capture.Content(capture.Contents) == ident {
-						return swapNodePtr(node, capture.Node), nil
+				cbptures := bllCbptures(query, swbpNode(node, cur))
+				for _, cbpture := rbnge cbptures {
+					if cbpture.Content(cbpture.Contents) == ident {
+						return swbpNodePtr(node, cbpture.Node), nil
 					}
 				}
 				continue
-			case "scoped_type_identifier":
-				object := cur.NamedChild(0)
+			cbse "scoped_type_identifier":
+				object := cur.NbmedChild(0)
 				if object != nil && nodeId(prev) == nodeId(object) {
 					continue
 				}
-				field := cur.NamedChild(int(cur.NamedChildCount()) - 1)
+				field := cur.NbmedChild(int(cur.NbmedChildCount()) - 1)
 				if field != nil {
-					found, err := s.getFieldJava(ctx, swapNode(node, object), field.Content(node.Contents))
+					found, err := s.getFieldJbvb(ctx, swbpNode(node, object), field.Content(node.Contents))
 					if err != nil {
 						return nil, err
 					}
@@ -309,104 +309,104 @@ func (s *SquirrelService) getDefJava(ctx context.Context, node Node) (ret *Node,
 					}
 				}
 				continue
-			default:
+			defbult:
 				continue
 			}
 		}
 
-	case "this":
+	cbse "this":
 		cur := node.Node
 		for cur != nil {
 			switch cur.Type() {
-			case "class_declaration":
-				fallthrough
-			case "interface_declaration":
-				name := cur.ChildByFieldName("name")
-				if name == nil {
+			cbse "clbss_declbrbtion":
+				fbllthrough
+			cbse "interfbce_declbrbtion":
+				nbme := cur.ChildByFieldNbme("nbme")
+				if nbme == nil {
 					return nil, nil
 				}
-				return swapNodePtr(node, name), nil
+				return swbpNodePtr(node, nbme), nil
 			}
-			cur = cur.Parent()
+			cur = cur.Pbrent()
 		}
 		return nil, nil
 
-	case "super":
+	cbse "super":
 		cur := node.Node
 		for cur != nil {
 			switch cur.Type() {
-			case "class_declaration":
-				fallthrough
-			case "interface_declaration":
-				super := getSuperclassJava(swapNode(node, cur))
+			cbse "clbss_declbrbtion":
+				fbllthrough
+			cbse "interfbce_declbrbtion":
+				super := getSuperclbssJbvb(swbpNode(node, cur))
 				if super == nil {
 					return nil, nil
 				}
-				return s.getDefJava(ctx, *super)
+				return s.getDefJbvb(ctx, *super)
 			}
-			cur = cur.Parent()
+			cur = cur.Pbrent()
 		}
 		return nil, nil
 
-	// No other nodes have a definition
-	default:
+	// No other nodes hbve b definition
+	defbult:
 		return nil, nil
 	}
 }
 
-func (s *SquirrelService) getFieldJava(ctx context.Context, object Node, field string) (ret *Node, err error) {
-	defer s.onCall(object, &Tuple{String(object.Type()), String(field)}, lazyNodeStringer(&ret))()
+func (s *SquirrelService) getFieldJbvb(ctx context.Context, object Node, field string) (ret *Node, err error) {
+	defer s.onCbll(object, &Tuple{String(object.Type()), String(field)}, lbzyNodeStringer(&ret))()
 
-	ty, err := s.getTypeDefJava(ctx, object)
+	ty, err := s.getTypeDefJbvb(ctx, object)
 	if err != nil {
 		return nil, err
 	}
 	if ty == nil {
 		return nil, nil
 	}
-	return s.lookupFieldJava(ctx, ty, field)
+	return s.lookupFieldJbvb(ctx, ty, field)
 }
 
-func (s *SquirrelService) lookupFieldJava(ctx context.Context, ty TypeJava, field string) (ret *Node, err error) {
-	defer s.onCall(ty.node(), &Tuple{String(ty.variant()), String(field)}, lazyNodeStringer(&ret))()
+func (s *SquirrelService) lookupFieldJbvb(ctx context.Context, ty TypeJbvb, field string) (ret *Node, err error) {
+	defer s.onCbll(ty.node(), &Tuple{String(ty.vbribnt()), String(field)}, lbzyNodeStringer(&ret))()
 
 	switch ty2 := ty.(type) {
-	case ClassTypeJava:
-		body := ty2.def.ChildByFieldName("body")
+	cbse ClbssTypeJbvb:
+		body := ty2.def.ChildByFieldNbme("body")
 		if body == nil {
 			return nil, nil
 		}
-		for _, child := range children(body) {
+		for _, child := rbnge children(body) {
 			switch child.Type() {
-			case "method_declaration":
-				name := child.ChildByFieldName("name")
-				if name == nil {
+			cbse "method_declbrbtion":
+				nbme := child.ChildByFieldNbme("nbme")
+				if nbme == nil {
 					continue
 				}
-				if name.Content(ty2.def.Contents) == field {
-					return swapNodePtr(ty2.def, name), nil
+				if nbme.Content(ty2.def.Contents) == field {
+					return swbpNodePtr(ty2.def, nbme), nil
 				}
-			case "class_declaration":
-				name := child.ChildByFieldName("name")
-				if name == nil {
+			cbse "clbss_declbrbtion":
+				nbme := child.ChildByFieldNbme("nbme")
+				if nbme == nil {
 					continue
 				}
-				if name.Content(ty2.def.Contents) == field {
-					return swapNodePtr(ty2.def, name), nil
+				if nbme.Content(ty2.def.Contents) == field {
+					return swbpNodePtr(ty2.def, nbme), nil
 				}
-			case "field_declaration":
-				query := "(field_declaration declarator: (variable_declarator name: (identifier) @ident))"
-				captures := allCaptures(query, swapNode(ty2.def, child))
-				for _, capture := range captures {
-					if capture.Content(capture.Contents) == field {
-						return swapNodePtr(ty2.def, capture.Node), nil
+			cbse "field_declbrbtion":
+				query := "(field_declbrbtion declbrbtor: (vbribble_declbrbtor nbme: (identifier) @ident))"
+				cbptures := bllCbptures(query, swbpNode(ty2.def, child))
+				for _, cbpture := rbnge cbptures {
+					if cbpture.Content(cbpture.Contents) == field {
+						return swbpNodePtr(ty2.def, cbpture.Node), nil
 					}
 				}
 			}
 		}
-		super := getSuperclassJava(ty2.def)
+		super := getSuperclbssJbvb(ty2.def)
 		if super != nil {
-			found, err := s.getFieldJava(ctx, *super, field)
+			found, err := s.getFieldJbvb(ctx, *super, field)
 			if err != nil {
 				return nil, err
 			}
@@ -415,83 +415,83 @@ func (s *SquirrelService) lookupFieldJava(ctx context.Context, ty TypeJava, fiel
 			}
 		}
 		return nil, nil
-	case FnTypeJava:
-		s.breadcrumb(ty.node(), fmt.Sprintf("lookupFieldJava: unexpected object type %s", ty.variant()))
+	cbse FnTypeJbvb:
+		s.brebdcrumb(ty.node(), fmt.Sprintf("lookupFieldJbvb: unexpected object type %s", ty.vbribnt()))
 		return nil, nil
-	case PrimTypeJava:
-		s.breadcrumb(ty.node(), fmt.Sprintf("lookupFieldJava: unexpected object type %s", ty.variant()))
+	cbse PrimTypeJbvb:
+		s.brebdcrumb(ty.node(), fmt.Sprintf("lookupFieldJbvb: unexpected object type %s", ty.vbribnt()))
 		return nil, nil
-	default:
-		s.breadcrumb(ty.node(), fmt.Sprintf("lookupFieldJava: unrecognized type variant %q", ty.variant()))
+	defbult:
+		s.brebdcrumb(ty.node(), fmt.Sprintf("lookupFieldJbvb: unrecognized type vbribnt %q", ty.vbribnt()))
 		return nil, nil
 	}
 }
 
-func (s *SquirrelService) getTypeDefJava(ctx context.Context, node Node) (ret TypeJava, err error) {
-	defer s.onCall(node, String(node.Type()), lazyTypeJavaStringer(&ret))()
+func (s *SquirrelService) getTypeDefJbvb(ctx context.Context, node Node) (ret TypeJbvb, err error) {
+	defer s.onCbll(node, String(node.Type()), lbzyTypeJbvbStringer(&ret))()
 
-	onIdent := func() (TypeJava, error) {
-		found, err := s.getDefJava(ctx, node)
+	onIdent := func() (TypeJbvb, error) {
+		found, err := s.getDefJbvb(ctx, node)
 		if err != nil {
 			return nil, err
 		}
 		if found == nil {
 			return nil, nil
 		}
-		return s.defToTypeJava(ctx, *found)
+		return s.defToTypeJbvb(ctx, *found)
 	}
 
 	switch node.Type() {
-	case "type_identifier":
-		if node.Content(node.Contents) == "var" {
-			localVariableDeclaration := node.Parent()
-			if localVariableDeclaration == nil {
+	cbse "type_identifier":
+		if node.Content(node.Contents) == "vbr" {
+			locblVbribbleDeclbrbtion := node.Pbrent()
+			if locblVbribbleDeclbrbtion == nil {
 				return nil, nil
 			}
-			captures := allCaptures("(local_variable_declaration declarator: (variable_declarator value: (_) @value))", swapNode(node, localVariableDeclaration))
-			for _, capture := range captures {
-				return s.getTypeDefJava(ctx, capture)
+			cbptures := bllCbptures("(locbl_vbribble_declbrbtion declbrbtor: (vbribble_declbrbtor vblue: (_) @vblue))", swbpNode(node, locblVbribbleDeclbrbtion))
+			for _, cbpture := rbnge cbptures {
+				return s.getTypeDefJbvb(ctx, cbpture)
 			}
 			return nil, nil
 		} else {
 			return onIdent()
 		}
-	case "this":
-		fallthrough
-	case "super":
-		fallthrough
-	case "identifier":
+	cbse "this":
+		fbllthrough
+	cbse "super":
+		fbllthrough
+	cbse "identifier":
 		return onIdent()
-	case "field_access":
-		object := node.ChildByFieldName("object")
+	cbse "field_bccess":
+		object := node.ChildByFieldNbme("object")
 		if object == nil {
 			return nil, nil
 		}
-		field := node.ChildByFieldName("field")
+		field := node.ChildByFieldNbme("field")
 		if field == nil {
 			return nil, nil
 		}
-		objectType, err := s.getTypeDefJava(ctx, swapNode(node, object))
+		objectType, err := s.getTypeDefJbvb(ctx, swbpNode(node, object))
 		if err != nil {
 			return nil, err
 		}
 		if objectType == nil {
 			return nil, nil
 		}
-		found, err := s.lookupFieldJava(ctx, objectType, field.Content(node.Contents))
+		found, err := s.lookupFieldJbvb(ctx, objectType, field.Content(node.Contents))
 		if err != nil {
 			return nil, err
 		}
 		if found == nil {
 			return nil, nil
 		}
-		return s.defToTypeJava(ctx, *found)
-	case "method_invocation":
-		name := node.ChildByFieldName("name")
-		if name == nil {
+		return s.defToTypeJbvb(ctx, *found)
+	cbse "method_invocbtion":
+		nbme := node.ChildByFieldNbme("nbme")
+		if nbme == nil {
 			return nil, nil
 		}
-		ty, err := s.getTypeDefJava(ctx, swapNode(node, name))
+		ty, err := s.getTypeDefJbvb(ctx, swbpNode(node, nbme))
 		if err != nil {
 			return nil, err
 		}
@@ -499,95 +499,95 @@ func (s *SquirrelService) getTypeDefJava(ctx context.Context, node Node) (ret Ty
 			return nil, nil
 		}
 		switch ty2 := ty.(type) {
-		case FnTypeJava:
+		cbse FnTypeJbvb:
 			return ty2.ret, nil
-		default:
-			s.breadcrumb(ty.node(), fmt.Sprintf("getTypeDefJava: expected method, got %q", ty.variant()))
+		defbult:
+			s.brebdcrumb(ty.node(), fmt.Sprintf("getTypeDefJbvb: expected method, got %q", ty.vbribnt()))
 			return nil, nil
 		}
-	case "generic_type":
-		for _, child := range children(node.Node) {
+	cbse "generic_type":
+		for _, child := rbnge children(node.Node) {
 			if child.Type() == "type_identifier" || child.Type() == "scoped_type_identifier" {
-				return s.getTypeDefJava(ctx, swapNode(node, child))
+				return s.getTypeDefJbvb(ctx, swbpNode(node, child))
 			}
 		}
-		s.breadcrumb(node, "getTypeDefJava: expected an identifier")
+		s.brebdcrumb(node, "getTypeDefJbvb: expected bn identifier")
 		return nil, nil
-	case "scoped_type_identifier":
-		for i := int(node.NamedChildCount()) - 1; i >= 0; i-- {
-			child := node.NamedChild(i)
+	cbse "scoped_type_identifier":
+		for i := int(node.NbmedChildCount()) - 1; i >= 0; i-- {
+			child := node.NbmedChild(i)
 			if child.Type() == "type_identifier" {
-				return s.getTypeDefJava(ctx, swapNode(node, child))
+				return s.getTypeDefJbvb(ctx, swbpNode(node, child))
 			}
 		}
 		return nil, nil
-	case "object_creation_expression":
-		ty := node.ChildByFieldName("type")
+	cbse "object_crebtion_expression":
+		ty := node.ChildByFieldNbme("type")
 		if ty == nil {
 			return nil, nil
 		}
-		return s.getTypeDefJava(ctx, swapNode(node, ty))
-	case "void_type":
-		return PrimTypeJava{noad: node, varient: "void"}, nil
-	case "integral_type":
-		return PrimTypeJava{noad: node, varient: "integral"}, nil
-	case "floating_point_type":
-		return PrimTypeJava{noad: node, varient: "floating"}, nil
-	case "boolean_type":
-		return PrimTypeJava{noad: node, varient: "boolean"}, nil
-	default:
-		s.breadcrumb(node, fmt.Sprintf("getTypeDefJava: unrecognized node type %q", node.Type()))
+		return s.getTypeDefJbvb(ctx, swbpNode(node, ty))
+	cbse "void_type":
+		return PrimTypeJbvb{nobd: node, vbrient: "void"}, nil
+	cbse "integrbl_type":
+		return PrimTypeJbvb{nobd: node, vbrient: "integrbl"}, nil
+	cbse "flobting_point_type":
+		return PrimTypeJbvb{nobd: node, vbrient: "flobting"}, nil
+	cbse "boolebn_type":
+		return PrimTypeJbvb{nobd: node, vbrient: "boolebn"}, nil
+	defbult:
+		s.brebdcrumb(node, fmt.Sprintf("getTypeDefJbvb: unrecognized node type %q", node.Type()))
 		return nil, nil
 	}
 }
 
-func (s *SquirrelService) getDefInImportsOrCurrentPackageJava(ctx context.Context, program Node, ident string) (ret *Node, err error) {
-	defer s.onCall(program, &Tuple{String(program.Type()), String(ident)}, lazyNodeStringer(&ret))()
+func (s *SquirrelService) getDefInImportsOrCurrentPbckbgeJbvb(ctx context.Context, progrbm Node, ident string) (ret *Node, err error) {
+	defer s.onCbll(progrbm, &Tuple{String(progrbm.Type()), String(ident)}, lbzyNodeStringer(&ret))()
 
 	// Determine project root
-	root := getProjectRoot(program)
+	root := getProjectRoot(progrbm)
 	// Collect imports
 	imports := [][]string{}
-	for _, importNode := range children(program.Node) {
-		if importNode.Type() != "import_declaration" {
+	for _, importNode := rbnge children(progrbm.Node) {
+		if importNode.Type() != "import_declbrbtion" {
 			continue
 		}
-		path := getPath(swapNode(program, importNode))
-		for _, child := range children(importNode) {
-			if child.Type() == "asterisk" {
-				path = append(path, "*")
-				break
+		pbth := getPbth(swbpNode(progrbm, importNode))
+		for _, child := rbnge children(importNode) {
+			if child.Type() == "bsterisk" {
+				pbth = bppend(pbth, "*")
+				brebk
 			}
 		}
-		if len(path) == 0 {
+		if len(pbth) == 0 {
 			continue
 		}
-		imports = append(imports, path)
+		imports = bppend(imports, pbth)
 	}
 
-	// Check explicit imports (faster) before running symbol searches (slower)
-	for _, importPath := range imports {
-		last := importPath[len(importPath)-1]
-		if last == "*" {
+	// Check explicit imports (fbster) before running symbol sebrches (slower)
+	for _, importPbth := rbnge imports {
+		lbst := importPbth[len(importPbth)-1]
+		if lbst == "*" {
 			continue
 		}
-		if last == ident {
-			return s.symbolSearchOne(
+		if lbst == ident {
+			return s.symbolSebrchOne(
 				ctx,
-				program.RepoCommitPath.Repo,
-				program.RepoCommitPath.Commit,
-				[]string{fmt.Sprintf("^%s/%s", filepath.Join(root...), filepath.Join(importPath[:len(importPath)-1]...))},
+				progrbm.RepoCommitPbth.Repo,
+				progrbm.RepoCommitPbth.Commit,
+				[]string{fmt.Sprintf("^%s/%s", filepbth.Join(root...), filepbth.Join(importPbth[:len(importPbth)-1]...))},
 				ident,
 			)
 		}
 	}
 
-	// Search in current package
-	found, err := s.symbolSearchOne(
+	// Sebrch in current pbckbge
+	found, err := s.symbolSebrchOne(
 		ctx,
-		program.RepoCommitPath.Repo,
-		program.RepoCommitPath.Commit,
-		[]string{filepath.Dir(program.RepoCommitPath.Path)},
+		progrbm.RepoCommitPbth.Repo,
+		progrbm.RepoCommitPbth.Commit,
+		[]string{filepbth.Dir(progrbm.RepoCommitPbth.Pbth)},
 		ident,
 	)
 	if err != nil {
@@ -597,17 +597,17 @@ func (s *SquirrelService) getDefInImportsOrCurrentPackageJava(ctx context.Contex
 		return found, nil
 	}
 
-	// Search in packages imported with an asterisk
-	for _, importPath := range imports {
-		if importPath[len(importPath)-1] != "*" {
+	// Sebrch in pbckbges imported with bn bsterisk
+	for _, importPbth := rbnge imports {
+		if importPbth[len(importPbth)-1] != "*" {
 			continue
 		}
 
-		found, err := s.symbolSearchOne(
+		found, err := s.symbolSebrchOne(
 			ctx,
-			program.RepoCommitPath.Repo,
-			program.RepoCommitPath.Commit,
-			[]string{fmt.Sprintf("^%s/%s", filepath.Join(root...), filepath.Join(importPath[:len(importPath)-1]...))},
+			progrbm.RepoCommitPbth.Repo,
+			progrbm.RepoCommitPbth.Commit,
+			[]string{fmt.Sprintf("^%s/%s", filepbth.Join(root...), filepbth.Join(importPbth[:len(importPbth)-1]...))},
 			ident,
 		)
 		if err != nil {
@@ -621,13 +621,13 @@ func (s *SquirrelService) getDefInImportsOrCurrentPackageJava(ctx context.Contex
 	return nil, nil
 }
 
-func getProjectRoot(program Node) []string {
-	root := strings.Split(filepath.Dir(program.RepoCommitPath.Path), "/")
-	for _, pkgNode := range children(program.Node) {
-		if pkgNode.Type() != "package_declaration" {
+func getProjectRoot(progrbm Node) []string {
+	root := strings.Split(filepbth.Dir(progrbm.RepoCommitPbth.Pbth), "/")
+	for _, pkgNode := rbnge children(progrbm.Node) {
+		if pkgNode.Type() != "pbckbge_declbrbtion" {
 			continue
 		}
-		pkg := getPath(swapNode(program, pkgNode))
+		pkg := getPbth(swbpNode(progrbm, pkgNode))
 		if len(root) > len(pkg) {
 			root = root[:len(root)-len(pkg)]
 		}
@@ -635,145 +635,145 @@ func getProjectRoot(program Node) []string {
 	return root
 }
 
-func getPath(node Node) []string {
+func getPbth(node Node) []string {
 	query := `(identifier) @ident`
-	captures := allCaptures(query, node)
-	sort.Slice(captures, func(i, j int) bool {
-		return captures[i].StartByte() < captures[j].StartByte()
+	cbptures := bllCbptures(query, node)
+	sort.Slice(cbptures, func(i, j int) bool {
+		return cbptures[i].StbrtByte() < cbptures[j].StbrtByte()
 	})
 	components := []string{}
-	for _, capture := range captures {
-		components = append(components, capture.Content(capture.Contents))
+	for _, cbpture := rbnge cbptures {
+		components = bppend(components, cbpture.Content(cbpture.Contents))
 	}
 	return components
 }
 
-func getPathUpTo(node Node, component *sitter.Node) []string {
+func getPbthUpTo(node Node, component *sitter.Node) []string {
 	query := `(identifier) @ident`
-	captures := allCaptures(query, node)
-	sort.Slice(captures, func(i, j int) bool {
-		return captures[i].StartByte() < captures[j].StartByte()
+	cbptures := bllCbptures(query, node)
+	sort.Slice(cbptures, func(i, j int) bool {
+		return cbptures[i].StbrtByte() < cbptures[j].StbrtByte()
 	})
 	components := []string{}
-	for _, capture := range captures {
-		components = append(components, capture.Content(capture.Contents))
-		if nodeId(capture.Node) == nodeId(component) {
-			break
+	for _, cbpture := rbnge cbptures {
+		components = bppend(components, cbpture.Content(cbpture.Contents))
+		if nodeId(cbpture.Node) == nodeId(component) {
+			brebk
 		}
 	}
 	return components
 }
 
-func getSuperclassJava(declaration Node) *Node {
-	super := declaration.ChildByFieldName("superclass")
+func getSuperclbssJbvb(declbrbtion Node) *Node {
+	super := declbrbtion.ChildByFieldNbme("superclbss")
 	if super == nil {
 		return nil
 	}
-	class := super.NamedChild(0)
-	if class == nil {
+	clbss := super.NbmedChild(0)
+	if clbss == nil {
 		return nil
 	}
-	return swapNodePtr(declaration, class)
+	return swbpNodePtr(declbrbtion, clbss)
 }
 
-type TypeJava interface {
-	variant() string
+type TypeJbvb interfbce {
+	vbribnt() string
 	node() Node
 }
 
-type FnTypeJava struct {
-	ret  TypeJava
-	noad Node
+type FnTypeJbvb struct {
+	ret  TypeJbvb
+	nobd Node
 }
 
-func (t FnTypeJava) variant() string {
+func (t FnTypeJbvb) vbribnt() string {
 	return "fn"
 }
 
-func (t FnTypeJava) node() Node {
-	return t.noad
+func (t FnTypeJbvb) node() Node {
+	return t.nobd
 }
 
-type ClassTypeJava struct {
+type ClbssTypeJbvb struct {
 	def Node
 }
 
-func (t ClassTypeJava) variant() string {
-	return "class"
+func (t ClbssTypeJbvb) vbribnt() string {
+	return "clbss"
 }
 
-func (t ClassTypeJava) node() Node {
+func (t ClbssTypeJbvb) node() Node {
 	return t.def
 }
 
-type PrimTypeJava struct {
-	noad    Node
-	varient string
+type PrimTypeJbvb struct {
+	nobd    Node
+	vbrient string
 }
 
-func (t PrimTypeJava) variant() string {
-	return fmt.Sprintf("prim:%s", t.varient)
+func (t PrimTypeJbvb) vbribnt() string {
+	return fmt.Sprintf("prim:%s", t.vbrient)
 }
 
-func (t PrimTypeJava) node() Node {
-	return t.noad
+func (t PrimTypeJbvb) node() Node {
+	return t.nobd
 }
 
-func (s *SquirrelService) defToTypeJava(ctx context.Context, def Node) (TypeJava, error) {
-	parent := def.Node.Parent()
-	if parent == nil {
+func (s *SquirrelService) defToTypeJbvb(ctx context.Context, def Node) (TypeJbvb, error) {
+	pbrent := def.Node.Pbrent()
+	if pbrent == nil {
 		return nil, nil
 	}
-	switch parent.Type() {
-	case "class_declaration":
-		return (TypeJava)(ClassTypeJava{def: swapNode(def, parent)}), nil
-	case "method_declaration":
-		retTyNode := parent.ChildByFieldName("type")
+	switch pbrent.Type() {
+	cbse "clbss_declbrbtion":
+		return (TypeJbvb)(ClbssTypeJbvb{def: swbpNode(def, pbrent)}), nil
+	cbse "method_declbrbtion":
+		retTyNode := pbrent.ChildByFieldNbme("type")
 		if retTyNode == nil {
-			s.breadcrumb(swapNode(def, parent), "defToType: could not find return type")
-			return (TypeJava)(FnTypeJava{
+			s.brebdcrumb(swbpNode(def, pbrent), "defToType: could not find return type")
+			return (TypeJbvb)(FnTypeJbvb{
 				ret:  nil,
-				noad: swapNode(def, parent),
+				nobd: swbpNode(def, pbrent),
 			}), nil
 		}
-		retTy, err := s.getTypeDefJava(ctx, swapNode(def, retTyNode))
+		retTy, err := s.getTypeDefJbvb(ctx, swbpNode(def, retTyNode))
 		if err != nil {
 			return nil, err
 		}
-		return (TypeJava)(FnTypeJava{
+		return (TypeJbvb)(FnTypeJbvb{
 			ret:  retTy,
-			noad: swapNode(def, parent),
+			nobd: swbpNode(def, pbrent),
 		}), nil
-	case "formal_parameter":
-		fallthrough
-	case "enhanced_for_statement":
-		tyNode := parent.ChildByFieldName("type")
+	cbse "formbl_pbrbmeter":
+		fbllthrough
+	cbse "enhbnced_for_stbtement":
+		tyNode := pbrent.ChildByFieldNbme("type")
 		if tyNode == nil {
-			s.breadcrumb(swapNode(def, parent), "defToType: could not find type")
+			s.brebdcrumb(swbpNode(def, pbrent), "defToType: could not find type")
 			return nil, nil
 		}
-		return s.getTypeDefJava(ctx, swapNode(def, tyNode))
-	case "variable_declarator":
-		grandparent := parent.Parent()
-		if grandparent == nil {
+		return s.getTypeDefJbvb(ctx, swbpNode(def, tyNode))
+	cbse "vbribble_declbrbtor":
+		grbndpbrent := pbrent.Pbrent()
+		if grbndpbrent == nil {
 			return nil, nil
 		}
-		tyNode := grandparent.ChildByFieldName("type")
+		tyNode := grbndpbrent.ChildByFieldNbme("type")
 		if tyNode == nil {
-			s.breadcrumb(swapNode(def, parent), "defToType: could not find type")
+			s.brebdcrumb(swbpNode(def, pbrent), "defToType: could not find type")
 			return nil, nil
 		}
-		return s.getTypeDefJava(ctx, swapNode(def, tyNode))
-	default:
-		s.breadcrumb(swapNode(def, parent), fmt.Sprintf("unrecognized def parent %q", parent.Type()))
+		return s.getTypeDefJbvb(ctx, swbpNode(def, tyNode))
+	defbult:
+		s.brebdcrumb(swbpNode(def, pbrent), fmt.Sprintf("unrecognized def pbrent %q", pbrent.Type()))
 		return nil, nil
 	}
 }
 
-func lazyTypeJavaStringer(ty *TypeJava) func() fmt.Stringer {
+func lbzyTypeJbvbStringer(ty *TypeJbvb) func() fmt.Stringer {
 	return func() fmt.Stringer {
 		if ty != nil && *ty != nil {
-			return String((*ty).variant())
+			return String((*ty).vbribnt())
 		} else {
 			return String("<nil>")
 		}

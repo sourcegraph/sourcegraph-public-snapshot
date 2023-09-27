@@ -1,29 +1,29 @@
-package batches
+pbckbge bbtches
 
 import (
 	"context"
 
-	"github.com/sourcegraph/log"
+	"github.com/sourcegrbph/log"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/executorqueue/handler"
-	bstore "github.com/sourcegraph/sourcegraph/internal/batches/store"
-	btypes "github.com/sourcegraph/sourcegraph/internal/batches/types"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	apiclient "github.com/sourcegraph/sourcegraph/internal/executor/types"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/internbl/executorqueue/hbndler"
+	bstore "github.com/sourcegrbph/sourcegrbph/internbl/bbtches/store"
+	btypes "github.com/sourcegrbph/sourcegrbph/internbl/bbtches/types"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	bpiclient "github.com/sourcegrbph/sourcegrbph/internbl/executor/types"
+	"github.com/sourcegrbph/sourcegrbph/internbl/observbtion"
 )
 
-func QueueHandler(observationCtx *observation.Context, db database.DB, _ func() string) handler.QueueHandler[*btypes.BatchSpecWorkspaceExecutionJob] {
-	logger := log.Scoped("executor-queue.batches", "The executor queue handlers for the batches queue")
-	recordTransformer := func(ctx context.Context, version string, record *btypes.BatchSpecWorkspaceExecutionJob, _ handler.ResourceMetadata) (apiclient.Job, error) {
-		batchesStore := bstore.New(db, observationCtx, nil)
-		return transformRecord(ctx, logger, batchesStore, record, version)
+func QueueHbndler(observbtionCtx *observbtion.Context, db dbtbbbse.DB, _ func() string) hbndler.QueueHbndler[*btypes.BbtchSpecWorkspbceExecutionJob] {
+	logger := log.Scoped("executor-queue.bbtches", "The executor queue hbndlers for the bbtches queue")
+	recordTrbnsformer := func(ctx context.Context, version string, record *btypes.BbtchSpecWorkspbceExecutionJob, _ hbndler.ResourceMetbdbtb) (bpiclient.Job, error) {
+		bbtchesStore := bstore.New(db, observbtionCtx, nil)
+		return trbnsformRecord(ctx, logger, bbtchesStore, record, version)
 	}
 
-	store := bstore.NewBatchSpecWorkspaceExecutionWorkerStore(observationCtx, db.Handle())
-	return handler.QueueHandler[*btypes.BatchSpecWorkspaceExecutionJob]{
-		Name:              "batches",
+	store := bstore.NewBbtchSpecWorkspbceExecutionWorkerStore(observbtionCtx, db.Hbndle())
+	return hbndler.QueueHbndler[*btypes.BbtchSpecWorkspbceExecutionJob]{
+		Nbme:              "bbtches",
 		Store:             store,
-		RecordTransformer: recordTransformer,
+		RecordTrbnsformer: recordTrbnsformer,
 	}
 }

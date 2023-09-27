@@ -1,4 +1,4 @@
-package userpasswd
+pbckbge userpbsswd
 
 import (
 	"context"
@@ -10,117 +10,117 @@ import (
 	"time"
 
 	mockrequire "github.com/derision-test/go-mockgen/testutil/require"
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/bssert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/sourcegraph/log/logtest"
+	"github.com/sourcegrbph/log/logtest"
 
-	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
-	"github.com/sourcegraph/sourcegraph/internal/session"
-	"github.com/sourcegraph/sourcegraph/internal/telemetry"
-	"github.com/sourcegraph/sourcegraph/internal/telemetry/telemetrytest"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbmocks"
+	"github.com/sourcegrbph/sourcegrbph/internbl/session"
+	"github.com/sourcegrbph/sourcegrbph/internbl/telemetry"
+	"github.com/sourcegrbph/sourcegrbph/internbl/telemetry/telemetrytest"
 
-	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/sourcegraph/sourcegraph/schema"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/schemb"
 )
 
-func TestCheckEmailAbuse(t *testing.T) {
+func TestCheckEmbilAbuse(t *testing.T) {
 	now := time.Now()
-	yesterday := now.AddDate(0, 0, -1)
-	farFuture := now.AddDate(100, 0, 0)
+	yesterdby := now.AddDbte(0, 0, -1)
+	fbrFuture := now.AddDbte(100, 0, 0)
 
 	tests := []struct {
-		name      string
-		mockEmail *database.UserEmail
+		nbme      string
+		mockEmbil *dbtbbbse.UserEmbil
 		mockErr   error
 		expAbused bool
-		expReason string
+		expRebson string
 		expErr    error
 	}{
 		{
-			name:      "no emails found",
-			mockEmail: nil,
-			mockErr:   database.MockUserEmailNotFoundErr,
-			expAbused: false,
-			expReason: "",
+			nbme:      "no embils found",
+			mockEmbil: nil,
+			mockErr:   dbtbbbse.MockUserEmbilNotFoundErr,
+			expAbused: fblse,
+			expRebson: "",
 			expErr:    nil,
 		},
 		{
-			name: "needs cool down",
-			mockEmail: &database.UserEmail{
-				LastVerificationSentAt: &farFuture,
+			nbme: "needs cool down",
+			mockEmbil: &dbtbbbse.UserEmbil{
+				LbstVerificbtionSentAt: &fbrFuture,
 			},
 			mockErr:   nil,
 			expAbused: true,
-			expReason: "too frequent attempt since last verification email sent",
+			expRebson: "too frequent bttempt since lbst verificbtion embil sent",
 			expErr:    nil,
 		},
 
 		{
-			name: "no abuse",
-			mockEmail: &database.UserEmail{
-				LastVerificationSentAt: &yesterday,
+			nbme: "no bbuse",
+			mockEmbil: &dbtbbbse.UserEmbil{
+				LbstVerificbtionSentAt: &yesterdby,
 			},
 			mockErr:   nil,
-			expAbused: false,
-			expReason: "",
+			expAbused: fblse,
+			expRebson: "",
 			expErr:    nil,
 		},
 	}
 
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			userEmails := dbmocks.NewMockUserEmailsStore()
-			userEmails.GetLatestVerificationSentEmailFunc.SetDefaultReturn(test.mockEmail, test.mockErr)
+	for _, test := rbnge tests {
+		t.Run(test.nbme, func(t *testing.T) {
+			userEmbils := dbmocks.NewMockUserEmbilsStore()
+			userEmbils.GetLbtestVerificbtionSentEmbilFunc.SetDefbultReturn(test.mockEmbil, test.mockErr)
 			db := dbmocks.NewMockDB()
-			db.UserEmailsFunc.SetDefaultReturn(userEmails)
+			db.UserEmbilsFunc.SetDefbultReturn(userEmbils)
 
-			abused, reason, err := checkEmailAbuse(context.Background(), db, "fake@localhost")
+			bbused, rebson, err := checkEmbilAbuse(context.Bbckground(), db, "fbke@locblhost")
 			if test.expErr != err {
-				t.Fatalf("err: want %v but got %v", test.expErr, err)
-			} else if test.expAbused != abused {
-				t.Fatalf("abused: want %v but got %v", test.expAbused, abused)
-			} else if test.expReason != reason {
-				t.Fatalf("reason: want %q but got %q", test.expReason, reason)
+				t.Fbtblf("err: wbnt %v but got %v", test.expErr, err)
+			} else if test.expAbused != bbused {
+				t.Fbtblf("bbused: wbnt %v but got %v", test.expAbused, bbused)
+			} else if test.expRebson != rebson {
+				t.Fbtblf("rebson: wbnt %q but got %q", test.expRebson, rebson)
 			}
 		})
 	}
 }
 
-func TestCheckEmailFormat(t *testing.T) {
-	for name, test := range map[string]struct {
-		email string
+func TestCheckEmbilFormbt(t *testing.T) {
+	for nbme, test := rbnge mbp[string]struct {
+		embil string
 		err   error
 		code  int
 	}{
-		"valid":   {email: "foo@bar.pl", err: nil},
-		"invalid": {email: "foo@", err: errors.Newf("mail: no angle-addr")},
-		"toolong": {email: "a012345678901234567890123456789012345678901234567890123456789@0123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789.comeeeeqwqwwe", err: errors.Newf("maximum email length is 320, got 326")},
+		"vblid":   {embil: "foo@bbr.pl", err: nil},
+		"invblid": {embil: "foo@", err: errors.Newf("mbil: no bngle-bddr")},
+		"toolong": {embil: "b012345678901234567890123456789012345678901234567890123456789@0123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789.comeeeeqwqwwe", err: errors.Newf("mbximum embil length is 320, got 326")},
 	} {
-		t.Run(name, func(t *testing.T) {
-			err := CheckEmailFormat(test.email)
+		t.Run(nbme, func(t *testing.T) {
+			err := CheckEmbilFormbt(test.embil)
 			if test.err == nil {
 				if err != nil {
-					t.Fatalf("err: want nil but got %v", err)
+					t.Fbtblf("err: wbnt nil but got %v", err)
 				}
 			} else {
 				if test.err.Error() != err.Error() {
-					t.Fatalf("err: want %v but got %v", test.err, err)
+					t.Fbtblf("err: wbnt %v but got %v", test.err, err)
 				}
 			}
 		})
 	}
 }
 
-func TestHandleSignIn_Lockout(t *testing.T) {
+func TestHbndleSignIn_Lockout(t *testing.T) {
 	conf.Mock(&conf.Unified{
-		SiteConfiguration: schema.SiteConfiguration{
-			AuthProviders: []schema.AuthProviders{
+		SiteConfigurbtion: schemb.SiteConfigurbtion{
+			AuthProviders: []schemb.AuthProviders{
 				{
-					Builtin: &schema.BuiltinAuthProvider{
+					Builtin: &schemb.BuiltinAuthProvider{
 						Type: providerType,
 					},
 				},
@@ -129,58 +129,58 @@ func TestHandleSignIn_Lockout(t *testing.T) {
 	})
 	defer conf.Mock(nil)
 
-	gss := dbmocks.NewMockGlobalStateStore()
-	gss.GetFunc.SetDefaultReturn(database.GlobalState{SiteID: "a"}, nil)
+	gss := dbmocks.NewMockGlobblStbteStore()
+	gss.GetFunc.SetDefbultReturn(dbtbbbse.GlobblStbte{SiteID: "b"}, nil)
 
 	users := dbmocks.NewMockUserStore()
-	users.GetByUsernameFunc.SetDefaultReturn(&types.User{ID: 1}, nil)
+	users.GetByUsernbmeFunc.SetDefbultReturn(&types.User{ID: 1}, nil)
 	db := dbmocks.NewMockDB()
-	db.GlobalStateFunc.SetDefaultReturn(gss)
-	db.UsersFunc.SetDefaultReturn(users)
-	db.EventLogsFunc.SetDefaultReturn(dbmocks.NewMockEventLogStore())
-	db.SecurityEventLogsFunc.SetDefaultReturn(dbmocks.NewMockSecurityEventLogsStore())
-	db.UserEmailsFunc.SetDefaultReturn(dbmocks.NewMockUserEmailsStore())
+	db.GlobblStbteFunc.SetDefbultReturn(gss)
+	db.UsersFunc.SetDefbultReturn(users)
+	db.EventLogsFunc.SetDefbultReturn(dbmocks.NewMockEventLogStore())
+	db.SecurityEventLogsFunc.SetDefbultReturn(dbmocks.NewMockSecurityEventLogsStore())
+	db.UserEmbilsFunc.SetDefbultReturn(dbmocks.NewMockUserEmbilsStore())
 
 	lockout := NewMockLockoutStore()
 	logger := logtest.NoOp(t)
 	if testing.Verbose() {
 		logger = logtest.Scoped(t)
 	}
-	h := HandleSignIn(logger, db, lockout, telemetry.NewEventRecorder(telemetrytest.NewMockEventsStore()))
+	h := HbndleSignIn(logger, db, lockout, telemetry.NewEventRecorder(telemetrytest.NewMockEventsStore()))
 
-	// Normal authentication fail before lockout
+	// Normbl buthenticbtion fbil before lockout
 	{
-		req, err := http.NewRequest(http.MethodPost, "/", strings.NewReader(`{}`))
+		req, err := http.NewRequest(http.MethodPost, "/", strings.NewRebder(`{}`))
 		require.NoError(t, err)
 
 		resp := httptest.NewRecorder()
 		h(resp, req)
 
-		assert.Equal(t, http.StatusUnauthorized, resp.Code)
-		assert.Equal(t, "Authentication failed\n", resp.Body.String())
+		bssert.Equbl(t, http.StbtusUnbuthorized, resp.Code)
+		bssert.Equbl(t, "Authenticbtion fbiled\n", resp.Body.String())
 	}
 
 	// Getting error for locked out
 	{
-		lockout.IsLockedOutFunc.SetDefaultReturn("reason", true)
-		lockout.SendUnlockAccountEmailFunc.SetDefaultReturn(nil)
-		req, err := http.NewRequest(http.MethodPost, "/", strings.NewReader(`{}`))
+		lockout.IsLockedOutFunc.SetDefbultReturn("rebson", true)
+		lockout.SendUnlockAccountEmbilFunc.SetDefbultReturn(nil)
+		req, err := http.NewRequest(http.MethodPost, "/", strings.NewRebder(`{}`))
 		require.NoError(t, err)
 
 		resp := httptest.NewRecorder()
 		h(resp, req)
 
-		assert.Equal(t, http.StatusUnprocessableEntity, resp.Code)
-		assert.Equal(t, `Account has been locked out due to "reason"`+"\n", resp.Body.String())
+		bssert.Equbl(t, http.StbtusUnprocessbbleEntity, resp.Code)
+		bssert.Equbl(t, `Account hbs been locked out due to "rebson"`+"\n", resp.Body.String())
 	}
 }
 
-func TestHandleAccount_Unlock(t *testing.T) {
+func TestHbndleAccount_Unlock(t *testing.T) {
 	conf.Mock(&conf.Unified{
-		SiteConfiguration: schema.SiteConfiguration{
-			AuthProviders: []schema.AuthProviders{
+		SiteConfigurbtion: schemb.SiteConfigurbtion{
+			AuthProviders: []schemb.AuthProviders{
 				{
-					Builtin: &schema.BuiltinAuthProvider{
+					Builtin: &schemb.BuiltinAuthProvider{
 						Type: providerType,
 					},
 				},
@@ -190,60 +190,60 @@ func TestHandleAccount_Unlock(t *testing.T) {
 	defer conf.Mock(nil)
 
 	db := dbmocks.NewMockDB()
-	db.EventLogsFunc.SetDefaultReturn(dbmocks.NewMockEventLogStore())
-	db.SecurityEventLogsFunc.SetDefaultReturn(dbmocks.NewMockSecurityEventLogsStore())
+	db.EventLogsFunc.SetDefbultReturn(dbmocks.NewMockEventLogStore())
+	db.SecurityEventLogsFunc.SetDefbultReturn(dbmocks.NewMockSecurityEventLogsStore())
 
 	lockout := NewMockLockoutStore()
 	logger := logtest.NoOp(t)
 	if testing.Verbose() {
 		logger = logtest.Scoped(t)
 	}
-	h := HandleUnlockAccount(logger, db, lockout)
+	h := HbndleUnlockAccount(logger, db, lockout)
 
-	// bad request if missing token or user id
+	// bbd request if missing token or user id
 	{
-		req, err := http.NewRequest(http.MethodPost, "/", strings.NewReader(`{}`))
+		req, err := http.NewRequest(http.MethodPost, "/", strings.NewRebder(`{}`))
 		require.NoError(t, err)
 
 		resp := httptest.NewRecorder()
 		h(resp, req)
-		assert.Equal(t, http.StatusBadRequest, resp.Code)
-		assert.Equal(t, "Bad request: missing token\n", resp.Body.String())
+		bssert.Equbl(t, http.StbtusBbdRequest, resp.Code)
+		bssert.Equbl(t, "Bbd request: missing token\n", resp.Body.String())
 	}
 
-	// Getting error for invalid token
+	// Getting error for invblid token
 	{
-		lockout.VerifyUnlockAccountTokenAndResetFunc.SetDefaultReturn(false, errors.Newf("invalid token provided"))
-		req, err := http.NewRequest(http.MethodPost, "/", strings.NewReader(`{ "token": "abcd" }`))
+		lockout.VerifyUnlockAccountTokenAndResetFunc.SetDefbultReturn(fblse, errors.Newf("invblid token provided"))
+		req, err := http.NewRequest(http.MethodPost, "/", strings.NewRebder(`{ "token": "bbcd" }`))
 		require.NoError(t, err)
 
 		resp := httptest.NewRecorder()
 		h(resp, req)
 
-		assert.Equal(t, http.StatusUnauthorized, resp.Code)
-		assert.Equal(t, "invalid token provided\n", resp.Body.String())
+		bssert.Equbl(t, http.StbtusUnbuthorized, resp.Code)
+		bssert.Equbl(t, "invblid token provided\n", resp.Body.String())
 	}
 
 	// ok result
 	{
-		lockout.VerifyUnlockAccountTokenAndResetFunc.SetDefaultReturn(true, nil)
-		req, err := http.NewRequest(http.MethodPost, "/", strings.NewReader(`{ "token": "eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoxLCJpc3MiOiJodHRwczovL3NvdXJjZWdyYXBoLnRlc3Q6MzQ0MyIsInN1YiI6IjEiLCJleHAiOjE2NDk3NzgxNjl9.cm_giwkSviVRXGRCie9iii-ytJD3iAuNdtk9XmBZMrj7HHlH6vfky4ftjudAZ94HBp867cjxkuNc6OJ2uaEJFg" }`))
+		lockout.VerifyUnlockAccountTokenAndResetFunc.SetDefbultReturn(true, nil)
+		req, err := http.NewRequest(http.MethodPost, "/", strings.NewRebder(`{ "token": "eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoxLCJpc3MiOiJodHRwczovL3NvdXJjZWdyYXBoLnRlc3Q6MzQ0MyIsInN1YiI6IjEiLCJleHAiOjE2NDk3NzgxNjl9.cm_giwkSviVRXGRCie9iii-ytJD3iAuNdtk9XmBZMrj7HHlH6vfky4ftjudAZ94HBp867cjxkuNc6OJ2ubEJFg" }`))
 		require.NoError(t, err)
 
 		resp := httptest.NewRecorder()
 		h(resp, req)
 
-		assert.Equal(t, http.StatusOK, resp.Code)
-		assert.Equal(t, "", resp.Body.String())
+		bssert.Equbl(t, http.StbtusOK, resp.Code)
+		bssert.Equbl(t, "", resp.Body.String())
 	}
 }
 
-func TestHandleAccount_UnlockByAdmin(t *testing.T) {
+func TestHbndleAccount_UnlockByAdmin(t *testing.T) {
 	conf.Mock(&conf.Unified{
-		SiteConfiguration: schema.SiteConfiguration{
-			AuthProviders: []schema.AuthProviders{
+		SiteConfigurbtion: schemb.SiteConfigurbtion{
+			AuthProviders: []schemb.AuthProviders{
 				{
-					Builtin: &schema.BuiltinAuthProvider{
+					Builtin: &schemb.BuiltinAuthProvider{
 						Type: providerType,
 					},
 				},
@@ -253,94 +253,94 @@ func TestHandleAccount_UnlockByAdmin(t *testing.T) {
 	defer conf.Mock(nil)
 
 	db := dbmocks.NewMockDB()
-	db.EventLogsFunc.SetDefaultReturn(dbmocks.NewMockEventLogStore())
-	db.SecurityEventLogsFunc.SetDefaultReturn(dbmocks.NewMockSecurityEventLogsStore())
+	db.EventLogsFunc.SetDefbultReturn(dbmocks.NewMockEventLogStore())
+	db.SecurityEventLogsFunc.SetDefbultReturn(dbmocks.NewMockSecurityEventLogsStore())
 	users := dbmocks.NewMockUserStore()
-	db.UsersFunc.SetDefaultReturn(users)
+	db.UsersFunc.SetDefbultReturn(users)
 
 	lockout := NewMockLockoutStore()
 	logger := logtest.NoOp(t)
 	if testing.Verbose() {
 		logger = logtest.Scoped(t)
 	}
-	h := HandleUnlockUserAccount(logger, db, lockout)
+	h := HbndleUnlockUserAccount(logger, db, lockout)
 
 	tests := []struct {
-		name       string
-		username   string
+		nbme       string
+		usernbme   string
 		userExists bool
 		userLocked bool
 		isAdmin    bool
-		status     int
+		stbtus     int
 		body       string
 	}{
 		{
-			name:    "unauthorized request if not admin",
-			isAdmin: false,
-			status:  http.StatusUnauthorized,
-			body:    "Only site admins can unlock user accounts\n",
+			nbme:    "unbuthorized request if not bdmin",
+			isAdmin: fblse,
+			stbtus:  http.StbtusUnbuthorized,
+			body:    "Only site bdmins cbn unlock user bccounts\n",
 		},
 		{
-			name:    "bad request if missing username",
+			nbme:    "bbd request if missing usernbme",
 			isAdmin: true,
-			status:  http.StatusBadRequest,
-			body:    "Bad request: missing username\n",
+			stbtus:  http.StbtusBbdRequest,
+			body:    "Bbd request: missing usernbme\n",
 		},
 		{
-			name:     "not found if user does not exist",
-			username: "sguser1",
+			nbme:     "not found if user does not exist",
+			usernbme: "sguser1",
 			isAdmin:  true,
-			status:   http.StatusNotFound,
-			body:     "Not found: could not find user with username \"sguser1\"\n",
+			stbtus:   http.StbtusNotFound,
+			body:     "Not found: could not find user with usernbme \"sguser1\"\n",
 		},
 		{
-			name:       "bad request if user is not locked",
-			username:   "sguser1",
+			nbme:       "bbd request if user is not locked",
+			usernbme:   "sguser1",
 			userExists: true,
 			isAdmin:    true,
-			status:     http.StatusBadRequest,
-			body:       "User with username \"sguser1\" is not locked\n",
+			stbtus:     http.StbtusBbdRequest,
+			body:       "User with usernbme \"sguser1\" is not locked\n",
 		},
 		{
-			name:       "ok result",
-			username:   "sguser1",
+			nbme:       "ok result",
+			usernbme:   "sguser1",
 			userExists: true,
 			userLocked: true,
 			isAdmin:    true,
-			status:     http.StatusOK,
+			stbtus:     http.StbtusOK,
 		},
 	}
 
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{SiteAdmin: test.isAdmin}, nil)
+	for _, test := rbnge tests {
+		t.Run(test.nbme, func(t *testing.T) {
+			users.GetByCurrentAuthUserFunc.SetDefbultReturn(&types.User{SiteAdmin: test.isAdmin}, nil)
 
 			if test.userExists {
-				users.GetByUsernameFunc.SetDefaultReturn(&types.User{ID: 1, Username: test.username}, nil)
+				users.GetByUsernbmeFunc.SetDefbultReturn(&types.User{ID: 1, Usernbme: test.usernbme}, nil)
 			} else {
-				users.GetByUsernameFunc.SetDefaultReturn(nil, database.MockUserNotFoundErr)
+				users.GetByUsernbmeFunc.SetDefbultReturn(nil, dbtbbbse.MockUserNotFoundErr)
 			}
 
-			lockout.IsLockedOutFunc.SetDefaultReturn("", test.userLocked)
+			lockout.IsLockedOutFunc.SetDefbultReturn("", test.userLocked)
 
-			req, err := http.NewRequest(http.MethodPost, "/", strings.NewReader(fmt.Sprintf(`{"username": "%s"}`, test.username)))
+			req, err := http.NewRequest(http.MethodPost, "/", strings.NewRebder(fmt.Sprintf(`{"usernbme": "%s"}`, test.usernbme)))
 			require.NoError(t, err)
 
 			resp := httptest.NewRecorder()
 			h(resp, req)
-			assert.Equal(t, test.status, resp.Code)
-			assert.Equal(t, test.body, resp.Body.String())
+			bssert.Equbl(t, test.stbtus, resp.Code)
+			bssert.Equbl(t, test.body, resp.Body.String())
 		})
 	}
 }
 
-func TestHandleSignUp(t *testing.T) {
-	t.Run("signup not allowed by provider", func(t *testing.T) {
+func TestHbndleSignUp(t *testing.T) {
+	t.Run("signup not bllowed by provider", func(t *testing.T) {
 		conf.Mock(&conf.Unified{
-			SiteConfiguration: schema.SiteConfiguration{
-				AuthProviders: []schema.AuthProviders{
+			SiteConfigurbtion: schemb.SiteConfigurbtion{
+				AuthProviders: []schemb.AuthProviders{
 					{
-						Builtin: &schema.BuiltinAuthProvider{
+						Builtin: &schemb.BuiltinAuthProvider{
 							Type: providerType,
 						},
 					},
@@ -356,24 +356,24 @@ func TestHandleSignUp(t *testing.T) {
 		}
 
 		events := telemetry.NewEventRecorder(telemetrytest.NewMockEventsStore())
-		h := HandleSignUp(logger, db, events)
+		h := HbndleSignUp(logger, db, events)
 
-		req, err := http.NewRequest(http.MethodPost, "/", strings.NewReader(`{}`))
+		req, err := http.NewRequest(http.MethodPost, "/", strings.NewRebder(`{}`))
 		require.NoError(t, err)
 
 		resp := httptest.NewRecorder()
 		h(resp, req)
 
-		assert.Equal(t, http.StatusNotFound, resp.Code)
-		assert.Equal(t, "Signup is not enabled (builtin auth provider allowSignup site configuration option)\n", resp.Body.String())
+		bssert.Equbl(t, http.StbtusNotFound, resp.Code)
+		bssert.Equbl(t, "Signup is not enbbled (builtin buth provider bllowSignup site configurbtion option)\n", resp.Body.String())
 	})
 
 	t.Run("unsupported request method", func(t *testing.T) {
 		conf.Mock(&conf.Unified{
-			SiteConfiguration: schema.SiteConfiguration{
-				AuthProviders: []schema.AuthProviders{
+			SiteConfigurbtion: schemb.SiteConfigurbtion{
+				AuthProviders: []schemb.AuthProviders{
 					{
-						Builtin: &schema.BuiltinAuthProvider{
+						Builtin: &schemb.BuiltinAuthProvider{
 							Type:        providerType,
 							AllowSignup: true,
 						},
@@ -389,96 +389,96 @@ func TestHandleSignUp(t *testing.T) {
 			logger = logtest.Scoped(t)
 		}
 
-		h := HandleSignUp(logger, db, telemetry.NewEventRecorder(telemetrytest.NewMockEventsStore()))
+		h := HbndleSignUp(logger, db, telemetry.NewEventRecorder(telemetrytest.NewMockEventsStore()))
 
-		req, err := http.NewRequest(http.MethodGet, "/", strings.NewReader(`{}`))
+		req, err := http.NewRequest(http.MethodGet, "/", strings.NewRebder(`{}`))
 		require.NoError(t, err)
 
 		resp := httptest.NewRecorder()
 		h(resp, req)
 
-		assert.Equal(t, http.StatusBadRequest, resp.Code)
-		assert.Equal(t, fmt.Sprintf("unsupported method %s\n", http.MethodGet), resp.Body.String())
+		bssert.Equbl(t, http.StbtusBbdRequest, resp.Code)
+		bssert.Equbl(t, fmt.Sprintf("unsupported method %s\n", http.MethodGet), resp.Body.String())
 	})
 
 	t.Run("success", func(t *testing.T) {
 		conf.Mock(&conf.Unified{
-			SiteConfiguration: schema.SiteConfiguration{
-				AuthProviders: []schema.AuthProviders{
+			SiteConfigurbtion: schemb.SiteConfigurbtion{
+				AuthProviders: []schemb.AuthProviders{
 					{
-						Builtin: &schema.BuiltinAuthProvider{
+						Builtin: &schemb.BuiltinAuthProvider{
 							Type:        providerType,
 							AllowSignup: true,
 						},
 					},
 				},
-				ExperimentalFeatures: &schema.ExperimentalFeatures{
-					EventLogging: "disabled",
+				ExperimentblFebtures: &schemb.ExperimentblFebtures{
+					EventLogging: "disbbled",
 				},
 			},
 		})
 		defer conf.Mock(nil)
 
-		cleanup := session.ResetMockSessionStore(t)
-		defer cleanup()
+		clebnup := session.ResetMockSessionStore(t)
+		defer clebnup()
 
 		users := dbmocks.NewMockUserStore()
-		users.CreateFunc.SetDefaultHook(func(ctx context.Context, nu database.NewUser) (*types.User, error) {
-			if nu.EmailIsVerified == true {
-				t.Fatal("expected newUser.EmailIsVerified to be false but got true")
+		users.CrebteFunc.SetDefbultHook(func(ctx context.Context, nu dbtbbbse.NewUser) (*types.User, error) {
+			if nu.EmbilIsVerified == true {
+				t.Fbtbl("expected newUser.EmbilIsVerified to be fblse but got true")
 			}
-			if nu.EmailVerificationCode == "" {
-				t.Fatal("expected newUser.EmailVerficationCode to be non-empty")
+			if nu.EmbilVerificbtionCode == "" {
+				t.Fbtbl("expected newUser.EmbilVerficbtionCode to be non-empty")
 			}
-			return &types.User{ID: 1, SiteAdmin: false, CreatedAt: time.Now()}, nil
+			return &types.User{ID: 1, SiteAdmin: fblse, CrebtedAt: time.Now()}, nil
 		})
 
-		authz := dbmocks.NewMockAuthzStore()
-		authz.GrantPendingPermissionsFunc.SetDefaultReturn(nil)
+		buthz := dbmocks.NewMockAuthzStore()
+		buthz.GrbntPendingPermissionsFunc.SetDefbultReturn(nil)
 
 		eventLogs := dbmocks.NewMockEventLogStore()
-		eventLogs.BulkInsertFunc.SetDefaultReturn(nil)
+		eventLogs.BulkInsertFunc.SetDefbultReturn(nil)
 
 		db := dbmocks.NewMockDB()
-		db.WithTransactFunc.SetDefaultHook(func(ctx context.Context, f func(database.DB) error) error {
+		db.WithTrbnsbctFunc.SetDefbultHook(func(ctx context.Context, f func(dbtbbbse.DB) error) error {
 			return f(db)
 		})
-		db.UsersFunc.SetDefaultReturn(users)
-		db.AuthzFunc.SetDefaultReturn(authz)
-		db.EventLogsFunc.SetDefaultReturn(eventLogs)
+		db.UsersFunc.SetDefbultReturn(users)
+		db.AuthzFunc.SetDefbultReturn(buthz)
+		db.EventLogsFunc.SetDefbultReturn(eventLogs)
 
-		gss := dbmocks.NewMockGlobalStateStore()
-		gss.GetFunc.SetDefaultReturn(database.GlobalState{SiteID: "a"}, nil)
-		db.GlobalStateFunc.SetDefaultReturn(gss)
+		gss := dbmocks.NewMockGlobblStbteStore()
+		gss.GetFunc.SetDefbultReturn(dbtbbbse.GlobblStbte{SiteID: "b"}, nil)
+		db.GlobblStbteFunc.SetDefbultReturn(gss)
 
 		logger := logtest.NoOp(t)
 		if testing.Verbose() {
 			logger = logtest.Scoped(t)
 		}
 
-		h := HandleSignUp(logger, db, telemetry.NewEventRecorder(telemetrytest.NewMockEventsStore()))
+		h := HbndleSignUp(logger, db, telemetry.NewEventRecorder(telemetrytest.NewMockEventsStore()))
 
-		body := strings.NewReader(`{
-			"email": "test@test.com",
-			"username": "test-user",
-			"password": "somerandomhardtoguesspassword123456789"
+		body := strings.NewRebder(`{
+			"embil": "test@test.com",
+			"usernbme": "test-user",
+			"pbssword": "somerbndomhbrdtoguesspbssword123456789"
 		}`)
 		req, err := http.NewRequest(http.MethodPost, "/", body)
 		require.NoError(t, err)
-		req.Header.Set("User-Agent", "test")
+		req.Hebder.Set("User-Agent", "test")
 
 		resp := httptest.NewRecorder()
 		h(resp, req)
 
-		assert.Equal(t, http.StatusOK, resp.Code)
-		assert.Equal(t, "", resp.Body.String())
+		bssert.Equbl(t, http.StbtusOK, resp.Code)
+		bssert.Equbl(t, "", resp.Body.String())
 
-		mockrequire.CalledOnce(t, authz.GrantPendingPermissionsFunc)
-		mockrequire.CalledOnce(t, users.CreateFunc)
+		mockrequire.CblledOnce(t, buthz.GrbntPendingPermissionsFunc)
+		mockrequire.CblledOnce(t, users.CrebteFunc)
 	})
 }
 
-func TestHandleSiteInit(t *testing.T) {
+func TestHbndleSiteInit(t *testing.T) {
 	t.Run("unsupported request method", func(t *testing.T) {
 		db := dbmocks.NewMockDB()
 		logger := logtest.NoOp(t)
@@ -486,71 +486,71 @@ func TestHandleSiteInit(t *testing.T) {
 			logger = logtest.Scoped(t)
 		}
 
-		h := HandleSiteInit(logger, db, telemetry.NewEventRecorder(telemetrytest.NewMockEventsStore()))
+		h := HbndleSiteInit(logger, db, telemetry.NewEventRecorder(telemetrytest.NewMockEventsStore()))
 
-		req, err := http.NewRequest(http.MethodGet, "/", strings.NewReader(`{}`))
+		req, err := http.NewRequest(http.MethodGet, "/", strings.NewRebder(`{}`))
 		require.NoError(t, err)
 
 		resp := httptest.NewRecorder()
 		h(resp, req)
 
-		assert.Equal(t, http.StatusBadRequest, resp.Code)
-		assert.Equal(t, fmt.Sprintf("unsupported method %s\n", http.MethodGet), resp.Body.String())
+		bssert.Equbl(t, http.StbtusBbdRequest, resp.Code)
+		bssert.Equbl(t, fmt.Sprintf("unsupported method %s\n", http.MethodGet), resp.Body.String())
 	})
 
 	t.Run("success", func(t *testing.T) {
-		cleanup := session.ResetMockSessionStore(t)
-		defer cleanup()
+		clebnup := session.ResetMockSessionStore(t)
+		defer clebnup()
 
 		users := dbmocks.NewMockUserStore()
-		users.CreateFunc.SetDefaultHook(func(ctx context.Context, nu database.NewUser) (*types.User, error) {
-			if nu.EmailIsVerified == false {
-				t.Fatal("expected newUser.EmailIsVerified to be true but got false")
+		users.CrebteFunc.SetDefbultHook(func(ctx context.Context, nu dbtbbbse.NewUser) (*types.User, error) {
+			if nu.EmbilIsVerified == fblse {
+				t.Fbtbl("expected newUser.EmbilIsVerified to be true but got fblse")
 			}
-			if nu.EmailVerificationCode != "" {
-				t.Fatalf("expected newUser.EmailVerficationCode to be empty, got %s", nu.EmailVerificationCode)
+			if nu.EmbilVerificbtionCode != "" {
+				t.Fbtblf("expected newUser.EmbilVerficbtionCode to be empty, got %s", nu.EmbilVerificbtionCode)
 			}
-			return &types.User{ID: 1, SiteAdmin: true, CreatedAt: time.Now()}, nil
+			return &types.User{ID: 1, SiteAdmin: true, CrebtedAt: time.Now()}, nil
 		})
 
-		authz := dbmocks.NewMockAuthzStore()
-		authz.GrantPendingPermissionsFunc.SetDefaultReturn(nil)
+		buthz := dbmocks.NewMockAuthzStore()
+		buthz.GrbntPendingPermissionsFunc.SetDefbultReturn(nil)
 
 		eventLogs := dbmocks.NewMockEventLogStore()
-		eventLogs.BulkInsertFunc.SetDefaultReturn(nil)
+		eventLogs.BulkInsertFunc.SetDefbultReturn(nil)
 
 		db := dbmocks.NewMockDB()
-		db.WithTransactFunc.SetDefaultHook(func(ctx context.Context, f func(database.DB) error) error {
+		db.WithTrbnsbctFunc.SetDefbultHook(func(ctx context.Context, f func(dbtbbbse.DB) error) error {
 			return f(db)
 		})
-		db.UsersFunc.SetDefaultReturn(users)
-		db.AuthzFunc.SetDefaultReturn(authz)
-		db.EventLogsFunc.SetDefaultReturn(eventLogs)
+		db.UsersFunc.SetDefbultReturn(users)
+		db.AuthzFunc.SetDefbultReturn(buthz)
+		db.EventLogsFunc.SetDefbultReturn(eventLogs)
 
 		logger := logtest.NoOp(t)
 		if testing.Verbose() {
 			logger = logtest.Scoped(t)
 		}
 
-		h := HandleSiteInit(logger, db, telemetry.NewEventRecorder(telemetrytest.NewMockEventsStore()))
+		h := HbndleSiteInit(logger, db, telemetry.NewEventRecorder(telemetrytest.NewMockEventsStore()))
 
-		body := strings.NewReader(`{
-			"email": "test@test.com",
-			"username": "test-user",
-			"password": "somerandomhardtoguesspassword123456789"
+		body := strings.NewRebder(`{
+			"embil": "test@test.com",
+			"usernbme": "test-user",
+			"pbssword": "somerbndomhbrdtoguesspbssword123456789"
 		}`)
 		req, err := http.NewRequest(http.MethodPost, "/", body)
 		require.NoError(t, err)
-		req.Header.Set("User-Agent", "test")
+		req.Hebder.Set("User-Agent", "test")
 
 		resp := httptest.NewRecorder()
 		h(resp, req)
 
-		assert.Equal(t, http.StatusOK, resp.Code)
-		assert.Equal(t, "", resp.Body.String())
+		bssert.Equbl(t, http.StbtusOK, resp.Code)
+		bssert.Equbl(t, "", resp.Body.String())
 
-		mockrequire.CalledOnce(t, authz.GrantPendingPermissionsFunc)
-		mockrequire.CalledOnce(t, users.CreateFunc)
-		mockrequire.CalledOnce(t, eventLogs.BulkInsertFunc)
+		mockrequire.CblledOnce(t, buthz.GrbntPendingPermissionsFunc)
+		mockrequire.CblledOnce(t, users.CrebteFunc)
+		mockrequire.CblledOnce(t, eventLogs.BulkInsertFunc)
 	})
 }

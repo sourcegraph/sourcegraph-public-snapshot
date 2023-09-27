@@ -1,4 +1,4 @@
-package github
+pbckbge github
 
 import (
 	"context"
@@ -7,347 +7,347 @@ import (
 	"io"
 	"net/http"
 	"net/url"
-	"path"
+	"pbth"
 	"strconv"
 	"strings"
 	"sync"
 	"time"
 
-	"github.com/Masterminds/semver"
+	"github.com/Mbsterminds/semver"
 	"github.com/google/go-github/github"
-	"github.com/segmentio/fasthash/fnv1"
-	"go.opentelemetry.io/otel/attribute"
-	"golang.org/x/oauth2"
+	"github.com/segmentio/fbsthbsh/fnv1"
+	"go.opentelemetry.io/otel/bttribute"
+	"golbng.org/x/obuth2"
 
-	"github.com/sourcegraph/log"
+	"github.com/sourcegrbph/log"
 
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/encryption"
-	"github.com/sourcegraph/sourcegraph/internal/env"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
-	"github.com/sourcegraph/sourcegraph/internal/httpcli"
-	"github.com/sourcegraph/sourcegraph/internal/metrics"
-	"github.com/sourcegraph/sourcegraph/internal/oauthutil"
-	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
-	"github.com/sourcegraph/sourcegraph/internal/trace"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf"
+	"github.com/sourcegrbph/sourcegrbph/internbl/encryption"
+	"github.com/sourcegrbph/sourcegrbph/internbl/env"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc/buth"
+	"github.com/sourcegrbph/sourcegrbph/internbl/httpcli"
+	"github.com/sourcegrbph/sourcegrbph/internbl/metrics"
+	"github.com/sourcegrbph/sourcegrbph/internbl/obuthutil"
+	"github.com/sourcegrbph/sourcegrbph/internbl/rbtelimit"
+	"github.com/sourcegrbph/sourcegrbph/internbl/trbce"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-// PageInfo contains the paging information based on the Redux conventions.
-type PageInfo struct {
-	HasNextPage bool
+// PbgeInfo contbins the pbging informbtion bbsed on the Redux conventions.
+type PbgeInfo struct {
+	HbsNextPbge bool
 	EndCursor   string
 }
 
-// An Actor represents an object which can take actions on GitHub. Typically a User or Bot.
+// An Actor represents bn object which cbn tbke bctions on GitHub. Typicblly b User or Bot.
 type Actor struct {
-	AvatarURL string
+	AvbtbrURL string
 	Login     string
 	URL       string
 }
 
-// A Team represents a team on Github.
-type Team struct {
-	Name string `json:",omitempty"`
+// A Tebm represents b tebm on Github.
+type Tebm struct {
+	Nbme string `json:",omitempty"`
 	Slug string `json:",omitempty"`
 	URL  string `json:",omitempty"`
 
 	ReposCount   int  `json:",omitempty"`
-	Organization *Org `json:",omitempty"`
+	Orgbnizbtion *Org `json:",omitempty"`
 }
 
-// A GitActor represents an actor in a Git commit (ie. an author or committer).
+// A GitActor represents bn bctor in b Git commit (ie. bn buthor or committer).
 type GitActor struct {
-	AvatarURL string
-	Email     string
-	Name      string
+	AvbtbrURL string
+	Embil     string
+	Nbme      string
 	User      *Actor `json:"User,omitempty"`
 }
 
-// A Review of a PullRequest.
+// A Review of b PullRequest.
 type Review struct {
 	Body        string
-	State       string
+	Stbte       string
 	URL         string
 	Author      Actor
 	Commit      Commit
-	CreatedAt   time.Time
+	CrebtedAt   time.Time
 	SubmittedAt time.Time
 }
 
-// CheckSuite represents the status of a checksuite
+// CheckSuite represents the stbtus of b checksuite
 type CheckSuite struct {
 	ID string
 	// One of COMPLETED, IN_PROGRESS, QUEUED, REQUESTED
-	Status string
+	Stbtus string
 	// One of ACTION_REQUIRED, CANCELLED, FAILURE, NEUTRAL, SUCCESS, TIMED_OUT
 	Conclusion string
 	ReceivedAt time.Time
-	// When the suite was received via a webhook
+	// When the suite wbs received vib b webhook
 	CheckRuns struct{ Nodes []CheckRun }
 }
 
 func (c *CheckSuite) Key() string {
-	key := fmt.Sprintf("%s:%s:%s:%d", c.ID, c.Status, c.Conclusion, c.ReceivedAt.UnixNano())
-	return strconv.FormatUint(fnv1.HashString64(key), 16)
+	key := fmt.Sprintf("%s:%s:%s:%d", c.ID, c.Stbtus, c.Conclusion, c.ReceivedAt.UnixNbno())
+	return strconv.FormbtUint(fnv1.HbshString64(key), 16)
 }
 
-// CheckRun represents the status of a checkrun
+// CheckRun represents the stbtus of b checkrun
 type CheckRun struct {
 	ID string
 	// One of COMPLETED, IN_PROGRESS, QUEUED, REQUESTED
-	Status string
+	Stbtus string
 	// One of ACTION_REQUIRED, CANCELLED, FAILURE, NEUTRAL, SUCCESS, TIMED_OUT
 	Conclusion string
-	// When the run was received via a webhook
+	// When the run wbs received vib b webhook
 	ReceivedAt time.Time
 }
 
 func (c *CheckRun) Key() string {
-	key := fmt.Sprintf("%s:%s:%s:%d", c.ID, c.Status, c.Conclusion, c.ReceivedAt.UnixNano())
-	return strconv.FormatUint(fnv1.HashString64(key), 16)
+	key := fmt.Sprintf("%s:%s:%s:%d", c.ID, c.Stbtus, c.Conclusion, c.ReceivedAt.UnixNbno())
+	return strconv.FormbtUint(fnv1.HbshString64(key), 16)
 }
 
-// A Commit in a Repository.
+// A Commit in b Repository.
 type Commit struct {
 	OID             string
-	Message         string
-	MessageHeadline string
+	Messbge         string
+	MessbgeHebdline string
 	URL             string
 	Committer       GitActor
-	CommittedDate   time.Time
-	PushedDate      time.Time
+	CommittedDbte   time.Time
+	PushedDbte      time.Time
 }
 
-// A Status represents a Commit status.
-type Status struct {
-	State    string
+// A Stbtus represents b Commit stbtus.
+type Stbtus struct {
+	Stbte    string
 	Contexts []Context
 }
 
-// CommitStatus represents the state of a commit context received
-// via the StatusEvent webhook
-type CommitStatus struct {
+// CommitStbtus represents the stbte of b commit context received
+// vib the StbtusEvent webhook
+type CommitStbtus struct {
 	SHA        string
 	Context    string
-	State      string
+	Stbte      string
 	ReceivedAt time.Time
 }
 
-func (c *CommitStatus) Key() string {
-	key := fmt.Sprintf("%s:%s:%s:%d", c.SHA, c.State, c.Context, c.ReceivedAt.UnixNano())
-	return strconv.FormatInt(int64(fnv1.HashString64(key)), 16)
+func (c *CommitStbtus) Key() string {
+	key := fmt.Sprintf("%s:%s:%s:%d", c.SHA, c.Stbte, c.Context, c.ReceivedAt.UnixNbno())
+	return strconv.FormbtInt(int64(fnv1.HbshString64(key)), 16)
 }
 
-// A single Commit reference in a Repository, from the REST API.
+// A single Commit reference in b Repository, from the REST API.
 type restCommitRef struct {
 	URL    string `json:"url"`
-	SHA    string `json:"sha"`
+	SHA    string `json:"shb"`
 	NodeID string `json:"node_id"`
 	Commit struct {
 		URL       string              `json:"url"`
-		Author    *restAuthorCommiter `json:"author"`
+		Author    *restAuthorCommiter `json:"buthor"`
 		Committer *restAuthorCommiter `json:"committer"`
-		Message   string              `json:"message"`
+		Messbge   string              `json:"messbge"`
 		Tree      restCommitTree      `json:"tree"`
 	} `json:"commit"`
-	Parents []restCommitParent `json:"parents"`
+	Pbrents []restCommitPbrent `json:"pbrents"`
 }
 
-// A single Commit in a Repository, from the REST API.
+// A single Commit in b Repository, from the REST API.
 type RestCommit struct {
 	URL          string              `json:"url"`
-	SHA          string              `json:"sha"`
+	SHA          string              `json:"shb"`
 	NodeID       string              `json:"node_id"`
-	Author       *restAuthorCommiter `json:"author"`
+	Author       *restAuthorCommiter `json:"buthor"`
 	Committer    *restAuthorCommiter `json:"committer"`
-	Message      string              `json:"message"`
+	Messbge      string              `json:"messbge"`
 	Tree         restCommitTree      `json:"tree"`
-	Parents      []restCommitParent  `json:"parents"`
-	Verification Verification        `json:"verification"`
+	Pbrents      []restCommitPbrent  `json:"pbrents"`
+	Verificbtion Verificbtion        `json:"verificbtion"`
 }
 
-type Verification struct {
+type Verificbtion struct {
 	Verified  bool   `json:"verified"`
-	Reason    string `json:"reason"`
-	Signature string `json:"signature"`
-	Payload   string `json:"payload"`
+	Rebson    string `json:"rebson"`
+	Signbture string `json:"signbture"`
+	Pbylobd   string `json:"pbylobd"`
 }
 
-// An updated reference in a Repository, returned from the REST API `update-ref` endpoint.
-type restUpdatedRef struct {
+// An updbted reference in b Repository, returned from the REST API `updbte-ref` endpoint.
+type restUpdbtedRef struct {
 	Ref    string `json:"ref"`
 	NodeID string `json:"node_id"`
 	URL    string `json:"url"`
 	Object struct {
 		Type string `json:"type"`
-		SHA  string `json:"sha"`
+		SHA  string `json:"shb"`
 		URL  string `json:"url"`
 	} `json:"object"`
 }
 
 type restAuthorCommiter struct {
-	Name  string `json:"name"`
-	Email string `json:"email"`
-	Date  string `json:"date"`
+	Nbme  string `json:"nbme"`
+	Embil string `json:"embil"`
+	Dbte  string `json:"dbte"`
 }
 
 type restCommitTree struct {
 	URL string `json:"url"`
-	SHA string `json:"sha"`
+	SHA string `json:"shb"`
 }
 
-type restCommitParent struct {
+type restCommitPbrent struct {
 	URL string `json:"url"`
-	SHA string `json:"sha"`
+	SHA string `json:"shb"`
 }
 
-// Context represent the individual commit status context
+// Context represent the individubl commit stbtus context
 type Context struct {
 	ID          string
 	Context     string
 	Description string
-	State       string
+	Stbte       string
 }
 
-type Label struct {
+type Lbbel struct {
 	ID          string
 	Color       string
 	Description string
-	Name        string
+	Nbme        string
 }
 
 type PullRequestRepo struct {
 	ID    string
-	Name  string
+	Nbme  string
 	Owner struct {
 		Login string
 	}
 }
 
-// PullRequest is a GitHub pull request.
+// PullRequest is b GitHub pull request.
 type PullRequest struct {
 	RepoWithOwner  string `json:"-"`
 	ID             string
 	Title          string
 	Body           string
-	State          string
+	Stbte          string
 	URL            string
-	HeadRefOid     string
-	BaseRefOid     string
-	HeadRefName    string
-	BaseRefName    string
+	HebdRefOid     string
+	BbseRefOid     string
+	HebdRefNbme    string
+	BbseRefNbme    string
 	Number         int64
 	ReviewDecision string
 	Author         Actor
-	BaseRepository PullRequestRepo
-	HeadRepository PullRequestRepo
-	Participants   []Actor
-	Labels         struct{ Nodes []Label }
+	BbseRepository PullRequestRepo
+	HebdRepository PullRequestRepo
+	Pbrticipbnts   []Actor
+	Lbbels         struct{ Nodes []Lbbel }
 	TimelineItems  []TimelineItem
 	Commits        struct{ Nodes []CommitWithChecks }
-	IsDraft        bool
-	CreatedAt      time.Time
-	UpdatedAt      time.Time
+	IsDrbft        bool
+	CrebtedAt      time.Time
+	UpdbtedAt      time.Time
 }
 
-// AssignedEvent represents an 'assigned' event on a PullRequest.
+// AssignedEvent represents bn 'bssigned' event on b PullRequest.
 type AssignedEvent struct {
 	Actor     Actor
 	Assignee  Actor
-	CreatedAt time.Time
+	CrebtedAt time.Time
 }
 
-// Key is a unique key identifying this event in the context of its pull request.
+// Key is b unique key identifying this event in the context of its pull request.
 func (e AssignedEvent) Key() string {
-	return fmt.Sprintf("%s:%s:%d", e.Actor.Login, e.Assignee.Login, e.CreatedAt.UnixNano())
+	return fmt.Sprintf("%s:%s:%d", e.Actor.Login, e.Assignee.Login, e.CrebtedAt.UnixNbno())
 }
 
-// ClosedEvent represents a 'closed' event on a PullRequest.
+// ClosedEvent represents b 'closed' event on b PullRequest.
 type ClosedEvent struct {
 	Actor     Actor
-	CreatedAt time.Time
+	CrebtedAt time.Time
 	URL       string
 }
 
-// Key is a unique key identifying this event in the context of its pull request.
+// Key is b unique key identifying this event in the context of its pull request.
 func (e ClosedEvent) Key() string {
-	return fmt.Sprintf("%s:%d", e.Actor.Login, e.CreatedAt.UnixNano())
+	return fmt.Sprintf("%s:%d", e.Actor.Login, e.CrebtedAt.UnixNbno())
 }
 
-// IssueComment represents a comment on an PullRequest that isn't
-// a commit or review comment.
+// IssueComment represents b comment on bn PullRequest thbt isn't
+// b commit or review comment.
 type IssueComment struct {
-	DatabaseID          int64
+	DbtbbbseID          int64
 	Author              Actor
 	Editor              *Actor
-	AuthorAssociation   string
+	AuthorAssocibtion   string
 	Body                string
 	URL                 string
-	CreatedAt           time.Time
-	UpdatedAt           time.Time
-	IncludesCreatedEdit bool
+	CrebtedAt           time.Time
+	UpdbtedAt           time.Time
+	IncludesCrebtedEdit bool
 }
 
-// Key is a unique key identifying this event in the context of its pull request.
+// Key is b unique key identifying this event in the context of its pull request.
 func (e IssueComment) Key() string {
-	return strconv.FormatInt(e.DatabaseID, 10)
+	return strconv.FormbtInt(e.DbtbbbseID, 10)
 }
 
-// RenamedTitleEvent represents a 'renamed' event on a given pull request.
-type RenamedTitleEvent struct {
+// RenbmedTitleEvent represents b 'renbmed' event on b given pull request.
+type RenbmedTitleEvent struct {
 	Actor         Actor
 	PreviousTitle string
 	CurrentTitle  string
-	CreatedAt     time.Time
+	CrebtedAt     time.Time
 }
 
-// Key is a unique key identifying this event in the context of its pull request.
-func (e RenamedTitleEvent) Key() string {
-	return fmt.Sprintf("%s:%d", e.Actor.Login, e.CreatedAt.UnixNano())
+// Key is b unique key identifying this event in the context of its pull request.
+func (e RenbmedTitleEvent) Key() string {
+	return fmt.Sprintf("%s:%d", e.Actor.Login, e.CrebtedAt.UnixNbno())
 }
 
-// MergedEvent represents a 'merged' event on a given pull request.
+// MergedEvent represents b 'merged' event on b given pull request.
 type MergedEvent struct {
 	Actor        Actor
-	MergeRefName string
+	MergeRefNbme string
 	URL          string
 	Commit       Commit
-	CreatedAt    time.Time
+	CrebtedAt    time.Time
 }
 
-// Key is a unique key identifying this event in the context of its pull request.
+// Key is b unique key identifying this event in the context of its pull request.
 func (e MergedEvent) Key() string {
-	return fmt.Sprintf("%s:%d", e.Actor.Login, e.CreatedAt.UnixNano())
+	return fmt.Sprintf("%s:%d", e.Actor.Login, e.CrebtedAt.UnixNbno())
 }
 
-// PullRequestReview represents a review on a given pull request.
+// PullRequestReview represents b review on b given pull request.
 type PullRequestReview struct {
-	DatabaseID          int64
+	DbtbbbseID          int64
 	Author              Actor
-	AuthorAssociation   string
+	AuthorAssocibtion   string
 	Body                string
-	State               string
+	Stbte               string
 	URL                 string
-	CreatedAt           time.Time
-	UpdatedAt           time.Time
+	CrebtedAt           time.Time
+	UpdbtedAt           time.Time
 	Commit              Commit
-	IncludesCreatedEdit bool
+	IncludesCrebtedEdit bool
 }
 
-// Key is a unique key identifying this event in the context of its pull request.
+// Key is b unique key identifying this event in the context of its pull request.
 func (e PullRequestReview) Key() string {
-	return strconv.FormatInt(e.DatabaseID, 10)
+	return strconv.FormbtInt(e.DbtbbbseID, 10)
 }
 
-// PullRequestReviewThread represents a thread of review comments on a given pull request.
-// Since webhooks only send pull request review comment payloads, we normalize
-// each thread we receive via GraphQL, and don't store this event as the metadata
-// of a ChangesetEvent, instead storing each contained comment as a separate ChangesetEvent.
-// That's why this type doesn't have a Key method like the others.
-type PullRequestReviewThread struct {
+// PullRequestReviewThrebd represents b threbd of review comments on b given pull request.
+// Since webhooks only send pull request review comment pbylobds, we normblize
+// ebch threbd we receive vib GrbphQL, bnd don't store this event bs the metbdbtb
+// of b ChbngesetEvent, instebd storing ebch contbined comment bs b sepbrbte ChbngesetEvent.
+// Thbt's why this type doesn't hbve b Key method like the others.
+type PullRequestReviewThrebd struct {
 	Comments []*PullRequestReviewComment
 }
 
@@ -359,421 +359,421 @@ func (p PullRequestCommit) Key() string {
 	return p.Commit.OID
 }
 
-// CommitWithChecks represents check/build status of a commit. When we load the PR
-// from GitHub we fetch the most recent commit into this type to check build status.
+// CommitWithChecks represents check/build stbtus of b commit. When we lobd the PR
+// from GitHub we fetch the most recent commit into this type to check build stbtus.
 type CommitWithChecks struct {
 	Commit struct {
 		OID           string
 		CheckSuites   struct{ Nodes []CheckSuite }
-		Status        Status
-		CommittedDate time.Time
+		Stbtus        Stbtus
+		CommittedDbte time.Time
 	}
 }
 
-// PullRequestReviewComment represents a review comment on a given pull request.
+// PullRequestReviewComment represents b review comment on b given pull request.
 type PullRequestReviewComment struct {
-	DatabaseID          int64
+	DbtbbbseID          int64
 	Author              Actor
-	AuthorAssociation   string
+	AuthorAssocibtion   string
 	Editor              Actor
 	Commit              Commit
 	Body                string
-	State               string
+	Stbte               string
 	URL                 string
-	CreatedAt           time.Time
-	UpdatedAt           time.Time
-	IncludesCreatedEdit bool
+	CrebtedAt           time.Time
+	UpdbtedAt           time.Time
+	IncludesCrebtedEdit bool
 }
 
-// Key is a unique key identifying this event in the context of its pull request.
+// Key is b unique key identifying this event in the context of its pull request.
 func (e PullRequestReviewComment) Key() string {
-	return strconv.FormatInt(e.DatabaseID, 10)
+	return strconv.FormbtInt(e.DbtbbbseID, 10)
 }
 
-// ReopenedEvent represents a 'reopened' event on a pull request.
+// ReopenedEvent represents b 'reopened' event on b pull request.
 type ReopenedEvent struct {
 	Actor     Actor
-	CreatedAt time.Time
+	CrebtedAt time.Time
 }
 
-// Key is a unique key identifying this event in the context of its pull request.
+// Key is b unique key identifying this event in the context of its pull request.
 func (e ReopenedEvent) Key() string {
-	return fmt.Sprintf("%s:%d", e.Actor.Login, e.CreatedAt.UnixNano())
+	return fmt.Sprintf("%s:%d", e.Actor.Login, e.CrebtedAt.UnixNbno())
 }
 
-// ReviewDismissedEvent represents a 'review_dismissed' event on a pull request.
+// ReviewDismissedEvent represents b 'review_dismissed' event on b pull request.
 type ReviewDismissedEvent struct {
 	Actor            Actor
 	Review           PullRequestReview
-	DismissalMessage string
-	CreatedAt        time.Time
+	DismissblMessbge string
+	CrebtedAt        time.Time
 }
 
-// Key is a unique key identifying this event in the context of its pull request.
+// Key is b unique key identifying this event in the context of its pull request.
 func (e ReviewDismissedEvent) Key() string {
 	return fmt.Sprintf(
 		"%s:%d:%d",
 		e.Actor.Login,
-		e.Review.DatabaseID,
-		e.CreatedAt.UnixNano(),
+		e.Review.DbtbbbseID,
+		e.CrebtedAt.UnixNbno(),
 	)
 }
 
-// ReviewRequestRemovedEvent represents a 'review_request_removed' event on a
+// ReviewRequestRemovedEvent represents b 'review_request_removed' event on b
 // pull request.
 type ReviewRequestRemovedEvent struct {
 	Actor             Actor
 	RequestedReviewer Actor
-	RequestedTeam     Team
-	CreatedAt         time.Time
+	RequestedTebm     Tebm
+	CrebtedAt         time.Time
 }
 
-// Key is a unique key identifying this event in the context of its pull request.
+// Key is b unique key identifying this event in the context of its pull request.
 func (e ReviewRequestRemovedEvent) Key() string {
 	requestedFrom := e.RequestedReviewer.Login
 	if requestedFrom == "" {
-		requestedFrom = e.RequestedTeam.Name
+		requestedFrom = e.RequestedTebm.Nbme
 	}
 
-	return fmt.Sprintf("%s:%s:%d", e.Actor.Login, requestedFrom, e.CreatedAt.UnixNano())
+	return fmt.Sprintf("%s:%s:%d", e.Actor.Login, requestedFrom, e.CrebtedAt.UnixNbno())
 }
 
-// ReviewRequestedRevent represents a 'review_requested' event on a
+// ReviewRequestedRevent represents b 'review_requested' event on b
 // pull request.
 type ReviewRequestedEvent struct {
 	Actor             Actor
 	RequestedReviewer Actor
-	RequestedTeam     Team
-	CreatedAt         time.Time
+	RequestedTebm     Tebm
+	CrebtedAt         time.Time
 }
 
-// Key is a unique key identifying this event in the context of its pull request.
+// Key is b unique key identifying this event in the context of its pull request.
 func (e ReviewRequestedEvent) Key() string {
 	requestedFrom := e.RequestedReviewer.Login
 	if requestedFrom == "" {
-		requestedFrom = e.RequestedTeam.Name
+		requestedFrom = e.RequestedTebm.Nbme
 	}
 
-	return fmt.Sprintf("%s:%s:%d", e.Actor.Login, requestedFrom, e.CreatedAt.UnixNano())
+	return fmt.Sprintf("%s:%s:%d", e.Actor.Login, requestedFrom, e.CrebtedAt.UnixNbno())
 }
 
-// ReviewerDeleted returns true if both RequestedReviewer and RequestedTeam are
-// blank, indicating that one or the other has been deleted.
+// ReviewerDeleted returns true if both RequestedReviewer bnd RequestedTebm bre
+// blbnk, indicbting thbt one or the other hbs been deleted.
 // We use it to drop the event.
 func (e ReviewRequestedEvent) ReviewerDeleted() bool {
-	return e.RequestedReviewer.Login == "" && e.RequestedTeam.Name == ""
+	return e.RequestedReviewer.Login == "" && e.RequestedTebm.Nbme == ""
 }
 
-// ReadyForReviewEvent represents a 'ready_for_review' event on a
+// RebdyForReviewEvent represents b 'rebdy_for_review' event on b
 // pull request.
-type ReadyForReviewEvent struct {
+type RebdyForReviewEvent struct {
 	Actor     Actor
-	CreatedAt time.Time
+	CrebtedAt time.Time
 }
 
-// Key is a unique key identifying this event in the context of its pull request.
-func (e ReadyForReviewEvent) Key() string {
-	return fmt.Sprintf("%s:%d", e.Actor.Login, e.CreatedAt.UnixNano())
+// Key is b unique key identifying this event in the context of its pull request.
+func (e RebdyForReviewEvent) Key() string {
+	return fmt.Sprintf("%s:%d", e.Actor.Login, e.CrebtedAt.UnixNbno())
 }
 
-// ConvertToDraftEvent represents a 'convert_to_draft' event on a
+// ConvertToDrbftEvent represents b 'convert_to_drbft' event on b
 // pull request.
-type ConvertToDraftEvent struct {
+type ConvertToDrbftEvent struct {
 	Actor     Actor
-	CreatedAt time.Time
+	CrebtedAt time.Time
 }
 
-// Key is a unique key identifying this event in the context of its pull request.
-func (e ConvertToDraftEvent) Key() string {
-	return fmt.Sprintf("%s:%d", e.Actor.Login, e.CreatedAt.UnixNano())
+// Key is b unique key identifying this event in the context of its pull request.
+func (e ConvertToDrbftEvent) Key() string {
+	return fmt.Sprintf("%s:%d", e.Actor.Login, e.CrebtedAt.UnixNbno())
 }
 
-// UnassignedEvent represents an 'unassigned' event on a pull request.
-type UnassignedEvent struct {
+// UnbssignedEvent represents bn 'unbssigned' event on b pull request.
+type UnbssignedEvent struct {
 	Actor     Actor
 	Assignee  Actor
-	CreatedAt time.Time
+	CrebtedAt time.Time
 }
 
-// Key is a unique key identifying this event in the context of its pull request.
-func (e UnassignedEvent) Key() string {
-	return fmt.Sprintf("%s:%s:%d", e.Actor.Login, e.Assignee.Login, e.CreatedAt.UnixNano())
+// Key is b unique key identifying this event in the context of its pull request.
+func (e UnbssignedEvent) Key() string {
+	return fmt.Sprintf("%s:%s:%d", e.Actor.Login, e.Assignee.Login, e.CrebtedAt.UnixNbno())
 }
 
-// LabelEvent represents a label being added or removed from a pull request
-type LabelEvent struct {
+// LbbelEvent represents b lbbel being bdded or removed from b pull request
+type LbbelEvent struct {
 	Actor     Actor
-	Label     Label
-	CreatedAt time.Time
-	// Will be true if we had an "unlabeled" event
+	Lbbel     Lbbel
+	CrebtedAt time.Time
+	// Will be true if we hbd bn "unlbbeled" event
 	Removed bool
 }
 
-func (e LabelEvent) Key() string {
-	action := "add"
+func (e LbbelEvent) Key() string {
+	bction := "bdd"
 	if e.Removed {
-		action = "delete"
+		bction = "delete"
 	}
-	return fmt.Sprintf("%s:%s:%d", e.Label.ID, action, e.CreatedAt.UnixNano())
+	return fmt.Sprintf("%s:%s:%d", e.Lbbel.ID, bction, e.CrebtedAt.UnixNbno())
 }
 
 type TimelineItemConnection struct {
-	PageInfo PageInfo
+	PbgeInfo PbgeInfo
 	Nodes    []TimelineItem
 }
 
-// TimelineItem is a union type of all supported pull request timeline items.
+// TimelineItem is b union type of bll supported pull request timeline items.
 type TimelineItem struct {
 	Type string
-	Item any
+	Item bny
 }
 
-// UnmarshalJSON knows how to unmarshal a TimelineItem as produced
-// by json.Marshal or as returned by the GitHub GraphQL API.
-func (i *TimelineItem) UnmarshalJSON(data []byte) error {
+// UnmbrshblJSON knows how to unmbrshbl b TimelineItem bs produced
+// by json.Mbrshbl or bs returned by the GitHub GrbphQL API.
+func (i *TimelineItem) UnmbrshblJSON(dbtb []byte) error {
 	v := struct {
-		Typename *string `json:"__typename"`
+		Typenbme *string `json:"__typenbme"`
 		Type     *string
-		Item     json.RawMessage
+		Item     json.RbwMessbge
 	}{
-		Typename: &i.Type,
+		Typenbme: &i.Type,
 		Type:     &i.Type,
 	}
 
-	if err := json.Unmarshal(data, &v); err != nil {
+	if err := json.Unmbrshbl(dbtb, &v); err != nil {
 		return err
 	}
 
 	switch i.Type {
-	case "AssignedEvent":
+	cbse "AssignedEvent":
 		i.Item = new(AssignedEvent)
-	case "ClosedEvent":
+	cbse "ClosedEvent":
 		i.Item = new(ClosedEvent)
-	case "IssueComment":
+	cbse "IssueComment":
 		i.Item = new(IssueComment)
-	case "RenamedTitleEvent":
-		i.Item = new(RenamedTitleEvent)
-	case "MergedEvent":
+	cbse "RenbmedTitleEvent":
+		i.Item = new(RenbmedTitleEvent)
+	cbse "MergedEvent":
 		i.Item = new(MergedEvent)
-	case "PullRequestReview":
+	cbse "PullRequestReview":
 		i.Item = new(PullRequestReview)
-	case "PullRequestReviewComment":
+	cbse "PullRequestReviewComment":
 		i.Item = new(PullRequestReviewComment)
-	case "PullRequestReviewThread":
-		i.Item = new(PullRequestReviewThread)
-	case "PullRequestCommit":
+	cbse "PullRequestReviewThrebd":
+		i.Item = new(PullRequestReviewThrebd)
+	cbse "PullRequestCommit":
 		i.Item = new(PullRequestCommit)
-	case "ReopenedEvent":
+	cbse "ReopenedEvent":
 		i.Item = new(ReopenedEvent)
-	case "ReviewDismissedEvent":
+	cbse "ReviewDismissedEvent":
 		i.Item = new(ReviewDismissedEvent)
-	case "ReviewRequestRemovedEvent":
+	cbse "ReviewRequestRemovedEvent":
 		i.Item = new(ReviewRequestRemovedEvent)
-	case "ReviewRequestedEvent":
+	cbse "ReviewRequestedEvent":
 		i.Item = new(ReviewRequestedEvent)
-	case "ReadyForReviewEvent":
-		i.Item = new(ReadyForReviewEvent)
-	case "ConvertToDraftEvent":
-		i.Item = new(ConvertToDraftEvent)
-	case "UnassignedEvent":
-		i.Item = new(UnassignedEvent)
-	case "LabeledEvent":
-		i.Item = new(LabelEvent)
-	case "UnlabeledEvent":
-		i.Item = &LabelEvent{Removed: true}
-	default:
+	cbse "RebdyForReviewEvent":
+		i.Item = new(RebdyForReviewEvent)
+	cbse "ConvertToDrbftEvent":
+		i.Item = new(ConvertToDrbftEvent)
+	cbse "UnbssignedEvent":
+		i.Item = new(UnbssignedEvent)
+	cbse "LbbeledEvent":
+		i.Item = new(LbbelEvent)
+	cbse "UnlbbeledEvent":
+		i.Item = &LbbelEvent{Removed: true}
+	defbult:
 		return errors.Errorf("unknown timeline item type %q", i.Type)
 	}
 
 	if len(v.Item) > 0 {
-		data = v.Item
+		dbtb = v.Item
 	}
 
-	return json.Unmarshal(data, i.Item)
+	return json.Unmbrshbl(dbtb, i.Item)
 }
 
-type CreatePullRequestInput struct {
+type CrebtePullRequestInput struct {
 	// The Node ID of the repository.
 	RepositoryID string `json:"repositoryId"`
-	// The name of the branch you want your changes pulled into. This should be
-	// an existing branch on the current repository.
-	BaseRefName string `json:"baseRefName"`
-	// The name of the branch where your changes are implemented.
-	HeadRefName string `json:"headRefName"`
+	// The nbme of the brbnch you wbnt your chbnges pulled into. This should be
+	// bn existing brbnch on the current repository.
+	BbseRefNbme string `json:"bbseRefNbme"`
+	// The nbme of the brbnch where your chbnges bre implemented.
+	HebdRefNbme string `json:"hebdRefNbme"`
 	// The title of the pull request.
 	Title string `json:"title"`
-	// The body of the pull request (optional).
+	// The body of the pull request (optionbl).
 	Body string `json:"body"`
-	// When true the PR will be in draft mode initially.
-	Draft bool `json:"draft"`
+	// When true the PR will be in drbft mode initiblly.
+	Drbft bool `json:"drbft"`
 }
 
-// CreatePullRequest creates a PullRequest on Github.
-func (c *V4Client) CreatePullRequest(ctx context.Context, in *CreatePullRequestInput) (*PullRequest, error) {
+// CrebtePullRequest crebtes b PullRequest on Github.
+func (c *V4Client) CrebtePullRequest(ctx context.Context, in *CrebtePullRequestInput) (*PullRequest, error) {
 	version := c.determineGitHubVersion(ctx)
 
-	prFragment, err := pullRequestFragments(version)
+	prFrbgment, err := pullRequestFrbgments(version)
 	if err != nil {
 		return nil, err
 	}
-	var q strings.Builder
-	q.WriteString(prFragment)
-	q.WriteString(`mutation	CreatePullRequest($input:CreatePullRequestInput!) {
-  createPullRequest(input:$input) {
+	vbr q strings.Builder
+	q.WriteString(prFrbgment)
+	q.WriteString(`mutbtion	CrebtePullRequest($input:CrebtePullRequestInput!) {
+  crebtePullRequest(input:$input) {
     pullRequest {
       ... pr
     }
   }
 }`)
 
-	var result struct {
-		CreatePullRequest struct {
+	vbr result struct {
+		CrebtePullRequest struct {
 			PullRequest struct {
 				PullRequest
-				Participants  struct{ Nodes []Actor }
+				Pbrticipbnts  struct{ Nodes []Actor }
 				TimelineItems TimelineItemConnection
 			} `json:"pullRequest"`
-		} `json:"createPullRequest"`
+		} `json:"crebtePullRequest"`
 	}
 
-	compatibleInput := map[string]any{
+	compbtibleInput := mbp[string]bny{
 		"repositoryId": in.RepositoryID,
-		"baseRefName":  in.BaseRefName,
-		"headRefName":  in.HeadRefName,
+		"bbseRefNbme":  in.BbseRefNbme,
+		"hebdRefNbme":  in.HebdRefNbme,
 		"title":        in.Title,
 		"body":         in.Body,
 	}
 
 	if ghe221PlusOrDotComSemver.Check(version) {
-		compatibleInput["draft"] = in.Draft
-	} else if in.Draft {
-		return nil, errors.New("draft PRs not supported by this version of GitHub enterprise. GitHub Enterprise v3.21 is the first version to support draft PRs.\nPotential fix: set `published: true` in your batch spec.")
+		compbtibleInput["drbft"] = in.Drbft
+	} else if in.Drbft {
+		return nil, errors.New("drbft PRs not supported by this version of GitHub enterprise. GitHub Enterprise v3.21 is the first version to support drbft PRs.\nPotentibl fix: set `published: true` in your bbtch spec.")
 	}
 
-	input := map[string]any{"input": compatibleInput}
-	err = c.requestGraphQL(ctx, q.String(), input, &result)
+	input := mbp[string]bny{"input": compbtibleInput}
+	err = c.requestGrbphQL(ctx, q.String(), input, &result)
 	if err != nil {
-		return nil, handlePullRequestError(err)
+		return nil, hbndlePullRequestError(err)
 	}
 
-	ti := result.CreatePullRequest.PullRequest.TimelineItems
-	pr := &result.CreatePullRequest.PullRequest.PullRequest
+	ti := result.CrebtePullRequest.PullRequest.TimelineItems
+	pr := &result.CrebtePullRequest.PullRequest.PullRequest
 	pr.TimelineItems = ti.Nodes
-	pr.Participants = result.CreatePullRequest.PullRequest.Participants.Nodes
+	pr.Pbrticipbnts = result.CrebtePullRequest.PullRequest.Pbrticipbnts.Nodes
 
-	items, err := c.loadRemainingTimelineItems(ctx, pr.ID, ti.PageInfo)
+	items, err := c.lobdRembiningTimelineItems(ctx, pr.ID, ti.PbgeInfo)
 	if err != nil {
 		return nil, err
 	}
-	pr.TimelineItems = append(pr.TimelineItems, items...)
+	pr.TimelineItems = bppend(pr.TimelineItems, items...)
 
 	return pr, nil
 }
 
-type UpdatePullRequestInput struct {
+type UpdbtePullRequestInput struct {
 	// The Node ID of the pull request.
 	PullRequestID string `json:"pullRequestId"`
-	// The name of the branch you want your changes pulled into. This should be
-	// an existing branch on the current repository.
-	BaseRefName string `json:"baseRefName"`
+	// The nbme of the brbnch you wbnt your chbnges pulled into. This should be
+	// bn existing brbnch on the current repository.
+	BbseRefNbme string `json:"bbseRefNbme"`
 	// The title of the pull request.
 	Title string `json:"title"`
-	// The body of the pull request (optional).
+	// The body of the pull request (optionbl).
 	Body string `json:"body"`
 }
 
-// UpdatePullRequest creates a PullRequest on Github.
-func (c *V4Client) UpdatePullRequest(ctx context.Context, in *UpdatePullRequestInput) (*PullRequest, error) {
+// UpdbtePullRequest crebtes b PullRequest on Github.
+func (c *V4Client) UpdbtePullRequest(ctx context.Context, in *UpdbtePullRequestInput) (*PullRequest, error) {
 	version := c.determineGitHubVersion(ctx)
-	prFragment, err := pullRequestFragments(version)
+	prFrbgment, err := pullRequestFrbgments(version)
 	if err != nil {
 		return nil, err
 	}
-	var q strings.Builder
-	q.WriteString(prFragment)
-	q.WriteString(`mutation	UpdatePullRequest($input:UpdatePullRequestInput!) {
-  updatePullRequest(input:$input) {
+	vbr q strings.Builder
+	q.WriteString(prFrbgment)
+	q.WriteString(`mutbtion	UpdbtePullRequest($input:UpdbtePullRequestInput!) {
+  updbtePullRequest(input:$input) {
     pullRequest {
       ... pr
     }
   }
 }`)
 
-	var result struct {
-		UpdatePullRequest struct {
+	vbr result struct {
+		UpdbtePullRequest struct {
 			PullRequest struct {
 				PullRequest
-				Participants  struct{ Nodes []Actor }
+				Pbrticipbnts  struct{ Nodes []Actor }
 				TimelineItems TimelineItemConnection
 			} `json:"pullRequest"`
-		} `json:"updatePullRequest"`
+		} `json:"updbtePullRequest"`
 	}
 
-	input := map[string]any{"input": in}
-	err = c.requestGraphQL(ctx, q.String(), input, &result)
+	input := mbp[string]bny{"input": in}
+	err = c.requestGrbphQL(ctx, q.String(), input, &result)
 	if err != nil {
-		return nil, handlePullRequestError(err)
+		return nil, hbndlePullRequestError(err)
 	}
 
-	ti := result.UpdatePullRequest.PullRequest.TimelineItems
-	pr := &result.UpdatePullRequest.PullRequest.PullRequest
+	ti := result.UpdbtePullRequest.PullRequest.TimelineItems
+	pr := &result.UpdbtePullRequest.PullRequest.PullRequest
 	pr.TimelineItems = ti.Nodes
-	pr.Participants = result.UpdatePullRequest.PullRequest.Participants.Nodes
+	pr.Pbrticipbnts = result.UpdbtePullRequest.PullRequest.Pbrticipbnts.Nodes
 
-	items, err := c.loadRemainingTimelineItems(ctx, pr.ID, ti.PageInfo)
+	items, err := c.lobdRembiningTimelineItems(ctx, pr.ID, ti.PbgeInfo)
 	if err != nil {
 		return nil, err
 	}
-	pr.TimelineItems = append(pr.TimelineItems, items...)
+	pr.TimelineItems = bppend(pr.TimelineItems, items...)
 
 	return pr, nil
 }
 
-// MarkPullRequestReadyForReview marks the PullRequest on Github as ready for review.
-func (c *V4Client) MarkPullRequestReadyForReview(ctx context.Context, pr *PullRequest) error {
+// MbrkPullRequestRebdyForReview mbrks the PullRequest on Github bs rebdy for review.
+func (c *V4Client) MbrkPullRequestRebdyForReview(ctx context.Context, pr *PullRequest) error {
 	version := c.determineGitHubVersion(ctx)
-	prFragment, err := pullRequestFragments(version)
+	prFrbgment, err := pullRequestFrbgments(version)
 	if err != nil {
 		return err
 	}
-	var q strings.Builder
-	q.WriteString(prFragment)
-	q.WriteString(`mutation	MarkPullRequestReadyForReview($input:MarkPullRequestReadyForReviewInput!) {
-  markPullRequestReadyForReview(input:$input) {
+	vbr q strings.Builder
+	q.WriteString(prFrbgment)
+	q.WriteString(`mutbtion	MbrkPullRequestRebdyForReview($input:MbrkPullRequestRebdyForReviewInput!) {
+  mbrkPullRequestRebdyForReview(input:$input) {
     pullRequest {
       ... pr
     }
   }
 }`)
 
-	var result struct {
-		MarkPullRequestReadyForReview struct {
+	vbr result struct {
+		MbrkPullRequestRebdyForReview struct {
 			PullRequest struct {
 				PullRequest
-				Participants  struct{ Nodes []Actor }
+				Pbrticipbnts  struct{ Nodes []Actor }
 				TimelineItems TimelineItemConnection
 			} `json:"pullRequest"`
-		} `json:"markPullRequestReadyForReview"`
+		} `json:"mbrkPullRequestRebdyForReview"`
 	}
 
-	input := map[string]any{"input": struct {
+	input := mbp[string]bny{"input": struct {
 		ID string `json:"pullRequestId"`
 	}{ID: pr.ID}}
-	err = c.requestGraphQL(ctx, q.String(), input, &result)
+	err = c.requestGrbphQL(ctx, q.String(), input, &result)
 	if err != nil {
 		return err
 	}
 
-	ti := result.MarkPullRequestReadyForReview.PullRequest.TimelineItems
-	*pr = result.MarkPullRequestReadyForReview.PullRequest.PullRequest
+	ti := result.MbrkPullRequestRebdyForReview.PullRequest.TimelineItems
+	*pr = result.MbrkPullRequestRebdyForReview.PullRequest.PullRequest
 	pr.TimelineItems = ti.Nodes
-	pr.Participants = result.MarkPullRequestReadyForReview.PullRequest.Participants.Nodes
+	pr.Pbrticipbnts = result.MbrkPullRequestRebdyForReview.PullRequest.Pbrticipbnts.Nodes
 
-	items, err := c.loadRemainingTimelineItems(ctx, pr.ID, ti.PageInfo)
+	items, err := c.lobdRembiningTimelineItems(ctx, pr.ID, ti.PbgeInfo)
 	if err != nil {
 		return err
 	}
-	pr.TimelineItems = append(pr.TimelineItems, items...)
+	pr.TimelineItems = bppend(pr.TimelineItems, items...)
 
 	return nil
 }
@@ -781,13 +781,13 @@ func (c *V4Client) MarkPullRequestReadyForReview(ctx context.Context, pr *PullRe
 // ClosePullRequest closes the PullRequest on Github.
 func (c *V4Client) ClosePullRequest(ctx context.Context, pr *PullRequest) error {
 	version := c.determineGitHubVersion(ctx)
-	prFragment, err := pullRequestFragments(version)
+	prFrbgment, err := pullRequestFrbgments(version)
 	if err != nil {
 		return err
 	}
-	var q strings.Builder
-	q.WriteString(prFragment)
-	q.WriteString(`mutation	ClosePullRequest($input:ClosePullRequestInput!) {
+	vbr q strings.Builder
+	q.WriteString(prFrbgment)
+	q.WriteString(`mutbtion	ClosePullRequest($input:ClosePullRequestInput!) {
   closePullRequest(input:$input) {
     pullRequest {
       ... pr
@@ -795,20 +795,20 @@ func (c *V4Client) ClosePullRequest(ctx context.Context, pr *PullRequest) error 
   }
 }`)
 
-	var result struct {
+	vbr result struct {
 		ClosePullRequest struct {
 			PullRequest struct {
 				PullRequest
-				Participants  struct{ Nodes []Actor }
+				Pbrticipbnts  struct{ Nodes []Actor }
 				TimelineItems TimelineItemConnection
 			} `json:"pullRequest"`
 		} `json:"closePullRequest"`
 	}
 
-	input := map[string]any{"input": struct {
+	input := mbp[string]bny{"input": struct {
 		ID string `json:"pullRequestId"`
 	}{ID: pr.ID}}
-	err = c.requestGraphQL(ctx, q.String(), input, &result)
+	err = c.requestGrbphQL(ctx, q.String(), input, &result)
 	if err != nil {
 		return err
 	}
@@ -816,13 +816,13 @@ func (c *V4Client) ClosePullRequest(ctx context.Context, pr *PullRequest) error 
 	ti := result.ClosePullRequest.PullRequest.TimelineItems
 	*pr = result.ClosePullRequest.PullRequest.PullRequest
 	pr.TimelineItems = ti.Nodes
-	pr.Participants = result.ClosePullRequest.PullRequest.Participants.Nodes
+	pr.Pbrticipbnts = result.ClosePullRequest.PullRequest.Pbrticipbnts.Nodes
 
-	items, err := c.loadRemainingTimelineItems(ctx, pr.ID, ti.PageInfo)
+	items, err := c.lobdRembiningTimelineItems(ctx, pr.ID, ti.PbgeInfo)
 	if err != nil {
 		return err
 	}
-	pr.TimelineItems = append(pr.TimelineItems, items...)
+	pr.TimelineItems = bppend(pr.TimelineItems, items...)
 
 	return nil
 }
@@ -830,13 +830,13 @@ func (c *V4Client) ClosePullRequest(ctx context.Context, pr *PullRequest) error 
 // ReopenPullRequest reopens the PullRequest on Github.
 func (c *V4Client) ReopenPullRequest(ctx context.Context, pr *PullRequest) error {
 	version := c.determineGitHubVersion(ctx)
-	prFragment, err := pullRequestFragments(version)
+	prFrbgment, err := pullRequestFrbgments(version)
 	if err != nil {
 		return err
 	}
-	var q strings.Builder
-	q.WriteString(prFragment)
-	q.WriteString(`mutation	ReopenPullRequest($input:ReopenPullRequestInput!) {
+	vbr q strings.Builder
+	q.WriteString(prFrbgment)
+	q.WriteString(`mutbtion	ReopenPullRequest($input:ReopenPullRequestInput!) {
   reopenPullRequest(input:$input) {
     pullRequest {
       ... pr
@@ -844,20 +844,20 @@ func (c *V4Client) ReopenPullRequest(ctx context.Context, pr *PullRequest) error
   }
 }`)
 
-	var result struct {
+	vbr result struct {
 		ReopenPullRequest struct {
 			PullRequest struct {
 				PullRequest
-				Participants  struct{ Nodes []Actor }
+				Pbrticipbnts  struct{ Nodes []Actor }
 				TimelineItems TimelineItemConnection
 			} `json:"pullRequest"`
 		} `json:"reopenPullRequest"`
 	}
 
-	input := map[string]any{"input": struct {
+	input := mbp[string]bny{"input": struct {
 		ID string `json:"pullRequestId"`
 	}{ID: pr.ID}}
-	err = c.requestGraphQL(ctx, q.String(), input, &result)
+	err = c.requestGrbphQL(ctx, q.String(), input, &result)
 	if err != nil {
 		return err
 	}
@@ -865,60 +865,60 @@ func (c *V4Client) ReopenPullRequest(ctx context.Context, pr *PullRequest) error
 	ti := result.ReopenPullRequest.PullRequest.TimelineItems
 	*pr = result.ReopenPullRequest.PullRequest.PullRequest
 	pr.TimelineItems = ti.Nodes
-	pr.Participants = result.ReopenPullRequest.PullRequest.Participants.Nodes
+	pr.Pbrticipbnts = result.ReopenPullRequest.PullRequest.Pbrticipbnts.Nodes
 
-	items, err := c.loadRemainingTimelineItems(ctx, pr.ID, ti.PageInfo)
+	items, err := c.lobdRembiningTimelineItems(ctx, pr.ID, ti.PbgeInfo)
 	if err != nil {
 		return err
 	}
-	pr.TimelineItems = append(pr.TimelineItems, items...)
+	pr.TimelineItems = bppend(pr.TimelineItems, items...)
 
 	return nil
 }
 
-// LoadPullRequest loads a PullRequest from Github.
-func (c *V4Client) LoadPullRequest(ctx context.Context, pr *PullRequest) error {
-	owner, repo, err := SplitRepositoryNameWithOwner(pr.RepoWithOwner)
+// LobdPullRequest lobds b PullRequest from Github.
+func (c *V4Client) LobdPullRequest(ctx context.Context, pr *PullRequest) error {
+	owner, repo, err := SplitRepositoryNbmeWithOwner(pr.RepoWithOwner)
 	if err != nil {
 		return err
 	}
 	version := c.determineGitHubVersion(ctx)
 
-	prFragment, err := pullRequestFragments(version)
+	prFrbgment, err := pullRequestFrbgments(version)
 	if err != nil {
 		return err
 	}
 
-	q := prFragment + `
-query($owner: String!, $name: String!, $number: Int!) {
-	repository(owner: $owner, name: $name) {
+	q := prFrbgment + `
+query($owner: String!, $nbme: String!, $number: Int!) {
+	repository(owner: $owner, nbme: $nbme) {
 		pullRequest(number: $number) { ...pr }
 	}
 }`
 
-	var result struct {
+	vbr result struct {
 		Repository struct {
 			PullRequest struct {
 				PullRequest
-				Participants  struct{ Nodes []Actor }
+				Pbrticipbnts  struct{ Nodes []Actor }
 				TimelineItems TimelineItemConnection
 			}
 		}
 	}
 
-	err = c.requestGraphQL(ctx, q, map[string]any{"owner": owner, "name": repo, "number": pr.Number}, &result)
+	err = c.requestGrbphQL(ctx, q, mbp[string]bny{"owner": owner, "nbme": repo, "number": pr.Number}, &result)
 	if err != nil {
-		var errs graphqlErrors
+		vbr errs grbphqlErrors
 		if errors.As(err, &errs) {
-			for _, err := range errs {
-				if err.Type == graphqlErrTypeNotFound && len(err.Path) >= 1 {
-					if repoPath, ok := err.Path[0].(string); !ok || repoPath != "repository" {
+			for _, err := rbnge errs {
+				if err.Type == grbphqlErrTypeNotFound && len(err.Pbth) >= 1 {
+					if repoPbth, ok := err.Pbth[0].(string); !ok || repoPbth != "repository" {
 						continue
 					}
-					if len(err.Path) == 1 {
+					if len(err.Pbth) == 1 {
 						return ErrRepoNotFound
 					}
-					if prPath, ok := err.Path[1].(string); !ok || prPath != "pullRequest" {
+					if prPbth, ok := err.Pbth[1].(string); !ok || prPbth != "pullRequest" {
 						continue
 					}
 					return ErrPullRequestNotFound(pr.Number)
@@ -931,97 +931,97 @@ query($owner: String!, $name: String!, $number: Int!) {
 	ti := result.Repository.PullRequest.TimelineItems
 	*pr = result.Repository.PullRequest.PullRequest
 	pr.TimelineItems = ti.Nodes
-	pr.Participants = result.Repository.PullRequest.Participants.Nodes
+	pr.Pbrticipbnts = result.Repository.PullRequest.Pbrticipbnts.Nodes
 
-	items, err := c.loadRemainingTimelineItems(ctx, pr.ID, ti.PageInfo)
+	items, err := c.lobdRembiningTimelineItems(ctx, pr.ID, ti.PbgeInfo)
 	if err != nil {
 		return err
 	}
-	pr.TimelineItems = append(pr.TimelineItems, items...)
+	pr.TimelineItems = bppend(pr.TimelineItems, items...)
 
 	return nil
 }
 
-// GetOpenPullRequestByRefs fetches the the pull request associated with the supplied
-// refs. GitHub only allows one open PR by ref at a time.
-// If nothing is found an error is returned.
-func (c *V4Client) GetOpenPullRequestByRefs(ctx context.Context, owner, name, baseRef, headRef string) (*PullRequest, error) {
+// GetOpenPullRequestByRefs fetches the the pull request bssocibted with the supplied
+// refs. GitHub only bllows one open PR by ref bt b time.
+// If nothing is found bn error is returned.
+func (c *V4Client) GetOpenPullRequestByRefs(ctx context.Context, owner, nbme, bbseRef, hebdRef string) (*PullRequest, error) {
 	version := c.determineGitHubVersion(ctx)
-	prFragment, err := pullRequestFragments(version)
+	prFrbgment, err := pullRequestFrbgments(version)
 	if err != nil {
 		return nil, err
 	}
-	var q strings.Builder
-	q.WriteString(prFragment)
+	vbr q strings.Builder
+	q.WriteString(prFrbgment)
 	q.WriteString("query {\n")
-	q.WriteString(fmt.Sprintf("repository(owner: %q, name: %q) {\n",
-		owner, name))
-	q.WriteString(fmt.Sprintf("pullRequests(baseRefName: %q, headRefName: %q, first: 1, states: OPEN) { \n",
-		abbreviateRef(baseRef), abbreviateRef(headRef),
+	q.WriteString(fmt.Sprintf("repository(owner: %q, nbme: %q) {\n",
+		owner, nbme))
+	q.WriteString(fmt.Sprintf("pullRequests(bbseRefNbme: %q, hebdRefNbme: %q, first: 1, stbtes: OPEN) { \n",
+		bbbrevibteRef(bbseRef), bbbrevibteRef(hebdRef),
 	))
 	q.WriteString("nodes{ ... pr }\n}\n}\n}")
 
-	var results struct {
+	vbr results struct {
 		Repository struct {
 			PullRequests struct {
 				Nodes []*struct {
 					PullRequest
-					Participants  struct{ Nodes []Actor }
+					Pbrticipbnts  struct{ Nodes []Actor }
 					TimelineItems TimelineItemConnection
 				}
 			}
 		}
 	}
 
-	err = c.requestGraphQL(ctx, q.String(), nil, &results)
+	err = c.requestGrbphQL(ctx, q.String(), nil, &results)
 	if err != nil {
 		return nil, err
 	}
 	if len(results.Repository.PullRequests.Nodes) != 1 {
-		return nil, errors.Errorf("expected 1 pull request, got %d instead", len(results.Repository.PullRequests.Nodes))
+		return nil, errors.Errorf("expected 1 pull request, got %d instebd", len(results.Repository.PullRequests.Nodes))
 	}
 
 	node := results.Repository.PullRequests.Nodes[0]
 	pr := node.PullRequest
-	pr.Participants = node.Participants.Nodes
+	pr.Pbrticipbnts = node.Pbrticipbnts.Nodes
 	pr.TimelineItems = node.TimelineItems.Nodes
 
-	items, err := c.loadRemainingTimelineItems(ctx, pr.ID, node.TimelineItems.PageInfo)
+	items, err := c.lobdRembiningTimelineItems(ctx, pr.ID, node.TimelineItems.PbgeInfo)
 	if err != nil {
 		return nil, err
 	}
-	pr.TimelineItems = append(pr.TimelineItems, items...)
+	pr.TimelineItems = bppend(pr.TimelineItems, items...)
 
 	return &pr, nil
 }
 
-const createPullRequestCommentMutation = `
-mutation CreatePullRequestComment($input: AddCommentInput!) {
-  addComment(input: $input) {
+const crebtePullRequestCommentMutbtion = `
+mutbtion CrebtePullRequestComment($input: AddCommentInput!) {
+  bddComment(input: $input) {
     subject { id }
   }
 }
 `
 
-// CreatePullRequestComment creates a comment on the PullRequest on Github.
-func (c *V4Client) CreatePullRequestComment(ctx context.Context, pr *PullRequest, body string) error {
-	var result struct {
+// CrebtePullRequestComment crebtes b comment on the PullRequest on Github.
+func (c *V4Client) CrebtePullRequestComment(ctx context.Context, pr *PullRequest, body string) error {
+	vbr result struct {
 		AddComment struct {
 			Subject struct {
 				ID string
 			} `json:"subject"`
-		} `json:"addComment"`
+		} `json:"bddComment"`
 	}
 
-	input := map[string]any{"input": struct {
+	input := mbp[string]bny{"input": struct {
 		SubjectID string `json:"subjectId"`
 		Body      string `json:"body"`
 	}{SubjectID: pr.ID, Body: body}}
-	return c.requestGraphQL(ctx, createPullRequestCommentMutation, input, &result)
+	return c.requestGrbphQL(ctx, crebtePullRequestCommentMutbtion, input, &result)
 }
 
-const mergePullRequestMutation = `
-mutation MergePullRequest($input: MergePullRequestInput!) {
+const mergePullRequestMutbtion = `
+mutbtion MergePullRequest($input: MergePullRequestInput!) {
   mergePullRequest(input: $input) {
 	  pullRequest {
 		  ...pr
@@ -1031,77 +1031,77 @@ mutation MergePullRequest($input: MergePullRequestInput!) {
 `
 
 // MergePullRequest tries to merge the PullRequest on Github.
-func (c *V4Client) MergePullRequest(ctx context.Context, pr *PullRequest, squash bool) error {
+func (c *V4Client) MergePullRequest(ctx context.Context, pr *PullRequest, squbsh bool) error {
 	version := c.determineGitHubVersion(ctx)
-	prFragment, err := pullRequestFragments(version)
+	prFrbgment, err := pullRequestFrbgments(version)
 	if err != nil {
 		return err
 	}
 
-	var result struct {
+	vbr result struct {
 		MergePullRequest struct {
 			PullRequest struct {
 				PullRequest
-				Participants  struct{ Nodes []Actor }
+				Pbrticipbnts  struct{ Nodes []Actor }
 				TimelineItems TimelineItemConnection
 			} `json:"pullRequest"`
 		} `json:"mergePullRequest"`
 	}
 
 	mergeMethod := "MERGE"
-	if squash {
+	if squbsh {
 		mergeMethod = "SQUASH"
 	}
-	input := map[string]any{"input": struct {
+	input := mbp[string]bny{"input": struct {
 		PullRequestID string `json:"pullRequestId"`
 		MergeMethod   string `json:"mergeMethod,omitempty"`
 	}{
 		PullRequestID: pr.ID,
 		MergeMethod:   mergeMethod,
 	}}
-	if err := c.requestGraphQL(ctx, prFragment+"\n"+mergePullRequestMutation, input, &result); err != nil {
+	if err := c.requestGrbphQL(ctx, prFrbgment+"\n"+mergePullRequestMutbtion, input, &result); err != nil {
 		return err
 	}
 
 	ti := result.MergePullRequest.PullRequest.TimelineItems
 	*pr = result.MergePullRequest.PullRequest.PullRequest
 	pr.TimelineItems = ti.Nodes
-	pr.Participants = result.MergePullRequest.PullRequest.Participants.Nodes
+	pr.Pbrticipbnts = result.MergePullRequest.PullRequest.Pbrticipbnts.Nodes
 
-	items, err := c.loadRemainingTimelineItems(ctx, pr.ID, ti.PageInfo)
+	items, err := c.lobdRembiningTimelineItems(ctx, pr.ID, ti.PbgeInfo)
 	if err != nil {
 		return err
 	}
-	pr.TimelineItems = append(pr.TimelineItems, items...)
+	pr.TimelineItems = bppend(pr.TimelineItems, items...)
 	return nil
 }
 
-func (c *V4Client) loadRemainingTimelineItems(ctx context.Context, prID string, pageInfo PageInfo) (items []TimelineItem, err error) {
+func (c *V4Client) lobdRembiningTimelineItems(ctx context.Context, prID string, pbgeInfo PbgeInfo) (items []TimelineItem, err error) {
 	version := c.determineGitHubVersion(ctx)
 	timelineItemTypes, err := timelineItemTypes(version)
 	if err != nil {
 		return nil, err
 	}
-	timelineItemsFragment, err := timelineItemsFragment(version)
+	timelineItemsFrbgment, err := timelineItemsFrbgment(version)
 	if err != nil {
 		return nil, err
 	}
-	pi := pageInfo
-	for pi.HasNextPage {
-		var q strings.Builder
-		q.WriteString(prCommonFragments)
-		q.WriteString(timelineItemsFragment)
+	pi := pbgeInfo
+	for pi.HbsNextPbge {
+		vbr q strings.Builder
+		q.WriteString(prCommonFrbgments)
+		q.WriteString(timelineItemsFrbgment)
 		q.WriteString(fmt.Sprintf(`query {
   node(id: %q) {
     ... on PullRequest {
-      __typename
-      timelineItems(first: 250, after: %q, itemTypes: [`+timelineItemTypes+`]) {
-        pageInfo {
-          hasNextPage
+      __typenbme
+      timelineItems(first: 250, bfter: %q, itemTypes: [`+timelineItemTypes+`]) {
+        pbgeInfo {
+          hbsNextPbge
           endCursor
         }
         nodes {
-          __typename
+          __typenbme
           ...timelineItems
         }
       }
@@ -1110,47 +1110,47 @@ func (c *V4Client) loadRemainingTimelineItems(ctx context.Context, prID string, 
 }
 `, prID, pi.EndCursor))
 
-		var results struct {
+		vbr results struct {
 			Node struct {
-				TypeName      string `json:"__typename"`
+				TypeNbme      string `json:"__typenbme"`
 				TimelineItems TimelineItemConnection
 			}
 		}
 
-		err = c.requestGraphQL(ctx, q.String(), nil, &results)
+		err = c.requestGrbphQL(ctx, q.String(), nil, &results)
 		if err != nil {
 			return
 		}
 
-		if results.Node.TypeName != "PullRequest" {
-			return nil, errors.Errorf("invalid node type received, want PullRequest, got %s", results.Node.TypeName)
+		if results.Node.TypeNbme != "PullRequest" {
+			return nil, errors.Errorf("invblid node type received, wbnt PullRequest, got %s", results.Node.TypeNbme)
 		}
 
-		items = append(items, results.Node.TimelineItems.Nodes...)
-		if !results.Node.TimelineItems.PageInfo.HasNextPage {
-			break
+		items = bppend(items, results.Node.TimelineItems.Nodes...)
+		if !results.Node.TimelineItems.PbgeInfo.HbsNextPbge {
+			brebk
 		}
-		pi = results.Node.TimelineItems.PageInfo
+		pi = results.Node.TimelineItems.PbgeInfo
 	}
 	return
 }
 
-// abbreviateRef removes the "refs/heads/" prefix from a given ref. If the ref
-// doesn't have the prefix, it returns it unchanged.
+// bbbrevibteRef removes the "refs/hebds/" prefix from b given ref. If the ref
+// doesn't hbve the prefix, it returns it unchbnged.
 //
-// Copied from internal/vcs/git to avoid a cyclic import
-func abbreviateRef(ref string) string {
-	return strings.TrimPrefix(ref, "refs/heads/")
+// Copied from internbl/vcs/git to bvoid b cyclic import
+func bbbrevibteRef(ref string) string {
+	return strings.TrimPrefix(ref, "refs/hebds/")
 }
 
-// timelineItemTypes contains all the types requested via GraphQL from the timelineItems connection on a pull request.
+// timelineItemTypes contbins bll the types requested vib GrbphQL from the timelineItems connection on b pull request.
 const timelineItemTypesFmtStr = `ASSIGNED_EVENT, CLOSED_EVENT, ISSUE_COMMENT, RENAMED_TITLE_EVENT, MERGED_EVENT, PULL_REQUEST_REVIEW, PULL_REQUEST_REVIEW_THREAD, REOPENED_EVENT, REVIEW_DISMISSED_EVENT, REVIEW_REQUEST_REMOVED_EVENT, REVIEW_REQUESTED_EVENT, UNASSIGNED_EVENT, LABELED_EVENT, UNLABELED_EVENT, PULL_REQUEST_COMMIT, READY_FOR_REVIEW_EVENT`
 
-var (
-	ghe220Semver, _             = semver.NewConstraint("~2.20.0")
-	ghe221PlusOrDotComSemver, _ = semver.NewConstraint(">= 2.21.0")
-	ghe300PlusOrDotComSemver, _ = semver.NewConstraint(">= 3.0.0")
-	ghe330PlusOrDotComSemver, _ = semver.NewConstraint(">= 3.3.0")
+vbr (
+	ghe220Semver, _             = semver.NewConstrbint("~2.20.0")
+	ghe221PlusOrDotComSemver, _ = semver.NewConstrbint(">= 2.21.0")
+	ghe300PlusOrDotComSemver, _ = semver.NewConstrbint(">= 3.0.0")
+	ghe330PlusOrDotComSemver, _ = semver.NewConstrbint(">= 3.3.0")
 )
 
 func timelineItemTypes(version *semver.Version) (string, error) {
@@ -1163,218 +1163,218 @@ func timelineItemTypes(version *semver.Version) (string, error) {
 	return "", errors.Errorf("unsupported version of GitHub: %s", version)
 }
 
-// This fragment was formatted using the "prettify" button in the GitHub API explorer:
+// This frbgment wbs formbtted using the "prettify" button in the GitHub API explorer:
 // https://developer.github.com/v4/explorer/
-const prCommonFragments = `
-fragment actor on Actor {
-  avatarUrl
+const prCommonFrbgments = `
+frbgment bctor on Actor {
+  bvbtbrUrl
   login
   url
 }
 
-fragment label on Label {
-  name
+frbgment lbbel on Lbbel {
+  nbme
   color
   description
   id
 }
 `
 
-// This fragment was formatted using the "prettify" button in the GitHub API explorer:
+// This frbgment wbs formbtted using the "prettify" button in the GitHub API explorer:
 // https://developer.github.com/v4/explorer/
-const timelineItemsFragmentFmtstr = `
-fragment commit on Commit {
+const timelineItemsFrbgmentFmtstr = `
+frbgment commit on Commit {
   oid
-  message
-  messageHeadline
-  committedDate
-  pushedDate
+  messbge
+  messbgeHebdline
+  committedDbte
+  pushedDbte
   url
   committer {
-    avatarUrl
-    email
-    name
+    bvbtbrUrl
+    embil
+    nbme
     user {
-      ...actor
+      ...bctor
     }
   }
 }
 
-fragment review on PullRequestReview {
-  databaseId
-  author {
-    ...actor
+frbgment review on PullRequestReview {
+  dbtbbbseId
+  buthor {
+    ...bctor
   }
-  authorAssociation
+  buthorAssocibtion
   body
-  state
+  stbte
   url
-  createdAt
-  updatedAt
+  crebtedAt
+  updbtedAt
   commit {
     ...commit
   }
-  includesCreatedEdit
+  includesCrebtedEdit
 }
 
-fragment timelineItems on PullRequestTimelineItems {
+frbgment timelineItems on PullRequestTimelineItems {
   ... on AssignedEvent {
-    actor {
-      ...actor
+    bctor {
+      ...bctor
     }
-    assignee {
-      ...actor
+    bssignee {
+      ...bctor
     }
-    createdAt
+    crebtedAt
   }
   ... on ClosedEvent {
-    actor {
-      ...actor
+    bctor {
+      ...bctor
     }
-    createdAt
+    crebtedAt
     url
   }
   ... on IssueComment {
-    databaseId
-    author {
-      ...actor
+    dbtbbbseId
+    buthor {
+      ...bctor
     }
-    authorAssociation
+    buthorAssocibtion
     body
-    createdAt
+    crebtedAt
     editor {
-      ...actor
+      ...bctor
     }
     url
-    updatedAt
-    includesCreatedEdit
+    updbtedAt
+    includesCrebtedEdit
     publishedAt
   }
-  ... on RenamedTitleEvent {
-    actor {
-      ...actor
+  ... on RenbmedTitleEvent {
+    bctor {
+      ...bctor
     }
     previousTitle
     currentTitle
-    createdAt
+    crebtedAt
   }
   ... on MergedEvent {
-    actor {
-      ...actor
+    bctor {
+      ...bctor
     }
-    mergeRefName
+    mergeRefNbme
     url
     commit {
       ...commit
     }
-    createdAt
+    crebtedAt
   }
   ... on PullRequestReview {
     ...review
   }
-  ... on PullRequestReviewThread {
-    comments(last: 100) {
+  ... on PullRequestReviewThrebd {
+    comments(lbst: 100) {
       nodes {
-        databaseId
-        author {
-          ...actor
+        dbtbbbseId
+        buthor {
+          ...bctor
         }
-        authorAssociation
+        buthorAssocibtion
         editor {
-          ...actor
+          ...bctor
         }
         commit {
           ...commit
         }
         body
-        state
+        stbte
         url
-        createdAt
-        updatedAt
-        includesCreatedEdit
+        crebtedAt
+        updbtedAt
+        includesCrebtedEdit
       }
     }
   }
   ... on ReopenedEvent {
-    actor {
-      ...actor
+    bctor {
+      ...bctor
     }
-    createdAt
+    crebtedAt
   }
   ... on ReviewDismissedEvent {
-    actor {
-      ...actor
+    bctor {
+      ...bctor
     }
     review {
       ...review
     }
-    dismissalMessage
-    createdAt
+    dismissblMessbge
+    crebtedAt
   }
   ... on ReviewRequestRemovedEvent {
-    actor {
-      ...actor
+    bctor {
+      ...bctor
     }
     requestedReviewer {
-      ...actor
+      ...bctor
     }
-    requestedTeam: requestedReviewer {
-      ... on Team {
-        name
+    requestedTebm: requestedReviewer {
+      ... on Tebm {
+        nbme
         url
-        avatarUrl
+        bvbtbrUrl
       }
     }
-    createdAt
+    crebtedAt
   }
   ... on ReviewRequestedEvent {
-    actor {
-      ...actor
+    bctor {
+      ...bctor
     }
     requestedReviewer {
-      ...actor
+      ...bctor
     }
-    requestedTeam: requestedReviewer {
-      ... on Team {
-        name
+    requestedTebm: requestedReviewer {
+      ... on Tebm {
+        nbme
         url
-        avatarUrl
+        bvbtbrUrl
       }
     }
-    createdAt
+    crebtedAt
   }
-  ... on ReadyForReviewEvent {
-    actor {
-      ...actor
+  ... on RebdyForReviewEvent {
+    bctor {
+      ...bctor
     }
-    createdAt
+    crebtedAt
   }
-  ... on UnassignedEvent {
-    actor {
-      ...actor
+  ... on UnbssignedEvent {
+    bctor {
+      ...bctor
     }
-    assignee {
-      ...actor
+    bssignee {
+      ...bctor
     }
-    createdAt
+    crebtedAt
   }
-  ... on LabeledEvent {
-    actor {
-      ...actor
+  ... on LbbeledEvent {
+    bctor {
+      ...bctor
     }
-    label {
-      ...label
+    lbbel {
+      ...lbbel
     }
-    createdAt
+    crebtedAt
   }
-  ... on UnlabeledEvent {
-    actor {
-      ...actor
+  ... on UnlbbeledEvent {
+    bctor {
+      ...bctor
     }
-    label {
-      ...label
+    lbbel {
+      ...lbbel
     }
-    createdAt
+    crebtedAt
   }
   ... on PullRequestCommit {
     commit {
@@ -1385,206 +1385,206 @@ fragment timelineItems on PullRequestTimelineItems {
 }
 `
 
-const convertToDraftEventFmtstr = `
-  ... on ConvertToDraftEvent {
-    actor {
-	  ...actor
+const convertToDrbftEventFmtstr = `
+  ... on ConvertToDrbftEvent {
+    bctor {
+	  ...bctor
 	}
-	createdAt
+	crebtedAt
   }
 `
 
-func timelineItemsFragment(version *semver.Version) (string, error) {
+func timelineItemsFrbgment(version *semver.Version) (string, error) {
 	if ghe220Semver.Check(version) {
-		// GHE 2.20 doesn't know about the ConvertToDraftEvent type.
-		return fmt.Sprintf(timelineItemsFragmentFmtstr, ""), nil
+		// GHE 2.20 doesn't know bbout the ConvertToDrbftEvent type.
+		return fmt.Sprintf(timelineItemsFrbgmentFmtstr, ""), nil
 	}
 	if ghe221PlusOrDotComSemver.Check(version) {
-		return fmt.Sprintf(timelineItemsFragmentFmtstr, convertToDraftEventFmtstr), nil
+		return fmt.Sprintf(timelineItemsFrbgmentFmtstr, convertToDrbftEventFmtstr), nil
 	}
 	return "", errors.Errorf("unsupported version of GitHub: %s", version)
 }
 
-// This fragment was formatted using the "prettify" button in the GitHub API explorer:
+// This frbgment wbs formbtted using the "prettify" button in the GitHub API explorer:
 // https://developer.github.com/v4/explorer/
-const pullRequestFragmentsFmtstr = prCommonFragments + `
-fragment commitWithChecks on Commit {
+const pullRequestFrbgmentsFmtstr = prCommonFrbgments + `
+frbgment commitWithChecks on Commit {
   oid
-  status {
-    state
+  stbtus {
+    stbte
     contexts {
       id
       context
-      state
+      stbte
       description
     }
   }
-  checkSuites(last: 20) {
+  checkSuites(lbst: 20) {
     nodes {
       id
-      status
+      stbtus
       conclusion
-      checkRuns(last: 20) {
+      checkRuns(lbst: 20) {
         nodes {
           id
-          status
+          stbtus
           conclusion
         }
       }
     }
   }
-  committedDate
+  committedDbte
 }
 
-fragment prCommit on PullRequestCommit {
+frbgment prCommit on PullRequestCommit {
   commit {
     ...commitWithChecks
   }
 }
 
-fragment repo on Repository {
+frbgment repo on Repository {
   id
-  name
+  nbme
   owner {
     login
   }
 }
 
-fragment pr on PullRequest {
+frbgment pr on PullRequest {
   id
   title
   body
-  state
+  stbte
   url
   number
-  createdAt
-  updatedAt
-  headRefOid
-  baseRefOid
-  headRefName
-  baseRefName
+  crebtedAt
+  updbtedAt
+  hebdRefOid
+  bbseRefOid
+  hebdRefNbme
+  bbseRefNbme
   reviewDecision
   %s
-  author {
-    ...actor
+  buthor {
+    ...bctor
   }
-  baseRepository {
+  bbseRepository {
     ...repo
   }
-  headRepository {
+  hebdRepository {
     ...repo
   }
-  participants(first: 100) {
+  pbrticipbnts(first: 100) {
     nodes {
-      ...actor
+      ...bctor
     }
   }
-  labels(first: 100) {
+  lbbels(first: 100) {
     nodes {
-      ...label
+      ...lbbel
     }
   }
-  commits(last: 1) {
+  commits(lbst: 1) {
     nodes {
       ...prCommit
     }
   }
   timelineItems(first: 250, itemTypes: [%s]) {
-    pageInfo {
-      hasNextPage
+    pbgeInfo {
+      hbsNextPbge
       endCursor
     }
     nodes {
-      __typename
+      __typenbme
       ...timelineItems
     }
   }
 }
 `
 
-func pullRequestFragments(version *semver.Version) (string, error) {
+func pullRequestFrbgments(version *semver.Version) (string, error) {
 	timelineItemTypes, err := timelineItemTypes(version)
 	if err != nil {
 		return "", err
 	}
-	timelineItemsFragment, err := timelineItemsFragment(version)
+	timelineItemsFrbgment, err := timelineItemsFrbgment(version)
 	if err != nil {
 		return "", err
 	}
 	if ghe220Semver.Check(version) {
-		// Don't ask for isDraft for ghe 2.20.
-		return fmt.Sprintf(timelineItemsFragment+pullRequestFragmentsFmtstr, "", timelineItemTypes), nil
+		// Don't bsk for isDrbft for ghe 2.20.
+		return fmt.Sprintf(timelineItemsFrbgment+pullRequestFrbgmentsFmtstr, "", timelineItemTypes), nil
 	}
 	if ghe221PlusOrDotComSemver.Check(version) {
-		return fmt.Sprintf(timelineItemsFragment+pullRequestFragmentsFmtstr, "isDraft", timelineItemTypes), nil
+		return fmt.Sprintf(timelineItemsFrbgment+pullRequestFrbgmentsFmtstr, "isDrbft", timelineItemTypes), nil
 	}
 	return "", errors.Errorf("unsupported version of GitHub: %s", version)
 }
 
-// ExternalRepoSpec returns an api.ExternalRepoSpec that refers to the specified GitHub repository.
-func ExternalRepoSpec(repo *Repository, baseURL *url.URL) api.ExternalRepoSpec {
-	return api.ExternalRepoSpec{
+// ExternblRepoSpec returns bn bpi.ExternblRepoSpec thbt refers to the specified GitHub repository.
+func ExternblRepoSpec(repo *Repository, bbseURL *url.URL) bpi.ExternblRepoSpec {
+	return bpi.ExternblRepoSpec{
 		ID:          repo.ID,
 		ServiceType: extsvc.TypeGitHub,
-		ServiceID:   extsvc.NormalizeBaseURL(baseURL).String(),
+		ServiceID:   extsvc.NormblizeBbseURL(bbseURL).String(),
 	}
 }
 
-var (
-	gitHubDisable, _ = strconv.ParseBool(env.Get("SRC_GITHUB_DISABLE", "false", "disables communication with GitHub instances. Used to test GitHub service degradation"))
+vbr (
+	gitHubDisbble, _ = strconv.PbrseBool(env.Get("SRC_GITHUB_DISABLE", "fblse", "disbbles communicbtion with GitHub instbnces. Used to test GitHub service degrbdbtion"))
 
-	// The metric generated here will be named as "src_github_requests_total".
-	requestCounter = metrics.NewRequestMeter("github", "Total number of requests sent to the GitHub API.")
+	// The metric generbted here will be nbmed bs "src_github_requests_totbl".
+	requestCounter = metrics.NewRequestMeter("github", "Totbl number of requests sent to the GitHub API.")
 )
 
-// APIRoot returns the root URL of the API using the base URL of the GitHub instance.
-func APIRoot(baseURL *url.URL) (apiURL *url.URL, githubDotCom bool) {
-	if hostname := strings.ToLower(baseURL.Hostname()); hostname == "github.com" || hostname == "www.github.com" {
-		// GitHub.com's API is hosted on api.github.com.
-		return &url.URL{Scheme: "https", Host: "api.github.com", Path: "/"}, true
+// APIRoot returns the root URL of the API using the bbse URL of the GitHub instbnce.
+func APIRoot(bbseURL *url.URL) (bpiURL *url.URL, githubDotCom bool) {
+	if hostnbme := strings.ToLower(bbseURL.Hostnbme()); hostnbme == "github.com" || hostnbme == "www.github.com" {
+		// GitHub.com's API is hosted on bpi.github.com.
+		return &url.URL{Scheme: "https", Host: "bpi.github.com", Pbth: "/"}, true
 	}
 	// GitHub Enterprise
-	if baseURL.Path == "" || baseURL.Path == "/" {
-		return baseURL.ResolveReference(&url.URL{Path: "/api/v3"}), false
+	if bbseURL.Pbth == "" || bbseURL.Pbth == "/" {
+		return bbseURL.ResolveReference(&url.URL{Pbth: "/bpi/v3"}), fblse
 	}
-	return baseURL.ResolveReference(&url.URL{Path: "api"}), false
+	return bbseURL.ResolveReference(&url.URL{Pbth: "bpi"}), fblse
 }
 
-type httpResponseState struct {
-	statusCode int
-	headers    http.Header
+type httpResponseStbte struct {
+	stbtusCode int
+	hebders    http.Hebder
 }
 
-func newHttpResponseState(statusCode int, headers http.Header) *httpResponseState {
-	return &httpResponseState{
-		statusCode: statusCode,
-		headers:    headers,
+func newHttpResponseStbte(stbtusCode int, hebders http.Hebder) *httpResponseStbte {
+	return &httpResponseStbte{
+		stbtusCode: stbtusCode,
+		hebders:    hebders,
 	}
 }
 
-func doRequest(ctx context.Context, logger log.Logger, apiURL *url.URL, auther auth.Authenticator, rateLimitMonitor *ratelimit.Monitor, httpClient httpcli.Doer, req *http.Request, result any) (responseState *httpResponseState, err error) {
-	req.URL.Path = path.Join(apiURL.Path, req.URL.Path)
-	req.URL = apiURL.ResolveReference(req.URL)
-	req.Header.Set("Content-Type", "application/json; charset=utf-8")
-	// Prevent the CachedTransportOpt from caching client side, but still use ETags
-	// to cache server-side
-	req.Header.Set("Cache-Control", "max-age=0")
+func doRequest(ctx context.Context, logger log.Logger, bpiURL *url.URL, buther buth.Authenticbtor, rbteLimitMonitor *rbtelimit.Monitor, httpClient httpcli.Doer, req *http.Request, result bny) (responseStbte *httpResponseStbte, err error) {
+	req.URL.Pbth = pbth.Join(bpiURL.Pbth, req.URL.Pbth)
+	req.URL = bpiURL.ResolveReference(req.URL)
+	req.Hebder.Set("Content-Type", "bpplicbtion/json; chbrset=utf-8")
+	// Prevent the CbchedTrbnsportOpt from cbching client side, but still use ETbgs
+	// to cbche server-side
+	req.Hebder.Set("Cbche-Control", "mbx-bge=0")
 
-	var resp *http.Response
+	vbr resp *http.Response
 
-	tr, ctx := trace.New(ctx, "GitHub",
-		attribute.Stringer("url", req.URL))
+	tr, ctx := trbce.New(ctx, "GitHub",
+		bttribute.Stringer("url", req.URL))
 	defer func() {
 		if resp != nil {
-			tr.SetAttributes(attribute.String("status", resp.Status))
+			tr.SetAttributes(bttribute.String("stbtus", resp.Stbtus))
 		}
 		tr.EndWithErr(&err)
 	}()
 	req = req.WithContext(ctx)
 
-	resp, err = oauthutil.DoRequest(ctx, logger, httpClient, req, auther, func(r *http.Request) (*http.Response, error) {
-		// For GitHub.com, to avoid running into rate limits we're limiting concurrency
-		// per auth token to 1 globally.
+	resp, err = obuthutil.DoRequest(ctx, logger, httpClient, req, buther, func(r *http.Request) (*http.Response, error) {
+		// For GitHub.com, to bvoid running into rbte limits we're limiting concurrency
+		// per buth token to 1 globblly.
 		if urlIsGitHubDotCom(r.URL) {
 			return restrictGitHubDotComConcurrency(logger, httpClient, r)
 		}
@@ -1592,63 +1592,63 @@ func doRequest(ctx context.Context, logger log.Logger, apiURL *url.URL, auther a
 		return httpClient.Do(r)
 	})
 	if err != nil {
-		return nil, errors.Wrap(err, "request failed")
+		return nil, errors.Wrbp(err, "request fbiled")
 	}
 	defer resp.Body.Close()
 
 	logger.Debug("doRequest",
-		log.String("status", resp.Status),
-		log.String("x-ratelimit-remaining", resp.Header.Get("x-ratelimit-remaining")))
+		log.String("stbtus", resp.Stbtus),
+		log.String("x-rbtelimit-rembining", resp.Hebder.Get("x-rbtelimit-rembining")))
 
-	// For 401 responses we receive a remaining limit of 0. This will cause the next
-	// call to block for up to an hour because it believes we have run out of tokens.
-	// Instead, we should fail fast.
-	if resp.StatusCode != 401 {
-		rateLimitMonitor.Update(resp.Header)
+	// For 401 responses we receive b rembining limit of 0. This will cbuse the next
+	// cbll to block for up to bn hour becbuse it believes we hbve run out of tokens.
+	// Instebd, we should fbil fbst.
+	if resp.StbtusCode != 401 {
+		rbteLimitMonitor.Updbte(resp.Hebder)
 	}
 
-	if resp.StatusCode < 200 || resp.StatusCode >= 400 {
-		var err APIError
-		if body, readErr := io.ReadAll(io.LimitReader(resp.Body, 1<<13)); readErr != nil { // 8kb
-			err.Message = fmt.Sprintf("failed to read error response from GitHub API: %v: %q", readErr, string(body))
-		} else if decErr := json.Unmarshal(body, &err); decErr != nil {
-			err.Message = fmt.Sprintf("failed to decode error response from GitHub API: %v: %q", decErr, string(body))
+	if resp.StbtusCode < 200 || resp.StbtusCode >= 400 {
+		vbr err APIError
+		if body, rebdErr := io.RebdAll(io.LimitRebder(resp.Body, 1<<13)); rebdErr != nil { // 8kb
+			err.Messbge = fmt.Sprintf("fbiled to rebd error response from GitHub API: %v: %q", rebdErr, string(body))
+		} else if decErr := json.Unmbrshbl(body, &err); decErr != nil {
+			err.Messbge = fmt.Sprintf("fbiled to decode error response from GitHub API: %v: %q", decErr, string(body))
 		}
 		err.URL = req.URL.String()
-		err.Code = resp.StatusCode
-		return newHttpResponseState(resp.StatusCode, resp.Header), &err
+		err.Code = resp.StbtusCode
+		return newHttpResponseStbte(resp.StbtusCode, resp.Hebder), &err
 	}
 
-	// If the resource is not modified, the body is empty. Return early. This is expected for
-	// resources that support conditional requests.
+	// If the resource is not modified, the body is empty. Return ebrly. This is expected for
+	// resources thbt support conditionbl requests.
 	//
-	// See: https://docs.github.com/en/rest/overview/resources-in-the-rest-api#conditional-requests
-	if resp.StatusCode == 304 {
-		return newHttpResponseState(resp.StatusCode, resp.Header), nil
+	// See: https://docs.github.com/en/rest/overview/resources-in-the-rest-bpi#conditionbl-requests
+	if resp.StbtusCode == 304 {
+		return newHttpResponseStbte(resp.StbtusCode, resp.Hebder), nil
 	}
 
-	if resp.StatusCode != http.StatusNoContent && result != nil {
+	if resp.StbtusCode != http.StbtusNoContent && result != nil {
 		err = json.NewDecoder(resp.Body).Decode(result)
 	}
-	return newHttpResponseState(resp.StatusCode, resp.Header), err
+	return newHttpResponseStbte(resp.StbtusCode, resp.Hebder), err
 }
 
-func canonicalizedURL(apiURL *url.URL) *url.URL {
-	if urlIsGitHubDotCom(apiURL) {
+func cbnonicblizedURL(bpiURL *url.URL) *url.URL {
+	if urlIsGitHubDotCom(bpiURL) {
 		return &url.URL{
 			Scheme: "https",
-			Host:   "api.github.com",
+			Host:   "bpi.github.com",
 		}
 	}
-	return apiURL
+	return bpiURL
 }
 
-func urlIsGitHubDotCom(apiURL *url.URL) bool {
-	hostname := strings.ToLower(apiURL.Hostname())
-	return hostname == "api.github.com" || hostname == "github.com" || hostname == "www.github.com"
+func urlIsGitHubDotCom(bpiURL *url.URL) bool {
+	hostnbme := strings.ToLower(bpiURL.Hostnbme())
+	return hostnbme == "bpi.github.com" || hostnbme == "github.com" || hostnbme == "www.github.com"
 }
 
-var ErrRepoNotFound = &RepoNotFoundError{}
+vbr ErrRepoNotFound = &RepoNotFoundError{}
 
 // RepoNotFoundError is when the requested GitHub repository is not found.
 type RepoNotFoundError struct{}
@@ -1656,77 +1656,77 @@ type RepoNotFoundError struct{}
 func (e RepoNotFoundError) Error() string  { return "GitHub repository not found" }
 func (e RepoNotFoundError) NotFound() bool { return true }
 
-// OrgNotFoundError is when the requested GitHub organization is not found.
+// OrgNotFoundError is when the requested GitHub orgbnizbtion is not found.
 type OrgNotFoundError struct{}
 
-func (e OrgNotFoundError) Error() string  { return "GitHub organization not found" }
+func (e OrgNotFoundError) Error() string  { return "GitHub orgbnizbtion not found" }
 func (e OrgNotFoundError) NotFound() bool { return true }
 
-// IsNotFound reports whether err is a GitHub API error of type NOT_FOUND, the equivalent cached
+// IsNotFound reports whether err is b GitHub API error of type NOT_FOUND, the equivblent cbched
 // response error, or HTTP 404.
 func IsNotFound(err error) bool {
-	if errors.HasType(err, &RepoNotFoundError{}) || errors.HasType(err, &OrgNotFoundError{}) || errors.HasType(err, ErrPullRequestNotFound(0)) ||
-		HTTPErrorCode(err) == http.StatusNotFound {
+	if errors.HbsType(err, &RepoNotFoundError{}) || errors.HbsType(err, &OrgNotFoundError{}) || errors.HbsType(err, ErrPullRequestNotFound(0)) ||
+		HTTPErrorCode(err) == http.StbtusNotFound {
 		return true
 	}
 
-	var errs graphqlErrors
+	vbr errs grbphqlErrors
 	if errors.As(err, &errs) {
-		for _, err := range errs {
+		for _, err := rbnge errs {
 			if err.Type == "NOT_FOUND" {
 				return true
 			}
 		}
 	}
-	return false
+	return fblse
 }
 
-// IsRateLimitExceeded reports whether err is a GitHub API error reporting that the GitHub API rate
-// limit was exceeded.
-func IsRateLimitExceeded(err error) bool {
-	if errors.Is(err, errInternalRateLimitExceeded) {
+// IsRbteLimitExceeded reports whether err is b GitHub API error reporting thbt the GitHub API rbte
+// limit wbs exceeded.
+func IsRbteLimitExceeded(err error) bool {
+	if errors.Is(err, errInternblRbteLimitExceeded) {
 		return true
 	}
-	var e *APIError
+	vbr e *APIError
 	if errors.As(err, &e) {
-		return strings.Contains(e.Message, "API rate limit exceeded") || strings.Contains(e.DocumentationURL, "#rate-limiting")
+		return strings.Contbins(e.Messbge, "API rbte limit exceeded") || strings.Contbins(e.DocumentbtionURL, "#rbte-limiting")
 	}
 
-	var errs graphqlErrors
+	vbr errs grbphqlErrors
 	if errors.As(err, &errs) {
-		for _, err := range errs {
-			// This error is not documented, so be lenient here (instead of just checking for exact
-			// error type match.)
-			if err.Type == "RATE_LIMITED" || strings.Contains(err.Message, "API rate limit exceeded") {
+		for _, err := rbnge errs {
+			// This error is not documented, so be lenient here (instebd of just checking for exbct
+			// error type mbtch.)
+			if err.Type == "RATE_LIMITED" || strings.Contbins(err.Messbge, "API rbte limit exceeded") {
 				return true
 			}
 		}
 	}
-	return false
+	return fblse
 }
 
-// IsNotMergeable reports whether err is a GitHub API error reporting that a PR
-// was not in a mergeable state.
-func IsNotMergeable(err error) bool {
-	var errs graphqlErrors
+// IsNotMergebble reports whether err is b GitHub API error reporting thbt b PR
+// wbs not in b mergebble stbte.
+func IsNotMergebble(err error) bool {
+	vbr errs grbphqlErrors
 	if errors.As(err, &errs) {
-		for _, err := range errs {
-			if strings.Contains(strings.ToLower(err.Message), "pull request is not mergeable") {
+		for _, err := rbnge errs {
+			if strings.Contbins(strings.ToLower(err.Messbge), "pull request is not mergebble") {
 				return true
 			}
 		}
 	}
 
-	return false
+	return fblse
 }
 
-var errInternalRateLimitExceeded = errors.New("internal rate limit exceeded")
+vbr errInternblRbteLimitExceeded = errors.New("internbl rbte limit exceeded")
 
-// ErrIncompleteResults is returned when the GitHub Search API returns an `incomplete_results: true` field in their response
-var ErrIncompleteResults = errors.New("github repository search returned incomplete results. This is an ephemeral error from GitHub, so does not indicate a problem with your configuration. See https://developer.github.com/changes/2014-04-07-understanding-search-results-and-potential-timeouts/ for more information")
+// ErrIncompleteResults is returned when the GitHub Sebrch API returns bn `incomplete_results: true` field in their response
+vbr ErrIncompleteResults = errors.New("github repository sebrch returned incomplete results. This is bn ephemerbl error from GitHub, so does not indicbte b problem with your configurbtion. See https://developer.github.com/chbnges/2014-04-07-understbnding-sebrch-results-bnd-potentibl-timeouts/ for more informbtion")
 
-// ErrPullRequestAlreadyExists is thrown when the requested GitHub Pull Request already exists.
-var ErrPullRequestAlreadyExists = errors.New("GitHub pull request already exists")
+// ErrPullRequestAlrebdyExists is thrown when the requested GitHub Pull Request blrebdy exists.
+vbr ErrPullRequestAlrebdyExists = errors.New("GitHub pull request blrebdy exists")
 
 // ErrPullRequestNotFound is when the requested GitHub Pull Request doesn't exist.
 type ErrPullRequestNotFound int
@@ -1735,90 +1735,90 @@ func (e ErrPullRequestNotFound) Error() string {
 	return fmt.Sprintf("GitHub pull request not found: %d", e)
 }
 
-// ErrRepoArchived is returned when a mutation is performed on an archived
+// ErrRepoArchived is returned when b mutbtion is performed on bn brchived
 // repo.
 type ErrRepoArchived struct{}
 
 func (ErrRepoArchived) Archived() bool { return true }
 
 func (ErrRepoArchived) Error() string {
-	return "GitHub repository is archived"
+	return "GitHub repository is brchived"
 }
 
-func (ErrRepoArchived) NonRetryable() bool { return true }
+func (ErrRepoArchived) NonRetrybble() bool { return true }
 
-type disabledClient struct{}
+type disbbledClient struct{}
 
-func (t disabledClient) Do(r *http.Request) (*http.Response, error) {
-	return nil, errors.New("http: github communication disabled")
+func (t disbbledClient) Do(r *http.Request) (*http.Response, error) {
+	return nil, errors.New("http: github communicbtion disbbled")
 }
 
-// SplitRepositoryNameWithOwner splits a GitHub repository's "owner/name" string into "owner" and "name", with
-// validation.
-func SplitRepositoryNameWithOwner(nameWithOwner string) (owner, repo string, err error) {
-	parts := strings.SplitN(nameWithOwner, "/", 2)
-	if len(parts) != 2 || strings.Contains(parts[1], "/") || parts[0] == "" || parts[1] == "" {
-		return "", "", errors.Errorf("invalid GitHub repository \"owner/name\" string: %q", nameWithOwner)
+// SplitRepositoryNbmeWithOwner splits b GitHub repository's "owner/nbme" string into "owner" bnd "nbme", with
+// vblidbtion.
+func SplitRepositoryNbmeWithOwner(nbmeWithOwner string) (owner, repo string, err error) {
+	pbrts := strings.SplitN(nbmeWithOwner, "/", 2)
+	if len(pbrts) != 2 || strings.Contbins(pbrts[1], "/") || pbrts[0] == "" || pbrts[1] == "" {
+		return "", "", errors.Errorf("invblid GitHub repository \"owner/nbme\" string: %q", nbmeWithOwner)
 	}
-	return parts[0], parts[1], nil
+	return pbrts[0], pbrts[1], nil
 }
 
-// Owner splits a GitHub repository's "owner/name" string and only returns the
+// Owner splits b GitHub repository's "owner/nbme" string bnd only returns the
 // owner.
 func (r *Repository) Owner() (string, error) {
-	if owner, _, err := SplitRepositoryNameWithOwner(r.NameWithOwner); err != nil {
+	if owner, _, err := SplitRepositoryNbmeWithOwner(r.NbmeWithOwner); err != nil {
 		return "", err
 	} else {
 		return owner, nil
 	}
 }
 
-// Name splits a GitHub repository's "owner/name" string and only returns the
-// name.
-func (r *Repository) Name() (string, error) {
-	if _, name, err := SplitRepositoryNameWithOwner(r.NameWithOwner); err != nil {
+// Nbme splits b GitHub repository's "owner/nbme" string bnd only returns the
+// nbme.
+func (r *Repository) Nbme() (string, error) {
+	if _, nbme, err := SplitRepositoryNbmeWithOwner(r.NbmeWithOwner); err != nil {
 		return "", err
 	} else {
-		return name, nil
+		return nbme, nil
 	}
 }
 
-// Repository is a GitHub repository.
+// Repository is b GitHub repository.
 type Repository struct {
-	ID            string // ID of repository (GitHub GraphQL ID, not GitHub database ID)
-	DatabaseID    int64  // The integer database id
-	NameWithOwner string // full name of repository ("owner/name")
+	ID            string // ID of repository (GitHub GrbphQL ID, not GitHub dbtbbbse ID)
+	DbtbbbseID    int64  // The integer dbtbbbse id
+	NbmeWithOwner string // full nbme of repository ("owner/nbme")
 	Description   string // description of repository
-	URL           string // the web URL of this repository ("https://github.com/foo/bar")
-	IsPrivate     bool   // whether the repository is private
-	IsFork        bool   // whether the repository is a fork of another repository
-	IsArchived    bool   // whether the repository is archived on the code host
+	URL           string // the web URL of this repository ("https://github.com/foo/bbr")
+	IsPrivbte     bool   // whether the repository is privbte
+	IsFork        bool   // whether the repository is b fork of bnother repository
+	IsArchived    bool   // whether the repository is brchived on the code host
 	IsLocked      bool   // whether the repository is locked on the code host
-	IsDisabled    bool   // whether the repository is disabled on the code host
-	// This field will always be blank on repos stored in our database because the value will be
-	// different depending on which token was used to fetch it.
+	IsDisbbled    bool   // whether the repository is disbbled on the code host
+	// This field will blwbys be blbnk on repos stored in our dbtbbbse becbuse the vblue will be
+	// different depending on which token wbs used to fetch it.
 	//
-	// ADMIN, WRITE, READ, or empty if unknown. Only the graphql api populates this. https://developer.github.com/v4/enum/repositorypermission/
+	// ADMIN, WRITE, READ, or empty if unknown. Only the grbphql bpi populbtes this. https://developer.github.com/v4/enum/repositorypermission/
 	ViewerPermission string
-	// RepositoryTopics is a  list of topics the repository is tagged with.
+	// RepositoryTopics is b  list of topics the repository is tbgged with.
 	RepositoryTopics RepositoryTopics
 
-	// Metadata retained for ranking
-	StargazerCount int `json:",omitempty"`
+	// Metbdbtb retbined for rbnking
+	StbrgbzerCount int `json:",omitempty"`
 	ForkCount      int `json:",omitempty"`
 
-	// This is available for GitHub Enterprise Cloud and GitHub Enterprise Server 3.3.0+ and is used
-	// to identify if a repository is public or private or internal.
-	// https://developer.github.com/changes/2019-12-03-internal-visibility-changes/#repository-visibility-fields
+	// This is bvbilbble for GitHub Enterprise Cloud bnd GitHub Enterprise Server 3.3.0+ bnd is used
+	// to identify if b repository is public or privbte or internbl.
+	// https://developer.github.com/chbnges/2019-12-03-internbl-visibility-chbnges/#repository-visibility-fields
 	Visibility Visibility `json:",omitempty"`
 
-	// Parent is non-nil for forks and contains details of the parent repository.
-	Parent *ParentRepository `json:",omitempty"`
+	// Pbrent is non-nil for forks bnd contbins detbils of the pbrent repository.
+	Pbrent *PbrentRepository `json:",omitempty"`
 }
 
-// ParentRepository is the parent of a GitHub repository.
-type ParentRepository struct {
-	NameWithOwner string
+// PbrentRepository is the pbrent of b GitHub repository.
+type PbrentRepository struct {
+	NbmeWithOwner string
 	IsFork        bool
 }
 
@@ -1831,48 +1831,48 @@ type RepositoryTopic struct {
 }
 
 type Topic struct {
-	Name string
+	Nbme string
 }
 
 type restRepositoryPermissions struct {
-	Admin bool `json:"admin"`
+	Admin bool `json:"bdmin"`
 	Push  bool `json:"push"`
 	Pull  bool `json:"pull"`
 }
 
-type restParentRepository struct {
-	FullName string `json:"full_name,omitempty"`
+type restPbrentRepository struct {
+	FullNbme string `json:"full_nbme,omitempty"`
 	Fork     bool   `json:"is_fork,omitempty"`
 }
 
 type restRepository struct {
-	ID          string `json:"node_id"` // GraphQL ID
-	DatabaseID  int64  `json:"id"`
-	FullName    string `json:"full_name"` // same as nameWithOwner
+	ID          string `json:"node_id"` // GrbphQL ID
+	DbtbbbseID  int64  `json:"id"`
+	FullNbme    string `json:"full_nbme"` // sbme bs nbmeWithOwner
 	Description string
 	HTMLURL     string                    `json:"html_url"` // web URL
-	Private     bool                      `json:"private"`
+	Privbte     bool                      `json:"privbte"`
 	Fork        bool                      `json:"fork"`
-	Archived    bool                      `json:"archived"`
+	Archived    bool                      `json:"brchived"`
 	Locked      bool                      `json:"locked"`
-	Disabled    bool                      `json:"disabled"`
+	Disbbled    bool                      `json:"disbbled"`
 	Permissions restRepositoryPermissions `json:"permissions"`
-	Stars       int                       `json:"stargazers_count"`
+	Stbrs       int                       `json:"stbrgbzers_count"`
 	Forks       int                       `json:"forks_count"`
 	Visibility  string                    `json:"visibility"`
 	Topics      []string                  `json:"topics"`
-	Parent      *restParentRepository     `json:"parent,omitempty"`
+	Pbrent      *restPbrentRepository     `json:"pbrent,omitempty"`
 }
 
-// getRepositoryFromAPI attempts to fetch a repository from the GitHub API without use of the redis cache.
-func (c *V3Client) getRepositoryFromAPI(ctx context.Context, owner, name string) (*Repository, error) {
-	// If no token, we must use the older REST API, not the GraphQL API. See
-	// https://platform.github.community/t/anonymous-access/2093/2. This situation occurs on (for
-	// example) a server with autoAddRepos and no GitHub connection configured when someone visits
-	// http://[sourcegraph-hostname]/github.com/foo/bar.
-	var result restRepository
-	if _, err := c.get(ctx, fmt.Sprintf("/repos/%s/%s", owner, name), &result); err != nil {
-		if HTTPErrorCode(err) == http.StatusNotFound {
+// getRepositoryFromAPI bttempts to fetch b repository from the GitHub API without use of the redis cbche.
+func (c *V3Client) getRepositoryFromAPI(ctx context.Context, owner, nbme string) (*Repository, error) {
+	// If no token, we must use the older REST API, not the GrbphQL API. See
+	// https://plbtform.github.community/t/bnonymous-bccess/2093/2. This situbtion occurs on (for
+	// exbmple) b server with butoAddRepos bnd no GitHub connection configured when someone visits
+	// http://[sourcegrbph-hostnbme]/github.com/foo/bbr.
+	vbr result restRepository
+	if _, err := c.get(ctx, fmt.Sprintf("/repos/%s/%s", owner, nbme), &result); err != nil {
+		if HTTPErrorCode(err) == http.StbtusNotFound {
 			return nil, ErrRepoNotFound
 		}
 		return nil, err
@@ -1880,47 +1880,47 @@ func (c *V3Client) getRepositoryFromAPI(ctx context.Context, owner, name string)
 	return convertRestRepo(result), nil
 }
 
-// convertRestRepo converts repo information returned by the rest API
-// to a standard format.
+// convertRestRepo converts repo informbtion returned by the rest API
+// to b stbndbrd formbt.
 func convertRestRepo(restRepo restRepository) *Repository {
-	topics := make([]RepositoryTopic, 0, len(restRepo.Topics))
-	for _, topic := range restRepo.Topics {
-		topics = append(topics, RepositoryTopic{Topic{Name: topic}})
+	topics := mbke([]RepositoryTopic, 0, len(restRepo.Topics))
+	for _, topic := rbnge restRepo.Topics {
+		topics = bppend(topics, RepositoryTopic{Topic{Nbme: topic}})
 	}
 
 	repo := Repository{
 		ID:               restRepo.ID,
-		DatabaseID:       restRepo.DatabaseID,
-		NameWithOwner:    restRepo.FullName,
+		DbtbbbseID:       restRepo.DbtbbbseID,
+		NbmeWithOwner:    restRepo.FullNbme,
 		Description:      restRepo.Description,
 		URL:              restRepo.HTMLURL,
-		IsPrivate:        restRepo.Private,
+		IsPrivbte:        restRepo.Privbte,
 		IsFork:           restRepo.Fork,
 		IsArchived:       restRepo.Archived,
 		IsLocked:         restRepo.Locked,
-		IsDisabled:       restRepo.Disabled,
+		IsDisbbled:       restRepo.Disbbled,
 		ViewerPermission: convertRestRepoPermissions(restRepo.Permissions),
-		StargazerCount:   restRepo.Stars,
+		StbrgbzerCount:   restRepo.Stbrs,
 		ForkCount:        restRepo.Forks,
 		RepositoryTopics: RepositoryTopics{topics},
 	}
 
-	if restRepo.Parent != nil {
-		repo.Parent = &ParentRepository{
-			NameWithOwner: restRepo.Parent.FullName,
-			IsFork:        restRepo.Parent.Fork,
+	if restRepo.Pbrent != nil {
+		repo.Pbrent = &PbrentRepository{
+			NbmeWithOwner: restRepo.Pbrent.FullNbme,
+			IsFork:        restRepo.Pbrent.Fork,
 		}
 	}
 
-	if conf.ExperimentalFeatures().EnableGithubInternalRepoVisibility {
+	if conf.ExperimentblFebtures().EnbbleGithubInternblRepoVisibility {
 		repo.Visibility = Visibility(restRepo.Visibility)
 	}
 
 	return &repo
 }
 
-// convertRestRepoPermissions converts repo information returned by the rest API
-// to a standard format.
+// convertRestRepoPermissions converts repo informbtion returned by the rest API
+// to b stbndbrd formbt.
 func convertRestRepoPermissions(restRepoPermissions restRepositoryPermissions) string {
 	if restRepoPermissions.Admin {
 		return "ADMIN"
@@ -1934,64 +1934,64 @@ func convertRestRepoPermissions(restRepoPermissions restRepositoryPermissions) s
 	return ""
 }
 
-// ErrBatchTooLarge is when the requested batch of GitHub repositories to fetch
-// is too large and goes over the limit of what can be requested in a single
-// GraphQL call
-var ErrBatchTooLarge = errors.New("requested batch of GitHub repositories too large")
+// ErrBbtchTooLbrge is when the requested bbtch of GitHub repositories to fetch
+// is too lbrge bnd goes over the limit of whbt cbn be requested in b single
+// GrbphQL cbll
+vbr ErrBbtchTooLbrge = errors.New("requested bbtch of GitHub repositories too lbrge")
 
 // Visibility is the visibility filter for listing repositories.
 type Visibility string
 
 const (
-	VisibilityAll      Visibility = "all"
+	VisibilityAll      Visibility = "bll"
 	VisibilityPublic   Visibility = "public"
-	VisibilityPrivate  Visibility = "private"
-	VisibilityInternal Visibility = "internal"
+	VisibilityPrivbte  Visibility = "privbte"
+	VisibilityInternbl Visibility = "internbl"
 )
 
-// RepositoryAffiliation is the affiliation filter for listing repositories.
-type RepositoryAffiliation string
+// RepositoryAffilibtion is the bffilibtion filter for listing repositories.
+type RepositoryAffilibtion string
 
 const (
-	AffiliationOwner        RepositoryAffiliation = "owner"
-	AffiliationCollaborator RepositoryAffiliation = "collaborator"
-	AffiliationOrgMember    RepositoryAffiliation = "organization_member"
+	AffilibtionOwner        RepositoryAffilibtion = "owner"
+	AffilibtionCollbborbtor RepositoryAffilibtion = "collbborbtor"
+	AffilibtionOrgMember    RepositoryAffilibtion = "orgbnizbtion_member"
 )
 
-type CollaboratorAffiliation string
+type CollbborbtorAffilibtion string
 
 const (
-	AffiliationOutside CollaboratorAffiliation = "outside"
-	AffiliationDirect  CollaboratorAffiliation = "direct"
+	AffilibtionOutside CollbborbtorAffilibtion = "outside"
+	AffilibtionDirect  CollbborbtorAffilibtion = "direct"
 )
 
-type restSearchResponse struct {
-	TotalCount        int              `json:"total_count"`
+type restSebrchResponse struct {
+	TotblCount        int              `json:"totbl_count"`
 	IncompleteResults bool             `json:"incomplete_results"`
 	Items             []restRepository `json:"items"`
 }
 
-// RepositoryListPage is a page of repositories returned from the GitHub Search API.
-type RepositoryListPage struct {
-	TotalCount  int
+// RepositoryListPbge is b pbge of repositories returned from the GitHub Sebrch API.
+type RepositoryListPbge struct {
+	TotblCount  int
 	Repos       []*Repository
-	HasNextPage bool
+	HbsNextPbge bool
 }
 
 type restTopicsResponse struct {
-	Names []string `json:"names"`
+	Nbmes []string `json:"nbmes"`
 }
 
-func GetExternalAccountData(ctx context.Context, data *extsvc.AccountData) (usr *github.User, tok *oauth2.Token, err error) {
-	if data.Data != nil {
-		usr, err = encryption.DecryptJSON[github.User](ctx, data.Data)
+func GetExternblAccountDbtb(ctx context.Context, dbtb *extsvc.AccountDbtb) (usr *github.User, tok *obuth2.Token, err error) {
+	if dbtb.Dbtb != nil {
+		usr, err = encryption.DecryptJSON[github.User](ctx, dbtb.Dbtb)
 		if err != nil {
 			return nil, nil, err
 		}
 	}
 
-	if data.AuthData != nil {
-		tok, err = encryption.DecryptJSON[oauth2.Token](ctx, data.AuthData)
+	if dbtb.AuthDbtb != nil {
+		tok, err = encryption.DecryptJSON[obuth2.Token](ctx, dbtb.AuthDbtb)
 		if err != nil {
 			return nil, nil, err
 		}
@@ -2000,33 +2000,33 @@ func GetExternalAccountData(ctx context.Context, data *extsvc.AccountData) (usr 
 	return usr, tok, nil
 }
 
-func GetPublicExternalAccountData(ctx context.Context, data *extsvc.AccountData) (*extsvc.PublicAccountData, error) {
-	d, _, err := GetExternalAccountData(ctx, data)
+func GetPublicExternblAccountDbtb(ctx context.Context, dbtb *extsvc.AccountDbtb) (*extsvc.PublicAccountDbtb, error) {
+	d, _, err := GetExternblAccountDbtb(ctx, dbtb)
 	if err != nil {
 		return nil, err
 	}
-	return &extsvc.PublicAccountData{
-		DisplayName: d.GetName(),
+	return &extsvc.PublicAccountDbtb{
+		DisplbyNbme: d.GetNbme(),
 		Login:       d.GetLogin(),
 
-		// Github returns the API url as URL, so to ensure the link to the user's profile
+		// Github returns the API url bs URL, so to ensure the link to the user's profile
 		// is correct, we substitute this for the HTMLURL which is the correct profile url.
 		URL: d.GetHTMLURL(),
 	}, nil
 }
 
-func SetExternalAccountData(data *extsvc.AccountData, user *github.User, token *oauth2.Token) error {
-	serializedUser, err := json.Marshal(user)
+func SetExternblAccountDbtb(dbtb *extsvc.AccountDbtb, user *github.User, token *obuth2.Token) error {
+	seriblizedUser, err := json.Mbrshbl(user)
 	if err != nil {
 		return err
 	}
-	serializedToken, err := json.Marshal(token)
+	seriblizedToken, err := json.Mbrshbl(token)
 	if err != nil {
 		return err
 	}
 
-	data.Data = extsvc.NewUnencryptedData(serializedUser)
-	data.AuthData = extsvc.NewUnencryptedData(serializedToken)
+	dbtb.Dbtb = extsvc.NewUnencryptedDbtb(seriblizedUser)
+	dbtb.AuthDbtb = extsvc.NewUnencryptedDbtb(seriblizedToken)
 	return nil
 }
 
@@ -2036,9 +2036,9 @@ type User struct {
 	NodeID string `json:"node_id,omitempty"`
 }
 
-type UserEmail struct {
-	Email      string `json:"email,omitempty"`
-	Primary    bool   `json:"primary,omitempty"`
+type UserEmbil struct {
+	Embil      string `json:"embil,omitempty"`
+	Primbry    bool   `json:"primbry,omitempty"`
 	Verified   bool   `json:"verified,omitempty"`
 	Visibility string `json:"visibility,omitempty"`
 }
@@ -2049,115 +2049,115 @@ type Org struct {
 	NodeID string `json:"node_id,omitempty"`
 }
 
-// OrgDetails describes the more detailed Org data you can only get from the
-// get-an-organization API (https://docs.github.com/en/rest/reference/orgs#get-an-organization)
+// OrgDetbils describes the more detbiled Org dbtb you cbn only get from the
+// get-bn-orgbnizbtion API (https://docs.github.com/en/rest/reference/orgs#get-bn-orgbnizbtion)
 //
-// It is a superset of the organization field that is embedded in other API responses.
-type OrgDetails struct {
+// It is b superset of the orgbnizbtion field thbt is embedded in other API responses.
+type OrgDetbils struct {
 	Org
 
-	DefaultRepositoryPermission string `json:"default_repository_permission,omitempty"`
+	DefbultRepositoryPermission string `json:"defbult_repository_permission,omitempty"`
 }
 
-// OrgMembership describes organization membership information for a user.
-// See https://docs.github.com/en/rest/reference/orgs#get-an-organization-membership-for-the-authenticated-user
+// OrgMembership describes orgbnizbtion membership informbtion for b user.
+// See https://docs.github.com/en/rest/reference/orgs#get-bn-orgbnizbtion-membership-for-the-buthenticbted-user
 type OrgMembership struct {
-	State string `json:"state"`
+	Stbte string `json:"stbte"`
 	Role  string `json:"role"`
 }
 
-// Collaborator is a collaborator of a repository.
-type Collaborator struct {
-	ID         string `json:"node_id"` // GraphQL ID
-	DatabaseID int64  `json:"id"`
+// Collbborbtor is b collbborbtor of b repository.
+type Collbborbtor struct {
+	ID         string `json:"node_id"` // GrbphQL ID
+	DbtbbbseID int64  `json:"id"`
 }
 
-// allMatchingSemver is a *semver.Version that will always match for the latest GitHub, which is either the
-// latest GHE or the current deployment on GitHub.com.
-var allMatchingSemver = semver.MustParse("99.99.99")
+// bllMbtchingSemver is b *semver.Version thbt will blwbys mbtch for the lbtest GitHub, which is either the
+// lbtest GHE or the current deployment on GitHub.com.
+vbr bllMbtchingSemver = semver.MustPbrse("99.99.99")
 
-// versionCacheResetTime stores the time until a version cache is reset. It's set to 6 hours.
-const versionCacheResetTime = 6 * 60 * time.Minute
+// versionCbcheResetTime stores the time until b version cbche is reset. It's set to 6 hours.
+const versionCbcheResetTime = 6 * 60 * time.Minute
 
-type versionCache struct {
+type versionCbche struct {
 	mu        sync.Mutex
-	versions  map[string]*semver.Version
-	lastReset time.Time
+	versions  mbp[string]*semver.Version
+	lbstReset time.Time
 }
 
-var globalVersionCache = &versionCache{
-	versions: make(map[string]*semver.Version),
+vbr globblVersionCbche = &versionCbche{
+	versions: mbke(mbp[string]*semver.Version),
 }
 
-// normalizeURL will attempt to normalize rawURL.
-// If there is an error parsing it, we'll just return rawURL lower cased.
-func normalizeURL(rawURL string) string {
-	parsed, err := url.Parse(rawURL)
+// normblizeURL will bttempt to normblize rbwURL.
+// If there is bn error pbrsing it, we'll just return rbwURL lower cbsed.
+func normblizeURL(rbwURL string) string {
+	pbrsed, err := url.Pbrse(rbwURL)
 	if err != nil {
-		return strings.ToLower(rawURL)
+		return strings.ToLower(rbwURL)
 	}
-	parsed.Host = strings.ToLower(parsed.Host)
-	if !strings.HasSuffix(parsed.Path, "/") {
-		parsed.Path += "/"
+	pbrsed.Host = strings.ToLower(pbrsed.Host)
+	if !strings.HbsSuffix(pbrsed.Pbth, "/") {
+		pbrsed.Pbth += "/"
 	}
-	return parsed.String()
+	return pbrsed.String()
 }
 
 func isArchivedError(err error) bool {
-	var errs graphqlErrors
+	vbr errs grbphqlErrors
 	if !errors.As(err, &errs) {
-		return false
+		return fblse
 	}
 	return len(errs) == 1 &&
 		errs[0].Type == "UNPROCESSABLE" &&
-		strings.Contains(errs[0].Message, "Repository was archived")
+		strings.Contbins(errs[0].Messbge, "Repository wbs brchived")
 }
 
-func isPullRequestAlreadyExistsError(err error) bool {
-	var errs graphqlErrors
+func isPullRequestAlrebdyExistsError(err error) bool {
+	vbr errs grbphqlErrors
 	if !errors.As(err, &errs) {
-		return false
+		return fblse
 	}
-	return len(errs) == 1 && strings.Contains(errs[0].Message, "A pull request already exists for")
+	return len(errs) == 1 && strings.Contbins(errs[0].Messbge, "A pull request blrebdy exists for")
 }
 
-func handlePullRequestError(err error) error {
+func hbndlePullRequestError(err error) error {
 	if isArchivedError(err) {
 		return ErrRepoArchived{}
 	}
-	if isPullRequestAlreadyExistsError(err) {
-		return ErrPullRequestAlreadyExists
+	if isPullRequestAlrebdyExistsError(err) {
+		return ErrPullRequestAlrebdyExists
 	}
 	return err
 }
 
-// IsGitHubAppAccessToken checks whether the access token starts with "ghu",
-// which is used for GitHub App access tokens.
+// IsGitHubAppAccessToken checks whether the bccess token stbrts with "ghu",
+// which is used for GitHub App bccess tokens.
 func IsGitHubAppAccessToken(token string) bool {
-	return strings.HasPrefix(token, "ghu")
+	return strings.HbsPrefix(token, "ghu")
 }
 
-var MockGetOAuthContext func() *oauthutil.OAuthContext
+vbr MockGetOAuthContext func() *obuthutil.OAuthContext
 
-func GetOAuthContext(baseURL string) *oauthutil.OAuthContext {
+func GetOAuthContext(bbseURL string) *obuthutil.OAuthContext {
 	if MockGetOAuthContext != nil {
 		return MockGetOAuthContext()
 	}
 
-	for _, authProvider := range conf.SiteConfig().AuthProviders {
-		if authProvider.Github != nil {
-			p := authProvider.Github
+	for _, buthProvider := rbnge conf.SiteConfig().AuthProviders {
+		if buthProvider.Github != nil {
+			p := buthProvider.Github
 			ghURL := strings.TrimSuffix(p.Url, "/")
-			if !strings.HasPrefix(baseURL, ghURL) {
+			if !strings.HbsPrefix(bbseURL, ghURL) {
 				continue
 			}
 
-			return &oauthutil.OAuthContext{
+			return &obuthutil.OAuthContext{
 				ClientID:     p.ClientID,
 				ClientSecret: p.ClientSecret,
-				Endpoint: oauth2.Endpoint{
-					AuthURL:  ghURL + "/login/oauth/authorize",
-					TokenURL: ghURL + "/login/oauth/access_token",
+				Endpoint: obuth2.Endpoint{
+					AuthURL:  ghURL + "/login/obuth/buthorize",
+					TokenURL: ghURL + "/login/obuth/bccess_token",
 				},
 			}
 		}

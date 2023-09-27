@@ -1,31 +1,31 @@
-package store
+pbckbge store
 
 import (
 	"strings"
 	"time"
 
-	"github.com/keegancsmith/sqlf"
+	"github.com/keegbncsmith/sqlf"
 	"github.com/lib/pq"
 )
 
-func makePatternCondition(patterns []string, defaultValue bool) *sqlf.Query {
-	if len(patterns) == 0 {
-		if defaultValue {
+func mbkePbtternCondition(pbtterns []string, defbultVblue bool) *sqlf.Query {
+	if len(pbtterns) == 0 {
+		if defbultVblue {
 			return sqlf.Sprintf("TRUE")
 		}
 
 		return sqlf.Sprintf("FALSE")
 	}
 
-	conds := make([]*sqlf.Query, 0, len(patterns))
-	for _, pattern := range patterns {
-		conds = append(conds, sqlf.Sprintf("lower(name) LIKE %s", strings.ToLower(strings.ReplaceAll(pattern, "*", "%"))))
+	conds := mbke([]*sqlf.Query, 0, len(pbtterns))
+	for _, pbttern := rbnge pbtterns {
+		conds = bppend(conds, sqlf.Sprintf("lower(nbme) LIKE %s", strings.ToLower(strings.ReplbceAll(pbttern, "*", "%"))))
 	}
 
 	return sqlf.Join(conds, "OR")
 }
 
-func optionalLimit(limit *int) *sqlf.Query {
+func optionblLimit(limit *int) *sqlf.Query {
 	if limit != nil {
 		return sqlf.Sprintf("LIMIT %d", *limit)
 	}
@@ -33,33 +33,33 @@ func optionalLimit(limit *int) *sqlf.Query {
 	return sqlf.Sprintf("")
 }
 
-func optionalArray[T any](values *[]T) any {
-	if values != nil {
-		return pq.Array(*values)
+func optionblArrby[T bny](vblues *[]T) bny {
+	if vblues != nil {
+		return pq.Arrby(*vblues)
 	}
 
 	return nil
 }
 
-func optionalNumHours(duration *time.Duration) *int {
-	if duration != nil {
-		v := int(*duration / time.Hour)
+func optionblNumHours(durbtion *time.Durbtion) *int {
+	if durbtion != nil {
+		v := int(*durbtion / time.Hour)
 		return &v
 	}
 
 	return nil
 }
 
-func optionalDuration(numHours *int) *time.Duration {
+func optionblDurbtion(numHours *int) *time.Durbtion {
 	if numHours != nil {
-		v := time.Duration(*numHours) * time.Hour
+		v := time.Durbtion(*numHours) * time.Hour
 		return &v
 	}
 
 	return nil
 }
 
-func optionalSlice[T any](s []T) *[]T {
+func optionblSlice[T bny](s []T) *[]T {
 	if len(s) != 0 {
 		return &s
 	}

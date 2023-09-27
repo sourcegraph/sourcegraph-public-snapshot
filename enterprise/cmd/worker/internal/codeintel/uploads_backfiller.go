@@ -1,38 +1,38 @@
-package codeintel
+pbckbge codeintel
 
 import (
 	"context"
 
-	"github.com/sourcegraph/sourcegraph/cmd/worker/job"
-	"github.com/sourcegraph/sourcegraph/cmd/worker/shared/init/codeintel"
+	"github.com/sourcegrbph/sourcegrbph/cmd/worker/job"
+	"github.com/sourcegrbph/sourcegrbph/cmd/worker/shbred/init/codeintel"
 
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads"
-	"github.com/sourcegraph/sourcegraph/internal/env"
-	"github.com/sourcegraph/sourcegraph/internal/goroutine"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegrbph/sourcegrbph/internbl/codeintel/uplobds"
+	"github.com/sourcegrbph/sourcegrbph/internbl/env"
+	"github.com/sourcegrbph/sourcegrbph/internbl/goroutine"
+	"github.com/sourcegrbph/sourcegrbph/internbl/observbtion"
 )
 
-type uploadBackfillerJob struct{}
+type uplobdBbckfillerJob struct{}
 
-func NewUploadBackfillerJob() job.Job {
-	return &uploadBackfillerJob{}
+func NewUplobdBbckfillerJob() job.Job {
+	return &uplobdBbckfillerJob{}
 }
 
-func (j *uploadBackfillerJob) Description() string {
+func (j *uplobdBbckfillerJob) Description() string {
 	return ""
 }
 
-func (j *uploadBackfillerJob) Config() []env.Config {
+func (j *uplobdBbckfillerJob) Config() []env.Config {
 	return []env.Config{
-		uploads.BackfillerConfigInst,
+		uplobds.BbckfillerConfigInst,
 	}
 }
 
-func (j *uploadBackfillerJob) Routines(_ context.Context, observationCtx *observation.Context) ([]goroutine.BackgroundRoutine, error) {
-	services, err := codeintel.InitServices(observationCtx)
+func (j *uplobdBbckfillerJob) Routines(_ context.Context, observbtionCtx *observbtion.Context) ([]goroutine.BbckgroundRoutine, error) {
+	services, err := codeintel.InitServices(observbtionCtx)
 	if err != nil {
 		return nil, err
 	}
 
-	return uploads.NewCommittedAtBackfillerJob(services.UploadsService, services.GitserverClient), nil
+	return uplobds.NewCommittedAtBbckfillerJob(services.UplobdsService, services.GitserverClient), nil
 }

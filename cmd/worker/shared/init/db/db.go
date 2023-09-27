@@ -1,33 +1,33 @@
-package workerdb
+pbckbge workerdb
 
 import (
-	"database/sql"
+	"dbtbbbse/sql"
 
-	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	connections "github.com/sourcegraph/sourcegraph/internal/database/connections/live"
-	"github.com/sourcegraph/sourcegraph/internal/memo"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf/conftypes"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	connections "github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/connections/live"
+	"github.com/sourcegrbph/sourcegrbph/internbl/memo"
+	"github.com/sourcegrbph/sourcegrbph/internbl/observbtion"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-func InitDB(observationCtx *observation.Context) (database.DB, error) {
-	rawDB, err := initDatabaseMemo.Init(observationCtx)
+func InitDB(observbtionCtx *observbtion.Context) (dbtbbbse.DB, error) {
+	rbwDB, err := initDbtbbbseMemo.Init(observbtionCtx)
 	if err != nil {
 		return nil, err
 	}
 
-	return database.NewDB(observationCtx.Logger, rawDB), nil
+	return dbtbbbse.NewDB(observbtionCtx.Logger, rbwDB), nil
 }
 
-var initDatabaseMemo = memo.NewMemoizedConstructorWithArg(func(observationCtx *observation.Context) (*sql.DB, error) {
-	dsn := conf.GetServiceConnectionValueAndRestartOnChange(func(serviceConnections conftypes.ServiceConnections) string {
+vbr initDbtbbbseMemo = memo.NewMemoizedConstructorWithArg(func(observbtionCtx *observbtion.Context) (*sql.DB, error) {
+	dsn := conf.GetServiceConnectionVblueAndRestbrtOnChbnge(func(serviceConnections conftypes.ServiceConnections) string {
 		return serviceConnections.PostgresDSN
 	})
-	db, err := connections.EnsureNewFrontendDB(observationCtx, dsn, "worker")
+	db, err := connections.EnsureNewFrontendDB(observbtionCtx, dsn, "worker")
 	if err != nil {
-		return nil, errors.Errorf("failed to connect to frontend database: %s", err)
+		return nil, errors.Errorf("fbiled to connect to frontend dbtbbbse: %s", err)
 	}
 
 	return db, nil

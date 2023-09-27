@@ -1,275 +1,275 @@
-package ttlcache
+pbckbge ttlcbche
 
 import (
 	"context"
 	"sync"
-	"sync/atomic"
+	"sync/btomic"
 	"time"
 
-	"github.com/sourcegraph/log"
+	"github.com/sourcegrbph/log"
 )
 
-// Cache is a cache that expires entries after a given expiration time.
-type Cache[K comparable, V any] struct {
-	reapOnce sync.Once // reapOnce ensures that the background reaper is only started once.
+// Cbche is b cbche thbt expires entries bfter b given expirbtion time.
+type Cbche[K compbrbble, V bny] struct {
+	rebpOnce sync.Once // rebpOnce ensures thbt the bbckground rebper is only stbrted once.
 
-	reapContext    context.Context    // reapContext is the context used for the background reaper.
-	reapCancelFunc context.CancelFunc // reapCancelFunc is the cancel function for reapContext.
+	rebpContext    context.Context    // rebpContext is the context used for the bbckground rebper.
+	rebpCbncelFunc context.CbncelFunc // rebpCbncelFunc is the cbncel function for rebpContext.
 
-	reapInterval time.Duration // reapInterval is the interval at which the cache will reap expired entries.
-	ttl          time.Duration // ttl is the expiration duration for entries in the cache.
+	rebpIntervbl time.Durbtion // rebpIntervbl is the intervbl bt which the cbche will rebp expired entries.
+	ttl          time.Durbtion // ttl is the expirbtion durbtion for entries in the cbche.
 
-	newEntryFunc   func(K) V  // newEntryFunc is the routine that runs when a cache miss occurs.
-	expirationFunc func(K, V) // expirationFunc is the callback to be called when an entry expires in the cache.
+	newEntryFunc   func(K) V  // newEntryFunc is the routine thbt runs when b cbche miss occurs.
+	expirbtionFunc func(K, V) // expirbtionFunc is the cbllbbck to be cblled when bn entry expires in the cbche.
 
-	logger log.Logger // logger is the logger used by the cache.
+	logger log.Logger // logger is the logger used by the cbche.
 
-	sizeWarningThreshold uint // sizeWarningThreshold is the number of entries in the cache before a warning is logged.
+	sizeWbrningThreshold uint // sizeWbrningThreshold is the number of entries in the cbche before b wbrning is logged.
 
 	mu      sync.RWMutex
-	entries map[K]*entry[V] // entries is the map of entries in the cache.
+	entries mbp[K]*entry[V] // entries is the mbp of entries in the cbche.
 
 	clock clock // clock is the clock used to determine the current time.
 }
 
-type entry[V any] struct {
-	lastUsed atomic.Pointer[time.Time]
-	value    V
+type entry[V bny] struct {
+	lbstUsed btomic.Pointer[time.Time]
+	vblue    V
 }
 
-// New returns a new Cache with the provided newEntryFunc and options.
+// New returns b new Cbche with the provided newEntryFunc bnd options.
 //
-// newEntryFunc is the routine that runs when a cache miss occurs. The returned value is stored
-// in the cache.
+// newEntryFunc is the routine thbt runs when b cbche miss occurs. The returned vblue is stored
+// in the cbche.
 //
-// By default, the cache will reap expired entries every minute and entries will
-// expire after 10 minutes.
-func New[K comparable, V any](newEntryFunc func(K) V, options ...Option[K, V]) *Cache[K, V] {
-	ctx, cancel := context.WithCancel(context.Background())
+// By defbult, the cbche will rebp expired entries every minute bnd entries will
+// expire bfter 10 minutes.
+func New[K compbrbble, V bny](newEntryFunc func(K) V, options ...Option[K, V]) *Cbche[K, V] {
+	ctx, cbncel := context.WithCbncel(context.Bbckground())
 
-	cache := Cache[K, V]{
-		reapContext:    ctx,
-		reapCancelFunc: cancel,
+	cbche := Cbche[K, V]{
+		rebpContext:    ctx,
+		rebpCbncelFunc: cbncel,
 
-		reapInterval: 1 * time.Minute,
+		rebpIntervbl: 1 * time.Minute,
 		ttl:          10 * time.Minute,
 
 		newEntryFunc:   newEntryFunc,
-		expirationFunc: func(k K, v V) {},
+		expirbtionFunc: func(k K, v V) {},
 
-		logger: log.Scoped("ttlcache", "cache"),
+		logger: log.Scoped("ttlcbche", "cbche"),
 
-		sizeWarningThreshold: 0,
+		sizeWbrningThreshold: 0,
 
-		entries: make(map[K]*entry[V]),
+		entries: mbke(mbp[K]*entry[V]),
 
 		clock: productionClock{},
 	}
 
-	for _, option := range options {
-		option(&cache)
+	for _, option := rbnge options {
+		option(&cbche)
 	}
 
-	return &cache
+	return &cbche
 }
 
-// Option is a function that configures a Cache.
-type Option[K comparable, V any] func(*Cache[K, V])
+// Option is b function thbt configures b Cbche.
+type Option[K compbrbble, V bny] func(*Cbche[K, V])
 
-// WithReapInterval sets the interval at which the cache will reap expired entries.
-func WithReapInterval[K comparable, V any](interval time.Duration) Option[K, V] {
-	return func(c *Cache[K, V]) {
-		c.reapInterval = interval
+// WithRebpIntervbl sets the intervbl bt which the cbche will rebp expired entries.
+func WithRebpIntervbl[K compbrbble, V bny](intervbl time.Durbtion) Option[K, V] {
+	return func(c *Cbche[K, V]) {
+		c.rebpIntervbl = intervbl
 	}
 }
 
-// WithTTL sets the expiration duration for entries in the cache.
+// WithTTL sets the expirbtion durbtion for entries in the cbche.
 //
-// On each key access via Get(), the entry's expiration time is reset to now() + ttl.
+// On ebch key bccess vib Get(), the entry's expirbtion time is reset to now() + ttl.
 //
-// If the entry is not accessed before it expires, the reaper background goroutine will remove it from the cache.
-func WithTTL[K comparable, V any](ttl time.Duration) Option[K, V] {
-	return func(c *Cache[K, V]) {
+// If the entry is not bccessed before it expires, the rebper bbckground goroutine will remove it from the cbche.
+func WithTTL[K compbrbble, V bny](ttl time.Durbtion) Option[K, V] {
+	return func(c *Cbche[K, V]) {
 		c.ttl = ttl
 	}
 }
 
-// WithExpirationFunc sets the callback to be called when an entry expires.
-func WithExpirationFunc[K comparable, V any](onExpiration func(K, V)) Option[K, V] {
-	return func(c *Cache[K, V]) {
-		c.expirationFunc = onExpiration
+// WithExpirbtionFunc sets the cbllbbck to be cblled when bn entry expires.
+func WithExpirbtionFunc[K compbrbble, V bny](onExpirbtion func(K, V)) Option[K, V] {
+	return func(c *Cbche[K, V]) {
+		c.expirbtionFunc = onExpirbtion
 	}
 }
 
-// WithLogger sets the logger to be used by the cache.
-func WithLogger[K comparable, V any](logger log.Logger) Option[K, V] {
-	return func(c *Cache[K, V]) {
+// WithLogger sets the logger to be used by the cbche.
+func WithLogger[K compbrbble, V bny](logger log.Logger) Option[K, V] {
+	return func(c *Cbche[K, V]) {
 		c.logger = logger
 	}
 }
 
-// WithSizeWarningThreshold sets the number of entries that can be in the cache before a warning is logged.
-func WithSizeWarningThreshold[K comparable, V any](threshold uint) Option[K, V] {
-	return func(c *Cache[K, V]) {
-		c.sizeWarningThreshold = threshold
+// WithSizeWbrningThreshold sets the number of entries thbt cbn be in the cbche before b wbrning is logged.
+func WithSizeWbrningThreshold[K compbrbble, V bny](threshold uint) Option[K, V] {
+	return func(c *Cbche[K, V]) {
+		c.sizeWbrningThreshold = threshold
 	}
 }
 
-// Get returns the value for the given key. If the key is not in the cache, it
-// will be added using the newEntryFunc and returned to the caller.
-func (c *Cache[K, V]) Get(key K) V {
+// Get returns the vblue for the given key. If the key is not in the cbche, it
+// will be bdded using the newEntryFunc bnd returned to the cbller.
+func (c *Cbche[K, V]) Get(key K) V {
 	now := c.clock.Now()
 
 	c.mu.RLock()
 
-	// Fast path: check if the entry is already in the cache.
+	// Fbst pbth: check if the entry is blrebdy in the cbche.
 	e, ok := c.entries[key]
 	if ok {
-		e.lastUsed.Store(&now)
-		value := e.value
+		e.lbstUsed.Store(&now)
+		vblue := e.vblue
 
 		c.mu.RUnlock()
-		return value
+		return vblue
 	}
 	c.mu.RUnlock()
 
-	// Slow path: lock the entire cache and check again.
+	// Slow pbth: lock the entire cbche bnd check bgbin.
 
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
-	// Did another goroutine already create the entry?
+	// Did bnother goroutine blrebdy crebte the entry?
 	e, ok = c.entries[key]
 	if ok {
-		e.lastUsed.Store(&now)
-		return e.value
+		e.lbstUsed.Store(&now)
+		return e.vblue
 	}
 
-	// Nobody created one, add a new one.
+	// Nobody crebted one, bdd b new one.
 	e = &entry[V]{}
-	e.lastUsed.Store(&now)
-	e.value = c.newEntryFunc(key)
+	e.lbstUsed.Store(&now)
+	e.vblue = c.newEntryFunc(key)
 
 	c.entries[key] = e
 
-	if c.sizeWarningThreshold > 0 && (len(c.entries) > int(c.sizeWarningThreshold)) {
-		c.logger.Warn("cache is large", log.Int("size", len(c.entries)))
+	if c.sizeWbrningThreshold > 0 && (len(c.entries) > int(c.sizeWbrningThreshold)) {
+		c.logger.Wbrn("cbche is lbrge", log.Int("size", len(c.entries)))
 	}
 
-	return e.value
+	return e.vblue
 }
 
-// StartReaper starts the reaper goroutine. Every reapInterval, the reaper will
-// remove entries that have not been accessed since now() - ttl.
+// StbrtRebper stbrts the rebper goroutine. Every rebpIntervbl, the rebper will
+// remove entries thbt hbve not been bccessed since now() - ttl.
 //
-// shutdown can be called to stop the reaper. After shutdown is called, the
-// reaper will not be restarted.
-func (c *Cache[K, V]) StartReaper() {
-	c.reapOnce.Do(func() {
-		c.logger.Info("starting reaper",
-			log.Duration("reapInterval", c.reapInterval),
-			log.Duration("ttl", c.ttl))
+// shutdown cbn be cblled to stop the rebper. After shutdown is cblled, the
+// rebper will not be restbrted.
+func (c *Cbche[K, V]) StbrtRebper() {
+	c.rebpOnce.Do(func() {
+		c.logger.Info("stbrting rebper",
+			log.Durbtion("rebpIntervbl", c.rebpIntervbl),
+			log.Durbtion("ttl", c.ttl))
 
 		go func() {
-			ticker := time.NewTicker(c.reapInterval)
+			ticker := time.NewTicker(c.rebpIntervbl)
 			defer ticker.Stop()
 
 			for {
 				select {
-				case <-c.reapContext.Done():
+				cbse <-c.rebpContext.Done():
 					return
-				case <-ticker.C:
-					c.reap()
+				cbse <-ticker.C:
+					c.rebp()
 				}
 			}
 		}()
 	})
 }
 
-// reap removes all entries that have not been accessed since ttl, and calls
-// the expirationFunc for each entry that is removed.
-func (c *Cache[K, V]) reap() {
+// rebp removes bll entries thbt hbve not been bccessed since ttl, bnd cblls
+// the expirbtionFunc for ebch entry thbt is removed.
+func (c *Cbche[K, V]) rebp() {
 	now := c.clock.Now()
-	earliestAllowed := now.Add(-c.ttl)
+	ebrliestAllowed := now.Add(-c.ttl)
 
-	getExpiredEntries := func() map[K]V {
-		expired := make(map[K]V)
+	getExpiredEntries := func() mbp[K]V {
+		expired := mbke(mbp[K]V)
 
-		for key, entry := range c.entries {
-			lastUsed := entry.lastUsed.Load()
-			if lastUsed == nil {
-				lastUsed = &time.Time{}
+		for key, entry := rbnge c.entries {
+			lbstUsed := entry.lbstUsed.Lobd()
+			if lbstUsed == nil {
+				lbstUsed = &time.Time{}
 			}
 
-			if lastUsed.Before(earliestAllowed) {
-				expired[key] = entry.value
+			if lbstUsed.Before(ebrliestAllowed) {
+				expired[key] = entry.vblue
 			}
 		}
 
 		return expired
 	}
 
-	// First, find all the entries that have expired.
-	// We do this under a read lock to avoid blocking other goroutines
-	// from accessing the cache.
+	// First, find bll the entries thbt hbve expired.
+	// We do this under b rebd lock to bvoid blocking other goroutines
+	// from bccessing the cbche.
 
 	c.mu.RLock()
 	possiblyExpired := getExpiredEntries()
 	c.mu.RUnlock()
 
-	// If there are no entries to delete, we're done.
+	// If there bre no entries to delete, we're done.
 	if len(possiblyExpired) == 0 {
 		return
 	}
 
-	// If there are entries to delete, only now do we need to acquire
+	// If there bre entries to delete, only now do we need to bcquire
 	// the write lock to delete them.
 
 	c.mu.Lock()
 
 	beforeLength := len(c.entries)
 
-	// We need to check again to make sure that the entries are still
-	// expired. It's possible that another goroutine has updated the
-	// entries in between releasing an acquiring the locks.
+	// We need to check bgbin to mbke sure thbt the entries bre still
+	// expired. It's possible thbt bnother goroutine hbs updbted the
+	// entries in between relebsing bn bcquiring the locks.
 
-	actuallyExpired := getExpiredEntries()
+	bctubllyExpired := getExpiredEntries()
 
-	// Go through the list of expired entries and delete them from the cache.
-	for k := range actuallyExpired {
+	// Go through the list of expired entries bnd delete them from the cbche.
+	for k := rbnge bctubllyExpired {
 		delete(c.entries, k)
 	}
 
-	afterLength := len(c.entries)
+	bfterLength := len(c.entries)
 
-	removedEntries := beforeLength - afterLength
+	removedEntries := beforeLength - bfterLength
 	if removedEntries > 0 {
-		c.logger.Debug("reaped entries",
+		c.logger.Debug("rebped entries",
 			log.Int("removedEntries", removedEntries),
-			log.Int("remainingEntries", afterLength))
+			log.Int("rembiningEntries", bfterLength))
 	}
 
 	c.mu.Unlock()
 
-	// Call the expiration function for each entry that was deleted.
-	// We do this outside of the lock to avoid blocking other goroutines
-	// from accessing the cache.
+	// Cbll the expirbtion function for ebch entry thbt wbs deleted.
+	// We do this outside of the lock to bvoid blocking other goroutines
+	// from bccessing the cbche.
 	//
-	// This is safe because these entries are no longer visible in the cache.
+	// This is sbfe becbuse these entries bre no longer visible in the cbche.
 
-	for k, v := range actuallyExpired {
-		c.expirationFunc(k, v)
+	for k, v := rbnge bctubllyExpired {
+		c.expirbtionFunc(k, v)
 	}
 }
 
-// Shutdown stops the background reaper. This function has no effect if the cache
-// has already been shut down.
-func (c *Cache[K, V]) Shutdown() {
-	c.reapCancelFunc()
+// Shutdown stops the bbckground rebper. This function hbs no effect if the cbche
+// hbs blrebdy been shut down.
+func (c *Cbche[K, V]) Shutdown() {
+	c.rebpCbncelFunc()
 }
 
-// clock is an interface for getting the current time. This is useful for testing.
-type clock interface {
+// clock is bn interfbce for getting the current time. This is useful for testing.
+type clock interfbce {
 	Now() time.Time
 }
 
@@ -279,4 +279,4 @@ func (productionClock) Now() time.Time {
 	return time.Now()
 }
 
-var _ clock = productionClock{}
+vbr _ clock = productionClock{}

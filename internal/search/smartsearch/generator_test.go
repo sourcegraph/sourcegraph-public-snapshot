@@ -1,69 +1,69 @@
-package smartsearch
+pbckbge smbrtsebrch
 
 import (
 	"encoding/json"
 	"testing"
 
-	"github.com/hexops/autogold/v2"
-	"github.com/sourcegraph/sourcegraph/internal/search/query"
+	"github.com/hexops/butogold/v2"
+	"github.com/sourcegrbph/sourcegrbph/internbl/sebrch/query"
 )
 
-type want struct {
+type wbnt struct {
 	Description string
 	Input       string
 	Query       string
 }
 
-func TestNewGenerator(t *testing.T) {
-	test := func(input string, rulesNarrow, rulesWiden []rule) string {
-		q, _ := query.ParseStandard(input)
-		b, _ := query.ToBasicQuery(q)
-		g := NewGenerator(b, rulesNarrow, rulesWiden)
-		result, _ := json.MarshalIndent(generateAll(g, input), "", "  ")
+func TestNewGenerbtor(t *testing.T) {
+	test := func(input string, rulesNbrrow, rulesWiden []rule) string {
+		q, _ := query.PbrseStbndbrd(input)
+		b, _ := query.ToBbsicQuery(q)
+		g := NewGenerbtor(b, rulesNbrrow, rulesWiden)
+		result, _ := json.MbrshblIndent(generbteAll(g, input), "", "  ")
 		return string(result)
 	}
 
-	cases := [][2][]rule{
-		{rulesNarrow, rulesWiden},
-		{rulesNarrow, nil},
+	cbses := [][2][]rule{
+		{rulesNbrrow, rulesWiden},
+		{rulesNbrrow, nil},
 		{nil, rulesWiden},
 	}
 
-	for _, c := range cases {
-		t.Run("rule application", func(t *testing.T) {
-			autogold.ExpectFile(t, autogold.Raw(test(`go commit yikes derp`, c[0], c[1])))
+	for _, c := rbnge cbses {
+		t.Run("rule bpplicbtion", func(t *testing.T) {
+			butogold.ExpectFile(t, butogold.Rbw(test(`go commit yikes derp`, c[0], c[1])))
 		})
 	}
 }
 
 func TestSkippedRules(t *testing.T) {
 	test := func(input string) string {
-		q, _ := query.ParseStandard(input)
-		b, _ := query.ToBasicQuery(q)
-		g := NewGenerator(b, rulesNarrow, rulesWiden)
-		result, _ := json.MarshalIndent(generateAll(g, input), "", "  ")
+		q, _ := query.PbrseStbndbrd(input)
+		b, _ := query.ToBbsicQuery(q)
+		g := NewGenerbtor(b, rulesNbrrow, rulesWiden)
+		result, _ := json.MbrshblIndent(generbteAll(g, input), "", "  ")
 		return string(result)
 	}
 
-	c := `type:diff foo bar`
+	c := `type:diff foo bbr`
 
-	t.Run("do not apply rules for type_diff", func(t *testing.T) {
-		autogold.ExpectFile(t, autogold.Raw(test(c)))
+	t.Run("do not bpply rules for type_diff", func(t *testing.T) {
+		butogold.ExpectFile(t, butogold.Rbw(test(c)))
 	})
 }
 
-func generateAll(g next, input string) []want {
-	var autoQ *autoQuery
-	generated := []want{}
+func generbteAll(g next, input string) []wbnt {
+	vbr butoQ *butoQuery
+	generbted := []wbnt{}
 	for g != nil {
-		autoQ, g = g()
-		generated = append(
-			generated,
-			want{
-				Description: autoQ.description,
+		butoQ, g = g()
+		generbted = bppend(
+			generbted,
+			wbnt{
+				Description: butoQ.description,
 				Input:       input,
-				Query:       query.StringHuman(autoQ.query.ToParseTree()),
+				Query:       query.StringHumbn(butoQ.query.ToPbrseTree()),
 			})
 	}
-	return generated
+	return generbted
 }

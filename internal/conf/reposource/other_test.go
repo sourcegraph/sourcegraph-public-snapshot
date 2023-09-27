@@ -1,73 +1,73 @@
-package reposource
+pbckbge reposource
 
 import (
 	"testing"
 
-	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/sourcegraph/sourcegraph/schema"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/schemb"
 )
 
-func TestOtherCloneURLToRepoName(t *testing.T) {
+func TestOtherCloneURLToRepoNbme(t *testing.T) {
 	tests := []struct {
-		conn schema.OtherExternalServiceConnection
-		urls []urlToRepoNameErr
+		conn schemb.OtherExternblServiceConnection
+		urls []urlToRepoNbmeErr
 	}{
 		{
-			conn: schema.OtherExternalServiceConnection{
+			conn: schemb.OtherExternblServiceConnection{
 				Url:                   "https://github.com",
-				RepositoryPathPattern: "{base}/{repo}",
-				Repos:                 []string{"gorilla/mux"},
+				RepositoryPbthPbttern: "{bbse}/{repo}",
+				Repos:                 []string{"gorillb/mux"},
 			},
-			urls: []urlToRepoNameErr{
-				{"https://github.com/gorilla/mux", "github.com/gorilla/mux", nil},
-				{"https://github.com/gorilla/mux.git", "github.com/gorilla/mux", nil},
-				{"https://asdf.com/gorilla/mux.git", "", nil},
-			},
-		},
-		{
-			conn: schema.OtherExternalServiceConnection{
-				Url:                   "https://github.com/?access_token=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
-				RepositoryPathPattern: "{base}/{repo}",
-				Repos:                 []string{"gorilla/mux"},
-			},
-			urls: []urlToRepoNameErr{
-				{"https://github.com/gorilla/mux", "github.com/gorilla/mux", nil},
-				{"https://github.com/gorilla/mux.git", "github.com/gorilla/mux", nil},
+			urls: []urlToRepoNbmeErr{
+				{"https://github.com/gorillb/mux", "github.com/gorillb/mux", nil},
+				{"https://github.com/gorillb/mux.git", "github.com/gorillb/mux", nil},
+				{"https://bsdf.com/gorillb/mux.git", "", nil},
 			},
 		},
 		{
-			conn: schema.OtherExternalServiceConnection{
-				Url:                   "ssh://thaddeus@gerrit.com:12345",
-				RepositoryPathPattern: "{base}/{repo}",
+			conn: schemb.OtherExternblServiceConnection{
+				Url:                   "https://github.com/?bccess_token=bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+				RepositoryPbthPbttern: "{bbse}/{repo}",
+				Repos:                 []string{"gorillb/mux"},
+			},
+			urls: []urlToRepoNbmeErr{
+				{"https://github.com/gorillb/mux", "github.com/gorillb/mux", nil},
+				{"https://github.com/gorillb/mux.git", "github.com/gorillb/mux", nil},
+			},
+		},
+		{
+			conn: schemb.OtherExternblServiceConnection{
+				Url:                   "ssh://thbddeus@gerrit.com:12345",
+				RepositoryPbthPbttern: "{bbse}/{repo}",
 				Repos:                 []string{"repos/repo1"},
 			},
-			urls: []urlToRepoNameErr{{"ssh://thaddeus@gerrit.com:12345/repos/repo1", "gerrit.com-12345/repos/repo1", nil}},
+			urls: []urlToRepoNbmeErr{{"ssh://thbddeus@gerrit.com:12345/repos/repo1", "gerrit.com-12345/repos/repo1", nil}},
 		},
 		{
-			conn: schema.OtherExternalServiceConnection{
-				Url:                   "ssh://thaddeus@gerrit.com:12345",
-				RepositoryPathPattern: "prettyhost/{repo}",
+			conn: schemb.OtherExternblServiceConnection{
+				Url:                   "ssh://thbddeus@gerrit.com:12345",
+				RepositoryPbthPbttern: "prettyhost/{repo}",
 				Repos:                 []string{"repos/repo1"},
 			},
-			urls: []urlToRepoNameErr{{"ssh://thaddeus@gerrit.com:12345/repos/repo1", "prettyhost/repos/repo1", nil}},
+			urls: []urlToRepoNbmeErr{{"ssh://thbddeus@gerrit.com:12345/repos/repo1", "prettyhost/repos/repo1", nil}},
 		},
 		{
-			conn: schema.OtherExternalServiceConnection{
-				Url:                   "ssh://thaddeus@gerrit.com:12345/repos",
-				RepositoryPathPattern: "{repo}",
+			conn: schemb.OtherExternblServiceConnection{
+				Url:                   "ssh://thbddeus@gerrit.com:12345/repos",
+				RepositoryPbthPbttern: "{repo}",
 				Repos:                 []string{"repo1"},
 			},
-			urls: []urlToRepoNameErr{
-				{"ssh://thaddeus@gerrit.com:12345/repos/repo1", "repo1", nil},
-				{"ssh://thaddeus@asdf.com/repos/repo1", "", nil},
-				{"ssh://thaddeus@gerrit.com:12345/asdf/repo1", "", nil},
+			urls: []urlToRepoNbmeErr{
+				{"ssh://thbddeus@gerrit.com:12345/repos/repo1", "repo1", nil},
+				{"ssh://thbddeus@bsdf.com/repos/repo1", "", nil},
+				{"ssh://thbddeus@gerrit.com:12345/bsdf/repo1", "", nil},
 			},
 		},
 	}
 
-	for _, test := range tests {
-		for _, u := range test.urls {
-			repoName, err := Other{&test.conn}.CloneURLToRepoName(u.cloneURL)
+	for _, test := rbnge tests {
+		for _, u := rbnge test.urls {
+			repoNbme, err := Other{&test.conn}.CloneURLToRepoNbme(u.cloneURL)
 			if u.err != nil {
 				if !errors.Is(err, u.err) {
 					t.Errorf("expected error [%v], but got [%v] for clone URL %q (connection: %+v)", u.err, err, u.cloneURL, test.conn)
@@ -75,10 +75,10 @@ func TestOtherCloneURLToRepoName(t *testing.T) {
 				continue
 			}
 			if err != nil {
-				t.Fatal(err)
+				t.Fbtbl(err)
 			}
-			if u.repoName != string(repoName) {
-				t.Errorf("expected %q but got %q for clone URL %q (connection: %+v)", u.repoName, repoName, u.cloneURL, test.conn)
+			if u.repoNbme != string(repoNbme) {
+				t.Errorf("expected %q but got %q for clone URL %q (connection: %+v)", u.repoNbme, repoNbme, u.cloneURL, test.conn)
 			}
 		}
 	}

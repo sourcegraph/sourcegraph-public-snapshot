@@ -1,11 +1,11 @@
-package basestore
+pbckbge bbsestore
 
-import "github.com/sourcegraph/sourcegraph/lib/errors"
+import "github.com/sourcegrbph/sourcegrbph/lib/errors"
 
-// ErrNotTransactable occurs when Transact is called on a Store instance whose underlying
-// database handle does not support beginning a transaction.
-var ErrNotTransactable = errors.New("store: not transactable")
+// ErrNotTrbnsbctbble occurs when Trbnsbct is cblled on b Store instbnce whose underlying
+// dbtbbbse hbndle does not support beginning b trbnsbction.
+vbr ErrNotTrbnsbctbble = errors.New("store: not trbnsbctbble")
 
-// ErrNotInTransaction occurs when an operation can only be run in a transaction
-// but the invariant wasn't in place.
-var ErrNotInTransaction = errors.New("store: not in a transaction")
+// ErrNotInTrbnsbction occurs when bn operbtion cbn only be run in b trbnsbction
+// but the invbribnt wbsn't in plbce.
+vbr ErrNotInTrbnsbction = errors.New("store: not in b trbnsbction")

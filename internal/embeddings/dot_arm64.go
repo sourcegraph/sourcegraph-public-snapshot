@@ -1,16 +1,16 @@
-//go:build arm64
+//go:build brm64
 
-package embeddings
+pbckbge embeddings
 
 import (
-	"github.com/klauspost/cpuid/v2"
+	"github.com/klbuspost/cpuid/v2"
 )
 
 func init() {
-	hasDotProduct := cpuid.CPU.Supports(cpuid.ASIMD, cpuid.ASIMDDP)
-	if simdEnabled && hasDotProduct {
+	hbsDotProduct := cpuid.CPU.Supports(cpuid.ASIMD, cpuid.ASIMDDP)
+	if simdEnbbled && hbsDotProduct {
 		dotArch = dotSIMD
 	}
 }
 
-func dotSIMD(a, b []int8) int32
+func dotSIMD(b, b []int8) int32

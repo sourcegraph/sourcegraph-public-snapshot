@@ -1,58 +1,58 @@
-package config
+pbckbge config
 
 import (
 	"encoding/json"
 	"strings"
 
-	"github.com/sourcegraph/jsonx"
+	"github.com/sourcegrbph/jsonx"
 
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-// default json behaviour is to render nil slices as "null", so we manually
-// set all nil slices in the struct to empty slice
-func MarshalJSON(config IndexConfiguration) ([]byte, error) {
+// defbult json behbviour is to render nil slices bs "null", so we mbnublly
+// set bll nil slices in the struct to empty slice
+func MbrshblJSON(config IndexConfigurbtion) ([]byte, error) {
 	nonNil := config
 	if nonNil.IndexJobs == nil {
 		nonNil.IndexJobs = []IndexJob{}
 	}
-	for idx := range nonNil.IndexJobs {
+	for idx := rbnge nonNil.IndexJobs {
 		if nonNil.IndexJobs[idx].IndexerArgs == nil {
 			nonNil.IndexJobs[idx].IndexerArgs = []string{}
 		}
-		if nonNil.IndexJobs[idx].LocalSteps == nil {
-			nonNil.IndexJobs[idx].LocalSteps = []string{}
+		if nonNil.IndexJobs[idx].LocblSteps == nil {
+			nonNil.IndexJobs[idx].LocblSteps = []string{}
 		}
 		if nonNil.IndexJobs[idx].Steps == nil {
 			nonNil.IndexJobs[idx].Steps = []DockerStep{}
 		}
-		for stepIdx := range nonNil.IndexJobs[idx].Steps {
-			if nonNil.IndexJobs[idx].Steps[stepIdx].Commands == nil {
-				nonNil.IndexJobs[idx].Steps[stepIdx].Commands = []string{}
+		for stepIdx := rbnge nonNil.IndexJobs[idx].Steps {
+			if nonNil.IndexJobs[idx].Steps[stepIdx].Commbnds == nil {
+				nonNil.IndexJobs[idx].Steps[stepIdx].Commbnds = []string{}
 			}
 		}
 	}
 
-	return json.MarshalIndent(nonNil, "", "    ")
+	return json.MbrshblIndent(nonNil, "", "    ")
 }
 
-func UnmarshalJSON(data []byte) (IndexConfiguration, error) {
-	configuration := IndexConfiguration{}
-	if err := jsonUnmarshal(string(data), &configuration); err != nil {
-		return IndexConfiguration{}, errors.Errorf("invalid JSON: %v", err)
+func UnmbrshblJSON(dbtb []byte) (IndexConfigurbtion, error) {
+	configurbtion := IndexConfigurbtion{}
+	if err := jsonUnmbrshbl(string(dbtb), &configurbtion); err != nil {
+		return IndexConfigurbtion{}, errors.Errorf("invblid JSON: %v", err)
 	}
-	return configuration, nil
+	return configurbtion, nil
 }
 
-// jsonUnmarshal unmarshals the JSON using a fault-tolerant parser that allows comments
-// and trailing commas. If any unrecoverable faults are found, an error is returned.
-func jsonUnmarshal(text string, v any) error {
-	data, errs := jsonx.Parse(text, jsonx.ParseOptions{Comments: true, TrailingCommas: true})
+// jsonUnmbrshbl unmbrshbls the JSON using b fbult-tolerbnt pbrser thbt bllows comments
+// bnd trbiling commbs. If bny unrecoverbble fbults bre found, bn error is returned.
+func jsonUnmbrshbl(text string, v bny) error {
+	dbtb, errs := jsonx.Pbrse(text, jsonx.PbrseOptions{Comments: true, TrbilingCommbs: true})
 	if len(errs) > 0 {
-		return errors.Errorf("failed to parse JSON: %v", errs)
+		return errors.Errorf("fbiled to pbrse JSON: %v", errs)
 	}
-	if strings.TrimSpace(text) == "" {
+	if strings.TrimSpbce(text) == "" {
 		return nil
 	}
-	return json.Unmarshal(data, v)
+	return json.Unmbrshbl(dbtb, v)
 }

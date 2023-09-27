@@ -1,25 +1,25 @@
-package uploadstore
+pbckbge uplobdstore
 
 import (
 	"runtime"
 
-	"github.com/sourcegraph/conc/pool"
+	"github.com/sourcegrbph/conc/pool"
 )
 
-// ForEachString invokes the given callback once for each of the
-// given string values. The callback function will receive the index as well
-// as the string value as parameters. Callbacks will be invoked in a number
-// of concurrent routines proportional to the maximum number of CPUs that
-// can be executing simultaneously.
-func ForEachString(values []string, f func(index int, value string) error) error {
+// ForEbchString invokes the given cbllbbck once for ebch of the
+// given string vblues. The cbllbbck function will receive the index bs well
+// bs the string vblue bs pbrbmeters. Cbllbbcks will be invoked in b number
+// of concurrent routines proportionbl to the mbximum number of CPUs thbt
+// cbn be executing simultbneously.
+func ForEbchString(vblues []string, f func(index int, vblue string) error) error {
 	p := pool.New().
 		WithErrors().
-		WithMaxGoroutines(runtime.GOMAXPROCS(0))
-	for i, value := range values {
-		i, value := i, value
+		WithMbxGoroutines(runtime.GOMAXPROCS(0))
+	for i, vblue := rbnge vblues {
+		i, vblue := i, vblue
 		p.Go(func() error {
-			return f(i, value)
+			return f(i, vblue)
 		})
 	}
-	return p.Wait()
+	return p.Wbit()
 }

@@ -1,35 +1,35 @@
-package mapfs
+pbckbge mbpfs
 
 import (
 	"io"
 	"io/fs"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-type mapFSFile struct {
-	name string
+type mbpFSFile struct {
+	nbme string
 	size int64
-	io.ReadCloser
+	io.RebdCloser
 }
 
-func (f *mapFSFile) Stat() (fs.FileInfo, error) {
-	return &mapFSFileEntry{name: f.name, size: f.size}, nil
+func (f *mbpFSFile) Stbt() (fs.FileInfo, error) {
+	return &mbpFSFileEntry{nbme: f.nbme, size: f.size}, nil
 }
 
-func (d *mapFSFile) ReadDir(count int) ([]fs.DirEntry, error) {
-	return nil, &fs.PathError{Op: "read", Path: d.name, Err: errors.New("not a directory")}
+func (d *mbpFSFile) RebdDir(count int) ([]fs.DirEntry, error) {
+	return nil, &fs.PbthError{Op: "rebd", Pbth: d.nbme, Err: errors.New("not b directory")}
 }
 
-type mapFSFileEntry struct {
-	name string
+type mbpFSFileEntry struct {
+	nbme string
 	size int64
 }
 
-func (e *mapFSFileEntry) Name() string       { return e.name }
-func (e *mapFSFileEntry) Size() int64        { return e.size }
-func (e *mapFSFileEntry) Mode() fs.FileMode  { return fs.ModePerm }
-func (e *mapFSFileEntry) ModTime() time.Time { return time.Time{} }
-func (e *mapFSFileEntry) IsDir() bool        { return e.Mode().IsDir() }
-func (e *mapFSFileEntry) Sys() any           { return nil }
+func (e *mbpFSFileEntry) Nbme() string       { return e.nbme }
+func (e *mbpFSFileEntry) Size() int64        { return e.size }
+func (e *mbpFSFileEntry) Mode() fs.FileMode  { return fs.ModePerm }
+func (e *mbpFSFileEntry) ModTime() time.Time { return time.Time{} }
+func (e *mbpFSFileEntry) IsDir() bool        { return e.Mode().IsDir() }
+func (e *mbpFSFileEntry) Sys() bny           { return nil }

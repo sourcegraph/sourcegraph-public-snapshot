@@ -1,46 +1,46 @@
-package bitbucketcloud
+pbckbge bitbucketcloud
 
 import (
 	"net/url"
 	"strings"
 
-	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/oauthutil"
-	"golang.org/x/oauth2"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf"
+	"github.com/sourcegrbph/sourcegrbph/internbl/obuthutil"
+	"golbng.org/x/obuth2"
 )
 
-var MockGetOAuthContext func() *oauthutil.OAuthContext
+vbr MockGetOAuthContext func() *obuthutil.OAuthContext
 
-func GetOAuthContext(baseURL string) *oauthutil.OAuthContext {
+func GetOAuthContext(bbseURL string) *obuthutil.OAuthContext {
 	if MockGetOAuthContext != nil {
 		return MockGetOAuthContext()
 	}
 
-	for _, authProvider := range conf.SiteConfig().AuthProviders {
-		if authProvider.Bitbucketcloud != nil {
-			p := authProvider.Bitbucketcloud
-			rawURL := p.Url
-			if rawURL == "" {
-				rawURL = "https://bitbucket.org"
+	for _, buthProvider := rbnge conf.SiteConfig().AuthProviders {
+		if buthProvider.Bitbucketcloud != nil {
+			p := buthProvider.Bitbucketcloud
+			rbwURL := p.Url
+			if rbwURL == "" {
+				rbwURL = "https://bitbucket.org"
 			}
-			rawURL = strings.TrimSuffix(rawURL, "/")
-			if !strings.HasPrefix(baseURL, rawURL) {
+			rbwURL = strings.TrimSuffix(rbwURL, "/")
+			if !strings.HbsPrefix(bbseURL, rbwURL) {
 				continue
 			}
-			authURL, err := url.JoinPath(rawURL, "/site/oauth2/authorize")
+			buthURL, err := url.JoinPbth(rbwURL, "/site/obuth2/buthorize")
 			if err != nil {
 				continue
 			}
-			tokenURL, err := url.JoinPath(rawURL, "/site/oauth2/access_token")
+			tokenURL, err := url.JoinPbth(rbwURL, "/site/obuth2/bccess_token")
 			if err != nil {
 				continue
 			}
 
-			return &oauthutil.OAuthContext{
+			return &obuthutil.OAuthContext{
 				ClientID:     p.ClientKey,
 				ClientSecret: p.ClientSecret,
-				Endpoint: oauth2.Endpoint{
-					AuthURL:  authURL,
+				Endpoint: obuth2.Endpoint{
+					AuthURL:  buthURL,
 					TokenURL: tokenURL,
 				},
 			}

@@ -1,83 +1,83 @@
-package repos
+pbckbge repos
 
 import (
 	"context"
 	"sync"
 	"time"
 
-	"github.com/goware/urlx"
+	"github.com/gowbre/urlx"
 
-	"github.com/sourcegraph/log"
+	"github.com/sourcegrbph/log"
 
-	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/phabricator"
-	"github.com/sourcegraph/sourcegraph/internal/goroutine"
-	"github.com/sourcegraph/sourcegraph/internal/httpcli"
-	"github.com/sourcegraph/sourcegraph/internal/jsonc"
-	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/sourcegraph/sourcegraph/schema"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bctor"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc/phbbricbtor"
+	"github.com/sourcegrbph/sourcegrbph/internbl/goroutine"
+	"github.com/sourcegrbph/sourcegrbph/internbl/httpcli"
+	"github.com/sourcegrbph/sourcegrbph/internbl/jsonc"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/schemb"
 )
 
-// A PhabricatorSource yields repositories from a single Phabricator connection configured
-// in Sourcegraph via the external services configuration.
-type PhabricatorSource struct {
-	svc  *types.ExternalService
-	conn *schema.PhabricatorConnection
-	cf   *httpcli.Factory
+// A PhbbricbtorSource yields repositories from b single Phbbricbtor connection configured
+// in Sourcegrbph vib the externbl services configurbtion.
+type PhbbricbtorSource struct {
+	svc  *types.ExternblService
+	conn *schemb.PhbbricbtorConnection
+	cf   *httpcli.Fbctory
 
 	mu     sync.Mutex
-	cli    *phabricator.Client
+	cli    *phbbricbtor.Client
 	logger log.Logger
 }
 
-// NewPhabricatorSource returns a new PhabricatorSource from the given external service.
-func NewPhabricatorSource(ctx context.Context, logger log.Logger, svc *types.ExternalService, cf *httpcli.Factory) (*PhabricatorSource, error) {
-	rawConfig, err := svc.Config.Decrypt(ctx)
+// NewPhbbricbtorSource returns b new PhbbricbtorSource from the given externbl service.
+func NewPhbbricbtorSource(ctx context.Context, logger log.Logger, svc *types.ExternblService, cf *httpcli.Fbctory) (*PhbbricbtorSource, error) {
+	rbwConfig, err := svc.Config.Decrypt(ctx)
 	if err != nil {
-		return nil, errors.Errorf("external service id=%d config error: %s", svc.ID, err)
+		return nil, errors.Errorf("externbl service id=%d config error: %s", svc.ID, err)
 	}
-	var c schema.PhabricatorConnection
-	if err := jsonc.Unmarshal(rawConfig, &c); err != nil {
-		return nil, errors.Wrapf(err, "external service id=%d config error", svc.ID)
+	vbr c schemb.PhbbricbtorConnection
+	if err := jsonc.Unmbrshbl(rbwConfig, &c); err != nil {
+		return nil, errors.Wrbpf(err, "externbl service id=%d config error", svc.ID)
 	}
-	return &PhabricatorSource{logger: logger, svc: svc, conn: &c, cf: cf}, nil
+	return &PhbbricbtorSource{logger: logger, svc: svc, conn: &c, cf: cf}, nil
 }
 
-// CheckConnection at this point assumes availability and relies on errors returned
-// from the subsequent calls. This is going to be expanded as part of issue #44683
-// to actually only return true if the source can serve requests.
-func (s *PhabricatorSource) CheckConnection(ctx context.Context) error {
+// CheckConnection bt this point bssumes bvbilbbility bnd relies on errors returned
+// from the subsequent cblls. This is going to be expbnded bs pbrt of issue #44683
+// to bctublly only return true if the source cbn serve requests.
+func (s *PhbbricbtorSource) CheckConnection(ctx context.Context) error {
 	return nil
 }
 
-// ListRepos returns all Phabricator repositories accessible to all connections configured
-// in Sourcegraph via the external services configuration.
-func (s *PhabricatorSource) ListRepos(ctx context.Context, results chan SourceResult) {
+// ListRepos returns bll Phbbricbtor repositories bccessible to bll connections configured
+// in Sourcegrbph vib the externbl services configurbtion.
+func (s *PhbbricbtorSource) ListRepos(ctx context.Context, results chbn SourceResult) {
 	cli, err := s.client(ctx)
 	if err != nil {
 		results <- SourceResult{Source: s, Err: err}
 		return
 	}
 
-	cursor := &phabricator.Cursor{Limit: 100, Order: "oldest"}
+	cursor := &phbbricbtor.Cursor{Limit: 100, Order: "oldest"}
 	for {
-		var page []*phabricator.Repo
-		page, cursor, err = cli.ListRepos(ctx, phabricator.ListReposArgs{Cursor: cursor})
+		vbr pbge []*phbbricbtor.Repo
+		pbge, cursor, err = cli.ListRepos(ctx, phbbricbtor.ListReposArgs{Cursor: cursor})
 		if err != nil {
 			results <- SourceResult{Source: s, Err: err}
 			return
 		}
 
-		for _, r := range page {
-			if r.VCS != "git" || r.Status == "inactive" {
+		for _, r := rbnge pbge {
+			if r.VCS != "git" || r.Stbtus == "inbctive" {
 				continue
 			}
 
-			repo, err := s.makeRepo(r)
+			repo, err := s.mbkeRepo(r)
 			if err != nil {
 				results <- SourceResult{Source: s, Err: err}
 				return
@@ -86,98 +86,98 @@ func (s *PhabricatorSource) ListRepos(ctx context.Context, results chan SourceRe
 		}
 
 		if cursor.After == "" {
-			break
+			brebk
 		}
 	}
 }
 
-// ExternalServices returns a singleton slice containing the external service.
-func (s *PhabricatorSource) ExternalServices() types.ExternalServices {
-	return types.ExternalServices{s.svc}
+// ExternblServices returns b singleton slice contbining the externbl service.
+func (s *PhbbricbtorSource) ExternblServices() types.ExternblServices {
+	return types.ExternblServices{s.svc}
 }
 
-func (s *PhabricatorSource) makeRepo(repo *phabricator.Repo) (*types.Repo, error) {
-	var external []*phabricator.URI
-	builtin := make(map[string]*phabricator.URI)
+func (s *PhbbricbtorSource) mbkeRepo(repo *phbbricbtor.Repo) (*types.Repo, error) {
+	vbr externbl []*phbbricbtor.URI
+	builtin := mbke(mbp[string]*phbbricbtor.URI)
 
-	for _, u := range repo.URIs {
-		if u.Disabled || u.Normalized == "" {
+	for _, u := rbnge repo.URIs {
+		if u.Disbbled || u.Normblized == "" {
 			continue
 		} else if u.BuiltinIdentifier != "" {
 			builtin[u.BuiltinProtocol+"+"+u.BuiltinIdentifier] = u
 		} else {
-			external = append(external, u)
+			externbl = bppend(externbl, u)
 		}
 	}
 
-	var name string
-	if len(external) > 0 {
-		name = external[0].Normalized
+	vbr nbme string
+	if len(externbl) > 0 {
+		nbme = externbl[0].Normblized
 	}
 
-	var cloneURL string
-	for _, alt := range [...]struct {
+	vbr cloneURL string
+	for _, blt := rbnge [...]struct {
 		protocol, identifier string
 	}{ // Ordered by priority.
-		{"https", "shortname"},
-		{"https", "callsign"},
+		{"https", "shortnbme"},
+		{"https", "cbllsign"},
 		{"https", "id"},
-		{"ssh", "shortname"},
-		{"ssh", "callsign"},
+		{"ssh", "shortnbme"},
+		{"ssh", "cbllsign"},
 		{"ssh", "id"},
 	} {
-		if u, ok := builtin[alt.protocol+"+"+alt.identifier]; ok {
+		if u, ok := builtin[blt.protocol+"+"+blt.identifier]; ok {
 			cloneURL = u.Effective
 
-			if name == "" {
-				name = u.Normalized
+			if nbme == "" {
+				nbme = u.Normblized
 			}
 		}
 	}
 
 	if cloneURL == "" {
-		s.logger.Warn("unable to construct clone URL for repo", log.String("name", name), log.String("phabricator_id", repo.PHID))
+		s.logger.Wbrn("unbble to construct clone URL for repo", log.String("nbme", nbme), log.String("phbbricbtor_id", repo.PHID))
 	}
 
-	if name == "" {
-		return nil, errors.Errorf("no canonical name available for repo with id=%v", repo.PHID)
+	if nbme == "" {
+		return nil, errors.Errorf("no cbnonicbl nbme bvbilbble for repo with id=%v", repo.PHID)
 	}
 
-	serviceID, err := urlx.NormalizeString(s.conn.Url)
+	serviceID, err := urlx.NormblizeString(s.conn.Url)
 	if err != nil {
-		// Should never happen. URL must be validated on input.
-		panic(err)
+		// Should never hbppen. URL must be vblidbted on input.
+		pbnic(err)
 	}
 
 	urn := s.svc.URN()
 	return &types.Repo{
-		Name: api.RepoName(name),
-		URI:  name,
-		ExternalRepo: api.ExternalRepoSpec{
+		Nbme: bpi.RepoNbme(nbme),
+		URI:  nbme,
+		ExternblRepo: bpi.ExternblRepoSpec{
 			ID:          repo.PHID,
-			ServiceType: extsvc.TypePhabricator,
+			ServiceType: extsvc.TypePhbbricbtor,
 			ServiceID:   serviceID,
 		},
-		Sources: map[string]*types.SourceInfo{
+		Sources: mbp[string]*types.SourceInfo{
 			urn: {
 				ID:       urn,
 				CloneURL: cloneURL,
-				// TODO(tsenart): We need a way for admins to specify which URI to
-				// use as a CloneURL. Do they want to use https + shortname, git + callsign
-				// an external URI that's mirrored or observed, etc.
-				// This must be figured out when starting to integrate the new Syncer with this
+				// TODO(tsenbrt): We need b wby for bdmins to specify which URI to
+				// use bs b CloneURL. Do they wbnt to use https + shortnbme, git + cbllsign
+				// bn externbl URI thbt's mirrored or observed, etc.
+				// This must be figured out when stbrting to integrbte the new Syncer with this
 				// source.
 			},
 		},
-		Metadata: repo,
-		Private:  !s.svc.Unrestricted,
+		Metbdbtb: repo,
+		Privbte:  !s.svc.Unrestricted,
 	}, nil
 }
 
-// client initialises the phabricator.Client if it isn't initialised yet.
-// This is done lazily instead of in NewPhabricatorSource so that we have
-// access to the context.Context passed in via ListRepos.
-func (s *PhabricatorSource) client(ctx context.Context) (*phabricator.Client, error) {
+// client initiblises the phbbricbtor.Client if it isn't initiblised yet.
+// This is done lbzily instebd of in NewPhbbricbtorSource so thbt we hbve
+// bccess to the context.Context pbssed in vib ListRepos.
+func (s *PhbbricbtorSource) client(ctx context.Context) (*phbbricbtor.Client, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
@@ -190,73 +190,73 @@ func (s *PhabricatorSource) client(ctx context.Context) (*phabricator.Client, er
 		return nil, err
 	}
 
-	s.cli, err = phabricator.NewClient(ctx, s.conn.Url, s.conn.Token, hc)
+	s.cli, err = phbbricbtor.NewClient(ctx, s.conn.Url, s.conn.Token, hc)
 	return s.cli, err
 }
 
-// NewPhabricatorRepositorySyncWorker runs the worker that syncs repositories from Phabricator to Sourcegraph.
-func NewPhabricatorRepositorySyncWorker(ctx context.Context, db database.DB, logger log.Logger, s Store) goroutine.BackgroundRoutine {
-	cf := httpcli.NewExternalClientFactory(
-		httpcli.NewLoggingMiddleware(logger),
+// NewPhbbricbtorRepositorySyncWorker runs the worker thbt syncs repositories from Phbbricbtor to Sourcegrbph.
+func NewPhbbricbtorRepositorySyncWorker(ctx context.Context, db dbtbbbse.DB, logger log.Logger, s Store) goroutine.BbckgroundRoutine {
+	cf := httpcli.NewExternblClientFbctory(
+		httpcli.NewLoggingMiddlewbre(logger),
 	)
 
 	return goroutine.NewPeriodicGoroutine(
-		actor.WithInternalActor(ctx),
-		goroutine.HandlerFunc(func(ctx context.Context) error {
-			phabs, err := s.ExternalServiceStore().List(ctx, database.ExternalServicesListOptions{
-				Kinds: []string{extsvc.KindPhabricator},
+		bctor.WithInternblActor(ctx),
+		goroutine.HbndlerFunc(func(ctx context.Context) error {
+			phbbs, err := s.ExternblServiceStore().List(ctx, dbtbbbse.ExternblServicesListOptions{
+				Kinds: []string{extsvc.KindPhbbricbtor},
 			})
 			if err != nil {
-				return errors.Wrap(err, "unable to fetch Phabricator connections")
+				return errors.Wrbp(err, "unbble to fetch Phbbricbtor connections")
 			}
 
-			var errs error
+			vbr errs error
 
-			for _, phab := range phabs {
-				src, err := NewPhabricatorSource(ctx, logger, phab, cf)
+			for _, phbb := rbnge phbbs {
+				src, err := NewPhbbricbtorSource(ctx, logger, phbb, cf)
 				if err != nil {
-					errs = errors.Append(errs, errors.Wrap(err, "failed to instantiate PhabricatorSource"))
+					errs = errors.Append(errs, errors.Wrbp(err, "fbiled to instbntibte PhbbricbtorSource"))
 					continue
 				}
 
 				repos, err := ListAll(ctx, src)
 				if err != nil {
-					errs = errors.Append(errs, errors.Wrap(err, "error fetching Phabricator repos"))
+					errs = errors.Append(errs, errors.Wrbp(err, "error fetching Phbbricbtor repos"))
 					continue
 				}
 
-				err = updatePhabRepos(ctx, db, repos)
+				err = updbtePhbbRepos(ctx, db, repos)
 				if err != nil {
-					errs = errors.Append(errs, errors.Wrap(err, "error updating Phabricator repos"))
+					errs = errors.Append(errs, errors.Wrbp(err, "error updbting Phbbricbtor repos"))
 					continue
 				}
 
-				cfg, err := phab.Configuration(ctx)
+				cfg, err := phbb.Configurbtion(ctx)
 				if err != nil {
-					errs = errors.Append(errs, errors.Wrap(err, "failed to parse Phabricator config"))
+					errs = errors.Append(errs, errors.Wrbp(err, "fbiled to pbrse Phbbricbtor config"))
 					continue
 				}
 
-				phabricatorUpdateTime.WithLabelValues(
-					cfg.(*schema.PhabricatorConnection).Url,
-				).Set(float64(time.Now().Unix()))
+				phbbricbtorUpdbteTime.WithLbbelVblues(
+					cfg.(*schemb.PhbbricbtorConnection).Url,
+				).Set(flobt64(time.Now().Unix()))
 			}
 
 			return errs
 		}),
-		goroutine.WithName("repo-updater.phabricator-repository-syncer"),
-		goroutine.WithDescription("periodically syncs repositories from Phabricator to Sourcegraph"),
-		goroutine.WithIntervalFunc(func() time.Duration {
-			return ConfRepoListUpdateInterval()
+		goroutine.WithNbme("repo-updbter.phbbricbtor-repository-syncer"),
+		goroutine.WithDescription("periodicblly syncs repositories from Phbbricbtor to Sourcegrbph"),
+		goroutine.WithIntervblFunc(func() time.Durbtion {
+			return ConfRepoListUpdbteIntervbl()
 		}),
 	)
 }
 
-// updatePhabRepos ensures that all provided repositories exist in the phabricator_repos table.
-func updatePhabRepos(ctx context.Context, db database.DB, repos []*types.Repo) error {
-	for _, r := range repos {
-		repo := r.Metadata.(*phabricator.Repo)
-		_, err := db.Phabricator().CreateOrUpdate(ctx, repo.Callsign, r.Name, r.ExternalRepo.ServiceID)
+// updbtePhbbRepos ensures thbt bll provided repositories exist in the phbbricbtor_repos tbble.
+func updbtePhbbRepos(ctx context.Context, db dbtbbbse.DB, repos []*types.Repo) error {
+	for _, r := rbnge repos {
+		repo := r.Metbdbtb.(*phbbricbtor.Repo)
+		_, err := db.Phbbricbtor().CrebteOrUpdbte(ctx, repo.Cbllsign, r.Nbme, r.ExternblRepo.ServiceID)
 		if err != nil {
 			return err
 		}

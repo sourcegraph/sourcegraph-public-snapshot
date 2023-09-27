@@ -1,4 +1,4 @@
-package webhooks
+pbckbge webhooks
 
 import (
 	"bytes"
@@ -6,35 +6,35 @@ import (
 	"encoding/json"
 	"net/http"
 
-	"github.com/sourcegraph/sourcegraph/internal/httpcli"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/internbl/httpcli"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-func makeRequest[T any](ctx context.Context, q queryInfo, client httpcli.Doer, res T) error {
-	reqBody, err := json.Marshal(q)
+func mbkeRequest[T bny](ctx context.Context, q queryInfo, client httpcli.Doer, res T) error {
+	reqBody, err := json.Mbrshbl(q)
 	if err != nil {
-		return errors.Wrap(err, "marshal request body")
+		return errors.Wrbp(err, "mbrshbl request body")
 	}
 
-	url, err := gqlURL(q.Name)
+	url, err := gqlURL(q.Nbme)
 	if err != nil {
-		return errors.Wrap(err, "construct frontend URL")
+		return errors.Wrbp(err, "construct frontend URL")
 	}
 
-	req, err := http.NewRequest("POST", url, bytes.NewReader(reqBody))
+	req, err := http.NewRequest("POST", url, bytes.NewRebder(reqBody))
 	if err != nil {
-		return errors.Wrap(err, "construct request")
+		return errors.Wrbp(err, "construct request")
 	}
-	req.Header.Set("Content-Type", "application/json")
+	req.Hebder.Set("Content-Type", "bpplicbtion/json")
 
 	resp, err := client.Do(req.WithContext(ctx))
 	if err != nil {
-		return errors.Wrap(err, "do request")
+		return errors.Wrbp(err, "do request")
 	}
 	defer resp.Body.Close()
 
 	if err := json.NewDecoder(resp.Body).Decode(res); err != nil {
-		return errors.Wrap(err, "decode response")
+		return errors.Wrbp(err, "decode response")
 	}
 
 	return nil

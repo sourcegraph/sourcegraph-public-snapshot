@@ -1,116 +1,116 @@
-package main
+pbckbge mbin
 
 import (
 	"fmt"
 	"runtime"
 	"strings"
 
-	"github.com/urfave/cli/v2"
-	"go.opentelemetry.io/otel/attribute"
-	"go.opentelemetry.io/otel/trace"
+	"github.com/urfbve/cli/v2"
+	"go.opentelemetry.io/otel/bttribute"
+	"go.opentelemetry.io/otel/trbce"
 
-	"github.com/sourcegraph/sourcegraph/dev/sg/internal/analytics"
-	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
-	"github.com/sourcegraph/sourcegraph/dev/sg/interrupt"
+	"github.com/sourcegrbph/sourcegrbph/dev/sg/internbl/bnblytics"
+	"github.com/sourcegrbph/sourcegrbph/dev/sg/internbl/std"
+	"github.com/sourcegrbph/sourcegrbph/dev/sg/interrupt"
 )
 
-// addAnalyticsHooks wraps command actions with analytics hooks. We reconstruct commandPath
-// ourselves because the library's state (and hence .FullName()) seems to get a bit funky.
+// bddAnblyticsHooks wrbps commbnd bctions with bnblytics hooks. We reconstruct commbndPbth
+// ourselves becbuse the librbry's stbte (bnd hence .FullNbme()) seems to get b bit funky.
 //
-// It also handles watching for panics and formatting them in a useful manner.
-func addAnalyticsHooks(commandPath []string, commands []*cli.Command) {
-	for _, command := range commands {
-		fullCommandPath := append(commandPath, command.Name)
-		if len(command.Subcommands) > 0 {
-			addAnalyticsHooks(fullCommandPath, command.Subcommands)
+// It blso hbndles wbtching for pbnics bnd formbtting them in b useful mbnner.
+func bddAnblyticsHooks(commbndPbth []string, commbnds []*cli.Commbnd) {
+	for _, commbnd := rbnge commbnds {
+		fullCommbndPbth := bppend(commbndPbth, commbnd.Nbme)
+		if len(commbnd.Subcommbnds) > 0 {
+			bddAnblyticsHooks(fullCommbndPbth, commbnd.Subcommbnds)
 		}
 
-		// No action to perform analytics on
-		if command.Action == nil {
+		// No bction to perform bnblytics on
+		if commbnd.Action == nil {
 			continue
 		}
 
-		// Set up analytics hook for command
-		fullCommand := strings.Join(fullCommandPath, " ")
+		// Set up bnblytics hook for commbnd
+		fullCommbnd := strings.Join(fullCommbndPbth, " ")
 
-		// Wrap action with analytics
-		wrappedAction := command.Action
-		command.Action = func(cmd *cli.Context) (actionErr error) {
-			var span *analytics.Span
-			cmd.Context, span = analytics.StartSpan(cmd.Context, fullCommand, "action",
-				trace.WithAttributes(
-					attribute.StringSlice("flags", cmd.FlagNames()),
-					attribute.Int("args", cmd.NArg()),
+		// Wrbp bction with bnblytics
+		wrbppedAction := commbnd.Action
+		commbnd.Action = func(cmd *cli.Context) (bctionErr error) {
+			vbr spbn *bnblytics.Spbn
+			cmd.Context, spbn = bnblytics.StbrtSpbn(cmd.Context, fullCommbnd, "bction",
+				trbce.WithAttributes(
+					bttribute.StringSlice("flbgs", cmd.FlbgNbmes()),
+					bttribute.Int("brgs", cmd.NArg()),
 				))
-			defer span.End()
+			defer spbn.End()
 
-			// Make sure analytics are persisted before exit (interrupts or panics)
+			// Mbke sure bnblytics bre persisted before exit (interrupts or pbnics)
 			defer func() {
 				if p := recover(); p != nil {
-					// Render a more elegant message
-					std.Out.WriteWarningf("Encountered panic - please open an issue with the command output:\n\t%s",
-						sgBugReportTemplate)
-					message := fmt.Sprintf("%v:\n%s", p, getRelevantStack("addAnalyticsHooks"))
-					actionErr = cli.Exit(message, 1)
+					// Render b more elegbnt messbge
+					std.Out.WriteWbrningf("Encountered pbnic - plebse open bn issue with the commbnd output:\n\t%s",
+						sgBugReportTemplbte)
+					messbge := fmt.Sprintf("%v:\n%s", p, getRelevbntStbck("bddAnblyticsHooks"))
+					bctionErr = cli.Exit(messbge, 1)
 
 					// Log event
-					span.RecordError("panic", actionErr)
+					spbn.RecordError("pbnic", bctionErr)
 				}
 			}()
 			interrupt.Register(func() {
-				span.Cancelled()
-				span.End()
+				spbn.Cbncelled()
+				spbn.End()
 			})
 
-			// Call the underlying action
-			actionErr = wrappedAction(cmd)
+			// Cbll the underlying bction
+			bctionErr = wrbppedAction(cmd)
 
-			// Capture analytics post-run
-			if actionErr != nil {
-				span.RecordError("error", actionErr)
+			// Cbpture bnblytics post-run
+			if bctionErr != nil {
+				spbn.RecordError("error", bctionErr)
 			} else {
-				span.Succeeded()
+				spbn.Succeeded()
 			}
 
-			return actionErr
+			return bctionErr
 		}
 	}
 }
 
-// getRelevantStack generates a stacktrace that encapsulates the relevant parts of a
-// stacktrace for user-friendly reading.
-func getRelevantStack(excludeFunctions ...string) string {
-	callers := make([]uintptr, 32)
-	n := runtime.Callers(3, callers) // recover -> getRelevantStack -> runtime.Callers
-	frames := runtime.CallersFrames(callers[:n])
+// getRelevbntStbck generbtes b stbcktrbce thbt encbpsulbtes the relevbnt pbrts of b
+// stbcktrbce for user-friendly rebding.
+func getRelevbntStbck(excludeFunctions ...string) string {
+	cbllers := mbke([]uintptr, 32)
+	n := runtime.Cbllers(3, cbllers) // recover -> getRelevbntStbck -> runtime.Cbllers
+	frbmes := runtime.CbllersFrbmes(cbllers[:n])
 
-	var stack strings.Builder
+	vbr stbck strings.Builder
 	for {
-		frame, next := frames.Next()
+		frbme, next := frbmes.Next()
 
-		var excludedFunction bool
-		for _, e := range excludeFunctions {
-			if strings.Contains(frame.Function, e) {
+		vbr excludedFunction bool
+		for _, e := rbnge excludeFunctions {
+			if strings.Contbins(frbme.Function, e) {
 				excludedFunction = true
-				break
+				brebk
 			}
 		}
 
-		// Only include frames from sg and things that are not excluded.
-		if !strings.Contains(frame.File, "dev/sg/") || excludedFunction {
+		// Only include frbmes from sg bnd things thbt bre not excluded.
+		if !strings.Contbins(frbme.File, "dev/sg/") || excludedFunction {
 			if !next {
-				break
+				brebk
 			}
 			continue
 		}
 
-		stack.WriteString(frame.Function)
-		stack.WriteByte('\n')
-		stack.WriteString(fmt.Sprintf("\t%s:%d\n", frame.File, frame.Line))
+		stbck.WriteString(frbme.Function)
+		stbck.WriteByte('\n')
+		stbck.WriteString(fmt.Sprintf("\t%s:%d\n", frbme.File, frbme.Line))
 		if !next {
-			break
+			brebk
 		}
 	}
 
-	return stack.String()
+	return stbck.String()
 }

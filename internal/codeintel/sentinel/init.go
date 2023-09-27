@@ -1,39 +1,39 @@
-package sentinel
+pbckbge sentinel
 
 import (
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/sentinel/internal/background"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/sentinel/internal/background/downloader"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/sentinel/internal/background/matcher"
-	sentinelstore "github.com/sourcegraph/sourcegraph/internal/codeintel/sentinel/internal/store"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/goroutine"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegrbph/sourcegrbph/internbl/codeintel/sentinel/internbl/bbckground"
+	"github.com/sourcegrbph/sourcegrbph/internbl/codeintel/sentinel/internbl/bbckground/downlobder"
+	"github.com/sourcegrbph/sourcegrbph/internbl/codeintel/sentinel/internbl/bbckground/mbtcher"
+	sentinelstore "github.com/sourcegrbph/sourcegrbph/internbl/codeintel/sentinel/internbl/store"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/goroutine"
+	"github.com/sourcegrbph/sourcegrbph/internbl/observbtion"
 )
 
 func NewService(
-	observationCtx *observation.Context,
-	db database.DB,
+	observbtionCtx *observbtion.Context,
+	db dbtbbbse.DB,
 ) *Service {
 	return newService(
-		scopedContext("service", observationCtx),
-		sentinelstore.New(scopedContext("store", observationCtx), db),
+		scopedContext("service", observbtionCtx),
+		sentinelstore.New(scopedContext("store", observbtionCtx), db),
 	)
 }
 
-var (
-	DownloaderConfigInst = &downloader.Config{}
-	MatcherConfigInst    = &matcher.Config{}
+vbr (
+	DownlobderConfigInst = &downlobder.Config{}
+	MbtcherConfigInst    = &mbtcher.Config{}
 )
 
-func CVEScannerJob(observationCtx *observation.Context, service *Service) []goroutine.BackgroundRoutine {
-	return background.CVEScannerJob(
-		scopedContext("cvescanner", observationCtx),
+func CVEScbnnerJob(observbtionCtx *observbtion.Context, service *Service) []goroutine.BbckgroundRoutine {
+	return bbckground.CVEScbnnerJob(
+		scopedContext("cvescbnner", observbtionCtx),
 		service.store,
-		DownloaderConfigInst,
-		MatcherConfigInst,
+		DownlobderConfigInst,
+		MbtcherConfigInst,
 	)
 }
 
-func scopedContext(component string, parent *observation.Context) *observation.Context {
-	return observation.ScopedContext("codeintel", "sentinel", component, parent)
+func scopedContext(component string, pbrent *observbtion.Context) *observbtion.Context {
+	return observbtion.ScopedContext("codeintel", "sentinel", component, pbrent)
 }

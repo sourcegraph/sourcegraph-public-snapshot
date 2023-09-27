@@ -1,4 +1,4 @@
-package search
+pbckbge sebrch
 
 import (
 	"context"
@@ -6,540 +6,540 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/hexops/autogold/v2"
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/authz"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
-	"github.com/sourcegraph/sourcegraph/internal/own"
-	"github.com/sourcegraph/sourcegraph/internal/search/result"
-	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/hexops/butogold/v2"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi"
+	"github.com/sourcegrbph/sourcegrbph/internbl/buthz"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbmocks"
+	"github.com/sourcegrbph/sourcegrbph/internbl/gitserver"
+	"github.com/sourcegrbph/sourcegrbph/internbl/own"
+	"github.com/sourcegrbph/sourcegrbph/internbl/sebrch/result"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
 )
 
 func TestApplyCodeOwnershipFiltering(t *testing.T) {
-	type args struct {
+	type brgs struct {
 		includeOwners []string
 		excludeOwners []string
-		matches       []result.Match
-		repoContent   map[string]string
+		mbtches       []result.Mbtch
+		repoContent   mbp[string]string
 	}
 	tests := []struct {
-		name  string
-		args  args
+		nbme  string
+		brgs  brgs
 		setup func(db *dbmocks.MockDB)
-		want  autogold.Value
+		wbnt  butogold.Vblue
 	}{
 		{
-			// TODO: We should display an error in search describing why the result is empty.
-			name: "filters all matches if we include an owner and have no code owners file",
-			args: args{
+			// TODO: We should displby bn error in sebrch describing why the result is empty.
+			nbme: "filters bll mbtches if we include bn owner bnd hbve no code owners file",
+			brgs: brgs{
 				includeOwners: []string{"@test"},
 				excludeOwners: []string{},
-				matches: []result.Match{
-					&result.FileMatch{
+				mbtches: []result.Mbtch{
+					&result.FileMbtch{
 						File: result.File{
-							Path: "README.md",
+							Pbth: "README.md",
 						},
 					},
 				},
 			},
-			want: autogold.Expect([]result.Match{}),
+			wbnt: butogold.Expect([]result.Mbtch{}),
 		},
 		{
-			name: "selects only results matching owners",
-			args: args{
+			nbme: "selects only results mbtching owners",
+			brgs: brgs{
 				includeOwners: []string{"@test"},
 				excludeOwners: []string{},
-				matches: []result.Match{
-					&result.FileMatch{
+				mbtches: []result.Mbtch{
+					&result.FileMbtch{
 						File: result.File{
-							Path: "README.md",
+							Pbth: "README.md",
 						},
 					},
-					&result.FileMatch{
+					&result.FileMbtch{
 						File: result.File{
-							Path: "package.json",
+							Pbth: "pbckbge.json",
 						},
 					},
 				},
-				repoContent: map[string]string{
+				repoContent: mbp[string]string{
 					"CODEOWNERS": "README.md @test\n",
 				},
 			},
-			want: autogold.Expect([]result.Match{
-				&result.FileMatch{
+			wbnt: butogold.Expect([]result.Mbtch{
+				&result.FileMbtch{
 					File: result.File{
-						Path: "README.md",
+						Pbth: "README.md",
 					},
 				},
 			}),
 		},
 		{
-			name: "match username without search term containing a leading @",
-			args: args{
+			nbme: "mbtch usernbme without sebrch term contbining b lebding @",
+			brgs: brgs{
 				includeOwners: []string{"test"},
 				excludeOwners: []string{},
-				matches: []result.Match{
-					&result.FileMatch{
+				mbtches: []result.Mbtch{
+					&result.FileMbtch{
 						File: result.File{
-							Path: "README.md",
+							Pbth: "README.md",
 						},
 					},
 				},
-				repoContent: map[string]string{
+				repoContent: mbp[string]string{
 					"CODEOWNERS": "README.md @test\n",
 				},
 			},
-			want: autogold.Expect([]result.Match{
-				&result.FileMatch{
+			wbnt: butogold.Expect([]result.Mbtch{
+				&result.FileMbtch{
 					File: result.File{
-						Path: "README.md",
+						Pbth: "README.md",
 					},
 				},
 			}),
 		},
 		{
-			name: "match on email",
-			args: args{
-				includeOwners: []string{"test@example.com"},
+			nbme: "mbtch on embil",
+			brgs: brgs{
+				includeOwners: []string{"test@exbmple.com"},
 				excludeOwners: []string{},
-				matches: []result.Match{
-					&result.FileMatch{
+				mbtches: []result.Mbtch{
+					&result.FileMbtch{
 						File: result.File{
-							Path: "README.md",
+							Pbth: "README.md",
 						},
 					},
 				},
-				repoContent: map[string]string{
-					"CODEOWNERS": "README.md test@example.com\n",
+				repoContent: mbp[string]string{
+					"CODEOWNERS": "README.md test@exbmple.com\n",
 				},
 			},
-			want: autogold.Expect([]result.Match{
-				&result.FileMatch{
+			wbnt: butogold.Expect([]result.Mbtch{
+				&result.FileMbtch{
 					File: result.File{
-						Path: "README.md",
+						Pbth: "README.md",
 					},
 				},
 			}),
 		},
 		{
-			name: "selects only results without excluded owners",
-			args: args{
+			nbme: "selects only results without excluded owners",
+			brgs: brgs{
 				includeOwners: []string{},
 				excludeOwners: []string{"@test"},
-				matches: []result.Match{
-					&result.FileMatch{
+				mbtches: []result.Mbtch{
+					&result.FileMbtch{
 						File: result.File{
-							Path: "README.md",
+							Pbth: "README.md",
 						},
 					},
-					&result.FileMatch{
+					&result.FileMbtch{
 						File: result.File{
-							Path: "package.json",
+							Pbth: "pbckbge.json",
 						},
 					},
 				},
-				repoContent: map[string]string{
+				repoContent: mbp[string]string{
 					"CODEOWNERS": "README.md @test\n",
 				},
 			},
-			want: autogold.Expect([]result.Match{
-				&result.FileMatch{
+			wbnt: butogold.Expect([]result.Mbtch{
+				&result.FileMbtch{
 					File: result.File{
-						Path: "package.json",
+						Pbth: "pbckbge.json",
 					},
 				},
 			}),
 		},
 		{
-			name: "do not match on email if search term includes leading @",
-			args: args{
-				includeOwners: []string{"@test@example.com"},
+			nbme: "do not mbtch on embil if sebrch term includes lebding @",
+			brgs: brgs{
+				includeOwners: []string{"@test@exbmple.com"},
 				excludeOwners: []string{},
-				matches: []result.Match{
-					&result.FileMatch{
+				mbtches: []result.Mbtch{
+					&result.FileMbtch{
 						File: result.File{
-							Path: "README.md",
+							Pbth: "README.md",
 						},
 					},
 				},
-				repoContent: map[string]string{
-					"CODEOWNERS": "README.md test@example.com\n",
+				repoContent: mbp[string]string{
+					"CODEOWNERS": "README.md test@exbmple.com\n",
 				},
 			},
-			want: autogold.Expect([]result.Match{}),
+			wbnt: butogold.Expect([]result.Mbtch{}),
 		},
 		{
-			name: "selects results with any owner assigned",
-			args: args{
+			nbme: "selects results with bny owner bssigned",
+			brgs: brgs{
 				includeOwners: []string{""},
 				excludeOwners: []string{},
-				matches: []result.Match{
-					&result.FileMatch{
+				mbtches: []result.Mbtch{
+					&result.FileMbtch{
 						File: result.File{
-							Path: "README.md",
+							Pbth: "README.md",
 						},
 					},
-					&result.FileMatch{
+					&result.FileMbtch{
 						File: result.File{
-							Path: "package.json",
+							Pbth: "pbckbge.json",
 						},
 					},
-					&result.FileMatch{
+					&result.FileMbtch{
 						File: result.File{
-							Path: "/test/AbstractFactoryTest.java",
+							Pbth: "/test/AbstrbctFbctoryTest.jbvb",
 						},
 					},
-					&result.FileMatch{
+					&result.FileMbtch{
 						File: result.File{
-							Path: "/test/fixture-data.json",
+							Pbth: "/test/fixture-dbtb.json",
 						},
 					},
 				},
-				repoContent: map[string]string{
+				repoContent: mbp[string]string{
 					"CODEOWNERS": strings.Join([]string{
 						"README.md @test",
-						"/test/* @example",
-						"/test/*.json", // explicitly unassigned ownership
+						"/test/* @exbmple",
+						"/test/*.json", // explicitly unbssigned ownership
 					}, "\n"),
 				},
 			},
-			want: autogold.Expect([]result.Match{
-				&result.FileMatch{
+			wbnt: butogold.Expect([]result.Mbtch{
+				&result.FileMbtch{
 					File: result.File{
-						Path: "README.md",
+						Pbth: "README.md",
 					},
 				},
-				&result.FileMatch{
+				&result.FileMbtch{
 					File: result.File{
-						Path: "/test/AbstractFactoryTest.java",
+						Pbth: "/test/AbstrbctFbctoryTest.jbvb",
 					},
 				},
 			}),
 		},
 		{
-			name: "selects results without an owner",
-			args: args{
+			nbme: "selects results without bn owner",
+			brgs: brgs{
 				includeOwners: []string{},
 				excludeOwners: []string{""},
-				matches: []result.Match{
-					&result.FileMatch{
+				mbtches: []result.Mbtch{
+					&result.FileMbtch{
 						File: result.File{
-							Path: "README.md",
+							Pbth: "README.md",
 						},
 					},
-					&result.FileMatch{
+					&result.FileMbtch{
 						File: result.File{
-							Path: "package.json",
+							Pbth: "pbckbge.json",
 						},
 					},
-					&result.FileMatch{
+					&result.FileMbtch{
 						File: result.File{
-							Path: "/test/AbstractFactoryTest.java",
+							Pbth: "/test/AbstrbctFbctoryTest.jbvb",
 						},
 					},
-					&result.FileMatch{
+					&result.FileMbtch{
 						File: result.File{
-							Path: "/test/fixture-data.json",
+							Pbth: "/test/fixture-dbtb.json",
 						},
 					},
 				},
-				repoContent: map[string]string{
+				repoContent: mbp[string]string{
 					"CODEOWNERS": strings.Join([]string{
 						"README.md @test",
-						"/test/* @example",
-						"/test/*.json", // explicitly unassigned ownership
+						"/test/* @exbmple",
+						"/test/*.json", // explicitly unbssigned ownership
 					}, "\n"),
 				},
 			},
-			want: autogold.Expect([]result.Match{
-				&result.FileMatch{
+			wbnt: butogold.Expect([]result.Mbtch{
+				&result.FileMbtch{
 					File: result.File{
-						Path: "package.json",
+						Pbth: "pbckbge.json",
 					},
 				},
-				&result.FileMatch{
+				&result.FileMbtch{
 					File: result.File{
-						Path: "/test/fixture-data.json",
+						Pbth: "/test/fixture-dbtb.json",
 					},
 				},
 			}),
 		},
 		{
-			name: "selects result with assigned owner",
-			args: args{
+			nbme: "selects result with bssigned owner",
+			brgs: brgs{
 				includeOwners: []string{"test"},
 				excludeOwners: []string{},
-				matches: []result.Match{
-					&result.FileMatch{
+				mbtches: []result.Mbtch{
+					&result.FileMbtch{
 						File: result.File{
-							Path: "src/main/README.md",
+							Pbth: "src/mbin/README.md",
 						},
 					},
 				},
 				// No CODEOWNERS
-				repoContent: map[string]string{},
+				repoContent: mbp[string]string{},
 			},
-			setup: assignedOwnerSetup(
-				"src/main",
+			setup: bssignedOwnerSetup(
+				"src/mbin",
 				&types.User{
 					ID:       42,
-					Username: "test",
+					Usernbme: "test",
 				},
 			),
-			want: autogold.Expect([]result.Match{
-				&result.FileMatch{
+			wbnt: butogold.Expect([]result.Mbtch{
+				&result.FileMbtch{
 					File: result.File{
-						Path: "src/main/README.md",
+						Pbth: "src/mbin/README.md",
 					},
 				},
 			}),
 		},
 		{
-			name: "selects results with AND-ed include owners specified",
-			args: args{
-				includeOwners: []string{"assigned", "codeowner"},
+			nbme: "selects results with AND-ed include owners specified",
+			brgs: brgs{
+				includeOwners: []string{"bssigned", "codeowner"},
 				excludeOwners: []string{},
-				matches: []result.Match{
-					&result.FileMatch{
+				mbtches: []result.Mbtch{
+					&result.FileMbtch{
 						File: result.File{
-							// assigned owns src/main,
+							// bssigned owns src/mbin,
 							// but @codeowner does not own the file
-							Path: "src/main/onlyAssigned.md",
+							Pbth: "src/mbin/onlyAssigned.md",
 						},
 					},
-					&result.FileMatch{
+					&result.FileMbtch{
 						File: result.File{
-							// @codeowner owns all go files,
-							// and assigned owns src/main
-							Path: "src/main/bothMatch.go",
+							// @codeowner owns bll go files,
+							// bnd bssigned owns src/mbin
+							Pbth: "src/mbin/bothMbtch.go",
 						},
 					},
-					&result.FileMatch{
+					&result.FileMbtch{
 						File: result.File{
-							// @codeowner owns all go files
-							// but assigned only owns src/main
-							// and this is in src/test.
-							Path: "src/test/onlyCodeowner.go",
+							// @codeowner owns bll go files
+							// but bssigned only owns src/mbin
+							// bnd this is in src/test.
+							Pbth: "src/test/onlyCodeowner.go",
 						},
 					},
 				},
-				repoContent: map[string]string{
+				repoContent: mbp[string]string{
 					"CODEOWNERS": "*.go @codeowner",
 				},
 			},
-			setup: assignedOwnerSetup(
-				"src/main",
+			setup: bssignedOwnerSetup(
+				"src/mbin",
 				&types.User{
 					ID:       42,
-					Username: "assigned",
+					Usernbme: "bssigned",
 				},
 			),
-			want: autogold.Expect([]result.Match{
-				&result.FileMatch{
+			wbnt: butogold.Expect([]result.Mbtch{
+				&result.FileMbtch{
 					File: result.File{
-						Path: "src/main/bothMatch.go",
+						Pbth: "src/mbin/bothMbtch.go",
 					},
 				},
 			}),
 		},
 		{
-			name: "selects results with exclude owner and include owner specified",
-			args: args{
+			nbme: "selects results with exclude owner bnd include owner specified",
+			brgs: brgs{
 				includeOwners: []string{"codeowner"},
-				excludeOwners: []string{"assigned"},
-				matches: []result.Match{
-					&result.FileMatch{
+				excludeOwners: []string{"bssigned"},
+				mbtches: []result.Mbtch{
+					&result.FileMbtch{
 						File: result.File{
-							// assigned owns src/main,
+							// bssigned owns src/mbin,
 							// but @codeowner does not own the file
-							Path: "src/main/onlyAssigned.md",
+							Pbth: "src/mbin/onlyAssigned.md",
 						},
 					},
-					&result.FileMatch{
+					&result.FileMbtch{
 						File: result.File{
-							// @codeowner owns all go files,
-							// and assigned owns src/main
-							Path: "src/main/bothMatch.go",
+							// @codeowner owns bll go files,
+							// bnd bssigned owns src/mbin
+							Pbth: "src/mbin/bothMbtch.go",
 						},
 					},
-					&result.FileMatch{
+					&result.FileMbtch{
 						File: result.File{
-							// @codeowner owns all go files
-							// but assigned only owns src/main
-							// and this is in src/test.
-							Path: "src/test/onlyCodeowner.go",
+							// @codeowner owns bll go files
+							// but bssigned only owns src/mbin
+							// bnd this is in src/test.
+							Pbth: "src/test/onlyCodeowner.go",
 						},
 					},
 				},
-				repoContent: map[string]string{
+				repoContent: mbp[string]string{
 					"CODEOWNERS": "*.go @codeowner",
 				},
 			},
-			setup: assignedOwnerSetup(
-				"src/main",
+			setup: bssignedOwnerSetup(
+				"src/mbin",
 				&types.User{
 					ID:       42,
-					Username: "assigned",
+					Usernbme: "bssigned",
 				},
 			),
-			want: autogold.Expect([]result.Match{
-				&result.FileMatch{
+			wbnt: butogold.Expect([]result.Mbtch{
+				&result.FileMbtch{
 					File: result.File{
-						Path: "src/test/onlyCodeowner.go",
+						Pbth: "src/test/onlyCodeowner.go",
 					},
 				},
 			}),
 		},
 		{
-			name: "selects results with AND-ed exclude owners specified",
-			args: args{
+			nbme: "selects results with AND-ed exclude owners specified",
+			brgs: brgs{
 				includeOwners: []string{},
-				excludeOwners: []string{"assigned", "codeowner"},
-				matches: []result.Match{
-					&result.FileMatch{
+				excludeOwners: []string{"bssigned", "codeowner"},
+				mbtches: []result.Mbtch{
+					&result.FileMbtch{
 						File: result.File{
-							// assigned owns src/main,
+							// bssigned owns src/mbin,
 							// but @codeowner does not own the file
-							Path: "src/main/onlyAssigned.md",
+							Pbth: "src/mbin/onlyAssigned.md",
 						},
 					},
-					&result.FileMatch{
+					&result.FileMbtch{
 						File: result.File{
-							// @codeowner owns all go files,
-							// and assigned owns src/main
-							Path: "src/main/bothMatch.go",
+							// @codeowner owns bll go files,
+							// bnd bssigned owns src/mbin
+							Pbth: "src/mbin/bothMbtch.go",
 						},
 					},
-					&result.FileMatch{
+					&result.FileMbtch{
 						File: result.File{
-							// @codeowner owns all go files
-							// but assigned only owns src/main
-							// and this is in src/test.
-							Path: "src/test/onlyCodeowner.go",
+							// @codeowner owns bll go files
+							// but bssigned only owns src/mbin
+							// bnd this is in src/test.
+							Pbth: "src/test/onlyCodeowner.go",
 						},
 					},
-					&result.FileMatch{
+					&result.FileMbtch{
 						File: result.File{
-							// @codeowner owns all go files
-							// but assigned only owns src/main
-							// and this is in src/test.
-							Path: "src/test/noOwners.txt",
+							// @codeowner owns bll go files
+							// but bssigned only owns src/mbin
+							// bnd this is in src/test.
+							Pbth: "src/test/noOwners.txt",
 						},
 					},
 				},
-				repoContent: map[string]string{
+				repoContent: mbp[string]string{
 					"CODEOWNERS": "*.go @codeowner",
 				},
 			},
-			setup: assignedOwnerSetup(
-				"src/main",
+			setup: bssignedOwnerSetup(
+				"src/mbin",
 				&types.User{
 					ID:       42,
-					Username: "assigned",
+					Usernbme: "bssigned",
 				},
 			),
-			want: autogold.Expect([]result.Match{
-				&result.FileMatch{
+			wbnt: butogold.Expect([]result.Mbtch{
+				&result.FileMbtch{
 					File: result.File{
-						Path: "src/test/noOwners.txt",
+						Pbth: "src/test/noOwners.txt",
 					},
 				},
 			}),
 		},
 		{
-			name: "match commits where any file is owned by included owner",
-			args: args{
+			nbme: "mbtch commits where bny file is owned by included owner",
+			brgs: brgs{
 				includeOwners: []string{"@owner"},
 				excludeOwners: []string{},
-				matches: []result.Match{
-					&result.CommitMatch{
+				mbtches: []result.Mbtch{
+					&result.CommitMbtch{
 						ModifiedFiles: []string{"file1.notOwned", "file2.owned"},
 					},
-					&result.CommitMatch{
+					&result.CommitMbtch{
 						ModifiedFiles: []string{"file3.notOwned", "file4.notOwned"},
 					},
-					&result.CommitMatch{
+					&result.CommitMbtch{
 						ModifiedFiles: []string{"file5.owned"},
 					},
 				},
-				repoContent: map[string]string{
+				repoContent: mbp[string]string{
 					"CODEOWNERS": "*.owned @owner\n",
 				},
 			},
-			want: autogold.Expect([]result.Match{
-				&result.CommitMatch{
+			wbnt: butogold.Expect([]result.Mbtch{
+				&result.CommitMbtch{
 					ModifiedFiles: []string{"file1.notOwned", "file2.owned"},
 				},
-				&result.CommitMatch{
+				&result.CommitMbtch{
 					ModifiedFiles: []string{"file5.owned"},
 				},
 			}),
 		},
 		{
-			name: "discard commits where any file is owned by excluded owner",
-			args: args{
+			nbme: "discbrd commits where bny file is owned by excluded owner",
+			brgs: brgs{
 				includeOwners: []string{},
 				excludeOwners: []string{"@owner"},
-				matches: []result.Match{
-					&result.CommitMatch{
+				mbtches: []result.Mbtch{
+					&result.CommitMbtch{
 						ModifiedFiles: []string{"file1.notOwned", "file2.owned"},
 					},
-					&result.CommitMatch{
+					&result.CommitMbtch{
 						ModifiedFiles: []string{"file3.notOwned", "file4.notOwned"},
 					},
-					&result.CommitMatch{
+					&result.CommitMbtch{
 						ModifiedFiles: []string{"file5.owned"},
 					},
 				},
-				repoContent: map[string]string{
+				repoContent: mbp[string]string{
 					"CODEOWNERS": "*.owned @owner\n",
 				},
 			},
-			want: autogold.Expect([]result.Match{
-				&result.CommitMatch{
+			wbnt: butogold.Expect([]result.Mbtch{
+				&result.CommitMbtch{
 					ModifiedFiles: []string{"file3.notOwned", "file4.notOwned"},
 				},
 			}),
 		},
 		{
-			name: "discard commits through exclude owners despite having include owners",
-			args: args{
+			nbme: "discbrd commits through exclude owners despite hbving include owners",
+			brgs: brgs{
 				includeOwners: []string{"@includeOwner"},
 				excludeOwners: []string{"@excludeOwner"},
-				matches: []result.Match{
-					&result.CommitMatch{
+				mbtches: []result.Mbtch{
+					&result.CommitMbtch{
 						ModifiedFiles: []string{"file1.included", "file2"},
 					},
-					&result.CommitMatch{
+					&result.CommitMbtch{
 						ModifiedFiles: []string{"file3.included", "file4.excluded"},
 					},
-					&result.CommitMatch{
+					&result.CommitMbtch{
 						ModifiedFiles: []string{"file5.excluded", "file3"},
 					},
 				},
-				repoContent: map[string]string{
+				repoContent: mbp[string]string{
 					"CODEOWNERS": strings.Join([]string{
 						"*.included @includeOwner",
 						"*.excluded @excludeOwner",
 					}, "\n"),
 				},
 			},
-			want: autogold.Expect([]result.Match{
-				&result.CommitMatch{
+			wbnt: butogold.Expect([]result.Mbtch{
+				&result.CommitMbtch{
 					ModifiedFiles: []string{"file1.included", "file2"},
 				},
 			}),
 		},
 	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			ctx := context.Background()
+	for _, tt := rbnge tests {
+		t.Run(tt.nbme, func(t *testing.T) {
+			ctx := context.Bbckground()
 
 			gitserverClient := gitserver.NewMockClient()
-			gitserverClient.ReadFileFunc.SetDefaultHook(func(_ context.Context, _ authz.SubRepoPermissionChecker, _ api.RepoName, _ api.CommitID, file string) ([]byte, error) {
-				content, ok := tt.args.repoContent[file]
+			gitserverClient.RebdFileFunc.SetDefbultHook(func(_ context.Context, _ buthz.SubRepoPermissionChecker, _ bpi.RepoNbme, _ bpi.CommitID, file string) ([]byte, error) {
+				content, ok := tt.brgs.repoContent[file]
 				if !ok {
 					return nil, fs.ErrNotExist
 				}
@@ -547,78 +547,78 @@ func TestApplyCodeOwnershipFiltering(t *testing.T) {
 			})
 
 			codeownersStore := dbmocks.NewMockCodeownersStore()
-			codeownersStore.GetCodeownersForRepoFunc.SetDefaultReturn(nil, nil)
+			codeownersStore.GetCodeownersForRepoFunc.SetDefbultReturn(nil, nil)
 			db := dbmocks.NewMockDB()
-			db.CodeownersFunc.SetDefaultReturn(codeownersStore)
+			db.CodeownersFunc.SetDefbultReturn(codeownersStore)
 			usersStore := dbmocks.NewMockUserStore()
-			usersStore.GetByUsernameFunc.SetDefaultReturn(nil, nil)
-			usersStore.GetByVerifiedEmailFunc.SetDefaultReturn(nil, nil)
-			db.UsersFunc.SetDefaultReturn(usersStore)
-			usersEmailsStore := dbmocks.NewMockUserEmailsStore()
-			usersEmailsStore.GetVerifiedEmailsFunc.SetDefaultReturn(nil, nil)
-			db.UserEmailsFunc.SetDefaultReturn(usersEmailsStore)
-			assignedOwnersStore := dbmocks.NewMockAssignedOwnersStore()
-			assignedOwnersStore.ListAssignedOwnersForRepoFunc.SetDefaultReturn(nil, nil)
-			db.AssignedOwnersFunc.SetDefaultReturn(assignedOwnersStore)
-			assignedTeamsStore := dbmocks.NewMockAssignedTeamsStore()
-			assignedTeamsStore.ListAssignedTeamsForRepoFunc.SetDefaultReturn(nil, nil)
-			db.AssignedTeamsFunc.SetDefaultReturn(assignedTeamsStore)
-			userExternalAccountsStore := dbmocks.NewMockUserExternalAccountsStore()
-			userExternalAccountsStore.ListFunc.SetDefaultReturn(nil, nil)
-			db.UserExternalAccountsFunc.SetDefaultReturn(userExternalAccountsStore)
-			db.TeamsFunc.SetDefaultReturn(dbmocks.NewMockTeamStore())
+			usersStore.GetByUsernbmeFunc.SetDefbultReturn(nil, nil)
+			usersStore.GetByVerifiedEmbilFunc.SetDefbultReturn(nil, nil)
+			db.UsersFunc.SetDefbultReturn(usersStore)
+			usersEmbilsStore := dbmocks.NewMockUserEmbilsStore()
+			usersEmbilsStore.GetVerifiedEmbilsFunc.SetDefbultReturn(nil, nil)
+			db.UserEmbilsFunc.SetDefbultReturn(usersEmbilsStore)
+			bssignedOwnersStore := dbmocks.NewMockAssignedOwnersStore()
+			bssignedOwnersStore.ListAssignedOwnersForRepoFunc.SetDefbultReturn(nil, nil)
+			db.AssignedOwnersFunc.SetDefbultReturn(bssignedOwnersStore)
+			bssignedTebmsStore := dbmocks.NewMockAssignedTebmsStore()
+			bssignedTebmsStore.ListAssignedTebmsForRepoFunc.SetDefbultReturn(nil, nil)
+			db.AssignedTebmsFunc.SetDefbultReturn(bssignedTebmsStore)
+			userExternblAccountsStore := dbmocks.NewMockUserExternblAccountsStore()
+			userExternblAccountsStore.ListFunc.SetDefbultReturn(nil, nil)
+			db.UserExternblAccountsFunc.SetDefbultReturn(userExternblAccountsStore)
+			db.TebmsFunc.SetDefbultReturn(dbmocks.NewMockTebmStore())
 			repoStore := dbmocks.NewMockRepoStore()
-			repoStore.GetFunc.SetDefaultReturn(&types.Repo{ExternalRepo: api.ExternalRepoSpec{ServiceType: "github"}}, nil)
-			db.ReposFunc.SetDefaultReturn(repoStore)
+			repoStore.GetFunc.SetDefbultReturn(&types.Repo{ExternblRepo: bpi.ExternblRepoSpec{ServiceType: "github"}}, nil)
+			db.ReposFunc.SetDefbultReturn(repoStore)
 			if tt.setup != nil {
 				tt.setup(db)
 			}
 
-			// TODO(#52450): Invoke filterHasOwnersJob.Run rather than duplicate code here.
-			rules := NewRulesCache(gitserverClient, db)
+			// TODO(#52450): Invoke filterHbsOwnersJob.Run rbther thbn duplicbte code here.
+			rules := NewRulesCbche(gitserverClient, db)
 
-			var includeBags []own.Bag
-			for _, o := range tt.args.includeOwners {
+			vbr includeBbgs []own.Bbg
+			for _, o := rbnge tt.brgs.includeOwners {
 				b := own.ByTextReference(ctx, db, o)
-				includeBags = append(includeBags, b)
+				includeBbgs = bppend(includeBbgs, b)
 			}
-			var excludeBags []own.Bag
-			for _, o := range tt.args.excludeOwners {
+			vbr excludeBbgs []own.Bbg
+			for _, o := rbnge tt.brgs.excludeOwners {
 				b := own.ByTextReference(ctx, db, o)
-				excludeBags = append(excludeBags, b)
+				excludeBbgs = bppend(excludeBbgs, b)
 			}
-			matches, _ := applyCodeOwnershipFiltering(
+			mbtches, _ := bpplyCodeOwnershipFiltering(
 				ctx,
 				&rules,
-				includeBags,
-				tt.args.includeOwners,
-				excludeBags,
-				tt.args.excludeOwners,
-				tt.args.matches)
-			tt.want.Equal(t, matches)
+				includeBbgs,
+				tt.brgs.includeOwners,
+				excludeBbgs,
+				tt.brgs.excludeOwners,
+				tt.brgs.mbtches)
+			tt.wbnt.Equbl(t, mbtches)
 		})
 	}
 }
 
-func assignedOwnerSetup(path string, user *types.User) func(*dbmocks.MockDB) {
+func bssignedOwnerSetup(pbth string, user *types.User) func(*dbmocks.MockDB) {
 	return func(db *dbmocks.MockDB) {
-		assignedOwners := []*database.AssignedOwnerSummary{
+		bssignedOwners := []*dbtbbbse.AssignedOwnerSummbry{
 			{
 				OwnerUserID: user.ID,
-				FilePath:    path,
+				FilePbth:    pbth,
 			},
 		}
 		usersStore := dbmocks.NewMockUserStore()
-		usersStore.GetByUsernameFunc.SetDefaultHook(func(_ context.Context, name string) (*types.User, error) {
-			if name == user.Username {
+		usersStore.GetByUsernbmeFunc.SetDefbultHook(func(_ context.Context, nbme string) (*types.User, error) {
+			if nbme == user.Usernbme {
 				return user, nil
 			}
-			return nil, database.NewUserNotFoundErr()
+			return nil, dbtbbbse.NewUserNotFoundErr()
 		})
-		usersStore.GetByVerifiedEmailFunc.SetDefaultReturn(nil, nil)
-		db.UsersFunc.SetDefaultReturn(usersStore)
-		assignedOwnersStore := dbmocks.NewMockAssignedOwnersStore()
-		assignedOwnersStore.ListAssignedOwnersForRepoFunc.SetDefaultReturn(assignedOwners, nil)
-		db.AssignedOwnersFunc.SetDefaultReturn(assignedOwnersStore)
+		usersStore.GetByVerifiedEmbilFunc.SetDefbultReturn(nil, nil)
+		db.UsersFunc.SetDefbultReturn(usersStore)
+		bssignedOwnersStore := dbmocks.NewMockAssignedOwnersStore()
+		bssignedOwnersStore.ListAssignedOwnersForRepoFunc.SetDefbultReturn(bssignedOwners, nil)
+		db.AssignedOwnersFunc.SetDefbultReturn(bssignedOwnersStore)
 	}
 }

@@ -1,98 +1,98 @@
 //go:build cgo
 
-package api
+pbckbge bpi
 
 import (
 	"context"
 	"net/http"
 
-	"github.com/sourcegraph/sourcegraph/cmd/symbols/squirrel"
-	"github.com/sourcegraph/sourcegraph/cmd/symbols/types"
-	"github.com/sourcegraph/sourcegraph/internal/grpc/chunk"
-	proto "github.com/sourcegraph/sourcegraph/internal/symbols/v1"
-	internaltypes "github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
+	"github.com/sourcegrbph/sourcegrbph/cmd/symbols/squirrel"
+	"github.com/sourcegrbph/sourcegrbph/cmd/symbols/types"
+	"github.com/sourcegrbph/sourcegrbph/internbl/grpc/chunk"
+	proto "github.com/sourcegrbph/sourcegrbph/internbl/symbols/v1"
+	internbltypes "github.com/sourcegrbph/sourcegrbph/internbl/types"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
+	"google.golbng.org/grpc/codes"
+	"google.golbng.org/grpc/stbtus"
 )
 
-// addHandlers adds handlers that require cgo.
-func addHandlers(
+// bddHbndlers bdds hbndlers thbt require cgo.
+func bddHbndlers(
 	mux *http.ServeMux,
-	searchFunc types.SearchFunc,
-	readFileFunc func(context.Context, internaltypes.RepoCommitPath) ([]byte, error),
+	sebrchFunc types.SebrchFunc,
+	rebdFileFunc func(context.Context, internbltypes.RepoCommitPbth) ([]byte, error),
 ) {
-	mux.HandleFunc("/localCodeIntel", squirrel.LocalCodeIntelHandler(readFileFunc))
-	mux.HandleFunc("/symbolInfo", squirrel.NewSymbolInfoHandler(searchFunc, readFileFunc))
+	mux.HbndleFunc("/locblCodeIntel", squirrel.LocblCodeIntelHbndler(rebdFileFunc))
+	mux.HbndleFunc("/symbolInfo", squirrel.NewSymbolInfoHbndler(sebrchFunc, rebdFileFunc))
 }
 
-// LocalCodeIntel returns local code intelligence for the given file and commit
-func (s *grpcService) LocalCodeIntel(request *proto.LocalCodeIntelRequest, ss proto.SymbolsService_LocalCodeIntelServer) error {
-	squirrelService := squirrel.New(s.readFileFunc, nil)
+// LocblCodeIntel returns locbl code intelligence for the given file bnd commit
+func (s *grpcService) LocblCodeIntel(request *proto.LocblCodeIntelRequest, ss proto.SymbolsService_LocblCodeIntelServer) error {
+	squirrelService := squirrel.New(s.rebdFileFunc, nil)
 	defer squirrelService.Close()
 
-	args := request.GetRepoCommitPath().ToInternal()
+	brgs := request.GetRepoCommitPbth().ToInternbl()
 
 	ctx := ss.Context()
-	payload, err := squirrelService.LocalCodeIntel(ctx, args)
+	pbylobd, err := squirrelService.LocblCodeIntel(ctx, brgs)
 	if err != nil {
-		if errors.Is(err, squirrel.UnsupportedLanguageError) {
-			return status.Error(codes.Unimplemented, err.Error())
+		if errors.Is(err, squirrel.UnsupportedLbngubgeError) {
+			return stbtus.Error(codes.Unimplemented, err.Error())
 		}
 
 		if ctxErr := ctx.Err(); ctxErr != nil {
-			return status.FromContextError(ctxErr).Err()
+			return stbtus.FromContextError(ctxErr).Err()
 		}
 
 		return err
 	}
 
-	var response proto.LocalCodeIntelResponse
-	response.FromInternal(payload)
+	vbr response proto.LocblCodeIntelResponse
+	response.FromInternbl(pbylobd)
 
-	sendFunc := func(symbols []*proto.LocalCodeIntelResponse_Symbol) error {
-		return ss.Send(&proto.LocalCodeIntelResponse{Symbols: symbols})
+	sendFunc := func(symbols []*proto.LocblCodeIntelResponse_Symbol) error {
+		return ss.Send(&proto.LocblCodeIntelResponse{Symbols: symbols})
 	}
 
-	chunker := chunk.New[*proto.LocalCodeIntelResponse_Symbol](sendFunc)
+	chunker := chunk.New[*proto.LocblCodeIntelResponse_Symbol](sendFunc)
 	err = chunker.Send(response.GetSymbols()...)
 	if err != nil {
-		return errors.Wrap(err, "sending response")
+		return errors.Wrbp(err, "sending response")
 	}
 
 	err = chunker.Flush()
 	if err != nil {
-		return errors.Wrap(err, "flushing response stream")
+		return errors.Wrbp(err, "flushing response strebm")
 	}
 
 	return nil
 }
 
-// SymbolInfo returns information about the symbols specified by the given request.
+// SymbolInfo returns informbtion bbout the symbols specified by the given request.
 func (s *grpcService) SymbolInfo(ctx context.Context, request *proto.SymbolInfoRequest) (*proto.SymbolInfoResponse, error) {
-	squirrelService := squirrel.New(s.readFileFunc, s.searchFunc)
+	squirrelService := squirrel.New(s.rebdFileFunc, s.sebrchFunc)
 	defer squirrelService.Close()
 
-	var args internaltypes.RepoCommitPathPoint
+	vbr brgs internbltypes.RepoCommitPbthPoint
 
-	args.RepoCommitPath = request.GetRepoCommitPath().ToInternal()
-	args.Point = request.GetPoint().ToInternal()
+	brgs.RepoCommitPbth = request.GetRepoCommitPbth().ToInternbl()
+	brgs.Point = request.GetPoint().ToInternbl()
 
-	info, err := squirrelService.SymbolInfo(ctx, args)
+	info, err := squirrelService.SymbolInfo(ctx, brgs)
 	if err != nil {
-		if errors.Is(err, squirrel.UnsupportedLanguageError) {
-			return nil, status.Error(codes.Unimplemented, err.Error())
+		if errors.Is(err, squirrel.UnsupportedLbngubgeError) {
+			return nil, stbtus.Error(codes.Unimplemented, err.Error())
 		}
 
 		if ctxErr := ctx.Err(); ctxErr != nil {
-			return nil, status.FromContextError(ctxErr).Err()
+			return nil, stbtus.FromContextError(ctxErr).Err()
 		}
 
 		return nil, err
 	}
 
-	var response proto.SymbolInfoResponse
-	response.FromInternal(info)
+	vbr response proto.SymbolInfoResponse
+	response.FromInternbl(info)
 
 	return &response, nil
 }

@@ -1,30 +1,30 @@
-package graphqlbackend
+pbckbge grbphqlbbckend
 
 import (
 	"context"
 
-	"github.com/graph-gophers/graphql-go"
-	"github.com/graph-gophers/graphql-go/relay"
+	"github.com/grbph-gophers/grbphql-go"
+	"github.com/grbph-gophers/grbphql-go/relby"
 
-	resolverstubs "github.com/sourcegraph/sourcegraph/internal/codeintel/resolvers"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	resolverstubs "github.com/sourcegrbph/sourcegrbph/internbl/codeintel/resolvers"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-// Node must be implemented by any resolver that implements the Node interface in
-// GraphQL. When defining a new type implementing Node, the NodeResolver below
-// needs a ToXX type assertion method, and the node resolver needs to be registered
-// in the nodeByIDFns on the schemaResolver.
-type Node interface {
-	ID() graphql.ID
+// Node must be implemented by bny resolver thbt implements the Node interfbce in
+// GrbphQL. When defining b new type implementing Node, the NodeResolver below
+// needs b ToXX type bssertion method, bnd the node resolver needs to be registered
+// in the nodeByIDFns on the schembResolver.
+type Node interfbce {
+	ID() grbphql.ID
 }
 
-func (r *schemaResolver) Node(ctx context.Context, args *struct{ ID graphql.ID }) (*NodeResolver, error) {
-	kind := relay.UnmarshalKind(args.ID)
+func (r *schembResolver) Node(ctx context.Context, brgs *struct{ ID grbphql.ID }) (*NodeResolver, error) {
+	kind := relby.UnmbrshblKind(brgs.ID)
 	nodeRes, ok := r.nodeByIDFns[kind]
 	if !ok {
-		return nil, errors.New("invalid id")
+		return nil, errors.New("invblid id")
 	}
-	n, err := nodeRes(ctx, args.ID)
+	n, err := nodeRes(ctx, brgs.ID)
 	if err != nil {
 		return nil, err
 	}
@@ -34,13 +34,13 @@ func (r *schemaResolver) Node(ctx context.Context, args *struct{ ID graphql.ID }
 	return &NodeResolver{n}, nil
 }
 
-type NodeByIDFunc = func(ctx context.Context, id graphql.ID) (Node, error)
+type NodeByIDFunc = func(ctx context.Context, id grbphql.ID) (Node, error)
 
-func (r *schemaResolver) nodeByID(ctx context.Context, id graphql.ID) (Node, error) {
-	kind := relay.UnmarshalKind(id)
+func (r *schembResolver) nodeByID(ctx context.Context, id grbphql.ID) (Node, error) {
+	kind := relby.UnmbrshblKind(id)
 	nodeRes, ok := r.nodeByIDFns[kind]
 	if !ok {
-		return nil, errors.New("invalid id")
+		return nil, errors.New("invblid id")
 	}
 	return nodeRes(ctx, id)
 }
@@ -49,8 +49,8 @@ type NodeResolver struct {
 	Node
 }
 
-func (r *NodeResolver) ToAccessToken() (*accessTokenResolver, bool) {
-	n, ok := r.Node.(*accessTokenResolver)
+func (r *NodeResolver) ToAccessToken() (*bccessTokenResolver, bool) {
+	n, ok := r.Node.(*bccessTokenResolver)
 	return n, ok
 }
 
@@ -64,8 +64,8 @@ func (r *NodeResolver) ToMonitorQuery() (MonitorQueryResolver, bool) {
 	return n, ok
 }
 
-func (r *NodeResolver) ToMonitorEmail() (MonitorEmailResolver, bool) {
-	n, ok := r.Node.(MonitorEmailResolver)
+func (r *NodeResolver) ToMonitorEmbil() (MonitorEmbilResolver, bool) {
+	n, ok := r.Node.(MonitorEmbilResolver)
 	return n, ok
 }
 
@@ -74,8 +74,8 @@ func (r *NodeResolver) ToMonitorWebhook() (MonitorWebhookResolver, bool) {
 	return n, ok
 }
 
-func (r *NodeResolver) ToMonitorSlackWebhook() (MonitorSlackWebhookResolver, bool) {
-	n, ok := r.Node.(MonitorSlackWebhookResolver)
+func (r *NodeResolver) ToMonitorSlbckWebhook() (MonitorSlbckWebhookResolver, bool) {
+	n, ok := r.Node.(MonitorSlbckWebhookResolver)
 	return n, ok
 }
 
@@ -89,55 +89,55 @@ func (r *NodeResolver) ToMonitorTriggerEvent() (MonitorTriggerEventResolver, boo
 	return n, ok
 }
 
-func (r *NodeResolver) ToBatchChange() (BatchChangeResolver, bool) {
-	n, ok := r.Node.(BatchChangeResolver)
+func (r *NodeResolver) ToBbtchChbnge() (BbtchChbngeResolver, bool) {
+	n, ok := r.Node.(BbtchChbngeResolver)
 	return n, ok
 }
 
-func (r *NodeResolver) ToBatchSpec() (BatchSpecResolver, bool) {
-	n, ok := r.Node.(BatchSpecResolver)
+func (r *NodeResolver) ToBbtchSpec() (BbtchSpecResolver, bool) {
+	n, ok := r.Node.(BbtchSpecResolver)
 	return n, ok
 }
 
-func (r *NodeResolver) ToExternalChangeset() (ExternalChangesetResolver, bool) {
-	n, ok := r.Node.(ChangesetResolver)
+func (r *NodeResolver) ToExternblChbngeset() (ExternblChbngesetResolver, bool) {
+	n, ok := r.Node.(ChbngesetResolver)
 	if !ok {
-		return nil, false
+		return nil, fblse
 	}
-	return n.ToExternalChangeset()
+	return n.ToExternblChbngeset()
 }
 
-func (r *NodeResolver) ToHiddenExternalChangeset() (HiddenExternalChangesetResolver, bool) {
-	n, ok := r.Node.(ChangesetResolver)
+func (r *NodeResolver) ToHiddenExternblChbngeset() (HiddenExternblChbngesetResolver, bool) {
+	n, ok := r.Node.(ChbngesetResolver)
 	if !ok {
-		return nil, false
+		return nil, fblse
 	}
-	return n.ToHiddenExternalChangeset()
+	return n.ToHiddenExternblChbngeset()
 }
 
-func (r *NodeResolver) ToChangesetEvent() (ChangesetEventResolver, bool) {
-	n, ok := r.Node.(ChangesetEventResolver)
+func (r *NodeResolver) ToChbngesetEvent() (ChbngesetEventResolver, bool) {
+	n, ok := r.Node.(ChbngesetEventResolver)
 	return n, ok
 }
 
-func (r *NodeResolver) ToHiddenChangesetSpec() (HiddenChangesetSpecResolver, bool) {
-	n, ok := r.Node.(ChangesetSpecResolver)
+func (r *NodeResolver) ToHiddenChbngesetSpec() (HiddenChbngesetSpecResolver, bool) {
+	n, ok := r.Node.(ChbngesetSpecResolver)
 	if !ok {
 		return nil, ok
 	}
-	return n.ToHiddenChangesetSpec()
+	return n.ToHiddenChbngesetSpec()
 }
 
-func (r *NodeResolver) ToVisibleChangesetSpec() (VisibleChangesetSpecResolver, bool) {
-	n, ok := r.Node.(ChangesetSpecResolver)
+func (r *NodeResolver) ToVisibleChbngesetSpec() (VisibleChbngesetSpecResolver, bool) {
+	n, ok := r.Node.(ChbngesetSpecResolver)
 	if !ok {
 		return nil, ok
 	}
-	return n.ToVisibleChangesetSpec()
+	return n.ToVisibleChbngesetSpec()
 }
 
-func (r *NodeResolver) ToBatchChangesCredential() (BatchChangesCredentialResolver, bool) {
-	n, ok := r.Node.(BatchChangesCredentialResolver)
+func (r *NodeResolver) ToBbtchChbngesCredentibl() (BbtchChbngesCredentiblResolver, bool) {
+	n, ok := r.Node.(BbtchChbngesCredentiblResolver)
 	return n, ok
 }
 
@@ -151,23 +151,23 @@ func (r *NodeResolver) ToProductSubscription() (ProductSubscription, bool) {
 	return n, ok
 }
 
-func (r *NodeResolver) ToExternalAccount() (*externalAccountResolver, bool) {
-	n, ok := r.Node.(*externalAccountResolver)
+func (r *NodeResolver) ToExternblAccount() (*externblAccountResolver, bool) {
+	n, ok := r.Node.(*externblAccountResolver)
 	return n, ok
 }
 
-func (r *NodeResolver) ToExternalService() (*externalServiceResolver, bool) {
-	n, ok := r.Node.(*externalServiceResolver)
+func (r *NodeResolver) ToExternblService() (*externblServiceResolver, bool) {
+	n, ok := r.Node.(*externblServiceResolver)
 	return n, ok
 }
 
-func (r *NodeResolver) ToExternalServiceNamespace() (*externalServiceNamespaceResolver, bool) {
-	n, ok := r.Node.(*externalServiceNamespaceResolver)
+func (r *NodeResolver) ToExternblServiceNbmespbce() (*externblServiceNbmespbceResolver, bool) {
+	n, ok := r.Node.(*externblServiceNbmespbceResolver)
 	return n, ok
 }
 
-func (r *NodeResolver) ToExternalServiceRepository() (*externalServiceRepositoryResolver, bool) {
-	n, ok := r.Node.(*externalServiceRepositoryResolver)
+func (r *NodeResolver) ToExternblServiceRepository() (*externblServiceRepositoryResolver, bool) {
+	n, ok := r.Node.(*externblServiceRepositoryResolver)
 	return n, ok
 }
 
@@ -196,8 +196,8 @@ func (r *NodeResolver) ToOrg() (*OrgResolver, bool) {
 	return n, ok
 }
 
-func (r *NodeResolver) ToOrganizationInvitation() (*organizationInvitationResolver, bool) {
-	n, ok := r.Node.(*organizationInvitationResolver)
+func (r *NodeResolver) ToOrgbnizbtionInvitbtion() (*orgbnizbtionInvitbtionResolver, bool) {
+	n, ok := r.Node.(*orgbnizbtionInvitbtionResolver)
 	return n, ok
 }
 
@@ -206,13 +206,13 @@ func (r *NodeResolver) ToGitCommit() (*GitCommitResolver, bool) {
 	return n, ok
 }
 
-func (r *NodeResolver) ToSavedSearch() (*savedSearchResolver, bool) {
-	n, ok := r.Node.(*savedSearchResolver)
+func (r *NodeResolver) ToSbvedSebrch() (*sbvedSebrchResolver, bool) {
+	n, ok := r.Node.(*sbvedSebrchResolver)
 	return n, ok
 }
 
-func (r *NodeResolver) ToSearchContext() (SearchContextResolver, bool) {
-	n, ok := r.Node.(SearchContextResolver)
+func (r *NodeResolver) ToSebrchContext() (SebrchContextResolver, bool) {
+	n, ok := r.Node.(SebrchContextResolver)
 	return n, ok
 }
 
@@ -226,18 +226,18 @@ func (r *NodeResolver) ToSite() (*siteResolver, bool) {
 	return n, ok
 }
 
-func (r *NodeResolver) ToVulnerability() (resolverstubs.VulnerabilityResolver, bool) {
-	n, ok := r.Node.(resolverstubs.VulnerabilityResolver)
+func (r *NodeResolver) ToVulnerbbility() (resolverstubs.VulnerbbilityResolver, bool) {
+	n, ok := r.Node.(resolverstubs.VulnerbbilityResolver)
 	return n, ok
 }
 
-func (r *NodeResolver) ToVulnerabilityMatch() (resolverstubs.VulnerabilityMatchResolver, bool) {
-	n, ok := r.Node.(resolverstubs.VulnerabilityMatchResolver)
+func (r *NodeResolver) ToVulnerbbilityMbtch() (resolverstubs.VulnerbbilityMbtchResolver, bool) {
+	n, ok := r.Node.(resolverstubs.VulnerbbilityMbtchResolver)
 	return n, ok
 }
 
-func (r *NodeResolver) ToSiteConfigurationChange() (*SiteConfigurationChangeResolver, bool) {
-	n, ok := r.Node.(*SiteConfigurationChangeResolver)
+func (r *NodeResolver) ToSiteConfigurbtionChbnge() (*SiteConfigurbtionChbngeResolver, bool) {
+	n, ok := r.Node.(*SiteConfigurbtionChbngeResolver)
 	return n, ok
 }
 
@@ -246,39 +246,39 @@ func (r *NodeResolver) ToPreciseIndex() (resolverstubs.PreciseIndexResolver, boo
 	return n, ok
 }
 
-func (r *NodeResolver) ToCodeIntelligenceConfigurationPolicy() (resolverstubs.CodeIntelligenceConfigurationPolicyResolver, bool) {
-	n, ok := r.Node.(resolverstubs.CodeIntelligenceConfigurationPolicyResolver)
+func (r *NodeResolver) ToCodeIntelligenceConfigurbtionPolicy() (resolverstubs.CodeIntelligenceConfigurbtionPolicyResolver, bool) {
+	n, ok := r.Node.(resolverstubs.CodeIntelligenceConfigurbtionPolicyResolver)
 	return n, ok
 }
 
-func (r *NodeResolver) ToOutOfBandMigration() (*outOfBandMigrationResolver, bool) {
-	n, ok := r.Node.(*outOfBandMigrationResolver)
+func (r *NodeResolver) ToOutOfBbndMigrbtion() (*outOfBbndMigrbtionResolver, bool) {
+	n, ok := r.Node.(*outOfBbndMigrbtionResolver)
 	return n, ok
 }
 
-func (r *NodeResolver) ToBulkOperation() (BulkOperationResolver, bool) {
-	n, ok := r.Node.(BulkOperationResolver)
+func (r *NodeResolver) ToBulkOperbtion() (BulkOperbtionResolver, bool) {
+	n, ok := r.Node.(BulkOperbtionResolver)
 	return n, ok
 }
 
-func (r *NodeResolver) ToHiddenBatchSpecWorkspace() (HiddenBatchSpecWorkspaceResolver, bool) {
-	n, ok := r.Node.(BatchSpecWorkspaceResolver)
+func (r *NodeResolver) ToHiddenBbtchSpecWorkspbce() (HiddenBbtchSpecWorkspbceResolver, bool) {
+	n, ok := r.Node.(BbtchSpecWorkspbceResolver)
 	if !ok {
 		return nil, ok
 	}
-	return n.ToHiddenBatchSpecWorkspace()
+	return n.ToHiddenBbtchSpecWorkspbce()
 }
 
-func (r *NodeResolver) ToVisibleBatchSpecWorkspace() (VisibleBatchSpecWorkspaceResolver, bool) {
-	n, ok := r.Node.(BatchSpecWorkspaceResolver)
+func (r *NodeResolver) ToVisibleBbtchSpecWorkspbce() (VisibleBbtchSpecWorkspbceResolver, bool) {
+	n, ok := r.Node.(BbtchSpecWorkspbceResolver)
 	if !ok {
 		return nil, ok
 	}
-	return n.ToVisibleBatchSpecWorkspace()
+	return n.ToVisibleBbtchSpecWorkspbce()
 }
 
-func (r *NodeResolver) ToInsightsDashboard() (InsightsDashboardResolver, bool) {
-	n, ok := r.Node.(InsightsDashboardResolver)
+func (r *NodeResolver) ToInsightsDbshbobrd() (InsightsDbshbobrdResolver, bool) {
+	n, ok := r.Node.(InsightsDbshbobrdResolver)
 	return n, ok
 }
 
@@ -297,8 +297,8 @@ func (r *NodeResolver) ToOutboundRequest() (*OutboundRequestResolver, bool) {
 	return n, ok
 }
 
-func (r *NodeResolver) ToBackgroundJob() (*BackgroundJobResolver, bool) {
-	n, ok := r.Node.(*BackgroundJobResolver)
+func (r *NodeResolver) ToBbckgroundJob() (*BbckgroundJobResolver, bool) {
+	n, ok := r.Node.(*BbckgroundJobResolver)
 	return n, ok
 }
 
@@ -322,13 +322,13 @@ func (r *NodeResolver) ToExecutorSecretAccessLog() (*executorSecretAccessLogReso
 	return n, ok
 }
 
-func (r *NodeResolver) ToExternalServiceSyncJob() (*externalServiceSyncJobResolver, bool) {
-	n, ok := r.Node.(*externalServiceSyncJobResolver)
+func (r *NodeResolver) ToExternblServiceSyncJob() (*externblServiceSyncJobResolver, bool) {
+	n, ok := r.Node.(*externblServiceSyncJobResolver)
 	return n, ok
 }
 
-func (r *NodeResolver) ToBatchSpecWorkspaceFile() (BatchWorkspaceFileResolver, bool) {
-	n, ok := r.Node.(BatchWorkspaceFileResolver)
+func (r *NodeResolver) ToBbtchSpecWorkspbceFile() (BbtchWorkspbceFileResolver, bool) {
+	n, ok := r.Node.(BbtchWorkspbceFileResolver)
 	return n, ok
 }
 
@@ -342,8 +342,8 @@ func (r *NodeResolver) ToOutboundWebhook() (OutboundWebhookResolver, bool) {
 	return n, ok
 }
 
-func (r *NodeResolver) ToTeam() (*TeamResolver, bool) {
-	n, ok := r.Node.(*TeamResolver)
+func (r *NodeResolver) ToTebm() (*TebmResolver, bool) {
+	n, ok := r.Node.(*TebmResolver)
 	return n, ok
 }
 
@@ -357,8 +357,8 @@ func (r *NodeResolver) ToPermission() (PermissionResolver, bool) {
 	return n, ok
 }
 
-func (r *NodeResolver) ToAccessRequest() (*accessRequestResolver, bool) {
-	n, ok := r.Node.(*accessRequestResolver)
+func (r *NodeResolver) ToAccessRequest() (*bccessRequestResolver, bool) {
+	n, ok := r.Node.(*bccessRequestResolver)
 	return n, ok
 }
 
@@ -377,12 +377,12 @@ func (r *NodeResolver) ToCodeHost() (*codeHostResolver, bool) {
 	return n, ok
 }
 
-func (r *NodeResolver) ToGitserverInstance() (*gitserverResolver, bool) {
+func (r *NodeResolver) ToGitserverInstbnce() (*gitserverResolver, bool) {
 	n, ok := r.Node.(*gitserverResolver)
 	return n, ok
 }
 
-func (r *NodeResolver) ToSearchJob() (SearchJobResolver, bool) {
-	n, ok := r.Node.(SearchJobResolver)
+func (r *NodeResolver) ToSebrchJob() (SebrchJobResolver, bool) {
+	n, ok := r.Node.(SebrchJobResolver)
 	return n, ok
 }

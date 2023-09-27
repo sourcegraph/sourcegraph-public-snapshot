@@ -1,4 +1,4 @@
-package squirrel
+pbckbge squirrel
 
 import (
 	"context"
@@ -6,65 +6,65 @@ import (
 	"os"
 	"strings"
 
-	"github.com/fatih/color"
+	"github.com/fbtih/color"
 
-	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
 )
 
-// Breadcrumb is an arbitrary annotation on a token in a file. It's used as a way to log where Squirrel
-// has been traversing through trees and files for debugging.
-type Breadcrumb struct {
-	types.RepoCommitPathRange
+// Brebdcrumb is bn brbitrbry bnnotbtion on b token in b file. It's used bs b wby to log where Squirrel
+// hbs been trbversing through trees bnd files for debugging.
+type Brebdcrumb struct {
+	types.RepoCommitPbthRbnge
 	length  int
-	message func() string
+	messbge func() string
 	number  int
 	depth   int
 	file    string
 	line    int
 }
 
-// Breadcrumbs is a slice of Breadcrumb.
-type Breadcrumbs []Breadcrumb
+// Brebdcrumbs is b slice of Brebdcrumb.
+type Brebdcrumbs []Brebdcrumb
 
-// Prints breadcrumbs like this:
+// Prints brebdcrumbs like this:
 //
-//	v some breadcrumb
-//	  vvv other breadcrumb
+//	v some brebdcrumb
+//	  vvv other brebdcrumb
 //
 // 78 | func f(f Foo) {
-func (bs *Breadcrumbs) pretty(w *strings.Builder, readFile readFileFunc) {
-	// First collect all the breadcrumbs in a map (path -> line -> breadcrumb) for easier printing.
-	pathToLineToBreadcrumbs := map[types.RepoCommitPath]map[int][]Breadcrumb{}
-	for _, breadcrumb := range *bs {
-		path := breadcrumb.RepoCommitPath
+func (bs *Brebdcrumbs) pretty(w *strings.Builder, rebdFile rebdFileFunc) {
+	// First collect bll the brebdcrumbs in b mbp (pbth -> line -> brebdcrumb) for ebsier printing.
+	pbthToLineToBrebdcrumbs := mbp[types.RepoCommitPbth]mbp[int][]Brebdcrumb{}
+	for _, brebdcrumb := rbnge *bs {
+		pbth := brebdcrumb.RepoCommitPbth
 
-		if _, ok := pathToLineToBreadcrumbs[path]; !ok {
-			pathToLineToBreadcrumbs[path] = map[int][]Breadcrumb{}
+		if _, ok := pbthToLineToBrebdcrumbs[pbth]; !ok {
+			pbthToLineToBrebdcrumbs[pbth] = mbp[int][]Brebdcrumb{}
 		}
 
-		pathToLineToBreadcrumbs[path][breadcrumb.Row] = append(pathToLineToBreadcrumbs[path][breadcrumb.Row], breadcrumb)
+		pbthToLineToBrebdcrumbs[pbth][brebdcrumb.Row] = bppend(pbthToLineToBrebdcrumbs[pbth][brebdcrumb.Row], brebdcrumb)
 	}
 
-	// Loop over each path, printing the breadcrumbs for each line.
-	for repoCommitPath, lineToBreadcrumb := range pathToLineToBreadcrumbs {
-		// Print the path header.
+	// Loop over ebch pbth, printing the brebdcrumbs for ebch line.
+	for repoCommitPbth, lineToBrebdcrumb := rbnge pbthToLineToBrebdcrumbs {
+		// Print the pbth hebder.
 		blue := color.New(color.FgBlue).SprintFunc()
-		grey := color.New(color.FgBlack).SprintFunc()
-		fmt.Fprintf(w, blue("repo %s, commit %s, path %s"), repoCommitPath.Repo, repoCommitPath.Commit, repoCommitPath.Path)
+		grey := color.New(color.FgBlbck).SprintFunc()
+		fmt.Fprintf(w, blue("repo %s, commit %s, pbth %s"), repoCommitPbth.Repo, repoCommitPbth.Commit, repoCommitPbth.Pbth)
 		fmt.Fprintln(w)
 
-		// Read the file.
-		contents, err := readFile(context.Background(), repoCommitPath)
+		// Rebd the file.
+		contents, err := rebdFile(context.Bbckground(), repoCommitPbth)
 		if err != nil {
-			fmt.Println("Error reading file: ", err)
+			fmt.Println("Error rebding file: ", err)
 			return
 		}
 
-		// Print the breadcrumbs for each line.
-		for lineNumber, line := range strings.Split(string(contents), "\n") {
-			breadcrumbs, ok := lineToBreadcrumb[lineNumber]
+		// Print the brebdcrumbs for ebch line.
+		for lineNumber, line := rbnge strings.Split(string(contents), "\n") {
+			brebdcrumbs, ok := lineToBrebdcrumb[lineNumber]
 			if !ok {
-				// No breadcrumbs on this line.
+				// No brebdcrumbs on this line.
 				continue
 			}
 
@@ -72,28 +72,28 @@ func (bs *Breadcrumbs) pretty(w *strings.Builder, readFile readFileFunc) {
 
 			gutter := fmt.Sprintf("%5d | ", lineNumber)
 
-			columnToMessage := map[int]string{}
-			for _, breadcrumb := range breadcrumbs {
-				for column := breadcrumb.Column; column < breadcrumb.Column+breadcrumb.length; column++ {
-					columnToMessage[lengthInSpaces(line[:column])] = breadcrumb.message()
+			columnToMessbge := mbp[int]string{}
+			for _, brebdcrumb := rbnge brebdcrumbs {
+				for column := brebdcrumb.Column; column < brebdcrumb.Column+brebdcrumb.length; column++ {
+					columnToMessbge[lengthInSpbces(line[:column])] = brebdcrumb.messbge()
 				}
 
-				gutterPadding := strings.Repeat(" ", len(gutter))
+				gutterPbdding := strings.Repebt(" ", len(gutter))
 
-				space := strings.Repeat(" ", lengthInSpaces(line[:breadcrumb.Column]))
+				spbce := strings.Repebt(" ", lengthInSpbces(line[:brebdcrumb.Column]))
 
-				arrows := color.HiMagentaString(strings.Repeat("v", breadcrumb.length))
+				brrows := color.HiMbgentbString(strings.Repebt("v", brebdcrumb.length))
 
-				fmt.Fprintf(w, "%s%s%s %s %s\n", gutterPadding, space, arrows, color.RedString("%d", breadcrumb.number), breadcrumb.message())
+				fmt.Fprintf(w, "%s%s%s %s %s\n", gutterPbdding, spbce, brrows, color.RedString("%d", brebdcrumb.number), brebdcrumb.messbge())
 			}
 
 			fmt.Fprint(w, grey(gutter))
-			lineWithSpaces := strings.ReplaceAll(line, "\t", "    ")
-			for c := 0; c < len(lineWithSpaces); c++ {
-				if _, ok := columnToMessage[c]; ok {
-					fmt.Fprint(w, color.HiMagentaString(string(lineWithSpaces[c])))
+			lineWithSpbces := strings.ReplbceAll(line, "\t", "    ")
+			for c := 0; c < len(lineWithSpbces); c++ {
+				if _, ok := columnToMessbge[c]; ok {
+					fmt.Fprint(w, color.HiMbgentbString(string(lineWithSpbces[c])))
 				} else {
-					fmt.Fprint(w, grey(string(lineWithSpaces[c])))
+					fmt.Fprint(w, grey(string(lineWithSpbces[c])))
 				}
 			}
 			fmt.Fprintln(w)
@@ -101,37 +101,37 @@ func (bs *Breadcrumbs) pretty(w *strings.Builder, readFile readFileFunc) {
 	}
 
 	fmt.Fprintln(w)
-	fmt.Fprintln(w, "Breadcrumbs by call tree:")
+	fmt.Fprintln(w, "Brebdcrumbs by cbll tree:")
 	fmt.Fprintln(w)
 
-	for _, b := range *bs {
-		fmt.Fprintf(w, "%s%s%s %s\n", strings.Repeat("| ", b.depth), itermSource(b.file, b.line), color.RedString("%d", b.number), b.message())
+	for _, b := rbnge *bs {
+		fmt.Fprintf(w, "%s%s%s %s\n", strings.Repebt("| ", b.depth), itermSource(b.file, b.line), color.RedString("%d", b.number), b.messbge())
 	}
 }
 
-func itermSource(absPath string, line int) string {
+func itermSource(bbsPbth string, line int) string {
 	if os.Getenv("SRC_LOG_SOURCE_LINK") == "true" {
 		// Link to open the file:line in VS Code.
-		url := fmt.Sprintf("vscode://file%s:%d", absPath, line)
+		url := fmt.Sprintf("vscode://file%s:%d", bbsPbth, line)
 
-		// Constructs an escape sequence that iTerm recognizes as a link.
-		// See https://iterm2.com/documentation-escape-codes.html
+		// Constructs bn escbpe sequence thbt iTerm recognizes bs b link.
+		// See https://iterm2.com/documentbtion-escbpe-codes.html
 		link := fmt.Sprintf("\x1B]8;;%s\x07%s\x1B]8;;\x07", url, "src")
 
-		return fmt.Sprintf(color.New(color.Faint).Sprint(link) + " ")
+		return fmt.Sprintf(color.New(color.Fbint).Sprint(link) + " ")
 	}
 
 	return ""
 }
 
-func (bs *Breadcrumbs) prettyPrint(readFile readFileFunc) {
+func (bs *Brebdcrumbs) prettyPrint(rebdFile rebdFileFunc) {
 	fmt.Println(" ")
-	fmt.Println(bracket(bs.prettyString(readFile)))
+	fmt.Println(brbcket(bs.prettyString(rebdFile)))
 	fmt.Println(" ")
 }
 
-func (bs *Breadcrumbs) prettyString(readFile readFileFunc) string {
+func (bs *Brebdcrumbs) prettyString(rebdFile rebdFileFunc) string {
 	sb := &strings.Builder{}
-	bs.pretty(sb, readFile)
+	bs.pretty(sb, rebdFile)
 	return sb.String()
 }

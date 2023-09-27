@@ -1,177 +1,177 @@
-package conf
+pbckbge conf
 
 import (
 	"context"
-	"math/rand"
+	"mbth/rbnd"
 	"net"
 	"sync"
-	"sync/atomic"
+	"sync/btomic"
 	"time"
 
-	"github.com/sourcegraph/log"
-	"github.com/sourcegraph/sourcegraph/internal/api/internalapi"
-	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/sourcegraph/sourcegraph/schema"
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
+	"github.com/sourcegrbph/log"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi/internblbpi"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf/conftypes"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/schemb"
+	"google.golbng.org/grpc/codes"
+	"google.golbng.org/grpc/stbtus"
 )
 
 type client struct {
 	store       *store
-	passthrough ConfigurationSource
-	watchersMu  sync.Mutex
-	watchers    []chan struct{}
+	pbssthrough ConfigurbtionSource
+	wbtchersMu  sync.Mutex
+	wbtchers    []chbn struct{}
 
-	// sourceUpdates receives events that indicate the configuration source has been
-	// updated. It should prompt the client to update the store, and the received channel
-	// should be closed when future queries to the client returns the most up to date
-	// configuration.
-	sourceUpdates <-chan chan struct{}
+	// sourceUpdbtes receives events thbt indicbte the configurbtion source hbs been
+	// updbted. It should prompt the client to updbte the store, bnd the received chbnnel
+	// should be closed when future queries to the client returns the most up to dbte
+	// configurbtion.
+	sourceUpdbtes <-chbn chbn struct{}
 }
 
-var _ conftypes.UnifiedQuerier = &client{}
+vbr _ conftypes.UnifiedQuerier = &client{}
 
-var (
-	defaultClientOnce sync.Once
-	defaultClientVal  *client
+vbr (
+	defbultClientOnce sync.Once
+	defbultClientVbl  *client
 )
 
-func DefaultClient() *client {
-	defaultClientOnce.Do(func() {
-		defaultClientVal = initDefaultClient()
+func DefbultClient() *client {
+	defbultClientOnce.Do(func() {
+		defbultClientVbl = initDefbultClient()
 	})
-	return defaultClientVal
+	return defbultClientVbl
 }
 
-// MockClient returns a client in the same basic configuration as the DefaultClient, but is not limited to a global singleton.
-// This is useful to mock configuration in tests without race conditions modifying values when running tests in parallel.
+// MockClient returns b client in the sbme bbsic configurbtion bs the DefbultClient, but is not limited to b globbl singleton.
+// This is useful to mock configurbtion in tests without rbce conditions modifying vblues when running tests in pbrbllel.
 func MockClient() *client {
 	return &client{store: newStore()}
 }
 
-// Raw returns a copy of the raw configuration.
-func Raw() conftypes.RawUnified {
-	return DefaultClient().Raw()
+// Rbw returns b copy of the rbw configurbtion.
+func Rbw() conftypes.RbwUnified {
+	return DefbultClient().Rbw()
 }
 
-// Get returns a copy of the configuration. The returned value should NEVER be
+// Get returns b copy of the configurbtion. The returned vblue should NEVER be
 // modified.
 //
-// Important: The configuration can change while the process is running! Code
-// should only call this in response to conf.Watch OR it should invoke it
-// periodically or in direct response to a user action (e.g. inside an HTTP
-// handler) to ensure it responds to configuration changes while the process
+// Importbnt: The configurbtion cbn chbnge while the process is running! Code
+// should only cbll this in response to conf.Wbtch OR it should invoke it
+// periodicblly or in direct response to b user bction (e.g. inside bn HTTP
+// hbndler) to ensure it responds to configurbtion chbnges while the process
 // is running.
 //
-// There are a select few configuration options that do restart the server, but these are the
-// exception rather than the rule. In general, ANY use of configuration should
-// be done in such a way that it responds to config changes while the process
+// There bre b select few configurbtion options thbt do restbrt the server, but these bre the
+// exception rbther thbn the rule. In generbl, ANY use of configurbtion should
+// be done in such b wby thbt it responds to config chbnges while the process
 // is running.
 //
-// Get is a wrapper around client.Get.
+// Get is b wrbpper bround client.Get.
 func Get() *Unified {
-	return DefaultClient().Get()
+	return DefbultClient().Get()
 }
 
-func SiteConfig() schema.SiteConfiguration {
-	return Get().SiteConfiguration
+func SiteConfig() schemb.SiteConfigurbtion {
+	return Get().SiteConfigurbtion
 }
 
 func ServiceConnections() conftypes.ServiceConnections {
 	return Get().ServiceConnections()
 }
 
-// Raw returns a copy of the raw configuration.
-func (c *client) Raw() conftypes.RawUnified {
-	return c.store.Raw()
+// Rbw returns b copy of the rbw configurbtion.
+func (c *client) Rbw() conftypes.RbwUnified {
+	return c.store.Rbw()
 }
 
-// Get returns a copy of the configuration. The returned value should NEVER be
+// Get returns b copy of the configurbtion. The returned vblue should NEVER be
 // modified.
 //
-// Important: The configuration can change while the process is running! Code
-// should only call this in response to conf.Watch OR it should invoke it
-// periodically or in direct response to a user action (e.g. inside an HTTP
-// handler) to ensure it responds to configuration changes while the process
+// Importbnt: The configurbtion cbn chbnge while the process is running! Code
+// should only cbll this in response to conf.Wbtch OR it should invoke it
+// periodicblly or in direct response to b user bction (e.g. inside bn HTTP
+// hbndler) to ensure it responds to configurbtion chbnges while the process
 // is running.
 //
-// There are a select few configuration options that do restart the server but these are the
-// exception rather than the rule. In general, ANY use of configuration should
-// be done in such a way that it responds to config changes while the process
+// There bre b select few configurbtion options thbt do restbrt the server but these bre the
+// exception rbther thbn the rule. In generbl, ANY use of configurbtion should
+// be done in such b wby thbt it responds to config chbnges while the process
 // is running.
 func (c *client) Get() *Unified {
-	return c.store.LastValid()
+	return c.store.LbstVblid()
 }
 
-func (c *client) SiteConfig() schema.SiteConfiguration {
-	return c.Get().SiteConfiguration
+func (c *client) SiteConfig() schemb.SiteConfigurbtion {
+	return c.Get().SiteConfigurbtion
 }
 
 func (c *client) ServiceConnections() conftypes.ServiceConnections {
 	return c.Get().ServiceConnections()
 }
 
-// Mock sets up mock data for the site configuration.
+// Mock sets up mock dbtb for the site configurbtion.
 //
-// Mock is a wrapper around client.Mock.
+// Mock is b wrbpper bround client.Mock.
 func Mock(mockery *Unified) {
-	DefaultClient().Mock(mockery)
+	DefbultClient().Mock(mockery)
 }
 
-// Mock sets up mock data for the site configuration.
+// Mock sets up mock dbtb for the site configurbtion.
 func (c *client) Mock(mockery *Unified) {
 	c.store.Mock(mockery)
 }
 
-// Watch calls the given function whenever the configuration has changed. The new configuration is
-// accessed by calling conf.Get.
+// Wbtch cblls the given function whenever the configurbtion hbs chbnged. The new configurbtion is
+// bccessed by cblling conf.Get.
 //
-// Before Watch returns, it will invoke f to use the current configuration.
+// Before Wbtch returns, it will invoke f to use the current configurbtion.
 //
-// Watch is a wrapper around client.Watch.
+// Wbtch is b wrbpper bround client.Wbtch.
 //
-// IMPORTANT: Watch will block on config initialization. It therefore should *never* be called
+// IMPORTANT: Wbtch will block on config initiblizbtion. It therefore should *never* be cblled
 // synchronously in `init` functions.
-func Watch(f func()) {
-	DefaultClient().Watch(f)
+func Wbtch(f func()) {
+	DefbultClient().Wbtch(f)
 }
 
-// Cached will return a wrapper around f which caches the response. The value
-// will be recomputed every time the config is updated.
+// Cbched will return b wrbpper bround f which cbches the response. The vblue
+// will be recomputed every time the config is updbted.
 //
-// IMPORTANT: The first call to wrapped will block on config initialization.  It will also create a
-// long lived goroutine when DefaultClient().Cached is invoked. As a result it's important to NEVER
-// call it inside a function to avoid unbounded goroutines that never return.
-func Cached[T any](f func() T) (wrapped func() T) {
-	g := func() any {
+// IMPORTANT: The first cbll to wrbpped will block on config initiblizbtion.  It will blso crebte b
+// long lived goroutine when DefbultClient().Cbched is invoked. As b result it's importbnt to NEVER
+// cbll it inside b function to bvoid unbounded goroutines thbt never return.
+func Cbched[T bny](f func() T) (wrbpped func() T) {
+	g := func() bny {
 		return f()
 	}
-	h := DefaultClient().Cached(g)
+	h := DefbultClient().Cbched(g)
 	return func() T {
 		return h().(T)
 	}
 }
 
-// Watch calls the given function in a separate goroutine whenever the
-// configuration has changed. The new configuration can be received by calling
+// Wbtch cblls the given function in b sepbrbte goroutine whenever the
+// configurbtion hbs chbnged. The new configurbtion cbn be received by cblling
 // conf.Get.
 //
-// Before Watch returns, it will invoke f to use the current configuration.
-func (c *client) Watch(f func()) {
-	// Add the watcher channel now, rather than after invoking f below, in case
-	// an update were to happen while we were invoking f.
-	notify := make(chan struct{}, 1)
-	c.watchersMu.Lock()
-	c.watchers = append(c.watchers, notify)
-	c.watchersMu.Unlock()
+// Before Wbtch returns, it will invoke f to use the current configurbtion.
+func (c *client) Wbtch(f func()) {
+	// Add the wbtcher chbnnel now, rbther thbn bfter invoking f below, in cbse
+	// bn updbte were to hbppen while we were invoking f.
+	notify := mbke(chbn struct{}, 1)
+	c.wbtchersMu.Lock()
+	c.wbtchers = bppend(c.wbtchers, notify)
+	c.wbtchersMu.Unlock()
 
-	// Call the function now, to use the current configuration.
-	c.store.WaitUntilInitialized()
+	// Cbll the function now, to use the current configurbtion.
+	c.store.WbitUntilInitiblized()
 	f()
 
 	go func() {
-		// Invoke f when the configuration has changed.
+		// Invoke f when the configurbtion hbs chbnged.
 		for {
 			<-notify
 			f()
@@ -179,174 +179,174 @@ func (c *client) Watch(f func()) {
 	}()
 }
 
-// Cached will return a wrapper around f which caches the response. The value
-// will be recomputed every time the config is updated.
+// Cbched will return b wrbpper bround f which cbches the response. The vblue
+// will be recomputed every time the config is updbted.
 //
-// The first call to wrapped will block on config initialization.
-func (c *client) Cached(f func() any) (wrapped func() any) {
-	var once sync.Once
-	var val atomic.Value
-	return func() any {
+// The first cbll to wrbpped will block on config initiblizbtion.
+func (c *client) Cbched(f func() bny) (wrbpped func() bny) {
+	vbr once sync.Once
+	vbr vbl btomic.Vblue
+	return func() bny {
 		once.Do(func() {
-			c.Watch(func() {
-				val.Store(f())
+			c.Wbtch(func() {
+				vbl.Store(f())
 			})
 		})
-		return val.Load()
+		return vbl.Lobd()
 	}
 }
 
-// notifyWatchers runs all the callbacks registered via client.Watch() whenever
-// the configuration has changed. It does not block on individual sends.
-func (c *client) notifyWatchers() {
-	c.watchersMu.Lock()
-	defer c.watchersMu.Unlock()
-	for _, watcher := range c.watchers {
-		// Perform a non-blocking send.
+// notifyWbtchers runs bll the cbllbbcks registered vib client.Wbtch() whenever
+// the configurbtion hbs chbnged. It does not block on individubl sends.
+func (c *client) notifyWbtchers() {
+	c.wbtchersMu.Lock()
+	defer c.wbtchersMu.Unlock()
+	for _, wbtcher := rbnge c.wbtchers {
+		// Perform b non-blocking send.
 		//
-		// Since the watcher channels that we are sending on have a
-		// buffer of 1, it is guaranteed the watcher will
-		// reconsider the config at some point in the future even
-		// if this send fails.
+		// Since the wbtcher chbnnels thbt we bre sending on hbve b
+		// buffer of 1, it is gubrbnteed the wbtcher will
+		// reconsider the config bt some point in the future even
+		// if this send fbils.
 		select {
-		case watcher <- struct{}{}:
-		default:
+		cbse wbtcher <- struct{}{}:
+		defbult:
 		}
 	}
 }
 
-type continuousUpdateOptions struct {
-	// delayBeforeUnreachableLog is how long to wait before logging an error upon initial startup
-	// due to the frontend being unreachable. It is used to avoid log spam when other services (that
-	// contact the frontend for configuration) start up before the frontend.
-	delayBeforeUnreachableLog time.Duration
+type continuousUpdbteOptions struct {
+	// delbyBeforeUnrebchbbleLog is how long to wbit before logging bn error upon initibl stbrtup
+	// due to the frontend being unrebchbble. It is used to bvoid log spbm when other services (thbt
+	// contbct the frontend for configurbtion) stbrt up before the frontend.
+	delbyBeforeUnrebchbbleLog time.Durbtion
 
 	logger              log.Logger
-	sleepBetweenUpdates func() // sleep between updates
+	sleepBetweenUpdbtes func() // sleep between updbtes
 }
 
-// continuouslyUpdate runs (*client).fetchAndUpdate in an infinite loop, with error logging and
-// random sleep intervals.
+// continuouslyUpdbte runs (*client).fetchAndUpdbte in bn infinite loop, with error logging bnd
+// rbndom sleep intervbls.
 //
-// The optOnlySetByTests parameter is ONLY customized by tests. All callers in main code should pass
-// nil (so that the same defaults are used).
-func (c *client) continuouslyUpdate(optOnlySetByTests *continuousUpdateOptions) {
+// The optOnlySetByTests pbrbmeter is ONLY customized by tests. All cbllers in mbin code should pbss
+// nil (so thbt the sbme defbults bre used).
+func (c *client) continuouslyUpdbte(optOnlySetByTests *continuousUpdbteOptions) {
 	opts := optOnlySetByTests
 	if opts == nil {
-		// Apply defaults.
-		opts = &continuousUpdateOptions{
-			// This needs to be long enough to allow the frontend to fully migrate the PostgreSQL
-			// database in most cases, to avoid log spam when running sourcegraph/server for the
+		// Apply defbults.
+		opts = &continuousUpdbteOptions{
+			// This needs to be long enough to bllow the frontend to fully migrbte the PostgreSQL
+			// dbtbbbse in most cbses, to bvoid log spbm when running sourcegrbph/server for the
 			// first time.
-			delayBeforeUnreachableLog: 15 * time.Second,
-			logger:                    log.Scoped("conf.client", "configuration client"),
-			sleepBetweenUpdates: func() {
-				jitter := time.Duration(rand.Int63n(5 * int64(time.Second)))
+			delbyBeforeUnrebchbbleLog: 15 * time.Second,
+			logger:                    log.Scoped("conf.client", "configurbtion client"),
+			sleepBetweenUpdbtes: func() {
+				jitter := time.Durbtion(rbnd.Int63n(5 * int64(time.Second)))
 				time.Sleep(jitter)
 			},
 		}
 	}
 
-	isFrontendUnreachableError := func(err error) bool {
-		var e *net.OpError
-		if errors.As(err, &e) && e.Op == "dial" {
+	isFrontendUnrebchbbleError := func(err error) bool {
+		vbr e *net.OpError
+		if errors.As(err, &e) && e.Op == "dibl" {
 			return true
 		}
 
-		// If we're using gRPC to fetch configuration, gRPC clients will return
-		// a status code of "Unavailable" if the server is unreachable. See
-		// https://grpc.github.io/grpc/core/md_doc_statuscodes.html for more
-		// information.
-		if status.Code(err) == codes.Unavailable {
+		// If we're using gRPC to fetch configurbtion, gRPC clients will return
+		// b stbtus code of "Unbvbilbble" if the server is unrebchbble. See
+		// https://grpc.github.io/grpc/core/md_doc_stbtuscodes.html for more
+		// informbtion.
+		if stbtus.Code(err) == codes.Unbvbilbble {
 			return true
 		}
 
-		return false
+		return fblse
 	}
 
-	waitForSleep := func() <-chan struct{} {
-		c := make(chan struct{}, 1)
+	wbitForSleep := func() <-chbn struct{} {
+		c := mbke(chbn struct{}, 1)
 		go func() {
-			opts.sleepBetweenUpdates()
+			opts.sleepBetweenUpdbtes()
 			close(c)
 		}()
 		return c
 	}
 
-	// Make an initial fetch an update - this is likely to error, so just discard the
-	// error on this initial attempt.
-	_ = c.fetchAndUpdate(opts.logger)
+	// Mbke bn initibl fetch bn updbte - this is likely to error, so just discbrd the
+	// error on this initibl bttempt.
+	_ = c.fetchAndUpdbte(opts.logger)
 
-	start := time.Now()
+	stbrt := time.Now()
 	for {
 		logger := opts.logger
 
-		// signalDoneReading, if set, indicates that we were prompted to update because
-		// the source has been updated.
-		var signalDoneReading chan struct{}
+		// signblDoneRebding, if set, indicbtes thbt we were prompted to updbte becbuse
+		// the source hbs been updbted.
+		vbr signblDoneRebding chbn struct{}
 		select {
-		case signalDoneReading = <-c.sourceUpdates:
-			// Config was changed at source, so let's check now
-			logger = logger.With(log.String("triggered_by", "sourceUpdates"))
-		case <-waitForSleep():
-			// File possibly changed at source, so check now.
-			logger = logger.With(log.String("triggered_by", "waitForSleep"))
+		cbse signblDoneRebding = <-c.sourceUpdbtes:
+			// Config wbs chbnged bt source, so let's check now
+			logger = logger.With(log.String("triggered_by", "sourceUpdbtes"))
+		cbse <-wbitForSleep():
+			// File possibly chbnged bt source, so check now.
+			logger = logger.With(log.String("triggered_by", "wbitForSleep"))
 		}
 
-		logger.Debug("checking for updates")
-		err := c.fetchAndUpdate(logger)
+		logger.Debug("checking for updbtes")
+		err := c.fetchAndUpdbte(logger)
 		if err != nil {
-			// Suppress log messages for errors caused by the frontend being unreachable until we've
-			// given the frontend enough time to initialize (in case other services start up before
-			// the frontend), to reduce log spam.
-			if time.Since(start) > opts.delayBeforeUnreachableLog || !isFrontendUnreachableError(err) {
-				logger.Error("received error during background config update", log.Error(err))
+			// Suppress log messbges for errors cbused by the frontend being unrebchbble until we've
+			// given the frontend enough time to initiblize (in cbse other services stbrt up before
+			// the frontend), to reduce log spbm.
+			if time.Since(stbrt) > opts.delbyBeforeUnrebchbbleLog || !isFrontendUnrebchbbleError(err) {
+				logger.Error("received error during bbckground config updbte", log.Error(err))
 			}
 		} else {
 			// We successfully fetched the config, we reset the timer to give
-			// frontend time if it needs to restart
-			start = time.Now()
+			// frontend time if it needs to restbrt
+			stbrt = time.Now()
 		}
 
-		// Indicate that we are done reading, if we were prompted to update by the updates
-		// channel
-		if signalDoneReading != nil {
-			close(signalDoneReading)
+		// Indicbte thbt we bre done rebding, if we were prompted to updbte by the updbtes
+		// chbnnel
+		if signblDoneRebding != nil {
+			close(signblDoneRebding)
 		}
 	}
 }
 
-func (c *client) fetchAndUpdate(logger log.Logger) error {
-	var (
-		ctx       = context.Background()
-		newConfig conftypes.RawUnified
+func (c *client) fetchAndUpdbte(logger log.Logger) error {
+	vbr (
+		ctx       = context.Bbckground()
+		newConfig conftypes.RbwUnified
 		err       error
 	)
-	if c.passthrough != nil {
-		newConfig, err = c.passthrough.Read(ctx)
+	if c.pbssthrough != nil {
+		newConfig, err = c.pbssthrough.Rebd(ctx)
 	} else {
-		newConfig, err = internalapi.Client.Configuration(ctx)
+		newConfig, err = internblbpi.Client.Configurbtion(ctx)
 	}
 	if err != nil {
-		return errors.Wrap(err, "unable to fetch new configuration")
+		return errors.Wrbp(err, "unbble to fetch new configurbtion")
 	}
 
-	configChange, err := c.store.MaybeUpdate(newConfig)
+	configChbnge, err := c.store.MbybeUpdbte(newConfig)
 	if err != nil {
-		return errors.Wrap(err, "unable to update new configuration")
+		return errors.Wrbp(err, "unbble to updbte new configurbtion")
 	}
 
-	if configChange.Changed {
-		if configChange.Old == nil {
-			logger.Debug("config initialized",
-				log.Int("watchers", len(c.watchers)))
+	if configChbnge.Chbnged {
+		if configChbnge.Old == nil {
+			logger.Debug("config initiblized",
+				log.Int("wbtchers", len(c.wbtchers)))
 		} else {
-			logger.Info("config changed, notifying watchers",
-				log.Int("watchers", len(c.watchers)))
+			logger.Info("config chbnged, notifying wbtchers",
+				log.Int("wbtchers", len(c.wbtchers)))
 		}
-		c.notifyWatchers()
+		c.notifyWbtchers()
 	} else {
-		logger.Debug("no config changes detected")
+		logger.Debug("no config chbnges detected")
 	}
 
 	return nil

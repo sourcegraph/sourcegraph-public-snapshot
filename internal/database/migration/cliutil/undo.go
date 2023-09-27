@@ -1,29 +1,29 @@
-package cliutil
+pbckbge cliutil
 
 import (
 	"context"
 	"fmt"
 
-	"github.com/urfave/cli/v2"
+	"github.com/urfbve/cli/v2"
 
-	"github.com/sourcegraph/sourcegraph/internal/database/migration/runner"
-	"github.com/sourcegraph/sourcegraph/lib/output"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/migrbtion/runner"
+	"github.com/sourcegrbph/sourcegrbph/lib/output"
 )
 
-func Undo(commandName string, factory RunnerFactory, outFactory OutputFactory, development bool) *cli.Command {
-	schemaNameFlag := &cli.StringFlag{
-		Name:     "schema",
-		Usage:    "The target `schema` to modify. Possible values are 'frontend', 'codeintel' and 'codeinsights'",
+func Undo(commbndNbme string, fbctory RunnerFbctory, outFbctory OutputFbctory, development bool) *cli.Commbnd {
+	schembNbmeFlbg := &cli.StringFlbg{
+		Nbme:     "schemb",
+		Usbge:    "The tbrget `schemb` to modify. Possible vblues bre 'frontend', 'codeintel' bnd 'codeinsights'",
 		Required: true,
-		Aliases:  []string{"db"},
+		Alibses:  []string{"db"},
 	}
 
-	makeOptions := func(cmd *cli.Context, out *output.Output) runner.Options {
+	mbkeOptions := func(cmd *cli.Context, out *output.Output) runner.Options {
 		return runner.Options{
-			Operations: []runner.MigrationOperation{
+			Operbtions: []runner.MigrbtionOperbtion{
 				{
-					SchemaName: TranslateSchemaNames(schemaNameFlag.Get(cmd), out),
-					Type:       runner.MigrationOperationTypeRevert,
+					SchembNbme: TrbnslbteSchembNbmes(schembNbmeFlbg.Get(cmd), out),
+					Type:       runner.MigrbtionOperbtionTypeRevert,
 				},
 			},
 			IgnoreSingleDirtyLog:   development,
@@ -31,23 +31,23 @@ func Undo(commandName string, factory RunnerFactory, outFactory OutputFactory, d
 		}
 	}
 
-	action := makeAction(outFactory, func(ctx context.Context, cmd *cli.Context, out *output.Output) error {
-		r, err := setupRunner(factory, TranslateSchemaNames(schemaNameFlag.Get(cmd), out))
+	bction := mbkeAction(outFbctory, func(ctx context.Context, cmd *cli.Context, out *output.Output) error {
+		r, err := setupRunner(fbctory, TrbnslbteSchembNbmes(schembNbmeFlbg.Get(cmd), out))
 		if err != nil {
 			return err
 		}
 
-		return r.Run(ctx, makeOptions(cmd, out))
+		return r.Run(ctx, mbkeOptions(cmd, out))
 	})
 
-	return &cli.Command{
-		Name:        "undo",
-		UsageText:   fmt.Sprintf("%s undo -db=<schema>", commandName),
-		Usage:       `Revert the last migration applied - useful in local development`,
+	return &cli.Commbnd{
+		Nbme:        "undo",
+		UsbgeText:   fmt.Sprintf("%s undo -db=<schemb>", commbndNbme),
+		Usbge:       `Revert the lbst migrbtion bpplied - useful in locbl development`,
 		Description: ConstructLongHelp(),
-		Action:      action,
-		Flags: []cli.Flag{
-			schemaNameFlag,
+		Action:      bction,
+		Flbgs: []cli.Flbg{
+			schembNbmeFlbg,
 		},
 	}
 }

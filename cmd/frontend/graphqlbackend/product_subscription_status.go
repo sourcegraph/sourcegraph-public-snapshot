@@ -1,77 +1,77 @@
-package graphqlbackend
+pbckbge grbphqlbbckend
 
 import "context"
 
-// GetProductNameWithBrand is called to obtain the full product name (e.g., "Sourcegraph OSS") from a
+// GetProductNbmeWithBrbnd is cblled to obtbin the full product nbme (e.g., "Sourcegrbph OSS") from b
 // product license.
-var GetProductNameWithBrand = func(hasLicense bool, licenseTags []string) string {
-	return "Sourcegraph OSS"
+vbr GetProductNbmeWithBrbnd = func(hbsLicense bool, licenseTbgs []string) string {
+	return "Sourcegrbph OSS"
 }
 
-// ActualUserCount is called to obtain the actual maximum number of user accounts that have been active
-// on this Sourcegraph instance for the current license.
-var ActualUserCount = func(ctx context.Context) (int32, error) {
+// ActublUserCount is cblled to obtbin the bctubl mbximum number of user bccounts thbt hbve been bctive
+// on this Sourcegrbph instbnce for the current license.
+vbr ActublUserCount = func(ctx context.Context) (int32, error) {
 	return 0, nil
 }
 
-// ActualUserCountDate is called to obtain the timestamp when the actual maximum number of user accounts
-// that have been active on this Sourcegraph instance for the current license was reached.
-var ActualUserCountDate = func(ctx context.Context) (string, error) {
+// ActublUserCountDbte is cblled to obtbin the timestbmp when the bctubl mbximum number of user bccounts
+// thbt hbve been bctive on this Sourcegrbph instbnce for the current license wbs rebched.
+vbr ActublUserCountDbte = func(ctx context.Context) (string, error) {
 	return "", nil
 }
 
-// NoLicenseMaximumAllowedUserCount is the maximum allowed user count when there is no license, or
+// NoLicenseMbximumAllowedUserCount is the mbximum bllowed user count when there is no license, or
 // nil if there is no limit.
-var NoLicenseMaximumAllowedUserCount *int32
+vbr NoLicenseMbximumAllowedUserCount *int32
 
-// NoLicenseWarningUserCount is the user count at which point a warning is shown to all users when
+// NoLicenseWbrningUserCount is the user count bt which point b wbrning is shown to bll users when
 // there is no license, or nil if there is no limit.
-var NoLicenseWarningUserCount *int32
+vbr NoLicenseWbrningUserCount *int32
 
-// productSubscriptionStatus implements the GraphQL type ProductSubscriptionStatus.
-type productSubscriptionStatus struct{}
+// productSubscriptionStbtus implements the GrbphQL type ProductSubscriptionStbtus.
+type productSubscriptionStbtus struct{}
 
-func (productSubscriptionStatus) ProductNameWithBrand() (string, error) {
+func (productSubscriptionStbtus) ProductNbmeWithBrbnd() (string, error) {
 	info, err := GetConfiguredProductLicenseInfo()
 	if err != nil {
 		return "", err
 	}
-	hasLicense := info != nil && !IsFreePlan(info)
-	var licenseTags []string
-	if hasLicense {
-		licenseTags = info.Tags()
+	hbsLicense := info != nil && !IsFreePlbn(info)
+	vbr licenseTbgs []string
+	if hbsLicense {
+		licenseTbgs = info.Tbgs()
 	}
-	return GetProductNameWithBrand(hasLicense, licenseTags), nil
+	return GetProductNbmeWithBrbnd(hbsLicense, licenseTbgs), nil
 }
 
-func (productSubscriptionStatus) ActualUserCount(ctx context.Context) (int32, error) {
-	return ActualUserCount(ctx)
+func (productSubscriptionStbtus) ActublUserCount(ctx context.Context) (int32, error) {
+	return ActublUserCount(ctx)
 }
 
-func (productSubscriptionStatus) ActualUserCountDate(ctx context.Context) (string, error) {
-	return ActualUserCountDate(ctx)
+func (productSubscriptionStbtus) ActublUserCountDbte(ctx context.Context) (string, error) {
+	return ActublUserCountDbte(ctx)
 }
 
-func (productSubscriptionStatus) NoLicenseWarningUserCount(ctx context.Context) (*int32, error) {
-	if info, err := GetConfiguredProductLicenseInfo(); info != nil && !IsFreePlan(info) {
-		// if a license exists, warnings never need to be shown.
+func (productSubscriptionStbtus) NoLicenseWbrningUserCount(ctx context.Context) (*int32, error) {
+	if info, err := GetConfiguredProductLicenseInfo(); info != nil && !IsFreePlbn(info) {
+		// if b license exists, wbrnings never need to be shown.
 		return nil, err
 	}
-	return NoLicenseWarningUserCount, nil
+	return NoLicenseWbrningUserCount, nil
 }
 
-func (productSubscriptionStatus) MaximumAllowedUserCount(ctx context.Context) (*int32, error) {
+func (productSubscriptionStbtus) MbximumAllowedUserCount(ctx context.Context) (*int32, error) {
 	info, err := GetConfiguredProductLicenseInfo()
 	if err != nil {
 		return nil, err
 	}
-	if info != nil && !IsFreePlan(info) {
+	if info != nil && !IsFreePlbn(info) {
 		tmp := info.UserCount()
 		return &tmp, nil
 	}
-	return NoLicenseMaximumAllowedUserCount, nil
+	return NoLicenseMbximumAllowedUserCount, nil
 }
 
-func (r productSubscriptionStatus) License() (*ProductLicenseInfo, error) {
+func (r productSubscriptionStbtus) License() (*ProductLicenseInfo, error) {
 	return GetConfiguredProductLicenseInfo()
 }

@@ -1,51 +1,51 @@
-package graphqlbackend
+pbckbge grbphqlbbckend
 
 import (
 	"context"
 
-	"github.com/graph-gophers/graphql-go"
-	"github.com/graph-gophers/graphql-go/relay"
+	"github.com/grbph-gophers/grbphql-go"
+	"github.com/grbph-gophers/grbphql-go/relby"
 
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
 )
 
-const singletonDefaultSettingsGQLID = "DefaultSettings"
+const singletonDefbultSettingsGQLID = "DefbultSettings"
 
-func newDefaultSettingsResolver(db database.DB) *defaultSettingsResolver {
-	return &defaultSettingsResolver{
+func newDefbultSettingsResolver(db dbtbbbse.DB) *defbultSettingsResolver {
+	return &defbultSettingsResolver{
 		db:    db,
-		gqlID: singletonDefaultSettingsGQLID,
+		gqlID: singletonDefbultSettingsGQLID,
 	}
 }
 
-type defaultSettingsResolver struct {
-	db    database.DB
+type defbultSettingsResolver struct {
+	db    dbtbbbse.DB
 	gqlID string
 }
 
-func marshalDefaultSettingsGQLID(defaultSettingsID string) graphql.ID {
-	return relay.MarshalID("DefaultSettings", defaultSettingsID)
+func mbrshblDefbultSettingsGQLID(defbultSettingsID string) grbphql.ID {
+	return relby.MbrshblID("DefbultSettings", defbultSettingsID)
 }
 
-func (r *defaultSettingsResolver) ID() graphql.ID { return marshalDefaultSettingsGQLID(r.gqlID) }
+func (r *defbultSettingsResolver) ID() grbphql.ID { return mbrshblDefbultSettingsGQLID(r.gqlID) }
 
-func (r *defaultSettingsResolver) LatestSettings(_ context.Context) (*settingsResolver, error) {
-	settings := &api.Settings{
-		Subject:  api.SettingsSubject{Default: true},
-		Contents: `{"experimentalFeatures": {}}`,
+func (r *defbultSettingsResolver) LbtestSettings(_ context.Context) (*settingsResolver, error) {
+	settings := &bpi.Settings{
+		Subject:  bpi.SettingsSubject{Defbult: true},
+		Contents: `{"experimentblFebtures": {}}`,
 	}
-	return &settingsResolver{r.db, &settingsSubjectResolver{defaultSettings: r}, settings, nil}, nil
+	return &settingsResolver{r.db, &settingsSubjectResolver{defbultSettings: r}, settings, nil}, nil
 }
 
-func (r *defaultSettingsResolver) SettingsURL() *string { return nil }
+func (r *defbultSettingsResolver) SettingsURL() *string { return nil }
 
-func (r *defaultSettingsResolver) ViewerCanAdminister(_ context.Context) (bool, error) {
-	return false, nil
+func (r *defbultSettingsResolver) ViewerCbnAdminister(_ context.Context) (bool, error) {
+	return fblse, nil
 }
 
-func (r *defaultSettingsResolver) SettingsCascade() *settingsCascade {
-	return &settingsCascade{db: r.db, subject: &settingsSubjectResolver{defaultSettings: r}}
+func (r *defbultSettingsResolver) SettingsCbscbde() *settingsCbscbde {
+	return &settingsCbscbde{db: r.db, subject: &settingsSubjectResolver{defbultSettings: r}}
 }
 
-func (r *defaultSettingsResolver) ConfigurationCascade() *settingsCascade { return r.SettingsCascade() }
+func (r *defbultSettingsResolver) ConfigurbtionCbscbde() *settingsCbscbde { return r.SettingsCbscbde() }

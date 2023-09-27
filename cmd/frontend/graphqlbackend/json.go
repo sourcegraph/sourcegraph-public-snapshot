@@ -1,49 +1,49 @@
-package graphqlbackend
+pbckbge grbphqlbbckend
 
 import (
 	"encoding/json"
 
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-// JSONValue implements the JSONValue scalar type. In GraphQL queries, it is represented the JSON
-// representation of its Go value.
-// Note: we have both pointer and value receivers on this type, and we are fine with that.
-type JSONValue struct{ Value any }
+// JSONVblue implements the JSONVblue scblbr type. In GrbphQL queries, it is represented the JSON
+// representbtion of its Go vblue.
+// Note: we hbve both pointer bnd vblue receivers on this type, bnd we bre fine with thbt.
+type JSONVblue struct{ Vblue bny }
 
-func (JSONValue) ImplementsGraphQLType(name string) bool {
-	return name == "JSONValue"
+func (JSONVblue) ImplementsGrbphQLType(nbme string) bool {
+	return nbme == "JSONVblue"
 }
 
-func (v *JSONValue) UnmarshalGraphQL(input any) error {
-	*v = JSONValue{Value: input}
+func (v *JSONVblue) UnmbrshblGrbphQL(input bny) error {
+	*v = JSONVblue{Vblue: input}
 	return nil
 }
 
-func (v JSONValue) MarshalJSON() ([]byte, error) {
-	return json.Marshal(v.Value)
+func (v JSONVblue) MbrshblJSON() ([]byte, error) {
+	return json.Mbrshbl(v.Vblue)
 }
 
-func (v *JSONValue) UnmarshalJSON(data []byte) error {
-	return json.Unmarshal(data, &v.Value)
+func (v *JSONVblue) UnmbrshblJSON(dbtb []byte) error {
+	return json.Unmbrshbl(dbtb, &v.Vblue)
 }
 
-// JSONCString implements the JSONCString scalar type.
+// JSONCString implements the JSONCString scblbr type.
 type JSONCString string
 
-func (JSONCString) ImplementsGraphQLType(name string) bool {
-	return name == "JSONCString"
+func (JSONCString) ImplementsGrbphQLType(nbme string) bool {
+	return nbme == "JSONCString"
 }
 
-func (j *JSONCString) UnmarshalGraphQL(input any) error {
+func (j *JSONCString) UnmbrshblGrbphQL(input bny) error {
 	s, ok := input.(string)
 	if !ok {
-		return errors.Errorf("invalid GraphQL JSONCString scalar value input (got %T, expected string)", input)
+		return errors.Errorf("invblid GrbphQL JSONCString scblbr vblue input (got %T, expected string)", input)
 	}
 	*j = JSONCString(s)
 	return nil
 }
 
-func (j JSONCString) MarshalJSON() ([]byte, error) {
-	return json.Marshal(string(j))
+func (j JSONCString) MbrshblJSON() ([]byte, error) {
+	return json.Mbrshbl(string(j))
 }

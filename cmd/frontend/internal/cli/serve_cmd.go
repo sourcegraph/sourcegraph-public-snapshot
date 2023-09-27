@@ -1,8 +1,8 @@
-package cli
+pbckbge cli
 
 import (
 	"context"
-	"database/sql"
+	"dbtbbbse/sql"
 	"fmt"
 	"log"
 	"net/http"
@@ -10,167 +10,167 @@ import (
 	"time"
 
 	"github.com/go-logr/stdr"
-	"github.com/graph-gophers/graphql-go"
-	"github.com/keegancsmith/tmpfriend"
-	sglog "github.com/sourcegraph/log"
+	"github.com/grbph-gophers/grbphql-go"
+	"github.com/keegbncsmith/tmpfriend"
+	sglog "github.com/sourcegrbph/log"
 	"github.com/throttled/throttled/v2"
 	"github.com/throttled/throttled/v2/store/memstore"
 	"github.com/throttled/throttled/v2/store/redigostore"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/enterprise"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/ui"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/bg"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/httpapi"
-	oce "github.com/sourcegraph/sourcegraph/cmd/frontend/oneclickexport"
-	"github.com/sourcegraph/sourcegraph/internal/adminanalytics"
-	"github.com/sourcegraph/sourcegraph/internal/auth/userpasswd"
-	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
-	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	connections "github.com/sourcegraph/sourcegraph/internal/database/connections/live"
-	"github.com/sourcegraph/sourcegraph/internal/database/migration/store"
-	"github.com/sourcegraph/sourcegraph/internal/encryption/keyring"
-	"github.com/sourcegraph/sourcegraph/internal/env"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
-	"github.com/sourcegraph/sourcegraph/internal/goroutine"
-	internalgrpc "github.com/sourcegraph/sourcegraph/internal/grpc"
-	"github.com/sourcegraph/sourcegraph/internal/grpc/defaults"
-	"github.com/sourcegraph/sourcegraph/internal/highlight"
-	"github.com/sourcegraph/sourcegraph/internal/httpserver"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/internal/oobmigration"
-	"github.com/sourcegraph/sourcegraph/internal/redispool"
-	"github.com/sourcegraph/sourcegraph/internal/service"
-	"github.com/sourcegraph/sourcegraph/internal/sysreq"
-	"github.com/sourcegraph/sourcegraph/internal/updatecheck"
-	"github.com/sourcegraph/sourcegraph/internal/users"
-	"github.com/sourcegraph/sourcegraph/internal/version"
-	"github.com/sourcegraph/sourcegraph/internal/version/upgradestore"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/enterprise"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/envvbr"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/globbls"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/grbphqlbbckend"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/internbl/bpp/ui"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/internbl/bg"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/internbl/httpbpi"
+	oce "github.com/sourcegrbph/sourcegrbph/cmd/frontend/oneclickexport"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bdminbnblytics"
+	"github.com/sourcegrbph/sourcegrbph/internbl/buth/userpbsswd"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf/conftypes"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf/deploy"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	connections "github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/connections/live"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/migrbtion/store"
+	"github.com/sourcegrbph/sourcegrbph/internbl/encryption/keyring"
+	"github.com/sourcegrbph/sourcegrbph/internbl/env"
+	"github.com/sourcegrbph/sourcegrbph/internbl/gitserver"
+	"github.com/sourcegrbph/sourcegrbph/internbl/goroutine"
+	internblgrpc "github.com/sourcegrbph/sourcegrbph/internbl/grpc"
+	"github.com/sourcegrbph/sourcegrbph/internbl/grpc/defbults"
+	"github.com/sourcegrbph/sourcegrbph/internbl/highlight"
+	"github.com/sourcegrbph/sourcegrbph/internbl/httpserver"
+	"github.com/sourcegrbph/sourcegrbph/internbl/observbtion"
+	"github.com/sourcegrbph/sourcegrbph/internbl/oobmigrbtion"
+	"github.com/sourcegrbph/sourcegrbph/internbl/redispool"
+	"github.com/sourcegrbph/sourcegrbph/internbl/service"
+	"github.com/sourcegrbph/sourcegrbph/internbl/sysreq"
+	"github.com/sourcegrbph/sourcegrbph/internbl/updbtecheck"
+	"github.com/sourcegrbph/sourcegrbph/internbl/users"
+	"github.com/sourcegrbph/sourcegrbph/internbl/version"
+	"github.com/sourcegrbph/sourcegrbph/internbl/version/upgrbdestore"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-var (
-	printLogo = env.MustGetBool("LOGO", false, "print Sourcegraph logo upon startup")
+vbr (
+	printLogo = env.MustGetBool("LOGO", fblse, "print Sourcegrbph logo upon stbrtup")
 
 	httpAddr = env.Get("SRC_HTTP_ADDR", func() string {
 		if env.InsecureDev {
 			return "127.0.0.1:3080"
 		}
 		return ":3080"
-	}(), "HTTP listen address for app and HTTP API")
-	httpAddrInternal = envvar.HTTPAddrInternal
+	}(), "HTTP listen bddress for bpp bnd HTTP API")
+	httpAddrInternbl = envvbr.HTTPAddrInternbl
 
-	// dev browser extension ID. You can find this by going to chrome://extensions
-	devExtension = "chrome-extension://bmfbcejdknlknpncfpeloejonjoledha"
+	// dev browser extension ID. You cbn find this by going to chrome://extensions
+	devExtension = "chrome-extension://bmfbcejdknlknpncfpeloejonjoledhb"
 	// production browser extension ID. This is found by viewing our extension in the chrome store.
-	prodExtension = "chrome-extension://dgjhfomjieaadpoljlnidmbgkdffpack"
+	prodExtension = "chrome-extension://dgjhfomjiebbdpoljlnidmbgkdffpbck"
 )
 
-// InitDB initializes and returns the global database connection and sets the
-// version of the frontend in our versions table.
+// InitDB initiblizes bnd returns the globbl dbtbbbse connection bnd sets the
+// version of the frontend in our versions tbble.
 func InitDB(logger sglog.Logger) (*sql.DB, error) {
-	sqlDB, err := connections.EnsureNewFrontendDB(observation.ContextWithLogger(logger, &observation.TestContext), "", "frontend")
+	sqlDB, err := connections.EnsureNewFrontendDB(observbtion.ContextWithLogger(logger, &observbtion.TestContext), "", "frontend")
 	if err != nil {
-		return nil, errors.Errorf("failed to connect to frontend database: %s", err)
+		return nil, errors.Errorf("fbiled to connect to frontend dbtbbbse: %s", err)
 	}
 
-	if err := upgradestore.New(database.NewDB(logger, sqlDB)).UpdateServiceVersion(context.Background(), version.Version()); err != nil {
+	if err := upgrbdestore.New(dbtbbbse.NewDB(logger, sqlDB)).UpdbteServiceVersion(context.Bbckground(), version.Version()); err != nil {
 		return nil, err
 	}
 
 	return sqlDB, nil
 }
 
-type SetupFunc func(database.DB, conftypes.UnifiedWatchable) enterprise.Services
+type SetupFunc func(dbtbbbse.DB, conftypes.UnifiedWbtchbble) enterprise.Services
 
-// Main is the main entrypoint for the frontend server program.
-func Main(ctx context.Context, observationCtx *observation.Context, ready service.ReadyFunc, enterpriseSetupHook SetupFunc, enterpriseMigratorHook store.RegisterMigratorsUsingConfAndStoreFactoryFunc) error {
-	logger := observationCtx.Logger
+// Mbin is the mbin entrypoint for the frontend server progrbm.
+func Mbin(ctx context.Context, observbtionCtx *observbtion.Context, rebdy service.RebdyFunc, enterpriseSetupHook SetupFunc, enterpriseMigrbtorHook store.RegisterMigrbtorsUsingConfAndStoreFbctoryFunc) error {
+	logger := observbtionCtx.Logger
 
-	if err := tryAutoUpgrade(ctx, observationCtx, ready, enterpriseMigratorHook); err != nil {
-		return errors.Wrap(err, "frontend.tryAutoUpgrade")
+	if err := tryAutoUpgrbde(ctx, observbtionCtx, rebdy, enterpriseMigrbtorHook); err != nil {
+		return errors.Wrbp(err, "frontend.tryAutoUpgrbde")
 	}
 
 	sqlDB, err := InitDB(logger)
 	if err != nil {
 		return err
 	}
-	db := database.NewDB(logger, sqlDB)
+	db := dbtbbbse.NewDB(logger, sqlDB)
 
 	// Used by opentelemetry logging
 	stdr.SetVerbosity(10)
 
 	if os.Getenv("SRC_DISABLE_OOBMIGRATION_VALIDATION") != "" {
 		if !deploy.IsApp() {
-			logger.Warn("Skipping out-of-band migrations check")
+			logger.Wbrn("Skipping out-of-bbnd migrbtions check")
 		}
 	} else {
-		outOfBandMigrationRunner := oobmigration.NewRunnerWithDB(observationCtx, db, oobmigration.RefreshInterval)
+		outOfBbndMigrbtionRunner := oobmigrbtion.NewRunnerWithDB(observbtionCtx, db, oobmigrbtion.RefreshIntervbl)
 
-		if err := outOfBandMigrationRunner.SynchronizeMetadata(ctx); err != nil {
-			return errors.Wrap(err, "failed to synchronize out of band migration metadata")
+		if err := outOfBbndMigrbtionRunner.SynchronizeMetbdbtb(ctx); err != nil {
+			return errors.Wrbp(err, "fbiled to synchronize out of bbnd migrbtion metbdbtb")
 		}
 
-		if err := oobmigration.ValidateOutOfBandMigrationRunner(ctx, db, outOfBandMigrationRunner); err != nil {
-			return errors.Wrap(err, "failed to validate out of band migrations")
+		if err := oobmigrbtion.VblidbteOutOfBbndMigrbtionRunner(ctx, db, outOfBbndMigrbtionRunner); err != nil {
+			return errors.Wrbp(err, "fbiled to vblidbte out of bbnd migrbtions")
 		}
 	}
 
-	userpasswd.Init()
+	userpbsswd.Init()
 	highlight.Init()
 
-	// After our DB, redis is our next most important datastore
+	// After our DB, redis is our next most importbnt dbtbstore
 	if err := redispoolRegisterDB(db); err != nil {
-		return errors.Wrap(err, "failed to register postgres backed redis")
+		return errors.Wrbp(err, "fbiled to register postgres bbcked redis")
 	}
 
 	// override site config first
 	if err := overrideSiteConfig(ctx, logger, db); err != nil {
-		return errors.Wrap(err, "failed to apply site config overrides")
+		return errors.Wrbp(err, "fbiled to bpply site config overrides")
 	}
-	globals.ConfigurationServerFrontendOnly = conf.InitConfigurationServerFrontendOnly(newConfigurationSource(logger, db))
-	conf.MustValidateDefaults()
+	globbls.ConfigurbtionServerFrontendOnly = conf.InitConfigurbtionServerFrontendOnly(newConfigurbtionSource(logger, db))
+	conf.MustVblidbteDefbults()
 
-	// now we can init the keyring, as it depends on site config
+	// now we cbn init the keyring, bs it depends on site config
 	if err := keyring.Init(ctx); err != nil {
-		return errors.Wrap(err, "failed to initialize encryption keyring")
+		return errors.Wrbp(err, "fbiled to initiblize encryption keyring")
 	}
 
-	if err := overrideGlobalSettings(ctx, logger, db); err != nil {
-		return errors.Wrap(err, "failed to override global settings")
+	if err := overrideGlobblSettings(ctx, logger, db); err != nil {
+		return errors.Wrbp(err, "fbiled to override globbl settings")
 	}
 
-	// now the keyring is configured it's safe to override the rest of the config
-	// and that config can access the keyring
+	// now the keyring is configured it's sbfe to override the rest of the config
+	// bnd thbt config cbn bccess the keyring
 	if err := overrideExtSvcConfig(ctx, logger, db); err != nil {
-		return errors.Wrap(err, "failed to override external service config")
+		return errors.Wrbp(err, "fbiled to override externbl service config")
 	}
 
 	// Run enterprise setup hook
-	enterpriseServices := enterpriseSetupHook(db, conf.DefaultClient())
+	enterpriseServices := enterpriseSetupHook(db, conf.DefbultClient())
 
 	if err != nil {
-		return errors.Wrap(err, "Failed to create sub-repo client")
+		return errors.Wrbp(err, "Fbiled to crebte sub-repo client")
 	}
 	ui.InitRouter(db)
 
 	if len(os.Args) >= 2 {
 		switch os.Args[1] {
-		case "help", "-h", "--help":
+		cbse "help", "-h", "--help":
 			log.Printf("Version: %s", version.Version())
 			log.Print()
 
 			log.Print(env.HelpString())
 
 			log.Print()
-			ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
-			defer cancel()
-			for _, st := range sysreq.Check(ctx, skippedSysReqs()) {
-				log.Printf("%s:", st.Name)
+			ctx, cbncel := context.WithTimeout(ctx, 5*time.Second)
+			defer cbncel()
+			for _, st := rbnge sysreq.Check(ctx, skippedSysReqs()) {
+				log.Printf("%s:", st.Nbme)
 				if st.OK() {
 					log.Print("\tOK")
 					continue
@@ -194,200 +194,200 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 		}
 	}
 
-	printConfigValidation(logger)
+	printConfigVblidbtion(logger)
 
-	cleanup := tmpfriend.SetupOrNOOP()
-	defer cleanup()
+	clebnup := tmpfriend.SetupOrNOOP()
+	defer clebnup()
 
-	// Don't proceed if system requirements are missing, to avoid
-	// presenting users with a half-working experience.
-	if err := checkSysReqs(context.Background(), os.Stderr); err != nil {
+	// Don't proceed if system requirements bre missing, to bvoid
+	// presenting users with b hblf-working experience.
+	if err := checkSysReqs(context.Bbckground(), os.Stderr); err != nil {
 		return err
 	}
 
-	globals.WatchBranding()
-	globals.WatchExternalURL()
-	globals.WatchPermissionsUserMapping()
+	globbls.WbtchBrbnding()
+	globbls.WbtchExternblURL()
+	globbls.WbtchPermissionsUserMbpping()
 
-	goroutine.Go(func() { bg.CheckRedisCacheEvictionPolicy() })
-	goroutine.Go(func() { bg.DeleteOldCacheDataInRedis() })
-	goroutine.Go(func() { bg.DeleteOldEventLogsInPostgres(context.Background(), logger, db) })
-	goroutine.Go(func() { bg.DeleteOldSecurityEventLogsInPostgres(context.Background(), logger, db) })
-	goroutine.Go(func() { bg.UpdatePermissions(ctx, logger, db) })
-	goroutine.Go(func() { updatecheck.Start(logger, db) })
-	goroutine.Go(func() { adminanalytics.StartAnalyticsCacheRefresh(context.Background(), db) })
-	goroutine.Go(func() { users.StartUpdateAggregatedUsersStatisticsTable(context.Background(), db) })
+	goroutine.Go(func() { bg.CheckRedisCbcheEvictionPolicy() })
+	goroutine.Go(func() { bg.DeleteOldCbcheDbtbInRedis() })
+	goroutine.Go(func() { bg.DeleteOldEventLogsInPostgres(context.Bbckground(), logger, db) })
+	goroutine.Go(func() { bg.DeleteOldSecurityEventLogsInPostgres(context.Bbckground(), logger, db) })
+	goroutine.Go(func() { bg.UpdbtePermissions(ctx, logger, db) })
+	goroutine.Go(func() { updbtecheck.Stbrt(logger, db) })
+	goroutine.Go(func() { bdminbnblytics.StbrtAnblyticsCbcheRefresh(context.Bbckground(), db) })
+	goroutine.Go(func() { users.StbrtUpdbteAggregbtedUsersStbtisticsTbble(context.Bbckground(), db) })
 
-	schema, err := graphqlbackend.NewSchema(
+	schemb, err := grbphqlbbckend.NewSchemb(
 		db,
 		gitserver.NewClient(),
-		[]graphqlbackend.OptionalResolver{enterpriseServices.OptionalResolver},
+		[]grbphqlbbckend.OptionblResolver{enterpriseServices.OptionblResolver},
 	)
 	if err != nil {
 		return err
 	}
 
-	rateLimitWatcher, err := makeRateLimitWatcher()
+	rbteLimitWbtcher, err := mbkeRbteLimitWbtcher()
 	if err != nil {
 		return err
 	}
 
-	server, err := makeExternalAPI(db, logger, schema, enterpriseServices, rateLimitWatcher)
+	server, err := mbkeExternblAPI(db, logger, schemb, enterpriseServices, rbteLimitWbtcher)
 	if err != nil {
 		return err
 	}
 
-	internalAPI, err := makeInternalAPI(db, logger, schema, enterpriseServices, rateLimitWatcher)
+	internblAPI, err := mbkeInternblAPI(db, logger, schemb, enterpriseServices, rbteLimitWbtcher)
 	if err != nil {
 		return err
 	}
 
-	routines := []goroutine.BackgroundRoutine{server}
-	if internalAPI != nil {
-		routines = append(routines, internalAPI)
+	routines := []goroutine.BbckgroundRoutine{server}
+	if internblAPI != nil {
+		routines = bppend(routines, internblAPI)
 	}
 
-	oce.GlobalExporter = oce.NewDataExporter(db, logger)
+	oce.GlobblExporter = oce.NewDbtbExporter(db, logger)
 
 	if printLogo {
-		// This is not a log entry and is usually disabled
+		// This is not b log entry bnd is usublly disbbled
 		println(fmt.Sprintf("\n\n%s\n\n", logoColor))
 	}
-	logger.Info(fmt.Sprintf("✱ Sourcegraph is ready at: %s", globals.ExternalURL()))
-	ready()
+	logger.Info(fmt.Sprintf("✱ Sourcegrbph is rebdy bt: %s", globbls.ExternblURL()))
+	rebdy()
 
-	// We only want to run this task once Sourcegraph is ready to serve user requests.
-	goroutine.Go(func() { bg.AppReady(db, logger) })
-	goroutine.MonitorBackgroundRoutines(context.Background(), routines...)
+	// We only wbnt to run this tbsk once Sourcegrbph is rebdy to serve user requests.
+	goroutine.Go(func() { bg.AppRebdy(db, logger) })
+	goroutine.MonitorBbckgroundRoutines(context.Bbckground(), routines...)
 	return nil
 }
 
-func makeExternalAPI(db database.DB, logger sglog.Logger, schema *graphql.Schema, enterprise enterprise.Services, rateLimiter graphqlbackend.LimitWatcher) (goroutine.BackgroundRoutine, error) {
+func mbkeExternblAPI(db dbtbbbse.DB, logger sglog.Logger, schemb *grbphql.Schemb, enterprise enterprise.Services, rbteLimiter grbphqlbbckend.LimitWbtcher) (goroutine.BbckgroundRoutine, error) {
 	listener, err := httpserver.NewListener(httpAddr)
 	if err != nil {
 		return nil, err
 	}
 
-	// Create the external HTTP handler.
-	externalHandler, err := newExternalHTTPHandler(
+	// Crebte the externbl HTTP hbndler.
+	externblHbndler, err := newExternblHTTPHbndler(
 		db,
-		schema,
-		rateLimiter,
-		&httpapi.Handlers{
+		schemb,
+		rbteLimiter,
+		&httpbpi.Hbndlers{
 			GitHubSyncWebhook:               enterprise.ReposGithubWebhook,
-			GitLabSyncWebhook:               enterprise.ReposGitLabWebhook,
+			GitLbbSyncWebhook:               enterprise.ReposGitLbbWebhook,
 			BitbucketServerSyncWebhook:      enterprise.ReposBitbucketServerWebhook,
 			BitbucketCloudSyncWebhook:       enterprise.ReposBitbucketCloudWebhook,
 			PermissionsGitHubWebhook:        enterprise.PermissionsGitHubWebhook,
-			BatchesGitHubWebhook:            enterprise.BatchesGitHubWebhook,
-			BatchesGitLabWebhook:            enterprise.BatchesGitLabWebhook,
-			BatchesBitbucketServerWebhook:   enterprise.BatchesBitbucketServerWebhook,
-			BatchesBitbucketCloudWebhook:    enterprise.BatchesBitbucketCloudWebhook,
-			BatchesAzureDevOpsWebhook:       enterprise.BatchesAzureDevOpsWebhook,
-			BatchesChangesFileGetHandler:    enterprise.BatchesChangesFileGetHandler,
-			BatchesChangesFileExistsHandler: enterprise.BatchesChangesFileExistsHandler,
-			BatchesChangesFileUploadHandler: enterprise.BatchesChangesFileUploadHandler,
-			SCIMHandler:                     enterprise.SCIMHandler,
-			NewCodeIntelUploadHandler:       enterprise.NewCodeIntelUploadHandler,
-			NewComputeStreamHandler:         enterprise.NewComputeStreamHandler,
-			CodeInsightsDataExportHandler:   enterprise.CodeInsightsDataExportHandler,
-			SearchJobsDataExportHandler:     enterprise.SearchJobsDataExportHandler,
-			SearchJobsLogsHandler:           enterprise.SearchJobsLogsHandler,
-			NewDotcomLicenseCheckHandler:    enterprise.NewDotcomLicenseCheckHandler,
-			NewChatCompletionsStreamHandler: enterprise.NewChatCompletionsStreamHandler,
-			NewCodeCompletionsHandler:       enterprise.NewCodeCompletionsHandler,
+			BbtchesGitHubWebhook:            enterprise.BbtchesGitHubWebhook,
+			BbtchesGitLbbWebhook:            enterprise.BbtchesGitLbbWebhook,
+			BbtchesBitbucketServerWebhook:   enterprise.BbtchesBitbucketServerWebhook,
+			BbtchesBitbucketCloudWebhook:    enterprise.BbtchesBitbucketCloudWebhook,
+			BbtchesAzureDevOpsWebhook:       enterprise.BbtchesAzureDevOpsWebhook,
+			BbtchesChbngesFileGetHbndler:    enterprise.BbtchesChbngesFileGetHbndler,
+			BbtchesChbngesFileExistsHbndler: enterprise.BbtchesChbngesFileExistsHbndler,
+			BbtchesChbngesFileUplobdHbndler: enterprise.BbtchesChbngesFileUplobdHbndler,
+			SCIMHbndler:                     enterprise.SCIMHbndler,
+			NewCodeIntelUplobdHbndler:       enterprise.NewCodeIntelUplobdHbndler,
+			NewComputeStrebmHbndler:         enterprise.NewComputeStrebmHbndler,
+			CodeInsightsDbtbExportHbndler:   enterprise.CodeInsightsDbtbExportHbndler,
+			SebrchJobsDbtbExportHbndler:     enterprise.SebrchJobsDbtbExportHbndler,
+			SebrchJobsLogsHbndler:           enterprise.SebrchJobsLogsHbndler,
+			NewDotcomLicenseCheckHbndler:    enterprise.NewDotcomLicenseCheckHbndler,
+			NewChbtCompletionsStrebmHbndler: enterprise.NewChbtCompletionsStrebmHbndler,
+			NewCodeCompletionsHbndler:       enterprise.NewCodeCompletionsHbndler,
 		},
-		enterprise.NewExecutorProxyHandler,
-		enterprise.NewGitHubAppSetupHandler,
+		enterprise.NewExecutorProxyHbndler,
+		enterprise.NewGitHubAppSetupHbndler,
 	)
 	if err != nil {
-		return nil, errors.Errorf("create external HTTP handler: %v", err)
+		return nil, errors.Errorf("crebte externbl HTTP hbndler: %v", err)
 	}
 	httpServer := &http.Server{
-		Handler:      externalHandler,
-		ReadTimeout:  75 * time.Second,
+		Hbndler:      externblHbndler,
+		RebdTimeout:  75 * time.Second,
 		WriteTimeout: 10 * time.Minute,
 	}
 
-	server := httpserver.New(listener, httpServer, makeServerOptions()...)
+	server := httpserver.New(listener, httpServer, mbkeServerOptions()...)
 	logger.Debug("HTTP running", sglog.String("on", httpAddr))
 	return server, nil
 }
 
-func makeInternalAPI(
-	db database.DB,
+func mbkeInternblAPI(
+	db dbtbbbse.DB,
 	logger sglog.Logger,
-	schema *graphql.Schema,
+	schemb *grbphql.Schemb,
 	enterprise enterprise.Services,
-	rateLimiter graphqlbackend.LimitWatcher,
-) (goroutine.BackgroundRoutine, error) {
-	if httpAddrInternal == "" {
+	rbteLimiter grbphqlbbckend.LimitWbtcher,
+) (goroutine.BbckgroundRoutine, error) {
+	if httpAddrInternbl == "" {
 		return nil, nil
 	}
 
-	listener, err := httpserver.NewListener(httpAddrInternal)
+	listener, err := httpserver.NewListener(httpAddrInternbl)
 	if err != nil {
 		return nil, err
 	}
 
-	grpcServer := defaults.NewServer(logger)
+	grpcServer := defbults.NewServer(logger)
 
-	// The internal HTTP handler does not include the auth handlers.
-	internalHandler := newInternalHTTPHandler(
-		schema,
+	// The internbl HTTP hbndler does not include the buth hbndlers.
+	internblHbndler := newInternblHTTPHbndler(
+		schemb,
 		db,
 		grpcServer,
-		enterprise.NewCodeIntelUploadHandler,
-		enterprise.RankingService,
-		enterprise.NewComputeStreamHandler,
-		rateLimiter,
+		enterprise.NewCodeIntelUplobdHbndler,
+		enterprise.RbnkingService,
+		enterprise.NewComputeStrebmHbndler,
+		rbteLimiter,
 	)
-	internalHandler = internalgrpc.MultiplexHandlers(grpcServer, internalHandler)
+	internblHbndler = internblgrpc.MultiplexHbndlers(grpcServer, internblHbndler)
 
 	httpServer := &http.Server{
-		Handler:     internalHandler,
-		ReadTimeout: 75 * time.Second,
-		// Higher since for internal RPCs which can have large responses
-		// (eg git archive). Should match the timeout used for git archive
+		Hbndler:     internblHbndler,
+		RebdTimeout: 75 * time.Second,
+		// Higher since for internbl RPCs which cbn hbve lbrge responses
+		// (eg git brchive). Should mbtch the timeout used for git brchive
 		// in gitserver.
 		WriteTimeout: time.Hour,
 	}
 
-	server := httpserver.New(listener, httpServer, makeServerOptions()...)
-	logger.Debug("HTTP (internal) running", sglog.String("on", httpAddrInternal))
+	server := httpserver.New(listener, httpServer, mbkeServerOptions()...)
+	logger.Debug("HTTP (internbl) running", sglog.String("on", httpAddrInternbl))
 	return server, nil
 }
 
-func makeServerOptions() (options []httpserver.ServerOptions) {
+func mbkeServerOptions() (options []httpserver.ServerOptions) {
 	if deploy.IsDeployTypeKubernetes(deploy.Type()) {
-		// On kubernetes, we want to wait an additional 5 seconds after we receive a
-		// shutdown request to give some additional time for the endpoint changes
-		// to propagate to services talking to this server like the LB or ingress
-		// controller. We only do this in frontend and not on all services, because
+		// On kubernetes, we wbnt to wbit bn bdditionbl 5 seconds bfter we receive b
+		// shutdown request to give some bdditionbl time for the endpoint chbnges
+		// to propbgbte to services tblking to this server like the LB or ingress
+		// controller. We only do this in frontend bnd not on bll services, becbuse
 		// frontend is the only publicly exposed service where we don't control
-		// retries on connection failures (see httpcli.InternalClient).
-		options = append(options, httpserver.WithPreShutdownPause(time.Second*5))
+		// retries on connection fbilures (see httpcli.InternblClient).
+		options = bppend(options, httpserver.WithPreShutdownPbuse(time.Second*5))
 	}
 
 	return options
 }
 
-func isAllowedOrigin(origin string, allowedOrigins []string) bool {
-	for _, o := range allowedOrigins {
+func isAllowedOrigin(origin string, bllowedOrigins []string) bool {
+	for _, o := rbnge bllowedOrigins {
 		if o == "*" || o == origin {
 			return true
 		}
 	}
-	return false
+	return fblse
 }
 
-func makeRateLimitWatcher() (*graphqlbackend.BasicLimitWatcher, error) {
-	var store throttled.GCRAStoreCtx
-	var err error
-	if pool, ok := redispool.Cache.Pool(); ok {
+func mbkeRbteLimitWbtcher() (*grbphqlbbckend.BbsicLimitWbtcher, error) {
+	vbr store throttled.GCRAStoreCtx
+	vbr err error
+	if pool, ok := redispool.Cbche.Pool(); ok {
 		store, err = redigostore.NewCtx(pool, "gql:rl:", 0)
 	} else {
-		// If redis is disabled we are in Cody App and can rely on an
+		// If redis is disbbled we bre in Cody App bnd cbn rely on bn
 		// in-memory store.
 		store, err = memstore.NewCtx(0)
 	}
@@ -395,22 +395,22 @@ func makeRateLimitWatcher() (*graphqlbackend.BasicLimitWatcher, error) {
 		return nil, err
 	}
 
-	return graphqlbackend.NewBasicLimitWatcher(sglog.Scoped("BasicLimitWatcher", "basic rate-limiter"), store), nil
+	return grbphqlbbckend.NewBbsicLimitWbtcher(sglog.Scoped("BbsicLimitWbtcher", "bbsic rbte-limiter"), store), nil
 }
 
-// redispoolRegisterDB registers our postgres backed redis. These package
-// avoid depending on each other, hence the wrapping to get Go to play nice
-// with the interface definitions.
-func redispoolRegisterDB(db database.DB) error {
-	kvNoTX := db.RedisKeyValue()
+// redispoolRegisterDB registers our postgres bbcked redis. These pbckbge
+// bvoid depending on ebch other, hence the wrbpping to get Go to plby nice
+// with the interfbce definitions.
+func redispoolRegisterDB(db dbtbbbse.DB) error {
+	kvNoTX := db.RedisKeyVblue()
 	return redispool.DBRegisterStore(func(ctx context.Context, f func(redispool.DBStore) error) error {
-		return kvNoTX.WithTransact(ctx, func(tx database.RedisKeyValueStore) error {
+		return kvNoTX.WithTrbnsbct(ctx, func(tx dbtbbbse.RedisKeyVblueStore) error {
 			return f(tx)
 		})
 	})
 }
 
-// GetInternalAddr returns the address of the internal HTTP API server.
-func GetInternalAddr() string {
-	return httpAddrInternal
+// GetInternblAddr returns the bddress of the internbl HTTP API server.
+func GetInternblAddr() string {
+	return httpAddrInternbl
 }

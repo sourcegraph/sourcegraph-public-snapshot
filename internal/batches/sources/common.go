@@ -1,197 +1,197 @@
-package sources
+pbckbge sources
 
 import (
 	"context"
 	"fmt"
 
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	btypes "github.com/sourcegraph/sourcegraph/internal/batches/types"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
-	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi"
+	btypes "github.com/sourcegrbph/sourcegrbph/internbl/bbtches/types"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc/buth"
+	"github.com/sourcegrbph/sourcegrbph/internbl/gitserver/gitdombin"
+	"github.com/sourcegrbph/sourcegrbph/internbl/gitserver/protocol"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
 )
 
-// ChangesetNotFoundError is returned by LoadChangeset if the changeset
+// ChbngesetNotFoundError is returned by LobdChbngeset if the chbngeset
 // could not be found on the codehost. This is only returned, if the
-// changeset is actually not found. Other not found errors, such as
-// repo not found should NOT raise this error, since it will cause
-// the changeset to be marked as deleted.
-type ChangesetNotFoundError struct {
-	Changeset *Changeset
+// chbngeset is bctublly not found. Other not found errors, such bs
+// repo not found should NOT rbise this error, since it will cbuse
+// the chbngeset to be mbrked bs deleted.
+type ChbngesetNotFoundError struct {
+	Chbngeset *Chbngeset
 }
 
-func (e ChangesetNotFoundError) Error() string {
-	return fmt.Sprintf("Changeset with external ID %s not found", e.Changeset.Changeset.ExternalID)
+func (e ChbngesetNotFoundError) Error() string {
+	return fmt.Sprintf("Chbngeset with externbl ID %s not found", e.Chbngeset.Chbngeset.ExternblID)
 }
 
-func (e ChangesetNotFoundError) NonRetryable() bool { return true }
+func (e ChbngesetNotFoundError) NonRetrybble() bool { return true }
 
-// ArchivableChangesetSource represents a changeset source that has a
-// concept of archived repositories.
-type ArchivableChangesetSource interface {
-	ChangesetSource
+// ArchivbbleChbngesetSource represents b chbngeset source thbt hbs b
+// concept of brchived repositories.
+type ArchivbbleChbngesetSource interfbce {
+	ChbngesetSource
 
-	// IsArchivedPushError parses the given error output from `git push` to
-	// detect whether the error was caused by the repository being archived.
+	// IsArchivedPushError pbrses the given error output from `git push` to
+	// detect whether the error wbs cbused by the repository being brchived.
 	IsArchivedPushError(output string) bool
 }
 
-// A DraftChangesetSource can create draft changesets and undraft them.
-type DraftChangesetSource interface {
-	ChangesetSource
+// A DrbftChbngesetSource cbn crebte drbft chbngesets bnd undrbft them.
+type DrbftChbngesetSource interfbce {
+	ChbngesetSource
 
-	// CreateDraftChangeset will create the Changeset on the source. If it already
-	// exists, *Changeset will be populated and the return value will be
+	// CrebteDrbftChbngeset will crebte the Chbngeset on the source. If it blrebdy
+	// exists, *Chbngeset will be populbted bnd the return vblue will be
 	// true.
-	CreateDraftChangeset(context.Context, *Changeset) (bool, error)
-	// UndraftChangeset will update the Changeset on the source to be not in draft mode anymore.
-	UndraftChangeset(context.Context, *Changeset) error
+	CrebteDrbftChbngeset(context.Context, *Chbngeset) (bool, error)
+	// UndrbftChbngeset will updbte the Chbngeset on the source to be not in drbft mode bnymore.
+	UndrbftChbngeset(context.Context, *Chbngeset) error
 }
 
-type ForkableChangesetSource interface {
-	ChangesetSource
+type ForkbbleChbngesetSource interfbce {
+	ChbngesetSource
 
-	// GetFork returns a repo pointing to a fork of the target repo, ensuring that the
-	// fork exists and creating it if it doesn't. If namespace is not provided, the fork
-	// will be in the currently authenticated user's namespace. If name is not provided,
-	// the fork will be named with the default Sourcegraph convention:
-	// "${original-namespace}-${original-name}"
-	GetFork(ctx context.Context, targetRepo *types.Repo, namespace, name *string) (*types.Repo, error)
+	// GetFork returns b repo pointing to b fork of the tbrget repo, ensuring thbt the
+	// fork exists bnd crebting it if it doesn't. If nbmespbce is not provided, the fork
+	// will be in the currently buthenticbted user's nbmespbce. If nbme is not provided,
+	// the fork will be nbmed with the defbult Sourcegrbph convention:
+	// "${originbl-nbmespbce}-${originbl-nbme}"
+	GetFork(ctx context.Context, tbrgetRepo *types.Repo, nbmespbce, nbme *string) (*types.Repo, error)
 }
 
-// A ChangesetSource can load the latest state of a list of Changesets.
-type ChangesetSource interface {
-	// GitserverPushConfig returns an authenticated push config used for pushing
+// A ChbngesetSource cbn lobd the lbtest stbte of b list of Chbngesets.
+type ChbngesetSource interfbce {
+	// GitserverPushConfig returns bn buthenticbted push config used for pushing
 	// commits to the code host.
 	GitserverPushConfig(*types.Repo) (*protocol.PushConfig, error)
-	// WithAuthenticator returns a copy of the original Source configured to use
-	// the given authenticator, provided that authenticator type is supported by
+	// WithAuthenticbtor returns b copy of the originbl Source configured to use
+	// the given buthenticbtor, provided thbt buthenticbtor type is supported by
 	// the code host.
-	WithAuthenticator(auth.Authenticator) (ChangesetSource, error)
-	// ValidateAuthenticator validates the currently set authenticator is usable.
-	// Returns an error, when validating the Authenticator yielded an error.
-	ValidateAuthenticator(ctx context.Context) error
+	WithAuthenticbtor(buth.Authenticbtor) (ChbngesetSource, error)
+	// VblidbteAuthenticbtor vblidbtes the currently set buthenticbtor is usbble.
+	// Returns bn error, when vblidbting the Authenticbtor yielded bn error.
+	VblidbteAuthenticbtor(ctx context.Context) error
 
-	// LoadChangeset loads the given Changeset from the source and updates it.
-	// If the Changeset could not be found on the source, a ChangesetNotFoundError is returned.
-	LoadChangeset(context.Context, *Changeset) error
-	// CreateChangeset will create the Changeset on the source. If it already
-	// exists, *Changeset will be populated and the return value will be
+	// LobdChbngeset lobds the given Chbngeset from the source bnd updbtes it.
+	// If the Chbngeset could not be found on the source, b ChbngesetNotFoundError is returned.
+	LobdChbngeset(context.Context, *Chbngeset) error
+	// CrebteChbngeset will crebte the Chbngeset on the source. If it blrebdy
+	// exists, *Chbngeset will be populbted bnd the return vblue will be
 	// true.
-	CreateChangeset(context.Context, *Changeset) (bool, error)
-	// CloseChangeset will close the Changeset on the source, where "close"
-	// means the appropriate final state on the codehost (e.g. "declined" on
+	CrebteChbngeset(context.Context, *Chbngeset) (bool, error)
+	// CloseChbngeset will close the Chbngeset on the source, where "close"
+	// mebns the bppropribte finbl stbte on the codehost (e.g. "declined" on
 	// Bitbucket Server).
-	CloseChangeset(context.Context, *Changeset) error
-	// UpdateChangeset can update Changesets.
-	UpdateChangeset(context.Context, *Changeset) error
-	// ReopenChangeset will reopen the Changeset on the source, if it's closed.
-	// If not, it's a noop.
-	ReopenChangeset(context.Context, *Changeset) error
-	// CreateComment posts a comment on the Changeset.
-	CreateComment(context.Context, *Changeset, string) error
-	// MergeChangeset merges a Changeset on the code host, if in a mergeable state.
-	// If squash is true, and the code host supports squash merges, the source
-	// must attempt a squash merge. Otherwise, it is expected to perform a regular
-	// merge. If the changeset cannot be merged, because it is in an unmergeable
-	// state, ChangesetNotMergeableError must be returned.
-	MergeChangeset(ctx context.Context, ch *Changeset, squash bool) error
-	// BuildCommitOpts builds the CreateCommitFromPatchRequest needed to commit and push the change to the code host.
-	BuildCommitOpts(repo *types.Repo, changeset *btypes.Changeset, spec *btypes.ChangesetSpec, pushOpts *protocol.PushConfig) protocol.CreateCommitFromPatchRequest
+	CloseChbngeset(context.Context, *Chbngeset) error
+	// UpdbteChbngeset cbn updbte Chbngesets.
+	UpdbteChbngeset(context.Context, *Chbngeset) error
+	// ReopenChbngeset will reopen the Chbngeset on the source, if it's closed.
+	// If not, it's b noop.
+	ReopenChbngeset(context.Context, *Chbngeset) error
+	// CrebteComment posts b comment on the Chbngeset.
+	CrebteComment(context.Context, *Chbngeset, string) error
+	// MergeChbngeset merges b Chbngeset on the code host, if in b mergebble stbte.
+	// If squbsh is true, bnd the code host supports squbsh merges, the source
+	// must bttempt b squbsh merge. Otherwise, it is expected to perform b regulbr
+	// merge. If the chbngeset cbnnot be merged, becbuse it is in bn unmergebble
+	// stbte, ChbngesetNotMergebbleError must be returned.
+	MergeChbngeset(ctx context.Context, ch *Chbngeset, squbsh bool) error
+	// BuildCommitOpts builds the CrebteCommitFromPbtchRequest needed to commit bnd push the chbnge to the code host.
+	BuildCommitOpts(repo *types.Repo, chbngeset *btypes.Chbngeset, spec *btypes.ChbngesetSpec, pushOpts *protocol.PushConfig) protocol.CrebteCommitFromPbtchRequest
 }
 
-// ChangesetNotMergeableError is returned by MergeChangeset if the changeset
-// could not be merged on the codehost, because some precondition is not met. This
-// is only returned, if the changeset is not mergeable. Other errors, such as
-// network or auth errors should NOT raise this error.
-type ChangesetNotMergeableError struct {
+// ChbngesetNotMergebbleError is returned by MergeChbngeset if the chbngeset
+// could not be merged on the codehost, becbuse some precondition is not met. This
+// is only returned, if the chbngeset is not mergebble. Other errors, such bs
+// network or buth errors should NOT rbise this error.
+type ChbngesetNotMergebbleError struct {
 	ErrorMsg string
 }
 
-func (e ChangesetNotMergeableError) Error() string {
-	return fmt.Sprintf("changeset cannot be merged:\n%s", e.ErrorMsg)
+func (e ChbngesetNotMergebbleError) Error() string {
+	return fmt.Sprintf("chbngeset cbnnot be merged:\n%s", e.ErrorMsg)
 }
 
-func (e ChangesetNotMergeableError) NonRetryable() bool { return true }
+func (e ChbngesetNotMergebbleError) NonRetrybble() bool { return true }
 
-// A Changeset of an existing Repo.
-type Changeset struct {
+// A Chbngeset of bn existing Repo.
+type Chbngeset struct {
 	Title   string
 	Body    string
-	HeadRef string
-	BaseRef string
+	HebdRef string
+	BbseRef string
 
-	// RemoteRepo is the repository the branch will be pushed to. This must be
-	// the same as TargetRepo if forking is not in use.
+	// RemoteRepo is the repository the brbnch will be pushed to. This must be
+	// the sbme bs TbrgetRepo if forking is not in use.
 	RemoteRepo *types.Repo
-	// TargetRepo is the repository in which the pull or merge request will be
+	// TbrgetRepo is the repository in which the pull or merge request will be
 	// opened.
-	TargetRepo *types.Repo
+	TbrgetRepo *types.Repo
 
-	*btypes.Changeset
+	*btypes.Chbngeset
 }
 
-// IsOutdated returns true when the attributes of the nested
-// batches.Changeset do not match the attributes (title, body, ...) set on
-// the Changeset.
-func (c *Changeset) IsOutdated() (bool, error) {
-	currentTitle, err := c.Changeset.Title()
+// IsOutdbted returns true when the bttributes of the nested
+// bbtches.Chbngeset do not mbtch the bttributes (title, body, ...) set on
+// the Chbngeset.
+func (c *Chbngeset) IsOutdbted() (bool, error) {
+	currentTitle, err := c.Chbngeset.Title()
 	if err != nil {
-		return false, err
+		return fblse, err
 	}
 
 	if currentTitle != c.Title {
 		return true, nil
 	}
 
-	currentBody, err := c.Changeset.Body()
+	currentBody, err := c.Chbngeset.Body()
 	if err != nil {
-		return false, err
+		return fblse, err
 	}
 
 	if currentBody != c.Body {
 		return true, nil
 	}
 
-	currentBaseRef, err := c.Changeset.BaseRef()
+	currentBbseRef, err := c.Chbngeset.BbseRef()
 	if err != nil {
-		return false, err
+		return fblse, err
 	}
 
-	if gitdomain.EnsureRefPrefix(currentBaseRef) != gitdomain.EnsureRefPrefix(c.BaseRef) {
+	if gitdombin.EnsureRefPrefix(currentBbseRef) != gitdombin.EnsureRefPrefix(c.BbseRef) {
 		return true, nil
 	}
 
-	return false, nil
+	return fblse, nil
 }
 
-func BuildCommitOptsCommon(repo *types.Repo, spec *btypes.ChangesetSpec, pushOpts *protocol.PushConfig) protocol.CreateCommitFromPatchRequest {
-	// IMPORTANT: We add a trailing newline here, otherwise `git apply`
-	// will fail with "corrupt patch at line <N>" where N is the last line.
-	patch := append([]byte{}, spec.Diff...)
-	patch = append(patch, []byte("\n")...)
-	opts := protocol.CreateCommitFromPatchRequest{
-		Repo:       repo.Name,
-		BaseCommit: api.CommitID(spec.BaseRev),
-		Patch:      patch,
-		TargetRef:  spec.HeadRef,
+func BuildCommitOptsCommon(repo *types.Repo, spec *btypes.ChbngesetSpec, pushOpts *protocol.PushConfig) protocol.CrebteCommitFromPbtchRequest {
+	// IMPORTANT: We bdd b trbiling newline here, otherwise `git bpply`
+	// will fbil with "corrupt pbtch bt line <N>" where N is the lbst line.
+	pbtch := bppend([]byte{}, spec.Diff...)
+	pbtch = bppend(pbtch, []byte("\n")...)
+	opts := protocol.CrebteCommitFromPbtchRequest{
+		Repo:       repo.Nbme,
+		BbseCommit: bpi.CommitID(spec.BbseRev),
+		Pbtch:      pbtch,
+		TbrgetRef:  spec.HebdRef,
 
-		// CAUTION: `UniqueRef` means that we'll push to a generated branch if it
-		// already exists.
-		// So when we retry publishing a changeset, this will overwrite what we
+		// CAUTION: `UniqueRef` mebns thbt we'll push to b generbted brbnch if it
+		// blrebdy exists.
+		// So when we retry publishing b chbngeset, this will overwrite whbt we
 		// pushed before.
-		UniqueRef: false,
+		UniqueRef: fblse,
 
-		CommitInfo: protocol.PatchCommitInfo{
-			Messages:    []string{spec.CommitMessage},
-			AuthorName:  spec.CommitAuthorName,
-			AuthorEmail: spec.CommitAuthorEmail,
-			Date:        spec.CreatedAt,
+		CommitInfo: protocol.PbtchCommitInfo{
+			Messbges:    []string{spec.CommitMessbge},
+			AuthorNbme:  spec.CommitAuthorNbme,
+			AuthorEmbil: spec.CommitAuthorEmbil,
+			Dbte:        spec.CrebtedAt,
 		},
-		// We use unified diffs, not git diffs, which means they're missing the
-		// `a/` and `b/` filename prefixes. `-p0` tells `git apply` to not
-		// expect and strip prefixes.
+		// We use unified diffs, not git diffs, which mebns they're missing the
+		// `b/` bnd `b/` filenbme prefixes. `-p0` tells `git bpply` to not
+		// expect bnd strip prefixes.
 		GitApplyArgs: []string{"-p0"},
 		Push:         pushOpts,
 	}

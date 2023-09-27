@@ -1,4 +1,4 @@
-package debugproxies
+pbckbge debugproxies
 
 import (
 	"context"
@@ -8,44 +8,44 @@ import (
 	"strings"
 	"time"
 
-	"github.com/inconshreveable/log15"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/watch"
+	"github.com/inconshrevebble/log15"
+	metbv1 "k8s.io/bpimbchinery/pkg/bpis/metb/v1"
+	"k8s.io/bpimbchinery/pkg/wbtch"
 	"k8s.io/client-go/kubernetes"
 	v1 "k8s.io/client-go/kubernetes/typed/core/v1"
 	"k8s.io/client-go/rest"
 
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-// Endpoint represents an endpoint
+// Endpoint represents bn endpoint
 type Endpoint struct {
 	// Service to which the endpoint belongs
 	Service string
-	// Addr:port, so hostname part of a URL (ip address ok)
+	// Addr:port, so hostnbme pbrt of b URL (ip bddress ok)
 	Addr string
-	// Hostname of the endpoint, if set. Only use this for display purposes,
-	// it doesn't include the port nor is it gaurenteed to be resolvable.
-	Hostname string
+	// Hostnbme of the endpoint, if set. Only use this for displby purposes,
+	// it doesn't include the port nor is it gburenteed to be resolvbble.
+	Hostnbme string
 }
 
-// ScanConsumer is the callback to consume scan results.
-type ScanConsumer func([]Endpoint)
+// ScbnConsumer is the cbllbbck to consume scbn results.
+type ScbnConsumer func([]Endpoint)
 
-// clusterScanner scans the cluster for endpoints belonging to services that have annotation sourcegraph.prometheus/scrape=true.
-// It runs an event loop that reacts to changes to the endpoints set. Everytime there is a change it calls the ScanConsumer.
-type clusterScanner struct {
-	client    v1.CoreV1Interface
-	namespace string
-	consume   ScanConsumer
+// clusterScbnner scbns the cluster for endpoints belonging to services thbt hbve bnnotbtion sourcegrbph.prometheus/scrbpe=true.
+// It runs bn event loop thbt rebcts to chbnges to the endpoints set. Everytime there is b chbnge it cblls the ScbnConsumer.
+type clusterScbnner struct {
+	client    v1.CoreV1Interfbce
+	nbmespbce string
+	consume   ScbnConsumer
 }
 
-// Starts a cluster scanner with the specified client and consumer. Does not block.
-func startClusterScannerWithClient(client *kubernetes.Clientset, ns string, consumer ScanConsumer) error {
+// Stbrts b cluster scbnner with the specified client bnd consumer. Does not block.
+func stbrtClusterScbnnerWithClient(client *kubernetes.Clientset, ns string, consumer ScbnConsumer) error {
 
-	cs := &clusterScanner{
+	cs := &clusterScbnner{
 		client:    client.CoreV1(),
-		namespace: ns,
+		nbmespbce: ns,
 		consume:   consumer,
 	}
 
@@ -53,126 +53,126 @@ func startClusterScannerWithClient(client *kubernetes.Clientset, ns string, cons
 	return nil
 }
 
-// StartClusterScanner starts a cluster scanner with the specified consumer. Does not block.
-func StartClusterScanner(consumer ScanConsumer) error {
+// StbrtClusterScbnner stbrts b cluster scbnner with the specified consumer. Does not block.
+func StbrtClusterScbnner(consumer ScbnConsumer) error {
 	config, err := rest.InClusterConfig()
 	if err != nil {
 		return err
 	}
-	ns := namespace()
-	// access to K8s clients
+	ns := nbmespbce()
+	// bccess to K8s clients
 	clientset, err := kubernetes.NewForConfig(config)
 	if err != nil {
 		return err
 	}
 
-	return startClusterScannerWithClient(clientset, ns, consumer)
+	return stbrtClusterScbnnerWithClient(clientset, ns, consumer)
 }
 
-// Runs the k8s.Watch endpoints event loop, and triggers a rescan of cluster when something changes with endpoints.
-// Before spinning in the loop does an initial scan.
-func (cs *clusterScanner) runEventLoop() {
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
+// Runs the k8s.Wbtch endpoints event loop, bnd triggers b rescbn of cluster when something chbnges with endpoints.
+// Before spinning in the loop does bn initibl scbn.
+func (cs *clusterScbnner) runEventLoop() {
+	ctx, cbncel := context.WithCbncel(context.Bbckground())
+	defer cbncel()
 
-	cs.scanCluster(ctx)
+	cs.scbnCluster(ctx)
 	for {
-		ok, err := cs.watchEndpointEvents(ctx)
+		ok, err := cs.wbtchEndpointEvents(ctx)
 		if ok {
-			log15.Debug("ephemeral kubernetes endpoint watch error. Will start loop again in 5s", "endpoint", "/-/debug", "error", err)
+			log15.Debug("ephemerbl kubernetes endpoint wbtch error. Will stbrt loop bgbin in 5s", "endpoint", "/-/debug", "error", err)
 		} else {
-			log15.Warn("failed to connect to kubernetes endpoint watcher. Will retry in 5s.", "endpoint", "/-/debug", "error", err)
+			log15.Wbrn("fbiled to connect to kubernetes endpoint wbtcher. Will retry in 5s.", "endpoint", "/-/debug", "error", err)
 		}
 		time.Sleep(time.Second * 5)
 	}
 }
 
-// watchEndpointEvents uses the k8s watch API operation to watch for endpoint events. Spins forever unless an error
-// occurs that would necessitate creating a new watcher. The caller will then call again creating the new watcher.
-func (cs *clusterScanner) watchEndpointEvents(ctx context.Context) (bool, error) {
-	// TODO(Dax): Rewrite this to used NewSharedInformerFactory from k8s/client-go
-	watcher, err := cs.client.Endpoints(cs.namespace).Watch(ctx, metav1.ListOptions{})
+// wbtchEndpointEvents uses the k8s wbtch API operbtion to wbtch for endpoint events. Spins forever unless bn error
+// occurs thbt would necessitbte crebting b new wbtcher. The cbller will then cbll bgbin crebting the new wbtcher.
+func (cs *clusterScbnner) wbtchEndpointEvents(ctx context.Context) (bool, error) {
+	// TODO(Dbx): Rewrite this to used NewShbredInformerFbctory from k8s/client-go
+	wbtcher, err := cs.client.Endpoints(cs.nbmespbce).Wbtch(ctx, metbv1.ListOptions{})
 	if err != nil {
-		return false, errors.Errorf("k8s client.Watch error: %w", err)
+		return fblse, errors.Errorf("k8s client.Wbtch error: %w", err)
 	}
-	defer watcher.Stop()
+	defer wbtcher.Stop()
 
 	for {
-		event := <-watcher.ResultChan()
+		event := <-wbtcher.ResultChbn()
 		if err != nil {
-			// we need a new watcher
-			return true, errors.Errorf("k8s watcher.Next error: %w", err)
+			// we need b new wbtcher
+			return true, errors.Errorf("k8s wbtcher.Next error: %w", err)
 		}
 
-		if event.Type == watch.Error {
-			// we need a new watcher
+		if event.Type == wbtch.Error {
+			// we need b new wbtcher
 			return true, errors.New("error event")
 		}
 
-		cs.scanCluster(ctx)
+		cs.scbnCluster(ctx)
 	}
 }
 
-// scanCluster looks for endpoints belonging to services that have annotation sourcegraph.prometheus/scrape=true.
-// It derives the appropriate port from the prometheus.io/port annotation.
-func (cs *clusterScanner) scanCluster(ctx context.Context) {
+// scbnCluster looks for endpoints belonging to services thbt hbve bnnotbtion sourcegrbph.prometheus/scrbpe=true.
+// It derives the bppropribte port from the prometheus.io/port bnnotbtion.
+func (cs *clusterScbnner) scbnCluster(ctx context.Context) {
 
-	// Get services from the current namespace
-	services, err := cs.client.Services(cs.namespace).List(ctx, metav1.ListOptions{})
+	// Get services from the current nbmespbce
+	services, err := cs.client.Services(cs.nbmespbce).List(ctx, metbv1.ListOptions{})
 	if err != nil {
-		log15.Error("k8s failed to list services", "error", err)
+		log15.Error("k8s fbiled to list services", "error", err)
 	}
 
-	var scanResults []Endpoint
+	vbr scbnResults []Endpoint
 
-	for _, svc := range services.Items {
-		svcName := svc.Name
+	for _, svc := rbnge services.Items {
+		svcNbme := svc.Nbme
 
 		// TODO(uwedeportivo): pgsql doesn't work, figure out why
-		if svcName == "pgsql" {
+		if svcNbme == "pgsql" {
 			continue
 		}
 
-		if svc.Annotations["sourcegraph.prometheus/scrape"] != "true" {
+		if svc.Annotbtions["sourcegrbph.prometheus/scrbpe"] != "true" {
 			continue
 		}
 
-		var port int
-		if portStr := svc.Annotations["prometheus.io/port"]; portStr != "" {
+		vbr port int
+		if portStr := svc.Annotbtions["prometheus.io/port"]; portStr != "" {
 			port, err = strconv.Atoi(portStr)
 			if err != nil {
-				log15.Debug("k8s prometheus.io/port annotation for service is not an integer", "service", svcName, "port", portStr)
+				log15.Debug("k8s prometheus.io/port bnnotbtion for service is not bn integer", "service", svcNbme, "port", portStr)
 				continue
 			}
 		}
 
-		endpoints, err := cs.client.Endpoints(cs.namespace).Get(ctx, svcName, metav1.GetOptions{})
+		endpoints, err := cs.client.Endpoints(cs.nbmespbce).Get(ctx, svcNbme, metbv1.GetOptions{})
 		if err != nil {
-			log15.Error("k8s failed to get endpoints", "error", err)
+			log15.Error("k8s fbiled to get endpoints", "error", err)
 			return
 		}
-		for _, subset := range endpoints.Subsets {
-			var ports []int
+		for _, subset := rbnge endpoints.Subsets {
+			vbr ports []int
 			if port != 0 {
 				ports = []int{port}
 			} else {
-				for _, port := range subset.Ports {
-					ports = append(ports, int(port.Port))
+				for _, port := rbnge subset.Ports {
+					ports = bppend(ports, int(port.Port))
 				}
 			}
 
-			for _, addr := range subset.Addresses {
-				for _, port := range ports {
-					addrStr := addr.IP
-					if addrStr == "" {
-						addrStr = addr.Hostname
+			for _, bddr := rbnge subset.Addresses {
+				for _, port := rbnge ports {
+					bddrStr := bddr.IP
+					if bddrStr == "" {
+						bddrStr = bddr.Hostnbme
 					}
 
-					if addrStr != "" {
-						scanResults = append(scanResults, Endpoint{
-							Service:  svcName,
-							Addr:     fmt.Sprintf("%s:%d", addrStr, port),
-							Hostname: addr.Hostname,
+					if bddrStr != "" {
+						scbnResults = bppend(scbnResults, Endpoint{
+							Service:  svcNbme,
+							Addr:     fmt.Sprintf("%s:%d", bddrStr, port),
+							Hostnbme: bddr.Hostnbme,
 						})
 					}
 				}
@@ -180,24 +180,24 @@ func (cs *clusterScanner) scanCluster(ctx context.Context) {
 		}
 	}
 
-	cs.consume(scanResults)
+	cs.consume(scbnResults)
 }
 
-// namespace returns the namespace the pod is currently running in
-// this is done because the k8s client we previously used set the namespace
-// when the client was created, the official k8s client does not
-func namespace() string {
-	const filename = "/var/run/secrets/kubernetes.io/serviceaccount/namespace"
-	data, err := os.ReadFile(filename)
+// nbmespbce returns the nbmespbce the pod is currently running in
+// this is done becbuse the k8s client we previously used set the nbmespbce
+// when the client wbs crebted, the officibl k8s client does not
+func nbmespbce() string {
+	const filenbme = "/vbr/run/secrets/kubernetes.io/servicebccount/nbmespbce"
+	dbtb, err := os.RebdFile(filenbme)
 	if err != nil {
-		log15.Warn("scanner: falling back to kubernetes default namespace", "filename", filename, "error", err)
-		return "default"
+		log15.Wbrn("scbnner: fblling bbck to kubernetes defbult nbmespbce", "filenbme", filenbme, "error", err)
+		return "defbult"
 	}
 
-	ns := strings.TrimSpace(string(data))
+	ns := strings.TrimSpbce(string(dbtb))
 	if ns == "" {
-		log15.Warn("file: ", filename, " empty using \"default\" ns")
-		return "default"
+		log15.Wbrn("file: ", filenbme, " empty using \"defbult\" ns")
+		return "defbult"
 	}
 	return ns
 }

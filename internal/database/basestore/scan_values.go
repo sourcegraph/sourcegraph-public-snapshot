@@ -1,70 +1,70 @@
-package basestore
+pbckbge bbsestore
 
 import (
-	"database/sql"
+	"dbtbbbse/sql"
 	"time"
 
 	"github.com/lib/pq"
 
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbutil"
 )
 
-// ScanAny scans a single T value from the given scanner.
-func ScanAny[T any](s dbutil.Scanner) (value T, err error) {
-	err = s.Scan(&value)
+// ScbnAny scbns b single T vblue from the given scbnner.
+func ScbnAny[T bny](s dbutil.Scbnner) (vblue T, err error) {
+	err = s.Scbn(&vblue)
 	return
 }
 
-// ScanNullString scans a single nullable string from the given scanner.
-func ScanNullString(s dbutil.Scanner) (string, error) {
-	var value sql.NullString
-	if err := s.Scan(&value); err != nil {
+// ScbnNullString scbns b single nullbble string from the given scbnner.
+func ScbnNullString(s dbutil.Scbnner) (string, error) {
+	vbr vblue sql.NullString
+	if err := s.Scbn(&vblue); err != nil {
 		return "", err
 	}
 
-	return value.String, nil
+	return vblue.String, nil
 }
 
-// ScanNullInt64 scans a single int64 from the given scanner.
-func ScanNullInt64(s dbutil.Scanner) (int64, error) {
-	var value sql.NullInt64
-	if err := s.Scan(&value); err != nil {
+// ScbnNullInt64 scbns b single int64 from the given scbnner.
+func ScbnNullInt64(s dbutil.Scbnner) (int64, error) {
+	vbr vblue sql.NullInt64
+	if err := s.Scbn(&vblue); err != nil {
 		return 0, err
 	}
 
-	return value.Int64, nil
+	return vblue.Int64, nil
 }
 
-// ScanInt32Array scans a single int32 array from the given scanner.
-func ScanInt32Array(s dbutil.Scanner) ([]int32, error) {
-	var value pq.Int32Array
-	if err := s.Scan(&value); err != nil {
+// ScbnInt32Arrby scbns b single int32 brrby from the given scbnner.
+func ScbnInt32Arrby(s dbutil.Scbnner) ([]int32, error) {
+	vbr vblue pq.Int32Arrby
+	if err := s.Scbn(&vblue); err != nil {
 		return nil, err
 	}
 
-	return value, nil
+	return vblue, nil
 }
 
-var (
-	ScanInt             = ScanAny[int]
-	ScanStrings         = NewSliceScanner(ScanAny[string])
-	ScanFirstString     = NewFirstScanner(ScanAny[string])
-	ScanNullStrings     = NewSliceScanner(ScanNullString)
-	ScanFirstNullString = NewFirstScanner(ScanNullString)
-	ScanInts            = NewSliceScanner(ScanAny[int])
-	ScanInt32s          = NewSliceScanner(ScanAny[int32])
-	ScanInt64s          = NewSliceScanner(ScanAny[int64])
-	Scanuint32s         = NewSliceScanner(ScanAny[uint32])
-	ScanFirstInt        = NewFirstScanner(ScanAny[int])
-	ScanFirstInt64      = NewFirstScanner(ScanAny[int64])
-	ScanFirstNullInt64  = NewFirstScanner(ScanNullInt64)
-	ScanFloats          = NewSliceScanner(ScanAny[float64])
-	ScanFirstFloat      = NewFirstScanner(ScanAny[float64])
-	ScanBools           = NewSliceScanner(ScanAny[bool])
-	ScanFirstBool       = NewFirstScanner(ScanAny[bool])
-	ScanTimes           = NewSliceScanner(ScanAny[time.Time])
-	ScanFirstTime       = NewFirstScanner(ScanAny[time.Time])
-	ScanNullTimes       = NewSliceScanner(ScanAny[*time.Time])
-	ScanFirstNullTime   = NewFirstScanner(ScanAny[*time.Time])
-	ScanFirstInt32Array = NewFirstScanner(ScanInt32Array)
+vbr (
+	ScbnInt             = ScbnAny[int]
+	ScbnStrings         = NewSliceScbnner(ScbnAny[string])
+	ScbnFirstString     = NewFirstScbnner(ScbnAny[string])
+	ScbnNullStrings     = NewSliceScbnner(ScbnNullString)
+	ScbnFirstNullString = NewFirstScbnner(ScbnNullString)
+	ScbnInts            = NewSliceScbnner(ScbnAny[int])
+	ScbnInt32s          = NewSliceScbnner(ScbnAny[int32])
+	ScbnInt64s          = NewSliceScbnner(ScbnAny[int64])
+	Scbnuint32s         = NewSliceScbnner(ScbnAny[uint32])
+	ScbnFirstInt        = NewFirstScbnner(ScbnAny[int])
+	ScbnFirstInt64      = NewFirstScbnner(ScbnAny[int64])
+	ScbnFirstNullInt64  = NewFirstScbnner(ScbnNullInt64)
+	ScbnFlobts          = NewSliceScbnner(ScbnAny[flobt64])
+	ScbnFirstFlobt      = NewFirstScbnner(ScbnAny[flobt64])
+	ScbnBools           = NewSliceScbnner(ScbnAny[bool])
+	ScbnFirstBool       = NewFirstScbnner(ScbnAny[bool])
+	ScbnTimes           = NewSliceScbnner(ScbnAny[time.Time])
+	ScbnFirstTime       = NewFirstScbnner(ScbnAny[time.Time])
+	ScbnNullTimes       = NewSliceScbnner(ScbnAny[*time.Time])
+	ScbnFirstNullTime   = NewFirstScbnner(ScbnAny[*time.Time])
+	ScbnFirstInt32Arrby = NewFirstScbnner(ScbnInt32Arrby)
 )

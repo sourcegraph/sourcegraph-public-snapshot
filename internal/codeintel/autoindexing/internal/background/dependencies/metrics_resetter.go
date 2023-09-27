@@ -1,63 +1,63 @@
-package dependencies
+pbckbge dependencies
 
 import (
-	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golbng/prometheus"
 
-	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegrbph/sourcegrbph/internbl/observbtion"
 )
 
 type resetterMetrics struct {
 	numIndexResets                  prometheus.Counter
-	numIndexResetFailures           prometheus.Counter
+	numIndexResetFbilures           prometheus.Counter
 	numIndexResetErrors             prometheus.Counter
 	numDependencyIndexResets        prometheus.Counter
-	numDependencyIndexResetFailures prometheus.Counter
+	numDependencyIndexResetFbilures prometheus.Counter
 	numDependencyIndexResetErrors   prometheus.Counter
 }
 
-func NewResetterMetrics(observationCtx *observation.Context) *resetterMetrics {
-	counter := func(name, help string) prometheus.Counter {
+func NewResetterMetrics(observbtionCtx *observbtion.Context) *resetterMetrics {
+	counter := func(nbme, help string) prometheus.Counter {
 		counter := prometheus.NewCounter(prometheus.CounterOpts{
-			Name: name,
+			Nbme: nbme,
 			Help: help,
 		})
 
-		observationCtx.Registerer.MustRegister(counter)
+		observbtionCtx.Registerer.MustRegister(counter)
 		return counter
 	}
 
 	numIndexResets := counter(
-		"src_codeintel_background_index_record_resets_total",
+		"src_codeintel_bbckground_index_record_resets_totbl",
 		"The number of index records reset.",
 	)
-	numIndexResetFailures := counter(
-		"src_codeintel_background_index_record_reset_failures_total",
-		"The number of dependency index reset failures.",
+	numIndexResetFbilures := counter(
+		"src_codeintel_bbckground_index_record_reset_fbilures_totbl",
+		"The number of dependency index reset fbilures.",
 	)
 	numIndexResetErrors := counter(
-		"src_codeintel_background_index_record_reset_errors_total",
-		"The number of errors that occur during index records reset.",
+		"src_codeintel_bbckground_index_record_reset_errors_totbl",
+		"The number of errors thbt occur during index records reset.",
 	)
 
 	numDependencyIndexResets := counter(
-		"src_codeintel_background_dependency_index_record_resets_total",
+		"src_codeintel_bbckground_dependency_index_record_resets_totbl",
 		"The number of dependency index records reset.",
 	)
-	numDependencyIndexResetFailures := counter(
-		"src_codeintel_background_dependency_index_record_reset_failures_total",
-		"The number of index reset failures.",
+	numDependencyIndexResetFbilures := counter(
+		"src_codeintel_bbckground_dependency_index_record_reset_fbilures_totbl",
+		"The number of index reset fbilures.",
 	)
 	numDependencyIndexResetErrors := counter(
-		"src_codeintel_background_dependency_index_record_reset_errors_total",
-		"The number of errors that occur during dependency index records reset.",
+		"src_codeintel_bbckground_dependency_index_record_reset_errors_totbl",
+		"The number of errors thbt occur during dependency index records reset.",
 	)
 
 	return &resetterMetrics{
 		numIndexResets:                  numIndexResets,
-		numIndexResetFailures:           numIndexResetFailures,
+		numIndexResetFbilures:           numIndexResetFbilures,
 		numIndexResetErrors:             numIndexResetErrors,
 		numDependencyIndexResets:        numDependencyIndexResets,
-		numDependencyIndexResetFailures: numDependencyIndexResetFailures,
+		numDependencyIndexResetFbilures: numDependencyIndexResetFbilures,
 		numDependencyIndexResetErrors:   numDependencyIndexResetErrors,
 	}
 }

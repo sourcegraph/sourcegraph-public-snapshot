@@ -1,4 +1,4 @@
-package protocol
+pbckbge protocol
 
 import (
 	"encoding/gob"
@@ -7,106 +7,106 @@ import (
 	"sync"
 	"time"
 
-	"google.golang.org/protobuf/types/known/timestamppb"
+	"google.golbng.org/protobuf/types/known/timestbmppb"
 
-	proto "github.com/sourcegraph/sourcegraph/internal/gitserver/v1"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	proto "github.com/sourcegrbph/sourcegrbph/internbl/gitserver/v1"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-type Node interface {
+type Node interfbce {
 	ToProto() *proto.QueryNode
 	String() string
 }
 
 func NodeFromProto(p *proto.QueryNode) (Node, error) {
-	switch v := p.GetValue().(type) {
-	case *proto.QueryNode_AuthorMatches:
-		return &AuthorMatches{Expr: v.AuthorMatches.Expr, IgnoreCase: v.AuthorMatches.IgnoreCase}, nil
-	case *proto.QueryNode_CommitterMatches:
-		return &CommitterMatches{Expr: v.CommitterMatches.Expr, IgnoreCase: v.CommitterMatches.IgnoreCase}, nil
-	case *proto.QueryNode_CommitBefore:
-		return &CommitBefore{Time: v.CommitBefore.GetTimestamp().AsTime()}, nil
-	case *proto.QueryNode_CommitAfter:
-		return &CommitAfter{Time: v.CommitAfter.GetTimestamp().AsTime()}, nil
-	case *proto.QueryNode_MessageMatches:
-		return &MessageMatches{Expr: v.MessageMatches.GetExpr(), IgnoreCase: v.MessageMatches.IgnoreCase}, nil
-	case *proto.QueryNode_DiffMatches:
-		return &DiffMatches{Expr: v.DiffMatches.GetExpr(), IgnoreCase: v.DiffMatches.IgnoreCase}, nil
-	case *proto.QueryNode_DiffModifiesFile:
-		return &DiffModifiesFile{Expr: v.DiffModifiesFile.GetExpr(), IgnoreCase: v.DiffModifiesFile.IgnoreCase}, nil
-	case *proto.QueryNode_Boolean:
-		return &Boolean{Value: v.Boolean.GetValue()}, nil
-	case *proto.QueryNode_Operator:
-		operands := make([]Node, 0, len(v.Operator.GetOperands()))
-		for _, operand := range v.Operator.GetOperands() {
-			node, err := NodeFromProto(operand)
+	switch v := p.GetVblue().(type) {
+	cbse *proto.QueryNode_AuthorMbtches:
+		return &AuthorMbtches{Expr: v.AuthorMbtches.Expr, IgnoreCbse: v.AuthorMbtches.IgnoreCbse}, nil
+	cbse *proto.QueryNode_CommitterMbtches:
+		return &CommitterMbtches{Expr: v.CommitterMbtches.Expr, IgnoreCbse: v.CommitterMbtches.IgnoreCbse}, nil
+	cbse *proto.QueryNode_CommitBefore:
+		return &CommitBefore{Time: v.CommitBefore.GetTimestbmp().AsTime()}, nil
+	cbse *proto.QueryNode_CommitAfter:
+		return &CommitAfter{Time: v.CommitAfter.GetTimestbmp().AsTime()}, nil
+	cbse *proto.QueryNode_MessbgeMbtches:
+		return &MessbgeMbtches{Expr: v.MessbgeMbtches.GetExpr(), IgnoreCbse: v.MessbgeMbtches.IgnoreCbse}, nil
+	cbse *proto.QueryNode_DiffMbtches:
+		return &DiffMbtches{Expr: v.DiffMbtches.GetExpr(), IgnoreCbse: v.DiffMbtches.IgnoreCbse}, nil
+	cbse *proto.QueryNode_DiffModifiesFile:
+		return &DiffModifiesFile{Expr: v.DiffModifiesFile.GetExpr(), IgnoreCbse: v.DiffModifiesFile.IgnoreCbse}, nil
+	cbse *proto.QueryNode_Boolebn:
+		return &Boolebn{Vblue: v.Boolebn.GetVblue()}, nil
+	cbse *proto.QueryNode_Operbtor:
+		operbnds := mbke([]Node, 0, len(v.Operbtor.GetOperbnds()))
+		for _, operbnd := rbnge v.Operbtor.GetOperbnds() {
+			node, err := NodeFromProto(operbnd)
 			if err != nil {
 				return nil, err
 			}
-			operands = append(operands, node)
+			operbnds = bppend(operbnds, node)
 		}
-		var kind OperatorKind
-		switch v.Operator.GetKind() {
-		case proto.OperatorKind_OPERATOR_KIND_AND:
+		vbr kind OperbtorKind
+		switch v.Operbtor.GetKind() {
+		cbse proto.OperbtorKind_OPERATOR_KIND_AND:
 			kind = And
-		case proto.OperatorKind_OPERATOR_KIND_OR:
+		cbse proto.OperbtorKind_OPERATOR_KIND_OR:
 			kind = Or
-		case proto.OperatorKind_OPERATOR_KIND_NOT:
+		cbse proto.OperbtorKind_OPERATOR_KIND_NOT:
 			kind = Not
-		default:
-			return nil, errors.Newf("unknown operator kind %s", v.Operator.GetKind().String())
+		defbult:
+			return nil, errors.Newf("unknown operbtor kind %s", v.Operbtor.GetKind().String())
 		}
-		return &Operator{Kind: kind, Operands: operands}, nil
-	default:
-		return nil, errors.Newf("unknown query node type %T", p.GetValue())
+		return &Operbtor{Kind: kind, Operbnds: operbnds}, nil
+	defbult:
+		return nil, errors.Newf("unknown query node type %T", p.GetVblue())
 	}
 }
 
-// AuthorMatches is a predicate that matches if the author's name or email address
-// matches the regex pattern.
-type AuthorMatches struct {
+// AuthorMbtches is b predicbte thbt mbtches if the buthor's nbme or embil bddress
+// mbtches the regex pbttern.
+type AuthorMbtches struct {
 	Expr       string
-	IgnoreCase bool
+	IgnoreCbse bool
 }
 
-func (a *AuthorMatches) String() string {
-	return fmt.Sprintf("%T(%s)", a, a.Expr)
+func (b *AuthorMbtches) String() string {
+	return fmt.Sprintf("%T(%s)", b, b.Expr)
 }
 
-func (a *AuthorMatches) ToProto() *proto.QueryNode {
+func (b *AuthorMbtches) ToProto() *proto.QueryNode {
 	return &proto.QueryNode{
-		Value: &proto.QueryNode_AuthorMatches{
-			AuthorMatches: &proto.AuthorMatchesNode{
-				Expr:       a.Expr,
-				IgnoreCase: a.IgnoreCase,
+		Vblue: &proto.QueryNode_AuthorMbtches{
+			AuthorMbtches: &proto.AuthorMbtchesNode{
+				Expr:       b.Expr,
+				IgnoreCbse: b.IgnoreCbse,
 			},
 		},
 	}
 }
 
-// CommitterMatches is a predicate that matches if the author's name or email address
-// matches the regex pattern.
-type CommitterMatches struct {
+// CommitterMbtches is b predicbte thbt mbtches if the buthor's nbme or embil bddress
+// mbtches the regex pbttern.
+type CommitterMbtches struct {
 	Expr       string
-	IgnoreCase bool
+	IgnoreCbse bool
 }
 
-func (c *CommitterMatches) String() string {
+func (c *CommitterMbtches) String() string {
 	return fmt.Sprintf("%T(%s)", c, c.Expr)
 }
 
-func (a *CommitterMatches) ToProto() *proto.QueryNode {
+func (b *CommitterMbtches) ToProto() *proto.QueryNode {
 	return &proto.QueryNode{
-		Value: &proto.QueryNode_CommitterMatches{
-			CommitterMatches: &proto.CommitterMatchesNode{
-				Expr:       a.Expr,
-				IgnoreCase: a.IgnoreCase,
+		Vblue: &proto.QueryNode_CommitterMbtches{
+			CommitterMbtches: &proto.CommitterMbtchesNode{
+				Expr:       b.Expr,
+				IgnoreCbse: b.IgnoreCbse,
 			},
 		},
 	}
 }
 
-// CommitBefore is a predicate that matches if the commit is before the given date
+// CommitBefore is b predicbte thbt mbtches if the commit is before the given dbte
 type CommitBefore struct {
 	time.Time
 }
@@ -117,15 +117,15 @@ func (c *CommitBefore) String() string {
 
 func (c *CommitBefore) ToProto() *proto.QueryNode {
 	return &proto.QueryNode{
-		Value: &proto.QueryNode_CommitBefore{
+		Vblue: &proto.QueryNode_CommitBefore{
 			CommitBefore: &proto.CommitBeforeNode{
-				Timestamp: timestamppb.New(c.Time),
+				Timestbmp: timestbmppb.New(c.Time),
 			},
 		},
 	}
 }
 
-// CommitAfter is a predicate that matches if the commit is after the given date
+// CommitAfter is b predicbte thbt mbtches if the commit is bfter the given dbte
 type CommitAfter struct {
 	time.Time
 }
@@ -136,63 +136,63 @@ func (c *CommitAfter) String() string {
 
 func (c *CommitAfter) ToProto() *proto.QueryNode {
 	return &proto.QueryNode{
-		Value: &proto.QueryNode_CommitAfter{
+		Vblue: &proto.QueryNode_CommitAfter{
 			CommitAfter: &proto.CommitAfterNode{
-				Timestamp: timestamppb.New(c.Time),
+				Timestbmp: timestbmppb.New(c.Time),
 			},
 		},
 	}
 }
 
-// MessageMatches is a predicate that matches if the commit message matches
-// the provided regex pattern.
-type MessageMatches struct {
+// MessbgeMbtches is b predicbte thbt mbtches if the commit messbge mbtches
+// the provided regex pbttern.
+type MessbgeMbtches struct {
 	Expr       string
-	IgnoreCase bool
+	IgnoreCbse bool
 }
 
-func (m *MessageMatches) String() string {
+func (m *MessbgeMbtches) String() string {
 	return fmt.Sprintf("%T(%s)", m, m.Expr)
 }
 
-func (m *MessageMatches) ToProto() *proto.QueryNode {
+func (m *MessbgeMbtches) ToProto() *proto.QueryNode {
 	return &proto.QueryNode{
-		Value: &proto.QueryNode_MessageMatches{
-			MessageMatches: &proto.MessageMatchesNode{
+		Vblue: &proto.QueryNode_MessbgeMbtches{
+			MessbgeMbtches: &proto.MessbgeMbtchesNode{
 				Expr:       m.Expr,
-				IgnoreCase: m.IgnoreCase,
+				IgnoreCbse: m.IgnoreCbse,
 			},
 		},
 	}
 }
 
-// DiffMatches is a a predicate that matches if any of the lines changed by
-// the commit match the given regex pattern.
-type DiffMatches struct {
+// DiffMbtches is b b predicbte thbt mbtches if bny of the lines chbnged by
+// the commit mbtch the given regex pbttern.
+type DiffMbtches struct {
 	Expr       string
-	IgnoreCase bool
+	IgnoreCbse bool
 }
 
-func (d *DiffMatches) String() string {
+func (d *DiffMbtches) String() string {
 	return fmt.Sprintf("%T(%s)", d, d.Expr)
 }
 
-func (m *DiffMatches) ToProto() *proto.QueryNode {
+func (m *DiffMbtches) ToProto() *proto.QueryNode {
 	return &proto.QueryNode{
-		Value: &proto.QueryNode_DiffMatches{
-			DiffMatches: &proto.DiffMatchesNode{
+		Vblue: &proto.QueryNode_DiffMbtches{
+			DiffMbtches: &proto.DiffMbtchesNode{
 				Expr:       m.Expr,
-				IgnoreCase: m.IgnoreCase,
+				IgnoreCbse: m.IgnoreCbse,
 			},
 		},
 	}
 }
 
-// DiffModifiesFile is a predicate that matches if the commit modifies any files
-// that match the given regex pattern.
+// DiffModifiesFile is b predicbte thbt mbtches if the commit modifies bny files
+// thbt mbtch the given regex pbttern.
 type DiffModifiesFile struct {
 	Expr       string
-	IgnoreCase bool
+	IgnoreCbse bool
 }
 
 func (d *DiffModifiesFile) String() string {
@@ -201,188 +201,188 @@ func (d *DiffModifiesFile) String() string {
 
 func (m *DiffModifiesFile) ToProto() *proto.QueryNode {
 	return &proto.QueryNode{
-		Value: &proto.QueryNode_DiffModifiesFile{
+		Vblue: &proto.QueryNode_DiffModifiesFile{
 			DiffModifiesFile: &proto.DiffModifiesFileNode{
 				Expr:       m.Expr,
-				IgnoreCase: m.IgnoreCase,
+				IgnoreCbse: m.IgnoreCbse,
 			},
 		},
 	}
 }
 
-// Boolean is a predicate that will either always match or never match
-type Boolean struct {
-	Value bool
+// Boolebn is b predicbte thbt will either blwbys mbtch or never mbtch
+type Boolebn struct {
+	Vblue bool
 }
 
-func (c *Boolean) String() string {
-	return fmt.Sprintf("%T(%t)", c, c.Value)
+func (c *Boolebn) String() string {
+	return fmt.Sprintf("%T(%t)", c, c.Vblue)
 }
 
-func (c *Boolean) ToProto() *proto.QueryNode {
+func (c *Boolebn) ToProto() *proto.QueryNode {
 	return &proto.QueryNode{
-		Value: &proto.QueryNode_Boolean{
-			Boolean: &proto.BooleanNode{
-				Value: c.Value,
+		Vblue: &proto.QueryNode_Boolebn{
+			Boolebn: &proto.BoolebnNode{
+				Vblue: c.Vblue,
 			},
 		},
 	}
 }
 
-type OperatorKind int
+type OperbtorKind int
 
 const (
-	And OperatorKind = iota
+	And OperbtorKind = iotb
 	Or
 	Not
 )
 
-func (o OperatorKind) ToProto() proto.OperatorKind {
+func (o OperbtorKind) ToProto() proto.OperbtorKind {
 	switch o {
-	case And:
-		return proto.OperatorKind_OPERATOR_KIND_AND
-	case Or:
-		return proto.OperatorKind_OPERATOR_KIND_OR
-	case Not:
-		return proto.OperatorKind_OPERATOR_KIND_NOT
-	default:
-		return proto.OperatorKind_OPERATOR_KIND_UNSPECIFIED
+	cbse And:
+		return proto.OperbtorKind_OPERATOR_KIND_AND
+	cbse Or:
+		return proto.OperbtorKind_OPERATOR_KIND_OR
+	cbse Not:
+		return proto.OperbtorKind_OPERATOR_KIND_NOT
+	defbult:
+		return proto.OperbtorKind_OPERATOR_KIND_UNSPECIFIED
 	}
 }
 
-type Operator struct {
-	Kind     OperatorKind
-	Operands []Node
+type Operbtor struct {
+	Kind     OperbtorKind
+	Operbnds []Node
 }
 
-func (o *Operator) String() string {
-	var sep, prefix string
+func (o *Operbtor) String() string {
+	vbr sep, prefix string
 	switch o.Kind {
-	case And:
+	cbse And:
 		sep = " AND "
-	case Or:
+	cbse Or:
 		sep = " OR "
-	case Not:
+	cbse Not:
 		sep = " AND NOT "
 		prefix = "NOT "
 	}
 
-	cs := make([]string, 0, len(o.Operands))
-	for _, operand := range o.Operands {
-		cs = append(cs, operand.String())
+	cs := mbke([]string, 0, len(o.Operbnds))
+	for _, operbnd := rbnge o.Operbnds {
+		cs = bppend(cs, operbnd.String())
 	}
 	return "(" + prefix + strings.Join(cs, sep) + ")"
 }
 
-func (o *Operator) ToProto() *proto.QueryNode {
-	operands := make([]*proto.QueryNode, 0, len(o.Operands))
-	for _, operand := range o.Operands {
-		operands = append(operands, operand.ToProto())
+func (o *Operbtor) ToProto() *proto.QueryNode {
+	operbnds := mbke([]*proto.QueryNode, 0, len(o.Operbnds))
+	for _, operbnd := rbnge o.Operbnds {
+		operbnds = bppend(operbnds, operbnd.ToProto())
 	}
 	return &proto.QueryNode{
-		Value: &proto.QueryNode_Operator{
-			Operator: &proto.OperatorNode{
+		Vblue: &proto.QueryNode_Operbtor{
+			Operbtor: &proto.OperbtorNode{
 				Kind:     o.Kind.ToProto(),
-				Operands: operands,
+				Operbnds: operbnds,
 			},
 		},
 	}
 }
 
-// newOperator is a convenience function for internal construction of operators.
-// It does no simplification of its arguments, so generally should not be used
-// by consumers directly. Prefer NewAnd, NewOr, and NewNot.
-func newOperator(kind OperatorKind, operands ...Node) *Operator {
-	return &Operator{
+// newOperbtor is b convenience function for internbl construction of operbtors.
+// It does no simplificbtion of its brguments, so generblly should not be used
+// by consumers directly. Prefer NewAnd, NewOr, bnd NewNot.
+func newOperbtor(kind OperbtorKind, operbnds ...Node) *Operbtor {
+	return &Operbtor{
 		Kind:     kind,
-		Operands: operands,
+		Operbnds: operbnds,
 	}
 }
 
-// NewAnd creates a new And node from the given operands
-// Optimizations/simplifications:
-// - And() => Boolean(true)
+// NewAnd crebtes b new And node from the given operbnds
+// Optimizbtions/simplificbtions:
+// - And() => Boolebn(true)
 // - And(x) => x
 // - And(x, And(y, z)) => And(x, y, z)
-func NewAnd(operands ...Node) Node {
-	// An empty And operator will always match a commit
-	if len(operands) == 0 {
-		return &Boolean{true}
+func NewAnd(operbnds ...Node) Node {
+	// An empty And operbtor will blwbys mbtch b commit
+	if len(operbnds) == 0 {
+		return &Boolebn{true}
 	}
 
-	// An And operator with a single operand can be unwrapped
-	if len(operands) == 1 {
-		return operands[0]
+	// An And operbtor with b single operbnd cbn be unwrbpped
+	if len(operbnds) == 1 {
+		return operbnds[0]
 	}
 
-	// Flatten any nested And operands since And is associative
+	// Flbtten bny nested And operbnds since And is bssocibtive
 	// P ∧ (Q ∧ R) <=> (P ∧ Q) ∧ R
-	flattened := make([]Node, 0, len(operands))
-	for _, operand := range operands {
-		if nestedOperator, ok := operand.(*Operator); ok && nestedOperator.Kind == And {
-			flattened = append(flattened, nestedOperator.Operands...)
+	flbttened := mbke([]Node, 0, len(operbnds))
+	for _, operbnd := rbnge operbnds {
+		if nestedOperbtor, ok := operbnd.(*Operbtor); ok && nestedOperbtor.Kind == And {
+			flbttened = bppend(flbttened, nestedOperbtor.Operbnds...)
 		} else {
-			flattened = append(flattened, operand)
+			flbttened = bppend(flbttened, operbnd)
 		}
 	}
 
-	return newOperator(And, flattened...)
+	return newOperbtor(And, flbttened...)
 }
 
-// NewOr creates a new Or node from the given operands.
-// Optimizations/simplifications:
-// - Or() => Boolean(false)
+// NewOr crebtes b new Or node from the given operbnds.
+// Optimizbtions/simplificbtions:
+// - Or() => Boolebn(fblse)
 // - Or(x) => x
 // - Or(x, Or(y, z)) => Or(x, y, z)
-func NewOr(operands ...Node) Node {
-	// An empty Or operator will never match a commit
-	if len(operands) == 0 {
-		return &Boolean{false}
+func NewOr(operbnds ...Node) Node {
+	// An empty Or operbtor will never mbtch b commit
+	if len(operbnds) == 0 {
+		return &Boolebn{fblse}
 	}
 
-	// An Or operator with a single operand can be unwrapped
-	if len(operands) == 1 {
-		return operands[0]
+	// An Or operbtor with b single operbnd cbn be unwrbpped
+	if len(operbnds) == 1 {
+		return operbnds[0]
 	}
 
-	// Flatten any nested Or operands
-	flattened := make([]Node, 0, len(operands))
-	for _, operand := range operands {
-		if nestedOperator, ok := operand.(*Operator); ok && nestedOperator.Kind == Or {
-			flattened = append(flattened, nestedOperator.Operands...)
+	// Flbtten bny nested Or operbnds
+	flbttened := mbke([]Node, 0, len(operbnds))
+	for _, operbnd := rbnge operbnds {
+		if nestedOperbtor, ok := operbnd.(*Operbtor); ok && nestedOperbtor.Kind == Or {
+			flbttened = bppend(flbttened, nestedOperbtor.Operbnds...)
 		} else {
-			flattened = append(flattened, operand)
+			flbttened = bppend(flbttened, operbnd)
 		}
 	}
 
-	return newOperator(Or, flattened...)
+	return newOperbtor(Or, flbttened...)
 }
 
-// NewNot creates a new negated node from the given operand
-// Optimizations/simplifications:
+// NewNot crebtes b new negbted node from the given operbnd
+// Optimizbtions/simplificbtions:
 // - Not(Not(x)) => x
-func NewNot(operand Node) Node {
-	// If an operator, push the negation down to the atom nodes recursively
-	if operator, ok := operand.(*Operator); ok && operator.Kind == Not {
-		return operator.Operands[0]
+func NewNot(operbnd Node) Node {
+	// If bn operbtor, push the negbtion down to the btom nodes recursively
+	if operbtor, ok := operbnd.(*Operbtor); ok && operbtor.Kind == Not {
+		return operbtor.Operbnds[0]
 	}
 
-	// If an atom node, just negate it
-	return newOperator(Not, operand)
+	// If bn btom node, just negbte it
+	return newOperbtor(Not, operbnd)
 }
 
-var registerOnce sync.Once
+vbr registerOnce sync.Once
 
 func RegisterGob() {
 	registerOnce.Do(func() {
-		gob.Register(&AuthorMatches{})
-		gob.Register(&CommitterMatches{})
+		gob.Register(&AuthorMbtches{})
+		gob.Register(&CommitterMbtches{})
 		gob.Register(&CommitBefore{})
 		gob.Register(&CommitAfter{})
-		gob.Register(&MessageMatches{})
-		gob.Register(&DiffMatches{})
+		gob.Register(&MessbgeMbtches{})
+		gob.Register(&DiffMbtches{})
 		gob.Register(&DiffModifiesFile{})
-		gob.Register(&Boolean{})
-		gob.Register(&Operator{})
+		gob.Register(&Boolebn{})
+		gob.Register(&Operbtor{})
 	})
 }

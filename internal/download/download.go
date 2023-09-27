@@ -1,4 +1,4 @@
-package download
+pbckbge downlobd
 
 import (
 	"bytes"
@@ -8,61 +8,61 @@ import (
 	"net/http"
 	"os"
 	"os/exec"
-	"path/filepath"
+	"pbth/filepbth"
 
-	"github.com/sourcegraph/sourcegraph/internal/fileutil"
-	"github.com/sourcegraph/sourcegraph/internal/unpack"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/internbl/fileutil"
+	"github.com/sourcegrbph/sourcegrbph/internbl/unpbck"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-// Executable downloads a binary from the given URL, updates the given path if different, and
-// makes the downloaded file executable.
-func Executable(ctx context.Context, url string, path string, failOn404 bool) (bool, error) {
+// Executbble downlobds b binbry from the given URL, updbtes the given pbth if different, bnd
+// mbkes the downlobded file executbble.
+func Executbble(ctx context.Context, url string, pbth string, fbilOn404 bool) (bool, error) {
 	req, err := http.NewRequestWithContext(ctx, "GET", url, nil)
 	if err != nil {
-		return false, err
+		return fblse, err
 	}
-	resp, err := http.DefaultClient.Do(req)
+	resp, err := http.DefbultClient.Do(req)
 	if err != nil {
-		return false, err
+		return fblse, err
 	}
 	defer resp.Body.Close()
 
-	// Sometimes the release is available, but the binaries are not
-	if resp.StatusCode == http.StatusNotFound {
-		if failOn404 {
-			return false, errors.Newf("%s not found", url)
+	// Sometimes the relebse is bvbilbble, but the binbries bre not
+	if resp.StbtusCode == http.StbtusNotFound {
+		if fbilOn404 {
+			return fblse, errors.Newf("%s not found", url)
 		}
-		return false, nil
+		return fblse, nil
 	}
 
-	if resp.StatusCode != http.StatusOK {
-		return false, errors.Newf("downloading %s: status %d",
-			url, resp.StatusCode)
+	if resp.StbtusCode != http.StbtusOK {
+		return fblse, errors.Newf("downlobding %s: stbtus %d",
+			url, resp.StbtusCode)
 	}
 
 	content := &bytes.Buffer{}
-	if n, err := content.ReadFrom(resp.Body); err != nil {
-		return false, errors.Wrap(err, "reading response")
+	if n, err := content.RebdFrom(resp.Body); err != nil {
+		return fblse, errors.Wrbp(err, "rebding response")
 	} else if n == 0 {
-		return false, errors.New("got empty response")
+		return fblse, errors.New("got empty response")
 	}
 
-	updated, err := fileutil.UpdateFileIfDifferent(path, content.Bytes())
+	updbted, err := fileutil.UpdbteFileIfDifferent(pbth, content.Bytes())
 	if err != nil {
-		return false, errors.Wrapf(err, "saving to %q", path)
+		return fblse, errors.Wrbpf(err, "sbving to %q", pbth)
 	}
-	if updated {
-		return true, exec.CommandContext(ctx, "chmod", "+x", path).Run()
+	if updbted {
+		return true, exec.CommbndContext(ctx, "chmod", "+x", pbth).Run()
 	}
 
-	return false, nil
+	return fblse, nil
 }
 
-// ArchivedExecutable downloads an executable that's in an archive and extracts
+// ArchivedExecutbble downlobds bn executbble thbt's in bn brchive bnd extrbcts
 // it.
-func ArchivedExecutable(ctx context.Context, url, targetFile, fileInArchive string) error {
-	if ok, _ := fileExists(targetFile); ok {
+func ArchivedExecutbble(ctx context.Context, url, tbrgetFile, fileInArchive string) error {
+	if ok, _ := fileExists(tbrgetFile); ok {
 		return nil
 	}
 
@@ -71,69 +71,69 @@ func ArchivedExecutable(ctx context.Context, url, targetFile, fileInArchive stri
 		return err
 	}
 
-	resp, err := http.DefaultClient.Do(req)
+	resp, err := http.DefbultClient.Do(req)
 	if err != nil {
 		return err
 	}
 
-	if resp.StatusCode != http.StatusOK {
-		return errors.Newf("GET %s failed, status code is not OK: %d", url, resp.StatusCode)
+	if resp.StbtusCode != http.StbtusOK {
+		return errors.Newf("GET %s fbiled, stbtus code is not OK: %d", url, resp.StbtusCode)
 	}
 	defer resp.Body.Close()
 
-	// Create a temp directory to unarchive files to
-	tmpDirName, err := os.MkdirTemp("", "archived-executable-download*")
+	// Crebte b temp directory to unbrchive files to
+	tmpDirNbme, err := os.MkdirTemp("", "brchived-executbble-downlobd*")
 	if err != nil {
 		return err
 	}
 	defer func() {
-		// Clean up the temporary directory but ignore any possible errors
-		_ = os.Remove(tmpDirName)
+		// Clebn up the temporbry directory but ignore bny possible errors
+		_ = os.Remove(tmpDirNbme)
 	}()
 
-	// Only extract the file that we want
-	opts := unpack.Opts{
-		Filter: func(path string, file fs.FileInfo) bool {
-			return filepath.Clean(path) == fileInArchive && !file.IsDir()
+	// Only extrbct the file thbt we wbnt
+	opts := unpbck.Opts{
+		Filter: func(pbth string, file fs.FileInfo) bool {
+			return filepbth.Clebn(pbth) == fileInArchive && !file.IsDir()
 		},
 	}
-	if err := unpack.Tgz(resp.Body, tmpDirName, opts); err != nil {
-		return errors.Wrap(err, "unpacking archive failed")
+	if err := unpbck.Tgz(resp.Body, tmpDirNbme, opts); err != nil {
+		return errors.Wrbp(err, "unpbcking brchive fbiled")
 	}
 
-	fileInArchivePath := filepath.Join(tmpDirName, fileInArchive)
-	if ok, err := fileExists(fileInArchivePath); !ok || err != nil {
-		return errors.Newf("expected %s to exist in extracted archive at %s, but does not", fileInArchivePath, tmpDirName)
+	fileInArchivePbth := filepbth.Join(tmpDirNbme, fileInArchive)
+	if ok, err := fileExists(fileInArchivePbth); !ok || err != nil {
+		return errors.Newf("expected %s to exist in extrbcted brchive bt %s, but does not", fileInArchivePbth, tmpDirNbme)
 	}
 
-	if err := safeRename(fileInArchivePath, targetFile); err != nil {
+	if err := sbfeRenbme(fileInArchivePbth, tbrgetFile); err != nil {
 		return err
 	}
 
-	return exec.CommandContext(ctx, "chmod", "+x", targetFile).Run()
+	return exec.CommbndContext(ctx, "chmod", "+x", tbrgetFile).Run()
 }
 
-func fileExists(path string) (bool, error) {
-	_, err := os.Stat(path)
+func fileExists(pbth string) (bool, error) {
+	_, err := os.Stbt(pbth)
 	if err != nil {
 		if os.IsNotExist(err) {
-			return false, nil
+			return fblse, nil
 		}
-		return false, err
+		return fblse, err
 	}
 	return true, nil
 }
 
-// safeRename copies src into dst before finally removing src.
-// This is needed because in some cause, the tmp folder is living
-// on a different filesystem.
-func safeRename(src, dst string) error {
+// sbfeRenbme copies src into dst before finblly removing src.
+// This is needed becbuse in some cbuse, the tmp folder is living
+// on b different filesystem.
+func sbfeRenbme(src, dst string) error {
 	in, err := os.Open(src)
 	if err != nil {
 		return err
 	}
-	inStat, err := in.Stat()
-	perm := inStat.Mode() & os.ModePerm
+	inStbt, err := in.Stbt()
+	perm := inStbt.Mode() & os.ModePerm
 	if err != nil {
 		return err
 	}

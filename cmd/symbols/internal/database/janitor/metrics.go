@@ -1,41 +1,41 @@
-package janitor
+pbckbge jbnitor
 
 import (
-	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golbng/prometheus"
 
-	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegrbph/sourcegrbph/internbl/observbtion"
 )
 
 type Metrics struct {
-	cacheSizeBytes prometheus.Gauge
+	cbcheSizeBytes prometheus.Gbuge
 	evictions      prometheus.Counter
 	errors         prometheus.Counter
 }
 
-func NewMetrics(observationCtx *observation.Context) *Metrics {
-	cacheSizeBytes := prometheus.NewGauge(prometheus.GaugeOpts{
-		Namespace: "src",
-		Name:      "codeintel_symbols_store_cache_size_bytes",
-		Help:      "The total size of items in the on disk cache.",
+func NewMetrics(observbtionCtx *observbtion.Context) *Metrics {
+	cbcheSizeBytes := prometheus.NewGbuge(prometheus.GbugeOpts{
+		Nbmespbce: "src",
+		Nbme:      "codeintel_symbols_store_cbche_size_bytes",
+		Help:      "The totbl size of items in the on disk cbche.",
 	})
-	observationCtx.Registerer.MustRegister(cacheSizeBytes)
+	observbtionCtx.Registerer.MustRegister(cbcheSizeBytes)
 
 	evictions := prometheus.NewCounter(prometheus.CounterOpts{
-		Namespace: "src",
-		Name:      "codeintel_symbols_store_evictions_total",
-		Help:      "The total number of items evicted from the cache.",
+		Nbmespbce: "src",
+		Nbme:      "codeintel_symbols_store_evictions_totbl",
+		Help:      "The totbl number of items evicted from the cbche.",
 	})
-	observationCtx.Registerer.MustRegister(evictions)
+	observbtionCtx.Registerer.MustRegister(evictions)
 
 	errors := prometheus.NewCounter(prometheus.CounterOpts{
-		Namespace: "src",
-		Name:      "codeintel_symbols_store_errors_total",
-		Help:      "The total number of failures evicting items from the cache.",
+		Nbmespbce: "src",
+		Nbme:      "codeintel_symbols_store_errors_totbl",
+		Help:      "The totbl number of fbilures evicting items from the cbche.",
 	})
-	observationCtx.Registerer.MustRegister(errors)
+	observbtionCtx.Registerer.MustRegister(errors)
 
 	return &Metrics{
-		cacheSizeBytes: cacheSizeBytes,
+		cbcheSizeBytes: cbcheSizeBytes,
 		evictions:      evictions,
 		errors:         errors,
 	}

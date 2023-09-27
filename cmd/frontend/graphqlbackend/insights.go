@@ -1,408 +1,408 @@
-package graphqlbackend
+pbckbge grbphqlbbckend
 
 import (
 	"context"
 
-	"github.com/graph-gophers/graphql-go"
-	"github.com/graph-gophers/graphql-go/relay"
+	"github.com/grbph-gophers/grbphql-go"
+	"github.com/grbph-gophers/grbphql-go/relby"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
-	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/grbphqlbbckend/grbphqlutil"
+	"github.com/sourcegrbph/sourcegrbph/internbl/gqlutil"
 )
 
-// This file just contains stub GraphQL resolvers and data types for Code Insights which merely
-// return an error if not running in enterprise mode. The actual resolvers can be found in
-// internal/insights/resolvers
+// This file just contbins stub GrbphQL resolvers bnd dbtb types for Code Insights which merely
+// return bn error if not running in enterprise mode. The bctubl resolvers cbn be found in
+// internbl/insights/resolvers
 
 // InsightsResolver is the root resolver.
-type InsightsResolver interface {
+type InsightsResolver interfbce {
 	// Queries
-	InsightsDashboards(ctx context.Context, args *InsightsDashboardsArgs) (InsightsDashboardConnectionResolver, error)
-	InsightViews(ctx context.Context, args *InsightViewQueryArgs) (InsightViewConnectionResolver, error)
+	InsightsDbshbobrds(ctx context.Context, brgs *InsightsDbshbobrdsArgs) (InsightsDbshbobrdConnectionResolver, error)
+	InsightViews(ctx context.Context, brgs *InsightViewQueryArgs) (InsightViewConnectionResolver, error)
 
-	SearchInsightLivePreview(ctx context.Context, args SearchInsightLivePreviewArgs) ([]SearchInsightLivePreviewSeriesResolver, error)
-	SearchInsightPreview(ctx context.Context, args SearchInsightPreviewArgs) ([]SearchInsightLivePreviewSeriesResolver, error)
+	SebrchInsightLivePreview(ctx context.Context, brgs SebrchInsightLivePreviewArgs) ([]SebrchInsightLivePreviewSeriesResolver, error)
+	SebrchInsightPreview(ctx context.Context, brgs SebrchInsightPreviewArgs) ([]SebrchInsightLivePreviewSeriesResolver, error)
 
-	ValidateScopedInsightQuery(ctx context.Context, args ValidateScopedInsightQueryArgs) (ScopedInsightQueryPayloadResolver, error)
-	PreviewRepositoriesFromQuery(ctx context.Context, args PreviewRepositoriesFromQueryArgs) (RepositoryPreviewPayloadResolver, error)
+	VblidbteScopedInsightQuery(ctx context.Context, brgs VblidbteScopedInsightQueryArgs) (ScopedInsightQueryPbylobdResolver, error)
+	PreviewRepositoriesFromQuery(ctx context.Context, brgs PreviewRepositoriesFromQueryArgs) (RepositoryPreviewPbylobdResolver, error)
 
-	// Mutations
-	CreateInsightsDashboard(ctx context.Context, args *CreateInsightsDashboardArgs) (InsightsDashboardPayloadResolver, error)
-	UpdateInsightsDashboard(ctx context.Context, args *UpdateInsightsDashboardArgs) (InsightsDashboardPayloadResolver, error)
-	DeleteInsightsDashboard(ctx context.Context, args *DeleteInsightsDashboardArgs) (*EmptyResponse, error)
-	RemoveInsightViewFromDashboard(ctx context.Context, args *RemoveInsightViewFromDashboardArgs) (InsightsDashboardPayloadResolver, error)
-	AddInsightViewToDashboard(ctx context.Context, args *AddInsightViewToDashboardArgs) (InsightsDashboardPayloadResolver, error)
+	// Mutbtions
+	CrebteInsightsDbshbobrd(ctx context.Context, brgs *CrebteInsightsDbshbobrdArgs) (InsightsDbshbobrdPbylobdResolver, error)
+	UpdbteInsightsDbshbobrd(ctx context.Context, brgs *UpdbteInsightsDbshbobrdArgs) (InsightsDbshbobrdPbylobdResolver, error)
+	DeleteInsightsDbshbobrd(ctx context.Context, brgs *DeleteInsightsDbshbobrdArgs) (*EmptyResponse, error)
+	RemoveInsightViewFromDbshbobrd(ctx context.Context, brgs *RemoveInsightViewFromDbshbobrdArgs) (InsightsDbshbobrdPbylobdResolver, error)
+	AddInsightViewToDbshbobrd(ctx context.Context, brgs *AddInsightViewToDbshbobrdArgs) (InsightsDbshbobrdPbylobdResolver, error)
 
-	CreateLineChartSearchInsight(ctx context.Context, args *CreateLineChartSearchInsightArgs) (InsightViewPayloadResolver, error)
-	UpdateLineChartSearchInsight(ctx context.Context, args *UpdateLineChartSearchInsightArgs) (InsightViewPayloadResolver, error)
-	CreatePieChartSearchInsight(ctx context.Context, args *CreatePieChartSearchInsightArgs) (InsightViewPayloadResolver, error)
-	UpdatePieChartSearchInsight(ctx context.Context, args *UpdatePieChartSearchInsightArgs) (InsightViewPayloadResolver, error)
+	CrebteLineChbrtSebrchInsight(ctx context.Context, brgs *CrebteLineChbrtSebrchInsightArgs) (InsightViewPbylobdResolver, error)
+	UpdbteLineChbrtSebrchInsight(ctx context.Context, brgs *UpdbteLineChbrtSebrchInsightArgs) (InsightViewPbylobdResolver, error)
+	CrebtePieChbrtSebrchInsight(ctx context.Context, brgs *CrebtePieChbrtSebrchInsightArgs) (InsightViewPbylobdResolver, error)
+	UpdbtePieChbrtSebrchInsight(ctx context.Context, brgs *UpdbtePieChbrtSebrchInsightArgs) (InsightViewPbylobdResolver, error)
 
-	DeleteInsightView(ctx context.Context, args *DeleteInsightViewArgs) (*EmptyResponse, error)
-	SaveInsightAsNewView(ctx context.Context, args SaveInsightAsNewViewArgs) (InsightViewPayloadResolver, error)
+	DeleteInsightView(ctx context.Context, brgs *DeleteInsightViewArgs) (*EmptyResponse, error)
+	SbveInsightAsNewView(ctx context.Context, brgs SbveInsightAsNewViewArgs) (InsightViewPbylobdResolver, error)
 
-	// Admin Management
-	InsightSeriesQueryStatus(ctx context.Context) ([]InsightSeriesQueryStatusResolver, error)
-	InsightViewDebug(ctx context.Context, args InsightViewDebugArgs) (InsightViewDebugResolver, error)
-	InsightAdminBackfillQueue(ctx context.Context, args *AdminBackfillQueueArgs) (*graphqlutil.ConnectionResolver[*BackfillQueueItemResolver], error)
-	// Admin Mutations
-	UpdateInsightSeries(ctx context.Context, args *UpdateInsightSeriesArgs) (InsightSeriesMetadataPayloadResolver, error)
-	RetryInsightSeriesBackfill(ctx context.Context, args *BackfillArgs) (*BackfillQueueItemResolver, error)
-	MoveInsightSeriesBackfillToFrontOfQueue(ctx context.Context, args *BackfillArgs) (*BackfillQueueItemResolver, error)
-	MoveInsightSeriesBackfillToBackOfQueue(ctx context.Context, args *BackfillArgs) (*BackfillQueueItemResolver, error)
+	// Admin Mbnbgement
+	InsightSeriesQueryStbtus(ctx context.Context) ([]InsightSeriesQueryStbtusResolver, error)
+	InsightViewDebug(ctx context.Context, brgs InsightViewDebugArgs) (InsightViewDebugResolver, error)
+	InsightAdminBbckfillQueue(ctx context.Context, brgs *AdminBbckfillQueueArgs) (*grbphqlutil.ConnectionResolver[*BbckfillQueueItemResolver], error)
+	// Admin Mutbtions
+	UpdbteInsightSeries(ctx context.Context, brgs *UpdbteInsightSeriesArgs) (InsightSeriesMetbdbtbPbylobdResolver, error)
+	RetryInsightSeriesBbckfill(ctx context.Context, brgs *BbckfillArgs) (*BbckfillQueueItemResolver, error)
+	MoveInsightSeriesBbckfillToFrontOfQueue(ctx context.Context, brgs *BbckfillArgs) (*BbckfillQueueItemResolver, error)
+	MoveInsightSeriesBbckfillToBbckOfQueue(ctx context.Context, brgs *BbckfillArgs) (*BbckfillQueueItemResolver, error)
 }
 
-type SearchInsightLivePreviewArgs struct {
-	Input SearchInsightLivePreviewInput
+type SebrchInsightLivePreviewArgs struct {
+	Input SebrchInsightLivePreviewInput
 }
-type SearchInsightPreviewArgs struct {
-	Input SearchInsightPreviewInput
+type SebrchInsightPreviewArgs struct {
+	Input SebrchInsightPreviewInput
 }
 
-type SearchInsightPreviewInput struct {
+type SebrchInsightPreviewInput struct {
 	RepositoryScope RepositoryScopeInput
 	TimeScope       TimeScopeInput
-	Series          []SearchSeriesPreviewInput
+	Series          []SebrchSeriesPreviewInput
 }
 
-type SearchSeriesPreviewInput struct {
+type SebrchSeriesPreviewInput struct {
 	Query                      string
-	Label                      string
-	GeneratedFromCaptureGroups bool
+	Lbbel                      string
+	GenerbtedFromCbptureGroups bool
 	GroupBy                    *string
 }
 
-type SearchInsightLivePreviewInput struct {
+type SebrchInsightLivePreviewInput struct {
 	Query                      string
-	Label                      string
+	Lbbel                      string
 	RepositoryScope            RepositoryScopeInput
 	TimeScope                  TimeScopeInput
-	GeneratedFromCaptureGroups bool
+	GenerbtedFromCbptureGroups bool
 	GroupBy                    *string
 }
 
 type InsightsArgs struct {
-	Ids *[]graphql.ID
+	Ids *[]grbphql.ID
 }
 
 type InsightViewDebugArgs struct {
-	Id graphql.ID
+	Id grbphql.ID
 }
 
-type InsightsDataPointResolver interface {
-	DateTime() gqlutil.DateTime
-	Value() float64
+type InsightsDbtbPointResolver interfbce {
+	DbteTime() gqlutil.DbteTime
+	Vblue() flobt64
 	DiffQuery() (*string, error)
 }
 
-type InsightViewDebugResolver interface {
-	Raw(context.Context) ([]string, error)
+type InsightViewDebugResolver interfbce {
+	Rbw(context.Context) ([]string, error)
 }
-type InsightStatusResolver interface {
-	TotalPoints(context.Context) (int32, error)
+type InsightStbtusResolver interfbce {
+	TotblPoints(context.Context) (int32, error)
 	PendingJobs(context.Context) (int32, error)
 	CompletedJobs(context.Context) (int32, error)
-	FailedJobs(context.Context) (int32, error)
-	BackfillQueuedAt(context.Context) *gqlutil.DateTime
-	IsLoadingData(context.Context) (*bool, error)
-	IncompleteDatapoints(ctx context.Context) ([]IncompleteDatapointAlert, error)
+	FbiledJobs(context.Context) (int32, error)
+	BbckfillQueuedAt(context.Context) *gqlutil.DbteTime
+	IsLobdingDbtb(context.Context) (*bool, error)
+	IncompleteDbtbpoints(ctx context.Context) ([]IncompleteDbtbpointAlert, error)
 }
 
 type InsightsPointsArgs struct {
-	From             *gqlutil.DateTime
-	To               *gqlutil.DateTime
+	From             *gqlutil.DbteTime
+	To               *gqlutil.DbteTime
 	IncludeRepoRegex *string
 	ExcludeRepoRegex *string
 }
 
-type InsightSeriesResolver interface {
+type InsightSeriesResolver interfbce {
 	SeriesId() string
-	Label() string
-	Points(ctx context.Context, args *InsightsPointsArgs) ([]InsightsDataPointResolver, error)
-	Status(ctx context.Context) (InsightStatusResolver, error)
+	Lbbel() string
+	Points(ctx context.Context, brgs *InsightsPointsArgs) ([]InsightsDbtbPointResolver, error)
+	Stbtus(ctx context.Context) (InsightStbtusResolver, error)
 }
 
-type InsightResolver interface {
+type InsightResolver interfbce {
 	Title() string
 	Description() string
 	Series() []InsightSeriesResolver
 	ID() string
 }
 
-type InsightsDashboardsArgs struct {
+type InsightsDbshbobrdsArgs struct {
 	First *int32
 	After *string
-	ID    *graphql.ID
+	ID    *grbphql.ID
 }
 
-type InsightsDashboardConnectionResolver interface {
-	Nodes(ctx context.Context) ([]InsightsDashboardResolver, error)
-	PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error)
+type InsightsDbshbobrdConnectionResolver interfbce {
+	Nodes(ctx context.Context) ([]InsightsDbshbobrdResolver, error)
+	PbgeInfo(ctx context.Context) (*grbphqlutil.PbgeInfo, error)
 }
 
-type InsightsDashboardResolver interface {
+type InsightsDbshbobrdResolver interfbce {
 	Title() string
-	ID() graphql.ID
-	Views(ctx context.Context, args DashboardInsightViewConnectionArgs) InsightViewConnectionResolver
-	Grants() InsightsPermissionGrantsResolver
+	ID() grbphql.ID
+	Views(ctx context.Context, brgs DbshbobrdInsightViewConnectionArgs) InsightViewConnectionResolver
+	Grbnts() InsightsPermissionGrbntsResolver
 }
 
-type DashboardInsightViewConnectionArgs struct {
+type DbshbobrdInsightViewConnectionArgs struct {
 	After *string
 	First *int32
 }
 
-type InsightsPermissionGrantsResolver interface {
-	Users() []graphql.ID
-	Organizations() []graphql.ID
-	Global() bool
+type InsightsPermissionGrbntsResolver interfbce {
+	Users() []grbphql.ID
+	Orgbnizbtions() []grbphql.ID
+	Globbl() bool
 }
 
-type CreateInsightsDashboardArgs struct {
-	Input CreateInsightsDashboardInput
+type CrebteInsightsDbshbobrdArgs struct {
+	Input CrebteInsightsDbshbobrdInput
 }
 
-type CreateInsightsDashboardInput struct {
+type CrebteInsightsDbshbobrdInput struct {
 	Title  string
-	Grants InsightsPermissionGrants
+	Grbnts InsightsPermissionGrbnts
 }
 
-type UpdateInsightsDashboardArgs struct {
-	Id    graphql.ID
-	Input UpdateInsightsDashboardInput
+type UpdbteInsightsDbshbobrdArgs struct {
+	Id    grbphql.ID
+	Input UpdbteInsightsDbshbobrdInput
 }
 
-type UpdateInsightsDashboardInput struct {
+type UpdbteInsightsDbshbobrdInput struct {
 	Title  *string
-	Grants *InsightsPermissionGrants
+	Grbnts *InsightsPermissionGrbnts
 }
 
-type InsightsPermissionGrants struct {
-	Users         *[]graphql.ID
-	Organizations *[]graphql.ID
-	Global        *bool
+type InsightsPermissionGrbnts struct {
+	Users         *[]grbphql.ID
+	Orgbnizbtions *[]grbphql.ID
+	Globbl        *bool
 }
 
-type DeleteInsightsDashboardArgs struct {
-	Id graphql.ID
+type DeleteInsightsDbshbobrdArgs struct {
+	Id grbphql.ID
 }
 
-type InsightViewConnectionResolver interface {
+type InsightViewConnectionResolver interfbce {
 	Nodes(ctx context.Context) ([]InsightViewResolver, error)
-	TotalCount(ctx context.Context) (*int32, error)
-	PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error)
+	TotblCount(ctx context.Context) (*int32, error)
+	PbgeInfo(ctx context.Context) (*grbphqlutil.PbgeInfo, error)
 }
 
-type InsightViewResolver interface {
-	ID() graphql.ID
-	DefaultFilters(ctx context.Context) (InsightViewFiltersResolver, error)
+type InsightViewResolver interfbce {
+	ID() grbphql.ID
+	DefbultFilters(ctx context.Context) (InsightViewFiltersResolver, error)
 	AppliedFilters(ctx context.Context) (InsightViewFiltersResolver, error)
-	DataSeries(ctx context.Context) ([]InsightSeriesResolver, error)
-	Presentation(ctx context.Context) (InsightPresentation, error)
-	DataSeriesDefinitions(ctx context.Context) ([]InsightDataSeriesDefinition, error)
-	DashboardReferenceCount(ctx context.Context) (int32, error)
+	DbtbSeries(ctx context.Context) ([]InsightSeriesResolver, error)
+	Presentbtion(ctx context.Context) (InsightPresentbtion, error)
+	DbtbSeriesDefinitions(ctx context.Context) ([]InsightDbtbSeriesDefinition, error)
+	DbshbobrdReferenceCount(ctx context.Context) (int32, error)
 	IsFrozen(ctx context.Context) (bool, error)
-	DefaultSeriesDisplayOptions(ctx context.Context) (InsightViewSeriesDisplayOptionsResolver, error)
-	AppliedSeriesDisplayOptions(ctx context.Context) (InsightViewSeriesDisplayOptionsResolver, error)
-	Dashboards(ctx context.Context, args *InsightsDashboardsArgs) InsightsDashboardConnectionResolver
+	DefbultSeriesDisplbyOptions(ctx context.Context) (InsightViewSeriesDisplbyOptionsResolver, error)
+	AppliedSeriesDisplbyOptions(ctx context.Context) (InsightViewSeriesDisplbyOptionsResolver, error)
+	Dbshbobrds(ctx context.Context, brgs *InsightsDbshbobrdsArgs) InsightsDbshbobrdConnectionResolver
 	SeriesCount(ctx context.Context) (*int32, error)
 	RepositoryDefinition(ctx context.Context) (InsightRepositoryDefinition, error)
 	TimeScope(ctx context.Context) (InsightTimeScope, error)
 }
 
-type InsightDataSeriesDefinition interface {
-	ToSearchInsightDataSeriesDefinition() (SearchInsightDataSeriesDefinitionResolver, bool)
+type InsightDbtbSeriesDefinition interfbce {
+	ToSebrchInsightDbtbSeriesDefinition() (SebrchInsightDbtbSeriesDefinitionResolver, bool)
 }
 
-type LineChartInsightViewPresentation interface {
+type LineChbrtInsightViewPresentbtion interfbce {
 	Title(ctx context.Context) (string, error)
-	SeriesPresentation(ctx context.Context) ([]LineChartDataSeriesPresentationResolver, error)
+	SeriesPresentbtion(ctx context.Context) ([]LineChbrtDbtbSeriesPresentbtionResolver, error)
 }
 
-type PieChartInsightViewPresentation interface {
+type PieChbrtInsightViewPresentbtion interfbce {
 	Title(ctx context.Context) (string, error)
-	OtherThreshold(ctx context.Context) (float64, error)
+	OtherThreshold(ctx context.Context) (flobt64, error)
 }
 
-type LineChartDataSeriesPresentationResolver interface {
+type LineChbrtDbtbSeriesPresentbtionResolver interfbce {
 	SeriesId(ctx context.Context) (string, error)
-	Label(ctx context.Context) (string, error)
+	Lbbel(ctx context.Context) (string, error)
 	Color(ctx context.Context) (string, error)
 }
 
-type SearchInsightDataSeriesDefinitionResolver interface {
+type SebrchInsightDbtbSeriesDefinitionResolver interfbce {
 	SeriesId(ctx context.Context) (string, error)
 	Query(ctx context.Context) (string, error)
 	RepositoryScope(ctx context.Context) (InsightRepositoryScopeResolver, error)
 	RepositoryDefinition(ctx context.Context) (InsightRepositoryDefinition, error)
 	TimeScope(ctx context.Context) (InsightTimeScope, error)
-	GeneratedFromCaptureGroups() (bool, error)
-	IsCalculated() (bool, error)
+	GenerbtedFromCbptureGroups() (bool, error)
+	IsCblculbted() (bool, error)
 	GroupBy() (*string, error)
 }
 
-type InsightPresentation interface {
-	ToLineChartInsightViewPresentation() (LineChartInsightViewPresentation, bool)
-	ToPieChartInsightViewPresentation() (PieChartInsightViewPresentation, bool)
+type InsightPresentbtion interfbce {
+	ToLineChbrtInsightViewPresentbtion() (LineChbrtInsightViewPresentbtion, bool)
+	ToPieChbrtInsightViewPresentbtion() (PieChbrtInsightViewPresentbtion, bool)
 }
 
-type InsightTimeScope interface {
-	ToInsightIntervalTimeScope() (InsightIntervalTimeScope, bool)
+type InsightTimeScope interfbce {
+	ToInsightIntervblTimeScope() (InsightIntervblTimeScope, bool)
 }
 
-type InsightIntervalTimeScope interface {
+type InsightIntervblTimeScope interfbce {
 	Unit(ctx context.Context) (string, error)
-	Value(ctx context.Context) (int32, error)
+	Vblue(ctx context.Context) (int32, error)
 }
 
-type InsightRepositoryScopeResolver interface {
+type InsightRepositoryScopeResolver interfbce {
 	Repositories(ctx context.Context) ([]string, error)
 }
 
-type InsightRepositoryDefinition interface {
+type InsightRepositoryDefinition interfbce {
 	ToInsightRepositoryScope() (InsightRepositoryScopeResolver, bool)
-	ToRepositorySearchScope() (RepositorySearchScopeResolver, bool)
+	ToRepositorySebrchScope() (RepositorySebrchScopeResolver, bool)
 }
 
-type RepositorySearchScopeResolver interface {
-	Search() string
+type RepositorySebrchScopeResolver interfbce {
+	Sebrch() string
 	AllRepositories() bool
 }
 
-type InsightsDashboardPayloadResolver interface {
-	Dashboard(ctx context.Context) (InsightsDashboardResolver, error)
+type InsightsDbshbobrdPbylobdResolver interfbce {
+	Dbshbobrd(ctx context.Context) (InsightsDbshbobrdResolver, error)
 }
 
-type AddInsightViewToDashboardArgs struct {
-	Input AddInsightViewToDashboardInput
+type AddInsightViewToDbshbobrdArgs struct {
+	Input AddInsightViewToDbshbobrdInput
 }
 
-type AddInsightViewToDashboardInput struct {
-	InsightViewID graphql.ID
-	DashboardID   graphql.ID
+type AddInsightViewToDbshbobrdInput struct {
+	InsightViewID grbphql.ID
+	DbshbobrdID   grbphql.ID
 }
 
-type RemoveInsightViewFromDashboardArgs struct {
-	Input RemoveInsightViewFromDashboardInput
+type RemoveInsightViewFromDbshbobrdArgs struct {
+	Input RemoveInsightViewFromDbshbobrdInput
 }
 
-type RemoveInsightViewFromDashboardInput struct {
-	InsightViewID graphql.ID
-	DashboardID   graphql.ID
+type RemoveInsightViewFromDbshbobrdInput struct {
+	InsightViewID grbphql.ID
+	DbshbobrdID   grbphql.ID
 }
 
-type UpdateInsightSeriesArgs struct {
-	Input UpdateInsightSeriesInput
+type UpdbteInsightSeriesArgs struct {
+	Input UpdbteInsightSeriesInput
 }
 
-type UpdateInsightSeriesInput struct {
+type UpdbteInsightSeriesInput struct {
 	SeriesId string
-	Enabled  *bool
+	Enbbled  *bool
 }
 
-type InsightSeriesMetadataResolver interface {
+type InsightSeriesMetbdbtbResolver interfbce {
 	SeriesId(ctx context.Context) (string, error)
 	Query(ctx context.Context) (string, error)
-	Enabled(ctx context.Context) (bool, error)
+	Enbbled(ctx context.Context) (bool, error)
 }
 
-type InsightSeriesMetadataPayloadResolver interface {
-	Series(ctx context.Context) InsightSeriesMetadataResolver
+type InsightSeriesMetbdbtbPbylobdResolver interfbce {
+	Series(ctx context.Context) InsightSeriesMetbdbtbResolver
 }
 
-type InsightSeriesQueryStatusResolver interface {
+type InsightSeriesQueryStbtusResolver interfbce {
 	SeriesId(ctx context.Context) (string, error)
 	Query(ctx context.Context) (string, error)
-	Enabled(ctx context.Context) (bool, error)
+	Enbbled(ctx context.Context) (bool, error)
 	Errored(ctx context.Context) (int32, error)
 	Completed(ctx context.Context) (int32, error)
 	Processing(ctx context.Context) (int32, error)
-	Failed(ctx context.Context) (int32, error)
+	Fbiled(ctx context.Context) (int32, error)
 	Queued(ctx context.Context) (int32, error)
 }
-type InsightViewFiltersResolver interface {
+type InsightViewFiltersResolver interfbce {
 	IncludeRepoRegex(ctx context.Context) (*string, error)
 	ExcludeRepoRegex(ctx context.Context) (*string, error)
-	SearchContexts(ctx context.Context) (*[]string, error)
+	SebrchContexts(ctx context.Context) (*[]string, error)
 }
-type InsightViewSeriesDisplayOptionsResolver interface {
+type InsightViewSeriesDisplbyOptionsResolver interfbce {
 	SortOptions(ctx context.Context) (InsightViewSeriesSortOptionsResolver, error)
 	Limit(ctx context.Context) (*int32, error)
-	NumSamples() *int32
+	NumSbmples() *int32
 }
 
-type InsightViewSeriesSortOptionsResolver interface {
+type InsightViewSeriesSortOptionsResolver interfbce {
 	Mode(ctx context.Context) (*string, error)
 	Direction(ctx context.Context) (*string, error)
 }
 
-type CreateLineChartSearchInsightArgs struct {
-	Input CreateLineChartSearchInsightInput
+type CrebteLineChbrtSebrchInsightArgs struct {
+	Input CrebteLineChbrtSebrchInsightInput
 }
 
-type CreateLineChartSearchInsightInput struct {
-	DataSeries      []LineChartSearchInsightDataSeriesInput
-	Options         LineChartOptionsInput
-	Dashboards      *[]graphql.ID
+type CrebteLineChbrtSebrchInsightInput struct {
+	DbtbSeries      []LineChbrtSebrchInsightDbtbSeriesInput
+	Options         LineChbrtOptionsInput
+	Dbshbobrds      *[]grbphql.ID
 	ViewControls    *InsightViewControlsInput
 	RepositoryScope *RepositoryScopeInput
 	TimeScope       *TimeScopeInput
 }
 
-type UpdateLineChartSearchInsightArgs struct {
-	Id    graphql.ID
-	Input UpdateLineChartSearchInsightInput
+type UpdbteLineChbrtSebrchInsightArgs struct {
+	Id    grbphql.ID
+	Input UpdbteLineChbrtSebrchInsightInput
 }
 
-type UpdateLineChartSearchInsightInput struct {
-	DataSeries          []LineChartSearchInsightDataSeriesInput
-	PresentationOptions LineChartOptionsInput
+type UpdbteLineChbrtSebrchInsightInput struct {
+	DbtbSeries          []LineChbrtSebrchInsightDbtbSeriesInput
+	PresentbtionOptions LineChbrtOptionsInput
 	ViewControls        InsightViewControlsInput
 	RepositoryScope     *RepositoryScopeInput
 	TimeScope           *TimeScopeInput
 }
 
-type CreatePieChartSearchInsightArgs struct {
-	Input CreatePieChartSearchInsightInput
+type CrebtePieChbrtSebrchInsightArgs struct {
+	Input CrebtePieChbrtSebrchInsightInput
 }
 
-type CreatePieChartSearchInsightInput struct {
+type CrebtePieChbrtSebrchInsightInput struct {
 	Query               string
 	RepositoryScope     RepositoryScopeInput
-	PresentationOptions PieChartOptionsInput
-	Dashboards          *[]graphql.ID
+	PresentbtionOptions PieChbrtOptionsInput
+	Dbshbobrds          *[]grbphql.ID
 }
 
-type UpdatePieChartSearchInsightArgs struct {
-	Id    graphql.ID
-	Input UpdatePieChartSearchInsightInput
+type UpdbtePieChbrtSebrchInsightArgs struct {
+	Id    grbphql.ID
+	Input UpdbtePieChbrtSebrchInsightInput
 }
 
-type UpdatePieChartSearchInsightInput struct {
+type UpdbtePieChbrtSebrchInsightInput struct {
 	Query               string
 	RepositoryScope     RepositoryScopeInput
-	PresentationOptions PieChartOptionsInput
+	PresentbtionOptions PieChbrtOptionsInput
 }
 
-type PieChartOptionsInput struct {
+type PieChbrtOptionsInput struct {
 	Title          string
-	OtherThreshold float64
+	OtherThreshold flobt64
 }
 
 type InsightViewControlsInput struct {
 	Filters              InsightViewFiltersInput
-	SeriesDisplayOptions SeriesDisplayOptionsInput
+	SeriesDisplbyOptions SeriesDisplbyOptionsInput
 }
 
-type SeriesDisplayOptions struct {
+type SeriesDisplbyOptions struct {
 	SortOptions *SeriesSortOptions
 	Limit       *int32
 }
 
-type SeriesDisplayOptionsInput struct {
+type SeriesDisplbyOptionsInput struct {
 	SortOptions *SeriesSortOptionsInput
 	Limit       *int32
-	NumSamples  *int32
+	NumSbmples  *int32
 }
 
 type SeriesSortOptions struct {
@@ -418,172 +418,172 @@ type SeriesSortOptionsInput struct {
 type InsightViewFiltersInput struct {
 	IncludeRepoRegex *string
 	ExcludeRepoRegex *string
-	SearchContexts   *[]string
+	SebrchContexts   *[]string
 }
 
-type LineChartSearchInsightDataSeriesInput struct {
+type LineChbrtSebrchInsightDbtbSeriesInput struct {
 	SeriesId                   *string
 	Query                      string
 	TimeScope                  *TimeScopeInput
 	RepositoryScope            *RepositoryScopeInput
-	Options                    LineChartDataSeriesOptionsInput
-	GeneratedFromCaptureGroups *bool
+	Options                    LineChbrtDbtbSeriesOptionsInput
+	GenerbtedFromCbptureGroups *bool
 	GroupBy                    *string
 }
 
-type LineChartDataSeriesOptionsInput struct {
-	Label     *string
+type LineChbrtDbtbSeriesOptionsInput struct {
+	Lbbel     *string
 	LineColor *string
 }
 
 type RepositoryScopeInput struct {
 	Repositories       []string
-	RepositoryCriteria *string
+	RepositoryCriterib *string
 }
 
 type TimeScopeInput struct {
-	StepInterval *TimeIntervalStepInput
+	StepIntervbl *TimeIntervblStepInput
 }
 
-type TimeIntervalStepInput struct {
-	Unit  string // this is actually an enum, not sure how that works here with graphql enums
-	Value int32
+type TimeIntervblStepInput struct {
+	Unit  string // this is bctublly bn enum, not sure how thbt works here with grbphql enums
+	Vblue int32
 }
 
-type LineChartOptionsInput struct {
+type LineChbrtOptionsInput struct {
 	Title *string
 }
 
-type SaveInsightAsNewViewArgs struct {
-	Input SaveInsightAsNewViewInput
+type SbveInsightAsNewViewArgs struct {
+	Input SbveInsightAsNewViewInput
 }
 
-type SaveInsightAsNewViewInput struct {
-	InsightViewID graphql.ID
-	Options       LineChartOptionsInput
-	Dashboard     *graphql.ID
+type SbveInsightAsNewViewInput struct {
+	InsightViewID grbphql.ID
+	Options       LineChbrtOptionsInput
+	Dbshbobrd     *grbphql.ID
 	ViewControls  *InsightViewControlsInput
 }
 
-type InsightViewPayloadResolver interface {
+type InsightViewPbylobdResolver interfbce {
 	View(ctx context.Context) (InsightViewResolver, error)
 }
 
 type InsightViewQueryArgs struct {
 	First                *int32
 	After                *string
-	Id                   *graphql.ID
-	ExcludeIds           *[]graphql.ID
+	Id                   *grbphql.ID
+	ExcludeIds           *[]grbphql.ID
 	Find                 *string
 	IsFrozen             *bool
 	Filters              *InsightViewFiltersInput
-	SeriesDisplayOptions *SeriesDisplayOptionsInput
+	SeriesDisplbyOptions *SeriesDisplbyOptionsInput
 }
 
 type DeleteInsightViewArgs struct {
-	Id graphql.ID
+	Id grbphql.ID
 }
 
-type SearchInsightLivePreviewSeriesResolver interface {
-	Points(ctx context.Context) ([]InsightsDataPointResolver, error)
-	Label(ctx context.Context) (string, error)
+type SebrchInsightLivePreviewSeriesResolver interfbce {
+	Points(ctx context.Context) ([]InsightsDbtbPointResolver, error)
+	Lbbel(ctx context.Context) (string, error)
 }
 
-type IncompleteDatapointAlert interface {
-	ToTimeoutDatapointAlert() (TimeoutDatapointAlert, bool)
-	ToGenericIncompleteDatapointAlert() (GenericIncompleteDatapointAlert, bool)
-	Time() gqlutil.DateTime
+type IncompleteDbtbpointAlert interfbce {
+	ToTimeoutDbtbpointAlert() (TimeoutDbtbpointAlert, bool)
+	ToGenericIncompleteDbtbpointAlert() (GenericIncompleteDbtbpointAlert, bool)
+	Time() gqlutil.DbteTime
 }
 
-type TimeoutDatapointAlert interface {
-	Time() gqlutil.DateTime
+type TimeoutDbtbpointAlert interfbce {
+	Time() gqlutil.DbteTime
 }
 
-type GenericIncompleteDatapointAlert interface {
-	Time() gqlutil.DateTime
-	Reason() string
+type GenericIncompleteDbtbpointAlert interfbce {
+	Time() gqlutil.DbteTime
+	Rebson() string
 }
 
-type ValidateScopedInsightQueryArgs struct {
+type VblidbteScopedInsightQueryArgs struct {
 	Query string
 }
 
-type ScopedInsightQueryPayloadResolver interface {
+type ScopedInsightQueryPbylobdResolver interfbce {
 	Query(ctx context.Context) string
-	IsValid(ctx context.Context) bool
-	InvalidReason(ctx context.Context) *string
+	IsVblid(ctx context.Context) bool
+	InvblidRebson(ctx context.Context) *string
 }
 
 type PreviewRepositoriesFromQueryArgs struct {
 	Query string
 }
 
-type RepositoryPreviewPayloadResolver interface {
+type RepositoryPreviewPbylobdResolver interfbce {
 	Query(ctx context.Context) string
 	NumberOfRepositories(ctx context.Context) *int32
 }
 
-type BackfillQueueID struct {
-	BackfillID int
+type BbckfillQueueID struct {
+	BbckfillID int
 	InsightID  string
 }
-type BackfillQueueItemResolver struct {
-	BackfillID      int
+type BbckfillQueueItemResolver struct {
+	BbckfillID      int
 	InsightUniqueID string
 	InsightTitle    string
-	CreatorID       *int32
-	Label           string
+	CrebtorID       *int32
+	Lbbel           string
 	Query           string
-	BackfillStatus  BackfillQueueStatusResolver
+	BbckfillStbtus  BbckfillQueueStbtusResolver
 	GetUserResolver func(*int32) (*UserResolver, error)
 }
 
-func (r *BackfillQueueItemResolver) ID() graphql.ID {
-	return relay.MarshalID("backfillQueueItem", BackfillQueueID{BackfillID: r.BackfillID, InsightID: r.InsightUniqueID})
+func (r *BbckfillQueueItemResolver) ID() grbphql.ID {
+	return relby.MbrshblID("bbckfillQueueItem", BbckfillQueueID{BbckfillID: r.BbckfillID, InsightID: r.InsightUniqueID})
 }
 
-func (r *BackfillQueueItemResolver) IDInt32() int32 {
-	return int32(r.BackfillID)
+func (r *BbckfillQueueItemResolver) IDInt32() int32 {
+	return int32(r.BbckfillID)
 }
 
-func (r *BackfillQueueItemResolver) InsightViewTitle() string {
+func (r *BbckfillQueueItemResolver) InsightViewTitle() string {
 	return r.InsightTitle
 }
-func (r *BackfillQueueItemResolver) Creator(ctx context.Context) (*UserResolver, error) {
-	return r.GetUserResolver(r.CreatorID)
+func (r *BbckfillQueueItemResolver) Crebtor(ctx context.Context) (*UserResolver, error) {
+	return r.GetUserResolver(r.CrebtorID)
 }
-func (r *BackfillQueueItemResolver) SeriesLabel() string {
-	return r.Label
+func (r *BbckfillQueueItemResolver) SeriesLbbel() string {
+	return r.Lbbel
 }
-func (r *BackfillQueueItemResolver) SeriesSearchQuery() string {
+func (r *BbckfillQueueItemResolver) SeriesSebrchQuery() string {
 	return r.Query
 }
-func (r *BackfillQueueItemResolver) BackfillQueueStatus() (BackfillQueueStatusResolver, error) {
-	return r.BackfillStatus, nil
+func (r *BbckfillQueueItemResolver) BbckfillQueueStbtus() (BbckfillQueueStbtusResolver, error) {
+	return r.BbckfillStbtus, nil
 }
 
-type BackfillQueueStatusResolver interface {
-	State() string // enum
+type BbckfillQueueStbtusResolver interfbce {
+	Stbte() string // enum
 	QueuePosition() *int32
 	Errors() *[]string
 	Cost() *int32
 	PercentComplete() *int32
-	CreatedAt() *gqlutil.DateTime
-	StartedAt() *gqlutil.DateTime
-	CompletedAt() *gqlutil.DateTime
+	CrebtedAt() *gqlutil.DbteTime
+	StbrtedAt() *gqlutil.DbteTime
+	CompletedAt() *gqlutil.DbteTime
 	Runtime() *string
 }
 
-type BackfillArgs struct {
-	Id graphql.ID
+type BbckfillArgs struct {
+	Id grbphql.ID
 }
 
-type AdminBackfillQueueArgs struct {
-	graphqlutil.ConnectionResolverArgs
+type AdminBbckfillQueueArgs struct {
+	grbphqlutil.ConnectionResolverArgs
 	OrderBy    string
 	Descending bool
 
 	//filters
-	States     *[]string
-	TextSearch *string
+	Stbtes     *[]string
+	TextSebrch *string
 }

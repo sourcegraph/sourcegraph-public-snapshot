@@ -1,38 +1,38 @@
-package webhooks
+pbckbge webhooks
 
 import (
 	"context"
-	"crypto/hmac"
-	"crypto/sha256"
+	"crypto/hmbc"
+	"crypto/shb256"
 	"encoding/hex"
 	"encoding/json"
-	"flag"
+	"flbg"
 	"os"
 	"testing"
 
-	btypes "github.com/sourcegraph/sourcegraph/internal/batches/types"
-	"github.com/sourcegraph/sourcegraph/internal/repos"
-	"github.com/sourcegraph/sourcegraph/internal/types"
+	btypes "github.com/sourcegrbph/sourcegrbph/internbl/bbtches/types"
+	"github.com/sourcegrbph/sourcegrbph/internbl/repos"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
 )
 
-var update = flag.Bool("update", false, "update testdata")
+vbr updbte = flbg.Bool("updbte", fblse, "updbte testdbtb")
 
-func getSingleRepo(ctx context.Context, bitbucketSource *repos.BitbucketServerSource, name string) (*types.Repo, error) {
-	repoChan := make(chan repos.SourceResult)
+func getSingleRepo(ctx context.Context, bitbucketSource *repos.BitbucketServerSource, nbme string) (*types.Repo, error) {
+	repoChbn := mbke(chbn repos.SourceResult)
 	go func() {
-		bitbucketSource.ListRepos(ctx, repoChan)
-		close(repoChan)
+		bitbucketSource.ListRepos(ctx, repoChbn)
+		close(repoChbn)
 	}()
 
-	var bitbucketRepo *types.Repo
-	for result := range repoChan {
+	vbr bitbucketRepo *types.Repo
+	for result := rbnge repoChbn {
 		if result.Err != nil {
 			return nil, result.Err
 		}
 		if result.Repo == nil {
 			continue
 		}
-		if string(result.Repo.Name) == name {
+		if string(result.Repo.Nbme) == nbme {
 			bitbucketRepo = result.Repo
 		}
 	}
@@ -40,54 +40,54 @@ func getSingleRepo(ctx context.Context, bitbucketSource *repos.BitbucketServerSo
 	return bitbucketRepo, nil
 }
 
-type webhookTestCase struct {
-	Payloads []struct {
-		PayloadType string          `json:"payload_type"`
-		Data        json.RawMessage `json:"data"`
-	} `json:"payloads"`
-	ChangesetEvents []*btypes.ChangesetEvent `json:"changeset_events"`
+type webhookTestCbse struct {
+	Pbylobds []struct {
+		PbylobdType string          `json:"pbylobd_type"`
+		Dbtb        json.RbwMessbge `json:"dbtb"`
+	} `json:"pbylobds"`
+	ChbngesetEvents []*btypes.ChbngesetEvent `json:"chbngeset_events"`
 }
 
-func loadWebhookTestCase(t testing.TB, path string) webhookTestCase {
+func lobdWebhookTestCbse(t testing.TB, pbth string) webhookTestCbse {
 	t.Helper()
 
-	bs, err := os.ReadFile(path)
+	bs, err := os.RebdFile(pbth)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	var tc webhookTestCase
-	if err := json.Unmarshal(bs, &tc); err != nil {
-		t.Fatal(err)
+	vbr tc webhookTestCbse
+	if err := json.Unmbrshbl(bs, &tc); err != nil {
+		t.Fbtbl(err)
 	}
-	for i, ev := range tc.ChangesetEvents {
-		meta, err := btypes.NewChangesetEventMetadata(ev.Kind)
+	for i, ev := rbnge tc.ChbngesetEvents {
+		metb, err := btypes.NewChbngesetEventMetbdbtb(ev.Kind)
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
-		raw, err := json.Marshal(ev.Metadata)
+		rbw, err := json.Mbrshbl(ev.Metbdbtb)
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
-		err = json.Unmarshal(raw, &meta)
+		err = json.Unmbrshbl(rbw, &metb)
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
-		tc.ChangesetEvents[i].Metadata = meta
+		tc.ChbngesetEvents[i].Metbdbtb = metb
 	}
 
 	return tc
 }
 
-func sign(t *testing.T, message, secret []byte) string {
+func sign(t *testing.T, messbge, secret []byte) string {
 	t.Helper()
 
-	mac := hmac.New(sha256.New, secret)
+	mbc := hmbc.New(shb256.New, secret)
 
-	_, err := mac.Write(message)
+	_, err := mbc.Write(messbge)
 	if err != nil {
-		t.Fatalf("writing hmac message failed: %s", err)
+		t.Fbtblf("writing hmbc messbge fbiled: %s", err)
 	}
 
-	return "sha256=" + hex.EncodeToString(mac.Sum(nil))
+	return "shb256=" + hex.EncodeToString(mbc.Sum(nil))
 }

@@ -1,4 +1,4 @@
-package graphqlutil
+pbckbge grbphqlutil
 
 import (
 	"context"
@@ -6,61 +6,61 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
-	"github.com/graph-gophers/graphql-go"
+	"github.com/grbph-gophers/grbphql-go"
 
-	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
 )
 
-const testTotalCount = int32(10)
+const testTotblCount = int32(10)
 
 type testConnectionNode struct {
 	id int
 }
 
-func (n testConnectionNode) ID() graphql.ID {
-	return graphql.ID(fmt.Sprintf("%d", n.id))
+func (n testConnectionNode) ID() grbphql.ID {
+	return grbphql.ID(fmt.Sprintf("%d", n.id))
 }
 
 type testConnectionStore struct {
 	t                      *testing.T
-	expectedPaginationArgs *database.PaginationArgs
-	ComputeTotalCalled     int
-	ComputeNodesCalled     int
+	expectedPbginbtionArgs *dbtbbbse.PbginbtionArgs
+	ComputeTotblCblled     int
+	ComputeNodesCblled     int
 }
 
-func (s *testConnectionStore) testPaginationArgs(args *database.PaginationArgs) {
-	if s.expectedPaginationArgs == nil {
+func (s *testConnectionStore) testPbginbtionArgs(brgs *dbtbbbse.PbginbtionArgs) {
+	if s.expectedPbginbtionArgs == nil {
 		return
 	}
 
-	if diff := cmp.Diff(s.expectedPaginationArgs, args); diff != "" {
-		s.t.Fatal(diff)
+	if diff := cmp.Diff(s.expectedPbginbtionArgs, brgs); diff != "" {
+		s.t.Fbtbl(diff)
 	}
 }
 
-func (s *testConnectionStore) ComputeTotal(ctx context.Context) (*int32, error) {
-	s.ComputeTotalCalled = s.ComputeTotalCalled + 1
-	total := testTotalCount
+func (s *testConnectionStore) ComputeTotbl(ctx context.Context) (*int32, error) {
+	s.ComputeTotblCblled = s.ComputeTotblCblled + 1
+	totbl := testTotblCount
 
-	return &total, nil
+	return &totbl, nil
 }
 
-func (s *testConnectionStore) ComputeNodes(ctx context.Context, args *database.PaginationArgs) ([]*testConnectionNode, error) {
-	s.ComputeNodesCalled = s.ComputeNodesCalled + 1
-	s.testPaginationArgs(args)
+func (s *testConnectionStore) ComputeNodes(ctx context.Context, brgs *dbtbbbse.PbginbtionArgs) ([]*testConnectionNode, error) {
+	s.ComputeNodesCblled = s.ComputeNodesCblled + 1
+	s.testPbginbtionArgs(brgs)
 
 	nodes := []*testConnectionNode{{id: 0}, {id: 1}}
 
 	return nodes, nil
 }
 
-func (*testConnectionStore) MarshalCursor(n *testConnectionNode, _ database.OrderBy) (*string, error) {
+func (*testConnectionStore) MbrshblCursor(n *testConnectionNode, _ dbtbbbse.OrderBy) (*string, error) {
 	cursor := string(n.ID())
 
 	return &cursor, nil
 }
 
-func (*testConnectionStore) UnmarshalCursor(cursor string, _ database.OrderBy) (*string, error) {
+func (*testConnectionStore) UnmbrshblCursor(cursor string, _ dbtbbbse.OrderBy) (*string, error) {
 	return &cursor, nil
 }
 
@@ -70,269 +70,269 @@ func newInt32(n int) *int32 {
 	return &num
 }
 
-func withFirstCA(first int, a *ConnectionResolverArgs) *ConnectionResolverArgs {
-	a.First = newInt32(first)
+func withFirstCA(first int, b *ConnectionResolverArgs) *ConnectionResolverArgs {
+	b.First = newInt32(first)
 
-	return a
+	return b
 }
 
-func withLastCA(last int, a *ConnectionResolverArgs) *ConnectionResolverArgs {
-	a.Last = newInt32(last)
+func withLbstCA(lbst int, b *ConnectionResolverArgs) *ConnectionResolverArgs {
+	b.Lbst = newInt32(lbst)
 
-	return a
+	return b
 }
 
-func withAfterCA(after string, a *ConnectionResolverArgs) *ConnectionResolverArgs {
-	a.After = &after
+func withAfterCA(bfter string, b *ConnectionResolverArgs) *ConnectionResolverArgs {
+	b.After = &bfter
 
-	return a
+	return b
 }
 
-func withBeforeCA(before string, a *ConnectionResolverArgs) *ConnectionResolverArgs {
-	a.Before = &before
+func withBeforeCA(before string, b *ConnectionResolverArgs) *ConnectionResolverArgs {
+	b.Before = &before
 
-	return a
+	return b
 }
 
-func withFirstPA(first int, a *database.PaginationArgs) *database.PaginationArgs {
-	a.First = &first
+func withFirstPA(first int, b *dbtbbbse.PbginbtionArgs) *dbtbbbse.PbginbtionArgs {
+	b.First = &first
 
-	return a
+	return b
 }
 
-func withLastPA(last int, a *database.PaginationArgs) *database.PaginationArgs {
-	a.Last = &last
+func withLbstPA(lbst int, b *dbtbbbse.PbginbtionArgs) *dbtbbbse.PbginbtionArgs {
+	b.Lbst = &lbst
 
-	return a
+	return b
 }
 
-func withAfterPA(after string, a *database.PaginationArgs) *database.PaginationArgs {
-	a.After = &after
+func withAfterPA(bfter string, b *dbtbbbse.PbginbtionArgs) *dbtbbbse.PbginbtionArgs {
+	b.After = &bfter
 
-	return a
+	return b
 }
 
-func withBeforePA(before string, a *database.PaginationArgs) *database.PaginationArgs {
-	a.Before = &before
+func withBeforePA(before string, b *dbtbbbse.PbginbtionArgs) *dbtbbbse.PbginbtionArgs {
+	b.Before = &before
 
-	return a
+	return b
 }
 
-func TestConnectionTotalCount(t *testing.T) {
-	ctx := context.Background()
+func TestConnectionTotblCount(t *testing.T) {
+	ctx := context.Bbckground()
 	store := &testConnectionStore{t: t}
 	resolver, err := NewConnectionResolver[*testConnectionNode](store, withFirstCA(1, &ConnectionResolverArgs{}), nil)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	count, err := resolver.TotalCount(ctx)
+	count, err := resolver.TotblCount(ctx)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
-	if count != testTotalCount {
-		t.Fatalf("wrong total count. want=%d, have=%d", testTotalCount, count)
+	if count != testTotblCount {
+		t.Fbtblf("wrong totbl count. wbnt=%d, hbve=%d", testTotblCount, count)
 	}
 
-	_, err = resolver.TotalCount(ctx)
+	_, err = resolver.TotblCount(ctx)
 	if err != nil {
-		t.Fatalf("expected nil error when calling TotalCount, got %v", err)
+		t.Fbtblf("expected nil error when cblling TotblCount, got %v", err)
 	}
-	if store.ComputeTotalCalled != 1 {
-		t.Fatalf("wrong compute total called count. want=%d, have=%d", 1, store.ComputeTotalCalled)
+	if store.ComputeTotblCblled != 1 {
+		t.Fbtblf("wrong compute totbl cblled count. wbnt=%d, hbve=%d", 1, store.ComputeTotblCblled)
 	}
 }
 
-func testResolverNodesResponse(t *testing.T, resolver *ConnectionResolver[*testConnectionNode], store *testConnectionStore, count int, wantErr bool) {
-	ctx := context.Background()
+func testResolverNodesResponse(t *testing.T, resolver *ConnectionResolver[*testConnectionNode], store *testConnectionStore, count int, wbntErr bool) {
+	ctx := context.Bbckground()
 	nodes, err := resolver.Nodes(ctx)
-	if wantErr {
+	if wbntErr {
 		if err == nil {
-			t.Fatalf("expected error, got %v", err)
+			t.Fbtblf("expected error, got %v", err)
 		}
 		return
 	}
-	if err != nil && !wantErr {
-		t.Fatal(err)
+	if err != nil && !wbntErr {
+		t.Fbtbl(err)
 	}
 
 	if diff := cmp.Diff(count, len(nodes)); diff != "" {
-		t.Fatal(diff)
+		t.Fbtbl(diff)
 	}
 
 	_, err = resolver.Nodes(ctx)
 	if err != nil {
-		t.Fatalf("expected nil error when calling resolver.Nodes, got %v", err)
+		t.Fbtblf("expected nil error when cblling resolver.Nodes, got %v", err)
 	}
-	if store.ComputeNodesCalled != 1 {
-		t.Fatalf("wrong compute nodes called count. want=%d, have=%d", 1, store.ComputeNodesCalled)
+	if store.ComputeNodesCblled != 1 {
+		t.Fbtblf("wrong compute nodes cblled count. wbnt=%d, hbve=%d", 1, store.ComputeNodesCblled)
 	}
 }
 
-func buildPaginationArgs() *database.PaginationArgs {
-	args := database.PaginationArgs{
-		OrderBy: database.OrderBy{{Field: "id"}},
+func buildPbginbtionArgs() *dbtbbbse.PbginbtionArgs {
+	brgs := dbtbbbse.PbginbtionArgs{
+		OrderBy: dbtbbbse.OrderBy{{Field: "id"}},
 	}
 
-	return &args
+	return &brgs
 }
 
 func TestConnectionNodes(t *testing.T) {
-	for _, test := range []struct {
-		name           string
+	for _, test := rbnge []struct {
+		nbme           string
 		connectionArgs *ConnectionResolverArgs
 		options        *ConnectionResolverOptions
 
-		wantError          bool
-		wantPaginationArgs *database.PaginationArgs
-		wantNodes          int
+		wbntError          bool
+		wbntPbginbtionArgs *dbtbbbse.PbginbtionArgs
+		wbntNodes          int
 	}{
 		{
-			name:               "default",
+			nbme:               "defbult",
 			connectionArgs:     withFirstCA(5, &ConnectionResolverArgs{}),
-			wantPaginationArgs: withFirstPA(6, buildPaginationArgs()),
-			wantNodes:          2,
+			wbntPbginbtionArgs: withFirstPA(6, buildPbginbtionArgs()),
+			wbntNodes:          2,
 		},
 		{
-			name:               "last arg",
-			wantPaginationArgs: withLastPA(6, buildPaginationArgs()),
-			connectionArgs:     withLastCA(5, &ConnectionResolverArgs{}),
-			wantNodes:          2,
+			nbme:               "lbst brg",
+			wbntPbginbtionArgs: withLbstPA(6, buildPbginbtionArgs()),
+			connectionArgs:     withLbstCA(5, &ConnectionResolverArgs{}),
+			wbntNodes:          2,
 		},
 		{
-			name:               "after arg",
-			wantPaginationArgs: withAfterPA("0", withFirstPA(6, buildPaginationArgs())),
+			nbme:               "bfter brg",
+			wbntPbginbtionArgs: withAfterPA("0", withFirstPA(6, buildPbginbtionArgs())),
 			connectionArgs:     withAfterCA("0", withFirstCA(5, &ConnectionResolverArgs{})),
-			wantNodes:          2,
+			wbntNodes:          2,
 		},
 		{
-			name:               "before arg",
-			wantPaginationArgs: withBeforePA("0", withLastPA(6, buildPaginationArgs())),
-			connectionArgs:     withBeforeCA("0", withLastCA(5, &ConnectionResolverArgs{})),
-			wantNodes:          2,
+			nbme:               "before brg",
+			wbntPbginbtionArgs: withBeforePA("0", withLbstPA(6, buildPbginbtionArgs())),
+			connectionArgs:     withBeforeCA("0", withLbstCA(5, &ConnectionResolverArgs{})),
+			wbntNodes:          2,
 		},
 		{
-			name:               "with limit",
-			wantPaginationArgs: withBeforePA("0", withLastPA(2, buildPaginationArgs())),
-			connectionArgs:     withBeforeCA("0", withLastCA(1, &ConnectionResolverArgs{})),
-			wantNodes:          1,
+			nbme:               "with limit",
+			wbntPbginbtionArgs: withBeforePA("0", withLbstPA(2, buildPbginbtionArgs())),
+			connectionArgs:     withBeforeCA("0", withLbstCA(1, &ConnectionResolverArgs{})),
+			wbntNodes:          1,
 		},
 		{
-			name:           "no args supplied (skipArgValidation is false)",
+			nbme:           "no brgs supplied (skipArgVblidbtion is fblse)",
 			connectionArgs: &ConnectionResolverArgs{},
-			options:        &ConnectionResolverOptions{AllowNoLimit: false},
-			wantError:      true,
+			options:        &ConnectionResolverOptions{AllowNoLimit: fblse},
+			wbntError:      true,
 		},
 		{
-			name:           "no args supplied (skipArgValidation is true)",
+			nbme:           "no brgs supplied (skipArgVblidbtion is true)",
 			connectionArgs: &ConnectionResolverArgs{},
 			options:        &ConnectionResolverOptions{AllowNoLimit: true},
-			wantError:      false,
-			wantNodes:      2,
+			wbntError:      fblse,
+			wbntNodes:      2,
 		},
 	} {
-		t.Run(test.name, func(t *testing.T) {
-			store := &testConnectionStore{t: t, expectedPaginationArgs: test.wantPaginationArgs}
+		t.Run(test.nbme, func(t *testing.T) {
+			store := &testConnectionStore{t: t, expectedPbginbtionArgs: test.wbntPbginbtionArgs}
 			resolver, err := NewConnectionResolver[*testConnectionNode](store, test.connectionArgs, test.options)
 			if err != nil {
-				t.Fatal(err)
+				t.Fbtbl(err)
 			}
 
-			testResolverNodesResponse(t, resolver, store, test.wantNodes, test.wantError)
+			testResolverNodesResponse(t, resolver, store, test.wbntNodes, test.wbntError)
 		})
 	}
 }
 
-type pageInfoResponse struct {
-	startCursor     string
+type pbgeInfoResponse struct {
+	stbrtCursor     string
 	endCursor       string
-	hasNextPage     bool
-	hasPreviousPage bool
+	hbsNextPbge     bool
+	hbsPreviousPbge bool
 }
 
-func testResolverPageInfoResponse(t *testing.T, resolver *ConnectionResolver[*testConnectionNode], store *testConnectionStore, expectedResponse *pageInfoResponse) {
-	ctx := context.Background()
-	pageInfo, err := resolver.PageInfo(ctx)
+func testResolverPbgeInfoResponse(t *testing.T, resolver *ConnectionResolver[*testConnectionNode], store *testConnectionStore, expectedResponse *pbgeInfoResponse) {
+	ctx := context.Bbckground()
+	pbgeInfo, err := resolver.PbgeInfo(ctx)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	startCursor, err := pageInfo.StartCursor()
+	stbrtCursor, err := pbgeInfo.StbrtCursor()
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
-	if diff := cmp.Diff(expectedResponse.startCursor, *startCursor); diff != "" {
-		t.Fatal(diff)
+	if diff := cmp.Diff(expectedResponse.stbrtCursor, *stbrtCursor); diff != "" {
+		t.Fbtbl(diff)
 	}
 
-	endCursor, err := pageInfo.EndCursor()
+	endCursor, err := pbgeInfo.EndCursor()
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 	if diff := cmp.Diff(expectedResponse.endCursor, *endCursor); diff != "" {
-		t.Fatal(diff)
+		t.Fbtbl(diff)
 	}
 
-	if expectedResponse.hasNextPage != pageInfo.HasNextPage() {
-		t.Fatalf("hasNextPage should be %v, but is %v", expectedResponse.hasNextPage, pageInfo.HasNextPage())
+	if expectedResponse.hbsNextPbge != pbgeInfo.HbsNextPbge() {
+		t.Fbtblf("hbsNextPbge should be %v, but is %v", expectedResponse.hbsNextPbge, pbgeInfo.HbsNextPbge())
 	}
-	if expectedResponse.hasPreviousPage != pageInfo.HasPreviousPage() {
-		t.Fatalf("hasPreviousPage should be %v, but is %v", expectedResponse.hasPreviousPage, pageInfo.HasPreviousPage())
+	if expectedResponse.hbsPreviousPbge != pbgeInfo.HbsPreviousPbge() {
+		t.Fbtblf("hbsPreviousPbge should be %v, but is %v", expectedResponse.hbsPreviousPbge, pbgeInfo.HbsPreviousPbge())
 	}
 
-	_, err = resolver.PageInfo(ctx)
+	_, err = resolver.PbgeInfo(ctx)
 	if err != nil {
-		t.Fatalf("expected nil error when calling resolver.PageInfo, got %v", err)
+		t.Fbtblf("expected nil error when cblling resolver.PbgeInfo, got %v", err)
 	}
-	if diff := cmp.Diff(1, store.ComputeNodesCalled); diff != "" {
-		t.Fatal(diff)
+	if diff := cmp.Diff(1, store.ComputeNodesCblled); diff != "" {
+		t.Fbtbl(diff)
 	}
 }
 
-func TestConnectionPageInfo(t *testing.T) {
-	for _, test := range []struct {
-		name string
-		args *ConnectionResolverArgs
-		want *pageInfoResponse
+func TestConnectionPbgeInfo(t *testing.T) {
+	for _, test := rbnge []struct {
+		nbme string
+		brgs *ConnectionResolverArgs
+		wbnt *pbgeInfoResponse
 	}{
 		{
-			name: "default",
-			args: withFirstCA(20, &ConnectionResolverArgs{}),
-			want: &pageInfoResponse{startCursor: "0", endCursor: "1", hasNextPage: false, hasPreviousPage: false},
+			nbme: "defbult",
+			brgs: withFirstCA(20, &ConnectionResolverArgs{}),
+			wbnt: &pbgeInfoResponse{stbrtCursor: "0", endCursor: "1", hbsNextPbge: fblse, hbsPreviousPbge: fblse},
 		},
 		{
-			name: "first page",
-			args: withFirstCA(1, &ConnectionResolverArgs{}),
-			want: &pageInfoResponse{startCursor: "0", endCursor: "0", hasNextPage: true, hasPreviousPage: false},
+			nbme: "first pbge",
+			brgs: withFirstCA(1, &ConnectionResolverArgs{}),
+			wbnt: &pbgeInfoResponse{stbrtCursor: "0", endCursor: "0", hbsNextPbge: true, hbsPreviousPbge: fblse},
 		},
 		{
-			name: "second page",
-			args: withAfterCA("0", withFirstCA(1, &ConnectionResolverArgs{})),
-			want: &pageInfoResponse{startCursor: "0", endCursor: "0", hasNextPage: true, hasPreviousPage: true},
+			nbme: "second pbge",
+			brgs: withAfterCA("0", withFirstCA(1, &ConnectionResolverArgs{})),
+			wbnt: &pbgeInfoResponse{stbrtCursor: "0", endCursor: "0", hbsNextPbge: true, hbsPreviousPbge: true},
 		},
 		{
-			name: "backward first page",
-			args: withBeforeCA("0", withLastCA(1, &ConnectionResolverArgs{})),
-			want: &pageInfoResponse{startCursor: "0", endCursor: "0", hasNextPage: true, hasPreviousPage: true},
+			nbme: "bbckwbrd first pbge",
+			brgs: withBeforeCA("0", withLbstCA(1, &ConnectionResolverArgs{})),
+			wbnt: &pbgeInfoResponse{stbrtCursor: "0", endCursor: "0", hbsNextPbge: true, hbsPreviousPbge: true},
 		},
 		{
-			name: "backward first page without cursor",
-			args: withLastCA(1, &ConnectionResolverArgs{}),
-			want: &pageInfoResponse{startCursor: "0", endCursor: "0", hasNextPage: false, hasPreviousPage: true},
+			nbme: "bbckwbrd first pbge without cursor",
+			brgs: withLbstCA(1, &ConnectionResolverArgs{}),
+			wbnt: &pbgeInfoResponse{stbrtCursor: "0", endCursor: "0", hbsNextPbge: fblse, hbsPreviousPbge: true},
 		},
 		{
-			name: "backward last page",
-			args: withBeforeCA("0", withBeforeCA("0", withLastCA(20, &ConnectionResolverArgs{}))),
-			want: &pageInfoResponse{startCursor: "1", endCursor: "0", hasNextPage: true, hasPreviousPage: false},
+			nbme: "bbckwbrd lbst pbge",
+			brgs: withBeforeCA("0", withBeforeCA("0", withLbstCA(20, &ConnectionResolverArgs{}))),
+			wbnt: &pbgeInfoResponse{stbrtCursor: "1", endCursor: "0", hbsNextPbge: true, hbsPreviousPbge: fblse},
 		},
 	} {
-		t.Run(test.name, func(t *testing.T) {
+		t.Run(test.nbme, func(t *testing.T) {
 			store := &testConnectionStore{t: t}
-			resolver, err := NewConnectionResolver[*testConnectionNode](store, test.args, nil)
+			resolver, err := NewConnectionResolver[*testConnectionNode](store, test.brgs, nil)
 			if err != nil {
-				t.Fatal(err)
+				t.Fbtbl(err)
 			}
-			testResolverPageInfoResponse(t, resolver, store, test.want)
+			testResolverPbgeInfoResponse(t, resolver, store, test.wbnt)
 		})
 	}
 }

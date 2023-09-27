@@ -1,57 +1,57 @@
-package codeintel
+pbckbge codeintel
 
 import (
 	"context"
 
-	"github.com/sourcegraph/sourcegraph/cmd/worker/job"
-	"github.com/sourcegraph/sourcegraph/cmd/worker/shared/init/codeintel"
-	workerdb "github.com/sourcegraph/sourcegraph/cmd/worker/shared/init/db"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/policies"
-	"github.com/sourcegraph/sourcegraph/internal/env"
-	"github.com/sourcegraph/sourcegraph/internal/goroutine"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegrbph/sourcegrbph/cmd/worker/job"
+	"github.com/sourcegrbph/sourcegrbph/cmd/worker/shbred/init/codeintel"
+	workerdb "github.com/sourcegrbph/sourcegrbph/cmd/worker/shbred/init/db"
+	"github.com/sourcegrbph/sourcegrbph/internbl/codeintel/butoindexing"
+	"github.com/sourcegrbph/sourcegrbph/internbl/codeintel/policies"
+	"github.com/sourcegrbph/sourcegrbph/internbl/env"
+	"github.com/sourcegrbph/sourcegrbph/internbl/goroutine"
+	"github.com/sourcegrbph/sourcegrbph/internbl/observbtion"
 )
 
-type autoindexingScheduler struct{}
+type butoindexingScheduler struct{}
 
 func NewAutoindexingSchedulerJob() job.Job {
-	return &autoindexingScheduler{}
+	return &butoindexingScheduler{}
 }
 
-func (j *autoindexingScheduler) Description() string {
+func (j *butoindexingScheduler) Description() string {
 	return ""
 }
 
-func (j *autoindexingScheduler) Config() []env.Config {
+func (j *butoindexingScheduler) Config() []env.Config {
 	return []env.Config{
-		autoindexing.SchedulerConfigInst,
+		butoindexing.SchedulerConfigInst,
 	}
 }
 
-func (j *autoindexingScheduler) Routines(_ context.Context, observationCtx *observation.Context) ([]goroutine.BackgroundRoutine, error) {
-	services, err := codeintel.InitServices(observationCtx)
+func (j *butoindexingScheduler) Routines(_ context.Context, observbtionCtx *observbtion.Context) ([]goroutine.BbckgroundRoutine, error) {
+	services, err := codeintel.InitServices(observbtionCtx)
 	if err != nil {
 		return nil, err
 	}
 
-	db, err := workerdb.InitDB(observationCtx)
+	db, err := workerdb.InitDB(observbtionCtx)
 	if err != nil {
 		return nil, err
 	}
 
-	matcher := policies.NewMatcher(
+	mbtcher := policies.NewMbtcher(
 		services.GitserverClient,
-		policies.IndexingExtractor,
-		false,
+		policies.IndexingExtrbctor,
+		fblse,
 		true,
 	)
 
-	return autoindexing.NewIndexSchedulers(
-		observationCtx,
-		services.UploadsService,
+	return butoindexing.NewIndexSchedulers(
+		observbtionCtx,
+		services.UplobdsService,
 		services.PoliciesService,
-		matcher,
+		mbtcher,
 		services.AutoIndexingService,
 		db.Repos(),
 	), nil

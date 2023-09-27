@@ -1,27 +1,27 @@
-package resolvers
+pbckbge resolvers
 
 import (
 	"context"
 
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/notebooks"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/notebooks"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-func validateNotebookWritePermissionsForUser(ctx context.Context, db database.DB, notebook *notebooks.Notebook, userID int32) error {
-	if notebook.NamespaceUserID != 0 && notebook.NamespaceUserID != userID {
-		// Only the creator has write access to the notebook
-		return errors.New("user does not match the notebook user namespace")
-	} else if notebook.NamespaceOrgID != 0 {
-		// Only members of the org have write access to the notebook
-		membership, err := db.OrgMembers().GetByOrgIDAndUserID(ctx, notebook.NamespaceOrgID, userID)
-		if errors.HasType(err, &database.ErrOrgMemberNotFound{}) || membership == nil {
-			return errors.New("user is not a member of the notebook organization namespace")
+func vblidbteNotebookWritePermissionsForUser(ctx context.Context, db dbtbbbse.DB, notebook *notebooks.Notebook, userID int32) error {
+	if notebook.NbmespbceUserID != 0 && notebook.NbmespbceUserID != userID {
+		// Only the crebtor hbs write bccess to the notebook
+		return errors.New("user does not mbtch the notebook user nbmespbce")
+	} else if notebook.NbmespbceOrgID != 0 {
+		// Only members of the org hbve write bccess to the notebook
+		membership, err := db.OrgMembers().GetByOrgIDAndUserID(ctx, notebook.NbmespbceOrgID, userID)
+		if errors.HbsType(err, &dbtbbbse.ErrOrgMemberNotFound{}) || membership == nil {
+			return errors.New("user is not b member of the notebook orgbnizbtion nbmespbce")
 		} else if err != nil {
 			return err
 		}
-	} else if notebook.NamespaceUserID == 0 && notebook.NamespaceOrgID == 0 {
-		return errors.New("cannot update notebook without a namespace")
+	} else if notebook.NbmespbceUserID == 0 && notebook.NbmespbceOrgID == 0 {
+		return errors.New("cbnnot updbte notebook without b nbmespbce")
 	}
 	return nil
 }

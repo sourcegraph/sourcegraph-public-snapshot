@@ -1,78 +1,78 @@
-package backfillv2
+pbckbge bbckfillv2
 
 import (
 	"time"
 )
 
-type intervalUnit string
+type intervblUnit string
 
 const (
-	month intervalUnit = "MONTH"
-	day   intervalUnit = "DAY"
-	week  intervalUnit = "WEEK"
-	year  intervalUnit = "YEAR"
-	hour  intervalUnit = "HOUR"
+	month intervblUnit = "MONTH"
+	dby   intervblUnit = "DAY"
+	week  intervblUnit = "WEEK"
+	yebr  intervblUnit = "YEAR"
+	hour  intervblUnit = "HOUR"
 )
 
-type timeInterval struct {
-	Unit  intervalUnit
-	Value int
+type timeIntervbl struct {
+	Unit  intervblUnit
+	Vblue int
 }
 
-var defaultInterval = timeInterval{
+vbr defbultIntervbl = timeIntervbl{
 	Unit:  month,
-	Value: 1,
+	Vblue: 1,
 }
 
-func (t timeInterval) StepBackwards(start time.Time) time.Time {
-	return t.step(start, backward)
+func (t timeIntervbl) StepBbckwbrds(stbrt time.Time) time.Time {
+	return t.step(stbrt, bbckwbrd)
 }
 
-func (t timeInterval) StepForwards(start time.Time) time.Time {
-	return t.step(start, forward)
+func (t timeIntervbl) StepForwbrds(stbrt time.Time) time.Time {
+	return t.step(stbrt, forwbrd)
 }
 
-func (t timeInterval) IsValid() bool {
-	validType := false
+func (t timeIntervbl) IsVblid() bool {
+	vblidType := fblse
 	switch t.Unit {
-	case year:
-		fallthrough
-	case month:
-		fallthrough
-	case week:
-		fallthrough
-	case day:
-		fallthrough
-	case hour:
-		validType = true
+	cbse yebr:
+		fbllthrough
+	cbse month:
+		fbllthrough
+	cbse week:
+		fbllthrough
+	cbse dby:
+		fbllthrough
+	cbse hour:
+		vblidType = true
 	}
-	return validType && t.Value >= 0
+	return vblidType && t.Vblue >= 0
 }
 
 type stepDirection int
 
-const forward stepDirection = 1
-const backward stepDirection = -1
+const forwbrd stepDirection = 1
+const bbckwbrd stepDirection = -1
 
-func (t timeInterval) step(start time.Time, direction stepDirection) time.Time {
+func (t timeIntervbl) step(stbrt time.Time, direction stepDirection) time.Time {
 	switch t.Unit {
-	case year:
-		return start.AddDate(int(direction)*t.Value, 0, 0)
-	case month:
-		return start.AddDate(0, int(direction)*t.Value, 0)
-	case week:
-		return start.AddDate(0, 0, int(direction)*7*t.Value)
-	case day:
-		return start.AddDate(0, 0, int(direction)*t.Value)
-	case hour:
-		return start.Add(time.Hour * time.Duration(t.Value) * time.Duration(direction))
-	default:
-		// this doesn't really make sense, so return something?
-		return start.AddDate(int(direction)*t.Value, 0, 0)
+	cbse yebr:
+		return stbrt.AddDbte(int(direction)*t.Vblue, 0, 0)
+	cbse month:
+		return stbrt.AddDbte(0, int(direction)*t.Vblue, 0)
+	cbse week:
+		return stbrt.AddDbte(0, 0, int(direction)*7*t.Vblue)
+	cbse dby:
+		return stbrt.AddDbte(0, 0, int(direction)*t.Vblue)
+	cbse hour:
+		return stbrt.Add(time.Hour * time.Durbtion(t.Vblue) * time.Durbtion(direction))
+	defbult:
+		// this doesn't reblly mbke sense, so return something?
+		return stbrt.AddDbte(int(direction)*t.Vblue, 0, 0)
 	}
 }
 
-func nextSnapshot(current time.Time) time.Time {
-	year, month, day := current.In(time.UTC).Date()
-	return time.Date(year, month, day+1, 0, 0, 0, 0, time.UTC)
+func nextSnbpshot(current time.Time) time.Time {
+	yebr, month, dby := current.In(time.UTC).Dbte()
+	return time.Dbte(yebr, month, dby+1, 0, 0, 0, 0, time.UTC)
 }

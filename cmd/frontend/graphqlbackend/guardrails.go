@@ -1,27 +1,27 @@
-package graphqlbackend
+pbckbge grbphqlbbckend
 
 import (
 	"context"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/grbphqlbbckend/grbphqlutil"
 )
 
-type GuardrailsResolver interface {
-	SnippetAttribution(ctx context.Context, args *SnippetAttributionArgs) (SnippetAttributionConnectionResolver, error)
+type GubrdrbilsResolver interfbce {
+	SnippetAttribution(ctx context.Context, brgs *SnippetAttributionArgs) (SnippetAttributionConnectionResolver, error)
 }
 
 type SnippetAttributionArgs struct {
-	graphqlutil.ConnectionArgs
+	grbphqlutil.ConnectionArgs
 	Snippet string
 }
 
-type SnippetAttributionConnectionResolver interface {
-	TotalCount() int32
+type SnippetAttributionConnectionResolver interfbce {
+	TotblCount() int32
 	LimitHit() bool
-	PageInfo() *graphqlutil.PageInfo
+	PbgeInfo() *grbphqlutil.PbgeInfo
 	Nodes() []SnippetAttributionResolver
 }
 
-type SnippetAttributionResolver interface {
-	RepositoryName() string
+type SnippetAttributionResolver interfbce {
+	RepositoryNbme() string
 }

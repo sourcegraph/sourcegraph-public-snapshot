@@ -1,4 +1,4 @@
-package notebooks
+pbckbge notebooks
 
 import (
 	"time"
@@ -8,7 +8,7 @@ type NotebookBlockType string
 
 const (
 	NotebookQueryBlockType    NotebookBlockType = "query"
-	NotebookMarkdownBlockType NotebookBlockType = "md"
+	NotebookMbrkdownBlockType NotebookBlockType = "md"
 	NotebookFileBlockType     NotebookBlockType = "file"
 	NotebookSymbolBlockType   NotebookBlockType = "symbol"
 )
@@ -17,32 +17,32 @@ type NotebookQueryBlockInput struct {
 	Text string `json:"text"`
 }
 
-type NotebookMarkdownBlockInput struct {
+type NotebookMbrkdownBlockInput struct {
 	Text string `json:"text"`
 }
 
-type LineRange struct {
-	// StartLine is the 1-based inclusive start line of the range.
-	StartLine int32 `json:"startLine"`
+type LineRbnge struct {
+	// StbrtLine is the 1-bbsed inclusive stbrt line of the rbnge.
+	StbrtLine int32 `json:"stbrtLine"`
 
-	// EndLine is the 1-based inclusive end line of the range.
+	// EndLine is the 1-bbsed inclusive end line of the rbnge.
 	EndLine int32 `json:"endLine"`
 }
 
 type NotebookFileBlockInput struct {
-	RepositoryName string     `json:"repositoryName"`
-	FilePath       string     `json:"filePath"`
+	RepositoryNbme string     `json:"repositoryNbme"`
+	FilePbth       string     `json:"filePbth"`
 	Revision       *string    `json:"revision,omitempty"`
-	LineRange      *LineRange `json:"lineRange,omitempty"`
+	LineRbnge      *LineRbnge `json:"lineRbnge,omitempty"`
 }
 
 type NotebookSymbolBlockInput struct {
-	RepositoryName      string  `json:"repositoryName"`
-	FilePath            string  `json:"filePath"`
+	RepositoryNbme      string  `json:"repositoryNbme"`
+	FilePbth            string  `json:"filePbth"`
 	Revision            *string `json:"revision,omitempty"`
 	LineContext         int32   `json:"lineContext"`
-	SymbolName          string  `json:"symbolName"`
-	SymbolContainerName string  `json:"symbolContainerName"`
+	SymbolNbme          string  `json:"symbolNbme"`
+	SymbolContbinerNbme string  `json:"symbolContbinerNbme"`
 	SymbolKind          string  `json:"symbolKind"`
 }
 
@@ -50,7 +50,7 @@ type NotebookBlock struct {
 	ID            string                      `json:"id"`
 	Type          NotebookBlockType           `json:"type"`
 	QueryInput    *NotebookQueryBlockInput    `json:"queryInput,omitempty"`
-	MarkdownInput *NotebookMarkdownBlockInput `json:"markdownInput,omitempty"`
+	MbrkdownInput *NotebookMbrkdownBlockInput `json:"mbrkdownInput,omitempty"`
 	FileInput     *NotebookFileBlockInput     `json:"fileInput,omitempty"`
 	SymbolInput   *NotebookSymbolBlockInput   `json:"symbolInput,omitempty"`
 }
@@ -62,16 +62,16 @@ type Notebook struct {
 	Title           string
 	Blocks          NotebookBlocks
 	Public          bool
-	CreatorUserID   int32
-	UpdaterUserID   int32
-	NamespaceUserID int32 // if non-zero, the owner is this user. NamespaceUserID/NamespaceOrgID are mutually exclusive.
-	NamespaceOrgID  int32 // if non-zero, the owner is this organization. NamespaceUserID/NamespaceOrgID are mutually exclusive.
-	CreatedAt       time.Time
-	UpdatedAt       time.Time
+	CrebtorUserID   int32
+	UpdbterUserID   int32
+	NbmespbceUserID int32 // if non-zero, the owner is this user. NbmespbceUserID/NbmespbceOrgID bre mutublly exclusive.
+	NbmespbceOrgID  int32 // if non-zero, the owner is this orgbnizbtion. NbmespbceUserID/NbmespbceOrgID bre mutublly exclusive.
+	CrebtedAt       time.Time
+	UpdbtedAt       time.Time
 }
 
-type NotebookStar struct {
+type NotebookStbr struct {
 	NotebookID int64
 	UserID     int32
-	CreatedAt  time.Time
+	CrebtedAt  time.Time
 }

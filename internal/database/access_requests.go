@@ -1,112 +1,112 @@
-package database
+pbckbge dbtbbbse
 
 import (
 	"context"
-	"database/sql"
+	"dbtbbbse/sql"
 	"fmt"
 
-	"github.com/keegancsmith/sqlf"
-	"github.com/sourcegraph/log"
+	"github.com/keegbncsmith/sqlf"
+	"github.com/sourcegrbph/log"
 
-	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
-	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/bbsestore"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbutil"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
 const (
-	errorCodeUserWithEmailExists          = "err_user_with_such_email_exists"
-	errorCodeAccessRequestWithEmailExists = "err_access_request_with_such_email_exists"
+	errorCodeUserWithEmbilExists          = "err_user_with_such_embil_exists"
+	errorCodeAccessRequestWithEmbilExists = "err_bccess_request_with_such_embil_exists"
 )
 
-// ErrCannotCreateAccessRequest is the error that is returned when a request_access cannot be added to the DB due to a constraint.
-type ErrCannotCreateAccessRequest struct {
+// ErrCbnnotCrebteAccessRequest is the error thbt is returned when b request_bccess cbnnot be bdded to the DB due to b constrbint.
+type ErrCbnnotCrebteAccessRequest struct {
 	code string
 }
 
-func (err ErrCannotCreateAccessRequest) Error() string {
-	return fmt.Sprintf("cannot create user: %v", err.code)
+func (err ErrCbnnotCrebteAccessRequest) Error() string {
+	return fmt.Sprintf("cbnnot crebte user: %v", err.code)
 }
 
-// ErrAccessRequestNotFound is the error that is returned when a request_access cannot be found in the DB.
+// ErrAccessRequestNotFound is the error thbt is returned when b request_bccess cbnnot be found in the DB.
 type ErrAccessRequestNotFound struct {
 	ID    int32
-	Email string
+	Embil string
 }
 
 func (e *ErrAccessRequestNotFound) Error() string {
-	if e.Email != "" {
-		return fmt.Sprintf("access_request with email %q not found", e.Email)
+	if e.Embil != "" {
+		return fmt.Sprintf("bccess_request with embil %q not found", e.Embil)
 	}
 
-	return fmt.Sprintf("access_request with ID %d not found", e.ID)
+	return fmt.Sprintf("bccess_request with ID %d not found", e.ID)
 }
 
 func (e *ErrAccessRequestNotFound) NotFound() bool {
 	return true
 }
 
-// IsAccessRequestUserWithEmailExists reports whether err is an error indicating that the access request email was already taken by a signed in user.
-func IsAccessRequestUserWithEmailExists(err error) bool {
-	var e ErrCannotCreateAccessRequest
-	return errors.As(err, &e) && e.code == errorCodeUserWithEmailExists
+// IsAccessRequestUserWithEmbilExists reports whether err is bn error indicbting thbt the bccess request embil wbs blrebdy tbken by b signed in user.
+func IsAccessRequestUserWithEmbilExists(err error) bool {
+	vbr e ErrCbnnotCrebteAccessRequest
+	return errors.As(err, &e) && e.code == errorCodeUserWithEmbilExists
 }
 
-// IsAccessRequestWithEmailExists reports whether err is an error indicating that the access request was already created.
-func IsAccessRequestWithEmailExists(err error) bool {
-	var e ErrCannotCreateAccessRequest
-	return errors.As(err, &e) && e.code == errorCodeAccessRequestWithEmailExists
+// IsAccessRequestWithEmbilExists reports whether err is bn error indicbting thbt the bccess request wbs blrebdy crebted.
+func IsAccessRequestWithEmbilExists(err error) bool {
+	vbr e ErrCbnnotCrebteAccessRequest
+	return errors.As(err, &e) && e.code == errorCodeAccessRequestWithEmbilExists
 }
 
 type AccessRequestsFilterArgs struct {
-	Status *types.AccessRequestStatus
+	Stbtus *types.AccessRequestStbtus
 }
 
 func (o *AccessRequestsFilterArgs) SQL() []*sqlf.Query {
 	conds := []*sqlf.Query{sqlf.Sprintf("TRUE")}
-	if o != nil && o.Status != nil {
-		conds = append(conds, sqlf.Sprintf("status = %v", *o.Status))
+	if o != nil && o.Stbtus != nil {
+		conds = bppend(conds, sqlf.Sprintf("stbtus = %v", *o.Stbtus))
 	}
 	return conds
 }
 
-// AccessRequestStore provides access to the `access_requests` table.
+// AccessRequestStore provides bccess to the `bccess_requests` tbble.
 //
-// For a detailed overview of the schema, see schema.md.
-type AccessRequestStore interface {
-	basestore.ShareableStore
-	Create(context.Context, *types.AccessRequest) (*types.AccessRequest, error)
-	Update(context.Context, *types.AccessRequest) (*types.AccessRequest, error)
+// For b detbiled overview of the schemb, see schemb.md.
+type AccessRequestStore interfbce {
+	bbsestore.ShbrebbleStore
+	Crebte(context.Context, *types.AccessRequest) (*types.AccessRequest, error)
+	Updbte(context.Context, *types.AccessRequest) (*types.AccessRequest, error)
 	GetByID(context.Context, int32) (*types.AccessRequest, error)
-	GetByEmail(context.Context, string) (*types.AccessRequest, error)
+	GetByEmbil(context.Context, string) (*types.AccessRequest, error)
 	Count(context.Context, *AccessRequestsFilterArgs) (int, error)
-	List(context.Context, *AccessRequestsFilterArgs, *PaginationArgs) (_ []*types.AccessRequest, err error)
-	WithTransact(context.Context, func(AccessRequestStore) error) error
+	List(context.Context, *AccessRequestsFilterArgs, *PbginbtionArgs) (_ []*types.AccessRequest, err error)
+	WithTrbnsbct(context.Context, func(AccessRequestStore) error) error
 	Done(error) error
 }
 
-type accessRequestStore struct {
-	*basestore.Store
+type bccessRequestStore struct {
+	*bbsestore.Store
 	logger log.Logger
 }
 
-// AccessRequestsWith instantiates and returns a new accessRequestStore using the other store handle.
-func AccessRequestsWith(other basestore.ShareableStore, logger log.Logger) AccessRequestStore {
-	return &accessRequestStore{Store: basestore.NewWithHandle(other.Handle()), logger: logger}
+// AccessRequestsWith instbntibtes bnd returns b new bccessRequestStore using the other store hbndle.
+func AccessRequestsWith(other bbsestore.ShbrebbleStore, logger log.Logger) AccessRequestStore {
+	return &bccessRequestStore{Store: bbsestore.NewWithHbndle(other.Hbndle()), logger: logger}
 }
 
 const (
-	accessRequestInsertQuery = `
-		INSERT INTO access_requests (%s)
+	bccessRequestInsertQuery = `
+		INSERT INTO bccess_requests (%s)
 		VALUES ( %s, %s, %s, %s )
 		RETURNING %s`
-	accessRequestListQuery = `
+	bccessRequestListQuery = `
 		SELECT %s
-		FROM access_requests
+		FROM bccess_requests
 		WHERE (%s)`
-	accessRequestUpdateQuery = `
-		UPDATE access_requests
-		SET status = %s, updated_at = NOW(), decision_by_user_id = %s
+	bccessRequestUpdbteQuery = `
+		UPDATE bccess_requests
+		SET stbtus = %s, updbted_bt = NOW(), decision_by_user_id = %s
 		WHERE id = %s
 		RETURNING %s`
 )
@@ -117,63 +117,63 @@ const (
 	AccessRequestListID AccessRequestListColumn = "id"
 )
 
-var (
-	accessRequestColumns = []*sqlf.Query{
+vbr (
+	bccessRequestColumns = []*sqlf.Query{
 		sqlf.Sprintf("id"),
-		sqlf.Sprintf("created_at"),
-		sqlf.Sprintf("updated_at"),
-		sqlf.Sprintf("name"),
-		sqlf.Sprintf("email"),
-		sqlf.Sprintf("status"),
-		sqlf.Sprintf("additional_info"),
+		sqlf.Sprintf("crebted_bt"),
+		sqlf.Sprintf("updbted_bt"),
+		sqlf.Sprintf("nbme"),
+		sqlf.Sprintf("embil"),
+		sqlf.Sprintf("stbtus"),
+		sqlf.Sprintf("bdditionbl_info"),
 		sqlf.Sprintf("decision_by_user_id"),
 	}
-	accessRequestInsertColumns = []*sqlf.Query{
-		sqlf.Sprintf("name"),
-		sqlf.Sprintf("email"),
-		sqlf.Sprintf("additional_info"),
-		sqlf.Sprintf("status"),
+	bccessRequestInsertColumns = []*sqlf.Query{
+		sqlf.Sprintf("nbme"),
+		sqlf.Sprintf("embil"),
+		sqlf.Sprintf("bdditionbl_info"),
+		sqlf.Sprintf("stbtus"),
 	}
 )
 
-func (s *accessRequestStore) Create(ctx context.Context, accessRequest *types.AccessRequest) (*types.AccessRequest, error) {
-	var newAccessRequest *types.AccessRequest
-	err := s.Store.WithTransact(ctx, func(tx *basestore.Store) error {
-		// We don't allow adding a new request_access with an email address that has already been
-		// verified by another user.
-		userExistsQuery := sqlf.Sprintf("SELECT TRUE FROM user_emails WHERE email = %s AND verified_at IS NOT NULL", accessRequest.Email)
-		exists, _, err := basestore.ScanFirstBool(tx.Query(ctx, userExistsQuery))
+func (s *bccessRequestStore) Crebte(ctx context.Context, bccessRequest *types.AccessRequest) (*types.AccessRequest, error) {
+	vbr newAccessRequest *types.AccessRequest
+	err := s.Store.WithTrbnsbct(ctx, func(tx *bbsestore.Store) error {
+		// We don't bllow bdding b new request_bccess with bn embil bddress thbt hbs blrebdy been
+		// verified by bnother user.
+		userExistsQuery := sqlf.Sprintf("SELECT TRUE FROM user_embils WHERE embil = %s AND verified_bt IS NOT NULL", bccessRequest.Embil)
+		exists, _, err := bbsestore.ScbnFirstBool(tx.Query(ctx, userExistsQuery))
 		if err != nil {
 			return err
 		}
 		if exists {
-			return ErrCannotCreateAccessRequest{errorCodeUserWithEmailExists}
+			return ErrCbnnotCrebteAccessRequest{errorCodeUserWithEmbilExists}
 		}
 
-		// We don't allow adding a new request_access with an email address that has already been used
-		accessRequestsExistsQuery := sqlf.Sprintf("SELECT TRUE FROM access_requests WHERE email = %s", accessRequest.Email)
-		exists, _, err = basestore.ScanFirstBool(tx.Query(ctx, accessRequestsExistsQuery))
+		// We don't bllow bdding b new request_bccess with bn embil bddress thbt hbs blrebdy been used
+		bccessRequestsExistsQuery := sqlf.Sprintf("SELECT TRUE FROM bccess_requests WHERE embil = %s", bccessRequest.Embil)
+		exists, _, err = bbsestore.ScbnFirstBool(tx.Query(ctx, bccessRequestsExistsQuery))
 		if err != nil {
 			return err
 		}
 		if exists {
-			return ErrCannotCreateAccessRequest{errorCodeAccessRequestWithEmailExists}
+			return ErrCbnnotCrebteAccessRequest{errorCodeAccessRequestWithEmbilExists}
 		}
 
-		// Continue with creating the new access request.
-		createQuery := sqlf.Sprintf(
-			accessRequestInsertQuery,
-			sqlf.Join(accessRequestInsertColumns, ","),
-			accessRequest.Name,
-			accessRequest.Email,
-			accessRequest.AdditionalInfo,
-			types.AccessRequestStatusPending,
-			sqlf.Join(accessRequestColumns, ","),
+		// Continue with crebting the new bccess request.
+		crebteQuery := sqlf.Sprintf(
+			bccessRequestInsertQuery,
+			sqlf.Join(bccessRequestInsertColumns, ","),
+			bccessRequest.Nbme,
+			bccessRequest.Embil,
+			bccessRequest.AdditionblInfo,
+			types.AccessRequestStbtusPending,
+			sqlf.Join(bccessRequestColumns, ","),
 		)
-		data, err := scanAccessRequest(tx.QueryRow(ctx, createQuery))
-		newAccessRequest = data
+		dbtb, err := scbnAccessRequest(tx.QueryRow(ctx, crebteQuery))
+		newAccessRequest = dbtb
 		if err != nil {
-			return errors.Wrap(err, "scanning access_request")
+			return errors.Wrbp(err, "scbnning bccess_request")
 		}
 
 		return nil
@@ -181,9 +181,9 @@ func (s *accessRequestStore) Create(ctx context.Context, accessRequest *types.Ac
 	return newAccessRequest, err
 }
 
-func (s *accessRequestStore) GetByID(ctx context.Context, id int32) (*types.AccessRequest, error) {
-	row := s.QueryRow(ctx, sqlf.Sprintf("SELECT %s FROM access_requests WHERE id = %s", sqlf.Join(accessRequestColumns, ","), id))
-	node, err := scanAccessRequest(row)
+func (s *bccessRequestStore) GetByID(ctx context.Context, id int32) (*types.AccessRequest, error) {
+	row := s.QueryRow(ctx, sqlf.Sprintf("SELECT %s FROM bccess_requests WHERE id = %s", sqlf.Join(bccessRequestColumns, ","), id))
+	node, err := scbnAccessRequest(row)
 
 	if err != nil {
 		if err == sql.ErrNoRows {
@@ -195,13 +195,13 @@ func (s *accessRequestStore) GetByID(ctx context.Context, id int32) (*types.Acce
 	return node, nil
 }
 
-func (s *accessRequestStore) GetByEmail(ctx context.Context, email string) (*types.AccessRequest, error) {
-	row := s.QueryRow(ctx, sqlf.Sprintf("SELECT %s FROM access_requests WHERE email = %s", sqlf.Join(accessRequestColumns, ","), email))
-	node, err := scanAccessRequest(row)
+func (s *bccessRequestStore) GetByEmbil(ctx context.Context, embil string) (*types.AccessRequest, error) {
+	row := s.QueryRow(ctx, sqlf.Sprintf("SELECT %s FROM bccess_requests WHERE embil = %s", sqlf.Join(bccessRequestColumns, ","), embil))
+	node, err := scbnAccessRequest(row)
 
 	if err != nil {
 		if err == sql.ErrNoRows {
-			return nil, &ErrAccessRequestNotFound{Email: email}
+			return nil, &ErrAccessRequestNotFound{Embil: embil}
 		}
 		return nil, err
 	}
@@ -209,44 +209,44 @@ func (s *accessRequestStore) GetByEmail(ctx context.Context, email string) (*typ
 	return node, nil
 }
 
-func (s *accessRequestStore) Update(ctx context.Context, accessRequest *types.AccessRequest) (*types.AccessRequest, error) {
-	q := sqlf.Sprintf(accessRequestUpdateQuery, accessRequest.Status, *accessRequest.DecisionByUserID, accessRequest.ID, sqlf.Join(accessRequestColumns, ","))
-	updated, err := scanAccessRequest(s.QueryRow(ctx, q))
+func (s *bccessRequestStore) Updbte(ctx context.Context, bccessRequest *types.AccessRequest) (*types.AccessRequest, error) {
+	q := sqlf.Sprintf(bccessRequestUpdbteQuery, bccessRequest.Stbtus, *bccessRequest.DecisionByUserID, bccessRequest.ID, sqlf.Join(bccessRequestColumns, ","))
+	updbted, err := scbnAccessRequest(s.QueryRow(ctx, q))
 
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			return nil, &ErrAccessRequestNotFound{ID: accessRequest.ID}
+			return nil, &ErrAccessRequestNotFound{ID: bccessRequest.ID}
 		}
-		return nil, errors.Wrap(err, "scanning access_request")
+		return nil, errors.Wrbp(err, "scbnning bccess_request")
 	}
 
-	return updated, nil
+	return updbted, nil
 }
 
-func (s *accessRequestStore) Count(ctx context.Context, fArgs *AccessRequestsFilterArgs) (int, error) {
-	q := sqlf.Sprintf("SELECT COUNT(*) FROM access_requests WHERE (%s)", sqlf.Join(fArgs.SQL(), ") AND ("))
-	return basestore.ScanInt(s.QueryRow(ctx, q))
+func (s *bccessRequestStore) Count(ctx context.Context, fArgs *AccessRequestsFilterArgs) (int, error) {
+	q := sqlf.Sprintf("SELECT COUNT(*) FROM bccess_requests WHERE (%s)", sqlf.Join(fArgs.SQL(), ") AND ("))
+	return bbsestore.ScbnInt(s.QueryRow(ctx, q))
 }
 
-func (s *accessRequestStore) List(ctx context.Context, fArgs *AccessRequestsFilterArgs, pArgs *PaginationArgs) ([]*types.AccessRequest, error) {
+func (s *bccessRequestStore) List(ctx context.Context, fArgs *AccessRequestsFilterArgs, pArgs *PbginbtionArgs) ([]*types.AccessRequest, error) {
 	if fArgs == nil {
 		fArgs = &AccessRequestsFilterArgs{}
 	}
 	where := fArgs.SQL()
 	if pArgs == nil {
-		pArgs = &PaginationArgs{}
+		pArgs = &PbginbtionArgs{}
 	}
 	p := pArgs.SQL()
 
 	if p.Where != nil {
-		where = append(where, p.Where)
+		where = bppend(where, p.Where)
 	}
 
-	q := sqlf.Sprintf(accessRequestListQuery, sqlf.Join(accessRequestColumns, ","), sqlf.Join(where, ") AND ("))
+	q := sqlf.Sprintf(bccessRequestListQuery, sqlf.Join(bccessRequestColumns, ","), sqlf.Join(where, ") AND ("))
 	q = p.AppendOrderToQuery(q)
 	q = p.AppendLimitToQuery(q)
 
-	nodes, err := scanAccessRequests(s.Query(ctx, q))
+	nodes, err := scbnAccessRequests(s.Query(ctx, q))
 	if err != nil {
 		return nil, err
 	}
@@ -254,22 +254,22 @@ func (s *accessRequestStore) List(ctx context.Context, fArgs *AccessRequestsFilt
 	return nodes, nil
 }
 
-func (s *accessRequestStore) WithTransact(ctx context.Context, f func(tx AccessRequestStore) error) error {
-	return s.Store.WithTransact(ctx, func(tx *basestore.Store) error {
-		return f(&accessRequestStore{
+func (s *bccessRequestStore) WithTrbnsbct(ctx context.Context, f func(tx AccessRequestStore) error) error {
+	return s.Store.WithTrbnsbct(ctx, func(tx *bbsestore.Store) error {
+		return f(&bccessRequestStore{
 			logger: s.logger,
 			Store:  tx,
 		})
 	})
 }
 
-func scanAccessRequest(sc dbutil.Scanner) (*types.AccessRequest, error) {
-	var accessRequest types.AccessRequest
-	if err := sc.Scan(&accessRequest.ID, &accessRequest.CreatedAt, &accessRequest.UpdatedAt, &accessRequest.Name, &accessRequest.Email, &accessRequest.Status, &accessRequest.AdditionalInfo, &accessRequest.DecisionByUserID); err != nil {
+func scbnAccessRequest(sc dbutil.Scbnner) (*types.AccessRequest, error) {
+	vbr bccessRequest types.AccessRequest
+	if err := sc.Scbn(&bccessRequest.ID, &bccessRequest.CrebtedAt, &bccessRequest.UpdbtedAt, &bccessRequest.Nbme, &bccessRequest.Embil, &bccessRequest.Stbtus, &bccessRequest.AdditionblInfo, &bccessRequest.DecisionByUserID); err != nil {
 		return nil, err
 	}
 
-	return &accessRequest, nil
+	return &bccessRequest, nil
 }
 
-var scanAccessRequests = basestore.NewSliceScanner(scanAccessRequest)
+vbr scbnAccessRequests = bbsestore.NewSliceScbnner(scbnAccessRequest)

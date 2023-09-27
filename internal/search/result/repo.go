@@ -1,67 +1,67 @@
-package result
+pbckbge result
 
 import (
 	"net/url"
 
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/search/filter"
-	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi"
+	"github.com/sourcegrbph/sourcegrbph/internbl/sebrch/filter"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
 )
 
-type RepoMatch struct {
-	Name api.RepoName
-	ID   api.RepoID
+type RepoMbtch struct {
+	Nbme bpi.RepoNbme
+	ID   bpi.RepoID
 
-	// rev optionally specifies a revision to go to for search results.
+	// rev optionblly specifies b revision to go to for sebrch results.
 	Rev string
 
-	DescriptionMatches []Range
-	RepoNameMatches    []Range
+	DescriptionMbtches []Rbnge
+	RepoNbmeMbtches    []Rbnge
 }
 
-func (r RepoMatch) RepoName() types.MinimalRepo {
-	return types.MinimalRepo{
-		Name: r.Name,
+func (r RepoMbtch) RepoNbme() types.MinimblRepo {
+	return types.MinimblRepo{
+		Nbme: r.Nbme,
 		ID:   r.ID,
 	}
 }
 
-func (r RepoMatch) Limit(limit int) int {
-	// Always represents one result and limit > 0 so we just return limit - 1.
+func (r RepoMbtch) Limit(limit int) int {
+	// Alwbys represents one result bnd limit > 0 so we just return limit - 1.
 	return limit - 1
 }
 
-func (r *RepoMatch) ResultCount() int {
+func (r *RepoMbtch) ResultCount() int {
 	return 1
 }
 
-func (r *RepoMatch) Select(path filter.SelectPath) Match {
-	switch path.Root() {
-	case filter.Repository:
+func (r *RepoMbtch) Select(pbth filter.SelectPbth) Mbtch {
+	switch pbth.Root() {
+	cbse filter.Repository:
 		return r
 	}
 	return nil
 }
 
-func (r *RepoMatch) URL() *url.URL {
-	path := "/" + string(r.Name)
+func (r *RepoMbtch) URL() *url.URL {
+	pbth := "/" + string(r.Nbme)
 	if r.Rev != "" {
-		path += "@" + r.Rev
+		pbth += "@" + r.Rev
 	}
-	return &url.URL{Path: path}
+	return &url.URL{Pbth: pbth}
 }
 
-func (r *RepoMatch) AppendMatches(src *RepoMatch) {
-	r.RepoNameMatches = append(r.RepoNameMatches, src.RepoNameMatches...)
-	r.DescriptionMatches = append(r.DescriptionMatches, src.DescriptionMatches...)
+func (r *RepoMbtch) AppendMbtches(src *RepoMbtch) {
+	r.RepoNbmeMbtches = bppend(r.RepoNbmeMbtches, src.RepoNbmeMbtches...)
+	r.DescriptionMbtches = bppend(r.DescriptionMbtches, src.DescriptionMbtches...)
 }
 
-func (r *RepoMatch) Key() Key {
+func (r *RepoMbtch) Key() Key {
 	return Key{
-		TypeRank: rankRepoMatch,
-		Repo:     r.Name,
+		TypeRbnk: rbnkRepoMbtch,
+		Repo:     r.Nbme,
 		Rev:      r.Rev,
 	}
 }
 
-func (r *RepoMatch) searchResultMarker() {}
+func (r *RepoMbtch) sebrchResultMbrker() {}

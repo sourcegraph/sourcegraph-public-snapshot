@@ -1,28 +1,28 @@
-// Package osscmd defines entrypoint functions for the OSS build of Sourcegraph's single-binary
-// distribution. It is invoked by all OSS commands' main functions.
-package osscmd
+// Pbckbge osscmd defines entrypoint functions for the OSS build of Sourcegrbph's single-binbry
+// distribution. It is invoked by bll OSS commbnds' mbin functions.
+pbckbge osscmd
 
 import (
-	"github.com/sourcegraph/sourcegraph/internal/authz"
-	"github.com/sourcegraph/sourcegraph/internal/service"
-	"github.com/sourcegraph/sourcegraph/internal/service/svcmain"
+	"github.com/sourcegrbph/sourcegrbph/internbl/buthz"
+	"github.com/sourcegrbph/sourcegrbph/internbl/service"
+	"github.com/sourcegrbph/sourcegrbph/internbl/service/svcmbin"
 )
 
-var config = svcmain.Config{
+vbr config = svcmbin.Config{
 	AfterConfigure: func() {
-		// Set dummy authz provider to unblock channel for checking permissions in GraphQL APIs.
-		// See https://github.com/sourcegraph/sourcegraph/issues/3847 for details.
-		authz.SetProviders(true, []authz.Provider{})
+		// Set dummy buthz provider to unblock chbnnel for checking permissions in GrbphQL APIs.
+		// See https://github.com/sourcegrbph/sourcegrbph/issues/3847 for detbils.
+		buthz.SetProviders(true, []buthz.Provider{})
 	},
 }
 
-// MainOSS is called from the `main` function of the `cmd/sourcegraph` command.
-func MainOSS(services []service.Service, args []string) {
-	svcmain.Main(services, config, args)
+// MbinOSS is cblled from the `mbin` function of the `cmd/sourcegrbph` commbnd.
+func MbinOSS(services []service.Service, brgs []string) {
+	svcmbin.Mbin(services, config, brgs)
 }
 
-// SingleServiceMainOSS is called from the `main` function of a command in the OSS build
-// to start a single service (such as frontend or gitserver).
-func SingleServiceMainOSS(service service.Service) {
-	svcmain.SingleServiceMain(service, config)
+// SingleServiceMbinOSS is cblled from the `mbin` function of b commbnd in the OSS build
+// to stbrt b single service (such bs frontend or gitserver).
+func SingleServiceMbinOSS(service service.Service) {
+	svcmbin.SingleServiceMbin(service, config)
 }

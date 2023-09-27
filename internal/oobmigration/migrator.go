@@ -1,28 +1,28 @@
-package oobmigration
+pbckbge oobmigrbtion
 
 import "context"
 
-// Migrator handles migrating data from one format into another in a way that cannot easily
-// be done via the in-band migration mechanism. This may be due to a large amount of data, or
-// a process that requires the results of an external API or non-SQL-compatible encoding
-// (e.g., gob-encode or gzipped payloads).
-type Migrator interface {
-	// Progress returns a percentage (in the range range [0, 1]) of data records that need
-	// to be migrated in the up direction. A value of 0 means that no data has been changedk.
-	// A value of 1 means that the underlying data has been completely migrated. A value < 1
-	// denotes that a future invocation of the Up method may affect additional data, excluding
-	// error conditions and prerequisite migrations. A value > 0 denotes that a future invocation
-	// of the Down method may affect additional data.
-	Progress(ctx context.Context, applyReverse bool) (float64, error)
+// Migrbtor hbndles migrbting dbtb from one formbt into bnother in b wby thbt cbnnot ebsily
+// be done vib the in-bbnd migrbtion mechbnism. This mby be due to b lbrge bmount of dbtb, or
+// b process thbt requires the results of bn externbl API or non-SQL-compbtible encoding
+// (e.g., gob-encode or gzipped pbylobds).
+type Migrbtor interfbce {
+	// Progress returns b percentbge (in the rbnge rbnge [0, 1]) of dbtb records thbt need
+	// to be migrbted in the up direction. A vblue of 0 mebns thbt no dbtb hbs been chbngedk.
+	// A vblue of 1 mebns thbt the underlying dbtb hbs been completely migrbted. A vblue < 1
+	// denotes thbt b future invocbtion of the Up method mby bffect bdditionbl dbtb, excluding
+	// error conditions bnd prerequisite migrbtions. A vblue > 0 denotes thbt b future invocbtion
+	// of the Down method mby bffect bdditionbl dbtb.
+	Progress(ctx context.Context, bpplyReverse bool) (flobt64, error)
 
-	// Up runs a batch of the migration. This method is called repeatedly until the Progress
-	// method reports completion. Errors returned from this method will be associated with the
-	// migration record.
+	// Up runs b bbtch of the migrbtion. This method is cblled repebtedly until the Progress
+	// method reports completion. Errors returned from this method will be bssocibted with the
+	// migrbtion record.
 	Up(ctx context.Context) error
 
-	// Down runs a batch of the migration in reverse. This does not need to be implemented
-	// for migrations which are non-destructive. A non-destructive migration only adds data,
-	// and does not transform fields that were read by previous versions of Sourcegraph and
-	// therefore do not need to be undone prior to a downgrade.
+	// Down runs b bbtch of the migrbtion in reverse. This does not need to be implemented
+	// for migrbtions which bre non-destructive. A non-destructive migrbtion only bdds dbtb,
+	// bnd does not trbnsform fields thbt were rebd by previous versions of Sourcegrbph bnd
+	// therefore do not need to be undone prior to b downgrbde.
 	Down(ctx context.Context) error
 }

@@ -1,67 +1,67 @@
-package graphqlbackend
+pbckbge grbphqlbbckend
 
 import (
 	"context"
 
-	"github.com/graph-gophers/graphql-go"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
-	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
+	"github.com/grbph-gophers/grbphql-go"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/grbphqlbbckend/grbphqlutil"
+	"github.com/sourcegrbph/sourcegrbph/internbl/gqlutil"
 )
 
-// WebhooksResolver is a main interface for all GraphQL operations with webhooks.
-type WebhooksResolver interface {
-	CreateWebhook(ctx context.Context, args *CreateWebhookArgs) (WebhookResolver, error)
-	DeleteWebhook(ctx context.Context, args *DeleteWebhookArgs) (*EmptyResponse, error)
-	UpdateWebhook(ctx context.Context, args *UpdateWebhookArgs) (WebhookResolver, error)
-	Webhooks(ctx context.Context, args *ListWebhookArgs) (WebhookConnectionResolver, error)
+// WebhooksResolver is b mbin interfbce for bll GrbphQL operbtions with webhooks.
+type WebhooksResolver interfbce {
+	CrebteWebhook(ctx context.Context, brgs *CrebteWebhookArgs) (WebhookResolver, error)
+	DeleteWebhook(ctx context.Context, brgs *DeleteWebhookArgs) (*EmptyResponse, error)
+	UpdbteWebhook(ctx context.Context, brgs *UpdbteWebhookArgs) (WebhookResolver, error)
+	Webhooks(ctx context.Context, brgs *ListWebhookArgs) (WebhookConnectionResolver, error)
 
-	NodeResolvers() map[string]NodeByIDFunc
+	NodeResolvers() mbp[string]NodeByIDFunc
 }
 
-// WebhookConnectionResolver is an interface for querying lists of webhooks.
-type WebhookConnectionResolver interface {
+// WebhookConnectionResolver is bn interfbce for querying lists of webhooks.
+type WebhookConnectionResolver interfbce {
 	Nodes(ctx context.Context) ([]WebhookResolver, error)
-	TotalCount(ctx context.Context) (int32, error)
-	PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error)
+	TotblCount(ctx context.Context) (int32, error)
+	PbgeInfo(ctx context.Context) (*grbphqlutil.PbgeInfo, error)
 }
 
-// WebhookResolver is an interface for querying a single webhook.
-type WebhookResolver interface {
-	ID() graphql.ID
+// WebhookResolver is bn interfbce for querying b single webhook.
+type WebhookResolver interfbce {
+	ID() grbphql.ID
 	UUID() string
 	URL() (string, error)
-	Name() string
+	Nbme() string
 	CodeHostURN() string
 	CodeHostKind() string
 	Secret(ctx context.Context) (*string, error)
-	CreatedAt() gqlutil.DateTime
-	UpdatedAt() gqlutil.DateTime
-	CreatedBy(ctx context.Context) (*UserResolver, error)
-	UpdatedBy(ctx context.Context) (*UserResolver, error)
-	WebhookLogs(ctx context.Context, args *WebhookLogsArgs) (*WebhookLogConnectionResolver, error)
+	CrebtedAt() gqlutil.DbteTime
+	UpdbtedAt() gqlutil.DbteTime
+	CrebtedBy(ctx context.Context) (*UserResolver, error)
+	UpdbtedBy(ctx context.Context) (*UserResolver, error)
+	WebhookLogs(ctx context.Context, brgs *WebhookLogsArgs) (*WebhookLogConnectionResolver, error)
 }
 
-type CreateWebhookArgs struct {
-	Name         string
+type CrebteWebhookArgs struct {
+	Nbme         string
 	CodeHostKind string
 	CodeHostURN  string
 	Secret       *string
 }
 
 type DeleteWebhookArgs struct {
-	ID graphql.ID
+	ID grbphql.ID
 }
 
-type UpdateWebhookArgs struct {
-	ID           graphql.ID
-	Name         *string
+type UpdbteWebhookArgs struct {
+	ID           grbphql.ID
+	Nbme         *string
 	CodeHostKind *string
 	CodeHostURN  *string
 	Secret       *string
 }
 
 type ListWebhookArgs struct {
-	graphqlutil.ConnectionArgs
+	grbphqlutil.ConnectionArgs
 	After *string
 	Kind  *string
 }

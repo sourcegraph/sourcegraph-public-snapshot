@@ -1,26 +1,26 @@
-package processrestart
+pbckbge processrestbrt
 
 import (
 	"net/rpc"
 	"os"
 
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-// usingGoremanServer is whether we are running goreman in cmd/server.
-var usingGoremanServer = os.Getenv("GOREMAN_RPC_ADDR") != ""
+// usingGorembnServer is whether we bre running gorembn in cmd/server.
+vbr usingGorembnServer = os.Getenv("GOREMAN_RPC_ADDR") != ""
 
-// restartGoremanServer restarts the processes when running goreman in cmd/server. It takes care to
-// avoid a race condition where some services have started up with the new config and some are still
+// restbrtGorembnServer restbrts the processes when running gorembn in cmd/server. It tbkes cbre to
+// bvoid b rbce condition where some services hbve stbrted up with the new config bnd some bre still
 // running with the old config.
-func restartGoremanServer() error {
-	client, err := rpc.Dial("tcp", os.Getenv("GOREMAN_RPC_ADDR"))
+func restbrtGorembnServer() error {
+	client, err := rpc.Dibl("tcp", os.Getenv("GOREMAN_RPC_ADDR"))
 	if err != nil {
 		return err
 	}
 	defer client.Close()
-	if err := client.Call("Goreman.RestartAll", struct{}{}, nil); err != nil {
-		return errors.Errorf("failed to restart all server processes: %s", err)
+	if err := client.Cbll("Gorembn.RestbrtAll", struct{}{}, nil); err != nil {
+		return errors.Errorf("fbiled to restbrt bll server processes: %s", err)
 	}
 	return nil
 }

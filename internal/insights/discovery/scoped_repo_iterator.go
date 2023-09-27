@@ -1,25 +1,25 @@
-package discovery
+pbckbge discovery
 
 import (
 	"context"
 
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
 type simpleRepo struct {
-	name string
-	id   api.RepoID
+	nbme string
+	id   bpi.RepoID
 }
 
-type ScopedRepoIterator struct {
+type ScopedRepoIterbtor struct {
 	repos []simpleRepo
 }
 
-func (s *ScopedRepoIterator) ForEach(ctx context.Context, each func(repoName string, id api.RepoID) error) error {
-	for _, repo := range s.repos {
-		err := each(repo.name, repo.id)
+func (s *ScopedRepoIterbtor) ForEbch(ctx context.Context, ebch func(repoNbme string, id bpi.RepoID) error) error {
+	for _, repo := rbnge s.repos {
+		err := ebch(repo.nbme, repo.id)
 		if err != nil {
 			return err
 		}
@@ -27,23 +27,23 @@ func (s *ScopedRepoIterator) ForEach(ctx context.Context, each func(repoName str
 	return nil
 }
 
-func NewScopedRepoIterator(ctx context.Context, repoNames []string, store RepoStore) (*ScopedRepoIterator, error) {
-	repos, err := loadRepoIds(ctx, repoNames, store)
+func NewScopedRepoIterbtor(ctx context.Context, repoNbmes []string, store RepoStore) (*ScopedRepoIterbtor, error) {
+	repos, err := lobdRepoIds(ctx, repoNbmes, store)
 	if err != nil {
 		return nil, err
 	}
-	return &ScopedRepoIterator{repos: repos}, nil
+	return &ScopedRepoIterbtor{repos: repos}, nil
 }
 
-func loadRepoIds(ctx context.Context, repoNames []string, repoStore RepoStore) ([]simpleRepo, error) {
-	list, err := repoStore.List(ctx, database.ReposListOptions{Names: repoNames})
+func lobdRepoIds(ctx context.Context, repoNbmes []string, repoStore RepoStore) ([]simpleRepo, error) {
+	list, err := repoStore.List(ctx, dbtbbbse.ReposListOptions{Nbmes: repoNbmes})
 	if err != nil {
-		return nil, errors.Wrap(err, "repoStore.List")
+		return nil, errors.Wrbp(err, "repoStore.List")
 	}
-	var results []simpleRepo
-	for _, repo := range list {
-		results = append(results, simpleRepo{
-			name: string(repo.Name),
+	vbr results []simpleRepo
+	for _, repo := rbnge list {
+		results = bppend(results, simpleRepo{
+			nbme: string(repo.Nbme),
 			id:   repo.ID,
 		})
 	}

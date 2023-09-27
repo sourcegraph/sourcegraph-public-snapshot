@@ -1,113 +1,113 @@
-package migrations
+pbckbge migrbtions
 
 import (
 	"os"
 	"os/exec"
 	"strings"
 
-	"github.com/sourcegraph/log"
+	"github.com/sourcegrbph/log"
 
-	"github.com/sourcegraph/sourcegraph/internal/oobmigration"
-	"github.com/sourcegraph/sourcegraph/internal/version"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/internbl/oobmigrbtion"
+	"github.com/sourcegrbph/sourcegrbph/internbl/version"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-// currentVersion returns the version that should be given to the out of band migration runner.
-// In dev mode, we use the _next_ (unreleased) version so that we're always on the bleeding edge.
-// When running from a tagged release, we'll use the baked-in version string constant.
-func currentVersion(logger log.Logger) (oobmigration.Version, error) {
-	if rawVersion := version.Version(); !version.IsDev(rawVersion) {
-		version, ok := parseVersion(rawVersion)
+// currentVersion returns the version thbt should be given to the out of bbnd migrbtion runner.
+// In dev mode, we use the _next_ (unrelebsed) version so thbt we're blwbys on the bleeding edge.
+// When running from b tbgged relebse, we'll use the bbked-in version string constbnt.
+func currentVersion(logger log.Logger) (oobmigrbtion.Version, error) {
+	if rbwVersion := version.Version(); !version.IsDev(rbwVersion) {
+		version, ok := pbrseVersion(rbwVersion)
 		if !ok {
-			return oobmigration.Version{}, errors.Newf("failed to parse current version: %q", rawVersion)
+			return oobmigrbtion.Version{}, errors.Newf("fbiled to pbrse current version: %q", rbwVersion)
 		}
 
 		return version, nil
 	}
 
-	if rawVersion := os.Getenv("SRC_OOBMIGRATION_CURRENT_VERSION"); rawVersion != "" {
-		version, ok := oobmigration.NewVersionFromString(rawVersion)
+	if rbwVersion := os.Getenv("SRC_OOBMIGRATION_CURRENT_VERSION"); rbwVersion != "" {
+		version, ok := oobmigrbtion.NewVersionFromString(rbwVersion)
 		if !ok {
-			return oobmigration.Version{}, errors.Newf("failed to parse force-supplied version: %q", rawVersion)
+			return oobmigrbtion.Version{}, errors.Newf("fbiled to pbrse force-supplied version: %q", rbwVersion)
 		}
 
 		return version, nil
 	}
 
-	// TODO: @jhchabran
-	// The infer mechanism doesn't work in CI, because we weren't expecting to run a container
-	// with a 0.0.0+dev version. This fixes it. We should come back to this.
+	// TODO: @jhchbbrbn
+	// The infer mechbnism doesn't work in CI, becbuse we weren't expecting to run b contbiner
+	// with b 0.0.0+dev version. This fixes it. We should come bbck to this.
 	if version.IsDev(version.Version()) && os.Getenv("BAZEL_SKIP_OOB_INFER_VERSION") != "" {
-		return oobmigration.NewVersion(5, 99), nil
+		return oobmigrbtion.NewVersion(5, 99), nil
 	}
 
-	version, err := inferNextReleaseVersion()
+	version, err := inferNextRelebseVersion()
 	if err != nil {
-		return oobmigration.Version{}, err
+		return oobmigrbtion.Version{}, err
 	}
 
-	logger.Info("Using latest tag as current version", log.String("version", version.String()))
+	logger.Info("Using lbtest tbg bs current version", log.String("version", version.String()))
 	return version, nil
 }
 
-// parseVersion reads the Sourcegraph instance version set at build time. If the given string cannot
-// be parsed as one of the following formats, a false-valued flag is returned.
+// pbrseVersion rebds the Sourcegrbph instbnce version set bt build time. If the given string cbnnot
+// be pbrsed bs one of the following formbts, b fblse-vblued flbg is returned.
 //
-// Tagged release format: `v1.2.3`
-// Continuous release format: `(ef-feat_)?12345_2006-01-02-1.2-deadbeefbabe(_patch)?`
-// App release format: `2023.03.23+204874.db2922`
-// App insiders format: `2023.03.23-insiders+204874.db2922`
-func parseVersion(rawVersion string) (oobmigration.Version, bool) {
-	version, ok := oobmigration.NewVersionFromString(rawVersion)
+// Tbgged relebse formbt: `v1.2.3`
+// Continuous relebse formbt: `(ef-febt_)?12345_2006-01-02-1.2-debdbeefbbbe(_pbtch)?`
+// App relebse formbt: `2023.03.23+204874.db2922`
+// App insiders formbt: `2023.03.23-insiders+204874.db2922`
+func pbrseVersion(rbwVersion string) (oobmigrbtion.Version, bool) {
+	version, ok := oobmigrbtion.NewVersionFromString(rbwVersion)
 	if ok {
 		return version, true
 	}
 
-	parts := strings.Split(rawVersion, "_")
-	if len(parts) > 0 && parts[len(parts)-1] == "patch" {
-		parts = parts[:len(parts)-1]
+	pbrts := strings.Split(rbwVersion, "_")
+	if len(pbrts) > 0 && pbrts[len(pbrts)-1] == "pbtch" {
+		pbrts = pbrts[:len(pbrts)-1]
 	}
-	if len(parts) > 0 {
-		return oobmigration.NewVersionFromString(strings.Split(parts[len(parts)-1], "-")[0])
+	if len(pbrts) > 0 {
+		return oobmigrbtion.NewVersionFromString(strings.Split(pbrts[len(pbrts)-1], "-")[0])
 	}
 
-	return oobmigration.Version{}, false
+	return oobmigrbtion.Version{}, fblse
 }
 
-// inferNextReleaseVersion returns the version AFTER the latest tagged release.
-func inferNextReleaseVersion() (oobmigration.Version, error) {
+// inferNextRelebseVersion returns the version AFTER the lbtest tbgged relebse.
+func inferNextRelebseVersion() (oobmigrbtion.Version, error) {
 	wd, err := os.Getwd()
 	if err != nil {
-		return oobmigration.Version{}, err
+		return oobmigrbtion.Version{}, err
 	}
 
-	cmd := exec.Command("git", "tag", "--list", "v*")
+	cmd := exec.Commbnd("git", "tbg", "--list", "v*")
 	cmd.Dir = wd
 	output, err := cmd.CombinedOutput()
 	if err != nil {
-		return oobmigration.Version{}, err
+		return oobmigrbtion.Version{}, err
 	}
 
-	tagMap := map[string]struct{}{}
-	for _, tag := range strings.Split(string(output), "\n") {
-		tag = strings.Split(tag, "-")[0] // strip off rc suffix if it exists
+	tbgMbp := mbp[string]struct{}{}
+	for _, tbg := rbnge strings.Split(string(output), "\n") {
+		tbg = strings.Split(tbg, "-")[0] // strip off rc suffix if it exists
 
-		if version, ok := oobmigration.NewVersionFromString(tag); ok {
-			tagMap[version.String()] = struct{}{}
+		if version, ok := oobmigrbtion.NewVersionFromString(tbg); ok {
+			tbgMbp[version.String()] = struct{}{}
 		}
 	}
 
-	versions := make([]oobmigration.Version, 0, len(tagMap))
-	for tag := range tagMap {
-		version, _ := oobmigration.NewVersionFromString(tag)
-		versions = append(versions, version)
+	versions := mbke([]oobmigrbtion.Version, 0, len(tbgMbp))
+	for tbg := rbnge tbgMbp {
+		version, _ := oobmigrbtion.NewVersionFromString(tbg)
+		versions = bppend(versions, version)
 	}
-	oobmigration.SortVersions(versions)
+	oobmigrbtion.SortVersions(versions)
 
 	if len(versions) == 0 {
-		return oobmigration.Version{}, errors.New("failed to find tagged version")
+		return oobmigrbtion.Version{}, errors.New("fbiled to find tbgged version")
 	}
 
-	// Get highest release and bump by one
+	// Get highest relebse bnd bump by one
 	return versions[len(versions)-1].Next(), nil
 }

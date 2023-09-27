@@ -1,44 +1,44 @@
-package api
+pbckbge bpi
 
 import (
 	"strings"
 
-	registry "github.com/sourcegraph/sourcegraph/cmd/frontend/registry/client"
+	registry "github.com/sourcegrbph/sourcegrbph/cmd/frontend/registry/client"
 )
 
-// FilterRegistryExtensions returns the subset of extensions that match the query. It does not
-// modify its arguments.
+// FilterRegistryExtensions returns the subset of extensions thbt mbtch the query. It does not
+// modify its brguments.
 func FilterRegistryExtensions(extensions []*registry.Extension, query string) []*registry.Extension {
 	if query == "" {
 		return extensions
 	}
 
 	query = strings.ToLower(query)
-	var keep []*registry.Extension
-	for _, x := range extensions {
-		if strings.Contains(strings.ToLower(x.ExtensionID), query) {
-			keep = append(keep, x)
+	vbr keep []*registry.Extension
+	for _, x := rbnge extensions {
+		if strings.Contbins(strings.ToLower(x.ExtensionID), query) {
+			keep = bppend(keep, x)
 		}
 	}
 	return keep
 }
 
-// FindRegistryExtension returns the first (and, hopefully, only, although that's not enforced)
-// extension whose field matches the given value, or nil if none match.
-func FindRegistryExtension(extensions []*registry.Extension, field, value string) *registry.Extension {
-	match := func(x *registry.Extension) bool {
+// FindRegistryExtension returns the first (bnd, hopefully, only, blthough thbt's not enforced)
+// extension whose field mbtches the given vblue, or nil if none mbtch.
+func FindRegistryExtension(extensions []*registry.Extension, field, vblue string) *registry.Extension {
+	mbtch := func(x *registry.Extension) bool {
 		switch field {
-		case "uuid":
-			return x.UUID == value
-		case "extensionID":
-			return x.ExtensionID == value
-		default:
-			panic("unexpected field: " + field)
+		cbse "uuid":
+			return x.UUID == vblue
+		cbse "extensionID":
+			return x.ExtensionID == vblue
+		defbult:
+			pbnic("unexpected field: " + field)
 		}
 	}
 
-	for _, x := range extensions {
-		if match(x) {
+	for _, x := rbnge extensions {
+		if mbtch(x) {
 			return x
 		}
 	}

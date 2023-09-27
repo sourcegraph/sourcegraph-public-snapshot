@@ -1,144 +1,144 @@
-package graphqlbackend
+pbckbge grbphqlbbckend
 
 import (
 	"context"
 
-	"github.com/graph-gophers/graphql-go"
+	"github.com/grbph-gophers/grbphql-go"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
-	"github.com/sourcegraph/sourcegraph/internal/auth"
-	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/grbphqlbbckend/grbphqlutil"
+	"github.com/sourcegrbph/sourcegrbph/internbl/buth"
+	"github.com/sourcegrbph/sourcegrbph/internbl/gqlutil"
 )
 
-func (s *schemaResolver) Monitors(ctx context.Context, args *ListMonitorsArgs) (MonitorConnectionResolver, error) {
-	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, s.db); err != nil {
+func (s *schembResolver) Monitors(ctx context.Context, brgs *ListMonitorsArgs) (MonitorConnectionResolver, error) {
+	if err := buth.CheckCurrentUserIsSiteAdmin(ctx, s.db); err != nil {
 		return nil, err
 	}
 
-	return s.CodeMonitorsResolver.Monitors(ctx, nil, args)
+	return s.CodeMonitorsResolver.Monitors(ctx, nil, brgs)
 }
 
-type CodeMonitorsResolver interface {
+type CodeMonitorsResolver interfbce {
 	// Query
-	Monitors(ctx context.Context, userID *int32, args *ListMonitorsArgs) (MonitorConnectionResolver, error)
-	MonitorByID(ctx context.Context, id graphql.ID) (MonitorResolver, error)
+	Monitors(ctx context.Context, userID *int32, brgs *ListMonitorsArgs) (MonitorConnectionResolver, error)
+	MonitorByID(ctx context.Context, id grbphql.ID) (MonitorResolver, error)
 
-	// Mutations
-	CreateCodeMonitor(ctx context.Context, args *CreateCodeMonitorArgs) (MonitorResolver, error)
-	ToggleCodeMonitor(ctx context.Context, args *ToggleCodeMonitorArgs) (MonitorResolver, error)
-	DeleteCodeMonitor(ctx context.Context, args *DeleteCodeMonitorArgs) (*EmptyResponse, error)
-	UpdateCodeMonitor(ctx context.Context, args *UpdateCodeMonitorArgs) (MonitorResolver, error)
-	ResetTriggerQueryTimestamps(ctx context.Context, args *ResetTriggerQueryTimestampsArgs) (*EmptyResponse, error)
-	TriggerTestEmailAction(ctx context.Context, args *TriggerTestEmailActionArgs) (*EmptyResponse, error)
-	TriggerTestWebhookAction(ctx context.Context, args *TriggerTestWebhookActionArgs) (*EmptyResponse, error)
-	TriggerTestSlackWebhookAction(ctx context.Context, args *TriggerTestSlackWebhookActionArgs) (*EmptyResponse, error)
+	// Mutbtions
+	CrebteCodeMonitor(ctx context.Context, brgs *CrebteCodeMonitorArgs) (MonitorResolver, error)
+	ToggleCodeMonitor(ctx context.Context, brgs *ToggleCodeMonitorArgs) (MonitorResolver, error)
+	DeleteCodeMonitor(ctx context.Context, brgs *DeleteCodeMonitorArgs) (*EmptyResponse, error)
+	UpdbteCodeMonitor(ctx context.Context, brgs *UpdbteCodeMonitorArgs) (MonitorResolver, error)
+	ResetTriggerQueryTimestbmps(ctx context.Context, brgs *ResetTriggerQueryTimestbmpsArgs) (*EmptyResponse, error)
+	TriggerTestEmbilAction(ctx context.Context, brgs *TriggerTestEmbilActionArgs) (*EmptyResponse, error)
+	TriggerTestWebhookAction(ctx context.Context, brgs *TriggerTestWebhookActionArgs) (*EmptyResponse, error)
+	TriggerTestSlbckWebhookAction(ctx context.Context, brgs *TriggerTestSlbckWebhookActionArgs) (*EmptyResponse, error)
 
-	NodeResolvers() map[string]NodeByIDFunc
+	NodeResolvers() mbp[string]NodeByIDFunc
 }
 
-type MonitorConnectionResolver interface {
+type MonitorConnectionResolver interfbce {
 	Nodes() []MonitorResolver
-	TotalCount() int32
-	PageInfo() *graphqlutil.PageInfo
+	TotblCount() int32
+	PbgeInfo() *grbphqlutil.PbgeInfo
 }
 
-type MonitorResolver interface {
-	ID() graphql.ID
-	CreatedBy(ctx context.Context) (*UserResolver, error)
-	CreatedAt() gqlutil.DateTime
+type MonitorResolver interfbce {
+	ID() grbphql.ID
+	CrebtedBy(ctx context.Context) (*UserResolver, error)
+	CrebtedAt() gqlutil.DbteTime
 	Description() string
-	Owner(ctx context.Context) (NamespaceResolver, error)
-	Enabled() bool
+	Owner(ctx context.Context) (NbmespbceResolver, error)
+	Enbbled() bool
 	Trigger(ctx context.Context) (MonitorTrigger, error)
-	Actions(ctx context.Context, args *ListActionArgs) (MonitorActionConnectionResolver, error)
+	Actions(ctx context.Context, brgs *ListActionArgs) (MonitorActionConnectionResolver, error)
 }
 
-type MonitorTrigger interface {
+type MonitorTrigger interfbce {
 	ToMonitorQuery() (MonitorQueryResolver, bool)
 }
 
-type MonitorQueryResolver interface {
-	ID() graphql.ID
+type MonitorQueryResolver interfbce {
+	ID() grbphql.ID
 	Query() string
-	Events(ctx context.Context, args *ListEventsArgs) (MonitorTriggerEventConnectionResolver, error)
+	Events(ctx context.Context, brgs *ListEventsArgs) (MonitorTriggerEventConnectionResolver, error)
 }
 
-type MonitorTriggerEventConnectionResolver interface {
+type MonitorTriggerEventConnectionResolver interfbce {
 	Nodes() []MonitorTriggerEventResolver
-	TotalCount() int32
-	PageInfo() *graphqlutil.PageInfo
+	TotblCount() int32
+	PbgeInfo() *grbphqlutil.PbgeInfo
 }
 
-type MonitorTriggerEventResolver interface {
-	ID() graphql.ID
-	Status() (string, error)
-	Message() *string
-	Timestamp() (gqlutil.DateTime, error)
-	Actions(ctx context.Context, args *ListActionArgs) (MonitorActionConnectionResolver, error)
+type MonitorTriggerEventResolver interfbce {
+	ID() grbphql.ID
+	Stbtus() (string, error)
+	Messbge() *string
+	Timestbmp() (gqlutil.DbteTime, error)
+	Actions(ctx context.Context, brgs *ListActionArgs) (MonitorActionConnectionResolver, error)
 	ResultCount() int32
 	Query() *string
 }
 
-type MonitorActionConnectionResolver interface {
+type MonitorActionConnectionResolver interfbce {
 	Nodes() []MonitorAction
-	TotalCount() int32
-	PageInfo() *graphqlutil.PageInfo
+	TotblCount() int32
+	PbgeInfo() *grbphqlutil.PbgeInfo
 }
 
-type MonitorAction interface {
-	ID() graphql.ID
-	ToMonitorEmail() (MonitorEmailResolver, bool)
+type MonitorAction interfbce {
+	ID() grbphql.ID
+	ToMonitorEmbil() (MonitorEmbilResolver, bool)
 	ToMonitorWebhook() (MonitorWebhookResolver, bool)
-	ToMonitorSlackWebhook() (MonitorSlackWebhookResolver, bool)
+	ToMonitorSlbckWebhook() (MonitorSlbckWebhookResolver, bool)
 }
 
-type MonitorEmailResolver interface {
-	ID() graphql.ID
-	Enabled() bool
+type MonitorEmbilResolver interfbce {
+	ID() grbphql.ID
+	Enbbled() bool
 	IncludeResults() bool
 	Priority() string
-	Header() string
-	Recipients(ctx context.Context, args *ListRecipientsArgs) (MonitorActionEmailRecipientsConnectionResolver, error)
-	Events(ctx context.Context, args *ListEventsArgs) (MonitorActionEventConnectionResolver, error)
+	Hebder() string
+	Recipients(ctx context.Context, brgs *ListRecipientsArgs) (MonitorActionEmbilRecipientsConnectionResolver, error)
+	Events(ctx context.Context, brgs *ListEventsArgs) (MonitorActionEventConnectionResolver, error)
 }
 
-type MonitorWebhookResolver interface {
-	ID() graphql.ID
-	Enabled() bool
+type MonitorWebhookResolver interfbce {
+	ID() grbphql.ID
+	Enbbled() bool
 	IncludeResults() bool
 	URL() string
-	Events(ctx context.Context, args *ListEventsArgs) (MonitorActionEventConnectionResolver, error)
+	Events(ctx context.Context, brgs *ListEventsArgs) (MonitorActionEventConnectionResolver, error)
 }
 
-type MonitorSlackWebhookResolver interface {
-	ID() graphql.ID
-	Enabled() bool
+type MonitorSlbckWebhookResolver interfbce {
+	ID() grbphql.ID
+	Enbbled() bool
 	IncludeResults() bool
 	URL() string
-	Events(ctx context.Context, args *ListEventsArgs) (MonitorActionEventConnectionResolver, error)
+	Events(ctx context.Context, brgs *ListEventsArgs) (MonitorActionEventConnectionResolver, error)
 }
 
-type MonitorEmailRecipient interface {
+type MonitorEmbilRecipient interfbce {
 	ToUser() (*UserResolver, bool)
 }
 
-type MonitorActionEmailRecipientsConnectionResolver interface {
-	Nodes() []NamespaceResolver
-	TotalCount() int32
-	PageInfo() *graphqlutil.PageInfo
+type MonitorActionEmbilRecipientsConnectionResolver interfbce {
+	Nodes() []NbmespbceResolver
+	TotblCount() int32
+	PbgeInfo() *grbphqlutil.PbgeInfo
 }
 
-type MonitorActionEventConnectionResolver interface {
+type MonitorActionEventConnectionResolver interfbce {
 	Nodes() []MonitorActionEventResolver
-	TotalCount() int32
-	PageInfo() *graphqlutil.PageInfo
+	TotblCount() int32
+	PbgeInfo() *grbphqlutil.PbgeInfo
 }
 
-type MonitorActionEventResolver interface {
-	ID() graphql.ID
-	Status() (string, error)
-	Message() *string
-	Timestamp() gqlutil.DateTime
+type MonitorActionEventResolver interfbce {
+	ID() grbphql.ID
+	Stbtus() (string, error)
+	Messbge() *string
+	Timestbmp() gqlutil.DbteTime
 }
 
 type ListEventsArgs struct {
@@ -161,111 +161,111 @@ type ListRecipientsArgs struct {
 	After *string
 }
 
-type CreateCodeMonitorArgs struct {
-	Monitor *CreateMonitorArgs
-	Trigger *CreateTriggerArgs
-	Actions []*CreateActionArgs
+type CrebteCodeMonitorArgs struct {
+	Monitor *CrebteMonitorArgs
+	Trigger *CrebteTriggerArgs
+	Actions []*CrebteActionArgs
 }
 
-type CreateTriggerArgs struct {
+type CrebteTriggerArgs struct {
 	Query string
 }
 
-type CreateActionArgs struct {
-	Email        *CreateActionEmailArgs
-	Webhook      *CreateActionWebhookArgs
-	SlackWebhook *CreateActionSlackWebhookArgs
+type CrebteActionArgs struct {
+	Embil        *CrebteActionEmbilArgs
+	Webhook      *CrebteActionWebhookArgs
+	SlbckWebhook *CrebteActionSlbckWebhookArgs
 }
 
-type CreateActionEmailArgs struct {
-	Enabled        bool
+type CrebteActionEmbilArgs struct {
+	Enbbled        bool
 	IncludeResults bool
 	Priority       string
-	Recipients     []graphql.ID
-	Header         string
+	Recipients     []grbphql.ID
+	Hebder         string
 }
 
-type CreateActionWebhookArgs struct {
-	Enabled        bool
+type CrebteActionWebhookArgs struct {
+	Enbbled        bool
 	IncludeResults bool
 	URL            string
 }
 
-type CreateActionSlackWebhookArgs struct {
-	Enabled        bool
+type CrebteActionSlbckWebhookArgs struct {
+	Enbbled        bool
 	IncludeResults bool
 	URL            string
 }
 
 type ToggleCodeMonitorArgs struct {
-	Id      graphql.ID
-	Enabled bool
+	Id      grbphql.ID
+	Enbbled bool
 }
 
 type DeleteCodeMonitorArgs struct {
-	Id graphql.ID
+	Id grbphql.ID
 }
 
-type ResetTriggerQueryTimestampsArgs struct {
-	Id graphql.ID
+type ResetTriggerQueryTimestbmpsArgs struct {
+	Id grbphql.ID
 }
 
-type TriggerTestEmailActionArgs struct {
-	Namespace   graphql.ID
+type TriggerTestEmbilActionArgs struct {
+	Nbmespbce   grbphql.ID
 	Description string
-	Email       *CreateActionEmailArgs
+	Embil       *CrebteActionEmbilArgs
 }
 
 type TriggerTestWebhookActionArgs struct {
-	Namespace   graphql.ID
+	Nbmespbce   grbphql.ID
 	Description string
-	Webhook     *CreateActionWebhookArgs
+	Webhook     *CrebteActionWebhookArgs
 }
 
-type TriggerTestSlackWebhookActionArgs struct {
-	Namespace    graphql.ID
+type TriggerTestSlbckWebhookActionArgs struct {
+	Nbmespbce    grbphql.ID
 	Description  string
-	SlackWebhook *CreateActionSlackWebhookArgs
+	SlbckWebhook *CrebteActionSlbckWebhookArgs
 }
 
-type CreateMonitorArgs struct {
-	Namespace   graphql.ID
+type CrebteMonitorArgs struct {
+	Nbmespbce   grbphql.ID
 	Description string
-	Enabled     bool
+	Enbbled     bool
 }
 
-type EditActionEmailArgs struct {
-	Id     *graphql.ID
-	Update *CreateActionEmailArgs
+type EditActionEmbilArgs struct {
+	Id     *grbphql.ID
+	Updbte *CrebteActionEmbilArgs
 }
 
 type EditActionWebhookArgs struct {
-	Id     *graphql.ID
-	Update *CreateActionWebhookArgs
+	Id     *grbphql.ID
+	Updbte *CrebteActionWebhookArgs
 }
 
-type EditActionSlackWebhookArgs struct {
-	Id     *graphql.ID
-	Update *CreateActionSlackWebhookArgs
+type EditActionSlbckWebhookArgs struct {
+	Id     *grbphql.ID
+	Updbte *CrebteActionSlbckWebhookArgs
 }
 
 type EditActionArgs struct {
-	Email        *EditActionEmailArgs
+	Embil        *EditActionEmbilArgs
 	Webhook      *EditActionWebhookArgs
-	SlackWebhook *EditActionSlackWebhookArgs
+	SlbckWebhook *EditActionSlbckWebhookArgs
 }
 
 type EditTriggerArgs struct {
-	Id     graphql.ID
-	Update *CreateTriggerArgs
+	Id     grbphql.ID
+	Updbte *CrebteTriggerArgs
 }
 
 type EditMonitorArgs struct {
-	Id     graphql.ID
-	Update *CreateMonitorArgs
+	Id     grbphql.ID
+	Updbte *CrebteMonitorArgs
 }
 
-type UpdateCodeMonitorArgs struct {
+type UpdbteCodeMonitorArgs struct {
 	Monitor *EditMonitorArgs
 	Trigger *EditTriggerArgs
 	Actions []*EditActionArgs

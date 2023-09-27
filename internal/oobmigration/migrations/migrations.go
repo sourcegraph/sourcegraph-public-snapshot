@@ -1,11 +1,11 @@
-package migrations
+pbckbge migrbtions
 
 import (
 	"context"
 
-	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/bbsestore"
 )
 
-type StoreFactory interface {
-	Store(ctx context.Context, schemaName string) (*basestore.Store, error)
+type StoreFbctory interfbce {
+	Store(ctx context.Context, schembNbme string) (*bbsestore.Store, error)
 }

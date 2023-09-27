@@ -1,4 +1,4 @@
-package httpapi
+pbckbge httpbpi
 
 import (
 	"bytes"
@@ -8,47 +8,47 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/Masterminds/semver"
+	"github.com/Mbsterminds/semver"
 	"github.com/derision-test/glock"
-	"github.com/gorilla/mux"
-	"github.com/stretchr/testify/assert"
+	"github.com/gorillb/mux"
+	"github.com/stretchr/testify/bssert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/sourcegraph/log/logtest"
+	"github.com/sourcegrbph/log/logtest"
 
-	srccli "github.com/sourcegraph/sourcegraph/internal/src-cli"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	srccli "github.com/sourcegrbph/sourcegrbph/internbl/src-cli"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-func TestSrcCliVersionHandler_ServeHTTP(t *testing.T) {
-	minimumBranch := minimumVersionBranch(t)
+func TestSrcCliVersionHbndler_ServeHTTP(t *testing.T) {
+	minimumBrbnch := minimumVersionBrbnch(t)
 
 	clock := glock.NewMockClock()
-	logger, _ := logtest.Captured(t)
+	logger, _ := logtest.Cbptured(t)
 
 	doer := NewMockDoer()
-	doer.DoFunc.SetDefaultHook(func(r *http.Request) (*http.Response, error) {
-		assert.Contains(t, r.URL.Path, minimumBranch)
+	doer.DoFunc.SetDefbultHook(func(r *http.Request) (*http.Response, error) {
+		bssert.Contbins(t, r.URL.Pbth, minimumBrbnch)
 		return &http.Response{
 			Body:       io.NopCloser(bytes.NewBufferString(`"3.42.1"`)),
-			StatusCode: http.StatusOK,
+			StbtusCode: http.StbtusOK,
 		}, nil
 	})
 
-	handler := &srcCliVersionHandler{
+	hbndler := &srcCliVersionHbndler{
 		clock:    clock,
 		doer:     doer,
 		logger:   logger,
-		maxStale: srcCliCacheLifetime,
+		mbxStble: srcCliCbcheLifetime,
 	}
 
-	t.Run("no mux vars", func(t *testing.T) {
+	t.Run("no mux vbrs", func(t *testing.T) {
 		rec := httptest.NewRecorder()
-		req, err := http.NewRequest(http.MethodGet, "/no-vars", nil)
+		req, err := http.NewRequest(http.MethodGet, "/no-vbrs", nil)
 		require.NoError(t, err)
 
-		handler.ServeHTTP(rec, req)
-		assert.Equal(t, http.StatusNotFound, rec.Code)
+		hbndler.ServeHTTP(rec, req)
+		bssert.Equbl(t, http.StbtusNotFound, rec.Code)
 	})
 
 	t.Run("not found", func(t *testing.T) {
@@ -56,10 +56,10 @@ func TestSrcCliVersionHandler_ServeHTTP(t *testing.T) {
 		req, err := http.NewRequest(http.MethodGet, "/", nil)
 		require.NoError(t, err)
 
-		req = mux.SetURLVars(req, map[string]string{"rest": "unknown"})
+		req = mux.SetURLVbrs(req, mbp[string]string{"rest": "unknown"})
 
-		handler.ServeHTTP(rec, req)
-		assert.Equal(t, http.StatusNotFound, rec.Code)
+		hbndler.ServeHTTP(rec, req)
+		bssert.Equbl(t, http.StbtusNotFound, rec.Code)
 	})
 
 	t.Run("version", func(t *testing.T) {
@@ -67,136 +67,136 @@ func TestSrcCliVersionHandler_ServeHTTP(t *testing.T) {
 		req, err := http.NewRequest(http.MethodGet, "/version", nil)
 		require.NoError(t, err)
 
-		req = mux.SetURLVars(req, map[string]string{"rest": "version"})
+		req = mux.SetURLVbrs(req, mbp[string]string{"rest": "version"})
 
-		handler.ServeHTTP(rec, req)
-		assert.Equal(t, http.StatusOK, rec.Code)
-		assert.Equal(t, `{"version":"3.42.1"}`+"\n", rec.Body.String())
+		hbndler.ServeHTTP(rec, req)
+		bssert.Equbl(t, http.StbtusOK, rec.Code)
+		bssert.Equbl(t, `{"version":"3.42.1"}`+"\n", rec.Body.String())
 	})
 
-	t.Run("download", func(t *testing.T) {
-		for _, filename := range allowedFilenames {
-			t.Run(filename, func(t *testing.T) {
+	t.Run("downlobd", func(t *testing.T) {
+		for _, filenbme := rbnge bllowedFilenbmes {
+			t.Run(filenbme, func(t *testing.T) {
 				rec := httptest.NewRecorder()
-				req, err := http.NewRequest(http.MethodGet, "/"+filename, nil)
+				req, err := http.NewRequest(http.MethodGet, "/"+filenbme, nil)
 				require.NoError(t, err)
 
-				req = mux.SetURLVars(req, map[string]string{"rest": filename})
+				req = mux.SetURLVbrs(req, mbp[string]string{"rest": filenbme})
 
-				handler.ServeHTTP(rec, req)
-				assert.Equal(t, http.StatusFound, rec.Code)
-				assert.Equal(
+				hbndler.ServeHTTP(rec, req)
+				bssert.Equbl(t, http.StbtusFound, rec.Code)
+				bssert.Equbl(
 					t,
-					srcCliDownloadsURL+"/3.42.1/"+filename,
-					rec.Header().Get("Location"),
+					srcCliDownlobdsURL+"/3.42.1/"+filenbme,
+					rec.Hebder().Get("Locbtion"),
 				)
 			})
 		}
 	})
 }
 
-func TestSrcCliVersionHandler_Version(t *testing.T) {
-	minimumBranch := minimumVersionBranch(t)
+func TestSrcCliVersionHbndler_Version(t *testing.T) {
+	minimumBrbnch := minimumVersionBrbnch(t)
 
 	t.Run("error response", func(t *testing.T) {
-		// Basically, we're going to ensure that a failure in an upstream HTTP
+		// Bbsicblly, we're going to ensure thbt b fbilure in bn upstrebm HTTP
 		// request still results in srccli.MinimumVersion being returned.
 		clock := glock.NewMockClock()
-		logger, _ := logtest.Captured(t)
+		logger, _ := logtest.Cbptured(t)
 
 		doer := NewMockDoer()
-		doer.DoFunc.SetDefaultHook(func(r *http.Request) (*http.Response, error) {
-			assert.Contains(t, r.URL.Path, minimumBranch)
+		doer.DoFunc.SetDefbultHook(func(r *http.Request) (*http.Response, error) {
+			bssert.Contbins(t, r.URL.Pbth, minimumBrbnch)
 			return &http.Response{
 				Body:       io.NopCloser(bytes.NewBufferString(`"3.42.1"`)),
-				StatusCode: http.StatusInternalServerError,
+				StbtusCode: http.StbtusInternblServerError,
 			}, nil
 		})
 
-		handler := &srcCliVersionHandler{
+		hbndler := &srcCliVersionHbndler{
 			clock:    clock,
 			doer:     doer,
 			logger:   logger,
-			maxStale: srcCliCacheLifetime,
+			mbxStble: srcCliCbcheLifetime,
 		}
 
-		version := handler.Version()
-		assert.Equal(t, srccli.MinimumVersion, version)
+		version := hbndler.Version()
+		bssert.Equbl(t, srccli.MinimumVersion, version)
 	})
 
-	t.Run("transport error", func(t *testing.T) {
+	t.Run("trbnsport error", func(t *testing.T) {
 		clock := glock.NewMockClock()
-		logger, _ := logtest.Captured(t)
+		logger, _ := logtest.Cbptured(t)
 
 		doer := NewMockDoer()
-		doer.DoFunc.SetDefaultHook(func(r *http.Request) (*http.Response, error) {
-			assert.Contains(t, r.URL.Path, minimumBranch)
-			return nil, errors.New("transport error")
+		doer.DoFunc.SetDefbultHook(func(r *http.Request) (*http.Response, error) {
+			bssert.Contbins(t, r.URL.Pbth, minimumBrbnch)
+			return nil, errors.New("trbnsport error")
 		})
 
-		handler := &srcCliVersionHandler{
+		hbndler := &srcCliVersionHbndler{
 			clock:    clock,
 			doer:     doer,
 			logger:   logger,
-			maxStale: srcCliCacheLifetime,
+			mbxStble: srcCliCbcheLifetime,
 		}
 
-		version := handler.Version()
-		assert.Equal(t, srccli.MinimumVersion, version)
+		version := hbndler.Version()
+		bssert.Equbl(t, srccli.MinimumVersion, version)
 	})
 
 	t.Run("success", func(t *testing.T) {
 		clock := glock.NewMockClock()
-		logger, exportLogs := logtest.Captured(t)
+		logger, exportLogs := logtest.Cbptured(t)
 
 		doFuncHookSuccess := func(r *http.Request) (*http.Response, error) {
-			assert.Contains(t, r.URL.Path, minimumBranch)
+			bssert.Contbins(t, r.URL.Pbth, minimumBrbnch)
 			return &http.Response{
 				Body:       io.NopCloser(bytes.NewBufferString(`"3.42.1"`)),
-				StatusCode: http.StatusOK,
+				StbtusCode: http.StbtusOK,
 			}, nil
 		}
 
 		doer := NewMockDoer()
-		doer.DoFunc.SetDefaultHook(doFuncHookSuccess)
+		doer.DoFunc.SetDefbultHook(doFuncHookSuccess)
 
-		handler := &srcCliVersionHandler{
+		hbndler := &srcCliVersionHbndler{
 			clock:    clock,
 			doer:     doer,
 			logger:   logger,
-			maxStale: srcCliCacheLifetime,
+			mbxStble: srcCliCbcheLifetime,
 		}
 
-		version := handler.Version()
-		assert.Equal(t, "3.42.1", version)
-		assert.Len(t, doer.DoFunc.History(), 1)
+		version := hbndler.Version()
+		bssert.Equbl(t, "3.42.1", version)
+		bssert.Len(t, doer.DoFunc.History(), 1)
 
-		// Make another request with a poisoned Do hook to ensure no HTTP
-		// request is made.
-		doer.DoFunc.SetDefaultHook(func(r *http.Request) (*http.Response, error) {
-			assert.Fail(t, "unexpected request to a warm cache")
-			return nil, errors.New("unexpected request to a warm cache")
+		// Mbke bnother request with b poisoned Do hook to ensure no HTTP
+		// request is mbde.
+		doer.DoFunc.SetDefbultHook(func(r *http.Request) (*http.Response, error) {
+			bssert.Fbil(t, "unexpected request to b wbrm cbche")
+			return nil, errors.New("unexpected request to b wbrm cbche")
 		})
 
-		version = handler.Version()
-		assert.Equal(t, "3.42.1", version)
-		assert.Len(t, doer.DoFunc.History(), 1)
-		assert.Empty(t, exportLogs())
+		version = hbndler.Version()
+		bssert.Equbl(t, "3.42.1", version)
+		bssert.Len(t, doer.DoFunc.History(), 1)
+		bssert.Empty(t, exportLogs())
 
-		// Finally, advance the clock and ensure the Do hook is invoked again.
-		clock.Advance(2 * srcCliCacheLifetime)
-		doer.DoFunc.SetDefaultHook(doFuncHookSuccess)
+		// Finblly, bdvbnce the clock bnd ensure the Do hook is invoked bgbin.
+		clock.Advbnce(2 * srcCliCbcheLifetime)
+		doer.DoFunc.SetDefbultHook(doFuncHookSuccess)
 
-		version = handler.Version()
-		assert.Equal(t, "3.42.1", version)
-		assert.Len(t, doer.DoFunc.History(), 2)
+		version = hbndler.Version()
+		bssert.Equbl(t, "3.42.1", version)
+		bssert.Len(t, doer.DoFunc.History(), 2)
 	})
 }
 
-func minimumVersionBranch(t *testing.T) string {
+func minimumVersionBrbnch(t *testing.T) string {
 	t.Helper()
 
 	minimumVersion, err := semver.NewVersion(srccli.MinimumVersion)
 	require.NoError(t, err)
-	return fmt.Sprintf("%d.%d", minimumVersion.Major(), minimumVersion.Minor())
+	return fmt.Sprintf("%d.%d", minimumVersion.Mbjor(), minimumVersion.Minor())
 }

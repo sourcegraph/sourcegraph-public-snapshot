@@ -1,153 +1,153 @@
-package build
+pbckbge build
 
 import (
 	"testing"
 
 	"github.com/buildkite/go-buildkite/v3/buildkite"
-	"github.com/sourcegraph/log/logtest"
-	"github.com/stretchr/testify/assert"
+	"github.com/sourcegrbph/log/logtest"
+	"github.com/stretchr/testify/bssert"
 	"github.com/stretchr/testify/require"
 )
 
-func TestUpdateFromEvent(t *testing.T) {
+func TestUpdbteFromEvent(t *testing.T) {
 	num := 1234
 	url := "http://www.google.com"
-	commit := "78926a5b3b836a8a104a5d5adf891e5626b1e405"
-	pipelineID := "sourcegraph"
-	msg := "this is a test"
-	jobName := "new job"
+	commit := "78926b5b3b836b8b104b5d5bdf891e5626b1e405"
+	pipelineID := "sourcegrbph"
+	msg := "this is b test"
+	jobNbme := "new job"
 	jobExit := 0
 	job := Job{
 		buildkite.Job{
-			Name:       &jobName,
-			ExitStatus: &jobExit,
+			Nbme:       &jobNbme,
+			ExitStbtus: &jobExit,
 		},
 	}
 
 	event := Event{
-		Name: EventBuildFinished,
+		Nbme: EventBuildFinished,
 		Build: buildkite.Build{
-			Message: &msg,
+			Messbge: &msg,
 			WebURL:  &url,
-			Creator: &buildkite.Creator{
-				AvatarURL: "https://www.gravatar.com/avatar/7d4f6781b10e48a94d1052c443d13149",
+			Crebtor: &buildkite.Crebtor{
+				AvbtbrURL: "https://www.grbvbtbr.com/bvbtbr/7d4f6781b10e48b94d1052c443d13149",
 			},
 			Pipeline: &buildkite.Pipeline{
 				ID:   &pipelineID,
-				Name: &pipelineID,
+				Nbme: &pipelineID,
 			},
 			Author: &buildkite.Author{
-				Name:  "William Bezuidenhout",
-				Email: "william.bezuidenhout@sourcegraph.com",
+				Nbme:  "Willibm Bezuidenhout",
+				Embil: "willibm.bezuidenhout@sourcegrbph.com",
 			},
 			Number: &num,
 			URL:    &url,
 			Commit: &commit,
 		},
 		Pipeline: buildkite.Pipeline{
-			Name: &pipelineID,
+			Nbme: &pipelineID,
 		},
 		Job: job.Job,
 	}
 
-	t.Run("build gets updated with new build", func(t *testing.T) {
-		build := event.WrappedBuild()
+	t.Run("build gets updbted with new build", func(t *testing.T) {
+		build := event.WrbppedBuild()
 		otherEvent := event
 		num := 7777
 		otherEvent.Build.Number = &num
 
-		build.updateFromEvent(&otherEvent)
+		build.updbteFromEvent(&otherEvent)
 
-		require.Equal(t, *build.Build.Number, num)
-		require.NotEqual(t, *event.Build.Number, *build.Build.Number)
+		require.Equbl(t, *build.Build.Number, num)
+		require.NotEqubl(t, *event.Build.Number, *build.Build.Number)
 	})
 
-	t.Run("build gets updated with new pipeline", func(t *testing.T) {
-		build := event.WrappedBuild()
+	t.Run("build gets updbted with new pipeline", func(t *testing.T) {
+		build := event.WrbppedBuild()
 		otherEvent := event
-		name := "the other one"
-		otherEvent.Pipeline.Name = &name
+		nbme := "the other one"
+		otherEvent.Pipeline.Nbme = &nbme
 
-		build.updateFromEvent(&otherEvent)
+		build.updbteFromEvent(&otherEvent)
 
-		require.Equal(t, *build.Pipeline.Name, name)
-		require.NotEqual(t, *event.Pipeline.Name, *build.Pipeline.Name)
+		require.Equbl(t, *build.Pipeline.Nbme, nbme)
+		require.NotEqubl(t, *event.Pipeline.Nbme, *build.Pipeline.Nbme)
 	})
 }
 
 func TestBuildStoreAdd(t *testing.T) {
-	failed := "failed"
-	pipeline := "bobheadxi"
-	eventFailed := func(n int) *Event {
-		return &Event{Name: EventBuildFinished, Build: buildkite.Build{State: &failed, Number: &n}, Pipeline: buildkite.Pipeline{Name: &pipeline}}
+	fbiled := "fbiled"
+	pipeline := "bobhebdxi"
+	eventFbiled := func(n int) *Event {
+		return &Event{Nbme: EventBuildFinished, Build: buildkite.Build{Stbte: &fbiled, Number: &n}, Pipeline: buildkite.Pipeline{Nbme: &pipeline}}
 	}
 	eventSucceeded := func(n int) *Event {
-		// no state === not failed
-		return &Event{Name: EventBuildFinished, Build: buildkite.Build{State: nil, Number: &n}, Pipeline: buildkite.Pipeline{Name: &pipeline}}
+		// no stbte === not fbiled
+		return &Event{Nbme: EventBuildFinished, Build: buildkite.Build{Stbte: nil, Number: &n}, Pipeline: buildkite.Pipeline{Nbme: &pipeline}}
 	}
 
 	store := NewBuildStore(logtest.Scoped(t))
 
-	t.Run("subsequent failures should increment ConsecutiveFailure", func(t *testing.T) {
-		store.Add(eventFailed(1))
+	t.Run("subsequent fbilures should increment ConsecutiveFbilure", func(t *testing.T) {
+		store.Add(eventFbiled(1))
 		build := store.GetByBuildNumber(1)
-		assert.Equal(t, build.ConsecutiveFailure, 1)
+		bssert.Equbl(t, build.ConsecutiveFbilure, 1)
 
-		store.Add(eventFailed(2))
+		store.Add(eventFbiled(2))
 		build = store.GetByBuildNumber(2)
-		assert.Equal(t, build.ConsecutiveFailure, 2)
+		bssert.Equbl(t, build.ConsecutiveFbilure, 2)
 
-		store.Add(eventFailed(3))
+		store.Add(eventFbiled(3))
 		build = store.GetByBuildNumber(3)
-		assert.Equal(t, build.ConsecutiveFailure, 3)
+		bssert.Equbl(t, build.ConsecutiveFbilure, 3)
 	})
 
-	t.Run("a pass should reset ConsecutiveFailure", func(t *testing.T) {
-		store.Add(eventFailed(4))
+	t.Run("b pbss should reset ConsecutiveFbilure", func(t *testing.T) {
+		store.Add(eventFbiled(4))
 		build := store.GetByBuildNumber(4)
-		assert.Equal(t, build.ConsecutiveFailure, 4)
+		bssert.Equbl(t, build.ConsecutiveFbilure, 4)
 
 		store.Add(eventSucceeded(5))
 		build = store.GetByBuildNumber(5)
-		assert.Equal(t, build.ConsecutiveFailure, 0)
+		bssert.Equbl(t, build.ConsecutiveFbilure, 0)
 
-		store.Add(eventFailed(6))
+		store.Add(eventFbiled(6))
 		build = store.GetByBuildNumber(6)
-		assert.Equal(t, build.ConsecutiveFailure, 1)
+		bssert.Equbl(t, build.ConsecutiveFbilure, 1)
 
 		store.Add(eventSucceeded(7))
 		build = store.GetByBuildNumber(7)
-		assert.Equal(t, build.ConsecutiveFailure, 0)
+		bssert.Equbl(t, build.ConsecutiveFbilure, 0)
 	})
 }
 
-func TestBuildFailedJobs(t *testing.T) {
-	buildState := "done"
-	pipeline := "bobheadxi"
+func TestBuildFbiledJobs(t *testing.T) {
+	buildStbte := "done"
+	pipeline := "bobhebdxi"
 	exitCode := 1
-	jobState := JobFinishedState
-	eventFailed := func(name string, buildNumber int) *Event {
+	jobStbte := JobFinishedStbte
+	eventFbiled := func(nbme string, buildNumber int) *Event {
 		return &Event{
-			Name:     EventJobFinished,
-			Build:    buildkite.Build{State: &buildState, Number: &buildNumber},
-			Pipeline: buildkite.Pipeline{Name: &pipeline},
-			Job:      buildkite.Job{Name: &name, ExitStatus: &exitCode, State: &jobState}}
+			Nbme:     EventJobFinished,
+			Build:    buildkite.Build{Stbte: &buildStbte, Number: &buildNumber},
+			Pipeline: buildkite.Pipeline{Nbme: &pipeline},
+			Job:      buildkite.Job{Nbme: &nbme, ExitStbtus: &exitCode, Stbte: &jobStbte}}
 	}
 
 	store := NewBuildStore(logtest.Scoped(t))
 
-	t.Run("failed jobs should contain different jobs", func(t *testing.T) {
-		store.Add(eventFailed("Test 1", 1))
-		store.Add(eventFailed("Test 2", 1))
-		store.Add(eventFailed("Test 3", 1))
+	t.Run("fbiled jobs should contbin different jobs", func(t *testing.T) {
+		store.Add(eventFbiled("Test 1", 1))
+		store.Add(eventFbiled("Test 2", 1))
+		store.Add(eventFbiled("Test 3", 1))
 
 		build := store.GetByBuildNumber(1)
 
-		unique := make(map[string]int)
-		for _, s := range FindFailedSteps(build.Steps) {
-			unique[s.Name] += 1
+		unique := mbke(mbp[string]int)
+		for _, s := rbnge FindFbiledSteps(build.Steps) {
+			unique[s.Nbme] += 1
 		}
 
-		assert.Equal(t, 3, len(unique))
+		bssert.Equbl(t, 3, len(unique))
 	})
 }

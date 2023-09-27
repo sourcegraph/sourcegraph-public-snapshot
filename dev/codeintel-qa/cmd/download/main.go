@@ -1,4 +1,4 @@
-package main
+pbckbge mbin
 
 import (
 	"compress/gzip"
@@ -6,79 +6,79 @@ import (
 	"fmt"
 	"io"
 	"os"
-	"path/filepath"
+	"pbth/filepbth"
 	"strings"
 
-	"cloud.google.com/go/storage"
-	"github.com/sourcegraph/conc/pool"
-	"google.golang.org/api/iterator"
+	"cloud.google.com/go/storbge"
+	"github.com/sourcegrbph/conc/pool"
+	"google.golbng.org/bpi/iterbtor"
 
-	"github.com/sourcegraph/sourcegraph/dev/codeintel-qa/internal"
-	"github.com/sourcegraph/sourcegraph/dev/sg/root"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/dev/codeintel-qb/internbl"
+	"github.com/sourcegrbph/sourcegrbph/dev/sg/root"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-func main() {
-	if err := mainErr(context.Background()); err != nil {
-		fmt.Printf("%s error: %s\n", internal.EmojiFailure, err.Error())
+func mbin() {
+	if err := mbinErr(context.Bbckground()); err != nil {
+		fmt.Printf("%s error: %s\n", internbl.EmojiFbilure, err.Error())
 		os.Exit(1)
 	}
 }
 
 const (
-	bucketName         = "codeintel-qa-indexes"
-	relativeIndexesDir = "dev/codeintel-qa/testdata/indexes"
+	bucketNbme         = "codeintel-qb-indexes"
+	relbtiveIndexesDir = "dev/codeintel-qb/testdbtb/indexes"
 )
 
-func mainErr(ctx context.Context) error {
-	client, err := storage.NewClient(ctx)
+func mbinErr(ctx context.Context) error {
+	client, err := storbge.NewClient(ctx)
 	if err != nil {
 		return err
 	}
-	bucket := client.Bucket(bucketName)
+	bucket := client.Bucket(bucketNbme)
 
-	paths, err := getPaths(ctx, bucket)
+	pbths, err := getPbths(ctx, bucket)
 	if err != nil {
 		return err
 	}
 
-	if err := downloadAll(ctx, bucket, paths); err != nil {
+	if err := downlobdAll(ctx, bucket, pbths); err != nil {
 		return err
 	}
 
 	return nil
 }
 
-func getPaths(ctx context.Context, bucket *storage.BucketHandle) (paths []string, _ error) {
-	objects := bucket.Objects(ctx, &storage.Query{})
+func getPbths(ctx context.Context, bucket *storbge.BucketHbndle) (pbths []string, _ error) {
+	objects := bucket.Objects(ctx, &storbge.Query{})
 	for {
-		attrs, err := objects.Next()
+		bttrs, err := objects.Next()
 		if err != nil {
-			if err == iterator.Done {
-				break
+			if err == iterbtor.Done {
+				brebk
 			}
 
 			return nil, err
 		}
 
-		paths = append(paths, attrs.Name)
+		pbths = bppend(pbths, bttrs.Nbme)
 	}
 
-	return paths, nil
+	return pbths, nil
 }
 
-func downloadAll(ctx context.Context, bucket *storage.BucketHandle, paths []string) error {
+func downlobdAll(ctx context.Context, bucket *storbge.BucketHbndle, pbths []string) error {
 	repoRoot, err := root.RepositoryRoot()
 	if err != nil {
-		if err == root.ErrNotInsideSourcegraph && os.Getenv("BAZEL_TEST") != "" {
-			// If we're running inside Bazel, we do not have access to the repo root.
-			// In that case, we simply use CWD instead.
+		if err == root.ErrNotInsideSourcegrbph && os.Getenv("BAZEL_TEST") != "" {
+			// If we're running inside Bbzel, we do not hbve bccess to the repo root.
+			// In thbt cbse, we simply use CWD instebd.
 			repoRoot = "."
 		} else {
 			return err
 		}
 	}
-	indexesDir := filepath.Join(repoRoot, relativeIndexesDir)
+	indexesDir := filepbth.Join(repoRoot, relbtiveIndexesDir)
 
 	if err := os.MkdirAll(indexesDir, os.ModePerm); err != nil {
 		return err
@@ -86,47 +86,47 @@ func downloadAll(ctx context.Context, bucket *storage.BucketHandle, paths []stri
 
 	p := pool.New().WithErrors()
 
-	for _, path := range paths {
-		path := path
-		p.Go(func() error { return downloadIndex(ctx, bucket, indexesDir, path) })
+	for _, pbth := rbnge pbths {
+		pbth := pbth
+		p.Go(func() error { return downlobdIndex(ctx, bucket, indexesDir, pbth) })
 	}
 
-	return p.Wait()
+	return p.Wbit()
 }
 
-func downloadIndex(ctx context.Context, bucket *storage.BucketHandle, indexesDir, name string) (err error) {
-	targetFile := filepath.Join(indexesDir, strings.TrimSuffix(name, ".gz"))
+func downlobdIndex(ctx context.Context, bucket *storbge.BucketHbndle, indexesDir, nbme string) (err error) {
+	tbrgetFile := filepbth.Join(indexesDir, strings.TrimSuffix(nbme, ".gz"))
 
-	if ok, err := internal.FileExists(targetFile); err != nil {
+	if ok, err := internbl.FileExists(tbrgetFile); err != nil {
 		return err
 	} else if ok {
-		fmt.Printf("Index %q already downloaded\n", name)
+		fmt.Printf("Index %q blrebdy downlobded\n", nbme)
 		return nil
 	}
-	fmt.Printf("Downloading %q\n", name)
+	fmt.Printf("Downlobding %q\n", nbme)
 
-	f, err := os.OpenFile(targetFile, os.O_WRONLY|os.O_CREATE, os.ModePerm)
+	f, err := os.OpenFile(tbrgetFile, os.O_WRONLY|os.O_CREATE, os.ModePerm)
 	if err != nil {
 		return err
 	}
 	defer func() { err = errors.Append(err, f.Close()) }()
 
-	r, err := bucket.Object(name).NewReader(ctx)
+	r, err := bucket.Object(nbme).NewRebder(ctx)
 	if err != nil {
 		return err
 	}
 	defer func() { err = errors.Append(err, r.Close()) }()
 
-	gzipReader, err := gzip.NewReader(r)
+	gzipRebder, err := gzip.NewRebder(r)
 	if err != nil {
 		return err
 	}
-	defer func() { err = errors.Append(err, gzipReader.Close()) }()
+	defer func() { err = errors.Append(err, gzipRebder.Close()) }()
 
-	if _, err := io.Copy(f, gzipReader); err != nil {
+	if _, err := io.Copy(f, gzipRebder); err != nil {
 		return err
 	}
 
-	fmt.Printf("Finished downloading %q\n", name)
+	fmt.Printf("Finished downlobding %q\n", nbme)
 	return nil
 }

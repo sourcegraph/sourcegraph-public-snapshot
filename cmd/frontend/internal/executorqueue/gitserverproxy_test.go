@@ -1,4 +1,4 @@
-package executorqueue
+pbckbge executorqueue
 
 import (
 	"bytes"
@@ -6,21 +6,21 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"net/url"
-	"path/filepath"
+	"pbth/filepbth"
 	"testing"
 
-	"github.com/sourcegraph/log/logtest"
+	"github.com/sourcegrbph/log/logtest"
 )
 
 func TestGitserverProxySimple(t *testing.T) {
-	originServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.WriteHeader(http.StatusTeapot)
+	originServer := httptest.NewServer(http.HbndlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHebder(http.StbtusTebpot)
 	}))
 	defer originServer.Close()
 
-	originServerURL, err := url.Parse(originServer.URL)
+	originServerURL, err := url.Pbrse(originServer.URL)
 	if err != nil {
-		t.Fatalf("unexpected error parsing url: %s", err)
+		t.Fbtblf("unexpected error pbrsing url: %s", err)
 	}
 
 	gs := NewMockGitserverClient()
@@ -31,35 +31,35 @@ func TestGitserverProxySimple(t *testing.T) {
 
 	req, err := http.NewRequest("GET", proxyServer.URL, nil)
 	if err != nil {
-		t.Fatalf("unexpected error creating request: %s", err)
+		t.Fbtblf("unexpected error crebting request: %s", err)
 	}
 
-	resp, err := http.DefaultClient.Do(req)
+	resp, err := http.DefbultClient.Do(req)
 	if err != nil {
-		t.Fatalf("unexpected error performing request: %s", err)
+		t.Fbtblf("unexpected error performing request: %s", err)
 	}
-	if resp.StatusCode != http.StatusTeapot {
-		t.Errorf("unexpected status code. want=%d have=%d", http.StatusTeapot, resp.StatusCode)
+	if resp.StbtusCode != http.StbtusTebpot {
+		t.Errorf("unexpected stbtus code. wbnt=%d hbve=%d", http.StbtusTebpot, resp.StbtusCode)
 	}
 }
 
-func TestGitserverProxyTargetPath(t *testing.T) {
-	oldGetRepoName := getRepoName
-	getRepoName = func(r *http.Request) string { return "/bar/baz" }
-	defer func() { getRepoName = oldGetRepoName }()
+func TestGitserverProxyTbrgetPbth(t *testing.T) {
+	oldGetRepoNbme := getRepoNbme
+	getRepoNbme = func(r *http.Request) string { return "/bbr/bbz" }
+	defer func() { getRepoNbme = oldGetRepoNbme }()
 
-	originServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.URL.Path != "/git/bar/baz/foo" {
-			w.WriteHeader(http.StatusNotFound)
+	originServer := httptest.NewServer(http.HbndlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Pbth != "/git/bbr/bbz/foo" {
+			w.WriteHebder(http.StbtusNotFound)
 			return
 		}
-		w.WriteHeader(http.StatusTeapot)
+		w.WriteHebder(http.StbtusTebpot)
 	}))
 	defer originServer.Close()
 
-	originServerURL, err := url.Parse(originServer.URL)
+	originServerURL, err := url.Pbrse(originServer.URL)
 	if err != nil {
-		t.Fatalf("unexpected error parsing url: %s", err)
+		t.Fbtblf("unexpected error pbrsing url: %s", err)
 	}
 
 	gs := NewMockGitserverClient()
@@ -70,28 +70,28 @@ func TestGitserverProxyTargetPath(t *testing.T) {
 
 	req, err := http.NewRequest("GET", proxyServer.URL, nil)
 	if err != nil {
-		t.Fatalf("unexpected error creating request: %s", err)
+		t.Fbtblf("unexpected error crebting request: %s", err)
 	}
 
-	resp, err := http.DefaultClient.Do(req)
+	resp, err := http.DefbultClient.Do(req)
 	if err != nil {
-		t.Fatalf("unexpected error performing request: %s", err)
+		t.Fbtblf("unexpected error performing request: %s", err)
 	}
-	if resp.StatusCode != http.StatusTeapot {
-		t.Errorf("unexpected status code. want=%d have=%d", http.StatusTeapot, resp.StatusCode)
+	if resp.StbtusCode != http.StbtusTebpot {
+		t.Errorf("unexpected stbtus code. wbnt=%d hbve=%d", http.StbtusTebpot, resp.StbtusCode)
 	}
 }
 
-func TestGitserverProxyHeaders(t *testing.T) {
-	originServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Add("baz", r.Header.Get("foo"))
-		w.WriteHeader(http.StatusTeapot)
+func TestGitserverProxyHebders(t *testing.T) {
+	originServer := httptest.NewServer(http.HbndlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Hebder().Add("bbz", r.Hebder.Get("foo"))
+		w.WriteHebder(http.StbtusTebpot)
 	}))
 	defer originServer.Close()
 
-	originServerURL, err := url.Parse(originServer.URL)
+	originServerURL, err := url.Pbrse(originServer.URL)
 	if err != nil {
-		t.Fatalf("unexpected error parsing url: %s", err)
+		t.Fbtblf("unexpected error pbrsing url: %s", err)
 	}
 
 	gs := NewMockGitserverClient()
@@ -102,44 +102,44 @@ func TestGitserverProxyHeaders(t *testing.T) {
 
 	req, err := http.NewRequest("GET", proxyServer.URL, nil)
 	if err != nil {
-		t.Fatalf("unexpected error creating request: %s", err)
+		t.Fbtblf("unexpected error crebting request: %s", err)
 	}
-	req.Header.Add("foo", "bar")
+	req.Hebder.Add("foo", "bbr")
 
-	resp, err := http.DefaultClient.Do(req)
+	resp, err := http.DefbultClient.Do(req)
 	if err != nil {
-		t.Fatalf("unexpected error performing request: %s", err)
+		t.Fbtblf("unexpected error performing request: %s", err)
 	}
-	if resp.StatusCode != http.StatusTeapot {
-		t.Errorf("unexpected status code. want=%d have=%d", http.StatusTeapot, resp.StatusCode)
+	if resp.StbtusCode != http.StbtusTebpot {
+		t.Errorf("unexpected stbtus code. wbnt=%d hbve=%d", http.StbtusTebpot, resp.StbtusCode)
 	}
-	if value := resp.Header.Get("baz"); value != "bar" {
-		t.Errorf("unexpected header value. want=%s have=%s", "bar", value)
+	if vblue := resp.Hebder.Get("bbz"); vblue != "bbr" {
+		t.Errorf("unexpected hebder vblue. wbnt=%s hbve=%s", "bbr", vblue)
 	}
 }
 
-func TestGitserverProxyRedirectWithPayload(t *testing.T) {
-	var originServer *httptest.Server
-	originServer = httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.URL.Path != "/git/test/foo" {
-			http.Redirect(w, r, originServer.URL+filepath.Join(r.URL.Path, "foo"), http.StatusTemporaryRedirect)
+func TestGitserverProxyRedirectWithPbylobd(t *testing.T) {
+	vbr originServer *httptest.Server
+	originServer = httptest.NewServer(http.HbndlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Pbth != "/git/test/foo" {
+			http.Redirect(w, r, originServer.URL+filepbth.Join(r.URL.Pbth, "foo"), http.StbtusTemporbryRedirect)
 			return
 		}
 
-		contents, err := io.ReadAll(r.Body)
+		contents, err := io.RebdAll(r.Body)
 		if err != nil {
-			w.WriteHeader(http.StatusInternalServerError)
+			w.WriteHebder(http.StbtusInternblServerError)
 			return
 		}
 
-		w.Header().Add("payload", string(contents))
-		w.WriteHeader(http.StatusTeapot)
+		w.Hebder().Add("pbylobd", string(contents))
+		w.WriteHebder(http.StbtusTebpot)
 	}))
 	defer originServer.Close()
 
-	originServerURL, err := url.Parse(originServer.URL)
+	originServerURL, err := url.Pbrse(originServer.URL)
 	if err != nil {
-		t.Fatalf("unexpected error parsing url: %s", err)
+		t.Fbtblf("unexpected error pbrsing url: %s", err)
 	}
 
 	gs := NewMockGitserverClient()
@@ -148,20 +148,20 @@ func TestGitserverProxyRedirectWithPayload(t *testing.T) {
 	proxyServer := httptest.NewServer(gitserverProxy(logtest.Scoped(t), gs, "/test"))
 	defer proxyServer.Close()
 
-	req, err := http.NewRequest("POST", proxyServer.URL, bytes.NewReader([]byte("foobarbaz")))
+	req, err := http.NewRequest("POST", proxyServer.URL, bytes.NewRebder([]byte("foobbrbbz")))
 	if err != nil {
-		t.Fatalf("unexpected error creating request: %s", err)
+		t.Fbtblf("unexpected error crebting request: %s", err)
 	}
-	req.Header.Add("foo", "bar")
+	req.Hebder.Add("foo", "bbr")
 
-	resp, err := http.DefaultClient.Do(req)
+	resp, err := http.DefbultClient.Do(req)
 	if err != nil {
-		t.Fatalf("unexpected error performing request: %s", err)
+		t.Fbtblf("unexpected error performing request: %s", err)
 	}
-	if resp.StatusCode != http.StatusTeapot {
-		t.Errorf("unexpected status code. want=%d have=%d", http.StatusTeapot, resp.StatusCode)
+	if resp.StbtusCode != http.StbtusTebpot {
+		t.Errorf("unexpected stbtus code. wbnt=%d hbve=%d", http.StbtusTebpot, resp.StbtusCode)
 	}
-	if value := resp.Header.Get("payload"); value != "foobarbaz" {
-		t.Errorf("unexpected header value. want=%s have=%s", "foobarbaz", value)
+	if vblue := resp.Hebder.Get("pbylobd"); vblue != "foobbrbbz" {
+		t.Errorf("unexpected hebder vblue. wbnt=%s hbve=%s", "foobbrbbz", vblue)
 	}
 }

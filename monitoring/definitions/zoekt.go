@@ -1,420 +1,420 @@
-package definitions
+pbckbge definitions
 
 import (
 	"fmt"
 	"time"
 
-	"github.com/grafana-tools/sdk"
+	"github.com/grbfbnb-tools/sdk"
 
-	"github.com/sourcegraph/sourcegraph/monitoring/definitions/shared"
-	"github.com/sourcegraph/sourcegraph/monitoring/monitoring"
+	"github.com/sourcegrbph/sourcegrbph/monitoring/definitions/shbred"
+	"github.com/sourcegrbph/sourcegrbph/monitoring/monitoring"
 )
 
-func Zoekt() *monitoring.Dashboard {
+func Zoekt() *monitoring.Dbshbobrd {
 	const (
-		indexServerContainerName = "zoekt-indexserver"
-		webserverContainerName   = "zoekt-webserver"
-		bundledContainerName     = "indexed-search"
-		grpcServiceName          = "zoekt.webserver.v1.WebserverService"
+		indexServerContbinerNbme = "zoekt-indexserver"
+		webserverContbinerNbme   = "zoekt-webserver"
+		bundledContbinerNbme     = "indexed-sebrch"
+		grpcServiceNbme          = "zoekt.webserver.v1.WebserverService"
 	)
 
-	grpcMethodVariable := shared.GRPCMethodVariable("zoekt_webserver", grpcServiceName)
+	grpcMethodVbribble := shbred.GRPCMethodVbribble("zoekt_webserver", grpcServiceNbme)
 
-	return &monitoring.Dashboard{
-		Name:                     "zoekt",
+	return &monitoring.Dbshbobrd{
+		Nbme:                     "zoekt",
 		Title:                    "Zoekt",
-		Description:              "Indexes repositories, populates the search index, and responds to indexed search queries.",
-		NoSourcegraphDebugServer: true,
-		Variables: []monitoring.ContainerVariable{
+		Description:              "Indexes repositories, populbtes the sebrch index, bnd responds to indexed sebrch queries.",
+		NoSourcegrbphDebugServer: true,
+		Vbribbles: []monitoring.ContbinerVbribble{
 			{
-				Label: "Instance",
-				Name:  "instance",
-				OptionsLabelValues: monitoring.ContainerVariableOptionsLabelValues{
-					Query:         "index_num_assigned",
-					LabelName:     "instance",
-					ExampleOption: "zoekt-indexserver-0:6072",
+				Lbbel: "Instbnce",
+				Nbme:  "instbnce",
+				OptionsLbbelVblues: monitoring.ContbinerVbribbleOptionsLbbelVblues{
+					Query:         "index_num_bssigned",
+					LbbelNbme:     "instbnce",
+					ExbmpleOption: "zoekt-indexserver-0:6072",
 				},
 				Multi: true,
 			},
 			{
-				Label: "Webserver Instance",
-				Name:  "webserver_instance",
-				OptionsLabelValues: monitoring.ContainerVariableOptionsLabelValues{
-					Query:         "zoekt_webserver_watchdog_errors",
-					LabelName:     "instance",
-					ExampleOption: "zoekt-webserver-0:6072",
+				Lbbel: "Webserver Instbnce",
+				Nbme:  "webserver_instbnce",
+				OptionsLbbelVblues: monitoring.ContbinerVbribbleOptionsLbbelVblues{
+					Query:         "zoekt_webserver_wbtchdog_errors",
+					LbbelNbme:     "instbnce",
+					ExbmpleOption: "zoekt-webserver-0:6072",
 				},
 				Multi: true,
 			},
-			grpcMethodVariable,
+			grpcMethodVbribble,
 		},
 		Groups: []monitoring.Group{
 			{
-				Title: "General",
+				Title: "Generbl",
 				Rows: []monitoring.Row{
 					{
 						{
-							Name:        "total_repos_aggregate",
-							Description: "total number of repos (aggregate)",
-							Query:       `sum by (__name__) ({__name__=~"index_num_assigned|index_num_indexed|index_queue_cap"})`,
+							Nbme:        "totbl_repos_bggregbte",
+							Description: "totbl number of repos (bggregbte)",
+							Query:       `sum by (__nbme__) ({__nbme__=~"index_num_bssigned|index_num_indexed|index_queue_cbp"})`,
 							NoAlert:     true,
-							Panel: monitoring.Panel().
+							Pbnel: monitoring.Pbnel().
 								With(
-									monitoring.PanelOptions.LegendOnRight(),
-									monitoring.PanelOptions.HoverShowAll(),
+									monitoring.PbnelOptions.LegendOnRight(),
+									monitoring.PbnelOptions.HoverShowAll(),
 								).
 								MinAuto().
-								LegendFormat("{{__name__}}"),
-							Owner: monitoring.ObservableOwnerSearchCore,
-							Interpretation: `
-								Sudden changes can be caused by indexing configuration changes.
+								LegendFormbt("{{__nbme__}}"),
+							Owner: monitoring.ObservbbleOwnerSebrchCore,
+							Interpretbtion: `
+								Sudden chbnges cbn be cbused by indexing configurbtion chbnges.
 
-								Additionally, a discrepancy between "index_num_assigned" and "index_queue_cap" could indicate a bug.
+								Additionblly, b discrepbncy between "index_num_bssigned" bnd "index_queue_cbp" could indicbte b bug.
 
 								Legend:
-								- index_num_assigned: # of repos assigned to Zoekt
-								- index_num_indexed: # of repos Zoekt has indexed
-								- index_queue_cap: # of repos Zoekt is aware of, including those that it has finished indexing
+								- index_num_bssigned: # of repos bssigned to Zoekt
+								- index_num_indexed: # of repos Zoekt hbs indexed
+								- index_queue_cbp: # of repos Zoekt is bwbre of, including those thbt it hbs finished indexing
 							`,
 						},
 						{
-							Name:        "total_repos_per_instance",
-							Description: "total number of repos (per instance)",
-							Query:       `sum by (__name__, instance) ({__name__=~"index_num_assigned|index_num_indexed|index_queue_cap",instance=~"${instance:regex}"})`,
+							Nbme:        "totbl_repos_per_instbnce",
+							Description: "totbl number of repos (per instbnce)",
+							Query:       `sum by (__nbme__, instbnce) ({__nbme__=~"index_num_bssigned|index_num_indexed|index_queue_cbp",instbnce=~"${instbnce:regex}"})`,
 							NoAlert:     true,
-							Panel: monitoring.Panel().
+							Pbnel: monitoring.Pbnel().
 								With(
-									monitoring.PanelOptions.LegendOnRight(),
-									monitoring.PanelOptions.HoverShowAll(),
+									monitoring.PbnelOptions.LegendOnRight(),
+									monitoring.PbnelOptions.HoverShowAll(),
 								).
 								MinAuto().
-								LegendFormat("{{instance}} {{__name__}}"),
-							Owner: monitoring.ObservableOwnerSearchCore,
-							Interpretation: `
-								Sudden changes can be caused by indexing configuration changes.
+								LegendFormbt("{{instbnce}} {{__nbme__}}"),
+							Owner: monitoring.ObservbbleOwnerSebrchCore,
+							Interpretbtion: `
+								Sudden chbnges cbn be cbused by indexing configurbtion chbnges.
 
-								Additionally, a discrepancy between "index_num_assigned" and "index_queue_cap" could indicate a bug.
+								Additionblly, b discrepbncy between "index_num_bssigned" bnd "index_queue_cbp" could indicbte b bug.
 
 								Legend:
-								- index_num_assigned: # of repos assigned to Zoekt
-								- index_num_indexed: # of repos Zoekt has indexed
-								- index_queue_cap: # of repos Zoekt is aware of, including those that it has finished processing
+								- index_num_bssigned: # of repos bssigned to Zoekt
+								- index_num_indexed: # of repos Zoekt hbs indexed
+								- index_queue_cbp: # of repos Zoekt is bwbre of, including those thbt it hbs finished processing
 							`,
 						},
 					},
 					{
 						{
-							Name:        "repos_stopped_tracking_total_aggregate",
-							Description: "the number of repositories we stopped tracking over 5m (aggregate)",
-							Query:       `sum(increase(index_num_stopped_tracking_total[5m]))`,
+							Nbme:        "repos_stopped_trbcking_totbl_bggregbte",
+							Description: "the number of repositories we stopped trbcking over 5m (bggregbte)",
+							Query:       `sum(increbse(index_num_stopped_trbcking_totbl[5m]))`,
 							NoAlert:     true,
-							Panel: monitoring.Panel().LegendFormat("dropped").
+							Pbnel: monitoring.Pbnel().LegendFormbt("dropped").
 								Unit(monitoring.Number).
-								With(monitoring.PanelOptions.LegendOnRight()),
-							Owner:          monitoring.ObservableOwnerSearchCore,
-							Interpretation: "Repositories we stop tracking are soft-deleted during the next cleanup job.",
+								With(monitoring.PbnelOptions.LegendOnRight()),
+							Owner:          monitoring.ObservbbleOwnerSebrchCore,
+							Interpretbtion: "Repositories we stop trbcking bre soft-deleted during the next clebnup job.",
 						},
 						{
-							Name:        "repos_stopped_tracking_total_per_instance",
-							Description: "the number of repositories we stopped tracking over 5m (per instance)",
-							Query:       "sum by (instance) (increase(index_num_stopped_tracking_total{instance=~`${instance:regex}`}[5m]))",
+							Nbme:        "repos_stopped_trbcking_totbl_per_instbnce",
+							Description: "the number of repositories we stopped trbcking over 5m (per instbnce)",
+							Query:       "sum by (instbnce) (increbse(index_num_stopped_trbcking_totbl{instbnce=~`${instbnce:regex}`}[5m]))",
 							NoAlert:     true,
-							Panel: monitoring.Panel().LegendFormat("{{instance}}").
+							Pbnel: monitoring.Pbnel().LegendFormbt("{{instbnce}}").
 								Unit(monitoring.Number).
-								With(monitoring.PanelOptions.LegendOnRight()),
-							Owner:          monitoring.ObservableOwnerSearchCore,
-							Interpretation: "Repositories we stop tracking are soft-deleted during the next cleanup job.",
+								With(monitoring.PbnelOptions.LegendOnRight()),
+							Owner:          monitoring.ObservbbleOwnerSebrchCore,
+							Interpretbtion: "Repositories we stop trbcking bre soft-deleted during the next clebnup job.",
 						},
 					},
 					{
 						{
-							Name:        "average_resolve_revision_duration",
-							Description: "average resolve revision duration over 5m",
-							Query:       `sum(rate(resolve_revision_seconds_sum[5m])) / sum(rate(resolve_revision_seconds_count[5m]))`,
-							Warning:     monitoring.Alert().GreaterOrEqual(15),
-							Panel:       monitoring.Panel().LegendFormat("{{duration}}").Unit(monitoring.Seconds),
-							Owner:       monitoring.ObservableOwnerSearchCore,
+							Nbme:        "bverbge_resolve_revision_durbtion",
+							Description: "bverbge resolve revision durbtion over 5m",
+							Query:       `sum(rbte(resolve_revision_seconds_sum[5m])) / sum(rbte(resolve_revision_seconds_count[5m]))`,
+							Wbrning:     monitoring.Alert().GrebterOrEqubl(15),
+							Pbnel:       monitoring.Pbnel().LegendFormbt("{{durbtion}}").Unit(monitoring.Seconds),
+							Owner:       monitoring.ObservbbleOwnerSebrchCore,
 							NextSteps:   "none",
 						},
 						{
-							Name:        "get_index_options_error_increase",
-							Description: "the number of repositories we failed to get indexing options over 5m",
-							Query:       `sum(increase(get_index_options_error_total[5m]))`,
-							// This value can spike, so only if we have a
-							// sustained error rate do we alert. On
-							// Sourcegraph.com gitserver rollouts take a while
-							// and this alert will fire during that time. So
-							// we tuned Critical to atleast be as long as a
+							Nbme:        "get_index_options_error_increbse",
+							Description: "the number of repositories we fbiled to get indexing options over 5m",
+							Query:       `sum(increbse(get_index_options_error_totbl[5m]))`,
+							// This vblue cbn spike, so only if we hbve b
+							// sustbined error rbte do we blert. On
+							// Sourcegrbph.com gitserver rollouts tbke b while
+							// bnd this blert will fire during thbt time. So
+							// we tuned Criticbl to btlebst be bs long bs b
 							// gitserver rollout. 2022-02-09 ~25m rollout.
-							Warning:  monitoring.Alert().GreaterOrEqual(100).For(5 * time.Minute),
-							Critical: monitoring.Alert().GreaterOrEqual(100).For(35 * time.Minute),
-							Panel:    monitoring.Panel().Min(0),
-							Owner:    monitoring.ObservableOwnerSearchCore,
+							Wbrning:  monitoring.Alert().GrebterOrEqubl(100).For(5 * time.Minute),
+							Criticbl: monitoring.Alert().GrebterOrEqubl(100).For(35 * time.Minute),
+							Pbnel:    monitoring.Pbnel().Min(0),
+							Owner:    monitoring.ObservbbleOwnerSebrchCore,
 							NextSteps: `
-								- View error rates on gitserver and frontend to identify root cause.
-								- Rollback frontend/gitserver deployment if due to a bad code change.
-								- View error logs for 'getIndexOptions' via net/trace debug interface. For example click on a 'indexed-search-indexer-' on https://sourcegraph.com/-/debug/. Then click on Traces. Replace sourcegraph.com with your instance address.
+								- View error rbtes on gitserver bnd frontend to identify root cbuse.
+								- Rollbbck frontend/gitserver deployment if due to b bbd code chbnge.
+								- View error logs for 'getIndexOptions' vib net/trbce debug interfbce. For exbmple click on b 'indexed-sebrch-indexer-' on https://sourcegrbph.com/-/debug/. Then click on Trbces. Replbce sourcegrbph.com with your instbnce bddress.
 							`,
-							Interpretation: `
-								When considering indexing a repository we ask for the index configuration
-								from frontend per repository. The most likely reason this would fail is
-								failing to resolve branch names to git SHAs.
+							Interpretbtion: `
+								When considering indexing b repository we bsk for the index configurbtion
+								from frontend per repository. The most likely rebson this would fbil is
+								fbiling to resolve brbnch nbmes to git SHAs.
 
-								This value can spike up during deployments/etc. Only if you encounter
-								sustained periods of errors is there an underlying issue. When sustained
-								this indicates repositories will not get updated indexes.
+								This vblue cbn spike up during deployments/etc. Only if you encounter
+								sustbined periods of errors is there bn underlying issue. When sustbined
+								this indicbtes repositories will not get updbted indexes.
 							`,
 						},
 					},
 				},
 			},
 			{
-				Title: "Search requests",
+				Title: "Sebrch requests",
 				Rows: []monitoring.Row{
 					{
 						{
-							Name:        "indexed_search_request_duration_p99_aggregate",
-							Description: "99th percentile indexed search duration over 1m (aggregate)",
-							Query:       `histogram_quantile(0.99, sum by (le, name)(rate(zoekt_search_duration_seconds_bucket[1m])))`, // TODO: split this into separate success/failure metrics
+							Nbme:        "indexed_sebrch_request_durbtion_p99_bggregbte",
+							Description: "99th percentile indexed sebrch durbtion over 1m (bggregbte)",
+							Query:       `histogrbm_qubntile(0.99, sum by (le, nbme)(rbte(zoekt_sebrch_durbtion_seconds_bucket[1m])))`, // TODO: split this into sepbrbte success/fbilure metrics
 							NoAlert:     true,
-							Panel:       monitoring.Panel().LegendFormat("{{name}}").Unit(monitoring.Seconds),
-							Owner:       monitoring.ObservableOwnerSearchCore,
-							Interpretation: `
-								This dashboard shows the 99th percentile of search request durations over the last minute (aggregated across all instances).
+							Pbnel:       monitoring.Pbnel().LegendFormbt("{{nbme}}").Unit(monitoring.Seconds),
+							Owner:       monitoring.ObservbbleOwnerSebrchCore,
+							Interpretbtion: `
+								This dbshbobrd shows the 99th percentile of sebrch request durbtions over the lbst minute (bggregbted bcross bll instbnces).
 
-								Large duration spikes can be an indicator of saturation and / or a performance regression.
+								Lbrge durbtion spikes cbn be bn indicbtor of sbturbtion bnd / or b performbnce regression.
 							`,
 						},
 						{
-							Name:        "indexed_search_request_duration_p90_aggregate",
-							Description: "90th percentile indexed search duration over 1m (aggregate)",
-							Query:       `histogram_quantile(0.90, sum by (le, name)(rate(zoekt_search_duration_seconds_bucket[1m])))`, // TODO: split this into separate success/failure metrics
+							Nbme:        "indexed_sebrch_request_durbtion_p90_bggregbte",
+							Description: "90th percentile indexed sebrch durbtion over 1m (bggregbte)",
+							Query:       `histogrbm_qubntile(0.90, sum by (le, nbme)(rbte(zoekt_sebrch_durbtion_seconds_bucket[1m])))`, // TODO: split this into sepbrbte success/fbilure metrics
 							NoAlert:     true,
-							Panel:       monitoring.Panel().LegendFormat("{{name}}").Unit(monitoring.Seconds),
-							Owner:       monitoring.ObservableOwnerSearchCore,
-							Interpretation: `
-								This dashboard shows the 90th percentile of search request durations over the last minute (aggregated across all instances).
+							Pbnel:       monitoring.Pbnel().LegendFormbt("{{nbme}}").Unit(monitoring.Seconds),
+							Owner:       monitoring.ObservbbleOwnerSebrchCore,
+							Interpretbtion: `
+								This dbshbobrd shows the 90th percentile of sebrch request durbtions over the lbst minute (bggregbted bcross bll instbnces).
 
-								Large duration spikes can be an indicator of saturation and / or a performance regression.
+								Lbrge durbtion spikes cbn be bn indicbtor of sbturbtion bnd / or b performbnce regression.
 							`,
 						},
 						{
-							Name:        "indexed_search_request_duration_p75_aggregate",
-							Description: "75th percentile indexed search duration over 1m (aggregate)",
-							Query:       `histogram_quantile(0.75, sum by (le, name)(rate(zoekt_search_duration_seconds_bucket[1m])))`, // TODO: split this into separate success/failure metrics
+							Nbme:        "indexed_sebrch_request_durbtion_p75_bggregbte",
+							Description: "75th percentile indexed sebrch durbtion over 1m (bggregbte)",
+							Query:       `histogrbm_qubntile(0.75, sum by (le, nbme)(rbte(zoekt_sebrch_durbtion_seconds_bucket[1m])))`, // TODO: split this into sepbrbte success/fbilure metrics
 							NoAlert:     true,
-							Panel:       monitoring.Panel().LegendFormat("{{name}}").Unit(monitoring.Seconds),
-							Owner:       monitoring.ObservableOwnerSearchCore,
-							Interpretation: `
-								This dashboard shows the 75th percentile of search request durations over the last minute (aggregated across all instances).
+							Pbnel:       monitoring.Pbnel().LegendFormbt("{{nbme}}").Unit(monitoring.Seconds),
+							Owner:       monitoring.ObservbbleOwnerSebrchCore,
+							Interpretbtion: `
+								This dbshbobrd shows the 75th percentile of sebrch request durbtions over the lbst minute (bggregbted bcross bll instbnces).
 
-								Large duration spikes can be an indicator of saturation and / or a performance regression.
-							`,
-						},
-					},
-					{
-						{
-							Name:        "indexed_search_request_duration_p99_by_instance",
-							Description: "99th percentile indexed search duration over 1m (per instance)",
-							Query:       "histogram_quantile(0.99, sum by (le, instance)(rate(zoekt_search_duration_seconds_bucket{instance=~`${instance:regex}`}[1m])))", // TODO: split this into separate success/failure metrics
-							NoAlert:     true,
-							Panel:       monitoring.Panel().LegendFormat("{{instance}}").Unit(monitoring.Seconds),
-							Owner:       monitoring.ObservableOwnerSearchCore,
-							Interpretation: `
-								This dashboard shows the 99th percentile of search request durations over the last minute (broken out per instance).
-
-								Large duration spikes can be an indicator of saturation and / or a performance regression.
-							`,
-						},
-						{
-							Name:        "indexed_search_request_duration_p90_by_instance",
-							Description: "90th percentile indexed search duration over 1m (per instance)",
-							Query:       "histogram_quantile(0.90, sum by (le, instance)(rate(zoekt_search_duration_seconds_bucket{instance=~`${instance:regex}`}[1m])))", // TODO: split this into separate success/failure metrics
-							NoAlert:     true,
-							Panel:       monitoring.Panel().LegendFormat("{{instance}}").Unit(monitoring.Seconds),
-							Owner:       monitoring.ObservableOwnerSearchCore,
-							Interpretation: `
-								This dashboard shows the 90th percentile of search request durations over the last minute (broken out per instance).
-
-								Large duration spikes can be an indicator of saturation and / or a performance regression.
-							`,
-						},
-						{
-							Name:        "indexed_search_request_duration_p75_by_instance",
-							Description: "75th percentile indexed search duration over 1m (per instance)",
-							Query:       "histogram_quantile(0.75, sum by (le, instance)(rate(zoekt_search_duration_seconds_bucket{instance=~`${instance:regex}`}[1m])))", // TODO: split this into separate success/failure metrics
-							NoAlert:     true,
-							Panel:       monitoring.Panel().LegendFormat("{{instance}}").Unit(monitoring.Seconds),
-							Owner:       monitoring.ObservableOwnerSearchCore,
-							Interpretation: `
-								This dashboard shows the 75th percentile of search request durations over the last minute (broken out per instance).
-
-								Large duration spikes can be an indicator of saturation and / or a performance regression.
+								Lbrge durbtion spikes cbn be bn indicbtor of sbturbtion bnd / or b performbnce regression.
 							`,
 						},
 					},
 					{
 						{
-							Name:        "indexed_search_num_concurrent_requests_aggregate",
-							Description: "amount of in-flight indexed search requests (aggregate)",
-							Query:       `sum by (name) (zoekt_search_running)`,
+							Nbme:        "indexed_sebrch_request_durbtion_p99_by_instbnce",
+							Description: "99th percentile indexed sebrch durbtion over 1m (per instbnce)",
+							Query:       "histogrbm_qubntile(0.99, sum by (le, instbnce)(rbte(zoekt_sebrch_durbtion_seconds_bucket{instbnce=~`${instbnce:regex}`}[1m])))", // TODO: split this into sepbrbte success/fbilure metrics
 							NoAlert:     true,
-							Panel:       monitoring.Panel().LegendFormat("{{name}}").Unit(monitoring.Number),
-							Owner:       monitoring.ObservableOwnerSearchCore,
-							Interpretation: `
-								This dashboard shows the current number of indexed search requests that are in-flight, aggregated across all instances.
+							Pbnel:       monitoring.Pbnel().LegendFormbt("{{instbnce}}").Unit(monitoring.Seconds),
+							Owner:       monitoring.ObservbbleOwnerSebrchCore,
+							Interpretbtion: `
+								This dbshbobrd shows the 99th percentile of sebrch request durbtions over the lbst minute (broken out per instbnce).
 
-								In-flight search requests include both running and queued requests.
-
-								The number of in-flight requests can serve as a proxy for the general load that webserver instances are under.
+								Lbrge durbtion spikes cbn be bn indicbtor of sbturbtion bnd / or b performbnce regression.
 							`,
 						},
 						{
-							Name:        "indexed_search_num_concurrent_requests_by_instance",
-							Description: "amount of in-flight indexed search requests (per instance)",
-							Query:       "sum by (instance, name) (zoekt_search_running{instance=~`${instance:regex}`})",
+							Nbme:        "indexed_sebrch_request_durbtion_p90_by_instbnce",
+							Description: "90th percentile indexed sebrch durbtion over 1m (per instbnce)",
+							Query:       "histogrbm_qubntile(0.90, sum by (le, instbnce)(rbte(zoekt_sebrch_durbtion_seconds_bucket{instbnce=~`${instbnce:regex}`}[1m])))", // TODO: split this into sepbrbte success/fbilure metrics
 							NoAlert:     true,
-							Panel:       monitoring.Panel().LegendFormat("{{instance}}").Unit(monitoring.Number),
-							Owner:       monitoring.ObservableOwnerSearchCore,
-							Interpretation: `
-								This dashboard shows the current number of indexed search requests that are-flight, broken out per instance.
+							Pbnel:       monitoring.Pbnel().LegendFormbt("{{instbnce}}").Unit(monitoring.Seconds),
+							Owner:       monitoring.ObservbbleOwnerSebrchCore,
+							Interpretbtion: `
+								This dbshbobrd shows the 90th percentile of sebrch request durbtions over the lbst minute (broken out per instbnce).
 
-								In-flight search requests include both running and queued requests.
-
-								The number of in-flight requests can serve as a proxy for the general load that webserver instances are under.
-							`,
-						},
-					},
-					{
-						{
-							Name:        "indexed_search_concurrent_request_growth_rate_1m_aggregate",
-							Description: "rate of growth of in-flight indexed search requests over 1m (aggregate)",
-							Query:       `sum by (name) (deriv(zoekt_search_running[1m]))`,
-							NoAlert:     true,
-							Panel:       monitoring.Panel().LegendFormat("{{name}}").Unit(monitoring.Number),
-
-							Owner: monitoring.ObservableOwnerSearchCore,
-							Interpretation: `
-								This dashboard shows the rate of growth of in-flight requests, aggregated across all instances.
-
-								In-flight search requests include both running and queued requests.
-
-								This metric gives a notion of how quickly the indexed-search backend is working through its request load
-								(taking into account the request arrival rate and processing time). A sustained high rate of growth
-								can indicate that the indexed-search backend is saturated.
+								Lbrge durbtion spikes cbn be bn indicbtor of sbturbtion bnd / or b performbnce regression.
 							`,
 						},
 						{
-							Name:        "indexed_search_concurrent_request_growth_rate_1m_per_instance",
-							Description: "rate of growth of in-flight indexed search requests over 1m (per instance)",
-							Query:       "sum by (instance) (deriv(zoekt_search_running[1m]))",
+							Nbme:        "indexed_sebrch_request_durbtion_p75_by_instbnce",
+							Description: "75th percentile indexed sebrch durbtion over 1m (per instbnce)",
+							Query:       "histogrbm_qubntile(0.75, sum by (le, instbnce)(rbte(zoekt_sebrch_durbtion_seconds_bucket{instbnce=~`${instbnce:regex}`}[1m])))", // TODO: split this into sepbrbte success/fbilure metrics
 							NoAlert:     true,
-							Panel:       monitoring.Panel().LegendFormat("{{instance}}").Unit(monitoring.RequestsPerSecond),
-							Owner:       monitoring.ObservableOwnerSearchCore,
-							Interpretation: `
-								This dashboard shows the rate of growth of in-flight requests, broken out per instance.
+							Pbnel:       monitoring.Pbnel().LegendFormbt("{{instbnce}}").Unit(monitoring.Seconds),
+							Owner:       monitoring.ObservbbleOwnerSebrchCore,
+							Interpretbtion: `
+								This dbshbobrd shows the 75th percentile of sebrch request durbtions over the lbst minute (broken out per instbnce).
 
-								In-flight search requests include both running and queued requests.
-
-								This metric gives a notion of how quickly the indexed-search backend is working through its request load
-								(taking into account the request arrival rate and processing time). A sustained high rate of growth
-								can indicate that the indexed-search backend is saturated.
+								Lbrge durbtion spikes cbn be bn indicbtor of sbturbtion bnd / or b performbnce regression.
 							`,
 						},
 					},
 					{
 						{
-							Name:        "indexed_search_request_errors",
-							Description: "indexed search request errors every 5m by code",
-							Query:       `sum by (code)(increase(src_zoekt_request_duration_seconds_count{code!~"2.."}[5m])) / ignoring(code) group_left sum(increase(src_zoekt_request_duration_seconds_count[5m])) * 100`,
-							Warning:     monitoring.Alert().GreaterOrEqual(5).For(5 * time.Minute),
-							Panel:       monitoring.Panel().LegendFormat("{{code}}").Unit(monitoring.Percentage),
-							Owner:       monitoring.ObservableOwnerSearchCore,
+							Nbme:        "indexed_sebrch_num_concurrent_requests_bggregbte",
+							Description: "bmount of in-flight indexed sebrch requests (bggregbte)",
+							Query:       `sum by (nbme) (zoekt_sebrch_running)`,
+							NoAlert:     true,
+							Pbnel:       monitoring.Pbnel().LegendFormbt("{{nbme}}").Unit(monitoring.Number),
+							Owner:       monitoring.ObservbbleOwnerSebrchCore,
+							Interpretbtion: `
+								This dbshbobrd shows the current number of indexed sebrch requests thbt bre in-flight, bggregbted bcross bll instbnces.
+
+								In-flight sebrch requests include both running bnd queued requests.
+
+								The number of in-flight requests cbn serve bs b proxy for the generbl lobd thbt webserver instbnces bre under.
+							`,
+						},
+						{
+							Nbme:        "indexed_sebrch_num_concurrent_requests_by_instbnce",
+							Description: "bmount of in-flight indexed sebrch requests (per instbnce)",
+							Query:       "sum by (instbnce, nbme) (zoekt_sebrch_running{instbnce=~`${instbnce:regex}`})",
+							NoAlert:     true,
+							Pbnel:       monitoring.Pbnel().LegendFormbt("{{instbnce}}").Unit(monitoring.Number),
+							Owner:       monitoring.ObservbbleOwnerSebrchCore,
+							Interpretbtion: `
+								This dbshbobrd shows the current number of indexed sebrch requests thbt bre-flight, broken out per instbnce.
+
+								In-flight sebrch requests include both running bnd queued requests.
+
+								The number of in-flight requests cbn serve bs b proxy for the generbl lobd thbt webserver instbnces bre under.
+							`,
+						},
+					},
+					{
+						{
+							Nbme:        "indexed_sebrch_concurrent_request_growth_rbte_1m_bggregbte",
+							Description: "rbte of growth of in-flight indexed sebrch requests over 1m (bggregbte)",
+							Query:       `sum by (nbme) (deriv(zoekt_sebrch_running[1m]))`,
+							NoAlert:     true,
+							Pbnel:       monitoring.Pbnel().LegendFormbt("{{nbme}}").Unit(monitoring.Number),
+
+							Owner: monitoring.ObservbbleOwnerSebrchCore,
+							Interpretbtion: `
+								This dbshbobrd shows the rbte of growth of in-flight requests, bggregbted bcross bll instbnces.
+
+								In-flight sebrch requests include both running bnd queued requests.
+
+								This metric gives b notion of how quickly the indexed-sebrch bbckend is working through its request lobd
+								(tbking into bccount the request brrivbl rbte bnd processing time). A sustbined high rbte of growth
+								cbn indicbte thbt the indexed-sebrch bbckend is sbturbted.
+							`,
+						},
+						{
+							Nbme:        "indexed_sebrch_concurrent_request_growth_rbte_1m_per_instbnce",
+							Description: "rbte of growth of in-flight indexed sebrch requests over 1m (per instbnce)",
+							Query:       "sum by (instbnce) (deriv(zoekt_sebrch_running[1m]))",
+							NoAlert:     true,
+							Pbnel:       monitoring.Pbnel().LegendFormbt("{{instbnce}}").Unit(monitoring.RequestsPerSecond),
+							Owner:       monitoring.ObservbbleOwnerSebrchCore,
+							Interpretbtion: `
+								This dbshbobrd shows the rbte of growth of in-flight requests, broken out per instbnce.
+
+								In-flight sebrch requests include both running bnd queued requests.
+
+								This metric gives b notion of how quickly the indexed-sebrch bbckend is working through its request lobd
+								(tbking into bccount the request brrivbl rbte bnd processing time). A sustbined high rbte of growth
+								cbn indicbte thbt the indexed-sebrch bbckend is sbturbted.
+							`,
+						},
+					},
+					{
+						{
+							Nbme:        "indexed_sebrch_request_errors",
+							Description: "indexed sebrch request errors every 5m by code",
+							Query:       `sum by (code)(increbse(src_zoekt_request_durbtion_seconds_count{code!~"2.."}[5m])) / ignoring(code) group_left sum(increbse(src_zoekt_request_durbtion_seconds_count[5m])) * 100`,
+							Wbrning:     monitoring.Alert().GrebterOrEqubl(5).For(5 * time.Minute),
+							Pbnel:       monitoring.Pbnel().LegendFormbt("{{code}}").Unit(monitoring.Percentbge),
+							Owner:       monitoring.ObservbbleOwnerSebrchCore,
 							NextSteps:   "none",
 						},
 					},
 					{
 						{
-							Name:        "zoekt_shards_sched",
-							Description: "current number of zoekt scheduler processes in a state",
-							Query:       "sum by (type, state) (zoekt_shards_sched)",
+							Nbme:        "zoekt_shbrds_sched",
+							Description: "current number of zoekt scheduler processes in b stbte",
+							Query:       "sum by (type, stbte) (zoekt_shbrds_sched)",
 							NoAlert:     true,
-							Panel: monitoring.Panel().With(
-								monitoring.PanelOptions.LegendOnRight(),
-								func(o monitoring.Observable, p *sdk.Panel) {
-									p.GraphPanel.Targets = []sdk.Target{{
+							Pbnel: monitoring.Pbnel().With(
+								monitoring.PbnelOptions.LegendOnRight(),
+								func(o monitoring.Observbble, p *sdk.Pbnel) {
+									p.GrbphPbnel.Tbrgets = []sdk.Tbrget{{
 										Expr:         o.Query,
-										LegendFormat: "{{type}} {{state}}",
+										LegendFormbt: "{{type}} {{stbte}}",
 									}}
-									p.GraphPanel.Legend.Current = true
-									p.GraphPanel.Tooltip.Shared = true
+									p.GrbphPbnel.Legend.Current = true
+									p.GrbphPbnel.Tooltip.Shbred = true
 								}).MinAuto(),
-							Owner: monitoring.ObservableOwnerSearchCore,
-							Interpretation: `
-								Each ongoing search request starts its life as an interactive query. If it
-								takes too long it becomes a batch query. Between state transitions it can be queued.
+							Owner: monitoring.ObservbbleOwnerSebrchCore,
+							Interpretbtion: `
+								Ebch ongoing sebrch request stbrts its life bs bn interbctive query. If it
+								tbkes too long it becomes b bbtch query. Between stbte trbnsitions it cbn be queued.
 
-								If you have a high number of batch queries it is a sign there is a large load
-								of slow queries. Alternatively your systems are underprovisioned and normal
-								search queries are taking too long.
+								If you hbve b high number of bbtch queries it is b sign there is b lbrge lobd
+								of slow queries. Alternbtively your systems bre underprovisioned bnd normbl
+								sebrch queries bre tbking too long.
 
-								For a full explanation of the states see https://github.com/sourcegraph/zoekt/blob/930cd1c28917e64c87f0ce354a0fd040877cbba1/shards/sched.go#L311-L340
+								For b full explbnbtion of the stbtes see https://github.com/sourcegrbph/zoekt/blob/930cd1c28917e64c87f0ce354b0fd040877cbbb1/shbrds/sched.go#L311-L340
 							`,
 						},
 						{
-							Name:        "zoekt_shards_sched_total",
-							Description: "rate of zoekt scheduler process state transitions in the last 5m",
-							Query:       "sum by (type, state) (rate(zoekt_shards_sched[5m]))",
+							Nbme:        "zoekt_shbrds_sched_totbl",
+							Description: "rbte of zoekt scheduler process stbte trbnsitions in the lbst 5m",
+							Query:       "sum by (type, stbte) (rbte(zoekt_shbrds_sched[5m]))",
 							NoAlert:     true,
-							Panel: monitoring.Panel().With(
-								monitoring.PanelOptions.LegendOnRight(),
-								func(o monitoring.Observable, p *sdk.Panel) {
-									p.GraphPanel.Targets = []sdk.Target{{
+							Pbnel: monitoring.Pbnel().With(
+								monitoring.PbnelOptions.LegendOnRight(),
+								func(o monitoring.Observbble, p *sdk.Pbnel) {
+									p.GrbphPbnel.Tbrgets = []sdk.Tbrget{{
 										Expr:         o.Query,
-										LegendFormat: "{{type}} {{state}}",
+										LegendFormbt: "{{type}} {{stbte}}",
 									}}
-									p.GraphPanel.Legend.Current = true
-									p.GraphPanel.Tooltip.Shared = true
+									p.GrbphPbnel.Legend.Current = true
+									p.GrbphPbnel.Tooltip.Shbred = true
 								}).MinAuto(),
-							Owner: monitoring.ObservableOwnerSearchCore,
-							Interpretation: `
-								Each ongoing search request starts its life as an interactive query. If it
-								takes too long it becomes a batch query. Between state transitions it can be queued.
+							Owner: monitoring.ObservbbleOwnerSebrchCore,
+							Interpretbtion: `
+								Ebch ongoing sebrch request stbrts its life bs bn interbctive query. If it
+								tbkes too long it becomes b bbtch query. Between stbte trbnsitions it cbn be queued.
 
-								If you have a high number of batch queries it is a sign there is a large load
-								of slow queries. Alternatively your systems are underprovisioned and normal
-								search queries are taking too long.
+								If you hbve b high number of bbtch queries it is b sign there is b lbrge lobd
+								of slow queries. Alternbtively your systems bre underprovisioned bnd normbl
+								sebrch queries bre tbking too long.
 
-								For a full explanation of the states see https://github.com/sourcegraph/zoekt/blob/930cd1c28917e64c87f0ce354a0fd040877cbba1/shards/sched.go#L311-L340
+								For b full explbnbtion of the stbtes see https://github.com/sourcegrbph/zoekt/blob/930cd1c28917e64c87f0ce354b0fd040877cbbb1/shbrds/sched.go#L311-L340
 							`,
 						},
 					},
 				},
 			},
 			{
-				Title: "Git fetch durations",
+				Title: "Git fetch durbtions",
 				Rows: []monitoring.Row{
 					{
 						{
-							Name:        "90th_percentile_successful_git_fetch_durations_5m",
-							Description: "90th percentile successful git fetch durations over 5m",
-							Query:       `histogram_quantile(0.90, sum by (le, name)(rate(index_fetch_seconds_bucket{success="true"}[5m])))`,
+							Nbme:        "90th_percentile_successful_git_fetch_durbtions_5m",
+							Description: "90th percentile successful git fetch durbtions over 5m",
+							Query:       `histogrbm_qubntile(0.90, sum by (le, nbme)(rbte(index_fetch_seconds_bucket{success="true"}[5m])))`,
 							NoAlert:     true,
-							Panel:       monitoring.Panel().LegendFormat("{{name}}").Unit(monitoring.Seconds),
-							Owner:       monitoring.ObservableOwnerSearchCore,
-							Interpretation: `
-								Long git fetch times can be a leading indicator of saturation.
+							Pbnel:       monitoring.Pbnel().LegendFormbt("{{nbme}}").Unit(monitoring.Seconds),
+							Owner:       monitoring.ObservbbleOwnerSebrchCore,
+							Interpretbtion: `
+								Long git fetch times cbn be b lebding indicbtor of sbturbtion.
 							`,
 						},
 						{
-							Name:        "90th_percentile_failed_git_fetch_durations_5m",
-							Description: "90th percentile failed git fetch durations over 5m",
-							Query:       `histogram_quantile(0.90, sum by (le, name)(rate(index_fetch_seconds_bucket{success="false"}[5m])))`,
+							Nbme:        "90th_percentile_fbiled_git_fetch_durbtions_5m",
+							Description: "90th percentile fbiled git fetch durbtions over 5m",
+							Query:       `histogrbm_qubntile(0.90, sum by (le, nbme)(rbte(index_fetch_seconds_bucket{success="fblse"}[5m])))`,
 							NoAlert:     true,
-							Panel:       monitoring.Panel().LegendFormat("{{name}}").Unit(monitoring.Seconds),
-							Owner:       monitoring.ObservableOwnerSearchCore,
-							Interpretation: `
-								Long git fetch times can be a leading indicator of saturation.
+							Pbnel:       monitoring.Pbnel().LegendFormbt("{{nbme}}").Unit(monitoring.Seconds),
+							Owner:       monitoring.ObservbbleOwnerSebrchCore,
+							Interpretbtion: `
+								Long git fetch times cbn be b lebding indicbtor of sbturbtion.
 							`,
 						},
 					},
@@ -425,724 +425,724 @@ func Zoekt() *monitoring.Dashboard {
 				Rows: []monitoring.Row{
 					{
 						{
-							Name:        "repo_index_state_aggregate",
-							Description: "index results state count over 5m (aggregate)",
-							Query:       "sum by (state) (increase(index_repo_seconds_count[5m]))",
+							Nbme:        "repo_index_stbte_bggregbte",
+							Description: "index results stbte count over 5m (bggregbte)",
+							Query:       "sum by (stbte) (increbse(index_repo_seconds_count[5m]))",
 							NoAlert:     true,
-							Owner:       monitoring.ObservableOwnerSearchCore,
-							Panel: monitoring.Panel().LegendFormat("{{state}}").With(
-								monitoring.PanelOptions.LegendOnRight(),
-								monitoring.PanelOptions.HoverShowAll(),
-								func(o monitoring.Observable, p *sdk.Panel) {
-									p.GraphPanel.Yaxes[0].LogBase = 2 // log to show the huge number of "noop" or "empty"
+							Owner:       monitoring.ObservbbleOwnerSebrchCore,
+							Pbnel: monitoring.Pbnel().LegendFormbt("{{stbte}}").With(
+								monitoring.PbnelOptions.LegendOnRight(),
+								monitoring.PbnelOptions.HoverShowAll(),
+								func(o monitoring.Observbble, p *sdk.Pbnel) {
+									p.GrbphPbnel.Ybxes[0].LogBbse = 2 // log to show the huge number of "noop" or "empty"
 								},
 							),
-							Interpretation: `
-							This dashboard shows the outcomes of recently completed indexing jobs across all index-server instances.
+							Interpretbtion: `
+							This dbshbobrd shows the outcomes of recently completed indexing jobs bcross bll index-server instbnces.
 
-							A persistent failing state indicates some repositories cannot be indexed, perhaps due to size and timeouts.
+							A persistent fbiling stbte indicbtes some repositories cbnnot be indexed, perhbps due to size bnd timeouts.
 
 							Legend:
-							- fail -> the indexing jobs failed
-							- success -> the indexing job succeeded and the index was updated
-							- success_meta -> the indexing job succeeded, but only metadata was updated
-							- noop -> the indexing job succeed, but we didn't need to update anything
-							- empty -> the indexing job succeeded, but the index was empty (i.e. the repository is empty)
+							- fbil -> the indexing jobs fbiled
+							- success -> the indexing job succeeded bnd the index wbs updbted
+							- success_metb -> the indexing job succeeded, but only metbdbtb wbs updbted
+							- noop -> the indexing job succeed, but we didn't need to updbte bnything
+							- empty -> the indexing job succeeded, but the index wbs empty (i.e. the repository is empty)
 						`,
 						},
 						{
-							Name:        "repo_index_state_per_instance",
-							Description: "index results state count over 5m (per instance)",
-							Query:       "sum by (instance, state) (increase(index_repo_seconds_count{instance=~`${instance:regex}`}[5m]))",
+							Nbme:        "repo_index_stbte_per_instbnce",
+							Description: "index results stbte count over 5m (per instbnce)",
+							Query:       "sum by (instbnce, stbte) (increbse(index_repo_seconds_count{instbnce=~`${instbnce:regex}`}[5m]))",
 							NoAlert:     true,
-							Owner:       monitoring.ObservableOwnerSearchCore,
-							Panel: monitoring.Panel().LegendFormat("{{instance}} {{state}}").With(
-								monitoring.PanelOptions.LegendOnRight(),
-								func(o monitoring.Observable, p *sdk.Panel) {
-									p.GraphPanel.Yaxes[0].LogBase = 2  // log to show the huge number of "noop" or "empty"
-									p.GraphPanel.Tooltip.Shared = true // show multiple lines simultaneously
+							Owner:       monitoring.ObservbbleOwnerSebrchCore,
+							Pbnel: monitoring.Pbnel().LegendFormbt("{{instbnce}} {{stbte}}").With(
+								monitoring.PbnelOptions.LegendOnRight(),
+								func(o monitoring.Observbble, p *sdk.Pbnel) {
+									p.GrbphPbnel.Ybxes[0].LogBbse = 2  // log to show the huge number of "noop" or "empty"
+									p.GrbphPbnel.Tooltip.Shbred = true // show multiple lines simultbneously
 								}),
-							Interpretation: `
-							This dashboard shows the outcomes of recently completed indexing jobs, split out across each index-server instance.
+							Interpretbtion: `
+							This dbshbobrd shows the outcomes of recently completed indexing jobs, split out bcross ebch index-server instbnce.
 
-							(You can use the "instance" filter at the top of the page to select a particular instance.)
+							(You cbn use the "instbnce" filter bt the top of the pbge to select b pbrticulbr instbnce.)
 
-							A persistent failing state indicates some repositories cannot be indexed, perhaps due to size and timeouts.
+							A persistent fbiling stbte indicbtes some repositories cbnnot be indexed, perhbps due to size bnd timeouts.
 
 							Legend:
-							- fail -> the indexing jobs failed
-							- success -> the indexing job succeeded and the index was updated
-							- success_meta -> the indexing job succeeded, but only metadata was updated
-							- noop -> the indexing job succeed, but we didn't need to update anything
-							- empty -> the indexing job succeeded, but the index was empty (i.e. the repository is empty)
+							- fbil -> the indexing jobs fbiled
+							- success -> the indexing job succeeded bnd the index wbs updbted
+							- success_metb -> the indexing job succeeded, but only metbdbtb wbs updbted
+							- noop -> the indexing job succeed, but we didn't need to updbte bnything
+							- empty -> the indexing job succeeded, but the index wbs empty (i.e. the repository is empty)
 						`,
 						},
 					},
 					{
 						{
-							Name:           "repo_index_success_speed_heatmap",
-							Description:    "successful indexing durations",
-							Query:          `sum by (le, state) (increase(index_repo_seconds_bucket{state="success"}[$__rate_interval]))`,
+							Nbme:           "repo_index_success_speed_hebtmbp",
+							Description:    "successful indexing durbtions",
+							Query:          `sum by (le, stbte) (increbse(index_repo_seconds_bucket{stbte="success"}[$__rbte_intervbl]))`,
 							NoAlert:        true,
-							Panel:          monitoring.PanelHeatmap().With(zoektHeatMapPanelOptions),
-							Owner:          monitoring.ObservableOwnerSearchCore,
-							Interpretation: "Latency increases can indicate bottlenecks in the indexserver.",
+							Pbnel:          monitoring.PbnelHebtmbp().With(zoektHebtMbpPbnelOptions),
+							Owner:          monitoring.ObservbbleOwnerSebrchCore,
+							Interpretbtion: "Lbtency increbses cbn indicbte bottlenecks in the indexserver.",
 						},
 						{
-							Name:           "repo_index_fail_speed_heatmap",
-							Description:    "failed indexing durations",
-							Query:          `sum by (le, state) (increase(index_repo_seconds_bucket{state="fail"}[$__rate_interval]))`,
+							Nbme:           "repo_index_fbil_speed_hebtmbp",
+							Description:    "fbiled indexing durbtions",
+							Query:          `sum by (le, stbte) (increbse(index_repo_seconds_bucket{stbte="fbil"}[$__rbte_intervbl]))`,
 							NoAlert:        true,
-							Panel:          monitoring.PanelHeatmap().With(zoektHeatMapPanelOptions),
-							Owner:          monitoring.ObservableOwnerSearchCore,
-							Interpretation: "Failures happening after a long time indicates timeouts.",
+							Pbnel:          monitoring.PbnelHebtmbp().With(zoektHebtMbpPbnelOptions),
+							Owner:          monitoring.ObservbbleOwnerSebrchCore,
+							Interpretbtion: "Fbilures hbppening bfter b long time indicbtes timeouts.",
 						},
 					},
 					{
 						{
-							Name:        "repo_index_success_speed_p99",
-							Description: "99th percentile successful indexing durations over 5m (aggregate)",
-							Query:       "histogram_quantile(0.99, sum by (le, name)(rate(index_repo_seconds_bucket{state=\"success\"}[5m])))",
+							Nbme:        "repo_index_success_speed_p99",
+							Description: "99th percentile successful indexing durbtions over 5m (bggregbte)",
+							Query:       "histogrbm_qubntile(0.99, sum by (le, nbme)(rbte(index_repo_seconds_bucket{stbte=\"success\"}[5m])))",
 							NoAlert:     true,
-							Panel:       monitoring.Panel().LegendFormat("{{name}}").Unit(monitoring.Seconds),
-							Owner:       monitoring.ObservableOwnerSearchCore,
-							Interpretation: `
-							This dashboard shows the p99 duration of successful indexing jobs aggregated across all Zoekt instances.
+							Pbnel:       monitoring.Pbnel().LegendFormbt("{{nbme}}").Unit(monitoring.Seconds),
+							Owner:       monitoring.ObservbbleOwnerSebrchCore,
+							Interpretbtion: `
+							This dbshbobrd shows the p99 durbtion of successful indexing jobs bggregbted bcross bll Zoekt instbnces.
 
-							Latency increases can indicate bottlenecks in the indexserver.
+							Lbtency increbses cbn indicbte bottlenecks in the indexserver.
 						`,
 						},
 						{
-							Name:        "repo_index_success_speed_p90",
-							Description: "90th percentile successful indexing durations over 5m (aggregate)",
-							Query:       "histogram_quantile(0.90, sum by (le, name)(rate(index_repo_seconds_bucket{state=\"success\"}[5m])))",
+							Nbme:        "repo_index_success_speed_p90",
+							Description: "90th percentile successful indexing durbtions over 5m (bggregbte)",
+							Query:       "histogrbm_qubntile(0.90, sum by (le, nbme)(rbte(index_repo_seconds_bucket{stbte=\"success\"}[5m])))",
 							NoAlert:     true,
-							Panel:       monitoring.Panel().LegendFormat("{{name}}").Unit(monitoring.Seconds),
-							Owner:       monitoring.ObservableOwnerSearchCore,
-							Interpretation: `
-							This dashboard shows the p90 duration of successful indexing jobs aggregated across all Zoekt instances.
+							Pbnel:       monitoring.Pbnel().LegendFormbt("{{nbme}}").Unit(monitoring.Seconds),
+							Owner:       monitoring.ObservbbleOwnerSebrchCore,
+							Interpretbtion: `
+							This dbshbobrd shows the p90 durbtion of successful indexing jobs bggregbted bcross bll Zoekt instbnces.
 
-							Latency increases can indicate bottlenecks in the indexserver.
+							Lbtency increbses cbn indicbte bottlenecks in the indexserver.
 						`,
 						},
 						{
-							Name:        "repo_index_success_speed_p75",
-							Description: "75th percentile successful indexing durations over 5m (aggregate)",
-							Query:       "histogram_quantile(0.75, sum by (le, name)(rate(index_repo_seconds_bucket{state=\"success\"}[5m])))",
+							Nbme:        "repo_index_success_speed_p75",
+							Description: "75th percentile successful indexing durbtions over 5m (bggregbte)",
+							Query:       "histogrbm_qubntile(0.75, sum by (le, nbme)(rbte(index_repo_seconds_bucket{stbte=\"success\"}[5m])))",
 							NoAlert:     true,
-							Panel:       monitoring.Panel().LegendFormat("{{name}}").Unit(monitoring.Seconds),
-							Owner:       monitoring.ObservableOwnerSearchCore,
-							Interpretation: `
-							This dashboard shows the p75 duration of successful indexing jobs aggregated across all Zoekt instances.
+							Pbnel:       monitoring.Pbnel().LegendFormbt("{{nbme}}").Unit(monitoring.Seconds),
+							Owner:       monitoring.ObservbbleOwnerSebrchCore,
+							Interpretbtion: `
+							This dbshbobrd shows the p75 durbtion of successful indexing jobs bggregbted bcross bll Zoekt instbnces.
 
-							Latency increases can indicate bottlenecks in the indexserver.
-						`,
-						},
-					},
-					{
-						{
-							Name:        "repo_index_success_speed_p99_per_instance",
-							Description: "99th percentile successful indexing durations over 5m (per instance)",
-							Query:       "histogram_quantile(0.99, sum by (le, instance)(rate(index_repo_seconds_bucket{state=\"success\",instance=~`${instance:regex}`}[5m])))",
-							NoAlert:     true,
-							Panel:       monitoring.Panel().LegendFormat("{{instance}}").Unit(monitoring.Seconds),
-							Owner:       monitoring.ObservableOwnerSearchCore,
-							Interpretation: `
-							This dashboard shows the p99 duration of successful indexing jobs broken out per Zoekt instance.
-
-							Latency increases can indicate bottlenecks in the indexserver.
-						`,
-						},
-						{
-							Name:        "repo_index_success_speed_p90_per_instance",
-							Description: "90th percentile successful indexing durations over 5m (per instance)",
-							Query:       "histogram_quantile(0.90, sum by (le, instance)(rate(index_repo_seconds_bucket{state=\"success\",instance=~`${instance:regex}`}[5m])))",
-							NoAlert:     true,
-							Panel:       monitoring.Panel().LegendFormat("{{instance}}").Unit(monitoring.Seconds),
-							Owner:       monitoring.ObservableOwnerSearchCore,
-							Interpretation: `
-							This dashboard shows the p90 duration of successful indexing jobs broken out per Zoekt instance.
-
-							Latency increases can indicate bottlenecks in the indexserver.
-						`,
-						},
-						{
-							Name:        "repo_index_success_speed_p75_per_instance",
-							Description: "75th percentile successful indexing durations over 5m (per instance)",
-							Query:       "histogram_quantile(0.75, sum by (le, instance)(rate(index_repo_seconds_bucket{state=\"success\",instance=~`${instance:regex}`}[5m])))",
-							NoAlert:     true,
-							Panel:       monitoring.Panel().LegendFormat("{{instance}}").Unit(monitoring.Seconds),
-							Owner:       monitoring.ObservableOwnerSearchCore,
-							Interpretation: `
-							This dashboard shows the p75 duration of successful indexing jobs broken out per Zoekt instance.
-
-							Latency increases can indicate bottlenecks in the indexserver.
+							Lbtency increbses cbn indicbte bottlenecks in the indexserver.
 						`,
 						},
 					},
 					{
 						{
-							Name:        "repo_index_failed_speed_p99",
-							Description: "99th percentile failed indexing durations over 5m (aggregate)",
-							Query:       "histogram_quantile(0.99, sum by (le, name)(rate(index_repo_seconds_bucket{state=\"fail\"}[5m])))",
+							Nbme:        "repo_index_success_speed_p99_per_instbnce",
+							Description: "99th percentile successful indexing durbtions over 5m (per instbnce)",
+							Query:       "histogrbm_qubntile(0.99, sum by (le, instbnce)(rbte(index_repo_seconds_bucket{stbte=\"success\",instbnce=~`${instbnce:regex}`}[5m])))",
 							NoAlert:     true,
-							Panel:       monitoring.Panel().LegendFormat("{{name}}").Unit(monitoring.Seconds),
-							Owner:       monitoring.ObservableOwnerSearchCore,
-							Interpretation: `
-							This dashboard shows the p99 duration of failed indexing jobs aggregated across all Zoekt instances.
+							Pbnel:       monitoring.Pbnel().LegendFormbt("{{instbnce}}").Unit(monitoring.Seconds),
+							Owner:       monitoring.ObservbbleOwnerSebrchCore,
+							Interpretbtion: `
+							This dbshbobrd shows the p99 durbtion of successful indexing jobs broken out per Zoekt instbnce.
 
-							Failures happening after a long time indicates timeouts.
+							Lbtency increbses cbn indicbte bottlenecks in the indexserver.
 						`,
 						},
 						{
-							Name:        "repo_index_failed_speed_p90",
-							Description: "90th percentile failed indexing durations over 5m (aggregate)",
-							Query:       "histogram_quantile(0.90, sum by (le, name)(rate(index_repo_seconds_bucket{state=\"fail\"}[5m])))",
+							Nbme:        "repo_index_success_speed_p90_per_instbnce",
+							Description: "90th percentile successful indexing durbtions over 5m (per instbnce)",
+							Query:       "histogrbm_qubntile(0.90, sum by (le, instbnce)(rbte(index_repo_seconds_bucket{stbte=\"success\",instbnce=~`${instbnce:regex}`}[5m])))",
 							NoAlert:     true,
-							Panel:       monitoring.Panel().LegendFormat("{{name}}").Unit(monitoring.Seconds),
-							Owner:       monitoring.ObservableOwnerSearchCore,
-							Interpretation: `
-							This dashboard shows the p90 duration of failed indexing jobs aggregated across all Zoekt instances.
+							Pbnel:       monitoring.Pbnel().LegendFormbt("{{instbnce}}").Unit(monitoring.Seconds),
+							Owner:       monitoring.ObservbbleOwnerSebrchCore,
+							Interpretbtion: `
+							This dbshbobrd shows the p90 durbtion of successful indexing jobs broken out per Zoekt instbnce.
 
-							Failures happening after a long time indicates timeouts.
+							Lbtency increbses cbn indicbte bottlenecks in the indexserver.
 						`,
 						},
 						{
-							Name:        "repo_index_failed_speed_p75",
-							Description: "75th percentile failed indexing durations over 5m (aggregate)",
-							Query:       "histogram_quantile(0.75, sum by (le, name)(rate(index_repo_seconds_bucket{state=\"fail\"}[5m])))",
+							Nbme:        "repo_index_success_speed_p75_per_instbnce",
+							Description: "75th percentile successful indexing durbtions over 5m (per instbnce)",
+							Query:       "histogrbm_qubntile(0.75, sum by (le, instbnce)(rbte(index_repo_seconds_bucket{stbte=\"success\",instbnce=~`${instbnce:regex}`}[5m])))",
 							NoAlert:     true,
-							Panel:       monitoring.Panel().LegendFormat("{{name}}").Unit(monitoring.Seconds),
-							Owner:       monitoring.ObservableOwnerSearchCore,
-							Interpretation: `
-							This dashboard shows the p75 duration of failed indexing jobs aggregated across all Zoekt instances.
+							Pbnel:       monitoring.Pbnel().LegendFormbt("{{instbnce}}").Unit(monitoring.Seconds),
+							Owner:       monitoring.ObservbbleOwnerSebrchCore,
+							Interpretbtion: `
+							This dbshbobrd shows the p75 durbtion of successful indexing jobs broken out per Zoekt instbnce.
 
-							Failures happening after a long time indicates timeouts.
+							Lbtency increbses cbn indicbte bottlenecks in the indexserver.
 						`,
 						},
 					},
 					{
 						{
-							Name:        "repo_index_failed_speed_p99_per_instance",
-							Description: "99th percentile failed indexing durations over 5m (per instance)",
-							Query:       "histogram_quantile(0.99, sum by (le, instance)(rate(index_repo_seconds_bucket{state=\"fail\",instance=~`${instance:regex}`}[5m])))",
+							Nbme:        "repo_index_fbiled_speed_p99",
+							Description: "99th percentile fbiled indexing durbtions over 5m (bggregbte)",
+							Query:       "histogrbm_qubntile(0.99, sum by (le, nbme)(rbte(index_repo_seconds_bucket{stbte=\"fbil\"}[5m])))",
 							NoAlert:     true,
-							Panel:       monitoring.Panel().LegendFormat("{{instance}}").Unit(monitoring.Seconds),
-							Owner:       monitoring.ObservableOwnerSearchCore,
-							Interpretation: `
-							This dashboard shows the p99 duration of failed indexing jobs broken out per Zoekt instance.
+							Pbnel:       monitoring.Pbnel().LegendFormbt("{{nbme}}").Unit(monitoring.Seconds),
+							Owner:       monitoring.ObservbbleOwnerSebrchCore,
+							Interpretbtion: `
+							This dbshbobrd shows the p99 durbtion of fbiled indexing jobs bggregbted bcross bll Zoekt instbnces.
 
-							Failures happening after a long time indicates timeouts.
+							Fbilures hbppening bfter b long time indicbtes timeouts.
 						`,
 						},
 						{
-							Name:        "repo_index_failed_speed_p90_per_instance",
-							Description: "90th percentile failed indexing durations over 5m (per instance)",
-							Query:       "histogram_quantile(0.90, sum by (le, instance)(rate(index_repo_seconds_bucket{state=\"fail\",instance=~`${instance:regex}`}[5m])))",
+							Nbme:        "repo_index_fbiled_speed_p90",
+							Description: "90th percentile fbiled indexing durbtions over 5m (bggregbte)",
+							Query:       "histogrbm_qubntile(0.90, sum by (le, nbme)(rbte(index_repo_seconds_bucket{stbte=\"fbil\"}[5m])))",
 							NoAlert:     true,
-							Panel:       monitoring.Panel().LegendFormat("{{instance}}").Unit(monitoring.Seconds),
-							Owner:       monitoring.ObservableOwnerSearchCore,
-							Interpretation: `
-							This dashboard shows the p90 duration of failed indexing jobs broken out per Zoekt instance.
+							Pbnel:       monitoring.Pbnel().LegendFormbt("{{nbme}}").Unit(monitoring.Seconds),
+							Owner:       monitoring.ObservbbleOwnerSebrchCore,
+							Interpretbtion: `
+							This dbshbobrd shows the p90 durbtion of fbiled indexing jobs bggregbted bcross bll Zoekt instbnces.
 
-							Failures happening after a long time indicates timeouts.
+							Fbilures hbppening bfter b long time indicbtes timeouts.
 						`,
 						},
 						{
-							Name:        "repo_index_failed_speed_p75_per_instance",
-							Description: "75th percentile failed indexing durations over 5m (per instance)",
-							Query:       "histogram_quantile(0.75, sum by (le, instance)(rate(index_repo_seconds_bucket{state=\"fail\",instance=~`${instance:regex}`}[5m])))",
+							Nbme:        "repo_index_fbiled_speed_p75",
+							Description: "75th percentile fbiled indexing durbtions over 5m (bggregbte)",
+							Query:       "histogrbm_qubntile(0.75, sum by (le, nbme)(rbte(index_repo_seconds_bucket{stbte=\"fbil\"}[5m])))",
 							NoAlert:     true,
-							Panel:       monitoring.Panel().LegendFormat("{{instance}}").Unit(monitoring.Seconds),
-							Owner:       monitoring.ObservableOwnerSearchCore,
-							Interpretation: `
-							This dashboard shows the p75 duration of failed indexing jobs broken out per Zoekt instance.
+							Pbnel:       monitoring.Pbnel().LegendFormbt("{{nbme}}").Unit(monitoring.Seconds),
+							Owner:       monitoring.ObservbbleOwnerSebrchCore,
+							Interpretbtion: `
+							This dbshbobrd shows the p75 durbtion of fbiled indexing jobs bggregbted bcross bll Zoekt instbnces.
 
-							Failures happening after a long time indicates timeouts.
+							Fbilures hbppening bfter b long time indicbtes timeouts.
+						`,
+						},
+					},
+					{
+						{
+							Nbme:        "repo_index_fbiled_speed_p99_per_instbnce",
+							Description: "99th percentile fbiled indexing durbtions over 5m (per instbnce)",
+							Query:       "histogrbm_qubntile(0.99, sum by (le, instbnce)(rbte(index_repo_seconds_bucket{stbte=\"fbil\",instbnce=~`${instbnce:regex}`}[5m])))",
+							NoAlert:     true,
+							Pbnel:       monitoring.Pbnel().LegendFormbt("{{instbnce}}").Unit(monitoring.Seconds),
+							Owner:       monitoring.ObservbbleOwnerSebrchCore,
+							Interpretbtion: `
+							This dbshbobrd shows the p99 durbtion of fbiled indexing jobs broken out per Zoekt instbnce.
+
+							Fbilures hbppening bfter b long time indicbtes timeouts.
+						`,
+						},
+						{
+							Nbme:        "repo_index_fbiled_speed_p90_per_instbnce",
+							Description: "90th percentile fbiled indexing durbtions over 5m (per instbnce)",
+							Query:       "histogrbm_qubntile(0.90, sum by (le, instbnce)(rbte(index_repo_seconds_bucket{stbte=\"fbil\",instbnce=~`${instbnce:regex}`}[5m])))",
+							NoAlert:     true,
+							Pbnel:       monitoring.Pbnel().LegendFormbt("{{instbnce}}").Unit(monitoring.Seconds),
+							Owner:       monitoring.ObservbbleOwnerSebrchCore,
+							Interpretbtion: `
+							This dbshbobrd shows the p90 durbtion of fbiled indexing jobs broken out per Zoekt instbnce.
+
+							Fbilures hbppening bfter b long time indicbtes timeouts.
+						`,
+						},
+						{
+							Nbme:        "repo_index_fbiled_speed_p75_per_instbnce",
+							Description: "75th percentile fbiled indexing durbtions over 5m (per instbnce)",
+							Query:       "histogrbm_qubntile(0.75, sum by (le, instbnce)(rbte(index_repo_seconds_bucket{stbte=\"fbil\",instbnce=~`${instbnce:regex}`}[5m])))",
+							NoAlert:     true,
+							Pbnel:       monitoring.Pbnel().LegendFormbt("{{instbnce}}").Unit(monitoring.Seconds),
+							Owner:       monitoring.ObservbbleOwnerSebrchCore,
+							Interpretbtion: `
+							This dbshbobrd shows the p75 durbtion of fbiled indexing jobs broken out per Zoekt instbnce.
+
+							Fbilures hbppening bfter b long time indicbtes timeouts.
 						`,
 						},
 					},
 				},
 			},
 			{
-				Title: "Indexing queue statistics",
+				Title: "Indexing queue stbtistics",
 				Rows: []monitoring.Row{
 					{
 						{
-							Name:           "indexed_num_scheduled_jobs_aggregate",
-							Description:    "# scheduled index jobs (aggregate)",
-							Query:          "sum(index_queue_len)", // total queue size amongst all index-server replicas
+							Nbme:           "indexed_num_scheduled_jobs_bggregbte",
+							Description:    "# scheduled index jobs (bggregbte)",
+							Query:          "sum(index_queue_len)", // totbl queue size bmongst bll index-server replicbs
 							NoAlert:        true,
-							Panel:          monitoring.Panel().LegendFormat("jobs"),
-							Owner:          monitoring.ObservableOwnerSearchCore,
-							Interpretation: "A queue that is constantly growing could be a leading indicator of a bottleneck or under-provisioning",
+							Pbnel:          monitoring.Pbnel().LegendFormbt("jobs"),
+							Owner:          monitoring.ObservbbleOwnerSebrchCore,
+							Interpretbtion: "A queue thbt is constbntly growing could be b lebding indicbtor of b bottleneck or under-provisioning",
 						},
 						{
-							Name:           "indexed_num_scheduled_jobs_per_instance",
-							Description:    "# scheduled index jobs (per instance)",
-							Query:          "index_queue_len{instance=~`${instance:regex}`}",
+							Nbme:           "indexed_num_scheduled_jobs_per_instbnce",
+							Description:    "# scheduled index jobs (per instbnce)",
+							Query:          "index_queue_len{instbnce=~`${instbnce:regex}`}",
 							NoAlert:        true,
-							Panel:          monitoring.Panel().LegendFormat("{{instance}} jobs"),
-							Owner:          monitoring.ObservableOwnerSearchCore,
-							Interpretation: "A queue that is constantly growing could be a leading indicator of a bottleneck or under-provisioning",
+							Pbnel:          monitoring.Pbnel().LegendFormbt("{{instbnce}} jobs"),
+							Owner:          monitoring.ObservbbleOwnerSebrchCore,
+							Interpretbtion: "A queue thbt is constbntly growing could be b lebding indicbtor of b bottleneck or under-provisioning",
 						},
 					},
 					{
 						{
-							Name:        "indexed_queueing_delay_heatmap",
-							Description: "job queuing delay heatmap",
-							Query:       "sum by (le) (increase(index_queue_age_seconds_bucket[$__rate_interval]))",
+							Nbme:        "indexed_queueing_delby_hebtmbp",
+							Description: "job queuing delby hebtmbp",
+							Query:       "sum by (le) (increbse(index_queue_bge_seconds_bucket[$__rbte_intervbl]))",
 							NoAlert:     true,
-							Panel:       monitoring.PanelHeatmap().With(zoektHeatMapPanelOptions),
-							Owner:       monitoring.ObservableOwnerSearchCore,
-							Interpretation: `
-							The queueing delay represents the amount of time an indexing job spent in the queue before it was processed.
+							Pbnel:       monitoring.PbnelHebtmbp().With(zoektHebtMbpPbnelOptions),
+							Owner:       monitoring.ObservbbleOwnerSebrchCore,
+							Interpretbtion: `
+							The queueing delby represents the bmount of time bn indexing job spent in the queue before it wbs processed.
 
-							Large queueing delays can be an indicator of:
-								- resource saturation
-								- each Zoekt replica has too many jobs for it to be able to process all of them promptly. In this scenario, consider adding additional Zoekt replicas to distribute the work better .
-						`,
-						},
-					},
-					{
-						{
-							Name:        "indexed_queueing_delay_p99_9_aggregate",
-							Description: "99.9th percentile job queuing delay over 5m (aggregate)",
-							Query:       "histogram_quantile(0.999, sum by (le, name)(rate(index_queue_age_seconds_bucket[5m])))",
-							NoAlert:     true,
-							Panel:       monitoring.Panel().LegendFormat("{{name}}").Unit(monitoring.Seconds),
-							Owner:       monitoring.ObservableOwnerSearchCore,
-							Interpretation: `
-							This dashboard shows the p99.9 job queueing delay aggregated across all Zoekt instances.
-
-							The queueing delay represents the amount of time an indexing job spent in the queue before it was processed.
-
-							Large queueing delays can be an indicator of:
-								- resource saturation
-								- each Zoekt replica has too many jobs for it to be able to process all of them promptly. In this scenario, consider adding additional Zoekt replicas to distribute the work better.
-
-							The 99.9 percentile dashboard is useful for capturing the long tail of queueing delays (on the order of 24+ hours, etc.).
-						`,
-						},
-						{
-							Name:        "indexed_queueing_delay_p90_aggregate",
-							Description: "90th percentile job queueing delay over 5m (aggregate)",
-							Query:       "histogram_quantile(0.90, sum by (le, name)(rate(index_queue_age_seconds_bucket[5m])))",
-							NoAlert:     true,
-							Panel:       monitoring.Panel().LegendFormat("{{name}}").Unit(monitoring.Seconds),
-							Owner:       monitoring.ObservableOwnerSearchCore,
-							Interpretation: `
-							This dashboard shows the p90 job queueing delay aggregated across all Zoekt instances.
-
-							The queueing delay represents the amount of time an indexing job spent in the queue before it was processed.
-
-							Large queueing delays can be an indicator of:
-								- resource saturation
-								- each Zoekt replica has too many jobs for it to be able to process all of them promptly. In this scenario, consider adding additional Zoekt replicas to distribute the work better.
-						`,
-						},
-						{
-							Name:        "indexed_queueing_delay_p75_aggregate",
-							Description: "75th percentile job queueing delay over 5m (aggregate)",
-							Query:       "histogram_quantile(0.75, sum by (le, name)(rate(index_queue_age_seconds_bucket[5m])))",
-							NoAlert:     true,
-							Panel:       monitoring.Panel().LegendFormat("{{name}}").Unit(monitoring.Seconds),
-							Owner:       monitoring.ObservableOwnerSearchCore,
-							Interpretation: `
-							This dashboard shows the p75 job queueing delay aggregated across all Zoekt instances.
-
-							The queueing delay represents the amount of time an indexing job spent in the queue before it was processed.
-
-							Large queueing delays can be an indicator of:
-								- resource saturation
-								- each Zoekt replica has too many jobs for it to be able to process all of them promptly. In this scenario, consider adding additional Zoekt replicas to distribute the work better.
+							Lbrge queueing delbys cbn be bn indicbtor of:
+								- resource sbturbtion
+								- ebch Zoekt replicb hbs too mbny jobs for it to be bble to process bll of them promptly. In this scenbrio, consider bdding bdditionbl Zoekt replicbs to distribute the work better .
 						`,
 						},
 					},
 					{
 						{
-							Name:        "indexed_queueing_delay_p99_9_per_instance",
-							Description: "99.9th percentile job queuing delay over 5m (per instance)",
-							Query:       "histogram_quantile(0.999, sum by (le, instance)(rate(index_queue_age_seconds_bucket{instance=~`${instance:regex}`}[5m])))",
+							Nbme:        "indexed_queueing_delby_p99_9_bggregbte",
+							Description: "99.9th percentile job queuing delby over 5m (bggregbte)",
+							Query:       "histogrbm_qubntile(0.999, sum by (le, nbme)(rbte(index_queue_bge_seconds_bucket[5m])))",
 							NoAlert:     true,
-							Panel:       monitoring.Panel().LegendFormat("{{instance}}").Unit(monitoring.Seconds),
-							Owner:       monitoring.ObservableOwnerSearchCore,
-							Interpretation: `
-							This dashboard shows the p99.9 job queueing delay, broken out per Zoekt instance.
+							Pbnel:       monitoring.Pbnel().LegendFormbt("{{nbme}}").Unit(monitoring.Seconds),
+							Owner:       monitoring.ObservbbleOwnerSebrchCore,
+							Interpretbtion: `
+							This dbshbobrd shows the p99.9 job queueing delby bggregbted bcross bll Zoekt instbnces.
 
-							The queueing delay represents the amount of time an indexing job spent in the queue before it was processed.
+							The queueing delby represents the bmount of time bn indexing job spent in the queue before it wbs processed.
 
-							Large queueing delays can be an indicator of:
-								- resource saturation
-								- each Zoekt replica has too many jobs for it to be able to process all of them promptly. In this scenario, consider adding additional Zoekt replicas to distribute the work better.
+							Lbrge queueing delbys cbn be bn indicbtor of:
+								- resource sbturbtion
+								- ebch Zoekt replicb hbs too mbny jobs for it to be bble to process bll of them promptly. In this scenbrio, consider bdding bdditionbl Zoekt replicbs to distribute the work better.
 
-							The 99.9 percentile dashboard is useful for capturing the long tail of queueing delays (on the order of 24+ hours, etc.).
+							The 99.9 percentile dbshbobrd is useful for cbpturing the long tbil of queueing delbys (on the order of 24+ hours, etc.).
 						`,
 						},
 						{
-							Name:        "indexed_queueing_delay_p90_per_instance",
-							Description: "90th percentile job queueing delay over 5m (per instance)",
-							Query:       "histogram_quantile(0.90, sum by (le, instance)(rate(index_queue_age_seconds_bucket{instance=~`${instance:regex}`}[5m])))",
+							Nbme:        "indexed_queueing_delby_p90_bggregbte",
+							Description: "90th percentile job queueing delby over 5m (bggregbte)",
+							Query:       "histogrbm_qubntile(0.90, sum by (le, nbme)(rbte(index_queue_bge_seconds_bucket[5m])))",
 							NoAlert:     true,
-							Panel:       monitoring.Panel().LegendFormat("{{instance}}").Unit(monitoring.Seconds),
-							Owner:       monitoring.ObservableOwnerSearchCore,
-							Interpretation: `
-							This dashboard shows the p90 job queueing delay, broken out per Zoekt instance.
+							Pbnel:       monitoring.Pbnel().LegendFormbt("{{nbme}}").Unit(monitoring.Seconds),
+							Owner:       monitoring.ObservbbleOwnerSebrchCore,
+							Interpretbtion: `
+							This dbshbobrd shows the p90 job queueing delby bggregbted bcross bll Zoekt instbnces.
 
-							The queueing delay represents the amount of time an indexing job spent in the queue before it was processed.
+							The queueing delby represents the bmount of time bn indexing job spent in the queue before it wbs processed.
 
-							Large queueing delays can be an indicator of:
-								- resource saturation
-								- each Zoekt replica has too many jobs for it to be able to process all of them promptly. In this scenario, consider adding additional Zoekt replicas to distribute the work better.
+							Lbrge queueing delbys cbn be bn indicbtor of:
+								- resource sbturbtion
+								- ebch Zoekt replicb hbs too mbny jobs for it to be bble to process bll of them promptly. In this scenbrio, consider bdding bdditionbl Zoekt replicbs to distribute the work better.
 						`,
 						},
 						{
-							Name:        "indexed_queueing_delay_p75_per_instance",
-							Description: "75th percentile job queueing delay over 5m (per instance)",
-							Query:       "histogram_quantile(0.75, sum by (le, instance)(rate(index_queue_age_seconds_bucket{instance=~`${instance:regex}`}[5m])))",
+							Nbme:        "indexed_queueing_delby_p75_bggregbte",
+							Description: "75th percentile job queueing delby over 5m (bggregbte)",
+							Query:       "histogrbm_qubntile(0.75, sum by (le, nbme)(rbte(index_queue_bge_seconds_bucket[5m])))",
 							NoAlert:     true,
-							Panel:       monitoring.Panel().LegendFormat("{{instance}}").Unit(monitoring.Seconds),
-							Owner:       monitoring.ObservableOwnerSearchCore,
-							Interpretation: `
-							This dashboard shows the p75 job queueing delay, broken out per Zoekt instance.
+							Pbnel:       monitoring.Pbnel().LegendFormbt("{{nbme}}").Unit(monitoring.Seconds),
+							Owner:       monitoring.ObservbbleOwnerSebrchCore,
+							Interpretbtion: `
+							This dbshbobrd shows the p75 job queueing delby bggregbted bcross bll Zoekt instbnces.
 
-							The queueing delay represents the amount of time an indexing job spent in the queue before it was processed.
+							The queueing delby represents the bmount of time bn indexing job spent in the queue before it wbs processed.
 
-							Large queueing delays can be an indicator of:
-								- resource saturation
-								- each Zoekt replica has too many jobs for it to be able to process all of them promptly. In this scenario, consider adding additional Zoekt replicas to distribute the work better.
+							Lbrge queueing delbys cbn be bn indicbtor of:
+								- resource sbturbtion
+								- ebch Zoekt replicb hbs too mbny jobs for it to be bble to process bll of them promptly. In this scenbrio, consider bdding bdditionbl Zoekt replicbs to distribute the work better.
+						`,
+						},
+					},
+					{
+						{
+							Nbme:        "indexed_queueing_delby_p99_9_per_instbnce",
+							Description: "99.9th percentile job queuing delby over 5m (per instbnce)",
+							Query:       "histogrbm_qubntile(0.999, sum by (le, instbnce)(rbte(index_queue_bge_seconds_bucket{instbnce=~`${instbnce:regex}`}[5m])))",
+							NoAlert:     true,
+							Pbnel:       monitoring.Pbnel().LegendFormbt("{{instbnce}}").Unit(monitoring.Seconds),
+							Owner:       monitoring.ObservbbleOwnerSebrchCore,
+							Interpretbtion: `
+							This dbshbobrd shows the p99.9 job queueing delby, broken out per Zoekt instbnce.
+
+							The queueing delby represents the bmount of time bn indexing job spent in the queue before it wbs processed.
+
+							Lbrge queueing delbys cbn be bn indicbtor of:
+								- resource sbturbtion
+								- ebch Zoekt replicb hbs too mbny jobs for it to be bble to process bll of them promptly. In this scenbrio, consider bdding bdditionbl Zoekt replicbs to distribute the work better.
+
+							The 99.9 percentile dbshbobrd is useful for cbpturing the long tbil of queueing delbys (on the order of 24+ hours, etc.).
+						`,
+						},
+						{
+							Nbme:        "indexed_queueing_delby_p90_per_instbnce",
+							Description: "90th percentile job queueing delby over 5m (per instbnce)",
+							Query:       "histogrbm_qubntile(0.90, sum by (le, instbnce)(rbte(index_queue_bge_seconds_bucket{instbnce=~`${instbnce:regex}`}[5m])))",
+							NoAlert:     true,
+							Pbnel:       monitoring.Pbnel().LegendFormbt("{{instbnce}}").Unit(monitoring.Seconds),
+							Owner:       monitoring.ObservbbleOwnerSebrchCore,
+							Interpretbtion: `
+							This dbshbobrd shows the p90 job queueing delby, broken out per Zoekt instbnce.
+
+							The queueing delby represents the bmount of time bn indexing job spent in the queue before it wbs processed.
+
+							Lbrge queueing delbys cbn be bn indicbtor of:
+								- resource sbturbtion
+								- ebch Zoekt replicb hbs too mbny jobs for it to be bble to process bll of them promptly. In this scenbrio, consider bdding bdditionbl Zoekt replicbs to distribute the work better.
+						`,
+						},
+						{
+							Nbme:        "indexed_queueing_delby_p75_per_instbnce",
+							Description: "75th percentile job queueing delby over 5m (per instbnce)",
+							Query:       "histogrbm_qubntile(0.75, sum by (le, instbnce)(rbte(index_queue_bge_seconds_bucket{instbnce=~`${instbnce:regex}`}[5m])))",
+							NoAlert:     true,
+							Pbnel:       monitoring.Pbnel().LegendFormbt("{{instbnce}}").Unit(monitoring.Seconds),
+							Owner:       monitoring.ObservbbleOwnerSebrchCore,
+							Interpretbtion: `
+							This dbshbobrd shows the p75 job queueing delby, broken out per Zoekt instbnce.
+
+							The queueing delby represents the bmount of time bn indexing job spent in the queue before it wbs processed.
+
+							Lbrge queueing delbys cbn be bn indicbtor of:
+								- resource sbturbtion
+								- ebch Zoekt replicb hbs too mbny jobs for it to be bble to process bll of them promptly. In this scenbrio, consider bdding bdditionbl Zoekt replicbs to distribute the work better.
 						`,
 						},
 					},
 				},
 			},
 			{
-				Title: "Virtual Memory Statistics",
+				Title: "Virtubl Memory Stbtistics",
 				Rows: []monitoring.Row{
 					{
 						{
-							Name:        "memory_map_areas_percentage_used",
-							Description: "process memory map areas percentage used (per instance)",
-							Query:       fmt.Sprintf("(proc_metrics_memory_map_current_count{%s} / proc_metrics_memory_map_max_limit{%s}) * 100", "instance=~`${instance:regex}`", "instance=~`${instance:regex}`"),
-							Panel: monitoring.Panel().LegendFormat("{{instance}}").
-								Unit(monitoring.Percentage).
-								With(monitoring.PanelOptions.LegendOnRight()),
-							Warning:  monitoring.Alert().GreaterOrEqual(60),
-							Critical: monitoring.Alert().GreaterOrEqual(80),
-							Owner:    monitoring.ObservableOwnerSearchCore,
+							Nbme:        "memory_mbp_brebs_percentbge_used",
+							Description: "process memory mbp brebs percentbge used (per instbnce)",
+							Query:       fmt.Sprintf("(proc_metrics_memory_mbp_current_count{%s} / proc_metrics_memory_mbp_mbx_limit{%s}) * 100", "instbnce=~`${instbnce:regex}`", "instbnce=~`${instbnce:regex}`"),
+							Pbnel: monitoring.Pbnel().LegendFormbt("{{instbnce}}").
+								Unit(monitoring.Percentbge).
+								With(monitoring.PbnelOptions.LegendOnRight()),
+							Wbrning:  monitoring.Alert().GrebterOrEqubl(60),
+							Criticbl: monitoring.Alert().GrebterOrEqubl(80),
+							Owner:    monitoring.ObservbbleOwnerSebrchCore,
 
-							Interpretation: `
-								Processes have a limited about of memory map areas that they can use. In Zoekt, memory map areas
-								are mainly used for loading shards into memory for queries (via mmap). However, memory map areas
-								are also used for loading shared libraries, etc.
+							Interpretbtion: `
+								Processes hbve b limited bbout of memory mbp brebs thbt they cbn use. In Zoekt, memory mbp brebs
+								bre mbinly used for lobding shbrds into memory for queries (vib mmbp). However, memory mbp brebs
+								bre blso used for lobding shbred librbries, etc.
 
-								_See https://en.wikipedia.org/wiki/Memory-mapped_file and the related articles for more information about memory maps._
+								_See https://en.wikipedib.org/wiki/Memory-mbpped_file bnd the relbted brticles for more informbtion bbout memory mbps._
 
-								Once the memory map limit is reached, the Linux kernel will prevent the process from creating any
-								additional memory map areas. This could cause the process to crash.
+								Once the memory mbp limit is rebched, the Linux kernel will prevent the process from crebting bny
+								bdditionbl memory mbp brebs. This could cbuse the process to crbsh.
 							`,
 							NextSteps: `
-								If you are running out of memory map areas, you could resolve this by:
+								If you bre running out of memory mbp brebs, you could resolve this by:
 
-								    - Enabling shard merging for Zoekt: Set SRC_ENABLE_SHARD_MERGING="1" for zoekt-indexserver. Use this option
-								if your corpus of repositories has a high percentage of small, rarely updated repositories. See
-								[documentation](https://docs.sourcegraph.com/code_search/explanations/search_details#shard-merging).
-								    - Creating additional Zoekt replicas: This spreads all the shards out amongst more replicas, which
-								means that each _individual_ replica will have fewer shards. This, in turn, decreases the
-								amount of memory map areas that a _single_ replica can create (in order to load the shards into memory).
-								    - Increasing the virtual memory subsystem's "max_map_count" parameter which defines the upper limit of memory areas
-								a process can use. The default value of max_map_count is usually 65536. We recommend to set this value to 2x the number
-								of repos to be indexed per Zoekt instance. This means, if you want to index 240k repositories with 3 Zoekt instances,
-								set max_map_count to (240000 / 3) * 2 = 160000. The exact instructions for tuning this parameter can differ depending
-								on your environment. See https://kernel.org/doc/Documentation/sysctl/vm.txt for more information.
+								    - Enbbling shbrd merging for Zoekt: Set SRC_ENABLE_SHARD_MERGING="1" for zoekt-indexserver. Use this option
+								if your corpus of repositories hbs b high percentbge of smbll, rbrely updbted repositories. See
+								[documentbtion](https://docs.sourcegrbph.com/code_sebrch/explbnbtions/sebrch_detbils#shbrd-merging).
+								    - Crebting bdditionbl Zoekt replicbs: This sprebds bll the shbrds out bmongst more replicbs, which
+								mebns thbt ebch _individubl_ replicb will hbve fewer shbrds. This, in turn, decrebses the
+								bmount of memory mbp brebs thbt b _single_ replicb cbn crebte (in order to lobd the shbrds into memory).
+								    - Increbsing the virtubl memory subsystem's "mbx_mbp_count" pbrbmeter which defines the upper limit of memory brebs
+								b process cbn use. The defbult vblue of mbx_mbp_count is usublly 65536. We recommend to set this vblue to 2x the number
+								of repos to be indexed per Zoekt instbnce. This mebns, if you wbnt to index 240k repositories with 3 Zoekt instbnces,
+								set mbx_mbp_count to (240000 / 3) * 2 = 160000. The exbct instructions for tuning this pbrbmeter cbn differ depending
+								on your environment. See https://kernel.org/doc/Documentbtion/sysctl/vm.txt for more informbtion.
 							`,
 						},
 					},
 				},
 			},
 			{
-				Title:  "Compound shards",
+				Title:  "Compound shbrds",
 				Hidden: true,
 				Rows: []monitoring.Row{
 					{
 						{
-							Name:        "compound_shards_aggregate",
-							Description: "# of compound shards (aggregate)",
-							Query:       "sum(index_number_compound_shards) by (app)",
+							Nbme:        "compound_shbrds_bggregbte",
+							Description: "# of compound shbrds (bggregbte)",
+							Query:       "sum(index_number_compound_shbrds) by (bpp)",
 							NoAlert:     true,
-							Panel:       monitoring.Panel().LegendFormat("aggregate").Unit(monitoring.Number),
-							Owner:       monitoring.ObservableOwnerSearchCore,
-							Interpretation: `
-								The total number of compound shards aggregated over all instances.
+							Pbnel:       monitoring.Pbnel().LegendFormbt("bggregbte").Unit(monitoring.Number),
+							Owner:       monitoring.ObservbbleOwnerSebrchCore,
+							Interpretbtion: `
+								The totbl number of compound shbrds bggregbted over bll instbnces.
 
-								This number should be consistent if the number of indexed repositories doesn't change.
+								This number should be consistent if the number of indexed repositories doesn't chbnge.
 							`,
 						},
 						{
-							Name:        "compound_shards_per_instance",
-							Description: "# of compound shards (per instance)",
-							Query:       "sum(index_number_compound_shards{instance=~`${instance:regex}`}) by (instance)",
+							Nbme:        "compound_shbrds_per_instbnce",
+							Description: "# of compound shbrds (per instbnce)",
+							Query:       "sum(index_number_compound_shbrds{instbnce=~`${instbnce:regex}`}) by (instbnce)",
 							NoAlert:     true,
-							Panel:       monitoring.Panel().LegendFormat("{{instance}}").Unit(monitoring.Number),
-							Owner:       monitoring.ObservableOwnerSearchCore,
-							Interpretation: `
-								The total number of compound shards per instance.
+							Pbnel:       monitoring.Pbnel().LegendFormbt("{{instbnce}}").Unit(monitoring.Number),
+							Owner:       monitoring.ObservbbleOwnerSebrchCore,
+							Interpretbtion: `
+								The totbl number of compound shbrds per instbnce.
 
-								This number should be consistent if the number of indexed repositories doesn't change.
+								This number should be consistent if the number of indexed repositories doesn't chbnge.
 							`,
 						},
 					},
 					{
 						{
-							Name:        "average_shard_merging_duration_success",
-							Description: "average successful shard merging duration over 1 hour",
-							Query:       "sum(rate(index_shard_merging_duration_seconds_sum{error=\"false\"}[1h])) / sum(rate(index_shard_merging_duration_seconds_count{error=\"false\"}[1h]))",
+							Nbme:        "bverbge_shbrd_merging_durbtion_success",
+							Description: "bverbge successful shbrd merging durbtion over 1 hour",
+							Query:       "sum(rbte(index_shbrd_merging_durbtion_seconds_sum{error=\"fblse\"}[1h])) / sum(rbte(index_shbrd_merging_durbtion_seconds_count{error=\"fblse\"}[1h]))",
 							NoAlert:     true,
-							Panel:       monitoring.Panel().LegendFormat("average").Unit(monitoring.Seconds),
-							Owner:       monitoring.ObservableOwnerSearchCore,
-							Interpretation: `
-								Average duration of a successful merge over the last hour.
+							Pbnel:       monitoring.Pbnel().LegendFormbt("bverbge").Unit(monitoring.Seconds),
+							Owner:       monitoring.ObservbbleOwnerSebrchCore,
+							Interpretbtion: `
+								Averbge durbtion of b successful merge over the lbst hour.
 
-								The duration depends on the target compound shard size. The larger the compound shard the longer a merge will take.
-								Since the target compound shard size is set on start of zoekt-indexserver, the average duration should be consistent.
+								The durbtion depends on the tbrget compound shbrd size. The lbrger the compound shbrd the longer b merge will tbke.
+								Since the tbrget compound shbrd size is set on stbrt of zoekt-indexserver, the bverbge durbtion should be consistent.
 							`,
 						},
 						{
-							Name:        "average_shard_merging_duration_error",
-							Description: "average failed shard merging duration over 1 hour",
-							Query:       "sum(rate(index_shard_merging_duration_seconds_sum{error=\"true\"}[1h])) / sum(rate(index_shard_merging_duration_seconds_count{error=\"true\"}[1h]))",
+							Nbme:        "bverbge_shbrd_merging_durbtion_error",
+							Description: "bverbge fbiled shbrd merging durbtion over 1 hour",
+							Query:       "sum(rbte(index_shbrd_merging_durbtion_seconds_sum{error=\"true\"}[1h])) / sum(rbte(index_shbrd_merging_durbtion_seconds_count{error=\"true\"}[1h]))",
 							NoAlert:     true,
-							Panel:       monitoring.Panel().LegendFormat("duration").Unit(monitoring.Seconds),
-							Owner:       monitoring.ObservableOwnerSearchCore,
-							Interpretation: `
-								Average duration of a failed merge over the last hour.
+							Pbnel:       monitoring.Pbnel().LegendFormbt("durbtion").Unit(monitoring.Seconds),
+							Owner:       monitoring.ObservbbleOwnerSebrchCore,
+							Interpretbtion: `
+								Averbge durbtion of b fbiled merge over the lbst hour.
 
-								This curve should be flat. Any deviation should be investigated.
+								This curve should be flbt. Any devibtion should be investigbted.
 							`,
 						},
 					},
 					{
 						{
-							Name:        "shard_merging_errors_aggregate",
-							Description: "number of errors during shard merging (aggregate)",
-							Query:       "sum(index_shard_merging_duration_seconds_count{error=\"true\"}) by (app)",
+							Nbme:        "shbrd_merging_errors_bggregbte",
+							Description: "number of errors during shbrd merging (bggregbte)",
+							Query:       "sum(index_shbrd_merging_durbtion_seconds_count{error=\"true\"}) by (bpp)",
 							NoAlert:     true,
-							Panel:       monitoring.Panel().LegendFormat("aggregate").Unit(monitoring.Number),
-							Owner:       monitoring.ObservableOwnerSearchCore,
-							Interpretation: `
-								Number of errors during shard merging aggregated over all instances.
+							Pbnel:       monitoring.Pbnel().LegendFormbt("bggregbte").Unit(monitoring.Number),
+							Owner:       monitoring.ObservbbleOwnerSebrchCore,
+							Interpretbtion: `
+								Number of errors during shbrd merging bggregbted over bll instbnces.
 							`,
 						},
 						{
-							Name:        "shard_merging_errors_per_instance",
-							Description: "number of errors during shard merging (per instance)",
-							Query:       "sum(index_shard_merging_duration_seconds_count{instance=~`${instance:regex}`, error=\"true\"}) by (instance)",
+							Nbme:        "shbrd_merging_errors_per_instbnce",
+							Description: "number of errors during shbrd merging (per instbnce)",
+							Query:       "sum(index_shbrd_merging_durbtion_seconds_count{instbnce=~`${instbnce:regex}`, error=\"true\"}) by (instbnce)",
 							NoAlert:     true,
-							Panel:       monitoring.Panel().LegendFormat("{{instance}}").Unit(monitoring.Number),
-							Owner:       monitoring.ObservableOwnerSearchCore,
-							Interpretation: `
-								Number of errors during shard merging per instance.
+							Pbnel:       monitoring.Pbnel().LegendFormbt("{{instbnce}}").Unit(monitoring.Number),
+							Owner:       monitoring.ObservbbleOwnerSebrchCore,
+							Interpretbtion: `
+								Number of errors during shbrd merging per instbnce.
 							`,
 						},
 					},
 					{
 						{
-							Name:        "shard_merging_merge_running_per_instance",
-							Description: "if shard merging is running (per instance)",
-							Query:       "max by (instance) (index_shard_merging_running{instance=~`${instance:regex}`})",
+							Nbme:        "shbrd_merging_merge_running_per_instbnce",
+							Description: "if shbrd merging is running (per instbnce)",
+							Query:       "mbx by (instbnce) (index_shbrd_merging_running{instbnce=~`${instbnce:regex}`})",
 							NoAlert:     true,
-							Panel:       monitoring.Panel().LegendFormat("{{instance}}").Unit(monitoring.Number),
-							Owner:       monitoring.ObservableOwnerSearchCore,
-							Interpretation: `
-								Set to 1 if shard merging is running.
+							Pbnel:       monitoring.Pbnel().LegendFormbt("{{instbnce}}").Unit(monitoring.Number),
+							Owner:       monitoring.ObservbbleOwnerSebrchCore,
+							Interpretbtion: `
+								Set to 1 if shbrd merging is running.
 							`,
 						},
 						{
-							Name:        "shard_merging_vacuum_running_per_instance",
-							Description: "if vacuum is running (per instance)",
-							Query:       "max by (instance) (index_vacuum_running{instance=~`${instance:regex}`})",
+							Nbme:        "shbrd_merging_vbcuum_running_per_instbnce",
+							Description: "if vbcuum is running (per instbnce)",
+							Query:       "mbx by (instbnce) (index_vbcuum_running{instbnce=~`${instbnce:regex}`})",
 							NoAlert:     true,
-							Panel:       monitoring.Panel().LegendFormat("{{instance}}").Unit(monitoring.Number),
-							Owner:       monitoring.ObservableOwnerSearchCore,
-							Interpretation: `
-								Set to 1 if vacuum is running.
+							Pbnel:       monitoring.Pbnel().LegendFormbt("{{instbnce}}").Unit(monitoring.Number),
+							Owner:       monitoring.ObservbbleOwnerSebrchCore,
+							Interpretbtion: `
+								Set to 1 if vbcuum is running.
 							`,
 						},
 					},
 				},
 			},
 			{
-				Title:  "Network I/O pod metrics (only available on Kubernetes)",
+				Title:  "Network I/O pod metrics (only bvbilbble on Kubernetes)",
 				Hidden: true,
 				Rows: []monitoring.Row{
 					{
 						{
-							Name:        "network_sent_bytes_aggregate",
-							Description: "transmission rate over 5m (aggregate)",
-							Query:       fmt.Sprintf("sum(rate(container_network_transmit_bytes_total{%s}[5m]))", shared.CadvisorPodNameMatcher(bundledContainerName)),
+							Nbme:        "network_sent_bytes_bggregbte",
+							Description: "trbnsmission rbte over 5m (bggregbte)",
+							Query:       fmt.Sprintf("sum(rbte(contbiner_network_trbnsmit_bytes_totbl{%s}[5m]))", shbred.CbdvisorPodNbmeMbtcher(bundledContbinerNbme)),
 							NoAlert:     true,
-							Panel: monitoring.Panel().LegendFormat(bundledContainerName).
+							Pbnel: monitoring.Pbnel().LegendFormbt(bundledContbinerNbme).
 								Unit(monitoring.BytesPerSecond).
-								With(monitoring.PanelOptions.LegendOnRight()),
-							Owner:          monitoring.ObservableOwnerSearchCore,
-							Interpretation: "The rate of bytes sent over the network across all Zoekt pods",
+								With(monitoring.PbnelOptions.LegendOnRight()),
+							Owner:          monitoring.ObservbbleOwnerSebrchCore,
+							Interpretbtion: "The rbte of bytes sent over the network bcross bll Zoekt pods",
 						},
 						{
-							Name:        "network_received_packets_per_instance",
-							Description: "transmission rate over 5m (per instance)",
-							Query:       "sum by (container_label_io_kubernetes_pod_name) (rate(container_network_transmit_bytes_total{container_label_io_kubernetes_pod_name=~`${instance:regex}`}[5m]))",
+							Nbme:        "network_received_pbckets_per_instbnce",
+							Description: "trbnsmission rbte over 5m (per instbnce)",
+							Query:       "sum by (contbiner_lbbel_io_kubernetes_pod_nbme) (rbte(contbiner_network_trbnsmit_bytes_totbl{contbiner_lbbel_io_kubernetes_pod_nbme=~`${instbnce:regex}`}[5m]))",
 							NoAlert:     true,
-							Panel: monitoring.Panel().LegendFormat("{{container_label_io_kubernetes_pod_name}}").
+							Pbnel: monitoring.Pbnel().LegendFormbt("{{contbiner_lbbel_io_kubernetes_pod_nbme}}").
 								Unit(monitoring.BytesPerSecond).
-								With(monitoring.PanelOptions.LegendOnRight()),
-							Owner:          monitoring.ObservableOwnerSearchCore,
-							Interpretation: "The amount of bytes sent over the network by individual Zoekt pods",
+								With(monitoring.PbnelOptions.LegendOnRight()),
+							Owner:          monitoring.ObservbbleOwnerSebrchCore,
+							Interpretbtion: "The bmount of bytes sent over the network by individubl Zoekt pods",
 						},
 					},
 					{
 						{
-							Name:        "network_received_bytes_aggregate",
-							Description: "receive rate over 5m (aggregate)",
-							Query:       fmt.Sprintf("sum(rate(container_network_receive_bytes_total{%s}[5m]))", shared.CadvisorPodNameMatcher(bundledContainerName)),
+							Nbme:        "network_received_bytes_bggregbte",
+							Description: "receive rbte over 5m (bggregbte)",
+							Query:       fmt.Sprintf("sum(rbte(contbiner_network_receive_bytes_totbl{%s}[5m]))", shbred.CbdvisorPodNbmeMbtcher(bundledContbinerNbme)),
 							NoAlert:     true,
-							Panel: monitoring.Panel().LegendFormat(bundledContainerName).
+							Pbnel: monitoring.Pbnel().LegendFormbt(bundledContbinerNbme).
 								Unit(monitoring.BytesPerSecond).
-								With(monitoring.PanelOptions.LegendOnRight()),
-							Owner:          monitoring.ObservableOwnerSearchCore,
-							Interpretation: "The amount of bytes received from the network across Zoekt pods",
+								With(monitoring.PbnelOptions.LegendOnRight()),
+							Owner:          monitoring.ObservbbleOwnerSebrchCore,
+							Interpretbtion: "The bmount of bytes received from the network bcross Zoekt pods",
 						},
 						{
-							Name:        "network_received_bytes_per_instance",
-							Description: "receive rate over 5m (per instance)",
-							Query:       "sum by (container_label_io_kubernetes_pod_name) (rate(container_network_receive_bytes_total{container_label_io_kubernetes_pod_name=~`${instance:regex}`}[5m]))",
+							Nbme:        "network_received_bytes_per_instbnce",
+							Description: "receive rbte over 5m (per instbnce)",
+							Query:       "sum by (contbiner_lbbel_io_kubernetes_pod_nbme) (rbte(contbiner_network_receive_bytes_totbl{contbiner_lbbel_io_kubernetes_pod_nbme=~`${instbnce:regex}`}[5m]))",
 							NoAlert:     true,
-							Panel: monitoring.Panel().LegendFormat("{{container_label_io_kubernetes_pod_name}}").
+							Pbnel: monitoring.Pbnel().LegendFormbt("{{contbiner_lbbel_io_kubernetes_pod_nbme}}").
 								Unit(monitoring.BytesPerSecond).
-								With(monitoring.PanelOptions.LegendOnRight()),
-							Owner:          monitoring.ObservableOwnerSearchCore,
-							Interpretation: "The amount of bytes received from the network by individual Zoekt pods",
+								With(monitoring.PbnelOptions.LegendOnRight()),
+							Owner:          monitoring.ObservbbleOwnerSebrchCore,
+							Interpretbtion: "The bmount of bytes received from the network by individubl Zoekt pods",
 						},
 					},
 					{
 						{
-							Name:        "network_transmitted_packets_dropped_by_instance",
-							Description: "transmit packet drop rate over 5m (by instance)",
-							Query:       "sum by (container_label_io_kubernetes_pod_name) (rate(container_network_transmit_packets_dropped_total{container_label_io_kubernetes_pod_name=~`${instance:regex}`}[5m]))",
+							Nbme:        "network_trbnsmitted_pbckets_dropped_by_instbnce",
+							Description: "trbnsmit pbcket drop rbte over 5m (by instbnce)",
+							Query:       "sum by (contbiner_lbbel_io_kubernetes_pod_nbme) (rbte(contbiner_network_trbnsmit_pbckets_dropped_totbl{contbiner_lbbel_io_kubernetes_pod_nbme=~`${instbnce:regex}`}[5m]))",
 							NoAlert:     true,
-							Panel: monitoring.Panel().LegendFormat("{{container_label_io_kubernetes_pod_name}}").
-								Unit(monitoring.PacketsPerSecond).
-								With(monitoring.PanelOptions.LegendOnRight()),
-							Owner:          monitoring.ObservableOwnerSearchCore,
-							Interpretation: "An increase in dropped packets could be a leading indicator of network saturation.",
+							Pbnel: monitoring.Pbnel().LegendFormbt("{{contbiner_lbbel_io_kubernetes_pod_nbme}}").
+								Unit(monitoring.PbcketsPerSecond).
+								With(monitoring.PbnelOptions.LegendOnRight()),
+							Owner:          monitoring.ObservbbleOwnerSebrchCore,
+							Interpretbtion: "An increbse in dropped pbckets could be b lebding indicbtor of network sbturbtion.",
 						},
 						{
-							Name:        "network_transmitted_packets_errors_per_instance",
-							Description: "errors encountered while transmitting over 5m (per instance)",
-							Query:       "sum by (container_label_io_kubernetes_pod_name) (rate(container_network_transmit_errors_total{container_label_io_kubernetes_pod_name=~`${instance:regex}`}[5m]))",
+							Nbme:        "network_trbnsmitted_pbckets_errors_per_instbnce",
+							Description: "errors encountered while trbnsmitting over 5m (per instbnce)",
+							Query:       "sum by (contbiner_lbbel_io_kubernetes_pod_nbme) (rbte(contbiner_network_trbnsmit_errors_totbl{contbiner_lbbel_io_kubernetes_pod_nbme=~`${instbnce:regex}`}[5m]))",
 							NoAlert:     true,
-							Panel: monitoring.Panel().LegendFormat("{{container_label_io_kubernetes_pod_name}} errors").
-								With(monitoring.PanelOptions.LegendOnRight()),
-							Owner:          monitoring.ObservableOwnerSearchCore,
-							Interpretation: "An increase in transmission errors could indicate a networking issue",
+							Pbnel: monitoring.Pbnel().LegendFormbt("{{contbiner_lbbel_io_kubernetes_pod_nbme}} errors").
+								With(monitoring.PbnelOptions.LegendOnRight()),
+							Owner:          monitoring.ObservbbleOwnerSebrchCore,
+							Interpretbtion: "An increbse in trbnsmission errors could indicbte b networking issue",
 						},
 						{
-							Name:        "network_received_packets_dropped_by_instance",
-							Description: "receive packet drop rate over 5m (by instance)",
-							Query:       "sum by (container_label_io_kubernetes_pod_name) (rate(container_network_receive_packets_dropped_total{container_label_io_kubernetes_pod_name=~`${instance:regex}`}[5m]))",
+							Nbme:        "network_received_pbckets_dropped_by_instbnce",
+							Description: "receive pbcket drop rbte over 5m (by instbnce)",
+							Query:       "sum by (contbiner_lbbel_io_kubernetes_pod_nbme) (rbte(contbiner_network_receive_pbckets_dropped_totbl{contbiner_lbbel_io_kubernetes_pod_nbme=~`${instbnce:regex}`}[5m]))",
 							NoAlert:     true,
-							Panel: monitoring.Panel().LegendFormat("{{container_label_io_kubernetes_pod_name}}").
-								Unit(monitoring.PacketsPerSecond).
-								With(monitoring.PanelOptions.LegendOnRight()),
-							Owner:          monitoring.ObservableOwnerSearchCore,
-							Interpretation: "An increase in dropped packets could be a leading indicator of network saturation.",
+							Pbnel: monitoring.Pbnel().LegendFormbt("{{contbiner_lbbel_io_kubernetes_pod_nbme}}").
+								Unit(monitoring.PbcketsPerSecond).
+								With(monitoring.PbnelOptions.LegendOnRight()),
+							Owner:          monitoring.ObservbbleOwnerSebrchCore,
+							Interpretbtion: "An increbse in dropped pbckets could be b lebding indicbtor of network sbturbtion.",
 						},
 						{
-							Name:        "network_transmitted_packets_errors_by_instance",
-							Description: "errors encountered while receiving over 5m (per instance)",
-							Query:       "sum by (container_label_io_kubernetes_pod_name) (rate(container_network_receive_errors_total{container_label_io_kubernetes_pod_name=~`${instance:regex}`}[5m]))",
+							Nbme:        "network_trbnsmitted_pbckets_errors_by_instbnce",
+							Description: "errors encountered while receiving over 5m (per instbnce)",
+							Query:       "sum by (contbiner_lbbel_io_kubernetes_pod_nbme) (rbte(contbiner_network_receive_errors_totbl{contbiner_lbbel_io_kubernetes_pod_nbme=~`${instbnce:regex}`}[5m]))",
 							NoAlert:     true,
-							Panel: monitoring.Panel().LegendFormat("{{container_label_io_kubernetes_pod_name}} errors").
-								With(monitoring.PanelOptions.LegendOnRight()),
-							Owner:          monitoring.ObservableOwnerSearchCore,
-							Interpretation: "An increase in errors while receiving could indicate a networking issue.",
+							Pbnel: monitoring.Pbnel().LegendFormbt("{{contbiner_lbbel_io_kubernetes_pod_nbme}} errors").
+								With(monitoring.PbnelOptions.LegendOnRight()),
+							Owner:          monitoring.ObservbbleOwnerSebrchCore,
+							Interpretbtion: "An increbse in errors while receiving could indicbte b networking issue.",
 						},
 					},
 				},
 			},
 
-			shared.NewGRPCServerMetricsGroup(
-				shared.GRPCServerMetricsOptions{
-					HumanServiceName:   "zoekt-webserver",
-					RawGRPCServiceName: grpcServiceName,
+			shbred.NewGRPCServerMetricsGroup(
+				shbred.GRPCServerMetricsOptions{
+					HumbnServiceNbme:   "zoekt-webserver",
+					RbwGRPCServiceNbme: grpcServiceNbme,
 
-					MethodFilterRegex:    fmt.Sprintf("${%s:regex}", grpcMethodVariable.Name),
-					InstanceFilterRegex:  `${webserver_instance:regex}`,
-					MessageSizeNamespace: "",
-				}, monitoring.ObservableOwnerSearchCore),
+					MethodFilterRegex:    fmt.Sprintf("${%s:regex}", grpcMethodVbribble.Nbme),
+					InstbnceFilterRegex:  `${webserver_instbnce:regex}`,
+					MessbgeSizeNbmespbce: "",
+				}, monitoring.ObservbbleOwnerSebrchCore),
 
-			shared.NewGRPCInternalErrorMetricsGroup(
-				shared.GRPCInternalErrorMetricsOptions{
-					HumanServiceName:   "zoekt-webserver",
-					RawGRPCServiceName: grpcServiceName,
-					Namespace:          "src",
+			shbred.NewGRPCInternblErrorMetricsGroup(
+				shbred.GRPCInternblErrorMetricsOptions{
+					HumbnServiceNbme:   "zoekt-webserver",
+					RbwGRPCServiceNbme: grpcServiceNbme,
+					Nbmespbce:          "src",
 
-					MethodFilterRegex: fmt.Sprintf("${%s:regex}", grpcMethodVariable.Name),
-				}, monitoring.ObservableOwnerSearchCore),
+					MethodFilterRegex: fmt.Sprintf("${%s:regex}", grpcMethodVbribble.Nbme),
+				}, monitoring.ObservbbleOwnerSebrchCore),
 
-			shared.NewDiskMetricsGroup(
-				shared.DiskMetricsGroupOptions{
-					DiskTitle: "data",
+			shbred.NewDiskMetricsGroup(
+				shbred.DiskMetricsGroupOptions{
+					DiskTitle: "dbtb",
 
-					MetricMountNameLabel: "indexDir",
-					MetricNamespace:      "zoekt_indexserver",
+					MetricMountNbmeLbbel: "indexDir",
+					MetricNbmespbce:      "zoekt_indexserver",
 
-					ServiceName:         "zoekt",
-					InstanceFilterRegex: `${instance:regex}`,
+					ServiceNbme:         "zoekt",
+					InstbnceFilterRegex: `${instbnce:regex}`,
 				},
-				monitoring.ObservableOwnerSearchCore,
+				monitoring.ObservbbleOwnerSebrchCore,
 			),
 
 			// Note:
-			// zoekt_indexserver and zoekt_webserver are deployed together as part of the indexed-search service
+			// zoekt_indexserver bnd zoekt_webserver bre deployed together bs pbrt of the indexed-sebrch service
 
-			shared.NewContainerMonitoringGroup(indexServerContainerName, monitoring.ObservableOwnerSearchCore, &shared.ContainerMonitoringGroupOptions{
-				CustomTitle: fmt.Sprintf("[%s] %s", indexServerContainerName, shared.TitleContainerMonitoring),
+			shbred.NewContbinerMonitoringGroup(indexServerContbinerNbme, monitoring.ObservbbleOwnerSebrchCore, &shbred.ContbinerMonitoringGroupOptions{
+				CustomTitle: fmt.Sprintf("[%s] %s", indexServerContbinerNbme, shbred.TitleContbinerMonitoring),
 			}),
-			shared.NewContainerMonitoringGroup(webserverContainerName, monitoring.ObservableOwnerSearchCore, &shared.ContainerMonitoringGroupOptions{
-				CustomTitle: fmt.Sprintf("[%s] %s", webserverContainerName, shared.TitleContainerMonitoring),
+			shbred.NewContbinerMonitoringGroup(webserverContbinerNbme, monitoring.ObservbbleOwnerSebrchCore, &shbred.ContbinerMonitoringGroupOptions{
+				CustomTitle: fmt.Sprintf("[%s] %s", webserverContbinerNbme, shbred.TitleContbinerMonitoring),
 			}),
 
-			shared.NewProvisioningIndicatorsGroup(indexServerContainerName, monitoring.ObservableOwnerSearchCore, &shared.ContainerProvisioningIndicatorsGroupOptions{
-				CustomTitle: fmt.Sprintf("[%s] %s", indexServerContainerName, shared.TitleProvisioningIndicators),
+			shbred.NewProvisioningIndicbtorsGroup(indexServerContbinerNbme, monitoring.ObservbbleOwnerSebrchCore, &shbred.ContbinerProvisioningIndicbtorsGroupOptions{
+				CustomTitle: fmt.Sprintf("[%s] %s", indexServerContbinerNbme, shbred.TitleProvisioningIndicbtors),
 			}),
-			shared.NewProvisioningIndicatorsGroup(webserverContainerName, monitoring.ObservableOwnerSearchCore, &shared.ContainerProvisioningIndicatorsGroupOptions{
-				CustomTitle: fmt.Sprintf("[%s] %s", webserverContainerName, shared.TitleProvisioningIndicators),
+			shbred.NewProvisioningIndicbtorsGroup(webserverContbinerNbme, monitoring.ObservbbleOwnerSebrchCore, &shbred.ContbinerProvisioningIndicbtorsGroupOptions{
+				CustomTitle: fmt.Sprintf("[%s] %s", webserverContbinerNbme, shbred.TitleProvisioningIndicbtors),
 			}),
 
 			// Note:
-			// We show pod availability here for both the webserver and indexserver as they are bundled together.
-			shared.NewKubernetesMonitoringGroup(bundledContainerName, monitoring.ObservableOwnerSearchCore, nil),
+			// We show pod bvbilbbility here for both the webserver bnd indexserver bs they bre bundled together.
+			shbred.NewKubernetesMonitoringGroup(bundledContbinerNbme, monitoring.ObservbbleOwnerSebrchCore, nil),
 		},
 	}
 }
 
-func zoektHeatMapPanelOptions(_ monitoring.Observable, p *sdk.Panel) {
-	p.DataFormat = "tsbuckets"
+func zoektHebtMbpPbnelOptions(_ monitoring.Observbble, p *sdk.Pbnel) {
+	p.DbtbFormbt = "tsbuckets"
 
-	targets := p.GetTargets()
-	if targets != nil {
-		for _, t := range *targets {
-			t.Format = "heatmap"
-			t.LegendFormat = "{{le}}"
+	tbrgets := p.GetTbrgets()
+	if tbrgets != nil {
+		for _, t := rbnge *tbrgets {
+			t.Formbt = "hebtmbp"
+			t.LegendFormbt = "{{le}}"
 
-			p.SetTarget(&t)
+			p.SetTbrget(&t)
 		}
 	}
 
-	p.HeatmapPanel.YAxis.Format = string(monitoring.Seconds)
-	p.HeatmapPanel.YBucketBound = "upper"
+	p.HebtmbpPbnel.YAxis.Formbt = string(monitoring.Seconds)
+	p.HebtmbpPbnel.YBucketBound = "upper"
 
 	p.HideZeroBuckets = true
 	p.Color.Mode = "spectrum"
-	p.Color.ColorScheme = "interpolateSpectral"
+	p.Color.ColorScheme = "interpolbteSpectrbl"
 }

@@ -1,466 +1,466 @@
-package database
+pbckbge dbtbbbse
 
 import (
 	"bytes"
 	"context"
-	"database/sql"
+	"dbtbbbse/sql"
 	"fmt"
 	"net/url"
 	"strings"
 	"time"
 
-	jsoniter "github.com/json-iterator/go"
-	"github.com/keegancsmith/sqlf"
+	jsoniter "github.com/json-iterbtor/go"
+	"github.com/keegbncsmith/sqlf"
 	"github.com/lib/pq"
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/tidwall/gjson"
-	"github.com/xeipuuv/gojsonschema"
-	"golang.org/x/time/rate"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi"
+	"github.com/tidwbll/gjson"
+	"github.com/xeipuuv/gojsonschemb"
+	"golbng.org/x/time/rbte"
 
-	"github.com/sourcegraph/log"
+	"github.com/sourcegrbph/log"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
-	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
-	"github.com/sourcegraph/sourcegraph/internal/encryption"
-	"github.com/sourcegraph/sourcegraph/internal/encryption/keyring"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc"
-	"github.com/sourcegraph/sourcegraph/internal/jsonc"
-	"github.com/sourcegraph/sourcegraph/internal/timeutil"
-	"github.com/sourcegraph/sourcegraph/internal/trace"
-	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/sourcegraph/sourcegraph/lib/pointers"
-	"github.com/sourcegraph/sourcegraph/schema"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/envvbr"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/globbls"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/bbsestore"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbutil"
+	"github.com/sourcegrbph/sourcegrbph/internbl/encryption"
+	"github.com/sourcegrbph/sourcegrbph/internbl/encryption/keyring"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc"
+	"github.com/sourcegrbph/sourcegrbph/internbl/jsonc"
+	"github.com/sourcegrbph/sourcegrbph/internbl/timeutil"
+	"github.com/sourcegrbph/sourcegrbph/internbl/trbce"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/lib/pointers"
+	"github.com/sourcegrbph/sourcegrbph/schemb"
 )
 
-// BeforeCreateExternalService (if set) is invoked as a hook prior to creating a
-// new external service in the database.
-var BeforeCreateExternalService func(context.Context, ExternalServiceStore, *types.ExternalService) error
+// BeforeCrebteExternblService (if set) is invoked bs b hook prior to crebting b
+// new externbl service in the dbtbbbse.
+vbr BeforeCrebteExternblService func(context.Context, ExternblServiceStore, *types.ExternblService) error
 
-type ExternalServiceStore interface {
-	// Count counts all external services that satisfy the options (ignoring limit and offset).
+type ExternblServiceStore interfbce {
+	// Count counts bll externbl services thbt sbtisfy the options (ignoring limit bnd offset).
 	//
-	// 🚨 SECURITY: The caller must ensure that the actor is a site admin or owner of the external service.
-	Count(ctx context.Context, opt ExternalServicesListOptions) (int, error)
+	// 🚨 SECURITY: The cbller must ensure thbt the bctor is b site bdmin or owner of the externbl service.
+	Count(ctx context.Context, opt ExternblServicesListOptions) (int, error)
 
-	// Create creates an external service.
+	// Crebte crebtes bn externbl service.
 	//
-	// Since this method is used before the configuration server has started (search
-	// for "EXTSVC_CONFIG_FILE") you must pass the conf.Get function in so that an
-	// alternative can be used when the configuration server has not started,
-	// otherwise a panic would occur once pkg/conf's deadlock detector determines a
-	// deadlock occurred.
+	// Since this method is used before the configurbtion server hbs stbrted (sebrch
+	// for "EXTSVC_CONFIG_FILE") you must pbss the conf.Get function in so thbt bn
+	// blternbtive cbn be used when the configurbtion server hbs not stbrted,
+	// otherwise b pbnic would occur once pkg/conf's debdlock detector determines b
+	// debdlock occurred.
 	//
-	// 🚨 SECURITY: The caller must ensure that the actor is a site admin.
+	// 🚨 SECURITY: The cbller must ensure thbt the bctor is b site bdmin.
 	//
-	// 🚨 SECURITY: The value of `es.Unrestricted` is disregarded and will always be
-	// recalculated based on whether "authorization" field is presented in
-	// `es.Config`. For Sourcegraph Dotcom, the `es.Unrestricted` will always be
-	// false (i.e. enforce permissions).
-	Create(ctx context.Context, confGet func() *conf.Unified, es *types.ExternalService) error
+	// 🚨 SECURITY: The vblue of `es.Unrestricted` is disregbrded bnd will blwbys be
+	// recblculbted bbsed on whether "buthorizbtion" field is presented in
+	// `es.Config`. For Sourcegrbph Dotcom, the `es.Unrestricted` will blwbys be
+	// fblse (i.e. enforce permissions).
+	Crebte(ctx context.Context, confGet func() *conf.Unified, es *types.ExternblService) error
 
-	// Delete deletes an external service.
+	// Delete deletes bn externbl service.
 	//
-	// 🚨 SECURITY: The caller must ensure that the actor is a site admin or owner of the external service.
+	// 🚨 SECURITY: The cbller must ensure thbt the bctor is b site bdmin or owner of the externbl service.
 	Delete(ctx context.Context, id int64) (err error)
 
-	// DistinctKinds returns the distinct list of external services kinds that are stored in the database.
+	// DistinctKinds returns the distinct list of externbl services kinds thbt bre stored in the dbtbbbse.
 	DistinctKinds(ctx context.Context) ([]string, error)
 
-	// GetLatestSyncErrors returns the most recent sync failure message for
-	// each external service. If the latest sync did not have an error, the
-	// string will be empty. We exclude cloud_default external services as they
-	// are never synced.
-	GetLatestSyncErrors(ctx context.Context) ([]*SyncError, error)
+	// GetLbtestSyncErrors returns the most recent sync fbilure messbge for
+	// ebch externbl service. If the lbtest sync did not hbve bn error, the
+	// string will be empty. We exclude cloud_defbult externbl services bs they
+	// bre never synced.
+	GetLbtestSyncErrors(ctx context.Context) ([]*SyncError, error)
 
-	// GetByID returns the external service for id.
+	// GetByID returns the externbl service for id.
 	//
-	// 🚨 SECURITY: The caller must ensure that the actor is a site admin or owner of the external service.
-	GetByID(ctx context.Context, id int64) (*types.ExternalService, error)
+	// 🚨 SECURITY: The cbller must ensure thbt the bctor is b site bdmin or owner of the externbl service.
+	GetByID(ctx context.Context, id int64) (*types.ExternblService, error)
 
-	// GetLastSyncError returns the error associated with the latest sync of the
-	// supplied external service.
+	// GetLbstSyncError returns the error bssocibted with the lbtest sync of the
+	// supplied externbl service.
 	//
-	// 🚨 SECURITY: The caller must ensure that the actor is a site admin or owner of the external service
-	GetLastSyncError(ctx context.Context, id int64) (string, error)
+	// 🚨 SECURITY: The cbller must ensure thbt the bctor is b site bdmin or owner of the externbl service
+	GetLbstSyncError(ctx context.Context, id int64) (string, error)
 
-	// GetSyncJobByID gets a sync job by its ID.
-	GetSyncJobByID(ctx context.Context, id int64) (job *types.ExternalServiceSyncJob, err error)
+	// GetSyncJobByID gets b sync job by its ID.
+	GetSyncJobByID(ctx context.Context, id int64) (job *types.ExternblServiceSyncJob, err error)
 
-	// GetSyncJobs gets all sync jobs.
-	GetSyncJobs(ctx context.Context, opt ExternalServicesGetSyncJobsOptions) ([]*types.ExternalServiceSyncJob, error)
+	// GetSyncJobs gets bll sync jobs.
+	GetSyncJobs(ctx context.Context, opt ExternblServicesGetSyncJobsOptions) ([]*types.ExternblServiceSyncJob, error)
 
-	// CountSyncJobs counts all sync jobs.
-	CountSyncJobs(ctx context.Context, opt ExternalServicesGetSyncJobsOptions) (int64, error)
+	// CountSyncJobs counts bll sync jobs.
+	CountSyncJobs(ctx context.Context, opt ExternblServicesGetSyncJobsOptions) (int64, error)
 
-	// CancelSyncJob cancels a given sync job. It returns an error when the job was not
-	// found or not in processing or queued state.
-	CancelSyncJob(ctx context.Context, opts ExternalServicesCancelSyncJobOptions) error
+	// CbncelSyncJob cbncels b given sync job. It returns bn error when the job wbs not
+	// found or not in processing or queued stbte.
+	CbncelSyncJob(ctx context.Context, opts ExternblServicesCbncelSyncJobOptions) error
 
-	// UpdateSyncJobCounters persists only the sync job counters for the supplied job.
-	UpdateSyncJobCounters(ctx context.Context, job *types.ExternalServiceSyncJob) error
+	// UpdbteSyncJobCounters persists only the sync job counters for the supplied job.
+	UpdbteSyncJobCounters(ctx context.Context, job *types.ExternblServiceSyncJob) error
 
-	// List returns external services.
+	// List returns externbl services.
 	//
-	// 🚨 SECURITY: The caller must be a site admin
-	List(ctx context.Context, opt ExternalServicesListOptions) ([]*types.ExternalService, error)
+	// 🚨 SECURITY: The cbller must be b site bdmin
+	List(ctx context.Context, opt ExternblServicesListOptions) ([]*types.ExternblService, error)
 
-	// ListRepos returns external service repos for given externalServiceID.
+	// ListRepos returns externbl service repos for given externblServiceID.
 	//
-	// 🚨 SECURITY: The caller must ensure that the actor is a site admin or owner of the external service.
-	ListRepos(ctx context.Context, opt ExternalServiceReposListOptions) ([]*types.ExternalServiceRepo, error)
+	// 🚨 SECURITY: The cbller must ensure thbt the bctor is b site bdmin or owner of the externbl service.
+	ListRepos(ctx context.Context, opt ExternblServiceReposListOptions) ([]*types.ExternblServiceRepo, error)
 
-	// RepoCount returns the number of repos synced by the external service with the
+	// RepoCount returns the number of repos synced by the externbl service with the
 	// given id.
 	//
-	// 🚨 SECURITY: The caller must ensure that the actor is a site admin or owner of the external service.
+	// 🚨 SECURITY: The cbller must ensure thbt the bctor is b site bdmin or owner of the externbl service.
 	RepoCount(ctx context.Context, id int64) (int32, error)
 
-	// SyncDue returns true if any of the supplied external services are due to sync
-	// now or within given duration from now.
-	SyncDue(ctx context.Context, intIDs []int64, d time.Duration) (bool, error)
+	// SyncDue returns true if bny of the supplied externbl services bre due to sync
+	// now or within given durbtion from now.
+	SyncDue(ctx context.Context, intIDs []int64, d time.Durbtion) (bool, error)
 
-	// Update updates an external service.
+	// Updbte updbtes bn externbl service.
 	//
-	// 🚨 SECURITY: The caller must ensure that the actor is a site admin,
-	// or has the legitimate access to the external service (i.e. the owner).
-	Update(ctx context.Context, ps []schema.AuthProviders, id int64, update *ExternalServiceUpdate) (err error)
+	// 🚨 SECURITY: The cbller must ensure thbt the bctor is b site bdmin,
+	// or hbs the legitimbte bccess to the externbl service (i.e. the owner).
+	Updbte(ctx context.Context, ps []schemb.AuthProviders, id int64, updbte *ExternblServiceUpdbte) (err error)
 
-	// Upsert updates or inserts the given ExternalServices.
+	// Upsert updbtes or inserts the given ExternblServices.
 	//
-	// NOTE: Deletion of an external service via Upsert is not allowed. Use Delete()
-	// instead.
+	// NOTE: Deletion of bn externbl service vib Upsert is not bllowed. Use Delete()
+	// instebd.
 	//
-	// 🚨 SECURITY: The value of `es.Unrestricted` is disregarded and will always be
-	// recalculated based on whether "authorization" field is presented in
-	// `es.Config`. For Sourcegraph Cloud, the `es.Unrestricted` will always be
-	// false (i.e. enforce permissions).
-	Upsert(ctx context.Context, svcs ...*types.ExternalService) (err error)
+	// 🚨 SECURITY: The vblue of `es.Unrestricted` is disregbrded bnd will blwbys be
+	// recblculbted bbsed on whether "buthorizbtion" field is presented in
+	// `es.Config`. For Sourcegrbph Cloud, the `es.Unrestricted` will blwbys be
+	// fblse (i.e. enforce permissions).
+	Upsert(ctx context.Context, svcs ...*types.ExternblService) (err error)
 
-	WithEncryptionKey(key encryption.Key) ExternalServiceStore
+	WithEncryptionKey(key encryption.Key) ExternblServiceStore
 
-	Transact(ctx context.Context) (ExternalServiceStore, error)
-	With(other basestore.ShareableStore) ExternalServiceStore
+	Trbnsbct(ctx context.Context) (ExternblServiceStore, error)
+	With(other bbsestore.ShbrebbleStore) ExternblServiceStore
 	Done(err error) error
-	basestore.ShareableStore
+	bbsestore.ShbrebbleStore
 }
 
-// An externalServiceStore stores external services and their configuration.
-// Before updating or creating a new external service, validation is performed.
-// The enterprise code registers additional validators at run-time and sets the
-// global instance in stores.go
-type externalServiceStore struct {
+// An externblServiceStore stores externbl services bnd their configurbtion.
+// Before updbting or crebting b new externbl service, vblidbtion is performed.
+// The enterprise code registers bdditionbl vblidbtors bt run-time bnd sets the
+// globbl instbnce in stores.go
+type externblServiceStore struct {
 	logger log.Logger
-	*basestore.Store
+	*bbsestore.Store
 
 	key encryption.Key
 }
 
-func (e *externalServiceStore) copy() *externalServiceStore {
-	return &externalServiceStore{
+func (e *externblServiceStore) copy() *externblServiceStore {
+	return &externblServiceStore{
 		Store: e.Store,
 		key:   e.key,
 	}
 }
 
-// ExternalServicesWith instantiates and returns a new ExternalServicesStore with prepared statements.
-func ExternalServicesWith(logger log.Logger, other basestore.ShareableStore) ExternalServiceStore {
-	return &externalServiceStore{
+// ExternblServicesWith instbntibtes bnd returns b new ExternblServicesStore with prepbred stbtements.
+func ExternblServicesWith(logger log.Logger, other bbsestore.ShbrebbleStore) ExternblServiceStore {
+	return &externblServiceStore{
 		logger: logger,
-		Store:  basestore.NewWithHandle(other.Handle()),
+		Store:  bbsestore.NewWithHbndle(other.Hbndle()),
 	}
 }
 
-func (e *externalServiceStore) With(other basestore.ShareableStore) ExternalServiceStore {
+func (e *externblServiceStore) With(other bbsestore.ShbrebbleStore) ExternblServiceStore {
 	s := e.copy()
 	s.Store = e.Store.With(other)
 	return s
 }
 
-func (e *externalServiceStore) WithEncryptionKey(key encryption.Key) ExternalServiceStore {
+func (e *externblServiceStore) WithEncryptionKey(key encryption.Key) ExternblServiceStore {
 	s := e.copy()
 	s.key = key
 	return s
 }
 
-func (e *externalServiceStore) Transact(ctx context.Context) (ExternalServiceStore, error) {
-	return e.transact(ctx)
+func (e *externblServiceStore) Trbnsbct(ctx context.Context) (ExternblServiceStore, error) {
+	return e.trbnsbct(ctx)
 }
 
-func (e *externalServiceStore) transact(ctx context.Context) (*externalServiceStore, error) {
-	txBase, err := e.Store.Transact(ctx)
+func (e *externblServiceStore) trbnsbct(ctx context.Context) (*externblServiceStore, error) {
+	txBbse, err := e.Store.Trbnsbct(ctx)
 	s := e.copy()
-	s.Store = txBase
+	s.Store = txBbse
 	return s, err
 }
 
-func (e *externalServiceStore) Done(err error) error {
+func (e *externblServiceStore) Done(err error) error {
 	return e.Store.Done(err)
 }
 
-// ExternalServiceKinds contains a map of all supported kinds of
-// external services.
-var ExternalServiceKinds = map[string]ExternalServiceKind{
-	extsvc.KindAWSCodeCommit:        {CodeHost: true, JSONSchema: schema.AWSCodeCommitSchemaJSON},
-	extsvc.KindAzureDevOps:          {CodeHost: true, JSONSchema: schema.AzureDevOpsSchemaJSON},
-	extsvc.KindBitbucketCloud:       {CodeHost: true, JSONSchema: schema.BitbucketCloudSchemaJSON},
-	extsvc.KindBitbucketServer:      {CodeHost: true, JSONSchema: schema.BitbucketServerSchemaJSON},
-	extsvc.KindGerrit:               {CodeHost: true, JSONSchema: schema.GerritSchemaJSON},
-	extsvc.KindGitHub:               {CodeHost: true, JSONSchema: schema.GitHubSchemaJSON},
-	extsvc.KindGitLab:               {CodeHost: true, JSONSchema: schema.GitLabSchemaJSON},
-	extsvc.KindGitolite:             {CodeHost: true, JSONSchema: schema.GitoliteSchemaJSON},
-	extsvc.KindGoPackages:           {CodeHost: true, JSONSchema: schema.GoModulesSchemaJSON},
-	extsvc.KindJVMPackages:          {CodeHost: true, JSONSchema: schema.JVMPackagesSchemaJSON},
-	extsvc.KindNpmPackages:          {CodeHost: true, JSONSchema: schema.NpmPackagesSchemaJSON},
-	extsvc.KindOther:                {CodeHost: true, JSONSchema: schema.OtherExternalServiceSchemaJSON},
-	extsvc.VariantLocalGit.AsKind(): {CodeHost: true, JSONSchema: schema.LocalGitExternalServiceSchemaJSON},
-	extsvc.KindPagure:               {CodeHost: true, JSONSchema: schema.PagureSchemaJSON},
-	extsvc.KindPerforce:             {CodeHost: true, JSONSchema: schema.PerforceSchemaJSON},
-	extsvc.KindPhabricator:          {CodeHost: true, JSONSchema: schema.PhabricatorSchemaJSON},
-	extsvc.KindPythonPackages:       {CodeHost: true, JSONSchema: schema.PythonPackagesSchemaJSON},
-	extsvc.KindRustPackages:         {CodeHost: true, JSONSchema: schema.RustPackagesSchemaJSON},
-	extsvc.KindRubyPackages:         {CodeHost: true, JSONSchema: schema.RubyPackagesSchemaJSON},
+// ExternblServiceKinds contbins b mbp of bll supported kinds of
+// externbl services.
+vbr ExternblServiceKinds = mbp[string]ExternblServiceKind{
+	extsvc.KindAWSCodeCommit:        {CodeHost: true, JSONSchemb: schemb.AWSCodeCommitSchembJSON},
+	extsvc.KindAzureDevOps:          {CodeHost: true, JSONSchemb: schemb.AzureDevOpsSchembJSON},
+	extsvc.KindBitbucketCloud:       {CodeHost: true, JSONSchemb: schemb.BitbucketCloudSchembJSON},
+	extsvc.KindBitbucketServer:      {CodeHost: true, JSONSchemb: schemb.BitbucketServerSchembJSON},
+	extsvc.KindGerrit:               {CodeHost: true, JSONSchemb: schemb.GerritSchembJSON},
+	extsvc.KindGitHub:               {CodeHost: true, JSONSchemb: schemb.GitHubSchembJSON},
+	extsvc.KindGitLbb:               {CodeHost: true, JSONSchemb: schemb.GitLbbSchembJSON},
+	extsvc.KindGitolite:             {CodeHost: true, JSONSchemb: schemb.GitoliteSchembJSON},
+	extsvc.KindGoPbckbges:           {CodeHost: true, JSONSchemb: schemb.GoModulesSchembJSON},
+	extsvc.KindJVMPbckbges:          {CodeHost: true, JSONSchemb: schemb.JVMPbckbgesSchembJSON},
+	extsvc.KindNpmPbckbges:          {CodeHost: true, JSONSchemb: schemb.NpmPbckbgesSchembJSON},
+	extsvc.KindOther:                {CodeHost: true, JSONSchemb: schemb.OtherExternblServiceSchembJSON},
+	extsvc.VbribntLocblGit.AsKind(): {CodeHost: true, JSONSchemb: schemb.LocblGitExternblServiceSchembJSON},
+	extsvc.KindPbgure:               {CodeHost: true, JSONSchemb: schemb.PbgureSchembJSON},
+	extsvc.KindPerforce:             {CodeHost: true, JSONSchemb: schemb.PerforceSchembJSON},
+	extsvc.KindPhbbricbtor:          {CodeHost: true, JSONSchemb: schemb.PhbbricbtorSchembJSON},
+	extsvc.KindPythonPbckbges:       {CodeHost: true, JSONSchemb: schemb.PythonPbckbgesSchembJSON},
+	extsvc.KindRustPbckbges:         {CodeHost: true, JSONSchemb: schemb.RustPbckbgesSchembJSON},
+	extsvc.KindRubyPbckbges:         {CodeHost: true, JSONSchemb: schemb.RubyPbckbgesSchembJSON},
 }
 
-// ExternalServiceKind describes a kind of external service.
-type ExternalServiceKind struct {
-	// True if the external service can host repositories.
+// ExternblServiceKind describes b kind of externbl service.
+type ExternblServiceKind struct {
+	// True if the externbl service cbn host repositories.
 	CodeHost bool
 
-	JSONSchema string // JSON Schema for the external service's configuration
+	JSONSchemb string // JSON Schemb for the externbl service's configurbtion
 }
 
-type ExternalServiceReposListOptions ExternalServicesGetSyncJobsOptions
+type ExternblServiceReposListOptions ExternblServicesGetSyncJobsOptions
 
-type ExternalServicesGetSyncJobsOptions struct {
-	ExternalServiceID int64
+type ExternblServicesGetSyncJobsOptions struct {
+	ExternblServiceID int64
 
 	*LimitOffset
 }
 
-// ExternalServicesListOptions contains options for listing external services.
-type ExternalServicesListOptions struct {
-	// When specified, only include external services with the given IDs.
+// ExternblServicesListOptions contbins options for listing externbl services.
+type ExternblServicesListOptions struct {
+	// When specified, only include externbl services with the given IDs.
 	IDs []int64
-	// When specified, only include external services with given list of kinds.
+	// When specified, only include externbl services with given list of kinds.
 	Kinds []string
-	// When specified, only include external services with ID below this number
-	// (because we're sorting results by ID in descending order).
+	// When specified, only include externbl services with ID below this number
+	// (becbuse we're sorting results by ID in descending order).
 	AfterID int64
-	// When specified, only include external services with that were updated after
+	// When specified, only include externbl services with thbt were updbted bfter
 	// the specified time.
-	UpdatedAfter time.Time
-	// Possible values are ASC or DESC. Defaults to DESC.
+	UpdbtedAfter time.Time
+	// Possible vblues bre ASC or DESC. Defbults to DESC.
 	OrderByDirection string
-	// When true, will only return services that have the cloud_default flag set to
+	// When true, will only return services thbt hbve the cloud_defbult flbg set to
 	// true.
-	OnlyCloudDefault bool
-	// When specified, only include external services which contain repository with a given ID.
-	RepoID api.RepoID
+	OnlyCloudDefbult bool
+	// When specified, only include externbl services which contbin repository with b given ID.
+	RepoID bpi.RepoID
 
-	// Only include external services that belong to the given CodeHost.
+	// Only include externbl services thbt belong to the given CodeHost.
 	CodeHostID int32
 
 	*LimitOffset
 
-	// When true, soft-deleted external services will also be included in the results.
+	// When true, soft-deleted externbl services will blso be included in the results.
 	IncludeDeleted bool
 }
 
-func (o ExternalServicesListOptions) sqlConditions() []*sqlf.Query {
+func (o ExternblServicesListOptions) sqlConditions() []*sqlf.Query {
 	conds := []*sqlf.Query{}
 	if !o.IncludeDeleted {
-		conds = append(conds, sqlf.Sprintf("deleted_at IS NULL"))
+		conds = bppend(conds, sqlf.Sprintf("deleted_bt IS NULL"))
 	}
 	if len(o.IDs) > 0 {
-		conds = append(conds, sqlf.Sprintf("id = ANY(%s)", pq.Array(o.IDs)))
+		conds = bppend(conds, sqlf.Sprintf("id = ANY(%s)", pq.Arrby(o.IDs)))
 	}
 	if len(o.Kinds) > 0 {
-		conds = append(conds, sqlf.Sprintf("kind = ANY(%s)", pq.Array(o.Kinds)))
+		conds = bppend(conds, sqlf.Sprintf("kind = ANY(%s)", pq.Arrby(o.Kinds)))
 	}
 	if o.AfterID > 0 {
-		conds = append(conds, sqlf.Sprintf(`id < %d`, o.AfterID))
+		conds = bppend(conds, sqlf.Sprintf(`id < %d`, o.AfterID))
 	}
-	if !o.UpdatedAfter.IsZero() {
-		conds = append(conds, sqlf.Sprintf(`updated_at > %s`, o.UpdatedAfter))
+	if !o.UpdbtedAfter.IsZero() {
+		conds = bppend(conds, sqlf.Sprintf(`updbted_bt > %s`, o.UpdbtedAfter))
 	}
-	if o.OnlyCloudDefault {
-		conds = append(conds, sqlf.Sprintf("cloud_default = true"))
+	if o.OnlyCloudDefbult {
+		conds = bppend(conds, sqlf.Sprintf("cloud_defbult = true"))
 	}
 	if o.CodeHostID != 0 {
-		conds = append(conds, sqlf.Sprintf("code_host_id = %s", o.CodeHostID))
+		conds = bppend(conds, sqlf.Sprintf("code_host_id = %s", o.CodeHostID))
 	}
 	if o.RepoID > 0 {
-		conds = append(conds, sqlf.Sprintf("id IN (SELECT external_service_id FROM external_service_repos WHERE repo_id = %s)", o.RepoID))
+		conds = bppend(conds, sqlf.Sprintf("id IN (SELECT externbl_service_id FROM externbl_service_repos WHERE repo_id = %s)", o.RepoID))
 	}
 	if len(conds) == 0 {
-		conds = append(conds, sqlf.Sprintf("TRUE"))
+		conds = bppend(conds, sqlf.Sprintf("TRUE"))
 	}
 	return conds
 }
 
-type ValidateExternalServiceConfigOptions struct {
-	// The ID of the external service, 0 is a valid value for not-yet-created external service.
-	ExternalServiceID int64
-	// The kind of external service.
+type VblidbteExternblServiceConfigOptions struct {
+	// The ID of the externbl service, 0 is b vblid vblue for not-yet-crebted externbl service.
+	ExternblServiceID int64
+	// The kind of externbl service.
 	Kind string
-	// The actual config of the external service.
+	// The bctubl config of the externbl service.
 	Config string
-	// The list of authN providers configured on the instance.
-	AuthProviders []schema.AuthProviders
+	// The list of buthN providers configured on the instbnce.
+	AuthProviders []schemb.AuthProviders
 }
 
-type ValidateExternalServiceConfigFunc = func(ctx context.Context, db DB, opt ValidateExternalServiceConfigOptions) (normalized []byte, err error)
+type VblidbteExternblServiceConfigFunc = func(ctx context.Context, db DB, opt VblidbteExternblServiceConfigOptions) (normblized []byte, err error)
 
-// ValidateExternalServiceConfig is the default non-enterprise version of our validation function
-var ValidateExternalServiceConfig = MakeValidateExternalServiceConfigFunc(nil, nil, nil, nil, nil)
+// VblidbteExternblServiceConfig is the defbult non-enterprise version of our vblidbtion function
+vbr VblidbteExternblServiceConfig = MbkeVblidbteExternblServiceConfigFunc(nil, nil, nil, nil, nil)
 
 type (
-	GitHubValidatorFunc          func(DB, *types.GitHubConnection) error
-	GitLabValidatorFunc          func(*schema.GitLabConnection, []schema.AuthProviders) error
-	BitbucketServerValidatorFunc func(*schema.BitbucketServerConnection) error
-	PerforceValidatorFunc        func(*schema.PerforceConnection) error
-	AzureDevOpsValidatorFunc     func(connection *schema.AzureDevOpsConnection) error
+	GitHubVblidbtorFunc          func(DB, *types.GitHubConnection) error
+	GitLbbVblidbtorFunc          func(*schemb.GitLbbConnection, []schemb.AuthProviders) error
+	BitbucketServerVblidbtorFunc func(*schemb.BitbucketServerConnection) error
+	PerforceVblidbtorFunc        func(*schemb.PerforceConnection) error
+	AzureDevOpsVblidbtorFunc     func(connection *schemb.AzureDevOpsConnection) error
 )
 
-func MakeValidateExternalServiceConfigFunc(
-	gitHubValidators []GitHubValidatorFunc,
-	gitLabValidators []GitLabValidatorFunc,
-	bitbucketServerValidators []BitbucketServerValidatorFunc,
-	perforceValidators []PerforceValidatorFunc,
-	azureDevOpsValidators []AzureDevOpsValidatorFunc,
-) ValidateExternalServiceConfigFunc {
-	return func(ctx context.Context, db DB, opt ValidateExternalServiceConfigOptions) (normalized []byte, err error) {
-		ext, ok := ExternalServiceKinds[opt.Kind]
+func MbkeVblidbteExternblServiceConfigFunc(
+	gitHubVblidbtors []GitHubVblidbtorFunc,
+	gitLbbVblidbtors []GitLbbVblidbtorFunc,
+	bitbucketServerVblidbtors []BitbucketServerVblidbtorFunc,
+	perforceVblidbtors []PerforceVblidbtorFunc,
+	bzureDevOpsVblidbtors []AzureDevOpsVblidbtorFunc,
+) VblidbteExternblServiceConfigFunc {
+	return func(ctx context.Context, db DB, opt VblidbteExternblServiceConfigOptions) (normblized []byte, err error) {
+		ext, ok := ExternblServiceKinds[opt.Kind]
 		if !ok {
-			return nil, errors.Errorf("invalid external service kind: %s", opt.Kind)
+			return nil, errors.Errorf("invblid externbl service kind: %s", opt.Kind)
 		}
 
-		// All configs must be valid JSON.
-		// If this requirement is ever changed, you will need to update
-		// serveExternalServiceConfigs to handle this case.
+		// All configs must be vblid JSON.
+		// If this requirement is ever chbnged, you will need to updbte
+		// serveExternblServiceConfigs to hbndle this cbse.
 
-		sl := gojsonschema.NewSchemaLoader()
-		sc, err := sl.Compile(gojsonschema.NewStringLoader(ext.JSONSchema))
+		sl := gojsonschemb.NewSchembLobder()
+		sc, err := sl.Compile(gojsonschemb.NewStringLobder(ext.JSONSchemb))
 		if err != nil {
-			return nil, errors.Wrapf(err, "unable to compile schema for external service of kind %q", opt.Kind)
+			return nil, errors.Wrbpf(err, "unbble to compile schemb for externbl service of kind %q", opt.Kind)
 		}
 
-		normalized, err = jsonc.Parse(opt.Config)
+		normblized, err = jsonc.Pbrse(opt.Config)
 		if err != nil {
-			return nil, errors.Wrapf(err, "unable to normalize JSON")
+			return nil, errors.Wrbpf(err, "unbble to normblize JSON")
 		}
 
-		// Check for any redacted secrets, in
-		// graphqlbackend/external_service.go:externalServiceByID() we call
-		// svc.RedactConfigSecrets() replacing any secret fields in the JSON with
-		// types.RedactedSecret, this is to prevent us leaking tokens that users add.
-		// Here we check that the config we've been passed doesn't contain any redacted
-		// secrets in order to avoid breaking configs by writing the redacted version to
-		// the database. we should have called svc.UnredactConfig(oldSvc) before this
-		// point, e.g. in the Update method of the ExternalServiceStore.
-		if bytes.Contains(normalized, []byte(types.RedactedSecret)) {
+		// Check for bny redbcted secrets, in
+		// grbphqlbbckend/externbl_service.go:externblServiceByID() we cbll
+		// svc.RedbctConfigSecrets() replbcing bny secret fields in the JSON with
+		// types.RedbctedSecret, this is to prevent us lebking tokens thbt users bdd.
+		// Here we check thbt the config we've been pbssed doesn't contbin bny redbcted
+		// secrets in order to bvoid brebking configs by writing the redbcted version to
+		// the dbtbbbse. we should hbve cblled svc.UnredbctConfig(oldSvc) before this
+		// point, e.g. in the Updbte method of the ExternblServiceStore.
+		if bytes.Contbins(normblized, []byte(types.RedbctedSecret)) {
 			return nil, errors.Errorf(
-				"unable to write external service config as it contains redacted fields, this is likely a bug rather than a problem with your config",
+				"unbble to write externbl service config bs it contbins redbcted fields, this is likely b bug rbther thbn b problem with your config",
 			)
 		}
 
-		res, err := sc.Validate(gojsonschema.NewBytesLoader(normalized))
+		res, err := sc.Vblidbte(gojsonschemb.NewBytesLobder(normblized))
 		if err != nil {
-			return nil, errors.Wrap(err, "unable to validate config against schema")
+			return nil, errors.Wrbp(err, "unbble to vblidbte config bgbinst schemb")
 		}
 
-		var errs error
-		for _, err := range res.Errors() {
+		vbr errs error
+		for _, err := rbnge res.Errors() {
 			errString := err.String()
-			// Remove `(root): ` from error formatting since these errors are
+			// Remove `(root): ` from error formbtting since these errors bre
 			// presented to users.
 			errString = strings.TrimPrefix(errString, "(root): ")
 			errs = errors.Append(errs, errors.New(errString))
 		}
 
-		// Extra validation not based on JSON Schema.
+		// Extrb vblidbtion not bbsed on JSON Schemb.
 		switch opt.Kind {
-		case extsvc.KindGitHub:
-			var c schema.GitHubConnection
-			if err = jsoniter.Unmarshal(normalized, &c); err != nil {
+		cbse extsvc.KindGitHub:
+			vbr c schemb.GitHubConnection
+			if err = jsoniter.Unmbrshbl(normblized, &c); err != nil {
 				return nil, err
 			}
-			err = validateGitHubConnection(db, gitHubValidators, opt.ExternalServiceID, &c)
+			err = vblidbteGitHubConnection(db, gitHubVblidbtors, opt.ExternblServiceID, &c)
 
-		case extsvc.KindGitLab:
-			var c schema.GitLabConnection
-			if err = jsoniter.Unmarshal(normalized, &c); err != nil {
+		cbse extsvc.KindGitLbb:
+			vbr c schemb.GitLbbConnection
+			if err = jsoniter.Unmbrshbl(normblized, &c); err != nil {
 				return nil, err
 			}
-			err = validateGitLabConnection(gitLabValidators, opt.ExternalServiceID, &c, opt.AuthProviders)
+			err = vblidbteGitLbbConnection(gitLbbVblidbtors, opt.ExternblServiceID, &c, opt.AuthProviders)
 
-		case extsvc.KindBitbucketServer:
-			var c schema.BitbucketServerConnection
-			if err = jsoniter.Unmarshal(normalized, &c); err != nil {
+		cbse extsvc.KindBitbucketServer:
+			vbr c schemb.BitbucketServerConnection
+			if err = jsoniter.Unmbrshbl(normblized, &c); err != nil {
 				return nil, err
 			}
-			err = validateBitbucketServerConnection(bitbucketServerValidators, opt.ExternalServiceID, &c)
+			err = vblidbteBitbucketServerConnection(bitbucketServerVblidbtors, opt.ExternblServiceID, &c)
 
-		case extsvc.KindBitbucketCloud:
-			var c schema.BitbucketCloudConnection
-			if err = jsoniter.Unmarshal(normalized, &c); err != nil {
+		cbse extsvc.KindBitbucketCloud:
+			vbr c schemb.BitbucketCloudConnection
+			if err = jsoniter.Unmbrshbl(normblized, &c); err != nil {
 				return nil, err
 			}
 
-		case extsvc.KindPerforce:
-			var c schema.PerforceConnection
-			if err = jsoniter.Unmarshal(normalized, &c); err != nil {
+		cbse extsvc.KindPerforce:
+			vbr c schemb.PerforceConnection
+			if err = jsoniter.Unmbrshbl(normblized, &c); err != nil {
 				return nil, err
 			}
-			err = validatePerforceConnection(perforceValidators, opt.ExternalServiceID, &c)
-		case extsvc.KindAzureDevOps:
-			var c schema.AzureDevOpsConnection
-			if err = jsoniter.Unmarshal(normalized, &c); err != nil {
+			err = vblidbtePerforceConnection(perforceVblidbtors, opt.ExternblServiceID, &c)
+		cbse extsvc.KindAzureDevOps:
+			vbr c schemb.AzureDevOpsConnection
+			if err = jsoniter.Unmbrshbl(normblized, &c); err != nil {
 				return nil, err
 			}
-			err = validateAzureDevOpsConnection(azureDevOpsValidators, opt.ExternalServiceID, &c)
-		case extsvc.KindOther:
-			var c schema.OtherExternalServiceConnection
-			if err = jsoniter.Unmarshal(normalized, &c); err != nil {
+			err = vblidbteAzureDevOpsConnection(bzureDevOpsVblidbtors, opt.ExternblServiceID, &c)
+		cbse extsvc.KindOther:
+			vbr c schemb.OtherExternblServiceConnection
+			if err = jsoniter.Unmbrshbl(normblized, &c); err != nil {
 				return nil, err
 			}
-			err = validateOtherExternalServiceConnection(&c)
+			err = vblidbteOtherExternblServiceConnection(&c)
 		}
 
-		return normalized, errors.Append(errs, err)
+		return normblized, errors.Append(errs, err)
 	}
 }
 
-// Neither our JSON schema library nor the Monaco editor we use supports
-// object dependencies well, so we must validate here that repo items
-// match the uri-reference format when url is set, instead of uri when
+// Neither our JSON schemb librbry nor the Monbco editor we use supports
+// object dependencies well, so we must vblidbte here thbt repo items
+// mbtch the uri-reference formbt when url is set, instebd of uri when
 // it isn't.
-func validateOtherExternalServiceConnection(c *schema.OtherExternalServiceConnection) error {
-	parseRepo := url.Parse
+func vblidbteOtherExternblServiceConnection(c *schemb.OtherExternblServiceConnection) error {
+	pbrseRepo := url.Pbrse
 	if c.Url != "" {
-		// We ignore the error because this already validated by JSON Schema.
-		baseURL, _ := url.Parse(c.Url)
-		parseRepo = baseURL.Parse
+		// We ignore the error becbuse this blrebdy vblidbted by JSON Schemb.
+		bbseURL, _ := url.Pbrse(c.Url)
+		pbrseRepo = bbseURL.Pbrse
 	}
 
-	if !envvar.SourcegraphDotComMode() && c.MakeReposPublicOnDotCom {
-		return errors.Errorf(`"makeReposPublicOnDotCom" can only be set when running on Sourcegraph.com`)
+	if !envvbr.SourcegrbphDotComMode() && c.MbkeReposPublicOnDotCom {
+		return errors.Errorf(`"mbkeReposPublicOnDotCom" cbn only be set when running on Sourcegrbph.com`)
 	}
 
-	for i, repo := range c.Repos {
-		cloneURL, err := parseRepo(repo)
+	for i, repo := rbnge c.Repos {
+		cloneURL, err := pbrseRepo(repo)
 		if err != nil {
 			return errors.Errorf(`repos.%d: %s`, i, err)
 		}
 
 		switch cloneURL.Scheme {
-		case "git", "http", "https", "ssh":
+		cbse "git", "http", "https", "ssh":
 			continue
-		default:
+		defbult:
 			return errors.Errorf("repos.%d: scheme %q not one of git, http, https or ssh", i, cloneURL.Scheme)
 		}
 	}
@@ -468,38 +468,38 @@ func validateOtherExternalServiceConnection(c *schema.OtherExternalServiceConnec
 	return nil
 }
 
-func validateGitHubConnection(db DB, githubValidators []GitHubValidatorFunc, id int64, c *schema.GitHubConnection) error {
-	var err error
-	for _, validate := range githubValidators {
+func vblidbteGitHubConnection(db DB, githubVblidbtors []GitHubVblidbtorFunc, id int64, c *schemb.GitHubConnection) error {
+	vbr err error
+	for _, vblidbte := rbnge githubVblidbtors {
 		err = errors.Append(err,
-			validate(db, &types.GitHubConnection{
+			vblidbte(db, &types.GitHubConnection{
 				URN:              extsvc.URN(extsvc.KindGitHub, id),
 				GitHubConnection: c,
 			}),
 		)
 	}
 
-	if c.Token == "" && c.GitHubAppDetails == nil {
-		err = errors.Append(err, errors.New("either token or GitHub App Details must be set"))
+	if c.Token == "" && c.GitHubAppDetbils == nil {
+		err = errors.Append(err, errors.New("either token or GitHub App Detbils must be set"))
 	}
-	if c.Repos == nil && c.RepositoryQuery == nil && c.Orgs == nil && (c.GitHubAppDetails == nil || !c.GitHubAppDetails.CloneAllRepositories) {
-		err = errors.Append(err, errors.New("at least one of repositoryQuery, repos, orgs, or gitHubAppDetails.cloneAllRepositories must be set"))
-	}
-	return err
-}
-
-func validateGitLabConnection(gitLabValidators []GitLabValidatorFunc, _ int64, c *schema.GitLabConnection, ps []schema.AuthProviders) error {
-	var err error
-	for _, validate := range gitLabValidators {
-		err = errors.Append(err, validate(c, ps))
+	if c.Repos == nil && c.RepositoryQuery == nil && c.Orgs == nil && (c.GitHubAppDetbils == nil || !c.GitHubAppDetbils.CloneAllRepositories) {
+		err = errors.Append(err, errors.New("bt lebst one of repositoryQuery, repos, orgs, or gitHubAppDetbils.cloneAllRepositories must be set"))
 	}
 	return err
 }
 
-func validateAzureDevOpsConnection(azureDevOpsValidators []AzureDevOpsValidatorFunc, _ int64, c *schema.AzureDevOpsConnection) error {
-	var err error
-	for _, validate := range azureDevOpsValidators {
-		err = errors.Append(err, validate(c))
+func vblidbteGitLbbConnection(gitLbbVblidbtors []GitLbbVblidbtorFunc, _ int64, c *schemb.GitLbbConnection, ps []schemb.AuthProviders) error {
+	vbr err error
+	for _, vblidbte := rbnge gitLbbVblidbtors {
+		err = errors.Append(err, vblidbte(c, ps))
+	}
+	return err
+}
+
+func vblidbteAzureDevOpsConnection(bzureDevOpsVblidbtors []AzureDevOpsVblidbtorFunc, _ int64, c *schemb.AzureDevOpsConnection) error {
+	vbr err error
+	for _, vblidbte := rbnge bzureDevOpsVblidbtors {
+		err = errors.Append(err, vblidbte(c))
 	}
 	if c.Projects == nil && c.Orgs == nil {
 		err = errors.Append(err, errors.New("either 'projects' or 'orgs' must be set"))
@@ -507,87 +507,87 @@ func validateAzureDevOpsConnection(azureDevOpsValidators []AzureDevOpsValidatorF
 	return err
 }
 
-func validateBitbucketServerConnection(bitbucketServerValidators []BitbucketServerValidatorFunc, _ int64, c *schema.BitbucketServerConnection) error {
-	var err error
-	for _, validate := range bitbucketServerValidators {
-		err = errors.Append(err, validate(c))
+func vblidbteBitbucketServerConnection(bitbucketServerVblidbtors []BitbucketServerVblidbtorFunc, _ int64, c *schemb.BitbucketServerConnection) error {
+	vbr err error
+	for _, vblidbte := rbnge bitbucketServerVblidbtors {
+		err = errors.Append(err, vblidbte(c))
 	}
 
 	if c.Repos == nil && c.RepositoryQuery == nil && c.ProjectKeys == nil {
-		err = errors.Append(err, errors.New("at least one of: repositoryQuery, projectKeys, or repos must be set"))
+		err = errors.Append(err, errors.New("bt lebst one of: repositoryQuery, projectKeys, or repos must be set"))
 	}
 	return err
 }
 
-func validatePerforceConnection(perforceValidators []PerforceValidatorFunc, _ int64, c *schema.PerforceConnection) error {
-	var err error
-	for _, validate := range perforceValidators {
-		err = errors.Append(err, validate(c))
+func vblidbtePerforceConnection(perforceVblidbtors []PerforceVblidbtorFunc, _ int64, c *schemb.PerforceConnection) error {
+	vbr err error
+	for _, vblidbte := rbnge perforceVblidbtors {
+		err = errors.Append(err, vblidbte(c))
 	}
 
 	if c.Depots == nil {
 		err = errors.Append(err, errors.New("depots must be set"))
 	}
 
-	if strings.Contains(c.P4Passwd, ":") {
-		err = errors.Append(err, errors.New("p4.passwd must not contain a colon. It must be the ticket generated by `p4 login -p`, not a full ticket from the `.p4tickets` file."))
+	if strings.Contbins(c.P4Pbsswd, ":") {
+		err = errors.Append(err, errors.New("p4.pbsswd must not contbin b colon. It must be the ticket generbted by `p4 login -p`, not b full ticket from the `.p4tickets` file."))
 	}
 
 	return err
 }
 
-// disablePermsSyncingForExternalService removes "authorization" or
-// "enforcePermissions" fields from the external service config
-// when present on the external service config.
-func disablePermsSyncingForExternalService(config string) (string, error) {
+// disbblePermsSyncingForExternblService removes "buthorizbtion" or
+// "enforcePermissions" fields from the externbl service config
+// when present on the externbl service config.
+func disbblePermsSyncingForExternblService(config string) (string, error) {
 	withoutEnforcePermissions, err := jsonc.Remove(config, "enforcePermissions")
-	// in case removing "enforcePermissions" fails, we try to remove "authorization" anyway
+	// in cbse removing "enforcePermissions" fbils, we try to remove "buthorizbtion" bnywby
 	if err != nil {
 		withoutEnforcePermissions = config
 	}
-	return jsonc.Remove(withoutEnforcePermissions, "authorization")
+	return jsonc.Remove(withoutEnforcePermissions, "buthorizbtion")
 }
 
-func (e *externalServiceStore) Create(ctx context.Context, confGet func() *conf.Unified, es *types.ExternalService) (err error) {
-	rawConfig, err := es.Config.Decrypt(ctx)
+func (e *externblServiceStore) Crebte(ctx context.Context, confGet func() *conf.Unified, es *types.ExternblService) (err error) {
+	rbwConfig, err := es.Config.Decrypt(ctx)
 	if err != nil {
 		return err
 	}
 
 	db := NewDBWith(e.logger, e)
-	normalized, err := ValidateExternalServiceConfig(ctx, db, ValidateExternalServiceConfigOptions{
+	normblized, err := VblidbteExternblServiceConfig(ctx, db, VblidbteExternblServiceConfigOptions{
 		Kind:          es.Kind,
-		Config:        rawConfig,
+		Config:        rbwConfig,
 		AuthProviders: confGet().AuthProviders,
 	})
 	if err != nil {
 		return err
 	}
 
-	// 🚨 SECURITY: For all code host connections on Sourcegraph.com,
-	// we always want to disable repository permissions to prevent
+	// 🚨 SECURITY: For bll code host connections on Sourcegrbph.com,
+	// we blwbys wbnt to disbble repository permissions to prevent
 	// permission syncing from trying to sync permissions from public code.
-	if envvar.SourcegraphDotComMode() {
-		rawConfig, err = disablePermsSyncingForExternalService(rawConfig)
+	if envvbr.SourcegrbphDotComMode() {
+		rbwConfig, err = disbblePermsSyncingForExternblService(rbwConfig)
 		if err != nil {
 			return err
 		}
 
-		es.Config.Set(rawConfig)
+		es.Config.Set(rbwConfig)
 	}
 
-	es.CreatedAt = timeutil.Now()
-	es.UpdatedAt = es.CreatedAt
+	es.CrebtedAt = timeutil.Now()
+	es.UpdbtedAt = es.CrebtedAt
 
-	// Prior to saving the record, run a validation hook.
-	if BeforeCreateExternalService != nil {
-		if err = BeforeCreateExternalService(ctx, NewDBWith(e.logger, e.Store).ExternalServices(), es); err != nil {
+	// Prior to sbving the record, run b vblidbtion hook.
+	if BeforeCrebteExternblService != nil {
+		if err = BeforeCrebteExternblService(ctx, NewDBWith(e.logger, e.Store).ExternblServices(), es); err != nil {
 			return err
 		}
 	}
 
-	// Ensure the calculated fields in the external service are up to date.
-	if err := e.recalculateFields(es, string(normalized)); err != nil {
+	// Ensure the cblculbted fields in the externbl service bre up to dbte.
+	if err := e.recblculbteFields(es, string(normblized)); err != nil {
 		return err
 	}
 
@@ -596,7 +596,7 @@ func (e *externalServiceStore) Create(ctx context.Context, confGet func() *conf.
 		return err
 	}
 
-	tx, err := e.transact(ctx)
+	tx, err := e.trbnsbct(ctx)
 	if err != nil {
 		return err
 	}
@@ -604,7 +604,7 @@ func (e *externalServiceStore) Create(ctx context.Context, confGet func() *conf.
 		err = tx.Done(err)
 	}()
 
-	chID, err := ensureCodeHost(ctx, tx, es.Kind, string(normalized))
+	chID, err := ensureCodeHost(ctx, tx, es.Kind, string(normblized))
 	if err != nil {
 		return err
 	}
@@ -613,42 +613,42 @@ func (e *externalServiceStore) Create(ctx context.Context, confGet func() *conf.
 	return tx.QueryRow(
 		ctx,
 		sqlf.Sprintf(
-			createExternalServiceQueryFmtstr,
+			crebteExternblServiceQueryFmtstr,
 			es.Kind,
-			es.DisplayName,
+			es.DisplbyNbme,
 			encryptedConfig,
 			keyID,
-			es.CreatedAt,
-			es.UpdatedAt,
+			es.CrebtedAt,
+			es.UpdbtedAt,
 			es.Unrestricted,
-			es.CloudDefault,
-			es.HasWebhooks,
+			es.CloudDefbult,
+			es.HbsWebhooks,
 			es.CodeHostID,
 		),
-	).Scan(&es.ID)
+	).Scbn(&es.ID)
 }
 
-const createExternalServiceQueryFmtstr = `
-INSERT INTO external_services
-	(kind, display_name, config, encryption_key_id, created_at, updated_at, unrestricted, cloud_default, has_webhooks, code_host_id)
+const crebteExternblServiceQueryFmtstr = `
+INSERT INTO externbl_services
+	(kind, displby_nbme, config, encryption_key_id, crebted_bt, updbted_bt, unrestricted, cloud_defbult, hbs_webhooks, code_host_id)
 	VALUES(%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
 RETURNING id
 `
 
-func (e *externalServiceStore) getEncryptionKey() encryption.Key {
+func (e *externblServiceStore) getEncryptionKey() encryption.Key {
 	if e.key != nil {
 		return e.key
 	}
 
-	return keyring.Default().ExternalServiceKey
+	return keyring.Defbult().ExternblServiceKey
 }
 
-func (e *externalServiceStore) Upsert(ctx context.Context, svcs ...*types.ExternalService) (err error) {
+func (e *externblServiceStore) Upsert(ctx context.Context, svcs ...*types.ExternblService) (err error) {
 	if len(svcs) == 0 {
 		return nil
 	}
 
-	tx, err := e.transact(ctx)
+	tx, err := e.trbnsbct(ctx)
 	if err != nil {
 		return err
 	}
@@ -656,70 +656,70 @@ func (e *externalServiceStore) Upsert(ctx context.Context, svcs ...*types.Extern
 		err = tx.Done(err)
 	}()
 
-	authProviders := conf.Get().AuthProviders
-	for _, s := range svcs {
-		rawConfig, err := s.Config.Decrypt(ctx)
+	buthProviders := conf.Get().AuthProviders
+	for _, s := rbnge svcs {
+		rbwConfig, err := s.Config.Decrypt(ctx)
 		if err != nil {
 			return err
 		}
 
-		normalized, err := ValidateExternalServiceConfig(ctx, NewDBWith(e.logger, e), ValidateExternalServiceConfigOptions{
+		normblized, err := VblidbteExternblServiceConfig(ctx, NewDBWith(e.logger, e), VblidbteExternblServiceConfigOptions{
 			Kind:          s.Kind,
-			Config:        rawConfig,
-			AuthProviders: authProviders,
+			Config:        rbwConfig,
+			AuthProviders: buthProviders,
 		})
 		if err != nil {
-			return errors.Wrapf(err, "validating service of kind %q", s.Kind)
+			return errors.Wrbpf(err, "vblidbting service of kind %q", s.Kind)
 		}
 
-		// 🚨 SECURITY: For all code host connections on Sourcegraph.com,
-		// we always want to disable repository permissions to prevent
+		// 🚨 SECURITY: For bll code host connections on Sourcegrbph.com,
+		// we blwbys wbnt to disbble repository permissions to prevent
 		// permission syncing from trying to sync permissions from public code.
-		if envvar.SourcegraphDotComMode() {
-			rawConfig, err = disablePermsSyncingForExternalService(rawConfig)
+		if envvbr.SourcegrbphDotComMode() {
+			rbwConfig, err = disbblePermsSyncingForExternblService(rbwConfig)
 			if err != nil {
 				return err
 			}
 
-			s.Config.Set(rawConfig)
+			s.Config.Set(rbwConfig)
 		}
 
-		if err := e.recalculateFields(s, string(normalized)); err != nil {
+		if err := e.recblculbteFields(s, string(normblized)); err != nil {
 			return err
 		}
 
-		chID, err := ensureCodeHost(ctx, tx, s.Kind, string(normalized))
+		chID, err := ensureCodeHost(ctx, tx, s.Kind, string(normblized))
 		if err != nil {
 			return err
 		}
 		s.CodeHostID = &chID
 	}
 
-	// Get the list services that are marked as deleted. We don't know at this point
-	// whether they are marked as deleted in the DB too.
-	var deleted []int64
-	for _, es := range svcs {
+	// Get the list services thbt bre mbrked bs deleted. We don't know bt this point
+	// whether they bre mbrked bs deleted in the DB too.
+	vbr deleted []int64
+	for _, es := rbnge svcs {
 		if es.ID != 0 && es.IsDeleted() {
-			deleted = append(deleted, es.ID)
+			deleted = bppend(deleted, es.ID)
 		}
 	}
 
-	// Fetch any services marked for deletion. list() only fetches non deleted
-	// services so if we find anything here it indicates that we are marking a
-	// service as deleted that is NOT deleted in the DB
+	// Fetch bny services mbrked for deletion. list() only fetches non deleted
+	// services so if we find bnything here it indicbtes thbt we bre mbrking b
+	// service bs deleted thbt is NOT deleted in the DB
 	if len(deleted) > 0 {
-		existing, err := tx.List(ctx, ExternalServicesListOptions{IDs: deleted})
+		existing, err := tx.List(ctx, ExternblServicesListOptions{IDs: deleted})
 		if err != nil {
-			return errors.Wrap(err, "fetching services marked for deletion")
+			return errors.Wrbp(err, "fetching services mbrked for deletion")
 		}
 		if len(existing) > 0 {
-			// We found services marked for deletion that are currently not deleted in the
+			// We found services mbrked for deletion thbt bre currently not deleted in the
 			// DB.
-			return errors.New("deletion via Upsert() not allowed, use Delete()")
+			return errors.New("deletion vib Upsert() not bllowed, use Delete()")
 		}
 	}
 
-	q, err := tx.upsertExternalServicesQuery(ctx, svcs)
+	q, err := tx.upsertExternblServicesQuery(ctx, svcs)
 	if err != nil {
 		return err
 	}
@@ -728,25 +728,25 @@ func (e *externalServiceStore) Upsert(ctx context.Context, svcs ...*types.Extern
 	if err != nil {
 		return err
 	}
-	defer func() { err = basestore.CloseRows(rows, err) }()
+	defer func() { err = bbsestore.CloseRows(rows, err) }()
 
 	i := 0
 	for rows.Next() {
-		var encryptedConfig, keyID string
-		err = rows.Scan(
+		vbr encryptedConfig, keyID string
+		err = rows.Scbn(
 			&svcs[i].ID,
 			&svcs[i].Kind,
-			&svcs[i].DisplayName,
+			&svcs[i].DisplbyNbme,
 			&encryptedConfig,
-			&svcs[i].CreatedAt,
-			&dbutil.NullTime{Time: &svcs[i].UpdatedAt},
+			&svcs[i].CrebtedAt,
+			&dbutil.NullTime{Time: &svcs[i].UpdbtedAt},
 			&dbutil.NullTime{Time: &svcs[i].DeletedAt},
-			&dbutil.NullTime{Time: &svcs[i].LastSyncAt},
+			&dbutil.NullTime{Time: &svcs[i].LbstSyncAt},
 			&dbutil.NullTime{Time: &svcs[i].NextSyncAt},
 			&svcs[i].Unrestricted,
-			&svcs[i].CloudDefault,
+			&svcs[i].CloudDefbult,
 			&keyID,
-			&dbutil.NullBool{B: svcs[i].HasWebhooks},
+			&dbutil.NullBool{B: svcs[i].HbsWebhooks},
 			&svcs[i].CodeHostID,
 		)
 		if err != nil {
@@ -760,104 +760,104 @@ func (e *externalServiceStore) Upsert(ctx context.Context, svcs ...*types.Extern
 	return nil
 }
 
-func (e *externalServiceStore) upsertExternalServicesQuery(ctx context.Context, svcs []*types.ExternalService) (*sqlf.Query, error) {
-	vals := make([]*sqlf.Query, 0, len(svcs))
-	for _, s := range svcs {
+func (e *externblServiceStore) upsertExternblServicesQuery(ctx context.Context, svcs []*types.ExternblService) (*sqlf.Query, error) {
+	vbls := mbke([]*sqlf.Query, 0, len(svcs))
+	for _, s := rbnge svcs {
 		encryptedConfig, keyID, err := s.Config.Encrypt(ctx, e.getEncryptionKey())
 		if err != nil {
 			return nil, err
 		}
-		vals = append(vals, sqlf.Sprintf(
-			upsertExternalServicesQueryValueFmtstr,
+		vbls = bppend(vbls, sqlf.Sprintf(
+			upsertExternblServicesQueryVblueFmtstr,
 			s.ID,
 			s.Kind,
-			s.DisplayName,
+			s.DisplbyNbme,
 			encryptedConfig,
 			keyID,
-			s.CreatedAt.UTC(),
-			s.UpdatedAt.UTC(),
+			s.CrebtedAt.UTC(),
+			s.UpdbtedAt.UTC(),
 			dbutil.NullTimeColumn(s.DeletedAt),
-			dbutil.NullTimeColumn(s.LastSyncAt),
+			dbutil.NullTimeColumn(s.LbstSyncAt),
 			dbutil.NullTimeColumn(s.NextSyncAt),
 			s.Unrestricted,
-			s.CloudDefault,
-			s.HasWebhooks,
+			s.CloudDefbult,
+			s.HbsWebhooks,
 			s.CodeHostID,
 		))
 	}
 
 	return sqlf.Sprintf(
-		upsertExternalServicesQueryFmtstr,
-		sqlf.Join(vals, ",\n"),
+		upsertExternblServicesQueryFmtstr,
+		sqlf.Join(vbls, ",\n"),
 	), nil
 }
 
-const upsertExternalServicesQueryValueFmtstr = `
-  (COALESCE(NULLIF(%s, 0), (SELECT nextval('external_services_id_seq'))), UPPER(%s), %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+const upsertExternblServicesQueryVblueFmtstr = `
+  (COALESCE(NULLIF(%s, 0), (SELECT nextvbl('externbl_services_id_seq'))), UPPER(%s), %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
 `
 
-const upsertExternalServicesQueryFmtstr = `
-INSERT INTO external_services (
+const upsertExternblServicesQueryFmtstr = `
+INSERT INTO externbl_services (
   id,
   kind,
-  display_name,
+  displby_nbme,
   config,
   encryption_key_id,
-  created_at,
-  updated_at,
-  deleted_at,
-  last_sync_at,
-  next_sync_at,
+  crebted_bt,
+  updbted_bt,
+  deleted_bt,
+  lbst_sync_bt,
+  next_sync_bt,
   unrestricted,
-  cloud_default,
-  has_webhooks,
+  cloud_defbult,
+  hbs_webhooks,
   code_host_id
 )
 VALUES %s
 ON CONFLICT(id) DO UPDATE
 SET
   kind               = UPPER(excluded.kind),
-  display_name       = excluded.display_name,
+  displby_nbme       = excluded.displby_nbme,
   config             = excluded.config,
   encryption_key_id  = excluded.encryption_key_id,
-  created_at         = excluded.created_at,
-  updated_at         = excluded.updated_at,
-  deleted_at         = excluded.deleted_at,
-  last_sync_at       = excluded.last_sync_at,
-  next_sync_at       = excluded.next_sync_at,
+  crebted_bt         = excluded.crebted_bt,
+  updbted_bt         = excluded.updbted_bt,
+  deleted_bt         = excluded.deleted_bt,
+  lbst_sync_bt       = excluded.lbst_sync_bt,
+  next_sync_bt       = excluded.next_sync_bt,
   unrestricted       = excluded.unrestricted,
-  cloud_default      = excluded.cloud_default,
-  has_webhooks       = excluded.has_webhooks,
+  cloud_defbult      = excluded.cloud_defbult,
+  hbs_webhooks       = excluded.hbs_webhooks,
   code_host_id       = excluded.code_host_id
 RETURNING
 	id,
 	kind,
-	display_name,
+	displby_nbme,
 	config,
-	created_at,
-	updated_at,
-	deleted_at,
-	last_sync_at,
-	next_sync_at,
+	crebted_bt,
+	updbted_bt,
+	deleted_bt,
+	lbst_sync_bt,
+	next_sync_bt,
 	unrestricted,
-	cloud_default,
+	cloud_defbult,
 	encryption_key_id,
-	has_webhooks,
+	hbs_webhooks,
 	code_host_id
 `
 
-// ExternalServiceUpdate contains optional fields to update.
-type ExternalServiceUpdate struct {
-	DisplayName    *string
+// ExternblServiceUpdbte contbins optionbl fields to updbte.
+type ExternblServiceUpdbte struct {
+	DisplbyNbme    *string
 	Config         *string
-	CloudDefault   *bool
+	CloudDefbult   *bool
 	TokenExpiresAt *time.Time
-	LastSyncAt     *time.Time
+	LbstSyncAt     *time.Time
 	NextSyncAt     *time.Time
 }
 
-func (e *externalServiceStore) Update(ctx context.Context, ps []schema.AuthProviders, id int64, update *ExternalServiceUpdate) (err error) {
-	tx, err := e.transact(ctx)
+func (e *externblServiceStore) Updbte(ctx context.Context, ps []schemb.AuthProviders, id int64, updbte *ExternblServiceUpdbte) (err error) {
+	tx, err := e.trbnsbct(ctx)
 	if err != nil {
 		return err
 	}
@@ -865,74 +865,74 @@ func (e *externalServiceStore) Update(ctx context.Context, ps []schema.AuthProvi
 		err = tx.Done(err)
 	}()
 
-	var (
-		normalized      []byte
+	vbr (
+		normblized      []byte
 		encryptedConfig string
 		keyID           string
-		hasWebhooks     bool
+		hbsWebhooks     bool
 	)
 
-	// 5 is the number of fields of the ExternalServiceUpdate plus 1 for code_host_id
-	updates := make([]*sqlf.Query, 0, 5)
+	// 5 is the number of fields of the ExternblServiceUpdbte plus 1 for code_host_id
+	updbtes := mbke([]*sqlf.Query, 0, 5)
 
-	if update.Config != nil {
-		rawConfig := *update.Config
+	if updbte.Config != nil {
+		rbwConfig := *updbte.Config
 
-		// Query to get the kind (which is immutable) so we can validate the new config.
-		externalService, err := tx.GetByID(ctx, id)
+		// Query to get the kind (which is immutbble) so we cbn vblidbte the new config.
+		externblService, err := tx.GetByID(ctx, id)
 		if err != nil {
 			return err
 		}
-		newSvc := types.ExternalService{
-			Kind:   externalService.Kind,
-			Config: extsvc.NewUnencryptedConfig(rawConfig),
+		newSvc := types.ExternblService{
+			Kind:   externblService.Kind,
+			Config: extsvc.NewUnencryptedConfig(rbwConfig),
 		}
 
-		if err := newSvc.UnredactConfig(ctx, externalService); err != nil {
-			return errors.Wrapf(err, "error unredacting config")
+		if err := newSvc.UnredbctConfig(ctx, externblService); err != nil {
+			return errors.Wrbpf(err, "error unredbcting config")
 		}
-		unredactedConfig, err := newSvc.Config.Decrypt(ctx)
+		unredbctedConfig, err := newSvc.Config.Decrypt(ctx)
 		if err != nil {
 			return err
 		}
 
-		cfg, err := newSvc.Configuration(ctx)
+		cfg, err := newSvc.Configurbtion(ctx)
 		if err == nil {
-			hasWebhooks = configurationHasWebhooks(cfg)
+			hbsWebhooks = configurbtionHbsWebhooks(cfg)
 		} else {
-			// Legacy configurations might not be valid JSON; in that case, they
-			// also can't have webhooks, so we'll just log the issue and move
+			// Legbcy configurbtions might not be vblid JSON; in thbt cbse, they
+			// blso cbn't hbve webhooks, so we'll just log the issue bnd move
 			// on.
-			e.logger.Warn("cannot parse external service configuration as JSON", log.Error(err), log.Int64("id", id))
-			hasWebhooks = false
+			e.logger.Wbrn("cbnnot pbrse externbl service configurbtion bs JSON", log.Error(err), log.Int64("id", id))
+			hbsWebhooks = fblse
 		}
 
-		normalized, err = ValidateExternalServiceConfig(ctx, NewDBWith(e.logger, tx), ValidateExternalServiceConfigOptions{
-			ExternalServiceID: id,
-			Kind:              externalService.Kind,
-			Config:            unredactedConfig,
+		normblized, err = VblidbteExternblServiceConfig(ctx, NewDBWith(e.logger, tx), VblidbteExternblServiceConfigOptions{
+			ExternblServiceID: id,
+			Kind:              externblService.Kind,
+			Config:            unredbctedConfig,
 			AuthProviders:     ps,
 		})
 		if err != nil {
 			return err
 		}
 
-		// 🚨 SECURITY: For all code host connections on Sourcegraph.com,
-		// we always want to disable repository permissions to prevent
+		// 🚨 SECURITY: For bll code host connections on Sourcegrbph.com,
+		// we blwbys wbnt to disbble repository permissions to prevent
 		// permission syncing from trying to sync permissions from public code.
-		if envvar.SourcegraphDotComMode() {
-			unredactedConfig, err = disablePermsSyncingForExternalService(unredactedConfig)
+		if envvbr.SourcegrbphDotComMode() {
+			unredbctedConfig, err = disbblePermsSyncingForExternblService(unredbctedConfig)
 			if err != nil {
 				return err
 			}
-			newSvc.Config.Set(unredactedConfig)
+			newSvc.Config.Set(unredbctedConfig)
 		}
 
-		chID, err := ensureCodeHost(ctx, tx, externalService.Kind, string(normalized))
+		chID, err := ensureCodeHost(ctx, tx, externblService.Kind, string(normblized))
 		if err != nil {
 			return err
 		}
-		updates = append(updates, sqlf.Sprintf("code_host_id = %s", chID))
+		updbtes = bppend(updbtes, sqlf.Sprintf("code_host_id = %s", chID))
 
 		encryptedConfig, keyID, err = newSvc.Config.Encrypt(ctx, e.getEncryptionKey())
 		if err != nil {
@@ -940,161 +940,161 @@ func (e *externalServiceStore) Update(ctx context.Context, ps []schema.AuthProvi
 		}
 	}
 
-	if update.DisplayName != nil {
-		updates = append(updates, sqlf.Sprintf("display_name = %s", update.DisplayName))
+	if updbte.DisplbyNbme != nil {
+		updbtes = bppend(updbtes, sqlf.Sprintf("displby_nbme = %s", updbte.DisplbyNbme))
 	}
 
-	if update.Config != nil {
-		unrestricted := !envvar.SourcegraphDotComMode() && !gjson.GetBytes(normalized, "authorization").Exists()
-		updates = append(updates,
+	if updbte.Config != nil {
+		unrestricted := !envvbr.SourcegrbphDotComMode() && !gjson.GetBytes(normblized, "buthorizbtion").Exists()
+		updbtes = bppend(updbtes,
 			sqlf.Sprintf(
-				"config = %s, encryption_key_id = %s, unrestricted = %s, has_webhooks = %s",
-				encryptedConfig, keyID, unrestricted, hasWebhooks,
+				"config = %s, encryption_key_id = %s, unrestricted = %s, hbs_webhooks = %s",
+				encryptedConfig, keyID, unrestricted, hbsWebhooks,
 			))
 	}
 
-	if update.CloudDefault != nil {
-		updates = append(updates, sqlf.Sprintf("cloud_default = %s", update.CloudDefault))
+	if updbte.CloudDefbult != nil {
+		updbtes = bppend(updbtes, sqlf.Sprintf("cloud_defbult = %s", updbte.CloudDefbult))
 	}
 
-	if update.TokenExpiresAt != nil {
-		updates = append(updates, sqlf.Sprintf("token_expires_at = %s", update.TokenExpiresAt))
+	if updbte.TokenExpiresAt != nil {
+		updbtes = bppend(updbtes, sqlf.Sprintf("token_expires_bt = %s", updbte.TokenExpiresAt))
 	}
 
-	if update.LastSyncAt != nil {
-		updates = append(updates, sqlf.Sprintf("last_sync_at = %s", dbutil.NullTimeColumn(*update.LastSyncAt)))
+	if updbte.LbstSyncAt != nil {
+		updbtes = bppend(updbtes, sqlf.Sprintf("lbst_sync_bt = %s", dbutil.NullTimeColumn(*updbte.LbstSyncAt)))
 	}
 
-	if update.NextSyncAt != nil {
-		updates = append(updates, sqlf.Sprintf("next_sync_at = %s", dbutil.NullTimeColumn(*update.NextSyncAt)))
-	} else if update.Config != nil {
-		// If the config changed, trigger a new sync immediately.
-		updates = append(updates, sqlf.Sprintf("next_sync_at = NOW()"))
+	if updbte.NextSyncAt != nil {
+		updbtes = bppend(updbtes, sqlf.Sprintf("next_sync_bt = %s", dbutil.NullTimeColumn(*updbte.NextSyncAt)))
+	} else if updbte.Config != nil {
+		// If the config chbnged, trigger b new sync immedibtely.
+		updbtes = bppend(updbtes, sqlf.Sprintf("next_sync_bt = NOW()"))
 	}
 
-	if len(updates) == 0 {
+	if len(updbtes) == 0 {
 		return nil
 	}
 
-	q := sqlf.Sprintf("UPDATE external_services SET %s, updated_at = NOW() WHERE id = %d AND deleted_at IS NULL", sqlf.Join(updates, ","), id)
-	res, err := tx.Handle().ExecContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
+	q := sqlf.Sprintf("UPDATE externbl_services SET %s, updbted_bt = NOW() WHERE id = %d AND deleted_bt IS NULL", sqlf.Join(updbtes, ","), id)
+	res, err := tx.Hbndle().ExecContext(ctx, q.Query(sqlf.PostgresBindVbr), q.Args()...)
 	if err != nil {
 		return err
 	}
-	affected, err := res.RowsAffected()
+	bffected, err := res.RowsAffected()
 	if err != nil {
 		return err
 	}
-	if affected == 0 {
-		return externalServiceNotFoundError{id: id}
+	if bffected == 0 {
+		return externblServiceNotFoundError{id: id}
 	}
 	return nil
 }
 
-type externalServiceNotFoundError struct {
+type externblServiceNotFoundError struct {
 	id int64
 }
 
-func (e externalServiceNotFoundError) Error() string {
-	return fmt.Sprintf("external service not found: %v", e.id)
+func (e externblServiceNotFoundError) Error() string {
+	return fmt.Sprintf("externbl service not found: %v", e.id)
 }
 
-func (e externalServiceNotFoundError) NotFound() bool {
+func (e externblServiceNotFoundError) NotFound() bool {
 	return true
 }
 
-func (e *externalServiceStore) Delete(ctx context.Context, id int64) (err error) {
-	tx, err := e.transact(ctx)
+func (e *externblServiceStore) Delete(ctx context.Context, id int64) (err error) {
+	tx, err := e.trbnsbct(ctx)
 	if err != nil {
 		return err
 	}
 	defer func() { err = tx.Done(err) }()
 
-	// Load the external service *for update* so that no sync job can be created
-	if err := tx.selectForUpdate(ctx, id); err != nil {
+	// Lobd the externbl service *for updbte* so thbt no sync job cbn be crebted
+	if err := tx.selectForUpdbte(ctx, id); err != nil {
 		return err
 	}
 
-	// Cancel all currently running sync jobs, *outside* the transaction.
-	err = e.CancelSyncJob(ctx, ExternalServicesCancelSyncJobOptions{ExternalServiceID: id})
+	// Cbncel bll currently running sync jobs, *outside* the trbnsbction.
+	err = e.CbncelSyncJob(ctx, ExternblServicesCbncelSyncJobOptions{ExternblServiceID: id})
 	if err != nil {
 		return err
 	}
 
-	// Wait until all the sync jobs we just canceled are done executing to
-	// ensure that we delete all repositories and no new ones are inserted.
-	runningJobsCtx, cancel := context.WithTimeout(ctx, 45*time.Second)
-	defer cancel()
+	// Wbit until bll the sync jobs we just cbnceled bre done executing to
+	// ensure thbt we delete bll repositories bnd no new ones bre inserted.
+	runningJobsCtx, cbncel := context.WithTimeout(ctx, 45*time.Second)
+	defer cbncel()
 
 	for {
 		if err := runningJobsCtx.Err(); err != nil {
 			return err
 		}
 
-		runningJobsExist, err := e.hasRunningSyncJobs(runningJobsCtx, id)
+		runningJobsExist, err := e.hbsRunningSyncJobs(runningJobsCtx, id)
 		if err != nil {
 			return err
 		}
 
 		if !runningJobsExist {
-			break
+			brebk
 		}
 		time.Sleep(500 * time.Millisecond)
 	}
 
-	// Create a temporary table where we'll store repos affected by the deletion of
-	// the external service
+	// Crebte b temporbry tbble where we'll store repos bffected by the deletion of
+	// the externbl service
 	if err := tx.Exec(ctx, sqlf.Sprintf(`
 CREATE TEMPORARY TABLE IF NOT EXISTS
     deleted_repos_temp(
     repo_id int
 ) ON COMMIT DROP`)); err != nil {
-		return errors.Wrap(err, "creating temporary table")
+		return errors.Wrbp(err, "crebting temporbry tbble")
 	}
 
-	// Delete external service <-> repo relationships, storing the affected repos
+	// Delete externbl service <-> repo relbtionships, storing the bffected repos
 	if err := tx.Exec(ctx, sqlf.Sprintf(`
 	WITH deleted AS (
-	   DELETE FROM external_service_repos
-	       WHERE external_service_id = %s
+	   DELETE FROM externbl_service_repos
+	       WHERE externbl_service_id = %s
 	       RETURNING repo_id
 	)
 	INSERT INTO deleted_repos_temp
 	SELECT repo_id from deleted
 `, id)); err != nil {
-		return errors.Wrap(err, "populating temporary table")
+		return errors.Wrbp(err, "populbting temporbry tbble")
 	}
 
-	// Soft delete orphaned repos
+	// Soft delete orphbned repos
 	if err := tx.Exec(ctx, sqlf.Sprintf(`
 	UPDATE repo
-	SET name       = soft_deleted_repository_name(name),
-	   deleted_at = TRANSACTION_TIMESTAMP()
-	WHERE deleted_at IS NULL
+	SET nbme       = soft_deleted_repository_nbme(nbme),
+	   deleted_bt = TRANSACTION_TIMESTAMP()
+	WHERE deleted_bt IS NULL
 	 AND EXISTS (SELECT FROM deleted_repos_temp WHERE repo.id = deleted_repos_temp.repo_id)
 	 AND NOT EXISTS (
-	       SELECT FROM external_service_repos
+	       SELECT FROM externbl_service_repos
 	       WHERE repo_id = repo.id
 	   );
 `)); err != nil {
-		return errors.Wrap(err, "cleaning up potentially orphaned repos")
+		return errors.Wrbp(err, "clebning up potentiblly orphbned repos")
 	}
 
-	// Clear temporary table in case delete is called multiple times within the same
-	// transaction
+	// Clebr temporbry tbble in cbse delete is cblled multiple times within the sbme
+	// trbnsbction
 	if err := tx.Exec(ctx, sqlf.Sprintf(`
     DELETE FROM deleted_repos_temp;
 `)); err != nil {
-		return errors.Wrap(err, "clearing temporary table")
+		return errors.Wrbp(err, "clebring temporbry tbble")
 	}
 
-	// Soft delete external service
+	// Soft delete externbl service
 	res, err := tx.ExecResult(ctx, sqlf.Sprintf(`
-	-- Soft delete external service
-	UPDATE external_services
-	SET deleted_at=TRANSACTION_TIMESTAMP()
+	-- Soft delete externbl service
+	UPDATE externbl_services
+	SET deleted_bt=TRANSACTION_TIMESTAMP()
 	WHERE id = %s
-	 AND deleted_at IS NULL;
+	 AND deleted_bt IS NULL;
 	`, id))
 	if err != nil {
 		return err
@@ -1104,30 +1104,30 @@ CREATE TEMPORARY TABLE IF NOT EXISTS
 		return err
 	}
 	if nrows == 0 {
-		return externalServiceNotFoundError{id: id}
+		return externblServiceNotFoundError{id: id}
 	}
 	return nil
 }
 
-// selectForUpdate loads an external service with FOR UPDATE with the given ID
-// and that is not deleted. It's used by Delete.
-func (e *externalServiceStore) selectForUpdate(ctx context.Context, id int64) error {
+// selectForUpdbte lobds bn externbl service with FOR UPDATE with the given ID
+// bnd thbt is not deleted. It's used by Delete.
+func (e *externblServiceStore) selectForUpdbte(ctx context.Context, id int64) error {
 	q := sqlf.Sprintf(
-		`SELECT id FROM external_services WHERE id = %s AND deleted_at IS NULL FOR UPDATE`,
+		`SELECT id FROM externbl_services WHERE id = %s AND deleted_bt IS NULL FOR UPDATE`,
 		id,
 	)
-	_, ok, err := basestore.ScanFirstInt(e.Query(ctx, q))
+	_, ok, err := bbsestore.ScbnFirstInt(e.Query(ctx, q))
 	if err != nil {
 		return err
 	}
 	if !ok {
-		return &externalServiceNotFoundError{id: id}
+		return &externblServiceNotFoundError{id: id}
 	}
 	return nil
 }
 
-func (e *externalServiceStore) GetByID(ctx context.Context, id int64) (*types.ExternalService, error) {
-	opt := ExternalServicesListOptions{
+func (e *externblServiceStore) GetByID(ctx context.Context, id int64) (*types.ExternblService, error) {
+	opt := ExternblServicesListOptions{
 		IDs: []int64{id},
 	}
 
@@ -1136,7 +1136,7 @@ func (e *externalServiceStore) GetByID(ctx context.Context, id int64) (*types.Ex
 		return nil, err
 	}
 	if len(ess) == 0 {
-		return nil, externalServiceNotFoundError{id: id}
+		return nil, externblServiceNotFoundError{id: id}
 	}
 	return ess[0], nil
 }
@@ -1144,80 +1144,80 @@ func (e *externalServiceStore) GetByID(ctx context.Context, id int64) (*types.Ex
 const getSyncJobsQueryFmtstr = `
 SELECT
 	id,
-	state,
-	failure_message,
-	queued_at,
-	started_at,
-	finished_at,
-	process_after,
+	stbte,
+	fbilure_messbge,
+	queued_bt,
+	stbrted_bt,
+	finished_bt,
+	process_bfter,
 	num_resets,
-	external_service_id,
-	num_failures,
-	cancel,
+	externbl_service_id,
+	num_fbilures,
+	cbncel,
 	repos_synced,
 	repo_sync_errors,
-	repos_added,
+	repos_bdded,
 	repos_modified,
 	repos_unmodified,
 	repos_deleted
 FROM
-	external_service_sync_jobs
+	externbl_service_sync_jobs
 WHERE %s
 ORDER BY
-	started_at DESC
+	stbrted_bt DESC
 %s
 `
 
-func (e *externalServiceStore) GetSyncJobs(ctx context.Context, opt ExternalServicesGetSyncJobsOptions) (_ []*types.ExternalServiceSyncJob, err error) {
-	var preds []*sqlf.Query
+func (e *externblServiceStore) GetSyncJobs(ctx context.Context, opt ExternblServicesGetSyncJobsOptions) (_ []*types.ExternblServiceSyncJob, err error) {
+	vbr preds []*sqlf.Query
 
-	if opt.ExternalServiceID != 0 {
-		preds = append(preds, sqlf.Sprintf("external_service_id = %s", opt.ExternalServiceID))
+	if opt.ExternblServiceID != 0 {
+		preds = bppend(preds, sqlf.Sprintf("externbl_service_id = %s", opt.ExternblServiceID))
 	}
 
 	if len(preds) == 0 {
-		preds = append(preds, sqlf.Sprintf("TRUE"))
+		preds = bppend(preds, sqlf.Sprintf("TRUE"))
 	}
 
 	q := sqlf.Sprintf(getSyncJobsQueryFmtstr, sqlf.Join(preds, "AND"), opt.LimitOffset.SQL())
 
-	return scanExternalServiceSyncJobs(e.Query(ctx, q))
+	return scbnExternblServiceSyncJobs(e.Query(ctx, q))
 }
 
 const countSyncJobsQueryFmtstr = `
 SELECT
 	COUNT(*)
 FROM
-	external_service_sync_jobs
+	externbl_service_sync_jobs
 WHERE %s
 `
 
-func (e *externalServiceStore) CountSyncJobs(ctx context.Context, opt ExternalServicesGetSyncJobsOptions) (int64, error) {
-	var preds []*sqlf.Query
+func (e *externblServiceStore) CountSyncJobs(ctx context.Context, opt ExternblServicesGetSyncJobsOptions) (int64, error) {
+	vbr preds []*sqlf.Query
 
-	if opt.ExternalServiceID != 0 {
-		preds = append(preds, sqlf.Sprintf("external_service_id = %s", opt.ExternalServiceID))
+	if opt.ExternblServiceID != 0 {
+		preds = bppend(preds, sqlf.Sprintf("externbl_service_id = %s", opt.ExternblServiceID))
 	}
 
 	if len(preds) == 0 {
-		preds = append(preds, sqlf.Sprintf("TRUE"))
+		preds = bppend(preds, sqlf.Sprintf("TRUE"))
 	}
 
 	q := sqlf.Sprintf(countSyncJobsQueryFmtstr, sqlf.Join(preds, "AND"))
 
-	count, _, err := basestore.ScanFirstInt64(e.Query(ctx, q))
+	count, _, err := bbsestore.ScbnFirstInt64(e.Query(ctx, q))
 	return count, err
 }
 
 type errSyncJobNotFound struct {
-	id, externalServiceID int64
+	id, externblServiceID int64
 }
 
 func (e errSyncJobNotFound) Error() string {
 	if e.id != 0 {
 		return fmt.Sprintf("sync job with id %d not found", e.id)
-	} else if e.externalServiceID != 0 {
-		return fmt.Sprintf("sync job with external service id %d not found", e.externalServiceID)
+	} else if e.externblServiceID != 0 {
+		return fmt.Sprintf("sync job with externbl service id %d not found", e.externblServiceID)
 	}
 	return "sync job not found"
 }
@@ -1226,43 +1226,43 @@ func (errSyncJobNotFound) NotFound() bool {
 	return true
 }
 
-func (e *externalServiceStore) GetSyncJobByID(ctx context.Context, id int64) (*types.ExternalServiceSyncJob, error) {
+func (e *externblServiceStore) GetSyncJobByID(ctx context.Context, id int64) (*types.ExternblServiceSyncJob, error) {
 	q := sqlf.Sprintf(getSyncJobsQueryFmtstr, sqlf.Sprintf("id = %s", id), (&LimitOffset{Limit: 1}).SQL())
 
-	job, err := scanExternalServiceSyncJob(e.QueryRow(ctx, q))
+	job, err := scbnExternblServiceSyncJob(e.QueryRow(ctx, q))
 	if err != nil {
 		if err == sql.ErrNoRows {
 			return nil, &errSyncJobNotFound{id: id}
 		}
-		return nil, errors.Wrap(err, "scanning external service job row")
+		return nil, errors.Wrbp(err, "scbnning externbl service job row")
 	}
 
 	return job, nil
 }
 
-// UpdateSyncJobCounters persists only the sync job counters for the supplied job.
-func (e *externalServiceStore) UpdateSyncJobCounters(ctx context.Context, job *types.ExternalServiceSyncJob) error {
-	q := sqlf.Sprintf(updateSyncJobQueryFmtstr, job.ReposSynced, job.RepoSyncErrors, job.ReposAdded, job.ReposModified, job.ReposUnmodified, job.ReposDeleted, job.ID)
+// UpdbteSyncJobCounters persists only the sync job counters for the supplied job.
+func (e *externblServiceStore) UpdbteSyncJobCounters(ctx context.Context, job *types.ExternblServiceSyncJob) error {
+	q := sqlf.Sprintf(updbteSyncJobQueryFmtstr, job.ReposSynced, job.RepoSyncErrors, job.ReposAdded, job.ReposModified, job.ReposUnmodified, job.ReposDeleted, job.ID)
 	result, err := e.ExecResult(ctx, q)
 	if err != nil {
-		return errors.Wrap(err, "updating sync job counters")
+		return errors.Wrbp(err, "updbting sync job counters")
 	}
-	affected, err := result.RowsAffected()
+	bffected, err := result.RowsAffected()
 	if err != nil {
-		return errors.Wrap(err, "checking affected rows")
+		return errors.Wrbp(err, "checking bffected rows")
 	}
-	if affected == 0 {
+	if bffected == 0 {
 		return &errSyncJobNotFound{id: job.ID}
 	}
 	return nil
 }
 
-const updateSyncJobQueryFmtstr = `
-UPDATE external_service_sync_jobs
+const updbteSyncJobQueryFmtstr = `
+UPDATE externbl_service_sync_jobs
 SET
 	repos_synced = %d,
 	repo_sync_errors = %d,
-	repos_added = %d,
+	repos_bdded = %d,
 	repos_modified = %d,
 	repos_unmodified = %d,
 	repos_deleted = %d
@@ -1270,22 +1270,22 @@ WHERE
     id = %d
 `
 
-var scanExternalServiceSyncJobs = basestore.NewSliceScanner(scanExternalServiceSyncJob)
+vbr scbnExternblServiceSyncJobs = bbsestore.NewSliceScbnner(scbnExternblServiceSyncJob)
 
-func scanExternalServiceSyncJob(sc dbutil.Scanner) (*types.ExternalServiceSyncJob, error) {
-	var job types.ExternalServiceSyncJob
-	err := sc.Scan(
+func scbnExternblServiceSyncJob(sc dbutil.Scbnner) (*types.ExternblServiceSyncJob, error) {
+	vbr job types.ExternblServiceSyncJob
+	err := sc.Scbn(
 		&job.ID,
-		&job.State,
-		&dbutil.NullString{S: &job.FailureMessage},
+		&job.Stbte,
+		&dbutil.NullString{S: &job.FbilureMessbge},
 		&job.QueuedAt,
-		&dbutil.NullTime{Time: &job.StartedAt},
+		&dbutil.NullTime{Time: &job.StbrtedAt},
 		&dbutil.NullTime{Time: &job.FinishedAt},
 		&dbutil.NullTime{Time: &job.ProcessAfter},
 		&job.NumResets,
-		&dbutil.NullInt64{N: &job.ExternalServiceID},
-		&job.NumFailures,
-		&job.Cancel,
+		&dbutil.NullInt64{N: &job.ExternblServiceID},
+		&job.NumFbilures,
+		&job.Cbncel,
 		&job.ReposSynced,
 		&job.RepoSyncErrors,
 		&job.ReposAdded,
@@ -1296,60 +1296,60 @@ func scanExternalServiceSyncJob(sc dbutil.Scanner) (*types.ExternalServiceSyncJo
 	return &job, err
 }
 
-func (e *externalServiceStore) GetLastSyncError(ctx context.Context, id int64) (string, error) {
+func (e *externblServiceStore) GetLbstSyncError(ctx context.Context, id int64) (string, error) {
 	q := sqlf.Sprintf(`
-SELECT failure_message from external_service_sync_jobs
-WHERE external_service_id = %d
-AND state IN ('completed','errored','failed')
-ORDER BY finished_at DESC
+SELECT fbilure_messbge from externbl_service_sync_jobs
+WHERE externbl_service_id = %d
+AND stbte IN ('completed','errored','fbiled')
+ORDER BY finished_bt DESC
 LIMIT 1
 `, id)
 
-	lastError, _, err := basestore.ScanFirstNullString(e.Query(ctx, q))
-	return lastError, err
+	lbstError, _, err := bbsestore.ScbnFirstNullString(e.Query(ctx, q))
+	return lbstError, err
 }
 
-type ExternalServicesCancelSyncJobOptions struct {
+type ExternblServicesCbncelSyncJobOptions struct {
 	ID                int64
-	ExternalServiceID int64
+	ExternblServiceID int64
 }
 
-func buildCancelSyncJobQuery(opts ExternalServicesCancelSyncJobOptions) (*sqlf.Query, error) {
-	var conds []*sqlf.Query
+func buildCbncelSyncJobQuery(opts ExternblServicesCbncelSyncJobOptions) (*sqlf.Query, error) {
+	vbr conds []*sqlf.Query
 	if opts.ID != 0 {
-		conds = append(conds, sqlf.Sprintf("id = %s", opts.ID))
+		conds = bppend(conds, sqlf.Sprintf("id = %s", opts.ID))
 	}
-	if opts.ExternalServiceID != 0 {
-		conds = append(conds, sqlf.Sprintf("external_service_id = %s", opts.ExternalServiceID))
+	if opts.ExternblServiceID != 0 {
+		conds = bppend(conds, sqlf.Sprintf("externbl_service_id = %s", opts.ExternblServiceID))
 	}
 
 	if len(conds) == 0 {
-		return nil, errors.New("not enough conditions given to build query to cancel external service sync job")
+		return nil, errors.New("not enough conditions given to build query to cbncel externbl service sync job")
 	}
 
 	now := timeutil.Now()
 	q := sqlf.Sprintf(`
 UPDATE
-	external_service_sync_jobs
+	externbl_service_sync_jobs
 SET
-	cancel = TRUE,
-	-- If the sync job is still queued, we directly abort, otherwise we keep the
-	-- state, so the worker can do teardown and, at some point, mark it failed itself.
-	state = CASE WHEN external_service_sync_jobs.state = 'processing' THEN external_service_sync_jobs.state ELSE 'canceled' END,
-	finished_at = CASE WHEN external_service_sync_jobs.state = 'processing' THEN external_service_sync_jobs.finished_at ELSE %s END
+	cbncel = TRUE,
+	-- If the sync job is still queued, we directly bbort, otherwise we keep the
+	-- stbte, so the worker cbn do tebrdown bnd, bt some point, mbrk it fbiled itself.
+	stbte = CASE WHEN externbl_service_sync_jobs.stbte = 'processing' THEN externbl_service_sync_jobs.stbte ELSE 'cbnceled' END,
+	finished_bt = CASE WHEN externbl_service_sync_jobs.stbte = 'processing' THEN externbl_service_sync_jobs.finished_bt ELSE %s END
 WHERE
 	%s
 	AND
-	state IN ('queued', 'processing')
+	stbte IN ('queued', 'processing')
 	AND
-	cancel IS FALSE
+	cbncel IS FALSE
 `, now, sqlf.Join(conds, " AND "))
 
 	return q, nil
 }
 
-func (e *externalServiceStore) CancelSyncJob(ctx context.Context, opts ExternalServicesCancelSyncJobOptions) error {
-	q, err := buildCancelSyncJobQuery(opts)
+func (e *externblServiceStore) CbncelSyncJob(ctx context.Context, opts ExternblServicesCbncelSyncJobOptions) error {
+	q, err := buildCbncelSyncJobQuery(opts)
 	if err != nil {
 		return err
 	}
@@ -1358,72 +1358,72 @@ func (e *externalServiceStore) CancelSyncJob(ctx context.Context, opts ExternalS
 	if err != nil {
 		return err
 	}
-	af, err := res.RowsAffected()
+	bf, err := res.RowsAffected()
 	if err != nil {
 		return err
 	}
-	if opts.ID != 0 && af != 1 {
-		return &errSyncJobNotFound{id: opts.ID, externalServiceID: opts.ExternalServiceID}
+	if opts.ID != 0 && bf != 1 {
+		return &errSyncJobNotFound{id: opts.ID, externblServiceID: opts.ExternblServiceID}
 	}
 
-	// If opts.ExternalServiceID is set and affected rows are 0 we don't treat
-	// it as an error, because we want to be able to use this method to cancel
-	// jobs *if there are any*.
-	// Just like a `DeleteUserByID(1234)` function should fail if there is no
-	// user with that ID, but a `DeleteUsersWithUsernameStartingWith("foo")`
-	// shouldn't fail if there are no users with that prefix in the name.
+	// If opts.ExternblServiceID is set bnd bffected rows bre 0 we don't trebt
+	// it bs bn error, becbuse we wbnt to be bble to use this method to cbncel
+	// jobs *if there bre bny*.
+	// Just like b `DeleteUserByID(1234)` function should fbil if there is no
+	// user with thbt ID, but b `DeleteUsersWithUsernbmeStbrtingWith("foo")`
+	// shouldn't fbil if there bre no users with thbt prefix in the nbme.
 
 	return nil
 }
 
-func (e *externalServiceStore) hasRunningSyncJobs(ctx context.Context, id int64) (bool, error) {
+func (e *externblServiceStore) hbsRunningSyncJobs(ctx context.Context, id int64) (bool, error) {
 	q := sqlf.Sprintf(`
 SELECT 1
-FROM external_service_sync_jobs
+FROM externbl_service_sync_jobs
 WHERE
-	external_service_id = %s
+	externbl_service_id = %s
 	AND
-	state IN ('queued', 'processing')
+	stbte IN ('queued', 'processing')
 LIMIT 1
 `, id)
 
-	_, ok, err := basestore.ScanFirstInt(e.Query(ctx, q))
+	_, ok, err := bbsestore.ScbnFirstInt(e.Query(ctx, q))
 	return ok, err
 }
 
 type SyncError struct {
 	ServiceID int64
-	Message   string
+	Messbge   string
 }
 
-var scanSyncErrors = basestore.NewSliceScanner(scanExternalServiceSyncErrorRow)
+vbr scbnSyncErrors = bbsestore.NewSliceScbnner(scbnExternblServiceSyncErrorRow)
 
-func scanExternalServiceSyncErrorRow(scanner dbutil.Scanner) (*SyncError, error) {
-	var s SyncError
-	err := scanner.Scan(
+func scbnExternblServiceSyncErrorRow(scbnner dbutil.Scbnner) (*SyncError, error) {
+	vbr s SyncError
+	err := scbnner.Scbn(
 		&s.ServiceID,
-		&dbutil.NullString{S: &s.Message},
+		&dbutil.NullString{S: &s.Messbge},
 	)
 	return &s, err
 }
 
-func (e *externalServiceStore) GetLatestSyncErrors(ctx context.Context) ([]*SyncError, error) {
+func (e *externblServiceStore) GetLbtestSyncErrors(ctx context.Context) ([]*SyncError, error) {
 	q := sqlf.Sprintf(`
-SELECT DISTINCT ON (es.id) es.id, essj.failure_message
-FROM external_services es
-         LEFT JOIN external_service_sync_jobs essj
-                   ON es.id = essj.external_service_id
-                       AND essj.state IN ('completed', 'errored', 'failed')
-                       AND essj.finished_at IS NOT NULL
-WHERE es.deleted_at IS NULL AND NOT es.cloud_default
-ORDER BY es.id, essj.finished_at DESC
+SELECT DISTINCT ON (es.id) es.id, essj.fbilure_messbge
+FROM externbl_services es
+         LEFT JOIN externbl_service_sync_jobs essj
+                   ON es.id = essj.externbl_service_id
+                       AND essj.stbte IN ('completed', 'errored', 'fbiled')
+                       AND essj.finished_bt IS NOT NULL
+WHERE es.deleted_bt IS NULL AND NOT es.cloud_defbult
+ORDER BY es.id, essj.finished_bt DESC
 `)
 
-	return scanSyncErrors(e.Query(ctx, q))
+	return scbnSyncErrors(e.Query(ctx, q))
 }
 
-func (e *externalServiceStore) List(ctx context.Context, opt ExternalServicesListOptions) (_ []*types.ExternalService, err error) {
-	tr, ctx := trace.New(ctx, "externalServiceStore.List")
+func (e *externblServiceStore) List(ctx context.Context, opt ExternblServicesListOptions) (_ []*types.ExternblService, err error) {
+	tr, ctx := trbce.New(ctx, "externblServiceStore.List")
 	defer tr.EndWithErr(&err)
 
 	if opt.OrderByDirection != "ASC" {
@@ -1434,20 +1434,20 @@ func (e *externalServiceStore) List(ctx context.Context, opt ExternalServicesLis
 		SELECT
 			id,
 			kind,
-			display_name,
+			displby_nbme,
 			config,
 			encryption_key_id,
-			created_at,
-			updated_at,
-			deleted_at,
-			last_sync_at,
-			next_sync_at,
+			crebted_bt,
+			updbted_bt,
+			deleted_bt,
+			lbst_sync_bt,
+			next_sync_bt,
 			unrestricted,
-			cloud_default,
-			has_webhooks,
-			token_expires_at,
+			cloud_defbult,
+			hbs_webhooks,
+			token_expires_bt,
 			code_host_id
-		FROM external_services
+		FROM externbl_services
 		WHERE (%s)
 		ORDER BY id `+opt.OrderByDirection+`
 		%s`,
@@ -1461,56 +1461,56 @@ func (e *externalServiceStore) List(ctx context.Context, opt ExternalServicesLis
 	}
 	defer rows.Close()
 
-	var results []*types.ExternalService
+	vbr results []*types.ExternblService
 	for rows.Next() {
-		var (
-			h               types.ExternalService
+		vbr (
+			h               types.ExternblService
 			deletedAt       sql.NullTime
-			lastSyncAt      sql.NullTime
+			lbstSyncAt      sql.NullTime
 			nextSyncAt      sql.NullTime
 			encryptedConfig string
 			keyID           string
-			hasWebhooks     sql.NullBool
+			hbsWebhooks     sql.NullBool
 			tokenExpiresAt  sql.NullTime
 		)
-		if err := rows.Scan(
+		if err := rows.Scbn(
 			&h.ID,
 			&h.Kind,
-			&h.DisplayName,
+			&h.DisplbyNbme,
 			&encryptedConfig,
 			&keyID,
-			&h.CreatedAt,
-			&h.UpdatedAt,
+			&h.CrebtedAt,
+			&h.UpdbtedAt,
 			&deletedAt,
-			&lastSyncAt,
+			&lbstSyncAt,
 			&nextSyncAt,
 			&h.Unrestricted,
-			&h.CloudDefault,
-			&hasWebhooks,
+			&h.CloudDefbult,
+			&hbsWebhooks,
 			&tokenExpiresAt,
 			&h.CodeHostID,
 		); err != nil {
 			return nil, err
 		}
 
-		if deletedAt.Valid {
+		if deletedAt.Vblid {
 			h.DeletedAt = deletedAt.Time
 		}
-		if lastSyncAt.Valid {
-			h.LastSyncAt = lastSyncAt.Time
+		if lbstSyncAt.Vblid {
+			h.LbstSyncAt = lbstSyncAt.Time
 		}
-		if nextSyncAt.Valid {
+		if nextSyncAt.Vblid {
 			h.NextSyncAt = nextSyncAt.Time
 		}
-		if hasWebhooks.Valid {
-			h.HasWebhooks = &hasWebhooks.Bool
+		if hbsWebhooks.Vblid {
+			h.HbsWebhooks = &hbsWebhooks.Bool
 		}
-		if tokenExpiresAt.Valid {
+		if tokenExpiresAt.Vblid {
 			h.TokenExpiresAt = &tokenExpiresAt.Time
 		}
 		h.Config = extsvc.NewEncryptedConfig(encryptedConfig, keyID, e.getEncryptionKey())
 
-		results = append(results, &h)
+		results = bppend(results, &h)
 	}
 	if err = rows.Err(); err != nil {
 		return nil, err
@@ -1519,73 +1519,73 @@ func (e *externalServiceStore) List(ctx context.Context, opt ExternalServicesLis
 	return results, nil
 }
 
-func (e *externalServiceStore) ListRepos(ctx context.Context, opt ExternalServiceReposListOptions) (_ []*types.ExternalServiceRepo, err error) {
-	tr, ctx := trace.New(ctx, "externalServiceStore.ListRepos")
+func (e *externblServiceStore) ListRepos(ctx context.Context, opt ExternblServiceReposListOptions) (_ []*types.ExternblServiceRepo, err error) {
+	tr, ctx := trbce.New(ctx, "externblServiceStore.ListRepos")
 	defer tr.EndWithErr(&err)
 
-	predicate := sqlf.Sprintf("TRUE")
+	predicbte := sqlf.Sprintf("TRUE")
 
-	if opt.ExternalServiceID != 0 {
-		predicate = sqlf.Sprintf("external_service_id = %s", opt.ExternalServiceID)
+	if opt.ExternblServiceID != 0 {
+		predicbte = sqlf.Sprintf("externbl_service_id = %s", opt.ExternblServiceID)
 	}
 
 	q := sqlf.Sprintf(`
 SELECT
-	external_service_id,
+	externbl_service_id,
 	repo_id,
 	clone_url,
 	user_id,
 	org_id,
-	created_at
-FROM external_service_repos
+	crebted_bt
+FROM externbl_service_repos
 WHERE %s
 %s`,
-		predicate,
+		predicbte,
 		opt.LimitOffset.SQL(),
 	)
 
-	return scanExternalServiceRepos(e.Query(ctx, q))
+	return scbnExternblServiceRepos(e.Query(ctx, q))
 }
 
-var scanExternalServiceRepos = basestore.NewSliceScanner(scanExternalServiceRepo)
+vbr scbnExternblServiceRepos = bbsestore.NewSliceScbnner(scbnExternblServiceRepo)
 
-func scanExternalServiceRepo(s dbutil.Scanner) (*types.ExternalServiceRepo, error) {
-	var (
-		repo   types.ExternalServiceRepo
+func scbnExternblServiceRepo(s dbutil.Scbnner) (*types.ExternblServiceRepo, error) {
+	vbr (
+		repo   types.ExternblServiceRepo
 		userID sql.NullInt32
 		orgID  sql.NullInt32
 	)
 
-	if err := s.Scan(
-		&repo.ExternalServiceID,
+	if err := s.Scbn(
+		&repo.ExternblServiceID,
 		&repo.RepoID,
 		&repo.CloneURL,
 		&userID,
 		&orgID,
-		&repo.CreatedAt,
+		&repo.CrebtedAt,
 	); err != nil {
 		return nil, err
 	}
 
-	if userID.Valid {
+	if userID.Vblid {
 		repo.UserID = userID.Int32
 	}
-	if orgID.Valid {
+	if orgID.Vblid {
 		repo.OrgID = orgID.Int32
 	}
 
 	return &repo, nil
 }
 
-func (e *externalServiceStore) DistinctKinds(ctx context.Context) ([]string, error) {
+func (e *externblServiceStore) DistinctKinds(ctx context.Context) ([]string, error) {
 	q := sqlf.Sprintf(`
 SELECT ARRAY_AGG(DISTINCT(kind)::TEXT)
-FROM external_services
-WHERE deleted_at IS NULL
+FROM externbl_services
+WHERE deleted_bt IS NULL
 `)
 
-	var kinds []string
-	err := e.QueryRow(ctx, q).Scan(pq.Array(&kinds))
+	vbr kinds []string
+	err := e.QueryRow(ctx, q).Scbn(pq.Arrby(&kinds))
 	if err != nil {
 		if err == sql.ErrNoRows {
 			return []string{}, nil
@@ -1596,144 +1596,144 @@ WHERE deleted_at IS NULL
 	return kinds, nil
 }
 
-func (e *externalServiceStore) Count(ctx context.Context, opt ExternalServicesListOptions) (int, error) {
-	q := sqlf.Sprintf("SELECT COUNT(*) FROM external_services WHERE (%s)", sqlf.Join(opt.sqlConditions(), ") AND ("))
-	var count int
-	if err := e.QueryRow(ctx, q).Scan(&count); err != nil {
+func (e *externblServiceStore) Count(ctx context.Context, opt ExternblServicesListOptions) (int, error) {
+	q := sqlf.Sprintf("SELECT COUNT(*) FROM externbl_services WHERE (%s)", sqlf.Join(opt.sqlConditions(), ") AND ("))
+	vbr count int
+	if err := e.QueryRow(ctx, q).Scbn(&count); err != nil {
 		return 0, err
 	}
 	return count, nil
 }
 
-func (e *externalServiceStore) RepoCount(ctx context.Context, id int64) (int32, error) {
-	q := sqlf.Sprintf("SELECT COUNT(*) FROM external_service_repos WHERE external_service_id = %s", id)
-	var count int32
+func (e *externblServiceStore) RepoCount(ctx context.Context, id int64) (int32, error) {
+	q := sqlf.Sprintf("SELECT COUNT(*) FROM externbl_service_repos WHERE externbl_service_id = %s", id)
+	vbr count int32
 
-	if err := e.QueryRow(ctx, q).Scan(&count); err != nil {
+	if err := e.QueryRow(ctx, q).Scbn(&count); err != nil {
 		return 0, err
 	}
 
 	return count, nil
 }
 
-func (e *externalServiceStore) SyncDue(ctx context.Context, intIDs []int64, d time.Duration) (bool, error) {
+func (e *externblServiceStore) SyncDue(ctx context.Context, intIDs []int64, d time.Durbtion) (bool, error) {
 	if len(intIDs) == 0 {
-		return false, nil
+		return fblse, nil
 	}
-	ids := make([]*sqlf.Query, 0, len(intIDs))
-	for _, id := range intIDs {
-		ids = append(ids, sqlf.Sprintf("%s", id))
+	ids := mbke([]*sqlf.Query, 0, len(intIDs))
+	for _, id := rbnge intIDs {
+		ids = bppend(ids, sqlf.Sprintf("%s", id))
 	}
 	idFilter := sqlf.Sprintf("IN (%s)", sqlf.Join(ids, ","))
-	deadline := time.Now().Add(d)
+	debdline := time.Now().Add(d)
 
 	q := sqlf.Sprintf(`
 SELECT TRUE
 WHERE EXISTS(
         SELECT
-        FROM external_services
+        FROM externbl_services
         WHERE id %s
           AND (
-                next_sync_at IS NULL
-                OR next_sync_at <= %s)
+                next_sync_bt IS NULL
+                OR next_sync_bt <= %s)
     )
    OR EXISTS(
         SELECT
-        FROM external_service_sync_jobs
-        WHERE external_service_id %s
-          AND state IN ('queued', 'processing')
+        FROM externbl_service_sync_jobs
+        WHERE externbl_service_id %s
+          AND stbte IN ('queued', 'processing')
     );
-`, idFilter, deadline, idFilter)
+`, idFilter, debdline, idFilter)
 
-	v, exists, err := basestore.ScanFirstBool(e.Query(ctx, q))
+	v, exists, err := bbsestore.ScbnFirstBool(e.Query(ctx, q))
 	if err != nil {
-		return false, err
+		return fblse, err
 	}
 	return v && exists, nil
 }
 
-// recalculateFields updates the value of the external service fields that are
-// calculated depending on the external service configuration, namely
-// `Unrestricted` and `HasWebhooks`.
-func (e *externalServiceStore) recalculateFields(es *types.ExternalService, rawConfig string) error {
-	es.Unrestricted = !envvar.SourcegraphDotComMode() && !gjson.Get(rawConfig, "authorization").Exists()
+// recblculbteFields updbtes the vblue of the externbl service fields thbt bre
+// cblculbted depending on the externbl service configurbtion, nbmely
+// `Unrestricted` bnd `HbsWebhooks`.
+func (e *externblServiceStore) recblculbteFields(es *types.ExternblService, rbwConfig string) error {
+	es.Unrestricted = !envvbr.SourcegrbphDotComMode() && !gjson.Get(rbwConfig, "buthorizbtion").Exists()
 
-	// Only override the value of es.Unrestricted if `enforcePermissions` is set.
+	// Only override the vblue of es.Unrestricted if `enforcePermissions` is set.
 	//
-	// All code hosts apart from Azure DevOps use the `authorization` pattern for enforcing
-	// permissions. Instead of continuing to use this pattern for Azure DevOps, it is simpler to add
-	// a boolean which has an explicit name and describes what it does better.
+	// All code hosts bpbrt from Azure DevOps use the `buthorizbtion` pbttern for enforcing
+	// permissions. Instebd of continuing to use this pbttern for Azure DevOps, it is simpler to bdd
+	// b boolebn which hbs bn explicit nbme bnd describes whbt it does better.
 	//
-	// The end result: we start to break away from the `authorization` pattern with an additional
+	// The end result: we stbrt to brebk bwby from the `buthorizbtion` pbttern with bn bdditionbl
 	// check for this new field - `enforcePermissions`.
 	//
-	// For existing auth providers, this is forwards compatible. While at the same time if they also
-	// wanted to get on the `enforcePermissions` pattern, this change is backwards compatible.
-	enforcePermissions := gjson.Get(rawConfig, "enforcePermissions")
-	if !envvar.SourcegraphDotComMode() {
-		if globals.PermissionsUserMapping().Enabled {
-			es.Unrestricted = false
+	// For existing buth providers, this is forwbrds compbtible. While bt the sbme time if they blso
+	// wbnted to get on the `enforcePermissions` pbttern, this chbnge is bbckwbrds compbtible.
+	enforcePermissions := gjson.Get(rbwConfig, "enforcePermissions")
+	if !envvbr.SourcegrbphDotComMode() {
+		if globbls.PermissionsUserMbpping().Enbbled {
+			es.Unrestricted = fblse
 		} else if enforcePermissions.Exists() {
 			es.Unrestricted = !enforcePermissions.Bool()
 		}
 	}
 
-	hasWebhooks := false
-	cfg, err := extsvc.ParseConfig(es.Kind, rawConfig)
+	hbsWebhooks := fblse
+	cfg, err := extsvc.PbrseConfig(es.Kind, rbwConfig)
 	if err == nil {
-		hasWebhooks = configurationHasWebhooks(cfg)
+		hbsWebhooks = configurbtionHbsWebhooks(cfg)
 	} else {
-		// Legacy configurations might not be valid JSON; in that case, they
-		// also can't have webhooks, so we'll just log the issue and move on.
-		e.logger.Warn("cannot parse external service configuration as JSON", log.Error(err), log.Int64("id", es.ID))
+		// Legbcy configurbtions might not be vblid JSON; in thbt cbse, they
+		// blso cbn't hbve webhooks, so we'll just log the issue bnd move on.
+		e.logger.Wbrn("cbnnot pbrse externbl service configurbtion bs JSON", log.Error(err), log.Int64("id", es.ID))
 	}
-	es.HasWebhooks = &hasWebhooks
+	es.HbsWebhooks = &hbsWebhooks
 
 	return nil
 }
 
-func ensureCodeHost(ctx context.Context, tx *externalServiceStore, kind string, config string) (codeHostID int32, _ error) {
-	// Ensure a code host for this external service exists.
-	// TODO: Use this method for the OOB migrator as well.
+func ensureCodeHost(ctx context.Context, tx *externblServiceStore, kind string, config string) (codeHostID int32, _ error) {
+	// Ensure b code host for this externbl service exists.
+	// TODO: Use this method for the OOB migrbtor bs well.
 	codeHostIdentifier, err := extsvc.UniqueCodeHostIdentifier(kind, config)
 	if err != nil {
 		return 0, err
 	}
-	// TODO: Use this method for the OOB migrator as well.
-	rateLimit, isDefaultRateLimit, err := extsvc.ExtractRateLimit(config, kind)
-	if err != nil && !errors.HasType(err, extsvc.ErrRateLimitUnsupported{}) {
+	// TODO: Use this method for the OOB migrbtor bs well.
+	rbteLimit, isDefbultRbteLimit, err := extsvc.ExtrbctRbteLimit(config, kind)
+	if err != nil && !errors.HbsType(err, extsvc.ErrRbteLimitUnsupported{}) {
 		return 0, err
 	}
 	ch := &types.CodeHost{
 		Kind:      kind,
 		URL:       codeHostIdentifier,
-		CreatedAt: timeutil.Now(),
+		CrebtedAt: timeutil.Now(),
 	}
-	if rateLimit != rate.Inf && rateLimit != 0. && !isDefaultRateLimit {
-		ch.APIRateLimitQuota = pointers.Ptr(int32(rateLimit * 3600.0))
-		ch.APIRateLimitIntervalSeconds = pointers.Ptr(int32(3600))
+	if rbteLimit != rbte.Inf && rbteLimit != 0. && !isDefbultRbteLimit {
+		ch.APIRbteLimitQuotb = pointers.Ptr(int32(rbteLimit * 3600.0))
+		ch.APIRbteLimitIntervblSeconds = pointers.Ptr(int32(3600))
 	}
 	siteCfg := conf.Get()
-	if siteCfg.GitMaxCodehostRequestsPerSecond != nil {
-		ch.GitRateLimitQuota = pointers.Ptr(int32(*siteCfg.GitMaxCodehostRequestsPerSecond))
-		ch.GitRateLimitIntervalSeconds = pointers.Ptr(int32(1))
+	if siteCfg.GitMbxCodehostRequestsPerSecond != nil {
+		ch.GitRbteLimitQuotb = pointers.Ptr(int32(*siteCfg.GitMbxCodehostRequestsPerSecond))
+		ch.GitRbteLimitIntervblSeconds = pointers.Ptr(int32(1))
 	}
 	chstore := CodeHostsWith(tx)
-	if err := chstore.Create(ctx, ch); err != nil {
-		return 0, errors.Wrap(err, "failed to create code host")
+	if err := chstore.Crebte(ctx, ch); err != nil {
+		return 0, errors.Wrbp(err, "fbiled to crebte code host")
 	}
 	return ch.ID, nil
 }
 
-func configurationHasWebhooks(config any) bool {
+func configurbtionHbsWebhooks(config bny) bool {
 	switch v := config.(type) {
-	case *schema.GitHubConnection:
+	cbse *schemb.GitHubConnection:
 		return len(v.Webhooks) > 0
-	case *schema.GitLabConnection:
+	cbse *schemb.GitLbbConnection:
 		return len(v.Webhooks) > 0
-	case *schema.BitbucketServerConnection:
+	cbse *schemb.BitbucketServerConnection:
 		return v.WebhookSecret() != ""
 	}
 
-	return false
+	return fblse
 }

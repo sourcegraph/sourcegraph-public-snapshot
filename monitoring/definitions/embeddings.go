@@ -1,45 +1,45 @@
-package definitions
+pbckbge definitions
 
 import (
-	"github.com/sourcegraph/sourcegraph/monitoring/definitions/shared"
-	"github.com/sourcegraph/sourcegraph/monitoring/monitoring"
+	"github.com/sourcegrbph/sourcegrbph/monitoring/definitions/shbred"
+	"github.com/sourcegrbph/sourcegrbph/monitoring/monitoring"
 )
 
-func Embeddings() *monitoring.Dashboard {
-	const containerName = "embeddings"
+func Embeddings() *monitoring.Dbshbobrd {
+	const contbinerNbme = "embeddings"
 
-	return &monitoring.Dashboard{
-		Name:        "embeddings",
+	return &monitoring.Dbshbobrd{
+		Nbme:        "embeddings",
 		Title:       "Embeddings",
-		Description: "Handles embeddings searches.",
+		Description: "Hbndles embeddings sebrches.",
 		Groups: []monitoring.Group{
-			shared.NewDatabaseConnectionsMonitoringGroup(containerName),
-			shared.NewFrontendInternalAPIErrorResponseMonitoringGroup(containerName, monitoring.ObservableOwnerCody, nil),
-			shared.NewContainerMonitoringGroup(containerName, monitoring.ObservableOwnerCody, nil),
-			shared.NewProvisioningIndicatorsGroup(containerName, monitoring.ObservableOwnerCody, nil),
-			shared.NewGolangMonitoringGroup(containerName, monitoring.ObservableOwnerCody, nil),
-			shared.NewKubernetesMonitoringGroup(containerName, monitoring.ObservableOwnerCody, nil),
+			shbred.NewDbtbbbseConnectionsMonitoringGroup(contbinerNbme),
+			shbred.NewFrontendInternblAPIErrorResponseMonitoringGroup(contbinerNbme, monitoring.ObservbbleOwnerCody, nil),
+			shbred.NewContbinerMonitoringGroup(contbinerNbme, monitoring.ObservbbleOwnerCody, nil),
+			shbred.NewProvisioningIndicbtorsGroup(contbinerNbme, monitoring.ObservbbleOwnerCody, nil),
+			shbred.NewGolbngMonitoringGroup(contbinerNbme, monitoring.ObservbbleOwnerCody, nil),
+			shbred.NewKubernetesMonitoringGroup(contbinerNbme, monitoring.ObservbbleOwnerCody, nil),
 			{
-				Title:  "Cache",
+				Title:  "Cbche",
 				Hidden: true,
 				Rows: []monitoring.Row{{
 					{
-						Name:           "hit_ratio",
-						Description:    "hit ratio of the embeddings cache",
-						Owner:          monitoring.ObservableOwner{},
-						Query:          "rate(src_embeddings_cache_hit_count[30m]) / (rate(src_embeddings_cache_hit_count[30m]) + rate(src_embeddings_cache_miss_count[30m]))",
+						Nbme:           "hit_rbtio",
+						Description:    "hit rbtio of the embeddings cbche",
+						Owner:          monitoring.ObservbbleOwner{},
+						Query:          "rbte(src_embeddings_cbche_hit_count[30m]) / (rbte(src_embeddings_cbche_hit_count[30m]) + rbte(src_embeddings_cbche_miss_count[30m]))",
 						NoAlert:        true,
-						Interpretation: "A low hit rate indicates your cache is not well utilized. Consider increasing the cache size.",
-						Panel:          monitoring.Panel().Unit(monitoring.Number),
+						Interpretbtion: "A low hit rbte indicbtes your cbche is not well utilized. Consider increbsing the cbche size.",
+						Pbnel:          monitoring.Pbnel().Unit(monitoring.Number),
 					},
 					{
-						Name:           "missed_bytes",
-						Description:    "bytes fetched due to a cache miss",
-						Owner:          monitoring.ObservableOwner{},
-						Query:          "rate(src_embeddings_cache_miss_bytes[10m])",
+						Nbme:           "missed_bytes",
+						Description:    "bytes fetched due to b cbche miss",
+						Owner:          monitoring.ObservbbleOwner{},
+						Query:          "rbte(src_embeddings_cbche_miss_bytes[10m])",
 						NoAlert:        true,
-						Interpretation: "A high volume of misses indicates that the many searches are not hitting the cache. Consider increasing the cache size.",
-						Panel:          monitoring.Panel().Unit(monitoring.Bytes),
+						Interpretbtion: "A high volume of misses indicbtes thbt the mbny sebrches bre not hitting the cbche. Consider increbsing the cbche size.",
+						Pbnel:          monitoring.Pbnel().Unit(monitoring.Bytes),
 					},
 				}},
 			},

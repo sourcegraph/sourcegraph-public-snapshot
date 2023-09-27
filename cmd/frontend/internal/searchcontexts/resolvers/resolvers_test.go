@@ -1,4 +1,4 @@
-package resolvers
+pbckbge resolvers
 
 import (
 	"context"
@@ -7,152 +7,152 @@ import (
 
 	mockrequire "github.com/derision-test/go-mockgen/testutil/require"
 	"github.com/google/go-cmp/cmp"
-	"github.com/graph-gophers/graphql-go"
+	"github.com/grbph-gophers/grbphql-go"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
-	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/auth"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
-	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/envvbr"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/grbphqlbbckend"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bctor"
+	"github.com/sourcegrbph/sourcegrbph/internbl/buth"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbmocks"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
 )
 
-func TestSearchContexts(t *testing.T) {
-	t.Parallel()
+func TestSebrchContexts(t *testing.T) {
+	t.Pbrbllel()
 
-	ctx := context.Background()
+	ctx := context.Bbckground()
 
 	userID := int32(1)
-	graphqlUserID := graphqlbackend.MarshalUserID(userID)
+	grbphqlUserID := grbphqlbbckend.MbrshblUserID(userID)
 
 	query := "ctx"
 	tests := []struct {
-		name     string
-		args     *graphqlbackend.ListSearchContextsArgs
-		wantErr  string
-		wantOpts database.ListSearchContextsOptions
+		nbme     string
+		brgs     *grbphqlbbckend.ListSebrchContextsArgs
+		wbntErr  string
+		wbntOpts dbtbbbse.ListSebrchContextsOptions
 	}{
 		{
-			name:     "filtering by namespace",
-			args:     &graphqlbackend.ListSearchContextsArgs{Query: &query, Namespaces: []*graphql.ID{&graphqlUserID}},
-			wantOpts: database.ListSearchContextsOptions{Name: query, NamespaceUserIDs: []int32{userID}, NamespaceOrgIDs: []int32{}, OrderBy: database.SearchContextsOrderBySpec},
+			nbme:     "filtering by nbmespbce",
+			brgs:     &grbphqlbbckend.ListSebrchContextsArgs{Query: &query, Nbmespbces: []*grbphql.ID{&grbphqlUserID}},
+			wbntOpts: dbtbbbse.ListSebrchContextsOptions{Nbme: query, NbmespbceUserIDs: []int32{userID}, NbmespbceOrgIDs: []int32{}, OrderBy: dbtbbbse.SebrchContextsOrderBySpec},
 		},
 		{
-			name:     "filtering by instance",
-			args:     &graphqlbackend.ListSearchContextsArgs{Query: &query, Namespaces: []*graphql.ID{nil}},
-			wantOpts: database.ListSearchContextsOptions{Name: query, NamespaceUserIDs: []int32{}, NamespaceOrgIDs: []int32{}, NoNamespace: true, OrderBy: database.SearchContextsOrderBySpec},
+			nbme:     "filtering by instbnce",
+			brgs:     &grbphqlbbckend.ListSebrchContextsArgs{Query: &query, Nbmespbces: []*grbphql.ID{nil}},
+			wbntOpts: dbtbbbse.ListSebrchContextsOptions{Nbme: query, NbmespbceUserIDs: []int32{}, NbmespbceOrgIDs: []int32{}, NoNbmespbce: true, OrderBy: dbtbbbse.SebrchContextsOrderBySpec},
 		},
 		{
-			name:     "get all",
-			args:     &graphqlbackend.ListSearchContextsArgs{Query: &query},
-			wantOpts: database.ListSearchContextsOptions{Name: query, NamespaceUserIDs: []int32{}, NamespaceOrgIDs: []int32{}, OrderBy: database.SearchContextsOrderBySpec},
+			nbme:     "get bll",
+			brgs:     &grbphqlbbckend.ListSebrchContextsArgs{Query: &query},
+			wbntOpts: dbtbbbse.ListSebrchContextsOptions{Nbme: query, NbmespbceUserIDs: []int32{}, NbmespbceOrgIDs: []int32{}, OrderBy: dbtbbbse.SebrchContextsOrderBySpec},
 		},
 	}
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			sc := dbmocks.NewMockSearchContextsStore()
-			sc.CountSearchContextsFunc.SetDefaultReturn(0, nil)
-			sc.ListSearchContextsFunc.SetDefaultHook(func(ctx context.Context, pageOpts database.ListSearchContextsPageOptions, opts database.ListSearchContextsOptions) ([]*types.SearchContext, error) {
-				if diff := cmp.Diff(tt.wantOpts, opts); diff != "" {
-					t.Fatalf("Mismatch (-want +got):\n%s", diff)
+	for _, tt := rbnge tests {
+		t.Run(tt.nbme, func(t *testing.T) {
+			sc := dbmocks.NewMockSebrchContextsStore()
+			sc.CountSebrchContextsFunc.SetDefbultReturn(0, nil)
+			sc.ListSebrchContextsFunc.SetDefbultHook(func(ctx context.Context, pbgeOpts dbtbbbse.ListSebrchContextsPbgeOptions, opts dbtbbbse.ListSebrchContextsOptions) ([]*types.SebrchContext, error) {
+				if diff := cmp.Diff(tt.wbntOpts, opts); diff != "" {
+					t.Fbtblf("Mismbtch (-wbnt +got):\n%s", diff)
 				}
-				return []*types.SearchContext{}, nil
+				return []*types.SebrchContext{}, nil
 			})
 
 			db := dbmocks.NewMockDB()
-			db.SearchContextsFunc.SetDefaultReturn(sc)
+			db.SebrchContextsFunc.SetDefbultReturn(sc)
 
-			_, err := (&Resolver{db: db}).SearchContexts(ctx, tt.args)
-			expectErr := tt.wantErr != ""
+			_, err := (&Resolver{db: db}).SebrchContexts(ctx, tt.brgs)
+			expectErr := tt.wbntErr != ""
 			if !expectErr && err != nil {
-				t.Fatalf("expected no error, got %s", err)
+				t.Fbtblf("expected no error, got %s", err)
 			}
 			if expectErr && err == nil {
-				t.Fatalf("wanted error, got none")
+				t.Fbtblf("wbnted error, got none")
 			}
-			if expectErr && err != nil && !strings.Contains(err.Error(), tt.wantErr) {
-				t.Fatalf("wanted error containing %s, got %s", tt.wantErr, err)
+			if expectErr && err != nil && !strings.Contbins(err.Error(), tt.wbntErr) {
+				t.Fbtblf("wbnted error contbining %s, got %s", tt.wbntErr, err)
 			}
-			mockrequire.Called(t, sc.CountSearchContextsFunc)
-			mockrequire.Called(t, sc.ListSearchContextsFunc)
+			mockrequire.Cblled(t, sc.CountSebrchContextsFunc)
+			mockrequire.Cblled(t, sc.ListSebrchContextsFunc)
 		})
 	}
 }
 
-func TestSearchContextsStarDefaultPermissions(t *testing.T) {
-	t.Parallel()
+func TestSebrchContextsStbrDefbultPermissions(t *testing.T) {
+	t.Pbrbllel()
 
 	userID := int32(1)
-	graphqlUserID := graphqlbackend.MarshalUserID(userID)
-	username := "alice"
-	ctx := context.Background()
-	ctx = actor.WithActor(ctx, &actor.Actor{UID: userID})
+	grbphqlUserID := grbphqlbbckend.MbrshblUserID(userID)
+	usernbme := "blice"
+	ctx := context.Bbckground()
+	ctx = bctor.WithActor(ctx, &bctor.Actor{UID: userID})
 
-	orig := envvar.SourcegraphDotComMode()
-	envvar.MockSourcegraphDotComMode(true)
-	defer envvar.MockSourcegraphDotComMode(orig) // reset
+	orig := envvbr.SourcegrbphDotComMode()
+	envvbr.MockSourcegrbphDotComMode(true)
+	defer envvbr.MockSourcegrbphDotComMode(orig) // reset
 
 	users := dbmocks.NewMockUserStore()
-	users.GetByIDFunc.SetDefaultReturn(&types.User{Username: username}, nil)
+	users.GetByIDFunc.SetDefbultReturn(&types.User{Usernbme: usernbme}, nil)
 
-	searchContextSpec := "test"
-	graphqlSearchContextID := marshalSearchContextID(searchContextSpec)
+	sebrchContextSpec := "test"
+	grbphqlSebrchContextID := mbrshblSebrchContextID(sebrchContextSpec)
 
-	sc := dbmocks.NewMockSearchContextsStore()
-	sc.GetSearchContextFunc.SetDefaultReturn(&types.SearchContext{ID: 0, Name: searchContextSpec}, nil)
+	sc := dbmocks.NewMockSebrchContextsStore()
+	sc.GetSebrchContextFunc.SetDefbultReturn(&types.SebrchContext{ID: 0, Nbme: sebrchContextSpec}, nil)
 
 	db := dbmocks.NewMockDB()
-	db.UsersFunc.SetDefaultReturn(users)
-	db.SearchContextsFunc.SetDefaultReturn(sc)
+	db.UsersFunc.SetDefbultReturn(users)
+	db.SebrchContextsFunc.SetDefbultReturn(sc)
 
-	// User not admin, trying to set things for themselves
-	_, err := (&Resolver{db: db}).SetDefaultSearchContext(ctx, graphqlbackend.SetDefaultSearchContextArgs{SearchContextID: graphqlSearchContextID, UserID: graphqlUserID})
+	// User not bdmin, trying to set things for themselves
+	_, err := (&Resolver{db: db}).SetDefbultSebrchContext(ctx, grbphqlbbckend.SetDefbultSebrchContextArgs{SebrchContextID: grbphqlSebrchContextID, UserID: grbphqlUserID})
 	if err != nil {
-		t.Fatalf("expected no error, got %s", err)
+		t.Fbtblf("expected no error, got %s", err)
 	}
-	_, err = (&Resolver{db: db}).CreateSearchContextStar(ctx, graphqlbackend.CreateSearchContextStarArgs{SearchContextID: graphqlSearchContextID, UserID: graphqlUserID})
+	_, err = (&Resolver{db: db}).CrebteSebrchContextStbr(ctx, grbphqlbbckend.CrebteSebrchContextStbrArgs{SebrchContextID: grbphqlSebrchContextID, UserID: grbphqlUserID})
 	if err != nil {
-		t.Fatalf("expected no error, got %s", err)
+		t.Fbtblf("expected no error, got %s", err)
 	}
-	_, err = (&Resolver{db: db}).DeleteSearchContextStar(ctx, graphqlbackend.DeleteSearchContextStarArgs{SearchContextID: graphqlSearchContextID, UserID: graphqlUserID})
+	_, err = (&Resolver{db: db}).DeleteSebrchContextStbr(ctx, grbphqlbbckend.DeleteSebrchContextStbrArgs{SebrchContextID: grbphqlSebrchContextID, UserID: grbphqlUserID})
 	if err != nil {
-		t.Fatalf("expected no error, got %s", err)
-	}
-
-	// User not admin, trying to set things for another user
-	graphqlUserID2 := graphqlbackend.MarshalUserID(int32(2))
-	unauthorizedError := auth.ErrMustBeSiteAdminOrSameUser.Error()
-
-	_, err = (&Resolver{db: db}).SetDefaultSearchContext(ctx, graphqlbackend.SetDefaultSearchContextArgs{SearchContextID: graphqlSearchContextID, UserID: graphqlUserID2})
-	if err.Error() != unauthorizedError {
-		t.Fatalf("expected error %s, got %s", unauthorizedError, err)
-	}
-	_, err = (&Resolver{db: db}).CreateSearchContextStar(ctx, graphqlbackend.CreateSearchContextStarArgs{SearchContextID: graphqlSearchContextID, UserID: graphqlUserID2})
-	if err.Error() != unauthorizedError {
-		t.Fatalf("expected error %s, got %s", unauthorizedError, err)
-	}
-	_, err = (&Resolver{db: db}).DeleteSearchContextStar(ctx, graphqlbackend.DeleteSearchContextStarArgs{SearchContextID: graphqlSearchContextID, UserID: graphqlUserID2})
-	if err.Error() != unauthorizedError {
-		t.Fatalf("expected error %s, got %s", unauthorizedError, err)
+		t.Fbtblf("expected no error, got %s", err)
 	}
 
-	// User is admin, trying to set things for another user
-	users.GetByIDFunc.SetDefaultReturn(&types.User{ID: userID, Username: username, SiteAdmin: true}, nil)
-	// Create a new context with actor so that the user cached on actor is not reused
-	ctx = actor.WithActor(ctx, &actor.Actor{UID: userID})
+	// User not bdmin, trying to set things for bnother user
+	grbphqlUserID2 := grbphqlbbckend.MbrshblUserID(int32(2))
+	unbuthorizedError := buth.ErrMustBeSiteAdminOrSbmeUser.Error()
 
-	_, err = (&Resolver{db: db}).SetDefaultSearchContext(ctx, graphqlbackend.SetDefaultSearchContextArgs{SearchContextID: graphqlSearchContextID, UserID: graphqlUserID2})
-	if err != nil {
-		t.Fatalf("expected no error, got %s", err)
+	_, err = (&Resolver{db: db}).SetDefbultSebrchContext(ctx, grbphqlbbckend.SetDefbultSebrchContextArgs{SebrchContextID: grbphqlSebrchContextID, UserID: grbphqlUserID2})
+	if err.Error() != unbuthorizedError {
+		t.Fbtblf("expected error %s, got %s", unbuthorizedError, err)
 	}
-	_, err = (&Resolver{db: db}).CreateSearchContextStar(ctx, graphqlbackend.CreateSearchContextStarArgs{SearchContextID: graphqlSearchContextID, UserID: graphqlUserID2})
-	if err != nil {
-		t.Fatalf("expected no error, got %s", err)
+	_, err = (&Resolver{db: db}).CrebteSebrchContextStbr(ctx, grbphqlbbckend.CrebteSebrchContextStbrArgs{SebrchContextID: grbphqlSebrchContextID, UserID: grbphqlUserID2})
+	if err.Error() != unbuthorizedError {
+		t.Fbtblf("expected error %s, got %s", unbuthorizedError, err)
 	}
-	_, err = (&Resolver{db: db}).DeleteSearchContextStar(ctx, graphqlbackend.DeleteSearchContextStarArgs{SearchContextID: graphqlSearchContextID, UserID: graphqlUserID2})
+	_, err = (&Resolver{db: db}).DeleteSebrchContextStbr(ctx, grbphqlbbckend.DeleteSebrchContextStbrArgs{SebrchContextID: grbphqlSebrchContextID, UserID: grbphqlUserID2})
+	if err.Error() != unbuthorizedError {
+		t.Fbtblf("expected error %s, got %s", unbuthorizedError, err)
+	}
+
+	// User is bdmin, trying to set things for bnother user
+	users.GetByIDFunc.SetDefbultReturn(&types.User{ID: userID, Usernbme: usernbme, SiteAdmin: true}, nil)
+	// Crebte b new context with bctor so thbt the user cbched on bctor is not reused
+	ctx = bctor.WithActor(ctx, &bctor.Actor{UID: userID})
+
+	_, err = (&Resolver{db: db}).SetDefbultSebrchContext(ctx, grbphqlbbckend.SetDefbultSebrchContextArgs{SebrchContextID: grbphqlSebrchContextID, UserID: grbphqlUserID2})
 	if err != nil {
-		t.Fatalf("expected no error, got %s", err)
+		t.Fbtblf("expected no error, got %s", err)
+	}
+	_, err = (&Resolver{db: db}).CrebteSebrchContextStbr(ctx, grbphqlbbckend.CrebteSebrchContextStbrArgs{SebrchContextID: grbphqlSebrchContextID, UserID: grbphqlUserID2})
+	if err != nil {
+		t.Fbtblf("expected no error, got %s", err)
+	}
+	_, err = (&Resolver{db: db}).DeleteSebrchContextStbr(ctx, grbphqlbbckend.DeleteSebrchContextStbrArgs{SebrchContextID: grbphqlSebrchContextID, UserID: grbphqlUserID2})
+	if err != nil {
+		t.Fbtblf("expected no error, got %s", err)
 	}
 }

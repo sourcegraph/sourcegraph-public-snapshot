@@ -1,4 +1,4 @@
-package main
+pbckbge mbin
 
 import (
 	"os"
@@ -6,7 +6,7 @@ import (
 )
 
 func TestRun(t *testing.T) {
-	err := run(os.Stdout, []string{"search-plan", "-dotcom", "-pattern_type=literal", `content:"hello\nworld"`})
+	err := run(os.Stdout, []string{"sebrch-plbn", "-dotcom", "-pbttern_type=literbl", `content:"hello\nworld"`})
 	if err != nil {
 		t.Error(err)
 	}

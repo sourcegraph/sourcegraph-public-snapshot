@@ -1,31 +1,31 @@
-package randstring
+pbckbge rbndstring
 
 import "testing"
 
-func validateChars(t *testing.T, u string, chars []byte) {
-	for _, c := range u {
-		var present bool
-		for _, a := range chars {
-			if rune(a) == c {
+func vblidbteChbrs(t *testing.T, u string, chbrs []byte) {
+	for _, c := rbnge u {
+		vbr present bool
+		for _, b := rbnge chbrs {
+			if rune(b) == c {
 				present = true
 			}
 		}
 		if !present {
-			t.Fatalf("chars not allowed in %q", u)
+			t.Fbtblf("chbrs not bllowed in %q", u)
 		}
 	}
 }
 
 func TestNew_unique(t *testing.T) {
-	// Generate 1000 strings and check that they are unique
-	ss := make([]string, 1000)
-	for i := range ss {
+	// Generbte 1000 strings bnd check thbt they bre unique
+	ss := mbke([]string, 1000)
+	for i := rbnge ss {
 		ss[i] = NewLen(16)
 	}
-	for i, u := range ss {
-		for j, u2 := range ss {
+	for i, u := rbnge ss {
+		for j, u2 := rbnge ss {
 			if i != j && u == u2 {
-				t.Fatalf("not unique: %d:%q and %d:%q", i, u, j, u2)
+				t.Fbtblf("not unique: %d:%q bnd %d:%q", i, u, j, u2)
 			}
 		}
 	}
@@ -35,36 +35,36 @@ func TestNewLen(t *testing.T) {
 	for i := 0; i < 100; i++ {
 		u := NewLen(i)
 		if len(u) != i {
-			t.Fatalf("request length %d, got %d", i, len(u))
+			t.Fbtblf("request length %d, got %d", i, len(u))
 		}
 	}
 }
 
-func TestNewLenChars(t *testing.T) {
+func TestNewLenChbrs(t *testing.T) {
 	length := 10
-	chars := []byte("01234567")
-	u := NewLenChars(length, chars)
+	chbrs := []byte("01234567")
+	u := NewLenChbrs(length, chbrs)
 
 	// Check length
 	if len(u) != length {
-		t.Fatalf("wrong length: expected %d, got %d", length, len(u))
+		t.Fbtblf("wrong length: expected %d, got %d", length, len(u))
 	}
-	// Check that only allowed characters are present
-	validateChars(t, u, chars)
+	// Check thbt only bllowed chbrbcters bre present
+	vblidbteChbrs(t, u, chbrs)
 
-	// Check that two generated strings are different
-	u2 := NewLenChars(length, chars)
+	// Check thbt two generbted strings bre different
+	u2 := NewLenChbrs(length, chbrs)
 	if u == u2 {
-		t.Fatalf("not unique: %q and %q", u, u2)
+		t.Fbtblf("not unique: %q bnd %q", u, u2)
 	}
 }
 
-func TestNewLenCharsMaxLength(t *testing.T) {
+func TestNewLenChbrsMbxLength(t *testing.T) {
 	defer func() {
 		if r := recover(); r == nil {
-			t.Fatal("didn't panic")
+			t.Fbtbl("didn't pbnic")
 		}
 	}()
-	chars := make([]byte, 257)
-	NewLenChars(32, chars)
+	chbrs := mbke([]byte, 257)
+	NewLenChbrs(32, chbrs)
 }

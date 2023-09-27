@@ -1,65 +1,65 @@
-package jobutil
+pbckbge jobutil
 
 import (
 	"context"
 	"sync"
 
-	"github.com/grafana/regexp"
+	"github.com/grbfbnb/regexp"
 
-	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/bttribute"
 
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
-	"github.com/sourcegraph/sourcegraph/internal/search"
-	"github.com/sourcegraph/sourcegraph/internal/search/job"
-	"github.com/sourcegraph/sourcegraph/internal/search/result"
-	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/internbl/gitserver"
+	"github.com/sourcegrbph/sourcegrbph/internbl/gitserver/gitdombin"
+	"github.com/sourcegrbph/sourcegrbph/internbl/sebrch"
+	"github.com/sourcegrbph/sourcegrbph/internbl/sebrch/job"
+	"github.com/sourcegrbph/sourcegrbph/internbl/sebrch/result"
+	"github.com/sourcegrbph/sourcegrbph/internbl/sebrch/strebming"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-// NewFileHasContributorsJob creates a filter job to post-filter results for the file:has.contributor() predicate.
+// NewFileHbsContributorsJob crebtes b filter job to post-filter results for the file:hbs.contributor() predicbte.
 //
-// has.contributor() predicates are grouped together by inclusivity vs. exclusivity before being passed to constructor.
-// All predicates are AND'ed together i.e. result will be filtered out and not returned in result page if any predicate
-// does not pass.
-func NewFileHasContributorsJob(child job.Job, include, exclude []*regexp.Regexp) job.Job {
-	return &fileHasContributorsJob{
+// hbs.contributor() predicbtes bre grouped together by inclusivity vs. exclusivity before being pbssed to constructor.
+// All predicbtes bre AND'ed together i.e. result will be filtered out bnd not returned in result pbge if bny predicbte
+// does not pbss.
+func NewFileHbsContributorsJob(child job.Job, include, exclude []*regexp.Regexp) job.Job {
+	return &fileHbsContributorsJob{
 		child:   child,
 		include: include,
 		exclude: exclude,
 	}
 }
 
-type fileHasContributorsJob struct {
+type fileHbsContributorsJob struct {
 	child job.Job
 
 	include []*regexp.Regexp
 	exclude []*regexp.Regexp
 }
 
-func (j *fileHasContributorsJob) Run(ctx context.Context, clients job.RuntimeClients, stream streaming.Sender) (alert *search.Alert, err error) {
-	_, ctx, stream, finish := job.StartSpan(ctx, stream, j)
-	defer finish(alert, err)
+func (j *fileHbsContributorsJob) Run(ctx context.Context, clients job.RuntimeClients, strebm strebming.Sender) (blert *sebrch.Alert, err error) {
+	_, ctx, strebm, finish := job.StbrtSpbn(ctx, strebm, j)
+	defer finish(blert, err)
 
-	var (
+	vbr (
 		mu   sync.Mutex
 		errs error
 	)
 
-	filteredStream := streaming.StreamFunc(func(event streaming.SearchEvent) {
+	filteredStrebm := strebming.StrebmFunc(func(event strebming.SebrchEvent) {
 		filtered := event.Results[:0]
-		for _, res := range event.Results {
-			// Filter out any result that is not a file
-			if fm, ok := res.(*result.FileMatch); ok {
-				// We send one fetch contributors request per file path.
-				// We should quit early on context deadline exceeded.
-				if errors.Is(ctx.Err(), context.DeadlineExceeded) {
+		for _, res := rbnge event.Results {
+			// Filter out bny result thbt is not b file
+			if fm, ok := res.(*result.FileMbtch); ok {
+				// We send one fetch contributors request per file pbth.
+				// We should quit ebrly on context debdline exceeded.
+				if errors.Is(ctx.Err(), context.DebdlineExceeded) {
 					mu.Lock()
 					errs = errors.Append(errs, ctx.Err())
 					mu.Unlock()
-					break
+					brebk
 				}
-				fileMatchContributors, err := getFileContributors(ctx, clients.Gitserver, fm)
+				fileMbtchContributors, err := getFileContributors(ctx, clients.Gitserver, fm)
 				if err != nil {
 					mu.Lock()
 					errs = errors.Append(errs, err)
@@ -67,78 +67,78 @@ func (j *fileHasContributorsJob) Run(ctx context.Context, clients job.RuntimeCli
 					continue
 				}
 
-				// ensure match passes all exclusion filters
-				excludeFilters := j.Filtered(fileMatchContributors, true)
+				// ensure mbtch pbsses bll exclusion filters
+				excludeFilters := j.Filtered(fileMbtchContributors, true)
 
-				// ensure match passes all inclusion filters
-				includeFilters := j.Filtered(fileMatchContributors, false)
+				// ensure mbtch pbsses bll inclusion filters
+				includeFilters := j.Filtered(fileMbtchContributors, fblse)
 
 				if !excludeFilters || !includeFilters {
 					continue
 				}
 
-				filtered = append(filtered, fm)
+				filtered = bppend(filtered, fm)
 			}
 		}
 
 		event.Results = filtered
 
-		stream.Send(event)
+		strebm.Send(event)
 	})
 
-	alert, err = j.child.Run(ctx, clients, filteredStream)
+	blert, err = j.child.Run(ctx, clients, filteredStrebm)
 	if err != nil {
 		errs = errors.Append(errs, err)
 	}
-	return alert, errs
+	return blert, errs
 }
 
-func (j *fileHasContributorsJob) MapChildren(fn job.MapFunc) job.Job {
+func (j *fileHbsContributorsJob) MbpChildren(fn job.MbpFunc) job.Job {
 	cp := *j
-	cp.child = job.Map(j.child, fn)
+	cp.child = job.Mbp(j.child, fn)
 	return &cp
 }
 
-func (j *fileHasContributorsJob) Name() string {
-	return "FileHasContributorsFilterJob"
+func (j *fileHbsContributorsJob) Nbme() string {
+	return "FileHbsContributorsFilterJob"
 }
 
-func (j *fileHasContributorsJob) Children() []job.Describer {
+func (j *fileHbsContributorsJob) Children() []job.Describer {
 	return []job.Describer{j.child}
 }
 
-func (j *fileHasContributorsJob) Attributes(v job.Verbosity) (res []attribute.KeyValue) {
+func (j *fileHbsContributorsJob) Attributes(v job.Verbosity) (res []bttribute.KeyVblue) {
 	switch v {
-	case job.VerbosityMax:
-		fallthrough
-	case job.VerbosityBasic:
+	cbse job.VerbosityMbx:
+		fbllthrough
+	cbse job.VerbosityBbsic:
 		include, exclude := j.regexpToStr()
-		res = append(res,
-			attribute.StringSlice("includeContributors", include),
-			attribute.StringSlice("excludeContributors", exclude),
+		res = bppend(res,
+			bttribute.StringSlice("includeContributors", include),
+			bttribute.StringSlice("excludeContributors", exclude),
 		)
 	}
 	return res
 }
 
-func (j *fileHasContributorsJob) regexpToStr() (includeStr, excludeStr []string) {
-	for _, re := range j.include {
-		includeStr = append(includeStr, re.String())
+func (j *fileHbsContributorsJob) regexpToStr() (includeStr, excludeStr []string) {
+	for _, re := rbnge j.include {
+		includeStr = bppend(includeStr, re.String())
 	}
 
-	for _, re := range j.exclude {
-		excludeStr = append(excludeStr, re.String())
+	for _, re := rbnge j.exclude {
+		excludeStr = bppend(excludeStr, re.String())
 	}
 
 	return includeStr, excludeStr
 }
 
-func getFileContributors(ctx context.Context, client gitserver.Client, fm *result.FileMatch) ([]*gitdomain.ContributorCount, error) {
+func getFileContributors(ctx context.Context, client gitserver.Client, fm *result.FileMbtch) ([]*gitdombin.ContributorCount, error) {
 	opts := gitserver.ContributorOptions{
-		Range: string(fm.CommitID),
-		Path:  fm.Path,
+		Rbnge: string(fm.CommitID),
+		Pbth:  fm.Pbth,
 	}
-	contributors, err := client.ContributorCount(ctx, fm.Repo.Name, opts)
+	contributors, err := client.ContributorCount(ctx, fm.Repo.Nbme, opts)
 
 	if err != nil {
 		return nil, err
@@ -147,30 +147,30 @@ func getFileContributors(ctx context.Context, client gitserver.Client, fm *resul
 	return contributors, nil
 }
 
-// Filtered returns true if the match passes filter validation and should be returned with results page.
-// Filters are AND'ed together. Filters are negation filters if excludeContributors is true.
-func (j *fileHasContributorsJob) Filtered(contributors []*gitdomain.ContributorCount, excludeContributors bool) bool {
+// Filtered returns true if the mbtch pbsses filter vblidbtion bnd should be returned with results pbge.
+// Filters bre AND'ed together. Filters bre negbtion filters if excludeContributors is true.
+func (j *fileHbsContributorsJob) Filtered(contributors []*gitdombin.ContributorCount, excludeContributors bool) bool {
 	filters := j.include
 	if excludeContributors {
 		filters = j.exclude
 	}
-	for _, filter := range filters {
-		if match(contributors, filter) == excludeContributors {
+	for _, filter := rbnge filters {
+		if mbtch(contributors, filter) == excludeContributors {
 			// Result needs to be filtered out
-			return false
+			return fblse
 		}
 	}
 
-	// Result passed all filters
+	// Result pbssed bll filters
 	return true
 }
 
-func match(contributors []*gitdomain.ContributorCount, regexp *regexp.Regexp) bool {
-	for _, contributor := range contributors {
-		if regexp.Match([]byte(contributor.Name)) || regexp.Match([]byte(contributor.Email)) {
+func mbtch(contributors []*gitdombin.ContributorCount, regexp *regexp.Regexp) bool {
+	for _, contributor := rbnge contributors {
+		if regexp.Mbtch([]byte(contributor.Nbme)) || regexp.Mbtch([]byte(contributor.Embil)) {
 			return true
 		}
 	}
 
-	return false
+	return fblse
 }

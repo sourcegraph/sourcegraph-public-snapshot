@@ -1,18 +1,18 @@
-package graphqlbackend
+pbckbge grbphqlbbckend
 
 import (
-	"github.com/graph-gophers/graphql-go"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/grbph-gophers/grbphql-go"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
 )
 
 type codeHostResolver struct {
 	ch *types.CodeHost
-	db database.DB
+	db dbtbbbse.DB
 }
 
-func (r *codeHostResolver) ID() graphql.ID {
-	return MarshalCodeHostID(r.ch.ID)
+func (r *codeHostResolver) ID() grbphql.ID {
+	return MbrshblCodeHostID(r.ch.ID)
 }
 
 func (r *codeHostResolver) Kind() string {
@@ -23,45 +23,45 @@ func (r *codeHostResolver) URL() string {
 	return r.ch.URL
 }
 
-func (r *codeHostResolver) APIRateLimitQuota() *int32 {
-	return r.ch.APIRateLimitQuota
+func (r *codeHostResolver) APIRbteLimitQuotb() *int32 {
+	return r.ch.APIRbteLimitQuotb
 }
 
-func (r *codeHostResolver) APIRateLimitIntervalSeconds() *int32 {
-	return r.ch.APIRateLimitIntervalSeconds
+func (r *codeHostResolver) APIRbteLimitIntervblSeconds() *int32 {
+	return r.ch.APIRbteLimitIntervblSeconds
 }
 
-func (r *codeHostResolver) GitRateLimitQuota() *int32 {
-	return r.ch.GitRateLimitQuota
+func (r *codeHostResolver) GitRbteLimitQuotb() *int32 {
+	return r.ch.GitRbteLimitQuotb
 }
 
-func (r *codeHostResolver) GitRateLimitIntervalSeconds() *int32 {
-	return r.ch.GitRateLimitIntervalSeconds
+func (r *codeHostResolver) GitRbteLimitIntervblSeconds() *int32 {
+	return r.ch.GitRbteLimitIntervblSeconds
 }
 
-type CodeHostExternalServicesArgs struct {
+type CodeHostExternblServicesArgs struct {
 	First int32
 	After *string
 }
 
-func (r *codeHostResolver) ExternalServices(args *CodeHostExternalServicesArgs) (*externalServiceConnectionResolver, error) {
-	// 🚨 SECURITY: This may only be returned to site-admins, but code host is
-	// only accessible to admins anyways.
+func (r *codeHostResolver) ExternblServices(brgs *CodeHostExternblServicesArgs) (*externblServiceConnectionResolver, error) {
+	// 🚨 SECURITY: This mby only be returned to site-bdmins, but code host is
+	// only bccessible to bdmins bnywbys.
 
-	var afterID int64
-	if args.After != nil {
-		var err error
-		afterID, err = UnmarshalExternalServiceID(graphql.ID(*args.After))
+	vbr bfterID int64
+	if brgs.After != nil {
+		vbr err error
+		bfterID, err = UnmbrshblExternblServiceID(grbphql.ID(*brgs.After))
 		if err != nil {
 			return nil, err
 		}
 	}
 
-	opt := database.ExternalServicesListOptions{
+	opt := dbtbbbse.ExternblServicesListOptions{
 		// Only return services of this code host.
 		CodeHostID:  r.ch.ID,
-		AfterID:     afterID,
-		LimitOffset: &database.LimitOffset{Limit: int(args.First)},
+		AfterID:     bfterID,
+		LimitOffset: &dbtbbbse.LimitOffset{Limit: int(brgs.First)},
 	}
-	return &externalServiceConnectionResolver{db: r.db, opt: opt}, nil
+	return &externblServiceConnectionResolver{db: r.db, opt: opt}, nil
 }

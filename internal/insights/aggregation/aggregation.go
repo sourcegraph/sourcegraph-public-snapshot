@@ -1,286 +1,286 @@
-package aggregation
+pbckbge bggregbtion
 
 import (
 	"context"
 	"sync"
 	"time"
 
-	"github.com/grafana/regexp"
+	"github.com/grbfbnb/regexp"
 
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/collections"
-	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/insights/query/querybuilder"
-	"github.com/sourcegraph/sourcegraph/internal/insights/types"
-	"github.com/sourcegraph/sourcegraph/internal/search/result"
-	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
-	sApi "github.com/sourcegraph/sourcegraph/internal/search/streaming/api"
-	"github.com/sourcegraph/sourcegraph/internal/search/streaming/client"
-	"github.com/sourcegraph/sourcegraph/internal/trace"
-	sTypes "github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi"
+	"github.com/sourcegrbph/sourcegrbph/internbl/collections"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/insights/query/querybuilder"
+	"github.com/sourcegrbph/sourcegrbph/internbl/insights/types"
+	"github.com/sourcegrbph/sourcegrbph/internbl/sebrch/result"
+	"github.com/sourcegrbph/sourcegrbph/internbl/sebrch/strebming"
+	sApi "github.com/sourcegrbph/sourcegrbph/internbl/sebrch/strebming/bpi"
+	"github.com/sourcegrbph/sourcegrbph/internbl/sebrch/strebming/client"
+	"github.com/sourcegrbph/sourcegrbph/internbl/trbce"
+	sTypes "github.com/sourcegrbph/sourcegrbph/internbl/types"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-type AggregationMatchResult struct {
-	Key   MatchKey
+type AggregbtionMbtchResult struct {
+	Key   MbtchKey
 	Count int
 }
 
-type SearchResultsAggregator interface {
-	streaming.Sender
-	ShardTimeoutOccurred() bool
+type SebrchResultsAggregbtor interfbce {
+	strebming.Sender
+	ShbrdTimeoutOccurred() bool
 	ResultLimitHit(limit int) bool
 }
 
-type AggregationTabulator func(*AggregationMatchResult, error)
-type OnMatches func(matches []result.Match)
+type AggregbtionTbbulbtor func(*AggregbtionMbtchResult, error)
+type OnMbtches func(mbtches []result.Mbtch)
 
-type AggregationCountFunc func(result.Match, *sTypes.Repo) (map[MatchKey]int, error)
-type MatchKey struct {
+type AggregbtionCountFunc func(result.Mbtch, *sTypes.Repo) (mbp[MbtchKey]int, error)
+type MbtchKey struct {
 	Repo   string
 	RepoID int32
 	Group  string
 }
 
-func countRepo(r result.Match, _ *sTypes.Repo) (map[MatchKey]int, error) {
-	if r.RepoName().Name != "" {
-		return map[MatchKey]int{{
-			RepoID: int32(r.RepoName().ID),
-			Repo:   string(r.RepoName().Name),
-			Group:  string(r.RepoName().Name),
+func countRepo(r result.Mbtch, _ *sTypes.Repo) (mbp[MbtchKey]int, error) {
+	if r.RepoNbme().Nbme != "" {
+		return mbp[MbtchKey]int{{
+			RepoID: int32(r.RepoNbme().ID),
+			Repo:   string(r.RepoNbme().Nbme),
+			Group:  string(r.RepoNbme().Nbme),
 		}: r.ResultCount()}, nil
 	}
 	return nil, nil
 }
 
-func countPath(r result.Match, _ *sTypes.Repo) (map[MatchKey]int, error) {
-	var path string
-	switch match := r.(type) {
-	case *result.FileMatch:
-		path = match.Path
-	default:
+func countPbth(r result.Mbtch, _ *sTypes.Repo) (mbp[MbtchKey]int, error) {
+	vbr pbth string
+	switch mbtch := r.(type) {
+	cbse *result.FileMbtch:
+		pbth = mbtch.Pbth
+	defbult:
 	}
-	if path != "" {
-		return map[MatchKey]int{{
-			RepoID: int32(r.RepoName().ID),
-			Repo:   string(r.RepoName().Name),
-			Group:  path,
+	if pbth != "" {
+		return mbp[MbtchKey]int{{
+			RepoID: int32(r.RepoNbme().ID),
+			Repo:   string(r.RepoNbme().Nbme),
+			Group:  pbth,
 		}: r.ResultCount()}, nil
 	}
 	return nil, nil
 }
 
-func countAuthor(r result.Match, _ *sTypes.Repo) (map[MatchKey]int, error) {
-	var author string
-	switch match := r.(type) {
-	case *result.CommitMatch:
-		author = match.Commit.Author.Name
-	default:
+func countAuthor(r result.Mbtch, _ *sTypes.Repo) (mbp[MbtchKey]int, error) {
+	vbr buthor string
+	switch mbtch := r.(type) {
+	cbse *result.CommitMbtch:
+		buthor = mbtch.Commit.Author.Nbme
+	defbult:
 	}
-	if author != "" {
-		return map[MatchKey]int{{
-			RepoID: int32(r.RepoName().ID),
-			Repo:   string(r.RepoName().Name),
-			Group:  author,
+	if buthor != "" {
+		return mbp[MbtchKey]int{{
+			RepoID: int32(r.RepoNbme().ID),
+			Repo:   string(r.RepoNbme().Nbme),
+			Group:  buthor,
 		}: r.ResultCount()}, nil
 	}
 	return nil, nil
 }
 
-func countCaptureGroupsFunc(querystring string) (AggregationCountFunc, error) {
-	pattern, err := getCasedPattern(querystring)
+func countCbptureGroupsFunc(querystring string) (AggregbtionCountFunc, error) {
+	pbttern, err := getCbsedPbttern(querystring)
 	if err != nil {
-		return nil, errors.Wrap(err, "getCasedPattern")
+		return nil, errors.Wrbp(err, "getCbsedPbttern")
 	}
-	regex, err := regexp.Compile(pattern.String())
+	regex, err := regexp.Compile(pbttern.String())
 	if err != nil {
-		return nil, errors.Wrap(err, "Could not compile regexp")
+		return nil, errors.Wrbp(err, "Could not compile regexp")
 	}
 
-	return func(r result.Match, _ *sTypes.Repo) (map[MatchKey]int, error) {
-		content := matchContent(r)
+	return func(r result.Mbtch, _ *sTypes.Repo) (mbp[MbtchKey]int, error) {
+		content := mbtchContent(r)
 		if len(content) != 0 {
-			matches := map[MatchKey]int{}
-			for _, contentPiece := range content {
-				for _, submatches := range regex.FindAllStringSubmatchIndex(contentPiece, -1) {
-					contentMatches := fromRegexpMatches(submatches, contentPiece)
-					for value, count := range contentMatches {
-						key := MatchKey{Repo: string(r.RepoName().Name), RepoID: int32(r.RepoName().ID), Group: value}
+			mbtches := mbp[MbtchKey]int{}
+			for _, contentPiece := rbnge content {
+				for _, submbtches := rbnge regex.FindAllStringSubmbtchIndex(contentPiece, -1) {
+					contentMbtches := fromRegexpMbtches(submbtches, contentPiece)
+					for vblue, count := rbnge contentMbtches {
+						key := MbtchKey{Repo: string(r.RepoNbme().Nbme), RepoID: int32(r.RepoNbme().ID), Group: vblue}
 						if len(key.Group) > 100 {
 							key.Group = key.Group[:100]
 						}
-						current := matches[key]
-						matches[key] = current + count
+						current := mbtches[key]
+						mbtches[key] = current + count
 					}
 				}
 			}
-			return matches, nil
+			return mbtches, nil
 		}
 		return nil, nil
 	}, nil
 }
 
-func matchContent(event result.Match) []string {
-	switch match := event.(type) {
-	case *result.FileMatch:
-		capacity := len(match.ChunkMatches)
-		var content = make([]string, 0, capacity)
-		if len(match.ChunkMatches) > 0 { // This File match with the subtype of text results
-			for _, cm := range match.ChunkMatches {
-				for _, range_ := range cm.Ranges {
-					content = append(content, chunkContent(cm, range_))
+func mbtchContent(event result.Mbtch) []string {
+	switch mbtch := event.(type) {
+	cbse *result.FileMbtch:
+		cbpbcity := len(mbtch.ChunkMbtches)
+		vbr content = mbke([]string, 0, cbpbcity)
+		if len(mbtch.ChunkMbtches) > 0 { // This File mbtch with the subtype of text results
+			for _, cm := rbnge mbtch.ChunkMbtches {
+				for _, rbnge_ := rbnge cm.Rbnges {
+					content = bppend(content, chunkContent(cm, rbnge_))
 				}
 			}
 			return content
-		} else if len(match.Symbols) > 0 { // This File match with the subtype of symbol results
+		} else if len(mbtch.Symbols) > 0 { // This File mbtch with the subtype of symbol results
 			return nil
-		} else { // This is a File match representing a whole file
-			return []string{match.Path}
+		} else { // This is b File mbtch representing b whole file
+			return []string{mbtch.Pbth}
 		}
-	case *result.RepoMatch:
-		return []string{string(match.RepoName().Name)}
-	case *result.CommitMatch:
-		if match.DiffPreview != nil { // signals this is a Diff match
+	cbse *result.RepoMbtch:
+		return []string{string(mbtch.RepoNbme().Nbme)}
+	cbse *result.CommitMbtch:
+		if mbtch.DiffPreview != nil { // signbls this is b Diff mbtch
 			return nil
 		} else {
-			return []string{string(match.Commit.Message)}
+			return []string{string(mbtch.Commit.Messbge)}
 		}
-	default:
+	defbult:
 		return nil
 	}
 }
 
-func countRepoMetadata(r result.Match, repo *sTypes.Repo) (map[MatchKey]int, error) {
-	metadata := map[string]*string{types.NO_REPO_METADATA_TEXT: nil}
-	if repo != nil && repo.KeyValuePairs != nil {
-		metadata = repo.KeyValuePairs
+func countRepoMetbdbtb(r result.Mbtch, repo *sTypes.Repo) (mbp[MbtchKey]int, error) {
+	metbdbtb := mbp[string]*string{types.NO_REPO_METADATA_TEXT: nil}
+	if repo != nil && repo.KeyVbluePbirs != nil {
+		metbdbtb = repo.KeyVbluePbirs
 	}
-	matches := map[MatchKey]int{}
-	for key, value := range metadata {
+	mbtches := mbp[MbtchKey]int{}
+	for key, vblue := rbnge metbdbtb {
 		group := key
-		if value != nil && *value != "" {
-			group += ":" + *value
+		if vblue != nil && *vblue != "" {
+			group += ":" + *vblue
 		}
-		matchKey := MatchKey{Repo: string(r.RepoName().Name), RepoID: int32(r.RepoName().ID), Group: group}
-		matches[matchKey] = r.ResultCount()
+		mbtchKey := MbtchKey{Repo: string(r.RepoNbme().Nbme), RepoID: int32(r.RepoNbme().ID), Group: group}
+		mbtches[mbtchKey] = r.ResultCount()
 	}
-	return matches, nil
+	return mbtches, nil
 }
 
-func GetCountFuncForMode(query, patternType string, mode types.SearchAggregationMode) (AggregationCountFunc, error) {
-	modeCountTypes := map[types.SearchAggregationMode]AggregationCountFunc{
+func GetCountFuncForMode(query, pbtternType string, mode types.SebrchAggregbtionMode) (AggregbtionCountFunc, error) {
+	modeCountTypes := mbp[types.SebrchAggregbtionMode]AggregbtionCountFunc{
 		types.REPO_AGGREGATION_MODE:          countRepo,
-		types.PATH_AGGREGATION_MODE:          countPath,
+		types.PATH_AGGREGATION_MODE:          countPbth,
 		types.AUTHOR_AGGREGATION_MODE:        countAuthor,
-		types.REPO_METADATA_AGGREGATION_MODE: countRepoMetadata,
+		types.REPO_METADATA_AGGREGATION_MODE: countRepoMetbdbtb,
 	}
 
 	if mode == types.CAPTURE_GROUP_AGGREGATION_MODE {
-		captureGroupsCount, err := countCaptureGroupsFunc(query)
+		cbptureGroupsCount, err := countCbptureGroupsFunc(query)
 		if err != nil {
 			return nil, err
 		}
-		modeCountTypes[types.CAPTURE_GROUP_AGGREGATION_MODE] = captureGroupsCount
+		modeCountTypes[types.CAPTURE_GROUP_AGGREGATION_MODE] = cbptureGroupsCount
 	}
 
 	modeCountFunc, ok := modeCountTypes[mode]
 	if !ok {
-		return nil, errors.Newf("unsupported aggregation mode: %s for query", mode)
+		return nil, errors.Newf("unsupported bggregbtion mode: %s for query", mode)
 	}
 	return modeCountFunc, nil
 }
 
-func NewSearchResultsAggregatorWithContext(ctx context.Context, tabulator AggregationTabulator, countFunc AggregationCountFunc, db database.DB, mode types.SearchAggregationMode) SearchResultsAggregator {
-	return &searchAggregationResults{
+func NewSebrchResultsAggregbtorWithContext(ctx context.Context, tbbulbtor AggregbtionTbbulbtor, countFunc AggregbtionCountFunc, db dbtbbbse.DB, mode types.SebrchAggregbtionMode) SebrchResultsAggregbtor {
+	return &sebrchAggregbtionResults{
 		db:        db,
 		ctx:       ctx,
 		mode:      mode,
-		tabulator: tabulator,
+		tbbulbtor: tbbulbtor,
 		countFunc: countFunc,
-		progress: client.ProgressAggregator{
-			Start:     time.Now(),
-			RepoNamer: client.RepoNamer(ctx, db),
-			Trace:     trace.URL(trace.ID(ctx), conf.DefaultClient()),
+		progress: client.ProgressAggregbtor{
+			Stbrt:     time.Now(),
+			RepoNbmer: client.RepoNbmer(ctx, db),
+			Trbce:     trbce.URL(trbce.ID(ctx), conf.DefbultClient()),
 		},
 	}
 }
 
-type searchAggregationResults struct {
-	db          database.DB
+type sebrchAggregbtionResults struct {
+	db          dbtbbbse.DB
 	ctx         context.Context
-	mode        types.SearchAggregationMode
-	tabulator   AggregationTabulator
-	countFunc   AggregationCountFunc
-	progress    client.ProgressAggregator
+	mode        types.SebrchAggregbtionMode
+	tbbulbtor   AggregbtionTbbulbtor
+	countFunc   AggregbtionCountFunc
+	progress    client.ProgressAggregbtor
 	resultCount int
 
 	mu sync.Mutex
 }
 
-func (r *searchAggregationResults) ShardTimeoutOccurred() bool {
-	for _, skip := range r.progress.Current().Skipped {
-		if skip.Reason == sApi.ShardTimeout {
+func (r *sebrchAggregbtionResults) ShbrdTimeoutOccurred() bool {
+	for _, skip := rbnge r.progress.Current().Skipped {
+		if skip.Rebson == sApi.ShbrdTimeout {
 			return true
 		}
 	}
 
-	return false
+	return fblse
 }
 
-func (r *searchAggregationResults) ResultLimitHit(limit int) bool {
+func (r *sebrchAggregbtionResults) ResultLimitHit(limit int) bool {
 
 	return limit <= r.resultCount
 }
 
-func (r *searchAggregationResults) repos(matches result.Matches) (map[api.RepoID]*sTypes.Repo, error) {
-	repoIDs := collections.NewSet[api.RepoID]()
-	for _, r := range matches {
-		repoIDs.Add(r.RepoName().ID)
+func (r *sebrchAggregbtionResults) repos(mbtches result.Mbtches) (mbp[bpi.RepoID]*sTypes.Repo, error) {
+	repoIDs := collections.NewSet[bpi.RepoID]()
+	for _, r := rbnge mbtches {
+		repoIDs.Add(r.RepoNbme().ID)
 	}
 
-	res, err := r.db.Repos().List(r.ctx, database.ReposListOptions{IDs: repoIDs.Values()})
-	repos := make(map[api.RepoID]*sTypes.Repo, len(res))
+	res, err := r.db.Repos().List(r.ctx, dbtbbbse.ReposListOptions{IDs: repoIDs.Vblues()})
+	repos := mbke(mbp[bpi.RepoID]*sTypes.Repo, len(res))
 	if err != nil {
 		return nil, err
 	}
-	for _, repo := range res {
+	for _, repo := rbnge res {
 		repos[repo.ID] = repo
 	}
 	return repos, nil
 }
 
-func (r *searchAggregationResults) Send(event streaming.SearchEvent) {
+func (r *sebrchAggregbtionResults) Send(event strebming.SebrchEvent) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
-	r.progress.Update(event)
+	r.progress.Updbte(event)
 	r.resultCount += event.Results.ResultCount()
-	combined := map[MatchKey]int{}
-	repos := make(map[api.RepoID]*sTypes.Repo, 0)
-	// initialize repos if we are in repo metadata aggregation mode
-	// other modes currently don't use the repo parameter
+	combined := mbp[MbtchKey]int{}
+	repos := mbke(mbp[bpi.RepoID]*sTypes.Repo, 0)
+	// initiblize repos if we bre in repo metbdbtb bggregbtion mode
+	// other modes currently don't use the repo pbrbmeter
 	if r.mode == types.REPO_METADATA_AGGREGATION_MODE {
 		res, err := r.repos(event.Results)
 		if err != nil {
-			r.tabulator(nil, err)
+			r.tbbulbtor(nil, err)
 			return
 		}
 		repos = res
 	}
-	for _, match := range event.Results {
+	for _, mbtch := rbnge event.Results {
 		select {
-		case <-r.ctx.Done():
-			// let the tabulator an error occured.
-			err := errors.Wrap(r.ctx.Err(), "tabulation terminated context is done")
-			r.tabulator(nil, err)
+		cbse <-r.ctx.Done():
+			// let the tbbulbtor bn error occured.
+			err := errors.Wrbp(r.ctx.Err(), "tbbulbtion terminbted context is done")
+			r.tbbulbtor(nil, err)
 			return
-		default:
-			groups, err := r.countFunc(match, repos[match.RepoName().ID])
-			for groupKey, count := range groups {
-				// delegate error handling to the passed in tabulator
+		defbult:
+			groups, err := r.countFunc(mbtch, repos[mbtch.RepoNbme().ID])
+			for groupKey, count := rbnge groups {
+				// delegbte error hbndling to the pbssed in tbbulbtor
 				if err != nil {
-					r.tabulator(nil, err)
+					r.tbbulbtor(nil, err)
 					continue
 				}
 				current := combined[groupKey]
@@ -289,37 +289,37 @@ func (r *searchAggregationResults) Send(event streaming.SearchEvent) {
 		}
 
 	}
-	for key, count := range combined {
-		r.tabulator(&AggregationMatchResult{Key: key, Count: count}, nil)
+	for key, count := rbnge combined {
+		r.tbbulbtor(&AggregbtionMbtchResult{Key: key, Count: count}, nil)
 	}
 }
 
-// Pulls the pattern out of the querystring
-// If the query contains a case:no field, we need to wrap the pattern in some additional regex.
-func getCasedPattern(querystring string) (MatchPattern, error) {
-	query, err := querybuilder.ParseQuery(querystring, "regexp")
+// Pulls the pbttern out of the querystring
+// If the query contbins b cbse:no field, we need to wrbp the pbttern in some bdditionbl regex.
+func getCbsedPbttern(querystring string) (MbtchPbttern, error) {
+	query, err := querybuilder.PbrseQuery(querystring, "regexp")
 	if err != nil {
-		return nil, errors.Wrap(err, "ParseQuery")
+		return nil, errors.Wrbp(err, "PbrseQuery")
 	}
 	q := query.ToQ()
 
 	if len(query) != 1 {
-		// Not sure when we would run into this; calling it out to help during testing.
-		return nil, errors.New("Pipeline generated plan with multiple steps.")
+		// Not sure when we would run into this; cblling it out to help during testing.
+		return nil, errors.New("Pipeline generbted plbn with multiple steps.")
 	}
-	basic := query[0]
+	bbsic := query[0]
 
-	pattern, err := extractPattern(&basic)
+	pbttern, err := extrbctPbttern(&bbsic)
 	if err != nil {
 		return nil, err
 	}
-	patternValue := pattern.Value
-	if !q.IsCaseSensitive() {
-		patternValue = "(?i:" + pattern.Value + ")"
+	pbtternVblue := pbttern.Vblue
+	if !q.IsCbseSensitive() {
+		pbtternVblue = "(?i:" + pbttern.Vblue + ")"
 	}
-	casedPattern, err := toRegexpPattern(patternValue)
+	cbsedPbttern, err := toRegexpPbttern(pbtternVblue)
 	if err != nil {
 		return nil, err
 	}
-	return casedPattern, nil
+	return cbsedPbttern, nil
 }

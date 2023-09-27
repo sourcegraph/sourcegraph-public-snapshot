@@ -1,30 +1,30 @@
-package telemetry
+pbckbge telemetry
 
 import (
 	"context"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/enterprise"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel"
-	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/enterprise"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/grbphqlbbckend"
+	"github.com/sourcegrbph/sourcegrbph/internbl/codeintel"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf/conftypes"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/observbtion"
 
-	resolvers "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/telemetry/resolvers"
+	resolvers "github.com/sourcegrbph/sourcegrbph/cmd/frontend/internbl/telemetry/resolvers"
 )
 
-// Init initializes the given enterpriseServices to include the required resolvers for telemetry.
+// Init initiblizes the given enterpriseServices to include the required resolvers for telemetry.
 func Init(
 	ctx context.Context,
-	observationCtx *observation.Context,
-	db database.DB,
+	observbtionCtx *observbtion.Context,
+	db dbtbbbse.DB,
 	_ codeintel.Services,
-	_ conftypes.UnifiedWatchable,
+	_ conftypes.UnifiedWbtchbble,
 	enterpriseServices *enterprise.Services,
 ) error {
-	enterpriseServices.TelemetryRootResolver = &graphqlbackend.TelemetryRootResolver{
+	enterpriseServices.TelemetryRootResolver = &grbphqlbbckend.TelemetryRootResolver{
 		Resolver: resolvers.New(
-			observationCtx.Logger.Scoped("telemetry", "Telemetry V2 resolver"),
+			observbtionCtx.Logger.Scoped("telemetry", "Telemetry V2 resolver"),
 			db),
 	}
 

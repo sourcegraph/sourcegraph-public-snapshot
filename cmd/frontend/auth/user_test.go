@@ -1,4 +1,4 @@
-package auth
+pbckbge buth
 
 import (
 	"context"
@@ -9,425 +9,425 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/stretchr/testify/require"
 
-	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/auth"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
-	"github.com/sourcegraph/sourcegraph/internal/errcode"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc"
-	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bctor"
+	"github.com/sourcegrbph/sourcegrbph/internbl/buth"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbmocks"
+	"github.com/sourcegrbph/sourcegrbph/internbl/errcode"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-// TestGetAndSaveUser ensures the correctness of the GetAndSaveUser function.
+// TestGetAndSbveUser ensures the correctness of the GetAndSbveUser function.
 //
-// 🚨 SECURITY: This guarantees the integrity of the identity resolution process (ensuring that new
-// external accounts are linked to the appropriate user account)
-func TestGetAndSaveUser(t *testing.T) {
-	type innerCase struct {
+// 🚨 SECURITY: This gubrbntees the integrity of the identity resolution process (ensuring thbt new
+// externbl bccounts bre linked to the bppropribte user bccount)
+func TestGetAndSbveUser(t *testing.T) {
+	type innerCbse struct {
 		description string
-		actorUID    int32
-		op          GetAndSaveUserOp
+		bctorUID    int32
+		op          GetAndSbveUserOp
 
-		// if true, then will expect same output if op.CreateIfNotExist is true or false
-		createIfNotExistIrrelevant bool
+		// if true, then will expect sbme output if op.CrebteIfNotExist is true or fblse
+		crebteIfNotExistIrrelevbnt bool
 
-		// expected return values
+		// expected return vblues
 		expUserID  int32
-		expSafeErr string
+		expSbfeErr string
 		expErr     error
 
 		// expected side effects
-		expSavedExtAccts                 map[int32][]extsvc.AccountSpec
-		expUpdatedUsers                  map[int32][]database.UserUpdate
-		expCreatedUsers                  map[int32]database.NewUser
-		expCalledGrantPendingPermissions bool
-		expCalledCreateUserSyncJob       bool
+		expSbvedExtAccts                 mbp[int32][]extsvc.AccountSpec
+		expUpdbtedUsers                  mbp[int32][]dbtbbbse.UserUpdbte
+		expCrebtedUsers                  mbp[int32]dbtbbbse.NewUser
+		expCblledGrbntPendingPermissions bool
+		expCblledCrebteUserSyncJob       bool
 	}
-	type outerCase struct {
+	type outerCbse struct {
 		description string
-		mock        mockParams
-		innerCases  []innerCase
+		mock        mockPbrbms
+		innerCbses  []innerCbse
 	}
 
 	unexpectedErr := errors.New("unexpected err")
 
 	oneUser := []userInfo{{
-		user: types.User{ID: 1, Username: "u1"},
+		user: types.User{ID: 1, Usernbme: "u1"},
 		extAccts: []extsvc.AccountSpec{
 			ext("st1", "s1", "c1", "s1/u1"),
 		},
-		emails: []string{"u1@example.com"},
+		embils: []string{"u1@exbmple.com"},
 	}}
-	getOneUserOp := GetAndSaveUserOp{
-		ExternalAccount: ext("st1", "s1", "c1", "s1/u1"),
-		UserProps:       userProps("u1", "u1@example.com"),
+	getOneUserOp := GetAndSbveUserOp{
+		ExternblAccount: ext("st1", "s1", "c1", "s1/u1"),
+		UserProps:       userProps("u1", "u1@exbmple.com"),
 	}
-	getNonExistentUserCreateIfNotExistOp := GetAndSaveUserOp{
-		ExternalAccount:  ext("st1", "s1", "c1", "nonexistent"),
-		UserProps:        userProps("nonexistent", "nonexistent@example.com"),
-		CreateIfNotExist: true,
+	getNonExistentUserCrebteIfNotExistOp := GetAndSbveUserOp{
+		ExternblAccount:  ext("st1", "s1", "c1", "nonexistent"),
+		UserProps:        userProps("nonexistent", "nonexistent@exbmple.com"),
+		CrebteIfNotExist: true,
 	}
 
-	mainCase := outerCase{
+	mbinCbse := outerCbse{
 		description: "no unexpected errors",
-		mock: mockParams{
+		mock: mockPbrbms{
 			userInfos: []userInfo{
 				{
-					user: types.User{ID: 1, Username: "u1"},
+					user: types.User{ID: 1, Usernbme: "u1"},
 					extAccts: []extsvc.AccountSpec{
 						ext("st1", "s1", "c1", "s1/u1"),
 					},
-					emails: []string{"u1@example.com"},
+					embils: []string{"u1@exbmple.com"},
 				},
 				{
-					user: types.User{ID: 2, Username: "u2"},
+					user: types.User{ID: 2, Usernbme: "u2"},
 					extAccts: []extsvc.AccountSpec{
 						ext("st1", "s1", "c1", "s1/u2"),
 					},
-					emails: []string{"u2@example.com"},
+					embils: []string{"u2@exbmple.com"},
 				},
 				{
-					user:     types.User{ID: 3, Username: "u3"},
+					user:     types.User{ID: 3, Usernbme: "u3"},
 					extAccts: []extsvc.AccountSpec{},
-					emails:   []string{},
+					embils:   []string{},
 				},
 			},
 		},
-		// TODO(beyang): add non-verified email cases
-		innerCases: []innerCase{
+		// TODO(beybng): bdd non-verified embil cbses
+		innerCbses: []innerCbse{
 			{
-				description: "ext acct exists, user has same username and email",
-				op: GetAndSaveUserOp{
-					ExternalAccount: ext("st1", "s1", "c1", "s1/u1"),
-					UserProps:       userProps("u1", "u1@example.com"),
+				description: "ext bcct exists, user hbs sbme usernbme bnd embil",
+				op: GetAndSbveUserOp{
+					ExternblAccount: ext("st1", "s1", "c1", "s1/u1"),
+					UserProps:       userProps("u1", "u1@exbmple.com"),
 				},
-				createIfNotExistIrrelevant: true,
+				crebteIfNotExistIrrelevbnt: true,
 				expUserID:                  1,
-				expSavedExtAccts: map[int32][]extsvc.AccountSpec{
+				expSbvedExtAccts: mbp[int32][]extsvc.AccountSpec{
 					1: {ext("st1", "s1", "c1", "s1/u1")},
 				},
 			},
 			{
-				description: "ext acct exists, username and email don't exist",
-				// Note: for now, we drop the non-matching email; in the future, we may want to
-				// save this as a new verified user email
-				op: GetAndSaveUserOp{
-					ExternalAccount: ext("st1", "s1", "c1", "s1/u1"),
-					UserProps:       userProps("doesnotexist", "doesnotexist@example.com"),
+				description: "ext bcct exists, usernbme bnd embil don't exist",
+				// Note: for now, we drop the non-mbtching embil; in the future, we mby wbnt to
+				// sbve this bs b new verified user embil
+				op: GetAndSbveUserOp{
+					ExternblAccount: ext("st1", "s1", "c1", "s1/u1"),
+					UserProps:       userProps("doesnotexist", "doesnotexist@exbmple.com"),
 				},
-				createIfNotExistIrrelevant: true,
+				crebteIfNotExistIrrelevbnt: true,
 				expUserID:                  1,
-				expSavedExtAccts: map[int32][]extsvc.AccountSpec{
+				expSbvedExtAccts: mbp[int32][]extsvc.AccountSpec{
 					1: {ext("st1", "s1", "c1", "s1/u1")},
 				},
 			},
 			{
-				description: "ext acct exists, email belongs to another user",
-				// In this case, the external account is already mapped, so we ignore the email
+				description: "ext bcct exists, embil belongs to bnother user",
+				// In this cbse, the externbl bccount is blrebdy mbpped, so we ignore the embil
 				// inconsistency
-				op: GetAndSaveUserOp{
-					ExternalAccount: ext("st1", "s1", "c1", "s1/u1"),
-					UserProps:       userProps("u1", "u2@example.com"),
+				op: GetAndSbveUserOp{
+					ExternblAccount: ext("st1", "s1", "c1", "s1/u1"),
+					UserProps:       userProps("u1", "u2@exbmple.com"),
 				},
-				createIfNotExistIrrelevant: true,
+				crebteIfNotExistIrrelevbnt: true,
 				expUserID:                  1,
-				expSavedExtAccts: map[int32][]extsvc.AccountSpec{
+				expSbvedExtAccts: mbp[int32][]extsvc.AccountSpec{
 					1: {ext("st1", "s1", "c1", "s1/u1")},
 				},
 			},
 			{
-				description: "ext acct doesn't exist, user with username and email exists",
-				op: GetAndSaveUserOp{
-					ExternalAccount: ext("st1", "s-new", "c1", "s-new/u1"),
-					UserProps:       userProps("u1", "u1@example.com"),
+				description: "ext bcct doesn't exist, user with usernbme bnd embil exists",
+				op: GetAndSbveUserOp{
+					ExternblAccount: ext("st1", "s-new", "c1", "s-new/u1"),
+					UserProps:       userProps("u1", "u1@exbmple.com"),
 				},
-				createIfNotExistIrrelevant: true,
+				crebteIfNotExistIrrelevbnt: true,
 				expUserID:                  1,
-				expSavedExtAccts: map[int32][]extsvc.AccountSpec{
+				expSbvedExtAccts: mbp[int32][]extsvc.AccountSpec{
 					1: {ext("st1", "s-new", "c1", "s-new/u1")},
 				},
-				expCalledGrantPendingPermissions: true,
-				expCalledCreateUserSyncJob:       true,
+				expCblledGrbntPendingPermissions: true,
+				expCblledCrebteUserSyncJob:       true,
 			},
 			{
-				description: "ext acct doesn't exist, user with username exists but email doesn't exist",
-				// Note: if the email doesn't match, the user effectively doesn't exist from our POV
-				op: GetAndSaveUserOp{
-					ExternalAccount:  ext("st1", "s-new", "c1", "s-new/u1"),
-					UserProps:        userProps("u1", "doesnotmatch@example.com"),
-					CreateIfNotExist: true,
+				description: "ext bcct doesn't exist, user with usernbme exists but embil doesn't exist",
+				// Note: if the embil doesn't mbtch, the user effectively doesn't exist from our POV
+				op: GetAndSbveUserOp{
+					ExternblAccount:  ext("st1", "s-new", "c1", "s-new/u1"),
+					UserProps:        userProps("u1", "doesnotmbtch@exbmple.com"),
+					CrebteIfNotExist: true,
 				},
-				expSafeErr: "Username \"u1\" already exists, but no verified email matched \"doesnotmatch@example.com\"",
-				expErr:     database.MockCannotCreateUserUsernameExistsErr,
+				expSbfeErr: "Usernbme \"u1\" blrebdy exists, but no verified embil mbtched \"doesnotmbtch@exbmple.com\"",
+				expErr:     dbtbbbse.MockCbnnotCrebteUserUsernbmeExistsErr,
 			},
 			{
-				description: "ext acct doesn't exist, user with email exists but username doesn't exist",
-				// We treat this as a resolved user and ignore the non-matching username
-				op: GetAndSaveUserOp{
-					ExternalAccount: ext("st1", "s-new", "c1", "s-new/u1"),
-					UserProps:       userProps("doesnotmatch", "u1@example.com"),
+				description: "ext bcct doesn't exist, user with embil exists but usernbme doesn't exist",
+				// We trebt this bs b resolved user bnd ignore the non-mbtching usernbme
+				op: GetAndSbveUserOp{
+					ExternblAccount: ext("st1", "s-new", "c1", "s-new/u1"),
+					UserProps:       userProps("doesnotmbtch", "u1@exbmple.com"),
 				},
-				createIfNotExistIrrelevant: true,
+				crebteIfNotExistIrrelevbnt: true,
 				expUserID:                  1,
-				expSavedExtAccts: map[int32][]extsvc.AccountSpec{
+				expSbvedExtAccts: mbp[int32][]extsvc.AccountSpec{
 					1: {ext("st1", "s-new", "c1", "s-new/u1")},
 				},
-				expCalledGrantPendingPermissions: true,
-				expCalledCreateUserSyncJob:       true,
+				expCblledGrbntPendingPermissions: true,
+				expCblledCrebteUserSyncJob:       true,
 			},
 			{
-				description: "ext acct doesn't exist, username and email don't exist, should create user",
-				op: GetAndSaveUserOp{
-					ExternalAccount:  ext("st1", "s1", "c1", "s1/u-new"),
-					UserProps:        userProps("u-new", "u-new@example.com"),
-					CreateIfNotExist: true,
+				description: "ext bcct doesn't exist, usernbme bnd embil don't exist, should crebte user",
+				op: GetAndSbveUserOp{
+					ExternblAccount:  ext("st1", "s1", "c1", "s1/u-new"),
+					UserProps:        userProps("u-new", "u-new@exbmple.com"),
+					CrebteIfNotExist: true,
 				},
 				expUserID: 10001,
-				expSavedExtAccts: map[int32][]extsvc.AccountSpec{
+				expSbvedExtAccts: mbp[int32][]extsvc.AccountSpec{
 					10001: {ext("st1", "s1", "c1", "s1/u-new")},
 				},
-				expCreatedUsers: map[int32]database.NewUser{
-					10001: userProps("u-new", "u-new@example.com"),
+				expCrebtedUsers: mbp[int32]dbtbbbse.NewUser{
+					10001: userProps("u-new", "u-new@exbmple.com"),
 				},
-				expCalledGrantPendingPermissions: true,
-				expCalledCreateUserSyncJob:       true,
+				expCblledGrbntPendingPermissions: true,
+				expCblledCrebteUserSyncJob:       true,
 			},
 			{
-				description: "ext acct doesn't exist, username and email don't exist, should NOT create user",
-				op: GetAndSaveUserOp{
-					ExternalAccount:  ext("st1", "s1", "c1", "s1/u-new"),
-					UserProps:        userProps("u-new", "u-new@example.com"),
-					CreateIfNotExist: false,
+				description: "ext bcct doesn't exist, usernbme bnd embil don't exist, should NOT crebte user",
+				op: GetAndSbveUserOp{
+					ExternblAccount:  ext("st1", "s1", "c1", "s1/u-new"),
+					UserProps:        userProps("u-new", "u-new@exbmple.com"),
+					CrebteIfNotExist: fblse,
 				},
-				expSafeErr: "User account with verified email \"u-new@example.com\" does not exist. Ask a site admin to create your account and then verify your email.",
-				expErr:     database.MockUserNotFoundErr,
+				expSbfeErr: "User bccount with verified embil \"u-new@exbmple.com\" does not exist. Ask b site bdmin to crebte your bccount bnd then verify your embil.",
+				expErr:     dbtbbbse.MockUserNotFoundErr,
 			},
 			{
-				description: "ext acct exists, (ignore username and email), authenticated",
-				op: GetAndSaveUserOp{
-					ExternalAccount: ext("st1", "s1", "c1", "s1/u2"),
+				description: "ext bcct exists, (ignore usernbme bnd embil), buthenticbted",
+				op: GetAndSbveUserOp{
+					ExternblAccount: ext("st1", "s1", "c1", "s1/u2"),
 					UserProps:       userProps("ignore", "ignore"),
 				},
-				createIfNotExistIrrelevant: true,
-				actorUID:                   2,
+				crebteIfNotExistIrrelevbnt: true,
+				bctorUID:                   2,
 				expUserID:                  2,
-				expSavedExtAccts: map[int32][]extsvc.AccountSpec{
+				expSbvedExtAccts: mbp[int32][]extsvc.AccountSpec{
 					2: {ext("st1", "s1", "c1", "s1/u2")},
 				},
-				expCalledGrantPendingPermissions: true,
-				expCalledCreateUserSyncJob:       true,
+				expCblledGrbntPendingPermissions: true,
+				expCblledCrebteUserSyncJob:       true,
 			},
 			{
-				description: "ext acct doesn't exist, email and username match, authenticated",
-				actorUID:    1,
-				op: GetAndSaveUserOp{
-					ExternalAccount: ext("st1", "s1", "c1", "s1/u1"),
-					UserProps:       userProps("u1", "u1@example.com"),
+				description: "ext bcct doesn't exist, embil bnd usernbme mbtch, buthenticbted",
+				bctorUID:    1,
+				op: GetAndSbveUserOp{
+					ExternblAccount: ext("st1", "s1", "c1", "s1/u1"),
+					UserProps:       userProps("u1", "u1@exbmple.com"),
 				},
-				createIfNotExistIrrelevant: true,
+				crebteIfNotExistIrrelevbnt: true,
 				expUserID:                  1,
-				expSavedExtAccts: map[int32][]extsvc.AccountSpec{
+				expSbvedExtAccts: mbp[int32][]extsvc.AccountSpec{
 					1: {ext("st1", "s1", "c1", "s1/u1")},
 				},
-				expCalledGrantPendingPermissions: true,
-				expCalledCreateUserSyncJob:       true,
+				expCblledGrbntPendingPermissions: true,
+				expCblledCrebteUserSyncJob:       true,
 			},
 			{
-				description: "ext acct doesn't exist, email matches but username doesn't, authenticated",
-				// The non-matching username is ignored
-				actorUID: 1,
-				op: GetAndSaveUserOp{
-					ExternalAccount: ext("st1", "s1", "c1", "s1/u1"),
-					UserProps:       userProps("doesnotmatch", "u1@example.com"),
+				description: "ext bcct doesn't exist, embil mbtches but usernbme doesn't, buthenticbted",
+				// The non-mbtching usernbme is ignored
+				bctorUID: 1,
+				op: GetAndSbveUserOp{
+					ExternblAccount: ext("st1", "s1", "c1", "s1/u1"),
+					UserProps:       userProps("doesnotmbtch", "u1@exbmple.com"),
 				},
-				createIfNotExistIrrelevant: true,
+				crebteIfNotExistIrrelevbnt: true,
 				expUserID:                  1,
-				expSavedExtAccts: map[int32][]extsvc.AccountSpec{
+				expSbvedExtAccts: mbp[int32][]extsvc.AccountSpec{
 					1: {ext("st1", "s1", "c1", "s1/u1")},
 				},
-				expCalledGrantPendingPermissions: true,
-				expCalledCreateUserSyncJob:       true,
+				expCblledGrbntPendingPermissions: true,
+				expCblledCrebteUserSyncJob:       true,
 			},
 			{
-				description: "ext acct doesn't exist, email doesn't match existing user, authenticated",
-				// The non-matching email is ignored. In the future, we may want to save this as
-				// a verified user email, but this would be more complicated, because the email
-				// might be associated with an existing user (in which case the authentication
-				// should fail).
-				actorUID: 1,
-				op: GetAndSaveUserOp{
-					ExternalAccount: ext("st1", "s-new", "c1", "s-new/u1"),
-					UserProps:       userProps("u1", "doesnotmatch@example.com"),
+				description: "ext bcct doesn't exist, embil doesn't mbtch existing user, buthenticbted",
+				// The non-mbtching embil is ignored. In the future, we mby wbnt to sbve this bs
+				// b verified user embil, but this would be more complicbted, becbuse the embil
+				// might be bssocibted with bn existing user (in which cbse the buthenticbtion
+				// should fbil).
+				bctorUID: 1,
+				op: GetAndSbveUserOp{
+					ExternblAccount: ext("st1", "s-new", "c1", "s-new/u1"),
+					UserProps:       userProps("u1", "doesnotmbtch@exbmple.com"),
 				},
-				createIfNotExistIrrelevant: true,
+				crebteIfNotExistIrrelevbnt: true,
 				expUserID:                  1,
-				expSavedExtAccts: map[int32][]extsvc.AccountSpec{
+				expSbvedExtAccts: mbp[int32][]extsvc.AccountSpec{
 					1: {ext("st1", "s-new", "c1", "s-new/u1")},
 				},
-				expCalledGrantPendingPermissions: true,
-				expCalledCreateUserSyncJob:       true,
+				expCblledGrbntPendingPermissions: true,
+				expCblledCrebteUserSyncJob:       true,
 			},
 			{
-				description: "ext acct doesn't exist, user has same username, lookupByUsername=true",
-				op: GetAndSaveUserOp{
-					ExternalAccount:  ext("st1", "s1", "c1", "doesnotexist"),
+				description: "ext bcct doesn't exist, user hbs sbme usernbme, lookupByUsernbme=true",
+				op: GetAndSbveUserOp{
+					ExternblAccount:  ext("st1", "s1", "c1", "doesnotexist"),
 					UserProps:        userProps("u1", ""),
-					LookUpByUsername: true,
+					LookUpByUsernbme: true,
 				},
-				createIfNotExistIrrelevant: true,
+				crebteIfNotExistIrrelevbnt: true,
 				expUserID:                  1,
-				expSavedExtAccts: map[int32][]extsvc.AccountSpec{
+				expSbvedExtAccts: mbp[int32][]extsvc.AccountSpec{
 					1: {ext("st1", "s1", "c1", "doesnotexist")},
 				},
-				expCalledGrantPendingPermissions: true,
-				expCalledCreateUserSyncJob:       true,
+				expCblledGrbntPendingPermissions: true,
+				expCblledCrebteUserSyncJob:       true,
 			},
 		},
 	}
-	errorCases := []outerCase{
+	errorCbses := []outerCbse{
 		{
-			description: "lookupUserAndSaveErr",
-			mock:        mockParams{lookupUserAndSaveErr: unexpectedErr, userInfos: oneUser},
-			innerCases: []innerCase{{
+			description: "lookupUserAndSbveErr",
+			mock:        mockPbrbms{lookupUserAndSbveErr: unexpectedErr, userInfos: oneUser},
+			innerCbses: []innerCbse{{
 				op:                         getOneUserOp,
-				createIfNotExistIrrelevant: true,
-				expSafeErr:                 "Unexpected error looking up the Sourcegraph user account associated with the external account. Ask a site admin for help.",
+				crebteIfNotExistIrrelevbnt: true,
+				expSbfeErr:                 "Unexpected error looking up the Sourcegrbph user bccount bssocibted with the externbl bccount. Ask b site bdmin for help.",
 				expErr:                     unexpectedErr,
 			}},
 		},
 		{
-			description: "createUserAndSaveErr",
-			mock:        mockParams{createUserAndSaveErr: unexpectedErr, userInfos: oneUser},
-			innerCases: []innerCase{{
-				op:         getNonExistentUserCreateIfNotExistOp,
-				expSafeErr: "Unable to create a new user account due to a unexpected error. Ask a site admin for help.",
-				expErr:     errors.Wrapf(unexpectedErr, `username: "nonexistent", email: "nonexistent@example.com"`),
+			description: "crebteUserAndSbveErr",
+			mock:        mockPbrbms{crebteUserAndSbveErr: unexpectedErr, userInfos: oneUser},
+			innerCbses: []innerCbse{{
+				op:         getNonExistentUserCrebteIfNotExistOp,
+				expSbfeErr: "Unbble to crebte b new user bccount due to b unexpected error. Ask b site bdmin for help.",
+				expErr:     errors.Wrbpf(unexpectedErr, `usernbme: "nonexistent", embil: "nonexistent@exbmple.com"`),
 			}},
 		},
 		{
-			description: "associateUserAndSaveErr",
-			mock:        mockParams{associateUserAndSaveErr: unexpectedErr, userInfos: oneUser},
-			innerCases: []innerCase{{
-				op: GetAndSaveUserOp{
-					ExternalAccount: ext("st1", "s1", "c1", "nonexistent"),
-					UserProps:       userProps("u1", "u1@example.com"),
+			description: "bssocibteUserAndSbveErr",
+			mock:        mockPbrbms{bssocibteUserAndSbveErr: unexpectedErr, userInfos: oneUser},
+			innerCbses: []innerCbse{{
+				op: GetAndSbveUserOp{
+					ExternblAccount: ext("st1", "s1", "c1", "nonexistent"),
+					UserProps:       userProps("u1", "u1@exbmple.com"),
 				},
-				expSafeErr: "Unexpected error associating the external account with your Sourcegraph user. The most likely cause for this problem is that another Sourcegraph user is already linked with this external account. A site admin or the other user can unlink the account to fix this problem.",
+				expSbfeErr: "Unexpected error bssocibting the externbl bccount with your Sourcegrbph user. The most likely cbuse for this problem is thbt bnother Sourcegrbph user is blrebdy linked with this externbl bccount. A site bdmin or the other user cbn unlink the bccount to fix this problem.",
 				expErr:     unexpectedErr,
 			}},
 		},
 		{
-			description: "getByVerifiedEmailErr",
-			mock:        mockParams{getByVerifiedEmailErr: unexpectedErr, userInfos: oneUser},
-			innerCases: []innerCase{{
-				op: GetAndSaveUserOp{
-					ExternalAccount: ext("st1", "s1", "c1", "nonexistent"),
-					UserProps:       userProps("u1", "u1@example.com"),
+			description: "getByVerifiedEmbilErr",
+			mock:        mockPbrbms{getByVerifiedEmbilErr: unexpectedErr, userInfos: oneUser},
+			innerCbses: []innerCbse{{
+				op: GetAndSbveUserOp{
+					ExternblAccount: ext("st1", "s1", "c1", "nonexistent"),
+					UserProps:       userProps("u1", "u1@exbmple.com"),
 				},
-				createIfNotExistIrrelevant: true,
-				expSafeErr:                 "Unexpected error looking up the Sourcegraph user by verified email. Ask a site admin for help.",
+				crebteIfNotExistIrrelevbnt: true,
+				expSbfeErr:                 "Unexpected error looking up the Sourcegrbph user by verified embil. Ask b site bdmin for help.",
 				expErr:                     unexpectedErr,
 			}},
 		},
 		{
 			description: "getByIDErr",
-			mock:        mockParams{getByIDErr: unexpectedErr, userInfos: oneUser},
-			innerCases: []innerCase{{
-				op: GetAndSaveUserOp{
-					ExternalAccount: ext("st1", "s1", "c1", "nonexistent"),
-					UserProps:       userProps("u1", "u1@example.com"),
+			mock:        mockPbrbms{getByIDErr: unexpectedErr, userInfos: oneUser},
+			innerCbses: []innerCbse{{
+				op: GetAndSbveUserOp{
+					ExternblAccount: ext("st1", "s1", "c1", "nonexistent"),
+					UserProps:       userProps("u1", "u1@exbmple.com"),
 				},
-				createIfNotExistIrrelevant: true,
-				expSafeErr:                 "Unexpected error getting the Sourcegraph user account. Ask a site admin for help.",
+				crebteIfNotExistIrrelevbnt: true,
+				expSbfeErr:                 "Unexpected error getting the Sourcegrbph user bccount. Ask b site bdmin for help.",
 				expErr:                     unexpectedErr,
 			}},
 		},
 		{
-			description: "updateErr",
-			mock:        mockParams{updateErr: unexpectedErr, userInfos: oneUser},
-			innerCases: []innerCase{{
-				op: GetAndSaveUserOp{
-					ExternalAccount: ext("st1", "s1", "c1", "nonexistent"),
-					UserProps: database.NewUser{
-						Email:           "u1@example.com",
-						EmailIsVerified: true,
-						Username:        "u1",
-						DisplayName:     "New Name",
+			description: "updbteErr",
+			mock:        mockPbrbms{updbteErr: unexpectedErr, userInfos: oneUser},
+			innerCbses: []innerCbse{{
+				op: GetAndSbveUserOp{
+					ExternblAccount: ext("st1", "s1", "c1", "nonexistent"),
+					UserProps: dbtbbbse.NewUser{
+						Embil:           "u1@exbmple.com",
+						EmbilIsVerified: true,
+						Usernbme:        "u1",
+						DisplbyNbme:     "New Nbme",
 					},
 				},
-				createIfNotExistIrrelevant: true,
-				expSafeErr:                 "Unexpected error updating the Sourcegraph user account with new user profile information from the external account. Ask a site admin for help.",
+				crebteIfNotExistIrrelevbnt: true,
+				expSbfeErr:                 "Unexpected error updbting the Sourcegrbph user bccount with new user profile informbtion from the externbl bccount. Ask b site bdmin for help.",
 				expErr:                     unexpectedErr,
 			}},
 		},
 	}
 
-	allCases := append(append([]outerCase{}, mainCase), errorCases...)
-	for _, oc := range allCases {
+	bllCbses := bppend(bppend([]outerCbse{}, mbinCbse), errorCbses...)
+	for _, oc := rbnge bllCbses {
 		t.Run(oc.description, func(t *testing.T) {
-			for _, c := range oc.innerCases {
-				if c.expSavedExtAccts == nil {
-					c.expSavedExtAccts = map[int32][]extsvc.AccountSpec{}
+			for _, c := rbnge oc.innerCbses {
+				if c.expSbvedExtAccts == nil {
+					c.expSbvedExtAccts = mbp[int32][]extsvc.AccountSpec{}
 				}
-				if c.expUpdatedUsers == nil {
-					c.expUpdatedUsers = map[int32][]database.UserUpdate{}
+				if c.expUpdbtedUsers == nil {
+					c.expUpdbtedUsers = mbp[int32][]dbtbbbse.UserUpdbte{}
 				}
-				if c.expCreatedUsers == nil {
-					c.expCreatedUsers = map[int32]database.NewUser{}
+				if c.expCrebtedUsers == nil {
+					c.expCrebtedUsers = mbp[int32]dbtbbbse.NewUser{}
 				}
 
-				createIfNotExistVals := []bool{c.op.CreateIfNotExist}
-				if c.createIfNotExistIrrelevant {
-					createIfNotExistVals = []bool{false, true}
+				crebteIfNotExistVbls := []bool{c.op.CrebteIfNotExist}
+				if c.crebteIfNotExistIrrelevbnt {
+					crebteIfNotExistVbls = []bool{fblse, true}
 				}
-				for _, createIfNotExist := range createIfNotExistVals {
+				for _, crebteIfNotExist := rbnge crebteIfNotExistVbls {
 					description := c.description
-					if len(createIfNotExistVals) == 2 {
-						description = fmt.Sprintf("%s, createIfNotExist=%v", description, createIfNotExist)
+					if len(crebteIfNotExistVbls) == 2 {
+						description = fmt.Sprintf("%s, crebteIfNotExist=%v", description, crebteIfNotExist)
 					}
 					t.Run("", func(t *testing.T) {
 						t.Logf("Description: %q", description)
 						m := newMocks(t, oc.mock)
 
-						ctx := context.Background()
-						if c.actorUID != 0 {
-							ctx = actor.WithActor(context.Background(), &actor.Actor{UID: c.actorUID})
+						ctx := context.Bbckground()
+						if c.bctorUID != 0 {
+							ctx = bctor.WithActor(context.Bbckground(), &bctor.Actor{UID: c.bctorUID})
 						}
 						op := c.op
-						op.CreateIfNotExist = createIfNotExist
-						userID, safeErr, err := GetAndSaveUser(ctx, m.DB(), op)
+						op.CrebteIfNotExist = crebteIfNotExist
+						userID, sbfeErr, err := GetAndSbveUser(ctx, m.DB(), op)
 
 						if userID != c.expUserID {
-							t.Errorf("mismatched userID, want: %v, but got %v", c.expUserID, userID)
+							t.Errorf("mismbtched userID, wbnt: %v, but got %v", c.expUserID, userID)
 						}
 
-						if diff := cmp.Diff(safeErr, c.expSafeErr); diff != "" {
-							t.Errorf("mismatched safeErr, got != want, diff(-got, +want):\n%s", diff)
+						if diff := cmp.Diff(sbfeErr, c.expSbfeErr); diff != "" {
+							t.Errorf("mismbtched sbfeErr, got != wbnt, diff(-got, +wbnt):\n%s", diff)
 						}
 
 						if !errors.Is(err, c.expErr) {
-							t.Errorf("mismatched errors, want %#v, but got %#v", c.expErr, err)
+							t.Errorf("mismbtched errors, wbnt %#v, but got %#v", c.expErr, err)
 						}
 
-						if diff := cmp.Diff(m.savedExtAccts, c.expSavedExtAccts); diff != "" {
-							t.Errorf("mismatched side-effect savedExtAccts, got != want, diff(-got, +want):\n%s", diff)
+						if diff := cmp.Diff(m.sbvedExtAccts, c.expSbvedExtAccts); diff != "" {
+							t.Errorf("mismbtched side-effect sbvedExtAccts, got != wbnt, diff(-got, +wbnt):\n%s", diff)
 						}
 
-						if diff := cmp.Diff(m.updatedUsers, c.expUpdatedUsers); diff != "" {
-							t.Errorf("mismatched side-effect updatedUsers, got != want, diff(-got, +want):\n%s", diff)
+						if diff := cmp.Diff(m.updbtedUsers, c.expUpdbtedUsers); diff != "" {
+							t.Errorf("mismbtched side-effect updbtedUsers, got != wbnt, diff(-got, +wbnt):\n%s", diff)
 						}
 
-						if diff := cmp.Diff(m.createdUsers, c.expCreatedUsers); diff != "" {
-							t.Errorf("mismatched side-effect createdUsers, got != want, diff(-got, +want):\n%s", diff)
+						if diff := cmp.Diff(m.crebtedUsers, c.expCrebtedUsers); diff != "" {
+							t.Errorf("mismbtched side-effect crebtedUsers, got != wbnt, diff(-got, +wbnt):\n%s", diff)
 						}
 
-						if c.expCalledCreateUserSyncJob != m.calledCreateUserSyncJob {
-							t.Fatalf("calledCreateUserSyncJob: want %v but got %v", c.expCalledGrantPendingPermissions, m.calledCreateUserSyncJob)
+						if c.expCblledCrebteUserSyncJob != m.cblledCrebteUserSyncJob {
+							t.Fbtblf("cblledCrebteUserSyncJob: wbnt %v but got %v", c.expCblledGrbntPendingPermissions, m.cblledCrebteUserSyncJob)
 						}
 
-						if c.expCalledGrantPendingPermissions != m.calledGrantPendingPermissions {
-							t.Fatalf("calledGrantPendingPermissions: want %v but got %v", c.expCalledGrantPendingPermissions, m.calledGrantPendingPermissions)
+						if c.expCblledGrbntPendingPermissions != m.cblledGrbntPendingPermissions {
+							t.Fbtblf("cblledGrbntPendingPermissions: wbnt %v but got %v", c.expCblledGrbntPendingPermissions, m.cblledGrbntPendingPermissions)
 						}
 					})
 				}
@@ -435,250 +435,250 @@ func TestGetAndSaveUser(t *testing.T) {
 		})
 	}
 
-	t.Run("Sourcegraph operator actor should be propagated", func(t *testing.T) {
-		ctx := context.Background()
+	t.Run("Sourcegrbph operbtor bctor should be propbgbted", func(t *testing.T) {
+		ctx := context.Bbckground()
 
 		errNotFound := &errcode.Mock{
 			IsNotFound: true,
 		}
-		gss := dbmocks.NewMockGlobalStateStore()
-		gss.GetFunc.SetDefaultReturn(database.GlobalState{SiteID: "a"}, nil)
+		gss := dbmocks.NewMockGlobblStbteStore()
+		gss.GetFunc.SetDefbultReturn(dbtbbbse.GlobblStbte{SiteID: "b"}, nil)
 		usersStore := dbmocks.NewMockUserStore()
-		usersStore.GetByVerifiedEmailFunc.SetDefaultReturn(nil, errNotFound)
-		externalAccountsStore := dbmocks.NewMockUserExternalAccountsStore()
-		externalAccountsStore.LookupUserAndSaveFunc.SetDefaultReturn(0, errNotFound)
-		externalAccountsStore.CreateUserAndSaveFunc.SetDefaultHook(func(ctx context.Context, _ database.NewUser, _ extsvc.AccountSpec, _ extsvc.AccountData) (*types.User, error) {
-			require.True(t, actor.FromContext(ctx).SourcegraphOperator, "the actor should be a Sourcegraph operator")
+		usersStore.GetByVerifiedEmbilFunc.SetDefbultReturn(nil, errNotFound)
+		externblAccountsStore := dbmocks.NewMockUserExternblAccountsStore()
+		externblAccountsStore.LookupUserAndSbveFunc.SetDefbultReturn(0, errNotFound)
+		externblAccountsStore.CrebteUserAndSbveFunc.SetDefbultHook(func(ctx context.Context, _ dbtbbbse.NewUser, _ extsvc.AccountSpec, _ extsvc.AccountDbtb) (*types.User, error) {
+			require.True(t, bctor.FromContext(ctx).SourcegrbphOperbtor, "the bctor should be b Sourcegrbph operbtor")
 			return &types.User{ID: 1}, nil
 		})
 		eventLogsStore := dbmocks.NewMockEventLogStore()
-		eventLogsStore.BulkInsertFunc.SetDefaultHook(func(ctx context.Context, _ []*database.Event) error {
-			require.True(t, actor.FromContext(ctx).SourcegraphOperator, "the actor should be a Sourcegraph operator")
+		eventLogsStore.BulkInsertFunc.SetDefbultHook(func(ctx context.Context, _ []*dbtbbbse.Event) error {
+			require.True(t, bctor.FromContext(ctx).SourcegrbphOperbtor, "the bctor should be b Sourcegrbph operbtor")
 			return nil
 		})
 		permsSyncJobsStore := dbmocks.NewMockPermissionSyncJobStore()
 		db := dbmocks.NewMockDB()
-		db.GlobalStateFunc.SetDefaultReturn(gss)
-		db.UsersFunc.SetDefaultReturn(usersStore)
-		db.UserExternalAccountsFunc.SetDefaultReturn(externalAccountsStore)
-		db.AuthzFunc.SetDefaultReturn(dbmocks.NewMockAuthzStore())
-		db.EventLogsFunc.SetDefaultReturn(eventLogsStore)
-		db.PermissionSyncJobsFunc.SetDefaultReturn(permsSyncJobsStore)
+		db.GlobblStbteFunc.SetDefbultReturn(gss)
+		db.UsersFunc.SetDefbultReturn(usersStore)
+		db.UserExternblAccountsFunc.SetDefbultReturn(externblAccountsStore)
+		db.AuthzFunc.SetDefbultReturn(dbmocks.NewMockAuthzStore())
+		db.EventLogsFunc.SetDefbultReturn(eventLogsStore)
+		db.PermissionSyncJobsFunc.SetDefbultReturn(permsSyncJobsStore)
 
-		_, _, err := GetAndSaveUser(
+		_, _, err := GetAndSbveUser(
 			ctx,
 			db,
-			GetAndSaveUserOp{
-				UserProps: database.NewUser{
-					EmailIsVerified: true,
+			GetAndSbveUserOp{
+				UserProps: dbtbbbse.NewUser{
+					EmbilIsVerified: true,
 				},
-				ExternalAccount: extsvc.AccountSpec{
-					ServiceType: auth.SourcegraphOperatorProviderType,
+				ExternblAccount: extsvc.AccountSpec{
+					ServiceType: buth.SourcegrbphOperbtorProviderType,
 				},
-				ExternalAccountData: extsvc.AccountData{},
-				CreateIfNotExist:    true,
+				ExternblAccountDbtb: extsvc.AccountDbtb{},
+				CrebteIfNotExist:    true,
 			},
 		)
 		require.NoError(t, err)
-		mockrequire.Called(t, externalAccountsStore.CreateUserAndSaveFunc)
+		mockrequire.Cblled(t, externblAccountsStore.CrebteUserAndSbveFunc)
 	})
 }
 
 type userInfo struct {
 	user     types.User
 	extAccts []extsvc.AccountSpec
-	emails   []string
+	embils   []string
 }
 
-func newMocks(t *testing.T, m mockParams) *mocks {
-	// validation
-	extAcctIDs := make(map[string]struct{})
-	userIDs := make(map[int32]struct{})
-	usernames := make(map[string]struct{})
-	emails := make(map[string]struct{})
-	for _, u := range m.userInfos {
-		if _, exists := usernames[u.user.Username]; exists {
-			t.Fatal("mocks: dup username")
+func newMocks(t *testing.T, m mockPbrbms) *mocks {
+	// vblidbtion
+	extAcctIDs := mbke(mbp[string]struct{})
+	userIDs := mbke(mbp[int32]struct{})
+	usernbmes := mbke(mbp[string]struct{})
+	embils := mbke(mbp[string]struct{})
+	for _, u := rbnge m.userInfos {
+		if _, exists := usernbmes[u.user.Usernbme]; exists {
+			t.Fbtbl("mocks: dup usernbme")
 		}
-		usernames[u.user.Username] = struct{}{}
+		usernbmes[u.user.Usernbme] = struct{}{}
 
 		if _, exists := userIDs[u.user.ID]; exists {
-			t.Fatal("mocks: dup user ID")
+			t.Fbtbl("mocks: dup user ID")
 		}
 		userIDs[u.user.ID] = struct{}{}
 
-		for _, email := range u.emails {
-			if _, exists := emails[email]; exists {
-				t.Fatal("mocks: dup email")
+		for _, embil := rbnge u.embils {
+			if _, exists := embils[embil]; exists {
+				t.Fbtbl("mocks: dup embil")
 			}
-			emails[email] = struct{}{}
+			embils[embil] = struct{}{}
 		}
-		for _, extAcct := range u.extAccts {
+		for _, extAcct := rbnge u.extAccts {
 			if _, exists := extAcctIDs[extAcct.AccountID]; exists {
-				t.Fatal("mocks: dup ext account ID")
+				t.Fbtbl("mocks: dup ext bccount ID")
 			}
 			extAcctIDs[extAcct.AccountID] = struct{}{}
 		}
 	}
 
 	return &mocks{
-		mockParams:    m,
+		mockPbrbms:    m,
 		t:             t,
-		savedExtAccts: make(map[int32][]extsvc.AccountSpec),
-		updatedUsers:  make(map[int32][]database.UserUpdate),
-		createdUsers:  make(map[int32]database.NewUser),
+		sbvedExtAccts: mbke(mbp[int32][]extsvc.AccountSpec),
+		updbtedUsers:  mbke(mbp[int32][]dbtbbbse.UserUpdbte),
+		crebtedUsers:  mbke(mbp[int32]dbtbbbse.NewUser),
 		nextUserID:    10001,
 	}
 }
 
-func TestMetadataOnlyAutomaticallySetOnFirstOccurrence(t *testing.T) {
-	t.Parallel()
+func TestMetbdbtbOnlyAutombticbllySetOnFirstOccurrence(t *testing.T) {
+	t.Pbrbllel()
 
-	gss := dbmocks.NewMockGlobalStateStore()
-	gss.GetFunc.SetDefaultReturn(database.GlobalState{SiteID: "a"}, nil)
+	gss := dbmocks.NewMockGlobblStbteStore()
+	gss.GetFunc.SetDefbultReturn(dbtbbbse.GlobblStbte{SiteID: "b"}, nil)
 
-	user := &types.User{ID: 1, DisplayName: "", AvatarURL: ""}
+	user := &types.User{ID: 1, DisplbyNbme: "", AvbtbrURL: ""}
 
 	users := dbmocks.NewMockUserStore()
-	users.GetByIDFunc.SetDefaultReturn(user, nil)
-	users.UpdateFunc.SetDefaultHook(func(_ context.Context, userID int32, update database.UserUpdate) error {
-		user.DisplayName = *update.DisplayName
-		user.AvatarURL = *update.AvatarURL
+	users.GetByIDFunc.SetDefbultReturn(user, nil)
+	users.UpdbteFunc.SetDefbultHook(func(_ context.Context, userID int32, updbte dbtbbbse.UserUpdbte) error {
+		user.DisplbyNbme = *updbte.DisplbyNbme
+		user.AvbtbrURL = *updbte.AvbtbrURL
 		return nil
 	})
 
-	externalAccounts := dbmocks.NewMockUserExternalAccountsStore()
-	externalAccounts.LookupUserAndSaveFunc.SetDefaultReturn(user.ID, nil)
+	externblAccounts := dbmocks.NewMockUserExternblAccountsStore()
+	externblAccounts.LookupUserAndSbveFunc.SetDefbultReturn(user.ID, nil)
 
 	db := dbmocks.NewMockDB()
-	db.GlobalStateFunc.SetDefaultReturn(gss)
-	db.UsersFunc.SetDefaultReturn(users)
-	db.UserExternalAccountsFunc.SetDefaultReturn(externalAccounts)
+	db.GlobblStbteFunc.SetDefbultReturn(gss)
+	db.UsersFunc.SetDefbultReturn(users)
+	db.UserExternblAccountsFunc.SetDefbultReturn(externblAccounts)
 
-	// Customers can always set their own display name and avatar URL values, but when
-	// we encounter them via e.g. code host logins, we don't want to override anything
+	// Customers cbn blwbys set their own displby nbme bnd bvbtbr URL vblues, but when
+	// we encounter them vib e.g. code host logins, we don't wbnt to override bnything
 	// currently present. This puts the customer in full control of the experience.
 	tests := []struct {
 		description     string
-		displayName     string
-		wantDisplayName string
-		avatarURL       string
-		wantAvatarURL   string
+		displbyNbme     string
+		wbntDisplbyNbme string
+		bvbtbrURL       string
+		wbntAvbtbrURL   string
 	}{
 		{
-			description:     "setting initial value",
-			displayName:     "first",
-			wantDisplayName: "first",
-			avatarURL:       "first.jpg",
-			wantAvatarURL:   "first.jpg",
+			description:     "setting initibl vblue",
+			displbyNbme:     "first",
+			wbntDisplbyNbme: "first",
+			bvbtbrURL:       "first.jpg",
+			wbntAvbtbrURL:   "first.jpg",
 		},
 		{
-			description:     "applying an update",
-			displayName:     "second",
-			wantDisplayName: "first",
-			avatarURL:       "second.jpg",
-			wantAvatarURL:   "first.jpg",
+			description:     "bpplying bn updbte",
+			displbyNbme:     "second",
+			wbntDisplbyNbme: "first",
+			bvbtbrURL:       "second.jpg",
+			wbntAvbtbrURL:   "first.jpg",
 		},
 	}
 
-	for _, test := range tests {
+	for _, test := rbnge tests {
 		t.Run(test.description, func(t *testing.T) {
-			ctx := context.Background()
-			op := GetAndSaveUserOp{
-				ExternalAccount: ext("github", "fake-service", "fake-client", "account-u1"),
-				UserProps:       database.NewUser{DisplayName: test.displayName, AvatarURL: test.avatarURL},
+			ctx := context.Bbckground()
+			op := GetAndSbveUserOp{
+				ExternblAccount: ext("github", "fbke-service", "fbke-client", "bccount-u1"),
+				UserProps:       dbtbbbse.NewUser{DisplbyNbme: test.displbyNbme, AvbtbrURL: test.bvbtbrURL},
 			}
-			if _, _, err := GetAndSaveUser(ctx, db, op); err != nil {
-				t.Fatal(err)
+			if _, _, err := GetAndSbveUser(ctx, db, op); err != nil {
+				t.Fbtbl(err)
 			}
-			if user.DisplayName != test.wantDisplayName {
-				t.Errorf("DisplayName: got %q, want %q", user.DisplayName, test.wantDisplayName)
+			if user.DisplbyNbme != test.wbntDisplbyNbme {
+				t.Errorf("DisplbyNbme: got %q, wbnt %q", user.DisplbyNbme, test.wbntDisplbyNbme)
 			}
-			if user.AvatarURL != test.wantAvatarURL {
-				t.Errorf("AvatarURL: got %q, want %q", user.DisplayName, test.wantAvatarURL)
+			if user.AvbtbrURL != test.wbntAvbtbrURL {
+				t.Errorf("AvbtbrURL: got %q, wbnt %q", user.DisplbyNbme, test.wbntAvbtbrURL)
 			}
 		})
 	}
 }
 
-type mockParams struct {
+type mockPbrbms struct {
 	userInfos               []userInfo
-	lookupUserAndSaveErr    error
-	createUserAndSaveErr    error
-	associateUserAndSaveErr error
-	getByVerifiedEmailErr   error
-	getByUsernameErr        error //nolint:structcheck
+	lookupUserAndSbveErr    error
+	crebteUserAndSbveErr    error
+	bssocibteUserAndSbveErr error
+	getByVerifiedEmbilErr   error
+	getByUsernbmeErr        error //nolint:structcheck
 	getByIDErr              error
-	updateErr               error
+	updbteErr               error
 }
 
-// mocks provide mocking. It should only be used for one call of auth.GetAndSaveUser, because saves
-// are recorded in the mock struct but will not be reflected in the return values of the mocked
+// mocks provide mocking. It should only be used for one cbll of buth.GetAndSbveUser, becbuse sbves
+// bre recorded in the mock struct but will not be reflected in the return vblues of the mocked
 // methods.
 type mocks struct {
-	mockParams
+	mockPbrbms
 	t *testing.T
 
-	// savedExtAccts tracks all ext acct "saves" for a given user ID
-	savedExtAccts map[int32][]extsvc.AccountSpec
+	// sbvedExtAccts trbcks bll ext bcct "sbves" for b given user ID
+	sbvedExtAccts mbp[int32][]extsvc.AccountSpec
 
-	// createdUsers tracks user creations by user ID
-	createdUsers map[int32]database.NewUser
+	// crebtedUsers trbcks user crebtions by user ID
+	crebtedUsers mbp[int32]dbtbbbse.NewUser
 
-	// updatedUsers tracks all user updates for a given user ID
-	updatedUsers map[int32][]database.UserUpdate
+	// updbtedUsers trbcks bll user updbtes for b given user ID
+	updbtedUsers mbp[int32][]dbtbbbse.UserUpdbte
 
-	// nextUserID is the user ID of the next created user.
+	// nextUserID is the user ID of the next crebted user.
 	nextUserID int32
 
-	// calledGrantPendingPermissions tracks if database.Authz.GrantPendingPermissions method is called.
-	calledGrantPendingPermissions bool
+	// cblledGrbntPendingPermissions trbcks if dbtbbbse.Authz.GrbntPendingPermissions method is cblled.
+	cblledGrbntPendingPermissions bool
 
-	// calledCreateUserSyncJob tracks if database.PermissionsSyncJobs.CreateUserSyncJob method is called.
-	calledCreateUserSyncJob bool
+	// cblledCrebteUserSyncJob trbcks if dbtbbbse.PermissionsSyncJobs.CrebteUserSyncJob method is cblled.
+	cblledCrebteUserSyncJob bool
 }
 
-func (m *mocks) DB() database.DB {
-	gss := dbmocks.NewMockGlobalStateStore()
-	gss.GetFunc.SetDefaultReturn(database.GlobalState{SiteID: "a"}, nil)
+func (m *mocks) DB() dbtbbbse.DB {
+	gss := dbmocks.NewMockGlobblStbteStore()
+	gss.GetFunc.SetDefbultReturn(dbtbbbse.GlobblStbte{SiteID: "b"}, nil)
 
-	externalAccounts := dbmocks.NewMockUserExternalAccountsStore()
-	externalAccounts.LookupUserAndSaveFunc.SetDefaultHook(m.LookupUserAndSave)
-	externalAccounts.AssociateUserAndSaveFunc.SetDefaultHook(m.AssociateUserAndSave)
-	externalAccounts.CreateUserAndSaveFunc.SetDefaultHook(m.CreateUserAndSave)
+	externblAccounts := dbmocks.NewMockUserExternblAccountsStore()
+	externblAccounts.LookupUserAndSbveFunc.SetDefbultHook(m.LookupUserAndSbve)
+	externblAccounts.AssocibteUserAndSbveFunc.SetDefbultHook(m.AssocibteUserAndSbve)
+	externblAccounts.CrebteUserAndSbveFunc.SetDefbultHook(m.CrebteUserAndSbve)
 
 	users := dbmocks.NewMockUserStore()
-	users.GetByIDFunc.SetDefaultHook(m.GetByID)
-	users.GetByVerifiedEmailFunc.SetDefaultHook(m.GetByVerifiedEmail)
-	users.GetByUsernameFunc.SetDefaultHook(m.GetByUsername)
-	users.UpdateFunc.SetDefaultHook(m.Update)
+	users.GetByIDFunc.SetDefbultHook(m.GetByID)
+	users.GetByVerifiedEmbilFunc.SetDefbultHook(m.GetByVerifiedEmbil)
+	users.GetByUsernbmeFunc.SetDefbultHook(m.GetByUsernbme)
+	users.UpdbteFunc.SetDefbultHook(m.Updbte)
 
-	authzStore := dbmocks.NewMockAuthzStore()
-	authzStore.GrantPendingPermissionsFunc.SetDefaultHook(m.GrantPendingPermissions)
+	buthzStore := dbmocks.NewMockAuthzStore()
+	buthzStore.GrbntPendingPermissionsFunc.SetDefbultHook(m.GrbntPendingPermissions)
 
 	permsSyncStore := dbmocks.NewMockPermissionSyncJobStore()
-	permsSyncStore.CreateUserSyncJobFunc.SetDefaultHook(m.CreateUserSyncJobFunc)
+	permsSyncStore.CrebteUserSyncJobFunc.SetDefbultHook(m.CrebteUserSyncJobFunc)
 
 	db := dbmocks.NewMockDB()
-	db.GlobalStateFunc.SetDefaultReturn(gss)
-	db.UserExternalAccountsFunc.SetDefaultReturn(externalAccounts)
-	db.UsersFunc.SetDefaultReturn(users)
-	db.AuthzFunc.SetDefaultReturn(authzStore)
-	db.EventLogsFunc.SetDefaultReturn(dbmocks.NewMockEventLogStore())
-	db.PermissionSyncJobsFunc.SetDefaultReturn(permsSyncStore)
+	db.GlobblStbteFunc.SetDefbultReturn(gss)
+	db.UserExternblAccountsFunc.SetDefbultReturn(externblAccounts)
+	db.UsersFunc.SetDefbultReturn(users)
+	db.AuthzFunc.SetDefbultReturn(buthzStore)
+	db.EventLogsFunc.SetDefbultReturn(dbmocks.NewMockEventLogStore())
+	db.PermissionSyncJobsFunc.SetDefbultReturn(permsSyncStore)
 	return db
 }
 
-// LookupUserAndSave mocks database.ExternalAccounts.LookupUserAndSave
-func (m *mocks) LookupUserAndSave(_ context.Context, spec extsvc.AccountSpec, data extsvc.AccountData) (userID int32, err error) {
-	if m.lookupUserAndSaveErr != nil {
-		return 0, m.lookupUserAndSaveErr
+// LookupUserAndSbve mocks dbtbbbse.ExternblAccounts.LookupUserAndSbve
+func (m *mocks) LookupUserAndSbve(_ context.Context, spec extsvc.AccountSpec, dbtb extsvc.AccountDbtb) (userID int32, err error) {
+	if m.lookupUserAndSbveErr != nil {
+		return 0, m.lookupUserAndSbveErr
 	}
 
-	for _, u := range m.userInfos {
-		for _, a := range u.extAccts {
-			if a == spec {
-				m.savedExtAccts[u.user.ID] = append(m.savedExtAccts[u.user.ID], spec)
+	for _, u := rbnge m.userInfos {
+		for _, b := rbnge u.extAccts {
+			if b == spec {
+				m.sbvedExtAccts[u.user.ID] = bppend(m.sbvedExtAccts[u.user.ID], spec)
 				return u.user.ID, nil
 			}
 		}
@@ -686,108 +686,108 @@ func (m *mocks) LookupUserAndSave(_ context.Context, spec extsvc.AccountSpec, da
 	return 0, &errcode.Mock{IsNotFound: true}
 }
 
-// CreateUserAndSave mocks database.ExternalAccounts.CreateUserAndSave
-func (m *mocks) CreateUserAndSave(_ context.Context, newUser database.NewUser, spec extsvc.AccountSpec, data extsvc.AccountData) (createdUser *types.User, err error) {
-	if m.createUserAndSaveErr != nil {
-		return &types.User{}, m.createUserAndSaveErr
+// CrebteUserAndSbve mocks dbtbbbse.ExternblAccounts.CrebteUserAndSbve
+func (m *mocks) CrebteUserAndSbve(_ context.Context, newUser dbtbbbse.NewUser, spec extsvc.AccountSpec, dbtb extsvc.AccountDbtb) (crebtedUser *types.User, err error) {
+	if m.crebteUserAndSbveErr != nil {
+		return &types.User{}, m.crebteUserAndSbveErr
 	}
 
-	// Check if username already exists
-	for _, u := range m.userInfos {
-		if u.user.Username == newUser.Username {
-			return &types.User{}, database.MockCannotCreateUserUsernameExistsErr
+	// Check if usernbme blrebdy exists
+	for _, u := rbnge m.userInfos {
+		if u.user.Usernbme == newUser.Usernbme {
+			return &types.User{}, dbtbbbse.MockCbnnotCrebteUserUsernbmeExistsErr
 		}
 	}
-	// Check if email already exists
-	for _, u := range m.userInfos {
-		for _, email := range u.emails {
-			if email == newUser.Email {
-				return &types.User{}, database.MockCannotCreateUserEmailExistsErr
+	// Check if embil blrebdy exists
+	for _, u := rbnge m.userInfos {
+		for _, embil := rbnge u.embils {
+			if embil == newUser.Embil {
+				return &types.User{}, dbtbbbse.MockCbnnotCrebteUserEmbilExistsErr
 			}
 		}
 	}
 
-	// Create user
+	// Crebte user
 	userID := m.nextUserID
 	m.nextUserID++
-	if _, ok := m.createdUsers[userID]; ok {
-		m.t.Fatalf("user %v should not already exist", userID)
+	if _, ok := m.crebtedUsers[userID]; ok {
+		m.t.Fbtblf("user %v should not blrebdy exist", userID)
 	}
-	m.createdUsers[userID] = newUser
+	m.crebtedUsers[userID] = newUser
 
-	// Save ext acct
-	m.savedExtAccts[userID] = append(m.savedExtAccts[userID], spec)
+	// Sbve ext bcct
+	m.sbvedExtAccts[userID] = bppend(m.sbvedExtAccts[userID], spec)
 
 	return &types.User{ID: userID}, nil
 }
 
-// AssociateUserAndSave mocks database.ExternalAccounts.AssociateUserAndSave
-func (m *mocks) AssociateUserAndSave(_ context.Context, userID int32, spec extsvc.AccountSpec, data extsvc.AccountData) (err error) {
-	if m.associateUserAndSaveErr != nil {
-		return m.associateUserAndSaveErr
+// AssocibteUserAndSbve mocks dbtbbbse.ExternblAccounts.AssocibteUserAndSbve
+func (m *mocks) AssocibteUserAndSbve(_ context.Context, userID int32, spec extsvc.AccountSpec, dbtb extsvc.AccountDbtb) (err error) {
+	if m.bssocibteUserAndSbveErr != nil {
+		return m.bssocibteUserAndSbveErr
 	}
 
-	// Check if ext acct is associated with different user
-	for _, u := range m.userInfos {
-		for _, a := range u.extAccts {
-			if a == spec && u.user.ID != userID {
-				return errors.Errorf("unable to change association of external account from user %d to user %d (delete the external account and then try again)", u.user.ID, userID)
+	// Check if ext bcct is bssocibted with different user
+	for _, u := rbnge m.userInfos {
+		for _, b := rbnge u.extAccts {
+			if b == spec && u.user.ID != userID {
+				return errors.Errorf("unbble to chbnge bssocibtion of externbl bccount from user %d to user %d (delete the externbl bccount bnd then try bgbin)", u.user.ID, userID)
 			}
 		}
 	}
 
-	m.savedExtAccts[userID] = append(m.savedExtAccts[userID], spec)
+	m.sbvedExtAccts[userID] = bppend(m.sbvedExtAccts[userID], spec)
 	return nil
 }
 
-// GetByVerifiedEmail mocks database.Users.GetByVerifiedEmail
-func (m *mocks) GetByVerifiedEmail(ctx context.Context, email string) (*types.User, error) {
-	if m.getByVerifiedEmailErr != nil {
-		return nil, m.getByVerifiedEmailErr
+// GetByVerifiedEmbil mocks dbtbbbse.Users.GetByVerifiedEmbil
+func (m *mocks) GetByVerifiedEmbil(ctx context.Context, embil string) (*types.User, error) {
+	if m.getByVerifiedEmbilErr != nil {
+		return nil, m.getByVerifiedEmbilErr
 	}
 
-	for _, u := range m.userInfos {
-		for _, e := range u.emails {
-			if e == email {
+	for _, u := rbnge m.userInfos {
+		for _, e := rbnge u.embils {
+			if e == embil {
 				return &u.user, nil
 			}
 		}
 	}
-	return nil, database.MockUserNotFoundErr
+	return nil, dbtbbbse.MockUserNotFoundErr
 }
 
-// GetByUsername mocks database.Users.GetByUsername
-func (m *mocks) GetByUsername(ctx context.Context, username string) (*types.User, error) {
-	if m.getByUsernameErr != nil {
-		return nil, m.getByUsernameErr
+// GetByUsernbme mocks dbtbbbse.Users.GetByUsernbme
+func (m *mocks) GetByUsernbme(ctx context.Context, usernbme string) (*types.User, error) {
+	if m.getByUsernbmeErr != nil {
+		return nil, m.getByUsernbmeErr
 	}
 
-	for _, u := range m.userInfos {
-		if u.user.Username == username {
+	for _, u := rbnge m.userInfos {
+		if u.user.Usernbme == usernbme {
 			return &u.user, nil
 		}
 	}
-	return nil, database.MockUserNotFoundErr
+	return nil, dbtbbbse.MockUserNotFoundErr
 }
 
-// GetByID mocks database.Users.GetByID
+// GetByID mocks dbtbbbse.Users.GetByID
 func (m *mocks) GetByID(ctx context.Context, id int32) (*types.User, error) {
 	if m.getByIDErr != nil {
 		return nil, m.getByIDErr
 	}
 
-	for _, u := range m.userInfos {
+	for _, u := rbnge m.userInfos {
 		if u.user.ID == id {
 			return &u.user, nil
 		}
 	}
-	return nil, database.MockUserNotFoundErr
+	return nil, dbtbbbse.MockUserNotFoundErr
 }
 
-// Update mocks database.Users.Update
-func (m *mocks) Update(ctx context.Context, id int32, update database.UserUpdate) error {
-	if m.updateErr != nil {
-		return m.updateErr
+// Updbte mocks dbtbbbse.Users.Updbte
+func (m *mocks) Updbte(ctx context.Context, id int32, updbte dbtbbbse.UserUpdbte) error {
+	if m.updbteErr != nil {
+		return m.updbteErr
 	}
 
 	_, err := m.GetByID(ctx, id)
@@ -795,35 +795,35 @@ func (m *mocks) Update(ctx context.Context, id int32, update database.UserUpdate
 		return err
 	}
 
-	// Save user
-	m.updatedUsers[id] = append(m.updatedUsers[id], update)
+	// Sbve user
+	m.updbtedUsers[id] = bppend(m.updbtedUsers[id], updbte)
 	return nil
 }
 
-// GrantPendingPermissions mocks database.Authz.GrantPendingPermissions
-func (m *mocks) GrantPendingPermissions(context.Context, *database.GrantPendingPermissionsArgs) error {
-	m.calledGrantPendingPermissions = true
+// GrbntPendingPermissions mocks dbtbbbse.Authz.GrbntPendingPermissions
+func (m *mocks) GrbntPendingPermissions(context.Context, *dbtbbbse.GrbntPendingPermissionsArgs) error {
+	m.cblledGrbntPendingPermissions = true
 	return nil
 }
 
-func (m *mocks) CreateUserSyncJobFunc(context.Context, int32, database.PermissionSyncJobOpts) error {
-	m.calledCreateUserSyncJob = true
+func (m *mocks) CrebteUserSyncJobFunc(context.Context, int32, dbtbbbse.PermissionSyncJobOpts) error {
+	m.cblledCrebteUserSyncJob = true
 	return nil
 }
 
-func ext(serviceType, serviceID, clientID, accountID string) extsvc.AccountSpec {
+func ext(serviceType, serviceID, clientID, bccountID string) extsvc.AccountSpec {
 	return extsvc.AccountSpec{
 		ServiceType: serviceType,
 		ServiceID:   serviceID,
 		ClientID:    clientID,
-		AccountID:   accountID,
+		AccountID:   bccountID,
 	}
 }
 
-func userProps(username, email string) database.NewUser {
-	return database.NewUser{
-		Username:        username,
-		Email:           email,
-		EmailIsVerified: true,
+func userProps(usernbme, embil string) dbtbbbse.NewUser {
+	return dbtbbbse.NewUser{
+		Usernbme:        usernbme,
+		Embil:           embil,
+		EmbilIsVerified: true,
 	}
 }

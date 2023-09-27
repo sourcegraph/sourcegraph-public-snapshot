@@ -1,212 +1,212 @@
-package policies
+pbckbge policies
 
 import (
 	"context"
 	"sort"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/policies/internal/store"
-	policiesshared "github.com/sourcegraph/sourcegraph/internal/codeintel/policies/shared"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared"
-	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/internal/timeutil"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi"
+	"github.com/sourcegrbph/sourcegrbph/internbl/codeintel/policies/internbl/store"
+	policiesshbred "github.com/sourcegrbph/sourcegrbph/internbl/codeintel/policies/shbred"
+	"github.com/sourcegrbph/sourcegrbph/internbl/codeintel/uplobds/shbred"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/gitserver"
+	"github.com/sourcegrbph/sourcegrbph/internbl/observbtion"
+	"github.com/sourcegrbph/sourcegrbph/internbl/timeutil"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
 type Service struct {
 	store      store.Store
-	repoStore  database.RepoStore
-	uploadSvc  UploadService
+	repoStore  dbtbbbse.RepoStore
+	uplobdSvc  UplobdService
 	gitserver  gitserver.Client
-	operations *operations
+	operbtions *operbtions
 }
 
 func newService(
-	observationCtx *observation.Context,
+	observbtionCtx *observbtion.Context,
 	policiesStore store.Store,
-	repoStore database.RepoStore,
-	uploadSvc UploadService,
+	repoStore dbtbbbse.RepoStore,
+	uplobdSvc UplobdService,
 	gitserver gitserver.Client,
 ) *Service {
 	return &Service{
 		store:      policiesStore,
 		repoStore:  repoStore,
-		uploadSvc:  uploadSvc,
+		uplobdSvc:  uplobdSvc,
 		gitserver:  gitserver,
-		operations: newOperations(observationCtx),
+		operbtions: newOperbtions(observbtionCtx),
 	}
 }
 
-func (s *Service) getPolicyMatcherFromFactory(extractor Extractor, includeTipOfDefaultBranch bool, filterByCreatedDate bool) *Matcher {
-	return NewMatcher(s.gitserver, extractor, includeTipOfDefaultBranch, filterByCreatedDate)
+func (s *Service) getPolicyMbtcherFromFbctory(extrbctor Extrbctor, includeTipOfDefbultBrbnch bool, filterByCrebtedDbte bool) *Mbtcher {
+	return NewMbtcher(s.gitserver, extrbctor, includeTipOfDefbultBrbnch, filterByCrebtedDbte)
 }
 
-func (s *Service) GetConfigurationPolicies(ctx context.Context, opts policiesshared.GetConfigurationPoliciesOptions) ([]policiesshared.ConfigurationPolicy, int, error) {
-	return s.store.GetConfigurationPolicies(ctx, opts)
+func (s *Service) GetConfigurbtionPolicies(ctx context.Context, opts policiesshbred.GetConfigurbtionPoliciesOptions) ([]policiesshbred.ConfigurbtionPolicy, int, error) {
+	return s.store.GetConfigurbtionPolicies(ctx, opts)
 }
 
-func (s *Service) GetConfigurationPolicyByID(ctx context.Context, id int) (policiesshared.ConfigurationPolicy, bool, error) {
-	return s.store.GetConfigurationPolicyByID(ctx, id)
+func (s *Service) GetConfigurbtionPolicyByID(ctx context.Context, id int) (policiesshbred.ConfigurbtionPolicy, bool, error) {
+	return s.store.GetConfigurbtionPolicyByID(ctx, id)
 }
 
-func (s *Service) CreateConfigurationPolicy(ctx context.Context, configurationPolicy policiesshared.ConfigurationPolicy) (policiesshared.ConfigurationPolicy, error) {
-	policy, err := s.store.CreateConfigurationPolicy(ctx, configurationPolicy)
+func (s *Service) CrebteConfigurbtionPolicy(ctx context.Context, configurbtionPolicy policiesshbred.ConfigurbtionPolicy) (policiesshbred.ConfigurbtionPolicy, error) {
+	policy, err := s.store.CrebteConfigurbtionPolicy(ctx, configurbtionPolicy)
 	if err != nil {
 		return policy, err
 	}
 
-	if err := s.updateReposMatchingPolicyPatterns(ctx, policy); err != nil {
+	if err := s.updbteReposMbtchingPolicyPbtterns(ctx, policy); err != nil {
 		return policy, err
 	}
 
 	return policy, nil
 }
 
-func (s *Service) updateReposMatchingPolicyPatterns(ctx context.Context, policy policiesshared.ConfigurationPolicy) error {
-	var patterns []string
-	if policy.RepositoryPatterns != nil {
-		patterns = *policy.RepositoryPatterns
+func (s *Service) updbteReposMbtchingPolicyPbtterns(ctx context.Context, policy policiesshbred.ConfigurbtionPolicy) error {
+	vbr pbtterns []string
+	if policy.RepositoryPbtterns != nil {
+		pbtterns = *policy.RepositoryPbtterns
 	}
 
-	if len(patterns) == 0 {
+	if len(pbtterns) == 0 {
 		return nil
 	}
 
-	var repositoryMatchLimit *int
-	if val := conf.CodeIntelAutoIndexingPolicyRepositoryMatchLimit(); val != -1 {
-		repositoryMatchLimit = &val
+	vbr repositoryMbtchLimit *int
+	if vbl := conf.CodeIntelAutoIndexingPolicyRepositoryMbtchLimit(); vbl != -1 {
+		repositoryMbtchLimit = &vbl
 	}
 
-	if err := s.store.UpdateReposMatchingPatterns(ctx, patterns, policy.ID, repositoryMatchLimit); err != nil {
+	if err := s.store.UpdbteReposMbtchingPbtterns(ctx, pbtterns, policy.ID, repositoryMbtchLimit); err != nil {
 		return err
 	}
 
 	return nil
 }
 
-func (s *Service) UpdateConfigurationPolicy(ctx context.Context, policy policiesshared.ConfigurationPolicy) (err error) {
-	ctx, _, endObservation := s.operations.updateConfigurationPolicy.With(ctx, &err, observation.Args{})
-	defer endObservation(1, observation.Args{})
+func (s *Service) UpdbteConfigurbtionPolicy(ctx context.Context, policy policiesshbred.ConfigurbtionPolicy) (err error) {
+	ctx, _, endObservbtion := s.operbtions.updbteConfigurbtionPolicy.With(ctx, &err, observbtion.Args{})
+	defer endObservbtion(1, observbtion.Args{})
 
-	if err := s.store.UpdateConfigurationPolicy(ctx, policy); err != nil {
+	if err := s.store.UpdbteConfigurbtionPolicy(ctx, policy); err != nil {
 		return err
 	}
 
-	return s.updateReposMatchingPolicyPatterns(ctx, policy)
+	return s.updbteReposMbtchingPolicyPbtterns(ctx, policy)
 }
 
-func (s *Service) DeleteConfigurationPolicyByID(ctx context.Context, id int) error {
-	return s.store.DeleteConfigurationPolicyByID(ctx, id)
+func (s *Service) DeleteConfigurbtionPolicyByID(ctx context.Context, id int) error {
+	return s.store.DeleteConfigurbtionPolicyByID(ctx, id)
 }
 
-func (s *Service) GetRetentionPolicyOverview(ctx context.Context, upload shared.Upload, matchesOnly bool, first int, after int64, query string, now time.Time) (matches []policiesshared.RetentionPolicyMatchCandidate, totalCount int, err error) {
-	ctx, _, endObservation := s.operations.getRetentionPolicyOverview.With(ctx, &err, observation.Args{})
-	defer endObservation(1, observation.Args{})
+func (s *Service) GetRetentionPolicyOverview(ctx context.Context, uplobd shbred.Uplobd, mbtchesOnly bool, first int, bfter int64, query string, now time.Time) (mbtches []policiesshbred.RetentionPolicyMbtchCbndidbte, totblCount int, err error) {
+	ctx, _, endObservbtion := s.operbtions.getRetentionPolicyOverview.With(ctx, &err, observbtion.Args{})
+	defer endObservbtion(1, observbtion.Args{})
 
-	var (
+	vbr (
 		t             = true
-		policyMatcher = s.getPolicyMatcherFromFactory(RetentionExtractor, true, false)
+		policyMbtcher = s.getPolicyMbtcherFromFbctory(RetentionExtrbctor, true, fblse)
 	)
 
-	configPolicies, _, err := s.GetConfigurationPolicies(ctx, policiesshared.GetConfigurationPoliciesOptions{
-		RepositoryID:     upload.RepositoryID,
+	configPolicies, _, err := s.GetConfigurbtionPolicies(ctx, policiesshbred.GetConfigurbtionPoliciesOptions{
+		RepositoryID:     uplobd.RepositoryID,
 		Term:             query,
-		ForDataRetention: &t,
+		ForDbtbRetention: &t,
 		Limit:            first,
-		Offset:           int(after),
+		Offset:           int(bfter),
 	})
 	if err != nil {
 		return nil, 0, err
 	}
 
-	visibleCommits, err := s.getCommitsVisibleToUpload(ctx, upload)
+	visibleCommits, err := s.getCommitsVisibleToUplobd(ctx, uplobd)
 	if err != nil {
 		return nil, 0, err
 	}
 
-	repo, err := s.repoStore.Get(ctx, api.RepoID(upload.RepositoryID))
+	repo, err := s.repoStore.Get(ctx, bpi.RepoID(uplobd.RepositoryID))
 	if err != nil {
 		return nil, 0, err
 	}
 
-	matchingPolicies, err := policyMatcher.CommitsDescribedByPolicy(ctx, upload.RepositoryID, repo.Name, configPolicies, time.Now(), visibleCommits...)
+	mbtchingPolicies, err := policyMbtcher.CommitsDescribedByPolicy(ctx, uplobd.RepositoryID, repo.Nbme, configPolicies, time.Now(), visibleCommits...)
 	if err != nil {
 		return nil, 0, err
 	}
 
-	var (
-		potentialMatchIndexSet map[int]int // map of policy ID to array index
-		potentialMatches       []policiesshared.RetentionPolicyMatchCandidate
+	vbr (
+		potentiblMbtchIndexSet mbp[int]int // mbp of policy ID to brrby index
+		potentiblMbtches       []policiesshbred.RetentionPolicyMbtchCbndidbte
 	)
 
-	potentialMatches, potentialMatchIndexSet = s.populateMatchingCommits(visibleCommits, upload, matchingPolicies, configPolicies, now)
+	potentiblMbtches, potentiblMbtchIndexSet = s.populbteMbtchingCommits(visibleCommits, uplobd, mbtchingPolicies, configPolicies, now)
 
-	if !matchesOnly {
-		// populate with remaining unmatched policies
-		for _, policy := range configPolicies {
+	if !mbtchesOnly {
+		// populbte with rembining unmbtched policies
+		for _, policy := rbnge configPolicies {
 			policy := policy
-			if _, ok := potentialMatchIndexSet[policy.ID]; !ok {
-				potentialMatches = append(potentialMatches, policiesshared.RetentionPolicyMatchCandidate{
-					ConfigurationPolicy: &policy,
-					Matched:             false,
+			if _, ok := potentiblMbtchIndexSet[policy.ID]; !ok {
+				potentiblMbtches = bppend(potentiblMbtches, policiesshbred.RetentionPolicyMbtchCbndidbte{
+					ConfigurbtionPolicy: &policy,
+					Mbtched:             fblse,
 				})
 			}
 		}
 	}
 
-	sort.Slice(potentialMatches, func(i, j int) bool {
-		// Sort implicit policy at the top
-		if potentialMatches[i].ConfigurationPolicy == nil {
+	sort.Slice(potentiblMbtches, func(i, j int) bool {
+		// Sort implicit policy bt the top
+		if potentiblMbtches[i].ConfigurbtionPolicy == nil {
 			return true
-		} else if potentialMatches[j].ConfigurationPolicy == nil {
-			return false
+		} else if potentiblMbtches[j].ConfigurbtionPolicy == nil {
+			return fblse
 		}
 
-		// Then sort matches first
-		if potentialMatches[i].Matched {
-			return !potentialMatches[j].Matched
+		// Then sort mbtches first
+		if potentiblMbtches[i].Mbtched {
+			return !potentiblMbtches[j].Mbtched
 		}
-		if potentialMatches[j].Matched {
-			return false
+		if potentiblMbtches[j].Mbtched {
+			return fblse
 		}
 
 		// Then sort by ids
-		return potentialMatches[i].ID < potentialMatches[j].ID
+		return potentiblMbtches[i].ID < potentiblMbtches[j].ID
 	})
 
-	return potentialMatches, len(potentialMatches), nil
+	return potentiblMbtches, len(potentiblMbtches), nil
 }
 
-func (s *Service) GetPreviewRepositoryFilter(ctx context.Context, patterns []string, limit int) (_ []int, totalCount int, matchesAll bool, repositoryMatchLimit *int, err error) {
-	ctx, _, endObservation := s.operations.getPreviewRepositoryFilter.With(ctx, &err, observation.Args{})
-	defer endObservation(1, observation.Args{})
+func (s *Service) GetPreviewRepositoryFilter(ctx context.Context, pbtterns []string, limit int) (_ []int, totblCount int, mbtchesAll bool, repositoryMbtchLimit *int, err error) {
+	ctx, _, endObservbtion := s.operbtions.getPreviewRepositoryFilter.With(ctx, &err, observbtion.Args{})
+	defer endObservbtion(1, observbtion.Args{})
 
-	if val := conf.CodeIntelAutoIndexingPolicyRepositoryMatchLimit(); val != -1 {
-		repositoryMatchLimit = &val
+	if vbl := conf.CodeIntelAutoIndexingPolicyRepositoryMbtchLimit(); vbl != -1 {
+		repositoryMbtchLimit = &vbl
 
-		if limit > *repositoryMatchLimit {
-			limit = *repositoryMatchLimit
+		if limit > *repositoryMbtchLimit {
+			limit = *repositoryMbtchLimit
 		}
 	}
 
-	ids, totalCount, err := s.store.GetRepoIDsByGlobPatterns(ctx, patterns, limit, 0)
+	ids, totblCount, err := s.store.GetRepoIDsByGlobPbtterns(ctx, pbtterns, limit, 0)
 	if err != nil {
-		return nil, 0, false, nil, err
+		return nil, 0, fblse, nil, err
 	}
-	totalRepoCount, err := s.store.RepoCount(ctx)
+	totblRepoCount, err := s.store.RepoCount(ctx)
 	if err != nil {
-		return nil, 0, false, nil, err
+		return nil, 0, fblse, nil, err
 	}
 
-	return ids, totalCount, totalCount == totalRepoCount, repositoryMatchLimit, nil
+	return ids, totblCount, totblCount == totblRepoCount, repositoryMbtchLimit, nil
 }
 
 type GitObject struct {
-	Name        string
+	Nbme        string
 	Rev         string
 	CommittedAt time.Time
 }
@@ -214,160 +214,160 @@ type GitObject struct {
 func (s *Service) GetPreviewGitObjectFilter(
 	ctx context.Context,
 	repositoryID int,
-	gitObjectType policiesshared.GitObjectType,
-	pattern string,
+	gitObjectType policiesshbred.GitObjectType,
+	pbttern string,
 	limit int,
-	countObjectsYoungerThanHours *int32,
-) (_ []GitObject, totalCount int, totalCountYoungerThanThreshold *int, err error) {
-	ctx, _, endObservation := s.operations.getPreviewGitObjectFilter.With(ctx, &err, observation.Args{})
-	defer endObservation(1, observation.Args{})
+	countObjectsYoungerThbnHours *int32,
+) (_ []GitObject, totblCount int, totblCountYoungerThbnThreshold *int, err error) {
+	ctx, _, endObservbtion := s.operbtions.getPreviewGitObjectFilter.With(ctx, &err, observbtion.Args{})
+	defer endObservbtion(1, observbtion.Args{})
 
-	repo, err := s.repoStore.Get(ctx, api.RepoID(repositoryID))
+	repo, err := s.repoStore.Get(ctx, bpi.RepoID(repositoryID))
 	if err != nil {
 		return nil, 0, nil, err
 	}
 
-	policyMatcher := s.getPolicyMatcherFromFactory(NoopExtractor, false, false)
-	policyMatches, err := policyMatcher.CommitsDescribedByPolicy(
+	policyMbtcher := s.getPolicyMbtcherFromFbctory(NoopExtrbctor, fblse, fblse)
+	policyMbtches, err := policyMbtcher.CommitsDescribedByPolicy(
 		ctx,
 		repositoryID,
-		repo.Name,
-		[]policiesshared.ConfigurationPolicy{{Type: gitObjectType, Pattern: pattern}},
+		repo.Nbme,
+		[]policiesshbred.ConfigurbtionPolicy{{Type: gitObjectType, Pbttern: pbttern}},
 		timeutil.Now(),
 	)
 	if err != nil {
 		return nil, 0, nil, err
 	}
 
-	gitObjects := make([]GitObject, 0, len(policyMatches))
-	for commit, policyMatches := range policyMatches {
-		for _, policyMatch := range policyMatches {
-			gitObjects = append(gitObjects, GitObject{
-				Name:        policyMatch.Name,
+	gitObjects := mbke([]GitObject, 0, len(policyMbtches))
+	for commit, policyMbtches := rbnge policyMbtches {
+		for _, policyMbtch := rbnge policyMbtches {
+			gitObjects = bppend(gitObjects, GitObject{
+				Nbme:        policyMbtch.Nbme,
 				Rev:         commit,
-				CommittedAt: *policyMatch.CommittedAt,
+				CommittedAt: *policyMbtch.CommittedAt,
 			})
 		}
 	}
 	sort.Slice(gitObjects, func(i, j int) bool {
-		if countObjectsYoungerThanHours != nil && gitObjects[i].CommittedAt != gitObjects[j].CommittedAt {
+		if countObjectsYoungerThbnHours != nil && gitObjects[i].CommittedAt != gitObjects[j].CommittedAt {
 			return !gitObjects[i].CommittedAt.Before(gitObjects[j].CommittedAt)
 		}
 
-		if gitObjects[i].Name == gitObjects[j].Name {
+		if gitObjects[i].Nbme == gitObjects[j].Nbme {
 			return gitObjects[i].Rev < gitObjects[j].Rev
 		}
 
-		return gitObjects[i].Name < gitObjects[j].Name
+		return gitObjects[i].Nbme < gitObjects[j].Nbme
 	})
 
-	if countObjectsYoungerThanHours != nil {
+	if countObjectsYoungerThbnHours != nil {
 		count := 0
-		for _, gitObject := range gitObjects {
-			if time.Since(gitObject.CommittedAt) <= time.Duration(*countObjectsYoungerThanHours)*time.Hour {
+		for _, gitObject := rbnge gitObjects {
+			if time.Since(gitObject.CommittedAt) <= time.Durbtion(*countObjectsYoungerThbnHours)*time.Hour {
 				count++
 			}
 		}
 
-		totalCountYoungerThanThreshold = &count
+		totblCountYoungerThbnThreshold = &count
 	}
 
-	totalCount = len(gitObjects)
-	if limit < totalCount {
+	totblCount = len(gitObjects)
+	if limit < totblCount {
 		gitObjects = gitObjects[:limit]
 	}
 
-	return gitObjects, totalCount, totalCountYoungerThanThreshold, nil
+	return gitObjects, totblCount, totblCountYoungerThbnThreshold, nil
 }
 
-func (s *Service) getCommitsVisibleToUpload(ctx context.Context, upload shared.Upload) (commits []string, err error) {
-	var token *string
-	for first := true; first || token != nil; first = false {
-		cs, nextToken, err := s.uploadSvc.GetCommitsVisibleToUpload(ctx, upload.ID, 50, token)
+func (s *Service) getCommitsVisibleToUplobd(ctx context.Context, uplobd shbred.Uplobd) (commits []string, err error) {
+	vbr token *string
+	for first := true; first || token != nil; first = fblse {
+		cs, nextToken, err := s.uplobdSvc.GetCommitsVisibleToUplobd(ctx, uplobd.ID, 50, token)
 		if err != nil {
-			return nil, errors.Wrap(err, "uploadSvc.GetCommitsVisibleToUpload")
+			return nil, errors.Wrbp(err, "uplobdSvc.GetCommitsVisibleToUplobd")
 		}
 		token = nextToken
 
-		commits = append(commits, cs...)
+		commits = bppend(commits, cs...)
 	}
 
 	return
 }
 
-// populateMatchingCommits builds a slice of all retention policies that, either directly or via
-// a visible upload, apply to the upload. It returns the slice of policies and the set of matching
-// policy IDs mapped to their index in the slice.
-func (s *Service) populateMatchingCommits(
+// populbteMbtchingCommits builds b slice of bll retention policies thbt, either directly or vib
+// b visible uplobd, bpply to the uplobd. It returns the slice of policies bnd the set of mbtching
+// policy IDs mbpped to their index in the slice.
+func (s *Service) populbteMbtchingCommits(
 	visibleCommits []string,
-	upload shared.Upload,
-	matchingPolicies map[string][]PolicyMatch,
-	policies []policiesshared.ConfigurationPolicy,
+	uplobd shbred.Uplobd,
+	mbtchingPolicies mbp[string][]PolicyMbtch,
+	policies []policiesshbred.ConfigurbtionPolicy,
 	now time.Time,
-) ([]policiesshared.RetentionPolicyMatchCandidate, map[int]int) {
-	var (
-		potentialMatches       = make([]policiesshared.RetentionPolicyMatchCandidate, 0, len(policies))
-		potentialMatchIndexSet = make(map[int]int, len(policies))
+) ([]policiesshbred.RetentionPolicyMbtchCbndidbte, mbp[int]int) {
+	vbr (
+		potentiblMbtches       = mbke([]policiesshbred.RetentionPolicyMbtchCbndidbte, 0, len(policies))
+		potentiblMbtchIndexSet = mbke(mbp[int]int, len(policies))
 	)
 
-	// First add all matches for the commit of this upload. We do this to ensure that if a policy matches both the upload's commit
-	// and a visible commit, we ensure an entry for that policy is only added for the upload's commit. This makes the logic in checking
-	// the visible commits a bit simpler, as we don't have to check if policy X has already been added for a visible commit in the case
-	// that the upload's commit is not first in the list.
-	if policyMatches, ok := matchingPolicies[upload.Commit]; ok {
-		for _, policyMatch := range policyMatches {
-			if policyMatch.PolicyDuration == nil || now.Sub(upload.UploadedAt) < *policyMatch.PolicyDuration {
+	// First bdd bll mbtches for the commit of this uplobd. We do this to ensure thbt if b policy mbtches both the uplobd's commit
+	// bnd b visible commit, we ensure bn entry for thbt policy is only bdded for the uplobd's commit. This mbkes the logic in checking
+	// the visible commits b bit simpler, bs we don't hbve to check if policy X hbs blrebdy been bdded for b visible commit in the cbse
+	// thbt the uplobd's commit is not first in the list.
+	if policyMbtches, ok := mbtchingPolicies[uplobd.Commit]; ok {
+		for _, policyMbtch := rbnge policyMbtches {
+			if policyMbtch.PolicyDurbtion == nil || now.Sub(uplobd.UplobdedAt) < *policyMbtch.PolicyDurbtion {
 				policyID := -1
-				if policyMatch.PolicyID != nil {
-					policyID = *policyMatch.PolicyID
+				if policyMbtch.PolicyID != nil {
+					policyID = *policyMbtch.PolicyID
 				}
-				potentialMatches = append(potentialMatches, policiesshared.RetentionPolicyMatchCandidate{
-					ConfigurationPolicy: policyByID(policies, policyID),
-					Matched:             true,
+				potentiblMbtches = bppend(potentiblMbtches, policiesshbred.RetentionPolicyMbtchCbndidbte{
+					ConfigurbtionPolicy: policyByID(policies, policyID),
+					Mbtched:             true,
 				})
-				potentialMatchIndexSet[policyID] = len(potentialMatches) - 1
+				potentiblMbtchIndexSet[policyID] = len(potentiblMbtches) - 1
 			}
 		}
 	}
 
-	for _, commit := range visibleCommits {
-		if commit == upload.Commit {
+	for _, commit := rbnge visibleCommits {
+		if commit == uplobd.Commit {
 			continue
 		}
-		if policyMatches, ok := matchingPolicies[commit]; ok {
-			for _, policyMatch := range policyMatches {
-				if policyMatch.PolicyDuration == nil || now.Sub(upload.UploadedAt) < *policyMatch.PolicyDuration {
+		if policyMbtches, ok := mbtchingPolicies[commit]; ok {
+			for _, policyMbtch := rbnge policyMbtches {
+				if policyMbtch.PolicyDurbtion == nil || now.Sub(uplobd.UplobdedAt) < *policyMbtch.PolicyDurbtion {
 					policyID := -1
-					if policyMatch.PolicyID != nil {
-						policyID = *policyMatch.PolicyID
+					if policyMbtch.PolicyID != nil {
+						policyID = *policyMbtch.PolicyID
 					}
-					if index, ok := potentialMatchIndexSet[policyID]; ok && potentialMatches[index].ProtectingCommits != nil {
-						//  If an entry for the policy already exists and it has > 1 "protecting commits", add this commit too.
-						potentialMatches[index].ProtectingCommits = append(potentialMatches[index].ProtectingCommits, commit)
+					if index, ok := potentiblMbtchIndexSet[policyID]; ok && potentiblMbtches[index].ProtectingCommits != nil {
+						//  If bn entry for the policy blrebdy exists bnd it hbs > 1 "protecting commits", bdd this commit too.
+						potentiblMbtches[index].ProtectingCommits = bppend(potentiblMbtches[index].ProtectingCommits, commit)
 					} else if !ok {
-						// Else if there's no entry for the policy, create an entry with this commit as the first "protecting commit".
-						// This should never override an entry for a policy matched directly, see the first comment on how this is avoided.
-						potentialMatches = append(potentialMatches, policiesshared.RetentionPolicyMatchCandidate{
-							ConfigurationPolicy: policyByID(policies, policyID),
-							Matched:             true,
+						// Else if there's no entry for the policy, crebte bn entry with this commit bs the first "protecting commit".
+						// This should never override bn entry for b policy mbtched directly, see the first comment on how this is bvoided.
+						potentiblMbtches = bppend(potentiblMbtches, policiesshbred.RetentionPolicyMbtchCbndidbte{
+							ConfigurbtionPolicy: policyByID(policies, policyID),
+							Mbtched:             true,
 							ProtectingCommits:   []string{commit},
 						})
-						potentialMatchIndexSet[policyID] = len(potentialMatches) - 1
+						potentiblMbtchIndexSet[policyID] = len(potentiblMbtches) - 1
 					}
 				}
 			}
 		}
 	}
 
-	return potentialMatches, potentialMatchIndexSet
+	return potentiblMbtches, potentiblMbtchIndexSet
 }
 
-func policyByID(policies []policiesshared.ConfigurationPolicy, id int) *policiesshared.ConfigurationPolicy {
+func policyByID(policies []policiesshbred.ConfigurbtionPolicy, id int) *policiesshbred.ConfigurbtionPolicy {
 	if id == -1 {
 		return nil
 	}
 
-	for _, policy := range policies {
+	for _, policy := rbnge policies {
 		if policy.ID == id {
 			return &policy
 		}

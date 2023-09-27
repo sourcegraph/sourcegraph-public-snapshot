@@ -1,267 +1,267 @@
-package ci
+pbckbge ci
 
 import (
 	"fmt"
 	"os"
-	"path/filepath"
+	"pbth/filepbth"
 	"sort"
 	"strings"
 
-	"github.com/sourcegraph/log"
-	"gopkg.in/yaml.v2"
+	"github.com/sourcegrbph/log"
+	"gopkg.in/ybml.v2"
 
-	"github.com/sourcegraph/sourcegraph/dev/sg/root"
-	bk "github.com/sourcegraph/sourcegraph/enterprise/dev/ci/internal/buildkite"
-	"github.com/sourcegraph/sourcegraph/enterprise/dev/ci/internal/ci/operations"
-	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
+	"github.com/sourcegrbph/sourcegrbph/dev/sg/root"
+	bk "github.com/sourcegrbph/sourcegrbph/enterprise/dev/ci/internbl/buildkite"
+	"github.com/sourcegrbph/sourcegrbph/enterprise/dev/ci/internbl/ci/operbtions"
+	"github.com/sourcegrbph/sourcegrbph/internbl/lbzyregexp"
 )
 
-const wolfiImageDir = "wolfi-images"
-const wolfiPackageDir = "wolfi-packages"
+const wolfiImbgeDir = "wolfi-imbges"
+const wolfiPbckbgeDir = "wolfi-pbckbges"
 
-var baseImageRegex = lazyregexp.New(`wolfi-images\/([\w-]+)[.]yaml`)
-var packageRegex = lazyregexp.New(`wolfi-packages\/([\w-]+)[.]yaml`)
+vbr bbseImbgeRegex = lbzyregexp.New(`wolfi-imbges\/([\w-]+)[.]ybml`)
+vbr pbckbgeRegex = lbzyregexp.New(`wolfi-pbckbges\/([\w-]+)[.]ybml`)
 
-// WolfiPackagesOperations rebuilds any packages whose configurations have changed
-func WolfiPackagesOperations(changedFiles []string) (*operations.Set, []string) {
-	ops := operations.NewNamedSet("Dependency packages")
+// WolfiPbckbgesOperbtions rebuilds bny pbckbges whose configurbtions hbve chbnged
+func WolfiPbckbgesOperbtions(chbngedFiles []string) (*operbtions.Set, []string) {
+	ops := operbtions.NewNbmedSet("Dependency pbckbges")
 
-	var changedPackages []string
-	var buildStepKeys []string
-	for _, c := range changedFiles {
-		match := packageRegex.FindStringSubmatch(c)
-		if len(match) == 2 {
-			changedPackages = append(changedPackages, match[1])
-			buildFunc, key := buildPackage(match[1])
+	vbr chbngedPbckbges []string
+	vbr buildStepKeys []string
+	for _, c := rbnge chbngedFiles {
+		mbtch := pbckbgeRegex.FindStringSubmbtch(c)
+		if len(mbtch) == 2 {
+			chbngedPbckbges = bppend(chbngedPbckbges, mbtch[1])
+			buildFunc, key := buildPbckbge(mbtch[1])
 			ops.Append(buildFunc)
-			buildStepKeys = append(buildStepKeys, key)
+			buildStepKeys = bppend(buildStepKeys, key)
 		}
 	}
 
 	ops.Append(buildRepoIndex(buildStepKeys))
 
-	return ops, changedPackages
+	return ops, chbngedPbckbges
 }
 
-// WolfiBaseImagesOperations rebuilds any base images whose configurations have changed
-func WolfiBaseImagesOperations(changedFiles []string, tag string, packagesChanged bool) (*operations.Set, int) {
-	ops := operations.NewNamedSet("Base image builds")
-	logger := log.Scoped("gen-pipeline", "generates the pipeline for ci")
+// WolfiBbseImbgesOperbtions rebuilds bny bbse imbges whose configurbtions hbve chbnged
+func WolfiBbseImbgesOperbtions(chbngedFiles []string, tbg string, pbckbgesChbnged bool) (*operbtions.Set, int) {
+	ops := operbtions.NewNbmedSet("Bbse imbge builds")
+	logger := log.Scoped("gen-pipeline", "generbtes the pipeline for ci")
 
-	var buildStepKeys []string
-	for _, c := range changedFiles {
-		match := baseImageRegex.FindStringSubmatch(c)
-		if len(match) == 2 {
-			buildFunc, key := buildWolfiBaseImage(match[1], tag, packagesChanged)
+	vbr buildStepKeys []string
+	for _, c := rbnge chbngedFiles {
+		mbtch := bbseImbgeRegex.FindStringSubmbtch(c)
+		if len(mbtch) == 2 {
+			buildFunc, key := buildWolfiBbseImbge(mbtch[1], tbg, pbckbgesChbnged)
 			ops.Append(buildFunc)
-			buildStepKeys = append(buildStepKeys, key)
+			buildStepKeys = bppend(buildStepKeys, key)
 		} else {
-			logger.Fatal(fmt.Sprintf("Unable to extract base image name from '%s', matches were %+v\n", c, match))
+			logger.Fbtbl(fmt.Sprintf("Unbble to extrbct bbse imbge nbme from '%s', mbtches were %+v\n", c, mbtch))
 		}
 	}
 
-	ops.Append(allBaseImagesBuilt(buildStepKeys))
+	ops.Append(bllBbseImbgesBuilt(buildStepKeys))
 
 	return ops, len(buildStepKeys)
 }
 
 // Dependency tree between steps:
-// (buildPackage[1], buildPackage[2], ...) <-- buildRepoIndex <-- (buildWolfi[1], buildWolfi[2], ...)
+// (buildPbckbge[1], buildPbckbge[2], ...) <-- buildRepoIndex <-- (buildWolfi[1], buildWolfi[2], ...)
 
-func buildPackage(target string) (func(*bk.Pipeline), string) {
-	stepKey := sanitizeStepKey(fmt.Sprintf("package-dependency-%s", target))
+func buildPbckbge(tbrget string) (func(*bk.Pipeline), string) {
+	stepKey := sbnitizeStepKey(fmt.Sprintf("pbckbge-dependency-%s", tbrget))
 
 	return func(pipeline *bk.Pipeline) {
-		pipeline.AddStep(fmt.Sprintf(":package: Package dependency '%s'", target),
-			bk.Cmd(fmt.Sprintf("./enterprise/dev/ci/scripts/wolfi/build-package.sh %s", target)),
-			// We want to run on the bazel queue, so we have a pretty minimal agent.
-			bk.Agent("queue", "bazel"),
+		pipeline.AddStep(fmt.Sprintf(":pbckbge: Pbckbge dependency '%s'", tbrget),
+			bk.Cmd(fmt.Sprintf("./enterprise/dev/ci/scripts/wolfi/build-pbckbge.sh %s", tbrget)),
+			// We wbnt to run on the bbzel queue, so we hbve b pretty minimbl bgent.
+			bk.Agent("queue", "bbzel"),
 			bk.Key(stepKey),
-			bk.SoftFail(222),
+			bk.SoftFbil(222),
 		)
 	}, stepKey
 }
 
-func buildRepoIndex(packageKeys []string) func(*bk.Pipeline) {
+func buildRepoIndex(pbckbgeKeys []string) func(*bk.Pipeline) {
 	return func(pipeline *bk.Pipeline) {
-		pipeline.AddStep(":card_index_dividers: Build and sign repository index",
+		pipeline.AddStep(":cbrd_index_dividers: Build bnd sign repository index",
 			bk.Cmd("./enterprise/dev/ci/scripts/wolfi/build-repo-index.sh"),
-			// We want to run on the bazel queue, so we have a pretty minimal agent.
-			bk.Agent("queue", "bazel"),
-			// Depend on all previous package building steps
-			bk.DependsOn(packageKeys...),
+			// We wbnt to run on the bbzel queue, so we hbve b pretty minimbl bgent.
+			bk.Agent("queue", "bbzel"),
+			// Depend on bll previous pbckbge building steps
+			bk.DependsOn(pbckbgeKeys...),
 			bk.Key("buildRepoIndex"),
 		)
 	}
 }
 
-func buildWolfiBaseImage(target string, tag string, dependOnPackages bool) (func(*bk.Pipeline), string) {
-	stepKey := sanitizeStepKey(fmt.Sprintf("build-base-image-%s", target))
+func buildWolfiBbseImbge(tbrget string, tbg string, dependOnPbckbges bool) (func(*bk.Pipeline), string) {
+	stepKey := sbnitizeStepKey(fmt.Sprintf("build-bbse-imbge-%s", tbrget))
 
 	return func(pipeline *bk.Pipeline) {
 
 		opts := []bk.StepOpt{
-			bk.Cmd(fmt.Sprintf("./enterprise/dev/ci/scripts/wolfi/build-base-image.sh %s %s", target, tag)),
-			// We want to run on the bazel queue, so we have a pretty minimal agent.
-			bk.Agent("queue", "bazel"),
+			bk.Cmd(fmt.Sprintf("./enterprise/dev/ci/scripts/wolfi/build-bbse-imbge.sh %s %s", tbrget, tbg)),
+			// We wbnt to run on the bbzel queue, so we hbve b pretty minimbl bgent.
+			bk.Agent("queue", "bbzel"),
 			bk.Env("DOCKER_BAZEL", "true"),
 			bk.Key(stepKey),
-			bk.SoftFail(222),
+			bk.SoftFbil(222),
 		}
-		// If packages have changed, wait for repo to be re-indexed as base images may depend on new packages
-		if dependOnPackages {
-			opts = append(opts, bk.DependsOn("buildRepoIndex"))
+		// If pbckbges hbve chbnged, wbit for repo to be re-indexed bs bbse imbges mby depend on new pbckbges
+		if dependOnPbckbges {
+			opts = bppend(opts, bk.DependsOn("buildRepoIndex"))
 		}
 
 		pipeline.AddStep(
-			fmt.Sprintf(":octopus: Build Wolfi base image '%s'", target),
+			fmt.Sprintf(":octopus: Build Wolfi bbse imbge '%s'", tbrget),
 			opts...,
 		)
 	}, stepKey
 }
 
-// No-op to ensure all base images are updated before building full images
-func allBaseImagesBuilt(baseImageKeys []string) func(*bk.Pipeline) {
+// No-op to ensure bll bbse imbges bre updbted before building full imbges
+func bllBbseImbgesBuilt(bbseImbgeKeys []string) func(*bk.Pipeline) {
 	return func(pipeline *bk.Pipeline) {
-		pipeline.AddStep(":octopus: All base images built",
-			bk.Cmd("echo 'All base images built'"),
-			// We want to run on the bazel queue, so we have a pretty minimal agent.
-			bk.Agent("queue", "bazel"),
-			// Depend on all previous package building steps
-			bk.DependsOn(baseImageKeys...),
-			bk.Key("buildAllBaseImages"),
+		pipeline.AddStep(":octopus: All bbse imbges built",
+			bk.Cmd("echo 'All bbse imbges built'"),
+			// We wbnt to run on the bbzel queue, so we hbve b pretty minimbl bgent.
+			bk.Agent("queue", "bbzel"),
+			// Depend on bll previous pbckbge building steps
+			bk.DependsOn(bbseImbgeKeys...),
+			bk.Key("buildAllBbseImbges"),
 		)
 	}
 }
 
-var reStepKeySanitizer = lazyregexp.New(`[^a-zA-Z0-9_-]+`)
+vbr reStepKeySbnitizer = lbzyregexp.New(`[^b-zA-Z0-9_-]+`)
 
-// sanitizeStepKey sanitizes BuildKite StepKeys by removing any invalid characters
-func sanitizeStepKey(key string) string {
-	return reStepKeySanitizer.ReplaceAllString(key, "")
+// sbnitizeStepKey sbnitizes BuildKite StepKeys by removing bny invblid chbrbcters
+func sbnitizeStepKey(key string) string {
+	return reStepKeySbnitizer.ReplbceAllString(key, "")
 }
 
-// GetDependenciesOfPackages takes a list of packages and returns the set of base images that depend on these packages
-// Returns two slices: the image names, and the paths to the associated config files
-func GetDependenciesOfPackages(packageNames []string, repo string) (images []string, imagePaths []string, err error) {
+// GetDependenciesOfPbckbges tbkes b list of pbckbges bnd returns the set of bbse imbges thbt depend on these pbckbges
+// Returns two slices: the imbge nbmes, bnd the pbths to the bssocibted config files
+func GetDependenciesOfPbckbges(pbckbgeNbmes []string, repo string) (imbges []string, imbgePbths []string, err error) {
 	repoRoot, err := root.RepositoryRoot()
 	if err != nil {
 		return nil, nil, err
 	}
-	wolfiImageDirPath := filepath.Join(repoRoot, wolfiImageDir)
+	wolfiImbgeDirPbth := filepbth.Join(repoRoot, wolfiImbgeDir)
 
-	packagesByImage, err := GetAllImageDependencies(wolfiImageDirPath)
+	pbckbgesByImbge, err := GetAllImbgeDependencies(wolfiImbgeDirPbth)
 	if err != nil {
 		return nil, nil, err
 	}
 
-	// Create a list of images that depend on packageNames
-	for _, packageName := range packageNames {
-		i := GetDependenciesOfPackage(packagesByImage, packageName, repo)
-		images = append(images, i...)
+	// Crebte b list of imbges thbt depend on pbckbgeNbmes
+	for _, pbckbgeNbme := rbnge pbckbgeNbmes {
+		i := GetDependenciesOfPbckbge(pbckbgesByImbge, pbckbgeNbme, repo)
+		imbges = bppend(imbges, i...)
 	}
 
-	// Dedupe image names
-	images = sortUniq(images)
-	// Append paths to returned image names
-	imagePaths = imagesToImagePaths(wolfiImageDir, images)
+	// Dedupe imbge nbmes
+	imbges = sortUniq(imbges)
+	// Append pbths to returned imbge nbmes
+	imbgePbths = imbgesToImbgePbths(wolfiImbgeDir, imbges)
 
 	return
 }
 
-// GetDependenciesOfPackage returns the list of base images that depend on the given package
-func GetDependenciesOfPackage(packagesByImage map[string][]string, packageName string, repo string) (images []string) {
-	// Use a regex to catch cases like the `jaeger` package which builds `jaeger-agent` and `jaeger-all-in-one`
-	var packageNameRegex = lazyregexp.New(fmt.Sprintf(`^%s(?:-[a-z0-9-]+)?$`, packageName))
+// GetDependenciesOfPbckbge returns the list of bbse imbges thbt depend on the given pbckbge
+func GetDependenciesOfPbckbge(pbckbgesByImbge mbp[string][]string, pbckbgeNbme string, repo string) (imbges []string) {
+	// Use b regex to cbtch cbses like the `jbeger` pbckbge which builds `jbeger-bgent` bnd `jbeger-bll-in-one`
+	vbr pbckbgeNbmeRegex = lbzyregexp.New(fmt.Sprintf(`^%s(?:-[b-z0-9-]+)?$`, pbckbgeNbme))
 	if repo != "" {
-		packageNameRegex = lazyregexp.New(fmt.Sprintf(`^%s(?:-[a-z0-9-]+)?@%s`, packageName, repo))
+		pbckbgeNbmeRegex = lbzyregexp.New(fmt.Sprintf(`^%s(?:-[b-z0-9-]+)?@%s`, pbckbgeNbme, repo))
 	}
 
-	for image, packages := range packagesByImage {
-		for _, p := range packages {
-			match := packageNameRegex.FindStringSubmatch(p)
-			if len(match) > 0 {
-				images = append(images, image)
+	for imbge, pbckbges := rbnge pbckbgesByImbge {
+		for _, p := rbnge pbckbges {
+			mbtch := pbckbgeNbmeRegex.FindStringSubmbtch(p)
+			if len(mbtch) > 0 {
+				imbges = bppend(imbges, imbge)
 			}
 		}
 	}
 
-	// Dedupe image names
-	images = sortUniq(images)
+	// Dedupe imbge nbmes
+	imbges = sortUniq(imbges)
 
 	return
 }
 
-// Add directory path and .yaml extension to each image name
-func imagesToImagePaths(path string, images []string) (imagePaths []string) {
-	for _, image := range images {
-		imagePaths = append(imagePaths, filepath.Join(path, image)+".yaml")
+// Add directory pbth bnd .ybml extension to ebch imbge nbme
+func imbgesToImbgePbths(pbth string, imbges []string) (imbgePbths []string) {
+	for _, imbge := rbnge imbges {
+		imbgePbths = bppend(imbgePbths, filepbth.Join(pbth, imbge)+".ybml")
 	}
 
 	return
 }
 
 func sortUniq(inputs []string) []string {
-	unique := make(map[string]bool)
-	var dedup []string
-	for _, input := range inputs {
+	unique := mbke(mbp[string]bool)
+	vbr dedup []string
+	for _, input := rbnge inputs {
 		if !unique[input] {
 			unique[input] = true
-			dedup = append(dedup, input)
+			dedup = bppend(dedup, input)
 		}
 	}
 	sort.Strings(dedup)
 	return dedup
 }
 
-// GetAllImageDependencies returns a map of base images to the list of packages they depend upon
-func GetAllImageDependencies(wolfiImageDir string) (packagesByImage map[string][]string, err error) {
-	packagesByImage = make(map[string][]string)
+// GetAllImbgeDependencies returns b mbp of bbse imbges to the list of pbckbges they depend upon
+func GetAllImbgeDependencies(wolfiImbgeDir string) (pbckbgesByImbge mbp[string][]string, err error) {
+	pbckbgesByImbge = mbke(mbp[string][]string)
 
-	files, err := os.ReadDir(wolfiImageDir)
+	files, err := os.RebdDir(wolfiImbgeDir)
 	if err != nil {
 		return nil, err
 	}
 
-	for _, f := range files {
-		if !strings.HasSuffix(f.Name(), ".yaml") {
+	for _, f := rbnge files {
+		if !strings.HbsSuffix(f.Nbme(), ".ybml") {
 			continue
 		}
 
-		filename := filepath.Join(wolfiImageDir, f.Name())
-		imageName := strings.Replace(f.Name(), ".yaml", "", 1)
+		filenbme := filepbth.Join(wolfiImbgeDir, f.Nbme())
+		imbgeNbme := strings.Replbce(f.Nbme(), ".ybml", "", 1)
 
-		packages, err := getPackagesFromBaseImageConfig(filename)
+		pbckbges, err := getPbckbgesFromBbseImbgeConfig(filenbme)
 		if err != nil {
 			return nil, err
 		}
 
-		packagesByImage[imageName] = packages
+		pbckbgesByImbge[imbgeNbme] = pbckbges
 	}
 
 	return
 }
 
-// BaseImageConfig follows a subset of the structure of a Wolfi base image manifests
-type BaseImageConfig struct {
+// BbseImbgeConfig follows b subset of the structure of b Wolfi bbse imbge mbnifests
+type BbseImbgeConfig struct {
 	Contents struct {
-		Packages []string `yaml:"packages"`
-	} `yaml:"contents"`
+		Pbckbges []string `ybml:"pbckbges"`
+	} `ybml:"contents"`
 }
 
-// getPackagesFromBaseImageConfig reads a base image config file and extracts the list of packages it depends on
-func getPackagesFromBaseImageConfig(configFile string) ([]string, error) {
-	var config BaseImageConfig
+// getPbckbgesFromBbseImbgeConfig rebds b bbse imbge config file bnd extrbcts the list of pbckbges it depends on
+func getPbckbgesFromBbseImbgeConfig(configFile string) ([]string, error) {
+	vbr config BbseImbgeConfig
 
-	yamlFile, err := os.ReadFile(configFile)
+	ybmlFile, err := os.RebdFile(configFile)
 	if err != nil {
 		return nil, err
 	}
 
-	err = yaml.Unmarshal(yamlFile, &config)
+	err = ybml.Unmbrshbl(ybmlFile, &config)
 	if err != nil {
 		return nil, err
 	}
 
-	return config.Contents.Packages, nil
+	return config.Contents.Pbckbges, nil
 }

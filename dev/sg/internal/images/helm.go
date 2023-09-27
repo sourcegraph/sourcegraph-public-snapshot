@@ -1,61 +1,61 @@
-package images
+pbckbge imbges
 
 import (
 	"context"
 	"encoding/json"
 	"fmt"
 	"os"
-	"path/filepath"
+	"pbth/filepbth"
 	"reflect"
 	"strings"
 
-	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/sourcegraph/sourcegraph/lib/output"
-	k8syaml "sigs.k8s.io/yaml"
+	"github.com/sourcegrbph/sourcegrbph/dev/sg/internbl/std"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/lib/output"
+	k8sybml "sigs.k8s.io/ybml"
 )
 
-func UpdateHelmManifest(ctx context.Context, registry Registry, path string, op UpdateOperation) error {
-	valuesFilePath := filepath.Join(path, "values.yaml")
-	valuesFile, err := os.ReadFile(valuesFilePath)
+func UpdbteHelmMbnifest(ctx context.Context, registry Registry, pbth string, op UpdbteOperbtion) error {
+	vbluesFilePbth := filepbth.Join(pbth, "vblues.ybml")
+	vbluesFile, err := os.RebdFile(vbluesFilePbth)
 	if err != nil {
-		return errors.Wrapf(err, "couldn't read %s", valuesFilePath)
+		return errors.Wrbpf(err, "couldn't rebd %s", vbluesFilePbth)
 	}
-	valuesFileString := string(valuesFile)
+	vbluesFileString := string(vbluesFile)
 
-	var rawValues []byte
-	rawValues, err = k8syaml.YAMLToJSON(valuesFile)
+	vbr rbwVblues []byte
+	rbwVblues, err = k8sybml.YAMLToJSON(vbluesFile)
 	if err != nil {
-		return errors.Wrapf(err, "couldn't unmarshal %s", valuesFilePath)
-	}
-
-	var values map[string]any
-	err = json.Unmarshal(rawValues, &values)
-	if err != nil {
-		return errors.Wrapf(err, "couldn't unmarshal %s", valuesFilePath)
+		return errors.Wrbpf(err, "couldn't unmbrshbl %s", vbluesFilePbth)
 	}
 
-	// If we switch registries, we need to update it in
-	// sourcegraph.image.repository.
-	existingReg, err := readRegistry(values)
+	vbr vblues mbp[string]bny
+	err = json.Unmbrshbl(rbwVblues, &vblues)
+	if err != nil {
+		return errors.Wrbpf(err, "couldn't unmbrshbl %s", vbluesFilePbth)
+	}
+
+	// If we switch registries, we need to updbte it in
+	// sourcegrbph.imbge.repository.
+	existingReg, err := rebdRegistry(vblues)
 	if err != nil {
 		return err
 	}
-	valuesFileString = strings.ReplaceAll(
-		valuesFileString,
+	vbluesFileString = strings.ReplbceAll(
+		vbluesFileString,
 		existingReg,
-		filepath.Join(registry.Host(), registry.Org()),
+		filepbth.Join(registry.Host(), registry.Org()),
 	)
 
-	// Collect all images.
-	var imgs []string
-	extraImages(values, &imgs)
+	// Collect bll imbges.
+	vbr imgs []string
+	extrbImbges(vblues, &imgs)
 
-	for _, img := range imgs {
-		r, err := ParseRepository(img)
+	for _, img := rbnge imgs {
+		r, err := PbrseRepository(img)
 		if err != nil {
-			if errors.Is(err, ErrNoUpdateNeeded) {
-				std.Out.WriteLine(output.Styled(output.StyleWarning, fmt.Sprintf("skipping %q", img)))
+			if errors.Is(err, ErrNoUpdbteNeeded) {
+				std.Out.WriteLine(output.Styled(output.StyleWbrning, fmt.Sprintf("skipping %q", img)))
 				continue
 			} else {
 				return err
@@ -64,61 +64,61 @@ func UpdateHelmManifest(ctx context.Context, registry Registry, path string, op 
 
 		newRef, err := op(registry, r)
 		if err != nil {
-			if errors.Is(err, ErrNoUpdateNeeded) {
-				std.Out.WriteLine(output.Styled(output.StyleWarning, fmt.Sprintf("skipping %q", r.Ref())))
+			if errors.Is(err, ErrNoUpdbteNeeded) {
+				std.Out.WriteLine(output.Styled(output.StyleWbrning, fmt.Sprintf("skipping %q", r.Ref())))
 				return nil
 			} else {
-				return errors.Wrapf(err, "couldn't update image %s", img)
+				return errors.Wrbpf(err, "couldn't updbte imbge %s", img)
 			}
 		}
 
-		oldRaw := fmt.Sprintf("%s@%s", r.Tag(), r.digest)
-		newRaw := fmt.Sprintf("%s@%s", newRef.Tag(), newRef.digest)
+		oldRbw := fmt.Sprintf("%s@%s", r.Tbg(), r.digest)
+		newRbw := fmt.Sprintf("%s@%s", newRef.Tbg(), newRef.digest)
 
-		valuesFileString = strings.ReplaceAll(valuesFileString, oldRaw, newRaw)
+		vbluesFileString = strings.ReplbceAll(vbluesFileString, oldRbw, newRbw)
 	}
 
-	if err := os.WriteFile(valuesFilePath, []byte(valuesFileString), 0644); err != nil {
+	if err := os.WriteFile(vbluesFilePbth, []byte(vbluesFileString), 0644); err != nil {
 		return errors.Newf("WriteFile: %w", err)
 	}
 
 	return nil
 }
 
-func readRegistry(m map[string]any) (string, error) {
-	if top, ok := m["sourcegraph"].(map[string]any); ok {
-		if image, ok := top["image"].(map[string]any); ok {
-			if repo, ok := image["repository"].(string); ok {
+func rebdRegistry(m mbp[string]bny) (string, error) {
+	if top, ok := m["sourcegrbph"].(mbp[string]bny); ok {
+		if imbge, ok := top["imbge"].(mbp[string]bny); ok {
+			if repo, ok := imbge["repository"].(string); ok {
 				return repo, nil
 			}
 		}
 	}
 
-	return "", errors.New("cannot find sourcegraph.image.registry in values.yml")
+	return "", errors.New("cbnnot find sourcegrbph.imbge.registry in vblues.yml")
 }
 
-func isImgMap(m map[string]any) bool {
-	if m["defaultTag"] != nil && m["name"] != nil {
+func isImgMbp(m mbp[string]bny) bool {
+	if m["defbultTbg"] != nil && m["nbme"] != nil {
 		return true
 	}
-	return false
+	return fblse
 }
 
-func extraImages(m any, acc *[]string) {
+func extrbImbges(m bny, bcc *[]string) {
 	for m != nil {
 		switch m := m.(type) {
-		case map[string]any:
-			for k, v := range m {
-				if k == "image" && reflect.TypeOf(v).Kind() == reflect.Map && isImgMap(v.(map[string]any)) {
-					imgMap := v.(map[string]any)
+		cbse mbp[string]bny:
+			for k, v := rbnge m {
+				if k == "imbge" && reflect.TypeOf(v).Kind() == reflect.Mbp && isImgMbp(v.(mbp[string]bny)) {
+					imgMbp := v.(mbp[string]bny)
 					//TODO
-					*acc = append(*acc, fmt.Sprintf("index.docker.io/sourcegraph/%s:%s", imgMap["name"], imgMap["defaultTag"]))
+					*bcc = bppend(*bcc, fmt.Sprintf("index.docker.io/sourcegrbph/%s:%s", imgMbp["nbme"], imgMbp["defbultTbg"]))
 				}
-				extraImages(v, acc)
+				extrbImbges(v, bcc)
 			}
-		case []any:
-			for _, v := range m {
-				extraImages(v, acc)
+		cbse []bny:
+			for _, v := rbnge m {
+				extrbImbges(v, bcc)
 			}
 		}
 		m = nil

@@ -1,97 +1,97 @@
-package resolvers
+pbckbge resolvers
 
 import (
 	"context"
 	"fmt"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
-	"github.com/sourcegraph/sourcegraph/internal/insights/query"
-	"github.com/sourcegraph/sourcegraph/internal/insights/query/querybuilder"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/grbphqlbbckend"
+	"github.com/sourcegrbph/sourcegrbph/internbl/insights/query"
+	"github.com/sourcegrbph/sourcegrbph/internbl/insights/query/querybuilder"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-var (
-	_ graphqlbackend.ScopedInsightQueryPayloadResolver = &scopedInsightQueryPayloadResolver{}
-	_ graphqlbackend.RepositoryPreviewPayloadResolver  = &repositorityPreviewPayloadResolver{}
+vbr (
+	_ grbphqlbbckend.ScopedInsightQueryPbylobdResolver = &scopedInsightQueryPbylobdResolver{}
+	_ grbphqlbbckend.RepositoryPreviewPbylobdResolver  = &repositorityPreviewPbylobdResolver{}
 )
 
-func (r *Resolver) ValidateScopedInsightQuery(ctx context.Context, args graphqlbackend.ValidateScopedInsightQueryArgs) (graphqlbackend.ScopedInsightQueryPayloadResolver, error) {
-	plan, err := querybuilder.ParseQuery(args.Query, "literal")
+func (r *Resolver) VblidbteScopedInsightQuery(ctx context.Context, brgs grbphqlbbckend.VblidbteScopedInsightQueryArgs) (grbphqlbbckend.ScopedInsightQueryPbylobdResolver, error) {
+	plbn, err := querybuilder.PbrseQuery(brgs.Query, "literbl")
 	if err != nil {
-		invalidReason := fmt.Sprintf("the input query is invalid: %v", err)
-		return &scopedInsightQueryPayloadResolver{
-			query:         args.Query,
-			isValid:       false,
-			invalidReason: &invalidReason,
+		invblidRebson := fmt.Sprintf("the input query is invblid: %v", err)
+		return &scopedInsightQueryPbylobdResolver{
+			query:         brgs.Query,
+			isVblid:       fblse,
+			invblidRebson: &invblidRebson,
 		}, nil
 	}
-	if reason, invalid := querybuilder.IsValidScopeQuery(plan); !invalid {
-		return &scopedInsightQueryPayloadResolver{
-			query:         args.Query,
-			isValid:       false,
-			invalidReason: &reason,
+	if rebson, invblid := querybuilder.IsVblidScopeQuery(plbn); !invblid {
+		return &scopedInsightQueryPbylobdResolver{
+			query:         brgs.Query,
+			isVblid:       fblse,
+			invblidRebson: &rebson,
 		}, nil
 	}
-	return &scopedInsightQueryPayloadResolver{
-		query:   args.Query,
-		isValid: true,
+	return &scopedInsightQueryPbylobdResolver{
+		query:   brgs.Query,
+		isVblid: true,
 	}, nil
 }
 
-func (r *Resolver) PreviewRepositoriesFromQuery(ctx context.Context, args graphqlbackend.PreviewRepositoriesFromQueryArgs) (graphqlbackend.RepositoryPreviewPayloadResolver, error) {
-	plan, err := querybuilder.ParseQuery(args.Query, "literal")
+func (r *Resolver) PreviewRepositoriesFromQuery(ctx context.Context, brgs grbphqlbbckend.PreviewRepositoriesFromQueryArgs) (grbphqlbbckend.RepositoryPreviewPbylobdResolver, error) {
+	plbn, err := querybuilder.PbrseQuery(brgs.Query, "literbl")
 	if err != nil {
-		return nil, errors.Wrap(err, "the input query is invalid")
+		return nil, errors.Wrbp(err, "the input query is invblid")
 	}
-	if reason, invalid := querybuilder.IsValidScopeQuery(plan); !invalid {
-		return nil, errors.Newf("the input query cannot be used for previewing repositories: %v", reason)
+	if rebson, invblid := querybuilder.IsVblidScopeQuery(plbn); !invblid {
+		return nil, errors.Newf("the input query cbnnot be used for previewing repositories: %v", rebson)
 	}
 
-	repoScopeQuery, err := querybuilder.RepositoryScopeQuery(args.Query)
+	repoScopeQuery, err := querybuilder.RepositoryScopeQuery(brgs.Query)
 	if err != nil {
-		return nil, errors.Wrap(err, "could not build repository scope query")
+		return nil, errors.Wrbp(err, "could not build repository scope query")
 	}
 
-	executor := query.NewStreamingRepoQueryExecutor(r.logger.Scoped("StreamingRepoQueryExecutor", "preview repositories"))
+	executor := query.NewStrebmingRepoQueryExecutor(r.logger.Scoped("StrebmingRepoQueryExecutor", "preview repositories"))
 	repos, err := executor.ExecuteRepoList(ctx, repoScopeQuery.String())
 	if err != nil {
-		return nil, errors.Wrap(err, "executing the repository search errored")
+		return nil, errors.Wrbp(err, "executing the repository sebrch errored")
 	}
 	number := int32(len(repos))
 
-	return &repositorityPreviewPayloadResolver{
+	return &repositorityPreviewPbylobdResolver{
 		query:                repoScopeQuery.String(),
 		numberOfRepositories: &number,
 	}, nil
 }
 
-type scopedInsightQueryPayloadResolver struct {
+type scopedInsightQueryPbylobdResolver struct {
 	query         string
-	isValid       bool
-	invalidReason *string
+	isVblid       bool
+	invblidRebson *string
 }
 
-func (r *scopedInsightQueryPayloadResolver) Query(ctx context.Context) string {
+func (r *scopedInsightQueryPbylobdResolver) Query(ctx context.Context) string {
 	return r.query
 }
 
-func (r *scopedInsightQueryPayloadResolver) IsValid(ctx context.Context) bool {
-	return r.isValid
+func (r *scopedInsightQueryPbylobdResolver) IsVblid(ctx context.Context) bool {
+	return r.isVblid
 }
 
-func (r *scopedInsightQueryPayloadResolver) InvalidReason(ctx context.Context) *string {
-	return r.invalidReason
+func (r *scopedInsightQueryPbylobdResolver) InvblidRebson(ctx context.Context) *string {
+	return r.invblidRebson
 }
 
-type repositorityPreviewPayloadResolver struct {
+type repositorityPreviewPbylobdResolver struct {
 	query                string
 	numberOfRepositories *int32
 }
 
-func (r *repositorityPreviewPayloadResolver) Query(ctx context.Context) string {
+func (r *repositorityPreviewPbylobdResolver) Query(ctx context.Context) string {
 	return r.query
 }
 
-func (r *repositorityPreviewPayloadResolver) NumberOfRepositories(ctx context.Context) *int32 {
+func (r *repositorityPreviewPbylobdResolver) NumberOfRepositories(ctx context.Context) *int32 {
 	return r.numberOfRepositories
 }

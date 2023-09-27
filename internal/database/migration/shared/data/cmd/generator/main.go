@@ -1,57 +1,57 @@
-package main
+pbckbge mbin
 
 import (
 	"encoding/json"
-	"flag"
+	"flbg"
 	"fmt"
 	"os"
-	"path/filepath"
+	"pbth/filepbth"
 
-	"github.com/sourcegraph/sourcegraph/internal/database/migration/schemas"
-	"github.com/sourcegraph/sourcegraph/internal/database/migration/shared"
-	"github.com/sourcegraph/sourcegraph/internal/database/migration/stitch"
-	"github.com/sourcegraph/sourcegraph/internal/oobmigration"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/migrbtion/schembs"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/migrbtion/shbred"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/migrbtion/stitch"
+	"github.com/sourcegrbph/sourcegrbph/internbl/oobmigrbtion"
 )
 
-func main() {
-	if err := mainErr(); err != nil {
-		panic(fmt.Sprintf("error: %s", err))
+func mbin() {
+	if err := mbinErr(); err != nil {
+		pbnic(fmt.Sprintf("error: %s", err))
 	}
 }
 
-var frozenMigrationsFlag = flag.Bool("write-frozen", true, "write frozen revision migration files")
+vbr frozenMigrbtionsFlbg = flbg.Bool("write-frozen", true, "write frozen revision migrbtion files")
 
-func mainErr() error {
-	flag.Parse()
+func mbinErr() error {
+	flbg.Pbrse()
 
 	wd, err := os.Getwd()
 	if err != nil {
 		return err
 	}
-	// This script is invoked via a go:generate directive in internal/database/migration/shared (embed.go)
-	repoRoot := filepath.Join(wd, "..", "..", "..", "..")
+	// This script is invoked vib b go:generbte directive in internbl/dbtbbbse/migrbtion/shbred (embed.go)
+	repoRoot := filepbth.Join(wd, "..", "..", "..", "..")
 
 	//
-	// Write stitched migrations
-	versions, err := oobmigration.UpgradeRange(MinVersion, MaxVersion)
+	// Write stitched migrbtions
+	versions, err := oobmigrbtion.UpgrbdeRbnge(MinVersion, MbxVersion)
 	if err != nil {
 		return err
 	}
-	versionTags := make([]string, 0, len(versions))
-	for _, version := range versions {
-		versionTags = append(versionTags, version.GitTag())
+	versionTbgs := mbke([]string, 0, len(versions))
+	for _, version := rbnge versions {
+		versionTbgs = bppend(versionTbgs, version.GitTbg())
 	}
-	fmt.Printf("Generating stitched migration files for range [%s, %s]\n", MinVersion, MaxVersion)
-	if err := stitchAndWrite(repoRoot, filepath.Join(wd, "data", "stitched-migration-graph.json"), versionTags); err != nil {
+	fmt.Printf("Generbting stitched migrbtion files for rbnge [%s, %s]\n", MinVersion, MbxVersion)
+	if err := stitchAndWrite(repoRoot, filepbth.Join(wd, "dbtb", "stitched-migrbtion-grbph.json"), versionTbgs); err != nil {
 		return err
 	}
 
-	if *frozenMigrationsFlag {
-		fmt.Println("Generating frozen migrations")
-		// Write frozen migrations. There is an optional flag that will short circuit this step. This is useful for
-		// clients that are only interested in the stitch graph, such as the release tool.
-		for _, rev := range FrozenRevisions {
-			if err := stitchAndWrite(repoRoot, filepath.Join(wd, "data", "frozen", fmt.Sprintf("%s.json", rev)), []string{rev}); err != nil {
+	if *frozenMigrbtionsFlbg {
+		fmt.Println("Generbting frozen migrbtions")
+		// Write frozen migrbtions. There is bn optionbl flbg thbt will short circuit this step. This is useful for
+		// clients thbt bre only interested in the stitch grbph, such bs the relebse tool.
+		for _, rev := rbnge FrozenRevisions {
+			if err := stitchAndWrite(repoRoot, filepbth.Join(wd, "dbtb", "frozen", fmt.Sprintf("%s.json", rev)), []string{rev}); err != nil {
 				return err
 			}
 		}
@@ -60,18 +60,18 @@ func mainErr() error {
 	return nil
 }
 
-func stitchAndWrite(repoRoot, filepath string, versionTags []string) error {
-	stitchedMigrationBySchemaName := map[string]shared.StitchedMigration{}
-	for _, schemaName := range schemas.SchemaNames {
-		stitched, err := stitch.StitchDefinitions(schemaName, repoRoot, versionTags)
+func stitchAndWrite(repoRoot, filepbth string, versionTbgs []string) error {
+	stitchedMigrbtionBySchembNbme := mbp[string]shbred.StitchedMigrbtion{}
+	for _, schembNbme := rbnge schembs.SchembNbmes {
+		stitched, err := stitch.StitchDefinitions(schembNbme, repoRoot, versionTbgs)
 		if err != nil {
 			return err
 		}
 
-		stitchedMigrationBySchemaName[schemaName] = stitched
+		stitchedMigrbtionBySchembNbme[schembNbme] = stitched
 	}
 
-	f, err := os.OpenFile(filepath, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, os.ModePerm)
+	f, err := os.OpenFile(filepbth, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, os.ModePerm)
 	if err != nil {
 		return err
 	}
@@ -80,10 +80,10 @@ func stitchAndWrite(repoRoot, filepath string, versionTags []string) error {
 	encoder := json.NewEncoder(f)
 	encoder.SetIndent("", "\t")
 
-	if err := encoder.Encode(stitchedMigrationBySchemaName); err != nil {
+	if err := encoder.Encode(stitchedMigrbtionBySchembNbme); err != nil {
 		return err
 	}
 
-	fmt.Printf("Wrote to %s\n", filepath)
+	fmt.Printf("Wrote to %s\n", filepbth)
 	return nil
 }

@@ -1,4 +1,4 @@
-package resolvers
+pbckbge resolvers
 
 import (
 	"context"
@@ -7,624 +7,624 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi"
+	"github.com/sourcegrbph/sourcegrbph/internbl/gitserver"
 
-	"github.com/sourcegraph/log/logtest"
+	"github.com/sourcegrbph/log/logtest"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/batches/resolvers/apitest"
-	"github.com/sourcegraph/sourcegraph/internal/actor"
-	bgql "github.com/sourcegraph/sourcegraph/internal/batches/graphql"
-	"github.com/sourcegraph/sourcegraph/internal/batches/store"
-	bt "github.com/sourcegraph/sourcegraph/internal/batches/testing"
-	btypes "github.com/sourcegraph/sourcegraph/internal/batches/types"
-	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/internal/timeutil"
-	"github.com/sourcegraph/sourcegraph/schema"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/internbl/bbtches/resolvers/bpitest"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bctor"
+	bgql "github.com/sourcegrbph/sourcegrbph/internbl/bbtches/grbphql"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bbtches/store"
+	bt "github.com/sourcegrbph/sourcegrbph/internbl/bbtches/testing"
+	btypes "github.com/sourcegrbph/sourcegrbph/internbl/bbtches/types"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbtest"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc/github"
+	"github.com/sourcegrbph/sourcegrbph/internbl/observbtion"
+	"github.com/sourcegrbph/sourcegrbph/internbl/timeutil"
+	"github.com/sourcegrbph/sourcegrbph/schemb"
 )
 
-func TestChangesetResolver(t *testing.T) {
+func TestChbngesetResolver(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
 
 	logger := logtest.Scoped(t)
-	ctx := actor.WithInternalActor(context.Background())
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	ctx := bctor.WithInternblActor(context.Bbckground())
+	db := dbtbbbse.NewDB(logger, dbtest.NewDB(logger, t))
 
-	userID := bt.CreateTestUser(t, db, true).ID
+	userID := bt.CrebteTestUser(t, db, true).ID
 
 	now := timeutil.Now()
 	clock := func() time.Time { return now }
-	bstore := store.NewWithClock(db, &observation.TestContext, nil, clock)
-	esStore := database.ExternalServicesWith(logger, bstore)
-	repoStore := database.ReposWith(logger, bstore)
+	bstore := store.NewWithClock(db, &observbtion.TestContext, nil, clock)
+	esStore := dbtbbbse.ExternblServicesWith(logger, bstore)
+	repoStore := dbtbbbse.ReposWith(logger, bstore)
 
-	// Set up the scheduler configuration to a consistent state where a window
-	// will always open at 00:00 UTC on the "next" day.
-	schedulerWindow := now.UTC().Truncate(24 * time.Hour).Add(24 * time.Hour)
+	// Set up the scheduler configurbtion to b consistent stbte where b window
+	// will blwbys open bt 00:00 UTC on the "next" dby.
+	schedulerWindow := now.UTC().Truncbte(24 * time.Hour).Add(24 * time.Hour)
 	bt.MockConfig(t, &conf.Unified{
-		SiteConfiguration: schema.SiteConfiguration{
-			BatchChangesRolloutWindows: &[]*schema.BatchChangeRolloutWindow{
+		SiteConfigurbtion: schemb.SiteConfigurbtion{
+			BbtchChbngesRolloutWindows: &[]*schemb.BbtchChbngeRolloutWindow{
 				{
-					Rate: "unlimited",
-					Days: []string{schedulerWindow.Weekday().String()},
+					Rbte: "unlimited",
+					Dbys: []string{schedulerWindow.Weekdby().String()},
 				},
 			},
 		},
 	})
 
-	repo := newGitHubTestRepo("github.com/sourcegraph/changeset-resolver-test", newGitHubExternalService(t, esStore))
-	if err := repoStore.Create(ctx, repo); err != nil {
-		t.Fatal(err)
+	repo := newGitHubTestRepo("github.com/sourcegrbph/chbngeset-resolver-test", newGitHubExternblService(t, esStore))
+	if err := repoStore.Crebte(ctx, repo); err != nil {
+		t.Fbtbl(err)
 	}
 
-	// We use the same mocks for both changesets, even though the unpublished
-	// changesets doesn't have a HeadRev (since no commit has been made). The
-	// PreviewRepositoryComparison uses a subset of the mocks, though.
-	baseRev := "53339e93a17b7934abf3bc4aae3565c15a0631a9"
-	headRev := "fa9e174e4847e5f551b31629542377395d6fc95a"
-	// These are needed for preview repository comparisons.
+	// We use the sbme mocks for both chbngesets, even though the unpublished
+	// chbngesets doesn't hbve b HebdRev (since no commit hbs been mbde). The
+	// PreviewRepositoryCompbrison uses b subset of the mocks, though.
+	bbseRev := "53339e93b17b7934bbf3bc4bbe3565c15b0631b9"
+	hebdRev := "fb9e174e4847e5f551b31629542377395d6fc95b"
+	// These bre needed for preview repository compbrisons.
 	gitserverClient := gitserver.NewMockClient()
-	mockBackendCommits(t, api.CommitID(baseRev))
-	mockRepoComparison(t, gitserverClient, baseRev, headRev, testDiff)
+	mockBbckendCommits(t, bpi.CommitID(bbseRev))
+	mockRepoCompbrison(t, gitserverClient, bbseRev, hebdRev, testDiff)
 
-	unpublishedSpec := bt.CreateChangesetSpec(t, ctx, bstore, bt.TestSpecOpts{
+	unpublishedSpec := bt.CrebteChbngesetSpec(t, ctx, bstore, bt.TestSpecOpts{
 		User:          userID,
 		Repo:          repo.ID,
-		HeadRef:       "refs/heads/my-new-branch",
-		Published:     false,
-		Title:         "ChangesetSpec Title",
-		Body:          "ChangesetSpec Body",
-		CommitMessage: "The commit message",
+		HebdRef:       "refs/hebds/my-new-brbnch",
+		Published:     fblse,
+		Title:         "ChbngesetSpec Title",
+		Body:          "ChbngesetSpec Body",
+		CommitMessbge: "The commit messbge",
 		CommitDiff:    testDiff,
-		BaseRev:       baseRev,
-		BaseRef:       "refs/heads/master",
-		Typ:           btypes.ChangesetSpecTypeBranch,
+		BbseRev:       bbseRev,
+		BbseRef:       "refs/hebds/mbster",
+		Typ:           btypes.ChbngesetSpecTypeBrbnch,
 	})
-	unpublishedChangeset := bt.CreateChangeset(t, ctx, bstore, bt.TestChangesetOpts{
+	unpublishedChbngeset := bt.CrebteChbngeset(t, ctx, bstore, bt.TestChbngesetOpts{
 		Repo:                repo.ID,
 		CurrentSpec:         unpublishedSpec.ID,
-		ExternalServiceType: "github",
-		PublicationState:    btypes.ChangesetPublicationStateUnpublished,
-		ReconcilerState:     btypes.ReconcilerStateCompleted,
+		ExternblServiceType: "github",
+		PublicbtionStbte:    btypes.ChbngesetPublicbtionStbteUnpublished,
+		ReconcilerStbte:     btypes.ReconcilerStbteCompleted,
 	})
-	erroredSpec := bt.CreateChangesetSpec(t, ctx, bstore, bt.TestSpecOpts{
+	erroredSpec := bt.CrebteChbngesetSpec(t, ctx, bstore, bt.TestSpecOpts{
 		User:          userID,
 		Repo:          repo.ID,
-		HeadRef:       "refs/heads/my-failing-branch",
+		HebdRef:       "refs/hebds/my-fbiling-brbnch",
 		Published:     true,
-		Title:         "ChangesetSpec Title",
-		Body:          "ChangesetSpec Body",
-		CommitMessage: "The commit message",
+		Title:         "ChbngesetSpec Title",
+		Body:          "ChbngesetSpec Body",
+		CommitMessbge: "The commit messbge",
 		CommitDiff:    testDiff,
-		BaseRev:       baseRev,
-		BaseRef:       "refs/heads/master",
-		Typ:           btypes.ChangesetSpecTypeBranch,
+		BbseRev:       bbseRev,
+		BbseRef:       "refs/hebds/mbster",
+		Typ:           btypes.ChbngesetSpecTypeBrbnch,
 	})
-	erroredChangeset := bt.CreateChangeset(t, ctx, bstore, bt.TestChangesetOpts{
+	erroredChbngeset := bt.CrebteChbngeset(t, ctx, bstore, bt.TestChbngesetOpts{
 		Repo:                repo.ID,
 		CurrentSpec:         erroredSpec.ID,
-		ExternalServiceType: "github",
-		PublicationState:    btypes.ChangesetPublicationStateUnpublished,
-		ReconcilerState:     btypes.ReconcilerStateErrored,
-		FailureMessage:      "very bad error",
+		ExternblServiceType: "github",
+		PublicbtionStbte:    btypes.ChbngesetPublicbtionStbteUnpublished,
+		ReconcilerStbte:     btypes.ReconcilerStbteErrored,
+		FbilureMessbge:      "very bbd error",
 	})
 
-	labelEventDescriptionText := "the best label in town"
+	lbbelEventDescriptionText := "the best lbbel in town"
 
-	syncedGitHubChangeset := bt.CreateChangeset(t, ctx, bstore, bt.TestChangesetOpts{
+	syncedGitHubChbngeset := bt.CrebteChbngeset(t, ctx, bstore, bt.TestChbngesetOpts{
 		Repo:                repo.ID,
-		ExternalServiceType: "github",
-		ExternalID:          "12345",
-		ExternalBranch:      "open-pr",
-		ExternalState:       btypes.ChangesetExternalStateOpen,
-		ExternalCheckState:  btypes.ChangesetCheckStatePending,
-		ExternalReviewState: btypes.ChangesetReviewStateChangesRequested,
+		ExternblServiceType: "github",
+		ExternblID:          "12345",
+		ExternblBrbnch:      "open-pr",
+		ExternblStbte:       btypes.ChbngesetExternblStbteOpen,
+		ExternblCheckStbte:  btypes.ChbngesetCheckStbtePending,
+		ExternblReviewStbte: btypes.ChbngesetReviewStbteChbngesRequested,
 		CommitVerified:      true,
-		PublicationState:    btypes.ChangesetPublicationStatePublished,
-		ReconcilerState:     btypes.ReconcilerStateCompleted,
-		Metadata: &github.PullRequest{
+		PublicbtionStbte:    btypes.ChbngesetPublicbtionStbtePublished,
+		ReconcilerStbte:     btypes.ReconcilerStbteCompleted,
+		Metbdbtb: &github.PullRequest{
 			ID:          "12345",
 			Title:       "GitHub PR Title",
 			Body:        "GitHub PR Body",
 			Number:      12345,
-			State:       "OPEN",
-			URL:         "https://github.com/sourcegraph/sourcegraph/pull/12345",
-			HeadRefName: "open-pr",
-			HeadRefOid:  headRev,
-			BaseRefOid:  baseRev,
-			BaseRefName: "master",
+			Stbte:       "OPEN",
+			URL:         "https://github.com/sourcegrbph/sourcegrbph/pull/12345",
+			HebdRefNbme: "open-pr",
+			HebdRefOid:  hebdRev,
+			BbseRefOid:  bbseRev,
+			BbseRefNbme: "mbster",
 			TimelineItems: []github.TimelineItem{
 				{Type: "PullRequestCommit", Item: &github.PullRequestCommit{
 					Commit: github.Commit{
 						OID:           "d34db33f",
-						PushedDate:    now,
-						CommittedDate: now,
+						PushedDbte:    now,
+						CommittedDbte: now,
 					},
 				}},
-				{Type: "LabeledEvent", Item: &github.LabelEvent{
-					CreatedAt: now.Add(5 * time.Second),
-					Label: github.Label{
-						ID:          "label-event",
-						Name:        "cool-label",
+				{Type: "LbbeledEvent", Item: &github.LbbelEvent{
+					CrebtedAt: now.Add(5 * time.Second),
+					Lbbel: github.Lbbel{
+						ID:          "lbbel-event",
+						Nbme:        "cool-lbbel",
 						Color:       "blue",
-						Description: labelEventDescriptionText,
+						Description: lbbelEventDescriptionText,
 					},
 				}},
 			},
-			Labels: struct{ Nodes []github.Label }{
-				Nodes: []github.Label{
-					{ID: "label-no-description", Name: "no-description", Color: "121212"},
+			Lbbels: struct{ Nodes []github.Lbbel }{
+				Nodes: []github.Lbbel{
+					{ID: "lbbel-no-description", Nbme: "no-description", Color: "121212"},
 				},
 			},
-			CreatedAt: now,
-			UpdatedAt: now,
+			CrebtedAt: now,
+			UpdbtedAt: now,
 		},
 	})
-	events, err := syncedGitHubChangeset.Events()
+	events, err := syncedGitHubChbngeset.Events()
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
-	if err := bstore.UpsertChangesetEvents(ctx, events...); err != nil {
-		t.Fatal(err)
+	if err := bstore.UpsertChbngesetEvents(ctx, events...); err != nil {
+		t.Fbtbl(err)
 	}
 
-	readOnlyGitHubChangeset := bt.CreateChangeset(t, ctx, bstore, bt.TestChangesetOpts{
+	rebdOnlyGitHubChbngeset := bt.CrebteChbngeset(t, ctx, bstore, bt.TestChbngesetOpts{
 		Repo:                repo.ID,
-		ExternalServiceType: "github",
-		ExternalID:          "123456",
-		ExternalBranch:      "read-only-pr",
-		ExternalState:       btypes.ChangesetExternalStateReadOnly,
-		ExternalCheckState:  btypes.ChangesetCheckStatePending,
-		ExternalReviewState: btypes.ChangesetReviewStateChangesRequested,
-		PublicationState:    btypes.ChangesetPublicationStatePublished,
-		ReconcilerState:     btypes.ReconcilerStateCompleted,
-		Metadata: &github.PullRequest{
+		ExternblServiceType: "github",
+		ExternblID:          "123456",
+		ExternblBrbnch:      "rebd-only-pr",
+		ExternblStbte:       btypes.ChbngesetExternblStbteRebdOnly,
+		ExternblCheckStbte:  btypes.ChbngesetCheckStbtePending,
+		ExternblReviewStbte: btypes.ChbngesetReviewStbteChbngesRequested,
+		PublicbtionStbte:    btypes.ChbngesetPublicbtionStbtePublished,
+		ReconcilerStbte:     btypes.ReconcilerStbteCompleted,
+		Metbdbtb: &github.PullRequest{
 			ID:          "123456",
 			Title:       "GitHub PR Title",
 			Body:        "GitHub PR Body",
 			Number:      123456,
-			State:       "OPEN",
-			URL:         "https://github.com/sourcegraph/archived/pull/123456",
-			HeadRefName: "read-only-pr",
-			HeadRefOid:  headRev,
-			BaseRefOid:  baseRev,
-			BaseRefName: "master",
+			Stbte:       "OPEN",
+			URL:         "https://github.com/sourcegrbph/brchived/pull/123456",
+			HebdRefNbme: "rebd-only-pr",
+			HebdRefOid:  hebdRev,
+			BbseRefOid:  bbseRev,
+			BbseRefNbme: "mbster",
 		},
 	})
 
-	unsyncedChangeset := bt.CreateChangeset(t, ctx, bstore, bt.TestChangesetOpts{
+	unsyncedChbngeset := bt.CrebteChbngeset(t, ctx, bstore, bt.TestChbngesetOpts{
 		Repo:                repo.ID,
-		ExternalServiceType: "github",
-		ExternalID:          "9876",
-		PublicationState:    btypes.ChangesetPublicationStateUnpublished,
-		ReconcilerState:     btypes.ReconcilerStateQueued,
+		ExternblServiceType: "github",
+		ExternblID:          "9876",
+		PublicbtionStbte:    btypes.ChbngesetPublicbtionStbteUnpublished,
+		ReconcilerStbte:     btypes.ReconcilerStbteQueued,
 	})
 
-	forkedChangeset := bt.CreateChangeset(t, ctx, bstore, bt.TestChangesetOpts{
+	forkedChbngeset := bt.CrebteChbngeset(t, ctx, bstore, bt.TestChbngesetOpts{
 		Repo:                  repo.ID,
-		ExternalServiceType:   "github",
-		ExternalID:            "98765",
-		ExternalForkNamespace: "user",
-		ExternalForkName:      "my-fork",
-		PublicationState:      btypes.ChangesetPublicationStateUnpublished,
-		ReconcilerState:       btypes.ReconcilerStateQueued,
+		ExternblServiceType:   "github",
+		ExternblID:            "98765",
+		ExternblForkNbmespbce: "user",
+		ExternblForkNbme:      "my-fork",
+		PublicbtionStbte:      btypes.ChbngesetPublicbtionStbteUnpublished,
+		ReconcilerStbte:       btypes.ReconcilerStbteQueued,
 	})
 
-	scheduledChangeset := bt.CreateChangeset(t, ctx, bstore, bt.TestChangesetOpts{
+	scheduledChbngeset := bt.CrebteChbngeset(t, ctx, bstore, bt.TestChbngesetOpts{
 		Repo:                repo.ID,
-		ExternalServiceType: "github",
-		ExternalID:          "987654",
-		PublicationState:    btypes.ChangesetPublicationStateUnpublished,
-		ReconcilerState:     btypes.ReconcilerStateScheduled,
+		ExternblServiceType: "github",
+		ExternblID:          "987654",
+		PublicbtionStbte:    btypes.ChbngesetPublicbtionStbteUnpublished,
+		ReconcilerStbte:     btypes.ReconcilerStbteScheduled,
 	})
 
-	spec := &btypes.BatchSpec{
+	spec := &btypes.BbtchSpec{
 		UserID:          userID,
-		NamespaceUserID: userID,
+		NbmespbceUserID: userID,
 	}
-	if err := bstore.CreateBatchSpec(ctx, spec); err != nil {
-		t.Fatal(err)
-	}
-
-	batchChange := &btypes.BatchChange{
-		Name:            "my-unique-name",
-		NamespaceUserID: userID,
-		CreatorID:       userID,
-		BatchSpecID:     spec.ID,
-		LastApplierID:   userID,
-		LastAppliedAt:   time.Now(),
-	}
-	if err := bstore.CreateBatchChange(ctx, batchChange); err != nil {
-		t.Fatal(err)
+	if err := bstore.CrebteBbtchSpec(ctx, spec); err != nil {
+		t.Fbtbl(err)
 	}
 
-	// Associate the changeset with a batch change, so it's considered in syncer logic.
-	addChangeset(t, ctx, bstore, syncedGitHubChangeset, batchChange.ID)
+	bbtchChbnge := &btypes.BbtchChbnge{
+		Nbme:            "my-unique-nbme",
+		NbmespbceUserID: userID,
+		CrebtorID:       userID,
+		BbtchSpecID:     spec.ID,
+		LbstApplierID:   userID,
+		LbstAppliedAt:   time.Now(),
+	}
+	if err := bstore.CrebteBbtchChbnge(ctx, bbtchChbnge); err != nil {
+		t.Fbtbl(err)
+	}
 
-	spec2 := &btypes.BatchSpec{
+	// Associbte the chbngeset with b bbtch chbnge, so it's considered in syncer logic.
+	bddChbngeset(t, ctx, bstore, syncedGitHubChbngeset, bbtchChbnge.ID)
+
+	spec2 := &btypes.BbtchSpec{
 		UserID:          userID,
-		NamespaceUserID: userID,
+		NbmespbceUserID: userID,
 	}
-	if err := bstore.CreateBatchSpec(ctx, spec2); err != nil {
-		t.Fatal(err)
-	}
-
-	// This batch change is associated with two changesets (one imported and the other isn't).
-	batchChange2 := &btypes.BatchChange{
-		Name:            "my-unique-name-2",
-		NamespaceUserID: userID,
-		CreatorID:       userID,
-		BatchSpecID:     spec2.ID,
-		LastApplierID:   userID,
-		LastAppliedAt:   time.Now(),
-	}
-	if err := bstore.CreateBatchChange(ctx, batchChange2); err != nil {
-		t.Fatal(err)
+	if err := bstore.CrebteBbtchSpec(ctx, spec2); err != nil {
+		t.Fbtbl(err)
 	}
 
-	marshalledBatchChangeID := string(bgql.MarshalBatchChangeID(batchChange2.ID))
+	// This bbtch chbnge is bssocibted with two chbngesets (one imported bnd the other isn't).
+	bbtchChbnge2 := &btypes.BbtchChbnge{
+		Nbme:            "my-unique-nbme-2",
+		NbmespbceUserID: userID,
+		CrebtorID:       userID,
+		BbtchSpecID:     spec2.ID,
+		LbstApplierID:   userID,
+		LbstAppliedAt:   time.Now(),
+	}
+	if err := bstore.CrebteBbtchChbnge(ctx, bbtchChbnge2); err != nil {
+		t.Fbtbl(err)
+	}
 
-	unimportedChangest := bt.CreateChangeset(t, ctx, bstore, bt.TestChangesetOpts{
+	mbrshblledBbtchChbngeID := string(bgql.MbrshblBbtchChbngeID(bbtchChbnge2.ID))
+
+	unimportedChbngest := bt.CrebteChbngeset(t, ctx, bstore, bt.TestChbngesetOpts{
 		Repo:                repo.ID,
-		ExternalServiceType: "github",
-		ExternalID:          "12345678",
-		ExternalBranch:      "unimported",
-		ExternalState:       btypes.ChangesetExternalStateOpen,
-		ExternalCheckState:  btypes.ChangesetCheckStatePending,
-		ExternalReviewState: btypes.ChangesetReviewStateChangesRequested,
-		PublicationState:    btypes.ChangesetPublicationStatePublished,
-		ReconcilerState:     btypes.ReconcilerStateCompleted,
-		OwnedByBatchChange:  batchChange2.ID,
-		Metadata: &github.PullRequest{
+		ExternblServiceType: "github",
+		ExternblID:          "12345678",
+		ExternblBrbnch:      "unimported",
+		ExternblStbte:       btypes.ChbngesetExternblStbteOpen,
+		ExternblCheckStbte:  btypes.ChbngesetCheckStbtePending,
+		ExternblReviewStbte: btypes.ChbngesetReviewStbteChbngesRequested,
+		PublicbtionStbte:    btypes.ChbngesetPublicbtionStbtePublished,
+		ReconcilerStbte:     btypes.ReconcilerStbteCompleted,
+		OwnedByBbtchChbnge:  bbtchChbnge2.ID,
+		Metbdbtb: &github.PullRequest{
 			ID:          "12345678",
-			Title:       "Imported Changeset Title",
-			Body:        "Imported Changeset Body",
+			Title:       "Imported Chbngeset Title",
+			Body:        "Imported Chbngeset Body",
 			Number:      12345678,
-			State:       "OPEN",
-			URL:         "https://github.com/sourcegraph/sourcegraph/pull/12345678",
-			HeadRefName: "unimported",
-			HeadRefOid:  headRev,
-			BaseRefOid:  baseRev,
-			BaseRefName: "main",
+			Stbte:       "OPEN",
+			URL:         "https://github.com/sourcegrbph/sourcegrbph/pull/12345678",
+			HebdRefNbme: "unimported",
+			HebdRefOid:  hebdRev,
+			BbseRefOid:  bbseRev,
+			BbseRefNbme: "mbin",
 		},
 	})
 
-	importedChangeset := bt.CreateChangeset(t, ctx, bstore, bt.TestChangesetOpts{
+	importedChbngeset := bt.CrebteChbngeset(t, ctx, bstore, bt.TestChbngesetOpts{
 		Repo:                repo.ID,
-		ExternalServiceType: "github",
-		ExternalID:          "1234567",
-		ExternalBranch:      "imported-pr",
-		ExternalState:       btypes.ChangesetExternalStateOpen,
-		ExternalCheckState:  btypes.ChangesetCheckStatePending,
-		ExternalReviewState: btypes.ChangesetReviewStateChangesRequested,
-		PublicationState:    btypes.ChangesetPublicationStatePublished,
-		ReconcilerState:     btypes.ReconcilerStateCompleted,
-		Metadata: &github.PullRequest{
+		ExternblServiceType: "github",
+		ExternblID:          "1234567",
+		ExternblBrbnch:      "imported-pr",
+		ExternblStbte:       btypes.ChbngesetExternblStbteOpen,
+		ExternblCheckStbte:  btypes.ChbngesetCheckStbtePending,
+		ExternblReviewStbte: btypes.ChbngesetReviewStbteChbngesRequested,
+		PublicbtionStbte:    btypes.ChbngesetPublicbtionStbtePublished,
+		ReconcilerStbte:     btypes.ReconcilerStbteCompleted,
+		Metbdbtb: &github.PullRequest{
 			ID:          "1234567",
 			Title:       "Imported GitHub PR Title",
 			Body:        "Imported GitHub PR Body",
 			Number:      1234567,
-			State:       "OPEN",
-			URL:         "https://github.com/sourcegraph/sourcegraph/pull/1234567",
-			HeadRefName: "imported-pr",
-			HeadRefOid:  headRev,
-			BaseRefOid:  baseRev,
-			BaseRefName: "master",
-			Labels: struct{ Nodes []github.Label }{
-				Nodes: []github.Label{
-					{ID: "label-no-description", Name: "no-description", Color: "121212"},
+			Stbte:       "OPEN",
+			URL:         "https://github.com/sourcegrbph/sourcegrbph/pull/1234567",
+			HebdRefNbme: "imported-pr",
+			HebdRefOid:  hebdRev,
+			BbseRefOid:  bbseRev,
+			BbseRefNbme: "mbster",
+			Lbbels: struct{ Nodes []github.Lbbel }{
+				Nodes: []github.Lbbel{
+					{ID: "lbbel-no-description", Nbme: "no-description", Color: "121212"},
 				},
 			},
-			CreatedAt: now,
-			UpdatedAt: now,
+			CrebtedAt: now,
+			UpdbtedAt: now,
 		},
 	})
 
-	addChangeset(t, ctx, bstore, unimportedChangest, batchChange2.ID)
-	addChangeset(t, ctx, bstore, importedChangeset, batchChange2.ID)
+	bddChbngeset(t, ctx, bstore, unimportedChbngest, bbtchChbnge2.ID)
+	bddChbngeset(t, ctx, bstore, importedChbngeset, bbtchChbnge2.ID)
 
-	//gitserverClient.MergeBaseFunc.SetDefaultHook(func(ctx context.Context, name api.RepoName, a api.CommitID, b api.CommitID) (api.CommitID, error) {
-	//	if string(a) != baseRev && string(b) != headRev {
-	//		t.Fatalf("git.Mocks.MergeBase received unknown commit ids: %s %s", a, b)
+	//gitserverClient.MergeBbseFunc.SetDefbultHook(func(ctx context.Context, nbme bpi.RepoNbme, b bpi.CommitID, b bpi.CommitID) (bpi.CommitID, error) {
+	//	if string(b) != bbseRev && string(b) != hebdRev {
+	//		t.Fbtblf("git.Mocks.MergeBbse received unknown commit ids: %s %s", b, b)
 	//	}
-	//	return a, nil
+	//	return b, nil
 	//})
-	s, err := newSchema(db, &Resolver{store: bstore, gitserverClient: gitserverClient})
+	s, err := newSchemb(db, &Resolver{store: bstore, gitserverClient: gitserverClient})
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
 	tests := []struct {
-		name      string
-		changeset *btypes.Changeset
-		want      apitest.Changeset
+		nbme      string
+		chbngeset *btypes.Chbngeset
+		wbnt      bpitest.Chbngeset
 	}{
 		{
-			name:      "unpublished changeset",
-			changeset: unpublishedChangeset,
-			want: apitest.Changeset{
-				Typename:   "ExternalChangeset",
+			nbme:      "unpublished chbngeset",
+			chbngeset: unpublishedChbngeset,
+			wbnt: bpitest.Chbngeset{
+				Typenbme:   "ExternblChbngeset",
 				Title:      unpublishedSpec.Title,
 				Body:       unpublishedSpec.Body,
-				Repository: apitest.Repository{Name: string(repo.Name)},
-				// Not scheduled for sync, because it's not published.
+				Repository: bpitest.Repository{Nbme: string(repo.Nbme)},
+				// Not scheduled for sync, becbuse it's not published.
 				NextSyncAt:         "",
-				ScheduleEstimateAt: "",
-				Labels:             []apitest.Label{},
-				Diff: apitest.Comparison{
-					Typename:  "PreviewRepositoryComparison",
-					FileDiffs: testDiffGraphQL,
+				ScheduleEstimbteAt: "",
+				Lbbels:             []bpitest.Lbbel{},
+				Diff: bpitest.Compbrison{
+					Typenbme:  "PreviewRepositoryCompbrison",
+					FileDiffs: testDiffGrbphQL,
 				},
-				State:       string(btypes.ChangesetStateUnpublished),
-				CurrentSpec: apitest.ChangesetSpec{ID: string(marshalChangesetSpecRandID(unpublishedSpec.RandID))},
+				Stbte:       string(btypes.ChbngesetStbteUnpublished),
+				CurrentSpec: bpitest.ChbngesetSpec{ID: string(mbrshblChbngesetSpecRbndID(unpublishedSpec.RbndID))},
 			},
 		},
 		{
-			name:      "errored changeset",
-			changeset: erroredChangeset,
-			want: apitest.Changeset{
-				Typename:   "ExternalChangeset",
+			nbme:      "errored chbngeset",
+			chbngeset: erroredChbngeset,
+			wbnt: bpitest.Chbngeset{
+				Typenbme:   "ExternblChbngeset",
 				Title:      erroredSpec.Title,
 				Body:       erroredSpec.Body,
-				Repository: apitest.Repository{Name: string(repo.Name)},
-				// Not scheduled for sync, because it's not published.
+				Repository: bpitest.Repository{Nbme: string(repo.Nbme)},
+				// Not scheduled for sync, becbuse it's not published.
 				NextSyncAt:         "",
-				ScheduleEstimateAt: "",
-				Labels:             []apitest.Label{},
-				Diff: apitest.Comparison{
-					Typename:  "PreviewRepositoryComparison",
-					FileDiffs: testDiffGraphQL,
+				ScheduleEstimbteAt: "",
+				Lbbels:             []bpitest.Lbbel{},
+				Diff: bpitest.Compbrison{
+					Typenbme:  "PreviewRepositoryCompbrison",
+					FileDiffs: testDiffGrbphQL,
 				},
-				State:       string(btypes.ChangesetStateRetrying),
-				Error:       "very bad error",
-				CurrentSpec: apitest.ChangesetSpec{ID: string(marshalChangesetSpecRandID(erroredSpec.RandID))},
+				Stbte:       string(btypes.ChbngesetStbteRetrying),
+				Error:       "very bbd error",
+				CurrentSpec: bpitest.ChbngesetSpec{ID: string(mbrshblChbngesetSpecRbndID(erroredSpec.RbndID))},
 			},
 		},
 		{
-			name:      "synced github changeset",
-			changeset: syncedGitHubChangeset,
-			want: apitest.Changeset{
-				Typename:           "ExternalChangeset",
+			nbme:      "synced github chbngeset",
+			chbngeset: syncedGitHubChbngeset,
+			wbnt: bpitest.Chbngeset{
+				Typenbme:           "ExternblChbngeset",
 				Title:              "GitHub PR Title",
 				Body:               "GitHub PR Body",
-				ExternalID:         "12345",
-				CheckState:         "PENDING",
-				ReviewState:        "CHANGES_REQUESTED",
-				NextSyncAt:         marshalDateTime(t, now.Add(8*time.Hour)),
-				ScheduleEstimateAt: "",
-				Repository:         apitest.Repository{Name: string(repo.Name)},
-				ExternalURL: apitest.ExternalURL{
-					URL:         "https://github.com/sourcegraph/sourcegraph/pull/12345",
+				ExternblID:         "12345",
+				CheckStbte:         "PENDING",
+				ReviewStbte:        "CHANGES_REQUESTED",
+				NextSyncAt:         mbrshblDbteTime(t, now.Add(8*time.Hour)),
+				ScheduleEstimbteAt: "",
+				Repository:         bpitest.Repository{Nbme: string(repo.Nbme)},
+				ExternblURL: bpitest.ExternblURL{
+					URL:         "https://github.com/sourcegrbph/sourcegrbph/pull/12345",
 					ServiceKind: "GITHUB",
 					ServiceType: "github",
 				},
-				State: string(btypes.ChangesetStateOpen),
-				Events: apitest.ChangesetEventConnection{
-					TotalCount: 2,
+				Stbte: string(btypes.ChbngesetStbteOpen),
+				Events: bpitest.ChbngesetEventConnection{
+					TotblCount: 2,
 				},
-				Labels: []apitest.Label{
-					{Text: "cool-label", Color: "blue", Description: &labelEventDescriptionText},
+				Lbbels: []bpitest.Lbbel{
+					{Text: "cool-lbbel", Color: "blue", Description: &lbbelEventDescriptionText},
 					{Text: "no-description", Color: "121212", Description: nil},
 				},
-				Diff: apitest.Comparison{
-					Typename:  "RepositoryComparison",
-					FileDiffs: testDiffGraphQL,
+				Diff: bpitest.Compbrison{
+					Typenbme:  "RepositoryCompbrison",
+					FileDiffs: testDiffGrbphQL,
 				},
-				CommitVerification: &apitest.GitHubCommitVerification{
+				CommitVerificbtion: &bpitest.GitHubCommitVerificbtion{
 					Verified: true,
 				},
 			},
 		},
 		{
-			name:      "read-only github changeset",
-			changeset: readOnlyGitHubChangeset,
-			want: apitest.Changeset{
-				Typename:           "ExternalChangeset",
+			nbme:      "rebd-only github chbngeset",
+			chbngeset: rebdOnlyGitHubChbngeset,
+			wbnt: bpitest.Chbngeset{
+				Typenbme:           "ExternblChbngeset",
 				Title:              "GitHub PR Title",
 				Body:               "GitHub PR Body",
-				ExternalID:         "123456",
-				CheckState:         "PENDING",
-				ReviewState:        "CHANGES_REQUESTED",
-				ScheduleEstimateAt: "",
-				Repository:         apitest.Repository{Name: string(repo.Name)},
-				ExternalURL: apitest.ExternalURL{
-					URL:         "https://github.com/sourcegraph/archived/pull/123456",
+				ExternblID:         "123456",
+				CheckStbte:         "PENDING",
+				ReviewStbte:        "CHANGES_REQUESTED",
+				ScheduleEstimbteAt: "",
+				Repository:         bpitest.Repository{Nbme: string(repo.Nbme)},
+				ExternblURL: bpitest.ExternblURL{
+					URL:         "https://github.com/sourcegrbph/brchived/pull/123456",
 					ServiceKind: "GITHUB",
 					ServiceType: "github",
 				},
-				Labels: []apitest.Label{},
-				State:  string(btypes.ChangesetStateReadOnly),
+				Lbbels: []bpitest.Lbbel{},
+				Stbte:  string(btypes.ChbngesetStbteRebdOnly),
 			},
 		},
 		{
-			name:      "unsynced changeset",
-			changeset: unsyncedChangeset,
-			want: apitest.Changeset{
-				Typename:   "ExternalChangeset",
-				ExternalID: "9876",
-				Repository: apitest.Repository{Name: string(repo.Name)},
-				Labels:     []apitest.Label{},
-				State:      string(btypes.ChangesetStateProcessing),
+			nbme:      "unsynced chbngeset",
+			chbngeset: unsyncedChbngeset,
+			wbnt: bpitest.Chbngeset{
+				Typenbme:   "ExternblChbngeset",
+				ExternblID: "9876",
+				Repository: bpitest.Repository{Nbme: string(repo.Nbme)},
+				Lbbels:     []bpitest.Lbbel{},
+				Stbte:      string(btypes.ChbngesetStbteProcessing),
 			},
 		},
 		{
-			name:      "forked changeset",
-			changeset: forkedChangeset,
-			want: apitest.Changeset{
-				Typename:      "ExternalChangeset",
-				ExternalID:    "98765",
-				ForkNamespace: "user",
-				ForkName:      "my-fork",
-				Repository:    apitest.Repository{Name: string(repo.Name)},
-				Labels:        []apitest.Label{},
-				State:         string(btypes.ChangesetStateProcessing),
+			nbme:      "forked chbngeset",
+			chbngeset: forkedChbngeset,
+			wbnt: bpitest.Chbngeset{
+				Typenbme:      "ExternblChbngeset",
+				ExternblID:    "98765",
+				ForkNbmespbce: "user",
+				ForkNbme:      "my-fork",
+				Repository:    bpitest.Repository{Nbme: string(repo.Nbme)},
+				Lbbels:        []bpitest.Lbbel{},
+				Stbte:         string(btypes.ChbngesetStbteProcessing),
 			},
 		},
 		{
-			name:      "scheduled changeset",
-			changeset: scheduledChangeset,
-			want: apitest.Changeset{
-				Typename:           "ExternalChangeset",
-				ExternalID:         "987654",
-				Repository:         apitest.Repository{Name: string(repo.Name)},
-				Labels:             []apitest.Label{},
-				State:              string(btypes.ChangesetStateScheduled),
-				ScheduleEstimateAt: schedulerWindow.Format(time.RFC3339),
+			nbme:      "scheduled chbngeset",
+			chbngeset: scheduledChbngeset,
+			wbnt: bpitest.Chbngeset{
+				Typenbme:           "ExternblChbngeset",
+				ExternblID:         "987654",
+				Repository:         bpitest.Repository{Nbme: string(repo.Nbme)},
+				Lbbels:             []bpitest.Lbbel{},
+				Stbte:              string(btypes.ChbngesetStbteScheduled),
+				ScheduleEstimbteAt: schedulerWindow.Formbt(time.RFC3339),
 			},
 		},
 		{
-			name:      "unimported changeset",
-			changeset: unimportedChangest,
-			want: apitest.Changeset{
-				Typename:           "ExternalChangeset",
-				Title:              "Imported Changeset Title",
-				Body:               "Imported Changeset Body",
-				ExternalID:         "12345678",
-				CheckState:         "PENDING",
-				ReviewState:        "CHANGES_REQUESTED",
-				NextSyncAt:         marshalDateTime(t, now.Add(8*time.Hour)),
-				ScheduleEstimateAt: "",
-				Repository:         apitest.Repository{Name: string(repo.Name)},
-				OwnedByBatchChange: &marshalledBatchChangeID,
-				ExternalURL: apitest.ExternalURL{
-					URL:         "https://github.com/sourcegraph/sourcegraph/pull/12345678",
+			nbme:      "unimported chbngeset",
+			chbngeset: unimportedChbngest,
+			wbnt: bpitest.Chbngeset{
+				Typenbme:           "ExternblChbngeset",
+				Title:              "Imported Chbngeset Title",
+				Body:               "Imported Chbngeset Body",
+				ExternblID:         "12345678",
+				CheckStbte:         "PENDING",
+				ReviewStbte:        "CHANGES_REQUESTED",
+				NextSyncAt:         mbrshblDbteTime(t, now.Add(8*time.Hour)),
+				ScheduleEstimbteAt: "",
+				Repository:         bpitest.Repository{Nbme: string(repo.Nbme)},
+				OwnedByBbtchChbnge: &mbrshblledBbtchChbngeID,
+				ExternblURL: bpitest.ExternblURL{
+					URL:         "https://github.com/sourcegrbph/sourcegrbph/pull/12345678",
 					ServiceKind: "GITHUB",
 					ServiceType: "github",
 				},
-				State: string(btypes.ChangesetStateOpen),
-				Events: apitest.ChangesetEventConnection{
-					TotalCount: 0,
+				Stbte: string(btypes.ChbngesetStbteOpen),
+				Events: bpitest.ChbngesetEventConnection{
+					TotblCount: 0,
 				},
-				Labels: []apitest.Label{},
-				Diff: apitest.Comparison{
-					Typename:  "RepositoryComparison",
-					FileDiffs: testDiffGraphQL,
+				Lbbels: []bpitest.Lbbel{},
+				Diff: bpitest.Compbrison{
+					Typenbme:  "RepositoryCompbrison",
+					FileDiffs: testDiffGrbphQL,
 				},
 			},
 		},
 		{
-			name:      "imported changeset",
-			changeset: importedChangeset,
-			want: apitest.Changeset{
-				Typename:           "ExternalChangeset",
+			nbme:      "imported chbngeset",
+			chbngeset: importedChbngeset,
+			wbnt: bpitest.Chbngeset{
+				Typenbme:           "ExternblChbngeset",
 				Title:              "Imported GitHub PR Title",
 				Body:               "Imported GitHub PR Body",
-				ExternalID:         "1234567",
-				CheckState:         "PENDING",
-				ReviewState:        "CHANGES_REQUESTED",
-				NextSyncAt:         marshalDateTime(t, now.Add(8*time.Hour)),
-				ScheduleEstimateAt: "",
-				Repository:         apitest.Repository{Name: string(repo.Name)},
-				ExternalURL: apitest.ExternalURL{
-					URL:         "https://github.com/sourcegraph/sourcegraph/pull/1234567",
+				ExternblID:         "1234567",
+				CheckStbte:         "PENDING",
+				ReviewStbte:        "CHANGES_REQUESTED",
+				NextSyncAt:         mbrshblDbteTime(t, now.Add(8*time.Hour)),
+				ScheduleEstimbteAt: "",
+				Repository:         bpitest.Repository{Nbme: string(repo.Nbme)},
+				ExternblURL: bpitest.ExternblURL{
+					URL:         "https://github.com/sourcegrbph/sourcegrbph/pull/1234567",
 					ServiceKind: "GITHUB",
 					ServiceType: "github",
 				},
-				State: string(btypes.ChangesetStateOpen),
-				Events: apitest.ChangesetEventConnection{
-					TotalCount: 0,
+				Stbte: string(btypes.ChbngesetStbteOpen),
+				Events: bpitest.ChbngesetEventConnection{
+					TotblCount: 0,
 				},
-				Labels: []apitest.Label{
+				Lbbels: []bpitest.Lbbel{
 					{Text: "no-description", Color: "121212", Description: nil},
 				},
-				Diff: apitest.Comparison{
-					Typename:  "RepositoryComparison",
-					FileDiffs: testDiffGraphQL,
+				Diff: bpitest.Compbrison{
+					Typenbme:  "RepositoryCompbrison",
+					FileDiffs: testDiffGrbphQL,
 				},
 			},
 		},
 	}
 
-	for _, tc := range tests {
-		t.Run(tc.name, func(t *testing.T) {
-			apiID := bgql.MarshalChangesetID(tc.changeset.ID)
-			input := map[string]any{"changeset": apiID}
+	for _, tc := rbnge tests {
+		t.Run(tc.nbme, func(t *testing.T) {
+			bpiID := bgql.MbrshblChbngesetID(tc.chbngeset.ID)
+			input := mbp[string]bny{"chbngeset": bpiID}
 
-			var response struct{ Node apitest.Changeset }
-			apitest.MustExec(ctx, t, s, input, &response, queryChangeset)
+			vbr response struct{ Node bpitest.Chbngeset }
+			bpitest.MustExec(ctx, t, s, input, &response, queryChbngeset)
 
-			tc.want.ID = string(apiID)
-			if diff := cmp.Diff(tc.want, response.Node); diff != "" {
-				t.Fatalf("wrong batch change response (-want +got):\n%s", diff)
+			tc.wbnt.ID = string(bpiID)
+			if diff := cmp.Diff(tc.wbnt, response.Node); diff != "" {
+				t.Fbtblf("wrong bbtch chbnge response (-wbnt +got):\n%s", diff)
 			}
 		})
 	}
 }
 
-const queryChangeset = `
-fragment fileDiffNode on FileDiff {
-    oldPath
-    newPath
-    oldFile { name }
+const queryChbngeset = `
+frbgment fileDiffNode on FileDiff {
+    oldPbth
+    newPbth
+    oldFile { nbme }
     hunks {
       body
-      oldRange { startLine, lines }
-      newRange { startLine, lines }
+      oldRbnge { stbrtLine, lines }
+      newRbnge { stbrtLine, lines }
     }
-    stat { added, deleted }
+    stbt { bdded, deleted }
 }
 
-query($changeset: ID!) {
-  node(id: $changeset) {
-    __typename
+query($chbngeset: ID!) {
+  node(id: $chbngeset) {
+    __typenbme
 
-    ... on ExternalChangeset {
+    ... on ExternblChbngeset {
       id
 
       title
       body
 
-      externalID
-      forkNamespace
-	  forkName
-      state
-      reviewState
-      checkState
-      externalURL { url, serviceKind, serviceType }
+      externblID
+      forkNbmespbce
+	  forkNbme
+      stbte
+      reviewStbte
+      checkStbte
+      externblURL { url, serviceKind, serviceType }
       nextSyncAt
-      scheduleEstimateAt
+      scheduleEstimbteAt
       error
 
-      repository { name }
+      repository { nbme }
 
-      events(first: 100) { totalCount }
-      labels { text, color, description }
+      events(first: 100) { totblCount }
+      lbbels { text, color, description }
 
       currentSpec { id }
 
-	  ownedByBatchChange
+	  ownedByBbtchChbnge
 
-	  commitVerification {
-		... on GitHubCommitVerification {
+	  commitVerificbtion {
+		... on GitHubCommitVerificbtion {
 		  verified
 		}
 	  }
 
       diff {
-        __typename
+        __typenbme
 
-        ... on RepositoryComparison {
+        ... on RepositoryCompbrison {
           fileDiffs {
-             totalCount
-             rawDiff
-             diffStat { added, deleted }
+             totblCount
+             rbwDiff
+             diffStbt { bdded, deleted }
              nodes {
                ... fileDiffNode
              }
           }
         }
 
-        ... on PreviewRepositoryComparison {
+        ... on PreviewRepositoryCompbrison {
           fileDiffs {
-             totalCount
-             rawDiff
-             diffStat { added, deleted }
+             totblCount
+             rbwDiff
+             diffStbt { bdded, deleted }
              nodes {
                ... fileDiffNode
              }

@@ -1,77 +1,77 @@
-package api
+pbckbge bpi
 
 import (
-	"flag"
+	"flbg"
 	"fmt"
-	"math"
+	"mbth"
 	"testing"
 
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/testutil"
-	"github.com/sourcegraph/sourcegraph/lib/pointers"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi"
+	"github.com/sourcegrbph/sourcegrbph/internbl/testutil"
+	"github.com/sourcegrbph/sourcegrbph/lib/pointers"
 )
 
-var updateGolden = flag.Bool("update", false, "Updastdata goldens")
+vbr updbteGolden = flbg.Bool("updbte", fblse, "Updbstdbtb goldens")
 
-func TestSearchProgress(t *testing.T) {
-	namer := func(ids []api.RepoID) (names []api.RepoName) {
-		for _, id := range ids {
-			names = append(names, api.RepoName(fmt.Sprintf("repo-%d", id)))
+func TestSebrchProgress(t *testing.T) {
+	nbmer := func(ids []bpi.RepoID) (nbmes []bpi.RepoNbme) {
+		for _, id := rbnge ids {
+			nbmes = bppend(nbmes, bpi.RepoNbme(fmt.Sprintf("repo-%d", id)))
 		}
-		return names
+		return nbmes
 	}
 
-	var timedout100 []api.RepoID
-	for id := api.RepoID(1); id <= 100; id++ {
-		timedout100 = append(timedout100, id)
+	vbr timedout100 []bpi.RepoID
+	for id := bpi.RepoID(1); id <= 100; id++ {
+		timedout100 = bppend(timedout100, id)
 	}
-	cases := map[string]ProgressStats{
+	cbses := mbp[string]ProgressStbts{
 		"empty": {},
 		"zeroresults": {
 			RepositoriesCount: pointers.Ptr(0),
 		},
 		"timedout100": {
-			MatchCount:          0,
-			ElapsedMilliseconds: 0,
+			MbtchCount:          0,
+			ElbpsedMilliseconds: 0,
 			RepositoriesCount:   pointers.Ptr(100),
 			ExcludedArchived:    0,
 			ExcludedForks:       0,
 			Timedout:            timedout100,
 			Missing:             nil,
 			Cloning:             nil,
-			LimitHit:            false,
-			DisplayLimit:        math.MaxInt32,
+			LimitHit:            fblse,
+			DisplbyLimit:        mbth.MbxInt32,
 		},
-		"all": {
-			MatchCount:          1,
-			ElapsedMilliseconds: 0,
+		"bll": {
+			MbtchCount:          1,
+			ElbpsedMilliseconds: 0,
 			RepositoriesCount:   pointers.Ptr(5),
-			BackendsMissing:     1,
+			BbckendsMissing:     1,
 			ExcludedArchived:    1,
 			ExcludedForks:       5,
-			Timedout:            []api.RepoID{1},
-			Missing:             []api.RepoID{2, 3},
-			Cloning:             []api.RepoID{4},
+			Timedout:            []bpi.RepoID{1},
+			Missing:             []bpi.RepoID{2, 3},
+			Cloning:             []bpi.RepoID{4},
 			LimitHit:            true,
 			SuggestedLimit:      1000,
-			DisplayLimit:        math.MaxInt32,
+			DisplbyLimit:        mbth.MbxInt32,
 		},
-		"traced": {
-			Trace: "abcd",
+		"trbced": {
+			Trbce: "bbcd",
 		},
 	}
 
-	for name, c := range cases {
-		t.Run(name, func(t *testing.T) {
-			got := BuildProgressEvent(c, namer)
-			got.DurationMs = 0 // clear out non-deterministic field
-			testutil.AssertGolden(t, "testdata/golden/"+t.Name()+".json", *updateGolden, got)
+	for nbme, c := rbnge cbses {
+		t.Run(nbme, func(t *testing.T) {
+			got := BuildProgressEvent(c, nbmer)
+			got.DurbtionMs = 0 // clebr out non-deterministic field
+			testutil.AssertGolden(t, "testdbtb/golden/"+t.Nbme()+".json", *updbteGolden, got)
 		})
 	}
 }
 
 func TestNumber(t *testing.T) {
-	cases := map[int]string{
+	cbses := mbp[int]string{
 		0:     "0",
 		1:     "1",
 		100:   "100",
@@ -86,10 +86,10 @@ func TestNumber(t *testing.T) {
 		10400: "10k",
 		54321: "54k",
 	}
-	for n, want := range cases {
+	for n, wbnt := rbnge cbses {
 		got := number(n)
-		if got != want {
-			t.Errorf("number(%d) got %q want %q", n, got, want)
+		if got != wbnt {
+			t.Errorf("number(%d) got %q wbnt %q", n, got, wbnt)
 		}
 	}
 }

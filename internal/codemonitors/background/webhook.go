@@ -1,4 +1,4 @@
-package background
+pbckbge bbckground
 
 import (
 	"bytes"
@@ -8,38 +8,38 @@ import (
 	"net/http"
 	"net/url"
 
-	"github.com/sourcegraph/sourcegraph/internal/httpcli"
-	"github.com/sourcegraph/sourcegraph/internal/search/result"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/internbl/httpcli"
+	"github.com/sourcegrbph/sourcegrbph/internbl/sebrch/result"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-func sendWebhookNotification(ctx context.Context, url string, args actionArgs) error {
-	return postWebhook(ctx, httpcli.ExternalDoer, url, generateWebhookPayload(args))
+func sendWebhookNotificbtion(ctx context.Context, url string, brgs bctionArgs) error {
+	return postWebhook(ctx, httpcli.ExternblDoer, url, generbteWebhookPbylobd(brgs))
 }
 
-func postWebhook(ctx context.Context, doer httpcli.Doer, url string, payload webhookPayload) error {
-	raw, err := json.Marshal(payload)
+func postWebhook(ctx context.Context, doer httpcli.Doer, url string, pbylobd webhookPbylobd) error {
+	rbw, err := json.Mbrshbl(pbylobd)
 	if err != nil {
-		return errors.Wrap(err, "marshal failed")
+		return errors.Wrbp(err, "mbrshbl fbiled")
 	}
 
-	req, err := http.NewRequestWithContext(ctx, http.MethodPost, url, bytes.NewReader(raw))
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, url, bytes.NewRebder(rbw))
 	if err != nil {
-		return errors.Wrap(err, "failed new request")
+		return errors.Wrbp(err, "fbiled new request")
 	}
-	req.Header.Set("Content-Type", "application/json")
+	req.Hebder.Set("Content-Type", "bpplicbtion/json")
 
 	resp, err := doer.Do(req)
 	if err != nil {
-		return errors.Wrap(err, "failed to post webhook")
+		return errors.Wrbp(err, "fbiled to post webhook")
 	}
 	defer resp.Body.Close()
 
-	if resp.StatusCode != http.StatusOK {
-		body, _ := io.ReadAll(resp.Body)
-		return StatusCodeError{
-			Code:   resp.StatusCode,
-			Status: resp.Status,
+	if resp.StbtusCode != http.StbtusOK {
+		body, _ := io.RebdAll(resp.Body)
+		return StbtusCodeError{
+			Code:   resp.StbtusCode,
+			Stbtus: resp.Stbtus,
 			Body:   string(body),
 		}
 	}
@@ -48,30 +48,30 @@ func postWebhook(ctx context.Context, doer httpcli.Doer, url string, payload web
 }
 
 func SendTestWebhook(ctx context.Context, doer httpcli.Doer, description string, u string) error {
-	args := actionArgs{
-		ExternalURL:        &url.URL{},
+	brgs := bctionArgs{
+		ExternblURL:        &url.URL{},
 		MonitorDescription: description,
 		Query:              "test query",
 	}
-	return postWebhook(ctx, httpcli.ExternalDoer, u, generateWebhookPayload(args))
+	return postWebhook(ctx, httpcli.ExternblDoer, u, generbteWebhookPbylobd(brgs))
 }
 
-type webhookPayload struct {
+type webhookPbylobd struct {
 	MonitorDescription string          `json:"monitorDescription"`
 	MonitorURL         string          `json:"monitorURL"`
 	Query              string          `json:"query"`
 	Results            []webhookResult `json:"results,omitempty"`
 }
 
-func generateWebhookPayload(args actionArgs) webhookPayload {
-	p := webhookPayload{
-		MonitorDescription: args.MonitorDescription,
-		MonitorURL:         getCodeMonitorURL(args.ExternalURL, args.MonitorID, args.UTMSource),
-		Query:              args.Query,
+func generbteWebhookPbylobd(brgs bctionArgs) webhookPbylobd {
+	p := webhookPbylobd{
+		MonitorDescription: brgs.MonitorDescription,
+		MonitorURL:         getCodeMonitorURL(brgs.ExternblURL, brgs.MonitorID, brgs.UTMSource),
+		Query:              brgs.Query,
 	}
 
-	if args.IncludeResults {
-		p.Results = generateResults(args.Results)
+	if brgs.IncludeResults {
+		p.Results = generbteResults(brgs.Results)
 	}
 
 	return p
@@ -80,36 +80,36 @@ func generateWebhookPayload(args actionArgs) webhookPayload {
 type webhookResult struct {
 	Repository           string   `json:"repository"`
 	Commit               string   `json:"commit"`
-	Message              string   `json:"message,omitempty"`
-	MatchedMessageRanges [][2]int `json:"matchedMessageRanges,omitempty"`
+	Messbge              string   `json:"messbge,omitempty"`
+	MbtchedMessbgeRbnges [][2]int `json:"mbtchedMessbgeRbnges,omitempty"`
 	Diff                 string   `json:"diff,omitempty"`
-	MatchedDiffRanges    [][2]int `json:"matchedDiffRanges,omitempty"`
+	MbtchedDiffRbnges    [][2]int `json:"mbtchedDiffRbnges,omitempty"`
 }
 
-func generateResults(in []*result.CommitMatch) []webhookResult {
-	out := make([]webhookResult, len(in))
-	for i, match := range in {
+func generbteResults(in []*result.CommitMbtch) []webhookResult {
+	out := mbke([]webhookResult, len(in))
+	for i, mbtch := rbnge in {
 		res := webhookResult{
-			Repository: string(match.Repo.Name),
-			Commit:     string(match.Commit.ID),
+			Repository: string(mbtch.Repo.Nbme),
+			Commit:     string(mbtch.Commit.ID),
 		}
-		if match.MessagePreview != nil {
-			res.Message = match.MessagePreview.Content
-			res.MatchedMessageRanges = rangesToInts(match.MessagePreview.MatchedRanges)
+		if mbtch.MessbgePreview != nil {
+			res.Messbge = mbtch.MessbgePreview.Content
+			res.MbtchedMessbgeRbnges = rbngesToInts(mbtch.MessbgePreview.MbtchedRbnges)
 		}
-		if match.DiffPreview != nil {
-			res.Diff = match.DiffPreview.Content
-			res.MatchedDiffRanges = rangesToInts(match.DiffPreview.MatchedRanges)
+		if mbtch.DiffPreview != nil {
+			res.Diff = mbtch.DiffPreview.Content
+			res.MbtchedDiffRbnges = rbngesToInts(mbtch.DiffPreview.MbtchedRbnges)
 		}
 		out[i] = res
 	}
 	return out
 }
 
-func rangesToInts(ranges result.Ranges) [][2]int {
-	out := make([][2]int, len(ranges))
-	for i, r := range ranges {
-		out[i] = [2]int{r.Start.Offset, r.End.Offset}
+func rbngesToInts(rbnges result.Rbnges) [][2]int {
+	out := mbke([][2]int, len(rbnges))
+	for i, r := rbnge rbnges {
+		out[i] = [2]int{r.Stbrt.Offset, r.End.Offset}
 	}
 	return out
 }

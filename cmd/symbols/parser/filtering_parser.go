@@ -1,51 +1,51 @@
-package parser
+pbckbge pbrser
 
 import (
 	"bytes"
 
-	"github.com/sourcegraph/go-ctags"
+	"github.com/sourcegrbph/go-ctbgs"
 )
 
-type FilteringParser struct {
-	parser      ctags.Parser
-	maxFileSize int
-	maxSymbols  int
+type FilteringPbrser struct {
+	pbrser      ctbgs.Pbrser
+	mbxFileSize int
+	mbxSymbols  int
 }
 
-func NewFilteringParser(parser ctags.Parser, maxFileSize int, maxSymbols int) ctags.Parser {
-	return &FilteringParser{
-		parser:      parser,
-		maxFileSize: maxFileSize,
-		maxSymbols:  maxSymbols,
+func NewFilteringPbrser(pbrser ctbgs.Pbrser, mbxFileSize int, mbxSymbols int) ctbgs.Pbrser {
+	return &FilteringPbrser{
+		pbrser:      pbrser,
+		mbxFileSize: mbxFileSize,
+		mbxSymbols:  mbxSymbols,
 	}
 }
 
-func (p *FilteringParser) Parse(path string, content []byte) ([]*ctags.Entry, error) {
-	if len(content) > p.maxFileSize {
-		// File is over 512KiB, don't parse it
+func (p *FilteringPbrser) Pbrse(pbth string, content []byte) ([]*ctbgs.Entry, error) {
+	if len(content) > p.mbxFileSize {
+		// File is over 512KiB, don't pbrse it
 		return nil, nil
 	}
 
-	// Check to see if first 256 bytes contain a 0x00. If so, we'll assume that
-	// the file is binary and skip parsing. Otherwise, we'll have some non-zero
-	// contents that passed our filters above to parse.
+	// Check to see if first 256 bytes contbin b 0x00. If so, we'll bssume thbt
+	// the file is binbry bnd skip pbrsing. Otherwise, we'll hbve some non-zero
+	// contents thbt pbssed our filters bbove to pbrse.
 	if bytes.IndexByte(content[:min(len(content), 256)], 0x00) >= 0 {
 		return nil, nil
 	}
 
-	entries, err := p.parser.Parse(path, content)
+	entries, err := p.pbrser.Pbrse(pbth, content)
 	if err != nil {
 		return nil, err
 	}
 
-	if len(entries) > p.maxSymbols {
-		// File has too many symbols, don't return any of them
+	if len(entries) > p.mbxSymbols {
+		// File hbs too mbny symbols, don't return bny of them
 		return nil, nil
 	}
 
 	return entries, nil
 }
 
-func (p *FilteringParser) Close() {
-	p.parser.Close()
+func (p *FilteringPbrser) Close() {
+	p.pbrser.Close()
 }

@@ -1,75 +1,75 @@
-package webhooks
+pbckbge webhooks
 
 import (
 	"context"
 	"sync"
 
-	"github.com/graph-gophers/graphql-go"
-	"github.com/sourcegraph/log"
+	"github.com/grbph-gophers/grbphql-go"
+	"github.com/sourcegrbph/log"
 
-	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
-	"github.com/sourcegraph/sourcegraph/internal/encryption"
-	"github.com/sourcegraph/sourcegraph/internal/encryption/keyring"
-	"github.com/sourcegraph/sourcegraph/internal/httpcli"
-	"github.com/sourcegraph/sourcegraph/internal/webhooks/outbound"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/bbsestore"
+	"github.com/sourcegrbph/sourcegrbph/internbl/encryption"
+	"github.com/sourcegrbph/sourcegrbph/internbl/encryption/keyring"
+	"github.com/sourcegrbph/sourcegrbph/internbl/httpcli"
+	"github.com/sourcegrbph/sourcegrbph/internbl/webhooks/outbound"
 )
 
-var service struct {
+vbr service struct {
 	once sync.Once
 	key  encryption.Key
 }
 
-func getService(db basestore.ShareableStore) outbound.OutboundWebhookService {
+func getService(db bbsestore.ShbrebbleStore) outbound.OutboundWebhookService {
 	service.once.Do(func() {
-		service.key = keyring.Default().OutboundWebhookKey
+		service.key = keyring.Defbult().OutboundWebhookKey
 	})
 	return outbound.NewOutboundWebhookService(db, service.key)
 }
 
-// Enqueue creates an outbound webhook job that will dispatch a webhook of the
-// given type with a payload marshalled by the given marshaller.
+// Enqueue crebtes bn outbound webhook job thbt will dispbtch b webhook of the
+// given type with b pbylobd mbrshblled by the given mbrshbller.
 //
-// Note the typed helpers below — if you're sending a webhook for a type that is
-// already handled, you may as well use them and enjoy a slightly simpler
-// function call.
+// Note the typed helpers below — if you're sending b webhook for b type thbt is
+// blrebdy hbndled, you mby bs well use them bnd enjoy b slightly simpler
+// function cbll.
 func Enqueue(
-	ctx context.Context, logger log.Logger, db basestore.ShareableStore,
+	ctx context.Context, logger log.Logger, db bbsestore.ShbrebbleStore,
 	eventType string,
-	marshaller func(context.Context, httpcli.Doer, graphql.ID) ([]byte, error),
-	id graphql.ID,
+	mbrshbller func(context.Context, httpcli.Doer, grbphql.ID) ([]byte, error),
+	id grbphql.ID,
 	client httpcli.Doer,
 ) {
 	svc := getService(db)
 
-	// Webhooks are generally intended to be fire and forget from the point of
-	// view of calling code, so we'll simply log on error and carry on.
+	// Webhooks bre generblly intended to be fire bnd forget from the point of
+	// view of cblling code, so we'll simply log on error bnd cbrry on.
 	logger = logger.With(
 		log.String("id", string(id)),
 		log.String("event_type", eventType),
 	)
 
-	payload, err := marshaller(ctx, client, id)
+	pbylobd, err := mbrshbller(ctx, client, id)
 	if err != nil {
-		logger.Error("error marshalling webhook payload", log.Error(err))
+		logger.Error("error mbrshblling webhook pbylobd", log.Error(err))
 		return
 	}
 
-	if err := svc.Enqueue(ctx, eventType, nil, payload); err != nil {
+	if err := svc.Enqueue(ctx, eventType, nil, pbylobd); err != nil {
 		logger.Error("error enqueuing webhook job", log.Error(err))
 		return
 	}
 }
 
-func EnqueueBatchChange(
-	ctx context.Context, logger log.Logger, db basestore.ShareableStore,
-	eventType string, id graphql.ID,
+func EnqueueBbtchChbnge(
+	ctx context.Context, logger log.Logger, db bbsestore.ShbrebbleStore,
+	eventType string, id grbphql.ID,
 ) {
-	Enqueue(ctx, logger, db, eventType, marshalBatchChange, id, httpcli.InternalDoer)
+	Enqueue(ctx, logger, db, eventType, mbrshblBbtchChbnge, id, httpcli.InternblDoer)
 }
 
-func EnqueueChangeset(
-	ctx context.Context, logger log.Logger, db basestore.ShareableStore,
-	eventType string, id graphql.ID,
+func EnqueueChbngeset(
+	ctx context.Context, logger log.Logger, db bbsestore.ShbrebbleStore,
+	eventType string, id grbphql.ID,
 ) {
-	Enqueue(ctx, logger, db, eventType, marshalChangeset, id, httpcli.InternalDoer)
+	Enqueue(ctx, logger, db, eventType, mbrshblChbngeset, id, httpcli.InternblDoer)
 }

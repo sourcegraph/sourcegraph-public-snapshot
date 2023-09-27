@@ -1,4 +1,4 @@
-package repos
+pbckbge repos
 
 import (
 	"context"
@@ -9,112 +9,112 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 
-	"github.com/sourcegraph/log/logtest"
+	"github.com/sourcegrbph/log/logtest"
 
-	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/awscodecommit"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/azuredevops"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketcloud"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/gerrit"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/perforce"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/phabricator"
-	"github.com/sourcegraph/sourcegraph/internal/timeutil"
-	"github.com/sourcegraph/sourcegraph/schema"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbmocks"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc/bwscodecommit"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc/bzuredevops"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc/bitbucketcloud"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc/bitbucketserver"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc/gerrit"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc/github"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc/gitlbb"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc/perforce"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc/phbbricbtor"
+	"github.com/sourcegrbph/sourcegrbph/internbl/timeutil"
+	"github.com/sourcegrbph/sourcegrbph/schemb"
 )
 
 func TestAWSCodeCloneURLs(t *testing.T) {
-	clock := timeutil.NewFakeClock(time.Now(), 0)
+	clock := timeutil.NewFbkeClock(time.Now(), 0)
 	now := clock.Now()
 
-	repo := &awscodecommit.Repository{
-		ARN:          "arn:aws:codecommit:us-west-1:999999999999:stripe-go",
+	repo := &bwscodecommit.Repository{
+		ARN:          "brn:bws:codecommit:us-west-1:999999999999:stripe-go",
 		AccountID:    "999999999999",
-		ID:           "f001337a-3450-46fd-b7d2-650c0EXAMPLE",
-		Name:         "stripe-go",
+		ID:           "f001337b-3450-46fd-b7d2-650c0EXAMPLE",
+		Nbme:         "stripe-go",
 		Description:  "The stripe-go lib",
-		HTTPCloneURL: "https://git-codecommit.us-west-1.amazonaws.com/v1/repos/stripe-go",
-		LastModified: &now,
+		HTTPCloneURL: "https://git-codecommit.us-west-1.bmbzonbws.com/v1/repos/stripe-go",
+		LbstModified: &now,
 	}
 
-	cfg := schema.AWSCodeCommitConnection{
-		GitCredentials: schema.AWSCodeCommitGitCredentials{
-			Username: "username",
-			Password: "password",
+	cfg := schemb.AWSCodeCommitConnection{
+		GitCredentibls: schemb.AWSCodeCommitGitCredentibls{
+			Usernbme: "usernbme",
+			Pbssword: "pbssword",
 		},
 	}
 
-	got := awsCodeCloneURL(logtest.Scoped(t), repo, &cfg)
-	want := "https://username:password@git-codecommit.us-west-1.amazonaws.com/v1/repos/stripe-go"
-	if got != want {
-		t.Fatalf("wrong cloneURL, got: %q, want: %q", got, want)
+	got := bwsCodeCloneURL(logtest.Scoped(t), repo, &cfg)
+	wbnt := "https://usernbme:pbssword@git-codecommit.us-west-1.bmbzonbws.com/v1/repos/stripe-go"
+	if got != wbnt {
+		t.Fbtblf("wrong cloneURL, got: %q, wbnt: %q", got, wbnt)
 	}
 }
 
 func TestAzureDevOpsCloneURL(t *testing.T) {
-	cfg := schema.AzureDevOpsConnection{
-		// the remote url used for clone has the username attached,
-		// so we double-check that it gets replaced properly.
-		Url:      "https://admin@dev.azure.com",
-		Username: "admin",
-		Token:    "pa$$word",
+	cfg := schemb.AzureDevOpsConnection{
+		// the remote url used for clone hbs the usernbme bttbched,
+		// so we double-check thbt it gets replbced properly.
+		Url:      "https://bdmin@dev.bzure.com",
+		Usernbme: "bdmin",
+		Token:    "pb$$word",
 	}
 
-	repo := &azuredevops.Repository{
+	repo := &bzuredevops.Repository{
 		ID:       "test-project",
-		CloneURL: "https://sgtestazure@dev.azure.com/sgtestazure/sgtestazure/_git/sgtestazure",
+		CloneURL: "https://sgtestbzure@dev.bzure.com/sgtestbzure/sgtestbzure/_git/sgtestbzure",
 	}
 
-	got := azureDevOpsCloneURL(logtest.Scoped(t), repo, &cfg)
-	want := "https://admin:pa$$word@dev.azure.com/sgtestazure/sgtestazure/_git/sgtestazure"
-	if got != want {
-		t.Fatalf("wrong cloneURL, got: %q, want: %q", got, want)
+	got := bzureDevOpsCloneURL(logtest.Scoped(t), repo, &cfg)
+	wbnt := "https://bdmin:pb$$word@dev.bzure.com/sgtestbzure/sgtestbzure/_git/sgtestbzure"
+	if got != wbnt {
+		t.Fbtblf("wrong cloneURL, got: %q, wbnt: %q", got, wbnt)
 	}
 }
 
 func TestBitbucketServerCloneURLs(t *testing.T) {
 	repo := &bitbucketserver.Repo{
 		ID:   1,
-		Slug: "bar",
+		Slug: "bbr",
 		Project: &bitbucketserver.Project{
 			Key: "foo",
 		},
 	}
 
-	cfg := schema.BitbucketServerConnection{
-		Token:    "abc",
-		Username: "username",
-		Password: "password",
+	cfg := schemb.BitbucketServerConnection{
+		Token:    "bbc",
+		Usernbme: "usernbme",
+		Pbssword: "pbssword",
 	}
 
 	t.Run("ssh", func(t *testing.T) {
 		repo.Links.Clone = []bitbucketserver.Link{
-			// even if the first link is http, ssh should prevail
-			{Name: "http", Href: "https://asdine@bitbucket.example.com/scm/sg/sourcegraph.git"},
-			{Name: "ssh", Href: "ssh://git@bitbucket.example.com:7999/sg/sourcegraph.git"},
+			// even if the first link is http, ssh should prevbil
+			{Nbme: "http", Href: "https://bsdine@bitbucket.exbmple.com/scm/sg/sourcegrbph.git"},
+			{Nbme: "ssh", Href: "ssh://git@bitbucket.exbmple.com:7999/sg/sourcegrbph.git"},
 		}
 
-		cfg.GitURLType = "ssh" // use ssh in the config as well
+		cfg.GitURLType = "ssh" // use ssh in the config bs well
 
 		got := bitbucketServerCloneURL(repo, &cfg)
-		want := "ssh://git@bitbucket.example.com:7999/sg/sourcegraph.git"
-		if got != want {
-			t.Fatalf("wrong cloneURL, got: %q, want: %q", got, want)
+		wbnt := "ssh://git@bitbucket.exbmple.com:7999/sg/sourcegrbph.git"
+		if got != wbnt {
+			t.Fbtblf("wrong cloneURL, got: %q, wbnt: %q", got, wbnt)
 		}
 	})
 
 	t.Run("http", func(t *testing.T) {
 		// Second test: http
 		repo.Links.Clone = []bitbucketserver.Link{
-			{Name: "http", Href: "https://asdine@bitbucket.example.com/scm/sg/sourcegraph.git"},
+			{Nbme: "http", Href: "https://bsdine@bitbucket.exbmple.com/scm/sg/sourcegrbph.git"},
 		}
 
 		got := bitbucketServerCloneURL(repo, &cfg)
-		want := "https://username:abc@bitbucket.example.com/scm/sg/sourcegraph.git"
-		if got != want {
-			t.Fatalf("wrong cloneURL, got: %q, want: %q", got, want)
+		wbnt := "https://usernbme:bbc@bitbucket.exbmple.com/scm/sg/sourcegrbph.git"
+		if got != wbnt {
+			t.Fbtblf("wrong cloneURL, got: %q, wbnt: %q", got, wbnt)
 		}
 	})
 
@@ -123,9 +123,9 @@ func TestBitbucketServerCloneURLs(t *testing.T) {
 		cfg.Token = ""
 
 		got := bitbucketServerCloneURL(repo, &cfg)
-		want := "https://username:password@bitbucket.example.com/scm/sg/sourcegraph.git"
-		if got != want {
-			t.Fatalf("wrong cloneURL, got: %q, want: %q", got, want)
+		wbnt := "https://usernbme:pbssword@bitbucket.exbmple.com/scm/sg/sourcegrbph.git"
+		if got != wbnt {
+			t.Fbtblf("wrong cloneURL, got: %q, wbnt: %q", got, wbnt)
 		}
 	})
 }
@@ -133,27 +133,27 @@ func TestBitbucketServerCloneURLs(t *testing.T) {
 func TestBitbucketCloudCloneURLs(t *testing.T) {
 	logger := logtest.Scoped(t)
 	repo := &bitbucketcloud.Repo{
-		FullName: "sg/sourcegraph",
+		FullNbme: "sg/sourcegrbph",
 	}
 
 	repo.Links.Clone = []bitbucketcloud.Link{
-		{Name: "https", Href: "https://asdine@bitbucket.org/sg/sourcegraph.git"},
-		{Name: "ssh", Href: "git@bitbucket.org/sg/sourcegraph.git"},
+		{Nbme: "https", Href: "https://bsdine@bitbucket.org/sg/sourcegrbph.git"},
+		{Nbme: "ssh", Href: "git@bitbucket.org/sg/sourcegrbph.git"},
 	}
 
-	cfg := schema.BitbucketCloudConnection{
+	cfg := schemb.BitbucketCloudConnection{
 		Url:         "bitbucket.org",
-		Username:    "username",
-		AppPassword: "password",
+		Usernbme:    "usernbme",
+		AppPbssword: "pbssword",
 	}
 
 	t.Run("ssh", func(t *testing.T) {
 		cfg.GitURLType = "ssh"
 
 		got := bitbucketCloudCloneURL(logger, repo, &cfg)
-		want := "git@bitbucket.org:sg/sourcegraph.git"
-		if got != want {
-			t.Fatalf("wrong cloneURL, got: %q, want: %q", got, want)
+		wbnt := "git@bitbucket.org:sg/sourcegrbph.git"
+		if got != wbnt {
+			t.Fbtblf("wrong cloneURL, got: %q, wbnt: %q", got, wbnt)
 		}
 	})
 
@@ -161,9 +161,9 @@ func TestBitbucketCloudCloneURLs(t *testing.T) {
 		cfg.GitURLType = "http"
 
 		got := bitbucketCloudCloneURL(logger, repo, &cfg)
-		want := "https://username:password@bitbucket.org/sg/sourcegraph.git"
-		if got != want {
-			t.Fatalf("wrong cloneURL, got: %q, want: %q", got, want)
+		wbnt := "https://usernbme:pbssword@bitbucket.org/sg/sourcegrbph.git"
+		if got != wbnt {
+			t.Fbtblf("wrong cloneURL, got: %q, wbnt: %q", got, wbnt)
 		}
 	})
 }
@@ -171,57 +171,57 @@ func TestBitbucketCloudCloneURLs(t *testing.T) {
 func TestGitHubCloneURLs(t *testing.T) {
 	logger := logtest.Scoped(t)
 	t.Run("empty repo.URL", func(t *testing.T) {
-		_, err := githubCloneURL(context.Background(), logger, dbmocks.NewMockDB(), &github.Repository{}, &schema.GitHubConnection{})
+		_, err := githubCloneURL(context.Bbckground(), logger, dbmocks.NewMockDB(), &github.Repository{}, &schemb.GitHubConnection{})
 		got := fmt.Sprintf("%v", err)
-		want := "empty repo.URL"
-		if diff := cmp.Diff(want, got); diff != "" {
-			t.Fatalf("Mismatch (-want +got):\n%s", diff)
+		wbnt := "empty repo.URL"
+		if diff := cmp.Diff(wbnt, got); diff != "" {
+			t.Fbtblf("Mismbtch (-wbnt +got):\n%s", diff)
 		}
 	})
 
-	var repo github.Repository
-	repo.NameWithOwner = "foo/bar"
+	vbr repo github.Repository
+	repo.NbmeWithOwner = "foo/bbr"
 
 	tests := []struct {
-		InstanceUrl string
+		InstbnceUrl string
 		RepoURL     string
 		Token       string
 		GitURLType  string
-		Want        string
+		Wbnt        string
 	}{
-		{"https://github.com", "https://github.com/foo/bar", "", "", "https://github.com/foo/bar"},
-		{"https://github.com", "https://github.com/foo/bar", "abcd", "", "https://oauth2:abcd@github.com/foo/bar"},
-		{"https://github.com", "https://github.com/foo/bar", "abcd", "ssh", "git@github.com:foo/bar.git"},
+		{"https://github.com", "https://github.com/foo/bbr", "", "", "https://github.com/foo/bbr"},
+		{"https://github.com", "https://github.com/foo/bbr", "bbcd", "", "https://obuth2:bbcd@github.com/foo/bbr"},
+		{"https://github.com", "https://github.com/foo/bbr", "bbcd", "ssh", "git@github.com:foo/bbr.git"},
 	}
 
-	for _, test := range tests {
-		t.Run(fmt.Sprintf("URL(%q) / Token(%q) / URLType(%q)", test.InstanceUrl, test.Token, test.GitURLType), func(t *testing.T) {
-			cfg := schema.GitHubConnection{
-				Url:        test.InstanceUrl,
+	for _, test := rbnge tests {
+		t.Run(fmt.Sprintf("URL(%q) / Token(%q) / URLType(%q)", test.InstbnceUrl, test.Token, test.GitURLType), func(t *testing.T) {
+			cfg := schemb.GitHubConnection{
+				Url:        test.InstbnceUrl,
 				Token:      test.Token,
 				GitURLType: test.GitURLType,
 			}
 
 			repo.URL = test.RepoURL
 
-			got, err := githubCloneURL(context.Background(), logger, dbmocks.NewMockDB(), &repo, &cfg)
+			got, err := githubCloneURL(context.Bbckground(), logger, dbmocks.NewMockDB(), &repo, &cfg)
 			if err != nil {
-				t.Fatal(err)
+				t.Fbtbl(err)
 			}
-			if got != test.Want {
-				t.Fatalf("wrong cloneURL, got: %q, want: %q", got, test.Want)
+			if got != test.Wbnt {
+				t.Fbtblf("wrong cloneURL, got: %q, wbnt: %q", got, test.Wbnt)
 			}
 		})
 	}
 }
 
-func TestGitLabCloneURLs(t *testing.T) {
-	repo := &gitlab.Project{
-		ProjectCommon: gitlab.ProjectCommon{
+func TestGitLbbCloneURLs(t *testing.T) {
+	repo := &gitlbb.Project{
+		ProjectCommon: gitlbb.ProjectCommon{
 			ID:                1,
-			PathWithNamespace: "foo/bar",
-			SSHURLToRepo:      "git@gitlab.com:gitlab-org/gitaly.git",
-			HTTPURLToRepo:     "https://gitlab.com/gitlab-org/gitaly.git",
+			PbthWithNbmespbce: "foo/bbr",
+			SSHURLToRepo:      "git@gitlbb.com:gitlbb-org/gitbly.git",
+			HTTPURLToRepo:     "https://gitlbb.com/gitlbb-org/gitbly.git",
 		},
 	}
 
@@ -229,36 +229,36 @@ func TestGitLabCloneURLs(t *testing.T) {
 		Token      string
 		GitURLType string
 		TokenType  string
-		Want       string
+		Wbnt       string
 	}{
-		{Want: "https://gitlab.com/gitlab-org/gitaly.git"},
-		{Token: "abcd", Want: "https://git:abcd@gitlab.com/gitlab-org/gitaly.git"},
-		{Token: "abcd", TokenType: "oauth", Want: "https://oauth2:abcd@gitlab.com/gitlab-org/gitaly.git"},
-		{Token: "abcd", GitURLType: "ssh", Want: "git@gitlab.com:gitlab-org/gitaly.git"},
-		{Token: "abcd", GitURLType: "ssh", Want: "git@gitlab.com:gitlab-org/gitaly.git"},
+		{Wbnt: "https://gitlbb.com/gitlbb-org/gitbly.git"},
+		{Token: "bbcd", Wbnt: "https://git:bbcd@gitlbb.com/gitlbb-org/gitbly.git"},
+		{Token: "bbcd", TokenType: "obuth", Wbnt: "https://obuth2:bbcd@gitlbb.com/gitlbb-org/gitbly.git"},
+		{Token: "bbcd", GitURLType: "ssh", Wbnt: "git@gitlbb.com:gitlbb-org/gitbly.git"},
+		{Token: "bbcd", GitURLType: "ssh", Wbnt: "git@gitlbb.com:gitlbb-org/gitbly.git"},
 	}
 
-	for _, test := range tests {
+	for _, test := rbnge tests {
 		t.Run(fmt.Sprintf("Token(%q) / URLType(%q)", test.Token, test.GitURLType), func(t *testing.T) {
-			cfg := schema.GitLabConnection{
+			cfg := schemb.GitLbbConnection{
 				Token:      test.Token,
 				TokenType:  test.TokenType,
 				GitURLType: test.GitURLType,
 			}
 
-			got := gitlabCloneURL(logtest.Scoped(t), repo, &cfg)
-			if got != test.Want {
-				t.Fatalf("wrong cloneURL, got: %q, want: %q", got, test.Want)
+			got := gitlbbCloneURL(logtest.Scoped(t), repo, &cfg)
+			if got != test.Wbnt {
+				t.Fbtblf("wrong cloneURL, got: %q, wbnt: %q", got, test.Wbnt)
 			}
 		})
 	}
 }
 
 func TestGerritCloneURL(t *testing.T) {
-	cfg := schema.GerritConnection{
+	cfg := schemb.GerritConnection{
 		Url:      "https://gerrit.com",
-		Username: "admin",
-		Password: "pa$$word",
+		Usernbme: "bdmin",
+		Pbssword: "pb$$word",
 	}
 
 	project := &gerrit.Project{
@@ -266,107 +266,107 @@ func TestGerritCloneURL(t *testing.T) {
 	}
 
 	got := gerritCloneURL(logtest.Scoped(t), project, &cfg)
-	want := "https://admin:pa$$word@gerrit.com/a/test-project"
-	if got != want {
-		t.Fatalf("wrong cloneURL, got: %q, want: %q", got, want)
+	wbnt := "https://bdmin:pb$$word@gerrit.com/b/test-project"
+	if got != wbnt {
+		t.Fbtblf("wrong cloneURL, got: %q, wbnt: %q", got, wbnt)
 	}
 }
 
 func TestPerforceCloneURL(t *testing.T) {
-	cfg := schema.PerforceConnection{
+	cfg := schemb.PerforceConnection{
 		P4Port:   "ssl:111.222.333.444:1666",
-		P4User:   "admin",
-		P4Passwd: "pa$$word",
+		P4User:   "bdmin",
+		P4Pbsswd: "pb$$word",
 	}
 
 	repo := &perforce.Depot{
-		Depot: "//Sourcegraph/",
+		Depot: "//Sourcegrbph/",
 	}
 
 	got := perforceCloneURL(repo, &cfg)
-	want := "perforce://admin:pa$$word@ssl:111.222.333.444:1666//Sourcegraph/"
-	if got != want {
-		t.Fatalf("wrong cloneURL, got: %q, want: %q", got, want)
+	wbnt := "perforce://bdmin:pb$$word@ssl:111.222.333.444:1666//Sourcegrbph/"
+	if got != wbnt {
+		t.Fbtblf("wrong cloneURL, got: %q, wbnt: %q", got, wbnt)
 	}
 }
 
-func TestPhabricatorCloneURL(t *testing.T) {
-	meta := `
+func TestPhbbricbtorCloneURL(t *testing.T) {
+	metb := `
 {
     "ID": 8,
     "VCS": "git",
-    "Name": "testing",
+    "Nbme": "testing",
     "PHID": "PHID-REPO-vl3v7n7jkzf5pjozoxuy",
     "URIs": [
         {
             "ID": "78",
-            "PHID": "PHID-RURI-kmdhjr2u4ugjgaaatp4k",
-            "Display": "git@gitolite.sgdev.org:testing",
-            "Disabled": false,
+            "PHID": "PHID-RURI-kmdhjr2u4ugjgbbbtp4k",
+            "Displby": "git@gitolite.sgdev.org:testing",
+            "Disbbled": fblse,
             "Effective": "git@gitolite.sgdev.org:testing",
-            "Normalized": "gitolite.sgdev.org/testing",
-            "DateCreated": "2019-05-03T11:16:27Z",
-            "DateModified": "0001-01-01T00:00:00Z",
+            "Normblized": "gitolite.sgdev.org/testing",
+            "DbteCrebted": "2019-05-03T11:16:27Z",
+            "DbteModified": "0001-01-01T00:00:00Z",
             "BuiltinProtocol": "",
             "BuiltinIdentifier": ""
         },
         {
             "ID": "71",
             "PHID": "PHID-RURI-xu54xqjhvxwyxxzjoz63",
-            "Display": "ssh://git@phabricator.sgdev.org/diffusion/8/test.git",
-            "Disabled": false,
-            "Effective": "ssh://git@phabricator.sgdev.org/diffusion/8/test.git",
-            "Normalized": "phabricator.sgdev.org/diffusion/8",
-            "DateCreated": "2019-05-03T11:16:06Z",
-            "DateModified": "0001-01-01T00:00:00Z",
+            "Displby": "ssh://git@phbbricbtor.sgdev.org/diffusion/8/test.git",
+            "Disbbled": fblse,
+            "Effective": "ssh://git@phbbricbtor.sgdev.org/diffusion/8/test.git",
+            "Normblized": "phbbricbtor.sgdev.org/diffusion/8",
+            "DbteCrebted": "2019-05-03T11:16:06Z",
+            "DbteModified": "0001-01-01T00:00:00Z",
             "BuiltinProtocol": "ssh",
             "BuiltinIdentifier": "id"
         },
         {
             "ID": "70",
             "PHID": "PHID-RURI-3pstu43sbjncekq6rwqt",
-            "Display": "ssh://git@phabricator.sgdev.org/source/test.git",
-            "Disabled": false,
-            "Effective": "ssh://git@phabricator.sgdev.org/source/test.git",
-            "Normalized": "phabricator.sgdev.org/source/test",
-            "DateCreated": "2019-05-03T11:16:06Z",
-            "DateModified": "0001-01-01T00:00:00Z",
+            "Displby": "ssh://git@phbbricbtor.sgdev.org/source/test.git",
+            "Disbbled": fblse,
+            "Effective": "ssh://git@phbbricbtor.sgdev.org/source/test.git",
+            "Normblized": "phbbricbtor.sgdev.org/source/test",
+            "DbteCrebted": "2019-05-03T11:16:06Z",
+            "DbteModified": "0001-01-01T00:00:00Z",
             "BuiltinProtocol": "ssh",
-            "BuiltinIdentifier": "shortname"
+            "BuiltinIdentifier": "shortnbme"
         },
         {
             "ID": "69",
-            "PHID": "PHID-RURI-5qh22baoby6u445k3nx5",
-            "Display": "ssh://git@phabricator.sgdev.org/diffusion/TESTING/test.git",
-            "Disabled": false,
-            "Effective": "ssh://git@phabricator.sgdev.org/diffusion/TESTING/test.git",
-            "Normalized": "phabricator.sgdev.org/diffusion/TESTING",
-            "DateCreated": "2019-05-03T11:16:06Z",
-            "DateModified": "0001-01-01T00:00:00Z",
+            "PHID": "PHID-RURI-5qh22bboby6u445k3nx5",
+            "Displby": "ssh://git@phbbricbtor.sgdev.org/diffusion/TESTING/test.git",
+            "Disbbled": fblse,
+            "Effective": "ssh://git@phbbricbtor.sgdev.org/diffusion/TESTING/test.git",
+            "Normblized": "phbbricbtor.sgdev.org/diffusion/TESTING",
+            "DbteCrebted": "2019-05-03T11:16:06Z",
+            "DbteModified": "0001-01-01T00:00:00Z",
             "BuiltinProtocol": "ssh",
-            "BuiltinIdentifier": "callsign"
+            "BuiltinIdentifier": "cbllsign"
         }
     ],
-    "Status": "active",
-    "Callsign": "TESTING",
-    "Shortname": "test",
-    "EditPolicy": "admin",
+    "Stbtus": "bctive",
+    "Cbllsign": "TESTING",
+    "Shortnbme": "test",
+    "EditPolicy": "bdmin",
     "ViewPolicy": "users",
-    "DateCreated": "2019-05-03T11:16:06Z",
-    "DateModified": "2019-08-08T14:45:57Z"
+    "DbteCrebted": "2019-05-03T11:16:06Z",
+    "DbteModified": "2019-08-08T14:45:57Z"
 }
 `
 
-	repo := &phabricator.Repo{}
-	err := json.Unmarshal([]byte(meta), repo)
+	repo := &phbbricbtor.Repo{}
+	err := json.Unmbrshbl([]byte(metb), repo)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	got := phabricatorCloneURL(logtest.Scoped(t), repo, nil)
-	want := "ssh://git@phabricator.sgdev.org/diffusion/8/test.git"
+	got := phbbricbtorCloneURL(logtest.Scoped(t), repo, nil)
+	wbnt := "ssh://git@phbbricbtor.sgdev.org/diffusion/8/test.git"
 
-	if want != got {
-		t.Fatalf("Want %q, got %q", want, got)
+	if wbnt != got {
+		t.Fbtblf("Wbnt %q, got %q", wbnt, got)
 	}
 }

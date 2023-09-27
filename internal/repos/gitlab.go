@@ -1,4 +1,4 @@
-package repos
+pbckbge repos
 
 import (
 	"context"
@@ -8,78 +8,78 @@ import (
 	"sync"
 	"time"
 
-	"github.com/prometheus/client_golang/prometheus"
-	"github.com/prometheus/client_golang/prometheus/promauto"
-	"github.com/sourcegraph/log"
+	"github.com/prometheus/client_golbng/prometheus"
+	"github.com/prometheus/client_golbng/prometheus/prombuto"
+	"github.com/sourcegrbph/log"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
-	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
-	"github.com/sourcegraph/sourcegraph/internal/httpcli"
-	"github.com/sourcegraph/sourcegraph/internal/jsonc"
-	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
-	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/sourcegraph/sourcegraph/schema"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/envvbr"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf/reposource"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc/buth"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc/gitlbb"
+	"github.com/sourcegrbph/sourcegrbph/internbl/httpcli"
+	"github.com/sourcegrbph/sourcegrbph/internbl/jsonc"
+	"github.com/sourcegrbph/sourcegrbph/internbl/rbtelimit"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/schemb"
 )
 
-// A GitLabSource yields repositories from a single GitLab connection configured
-// in Sourcegraph via the external services configuration.
-type GitLabSource struct {
-	svc                 *types.ExternalService
-	config              *schema.GitLabConnection
+// A GitLbbSource yields repositories from b single GitLbb connection configured
+// in Sourcegrbph vib the externbl services configurbtion.
+type GitLbbSource struct {
+	svc                 *types.ExternblService
+	config              *schemb.GitLbbConnection
 	exclude             excludeFunc
-	baseURL             *url.URL // URL with path /api/v4 (no trailing slash)
-	nameTransformations reposource.NameTransformations
-	provider            *gitlab.ClientProvider
-	client              *gitlab.Client
+	bbseURL             *url.URL // URL with pbth /bpi/v4 (no trbiling slbsh)
+	nbmeTrbnsformbtions reposource.NbmeTrbnsformbtions
+	provider            *gitlbb.ClientProvider
+	client              *gitlbb.Client
 	logger              log.Logger
 }
 
-var _ Source = &GitLabSource{}
-var _ UserSource = &GitLabSource{}
-var _ AffiliatedRepositorySource = &GitLabSource{}
-var _ VersionSource = &GitLabSource{}
+vbr _ Source = &GitLbbSource{}
+vbr _ UserSource = &GitLbbSource{}
+vbr _ AffilibtedRepositorySource = &GitLbbSource{}
+vbr _ VersionSource = &GitLbbSource{}
 
-// NewGitLabSource returns a new GitLabSource from the given external service.
-func NewGitLabSource(ctx context.Context, logger log.Logger, svc *types.ExternalService, cf *httpcli.Factory) (*GitLabSource, error) {
-	rawConfig, err := svc.Config.Decrypt(ctx)
+// NewGitLbbSource returns b new GitLbbSource from the given externbl service.
+func NewGitLbbSource(ctx context.Context, logger log.Logger, svc *types.ExternblService, cf *httpcli.Fbctory) (*GitLbbSource, error) {
+	rbwConfig, err := svc.Config.Decrypt(ctx)
 	if err != nil {
-		return nil, errors.Errorf("external service id=%d config error: %s", svc.ID, err)
+		return nil, errors.Errorf("externbl service id=%d config error: %s", svc.ID, err)
 	}
-	var c schema.GitLabConnection
-	if err := jsonc.Unmarshal(rawConfig, &c); err != nil {
-		return nil, errors.Errorf("external service id=%d config error: %s", svc.ID, err)
+	vbr c schemb.GitLbbConnection
+	if err := jsonc.Unmbrshbl(rbwConfig, &c); err != nil {
+		return nil, errors.Errorf("externbl service id=%d config error: %s", svc.ID, err)
 	}
-	return newGitLabSource(logger, svc, &c, cf)
+	return newGitLbbSource(logger, svc, &c, cf)
 }
 
-var gitlabRemainingGauge = promauto.NewGaugeVec(prometheus.GaugeOpts{
-	Name: "src_gitlab_rate_limit_remaining",
-	Help: "Number of calls to GitLab's API remaining before hitting the rate limit.",
-}, []string{"resource", "name"})
+vbr gitlbbRembiningGbuge = prombuto.NewGbugeVec(prometheus.GbugeOpts{
+	Nbme: "src_gitlbb_rbte_limit_rembining",
+	Help: "Number of cblls to GitLbb's API rembining before hitting the rbte limit.",
+}, []string{"resource", "nbme"})
 
-var gitlabRatelimitWaitCounter = promauto.NewCounterVec(prometheus.CounterOpts{
-	Name: "src_gitlab_rate_limit_wait_duration_seconds",
-	Help: "The amount of time spent waiting on the rate limit",
-}, []string{"resource", "name"})
+vbr gitlbbRbtelimitWbitCounter = prombuto.NewCounterVec(prometheus.CounterOpts{
+	Nbme: "src_gitlbb_rbte_limit_wbit_durbtion_seconds",
+	Help: "The bmount of time spent wbiting on the rbte limit",
+}, []string{"resource", "nbme"})
 
-func newGitLabSource(logger log.Logger, svc *types.ExternalService, c *schema.GitLabConnection, cf *httpcli.Factory) (*GitLabSource, error) {
-	baseURL, err := url.Parse(c.Url)
+func newGitLbbSource(logger log.Logger, svc *types.ExternblService, c *schemb.GitLbbConnection, cf *httpcli.Fbctory) (*GitLbbSource, error) {
+	bbseURL, err := url.Pbrse(c.Url)
 	if err != nil {
 		return nil, err
 	}
-	baseURL = extsvc.NormalizeBaseURL(baseURL)
+	bbseURL = extsvc.NormblizeBbseURL(bbseURL)
 
 	if cf == nil {
-		cf = httpcli.ExternalClientFactory
+		cf = httpcli.ExternblClientFbctory
 	}
 
-	var opts []httpcli.Opt
-	if c.Certificate != "" {
-		opts = append(opts, httpcli.NewCertPoolOpt(c.Certificate))
+	vbr opts []httpcli.Opt
+	if c.Certificbte != "" {
+		opts = bppend(opts, httpcli.NewCertPoolOpt(c.Certificbte))
 	}
 
 	cli, err := cf.Doer(opts...)
@@ -87,16 +87,16 @@ func newGitLabSource(logger log.Logger, svc *types.ExternalService, c *schema.Gi
 		return nil, err
 	}
 
-	var eb excludeBuilder
-	for _, r := range c.Exclude {
-		eb.Exact(r.Name)
-		eb.Exact(strconv.Itoa(r.Id))
-		eb.Pattern(r.Pattern)
-		excludeFunc := func(repo any) bool {
-			if project, ok := repo.(gitlab.Project); ok {
+	vbr eb excludeBuilder
+	for _, r := rbnge c.Exclude {
+		eb.Exbct(r.Nbme)
+		eb.Exbct(strconv.Itob(r.Id))
+		eb.Pbttern(r.Pbttern)
+		excludeFunc := func(repo bny) bool {
+			if project, ok := repo.(gitlbb.Project); ok {
 				return project.EmptyRepo
 			}
-			return false
+			return fblse
 		}
 		if r.EmptyRepos {
 			eb.Generic(excludeFunc)
@@ -107,185 +107,185 @@ func newGitLabSource(logger log.Logger, svc *types.ExternalService, c *schema.Gi
 		return nil, err
 	}
 
-	// Validate and cache user-defined name transformations.
-	nts, err := reposource.CompileGitLabNameTransformations(c.NameTransformations)
+	// Vblidbte bnd cbche user-defined nbme trbnsformbtions.
+	nts, err := reposource.CompileGitLbbNbmeTrbnsformbtions(c.NbmeTrbnsformbtions)
 	if err != nil {
 		return nil, err
 	}
 
-	provider := gitlab.NewClientProvider(svc.URN(), baseURL, cli)
+	provider := gitlbb.NewClientProvider(svc.URN(), bbseURL, cli)
 
-	var client *gitlab.Client
-	switch gitlab.TokenType(c.TokenType) {
-	case gitlab.TokenTypeOAuth:
+	vbr client *gitlbb.Client
+	switch gitlbb.TokenType(c.TokenType) {
+	cbse gitlbb.TokenTypeOAuth:
 		client = provider.GetOAuthClient(c.Token)
-	default:
+	defbult:
 		client = provider.GetPATClient(c.Token, "")
 	}
 
-	if !envvar.SourcegraphDotComMode() || svc.CloudDefault {
-		client.ExternalRateLimiter().SetCollector(&ratelimit.MetricsCollector{
-			Remaining: func(n float64) {
-				gitlabRemainingGauge.WithLabelValues("rest", svc.DisplayName).Set(n)
+	if !envvbr.SourcegrbphDotComMode() || svc.CloudDefbult {
+		client.ExternblRbteLimiter().SetCollector(&rbtelimit.MetricsCollector{
+			Rembining: func(n flobt64) {
+				gitlbbRembiningGbuge.WithLbbelVblues("rest", svc.DisplbyNbme).Set(n)
 			},
-			WaitDuration: func(n time.Duration) {
-				gitlabRatelimitWaitCounter.WithLabelValues("rest", svc.DisplayName).Add(n.Seconds())
+			WbitDurbtion: func(n time.Durbtion) {
+				gitlbbRbtelimitWbitCounter.WithLbbelVblues("rest", svc.DisplbyNbme).Add(n.Seconds())
 			},
 		})
 	}
 
-	return &GitLabSource{
+	return &GitLbbSource{
 		svc:                 svc,
 		config:              c,
 		exclude:             exclude,
-		baseURL:             baseURL,
-		nameTransformations: nts,
+		bbseURL:             bbseURL,
+		nbmeTrbnsformbtions: nts,
 		provider:            provider,
 		client:              client,
 		logger:              logger,
 	}, nil
 }
 
-func (s GitLabSource) WithAuthenticator(a auth.Authenticator) (Source, error) {
-	switch a.(type) {
-	case *auth.OAuthBearerToken,
-		*auth.OAuthBearerTokenWithSSH:
-		break
+func (s GitLbbSource) WithAuthenticbtor(b buth.Authenticbtor) (Source, error) {
+	switch b.(type) {
+	cbse *buth.OAuthBebrerToken,
+		*buth.OAuthBebrerTokenWithSSH:
+		brebk
 
-	default:
-		return nil, newUnsupportedAuthenticatorError("GitLabSource", a)
+	defbult:
+		return nil, newUnsupportedAuthenticbtorError("GitLbbSource", b)
 	}
 
 	sc := s
-	sc.client = sc.client.WithAuthenticator(a)
+	sc.client = sc.client.WithAuthenticbtor(b)
 
 	return &sc, nil
 }
 
-func (s GitLabSource) Version(ctx context.Context) (string, error) {
+func (s GitLbbSource) Version(ctx context.Context) (string, error) {
 	return s.client.GetVersion(ctx)
 }
 
-func (s GitLabSource) ValidateAuthenticator(ctx context.Context) error {
-	return s.client.ValidateToken(ctx)
+func (s GitLbbSource) VblidbteAuthenticbtor(ctx context.Context) error {
+	return s.client.VblidbteToken(ctx)
 }
 
-func (s GitLabSource) CheckConnection(ctx context.Context) error {
+func (s GitLbbSource) CheckConnection(ctx context.Context) error {
 	_, err := s.client.GetUser(ctx, "")
 	if err != nil {
-		return errors.Wrap(err, "connection check failed. could not fetch authenticated user")
+		return errors.Wrbp(err, "connection check fbiled. could not fetch buthenticbted user")
 	}
 	return nil
 }
 
-// ListRepos returns all GitLab repositories accessible to all connections configured
-// in Sourcegraph via the external services configuration.
-func (s GitLabSource) ListRepos(ctx context.Context, results chan SourceResult) {
+// ListRepos returns bll GitLbb repositories bccessible to bll connections configured
+// in Sourcegrbph vib the externbl services configurbtion.
+func (s GitLbbSource) ListRepos(ctx context.Context, results chbn SourceResult) {
 	s.listAllProjects(ctx, results)
 }
 
-// GetRepo returns the GitLab repository with the given pathWithNamespace.
-func (s GitLabSource) GetRepo(ctx context.Context, pathWithNamespace string) (*types.Repo, error) {
-	proj, err := s.client.GetProject(ctx, gitlab.GetProjectOp{
-		PathWithNamespace: pathWithNamespace,
-		CommonOp:          gitlab.CommonOp{NoCache: true},
+// GetRepo returns the GitLbb repository with the given pbthWithNbmespbce.
+func (s GitLbbSource) GetRepo(ctx context.Context, pbthWithNbmespbce string) (*types.Repo, error) {
+	proj, err := s.client.GetProject(ctx, gitlbb.GetProjectOp{
+		PbthWithNbmespbce: pbthWithNbmespbce,
+		CommonOp:          gitlbb.CommonOp{NoCbche: true},
 	})
 
 	if err != nil {
 		return nil, err
 	}
 
-	return s.makeRepo(proj), nil
+	return s.mbkeRepo(proj), nil
 }
 
-// ExternalServices returns a singleton slice containing the external service.
-func (s GitLabSource) ExternalServices() types.ExternalServices {
-	return types.ExternalServices{s.svc}
+// ExternblServices returns b singleton slice contbining the externbl service.
+func (s GitLbbSource) ExternblServices() types.ExternblServices {
+	return types.ExternblServices{s.svc}
 }
 
-func (s GitLabSource) makeRepo(proj *gitlab.Project) *types.Repo {
+func (s GitLbbSource) mbkeRepo(proj *gitlbb.Project) *types.Repo {
 	urn := s.svc.URN()
 	return &types.Repo{
-		Name: reposource.GitLabRepoName(
-			s.config.RepositoryPathPattern,
-			s.baseURL.Hostname(),
-			proj.PathWithNamespace,
-			s.nameTransformations,
+		Nbme: reposource.GitLbbRepoNbme(
+			s.config.RepositoryPbthPbttern,
+			s.bbseURL.Hostnbme(),
+			proj.PbthWithNbmespbce,
+			s.nbmeTrbnsformbtions,
 		),
-		URI: string(reposource.GitLabRepoName(
+		URI: string(reposource.GitLbbRepoNbme(
 			"",
-			s.baseURL.Hostname(),
-			proj.PathWithNamespace,
-			s.nameTransformations,
+			s.bbseURL.Hostnbme(),
+			proj.PbthWithNbmespbce,
+			s.nbmeTrbnsformbtions,
 		)),
-		ExternalRepo: gitlab.ExternalRepoSpec(proj, *s.baseURL),
+		ExternblRepo: gitlbb.ExternblRepoSpec(proj, *s.bbseURL),
 		Description:  proj.Description,
 		Fork:         proj.ForkedFromProject != nil,
 		Archived:     proj.Archived,
-		Stars:        proj.StarCount,
-		Private:      proj.Visibility == "private" || proj.Visibility == "internal",
-		Sources: map[string]*types.SourceInfo{
+		Stbrs:        proj.StbrCount,
+		Privbte:      proj.Visibility == "privbte" || proj.Visibility == "internbl",
+		Sources: mbp[string]*types.SourceInfo{
 			urn: {
 				ID:       urn,
 				CloneURL: s.remoteURL(proj),
 			},
 		},
-		Metadata: proj,
+		Metbdbtb: proj,
 	}
 }
 
-// remoteURL returns the GitLab project's Git remote URL
+// remoteURL returns the GitLbb project's Git remote URL
 //
-// note: this used to contain credentials but that is no longer the case
-// if you need to get an authenticated clone url use repos.CloneURL
-func (s *GitLabSource) remoteURL(proj *gitlab.Project) string {
+// note: this used to contbin credentibls but thbt is no longer the cbse
+// if you need to get bn buthenticbted clone url use repos.CloneURL
+func (s *GitLbbSource) remoteURL(proj *gitlbb.Project) string {
 	if s.config.GitURLType == "ssh" {
-		return proj.SSHURLToRepo // SSH authentication must be provided out-of-band
+		return proj.SSHURLToRepo // SSH buthenticbtion must be provided out-of-bbnd
 	}
 	return proj.HTTPURLToRepo
 }
 
-func (s *GitLabSource) excludes(p *gitlab.Project) bool {
-	return s.exclude(p.PathWithNamespace) || s.exclude(strconv.Itoa(p.ID)) || s.exclude(*p)
+func (s *GitLbbSource) excludes(p *gitlbb.Project) bool {
+	return s.exclude(p.PbthWithNbmespbce) || s.exclude(strconv.Itob(p.ID)) || s.exclude(*p)
 }
 
-func (s *GitLabSource) listAllProjects(ctx context.Context, results chan SourceResult) {
-	type batch struct {
-		projs []*gitlab.Project
+func (s *GitLbbSource) listAllProjects(ctx context.Context, results chbn SourceResult) {
+	type bbtch struct {
+		projs []*gitlbb.Project
 		err   error
 	}
 
-	ch := make(chan batch)
+	ch := mbke(chbn bbtch)
 
-	var wg sync.WaitGroup
+	vbr wg sync.WbitGroup
 
-	projch := make(chan *schema.GitLabProject)
+	projch := mbke(chbn *schemb.GitLbbProject)
 	for i := 0; i < 5; i++ { // 5 concurrent requests
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
-			for p := range projch {
+			for p := rbnge projch {
 				if err := ctx.Err(); err != nil {
-					ch <- batch{err: err}
+					ch <- bbtch{err: err}
 					return
 				}
 
-				proj, err := s.client.GetProject(ctx, gitlab.GetProjectOp{
+				proj, err := s.client.GetProject(ctx, gitlbb.GetProjectOp{
 					ID:                p.Id,
-					PathWithNamespace: p.Name,
-					CommonOp:          gitlab.CommonOp{NoCache: true},
+					PbthWithNbmespbce: p.Nbme,
+					CommonOp:          gitlbb.CommonOp{NoCbche: true},
 				})
 
 				if err != nil {
-					// TODO(tsenart): When implementing dry-run, reconsider alternatives to return
-					// 404 errors on external service config validation.
-					if gitlab.IsNotFound(err) {
-						s.logger.Warn("skipping missing gitlab.projects entry:", log.String("name", p.Name), log.Int("id", p.Id), log.Error(err))
+					// TODO(tsenbrt): When implementing dry-run, reconsider blternbtives to return
+					// 404 errors on externbl service config vblidbtion.
+					if gitlbb.IsNotFound(err) {
+						s.logger.Wbrn("skipping missing gitlbb.projects entry:", log.String("nbme", p.Nbme), log.Int("id", p.Id), log.Error(err))
 						continue
 					}
-					ch <- batch{err: errors.Wrapf(err, "gitlab.projects: id: %d, name: %q", p.Id, p.Name)}
+					ch <- bbtch{err: errors.Wrbpf(err, "gitlbb.projects: id: %d, nbme: %q", p.Id, p.Nbme)}
 				} else {
-					ch <- batch{projs: []*gitlab.Project{proj}}
+					ch <- bbtch{projs: []*gitlbb.Project{proj}}
 				}
 			}
 		}()
@@ -295,84 +295,84 @@ func (s *GitLabSource) listAllProjects(ctx context.Context, results chan SourceR
 	go func() {
 		defer wg.Done()
 		defer close(projch)
-		// Admins normally add to end of lists, so end of list most likely has
-		// new repos => stream them first.
+		// Admins normblly bdd to end of lists, so end of list most likely hbs
+		// new repos => strebm them first.
 		for i := len(s.config.Projects) - 1; i >= 0; i-- {
 			select {
-			case projch <- s.config.Projects[i]:
-			case <-ctx.Done():
+			cbse projch <- s.config.Projects[i]:
+			cbse <-ctx.Done():
 				return
 			}
 		}
 	}()
 
-	for _, projectQuery := range s.config.ProjectQuery {
+	for _, projectQuery := rbnge s.config.ProjectQuery {
 		if projectQuery == "none" {
 			continue
 		}
 
-		const perPage = 100
+		const perPbge = 100
 		wg.Add(1)
 		go func(projectQuery string) {
 			defer wg.Done()
 
-			urlStr, err := projectQueryToURL(projectQuery, perPage) // first page URL
+			urlStr, err := projectQueryToURL(projectQuery, perPbge) // first pbge URL
 			if err != nil {
-				ch <- batch{err: errors.Wrapf(err, "invalid GitLab projectQuery=%q", projectQuery)}
+				ch <- bbtch{err: errors.Wrbpf(err, "invblid GitLbb projectQuery=%q", projectQuery)}
 				return
 			}
 
 			for {
 				if err := ctx.Err(); err != nil {
-					ch <- batch{err: err}
+					ch <- bbtch{err: err}
 					return
 				}
-				projects, nextPageURL, err := s.client.ListProjects(ctx, urlStr)
+				projects, nextPbgeURL, err := s.client.ListProjects(ctx, urlStr)
 				if err != nil {
-					ch <- batch{err: errors.Wrapf(err, "error listing GitLab projects: url=%q", urlStr)}
+					ch <- bbtch{err: errors.Wrbpf(err, "error listing GitLbb projects: url=%q", urlStr)}
 					return
 				}
-				ch <- batch{projs: projects}
-				if nextPageURL == nil {
+				ch <- bbtch{projs: projects}
+				if nextPbgeURL == nil {
 					return
 				}
-				urlStr = *nextPageURL
+				urlStr = *nextPbgeURL
 			}
 		}(projectQuery)
 	}
 
 	go func() {
-		wg.Wait()
+		wg.Wbit()
 		close(ch)
 	}()
 
-	seen := make(map[int]bool)
-	for b := range ch {
+	seen := mbke(mbp[int]bool)
+	for b := rbnge ch {
 		if b.err != nil {
 			results <- SourceResult{Source: s, Err: b.err}
 			continue
 		}
 
-		for _, proj := range b.projs {
+		for _, proj := rbnge b.projs {
 			if !seen[proj.ID] && !s.excludes(proj) {
-				results <- SourceResult{Source: s, Repo: s.makeRepo(proj)}
+				results <- SourceResult{Source: s, Repo: s.mbkeRepo(proj)}
 				seen[proj.ID] = true
 			}
 		}
 	}
 }
 
-var schemeOrHostNotEmptyErr = errors.New("scheme and host should be empty")
+vbr schemeOrHostNotEmptyErr = errors.New("scheme bnd host should be empty")
 
-func projectQueryToURL(projectQuery string, perPage int) (string, error) {
-	// If all we have is the URL query, prepend "projects"
-	if strings.HasPrefix(projectQuery, "?") {
+func projectQueryToURL(projectQuery string, perPbge int) (string, error) {
+	// If bll we hbve is the URL query, prepend "projects"
+	if strings.HbsPrefix(projectQuery, "?") {
 		projectQuery = "projects" + projectQuery
 	} else if projectQuery == "" {
 		projectQuery = "projects"
 	}
 
-	u, err := url.Parse(projectQuery)
+	u, err := url.Pbrse(projectQuery)
 	if err != nil {
 		return "", err
 	}
@@ -380,32 +380,32 @@ func projectQueryToURL(projectQuery string, perPage int) (string, error) {
 		return "", schemeOrHostNotEmptyErr
 	}
 	q := u.Query()
-	q.Set("per_page", strconv.Itoa(perPage))
-	u.RawQuery = q.Encode()
+	q.Set("per_pbge", strconv.Itob(perPbge))
+	u.RbwQuery = q.Encode()
 
 	return u.String(), nil
 }
 
-func (s *GitLabSource) AffiliatedRepositories(ctx context.Context) ([]types.CodeHostRepository, error) {
-	queryURL, err := projectQueryToURL("projects?membership=true&archived=no", 40) // first page URL
+func (s *GitLbbSource) AffilibtedRepositories(ctx context.Context) ([]types.CodeHostRepository, error) {
+	queryURL, err := projectQueryToURL("projects?membership=true&brchived=no", 40) // first pbge URL
 	if err != nil {
 		return nil, err
 	}
-	var (
-		projects    []*gitlab.Project
-		nextPageURL = &queryURL
+	vbr (
+		projects    []*gitlbb.Project
+		nextPbgeURL = &queryURL
 	)
 
 	out := []types.CodeHostRepository{}
-	for nextPageURL != nil {
-		projects, nextPageURL, err = s.client.ListProjects(ctx, *nextPageURL)
+	for nextPbgeURL != nil {
+		projects, nextPbgeURL, err = s.client.ListProjects(ctx, *nextPbgeURL)
 		if err != nil {
 			return nil, err
 		}
-		for _, p := range projects {
-			out = append(out, types.CodeHostRepository{
-				Name:       p.PathWithNamespace,
-				Private:    p.Visibility == "private",
+		for _, p := rbnge projects {
+			out = bppend(out, types.CodeHostRepository{
+				Nbme:       p.PbthWithNbmespbce,
+				Privbte:    p.Visibility == "privbte",
 				CodeHostID: s.svc.ID,
 			})
 		}

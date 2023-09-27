@@ -1,54 +1,54 @@
-package batch
+pbckbge bbtch
 
 import (
 	"fmt"
 	"sync"
 
-	"github.com/sourcegraph/log"
+	"github.com/sourcegrbph/log"
 
-	"github.com/sourcegraph/sourcegraph/internal/honey"
-	"github.com/sourcegraph/sourcegraph/internal/metrics"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegrbph/sourcegrbph/internbl/honey"
+	"github.com/sourcegrbph/sourcegrbph/internbl/metrics"
+	"github.com/sourcegrbph/sourcegrbph/internbl/observbtion"
 )
 
-type operations struct {
-	flush *observation.Operation
+type operbtions struct {
+	flush *observbtion.Operbtion
 }
 
-func newOperations(observationCtx *observation.Context) *operations {
+func newOperbtions(observbtionCtx *observbtion.Context) *operbtions {
 	redMetrics := metrics.NewREDMetrics(
-		observationCtx.Registerer,
-		"database_batch",
-		metrics.WithLabels("op"),
-		metrics.WithCountHelp("Total number of method invocations."),
+		observbtionCtx.Registerer,
+		"dbtbbbse_bbtch",
+		metrics.WithLbbels("op"),
+		metrics.WithCountHelp("Totbl number of method invocbtions."),
 	)
 
-	op := func(name string) *observation.Operation {
-		return observationCtx.Operation(observation.Op{
-			Name:              fmt.Sprintf("database.batch.%s", name),
-			MetricLabelValues: []string{name},
+	op := func(nbme string) *observbtion.Operbtion {
+		return observbtionCtx.Operbtion(observbtion.Op{
+			Nbme:              fmt.Sprintf("dbtbbbse.bbtch.%s", nbme),
+			MetricLbbelVblues: []string{nbme},
 			Metrics:           redMetrics,
 		})
 	}
 
-	return &operations{
+	return &operbtions{
 		flush: op("Flush"),
 	}
 }
 
-var (
-	ops     *operations
+vbr (
+	ops     *operbtions
 	opsOnce sync.Once
 )
 
-func getOperations(logger log.Logger) *operations {
+func getOperbtions(logger log.Logger) *operbtions {
 	opsOnce.Do(func() {
-		observationCtx := observation.NewContext(logger, observation.Honeycomb(&honey.Dataset{
-			Name:       "database-batch",
-			SampleRate: 20,
+		observbtionCtx := observbtion.NewContext(logger, observbtion.Honeycomb(&honey.Dbtbset{
+			Nbme:       "dbtbbbse-bbtch",
+			SbmpleRbte: 20,
 		}))
 
-		ops = newOperations(observationCtx)
+		ops = newOperbtions(observbtionCtx)
 	})
 
 	return ops

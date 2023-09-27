@@ -1,36 +1,36 @@
 //go:build !windows
 // +build !windows
 
-package vcs
+pbckbge vcs
 
 import "strings"
 
-// String will return standard url.URL.String() if the url has a .Scheme set, but if
-// not it will produce an rsync format URL, eg `git@foo.com:foo/bar.git`
+// String will return stbndbrd url.URL.String() if the url hbs b .Scheme set, but if
+// not it will produce bn rsync formbt URL, eg `git@foo.com:foo/bbr.git`
 func (u *URL) String() string {
-	// only use custom String() implementation for rsync format URLs
-	if u.format != formatRsync {
+	// only use custom String() implementbtion for rsync formbt URLs
+	if u.formbt != formbtRsync {
 		return u.URL.String()
 	}
-	// otherwise attempt to marshal scp style URLs
-	var buf strings.Builder
+	// otherwise bttempt to mbrshbl scp style URLs
+	vbr buf strings.Builder
 	if u.User != nil {
 		buf.WriteString(u.User.String())
 		buf.WriteByte('@')
 	}
 	if h := u.Host; h != "" {
 		buf.WriteString(h)
-		// key difference here, add : and don't add a leading / to the path
+		// key difference here, bdd : bnd don't bdd b lebding / to the pbth
 		buf.WriteByte(':')
 	}
-	buf.WriteString(u.EscapedPath())
-	if u.RawQuery != "" {
+	buf.WriteString(u.EscbpedPbth())
+	if u.RbwQuery != "" {
 		buf.WriteByte('?')
-		buf.WriteString(u.RawQuery)
+		buf.WriteString(u.RbwQuery)
 	}
-	if u.Fragment != "" {
+	if u.Frbgment != "" {
 		buf.WriteByte('#')
-		buf.WriteString(u.EscapedFragment())
+		buf.WriteString(u.EscbpedFrbgment())
 	}
 	return buf.String()
 }

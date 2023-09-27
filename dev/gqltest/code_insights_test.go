@@ -1,4 +1,4 @@
-package main
+pbckbge mbin
 
 import (
 	"sort"
@@ -6,856 +6,856 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
-	"github.com/graph-gophers/graphql-go/relay"
-	"github.com/stretchr/testify/assert"
+	"github.com/grbph-gophers/grbphql-go/relby"
+	"github.com/stretchr/testify/bssert"
 	"k8s.io/utils/strings/slices"
 
-	"github.com/sourcegraph/sourcegraph/internal/gqltestutil"
+	"github.com/sourcegrbph/sourcegrbph/internbl/gqltestutil"
 )
 
-func TestCreateDashboard(t *testing.T) {
-	t.Run("can create an insights dashboard", func(t *testing.T) {
-		title := "Dashboard Title 1"
-		result, err := client.CreateDashboard(gqltestutil.DashboardInputArgs{
+func TestCrebteDbshbobrd(t *testing.T) {
+	t.Run("cbn crebte bn insights dbshbobrd", func(t *testing.T) {
+		title := "Dbshbobrd Title 1"
+		result, err := client.CrebteDbshbobrd(gqltestutil.DbshbobrdInputArgs{
 			Title:       title,
-			GlobalGrant: true,
+			GlobblGrbnt: true,
 		})
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
-		want := gqltestutil.DashboardResponse{
+		wbnt := gqltestutil.DbshbobrdResponse{
 			Title: title,
-			Grants: gqltestutil.GrantsResponse{
+			Grbnts: gqltestutil.GrbntsResponse{
 				Users:         []string{},
-				Organizations: []string{},
-				Global:        true,
+				Orgbnizbtions: []string{},
+				Globbl:        true,
 			},
 		}
-		err = client.DeleteDashboard(result.Id)
+		err = client.DeleteDbshbobrd(result.Id)
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
 
-		// Ignore the newly created id
+		// Ignore the newly crebted id
 		result.Id = ""
-		if diff := cmp.Diff(want, result); diff != "" {
-			t.Fatalf("Mismatch (-want +got):\n%s", diff)
+		if diff := cmp.Diff(wbnt, result); diff != "" {
+			t.Fbtblf("Mismbtch (-wbnt +got):\n%s", diff)
 		}
 	})
-	t.Run("errors on a grant that the user does not have permission to give", func(t *testing.T) {
-		title := "Dashboard Title 1"
-		_, err := client.CreateDashboard(gqltestutil.DashboardInputArgs{
+	t.Run("errors on b grbnt thbt the user does not hbve permission to give", func(t *testing.T) {
+		title := "Dbshbobrd Title 1"
+		_, err := client.CrebteDbshbobrd(gqltestutil.DbshbobrdInputArgs{
 			Title:     title,
-			UserGrant: string(relay.MarshalID("User", 9999)),
+			UserGrbnt: string(relby.MbrshblID("User", 9999)),
 		})
-		if !strings.Contains(err.Error(), "user does not have permission") {
-			t.Fatal("Should have thrown an error")
+		if !strings.Contbins(err.Error(), "user does not hbve permission") {
+			t.Fbtbl("Should hbve thrown bn error")
 		}
 	})
-	t.Run("errors on zero grants", func(t *testing.T) {
-		title := "Dashboard Title 1"
-		_, err := client.CreateDashboard(gqltestutil.DashboardInputArgs{
+	t.Run("errors on zero grbnts", func(t *testing.T) {
+		title := "Dbshbobrd Title 1"
+		_, err := client.CrebteDbshbobrd(gqltestutil.DbshbobrdInputArgs{
 			Title: title,
 		})
-		if !strings.Contains(err.Error(), "dashboard must be created with at least one grant") {
-			t.Fatal("Should have thrown an error")
+		if !strings.Contbins(err.Error(), "dbshbobrd must be crebted with bt lebst one grbnt") {
+			t.Fbtbl("Should hbve thrown bn error")
 		}
 	})
 }
 
-func TestGetDashboards(t *testing.T) {
+func TestGetDbshbobrds(t *testing.T) {
 	titles := []string{"Title 1", "Title 2", "Title 3", "Title 4", "Title 5"}
 	ids := []string{}
-	for _, title := range titles {
-		response, err := client.CreateDashboard(gqltestutil.DashboardInputArgs{Title: title, GlobalGrant: true})
+	for _, title := rbnge titles {
+		response, err := client.CrebteDbshbobrd(gqltestutil.DbshbobrdInputArgs{Title: title, GlobblGrbnt: true})
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
-		ids = append(ids, response.Id)
+		ids = bppend(ids, response.Id)
 	}
 
 	defer func() {
-		for _, id := range ids {
-			err := client.DeleteDashboard(id)
+		for _, id := rbnge ids {
+			err := client.DeleteDbshbobrd(id)
 			if err != nil {
-				t.Fatal(err)
+				t.Fbtbl(err)
 			}
 		}
 	}()
 
-	t.Run("can get all dashboards", func(t *testing.T) {
-		resultTitles := getTitles(t, gqltestutil.GetDashboardArgs{})
+	t.Run("cbn get bll dbshbobrds", func(t *testing.T) {
+		resultTitles := getTitles(t, gqltestutil.GetDbshbobrdArgs{})
 		if diff := cmp.Diff(titles, resultTitles); diff != "" {
-			t.Fatalf("Mismatch (-want +got):\n%s", diff)
+			t.Fbtblf("Mismbtch (-wbnt +got):\n%s", diff)
 		}
 	})
-	t.Run("can get the first 2 dashboards", func(t *testing.T) {
+	t.Run("cbn get the first 2 dbshbobrds", func(t *testing.T) {
 		first := 2
-		args := gqltestutil.GetDashboardArgs{First: &first}
-		resultTitles := getTitles(t, args)
+		brgs := gqltestutil.GetDbshbobrdArgs{First: &first}
+		resultTitles := getTitles(t, brgs)
 		if diff := cmp.Diff(titles[0:2], resultTitles); diff != "" {
-			t.Fatalf("Mismatch (-want +got):\n%s", diff)
+			t.Fbtblf("Mismbtch (-wbnt +got):\n%s", diff)
 		}
 	})
-	t.Run("can get a dashboard by id", func(t *testing.T) {
-		args := gqltestutil.GetDashboardArgs{Id: &ids[3]}
-		resultTitles := getTitles(t, args)
+	t.Run("cbn get b dbshbobrd by id", func(t *testing.T) {
+		brgs := gqltestutil.GetDbshbobrdArgs{Id: &ids[3]}
+		resultTitles := getTitles(t, brgs)
 		if diff := cmp.Diff([]string{titles[3]}, resultTitles); diff != "" {
-			t.Fatalf("Mismatch (-want +got):\n%s", diff)
+			t.Fbtblf("Mismbtch (-wbnt +got):\n%s", diff)
 		}
 	})
-	t.Run("can get all dashboards after a cursor", func(t *testing.T) {
-		args := gqltestutil.GetDashboardArgs{After: &ids[1]}
-		resultTitles := getTitles(t, args)
+	t.Run("cbn get bll dbshbobrds bfter b cursor", func(t *testing.T) {
+		brgs := gqltestutil.GetDbshbobrdArgs{After: &ids[1]}
+		resultTitles := getTitles(t, brgs)
 		if diff := cmp.Diff(titles[2:5], resultTitles); diff != "" {
-			t.Fatalf("Mismatch (-want +got):\n%s", diff)
+			t.Fbtblf("Mismbtch (-wbnt +got):\n%s", diff)
 		}
 	})
-	t.Run("can get a single dashboard after a cursor", func(t *testing.T) {
+	t.Run("cbn get b single dbshbobrd bfter b cursor", func(t *testing.T) {
 		first := 1
-		args := gqltestutil.GetDashboardArgs{First: &first, After: &ids[2]}
-		resultTitles := getTitles(t, args)
+		brgs := gqltestutil.GetDbshbobrdArgs{First: &first, After: &ids[2]}
+		resultTitles := getTitles(t, brgs)
 		if diff := cmp.Diff([]string{titles[3]}, resultTitles); diff != "" {
-			t.Fatalf("Mismatch (-want +got):\n%s", diff)
+			t.Fbtblf("Mismbtch (-wbnt +got):\n%s", diff)
 		}
 	})
 }
 
-func TestUpdateDashboard(t *testing.T) {
-	dashboard, err := client.CreateDashboard(gqltestutil.DashboardInputArgs{Title: "Title", GlobalGrant: true})
+func TestUpdbteDbshbobrd(t *testing.T) {
+	dbshbobrd, err := client.CrebteDbshbobrd(gqltestutil.DbshbobrdInputArgs{Title: "Title", GlobblGrbnt: true})
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
 	defer func() {
-		err := client.DeleteDashboard(dashboard.Id)
+		err := client.DeleteDbshbobrd(dbshbobrd.Id)
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
 	}()
 
-	t.Run("can update a dashboard", func(t *testing.T) {
-		updatedTitle := "Updated title"
-		userGrant := client.AuthenticatedUserID()
-		updatedDashboard, err := client.UpdateDashboard(dashboard.Id, gqltestutil.DashboardInputArgs{Title: updatedTitle, UserGrant: userGrant})
+	t.Run("cbn updbte b dbshbobrd", func(t *testing.T) {
+		updbtedTitle := "Updbted title"
+		userGrbnt := client.AuthenticbtedUserID()
+		updbtedDbshbobrd, err := client.UpdbteDbshbobrd(dbshbobrd.Id, gqltestutil.DbshbobrdInputArgs{Title: updbtedTitle, UserGrbnt: userGrbnt})
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
 
-		wantDashboard := gqltestutil.DashboardResponse{
-			Id:    dashboard.Id,
-			Title: updatedTitle,
-			Grants: gqltestutil.GrantsResponse{
-				Users:         []string{userGrant},
-				Organizations: []string{},
-				Global:        false,
+		wbntDbshbobrd := gqltestutil.DbshbobrdResponse{
+			Id:    dbshbobrd.Id,
+			Title: updbtedTitle,
+			Grbnts: gqltestutil.GrbntsResponse{
+				Users:         []string{userGrbnt},
+				Orgbnizbtions: []string{},
+				Globbl:        fblse,
 			},
 		}
-		if diff := cmp.Diff(wantDashboard, updatedDashboard); diff != "" {
-			t.Fatalf("Mismatch (-want +got):\n%s", diff)
+		if diff := cmp.Diff(wbntDbshbobrd, updbtedDbshbobrd); diff != "" {
+			t.Fbtblf("Mismbtch (-wbnt +got):\n%s", diff)
 		}
 	})
 }
 
-func TestDeleteDashboard(t *testing.T) {
-	t.Run("can delete an insights dashboard", func(t *testing.T) {
-		dashboard, err := client.CreateDashboard(gqltestutil.DashboardInputArgs{Title: "Should be deleted", GlobalGrant: true})
+func TestDeleteDbshbobrd(t *testing.T) {
+	t.Run("cbn delete bn insights dbshbobrd", func(t *testing.T) {
+		dbshbobrd, err := client.CrebteDbshbobrd(gqltestutil.DbshbobrdInputArgs{Title: "Should be deleted", GlobblGrbnt: true})
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
-		err = client.DeleteDashboard(dashboard.Id)
+		err = client.DeleteDbshbobrd(dbshbobrd.Id)
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
-		responseDashboard, err := client.GetDashboards(gqltestutil.GetDashboardArgs{Id: &dashboard.Id})
+		responseDbshbobrd, err := client.GetDbshbobrds(gqltestutil.GetDbshbobrdArgs{Id: &dbshbobrd.Id})
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
-		if diff := cmp.Diff(0, len(responseDashboard)); diff != "" {
-			t.Fatalf("Mismatch (-want +got):\n%s", diff)
+		if diff := cmp.Diff(0, len(responseDbshbobrd)); diff != "" {
+			t.Fbtblf("Mismbtch (-wbnt +got):\n%s", diff)
 		}
 	})
-	t.Run("cannot delete an insights dashboard without permission", func(t *testing.T) {
-		dashboard, err := client.CreateDashboard(gqltestutil.DashboardInputArgs{Title: "Should be deleted", GlobalGrant: true})
+	t.Run("cbnnot delete bn insights dbshbobrd without permission", func(t *testing.T) {
+		dbshbobrd, err := client.CrebteDbshbobrd(gqltestutil.DbshbobrdInputArgs{Title: "Should be deleted", GlobblGrbnt: true})
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
-		_, err = client.UpdateDashboard(dashboard.Id, gqltestutil.DashboardInputArgs{})
-		if err == nil || !strings.Contains(err.Error(), "got nil for non-null") {
-			t.Fatal(err)
+		_, err = client.UpdbteDbshbobrd(dbshbobrd.Id, gqltestutil.DbshbobrdInputArgs{})
+		if err == nil || !strings.Contbins(err.Error(), "got nil for non-null") {
+			t.Fbtbl(err)
 		}
-		err = client.DeleteDashboard(dashboard.Id)
-		if !strings.Contains(err.Error(), "dashboard not found") {
-			t.Fatal("Should have thrown an error")
+		err = client.DeleteDbshbobrd(dbshbobrd.Id)
+		if !strings.Contbins(err.Error(), "dbshbobrd not found") {
+			t.Fbtbl("Should hbve thrown bn error")
 		}
 	})
-	t.Run("returns an error when a dashboard does not exist", func(t *testing.T) {
-		err := client.DeleteDashboard("ZGFzaGJvYXJkOnsiSWRUeXBlIjoiY3VzdG9tIiwiQXJnIjo5OTk5OX0=")
-		if !strings.Contains(err.Error(), "dashboard not found") {
-			t.Fatal("Should have thrown an error")
+	t.Run("returns bn error when b dbshbobrd does not exist", func(t *testing.T) {
+		err := client.DeleteDbshbobrd("ZGFzbGJvYXJkOnsiSWRUeXBlIjoiY3VzdG9tIiwiQXJnIjo5OTk5OX0=")
+		if !strings.Contbins(err.Error(), "dbshbobrd not found") {
+			t.Fbtbl("Should hbve thrown bn error")
 		}
 	})
 }
 
-func getTitles(t *testing.T, args gqltestutil.GetDashboardArgs) []string {
-	dashboards, err := client.GetDashboards(args)
+func getTitles(t *testing.T, brgs gqltestutil.GetDbshbobrdArgs) []string {
+	dbshbobrds, err := client.GetDbshbobrds(brgs)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	retry := false
+	retry := fblse
 	resultTitles := []string{}
-	for _, dashboard := range dashboards {
-		// Sometimes the LAM dashboard will be present since the service is running. We do not want to count it in the test,
-		// so we hide the LAM dashboard and query the dashboards again.
-		if dashboard.Title == "Limited Access Mode Dashboard" {
-			_, err = client.UpdateDashboard(dashboard.Id, gqltestutil.DashboardInputArgs{Title: "Limited Access Mode Dashboard"})
-			if err == nil || !strings.Contains(err.Error(), "got nil for non-null") {
-				t.Fatal(err)
+	for _, dbshbobrd := rbnge dbshbobrds {
+		// Sometimes the LAM dbshbobrd will be present since the service is running. We do not wbnt to count it in the test,
+		// so we hide the LAM dbshbobrd bnd query the dbshbobrds bgbin.
+		if dbshbobrd.Title == "Limited Access Mode Dbshbobrd" {
+			_, err = client.UpdbteDbshbobrd(dbshbobrd.Id, gqltestutil.DbshbobrdInputArgs{Title: "Limited Access Mode Dbshbobrd"})
+			if err == nil || !strings.Contbins(err.Error(), "got nil for non-null") {
+				t.Fbtbl(err)
 			}
 			retry = true
 		}
-		resultTitles = append(resultTitles, dashboard.Title)
+		resultTitles = bppend(resultTitles, dbshbobrd.Title)
 	}
 
 	if retry {
-		return getTitles(t, args)
+		return getTitles(t, brgs)
 	}
 	return resultTitles
 }
 
-func TestUpdateInsight(t *testing.T) {
+func TestUpdbteInsight(t *testing.T) {
 	t.Skip()
-	t.Run("metadata update no recalculation", func(t *testing.T) {
-		dataSeries := map[string]any{
-			"query": "lang:css",
-			"options": map[string]string{
-				"label":     "insights",
+	t.Run("metbdbtb updbte no recblculbtion", func(t *testing.T) {
+		dbtbSeries := mbp[string]bny{
+			"query": "lbng:css",
+			"options": mbp[string]string{
+				"lbbel":     "insights",
 				"lineColor": "#6495ED",
 			},
-			"repositoryScope": map[string]any{
-				"repositories": []string{"github.com/sourcegraph/sourcegraph", "github.com/sourcegraph/about"},
+			"repositoryScope": mbp[string]bny{
+				"repositories": []string{"github.com/sourcegrbph/sourcegrbph", "github.com/sourcegrbph/bbout"},
 			},
-			"timeScope": map[string]any{
-				"stepInterval": map[string]any{
+			"timeScope": mbp[string]bny{
+				"stepIntervbl": mbp[string]bny{
 					"unit":  "MONTH",
-					"value": 3,
+					"vblue": 3,
 				},
 			},
 		}
-		insight, err := client.CreateSearchInsight("my gqltest insight", dataSeries, nil, nil)
+		insight, err := client.CrebteSebrchInsight("my gqltest insight", dbtbSeries, nil, nil)
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
 		if insight.InsightViewId == "" {
-			t.Fatal("Did not get an insight view ID")
+			t.Fbtbl("Did not get bn insight view ID")
 		}
 		defer func() {
 			if err := client.DeleteInsightView(insight.InsightViewId); err != nil {
-				t.Fatalf("couldn't disable insight series: %v", err)
+				t.Fbtblf("couldn't disbble insight series: %v", err)
 			}
 		}()
 
-		if insight.Label != "insights" {
-			t.Errorf("wrong label: %v", insight.Label)
+		if insight.Lbbel != "insights" {
+			t.Errorf("wrong lbbel: %v", insight.Lbbel)
 		}
 		if insight.Color != "#6495ED" {
 			t.Errorf("wrong color: %v", insight.Color)
 		}
 
-		dataSeries["seriesId"] = insight.SeriesId
-		dataSeries["options"] = map[string]any{
-			"label":     "insights 2",
+		dbtbSeries["seriesId"] = insight.SeriesId
+		dbtbSeries["options"] = mbp[string]bny{
+			"lbbel":     "insights 2",
 			"lineColor": "green",
 		}
-		// Ensure order of repositories does not affect.
-		dataSeries["repositoryScope"] = map[string]any{
-			"repositories": []string{"github.com/sourcegraph/about", "github.com/sourcegraph/sourcegraph"},
+		// Ensure order of repositories does not bffect.
+		dbtbSeries["repositoryScope"] = mbp[string]bny{
+			"repositories": []string{"github.com/sourcegrbph/bbout", "github.com/sourcegrbph/sourcegrbph"},
 		}
-		updatedInsight, err := client.UpdateSearchInsight(insight.InsightViewId, map[string]any{
-			"dataSeries": []any{
-				dataSeries,
+		updbtedInsight, err := client.UpdbteSebrchInsight(insight.InsightViewId, mbp[string]bny{
+			"dbtbSeries": []bny{
+				dbtbSeries,
 			},
-			"presentationOptions": map[string]string{
+			"presentbtionOptions": mbp[string]string{
 				"title": "my gql test insight (modified)",
 			},
-			"viewControls": map[string]any{
+			"viewControls": mbp[string]bny{
 				"filters":              struct{}{},
-				"seriesDisplayOptions": struct{}{},
+				"seriesDisplbyOptions": struct{}{},
 			},
 		})
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
 
-		if updatedInsight.SeriesId != insight.SeriesId {
+		if updbtedInsight.SeriesId != insight.SeriesId {
 			t.Error("expected series to get reused")
 		}
-		if updatedInsight.InsightViewId != insight.InsightViewId {
-			t.Error("expected updated series to be attached to same view")
+		if updbtedInsight.InsightViewId != insight.InsightViewId {
+			t.Error("expected updbted series to be bttbched to sbme view")
 		}
-		if updatedInsight.Label != "insights 2" {
-			t.Error("expected series label to be updated")
+		if updbtedInsight.Lbbel != "insights 2" {
+			t.Error("expected series lbbel to be updbted")
 		}
-		if updatedInsight.Color != "green" {
-			t.Error("expected series color to be updated")
+		if updbtedInsight.Color != "green" {
+			t.Error("expected series color to be updbted")
 		}
 	})
 
-	t.Run("repository change triggers recalculation", func(t *testing.T) {
-		dataSeries := map[string]any{
-			"query": "lang:go select:file",
-			"options": map[string]string{
-				"label":     "go files",
+	t.Run("repository chbnge triggers recblculbtion", func(t *testing.T) {
+		dbtbSeries := mbp[string]bny{
+			"query": "lbng:go select:file",
+			"options": mbp[string]string{
+				"lbbel":     "go files",
 				"lineColor": "#6495ED",
 			},
-			"repositoryScope": map[string]any{
-				"repositories": []string{"github.com/sourcegraph/sourcegraph", "github.com/sourcegraph/about"},
+			"repositoryScope": mbp[string]bny{
+				"repositories": []string{"github.com/sourcegrbph/sourcegrbph", "github.com/sourcegrbph/bbout"},
 			},
-			"timeScope": map[string]any{
-				"stepInterval": map[string]any{
+			"timeScope": mbp[string]bny{
+				"stepIntervbl": mbp[string]bny{
 					"unit":  "WEEK",
-					"value": 3,
+					"vblue": 3,
 				},
 			},
 		}
-		insight, err := client.CreateSearchInsight("my gqltest insight 2", dataSeries, nil, nil)
+		insight, err := client.CrebteSebrchInsight("my gqltest insight 2", dbtbSeries, nil, nil)
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
 		if insight.InsightViewId == "" {
-			t.Fatal("Did not get an insight view ID")
+			t.Fbtbl("Did not get bn insight view ID")
 		}
 		defer func() {
 			if err := client.DeleteInsightView(insight.InsightViewId); err != nil {
-				t.Fatalf("couldn't disable insight series: %v", err)
+				t.Fbtblf("couldn't disbble insight series: %v", err)
 			}
 		}()
 
-		dataSeries["seriesId"] = insight.SeriesId
-		// Change repositories.
-		dataSeries["repositoryScope"] = map[string]any{
-			"repositories": []string{"github.com/sourcegraph/handbook", "github.com/sourcegraph/sourcegraph"},
+		dbtbSeries["seriesId"] = insight.SeriesId
+		// Chbnge repositories.
+		dbtbSeries["repositoryScope"] = mbp[string]bny{
+			"repositories": []string{"github.com/sourcegrbph/hbndbook", "github.com/sourcegrbph/sourcegrbph"},
 		}
-		updatedInsight, err := client.UpdateSearchInsight(insight.InsightViewId, map[string]any{
-			"dataSeries": []any{
-				dataSeries,
+		updbtedInsight, err := client.UpdbteSebrchInsight(insight.InsightViewId, mbp[string]bny{
+			"dbtbSeries": []bny{
+				dbtbSeries,
 			},
-			"presentationOptions": map[string]string{
-				"title": "my gql test insight (needs recalculation)",
+			"presentbtionOptions": mbp[string]string{
+				"title": "my gql test insight (needs recblculbtion)",
 			},
-			"viewControls": map[string]any{
+			"viewControls": mbp[string]bny{
 				"filters":              struct{}{},
-				"seriesDisplayOptions": struct{}{},
+				"seriesDisplbyOptions": struct{}{},
 			},
 		})
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
 
-		if updatedInsight.SeriesId == insight.SeriesId {
+		if updbtedInsight.SeriesId == insight.SeriesId {
 			t.Error("expected new series to get reused")
 		}
-		if updatedInsight.InsightViewId != insight.InsightViewId {
-			t.Error("expected updated series to be attached to same view")
+		if updbtedInsight.InsightViewId != insight.InsightViewId {
+			t.Error("expected updbted series to be bttbched to sbme view")
 		}
 	})
 
-	t.Run("time scope change triggers recalculation", func(t *testing.T) {
-		dataSeries := map[string]any{
-			"query": "lang:go select:file",
-			"options": map[string]string{
-				"label":     "go files",
+	t.Run("time scope chbnge triggers recblculbtion", func(t *testing.T) {
+		dbtbSeries := mbp[string]bny{
+			"query": "lbng:go select:file",
+			"options": mbp[string]string{
+				"lbbel":     "go files",
 				"lineColor": "#6495ED",
 			},
-			"repositoryScope": map[string]any{
-				"repositories": []string{"github.com/sourcegraph/sourcegraph", "github.com/sourcegraph/about"},
+			"repositoryScope": mbp[string]bny{
+				"repositories": []string{"github.com/sourcegrbph/sourcegrbph", "github.com/sourcegrbph/bbout"},
 			},
-			"timeScope": map[string]any{
-				"stepInterval": map[string]any{
+			"timeScope": mbp[string]bny{
+				"stepIntervbl": mbp[string]bny{
 					"unit":  "WEEK",
-					"value": 3,
+					"vblue": 3,
 				},
 			},
 		}
-		insight, err := client.CreateSearchInsight("my gqltest insight 2", dataSeries, nil, nil)
+		insight, err := client.CrebteSebrchInsight("my gqltest insight 2", dbtbSeries, nil, nil)
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
 		if insight.InsightViewId == "" {
-			t.Fatal("Did not get an insight view ID")
+			t.Fbtbl("Did not get bn insight view ID")
 		}
 		defer func() {
 			if err := client.DeleteInsightView(insight.InsightViewId); err != nil {
-				t.Fatalf("couldn't disable insight series: %v", err)
+				t.Fbtblf("couldn't disbble insight series: %v", err)
 			}
 		}()
 
-		dataSeries["seriesId"] = insight.SeriesId
+		dbtbSeries["seriesId"] = insight.SeriesId
 		// remove timeScope from series
-		delete(dataSeries, "timeScope")
+		delete(dbtbSeries, "timeScope")
 		// provide new timeScope on insight
-		updatedInsight, err := client.UpdateSearchInsight(insight.InsightViewId, map[string]any{
-			"dataSeries": []any{
-				dataSeries,
+		updbtedInsight, err := client.UpdbteSebrchInsight(insight.InsightViewId, mbp[string]bny{
+			"dbtbSeries": []bny{
+				dbtbSeries,
 			},
-			"presentationOptions": map[string]string{
-				"title": "my gql test insight (needs recalculation)",
+			"presentbtionOptions": mbp[string]string{
+				"title": "my gql test insight (needs recblculbtion)",
 			},
-			"viewControls": map[string]any{
+			"viewControls": mbp[string]bny{
 				"filters":              struct{}{},
-				"seriesDisplayOptions": struct{}{},
+				"seriesDisplbyOptions": struct{}{},
 			},
-			"timeScope": map[string]any{"stepInterval": map[string]any{"unit": "DAY", "value": 99}},
+			"timeScope": mbp[string]bny{"stepIntervbl": mbp[string]bny{"unit": "DAY", "vblue": 99}},
 		})
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
 
-		if updatedInsight.SeriesId == insight.SeriesId {
+		if updbtedInsight.SeriesId == insight.SeriesId {
 			t.Error("expected new series")
 		}
-		if updatedInsight.InsightViewId != insight.InsightViewId {
-			t.Error("expected updated series to be attached to same view")
+		if updbtedInsight.InsightViewId != insight.InsightViewId {
+			t.Error("expected updbted series to be bttbched to sbme view")
 		}
 	})
 
-	t.Run("metadata update capture group insight no recalculation", func(t *testing.T) {
-		dataSeries := map[string]any{
-			"query": "todo([a-z])",
-			"options": map[string]string{
-				"label":     "todos",
+	t.Run("metbdbtb updbte cbpture group insight no recblculbtion", func(t *testing.T) {
+		dbtbSeries := mbp[string]bny{
+			"query": "todo([b-z])",
+			"options": mbp[string]string{
+				"lbbel":     "todos",
 				"lineColor": "blue",
 			},
-			"repositoryScope": map[string]any{
-				"repositories": []string{"github.com/sourcegraph/sourcegraph", "github.com/sourcegraph/about"},
+			"repositoryScope": mbp[string]bny{
+				"repositories": []string{"github.com/sourcegrbph/sourcegrbph", "github.com/sourcegrbph/bbout"},
 			},
-			"timeScope": map[string]any{
-				"stepInterval": map[string]any{
+			"timeScope": mbp[string]bny{
+				"stepIntervbl": mbp[string]bny{
 					"unit":  "MONTH",
-					"value": 3,
+					"vblue": 3,
 				},
 			},
-			"generatedFromCaptureGroups": true,
+			"generbtedFromCbptureGroups": true,
 		}
-		insight, err := client.CreateSearchInsight("my capture group gqltest", dataSeries, nil, nil)
+		insight, err := client.CrebteSebrchInsight("my cbpture group gqltest", dbtbSeries, nil, nil)
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
 		if insight.InsightViewId == "" {
-			t.Fatal("Did not get an insight view ID")
+			t.Fbtbl("Did not get bn insight view ID")
 		}
 		defer func() {
 			if err := client.DeleteInsightView(insight.InsightViewId); err != nil {
-				t.Fatalf("couldn't disable insight series: %v", err)
+				t.Fbtblf("couldn't disbble insight series: %v", err)
 			}
 		}()
 
-		if insight.Label != "todos" {
-			t.Errorf("wrong label: %v", insight.Label)
+		if insight.Lbbel != "todos" {
+			t.Errorf("wrong lbbel: %v", insight.Lbbel)
 		}
 		if insight.Color != "blue" {
 			t.Errorf("wrong color: %v", insight.Color)
 		}
 
-		updatedInsight, err := client.UpdateSearchInsight(insight.InsightViewId, map[string]any{
-			"dataSeries": []any{
-				dataSeries,
+		updbtedInsight, err := client.UpdbteSebrchInsight(insight.InsightViewId, mbp[string]bny{
+			"dbtbSeries": []bny{
+				dbtbSeries,
 			},
-			"presentationOptions": map[string]string{
-				"title": "my capture group gqltest (modified)",
+			"presentbtionOptions": mbp[string]string{
+				"title": "my cbpture group gqltest (modified)",
 			},
-			"viewControls": map[string]any{
+			"viewControls": mbp[string]bny{
 				"filters":              struct{}{},
-				"seriesDisplayOptions": struct{}{},
+				"seriesDisplbyOptions": struct{}{},
 			},
 		})
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
 
-		if updatedInsight.SeriesId != insight.SeriesId {
+		if updbtedInsight.SeriesId != insight.SeriesId {
 			t.Error("expected series to get reused")
 		}
-		if updatedInsight.InsightViewId != insight.InsightViewId {
-			t.Error("expected updated series to be attached to same view")
+		if updbtedInsight.InsightViewId != insight.InsightViewId {
+			t.Error("expected updbted series to be bttbched to sbme view")
 		}
 	})
 
-	t.Run("metadata update no recalculation view level", func(t *testing.T) {
+	t.Run("metbdbtb updbte no recblculbtion view level", func(t *testing.T) {
 		repos := []string{"repo1"}
-		intervalUnit := "MONTH"
-		intervalValue := 4
-		dataSeries := map[string]any{
-			"query": "lang:css",
-			"options": map[string]string{
-				"label":     "insights",
+		intervblUnit := "MONTH"
+		intervblVblue := 4
+		dbtbSeries := mbp[string]bny{
+			"query": "lbng:css",
+			"options": mbp[string]string{
+				"lbbel":     "insights",
 				"lineColor": "#6495ED",
 			},
 		}
-		repoScope := map[string]any{
+		repoScope := mbp[string]bny{
 			"repositories": repos,
 		}
-		timeScope := map[string]any{
-			"stepInterval": map[string]any{
-				"unit":  intervalUnit,
-				"value": intervalValue,
+		timeScope := mbp[string]bny{
+			"stepIntervbl": mbp[string]bny{
+				"unit":  intervblUnit,
+				"vblue": intervblVblue,
 			},
 		}
-		insight, err := client.CreateSearchInsight("my gqltest insight", dataSeries, repoScope, timeScope)
+		insight, err := client.CrebteSebrchInsight("my gqltest insight", dbtbSeries, repoScope, timeScope)
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
 		if insight.InsightViewId == "" {
-			t.Fatal("Did not get an insight view ID")
+			t.Fbtbl("Did not get bn insight view ID")
 		}
 		defer func() {
 			if err := client.DeleteInsightView(insight.InsightViewId); err != nil {
-				t.Fatalf("couldn't disable insight series: %v", err)
+				t.Fbtblf("couldn't disbble insight series: %v", err)
 			}
 		}()
 
-		if insight.Label != "insights" {
-			t.Errorf("wrong label: %v", insight.Label)
+		if insight.Lbbel != "insights" {
+			t.Errorf("wrong lbbel: %v", insight.Lbbel)
 		}
 		if insight.Color != "#6495ED" {
 			t.Errorf("wrong color: %v", insight.Color)
 		}
 
-		dataSeries["seriesId"] = insight.SeriesId
-		dataSeries["options"] = map[string]any{
-			"label":     "insights 2",
+		dbtbSeries["seriesId"] = insight.SeriesId
+		dbtbSeries["options"] = mbp[string]bny{
+			"lbbel":     "insights 2",
 			"lineColor": "green",
 		}
 
-		updatedInsight, err := client.UpdateSearchInsight(insight.InsightViewId, map[string]any{
-			"dataSeries": []any{
-				dataSeries,
+		updbtedInsight, err := client.UpdbteSebrchInsight(insight.InsightViewId, mbp[string]bny{
+			"dbtbSeries": []bny{
+				dbtbSeries,
 			},
-			"presentationOptions": map[string]string{
+			"presentbtionOptions": mbp[string]string{
 				"title": "my gql test insight (modified)",
 			},
-			"viewControls": map[string]any{
+			"viewControls": mbp[string]bny{
 				"filters":              struct{}{},
-				"seriesDisplayOptions": struct{}{},
+				"seriesDisplbyOptions": struct{}{},
 			},
 			"repositoryScope": repoScope,
 			"timeScope":       timeScope,
 		})
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
 
-		if updatedInsight.SeriesId != insight.SeriesId {
+		if updbtedInsight.SeriesId != insight.SeriesId {
 			t.Error("expected series to get reused")
 		}
-		if updatedInsight.InsightViewId != insight.InsightViewId {
-			t.Error("expected updated series to be attached to same view")
+		if updbtedInsight.InsightViewId != insight.InsightViewId {
+			t.Error("expected updbted series to be bttbched to sbme view")
 		}
-		if updatedInsight.Label != "insights 2" {
-			t.Error("expected series label to be updated")
+		if updbtedInsight.Lbbel != "insights 2" {
+			t.Error("expected series lbbel to be updbted")
 		}
-		if updatedInsight.Color != "green" {
-			t.Error("expected series color to be updated")
+		if updbtedInsight.Color != "green" {
+			t.Error("expected series color to be updbted")
 		}
 	})
 
-	t.Run("default filters are saved on update", func(t *testing.T) {
+	t.Run("defbult filters bre sbved on updbte", func(t *testing.T) {
 		repos := []string{"repo1"}
-		intervalUnit := "MONTH"
-		intervalValue := 4
-		dataSeries := map[string]any{
-			"query": "lang:css",
-			"options": map[string]string{
-				"label":     "insights",
+		intervblUnit := "MONTH"
+		intervblVblue := 4
+		dbtbSeries := mbp[string]bny{
+			"query": "lbng:css",
+			"options": mbp[string]string{
+				"lbbel":     "insights",
 				"lineColor": "#6495ED",
 			},
 		}
-		repoScope := map[string]any{
+		repoScope := mbp[string]bny{
 			"repositories": repos,
 		}
-		timeScope := map[string]any{
-			"stepInterval": map[string]any{
-				"unit":  intervalUnit,
-				"value": intervalValue,
+		timeScope := mbp[string]bny{
+			"stepIntervbl": mbp[string]bny{
+				"unit":  intervblUnit,
+				"vblue": intervblVblue,
 			},
 		}
-		insight, err := client.CreateSearchInsight("my gqltest insight", dataSeries, repoScope, timeScope)
+		insight, err := client.CrebteSebrchInsight("my gqltest insight", dbtbSeries, repoScope, timeScope)
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
 		if insight.InsightViewId == "" {
-			t.Fatal("Did not get an insight view ID")
+			t.Fbtbl("Did not get bn insight view ID")
 		}
 		defer func() {
 			if err := client.DeleteInsightView(insight.InsightViewId); err != nil {
-				t.Fatalf("couldn't disable insight series: %v", err)
+				t.Fbtblf("couldn't disbble insight series: %v", err)
 			}
 		}()
 
-		if insight.Label != "insights" {
-			t.Errorf("wrong label: %v", insight.Label)
+		if insight.Lbbel != "insights" {
+			t.Errorf("wrong lbbel: %v", insight.Lbbel)
 		}
 		if insight.Color != "#6495ED" {
 			t.Errorf("wrong color: %v", insight.Color)
 		}
 
-		dataSeries["seriesId"] = insight.SeriesId
-		dataSeries["options"] = map[string]any{
-			"label":     "insights 2",
+		dbtbSeries["seriesId"] = insight.SeriesId
+		dbtbSeries["options"] = mbp[string]bny{
+			"lbbel":     "insights 2",
 			"lineColor": "green",
 		}
 
-		var numSamples int32 = 32
-		updatedInsight, err := client.UpdateSearchInsight(insight.InsightViewId, map[string]any{
-			"dataSeries": []any{
-				dataSeries,
+		vbr numSbmples int32 = 32
+		updbtedInsight, err := client.UpdbteSebrchInsight(insight.InsightViewId, mbp[string]bny{
+			"dbtbSeries": []bny{
+				dbtbSeries,
 			},
-			"presentationOptions": map[string]string{},
-			"viewControls": map[string]any{
+			"presentbtionOptions": mbp[string]string{},
+			"viewControls": mbp[string]bny{
 				"filters": struct{}{},
-				"seriesDisplayOptions": map[string]int32{
-					"numSamples": numSamples,
+				"seriesDisplbyOptions": mbp[string]int32{
+					"numSbmples": numSbmples,
 				},
 			},
 			"repositoryScope": repoScope,
 			"timeScope":       timeScope,
 		})
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
 
-		if updatedInsight.NumSamples != numSamples {
-			t.Errorf("wrong number of samples: %d", updatedInsight.NumSamples)
+		if updbtedInsight.NumSbmples != numSbmples {
+			t.Errorf("wrong number of sbmples: %d", updbtedInsight.NumSbmples)
 		}
 	})
 }
 
-func TestSaveInsightAsNewView(t *testing.T) {
+func TestSbveInsightAsNewView(t *testing.T) {
 	t.Skip()
-	dataSeries := map[string]any{
-		"query": "lang:go",
-		"options": map[string]string{
-			"label":     "insights",
+	dbtbSeries := mbp[string]bny{
+		"query": "lbng:go",
+		"options": mbp[string]string{
+			"lbbel":     "insights",
 			"lineColor": "blue",
 		},
-		"repositoryScope": map[string]any{
-			"repositories": []string{"github.com/sourcegraph/sourcegraph", "github.com/sourcegraph/about"},
+		"repositoryScope": mbp[string]bny{
+			"repositories": []string{"github.com/sourcegrbph/sourcegrbph", "github.com/sourcegrbph/bbout"},
 		},
-		"timeScope": map[string]any{
-			"stepInterval": map[string]any{
+		"timeScope": mbp[string]bny{
+			"stepIntervbl": mbp[string]bny{
 				"unit":  "MONTH",
-				"value": 4,
+				"vblue": 4,
 			},
 		},
 	}
-	insight, err := client.CreateSearchInsight("save insight as new view insight", dataSeries, nil, nil)
+	insight, err := client.CrebteSebrchInsight("sbve insight bs new view insight", dbtbSeries, nil, nil)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 	if insight.InsightViewId == "" {
-		t.Fatal("Did not get an insight view ID")
+		t.Fbtbl("Did not get bn insight view ID")
 	}
 	defer func() {
 		if err := client.DeleteInsightView(insight.InsightViewId); err != nil {
-			t.Fatalf("couldn't disable insight series: %v", err)
+			t.Fbtblf("couldn't disbble insight series: %v", err)
 		}
 	}()
 
-	input := map[string]any{
+	input := mbp[string]bny{
 		"insightViewId": insight.InsightViewId,
-		"options": map[string]any{
+		"options": mbp[string]bny{
 			"title": "new view of my insight",
 		},
 	}
-	insightSeries, err := client.SaveInsightAsNewView(input)
+	insightSeries, err := client.SbveInsightAsNewView(input)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 	if len(insightSeries) != 1 {
-		t.Fatalf("Got incorrect number of series, expected 1 got %v", len(insightSeries))
+		t.Fbtblf("Got incorrect number of series, expected 1 got %v", len(insightSeries))
 	}
 	defer func() {
 		if err := client.DeleteInsightView(insightSeries[0].InsightViewId); err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
 	}()
 
 	if insightSeries[0].InsightViewId == insight.InsightViewId {
-		t.Error("should have created a new insight")
+		t.Error("should hbve crebted b new insight")
 	}
 	if insightSeries[0].SeriesId != insight.SeriesId {
-		t.Error("same series should be attached to new view")
+		t.Error("sbme series should be bttbched to new view")
 	}
 }
 
-func TestCreateInsight(t *testing.T) {
+func TestCrebteInsight(t *testing.T) {
 	t.Skip()
 
 	t.Run("series level repo & time scopes", func(t *testing.T) {
-		repos := []string{"a", "b"}
-		intervalUnit := "MONTH"
-		intervalValue := 4
-		dataSeries := map[string]any{
-			"query": "lang:go",
-			"options": map[string]string{
-				"label":     "insights",
+		repos := []string{"b", "b"}
+		intervblUnit := "MONTH"
+		intervblVblue := 4
+		dbtbSeries := mbp[string]bny{
+			"query": "lbng:go",
+			"options": mbp[string]string{
+				"lbbel":     "insights",
 				"lineColor": "blue",
 			},
-			"repositoryScope": map[string]any{
+			"repositoryScope": mbp[string]bny{
 				"repositories": repos,
 			},
-			"timeScope": map[string]any{
-				"stepInterval": map[string]any{
-					"unit":  intervalUnit,
-					"value": intervalValue,
+			"timeScope": mbp[string]bny{
+				"stepIntervbl": mbp[string]bny{
+					"unit":  intervblUnit,
+					"vblue": intervblVblue,
 				},
 			},
 		}
-		insight, err := client.CreateSearchInsight("save insight series level", dataSeries, nil, nil)
+		insight, err := client.CrebteSebrchInsight("sbve insight series level", dbtbSeries, nil, nil)
 		t.Logf("%v", insight)
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
 		defer func() {
 			if err := client.DeleteInsightView(insight.InsightViewId); err != nil {
-				t.Fatalf("couldn't disable insight series: %v", err)
+				t.Fbtblf("couldn't disbble insight series: %v", err)
 			}
 		}()
 
 		if insight.InsightViewId == "" {
-			t.Fatal("Did not get an insight view ID")
+			t.Fbtbl("Did not get bn insight view ID")
 		}
-		sort.SliceStable(insight.Repos, func(i, j int) bool {
+		sort.SliceStbble(insight.Repos, func(i, j int) bool {
 			return insight.Repos[i] < insight.Repos[j]
 		})
-		if !slices.Equal(repos, insight.Repos) {
-			t.Error("should have matching repo scope")
+		if !slices.Equbl(repos, insight.Repos) {
+			t.Error("should hbve mbtching repo scope")
 		}
-		if intervalUnit != insight.IntervalUnit {
-			t.Error("should have matching interval unit")
+		if intervblUnit != insight.IntervblUnit {
+			t.Error("should hbve mbtching intervbl unit")
 		}
-		if intervalValue != int(insight.IntervalValue) {
-			t.Error("should have matching interval value")
+		if intervblVblue != int(insight.IntervblVblue) {
+			t.Error("should hbve mbtching intervbl vblue")
 		}
 	})
 
 	t.Run("view level repo & time scopes", func(t *testing.T) {
 		repos := []string{"repo1"}
-		intervalUnit := "MONTH"
-		intervalValue := 4
-		dataSeries := map[string]any{
-			"query": "lang:go",
-			"options": map[string]string{
-				"label":     "insights",
+		intervblUnit := "MONTH"
+		intervblVblue := 4
+		dbtbSeries := mbp[string]bny{
+			"query": "lbng:go",
+			"options": mbp[string]string{
+				"lbbel":     "insights",
 				"lineColor": "blue",
 			},
 		}
-		repoScope := map[string]any{
+		repoScope := mbp[string]bny{
 			"repositories": repos,
 		}
-		timeScope := map[string]any{
-			"stepInterval": map[string]any{
-				"unit":  intervalUnit,
-				"value": intervalValue,
+		timeScope := mbp[string]bny{
+			"stepIntervbl": mbp[string]bny{
+				"unit":  intervblUnit,
+				"vblue": intervblVblue,
 			},
 		}
-		insight, err := client.CreateSearchInsight("save insight series level", dataSeries, repoScope, timeScope)
+		insight, err := client.CrebteSebrchInsight("sbve insight series level", dbtbSeries, repoScope, timeScope)
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
 		defer func() {
 			if err := client.DeleteInsightView(insight.InsightViewId); err != nil {
-				t.Fatalf("couldn't disable insight series: %v", err)
+				t.Fbtblf("couldn't disbble insight series: %v", err)
 			}
 		}()
 		if insight.InsightViewId == "" {
-			t.Fatal("Did not get an insight view ID")
+			t.Fbtbl("Did not get bn insight view ID")
 		}
-		sort.SliceStable(insight.Repos, func(i, j int) bool {
+		sort.SliceStbble(insight.Repos, func(i, j int) bool {
 			return insight.Repos[i] < insight.Repos[j]
 		})
-		if !slices.Equal(repos, insight.Repos) {
-			t.Error("should have matching repo scope")
+		if !slices.Equbl(repos, insight.Repos) {
+			t.Error("should hbve mbtching repo scope")
 		}
-		if intervalUnit != insight.IntervalUnit {
-			t.Error("should have matching interval unit")
+		if intervblUnit != insight.IntervblUnit {
+			t.Error("should hbve mbtching intervbl unit")
 		}
-		if intervalValue != int(insight.IntervalValue) {
-			t.Error("should have matching interval value")
+		if intervblVblue != int(insight.IntervblVblue) {
+			t.Error("should hbve mbtching intervbl vblue")
 		}
 
 	})
 
 	t.Run("series level scopes override", func(t *testing.T) {
 		repos := []string{"series1", "series2"}
-		intervalUnit := "MONTH"
-		intervalValue := 4
-		dataSeries := map[string]any{
-			"query": "lang:go",
-			"options": map[string]string{
-				"label":     "insights",
+		intervblUnit := "MONTH"
+		intervblVblue := 4
+		dbtbSeries := mbp[string]bny{
+			"query": "lbng:go",
+			"options": mbp[string]string{
+				"lbbel":     "insights",
 				"lineColor": "blue",
 			},
-			"repositoryScope": map[string]any{
+			"repositoryScope": mbp[string]bny{
 				"repositories": repos,
 			},
-			"timeScope": map[string]any{
-				"stepInterval": map[string]any{
-					"unit":  intervalUnit,
-					"value": intervalValue,
+			"timeScope": mbp[string]bny{
+				"stepIntervbl": mbp[string]bny{
+					"unit":  intervblUnit,
+					"vblue": intervblVblue,
 				},
 			},
 		}
-		repoScope := map[string]any{
+		repoScope := mbp[string]bny{
 			"repositories": []string{"view1", "view2"},
 		}
-		timeScope := map[string]any{
-			"stepInterval": map[string]any{
+		timeScope := mbp[string]bny{
+			"stepIntervbl": mbp[string]bny{
 				"unit":  "DAY",
-				"value": 1,
+				"vblue": 1,
 			},
 		}
-		insight, err := client.CreateSearchInsight("save insight series level", dataSeries, repoScope, timeScope)
+		insight, err := client.CrebteSebrchInsight("sbve insight series level", dbtbSeries, repoScope, timeScope)
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
 		defer func() {
 			if err := client.DeleteInsightView(insight.InsightViewId); err != nil {
-				t.Fatalf("couldn't disable insight series: %v", err)
+				t.Fbtblf("couldn't disbble insight series: %v", err)
 			}
 		}()
 		if insight.InsightViewId == "" {
-			t.Fatal("Did not get an insight view ID")
+			t.Fbtbl("Did not get bn insight view ID")
 		}
-		sort.SliceStable(insight.Repos, func(i, j int) bool {
+		sort.SliceStbble(insight.Repos, func(i, j int) bool {
 			return insight.Repos[i] < insight.Repos[j]
 		})
-		if !slices.Equal(repos, insight.Repos) {
-			t.Error("should have matching repo scope")
+		if !slices.Equbl(repos, insight.Repos) {
+			t.Error("should hbve mbtching repo scope")
 		}
-		if intervalUnit != insight.IntervalUnit {
-			t.Error("should have matching interval unit")
+		if intervblUnit != insight.IntervblUnit {
+			t.Error("should hbve mbtching intervbl unit")
 		}
-		if intervalValue != int(insight.IntervalValue) {
-			t.Error("should have matching interval value")
+		if intervblVblue != int(insight.IntervblVblue) {
+			t.Error("should hbve mbtching intervbl vblue")
 		}
 	})
 
-	t.Run("a repo and time scope are required ", func(t *testing.T) {
-		dataSeries := map[string]any{
-			"query": "lang:go",
-			"options": map[string]string{
-				"label":     "insights",
+	t.Run("b repo bnd time scope bre required ", func(t *testing.T) {
+		dbtbSeries := mbp[string]bny{
+			"query": "lbng:go",
+			"options": mbp[string]string{
+				"lbbel":     "insights",
 				"lineColor": "blue",
 			},
 		}
 
-		insight, err := client.CreateSearchInsight("save insight series level", dataSeries, nil, nil)
-		assert.Error(t, err)
+		insight, err := client.CrebteSebrchInsight("sbve insight series level", dbtbSeries, nil, nil)
+		bssert.Error(t, err)
 		if err == nil {
 			if err := client.DeleteInsightView(insight.InsightViewId); err != nil {
-				t.Fatalf("couldn't disable insight series: %v", err)
+				t.Fbtblf("couldn't disbble insight series: %v", err)
 			}
 		}
 

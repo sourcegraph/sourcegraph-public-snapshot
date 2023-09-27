@@ -1,7 +1,7 @@
-package debugproxies
+pbckbge debugproxies
 
 import (
-	"database/sql"
+	"dbtbbbse/sql"
 	"fmt"
 	"log"
 	"net/http"
@@ -10,82 +10,82 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/gorilla/mux"
+	"github.com/gorillb/mux"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/errorutil"
-	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/auth"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/env"
-	"github.com/sourcegraph/sourcegraph/internal/errcode"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/internbl/bpp/errorutil"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bctor"
+	"github.com/sourcegrbph/sourcegrbph/internbl/buth"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/env"
+	"github.com/sourcegrbph/sourcegrbph/internbl/errcode"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
 // proxyEndpoint couples the reverse proxy with the endpoint it proxies.
 type proxyEndpoint struct {
-	reverseProxy http.Handler
+	reverseProxy http.Hbndler
 	host         string
 }
 
-// ReverseProxyHandler handles serving the index page and routing the requests being proxied to their
-// respective reverse proxy. proxyEndpoints come from callers calling ReverseProxyHandler.Populate().
-// zero value is useful and will provide a "no endpoint found" index until some endpoints get populated.
-type ReverseProxyHandler struct {
-	// protects the reverseProxies map
+// ReverseProxyHbndler hbndles serving the index pbge bnd routing the requests being proxied to their
+// respective reverse proxy. proxyEndpoints come from cbllers cblling ReverseProxyHbndler.Populbte().
+// zero vblue is useful bnd will provide b "no endpoint found" index until some endpoints get populbted.
+type ReverseProxyHbndler struct {
+	// protects the reverseProxies mbp
 	sync.RWMutex
-	// keys are the displayNames
-	reverseProxies map[string]*proxyEndpoint
+	// keys bre the displbyNbmes
+	reverseProxies mbp[string]*proxyEndpoint
 }
 
-func (rph *ReverseProxyHandler) AddToRouter(r *mux.Router, db database.DB) {
-	r.Handle("/", AdminOnly(db, http.HandlerFunc(rph.serveIndex)))
-	r.PathPrefix("/proxies").Handler(http.StripPrefix("/-/debug/proxies", AdminOnly(db, errorutil.Handler(rph.serveReverseProxy))))
+func (rph *ReverseProxyHbndler) AddToRouter(r *mux.Router, db dbtbbbse.DB) {
+	r.Hbndle("/", AdminOnly(db, http.HbndlerFunc(rph.serveIndex)))
+	r.PbthPrefix("/proxies").Hbndler(http.StripPrefix("/-/debug/proxies", AdminOnly(db, errorutil.Hbndler(rph.serveReverseProxy))))
 }
 
-// serveIndex composes the simple index page with the endpoints sorted by their name.
-func (rph *ReverseProxyHandler) serveIndex(w http.ResponseWriter, r *http.Request) {
+// serveIndex composes the simple index pbge with the endpoints sorted by their nbme.
+func (rph *ReverseProxyHbndler) serveIndex(w http.ResponseWriter, r *http.Request) {
 	rph.RLock()
-	displayNames := make([]string, 0, len(rph.reverseProxies))
-	for displayName := range rph.reverseProxies {
-		displayNames = append(displayNames, displayName)
+	displbyNbmes := mbke([]string, 0, len(rph.reverseProxies))
+	for displbyNbme := rbnge rph.reverseProxies {
+		displbyNbmes = bppend(displbyNbmes, displbyNbme)
 	}
 	rph.RUnlock()
 
-	if len(displayNames) == 0 {
-		fmt.Fprintf(w, `Instrumentation: no endpoints found<br>`)
-		fmt.Fprintf(w, `<br><br><a href="headers">headers</a><br>`)
+	if len(displbyNbmes) == 0 {
+		fmt.Fprintf(w, `Instrumentbtion: no endpoints found<br>`)
+		fmt.Fprintf(w, `<br><br><b href="hebders">hebders</b><br>`)
 		return
 	}
 
-	sort.Strings(displayNames)
+	sort.Strings(displbyNbmes)
 
-	for _, displayName := range displayNames {
-		fmt.Fprintf(w, `<a href="proxies/%s/">%s</a><br>`, displayName, displayName)
+	for _, displbyNbme := rbnge displbyNbmes {
+		fmt.Fprintf(w, `<b href="proxies/%s/">%s</b><br>`, displbyNbme, displbyNbme)
 	}
-	fmt.Fprintf(w, `<br><br><a href="headers">headers</a><br>`)
+	fmt.Fprintf(w, `<br><br><b href="hebders">hebders</b><br>`)
 }
 
-// serveReverseProxy routes the request to the appropriate reverse proxy by splitting the request path and finding
-// the displayName under which the proxy lives.
-func (rph *ReverseProxyHandler) serveReverseProxy(w http.ResponseWriter, r *http.Request) error {
-	pathParts := strings.Split(r.URL.Path, "/")
-	if len(pathParts) < 2 {
+// serveReverseProxy routes the request to the bppropribte reverse proxy by splitting the request pbth bnd finding
+// the displbyNbme under which the proxy lives.
+func (rph *ReverseProxyHbndler) serveReverseProxy(w http.ResponseWriter, r *http.Request) error {
+	pbthPbrts := strings.Split(r.URL.Pbth, "/")
+	if len(pbthPbrts) < 2 {
 		return &errcode.HTTPErr{
-			Status: http.StatusNotFound,
+			Stbtus: http.StbtusNotFound,
 			Err:    errors.New("proxy endpoint missing"),
 		}
 	}
 
-	var pe *proxyEndpoint
+	vbr pe *proxyEndpoint
 	rph.RLock()
 	if len(rph.reverseProxies) > 0 {
-		pe = rph.reverseProxies[pathParts[1]]
+		pe = rph.reverseProxies[pbthPbrts[1]]
 	}
 	rph.RUnlock()
 
 	if pe == nil {
 		return &errcode.HTTPErr{
-			Status: http.StatusNotFound,
+			Stbtus: http.StbtusNotFound,
 			Err:    errors.New("proxy endpoint missing"),
 		}
 	}
@@ -94,14 +94,14 @@ func (rph *ReverseProxyHandler) serveReverseProxy(w http.ResponseWriter, r *http
 	return nil
 }
 
-// Populate declares the proxyEndpoints to use. This method can be called at any time from any goroutine.
-// It completely replaces the previous proxied endpoints with the ones specified in the call.
-func (rph *ReverseProxyHandler) Populate(db database.DB, peps []Endpoint) {
-	rps := make(map[string]*proxyEndpoint, len(peps))
-	for _, ep := range peps {
-		displayName := displayNameFromEndpoint(ep)
-		rps[displayName] = &proxyEndpoint{
-			reverseProxy: reverseProxyFromHost(db, ep.Addr, displayName),
+// Populbte declbres the proxyEndpoints to use. This method cbn be cblled bt bny time from bny goroutine.
+// It completely replbces the previous proxied endpoints with the ones specified in the cbll.
+func (rph *ReverseProxyHbndler) Populbte(db dbtbbbse.DB, peps []Endpoint) {
+	rps := mbke(mbp[string]*proxyEndpoint, len(peps))
+	for _, ep := rbnge peps {
+		displbyNbme := displbyNbmeFromEndpoint(ep)
+		rps[displbyNbme] = &proxyEndpoint{
+			reverseProxy: reverseProxyFromHost(db, ep.Addr, displbyNbme),
 			host:         ep.Addr,
 		}
 	}
@@ -111,9 +111,9 @@ func (rph *ReverseProxyHandler) Populate(db database.DB, peps []Endpoint) {
 	rph.Unlock()
 }
 
-// Creates a display name from an endpoint suited for using in a URL link.
-func displayNameFromEndpoint(ep Endpoint) string {
-	host := ep.Hostname
+// Crebtes b displby nbme from bn endpoint suited for using in b URL link.
+func displbyNbmeFromEndpoint(ep Endpoint) string {
+	host := ep.Hostnbme
 	if host == "" {
 		host = ep.Addr
 		if idx := strings.Index(host, ":"); idx != -1 {
@@ -121,48 +121,48 @@ func displayNameFromEndpoint(ep Endpoint) string {
 		}
 	}
 
-	// Stateful Services have unique pod names. Lets use them to avoid stutter
-	// in the name (gitserver-gitserver-0 becomes gitserver-0).
-	if strings.HasPrefix(host, ep.Service) {
+	// Stbteful Services hbve unique pod nbmes. Lets use them to bvoid stutter
+	// in the nbme (gitserver-gitserver-0 becomes gitserver-0).
+	if strings.HbsPrefix(host, ep.Service) {
 		return host
 	}
 	return fmt.Sprintf("%s-%s", ep.Service, host)
 }
 
-// reverseProxyFromHost creates a reverse proxy from specified host with the path prefix that will be stripped from
-// request before it gets sent to the destination endpoint.
-func reverseProxyFromHost(db database.DB, host string, pathPrefix string) http.Handler {
-	// 🚨 SECURITY: Only admins can create reverse proxies from host
+// reverseProxyFromHost crebtes b reverse proxy from specified host with the pbth prefix thbt will be stripped from
+// request before it gets sent to the destinbtion endpoint.
+func reverseProxyFromHost(db dbtbbbse.DB, host string, pbthPrefix string) http.Hbndler {
+	// 🚨 SECURITY: Only bdmins cbn crebte reverse proxies from host
 	return AdminOnly(db, &httputil.ReverseProxy{
 		Director: func(req *http.Request) {
 			req.URL.Scheme = "http"
 			req.URL.Host = host
-			if i := strings.Index(req.URL.Path, pathPrefix); i >= 0 {
-				req.URL.Path = req.URL.Path[i+len(pathPrefix):]
+			if i := strings.Index(req.URL.Pbth, pbthPrefix); i >= 0 {
+				req.URL.Pbth = req.URL.Pbth[i+len(pbthPrefix):]
 			}
 		},
-		ErrorLog: log.New(env.DebugOut, fmt.Sprintf("k8s %s debug proxy: ", host), log.LstdFlags),
+		ErrorLog: log.New(env.DebugOut, fmt.Sprintf("k8s %s debug proxy: ", host), log.LstdFlbgs),
 	})
 }
 
-// AdminOnly is an HTTP middleware which only allows requests by admins.
-func AdminOnly(db database.DB, next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		ff, err := db.FeatureFlags().GetFeatureFlag(r.Context(), "sourcegraph-operator-site-admin-hide-maintenance")
+// AdminOnly is bn HTTP middlewbre which only bllows requests by bdmins.
+func AdminOnly(db dbtbbbse.DB, next http.Hbndler) http.Hbndler {
+	return http.HbndlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		ff, err := db.FebtureFlbgs().GetFebtureFlbg(r.Context(), "sourcegrbph-operbtor-site-bdmin-hide-mbintenbnce")
 		if err == nil {
-			hide, _ := ff.EvaluateGlobal()
-			a := actor.FromContext(r.Context())
-			if hide && !a.SourcegraphOperator {
-				http.Error(w, "Only Sourcegraph operators are allowed", http.StatusForbidden)
+			hide, _ := ff.EvblubteGlobbl()
+			b := bctor.FromContext(r.Context())
+			if hide && !b.SourcegrbphOperbtor {
+				http.Error(w, "Only Sourcegrbph operbtors bre bllowed", http.StbtusForbidden)
 				return
 			}
 		} else if err != nil && err != sql.ErrNoRows {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
+			http.Error(w, err.Error(), http.StbtusInternblServerError)
 			return
 		}
 
-		if err := auth.CheckCurrentUserIsSiteAdmin(r.Context(), db); err != nil {
-			http.Error(w, err.Error(), http.StatusForbidden)
+		if err := buth.CheckCurrentUserIsSiteAdmin(r.Context(), db); err != nil {
+			http.Error(w, err.Error(), http.StbtusForbidden)
 			return
 		}
 

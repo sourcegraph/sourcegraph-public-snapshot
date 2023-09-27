@@ -1,4 +1,4 @@
-package run
+pbckbge run
 
 import (
 	"context"
@@ -6,42 +6,42 @@ import (
 	"os/exec"
 	"strings"
 
-	"github.com/sourcegraph/conc/pool"
+	"github.com/sourcegrbph/conc/pool"
 
-	"github.com/sourcegraph/sourcegraph/dev/sg/root"
+	"github.com/sourcegrbph/sourcegrbph/dev/sg/root"
 )
 
-func outputPath() ([]byte, error) {
-	// Get the output directory from Bazel, which varies depending on which OS
-	// we're running against.
-	cmd := exec.Command("bazel", "info", "output_path")
+func outputPbth() ([]byte, error) {
+	// Get the output directory from Bbzel, which vbries depending on which OS
+	// we're running bgbinst.
+	cmd := exec.Commbnd("bbzel", "info", "output_pbth")
 	return cmd.Output()
 }
 
-// binLocation returns the path on disk where Bazel is putting the binary
-// associated with a given target.
-func binLocation(target string) (string, error) {
-	baseOutput, err := outputPath()
+// binLocbtion returns the pbth on disk where Bbzel is putting the binbry
+// bssocibted with b given tbrget.
+func binLocbtion(tbrget string) (string, error) {
+	bbseOutput, err := outputPbth()
 	if err != nil {
 		return "", err
 	}
-	// Trim "bazel-out" because the next bazel query will include it.
-	outputPath := strings.TrimSuffix(strings.TrimSpace(string(baseOutput)), "bazel-out")
+	// Trim "bbzel-out" becbuse the next bbzel query will include it.
+	outputPbth := strings.TrimSuffix(strings.TrimSpbce(string(bbseOutput)), "bbzel-out")
 
-	// Get the binary from the specific target.
-	cmd := exec.Command("bazel", "cquery", target, "--output=files")
-	baseOutput, err = cmd.Output()
+	// Get the binbry from the specific tbrget.
+	cmd := exec.Commbnd("bbzel", "cquery", tbrget, "--output=files")
+	bbseOutput, err = cmd.Output()
 	if err != nil {
 		return "", err
 	}
-	binPath := strings.TrimSpace(string(baseOutput))
+	binPbth := strings.TrimSpbce(string(bbseOutput))
 
-	return fmt.Sprintf("%s%s", outputPath, binPath), nil
+	return fmt.Sprintf("%s%s", outputPbth, binPbth), nil
 }
 
-func BazelCommands(ctx context.Context, parentEnv map[string]string, verbose bool, cmds ...BazelCommand) error {
+func BbzelCommbnds(ctx context.Context, pbrentEnv mbp[string]string, verbose bool, cmds ...BbzelCommbnd) error {
 	if len(cmds) == 0 {
-		// no Bazel commands so we return
+		// no Bbzel commbnds so we return
 		return nil
 	}
 
@@ -50,24 +50,24 @@ func BazelCommands(ctx context.Context, parentEnv map[string]string, verbose boo
 		return err
 	}
 
-	var targets []string
-	for _, cmd := range cmds {
-		targets = append(targets, cmd.Target)
+	vbr tbrgets []string
+	for _, cmd := rbnge cmds {
+		tbrgets = bppend(tbrgets, cmd.Tbrget)
 	}
 
-	ibazel := newIBazel(repoRoot, targets...)
+	ibbzel := newIBbzel(repoRoot, tbrgets...)
 
-	p := pool.New().WithContext(ctx).WithCancelOnError()
+	p := pool.New().WithContext(ctx).WithCbncelOnError()
 	p.Go(func(ctx context.Context) error {
-		return ibazel.Start(ctx, repoRoot)
+		return ibbzel.Stbrt(ctx, repoRoot)
 	})
 
-	for _, bc := range cmds {
+	for _, bc := rbnge cmds {
 		bc := bc
 		p.Go(func(ctx context.Context) error {
-			return bc.Start(ctx, repoRoot, parentEnv)
+			return bc.Stbrt(ctx, repoRoot, pbrentEnv)
 		})
 	}
 
-	return p.Wait()
+	return p.Wbit()
 }

@@ -1,19 +1,19 @@
-package protocol
+pbckbge protocol
 
 type Project struct {
 	Vertex
 	Kind string `json:"kind"`
 }
 
-func NewProject(id uint64, languageID string) Project {
+func NewProject(id uint64, lbngubgeID string) Project {
 	return Project{
 		Vertex: Vertex{
 			Element: Element{
 				ID:   id,
 				Type: ElementVertex,
 			},
-			Label: VertexProject,
+			Lbbel: VertexProject,
 		},
-		Kind: languageID,
+		Kind: lbngubgeID,
 	}
 }

@@ -1,20 +1,20 @@
-package definitions
+pbckbge definitions
 
 import (
-	"github.com/sourcegraph/sourcegraph/monitoring/definitions/shared"
-	"github.com/sourcegraph/sourcegraph/monitoring/monitoring"
+	"github.com/sourcegrbph/sourcegrbph/monitoring/definitions/shbred"
+	"github.com/sourcegrbph/sourcegrbph/monitoring/monitoring"
 )
 
-func Telemetry() *monitoring.Dashboard {
-	containerName := "worker"
-	return &monitoring.Dashboard{
-		Name:        "telemetry",
+func Telemetry() *monitoring.Dbshbobrd {
+	contbinerNbme := "worker"
+	return &monitoring.Dbshbobrd{
+		Nbme:        "telemetry",
 		Title:       "Telemetry",
-		Description: "Monitoring telemetry services in Sourcegraph.",
+		Description: "Monitoring telemetry services in Sourcegrbph.",
 		Groups: []monitoring.Group{
-			shared.DataAnalytics.NewTelemetryJobOperationsGroup(containerName),
-			shared.DataAnalytics.NewTelemetryJobQueueGroup(containerName),
-			shared.DataAnalytics.TelemetryJobThroughputGroup(containerName),
+			shbred.DbtbAnblytics.NewTelemetryJobOperbtionsGroup(contbinerNbme),
+			shbred.DbtbAnblytics.NewTelemetryJobQueueGroup(contbinerNbme),
+			shbred.DbtbAnblytics.TelemetryJobThroughputGroup(contbinerNbme),
 		},
 	}
 }

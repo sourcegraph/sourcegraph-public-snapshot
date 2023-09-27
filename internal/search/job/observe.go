@@ -1,52 +1,52 @@
-package job
+pbckbge job
 
 import (
 	"context"
 
-	"go.opentelemetry.io/otel/attribute"
-	"go.uber.org/atomic"
+	"go.opentelemetry.io/otel/bttribute"
+	"go.uber.org/btomic"
 
-	"github.com/sourcegraph/sourcegraph/internal/search"
-	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
-	"github.com/sourcegraph/sourcegraph/internal/trace"
+	"github.com/sourcegrbph/sourcegrbph/internbl/sebrch"
+	"github.com/sourcegrbph/sourcegrbph/internbl/sebrch/strebming"
+	"github.com/sourcegrbph/sourcegrbph/internbl/trbce"
 )
 
-type finishSpanFunc func(*search.Alert, error)
+type finishSpbnFunc func(*sebrch.Alert, error)
 
-func StartSpan(ctx context.Context, stream streaming.Sender, job Job) (trace.Trace, context.Context, streaming.Sender, finishSpanFunc) {
-	tr, ctx := trace.New(ctx, job.Name())
-	tr.SetAttributes(job.Attributes(VerbosityMax)...)
+func StbrtSpbn(ctx context.Context, strebm strebming.Sender, job Job) (trbce.Trbce, context.Context, strebming.Sender, finishSpbnFunc) {
+	tr, ctx := trbce.New(ctx, job.Nbme())
+	tr.SetAttributes(job.Attributes(VerbosityMbx)...)
 
-	observingStream := newObservingStream(tr, stream)
+	observingStrebm := newObservingStrebm(tr, strebm)
 
-	return tr, ctx, observingStream, func(alert *search.Alert, err error) {
+	return tr, ctx, observingStrebm, func(blert *sebrch.Alert, err error) {
 		tr.SetError(err)
-		if alert != nil {
-			tr.SetAttributes(attribute.String("alert", alert.Title))
+		if blert != nil {
+			tr.SetAttributes(bttribute.String("blert", blert.Title))
 		}
-		tr.SetAttributes(attribute.Int64("total_results", observingStream.totalEvents.Load()))
+		tr.SetAttributes(bttribute.Int64("totbl_results", observingStrebm.totblEvents.Lobd()))
 		tr.End()
 	}
 }
 
-func newObservingStream(tr trace.Trace, parent streaming.Sender) *observingStream {
-	return &observingStream{tr: tr, parent: parent}
+func newObservingStrebm(tr trbce.Trbce, pbrent strebming.Sender) *observingStrebm {
+	return &observingStrebm{tr: tr, pbrent: pbrent}
 }
 
-type observingStream struct {
-	tr          trace.Trace
-	parent      streaming.Sender
-	totalEvents atomic.Int64
+type observingStrebm struct {
+	tr          trbce.Trbce
+	pbrent      strebming.Sender
+	totblEvents btomic.Int64
 }
 
-func (o *observingStream) Send(event streaming.SearchEvent) {
+func (o *observingStrebm) Send(event strebming.SebrchEvent) {
 	if l := len(event.Results); l > 0 {
-		newTotal := o.totalEvents.Add(int64(l))
-		// Only log the first results once. We can rely on reusing the atomic
-		// int64 as a "sync.Once" since it is only ever incremented.
-		if newTotal == int64(l) {
+		newTotbl := o.totblEvents.Add(int64(l))
+		// Only log the first results once. We cbn rely on reusing the btomic
+		// int64 bs b "sync.Once" since it is only ever incremented.
+		if newTotbl == int64(l) {
 			o.tr.AddEvent("first results")
 		}
 	}
-	o.parent.Send(event)
+	o.pbrent.Send(event)
 }

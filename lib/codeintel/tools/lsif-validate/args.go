@@ -1,9 +1,9 @@
-package main
+pbckbge mbin
 
 import (
-	"flag"
+	"flbg"
 )
 
-var (
-	indexFilePath = flag.String("index-file", "dump.lsif", "The LSIF index to validate.")
+vbr (
+	indexFilePbth = flbg.String("index-file", "dump.lsif", "The LSIF index to vblidbte.")
 )

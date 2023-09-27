@@ -1,109 +1,109 @@
-package env
+pbckbge env
 
 import (
 	"encoding/json"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
-	"gopkg.in/yaml.v2"
+	"gopkg.in/ybml.v2"
 
-	"github.com/sourcegraph/sourcegraph/lib/pointers"
+	"github.com/sourcegrbph/sourcegrbph/lib/pointers"
 )
 
-func TestVariable_MarshalJSON(t *testing.T) {
-	for name, tc := range map[string]struct {
-		in   variable
-		want string
+func TestVbribble_MbrshblJSON(t *testing.T) {
+	for nbme, tc := rbnge mbp[string]struct {
+		in   vbribble
+		wbnt string
 	}{
-		"no value": {
-			in:   variable{name: "foo"},
-			want: `"foo"`,
+		"no vblue": {
+			in:   vbribble{nbme: "foo"},
+			wbnt: `"foo"`,
 		},
-		"with value": {
-			in:   variable{name: "foo", value: pointers.Ptr("bar")},
-			want: `{"foo":"bar"}`,
+		"with vblue": {
+			in:   vbribble{nbme: "foo", vblue: pointers.Ptr("bbr")},
+			wbnt: `{"foo":"bbr"}`,
 		},
 	} {
-		t.Run(name, func(t *testing.T) {
-			have, err := json.Marshal(tc.in)
+		t.Run(nbme, func(t *testing.T) {
+			hbve, err := json.Mbrshbl(tc.in)
 			if err != nil {
 				t.Errorf("unexpected error: %v", err)
 			}
 
-			if string(have) != tc.want {
-				t.Errorf("unexpected value: have=%q want=%q", have, tc.want)
+			if string(hbve) != tc.wbnt {
+				t.Errorf("unexpected vblue: hbve=%q wbnt=%q", hbve, tc.wbnt)
 			}
 		})
 	}
 }
 
-func TestVariable_UnmarshalJSON(t *testing.T) {
+func TestVbribble_UnmbrshblJSON(t *testing.T) {
 	t.Run("success", func(t *testing.T) {
-		for name, tc := range map[string]struct {
+		for nbme, tc := rbnge mbp[string]struct {
 			in   string
-			want variable
+			wbnt vbribble
 		}{
-			"no value": {
+			"no vblue": {
 				in:   `"foo"`,
-				want: variable{name: "foo"},
+				wbnt: vbribble{nbme: "foo"},
 			},
-			"with value": {
-				in:   `{"foo":"bar"}`,
-				want: variable{name: "foo", value: pointers.Ptr("bar")},
+			"with vblue": {
+				in:   `{"foo":"bbr"}`,
+				wbnt: vbribble{nbme: "foo", vblue: pointers.Ptr("bbr")},
 			},
 		} {
-			t.Run(name, func(t *testing.T) {
-				var have variable
-				if err := json.Unmarshal([]byte(tc.in), &have); err != nil {
+			t.Run(nbme, func(t *testing.T) {
+				vbr hbve vbribble
+				if err := json.Unmbrshbl([]byte(tc.in), &hbve); err != nil {
 					t.Errorf("unexpected error: %v", err)
 				}
 
-				if diff := cmp.Diff(have, tc.want); diff != "" {
-					t.Errorf("unexpected value:\n%s", diff)
+				if diff := cmp.Diff(hbve, tc.wbnt); diff != "" {
+					t.Errorf("unexpected vblue:\n%s", diff)
 				}
 			})
 		}
 	})
 
-	t.Run("failure", func(t *testing.T) {
-		t.Run("invalid types", func(t *testing.T) {
-			for name, in := range map[string]string{
-				"invalid outer type": `false`,
-				"invalid inner type": `{"foo":false}`,
+	t.Run("fbilure", func(t *testing.T) {
+		t.Run("invblid types", func(t *testing.T) {
+			for nbme, in := rbnge mbp[string]string{
+				"invblid outer type": `fblse`,
+				"invblid inner type": `{"foo":fblse}`,
 			} {
-				t.Run(name, func(t *testing.T) {
-					var have variable
-					if err := json.Unmarshal([]byte(in), &have); err == nil {
+				t.Run(nbme, func(t *testing.T) {
+					vbr hbve vbribble
+					if err := json.Unmbrshbl([]byte(in), &hbve); err == nil {
 						t.Error("unexpected nil error")
-					} else if err != errInvalidVariableType {
-						t.Errorf("unexpected error: have=%v want=%v", err, errInvalidVariableType)
+					} else if err != errInvblidVbribbleType {
+						t.Errorf("unexpected error: hbve=%v wbnt=%v", err, errInvblidVbribbleType)
 					}
 				})
 			}
 		})
 
-		t.Run("invalid objects", func(t *testing.T) {
-			for name, tc := range map[string]struct {
+		t.Run("invblid objects", func(t *testing.T) {
+			for nbme, tc := rbnge mbp[string]struct {
 				in   string
-				want int
+				wbnt int
 			}{
 				"no properties": {
 					in:   `{}`,
-					want: 0,
+					wbnt: 0,
 				},
-				"too many properties": {
-					in:   `{"a":"b","c":"d"}`,
-					want: 2,
+				"too mbny properties": {
+					in:   `{"b":"b","c":"d"}`,
+					wbnt: 2,
 				},
 			} {
-				t.Run(name, func(t *testing.T) {
-					var have variable
-					if err := json.Unmarshal([]byte(tc.in), &have); err == nil {
+				t.Run(nbme, func(t *testing.T) {
+					vbr hbve vbribble
+					if err := json.Unmbrshbl([]byte(tc.in), &hbve); err == nil {
 						t.Error("unexpected nil error")
-					} else if e, ok := err.(errInvalidVariableObject); !ok {
+					} else if e, ok := err.(errInvblidVbribbleObject); !ok {
 						t.Errorf("unexpected error of type %T: %v", err, err)
-					} else if e.n != tc.want {
-						t.Errorf("unexpected number of properties in the error: have=%d want=%d", e.n, tc.want)
+					} else if e.n != tc.wbnt {
+						t.Errorf("unexpected number of properties in the error: hbve=%d wbnt=%d", e.n, tc.wbnt)
 					} else if e.Error() == "" {
 						t.Error("unexpected empty error string")
 					}
@@ -113,73 +113,73 @@ func TestVariable_UnmarshalJSON(t *testing.T) {
 	})
 }
 
-func TestVariable_UnmarshalYAML(t *testing.T) {
+func TestVbribble_UnmbrshblYAML(t *testing.T) {
 	t.Run("success", func(t *testing.T) {
-		for name, tc := range map[string]struct {
+		for nbme, tc := rbnge mbp[string]struct {
 			in   string
-			want variable
+			wbnt vbribble
 		}{
-			"no value": {
+			"no vblue": {
 				in:   `foo`,
-				want: variable{name: "foo"},
+				wbnt: vbribble{nbme: "foo"},
 			},
-			"with value": {
-				in:   `foo: bar`,
-				want: variable{name: "foo", value: pointers.Ptr("bar")},
+			"with vblue": {
+				in:   `foo: bbr`,
+				wbnt: vbribble{nbme: "foo", vblue: pointers.Ptr("bbr")},
 			},
 		} {
-			t.Run(name, func(t *testing.T) {
-				var have variable
-				if err := yaml.Unmarshal([]byte(tc.in), &have); err != nil {
+			t.Run(nbme, func(t *testing.T) {
+				vbr hbve vbribble
+				if err := ybml.Unmbrshbl([]byte(tc.in), &hbve); err != nil {
 					t.Errorf("unexpected error: %v", err)
 				}
 
-				if diff := cmp.Diff(have, tc.want); diff != "" {
-					t.Errorf("unexpected value:\n%s", diff)
+				if diff := cmp.Diff(hbve, tc.wbnt); diff != "" {
+					t.Errorf("unexpected vblue:\n%s", diff)
 				}
 			})
 		}
 	})
 
-	t.Run("failure", func(t *testing.T) {
-		t.Run("invalid types", func(t *testing.T) {
-			for name, in := range map[string]string{
-				"invalid outer type": `[]`,
-				"invalid inner type": `foo: []`,
+	t.Run("fbilure", func(t *testing.T) {
+		t.Run("invblid types", func(t *testing.T) {
+			for nbme, in := rbnge mbp[string]string{
+				"invblid outer type": `[]`,
+				"invblid inner type": `foo: []`,
 			} {
-				t.Run(name, func(t *testing.T) {
-					var have variable
-					if err := yaml.Unmarshal([]byte(in), &have); err == nil {
+				t.Run(nbme, func(t *testing.T) {
+					vbr hbve vbribble
+					if err := ybml.Unmbrshbl([]byte(in), &hbve); err == nil {
 						t.Error("unexpected nil error")
-					} else if err != errInvalidVariableType {
-						t.Errorf("unexpected error: have=%v want=%v", err, errInvalidVariableType)
+					} else if err != errInvblidVbribbleType {
+						t.Errorf("unexpected error: hbve=%v wbnt=%v", err, errInvblidVbribbleType)
 					}
 				})
 			}
 		})
 
-		t.Run("invalid objects", func(t *testing.T) {
-			for name, tc := range map[string]struct {
+		t.Run("invblid objects", func(t *testing.T) {
+			for nbme, tc := rbnge mbp[string]struct {
 				in   string
-				want int
+				wbnt int
 			}{
 				"no properties": {
 					in:   `{}`,
-					want: 0,
+					wbnt: 0,
 				},
-				"too many properties": {
-					in:   "a: b\nc: d",
-					want: 2,
+				"too mbny properties": {
+					in:   "b: b\nc: d",
+					wbnt: 2,
 				},
 			} {
-				t.Run(name, func(t *testing.T) {
-					var have variable
-					if err := yaml.Unmarshal([]byte(tc.in), &have); err == nil {
+				t.Run(nbme, func(t *testing.T) {
+					vbr hbve vbribble
+					if err := ybml.Unmbrshbl([]byte(tc.in), &hbve); err == nil {
 						t.Error("unexpected nil error")
-					} else if e, ok := err.(errInvalidVariableObject); !ok {
+					} else if e, ok := err.(errInvblidVbribbleObject); !ok {
 						t.Errorf("unexpected error of type %T: %v", err, err)
-					} else if e.n != tc.want {
-						t.Errorf("unexpected number of properties in the error: have=%d want=%d", e.n, tc.want)
+					} else if e.n != tc.wbnt {
+						t.Errorf("unexpected number of properties in the error: hbve=%d wbnt=%d", e.n, tc.wbnt)
 					} else if e.Error() == "" {
 						t.Error("unexpected empty error string")
 					}

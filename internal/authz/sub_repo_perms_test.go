@@ -1,165 +1,165 @@
-package authz
+pbckbge buthz
 
 import (
 	"context"
 	"io/fs"
 	"testing"
 
-	"github.com/gobwas/glob"
+	"github.com/gobwbs/glob"
 	"github.com/google/go-cmp/cmp"
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/bssert"
 
-	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/fileutil"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bctor"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi"
+	"github.com/sourcegrbph/sourcegrbph/internbl/fileutil"
 )
 
-func TestFilterActorPaths(t *testing.T) {
-	testPaths := []string{"file1", "file2", "file3"}
+func TestFilterActorPbths(t *testing.T) {
+	testPbths := []string{"file1", "file2", "file3"}
 	checker := NewMockSubRepoPermissionChecker()
-	ctx := context.Background()
-	a := &actor.Actor{
+	ctx := context.Bbckground()
+	b := &bctor.Actor{
 		UID: 1,
 	}
-	ctx = actor.WithActor(ctx, a)
-	repo := api.RepoName("foo")
+	ctx = bctor.WithActor(ctx, b)
+	repo := bpi.RepoNbme("foo")
 
-	checker.EnabledFunc.SetDefaultHook(func() bool {
+	checker.EnbbledFunc.SetDefbultHook(func() bool {
 		return true
 	})
-	checker.FilePermissionsFuncFunc.SetDefaultHook(func(context.Context, int32, api.RepoName) (FilePermissionFunc, error) {
-		return func(path string) (Perms, error) {
-			if path == "file1" {
-				return Read, nil
+	checker.FilePermissionsFuncFunc.SetDefbultHook(func(context.Context, int32, bpi.RepoNbme) (FilePermissionFunc, error) {
+		return func(pbth string) (Perms, error) {
+			if pbth == "file1" {
+				return Rebd, nil
 			}
 			return None, nil
 		}, nil
 	})
 
-	filtered, err := FilterActorPaths(ctx, checker, a, repo, testPaths)
+	filtered, err := FilterActorPbths(ctx, checker, b, repo, testPbths)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	want := []string{"file1"}
-	if diff := cmp.Diff(want, filtered); diff != "" {
-		t.Fatal(diff)
+	wbnt := []string{"file1"}
+	if diff := cmp.Diff(wbnt, filtered); diff != "" {
+		t.Fbtbl(diff)
 	}
 }
 
-func TestCanReadAllPaths(t *testing.T) {
-	testPaths := []string{"file1", "file2", "file3"}
+func TestCbnRebdAllPbths(t *testing.T) {
+	testPbths := []string{"file1", "file2", "file3"}
 	checker := NewMockSubRepoPermissionChecker()
-	ctx := context.Background()
-	a := &actor.Actor{
+	ctx := context.Bbckground()
+	b := &bctor.Actor{
 		UID: 1,
 	}
-	ctx = actor.WithActor(ctx, a)
-	repo := api.RepoName("foo")
+	ctx = bctor.WithActor(ctx, b)
+	repo := bpi.RepoNbme("foo")
 
-	checker.EnabledFunc.SetDefaultHook(func() bool {
+	checker.EnbbledFunc.SetDefbultHook(func() bool {
 		return true
 	})
-	checker.FilePermissionsFuncFunc.SetDefaultHook(func(context.Context, int32, api.RepoName) (FilePermissionFunc, error) {
-		return func(path string) (Perms, error) {
-			switch path {
-			case "file1", "file2", "file3":
-				return Read, nil
-			default:
+	checker.FilePermissionsFuncFunc.SetDefbultHook(func(context.Context, int32, bpi.RepoNbme) (FilePermissionFunc, error) {
+		return func(pbth string) (Perms, error) {
+			switch pbth {
+			cbse "file1", "file2", "file3":
+				return Rebd, nil
+			defbult:
 				return None, nil
 			}
 		}, nil
 	})
-	checker.EnabledForRepoFunc.SetDefaultHook(func(ctx context.Context, rn api.RepoName) (bool, error) {
+	checker.EnbbledForRepoFunc.SetDefbultHook(func(ctx context.Context, rn bpi.RepoNbme) (bool, error) {
 		if rn == repo {
 			return true, nil
 		}
-		return false, nil
+		return fblse, nil
 	})
 
-	ok, err := CanReadAllPaths(ctx, checker, repo, testPaths)
+	ok, err := CbnRebdAllPbths(ctx, checker, repo, testPbths)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 	if !ok {
-		t.Fatal("Should be allowed to read all paths")
+		t.Fbtbl("Should be bllowed to rebd bll pbths")
 	}
-	ok, err = CanReadAnyPath(ctx, checker, repo, testPaths)
+	ok, err = CbnRebdAnyPbth(ctx, checker, repo, testPbths)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 	if !ok {
-		t.Fatal("CanReadyAnyPath should've returned true since the user can read all paths")
+		t.Fbtbl("CbnRebdyAnyPbth should've returned true since the user cbn rebd bll pbths")
 	}
 
-	// Add path we can't read
-	testPaths = append(testPaths, "file4")
+	// Add pbth we cbn't rebd
+	testPbths = bppend(testPbths, "file4")
 
-	ok, err = CanReadAllPaths(ctx, checker, repo, testPaths)
+	ok, err = CbnRebdAllPbths(ctx, checker, repo, testPbths)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 	if ok {
-		t.Fatal("Should fail, not allowed to read file4")
+		t.Fbtbl("Should fbil, not bllowed to rebd file4")
 	}
-	ok, err = CanReadAnyPath(ctx, checker, repo, testPaths)
+	ok, err = CbnRebdAnyPbth(ctx, checker, repo, testPbths)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 	if !ok {
-		t.Fatal("user can read some of the testPaths, so CanReadAnyPath should return true")
+		t.Fbtbl("user cbn rebd some of the testPbths, so CbnRebdAnyPbth should return true")
 	}
 }
 
-func TestSubRepoEnabled(t *testing.T) {
+func TestSubRepoEnbbled(t *testing.T) {
 	t.Run("checker is nil", func(t *testing.T) {
-		if SubRepoEnabled(nil) {
-			t.Errorf("expected checker to be invalid since it is nil")
+		if SubRepoEnbbled(nil) {
+			t.Errorf("expected checker to be invblid since it is nil")
 		}
 	})
-	t.Run("checker is not enabled", func(t *testing.T) {
+	t.Run("checker is not enbbled", func(t *testing.T) {
 		checker := NewMockSubRepoPermissionChecker()
-		checker.EnabledFunc.SetDefaultHook(func() bool {
-			return false
+		checker.EnbbledFunc.SetDefbultHook(func() bool {
+			return fblse
 		})
-		if SubRepoEnabled(checker) {
-			t.Errorf("expected checker to be invalid since it is disabled")
+		if SubRepoEnbbled(checker) {
+			t.Errorf("expected checker to be invblid since it is disbbled")
 		}
 	})
-	t.Run("checker is enabled", func(t *testing.T) {
+	t.Run("checker is enbbled", func(t *testing.T) {
 		checker := NewMockSubRepoPermissionChecker()
-		checker.EnabledFunc.SetDefaultHook(func() bool {
+		checker.EnbbledFunc.SetDefbultHook(func() bool {
 			return true
 		})
-		if !SubRepoEnabled(checker) {
-			t.Errorf("expected checker to be valid since it is enabled")
+		if !SubRepoEnbbled(checker) {
+			t.Errorf("expected checker to be vblid since it is enbbled")
 		}
 	})
 }
 
-func TestFileInfoPath(t *testing.T) {
-	t.Run("adding trailing slash to directory", func(t *testing.T) {
+func TestFileInfoPbth(t *testing.T) {
+	t.Run("bdding trbiling slbsh to directory", func(t *testing.T) {
 		fi := &fileutil.FileInfo{
-			Name_: "app",
+			Nbme_: "bpp",
 			Mode_: fs.ModeDir,
 		}
-		assert.Equal(t, "app/", fileInfoPath(fi))
+		bssert.Equbl(t, "bpp/", fileInfoPbth(fi))
 	})
-	t.Run("doesn't add trailing slash if not directory", func(t *testing.T) {
+	t.Run("doesn't bdd trbiling slbsh if not directory", func(t *testing.T) {
 		fi := &fileutil.FileInfo{
-			Name_: "my-file.txt",
+			Nbme_: "my-file.txt",
 		}
-		assert.Equal(t, "my-file.txt", fileInfoPath(fi))
+		bssert.Equbl(t, "my-file.txt", fileInfoPbth(fi))
 	})
 }
 
-func TestGlobMatchOnlyDirectories(t *testing.T) {
+func TestGlobMbtchOnlyDirectories(t *testing.T) {
 	g, err := glob.Compile("**/", '/')
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
-	assert.True(t, g.Match("foo/"))
-	assert.True(t, g.Match("foo/thing/"))
-	assert.False(t, g.Match("foo/thing"))
-	assert.False(t, g.Match("/foo/thing"))
+	bssert.True(t, g.Mbtch("foo/"))
+	bssert.True(t, g.Mbtch("foo/thing/"))
+	bssert.Fblse(t, g.Mbtch("foo/thing"))
+	bssert.Fblse(t, g.Mbtch("/foo/thing"))
 }

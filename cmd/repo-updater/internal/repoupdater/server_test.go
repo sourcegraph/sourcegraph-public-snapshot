@@ -1,9 +1,9 @@
-package repoupdater
+pbckbge repoupdbter
 
 import (
 	"bytes"
 	"context"
-	"database/sql"
+	"dbtbbbse/sql"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -15,86 +15,86 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
-	"go.opentelemetry.io/otel/trace"
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
+	"go.opentelemetry.io/otel/trbce"
+	"google.golbng.org/grpc"
+	"google.golbng.org/grpc/codes"
+	"google.golbng.org/grpc/stbtus"
 
-	"github.com/sourcegraph/log/logtest"
+	"github.com/sourcegrbph/log/logtest"
 
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/awscodecommit"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
-	internalgrpc "github.com/sourcegraph/sourcegraph/internal/grpc"
-	"github.com/sourcegraph/sourcegraph/internal/grpc/defaults"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/internal/repos"
-	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
-	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
-	proto "github.com/sourcegraph/sourcegraph/internal/repoupdater/v1"
-	"github.com/sourcegraph/sourcegraph/internal/timeutil"
-	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/internal/types/typestest"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf/reposource"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbmocks"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbtest"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc/buth"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc/bwscodecommit"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc/github"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc/gitlbb"
+	internblgrpc "github.com/sourcegrbph/sourcegrbph/internbl/grpc"
+	"github.com/sourcegrbph/sourcegrbph/internbl/grpc/defbults"
+	"github.com/sourcegrbph/sourcegrbph/internbl/observbtion"
+	"github.com/sourcegrbph/sourcegrbph/internbl/repos"
+	"github.com/sourcegrbph/sourcegrbph/internbl/repoupdbter"
+	"github.com/sourcegrbph/sourcegrbph/internbl/repoupdbter/protocol"
+	proto "github.com/sourcegrbph/sourcegrbph/internbl/repoupdbter/v1"
+	"github.com/sourcegrbph/sourcegrbph/internbl/timeutil"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types/typestest"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-func TestServer_handleRepoLookup(t *testing.T) {
+func TestServer_hbndleRepoLookup(t *testing.T) {
 	logger := logtest.Scoped(t)
 	s := &Server{Logger: logger}
 
-	h := ObservedHandler(
+	h := ObservedHbndler(
 		logger,
-		NewHandlerMetrics(),
-		trace.NewNoopTracerProvider(),
-	)(s.Handler())
+		NewHbndlerMetrics(),
+		trbce.NewNoopTrbcerProvider(),
+	)(s.Hbndler())
 
-	repoLookup := func(t *testing.T, repo api.RepoName) (resp *protocol.RepoLookupResult, statusCode int) {
+	repoLookup := func(t *testing.T, repo bpi.RepoNbme) (resp *protocol.RepoLookupResult, stbtusCode int) {
 		t.Helper()
 		rr := httptest.NewRecorder()
-		body, err := json.Marshal(protocol.RepoLookupArgs{Repo: repo})
+		body, err := json.Mbrshbl(protocol.RepoLookupArgs{Repo: repo})
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
-		req := httptest.NewRequest("GET", "/repo-lookup", bytes.NewReader(body))
+		req := httptest.NewRequest("GET", "/repo-lookup", bytes.NewRebder(body))
 		fmt.Printf("h: %v rr: %v req: %v\n", h, rr, req)
 		h.ServeHTTP(rr, req)
-		if rr.Code == http.StatusOK {
+		if rr.Code == http.StbtusOK {
 			if err := json.NewDecoder(rr.Body).Decode(&resp); err != nil {
-				t.Fatal(err)
+				t.Fbtbl(err)
 			}
 		}
 		return resp, rr.Code
 	}
-	repoLookupResult := func(t *testing.T, repo api.RepoName) protocol.RepoLookupResult {
+	repoLookupResult := func(t *testing.T, repo bpi.RepoNbme) protocol.RepoLookupResult {
 		t.Helper()
-		resp, statusCode := repoLookup(t, repo)
-		if statusCode != http.StatusOK {
-			t.Fatalf("http non-200 status %d", statusCode)
+		resp, stbtusCode := repoLookup(t, repo)
+		if stbtusCode != http.StbtusOK {
+			t.Fbtblf("http non-200 stbtus %d", stbtusCode)
 		}
 		return *resp
 	}
 
-	t.Run("args", func(t *testing.T) {
-		called := false
-		mockRepoLookup = func(args protocol.RepoLookupArgs) (*protocol.RepoLookupResult, error) {
-			called = true
-			if want := api.RepoName("github.com/a/b"); args.Repo != want {
-				t.Errorf("got owner %q, want %q", args.Repo, want)
+	t.Run("brgs", func(t *testing.T) {
+		cblled := fblse
+		mockRepoLookup = func(brgs protocol.RepoLookupArgs) (*protocol.RepoLookupResult, error) {
+			cblled = true
+			if wbnt := bpi.RepoNbme("github.com/b/b"); brgs.Repo != wbnt {
+				t.Errorf("got owner %q, wbnt %q", brgs.Repo, wbnt)
 			}
 			return &protocol.RepoLookupResult{Repo: nil}, nil
 		}
 		defer func() { mockRepoLookup = nil }()
 
-		repoLookupResult(t, "github.com/a/b")
-		if !called {
-			t.Error("!called")
+		repoLookupResult(t, "github.com/b/b")
+		if !cblled {
+			t.Error("!cblled")
 		}
 	})
 
@@ -104,8 +104,8 @@ func TestServer_handleRepoLookup(t *testing.T) {
 		}
 		defer func() { mockRepoLookup = nil }()
 
-		if got, want := repoLookupResult(t, "github.com/a/b"), (protocol.RepoLookupResult{}); !reflect.DeepEqual(got, want) {
-			t.Errorf("got %+v, want %+v", got, want)
+		if got, wbnt := repoLookupResult(t, "github.com/b/b"), (protocol.RepoLookupResult{}); !reflect.DeepEqubl(got, wbnt) {
+			t.Errorf("got %+v, wbnt %+v", got, wbnt)
 		}
 	})
 
@@ -115,134 +115,134 @@ func TestServer_handleRepoLookup(t *testing.T) {
 		}
 		defer func() { mockRepoLookup = nil }()
 
-		result, statusCode := repoLookup(t, "github.com/a/b")
+		result, stbtusCode := repoLookup(t, "github.com/b/b")
 		if result != nil {
-			t.Errorf("got result %+v, want nil", result)
+			t.Errorf("got result %+v, wbnt nil", result)
 		}
-		if want := http.StatusInternalServerError; statusCode != want {
-			t.Errorf("got HTTP status code %d, want %d", statusCode, want)
+		if wbnt := http.StbtusInternblServerError; stbtusCode != wbnt {
+			t.Errorf("got HTTP stbtus code %d, wbnt %d", stbtusCode, wbnt)
 		}
 	})
 
 	t.Run("found", func(t *testing.T) {
-		want := protocol.RepoLookupResult{
+		wbnt := protocol.RepoLookupResult{
 			Repo: &protocol.RepoInfo{
-				ExternalRepo: api.ExternalRepoSpec{
-					ID:          "a",
+				ExternblRepo: bpi.ExternblRepoSpec{
+					ID:          "b",
 					ServiceType: extsvc.TypeGitHub,
 					ServiceID:   "https://github.com/",
 				},
-				Name:        "github.com/c/d",
+				Nbme:        "github.com/c/d",
 				Description: "b",
 				Fork:        true,
 			},
 		}
 		mockRepoLookup = func(protocol.RepoLookupArgs) (*protocol.RepoLookupResult, error) {
-			return &want, nil
+			return &wbnt, nil
 		}
 		defer func() { mockRepoLookup = nil }()
-		if got := repoLookupResult(t, "github.com/c/d"); !reflect.DeepEqual(got, want) {
-			t.Errorf("got %+v, want %+v", got, want)
+		if got := repoLookupResult(t, "github.com/c/d"); !reflect.DeepEqubl(got, wbnt) {
+			t.Errorf("got %+v, wbnt %+v", got, wbnt)
 		}
 	})
 }
 
-func TestServer_EnqueueRepoUpdate(t *testing.T) {
-	ctx := context.Background()
+func TestServer_EnqueueRepoUpdbte(t *testing.T) {
+	ctx := context.Bbckground()
 
-	svc := types.ExternalService{
+	svc := types.ExternblService{
 		Kind: extsvc.KindGitHub,
 		Config: extsvc.NewUnencryptedConfig(`{
 "url": "https://github.com",
 "token": "secret-token",
-"repos": ["owner/name"]
+"repos": ["owner/nbme"]
 }`),
 	}
 
 	repo := types.Repo{
 		ID:   1,
-		Name: "github.com/foo/bar",
-		ExternalRepo: api.ExternalRepoSpec{
-			ID:          "bar",
+		Nbme: "github.com/foo/bbr",
+		ExternblRepo: bpi.ExternblRepoSpec{
+			ID:          "bbr",
 			ServiceType: extsvc.TypeGitHub,
 			ServiceID:   "https://github.com",
 		},
-		Metadata: new(github.Repository),
+		Metbdbtb: new(github.Repository),
 	}
 
-	initStore := func(db database.DB) repos.Store {
+	initStore := func(db dbtbbbse.DB) repos.Store {
 		store := repos.NewStore(logtest.Scoped(t), db)
-		if err := store.ExternalServiceStore().Upsert(ctx, &svc); err != nil {
-			t.Fatal(err)
+		if err := store.ExternblServiceStore().Upsert(ctx, &svc); err != nil {
+			t.Fbtbl(err)
 		}
-		if err := store.RepoStore().Create(ctx, &repo); err != nil {
-			t.Fatal(err)
+		if err := store.RepoStore().Crebte(ctx, &repo); err != nil {
+			t.Fbtbl(err)
 		}
 		return store
 	}
 
-	type testCase struct {
-		name string
-		repo api.RepoName
-		res  *protocol.RepoUpdateResponse
+	type testCbse struct {
+		nbme string
+		repo bpi.RepoNbme
+		res  *protocol.RepoUpdbteResponse
 		err  string
-		init func(database.DB) repos.Store
+		init func(dbtbbbse.DB) repos.Store
 	}
 
-	testCases := []testCase{{
-		name: "returns an error on store failure",
-		init: func(realDB database.DB) repos.Store {
+	testCbses := []testCbse{{
+		nbme: "returns bn error on store fbilure",
+		init: func(reblDB dbtbbbse.DB) repos.Store {
 			mockRepos := dbmocks.NewMockRepoStore()
-			mockRepos.ListFunc.SetDefaultReturn(nil, errors.New("boom"))
-			realStore := initStore(realDB)
-			mockStore := repos.NewMockStoreFrom(realStore)
-			mockStore.RepoStoreFunc.SetDefaultReturn(mockRepos)
+			mockRepos.ListFunc.SetDefbultReturn(nil, errors.New("boom"))
+			reblStore := initStore(reblDB)
+			mockStore := repos.NewMockStoreFrom(reblStore)
+			mockStore.RepoStoreFunc.SetDefbultReturn(mockRepos)
 			return mockStore
 		},
 		err: `store.list-repos: boom`,
 	}, {
-		name: "missing repo",
+		nbme: "missing repo",
 		init: initStore,
 		repo: "foo",
 		err:  `repo foo not found with response: repo "foo" not found in store`,
 	}, {
-		name: "existing repo",
-		repo: repo.Name,
+		nbme: "existing repo",
+		repo: repo.Nbme,
 		init: initStore,
-		res: &protocol.RepoUpdateResponse{
+		res: &protocol.RepoUpdbteResponse{
 			ID:   repo.ID,
-			Name: string(repo.Name),
+			Nbme: string(repo.Nbme),
 		},
 	}}
 
 	logger := logtest.Scoped(t)
-	for _, tc := range testCases {
+	for _, tc := rbnge testCbses {
 		tc := tc
-		ctx := context.Background()
+		ctx := context.Bbckground()
 
-		t.Run(tc.name, func(t *testing.T) {
+		t.Run(tc.nbme, func(t *testing.T) {
 			sqlDB := dbtest.NewDB(logger, t)
-			store := tc.init(database.NewDB(logger, sqlDB))
+			store := tc.init(dbtbbbse.NewDB(logger, sqlDB))
 
-			s := &Server{Logger: logger, Store: store, Scheduler: &fakeScheduler{}}
-			gs := grpc.NewServer(defaults.ServerOptions(logger)...)
-			proto.RegisterRepoUpdaterServiceServer(gs, &RepoUpdaterServiceServer{Server: s})
+			s := &Server{Logger: logger, Store: store, Scheduler: &fbkeScheduler{}}
+			gs := grpc.NewServer(defbults.ServerOptions(logger)...)
+			proto.RegisterRepoUpdbterServiceServer(gs, &RepoUpdbterServiceServer{Server: s})
 
-			srv := httptest.NewServer(internalgrpc.MultiplexHandlers(gs, s.Handler()))
+			srv := httptest.NewServer(internblgrpc.MultiplexHbndlers(gs, s.Hbndler()))
 			defer srv.Close()
 
-			cli := repoupdater.NewClient(srv.URL)
+			cli := repoupdbter.NewClient(srv.URL)
 			if tc.err == "" {
 				tc.err = "<nil>"
 			}
 
-			res, err := cli.EnqueueRepoUpdate(ctx, tc.repo)
-			if have, want := fmt.Sprint(err), tc.err; !strings.Contains(have, want) {
-				t.Errorf("have err: %q, want: %q", have, want)
+			res, err := cli.EnqueueRepoUpdbte(ctx, tc.repo)
+			if hbve, wbnt := fmt.Sprint(err), tc.err; !strings.Contbins(hbve, wbnt) {
+				t.Errorf("hbve err: %q, wbnt: %q", hbve, wbnt)
 			}
 
-			if have, want := res, tc.res; !reflect.DeepEqual(have, want) {
-				t.Errorf("response: %s", cmp.Diff(have, want))
+			if hbve, wbnt := res, tc.res; !reflect.DeepEqubl(hbve, wbnt) {
+				t.Errorf("response: %s", cmp.Diff(hbve, wbnt))
 			}
 		})
 	}
@@ -251,47 +251,47 @@ func TestServer_EnqueueRepoUpdate(t *testing.T) {
 func TestServer_RepoLookup(t *testing.T) {
 	logger := logtest.Scoped(t)
 	db := dbtest.NewDB(logger, t)
-	store := repos.NewStore(logger, database.NewDB(logger, db))
-	ctx := context.Background()
-	clock := timeutil.NewFakeClock(time.Now(), 0)
+	store := repos.NewStore(logger, dbtbbbse.NewDB(logger, db))
+	ctx := context.Bbckground()
+	clock := timeutil.NewFbkeClock(time.Now(), 0)
 	now := clock.Now()
 
-	githubSource := types.ExternalService{
+	githubSource := types.ExternblService{
 		Kind:         extsvc.KindGitHub,
-		CloudDefault: true,
+		CloudDefbult: true,
 		Config: extsvc.NewUnencryptedConfig(`{
 "url": "https://github.com",
 "token": "secret-token",
-"repos": ["owner/name"]
+"repos": ["owner/nbme"]
 }`),
 	}
-	awsSource := types.ExternalService{
+	bwsSource := types.ExternblService{
 		Kind: extsvc.KindAWSCodeCommit,
 		Config: extsvc.NewUnencryptedConfig(`
 {
-  "region": "us-east-1",
-  "accessKeyID": "abc",
-  "secretAccessKey": "abc",
-  "gitCredentials": {
-    "username": "user",
-    "password": "pass"
+  "region": "us-ebst-1",
+  "bccessKeyID": "bbc",
+  "secretAccessKey": "bbc",
+  "gitCredentibls": {
+    "usernbme": "user",
+    "pbssword": "pbss"
   }
 }
 `),
 	}
-	gitlabSource := types.ExternalService{
-		Kind:         extsvc.KindGitLab,
-		CloudDefault: true,
+	gitlbbSource := types.ExternblService{
+		Kind:         extsvc.KindGitLbb,
+		CloudDefbult: true,
 		Config: extsvc.NewUnencryptedConfig(`
 {
-  "url": "https://gitlab.com",
-  "token": "abc",
+  "url": "https://gitlbb.com",
+  "token": "bbc",
   "projectQuery": ["none"]
 }
 `),
 	}
-	npmSource := types.ExternalService{
-		Kind: extsvc.KindNpmPackages,
+	npmSource := types.ExternblService{
+		Kind: extsvc.KindNpmPbckbges,
 		Config: extsvc.NewUnencryptedConfig(`
 {
   "registry": "npm.org"
@@ -299,359 +299,359 @@ func TestServer_RepoLookup(t *testing.T) {
 `),
 	}
 
-	if err := store.ExternalServiceStore().Upsert(ctx, &githubSource, &awsSource, &gitlabSource, &npmSource); err != nil {
-		t.Fatal(err)
+	if err := store.ExternblServiceStore().Upsert(ctx, &githubSource, &bwsSource, &gitlbbSource, &npmSource); err != nil {
+		t.Fbtbl(err)
 	}
 
 	githubRepository := &types.Repo{
-		Name:        "github.com/foo/bar",
+		Nbme:        "github.com/foo/bbr",
 		Description: "The description",
-		Archived:    false,
-		Fork:        false,
-		CreatedAt:   now,
-		UpdatedAt:   now,
-		ExternalRepo: api.ExternalRepoSpec{
+		Archived:    fblse,
+		Fork:        fblse,
+		CrebtedAt:   now,
+		UpdbtedAt:   now,
+		ExternblRepo: bpi.ExternblRepoSpec{
 			ID:          "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
 			ServiceType: extsvc.TypeGitHub,
 			ServiceID:   "https://github.com/",
 		},
-		Sources: map[string]*types.SourceInfo{
+		Sources: mbp[string]*types.SourceInfo{
 			githubSource.URN(): {
 				ID:       githubSource.URN(),
-				CloneURL: "git@github.com:foo/bar.git",
+				CloneURL: "git@github.com:foo/bbr.git",
 			},
 		},
-		Metadata: &github.Repository{
+		Metbdbtb: &github.Repository{
 			ID:            "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
-			URL:           "github.com/foo/bar",
-			DatabaseID:    1234,
+			URL:           "github.com/foo/bbr",
+			DbtbbbseID:    1234,
 			Description:   "The description",
-			NameWithOwner: "foo/bar",
+			NbmeWithOwner: "foo/bbr",
 		},
 	}
 
-	awsCodeCommitRepository := &types.Repo{
-		Name:        "git-codecommit.us-west-1.amazonaws.com/stripe-go",
+	bwsCodeCommitRepository := &types.Repo{
+		Nbme:        "git-codecommit.us-west-1.bmbzonbws.com/stripe-go",
 		Description: "The stripe-go lib",
-		Archived:    false,
-		Fork:        false,
-		CreatedAt:   now,
-		ExternalRepo: api.ExternalRepoSpec{
-			ID:          "f001337a-3450-46fd-b7d2-650c0EXAMPLE",
+		Archived:    fblse,
+		Fork:        fblse,
+		CrebtedAt:   now,
+		ExternblRepo: bpi.ExternblRepoSpec{
+			ID:          "f001337b-3450-46fd-b7d2-650c0EXAMPLE",
 			ServiceType: extsvc.TypeAWSCodeCommit,
-			ServiceID:   "arn:aws:codecommit:us-west-1:999999999999:",
+			ServiceID:   "brn:bws:codecommit:us-west-1:999999999999:",
 		},
-		Sources: map[string]*types.SourceInfo{
-			awsSource.URN(): {
-				ID:       awsSource.URN(),
-				CloneURL: "git@git-codecommit.us-west-1.amazonaws.com/v1/repos/stripe-go",
+		Sources: mbp[string]*types.SourceInfo{
+			bwsSource.URN(): {
+				ID:       bwsSource.URN(),
+				CloneURL: "git@git-codecommit.us-west-1.bmbzonbws.com/v1/repos/stripe-go",
 			},
 		},
-		Metadata: &awscodecommit.Repository{
-			ARN:          "arn:aws:codecommit:us-west-1:999999999999:stripe-go",
+		Metbdbtb: &bwscodecommit.Repository{
+			ARN:          "brn:bws:codecommit:us-west-1:999999999999:stripe-go",
 			AccountID:    "999999999999",
-			ID:           "f001337a-3450-46fd-b7d2-650c0EXAMPLE",
-			Name:         "stripe-go",
+			ID:           "f001337b-3450-46fd-b7d2-650c0EXAMPLE",
+			Nbme:         "stripe-go",
 			Description:  "The stripe-go lib",
-			HTTPCloneURL: "https://git-codecommit.us-west-1.amazonaws.com/v1/repos/stripe-go",
-			LastModified: &now,
+			HTTPCloneURL: "https://git-codecommit.us-west-1.bmbzonbws.com/v1/repos/stripe-go",
+			LbstModified: &now,
 		},
 	}
 
-	gitlabRepository := &types.Repo{
-		Name:        "gitlab.com/gitlab-org/gitaly",
-		Description: "Gitaly is a Git RPC service for handling all the git calls made by GitLab",
-		URI:         "gitlab.com/gitlab-org/gitaly",
-		CreatedAt:   now,
-		UpdatedAt:   now,
-		ExternalRepo: api.ExternalRepoSpec{
+	gitlbbRepository := &types.Repo{
+		Nbme:        "gitlbb.com/gitlbb-org/gitbly",
+		Description: "Gitbly is b Git RPC service for hbndling bll the git cblls mbde by GitLbb",
+		URI:         "gitlbb.com/gitlbb-org/gitbly",
+		CrebtedAt:   now,
+		UpdbtedAt:   now,
+		ExternblRepo: bpi.ExternblRepoSpec{
 			ID:          "2009901",
-			ServiceType: extsvc.TypeGitLab,
-			ServiceID:   "https://gitlab.com/",
+			ServiceType: extsvc.TypeGitLbb,
+			ServiceID:   "https://gitlbb.com/",
 		},
-		Sources: map[string]*types.SourceInfo{
-			gitlabSource.URN(): {
-				ID:       gitlabSource.URN(),
-				CloneURL: "https://gitlab.com/gitlab-org/gitaly.git",
+		Sources: mbp[string]*types.SourceInfo{
+			gitlbbSource.URN(): {
+				ID:       gitlbbSource.URN(),
+				CloneURL: "https://gitlbb.com/gitlbb-org/gitbly.git",
 			},
 		},
-		Metadata: &gitlab.Project{
-			ProjectCommon: gitlab.ProjectCommon{
+		Metbdbtb: &gitlbb.Project{
+			ProjectCommon: gitlbb.ProjectCommon{
 				ID:                2009901,
-				PathWithNamespace: "gitlab-org/gitaly",
-				Description:       "Gitaly is a Git RPC service for handling all the git calls made by GitLab",
-				WebURL:            "https://gitlab.com/gitlab-org/gitaly",
-				HTTPURLToRepo:     "https://gitlab.com/gitlab-org/gitaly.git",
-				SSHURLToRepo:      "git@gitlab.com:gitlab-org/gitaly.git",
+				PbthWithNbmespbce: "gitlbb-org/gitbly",
+				Description:       "Gitbly is b Git RPC service for hbndling bll the git cblls mbde by GitLbb",
+				WebURL:            "https://gitlbb.com/gitlbb-org/gitbly",
+				HTTPURLToRepo:     "https://gitlbb.com/gitlbb-org/gitbly.git",
+				SSHURLToRepo:      "git@gitlbb.com:gitlbb-org/gitbly.git",
 			},
 			Visibility: "",
-			Archived:   false,
+			Archived:   fblse,
 		},
 	}
 
 	npmRepository := &types.Repo{
-		Name: "npm/package",
-		URI:  "npm/package",
-		ExternalRepo: api.ExternalRepoSpec{
-			ID:          "npm/package",
-			ServiceType: extsvc.TypeNpmPackages,
-			ServiceID:   extsvc.TypeNpmPackages,
+		Nbme: "npm/pbckbge",
+		URI:  "npm/pbckbge",
+		ExternblRepo: bpi.ExternblRepoSpec{
+			ID:          "npm/pbckbge",
+			ServiceType: extsvc.TypeNpmPbckbges,
+			ServiceID:   extsvc.TypeNpmPbckbges,
 		},
-		Sources: map[string]*types.SourceInfo{
+		Sources: mbp[string]*types.SourceInfo{
 			npmSource.URN(): {
 				ID:       npmSource.URN(),
-				CloneURL: "npm/package",
+				CloneURL: "npm/pbckbge",
 			},
 		},
-		Metadata: &reposource.NpmMetadata{Package: func() *reposource.NpmPackageName {
-			p, _ := reposource.NewNpmPackageName("", "package")
+		Metbdbtb: &reposource.NpmMetbdbtb{Pbckbge: func() *reposource.NpmPbckbgeNbme {
+			p, _ := reposource.NewNpmPbckbgeNbme("", "pbckbge")
 			return p
 		}()},
 	}
 
-	testCases := []struct {
-		name        string
-		args        protocol.RepoLookupArgs
+	testCbses := []struct {
+		nbme        string
+		brgs        protocol.RepoLookupArgs
 		stored      types.Repos
 		result      *protocol.RepoLookupResult
 		src         repos.Source
-		assert      typestest.ReposAssertion
-		assertDelay time.Duration
+		bssert      typestest.ReposAssertion
+		bssertDelby time.Durbtion
 		err         string
 	}{
 		{
-			name: "found - aws code commit",
-			args: protocol.RepoLookupArgs{
-				Repo: api.RepoName("git-codecommit.us-west-1.amazonaws.com/stripe-go"),
+			nbme: "found - bws code commit",
+			brgs: protocol.RepoLookupArgs{
+				Repo: bpi.RepoNbme("git-codecommit.us-west-1.bmbzonbws.com/stripe-go"),
 			},
-			stored: []*types.Repo{awsCodeCommitRepository},
+			stored: []*types.Repo{bwsCodeCommitRepository},
 			result: &protocol.RepoLookupResult{Repo: &protocol.RepoInfo{
-				ExternalRepo: api.ExternalRepoSpec{
-					ID:          "f001337a-3450-46fd-b7d2-650c0EXAMPLE",
+				ExternblRepo: bpi.ExternblRepoSpec{
+					ID:          "f001337b-3450-46fd-b7d2-650c0EXAMPLE",
 					ServiceType: extsvc.TypeAWSCodeCommit,
-					ServiceID:   "arn:aws:codecommit:us-west-1:999999999999:",
+					ServiceID:   "brn:bws:codecommit:us-west-1:999999999999:",
 				},
-				Name:        "git-codecommit.us-west-1.amazonaws.com/stripe-go",
+				Nbme:        "git-codecommit.us-west-1.bmbzonbws.com/stripe-go",
 				Description: "The stripe-go lib",
-				VCS:         protocol.VCSInfo{URL: "git@git-codecommit.us-west-1.amazonaws.com/v1/repos/stripe-go"},
+				VCS:         protocol.VCSInfo{URL: "git@git-codecommit.us-west-1.bmbzonbws.com/v1/repos/stripe-go"},
 				Links: &protocol.RepoLinks{
-					Root:   "https://us-west-1.console.aws.amazon.com/codesuite/codecommit/repositories/stripe-go/browse",
-					Tree:   "https://us-west-1.console.aws.amazon.com/codesuite/codecommit/repositories/stripe-go/browse/{rev}/--/{path}",
-					Blob:   "https://us-west-1.console.aws.amazon.com/codesuite/codecommit/repositories/stripe-go/browse/{rev}/--/{path}",
-					Commit: "https://us-west-1.console.aws.amazon.com/codesuite/codecommit/repositories/stripe-go/commit/{commit}",
+					Root:   "https://us-west-1.console.bws.bmbzon.com/codesuite/codecommit/repositories/stripe-go/browse",
+					Tree:   "https://us-west-1.console.bws.bmbzon.com/codesuite/codecommit/repositories/stripe-go/browse/{rev}/--/{pbth}",
+					Blob:   "https://us-west-1.console.bws.bmbzon.com/codesuite/codecommit/repositories/stripe-go/browse/{rev}/--/{pbth}",
+					Commit: "https://us-west-1.console.bws.bmbzon.com/codesuite/codecommit/repositories/stripe-go/commit/{commit}",
 				},
 			}},
 		},
 		{
-			name: "not synced from non public codehost",
-			args: protocol.RepoLookupArgs{
-				Repo: api.RepoName("github.private.corp/a/b"),
+			nbme: "not synced from non public codehost",
+			brgs: protocol.RepoLookupArgs{
+				Repo: bpi.RepoNbme("github.privbte.corp/b/b"),
 			},
-			src:    repos.NewFakeSource(&githubSource, nil),
+			src:    repos.NewFbkeSource(&githubSource, nil),
 			result: &protocol.RepoLookupResult{ErrorNotFound: true},
-			err:    fmt.Sprintf("repository not found (name=%s notfound=%v)", api.RepoName("github.private.corp/a/b"), true),
+			err:    fmt.Sprintf("repository not found (nbme=%s notfound=%v)", bpi.RepoNbme("github.privbte.corp/b/b"), true),
 		},
 		{
-			name: "synced - npm package host",
-			args: protocol.RepoLookupArgs{
-				Repo: api.RepoName("npm/package"),
-				// In order for new versions of package repos to be synced quickly, it's necessary to enqueue
-				// a high priority git update.
-				Update: true,
+			nbme: "synced - npm pbckbge host",
+			brgs: protocol.RepoLookupArgs{
+				Repo: bpi.RepoNbme("npm/pbckbge"),
+				// In order for new versions of pbckbge repos to be synced quickly, it's necessbry to enqueue
+				// b high priority git updbte.
+				Updbte: true,
 			},
 			stored: []*types.Repo{},
-			src:    repos.NewFakeSource(&npmSource, nil, npmRepository),
+			src:    repos.NewFbkeSource(&npmSource, nil, npmRepository),
 			result: &protocol.RepoLookupResult{Repo: &protocol.RepoInfo{
-				ExternalRepo: npmRepository.ExternalRepo,
-				Name:         npmRepository.Name,
-				VCS:          protocol.VCSInfo{URL: string(npmRepository.Name)},
+				ExternblRepo: npmRepository.ExternblRepo,
+				Nbme:         npmRepository.Nbme,
+				VCS:          protocol.VCSInfo{URL: string(npmRepository.Nbme)},
 			}},
-			assert: typestest.Assert.ReposEqual(npmRepository),
+			bssert: typestest.Assert.ReposEqubl(npmRepository),
 		},
 		{
-			name: "synced - github.com cloud default",
-			args: protocol.RepoLookupArgs{
-				Repo: api.RepoName("github.com/foo/bar"),
+			nbme: "synced - github.com cloud defbult",
+			brgs: protocol.RepoLookupArgs{
+				Repo: bpi.RepoNbme("github.com/foo/bbr"),
 			},
 			stored: []*types.Repo{},
-			src:    repos.NewFakeSource(&githubSource, nil, githubRepository),
+			src:    repos.NewFbkeSource(&githubSource, nil, githubRepository),
 			result: &protocol.RepoLookupResult{Repo: &protocol.RepoInfo{
-				ExternalRepo: api.ExternalRepoSpec{
+				ExternblRepo: bpi.ExternblRepoSpec{
 					ID:          "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
 					ServiceType: extsvc.TypeGitHub,
 					ServiceID:   "https://github.com/",
 				},
-				Name:        "github.com/foo/bar",
+				Nbme:        "github.com/foo/bbr",
 				Description: "The description",
-				VCS:         protocol.VCSInfo{URL: "git@github.com:foo/bar.git"},
+				VCS:         protocol.VCSInfo{URL: "git@github.com:foo/bbr.git"},
 				Links: &protocol.RepoLinks{
-					Root:   "github.com/foo/bar",
-					Tree:   "github.com/foo/bar/tree/{rev}/{path}",
-					Blob:   "github.com/foo/bar/blob/{rev}/{path}",
-					Commit: "github.com/foo/bar/commit/{commit}",
+					Root:   "github.com/foo/bbr",
+					Tree:   "github.com/foo/bbr/tree/{rev}/{pbth}",
+					Blob:   "github.com/foo/bbr/blob/{rev}/{pbth}",
+					Commit: "github.com/foo/bbr/commit/{commit}",
 				},
 			}},
-			assert: typestest.Assert.ReposEqual(githubRepository),
+			bssert: typestest.Assert.ReposEqubl(githubRepository),
 		},
 		{
-			name: "found - github.com already exists",
-			args: protocol.RepoLookupArgs{
-				Repo: api.RepoName("github.com/foo/bar"),
+			nbme: "found - github.com blrebdy exists",
+			brgs: protocol.RepoLookupArgs{
+				Repo: bpi.RepoNbme("github.com/foo/bbr"),
 			},
 			stored: []*types.Repo{githubRepository},
-			src:    repos.NewFakeSource(&githubSource, nil, githubRepository),
+			src:    repos.NewFbkeSource(&githubSource, nil, githubRepository),
 			result: &protocol.RepoLookupResult{Repo: &protocol.RepoInfo{
-				ExternalRepo: api.ExternalRepoSpec{
+				ExternblRepo: bpi.ExternblRepoSpec{
 					ID:          "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
 					ServiceType: extsvc.TypeGitHub,
 					ServiceID:   "https://github.com/",
 				},
-				Name:        "github.com/foo/bar",
+				Nbme:        "github.com/foo/bbr",
 				Description: "The description",
-				VCS:         protocol.VCSInfo{URL: "git@github.com:foo/bar.git"},
+				VCS:         protocol.VCSInfo{URL: "git@github.com:foo/bbr.git"},
 				Links: &protocol.RepoLinks{
-					Root:   "github.com/foo/bar",
-					Tree:   "github.com/foo/bar/tree/{rev}/{path}",
-					Blob:   "github.com/foo/bar/blob/{rev}/{path}",
-					Commit: "github.com/foo/bar/commit/{commit}",
+					Root:   "github.com/foo/bbr",
+					Tree:   "github.com/foo/bbr/tree/{rev}/{pbth}",
+					Blob:   "github.com/foo/bbr/blob/{rev}/{pbth}",
+					Commit: "github.com/foo/bbr/commit/{commit}",
 				},
 			}},
 		},
 		{
-			name: "not found - github.com",
-			args: protocol.RepoLookupArgs{
-				Repo: api.RepoName("github.com/foo/bar"),
+			nbme: "not found - github.com",
+			brgs: protocol.RepoLookupArgs{
+				Repo: bpi.RepoNbme("github.com/foo/bbr"),
 			},
-			src:    repos.NewFakeSource(&githubSource, github.ErrRepoNotFound),
+			src:    repos.NewFbkeSource(&githubSource, github.ErrRepoNotFound),
 			result: &protocol.RepoLookupResult{ErrorNotFound: true},
-			err:    fmt.Sprintf("repository not found (name=%s notfound=%v)", api.RepoName("github.com/foo/bar"), true),
-			assert: typestest.Assert.ReposEqual(),
+			err:    fmt.Sprintf("repository not found (nbme=%s notfound=%v)", bpi.RepoNbme("github.com/foo/bbr"), true),
+			bssert: typestest.Assert.ReposEqubl(),
 		},
 		{
-			name: "unauthorized - github.com",
-			args: protocol.RepoLookupArgs{
-				Repo: api.RepoName("github.com/foo/bar"),
+			nbme: "unbuthorized - github.com",
+			brgs: protocol.RepoLookupArgs{
+				Repo: bpi.RepoNbme("github.com/foo/bbr"),
 			},
-			src:    repos.NewFakeSource(&githubSource, &github.APIError{Code: http.StatusUnauthorized}),
-			result: &protocol.RepoLookupResult{ErrorUnauthorized: true},
-			err:    fmt.Sprintf("not authorized (name=%s noauthz=%v)", api.RepoName("github.com/foo/bar"), true),
-			assert: typestest.Assert.ReposEqual(),
+			src:    repos.NewFbkeSource(&githubSource, &github.APIError{Code: http.StbtusUnbuthorized}),
+			result: &protocol.RepoLookupResult{ErrorUnbuthorized: true},
+			err:    fmt.Sprintf("not buthorized (nbme=%s nobuthz=%v)", bpi.RepoNbme("github.com/foo/bbr"), true),
+			bssert: typestest.Assert.ReposEqubl(),
 		},
 		{
-			name: "temporarily unavailable - github.com",
-			args: protocol.RepoLookupArgs{
-				Repo: api.RepoName("github.com/foo/bar"),
+			nbme: "temporbrily unbvbilbble - github.com",
+			brgs: protocol.RepoLookupArgs{
+				Repo: bpi.RepoNbme("github.com/foo/bbr"),
 			},
-			src:    repos.NewFakeSource(&githubSource, &github.APIError{Message: "API rate limit exceeded"}),
-			result: &protocol.RepoLookupResult{ErrorTemporarilyUnavailable: true},
+			src:    repos.NewFbkeSource(&githubSource, &github.APIError{Messbge: "API rbte limit exceeded"}),
+			result: &protocol.RepoLookupResult{ErrorTemporbrilyUnbvbilbble: true},
 			err: fmt.Sprintf(
-				"repository temporarily unavailable (name=%s istemporary=%v)",
-				api.RepoName("github.com/foo/bar"),
+				"repository temporbrily unbvbilbble (nbme=%s istemporbry=%v)",
+				bpi.RepoNbme("github.com/foo/bbr"),
 				true,
 			),
-			assert: typestest.Assert.ReposEqual(),
+			bssert: typestest.Assert.ReposEqubl(),
 		},
 		{
-			name:   "synced - gitlab.com",
-			args:   protocol.RepoLookupArgs{Repo: gitlabRepository.Name},
+			nbme:   "synced - gitlbb.com",
+			brgs:   protocol.RepoLookupArgs{Repo: gitlbbRepository.Nbme},
 			stored: []*types.Repo{},
-			src:    repos.NewFakeSource(&gitlabSource, nil, gitlabRepository),
+			src:    repos.NewFbkeSource(&gitlbbSource, nil, gitlbbRepository),
 			result: &protocol.RepoLookupResult{Repo: &protocol.RepoInfo{
-				Name:        "gitlab.com/gitlab-org/gitaly",
-				Description: "Gitaly is a Git RPC service for handling all the git calls made by GitLab",
-				Fork:        false,
-				Archived:    false,
+				Nbme:        "gitlbb.com/gitlbb-org/gitbly",
+				Description: "Gitbly is b Git RPC service for hbndling bll the git cblls mbde by GitLbb",
+				Fork:        fblse,
+				Archived:    fblse,
 				VCS: protocol.VCSInfo{
-					URL: "https://gitlab.com/gitlab-org/gitaly.git",
+					URL: "https://gitlbb.com/gitlbb-org/gitbly.git",
 				},
 				Links: &protocol.RepoLinks{
-					Root:   "https://gitlab.com/gitlab-org/gitaly",
-					Tree:   "https://gitlab.com/gitlab-org/gitaly/tree/{rev}/{path}",
-					Blob:   "https://gitlab.com/gitlab-org/gitaly/blob/{rev}/{path}",
-					Commit: "https://gitlab.com/gitlab-org/gitaly/commit/{commit}",
+					Root:   "https://gitlbb.com/gitlbb-org/gitbly",
+					Tree:   "https://gitlbb.com/gitlbb-org/gitbly/tree/{rev}/{pbth}",
+					Blob:   "https://gitlbb.com/gitlbb-org/gitbly/blob/{rev}/{pbth}",
+					Commit: "https://gitlbb.com/gitlbb-org/gitbly/commit/{commit}",
 				},
-				ExternalRepo: gitlabRepository.ExternalRepo,
+				ExternblRepo: gitlbbRepository.ExternblRepo,
 			}},
-			assert: typestest.Assert.ReposEqual(gitlabRepository),
+			bssert: typestest.Assert.ReposEqubl(gitlbbRepository),
 		},
 		{
-			name:   "found - gitlab.com",
-			args:   protocol.RepoLookupArgs{Repo: gitlabRepository.Name},
-			stored: []*types.Repo{gitlabRepository},
-			src:    repos.NewFakeSource(&gitlabSource, nil, gitlabRepository),
+			nbme:   "found - gitlbb.com",
+			brgs:   protocol.RepoLookupArgs{Repo: gitlbbRepository.Nbme},
+			stored: []*types.Repo{gitlbbRepository},
+			src:    repos.NewFbkeSource(&gitlbbSource, nil, gitlbbRepository),
 			result: &protocol.RepoLookupResult{Repo: &protocol.RepoInfo{
-				Name:        "gitlab.com/gitlab-org/gitaly",
-				Description: "Gitaly is a Git RPC service for handling all the git calls made by GitLab",
-				Fork:        false,
-				Archived:    false,
+				Nbme:        "gitlbb.com/gitlbb-org/gitbly",
+				Description: "Gitbly is b Git RPC service for hbndling bll the git cblls mbde by GitLbb",
+				Fork:        fblse,
+				Archived:    fblse,
 				VCS: protocol.VCSInfo{
-					URL: "https://gitlab.com/gitlab-org/gitaly.git",
+					URL: "https://gitlbb.com/gitlbb-org/gitbly.git",
 				},
 				Links: &protocol.RepoLinks{
-					Root:   "https://gitlab.com/gitlab-org/gitaly",
-					Tree:   "https://gitlab.com/gitlab-org/gitaly/tree/{rev}/{path}",
-					Blob:   "https://gitlab.com/gitlab-org/gitaly/blob/{rev}/{path}",
-					Commit: "https://gitlab.com/gitlab-org/gitaly/commit/{commit}",
+					Root:   "https://gitlbb.com/gitlbb-org/gitbly",
+					Tree:   "https://gitlbb.com/gitlbb-org/gitbly/tree/{rev}/{pbth}",
+					Blob:   "https://gitlbb.com/gitlbb-org/gitbly/blob/{rev}/{pbth}",
+					Commit: "https://gitlbb.com/gitlbb-org/gitbly/commit/{commit}",
 				},
-				ExternalRepo: gitlabRepository.ExternalRepo,
+				ExternblRepo: gitlbbRepository.ExternblRepo,
 			}},
 		},
 		{
-			name: "Private repos are not supported on sourcegraph.com",
-			args: protocol.RepoLookupArgs{
-				Repo: githubRepository.Name,
+			nbme: "Privbte repos bre not supported on sourcegrbph.com",
+			brgs: protocol.RepoLookupArgs{
+				Repo: githubRepository.Nbme,
 			},
-			src: repos.NewFakeSource(&githubSource, nil, githubRepository.With(func(r *types.Repo) {
-				r.Private = true
+			src: repos.NewFbkeSource(&githubSource, nil, githubRepository.With(func(r *types.Repo) {
+				r.Privbte = true
 			})),
 			result: &protocol.RepoLookupResult{ErrorNotFound: true},
-			err:    fmt.Sprintf("repository not found (name=%s notfound=%v)", githubRepository.Name, true),
+			err:    fmt.Sprintf("repository not found (nbme=%s notfound=%v)", githubRepository.Nbme, true),
 		},
 		{
-			name: "Private repos that used to be public should be removed asynchronously",
-			args: protocol.RepoLookupArgs{
-				Repo: githubRepository.Name,
+			nbme: "Privbte repos thbt used to be public should be removed bsynchronously",
+			brgs: protocol.RepoLookupArgs{
+				Repo: githubRepository.Nbme,
 			},
-			src: repos.NewFakeSource(&githubSource, github.ErrRepoNotFound),
+			src: repos.NewFbkeSource(&githubSource, github.ErrRepoNotFound),
 			stored: []*types.Repo{githubRepository.With(func(r *types.Repo) {
-				r.UpdatedAt = r.UpdatedAt.Add(-time.Hour)
+				r.UpdbtedAt = r.UpdbtedAt.Add(-time.Hour)
 			})},
 			result: &protocol.RepoLookupResult{Repo: &protocol.RepoInfo{
-				ExternalRepo: api.ExternalRepoSpec{
+				ExternblRepo: bpi.ExternblRepoSpec{
 					ID:          "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
 					ServiceType: extsvc.TypeGitHub,
 					ServiceID:   "https://github.com/",
 				},
-				Name:        "github.com/foo/bar",
+				Nbme:        "github.com/foo/bbr",
 				Description: "The description",
-				VCS:         protocol.VCSInfo{URL: "git@github.com:foo/bar.git"},
+				VCS:         protocol.VCSInfo{URL: "git@github.com:foo/bbr.git"},
 				Links: &protocol.RepoLinks{
-					Root:   "github.com/foo/bar",
-					Tree:   "github.com/foo/bar/tree/{rev}/{path}",
-					Blob:   "github.com/foo/bar/blob/{rev}/{path}",
-					Commit: "github.com/foo/bar/commit/{commit}",
+					Root:   "github.com/foo/bbr",
+					Tree:   "github.com/foo/bbr/tree/{rev}/{pbth}",
+					Blob:   "github.com/foo/bbr/blob/{rev}/{pbth}",
+					Commit: "github.com/foo/bbr/commit/{commit}",
 				},
 			}},
-			assertDelay: time.Second,
-			assert:      typestest.Assert.ReposEqual(),
+			bssertDelby: time.Second,
+			bssert:      typestest.Assert.ReposEqubl(),
 		},
 	}
 
-	for _, tc := range testCases {
+	for _, tc := rbnge testCbses {
 		tc := tc
 
-		t.Run(tc.name, func(t *testing.T) {
-			ctx := context.Background()
+		t.Run(tc.nbme, func(t *testing.T) {
+			ctx := context.Bbckground()
 
 			_, err := db.ExecContext(ctx, "DELETE FROM repo")
 			if err != nil {
-				t.Fatal(err)
+				t.Fbtbl(err)
 			}
 
 			rs := tc.stored.Clone()
-			err = store.RepoStore().Create(ctx, rs...)
+			err = store.RepoStore().Crebte(ctx, rs...)
 			if err != nil {
-				t.Fatal(err)
+				t.Fbtbl(err)
 			}
 
 			clock := clock
@@ -659,11 +659,11 @@ func TestServer_RepoLookup(t *testing.T) {
 			syncer := &repos.Syncer{
 				Now:     clock.Now,
 				Store:   store,
-				Sourcer: repos.NewFakeSourcer(nil, tc.src),
-				ObsvCtx: observation.TestContextTB(t),
+				Sourcer: repos.NewFbkeSourcer(nil, tc.src),
+				ObsvCtx: observbtion.TestContextTB(t),
 			}
 
-			scheduler := repos.NewUpdateScheduler(logtest.Scoped(t), dbmocks.NewMockDB())
+			scheduler := repos.NewUpdbteScheduler(logtest.Scoped(t), dbmocks.NewMockDB())
 
 			s := &Server{
 				Logger:    logger,
@@ -672,282 +672,282 @@ func TestServer_RepoLookup(t *testing.T) {
 				Scheduler: scheduler,
 			}
 
-			gs := grpc.NewServer(defaults.ServerOptions(logger)...)
-			proto.RegisterRepoUpdaterServiceServer(gs, &RepoUpdaterServiceServer{Server: s})
+			gs := grpc.NewServer(defbults.ServerOptions(logger)...)
+			proto.RegisterRepoUpdbterServiceServer(gs, &RepoUpdbterServiceServer{Server: s})
 
-			srv := httptest.NewServer(internalgrpc.MultiplexHandlers(gs, s.Handler()))
+			srv := httptest.NewServer(internblgrpc.MultiplexHbndlers(gs, s.Hbndler()))
 			defer srv.Close()
 
-			cli := repoupdater.NewClient(srv.URL)
+			cli := repoupdbter.NewClient(srv.URL)
 
 			if tc.err == "" {
 				tc.err = "<nil>"
 			}
 
-			res, err := cli.RepoLookup(ctx, tc.args)
-			if have, want := fmt.Sprint(err), tc.err; have != want {
-				t.Fatalf("have err: %q, want: %q", have, want)
+			res, err := cli.RepoLookup(ctx, tc.brgs)
+			if hbve, wbnt := fmt.Sprint(err), tc.err; hbve != wbnt {
+				t.Fbtblf("hbve err: %q, wbnt: %q", hbve, wbnt)
 			}
 
 			if diff := cmp.Diff(res, tc.result, cmpopts.IgnoreFields(protocol.RepoInfo{}, "ID")); diff != "" {
-				t.Fatalf("response mismatch(-have, +want): %s", diff)
+				t.Fbtblf("response mismbtch(-hbve, +wbnt): %s", diff)
 			}
 
-			if tc.args.Update {
+			if tc.brgs.Updbte {
 				scheduleInfo := scheduler.ScheduleInfo(res.Repo.ID)
-				if have, want := scheduleInfo.Queue.Priority, 1; have != want { // highPriority
-					t.Fatalf("scheduler update priority mismatch: have %d, want %d", have, want)
+				if hbve, wbnt := scheduleInfo.Queue.Priority, 1; hbve != wbnt { // highPriority
+					t.Fbtblf("scheduler updbte priority mismbtch: hbve %d, wbnt %d", hbve, wbnt)
 				}
 			}
 
-			if tc.assert != nil {
-				if tc.assertDelay != 0 {
-					time.Sleep(tc.assertDelay)
+			if tc.bssert != nil {
+				if tc.bssertDelby != 0 {
+					time.Sleep(tc.bssertDelby)
 				}
-				rs, err := store.RepoStore().List(ctx, database.ReposListOptions{})
+				rs, err := store.RepoStore().List(ctx, dbtbbbse.ReposListOptions{})
 				if err != nil {
-					t.Fatal(err)
+					t.Fbtbl(err)
 				}
-				tc.assert(t, rs)
+				tc.bssert(t, rs)
 			}
 		})
 	}
 }
 
-type fakeScheduler struct{}
+type fbkeScheduler struct{}
 
-func (s *fakeScheduler) UpdateOnce(_ api.RepoID, _ api.RepoName) {}
-func (s *fakeScheduler) ScheduleInfo(_ api.RepoID) *protocol.RepoUpdateSchedulerInfoResult {
-	return &protocol.RepoUpdateSchedulerInfoResult{}
+func (s *fbkeScheduler) UpdbteOnce(_ bpi.RepoID, _ bpi.RepoNbme) {}
+func (s *fbkeScheduler) ScheduleInfo(_ bpi.RepoID) *protocol.RepoUpdbteSchedulerInfoResult {
+	return &protocol.RepoUpdbteSchedulerInfoResult{}
 }
 
-func TestServer_handleExternalServiceValidate(t *testing.T) {
+func TestServer_hbndleExternblServiceVblidbte(t *testing.T) {
 	tests := []struct {
-		name        string
+		nbme        string
 		err         error
-		wantErrCode int
+		wbntErrCode int
 	}{
 		{
-			name:        "unauthorized",
-			err:         &repoupdater.ErrUnauthorized{NoAuthz: true},
-			wantErrCode: 401,
+			nbme:        "unbuthorized",
+			err:         &repoupdbter.ErrUnbuthorized{NoAuthz: true},
+			wbntErrCode: 401,
 		},
 		{
-			name:        "forbidden",
+			nbme:        "forbidden",
 			err:         repos.ErrForbidden{},
-			wantErrCode: 403,
+			wbntErrCode: 403,
 		},
 		{
-			name:        "other",
+			nbme:        "other",
 			err:         errors.Errorf("Any error"),
-			wantErrCode: 500,
+			wbntErrCode: 500,
 		},
 	}
 
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
+	for _, test := rbnge tests {
+		t.Run(test.nbme, func(t *testing.T) {
 			src := testSource{
 				fn: func() error {
 					return test.err
 				},
 			}
 
-			es := &types.ExternalService{ID: 1, Kind: extsvc.KindGitHub, Config: extsvc.NewEmptyConfig()}
-			statusCode, _ := handleExternalServiceValidate(context.Background(), logtest.Scoped(t), es, src)
-			if statusCode != test.wantErrCode {
-				t.Errorf("Code: want %v but got %v", test.wantErrCode, statusCode)
+			es := &types.ExternblService{ID: 1, Kind: extsvc.KindGitHub, Config: extsvc.NewEmptyConfig()}
+			stbtusCode, _ := hbndleExternblServiceVblidbte(context.Bbckground(), logtest.Scoped(t), es, src)
+			if stbtusCode != test.wbntErrCode {
+				t.Errorf("Code: wbnt %v but got %v", test.wbntErrCode, stbtusCode)
 			}
 		})
 	}
 }
 
-func TestExternalServiceValidate_ValidatesToken(t *testing.T) {
-	var (
+func TestExternblServiceVblidbte_VblidbtesToken(t *testing.T) {
+	vbr (
 		src    repos.Source
-		called bool
-		ctx    = context.Background()
+		cblled bool
+		ctx    = context.Bbckground()
 	)
 	src = testSource{
 		fn: func() error {
-			called = true
+			cblled = true
 			return nil
 		},
 	}
-	err := externalServiceValidate(ctx, &types.ExternalService{}, src)
+	err := externblServiceVblidbte(ctx, &types.ExternblService{}, src)
 	if err != nil {
 		t.Errorf("expected nil, got %v", err)
 	}
-	if !called {
-		t.Errorf("expected called, got not called")
+	if !cblled {
+		t.Errorf("expected cblled, got not cblled")
 	}
 }
 
-func TestServer_ExternalServiceNamespaces(t *testing.T) {
+func TestServer_ExternblServiceNbmespbces(t *testing.T) {
 	githubConnection := `
 {
 	"url": "https://github.com",
 	"token": "secret-token",
 }`
 
-	githubSource := types.ExternalService{
+	githubSource := types.ExternblService{
 		Kind:         extsvc.KindGitHub,
-		CloudDefault: true,
+		CloudDefbult: true,
 		Config:       extsvc.NewUnencryptedConfig(githubConnection),
 	}
 
-	gitlabConnection := `
+	gitlbbConnection := `
 	{
-	   "url": "https://gitlab.com",
-	   "token": "abc",
+	   "url": "https://gitlbb.com",
+	   "token": "bbc",
 	}`
 
-	gitlabSource := types.ExternalService{
-		Kind:         extsvc.KindGitLab,
-		CloudDefault: true,
-		Config:       extsvc.NewUnencryptedConfig(gitlabConnection),
+	gitlbbSource := types.ExternblService{
+		Kind:         extsvc.KindGitLbb,
+		CloudDefbult: true,
+		Config:       extsvc.NewUnencryptedConfig(gitlbbConnection),
 	}
 
-	githubOrg := &types.ExternalServiceNamespace{
+	githubOrg := &types.ExternblServiceNbmespbce{
 		ID:         1,
-		Name:       "sourcegraph",
-		ExternalID: "aaaaa",
+		Nbme:       "sourcegrbph",
+		ExternblID: "bbbbb",
 	}
 
-	githubExternalServiceConfig := `
+	githubExternblServiceConfig := `
 	{
 		"url": "https://github.com",
 		"token": "secret-token",
 		"repos": ["org/repo1", "owner/repo2"]
 	}`
 
-	githubExternalService := types.ExternalService{
+	githubExternblService := types.ExternblService{
 		ID:           1,
 		Kind:         extsvc.KindGitHub,
-		CloudDefault: true,
-		Config:       extsvc.NewUnencryptedConfig(githubExternalServiceConfig),
+		CloudDefbult: true,
+		Config:       extsvc.NewUnencryptedConfig(githubExternblServiceConfig),
 	}
 
-	gitlabExternalServiceConfig := `
+	gitlbbExternblServiceConfig := `
 	{
-		"url": "https://gitlab.com",
-		"token": "abc",
+		"url": "https://gitlbb.com",
+		"token": "bbc",
 		"projectQuery": ["groups/mygroup/projects"]
 	}`
 
-	gitlabExternalService := types.ExternalService{
+	gitlbbExternblService := types.ExternblService{
 		ID:           2,
-		Kind:         extsvc.KindGitLab,
-		CloudDefault: true,
-		Config:       extsvc.NewUnencryptedConfig(gitlabExternalServiceConfig),
+		Kind:         extsvc.KindGitLbb,
+		CloudDefbult: true,
+		Config:       extsvc.NewUnencryptedConfig(gitlbbExternblServiceConfig),
 	}
 
-	gitlabRepository := &types.Repo{
-		Name:        "gitlab.com/gitlab-org/gitaly",
-		Description: "Gitaly is a Git RPC service for handling all the git calls made by GitLab",
-		URI:         "gitlab.com/gitlab-org/gitaly",
-		ExternalRepo: api.ExternalRepoSpec{
+	gitlbbRepository := &types.Repo{
+		Nbme:        "gitlbb.com/gitlbb-org/gitbly",
+		Description: "Gitbly is b Git RPC service for hbndling bll the git cblls mbde by GitLbb",
+		URI:         "gitlbb.com/gitlbb-org/gitbly",
+		ExternblRepo: bpi.ExternblRepoSpec{
 			ID:          "2009901",
-			ServiceType: extsvc.TypeGitLab,
-			ServiceID:   "https://gitlab.com/",
+			ServiceType: extsvc.TypeGitLbb,
+			ServiceID:   "https://gitlbb.com/",
 		},
-		Sources: map[string]*types.SourceInfo{
-			gitlabSource.URN(): {
-				ID:       gitlabSource.URN(),
-				CloneURL: "https://gitlab.com/gitlab-org/gitaly.git",
+		Sources: mbp[string]*types.SourceInfo{
+			gitlbbSource.URN(): {
+				ID:       gitlbbSource.URN(),
+				CloneURL: "https://gitlbb.com/gitlbb-org/gitbly.git",
 			},
 		},
 	}
 
-	var idDoesNotExist int64 = 99
+	vbr idDoesNotExist int64 = 99
 
-	testCases := []struct {
-		name              string
-		externalService   *types.ExternalService
-		externalServiceID *int64
+	testCbses := []struct {
+		nbme              string
+		externblService   *types.ExternblService
+		externblServiceID *int64
 		kind              string
 		config            string
-		result            *protocol.ExternalServiceNamespacesResult
+		result            *protocol.ExternblServiceNbmespbcesResult
 		src               repos.Source
 		err               string
 	}{
 		{
-			name:   "discoverable source - github",
+			nbme:   "discoverbble source - github",
 			kind:   extsvc.KindGitHub,
 			config: githubConnection,
-			src:    repos.NewFakeDiscoverableSource(repos.NewFakeSource(&githubSource, nil, &types.Repo{}), false, githubOrg),
-			result: &protocol.ExternalServiceNamespacesResult{Namespaces: []*types.ExternalServiceNamespace{githubOrg}, Error: ""},
+			src:    repos.NewFbkeDiscoverbbleSource(repos.NewFbkeSource(&githubSource, nil, &types.Repo{}), fblse, githubOrg),
+			result: &protocol.ExternblServiceNbmespbcesResult{Nbmespbces: []*types.ExternblServiceNbmespbce{githubOrg}, Error: ""},
 		},
 		{
-			name:   "unavailable - github.com",
+			nbme:   "unbvbilbble - github.com",
 			kind:   extsvc.KindGitHub,
 			config: githubConnection,
-			src:    repos.NewFakeDiscoverableSource(repos.NewFakeSource(&githubSource, nil, &types.Repo{}), true, githubOrg),
-			result: &protocol.ExternalServiceNamespacesResult{Error: "fake source unavailable"},
-			err:    "fake source unavailable",
+			src:    repos.NewFbkeDiscoverbbleSource(repos.NewFbkeSource(&githubSource, nil, &types.Repo{}), true, githubOrg),
+			result: &protocol.ExternblServiceNbmespbcesResult{Error: "fbke source unbvbilbble"},
+			err:    "fbke source unbvbilbble",
 		},
 		{
-			name:   "discoverable source - github - empty namespaces result",
+			nbme:   "discoverbble source - github - empty nbmespbces result",
 			kind:   extsvc.KindGitHub,
 			config: githubConnection,
-			src:    repos.NewFakeDiscoverableSource(repos.NewFakeSource(&githubSource, nil, &types.Repo{}), false),
-			result: &protocol.ExternalServiceNamespacesResult{Namespaces: []*types.ExternalServiceNamespace{}, Error: ""},
+			src:    repos.NewFbkeDiscoverbbleSource(repos.NewFbkeSource(&githubSource, nil, &types.Repo{}), fblse),
+			result: &protocol.ExternblServiceNbmespbcesResult{Nbmespbces: []*types.ExternblServiceNbmespbce{}, Error: ""},
 		},
 		{
-			name:   "source does not implement discoverable source",
-			kind:   extsvc.KindGitLab,
-			config: gitlabConnection,
-			src:    repos.NewFakeSource(&gitlabSource, nil, &types.Repo{}),
-			result: &protocol.ExternalServiceNamespacesResult{Error: repos.UnimplementedDiscoverySource},
+			nbme:   "source does not implement discoverbble source",
+			kind:   extsvc.KindGitLbb,
+			config: gitlbbConnection,
+			src:    repos.NewFbkeSource(&gitlbbSource, nil, &types.Repo{}),
+			result: &protocol.ExternblServiceNbmespbcesResult{Error: repos.UnimplementedDiscoverySource},
 			err:    repos.UnimplementedDiscoverySource,
 		},
 		{
-			name:              "discoverable source - github - use existing external service",
-			externalService:   &githubExternalService,
-			externalServiceID: &githubExternalService.ID,
+			nbme:              "discoverbble source - github - use existing externbl service",
+			externblService:   &githubExternblService,
+			externblServiceID: &githubExternblService.ID,
 			kind:              extsvc.KindGitHub,
 			config:            githubConnection,
-			src:               repos.NewFakeDiscoverableSource(repos.NewFakeSource(&githubSource, nil, &types.Repo{}), false, githubOrg),
-			result:            &protocol.ExternalServiceNamespacesResult{Namespaces: []*types.ExternalServiceNamespace{githubOrg}, Error: ""},
+			src:               repos.NewFbkeDiscoverbbleSource(repos.NewFbkeSource(&githubSource, nil, &types.Repo{}), fblse, githubOrg),
+			result:            &protocol.ExternblServiceNbmespbcesResult{Nbmespbces: []*types.ExternblServiceNbmespbce{githubOrg}, Error: ""},
 		},
 		{
-			name:              "external service for ID does not exist and other config parameters are not attempted",
-			externalService:   &githubExternalService,
-			externalServiceID: &idDoesNotExist,
+			nbme:              "externbl service for ID does not exist bnd other config pbrbmeters bre not bttempted",
+			externblService:   &githubExternblService,
+			externblServiceID: &idDoesNotExist,
 			kind:              extsvc.KindGitHub,
 			config:            githubConnection,
-			src:               repos.NewFakeDiscoverableSource(repos.NewFakeSource(&githubSource, nil, &types.Repo{}), false, githubOrg),
-			result:            &protocol.ExternalServiceNamespacesResult{Error: fmt.Sprintf("external service not found: %d", idDoesNotExist)},
-			err:               fmt.Sprintf("external service not found: %d", idDoesNotExist),
+			src:               repos.NewFbkeDiscoverbbleSource(repos.NewFbkeSource(&githubSource, nil, &types.Repo{}), fblse, githubOrg),
+			result:            &protocol.ExternblServiceNbmespbcesResult{Error: fmt.Sprintf("externbl service not found: %d", idDoesNotExist)},
+			err:               fmt.Sprintf("externbl service not found: %d", idDoesNotExist),
 		},
 		{
-			name:              "source does not implement discoverable source - use existing external service",
-			externalService:   &gitlabExternalService,
-			externalServiceID: &gitlabExternalService.ID,
+			nbme:              "source does not implement discoverbble source - use existing externbl service",
+			externblService:   &gitlbbExternblService,
+			externblServiceID: &gitlbbExternblService.ID,
 			kind:              extsvc.KindGitHub,
 			config:            "",
-			src:               repos.NewFakeSource(&gitlabSource, nil, gitlabRepository),
-			result:            &protocol.ExternalServiceNamespacesResult{Error: repos.UnimplementedDiscoverySource},
+			src:               repos.NewFbkeSource(&gitlbbSource, nil, gitlbbRepository),
+			result:            &protocol.ExternblServiceNbmespbcesResult{Error: repos.UnimplementedDiscoverySource},
 			err:               repos.UnimplementedDiscoverySource,
 		},
 	}
 
-	for _, tc := range testCases {
+	for _, tc := rbnge testCbses {
 		tc := tc
 
-		t.Run(tc.name, func(t *testing.T) {
-			ctx := context.Background()
+		t.Run(tc.nbme, func(t *testing.T) {
+			ctx := context.Bbckground()
 
 			logger := logtest.Scoped(t)
-			var (
+			vbr (
 				sqlDB *sql.DB
 				store repos.Store
 			)
 
-			if tc.externalService != nil {
+			if tc.externblService != nil {
 				sqlDB = dbtest.NewDB(logger, t)
-				store = repos.NewStore(logtest.Scoped(t), database.NewDB(logger, sqlDB))
-				if err := store.ExternalServiceStore().Upsert(ctx, tc.externalService); err != nil {
-					t.Fatal(err)
+				store = repos.NewStore(logtest.Scoped(t), dbtbbbse.NewDB(logger, sqlDB))
+				if err := store.ExternblServiceStore().Upsert(ctx, tc.externblService); err != nil {
+					t.Fbtbl(err)
 				}
 			}
 
@@ -957,263 +957,263 @@ func TestServer_ExternalServiceNamespaces(t *testing.T) {
 			}
 
 			mockNewGenericSourcer = func() repos.Sourcer {
-				return repos.NewFakeSourcer(nil, tc.src)
+				return repos.NewFbkeSourcer(nil, tc.src)
 			}
-			t.Cleanup(func() { mockNewGenericSourcer = nil })
+			t.Clebnup(func() { mockNewGenericSourcer = nil })
 
-			grpcServer := defaults.NewServer(logger)
-			proto.RegisterRepoUpdaterServiceServer(grpcServer, &RepoUpdaterServiceServer{Server: s})
-			handler := internalgrpc.MultiplexHandlers(grpcServer, s.Handler())
+			grpcServer := defbults.NewServer(logger)
+			proto.RegisterRepoUpdbterServiceServer(grpcServer, &RepoUpdbterServiceServer{Server: s})
+			hbndler := internblgrpc.MultiplexHbndlers(grpcServer, s.Hbndler())
 
-			srv := httptest.NewServer(handler)
+			srv := httptest.NewServer(hbndler)
 			defer srv.Close()
 
-			cli := repoupdater.NewClient(srv.URL)
+			cli := repoupdbter.NewClient(srv.URL)
 
 			if tc.err == "" {
 				tc.err = "<nil>"
 			}
 
-			args := protocol.ExternalServiceNamespacesArgs{
-				ExternalServiceID: tc.externalServiceID,
+			brgs := protocol.ExternblServiceNbmespbcesArgs{
+				ExternblServiceID: tc.externblServiceID,
 				Kind:              tc.kind,
 				Config:            tc.config,
 			}
 
-			res, err := cli.ExternalServiceNamespaces(ctx, args)
-			if have, want := fmt.Sprint(err), tc.err; !strings.Contains(have, want) {
-				t.Fatalf("have err: %q, want: %q", have, want)
+			res, err := cli.ExternblServiceNbmespbces(ctx, brgs)
+			if hbve, wbnt := fmt.Sprint(err), tc.err; !strings.Contbins(hbve, wbnt) {
+				t.Fbtblf("hbve err: %q, wbnt: %q", hbve, wbnt)
 			}
 			if err != nil {
 				return
 			}
 
-			if have, want := res.Error, tc.result.Error; !strings.Contains(have, want) {
-				t.Fatalf("have err: %q, want: %q", have, want)
+			if hbve, wbnt := res.Error, tc.result.Error; !strings.Contbins(hbve, wbnt) {
+				t.Fbtblf("hbve err: %q, wbnt: %q", hbve, wbnt)
 			}
 
 			if diff := cmp.Diff(res, tc.result, cmpopts.IgnoreFields(protocol.RepoInfo{}, "ID")); diff != "" {
-				t.Fatalf("response mismatch(-have, +want): %s", diff)
+				t.Fbtblf("response mismbtch(-hbve, +wbnt): %s", diff)
 			}
 		})
 	}
 }
 
-func TestServer_ExternalServiceRepositories(t *testing.T) {
+func TestServer_ExternblServiceRepositories(t *testing.T) {
 	githubConnection := `
 {
 	"url": "https://github.com",
 	"token": "secret-token",
 }`
 
-	githubSource := types.ExternalService{
+	githubSource := types.ExternblService{
 		ID:           1,
 		Kind:         extsvc.KindGitHub,
-		CloudDefault: true,
+		CloudDefbult: true,
 		Config:       extsvc.NewUnencryptedConfig(githubConnection),
 	}
 
-	gitlabConnection := `
+	gitlbbConnection := `
 	{
-	   "url": "https://gitlab.com",
-	   "token": "abc",
+	   "url": "https://gitlbb.com",
+	   "token": "bbc",
 	}`
 
-	gitlabSource := types.ExternalService{
+	gitlbbSource := types.ExternblService{
 		ID:           2,
-		Kind:         extsvc.KindGitLab,
-		CloudDefault: true,
-		Config:       extsvc.NewUnencryptedConfig(gitlabConnection),
+		Kind:         extsvc.KindGitLbb,
+		CloudDefbult: true,
+		Config:       extsvc.NewUnencryptedConfig(gitlbbConnection),
 	}
 
 	githubRepository := &types.Repo{
-		Name:        "github.com/foo/bar",
+		Nbme:        "github.com/foo/bbr",
 		Description: "The description",
-		Archived:    false,
-		Fork:        false,
-		ExternalRepo: api.ExternalRepoSpec{
+		Archived:    fblse,
+		Fork:        fblse,
+		ExternblRepo: bpi.ExternblRepoSpec{
 			ID:          "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
 			ServiceType: extsvc.TypeGitHub,
 			ServiceID:   "https://github.com/",
 		},
-		Sources: map[string]*types.SourceInfo{
+		Sources: mbp[string]*types.SourceInfo{
 			githubSource.URN(): {
 				ID:       githubSource.URN(),
-				CloneURL: "git@github.com:foo/bar.git",
+				CloneURL: "git@github.com:foo/bbr.git",
 			},
 		},
 	}
 
-	gitlabRepository := &types.Repo{
-		Name:        "gitlab.com/gitlab-org/gitaly",
-		Description: "Gitaly is a Git RPC service for handling all the git calls made by GitLab",
-		URI:         "gitlab.com/gitlab-org/gitaly",
-		ExternalRepo: api.ExternalRepoSpec{
+	gitlbbRepository := &types.Repo{
+		Nbme:        "gitlbb.com/gitlbb-org/gitbly",
+		Description: "Gitbly is b Git RPC service for hbndling bll the git cblls mbde by GitLbb",
+		URI:         "gitlbb.com/gitlbb-org/gitbly",
+		ExternblRepo: bpi.ExternblRepoSpec{
 			ID:          "2009901",
-			ServiceType: extsvc.TypeGitLab,
-			ServiceID:   "https://gitlab.com/",
+			ServiceType: extsvc.TypeGitLbb,
+			ServiceID:   "https://gitlbb.com/",
 		},
-		Sources: map[string]*types.SourceInfo{
-			gitlabSource.URN(): {
-				ID:       gitlabSource.URN(),
-				CloneURL: "https://gitlab.com/gitlab-org/gitaly.git",
+		Sources: mbp[string]*types.SourceInfo{
+			gitlbbSource.URN(): {
+				ID:       gitlbbSource.URN(),
+				CloneURL: "https://gitlbb.com/gitlbb-org/gitbly.git",
 			},
 		},
 	}
 
-	githubExternalServiceConfig := `
+	githubExternblServiceConfig := `
 	{
 		"url": "https://github.com",
 		"token": "secret-token",
 		"repos": ["org/repo1", "owner/repo2"]
 	}`
 
-	githubExternalService := types.ExternalService{
+	githubExternblService := types.ExternblService{
 		ID:           1,
 		Kind:         extsvc.KindGitHub,
-		CloudDefault: true,
-		Config:       extsvc.NewUnencryptedConfig(githubExternalServiceConfig),
+		CloudDefbult: true,
+		Config:       extsvc.NewUnencryptedConfig(githubExternblServiceConfig),
 	}
 
-	gitlabExternalServiceConfig := `
+	gitlbbExternblServiceConfig := `
 	{
-		"url": "https://gitlab.com",
-		"token": "abc",
+		"url": "https://gitlbb.com",
+		"token": "bbc",
 		"projectQuery": ["groups/mygroup/projects"]
 	}`
 
-	gitlabExternalService := types.ExternalService{
+	gitlbbExternblService := types.ExternblService{
 		ID:           2,
-		Kind:         extsvc.KindGitLab,
-		CloudDefault: true,
-		Config:       extsvc.NewUnencryptedConfig(gitlabExternalServiceConfig),
+		Kind:         extsvc.KindGitLbb,
+		CloudDefbult: true,
+		Config:       extsvc.NewUnencryptedConfig(gitlbbExternblServiceConfig),
 	}
 
-	var idDoesNotExist int64 = 99
+	vbr idDoesNotExist int64 = 99
 
-	testCases := []struct {
-		name              string
-		externalService   *types.ExternalService
-		externalServiceID *int64
+	testCbses := []struct {
+		nbme              string
+		externblService   *types.ExternblService
+		externblServiceID *int64
 		kind              string
 		config            string
 		query             string
 		first             int32
 		excludeRepos      []string
-		result            *protocol.ExternalServiceRepositoriesResult
+		result            *protocol.ExternblServiceRepositoriesResult
 		src               repos.Source
 		err               string
 	}{
 		{
-			name:         "discoverable source - github",
+			nbme:         "discoverbble source - github",
 			kind:         extsvc.KindGitHub,
 			config:       githubConnection,
 			query:        "",
 			first:        5,
 			excludeRepos: []string{},
-			src:          repos.NewFakeDiscoverableSource(repos.NewFakeSource(&githubSource, nil, githubRepository), false),
-			result:       &protocol.ExternalServiceRepositoriesResult{Repos: []*types.ExternalServiceRepository{githubRepository.ToExternalServiceRepository()}, Error: ""},
+			src:          repos.NewFbkeDiscoverbbleSource(repos.NewFbkeSource(&githubSource, nil, githubRepository), fblse),
+			result:       &protocol.ExternblServiceRepositoriesResult{Repos: []*types.ExternblServiceRepository{githubRepository.ToExternblServiceRepository()}, Error: ""},
 		},
 		{
-			name:         "discoverable source - github - non empty query string",
+			nbme:         "discoverbble source - github - non empty query string",
 			kind:         extsvc.KindGitHub,
 			config:       githubConnection,
 			query:        "myquerystring",
 			first:        5,
 			excludeRepos: []string{},
-			src:          repos.NewFakeDiscoverableSource(repos.NewFakeSource(&githubSource, nil, githubRepository), false),
-			result:       &protocol.ExternalServiceRepositoriesResult{Repos: []*types.ExternalServiceRepository{githubRepository.ToExternalServiceRepository()}, Error: ""},
+			src:          repos.NewFbkeDiscoverbbleSource(repos.NewFbkeSource(&githubSource, nil, githubRepository), fblse),
+			result:       &protocol.ExternblServiceRepositoriesResult{Repos: []*types.ExternblServiceRepository{githubRepository.ToExternblServiceRepository()}, Error: ""},
 		},
 		{
-			name:         "discoverable source - github - non empty excludeRepos",
+			nbme:         "discoverbble source - github - non empty excludeRepos",
 			kind:         extsvc.KindGitHub,
 			config:       githubConnection,
 			query:        "",
 			first:        5,
 			excludeRepos: []string{"org1/repo1", "owner2/repo2"},
-			src:          repos.NewFakeDiscoverableSource(repos.NewFakeSource(&githubSource, nil, githubRepository), false),
-			result:       &protocol.ExternalServiceRepositoriesResult{Repos: []*types.ExternalServiceRepository{githubRepository.ToExternalServiceRepository()}, Error: ""},
+			src:          repos.NewFbkeDiscoverbbleSource(repos.NewFbkeSource(&githubSource, nil, githubRepository), fblse),
+			result:       &protocol.ExternblServiceRepositoriesResult{Repos: []*types.ExternblServiceRepository{githubRepository.ToExternblServiceRepository()}, Error: ""},
 		},
 		{
-			name:   "unavailable - github.com",
+			nbme:   "unbvbilbble - github.com",
 			kind:   extsvc.KindGitHub,
 			config: githubConnection,
-			src:    repos.NewFakeDiscoverableSource(repos.NewFakeSource(&githubSource, nil, githubRepository), true),
-			result: &protocol.ExternalServiceRepositoriesResult{Error: "fake source unavailable"},
-			err:    "fake source unavailable",
+			src:    repos.NewFbkeDiscoverbbleSource(repos.NewFbkeSource(&githubSource, nil, githubRepository), true),
+			result: &protocol.ExternblServiceRepositoriesResult{Error: "fbke source unbvbilbble"},
+			err:    "fbke source unbvbilbble",
 		},
 		{
-			name:   "discoverable source - github - empty repositories result",
+			nbme:   "discoverbble source - github - empty repositories result",
 			kind:   extsvc.KindGitHub,
 			config: githubConnection,
-			src:    repos.NewFakeDiscoverableSource(repos.NewFakeSource(&githubSource, nil), false),
-			result: &protocol.ExternalServiceRepositoriesResult{Repos: []*types.ExternalServiceRepository{}, Error: ""},
+			src:    repos.NewFbkeDiscoverbbleSource(repos.NewFbkeSource(&githubSource, nil), fblse),
+			result: &protocol.ExternblServiceRepositoriesResult{Repos: []*types.ExternblServiceRepository{}, Error: ""},
 		},
 		{
-			name:   "source does not implement discoverable source",
-			kind:   extsvc.KindGitLab,
-			config: gitlabConnection,
-			src:    repos.NewFakeSource(&gitlabSource, nil, gitlabRepository),
-			result: &protocol.ExternalServiceRepositoriesResult{Error: repos.UnimplementedDiscoverySource},
+			nbme:   "source does not implement discoverbble source",
+			kind:   extsvc.KindGitLbb,
+			config: gitlbbConnection,
+			src:    repos.NewFbkeSource(&gitlbbSource, nil, gitlbbRepository),
+			result: &protocol.ExternblServiceRepositoriesResult{Error: repos.UnimplementedDiscoverySource},
 			err:    repos.UnimplementedDiscoverySource,
 		},
 		{
-			name:              "discoverable source - github - use existing external service",
-			externalService:   &githubExternalService,
-			externalServiceID: &githubExternalService.ID,
+			nbme:              "discoverbble source - github - use existing externbl service",
+			externblService:   &githubExternblService,
+			externblServiceID: &githubExternblService.ID,
 			kind:              extsvc.KindGitHub,
 			config:            "",
 			query:             "",
 			first:             5,
 			excludeRepos:      []string{},
-			src:               repos.NewFakeDiscoverableSource(repos.NewFakeSource(&githubExternalService, nil, githubRepository), false),
-			result:            &protocol.ExternalServiceRepositoriesResult{Repos: []*types.ExternalServiceRepository{githubRepository.ToExternalServiceRepository()}, Error: ""},
+			src:               repos.NewFbkeDiscoverbbleSource(repos.NewFbkeSource(&githubExternblService, nil, githubRepository), fblse),
+			result:            &protocol.ExternblServiceRepositoriesResult{Repos: []*types.ExternblServiceRepository{githubRepository.ToExternblServiceRepository()}, Error: ""},
 		},
 		{
-			name:              "external service for ID does not exist and other config parameters are not attempted",
-			externalService:   &githubExternalService,
-			externalServiceID: &idDoesNotExist,
+			nbme:              "externbl service for ID does not exist bnd other config pbrbmeters bre not bttempted",
+			externblService:   &githubExternblService,
+			externblServiceID: &idDoesNotExist,
 			kind:              extsvc.KindGitHub,
-			config:            githubExternalServiceConfig,
+			config:            githubExternblServiceConfig,
 			query:             "myquerystring",
 			first:             5,
 			excludeRepos:      []string{},
-			src:               repos.NewFakeDiscoverableSource(repos.NewFakeSource(&githubExternalService, nil, githubRepository), false),
-			result:            &protocol.ExternalServiceRepositoriesResult{Error: fmt.Sprintf("external service not found: %d", idDoesNotExist)},
-			err:               fmt.Sprintf("external service not found: %d", idDoesNotExist),
+			src:               repos.NewFbkeDiscoverbbleSource(repos.NewFbkeSource(&githubExternblService, nil, githubRepository), fblse),
+			result:            &protocol.ExternblServiceRepositoriesResult{Error: fmt.Sprintf("externbl service not found: %d", idDoesNotExist)},
+			err:               fmt.Sprintf("externbl service not found: %d", idDoesNotExist),
 		},
 		{
-			name:              "source does not implement discoverable source - use existing external service",
-			externalService:   &gitlabExternalService,
-			externalServiceID: &gitlabExternalService.ID,
+			nbme:              "source does not implement discoverbble source - use existing externbl service",
+			externblService:   &gitlbbExternblService,
+			externblServiceID: &gitlbbExternblService.ID,
 			kind:              extsvc.KindGitHub,
 			config:            "",
 			query:             "",
 			first:             5,
 			excludeRepos:      []string{},
-			src:               repos.NewFakeSource(&gitlabSource, nil, gitlabRepository),
-			result:            &protocol.ExternalServiceRepositoriesResult{Error: repos.UnimplementedDiscoverySource},
+			src:               repos.NewFbkeSource(&gitlbbSource, nil, gitlbbRepository),
+			result:            &protocol.ExternblServiceRepositoriesResult{Error: repos.UnimplementedDiscoverySource},
 			err:               repos.UnimplementedDiscoverySource,
 		},
 	}
 
-	for _, tc := range testCases {
+	for _, tc := rbnge testCbses {
 		tc := tc
 
-		t.Run(tc.name, func(t *testing.T) {
-			ctx := context.Background()
+		t.Run(tc.nbme, func(t *testing.T) {
+			ctx := context.Bbckground()
 
 			logger := logtest.Scoped(t)
-			var (
+			vbr (
 				sqlDB *sql.DB
 				store repos.Store
 			)
 
-			if tc.externalService != nil {
+			if tc.externblService != nil {
 				sqlDB = dbtest.NewDB(logger, t)
-				store = repos.NewStore(logtest.Scoped(t), database.NewDB(logger, sqlDB))
-				if err := store.ExternalServiceStore().Upsert(ctx, tc.externalService); err != nil {
-					t.Fatal(err)
+				store = repos.NewStore(logtest.Scoped(t), dbtbbbse.NewDB(logger, sqlDB))
+				if err := store.ExternblServiceStore().Upsert(ctx, tc.externblService); err != nil {
+					t.Fbtbl(err)
 				}
 			}
 
@@ -1223,25 +1223,25 @@ func TestServer_ExternalServiceRepositories(t *testing.T) {
 			}
 
 			mockNewGenericSourcer = func() repos.Sourcer {
-				return repos.NewFakeSourcer(nil, tc.src)
+				return repos.NewFbkeSourcer(nil, tc.src)
 			}
-			t.Cleanup(func() { mockNewGenericSourcer = nil })
+			t.Clebnup(func() { mockNewGenericSourcer = nil })
 
-			grpcServer := defaults.NewServer(logger)
-			proto.RegisterRepoUpdaterServiceServer(grpcServer, &RepoUpdaterServiceServer{Server: s})
-			handler := internalgrpc.MultiplexHandlers(grpcServer, s.Handler())
+			grpcServer := defbults.NewServer(logger)
+			proto.RegisterRepoUpdbterServiceServer(grpcServer, &RepoUpdbterServiceServer{Server: s})
+			hbndler := internblgrpc.MultiplexHbndlers(grpcServer, s.Hbndler())
 
-			srv := httptest.NewServer(handler)
+			srv := httptest.NewServer(hbndler)
 			defer srv.Close()
 
-			cli := repoupdater.NewClient(srv.URL)
+			cli := repoupdbter.NewClient(srv.URL)
 
 			if tc.err == "" {
 				tc.err = "<nil>"
 			}
 
-			args := protocol.ExternalServiceRepositoriesArgs{
-				ExternalServiceID: tc.externalServiceID,
+			brgs := protocol.ExternblServiceRepositoriesArgs{
+				ExternblServiceID: tc.externblServiceID,
 				Kind:              tc.kind,
 				Config:            tc.config,
 				Query:             tc.query,
@@ -1249,22 +1249,22 @@ func TestServer_ExternalServiceRepositories(t *testing.T) {
 				ExcludeRepos:      tc.excludeRepos,
 			}
 
-			res, err := cli.ExternalServiceRepositories(ctx, args)
-			if have, want := fmt.Sprint(err), tc.err; !strings.Contains(have, want) {
-				t.Fatalf("have err: %q, want: %q", have, want)
+			res, err := cli.ExternblServiceRepositories(ctx, brgs)
+			if hbve, wbnt := fmt.Sprint(err), tc.err; !strings.Contbins(hbve, wbnt) {
+				t.Fbtblf("hbve err: %q, wbnt: %q", hbve, wbnt)
 			}
 			if err != nil {
 				return
 			}
 
-			if have, want := res.Error, tc.result.Error; !strings.Contains(have, want) {
-				t.Fatalf("have err: %q, want: %q", have, want)
+			if hbve, wbnt := res.Error, tc.result.Error; !strings.Contbins(hbve, wbnt) {
+				t.Fbtblf("hbve err: %q, wbnt: %q", hbve, wbnt)
 			}
 			res.Error = ""
 			tc.result.Error = ""
 
 			if diff := cmp.Diff(res, tc.result, cmpopts.IgnoreFields(protocol.RepoInfo{}, "ID")); diff != "" {
-				t.Fatalf("response mismatch(-have, +want): %s", diff)
+				t.Fbtblf("response mismbtch(-hbve, +wbnt): %s", diff)
 			}
 		})
 	}
@@ -1274,15 +1274,15 @@ type testSource struct {
 	fn func() error
 }
 
-var (
+vbr (
 	_ repos.Source     = &testSource{}
 	_ repos.UserSource = &testSource{}
 )
 
-func (t testSource) ListRepos(_ context.Context, _ chan repos.SourceResult) {
+func (t testSource) ListRepos(_ context.Context, _ chbn repos.SourceResult) {
 }
 
-func (t testSource) ExternalServices() types.ExternalServices {
+func (t testSource) ExternblServices() types.ExternblServices {
 	return nil
 }
 
@@ -1290,16 +1290,16 @@ func (t testSource) CheckConnection(_ context.Context) error {
 	return nil
 }
 
-func (t testSource) WithAuthenticator(_ auth.Authenticator) (repos.Source, error) {
+func (t testSource) WithAuthenticbtor(_ buth.Authenticbtor) (repos.Source, error) {
 	return t, nil
 }
 
-func (t testSource) ValidateAuthenticator(_ context.Context) error {
+func (t testSource) VblidbteAuthenticbtor(_ context.Context) error {
 	return t.fn()
 }
 
-func TestGrpcErrToStatus(t *testing.T) {
-	testCases := []struct {
+func TestGrpcErrToStbtus(t *testing.T) {
+	testCbses := []struct {
 		description  string
 		input        error
 		expectedCode int
@@ -1307,64 +1307,64 @@ func TestGrpcErrToStatus(t *testing.T) {
 		{
 			description:  "nil error",
 			input:        nil,
-			expectedCode: http.StatusOK,
+			expectedCode: http.StbtusOK,
 		},
 		{
-			description:  "non-status error",
-			input:        errors.New("non-status error"),
-			expectedCode: http.StatusInternalServerError,
-		},
-
-		{
-			description:  "status error context.Canceled",
-			input:        context.Canceled,
-			expectedCode: http.StatusInternalServerError,
-		},
-		{
-			description:  "status error context.DeadlineExceeded",
-			input:        context.DeadlineExceeded,
-			expectedCode: http.StatusInternalServerError,
-		},
-		{
-			description:  "status error codes.NotFound",
-			input:        status.Errorf(codes.NotFound, "not found"),
-			expectedCode: http.StatusNotFound,
-		},
-		{
-			description:  "status error codes.Internal",
-			input:        status.Errorf(codes.Internal, "internal error"),
-			expectedCode: http.StatusInternalServerError,
-		},
-		{
-			description:  "status error codes.InvalidArgument",
-			input:        status.Errorf(codes.InvalidArgument, "invalid argument"),
-			expectedCode: http.StatusBadRequest,
+			description:  "non-stbtus error",
+			input:        errors.New("non-stbtus error"),
+			expectedCode: http.StbtusInternblServerError,
 		},
 
 		{
-			description:  "status error codes.PermissionDenied",
-			input:        status.Errorf(codes.PermissionDenied, "permission denied"),
-			expectedCode: http.StatusUnauthorized,
+			description:  "stbtus error context.Cbnceled",
+			input:        context.Cbnceled,
+			expectedCode: http.StbtusInternblServerError,
+		},
+		{
+			description:  "stbtus error context.DebdlineExceeded",
+			input:        context.DebdlineExceeded,
+			expectedCode: http.StbtusInternblServerError,
+		},
+		{
+			description:  "stbtus error codes.NotFound",
+			input:        stbtus.Errorf(codes.NotFound, "not found"),
+			expectedCode: http.StbtusNotFound,
+		},
+		{
+			description:  "stbtus error codes.Internbl",
+			input:        stbtus.Errorf(codes.Internbl, "internbl error"),
+			expectedCode: http.StbtusInternblServerError,
+		},
+		{
+			description:  "stbtus error codes.InvblidArgument",
+			input:        stbtus.Errorf(codes.InvblidArgument, "invblid brgument"),
+			expectedCode: http.StbtusBbdRequest,
 		},
 
 		{
-			description:  "status error codes.Unavailable",
-			input:        status.Errorf(codes.Unavailable, "unavailable"),
-			expectedCode: http.StatusServiceUnavailable,
+			description:  "stbtus error codes.PermissionDenied",
+			input:        stbtus.Errorf(codes.PermissionDenied, "permission denied"),
+			expectedCode: http.StbtusUnbuthorized,
 		},
 
 		{
-			description:  "status error codes.unimplemented",
-			input:        status.Errorf(codes.Unimplemented, "unimplemented"),
-			expectedCode: http.StatusNotImplemented,
+			description:  "stbtus error codes.Unbvbilbble",
+			input:        stbtus.Errorf(codes.Unbvbilbble, "unbvbilbble"),
+			expectedCode: http.StbtusServiceUnbvbilbble,
+		},
+
+		{
+			description:  "stbtus error codes.unimplemented",
+			input:        stbtus.Errorf(codes.Unimplemented, "unimplemented"),
+			expectedCode: http.StbtusNotImplemented,
 		},
 	}
 
-	for _, tc := range testCases {
+	for _, tc := rbnge testCbses {
 		t.Run(tc.description, func(t *testing.T) {
-			result := grpcErrToStatus(tc.input)
+			result := grpcErrToStbtus(tc.input)
 			if result != tc.expectedCode {
-				t.Errorf("Expected status code %d, but got %d", tc.expectedCode, result)
+				t.Errorf("Expected stbtus code %d, but got %d", tc.expectedCode, result)
 			}
 		})
 	}

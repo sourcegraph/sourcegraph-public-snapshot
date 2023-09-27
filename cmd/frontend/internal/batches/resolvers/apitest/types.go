@@ -1,448 +1,448 @@
-package apitest
+pbckbge bpitest
 
 import (
-	"github.com/sourcegraph/go-diff/diff"
+	"github.com/sourcegrbph/go-diff/diff"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
-	btypes "github.com/sourcegraph/sourcegraph/internal/batches/types"
-	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
-	"github.com/sourcegraph/sourcegraph/lib/batches"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/grbphqlbbckend"
+	btypes "github.com/sourcegrbph/sourcegrbph/internbl/bbtches/types"
+	"github.com/sourcegrbph/sourcegrbph/internbl/gqlutil"
+	"github.com/sourcegrbph/sourcegrbph/lib/bbtches"
 )
 
-type GitTarget struct {
+type GitTbrget struct {
 	OID            string
-	AbbreviatedOID string
-	TargetType     string `json:"type"`
+	AbbrevibtedOID string
+	TbrgetType     string `json:"type"`
 }
 
-type DiffRange struct{ StartLine, Lines int }
+type DiffRbnge struct{ StbrtLine, Lines int }
 
-type DiffStat struct{ Added, Deleted int32 }
+type DiffStbt struct{ Added, Deleted int32 }
 
-func (ds DiffStat) ToDiffStat() *diff.Stat {
-	return &diff.Stat{Added: ds.Added, Deleted: ds.Deleted}
+func (ds DiffStbt) ToDiffStbt() *diff.Stbt {
+	return &diff.Stbt{Added: ds.Added, Deleted: ds.Deleted}
 }
 
 type FileDiffHunk struct {
 	Body, Section      string
 	OldNoNewlineAt     bool
-	OldRange, NewRange DiffRange
+	OldRbnge, NewRbnge DiffRbnge
 }
 
 type File struct {
-	Name string
-	// Ignoring other fields of File2, since that would require gitserver
+	Nbme string
+	// Ignoring other fields of File2, since thbt would require gitserver
 }
 
 type FileDiff struct {
-	OldPath, NewPath string
+	OldPbth, NewPbth string
 	Hunks            []FileDiffHunk
-	Stat             DiffStat
+	Stbt             DiffStbt
 	OldFile          File
 }
 
 type FileDiffs struct {
-	RawDiff    string
-	DiffStat   DiffStat
-	PageInfo   PageInfo
+	RbwDiff    string
+	DiffStbt   DiffStbt
+	PbgeInfo   PbgeInfo
 	Nodes      []FileDiff
-	TotalCount int
+	TotblCount int
 }
 
 type User struct {
 	ID         string
-	DatabaseID int32
+	DbtbbbseID int32
 	SiteAdmin  bool
 
-	BatchChanges          BatchChangeConnection
-	BatchChangesCodeHosts BatchChangesCodeHostsConnection
+	BbtchChbnges          BbtchChbngeConnection
+	BbtchChbngesCodeHosts BbtchChbngesCodeHostsConnection
 }
 
 type Org struct {
 	ID   string
-	Name string
+	Nbme string
 
-	BatchChanges BatchChangeConnection
+	BbtchChbnges BbtchChbngeConnection
 }
 
 type UserOrg struct {
 	ID         string
-	DatabaseID int32
+	DbtbbbseID int32
 	SiteAdmin  bool
-	Name       string
+	Nbme       string
 }
 
-type BatchChange struct {
+type BbtchChbnge struct {
 	ID                      string
-	Name                    string
+	Nbme                    string
 	Description             string
-	State                   btypes.BatchChangeState
-	SpecCreator             *User
-	Creator                 *User
-	LastApplier             *User
-	LastAppliedAt           string
-	ViewerCanAdminister     bool
-	Namespace               UserOrg
-	CreatedAt               string
-	UpdatedAt               string
+	Stbte                   btypes.BbtchChbngeStbte
+	SpecCrebtor             *User
+	Crebtor                 *User
+	LbstApplier             *User
+	LbstAppliedAt           string
+	ViewerCbnAdminister     bool
+	Nbmespbce               UserOrg
+	CrebtedAt               string
+	UpdbtedAt               string
 	ClosedAt                string
 	URL                     string
-	ChangesetsStats         ChangesetsStats
-	Changesets              ChangesetConnection
-	ChangesetCountsOverTime []ChangesetCounts
-	DiffStat                DiffStat
-	BulkOperations          BulkOperationConnection
-	BatchSpecs              BatchSpecConnection
+	ChbngesetsStbts         ChbngesetsStbts
+	Chbngesets              ChbngesetConnection
+	ChbngesetCountsOverTime []ChbngesetCounts
+	DiffStbt                DiffStbt
+	BulkOperbtions          BulkOperbtionConnection
+	BbtchSpecs              BbtchSpecConnection
 }
 
-type BatchChangeConnection struct {
-	Nodes      []BatchChange
-	TotalCount int
-	PageInfo   PageInfo
+type BbtchChbngeConnection struct {
+	Nodes      []BbtchChbnge
+	TotblCount int
+	PbgeInfo   PbgeInfo
 }
 
-type ChangesetEvent struct {
+type ChbngesetEvent struct {
 	ID        string
-	Changeset struct{ ID string }
-	CreatedAt string
+	Chbngeset struct{ ID string }
+	CrebtedAt string
 }
 
-type ChangesetEventConnection struct {
-	TotalCount int
-	PageInfo   PageInfo
-	Nodes      []ChangesetEvent
+type ChbngesetEventConnection struct {
+	TotblCount int
+	PbgeInfo   PbgeInfo
+	Nodes      []ChbngesetEvent
 }
 
 type Repository struct {
 	ID   string
-	Name string
+	Nbme string
 }
 
-type ExternalURL struct {
+type ExternblURL struct {
 	URL         string
 	ServiceKind string
 	ServiceType string
 }
 
-type GitHubCommitVerification struct {
+type GitHubCommitVerificbtion struct {
 	Verified  bool
-	Reason    string
-	Signature string
-	Payload   string
+	Rebson    string
+	Signbture string
+	Pbylobd   string
 }
 
-type Changeset struct {
-	Typename   string `json:"__typename"`
+type Chbngeset struct {
+	Typenbme   string `json:"__typenbme"`
 	ID         string
 	Repository Repository
 
-	BatchChanges       BatchChangeConnection
-	OwnedByBatchChange *string
+	BbtchChbnges       BbtchChbngeConnection
+	OwnedByBbtchChbnge *string
 
-	CreatedAt          string
-	UpdatedAt          string
+	CrebtedAt          string
+	UpdbtedAt          string
 	NextSyncAt         string
-	ScheduleEstimateAt string
+	ScheduleEstimbteAt string
 	Title              string
 	Body               string
 	Error              string
-	State              string
-	ExternalID         string
-	ExternalURL        ExternalURL
-	ForkNamespace      string
-	ForkName           string
-	ReviewState        string
-	CheckState         string
-	Events             ChangesetEventConnection
+	Stbte              string
+	ExternblID         string
+	ExternblURL        ExternblURL
+	ForkNbmespbce      string
+	ForkNbme           string
+	ReviewStbte        string
+	CheckStbte         string
+	Events             ChbngesetEventConnection
 
-	CommitVerification *GitHubCommitVerification
+	CommitVerificbtion *GitHubCommitVerificbtion
 
-	Diff Comparison
+	Diff Compbrison
 
-	Labels []Label
+	Lbbels []Lbbel
 
-	CurrentSpec ChangesetSpec
+	CurrentSpec ChbngesetSpec
 }
 
-type Comparison struct {
-	Typename  string `json:"__typename"`
+type Compbrison struct {
+	Typenbme  string `json:"__typenbme"`
 	FileDiffs FileDiffs
 }
 
-type Label struct {
+type Lbbel struct {
 	Text        string
 	Color       string
 	Description *string
 }
 
-type ChangesetConnection struct {
-	Nodes      []Changeset
-	TotalCount int
-	PageInfo   PageInfo
+type ChbngesetConnection struct {
+	Nodes      []Chbngeset
+	TotblCount int
+	PbgeInfo   PbgeInfo
 }
 
-type ChangesetsStats struct {
+type ChbngesetsStbts struct {
 	Unpublished int
-	Draft       int
+	Drbft       int
 	Open        int
 	Merged      int
 	Closed      int
 	Deleted     int
-	Total       int
+	Totbl       int
 }
 
-type ChangesetCounts struct {
-	Date                 string
-	Total                int32
+type ChbngesetCounts struct {
+	Dbte                 string
+	Totbl                int32
 	Merged               int32
 	Closed               int32
 	Open                 int32
-	Draft                int32
+	Drbft                int32
 	OpenApproved         int32
-	OpenChangesRequested int32
+	OpenChbngesRequested int32
 	OpenPending          int32
 }
 
-type BatchSpec struct {
-	Typename string `json:"__typename"`
+type BbtchSpec struct {
+	Typenbme string `json:"__typenbme"`
 	ID       string
 
-	OriginalInput string
-	ParsedInput   graphqlbackend.JSONValue
+	OriginblInput string
+	PbrsedInput   grbphqlbbckend.JSONVblue
 
 	ApplyURL *string
 
-	Namespace UserOrg
-	Creator   *User
+	Nbmespbce UserOrg
+	Crebtor   *User
 
-	ChangesetSpecs ChangesetSpecConnection
-	ApplyPreview   ChangesetApplyPreviewConnection
+	ChbngesetSpecs ChbngesetSpecConnection
+	ApplyPreview   ChbngesetApplyPreviewConnection
 
-	ViewerCanAdminister bool
+	ViewerCbnAdminister bool
 
-	DiffStat DiffStat
+	DiffStbt DiffStbt
 
-	// Alias for the above.
-	AllCodeHosts BatchChangesCodeHostsConnection
-	// Alias for the above.
-	OnlyWithoutCredential BatchChangesCodeHostsConnection
+	// Alibs for the bbove.
+	AllCodeHosts BbtchChbngesCodeHostsConnection
+	// Alibs for the bbove.
+	OnlyWithoutCredentibl BbtchChbngesCodeHostsConnection
 
-	CreatedAt gqlutil.DateTime
-	ExpiresAt *gqlutil.DateTime
+	CrebtedAt gqlutil.DbteTime
+	ExpiresAt *gqlutil.DbteTime
 
 	// NEW
-	SupersedingBatchSpec *BatchSpec
-	AppliesToBatchChange BatchChange
+	SupersedingBbtchSpec *BbtchSpec
+	AppliesToBbtchChbnge BbtchChbnge
 
-	State               string
-	WorkspaceResolution BatchSpecWorkspaceResolution
+	Stbte               string
+	WorkspbceResolution BbtchSpecWorkspbceResolution
 
-	StartedAt      gqlutil.DateTime
-	FinishedAt     gqlutil.DateTime
-	FailureMessage string
-	ViewerCanRetry bool
+	StbrtedAt      gqlutil.DbteTime
+	FinishedAt     gqlutil.DbteTime
+	FbilureMessbge string
+	ViewerCbnRetry bool
 }
 
-type BatchSpecConnection struct {
-	Nodes      []BatchSpec
-	TotalCount int
-	PageInfo   PageInfo
+type BbtchSpecConnection struct {
+	Nodes      []BbtchSpec
+	TotblCount int
+	PbgeInfo   PbgeInfo
 }
 
-type BatchSpecWorkspaceResolution struct {
-	State      string
-	Workspaces BatchSpecWorkspaceConnection
+type BbtchSpecWorkspbceResolution struct {
+	Stbte      string
+	Workspbces BbtchSpecWorkspbceConnection
 }
 
-type BatchSpecWorkspaceConnection struct {
-	Nodes      []BatchSpecWorkspace
-	TotalCount int
-	PageInfo   PageInfo
+type BbtchSpecWorkspbceConnection struct {
+	Nodes      []BbtchSpecWorkspbce
+	TotblCount int
+	PbgeInfo   PbgeInfo
 }
 
-// ChangesetSpecDelta is the delta between two ChangesetSpecs describing the same Changeset.
-type ChangesetSpecDelta struct {
-	TitleChanged         bool
-	BodyChanged          bool
-	Undraft              bool
-	BaseRefChanged       bool
-	DiffChanged          bool
-	CommitMessageChanged bool
-	AuthorNameChanged    bool
-	AuthorEmailChanged   bool
+// ChbngesetSpecDeltb is the deltb between two ChbngesetSpecs describing the sbme Chbngeset.
+type ChbngesetSpecDeltb struct {
+	TitleChbnged         bool
+	BodyChbnged          bool
+	Undrbft              bool
+	BbseRefChbnged       bool
+	DiffChbnged          bool
+	CommitMessbgeChbnged bool
+	AuthorNbmeChbnged    bool
+	AuthorEmbilChbnged   bool
 }
 
-type ChangesetSpec struct {
-	Typename string `json:"__typename"`
+type ChbngesetSpec struct {
+	Typenbme string `json:"__typenbme"`
 	ID       string
 
-	Description ChangesetSpecDescription
+	Description ChbngesetSpecDescription
 
-	ExpiresAt *gqlutil.DateTime
+	ExpiresAt *gqlutil.DbteTime
 }
 
-type ChangesetSpecConnection struct {
-	Nodes      []ChangesetSpec
-	TotalCount int
-	PageInfo   PageInfo
+type ChbngesetSpecConnection struct {
+	Nodes      []ChbngesetSpec
+	TotblCount int
+	PbgeInfo   PbgeInfo
 }
 
-type ChangesetApplyPreviewConnection struct {
-	Nodes      []ChangesetApplyPreview
-	TotalCount int
-	PageInfo   PageInfo
-	Stats      ChangesetApplyPreviewConnectionStats
+type ChbngesetApplyPreviewConnection struct {
+	Nodes      []ChbngesetApplyPreview
+	TotblCount int
+	PbgeInfo   PbgeInfo
+	Stbts      ChbngesetApplyPreviewConnectionStbts
 }
 
-type ChangesetApplyPreviewConnectionStats struct {
+type ChbngesetApplyPreviewConnectionStbts struct {
 	Push         int32
-	Update       int32
-	Undraft      int32
+	Updbte       int32
+	Undrbft      int32
 	Publish      int32
-	PublishDraft int32
+	PublishDrbft int32
 	Sync         int32
 	Import       int32
 	Close        int32
 	Reopen       int32
 	Sleep        int32
-	Detach       int32
+	Detbch       int32
 }
 
-type ChangesetApplyPreview struct {
-	Typename string `json:"__typename"`
+type ChbngesetApplyPreview struct {
+	Typenbme string `json:"__typenbme"`
 
-	Operations []btypes.ReconcilerOperation
-	Delta      ChangesetSpecDelta
-	Targets    ChangesetApplyPreviewTargets
+	Operbtions []btypes.ReconcilerOperbtion
+	Deltb      ChbngesetSpecDeltb
+	Tbrgets    ChbngesetApplyPreviewTbrgets
 }
 
-type ChangesetApplyPreviewTargets struct {
-	Typename string `json:"__typename"`
+type ChbngesetApplyPreviewTbrgets struct {
+	Typenbme string `json:"__typenbme"`
 
-	ChangesetSpec ChangesetSpec
-	Changeset     Changeset
+	ChbngesetSpec ChbngesetSpec
+	Chbngeset     Chbngeset
 }
 
-type ChangesetSpecDescription struct {
-	Typename string `json:"__typename"`
+type ChbngesetSpecDescription struct {
+	Typenbme string `json:"__typenbme"`
 
-	BaseRepository Repository
-	ExternalID     string
-	BaseRef        string
+	BbseRepository Repository
+	ExternblID     string
+	BbseRef        string
 
-	HeadRef string
+	HebdRef string
 
 	Title string
 	Body  string
 
 	Commits []GitCommitDescription
 
-	Published batches.PublishedValue
+	Published bbtches.PublishedVblue
 
 	Diff struct {
 		FileDiffs FileDiffs
 	}
-	DiffStat DiffStat
+	DiffStbt DiffStbt
 }
 
 type GitCommitDescription struct {
 	Author  Person
-	Message string
+	Messbge string
 	Subject string
 	Body    string
 	Diff    string
 }
 
-type PageInfo struct {
-	HasNextPage bool
+type PbgeInfo struct {
+	HbsNextPbge bool
 	EndCursor   *string
 }
 
 type Person struct {
-	Name  string
-	Email string
+	Nbme  string
+	Embil string
 	User  *User
 }
 
-type BatchChangesCredential struct {
+type BbtchChbngesCredentibl struct {
 	ID                  string
-	ExternalServiceKind string
-	ExternalServiceURL  string
-	IsSiteCredential    bool
-	CreatedAt           string
+	ExternblServiceKind string
+	ExternblServiceURL  string
+	IsSiteCredentibl    bool
+	CrebtedAt           string
 }
 
 type EmptyResponse struct {
-	AlwaysNil string
+	AlwbysNil string
 }
 
-type BatchChangesCodeHostsConnection struct {
-	PageInfo   PageInfo
-	Nodes      []BatchChangesCodeHost
-	TotalCount int
+type BbtchChbngesCodeHostsConnection struct {
+	PbgeInfo   PbgeInfo
+	Nodes      []BbtchChbngesCodeHost
+	TotblCount int
 }
 
-type BatchChangesCodeHost struct {
-	ExternalServiceKind string
-	ExternalServiceURL  string
-	Credential          BatchChangesCredential
+type BbtchChbngesCodeHost struct {
+	ExternblServiceKind string
+	ExternblServiceURL  string
+	Credentibl          BbtchChbngesCredentibl
 }
 
-type BulkOperation struct {
+type BulkOperbtion struct {
 	ID         string
 	Type       string
-	State      string
-	Progress   float64
-	Errors     []*ChangesetJobError
-	CreatedAt  string
+	Stbte      string
+	Progress   flobt64
+	Errors     []*ChbngesetJobError
+	CrebtedAt  string
 	FinishedAt string
 }
 
-type ChangesetJobError struct {
-	Changeset *Changeset
+type ChbngesetJobError struct {
+	Chbngeset *Chbngeset
 	Error     *string
 }
 
-type BulkOperationConnection struct {
-	Nodes      []BulkOperation
-	TotalCount int
-	PageInfo   PageInfo
+type BulkOperbtionConnection struct {
+	Nodes      []BulkOperbtion
+	TotblCount int
+	PbgeInfo   PbgeInfo
 }
 
 type GitRef struct {
-	Name        string
-	DisplayName string
-	AbbrevName  string
-	Target      GitTarget
+	Nbme        string
+	DisplbyNbme string
+	AbbrevNbme  string
+	Tbrget      GitTbrget
 }
 
-type BatchSpecWorkspace struct {
-	Typename string `json:"__typename"`
+type BbtchSpecWorkspbce struct {
+	Typenbme string `json:"__typenbme"`
 	ID       string
 
 	Repository Repository
-	BatchSpec  BatchSpec
+	BbtchSpec  BbtchSpec
 
-	ChangesetSpecs []ChangesetSpec
+	ChbngesetSpecs []ChbngesetSpec
 
-	Branch            GitRef
-	Path              string
-	SearchResultPaths []string
-	Steps             []BatchSpecWorkspaceStep
+	Brbnch            GitRef
+	Pbth              string
+	SebrchResultPbths []string
+	Steps             []BbtchSpecWorkspbceStep
 
-	CachedResultFound  bool
-	OnlyFetchWorkspace bool
+	CbchedResultFound  bool
+	OnlyFetchWorkspbce bool
 	Ignored            bool
 	Unsupported        bool
 
-	State          string
-	StartedAt      gqlutil.DateTime
-	FinishedAt     gqlutil.DateTime
-	FailureMessage string
-	PlaceInQueue   int
+	Stbte          string
+	StbrtedAt      gqlutil.DbteTime
+	FinishedAt     gqlutil.DbteTime
+	FbilureMessbge string
+	PlbceInQueue   int
 }
 
-type BatchSpecWorkspaceStep struct {
+type BbtchSpecWorkspbceStep struct {
 	Run       string
-	Container string
+	Contbiner string
 }

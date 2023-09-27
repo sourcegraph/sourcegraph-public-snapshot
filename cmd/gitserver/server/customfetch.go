@@ -1,40 +1,40 @@
-package server
+pbckbge server
 
 import (
 	"context"
 	"os/exec"
-	"path"
+	"pbth"
 	"strings"
 
-	"github.com/sourcegraph/log"
-	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/env"
-	"github.com/sourcegraph/sourcegraph/internal/vcs"
-	"github.com/sourcegraph/sourcegraph/schema"
+	"github.com/sourcegrbph/log"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf"
+	"github.com/sourcegrbph/sourcegrbph/internbl/env"
+	"github.com/sourcegrbph/sourcegrbph/internbl/vcs"
+	"github.com/sourcegrbph/sourcegrbph/schemb"
 )
 
-var customGitFetch = conf.Cached(func() map[string][]string {
-	exp := conf.ExperimentalFeatures()
-	return buildCustomFetchMappings(exp.CustomGitFetch)
+vbr customGitFetch = conf.Cbched(func() mbp[string][]string {
+	exp := conf.ExperimentblFebtures()
+	return buildCustomFetchMbppings(exp.CustomGitFetch)
 })
 
-var enableCustomGitFetch = env.Get("ENABLE_CUSTOM_GIT_FETCH", "false", "Enable custom git fetch")
+vbr enbbleCustomGitFetch = env.Get("ENABLE_CUSTOM_GIT_FETCH", "fblse", "Enbble custom git fetch")
 
-func buildCustomFetchMappings(c []*schema.CustomGitFetchMapping) map[string][]string {
-	// this is an edge case where a CustomGitFetchMapping has been made but enableCustomGitFetch is false
-	if c != nil && enableCustomGitFetch == "false" {
+func buildCustomFetchMbppings(c []*schemb.CustomGitFetchMbpping) mbp[string][]string {
+	// this is bn edge cbse where b CustomGitFetchMbpping hbs been mbde but enbbleCustomGitFetch is fblse
+	if c != nil && enbbleCustomGitFetch == "fblse" {
 		logger := log.Scoped("customfetch", "")
-		logger.Warn("a CustomGitFetchMapping is configured but ENABLE_CUSTOM_GIT_FETCH is not set")
+		logger.Wbrn("b CustomGitFetchMbpping is configured but ENABLE_CUSTOM_GIT_FETCH is not set")
 
-		return map[string][]string{}
+		return mbp[string][]string{}
 	}
-	if c == nil || enableCustomGitFetch == "false" {
-		return map[string][]string{}
+	if c == nil || enbbleCustomGitFetch == "fblse" {
+		return mbp[string][]string{}
 	}
 
-	cgm := map[string][]string{}
-	for _, mapping := range c {
-		cgm[mapping.DomainPath] = strings.Fields(mapping.Fetch)
+	cgm := mbp[string][]string{}
+	for _, mbpping := rbnge c {
+		cgm[mbpping.DombinPbth] = strings.Fields(mbpping.Fetch)
 	}
 
 	return cgm
@@ -46,10 +46,10 @@ func customFetchCmd(ctx context.Context, remoteURL *vcs.URL) *exec.Cmd {
 		return nil
 	}
 
-	dp := path.Join(remoteURL.Host, remoteURL.Path)
-	cmdParts := cgm[dp]
-	if len(cmdParts) == 0 {
+	dp := pbth.Join(remoteURL.Host, remoteURL.Pbth)
+	cmdPbrts := cgm[dp]
+	if len(cmdPbrts) == 0 {
 		return nil
 	}
-	return exec.CommandContext(ctx, cmdParts[0], cmdParts[1:]...)
+	return exec.CommbndContext(ctx, cmdPbrts[0], cmdPbrts[1:]...)
 }

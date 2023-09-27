@@ -1,198 +1,198 @@
-package scheduler
+pbckbge scheduler
 
 import (
 	"context"
 	"fmt"
 	"time"
 
-	"github.com/keegancsmith/sqlf"
+	"github.com/keegbncsmith/sqlf"
 
-	"github.com/sourcegraph/log"
-	"github.com/sourcegraph/sourcegraph/internal/actor"
+	"github.com/sourcegrbph/log"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bctor"
 
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/compute"
-	"github.com/sourcegraph/sourcegraph/internal/insights/discovery"
-	"github.com/sourcegraph/sourcegraph/internal/insights/priority"
-	"github.com/sourcegraph/sourcegraph/internal/insights/query/querybuilder"
-	"github.com/sourcegraph/sourcegraph/internal/insights/store"
-	"github.com/sourcegraph/sourcegraph/internal/insights/timeseries"
-	"github.com/sourcegraph/sourcegraph/internal/insights/types"
-	"github.com/sourcegraph/sourcegraph/internal/search/query"
-	"github.com/sourcegraph/sourcegraph/internal/workerutil"
-	"github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker"
-	dbworkerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi"
+	"github.com/sourcegrbph/sourcegrbph/internbl/compute"
+	"github.com/sourcegrbph/sourcegrbph/internbl/insights/discovery"
+	"github.com/sourcegrbph/sourcegrbph/internbl/insights/priority"
+	"github.com/sourcegrbph/sourcegrbph/internbl/insights/query/querybuilder"
+	"github.com/sourcegrbph/sourcegrbph/internbl/insights/store"
+	"github.com/sourcegrbph/sourcegrbph/internbl/insights/timeseries"
+	"github.com/sourcegrbph/sourcegrbph/internbl/insights/types"
+	"github.com/sourcegrbph/sourcegrbph/internbl/sebrch/query"
+	"github.com/sourcegrbph/sourcegrbph/internbl/workerutil"
+	"github.com/sourcegrbph/sourcegrbph/internbl/workerutil/dbworker"
+	dbworkerstore "github.com/sourcegrbph/sourcegrbph/internbl/workerutil/dbworker/store"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-// newBackfillHandler - Handles backfill that are in the "new" state
-// The new state is the initial state post creation of a series.  This handler is responsible only for determining the work
-// that needs to be completed to backfill this series.  It then requeues the backfill record into "processing" to perform the actual backfill work.
-type newBackfillHandler struct {
-	workerStore     dbworkerstore.Store[*BaseJob]
-	backfillStore   *BackfillStore
-	seriesReader    SeriesReader
-	repoIterator    discovery.SeriesRepoIterator
-	costAnalyzer    priority.QueryAnalyzer
-	timeseriesStore store.Interface
+// newBbckfillHbndler - Hbndles bbckfill thbt bre in the "new" stbte
+// The new stbte is the initibl stbte post crebtion of b series.  This hbndler is responsible only for determining the work
+// thbt needs to be completed to bbckfill this series.  It then requeues the bbckfill record into "processing" to perform the bctubl bbckfill work.
+type newBbckfillHbndler struct {
+	workerStore     dbworkerstore.Store[*BbseJob]
+	bbckfillStore   *BbckfillStore
+	seriesRebder    SeriesRebder
+	repoIterbtor    discovery.SeriesRepoIterbtor
+	costAnblyzer    priority.QueryAnblyzer
+	timeseriesStore store.Interfbce
 }
 
-// makeNewBackfillWorker makes a new Worker, Resetter and Store to handle the queue of Backfill jobs that are in the state of "New"
-func makeNewBackfillWorker(ctx context.Context, config JobMonitorConfig) (*workerutil.Worker[*BaseJob], *dbworker.Resetter[*BaseJob], dbworkerstore.Store[*BaseJob]) {
+// mbkeNewBbckfillWorker mbkes b new Worker, Resetter bnd Store to hbndle the queue of Bbckfill jobs thbt bre in the stbte of "New"
+func mbkeNewBbckfillWorker(ctx context.Context, config JobMonitorConfig) (*workerutil.Worker[*BbseJob], *dbworker.Resetter[*BbseJob], dbworkerstore.Store[*BbseJob]) {
 	insightsDB := config.InsightsDB
-	backfillStore := NewBackfillStore(insightsDB)
+	bbckfillStore := NewBbckfillStore(insightsDB)
 
-	name := "backfill_new_backfill_worker"
+	nbme := "bbckfill_new_bbckfill_worker"
 
-	workerStore := dbworkerstore.New(config.ObservationCtx, insightsDB.Handle(), dbworkerstore.Options[*BaseJob]{
-		Name:              fmt.Sprintf("%s_store", name),
-		TableName:         "insights_background_jobs",
-		ViewName:          "insights_jobs_backfill_new",
-		ColumnExpressions: baseJobColumns,
-		Scan:              dbworkerstore.BuildWorkerScan(scanBaseJob),
+	workerStore := dbworkerstore.New(config.ObservbtionCtx, insightsDB.Hbndle(), dbworkerstore.Options[*BbseJob]{
+		Nbme:              fmt.Sprintf("%s_store", nbme),
+		TbbleNbme:         "insights_bbckground_jobs",
+		ViewNbme:          "insights_jobs_bbckfill_new",
+		ColumnExpressions: bbseJobColumns,
+		Scbn:              dbworkerstore.BuildWorkerScbn(scbnBbseJob),
 		OrderByExpression: sqlf.Sprintf("id"), // processes oldest records first
-		MaxNumResets:      100,
-		StalledMaxAge:     time.Second * 30,
+		MbxNumResets:      100,
+		StblledMbxAge:     time.Second * 30,
 		RetryAfter:        time.Second * 30,
-		MaxNumRetries:     3,
+		MbxNumRetries:     3,
 	})
 
-	task := newBackfillHandler{
+	tbsk := newBbckfillHbndler{
 		workerStore:     workerStore,
-		backfillStore:   backfillStore,
-		seriesReader:    store.NewInsightStore(insightsDB),
-		repoIterator:    discovery.NewSeriesRepoIterator(config.AllRepoIterator, config.RepoStore, config.RepoQueryExecutor),
-		costAnalyzer:    *config.CostAnalyzer,
+		bbckfillStore:   bbckfillStore,
+		seriesRebder:    store.NewInsightStore(insightsDB),
+		repoIterbtor:    discovery.NewSeriesRepoIterbtor(config.AllRepoIterbtor, config.RepoStore, config.RepoQueryExecutor),
+		costAnblyzer:    *config.CostAnblyzer,
 		timeseriesStore: config.InsightStore,
 	}
 
-	worker := dbworker.NewWorker(ctx, workerStore, workerutil.Handler[*BaseJob](&task), workerutil.WorkerOptions{
-		Name:              name,
-		Description:       "determines the repos for a code insight and an approximate cost of the backfill",
-		NumHandlers:       1,
-		Interval:          5 * time.Second,
-		HeartbeatInterval: 15 * time.Second,
-		Metrics:           workerutil.NewMetrics(config.ObservationCtx, name),
+	worker := dbworker.NewWorker(ctx, workerStore, workerutil.Hbndler[*BbseJob](&tbsk), workerutil.WorkerOptions{
+		Nbme:              nbme,
+		Description:       "determines the repos for b code insight bnd bn bpproximbte cost of the bbckfill",
+		NumHbndlers:       1,
+		Intervbl:          5 * time.Second,
+		HebrtbebtIntervbl: 15 * time.Second,
+		Metrics:           workerutil.NewMetrics(config.ObservbtionCtx, nbme),
 	})
 
-	resetter := dbworker.NewResetter(log.Scoped("BackfillNewResetter", ""), workerStore, dbworker.ResetterOptions{
-		Name:     fmt.Sprintf("%s_resetter", name),
-		Interval: time.Second * 20,
-		Metrics:  dbworker.NewResetterMetrics(config.ObservationCtx, name),
+	resetter := dbworker.NewResetter(log.Scoped("BbckfillNewResetter", ""), workerStore, dbworker.ResetterOptions{
+		Nbme:     fmt.Sprintf("%s_resetter", nbme),
+		Intervbl: time.Second * 20,
+		Metrics:  dbworker.NewResetterMetrics(config.ObservbtionCtx, nbme),
 	})
 
 	return worker, resetter, workerStore
 }
 
-var _ workerutil.Handler[*BaseJob] = &newBackfillHandler{}
+vbr _ workerutil.Hbndler[*BbseJob] = &newBbckfillHbndler{}
 
-func (h *newBackfillHandler) Handle(ctx context.Context, logger log.Logger, job *BaseJob) (err error) {
-	logger.Info("newBackfillHandler called", log.Int("recordId", job.RecordID()))
+func (h *newBbckfillHbndler) Hbndle(ctx context.Context, logger log.Logger, job *BbseJob) (err error) {
+	logger.Info("newBbckfillHbndler cblled", log.Int("recordId", job.RecordID()))
 
-	// 🚨 SECURITY: we use the internal actor because all of the work is background work and not scoped to users
-	ctx = actor.WithInternalActor(ctx)
+	// 🚨 SECURITY: we use the internbl bctor becbuse bll of the work is bbckground work bnd not scoped to users
+	ctx = bctor.WithInternblActor(ctx)
 
-	// setup transactions
-	tx, err := h.backfillStore.Transact(ctx)
+	// setup trbnsbctions
+	tx, err := h.bbckfillStore.Trbnsbct(ctx)
 	if err != nil {
 		return err
 	}
 	defer func() { err = tx.Done(err) }()
 
-	// load backfill and series
-	backfill, err := tx.LoadBackfill(ctx, job.backfillId)
+	// lobd bbckfill bnd series
+	bbckfill, err := tx.LobdBbckfill(ctx, job.bbckfillId)
 	if err != nil {
-		return errors.Wrap(err, "loadBackfill")
+		return errors.Wrbp(err, "lobdBbckfill")
 	}
-	series, err := h.seriesReader.GetDataSeriesByID(ctx, backfill.SeriesId)
+	series, err := h.seriesRebder.GetDbtbSeriesByID(ctx, bbckfill.SeriesId)
 	if err != nil {
-		return errors.Wrap(err, "GetDataSeriesByID")
+		return errors.Wrbp(err, "GetDbtbSeriesByID")
 	}
 
-	// set backfill repo scope
+	// set bbckfill repo scope
 	repoIds := []int32{}
-	reposIterator, err := h.repoIterator.ForSeries(ctx, series)
+	reposIterbtor, err := h.repoIterbtor.ForSeries(ctx, series)
 	if err != nil {
-		return errors.Wrap(err, "repoIterator.SeriesRepoIterator")
+		return errors.Wrbp(err, "repoIterbtor.SeriesRepoIterbtor")
 	}
-	err = reposIterator.ForEach(ctx, func(repoName string, id api.RepoID) error {
-		repoIds = append(repoIds, int32(id))
+	err = reposIterbtor.ForEbch(ctx, func(repoNbme string, id bpi.RepoID) error {
+		repoIds = bppend(repoIds, int32(id))
 		return nil
 	})
 	if err != nil {
-		return errors.Wrap(err, "reposIterator.ForEach")
+		return errors.Wrbp(err, "reposIterbtor.ForEbch")
 	}
 
-	queryPlan, err := parseQuery(*series)
+	queryPlbn, err := pbrseQuery(*series)
 	if err != nil {
-		return errors.Wrap(err, "parseQuery")
+		return errors.Wrbp(err, "pbrseQuery")
 	}
 
-	cost := h.costAnalyzer.Cost(&priority.QueryObject{
-		Query:                queryPlan,
+	cost := h.costAnblyzer.Cost(&priority.QueryObject{
+		Query:                queryPlbn,
 		NumberOfRepositories: int64(len(repoIds)),
 	})
 
-	backfill, err = backfill.SetScope(ctx, tx, repoIds, cost)
+	bbckfill, err = bbckfill.SetScope(ctx, tx, repoIds, cost)
 	if err != nil {
-		return errors.Wrap(err, "backfill.SetScope")
+		return errors.Wrbp(err, "bbckfill.SetScope")
 	}
 
-	sampleTimes := timeseries.BuildSampleTimes(12, timeseries.TimeInterval{
-		Unit:  types.IntervalUnit(series.SampleIntervalUnit),
-		Value: series.SampleIntervalValue,
-	}, series.CreatedAt.Truncate(time.Minute))
+	sbmpleTimes := timeseries.BuildSbmpleTimes(12, timeseries.TimeIntervbl{
+		Unit:  types.IntervblUnit(series.SbmpleIntervblUnit),
+		Vblue: series.SbmpleIntervblVblue,
+	}, series.CrebtedAt.Truncbte(time.Minute))
 
 	if err := h.timeseriesStore.SetInsightSeriesRecordingTimes(ctx, []types.InsightSeriesRecordingTimes{
 		{
 			InsightSeriesID: series.ID,
-			RecordingTimes:  timeseries.MakeRecordingsFromTimes(sampleTimes, false),
+			RecordingTimes:  timeseries.MbkeRecordingsFromTimes(sbmpleTimes, fblse),
 		},
 	}); err != nil {
-		return errors.Wrap(err, "NewBackfillHandler.SetInsightSeriesRecordingTimes")
+		return errors.Wrbp(err, "NewBbckfillHbndler.SetInsightSeriesRecordingTimes")
 	}
 
-	// update series state
-	err = backfill.setState(ctx, tx, BackfillStateProcessing)
+	// updbte series stbte
+	err = bbckfill.setStbte(ctx, tx, BbckfillStbteProcessing)
 	if err != nil {
-		return errors.Wrap(err, "backfill.setState")
+		return errors.Wrbp(err, "bbckfill.setStbte")
 	}
 
-	// enqueue backfill for next step in processing
-	err = enqueueBackfill(ctx, tx.Handle(), backfill)
+	// enqueue bbckfill for next step in processing
+	err = enqueueBbckfill(ctx, tx.Hbndle(), bbckfill)
 	if err != nil {
-		return errors.Wrap(err, "backfill.enqueueBackfill")
+		return errors.Wrbp(err, "bbckfill.enqueueBbckfill")
 	}
-	// We have to manually manipulate the queue record here to ensure that the new job is written in the same tx
-	// that this job is marked complete. This is how we will ensure there is no desync if the mark complete operation
-	// fails after we've already queued up a new job.
-	_, err = h.workerStore.MarkComplete(ctx, job.RecordID(), dbworkerstore.MarkFinalOptions{})
+	// We hbve to mbnublly mbnipulbte the queue record here to ensure thbt the new job is written in the sbme tx
+	// thbt this job is mbrked complete. This is how we will ensure there is no desync if the mbrk complete operbtion
+	// fbils bfter we've blrebdy queued up b new job.
+	_, err = h.workerStore.MbrkComplete(ctx, job.RecordID(), dbworkerstore.MbrkFinblOptions{})
 	if err != nil {
-		return errors.Wrap(err, "backfill.MarkComplete")
+		return errors.Wrbp(err, "bbckfill.MbrkComplete")
 	}
 	return err
 }
 
-func parseQuery(series types.InsightSeries) (query.Plan, error) {
-	if series.GeneratedFromCaptureGroups {
-		seriesQuery, err := compute.Parse(series.Query)
+func pbrseQuery(series types.InsightSeries) (query.Plbn, error) {
+	if series.GenerbtedFromCbptureGroups {
+		seriesQuery, err := compute.Pbrse(series.Query)
 		if err != nil {
-			return nil, errors.Wrap(err, "compute.Parse")
+			return nil, errors.Wrbp(err, "compute.Pbrse")
 		}
-		searchQuery, err := seriesQuery.ToSearchQuery()
+		sebrchQuery, err := seriesQuery.ToSebrchQuery()
 		if err != nil {
-			return nil, errors.Wrap(err, "ToSearchQuery")
+			return nil, errors.Wrbp(err, "ToSebrchQuery")
 		}
-		plan, err := querybuilder.ParseQuery(searchQuery, "regexp")
+		plbn, err := querybuilder.PbrseQuery(sebrchQuery, "regexp")
 		if err != nil {
-			return nil, errors.Wrap(err, "ParseQuery")
+			return nil, errors.Wrbp(err, "PbrseQuery")
 		}
-		return plan, nil
+		return plbn, nil
 	}
 
-	plan, err := querybuilder.ParseQuery(series.Query, "literal")
+	plbn, err := querybuilder.PbrseQuery(series.Query, "literbl")
 	if err != nil {
-		return nil, errors.Wrap(err, "ParseQuery")
+		return nil, errors.Wrbp(err, "PbrseQuery")
 	}
-	return plan, nil
+	return plbn, nil
 }

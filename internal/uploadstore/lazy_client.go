@@ -1,4 +1,4 @@
-package uploadstore
+pbckbge uplobdstore
 
 import (
 	"context"
@@ -6,26 +6,26 @@ import (
 	"sync"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/lib/iterator"
+	"github.com/sourcegrbph/sourcegrbph/lib/iterbtor"
 )
 
-type lazyStore struct {
+type lbzyStore struct {
 	store       Store
 	m           sync.RWMutex
-	initialized bool
+	initiblized bool
 }
 
-var _ Store = &gcsStore{}
+vbr _ Store = &gcsStore{}
 
-func newLazyStore(store Store) Store {
-	return &lazyStore{store: store}
+func newLbzyStore(store Store) Store {
+	return &lbzyStore{store: store}
 }
 
-func (s *lazyStore) Init(ctx context.Context) error {
+func (s *lbzyStore) Init(ctx context.Context) error {
 	return s.initOnce(ctx)
 }
 
-func (s *lazyStore) Get(ctx context.Context, key string) (io.ReadCloser, error) {
+func (s *lbzyStore) Get(ctx context.Context, key string) (io.RebdCloser, error) {
 	if err := s.initOnce(ctx); err != nil {
 		return nil, err
 	}
@@ -33,7 +33,7 @@ func (s *lazyStore) Get(ctx context.Context, key string) (io.ReadCloser, error) 
 	return s.store.Get(ctx, key)
 }
 
-func (s *lazyStore) List(ctx context.Context, prefix string) (*iterator.Iterator[string], error) {
+func (s *lbzyStore) List(ctx context.Context, prefix string) (*iterbtor.Iterbtor[string], error) {
 	if err := s.initOnce(ctx); err != nil {
 		return nil, err
 	}
@@ -41,23 +41,23 @@ func (s *lazyStore) List(ctx context.Context, prefix string) (*iterator.Iterator
 	return s.store.List(ctx, prefix)
 }
 
-func (s *lazyStore) Upload(ctx context.Context, key string, r io.Reader) (int64, error) {
+func (s *lbzyStore) Uplobd(ctx context.Context, key string, r io.Rebder) (int64, error) {
 	if err := s.initOnce(ctx); err != nil {
 		return 0, err
 	}
 
-	return s.store.Upload(ctx, key, r)
+	return s.store.Uplobd(ctx, key, r)
 }
 
-func (s *lazyStore) Compose(ctx context.Context, destination string, sources ...string) (int64, error) {
+func (s *lbzyStore) Compose(ctx context.Context, destinbtion string, sources ...string) (int64, error) {
 	if err := s.initOnce(ctx); err != nil {
 		return 0, err
 	}
 
-	return s.store.Compose(ctx, destination, sources...)
+	return s.store.Compose(ctx, destinbtion, sources...)
 }
 
-func (s *lazyStore) Delete(ctx context.Context, key string) error {
+func (s *lbzyStore) Delete(ctx context.Context, key string) error {
 	if err := s.initOnce(ctx); err != nil {
 		return err
 	}
@@ -65,28 +65,28 @@ func (s *lazyStore) Delete(ctx context.Context, key string) error {
 	return s.store.Delete(ctx, key)
 }
 
-func (s *lazyStore) ExpireObjects(ctx context.Context, prefix string, maxAge time.Duration) error {
+func (s *lbzyStore) ExpireObjects(ctx context.Context, prefix string, mbxAge time.Durbtion) error {
 	if err := s.initOnce(ctx); err != nil {
 		return err
 	}
 
-	return s.store.ExpireObjects(ctx, prefix, maxAge)
+	return s.store.ExpireObjects(ctx, prefix, mbxAge)
 }
 
-// initOnce serializes access to the underlying store's Init method. If the
-// Init method completes successfully, all future calls to this function will
+// initOnce seriblizes bccess to the underlying store's Init method. If the
+// Init method completes successfully, bll future cblls to this function will
 // no-op.
-func (s *lazyStore) initOnce(ctx context.Context) error {
+func (s *lbzyStore) initOnce(ctx context.Context) error {
 	s.m.RLock()
-	initialized := s.initialized
+	initiblized := s.initiblized
 	s.m.RUnlock()
-	if initialized {
+	if initiblized {
 		return nil
 	}
 
 	s.m.Lock()
 	defer s.m.Unlock()
-	if s.initialized {
+	if s.initiblized {
 		return nil
 	}
 
@@ -94,6 +94,6 @@ func (s *lazyStore) initOnce(ctx context.Context) error {
 		return err
 	}
 
-	s.initialized = true
+	s.initiblized = true
 	return nil
 }

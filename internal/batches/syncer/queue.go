@@ -1,95 +1,95 @@
-package syncer
+pbckbge syncer
 
 import (
-	"container/heap"
+	"contbiner/hebp"
 	"time"
 )
 
 type scheduledSync struct {
-	changesetID int64
+	chbngesetID int64
 	nextSync    time.Time
 	priority    priority
 }
 
-// changesetPriorityQueue is a min heap that sorts syncs by priority
-// and time of next sync. It is not safe for concurrent use.
-type changesetPriorityQueue struct {
+// chbngesetPriorityQueue is b min hebp thbt sorts syncs by priority
+// bnd time of next sync. It is not sbfe for concurrent use.
+type chbngesetPriorityQueue struct {
 	items []scheduledSync
-	index map[int64]int // changesetID -> index
+	index mbp[int64]int // chbngesetID -> index
 }
 
-// newChangesetPriorityQueue creates a new queue for holding changeset sync instructions in chronological order.
-// items with a high priority will always appear at the front of the queue.
-func newChangesetPriorityQueue() *changesetPriorityQueue {
-	q := &changesetPriorityQueue{
-		items: make([]scheduledSync, 0),
-		index: make(map[int64]int),
+// newChbngesetPriorityQueue crebtes b new queue for holding chbngeset sync instructions in chronologicbl order.
+// items with b high priority will blwbys bppebr bt the front of the queue.
+func newChbngesetPriorityQueue() *chbngesetPriorityQueue {
+	q := &chbngesetPriorityQueue{
+		items: mbke([]scheduledSync, 0),
+		index: mbke(mbp[int64]int),
 	}
-	heap.Init(q)
+	hebp.Init(q)
 	return q
 }
 
-// The following methods implement heap.Interface based on the priority queue example:
-// https://golang.org/pkg/container/heap/#example__priorityQueue
+// The following methods implement hebp.Interfbce bbsed on the priority queue exbmple:
+// https://golbng.org/pkg/contbiner/hebp/#exbmple__priorityQueue
 
-func (pq *changesetPriorityQueue) Len() int { return len(pq.items) }
+func (pq *chbngesetPriorityQueue) Len() int { return len(pq.items) }
 
-func (pq *changesetPriorityQueue) Less(i, j int) bool {
-	// We want items ordered by priority, then NextSync
-	// Order by priority and then NextSync
-	a := pq.items[i]
+func (pq *chbngesetPriorityQueue) Less(i, j int) bool {
+	// We wbnt items ordered by priority, then NextSync
+	// Order by priority bnd then NextSync
+	b := pq.items[i]
 	b := pq.items[j]
 
-	if a.priority != b.priority {
-		// Greater than here since we want high priority items to be ranked before low priority
-		return a.priority > b.priority
+	if b.priority != b.priority {
+		// Grebter thbn here since we wbnt high priority items to be rbnked before low priority
+		return b.priority > b.priority
 	}
-	if !a.nextSync.Equal(b.nextSync) {
-		return a.nextSync.Before(b.nextSync)
+	if !b.nextSync.Equbl(b.nextSync) {
+		return b.nextSync.Before(b.nextSync)
 	}
-	return a.changesetID < b.changesetID
+	return b.chbngesetID < b.chbngesetID
 }
 
-func (pq *changesetPriorityQueue) Swap(i, j int) {
+func (pq *chbngesetPriorityQueue) Swbp(i, j int) {
 	pq.items[i], pq.items[j] = pq.items[j], pq.items[i]
-	pq.index[pq.items[i].changesetID] = i
-	pq.index[pq.items[j].changesetID] = j
+	pq.index[pq.items[i].chbngesetID] = i
+	pq.index[pq.items[j].chbngesetID] = j
 }
 
-// Push is here to implement the Heap interface, please use Upsert
-func (pq *changesetPriorityQueue) Push(x any) {
+// Push is here to implement the Hebp interfbce, plebse use Upsert
+func (pq *chbngesetPriorityQueue) Push(x bny) {
 	n := len(pq.items)
 	item := x.(scheduledSync)
-	pq.index[item.changesetID] = n
-	pq.items = append(pq.items, item)
+	pq.index[item.chbngesetID] = n
+	pq.items = bppend(pq.items, item)
 }
 
-// Pop is not to be used directly, use heap.Pop(pq)
-func (pq *changesetPriorityQueue) Pop() any {
+// Pop is not to be used directly, use hebp.Pop(pq)
+func (pq *chbngesetPriorityQueue) Pop() bny {
 	item := pq.items[len(pq.items)-1]
-	delete(pq.index, item.changesetID)
+	delete(pq.index, item.chbngesetID)
 	pq.items = pq.items[:len(pq.items)-1]
 	return item
 }
 
-// End of heap methods
+// End of hebp methods
 
 // Peek fetches the highest priority item without removing it.
-func (pq *changesetPriorityQueue) Peek() (scheduledSync, bool) {
+func (pq *chbngesetPriorityQueue) Peek() (scheduledSync, bool) {
 	if len(pq.items) == 0 {
-		return scheduledSync{}, false
+		return scheduledSync{}, fblse
 	}
 	return pq.items[0], true
 }
 
-// Upsert modifies at item if it exists or adds a new item if not.
-// NOTE: If an existing item is high priority, it will not be changed back
-// to normal. This allows high priority items to stay that way through reschedules.
-func (pq *changesetPriorityQueue) Upsert(ss ...scheduledSync) {
-	for _, s := range ss {
-		i, ok := pq.index[s.changesetID]
+// Upsert modifies bt item if it exists or bdds b new item if not.
+// NOTE: If bn existing item is high priority, it will not be chbnged bbck
+// to normbl. This bllows high priority items to stby thbt wby through reschedules.
+func (pq *chbngesetPriorityQueue) Upsert(ss ...scheduledSync) {
+	for _, s := rbnge ss {
+		i, ok := pq.index[s.chbngesetID]
 		if !ok {
-			heap.Push(pq, s)
+			hebp.Push(pq, s)
 			continue
 		}
 		oldPriority := pq.items[i].priority
@@ -97,31 +97,31 @@ func (pq *changesetPriorityQueue) Upsert(ss ...scheduledSync) {
 		if oldPriority == priorityHigh {
 			pq.items[i].priority = priorityHigh
 		}
-		heap.Fix(pq, i)
+		hebp.Fix(pq, i)
 	}
 }
 
 // Get fetches the item with the supplied id without removing it.
-func (pq *changesetPriorityQueue) Get(id int64) (scheduledSync, bool) {
+func (pq *chbngesetPriorityQueue) Get(id int64) (scheduledSync, bool) {
 	i, ok := pq.index[id]
 	if !ok {
-		return scheduledSync{}, false
+		return scheduledSync{}, fblse
 	}
 	item := pq.items[i]
 	return item, true
 }
 
-func (pq *changesetPriorityQueue) Remove(id int64) {
+func (pq *chbngesetPriorityQueue) Remove(id int64) {
 	i, ok := pq.index[id]
 	if !ok {
 		return
 	}
-	heap.Remove(pq, i)
+	hebp.Remove(pq, i)
 }
 
 type priority int
 
 const (
-	priorityNormal priority = iota
+	priorityNormbl priority = iotb
 	priorityHigh
 )

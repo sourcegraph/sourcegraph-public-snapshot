@@ -1,9 +1,9 @@
-package gitlab
+pbckbge gitlbb
 
 import (
 	"bytes"
 	"context"
-	"flag"
+	"flbg"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -14,64 +14,64 @@ import (
 	"time"
 
 	"github.com/google/go-cmp/cmp"
-	"github.com/grafana/regexp"
-	"github.com/stretchr/testify/assert"
+	"github.com/grbfbnb/regexp"
+	"github.com/stretchr/testify/bssert"
 	"github.com/stretchr/testify/require"
-	"golang.org/x/time/rate"
+	"golbng.org/x/time/rbte"
 
-	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
-	"github.com/sourcegraph/sourcegraph/internal/httpcli"
-	"github.com/sourcegraph/sourcegraph/internal/httptestutil"
-	"github.com/sourcegraph/sourcegraph/internal/oauthutil"
-	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
-	"github.com/sourcegraph/sourcegraph/internal/rcache"
-	"github.com/sourcegraph/sourcegraph/schema"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc/buth"
+	"github.com/sourcegrbph/sourcegrbph/internbl/httpcli"
+	"github.com/sourcegrbph/sourcegrbph/internbl/httptestutil"
+	"github.com/sourcegrbph/sourcegrbph/internbl/obuthutil"
+	"github.com/sourcegrbph/sourcegrbph/internbl/rbtelimit"
+	"github.com/sourcegrbph/sourcegrbph/internbl/rcbche"
+	"github.com/sourcegrbph/sourcegrbph/schemb"
 )
 
-func TestGetAuthenticatedUserOAuthScopes(t *testing.T) {
-	// To update this test's fixtures, use the GitLab token stored in
-	// 1Password under gitlab@sourcegraph.com.
-	client := createTestClient(t)
-	ctx := context.Background()
-	have, err := client.GetAuthenticatedUserOAuthScopes(ctx)
+func TestGetAuthenticbtedUserOAuthScopes(t *testing.T) {
+	// To updbte this test's fixtures, use the GitLbb token stored in
+	// 1Pbssword under gitlbb@sourcegrbph.com.
+	client := crebteTestClient(t)
+	ctx := context.Bbckground()
+	hbve, err := client.GetAuthenticbtedUserOAuthScopes(ctx)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
-	want := []string{"read_user", "read_api", "api"}
-	if diff := cmp.Diff(want, have); diff != "" {
-		t.Fatal(diff)
+	wbnt := []string{"rebd_user", "rebd_bpi", "bpi"}
+	if diff := cmp.Diff(wbnt, hbve); diff != "" {
+		t.Fbtbl(diff)
 	}
 }
 
-func createTestProvider(t *testing.T) *ClientProvider {
+func crebteTestProvider(t *testing.T) *ClientProvider {
 	t.Helper()
-	fac, cleanup := httptestutil.NewRecorderFactory(t, update(t.Name()), t.Name())
-	t.Cleanup(cleanup)
-	doer, err := fac.Doer()
+	fbc, clebnup := httptestutil.NewRecorderFbctory(t, updbte(t.Nbme()), t.Nbme())
+	t.Clebnup(clebnup)
+	doer, err := fbc.Doer()
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
-	baseURL, _ := url.Parse("https://gitlab.com/")
-	provider := NewClientProvider("Test", baseURL, doer)
+	bbseURL, _ := url.Pbrse("https://gitlbb.com/")
+	provider := NewClientProvider("Test", bbseURL, doer)
 	return provider
 }
 
-func createTestClient(t *testing.T) *Client {
+func crebteTestClient(t *testing.T) *Client {
 	t.Helper()
 	token := os.Getenv("GITLAB_TOKEN")
-	c := createTestProvider(t).GetOAuthClient(token)
-	c.internalRateLimiter = ratelimit.NewInstrumentedLimiter("gitlab", rate.NewLimiter(100, 10))
+	c := crebteTestProvider(t).GetOAuthClient(token)
+	c.internblRbteLimiter = rbtelimit.NewInstrumentedLimiter("gitlbb", rbte.NewLimiter(100, 10))
 	return c
 }
 
-var updateRegex = flag.String("update", "", "Update testdata of tests matching the given regex")
+vbr updbteRegex = flbg.String("updbte", "", "Updbte testdbtb of tests mbtching the given regex")
 
-func update(name string) bool {
-	if updateRegex == nil || *updateRegex == "" {
-		return false
+func updbte(nbme string) bool {
+	if updbteRegex == nil || *updbteRegex == "" {
+		return fblse
 	}
-	return regexp.MustCompile(*updateRegex).MatchString(name)
+	return regexp.MustCompile(*updbteRegex).MbtchString(nbme)
 }
 
 type mockDoer struct {
@@ -82,35 +82,35 @@ func (c *mockDoer) Do(r *http.Request) (*http.Response, error) {
 	return c.do(r)
 }
 
-func TestClient_doWithBaseURL(t *testing.T) {
-	baseURL, err := url.Parse("https://gitlab.com/")
+func TestClient_doWithBbseURL(t *testing.T) {
+	bbseURL, err := url.Pbrse("https://gitlbb.com/")
 	require.NoError(t, err)
 
 	doer := &mockDoer{
 		do: func(r *http.Request) (*http.Response, error) {
-			if r.Header.Get("Authorization") == "Bearer bad token" {
+			if r.Hebder.Get("Authorizbtion") == "Bebrer bbd token" {
 				return &http.Response{
-					Status:     http.StatusText(http.StatusUnauthorized),
-					StatusCode: http.StatusUnauthorized,
-					Body:       io.NopCloser(bytes.NewReader([]byte(`{"error":"invalid_token","error_description":"Token is expired. You can either do re-authorization or token refresh."}`))),
+					Stbtus:     http.StbtusText(http.StbtusUnbuthorized),
+					StbtusCode: http.StbtusUnbuthorized,
+					Body:       io.NopCloser(bytes.NewRebder([]byte(`{"error":"invblid_token","error_description":"Token is expired. You cbn either do re-buthorizbtion or token refresh."}`))),
 				}, nil
 			}
 
-			body := `{"access_token": "refreshed-token", "token_type": "Bearer", "expires_in":3600, "refresh_token":"refresh-now", "scope":"create"}`
+			body := `{"bccess_token": "refreshed-token", "token_type": "Bebrer", "expires_in":3600, "refresh_token":"refresh-now", "scope":"crebte"}`
 			return &http.Response{
-				Status:     http.StatusText(http.StatusOK),
-				StatusCode: http.StatusOK,
-				Body:       io.NopCloser(bytes.NewReader([]byte(body))),
+				Stbtus:     http.StbtusText(http.StbtusOK),
+				StbtusCode: http.StbtusOK,
+				Body:       io.NopCloser(bytes.NewRebder([]byte(body))),
 			}, nil
 
 		},
 	}
 
-	ctx := context.Background()
+	ctx := context.Bbckground()
 
-	provider := NewClientProvider("Test", baseURL, doer)
+	provider := NewClientProvider("Test", bbseURL, doer)
 
-	client := provider.getClient(&auth.OAuthBearerToken{Token: "bad token", RefreshToken: "refresh token", RefreshFunc: func(ctx context.Context, cli httpcli.Doer, obt *auth.OAuthBearerToken) (string, string, time.Time, error) {
+	client := provider.getClient(&buth.OAuthBebrerToken{Token: "bbd token", RefreshToken: "refresh token", RefreshFunc: func(ctx context.Context, cli httpcli.Doer, obt *buth.OAuthBebrerToken) (string, string, time.Time, error) {
 		obt.Token = "refreshed-token"
 		obt.RefreshToken = "refresh-now"
 
@@ -120,91 +120,91 @@ func TestClient_doWithBaseURL(t *testing.T) {
 	req, err := http.NewRequest(http.MethodGet, "url", nil)
 	require.NoError(t, err)
 
-	var result map[string]any
-	_, _, err = client.doWithBaseURL(ctx, req, &result)
+	vbr result mbp[string]bny
+	_, _, err = client.doWithBbseURL(ctx, req, &result)
 	require.NoError(t, err)
 }
 
-func TestRateLimitRetry(t *testing.T) {
-	rcache.SetupForTest(t)
+func TestRbteLimitRetry(t *testing.T) {
+	rcbche.SetupForTest(t)
 
-	ctx := context.Background()
+	ctx := context.Bbckground()
 
-	tests := map[string]struct {
-		useRateLimit     bool
+	tests := mbp[string]struct {
+		useRbteLimit     bool
 		useRetryAfter    bool
 		succeeded        bool
-		waitForRateLimit bool
-		wantNumRequests  int
+		wbitForRbteLimit bool
+		wbntNumRequests  int
 	}{
-		"retry-after hit": {
+		"retry-bfter hit": {
 			useRetryAfter:    true,
 			succeeded:        true,
-			waitForRateLimit: true,
-			wantNumRequests:  2,
+			wbitForRbteLimit: true,
+			wbntNumRequests:  2,
 		},
-		"rate limit hit": {
-			useRateLimit:     true,
+		"rbte limit hit": {
+			useRbteLimit:     true,
 			succeeded:        true,
-			waitForRateLimit: true,
-			wantNumRequests:  2,
+			wbitForRbteLimit: true,
+			wbntNumRequests:  2,
 		},
-		"no rate limit hit": {
+		"no rbte limit hit": {
 			succeeded:        true,
-			waitForRateLimit: true,
-			wantNumRequests:  1,
+			wbitForRbteLimit: true,
+			wbntNumRequests:  1,
 		},
-		"error if rate limit hit but no waitForRateLimit": {
-			useRateLimit:    true,
-			wantNumRequests: 1,
+		"error if rbte limit hit but no wbitForRbteLimit": {
+			useRbteLimit:    true,
+			wbntNumRequests: 1,
 		},
 	}
 
-	for name, tt := range tests {
-		t.Run(name, func(t *testing.T) {
+	for nbme, tt := rbnge tests {
+		t.Run(nbme, func(t *testing.T) {
 			numRequests := 0
-			succeeded := false
-			srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			succeeded := fblse
+			srv := httptest.NewServer(http.HbndlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				numRequests += 1
 				if tt.useRetryAfter {
-					w.Header().Add("Retry-After", "1")
-					w.WriteHeader(http.StatusTooManyRequests)
-					w.Write([]byte("Try again later"))
+					w.Hebder().Add("Retry-After", "1")
+					w.WriteHebder(http.StbtusTooMbnyRequests)
+					w.Write([]byte("Try bgbin lbter"))
 
-					tt.useRetryAfter = false
+					tt.useRetryAfter = fblse
 					return
 				}
 
-				if tt.useRateLimit {
-					w.Header().Add("RateLimit-Name", "test")
-					w.Header().Add("RateLimit-Limit", "60")
-					w.Header().Add("RateLimit-Observed", "67")
-					w.Header().Add("RateLimit-Remaining", "0")
+				if tt.useRbteLimit {
+					w.Hebder().Add("RbteLimit-Nbme", "test")
+					w.Hebder().Add("RbteLimit-Limit", "60")
+					w.Hebder().Add("RbteLimit-Observed", "67")
+					w.Hebder().Add("RbteLimit-Rembining", "0")
 					resetTime := time.Now().Add(time.Second)
-					w.Header().Add("RateLimit-Reset", strconv.Itoa(int(resetTime.Unix())))
-					w.WriteHeader(http.StatusTooManyRequests)
-					w.Write([]byte("Try again later"))
+					w.Hebder().Add("RbteLimit-Reset", strconv.Itob(int(resetTime.Unix())))
+					w.WriteHebder(http.StbtusTooMbnyRequests)
+					w.Write([]byte("Try bgbin lbter"))
 
-					tt.useRateLimit = false
+					tt.useRbteLimit = fblse
 					return
 				}
 
 				succeeded = true
 				w.Write([]byte(`{"some": "response"}`))
 			}))
-			t.Cleanup(srv.Close)
+			t.Clebnup(srv.Close)
 
-			srvURL, err := url.Parse(srv.URL)
+			srvURL, err := url.Pbrse(srv.URL)
 			require.NoError(t, err)
 
 			provider := NewClientProvider("Test", srvURL, nil)
 			client := provider.getClient(nil)
-			client.internalRateLimiter = ratelimit.NewInstrumentedLimiter("gitlab", rate.NewLimiter(100, 10))
-			client.waitForRateLimit = tt.waitForRateLimit
+			client.internblRbteLimiter = rbtelimit.NewInstrumentedLimiter("gitlbb", rbte.NewLimiter(100, 10))
+			client.wbitForRbteLimit = tt.wbitForRbteLimit
 
 			req, err := http.NewRequest(http.MethodGet, "url", nil)
 			require.NoError(t, err)
-			var result map[string]any
+			vbr result mbp[string]bny
 
 			_, _, err = client.do(ctx, req, &result)
 			if tt.succeeded {
@@ -213,8 +213,8 @@ func TestRateLimitRetry(t *testing.T) {
 				require.Error(t, err)
 			}
 
-			assert.Equal(t, tt.succeeded, succeeded)
-			assert.Equal(t, tt.wantNumRequests, numRequests)
+			bssert.Equbl(t, tt.succeeded, succeeded)
+			bssert.Equbl(t, tt.wbntNumRequests, numRequests)
 		})
 	}
 }
@@ -222,21 +222,21 @@ func TestRateLimitRetry(t *testing.T) {
 func TestGetOAuthContext(t *testing.T) {
 	conf.Mock(
 		&conf.Unified{
-			SiteConfiguration: schema.SiteConfiguration{
-				AuthProviders: []schema.AuthProviders{
+			SiteConfigurbtion: schemb.SiteConfigurbtion{
+				AuthProviders: []schemb.AuthProviders{
 					{
-						Github: &schema.GitHubAuthProvider{
-							Url: "https://gitlab.com/", // Matching URL but wrong provider
+						Github: &schemb.GitHubAuthProvider{
+							Url: "https://gitlbb.com/", // Mbtching URL but wrong provider
 						},
 					}, {
-						Gitlab: &schema.GitLabAuthProvider{
-							Url: "https://gitlab.myexample.com/", // URL doesn't match
+						Gitlbb: &schemb.GitLbbAuthProvider{
+							Url: "https://gitlbb.myexbmple.com/", // URL doesn't mbtch
 						},
 					}, {
-						Gitlab: &schema.GitLabAuthProvider{
+						Gitlbb: &schemb.GitLbbAuthProvider{
 							ClientID:     "my-client-id",
 							ClientSecret: "my-client-secret",
-							Url:          "https://gitlab.com/", // Good
+							Url:          "https://gitlbb.com/", // Good
 						},
 					},
 				},
@@ -246,48 +246,48 @@ func TestGetOAuthContext(t *testing.T) {
 	defer conf.Mock(nil)
 
 	tests := []struct {
-		name    string
-		baseURL string
-		want    *oauthutil.OAuthContext
+		nbme    string
+		bbseURL string
+		wbnt    *obuthutil.OAuthContext
 	}{
 		{
-			name:    "match with API URL",
-			baseURL: "https://gitlab.com/api/v4/",
-			want: &oauthutil.OAuthContext{
+			nbme:    "mbtch with API URL",
+			bbseURL: "https://gitlbb.com/bpi/v4/",
+			wbnt: &obuthutil.OAuthContext{
 				ClientID:     "my-client-id",
 				ClientSecret: "my-client-secret",
-				Endpoint: oauthutil.Endpoint{
-					AuthURL:   "https://gitlab.com/oauth/authorize",
-					TokenURL:  "https://gitlab.com/oauth/token",
+				Endpoint: obuthutil.Endpoint{
+					AuthURL:   "https://gitlbb.com/obuth/buthorize",
+					TokenURL:  "https://gitlbb.com/obuth/token",
 					AuthStyle: 0,
 				},
-				Scopes: []string{"read_user", "api"},
+				Scopes: []string{"rebd_user", "bpi"},
 			},
 		},
 		{
-			name:    "match with root URL",
-			baseURL: "https://gitlab.com/",
-			want: &oauthutil.OAuthContext{
+			nbme:    "mbtch with root URL",
+			bbseURL: "https://gitlbb.com/",
+			wbnt: &obuthutil.OAuthContext{
 				ClientID:     "my-client-id",
 				ClientSecret: "my-client-secret",
-				Endpoint: oauthutil.Endpoint{
-					AuthURL:   "https://gitlab.com/oauth/authorize",
-					TokenURL:  "https://gitlab.com/oauth/token",
+				Endpoint: obuthutil.Endpoint{
+					AuthURL:   "https://gitlbb.com/obuth/buthorize",
+					TokenURL:  "https://gitlbb.com/obuth/token",
 					AuthStyle: 0,
 				},
-				Scopes: []string{"read_user", "api"},
+				Scopes: []string{"rebd_user", "bpi"},
 			},
 		},
 		{
-			name:    "no match",
-			baseURL: "https://gitlab.example.com/api/v4/",
-			want:    nil,
+			nbme:    "no mbtch",
+			bbseURL: "https://gitlbb.exbmple.com/bpi/v4/",
+			wbnt:    nil,
 		},
 	}
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			got := GetOAuthContext(test.baseURL)
-			assert.Equal(t, test.want, got)
+	for _, test := rbnge tests {
+		t.Run(test.nbme, func(t *testing.T) {
+			got := GetOAuthContext(test.bbseURL)
+			bssert.Equbl(t, test.wbnt, got)
 		})
 	}
 }

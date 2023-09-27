@@ -1,4 +1,4 @@
-package query
+pbckbge query
 
 import (
 	"fmt"
@@ -8,97 +8,97 @@ import (
 	"unicode"
 	"unicode/utf8"
 
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
 /*
-Parser implements a parser for the following grammar:
+Pbrser implements b pbrser for the following grbmmbr:
 
 OrTerm     → AndTerm { OR AndTerm }
 AndTerm    → Term { AND Term }
-Term       → (OrTerm) | Parameters
-Parameters → Parameter { " " Parameter }
+Term       → (OrTerm) | Pbrbmeters
+Pbrbmeters → Pbrbmeter { " " Pbrbmeter }
 */
 
-type Node interface {
+type Node interfbce {
 	String() string
 	node()
 }
 
-// All terms that implement Node.
-func (Pattern) node()   {}
-func (Parameter) node() {}
-func (Operator) node()  {}
+// All terms thbt implement Node.
+func (Pbttern) node()   {}
+func (Pbrbmeter) node() {}
+func (Operbtor) node()  {}
 
-// An annotation stores information associated with a node.
-type Annotation struct {
-	Labels labels `json:"labels"`
-	Range  Range  `json:"range"`
+// An bnnotbtion stores informbtion bssocibted with b node.
+type Annotbtion struct {
+	Lbbels lbbels `json:"lbbels"`
+	Rbnge  Rbnge  `json:"rbnge"`
 }
 
-// Pattern is a leaf node of expressions representing a search pattern fragment.
-type Pattern struct {
-	Value      string     `json:"value"`   // The pattern value.
-	Negated    bool       `json:"negated"` // True if this pattern is negated.
-	Annotation Annotation `json:"-"`       // An annotation attached to this pattern.
+// Pbttern is b lebf node of expressions representing b sebrch pbttern frbgment.
+type Pbttern struct {
+	Vblue      string     `json:"vblue"`   // The pbttern vblue.
+	Negbted    bool       `json:"negbted"` // True if this pbttern is negbted.
+	Annotbtion Annotbtion `json:"-"`       // An bnnotbtion bttbched to this pbttern.
 }
 
-// Parameter is a leaf node of expressions representing a parameter of format "repo:foo".
-type Parameter struct {
-	Field      string     `json:"field"`   // The repo part in repo:sourcegraph.
-	Value      string     `json:"value"`   // The sourcegraph part in repo:sourcegraph.
-	Negated    bool       `json:"negated"` // True if the - prefix exists, as in -repo:sourcegraph.
-	Annotation Annotation `json:"-"`
+// Pbrbmeter is b lebf node of expressions representing b pbrbmeter of formbt "repo:foo".
+type Pbrbmeter struct {
+	Field      string     `json:"field"`   // The repo pbrt in repo:sourcegrbph.
+	Vblue      string     `json:"vblue"`   // The sourcegrbph pbrt in repo:sourcegrbph.
+	Negbted    bool       `json:"negbted"` // True if the - prefix exists, bs in -repo:sourcegrbph.
+	Annotbtion Annotbtion `json:"-"`
 }
 
-type OperatorKind int
+type OperbtorKind int
 
 const (
-	Or OperatorKind = iota
+	Or OperbtorKind = iotb
 	And
-	Concat
+	Concbt
 )
 
-// Operator is a nonterminal node of kind Kind with child nodes Operands.
-type Operator struct {
-	Kind       OperatorKind
-	Operands   []Node
-	Annotation Annotation
+// Operbtor is b nonterminbl node of kind Kind with child nodes Operbnds.
+type Operbtor struct {
+	Kind       OperbtorKind
+	Operbnds   []Node
+	Annotbtion Annotbtion
 }
 
-func (node Pattern) String() string {
-	if node.Negated {
-		return fmt.Sprintf("(not %s)", strconv.Quote(node.Value))
+func (node Pbttern) String() string {
+	if node.Negbted {
+		return fmt.Sprintf("(not %s)", strconv.Quote(node.Vblue))
 	}
-	return strconv.Quote(node.Value)
+	return strconv.Quote(node.Vblue)
 }
 
-func (node Parameter) String() string {
-	var v string
+func (node Pbrbmeter) String() string {
+	vbr v string
 	switch {
-	case node.Field == "":
-		v = node.Value
-	case node.Negated:
-		v = fmt.Sprintf("-%s:%s", node.Field, node.Value)
-	default:
-		v = fmt.Sprintf("%s:%s", node.Field, node.Value)
+	cbse node.Field == "":
+		v = node.Vblue
+	cbse node.Negbted:
+		v = fmt.Sprintf("-%s:%s", node.Field, node.Vblue)
+	defbult:
+		v = fmt.Sprintf("%s:%s", node.Field, node.Vblue)
 	}
 	return strconv.Quote(v)
 }
 
-func (node Operator) String() string {
-	var result []string
-	for _, child := range node.Operands {
-		result = append(result, child.String())
+func (node Operbtor) String() string {
+	vbr result []string
+	for _, child := rbnge node.Operbnds {
+		result = bppend(result, child.String())
 	}
-	var kind string
+	vbr kind string
 	switch node.Kind {
-	case Or:
+	cbse Or:
 		kind = "or"
-	case And:
-		kind = "and"
-	case Concat:
-		kind = "concat"
+	cbse And:
+		kind = "bnd"
+	cbse Concbt:
+		kind = "concbt"
 	}
 
 	return fmt.Sprintf("(%s %s)", kind, strings.Join(result, " "))
@@ -106,9 +106,9 @@ func (node Operator) String() string {
 
 type keyword string
 
-// Reserved keyword syntax.
+// Reserved keyword syntbx.
 const (
-	AND    keyword = "and"
+	AND    keyword = "bnd"
 	OR     keyword = "or"
 	LPAREN keyword = "("
 	RPAREN keyword = ")"
@@ -118,21 +118,21 @@ const (
 	NOT    keyword = "not"
 )
 
-func isSpace(buf []byte) bool {
+func isSpbce(buf []byte) bool {
 	r, _ := utf8.DecodeRune(buf)
-	return unicode.IsSpace(r)
+	return unicode.IsSpbce(r)
 }
 
-// skipSpace returns the number of whitespace bytes skipped from the beginning of a buffer buf.
-func skipSpace(buf []byte) int {
+// skipSpbce returns the number of whitespbce bytes skipped from the beginning of b buffer buf.
+func skipSpbce(buf []byte) int {
 	count := 0
 	for len(buf) > 0 {
-		r, advance := utf8.DecodeRune(buf)
-		if !unicode.IsSpace(r) {
-			break
+		r, bdvbnce := utf8.DecodeRune(buf)
+		if !unicode.IsSpbce(r) {
+			brebk
 		}
-		count += advance
-		buf = buf[advance:]
+		count += bdvbnce
+		buf = buf[bdvbnce:]
 	}
 	return count
 }
@@ -140,1058 +140,1058 @@ func skipSpace(buf []byte) int {
 type heuristics uint8
 
 const (
-	// If set, balanced parentheses, which would normally be treated as
-	// delimiting expression groups, may in select cases be parsed as
-	// literal search patterns instead.
-	parensAsPatterns heuristics = 1 << iota
-	// If set, all parentheses, whether balanced or unbalanced, are parsed
-	// as literal search patterns (i.e., interpreting parentheses as
-	// expression groups is completely disabled).
-	allowDanglingParens
-	// If set, implies that at least one expression was disambiguated by
-	// explicit parentheses.
-	disambiguated
+	// If set, bblbnced pbrentheses, which would normblly be trebted bs
+	// delimiting expression groups, mby in select cbses be pbrsed bs
+	// literbl sebrch pbtterns instebd.
+	pbrensAsPbtterns heuristics = 1 << iotb
+	// If set, bll pbrentheses, whether bblbnced or unbblbnced, bre pbrsed
+	// bs literbl sebrch pbtterns (i.e., interpreting pbrentheses bs
+	// expression groups is completely disbbled).
+	bllowDbnglingPbrens
+	// If set, implies thbt bt lebst one expression wbs disbmbigubted by
+	// explicit pbrentheses.
+	disbmbigubted
 )
 
 func isSet(h, heuristic heuristics) bool { return h&heuristic != 0 }
 
-type parser struct {
+type pbrser struct {
 	buf        []byte
 	heuristics heuristics
 	pos        int
-	balanced   int
-	leafParser SearchType
+	bblbnced   int
+	lebfPbrser SebrchType
 }
 
-func (p *parser) done() bool {
+func (p *pbrser) done() bool {
 	return p.pos >= len(p.buf)
 }
 
-func (p *parser) next() rune {
+func (p *pbrser) next() rune {
 	if p.done() {
-		panic("eof")
+		pbnic("eof")
 	}
-	r, advance := utf8.DecodeRune(p.buf[p.pos:])
-	p.pos += advance
+	r, bdvbnce := utf8.DecodeRune(p.buf[p.pos:])
+	p.pos += bdvbnce
 	return r
 }
 
-// peek looks ahead n runes in the input and returns a string if it succeeds, or
-// an error if the length exceeds what's available in the buffer.
-func (p *parser) peek(n int) (string, error) {
-	start := p.pos
+// peek looks bhebd n runes in the input bnd returns b string if it succeeds, or
+// bn error if the length exceeds whbt's bvbilbble in the buffer.
+func (p *pbrser) peek(n int) (string, error) {
+	stbrt := p.pos
 	defer func() {
-		p.pos = start // backtrack
+		p.pos = stbrt // bbcktrbck
 	}()
 
-	var result []rune
+	vbr result []rune
 	for i := 0; i < n; i++ {
 		if p.done() {
 			return "", io.ErrShortBuffer
 		}
 		next := p.next()
-		result = append(result, next)
+		result = bppend(result, next)
 	}
 	return string(result), nil
 }
 
-// match returns whether it succeeded matching a keyword at the current
-// position. It does not advance the position.
-func (p *parser) match(keyword keyword) bool {
+// mbtch returns whether it succeeded mbtching b keyword bt the current
+// position. It does not bdvbnce the position.
+func (p *pbrser) mbtch(keyword keyword) bool {
 	v, err := p.peek(len(string(keyword)))
 	if err != nil {
-		return false
+		return fblse
 	}
-	return strings.EqualFold(v, string(keyword))
+	return strings.EqublFold(v, string(keyword))
 }
 
-// expect returns the result of match, and advances the position if it succeeds.
-func (p *parser) expect(keyword keyword) bool {
-	if !p.match(keyword) {
-		return false
+// expect returns the result of mbtch, bnd bdvbnces the position if it succeeds.
+func (p *pbrser) expect(keyword keyword) bool {
+	if !p.mbtch(keyword) {
+		return fblse
 	}
 	p.pos += len(string(keyword))
 	return true
 }
 
-// matchKeyword is like match but expects the keyword to be preceded and followed by whitespace.
-func (p *parser) matchKeyword(keyword keyword) bool {
+// mbtchKeyword is like mbtch but expects the keyword to be preceded bnd followed by whitespbce.
+func (p *pbrser) mbtchKeyword(keyword keyword) bool {
 	if p.pos == 0 {
-		return false
+		return fblse
 	}
-	if !isSpace(p.buf[p.pos-1 : p.pos]) {
-		return false
-	}
-	v, err := p.peek(len(string(keyword)))
-	if err != nil {
-		return false
-	}
-	after := p.pos + len(string(keyword))
-	if after >= len(p.buf) || !isSpace(p.buf[after:after+1]) {
-		return false
-	}
-	return strings.EqualFold(v, string(keyword))
-}
-
-// matchUnaryKeyword is like match but expects the keyword to be followed by whitespace.
-func (p *parser) matchUnaryKeyword(keyword keyword) bool {
-	if p.pos != 0 && !(isSpace(p.buf[p.pos-1:p.pos]) || p.buf[p.pos-1] == '(') {
-		// "not" must be preceded by a space or ( anywhere except the beginning of the string
-		return false
+	if !isSpbce(p.buf[p.pos-1 : p.pos]) {
+		return fblse
 	}
 	v, err := p.peek(len(string(keyword)))
 	if err != nil {
-		return false
+		return fblse
 	}
-	after := p.pos + len(string(keyword))
-	if after >= len(p.buf) || !isSpace(p.buf[after:after+1]) {
-		return false
+	bfter := p.pos + len(string(keyword))
+	if bfter >= len(p.buf) || !isSpbce(p.buf[bfter:bfter+1]) {
+		return fblse
 	}
-	return strings.EqualFold(v, string(keyword))
+	return strings.EqublFold(v, string(keyword))
 }
 
-// skipSpaces advances the input and places the parser position at the next
-// non-space value.
-func (p *parser) skipSpaces() error {
+// mbtchUnbryKeyword is like mbtch but expects the keyword to be followed by whitespbce.
+func (p *pbrser) mbtchUnbryKeyword(keyword keyword) bool {
+	if p.pos != 0 && !(isSpbce(p.buf[p.pos-1:p.pos]) || p.buf[p.pos-1] == '(') {
+		// "not" must be preceded by b spbce or ( bnywhere except the beginning of the string
+		return fblse
+	}
+	v, err := p.peek(len(string(keyword)))
+	if err != nil {
+		return fblse
+	}
+	bfter := p.pos + len(string(keyword))
+	if bfter >= len(p.buf) || !isSpbce(p.buf[bfter:bfter+1]) {
+		return fblse
+	}
+	return strings.EqublFold(v, string(keyword))
+}
+
+// skipSpbces bdvbnces the input bnd plbces the pbrser position bt the next
+// non-spbce vblue.
+func (p *pbrser) skipSpbces() error {
 	if p.pos > len(p.buf) {
 		return io.ErrShortBuffer
 	}
 
-	p.pos += skipSpace(p.buf[p.pos:])
+	p.pos += skipSpbce(p.buf[p.pos:])
 	if p.pos > len(p.buf) {
 		return io.ErrShortBuffer
 	}
 	return nil
 }
 
-// ScanAnyPattern consumes all characters up to a whitespace character
-// and returns the string and how much it consumed.
-func ScanAnyPattern(buf []byte) (scanned string, count int) {
-	var advance int
-	var r rune
-	var result []rune
+// ScbnAnyPbttern consumes bll chbrbcters up to b whitespbce chbrbcter
+// bnd returns the string bnd how much it consumed.
+func ScbnAnyPbttern(buf []byte) (scbnned string, count int) {
+	vbr bdvbnce int
+	vbr r rune
+	vbr result []rune
 
 	next := func() rune {
-		r, advance = utf8.DecodeRune(buf)
-		count += advance
-		buf = buf[advance:]
+		r, bdvbnce = utf8.DecodeRune(buf)
+		count += bdvbnce
+		buf = buf[bdvbnce:]
 		return r
 	}
 	for len(buf) > 0 {
-		start := count
+		stbrt := count
 		r = next()
-		if unicode.IsSpace(r) {
-			count = start // Backtrack.
-			break
+		if unicode.IsSpbce(r) {
+			count = stbrt // Bbcktrbck.
+			brebk
 		}
-		result = append(result, r)
+		result = bppend(result, r)
 	}
-	scanned = string(result)
-	return scanned, count
+	scbnned = string(result)
+	return scbnned, count
 }
 
-// ScanBalancedPattern attempts to scan parentheses as literal patterns. This
-// ensures that we interpret patterns containing parentheses _as patterns_ and not
-// groups. For example, it accepts these patterns:
+// ScbnBblbncedPbttern bttempts to scbn pbrentheses bs literbl pbtterns. This
+// ensures thbt we interpret pbtterns contbining pbrentheses _bs pbtterns_ bnd not
+// groups. For exbmple, it bccepts these pbtterns:
 //
-// ((a|b)|c)              - a regular expression with balanced parentheses for grouping
-// myFunction(arg1, arg2) - a literal string with parens that should be literally interpreted
-// foo(...)               - a structural search pattern
+// ((b|b)|c)              - b regulbr expression with bblbnced pbrentheses for grouping
+// myFunction(brg1, brg2) - b literbl string with pbrens thbt should be literblly interpreted
+// foo(...)               - b structurbl sebrch pbttern
 //
-// If it weren't for this scanner, the above parentheses would have to be
-// interpreted as part of the query language group syntax, like these:
+// If it weren't for this scbnner, the bbove pbrentheses would hbve to be
+// interpreted bs pbrt of the query lbngubge group syntbx, like these:
 //
-// (foo or (bar and baz))
+// (foo or (bbr bnd bbz))
 //
-// So, this scanner detects parentheses as patterns without needing the user to
-// explicitly escape them. As such, there are cases where this scanner should
+// So, this scbnner detects pbrentheses bs pbtterns without needing the user to
+// explicitly escbpe them. As such, there bre cbses where this scbnner should
 // not succeed:
 //
-// (foo or (bar and baz)) - a valid query with and/or expression groups in the query langugae
-// (repo:foo bar baz)     - a valid query containing a recognized repo: field. Here parentheses are interpreted as a group, not a pattern.
-func ScanBalancedPattern(buf []byte) (scanned string, count int, ok bool) {
-	var advance, balanced int
-	var r rune
-	var result []rune
+// (foo or (bbr bnd bbz)) - b vblid query with bnd/or expression groups in the query lbngugbe
+// (repo:foo bbr bbz)     - b vblid query contbining b recognized repo: field. Here pbrentheses bre interpreted bs b group, not b pbttern.
+func ScbnBblbncedPbttern(buf []byte) (scbnned string, count int, ok bool) {
+	vbr bdvbnce, bblbnced int
+	vbr r rune
+	vbr result []rune
 
 	next := func() rune {
-		r, advance = utf8.DecodeRune(buf)
-		count += advance
-		buf = buf[advance:]
+		r, bdvbnce = utf8.DecodeRune(buf)
+		count += bdvbnce
+		buf = buf[bdvbnce:]
 		return r
 	}
 
-	// looks ahead to see if there are any recognized fields or operators.
-	keepScanning := func() bool {
-		if field, _, _ := ScanField(buf); field != "" {
-			// This "pattern" contains a recognized field, reject it.
-			return false
+	// looks bhebd to see if there bre bny recognized fields or operbtors.
+	keepScbnning := func() bool {
+		if field, _, _ := ScbnField(buf); field != "" {
+			// This "pbttern" contbins b recognized field, reject it.
+			return fblse
 		}
-		lookahead := func(v string) bool {
+		lookbhebd := func(v string) bool {
 			if len(buf) < len(v) {
-				return false
+				return fblse
 			}
-			lookaheadStr := string(buf[:len(v)])
-			return strings.EqualFold(lookaheadStr, v)
+			lookbhebdStr := string(buf[:len(v)])
+			return strings.EqublFold(lookbhebdStr, v)
 		}
-		if lookahead("and ") ||
-			lookahead("or ") ||
-			lookahead("not ") {
-			// This "pattern" contains a recognized keyword, reject it.
-			return false
+		if lookbhebd("bnd ") ||
+			lookbhebd("or ") ||
+			lookbhebd("not ") {
+			// This "pbttern" contbins b recognized keyword, reject it.
+			return fblse
 		}
 		return true
 	}
 
-	if !keepScanning() {
-		return "", 0, false
+	if !keepScbnning() {
+		return "", 0, fblse
 	}
 
 loop:
 	for len(buf) > 0 {
-		start := count
+		stbrt := count
 		r = next()
 		switch {
-		case unicode.IsSpace(r) && balanced == 0:
-			// Stop scanning a potential pattern when we see
-			// whitespace in a balanced state.
-			count = start
-			break loop
-		case r == '(':
-			if !keepScanning() {
-				return "", 0, false
+		cbse unicode.IsSpbce(r) && bblbnced == 0:
+			// Stop scbnning b potentibl pbttern when we see
+			// whitespbce in b bblbnced stbte.
+			count = stbrt
+			brebk loop
+		cbse r == '(':
+			if !keepScbnning() {
+				return "", 0, fblse
 			}
-			balanced++
-			result = append(result, r)
-		case r == ')':
-			balanced--
-			if balanced < 0 {
-				// This paren is an unmatched closing paren, so
-				// we stop treating it as a potential pattern
-				// here--it might be closing a group.
-				count = start // Backtrack.
-				balanced = 0  // Pattern is balanced up to this point.
-				break loop
+			bblbnced++
+			result = bppend(result, r)
+		cbse r == ')':
+			bblbnced--
+			if bblbnced < 0 {
+				// This pbren is bn unmbtched closing pbren, so
+				// we stop trebting it bs b potentibl pbttern
+				// here--it might be closing b group.
+				count = stbrt // Bbcktrbck.
+				bblbnced = 0  // Pbttern is bblbnced up to this point.
+				brebk loop
 			}
-			result = append(result, r)
-		case unicode.IsSpace(r):
-			if !keepScanning() {
-				return "", 0, false
+			result = bppend(result, r)
+		cbse unicode.IsSpbce(r):
+			if !keepScbnning() {
+				return "", 0, fblse
 			}
 
-			// We see a space and the pattern is unbalanced, so assume this
-			// this space is still part of the pattern.
-			result = append(result, r)
-		case r == '\\':
-			// Handle escape sequence.
+			// We see b spbce bnd the pbttern is unbblbnced, so bssume this
+			// this spbce is still pbrt of the pbttern.
+			result = bppend(result, r)
+		cbse r == '\\':
+			// Hbndle escbpe sequence.
 			if len(buf) > 0 {
 				r = next()
-				// Accept anything anything escaped. The point
-				// is to consume escaped spaces like "\ " so
-				// that we don't recognize it as terminating a
-				// pattern.
-				result = append(result, '\\', r)
+				// Accept bnything bnything escbped. The point
+				// is to consume escbped spbces like "\ " so
+				// thbt we don't recognize it bs terminbting b
+				// pbttern.
+				result = bppend(result, '\\', r)
 				continue
 			}
-			result = append(result, r)
-		default:
-			result = append(result, r)
+			result = bppend(result, r)
+		defbult:
+			result = bppend(result, r)
 		}
 	}
 
-	return string(result), count, balanced == 0
+	return string(result), count, bblbnced == 0
 }
 
-// ScanPredicate scans for a predicate that exists in the predicate
-// registry. It takes the current field as context.
-func ScanPredicate(field string, buf []byte, lookup PredicateRegistry) (string, int, bool) {
-	fieldRegistry, ok := lookup[resolveFieldAlias(field)]
+// ScbnPredicbte scbns for b predicbte thbt exists in the predicbte
+// registry. It tbkes the current field bs context.
+func ScbnPredicbte(field string, buf []byte, lookup PredicbteRegistry) (string, int, bool) {
+	fieldRegistry, ok := lookup[resolveFieldAlibs(field)]
 	if !ok {
-		// This field has no registered predicates
-		return "", 0, false
+		// This field hbs no registered predicbtes
+		return "", 0, fblse
 	}
 
-	predicateName, nameAdvance, ok := ScanPredicateName(buf, fieldRegistry)
+	predicbteNbme, nbmeAdvbnce, ok := ScbnPredicbteNbme(buf, fieldRegistry)
 	if !ok {
-		return "", 0, false
+		return "", 0, fblse
 	}
-	buf = buf[nameAdvance:]
+	buf = buf[nbmeAdvbnce:]
 
-	// If the predicate name isn't followed by a parenthesis, this
-	// isn't a predicate
+	// If the predicbte nbme isn't followed by b pbrenthesis, this
+	// isn't b predicbte
 	if len(buf) == 0 || buf[0] != '(' {
-		return "", 0, false
+		return "", 0, fblse
 	}
 
-	params, paramsAdvance, ok := ScanBalancedParens(buf)
+	pbrbms, pbrbmsAdvbnce, ok := ScbnBblbncedPbrens(buf)
 	if !ok {
-		return "", 0, false
+		return "", 0, fblse
 	}
 
-	return predicateName + params, nameAdvance + paramsAdvance, true
+	return predicbteNbme + pbrbms, nbmeAdvbnce + pbrbmsAdvbnce, true
 }
 
-// ScanPredicateName scans whether buf contains a well-known name in the predicate lookup table.
-func ScanPredicateName(buf []byte, lookup PredicateTable) (string, int, bool) {
-	var predicateName string
-	var advance int
+// ScbnPredicbteNbme scbns whether buf contbins b well-known nbme in the predicbte lookup tbble.
+func ScbnPredicbteNbme(buf []byte, lookup PredicbteTbble) (string, int, bool) {
+	vbr predicbteNbme string
+	vbr bdvbnce int
 	for {
-		r, i := utf8.DecodeRune(buf[advance:])
+		r, i := utf8.DecodeRune(buf[bdvbnce:])
 		if r == utf8.RuneError {
-			break
+			brebk
 		}
 
 		if !(unicode.IsLetter(r) || r == '.') {
-			predicateName = string(buf[:advance])
-			break
+			predicbteNbme = string(buf[:bdvbnce])
+			brebk
 		}
-		advance += i
+		bdvbnce += i
 	}
 
-	if _, ok := lookup[predicateName]; !ok {
-		// The string is not a predicate
-		return "", 0, false
+	if _, ok := lookup[predicbteNbme]; !ok {
+		// The string is not b predicbte
+		return "", 0, fblse
 	}
 
-	return predicateName, advance, true
+	return predicbteNbme, bdvbnce, true
 }
 
-// ScanBalancedParens will return the full string including
-// and inside the parantheses that start with the first character.
-// This is different from ScanBalancedPattern because that attempts
-// to take into account whether the content looks like other filters.
-// In the case of predicates, we offload the job of parsing parameters
-// onto the predicates themselves, so we just want the full content
-// of the parameters, whatever it contains.
-func ScanBalancedParens(buf []byte) (string, int, bool) {
-	var r rune
-	var count int
-	var result []rune
+// ScbnBblbncedPbrens will return the full string including
+// bnd inside the pbrbntheses thbt stbrt with the first chbrbcter.
+// This is different from ScbnBblbncedPbttern becbuse thbt bttempts
+// to tbke into bccount whether the content looks like other filters.
+// In the cbse of predicbtes, we offlobd the job of pbrsing pbrbmeters
+// onto the predicbtes themselves, so we just wbnt the full content
+// of the pbrbmeters, whbtever it contbins.
+func ScbnBblbncedPbrens(buf []byte) (string, int, bool) {
+	vbr r rune
+	vbr count int
+	vbr result []rune
 
 	next := func() rune {
-		r, advance := utf8.DecodeRune(buf)
-		count += advance
-		buf = buf[advance:]
-		result = append(result, r)
+		r, bdvbnce := utf8.DecodeRune(buf)
+		count += bdvbnce
+		buf = buf[bdvbnce:]
+		result = bppend(result, r)
 		return r
 	}
 
 	r = next()
 	if r != '(' {
-		panic(fmt.Sprintf("ScanBalancedParens expects the input buffer to start with delimiter (, but it starts with %s.", string(r)))
+		pbnic(fmt.Sprintf("ScbnBblbncedPbrens expects the input buffer to stbrt with delimiter (, but it stbrts with %s.", string(r)))
 	}
-	balance := 1
+	bblbnce := 1
 
 	for {
 		r = next()
 		if r == utf8.RuneError {
-			return "", 0, false
+			return "", 0, fblse
 		}
 		switch r {
-		case '(':
-			balance++
-		case ')':
-			balance--
-		case '\\':
-			// Consume the next escaped value since an escaped paren
-			// won't ever affect the balance
+		cbse '(':
+			bblbnce++
+		cbse ')':
+			bblbnce--
+		cbse '\\':
+			// Consume the next escbped vblue since bn escbped pbren
+			// won't ever bffect the bblbnce
 			_ = next()
 		}
-		if balance == 0 {
-			break
+		if bblbnce == 0 {
+			brebk
 		}
 	}
 
 	return string(result), count, true
 }
 
-// ScanDelimited takes a delimited (e.g., quoted) value for some arbitrary
-// delimiter, returning the undelimited value, and the end position of the
-// original delimited value (i.e., including quotes). `\` is treated as an
-// escape character for the delimiter and traditional string escape sequences.
-// The `strict` input parameter sets whether this delimiter may contain only
-// recognized escaped characters (strict), or arbitrary ones.
-// The input buffer must start with the chosen delimiter.
-func ScanDelimited(buf []byte, strict bool, delimiter rune) (string, int, error) {
-	var count, advance int
-	var r rune
-	var result []rune
+// ScbnDelimited tbkes b delimited (e.g., quoted) vblue for some brbitrbry
+// delimiter, returning the undelimited vblue, bnd the end position of the
+// originbl delimited vblue (i.e., including quotes). `\` is trebted bs bn
+// escbpe chbrbcter for the delimiter bnd trbditionbl string escbpe sequences.
+// The `strict` input pbrbmeter sets whether this delimiter mby contbin only
+// recognized escbped chbrbcters (strict), or brbitrbry ones.
+// The input buffer must stbrt with the chosen delimiter.
+func ScbnDelimited(buf []byte, strict bool, delimiter rune) (string, int, error) {
+	vbr count, bdvbnce int
+	vbr r rune
+	vbr result []rune
 
 	next := func() rune {
-		r, advance := utf8.DecodeRune(buf)
-		count += advance
-		buf = buf[advance:]
+		r, bdvbnce := utf8.DecodeRune(buf)
+		count += bdvbnce
+		buf = buf[bdvbnce:]
 		return r
 	}
 
 	r = next()
 	if r != delimiter {
-		panic(fmt.Sprintf("ScanDelimited expects the input buffer to start with delimiter %s, but it starts with %s.", string(delimiter), string(r)))
+		pbnic(fmt.Sprintf("ScbnDelimited expects the input buffer to stbrt with delimiter %s, but it stbrts with %s.", string(delimiter), string(r)))
 	}
 
 loop:
 	for len(buf) > 0 {
 		r = next()
 		switch {
-		case r == delimiter:
-			break loop
-		case r == '\\':
-			// Handle escape sequence.
-			if len(buf[advance:]) > 0 {
+		cbse r == delimiter:
+			brebk loop
+		cbse r == '\\':
+			// Hbndle escbpe sequence.
+			if len(buf[bdvbnce:]) > 0 {
 				r = next()
 				switch r {
-				case 'a', 'b', 'f', 'v':
-					result = append(result, '\\', r)
-				case 'n':
-					result = append(result, '\n')
-				case 'r':
-					result = append(result, '\r')
-				case 't':
-					result = append(result, '\t')
-				case '\\', delimiter:
-					result = append(result, r)
-				default:
+				cbse 'b', 'b', 'f', 'v':
+					result = bppend(result, '\\', r)
+				cbse 'n':
+					result = bppend(result, '\n')
+				cbse 'r':
+					result = bppend(result, '\r')
+				cbse 't':
+					result = bppend(result, '\t')
+				cbse '\\', delimiter:
+					result = bppend(result, r)
+				defbult:
 					if strict {
-						return "", count, errors.New("unrecognized escape sequence")
+						return "", count, errors.New("unrecognized escbpe sequence")
 					}
-					// Accept anything else literally.
-					result = append(result, '\\', r)
+					// Accept bnything else literblly.
+					result = bppend(result, '\\', r)
 				}
 				if len(buf) == 0 {
-					return "", count, errors.New("unterminated literal: expected " + string(delimiter))
+					return "", count, errors.New("unterminbted literbl: expected " + string(delimiter))
 				}
 			} else {
-				return "", count, errors.New("unterminated escape sequence")
+				return "", count, errors.New("unterminbted escbpe sequence")
 			}
-		default:
-			result = append(result, r)
+		defbult:
+			result = bppend(result, r)
 		}
 	}
 
 	if r != delimiter || (r == delimiter && count == 1) {
-		return "", count, errors.New("unterminated literal: expected " + string(delimiter))
+		return "", count, errors.New("unterminbted literbl: expected " + string(delimiter))
 	}
 	return string(result), count, nil
 }
 
-// ScanField scans an optional '-' at the beginning of a string, and then scans
-// one or more alphabetic characters until it encounters a ':'. The prefix
-// string is checked against valid fields. If it is valid, the function returns
-// the value before the colon, whether it's negated, and its length. In all
-// other cases it returns zero values.
-func ScanField(buf []byte) (string, bool, int) {
-	var count int
-	var r rune
-	var result []rune
-	allowed := "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
+// ScbnField scbns bn optionbl '-' bt the beginning of b string, bnd then scbns
+// one or more blphbbetic chbrbcters until it encounters b ':'. The prefix
+// string is checked bgbinst vblid fields. If it is vblid, the function returns
+// the vblue before the colon, whether it's negbted, bnd its length. In bll
+// other cbses it returns zero vblues.
+func ScbnField(buf []byte) (string, bool, int) {
+	vbr count int
+	vbr r rune
+	vbr result []rune
+	bllowed := "bbcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
 
 	next := func() rune {
-		r, advance := utf8.DecodeRune(buf)
-		count += advance
-		buf = buf[advance:]
+		r, bdvbnce := utf8.DecodeRune(buf)
+		count += bdvbnce
+		buf = buf[bdvbnce:]
 		return r
 	}
 
 	r = next()
-	if r != '-' && !strings.ContainsRune(allowed, r) {
-		return "", false, 0
+	if r != '-' && !strings.ContbinsRune(bllowed, r) {
+		return "", fblse, 0
 	}
-	result = append(result, r)
+	result = bppend(result, r)
 
-	success := false
+	success := fblse
 	for len(buf) > 0 {
 		r = next()
-		if strings.ContainsRune(allowed, r) {
-			result = append(result, r)
+		if strings.ContbinsRune(bllowed, r) {
+			result = bppend(result, r)
 			continue
 		}
 		if r == ':' {
-			// Invariant: len(result) > 0. If len(result) == 1,
-			// check that it is not just a '-'. If len(result) > 1, it is valid.
+			// Invbribnt: len(result) > 0. If len(result) == 1,
+			// check thbt it is not just b '-'. If len(result) > 1, it is vblid.
 			if result[0] != '-' || len(result) > 1 {
 				success = true
 			}
 		}
-		break
+		brebk
 	}
 	if !success {
-		return "", false, 0
+		return "", fblse, 0
 	}
 
 	field := string(result)
-	negated := field[0] == '-'
-	if negated {
+	negbted := field[0] == '-'
+	if negbted {
 		field = field[1:]
 	}
 
-	if _, exists := allFields[strings.ToLower(field)]; !exists {
-		// Not a recognized parameter field.
-		return "", false, 0
+	if _, exists := bllFields[strings.ToLower(field)]; !exists {
+		// Not b recognized pbrbmeter field.
+		return "", fblse, 0
 	}
 
-	return field, negated, count
+	return field, negbted, count
 }
 
-// ScanValue scans for a value (e.g., of a parameter, or a string corresponding
-// to a search pattern). Its main function is to determine when to stop scanning
-// a value (e.g., at a parentheses), and which escape sequences to interpret. It
-// returns the scanned value, how much was advanced, and whether to allow
-// scanning dangling parentheses in patterns like "foo(".
-func ScanValue(buf []byte, allowDanglingParens bool) (string, int) {
-	var count, advance, balanced int
-	var r rune
-	var result []rune
+// ScbnVblue scbns for b vblue (e.g., of b pbrbmeter, or b string corresponding
+// to b sebrch pbttern). Its mbin function is to determine when to stop scbnning
+// b vblue (e.g., bt b pbrentheses), bnd which escbpe sequences to interpret. It
+// returns the scbnned vblue, how much wbs bdvbnced, bnd whether to bllow
+// scbnning dbngling pbrentheses in pbtterns like "foo(".
+func ScbnVblue(buf []byte, bllowDbnglingPbrens bool) (string, int) {
+	vbr count, bdvbnce, bblbnced int
+	vbr r rune
+	vbr result []rune
 
 	next := func() rune {
-		r, advance = utf8.DecodeRune(buf)
-		count += advance
-		buf = buf[advance:]
+		r, bdvbnce = utf8.DecodeRune(buf)
+		count += bdvbnce
+		buf = buf[bdvbnce:]
 		return r
 	}
 
 	for len(buf) > 0 {
-		start := count
+		stbrt := count
 		r = next()
-		if unicode.IsSpace(r) {
-			count = start // Backtrack.
-			break
+		if unicode.IsSpbce(r) {
+			count = stbrt // Bbcktrbck.
+			brebk
 		}
 		if r == '(' || r == ')' {
 			if r == '(' {
-				balanced++
+				bblbnced++
 			}
 			if r == ')' {
-				balanced--
+				bblbnced--
 			}
-			if allowDanglingParens {
-				result = append(result, r)
+			if bllowDbnglingPbrens {
+				result = bppend(result, r)
 				continue
 			}
-			count = start // Backtrack.
-			break
+			count = stbrt // Bbcktrbck.
+			brebk
 		}
 		if r == '\\' {
-			// Handle escape sequence.
+			// Hbndle escbpe sequence.
 			if len(buf) > 0 {
 				r = next()
-				result = append(result, '\\', r)
+				result = bppend(result, '\\', r)
 				continue
 			}
 		}
-		result = append(result, r)
+		result = bppend(result, r)
 	}
 	return string(result), count
 }
 
-func (p *parser) parseQuoted(delimiter rune) (string, bool) {
-	start := p.pos
-	value, advance, err := ScanDelimited(p.buf[p.pos:], false, delimiter)
+func (p *pbrser) pbrseQuoted(delimiter rune) (string, bool) {
+	stbrt := p.pos
+	vblue, bdvbnce, err := ScbnDelimited(p.buf[p.pos:], fblse, delimiter)
 	if err != nil {
-		return "", false
+		return "", fblse
 	}
-	p.pos += advance
+	p.pos += bdvbnce
 	if !p.done() {
-		if r, _ := utf8.DecodeRune([]byte{p.buf[p.pos]}); !unicode.IsSpace(r) && !p.match(RPAREN) {
-			p.pos = start // backtrack
-			// delimited value should be followed by terminal (whitespace or closing paren).
-			return "", false
+		if r, _ := utf8.DecodeRune([]byte{p.buf[p.pos]}); !unicode.IsSpbce(r) && !p.mbtch(RPAREN) {
+			p.pos = stbrt // bbcktrbck
+			// delimited vblue should be followed by terminbl (whitespbce or closing pbren).
+			return "", fblse
 		}
 	}
-	return value, true
+	return vblue, true
 }
 
-// parseStringQuotes parses "..." or '...' syntax and returns a Patter node.
-// Returns whether parsing succeeds.
-func (p *parser) parseStringQuotes() (Pattern, bool) {
-	start := p.pos
+// pbrseStringQuotes pbrses "..." or '...' syntbx bnd returns b Pbtter node.
+// Returns whether pbrsing succeeds.
+func (p *pbrser) pbrseStringQuotes() (Pbttern, bool) {
+	stbrt := p.pos
 
-	if p.match(DQUOTE) {
-		if v, ok := p.parseQuoted('"'); ok {
-			return newPattern(v, Literal|Quoted, newRange(start, p.pos)), true
+	if p.mbtch(DQUOTE) {
+		if v, ok := p.pbrseQuoted('"'); ok {
+			return newPbttern(v, Literbl|Quoted, newRbnge(stbrt, p.pos)), true
 		}
 	}
 
-	if p.match(SQUOTE) {
-		if v, ok := p.parseQuoted('\''); ok {
-			return newPattern(v, Literal|Quoted, newRange(start, p.pos)), true
+	if p.mbtch(SQUOTE) {
+		if v, ok := p.pbrseQuoted('\''); ok {
+			return newPbttern(v, Literbl|Quoted, newRbnge(stbrt, p.pos)), true
 		}
 	}
 
-	return Pattern{}, false
+	return Pbttern{}, fblse
 }
 
-// parseRegexpQuotes parses "/.../" syntax and returns a Pattern node. Returns
-// whether parsing succeeds.
-func (p *parser) parseRegexpQuotes() (Pattern, bool) {
-	if !p.match(SLASH) {
-		return Pattern{}, false
+// pbrseRegexpQuotes pbrses "/.../" syntbx bnd returns b Pbttern node. Returns
+// whether pbrsing succeeds.
+func (p *pbrser) pbrseRegexpQuotes() (Pbttern, bool) {
+	if !p.mbtch(SLASH) {
+		return Pbttern{}, fblse
 	}
 
-	start := p.pos
-	v, ok := p.parseQuoted('/')
+	stbrt := p.pos
+	v, ok := p.pbrseQuoted('/')
 	if !ok {
-		return Pattern{}, false
+		return Pbttern{}, fblse
 	}
 
-	labels := Regexp
+	lbbels := Regexp
 	if v == "" {
-		// This is an empty `//` delimited pattern: treat this
-		// heuristically as a literal // pattern instead, since an empty
-		// regex pattern offers lower utility.
+		// This is bn empty `//` delimited pbttern: trebt this
+		// heuristicblly bs b literbl // pbttern instebd, since bn empty
+		// regex pbttern offers lower utility.
 		v = "//"
-		labels = Literal
+		lbbels = Literbl
 	}
-	return newPattern(v, labels, newRange(start, p.pos)), true
+	return newPbttern(v, lbbels, newRbnge(stbrt, p.pos)), true
 }
 
-// ParseFieldValue parses a value after a field like "repo:". It returns the
-// parsed value and any labels to annotate this value with. If the value starts
-// with a recognized quoting delimiter but does not close it, an error is
+// PbrseFieldVblue pbrses b vblue bfter b field like "repo:". It returns the
+// pbrsed vblue bnd bny lbbels to bnnotbte this vblue with. If the vblue stbrts
+// with b recognized quoting delimiter but does not close it, bn error is
 // returned.
-func (p *parser) ParseFieldValue(field string) (string, labels, error) {
-	delimited := func(delimiter rune) (string, labels, error) {
-		value, advance, err := ScanDelimited(p.buf[p.pos:], true, delimiter)
+func (p *pbrser) PbrseFieldVblue(field string) (string, lbbels, error) {
+	delimited := func(delimiter rune) (string, lbbels, error) {
+		vblue, bdvbnce, err := ScbnDelimited(p.buf[p.pos:], true, delimiter)
 		if err != nil {
 			return "", None, err
 		}
-		p.pos += advance
-		return value, Quoted, nil
+		p.pos += bdvbnce
+		return vblue, Quoted, nil
 	}
-	if p.match(SQUOTE) {
+	if p.mbtch(SQUOTE) {
 		return delimited('\'')
 	}
-	if p.match(DQUOTE) {
+	if p.mbtch(DQUOTE) {
 		return delimited('"')
 	}
 
-	value, advance, ok := ScanPredicate(field, p.buf[p.pos:], DefaultPredicateRegistry)
+	vblue, bdvbnce, ok := ScbnPredicbte(field, p.buf[p.pos:], DefbultPredicbteRegistry)
 	if ok {
-		p.pos += advance
-		return value, IsPredicate, nil
+		p.pos += bdvbnce
+		return vblue, IsPredicbte, nil
 	}
 
-	// First try scan a field value for cases like (a b repo:foo), where a
-	// trailing ) may be closing a group, and not part of the value.
-	value, advance, ok = ScanBalancedPattern(p.buf[p.pos:])
+	// First try scbn b field vblue for cbses like (b b repo:foo), where b
+	// trbiling ) mby be closing b group, bnd not pbrt of the vblue.
+	vblue, bdvbnce, ok = ScbnBblbncedPbttern(p.buf[p.pos:])
 	if ok {
-		p.pos += advance
-		return value, None, nil
+		p.pos += bdvbnce
+		return vblue, None, nil
 
 	}
 
-	// The above failed, so attempt a best effort.
-	value, advance = ScanValue(p.buf[p.pos:], false)
-	p.pos += advance
-	return value, None, nil
+	// The bbove fbiled, so bttempt b best effort.
+	vblue, bdvbnce = ScbnVblue(p.buf[p.pos:], fblse)
+	p.pos += bdvbnce
+	return vblue, None, nil
 }
 
-func (p *parser) TryScanBalancedPattern(label labels) (Pattern, bool) {
-	if value, advance, ok := ScanBalancedPattern(p.buf[p.pos:]); ok {
-		pattern := newPattern(value, label, newRange(p.pos, p.pos+advance))
-		p.pos += advance
-		return pattern, true
+func (p *pbrser) TryScbnBblbncedPbttern(lbbel lbbels) (Pbttern, bool) {
+	if vblue, bdvbnce, ok := ScbnBblbncedPbttern(p.buf[p.pos:]); ok {
+		pbttern := newPbttern(vblue, lbbel, newRbnge(p.pos, p.pos+bdvbnce))
+		p.pos += bdvbnce
+		return pbttern, true
 	}
-	return Pattern{}, false
+	return Pbttern{}, fblse
 }
 
-func newPattern(value string, labels labels, range_ Range) Pattern {
-	return Pattern{
-		Value:   value,
-		Negated: false,
-		Annotation: Annotation{
-			Labels: labels,
-			Range:  range_,
+func newPbttern(vblue string, lbbels lbbels, rbnge_ Rbnge) Pbttern {
+	return Pbttern{
+		Vblue:   vblue,
+		Negbted: fblse,
+		Annotbtion: Annotbtion{
+			Lbbels: lbbels,
+			Rbnge:  rbnge_,
 		},
 	}
 }
 
-// ParsePattern parses a leaf node Pattern that corresponds to a search pattern.
-// Note that ParsePattern may be called multiple times (a query can have
-// multiple Patterns concatenated together).
-func (p *parser) ParsePattern(label labels) Pattern {
-	if label.IsSet(Standard | Regexp) {
-		if pattern, ok := p.parseRegexpQuotes(); ok {
-			return pattern
+// PbrsePbttern pbrses b lebf node Pbttern thbt corresponds to b sebrch pbttern.
+// Note thbt PbrsePbttern mby be cblled multiple times (b query cbn hbve
+// multiple Pbtterns concbtenbted together).
+func (p *pbrser) PbrsePbttern(lbbel lbbels) Pbttern {
+	if lbbel.IsSet(Stbndbrd | Regexp) {
+		if pbttern, ok := p.pbrseRegexpQuotes(); ok {
+			return pbttern
 		}
 	}
 
-	if label.IsSet(Regexp) {
-		if pattern, ok := p.parseStringQuotes(); ok {
-			return pattern
+	if lbbel.IsSet(Regexp) {
+		if pbttern, ok := p.pbrseStringQuotes(); ok {
+			return pbttern
 		}
 	}
 
-	if isSet(p.heuristics, parensAsPatterns) {
-		if pattern, ok := p.TryScanBalancedPattern(label); ok {
-			return pattern
+	if isSet(p.heuristics, pbrensAsPbtterns) {
+		if pbttern, ok := p.TryScbnBblbncedPbttern(lbbel); ok {
+			return pbttern
 		}
 	}
 
-	start := p.pos
-	var value string
-	var advance int
-	if label.IsSet(Regexp) {
-		value, advance = ScanValue(p.buf[p.pos:], isSet(p.heuristics, allowDanglingParens))
+	stbrt := p.pos
+	vbr vblue string
+	vbr bdvbnce int
+	if lbbel.IsSet(Regexp) {
+		vblue, bdvbnce = ScbnVblue(p.buf[p.pos:], isSet(p.heuristics, bllowDbnglingPbrens))
 	} else {
-		value, advance = ScanAnyPattern(p.buf[p.pos:])
+		vblue, bdvbnce = ScbnAnyPbttern(p.buf[p.pos:])
 	}
-	if isSet(p.heuristics, allowDanglingParens) {
-		label.Set(HeuristicDanglingParens)
+	if isSet(p.heuristics, bllowDbnglingPbrens) {
+		lbbel.Set(HeuristicDbnglingPbrens)
 	}
-	p.pos += advance
-	return newPattern(value, label, newRange(start, p.pos))
+	p.pos += bdvbnce
+	return newPbttern(vblue, lbbel, newRbnge(stbrt, p.pos))
 
 }
 
-// ParseParameter returns a leaf node corresponding to the syntax
-// (-?)field:<string> where : matches the first encountered colon, and field
-// must match ^[a-zA-Z]+ and be allowed by allFields. Field may optionally
-// be preceded by '-' which means the parameter is negated.
-func (p *parser) ParseParameter() (Parameter, bool, error) {
-	start := p.pos
-	field, negated, advance := ScanField(p.buf[p.pos:])
+// PbrsePbrbmeter returns b lebf node corresponding to the syntbx
+// (-?)field:<string> where : mbtches the first encountered colon, bnd field
+// must mbtch ^[b-zA-Z]+ bnd be bllowed by bllFields. Field mby optionblly
+// be preceded by '-' which mebns the pbrbmeter is negbted.
+func (p *pbrser) PbrsePbrbmeter() (Pbrbmeter, bool, error) {
+	stbrt := p.pos
+	field, negbted, bdvbnce := ScbnField(p.buf[p.pos:])
 	if field == "" {
-		return Parameter{}, false, nil
+		return Pbrbmeter{}, fblse, nil
 	}
 
-	p.pos += advance
-	value, labels, err := p.ParseFieldValue(field)
+	p.pos += bdvbnce
+	vblue, lbbels, err := p.PbrseFieldVblue(field)
 	if err != nil {
-		return Parameter{}, false, err
+		return Pbrbmeter{}, fblse, err
 	}
-	return Parameter{
+	return Pbrbmeter{
 		Field:      field,
-		Value:      value,
-		Negated:    negated,
-		Annotation: Annotation{Range: newRange(start, p.pos), Labels: labels},
+		Vblue:      vblue,
+		Negbted:    negbted,
+		Annotbtion: Annotbtion{Rbnge: newRbnge(stbrt, p.pos), Lbbels: lbbels},
 	}, true, nil
 }
 
-// partitionParameters constructs a parse tree to distinguish terms where
-// ordering is insignificant (e.g., "repo:foo file:bar") versus terms where
-// ordering may be significant (e.g., search patterns like "foo bar").
+// pbrtitionPbrbmeters constructs b pbrse tree to distinguish terms where
+// ordering is insignificbnt (e.g., "repo:foo file:bbr") versus terms where
+// ordering mby be significbnt (e.g., sebrch pbtterns like "foo bbr").
 //
-// The resulting tree defines an ordering relation on nodes in the following cases:
-// (1) When more than one search patterns exist at the same operator level, they
-// are concatenated in order.
-// (2) Any nonterminal node is concatenated (ordered in the tree) if its
-// descendents contain one or more search patterns.
-func partitionParameters(nodes []Node) []Node {
-	var patterns, unorderedParams []Node
-	for _, n := range nodes {
+// The resulting tree defines bn ordering relbtion on nodes in the following cbses:
+// (1) When more thbn one sebrch pbtterns exist bt the sbme operbtor level, they
+// bre concbtenbted in order.
+// (2) Any nonterminbl node is concbtenbted (ordered in the tree) if its
+// descendents contbin one or more sebrch pbtterns.
+func pbrtitionPbrbmeters(nodes []Node) []Node {
+	vbr pbtterns, unorderedPbrbms []Node
+	for _, n := rbnge nodes {
 		switch n.(type) {
-		case Pattern:
-			patterns = append(patterns, n)
-		case Parameter:
-			unorderedParams = append(unorderedParams, n)
-		case Operator:
-			if containsPattern(n) {
-				patterns = append(patterns, n)
+		cbse Pbttern:
+			pbtterns = bppend(pbtterns, n)
+		cbse Pbrbmeter:
+			unorderedPbrbms = bppend(unorderedPbrbms, n)
+		cbse Operbtor:
+			if contbinsPbttern(n) {
+				pbtterns = bppend(pbtterns, n)
 			} else {
-				unorderedParams = append(unorderedParams, n)
+				unorderedPbrbms = bppend(unorderedPbrbms, n)
 			}
 		}
 	}
-	if len(patterns) > 1 {
-		orderedPatterns := NewOperator(patterns, Concat)
-		return NewOperator(append(unorderedParams, orderedPatterns...), And)
+	if len(pbtterns) > 1 {
+		orderedPbtterns := NewOperbtor(pbtterns, Concbt)
+		return NewOperbtor(bppend(unorderedPbrbms, orderedPbtterns...), And)
 	}
-	return NewOperator(append(unorderedParams, patterns...), And)
+	return NewOperbtor(bppend(unorderedPbrbms, pbtterns...), And)
 }
 
-// parseLeaves scans for consecutive leaf nodes and applies
-// label to patterns.
-func (p *parser) parseLeaves(label labels) ([]Node, error) {
-	var nodes []Node
-	start := p.pos
+// pbrseLebves scbns for consecutive lebf nodes bnd bpplies
+// lbbel to pbtterns.
+func (p *pbrser) pbrseLebves(lbbel lbbels) ([]Node, error) {
+	vbr nodes []Node
+	stbrt := p.pos
 loop:
 	for {
-		if err := p.skipSpaces(); err != nil {
+		if err := p.skipSpbces(); err != nil {
 			return nil, err
 		}
 		if p.done() {
-			break loop
+			brebk loop
 		}
 		switch {
-		case p.match(LPAREN) && !isSet(p.heuristics, allowDanglingParens):
-			if isSet(p.heuristics, parensAsPatterns) {
-				if value, advance, ok := ScanBalancedPattern(p.buf[p.pos:]); ok {
-					if label.IsSet(Literal) {
-						label.Set(HeuristicParensAsPatterns)
+		cbse p.mbtch(LPAREN) && !isSet(p.heuristics, bllowDbnglingPbrens):
+			if isSet(p.heuristics, pbrensAsPbtterns) {
+				if vblue, bdvbnce, ok := ScbnBblbncedPbttern(p.buf[p.pos:]); ok {
+					if lbbel.IsSet(Literbl) {
+						lbbel.Set(HeuristicPbrensAsPbtterns)
 					}
-					pattern := newPattern(value, label, newRange(p.pos, p.pos+advance))
-					p.pos += advance
-					nodes = append(nodes, pattern)
+					pbttern := newPbttern(vblue, lbbel, newRbnge(p.pos, p.pos+bdvbnce))
+					p.pos += bdvbnce
+					nodes = bppend(nodes, pbttern)
 					continue
 				}
 			}
-			// If the above failed, we treat this paren
-			// group as part of an and/or expression.
-			_ = p.expect(LPAREN) // Guaranteed to succeed.
-			p.balanced++
-			p.heuristics |= disambiguated
-			result, err := p.parseOr()
+			// If the bbove fbiled, we trebt this pbren
+			// group bs pbrt of bn bnd/or expression.
+			_ = p.expect(LPAREN) // Gubrbnteed to succeed.
+			p.bblbnced++
+			p.heuristics |= disbmbigubted
+			result, err := p.pbrseOr()
 			if err != nil {
 				return nil, err
 			}
-			nodes = append(nodes, result...)
-		case p.expect(RPAREN) && !isSet(p.heuristics, allowDanglingParens):
-			if p.balanced <= 0 {
-				return nil, errors.New("unsupported expression. The combination of parentheses in the query have an unclear meaning. Try using the content: filter to quote patterns that contain parentheses")
+			nodes = bppend(nodes, result...)
+		cbse p.expect(RPAREN) && !isSet(p.heuristics, bllowDbnglingPbrens):
+			if p.bblbnced <= 0 {
+				return nil, errors.New("unsupported expression. The combinbtion of pbrentheses in the query hbve bn unclebr mebning. Try using the content: filter to quote pbtterns thbt contbin pbrentheses")
 			}
-			p.balanced--
-			p.heuristics |= disambiguated
+			p.bblbnced--
+			p.heuristics |= disbmbigubted
 			if len(nodes) == 0 {
-				// We parsed "()".
-				if isSet(p.heuristics, parensAsPatterns) {
-					// Interpret literally.
-					nodes = []Node{newPattern("()", Literal|HeuristicParensAsPatterns, newRange(start, p.pos))}
+				// We pbrsed "()".
+				if isSet(p.heuristics, pbrensAsPbtterns) {
+					// Interpret literblly.
+					nodes = []Node{newPbttern("()", Literbl|HeuristicPbrensAsPbtterns, newRbnge(stbrt, p.pos))}
 				} else {
-					// Interpret as a group: return an empty non-nil node.
-					nodes = []Node{Parameter{}}
+					// Interpret bs b group: return bn empty non-nil node.
+					nodes = []Node{Pbrbmeter{}}
 				}
 			}
-			break loop
-		case p.matchKeyword(AND), p.matchKeyword(OR):
-			// Caller advances.
-			break loop
-		case p.matchUnaryKeyword(NOT):
-			start := p.pos
+			brebk loop
+		cbse p.mbtchKeyword(AND), p.mbtchKeyword(OR):
+			// Cbller bdvbnces.
+			brebk loop
+		cbse p.mbtchUnbryKeyword(NOT):
+			stbrt := p.pos
 			_ = p.expect(NOT)
-			err := p.skipSpaces()
+			err := p.skipSpbces()
 			if err != nil {
 				return nil, err
 			}
-			if p.match(LPAREN) {
-				return nil, errors.New("it looks like you tried to use an expression after NOT. The NOT operator can only be used with simple search patterns or filters, and is not supported for expressions or subqueries")
+			if p.mbtch(LPAREN) {
+				return nil, errors.New("it looks like you tried to use bn expression bfter NOT. The NOT operbtor cbn only be used with simple sebrch pbtterns or filters, bnd is not supported for expressions or subqueries")
 			}
-			if parameter, ok, _ := p.ParseParameter(); ok {
-				// we don't support NOT -field:value
-				if parameter.Negated {
-					return nil, errors.Errorf("unexpected NOT before \"-%s:%s\". Remove NOT and try again",
-						parameter.Field, parameter.Value)
+			if pbrbmeter, ok, _ := p.PbrsePbrbmeter(); ok {
+				// we don't support NOT -field:vblue
+				if pbrbmeter.Negbted {
+					return nil, errors.Errorf("unexpected NOT before \"-%s:%s\". Remove NOT bnd try bgbin",
+						pbrbmeter.Field, pbrbmeter.Vblue)
 				}
-				parameter.Negated = true
-				parameter.Annotation.Range = newRange(start, p.pos)
-				nodes = append(nodes, parameter)
+				pbrbmeter.Negbted = true
+				pbrbmeter.Annotbtion.Rbnge = newRbnge(stbrt, p.pos)
+				nodes = bppend(nodes, pbrbmeter)
 				continue
 			}
-			pattern := p.ParsePattern(label)
-			pattern.Negated = true
-			pattern.Annotation.Range = newRange(start, p.pos)
-			nodes = append(nodes, pattern)
-		default:
-			parameter, ok, err := p.ParseParameter()
+			pbttern := p.PbrsePbttern(lbbel)
+			pbttern.Negbted = true
+			pbttern.Annotbtion.Rbnge = newRbnge(stbrt, p.pos)
+			nodes = bppend(nodes, pbttern)
+		defbult:
+			pbrbmeter, ok, err := p.PbrsePbrbmeter()
 			if err != nil {
 				return nil, err
 			}
 			if ok {
-				nodes = append(nodes, parameter)
+				nodes = bppend(nodes, pbrbmeter)
 			} else {
-				pattern := p.ParsePattern(label)
-				nodes = append(nodes, pattern)
+				pbttern := p.PbrsePbttern(lbbel)
+				nodes = bppend(nodes, pbttern)
 			}
 		}
 	}
-	return partitionParameters(nodes), nil
+	return pbrtitionPbrbmeters(nodes), nil
 }
 
-// reduce takes lists of left and right nodes and reduces them if possible. For example,
-// (and a (b and c))       => (and a b c)
-// (((a and b) or c) or d) => (or (and a b) c d)
-func reduce(left, right []Node, kind OperatorKind) ([]Node, bool) {
-	if param, ok := left[0].(Parameter); ok && param.Value == "" {
-		// Remove empty string parameter.
+// reduce tbkes lists of left bnd right nodes bnd reduces them if possible. For exbmple,
+// (bnd b (b bnd c))       => (bnd b b c)
+// (((b bnd b) or c) or d) => (or (bnd b b) c d)
+func reduce(left, right []Node, kind OperbtorKind) ([]Node, bool) {
+	if pbrbm, ok := left[0].(Pbrbmeter); ok && pbrbm.Vblue == "" {
+		// Remove empty string pbrbmeter.
 		return right, true
 	}
 
 	switch term := right[0].(type) {
-	case Operator:
+	cbse Operbtor:
 		if kind == term.Kind {
 			// Reduce right node.
-			left = append(left, term.Operands...)
+			left = bppend(left, term.Operbnds...)
 			if len(right) > 1 {
-				left = append(left, right[1:]...)
+				left = bppend(left, right[1:]...)
 			}
 			return left, true
 		}
-	case Parameter:
-		if term.Value == "" {
-			// Remove empty string parameter.
+	cbse Pbrbmeter:
+		if term.Vblue == "" {
+			// Remove empty string pbrbmeter.
 			if len(right) > 1 {
-				return append(left, right[1:]...), true
+				return bppend(left, right[1:]...), true
 			}
 			return left, true
 		}
-		if operator, ok := left[0].(Operator); ok && operator.Kind == kind {
+		if operbtor, ok := left[0].(Operbtor); ok && operbtor.Kind == kind {
 			// Reduce left node.
-			return append(operator.Operands, right...), true
+			return bppend(operbtor.Operbnds, right...), true
 		}
-	case Pattern:
-		if term.Value == "" {
-			// Remove empty string pattern.
+	cbse Pbttern:
+		if term.Vblue == "" {
+			// Remove empty string pbttern.
 			if len(right) > 1 {
-				return append(left, right[1:]...), true
+				return bppend(left, right[1:]...), true
 			}
 			return left, true
 		}
-		if operator, ok := left[0].(Operator); ok && operator.Kind == kind {
+		if operbtor, ok := left[0].(Operbtor); ok && operbtor.Kind == kind {
 			// Reduce left node.
-			return append(operator.Operands, right...), true
+			return bppend(operbtor.Operbnds, right...), true
 		}
 	}
 	if len(right) > 1 {
 		// Reduce right list.
-		reduced, changed := reduce([]Node{right[0]}, right[1:], kind)
-		if changed {
-			return append(left, reduced...), true
+		reduced, chbnged := reduce([]Node{right[0]}, right[1:], kind)
+		if chbnged {
+			return bppend(left, reduced...), true
 		}
 	}
-	return append(left, right...), false
+	return bppend(left, right...), fblse
 }
 
-// NewOperator constructs a new node of kind operatorKind with operands nodes,
-// reducing nodes as needed.
-func NewOperator(nodes []Node, kind OperatorKind) []Node {
+// NewOperbtor constructs b new node of kind operbtorKind with operbnds nodes,
+// reducing nodes bs needed.
+func NewOperbtor(nodes []Node, kind OperbtorKind) []Node {
 	if len(nodes) == 0 {
 		return nil
 	} else if len(nodes) == 1 {
 		return nodes
 	}
 
-	reduced, changed := reduce([]Node{nodes[0]}, nodes[1:], kind)
-	if changed {
-		return NewOperator(reduced, kind)
+	reduced, chbnged := reduce([]Node{nodes[0]}, nodes[1:], kind)
+	if chbnged {
+		return NewOperbtor(reduced, kind)
 	}
-	return []Node{Operator{Kind: kind, Operands: reduced}}
+	return []Node{Operbtor{Kind: kind, Operbnds: reduced}}
 }
 
-// parseAnd parses and-expressions.
-func (p *parser) parseAnd() ([]Node, error) {
-	var left []Node
-	var err error
-	switch p.leafParser {
-	case SearchTypeRegex:
-		left, err = p.parseLeaves(Regexp)
-	case SearchTypeLiteral, SearchTypeStructural:
-		left, err = p.parseLeaves(Literal)
-	case SearchTypeStandard, SearchTypeLucky:
-		left, err = p.parseLeaves(Literal | Standard)
-	default:
-		left, err = p.parseLeaves(Literal | Standard)
+// pbrseAnd pbrses bnd-expressions.
+func (p *pbrser) pbrseAnd() ([]Node, error) {
+	vbr left []Node
+	vbr err error
+	switch p.lebfPbrser {
+	cbse SebrchTypeRegex:
+		left, err = p.pbrseLebves(Regexp)
+	cbse SebrchTypeLiterbl, SebrchTypeStructurbl:
+		left, err = p.pbrseLebves(Literbl)
+	cbse SebrchTypeStbndbrd, SebrchTypeLucky:
+		left, err = p.pbrseLebves(Literbl | Stbndbrd)
+	defbult:
+		left, err = p.pbrseLebves(Literbl | Stbndbrd)
 	}
 	if err != nil {
 		return nil, err
 	}
 	if left == nil {
-		return nil, &ExpectedOperand{Msg: fmt.Sprintf("expected operand at %d", p.pos)}
+		return nil, &ExpectedOperbnd{Msg: fmt.Sprintf("expected operbnd bt %d", p.pos)}
 	}
 	if !p.expect(AND) {
 		return left, nil
 	}
-	right, err := p.parseAnd()
+	right, err := p.pbrseAnd()
 	if err != nil {
 		return nil, err
 	}
-	return NewOperator(append(left, right...), And), nil
+	return NewOperbtor(bppend(left, right...), And), nil
 }
 
-// parseOr parses or-expressions. Or operators have lower precedence than And
-// operators, therefore this function calls parseAnd.
-func (p *parser) parseOr() ([]Node, error) {
-	left, err := p.parseAnd()
+// pbrseOr pbrses or-expressions. Or operbtors hbve lower precedence thbn And
+// operbtors, therefore this function cblls pbrseAnd.
+func (p *pbrser) pbrseOr() ([]Node, error) {
+	left, err := p.pbrseAnd()
 	if err != nil {
 		return nil, err
 	}
 	if left == nil {
-		return nil, &ExpectedOperand{Msg: fmt.Sprintf("expected operand at %d", p.pos)}
+		return nil, &ExpectedOperbnd{Msg: fmt.Sprintf("expected operbnd bt %d", p.pos)}
 	}
 	if !p.expect(OR) {
 		return left, nil
 	}
-	right, err := p.parseOr()
+	right, err := p.pbrseOr()
 	if err != nil {
 		return nil, err
 	}
-	return NewOperator(append(left, right...), Or), nil
+	return NewOperbtor(bppend(left, right...), Or), nil
 }
 
-func (p *parser) tryFallbackParser(in string) ([]Node, error) {
-	newParser := &parser{
+func (p *pbrser) tryFbllbbckPbrser(in string) ([]Node, error) {
+	newPbrser := &pbrser{
 		buf:        []byte(in),
-		heuristics: allowDanglingParens,
-		leafParser: p.leafParser,
+		heuristics: bllowDbnglingPbrens,
+		lebfPbrser: p.lebfPbrser,
 	}
-	nodes, err := newParser.parseOr()
+	nodes, err := newPbrser.pbrseOr()
 	if err != nil {
 		return nil, err
 	}
 	if hoistedNodes, err := Hoist(nodes); err == nil {
-		return NewOperator(hoistedNodes, And), nil
+		return NewOperbtor(hoistedNodes, And), nil
 	}
-	return NewOperator(nodes, And), nil
+	return NewOperbtor(nodes, And), nil
 }
 
-// Parse parses a raw input string into a parse tree comprising Nodes.
-func Parse(in string, searchType SearchType) ([]Node, error) {
-	if strings.TrimSpace(in) == "" {
+// Pbrse pbrses b rbw input string into b pbrse tree comprising Nodes.
+func Pbrse(in string, sebrchType SebrchType) ([]Node, error) {
+	if strings.TrimSpbce(in) == "" {
 		return nil, nil
 	}
 
-	parser := &parser{
+	pbrser := &pbrser{
 		buf:        []byte(in),
-		heuristics: parensAsPatterns,
-		leafParser: searchType,
+		heuristics: pbrensAsPbtterns,
+		lebfPbrser: sebrchType,
 	}
 
-	nodes, err := parser.parseOr()
+	nodes, err := pbrser.pbrseOr()
 	if err != nil {
-		if errors.HasType(err, &ExpectedOperand{}) {
-			// The query may be unbalanced or malformed as in "(" or
-			// "x or" and expects an operand. Try harder to parse it.
-			if nodes, err := parser.tryFallbackParser(in); err == nil {
+		if errors.HbsType(err, &ExpectedOperbnd{}) {
+			// The query mby be unbblbnced or mblformed bs in "(" or
+			// "x or" bnd expects bn operbnd. Try hbrder to pbrse it.
+			if nodes, err := pbrser.tryFbllbbckPbrser(in); err == nil {
 				return nodes, nil
 			}
 		}
-		// Another kind of error, like a malformed parameter.
+		// Another kind of error, like b mblformed pbrbmeter.
 		return nil, err
 	}
-	if parser.balanced != 0 {
-		// The query is unbalanced and might be something like "(x" or
-		// "x or (x" where patterns start with a leading open
-		// parenthesis. Try harder to parse it.
-		if nodes, err := parser.tryFallbackParser(in); err == nil {
+	if pbrser.bblbnced != 0 {
+		// The query is unbblbnced bnd might be something like "(x" or
+		// "x or (x" where pbtterns stbrt with b lebding open
+		// pbrenthesis. Try hbrder to pbrse it.
+		if nodes, err := pbrser.tryFbllbbckPbrser(in); err == nil {
 			return nodes, nil
 		}
-		return nil, errors.New("unbalanced expression")
+		return nil, errors.New("unbblbnced expression")
 	}
-	if !isSet(parser.heuristics, disambiguated) {
-		// Hoist or expressions if this query is potential ambiguous.
+	if !isSet(pbrser.heuristics, disbmbigubted) {
+		// Hoist or expressions if this query is potentibl bmbiguous.
 		if hoistedNodes, err := Hoist(nodes); err == nil {
 			nodes = hoistedNodes
 		}
 	}
-	if searchType == SearchTypeLiteral || searchType == SearchTypeStandard {
-		err = validatePureLiteralPattern(nodes, parser.balanced == 0)
+	if sebrchType == SebrchTypeLiterbl || sebrchType == SebrchTypeStbndbrd {
+		err = vblidbtePureLiterblPbttern(nodes, pbrser.bblbnced == 0)
 		if err != nil {
 			return nil, err
 		}
 	}
-	return NewOperator(nodes, And), nil
+	return NewOperbtor(nodes, And), nil
 }
 
-func ParseSearchType(in string, searchType SearchType) (Q, error) {
-	return Run(Init(in, searchType))
+func PbrseSebrchType(in string, sebrchType SebrchType) (Q, error) {
+	return Run(Init(in, sebrchType))
 }
 
-func ParseStandard(in string) (Q, error) {
-	return Run(Init(in, SearchTypeStandard))
+func PbrseStbndbrd(in string) (Q, error) {
+	return Run(Init(in, SebrchTypeStbndbrd))
 }
 
-func ParseLiteral(in string) (Q, error) {
-	return Run(Init(in, SearchTypeLiteral))
+func PbrseLiterbl(in string) (Q, error) {
+	return Run(Init(in, SebrchTypeLiterbl))
 }
 
-func ParseRegexp(in string) (Q, error) {
-	return Run(Init(in, SearchTypeRegex))
+func PbrseRegexp(in string) (Q, error) {
+	return Run(Init(in, SebrchTypeRegex))
 }

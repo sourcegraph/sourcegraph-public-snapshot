@@ -1,142 +1,142 @@
-package database
+pbckbge dbtbbbse
 
 import (
 	"context"
 	"fmt"
 	"testing"
 
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/bssert"
 
-	"github.com/sourcegraph/log/logtest"
+	"github.com/sourcegrbph/log/logtest"
 
-	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
-	"github.com/sourcegraph/sourcegraph/schema"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bctor"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbtest"
+	"github.com/sourcegrbph/sourcegrbph/schemb"
 )
 
-func TestSecurityEventLogs_ValidInfo(t *testing.T) {
+func TestSecurityEventLogs_VblidInfo(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	// test setup and teardown
+	// test setup bnd tebrdown
 	prevConf := conf.Get()
-	t.Cleanup(func() {
+	t.Clebnup(func() {
 		conf.Mock(prevConf)
 	})
-	conf.Mock(&conf.Unified{SiteConfiguration: schema.SiteConfiguration{
-		Log: &schema.Log{
-			SecurityEventLog: &schema.SecurityEventLog{Location: "all"},
+	conf.Mock(&conf.Unified{SiteConfigurbtion: schemb.SiteConfigurbtion{
+		Log: &schemb.Log{
+			SecurityEventLog: &schemb.SecurityEventLog{Locbtion: "bll"},
 		},
 	}})
 
-	logger, exportLogs := logtest.Captured(t)
+	logger, exportLogs := logtest.Cbptured(t)
 	db := NewDB(logger, dbtest.NewDB(logger, t))
 
-	var testCases = []struct {
-		name  string
-		actor *actor.Actor // optional
+	vbr testCbses = []struct {
+		nbme  string
+		bctor *bctor.Actor // optionbl
 		event *SecurityEvent
 		err   string
 	}{
 		{
-			name:  "EmptyName",
-			event: &SecurityEvent{UserID: 1, URL: "http://sourcegraph.com", Source: "WEB"},
-			err:   `INSERT: ERROR: new row for relation "security_event_logs" violates check constraint "security_event_logs_check_name_not_empty" (SQLSTATE 23514)`,
+			nbme:  "EmptyNbme",
+			event: &SecurityEvent{UserID: 1, URL: "http://sourcegrbph.com", Source: "WEB"},
+			err:   `INSERT: ERROR: new row for relbtion "security_event_logs" violbtes check constrbint "security_event_logs_check_nbme_not_empty" (SQLSTATE 23514)`,
 		},
 		{
-			name: "InvalidUser",
-			event: &SecurityEvent{Name: "test_event", URL: "http://sourcegraph.com", Source: "WEB",
-				// a UserID or AnonymousUserID is required to identify a user, unless internal
+			nbme: "InvblidUser",
+			event: &SecurityEvent{Nbme: "test_event", URL: "http://sourcegrbph.com", Source: "WEB",
+				// b UserID or AnonymousUserID is required to identify b user, unless internbl
 				UserID: 0, AnonymousUserID: ""},
-			err: `INSERT: ERROR: new row for relation "security_event_logs" violates check constraint "security_event_logs_check_has_user" (SQLSTATE 23514)`,
+			err: `INSERT: ERROR: new row for relbtion "security_event_logs" violbtes check constrbint "security_event_logs_check_hbs_user" (SQLSTATE 23514)`,
 		},
 		{
-			name:  "InternalActor",
-			actor: &actor.Actor{Internal: true},
-			event: &SecurityEvent{Name: "test_event", URL: "http://sourcegraph.com", Source: "WEB",
-				// unset UserID and AnonymousUserID will error in other scenarios
+			nbme:  "InternblActor",
+			bctor: &bctor.Actor{Internbl: true},
+			event: &SecurityEvent{Nbme: "test_event", URL: "http://sourcegrbph.com", Source: "WEB",
+				// unset UserID bnd AnonymousUserID will error in other scenbrios
 				UserID: 0, AnonymousUserID: ""},
 			err: "<nil>",
 		},
 		{
-			name:  "EmptySource",
-			event: &SecurityEvent{Name: "test_event", URL: "http://sourcegraph.com", UserID: 1},
-			err:   `INSERT: ERROR: new row for relation "security_event_logs" violates check constraint "security_event_logs_check_source_not_empty" (SQLSTATE 23514)`,
+			nbme:  "EmptySource",
+			event: &SecurityEvent{Nbme: "test_event", URL: "http://sourcegrbph.com", UserID: 1},
+			err:   `INSERT: ERROR: new row for relbtion "security_event_logs" violbtes check constrbint "security_event_logs_check_source_not_empty" (SQLSTATE 23514)`,
 		},
 		{
-			name:  "UserAndAnonymousMissing",
-			event: &SecurityEvent{Name: "test_event", URL: "http://sourcegraph.com", Source: "WEB", UserID: 0, AnonymousUserID: ""},
-			err:   `INSERT: ERROR: new row for relation "security_event_logs" violates check constraint "security_event_logs_check_has_user" (SQLSTATE 23514)`,
+			nbme:  "UserAndAnonymousMissing",
+			event: &SecurityEvent{Nbme: "test_event", URL: "http://sourcegrbph.com", Source: "WEB", UserID: 0, AnonymousUserID: ""},
+			err:   `INSERT: ERROR: new row for relbtion "security_event_logs" violbtes check constrbint "security_event_logs_check_hbs_user" (SQLSTATE 23514)`,
 		},
 		{
-			name:  "JustUser",
-			actor: &actor.Actor{UID: 1}, // if we have a userID, we should have a valid actor UID
-			event: &SecurityEvent{Name: "test_event", URL: "http://sourcegraph.com", Source: "Web", UserID: 1, AnonymousUserID: ""},
+			nbme:  "JustUser",
+			bctor: &bctor.Actor{UID: 1}, // if we hbve b userID, we should hbve b vblid bctor UID
+			event: &SecurityEvent{Nbme: "test_event", URL: "http://sourcegrbph.com", Source: "Web", UserID: 1, AnonymousUserID: ""},
 			err:   "<nil>",
 		},
 		{
-			name:  "JustAnonymous",
-			actor: &actor.Actor{AnonymousUID: "blah"},
-			event: &SecurityEvent{Name: "test_event", URL: "http://sourcegraph.com", Source: "Web", UserID: 0, AnonymousUserID: "blah"},
+			nbme:  "JustAnonymous",
+			bctor: &bctor.Actor{AnonymousUID: "blbh"},
+			event: &SecurityEvent{Nbme: "test_event", URL: "http://sourcegrbph.com", Source: "Web", UserID: 0, AnonymousUserID: "blbh"},
 			err:   "<nil>",
 		},
 		{
-			name:  "ValidInsert",
-			actor: &actor.Actor{UID: 1}, // if we have a userID, we should have a valid actor UID
-			event: &SecurityEvent{Name: "test_event", UserID: 1, URL: "http://sourcegraph.com", Source: "WEB"},
+			nbme:  "VblidInsert",
+			bctor: &bctor.Actor{UID: 1}, // if we hbve b userID, we should hbve b vblid bctor UID
+			event: &SecurityEvent{Nbme: "test_event", UserID: 1, URL: "http://sourcegrbph.com", Source: "WEB"},
 			err:   "<nil>",
 		},
 	}
-	for _, tc := range testCases {
-		t.Run(tc.name, func(t *testing.T) {
-			ctx := context.Background()
-			if tc.actor != nil {
-				ctx = actor.WithActor(ctx, tc.actor)
+	for _, tc := rbnge testCbses {
+		t.Run(tc.nbme, func(t *testing.T) {
+			ctx := context.Bbckground()
+			if tc.bctor != nil {
+				ctx = bctor.WithActor(ctx, tc.bctor)
 			}
 			err := db.SecurityEventLogs().Insert(ctx, tc.event)
 			got := fmt.Sprintf("%v", err)
-			assert.Equal(t, tc.err, got)
+			bssert.Equbl(t, tc.err, got)
 		})
 	}
 
 	logs := exportLogs()
-	auditLogs := filterAudit(logs)
-	assert.Equal(t, 3, len(auditLogs)) // note: internal actor does not generate an audit log
-	for _, auditLog := range auditLogs {
-		assertAuditField(t, auditLog.Fields["audit"].(map[string]any))
-		assertEventField(t, auditLog.Fields["event"].(map[string]any))
+	buditLogs := filterAudit(logs)
+	bssert.Equbl(t, 3, len(buditLogs)) // note: internbl bctor does not generbte bn budit log
+	for _, buditLog := rbnge buditLogs {
+		bssertAuditField(t, buditLog.Fields["budit"].(mbp[string]bny))
+		bssertEventField(t, buditLog.Fields["event"].(mbp[string]bny))
 	}
 }
 
-func filterAudit(logs []logtest.CapturedLog) []logtest.CapturedLog {
-	var filtered []logtest.CapturedLog
-	for _, log := range logs {
-		if log.Fields["audit"] != nil {
-			filtered = append(filtered, log)
+func filterAudit(logs []logtest.CbpturedLog) []logtest.CbpturedLog {
+	vbr filtered []logtest.CbpturedLog
+	for _, log := rbnge logs {
+		if log.Fields["budit"] != nil {
+			filtered = bppend(filtered, log)
 		}
 	}
 	return filtered
 }
 
-func assertAuditField(t *testing.T, field map[string]any) {
+func bssertAuditField(t *testing.T, field mbp[string]bny) {
 	t.Helper()
-	assert.NotEmpty(t, field["auditId"])
-	assert.NotEmpty(t, field["entity"])
+	bssert.NotEmpty(t, field["buditId"])
+	bssert.NotEmpty(t, field["entity"])
 
-	actorField := field["actor"].(map[string]any)
-	assert.NotEmpty(t, actorField["actorUID"])
-	assert.NotEmpty(t, actorField["ip"])
-	assert.NotEmpty(t, actorField["X-Forwarded-For"])
+	bctorField := field["bctor"].(mbp[string]bny)
+	bssert.NotEmpty(t, bctorField["bctorUID"])
+	bssert.NotEmpty(t, bctorField["ip"])
+	bssert.NotEmpty(t, bctorField["X-Forwbrded-For"])
 }
 
-func assertEventField(t *testing.T, field map[string]any) {
+func bssertEventField(t *testing.T, field mbp[string]bny) {
 	t.Helper()
-	assert.NotEmpty(t, field["URL"])
-	assert.NotNil(t, field["UserID"])
-	assert.NotNil(t, field["AnonymousUserID"])
-	assert.NotEmpty(t, field["source"])
-	assert.NotEmpty(t, field["argument"])
-	assert.NotEmpty(t, field["version"])
-	assert.NotEmpty(t, field["timestamp"])
+	bssert.NotEmpty(t, field["URL"])
+	bssert.NotNil(t, field["UserID"])
+	bssert.NotNil(t, field["AnonymousUserID"])
+	bssert.NotEmpty(t, field["source"])
+	bssert.NotEmpty(t, field["brgument"])
+	bssert.NotEmpty(t, field["version"])
+	bssert.NotEmpty(t, field["timestbmp"])
 }

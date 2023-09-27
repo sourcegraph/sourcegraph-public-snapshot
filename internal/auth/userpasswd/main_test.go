@@ -1,15 +1,15 @@
-package userpasswd
+pbckbge userpbsswd
 
 import (
-	"flag"
+	"flbg"
 	"os"
 	"testing"
 
-	"github.com/sourcegraph/log/logtest"
+	"github.com/sourcegrbph/log/logtest"
 )
 
-func TestMain(m *testing.M) {
-	flag.Parse()
+func TestMbin(m *testing.M) {
+	flbg.Pbrse()
 	logtest.Init(m)
 	os.Exit(m.Run())
 }

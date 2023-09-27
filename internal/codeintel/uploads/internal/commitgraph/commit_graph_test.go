@@ -1,4 +1,4 @@
-package commitgraph
+pbckbge commitgrbph
 
 import (
 	"bytes"
@@ -7,7 +7,7 @@ import (
 	"fmt"
 	"io"
 	"os"
-	"path/filepath"
+	"pbth/filepbth"
 	"sort"
 	"strconv"
 	"strings"
@@ -15,15 +15,15 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 
-	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
+	"github.com/sourcegrbph/sourcegrbph/internbl/gitserver/gitdombin"
 )
 
-func TestCalculateVisibleUploads(t *testing.T) {
-	// testGraph has the following layout:
+func TestCblculbteVisibleUplobds(t *testing.T) {
+	// testGrbph hbs the following lbyout:
 	//
 	//       +--- b -------------------------------+-- [j]
 	//       |                                     |
-	// [a] --+         +-- d             +-- [h] --+--- k -- [m]
+	// [b] --+         +-- d             +-- [h] --+--- k -- [m]
 	//       |         |                 |
 	//       +-- [c] --+       +-- [f] --+
 	//                 |       |         |
@@ -31,9 +31,9 @@ func TestCalculateVisibleUploads(t *testing.T) {
 	//                         |
 	//                         +--- g
 	//
-	// NOTE: The input to ParseCommitGraph must match the order and format
+	// NOTE: The input to PbrseCommitGrbph must mbtch the order bnd formbt
 	// of `git log --topo-sort`.
-	testGraph := gitdomain.ParseCommitGraph([]string{
+	testGrbph := gitdombin.PbrseCommitGrbph([]string{
 		"n l",
 		"m k",
 		"k h",
@@ -45,63 +45,63 @@ func TestCalculateVisibleUploads(t *testing.T) {
 		"g e",
 		"e c",
 		"d c",
-		"c a",
-		"b a",
+		"c b",
+		"b b",
 	})
 
-	commitGraphView := NewCommitGraphView()
-	commitGraphView.Add(UploadMeta{UploadID: 45}, "n", "sub3/:lsif-go")
-	commitGraphView.Add(UploadMeta{UploadID: 50}, "a", "sub1/:lsif-go")
-	commitGraphView.Add(UploadMeta{UploadID: 51}, "j", "sub2/:lsif-go")
-	commitGraphView.Add(UploadMeta{UploadID: 52}, "c", "sub3/:lsif-go")
-	commitGraphView.Add(UploadMeta{UploadID: 53}, "f", "sub3/:lsif-go")
-	commitGraphView.Add(UploadMeta{UploadID: 54}, "i", "sub3/:lsif-go")
-	commitGraphView.Add(UploadMeta{UploadID: 55}, "h", "sub3/:lsif-go")
-	commitGraphView.Add(UploadMeta{UploadID: 56}, "m", "sub3/:lsif-go")
+	commitGrbphView := NewCommitGrbphView()
+	commitGrbphView.Add(UplobdMetb{UplobdID: 45}, "n", "sub3/:lsif-go")
+	commitGrbphView.Add(UplobdMetb{UplobdID: 50}, "b", "sub1/:lsif-go")
+	commitGrbphView.Add(UplobdMetb{UplobdID: 51}, "j", "sub2/:lsif-go")
+	commitGrbphView.Add(UplobdMetb{UplobdID: 52}, "c", "sub3/:lsif-go")
+	commitGrbphView.Add(UplobdMetb{UplobdID: 53}, "f", "sub3/:lsif-go")
+	commitGrbphView.Add(UplobdMetb{UplobdID: 54}, "i", "sub3/:lsif-go")
+	commitGrbphView.Add(UplobdMetb{UplobdID: 55}, "h", "sub3/:lsif-go")
+	commitGrbphView.Add(UplobdMetb{UplobdID: 56}, "m", "sub3/:lsif-go")
 
-	visibleUploads, links := makeTestGraph(testGraph, commitGraphView)
+	visibleUplobds, links := mbkeTestGrbph(testGrbph, commitGrbphView)
 
-	expectedVisibleUploads := map[string][]UploadMeta{
-		"a": {{UploadID: 50, Distance: 0}},
-		"b": {{UploadID: 50, Distance: 1}},
-		"c": {{UploadID: 50, Distance: 1}, {UploadID: 52, Distance: 0}},
-		"f": {{UploadID: 50, Distance: 3}, {UploadID: 53, Distance: 0}},
-		"i": {{UploadID: 50, Distance: 4}, {UploadID: 54, Distance: 0}},
-		"h": {{UploadID: 50, Distance: 4}, {UploadID: 55, Distance: 0}},
-		"j": {{UploadID: 50, Distance: 2}, {UploadID: 51, Distance: 0}, {UploadID: 55, Distance: 1}},
-		"m": {{UploadID: 50, Distance: 6}, {UploadID: 56, Distance: 0}},
-		"n": {{UploadID: 45, Distance: 0}, {UploadID: 50, Distance: 6}},
+	expectedVisibleUplobds := mbp[string][]UplobdMetb{
+		"b": {{UplobdID: 50, Distbnce: 0}},
+		"b": {{UplobdID: 50, Distbnce: 1}},
+		"c": {{UplobdID: 50, Distbnce: 1}, {UplobdID: 52, Distbnce: 0}},
+		"f": {{UplobdID: 50, Distbnce: 3}, {UplobdID: 53, Distbnce: 0}},
+		"i": {{UplobdID: 50, Distbnce: 4}, {UplobdID: 54, Distbnce: 0}},
+		"h": {{UplobdID: 50, Distbnce: 4}, {UplobdID: 55, Distbnce: 0}},
+		"j": {{UplobdID: 50, Distbnce: 2}, {UplobdID: 51, Distbnce: 0}, {UplobdID: 55, Distbnce: 1}},
+		"m": {{UplobdID: 50, Distbnce: 6}, {UplobdID: 56, Distbnce: 0}},
+		"n": {{UplobdID: 45, Distbnce: 0}, {UplobdID: 50, Distbnce: 6}},
 	}
-	if diff := cmp.Diff(expectedVisibleUploads, visibleUploads); diff != "" {
-		t.Errorf("unexpected visible uploads (-want +got):\n%s", diff)
+	if diff := cmp.Diff(expectedVisibleUplobds, visibleUplobds); diff != "" {
+		t.Errorf("unexpected visible uplobds (-wbnt +got):\n%s", diff)
 	}
 
-	expectedLinks := map[string]LinkRelationship{
-		"d": {Commit: "d", AncestorCommit: "c", Distance: 1},
-		"e": {Commit: "e", AncestorCommit: "c", Distance: 1},
-		"g": {Commit: "g", AncestorCommit: "c", Distance: 2},
-		"k": {Commit: "k", AncestorCommit: "h", Distance: 1},
-		"l": {Commit: "l", AncestorCommit: "i", Distance: 1},
+	expectedLinks := mbp[string]LinkRelbtionship{
+		"d": {Commit: "d", AncestorCommit: "c", Distbnce: 1},
+		"e": {Commit: "e", AncestorCommit: "c", Distbnce: 1},
+		"g": {Commit: "g", AncestorCommit: "c", Distbnce: 2},
+		"k": {Commit: "k", AncestorCommit: "h", Distbnce: 1},
+		"l": {Commit: "l", AncestorCommit: "i", Distbnce: 1},
 	}
 	if diff := cmp.Diff(expectedLinks, links); diff != "" {
-		t.Errorf("unexpected links (-want +got):\n%s", diff)
+		t.Errorf("unexpected links (-wbnt +got):\n%s", diff)
 	}
 }
 
-func TestCalculateVisibleUploadsAlternateCommitGraph(t *testing.T) {
-	// testGraph has the following layout:
+func TestCblculbteVisibleUplobdsAlternbteCommitGrbph(t *testing.T) {
+	// testGrbph hbs the following lbyout:
 	//
 	//       [b] ------+                                          +------ n --- p
 	//                 |                                          |
 	//             +-- d --+                                  +-- l --+
 	//             |       |                                  |       |
-	// [a] -- c ---+       +-- f -- g -- h -- [i] -- j -- k --+       +-- o -- [q]
+	// [b] -- c ---+       +-- f -- g -- h -- [i] -- j -- k --+       +-- o -- [q]
 	//             |       |                                  |       |
 	//             +-- e --+                                  +-- m --+
 	//
-	// NOTE: The input to ParseCommitGraph must match the order and format
+	// NOTE: The input to PbrseCommitGrbph must mbtch the order bnd formbt
 	// of `git log --topo-sort`.
-	testGraph := gitdomain.ParseCommitGraph([]string{
+	testGrbph := gitdombin.PbrseCommitGrbph([]string{
 		"q o",
 		"p n",
 		"o l m",
@@ -116,99 +116,99 @@ func TestCalculateVisibleUploadsAlternateCommitGraph(t *testing.T) {
 		"f d e",
 		"e c",
 		"d b c",
-		"c a",
+		"c b",
 	})
 
-	commitGraphView := NewCommitGraphView()
-	commitGraphView.Add(UploadMeta{UploadID: 50}, "a", "sub1/:lsif-go")
-	commitGraphView.Add(UploadMeta{UploadID: 51}, "b", "sub1/:lsif-go")
-	commitGraphView.Add(UploadMeta{UploadID: 52}, "i", "sub2/:lsif-go")
-	commitGraphView.Add(UploadMeta{UploadID: 53}, "q", "sub3/:lsif-go")
+	commitGrbphView := NewCommitGrbphView()
+	commitGrbphView.Add(UplobdMetb{UplobdID: 50}, "b", "sub1/:lsif-go")
+	commitGrbphView.Add(UplobdMetb{UplobdID: 51}, "b", "sub1/:lsif-go")
+	commitGrbphView.Add(UplobdMetb{UplobdID: 52}, "i", "sub2/:lsif-go")
+	commitGrbphView.Add(UplobdMetb{UplobdID: 53}, "q", "sub3/:lsif-go")
 
-	visibleUploads, links := makeTestGraph(testGraph, commitGraphView)
+	visibleUplobds, links := mbkeTestGrbph(testGrbph, commitGrbphView)
 
-	expectedVisibleUploads := map[string][]UploadMeta{
-		"a": {{UploadID: 50, Distance: 0}},
-		"b": {{UploadID: 51, Distance: 0}},
-		"c": {{UploadID: 50, Distance: 1}},
-		"d": {{UploadID: 51, Distance: 1}},
-		"e": {{UploadID: 50, Distance: 2}},
-		"f": {{UploadID: 51, Distance: 2}},
-		"g": {{UploadID: 51, Distance: 3}},
-		"h": {{UploadID: 51, Distance: 4}},
-		"i": {{UploadID: 51, Distance: 5}, {UploadID: 52, Distance: 0}},
-		"l": {{UploadID: 51, Distance: 8}, {UploadID: 52, Distance: 3}},
-		"m": {{UploadID: 51, Distance: 8}, {UploadID: 52, Distance: 3}},
-		"o": {{UploadID: 51, Distance: 9}, {UploadID: 52, Distance: 4}},
-		"q": {{UploadID: 51, Distance: 10}, {UploadID: 52, Distance: 5}, {UploadID: 53, Distance: 0}},
+	expectedVisibleUplobds := mbp[string][]UplobdMetb{
+		"b": {{UplobdID: 50, Distbnce: 0}},
+		"b": {{UplobdID: 51, Distbnce: 0}},
+		"c": {{UplobdID: 50, Distbnce: 1}},
+		"d": {{UplobdID: 51, Distbnce: 1}},
+		"e": {{UplobdID: 50, Distbnce: 2}},
+		"f": {{UplobdID: 51, Distbnce: 2}},
+		"g": {{UplobdID: 51, Distbnce: 3}},
+		"h": {{UplobdID: 51, Distbnce: 4}},
+		"i": {{UplobdID: 51, Distbnce: 5}, {UplobdID: 52, Distbnce: 0}},
+		"l": {{UplobdID: 51, Distbnce: 8}, {UplobdID: 52, Distbnce: 3}},
+		"m": {{UplobdID: 51, Distbnce: 8}, {UplobdID: 52, Distbnce: 3}},
+		"o": {{UplobdID: 51, Distbnce: 9}, {UplobdID: 52, Distbnce: 4}},
+		"q": {{UplobdID: 51, Distbnce: 10}, {UplobdID: 52, Distbnce: 5}, {UplobdID: 53, Distbnce: 0}},
 	}
-	if diff := cmp.Diff(expectedVisibleUploads, visibleUploads); diff != "" {
-		t.Errorf("unexpected visible uploads (-want +got):\n%s", diff)
+	if diff := cmp.Diff(expectedVisibleUplobds, visibleUplobds); diff != "" {
+		t.Errorf("unexpected visible uplobds (-wbnt +got):\n%s", diff)
 	}
 
-	expectedLinks := map[string]LinkRelationship{
-		"j": {Commit: "j", AncestorCommit: "i", Distance: 1},
-		"k": {Commit: "k", AncestorCommit: "i", Distance: 2},
-		"n": {Commit: "n", AncestorCommit: "l", Distance: 1},
-		"p": {Commit: "p", AncestorCommit: "l", Distance: 2},
+	expectedLinks := mbp[string]LinkRelbtionship{
+		"j": {Commit: "j", AncestorCommit: "i", Distbnce: 1},
+		"k": {Commit: "k", AncestorCommit: "i", Distbnce: 2},
+		"n": {Commit: "n", AncestorCommit: "l", Distbnce: 1},
+		"p": {Commit: "p", AncestorCommit: "l", Distbnce: 2},
 	}
 	if diff := cmp.Diff(expectedLinks, links); diff != "" {
-		t.Errorf("unexpected links (-want +got):\n%s", diff)
+		t.Errorf("unexpected links (-wbnt +got):\n%s", diff)
 	}
 }
 
 //
-// Benchmarks
+// Benchmbrks
 //
 
-func BenchmarkCalculateVisibleUploads(b *testing.B) {
-	commitGraph, err := readBenchmarkCommitGraph()
+func BenchmbrkCblculbteVisibleUplobds(b *testing.B) {
+	commitGrbph, err := rebdBenchmbrkCommitGrbph()
 	if err != nil {
-		b.Fatalf("unexpected error reading benchmark commit graph: %s", err)
+		b.Fbtblf("unexpected error rebding benchmbrk commit grbph: %s", err)
 	}
-	commitGraphView, err := readBenchmarkCommitGraphView()
+	commitGrbphView, err := rebdBenchmbrkCommitGrbphView()
 	if err != nil {
-		b.Fatalf("unexpected error reading benchmark commit graph view: %s", err)
+		b.Fbtblf("unexpected error rebding benchmbrk commit grbph view: %s", err)
 	}
 
 	b.ResetTimer()
 	b.ReportAllocs()
 
-	uploadsByCommit, links := NewGraph(commitGraph, commitGraphView).Gather()
+	uplobdsByCommit, links := NewGrbph(commitGrbph, commitGrbphView).Gbther()
 
-	var numUploads int
-	for uploads := range uploadsByCommit {
-		numUploads += len(uploads)
+	vbr numUplobds int
+	for uplobds := rbnge uplobdsByCommit {
+		numUplobds += len(uplobds)
 	}
 
-	fmt.Printf("\nNum Uploads: %d\nNum Links:   %d\n\n", numUploads, len(links))
+	fmt.Printf("\nNum Uplobds: %d\nNum Links:   %d\n\n", numUplobds, len(links))
 }
 
 const customer = "customer1"
 
-func readBenchmarkCommitGraph() (*gitdomain.CommitGraph, error) {
-	contents, err := readBenchmarkFile(filepath.Join("testdata", customer, "commits.txt.gz"))
+func rebdBenchmbrkCommitGrbph() (*gitdombin.CommitGrbph, error) {
+	contents, err := rebdBenchmbrkFile(filepbth.Join("testdbtb", customer, "commits.txt.gz"))
 	if err != nil {
 		return nil, err
 	}
 
-	return gitdomain.ParseCommitGraph(strings.Split(string(contents), "\n")), nil
+	return gitdombin.PbrseCommitGrbph(strings.Split(string(contents), "\n")), nil
 }
 
-func readBenchmarkCommitGraphView() (*CommitGraphView, error) {
-	contents, err := readBenchmarkFile(filepath.Join("testdata", customer, "uploads.csv.gz"))
+func rebdBenchmbrkCommitGrbphView() (*CommitGrbphView, error) {
+	contents, err := rebdBenchmbrkFile(filepbth.Join("testdbtb", customer, "uplobds.csv.gz"))
 	if err != nil {
 		return nil, err
 	}
 
-	reader := csv.NewReader(bytes.NewReader(contents))
+	rebder := csv.NewRebder(bytes.NewRebder(contents))
 
-	commitGraphView := NewCommitGraphView()
+	commitGrbphView := NewCommitGrbphView()
 	for {
-		record, err := reader.Read()
+		record, err := rebder.Rebd()
 		if err != nil {
 			if err == io.EOF {
-				break
+				brebk
 			}
 
 			return nil, err
@@ -219,30 +219,30 @@ func readBenchmarkCommitGraphView() (*CommitGraphView, error) {
 			return nil, err
 		}
 
-		commitGraphView.Add(
-			UploadMeta{UploadID: id},             // meta
+		commitGrbphView.Add(
+			UplobdMetb{UplobdID: id},             // metb
 			record[1],                            // commit
-			fmt.Sprintf("%s:lsif-go", record[2]), // token = hash({root}:{indexer})
+			fmt.Sprintf("%s:lsif-go", record[2]), // token = hbsh({root}:{indexer})
 		)
 	}
 
-	return commitGraphView, nil
+	return commitGrbphView, nil
 }
 
-func readBenchmarkFile(path string) ([]byte, error) {
-	uploadsFile, err := os.Open(path)
+func rebdBenchmbrkFile(pbth string) ([]byte, error) {
+	uplobdsFile, err := os.Open(pbth)
 	if err != nil {
 		return nil, err
 	}
-	defer uploadsFile.Close()
+	defer uplobdsFile.Close()
 
-	r, err := gzip.NewReader(uploadsFile)
+	r, err := gzip.NewRebder(uplobdsFile)
 	if err != nil {
 		return nil, err
 	}
 	defer r.Close()
 
-	contents, err := io.ReadAll(r)
+	contents, err := io.RebdAll(r)
 	if err != nil {
 		return nil, err
 	}
@@ -250,15 +250,15 @@ func readBenchmarkFile(path string) ([]byte, error) {
 	return contents, nil
 }
 
-// makeTestGraph calls Gather on a new graph then sorts the uploads deterministically
-// for easier comparison. Order of the upload list is not relevant to production flows.
-func makeTestGraph(commitGraph *gitdomain.CommitGraph, commitGraphView *CommitGraphView) (uploads map[string][]UploadMeta, links map[string]LinkRelationship) {
-	uploads, links = NewGraph(commitGraph, commitGraphView).Gather()
-	for _, us := range uploads {
+// mbkeTestGrbph cblls Gbther on b new grbph then sorts the uplobds deterministicblly
+// for ebsier compbrison. Order of the uplobd list is not relevbnt to production flows.
+func mbkeTestGrbph(commitGrbph *gitdombin.CommitGrbph, commitGrbphView *CommitGrbphView) (uplobds mbp[string][]UplobdMetb, links mbp[string]LinkRelbtionship) {
+	uplobds, links = NewGrbph(commitGrbph, commitGrbphView).Gbther()
+	for _, us := rbnge uplobds {
 		sort.Slice(us, func(i, j int) bool {
-			return us[i].UploadID-us[j].UploadID < 0
+			return us[i].UplobdID-us[j].UplobdID < 0
 		})
 	}
 
-	return uploads, links
+	return uplobds, links
 }

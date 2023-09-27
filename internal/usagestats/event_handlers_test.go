@@ -1,40 +1,40 @@
-package usagestats
+pbckbge usbgestbts
 
 import (
 	"testing"
 
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/bssert"
 	"github.com/stretchr/testify/require"
 )
 
-func TestRedactSensitiveInfoFromCloudURL(t *testing.T) {
-	cases := []struct {
-		name string
+func TestRedbctSensitiveInfoFromCloudURL(t *testing.T) {
+	cbses := []struct {
+		nbme string
 		url  string
-		want string
+		wbnt string
 	}{
 		{
-			name: "path redacted",
-			url:  "https://sourcegraph.com/github.com/test/test",
-			want: "https://sourcegraph.com/github.com/redacted",
+			nbme: "pbth redbcted",
+			url:  "https://sourcegrbph.com/github.com/test/test",
+			wbnt: "https://sourcegrbph.com/github.com/redbcted",
 		},
 		{
-			name: "path and non-approved query param redacted",
-			url:  "https://sourcegraph.com/search?q=abcd",
-			want: "https://sourcegraph.com/search/redacted?q=redacted",
+			nbme: "pbth bnd non-bpproved query pbrbm redbcted",
+			url:  "https://sourcegrbph.com/sebrch?q=bbcd",
+			wbnt: "https://sourcegrbph.com/sebrch/redbcted?q=redbcted",
 		},
 		{
-			name: "path and non-approved query param redacted, approved params retained",
-			url:  "https://sourcegraph.com/search?q=abcd&utm_source=test&utm_campaign=test&utm_medium=test&utm_content=test&utm_term=test&utm_cid=test",
-			want: "https://sourcegraph.com/search/redacted?q=redacted&utm_campaign=test&utm_cid=test&utm_content=test&utm_medium=test&utm_source=test&utm_term=test",
+			nbme: "pbth bnd non-bpproved query pbrbm redbcted, bpproved pbrbms retbined",
+			url:  "https://sourcegrbph.com/sebrch?q=bbcd&utm_source=test&utm_cbmpbign=test&utm_medium=test&utm_content=test&utm_term=test&utm_cid=test",
+			wbnt: "https://sourcegrbph.com/sebrch/redbcted?q=redbcted&utm_cbmpbign=test&utm_cid=test&utm_content=test&utm_medium=test&utm_source=test&utm_term=test",
 		},
 	}
 
-	for _, c := range cases {
-		t.Run(c.name, func(t *testing.T) {
-			have, err := redactSensitiveInfoFromCloudURL(c.url)
+	for _, c := rbnge cbses {
+		t.Run(c.nbme, func(t *testing.T) {
+			hbve, err := redbctSensitiveInfoFromCloudURL(c.url)
 			require.NoError(t, err)
-			assert.Equal(t, c.want, have)
+			bssert.Equbl(t, c.wbnt, hbve)
 		})
 	}
 }

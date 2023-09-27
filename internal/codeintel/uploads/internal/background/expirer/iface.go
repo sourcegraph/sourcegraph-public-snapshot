@@ -1,18 +1,18 @@
-package expirer
+pbckbge expirer
 
 import (
 	"context"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/policies"
-	policiesshared "github.com/sourcegraph/sourcegraph/internal/codeintel/policies/shared"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi"
+	"github.com/sourcegrbph/sourcegrbph/internbl/codeintel/policies"
+	policiesshbred "github.com/sourcegrbph/sourcegrbph/internbl/codeintel/policies/shbred"
 )
 
-type PolicyService interface {
-	GetConfigurationPolicies(ctx context.Context, opts policiesshared.GetConfigurationPoliciesOptions) ([]policiesshared.ConfigurationPolicy, int, error)
+type PolicyService interfbce {
+	GetConfigurbtionPolicies(ctx context.Context, opts policiesshbred.GetConfigurbtionPoliciesOptions) ([]policiesshbred.ConfigurbtionPolicy, int, error)
 }
 
-type PolicyMatcher interface {
-	CommitsDescribedByPolicy(ctx context.Context, repositoryID int, repoName api.RepoName, policies []policiesshared.ConfigurationPolicy, now time.Time, filterCommits ...string) (map[string][]policies.PolicyMatch, error)
+type PolicyMbtcher interfbce {
+	CommitsDescribedByPolicy(ctx context.Context, repositoryID int, repoNbme bpi.RepoNbme, policies []policiesshbred.ConfigurbtionPolicy, now time.Time, filterCommits ...string) (mbp[string][]policies.PolicyMbtch, error)
 }

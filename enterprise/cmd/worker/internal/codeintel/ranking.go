@@ -1,47 +1,47 @@
-package codeintel
+pbckbge codeintel
 
 import (
 	"context"
 
-	"github.com/sourcegraph/sourcegraph/cmd/worker/job"
-	"github.com/sourcegraph/sourcegraph/cmd/worker/shared/init/codeintel"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/ranking"
-	"github.com/sourcegraph/sourcegraph/internal/env"
-	"github.com/sourcegraph/sourcegraph/internal/goroutine"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegrbph/sourcegrbph/cmd/worker/job"
+	"github.com/sourcegrbph/sourcegrbph/cmd/worker/shbred/init/codeintel"
+	"github.com/sourcegrbph/sourcegrbph/internbl/codeintel/rbnking"
+	"github.com/sourcegrbph/sourcegrbph/internbl/env"
+	"github.com/sourcegrbph/sourcegrbph/internbl/goroutine"
+	"github.com/sourcegrbph/sourcegrbph/internbl/observbtion"
 )
 
-type rankingJob struct{}
+type rbnkingJob struct{}
 
-func NewRankingFileReferenceCounter() job.Job {
-	return &rankingJob{}
+func NewRbnkingFileReferenceCounter() job.Job {
+	return &rbnkingJob{}
 }
 
-func (j *rankingJob) Description() string {
+func (j *rbnkingJob) Description() string {
 	return ""
 }
 
-func (j *rankingJob) Config() []env.Config {
+func (j *rbnkingJob) Config() []env.Config {
 	return []env.Config{
-		ranking.ExporterConfigInst,
-		ranking.CoordinatorConfigInst,
-		ranking.MapperConfigInst,
-		ranking.ReducerConfigInst,
-		ranking.JanitorConfigInst,
+		rbnking.ExporterConfigInst,
+		rbnking.CoordinbtorConfigInst,
+		rbnking.MbpperConfigInst,
+		rbnking.ReducerConfigInst,
+		rbnking.JbnitorConfigInst,
 	}
 }
 
-func (j *rankingJob) Routines(_ context.Context, observationCtx *observation.Context) ([]goroutine.BackgroundRoutine, error) {
-	services, err := codeintel.InitServices(observationCtx)
+func (j *rbnkingJob) Routines(_ context.Context, observbtionCtx *observbtion.Context) ([]goroutine.BbckgroundRoutine, error) {
+	services, err := codeintel.InitServices(observbtionCtx)
 	if err != nil {
 		return nil, err
 	}
 
-	routines := []goroutine.BackgroundRoutine{}
-	routines = append(routines, ranking.NewSymbolExporter(observationCtx, services.RankingService))
-	routines = append(routines, ranking.NewCoordinator(observationCtx, services.RankingService))
-	routines = append(routines, ranking.NewMapper(observationCtx, services.RankingService)...)
-	routines = append(routines, ranking.NewReducer(observationCtx, services.RankingService))
-	routines = append(routines, ranking.NewSymbolJanitor(observationCtx, services.RankingService)...)
+	routines := []goroutine.BbckgroundRoutine{}
+	routines = bppend(routines, rbnking.NewSymbolExporter(observbtionCtx, services.RbnkingService))
+	routines = bppend(routines, rbnking.NewCoordinbtor(observbtionCtx, services.RbnkingService))
+	routines = bppend(routines, rbnking.NewMbpper(observbtionCtx, services.RbnkingService)...)
+	routines = bppend(routines, rbnking.NewReducer(observbtionCtx, services.RbnkingService))
+	routines = bppend(routines, rbnking.NewSymbolJbnitor(observbtionCtx, services.RbnkingService)...)
 	return routines, nil
 }

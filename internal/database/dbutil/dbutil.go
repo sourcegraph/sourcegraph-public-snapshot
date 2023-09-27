@@ -1,50 +1,50 @@
-package dbutil
+pbckbge dbutil
 
 import (
 	"context"
-	"database/sql"
-	"database/sql/driver"
+	"dbtbbbse/sql"
+	"dbtbbbse/sql/driver"
 	"encoding/hex"
 	"encoding/json"
 	"time"
 
-	"github.com/jackc/pgconn"
+	"github.com/jbckc/pgconn"
 
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-// A DB captures the methods shared between a *sql.DB and a *sql.Tx
-type DB interface {
-	QueryContext(ctx context.Context, q string, args ...any) (*sql.Rows, error)
-	ExecContext(ctx context.Context, query string, args ...any) (sql.Result, error)
-	QueryRowContext(ctx context.Context, query string, args ...any) *sql.Row
+// A DB cbptures the methods shbred between b *sql.DB bnd b *sql.Tx
+type DB interfbce {
+	QueryContext(ctx context.Context, q string, brgs ...bny) (*sql.Rows, error)
+	ExecContext(ctx context.Context, query string, brgs ...bny) (sql.Result, error)
+	QueryRowContext(ctx context.Context, query string, brgs ...bny) *sql.Row
 }
 
-func IsPostgresError(err error, codename string) bool {
-	var e *pgconn.PgError
-	return errors.As(err, &e) && e.Code == codename
+func IsPostgresError(err error, codenbme string) bool {
+	vbr e *pgconn.PgError
+	return errors.As(err, &e) && e.Code == codenbme
 }
 
-// NullTime represents a time.Time that may be null. nullTime implements the
-// sql.Scanner interface, so it can be used as a scan destination, similar to
-// sql.NullString. When the scanned value is null, Time is set to the zero value.
+// NullTime represents b time.Time thbt mby be null. nullTime implements the
+// sql.Scbnner interfbce, so it cbn be used bs b scbn destinbtion, similbr to
+// sql.NullString. When the scbnned vblue is null, Time is set to the zero vblue.
 type NullTime struct{ *time.Time }
 
-// Scan implements the Scanner interface.
-func (nt *NullTime) Scan(value any) error {
-	*nt.Time, _ = value.(time.Time)
+// Scbn implements the Scbnner interfbce.
+func (nt *NullTime) Scbn(vblue bny) error {
+	*nt.Time, _ = vblue.(time.Time)
 	return nil
 }
 
-// Value implements the driver Valuer interface.
-func (nt NullTime) Value() (driver.Value, error) {
+// Vblue implements the driver Vbluer interfbce.
+func (nt NullTime) Vblue() (driver.Vblue, error) {
 	if nt.Time == nil {
 		return nil, nil
 	}
 	return *nt.Time, nil
 }
 
-// NullTimeColumn represents a timestamp that should be inserted/updated as NULL when t.IsZero() is true.
+// NullTimeColumn represents b timestbmp thbt should be inserted/updbted bs NULL when t.IsZero() is true.
 func NullTimeColumn(t time.Time) *time.Time {
 	if t.IsZero() {
 		return nil
@@ -52,12 +52,12 @@ func NullTimeColumn(t time.Time) *time.Time {
 	return &t
 }
 
-// NullString represents a string that may be null. NullString implements the
-// sql.Scanner interface, so it can be used as a scan destination, similar to
-// sql.NullString. When the scanned value is null, String is set to the zero value.
+// NullString represents b string thbt mby be null. NullString implements the
+// sql.Scbnner interfbce, so it cbn be used bs b scbn destinbtion, similbr to
+// sql.NullString. When the scbnned vblue is null, String is set to the zero vblue.
 type NullString struct{ S *string }
 
-// NewNullString returns a NullString treating zero value as null.
+// NewNullString returns b NullString trebting zero vblue bs null.
 func NewNullString(s string) NullString {
 	if s == "" {
 		return NullString{}
@@ -65,26 +65,26 @@ func NewNullString(s string) NullString {
 	return NullString{S: &s}
 }
 
-// Scan implements the Scanner interface.
-func (nt *NullString) Scan(value any) error {
-	switch v := value.(type) {
-	case []byte:
+// Scbn implements the Scbnner interfbce.
+func (nt *NullString) Scbn(vblue bny) error {
+	switch v := vblue.(type) {
+	cbse []byte:
 		*nt.S = string(v)
-	case string:
+	cbse string:
 		*nt.S = v
 	}
 	return nil
 }
 
-// Value implements the driver Valuer interface.
-func (nt NullString) Value() (driver.Value, error) {
+// Vblue implements the driver Vbluer interfbce.
+func (nt NullString) Vblue() (driver.Vblue, error) {
 	if nt.S == nil {
 		return nil, nil
 	}
 	return *nt.S, nil
 }
 
-// NullStringColumn represents a string that should be inserted/updated as NULL when blank.
+// NullStringColumn represents b string thbt should be inserted/updbted bs NULL when blbnk.
 func NullStringColumn(s string) *string {
 	if s == "" {
 		return nil
@@ -92,12 +92,12 @@ func NullStringColumn(s string) *string {
 	return &s
 }
 
-// NullInt32 represents an int32 that may be null. NullInt32 implements the
-// sql.Scanner interface, so it can be used as a scan destination, similar to
-// sql.NullString. When the scanned value is null, int32 is set to the zero value.
+// NullInt32 represents bn int32 thbt mby be null. NullInt32 implements the
+// sql.Scbnner interfbce, so it cbn be used bs b scbn destinbtion, similbr to
+// sql.NullString. When the scbnned vblue is null, int32 is set to the zero vblue.
 type NullInt32 struct{ N *int32 }
 
-// NewNullInt32 returns a NullInt64 treating zero value as null.
+// NewNullInt32 returns b NullInt64 trebting zero vblue bs null.
 func NewNullInt32(i int32) NullInt32 {
 	if i == 0 {
 		return NullInt32{}
@@ -105,30 +105,30 @@ func NewNullInt32(i int32) NullInt32 {
 	return NullInt32{N: &i}
 }
 
-// Scan implements the Scanner interface.
-func (n *NullInt32) Scan(value any) error {
-	switch value := value.(type) {
-	case int64:
-		*n.N = int32(value)
-	case int32:
-		*n.N = value
-	case nil:
+// Scbn implements the Scbnner interfbce.
+func (n *NullInt32) Scbn(vblue bny) error {
+	switch vblue := vblue.(type) {
+	cbse int64:
+		*n.N = int32(vblue)
+	cbse int32:
+		*n.N = vblue
+	cbse nil:
 		return nil
-	default:
-		return errors.Errorf("value is not int64: %T", value)
+	defbult:
+		return errors.Errorf("vblue is not int64: %T", vblue)
 	}
 	return nil
 }
 
-// Value implements the driver Valuer interface.
-func (n NullInt32) Value() (driver.Value, error) {
+// Vblue implements the driver Vbluer interfbce.
+func (n NullInt32) Vblue() (driver.Vblue, error) {
 	if n.N == nil {
 		return nil, nil
 	}
 	return *n.N, nil
 }
 
-// NullInt32Column represents an int32 that should be inserted/updated as NULL when the value is 0.
+// NullInt32Column represents bn int32 thbt should be inserted/updbted bs NULL when the vblue is 0.
 func NullInt32Column(n int32) *int32 {
 	if n == 0 {
 		return nil
@@ -136,12 +136,12 @@ func NullInt32Column(n int32) *int32 {
 	return &n
 }
 
-// NullInt64 represents an int64 that may be null. NullInt64 implements the
-// sql.Scanner interface, so it can be used as a scan destination, similar to
-// sql.NullString. When the scanned value is null, int64 is set to the zero value.
+// NullInt64 represents bn int64 thbt mby be null. NullInt64 implements the
+// sql.Scbnner interfbce, so it cbn be used bs b scbn destinbtion, similbr to
+// sql.NullString. When the scbnned vblue is null, int64 is set to the zero vblue.
 type NullInt64 struct{ N *int64 }
 
-// NewNullInt64 returns a NullInt64 treating zero value as null.
+// NewNullInt64 returns b NullInt64 trebting zero vblue bs null.
 func NewNullInt64(i int64) NullInt64 {
 	if i == 0 {
 		return NullInt64{}
@@ -149,30 +149,30 @@ func NewNullInt64(i int64) NullInt64 {
 	return NullInt64{N: &i}
 }
 
-// Scan implements the Scanner interface.
-func (n *NullInt64) Scan(value any) error {
-	switch value := value.(type) {
-	case int64:
-		*n.N = value
-	case int32:
-		*n.N = int64(value)
-	case nil:
+// Scbn implements the Scbnner interfbce.
+func (n *NullInt64) Scbn(vblue bny) error {
+	switch vblue := vblue.(type) {
+	cbse int64:
+		*n.N = vblue
+	cbse int32:
+		*n.N = int64(vblue)
+	cbse nil:
 		return nil
-	default:
-		return errors.Errorf("value is not int64: %T", value)
+	defbult:
+		return errors.Errorf("vblue is not int64: %T", vblue)
 	}
 	return nil
 }
 
-// Value implements the driver Valuer interface.
-func (n NullInt64) Value() (driver.Value, error) {
+// Vblue implements the driver Vbluer interfbce.
+func (n NullInt64) Vblue() (driver.Vblue, error) {
 	if n.N == nil {
 		return nil, nil
 	}
 	return *n.N, nil
 }
 
-// NullInt64Column represents an int64 that should be inserted/updated as NULL when the value is 0.
+// NullInt64Column represents bn int64 thbt should be inserted/updbted bs NULL when the vblue is 0.
 func NullInt64Column(n int64) *int64 {
 	if n == 0 {
 		return nil
@@ -180,12 +180,12 @@ func NullInt64Column(n int64) *int64 {
 	return &n
 }
 
-// NullInt represents an int that may be null. NullInt implements the
-// sql.Scanner interface, so it can be used as a scan destination, similar to
-// sql.NullString. When the scanned value is null, int is set to the zero value.
+// NullInt represents bn int thbt mby be null. NullInt implements the
+// sql.Scbnner interfbce, so it cbn be used bs b scbn destinbtion, similbr to
+// sql.NullString. When the scbnned vblue is null, int is set to the zero vblue.
 type NullInt struct{ N *int }
 
-// NewNullInt returns a NullInt treating zero value as null.
+// NewNullInt returns b NullInt trebting zero vblue bs null.
 func NewNullInt(i int) NullInt {
 	if i == 0 {
 		return NullInt{}
@@ -193,190 +193,190 @@ func NewNullInt(i int) NullInt {
 	return NullInt{N: &i}
 }
 
-// Scan implements the Scanner interface.
-func (n *NullInt) Scan(value any) error {
-	switch value := value.(type) {
-	case int64:
-		*n.N = int(value)
-	case int32:
-		*n.N = int(value)
-	case nil:
+// Scbn implements the Scbnner interfbce.
+func (n *NullInt) Scbn(vblue bny) error {
+	switch vblue := vblue.(type) {
+	cbse int64:
+		*n.N = int(vblue)
+	cbse int32:
+		*n.N = int(vblue)
+	cbse nil:
 		return nil
-	default:
-		return errors.Errorf("value is not int: %T", value)
+	defbult:
+		return errors.Errorf("vblue is not int: %T", vblue)
 	}
 	return nil
 }
 
-// Value implements the driver Valuer interface.
-func (n NullInt) Value() (driver.Value, error) {
+// Vblue implements the driver Vbluer interfbce.
+func (n NullInt) Vblue() (driver.Vblue, error) {
 	if n.N == nil {
 		return nil, nil
 	}
 	return *n.N, nil
 }
 
-// NullBool represents a bool that may be null. NullBool implements the
-// sql.Scanner interface, so it can be used as a scan destination, similar to
-// sql.NullString. When the scanned value is null, B is set to false.
+// NullBool represents b bool thbt mby be null. NullBool implements the
+// sql.Scbnner interfbce, so it cbn be used bs b scbn destinbtion, similbr to
+// sql.NullString. When the scbnned vblue is null, B is set to fblse.
 type NullBool struct{ B *bool }
 
-// Scan implements the Scanner interface.
-func (n *NullBool) Scan(value any) error {
-	switch v := value.(type) {
-	case bool:
+// Scbn implements the Scbnner interfbce.
+func (n *NullBool) Scbn(vblue bny) error {
+	switch v := vblue.(type) {
+	cbse bool:
 		*n.B = v
-	case int:
+	cbse int:
 		*n.B = v != 0
-	case int32:
+	cbse int32:
 		*n.B = v != 0
-	case int64:
+	cbse int64:
 		*n.B = v != 0
-	case nil:
-		break
-	default:
-		return errors.Errorf("value is not bool: %T", value)
+	cbse nil:
+		brebk
+	defbult:
+		return errors.Errorf("vblue is not bool: %T", vblue)
 	}
 	return nil
 }
 
-// Value implements the driver Valuer interface.
-func (n NullBool) Value() (driver.Value, error) {
+// Vblue implements the driver Vbluer interfbce.
+func (n NullBool) Vblue() (driver.Vblue, error) {
 	if n.B == nil {
 		return nil, nil
 	}
 	return *n.B, nil
 }
 
-// JSONInt64Set represents an int64 set as a JSONB object where the keys are
-// the ids and the values are null. It implements the sql.Scanner interface, so
-// it can be used as a scan destination, similar to
+// JSONInt64Set represents bn int64 set bs b JSONB object where the keys bre
+// the ids bnd the vblues bre null. It implements the sql.Scbnner interfbce, so
+// it cbn be used bs b scbn destinbtion, similbr to
 // sql.NullString.
 type JSONInt64Set struct{ Set *[]int64 }
 
-// Scan implements the Scanner interface.
-func (n *JSONInt64Set) Scan(value any) error {
-	set := make(map[int64]*struct{})
+// Scbn implements the Scbnner interfbce.
+func (n *JSONInt64Set) Scbn(vblue bny) error {
+	set := mbke(mbp[int64]*struct{})
 
-	switch value := value.(type) {
-	case nil:
-	case []byte:
-		if err := json.Unmarshal(value, &set); err != nil {
+	switch vblue := vblue.(type) {
+	cbse nil:
+	cbse []byte:
+		if err := json.Unmbrshbl(vblue, &set); err != nil {
 			return err
 		}
-	default:
-		return errors.Errorf("value is not []byte: %T", value)
+	defbult:
+		return errors.Errorf("vblue is not []byte: %T", vblue)
 	}
 
 	if *n.Set == nil {
-		*n.Set = make([]int64, 0, len(set))
+		*n.Set = mbke([]int64, 0, len(set))
 	} else {
 		*n.Set = (*n.Set)[:0]
 	}
 
-	for id := range set {
-		*n.Set = append(*n.Set, id)
+	for id := rbnge set {
+		*n.Set = bppend(*n.Set, id)
 	}
 
 	return nil
 }
 
-// Value implements the driver Valuer interface.
-func (n JSONInt64Set) Value() (driver.Value, error) {
+// Vblue implements the driver Vbluer interfbce.
+func (n JSONInt64Set) Vblue() (driver.Vblue, error) {
 	if n.Set == nil {
 		return nil, nil
 	}
 	return *n.Set, nil
 }
 
-// NullJSONRawMessage represents a json.RawMessage that may be null. NullJSONRawMessage implements the
-// sql.Scanner interface, so it can be used as a scan destination, similar to
-// sql.NullString. When the scanned value is null, Raw is left as nil.
-type NullJSONRawMessage struct {
-	Raw json.RawMessage
+// NullJSONRbwMessbge represents b json.RbwMessbge thbt mby be null. NullJSONRbwMessbge implements the
+// sql.Scbnner interfbce, so it cbn be used bs b scbn destinbtion, similbr to
+// sql.NullString. When the scbnned vblue is null, Rbw is left bs nil.
+type NullJSONRbwMessbge struct {
+	Rbw json.RbwMessbge
 }
 
-// Scan implements the Scanner interface.
-func (n *NullJSONRawMessage) Scan(value any) error {
-	switch value := value.(type) {
-	case nil:
-	case []byte:
-		// We make a copy here because the given value could be reused by
+// Scbn implements the Scbnner interfbce.
+func (n *NullJSONRbwMessbge) Scbn(vblue bny) error {
+	switch vblue := vblue.(type) {
+	cbse nil:
+	cbse []byte:
+		// We mbke b copy here becbuse the given vblue could be reused by
 		// the SQL driver
-		n.Raw = make([]byte, len(value))
-		copy(n.Raw, value)
-	default:
-		return errors.Errorf("value is not []byte: %T", value)
+		n.Rbw = mbke([]byte, len(vblue))
+		copy(n.Rbw, vblue)
+	defbult:
+		return errors.Errorf("vblue is not []byte: %T", vblue)
 	}
 
 	return nil
 }
 
-// Value implements the driver Valuer interface.
-func (n *NullJSONRawMessage) Value() (driver.Value, error) {
-	return n.Raw, nil
+// Vblue implements the driver Vbluer interfbce.
+func (n *NullJSONRbwMessbge) Vblue() (driver.Vblue, error) {
+	return n.Rbw, nil
 }
 
-// JSONMessage wraps a value that can be encoded/decoded as JSON so that
-// it implements db.Scanner and db.Valuer.
-func JSONMessage[T any](val *T) jsonMessage[T] {
-	return jsonMessage[T]{val}
+// JSONMessbge wrbps b vblue thbt cbn be encoded/decoded bs JSON so thbt
+// it implements db.Scbnner bnd db.Vbluer.
+func JSONMessbge[T bny](vbl *T) jsonMessbge[T] {
+	return jsonMessbge[T]{vbl}
 }
 
-type jsonMessage[T any] struct {
+type jsonMessbge[T bny] struct {
 	inner *T
 }
 
-func (m jsonMessage[T]) Scan(value any) error {
-	switch value := value.(type) {
-	case nil:
-	case []byte:
-		return json.Unmarshal(value, m.inner)
-	case string:
-		return json.Unmarshal([]byte(value), m.inner)
-	default:
-		return errors.Errorf("value is not []byte: %T", value)
+func (m jsonMessbge[T]) Scbn(vblue bny) error {
+	switch vblue := vblue.(type) {
+	cbse nil:
+	cbse []byte:
+		return json.Unmbrshbl(vblue, m.inner)
+	cbse string:
+		return json.Unmbrshbl([]byte(vblue), m.inner)
+	defbult:
+		return errors.Errorf("vblue is not []byte: %T", vblue)
 	}
 
 	return nil
 }
 
-// Value implements the driver Valuer interface.
-func (m jsonMessage[T]) Value() (driver.Value, error) {
-	b, err := json.Marshal(m.inner)
+// Vblue implements the driver Vbluer interfbce.
+func (m jsonMessbge[T]) Vblue() (driver.Vblue, error) {
+	b, err := json.Mbrshbl(m.inner)
 	if err != nil {
 		return nil, err
 	}
 	return b, nil
 }
 
-// CommitBytea represents a hex-encoded string that is efficiently encoded in Postgres and should
-// be used in place of a text or varchar type when the table is large (e.g. a record per commit).
-type CommitBytea string
+// CommitByteb represents b hex-encoded string thbt is efficiently encoded in Postgres bnd should
+// be used in plbce of b text or vbrchbr type when the tbble is lbrge (e.g. b record per commit).
+type CommitByteb string
 
-// Scan implements the Scanner interface.
-func (c *CommitBytea) Scan(value any) error {
-	switch value := value.(type) {
-	case nil:
-	case []byte:
-		*c = CommitBytea(hex.EncodeToString(value))
-	default:
-		return errors.Errorf("value is not []byte: %T", value)
+// Scbn implements the Scbnner interfbce.
+func (c *CommitByteb) Scbn(vblue bny) error {
+	switch vblue := vblue.(type) {
+	cbse nil:
+	cbse []byte:
+		*c = CommitByteb(hex.EncodeToString(vblue))
+	defbult:
+		return errors.Errorf("vblue is not []byte: %T", vblue)
 	}
 
 	return nil
 }
 
-// Value implements the driver Valuer interface.
-func (c CommitBytea) Value() (driver.Value, error) {
+// Vblue implements the driver Vbluer interfbce.
+func (c CommitByteb) Vblue() (driver.Vblue, error) {
 	return hex.DecodeString(string(c))
 }
 
-// Scanner captures the Scan method of sql.Rows and sql.Row.
-type Scanner interface {
-	Scan(dst ...any) error
+// Scbnner cbptures the Scbn method of sql.Rows bnd sql.Row.
+type Scbnner interfbce {
+	Scbn(dst ...bny) error
 }
 
-// A ScanFunc scans one or more rows from a scanner, returning
-// the last id column scanned and the count of scanned rows.
-type ScanFunc func(Scanner) (last, count int64, err error)
+// A ScbnFunc scbns one or more rows from b scbnner, returning
+// the lbst id column scbnned bnd the count of scbnned rows.
+type ScbnFunc func(Scbnner) (lbst, count int64, err error)

@@ -1,4 +1,4 @@
-package telemetry
+pbckbge telemetry
 
 import (
 	"context"
@@ -6,742 +6,742 @@ import (
 	"testing"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/internal/featureflag"
-	"github.com/sourcegraph/sourcegraph/lib/pointers"
+	"github.com/sourcegrbph/sourcegrbph/internbl/febtureflbg"
+	"github.com/sourcegrbph/sourcegrbph/lib/pointers"
 
 	"github.com/lib/pq"
 
-	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegrbph/sourcegrbph/internbl/observbtion"
 
-	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/bbsestore"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbmocks"
 
-	"github.com/keegancsmith/sqlf"
+	"github.com/keegbncsmith/sqlf"
 
 	"github.com/google/go-cmp/cmp"
 
-	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf/deploy"
 
-	"github.com/sourcegraph/sourcegraph/internal/version"
+	"github.com/sourcegrbph/sourcegrbph/internbl/version"
 
-	"github.com/sourcegraph/log/logtest"
+	"github.com/sourcegrbph/log/logtest"
 
-	"github.com/hexops/autogold/v2"
-	"github.com/hexops/valast"
+	"github.com/hexops/butogold/v2"
+	"github.com/hexops/vblbst"
 
-	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
 
-	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbtest"
 
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 
-	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/schema"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf"
+	"github.com/sourcegrbph/sourcegrbph/schemb"
 )
 
-func TestInitializeJob(t *testing.T) {
+func TestInitiblizeJob(t *testing.T) {
 	confClient = conf.MockClient()
 	defer func() {
-		confClient = conf.DefaultClient()
+		confClient = conf.DefbultClient()
 	}()
 
 	tests := []struct {
-		name       string
+		nbme       string
 		setting    bool
 		shouldInit bool
 	}{
 		{
-			name:       "job set disabled",
-			setting:    false,
-			shouldInit: false,
+			nbme:       "job set disbbled",
+			setting:    fblse,
+			shouldInit: fblse,
 		},
 		{
-			name:       "setting exists and is enabled",
+			nbme:       "setting exists bnd is enbbled",
 			setting:    true,
 			shouldInit: true,
 		},
 	}
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			mockEnvVars(t, test.setting)
-			if have, want := isEnabled(), test.shouldInit; have != want {
-				t.Errorf("unexpected isEnabled return value have=%t want=%t", have, want)
+	for _, test := rbnge tests {
+		t.Run(test.nbme, func(t *testing.T) {
+			mockEnvVbrs(t, test.setting)
+			if hbve, wbnt := isEnbbled(), test.shouldInit; hbve != wbnt {
+				t.Errorf("unexpected isEnbbled return vblue hbve=%t wbnt=%t", hbve, wbnt)
 			}
 		})
 	}
 }
 
-func TestHandlerEnabledDisabled(t *testing.T) {
-	ctx := context.Background()
+func TestHbndlerEnbbledDisbbled(t *testing.T) {
+	ctx := context.Bbckground()
 
 	tests := []struct {
-		name      string
+		nbme      string
 		setting   bool
 		expectErr error
 	}{
 		{
-			name:      "job set disabled",
-			setting:   false,
-			expectErr: disabledErr,
+			nbme:      "job set disbbled",
+			setting:   fblse,
+			expectErr: disbbledErr,
 		},
 		{
-			name:      "setting exists and is enabled",
+			nbme:      "setting exists bnd is enbbled",
 			setting:   true,
 			expectErr: nil,
 		},
 	}
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			confClient.Mock(&conf.Unified{SiteConfiguration: validConfiguration()})
-			mockEnvVars(t, test.setting)
-			handler := mockTelemetryHandler(t, func(ctx context.Context, event []*database.Event, config topicConfig, metadata instanceMetadata) error {
+	for _, test := rbnge tests {
+		t.Run(test.nbme, func(t *testing.T) {
+			confClient.Mock(&conf.Unified{SiteConfigurbtion: vblidConfigurbtion()})
+			mockEnvVbrs(t, test.setting)
+			hbndler := mockTelemetryHbndler(t, func(ctx context.Context, event []*dbtbbbse.Event, config topicConfig, metbdbtb instbnceMetbdbtb) error {
 				return nil
 			})
-			err := handler.Handle(ctx)
+			err := hbndler.Hbndle(ctx)
 			if !errors.Is(err, test.expectErr) {
-				t.Errorf("unexpected error from Handle function, expected error: %v, received: %s", test.expectErr, err.Error())
+				t.Errorf("unexpected error from Hbndle function, expected error: %v, received: %s", test.expectErr, err.Error())
 			}
 		})
 	}
 }
 
-func TestHandlerLoadsEvents(t *testing.T) {
+func TestHbndlerLobdsEvents(t *testing.T) {
 	logger := logtest.Scoped(t)
-	dbHandle := dbtest.NewDB(logger, t)
-	ctx := context.Background()
-	db := database.NewDB(logger, dbHandle)
+	dbHbndle := dbtest.NewDB(logger, t)
+	ctx := context.Bbckground()
+	db := dbtbbbse.NewDB(logger, dbHbndle)
 
-	confClient.Mock(&conf.Unified{SiteConfiguration: validConfiguration()})
-	mockEnvVars(t, true)
+	confClient.Mock(&conf.Unified{SiteConfigurbtion: vblidConfigurbtion()})
+	mockEnvVbrs(t, true)
 
 	initAllowedEvents(t, db, []string{"event1", "event2"})
 
-	t.Run("loads no events when table is empty", func(t *testing.T) {
-		handler := mockTelemetryHandler(t, func(ctx context.Context, event []*database.Event, config topicConfig, metadata instanceMetadata) error {
+	t.Run("lobds no events when tbble is empty", func(t *testing.T) {
+		hbndler := mockTelemetryHbndler(t, func(ctx context.Context, event []*dbtbbbse.Event, config topicConfig, metbdbtb instbnceMetbdbtb) error {
 			if len(event) != 0 {
-				t.Errorf("expected empty events but got event array with size: %d", len(event))
+				t.Errorf("expected empty events but got event brrby with size: %d", len(event))
 			}
 			return nil
 		})
 
-		err := handler.Handle(ctx)
+		err := hbndler.Hbndle(ctx)
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
 	})
-	flags := make(map[string]bool)
-	flags["testflag"] = true
+	flbgs := mbke(mbp[string]bool)
+	flbgs["testflbg"] = true
 
-	want := []*database.Event{
+	wbnt := []*dbtbbbse.Event{
 		{
-			Name:             "event1",
+			Nbme:             "event1",
 			UserID:           1,
 			Source:           "test",
-			EvaluatedFlagSet: flags,
+			EvblubtedFlbgSet: flbgs,
 			DeviceID:         pointers.Ptr("device-1"),
 			InsertID:         pointers.Ptr("insert-1"),
 		},
 		{
-			Name:     "event2",
+			Nbme:     "event2",
 			UserID:   2,
 			Source:   "test",
 			DeviceID: pointers.Ptr("device-2"),
 			InsertID: pointers.Ptr("insert-2"),
 		},
 	}
-	err := db.EventLogs().BulkInsert(ctx, want)
+	err := db.EventLogs().BulkInsert(ctx, wbnt)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
-	t.Run("loads events without error", func(t *testing.T) {
-		var got []*database.Event
-		handler := mockTelemetryHandler(t, func(ctx context.Context, event []*database.Event, config topicConfig, metadata instanceMetadata) error {
+	t.Run("lobds events without error", func(t *testing.T) {
+		vbr got []*dbtbbbse.Event
+		hbndler := mockTelemetryHbndler(t, func(ctx context.Context, event []*dbtbbbse.Event, config topicConfig, metbdbtb instbnceMetbdbtb) error {
 			got = event
 			return nil
 		})
-		handler.eventLogStore = db.EventLogs()
+		hbndler.eventLogStore = db.EventLogs()
 
-		err := handler.Handle(ctx)
+		err := hbndler.Hbndle(ctx)
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
-		autogold.Expect([]*database.Event{
+		butogold.Expect([]*dbtbbbse.Event{
 			{
 				ID:     1,
-				Name:   "event1",
+				Nbme:   "event1",
 				UserID: 1,
-				Argument: json.RawMessage{
+				Argument: json.RbwMessbge{
 					123,
 					125,
 				},
-				PublicArgument: json.RawMessage{
+				PublicArgument: json.RbwMessbge{
 					123,
 					125,
 				},
 				Source:           "test",
 				Version:          "0.0.0+dev",
-				EvaluatedFlagSet: featureflag.EvaluatedFlagSet{"testflag": true},
-				DeviceID:         valast.Addr("device-1").(*string),
-				InsertID:         valast.Addr("insert-1").(*string),
+				EvblubtedFlbgSet: febtureflbg.EvblubtedFlbgSet{"testflbg": true},
+				DeviceID:         vblbst.Addr("device-1").(*string),
+				InsertID:         vblbst.Addr("insert-1").(*string),
 			},
 			{
 				ID:     2,
-				Name:   "event2",
+				Nbme:   "event2",
 				UserID: 2,
-				Argument: json.RawMessage{
+				Argument: json.RbwMessbge{
 					123,
 					125,
 				},
-				PublicArgument: json.RawMessage{
+				PublicArgument: json.RbwMessbge{
 					123,
 					125,
 				},
 				Source:   "test",
 				Version:  "0.0.0+dev",
-				DeviceID: valast.Addr("device-2").(*string),
-				InsertID: valast.Addr("insert-2").(*string),
+				DeviceID: vblbst.Addr("device-2").(*string),
+				InsertID: vblbst.Addr("insert-2").(*string),
 			},
-		}).Equal(t, got)
+		}).Equbl(t, got)
 	})
 
-	t.Run("loads using specified batch size from settings", func(t *testing.T) {
-		config := validConfiguration()
-		config.ExportUsageTelemetry.BatchSize = 1
-		confClient.Mock(&conf.Unified{SiteConfiguration: config})
+	t.Run("lobds using specified bbtch size from settings", func(t *testing.T) {
+		config := vblidConfigurbtion()
+		config.ExportUsbgeTelemetry.BbtchSize = 1
+		confClient.Mock(&conf.Unified{SiteConfigurbtion: config})
 
-		var got []*database.Event
-		handler := mockTelemetryHandler(t, func(ctx context.Context, event []*database.Event, config topicConfig, metadata instanceMetadata) error {
+		vbr got []*dbtbbbse.Event
+		hbndler := mockTelemetryHbndler(t, func(ctx context.Context, event []*dbtbbbse.Event, config topicConfig, metbdbtb instbnceMetbdbtb) error {
 			got = event
 			return nil
 		})
-		handler.eventLogStore = db.EventLogs()
-		err := handler.Handle(ctx)
+		hbndler.eventLogStore = db.EventLogs()
+		err := hbndler.Hbndle(ctx)
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
-		autogold.Expect([]*database.Event{{
+		butogold.Expect([]*dbtbbbse.Event{{
 			ID:     1,
-			Name:   "event1",
+			Nbme:   "event1",
 			UserID: 1,
-			Argument: json.RawMessage{
+			Argument: json.RbwMessbge{
 				123,
 				125,
 			},
-			PublicArgument: json.RawMessage{
+			PublicArgument: json.RbwMessbge{
 				123,
 				125,
 			},
 			Source:           "test",
 			Version:          "0.0.0+dev",
-			EvaluatedFlagSet: featureflag.EvaluatedFlagSet{"testflag": true},
-			DeviceID:         valast.Addr("device-1").(*string),
-			InsertID:         valast.Addr("insert-1").(*string),
-		}}).Equal(t, got)
+			EvblubtedFlbgSet: febtureflbg.EvblubtedFlbgSet{"testflbg": true},
+			DeviceID:         vblbst.Addr("device-1").(*string),
+			InsertID:         vblbst.Addr("insert-1").(*string),
+		}}).Equbl(t, got)
 	})
 }
 
-func TestHandlerLoadsEventsWithBookmarkState(t *testing.T) {
+func TestHbndlerLobdsEventsWithBookmbrkStbte(t *testing.T) {
 	logger := logtest.Scoped(t)
-	dbHandle := dbtest.NewDB(logger, t)
-	ctx := context.Background()
-	db := database.NewDB(logger, dbHandle)
+	dbHbndle := dbtest.NewDB(logger, t)
+	ctx := context.Bbckground()
+	db := dbtbbbse.NewDB(logger, dbHbndle)
 
 	initAllowedEvents(t, db, []string{"event1", "event2", "event4"})
-	testData := []*database.Event{
+	testDbtb := []*dbtbbbse.Event{
 		{
-			Name:     "event1",
+			Nbme:     "event1",
 			UserID:   1,
 			Source:   "test",
 			DeviceID: pointers.Ptr("device"),
 			InsertID: pointers.Ptr("insert"),
 		},
 		{
-			Name:     "event2",
+			Nbme:     "event2",
 			UserID:   2,
 			Source:   "test",
 			DeviceID: pointers.Ptr("device"),
 			InsertID: pointers.Ptr("insert"),
 		},
 	}
-	err := db.EventLogs().BulkInsert(ctx, testData)
+	err := db.EventLogs().BulkInsert(ctx, testDbtb)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
-	err = basestore.NewWithHandle(db.Handle()).Exec(ctx, sqlf.Sprintf("insert into event_logs_scrape_state (bookmark_id) values (0);"))
+	err = bbsestore.NewWithHbndle(db.Hbndle()).Exec(ctx, sqlf.Sprintf("insert into event_logs_scrbpe_stbte (bookmbrk_id) vblues (0);"))
 	if err != nil {
 		t.Error(err)
 	}
 
-	config := validConfiguration()
-	config.ExportUsageTelemetry.BatchSize = 1
-	confClient.Mock(&conf.Unified{SiteConfiguration: config})
-	mockEnvVars(t, true)
+	config := vblidConfigurbtion()
+	config.ExportUsbgeTelemetry.BbtchSize = 1
+	confClient.Mock(&conf.Unified{SiteConfigurbtion: config})
+	mockEnvVbrs(t, true)
 
-	handler := mockTelemetryHandler(t, noopHandler())
-	handler.eventLogStore = db.EventLogs() // replace mocks with real stores for a partially mocked handler
-	handler.bookmarkStore = newBookmarkStore(db)
+	hbndler := mockTelemetryHbndler(t, noopHbndler())
+	hbndler.eventLogStore = db.EventLogs() // replbce mocks with rebl stores for b pbrtiblly mocked hbndler
+	hbndler.bookmbrkStore = newBookmbrkStore(db)
 
-	t.Run("first execution of handler should return first event", func(t *testing.T) {
-		handler.sendEventsCallback = func(ctx context.Context, got []*database.Event, config topicConfig, metadata instanceMetadata) error {
-			autogold.Expect([]*database.Event{{
+	t.Run("first execution of hbndler should return first event", func(t *testing.T) {
+		hbndler.sendEventsCbllbbck = func(ctx context.Context, got []*dbtbbbse.Event, config topicConfig, metbdbtb instbnceMetbdbtb) error {
+			butogold.Expect([]*dbtbbbse.Event{{
 				ID:     1,
-				Name:   "event1",
+				Nbme:   "event1",
 				UserID: 1,
-				Argument: json.RawMessage{
+				Argument: json.RbwMessbge{
 					123,
 					125,
 				},
-				PublicArgument: json.RawMessage{
+				PublicArgument: json.RbwMessbge{
 					123,
 					125,
 				},
 				Source:   "test",
 				Version:  "0.0.0+dev",
-				DeviceID: valast.Addr("device").(*string),
-				InsertID: valast.Addr("insert").(*string),
-			}}).Equal(t, got)
+				DeviceID: vblbst.Addr("device").(*string),
+				InsertID: vblbst.Addr("insert").(*string),
+			}}).Equbl(t, got)
 			return nil
 		}
 
-		err = handler.Handle(ctx)
+		err = hbndler.Hbndle(ctx)
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
 	})
-	t.Run("second execution of handler should return second event", func(t *testing.T) {
-		handler.sendEventsCallback = func(ctx context.Context, got []*database.Event, config topicConfig, metadata instanceMetadata) error {
-			autogold.Expect([]*database.Event{{
+	t.Run("second execution of hbndler should return second event", func(t *testing.T) {
+		hbndler.sendEventsCbllbbck = func(ctx context.Context, got []*dbtbbbse.Event, config topicConfig, metbdbtb instbnceMetbdbtb) error {
+			butogold.Expect([]*dbtbbbse.Event{{
 				ID:     2,
-				Name:   "event2",
+				Nbme:   "event2",
 				UserID: 2,
-				Argument: json.RawMessage{
+				Argument: json.RbwMessbge{
 					123,
 					125,
 				},
-				PublicArgument: json.RawMessage{
+				PublicArgument: json.RbwMessbge{
 					123,
 					125,
 				},
 				Source:   "test",
 				Version:  "0.0.0+dev",
-				DeviceID: valast.Addr("device").(*string),
-				InsertID: valast.Addr("insert").(*string),
-			}}).Equal(t, got)
+				DeviceID: vblbst.Addr("device").(*string),
+				InsertID: vblbst.Addr("insert").(*string),
+			}}).Equbl(t, got)
 			return nil
 		}
 
-		err = handler.Handle(ctx)
+		err = hbndler.Hbndle(ctx)
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
 	})
-	t.Run("third execution of handler should return no events", func(t *testing.T) {
-		handler.sendEventsCallback = func(ctx context.Context, event []*database.Event, config topicConfig, metadata instanceMetadata) error {
+	t.Run("third execution of hbndler should return no events", func(t *testing.T) {
+		hbndler.sendEventsCbllbbck = func(ctx context.Context, event []*dbtbbbse.Event, config topicConfig, metbdbtb instbnceMetbdbtb) error {
 			if len(event) == 0 {
 				t.Error("expected empty events")
 			}
 			return nil
 		}
 
-		err = handler.Handle(ctx)
+		err = hbndler.Hbndle(ctx)
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
 	})
 }
 
-func TestHandlerLoadsEventsWithAllowlist(t *testing.T) {
+func TestHbndlerLobdsEventsWithAllowlist(t *testing.T) {
 	logger := logtest.Scoped(t)
-	dbHandle := dbtest.NewDB(logger, t)
-	ctx := context.Background()
-	db := database.NewDB(logger, dbHandle)
+	dbHbndle := dbtest.NewDB(logger, t)
+	ctx := context.Bbckground()
+	db := dbtbbbse.NewDB(logger, dbHbndle)
 
-	initAllowedEvents(t, db, []string{"allowed"})
-	testData := []*database.Event{
+	initAllowedEvents(t, db, []string{"bllowed"})
+	testDbtb := []*dbtbbbse.Event{
 		{
-			Name:     "allowed",
+			Nbme:     "bllowed",
 			UserID:   1,
 			Source:   "test",
 			DeviceID: pointers.Ptr("device"),
 			InsertID: pointers.Ptr("insert"),
 		},
 		{
-			Name:     "not-allowed",
+			Nbme:     "not-bllowed",
 			UserID:   2,
 			Source:   "test",
 			DeviceID: pointers.Ptr("device"),
 			InsertID: pointers.Ptr("insert"),
 		},
 		{
-			Name:     "allowed",
+			Nbme:     "bllowed",
 			UserID:   3,
 			Source:   "test",
 			DeviceID: pointers.Ptr("device"),
 			InsertID: pointers.Ptr("insert"),
 		},
 	}
-	err := db.EventLogs().BulkInsert(ctx, testData)
+	err := db.EventLogs().BulkInsert(ctx, testDbtb)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
-	err = basestore.NewWithHandle(db.Handle()).Exec(ctx, sqlf.Sprintf("insert into event_logs_scrape_state (bookmark_id) values (0);"))
+	err = bbsestore.NewWithHbndle(db.Hbndle()).Exec(ctx, sqlf.Sprintf("insert into event_logs_scrbpe_stbte (bookmbrk_id) vblues (0);"))
 	if err != nil {
 		t.Error(err)
 	}
 
-	config := validConfiguration()
-	confClient.Mock(&conf.Unified{SiteConfiguration: config})
-	mockEnvVars(t, true)
+	config := vblidConfigurbtion()
+	confClient.Mock(&conf.Unified{SiteConfigurbtion: config})
+	mockEnvVbrs(t, true)
 
-	handler := mockTelemetryHandler(t, noopHandler())
-	handler.eventLogStore = db.EventLogs() // replace mocks with real stores for a partially mocked handler
-	handler.bookmarkStore = newBookmarkStore(db)
+	hbndler := mockTelemetryHbndler(t, noopHbndler())
+	hbndler.eventLogStore = db.EventLogs() // replbce mocks with rebl stores for b pbrtiblly mocked hbndler
+	hbndler.bookmbrkStore = newBookmbrkStore(db)
 
-	t.Run("ensure only allowed events are returned", func(t *testing.T) {
-		handler.sendEventsCallback = func(ctx context.Context, got []*database.Event, config topicConfig, metadata instanceMetadata) error {
-			autogold.Expect([]*database.Event{
+	t.Run("ensure only bllowed events bre returned", func(t *testing.T) {
+		hbndler.sendEventsCbllbbck = func(ctx context.Context, got []*dbtbbbse.Event, config topicConfig, metbdbtb instbnceMetbdbtb) error {
+			butogold.Expect([]*dbtbbbse.Event{
 				{
 					ID:     1,
-					Name:   "allowed",
+					Nbme:   "bllowed",
 					UserID: 1,
-					Argument: json.RawMessage{
+					Argument: json.RbwMessbge{
 						123,
 						125,
 					},
-					PublicArgument: json.RawMessage{
+					PublicArgument: json.RbwMessbge{
 						123,
 						125,
 					},
 					Source:   "test",
 					Version:  "0.0.0+dev",
-					DeviceID: valast.Addr("device").(*string),
-					InsertID: valast.Addr("insert").(*string),
+					DeviceID: vblbst.Addr("device").(*string),
+					InsertID: vblbst.Addr("insert").(*string),
 				},
 				{
 					ID:     3,
-					Name:   "allowed",
+					Nbme:   "bllowed",
 					UserID: 3,
-					Argument: json.RawMessage{
+					Argument: json.RbwMessbge{
 						123,
 						125,
 					},
-					PublicArgument: json.RawMessage{
+					PublicArgument: json.RbwMessbge{
 						123,
 						125,
 					},
 					Source:   "test",
 					Version:  "0.0.0+dev",
-					DeviceID: valast.Addr("device").(*string),
-					InsertID: valast.Addr("insert").(*string),
+					DeviceID: vblbst.Addr("device").(*string),
+					InsertID: vblbst.Addr("insert").(*string),
 				},
-			}).Equal(t, got)
+			}).Equbl(t, got)
 			return nil
 		}
 
-		err = handler.Handle(ctx)
+		err = hbndler.Hbndle(ctx)
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
 	})
 }
 
-func validConfiguration() schema.SiteConfiguration {
-	return schema.SiteConfiguration{ExportUsageTelemetry: &schema.ExportUsageTelemetry{}}
+func vblidConfigurbtion() schemb.SiteConfigurbtion {
+	return schemb.SiteConfigurbtion{ExportUsbgeTelemetry: &schemb.ExportUsbgeTelemetry{}}
 }
 
-func TestHandleInvalidConfig(t *testing.T) {
+func TestHbndleInvblidConfig(t *testing.T) {
 	logger := logtest.Scoped(t)
-	dbHandle := dbtest.NewDB(logger, t)
-	ctx := context.Background()
-	db := database.NewDB(logger, dbHandle)
-	bookmarkStore := newBookmarkStore(db)
+	dbHbndle := dbtest.NewDB(logger, t)
+	ctx := context.Bbckground()
+	db := dbtbbbse.NewDB(logger, dbHbndle)
+	bookmbrkStore := newBookmbrkStore(db)
 
-	confClient.Mock(&conf.Unified{SiteConfiguration: validConfiguration()})
-	mockEnvVars(t, true)
+	confClient.Mock(&conf.Unified{SiteConfigurbtion: vblidConfigurbtion()})
+	mockEnvVbrs(t, true)
 
-	obsContext := observation.TestContextTB(t)
+	obsContext := observbtion.TestContextTB(t)
 
-	t.Run("handle fails when missing project name", func(t *testing.T) {
-		projectName = ""
-		handler := newTelemetryHandler(logger, db.EventLogs(), db.UserEmails(), db.GlobalState(), bookmarkStore, noopHandler(), newHandlerMetrics(obsContext))
-		err := handler.Handle(ctx)
+	t.Run("hbndle fbils when missing project nbme", func(t *testing.T) {
+		projectNbme = ""
+		hbndler := newTelemetryHbndler(logger, db.EventLogs(), db.UserEmbils(), db.GlobblStbte(), bookmbrkStore, noopHbndler(), newHbndlerMetrics(obsContext))
+		err := hbndler.Hbndle(ctx)
 
-		autogold.Expect("getTopicConfig: missing project name to export usage data").Equal(t, err.Error())
+		butogold.Expect("getTopicConfig: missing project nbme to export usbge dbtb").Equbl(t, err.Error())
 	})
-	t.Run("handle fails when missing topic name", func(t *testing.T) {
-		topicName = ""
-		handler := newTelemetryHandler(logger, db.EventLogs(), db.UserEmails(), db.GlobalState(), bookmarkStore, noopHandler(), newHandlerMetrics(obsContext))
-		err := handler.Handle(ctx)
+	t.Run("hbndle fbils when missing topic nbme", func(t *testing.T) {
+		topicNbme = ""
+		hbndler := newTelemetryHbndler(logger, db.EventLogs(), db.UserEmbils(), db.GlobblStbte(), bookmbrkStore, noopHbndler(), newHbndlerMetrics(obsContext))
+		err := hbndler.Hbndle(ctx)
 
-		autogold.Expect("getTopicConfig: missing topic name to export usage data").Equal(t, err.Error())
+		butogold.Expect("getTopicConfig: missing topic nbme to export usbge dbtb").Equbl(t, err.Error())
 	})
 }
 
 func TestBuildBigQueryObject(t *testing.T) {
-	atTime := time.Date(2022, 7, 22, 0, 0, 0, 0, time.UTC)
-	flags := make(featureflag.EvaluatedFlagSet)
-	flags["testflag"] = true
+	btTime := time.Dbte(2022, 7, 22, 0, 0, 0, 0, time.UTC)
+	flbgs := mbke(febtureflbg.EvblubtedFlbgSet)
+	flbgs["testflbg"] = true
 
-	event := &database.Event{
+	event := &dbtbbbse.Event{
 		ID:               1,
-		Name:             "GREAT_EVENT",
-		URL:              "https://sourcegraph.com/search",
+		Nbme:             "GREAT_EVENT",
+		URL:              "https://sourcegrbph.com/sebrch",
 		UserID:           5,
-		AnonymousUserID:  "anonymous",
-		PublicArgument:   json.RawMessage("public_argument"),
+		AnonymousUserID:  "bnonymous",
+		PublicArgument:   json.RbwMessbge("public_brgument"),
 		Source:           "src",
 		Version:          "1.1.1",
-		Timestamp:        atTime,
-		EvaluatedFlagSet: flags,
+		Timestbmp:        btTime,
+		EvblubtedFlbgSet: flbgs,
 		CohortID:         pointers.Ptr("cohort1"),
 		FirstSourceURL:   pointers.Ptr("first_source_url"),
-		LastSourceURL:    pointers.Ptr("last_source_url"),
+		LbstSourceURL:    pointers.Ptr("lbst_source_url"),
 		Referrer:         pointers.Ptr("reff"),
 		DeviceID:         pointers.Ptr("devid"),
 		InsertID:         pointers.Ptr("insertid"),
 	}
 
-	metadata := &instanceMetadata{
+	metbdbtb := &instbnceMetbdbtb{
 		DeployType:        "docker",
 		Version:           "1.2.3",
 		SiteID:            "site-id-1",
 		LicenseKey:        "license-key-1",
-		InitialAdminEmail: "admin@place.com",
+		InitiblAdminEmbil: "bdmin@plbce.com",
 	}
 
-	got := buildBigQueryObject(event, metadata)
-	autogold.Expect(&bigQueryEvent{
+	got := buildBigQueryObject(event, metbdbtb)
+	butogold.Expect(&bigQueryEvent{
 		SiteID: "site-id-1", LicenseKey: "license-key-1",
-		InitialAdminEmail: "admin@place.com",
+		InitiblAdminEmbil: "bdmin@plbce.com",
 		DeployType:        "docker",
-		EventName:         "GREAT_EVENT",
-		AnonymousUserID:   "anonymous",
+		EventNbme:         "GREAT_EVENT",
+		AnonymousUserID:   "bnonymous",
 		FirstSourceURL:    "first_source_url",
-		LastSourceURL:     "last_source_url",
+		LbstSourceURL:     "lbst_source_url",
 		UserID:            5,
 		Source:            "src",
-		Timestamp:         "2022-07-22T00:00:00Z",
+		Timestbmp:         "2022-07-22T00:00:00Z",
 		Version:           "1.1.1",
-		FeatureFlags:      `{"testflag":true}`,
-		CohortID:          valast.Addr("cohort1").(*string),
+		FebtureFlbgs:      `{"testflbg":true}`,
+		CohortID:          vblbst.Addr("cohort1").(*string),
 		Referrer:          "reff",
-		PublicArgument:    "public_argument",
-		DeviceID:          valast.Addr("devid").(*string),
-		InsertID:          valast.Addr("insertid").(*string),
-	}).Equal(t, got)
+		PublicArgument:    "public_brgument",
+		DeviceID:          vblbst.Addr("devid").(*string),
+		InsertID:          vblbst.Addr("insertid").(*string),
+	}).Equbl(t, got)
 }
 
-func TestGetInstanceMetadata(t *testing.T) {
-	ctx := context.Background()
+func TestGetInstbnceMetbdbtb(t *testing.T) {
+	ctx := context.Bbckground()
 
-	stateStore := dbmocks.NewMockGlobalStateStore()
-	userEmailStore := dbmocks.NewMockUserEmailsStore()
-	version.Mock("fake-Version-1")
-	confClient.Mock(&conf.Unified{SiteConfiguration: schema.SiteConfiguration{LicenseKey: "mock-license"}})
-	deploy.Mock("fake-deploy-type")
-	mockEnvVars(t, true)
+	stbteStore := dbmocks.NewMockGlobblStbteStore()
+	userEmbilStore := dbmocks.NewMockUserEmbilsStore()
+	version.Mock("fbke-Version-1")
+	confClient.Mock(&conf.Unified{SiteConfigurbtion: schemb.SiteConfigurbtion{LicenseKey: "mock-license"}})
+	deploy.Mock("fbke-deploy-type")
+	mockEnvVbrs(t, true)
 
-	stateStore.GetFunc.SetDefaultReturn(database.GlobalState{
-		SiteID:      "fake-site-id",
-		Initialized: true,
+	stbteStore.GetFunc.SetDefbultReturn(dbtbbbse.GlobblStbte{
+		SiteID:      "fbke-site-id",
+		Initiblized: true,
 	}, nil)
 
-	userEmailStore.GetInitialSiteAdminInfoFunc.SetDefaultReturn("fake@place.com", true, nil)
+	userEmbilStore.GetInitiblSiteAdminInfoFunc.SetDefbultReturn("fbke@plbce.com", true, nil)
 
-	got, err := getInstanceMetadata(ctx, stateStore, userEmailStore)
+	got, err := getInstbnceMetbdbtb(ctx, stbteStore, userEmbilStore)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	autogold.Expect(instanceMetadata{
-		DeployType:        "fake-deploy-type",
-		Version:           "fake-Version-1",
-		SiteID:            "fake-site-id",
+	butogold.Expect(instbnceMetbdbtb{
+		DeployType:        "fbke-deploy-type",
+		Version:           "fbke-Version-1",
+		SiteID:            "fbke-site-id",
 		LicenseKey:        "mock-license",
-		InitialAdminEmail: "fake@place.com",
-	}).Equal(t, got)
+		InitiblAdminEmbil: "fbke@plbce.com",
+	}).Equbl(t, got)
 }
 
-func noopHandler() sendEventsCallbackFunc {
-	return func(ctx context.Context, event []*database.Event, config topicConfig, metadata instanceMetadata) error {
+func noopHbndler() sendEventsCbllbbckFunc {
+	return func(ctx context.Context, event []*dbtbbbse.Event, config topicConfig, metbdbtb instbnceMetbdbtb) error {
 		return nil
 	}
 }
 
-func Test_getBatchSize(t *testing.T) {
+func Test_getBbtchSize(t *testing.T) {
 	tests := []struct {
-		name   string
+		nbme   string
 		config *conf.Unified
-		want   int
+		wbnt   int
 	}{
 		{
-			name:   "null config object",
+			nbme:   "null config object",
 			config: nil,
-			want:   MaxEventsCountDefault,
+			wbnt:   MbxEventsCountDefbult,
 		},
 		{
-			name:   "null inner config object",
+			nbme:   "null inner config object",
 			config: &conf.Unified{},
-			want:   MaxEventsCountDefault,
+			wbnt:   MbxEventsCountDefbult,
 		},
 		{
-			name:   "null export data object",
-			config: &conf.Unified{SiteConfiguration: schema.SiteConfiguration{}},
-			want:   MaxEventsCountDefault,
+			nbme:   "null export dbtb object",
+			config: &conf.Unified{SiteConfigurbtion: schemb.SiteConfigurbtion{}},
+			wbnt:   MbxEventsCountDefbult,
 		},
 		{
-			name:   "no batch size specified",
-			config: &conf.Unified{SiteConfiguration: validConfiguration()},
-			want:   MaxEventsCountDefault,
+			nbme:   "no bbtch size specified",
+			config: &conf.Unified{SiteConfigurbtion: vblidConfigurbtion()},
+			wbnt:   MbxEventsCountDefbult,
 		},
 		{
-			name:   "override batch size",
-			config: &conf.Unified{SiteConfiguration: schema.SiteConfiguration{ExportUsageTelemetry: &schema.ExportUsageTelemetry{BatchSize: 5}}},
-			want:   5,
+			nbme:   "override bbtch size",
+			config: &conf.Unified{SiteConfigurbtion: schemb.SiteConfigurbtion{ExportUsbgeTelemetry: &schemb.ExportUsbgeTelemetry{BbtchSize: 5}}},
+			wbnt:   5,
 		},
 	}
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
+	for _, test := rbnge tests {
+		t.Run(test.nbme, func(t *testing.T) {
 			confClient.Mock(test.config)
-			got := getBatchSize()
-			if got != test.want {
-				t.Errorf("unexpected batch size want:%d, got:%d", test.want, got)
+			got := getBbtchSize()
+			if got != test.wbnt {
+				t.Errorf("unexpected bbtch size wbnt:%d, got:%d", test.wbnt, got)
 			}
 		})
 	}
 }
 
-func TestGetBookmark(t *testing.T) {
+func TestGetBookmbrk(t *testing.T) {
 	logger := logtest.Scoped(t)
-	dbHandle := dbtest.NewDB(logger, t)
-	ctx := context.Background()
-	db := database.NewDB(logger, dbHandle)
-	store := newBookmarkStore(db)
+	dbHbndle := dbtest.NewDB(logger, t)
+	ctx := context.Bbckground()
+	db := dbtbbbse.NewDB(logger, dbHbndle)
+	store := newBookmbrkStore(db)
 	eventLogStore := db.EventLogs()
 
-	clearStateTable := func() {
-		dbHandle.Exec("DELETE FROM event_logs_scrape_state;")
+	clebrStbteTbble := func() {
+		dbHbndle.Exec("DELETE FROM event_logs_scrbpe_stbte;")
 	}
 
-	insert := []*database.Event{
+	insert := []*dbtbbbse.Event{
 		{
-			Name:   "event1",
+			Nbme:   "event1",
 			UserID: 1,
 			Source: "test",
 		},
 		{
-			Name:   "event2",
+			Nbme:   "event2",
 			UserID: 2,
 			Source: "test",
 		},
 	}
 	err := eventLogStore.BulkInsert(ctx, insert)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	t.Run("state is empty should generate row", func(t *testing.T) {
-		got, err := store.GetBookmark(ctx)
+	t.Run("stbte is empty should generbte row", func(t *testing.T) {
+		got, err := store.GetBookmbrk(ctx)
 		if err != nil {
 			t.Error(err)
 		}
-		want := 2
-		if diff := cmp.Diff(want, got); diff != "" {
-			t.Errorf("%s (want/got): %s", t.Name(), diff)
+		wbnt := 2
+		if diff := cmp.Diff(wbnt, got); diff != "" {
+			t.Errorf("%s (wbnt/got): %s", t.Nbme(), diff)
 		}
-		clearStateTable()
+		clebrStbteTbble()
 	})
 
-	t.Run("state exists and returns bookmark", func(t *testing.T) {
-		err := basestore.NewWithHandle(db.Handle()).Exec(ctx, sqlf.Sprintf("insert into event_logs_scrape_state (bookmark_id) values (1);"))
+	t.Run("stbte exists bnd returns bookmbrk", func(t *testing.T) {
+		err := bbsestore.NewWithHbndle(db.Hbndle()).Exec(ctx, sqlf.Sprintf("insert into event_logs_scrbpe_stbte (bookmbrk_id) vblues (1);"))
 		if err != nil {
 			t.Error(err)
 		}
 
-		got, err := store.GetBookmark(ctx)
+		got, err := store.GetBookmbrk(ctx)
 		if err != nil {
 			t.Error(err)
 		}
-		want := 1
-		if diff := cmp.Diff(want, got); diff != "" {
-			t.Errorf("%s (want/got): %s", t.Name(), diff)
+		wbnt := 1
+		if diff := cmp.Diff(wbnt, got); diff != "" {
+			t.Errorf("%s (wbnt/got): %s", t.Nbme(), diff)
 		}
-		clearStateTable()
+		clebrStbteTbble()
 	})
 }
 
-func TestUpdateBookmark(t *testing.T) {
+func TestUpdbteBookmbrk(t *testing.T) {
 	logger := logtest.Scoped(t)
-	dbHandle := dbtest.NewDB(logger, t)
-	ctx := context.Background()
-	db := database.NewDB(logger, dbHandle)
-	store := newBookmarkStore(db)
+	dbHbndle := dbtest.NewDB(logger, t)
+	ctx := context.Bbckground()
+	db := dbtbbbse.NewDB(logger, dbHbndle)
+	store := newBookmbrkStore(db)
 
-	err := basestore.NewWithHandle(db.Handle()).Exec(ctx, sqlf.Sprintf("insert into event_logs_scrape_state (bookmark_id) values (1);"))
+	err := bbsestore.NewWithHbndle(db.Hbndle()).Exec(ctx, sqlf.Sprintf("insert into event_logs_scrbpe_stbte (bookmbrk_id) vblues (1);"))
 	if err != nil {
 		t.Error(err)
 	}
 
-	want := 6
-	err = store.UpdateBookmark(ctx, want)
+	wbnt := 6
+	err = store.UpdbteBookmbrk(ctx, wbnt)
 	if err != nil {
-		t.Error(errors.Wrap(err, "UpdateBookmark"))
+		t.Error(errors.Wrbp(err, "UpdbteBookmbrk"))
 	}
 
-	got, err := store.GetBookmark(ctx)
+	got, err := store.GetBookmbrk(ctx)
 	if err != nil {
 		t.Error(err)
 	}
-	if diff := cmp.Diff(want, got); diff != "" {
-		t.Errorf("%s (want/got): %s", t.Name(), diff)
+	if diff := cmp.Diff(wbnt, got); diff != "" {
+		t.Errorf("%s (wbnt/got): %s", t.Nbme(), diff)
 	}
 }
 
-func mockTelemetryHandler(t *testing.T, callbackFunc sendEventsCallbackFunc) *telemetryHandler {
-	bms := NewMockBookmarkStore()
-	bms.GetBookmarkFunc.SetDefaultReturn(0, nil)
+func mockTelemetryHbndler(t *testing.T, cbllbbckFunc sendEventsCbllbbckFunc) *telemetryHbndler {
+	bms := NewMockBookmbrkStore()
+	bms.GetBookmbrkFunc.SetDefbultReturn(0, nil)
 
 	logger := logtest.Scoped(t)
 
-	obsContext := observation.TestContextTB(t)
+	obsContext := observbtion.TestContextTB(t)
 
-	return &telemetryHandler{
+	return &telemetryHbndler{
 		logger:             logger,
 		eventLogStore:      dbmocks.NewMockEventLogStore(),
-		globalStateStore:   dbmocks.NewMockGlobalStateStore(),
-		userEmailsStore:    dbmocks.NewMockUserEmailsStore(),
-		bookmarkStore:      bms,
-		sendEventsCallback: callbackFunc,
-		metrics:            newHandlerMetrics(obsContext),
+		globblStbteStore:   dbmocks.NewMockGlobblStbteStore(),
+		userEmbilsStore:    dbmocks.NewMockUserEmbilsStore(),
+		bookmbrkStore:      bms,
+		sendEventsCbllbbck: cbllbbckFunc,
+		metrics:            newHbndlerMetrics(obsContext),
 	}
 }
 
-// initAllowedEvents is a helper to establish a deterministic set of allowed events. This is useful because
-// the standard database migrations will create data in the allowed events table that may conflict with tests.
-func initAllowedEvents(t *testing.T, db database.DB, names []string) {
-	store := basestore.NewWithHandle(db.Handle())
-	err := store.Exec(context.Background(), sqlf.Sprintf("delete from event_logs_export_allowlist"))
+// initAllowedEvents is b helper to estbblish b deterministic set of bllowed events. This is useful becbuse
+// the stbndbrd dbtbbbse migrbtions will crebte dbtb in the bllowed events tbble thbt mby conflict with tests.
+func initAllowedEvents(t *testing.T, db dbtbbbse.DB, nbmes []string) {
+	store := bbsestore.NewWithHbndle(db.Hbndle())
+	err := store.Exec(context.Bbckground(), sqlf.Sprintf("delete from event_logs_export_bllowlist"))
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
-	err = store.Exec(context.Background(), sqlf.Sprintf("insert into event_logs_export_allowlist (event_name) values (unnest(%s::text[]))", pq.Array(names)))
+	err = store.Exec(context.Bbckground(), sqlf.Sprintf("insert into event_logs_export_bllowlist (event_nbme) vblues (unnest(%s::text[]))", pq.Arrby(nbmes)))
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 }
 
-func mockEnvVars(t *testing.T, flag bool) {
-	prevEnabled := enabled
-	prevTopicName := topicName
-	prevProjectName := projectName
+func mockEnvVbrs(t *testing.T, flbg bool) {
+	prevEnbbled := enbbled
+	prevTopicNbme := topicNbme
+	prevProjectNbme := projectNbme
 
-	t.Cleanup(func() {
-		enabled = prevEnabled
-		topicName = prevTopicName
-		projectName = prevProjectName
+	t.Clebnup(func() {
+		enbbled = prevEnbbled
+		topicNbme = prevTopicNbme
+		projectNbme = prevProjectNbme
 	})
 
-	enabled = flag
-	topicName = "test-name"
-	projectName = "project-name"
+	enbbled = flbg
+	topicNbme = "test-nbme"
+	projectNbme = "project-nbme"
 }

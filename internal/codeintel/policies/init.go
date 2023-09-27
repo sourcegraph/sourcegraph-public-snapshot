@@ -1,40 +1,40 @@
-package policies
+pbckbge policies
 
 import (
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/policies/internal/background"
-	repomatcher "github.com/sourcegraph/sourcegraph/internal/codeintel/policies/internal/background/repository_matcher"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/policies/internal/store"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
-	"github.com/sourcegraph/sourcegraph/internal/goroutine"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegrbph/sourcegrbph/internbl/codeintel/policies/internbl/bbckground"
+	repombtcher "github.com/sourcegrbph/sourcegrbph/internbl/codeintel/policies/internbl/bbckground/repository_mbtcher"
+	"github.com/sourcegrbph/sourcegrbph/internbl/codeintel/policies/internbl/store"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/gitserver"
+	"github.com/sourcegrbph/sourcegrbph/internbl/goroutine"
+	"github.com/sourcegrbph/sourcegrbph/internbl/observbtion"
 )
 
 func NewService(
-	observationCtx *observation.Context,
-	db database.DB,
-	uploadSvc UploadService,
+	observbtionCtx *observbtion.Context,
+	db dbtbbbse.DB,
+	uplobdSvc UplobdService,
 	gitserverClient gitserver.Client,
 ) *Service {
 	return newService(
-		scopedContext("service", observationCtx),
-		store.New(scopedContext("store", observationCtx), db),
+		scopedContext("service", observbtionCtx),
+		store.New(scopedContext("store", observbtionCtx), db),
 		db.Repos(),
-		uploadSvc,
+		uplobdSvc,
 		gitserverClient,
 	)
 }
 
-var RepositoryMatcherConfigInst = &repomatcher.Config{}
+vbr RepositoryMbtcherConfigInst = &repombtcher.Config{}
 
-func NewRepositoryMatcherRoutines(observationCtx *observation.Context, service *Service) []goroutine.BackgroundRoutine {
-	return background.PolicyMatcherJobs(
-		scopedContext("repository-matcher", observationCtx),
+func NewRepositoryMbtcherRoutines(observbtionCtx *observbtion.Context, service *Service) []goroutine.BbckgroundRoutine {
+	return bbckground.PolicyMbtcherJobs(
+		scopedContext("repository-mbtcher", observbtionCtx),
 		service.store,
-		RepositoryMatcherConfigInst,
+		RepositoryMbtcherConfigInst,
 	)
 }
 
-func scopedContext(component string, parent *observation.Context) *observation.Context {
-	return observation.ScopedContext("codeintel", "policies", component, parent)
+func scopedContext(component string, pbrent *observbtion.Context) *observbtion.Context {
+	return observbtion.ScopedContext("codeintel", "policies", component, pbrent)
 }

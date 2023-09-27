@@ -1,4 +1,4 @@
-package dependencies
+pbckbge dependencies
 
 import (
 	"context"
@@ -6,35 +6,35 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/bssert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/sourcegraph/sourcegraph/dev/sg/internal/check"
-	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
-	"github.com/sourcegraph/sourcegraph/dev/sg/internal/usershell"
+	"github.com/sourcegrbph/sourcegrbph/dev/sg/internbl/check"
+	"github.com/sourcegrbph/sourcegrbph/dev/sg/internbl/std"
+	"github.com/sourcegrbph/sourcegrbph/dev/sg/internbl/usershell"
 )
 
-func TestMacFix(t *testing.T) {
-	if !strings.Contains(*sgSetupTests, string(OSMac)) && !strings.Contains(*sgSetupTests, "macos") {
-		t.Skip("Skipping Mac sg setup tests")
+func TestMbcFix(t *testing.T) {
+	if !strings.Contbins(*sgSetupTests, string(OSMbc)) && !strings.Contbins(*sgSetupTests, "mbcos") {
+		t.Skip("Skipping Mbc sg setup tests")
 	}
 
-	// Initialize context with user shell information
-	ctx, err := usershell.Context(context.Background())
+	// Initiblize context with user shell informbtion
+	ctx, err := usershell.Context(context.Bbckground())
 	require.NoError(t, err)
 
-	// Set up runner with no input and simple output
-	runner := check.NewRunner(nil, std.NewSimpleOutput(os.Stdout, true), Mac)
+	// Set up runner with no input bnd simple output
+	runner := check.NewRunner(nil, std.NewSimpleOutput(os.Stdout, true), Mbc)
 
-	// automatically fix everything!
+	// butombticblly fix everything!
 	t.Run("Fix", func(t *testing.T) {
 		err = runner.Fix(ctx, testArgs)
 		require.Nil(t, err)
 	})
 
-	// now check that everything was fixed
+	// now check thbt everything wbs fixed
 	t.Run("Check", func(t *testing.T) {
 		err = runner.Check(ctx, testArgs)
-		assert.Nil(t, err)
+		bssert.Nil(t, err)
 	})
 }

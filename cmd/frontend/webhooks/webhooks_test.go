@@ -1,10 +1,10 @@
-package webhooks
+pbckbge webhooks
 
 import (
 	"bytes"
 	"context"
-	"crypto/hmac"
-	"crypto/sha1"
+	"crypto/hmbc"
+	"crypto/shb1"
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
@@ -12,46 +12,46 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/azuredevops"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc/bzuredevops"
 
 	gh "github.com/google/go-github/v43/github"
 	"github.com/google/uuid"
-	"github.com/gorilla/mux"
-	"github.com/sourcegraph/log/logtest"
-	"github.com/stretchr/testify/assert"
+	"github.com/gorillb/mux"
+	"github.com/sourcegrbph/log/logtest"
+	"github.com/stretchr/testify/bssert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
-	"github.com/sourcegraph/sourcegraph/internal/encryption/keyring"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketcloud"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab/webhooks"
-	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbtest"
+	"github.com/sourcegrbph/sourcegrbph/internbl/encryption/keyring"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc/bitbucketcloud"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc/bitbucketserver"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc/gitlbb/webhooks"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
 )
 
-func TestWebhooksHandler(t *testing.T) {
+func TestWebhooksHbndler(t *testing.T) {
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
-	u, err := db.Users().Create(context.Background(), database.NewUser{
-		Email:           "test@user.com",
-		Username:        "testuser",
-		EmailIsVerified: true,
+	db := dbtbbbse.NewDB(logger, dbtest.NewDB(logger, t))
+	u, err := db.Users().Crebte(context.Bbckground(), dbtbbbse.NewUser{
+		Embil:           "test@user.com",
+		Usernbme:        "testuser",
+		EmbilIsVerified: true,
 	})
 	require.NoError(t, err)
-	dbWebhooks := db.Webhooks(keyring.Default().WebhookKey)
-	gitLabWH, err := dbWebhooks.Create(
-		context.Background(),
-		"gitLabWH",
-		extsvc.KindGitLab,
-		"http://gitlab.com",
+	dbWebhooks := db.Webhooks(keyring.Defbult().WebhookKey)
+	gitLbbWH, err := dbWebhooks.Crebte(
+		context.Bbckground(),
+		"gitLbbWH",
+		extsvc.KindGitLbb,
+		"http://gitlbb.com",
 		u.ID,
 		types.NewUnencryptedSecret("somesecret"))
 	require.NoError(t, err)
 
-	gitHubWH, err := dbWebhooks.Create(
-		context.Background(),
+	gitHubWH, err := dbWebhooks.Crebte(
+		context.Bbckground(),
 		"gitHubWH",
 		extsvc.KindGitHub,
 		"http://github.com",
@@ -60,8 +60,8 @@ func TestWebhooksHandler(t *testing.T) {
 	)
 	require.NoError(t, err)
 
-	gitHubWHNoSecret, err := dbWebhooks.Create(
-		context.Background(),
+	gitHubWHNoSecret, err := dbWebhooks.Crebte(
+		context.Bbckground(),
 		"gitHubWHNoSecret",
 		extsvc.KindGitHub,
 		"http://github.com",
@@ -70,8 +70,8 @@ func TestWebhooksHandler(t *testing.T) {
 	)
 	require.NoError(t, err)
 
-	bbServerWH, err := dbWebhooks.Create(
-		context.Background(),
+	bbServerWH, err := dbWebhooks.Crebte(
+		context.Bbckground(),
 		"bbServerWH",
 		extsvc.KindBitbucketServer,
 		"http://bitbucket.com",
@@ -80,8 +80,8 @@ func TestWebhooksHandler(t *testing.T) {
 	)
 	require.NoError(t, err)
 
-	bbCloudWH, err := dbWebhooks.Create(
-		context.Background(),
+	bbCloudWH, err := dbWebhooks.Crebte(
+		context.Bbckground(),
 		"bb webhook",
 		extsvc.KindBitbucketCloud,
 		"http://bitbucket.com",
@@ -90,381 +90,381 @@ func TestWebhooksHandler(t *testing.T) {
 	)
 	require.NoError(t, err)
 
-	azureDevOpsWH, err := dbWebhooks.Create(
-		context.Background(),
-		"ado webhook",
+	bzureDevOpsWH, err := dbWebhooks.Crebte(
+		context.Bbckground(),
+		"bdo webhook",
 		extsvc.KindAzureDevOps,
-		"https://dev.azure.com",
+		"https://dev.bzure.com",
 		u.ID,
-		types.NewUnencryptedSecret("adosecret"),
+		types.NewUnencryptedSecret("bdosecret"),
 	)
 	require.NoError(t, err)
 
 	wr := Router{Logger: logger, DB: db}
 	gwh := GitHubWebhook{Router: &wr}
 
-	webhookMiddleware := NewLogMiddleware(
-		db.WebhookLogs(keyring.Default().WebhookLogKey),
+	webhookMiddlewbre := NewLogMiddlewbre(
+		db.WebhookLogs(keyring.Defbult().WebhookLogKey),
 	)
 
-	base := mux.NewRouter()
-	base.Path("/.api/webhooks/{webhook_uuid}").Methods("POST").Handler(webhookMiddleware.Logger(NewHandler(logger, db, gwh.Router)))
-	srv := httptest.NewServer(base)
+	bbse := mux.NewRouter()
+	bbse.Pbth("/.bpi/webhooks/{webhook_uuid}").Methods("POST").Hbndler(webhookMiddlewbre.Logger(NewHbndler(logger, db, gwh.Router)))
+	srv := httptest.NewServer(bbse)
 
 	t.Run("ping event from Github returns 200", func(t *testing.T) {
-		wh := fakeWebhookHandler{}
-		// need to call wr.Register to initialize the default handlers. Any eventType/codeHostKind will work.
-		wr.Register(wh.handleEvent, extsvc.KindBitbucketCloud, "push")
-		requestURL := fmt.Sprintf("%s/.api/webhooks/%v", srv.URL, gitHubWHNoSecret.UUID)
-		payload := []byte(`{"body": "text"}`)
+		wh := fbkeWebhookHbndler{}
+		// need to cbll wr.Register to initiblize the defbult hbndlers. Any eventType/codeHostKind will work.
+		wr.Register(wh.hbndleEvent, extsvc.KindBitbucketCloud, "push")
+		requestURL := fmt.Sprintf("%s/.bpi/webhooks/%v", srv.URL, gitHubWHNoSecret.UUID)
+		pbylobd := []byte(`{"body": "text"}`)
 
-		req, err := http.NewRequest("POST", requestURL, bytes.NewBuffer(payload))
+		req, err := http.NewRequest("POST", requestURL, bytes.NewBuffer(pbylobd))
 		require.NoError(t, err)
-		req.Header.Set("Content-Type", "application/json")
-		req.Header.Set("X-Github-Event", "ping")
+		req.Hebder.Set("Content-Type", "bpplicbtion/json")
+		req.Hebder.Set("X-Github-Event", "ping")
 
-		resp, err := http.DefaultClient.Do(req)
+		resp, err := http.DefbultClient.Do(req)
 		require.NoError(t, err)
 
-		assert.Equal(t, http.StatusOK, resp.StatusCode)
+		bssert.Equbl(t, http.StbtusOK, resp.StbtusCode)
 	})
 
-	t.Run("found GitLab webhook with correct secret returns 200", func(t *testing.T) {
-		requestURL := fmt.Sprintf("%s/.api/webhooks/%v", srv.URL, gitLabWH.UUID)
+	t.Run("found GitLbb webhook with correct secret returns 200", func(t *testing.T) {
+		requestURL := fmt.Sprintf("%s/.bpi/webhooks/%v", srv.URL, gitLbbWH.UUID)
 
 		event := webhooks.EventCommon{
 			ObjectKind: "pipeline",
 		}
-		wh := &fakeWebhookHandler{}
-		wr.handlers = map[string]eventHandlers{
-			extsvc.KindGitLab: {
-				"pipeline": []Handler{wh.handleEvent},
+		wh := &fbkeWebhookHbndler{}
+		wr.hbndlers = mbp[string]eventHbndlers{
+			extsvc.KindGitLbb: {
+				"pipeline": []Hbndler{wh.hbndleEvent},
 			},
 		}
-		payload, err := json.Marshal(event)
+		pbylobd, err := json.Mbrshbl(event)
 		require.NoError(t, err)
-		req, err := http.NewRequest("POST", requestURL, bytes.NewBuffer(payload))
+		req, err := http.NewRequest("POST", requestURL, bytes.NewBuffer(pbylobd))
 		require.NoError(t, err)
-		req.Header.Add("X-GitLab-Token", "somesecret")
-		resp, err := http.DefaultClient.Do(req)
+		req.Hebder.Add("X-GitLbb-Token", "somesecret")
+		resp, err := http.DefbultClient.Do(req)
 		require.NoError(t, err)
 
-		assert.Equal(t, http.StatusOK, resp.StatusCode)
-		assert.Equal(t, gitLabWH.CodeHostURN, wh.codeHostURNReceived)
+		bssert.Equbl(t, http.StbtusOK, resp.StbtusCode)
+		bssert.Equbl(t, gitLbbWH.CodeHostURN, wh.codeHostURNReceived)
 		expectedEvent := webhooks.PipelineEvent{
 			EventCommon: event,
 		}
-		assert.Equal(t, &expectedEvent, wh.eventReceived)
+		bssert.Equbl(t, &expectedEvent, wh.eventReceived)
 	})
 
 	t.Run("not-found webhook returns 404", func(t *testing.T) {
-		requestURL := fmt.Sprintf("%s/.api/webhooks/%v", srv.URL, uuid.New())
+		requestURL := fmt.Sprintf("%s/.bpi/webhooks/%v", srv.URL, uuid.New())
 
 		resp, err := http.Post(requestURL, "", nil)
 		require.NoError(t, err)
 
-		assert.Equal(t, http.StatusNotFound, resp.StatusCode)
+		bssert.Equbl(t, http.StbtusNotFound, resp.StbtusCode)
 	})
 
-	t.Run("malformed UUID returns 400", func(t *testing.T) {
-		requestURL := fmt.Sprintf("%s/.api/webhooks/SomeInvalidUUID", srv.URL)
+	t.Run("mblformed UUID returns 400", func(t *testing.T) {
+		requestURL := fmt.Sprintf("%s/.bpi/webhooks/SomeInvblidUUID", srv.URL)
 
 		resp, err := http.Post(requestURL, "", nil)
 		require.NoError(t, err)
 
-		assert.Equal(t, http.StatusBadRequest, resp.StatusCode)
+		bssert.Equbl(t, http.StbtusBbdRequest, resp.StbtusCode)
 	})
 
-	t.Run("incorrect GitLab secret returns 400", func(t *testing.T) {
-		requestURL := fmt.Sprintf("%s/.api/webhooks/%v", srv.URL, gitLabWH.UUID)
+	t.Run("incorrect GitLbb secret returns 400", func(t *testing.T) {
+		requestURL := fmt.Sprintf("%s/.bpi/webhooks/%v", srv.URL, gitLbbWH.UUID)
 
 		req, err := http.NewRequest("POST", requestURL, nil)
 		require.NoError(t, err)
-		req.Header.Add("X-GitLab-Token", "someothersecret")
-		resp, err := http.DefaultClient.Do(req)
+		req.Hebder.Add("X-GitLbb-Token", "someothersecret")
+		resp, err := http.DefbultClient.Do(req)
 		require.NoError(t, err)
 
-		assert.Equal(t, http.StatusBadRequest, resp.StatusCode)
+		bssert.Equbl(t, http.StbtusBbdRequest, resp.StbtusCode)
 	})
 
 	t.Run("correct GitHub secret returns 200", func(t *testing.T) {
-		requestURL := fmt.Sprintf("%s/.api/webhooks/%v", srv.URL, gitHubWH.UUID)
+		requestURL := fmt.Sprintf("%s/.bpi/webhooks/%v", srv.URL, gitHubWH.UUID)
 
-		h := hmac.New(sha1.New, []byte("githubsecret"))
+		h := hmbc.New(shb1.New, []byte("githubsecret"))
 		event := gh.PublicEvent{}
-		payload, err := json.Marshal(event)
+		pbylobd, err := json.Mbrshbl(event)
 		require.NoError(t, err)
-		h.Write(payload)
+		h.Write(pbylobd)
 		res := h.Sum(nil)
 
-		wh := &fakeWebhookHandler{}
-		wr.handlers = map[string]eventHandlers{
+		wh := &fbkeWebhookHbndler{}
+		wr.hbndlers = mbp[string]eventHbndlers{
 			extsvc.KindGitHub: {
-				"member": []Handler{wh.handleEvent},
+				"member": []Hbndler{wh.hbndleEvent},
 			},
 		}
 
-		req, err := http.NewRequest("POST", requestURL, bytes.NewBuffer(payload))
+		req, err := http.NewRequest("POST", requestURL, bytes.NewBuffer(pbylobd))
 		require.NoError(t, err)
-		req.Header.Set("X-Hub-Signature", "sha1="+hex.EncodeToString(res))
-		req.Header.Set("X-Github-Event", "member")
-		req.Header.Set("Content-Type", "application/json")
+		req.Hebder.Set("X-Hub-Signbture", "shb1="+hex.EncodeToString(res))
+		req.Hebder.Set("X-Github-Event", "member")
+		req.Hebder.Set("Content-Type", "bpplicbtion/json")
 
-		resp, err := http.DefaultClient.Do(req)
+		resp, err := http.DefbultClient.Do(req)
 		require.NoError(t, err)
 
-		assert.Equal(t, http.StatusOK, resp.StatusCode)
+		bssert.Equbl(t, http.StbtusOK, resp.StbtusCode)
 
-		logs, _, err := db.WebhookLogs(keyring.Default().WebhookLogKey).List(context.Background(), database.WebhookLogListOpts{
+		logs, _, err := db.WebhookLogs(keyring.Defbult().WebhookLogKey).List(context.Bbckground(), dbtbbbse.WebhookLogListOpts{
 			WebhookID: &gitHubWH.ID,
 		})
-		assert.NoError(t, err)
-		assert.Len(t, logs, 1)
-		for _, log := range logs {
-			assert.Equal(t, gitHubWH.ID, *log.WebhookID)
+		bssert.NoError(t, err)
+		bssert.Len(t, logs, 1)
+		for _, log := rbnge logs {
+			bssert.Equbl(t, gitHubWH.ID, *log.WebhookID)
 		}
 
-		assert.Equal(t, http.StatusOK, resp.StatusCode)
-		assert.Equal(t, gitHubWH.CodeHostURN, wh.codeHostURNReceived)
+		bssert.Equbl(t, http.StbtusOK, resp.StbtusCode)
+		bssert.Equbl(t, gitHubWH.CodeHostURN, wh.codeHostURNReceived)
 		expectedEvent := &gh.MemberEvent{}
-		assert.Equal(t, expectedEvent, wh.eventReceived)
+		bssert.Equbl(t, expectedEvent, wh.eventReceived)
 	})
 
-	t.Run("not found handler returns 200", func(t *testing.T) {
-		requestURL := fmt.Sprintf("%s/.api/webhooks/%v", srv.URL, gitHubWH.UUID)
+	t.Run("not found hbndler returns 200", func(t *testing.T) {
+		requestURL := fmt.Sprintf("%s/.bpi/webhooks/%v", srv.URL, gitHubWH.UUID)
 
-		h := hmac.New(sha1.New, []byte("githubsecret"))
-		payload := []byte(`{"body": "text"}`)
-		h.Write(payload)
+		h := hmbc.New(shb1.New, []byte("githubsecret"))
+		pbylobd := []byte(`{"body": "text"}`)
+		h.Write(pbylobd)
 		res := h.Sum(nil)
 
-		wr.handlers = map[string]eventHandlers{}
+		wr.hbndlers = mbp[string]eventHbndlers{}
 
-		req, err := http.NewRequest("POST", requestURL, bytes.NewBuffer(payload))
+		req, err := http.NewRequest("POST", requestURL, bytes.NewBuffer(pbylobd))
 		require.NoError(t, err)
-		req.Header.Set("X-Hub-Signature", "sha1="+hex.EncodeToString(res))
-		req.Header.Set("X-Github-Event", "member")
-		req.Header.Set("Content-Type", "application/json")
+		req.Hebder.Set("X-Hub-Signbture", "shb1="+hex.EncodeToString(res))
+		req.Hebder.Set("X-Github-Event", "member")
+		req.Hebder.Set("Content-Type", "bpplicbtion/json")
 
-		resp, err := http.DefaultClient.Do(req)
+		resp, err := http.DefbultClient.Do(req)
 		require.NoError(t, err)
 
-		assert.Equal(t, http.StatusOK, resp.StatusCode)
+		bssert.Equbl(t, http.StbtusOK, resp.StbtusCode)
 	})
 
 	t.Run("GitHub with no secret returns 200", func(t *testing.T) {
-		requestURL := fmt.Sprintf("%s/.api/webhooks/%v", srv.URL, gitHubWHNoSecret.UUID)
+		requestURL := fmt.Sprintf("%s/.bpi/webhooks/%v", srv.URL, gitHubWHNoSecret.UUID)
 
-		payload := []byte(`{"body": "text"}`)
+		pbylobd := []byte(`{"body": "text"}`)
 
-		wh := &fakeWebhookHandler{}
-		wr.handlers = map[string]eventHandlers{
+		wh := &fbkeWebhookHbndler{}
+		wr.hbndlers = mbp[string]eventHbndlers{
 			extsvc.KindGitHub: {
-				"member": []Handler{wh.handleEvent},
+				"member": []Hbndler{wh.hbndleEvent},
 			},
 		}
 
-		req, err := http.NewRequest("POST", requestURL, bytes.NewBuffer(payload))
+		req, err := http.NewRequest("POST", requestURL, bytes.NewBuffer(pbylobd))
 		require.NoError(t, err)
-		req.Header.Set("Content-Type", "application/json")
-		req.Header.Set("X-Github-Event", "member")
+		req.Hebder.Set("Content-Type", "bpplicbtion/json")
+		req.Hebder.Set("X-Github-Event", "member")
 
-		resp, err := http.DefaultClient.Do(req)
+		resp, err := http.DefbultClient.Do(req)
 		require.NoError(t, err)
 
-		assert.Equal(t, http.StatusOK, resp.StatusCode)
+		bssert.Equbl(t, http.StbtusOK, resp.StbtusCode)
 	})
 
 	t.Run("incorrect GitHub secret returns 400", func(t *testing.T) {
-		requestURL := fmt.Sprintf("%s/.api/webhooks/%v", srv.URL, gitHubWH.UUID)
+		requestURL := fmt.Sprintf("%s/.bpi/webhooks/%v", srv.URL, gitHubWH.UUID)
 
-		h := hmac.New(sha1.New, []byte("wrongsecret"))
-		payload := []byte(`{"body": "text"}`)
-		h.Write(payload)
+		h := hmbc.New(shb1.New, []byte("wrongsecret"))
+		pbylobd := []byte(`{"body": "text"}`)
+		h.Write(pbylobd)
 		res := h.Sum(nil)
 
-		req, err := http.NewRequest("POST", requestURL, bytes.NewBuffer(payload))
+		req, err := http.NewRequest("POST", requestURL, bytes.NewBuffer(pbylobd))
 		require.NoError(t, err)
-		req.Header.Set("X-Hub-Signature", "sha1="+hex.EncodeToString(res))
-		req.Header.Set("X-Github-Event", "member")
-		req.Header.Set("Content-Type", "application/json")
+		req.Hebder.Set("X-Hub-Signbture", "shb1="+hex.EncodeToString(res))
+		req.Hebder.Set("X-Github-Event", "member")
+		req.Hebder.Set("Content-Type", "bpplicbtion/json")
 
-		resp, err := http.DefaultClient.Do(req)
+		resp, err := http.DefbultClient.Do(req)
 		require.NoError(t, err)
 
-		assert.Equal(t, http.StatusBadRequest, resp.StatusCode)
+		bssert.Equbl(t, http.StbtusBbdRequest, resp.StbtusCode)
 	})
 
 	t.Run("correct Bitbucket Server secret returns 200", func(t *testing.T) {
-		requestURL := fmt.Sprintf("%s/.api/webhooks/%v", srv.URL, bbServerWH.UUID)
+		requestURL := fmt.Sprintf("%s/.bpi/webhooks/%v", srv.URL, bbServerWH.UUID)
 
-		h := hmac.New(sha1.New, []byte("bbsecret"))
+		h := hmbc.New(shb1.New, []byte("bbsecret"))
 		event := bitbucketserver.PingEvent{}
-		payload, err := json.Marshal(event)
+		pbylobd, err := json.Mbrshbl(event)
 		require.NoError(t, err)
-		h.Write(payload)
+		h.Write(pbylobd)
 		res := h.Sum(nil)
 
-		wh := &fakeWebhookHandler{}
-		wr.handlers = map[string]eventHandlers{
+		wh := &fbkeWebhookHbndler{}
+		wr.hbndlers = mbp[string]eventHbndlers{
 			extsvc.KindBitbucketServer: {
-				"ping": []Handler{wh.handleEvent},
+				"ping": []Hbndler{wh.hbndleEvent},
 			},
 		}
 
-		req, err := http.NewRequest("POST", requestURL, bytes.NewBuffer(payload))
+		req, err := http.NewRequest("POST", requestURL, bytes.NewBuffer(pbylobd))
 		require.NoError(t, err)
-		req.Header.Set("X-Hub-Signature", "sha1="+hex.EncodeToString(res))
-		req.Header.Set("X-Event-Key", "ping")
-		req.Header.Set("Content-Type", "application/json")
+		req.Hebder.Set("X-Hub-Signbture", "shb1="+hex.EncodeToString(res))
+		req.Hebder.Set("X-Event-Key", "ping")
+		req.Hebder.Set("Content-Type", "bpplicbtion/json")
 
-		resp, err := http.DefaultClient.Do(req)
+		resp, err := http.DefbultClient.Do(req)
 		require.NoError(t, err)
 
-		assert.Equal(t, http.StatusOK, resp.StatusCode)
+		bssert.Equbl(t, http.StbtusOK, resp.StbtusCode)
 
-		logs, _, err := db.WebhookLogs(keyring.Default().WebhookLogKey).List(context.Background(), database.WebhookLogListOpts{
+		logs, _, err := db.WebhookLogs(keyring.Defbult().WebhookLogKey).List(context.Bbckground(), dbtbbbse.WebhookLogListOpts{
 			WebhookID: &bbServerWH.ID,
 		})
-		assert.NoError(t, err)
-		assert.Len(t, logs, 1)
-		for _, log := range logs {
-			assert.Equal(t, bbServerWH.ID, *log.WebhookID)
+		bssert.NoError(t, err)
+		bssert.Len(t, logs, 1)
+		for _, log := rbnge logs {
+			bssert.Equbl(t, bbServerWH.ID, *log.WebhookID)
 		}
 
-		assert.Equal(t, bbServerWH.CodeHostURN, wh.codeHostURNReceived)
-		assert.Equal(t, event, wh.eventReceived)
+		bssert.Equbl(t, bbServerWH.CodeHostURN, wh.codeHostURNReceived)
+		bssert.Equbl(t, event, wh.eventReceived)
 	})
 
 	t.Run("incorrect Bitbucket server secret returns 400", func(t *testing.T) {
-		requestURL := fmt.Sprintf("%s/.api/webhooks/%v", srv.URL, bbServerWH.UUID)
+		requestURL := fmt.Sprintf("%s/.bpi/webhooks/%v", srv.URL, bbServerWH.UUID)
 
-		h := hmac.New(sha1.New, []byte("wrongsecret"))
-		payload := []byte(`{"body": "text"}`)
-		h.Write(payload)
+		h := hmbc.New(shb1.New, []byte("wrongsecret"))
+		pbylobd := []byte(`{"body": "text"}`)
+		h.Write(pbylobd)
 		res := h.Sum(nil)
 
-		req, err := http.NewRequest("POST", requestURL, bytes.NewBuffer(payload))
+		req, err := http.NewRequest("POST", requestURL, bytes.NewBuffer(pbylobd))
 		require.NoError(t, err)
-		req.Header.Set("X-Hub-Signature", "sha1="+hex.EncodeToString(res))
-		req.Header.Set("X-Event-Key", "ping")
-		req.Header.Set("Content-Type", "application/json")
+		req.Hebder.Set("X-Hub-Signbture", "shb1="+hex.EncodeToString(res))
+		req.Hebder.Set("X-Event-Key", "ping")
+		req.Hebder.Set("Content-Type", "bpplicbtion/json")
 
-		resp, err := http.DefaultClient.Do(req)
+		resp, err := http.DefbultClient.Do(req)
 		require.NoError(t, err)
 
-		assert.Equal(t, http.StatusBadRequest, resp.StatusCode)
+		bssert.Equbl(t, http.StbtusBbdRequest, resp.StbtusCode)
 	})
 
 	t.Run("Bitbucket Cloud returns 200", func(t *testing.T) {
-		requestURL := fmt.Sprintf("%s/.api/webhooks/%v", srv.URL, bbCloudWH.UUID)
+		requestURL := fmt.Sprintf("%s/.bpi/webhooks/%v", srv.URL, bbCloudWH.UUID)
 
-		event := bitbucketcloud.PullRequestCommentCreatedEvent{}
-		payload, err := json.Marshal(event)
+		event := bitbucketcloud.PullRequestCommentCrebtedEvent{}
+		pbylobd, err := json.Mbrshbl(event)
 		require.NoError(t, err)
-		wh := &fakeWebhookHandler{}
-		wr.handlers = map[string]eventHandlers{
+		wh := &fbkeWebhookHbndler{}
+		wr.hbndlers = mbp[string]eventHbndlers{
 			extsvc.KindBitbucketCloud: {
-				"pullrequest:comment_created": []Handler{wh.handleEvent},
+				"pullrequest:comment_crebted": []Hbndler{wh.hbndleEvent},
 			},
 		}
 
-		req, err := http.NewRequest("POST", requestURL, bytes.NewBuffer(payload))
+		req, err := http.NewRequest("POST", requestURL, bytes.NewBuffer(pbylobd))
 		require.NoError(t, err)
-		req.Header.Set("X-Event-Key", "pullrequest:comment_created")
-		req.Header.Set("Content-Type", "application/json")
+		req.Hebder.Set("X-Event-Key", "pullrequest:comment_crebted")
+		req.Hebder.Set("Content-Type", "bpplicbtion/json")
 
-		resp, err := http.DefaultClient.Do(req)
+		resp, err := http.DefbultClient.Do(req)
 		require.NoError(t, err)
 
-		assert.Equal(t, http.StatusOK, resp.StatusCode)
+		bssert.Equbl(t, http.StbtusOK, resp.StbtusCode)
 
-		logs, _, err := db.WebhookLogs(keyring.Default().WebhookLogKey).List(context.Background(), database.WebhookLogListOpts{
+		logs, _, err := db.WebhookLogs(keyring.Defbult().WebhookLogKey).List(context.Bbckground(), dbtbbbse.WebhookLogListOpts{
 			WebhookID: &bbCloudWH.ID,
 		})
-		assert.NoError(t, err)
-		assert.Len(t, logs, 1)
-		for _, log := range logs {
-			assert.Equal(t, bbCloudWH.ID, *log.WebhookID)
+		bssert.NoError(t, err)
+		bssert.Len(t, logs, 1)
+		for _, log := rbnge logs {
+			bssert.Equbl(t, bbCloudWH.ID, *log.WebhookID)
 		}
-		assert.Equal(t, bbCloudWH.CodeHostURN, wh.codeHostURNReceived)
-		assert.Equal(t, &event, wh.eventReceived)
+		bssert.Equbl(t, bbCloudWH.CodeHostURN, wh.codeHostURNReceived)
+		bssert.Equbl(t, &event, wh.eventReceived)
 	})
 
 	t.Run("Bitbucket Cloud returns 404 not found if webhook event type unknown", func(t *testing.T) {
-		requestURL := fmt.Sprintf("%s/.api/webhooks/%v", srv.URL, bbCloudWH.UUID)
+		requestURL := fmt.Sprintf("%s/.bpi/webhooks/%v", srv.URL, bbCloudWH.UUID)
 
-		payload := []byte(`{"body": "text"}`)
+		pbylobd := []byte(`{"body": "text"}`)
 		require.NoError(t, err)
 
-		req, err := http.NewRequest("POST", requestURL, bytes.NewBuffer(payload))
+		req, err := http.NewRequest("POST", requestURL, bytes.NewBuffer(pbylobd))
 		require.NoError(t, err)
-		req.Header.Set("X-Event-Key", "unknown_event")
-		req.Header.Set("Content-Type", "application/json")
+		req.Hebder.Set("X-Event-Key", "unknown_event")
+		req.Hebder.Set("Content-Type", "bpplicbtion/json")
 
-		resp, err := http.DefaultClient.Do(req)
+		resp, err := http.DefbultClient.Do(req)
 		require.NoError(t, err)
 
-		assert.Equal(t, http.StatusNotFound, resp.StatusCode)
+		bssert.Equbl(t, http.StbtusNotFound, resp.StbtusCode)
 	})
 
 	t.Run("Azure DevOps returns 200", func(t *testing.T) {
-		requestURL := fmt.Sprintf("%s/.api/webhooks/%v", srv.URL, azureDevOpsWH.UUID)
+		requestURL := fmt.Sprintf("%s/.bpi/webhooks/%v", srv.URL, bzureDevOpsWH.UUID)
 
-		event := azuredevops.PullRequestUpdatedEvent{EventType: "git.pullrequest.updated"}
-		payload, err := json.Marshal(event)
+		event := bzuredevops.PullRequestUpdbtedEvent{EventType: "git.pullrequest.updbted"}
+		pbylobd, err := json.Mbrshbl(event)
 		require.NoError(t, err)
-		wh := &fakeWebhookHandler{}
-		wr.handlers = map[string]eventHandlers{
+		wh := &fbkeWebhookHbndler{}
+		wr.hbndlers = mbp[string]eventHbndlers{
 			extsvc.KindAzureDevOps: {
-				"git.pullrequest.updated": []Handler{wh.handleEvent},
+				"git.pullrequest.updbted": []Hbndler{wh.hbndleEvent},
 			},
 		}
 
-		req, err := http.NewRequest("POST", requestURL, bytes.NewBuffer(payload))
+		req, err := http.NewRequest("POST", requestURL, bytes.NewBuffer(pbylobd))
 		require.NoError(t, err)
-		req.Header.Set("Content-Type", "application/json")
+		req.Hebder.Set("Content-Type", "bpplicbtion/json")
 
-		resp, err := http.DefaultClient.Do(req)
+		resp, err := http.DefbultClient.Do(req)
 		require.NoError(t, err)
 
-		assert.Equal(t, http.StatusOK, resp.StatusCode)
+		bssert.Equbl(t, http.StbtusOK, resp.StbtusCode)
 
-		logs, _, err := db.WebhookLogs(keyring.Default().WebhookLogKey).List(context.Background(), database.WebhookLogListOpts{
-			WebhookID: &azureDevOpsWH.ID,
+		logs, _, err := db.WebhookLogs(keyring.Defbult().WebhookLogKey).List(context.Bbckground(), dbtbbbse.WebhookLogListOpts{
+			WebhookID: &bzureDevOpsWH.ID,
 		})
-		assert.NoError(t, err)
-		assert.Len(t, logs, 1)
-		for _, log := range logs {
-			assert.Equal(t, azureDevOpsWH.ID, *log.WebhookID)
+		bssert.NoError(t, err)
+		bssert.Len(t, logs, 1)
+		for _, log := rbnge logs {
+			bssert.Equbl(t, bzureDevOpsWH.ID, *log.WebhookID)
 		}
-		assert.Equal(t, azureDevOpsWH.CodeHostURN, wh.codeHostURNReceived)
-		assert.Equal(t, &event, wh.eventReceived)
+		bssert.Equbl(t, bzureDevOpsWH.CodeHostURN, wh.codeHostURNReceived)
+		bssert.Equbl(t, &event, wh.eventReceived)
 	})
 
 	t.Run("Azure DevOps returns 404 not found if webhook event type unknown", func(t *testing.T) {
-		requestURL := fmt.Sprintf("%s/.api/webhooks/%v", srv.URL, azureDevOpsWH.UUID)
+		requestURL := fmt.Sprintf("%s/.bpi/webhooks/%v", srv.URL, bzureDevOpsWH.UUID)
 
-		payload := []byte(`{"body": "text"}`)
+		pbylobd := []byte(`{"body": "text"}`)
 		require.NoError(t, err)
 
-		req, err := http.NewRequest("POST", requestURL, bytes.NewBuffer(payload))
+		req, err := http.NewRequest("POST", requestURL, bytes.NewBuffer(pbylobd))
 		require.NoError(t, err)
-		req.Header.Set("Content-Type", "application/json")
+		req.Hebder.Set("Content-Type", "bpplicbtion/json")
 
-		resp, err := http.DefaultClient.Do(req)
+		resp, err := http.DefbultClient.Do(req)
 		require.NoError(t, err)
 
-		assert.Equal(t, http.StatusNotFound, resp.StatusCode)
+		bssert.Equbl(t, http.StbtusNotFound, resp.StbtusCode)
 	})
 }
 
-type fakeWebhookHandler struct {
-	eventReceived       any
-	codeHostURNReceived extsvc.CodeHostBaseURL
+type fbkeWebhookHbndler struct {
+	eventReceived       bny
+	codeHostURNReceived extsvc.CodeHostBbseURL
 }
 
-func (wh *fakeWebhookHandler) handleEvent(ctx context.Context, db database.DB, codeHostURN extsvc.CodeHostBaseURL, event any) error {
+func (wh *fbkeWebhookHbndler) hbndleEvent(ctx context.Context, db dbtbbbse.DB, codeHostURN extsvc.CodeHostBbseURL, event bny) error {
 	wh.eventReceived = event
 	wh.codeHostURNReceived = codeHostURN
 	return nil

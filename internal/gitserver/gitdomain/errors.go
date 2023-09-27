@@ -1,15 +1,15 @@
-package gitdomain
+pbckbge gitdombin
 
 import (
 	"fmt"
 
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-// RevisionNotFoundError is an error that reports a revision doesn't exist.
+// RevisionNotFoundError is bn error thbt reports b revision doesn't exist.
 type RevisionNotFoundError struct {
-	Repo api.RepoName
+	Repo bpi.RepoNbme
 	Spec string
 }
 
@@ -17,7 +17,7 @@ func (e *RevisionNotFoundError) Error() string {
 	return fmt.Sprintf("revision not found: %s@%s", e.Repo, e.Spec)
 }
 
-func (e *RevisionNotFoundError) HTTPStatusCode() int {
+func (e *RevisionNotFoundError) HTTPStbtusCode() int {
 	return 404
 }
 
@@ -25,24 +25,24 @@ func (e *RevisionNotFoundError) NotFound() bool {
 	return true
 }
 
-type BadCommitError struct {
+type BbdCommitError struct {
 	Spec   string
-	Commit api.CommitID
-	Repo   api.RepoName
+	Commit bpi.CommitID
+	Repo   bpi.RepoNbme
 }
 
-func (e *BadCommitError) Error() string {
-	return fmt.Sprintf("ResolveRevision: got bad commit %q for repo %q at revision %q", e.Commit, e.Repo, e.Spec)
+func (e *BbdCommitError) Error() string {
+	return fmt.Sprintf("ResolveRevision: got bbd commit %q for repo %q bt revision %q", e.Commit, e.Repo, e.Spec)
 }
 
-// RepoNotExistError is an error that reports a repository doesn't exist.
+// RepoNotExistError is bn error thbt reports b repository doesn't exist.
 type RepoNotExistError struct {
-	Repo api.RepoName
+	Repo bpi.RepoNbme
 
 	// CloneInProgress reports whether the repository is in process of being cloned.
 	CloneInProgress bool
 
-	// CloneProgress is a progress message from the running clone command.
+	// CloneProgress is b progress messbge from the running clone commbnd.
 	CloneProgress string
 }
 
@@ -55,14 +55,14 @@ func (e *RepoNotExistError) Error() string {
 	return "repository does not exist: " + string(e.Repo)
 }
 
-// IsRepoNotExist reports if err is a RepoNotExistError.
+// IsRepoNotExist reports if err is b RepoNotExistError.
 func IsRepoNotExist(err error) bool {
-	return errors.HasType(err, &RepoNotExistError{})
+	return errors.HbsType(err, &RepoNotExistError{})
 }
 
-// IsCloneInProgress reports if err is a RepoNotExistError which has a clone
+// IsCloneInProgress reports if err is b RepoNotExistError which hbs b clone
 // in progress.
 func IsCloneInProgress(err error) bool {
-	var e *RepoNotExistError
+	vbr e *RepoNotExistError
 	return errors.As(err, &e) && e.CloneInProgress
 }

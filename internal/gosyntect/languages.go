@@ -1,13 +1,13 @@
-package gosyntect
+pbckbge gosyntect
 
-var treesitterSupportedFiletypes = map[string]struct{}{
+vbr treesitterSupportedFiletypes = mbp[string]struct{}{
 	"c":          {},
 	"c++":        {},
-	"c_sharp":    {},
+	"c_shbrp":    {},
 	"cpp":        {},
 	"go":         {},
-	"java":       {},
-	"javascript": {},
+	"jbvb":       {},
+	"jbvbscript": {},
 	"jsonnet":    {},
 	"jsx":        {},
 	"kotlin":     {},
@@ -16,7 +16,7 @@ var treesitterSupportedFiletypes = map[string]struct{}{
 	"python":     {},
 	"ruby":       {},
 	"rust":       {},
-	"scala":      {},
+	"scblb":      {},
 	"tsx":        {},
 	"typescript": {},
 	"xlsg":       {},

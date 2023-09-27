@@ -1,202 +1,202 @@
-package batches
+pbckbge bbtches
 
 import (
 	"context"
 	"strings"
 
-	godiff "github.com/sourcegraph/go-diff/diff"
+	godiff "github.com/sourcegrbph/go-diff/diff"
 
-	"github.com/sourcegraph/sourcegraph/lib/batches/execution"
-	"github.com/sourcegraph/sourcegraph/lib/batches/git"
-	"github.com/sourcegraph/sourcegraph/lib/batches/template"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/lib/bbtches/execution"
+	"github.com/sourcegrbph/sourcegrbph/lib/bbtches/git"
+	"github.com/sourcegrbph/sourcegrbph/lib/bbtches/templbte"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-// Repository is a repository in which the steps of a batch spec are executed.
+// Repository is b repository in which the steps of b bbtch spec bre executed.
 //
-// It is part of the cache.ExecutionKey, so changes to the names of fields here
-// will lead to cache busts.
+// It is pbrt of the cbche.ExecutionKey, so chbnges to the nbmes of fields here
+// will lebd to cbche busts.
 type Repository struct {
 	ID          string
-	Name        string
-	BaseRef     string
-	BaseRev     string
-	FileMatches []string
+	Nbme        string
+	BbseRef     string
+	BbseRev     string
+	FileMbtches []string
 }
 
-type ChangesetSpecInput struct {
+type ChbngesetSpecInput struct {
 	Repository Repository
 
-	BatchChangeAttributes *template.BatchChangeAttributes `json:"-"`
-	Template              *ChangesetTemplate              `json:"-"`
-	TransformChanges      *TransformChanges               `json:"-"`
-	Path                  string
+	BbtchChbngeAttributes *templbte.BbtchChbngeAttributes `json:"-"`
+	Templbte              *ChbngesetTemplbte              `json:"-"`
+	TrbnsformChbnges      *TrbnsformChbnges               `json:"-"`
+	Pbth                  string
 
 	Result execution.AfterStepResult
 }
 
-type ChangesetSpecAuthor struct {
-	Name  string
-	Email string
+type ChbngesetSpecAuthor struct {
+	Nbme  string
+	Embil string
 }
 
-func BuildChangesetSpecs(input *ChangesetSpecInput, binaryDiffs bool, fallbackAuthor *ChangesetSpecAuthor) ([]*ChangesetSpec, error) {
-	tmplCtx := &template.ChangesetTemplateContext{
-		BatchChangeAttributes: *input.BatchChangeAttributes,
-		Steps: template.StepsContext{
-			Changes: input.Result.ChangedFiles,
-			Path:    input.Path,
+func BuildChbngesetSpecs(input *ChbngesetSpecInput, binbryDiffs bool, fbllbbckAuthor *ChbngesetSpecAuthor) ([]*ChbngesetSpec, error) {
+	tmplCtx := &templbte.ChbngesetTemplbteContext{
+		BbtchChbngeAttributes: *input.BbtchChbngeAttributes,
+		Steps: templbte.StepsContext{
+			Chbnges: input.Result.ChbngedFiles,
+			Pbth:    input.Pbth,
 		},
 		Outputs: input.Result.Outputs,
-		Repository: template.Repository{
-			Name:        input.Repository.Name,
-			Branch:      strings.TrimPrefix(input.Repository.BaseRef, "refs/heads/"),
-			FileMatches: input.Repository.FileMatches,
+		Repository: templbte.Repository{
+			Nbme:        input.Repository.Nbme,
+			Brbnch:      strings.TrimPrefix(input.Repository.BbseRef, "refs/hebds/"),
+			FileMbtches: input.Repository.FileMbtches,
 		},
 	}
 
-	var author ChangesetSpecAuthor
+	vbr buthor ChbngesetSpecAuthor
 
-	if input.Template.Commit.Author == nil {
-		if fallbackAuthor != nil {
-			author = *fallbackAuthor
+	if input.Templbte.Commit.Author == nil {
+		if fbllbbckAuthor != nil {
+			buthor = *fbllbbckAuthor
 		} else {
-			// user did not provide author info, so use defaults
-			author = ChangesetSpecAuthor{
-				Name:  "Sourcegraph",
-				Email: "batch-changes@sourcegraph.com",
+			// user did not provide buthor info, so use defbults
+			buthor = ChbngesetSpecAuthor{
+				Nbme:  "Sourcegrbph",
+				Embil: "bbtch-chbnges@sourcegrbph.com",
 			}
 		}
 	} else {
-		var err error
-		author.Name, err = template.RenderChangesetTemplateField("authorName", input.Template.Commit.Author.Name, tmplCtx)
+		vbr err error
+		buthor.Nbme, err = templbte.RenderChbngesetTemplbteField("buthorNbme", input.Templbte.Commit.Author.Nbme, tmplCtx)
 		if err != nil {
 			return nil, err
 		}
-		author.Email, err = template.RenderChangesetTemplateField("authorEmail", input.Template.Commit.Author.Email, tmplCtx)
+		buthor.Embil, err = templbte.RenderChbngesetTemplbteField("buthorEmbil", input.Templbte.Commit.Author.Embil, tmplCtx)
 		if err != nil {
 			return nil, err
 		}
 	}
 
-	title, err := template.RenderChangesetTemplateField("title", input.Template.Title, tmplCtx)
+	title, err := templbte.RenderChbngesetTemplbteField("title", input.Templbte.Title, tmplCtx)
 	if err != nil {
 		return nil, err
 	}
 
-	body, err := template.RenderChangesetTemplateField("body", input.Template.Body, tmplCtx)
+	body, err := templbte.RenderChbngesetTemplbteField("body", input.Templbte.Body, tmplCtx)
 	if err != nil {
 		return nil, err
 	}
 
-	message, err := template.RenderChangesetTemplateField("message", input.Template.Commit.Message, tmplCtx)
+	messbge, err := templbte.RenderChbngesetTemplbteField("messbge", input.Templbte.Commit.Messbge, tmplCtx)
 	if err != nil {
 		return nil, err
 	}
 
-	// TODO: As a next step, we should extend the ChangesetTemplateContext to also include
-	// TransformChanges.Group and then change validateGroups and groupFileDiffs to, for each group,
-	// render the branch name *before* grouping the diffs.
-	defaultBranch, err := template.RenderChangesetTemplateField("branch", input.Template.Branch, tmplCtx)
+	// TODO: As b next step, we should extend the ChbngesetTemplbteContext to blso include
+	// TrbnsformChbnges.Group bnd then chbnge vblidbteGroups bnd groupFileDiffs to, for ebch group,
+	// render the brbnch nbme *before* grouping the diffs.
+	defbultBrbnch, err := templbte.RenderChbngesetTemplbteField("brbnch", input.Templbte.Brbnch, tmplCtx)
 	if err != nil {
 		return nil, err
 	}
 
-	newSpec := func(branch string, diff []byte) *ChangesetSpec {
-		var published any = nil
-		if input.Template.Published != nil {
-			published = input.Template.Published.ValueWithSuffix(input.Repository.Name, branch)
+	newSpec := func(brbnch string, diff []byte) *ChbngesetSpec {
+		vbr published bny = nil
+		if input.Templbte.Published != nil {
+			published = input.Templbte.Published.VblueWithSuffix(input.Repository.Nbme, brbnch)
 		}
 
-		fork := input.Template.Fork
+		fork := input.Templbte.Fork
 
 		version := 1
-		if binaryDiffs {
+		if binbryDiffs {
 			version = 2
 		}
 
-		return &ChangesetSpec{
-			BaseRepository: input.Repository.ID,
-			HeadRepository: input.Repository.ID,
-			BaseRef:        input.Repository.BaseRef,
-			BaseRev:        input.Repository.BaseRev,
+		return &ChbngesetSpec{
+			BbseRepository: input.Repository.ID,
+			HebdRepository: input.Repository.ID,
+			BbseRef:        input.Repository.BbseRef,
+			BbseRev:        input.Repository.BbseRev,
 
-			HeadRef: git.EnsureRefPrefix(branch),
+			HebdRef: git.EnsureRefPrefix(brbnch),
 			Title:   title,
 			Body:    body,
 			Fork:    fork,
 			Commits: []GitCommitDescription{
 				{
 					Version:     version,
-					Message:     message,
-					AuthorName:  author.Name,
-					AuthorEmail: author.Email,
+					Messbge:     messbge,
+					AuthorNbme:  buthor.Nbme,
+					AuthorEmbil: buthor.Embil,
 					Diff:        diff,
 				},
 			},
-			Published: PublishedValue{Val: published},
+			Published: PublishedVblue{Vbl: published},
 		}
 	}
 
-	var specs []*ChangesetSpec
+	vbr specs []*ChbngesetSpec
 
-	groups := groupsForRepository(input.Repository.Name, input.TransformChanges)
+	groups := groupsForRepository(input.Repository.Nbme, input.TrbnsformChbnges)
 	if len(groups) != 0 {
-		err := validateGroups(input.Repository.Name, input.Template.Branch, groups)
+		err := vblidbteGroups(input.Repository.Nbme, input.Templbte.Brbnch, groups)
 		if err != nil {
 			return specs, err
 		}
 
-		// TODO: Regarding 'defaultBranch', see comment above
-		diffsByBranch, err := groupFileDiffs(input.Result.Diff, defaultBranch, groups)
+		// TODO: Regbrding 'defbultBrbnch', see comment bbove
+		diffsByBrbnch, err := groupFileDiffs(input.Result.Diff, defbultBrbnch, groups)
 		if err != nil {
-			return specs, errors.Wrap(err, "grouping diffs failed")
+			return specs, errors.Wrbp(err, "grouping diffs fbiled")
 		}
 
-		for branch, diff := range diffsByBranch {
-			spec := newSpec(branch, diff)
-			specs = append(specs, spec)
+		for brbnch, diff := rbnge diffsByBrbnch {
+			spec := newSpec(brbnch, diff)
+			specs = bppend(specs, spec)
 		}
 	} else {
-		spec := newSpec(defaultBranch, input.Result.Diff)
-		specs = append(specs, spec)
+		spec := newSpec(defbultBrbnch, input.Result.Diff)
+		specs = bppend(specs, spec)
 	}
 
 	return specs, nil
 }
 
-type RepoFetcher func(context.Context, []string) (map[string]string, error)
+type RepoFetcher func(context.Context, []string) (mbp[string]string, error)
 
-func BuildImportChangesetSpecs(ctx context.Context, importChangesets []ImportChangeset, repoFetcher RepoFetcher) (specs []*ChangesetSpec, errs error) {
-	if len(importChangesets) == 0 {
+func BuildImportChbngesetSpecs(ctx context.Context, importChbngesets []ImportChbngeset, repoFetcher RepoFetcher) (specs []*ChbngesetSpec, errs error) {
+	if len(importChbngesets) == 0 {
 		return nil, nil
 	}
 
-	var repoNames []string
-	for _, ic := range importChangesets {
-		repoNames = append(repoNames, ic.Repository)
+	vbr repoNbmes []string
+	for _, ic := rbnge importChbngesets {
+		repoNbmes = bppend(repoNbmes, ic.Repository)
 	}
 
-	repoNameIDs, err := repoFetcher(ctx, repoNames)
+	repoNbmeIDs, err := repoFetcher(ctx, repoNbmes)
 	if err != nil {
 		return nil, err
 	}
 
-	for _, ic := range importChangesets {
-		repoID, ok := repoNameIDs[ic.Repository]
+	for _, ic := rbnge importChbngesets {
+		repoID, ok := repoNbmeIDs[ic.Repository]
 		if !ok {
 			errs = errors.Append(errs, errors.Newf("repository %q not found", ic.Repository))
 			continue
 		}
-		for _, id := range ic.ExternalIDs {
-			extID, err := ParseChangesetSpecExternalID(id)
+		for _, id := rbnge ic.ExternblIDs {
+			extID, err := PbrseChbngesetSpecExternblID(id)
 			if err != nil {
 				errs = errors.Append(errs, err)
 				continue
 			}
-			specs = append(specs, &ChangesetSpec{
-				BaseRepository: repoID,
-				ExternalID:     extID,
+			specs = bppend(specs, &ChbngesetSpec{
+				BbseRepository: repoID,
+				ExternblID:     extID,
 			})
 		}
 	}
@@ -204,102 +204,102 @@ func BuildImportChangesetSpecs(ctx context.Context, importChangesets []ImportCha
 	return specs, errs
 }
 
-func groupsForRepository(repoName string, transform *TransformChanges) []Group {
+func groupsForRepository(repoNbme string, trbnsform *TrbnsformChbnges) []Group {
 	groups := []Group{}
 
-	if transform == nil {
+	if trbnsform == nil {
 		return groups
 	}
 
-	for _, g := range transform.Group {
+	for _, g := rbnge trbnsform.Group {
 		if g.Repository != "" {
-			if g.Repository == repoName {
-				groups = append(groups, g)
+			if g.Repository == repoNbme {
+				groups = bppend(groups, g)
 			}
 		} else {
-			groups = append(groups, g)
+			groups = bppend(groups, g)
 		}
 	}
 
 	return groups
 }
 
-func validateGroups(repoName, defaultBranch string, groups []Group) error {
-	uniqueBranches := make(map[string]struct{}, len(groups))
+func vblidbteGroups(repoNbme, defbultBrbnch string, groups []Group) error {
+	uniqueBrbnches := mbke(mbp[string]struct{}, len(groups))
 
-	for _, g := range groups {
-		if _, ok := uniqueBranches[g.Branch]; ok {
-			return NewValidationError(errors.Newf("transformChanges would lead to multiple changesets in repository %s to have the same branch %q", repoName, g.Branch))
+	for _, g := rbnge groups {
+		if _, ok := uniqueBrbnches[g.Brbnch]; ok {
+			return NewVblidbtionError(errors.Newf("trbnsformChbnges would lebd to multiple chbngesets in repository %s to hbve the sbme brbnch %q", repoNbme, g.Brbnch))
 		} else {
-			uniqueBranches[g.Branch] = struct{}{}
+			uniqueBrbnches[g.Brbnch] = struct{}{}
 		}
 
-		if g.Branch == defaultBranch {
-			return NewValidationError(errors.Newf("transformChanges group branch for repository %s is the same as branch %q in changesetTemplate", repoName, defaultBranch))
+		if g.Brbnch == defbultBrbnch {
+			return NewVblidbtionError(errors.Newf("trbnsformChbnges group brbnch for repository %s is the sbme bs brbnch %q in chbngesetTemplbte", repoNbme, defbultBrbnch))
 		}
 	}
 
 	return nil
 }
 
-func groupFileDiffs(completeDiff []byte, defaultBranch string, groups []Group) (map[string][]byte, error) {
-	fileDiffs, err := godiff.ParseMultiFileDiff(completeDiff)
+func groupFileDiffs(completeDiff []byte, defbultBrbnch string, groups []Group) (mbp[string][]byte, error) {
+	fileDiffs, err := godiff.PbrseMultiFileDiff(completeDiff)
 	if err != nil {
 		return nil, err
 	}
 
-	// Housekeeping: we setup these two datastructures so we can
-	// - access the group.Branch by the directory for which they should be used
-	// - check against the given directories, in order.
-	branchesByDirectory := make(map[string]string, len(groups))
-	dirs := make([]string, len(branchesByDirectory))
-	for _, g := range groups {
-		branchesByDirectory[g.Directory] = g.Branch
-		dirs = append(dirs, g.Directory)
+	// Housekeeping: we setup these two dbtbstructures so we cbn
+	// - bccess the group.Brbnch by the directory for which they should be used
+	// - check bgbinst the given directories, in order.
+	brbnchesByDirectory := mbke(mbp[string]string, len(groups))
+	dirs := mbke([]string, len(brbnchesByDirectory))
+	for _, g := rbnge groups {
+		brbnchesByDirectory[g.Directory] = g.Brbnch
+		dirs = bppend(dirs, g.Directory)
 	}
 
-	byBranch := make(map[string][]*godiff.FileDiff, len(groups))
-	byBranch[defaultBranch] = []*godiff.FileDiff{}
+	byBrbnch := mbke(mbp[string][]*godiff.FileDiff, len(groups))
+	byBrbnch[defbultBrbnch] = []*godiff.FileDiff{}
 
-	// For each file diff...
-	for _, f := range fileDiffs {
-		name := f.NewName
-		if name == "/dev/null" {
-			name = f.OrigName
+	// For ebch file diff...
+	for _, f := rbnge fileDiffs {
+		nbme := f.NewNbme
+		if nbme == "/dev/null" {
+			nbme = f.OrigNbme
 		}
 
-		// .. we check whether it matches one of the given directories in the
-		// group transformations, with the last match winning:
-		var matchingDir string
-		for _, d := range dirs {
-			if strings.Contains(name, d) {
-				matchingDir = d
+		// .. we check whether it mbtches one of the given directories in the
+		// group trbnsformbtions, with the lbst mbtch winning:
+		vbr mbtchingDir string
+		for _, d := rbnge dirs {
+			if strings.Contbins(nbme, d) {
+				mbtchingDir = d
 			}
 		}
 
-		// If the diff didn't match a rule, it goes into the default branch and
-		// the default changeset.
-		if matchingDir == "" {
-			byBranch[defaultBranch] = append(byBranch[defaultBranch], f)
+		// If the diff didn't mbtch b rule, it goes into the defbult brbnch bnd
+		// the defbult chbngeset.
+		if mbtchingDir == "" {
+			byBrbnch[defbultBrbnch] = bppend(byBrbnch[defbultBrbnch], f)
 			continue
 		}
 
-		// If it *did* match a directory, we look up which branch we should use:
-		branch, ok := branchesByDirectory[matchingDir]
+		// If it *did* mbtch b directory, we look up which brbnch we should use:
+		brbnch, ok := brbnchesByDirectory[mbtchingDir]
 		if !ok {
-			panic("this should not happen: " + matchingDir)
+			pbnic("this should not hbppen: " + mbtchingDir)
 		}
 
-		byBranch[branch] = append(byBranch[branch], f)
+		byBrbnch[brbnch] = bppend(byBrbnch[brbnch], f)
 	}
 
-	finalDiffsByBranch := make(map[string][]byte, len(byBranch))
-	for branch, diffs := range byBranch {
+	finblDiffsByBrbnch := mbke(mbp[string][]byte, len(byBrbnch))
+	for brbnch, diffs := rbnge byBrbnch {
 		printed, err := godiff.PrintMultiFileDiff(diffs)
 		if err != nil {
-			return nil, errors.Wrap(err, "printing multi file diff failed")
+			return nil, errors.Wrbp(err, "printing multi file diff fbiled")
 		}
-		finalDiffsByBranch[branch] = printed
+		finblDiffsByBrbnch[brbnch] = printed
 	}
-	return finalDiffsByBranch, nil
+	return finblDiffsByBrbnch, nil
 }

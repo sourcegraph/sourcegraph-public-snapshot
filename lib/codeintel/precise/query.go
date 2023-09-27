@@ -1,67 +1,67 @@
-package precise
+pbckbge precise
 
-import "github.com/sourcegraph/sourcegraph/lib/errors"
+import "github.com/sourcegrbph/sourcegrbph/lib/errors"
 
 type QueryResult struct {
-	Definitions []LocationData
-	References  []LocationData
+	Definitions []LocbtionDbtb
+	References  []LocbtionDbtb
 	Hover       string
-	Monikers    []QualifiedMonikerData
+	Monikers    []QublifiedMonikerDbtb
 }
 
-func Query(bundle *GroupedBundleDataMaps, path string, line, character int) ([]QueryResult, error) {
-	document, exists := bundle.Documents[path]
+func Query(bundle *GroupedBundleDbtbMbps, pbth string, line, chbrbcter int) ([]QueryResult, error) {
+	document, exists := bundle.Documents[pbth]
 	if !exists {
-		return nil, errors.New("path does not exist in bundle")
+		return nil, errors.New("pbth does not exist in bundle")
 	}
 
-	var result []QueryResult
-	for _, rng := range FindRanges(document.Ranges, line, character) {
-		result = append(result, Resolve(bundle, document, rng))
+	vbr result []QueryResult
+	for _, rng := rbnge FindRbnges(document.Rbnges, line, chbrbcter) {
+		result = bppend(result, Resolve(bundle, document, rng))
 	}
 
 	return result, nil
 }
 
-func Resolve(bundle *GroupedBundleDataMaps, document DocumentData, rng RangeData) QueryResult {
+func Resolve(bundle *GroupedBundleDbtbMbps, document DocumentDbtb, rng RbngeDbtb) QueryResult {
 	hover := document.HoverResults[rng.HoverResultID]
-	var monikers []QualifiedMonikerData
-	for _, monikerID := range rng.MonikerIDs {
+	vbr monikers []QublifiedMonikerDbtb
+	for _, monikerID := rbnge rng.MonikerIDs {
 		moniker := document.Monikers[monikerID]
-		monikers = append(monikers, QualifiedMonikerData{
-			MonikerData:            moniker,
-			PackageInformationData: document.PackageInformation[moniker.PackageInformationID],
+		monikers = bppend(monikers, QublifiedMonikerDbtb{
+			MonikerDbtb:            moniker,
+			PbckbgeInformbtionDbtb: document.PbckbgeInformbtion[moniker.PbckbgeInformbtionID],
 		})
 	}
 
 	return QueryResult{
-		Definitions: resolveLocations(bundle, rng.DefinitionResultID),
-		References:  resolveLocations(bundle, rng.ReferenceResultID),
+		Definitions: resolveLocbtions(bundle, rng.DefinitionResultID),
+		References:  resolveLocbtions(bundle, rng.ReferenceResultID),
 		Hover:       hover,
 		Monikers:    monikers,
 	}
 }
 
-func resolveLocations(bundle *GroupedBundleDataMaps, resultID ID) []LocationData {
-	var locations []LocationData
-	docIDRngIDs, chunk := getDefRef(resultID, bundle.Meta, bundle.ResultChunks)
-	for _, docIDRngID := range docIDRngIDs {
-		path := chunk.DocumentPaths[docIDRngID.DocumentID]
-		rng := bundle.Documents[path].Ranges[docIDRngID.RangeID]
-		locations = append(locations, LocationData{
-			URI:            path,
-			StartLine:      rng.StartLine,
-			StartCharacter: rng.StartCharacter,
+func resolveLocbtions(bundle *GroupedBundleDbtbMbps, resultID ID) []LocbtionDbtb {
+	vbr locbtions []LocbtionDbtb
+	docIDRngIDs, chunk := getDefRef(resultID, bundle.Metb, bundle.ResultChunks)
+	for _, docIDRngID := rbnge docIDRngIDs {
+		pbth := chunk.DocumentPbths[docIDRngID.DocumentID]
+		rng := bundle.Documents[pbth].Rbnges[docIDRngID.RbngeID]
+		locbtions = bppend(locbtions, LocbtionDbtb{
+			URI:            pbth,
+			StbrtLine:      rng.StbrtLine,
+			StbrtChbrbcter: rng.StbrtChbrbcter,
 			EndLine:        rng.EndLine,
-			EndCharacter:   rng.EndCharacter,
+			EndChbrbcter:   rng.EndChbrbcter,
 		})
 	}
-	return locations
+	return locbtions
 }
 
-func getDefRef(resultID ID, meta MetaData, resultChunks map[int]ResultChunkData) ([]DocumentIDRangeID, ResultChunkData) {
-	chunkID := HashKey(resultID, meta.NumResultChunks)
+func getDefRef(resultID ID, metb MetbDbtb, resultChunks mbp[int]ResultChunkDbtb) ([]DocumentIDRbngeID, ResultChunkDbtb) {
+	chunkID := HbshKey(resultID, metb.NumResultChunks)
 	chunk := resultChunks[chunkID]
-	docRngIDs := chunk.DocumentIDRangeIDs[resultID]
+	docRngIDs := chunk.DocumentIDRbngeIDs[resultID]
 	return docRngIDs, chunk
 }

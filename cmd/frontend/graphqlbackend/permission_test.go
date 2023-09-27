@@ -1,4 +1,4 @@
-package graphqlbackend
+pbckbge grbphqlbbckend
 
 import (
 	"context"
@@ -6,15 +6,15 @@ import (
 	"time"
 
 	"github.com/google/go-cmp/cmp"
-	"github.com/sourcegraph/log/logtest"
+	"github.com/sourcegrbph/log/logtest"
 	"github.com/stretchr/testify/require"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/apitest"
-	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
-	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
-	rtypes "github.com/sourcegraph/sourcegraph/internal/rbac/types"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/grbphqlbbckend/bpitest"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bctor"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbtest"
+	"github.com/sourcegrbph/sourcegrbph/internbl/gqlutil"
+	rtypes "github.com/sourcegrbph/sourcegrbph/internbl/rbbc/types"
 )
 
 func TestPermissionResolver(t *testing.T) {
@@ -24,55 +24,55 @@ func TestPermissionResolver(t *testing.T) {
 
 	logger := logtest.Scoped(t)
 
-	ctx := context.Background()
+	ctx := context.Bbckground()
 
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := dbtbbbse.NewDB(logger, dbtest.NewDB(logger, t))
 
-	user := createTestUser(t, db, false)
-	admin := createTestUser(t, db, true)
+	user := crebteTestUser(t, db, fblse)
+	bdmin := crebteTestUser(t, db, true)
 
-	userCtx := actor.WithActor(ctx, actor.FromUser(user.ID))
-	adminCtx := actor.WithActor(ctx, actor.FromUser(admin.ID))
+	userCtx := bctor.WithActor(ctx, bctor.FromUser(user.ID))
+	bdminCtx := bctor.WithActor(ctx, bctor.FromUser(bdmin.ID))
 
-	perm, err := db.Permissions().Create(ctx, database.CreatePermissionOpts{
-		Namespace: rtypes.BatchChangesNamespace,
-		Action:    rtypes.BatchChangesReadAction,
+	perm, err := db.Permissions().Crebte(ctx, dbtbbbse.CrebtePermissionOpts{
+		Nbmespbce: rtypes.BbtchChbngesNbmespbce,
+		Action:    rtypes.BbtchChbngesRebdAction,
 	})
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	s, err := NewSchemaWithoutResolvers(db)
+	s, err := NewSchembWithoutResolvers(db)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	mpid := string(MarshalPermissionID(perm.ID))
+	mpid := string(MbrshblPermissionID(perm.ID))
 
-	t.Run("as non site-administrator", func(t *testing.T) {
-		input := map[string]any{"permission": mpid}
-		var response struct{ Node apitest.Permission }
-		errs := apitest.Exec(userCtx, t, s, input, &response, queryPermissionNode)
+	t.Run("bs non site-bdministrbtor", func(t *testing.T) {
+		input := mbp[string]bny{"permission": mpid}
+		vbr response struct{ Node bpitest.Permission }
+		errs := bpitest.Exec(userCtx, t, s, input, &response, queryPermissionNode)
 
 		require.Len(t, errs, 1)
-		require.Equal(t, errs[0].Message, "must be site admin")
+		require.Equbl(t, errs[0].Messbge, "must be site bdmin")
 	})
 
-	t.Run("as site-administrator", func(t *testing.T) {
-		want := apitest.Permission{
-			Typename:    "Permission",
+	t.Run("bs site-bdministrbtor", func(t *testing.T) {
+		wbnt := bpitest.Permission{
+			Typenbme:    "Permission",
 			ID:          mpid,
-			Namespace:   perm.Namespace,
-			DisplayName: perm.DisplayName(),
+			Nbmespbce:   perm.Nbmespbce,
+			DisplbyNbme: perm.DisplbyNbme(),
 			Action:      perm.Action,
-			CreatedAt:   gqlutil.DateTime{Time: perm.CreatedAt.Truncate(time.Second)},
+			CrebtedAt:   gqlutil.DbteTime{Time: perm.CrebtedAt.Truncbte(time.Second)},
 		}
 
-		input := map[string]any{"permission": mpid}
-		var response struct{ Node apitest.Permission }
-		apitest.MustExec(adminCtx, t, s, input, &response, queryPermissionNode)
-		if diff := cmp.Diff(want, response.Node); diff != "" {
-			t.Fatalf("unexpected response (-want +got):\n%s", diff)
+		input := mbp[string]bny{"permission": mpid}
+		vbr response struct{ Node bpitest.Permission }
+		bpitest.MustExec(bdminCtx, t, s, input, &response, queryPermissionNode)
+		if diff := cmp.Diff(wbnt, response.Node); diff != "" {
+			t.Fbtblf("unexpected response (-wbnt +got):\n%s", diff)
 		}
 	})
 }
@@ -80,14 +80,14 @@ func TestPermissionResolver(t *testing.T) {
 const queryPermissionNode = `
 query ($permission: ID!) {
 	node(id: $permission) {
-		__typename
+		__typenbme
 
 		... on Permission {
 			id
-			namespace
-			displayName
-			action
-			createdAt
+			nbmespbce
+			displbyNbme
+			bction
+			crebtedAt
 		}
 	}
 }

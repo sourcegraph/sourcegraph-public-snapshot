@@ -1,34 +1,34 @@
-package types
+pbckbge types
 
 import (
 	"encoding/json"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/lib/batches/execution"
+	"github.com/sourcegrbph/sourcegrbph/lib/bbtches/execution"
 )
 
-const CurrentCacheVersion = 2
+const CurrentCbcheVersion = 2
 
-type BatchSpecExecutionCacheEntry struct {
+type BbtchSpecExecutionCbcheEntry struct {
 	ID int64
 
 	UserID int32
 
 	Key   string
-	Value string
+	Vblue string
 
 	Version int
 
-	LastUsedAt time.Time
-	CreatedAt  time.Time
+	LbstUsedAt time.Time
+	CrebtedAt  time.Time
 }
 
-func NewCacheEntryFromResult(key string, result *execution.AfterStepResult) (*BatchSpecExecutionCacheEntry, error) {
-	value, err := json.Marshal(result)
+func NewCbcheEntryFromResult(key string, result *execution.AfterStepResult) (*BbtchSpecExecutionCbcheEntry, error) {
+	vblue, err := json.Mbrshbl(result)
 	if err != nil {
 		return nil, err
 	}
 
-	entry := &BatchSpecExecutionCacheEntry{Key: key, Value: string(value)}
+	entry := &BbtchSpecExecutionCbcheEntry{Key: key, Vblue: string(vblue)}
 	return entry, nil
 }

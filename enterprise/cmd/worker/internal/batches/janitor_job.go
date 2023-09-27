@@ -1,91 +1,91 @@
-package batches
+pbckbge bbtches
 
 import (
 	"context"
 
-	"github.com/sourcegraph/sourcegraph/cmd/worker/job"
-	"github.com/sourcegraph/sourcegraph/enterprise/cmd/worker/internal/batches/janitor"
-	"github.com/sourcegraph/sourcegraph/enterprise/cmd/worker/internal/executorqueue"
-	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/env"
-	"github.com/sourcegraph/sourcegraph/internal/goroutine"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegrbph/sourcegrbph/cmd/worker/job"
+	"github.com/sourcegrbph/sourcegrbph/enterprise/cmd/worker/internbl/bbtches/jbnitor"
+	"github.com/sourcegrbph/sourcegrbph/enterprise/cmd/worker/internbl/executorqueue"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bctor"
+	"github.com/sourcegrbph/sourcegrbph/internbl/env"
+	"github.com/sourcegrbph/sourcegrbph/internbl/goroutine"
+	"github.com/sourcegrbph/sourcegrbph/internbl/observbtion"
 )
 
-type janitorJob struct{}
+type jbnitorJob struct{}
 
-func NewJanitorJob() job.Job {
-	return &janitorJob{}
+func NewJbnitorJob() job.Job {
+	return &jbnitorJob{}
 }
 
-func (j *janitorJob) Description() string {
+func (j *jbnitorJob) Description() string {
 	return ""
 }
 
-func (j *janitorJob) Config() []env.Config {
-	return []env.Config{janitorConfigInst}
+func (j *jbnitorJob) Config() []env.Config {
+	return []env.Config{jbnitorConfigInst}
 }
 
-func (j *janitorJob) Routines(_ context.Context, observationCtx *observation.Context) ([]goroutine.BackgroundRoutine, error) {
-	observationCtx = observation.NewContext(observationCtx.Logger.Scoped("routines", "janitor job routines"))
-	workCtx := actor.WithInternalActor(context.Background())
+func (j *jbnitorJob) Routines(_ context.Context, observbtionCtx *observbtion.Context) ([]goroutine.BbckgroundRoutine, error) {
+	observbtionCtx = observbtion.NewContext(observbtionCtx.Logger.Scoped("routines", "jbnitor job routines"))
+	workCtx := bctor.WithInternblActor(context.Bbckground())
 
 	bstore, err := InitStore()
 	if err != nil {
 		return nil, err
 	}
 
-	janitorMetrics := janitor.NewMetrics(observationCtx)
+	jbnitorMetrics := jbnitor.NewMetrics(observbtionCtx)
 
 	reconcilerStore, err := InitReconcilerWorkerStore()
 	if err != nil {
 		return nil, err
 	}
-	bulkOperationStore, err := InitBulkOperationWorkerStore()
+	bulkOperbtionStore, err := InitBulkOperbtionWorkerStore()
 	if err != nil {
 		return nil, err
 	}
-	workspaceExecutionStore, err := InitBatchSpecWorkspaceExecutionWorkerStore()
+	workspbceExecutionStore, err := InitBbtchSpecWorkspbceExecutionWorkerStore()
 	if err != nil {
 		return nil, err
 	}
-	workspaceResolutionStore, err := InitBatchSpecResolutionWorkerStore()
-	if err != nil {
-		return nil, err
-	}
-
-	executorMetricsReporter, err := executorqueue.NewMetricReporter(observationCtx, "batches", workspaceExecutionStore, janitorConfigInst.MetricsConfig)
+	workspbceResolutionStore, err := InitBbtchSpecResolutionWorkerStore()
 	if err != nil {
 		return nil, err
 	}
 
-	routines := []goroutine.BackgroundRoutine{
+	executorMetricsReporter, err := executorqueue.NewMetricReporter(observbtionCtx, "bbtches", workspbceExecutionStore, jbnitorConfigInst.MetricsConfig)
+	if err != nil {
+		return nil, err
+	}
+
+	routines := []goroutine.BbckgroundRoutine{
 		executorMetricsReporter,
 
-		janitor.NewReconcilerWorkerResetter(
-			observationCtx.Logger.Scoped("ReconcilerWorkerResetter", ""),
+		jbnitor.NewReconcilerWorkerResetter(
+			observbtionCtx.Logger.Scoped("ReconcilerWorkerResetter", ""),
 			reconcilerStore,
-			janitorMetrics,
+			jbnitorMetrics,
 		),
-		janitor.NewBulkOperationWorkerResetter(
-			observationCtx.Logger.Scoped("BulkOperationWorkerResetter", ""),
-			bulkOperationStore,
-			janitorMetrics,
+		jbnitor.NewBulkOperbtionWorkerResetter(
+			observbtionCtx.Logger.Scoped("BulkOperbtionWorkerResetter", ""),
+			bulkOperbtionStore,
+			jbnitorMetrics,
 		),
-		janitor.NewBatchSpecWorkspaceExecutionWorkerResetter(
-			observationCtx.Logger.Scoped("BatchSpecWorkspaceExecutionWorkerResetter", ""),
-			workspaceExecutionStore,
-			janitorMetrics,
+		jbnitor.NewBbtchSpecWorkspbceExecutionWorkerResetter(
+			observbtionCtx.Logger.Scoped("BbtchSpecWorkspbceExecutionWorkerResetter", ""),
+			workspbceExecutionStore,
+			jbnitorMetrics,
 		),
-		janitor.NewBatchSpecWorkspaceResolutionWorkerResetter(
-			observationCtx.Logger.Scoped("BatchSpecWorkspaceResolutionWorkerResetter", ""),
-			workspaceResolutionStore,
-			janitorMetrics,
+		jbnitor.NewBbtchSpecWorkspbceResolutionWorkerResetter(
+			observbtionCtx.Logger.Scoped("BbtchSpecWorkspbceResolutionWorkerResetter", ""),
+			workspbceResolutionStore,
+			jbnitorMetrics,
 		),
 
-		janitor.NewSpecExpirer(workCtx, bstore),
-		janitor.NewCacheEntryCleaner(workCtx, bstore),
-		janitor.NewChangesetDetachedCleaner(workCtx, bstore),
+		jbnitor.NewSpecExpirer(workCtx, bstore),
+		jbnitor.NewCbcheEntryClebner(workCtx, bstore),
+		jbnitor.NewChbngesetDetbchedClebner(workCtx, bstore),
 	}
 
 	return routines, nil

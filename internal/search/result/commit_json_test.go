@@ -1,4 +1,4 @@
-package result
+pbckbge result
 
 import (
 	"encoding/json"
@@ -7,62 +7,62 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
-	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi"
+	"github.com/sourcegrbph/sourcegrbph/internbl/gitserver/gitdombin"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
 )
 
-func TestCommitMatchMarshaling(t *testing.T) {
+func TestCommitMbtchMbrshbling(t *testing.T) {
 	t.Run("roundtrip", func(t *testing.T) {
-		cm1 := CommitMatch{
-			Commit: gitdomain.Commit{
-				ID: api.CommitID("saccolabium"),
-				Author: gitdomain.Signature{
-					Name:  "Looseleaf teaperson",
-					Email: "75celsius@hotwater.com",
-					Date:  time.Date(237, time.November, 15, 8, 0, 0, 0, time.FixedZone("Ancient China", int(+8*time.Hour/time.Second))),
+		cm1 := CommitMbtch{
+			Commit: gitdombin.Commit{
+				ID: bpi.CommitID("sbccolbbium"),
+				Author: gitdombin.Signbture{
+					Nbme:  "Looselebf tebperson",
+					Embil: "75celsius@hotwbter.com",
+					Dbte:  time.Dbte(237, time.November, 15, 8, 0, 0, 0, time.FixedZone("Ancient Chinb", int(+8*time.Hour/time.Second))),
 				},
-				Committer: &gitdomain.Signature{
-					Name:  "Coffee drinkerperson",
-					Email: "93celsius@hotterwater.com",
-					Date:  time.Date(1402, time.January, 18, 7, 0, 0, 0, time.FixedZone("Aksum Ethiopia", int(+3*time.Hour/time.Second))),
+				Committer: &gitdombin.Signbture{
+					Nbme:  "Coffee drinkerperson",
+					Embil: "93celsius@hotterwbter.com",
+					Dbte:  time.Dbte(1402, time.Jbnubry, 18, 7, 0, 0, 0, time.FixedZone("Aksum Ethiopib", int(+3*time.Hour/time.Second))),
 				},
-				Message: "add documentation for hot beverages",
-				Parents: []api.CommitID{"coffeeae", "coffea", "arabica"},
+				Messbge: "bdd documentbtion for hot beverbges",
+				Pbrents: []bpi.CommitID{"coffeebe", "coffeb", "brbbicb"},
 			},
-			Repo: types.MinimalRepo{
+			Repo: types.MinimblRepo{
 				ID:    42,
-				Name:  api.RepoName("github.com/historyofconsumption/beverages"),
-				Stars: 7,
+				Nbme:  bpi.RepoNbme("github.com/historyofconsumption/beverbges"),
+				Stbrs: 7,
 			},
-			Refs:       []string{"awakeness"},
-			SourceRefs: []string{"caffeine"},
-			MessagePreview: &MatchedString{
-				Content:       "add documentation for hot beverages",
-				MatchedRanges: Ranges{{Start: Location{Offset: 0, Line: 0, Column: 0}, End: Location{Offset: 3, Line: 0, Column: 3}}},
+			Refs:       []string{"bwbkeness"},
+			SourceRefs: []string{"cbffeine"},
+			MessbgePreview: &MbtchedString{
+				Content:       "bdd documentbtion for hot beverbges",
+				MbtchedRbnges: Rbnges{{Stbrt: Locbtion{Offset: 0, Line: 0, Column: 0}, End: Locbtion{Offset: 3, Line: 0, Column: 3}}},
 			},
-			DiffPreview: &MatchedString{
+			DiffPreview: &MbtchedString{
 				Content:       `drinks/coffee\ with\ milk.md drinks/coffee.md`,
-				MatchedRanges: Ranges{{Start: Location{Offset: 17, Line: 0, Column: 17}, End: Location{Offset: 23, Line: 0, Column: 23}}},
+				MbtchedRbnges: Rbnges{{Stbrt: Locbtion{Offset: 17, Line: 0, Column: 17}, End: Locbtion{Offset: 23, Line: 0, Column: 23}}},
 			},
 			Diff: func() []DiffFile {
-				dfs, _ := ParseDiffString(`drinks/coffee\ with\ milk.md drinks/coffee.md`)
+				dfs, _ := PbrseDiffString(`drinks/coffee\ with\ milk.md drinks/coffee.md`)
 				return dfs
 			}(),
-			ModifiedFiles: []string{"drinks/coffee.md", "drinks/tea.md"},
+			ModifiedFiles: []string{"drinks/coffee.md", "drinks/teb.md"},
 		}
 
-		marshaled, err := json.Marshal(cm1)
+		mbrshbled, err := json.Mbrshbl(cm1)
 		require.NoError(t, err)
 
-		var cm2 CommitMatch
-		err = json.Unmarshal(marshaled, &cm2)
+		vbr cm2 CommitMbtch
+		err = json.Unmbrshbl(mbrshbled, &cm2)
 		require.NoError(t, err)
 
-		require.True(t, cm1.Commit.Author.Date.Equal(cm2.Commit.Author.Date))
-		require.True(t, cm1.Commit.Committer.Date.Equal(cm2.Commit.Committer.Date))
-		cm2.Commit.Author.Date = cm1.Commit.Author.Date
-		cm2.Commit.Committer.Date = cm1.Commit.Committer.Date
-		require.Equal(t, cm1, cm2)
+		require.True(t, cm1.Commit.Author.Dbte.Equbl(cm2.Commit.Author.Dbte))
+		require.True(t, cm1.Commit.Committer.Dbte.Equbl(cm2.Commit.Committer.Dbte))
+		cm2.Commit.Author.Dbte = cm1.Commit.Author.Dbte
+		cm2.Commit.Committer.Dbte = cm1.Commit.Committer.Dbte
+		require.Equbl(t, cm1, cm2)
 	})
 }

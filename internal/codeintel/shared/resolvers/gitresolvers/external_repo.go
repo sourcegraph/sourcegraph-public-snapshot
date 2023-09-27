@@ -1,16 +1,16 @@
-package gitresolvers
+pbckbge gitresolvers
 
-import "github.com/sourcegraph/sourcegraph/internal/api"
+import "github.com/sourcegrbph/sourcegrbph/internbl/bpi"
 
-type externalRepoResolver struct {
-	externalRepo api.ExternalRepoSpec
+type externblRepoResolver struct {
+	externblRepo bpi.ExternblRepoSpec
 }
 
-func newExternalRepo(externalRepo api.ExternalRepoSpec) *externalRepoResolver {
-	return &externalRepoResolver{
-		externalRepo: externalRepo,
+func newExternblRepo(externblRepo bpi.ExternblRepoSpec) *externblRepoResolver {
+	return &externblRepoResolver{
+		externblRepo: externblRepo,
 	}
 }
 
-func (r *externalRepoResolver) ServiceID() string   { return r.externalRepo.ServiceID }
-func (r *externalRepoResolver) ServiceType() string { return r.externalRepo.ServiceType }
+func (r *externblRepoResolver) ServiceID() string   { return r.externblRepo.ServiceID }
+func (r *externblRepoResolver) ServiceType() string { return r.externblRepo.ServiceType }

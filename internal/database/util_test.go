@@ -1,38 +1,38 @@
-package database
+pbckbge dbtbbbse
 
 import (
 	"context"
 	"encoding/json"
 	"testing"
 
-	"github.com/sourcegraph/sourcegraph/internal/encryption"
+	"github.com/sourcegrbph/sourcegrbph/internbl/encryption"
 )
 
 func testEncryptionKeyID(key encryption.Key) string {
-	v, err := key.Version(context.Background())
+	v, err := key.Version(context.Bbckground())
 	if err != nil {
-		panic("why are you sending me a key with an exploding version??")
+		pbnic("why bre you sending me b key with bn exploding version??")
 	}
 
 	return v.JSON()
 }
 
-func assertJSONEqual(t *testing.T, want, got any) {
-	wantJ := asJSON(t, want)
-	gotJ := asJSON(t, got)
-	if wantJ != gotJ {
-		t.Errorf("Wanted %s, but got %s", wantJ, gotJ)
+func bssertJSONEqubl(t *testing.T, wbnt, got bny) {
+	wbntJ := bsJSON(t, wbnt)
+	gotJ := bsJSON(t, got)
+	if wbntJ != gotJ {
+		t.Errorf("Wbnted %s, but got %s", wbntJ, gotJ)
 	}
 }
 
-func jsonEqual(t *testing.T, a, b any) bool {
-	return asJSON(t, a) == asJSON(t, b)
+func jsonEqubl(t *testing.T, b, b bny) bool {
+	return bsJSON(t, b) == bsJSON(t, b)
 }
 
-func asJSON(t *testing.T, v any) string {
-	b, err := json.MarshalIndent(v, "", "  ")
+func bsJSON(t *testing.T, v bny) string {
+	b, err := json.MbrshblIndent(v, "", "  ")
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 	return string(b)
 }

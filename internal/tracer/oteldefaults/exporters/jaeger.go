@@ -1,50 +1,50 @@
-package exporters
+pbckbge exporters
 
 import (
 	"strings"
 
-	jaegercfg "github.com/uber/jaeger-client-go/config"
-	oteljaeger "go.opentelemetry.io/otel/exporters/jaeger"
-	oteltracesdk "go.opentelemetry.io/otel/sdk/trace"
+	jbegercfg "github.com/uber/jbeger-client-go/config"
+	oteljbeger "go.opentelemetry.io/otel/exporters/jbeger"
+	oteltrbcesdk "go.opentelemetry.io/otel/sdk/trbce"
 
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-// NewJaegerExporter exports spans to a Jaeger collector or agent based on environment
-// configuration.
+// NewJbegerExporter exports spbns to b Jbeger collector or bgent bbsed on environment
+// configurbtion.
 //
-// By default, prefer to use internal/tracer.Init to set up a global OpenTelemetry
-// tracer and use that instead.
-func NewJaegerExporter() (oteltracesdk.SpanExporter, error) {
-	// Set configuration from jaegercfg package, to try and preserve back-compat with
-	// existing behaviour.
-	cfg, err := jaegercfg.FromEnv()
+// By defbult, prefer to use internbl/trbcer.Init to set up b globbl OpenTelemetry
+// trbcer bnd use thbt instebd.
+func NewJbegerExporter() (oteltrbcesdk.SpbnExporter, error) {
+	// Set configurbtion from jbegercfg pbckbge, to try bnd preserve bbck-compbt with
+	// existing behbviour.
+	cfg, err := jbegercfg.FromEnv()
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to read Jaeger configuration from env")
+		return nil, errors.Wrbp(err, "fbiled to rebd Jbeger configurbtion from env")
 	}
-	var endpoint oteljaeger.EndpointOption
+	vbr endpoint oteljbeger.EndpointOption
 	switch {
-	case cfg.Reporter.CollectorEndpoint != "":
-		endpoint = oteljaeger.WithCollectorEndpoint(
-			oteljaeger.WithEndpoint(cfg.Reporter.CollectorEndpoint),
-			oteljaeger.WithUsername(cfg.Reporter.User),
-			oteljaeger.WithPassword(cfg.Reporter.Password),
+	cbse cfg.Reporter.CollectorEndpoint != "":
+		endpoint = oteljbeger.WithCollectorEndpoint(
+			oteljbeger.WithEndpoint(cfg.Reporter.CollectorEndpoint),
+			oteljbeger.WithUsernbme(cfg.Reporter.User),
+			oteljbeger.WithPbssword(cfg.Reporter.Pbssword),
 		)
-	case cfg.Reporter.LocalAgentHostPort != "":
-		hostport := strings.Split(cfg.Reporter.LocalAgentHostPort, ":")
-		endpoint = oteljaeger.WithAgentEndpoint(
-			oteljaeger.WithAgentHost(hostport[0]),
-			oteljaeger.WithAgentPort(hostport[1]),
+	cbse cfg.Reporter.LocblAgentHostPort != "":
+		hostport := strings.Split(cfg.Reporter.LocblAgentHostPort, ":")
+		endpoint = oteljbeger.WithAgentEndpoint(
+			oteljbeger.WithAgentHost(hostport[0]),
+			oteljbeger.WithAgentPort(hostport[1]),
 		)
-	default:
-		// Otherwise, oteljaeger defaults and env configuration
-		endpoint = oteljaeger.WithAgentEndpoint()
+	defbult:
+		// Otherwise, oteljbeger defbults bnd env configurbtion
+		endpoint = oteljbeger.WithAgentEndpoint()
 	}
 
-	// Create exporter for endpoint
-	exporter, err := oteljaeger.New(endpoint)
+	// Crebte exporter for endpoint
+	exporter, err := oteljbeger.New(endpoint)
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to create trace exporter")
+		return nil, errors.Wrbp(err, "fbiled to crebte trbce exporter")
 	}
 	return exporter, nil
 }

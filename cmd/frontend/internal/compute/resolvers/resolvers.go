@@ -1,105 +1,105 @@
-package resolvers
+pbckbge resolvers
 
 import (
 	"context"
 	"fmt"
 
-	"github.com/inconshreveable/log15"
-	"github.com/sourcegraph/log"
+	"github.com/inconshrevebble/log15"
+	"github.com/sourcegrbph/log"
 
-	"github.com/sourcegraph/go-langserver/pkg/lsp"
+	"github.com/sourcegrbph/go-lbngserver/pkg/lsp"
 
-	gql "github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
-	"github.com/sourcegraph/sourcegraph/internal/compute"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
-	"github.com/sourcegraph/sourcegraph/internal/search/result"
-	"github.com/sourcegraph/sourcegraph/internal/types"
+	gql "github.com/sourcegrbph/sourcegrbph/cmd/frontend/grbphqlbbckend"
+	"github.com/sourcegrbph/sourcegrbph/internbl/compute"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/gitserver"
+	"github.com/sourcegrbph/sourcegrbph/internbl/sebrch/result"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
 )
 
-func NewResolver(logger log.Logger, db database.DB) gql.ComputeResolver {
+func NewResolver(logger log.Logger, db dbtbbbse.DB) gql.ComputeResolver {
 	return &Resolver{logger: logger, db: db}
 }
 
 type Resolver struct {
 	logger log.Logger
-	db     database.DB
+	db     dbtbbbse.DB
 }
 
-type computeMatchContextResolver struct {
+type computeMbtchContextResolver struct {
 	repository *gql.RepositoryResolver
 	commit     string
-	path       string
-	matches    []gql.ComputeMatchResolver
+	pbth       string
+	mbtches    []gql.ComputeMbtchResolver
 }
 
-func (c *computeMatchContextResolver) Repository() *gql.RepositoryResolver { return c.repository }
-func (c *computeMatchContextResolver) Commit() string                      { return c.commit }
-func (c *computeMatchContextResolver) Path() string                        { return c.path }
-func (c *computeMatchContextResolver) Matches() []gql.ComputeMatchResolver { return c.matches }
+func (c *computeMbtchContextResolver) Repository() *gql.RepositoryResolver { return c.repository }
+func (c *computeMbtchContextResolver) Commit() string                      { return c.commit }
+func (c *computeMbtchContextResolver) Pbth() string                        { return c.pbth }
+func (c *computeMbtchContextResolver) Mbtches() []gql.ComputeMbtchResolver { return c.mbtches }
 
-type computeMatchResolver struct {
-	m *compute.Match
+type computeMbtchResolver struct {
+	m *compute.Mbtch
 }
 
 type computeEnvironmentEntryResolver struct {
-	variable string
-	value    string
-	range_   compute.Range
+	vbribble string
+	vblue    string
+	rbnge_   compute.Rbnge
 }
 
 type computeTextResolver struct {
 	repository *gql.RepositoryResolver
 	commit     string
-	path       string
+	pbth       string
 	t          *compute.Text
 }
 
-func (r *computeMatchResolver) Value() string {
-	return r.m.Value
+func (r *computeMbtchResolver) Vblue() string {
+	return r.m.Vblue
 }
 
-func (r *computeMatchResolver) Range() gql.RangeResolver {
-	return gql.NewRangeResolver(toLspRange(r.m.Range))
+func (r *computeMbtchResolver) Rbnge() gql.RbngeResolver {
+	return gql.NewRbngeResolver(toLspRbnge(r.m.Rbnge))
 }
 
-func (r *computeMatchResolver) Environment() []gql.ComputeEnvironmentEntryResolver {
-	var resolvers []gql.ComputeEnvironmentEntryResolver
-	for variable, value := range r.m.Environment {
-		resolvers = append(resolvers, newEnvironmentEntryResolver(variable, value))
+func (r *computeMbtchResolver) Environment() []gql.ComputeEnvironmentEntryResolver {
+	vbr resolvers []gql.ComputeEnvironmentEntryResolver
+	for vbribble, vblue := rbnge r.m.Environment {
+		resolvers = bppend(resolvers, newEnvironmentEntryResolver(vbribble, vblue))
 	}
 	return resolvers
 }
 
-func newEnvironmentEntryResolver(variable string, value compute.Data) *computeEnvironmentEntryResolver {
+func newEnvironmentEntryResolver(vbribble string, vblue compute.Dbtb) *computeEnvironmentEntryResolver {
 	return &computeEnvironmentEntryResolver{
-		variable: variable,
-		value:    value.Value,
-		range_:   value.Range,
+		vbribble: vbribble,
+		vblue:    vblue.Vblue,
+		rbnge_:   vblue.Rbnge,
 	}
 }
 
-func (r *computeEnvironmentEntryResolver) Variable() string {
-	return r.variable
+func (r *computeEnvironmentEntryResolver) Vbribble() string {
+	return r.vbribble
 }
 
-func (r *computeEnvironmentEntryResolver) Value() string {
-	return r.value
+func (r *computeEnvironmentEntryResolver) Vblue() string {
+	return r.vblue
 }
 
-func (r *computeEnvironmentEntryResolver) Range() gql.RangeResolver {
-	return gql.NewRangeResolver(toLspRange(r.range_))
+func (r *computeEnvironmentEntryResolver) Rbnge() gql.RbngeResolver {
+	return gql.NewRbngeResolver(toLspRbnge(r.rbnge_))
 }
 
-func toLspRange(r compute.Range) lsp.Range {
-	return lsp.Range{
-		Start: lsp.Position{
-			Line:      r.Start.Line,
-			Character: r.Start.Column,
+func toLspRbnge(r compute.Rbnge) lsp.Rbnge {
+	return lsp.Rbnge{
+		Stbrt: lsp.Position{
+			Line:      r.Stbrt.Line,
+			Chbrbcter: r.Stbrt.Column,
 		},
 		End: lsp.Position{
 			Line:      r.End.Line,
-			Character: r.End.Column,
+			Chbrbcter: r.End.Column,
 		},
 	}
 }
@@ -110,26 +110,26 @@ func (c *computeTextResolver) Commit() *string {
 	return &c.commit
 }
 
-func (c *computeTextResolver) Path() *string {
-	return &c.path
+func (c *computeTextResolver) Pbth() *string {
+	return &c.pbth
 }
 
 func (c *computeTextResolver) Kind() *string {
 	return &c.t.Kind
 }
-func (c *computeTextResolver) Value() string { return c.t.Value }
+func (c *computeTextResolver) Vblue() string { return c.t.Vblue }
 
-// A dummy type to express the union of compute results. This how its done by the GQL library we use.
-// https://github.com/graph-gophers/graphql-go/blob/af5bb93e114f0cd4cc095dd8eae0b67070ae8f20/example/starwars/starwars.go#L485-L487
+// A dummy type to express the union of compute results. This how its done by the GQL librbry we use.
+// https://github.com/grbph-gophers/grbphql-go/blob/bf5bb93e114f0cd4cc095dd8ebe0b67070be8f20/exbmple/stbrwbrs/stbrwbrs.go#L485-L487
 //
-// union ComputeResult = ComputeMatchContext | ComputeText
+// union ComputeResult = ComputeMbtchContext | ComputeText
 
 type computeResultResolver struct {
-	result any
+	result bny
 }
 
-func (r *computeResultResolver) ToComputeMatchContext() (gql.ComputeMatchContextResolver, bool) {
-	res, ok := r.result.(*computeMatchContextResolver)
+func (r *computeResultResolver) ToComputeMbtchContext() (gql.ComputeMbtchContextResolver, bool) {
+	res, ok := r.result.(*computeMbtchContextResolver)
 	return res, ok
 }
 
@@ -138,106 +138,106 @@ func (r *computeResultResolver) ToComputeText() (gql.ComputeTextResolver, bool) 
 	return res, ok
 }
 
-func toComputeMatchContextResolver(mc *compute.MatchContext, repository *gql.RepositoryResolver, path, commit string) *computeMatchContextResolver {
-	computeMatches := make([]gql.ComputeMatchResolver, 0, len(mc.Matches))
-	for _, m := range mc.Matches {
+func toComputeMbtchContextResolver(mc *compute.MbtchContext, repository *gql.RepositoryResolver, pbth, commit string) *computeMbtchContextResolver {
+	computeMbtches := mbke([]gql.ComputeMbtchResolver, 0, len(mc.Mbtches))
+	for _, m := rbnge mc.Mbtches {
 		mCopy := m
-		computeMatches = append(computeMatches, &computeMatchResolver{m: &mCopy})
+		computeMbtches = bppend(computeMbtches, &computeMbtchResolver{m: &mCopy})
 	}
-	return &computeMatchContextResolver{
+	return &computeMbtchContextResolver{
 		repository: repository,
 		commit:     commit,
-		path:       path,
-		matches:    computeMatches,
+		pbth:       pbth,
+		mbtches:    computeMbtches,
 	}
 }
 
-func toComputeTextResolver(result *compute.Text, repository *gql.RepositoryResolver, path, commit string) *computeTextResolver {
+func toComputeTextResolver(result *compute.Text, repository *gql.RepositoryResolver, pbth, commit string) *computeTextResolver {
 	return &computeTextResolver{
 		repository: repository,
 		commit:     commit,
-		path:       path,
+		pbth:       pbth,
 		t:          result,
 	}
 }
 
-func toComputeResultResolver(result compute.Result, repoResolver *gql.RepositoryResolver, path, commit string) gql.ComputeResultResolver {
+func toComputeResultResolver(result compute.Result, repoResolver *gql.RepositoryResolver, pbth, commit string) gql.ComputeResultResolver {
 	switch r := result.(type) {
-	case *compute.MatchContext:
-		return &computeResultResolver{result: toComputeMatchContextResolver(r, repoResolver, path, commit)}
-	case *compute.Text:
-		return &computeResultResolver{result: toComputeTextResolver(r, repoResolver, path, commit)}
-	default:
-		panic(fmt.Sprintf("unsupported compute result %T", r))
+	cbse *compute.MbtchContext:
+		return &computeResultResolver{result: toComputeMbtchContextResolver(r, repoResolver, pbth, commit)}
+	cbse *compute.Text:
+		return &computeResultResolver{result: toComputeTextResolver(r, repoResolver, pbth, commit)}
+	defbult:
+		pbnic(fmt.Sprintf("unsupported compute result %T", r))
 	}
 }
 
-func pathAndCommitFromResult(m result.Match) (string, string) {
+func pbthAndCommitFromResult(m result.Mbtch) (string, string) {
 	switch v := m.(type) {
-	case *result.FileMatch:
-		return v.Path, string(v.CommitID)
-	case *result.CommitMatch:
+	cbse *result.FileMbtch:
+		return v.Pbth, string(v.CommitID)
+	cbse *result.CommitMbtch:
 		return "", string(v.Commit.ID)
-	case *result.RepoMatch:
+	cbse *result.RepoMbtch:
 		return "", v.Rev
 	}
 	return "", ""
 }
 
-func toResultResolverList(ctx context.Context, cmd compute.Command, matches []result.Match, db database.DB) ([]gql.ComputeResultResolver, error) {
+func toResultResolverList(ctx context.Context, cmd compute.Commbnd, mbtches []result.Mbtch, db dbtbbbse.DB) ([]gql.ComputeResultResolver, error) {
 	gitserverClient := gitserver.NewClient()
 
 	type repoKey struct {
-		Name types.MinimalRepo
+		Nbme types.MinimblRepo
 		Rev  string
 	}
-	repoResolvers := make(map[repoKey]*gql.RepositoryResolver, 10)
-	getRepoResolver := func(repoName types.MinimalRepo, rev string) *gql.RepositoryResolver {
-		if existing, ok := repoResolvers[repoKey{repoName, rev}]; ok {
+	repoResolvers := mbke(mbp[repoKey]*gql.RepositoryResolver, 10)
+	getRepoResolver := func(repoNbme types.MinimblRepo, rev string) *gql.RepositoryResolver {
+		if existing, ok := repoResolvers[repoKey{repoNbme, rev}]; ok {
 			return existing
 		}
-		resolver := gql.NewRepositoryResolver(db, gitserverClient, repoName.ToRepo())
-		resolver.RepoMatch.Rev = rev
-		repoResolvers[repoKey{repoName, rev}] = resolver
+		resolver := gql.NewRepositoryResolver(db, gitserverClient, repoNbme.ToRepo())
+		resolver.RepoMbtch.Rev = rev
+		repoResolvers[repoKey{repoNbme, rev}] = resolver
 		return resolver
 	}
 
-	results := make([]gql.ComputeResultResolver, 0, len(matches))
-	for _, m := range matches {
+	results := mbke([]gql.ComputeResultResolver, 0, len(mbtches))
+	for _, m := rbnge mbtches {
 		computeResult, err := cmd.Run(ctx, gitserverClient, m)
 		if err != nil {
 			return nil, err
 		}
 
 		if computeResult == nil {
-			// We processed a match that compute doesn't generate a result for.
+			// We processed b mbtch thbt compute doesn't generbte b result for.
 			continue
 		}
 
-		repoResolver := getRepoResolver(m.RepoName(), "")
-		path, commit := pathAndCommitFromResult(m)
-		resolver := toComputeResultResolver(computeResult, repoResolver, path, commit)
-		results = append(results, resolver)
+		repoResolver := getRepoResolver(m.RepoNbme(), "")
+		pbth, commit := pbthAndCommitFromResult(m)
+		resolver := toComputeResultResolver(computeResult, repoResolver, pbth, commit)
+		results = bppend(results, resolver)
 	}
 	return results, nil
 }
 
-// NewBatchComputeImplementer is a function that abstracts away the need to have a
-// handle on (*schemaResolver) Compute.
-func NewBatchComputeImplementer(ctx context.Context, logger log.Logger, db database.DB, args *gql.ComputeArgs) ([]gql.ComputeResultResolver, error) {
-	computeQuery, err := compute.Parse(args.Query)
+// NewBbtchComputeImplementer is b function thbt bbstrbcts bwby the need to hbve b
+// hbndle on (*schembResolver) Compute.
+func NewBbtchComputeImplementer(ctx context.Context, logger log.Logger, db dbtbbbse.DB, brgs *gql.ComputeArgs) ([]gql.ComputeResultResolver, error) {
+	computeQuery, err := compute.Pbrse(brgs.Query)
 	if err != nil {
 		return nil, err
 	}
 
-	searchQuery, err := computeQuery.ToSearchQuery()
+	sebrchQuery, err := computeQuery.ToSebrchQuery()
 	if err != nil {
 		return nil, err
 	}
-	log15.Debug("compute", "search", searchQuery)
+	log15.Debug("compute", "sebrch", sebrchQuery)
 
-	patternType := "regexp"
-	job, err := gql.NewBatchSearchImplementer(ctx, logger, db, &gql.SearchArgs{Query: searchQuery, PatternType: &patternType})
+	pbtternType := "regexp"
+	job, err := gql.NewBbtchSebrchImplementer(ctx, logger, db, &gql.SebrchArgs{Query: sebrchQuery, PbtternType: &pbtternType})
 	if err != nil {
 		return nil, err
 	}
@@ -246,9 +246,9 @@ func NewBatchComputeImplementer(ctx context.Context, logger log.Logger, db datab
 	if err != nil {
 		return nil, err
 	}
-	return toResultResolverList(ctx, computeQuery.Command, results.Matches, db)
+	return toResultResolverList(ctx, computeQuery.Commbnd, results.Mbtches, db)
 }
 
-func (r *Resolver) Compute(ctx context.Context, args *gql.ComputeArgs) ([]gql.ComputeResultResolver, error) {
-	return NewBatchComputeImplementer(ctx, r.logger, r.db, args)
+func (r *Resolver) Compute(ctx context.Context, brgs *gql.ComputeArgs) ([]gql.ComputeResultResolver, error) {
+	return NewBbtchComputeImplementer(ctx, r.logger, r.db, brgs)
 }

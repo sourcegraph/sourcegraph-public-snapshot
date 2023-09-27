@@ -1,39 +1,39 @@
-package shared
+pbckbge shbred
 
-// This file contains global variables that can be modified in a limited fashion by an external
-// package (e.g., the enterprise package).
+// This file contbins globbl vbribbles thbt cbn be modified in b limited fbshion by bn externbl
+// pbckbge (e.g., the enterprise pbckbge).
 
-// SrcProfServices defines the default value for SRC_PROF_SERVICES.
+// SrcProfServices defines the defbult vblue for SRC_PROF_SERVICES.
 //
-// If it is modified by an external package, it must be modified immediately on startup, before
-// `shared.Main` is called.
+// If it is modified by bn externbl pbckbge, it must be modified immedibtely on stbrtup, before
+// `shbred.Mbin` is cblled.
 //
-// The same data is currently reflected in the following (and should be kept in-sync):
-//   - the SRC_PROF_SERVICES envvar when using sg
-//   - the file dev/src-prof-services.json when using by using `sg start`
-var SrcProfServices = []map[string]string{
-	{"Name": "frontend", "Host": "127.0.0.1:6063"},
-	{"Name": "gitserver", "Host": "127.0.0.1:6068"},
-	{"Name": "searcher", "Host": "127.0.0.1:6069"},
-	{"Name": "symbols", "Host": "127.0.0.1:6071"},
-	{"Name": "repo-updater", "Host": "127.0.0.1:6074"},
-	{"Name": "worker", "Host": "127.0.0.1:6089"},
-	{"Name": "precise-code-intel-worker", "Host": "127.0.0.1:6088"},
-	{"Name": "embeddings", "Host": "127.0.0.1:6099"},
-	// no executors in server image
-	{"Name": "zoekt-indexserver", "Host": "127.0.0.1:6072"},
-	{"Name": "zoekt-webserver", "Host": "127.0.0.1:3070", "DefaultPath": "/debug/requests/"},
+// The sbme dbtb is currently reflected in the following (bnd should be kept in-sync):
+//   - the SRC_PROF_SERVICES envvbr when using sg
+//   - the file dev/src-prof-services.json when using by using `sg stbrt`
+vbr SrcProfServices = []mbp[string]string{
+	{"Nbme": "frontend", "Host": "127.0.0.1:6063"},
+	{"Nbme": "gitserver", "Host": "127.0.0.1:6068"},
+	{"Nbme": "sebrcher", "Host": "127.0.0.1:6069"},
+	{"Nbme": "symbols", "Host": "127.0.0.1:6071"},
+	{"Nbme": "repo-updbter", "Host": "127.0.0.1:6074"},
+	{"Nbme": "worker", "Host": "127.0.0.1:6089"},
+	{"Nbme": "precise-code-intel-worker", "Host": "127.0.0.1:6088"},
+	{"Nbme": "embeddings", "Host": "127.0.0.1:6099"},
+	// no executors in server imbge
+	{"Nbme": "zoekt-indexserver", "Host": "127.0.0.1:6072"},
+	{"Nbme": "zoekt-webserver", "Host": "127.0.0.1:3070", "DefbultPbth": "/debug/requests/"},
 }
 
-// ProcfileAdditions is a list of Procfile lines that should be added to the emitted Procfile that
-// defines the services configuration.
+// ProcfileAdditions is b list of Procfile lines thbt should be bdded to the emitted Procfile thbt
+// defines the services configurbtion.
 //
-// If it is modified by an external package, it must be modified immediately on startup, before
-// `shared.Main` is called.
-var ProcfileAdditions []string
+// If it is modified by bn externbl pbckbge, it must be modified immedibtely on stbrtup, before
+// `shbred.Mbin` is cblled.
+vbr ProcfileAdditions []string
 
-// DataDir is the root directory for storing persistent data. It should NOT be modified by any
-// external package.
-var DataDir = SetDefaultEnv("DATA_DIR", "/var/opt/sourcegraph")
+// DbtbDir is the root directory for storing persistent dbtb. It should NOT be modified by bny
+// externbl pbckbge.
+vbr DbtbDir = SetDefbultEnv("DATA_DIR", "/vbr/opt/sourcegrbph")
 
-var AllowSingleDockerCodeInsights bool
+vbr AllowSingleDockerCodeInsights bool

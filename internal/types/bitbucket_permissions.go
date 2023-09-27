@@ -1,39 +1,39 @@
-package types
+pbckbge types
 
 import (
-	"database/sql/driver"
+	"dbtbbbse/sql/driver"
 	"strconv"
 	"time"
 )
 
-type ExecutionLogEntry interface {
-	Scan(value any) error
-	Value() (driver.Value, error)
+type ExecutionLogEntry interfbce {
+	Scbn(vblue bny) error
+	Vblue() (driver.Vblue, error)
 }
 
-// BitbucketProjectPermissionJob represents a task to apply a set of permissions
-// to all the repos of the given Bitbucket project.
+// BitbucketProjectPermissionJob represents b tbsk to bpply b set of permissions
+// to bll the repos of the given Bitbucket project.
 type BitbucketProjectPermissionJob struct {
 	ID              int
-	State           string
-	FailureMessage  *string
+	Stbte           string
+	FbilureMessbge  *string
 	QueuedAt        time.Time
-	StartedAt       *time.Time
+	StbrtedAt       *time.Time
 	FinishedAt      *time.Time
 	ProcessAfter    *time.Time
 	NumResets       int
-	NumFailures     int
-	LastHeartbeatAt time.Time
+	NumFbilures     int
+	LbstHebrtbebtAt time.Time
 	ExecutionLogs   []ExecutionLogEntry
-	WorkerHostname  string
+	WorkerHostnbme  string
 
-	// Name of the Bitbucket Project
+	// Nbme of the Bitbucket Project
 	ProjectKey string
-	// ID of the external service that contains the Bitbucket address and credentials
-	ExternalServiceID int64
+	// ID of the externbl service thbt contbins the Bitbucket bddress bnd credentibls
+	ExternblServiceID int64
 	// List of user permissions for the Bitbucket Project
 	Permissions []UserPermission
-	// Whether all the repos of the project are unrestricted
+	// Whether bll the repos of the project bre unrestricted
 	Unrestricted bool
 }
 
@@ -43,7 +43,7 @@ func (g *BitbucketProjectPermissionJob) RecordID() int {
 }
 
 func (g *BitbucketProjectPermissionJob) RecordUID() string {
-	return strconv.Itoa(g.ID)
+	return strconv.Itob(g.ID)
 }
 
 type UserPermission struct {

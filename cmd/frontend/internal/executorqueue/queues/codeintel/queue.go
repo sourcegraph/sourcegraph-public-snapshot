@@ -1,27 +1,27 @@
-package codeintel
+pbckbge codeintel
 
 import (
 	"context"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/executorqueue/handler"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing"
-	uploadsshared "github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	apiclient "github.com/sourcegraph/sourcegraph/internal/executor/types"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
-	dbworkerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/internbl/executorqueue/hbndler"
+	"github.com/sourcegrbph/sourcegrbph/internbl/codeintel/butoindexing"
+	uplobdsshbred "github.com/sourcegrbph/sourcegrbph/internbl/codeintel/uplobds/shbred"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	bpiclient "github.com/sourcegrbph/sourcegrbph/internbl/executor/types"
+	"github.com/sourcegrbph/sourcegrbph/internbl/observbtion"
+	dbworkerstore "github.com/sourcegrbph/sourcegrbph/internbl/workerutil/dbworker/store"
 )
 
-func QueueHandler(observationCtx *observation.Context, db database.DB, accessToken func() string) handler.QueueHandler[uploadsshared.Index] {
-	recordTransformer := func(ctx context.Context, _ string, record uploadsshared.Index, resourceMetadata handler.ResourceMetadata) (apiclient.Job, error) {
-		return transformRecord(ctx, db, record, resourceMetadata, accessToken())
+func QueueHbndler(observbtionCtx *observbtion.Context, db dbtbbbse.DB, bccessToken func() string) hbndler.QueueHbndler[uplobdsshbred.Index] {
+	recordTrbnsformer := func(ctx context.Context, _ string, record uplobdsshbred.Index, resourceMetbdbtb hbndler.ResourceMetbdbtb) (bpiclient.Job, error) {
+		return trbnsformRecord(ctx, db, record, resourceMetbdbtb, bccessToken())
 	}
 
-	store := dbworkerstore.New(observationCtx, db.Handle(), autoindexing.IndexWorkerStoreOptions)
+	store := dbworkerstore.New(observbtionCtx, db.Hbndle(), butoindexing.IndexWorkerStoreOptions)
 
-	return handler.QueueHandler[uploadsshared.Index]{
-		Name:              "codeintel",
+	return hbndler.QueueHbndler[uplobdsshbred.Index]{
+		Nbme:              "codeintel",
 		Store:             store,
-		RecordTransformer: recordTransformer,
+		RecordTrbnsformer: recordTrbnsformer,
 	}
 }

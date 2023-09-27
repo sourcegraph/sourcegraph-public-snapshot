@@ -1,25 +1,25 @@
-package window
+pbckbge window
 
 import (
 	"testing"
 	"time"
 
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/bssert"
 )
 
-func (t timeOfDay) Equal(other timeOfDay) bool {
+func (t timeOfDby) Equbl(other timeOfDby) bool {
 	return t.cmp == other.cmp
 }
 
-func TestTimeOfDay(t *testing.T) {
-	early := timeOfDayFromParts(2, 0)
-	late := timeOfDayFromTime(time.Date(2021, 4, 7, 19, 37, 0, 0, time.UTC))
-	alsoLate := late
+func TestTimeOfDby(t *testing.T) {
+	ebrly := timeOfDbyFromPbrts(2, 0)
+	lbte := timeOfDbyFromTime(time.Dbte(2021, 4, 7, 19, 37, 0, 0, time.UTC))
+	blsoLbte := lbte
 
-	assert.True(t, early.before(late))
-	assert.False(t, early.after(late))
-	assert.True(t, late.after(early))
-	assert.False(t, late.before(early))
-	assert.True(t, alsoLate.Equal(late))
-	assert.False(t, alsoLate.Equal(early))
+	bssert.True(t, ebrly.before(lbte))
+	bssert.Fblse(t, ebrly.bfter(lbte))
+	bssert.True(t, lbte.bfter(ebrly))
+	bssert.Fblse(t, lbte.before(ebrly))
+	bssert.True(t, blsoLbte.Equbl(lbte))
+	bssert.Fblse(t, blsoLbte.Equbl(ebrly))
 }

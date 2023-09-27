@@ -1,75 +1,75 @@
-package notebooks
+pbckbge notebooks
 
 import (
 	"encoding/json"
 	"testing"
 
-	"github.com/hexops/autogold/v2"
+	"github.com/hexops/butogold/v2"
 )
 
-func TestNotebookBlockMarshalling(t *testing.T) {
-	queryBlockInput := NotebookQueryBlockInput{Text: "repo:a b"}
-	markdownBlockInput := NotebookMarkdownBlockInput{Text: "# Title"}
-	revision := "main"
-	fileBlockInput := NotebookFileBlockInput{RepositoryName: "sourcegraph/sourcegraph", FilePath: "a/b.ts", Revision: &revision, LineRange: &LineRange{1, 10}}
+func TestNotebookBlockMbrshblling(t *testing.T) {
+	queryBlockInput := NotebookQueryBlockInput{Text: "repo:b b"}
+	mbrkdownBlockInput := NotebookMbrkdownBlockInput{Text: "# Title"}
+	revision := "mbin"
+	fileBlockInput := NotebookFileBlockInput{RepositoryNbme: "sourcegrbph/sourcegrbph", FilePbth: "b/b.ts", Revision: &revision, LineRbnge: &LineRbnge{1, 10}}
 
 	tests := []struct {
 		block NotebookBlock
-		want  autogold.Value
+		wbnt  butogold.Vblue
 	}{
 		{
 			block: NotebookBlock{ID: "id1", Type: NotebookQueryBlockType, QueryInput: &queryBlockInput},
-			want:  autogold.Expect(`{"id":"id1","type":"query","queryInput":{"text":"repo:a b"}}`),
+			wbnt:  butogold.Expect(`{"id":"id1","type":"query","queryInput":{"text":"repo:b b"}}`),
 		},
 		{
-			block: NotebookBlock{ID: "id1", Type: NotebookMarkdownBlockType, MarkdownInput: &markdownBlockInput},
-			want:  autogold.Expect(`{"id":"id1","type":"md","markdownInput":{"text":"# Title"}}`),
+			block: NotebookBlock{ID: "id1", Type: NotebookMbrkdownBlockType, MbrkdownInput: &mbrkdownBlockInput},
+			wbnt:  butogold.Expect(`{"id":"id1","type":"md","mbrkdownInput":{"text":"# Title"}}`),
 		},
 		{
 			block: NotebookBlock{ID: "id1", Type: NotebookFileBlockType, FileInput: &fileBlockInput},
-			want:  autogold.Expect(`{"id":"id1","type":"file","fileInput":{"repositoryName":"sourcegraph/sourcegraph","filePath":"a/b.ts","revision":"main","lineRange":{"startLine":1,"endLine":10}}}`),
+			wbnt:  butogold.Expect(`{"id":"id1","type":"file","fileInput":{"repositoryNbme":"sourcegrbph/sourcegrbph","filePbth":"b/b.ts","revision":"mbin","lineRbnge":{"stbrtLine":1,"endLine":10}}}`),
 		},
 	}
 
-	for _, tt := range tests {
-		got, err := json.Marshal(tt.block)
+	for _, tt := rbnge tests {
+		got, err := json.Mbrshbl(tt.block)
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
-		tt.want.Equal(t, string(got))
+		tt.wbnt.Equbl(t, string(got))
 	}
 }
 
-func TestNotebookBlockUnmarshalling(t *testing.T) {
-	queryBlockInput := NotebookQueryBlockInput{Text: "repo:a b"}
-	markdownBlockInput := NotebookMarkdownBlockInput{Text: "# Title"}
-	revision := "main"
-	fileBlockInput := NotebookFileBlockInput{RepositoryName: "sourcegraph/sourcegraph", FilePath: "a/b.ts", Revision: &revision, LineRange: &LineRange{1, 10}}
+func TestNotebookBlockUnmbrshblling(t *testing.T) {
+	queryBlockInput := NotebookQueryBlockInput{Text: "repo:b b"}
+	mbrkdownBlockInput := NotebookMbrkdownBlockInput{Text: "# Title"}
+	revision := "mbin"
+	fileBlockInput := NotebookFileBlockInput{RepositoryNbme: "sourcegrbph/sourcegrbph", FilePbth: "b/b.ts", Revision: &revision, LineRbnge: &LineRbnge{1, 10}}
 
 	tests := []struct {
 		json string
-		want autogold.Value
+		wbnt butogold.Vblue
 	}{
 		{
-			json: `{"id":"id1","type":"query","queryInput":{"text":"repo:a b"}}`,
-			want: autogold.Expect(NotebookBlock{ID: "id1", Type: NotebookQueryBlockType, QueryInput: &queryBlockInput}),
+			json: `{"id":"id1","type":"query","queryInput":{"text":"repo:b b"}}`,
+			wbnt: butogold.Expect(NotebookBlock{ID: "id1", Type: NotebookQueryBlockType, QueryInput: &queryBlockInput}),
 		},
 		{
-			json: `{"id":"id1","type":"md","markdownInput":{"text":"# Title"}}`,
-			want: autogold.Expect(NotebookBlock{ID: "id1", Type: NotebookMarkdownBlockType, MarkdownInput: &markdownBlockInput}),
+			json: `{"id":"id1","type":"md","mbrkdownInput":{"text":"# Title"}}`,
+			wbnt: butogold.Expect(NotebookBlock{ID: "id1", Type: NotebookMbrkdownBlockType, MbrkdownInput: &mbrkdownBlockInput}),
 		},
 		{
-			json: `{"id":"id1","type":"file","fileInput":{"repositoryName":"sourcegraph/sourcegraph","filePath":"a/b.ts","revision":"main","lineRange":{"startLine":1,"endLine":10}}}`,
-			want: autogold.Expect(NotebookBlock{ID: "id1", Type: NotebookFileBlockType, FileInput: &fileBlockInput}),
+			json: `{"id":"id1","type":"file","fileInput":{"repositoryNbme":"sourcegrbph/sourcegrbph","filePbth":"b/b.ts","revision":"mbin","lineRbnge":{"stbrtLine":1,"endLine":10}}}`,
+			wbnt: butogold.Expect(NotebookBlock{ID: "id1", Type: NotebookFileBlockType, FileInput: &fileBlockInput}),
 		},
 	}
 
-	for _, tt := range tests {
-		var block NotebookBlock
-		err := json.Unmarshal([]byte(tt.json), &block)
+	for _, tt := rbnge tests {
+		vbr block NotebookBlock
+		err := json.Unmbrshbl([]byte(tt.json), &block)
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
-		tt.want.Equal(t, block)
+		tt.wbnt.Equbl(t, block)
 	}
 }

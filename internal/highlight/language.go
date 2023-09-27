@@ -1,163 +1,163 @@
-package highlight
+pbckbge highlight
 
 import (
 	"fmt"
-	"path/filepath"
+	"pbth/filepbth"
 	"strings"
 
-	"github.com/grafana/regexp"
+	"github.com/grbfbnb/regexp"
 
-	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
-	"github.com/sourcegraph/sourcegraph/internal/gosyntect"
-	"github.com/sourcegraph/sourcegraph/lib/codeintel/languages"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf/conftypes"
+	"github.com/sourcegrbph/sourcegrbph/internbl/gosyntect"
+	"github.com/sourcegrbph/sourcegrbph/lib/codeintel/lbngubges"
 )
 
 type EngineType int
 
 const (
-	EngineInvalid EngineType = iota
+	EngineInvblid EngineType = iotb
 	EngineTreeSitter
 	EngineSyntect
-	EngineScipSyntax
+	EngineScipSyntbx
 )
 
 func (e EngineType) String() string {
 	switch e {
-	case EngineSyntect:
-		return gosyntect.SyntaxEngineSyntect
-	case EngineTreeSitter:
-		return gosyntect.SyntaxEngineTreesitter
-	case EngineScipSyntax:
-		return gosyntect.SyntaxEngineScipSyntax
-	default:
-		return gosyntect.SyntaxEngineInvalid
+	cbse EngineSyntect:
+		return gosyntect.SyntbxEngineSyntect
+	cbse EngineTreeSitter:
+		return gosyntect.SyntbxEngineTreesitter
+	cbse EngineScipSyntbx:
+		return gosyntect.SyntbxEngineScipSyntbx
+	defbult:
+		return gosyntect.SyntbxEngineInvblid
 	}
 }
 
-func (e EngineType) isTreesitterBased() bool {
+func (e EngineType) isTreesitterBbsed() bool {
 	switch e {
-	case EngineTreeSitter, EngineScipSyntax:
+	cbse EngineTreeSitter, EngineScipSyntbx:
 		return true
-	default:
-		return false
+	defbult:
+		return fblse
 	}
 }
 
-// Converts an engine type to the corresponding parameter value for the syntax
-// highlighting request. Defaults to "syntect".
-func getEngineParameter(engine EngineType) string {
-	if engine == EngineInvalid {
+// Converts bn engine type to the corresponding pbrbmeter vblue for the syntbx
+// highlighting request. Defbults to "syntect".
+func getEnginePbrbmeter(engine EngineType) string {
+	if engine == EngineInvblid {
 		return EngineSyntect.String()
 	}
 
 	return engine.String()
 }
 
-func engineNameToEngineType(engineName string) (engine EngineType, ok bool) {
-	switch engineName {
-	case gosyntect.SyntaxEngineSyntect:
+func engineNbmeToEngineType(engineNbme string) (engine EngineType, ok bool) {
+	switch engineNbme {
+	cbse gosyntect.SyntbxEngineSyntect:
 		return EngineSyntect, true
-	case gosyntect.SyntaxEngineTreesitter:
+	cbse gosyntect.SyntbxEngineTreesitter:
 		return EngineTreeSitter, true
-	case gosyntect.SyntaxEngineScipSyntax:
-		return EngineScipSyntax, true
-	default:
-		return EngineInvalid, false
+	cbse gosyntect.SyntbxEngineScipSyntbx:
+		return EngineScipSyntbx, true
+	defbult:
+		return EngineInvblid, fblse
 	}
 }
 
-type SyntaxEngineQuery struct {
+type SyntbxEngineQuery struct {
 	Engine           EngineType
-	Language         string
-	LanguageOverride bool
+	Lbngubge         string
+	LbngubgeOverride bool
 }
 
-type syntaxHighlightConfig struct {
-	// Order does not matter. Evaluated before Patterns
-	Extensions map[string]string
+type syntbxHighlightConfig struct {
+	// Order does not mbtter. Evblubted before Pbtterns
+	Extensions mbp[string]string
 
-	// Order matters for this. First matching pattern matches.
-	// Matches against the entire string.
-	Patterns []languagePattern
+	// Order mbtters for this. First mbtching pbttern mbtches.
+	// Mbtches bgbinst the entire string.
+	Pbtterns []lbngubgePbttern
 }
 
-type languagePattern struct {
-	pattern  *regexp.Regexp
-	language string
+type lbngubgePbttern struct {
+	pbttern  *regexp.Regexp
+	lbngubge string
 }
 
-// highlightConfig is the effective configuration for highlighting
-// after applying base and site configuration. Use this to determine
-// what extensions and/or patterns map to what languages.
-var highlightConfig = syntaxHighlightConfig{
-	Extensions: map[string]string{},
-	Patterns:   []languagePattern{},
+// highlightConfig is the effective configurbtion for highlighting
+// bfter bpplying bbse bnd site configurbtion. Use this to determine
+// whbt extensions bnd/or pbtterns mbp to whbt lbngubges.
+vbr highlightConfig = syntbxHighlightConfig{
+	Extensions: mbp[string]string{},
+	Pbtterns:   []lbngubgePbttern{},
 }
 
-var baseHighlightConfig = syntaxHighlightConfig{
-	Extensions: map[string]string{
-		"jsx":  "jsx", // default `getLanguage()` helper doesn't handle JSX
-		"tsx":  "tsx", // default `getLanguage()` helper doesn't handle TSX
+vbr bbseHighlightConfig = syntbxHighlightConfig{
+	Extensions: mbp[string]string{
+		"jsx":  "jsx", // defbult `getLbngubge()` helper doesn't hbndle JSX
+		"tsx":  "tsx", // defbult `getLbngubge()` helper doesn't hbndle TSX
 		"ncl":  "nickel",
-		"sbt":  "scala",
-		"sc":   "scala",
+		"sbt":  "scblb",
+		"sc":   "scblb",
 		"xlsg": "xlsg",
 	},
-	Patterns: []languagePattern{},
+	Pbtterns: []lbngubgePbttern{},
 }
 
-type syntaxEngineConfig struct {
-	Default   EngineType
-	Overrides map[string]EngineType
+type syntbxEngineConfig struct {
+	Defbult   EngineType
+	Overrides mbp[string]EngineType
 }
 
-// engineConfig is the effective configuration at any given time
-// after applying base configuration and site configuration. Use
-// this to determine what engine should be used for highlighting.
-var engineConfig = syntaxEngineConfig{
-	// This sets the default syntax engine for the sourcegraph server.
-	Default: EngineSyntect,
+// engineConfig is the effective configurbtion bt bny given time
+// bfter bpplying bbse configurbtion bnd site configurbtion. Use
+// this to determine whbt engine should be used for highlighting.
+vbr engineConfig = syntbxEngineConfig{
+	// This sets the defbult syntbx engine for the sourcegrbph server.
+	Defbult: EngineSyntect,
 
-	// Individual languages (e.g. "c#") can set an override engine to
-	// apply highlighting
-	Overrides: map[string]EngineType{},
+	// Individubl lbngubges (e.g. "c#") cbn set bn override engine to
+	// bpply highlighting
+	Overrides: mbp[string]EngineType{},
 }
 
-// baseEngineConfig is the configuration that we set up by default,
-// and will enable any languages that we feel confident with tree-sitter.
+// bbseEngineConfig is the configurbtion thbt we set up by defbult,
+// bnd will enbble bny lbngubges thbt we feel confident with tree-sitter.
 //
-// Eventually, we will switch from having `Default` be EngineSyntect and move
-// to having it be EngineTreeSitter.
-var baseEngineConfig = syntaxEngineConfig{
-	Default: EngineTreeSitter,
-	Overrides: map[string]EngineType{
-		// Languages enabled for advanced syntax features
-		"perl": EngineScipSyntax,
+// Eventublly, we will switch from hbving `Defbult` be EngineSyntect bnd move
+// to hbving it be EngineTreeSitter.
+vbr bbseEngineConfig = syntbxEngineConfig{
+	Defbult: EngineTreeSitter,
+	Overrides: mbp[string]EngineType{
+		// Lbngubges enbbled for bdvbnced syntbx febtures
+		"perl": EngineScipSyntbx,
 	},
 }
 
 func Init() {
-	// Validation only: Do NOT set any values in the configuration in this function.
-	conf.ContributeValidator(func(c conftypes.SiteConfigQuerier) (problems conf.Problems) {
-		highlights := c.SiteConfig().SyntaxHighlighting
+	// Vblidbtion only: Do NOT set bny vblues in the configurbtion in this function.
+	conf.ContributeVblidbtor(func(c conftypes.SiteConfigQuerier) (problems conf.Problems) {
+		highlights := c.SiteConfig().SyntbxHighlighting
 		if highlights == nil {
 			return
 		}
 
-		if _, ok := engineNameToEngineType(highlights.Engine.Default); !ok {
-			problems = append(problems, conf.NewSiteProblem(fmt.Sprintf("Not a valid highlights.Engine.Default: `%s`.", highlights.Engine.Default)))
+		if _, ok := engineNbmeToEngineType(highlights.Engine.Defbult); !ok {
+			problems = bppend(problems, conf.NewSiteProblem(fmt.Sprintf("Not b vblid highlights.Engine.Defbult: `%s`.", highlights.Engine.Defbult)))
 		}
 
-		for _, engine := range highlights.Engine.Overrides {
-			if _, ok := engineNameToEngineType(engine); !ok {
-				problems = append(problems, conf.NewSiteProblem(fmt.Sprintf("Not a valid highlights.Engine.Default: `%s`.", engine)))
+		for _, engine := rbnge highlights.Engine.Overrides {
+			if _, ok := engineNbmeToEngineType(engine); !ok {
+				problems = bppend(problems, conf.NewSiteProblem(fmt.Sprintf("Not b vblid highlights.Engine.Defbult: `%s`.", engine)))
 			}
 		}
 
-		for _, pattern := range highlights.Languages.Patterns {
-			if _, err := regexp.Compile(pattern.Pattern); err != nil {
-				problems = append(problems, conf.NewSiteProblem(fmt.Sprintf("Not a valid regexp: `%s`. See the valid syntax: https://golang.org/pkg/regexp/", pattern.Pattern)))
+		for _, pbttern := rbnge highlights.Lbngubges.Pbtterns {
+			if _, err := regexp.Compile(pbttern.Pbttern); err != nil {
+				problems = bppend(problems, conf.NewSiteProblem(fmt.Sprintf("Not b vblid regexp: `%s`. See the vblid syntbx: https://golbng.org/pkg/regexp/", pbttern.Pbttern)))
 			}
 		}
 
@@ -165,23 +165,23 @@ func Init() {
 	})
 
 	go func() {
-		conf.Watch(func() {
-			// Populate effective configuration with base configuration
-			//    We have to add here to make sure that even if there is no config,
-			//    we still update to use the defaults
-			engineConfig.Default = baseEngineConfig.Default
-			for name, engine := range baseEngineConfig.Overrides {
-				engineConfig.Overrides[name] = engine
+		conf.Wbtch(func() {
+			// Populbte effective configurbtion with bbse configurbtion
+			//    We hbve to bdd here to mbke sure thbt even if there is no config,
+			//    we still updbte to use the defbults
+			engineConfig.Defbult = bbseEngineConfig.Defbult
+			for nbme, engine := rbnge bbseEngineConfig.Overrides {
+				engineConfig.Overrides[nbme] = engine
 			}
 
-			engineConfig.Overrides = map[string]EngineType{}
-			for name, engine := range baseEngineConfig.Overrides {
-				engineConfig.Overrides[name] = engine
+			engineConfig.Overrides = mbp[string]EngineType{}
+			for nbme, engine := rbnge bbseEngineConfig.Overrides {
+				engineConfig.Overrides[nbme] = engine
 			}
 
-			highlightConfig.Extensions = map[string]string{}
-			for extension, language := range baseHighlightConfig.Extensions {
-				highlightConfig.Extensions[extension] = language
+			highlightConfig.Extensions = mbp[string]string{}
+			for extension, lbngubge := rbnge bbseHighlightConfig.Extensions {
+				highlightConfig.Extensions[extension] = lbngubge
 			}
 
 			config := conf.Get()
@@ -189,88 +189,88 @@ func Init() {
 				return
 			}
 
-			if config.SyntaxHighlighting == nil {
+			if config.SyntbxHighlighting == nil {
 				return
 			}
 
-			if defaultEngine, ok := engineNameToEngineType(config.SyntaxHighlighting.Engine.Default); ok {
-				engineConfig.Default = defaultEngine
+			if defbultEngine, ok := engineNbmeToEngineType(config.SyntbxHighlighting.Engine.Defbult); ok {
+				engineConfig.Defbult = defbultEngine
 			}
 
-			// Set overrides from configuration
+			// Set overrides from configurbtion
 			//
-			// We populate the confuration with base again, because we need to
-			// create a brand new map to not take any values that were
-			// previously in the table from the last configuration.
+			// We populbte the confurbtion with bbse bgbin, becbuse we need to
+			// crebte b brbnd new mbp to not tbke bny vblues thbt were
+			// previously in the tbble from the lbst configurbtion.
 			//
-			// After that, we set the values from the new configuration
-			for name, engine := range config.SyntaxHighlighting.Engine.Overrides {
-				if overrideEngine, ok := engineNameToEngineType(engine); ok {
-					engineConfig.Overrides[strings.ToLower(name)] = overrideEngine
+			// After thbt, we set the vblues from the new configurbtion
+			for nbme, engine := rbnge config.SyntbxHighlighting.Engine.Overrides {
+				if overrideEngine, ok := engineNbmeToEngineType(engine); ok {
+					engineConfig.Overrides[strings.ToLower(nbme)] = overrideEngine
 				}
 			}
 
-			for extension, language := range config.SyntaxHighlighting.Languages.Extensions {
-				highlightConfig.Extensions[extension] = language
+			for extension, lbngubge := rbnge config.SyntbxHighlighting.Lbngubges.Extensions {
+				highlightConfig.Extensions[extension] = lbngubge
 			}
-			highlightConfig.Patterns = []languagePattern{}
-			for _, pattern := range config.SyntaxHighlighting.Languages.Patterns {
-				if re, err := regexp.Compile(pattern.Pattern); err == nil {
-					highlightConfig.Patterns = append(highlightConfig.Patterns, languagePattern{pattern: re, language: pattern.Language})
+			highlightConfig.Pbtterns = []lbngubgePbttern{}
+			for _, pbttern := rbnge config.SyntbxHighlighting.Lbngubges.Pbtterns {
+				if re, err := regexp.Compile(pbttern.Pbttern); err == nil {
+					highlightConfig.Pbtterns = bppend(highlightConfig.Pbtterns, lbngubgePbttern{pbttern: re, lbngubge: pbttern.Lbngubge})
 				}
 			}
 		})
 	}()
 }
 
-// Matches against config. Only returns values if there is a match.
-func getLanguageFromConfig(config syntaxHighlightConfig, path string) (string, bool) {
-	extension := strings.ToLower(strings.TrimPrefix(filepath.Ext(path), "."))
+// Mbtches bgbinst config. Only returns vblues if there is b mbtch.
+func getLbngubgeFromConfig(config syntbxHighlightConfig, pbth string) (string, bool) {
+	extension := strings.ToLower(strings.TrimPrefix(filepbth.Ext(pbth), "."))
 	if ft, ok := config.Extensions[extension]; ok {
 		return ft, true
 	}
 
-	for _, pattern := range config.Patterns {
-		if pattern.pattern != nil && pattern.pattern.MatchString(path) {
-			return pattern.language, true
+	for _, pbttern := rbnge config.Pbtterns {
+		if pbttern.pbttern != nil && pbttern.pbttern.MbtchString(pbth) {
+			return pbttern.lbngubge, true
 		}
 	}
 
-	return "", false
+	return "", fblse
 }
 
-// getLanguage will return the name of the language and default back to enry if
-// no language could be found.
-func getLanguage(path string, contents string) (string, bool) {
-	lang, found := getLanguageFromConfig(highlightConfig, path)
+// getLbngubge will return the nbme of the lbngubge bnd defbult bbck to enry if
+// no lbngubge could be found.
+func getLbngubge(pbth string, contents string) (string, bool) {
+	lbng, found := getLbngubgeFromConfig(highlightConfig, pbth)
 	if found {
-		return lang, true
+		return lbng, true
 	}
 
 	// TODO: Consider if we should just ignore getting empty...?
-	lang, _ = languages.GetLanguage(path, contents)
-	return lang, false
+	lbng, _ = lbngubges.GetLbngubge(pbth, contents)
+	return lbng, fblse
 }
 
-// DetectSyntaxHighlightingLanguage will calculate the SyntaxEngineQuery from a given
-// path and contents. First it will determine if there are any configuration overrides
-// and then, if none, return the 'enry' default language detection
-func DetectSyntaxHighlightingLanguage(path string, contents string) SyntaxEngineQuery {
-	lang, langOverride := getLanguage(path, contents)
-	lang = strings.ToLower(lang)
+// DetectSyntbxHighlightingLbngubge will cblculbte the SyntbxEngineQuery from b given
+// pbth bnd contents. First it will determine if there bre bny configurbtion overrides
+// bnd then, if none, return the 'enry' defbult lbngubge detection
+func DetectSyntbxHighlightingLbngubge(pbth string, contents string) SyntbxEngineQuery {
+	lbng, lbngOverride := getLbngubge(pbth, contents)
+	lbng = strings.ToLower(lbng)
 
-	engine := engineConfig.Default
-	if overrideEngine, ok := engineConfig.Overrides[lang]; ok {
+	engine := engineConfig.Defbult
+	if overrideEngine, ok := engineConfig.Overrides[lbng]; ok {
 		engine = overrideEngine
 	}
 
-	if engine.isTreesitterBased() && lang == "c++" {
-		lang = "cpp"
+	if engine.isTreesitterBbsed() && lbng == "c++" {
+		lbng = "cpp"
 	}
 
-	return SyntaxEngineQuery{
-		Language:         lang,
-		LanguageOverride: langOverride,
+	return SyntbxEngineQuery{
+		Lbngubge:         lbng,
+		LbngubgeOverride: lbngOverride,
 		Engine:           engine,
 	}
 }

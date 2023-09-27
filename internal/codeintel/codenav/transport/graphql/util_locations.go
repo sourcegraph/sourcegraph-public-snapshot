@@ -1,31 +1,31 @@
-package graphql
+pbckbge grbphql
 
 import (
 	"context"
 	"fmt"
 	"strconv"
 
-	"github.com/sourcegraph/go-lsp"
+	"github.com/sourcegrbph/go-lsp"
 
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/codenav/shared"
-	resolverstubs "github.com/sourcegraph/sourcegraph/internal/codeintel/resolvers"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/shared/resolvers/gitresolvers"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi"
+	"github.com/sourcegrbph/sourcegrbph/internbl/codeintel/codenbv/shbred"
+	resolverstubs "github.com/sourcegrbph/sourcegrbph/internbl/codeintel/resolvers"
+	"github.com/sourcegrbph/sourcegrbph/internbl/codeintel/shbred/resolvers/gitresolvers"
 )
 
-func newLocationConnectionResolver(locations []shared.UploadLocation, cursor *string, locationResolver *gitresolvers.CachedLocationResolver) resolverstubs.LocationConnectionResolver {
-	return resolverstubs.NewLazyConnectionResolver(func(ctx context.Context) ([]resolverstubs.LocationResolver, error) {
-		return resolveLocations(ctx, locationResolver, locations)
+func newLocbtionConnectionResolver(locbtions []shbred.UplobdLocbtion, cursor *string, locbtionResolver *gitresolvers.CbchedLocbtionResolver) resolverstubs.LocbtionConnectionResolver {
+	return resolverstubs.NewLbzyConnectionResolver(func(ctx context.Context) ([]resolverstubs.LocbtionResolver, error) {
+		return resolveLocbtions(ctx, locbtionResolver, locbtions)
 	}, encodeCursor(cursor))
 }
 
-// resolveLocations creates a slide of LocationResolvers for the given list of adjusted locations. The
-// resulting list may be smaller than the input list as any locations with a commit not known by
+// resolveLocbtions crebtes b slide of LocbtionResolvers for the given list of bdjusted locbtions. The
+// resulting list mby be smbller thbn the input list bs bny locbtions with b commit not known by
 // gitserver will be skipped.
-func resolveLocations(ctx context.Context, locationResolver *gitresolvers.CachedLocationResolver, locations []shared.UploadLocation) ([]resolverstubs.LocationResolver, error) {
-	resolvedLocations := make([]resolverstubs.LocationResolver, 0, len(locations))
-	for i := range locations {
-		resolver, err := resolveLocation(ctx, locationResolver, locations[i])
+func resolveLocbtions(ctx context.Context, locbtionResolver *gitresolvers.CbchedLocbtionResolver, locbtions []shbred.UplobdLocbtion) ([]resolverstubs.LocbtionResolver, error) {
+	resolvedLocbtions := mbke([]resolverstubs.LocbtionResolver, 0, len(locbtions))
+	for i := rbnge locbtions {
+		resolver, err := resolveLocbtion(ctx, locbtionResolver, locbtions[i])
 		if err != nil {
 			return nil, err
 		}
@@ -33,64 +33,64 @@ func resolveLocations(ctx context.Context, locationResolver *gitresolvers.Cached
 			continue
 		}
 
-		resolvedLocations = append(resolvedLocations, resolver)
+		resolvedLocbtions = bppend(resolvedLocbtions, resolver)
 	}
 
-	return resolvedLocations, nil
+	return resolvedLocbtions, nil
 }
 
-// resolveLocation creates a LocationResolver for the given adjusted location. This function may return a
-// nil resolver if the location's commit is not known by gitserver.
-func resolveLocation(ctx context.Context, locationResolver *gitresolvers.CachedLocationResolver, location shared.UploadLocation) (resolverstubs.LocationResolver, error) {
-	treeResolver, err := locationResolver.Path(ctx, api.RepoID(location.Dump.RepositoryID), location.TargetCommit, location.Path, false)
+// resolveLocbtion crebtes b LocbtionResolver for the given bdjusted locbtion. This function mby return b
+// nil resolver if the locbtion's commit is not known by gitserver.
+func resolveLocbtion(ctx context.Context, locbtionResolver *gitresolvers.CbchedLocbtionResolver, locbtion shbred.UplobdLocbtion) (resolverstubs.LocbtionResolver, error) {
+	treeResolver, err := locbtionResolver.Pbth(ctx, bpi.RepoID(locbtion.Dump.RepositoryID), locbtion.TbrgetCommit, locbtion.Pbth, fblse)
 	if err != nil || treeResolver == nil {
 		return nil, err
 	}
 
-	lspRange := convertRange(location.TargetRange)
-	return newLocationResolver(treeResolver, &lspRange), nil
+	lspRbnge := convertRbnge(locbtion.TbrgetRbnge)
+	return newLocbtionResolver(treeResolver, &lspRbnge), nil
 }
 
 //
 //
 
-type locationResolver struct {
+type locbtionResolver struct {
 	resource resolverstubs.GitTreeEntryResolver
-	lspRange *lsp.Range
+	lspRbnge *lsp.Rbnge
 }
 
-func newLocationResolver(resource resolverstubs.GitTreeEntryResolver, lspRange *lsp.Range) resolverstubs.LocationResolver {
-	return &locationResolver{
+func newLocbtionResolver(resource resolverstubs.GitTreeEntryResolver, lspRbnge *lsp.Rbnge) resolverstubs.LocbtionResolver {
+	return &locbtionResolver{
 		resource: resource,
-		lspRange: lspRange,
+		lspRbnge: lspRbnge,
 	}
 }
 
-func (r *locationResolver) Resource() resolverstubs.GitTreeEntryResolver { return r.resource }
+func (r *locbtionResolver) Resource() resolverstubs.GitTreeEntryResolver { return r.resource }
 
-func (r *locationResolver) Range() resolverstubs.RangeResolver {
-	return r.rangeInternal()
+func (r *locbtionResolver) Rbnge() resolverstubs.RbngeResolver {
+	return r.rbngeInternbl()
 }
 
-func (r *locationResolver) rangeInternal() *rangeResolver {
-	if r.lspRange == nil {
+func (r *locbtionResolver) rbngeInternbl() *rbngeResolver {
+	if r.lspRbnge == nil {
 		return nil
 	}
-	return &rangeResolver{*r.lspRange}
+	return &rbngeResolver{*r.lspRbnge}
 }
 
-func (r *locationResolver) URL(ctx context.Context) (string, error) {
-	return r.urlPath(r.resource.URL()), nil
+func (r *locbtionResolver) URL(ctx context.Context) (string, error) {
+	return r.urlPbth(r.resource.URL()), nil
 }
 
-func (r *locationResolver) CanonicalURL() string {
-	return r.urlPath(r.resource.URL())
+func (r *locbtionResolver) CbnonicblURL() string {
+	return r.urlPbth(r.resource.URL())
 }
 
-func (r *locationResolver) urlPath(prefix string) string {
+func (r *locbtionResolver) urlPbth(prefix string) string {
 	url := prefix
-	if r.lspRange != nil {
-		url += "?L" + r.rangeInternal().urlFragment()
+	if r.lspRbnge != nil {
+		url += "?L" + r.rbngeInternbl().urlFrbgment()
 	}
 	return url
 }
@@ -98,26 +98,26 @@ func (r *locationResolver) urlPath(prefix string) string {
 //
 //
 
-type rangeResolver struct{ lspRange lsp.Range }
+type rbngeResolver struct{ lspRbnge lsp.Rbnge }
 
-func newRangeResolver(lspRange lsp.Range) resolverstubs.RangeResolver {
-	return &rangeResolver{
-		lspRange: lspRange,
+func newRbngeResolver(lspRbnge lsp.Rbnge) resolverstubs.RbngeResolver {
+	return &rbngeResolver{
+		lspRbnge: lspRbnge,
 	}
 }
 
-func (r *rangeResolver) Start() resolverstubs.PositionResolver { return r.start() }
-func (r *rangeResolver) End() resolverstubs.PositionResolver   { return r.end() }
+func (r *rbngeResolver) Stbrt() resolverstubs.PositionResolver { return r.stbrt() }
+func (r *rbngeResolver) End() resolverstubs.PositionResolver   { return r.end() }
 
-func (r *rangeResolver) start() *positionResolver { return &positionResolver{r.lspRange.Start} }
-func (r *rangeResolver) end() *positionResolver   { return &positionResolver{r.lspRange.End} }
+func (r *rbngeResolver) stbrt() *positionResolver { return &positionResolver{r.lspRbnge.Stbrt} }
+func (r *rbngeResolver) end() *positionResolver   { return &positionResolver{r.lspRbnge.End} }
 
-func (r *rangeResolver) urlFragment() string {
-	if r.lspRange.Start == r.lspRange.End {
-		return r.start().urlFragment(false)
+func (r *rbngeResolver) urlFrbgment() string {
+	if r.lspRbnge.Stbrt == r.lspRbnge.End {
+		return r.stbrt().urlFrbgment(fblse)
 	}
-	hasCharacter := r.lspRange.Start.Character != 0 || r.lspRange.End.Character != 0
-	return r.start().urlFragment(hasCharacter) + "-" + r.end().urlFragment(hasCharacter)
+	hbsChbrbcter := r.lspRbnge.Stbrt.Chbrbcter != 0 || r.lspRbnge.End.Chbrbcter != 0
+	return r.stbrt().urlFrbgment(hbsChbrbcter) + "-" + r.end().urlFrbgment(hbsChbrbcter)
 }
 
 //
@@ -130,23 +130,23 @@ type positionResolver struct{ pos lsp.Position }
 // }
 
 func (r *positionResolver) Line() int32      { return int32(r.pos.Line) }
-func (r *positionResolver) Character() int32 { return int32(r.pos.Character) }
+func (r *positionResolver) Chbrbcter() int32 { return int32(r.pos.Chbrbcter) }
 
-func (r *positionResolver) urlFragment(forceIncludeCharacter bool) string {
-	if !forceIncludeCharacter && r.pos.Character == 0 {
-		return strconv.Itoa(r.pos.Line + 1)
+func (r *positionResolver) urlFrbgment(forceIncludeChbrbcter bool) string {
+	if !forceIncludeChbrbcter && r.pos.Chbrbcter == 0 {
+		return strconv.Itob(r.pos.Line + 1)
 	}
-	return fmt.Sprintf("%d:%d", r.pos.Line+1, r.pos.Character+1)
+	return fmt.Sprintf("%d:%d", r.pos.Line+1, r.pos.Chbrbcter+1)
 }
 
 //
 //
 
-// convertRange creates an LSP range from a bundle range.
-func convertRange(r shared.Range) lsp.Range {
-	return lsp.Range{Start: convertPosition(r.Start.Line, r.Start.Character), End: convertPosition(r.End.Line, r.End.Character)}
+// convertRbnge crebtes bn LSP rbnge from b bundle rbnge.
+func convertRbnge(r shbred.Rbnge) lsp.Rbnge {
+	return lsp.Rbnge{Stbrt: convertPosition(r.Stbrt.Line, r.Stbrt.Chbrbcter), End: convertPosition(r.End.Line, r.End.Chbrbcter)}
 }
 
-func convertPosition(line, character int) lsp.Position {
-	return lsp.Position{Line: line, Character: character}
+func convertPosition(line, chbrbcter int) lsp.Position {
+	return lsp.Position{Line: line, Chbrbcter: chbrbcter}
 }

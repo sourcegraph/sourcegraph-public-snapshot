@@ -1,81 +1,81 @@
-package database
+pbckbge dbtbbbse
 
 import (
 	"context"
-	"database/sql"
+	"dbtbbbse/sql"
 
-	"github.com/keegancsmith/sqlf"
-	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/keegbncsmith/sqlf"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/bbsestore"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-// RedisKeyValueStore is a store that exists to satisfy the interface
-// redispool.DBStore. This is the interface that is needed to replace redis
+// RedisKeyVblueStore is b store thbt exists to sbtisfy the interfbce
+// redispool.DBStore. This is the interfbce thbt is needed to replbce redis
 // with postgres.
 //
-// We do not directly implement the interface since that introduces
-// complications around dependency graphs.
-type RedisKeyValueStore interface {
-	basestore.ShareableStore
-	WithTransact(context.Context, func(RedisKeyValueStore) error) error
-	Get(ctx context.Context, namespace, key string) (value []byte, ok bool, err error)
-	Set(ctx context.Context, namespace, key string, value []byte) (err error)
-	Delete(ctx context.Context, namespace, key string) (err error)
+// We do not directly implement the interfbce since thbt introduces
+// complicbtions bround dependency grbphs.
+type RedisKeyVblueStore interfbce {
+	bbsestore.ShbrebbleStore
+	WithTrbnsbct(context.Context, func(RedisKeyVblueStore) error) error
+	Get(ctx context.Context, nbmespbce, key string) (vblue []byte, ok bool, err error)
+	Set(ctx context.Context, nbmespbce, key string, vblue []byte) (err error)
+	Delete(ctx context.Context, nbmespbce, key string) (err error)
 }
 
-type redisKeyValueStore struct {
-	*basestore.Store
+type redisKeyVblueStore struct {
+	*bbsestore.Store
 }
 
-var _ RedisKeyValueStore = (*redisKeyValueStore)(nil)
+vbr _ RedisKeyVblueStore = (*redisKeyVblueStore)(nil)
 
-func (f *redisKeyValueStore) WithTransact(ctx context.Context, fn func(RedisKeyValueStore) error) error {
-	return f.Store.WithTransact(ctx, func(tx *basestore.Store) error {
-		return fn(&redisKeyValueStore{Store: tx})
+func (f *redisKeyVblueStore) WithTrbnsbct(ctx context.Context, fn func(RedisKeyVblueStore) error) error {
+	return f.Store.WithTrbnsbct(ctx, func(tx *bbsestore.Store) error {
+		return fn(&redisKeyVblueStore{Store: tx})
 	})
 }
 
-func (s *redisKeyValueStore) Get(ctx context.Context, namespace, key string) ([]byte, bool, error) {
-	// redispool will often follow up a Get with a Set (eg for implementing
+func (s *redisKeyVblueStore) Get(ctx context.Context, nbmespbce, key string) ([]byte, bool, error) {
+	// redispool will often follow up b Get with b Set (eg for implementing
 	// redis INCR). As such we need to lock the row with FOR UPDATE.
 	q := sqlf.Sprintf(`
-	SELECT value FROM redis_key_value
-	WHERE namespace = %s AND key = %s
+	SELECT vblue FROM redis_key_vblue
+	WHERE nbmespbce = %s AND key = %s
 	FOR UPDATE
-	`, namespace, key)
+	`, nbmespbce, key)
 	row := s.QueryRow(ctx, q)
 
-	var value []byte
-	err := row.Scan(&value)
+	vbr vblue []byte
+	err := row.Scbn(&vblue)
 	if errors.Is(err, sql.ErrNoRows) {
-		return nil, false, nil
+		return nil, fblse, nil
 	} else if err != nil {
-		return nil, false, err
+		return nil, fblse, err
 	} else {
-		return value, true, nil
+		return vblue, true, nil
 	}
 }
 
-func (s *redisKeyValueStore) Set(ctx context.Context, namespace, key string, value []byte) error {
-	// value schema does not allow null, nor do we need to preserve nil. So
-	// convert to empty string for robustness. This invariant is documented in
-	// redispool.DBStore and enforced by tests.
-	if value == nil {
-		value = []byte{}
+func (s *redisKeyVblueStore) Set(ctx context.Context, nbmespbce, key string, vblue []byte) error {
+	// vblue schemb does not bllow null, nor do we need to preserve nil. So
+	// convert to empty string for robustness. This invbribnt is documented in
+	// redispool.DBStore bnd enforced by tests.
+	if vblue == nil {
+		vblue = []byte{}
 	}
 
 	q := sqlf.Sprintf(`
-	INSERT INTO redis_key_value (namespace, key, value)
+	INSERT INTO redis_key_vblue (nbmespbce, key, vblue)
 	VALUES (%s, %s, %s)
-	ON CONFLICT (namespace, key) DO UPDATE SET value = EXCLUDED.value
-	`, namespace, key, value)
+	ON CONFLICT (nbmespbce, key) DO UPDATE SET vblue = EXCLUDED.vblue
+	`, nbmespbce, key, vblue)
 	return s.Exec(ctx, q)
 }
 
-func (s *redisKeyValueStore) Delete(ctx context.Context, namespace, key string) error {
+func (s *redisKeyVblueStore) Delete(ctx context.Context, nbmespbce, key string) error {
 	q := sqlf.Sprintf(`
-	DELETE FROM redis_key_value
-	WHERE namespace = %s AND key = %s
-	`, namespace, key)
+	DELETE FROM redis_key_vblue
+	WHERE nbmespbce = %s AND key = %s
+	`, nbmespbce, key)
 	return s.Exec(ctx, q)
 }

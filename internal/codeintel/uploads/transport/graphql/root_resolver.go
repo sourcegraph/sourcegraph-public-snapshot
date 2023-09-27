@@ -1,41 +1,41 @@
-package graphql
+pbckbge grbphql
 
 import (
-	resolverstubs "github.com/sourcegraph/sourcegraph/internal/codeintel/resolvers"
-	sharedresolvers "github.com/sourcegraph/sourcegraph/internal/codeintel/shared/resolvers"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/shared/resolvers/gitresolvers"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
+	resolverstubs "github.com/sourcegrbph/sourcegrbph/internbl/codeintel/resolvers"
+	shbredresolvers "github.com/sourcegrbph/sourcegrbph/internbl/codeintel/shbred/resolvers"
+	"github.com/sourcegrbph/sourcegrbph/internbl/codeintel/shbred/resolvers/gitresolvers"
+	"github.com/sourcegrbph/sourcegrbph/internbl/observbtion"
 )
 
 type rootResolver struct {
-	uploadSvc                   UploadsService
-	autoindexSvc                AutoIndexingService
-	siteAdminChecker            sharedresolvers.SiteAdminChecker
-	uploadLoaderFactory         UploadLoaderFactory
-	indexLoaderFactory          IndexLoaderFactory
-	locationResolverFactory     *gitresolvers.CachedLocationResolverFactory
-	preciseIndexResolverFactory *PreciseIndexResolverFactory
-	operations                  *operations
+	uplobdSvc                   UplobdsService
+	butoindexSvc                AutoIndexingService
+	siteAdminChecker            shbredresolvers.SiteAdminChecker
+	uplobdLobderFbctory         UplobdLobderFbctory
+	indexLobderFbctory          IndexLobderFbctory
+	locbtionResolverFbctory     *gitresolvers.CbchedLocbtionResolverFbctory
+	preciseIndexResolverFbctory *PreciseIndexResolverFbctory
+	operbtions                  *operbtions
 }
 
 func NewRootResolver(
-	observationCtx *observation.Context,
-	uploadSvc UploadsService,
-	autoindexSvc AutoIndexingService,
-	siteAdminChecker sharedresolvers.SiteAdminChecker,
-	uploadLoaderFactory UploadLoaderFactory,
-	indexLoaderFactory IndexLoaderFactory,
-	locationResolverFactory *gitresolvers.CachedLocationResolverFactory,
-	preciseIndexResolverFactory *PreciseIndexResolverFactory,
-) resolverstubs.UploadsServiceResolver {
+	observbtionCtx *observbtion.Context,
+	uplobdSvc UplobdsService,
+	butoindexSvc AutoIndexingService,
+	siteAdminChecker shbredresolvers.SiteAdminChecker,
+	uplobdLobderFbctory UplobdLobderFbctory,
+	indexLobderFbctory IndexLobderFbctory,
+	locbtionResolverFbctory *gitresolvers.CbchedLocbtionResolverFbctory,
+	preciseIndexResolverFbctory *PreciseIndexResolverFbctory,
+) resolverstubs.UplobdsServiceResolver {
 	return &rootResolver{
-		uploadSvc:                   uploadSvc,
-		autoindexSvc:                autoindexSvc,
+		uplobdSvc:                   uplobdSvc,
+		butoindexSvc:                butoindexSvc,
 		siteAdminChecker:            siteAdminChecker,
-		uploadLoaderFactory:         uploadLoaderFactory,
-		indexLoaderFactory:          indexLoaderFactory,
-		locationResolverFactory:     locationResolverFactory,
-		preciseIndexResolverFactory: preciseIndexResolverFactory,
-		operations:                  newOperations(observationCtx),
+		uplobdLobderFbctory:         uplobdLobderFbctory,
+		indexLobderFbctory:          indexLobderFbctory,
+		locbtionResolverFbctory:     locbtionResolverFbctory,
+		preciseIndexResolverFbctory: preciseIndexResolverFbctory,
+		operbtions:                  newOperbtions(observbtionCtx),
 	}
 }

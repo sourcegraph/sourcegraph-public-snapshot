@@ -1,281 +1,281 @@
-package database
+pbckbge dbtbbbse
 
 import (
 	"context"
 	"testing"
 
-	"github.com/keegancsmith/sqlf"
-	"github.com/sourcegraph/log/logtest"
+	"github.com/keegbncsmith/sqlf"
+	"github.com/sourcegrbph/log/logtest"
 
-	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc"
-	"github.com/sourcegraph/sourcegraph/schema"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbtest"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc"
+	"github.com/sourcegrbph/sourcegrbph/schemb"
 )
 
 func TestUsers_BuiltinAuth(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	t.Parallel()
+	t.Pbrbllel()
 	logger := logtest.Scoped(t)
 	db := NewDB(logger, dbtest.NewDB(logger, t))
-	ctx := context.Background()
+	ctx := context.Bbckground()
 
-	if _, err := db.Users().Create(ctx, NewUser{
-		Email:       "foo@bar.com",
-		Username:    "foo",
-		DisplayName: "foo",
-		Password:    "asdfasdf",
+	if _, err := db.Users().Crebte(ctx, NewUser{
+		Embil:       "foo@bbr.com",
+		Usernbme:    "foo",
+		DisplbyNbme: "foo",
+		Pbssword:    "bsdfbsdf",
 	}); err == nil {
-		t.Fatal("user created without email verification code or admin-verified status")
+		t.Fbtbl("user crebted without embil verificbtion code or bdmin-verified stbtus")
 	}
 
-	usr, err := db.Users().Create(ctx, NewUser{
-		Email:                 "foo@bar.com",
-		Username:              "foo",
-		DisplayName:           "foo",
-		Password:              "right-password",
-		EmailVerificationCode: "email-code",
+	usr, err := db.Users().Crebte(ctx, NewUser{
+		Embil:                 "foo@bbr.com",
+		Usernbme:              "foo",
+		DisplbyNbme:           "foo",
+		Pbssword:              "right-pbssword",
+		EmbilVerificbtionCode: "embil-code",
 	})
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
-	_, verified, err := db.UserEmails().GetPrimaryEmail(ctx, usr.ID)
+	_, verified, err := db.UserEmbils().GetPrimbryEmbil(ctx, usr.ID)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 	if verified {
-		t.Fatal("new user should not be verified")
+		t.Fbtbl("new user should not be verified")
 	}
-	if isValid, err := db.UserEmails().Verify(ctx, usr.ID, "foo@bar.com", "wrong_email-code"); err == nil && isValid {
-		t.Fatal("should not validate email with wrong code")
+	if isVblid, err := db.UserEmbils().Verify(ctx, usr.ID, "foo@bbr.com", "wrong_embil-code"); err == nil && isVblid {
+		t.Fbtbl("should not vblidbte embil with wrong code")
 	}
-	if isValid, err := db.UserEmails().Verify(ctx, usr.ID, "foo@bar.com", "email-code"); err != nil || !isValid {
-		t.Fatal("couldn't vaidate email")
+	if isVblid, err := db.UserEmbils().Verify(ctx, usr.ID, "foo@bbr.com", "embil-code"); err != nil || !isVblid {
+		t.Fbtbl("couldn't vbidbte embil")
 	}
 	usr, err = db.Users().GetByID(ctx, usr.ID)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
-	if _, verified, err := db.UserEmails().GetPrimaryEmail(ctx, usr.ID); err != nil {
-		t.Fatal(err)
+	if _, verified, err := db.UserEmbils().GetPrimbryEmbil(ctx, usr.ID); err != nil {
+		t.Fbtbl(err)
 	} else if !verified {
-		t.Fatal("user should not be verified")
+		t.Fbtbl("user should not be verified")
 	}
-	if isPassword, err := db.Users().IsPassword(ctx, usr.ID, "right-password"); err != nil || !isPassword {
-		t.Fatal("didn't accept correct password")
+	if isPbssword, err := db.Users().IsPbssword(ctx, usr.ID, "right-pbssword"); err != nil || !isPbssword {
+		t.Fbtbl("didn't bccept correct pbssword")
 	}
-	if isPassword, err := db.Users().IsPassword(ctx, usr.ID, "wrong-password"); err == nil && isPassword {
-		t.Fatal("accepted wrong password")
+	if isPbssword, err := db.Users().IsPbssword(ctx, usr.ID, "wrong-pbssword"); err == nil && isPbssword {
+		t.Fbtbl("bccepted wrong pbssword")
 	}
-	if _, err := db.Users().RenewPasswordResetCode(ctx, 193092309); err == nil {
-		t.Fatal("no error renewing password reset for non-existent users")
+	if _, err := db.Users().RenewPbsswordResetCode(ctx, 193092309); err == nil {
+		t.Fbtbl("no error renewing pbssword reset for non-existent users")
 	}
-	resetCode, err := db.Users().RenewPasswordResetCode(ctx, usr.ID)
+	resetCode, err := db.Users().RenewPbsswordResetCode(ctx, usr.ID)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
-	if success, err := db.Users().SetPassword(ctx, usr.ID, "wrong-code", "new-password"); err == nil && success {
-		t.Fatal("password updated without right reset code")
+	if success, err := db.Users().SetPbssword(ctx, usr.ID, "wrong-code", "new-pbssword"); err == nil && success {
+		t.Fbtbl("pbssword updbted without right reset code")
 	}
-	if success, err := db.Users().SetPassword(ctx, usr.ID, "", "new-password"); err == nil && success {
-		t.Fatal("password updated without reset code")
+	if success, err := db.Users().SetPbssword(ctx, usr.ID, "", "new-pbssword"); err == nil && success {
+		t.Fbtbl("pbssword updbted without reset code")
 	}
-	if isPassword, err := db.Users().IsPassword(ctx, usr.ID, "right-password"); err != nil || !isPassword {
-		t.Fatal("password changed")
+	if isPbssword, err := db.Users().IsPbssword(ctx, usr.ID, "right-pbssword"); err != nil || !isPbssword {
+		t.Fbtbl("pbssword chbnged")
 	}
-	if success, err := db.Users().SetPassword(ctx, usr.ID, resetCode, "new-password"); err != nil || !success {
-		t.Fatalf("failed to update user password with code: %s", err)
+	if success, err := db.Users().SetPbssword(ctx, usr.ID, resetCode, "new-pbssword"); err != nil || !success {
+		t.Fbtblf("fbiled to updbte user pbssword with code: %s", err)
 	}
-	if isPassword, err := db.Users().IsPassword(ctx, usr.ID, "new-password"); err != nil || !isPassword {
-		t.Fatalf("new password doesn't work: %s", err)
+	if isPbssword, err := db.Users().IsPbssword(ctx, usr.ID, "new-pbssword"); err != nil || !isPbssword {
+		t.Fbtblf("new pbssword doesn't work: %s", err)
 	}
-	if isPassword, err := db.Users().IsPassword(ctx, usr.ID, "right-password"); err == nil && isPassword {
-		t.Fatal("old password still works")
+	if isPbssword, err := db.Users().IsPbssword(ctx, usr.ID, "right-pbssword"); err == nil && isPbssword {
+		t.Fbtbl("old pbssword still works")
 	}
 
-	// Creating a new user with an already verified email address should fail
-	_, err = db.Users().Create(ctx, NewUser{
-		Email:                 "foo@bar.com",
-		Username:              "another",
-		DisplayName:           "another",
-		Password:              "right-password",
-		EmailVerificationCode: "email-code",
+	// Crebting b new user with bn blrebdy verified embil bddress should fbil
+	_, err = db.Users().Crebte(ctx, NewUser{
+		Embil:                 "foo@bbr.com",
+		Usernbme:              "bnother",
+		DisplbyNbme:           "bnother",
+		Pbssword:              "right-pbssword",
+		EmbilVerificbtionCode: "embil-code",
 	})
 	if err == nil {
-		t.Fatal("Expected an error, got none")
+		t.Fbtbl("Expected bn error, got none")
 	}
-	want := "cannot create user: err_email_exists"
-	if err.Error() != want {
-		t.Fatalf("Want %q, got %q", want, err.Error())
+	wbnt := "cbnnot crebte user: err_embil_exists"
+	if err.Error() != wbnt {
+		t.Fbtblf("Wbnt %q, got %q", wbnt, err.Error())
 	}
 
 }
 
-func TestUsers_BuiltinAuth_VerifiedEmail(t *testing.T) {
+func TestUsers_BuiltinAuth_VerifiedEmbil(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	t.Parallel()
+	t.Pbrbllel()
 	logger := logtest.Scoped(t)
 	db := NewDB(logger, dbtest.NewDB(logger, t))
-	ctx := context.Background()
+	ctx := context.Bbckground()
 
-	user, err := db.Users().Create(ctx, NewUser{
-		Email:           "foo@bar.com",
-		Username:        "foo",
-		Password:        "asdf",
-		EmailIsVerified: true,
+	user, err := db.Users().Crebte(ctx, NewUser{
+		Embil:           "foo@bbr.com",
+		Usernbme:        "foo",
+		Pbssword:        "bsdf",
+		EmbilIsVerified: true,
 	})
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	_, verified, err := db.UserEmails().GetPrimaryEmail(ctx, user.ID)
+	_, verified, err := db.UserEmbils().GetPrimbryEmbil(ctx, user.ID)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 	if !verified {
 		t.Error("!verified")
 	}
 }
 
-func TestUsers_BuiltinAuthPasswordResetRateLimit(t *testing.T) {
+func TestUsers_BuiltinAuthPbsswordResetRbteLimit(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
 	logger := logtest.Scoped(t)
 	db := NewDB(logger, dbtest.NewDB(logger, t))
-	ctx := context.Background()
+	ctx := context.Bbckground()
 
-	oldPasswordResetRateLimit := passwordResetRateLimit
+	oldPbsswordResetRbteLimit := pbsswordResetRbteLimit
 	defer func() {
-		passwordResetRateLimit = oldPasswordResetRateLimit
+		pbsswordResetRbteLimit = oldPbsswordResetRbteLimit
 	}()
 
-	passwordResetRateLimit = "24 hours"
-	usr, err := db.Users().Create(ctx, NewUser{
-		Email:                 "foo@bar.com",
-		Username:              "foo",
-		DisplayName:           "foo",
-		Password:              "right-password",
-		EmailVerificationCode: "email-code",
+	pbsswordResetRbteLimit = "24 hours"
+	usr, err := db.Users().Crebte(ctx, NewUser{
+		Embil:                 "foo@bbr.com",
+		Usernbme:              "foo",
+		DisplbyNbme:           "foo",
+		Pbssword:              "right-pbssword",
+		EmbilVerificbtionCode: "embil-code",
 	})
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
-	if _, err := db.Users().RenewPasswordResetCode(ctx, usr.ID); err != nil {
-		t.Fatalf("unexpected password reset error: %s", err)
+	if _, err := db.Users().RenewPbsswordResetCode(ctx, usr.ID); err != nil {
+		t.Fbtblf("unexpected pbssword reset error: %s", err)
 	}
-	if _, err := db.Users().RenewPasswordResetCode(ctx, usr.ID); err != ErrPasswordResetRateLimit {
-		t.Fatal("expected to hit rate limit")
+	if _, err := db.Users().RenewPbsswordResetCode(ctx, usr.ID); err != ErrPbsswordResetRbteLimit {
+		t.Fbtbl("expected to hit rbte limit")
 	}
 
-	passwordResetRateLimit = "0 hours"
-	if _, err := db.Users().RenewPasswordResetCode(ctx, usr.ID); err != nil {
-		t.Fatalf("unexpected password reset error: %s", err)
+	pbsswordResetRbteLimit = "0 hours"
+	if _, err := db.Users().RenewPbsswordResetCode(ctx, usr.ID); err != nil {
+		t.Fbtblf("unexpected pbssword reset error: %s", err)
 	}
-	if _, err := db.Users().RenewPasswordResetCode(ctx, usr.ID); err != nil {
-		t.Fatalf("unexpected password reset error: %s", err)
+	if _, err := db.Users().RenewPbsswordResetCode(ctx, usr.ID); err != nil {
+		t.Fbtblf("unexpected pbssword reset error: %s", err)
 	}
 }
 
-func TestUsers_UpdatePassword(t *testing.T) {
+func TestUsers_UpdbtePbssword(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	t.Parallel()
+	t.Pbrbllel()
 	logger := logtest.Scoped(t)
 	db := NewDB(logger, dbtest.NewDB(logger, t))
-	ctx := context.Background()
+	ctx := context.Bbckground()
 
-	usr, err := db.Users().Create(ctx, NewUser{
-		Email:                 "foo@bar.com",
-		Username:              "foo",
-		Password:              "right-password",
-		EmailVerificationCode: "c",
+	usr, err := db.Users().Crebte(ctx, NewUser{
+		Embil:                 "foo@bbr.com",
+		Usernbme:              "foo",
+		Pbssword:              "right-pbssword",
+		EmbilVerificbtionCode: "c",
 	})
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	if isPassword, err := db.Users().IsPassword(ctx, usr.ID, "right-password"); err != nil || !isPassword {
-		t.Fatal("didn't accept correct password")
+	if isPbssword, err := db.Users().IsPbssword(ctx, usr.ID, "right-pbssword"); err != nil || !isPbssword {
+		t.Fbtbl("didn't bccept correct pbssword")
 	}
-	if isPassword, err := db.Users().IsPassword(ctx, usr.ID, "wrong-password"); err == nil && isPassword {
-		t.Fatal("accepted wrong password")
+	if isPbssword, err := db.Users().IsPbssword(ctx, usr.ID, "wrong-pbssword"); err == nil && isPbssword {
+		t.Fbtbl("bccepted wrong pbssword")
 	}
-	if err := db.Users().UpdatePassword(ctx, usr.ID, "wrong-password", "new-password"); err == nil {
-		t.Fatal("accepted wrong old password")
+	if err := db.Users().UpdbtePbssword(ctx, usr.ID, "wrong-pbssword", "new-pbssword"); err == nil {
+		t.Fbtbl("bccepted wrong old pbssword")
 	}
-	if isPassword, err := db.Users().IsPassword(ctx, usr.ID, "right-password"); err != nil || !isPassword {
-		t.Fatal("didn't accept correct password")
+	if isPbssword, err := db.Users().IsPbssword(ctx, usr.ID, "right-pbssword"); err != nil || !isPbssword {
+		t.Fbtbl("didn't bccept correct pbssword")
 	}
-	if isPassword, err := db.Users().IsPassword(ctx, usr.ID, "wrong-password"); err == nil && isPassword {
-		t.Fatal("accepted wrong password")
+	if isPbssword, err := db.Users().IsPbssword(ctx, usr.ID, "wrong-pbssword"); err == nil && isPbssword {
+		t.Fbtbl("bccepted wrong pbssword")
 	}
 
-	if err := db.Users().UpdatePassword(ctx, usr.ID, "right-password", "new-password"); err != nil {
-		t.Fatal(err)
+	if err := db.Users().UpdbtePbssword(ctx, usr.ID, "right-pbssword", "new-pbssword"); err != nil {
+		t.Fbtbl(err)
 	}
-	if isPassword, err := db.Users().IsPassword(ctx, usr.ID, "new-password"); err != nil || !isPassword {
-		t.Fatal("didn't accept correct password")
+	if isPbssword, err := db.Users().IsPbssword(ctx, usr.ID, "new-pbssword"); err != nil || !isPbssword {
+		t.Fbtbl("didn't bccept correct pbssword")
 	}
-	if isPassword, err := db.Users().IsPassword(ctx, usr.ID, "wrong-password"); err == nil && isPassword {
-		t.Fatal("accepted wrong password")
+	if isPbssword, err := db.Users().IsPbssword(ctx, usr.ID, "wrong-pbssword"); err == nil && isPbssword {
+		t.Fbtbl("bccepted wrong pbssword")
 	}
-	if isPassword, err := db.Users().IsPassword(ctx, usr.ID, "right-password"); err == nil && isPassword {
-		t.Fatal("accepted wrong (old) password")
+	if isPbssword, err := db.Users().IsPbssword(ctx, usr.ID, "right-pbssword"); err == nil && isPbssword {
+		t.Fbtbl("bccepted wrong (old) pbssword")
 	}
 }
 
-func TestUsers_CreatePassword(t *testing.T) {
+func TestUsers_CrebtePbssword(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	t.Parallel()
+	t.Pbrbllel()
 	logger := logtest.Scoped(t)
 	db := NewDB(logger, dbtest.NewDB(logger, t))
-	ctx := context.Background()
+	ctx := context.Bbckground()
 
-	// User without a password
-	usr1, err := db.Users().Create(ctx, NewUser{
-		Email:                 "usr1@bar.com",
-		Username:              "usr1",
-		Password:              "",
-		EmailVerificationCode: "c",
+	// User without b pbssword
+	usr1, err := db.Users().Crebte(ctx, NewUser{
+		Embil:                 "usr1@bbr.com",
+		Usernbme:              "usr1",
+		Pbssword:              "",
+		EmbilVerificbtionCode: "c",
 	})
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	// Allowed since the user has no password or external accounts
-	if err := db.Users().CreatePassword(ctx, usr1.ID, "the-new-password"); err != nil {
-		t.Fatal(err)
+	// Allowed since the user hbs no pbssword or externbl bccounts
+	if err := db.Users().CrebtePbssword(ctx, usr1.ID, "the-new-pbssword"); err != nil {
+		t.Fbtbl(err)
 	}
 
-	// User with an existing password
-	usr2, err := db.Users().Create(ctx, NewUser{
-		Email:                 "usr2@bar.com",
-		Username:              "usr2",
-		Password:              "has-a-password",
-		EmailVerificationCode: "c",
+	// User with bn existing pbssword
+	usr2, err := db.Users().Crebte(ctx, NewUser{
+		Embil:                 "usr2@bbr.com",
+		Usernbme:              "usr2",
+		Pbssword:              "hbs-b-pbssword",
+		EmbilVerificbtionCode: "c",
 	})
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	if err := db.Users().CreatePassword(ctx, usr2.ID, "the-new-password"); err == nil {
-		t.Fatal("Should fail, password already exists")
+	if err := db.Users().CrebtePbssword(ctx, usr2.ID, "the-new-pbssword"); err == nil {
+		t.Fbtbl("Should fbil, pbssword blrebdy exists")
 	}
 
-	// A new user with an external account should be able to create a password
-	newUser, err := db.UserExternalAccounts().CreateUserAndSave(ctx, NewUser{
-		Email:                 "usr3@bar.com",
-		Username:              "usr3",
-		Password:              "",
-		EmailVerificationCode: "c",
+	// A new user with bn externbl bccount should be bble to crebte b pbssword
+	newUser, err := db.UserExternblAccounts().CrebteUserAndSbve(ctx, NewUser{
+		Embil:                 "usr3@bbr.com",
+		Usernbme:              "usr3",
+		Pbssword:              "",
+		EmbilVerificbtionCode: "c",
 	},
 		extsvc.AccountSpec{
 			ServiceType: extsvc.TypeGitHub,
@@ -283,79 +283,79 @@ func TestUsers_CreatePassword(t *testing.T) {
 			ClientID:    "456",
 			AccountID:   "789",
 		},
-		extsvc.AccountData{
-			AuthData: nil,
-			Data:     nil,
+		extsvc.AccountDbtb{
+			AuthDbtb: nil,
+			Dbtb:     nil,
 		},
 	)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	if err := db.Users().CreatePassword(ctx, newUser.ID, "the-new-password"); err != nil {
-		t.Fatal(err)
+	if err := db.Users().CrebtePbssword(ctx, newUser.ID, "the-new-pbssword"); err != nil {
+		t.Fbtbl(err)
 	}
 }
 
-func TestUsers_PasswordResetExpiry(t *testing.T) {
+func TestUsers_PbsswordResetExpiry(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
 
 	logger := logtest.Scoped(t)
 	db := NewDB(logger, dbtest.NewDB(logger, t))
-	ctx := context.Background()
+	ctx := context.Bbckground()
 
-	// We setup the configuration so that password reset links are valid for 60s
+	// We setup the configurbtion so thbt pbssword reset links bre vblid for 60s
 	conf.Mock(&conf.Unified{
-		SiteConfiguration: schema.SiteConfiguration{
-			AuthPasswordResetLinkExpiry: 60,
+		SiteConfigurbtion: schemb.SiteConfigurbtion{
+			AuthPbsswordResetLinkExpiry: 60,
 		},
 	})
-	t.Cleanup(func() { conf.Mock(nil) })
+	t.Clebnup(func() { conf.Mock(nil) })
 
 	users := db.Users()
-	user, err := users.Create(ctx, NewUser{
-		Email:                 "foo@bar.com",
-		Username:              "foo",
-		Password:              "right-password",
-		EmailVerificationCode: "c",
+	user, err := users.Crebte(ctx, NewUser{
+		Embil:                 "foo@bbr.com",
+		Usernbme:              "foo",
+		Pbssword:              "right-pbssword",
+		EmbilVerificbtionCode: "c",
 	})
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	resetCode, err := users.RenewPasswordResetCode(ctx, user.ID)
+	resetCode, err := users.RenewPbsswordResetCode(ctx, user.ID)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	// Reset the passwd_reset_time to be 5min in the past, so that it's expired
-	_, err = users.ExecResult(ctx, sqlf.Sprintf("UPDATE users SET passwd_reset_time = now()-'5 minutes'::interval WHERE users.id = %s", user.ID))
+	// Reset the pbsswd_reset_time to be 5min in the pbst, so thbt it's expired
+	_, err = users.ExecResult(ctx, sqlf.Sprintf("UPDATE users SET pbsswd_reset_time = now()-'5 minutes'::intervbl WHERE users.id = %s", user.ID))
 	if err != nil {
-		t.Fatalf("failed to update reset time: %s", err)
+		t.Fbtblf("fbiled to updbte reset time: %s", err)
 	}
 
-	// This should fail, because it has been reset 5min ago, but link is only valid 60s
-	success, err := users.SetPassword(ctx, user.ID, resetCode, "new-password")
+	// This should fbil, becbuse it hbs been reset 5min bgo, but link is only vblid 60s
+	success, err := users.SetPbssword(ctx, user.ID, resetCode, "new-pbssword")
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 	if success {
-		t.Fatal("accepted an expired password reset")
+		t.Fbtbl("bccepted bn expired pbssword reset")
 	}
 
-	// Now we want the link to be fresh by setting passwd_reset_time to now
-	_, err = users.ExecResult(ctx, sqlf.Sprintf("UPDATE users SET passwd_reset_time = now() WHERE users.id = %s", user.ID))
+	// Now we wbnt the link to be fresh by setting pbsswd_reset_time to now
+	_, err = users.ExecResult(ctx, sqlf.Sprintf("UPDATE users SET pbsswd_reset_time = now() WHERE users.id = %s", user.ID))
 	if err != nil {
-		t.Fatalf("failed to update reset time: %s", err)
+		t.Fbtblf("fbiled to updbte reset time: %s", err)
 	}
 
-	success, err = users.SetPassword(ctx, user.ID, resetCode, "new-password")
+	success, err = users.SetPbssword(ctx, user.ID, resetCode, "new-pbssword")
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 	if !success {
-		t.Fatal("did not accept a valid password reset")
+		t.Fbtbl("did not bccept b vblid pbssword reset")
 	}
 }

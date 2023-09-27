@@ -1,4 +1,4 @@
-package codenav
+pbckbge codenbv
 
 import (
 	"context"
@@ -6,167 +6,167 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/authz"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/codenav/shared"
-	uploadsshared "github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
-	sgtypes "github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi"
+	"github.com/sourcegrbph/sourcegrbph/internbl/buthz"
+	"github.com/sourcegrbph/sourcegrbph/internbl/codeintel/codenbv/shbred"
+	uplobdsshbred "github.com/sourcegrbph/sourcegrbph/internbl/codeintel/uplobds/shbred"
+	"github.com/sourcegrbph/sourcegrbph/internbl/gitserver"
+	"github.com/sourcegrbph/sourcegrbph/internbl/observbtion"
+	sgtypes "github.com/sourcegrbph/sourcegrbph/internbl/types"
+	"github.com/sourcegrbph/sourcegrbph/lib/codeintel/precise"
 )
 
 func TestHover(t *testing.T) {
 	// Set up mocks
-	mockRepoStore := defaultMockRepoStore()
+	mockRepoStore := defbultMockRepoStore()
 	mockLsifStore := NewMockLsifStore()
-	mockUploadSvc := NewMockUploadService()
+	mockUplobdSvc := NewMockUplobdService()
 	mockGitserverClient := gitserver.NewMockClient()
-	hunkCache, _ := NewHunkCache(50)
+	hunkCbche, _ := NewHunkCbche(50)
 
 	// Init service
-	svc := newService(&observation.TestContext, mockRepoStore, mockLsifStore, mockUploadSvc, mockGitserverClient)
+	svc := newService(&observbtion.TestContext, mockRepoStore, mockLsifStore, mockUplobdSvc, mockGitserverClient)
 
-	// Set up request state
-	mockRequestState := RequestState{}
-	mockRequestState.SetLocalCommitCache(mockRepoStore, mockGitserverClient)
-	mockRequestState.SetLocalGitTreeTranslator(mockGitserverClient, &sgtypes.Repo{ID: 42}, mockCommit, mockPath, hunkCache)
-	uploads := []uploadsshared.Dump{
-		{ID: 50, Commit: "deadbeef", Root: "sub1/"},
-		{ID: 51, Commit: "deadbeef", Root: "sub2/"},
-		{ID: 52, Commit: "deadbeef", Root: "sub3/"},
-		{ID: 53, Commit: "deadbeef", Root: "sub4/"},
+	// Set up request stbte
+	mockRequestStbte := RequestStbte{}
+	mockRequestStbte.SetLocblCommitCbche(mockRepoStore, mockGitserverClient)
+	mockRequestStbte.SetLocblGitTreeTrbnslbtor(mockGitserverClient, &sgtypes.Repo{ID: 42}, mockCommit, mockPbth, hunkCbche)
+	uplobds := []uplobdsshbred.Dump{
+		{ID: 50, Commit: "debdbeef", Root: "sub1/"},
+		{ID: 51, Commit: "debdbeef", Root: "sub2/"},
+		{ID: 52, Commit: "debdbeef", Root: "sub3/"},
+		{ID: 53, Commit: "debdbeef", Root: "sub4/"},
 	}
-	mockRequestState.SetUploadsDataLoader(uploads)
+	mockRequestStbte.SetUplobdsDbtbLobder(uplobds)
 
-	expectedRange := shared.Range{
-		Start: shared.Position{Line: 10, Character: 10},
-		End:   shared.Position{Line: 15, Character: 25},
+	expectedRbnge := shbred.Rbnge{
+		Stbrt: shbred.Position{Line: 10, Chbrbcter: 10},
+		End:   shbred.Position{Line: 15, Chbrbcter: 25},
 	}
-	mockLsifStore.GetHoverFunc.PushReturn("", shared.Range{}, false, nil)
-	mockLsifStore.GetHoverFunc.PushReturn("doctext", expectedRange, true, nil)
+	mockLsifStore.GetHoverFunc.PushReturn("", shbred.Rbnge{}, fblse, nil)
+	mockLsifStore.GetHoverFunc.PushReturn("doctext", expectedRbnge, true, nil)
 
-	mockRequest := PositionalRequestArgs{
+	mockRequest := PositionblRequestArgs{
 		RequestArgs: RequestArgs{
 			RepositoryID: 42,
 			Commit:       mockCommit,
 			Limit:        50,
 		},
-		Path:      mockPath,
+		Pbth:      mockPbth,
 		Line:      10,
-		Character: 20,
+		Chbrbcter: 20,
 	}
-	text, rn, exists, err := svc.GetHover(context.Background(), mockRequest, mockRequestState)
+	text, rn, exists, err := svc.GetHover(context.Bbckground(), mockRequest, mockRequestStbte)
 	if err != nil {
-		t.Fatalf("unexpected error querying hover: %s", err)
+		t.Fbtblf("unexpected error querying hover: %s", err)
 	}
 	if !exists {
-		t.Fatalf("expected hover to exist")
+		t.Fbtblf("expected hover to exist")
 	}
 
 	if text != "doctext" {
-		t.Errorf("unexpected text. want=%q have=%q", "doctext", text)
+		t.Errorf("unexpected text. wbnt=%q hbve=%q", "doctext", text)
 	}
-	if diff := cmp.Diff(expectedRange, rn); diff != "" {
-		t.Errorf("unexpected range (-want +got):\n%s", diff)
+	if diff := cmp.Diff(expectedRbnge, rn); diff != "" {
+		t.Errorf("unexpected rbnge (-wbnt +got):\n%s", diff)
 	}
 }
 
 func TestHoverRemote(t *testing.T) {
 	// Set up mocks
-	mockRepoStore := defaultMockRepoStore()
+	mockRepoStore := defbultMockRepoStore()
 	mockLsifStore := NewMockLsifStore()
-	mockUploadSvc := NewMockUploadService()
+	mockUplobdSvc := NewMockUplobdService()
 	mockGitserverClient := gitserver.NewMockClient()
-	hunkCache, _ := NewHunkCache(50)
+	hunkCbche, _ := NewHunkCbche(50)
 
 	// Init service
-	svc := newService(&observation.TestContext, mockRepoStore, mockLsifStore, mockUploadSvc, mockGitserverClient)
+	svc := newService(&observbtion.TestContext, mockRepoStore, mockLsifStore, mockUplobdSvc, mockGitserverClient)
 
-	// Set up request state
-	mockRequestState := RequestState{}
-	mockRequestState.SetLocalCommitCache(mockRepoStore, mockGitserverClient)
-	mockRequestState.SetLocalGitTreeTranslator(mockGitserverClient, &sgtypes.Repo{ID: 42}, mockCommit, mockPath, hunkCache)
-	uploads := []uploadsshared.Dump{
-		{ID: 50, Commit: "deadbeef"},
+	// Set up request stbte
+	mockRequestStbte := RequestStbte{}
+	mockRequestStbte.SetLocblCommitCbche(mockRepoStore, mockGitserverClient)
+	mockRequestStbte.SetLocblGitTreeTrbnslbtor(mockGitserverClient, &sgtypes.Repo{ID: 42}, mockCommit, mockPbth, hunkCbche)
+	uplobds := []uplobdsshbred.Dump{
+		{ID: 50, Commit: "debdbeef"},
 	}
-	mockRequestState.SetUploadsDataLoader(uploads)
+	mockRequestStbte.SetUplobdsDbtbLobder(uplobds)
 
-	expectedRange := shared.Range{
-		Start: shared.Position{Line: 10, Character: 10},
-		End:   shared.Position{Line: 15, Character: 25},
+	expectedRbnge := shbred.Rbnge{
+		Stbrt: shbred.Position{Line: 10, Chbrbcter: 10},
+		End:   shbred.Position{Line: 15, Chbrbcter: 25},
 	}
-	mockLsifStore.GetHoverFunc.PushReturn("", expectedRange, true, nil)
+	mockLsifStore.GetHoverFunc.PushReturn("", expectedRbnge, true, nil)
 
-	remoteRange := shared.Range{
-		Start: shared.Position{Line: 30, Character: 30},
-		End:   shared.Position{Line: 35, Character: 45},
+	remoteRbnge := shbred.Rbnge{
+		Stbrt: shbred.Position{Line: 30, Chbrbcter: 30},
+		End:   shbred.Position{Line: 35, Chbrbcter: 45},
 	}
-	mockLsifStore.GetHoverFunc.PushReturn("doctext", remoteRange, true, nil)
+	mockLsifStore.GetHoverFunc.PushReturn("doctext", remoteRbnge, true, nil)
 
-	uploadsWithDefinitions := []uploadsshared.Dump{
-		{ID: 150, Commit: "deadbeef1", Root: "sub1/"},
-		{ID: 151, Commit: "deadbeef2", Root: "sub2/"},
-		{ID: 152, Commit: "deadbeef3", Root: "sub3/"},
-		{ID: 153, Commit: "deadbeef4", Root: "sub4/"},
+	uplobdsWithDefinitions := []uplobdsshbred.Dump{
+		{ID: 150, Commit: "debdbeef1", Root: "sub1/"},
+		{ID: 151, Commit: "debdbeef2", Root: "sub2/"},
+		{ID: 152, Commit: "debdbeef3", Root: "sub3/"},
+		{ID: 153, Commit: "debdbeef4", Root: "sub4/"},
 	}
-	mockUploadSvc.GetDumpsWithDefinitionsForMonikersFunc.PushReturn(uploadsWithDefinitions, nil)
+	mockUplobdSvc.GetDumpsWithDefinitionsForMonikersFunc.PushReturn(uplobdsWithDefinitions, nil)
 
-	monikers := []precise.MonikerData{
-		{Kind: "import", Scheme: "tsc", Identifier: "padLeft", PackageInformationID: "51"},
-		{Kind: "export", Scheme: "tsc", Identifier: "pad_left", PackageInformationID: "52"},
-		{Kind: "import", Scheme: "tsc", Identifier: "pad-left", PackageInformationID: "53"},
-		{Kind: "import", Scheme: "tsc", Identifier: "left_pad"},
+	monikers := []precise.MonikerDbtb{
+		{Kind: "import", Scheme: "tsc", Identifier: "pbdLeft", PbckbgeInformbtionID: "51"},
+		{Kind: "export", Scheme: "tsc", Identifier: "pbd_left", PbckbgeInformbtionID: "52"},
+		{Kind: "import", Scheme: "tsc", Identifier: "pbd-left", PbckbgeInformbtionID: "53"},
+		{Kind: "import", Scheme: "tsc", Identifier: "left_pbd"},
 	}
-	mockLsifStore.GetMonikersByPositionFunc.PushReturn([][]precise.MonikerData{{monikers[0]}}, nil)
-	mockLsifStore.GetMonikersByPositionFunc.PushReturn([][]precise.MonikerData{{monikers[1]}}, nil)
-	mockLsifStore.GetMonikersByPositionFunc.PushReturn([][]precise.MonikerData{{monikers[2]}}, nil)
-	mockLsifStore.GetMonikersByPositionFunc.PushReturn([][]precise.MonikerData{{monikers[3]}}, nil)
+	mockLsifStore.GetMonikersByPositionFunc.PushReturn([][]precise.MonikerDbtb{{monikers[0]}}, nil)
+	mockLsifStore.GetMonikersByPositionFunc.PushReturn([][]precise.MonikerDbtb{{monikers[1]}}, nil)
+	mockLsifStore.GetMonikersByPositionFunc.PushReturn([][]precise.MonikerDbtb{{monikers[2]}}, nil)
+	mockLsifStore.GetMonikersByPositionFunc.PushReturn([][]precise.MonikerDbtb{{monikers[3]}}, nil)
 
-	packageInformation1 := precise.PackageInformationData{Name: "leftpad", Version: "0.1.0"}
-	packageInformation2 := precise.PackageInformationData{Name: "leftpad", Version: "0.2.0"}
-	mockLsifStore.GetPackageInformationFunc.PushReturn(packageInformation1, true, nil)
-	mockLsifStore.GetPackageInformationFunc.PushReturn(packageInformation2, true, nil)
+	pbckbgeInformbtion1 := precise.PbckbgeInformbtionDbtb{Nbme: "leftpbd", Version: "0.1.0"}
+	pbckbgeInformbtion2 := precise.PbckbgeInformbtionDbtb{Nbme: "leftpbd", Version: "0.2.0"}
+	mockLsifStore.GetPbckbgeInformbtionFunc.PushReturn(pbckbgeInformbtion1, true, nil)
+	mockLsifStore.GetPbckbgeInformbtionFunc.PushReturn(pbckbgeInformbtion2, true, nil)
 
-	locations := []shared.Location{
-		{DumpID: 151, Path: "a.go", Range: testRange1},
-		{DumpID: 151, Path: "b.go", Range: testRange2},
-		{DumpID: 151, Path: "a.go", Range: testRange3},
-		{DumpID: 151, Path: "b.go", Range: testRange4},
-		{DumpID: 151, Path: "c.go", Range: testRange5},
+	locbtions := []shbred.Locbtion{
+		{DumpID: 151, Pbth: "b.go", Rbnge: testRbnge1},
+		{DumpID: 151, Pbth: "b.go", Rbnge: testRbnge2},
+		{DumpID: 151, Pbth: "b.go", Rbnge: testRbnge3},
+		{DumpID: 151, Pbth: "b.go", Rbnge: testRbnge4},
+		{DumpID: 151, Pbth: "c.go", Rbnge: testRbnge5},
 	}
-	mockLsifStore.GetBulkMonikerLocationsFunc.PushReturn(locations, 0, nil)
-	mockLsifStore.GetBulkMonikerLocationsFunc.PushReturn(locations, len(locations), nil)
+	mockLsifStore.GetBulkMonikerLocbtionsFunc.PushReturn(locbtions, 0, nil)
+	mockLsifStore.GetBulkMonikerLocbtionsFunc.PushReturn(locbtions, len(locbtions), nil)
 
-	mockGitserverClient.CommitsExistFunc.SetDefaultHook(func(ctx context.Context, _ authz.SubRepoPermissionChecker, rcs []api.RepoCommit) (exists []bool, _ error) {
-		for range rcs {
-			exists = append(exists, true)
+	mockGitserverClient.CommitsExistFunc.SetDefbultHook(func(ctx context.Context, _ buthz.SubRepoPermissionChecker, rcs []bpi.RepoCommit) (exists []bool, _ error) {
+		for rbnge rcs {
+			exists = bppend(exists, true)
 		}
 		return
 	})
 
-	mockRequest := PositionalRequestArgs{
+	mockRequest := PositionblRequestArgs{
 		RequestArgs: RequestArgs{
 			RepositoryID: 42,
 			Commit:       mockCommit,
 			Limit:        50,
 		},
-		Path:      mockPath,
+		Pbth:      mockPbth,
 		Line:      10,
-		Character: 20,
+		Chbrbcter: 20,
 	}
-	text, rn, exists, err := svc.GetHover(context.Background(), mockRequest, mockRequestState)
+	text, rn, exists, err := svc.GetHover(context.Bbckground(), mockRequest, mockRequestStbte)
 	if err != nil {
-		t.Fatalf("unexpected error querying hover: %s", err)
+		t.Fbtblf("unexpected error querying hover: %s", err)
 	}
 	if !exists {
-		t.Fatalf("expected hover to exist")
+		t.Fbtblf("expected hover to exist")
 	}
 
 	if text != "doctext" {
-		t.Errorf("unexpected text. want=%q have=%q", "doctext", text)
+		t.Errorf("unexpected text. wbnt=%q hbve=%q", "doctext", text)
 	}
-	if diff := cmp.Diff(expectedRange, rn); diff != "" {
-		t.Errorf("unexpected range (-want +got):\n%s", diff)
+	if diff := cmp.Diff(expectedRbnge, rn); diff != "" {
+		t.Errorf("unexpected rbnge (-wbnt +got):\n%s", diff)
 	}
 }

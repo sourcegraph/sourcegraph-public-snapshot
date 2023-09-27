@@ -1,10 +1,10 @@
-package shared
+pbckbge shbred
 
 const (
-	GoPackagesScheme     = "go"
-	JVMPackagesScheme    = "semanticdb"
-	NpmPackagesScheme    = "npm"
-	PythonPackagesScheme = "python"
-	RustPackagesScheme   = "rust-analyzer"
-	RubyPackagesScheme   = "scip-ruby"
+	GoPbckbgesScheme     = "go"
+	JVMPbckbgesScheme    = "sembnticdb"
+	NpmPbckbgesScheme    = "npm"
+	PythonPbckbgesScheme = "python"
+	RustPbckbgesScheme   = "rust-bnblyzer"
+	RubyPbckbgesScheme   = "scip-ruby"
 )

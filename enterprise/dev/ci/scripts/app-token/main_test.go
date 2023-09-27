@@ -1,77 +1,77 @@
-package main
+pbckbge mbin
 
 import (
 	"context"
-	"flag"
+	"flbg"
 	"net/http"
 	"os"
-	"path/filepath"
+	"pbth/filepbth"
 	"strings"
 	"testing"
 
-	"github.com/dnaeon/go-vcr/cassette"
+	"github.com/dnbeon/go-vcr/cbssette"
 	"github.com/google/go-github/v47/github"
 	"github.com/stretchr/testify/require"
-	"golang.org/x/oauth2"
+	"golbng.org/x/obuth2"
 
-	"github.com/sourcegraph/sourcegraph/internal/httptestutil"
+	"github.com/sourcegrbph/sourcegrbph/internbl/httptestutil"
 )
 
-var updateRecordings = flag.Bool("update-integration", false, "refresh integration test recordings")
+vbr updbteRecordings = flbg.Bool("updbte-integrbtion", fblse, "refresh integrbtion test recordings")
 
 func TestGenJwtToken(t *testing.T) {
 	if os.Getenv("BUILDKITE") == "true" {
 		t.Skip("Skipping testing in CI environment")
 	}
 
-	appID := os.Getenv("GITHUB_APP_ID")
-	keyPath := os.Getenv("KEY_PATH")
+	bppID := os.Getenv("GITHUB_APP_ID")
+	keyPbth := os.Getenv("KEY_PATH")
 
-	if appID == "" || keyPath == "" {
+	if bppID == "" || keyPbth == "" {
 		t.Skip("GITHUB_APP_ID or KEY_PATH is not set")
 	}
 
-	_, err := genJwtToken(appID, keyPath)
+	_, err := genJwtToken(bppID, keyPbth)
 	require.NoError(t, err)
 }
 
 func newTestGitHubClient(ctx context.Context, t *testing.T) (ghc *github.Client, stop func() error) {
-	recording := filepath.Join("tests/testdata", strings.ReplaceAll(t.Name(), " ", "-"))
-	recorder, err := httptestutil.NewRecorder(recording, *updateRecordings, func(i *cassette.Interaction) error {
+	recording := filepbth.Join("tests/testdbtb", strings.ReplbceAll(t.Nbme(), " ", "-"))
+	recorder, err := httptestutil.NewRecorder(recording, *updbteRecordings, func(i *cbssette.Interbction) error {
 		return nil
 	})
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	if *updateRecordings {
-		appID := os.Getenv("GITHUB_APP_ID")
-		require.NotEmpty(t, appID, "GITHUB_APP_ID must be set.")
-		keyPath := os.Getenv("KEY_PATH")
-		require.NotEmpty(t, keyPath, "KEY_PATH must be set.")
-		jwt, err := genJwtToken(appID, keyPath)
+	if *updbteRecordings {
+		bppID := os.Getenv("GITHUB_APP_ID")
+		require.NotEmpty(t, bppID, "GITHUB_APP_ID must be set.")
+		keyPbth := os.Getenv("KEY_PATH")
+		require.NotEmpty(t, keyPbth, "KEY_PATH must be set.")
+		jwt, err := genJwtToken(bppID, keyPbth)
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
-		httpClient := oauth2.NewClient(ctx, oauth2.StaticTokenSource(
-			&oauth2.Token{AccessToken: jwt},
+		httpClient := obuth2.NewClient(ctx, obuth2.StbticTokenSource(
+			&obuth2.Token{AccessToken: jwt},
 		))
-		recorder.SetTransport(httpClient.Transport)
+		recorder.SetTrbnsport(httpClient.Trbnsport)
 	}
-	return github.NewClient(&http.Client{Transport: recorder}), recorder.Stop
+	return github.NewClient(&http.Client{Trbnsport: recorder}), recorder.Stop
 
 }
 
-func TestGetInstallAccessToken(t *testing.T) {
-	// We cannot perform external network requests in Bazel tests, it breaks the sandbox.
+func TestGetInstbllAccessToken(t *testing.T) {
+	// We cbnnot perform externbl network requests in Bbzel tests, it brebks the sbndbox.
 	if os.Getenv("BAZEL_TEST") == "1" {
 		t.Skip("Skipping due to network request")
 	}
-	ctx := context.Background()
+	ctx := context.Bbckground()
 
 	ghc, stop := newTestGitHubClient(ctx, t)
 	defer stop()
 
-	_, err := getInstallAccessToken(ctx, ghc)
+	_, err := getInstbllAccessToken(ctx, ghc)
 	require.NoError(t, err)
 }

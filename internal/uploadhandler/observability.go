@@ -1,50 +1,50 @@
-package uploadhandler
+pbckbge uplobdhbndler
 
 import (
 	"fmt"
-	"syscall"
+	"syscbll"
 
-	"github.com/sourcegraph/sourcegraph/internal/metrics"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/internbl/metrics"
+	"github.com/sourcegrbph/sourcegrbph/internbl/observbtion"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-type Operations struct {
-	handleEnqueue                  *observation.Operation
-	handleEnqueueSinglePayload     *observation.Operation
-	handleEnqueueMultipartSetup    *observation.Operation
-	handleEnqueueMultipartUpload   *observation.Operation
-	handleEnqueueMultipartFinalize *observation.Operation
+type Operbtions struct {
+	hbndleEnqueue                  *observbtion.Operbtion
+	hbndleEnqueueSinglePbylobd     *observbtion.Operbtion
+	hbndleEnqueueMultipbrtSetup    *observbtion.Operbtion
+	hbndleEnqueueMultipbrtUplobd   *observbtion.Operbtion
+	hbndleEnqueueMultipbrtFinblize *observbtion.Operbtion
 }
 
-func NewOperations(observationCtx *observation.Context, prefix string) *Operations {
+func NewOperbtions(observbtionCtx *observbtion.Context, prefix string) *Operbtions {
 	redMetrics := metrics.NewREDMetrics(
-		observationCtx.Registerer,
-		fmt.Sprintf("%s_uploadhandler", prefix),
-		metrics.WithLabels("op"),
-		metrics.WithCountHelp("Total number of method invocations."),
+		observbtionCtx.Registerer,
+		fmt.Sprintf("%s_uplobdhbndler", prefix),
+		metrics.WithLbbels("op"),
+		metrics.WithCountHelp("Totbl number of method invocbtions."),
 	)
 
-	op := func(name string) *observation.Operation {
-		return observationCtx.Operation(observation.Op{
-			Name:              fmt.Sprintf("%s.uploadhandler.%s", prefix, name),
-			MetricLabelValues: []string{name},
+	op := func(nbme string) *observbtion.Operbtion {
+		return observbtionCtx.Operbtion(observbtion.Op{
+			Nbme:              fmt.Sprintf("%s.uplobdhbndler.%s", prefix, nbme),
+			MetricLbbelVblues: []string{nbme},
 			Metrics:           redMetrics,
-			ErrorFilter: func(err error) observation.ErrorFilterBehaviour {
-				var errno syscall.Errno
-				if errors.As(err, &errno) && errno == syscall.ECONNREFUSED {
-					return observation.EmitForDefault ^ observation.EmitForSentry
+			ErrorFilter: func(err error) observbtion.ErrorFilterBehbviour {
+				vbr errno syscbll.Errno
+				if errors.As(err, &errno) && errno == syscbll.ECONNREFUSED {
+					return observbtion.EmitForDefbult ^ observbtion.EmitForSentry
 				}
-				return observation.EmitForDefault
+				return observbtion.EmitForDefbult
 			},
 		})
 	}
 
-	return &Operations{
-		handleEnqueue:                  op("HandleEnqueue"),
-		handleEnqueueSinglePayload:     op("handleEnqueueSinglePayload"),
-		handleEnqueueMultipartSetup:    op("handleEnqueueMultipartSetup"),
-		handleEnqueueMultipartUpload:   op("handleEnqueueMultipartUpload"),
-		handleEnqueueMultipartFinalize: op("handleEnqueueMultipartFinalize"),
+	return &Operbtions{
+		hbndleEnqueue:                  op("HbndleEnqueue"),
+		hbndleEnqueueSinglePbylobd:     op("hbndleEnqueueSinglePbylobd"),
+		hbndleEnqueueMultipbrtSetup:    op("hbndleEnqueueMultipbrtSetup"),
+		hbndleEnqueueMultipbrtUplobd:   op("hbndleEnqueueMultipbrtUplobd"),
+		hbndleEnqueueMultipbrtFinblize: op("hbndleEnqueueMultipbrtFinblize"),
 	}
 }

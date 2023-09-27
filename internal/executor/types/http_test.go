@@ -1,29 +1,29 @@
-package types_test
+pbckbge types_test
 
 import (
 	"encoding/json"
 	"testing"
 
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/bssert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/sourcegraph/sourcegraph/internal/executor/types"
+	"github.com/sourcegrbph/sourcegrbph/internbl/executor/types"
 )
 
-func TestHeartbeatRequest_UnmarshalJSON(t *testing.T) {
+func TestHebrtbebtRequest_UnmbrshblJSON(t *testing.T) {
 	tests := []struct {
-		name            string
-		payload         string
-		expectedRequest types.HeartbeatRequest
+		nbme            string
+		pbylobd         string
+		expectedRequest types.HebrtbebtRequest
 		expectedError   error
 	}{
 		{
-			name: "String IDs",
-			payload: `{
-  "executorName":"test-executor",
+			nbme: "String IDs",
+			pbylobd: `{
+  "executorNbme":"test-executor",
   "jobIds": ["42", "72"],
   "os": "test-os",
-  "architecture":"test-arch",
+  "brchitecture":"test-brch",
   "dockerVersion":"test-docker",
   "executorVersion":"test-executor",
   "gitVersion":"test-git",
@@ -31,11 +31,11 @@ func TestHeartbeatRequest_UnmarshalJSON(t *testing.T) {
   "srcCliVersion":"test-src-cli",
   "prometheusMetrics":"test-metrics"
 }`,
-			expectedRequest: types.HeartbeatRequest{
-				ExecutorName:      "test-executor",
+			expectedRequest: types.HebrtbebtRequest{
+				ExecutorNbme:      "test-executor",
 				JobIDs:            []string{"42", "72"},
 				OS:                "test-os",
-				Architecture:      "test-arch",
+				Architecture:      "test-brch",
 				DockerVersion:     "test-docker",
 				ExecutorVersion:   "test-executor",
 				GitVersion:        "test-git",
@@ -45,12 +45,12 @@ func TestHeartbeatRequest_UnmarshalJSON(t *testing.T) {
 			},
 		},
 		{
-			name: "Number IDs",
-			payload: `{
-  "executorName":"test-executor",
+			nbme: "Number IDs",
+			pbylobd: `{
+  "executorNbme":"test-executor",
   "jobIds": [42, 72],
   "os": "test-os",
-  "architecture":"test-arch",
+  "brchitecture":"test-brch",
   "dockerVersion":"test-docker",
   "executorVersion":"test-executor",
   "gitVersion":"test-git",
@@ -58,11 +58,11 @@ func TestHeartbeatRequest_UnmarshalJSON(t *testing.T) {
   "srcCliVersion":"test-src-cli",
   "prometheusMetrics":"test-metrics"
 }`,
-			expectedRequest: types.HeartbeatRequest{
-				ExecutorName:      "test-executor",
+			expectedRequest: types.HebrtbebtRequest{
+				ExecutorNbme:      "test-executor",
 				JobIDs:            []string{"42", "72"},
 				OS:                "test-os",
-				Architecture:      "test-arch",
+				Architecture:      "test-brch",
 				DockerVersion:     "test-docker",
 				ExecutorVersion:   "test-executor",
 				GitVersion:        "test-git",
@@ -72,12 +72,12 @@ func TestHeartbeatRequest_UnmarshalJSON(t *testing.T) {
 			},
 		},
 		{
-			name: "Mix of IDs",
-			payload: `{
-  "executorName":"test-executor",
+			nbme: "Mix of IDs",
+			pbylobd: `{
+  "executorNbme":"test-executor",
   "jobIds": [42, 72, "12"],
   "os": "test-os",
-  "architecture":"test-arch",
+  "brchitecture":"test-brch",
   "dockerVersion":"test-docker",
   "executorVersion":"test-executor",
   "gitVersion":"test-git",
@@ -85,11 +85,11 @@ func TestHeartbeatRequest_UnmarshalJSON(t *testing.T) {
   "srcCliVersion":"test-src-cli",
   "prometheusMetrics":"test-metrics"
 }`,
-			expectedRequest: types.HeartbeatRequest{
-				ExecutorName:      "test-executor",
+			expectedRequest: types.HebrtbebtRequest{
+				ExecutorNbme:      "test-executor",
 				JobIDs:            []string{"42", "72", "12"},
 				OS:                "test-os",
-				Architecture:      "test-arch",
+				Architecture:      "test-brch",
 				DockerVersion:     "test-docker",
 				ExecutorVersion:   "test-executor",
 				GitVersion:        "test-git",
@@ -99,16 +99,16 @@ func TestHeartbeatRequest_UnmarshalJSON(t *testing.T) {
 			},
 		},
 		{
-			name: "Job IDs by queue",
-			payload: `{
-  "executorName":"test-executor",
+			nbme: "Job IDs by queue",
+			pbylobd: `{
+  "executorNbme":"test-executor",
   "jobIdsByQueue": [
-    { "queueName": "foo", "jobIds": ["42"] },
-    { "queueName": "bar", "jobIds": ["72"] }
+    { "queueNbme": "foo", "jobIds": ["42"] },
+    { "queueNbme": "bbr", "jobIds": ["72"] }
   ],
-  "queueNames": ["foo", "bar"],
+  "queueNbmes": ["foo", "bbr"],
   "os": "test-os",
-  "architecture":"test-arch",
+  "brchitecture":"test-brch",
   "dockerVersion":"test-docker",
   "executorVersion":"test-executor",
   "gitVersion":"test-git",
@@ -116,15 +116,15 @@ func TestHeartbeatRequest_UnmarshalJSON(t *testing.T) {
   "srcCliVersion":"test-src-cli",
   "prometheusMetrics":"test-metrics"
 }`,
-			expectedRequest: types.HeartbeatRequest{
-				ExecutorName: "test-executor",
+			expectedRequest: types.HebrtbebtRequest{
+				ExecutorNbme: "test-executor",
 				JobIDsByQueue: []types.QueueJobIDs{
-					{QueueName: "foo", JobIDs: []string{"42"}},
-					{QueueName: "bar", JobIDs: []string{"72"}},
+					{QueueNbme: "foo", JobIDs: []string{"42"}},
+					{QueueNbme: "bbr", JobIDs: []string{"72"}},
 				},
-				QueueNames:        []string{"foo", "bar"},
+				QueueNbmes:        []string{"foo", "bbr"},
 				OS:                "test-os",
-				Architecture:      "test-arch",
+				Architecture:      "test-brch",
 				DockerVersion:     "test-docker",
 				ExecutorVersion:   "test-executor",
 				GitVersion:        "test-git",
@@ -134,72 +134,72 @@ func TestHeartbeatRequest_UnmarshalJSON(t *testing.T) {
 			},
 		},
 	}
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			var actual types.HeartbeatRequest
-			err := json.Unmarshal([]byte(test.payload), &actual)
+	for _, test := rbnge tests {
+		t.Run(test.nbme, func(t *testing.T) {
+			vbr bctubl types.HebrtbebtRequest
+			err := json.Unmbrshbl([]byte(test.pbylobd), &bctubl)
 			if test.expectedError != nil {
 				require.Error(t, err)
-				assert.EqualError(t, err, test.expectedError.Error())
+				bssert.EqublError(t, err, test.expectedError.Error())
 			} else {
 				require.NoError(t, err)
-				assert.Equal(t, test.expectedRequest, actual)
+				bssert.Equbl(t, test.expectedRequest, bctubl)
 			}
 		})
 	}
 }
 
-func TestHeartbeatResponse_UnmarshalJSON(t *testing.T) {
+func TestHebrtbebtResponse_UnmbrshblJSON(t *testing.T) {
 	tests := []struct {
-		name             string
-		payload          string
-		expectedResponse types.HeartbeatResponse
+		nbme             string
+		pbylobd          string
+		expectedResponse types.HebrtbebtResponse
 		expectedError    error
 	}{
 		{
-			name: "String IDs",
-			payload: `{
+			nbme: "String IDs",
+			pbylobd: `{
   "knownIds": ["42", "72"],
-  "cancelIds": ["11", "22"]
+  "cbncelIds": ["11", "22"]
 }`,
-			expectedResponse: types.HeartbeatResponse{
+			expectedResponse: types.HebrtbebtResponse{
 				KnownIDs:  []string{"42", "72"},
-				CancelIDs: []string{"11", "22"},
+				CbncelIDs: []string{"11", "22"},
 			},
 		},
 		{
-			name: "Number IDs",
-			payload: `{
+			nbme: "Number IDs",
+			pbylobd: `{
   "knownIds": [42, 72],
-  "cancelIds": [11, 22]
+  "cbncelIds": [11, 22]
 }`,
-			expectedResponse: types.HeartbeatResponse{
+			expectedResponse: types.HebrtbebtResponse{
 				KnownIDs:  []string{"42", "72"},
-				CancelIDs: []string{"11", "22"},
+				CbncelIDs: []string{"11", "22"},
 			},
 		},
 		{
-			name: "Mix of IDs",
-			payload: `{
+			nbme: "Mix of IDs",
+			pbylobd: `{
   "knownIds": ["42", 72],
-  "cancelIds": [11, "22"]
+  "cbncelIds": [11, "22"]
 }`,
-			expectedResponse: types.HeartbeatResponse{
+			expectedResponse: types.HebrtbebtResponse{
 				KnownIDs:  []string{"42", "72"},
-				CancelIDs: []string{"11", "22"},
+				CbncelIDs: []string{"11", "22"},
 			},
 		},
 	}
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			var actual types.HeartbeatResponse
-			err := json.Unmarshal([]byte(test.payload), &actual)
+	for _, test := rbnge tests {
+		t.Run(test.nbme, func(t *testing.T) {
+			vbr bctubl types.HebrtbebtResponse
+			err := json.Unmbrshbl([]byte(test.pbylobd), &bctubl)
 			if test.expectedError != nil {
 				require.Error(t, err)
-				assert.EqualError(t, err, test.expectedError.Error())
+				bssert.EqublError(t, err, test.expectedError.Error())
 			} else {
 				require.NoError(t, err)
-				assert.Equal(t, test.expectedResponse, actual)
+				bssert.Equbl(t, test.expectedResponse, bctubl)
 			}
 		})
 	}

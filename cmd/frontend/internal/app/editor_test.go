@@ -1,4 +1,4 @@
-package app
+pbckbge bpp
 
 import (
 	"context"
@@ -6,96 +6,96 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/sourcegraph/log/logtest"
+	"github.com/sourcegrbph/log/logtest"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc"
-	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/bbckend"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbmocks"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
 )
 
 func TestEditorRev(t *testing.T) {
-	repoName := api.RepoName("myRepo")
+	repoNbme := bpi.RepoNbme("myRepo")
 	logger := logtest.Scoped(t)
-	backend.Mocks.Repos.ResolveRev = func(_ context.Context, _ *types.Repo, rev string) (api.CommitID, error) {
-		if rev == "branch" {
-			return api.CommitID(strings.Repeat("b", 40)), nil
+	bbckend.Mocks.Repos.ResolveRev = func(_ context.Context, _ *types.Repo, rev string) (bpi.CommitID, error) {
+		if rev == "brbnch" {
+			return bpi.CommitID(strings.Repebt("b", 40)), nil
 		}
-		if rev == "" || rev == "defaultBranch" {
-			return api.CommitID(strings.Repeat("d", 40)), nil
+		if rev == "" || rev == "defbultBrbnch" {
+			return bpi.CommitID(strings.Repebt("d", 40)), nil
 		}
 		if len(rev) == 40 {
-			return api.CommitID(rev), nil
+			return bpi.CommitID(rev), nil
 		}
-		t.Fatalf("unexpected RepoRev request rev: %q", rev)
+		t.Fbtblf("unexpected RepoRev request rev: %q", rev)
 		return "", nil
 	}
-	backend.Mocks.Repos.GetByName = func(v0 context.Context, name api.RepoName) (*types.Repo, error) {
-		return &types.Repo{ID: api.RepoID(1), Name: name},
+	bbckend.Mocks.Repos.GetByNbme = func(v0 context.Context, nbme bpi.RepoNbme) (*types.Repo, error) {
+		return &types.Repo{ID: bpi.RepoID(1), Nbme: nbme},
 
 			nil
 	}
-	ctx := context.Background()
+	ctx := context.Bbckground()
 
-	cases := []struct {
+	cbses := []struct {
 		inputRev     string
 		expEditorRev string
 		beExplicit   bool
 	}{
-		{strings.Repeat("a", 40), "@" + strings.Repeat("a", 40), false},
-		{"branch", "@branch", false},
-		{"", "", false},
-		{"defaultBranch", "", false},
-		{strings.Repeat("d", 40), "", false},                           // default revision
-		{strings.Repeat("d", 40), "@" + strings.Repeat("d", 40), true}, // default revision, explicit
+		{strings.Repebt("b", 40), "@" + strings.Repebt("b", 40), fblse},
+		{"brbnch", "@brbnch", fblse},
+		{"", "", fblse},
+		{"defbultBrbnch", "", fblse},
+		{strings.Repebt("d", 40), "", fblse},                           // defbult revision
+		{strings.Repebt("d", 40), "@" + strings.Repebt("d", 40), true}, // defbult revision, explicit
 	}
-	for _, c := range cases {
-		got := editorRev(ctx, logger, dbmocks.NewMockDB(), repoName, c.inputRev, c.beExplicit)
+	for _, c := rbnge cbses {
+		got := editorRev(ctx, logger, dbmocks.NewMockDB(), repoNbme, c.inputRev, c.beExplicit)
 		if got != c.expEditorRev {
-			t.Errorf("On input rev %q: got %q, want %q", c.inputRev, got, c.expEditorRev)
+			t.Errorf("On input rev %q: got %q, wbnt %q", c.inputRev, got, c.expEditorRev)
 		}
 	}
 }
 
 func TestEditorRedirect(t *testing.T) {
 	repos := dbmocks.NewMockRepoStore()
-	repos.GetFirstRepoNameByCloneURLFunc.SetDefaultReturn("", nil)
+	repos.GetFirstRepoNbmeByCloneURLFunc.SetDefbultReturn("", nil)
 
-	externalServices := dbmocks.NewMockExternalServiceStore()
-	externalServices.ListFunc.SetDefaultReturn(
-		[]*types.ExternalService{
+	externblServices := dbmocks.NewMockExternblServiceStore()
+	externblServices.ListFunc.SetDefbultReturn(
+		[]*types.ExternblService{
 			{
 				ID:          1,
 				Kind:        extsvc.KindGitHub,
-				DisplayName: "GITHUB #1",
-				Config:      extsvc.NewUnencryptedConfig(`{"url": "https://github.example.com", "repositoryQuery": ["none"], "token": "abc"}`),
+				DisplbyNbme: "GITHUB #1",
+				Config:      extsvc.NewUnencryptedConfig(`{"url": "https://github.exbmple.com", "repositoryQuery": ["none"], "token": "bbc"}`),
 			},
 			{
 				ID:          2,
 				Kind:        extsvc.KindOther,
-				DisplayName: "OtherPretty",
-				Config:      extsvc.NewUnencryptedConfig(`{"url": "https://somecodehost.com/bar", "repositoryPathPattern": "pretty/{repo}"}`),
+				DisplbyNbme: "OtherPretty",
+				Config:      extsvc.NewUnencryptedConfig(`{"url": "https://somecodehost.com/bbr", "repositoryPbthPbttern": "pretty/{repo}"}`),
 			},
 			{
 				ID:          3,
 				Kind:        extsvc.KindOther,
-				DisplayName: "OtherDefault",
-				Config:      extsvc.NewUnencryptedConfig(`{"url": "https://default.com"}`),
+				DisplbyNbme: "OtherDefbult",
+				Config:      extsvc.NewUnencryptedConfig(`{"url": "https://defbult.com"}`),
 			},
-			// This service won't be used, but is included to prevent regression where ReposourceCloneURLToRepoName returned an error when
-			// Phabricator was iterated over before the actual code host (e.g. The clone URL is handled by reposource.GitLab).
+			// This service won't be used, but is included to prevent regression where ReposourceCloneURLToRepoNbme returned bn error when
+			// Phbbricbtor wbs iterbted over before the bctubl code host (e.g. The clone URL is hbndled by reposource.GitLbb).
 			{
 				ID:          4,
-				Kind:        extsvc.KindPhabricator,
-				DisplayName: "PHABRICATOR #1",
-				Config:      extsvc.NewUnencryptedConfig(`{"repos": [{"path": "default.com/foo/bar", "callsign": "BAR"}], "token": "abc", "url": "https://phabricator.example.com"}`),
+				Kind:        extsvc.KindPhbbricbtor,
+				DisplbyNbme: "PHABRICATOR #1",
+				Config:      extsvc.NewUnencryptedConfig(`{"repos": [{"pbth": "defbult.com/foo/bbr", "cbllsign": "BAR"}], "token": "bbc", "url": "https://phbbricbtor.exbmple.com"}`),
 			},
 			// Code host with SCP-style remote URLs
 			{
 				ID:          5,
 				Kind:        extsvc.KindOther,
-				DisplayName: "OtherSCP",
+				DisplbyNbme: "OtherSCP",
 				Config:      extsvc.NewUnencryptedConfig(`{"url":"ssh://git@git.codehost.com"}`),
 			},
 		},
@@ -103,204 +103,204 @@ func TestEditorRedirect(t *testing.T) {
 	)
 
 	db := dbmocks.NewMockDB()
-	db.ReposFunc.SetDefaultReturn(repos)
-	db.ExternalServicesFunc.SetDefaultReturn(externalServices)
+	db.ReposFunc.SetDefbultReturn(repos)
+	db.ExternblServicesFunc.SetDefbultReturn(externblServices)
 
-	cases := []struct {
-		name            string
-		q               url.Values
-		wantRedirectURL string
-		wantParseErr    string
-		wantRedirectErr string
+	cbses := []struct {
+		nbme            string
+		q               url.Vblues
+		wbntRedirectURL string
+		wbntPbrseErr    string
+		wbntRedirectErr string
 	}{
 		{
-			name: "open file",
-			q: url.Values{
-				"remote_url": []string{"git@github.com:a/b"},
-				"branch":     []string{"dev"},
-				"revision":   []string{"0ad12f"},
+			nbme: "open file",
+			q: url.Vblues{
+				"remote_url": []string{"git@github.com:b/b"},
+				"brbnch":     []string{"dev"},
+				"revision":   []string{"0bd12f"},
 				"file":       []string{"mux.go"},
-				"start_row":  []string{"123"},
-				"start_col":  []string{"1"},
+				"stbrt_row":  []string{"123"},
+				"stbrt_col":  []string{"1"},
 				"end_row":    []string{"123"},
 				"end_col":    []string{"10"},
 			},
-			wantRedirectURL: "/github.com/a/b@0ad12f/-/blob/mux.go?L124%3A2-124%3A11",
+			wbntRedirectURL: "/github.com/b/b@0bd12f/-/blob/mux.go?L124%3A2-124%3A11",
 		},
 		{
-			name: "open file no selection",
-			q: url.Values{
+			nbme: "open file no selection",
+			q: url.Vblues{
 				"editor":     []string{"Atom"},
 				"version":    []string{"v1.2.1"},
-				"remote_url": []string{"git@github.com:a/b"},
-				"branch":     []string{"dev"},
-				"revision":   []string{"0ad12f"},
+				"remote_url": []string{"git@github.com:b/b"},
+				"brbnch":     []string{"dev"},
+				"revision":   []string{"0bd12f"},
 				"file":       []string{"mux.go"},
 			},
-			wantRedirectURL: "/github.com/a/b@0ad12f/-/blob/mux.go?L1",
+			wbntRedirectURL: "/github.com/b/b@0bd12f/-/blob/mux.go?L1",
 		},
 		{
-			name: "open file in repository (Phabricator mirrored)",
-			q: url.Values{
-				"remote_url": []string{"https://default.com/foo/bar"},
-				"branch":     []string{"dev"},
-				"revision":   []string{"0ad12f"},
+			nbme: "open file in repository (Phbbricbtor mirrored)",
+			q: url.Vblues{
+				"remote_url": []string{"https://defbult.com/foo/bbr"},
+				"brbnch":     []string{"dev"},
+				"revision":   []string{"0bd12f"},
 				"file":       []string{"mux.go"},
-				"start_row":  []string{"123"},
-				"start_col":  []string{"1"},
+				"stbrt_row":  []string{"123"},
+				"stbrt_col":  []string{"1"},
 				"end_row":    []string{"123"},
 				"end_col":    []string{"10"},
 			},
-			wantRedirectURL: "/default.com/foo/bar@0ad12f/-/blob/mux.go?L124%3A2-124%3A11",
+			wbntRedirectURL: "/defbult.com/foo/bbr@0bd12f/-/blob/mux.go?L124%3A2-124%3A11",
 		},
 		{
-			name: "open file (generic code host with repositoryPathPattern)",
-			q: url.Values{
-				"remote_url": []string{"https://somecodehost.com/bar/a/b"},
-				"branch":     []string{"dev"},
-				"revision":   []string{"0ad12f"},
+			nbme: "open file (generic code host with repositoryPbthPbttern)",
+			q: url.Vblues{
+				"remote_url": []string{"https://somecodehost.com/bbr/b/b"},
+				"brbnch":     []string{"dev"},
+				"revision":   []string{"0bd12f"},
 				"file":       []string{"mux.go"},
-				"start_row":  []string{"123"},
-				"start_col":  []string{"1"},
+				"stbrt_row":  []string{"123"},
+				"stbrt_col":  []string{"1"},
 				"end_row":    []string{"123"},
 				"end_col":    []string{"10"},
 			},
-			wantRedirectURL: "/pretty/a/b@0ad12f/-/blob/mux.go?L124%3A2-124%3A11",
+			wbntRedirectURL: "/pretty/b/b@0bd12f/-/blob/mux.go?L124%3A2-124%3A11",
 		},
 		{
-			name: "open file (generic code host without repositoryPathPattern)",
-			q: url.Values{
-				"remote_url": []string{"https://default.com/a/b"},
-				"branch":     []string{"dev"},
-				"revision":   []string{"0ad12f"},
+			nbme: "open file (generic code host without repositoryPbthPbttern)",
+			q: url.Vblues{
+				"remote_url": []string{"https://defbult.com/b/b"},
+				"brbnch":     []string{"dev"},
+				"revision":   []string{"0bd12f"},
 				"file":       []string{"mux.go"},
-				"start_row":  []string{"123"},
-				"start_col":  []string{"1"},
+				"stbrt_row":  []string{"123"},
+				"stbrt_col":  []string{"1"},
 				"end_row":    []string{"123"},
 				"end_col":    []string{"10"},
 			},
-			wantRedirectURL: "/default.com/a/b@0ad12f/-/blob/mux.go?L124%3A2-124%3A11",
+			wbntRedirectURL: "/defbult.com/b/b@0bd12f/-/blob/mux.go?L124%3A2-124%3A11",
 		},
 		{
-			name: "open file (generic git host with slash prefix in path)",
-			q: url.Values{
+			nbme: "open file (generic git host with slbsh prefix in pbth)",
+			q: url.Vblues{
 				"remote_url": []string{"git@git.codehost.com:/owner/repo"},
-				"branch":     []string{"dev"},
-				"revision":   []string{"0ad12f"},
+				"brbnch":     []string{"dev"},
+				"revision":   []string{"0bd12f"},
 				"file":       []string{"mux.go"},
-				"start_row":  []string{"123"},
-				"start_col":  []string{"1"},
+				"stbrt_row":  []string{"123"},
+				"stbrt_col":  []string{"1"},
 				"end_row":    []string{"123"},
 				"end_col":    []string{"10"},
 			},
-			wantRedirectURL: "/git.codehost.com/owner/repo@0ad12f/-/blob/mux.go?L124%3A2-124%3A11",
+			wbntRedirectURL: "/git.codehost.com/owner/repo@0bd12f/-/blob/mux.go?L124%3A2-124%3A11",
 		},
 		{
-			name: "open file (generic git host without slash prefix in path)",
-			q: url.Values{
+			nbme: "open file (generic git host without slbsh prefix in pbth)",
+			q: url.Vblues{
 				"remote_url": []string{"git@git.codehost.com:owner/repo"},
-				"branch":     []string{"dev"},
-				"revision":   []string{"0ad12f"},
+				"brbnch":     []string{"dev"},
+				"revision":   []string{"0bd12f"},
 				"file":       []string{"mux.go"},
-				"start_row":  []string{"123"},
-				"start_col":  []string{"1"},
+				"stbrt_row":  []string{"123"},
+				"stbrt_col":  []string{"1"},
 				"end_row":    []string{"123"},
 				"end_col":    []string{"10"},
 			},
-			wantRedirectURL: "/git.codehost.com/owner/repo@0ad12f/-/blob/mux.go?L124%3A2-124%3A11",
+			wbntRedirectURL: "/git.codehost.com/owner/repo@0bd12f/-/blob/mux.go?L124%3A2-124%3A11",
 		},
 		{
-			name: "search",
-			q: url.Values{
-				"search": []string{"foobar"},
+			nbme: "sebrch",
+			q: url.Vblues{
+				"sebrch": []string{"foobbr"},
 
-				// Editor extensions specify these when trying to perform a global search,
-				// so we cannot treat these as "search in repo/branch/file". When these are
-				// present, a global search must be performed:
-				"remote_url": []string{"git@github.com:a/b"},
-				"branch":     []string{"dev"},
+				// Editor extensions specify these when trying to perform b globbl sebrch,
+				// so we cbnnot trebt these bs "sebrch in repo/brbnch/file". When these bre
+				// present, b globbl sebrch must be performed:
+				"remote_url": []string{"git@github.com:b/b"},
+				"brbnch":     []string{"dev"},
 				"file":       []string{"mux.go"},
 			},
-			wantRedirectURL: "/search?patternType=literal&q=foobar",
+			wbntRedirectURL: "/sebrch?pbtternType=literbl&q=foobbr",
 		},
 		{
-			name: "search in repository",
-			q: url.Values{
-				"search":            []string{"foobar"},
-				"search_remote_url": []string{"git@github.com:a/b"},
+			nbme: "sebrch in repository",
+			q: url.Vblues{
+				"sebrch":            []string{"foobbr"},
+				"sebrch_remote_url": []string{"git@github.com:b/b"},
 			},
-			wantRedirectURL: "/search?patternType=literal&q=repo%3Agithub%5C.com%2Fa%2Fb%24+foobar",
+			wbntRedirectURL: "/sebrch?pbtternType=literbl&q=repo%3Agithub%5C.com%2Fb%2Fb%24+foobbr",
 		},
 		{
-			name: "search in repository branch",
-			q: url.Values{
-				"search":            []string{"foobar"},
-				"search_remote_url": []string{"git@github.com:a/b"},
-				"search_branch":     []string{"dev"},
+			nbme: "sebrch in repository brbnch",
+			q: url.Vblues{
+				"sebrch":            []string{"foobbr"},
+				"sebrch_remote_url": []string{"git@github.com:b/b"},
+				"sebrch_brbnch":     []string{"dev"},
 			},
-			wantRedirectURL: "/search?patternType=literal&q=repo%3Agithub%5C.com%2Fa%2Fb%24%40dev+foobar",
+			wbntRedirectURL: "/sebrch?pbtternType=literbl&q=repo%3Agithub%5C.com%2Fb%2Fb%24%40dev+foobbr",
 		},
 		{
-			name: "search in repository revision",
-			q: url.Values{
-				"search":            []string{"foobar"},
-				"search_remote_url": []string{"git@github.com:a/b"},
-				"search_branch":     []string{"dev"},
-				"search_revision":   []string{"0ad12f"},
+			nbme: "sebrch in repository revision",
+			q: url.Vblues{
+				"sebrch":            []string{"foobbr"},
+				"sebrch_remote_url": []string{"git@github.com:b/b"},
+				"sebrch_brbnch":     []string{"dev"},
+				"sebrch_revision":   []string{"0bd12f"},
 			},
-			wantRedirectURL: "/search?patternType=literal&q=repo%3Agithub%5C.com%2Fa%2Fb%24%400ad12f+foobar",
+			wbntRedirectURL: "/sebrch?pbtternType=literbl&q=repo%3Agithub%5C.com%2Fb%2Fb%24%400bd12f+foobbr",
 		},
 		{
-			name: "search in repository with generic code host (with repositoryPathPattern)",
-			q: url.Values{
+			nbme: "sebrch in repository with generic code host (with repositoryPbthPbttern)",
+			q: url.Vblues{
 				"editor":            []string{"Atom"},
 				"version":           []string{"v1.2.1"},
-				"search":            []string{"foobar"},
-				"search_remote_url": []string{"https://somecodehost.com/bar/a/b"},
+				"sebrch":            []string{"foobbr"},
+				"sebrch_remote_url": []string{"https://somecodehost.com/bbr/b/b"},
 			},
-			wantRedirectURL: "/search?patternType=literal&q=repo%3Apretty%2Fa%2Fb%24+foobar",
+			wbntRedirectURL: "/sebrch?pbtternType=literbl&q=repo%3Apretty%2Fb%2Fb%24+foobbr",
 		},
 		{
-			name: "search in repository file",
-			q: url.Values{
-				"search":            []string{"foobar"},
-				"search_remote_url": []string{"git@github.com:a/b"},
-				"search_file":       []string{"baz"},
+			nbme: "sebrch in repository file",
+			q: url.Vblues{
+				"sebrch":            []string{"foobbr"},
+				"sebrch_remote_url": []string{"git@github.com:b/b"},
+				"sebrch_file":       []string{"bbz"},
 			},
-			wantRedirectURL: "/search?patternType=literal&q=repo%3Agithub%5C.com%2Fa%2Fb%24+file%3A%5Ebaz%24+foobar",
+			wbntRedirectURL: "/sebrch?pbtternType=literbl&q=repo%3Agithub%5C.com%2Fb%2Fb%24+file%3A%5Ebbz%24+foobbr",
 		},
 		{
-			name: "search in file",
-			q: url.Values{
-				"search":      []string{"foobar"},
-				"search_file": []string{"baz"},
+			nbme: "sebrch in file",
+			q: url.Vblues{
+				"sebrch":      []string{"foobbr"},
+				"sebrch_file": []string{"bbz"},
 			},
-			wantRedirectURL: "/search?patternType=literal&q=file%3A%5Ebaz%24+foobar",
+			wbntRedirectURL: "/sebrch?pbtternType=literbl&q=file%3A%5Ebbz%24+foobbr",
 		},
 		{
-			name:         "empty request",
-			wantParseErr: "could not determine query string",
+			nbme:         "empty request",
+			wbntPbrseErr: "could not determine query string",
 		},
 		{
-			name:            "unknown request",
-			q:               url.Values{},
-			wantRedirectErr: "could not determine request type, missing ?search or ?remote_url",
+			nbme:            "unknown request",
+			q:               url.Vblues{},
+			wbntRedirectErr: "could not determine request type, missing ?sebrch or ?remote_url",
 		},
 		{
-			name: "editor and version is optional",
-			q: url.Values{
+			nbme: "editor bnd version is optionbl",
+			q: url.Vblues{
 				"editor":     []string{"Atom"},
 				"version":    []string{"v1.2.1"},
-				"remote_url": []string{"git@github.com:a/b"},
-				"branch":     []string{"dev"},
-				"revision":   []string{"0ad12f"},
+				"remote_url": []string{"git@github.com:b/b"},
+				"brbnch":     []string{"dev"},
+				"revision":   []string{"0bd12f"},
 				"file":       []string{"mux.go"},
-				"start_row":  []string{"123"},
-				"start_col":  []string{"1"},
+				"stbrt_row":  []string{"123"},
+				"stbrt_col":  []string{"1"},
 				"end_row":    []string{"123"},
 				"end_col":    []string{"10"},
 			},
-			wantRedirectURL: "/github.com/a/b@0ad12f/-/blob/mux.go?L124%3A2-124%3A11",
+			wbntRedirectURL: "/github.com/b/b@0bd12f/-/blob/mux.go?L124%3A2-124%3A11",
 		},
 	}
 	errStr := func(e error) string {
@@ -309,19 +309,19 @@ func TestEditorRedirect(t *testing.T) {
 		}
 		return e.Error()
 	}
-	for _, c := range cases {
-		t.Run(c.name, func(t *testing.T) {
-			editorRequest, parseErr := parseEditorRequest(db, c.q)
-			if errStr(parseErr) != c.wantParseErr {
-				t.Fatalf("got parseErr %q want %q", parseErr, c.wantParseErr)
+	for _, c := rbnge cbses {
+		t.Run(c.nbme, func(t *testing.T) {
+			editorRequest, pbrseErr := pbrseEditorRequest(db, c.q)
+			if errStr(pbrseErr) != c.wbntPbrseErr {
+				t.Fbtblf("got pbrseErr %q wbnt %q", pbrseErr, c.wbntPbrseErr)
 			}
-			if parseErr == nil {
+			if pbrseErr == nil {
 				redirectURL, redirectErr := editorRequest.redirectURL(context.TODO())
-				if errStr(redirectErr) != c.wantRedirectErr {
-					t.Fatalf("got redirectErr %q want %q", redirectErr, c.wantRedirectErr)
+				if errStr(redirectErr) != c.wbntRedirectErr {
+					t.Fbtblf("got redirectErr %q wbnt %q", redirectErr, c.wbntRedirectErr)
 				}
-				if redirectURL != c.wantRedirectURL {
-					t.Fatalf("got redirectURL %q want %q", redirectURL, c.wantRedirectURL)
+				if redirectURL != c.wbntRedirectURL {
+					t.Fbtblf("got redirectURL %q wbnt %q", redirectURL, c.wbntRedirectURL)
 				}
 			}
 		})

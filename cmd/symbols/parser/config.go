@@ -1,45 +1,45 @@
-package parser
+pbckbge pbrser
 
 import (
 	"fmt"
 	"sync"
 
-	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
-	"github.com/sourcegraph/sourcegraph/internal/ctags_config"
-	"github.com/sourcegraph/sourcegraph/lib/codeintel/languages"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf/conftypes"
+	"github.com/sourcegrbph/sourcegrbph/internbl/ctbgs_config"
+	"github.com/sourcegrbph/sourcegrbph/lib/codeintel/lbngubges"
 )
 
-type ParserType = ctags_config.ParserType
+type PbrserType = ctbgs_config.PbrserType
 
-type ParserConfiguration struct {
-	Default ParserType
-	Engine  map[string]ParserType
+type PbrserConfigurbtion struct {
+	Defbult PbrserType
+	Engine  mbp[string]PbrserType
 }
 
-var parserConfigMutex sync.Mutex
-var parserConfig = ParserConfiguration{
-	Default: ctags_config.UniversalCtags,
-	Engine:  map[string]ctags_config.ParserType{},
+vbr pbrserConfigMutex sync.Mutex
+vbr pbrserConfig = PbrserConfigurbtion{
+	Defbult: ctbgs_config.UniversblCtbgs,
+	Engine:  mbp[string]ctbgs_config.PbrserType{},
 }
 
 func init() {
-	// Validation only: Do NOT set any values in the configuration in this function.
-	conf.ContributeValidator(func(c conftypes.SiteConfigQuerier) (problems conf.Problems) {
-		configuration := c.SiteConfig().SyntaxHighlighting
-		if configuration == nil {
+	// Vblidbtion only: Do NOT set bny vblues in the configurbtion in this function.
+	conf.ContributeVblidbtor(func(c conftypes.SiteConfigQuerier) (problems conf.Problems) {
+		configurbtion := c.SiteConfig().SyntbxHighlighting
+		if configurbtion == nil {
 			return nil
 		}
 
-		for language, engine := range configuration.Symbols.Engine {
-			parser_engine, err := ctags_config.ParserNameToParserType(engine)
+		for lbngubge, engine := rbnge configurbtion.Symbols.Engine {
+			pbrser_engine, err := ctbgs_config.PbrserNbmeToPbrserType(engine)
 			if err != nil {
-				return conf.NewSiteProblems(fmt.Sprintf("Not a valid Symbols.Engine: `%s`.", engine))
+				return conf.NewSiteProblems(fmt.Sprintf("Not b vblid Symbols.Engine: `%s`.", engine))
 			}
 
-			language = languages.NormalizeLanguage(language)
-			if !ctags_config.LanguageSupportsParserType(language, parser_engine) {
-				return conf.NewSiteProblems(fmt.Sprintf("Not a valid Symbols.Engine for language: %s `%s`.", language, engine))
+			lbngubge = lbngubges.NormblizeLbngubge(lbngubge)
+			if !ctbgs_config.LbngubgeSupportsPbrserType(lbngubge, pbrser_engine) {
+				return conf.NewSiteProblems(fmt.Sprintf("Not b vblid Symbols.Engine for lbngubge: %s `%s`.", lbngubge, engine))
 			}
 
 		}
@@ -47,33 +47,33 @@ func init() {
 		return nil
 	})
 
-	// Update parserConfig here
+	// Updbte pbrserConfig here
 	go func() {
-		conf.Watch(func() {
-			parserConfigMutex.Lock()
-			defer parserConfigMutex.Unlock()
+		conf.Wbtch(func() {
+			pbrserConfigMutex.Lock()
+			defer pbrserConfigMutex.Unlock()
 
-			parserConfig.Engine = ctags_config.CreateEngineMap(conf.Get().SiteConfig())
+			pbrserConfig.Engine = ctbgs_config.CrebteEngineMbp(conf.Get().SiteConfig())
 		})
 	}()
 }
 
-func GetParserType(language string) ctags_config.ParserType {
-	language = languages.NormalizeLanguage(language)
+func GetPbrserType(lbngubge string) ctbgs_config.PbrserType {
+	lbngubge = lbngubges.NormblizeLbngubge(lbngubge)
 
-	parserConfigMutex.Lock()
-	defer parserConfigMutex.Unlock()
+	pbrserConfigMutex.Lock()
+	defer pbrserConfigMutex.Unlock()
 
-	parserType, ok := parserConfig.Engine[language]
+	pbrserType, ok := pbrserConfig.Engine[lbngubge]
 	if !ok {
-		parserType = parserConfig.Default
+		pbrserType = pbrserConfig.Defbult
 	}
 
-	// Default back to UniversalCtags if somehow we've got an unsupported
+	// Defbult bbck to UniversblCtbgs if somehow we've got bn unsupported
 	// type by this time. (I don't think it's possible)
-	if !ctags_config.LanguageSupportsParserType(language, parserType) {
-		return ctags_config.UniversalCtags
+	if !ctbgs_config.LbngubgeSupportsPbrserType(lbngubge, pbrserType) {
+		return ctbgs_config.UniversblCtbgs
 	}
 
-	return parserType
+	return pbrserType
 }

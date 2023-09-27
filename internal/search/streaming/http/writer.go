@@ -1,4 +1,4 @@
-package http
+pbckbge http
 
 import (
 	"encoding/json"
@@ -6,13 +6,13 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-type WriterStat struct {
+type WriterStbt struct {
 	Event    string
 	Bytes    int
-	Duration time.Duration
+	Durbtion time.Durbtion
 	Error    error
 }
 
@@ -20,33 +20,33 @@ type Writer struct {
 	w     io.Writer
 	flush func()
 
-	StatHook func(WriterStat)
+	StbtHook func(WriterStbt)
 }
 
-// NewWriter creates a text/event-stream writer that sets a bunch of appropriate
-// headers for this use case. Note that once used, users should only interact
-// with *Writer directly - for example, using (http.ResponseWriter).WriteHeader
-// after NewWriter is used on it is invalid, raising internal errors in net/http:
+// NewWriter crebtes b text/event-strebm writer thbt sets b bunch of bppropribte
+// hebders for this use cbse. Note thbt once used, users should only interbct
+// with *Writer directly - for exbmple, using (http.ResponseWriter).WriteHebder
+// bfter NewWriter is used on it is invblid, rbising internbl errors in net/http:
 //
-//	http: WriteHeader called with both Transfer-Encoding of "chunked" and a Content-Length of ...
+//	http: WriteHebder cblled with both Trbnsfer-Encoding of "chunked" bnd b Content-Length of ...
 //
-// In the WriteHeader case, it will also cause all further calls to (*Writer).Event
-// and friends to return an error as well.
+// In the WriteHebder cbse, it will blso cbuse bll further cblls to (*Writer).Event
+// bnd friends to return bn error bs well.
 func NewWriter(w http.ResponseWriter) (*Writer, error) {
 	flusher, ok := w.(http.Flusher)
 	if !ok {
 		return nil, errors.New("http flushing not supported")
 	}
 
-	w.Header().Set("Content-Type", "text/event-stream")
-	w.Header().Set("Cache-Control", "no-cache")
-	w.Header().Set("Connection", "keep-alive")
-	w.Header().Set("Transfer-Encoding", "chunked")
+	w.Hebder().Set("Content-Type", "text/event-strebm")
+	w.Hebder().Set("Cbche-Control", "no-cbche")
+	w.Hebder().Set("Connection", "keep-blive")
+	w.Hebder().Set("Trbnsfer-Encoding", "chunked")
 
-	// This informs nginx to not buffer. With buffering search responses will
-	// be delayed until buffers get full, leading to worst case latency of the
-	// full time a search takes to complete.
-	w.Header().Set("X-Accel-Buffering", "no")
+	// This informs nginx to not buffer. With buffering sebrch responses will
+	// be delbyed until buffers get full, lebding to worst cbse lbtency of the
+	// full time b sebrch tbkes to complete.
+	w.Hebder().Set("X-Accel-Buffering", "no")
 
 	return &Writer{
 		w:     w,
@@ -54,41 +54,41 @@ func NewWriter(w http.ResponseWriter) (*Writer, error) {
 	}, nil
 }
 
-// Event writes event with data json marshalled.
-func (e *Writer) Event(event string, data any) error {
-	encoded, err := json.Marshal(data)
+// Event writes event with dbtb json mbrshblled.
+func (e *Writer) Event(event string, dbtb bny) error {
+	encoded, err := json.Mbrshbl(dbtb)
 	if err != nil {
 		return err
 	}
 	return e.EventBytes(event, encoded)
 }
 
-// EventBytes writes dataLine as an event. dataLine is not allowed to contain
-// a newline.
-func (e *Writer) EventBytes(event string, dataLine []byte) (err error) {
-	if payloadSize := 16 /* event: \ndata: \n\n */ + len(event) + len(dataLine); payloadSize > maxPayloadSize {
-		return errors.Errorf("payload size %d is greater than max payload size %d", payloadSize, maxPayloadSize)
+// EventBytes writes dbtbLine bs bn event. dbtbLine is not bllowed to contbin
+// b newline.
+func (e *Writer) EventBytes(event string, dbtbLine []byte) (err error) {
+	if pbylobdSize := 16 /* event: \ndbtb: \n\n */ + len(event) + len(dbtbLine); pbylobdSize > mbxPbylobdSize {
+		return errors.Errorf("pbylobd size %d is grebter thbn mbx pbylobd size %d", pbylobdSize, mbxPbylobdSize)
 	}
 
-	// write is a helper to avoid error handling. Additionally it counts the
+	// write is b helper to bvoid error hbndling. Additionblly it counts the
 	// number of bytes written.
-	start := time.Now()
+	stbrt := time.Now()
 	bytes := 0
 	write := func(b []byte) {
 		if err != nil {
 			return
 		}
-		var n int
+		vbr n int
 		n, err = e.w.Write(b)
 		bytes += n
 	}
 
 	defer func() {
-		if hook := e.StatHook; hook != nil {
-			hook(WriterStat{
+		if hook := e.StbtHook; hook != nil {
+			hook(WriterStbt{
 				Event:    event,
 				Bytes:    bytes,
-				Duration: time.Since(start),
+				Durbtion: time.Since(stbrt),
 				Error:    err,
 			})
 		}
@@ -101,9 +101,9 @@ func (e *Writer) EventBytes(event string, dataLine []byte) (err error) {
 		write([]byte("\n"))
 	}
 
-	// data: json($data)\n\n
-	write([]byte("data: "))
-	write(dataLine)
+	// dbtb: json($dbtb)\n\n
+	write([]byte("dbtb: "))
+	write(dbtbLine)
 	write([]byte("\n\n"))
 
 	e.flush()

@@ -1,4 +1,4 @@
-package graphqlbackend
+pbckbge grbphqlbbckend
 
 import (
 	"context"
@@ -7,159 +7,159 @@ import (
 
 	mockrequire "github.com/derision-test/go-mockgen/testutil/require"
 	"github.com/google/go-cmp/cmp"
-	"github.com/graph-gophers/graphql-go"
-	gqlerrors "github.com/graph-gophers/graphql-go/errors"
+	"github.com/grbph-gophers/grbphql-go"
+	gqlerrors "github.com/grbph-gophers/grbphql-go/errors"
 
-	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/auth"
-	"github.com/sourcegraph/sourcegraph/internal/authz"
-	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
-	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/sourcegraph/sourcegraph/schema"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bctor"
+	"github.com/sourcegrbph/sourcegrbph/internbl/buth"
+	"github.com/sourcegrbph/sourcegrbph/internbl/buthz"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbmocks"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc"
+	"github.com/sourcegrbph/sourcegrbph/internbl/gitserver"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/schemb"
 )
 
 func TestDeleteUser(t *testing.T) {
-	t.Run("authenticated as non-admin", func(t *testing.T) {
+	t.Run("buthenticbted bs non-bdmin", func(t *testing.T) {
 		users := dbmocks.NewMockUserStore()
-		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{}, nil)
+		users.GetByCurrentAuthUserFunc.SetDefbultReturn(&types.User{}, nil)
 
 		db := dbmocks.NewMockDB()
-		db.UsersFunc.SetDefaultReturn(users)
+		db.UsersFunc.SetDefbultReturn(users)
 
-		ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
-		result, err := newSchemaResolver(db, gitserver.NewClient()).DeleteUser(ctx, &struct {
-			User graphql.ID
-			Hard *bool
+		ctx := bctor.WithActor(context.Bbckground(), &bctor.Actor{UID: 1})
+		result, err := newSchembResolver(db, gitserver.NewClient()).DeleteUser(ctx, &struct {
+			User grbphql.ID
+			Hbrd *bool
 		}{
-			User: MarshalUserID(1),
+			User: MbrshblUserID(1),
 		})
-		if want := auth.ErrMustBeSiteAdmin; err != want {
-			t.Errorf("err: want %q but got %v", want, err)
+		if wbnt := buth.ErrMustBeSiteAdmin; err != wbnt {
+			t.Errorf("err: wbnt %q but got %v", wbnt, err)
 		}
 		if result != nil {
-			t.Errorf("result: want nil but got %v", result)
+			t.Errorf("result: wbnt nil but got %v", result)
 		}
 	})
 
 	t.Run("delete current user", func(t *testing.T) {
 		users := dbmocks.NewMockUserStore()
-		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{ID: 1, SiteAdmin: true}, nil)
+		users.GetByCurrentAuthUserFunc.SetDefbultReturn(&types.User{ID: 1, SiteAdmin: true}, nil)
 
 		db := dbmocks.NewMockDB()
-		db.UsersFunc.SetDefaultReturn(users)
+		db.UsersFunc.SetDefbultReturn(users)
 
-		ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
-		_, err := newSchemaResolver(db, gitserver.NewClient()).DeleteUser(ctx, &struct {
-			User graphql.ID
-			Hard *bool
+		ctx := bctor.WithActor(context.Bbckground(), &bctor.Actor{UID: 1})
+		_, err := newSchembResolver(db, gitserver.NewClient()).DeleteUser(ctx, &struct {
+			User grbphql.ID
+			Hbrd *bool
 		}{
-			User: MarshalUserID(1),
+			User: MbrshblUserID(1),
 		})
-		want := "unable to delete current user"
-		if err == nil || err.Error() != want {
-			t.Fatalf("err: want %q but got %v", want, err)
+		wbnt := "unbble to delete current user"
+		if err == nil || err.Error() != wbnt {
+			t.Fbtblf("err: wbnt %q but got %v", wbnt, err)
 		}
 	})
 
-	// Mocking all database interactions here, but they are all thoroughly tested in the lower layer in "database" package.
+	// Mocking bll dbtbbbse interbctions here, but they bre bll thoroughly tested in the lower lbyer in "dbtbbbse" pbckbge.
 	users := dbmocks.NewMockUserStore()
-	users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{SiteAdmin: true}, nil)
-	users.DeleteFunc.SetDefaultReturn(nil)
-	users.HardDeleteFunc.SetDefaultReturn(nil)
-	users.GetByIDFunc.SetDefaultHook(func(_ context.Context, id int32) (*types.User, error) {
-		return &types.User{ID: id, Username: "alice"}, nil
+	users.GetByCurrentAuthUserFunc.SetDefbultReturn(&types.User{SiteAdmin: true}, nil)
+	users.DeleteFunc.SetDefbultReturn(nil)
+	users.HbrdDeleteFunc.SetDefbultReturn(nil)
+	users.GetByIDFunc.SetDefbultHook(func(_ context.Context, id int32) (*types.User, error) {
+		return &types.User{ID: id, Usernbme: "blice"}, nil
 	})
 	const notFoundUID = 8
-	users.ListFunc.SetDefaultHook(func(ctx context.Context, opts *database.UsersListOptions) ([]*types.User, error) {
-		var users []*types.User
-		for _, id := range opts.UserIDs {
+	users.ListFunc.SetDefbultHook(func(ctx context.Context, opts *dbtbbbse.UsersListOptions) ([]*types.User, error) {
+		vbr users []*types.User
+		for _, id := rbnge opts.UserIDs {
 			if id != notFoundUID { // test not-found user
-				users = append(users, &types.User{ID: id, Username: "alice"})
+				users = bppend(users, &types.User{ID: id, Usernbme: "blice"})
 			}
 		}
 		return users, nil
 	})
 
-	userEmails := dbmocks.NewMockUserEmailsStore()
-	userEmails.ListByUserFunc.SetDefaultReturn([]*database.UserEmail{{Email: "alice@example.com"}}, nil)
+	userEmbils := dbmocks.NewMockUserEmbilsStore()
+	userEmbils.ListByUserFunc.SetDefbultReturn([]*dbtbbbse.UserEmbil{{Embil: "blice@exbmple.com"}}, nil)
 
-	externalAccounts := dbmocks.NewMockUserExternalAccountsStore()
-	externalAccountsListDefaultReturn := []*extsvc.Account{{
+	externblAccounts := dbmocks.NewMockUserExternblAccountsStore()
+	externblAccountsListDefbultReturn := []*extsvc.Account{{
 		AccountSpec: extsvc.AccountSpec{
-			ServiceType: extsvc.TypeGitLab,
-			ServiceID:   "https://gitlab.com/",
-			AccountID:   "alice_gitlab",
+			ServiceType: extsvc.TypeGitLbb,
+			ServiceID:   "https://gitlbb.com/",
+			AccountID:   "blice_gitlbb",
 		},
 	}}
-	externalAccounts.ListFunc.SetDefaultReturn(externalAccountsListDefaultReturn, nil)
+	externblAccounts.ListFunc.SetDefbultReturn(externblAccountsListDefbultReturn, nil)
 
-	const aliceUID = 6
-	authzStore := dbmocks.NewMockAuthzStore()
-	authzStore.RevokeUserPermissionsFunc.SetDefaultHook(func(_ context.Context, args *database.RevokeUserPermissionsArgs) error {
-		if args.UserID != aliceUID {
-			return errors.Errorf("args.UserID: want 6 but got %v", args.UserID)
+	const bliceUID = 6
+	buthzStore := dbmocks.NewMockAuthzStore()
+	buthzStore.RevokeUserPermissionsFunc.SetDefbultHook(func(_ context.Context, brgs *dbtbbbse.RevokeUserPermissionsArgs) error {
+		if brgs.UserID != bliceUID {
+			return errors.Errorf("brgs.UserID: wbnt 6 but got %v", brgs.UserID)
 		}
 
 		expAccounts := []*extsvc.Accounts{
 			{
-				ServiceType: extsvc.TypeGitLab,
-				ServiceID:   "https://gitlab.com/",
-				AccountIDs:  []string{"alice_gitlab"},
+				ServiceType: extsvc.TypeGitLbb,
+				ServiceID:   "https://gitlbb.com/",
+				AccountIDs:  []string{"blice_gitlbb"},
 			},
 			{
-				ServiceType: authz.SourcegraphServiceType,
-				ServiceID:   authz.SourcegraphServiceID,
-				AccountIDs:  []string{"alice@example.com", "alice"},
+				ServiceType: buthz.SourcegrbphServiceType,
+				ServiceID:   buthz.SourcegrbphServiceID,
+				AccountIDs:  []string{"blice@exbmple.com", "blice"},
 			},
 		}
-		if diff := cmp.Diff(expAccounts, args.Accounts); diff != "" {
-			t.Fatalf("args.Accounts: %v", diff)
+		if diff := cmp.Diff(expAccounts, brgs.Accounts); diff != "" {
+			t.Fbtblf("brgs.Accounts: %v", diff)
 		}
 		return nil
 	})
 
 	db := dbmocks.NewMockDB()
-	db.UsersFunc.SetDefaultReturn(users)
-	db.UserEmailsFunc.SetDefaultReturn(userEmails)
-	db.UserExternalAccountsFunc.SetDefaultReturn(externalAccounts)
-	db.AuthzFunc.SetDefaultReturn(authzStore)
+	db.UsersFunc.SetDefbultReturn(users)
+	db.UserEmbilsFunc.SetDefbultReturn(userEmbils)
+	db.UserExternblAccountsFunc.SetDefbultReturn(externblAccounts)
+	db.AuthzFunc.SetDefbultReturn(buthzStore)
 
-	// Disable event logging, which is triggered for SOAP users
+	// Disbble event logging, which is triggered for SOAP users
 	conf.Mock(&conf.Unified{
-		SiteConfiguration: schema.SiteConfiguration{
-			ExperimentalFeatures: &schema.ExperimentalFeatures{
-				EventLogging: "disabled",
+		SiteConfigurbtion: schemb.SiteConfigurbtion{
+			ExperimentblFebtures: &schemb.ExperimentblFebtures{
+				EventLogging: "disbbled",
 			},
 		},
 	})
-	t.Cleanup(func() { conf.Mock(nil) })
+	t.Clebnup(func() { conf.Mock(nil) })
 
 	tests := []struct {
-		name     string
+		nbme     string
 		setup    func(t *testing.T)
 		gqlTests []*Test
 	}{
 		{
-			name: "target is not a user",
+			nbme: "tbrget is not b user",
 			gqlTests: []*Test{
 				{
-					Schema: mustParseGraphQLSchema(t, db),
+					Schemb: mustPbrseGrbphQLSchemb(t, db),
 					Query: `
-				mutation {
+				mutbtion {
 					deleteUser(user: "VXNlcjo4") {
-						alwaysNil
+						blwbysNil
 					}
 				}
 			`,
 					ExpectedResult: `
 				{
 					"deleteUser": {
-						"alwaysNil": null
+						"blwbysNil": null
 					}
 				}
 			`,
@@ -167,21 +167,21 @@ func TestDeleteUser(t *testing.T) {
 			},
 		},
 		{
-			name: "soft delete a user",
+			nbme: "soft delete b user",
 			gqlTests: []*Test{
 				{
-					Schema: mustParseGraphQLSchema(t, db),
+					Schemb: mustPbrseGrbphQLSchemb(t, db),
 					Query: `
-				mutation {
+				mutbtion {
 					deleteUser(user: "VXNlcjo2") {
-						alwaysNil
+						blwbysNil
 					}
 				}
 			`,
 					ExpectedResult: `
 				{
 					"deleteUser": {
-						"alwaysNil": null
+						"blwbysNil": null
 					}
 				}
 			`,
@@ -189,21 +189,21 @@ func TestDeleteUser(t *testing.T) {
 			},
 		},
 		{
-			name: "hard delete a user",
+			nbme: "hbrd delete b user",
 			gqlTests: []*Test{
 				{
-					Schema: mustParseGraphQLSchema(t, db),
+					Schemb: mustPbrseGrbphQLSchemb(t, db),
 					Query: `
-				mutation {
-					deleteUser(user: "VXNlcjo2", hard: true) {
-						alwaysNil
+				mutbtion {
+					deleteUser(user: "VXNlcjo2", hbrd: true) {
+						blwbysNil
 					}
 				}
 			`,
 					ExpectedResult: `
 				{
 					"deleteUser": {
-						"alwaysNil": null
+						"blwbysNil": null
 					}
 				}
 			`,
@@ -211,18 +211,18 @@ func TestDeleteUser(t *testing.T) {
 			},
 		},
 		{
-			name: "non-SOAP user cannot delete SOAP user",
+			nbme: "non-SOAP user cbnnot delete SOAP user",
 			setup: func(t *testing.T) {
-				t.Cleanup(func() { externalAccounts.ListFunc.SetDefaultReturn(externalAccountsListDefaultReturn, nil) })
+				t.Clebnup(func() { externblAccounts.ListFunc.SetDefbultReturn(externblAccountsListDefbultReturn, nil) })
 
-				externalAccounts.ListFunc.SetDefaultHook(func(ctx context.Context, opts database.ExternalAccountsListOptions) ([]*extsvc.Account, error) {
-					if opts.UserID == aliceUID {
-						// delete target is a SOAP user
+				externblAccounts.ListFunc.SetDefbultHook(func(ctx context.Context, opts dbtbbbse.ExternblAccountsListOptions) ([]*extsvc.Account, error) {
+					if opts.UserID == bliceUID {
+						// delete tbrget is b SOAP user
 						return []*extsvc.Account{{
 							AccountSpec: extsvc.AccountSpec{
-								ServiceType: auth.SourcegraphOperatorProviderType,
-								ServiceID:   "soap",
-								AccountID:   "alice_soap",
+								ServiceType: buth.SourcegrbphOperbtorProviderType,
+								ServiceID:   "sobp",
+								AccountID:   "blice_sobp",
 							},
 						}}, nil
 					}
@@ -231,38 +231,38 @@ func TestDeleteUser(t *testing.T) {
 			},
 			gqlTests: []*Test{
 				{
-					Schema: mustParseGraphQLSchema(t, db),
+					Schemb: mustPbrseGrbphQLSchemb(t, db),
 					Query: `
-				mutation {
+				mutbtion {
 					deleteUser(user: "VXNlcjo2") {
-						alwaysNil
+						blwbysNil
 					}
 				}
 			`,
 					ExpectedResult: `{ "deleteUser": null }`,
 					ExpectedErrors: []*gqlerrors.QueryError{
 						{
-							Path: []any{"deleteUser"},
-							Message: fmt.Sprintf("%[1]q user %d cannot be deleted by a non-%[1]q user",
-								auth.SourcegraphOperatorProviderType, aliceUID),
+							Pbth: []bny{"deleteUser"},
+							Messbge: fmt.Sprintf("%[1]q user %d cbnnot be deleted by b non-%[1]q user",
+								buth.SourcegrbphOperbtorProviderType, bliceUID),
 						},
 					},
 				},
 			},
 		},
 		{
-			name: "SOAP user deletes SOAP user",
+			nbme: "SOAP user deletes SOAP user",
 			setup: func(t *testing.T) {
-				t.Cleanup(func() { externalAccounts.ListFunc.SetDefaultReturn(externalAccountsListDefaultReturn, nil) })
+				t.Clebnup(func() { externblAccounts.ListFunc.SetDefbultReturn(externblAccountsListDefbultReturn, nil) })
 
-				externalAccounts.ListFunc.SetDefaultHook(func(ctx context.Context, opts database.ExternalAccountsListOptions) ([]*extsvc.Account, error) {
-					if opts.UserID == aliceUID {
-						// delete target is a SOAP user
+				externblAccounts.ListFunc.SetDefbultHook(func(ctx context.Context, opts dbtbbbse.ExternblAccountsListOptions) ([]*extsvc.Account, error) {
+					if opts.UserID == bliceUID {
+						// delete tbrget is b SOAP user
 						return []*extsvc.Account{{
 							AccountSpec: extsvc.AccountSpec{
-								ServiceType: auth.SourcegraphOperatorProviderType,
-								ServiceID:   "soap",
-								AccountID:   "alice_soap",
+								ServiceType: buth.SourcegrbphOperbtorProviderType,
+								ServiceID:   "sobp",
+								AccountID:   "blice_sobp",
 							},
 						}}, nil
 					}
@@ -271,20 +271,20 @@ func TestDeleteUser(t *testing.T) {
 			},
 			gqlTests: []*Test{
 				{
-					Schema: mustParseGraphQLSchema(t, db),
-					Context: actor.WithActor(context.Background(),
-						&actor.Actor{UID: 1, SourcegraphOperator: true}),
+					Schemb: mustPbrseGrbphQLSchemb(t, db),
+					Context: bctor.WithActor(context.Bbckground(),
+						&bctor.Actor{UID: 1, SourcegrbphOperbtor: true}),
 					Query: `
-				mutation {
+				mutbtion {
 					deleteUser(user: "VXNlcjo2") {
-						alwaysNil
+						blwbysNil
 					}
 				}
 			`,
 					ExpectedResult: `
 				{
 					"deleteUser": {
-						"alwaysNil": null
+						"blwbysNil": null
 					}
 				}
 			`,
@@ -292,8 +292,8 @@ func TestDeleteUser(t *testing.T) {
 			},
 		},
 	}
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
+	for _, test := rbnge tests {
+		t.Run(test.nbme, func(t *testing.T) {
 			if test.setup != nil {
 				test.setup(t)
 			}
@@ -302,74 +302,74 @@ func TestDeleteUser(t *testing.T) {
 	}
 }
 
-func TestDeleteOrganization_OnPremise(t *testing.T) {
+func TestDeleteOrgbnizbtion_OnPremise(t *testing.T) {
 	users := dbmocks.NewMockUserStore()
-	users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{ID: 1}, nil)
+	users.GetByCurrentAuthUserFunc.SetDefbultReturn(&types.User{ID: 1}, nil)
 
 	orgMembers := dbmocks.NewMockOrgMemberStore()
-	orgMembers.GetByOrgIDAndUserIDFunc.SetDefaultReturn(nil, nil)
+	orgMembers.GetByOrgIDAndUserIDFunc.SetDefbultReturn(nil, nil)
 
 	orgs := dbmocks.NewMockOrgStore()
 
-	mockedOrg := types.Org{ID: 1, Name: "acme"}
-	orgIDString := string(MarshalOrgID(mockedOrg.ID))
+	mockedOrg := types.Org{ID: 1, Nbme: "bcme"}
+	orgIDString := string(MbrshblOrgID(mockedOrg.ID))
 
 	db := dbmocks.NewMockDB()
-	db.OrgsFunc.SetDefaultReturn(orgs)
-	db.UsersFunc.SetDefaultReturn(users)
-	db.OrgMembersFunc.SetDefaultReturn(orgMembers)
+	db.OrgsFunc.SetDefbultReturn(orgs)
+	db.UsersFunc.SetDefbultReturn(users)
+	db.OrgMembersFunc.SetDefbultReturn(orgMembers)
 
-	ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
+	ctx := bctor.WithActor(context.Bbckground(), &bctor.Actor{UID: 1})
 
-	t.Run("Non admins cannot soft delete orgs", func(t *testing.T) {
+	t.Run("Non bdmins cbnnot soft delete orgs", func(t *testing.T) {
 		RunTest(t, &Test{
-			Schema:  mustParseGraphQLSchema(t, db),
+			Schemb:  mustPbrseGrbphQLSchemb(t, db),
 			Context: ctx,
 			Query: `
-				mutation DeleteOrganization($organization: ID!) {
-					deleteOrganization(organization: $organization) {
-						alwaysNil
+				mutbtion DeleteOrgbnizbtion($orgbnizbtion: ID!) {
+					deleteOrgbnizbtion(orgbnizbtion: $orgbnizbtion) {
+						blwbysNil
 					}
 				}
 				`,
-			Variables: map[string]any{
-				"organization": orgIDString,
+			Vbribbles: mbp[string]bny{
+				"orgbnizbtion": orgIDString,
 			},
 			ExpectedResult: `
 				{
-					"deleteOrganization": null
+					"deleteOrgbnizbtion": null
 				}
 				`,
 			ExpectedErrors: []*gqlerrors.QueryError{
 				{
-					Message: "must be site admin",
-					Path:    []any{"deleteOrganization"},
+					Messbge: "must be site bdmin",
+					Pbth:    []bny{"deleteOrgbnizbtion"},
 				},
 			},
 		})
 	})
 
-	t.Run("Admins can soft delete orgs", func(t *testing.T) {
-		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{ID: 1, SiteAdmin: true}, nil)
-		db.UsersFunc.SetDefaultReturn(users)
+	t.Run("Admins cbn soft delete orgs", func(t *testing.T) {
+		users.GetByCurrentAuthUserFunc.SetDefbultReturn(&types.User{ID: 1, SiteAdmin: true}, nil)
+		db.UsersFunc.SetDefbultReturn(users)
 
 		RunTest(t, &Test{
-			Schema:  mustParseGraphQLSchema(t, db),
+			Schemb:  mustPbrseGrbphQLSchemb(t, db),
 			Context: ctx,
 			Query: `
-				mutation DeleteOrganization($organization: ID!) {
-					deleteOrganization(organization: $organization) {
-						alwaysNil
+				mutbtion DeleteOrgbnizbtion($orgbnizbtion: ID!) {
+					deleteOrgbnizbtion(orgbnizbtion: $orgbnizbtion) {
+						blwbysNil
 					}
 				}
 				`,
-			Variables: map[string]any{
-				"organization": orgIDString,
+			Vbribbles: mbp[string]bny{
+				"orgbnizbtion": orgIDString,
 			},
 			ExpectedResult: `
 				{
-					"deleteOrganization": {
-						"alwaysNil": null
+					"deleteOrgbnizbtion": {
+						"blwbysNil": null
 					}
 				}
 				`,
@@ -378,86 +378,86 @@ func TestDeleteOrganization_OnPremise(t *testing.T) {
 }
 
 func TestSetIsSiteAdmin(t *testing.T) {
-	testCases := map[string]struct {
+	testCbses := mbp[string]struct {
 		isSiteAdmin           bool
-		argsUserID            int32
-		argsSiteAdmin         bool
+		brgsUserID            int32
+		brgsSiteAdmin         bool
 		result                *EmptyResponse
-		wantErr               error
-		securityLogEventCalls int
-		setIsSiteAdminCalls   int
+		wbntErr               error
+		securityLogEventCblls int
+		setIsSiteAdminCblls   int
 	}{
-		"authenticated as non-admin": {
-			isSiteAdmin:           false,
-			argsUserID:            1,
-			argsSiteAdmin:         true,
+		"buthenticbted bs non-bdmin": {
+			isSiteAdmin:           fblse,
+			brgsUserID:            1,
+			brgsSiteAdmin:         true,
 			result:                nil,
-			wantErr:               auth.ErrMustBeSiteAdmin,
-			securityLogEventCalls: 1,
-			setIsSiteAdminCalls:   0,
+			wbntErr:               buth.ErrMustBeSiteAdmin,
+			securityLogEventCblls: 1,
+			setIsSiteAdminCblls:   0,
 		},
-		"set current user as site-admin": {
+		"set current user bs site-bdmin": {
 			isSiteAdmin:           true,
-			argsUserID:            1,
-			argsSiteAdmin:         true,
+			brgsUserID:            1,
+			brgsSiteAdmin:         true,
 			result:                nil,
-			wantErr:               errRefuseToSetCurrentUserSiteAdmin,
-			securityLogEventCalls: 1,
-			setIsSiteAdminCalls:   0,
+			wbntErr:               errRefuseToSetCurrentUserSiteAdmin,
+			securityLogEventCblls: 1,
+			setIsSiteAdminCblls:   0,
 		},
-		"authenticated as site-admin: promoting to site-admin": {
+		"buthenticbted bs site-bdmin: promoting to site-bdmin": {
 			isSiteAdmin:           true,
-			argsUserID:            2,
-			argsSiteAdmin:         true,
+			brgsUserID:            2,
+			brgsSiteAdmin:         true,
 			result:                &EmptyResponse{},
-			wantErr:               nil,
-			securityLogEventCalls: 1,
-			setIsSiteAdminCalls:   1,
+			wbntErr:               nil,
+			securityLogEventCblls: 1,
+			setIsSiteAdminCblls:   1,
 		},
-		"authenticated as site-admin: demoting to site-admin": {
+		"buthenticbted bs site-bdmin: demoting to site-bdmin": {
 			isSiteAdmin:           true,
-			argsUserID:            2,
-			argsSiteAdmin:         false,
+			brgsUserID:            2,
+			brgsSiteAdmin:         fblse,
 			result:                &EmptyResponse{},
-			wantErr:               nil,
-			securityLogEventCalls: 1,
-			setIsSiteAdminCalls:   1,
+			wbntErr:               nil,
+			securityLogEventCblls: 1,
+			setIsSiteAdminCblls:   1,
 		},
 	}
 
-	for name, tc := range testCases {
-		t.Run(name, func(t *testing.T) {
+	for nbme, tc := rbnge testCbses {
+		t.Run(nbme, func(t *testing.T) {
 			users := dbmocks.NewMockUserStore()
-			users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{ID: 1, SiteAdmin: tc.isSiteAdmin}, nil)
-			users.SetIsSiteAdminFunc.SetDefaultReturn(nil)
+			users.GetByCurrentAuthUserFunc.SetDefbultReturn(&types.User{ID: 1, SiteAdmin: tc.isSiteAdmin}, nil)
+			users.SetIsSiteAdminFunc.SetDefbultReturn(nil)
 
 			securityLogEvents := dbmocks.NewMockSecurityEventLogsStore()
-			securityLogEvents.LogEventFunc.SetDefaultReturn()
+			securityLogEvents.LogEventFunc.SetDefbultReturn()
 
 			db := dbmocks.NewMockDB()
-			db.UsersFunc.SetDefaultReturn(users)
-			db.SecurityEventLogsFunc.SetDefaultReturn(securityLogEvents)
+			db.UsersFunc.SetDefbultReturn(users)
+			db.SecurityEventLogsFunc.SetDefbultReturn(securityLogEvents)
 
-			s := newSchemaResolver(db, gitserver.NewClient())
+			s := newSchembResolver(db, gitserver.NewClient())
 
-			actorCtx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
-			result, err := s.SetUserIsSiteAdmin(actorCtx, &struct {
-				UserID    graphql.ID
+			bctorCtx := bctor.WithActor(context.Bbckground(), &bctor.Actor{UID: 1})
+			result, err := s.SetUserIsSiteAdmin(bctorCtx, &struct {
+				UserID    grbphql.ID
 				SiteAdmin bool
 			}{
-				UserID:    MarshalUserID(tc.argsUserID),
-				SiteAdmin: tc.argsSiteAdmin,
+				UserID:    MbrshblUserID(tc.brgsUserID),
+				SiteAdmin: tc.brgsSiteAdmin,
 			})
 
-			if want := tc.wantErr; err != want {
-				t.Errorf("err: want %q but got %v", want, err)
+			if wbnt := tc.wbntErr; err != wbnt {
+				t.Errorf("err: wbnt %q but got %v", wbnt, err)
 			}
 			if result != tc.result {
-				t.Errorf("result: want %v but got %v", tc.result, result)
+				t.Errorf("result: wbnt %v but got %v", tc.result, result)
 			}
 
-			mockrequire.CalledN(t, securityLogEvents.LogEventFunc, tc.securityLogEventCalls)
-			mockrequire.CalledN(t, users.SetIsSiteAdminFunc, tc.setIsSiteAdminCalls)
+			mockrequire.CblledN(t, securityLogEvents.LogEventFunc, tc.securityLogEventCblls)
+			mockrequire.CblledN(t, users.SetIsSiteAdminFunc, tc.setIsSiteAdminCblls)
 		})
 	}
 }

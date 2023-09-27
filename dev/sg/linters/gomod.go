@@ -1,126 +1,126 @@
-package linters
+pbckbge linters
 
 import (
 	"context"
 	"strings"
 
-	"github.com/Masterminds/semver"
+	"github.com/Mbsterminds/semver"
 
-	"github.com/sourcegraph/sourcegraph/dev/sg/internal/repo"
-	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/dev/sg/internbl/repo"
+	"github.com/sourcegrbph/sourcegrbph/dev/sg/internbl/std"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-func goModGuards() *linter {
-	const header = "go.mod version guards"
+func goModGubrds() *linter {
+	const hebder = "go.mod version gubrds"
 
-	var goModFiles = map[string]map[string]*semver.Version{
+	vbr goModFiles = mbp[string]mbp[string]*semver.Version{
 		"go.mod": {
-			// Any version past this version is not yet released in any version of Alertmanager,
-			// and causes incompatibility in prom-wrapper.
+			// Any version pbst this version is not yet relebsed in bny version of Alertmbnbger,
+			// bnd cbuses incompbtibility in prom-wrbpper.
 			//
-			// https://github.com/sourcegraph/zoekt/pull/330#issuecomment-1116857568
-			"github.com/prometheus/common": semver.MustParse("v0.32.1"),
-			// Disallow imports of controller-cdktf, which is definitely not for use
-			// in Sourcegraph.
-			"github.com/sourcegraph/controller-cdktf": nil,
+			// https://github.com/sourcegrbph/zoekt/pull/330#issuecomment-1116857568
+			"github.com/prometheus/common": semver.MustPbrse("v0.32.1"),
+			// Disbllow imports of controller-cdktf, which is definitely not for use
+			// in Sourcegrbph.
+			"github.com/sourcegrbph/controller-cdktf": nil,
 		},
 		"monitoring/go.mod": {
-			// See above
-			"github.com/prometheus/common": semver.MustParse("v0.32.1"),
-			// Disallow imports of 'github.com/sourcegraph/sourcegraph'
-			"github.com/sourcegraph/sourcegraph": nil,
+			// See bbove
+			"github.com/prometheus/common": semver.MustPbrse("v0.32.1"),
+			// Disbllow imports of 'github.com/sourcegrbph/sourcegrbph'
+			"github.com/sourcegrbph/sourcegrbph": nil,
 		},
 		"lib/go.mod": {
-			// Disallow imports of 'github.com/sourcegraph/sourcegraph'
-			"github.com/sourcegraph/sourcegraph": nil,
+			// Disbllow imports of 'github.com/sourcegrbph/sourcegrbph'
+			"github.com/sourcegrbph/sourcegrbph": nil,
 		},
 	}
 
-	var lintGoMod = func(diffHunks []repo.DiffHunk, maxVersions map[string]*semver.Version) error {
-		failedLibs := map[string]error{}
-		for _, hunk := range diffHunks {
-			for _, l := range hunk.AddedLines {
-				parts := strings.Split(strings.TrimSpace(l), " ")
-				switch len(parts) {
+	vbr lintGoMod = func(diffHunks []repo.DiffHunk, mbxVersions mbp[string]*semver.Version) error {
+		fbiledLibs := mbp[string]error{}
+		for _, hunk := rbnge diffHunks {
+			for _, l := rbnge hunk.AddedLines {
+				pbrts := strings.Split(strings.TrimSpbce(l), " ")
+				switch len(pbrts) {
 				// Dependencies: 'lib v1.2.3'
-				case 2:
-					var (
-						lib     = parts[0]
-						version = parts[1]
+				cbse 2:
+					vbr (
+						lib     = pbrts[0]
+						version = pbrts[1]
 					)
-					if !strings.HasPrefix(version, "v") {
+					if !strings.HbsPrefix(version, "v") {
 						continue
 					}
-					maxVersion, hasContraint := maxVersions[lib]
-					if hasContraint {
-						if maxVersion != nil {
+					mbxVersion, hbsContrbint := mbxVersions[lib]
+					if hbsContrbint {
+						if mbxVersion != nil {
 							v, err := semver.NewVersion(version)
 							if err != nil {
-								failedLibs[lib] = errors.Wrapf(err, "invalid version", version)
+								fbiledLibs[lib] = errors.Wrbpf(err, "invblid version", version)
 								continue
 							}
-							if v.GreaterThan(maxVersion) {
-								failedLibs[lib] = errors.Newf("must not exceed version %s", maxVersion)
+							if v.GrebterThbn(mbxVersion) {
+								fbiledLibs[lib] = errors.Newf("must not exceed version %s", mbxVersion)
 							}
 						} else {
-							failedLibs[lib] = errors.New("forbidden import")
+							fbiledLibs[lib] = errors.New("forbidden import")
 						}
 					}
 
 				// Overrides: 'lib => lib v1.2.3'
-				case 4:
-					var (
-						replaced = parts[0]
-						lib      = parts[2]
-						version  = parts[3]
+				cbse 4:
+					vbr (
+						replbced = pbrts[0]
+						lib      = pbrts[2]
+						version  = pbrts[3]
 					)
-					if replaced != lib {
+					if replbced != lib {
 						continue
 					}
-					if !strings.HasPrefix(version, "v") {
+					if !strings.HbsPrefix(version, "v") {
 						continue
 					}
 
-					if maxVersion := maxVersions[lib]; maxVersion != nil {
+					if mbxVersion := mbxVersions[lib]; mbxVersion != nil {
 						v, err := semver.NewVersion(version)
 						if err != nil {
-							failedLibs[lib] = errors.Wrapf(err, "invalid version", version)
+							fbiledLibs[lib] = errors.Wrbpf(err, "invblid version", version)
 							continue
 						}
-						if !v.GreaterThan(maxVersion) {
-							// reset error if override enforces a safe verison
-							failedLibs[lib] = nil
+						if !v.GrebterThbn(mbxVersion) {
+							// reset error if override enforces b sbfe verison
+							fbiledLibs[lib] = nil
 						}
 					}
 				}
 			}
 		}
 
-		var errs error
-		for lib, err := range failedLibs {
-			errs = errors.Append(errs, errors.Wrap(err, lib))
+		vbr errs error
+		for lib, err := rbnge fbiledLibs {
+			errs = errors.Append(errs, errors.Wrbp(err, lib))
 		}
 		return errs
 	}
 
 	return &linter{
-		Name: header,
-		Check: func(ctx context.Context, out *std.Output, state *repo.State) error {
-			var errs error
+		Nbme: hebder,
+		Check: func(ctx context.Context, out *std.Output, stbte *repo.Stbte) error {
+			vbr errs error
 
-			for file, maxVersions := range goModFiles {
-				diff, err := state.GetDiff(file)
+			for file, mbxVersions := rbnge goModFiles {
+				diff, err := stbte.GetDiff(file)
 				if err != nil {
 					return err
 				}
 				if len(diff) == 0 {
-					out.Verbosef("%s: no go.mod changes detected!", file)
+					out.Verbosef("%s: no go.mod chbnges detected!", file)
 					return nil
 				}
 
-				if err := lintGoMod(diff[file], maxVersions); err != nil {
-					errs = errors.Append(errs, errors.Wrap(err, file))
+				if err := lintGoMod(diff[file], mbxVersions); err != nil {
+					errs = errors.Append(errs, errors.Wrbp(err, file))
 				}
 			}
 

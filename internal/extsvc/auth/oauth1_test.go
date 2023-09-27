@@ -1,55 +1,55 @@
-package auth
+pbckbge buth
 
 import (
 	"net/http"
 	"testing"
 
-	"github.com/gomodule/oauth1/oauth"
+	"github.com/gomodule/obuth1/obuth"
 )
 
 func TestOAuthClient(t *testing.T) {
-	t.Run("Authenticate", func(t *testing.T) {
-		token := newOAuthClient("abcdef", "Sourcegraph ❤️ you")
+	t.Run("Authenticbte", func(t *testing.T) {
+		token := newOAuthClient("bbcdef", "Sourcegrbph ❤️ you")
 
 		req, err := http.NewRequest("GET", "/", nil)
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
 
-		if err := token.Authenticate(req); err != nil {
+		if err := token.Authenticbte(req); err != nil {
 			t.Errorf("unexpected non-nil error: %v", err)
 		}
 
-		if have := req.Header.Get("Authorization"); have == "" {
-			t.Errorf("unexpected Authorization header: %q", have)
+		if hbve := req.Hebder.Get("Authorizbtion"); hbve == "" {
+			t.Errorf("unexpected Authorizbtion hebder: %q", hbve)
 		}
-		if have := req.URL.Query().Get("user_id"); have != "" {
-			t.Errorf("unexpected user_id parameter: %q", have)
+		if hbve := req.URL.Query().Get("user_id"); hbve != "" {
+			t.Errorf("unexpected user_id pbrbmeter: %q", hbve)
 		}
 	})
 
-	t.Run("Hash", func(t *testing.T) {
-		hashes := []string{
-			newOAuthClient("", "").Hash(),
-			newOAuthClient("", "quux").Hash(),
-			newOAuthClient("foobar", "quux").Hash(),
-			newOAuthClient("foobar", "").Hash(),
+	t.Run("Hbsh", func(t *testing.T) {
+		hbshes := []string{
+			newOAuthClient("", "").Hbsh(),
+			newOAuthClient("", "quux").Hbsh(),
+			newOAuthClient("foobbr", "quux").Hbsh(),
+			newOAuthClient("foobbr", "").Hbsh(),
 		}
 
-		seen := make(map[string]struct{})
-		for _, hash := range hashes {
-			if _, ok := seen[hash]; ok {
-				t.Errorf("non-unique hash: %q", hash)
+		seen := mbke(mbp[string]struct{})
+		for _, hbsh := rbnge hbshes {
+			if _, ok := seen[hbsh]; ok {
+				t.Errorf("non-unique hbsh: %q", hbsh)
 			}
-			seen[hash] = struct{}{}
+			seen[hbsh] = struct{}{}
 		}
 	})
 }
 
 func newOAuthClient(token, secret string) *OAuthClient {
 	return &OAuthClient{
-		Client: &oauth.Client{
-			Credentials: oauth.Credentials{
+		Client: &obuth.Client{
+			Credentibls: obuth.Credentibls{
 				Token:  token,
 				Secret: secret,
 			},

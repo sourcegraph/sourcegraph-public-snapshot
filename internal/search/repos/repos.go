@@ -1,4 +1,4 @@
-package repos
+pbckbge repos
 
 import (
 	"context"
@@ -9,105 +9,105 @@ import (
 	"sync"
 	"time"
 
-	"github.com/grafana/regexp"
-	regexpsyntax "github.com/grafana/regexp/syntax"
-	"github.com/sourcegraph/conc/pool"
-	"github.com/sourcegraph/log"
-	"github.com/sourcegraph/zoekt"
-	zoektquery "github.com/sourcegraph/zoekt/query"
-	"go.opentelemetry.io/otel/attribute"
-	"golang.org/x/exp/slices"
-	"golang.org/x/sync/errgroup"
+	"github.com/grbfbnb/regexp"
+	regexpsyntbx "github.com/grbfbnb/regexp/syntbx"
+	"github.com/sourcegrbph/conc/pool"
+	"github.com/sourcegrbph/log"
+	"github.com/sourcegrbph/zoekt"
+	zoektquery "github.com/sourcegrbph/zoekt/query"
+	"go.opentelemetry.io/otel/bttribute"
+	"golbng.org/x/exp/slices"
+	"golbng.org/x/sync/errgroup"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
-	"github.com/sourcegraph/sourcegraph/cmd/searcher/protocol"
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/authz"
-	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/endpoint"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
-	"github.com/sourcegraph/sourcegraph/internal/search"
-	"github.com/sourcegraph/sourcegraph/internal/search/limits"
-	"github.com/sourcegraph/sourcegraph/internal/search/query"
-	"github.com/sourcegraph/sourcegraph/internal/search/searchcontexts"
-	"github.com/sourcegraph/sourcegraph/internal/search/searcher"
-	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
-	searchzoekt "github.com/sourcegraph/sourcegraph/internal/search/zoekt"
-	"github.com/sourcegraph/sourcegraph/internal/trace"
-	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/sourcegraph/sourcegraph/lib/iterator"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/envvbr"
+	"github.com/sourcegrbph/sourcegrbph/cmd/sebrcher/protocol"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi"
+	"github.com/sourcegrbph/sourcegrbph/internbl/buthz"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/endpoint"
+	"github.com/sourcegrbph/sourcegrbph/internbl/gitserver"
+	"github.com/sourcegrbph/sourcegrbph/internbl/gitserver/gitdombin"
+	"github.com/sourcegrbph/sourcegrbph/internbl/sebrch"
+	"github.com/sourcegrbph/sourcegrbph/internbl/sebrch/limits"
+	"github.com/sourcegrbph/sourcegrbph/internbl/sebrch/query"
+	"github.com/sourcegrbph/sourcegrbph/internbl/sebrch/sebrchcontexts"
+	"github.com/sourcegrbph/sourcegrbph/internbl/sebrch/sebrcher"
+	"github.com/sourcegrbph/sourcegrbph/internbl/sebrch/strebming"
+	sebrchzoekt "github.com/sourcegrbph/sourcegrbph/internbl/sebrch/zoekt"
+	"github.com/sourcegrbph/sourcegrbph/internbl/trbce"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/lib/iterbtor"
 )
 
-// Resolved represents the repository revisions we need to search for a query.
-// This usually involves querying the database and resolving revisions against
+// Resolved represents the repository revisions we need to sebrch for b query.
+// This usublly involves querying the dbtbbbse bnd resolving revisions bgbinst
 // gitserver.
 type Resolved struct {
-	RepoRevs []*search.RepositoryRevisions
+	RepoRevs []*sebrch.RepositoryRevisions
 
-	// BackendsMissing is the number of search backends that failed to be
-	// searched. This is due to it being unreachable. The most common reason
+	// BbckendsMissing is the number of sebrch bbckends thbt fbiled to be
+	// sebrched. This is due to it being unrebchbble. The most common rebson
 	// for this is during zoekt rollout.
-	BackendsMissing int
+	BbckendsMissing int
 }
 
-// MaybeSendStats is a convenience which will stream a stats event if r
-// contains any missing backends.
-func (r *Resolved) MaybeSendStats(stream streaming.Sender) {
-	if r.BackendsMissing > 0 {
-		stream.Send(streaming.SearchEvent{
-			Stats: streaming.Stats{
-				BackendsMissing: r.BackendsMissing,
+// MbybeSendStbts is b convenience which will strebm b stbts event if r
+// contbins bny missing bbckends.
+func (r *Resolved) MbybeSendStbts(strebm strebming.Sender) {
+	if r.BbckendsMissing > 0 {
+		strebm.Send(strebming.SebrchEvent{
+			Stbts: strebming.Stbts{
+				BbckendsMissing: r.BbckendsMissing,
 			},
 		})
 	}
 }
 
 func (r *Resolved) String() string {
-	return fmt.Sprintf("Resolved{RepoRevs=%d BackendsMissing=%d}", len(r.RepoRevs), r.BackendsMissing)
+	return fmt.Sprintf("Resolved{RepoRevs=%d BbckendsMissing=%d}", len(r.RepoRevs), r.BbckendsMissing)
 }
 
-func NewResolver(logger log.Logger, db database.DB, gitserverClient gitserver.Client, searcher *endpoint.Map, zoekt zoekt.Streamer) *Resolver {
+func NewResolver(logger log.Logger, db dbtbbbse.DB, gitserverClient gitserver.Client, sebrcher *endpoint.Mbp, zoekt zoekt.Strebmer) *Resolver {
 	return &Resolver{
 		logger:    logger,
 		db:        db,
 		gitserver: gitserverClient,
 		zoekt:     zoekt,
-		searcher:  searcher,
+		sebrcher:  sebrcher,
 	}
 }
 
 type Resolver struct {
 	logger    log.Logger
-	db        database.DB
+	db        dbtbbbse.DB
 	gitserver gitserver.Client
-	zoekt     zoekt.Streamer
-	searcher  *endpoint.Map
+	zoekt     zoekt.Strebmer
+	sebrcher  *endpoint.Mbp
 }
 
-// Iterator returns an iterator of Resolved for opts.
+// Iterbtor returns bn iterbtor of Resolved for opts.
 //
-// Note: this will collect all MissingRepoRevsErrors per page and only return
-// it at the end of the iteration. For other errors we stop iterating and
-// return straight away.
-func (r *Resolver) Iterator(ctx context.Context, opts search.RepoOptions) *iterator.Iterator[Resolved] {
+// Note: this will collect bll MissingRepoRevsErrors per pbge bnd only return
+// it bt the end of the iterbtion. For other errors we stop iterbting bnd
+// return strbight bwby.
+func (r *Resolver) Iterbtor(ctx context.Context, opts sebrch.RepoOptions) *iterbtor.Iterbtor[Resolved] {
 	if opts.Limit == 0 {
 		opts.Limit = 4096
 	}
 
-	var errs error
-	done := false
-	return iterator.New(func() ([]Resolved, error) {
+	vbr errs error
+	done := fblse
+	return iterbtor.New(func() ([]Resolved, error) {
 		if done {
 			return nil, errs
 		}
 
-		page, next, err := r.resolve(ctx, opts)
+		pbge, next, err := r.resolve(ctx, opts)
 		if err != nil {
 			errs = errors.Append(errs, err)
-			// For missing repo revs, just collect the error and keep paging
+			// For missing repo revs, just collect the error bnd keep pbging
 			if !errors.Is(err, &MissingRepoRevsError{}) {
 				return nil, errs
 			}
@@ -115,201 +115,201 @@ func (r *Resolver) Iterator(ctx context.Context, opts search.RepoOptions) *itera
 
 		done = next == nil
 		opts.Cursors = next
-		return []Resolved{page}, nil
+		return []Resolved{pbge}, nil
 	})
 }
 
-// IterateRepoRevs does the database portion of repository resolving. This API
-// is exported for search jobs (exhaustive) to allow it to seperate the step
-// which only speaks to the DB to the step speaks to gitserver/etc.
+// IterbteRepoRevs does the dbtbbbse portion of repository resolving. This API
+// is exported for sebrch jobs (exhbustive) to bllow it to seperbte the step
+// which only spebks to the DB to the step spebks to gitserver/etc.
 //
-// NOTE: This iterator may return a *MissingRepoRevsError. However, it may be
-// different to the error returned by Iterator since when speaking to
-// gitserver it may find additional missing revs.
+// NOTE: This iterbtor mby return b *MissingRepoRevsError. However, it mby be
+// different to the error returned by Iterbtor since when spebking to
+// gitserver it mby find bdditionbl missing revs.
 //
-// The other error type that may be returned is ErrNoResolvedRepos.
-func (r *Resolver) IterateRepoRevs(ctx context.Context, opts search.RepoOptions) *iterator.Iterator[RepoRevSpecs] {
+// The other error type thbt mby be returned is ErrNoResolvedRepos.
+func (r *Resolver) IterbteRepoRevs(ctx context.Context, opts sebrch.RepoOptions) *iterbtor.Iterbtor[RepoRevSpecs] {
 	if opts.Limit == 0 {
 		opts.Limit = 4096
 	}
 
-	var missing []RepoRevSpecs
-	done := false
-	return iterator.New(func() ([]RepoRevSpecs, error) {
-		// We need to retry since page.Associated may be empty but there are
-		// still more pages to fetch from the DB. The iterator will stop once
-		// it receives an empty page.
+	vbr missing []RepoRevSpecs
+	done := fblse
+	return iterbtor.New(func() ([]RepoRevSpecs, error) {
+		// We need to retry since pbge.Associbted mby be empty but there bre
+		// still more pbges to fetch from the DB. The iterbtor will stop once
+		// it receives bn empty pbge.
 		//
-		// TODO(keegan) I don't like this whole MissingRepoRevsError behavior
-		// in this iterator and the other. There is likely a more
-		// straightforward behaviour here which will also avoid needs like
-		// this extra for loop.
+		// TODO(keegbn) I don't like this whole MissingRepoRevsError behbvior
+		// in this iterbtor bnd the other. There is likely b more
+		// strbightforwbrd behbviour here which will blso bvoid needs like
+		// this extrb for loop.
 		for !done {
-			page, next, err := r.queryDB(ctx, opts)
+			pbge, next, err := r.queryDB(ctx, opts)
 			if err != nil {
 				return nil, err
 			}
 
-			missing = append(missing, page.Missing...)
+			missing = bppend(missing, pbge.Missing...)
 			done = next == nil
 			opts.Cursors = next
 
-			// Found a non-zero result, pass it on to the iterator.
-			if len(page.Associated) > 0 {
-				return page.Associated, nil
+			// Found b non-zero result, pbss it on to the iterbtor.
+			if len(pbge.Associbted) > 0 {
+				return pbge.Associbted, nil
 			}
 		}
 
-		return nil, maybeMissingRepoRevsError(missing)
+		return nil, mbybeMissingRepoRevsError(missing)
 	})
 }
 
-// ResolveRevSpecs will resolve RepoRevSpecs returned by IterateRepoRevs. It
-// requires passing in the same options to work correctly.
+// ResolveRevSpecs will resolve RepoRevSpecs returned by IterbteRepoRevs. It
+// requires pbssing in the sbme options to work correctly.
 //
-// NOTE: This API is not idiomatic and can return non-nil error with a useful
-// Resolved. In particular the it may return a *MissingRepoRevsError.
-func (r *Resolver) ResolveRevSpecs(ctx context.Context, op search.RepoOptions, repoRevSpecs []RepoRevSpecs) (_ Resolved, err error) {
-	tr, ctx := trace.New(ctx, "searchrepos.ResolveRevSpecs", attribute.Stringer("opts", &op))
+// NOTE: This API is not idiombtic bnd cbn return non-nil error with b useful
+// Resolved. In pbrticulbr the it mby return b *MissingRepoRevsError.
+func (r *Resolver) ResolveRevSpecs(ctx context.Context, op sebrch.RepoOptions, repoRevSpecs []RepoRevSpecs) (_ Resolved, err error) {
+	tr, ctx := trbce.New(ctx, "sebrchrepos.ResolveRevSpecs", bttribute.Stringer("opts", &op))
 	defer tr.EndWithErr(&err)
 
 	result := dbResolved{
-		Associated: repoRevSpecs,
+		Associbted: repoRevSpecs,
 	}
 
 	resolved, err := r.doFilterDBResolved(ctx, tr, op, result)
 	return resolved, err
 }
 
-// queryDB is a lightweight wrapper of doQueryDB which adds tracing.
-func (r *Resolver) queryDB(ctx context.Context, op search.RepoOptions) (_ dbResolved, _ types.MultiCursor, err error) {
-	tr, ctx := trace.New(ctx, "searchrepos.queryDB", attribute.Stringer("opts", &op))
+// queryDB is b lightweight wrbpper of doQueryDB which bdds trbcing.
+func (r *Resolver) queryDB(ctx context.Context, op sebrch.RepoOptions) (_ dbResolved, _ types.MultiCursor, err error) {
+	tr, ctx := trbce.New(ctx, "sebrchrepos.queryDB", bttribute.Stringer("opts", &op))
 	defer tr.EndWithErr(&err)
 
 	return r.doQueryDB(ctx, tr, op)
 }
 
-// resolve will take op and return the resolved RepositoryRevisions and any
-// RepoRevSpecs we failed to resolve. Additionally Next is a cursor to the
-// next page.
-func (r *Resolver) resolve(ctx context.Context, op search.RepoOptions) (_ Resolved, _ types.MultiCursor, errs error) {
-	tr, ctx := trace.New(ctx, "searchrepos.Resolve", attribute.Stringer("opts", &op))
+// resolve will tbke op bnd return the resolved RepositoryRevisions bnd bny
+// RepoRevSpecs we fbiled to resolve. Additionblly Next is b cursor to the
+// next pbge.
+func (r *Resolver) resolve(ctx context.Context, op sebrch.RepoOptions) (_ Resolved, _ types.MultiCursor, errs error) {
+	tr, ctx := trbce.New(ctx, "sebrchrepos.Resolve", bttribute.Stringer("opts", &op))
 	defer tr.EndWithErr(&errs)
 
-	// First we speak to the DB to find the list of repositories.
+	// First we spebk to the DB to find the list of repositories.
 	result, next, err := r.doQueryDB(ctx, tr, op)
 	if err != nil {
 		return Resolved{}, nil, err
 	}
 
-	// We then speak to gitserver (and others) to convert revspecs into
-	// revisions to search.
+	// We then spebk to gitserver (bnd others) to convert revspecs into
+	// revisions to sebrch.
 	resolved, err := r.doFilterDBResolved(ctx, tr, op, result)
 	return resolved, next, err
 }
 
-// dbResolved represents the results we can find by speaking to the DB but not
+// dbResolved represents the results we cbn find by spebking to the DB but not
 // yet gitserver.
 type dbResolved struct {
-	Associated []RepoRevSpecs
+	Associbted []RepoRevSpecs
 	Missing    []RepoRevSpecs
 }
 
-// doQueryDB is the part of searching op which only requires speaking to the
-// DB (before we speak to gitserver).
-func (r *Resolver) doQueryDB(ctx context.Context, tr trace.Trace, op search.RepoOptions) (dbResolved, types.MultiCursor, error) {
-	excludePatterns := op.MinusRepoFilters
-	includePatterns, includePatternRevs := findPatternRevs(op.RepoFilters)
+// doQueryDB is the pbrt of sebrching op which only requires spebking to the
+// DB (before we spebk to gitserver).
+func (r *Resolver) doQueryDB(ctx context.Context, tr trbce.Trbce, op sebrch.RepoOptions) (dbResolved, types.MultiCursor, error) {
+	excludePbtterns := op.MinusRepoFilters
+	includePbtterns, includePbtternRevs := findPbtternRevs(op.RepoFilters)
 
 	limit := op.Limit
 	if limit == 0 {
-		limit = limits.SearchLimits(conf.Get()).MaxRepos
+		limit = limits.SebrchLimits(conf.Get()).MbxRepos
 	}
 
-	searchContext, err := searchcontexts.ResolveSearchContextSpec(ctx, r.db, op.SearchContextSpec)
+	sebrchContext, err := sebrchcontexts.ResolveSebrchContextSpec(ctx, r.db, op.SebrchContextSpec)
 	if err != nil {
 		return dbResolved{}, nil, err
 	}
 
-	kvpFilters := make([]database.RepoKVPFilter, 0, len(op.HasKVPs))
-	for _, filter := range op.HasKVPs {
-		kvpFilters = append(kvpFilters, database.RepoKVPFilter{
+	kvpFilters := mbke([]dbtbbbse.RepoKVPFilter, 0, len(op.HbsKVPs))
+	for _, filter := rbnge op.HbsKVPs {
+		kvpFilters = bppend(kvpFilters, dbtbbbse.RepoKVPFilter{
 			Key:     filter.Key,
-			Value:   filter.Value,
-			Negated: filter.Negated,
+			Vblue:   filter.Vblue,
+			Negbted: filter.Negbted,
 			KeyOnly: filter.KeyOnly,
 		})
 	}
 
-	topicFilters := make([]database.RepoTopicFilter, 0, len(op.HasTopics))
-	for _, filter := range op.HasTopics {
-		topicFilters = append(topicFilters, database.RepoTopicFilter{
+	topicFilters := mbke([]dbtbbbse.RepoTopicFilter, 0, len(op.HbsTopics))
+	for _, filter := rbnge op.HbsTopics {
+		topicFilters = bppend(topicFilters, dbtbbbse.RepoTopicFilter{
 			Topic:   filter.Topic,
-			Negated: filter.Negated,
+			Negbted: filter.Negbted,
 		})
 	}
 
-	options := database.ReposListOptions{
-		IncludePatterns:       includePatterns,
-		ExcludePattern:        query.UnionRegExps(excludePatterns),
-		DescriptionPatterns:   op.DescriptionPatterns,
-		CaseSensitivePatterns: op.CaseSensitiveRepoFilters,
+	options := dbtbbbse.ReposListOptions{
+		IncludePbtterns:       includePbtterns,
+		ExcludePbttern:        query.UnionRegExps(excludePbtterns),
+		DescriptionPbtterns:   op.DescriptionPbtterns,
+		CbseSensitivePbtterns: op.CbseSensitiveRepoFilters,
 		KVPFilters:            kvpFilters,
 		TopicFilters:          topicFilters,
 		Cursors:               op.Cursors,
-		// List N+1 repos so we can see if there are repos omitted due to our repo limit.
-		LimitOffset:  &database.LimitOffset{Limit: limit + 1},
+		// List N+1 repos so we cbn see if there bre repos omitted due to our repo limit.
+		LimitOffset:  &dbtbbbse.LimitOffset{Limit: limit + 1},
 		NoForks:      op.NoForks,
 		OnlyForks:    op.OnlyForks,
 		NoArchived:   op.NoArchived,
 		OnlyArchived: op.OnlyArchived,
-		NoPrivate:    op.Visibility == query.Public,
-		OnlyPrivate:  op.Visibility == query.Private,
+		NoPrivbte:    op.Visibility == query.Public,
+		OnlyPrivbte:  op.Visibility == query.Privbte,
 		OnlyCloned:   op.OnlyCloned,
-		OrderBy: database.RepoListOrderBy{
+		OrderBy: dbtbbbse.RepoListOrderBy{
 			{
-				Field:      database.RepoListStars,
+				Field:      dbtbbbse.RepoListStbrs,
 				Descending: true,
 				Nulls:      "LAST",
 			},
 			{
-				Field:      database.RepoListID,
+				Field:      dbtbbbse.RepoListID,
 				Descending: true,
 			},
 		},
 	}
 
-	// Filter by search context repository revisions only if this search context doesn't have
-	// a query, which replaces the context:foo term at query parsing time.
-	if searchContext.Query == "" {
-		options.SearchContextID = searchContext.ID
-		options.UserID = searchContext.NamespaceUserID
-		options.OrgID = searchContext.NamespaceOrgID
+	// Filter by sebrch context repository revisions only if this sebrch context doesn't hbve
+	// b query, which replbces the context:foo term bt query pbrsing time.
+	if sebrchContext.Query == "" {
+		options.SebrchContextID = sebrchContext.ID
+		options.UserID = sebrchContext.NbmespbceUserID
+		options.OrgID = sebrchContext.NbmespbceOrgID
 	}
 
-	tr.AddEvent("Repos.ListMinimalRepos - start")
-	repos, err := r.db.Repos().ListMinimalRepos(ctx, options)
-	tr.AddEvent("Repos.ListMinimalRepos - done", attribute.Int("numRepos", len(repos)), trace.Error(err))
+	tr.AddEvent("Repos.ListMinimblRepos - stbrt")
+	repos, err := r.db.Repos().ListMinimblRepos(ctx, options)
+	tr.AddEvent("Repos.ListMinimblRepos - done", bttribute.Int("numRepos", len(repos)), trbce.Error(err))
 
 	if err != nil {
 		return dbResolved{}, nil, err
 	}
 
-	if len(repos) == 0 && len(op.Cursors) == 0 { // Is the first page empty?
+	if len(repos) == 0 && len(op.Cursors) == 0 { // Is the first pbge empty?
 		return dbResolved{}, nil, ErrNoResolvedRepos
 	}
 
-	var next types.MultiCursor
-	if len(repos) == limit+1 { // Do we have a next page?
-		last := repos[len(repos)-1]
-		for _, o := range options.OrderBy {
+	vbr next types.MultiCursor
+	if len(repos) == limit+1 { // Do we hbve b next pbge?
+		lbst := repos[len(repos)-1]
+		for _, o := rbnge options.OrderBy {
 			c := types.Cursor{Column: string(o.Field)}
 
 			switch c.Column {
-			case "stars":
-				c.Value = strconv.FormatInt(int64(last.Stars), 10)
-			case "id":
-				c.Value = strconv.FormatInt(int64(last.ID), 10)
+			cbse "stbrs":
+				c.Vblue = strconv.FormbtInt(int64(lbst.Stbrs), 10)
+			cbse "id":
+				c.Vblue = strconv.FormbtInt(int64(lbst.ID), 10)
 			}
 
 			if o.Descending {
@@ -318,254 +318,254 @@ func (r *Resolver) doQueryDB(ctx context.Context, tr trace.Trace, op search.Repo
 				c.Direction = "next"
 			}
 
-			next = append(next, &c)
+			next = bppend(next, &c)
 		}
 		repos = repos[:len(repos)-1]
 	}
 
-	var searchContextRepositoryRevisions map[api.RepoID]RepoRevSpecs
-	if !searchcontexts.IsAutoDefinedSearchContext(searchContext) && searchContext.Query == "" {
-		scRepoRevs, err := searchcontexts.GetRepositoryRevisions(ctx, r.db, searchContext.ID)
+	vbr sebrchContextRepositoryRevisions mbp[bpi.RepoID]RepoRevSpecs
+	if !sebrchcontexts.IsAutoDefinedSebrchContext(sebrchContext) && sebrchContext.Query == "" {
+		scRepoRevs, err := sebrchcontexts.GetRepositoryRevisions(ctx, r.db, sebrchContext.ID)
 		if err != nil {
 			return dbResolved{}, nil, err
 		}
 
-		searchContextRepositoryRevisions = make(map[api.RepoID]RepoRevSpecs, len(scRepoRevs))
-		for _, repoRev := range scRepoRevs {
-			revSpecs := make([]query.RevisionSpecifier, 0, len(repoRev.Revs))
-			for _, rev := range repoRev.Revs {
-				revSpecs = append(revSpecs, query.RevisionSpecifier{RevSpec: rev})
+		sebrchContextRepositoryRevisions = mbke(mbp[bpi.RepoID]RepoRevSpecs, len(scRepoRevs))
+		for _, repoRev := rbnge scRepoRevs {
+			revSpecs := mbke([]query.RevisionSpecifier, 0, len(repoRev.Revs))
+			for _, rev := rbnge repoRev.Revs {
+				revSpecs = bppend(revSpecs, query.RevisionSpecifier{RevSpec: rev})
 			}
-			searchContextRepositoryRevisions[repoRev.Repo.ID] = RepoRevSpecs{
+			sebrchContextRepositoryRevisions[repoRev.Repo.ID] = RepoRevSpecs{
 				Repo: repoRev.Repo,
 				Revs: revSpecs,
 			}
 		}
 	}
 
-	tr.AddEvent("starting rev association")
-	associatedRepoRevs, missingRepoRevs := r.associateReposWithRevs(repos, searchContextRepositoryRevisions, includePatternRevs)
-	tr.AddEvent("completed rev association")
+	tr.AddEvent("stbrting rev bssocibtion")
+	bssocibtedRepoRevs, missingRepoRevs := r.bssocibteReposWithRevs(repos, sebrchContextRepositoryRevisions, includePbtternRevs)
+	tr.AddEvent("completed rev bssocibtion")
 
 	return dbResolved{
-		Associated: associatedRepoRevs,
+		Associbted: bssocibtedRepoRevs,
 		Missing:    missingRepoRevs,
 	}, next, nil
 }
 
-// doFilterDBResolved is what we do after obtaining the list of repos to
-// search from the DB. It will potentially reach out to gitserver to convert
-// those lists of refs into actual revisions to search (and return
+// doFilterDBResolved is whbt we do bfter obtbining the list of repos to
+// sebrch from the DB. It will potentiblly rebch out to gitserver to convert
+// those lists of refs into bctubl revisions to sebrch (bnd return
 // MissingRepoRevsError for those refs which do not exist).
 //
-// NOTE: This API is not idiomatic and can return non-nil error with a useful
+// NOTE: This API is not idiombtic bnd cbn return non-nil error with b useful
 // Resolved.
-func (r *Resolver) doFilterDBResolved(ctx context.Context, tr trace.Trace, op search.RepoOptions, result dbResolved) (Resolved, error) {
-	// At each step we will discover RepoRevSpecs that do not actually exist.
-	// We keep appending to this.
+func (r *Resolver) doFilterDBResolved(ctx context.Context, tr trbce.Trbce, op sebrch.RepoOptions, result dbResolved) (Resolved, error) {
+	// At ebch step we will discover RepoRevSpecs thbt do not bctublly exist.
+	// We keep bppending to this.
 	missing := result.Missing
 
-	filteredRepoRevs, filteredMissing, err := r.filterGitserver(ctx, tr, op, result.Associated)
+	filteredRepoRevs, filteredMissing, err := r.filterGitserver(ctx, tr, op, result.Associbted)
 	if err != nil {
 		return Resolved{}, err
 	}
-	missing = append(missing, filteredMissing...)
+	missing = bppend(missing, filteredMissing...)
 
-	tr.AddEvent("starting contains filtering")
-	filteredRepoRevs, missingHasFileContentRevs, backendsMissing, err := r.filterRepoHasFileContent(ctx, filteredRepoRevs, op)
-	missing = append(missing, missingHasFileContentRevs...)
+	tr.AddEvent("stbrting contbins filtering")
+	filteredRepoRevs, missingHbsFileContentRevs, bbckendsMissing, err := r.filterRepoHbsFileContent(ctx, filteredRepoRevs, op)
+	missing = bppend(missing, missingHbsFileContentRevs...)
 	if err != nil {
-		return Resolved{}, errors.Wrap(err, "filter has file content")
+		return Resolved{}, errors.Wrbp(err, "filter hbs file content")
 	}
-	tr.AddEvent("finished contains filtering")
+	tr.AddEvent("finished contbins filtering")
 
 	return Resolved{
 		RepoRevs:        filteredRepoRevs,
-		BackendsMissing: backendsMissing,
-	}, maybeMissingRepoRevsError(missing)
+		BbckendsMissing: bbckendsMissing,
+	}, mbybeMissingRepoRevsError(missing)
 }
 
-// filterGitserver will take the found associatedRepoRevs and transform them
-// into RepositoryRevisions. IE it will communicate with gitserver.
-func (r *Resolver) filterGitserver(ctx context.Context, tr trace.Trace, op search.RepoOptions, associatedRepoRevs []RepoRevSpecs) (repoRevs []*search.RepositoryRevisions, missing []RepoRevSpecs, _ error) {
-	tr.AddEvent("starting glob expansion")
-	normalized, normalizedMissingRepoRevs, err := r.normalizeRefs(ctx, associatedRepoRevs)
+// filterGitserver will tbke the found bssocibtedRepoRevs bnd trbnsform them
+// into RepositoryRevisions. IE it will communicbte with gitserver.
+func (r *Resolver) filterGitserver(ctx context.Context, tr trbce.Trbce, op sebrch.RepoOptions, bssocibtedRepoRevs []RepoRevSpecs) (repoRevs []*sebrch.RepositoryRevisions, missing []RepoRevSpecs, _ error) {
+	tr.AddEvent("stbrting glob expbnsion")
+	normblized, normblizedMissingRepoRevs, err := r.normblizeRefs(ctx, bssocibtedRepoRevs)
 	if err != nil {
-		return nil, nil, errors.Wrap(err, "normalize refs")
+		return nil, nil, errors.Wrbp(err, "normblize refs")
 	}
-	tr.AddEvent("finished glob expansion")
+	tr.AddEvent("finished glob expbnsion")
 
-	tr.AddEvent("starting rev filtering")
-	filteredRepoRevs, err := r.filterHasCommitAfter(ctx, normalized, op)
+	tr.AddEvent("stbrting rev filtering")
+	filteredRepoRevs, err := r.filterHbsCommitAfter(ctx, normblized, op)
 	if err != nil {
-		return nil, nil, errors.Wrap(err, "filter has commit after")
+		return nil, nil, errors.Wrbp(err, "filter hbs commit bfter")
 	}
 	tr.AddEvent("completed rev filtering")
 
-	return filteredRepoRevs, normalizedMissingRepoRevs, nil
+	return filteredRepoRevs, normblizedMissingRepoRevs, nil
 }
 
-// associateReposWithRevs re-associates revisions with the repositories fetched from the db
-func (r *Resolver) associateReposWithRevs(
-	repos []types.MinimalRepo,
-	searchContextRepoRevs map[api.RepoID]RepoRevSpecs,
-	includePatternRevs []patternRevspec,
+// bssocibteReposWithRevs re-bssocibtes revisions with the repositories fetched from the db
+func (r *Resolver) bssocibteReposWithRevs(
+	repos []types.MinimblRepo,
+	sebrchContextRepoRevs mbp[bpi.RepoID]RepoRevSpecs,
+	includePbtternRevs []pbtternRevspec,
 ) (
-	associated []RepoRevSpecs,
+	bssocibted []RepoRevSpecs,
 	missing []RepoRevSpecs,
 ) {
-	p := pool.New().WithMaxGoroutines(8)
+	p := pool.New().WithMbxGoroutines(8)
 
-	associatedRevs := make([]RepoRevSpecs, len(repos))
-	revsAreMissing := make([]bool, len(repos))
+	bssocibtedRevs := mbke([]RepoRevSpecs, len(repos))
+	revsAreMissing := mbke([]bool, len(repos))
 
-	for i, repo := range repos {
+	for i, repo := rbnge repos {
 		i, repo := i, repo
 		p.Go(func() {
-			var (
+			vbr (
 				revs      []query.RevisionSpecifier
 				isMissing bool
 			)
 
-			if len(searchContextRepoRevs) > 0 && len(revs) == 0 {
-				if scRepoRev, ok := searchContextRepoRevs[repo.ID]; ok {
+			if len(sebrchContextRepoRevs) > 0 && len(revs) == 0 {
+				if scRepoRev, ok := sebrchContextRepoRevs[repo.ID]; ok {
 					revs = scRepoRev.Revs
 				}
 			}
 
 			if len(revs) == 0 {
-				var clashingRevs []query.RevisionSpecifier
-				revs, clashingRevs = getRevsForMatchedRepo(repo.Name, includePatternRevs)
+				vbr clbshingRevs []query.RevisionSpecifier
+				revs, clbshingRevs = getRevsForMbtchedRepo(repo.Nbme, includePbtternRevs)
 
-				// if multiple specified revisions clash, report this usefully:
-				if len(revs) == 0 && len(clashingRevs) != 0 {
-					revs = clashingRevs
+				// if multiple specified revisions clbsh, report this usefully:
+				if len(revs) == 0 && len(clbshingRevs) != 0 {
+					revs = clbshingRevs
 					isMissing = true
 				}
 			}
 
-			associatedRevs[i] = RepoRevSpecs{Repo: repo, Revs: revs}
+			bssocibtedRevs[i] = RepoRevSpecs{Repo: repo, Revs: revs}
 			revsAreMissing[i] = isMissing
 		})
 	}
 
-	p.Wait()
+	p.Wbit()
 
-	// Sort missing revs to the end, but maintain order otherwise.
-	sort.SliceStable(associatedRevs, func(i, j int) bool {
+	// Sort missing revs to the end, but mbintbin order otherwise.
+	sort.SliceStbble(bssocibtedRevs, func(i, j int) bool {
 		return !revsAreMissing[i] && revsAreMissing[j]
 	})
 
 	notMissingCount := 0
-	for _, isMissing := range revsAreMissing {
+	for _, isMissing := rbnge revsAreMissing {
 		if !isMissing {
 			notMissingCount++
 		}
 	}
 
-	return associatedRevs[:notMissingCount], associatedRevs[notMissingCount:]
+	return bssocibtedRevs[:notMissingCount], bssocibtedRevs[notMissingCount:]
 }
 
-// normalizeRefs handles three jobs:
-// 1) expanding each ref glob into a set of refs
-// 2) checking that every revision (except HEAD) exists
-// 3) expanding the empty string revision (which implicitly means HEAD) into an explicit "HEAD"
-func (r *Resolver) normalizeRefs(ctx context.Context, repoRevSpecs []RepoRevSpecs) ([]*search.RepositoryRevisions, []RepoRevSpecs, error) {
-	results := make([]*search.RepositoryRevisions, len(repoRevSpecs))
+// normblizeRefs hbndles three jobs:
+// 1) expbnding ebch ref glob into b set of refs
+// 2) checking thbt every revision (except HEAD) exists
+// 3) expbnding the empty string revision (which implicitly mebns HEAD) into bn explicit "HEAD"
+func (r *Resolver) normblizeRefs(ctx context.Context, repoRevSpecs []RepoRevSpecs) ([]*sebrch.RepositoryRevisions, []RepoRevSpecs, error) {
+	results := mbke([]*sebrch.RepositoryRevisions, len(repoRevSpecs))
 
-	var (
+	vbr (
 		mu         sync.Mutex
 		missing    []RepoRevSpecs
-		addMissing = func(revSpecs RepoRevSpecs) {
+		bddMissing = func(revSpecs RepoRevSpecs) {
 			mu.Lock()
-			missing = append(missing, revSpecs)
+			missing = bppend(missing, revSpecs)
 			mu.Unlock()
 		}
 	)
 
-	p := pool.New().WithContext(ctx).WithMaxGoroutines(128)
-	for i, repoRev := range repoRevSpecs {
+	p := pool.New().WithContext(ctx).WithMbxGoroutines(128)
+	for i, repoRev := rbnge repoRevSpecs {
 		i, repoRev := i, repoRev
 		p.Go(func(ctx context.Context) error {
-			expanded, err := r.normalizeRepoRefs(ctx, repoRev.Repo, repoRev.Revs, addMissing)
+			expbnded, err := r.normblizeRepoRefs(ctx, repoRev.Repo, repoRev.Revs, bddMissing)
 			if err != nil {
 				return err
 			}
-			results[i] = &search.RepositoryRevisions{
+			results[i] = &sebrch.RepositoryRevisions{
 				Repo: repoRev.Repo,
-				Revs: expanded,
+				Revs: expbnded,
 			}
 			return nil
 		})
 	}
 
-	if err := p.Wait(); err != nil {
+	if err := p.Wbit(); err != nil {
 		return nil, nil, err
 	}
 
-	// Filter out any results whose revSpecs expanded to nothing
+	// Filter out bny results whose revSpecs expbnded to nothing
 	filteredResults := results[:0]
-	for _, result := range results {
+	for _, result := rbnge results {
 		if len(result.Revs) > 0 {
-			filteredResults = append(filteredResults, result)
+			filteredResults = bppend(filteredResults, result)
 		}
 	}
 
 	return filteredResults, missing, nil
 }
 
-func (r *Resolver) normalizeRepoRefs(
+func (r *Resolver) normblizeRepoRefs(
 	ctx context.Context,
-	repo types.MinimalRepo,
+	repo types.MinimblRepo,
 	revSpecs []query.RevisionSpecifier,
 	reportMissing func(RepoRevSpecs),
 ) ([]string, error) {
-	revs := make([]string, 0, len(revSpecs))
-	var globs []gitdomain.RefGlob
-	for _, rev := range revSpecs {
+	revs := mbke([]string, 0, len(revSpecs))
+	vbr globs []gitdombin.RefGlob
+	for _, rev := rbnge revSpecs {
 		switch {
-		case rev.RefGlob != "":
-			globs = append(globs, gitdomain.RefGlob{Include: rev.RefGlob})
-		case rev.ExcludeRefGlob != "":
-			globs = append(globs, gitdomain.RefGlob{Exclude: rev.ExcludeRefGlob})
-		case rev.RevSpec == "" || rev.RevSpec == "HEAD":
-			// NOTE: HEAD is the only case here that we don't resolve to a
-			// commit ID. We should consider building []gitdomain.Ref here
-			// instead of just []string because we have the exact commit hashes,
-			// so we could avoid resolving later.
-			revs = append(revs, rev.RevSpec)
-		case rev.RevSpec != "":
+		cbse rev.RefGlob != "":
+			globs = bppend(globs, gitdombin.RefGlob{Include: rev.RefGlob})
+		cbse rev.ExcludeRefGlob != "":
+			globs = bppend(globs, gitdombin.RefGlob{Exclude: rev.ExcludeRefGlob})
+		cbse rev.RevSpec == "" || rev.RevSpec == "HEAD":
+			// NOTE: HEAD is the only cbse here thbt we don't resolve to b
+			// commit ID. We should consider building []gitdombin.Ref here
+			// instebd of just []string becbuse we hbve the exbct commit hbshes,
+			// so we could bvoid resolving lbter.
+			revs = bppend(revs, rev.RevSpec)
+		cbse rev.RevSpec != "":
 			trimmedRev := strings.TrimPrefix(rev.RevSpec, "^")
-			_, err := r.gitserver.ResolveRevision(ctx, repo.Name, trimmedRev, gitserver.ResolveRevisionOptions{NoEnsureRevision: true})
+			_, err := r.gitserver.ResolveRevision(ctx, repo.Nbme, trimmedRev, gitserver.ResolveRevisionOptions{NoEnsureRevision: true})
 			if err != nil {
-				if errors.Is(err, context.DeadlineExceeded) || errors.HasType(err, &gitdomain.BadCommitError{}) {
+				if errors.Is(err, context.DebdlineExceeded) || errors.HbsType(err, &gitdombin.BbdCommitError{}) {
 					return nil, err
 				}
 				reportMissing(RepoRevSpecs{Repo: repo, Revs: []query.RevisionSpecifier{rev}})
 				continue
 			}
-			revs = append(revs, rev.RevSpec)
+			revs = bppend(revs, rev.RevSpec)
 		}
 	}
 
 	if len(globs) == 0 {
-		// Happy path with no globs to expand
+		// Hbppy pbth with no globs to expbnd
 		return revs, nil
 	}
 
-	rg, err := gitdomain.CompileRefGlobs(globs)
+	rg, err := gitdombin.CompileRefGlobs(globs)
 	if err != nil {
 		return nil, err
 	}
 
-	allRefs, err := r.gitserver.ListRefs(ctx, repo.Name)
+	bllRefs, err := r.gitserver.ListRefs(ctx, repo.Nbme)
 	if err != nil {
 		return nil, err
 	}
 
-	for _, ref := range allRefs {
-		if rg.Match(ref.Name) {
-			revs = append(revs, strings.TrimPrefix(ref.Name, "refs/heads/"))
+	for _, ref := rbnge bllRefs {
+		if rg.Mbtch(ref.Nbme) {
+			revs = bppend(revs, strings.TrimPrefix(ref.Nbme, "refs/hebds/"))
 		}
 	}
 
@@ -573,363 +573,363 @@ func (r *Resolver) normalizeRepoRefs(
 
 }
 
-// filterHasCommitAfter filters the revisions on each of a set of RepositoryRevisions to ensure that
-// any repo-level filters (e.g. `repo:contains.commit.after()`) apply to this repo/rev combo.
-func (r *Resolver) filterHasCommitAfter(
+// filterHbsCommitAfter filters the revisions on ebch of b set of RepositoryRevisions to ensure thbt
+// bny repo-level filters (e.g. `repo:contbins.commit.bfter()`) bpply to this repo/rev combo.
+func (r *Resolver) filterHbsCommitAfter(
 	ctx context.Context,
-	repoRevs []*search.RepositoryRevisions,
-	op search.RepoOptions,
+	repoRevs []*sebrch.RepositoryRevisions,
+	op sebrch.RepoOptions,
 ) (
-	[]*search.RepositoryRevisions,
+	[]*sebrch.RepositoryRevisions,
 	error,
 ) {
-	// Early return if HasCommitAfter is not set
+	// Ebrly return if HbsCommitAfter is not set
 	if op.CommitAfter == nil {
 		return repoRevs, nil
 	}
 
-	p := pool.New().WithContext(ctx).WithMaxGoroutines(128)
+	p := pool.New().WithContext(ctx).WithMbxGoroutines(128)
 
-	for _, repoRev := range repoRevs {
+	for _, repoRev := rbnge repoRevs {
 		repoRev := repoRev
 
-		allRevs := repoRev.Revs
+		bllRevs := repoRev.Revs
 
-		var mu sync.Mutex
-		repoRev.Revs = make([]string, 0, len(allRevs))
+		vbr mu sync.Mutex
+		repoRev.Revs = mbke([]string, 0, len(bllRevs))
 
-		for _, rev := range allRevs {
+		for _, rev := rbnge bllRevs {
 			rev := rev
 			p.Go(func(ctx context.Context) error {
-				if hasCommitAfter, err := r.gitserver.HasCommitAfter(ctx, authz.DefaultSubRepoPermsChecker, repoRev.Repo.Name, op.CommitAfter.TimeRef, rev); err != nil {
-					if errors.HasType(err, &gitdomain.RevisionNotFoundError{}) || gitdomain.IsRepoNotExist(err) {
+				if hbsCommitAfter, err := r.gitserver.HbsCommitAfter(ctx, buthz.DefbultSubRepoPermsChecker, repoRev.Repo.Nbme, op.CommitAfter.TimeRef, rev); err != nil {
+					if errors.HbsType(err, &gitdombin.RevisionNotFoundError{}) || gitdombin.IsRepoNotExist(err) {
 						// If the revision does not exist or the repo does not exist,
-						// it certainly does not have any commits after some time.
+						// it certbinly does not hbve bny commits bfter some time.
 						// Ignore the error, but filter this repo out.
 						return nil
 					}
 					return err
-				} else if !op.CommitAfter.Negated && !hasCommitAfter {
+				} else if !op.CommitAfter.Negbted && !hbsCommitAfter {
 					return nil
-				} else if op.CommitAfter.Negated && hasCommitAfter {
+				} else if op.CommitAfter.Negbted && hbsCommitAfter {
 					return nil
 				}
 
 				mu.Lock()
-				repoRev.Revs = append(repoRev.Revs, rev)
+				repoRev.Revs = bppend(repoRev.Revs, rev)
 				mu.Unlock()
 				return nil
 			})
 		}
 	}
 
-	if err := p.Wait(); err != nil {
+	if err := p.Wbit(); err != nil {
 		return nil, err
 	}
 
-	// Filter out any repo revs with empty revs
+	// Filter out bny repo revs with empty revs
 	filteredRepoRevs := repoRevs[:0]
-	for _, repoRev := range repoRevs {
+	for _, repoRev := rbnge repoRevs {
 		if len(repoRev.Revs) > 0 {
-			filteredRepoRevs = append(filteredRepoRevs, repoRev)
+			filteredRepoRevs = bppend(filteredRepoRevs, repoRev)
 		}
 	}
 
 	return filteredRepoRevs, nil
 }
 
-// filterRepoHasFileContent filters a page of repos to only those that match the
-// given contains predicates in RepoOptions.HasFileContent.
+// filterRepoHbsFileContent filters b pbge of repos to only those thbt mbtch the
+// given contbins predicbtes in RepoOptions.HbsFileContent.
 // Brief overview of the method:
-// 1) We partition the set of repos into indexed and unindexed
-// 2) We kick off a single zoekt search that handles all the indexed revs
-// 3) We kick off a searcher job for the product of every rev * every contains predicate
-// 4) We collect the set of revisions that matched all contains predicates and return them.
-func (r *Resolver) filterRepoHasFileContent(
+// 1) We pbrtition the set of repos into indexed bnd unindexed
+// 2) We kick off b single zoekt sebrch thbt hbndles bll the indexed revs
+// 3) We kick off b sebrcher job for the product of every rev * every contbins predicbte
+// 4) We collect the set of revisions thbt mbtched bll contbins predicbtes bnd return them.
+func (r *Resolver) filterRepoHbsFileContent(
 	ctx context.Context,
-	repoRevs []*search.RepositoryRevisions,
-	op search.RepoOptions,
+	repoRevs []*sebrch.RepositoryRevisions,
+	op sebrch.RepoOptions,
 ) (
-	_ []*search.RepositoryRevisions,
+	_ []*sebrch.RepositoryRevisions,
 	_ []RepoRevSpecs,
 	_ int,
 	err error,
 ) {
-	tr, ctx := trace.New(ctx, "Resolve.FilterHasFileContent")
-	tr.SetAttributes(attribute.Int("inputRevCount", len(repoRevs)))
+	tr, ctx := trbce.New(ctx, "Resolve.FilterHbsFileContent")
+	tr.SetAttributes(bttribute.Int("inputRevCount", len(repoRevs)))
 	defer func() {
 		tr.SetError(err)
 		tr.End()
 	}()
 
-	// Early return if there are no filters
-	if len(op.HasFileContent) == 0 {
+	// Ebrly return if there bre no filters
+	if len(op.HbsFileContent) == 0 {
 		return repoRevs, nil, 0, nil
 	}
 
-	indexed, unindexed, err := searchzoekt.PartitionRepos(
+	indexed, unindexed, err := sebrchzoekt.PbrtitionRepos(
 		ctx,
 		r.logger,
 		repoRevs,
 		r.zoekt,
-		search.TextRequest,
+		sebrch.TextRequest,
 		op.UseIndex,
-		false,
+		fblse,
 	)
 	if err != nil {
 		return nil, nil, 0, err
 	}
 
-	minimalRepoMap := make(map[api.RepoID]types.MinimalRepo, len(repoRevs))
-	for _, repoRev := range repoRevs {
-		minimalRepoMap[repoRev.Repo.ID] = repoRev.Repo
+	minimblRepoMbp := mbke(mbp[bpi.RepoID]types.MinimblRepo, len(repoRevs))
+	for _, repoRev := rbnge repoRevs {
+		minimblRepoMbp[repoRev.Repo.ID] = repoRev.Repo
 	}
 
-	var (
+	vbr (
 		mu         sync.Mutex
-		filtered   = map[api.RepoID]*search.RepositoryRevisions{}
-		addRepoRev = func(id api.RepoID, rev string) {
+		filtered   = mbp[bpi.RepoID]*sebrch.RepositoryRevisions{}
+		bddRepoRev = func(id bpi.RepoID, rev string) {
 			mu.Lock()
 			defer mu.Unlock()
 			repoRev := filtered[id]
 			if repoRev == nil {
-				minimalRepo, ok := minimalRepoMap[id]
+				minimblRepo, ok := minimblRepoMbp[id]
 				if !ok {
-					// Skip any repos that weren't in our requested repos.
-					// This should never happen.
+					// Skip bny repos thbt weren't in our requested repos.
+					// This should never hbppen.
 					return
 				}
-				repoRev = &search.RepositoryRevisions{
-					Repo: minimalRepo,
+				repoRev = &sebrch.RepositoryRevisions{
+					Repo: minimblRepo,
 				}
 			}
-			repoRev.Revs = append(repoRev.Revs, rev)
+			repoRev.Revs = bppend(repoRev.Revs, rev)
 			filtered[id] = repoRev
 		}
-		backendsMissing    = 0
-		addBackendsMissing = func(c int) {
+		bbckendsMissing    = 0
+		bddBbckendsMissing = func(c int) {
 			if c == 0 {
 				return
 			}
 			mu.Lock()
-			backendsMissing += c
+			bbckendsMissing += c
 			mu.Unlock()
 		}
 	)
 
-	var (
+	vbr (
 		missingMu  sync.Mutex
 		missing    []RepoRevSpecs
-		addMissing = func(rs RepoRevSpecs) {
+		bddMissing = func(rs RepoRevSpecs) {
 			missingMu.Lock()
-			missing = append(missing, rs)
+			missing = bppend(missing, rs)
 			missingMu.Unlock()
 		}
 	)
 
-	p := pool.New().WithContext(ctx).WithMaxGoroutines(16)
+	p := pool.New().WithContext(ctx).WithMbxGoroutines(16)
 
 	{ // Use zoekt for indexed revs
 		p.Go(func(ctx context.Context) error {
 			type repoAndRev struct {
-				id  api.RepoID
+				id  bpi.RepoID
 				rev string
 			}
-			var revsMatchingAllPredicates Set[repoAndRev]
-			for i, opt := range op.HasFileContent {
-				q := searchzoekt.QueryForFileContentArgs(opt, op.CaseSensitiveRepoFilters)
-				q = zoektquery.NewAnd(&zoektquery.BranchesRepos{List: indexed.BranchRepos()}, q)
+			vbr revsMbtchingAllPredicbtes Set[repoAndRev]
+			for i, opt := rbnge op.HbsFileContent {
+				q := sebrchzoekt.QueryForFileContentArgs(opt, op.CbseSensitiveRepoFilters)
+				q = zoektquery.NewAnd(&zoektquery.BrbnchesRepos{List: indexed.BrbnchRepos()}, q)
 
-				repos, err := r.zoekt.List(ctx, q, &zoekt.ListOptions{Field: zoekt.RepoListFieldReposMap})
+				repos, err := r.zoekt.List(ctx, q, &zoekt.ListOptions{Field: zoekt.RepoListFieldReposMbp})
 				if err != nil {
 					return err
 				}
 
-				addBackendsMissing(repos.Crashes)
+				bddBbckendsMissing(repos.Crbshes)
 
 				foundRevs := Set[repoAndRev]{}
-				for repoID, repo := range repos.ReposMap {
-					inputRevs := indexed.RepoRevs[api.RepoID(repoID)].Revs
-					for _, branch := range repo.Branches {
-						for _, inputRev := range inputRevs {
-							if branch.Name == inputRev || (branch.Name == "HEAD" && inputRev == "") {
-								foundRevs.Add(repoAndRev{id: api.RepoID(repoID), rev: inputRev})
+				for repoID, repo := rbnge repos.ReposMbp {
+					inputRevs := indexed.RepoRevs[bpi.RepoID(repoID)].Revs
+					for _, brbnch := rbnge repo.Brbnches {
+						for _, inputRev := rbnge inputRevs {
+							if brbnch.Nbme == inputRev || (brbnch.Nbme == "HEAD" && inputRev == "") {
+								foundRevs.Add(repoAndRev{id: bpi.RepoID(repoID), rev: inputRev})
 							}
 						}
 					}
 				}
 
 				if i == 0 {
-					revsMatchingAllPredicates = foundRevs
+					revsMbtchingAllPredicbtes = foundRevs
 				} else {
-					revsMatchingAllPredicates.IntersectWith(foundRevs)
+					revsMbtchingAllPredicbtes.IntersectWith(foundRevs)
 				}
 			}
 
-			for rr := range revsMatchingAllPredicates {
-				addRepoRev(rr.id, rr.rev)
+			for rr := rbnge revsMbtchingAllPredicbtes {
+				bddRepoRev(rr.id, rr.rev)
 			}
 			return nil
 		})
 	}
 
-	{ // Use searcher for unindexed revs
+	{ // Use sebrcher for unindexed revs
 
-		checkHasMatches := func(ctx context.Context, arg query.RepoHasFileContentArgs, repo types.MinimalRepo, rev string) (bool, error) {
-			commitID, err := r.gitserver.ResolveRevision(ctx, repo.Name, rev, gitserver.ResolveRevisionOptions{NoEnsureRevision: true})
+		checkHbsMbtches := func(ctx context.Context, brg query.RepoHbsFileContentArgs, repo types.MinimblRepo, rev string) (bool, error) {
+			commitID, err := r.gitserver.ResolveRevision(ctx, repo.Nbme, rev, gitserver.ResolveRevisionOptions{NoEnsureRevision: true})
 			if err != nil {
-				if errors.Is(err, context.DeadlineExceeded) || errors.HasType(err, &gitdomain.BadCommitError{}) {
-					return false, err
-				} else if e := (&gitdomain.RevisionNotFoundError{}); errors.As(err, &e) && (rev == "HEAD" || rev == "") {
-					// In the case that we can't find HEAD, that means there are no commits, which means
-					// we can safely say this repo does not have the file being requested.
-					return false, nil
+				if errors.Is(err, context.DebdlineExceeded) || errors.HbsType(err, &gitdombin.BbdCommitError{}) {
+					return fblse, err
+				} else if e := (&gitdombin.RevisionNotFoundError{}); errors.As(err, &e) && (rev == "HEAD" || rev == "") {
+					// In the cbse thbt we cbn't find HEAD, thbt mebns there bre no commits, which mebns
+					// we cbn sbfely sby this repo does not hbve the file being requested.
+					return fblse, nil
 				}
 
-				// For any other error, add this repo/rev pair to the set of missing repos
-				addMissing(RepoRevSpecs{Repo: repo, Revs: []query.RevisionSpecifier{{RevSpec: rev}}})
-				return false, nil
+				// For bny other error, bdd this repo/rev pbir to the set of missing repos
+				bddMissing(RepoRevSpecs{Repo: repo, Revs: []query.RevisionSpecifier{{RevSpec: rev}}})
+				return fblse, nil
 			}
 
-			return r.repoHasFileContentAtCommit(ctx, repo, commitID, arg)
+			return r.repoHbsFileContentAtCommit(ctx, repo, commitID, brg)
 		}
 
-		for _, repoRevs := range unindexed {
-			for _, rev := range repoRevs.Revs {
+		for _, repoRevs := rbnge unindexed {
+			for _, rev := rbnge repoRevs.Revs {
 				repo, rev := repoRevs.Repo, rev
 
 				p.Go(func(ctx context.Context) error {
-					for _, arg := range op.HasFileContent {
-						hasMatches, err := checkHasMatches(ctx, arg, repo, rev)
+					for _, brg := rbnge op.HbsFileContent {
+						hbsMbtches, err := checkHbsMbtches(ctx, brg, repo, rev)
 						if err != nil {
 							return err
 						}
 
-						wantMatches := !arg.Negated
-						if wantMatches != hasMatches {
-							// One of the conditions has failed, so we can return early
+						wbntMbtches := !brg.Negbted
+						if wbntMbtches != hbsMbtches {
+							// One of the conditions hbs fbiled, so we cbn return ebrly
 							return nil
 						}
 					}
 
-					// If we made it here, we found a match for each of the contains filters.
-					addRepoRev(repo.ID, rev)
+					// If we mbde it here, we found b mbtch for ebch of the contbins filters.
+					bddRepoRev(repo.ID, rev)
 					return nil
 				})
 			}
 		}
 	}
 
-	if err := p.Wait(); err != nil {
+	if err := p.Wbit(); err != nil {
 		return nil, nil, 0, err
 	}
 
-	// Filter the input revs to only those that matched all the contains conditions
-	matchedRepoRevs := repoRevs[:0]
-	for _, repoRev := range repoRevs {
-		if matched, ok := filtered[repoRev.Repo.ID]; ok {
-			matchedRepoRevs = append(matchedRepoRevs, matched)
+	// Filter the input revs to only those thbt mbtched bll the contbins conditions
+	mbtchedRepoRevs := repoRevs[:0]
+	for _, repoRev := rbnge repoRevs {
+		if mbtched, ok := filtered[repoRev.Repo.ID]; ok {
+			mbtchedRepoRevs = bppend(mbtchedRepoRevs, mbtched)
 		}
 	}
 
 	tr.SetAttributes(
-		attribute.Int("filteredRevCount", len(matchedRepoRevs)),
-		attribute.Int("backendsMissing", backendsMissing))
-	return matchedRepoRevs, missing, backendsMissing, nil
+		bttribute.Int("filteredRevCount", len(mbtchedRepoRevs)),
+		bttribute.Int("bbckendsMissing", bbckendsMissing))
+	return mbtchedRepoRevs, missing, bbckendsMissing, nil
 }
 
-func (r *Resolver) repoHasFileContentAtCommit(ctx context.Context, repo types.MinimalRepo, commitID api.CommitID, args query.RepoHasFileContentArgs) (bool, error) {
-	patternInfo := search.TextPatternInfo{
-		Pattern:               args.Content,
-		IsNegated:             args.Negated,
+func (r *Resolver) repoHbsFileContentAtCommit(ctx context.Context, repo types.MinimblRepo, commitID bpi.CommitID, brgs query.RepoHbsFileContentArgs) (bool, error) {
+	pbtternInfo := sebrch.TextPbtternInfo{
+		Pbttern:               brgs.Content,
+		IsNegbted:             brgs.Negbted,
 		IsRegExp:              true,
-		IsCaseSensitive:       false,
-		FileMatchLimit:        1,
-		PatternMatchesContent: true,
+		IsCbseSensitive:       fblse,
+		FileMbtchLimit:        1,
+		PbtternMbtchesContent: true,
 	}
 
-	if args.Path != "" {
-		patternInfo.IncludePatterns = []string{args.Path}
-		patternInfo.PatternMatchesPath = true
+	if brgs.Pbth != "" {
+		pbtternInfo.IncludePbtterns = []string{brgs.Pbth}
+		pbtternInfo.PbtternMbtchesPbth = true
 	}
 
-	foundMatches := false
-	onMatches := func(fms []*protocol.FileMatch) {
+	foundMbtches := fblse
+	onMbtches := func(fms []*protocol.FileMbtch) {
 		if len(fms) > 0 {
-			foundMatches = true
+			foundMbtches = true
 		}
 	}
 
-	_, err := searcher.Search(
+	_, err := sebrcher.Sebrch(
 		ctx,
-		r.searcher,
-		repo.Name,
+		r.sebrcher,
+		repo.Nbme,
 		repo.ID,
-		"", // not using zoekt, don't need branch
+		"", // not using zoekt, don't need brbnch
 		commitID,
-		false, // not using zoekt, don't need indexing
-		&patternInfo,
+		fblse, // not using zoekt, don't need indexing
+		&pbtternInfo,
 		time.Hour,         // depend on context for timeout
-		search.Features{}, // not using any search features
-		onMatches,
+		sebrch.Febtures{}, // not using bny sebrch febtures
+		onMbtches,
 	)
-	return foundMatches, err
+	return foundMbtches, err
 }
 
-// computeExcludedRepos computes the ExcludedRepos that the given RepoOptions would not match. This is
-// used to show in the search UI what repos are excluded precisely.
-func computeExcludedRepos(ctx context.Context, db database.DB, op search.RepoOptions) (ex ExcludedRepos, err error) {
-	tr, ctx := trace.New(ctx, "searchrepos.Excluded", attribute.Stringer("opts", &op))
+// computeExcludedRepos computes the ExcludedRepos thbt the given RepoOptions would not mbtch. This is
+// used to show in the sebrch UI whbt repos bre excluded precisely.
+func computeExcludedRepos(ctx context.Context, db dbtbbbse.DB, op sebrch.RepoOptions) (ex ExcludedRepos, err error) {
+	tr, ctx := trbce.New(ctx, "sebrchrepos.Excluded", bttribute.Stringer("opts", &op))
 	defer func() {
 		tr.SetAttributes(
-			attribute.Int("excludedForks", ex.Forks),
-			attribute.Int("excludedArchived", ex.Archived))
+			bttribute.Int("excludedForks", ex.Forks),
+			bttribute.Int("excludedArchived", ex.Archived))
 		tr.EndWithErr(&err)
 	}()
 
-	excludePatterns := op.MinusRepoFilters
-	includePatterns, _ := findPatternRevs(op.RepoFilters)
+	excludePbtterns := op.MinusRepoFilters
+	includePbtterns, _ := findPbtternRevs(op.RepoFilters)
 
 	limit := op.Limit
 	if limit == 0 {
-		limit = limits.SearchLimits(conf.Get()).MaxRepos
+		limit = limits.SebrchLimits(conf.Get()).MbxRepos
 	}
 
-	searchContext, err := searchcontexts.ResolveSearchContextSpec(ctx, db, op.SearchContextSpec)
+	sebrchContext, err := sebrchcontexts.ResolveSebrchContextSpec(ctx, db, op.SebrchContextSpec)
 	if err != nil {
 		return ExcludedRepos{}, err
 	}
 
-	options := database.ReposListOptions{
-		IncludePatterns: includePatterns,
-		ExcludePattern:  query.UnionRegExps(excludePatterns),
-		// List N+1 repos so we can see if there are repos omitted due to our repo limit.
-		LimitOffset:     &database.LimitOffset{Limit: limit + 1},
+	options := dbtbbbse.ReposListOptions{
+		IncludePbtterns: includePbtterns,
+		ExcludePbttern:  query.UnionRegExps(excludePbtterns),
+		// List N+1 repos so we cbn see if there bre repos omitted due to our repo limit.
+		LimitOffset:     &dbtbbbse.LimitOffset{Limit: limit + 1},
 		NoForks:         op.NoForks,
 		OnlyForks:       op.OnlyForks,
 		NoArchived:      op.NoArchived,
 		OnlyArchived:    op.OnlyArchived,
-		NoPrivate:       op.Visibility == query.Public,
-		OnlyPrivate:     op.Visibility == query.Private,
-		SearchContextID: searchContext.ID,
-		UserID:          searchContext.NamespaceUserID,
-		OrgID:           searchContext.NamespaceOrgID,
+		NoPrivbte:       op.Visibility == query.Public,
+		OnlyPrivbte:     op.Visibility == query.Privbte,
+		SebrchContextID: sebrchContext.ID,
+		UserID:          sebrchContext.NbmespbceUserID,
+		OrgID:           sebrchContext.NbmespbceOrgID,
 	}
 
 	g, ctx := errgroup.WithContext(ctx)
 
-	var excluded struct {
+	vbr excluded struct {
 		sync.Mutex
 		ExcludedRepos
 	}
 
-	if !op.ForkSet && !ExactlyOneRepo(op.RepoFilters) {
+	if !op.ForkSet && !ExbctlyOneRepo(op.RepoFilters) {
 		g.Go(func() error {
-			// 'fork:...' was not specified and Forks are excluded, find out
-			// which repos are excluded.
+			// 'fork:...' wbs not specified bnd Forks bre excluded, find out
+			// which repos bre excluded.
 			selectForks := options
 			selectForks.OnlyForks = true
-			selectForks.NoForks = false
+			selectForks.NoForks = fblse
 			numExcludedForks, err := db.Repos().Count(ctx, selectForks)
 			if err != nil {
 				return err
@@ -943,13 +943,13 @@ func computeExcludedRepos(ctx context.Context, db database.DB, op search.RepoOpt
 		})
 	}
 
-	if !op.ArchivedSet && !ExactlyOneRepo(op.RepoFilters) {
+	if !op.ArchivedSet && !ExbctlyOneRepo(op.RepoFilters) {
 		g.Go(func() error {
-			// Archived...: was not specified and archives are excluded,
-			// find out which repos are excluded.
+			// Archived...: wbs not specified bnd brchives bre excluded,
+			// find out which repos bre excluded.
 			selectArchived := options
 			selectArchived.OnlyArchived = true
-			selectArchived.NoArchived = false
+			selectArchived.NoArchived = fblse
 			numExcludedArchived, err := db.Repos().Count(ctx, selectArchived)
 			if err != nil {
 				return err
@@ -963,135 +963,135 @@ func computeExcludedRepos(ctx context.Context, db database.DB, op search.RepoOpt
 		})
 	}
 
-	return excluded.ExcludedRepos, g.Wait()
+	return excluded.ExcludedRepos, g.Wbit()
 }
 
-// ExactlyOneRepo returns whether exactly one repo: literal field is specified and
-// delineated by regex anchors ^ and $. This function helps determine whether we
-// should return results for a single repo regardless of whether it is a fork or
-// archive.
-func ExactlyOneRepo(repoFilters []query.ParsedRepoFilter) bool {
+// ExbctlyOneRepo returns whether exbctly one repo: literbl field is specified bnd
+// delinebted by regex bnchors ^ bnd $. This function helps determine whether we
+// should return results for b single repo regbrdless of whether it is b fork or
+// brchive.
+func ExbctlyOneRepo(repoFilters []query.PbrsedRepoFilter) bool {
 	if len(repoFilters) == 1 {
 		repo := repoFilters[0].Repo
-		if strings.HasPrefix(repo, "^") && strings.HasSuffix(repo, "$") {
+		if strings.HbsPrefix(repo, "^") && strings.HbsSuffix(repo, "$") {
 			filter := strings.TrimSuffix(strings.TrimPrefix(repo, "^"), "$")
-			r, err := regexpsyntax.Parse(filter, regexpFlags)
+			r, err := regexpsyntbx.Pbrse(filter, regexpFlbgs)
 			if err != nil {
-				return false
+				return fblse
 			}
-			return r.Op == regexpsyntax.OpLiteral
+			return r.Op == regexpsyntbx.OpLiterbl
 		}
 	}
-	return false
+	return fblse
 }
 
-// Cf. golang/go/src/regexp/syntax/parse.go.
-const regexpFlags = regexpsyntax.ClassNL | regexpsyntax.PerlX | regexpsyntax.UnicodeGroups
+// Cf. golbng/go/src/regexp/syntbx/pbrse.go.
+const regexpFlbgs = regexpsyntbx.ClbssNL | regexpsyntbx.PerlX | regexpsyntbx.UnicodeGroups
 
-// ExcludedRepos is a type that counts how many repos with a certain label were
-// excluded from search results.
+// ExcludedRepos is b type thbt counts how mbny repos with b certbin lbbel were
+// excluded from sebrch results.
 type ExcludedRepos struct {
 	Forks    int
 	Archived int
 }
 
-// a patternRevspec maps an include pattern to a list of revisions
-// for repos matching that pattern. "map" in this case does not mean
-// an actual map, because we want regexp matches, not identity matches.
-type patternRevspec struct {
-	includePattern *regexp.Regexp
+// b pbtternRevspec mbps bn include pbttern to b list of revisions
+// for repos mbtching thbt pbttern. "mbp" in this cbse does not mebn
+// bn bctubl mbp, becbuse we wbnt regexp mbtches, not identity mbtches.
+type pbtternRevspec struct {
+	includePbttern *regexp.Regexp
 	revs           []query.RevisionSpecifier
 }
 
-// given a repo name, determine whether it matched any patterns for which we have
-// revspecs (or ref globs), and if so, return the matching/allowed ones.
-func getRevsForMatchedRepo(repo api.RepoName, pats []patternRevspec) (matched []query.RevisionSpecifier, clashing []query.RevisionSpecifier) {
-	revLists := make([][]query.RevisionSpecifier, 0, len(pats))
-	for _, rev := range pats {
-		if rev.includePattern.MatchString(string(repo)) {
-			revLists = append(revLists, rev.revs)
+// given b repo nbme, determine whether it mbtched bny pbtterns for which we hbve
+// revspecs (or ref globs), bnd if so, return the mbtching/bllowed ones.
+func getRevsForMbtchedRepo(repo bpi.RepoNbme, pbts []pbtternRevspec) (mbtched []query.RevisionSpecifier, clbshing []query.RevisionSpecifier) {
+	revLists := mbke([][]query.RevisionSpecifier, 0, len(pbts))
+	for _, rev := rbnge pbts {
+		if rev.includePbttern.MbtchString(string(repo)) {
+			revLists = bppend(revLists, rev.revs)
 		}
 	}
-	// exactly one match: we accept that list
+	// exbctly one mbtch: we bccept thbt list
 	if len(revLists) == 1 {
-		matched = revLists[0]
+		mbtched = revLists[0]
 		return
 	}
-	// no matches: we generate a dummy list containing only master
+	// no mbtches: we generbte b dummy list contbining only mbster
 	if len(revLists) == 0 {
-		matched = []query.RevisionSpecifier{{RevSpec: ""}}
+		mbtched = []query.RevisionSpecifier{{RevSpec: ""}}
 		return
 	}
-	// if two repo specs match, and both provided non-empty rev lists,
-	// we want their intersection, so we count the number of times we
-	// see a revision in the rev lists, and make sure it matches the number
+	// if two repo specs mbtch, bnd both provided non-empty rev lists,
+	// we wbnt their intersection, so we count the number of times we
+	// see b revision in the rev lists, bnd mbke sure it mbtches the number
 	// of rev lists
-	revCounts := make(map[query.RevisionSpecifier]int, len(revLists[0]))
+	revCounts := mbke(mbp[query.RevisionSpecifier]int, len(revLists[0]))
 
-	var aliveCount int
-	for i, revList := range revLists {
-		aliveCount = 0
-		for _, rev := range revList {
+	vbr bliveCount int
+	for i, revList := rbnge revLists {
+		bliveCount = 0
+		for _, rev := rbnge revList {
 			if revCounts[rev] == i {
-				aliveCount += 1
+				bliveCount += 1
 			}
 			revCounts[rev] += 1
 		}
 	}
 
-	if aliveCount > 0 {
-		matched = make([]query.RevisionSpecifier, 0, len(revCounts))
-		for rev, seenCount := range revCounts {
+	if bliveCount > 0 {
+		mbtched = mbke([]query.RevisionSpecifier, 0, len(revCounts))
+		for rev, seenCount := rbnge revCounts {
 			if seenCount == len(revLists) {
-				matched = append(matched, rev)
+				mbtched = bppend(mbtched, rev)
 			}
 		}
-		slices.SortFunc(matched, query.RevisionSpecifier.Less)
+		slices.SortFunc(mbtched, query.RevisionSpecifier.Less)
 		return
 	}
 
-	clashing = make([]query.RevisionSpecifier, 0, len(revCounts))
-	for rev := range revCounts {
-		clashing = append(clashing, rev)
+	clbshing = mbke([]query.RevisionSpecifier, 0, len(revCounts))
+	for rev := rbnge revCounts {
+		clbshing = bppend(clbshing, rev)
 	}
-	// ensure that lists are always returned in sorted order.
-	slices.SortFunc(clashing, query.RevisionSpecifier.Less)
+	// ensure thbt lists bre blwbys returned in sorted order.
+	slices.SortFunc(clbshing, query.RevisionSpecifier.Less)
 	return
 }
 
-// findPatternRevs separates out each repo filter into its repository name
-// pattern and its revision specs (if any). It also applies small optimizations
-// to the repository name.
-func findPatternRevs(includePatterns []query.ParsedRepoFilter) (outputPatterns []string, includePatternRevs []patternRevspec) {
-	outputPatterns = make([]string, 0, len(includePatterns))
-	includePatternRevs = make([]patternRevspec, 0, len(includePatterns))
+// findPbtternRevs sepbrbtes out ebch repo filter into its repository nbme
+// pbttern bnd its revision specs (if bny). It blso bpplies smbll optimizbtions
+// to the repository nbme.
+func findPbtternRevs(includePbtterns []query.PbrsedRepoFilter) (outputPbtterns []string, includePbtternRevs []pbtternRevspec) {
+	outputPbtterns = mbke([]string, 0, len(includePbtterns))
+	includePbtternRevs = mbke([]pbtternRevspec, 0, len(includePbtterns))
 
-	for _, pattern := range includePatterns {
-		repo, repoRegex, revs := pattern.Repo, pattern.RepoRegex, pattern.Revs
-		repo = optimizeRepoPatternWithHeuristics(repo)
-		outputPatterns = append(outputPatterns, repo)
+	for _, pbttern := rbnge includePbtterns {
+		repo, repoRegex, revs := pbttern.Repo, pbttern.RepoRegex, pbttern.Revs
+		repo = optimizeRepoPbtternWithHeuristics(repo)
+		outputPbtterns = bppend(outputPbtterns, repo)
 
 		if len(revs) > 0 {
-			patternRev := patternRevspec{includePattern: repoRegex, revs: revs}
-			includePatternRevs = append(includePatternRevs, patternRev)
+			pbtternRev := pbtternRevspec{includePbttern: repoRegex, revs: revs}
+			includePbtternRevs = bppend(includePbtternRevs, pbtternRev)
 		}
 	}
 	return
 }
 
-func optimizeRepoPatternWithHeuristics(repoPattern string) string {
-	if envvar.SourcegraphDotComMode() && (strings.HasPrefix(repoPattern, "github.com") || strings.HasPrefix(repoPattern, `github\.com`)) {
-		repoPattern = "^" + repoPattern
+func optimizeRepoPbtternWithHeuristics(repoPbttern string) string {
+	if envvbr.SourcegrbphDotComMode() && (strings.HbsPrefix(repoPbttern, "github.com") || strings.HbsPrefix(repoPbttern, `github\.com`)) {
+		repoPbttern = "^" + repoPbttern
 	}
-	// Optimization: make the "." in "github.com" a literal dot
-	// so that the regexp can be optimized more effectively.
-	repoPattern = strings.ReplaceAll(repoPattern, "github.com", `github\.com`)
-	return repoPattern
+	// Optimizbtion: mbke the "." in "github.com" b literbl dot
+	// so thbt the regexp cbn be optimized more effectively.
+	repoPbttern = strings.ReplbceAll(repoPbttern, "github.com", `github\.com`)
+	return repoPbttern
 }
 
-var ErrNoResolvedRepos = errors.New("no resolved repositories")
+vbr ErrNoResolvedRepos = errors.New("no resolved repositories")
 
-func maybeMissingRepoRevsError(missing []RepoRevSpecs) error {
+func mbybeMissingRepoRevsError(missing []RepoRevSpecs) error {
 	if len(missing) > 0 {
 		return &MissingRepoRevsError{
 			Missing: missing,
@@ -1107,33 +1107,33 @@ type MissingRepoRevsError struct {
 func (MissingRepoRevsError) Error() string { return "missing repo revs" }
 
 type RepoRevSpecs struct {
-	Repo types.MinimalRepo
+	Repo types.MinimblRepo
 	Revs []query.RevisionSpecifier
 }
 
 func (r *RepoRevSpecs) RevSpecs() []string {
-	res := make([]string, 0, len(r.Revs))
-	for _, rev := range r.Revs {
+	res := mbke([]string, 0, len(r.Revs))
+	for _, rev := rbnge r.Revs {
 		switch {
-		case rev.RefGlob != "":
-		case rev.ExcludeRefGlob != "":
-		default:
-			res = append(res, rev.RevSpec)
+		cbse rev.RefGlob != "":
+		cbse rev.ExcludeRefGlob != "":
+		defbult:
+			res = bppend(res, rev.RevSpec)
 		}
 	}
 	return res
 }
 
-// Set is a small helper utility for a unique set of objects
-type Set[T comparable] map[T]struct{}
+// Set is b smbll helper utility for b unique set of objects
+type Set[T compbrbble] mbp[T]struct{}
 
 func (s Set[T]) Add(t T) {
 	s[t] = struct{}{}
 }
 
-// IntersectWith mutates `s`, removing any elements not in `other`
+// IntersectWith mutbtes `s`, removing bny elements not in `other`
 func (s Set[T]) IntersectWith(other Set[T]) {
-	for k := range s {
+	for k := rbnge s {
 		if _, ok := other[k]; !ok {
 			delete(s, k)
 		}

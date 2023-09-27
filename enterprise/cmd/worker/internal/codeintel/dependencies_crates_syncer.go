@@ -1,47 +1,47 @@
-package codeintel
+pbckbge codeintel
 
 import (
 	"context"
 
-	"github.com/sourcegraph/sourcegraph/cmd/worker/job"
-	"github.com/sourcegraph/sourcegraph/cmd/worker/shared/init/codeintel"
-	workerdb "github.com/sourcegraph/sourcegraph/cmd/worker/shared/init/db"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies"
-	"github.com/sourcegraph/sourcegraph/internal/env"
-	"github.com/sourcegraph/sourcegraph/internal/goroutine"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegrbph/sourcegrbph/cmd/worker/job"
+	"github.com/sourcegrbph/sourcegrbph/cmd/worker/shbred/init/codeintel"
+	workerdb "github.com/sourcegrbph/sourcegrbph/cmd/worker/shbred/init/db"
+	"github.com/sourcegrbph/sourcegrbph/internbl/codeintel/dependencies"
+	"github.com/sourcegrbph/sourcegrbph/internbl/env"
+	"github.com/sourcegrbph/sourcegrbph/internbl/goroutine"
+	"github.com/sourcegrbph/sourcegrbph/internbl/observbtion"
 )
 
-type cratesSyncerJob struct{}
+type crbtesSyncerJob struct{}
 
-func NewCratesSyncerJob() job.Job {
-	return &cratesSyncerJob{}
+func NewCrbtesSyncerJob() job.Job {
+	return &crbtesSyncerJob{}
 }
 
-func (j *cratesSyncerJob) Description() string {
-	return "crates.io syncer"
+func (j *crbtesSyncerJob) Description() string {
+	return "crbtes.io syncer"
 }
 
-func (j *cratesSyncerJob) Config() []env.Config {
+func (j *crbtesSyncerJob) Config() []env.Config {
 	return nil
 }
 
-func (j *cratesSyncerJob) Routines(_ context.Context, observationCtx *observation.Context) ([]goroutine.BackgroundRoutine, error) {
-	services, err := codeintel.InitServices(observationCtx)
+func (j *crbtesSyncerJob) Routines(_ context.Context, observbtionCtx *observbtion.Context) ([]goroutine.BbckgroundRoutine, error) {
+	services, err := codeintel.InitServices(observbtionCtx)
 	if err != nil {
 		return nil, err
 	}
 
-	db, err := workerdb.InitDB(observationCtx)
+	db, err := workerdb.InitDB(observbtionCtx)
 	if err != nil {
 		return nil, err
 	}
 
-	return dependencies.CrateSyncerJob(
-		observationCtx,
+	return dependencies.CrbteSyncerJob(
+		observbtionCtx,
 		services.AutoIndexingService,
 		services.DependenciesService,
 		services.GitserverClient,
-		db.ExternalServices(),
+		db.ExternblServices(),
 	), nil
 }

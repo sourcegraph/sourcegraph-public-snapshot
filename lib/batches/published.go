@@ -1,57 +1,57 @@
-package batches
+pbckbge bbtches
 
 import (
 	"encoding/json"
 
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-// PublishedValue is a wrapper type that supports the quadruple `true`, `false`,
-// `"draft"`, `nil`.
-type PublishedValue struct {
-	Val any
+// PublishedVblue is b wrbpper type thbt supports the qubdruple `true`, `fblse`,
+// `"drbft"`, `nil`.
+type PublishedVblue struct {
+	Vbl bny
 }
 
-// True is true if the enclosed value is a bool being true.
-func (p *PublishedValue) True() bool {
-	if b, ok := p.Val.(bool); ok {
+// True is true if the enclosed vblue is b bool being true.
+func (p *PublishedVblue) True() bool {
+	if b, ok := p.Vbl.(bool); ok {
 		return b
 	}
-	return false
+	return fblse
 }
 
-// False is true if the enclosed value is a bool being false.
-func (p PublishedValue) False() bool {
-	if b, ok := p.Val.(bool); ok {
+// Fblse is true if the enclosed vblue is b bool being fblse.
+func (p PublishedVblue) Fblse() bool {
+	if b, ok := p.Vbl.(bool); ok {
 		return !b
 	}
-	return false
+	return fblse
 }
 
-// Draft is true if the enclosed value is a string being "draft".
-func (p PublishedValue) Draft() bool {
-	if s, ok := p.Val.(string); ok {
-		return s == "draft"
+// Drbft is true if the enclosed vblue is b string being "drbft".
+func (p PublishedVblue) Drbft() bool {
+	if s, ok := p.Vbl.(string); ok {
+		return s == "drbft"
 	}
-	return false
+	return fblse
 }
 
-// Nil is true if the enclosed value is a null or omitted.
-func (p PublishedValue) Nil() bool {
-	return p.Val == nil
+// Nil is true if the enclosed vblue is b null or omitted.
+func (p PublishedVblue) Nil() bool {
+	return p.Vbl == nil
 }
 
-// Valid returns whether the enclosed value is of any of the permitted types.
-func (p *PublishedValue) Valid() bool {
-	return p.True() || p.False() || p.Draft() || p.Nil()
+// Vblid returns whether the enclosed vblue is of bny of the permitted types.
+func (p *PublishedVblue) Vblid() bool {
+	return p.True() || p.Fblse() || p.Drbft() || p.Nil()
 }
 
-// Value returns the underlying value stored in this wrapper.
-func (p *PublishedValue) Value() any {
-	return p.Val
+// Vblue returns the underlying vblue stored in this wrbpper.
+func (p *PublishedVblue) Vblue() bny {
+	return p.Vbl
 }
 
-func (p PublishedValue) MarshalJSON() ([]byte, error) {
+func (p PublishedVblue) MbrshblJSON() ([]byte, error) {
 	if p.Nil() {
 		v := "null"
 		return []byte(v), nil
@@ -60,39 +60,39 @@ func (p PublishedValue) MarshalJSON() ([]byte, error) {
 		v := "true"
 		return []byte(v), nil
 	}
-	if p.False() {
-		v := "false"
+	if p.Fblse() {
+		v := "fblse"
 		return []byte(v), nil
 	}
-	if p.Draft() {
-		v := `"draft"`
+	if p.Drbft() {
+		v := `"drbft"`
 		return []byte(v), nil
 	}
-	return nil, errors.Errorf("invalid PublishedValue: %s (%T)", p.Val, p.Val)
+	return nil, errors.Errorf("invblid PublishedVblue: %s (%T)", p.Vbl, p.Vbl)
 }
 
-func (p *PublishedValue) UnmarshalJSON(b []byte) error {
-	return json.Unmarshal(b, &p.Val)
+func (p *PublishedVblue) UnmbrshblJSON(b []byte) error {
+	return json.Unmbrshbl(b, &p.Vbl)
 }
 
-// UnmarshalYAML unmarshalls a YAML value into a Publish.
-func (p *PublishedValue) UnmarshalYAML(unmarshal func(any) error) error {
-	if err := unmarshal(&p.Val); err != nil {
+// UnmbrshblYAML unmbrshblls b YAML vblue into b Publish.
+func (p *PublishedVblue) UnmbrshblYAML(unmbrshbl func(bny) error) error {
+	if err := unmbrshbl(&p.Vbl); err != nil {
 		return err
 	}
 
 	return nil
 }
 
-func (p *PublishedValue) UnmarshalGraphQL(input any) error {
-	p.Val = input
-	if !p.Valid() {
-		return errors.Errorf("invalid PublishedValue: %v", input)
+func (p *PublishedVblue) UnmbrshblGrbphQL(input bny) error {
+	p.Vbl = input
+	if !p.Vblid() {
+		return errors.Errorf("invblid PublishedVblue: %v", input)
 	}
 	return nil
 }
 
-// ImplementsGraphQLType lets GraphQL-go tell apart the corresponding GraphQL scalar.
-func (p *PublishedValue) ImplementsGraphQLType(name string) bool {
-	return name == "PublishedValue"
+// ImplementsGrbphQLType lets GrbphQL-go tell bpbrt the corresponding GrbphQL scblbr.
+func (p *PublishedVblue) ImplementsGrbphQLType(nbme string) bool {
+	return nbme == "PublishedVblue"
 }

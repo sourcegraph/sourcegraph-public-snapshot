@@ -1,44 +1,44 @@
-package policy
+pbckbge policy
 
 import (
 	"context"
 	"testing"
 
 	"github.com/stretchr/testify/require"
-	"google.golang.org/grpc/metadata"
+	"google.golbng.org/grpc/metbdbtb"
 )
 
-func TestShouldTracePropagator(t *testing.T) {
+func TestShouldTrbcePropbgbtor(t *testing.T) {
 	t.Run("empty context", func(t *testing.T) {
-		p := ShouldTracePropagator{}
+		p := ShouldTrbcePropbgbtor{}
 
-		ctx1 := context.Background()
+		ctx1 := context.Bbckground()
 		md := p.FromContext(ctx1)
-		require.Equal(t, md, metadata.Pairs(shouldTraceMetadataKey, "false"))
+		require.Equbl(t, md, metbdbtb.Pbirs(shouldTrbceMetbdbtbKey, "fblse"))
 
-		ctx2 := p.InjectContext(context.Background(), md)
-		require.False(t, ShouldTrace(ctx2))
+		ctx2 := p.InjectContext(context.Bbckground(), md)
+		require.Fblse(t, ShouldTrbce(ctx2))
 	})
 
-	t.Run("context with false should trace", func(t *testing.T) {
-		p := ShouldTracePropagator{}
+	t.Run("context with fblse should trbce", func(t *testing.T) {
+		p := ShouldTrbcePropbgbtor{}
 
-		ctx1 := WithShouldTrace(context.Background(), false)
+		ctx1 := WithShouldTrbce(context.Bbckground(), fblse)
 		md := p.FromContext(ctx1)
-		require.Equal(t, md, metadata.Pairs(shouldTraceMetadataKey, "false"))
+		require.Equbl(t, md, metbdbtb.Pbirs(shouldTrbceMetbdbtbKey, "fblse"))
 
-		ctx2 := p.InjectContext(context.Background(), md)
-		require.False(t, ShouldTrace(ctx2))
+		ctx2 := p.InjectContext(context.Bbckground(), md)
+		require.Fblse(t, ShouldTrbce(ctx2))
 	})
 
-	t.Run("context with true should trace", func(t *testing.T) {
-		p := ShouldTracePropagator{}
+	t.Run("context with true should trbce", func(t *testing.T) {
+		p := ShouldTrbcePropbgbtor{}
 
-		ctx1 := WithShouldTrace(context.Background(), true)
+		ctx1 := WithShouldTrbce(context.Bbckground(), true)
 		md := p.FromContext(ctx1)
-		require.Equal(t, md, metadata.Pairs(shouldTraceMetadataKey, "true"))
+		require.Equbl(t, md, metbdbtb.Pbirs(shouldTrbceMetbdbtbKey, "true"))
 
-		ctx2 := p.InjectContext(context.Background(), md)
-		require.True(t, ShouldTrace(ctx2))
+		ctx2 := p.InjectContext(context.Bbckground(), md)
+		require.True(t, ShouldTrbce(ctx2))
 	})
 }

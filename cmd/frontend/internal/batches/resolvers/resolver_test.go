@@ -1,4 +1,4 @@
-package resolvers
+pbckbge resolvers
 
 import (
 	"context"
@@ -10,40 +10,40 @@ import (
 	"time"
 
 	"github.com/google/go-cmp/cmp"
-	"github.com/graph-gophers/graphql-go"
-	"github.com/graph-gophers/graphql-go/relay"
+	"github.com/grbph-gophers/grbphql-go"
+	"github.com/grbph-gophers/grbphql-go/relby"
 	"github.com/stretchr/testify/require"
 
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/bssert"
 
-	"github.com/sourcegraph/log/logtest"
+	"github.com/sourcegrbph/log/logtest"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/batches/resolvers/apitest"
-	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	bgql "github.com/sourcegraph/sourcegraph/internal/batches/graphql"
-	"github.com/sourcegraph/sourcegraph/internal/batches/search"
-	"github.com/sourcegraph/sourcegraph/internal/batches/service"
-	"github.com/sourcegraph/sourcegraph/internal/batches/store"
-	bt "github.com/sourcegraph/sourcegraph/internal/batches/testing"
-	btypes "github.com/sourcegraph/sourcegraph/internal/batches/types"
-	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
-	"github.com/sourcegraph/sourcegraph/internal/license"
-	"github.com/sourcegraph/sourcegraph/internal/licensing"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/internal/rbac"
-	"github.com/sourcegraph/sourcegraph/internal/timeutil"
-	"github.com/sourcegraph/sourcegraph/internal/types"
-	batcheslib "github.com/sourcegraph/sourcegraph/lib/batches"
-	"github.com/sourcegraph/sourcegraph/lib/batches/overridable"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/sourcegraph/sourcegraph/lib/pointers"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/grbphqlbbckend"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/internbl/bbtches/resolvers/bpitest"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bctor"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi"
+	bgql "github.com/sourcegrbph/sourcegrbph/internbl/bbtches/grbphql"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bbtches/sebrch"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bbtches/service"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bbtches/store"
+	bt "github.com/sourcegrbph/sourcegrbph/internbl/bbtches/testing"
+	btypes "github.com/sourcegrbph/sourcegrbph/internbl/bbtches/types"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbtest"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc/buth"
+	"github.com/sourcegrbph/sourcegrbph/internbl/gitserver"
+	"github.com/sourcegrbph/sourcegrbph/internbl/license"
+	"github.com/sourcegrbph/sourcegrbph/internbl/licensing"
+	"github.com/sourcegrbph/sourcegrbph/internbl/observbtion"
+	"github.com/sourcegrbph/sourcegrbph/internbl/rbbc"
+	"github.com/sourcegrbph/sourcegrbph/internbl/timeutil"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
+	bbtcheslib "github.com/sourcegrbph/sourcegrbph/lib/bbtches"
+	"github.com/sourcegrbph/sourcegrbph/lib/bbtches/overridbble"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/lib/pointers"
 )
 
 func TestNullIDResilience(t *testing.T) {
@@ -51,33 +51,33 @@ func TestNullIDResilience(t *testing.T) {
 
 	logger := logtest.Scoped(t)
 
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
-	sr := New(db, store.New(db, &observation.TestContext, nil), gitserver.NewMockClient(), logger)
+	db := dbtbbbse.NewDB(logger, dbtest.NewDB(logger, t))
+	sr := New(db, store.New(db, &observbtion.TestContext, nil), gitserver.NewMockClient(), logger)
 
-	s, err := newSchema(db, sr)
+	s, err := newSchemb(db, sr)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	ctx := actor.WithInternalActor(context.Background())
+	ctx := bctor.WithInternblActor(context.Bbckground())
 
-	ids := []graphql.ID{
-		bgql.MarshalBatchChangeID(0),
-		bgql.MarshalChangesetID(0),
-		marshalBatchSpecRandID(""),
-		marshalChangesetSpecRandID(""),
-		marshalBatchChangesCredentialID(0, false),
-		marshalBatchChangesCredentialID(0, true),
-		marshalBulkOperationID(""),
-		marshalBatchSpecWorkspaceID(0),
-		marshalWorkspaceFileRandID(""),
+	ids := []grbphql.ID{
+		bgql.MbrshblBbtchChbngeID(0),
+		bgql.MbrshblChbngesetID(0),
+		mbrshblBbtchSpecRbndID(""),
+		mbrshblChbngesetSpecRbndID(""),
+		mbrshblBbtchChbngesCredentiblID(0, fblse),
+		mbrshblBbtchChbngesCredentiblID(0, true),
+		mbrshblBulkOperbtionID(""),
+		mbrshblBbtchSpecWorkspbceID(0),
+		mbrshblWorkspbceFileRbndID(""),
 	}
 
-	for _, id := range ids {
-		var response struct{ Node struct{ ID string } }
+	for _, id := rbnge ids {
+		vbr response struct{ Node struct{ ID string } }
 
 		query := `query($id: ID!) { node(id: $id) { id } }`
-		errs := apitest.Exec(ctx, t, s, map[string]any{"id": id}, &response, query)
+		errs := bpitest.Exec(ctx, t, s, mbp[string]bny{"id": id}, &response, query)
 
 		if len(errs) != 1 {
 			t.Errorf("expected 1 error, got %d errors", len(errs))
@@ -89,476 +89,476 @@ func TestNullIDResilience(t *testing.T) {
 		}
 	}
 
-	mutations := []string{
-		fmt.Sprintf(`mutation { closeBatchChange(batchChange: %q) { id } }`, bgql.MarshalBatchChangeID(0)),
-		fmt.Sprintf(`mutation { deleteBatchChange(batchChange: %q) { alwaysNil } }`, bgql.MarshalBatchChangeID(0)),
-		fmt.Sprintf(`mutation { syncChangeset(changeset: %q) { alwaysNil } }`, bgql.MarshalChangesetID(0)),
-		fmt.Sprintf(`mutation { reenqueueChangeset(changeset: %q) { id } }`, bgql.MarshalChangesetID(0)),
-		fmt.Sprintf(`mutation { applyBatchChange(batchSpec: %q) { id } }`, marshalBatchSpecRandID("")),
-		fmt.Sprintf(`mutation { createBatchChange(batchSpec: %q) { id } }`, marshalBatchSpecRandID("")),
-		fmt.Sprintf(`mutation { moveBatchChange(batchChange: %q, newName: "foobar") { id } }`, bgql.MarshalBatchChangeID(0)),
-		fmt.Sprintf(`mutation { createBatchChangesCredential(externalServiceKind: GITHUB, externalServiceURL: "http://test", credential: "123123", user: %q) { id } }`, graphqlbackend.MarshalUserID(0)),
-		fmt.Sprintf(`mutation { deleteBatchChangesCredential(batchChangesCredential: %q) { alwaysNil } }`, marshalBatchChangesCredentialID(0, false)),
-		fmt.Sprintf(`mutation { deleteBatchChangesCredential(batchChangesCredential: %q) { alwaysNil } }`, marshalBatchChangesCredentialID(0, true)),
-		fmt.Sprintf(`mutation { createChangesetComments(batchChange: %q, changesets: [], body: "test") { id } }`, bgql.MarshalBatchChangeID(0)),
-		fmt.Sprintf(`mutation { createChangesetComments(batchChange: %q, changesets: [%q], body: "test") { id } }`, bgql.MarshalBatchChangeID(1), bgql.MarshalChangesetID(0)),
-		fmt.Sprintf(`mutation { reenqueueChangesets(batchChange: %q, changesets: []) { id } }`, bgql.MarshalBatchChangeID(0)),
-		fmt.Sprintf(`mutation { reenqueueChangesets(batchChange: %q, changesets: [%q]) { id } }`, bgql.MarshalBatchChangeID(1), bgql.MarshalChangesetID(0)),
-		fmt.Sprintf(`mutation { mergeChangesets(batchChange: %q, changesets: []) { id } }`, bgql.MarshalBatchChangeID(0)),
-		fmt.Sprintf(`mutation { mergeChangesets(batchChange: %q, changesets: [%q]) { id } }`, bgql.MarshalBatchChangeID(1), bgql.MarshalChangesetID(0)),
-		fmt.Sprintf(`mutation { closeChangesets(batchChange: %q, changesets: []) { id } }`, bgql.MarshalBatchChangeID(0)),
-		fmt.Sprintf(`mutation { closeChangesets(batchChange: %q, changesets: [%q]) { id } }`, bgql.MarshalBatchChangeID(1), bgql.MarshalChangesetID(0)),
-		fmt.Sprintf(`mutation { publishChangesets(batchChange: %q, changesets: []) { id } }`, bgql.MarshalBatchChangeID(0)),
-		fmt.Sprintf(`mutation { publishChangesets(batchChange: %q, changesets: [%q]) { id } }`, bgql.MarshalBatchChangeID(1), bgql.MarshalChangesetID(0)),
-		fmt.Sprintf(`mutation { executeBatchSpec(batchSpec: %q) { id } }`, marshalBatchSpecRandID("")),
-		fmt.Sprintf(`mutation { cancelBatchSpecExecution(batchSpec: %q) { id } }`, marshalBatchSpecRandID("")),
-		fmt.Sprintf(`mutation { replaceBatchSpecInput(previousSpec: %q, batchSpec: "name: testing") { id } }`, marshalBatchSpecRandID("")),
-		fmt.Sprintf(`mutation { retryBatchSpecWorkspaceExecution(batchSpecWorkspaces: [%q]) { alwaysNil } }`, marshalBatchSpecWorkspaceID(0)),
-		fmt.Sprintf(`mutation { retryBatchSpecExecution(batchSpec: %q) { id } }`, marshalBatchSpecRandID("")),
+	mutbtions := []string{
+		fmt.Sprintf(`mutbtion { closeBbtchChbnge(bbtchChbnge: %q) { id } }`, bgql.MbrshblBbtchChbngeID(0)),
+		fmt.Sprintf(`mutbtion { deleteBbtchChbnge(bbtchChbnge: %q) { blwbysNil } }`, bgql.MbrshblBbtchChbngeID(0)),
+		fmt.Sprintf(`mutbtion { syncChbngeset(chbngeset: %q) { blwbysNil } }`, bgql.MbrshblChbngesetID(0)),
+		fmt.Sprintf(`mutbtion { reenqueueChbngeset(chbngeset: %q) { id } }`, bgql.MbrshblChbngesetID(0)),
+		fmt.Sprintf(`mutbtion { bpplyBbtchChbnge(bbtchSpec: %q) { id } }`, mbrshblBbtchSpecRbndID("")),
+		fmt.Sprintf(`mutbtion { crebteBbtchChbnge(bbtchSpec: %q) { id } }`, mbrshblBbtchSpecRbndID("")),
+		fmt.Sprintf(`mutbtion { moveBbtchChbnge(bbtchChbnge: %q, newNbme: "foobbr") { id } }`, bgql.MbrshblBbtchChbngeID(0)),
+		fmt.Sprintf(`mutbtion { crebteBbtchChbngesCredentibl(externblServiceKind: GITHUB, externblServiceURL: "http://test", credentibl: "123123", user: %q) { id } }`, grbphqlbbckend.MbrshblUserID(0)),
+		fmt.Sprintf(`mutbtion { deleteBbtchChbngesCredentibl(bbtchChbngesCredentibl: %q) { blwbysNil } }`, mbrshblBbtchChbngesCredentiblID(0, fblse)),
+		fmt.Sprintf(`mutbtion { deleteBbtchChbngesCredentibl(bbtchChbngesCredentibl: %q) { blwbysNil } }`, mbrshblBbtchChbngesCredentiblID(0, true)),
+		fmt.Sprintf(`mutbtion { crebteChbngesetComments(bbtchChbnge: %q, chbngesets: [], body: "test") { id } }`, bgql.MbrshblBbtchChbngeID(0)),
+		fmt.Sprintf(`mutbtion { crebteChbngesetComments(bbtchChbnge: %q, chbngesets: [%q], body: "test") { id } }`, bgql.MbrshblBbtchChbngeID(1), bgql.MbrshblChbngesetID(0)),
+		fmt.Sprintf(`mutbtion { reenqueueChbngesets(bbtchChbnge: %q, chbngesets: []) { id } }`, bgql.MbrshblBbtchChbngeID(0)),
+		fmt.Sprintf(`mutbtion { reenqueueChbngesets(bbtchChbnge: %q, chbngesets: [%q]) { id } }`, bgql.MbrshblBbtchChbngeID(1), bgql.MbrshblChbngesetID(0)),
+		fmt.Sprintf(`mutbtion { mergeChbngesets(bbtchChbnge: %q, chbngesets: []) { id } }`, bgql.MbrshblBbtchChbngeID(0)),
+		fmt.Sprintf(`mutbtion { mergeChbngesets(bbtchChbnge: %q, chbngesets: [%q]) { id } }`, bgql.MbrshblBbtchChbngeID(1), bgql.MbrshblChbngesetID(0)),
+		fmt.Sprintf(`mutbtion { closeChbngesets(bbtchChbnge: %q, chbngesets: []) { id } }`, bgql.MbrshblBbtchChbngeID(0)),
+		fmt.Sprintf(`mutbtion { closeChbngesets(bbtchChbnge: %q, chbngesets: [%q]) { id } }`, bgql.MbrshblBbtchChbngeID(1), bgql.MbrshblChbngesetID(0)),
+		fmt.Sprintf(`mutbtion { publishChbngesets(bbtchChbnge: %q, chbngesets: []) { id } }`, bgql.MbrshblBbtchChbngeID(0)),
+		fmt.Sprintf(`mutbtion { publishChbngesets(bbtchChbnge: %q, chbngesets: [%q]) { id } }`, bgql.MbrshblBbtchChbngeID(1), bgql.MbrshblChbngesetID(0)),
+		fmt.Sprintf(`mutbtion { executeBbtchSpec(bbtchSpec: %q) { id } }`, mbrshblBbtchSpecRbndID("")),
+		fmt.Sprintf(`mutbtion { cbncelBbtchSpecExecution(bbtchSpec: %q) { id } }`, mbrshblBbtchSpecRbndID("")),
+		fmt.Sprintf(`mutbtion { replbceBbtchSpecInput(previousSpec: %q, bbtchSpec: "nbme: testing") { id } }`, mbrshblBbtchSpecRbndID("")),
+		fmt.Sprintf(`mutbtion { retryBbtchSpecWorkspbceExecution(bbtchSpecWorkspbces: [%q]) { blwbysNil } }`, mbrshblBbtchSpecWorkspbceID(0)),
+		fmt.Sprintf(`mutbtion { retryBbtchSpecExecution(bbtchSpec: %q) { id } }`, mbrshblBbtchSpecRbndID("")),
 	}
 
-	for _, m := range mutations {
-		var response struct{}
-		errs := apitest.Exec(ctx, t, s, nil, &response, m)
+	for _, m := rbnge mutbtions {
+		vbr response struct{}
+		errs := bpitest.Exec(ctx, t, s, nil, &response, m)
 		if len(errs) == 0 {
-			t.Errorf("expected errors but none returned (mutation: %q)", m)
+			t.Errorf("expected errors but none returned (mutbtion: %q)", m)
 		}
-		if have, want := errs[0].Error(), fmt.Sprintf("graphql: %s", ErrIDIsZero{}); have != want {
-			t.Errorf("wrong errors. have=%s, want=%s (mutation: %q)", have, want, m)
+		if hbve, wbnt := errs[0].Error(), fmt.Sprintf("grbphql: %s", ErrIDIsZero{}); hbve != wbnt {
+			t.Errorf("wrong errors. hbve=%s, wbnt=%s (mutbtion: %q)", hbve, wbnt, m)
 		}
 	}
 }
 
-func TestCreateBatchSpec(t *testing.T) {
+func TestCrebteBbtchSpec(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	licensingInfo := func(tags ...string) *licensing.Info {
-		return &licensing.Info{Info: license.Info{Tags: tags, ExpiresAt: time.Now().Add(1 * time.Hour)}}
+	licensingInfo := func(tbgs ...string) *licensing.Info {
+		return &licensing.Info{Info: license.Info{Tbgs: tbgs, ExpiresAt: time.Now().Add(1 * time.Hour)}}
 	}
 
 	logger := logtest.Scoped(t)
-	ctx := context.Background()
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	ctx := context.Bbckground()
+	db := dbtbbbse.NewDB(logger, dbtest.NewDB(logger, t))
 
-	user := bt.CreateTestUser(t, db, true)
+	user := bt.CrebteTestUser(t, db, true)
 	userID := user.ID
-	// We give this user the `BATCH_CHANGES#WRITE` permission so they're authorized
-	// to create Batch Changes.
-	assignBatchChangesWritePermissionToUser(ctx, t, db, userID)
+	// We give this user the `BATCH_CHANGES#WRITE` permission so they're buthorized
+	// to crebte Bbtch Chbnges.
+	bssignBbtchChbngesWritePermissionToUser(ctx, t, db, userID)
 
-	unauthorizedUser := bt.CreateTestUser(t, db, false)
+	unbuthorizedUser := bt.CrebteTestUser(t, db, fblse)
 
-	bstore := store.New(db, &observation.TestContext, nil)
-	repoStore := database.ReposWith(logger, bstore)
-	esStore := database.ExternalServicesWith(logger, bstore)
+	bstore := store.New(db, &observbtion.TestContext, nil)
+	repoStore := dbtbbbse.ReposWith(logger, bstore)
+	esStore := dbtbbbse.ExternblServicesWith(logger, bstore)
 
-	repo := newGitHubTestRepo("github.com/sourcegraph/create-batch-spec-test", newGitHubExternalService(t, esStore))
-	if err := repoStore.Create(ctx, repo); err != nil {
-		t.Fatal(err)
+	repo := newGitHubTestRepo("github.com/sourcegrbph/crebte-bbtch-spec-test", newGitHubExternblService(t, esStore))
+	if err := repoStore.Crebte(ctx, repo); err != nil {
+		t.Fbtbl(err)
 	}
 
-	maxNumChangesets := 10
+	mbxNumChbngesets := 10
 
-	// Create enough changeset specs to hit the licence check.
-	changesetSpecs := make([]*btypes.ChangesetSpec, maxNumChangesets+1)
-	for i := range changesetSpecs {
-		changesetSpecs[i] = &btypes.ChangesetSpec{
-			BaseRepoID: repo.ID,
+	// Crebte enough chbngeset specs to hit the licence check.
+	chbngesetSpecs := mbke([]*btypes.ChbngesetSpec, mbxNumChbngesets+1)
+	for i := rbnge chbngesetSpecs {
+		chbngesetSpecs[i] = &btypes.ChbngesetSpec{
+			BbseRepoID: repo.ID,
 			UserID:     userID,
-			ExternalID: "123",
-			Type:       btypes.ChangesetSpecTypeExisting,
+			ExternblID: "123",
+			Type:       btypes.ChbngesetSpecTypeExisting,
 		}
-		if err := bstore.CreateChangesetSpec(ctx, changesetSpecs[i]); err != nil {
-			t.Fatal(err)
+		if err := bstore.CrebteChbngesetSpec(ctx, chbngesetSpecs[i]); err != nil {
+			t.Fbtbl(err)
 		}
 	}
 
 	r := &Resolver{store: bstore}
-	s, err := newSchema(db, r)
+	s, err := newSchemb(db, r)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	userAPIID := string(graphqlbackend.MarshalUserID(userID))
-	rawSpec := bt.TestRawBatchSpec
+	userAPIID := string(grbphqlbbckend.MbrshblUserID(userID))
+	rbwSpec := bt.TestRbwBbtchSpec
 
-	for name, tc := range map[string]struct {
-		changesetSpecs []*btypes.ChangesetSpec
+	for nbme, tc := rbnge mbp[string]struct {
+		chbngesetSpecs []*btypes.ChbngesetSpec
 		licenseInfo    *licensing.Info
-		wantErr        bool
+		wbntErr        bool
 		userID         int32
-		unauthorized   bool
+		unbuthorized   bool
 	}{
-		"unauthorized access": {
-			changesetSpecs: []*btypes.ChangesetSpec{},
-			licenseInfo:    licensingInfo("starter"),
-			wantErr:        true,
-			userID:         unauthorizedUser.ID,
-			unauthorized:   true,
+		"unbuthorized bccess": {
+			chbngesetSpecs: []*btypes.ChbngesetSpec{},
+			licenseInfo:    licensingInfo("stbrter"),
+			wbntErr:        true,
+			userID:         unbuthorizedUser.ID,
+			unbuthorized:   true,
 		},
-		"batch changes license, restricted, over the limit": {
-			changesetSpecs: changesetSpecs,
-			licenseInfo:    licensingInfo("starter"),
-			wantErr:        true,
+		"bbtch chbnges license, restricted, over the limit": {
+			chbngesetSpecs: chbngesetSpecs,
+			licenseInfo:    licensingInfo("stbrter"),
+			wbntErr:        true,
 			userID:         userID,
 		},
-		"batch changes license, restricted, under the limit": {
-			changesetSpecs: changesetSpecs[0 : maxNumChangesets-1],
-			licenseInfo:    licensingInfo("starter"),
-			wantErr:        false,
+		"bbtch chbnges license, restricted, under the limit": {
+			chbngesetSpecs: chbngesetSpecs[0 : mbxNumChbngesets-1],
+			licenseInfo:    licensingInfo("stbrter"),
+			wbntErr:        fblse,
 			userID:         userID,
 		},
-		"batch changes license, unrestricted, over the limit": {
-			changesetSpecs: changesetSpecs,
-			licenseInfo:    licensingInfo("starter", "batch-changes"),
-			wantErr:        false,
+		"bbtch chbnges license, unrestricted, over the limit": {
+			chbngesetSpecs: chbngesetSpecs,
+			licenseInfo:    licensingInfo("stbrter", "bbtch-chbnges"),
+			wbntErr:        fblse,
 			userID:         userID,
 		},
-		"campaigns license, no limit": {
-			changesetSpecs: changesetSpecs,
-			licenseInfo:    licensingInfo("starter", "campaigns"),
-			wantErr:        false,
+		"cbmpbigns license, no limit": {
+			chbngesetSpecs: chbngesetSpecs,
+			licenseInfo:    licensingInfo("stbrter", "cbmpbigns"),
+			wbntErr:        fblse,
 			userID:         userID,
 		},
 		"no license": {
-			changesetSpecs: changesetSpecs[0:1],
-			wantErr:        true,
+			chbngesetSpecs: chbngesetSpecs[0:1],
+			wbntErr:        true,
 			userID:         userID,
 		},
 	} {
-		t.Run(name, func(t *testing.T) {
-			oldMock := licensing.MockCheckFeature
-			licensing.MockCheckFeature = func(feature licensing.Feature) error {
-				return feature.Check(tc.licenseInfo)
+		t.Run(nbme, func(t *testing.T) {
+			oldMock := licensing.MockCheckFebture
+			licensing.MockCheckFebture = func(febture licensing.Febture) error {
+				return febture.Check(tc.licenseInfo)
 			}
 
 			defer func() {
-				licensing.MockCheckFeature = oldMock
+				licensing.MockCheckFebture = oldMock
 			}()
 
-			changesetSpecIDs := make([]graphql.ID, len(tc.changesetSpecs))
-			for i, spec := range tc.changesetSpecs {
-				changesetSpecIDs[i] = marshalChangesetSpecRandID(spec.RandID)
+			chbngesetSpecIDs := mbke([]grbphql.ID, len(tc.chbngesetSpecs))
+			for i, spec := rbnge tc.chbngesetSpecs {
+				chbngesetSpecIDs[i] = mbrshblChbngesetSpecRbndID(spec.RbndID)
 			}
 
-			input := map[string]any{
-				"namespace":      userAPIID,
-				"batchSpec":      rawSpec,
-				"changesetSpecs": changesetSpecIDs,
+			input := mbp[string]bny{
+				"nbmespbce":      userAPIID,
+				"bbtchSpec":      rbwSpec,
+				"chbngesetSpecs": chbngesetSpecIDs,
 			}
 
-			var response struct{ CreateBatchSpec apitest.BatchSpec }
+			vbr response struct{ CrebteBbtchSpec bpitest.BbtchSpec }
 
-			actorCtx := actor.WithActor(ctx, actor.FromUser(tc.userID))
-			errs := apitest.Exec(actorCtx, t, s, input, &response, mutationCreateBatchSpec)
-			if tc.wantErr {
+			bctorCtx := bctor.WithActor(ctx, bctor.FromUser(tc.userID))
+			errs := bpitest.Exec(bctorCtx, t, s, input, &response, mutbtionCrebteBbtchSpec)
+			if tc.wbntErr {
 				if errs == nil {
-					t.Error("unexpected lack of errors")
+					t.Error("unexpected lbck of errors")
 				}
 
-				if tc.unauthorized && !errors.Is(errs[0], &rbac.ErrNotAuthorized{Permission: rbac.BatchChangesWritePermission}) {
-					t.Errorf("expected unauthorized error, got %v", errs)
+				if tc.unbuthorized && !errors.Is(errs[0], &rbbc.ErrNotAuthorized{Permission: rbbc.BbtchChbngesWritePermission}) {
+					t.Errorf("expected unbuthorized error, got %v", errs)
 				}
 			} else {
 				if errs != nil {
 					t.Errorf("unexpected error(s): %+v", errs)
 				}
 
-				var unmarshaled any
-				err = json.Unmarshal([]byte(rawSpec), &unmarshaled)
+				vbr unmbrshbled bny
+				err = json.Unmbrshbl([]byte(rbwSpec), &unmbrshbled)
 				if err != nil {
-					t.Fatal(err)
+					t.Fbtbl(err)
 				}
-				have := response.CreateBatchSpec
+				hbve := response.CrebteBbtchSpec
 
-				wantNodes := make([]apitest.ChangesetSpec, len(changesetSpecIDs))
-				for i, id := range changesetSpecIDs {
-					wantNodes[i] = apitest.ChangesetSpec{
-						Typename: "VisibleChangesetSpec",
+				wbntNodes := mbke([]bpitest.ChbngesetSpec, len(chbngesetSpecIDs))
+				for i, id := rbnge chbngesetSpecIDs {
+					wbntNodes[i] = bpitest.ChbngesetSpec{
+						Typenbme: "VisibleChbngesetSpec",
 						ID:       string(id),
 					}
 				}
 
-				applyUrl := fmt.Sprintf("/users/%s/batch-changes/apply/%s", user.Username, have.ID)
-				want := apitest.BatchSpec{
-					ID:            have.ID,
-					CreatedAt:     have.CreatedAt,
-					ExpiresAt:     have.ExpiresAt,
-					OriginalInput: rawSpec,
-					ParsedInput:   graphqlbackend.JSONValue{Value: unmarshaled},
-					ApplyURL:      &applyUrl,
-					Namespace:     apitest.UserOrg{ID: userAPIID, DatabaseID: userID, SiteAdmin: true},
-					Creator:       &apitest.User{ID: userAPIID, DatabaseID: userID, SiteAdmin: true},
-					ChangesetSpecs: apitest.ChangesetSpecConnection{
-						Nodes: wantNodes,
+				bpplyUrl := fmt.Sprintf("/users/%s/bbtch-chbnges/bpply/%s", user.Usernbme, hbve.ID)
+				wbnt := bpitest.BbtchSpec{
+					ID:            hbve.ID,
+					CrebtedAt:     hbve.CrebtedAt,
+					ExpiresAt:     hbve.ExpiresAt,
+					OriginblInput: rbwSpec,
+					PbrsedInput:   grbphqlbbckend.JSONVblue{Vblue: unmbrshbled},
+					ApplyURL:      &bpplyUrl,
+					Nbmespbce:     bpitest.UserOrg{ID: userAPIID, DbtbbbseID: userID, SiteAdmin: true},
+					Crebtor:       &bpitest.User{ID: userAPIID, DbtbbbseID: userID, SiteAdmin: true},
+					ChbngesetSpecs: bpitest.ChbngesetSpecConnection{
+						Nodes: wbntNodes,
 					},
 				}
 
-				if diff := cmp.Diff(want, have); diff != "" {
-					t.Fatalf("unexpected response (-want +got):\n%s", diff)
+				if diff := cmp.Diff(wbnt, hbve); diff != "" {
+					t.Fbtblf("unexpected response (-wbnt +got):\n%s", diff)
 				}
 			}
 		})
 	}
 }
 
-const mutationCreateBatchSpec = `
-fragment u on User { id, databaseID, siteAdmin }
-fragment o on Org  { id, name }
+const mutbtionCrebteBbtchSpec = `
+frbgment u on User { id, dbtbbbseID, siteAdmin }
+frbgment o on Org  { id, nbme }
 
-mutation($namespace: ID!, $batchSpec: String!, $changesetSpecs: [ID!]!){
-  createBatchSpec(namespace: $namespace, batchSpec: $batchSpec, changesetSpecs: $changesetSpecs) {
+mutbtion($nbmespbce: ID!, $bbtchSpec: String!, $chbngesetSpecs: [ID!]!){
+  crebteBbtchSpec(nbmespbce: $nbmespbce, bbtchSpec: $bbtchSpec, chbngesetSpecs: $chbngesetSpecs) {
     id
-    originalInput
-    parsedInput
+    originblInput
+    pbrsedInput
 
-    creator  { ...u }
-    namespace {
+    crebtor  { ...u }
+    nbmespbce {
       ... on User { ...u }
       ... on Org  { ...o }
     }
 
-    applyURL
+    bpplyURL
 
-	changesetSpecs {
+	chbngesetSpecs {
 	  nodes {
-		  __typename
-		  ... on VisibleChangesetSpec {
+		  __typenbme
+		  ... on VisibleChbngesetSpec {
 			  id
 		  }
 	  }
 	}
 
-    createdAt
+    crebtedAt
     expiresAt
   }
 }
 `
 
-func TestCreateBatchSpecFromRaw(t *testing.T) {
+func TestCrebteBbtchSpecFromRbw(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
 
 	logger := logtest.Scoped(t)
-	ctx := context.Background()
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	ctx := context.Bbckground()
+	db := dbtbbbse.NewDB(logger, dbtest.NewDB(logger, t))
 
-	user := bt.CreateTestUser(t, db, true)
+	user := bt.CrebteTestUser(t, db, true)
 	userID := user.ID
 
-	// We give this user the `BATCH_CHANGES#WRITE` permission so they're authorized
-	// to create Batch Changes.
-	assignBatchChangesWritePermissionToUser(ctx, t, db, userID)
+	// We give this user the `BATCH_CHANGES#WRITE` permission so they're buthorized
+	// to crebte Bbtch Chbnges.
+	bssignBbtchChbngesWritePermissionToUser(ctx, t, db, userID)
 
-	unauthorizedUser := bt.CreateTestUser(t, db, false)
+	unbuthorizedUser := bt.CrebteTestUser(t, db, fblse)
 
-	bstore := store.New(db, &observation.TestContext, nil)
+	bstore := store.New(db, &observbtion.TestContext, nil)
 
 	r := &Resolver{store: bstore}
-	s, err := newSchema(db, r)
+	s, err := newSchemb(db, r)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	name := "my-simple-change"
+	nbme := "my-simple-chbnge"
 
-	falsy := overridable.FromBoolOrString(false)
-	bs := &btypes.BatchSpec{
-		RawSpec: bt.TestRawBatchSpec,
-		Spec: &batcheslib.BatchSpec{
-			Name:        name,
+	fblsy := overridbble.FromBoolOrString(fblse)
+	bs := &btypes.BbtchSpec{
+		RbwSpec: bt.TestRbwBbtchSpec,
+		Spec: &bbtcheslib.BbtchSpec{
+			Nbme:        nbme,
 			Description: "My description",
-			ChangesetTemplate: &batcheslib.ChangesetTemplate{
+			ChbngesetTemplbte: &bbtcheslib.ChbngesetTemplbte{
 				Title:  "Hello there",
 				Body:   "This is the body",
-				Branch: "my-branch",
-				Commit: batcheslib.ExpandedGitCommitDescription{
-					Message: "Add hello world",
+				Brbnch: "my-brbnch",
+				Commit: bbtcheslib.ExpbndedGitCommitDescription{
+					Messbge: "Add hello world",
 				},
-				Published: &falsy,
+				Published: &fblsy,
 			},
 		},
 		UserID:          userID,
-		NamespaceUserID: userID,
+		NbmespbceUserID: userID,
 	}
-	if err := bstore.CreateBatchSpec(ctx, bs); err != nil {
-		t.Fatal(err)
-	}
-
-	bc := bt.CreateBatchChange(t, ctx, bstore, name, userID, bs.ID)
-	rawSpec := bt.TestRawBatchSpec
-
-	userAPIID := string(graphqlbackend.MarshalUserID(userID))
-	batchChangeID := string(bgql.MarshalBatchChangeID(bc.ID))
-
-	input := map[string]any{
-		"namespace":   userAPIID,
-		"batchSpec":   rawSpec,
-		"batchChange": batchChangeID,
+	if err := bstore.CrebteBbtchSpec(ctx, bs); err != nil {
+		t.Fbtbl(err)
 	}
 
-	t.Run("unauthorized access", func(t *testing.T) {
-		var response struct{ CreateBatchSpecFromRaw apitest.BatchSpec }
-		actorCtx := actor.WithActor(ctx, actor.FromUser(unauthorizedUser.ID))
+	bc := bt.CrebteBbtchChbnge(t, ctx, bstore, nbme, userID, bs.ID)
+	rbwSpec := bt.TestRbwBbtchSpec
 
-		errs := apitest.Exec(actorCtx, t, s, input, &response, mutationCreateBatchSpecFromRaw)
+	userAPIID := string(grbphqlbbckend.MbrshblUserID(userID))
+	bbtchChbngeID := string(bgql.MbrshblBbtchChbngeID(bc.ID))
+
+	input := mbp[string]bny{
+		"nbmespbce":   userAPIID,
+		"bbtchSpec":   rbwSpec,
+		"bbtchChbnge": bbtchChbngeID,
+	}
+
+	t.Run("unbuthorized bccess", func(t *testing.T) {
+		vbr response struct{ CrebteBbtchSpecFromRbw bpitest.BbtchSpec }
+		bctorCtx := bctor.WithActor(ctx, bctor.FromUser(unbuthorizedUser.ID))
+
+		errs := bpitest.Exec(bctorCtx, t, s, input, &response, mutbtionCrebteBbtchSpecFromRbw)
 		if errs == nil {
-			t.Fatal("expected error")
+			t.Fbtbl("expected error")
 		}
 		firstErr := errs[0]
-		if !strings.Contains(firstErr.Error(), fmt.Sprintf("user is missing permission %s", rbac.BatchChangesWritePermission)) {
-			t.Fatalf("expected unauthorized error, got %+v", err)
+		if !strings.Contbins(firstErr.Error(), fmt.Sprintf("user is missing permission %s", rbbc.BbtchChbngesWritePermission)) {
+			t.Fbtblf("expected unbuthorized error, got %+v", err)
 		}
 	})
 
-	t.Run("authorized user", func(t *testing.T) {
-		var response struct{ CreateBatchSpecFromRaw apitest.BatchSpec }
-		actorCtx := actor.WithActor(ctx, actor.FromUser(userID))
+	t.Run("buthorized user", func(t *testing.T) {
+		vbr response struct{ CrebteBbtchSpecFromRbw bpitest.BbtchSpec }
+		bctorCtx := bctor.WithActor(ctx, bctor.FromUser(userID))
 
-		errs := apitest.Exec(actorCtx, t, s, input, &response, mutationCreateBatchSpecFromRaw)
+		errs := bpitest.Exec(bctorCtx, t, s, input, &response, mutbtionCrebteBbtchSpecFromRbw)
 		if errs != nil {
 			t.Errorf("unexpected error(s): %+v", errs)
 		}
 
-		var unmarshaled any
-		err = json.Unmarshal([]byte(rawSpec), &unmarshaled)
+		vbr unmbrshbled bny
+		err = json.Unmbrshbl([]byte(rbwSpec), &unmbrshbled)
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
-		have := response.CreateBatchSpecFromRaw
+		hbve := response.CrebteBbtchSpecFromRbw
 
-		want := apitest.BatchSpec{
-			ID:                   have.ID,
-			OriginalInput:        rawSpec,
-			ParsedInput:          graphqlbackend.JSONValue{Value: unmarshaled},
-			Creator:              &apitest.User{ID: userAPIID, DatabaseID: userID, SiteAdmin: true},
-			Namespace:            apitest.UserOrg{ID: userAPIID, DatabaseID: userID, SiteAdmin: true},
-			AppliesToBatchChange: apitest.BatchChange{ID: batchChangeID},
-			CreatedAt:            have.CreatedAt,
-			ExpiresAt:            have.ExpiresAt,
+		wbnt := bpitest.BbtchSpec{
+			ID:                   hbve.ID,
+			OriginblInput:        rbwSpec,
+			PbrsedInput:          grbphqlbbckend.JSONVblue{Vblue: unmbrshbled},
+			Crebtor:              &bpitest.User{ID: userAPIID, DbtbbbseID: userID, SiteAdmin: true},
+			Nbmespbce:            bpitest.UserOrg{ID: userAPIID, DbtbbbseID: userID, SiteAdmin: true},
+			AppliesToBbtchChbnge: bpitest.BbtchChbnge{ID: bbtchChbngeID},
+			CrebtedAt:            hbve.CrebtedAt,
+			ExpiresAt:            hbve.ExpiresAt,
 		}
 
-		if diff := cmp.Diff(want, have); diff != "" {
-			t.Fatalf("unexpected response (-want +got):\n%s", diff)
+		if diff := cmp.Diff(wbnt, hbve); diff != "" {
+			t.Fbtblf("unexpected response (-wbnt +got):\n%s", diff)
 		}
 	})
 }
 
-const mutationCreateBatchSpecFromRaw = `
-fragment u on User { id, databaseID, siteAdmin }
-fragment o on Org  { id, name }
+const mutbtionCrebteBbtchSpecFromRbw = `
+frbgment u on User { id, dbtbbbseID, siteAdmin }
+frbgment o on Org  { id, nbme }
 
-mutation($batchSpec: String!, $namespace: ID!, $batchChange: ID!){
-	createBatchSpecFromRaw(batchSpec: $batchSpec, namespace: $namespace, batchChange: $batchChange) {
+mutbtion($bbtchSpec: String!, $nbmespbce: ID!, $bbtchChbnge: ID!){
+	crebteBbtchSpecFromRbw(bbtchSpec: $bbtchSpec, nbmespbce: $nbmespbce, bbtchChbnge: $bbtchChbnge) {
 		id
-		originalInput
-		parsedInput
+		originblInput
+		pbrsedInput
 
-		creator  { ...u }
-		namespace {
+		crebtor  { ...u }
+		nbmespbce {
 			... on User { ...u }
 			... on Org  { ...o }
 		}
 
-		appliesToBatchChange {
+		bppliesToBbtchChbnge {
 			id
 		}
 
-		createdAt
+		crebtedAt
 		expiresAt
 	}
 }
 `
 
-func TestCreateChangesetSpec(t *testing.T) {
+func TestCrebteChbngesetSpec(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
 
 	logger := logtest.Scoped(t)
-	ctx := context.Background()
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	ctx := context.Bbckground()
+	db := dbtbbbse.NewDB(logger, dbtest.NewDB(logger, t))
 
-	userID := bt.CreateTestUser(t, db, true).ID
-	// We give this user the `BATCH_CHANGES#WRITE` permission so they're authorized
-	// to create Batch Changes.
-	assignBatchChangesWritePermissionToUser(ctx, t, db, userID)
+	userID := bt.CrebteTestUser(t, db, true).ID
+	// We give this user the `BATCH_CHANGES#WRITE` permission so they're buthorized
+	// to crebte Bbtch Chbnges.
+	bssignBbtchChbngesWritePermissionToUser(ctx, t, db, userID)
 
-	unauthorizedUser := bt.CreateTestUser(t, db, false)
+	unbuthorizedUser := bt.CrebteTestUser(t, db, fblse)
 
-	bstore := store.New(db, &observation.TestContext, nil)
-	repoStore := database.ReposWith(logger, bstore)
-	esStore := database.ExternalServicesWith(logger, bstore)
+	bstore := store.New(db, &observbtion.TestContext, nil)
+	repoStore := dbtbbbse.ReposWith(logger, bstore)
+	esStore := dbtbbbse.ExternblServicesWith(logger, bstore)
 
-	repo := newGitHubTestRepo("github.com/sourcegraph/create-changeset-spec-test", newGitHubExternalService(t, esStore))
-	if err := repoStore.Create(ctx, repo); err != nil {
-		t.Fatal(err)
+	repo := newGitHubTestRepo("github.com/sourcegrbph/crebte-chbngeset-spec-test", newGitHubExternblService(t, esStore))
+	if err := repoStore.Crebte(ctx, repo); err != nil {
+		t.Fbtbl(err)
 	}
 
 	r := &Resolver{store: bstore}
-	s, err := newSchema(db, r)
+	s, err := newSchemb(db, r)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	input := map[string]any{
-		"changesetSpec": bt.NewRawChangesetSpecGitBranch(graphqlbackend.MarshalRepositoryID(repo.ID), "d34db33f"),
+	input := mbp[string]bny{
+		"chbngesetSpec": bt.NewRbwChbngesetSpecGitBrbnch(grbphqlbbckend.MbrshblRepositoryID(repo.ID), "d34db33f"),
 	}
 
-	t.Run("unauthorized access", func(t *testing.T) {
-		var response struct{ CreateChangesetSpec apitest.ChangesetSpec }
-		actorCtx := actor.WithActor(ctx, actor.FromUser(unauthorizedUser.ID))
-		errs := apitest.Exec(actorCtx, t, s, input, &response, mutationCreateChangesetSpec)
+	t.Run("unbuthorized bccess", func(t *testing.T) {
+		vbr response struct{ CrebteChbngesetSpec bpitest.ChbngesetSpec }
+		bctorCtx := bctor.WithActor(ctx, bctor.FromUser(unbuthorizedUser.ID))
+		errs := bpitest.Exec(bctorCtx, t, s, input, &response, mutbtionCrebteChbngesetSpec)
 		if errs == nil {
-			t.Fatal("expected error")
+			t.Fbtbl("expected error")
 		}
 		firstErr := errs[0]
-		if !strings.Contains(firstErr.Error(), fmt.Sprintf("user is missing permission %s", rbac.BatchChangesWritePermission)) {
-			t.Fatalf("expected unauthorized error, got %+v", err)
+		if !strings.Contbins(firstErr.Error(), fmt.Sprintf("user is missing permission %s", rbbc.BbtchChbngesWritePermission)) {
+			t.Fbtblf("expected unbuthorized error, got %+v", err)
 		}
 	})
 
-	t.Run("authorized user", func(t *testing.T) {
-		var response struct{ CreateChangesetSpec apitest.ChangesetSpec }
+	t.Run("buthorized user", func(t *testing.T) {
+		vbr response struct{ CrebteChbngesetSpec bpitest.ChbngesetSpec }
 
-		actorCtx := actor.WithActor(ctx, actor.FromUser(userID))
-		apitest.MustExec(actorCtx, t, s, input, &response, mutationCreateChangesetSpec)
+		bctorCtx := bctor.WithActor(ctx, bctor.FromUser(userID))
+		bpitest.MustExec(bctorCtx, t, s, input, &response, mutbtionCrebteChbngesetSpec)
 
-		have := response.CreateChangesetSpec
+		hbve := response.CrebteChbngesetSpec
 
-		want := apitest.ChangesetSpec{
-			Typename:  "VisibleChangesetSpec",
-			ID:        have.ID,
-			ExpiresAt: have.ExpiresAt,
+		wbnt := bpitest.ChbngesetSpec{
+			Typenbme:  "VisibleChbngesetSpec",
+			ID:        hbve.ID,
+			ExpiresAt: hbve.ExpiresAt,
 		}
 
-		if diff := cmp.Diff(want, have); diff != "" {
-			t.Fatalf("unexpected response (-want +got):\n%s", diff)
+		if diff := cmp.Diff(wbnt, hbve); diff != "" {
+			t.Fbtblf("unexpected response (-wbnt +got):\n%s", diff)
 		}
 
-		randID, err := unmarshalChangesetSpecID(graphql.ID(want.ID))
+		rbndID, err := unmbrshblChbngesetSpecID(grbphql.ID(wbnt.ID))
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
 
-		cs, err := bstore.GetChangesetSpec(ctx, store.GetChangesetSpecOpts{RandID: randID})
+		cs, err := bstore.GetChbngesetSpec(ctx, store.GetChbngesetSpecOpts{RbndID: rbndID})
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
 
-		if have, want := cs.BaseRepoID, repo.ID; have != want {
-			t.Fatalf("wrong RepoID. want=%d, have=%d", want, have)
+		if hbve, wbnt := cs.BbseRepoID, repo.ID; hbve != wbnt {
+			t.Fbtblf("wrong RepoID. wbnt=%d, hbve=%d", wbnt, hbve)
 		}
 	})
 }
 
-const mutationCreateChangesetSpec = `
-mutation($changesetSpec: String!){
-  createChangesetSpec(changesetSpec: $changesetSpec) {
-	__typename
-	... on VisibleChangesetSpec {
+const mutbtionCrebteChbngesetSpec = `
+mutbtion($chbngesetSpec: String!){
+  crebteChbngesetSpec(chbngesetSpec: $chbngesetSpec) {
+	__typenbme
+	... on VisibleChbngesetSpec {
 		id
 		expiresAt
 	}
@@ -566,93 +566,93 @@ mutation($changesetSpec: String!){
 }
 `
 
-func TestCreateChangesetSpecs(t *testing.T) {
+func TestCrebteChbngesetSpecs(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
 
 	logger := logtest.Scoped(t)
-	ctx := context.Background()
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	ctx := context.Bbckground()
+	db := dbtbbbse.NewDB(logger, dbtest.NewDB(logger, t))
 
-	userID := bt.CreateTestUser(t, db, true).ID
-	// We give this user the `BATCH_CHANGES#WRITE` permission so they're authorized
-	// to create Batch Changes.
-	assignBatchChangesWritePermissionToUser(ctx, t, db, userID)
+	userID := bt.CrebteTestUser(t, db, true).ID
+	// We give this user the `BATCH_CHANGES#WRITE` permission so they're buthorized
+	// to crebte Bbtch Chbnges.
+	bssignBbtchChbngesWritePermissionToUser(ctx, t, db, userID)
 
-	unauthorizedUser := bt.CreateTestUser(t, db, false)
+	unbuthorizedUser := bt.CrebteTestUser(t, db, fblse)
 
-	bstore := store.New(db, &observation.TestContext, nil)
-	repoStore := database.ReposWith(logger, bstore)
-	esStore := database.ExternalServicesWith(logger, bstore)
+	bstore := store.New(db, &observbtion.TestContext, nil)
+	repoStore := dbtbbbse.ReposWith(logger, bstore)
+	esStore := dbtbbbse.ExternblServicesWith(logger, bstore)
 
-	repo1 := newGitHubTestRepo("github.com/sourcegraph/create-changeset-spec-test1", newGitHubExternalService(t, esStore))
-	err := repoStore.Create(ctx, repo1)
+	repo1 := newGitHubTestRepo("github.com/sourcegrbph/crebte-chbngeset-spec-test1", newGitHubExternblService(t, esStore))
+	err := repoStore.Crebte(ctx, repo1)
 	require.NoError(t, err)
 
-	repo2 := newGitHubTestRepo("github.com/sourcegraph/create-changeset-spec-test2", newGitHubExternalService(t, esStore))
-	err = repoStore.Create(ctx, repo2)
+	repo2 := newGitHubTestRepo("github.com/sourcegrbph/crebte-chbngeset-spec-test2", newGitHubExternblService(t, esStore))
+	err = repoStore.Crebte(ctx, repo2)
 	require.NoError(t, err)
 
 	r := &Resolver{store: bstore}
-	s, err := newSchema(db, r)
+	s, err := newSchemb(db, r)
 	require.NoError(t, err)
 
-	input := map[string]any{
-		"changesetSpecs": []string{
-			bt.NewRawChangesetSpecGitBranch(graphqlbackend.MarshalRepositoryID(repo1.ID), "d34db33f"),
-			bt.NewRawChangesetSpecGitBranch(graphqlbackend.MarshalRepositoryID(repo2.ID), "d34db33g"),
+	input := mbp[string]bny{
+		"chbngesetSpecs": []string{
+			bt.NewRbwChbngesetSpecGitBrbnch(grbphqlbbckend.MbrshblRepositoryID(repo1.ID), "d34db33f"),
+			bt.NewRbwChbngesetSpecGitBrbnch(grbphqlbbckend.MbrshblRepositoryID(repo2.ID), "d34db33g"),
 		},
 	}
 
-	t.Run("unauthorized access", func(t *testing.T) {
-		var response struct{ CreateChangesetSpecs []apitest.ChangesetSpec }
-		actorCtx := actor.WithActor(ctx, actor.FromUser(unauthorizedUser.ID))
-		errs := apitest.Exec(actorCtx, t, s, input, &response, mutationCreateChangesetSpecs)
+	t.Run("unbuthorized bccess", func(t *testing.T) {
+		vbr response struct{ CrebteChbngesetSpecs []bpitest.ChbngesetSpec }
+		bctorCtx := bctor.WithActor(ctx, bctor.FromUser(unbuthorizedUser.ID))
+		errs := bpitest.Exec(bctorCtx, t, s, input, &response, mutbtionCrebteChbngesetSpecs)
 		if errs == nil {
-			t.Fatal("expected error")
+			t.Fbtbl("expected error")
 		}
 		firstErr := errs[0]
-		if !strings.Contains(firstErr.Error(), fmt.Sprintf("user is missing permission %s", rbac.BatchChangesWritePermission)) {
-			t.Fatalf("expected unauthorized error, got %+v", err)
+		if !strings.Contbins(firstErr.Error(), fmt.Sprintf("user is missing permission %s", rbbc.BbtchChbngesWritePermission)) {
+			t.Fbtblf("expected unbuthorized error, got %+v", err)
 		}
 	})
 
-	t.Run("authorized user", func(t *testing.T) {
-		var response struct{ CreateChangesetSpecs []apitest.ChangesetSpec }
+	t.Run("buthorized user", func(t *testing.T) {
+		vbr response struct{ CrebteChbngesetSpecs []bpitest.ChbngesetSpec }
 
-		actorCtx := actor.WithActor(ctx, actor.FromUser(userID))
-		apitest.MustExec(actorCtx, t, s, input, &response, mutationCreateChangesetSpecs)
+		bctorCtx := bctor.WithActor(ctx, bctor.FromUser(userID))
+		bpitest.MustExec(bctorCtx, t, s, input, &response, mutbtionCrebteChbngesetSpecs)
 
-		specs := response.CreateChangesetSpecs
-		assert.Len(t, specs, 2)
+		specs := response.CrebteChbngesetSpecs
+		bssert.Len(t, specs, 2)
 
-		for _, spec := range specs {
-			assert.NotEmpty(t, spec.Typename)
-			assert.NotEmpty(t, spec.ID)
-			assert.NotNil(t, spec.ExpiresAt)
+		for _, spec := rbnge specs {
+			bssert.NotEmpty(t, spec.Typenbme)
+			bssert.NotEmpty(t, spec.ID)
+			bssert.NotNil(t, spec.ExpiresAt)
 
-			randID, err := unmarshalChangesetSpecID(graphql.ID(spec.ID))
+			rbndID, err := unmbrshblChbngesetSpecID(grbphql.ID(spec.ID))
 			require.NoError(t, err)
 
-			cs, err := bstore.GetChangesetSpec(ctx, store.GetChangesetSpecOpts{RandID: randID})
+			cs, err := bstore.GetChbngesetSpec(ctx, store.GetChbngesetSpecOpts{RbndID: rbndID})
 			require.NoError(t, err)
 
-			if cs.BaseRev == "d34db33f" {
-				assert.Equal(t, repo1.ID, cs.BaseRepoID)
+			if cs.BbseRev == "d34db33f" {
+				bssert.Equbl(t, repo1.ID, cs.BbseRepoID)
 			} else {
-				assert.Equal(t, repo2.ID, cs.BaseRepoID)
+				bssert.Equbl(t, repo2.ID, cs.BbseRepoID)
 			}
 		}
 	})
 
 }
 
-const mutationCreateChangesetSpecs = `
-mutation($changesetSpecs: [String!]!){
-  createChangesetSpecs(changesetSpecs: $changesetSpecs) {
-	__typename
-	... on VisibleChangesetSpec {
+const mutbtionCrebteChbngesetSpecs = `
+mutbtion($chbngesetSpecs: [String!]!){
+  crebteChbngesetSpecs(chbngesetSpecs: $chbngesetSpecs) {
+	__typenbme
+	... on VisibleChbngesetSpec {
 		id
 		expiresAt
 	}
@@ -660,971 +660,971 @@ mutation($changesetSpecs: [String!]!){
 }
 `
 
-func TestApplyBatchChange(t *testing.T) {
+func TestApplyBbtchChbnge(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
 
-	oldMock := licensing.MockCheckFeature
-	licensing.MockCheckFeature = func(feature licensing.Feature) error {
-		if bcFeature, ok := feature.(*licensing.FeatureBatchChanges); ok {
-			bcFeature.Unrestricted = true
+	oldMock := licensing.MockCheckFebture
+	licensing.MockCheckFebture = func(febture licensing.Febture) error {
+		if bcFebture, ok := febture.(*licensing.FebtureBbtchChbnges); ok {
+			bcFebture.Unrestricted = true
 		}
 		return nil
 	}
 
 	defer func() {
-		licensing.MockCheckFeature = oldMock
+		licensing.MockCheckFebture = oldMock
 	}()
 
 	logger := logtest.Scoped(t)
-	ctx := context.Background()
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	ctx := context.Bbckground()
+	db := dbtbbbse.NewDB(logger, dbtest.NewDB(logger, t))
 
-	// Ensure our site configuration doesn't have rollout windows so we get a
-	// consistent initial state.
+	// Ensure our site configurbtion doesn't hbve rollout windows so we get b
+	// consistent initibl stbte.
 	bt.MockConfig(t, &conf.Unified{})
 
-	userID := bt.CreateTestUser(t, db, true).ID
-	// We give this user the `BATCH_CHANGES#WRITE` permission so they're authorized
-	// to create Batch Changes.
-	assignBatchChangesWritePermissionToUser(ctx, t, db, userID)
+	userID := bt.CrebteTestUser(t, db, true).ID
+	// We give this user the `BATCH_CHANGES#WRITE` permission so they're buthorized
+	// to crebte Bbtch Chbnges.
+	bssignBbtchChbngesWritePermissionToUser(ctx, t, db, userID)
 
-	unauthorizedUser := bt.CreateTestUser(t, db, false)
+	unbuthorizedUser := bt.CrebteTestUser(t, db, fblse)
 
 	now := timeutil.Now()
 	clock := func() time.Time { return now }
-	bstore := store.NewWithClock(db, &observation.TestContext, nil, clock)
-	repoStore := database.ReposWith(logger, bstore)
-	esStore := database.ExternalServicesWith(logger, bstore)
+	bstore := store.NewWithClock(db, &observbtion.TestContext, nil, clock)
+	repoStore := dbtbbbse.ReposWith(logger, bstore)
+	esStore := dbtbbbse.ExternblServicesWith(logger, bstore)
 
-	repo := newGitHubTestRepo("github.com/sourcegraph/apply-batch-change-test", newGitHubExternalService(t, esStore))
-	if err := repoStore.Create(ctx, repo); err != nil {
-		t.Fatal(err)
+	repo := newGitHubTestRepo("github.com/sourcegrbph/bpply-bbtch-chbnge-test", newGitHubExternblService(t, esStore))
+	if err := repoStore.Crebte(ctx, repo); err != nil {
+		t.Fbtbl(err)
 	}
 
-	falsy := overridable.FromBoolOrString(false)
-	batchSpec := &btypes.BatchSpec{
-		RawSpec: bt.TestRawBatchSpec,
-		Spec: &batcheslib.BatchSpec{
-			Name:        "my-batch-change",
+	fblsy := overridbble.FromBoolOrString(fblse)
+	bbtchSpec := &btypes.BbtchSpec{
+		RbwSpec: bt.TestRbwBbtchSpec,
+		Spec: &bbtcheslib.BbtchSpec{
+			Nbme:        "my-bbtch-chbnge",
 			Description: "My description",
-			ChangesetTemplate: &batcheslib.ChangesetTemplate{
+			ChbngesetTemplbte: &bbtcheslib.ChbngesetTemplbte{
 				Title:  "Hello there",
 				Body:   "This is the body",
-				Branch: "my-branch",
-				Commit: batcheslib.ExpandedGitCommitDescription{
-					Message: "Add hello world",
+				Brbnch: "my-brbnch",
+				Commit: bbtcheslib.ExpbndedGitCommitDescription{
+					Messbge: "Add hello world",
 				},
-				Published: &falsy,
+				Published: &fblsy,
 			},
 		},
 		UserID:          userID,
-		NamespaceUserID: userID,
+		NbmespbceUserID: userID,
 	}
-	if err := bstore.CreateBatchSpec(ctx, batchSpec); err != nil {
-		t.Fatal(err)
+	if err := bstore.CrebteBbtchSpec(ctx, bbtchSpec); err != nil {
+		t.Fbtbl(err)
 	}
 
-	changesetSpec := &btypes.ChangesetSpec{
-		BatchSpecID: batchSpec.ID,
-		BaseRepoID:  repo.ID,
+	chbngesetSpec := &btypes.ChbngesetSpec{
+		BbtchSpecID: bbtchSpec.ID,
+		BbseRepoID:  repo.ID,
 		UserID:      userID,
-		Type:        btypes.ChangesetSpecTypeExisting,
-		ExternalID:  "123",
+		Type:        btypes.ChbngesetSpecTypeExisting,
+		ExternblID:  "123",
 	}
-	if err := bstore.CreateChangesetSpec(ctx, changesetSpec); err != nil {
-		t.Fatal(err)
+	if err := bstore.CrebteChbngesetSpec(ctx, chbngesetSpec); err != nil {
+		t.Fbtbl(err)
 	}
 
 	r := &Resolver{store: bstore}
-	s, err := newSchema(db, r)
+	s, err := newSchemb(db, r)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	userAPIID := string(graphqlbackend.MarshalUserID(userID))
-	input := map[string]any{
-		"batchSpec": string(marshalBatchSpecRandID(batchSpec.RandID)),
+	userAPIID := string(grbphqlbbckend.MbrshblUserID(userID))
+	input := mbp[string]bny{
+		"bbtchSpec": string(mbrshblBbtchSpecRbndID(bbtchSpec.RbndID)),
 	}
 
-	t.Run("unauthorized access", func(t *testing.T) {
-		var response struct{ ApplyBatchChange apitest.BatchChange }
-		actorCtx := actor.WithActor(ctx, actor.FromUser(unauthorizedUser.ID))
-		errs := apitest.Exec(actorCtx, t, s, input, &response, mutationApplyBatchChange)
+	t.Run("unbuthorized bccess", func(t *testing.T) {
+		vbr response struct{ ApplyBbtchChbnge bpitest.BbtchChbnge }
+		bctorCtx := bctor.WithActor(ctx, bctor.FromUser(unbuthorizedUser.ID))
+		errs := bpitest.Exec(bctorCtx, t, s, input, &response, mutbtionApplyBbtchChbnge)
 		if errs == nil {
-			t.Fatal("expected error")
+			t.Fbtbl("expected error")
 		}
 		firstErr := errs[0]
-		if !strings.Contains(firstErr.Error(), fmt.Sprintf("user is missing permission %s", rbac.BatchChangesWritePermission)) {
-			t.Fatalf("expected unauthorized error, got %+v", err)
+		if !strings.Contbins(firstErr.Error(), fmt.Sprintf("user is missing permission %s", rbbc.BbtchChbngesWritePermission)) {
+			t.Fbtblf("expected unbuthorized error, got %+v", err)
 		}
 	})
 
-	t.Run("authorized user", func(t *testing.T) {
-		var response struct{ ApplyBatchChange apitest.BatchChange }
-		actorCtx := actor.WithActor(ctx, actor.FromUser(userID))
-		apitest.MustExec(actorCtx, t, s, input, &response, mutationApplyBatchChange)
+	t.Run("buthorized user", func(t *testing.T) {
+		vbr response struct{ ApplyBbtchChbnge bpitest.BbtchChbnge }
+		bctorCtx := bctor.WithActor(ctx, bctor.FromUser(userID))
+		bpitest.MustExec(bctorCtx, t, s, input, &response, mutbtionApplyBbtchChbnge)
 
-		apiUser := &apitest.User{
+		bpiUser := &bpitest.User{
 			ID:         userAPIID,
-			DatabaseID: userID,
+			DbtbbbseID: userID,
 			SiteAdmin:  true,
 		}
 
-		have := response.ApplyBatchChange
-		want := apitest.BatchChange{
-			ID:          have.ID,
-			Name:        batchSpec.Spec.Name,
-			Description: batchSpec.Spec.Description,
-			Namespace: apitest.UserOrg{
+		hbve := response.ApplyBbtchChbnge
+		wbnt := bpitest.BbtchChbnge{
+			ID:          hbve.ID,
+			Nbme:        bbtchSpec.Spec.Nbme,
+			Description: bbtchSpec.Spec.Description,
+			Nbmespbce: bpitest.UserOrg{
 				ID:         userAPIID,
-				DatabaseID: userID,
+				DbtbbbseID: userID,
 				SiteAdmin:  true,
 			},
-			Creator:       apiUser,
-			LastApplier:   apiUser,
-			LastAppliedAt: marshalDateTime(t, now),
-			Changesets: apitest.ChangesetConnection{
-				Nodes: []apitest.Changeset{
-					{Typename: "ExternalChangeset", State: string(btypes.ChangesetStateProcessing)},
+			Crebtor:       bpiUser,
+			LbstApplier:   bpiUser,
+			LbstAppliedAt: mbrshblDbteTime(t, now),
+			Chbngesets: bpitest.ChbngesetConnection{
+				Nodes: []bpitest.Chbngeset{
+					{Typenbme: "ExternblChbngeset", Stbte: string(btypes.ChbngesetStbteProcessing)},
 				},
-				TotalCount: 1,
+				TotblCount: 1,
 			},
 		}
 
-		if diff := cmp.Diff(want, have); diff != "" {
-			t.Fatalf("unexpected response (-want +got):\n%s", diff)
+		if diff := cmp.Diff(wbnt, hbve); diff != "" {
+			t.Fbtblf("unexpected response (-wbnt +got):\n%s", diff)
 		}
 
-		// Now we execute it again and make sure we get the same batch change back
-		apitest.MustExec(actorCtx, t, s, input, &response, mutationApplyBatchChange)
-		have2 := response.ApplyBatchChange
-		if diff := cmp.Diff(want, have2); diff != "" {
-			t.Fatalf("unexpected response (-want +got):\n%s", diff)
+		// Now we execute it bgbin bnd mbke sure we get the sbme bbtch chbnge bbck
+		bpitest.MustExec(bctorCtx, t, s, input, &response, mutbtionApplyBbtchChbnge)
+		hbve2 := response.ApplyBbtchChbnge
+		if diff := cmp.Diff(wbnt, hbve2); diff != "" {
+			t.Fbtblf("unexpected response (-wbnt +got):\n%s", diff)
 		}
 
-		// Execute it again with ensureBatchChange set to correct batch change's ID
-		input["ensureBatchChange"] = have2.ID
-		apitest.MustExec(actorCtx, t, s, input, &response, mutationApplyBatchChange)
-		have3 := response.ApplyBatchChange
-		if diff := cmp.Diff(want, have3); diff != "" {
-			t.Fatalf("unexpected response (-want +got):\n%s", diff)
+		// Execute it bgbin with ensureBbtchChbnge set to correct bbtch chbnge's ID
+		input["ensureBbtchChbnge"] = hbve2.ID
+		bpitest.MustExec(bctorCtx, t, s, input, &response, mutbtionApplyBbtchChbnge)
+		hbve3 := response.ApplyBbtchChbnge
+		if diff := cmp.Diff(wbnt, hbve3); diff != "" {
+			t.Fbtblf("unexpected response (-wbnt +got):\n%s", diff)
 		}
 
-		// Execute it again but ensureBatchChange set to wrong batch change ID
-		batchChangeID, err := unmarshalBatchChangeID(graphql.ID(have3.ID))
+		// Execute it bgbin but ensureBbtchChbnge set to wrong bbtch chbnge ID
+		bbtchChbngeID, err := unmbrshblBbtchChbngeID(grbphql.ID(hbve3.ID))
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
-		input["ensureBatchChange"] = bgql.MarshalBatchChangeID(batchChangeID + 999)
-		errs := apitest.Exec(actorCtx, t, s, input, &response, mutationApplyBatchChange)
+		input["ensureBbtchChbnge"] = bgql.MbrshblBbtchChbngeID(bbtchChbngeID + 999)
+		errs := bpitest.Exec(bctorCtx, t, s, input, &response, mutbtionApplyBbtchChbnge)
 		if len(errs) == 0 {
-			t.Fatalf("expected errors, got none")
+			t.Fbtblf("expected errors, got none")
 		}
 	})
 }
 
-const fragmentBatchChange = `
-fragment u on User { id, databaseID, siteAdmin }
-fragment o on Org  { id, name }
-fragment batchChange on BatchChange {
-	id, name, description
-    creator           { ...u }
-    lastApplier       { ...u }
-    lastAppliedAt
-    namespace {
+const frbgmentBbtchChbnge = `
+frbgment u on User { id, dbtbbbseID, siteAdmin }
+frbgment o on Org  { id, nbme }
+frbgment bbtchChbnge on BbtchChbnge {
+	id, nbme, description
+    crebtor           { ...u }
+    lbstApplier       { ...u }
+    lbstAppliedAt
+    nbmespbce {
         ... on User { ...u }
         ... on Org  { ...o }
     }
 
-    changesets {
+    chbngesets {
 		nodes {
-			__typename
-			state
+			__typenbme
+			stbte
 		}
 
-		totalCount
+		totblCount
     }
 }
 `
 
-const mutationApplyBatchChange = `
-mutation($batchSpec: ID!, $ensureBatchChange: ID, $publicationStates: [ChangesetSpecPublicationStateInput!]){
-	applyBatchChange(batchSpec: $batchSpec, ensureBatchChange: $ensureBatchChange, publicationStates: $publicationStates) {
-		...batchChange
+const mutbtionApplyBbtchChbnge = `
+mutbtion($bbtchSpec: ID!, $ensureBbtchChbnge: ID, $publicbtionStbtes: [ChbngesetSpecPublicbtionStbteInput!]){
+	bpplyBbtchChbnge(bbtchSpec: $bbtchSpec, ensureBbtchChbnge: $ensureBbtchChbnge, publicbtionStbtes: $publicbtionStbtes) {
+		...bbtchChbnge
 	}
 }
-` + fragmentBatchChange
+` + frbgmentBbtchChbnge
 
-func TestCreateEmptyBatchChange(t *testing.T) {
+func TestCrebteEmptyBbtchChbnge(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
 
 	logger := logtest.Scoped(t)
-	ctx := context.Background()
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	ctx := context.Bbckground()
+	db := dbtbbbse.NewDB(logger, dbtest.NewDB(logger, t))
 
-	bstore := store.New(db, &observation.TestContext, nil)
+	bstore := store.New(db, &observbtion.TestContext, nil)
 
 	r := &Resolver{store: bstore}
-	s, err := newSchema(db, r)
+	s, err := newSchemb(db, r)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	userID := bt.CreateTestUser(t, db, true).ID
-	// We give this user the `BATCH_CHANGES#WRITE` permission so they're authorized
-	// to create Batch Changes.
-	assignBatchChangesWritePermissionToUser(ctx, t, db, userID)
-	namespaceID := relay.MarshalID("User", userID)
+	userID := bt.CrebteTestUser(t, db, true).ID
+	// We give this user the `BATCH_CHANGES#WRITE` permission so they're buthorized
+	// to crebte Bbtch Chbnges.
+	bssignBbtchChbngesWritePermissionToUser(ctx, t, db, userID)
+	nbmespbceID := relby.MbrshblID("User", userID)
 
-	unauthorizedUser := bt.CreateTestUser(t, db, false)
+	unbuthorizedUser := bt.CrebteTestUser(t, db, fblse)
 
-	input := map[string]any{
-		"namespace": namespaceID,
-		"name":      "my-batch-change",
+	input := mbp[string]bny{
+		"nbmespbce": nbmespbceID,
+		"nbme":      "my-bbtch-chbnge",
 	}
 
-	t.Run("unauthorized access", func(t *testing.T) {
-		var response struct{ CreateEmptyBatchChange apitest.BatchChange }
-		actorCtx := actor.WithActor(ctx, actor.FromUser(unauthorizedUser.ID))
-		errs := apitest.Exec(actorCtx, t, s, input, &response, mutationCreateEmptyBatchChange)
+	t.Run("unbuthorized bccess", func(t *testing.T) {
+		vbr response struct{ CrebteEmptyBbtchChbnge bpitest.BbtchChbnge }
+		bctorCtx := bctor.WithActor(ctx, bctor.FromUser(unbuthorizedUser.ID))
+		errs := bpitest.Exec(bctorCtx, t, s, input, &response, mutbtionCrebteEmptyBbtchChbnge)
 		if errs == nil {
-			t.Fatal("expected error")
+			t.Fbtbl("expected error")
 		}
 		firstErr := errs[0]
-		if !strings.Contains(firstErr.Error(), fmt.Sprintf("user is missing permission %s", rbac.BatchChangesWritePermission)) {
-			t.Fatalf("expected unauthorized error, got %+v", err)
+		if !strings.Contbins(firstErr.Error(), fmt.Sprintf("user is missing permission %s", rbbc.BbtchChbngesWritePermission)) {
+			t.Fbtblf("expected unbuthorized error, got %+v", err)
 		}
 	})
 
-	t.Run("authorized user", func(t *testing.T) {
-		var response struct{ CreateEmptyBatchChange apitest.BatchChange }
-		actorCtx := actor.WithActor(ctx, actor.FromUser(userID))
+	t.Run("buthorized user", func(t *testing.T) {
+		vbr response struct{ CrebteEmptyBbtchChbnge bpitest.BbtchChbnge }
+		bctorCtx := bctor.WithActor(ctx, bctor.FromUser(userID))
 
-		// First time should work because no batch change exists
-		apitest.MustExec(actorCtx, t, s, input, &response, mutationCreateEmptyBatchChange)
+		// First time should work becbuse no bbtch chbnge exists
+		bpitest.MustExec(bctorCtx, t, s, input, &response, mutbtionCrebteEmptyBbtchChbnge)
 
-		if response.CreateEmptyBatchChange.ID == "" {
-			t.Fatalf("expected batch change to be created, but was not")
+		if response.CrebteEmptyBbtchChbnge.ID == "" {
+			t.Fbtblf("expected bbtch chbnge to be crebted, but wbs not")
 		}
 
-		// Second time should fail because namespace + name are not unique
-		errs := apitest.Exec(actorCtx, t, s, input, &response, mutationCreateEmptyBatchChange)
+		// Second time should fbil becbuse nbmespbce + nbme bre not unique
+		errs := bpitest.Exec(bctorCtx, t, s, input, &response, mutbtionCrebteEmptyBbtchChbnge)
 
 		if len(errs) != 1 {
-			t.Fatalf("expected single errors, but got none")
+			t.Fbtblf("expected single errors, but got none")
 		}
-		if have, want := errs[0].Message, service.ErrNameNotUnique.Error(); have != want {
-			t.Fatalf("wrong error. want=%q, have=%q", want, have)
-		}
-
-		// But third time should work because a different namespace + the same name is okay
-		orgID := bt.CreateTestOrg(t, db, "my-org").ID
-		namespaceID2 := relay.MarshalID("Org", orgID)
-
-		input2 := map[string]any{
-			"namespace": namespaceID2,
-			"name":      "my-batch-change",
+		if hbve, wbnt := errs[0].Messbge, service.ErrNbmeNotUnique.Error(); hbve != wbnt {
+			t.Fbtblf("wrong error. wbnt=%q, hbve=%q", wbnt, hbve)
 		}
 
-		apitest.MustExec(actorCtx, t, s, input2, &response, mutationCreateEmptyBatchChange)
+		// But third time should work becbuse b different nbmespbce + the sbme nbme is okby
+		orgID := bt.CrebteTestOrg(t, db, "my-org").ID
+		nbmespbceID2 := relby.MbrshblID("Org", orgID)
 
-		if response.CreateEmptyBatchChange.ID == "" {
-			t.Fatalf("expected batch change to be created, but was not")
+		input2 := mbp[string]bny{
+			"nbmespbce": nbmespbceID2,
+			"nbme":      "my-bbtch-chbnge",
 		}
 
-		// This case should fail because the name fails validation
-		input3 := map[string]any{
-			"namespace": namespaceID,
-			"name":      "not: valid:\nname",
+		bpitest.MustExec(bctorCtx, t, s, input2, &response, mutbtionCrebteEmptyBbtchChbnge)
+
+		if response.CrebteEmptyBbtchChbnge.ID == "" {
+			t.Fbtblf("expected bbtch chbnge to be crebted, but wbs not")
 		}
 
-		errs = apitest.Exec(actorCtx, t, s, input3, &response, mutationCreateEmptyBatchChange)
+		// This cbse should fbil becbuse the nbme fbils vblidbtion
+		input3 := mbp[string]bny{
+			"nbmespbce": nbmespbceID,
+			"nbme":      "not: vblid:\nnbme",
+		}
+
+		errs = bpitest.Exec(bctorCtx, t, s, input3, &response, mutbtionCrebteEmptyBbtchChbnge)
 
 		if len(errs) != 1 {
-			t.Fatalf("expected single errors, but got none")
+			t.Fbtblf("expected single errors, but got none")
 		}
 
-		expError := "The batch change name can only contain word characters, dots and dashes."
-		if have, want := errs[0].Message, expError; !strings.Contains(have, "The batch change name can only contain word characters, dots and dashes.") {
-			t.Fatalf("wrong error. want to contain=%q, have=%q", want, have)
+		expError := "The bbtch chbnge nbme cbn only contbin word chbrbcters, dots bnd dbshes."
+		if hbve, wbnt := errs[0].Messbge, expError; !strings.Contbins(hbve, "The bbtch chbnge nbme cbn only contbin word chbrbcters, dots bnd dbshes.") {
+			t.Fbtblf("wrong error. wbnt to contbin=%q, hbve=%q", wbnt, hbve)
 		}
 
 	})
 
 }
 
-const mutationCreateEmptyBatchChange = `
-mutation($namespace: ID!, $name: String!){
-	createEmptyBatchChange(namespace: $namespace, name: $name) {
-		...batchChange
+const mutbtionCrebteEmptyBbtchChbnge = `
+mutbtion($nbmespbce: ID!, $nbme: String!){
+	crebteEmptyBbtchChbnge(nbmespbce: $nbmespbce, nbme: $nbme) {
+		...bbtchChbnge
 	}
 }
-` + fragmentBatchChange
+` + frbgmentBbtchChbnge
 
-func TestUpsertEmptyBatchChange(t *testing.T) {
+func TestUpsertEmptyBbtchChbnge(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
 
 	logger := logtest.Scoped(t)
-	ctx := context.Background()
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	ctx := context.Bbckground()
+	db := dbtbbbse.NewDB(logger, dbtest.NewDB(logger, t))
 
-	bstore := store.New(db, &observation.TestContext, nil)
+	bstore := store.New(db, &observbtion.TestContext, nil)
 
 	r := &Resolver{store: bstore}
-	s, err := newSchema(db, r)
+	s, err := newSchemb(db, r)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	userID := bt.CreateTestUser(t, db, true).ID
-	// We give this user the `BATCH_CHANGES#WRITE` permission so they're authorized
-	// to create Batch Changes.
-	assignBatchChangesWritePermissionToUser(ctx, t, db, userID)
-	namespaceID := relay.MarshalID("User", userID)
+	userID := bt.CrebteTestUser(t, db, true).ID
+	// We give this user the `BATCH_CHANGES#WRITE` permission so they're buthorized
+	// to crebte Bbtch Chbnges.
+	bssignBbtchChbngesWritePermissionToUser(ctx, t, db, userID)
+	nbmespbceID := relby.MbrshblID("User", userID)
 
-	unauthorizedUser := bt.CreateTestUser(t, db, false)
+	unbuthorizedUser := bt.CrebteTestUser(t, db, fblse)
 
-	input := map[string]any{
-		"namespace": namespaceID,
-		"name":      "my-batch-change",
+	input := mbp[string]bny{
+		"nbmespbce": nbmespbceID,
+		"nbme":      "my-bbtch-chbnge",
 	}
 
-	t.Run("unauthorized access", func(t *testing.T) {
-		var response struct{ UpsertEmptyBatchChange apitest.BatchChange }
-		actorCtx := actor.WithActor(ctx, actor.FromUser(unauthorizedUser.ID))
-		errs := apitest.Exec(actorCtx, t, s, input, &response, mutationUpsertEmptyBatchChange)
+	t.Run("unbuthorized bccess", func(t *testing.T) {
+		vbr response struct{ UpsertEmptyBbtchChbnge bpitest.BbtchChbnge }
+		bctorCtx := bctor.WithActor(ctx, bctor.FromUser(unbuthorizedUser.ID))
+		errs := bpitest.Exec(bctorCtx, t, s, input, &response, mutbtionUpsertEmptyBbtchChbnge)
 		if errs == nil {
-			t.Fatal("expected error")
+			t.Fbtbl("expected error")
 		}
 		firstErr := errs[0]
-		if !strings.Contains(firstErr.Error(), fmt.Sprintf("user is missing permission %s", rbac.BatchChangesWritePermission)) {
-			t.Fatalf("expected unauthorized error, got %+v", err)
+		if !strings.Contbins(firstErr.Error(), fmt.Sprintf("user is missing permission %s", rbbc.BbtchChbngesWritePermission)) {
+			t.Fbtblf("expected unbuthorized error, got %+v", err)
 		}
 	})
 
-	t.Run("authorized user", func(t *testing.T) {
-		var response struct{ UpsertEmptyBatchChange apitest.BatchChange }
-		actorCtx := actor.WithActor(ctx, actor.FromUser(userID))
+	t.Run("buthorized user", func(t *testing.T) {
+		vbr response struct{ UpsertEmptyBbtchChbnge bpitest.BbtchChbnge }
+		bctorCtx := bctor.WithActor(ctx, bctor.FromUser(userID))
 
-		// First time should work because no batch change exists, so new one is created
-		apitest.MustExec(actorCtx, t, s, input, &response, mutationUpsertEmptyBatchChange)
+		// First time should work becbuse no bbtch chbnge exists, so new one is crebted
+		bpitest.MustExec(bctorCtx, t, s, input, &response, mutbtionUpsertEmptyBbtchChbnge)
 
-		if response.UpsertEmptyBatchChange.ID == "" {
-			t.Fatalf("expected batch change to be created, but was not")
+		if response.UpsertEmptyBbtchChbnge.ID == "" {
+			t.Fbtblf("expected bbtch chbnge to be crebted, but wbs not")
 		}
 
-		// Second time should return existing batch change
-		apitest.MustExec(actorCtx, t, s, input, &response, mutationUpsertEmptyBatchChange)
+		// Second time should return existing bbtch chbnge
+		bpitest.MustExec(bctorCtx, t, s, input, &response, mutbtionUpsertEmptyBbtchChbnge)
 
-		if response.UpsertEmptyBatchChange.ID == "" {
-			t.Fatalf("expected existing batch change, but was not")
+		if response.UpsertEmptyBbtchChbnge.ID == "" {
+			t.Fbtblf("expected existing bbtch chbnge, but wbs not")
 		}
 
-		badInput := map[string]any{
-			"namespace": "bad_namespace-id",
-			"name":      "my-batch-change",
+		bbdInput := mbp[string]bny{
+			"nbmespbce": "bbd_nbmespbce-id",
+			"nbme":      "my-bbtch-chbnge",
 		}
 
-		errs := apitest.Exec(actorCtx, t, s, badInput, &response, mutationUpsertEmptyBatchChange)
+		errs := bpitest.Exec(bctorCtx, t, s, bbdInput, &response, mutbtionUpsertEmptyBbtchChbnge)
 
 		if len(errs) != 1 {
-			t.Fatalf("expected single errors")
+			t.Fbtblf("expected single errors")
 		}
 
-		wantError := "invalid ID \"bad_namespace-id\" for namespace"
+		wbntError := "invblid ID \"bbd_nbmespbce-id\" for nbmespbce"
 
-		if have, want := errs[0].Message, wantError; have != want {
-			t.Fatalf("wrong error. want=%q, have=%q", want, have)
+		if hbve, wbnt := errs[0].Messbge, wbntError; hbve != wbnt {
+			t.Fbtblf("wrong error. wbnt=%q, hbve=%q", wbnt, hbve)
 		}
 	})
 
 }
 
-const mutationUpsertEmptyBatchChange = `
-mutation($namespace: ID!, $name: String!){
-	upsertEmptyBatchChange(namespace: $namespace, name: $name) {
-		...batchChange
+const mutbtionUpsertEmptyBbtchChbnge = `
+mutbtion($nbmespbce: ID!, $nbme: String!){
+	upsertEmptyBbtchChbnge(nbmespbce: $nbmespbce, nbme: $nbme) {
+		...bbtchChbnge
 	}
 }
-` + fragmentBatchChange
+` + frbgmentBbtchChbnge
 
-func TestCreateBatchChange(t *testing.T) {
+func TestCrebteBbtchChbnge(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
 
 	logger := logtest.Scoped(t)
-	ctx := context.Background()
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	ctx := context.Bbckground()
+	db := dbtbbbse.NewDB(logger, dbtest.NewDB(logger, t))
 
-	userID := bt.CreateTestUser(t, db, true).ID
-	// We give this user the `BATCH_CHANGES#WRITE` permission so they're authorized
-	// to create Batch Changes.
-	assignBatchChangesWritePermissionToUser(ctx, t, db, userID)
+	userID := bt.CrebteTestUser(t, db, true).ID
+	// We give this user the `BATCH_CHANGES#WRITE` permission so they're buthorized
+	// to crebte Bbtch Chbnges.
+	bssignBbtchChbngesWritePermissionToUser(ctx, t, db, userID)
 
-	unauthorizedUser := bt.CreateTestUser(t, db, false)
+	unbuthorizedUser := bt.CrebteTestUser(t, db, fblse)
 
-	bstore := store.New(db, &observation.TestContext, nil)
+	bstore := store.New(db, &observbtion.TestContext, nil)
 
-	batchSpec := &btypes.BatchSpec{
-		RawSpec: bt.TestRawBatchSpec,
-		Spec: &batcheslib.BatchSpec{
-			Name:        "my-batch-change",
+	bbtchSpec := &btypes.BbtchSpec{
+		RbwSpec: bt.TestRbwBbtchSpec,
+		Spec: &bbtcheslib.BbtchSpec{
+			Nbme:        "my-bbtch-chbnge",
 			Description: "My description",
 		},
 		UserID:          userID,
-		NamespaceUserID: userID,
+		NbmespbceUserID: userID,
 	}
-	if err := bstore.CreateBatchSpec(ctx, batchSpec); err != nil {
-		t.Fatal(err)
+	if err := bstore.CrebteBbtchSpec(ctx, bbtchSpec); err != nil {
+		t.Fbtbl(err)
 	}
 
 	r := &Resolver{store: bstore}
-	s, err := newSchema(db, r)
+	s, err := newSchemb(db, r)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	input := map[string]any{
-		"batchSpec": string(marshalBatchSpecRandID(batchSpec.RandID)),
+	input := mbp[string]bny{
+		"bbtchSpec": string(mbrshblBbtchSpecRbndID(bbtchSpec.RbndID)),
 	}
 
-	t.Run("unauthorized access", func(t *testing.T) {
-		var response struct{ CreateBatchChange apitest.BatchChange }
-		actorCtx := actor.WithActor(ctx, actor.FromUser(unauthorizedUser.ID))
-		errs := apitest.Exec(actorCtx, t, s, input, &response, mutationCreateBatchChange)
+	t.Run("unbuthorized bccess", func(t *testing.T) {
+		vbr response struct{ CrebteBbtchChbnge bpitest.BbtchChbnge }
+		bctorCtx := bctor.WithActor(ctx, bctor.FromUser(unbuthorizedUser.ID))
+		errs := bpitest.Exec(bctorCtx, t, s, input, &response, mutbtionCrebteBbtchChbnge)
 		if errs == nil {
-			t.Fatal("expected error")
+			t.Fbtbl("expected error")
 		}
 		firstErr := errs[0]
-		if !strings.Contains(firstErr.Error(), fmt.Sprintf("user is missing permission %s", rbac.BatchChangesWritePermission)) {
-			t.Fatalf("expected unauthorized error, got %+v", err)
+		if !strings.Contbins(firstErr.Error(), fmt.Sprintf("user is missing permission %s", rbbc.BbtchChbngesWritePermission)) {
+			t.Fbtblf("expected unbuthorized error, got %+v", err)
 		}
 	})
 
-	t.Run("authorized user", func(t *testing.T) {
-		var response struct{ CreateBatchChange apitest.BatchChange }
-		actorCtx := actor.WithActor(ctx, actor.FromUser(userID))
+	t.Run("buthorized user", func(t *testing.T) {
+		vbr response struct{ CrebteBbtchChbnge bpitest.BbtchChbnge }
+		bctorCtx := bctor.WithActor(ctx, bctor.FromUser(userID))
 
-		// First time it should work, because no batch change exists
-		apitest.MustExec(actorCtx, t, s, input, &response, mutationCreateBatchChange)
+		// First time it should work, becbuse no bbtch chbnge exists
+		bpitest.MustExec(bctorCtx, t, s, input, &response, mutbtionCrebteBbtchChbnge)
 
-		if response.CreateBatchChange.ID == "" {
-			t.Fatalf("expected batch change to be created, but was not")
+		if response.CrebteBbtchChbnge.ID == "" {
+			t.Fbtblf("expected bbtch chbnge to be crebted, but wbs not")
 		}
 
-		// Second time it should fail
-		errs := apitest.Exec(actorCtx, t, s, input, &response, mutationCreateBatchChange)
+		// Second time it should fbil
+		errs := bpitest.Exec(bctorCtx, t, s, input, &response, mutbtionCrebteBbtchChbnge)
 
 		if len(errs) != 1 {
-			t.Fatalf("expected single errors, but got none")
+			t.Fbtblf("expected single errors, but got none")
 		}
-		if have, want := errs[0].Message, service.ErrMatchingBatchChangeExists.Error(); have != want {
-			t.Fatalf("wrong error. want=%q, have=%q", want, have)
+		if hbve, wbnt := errs[0].Messbge, service.ErrMbtchingBbtchChbngeExists.Error(); hbve != wbnt {
+			t.Fbtblf("wrong error. wbnt=%q, hbve=%q", wbnt, hbve)
 		}
 	})
 }
 
-const mutationCreateBatchChange = `
-mutation($batchSpec: ID!, $publicationStates: [ChangesetSpecPublicationStateInput!]){
-	createBatchChange(batchSpec: $batchSpec, publicationStates: $publicationStates) {
-		...batchChange
+const mutbtionCrebteBbtchChbnge = `
+mutbtion($bbtchSpec: ID!, $publicbtionStbtes: [ChbngesetSpecPublicbtionStbteInput!]){
+	crebteBbtchChbnge(bbtchSpec: $bbtchSpec, publicbtionStbtes: $publicbtionStbtes) {
+		...bbtchChbnge
 	}
 }
-` + fragmentBatchChange
+` + frbgmentBbtchChbnge
 
-func TestApplyOrCreateBatchSpecWithPublicationStates(t *testing.T) {
+func TestApplyOrCrebteBbtchSpecWithPublicbtionStbtes(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
 
-	oldMock := licensing.MockCheckFeature
-	licensing.MockCheckFeature = func(feature licensing.Feature) error {
-		if bcFeature, ok := feature.(*licensing.FeatureBatchChanges); ok {
-			bcFeature.Unrestricted = true
+	oldMock := licensing.MockCheckFebture
+	licensing.MockCheckFebture = func(febture licensing.Febture) error {
+		if bcFebture, ok := febture.(*licensing.FebtureBbtchChbnges); ok {
+			bcFebture.Unrestricted = true
 		}
 		return nil
 	}
 
 	defer func() {
-		licensing.MockCheckFeature = oldMock
+		licensing.MockCheckFebture = oldMock
 	}()
 
 	logger := logtest.Scoped(t)
-	ctx := context.Background()
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	ctx := context.Bbckground()
+	db := dbtbbbse.NewDB(logger, dbtest.NewDB(logger, t))
 
-	// Ensure our site configuration doesn't have rollout windows so we get a
-	// consistent initial state.
+	// Ensure our site configurbtion doesn't hbve rollout windows so we get b
+	// consistent initibl stbte.
 	bt.MockConfig(t, &conf.Unified{})
 
-	userID := bt.CreateTestUser(t, db, true).ID
-	// We give this user the `BATCH_CHANGES#WRITE` permission so they're authorized
-	// to create Batch Changes.
-	assignBatchChangesWritePermissionToUser(ctx, t, db, userID)
+	userID := bt.CrebteTestUser(t, db, true).ID
+	// We give this user the `BATCH_CHANGES#WRITE` permission so they're buthorized
+	// to crebte Bbtch Chbnges.
+	bssignBbtchChbngesWritePermissionToUser(ctx, t, db, userID)
 
-	userAPIID := string(graphqlbackend.MarshalUserID(userID))
-	apiUser := &apitest.User{
+	userAPIID := string(grbphqlbbckend.MbrshblUserID(userID))
+	bpiUser := &bpitest.User{
 		ID:         userAPIID,
-		DatabaseID: userID,
+		DbtbbbseID: userID,
 		SiteAdmin:  true,
 	}
-	actorCtx := actor.WithActor(ctx, actor.FromUser(userID))
+	bctorCtx := bctor.WithActor(ctx, bctor.FromUser(userID))
 
-	unauthorizedUser := bt.CreateTestUser(t, db, false)
-	unauthorizedActorCtx := actor.WithActor(ctx, actor.FromUser(unauthorizedUser.ID))
+	unbuthorizedUser := bt.CrebteTestUser(t, db, fblse)
+	unbuthorizedActorCtx := bctor.WithActor(ctx, bctor.FromUser(unbuthorizedUser.ID))
 
 	now := timeutil.Now()
 	clock := func() time.Time { return now }
-	bstore := store.NewWithClock(db, &observation.TestContext, nil, clock)
-	repoStore := database.ReposWith(logger, bstore)
-	esStore := database.ExternalServicesWith(logger, bstore)
+	bstore := store.NewWithClock(db, &observbtion.TestContext, nil, clock)
+	repoStore := dbtbbbse.ReposWith(logger, bstore)
+	esStore := dbtbbbse.ExternblServicesWith(logger, bstore)
 
-	repo := newGitHubTestRepo("github.com/sourcegraph/apply-create-batch-change-test", newGitHubExternalService(t, esStore))
-	if err := repoStore.Create(ctx, repo); err != nil {
-		t.Fatal(err)
+	repo := newGitHubTestRepo("github.com/sourcegrbph/bpply-crebte-bbtch-chbnge-test", newGitHubExternblService(t, esStore))
+	if err := repoStore.Crebte(ctx, repo); err != nil {
+		t.Fbtbl(err)
 	}
 
 	r := &Resolver{store: bstore}
-	s, err := newSchema(db, r)
+	s, err := newSchemb(db, r)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	// Since apply and create are essentially the same underneath, we can test
-	// them with the same test code provided we special case the response type
-	// handling.
-	for name, tc := range map[string]struct {
-		exec func(ctx context.Context, t testing.TB, s *graphql.Schema, in map[string]any) (*apitest.BatchChange, error)
+	// Since bpply bnd crebte bre essentiblly the sbme undernebth, we cbn test
+	// them with the sbme test code provided we specibl cbse the response type
+	// hbndling.
+	for nbme, tc := rbnge mbp[string]struct {
+		exec func(ctx context.Context, t testing.TB, s *grbphql.Schemb, in mbp[string]bny) (*bpitest.BbtchChbnge, error)
 	}{
-		"applyBatchChange": {
-			exec: func(ctx context.Context, t testing.TB, s *graphql.Schema, in map[string]any) (*apitest.BatchChange, error) {
-				var response struct{ ApplyBatchChange apitest.BatchChange }
-				if errs := apitest.Exec(ctx, t, s, in, &response, mutationApplyBatchChange); errs != nil {
-					return nil, errors.Newf("GraphQL errors: %v", errs)
+		"bpplyBbtchChbnge": {
+			exec: func(ctx context.Context, t testing.TB, s *grbphql.Schemb, in mbp[string]bny) (*bpitest.BbtchChbnge, error) {
+				vbr response struct{ ApplyBbtchChbnge bpitest.BbtchChbnge }
+				if errs := bpitest.Exec(ctx, t, s, in, &response, mutbtionApplyBbtchChbnge); errs != nil {
+					return nil, errors.Newf("GrbphQL errors: %v", errs)
 				}
-				return &response.ApplyBatchChange, nil
+				return &response.ApplyBbtchChbnge, nil
 			},
 		},
-		"createBatchChange": {
-			exec: func(ctx context.Context, t testing.TB, s *graphql.Schema, in map[string]any) (*apitest.BatchChange, error) {
-				var response struct{ CreateBatchChange apitest.BatchChange }
-				if errs := apitest.Exec(ctx, t, s, in, &response, mutationCreateBatchChange); errs != nil {
-					return nil, errors.Newf("GraphQL errors: %v", errs)
+		"crebteBbtchChbnge": {
+			exec: func(ctx context.Context, t testing.TB, s *grbphql.Schemb, in mbp[string]bny) (*bpitest.BbtchChbnge, error) {
+				vbr response struct{ CrebteBbtchChbnge bpitest.BbtchChbnge }
+				if errs := bpitest.Exec(ctx, t, s, in, &response, mutbtionCrebteBbtchChbnge); errs != nil {
+					return nil, errors.Newf("GrbphQL errors: %v", errs)
 				}
-				return &response.CreateBatchChange, nil
+				return &response.CrebteBbtchChbnge, nil
 			},
 		},
 	} {
-		// Create initial specs. Note that we have to append the test case name
-		// to the batch spec ID to avoid cross-contamination between the test
-		// cases.
-		batchSpec := bt.CreateBatchSpec(t, ctx, bstore, "batch-spec-"+name, userID, 0)
-		changesetSpec := bt.CreateChangesetSpec(t, ctx, bstore, bt.TestSpecOpts{
+		// Crebte initibl specs. Note thbt we hbve to bppend the test cbse nbme
+		// to the bbtch spec ID to bvoid cross-contbminbtion between the test
+		// cbses.
+		bbtchSpec := bt.CrebteBbtchSpec(t, ctx, bstore, "bbtch-spec-"+nbme, userID, 0)
+		chbngesetSpec := bt.CrebteChbngesetSpec(t, ctx, bstore, bt.TestSpecOpts{
 			User:      userID,
 			Repo:      repo.ID,
-			BatchSpec: batchSpec.ID,
-			HeadRef:   "refs/heads/my-branch-1",
-			Typ:       btypes.ChangesetSpecTypeBranch,
+			BbtchSpec: bbtchSpec.ID,
+			HebdRef:   "refs/hebds/my-brbnch-1",
+			Typ:       btypes.ChbngesetSpecTypeBrbnch,
 		})
 
-		// We need a couple more changeset specs to make this useful: we need to
-		// be able to test that changeset specs attached to other batch specs
-		// cannot be modified, and that changeset specs with explicit published
-		// fields cause errors.
-		otherBatchSpec := bt.CreateBatchSpec(t, ctx, bstore, "other-batch-spec-"+name, userID, 0)
-		otherChangesetSpec := bt.CreateChangesetSpec(t, ctx, bstore, bt.TestSpecOpts{
+		// We need b couple more chbngeset specs to mbke this useful: we need to
+		// be bble to test thbt chbngeset specs bttbched to other bbtch specs
+		// cbnnot be modified, bnd thbt chbngeset specs with explicit published
+		// fields cbuse errors.
+		otherBbtchSpec := bt.CrebteBbtchSpec(t, ctx, bstore, "other-bbtch-spec-"+nbme, userID, 0)
+		otherChbngesetSpec := bt.CrebteChbngesetSpec(t, ctx, bstore, bt.TestSpecOpts{
 			User:      userID,
 			Repo:      repo.ID,
-			BatchSpec: otherBatchSpec.ID,
-			HeadRef:   "refs/heads/my-branch-2",
-			Typ:       btypes.ChangesetSpecTypeBranch,
+			BbtchSpec: otherBbtchSpec.ID,
+			HebdRef:   "refs/hebds/my-brbnch-2",
+			Typ:       btypes.ChbngesetSpecTypeBrbnch,
 		})
 
-		publishedChangesetSpec := bt.CreateChangesetSpec(t, ctx, bstore, bt.TestSpecOpts{
+		publishedChbngesetSpec := bt.CrebteChbngesetSpec(t, ctx, bstore, bt.TestSpecOpts{
 			User:      userID,
 			Repo:      repo.ID,
-			BatchSpec: batchSpec.ID,
-			HeadRef:   "refs/heads/my-branch-3",
-			Typ:       btypes.ChangesetSpecTypeBranch,
+			BbtchSpec: bbtchSpec.ID,
+			HebdRef:   "refs/hebds/my-brbnch-3",
+			Typ:       btypes.ChbngesetSpecTypeBrbnch,
 			Published: true,
 		})
 
-		t.Run("unauthorized access", func(t *testing.T) {
-			input := map[string]any{
-				"batchSpec": string(marshalBatchSpecRandID(batchSpec.RandID)),
-				"publicationStates": map[string]any{
-					"changesetSpec":    marshalChangesetSpecRandID(changesetSpec.RandID),
-					"publicationState": true,
+		t.Run("unbuthorized bccess", func(t *testing.T) {
+			input := mbp[string]bny{
+				"bbtchSpec": string(mbrshblBbtchSpecRbndID(bbtchSpec.RbndID)),
+				"publicbtionStbtes": mbp[string]bny{
+					"chbngesetSpec":    mbrshblChbngesetSpecRbndID(chbngesetSpec.RbndID),
+					"publicbtionStbte": true,
 				},
 			}
-			_, err := tc.exec(unauthorizedActorCtx, t, s, input)
+			_, err := tc.exec(unbuthorizedActorCtx, t, s, input)
 			if err == nil {
-				t.Fatal("expected error")
+				t.Fbtbl("expected error")
 			}
-			if !strings.Contains(err.Error(), fmt.Sprintf("user is missing permission %s", rbac.BatchChangesWritePermission)) {
-				t.Fatalf("expected unauthorized error, got %+v", err)
+			if !strings.Contbins(err.Error(), fmt.Sprintf("user is missing permission %s", rbbc.BbtchChbngesWritePermission)) {
+				t.Fbtblf("expected unbuthorized error, got %+v", err)
 			}
 		})
 
-		t.Run(name, func(t *testing.T) {
-			// Handle the interesting error cases for different
-			// publicationStates inputs.
-			for name, states := range map[string][]map[string]any{
-				"other batch spec": {
+		t.Run(nbme, func(t *testing.T) {
+			// Hbndle the interesting error cbses for different
+			// publicbtionStbtes inputs.
+			for nbme, stbtes := rbnge mbp[string][]mbp[string]bny{
+				"other bbtch spec": {
 					{
-						"changesetSpec":    marshalChangesetSpecRandID(otherChangesetSpec.RandID),
-						"publicationState": true,
+						"chbngesetSpec":    mbrshblChbngesetSpecRbndID(otherChbngesetSpec.RbndID),
+						"publicbtionStbte": true,
 					},
 				},
-				"duplicate batch specs": {
+				"duplicbte bbtch specs": {
 					{
-						"changesetSpec":    marshalChangesetSpecRandID(changesetSpec.RandID),
-						"publicationState": true,
+						"chbngesetSpec":    mbrshblChbngesetSpecRbndID(chbngesetSpec.RbndID),
+						"publicbtionStbte": true,
 					},
 					{
-						"changesetSpec":    marshalChangesetSpecRandID(changesetSpec.RandID),
-						"publicationState": true,
-					},
-				},
-				"invalid publication state": {
-					{
-						"changesetSpec":    marshalChangesetSpecRandID(changesetSpec.RandID),
-						"publicationState": "foo",
+						"chbngesetSpec":    mbrshblChbngesetSpecRbndID(chbngesetSpec.RbndID),
+						"publicbtionStbte": true,
 					},
 				},
-				"invalid changeset spec ID": {
+				"invblid publicbtion stbte": {
 					{
-						"changesetSpec":    "foo",
-						"publicationState": true,
+						"chbngesetSpec":    mbrshblChbngesetSpecRbndID(chbngesetSpec.RbndID),
+						"publicbtionStbte": "foo",
 					},
 				},
-				"changeset spec with a published state": {
+				"invblid chbngeset spec ID": {
 					{
-						"changesetSpec":    marshalChangesetSpecRandID(publishedChangesetSpec.RandID),
-						"publicationState": true,
+						"chbngesetSpec":    "foo",
+						"publicbtionStbte": true,
+					},
+				},
+				"chbngeset spec with b published stbte": {
+					{
+						"chbngesetSpec":    mbrshblChbngesetSpecRbndID(publishedChbngesetSpec.RbndID),
+						"publicbtionStbte": true,
 					},
 				},
 			} {
-				t.Run(name, func(t *testing.T) {
-					input := map[string]any{
-						"batchSpec":         string(marshalBatchSpecRandID(batchSpec.RandID)),
-						"publicationStates": states,
+				t.Run(nbme, func(t *testing.T) {
+					input := mbp[string]bny{
+						"bbtchSpec":         string(mbrshblBbtchSpecRbndID(bbtchSpec.RbndID)),
+						"publicbtionStbtes": stbtes,
 					}
-					if _, errs := tc.exec(actorCtx, t, s, input); errs == nil {
-						t.Fatalf("expected errors, got none")
+					if _, errs := tc.exec(bctorCtx, t, s, input); errs == nil {
+						t.Fbtblf("expected errors, got none")
 					}
 				})
 			}
 
-			// Finally, let's actually make a legit apply.
+			// Finblly, let's bctublly mbke b legit bpply.
 			t.Run("success", func(t *testing.T) {
-				input := map[string]any{
-					"batchSpec": string(marshalBatchSpecRandID(batchSpec.RandID)),
-					"publicationStates": []map[string]any{
+				input := mbp[string]bny{
+					"bbtchSpec": string(mbrshblBbtchSpecRbndID(bbtchSpec.RbndID)),
+					"publicbtionStbtes": []mbp[string]bny{
 						{
-							"changesetSpec":    marshalChangesetSpecRandID(changesetSpec.RandID),
-							"publicationState": true,
+							"chbngesetSpec":    mbrshblChbngesetSpecRbndID(chbngesetSpec.RbndID),
+							"publicbtionStbte": true,
 						},
 					},
 				}
-				have, err := tc.exec(actorCtx, t, s, input)
+				hbve, err := tc.exec(bctorCtx, t, s, input)
 				if err != nil {
 					t.Error(err)
 				}
-				want := &apitest.BatchChange{
-					ID:          have.ID,
-					Name:        batchSpec.Spec.Name,
-					Description: batchSpec.Spec.Description,
-					Namespace: apitest.UserOrg{
+				wbnt := &bpitest.BbtchChbnge{
+					ID:          hbve.ID,
+					Nbme:        bbtchSpec.Spec.Nbme,
+					Description: bbtchSpec.Spec.Description,
+					Nbmespbce: bpitest.UserOrg{
 						ID:         userAPIID,
-						DatabaseID: userID,
+						DbtbbbseID: userID,
 						SiteAdmin:  true,
 					},
-					Creator:       apiUser,
-					LastApplier:   apiUser,
-					LastAppliedAt: marshalDateTime(t, now),
-					Changesets: apitest.ChangesetConnection{
-						Nodes: []apitest.Changeset{
-							{Typename: "ExternalChangeset", State: string(btypes.ChangesetStateProcessing)},
-							{Typename: "ExternalChangeset", State: string(btypes.ChangesetStateProcessing)},
+					Crebtor:       bpiUser,
+					LbstApplier:   bpiUser,
+					LbstAppliedAt: mbrshblDbteTime(t, now),
+					Chbngesets: bpitest.ChbngesetConnection{
+						Nodes: []bpitest.Chbngeset{
+							{Typenbme: "ExternblChbngeset", Stbte: string(btypes.ChbngesetStbteProcessing)},
+							{Typenbme: "ExternblChbngeset", Stbte: string(btypes.ChbngesetStbteProcessing)},
 						},
-						TotalCount: 2,
+						TotblCount: 2,
 					},
 				}
-				if diff := cmp.Diff(want, have); diff != "" {
-					t.Errorf("unexpected response (-want +have):\n%s", diff)
+				if diff := cmp.Diff(wbnt, hbve); diff != "" {
+					t.Errorf("unexpected response (-wbnt +hbve):\n%s", diff)
 				}
 			})
 		})
 	}
 }
 
-func TestApplyBatchChangeWithLicenseFail(t *testing.T) {
+func TestApplyBbtchChbngeWithLicenseFbil(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
 
 	logger := logtest.Scoped(t)
-	ctx := context.Background()
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	ctx := context.Bbckground()
+	db := dbtbbbse.NewDB(logger, dbtest.NewDB(logger, t))
 
 	now := timeutil.Now()
 	clock := func() time.Time { return now }
 
-	bstore := store.NewWithClock(db, &observation.TestContext, nil, clock)
-	repoStore := database.ReposWith(logger, bstore)
-	esStore := database.ExternalServicesWith(logger, bstore)
+	bstore := store.NewWithClock(db, &observbtion.TestContext, nil, clock)
+	repoStore := dbtbbbse.ReposWith(logger, bstore)
+	esStore := dbtbbbse.ExternblServicesWith(logger, bstore)
 
-	repo := newGitHubTestRepo("github.com/sourcegraph/create-batch-spec-test", newGitHubExternalService(t, esStore))
-	err := repoStore.Create(ctx, repo)
+	repo := newGitHubTestRepo("github.com/sourcegrbph/crebte-bbtch-spec-test", newGitHubExternblService(t, esStore))
+	err := repoStore.Crebte(ctx, repo)
 	require.NoError(t, err)
 
 	r := &Resolver{store: bstore}
-	s, err := newSchema(db, r)
+	s, err := newSchemb(db, r)
 	require.NoError(t, err)
 
-	userID := bt.CreateTestUser(t, db, true).ID
-	// We give this user the `BATCH_CHANGES#WRITE` permission so they're authorized
-	// to create Batch Changes.
-	assignBatchChangesWritePermissionToUser(ctx, t, db, userID)
+	userID := bt.CrebteTestUser(t, db, true).ID
+	// We give this user the `BATCH_CHANGES#WRITE` permission so they're buthorized
+	// to crebte Bbtch Chbnges.
+	bssignBbtchChbngesWritePermissionToUser(ctx, t, db, userID)
 
-	unauthorizedUser := bt.CreateTestUser(t, db, false)
+	unbuthorizedUser := bt.CrebteTestUser(t, db, fblse)
 
-	falsy := overridable.FromBoolOrString(false)
-	batchSpec := &btypes.BatchSpec{
-		RawSpec: bt.TestRawBatchSpec,
-		Spec: &batcheslib.BatchSpec{
-			Name:        "my-batch-change",
+	fblsy := overridbble.FromBoolOrString(fblse)
+	bbtchSpec := &btypes.BbtchSpec{
+		RbwSpec: bt.TestRbwBbtchSpec,
+		Spec: &bbtcheslib.BbtchSpec{
+			Nbme:        "my-bbtch-chbnge",
 			Description: "My description",
-			ChangesetTemplate: &batcheslib.ChangesetTemplate{
+			ChbngesetTemplbte: &bbtcheslib.ChbngesetTemplbte{
 				Title:  "Hello there",
 				Body:   "This is the body",
-				Branch: "my-branch",
-				Commit: batcheslib.ExpandedGitCommitDescription{
-					Message: "Add hello world",
+				Brbnch: "my-brbnch",
+				Commit: bbtcheslib.ExpbndedGitCommitDescription{
+					Messbge: "Add hello world",
 				},
-				Published: &falsy,
+				Published: &fblsy,
 			},
 		},
 		UserID:          userID,
-		NamespaceUserID: userID,
+		NbmespbceUserID: userID,
 	}
-	err = bstore.CreateBatchSpec(ctx, batchSpec)
+	err = bstore.CrebteBbtchSpec(ctx, bbtchSpec)
 	require.NoError(t, err)
 
-	input := map[string]any{
-		"batchSpec": string(marshalBatchSpecRandID(batchSpec.RandID)),
+	input := mbp[string]bny{
+		"bbtchSpec": string(mbrshblBbtchSpecRbndID(bbtchSpec.RbndID)),
 	}
 
-	maxNumBatchChanges := 5
-	oldMock := licensing.MockCheckFeature
-	licensing.MockCheckFeature = func(feature licensing.Feature) error {
-		if bcFeature, ok := feature.(*licensing.FeatureBatchChanges); ok {
-			bcFeature.MaxNumChangesets = maxNumBatchChanges
+	mbxNumBbtchChbnges := 5
+	oldMock := licensing.MockCheckFebture
+	licensing.MockCheckFebture = func(febture licensing.Febture) error {
+		if bcFebture, ok := febture.(*licensing.FebtureBbtchChbnges); ok {
+			bcFebture.MbxNumChbngesets = mbxNumBbtchChbnges
 		}
 		return nil
 	}
 	defer func() {
-		licensing.MockCheckFeature = oldMock
+		licensing.MockCheckFebture = oldMock
 	}()
 
 	tests := []struct {
-		name           string
-		numChangesets  int
-		isunauthorized bool
+		nbme           string
+		numChbngesets  int
+		isunbuthorized bool
 	}{
 		{
-			name:          "ApplyBatchChange under limit",
-			numChangesets: 1,
+			nbme:          "ApplyBbtchChbnge under limit",
+			numChbngesets: 1,
 		},
 		{
-			name:          "ApplyBatchChange at limit",
-			numChangesets: 10,
+			nbme:          "ApplyBbtchChbnge bt limit",
+			numChbngesets: 10,
 		},
 		{
-			name:          "ApplyBatchChange over limit",
-			numChangesets: 11,
+			nbme:          "ApplyBbtchChbnge over limit",
+			numChbngesets: 11,
 		},
 		{
-			name:           "unauthorized access",
-			numChangesets:  1,
-			isunauthorized: true,
+			nbme:           "unbuthorized bccess",
+			numChbngesets:  1,
+			isunbuthorized: true,
 		},
 	}
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
+	for _, test := rbnge tests {
+		t.Run(test.nbme, func(t *testing.T) {
 
-			// Create enough changeset specs to hit the license check.
-			changesetSpecs := make([]*btypes.ChangesetSpec, test.numChangesets)
-			for i := range changesetSpecs {
-				changesetSpecs[i] = &btypes.ChangesetSpec{
-					BatchSpecID: batchSpec.ID,
-					BaseRepoID:  repo.ID,
-					ExternalID:  "123",
-					Type:        btypes.ChangesetSpecTypeExisting,
+			// Crebte enough chbngeset specs to hit the license check.
+			chbngesetSpecs := mbke([]*btypes.ChbngesetSpec, test.numChbngesets)
+			for i := rbnge chbngesetSpecs {
+				chbngesetSpecs[i] = &btypes.ChbngesetSpec{
+					BbtchSpecID: bbtchSpec.ID,
+					BbseRepoID:  repo.ID,
+					ExternblID:  "123",
+					Type:        btypes.ChbngesetSpecTypeExisting,
 				}
-				err = bstore.CreateChangesetSpec(ctx, changesetSpecs[i])
+				err = bstore.CrebteChbngesetSpec(ctx, chbngesetSpecs[i])
 				require.NoError(t, err)
 			}
 
 			defer func() {
-				for _, changesetSpec := range changesetSpecs {
-					bstore.DeleteChangeset(ctx, changesetSpec.ID)
+				for _, chbngesetSpec := rbnge chbngesetSpecs {
+					bstore.DeleteChbngeset(ctx, chbngesetSpec.ID)
 				}
-				bstore.DeleteChangesetSpecs(ctx, store.DeleteChangesetSpecsOpts{BatchSpecID: batchSpec.ID})
+				bstore.DeleteChbngesetSpecs(ctx, store.DeleteChbngesetSpecsOpts{BbtchSpecID: bbtchSpec.ID})
 			}()
 
-			actorCtx := actor.WithActor(ctx, actor.FromUser(userID))
-			if test.isunauthorized {
-				actorCtx = actor.WithActor(ctx, actor.FromUser(unauthorizedUser.ID))
+			bctorCtx := bctor.WithActor(ctx, bctor.FromUser(userID))
+			if test.isunbuthorized {
+				bctorCtx = bctor.WithActor(ctx, bctor.FromUser(unbuthorizedUser.ID))
 			}
 
-			var response struct{ ApplyBatchChange apitest.BatchChange }
+			vbr response struct{ ApplyBbtchChbnge bpitest.BbtchChbnge }
 
-			errs := apitest.Exec(actorCtx, t, s, input, &response, mutationApplyBatchChange)
+			errs := bpitest.Exec(bctorCtx, t, s, input, &response, mutbtionApplyBbtchChbnge)
 
-			if test.isunauthorized {
+			if test.isunbuthorized {
 				if errs == nil {
-					t.Fatal("expected error")
+					t.Fbtbl("expected error")
 				}
 				firstErr := errs[0]
-				if !strings.Contains(firstErr.Error(), fmt.Sprintf("user is missing permission %s", rbac.BatchChangesWritePermission)) {
-					t.Fatalf("expected unauthorized error, got %+v", err)
+				if !strings.Contbins(firstErr.Error(), fmt.Sprintf("user is missing permission %s", rbbc.BbtchChbngesWritePermission)) {
+					t.Fbtblf("expected unbuthorized error, got %+v", err)
 				}
 				return
 			}
 
-			if test.numChangesets > maxNumBatchChanges {
-				assert.Len(t, errs, 1)
-				assert.ErrorAs(t, errs[0], &ErrBatchChangesOverLimit{})
+			if test.numChbngesets > mbxNumBbtchChbnges {
+				bssert.Len(t, errs, 1)
+				bssert.ErrorAs(t, errs[0], &ErrBbtchChbngesOverLimit{})
 			} else {
-				assert.Len(t, errs, 0)
+				bssert.Len(t, errs, 0)
 			}
 		})
 	}
 }
 
-func TestMoveBatchChange(t *testing.T) {
+func TestMoveBbtchChbnge(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
 
 	logger := logtest.Scoped(t)
-	ctx := context.Background()
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	ctx := context.Bbckground()
+	db := dbtbbbse.NewDB(logger, dbtest.NewDB(logger, t))
 
-	user := bt.CreateTestUser(t, db, true)
+	user := bt.CrebteTestUser(t, db, true)
 	userID := user.ID
-	// We give this user the `BATCH_CHANGES#WRITE` permission so they're authorized
-	// to create Batch Changes.
-	assignBatchChangesWritePermissionToUser(ctx, t, db, userID)
+	// We give this user the `BATCH_CHANGES#WRITE` permission so they're buthorized
+	// to crebte Bbtch Chbnges.
+	bssignBbtchChbngesWritePermissionToUser(ctx, t, db, userID)
 
-	unauthorizedUser := bt.CreateTestUser(t, db, false)
+	unbuthorizedUser := bt.CrebteTestUser(t, db, fblse)
 
-	orgName := "move-batch-change-test"
-	orgID := bt.CreateTestOrg(t, db, orgName).ID
+	orgNbme := "move-bbtch-chbnge-test"
+	orgID := bt.CrebteTestOrg(t, db, orgNbme).ID
 
-	bstore := store.New(db, &observation.TestContext, nil)
+	bstore := store.New(db, &observbtion.TestContext, nil)
 
-	batchSpec := &btypes.BatchSpec{
-		RawSpec:         bt.TestRawBatchSpec,
+	bbtchSpec := &btypes.BbtchSpec{
+		RbwSpec:         bt.TestRbwBbtchSpec,
 		UserID:          userID,
-		NamespaceUserID: userID,
+		NbmespbceUserID: userID,
 	}
-	if err := bstore.CreateBatchSpec(ctx, batchSpec); err != nil {
-		t.Fatal(err)
+	if err := bstore.CrebteBbtchSpec(ctx, bbtchSpec); err != nil {
+		t.Fbtbl(err)
 	}
 
-	batchChange := &btypes.BatchChange{
-		BatchSpecID:     batchSpec.ID,
-		Name:            "old-name",
-		CreatorID:       userID,
-		LastApplierID:   userID,
-		LastAppliedAt:   time.Now(),
-		NamespaceUserID: batchSpec.UserID,
+	bbtchChbnge := &btypes.BbtchChbnge{
+		BbtchSpecID:     bbtchSpec.ID,
+		Nbme:            "old-nbme",
+		CrebtorID:       userID,
+		LbstApplierID:   userID,
+		LbstAppliedAt:   time.Now(),
+		NbmespbceUserID: bbtchSpec.UserID,
 	}
-	if err := bstore.CreateBatchChange(ctx, batchChange); err != nil {
-		t.Fatal(err)
+	if err := bstore.CrebteBbtchChbnge(ctx, bbtchChbnge); err != nil {
+		t.Fbtbl(err)
 	}
 
 	r := &Resolver{store: bstore}
-	s, err := newSchema(db, r)
+	s, err := newSchemb(db, r)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	// Move to a new name
-	batchChangeAPIID := string(bgql.MarshalBatchChangeID(batchChange.ID))
-	newBatchChagneName := "new-name"
-	input := map[string]any{
-		"batchChange": batchChangeAPIID,
-		"newName":     newBatchChagneName,
+	// Move to b new nbme
+	bbtchChbngeAPIID := string(bgql.MbrshblBbtchChbngeID(bbtchChbnge.ID))
+	newBbtchChbgneNbme := "new-nbme"
+	input := mbp[string]bny{
+		"bbtchChbnge": bbtchChbngeAPIID,
+		"newNbme":     newBbtchChbgneNbme,
 	}
 
-	t.Run("unauthorized access", func(t *testing.T) {
-		var response struct{ MoveBatchChange apitest.BatchChange }
-		actorCtx := actor.WithActor(ctx, actor.FromUser(unauthorizedUser.ID))
-		errs := apitest.Exec(actorCtx, t, s, input, &response, mutationMoveBatchChange)
+	t.Run("unbuthorized bccess", func(t *testing.T) {
+		vbr response struct{ MoveBbtchChbnge bpitest.BbtchChbnge }
+		bctorCtx := bctor.WithActor(ctx, bctor.FromUser(unbuthorizedUser.ID))
+		errs := bpitest.Exec(bctorCtx, t, s, input, &response, mutbtionMoveBbtchChbnge)
 		if errs == nil {
-			t.Fatal("expected error")
+			t.Fbtbl("expected error")
 		}
 		firstErr := errs[0]
-		if !strings.Contains(firstErr.Error(), fmt.Sprintf("user is missing permission %s", rbac.BatchChangesWritePermission)) {
-			t.Fatalf("expected unauthorized error, got %+v", err)
+		if !strings.Contbins(firstErr.Error(), fmt.Sprintf("user is missing permission %s", rbbc.BbtchChbngesWritePermission)) {
+			t.Fbtblf("expected unbuthorized error, got %+v", err)
 		}
 	})
 
-	t.Run("authorized user", func(t *testing.T) {
-		var response struct{ MoveBatchChange apitest.BatchChange }
-		actorCtx := actor.WithActor(ctx, actor.FromUser(userID))
-		apitest.MustExec(actorCtx, t, s, input, &response, mutationMoveBatchChange)
+	t.Run("buthorized user", func(t *testing.T) {
+		vbr response struct{ MoveBbtchChbnge bpitest.BbtchChbnge }
+		bctorCtx := bctor.WithActor(ctx, bctor.FromUser(userID))
+		bpitest.MustExec(bctorCtx, t, s, input, &response, mutbtionMoveBbtchChbnge)
 
-		haveBatchChange := response.MoveBatchChange
-		if diff := cmp.Diff(input["newName"], haveBatchChange.Name); diff != "" {
-			t.Fatalf("unexpected name (-want +got):\n%s", diff)
+		hbveBbtchChbnge := response.MoveBbtchChbnge
+		if diff := cmp.Diff(input["newNbme"], hbveBbtchChbnge.Nbme); diff != "" {
+			t.Fbtblf("unexpected nbme (-wbnt +got):\n%s", diff)
 		}
 
-		wantURL := fmt.Sprintf("/users/%s/batch-changes/%s", user.Username, newBatchChagneName)
-		if diff := cmp.Diff(wantURL, haveBatchChange.URL); diff != "" {
-			t.Fatalf("unexpected URL (-want +got):\n%s", diff)
+		wbntURL := fmt.Sprintf("/users/%s/bbtch-chbnges/%s", user.Usernbme, newBbtchChbgneNbme)
+		if diff := cmp.Diff(wbntURL, hbveBbtchChbnge.URL); diff != "" {
+			t.Fbtblf("unexpected URL (-wbnt +got):\n%s", diff)
 		}
 
-		// Move to a new namespace
-		orgAPIID := graphqlbackend.MarshalOrgID(orgID)
-		input = map[string]any{
-			"batchChange":  string(bgql.MarshalBatchChangeID(batchChange.ID)),
-			"newNamespace": orgAPIID,
+		// Move to b new nbmespbce
+		orgAPIID := grbphqlbbckend.MbrshblOrgID(orgID)
+		input = mbp[string]bny{
+			"bbtchChbnge":  string(bgql.MbrshblBbtchChbngeID(bbtchChbnge.ID)),
+			"newNbmespbce": orgAPIID,
 		}
 
-		apitest.MustExec(actorCtx, t, s, input, &response, mutationMoveBatchChange)
+		bpitest.MustExec(bctorCtx, t, s, input, &response, mutbtionMoveBbtchChbnge)
 
-		haveBatchChange = response.MoveBatchChange
-		if diff := cmp.Diff(string(orgAPIID), haveBatchChange.Namespace.ID); diff != "" {
-			t.Fatalf("unexpected namespace (-want +got):\n%s", diff)
+		hbveBbtchChbnge = response.MoveBbtchChbnge
+		if diff := cmp.Diff(string(orgAPIID), hbveBbtchChbnge.Nbmespbce.ID); diff != "" {
+			t.Fbtblf("unexpected nbmespbce (-wbnt +got):\n%s", diff)
 		}
-		wantURL = fmt.Sprintf("/organizations/%s/batch-changes/%s", orgName, newBatchChagneName)
-		if diff := cmp.Diff(wantURL, haveBatchChange.URL); diff != "" {
-			t.Fatalf("unexpected URL (-want +got):\n%s", diff)
+		wbntURL = fmt.Sprintf("/orgbnizbtions/%s/bbtch-chbnges/%s", orgNbme, newBbtchChbgneNbme)
+		if diff := cmp.Diff(wbntURL, hbveBbtchChbnge.URL); diff != "" {
+			t.Fbtblf("unexpected URL (-wbnt +got):\n%s", diff)
 		}
 	})
 }
 
-const mutationMoveBatchChange = `
-fragment u on User { id, databaseID, siteAdmin }
-fragment o on Org  { id, name }
+const mutbtionMoveBbtchChbnge = `
+frbgment u on User { id, dbtbbbseID, siteAdmin }
+frbgment o on Org  { id, nbme }
 
-mutation($batchChange: ID!, $newName: String, $newNamespace: ID){
-  moveBatchChange(batchChange: $batchChange, newName: $newName, newNamespace: $newNamespace) {
-	id, name, description
-	creator { ...u }
-	namespace {
+mutbtion($bbtchChbnge: ID!, $newNbme: String, $newNbmespbce: ID){
+  moveBbtchChbnge(bbtchChbnge: $bbtchChbnge, newNbme: $newNbme, newNbmespbce: $newNbmespbce) {
+	id, nbme, description
+	crebtor { ...u }
+	nbmespbce {
 		... on User { ...u }
 		... on Org  { ...o }
 	}
@@ -1633,192 +1633,192 @@ mutation($batchChange: ID!, $newName: String, $newNamespace: ID){
 }
 `
 
-func TestListChangesetOptsFromArgs(t *testing.T) {
-	var wantFirst int32 = 10
-	wantPublicationStates := []btypes.ChangesetPublicationState{
+func TestListChbngesetOptsFromArgs(t *testing.T) {
+	vbr wbntFirst int32 = 10
+	wbntPublicbtionStbtes := []btypes.ChbngesetPublicbtionStbte{
 		"PUBLISHED",
 		"INVALID",
 	}
-	haveStates := []btypes.ChangesetState{"OPEN", "INVALID"}
-	haveReviewStates := []string{"APPROVED", "INVALID"}
-	haveCheckStates := []string{"PENDING", "INVALID"}
-	wantReviewStates := []btypes.ChangesetReviewState{"APPROVED", "INVALID"}
-	wantCheckStates := []btypes.ChangesetCheckState{"PENDING", "INVALID"}
+	hbveStbtes := []btypes.ChbngesetStbte{"OPEN", "INVALID"}
+	hbveReviewStbtes := []string{"APPROVED", "INVALID"}
+	hbveCheckStbtes := []string{"PENDING", "INVALID"}
+	wbntReviewStbtes := []btypes.ChbngesetReviewStbte{"APPROVED", "INVALID"}
+	wbntCheckStbtes := []btypes.ChbngesetCheckStbte{"PENDING", "INVALID"}
 	truePtr := pointers.Ptr(true)
-	wantSearches := []search.TextSearchTerm{{Term: "foo"}, {Term: "bar", Not: true}}
-	var batchChangeID int64 = 1
-	var repoID api.RepoID = 123
-	repoGraphQLID := graphqlbackend.MarshalRepositoryID(repoID)
-	onlyClosable := true
-	openChangsetState := "OPEN"
+	wbntSebrches := []sebrch.TextSebrchTerm{{Term: "foo"}, {Term: "bbr", Not: true}}
+	vbr bbtchChbngeID int64 = 1
+	vbr repoID bpi.RepoID = 123
+	repoGrbphQLID := grbphqlbbckend.MbrshblRepositoryID(repoID)
+	onlyClosbble := true
+	openChbngsetStbte := "OPEN"
 
 	tcs := []struct {
-		args       *graphqlbackend.ListChangesetsArgs
-		wantSafe   bool
-		wantErr    string
-		wantParsed store.ListChangesetsOpts
+		brgs       *grbphqlbbckend.ListChbngesetsArgs
+		wbntSbfe   bool
+		wbntErr    string
+		wbntPbrsed store.ListChbngesetsOpts
 	}{
-		// No args given.
+		// No brgs given.
 		{
-			args:       nil,
-			wantSafe:   true,
-			wantParsed: store.ListChangesetsOpts{},
+			brgs:       nil,
+			wbntSbfe:   true,
+			wbntPbrsed: store.ListChbngesetsOpts{},
 		},
-		// First argument is set in opts, and considered safe.
+		// First brgument is set in opts, bnd considered sbfe.
 		{
-			args: &graphqlbackend.ListChangesetsArgs{
-				First: wantFirst,
+			brgs: &grbphqlbbckend.ListChbngesetsArgs{
+				First: wbntFirst,
 			},
-			wantSafe:   true,
-			wantParsed: store.ListChangesetsOpts{LimitOpts: store.LimitOpts{Limit: 10}},
+			wbntSbfe:   true,
+			wbntPbrsed: store.ListChbngesetsOpts{LimitOpts: store.LimitOpts{Limit: 10}},
 		},
-		// Setting state is safe and transferred to opts.
+		// Setting stbte is sbfe bnd trbnsferred to opts.
 		{
-			args: &graphqlbackend.ListChangesetsArgs{
-				State: pointers.Ptr(string(haveStates[0])),
+			brgs: &grbphqlbbckend.ListChbngesetsArgs{
+				Stbte: pointers.Ptr(string(hbveStbtes[0])),
 			},
-			wantSafe: true,
-			wantParsed: store.ListChangesetsOpts{
-				States: []btypes.ChangesetState{haveStates[0]},
-			},
-		},
-		// Setting invalid state fails.
-		{
-			args: &graphqlbackend.ListChangesetsArgs{
-				State: pointers.Ptr(string(haveStates[1])),
-			},
-			wantErr: "changeset state not valid",
-		},
-		// Setting review state is not safe and transferred to opts.
-		{
-			args: &graphqlbackend.ListChangesetsArgs{
-				ReviewState: &haveReviewStates[0],
-			},
-			wantSafe:   false,
-			wantParsed: store.ListChangesetsOpts{ExternalReviewState: &wantReviewStates[0]},
-		},
-		// Setting invalid review state fails.
-		{
-			args: &graphqlbackend.ListChangesetsArgs{
-				ReviewState: &haveReviewStates[1],
-			},
-			wantErr: "changeset review state not valid",
-		},
-		// Setting check state is not safe and transferred to opts.
-		{
-			args: &graphqlbackend.ListChangesetsArgs{
-				CheckState: &haveCheckStates[0],
-			},
-			wantSafe:   false,
-			wantParsed: store.ListChangesetsOpts{ExternalCheckState: &wantCheckStates[0]},
-		},
-		// Setting invalid check state fails.
-		{
-			args: &graphqlbackend.ListChangesetsArgs{
-				CheckState: &haveCheckStates[1],
-			},
-			wantErr: "changeset check state not valid",
-		},
-		// Setting OnlyPublishedByThisBatchChange true.
-		{
-			args: &graphqlbackend.ListChangesetsArgs{
-				OnlyPublishedByThisBatchChange: truePtr,
-			},
-			wantSafe: true,
-			wantParsed: store.ListChangesetsOpts{
-				PublicationState:     &wantPublicationStates[0],
-				OwnedByBatchChangeID: batchChangeID,
+			wbntSbfe: true,
+			wbntPbrsed: store.ListChbngesetsOpts{
+				Stbtes: []btypes.ChbngesetStbte{hbveStbtes[0]},
 			},
 		},
-		// Setting a positive search.
+		// Setting invblid stbte fbils.
 		{
-			args: &graphqlbackend.ListChangesetsArgs{
-				Search: pointers.Ptr("foo"),
+			brgs: &grbphqlbbckend.ListChbngesetsArgs{
+				Stbte: pointers.Ptr(string(hbveStbtes[1])),
 			},
-			wantSafe: false,
-			wantParsed: store.ListChangesetsOpts{
-				TextSearch: wantSearches[0:1],
+			wbntErr: "chbngeset stbte not vblid",
+		},
+		// Setting review stbte is not sbfe bnd trbnsferred to opts.
+		{
+			brgs: &grbphqlbbckend.ListChbngesetsArgs{
+				ReviewStbte: &hbveReviewStbtes[0],
+			},
+			wbntSbfe:   fblse,
+			wbntPbrsed: store.ListChbngesetsOpts{ExternblReviewStbte: &wbntReviewStbtes[0]},
+		},
+		// Setting invblid review stbte fbils.
+		{
+			brgs: &grbphqlbbckend.ListChbngesetsArgs{
+				ReviewStbte: &hbveReviewStbtes[1],
+			},
+			wbntErr: "chbngeset review stbte not vblid",
+		},
+		// Setting check stbte is not sbfe bnd trbnsferred to opts.
+		{
+			brgs: &grbphqlbbckend.ListChbngesetsArgs{
+				CheckStbte: &hbveCheckStbtes[0],
+			},
+			wbntSbfe:   fblse,
+			wbntPbrsed: store.ListChbngesetsOpts{ExternblCheckStbte: &wbntCheckStbtes[0]},
+		},
+		// Setting invblid check stbte fbils.
+		{
+			brgs: &grbphqlbbckend.ListChbngesetsArgs{
+				CheckStbte: &hbveCheckStbtes[1],
+			},
+			wbntErr: "chbngeset check stbte not vblid",
+		},
+		// Setting OnlyPublishedByThisBbtchChbnge true.
+		{
+			brgs: &grbphqlbbckend.ListChbngesetsArgs{
+				OnlyPublishedByThisBbtchChbnge: truePtr,
+			},
+			wbntSbfe: true,
+			wbntPbrsed: store.ListChbngesetsOpts{
+				PublicbtionStbte:     &wbntPublicbtionStbtes[0],
+				OwnedByBbtchChbngeID: bbtchChbngeID,
 			},
 		},
-		// Setting a negative search.
+		// Setting b positive sebrch.
 		{
-			args: &graphqlbackend.ListChangesetsArgs{
-				Search: pointers.Ptr("-bar"),
+			brgs: &grbphqlbbckend.ListChbngesetsArgs{
+				Sebrch: pointers.Ptr("foo"),
 			},
-			wantSafe: false,
-			wantParsed: store.ListChangesetsOpts{
-				TextSearch: wantSearches[1:],
+			wbntSbfe: fblse,
+			wbntPbrsed: store.ListChbngesetsOpts{
+				TextSebrch: wbntSebrches[0:1],
+			},
+		},
+		// Setting b negbtive sebrch.
+		{
+			brgs: &grbphqlbbckend.ListChbngesetsArgs{
+				Sebrch: pointers.Ptr("-bbr"),
+			},
+			wbntSbfe: fblse,
+			wbntPbrsed: store.ListChbngesetsOpts{
+				TextSebrch: wbntSebrches[1:],
 			},
 		},
 		// Setting OnlyArchived
 		{
-			args: &graphqlbackend.ListChangesetsArgs{
+			brgs: &grbphqlbbckend.ListChbngesetsArgs{
 				OnlyArchived: true,
 			},
-			wantSafe: true,
-			wantParsed: store.ListChangesetsOpts{
+			wbntSbfe: true,
+			wbntPbrsed: store.ListChbngesetsOpts{
 				OnlyArchived: true,
 			},
 		},
 		// Setting Repo
 		{
-			args: &graphqlbackend.ListChangesetsArgs{
-				Repo: &repoGraphQLID,
+			brgs: &grbphqlbbckend.ListChbngesetsArgs{
+				Repo: &repoGrbphQLID,
 			},
-			wantSafe: true,
-			wantParsed: store.ListChangesetsOpts{
-				RepoIDs: []api.RepoID{repoID},
+			wbntSbfe: true,
+			wbntPbrsed: store.ListChbngesetsOpts{
+				RepoIDs: []bpi.RepoID{repoID},
 			},
 		},
-		// onlyClosable changesets
+		// onlyClosbble chbngesets
 		{
-			args: &graphqlbackend.ListChangesetsArgs{
-				OnlyClosable: &onlyClosable,
+			brgs: &grbphqlbbckend.ListChbngesetsArgs{
+				OnlyClosbble: &onlyClosbble,
 			},
-			wantSafe: true,
-			wantParsed: store.ListChangesetsOpts{
-				States: []btypes.ChangesetState{
-					btypes.ChangesetStateOpen,
-					btypes.ChangesetStateDraft,
+			wbntSbfe: true,
+			wbntPbrsed: store.ListChbngesetsOpts{
+				Stbtes: []btypes.ChbngesetStbte{
+					btypes.ChbngesetStbteOpen,
+					btypes.ChbngesetStbteDrbft,
 				},
 			},
 		},
-		// error when state and onlyClosable are not null
+		// error when stbte bnd onlyClosbble bre not null
 		{
-			args: &graphqlbackend.ListChangesetsArgs{
-				OnlyClosable: &onlyClosable,
-				State:        &openChangsetState,
+			brgs: &grbphqlbbckend.ListChbngesetsArgs{
+				OnlyClosbble: &onlyClosbble,
+				Stbte:        &openChbngsetStbte,
 			},
-			wantSafe:   false,
-			wantParsed: store.ListChangesetsOpts{},
-			wantErr:    "invalid combination of state and onlyClosable",
+			wbntSbfe:   fblse,
+			wbntPbrsed: store.ListChbngesetsOpts{},
+			wbntErr:    "invblid combinbtion of stbte bnd onlyClosbble",
 		},
 	}
-	for i, tc := range tcs {
-		t.Run(strconv.Itoa(i), func(t *testing.T) {
-			haveParsed, haveSafe, err := listChangesetOptsFromArgs(tc.args, batchChangeID)
-			if tc.wantErr == "" && err != nil {
-				t.Fatal(err)
+	for i, tc := rbnge tcs {
+		t.Run(strconv.Itob(i), func(t *testing.T) {
+			hbvePbrsed, hbveSbfe, err := listChbngesetOptsFromArgs(tc.brgs, bbtchChbngeID)
+			if tc.wbntErr == "" && err != nil {
+				t.Fbtbl(err)
 			}
-			haveErr := fmt.Sprintf("%v", err)
-			wantErr := tc.wantErr
-			if wantErr == "" {
-				wantErr = "<nil>"
+			hbveErr := fmt.Sprintf("%v", err)
+			wbntErr := tc.wbntErr
+			if wbntErr == "" {
+				wbntErr = "<nil>"
 			}
-			if have, want := haveErr, wantErr; have != want {
-				t.Errorf("wrong error returned. have=%q want=%q", have, want)
+			if hbve, wbnt := hbveErr, wbntErr; hbve != wbnt {
+				t.Errorf("wrong error returned. hbve=%q wbnt=%q", hbve, wbnt)
 			}
-			if diff := cmp.Diff(haveParsed, tc.wantParsed); diff != "" {
-				t.Errorf("wrong args returned. diff=%s", diff)
+			if diff := cmp.Diff(hbvePbrsed, tc.wbntPbrsed); diff != "" {
+				t.Errorf("wrong brgs returned. diff=%s", diff)
 			}
-			if have, want := haveSafe, tc.wantSafe; have != want {
-				t.Errorf("wrong safe value returned. have=%t want=%t", have, want)
+			if hbve, wbnt := hbveSbfe, tc.wbntSbfe; hbve != wbnt {
+				t.Errorf("wrong sbfe vblue returned. hbve=%t wbnt=%t", hbve, wbnt)
 			}
 		})
 	}
 }
 
-func TestCreateBatchChangesCredential(t *testing.T) {
+func TestCrebteBbtchChbngesCredentibl(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
@@ -1827,874 +1827,874 @@ func TestCreateBatchChangesCredential(t *testing.T) {
 
 	logger := logtest.Scoped(t)
 
-	ctx := context.Background()
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	ctx := context.Bbckground()
+	db := dbtbbbse.NewDB(logger, dbtest.NewDB(logger, t))
 
-	pruneUserCredentials(t, db, nil)
+	pruneUserCredentibls(t, db, nil)
 
-	userID := bt.CreateTestUser(t, db, true).ID
+	userID := bt.CrebteTestUser(t, db, true).ID
 
-	bstore := store.New(db, &observation.TestContext, nil)
+	bstore := store.New(db, &observbtion.TestContext, nil)
 
 	r := &Resolver{store: bstore}
-	s, err := newSchema(db, r)
+	s, err := newSchemb(db, r)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	var validationErr error
-	service.Mocks.ValidateAuthenticator = func(ctx context.Context, externalServiceID, externalServiceType string, a auth.Authenticator) error {
-		return validationErr
+	vbr vblidbtionErr error
+	service.Mocks.VblidbteAuthenticbtor = func(ctx context.Context, externblServiceID, externblServiceType string, b buth.Authenticbtor) error {
+		return vblidbtionErr
 	}
-	t.Cleanup(func() {
+	t.Clebnup(func() {
 		service.Mocks.Reset()
 	})
 
-	t.Run("User credential", func(t *testing.T) {
-		input := map[string]any{
-			"user":                graphqlbackend.MarshalUserID(userID),
-			"externalServiceKind": extsvc.KindGitHub,
-			"externalServiceURL":  "https://github.com/",
-			"credential":          "SOSECRET",
+	t.Run("User credentibl", func(t *testing.T) {
+		input := mbp[string]bny{
+			"user":                grbphqlbbckend.MbrshblUserID(userID),
+			"externblServiceKind": extsvc.KindGitHub,
+			"externblServiceURL":  "https://github.com/",
+			"credentibl":          "SOSECRET",
 		}
 
-		var response struct {
-			CreateBatchChangesCredential apitest.BatchChangesCredential
+		vbr response struct {
+			CrebteBbtchChbngesCredentibl bpitest.BbtchChbngesCredentibl
 		}
-		actorCtx := actor.WithActor(ctx, actor.FromUser(userID))
+		bctorCtx := bctor.WithActor(ctx, bctor.FromUser(userID))
 
-		t.Run("validation fails", func(t *testing.T) {
-			// Throw correct error when credential failed validation
-			validationErr = errors.New("fake validation failed")
-			t.Cleanup(func() {
-				validationErr = nil
+		t.Run("vblidbtion fbils", func(t *testing.T) {
+			// Throw correct error when credentibl fbiled vblidbtion
+			vblidbtionErr = errors.New("fbke vblidbtion fbiled")
+			t.Clebnup(func() {
+				vblidbtionErr = nil
 			})
-			errs := apitest.Exec(actorCtx, t, s, input, &response, mutationCreateCredential)
+			errs := bpitest.Exec(bctorCtx, t, s, input, &response, mutbtionCrebteCredentibl)
 
 			if len(errs) != 1 {
-				t.Fatalf("expected single errors, but got none")
+				t.Fbtblf("expected single errors, but got none")
 			}
-			if have, want := errs[0].Extensions["code"], "ErrVerifyCredentialFailed"; have != want {
-				t.Fatalf("wrong error code. want=%q, have=%q", want, have)
+			if hbve, wbnt := errs[0].Extensions["code"], "ErrVerifyCredentiblFbiled"; hbve != wbnt {
+				t.Fbtblf("wrong error code. wbnt=%q, hbve=%q", wbnt, hbve)
 			}
 		})
 
-		// First time it should work, because no credential exists
-		apitest.MustExec(actorCtx, t, s, input, &response, mutationCreateCredential)
+		// First time it should work, becbuse no credentibl exists
+		bpitest.MustExec(bctorCtx, t, s, input, &response, mutbtionCrebteCredentibl)
 
-		if response.CreateBatchChangesCredential.ID == "" {
-			t.Fatalf("expected credential to be created, but was not")
+		if response.CrebteBbtchChbngesCredentibl.ID == "" {
+			t.Fbtblf("expected credentibl to be crebted, but wbs not")
 		}
 
-		// Second time it should fail
-		errs := apitest.Exec(actorCtx, t, s, input, &response, mutationCreateCredential)
+		// Second time it should fbil
+		errs := bpitest.Exec(bctorCtx, t, s, input, &response, mutbtionCrebteCredentibl)
 
 		if len(errs) != 1 {
-			t.Fatalf("expected single errors, but got none")
+			t.Fbtblf("expected single errors, but got none")
 		}
-		if have, want := errs[0].Extensions["code"], "ErrDuplicateCredential"; have != want {
-			t.Fatalf("wrong error code. want=%q, have=%q", want, have)
+		if hbve, wbnt := errs[0].Extensions["code"], "ErrDuplicbteCredentibl"; hbve != wbnt {
+			t.Fbtblf("wrong error code. wbnt=%q, hbve=%q", wbnt, hbve)
 		}
 	})
-	t.Run("Site credential", func(t *testing.T) {
-		input := map[string]any{
+	t.Run("Site credentibl", func(t *testing.T) {
+		input := mbp[string]bny{
 			"user":                nil,
-			"externalServiceKind": extsvc.KindGitHub,
-			"externalServiceURL":  "https://github.com/",
-			"credential":          "SOSECRET",
+			"externblServiceKind": extsvc.KindGitHub,
+			"externblServiceURL":  "https://github.com/",
+			"credentibl":          "SOSECRET",
 		}
 
-		var response struct {
-			CreateBatchChangesCredential apitest.BatchChangesCredential
+		vbr response struct {
+			CrebteBbtchChbngesCredentibl bpitest.BbtchChbngesCredentibl
 		}
-		actorCtx := actor.WithActor(ctx, actor.FromUser(userID))
+		bctorCtx := bctor.WithActor(ctx, bctor.FromUser(userID))
 
-		t.Run("validation fails", func(t *testing.T) {
-			// Throw correct error when credential failed validation
-			validationErr = errors.New("fake validation failed")
-			t.Cleanup(func() {
-				validationErr = nil
+		t.Run("vblidbtion fbils", func(t *testing.T) {
+			// Throw correct error when credentibl fbiled vblidbtion
+			vblidbtionErr = errors.New("fbke vblidbtion fbiled")
+			t.Clebnup(func() {
+				vblidbtionErr = nil
 			})
-			errs := apitest.Exec(actorCtx, t, s, input, &response, mutationCreateCredential)
+			errs := bpitest.Exec(bctorCtx, t, s, input, &response, mutbtionCrebteCredentibl)
 
 			if len(errs) != 1 {
-				t.Fatalf("expected single errors, but got none")
+				t.Fbtblf("expected single errors, but got none")
 			}
-			if have, want := errs[0].Extensions["code"], "ErrVerifyCredentialFailed"; have != want {
-				t.Fatalf("wrong error code. want=%q, have=%q", want, have)
+			if hbve, wbnt := errs[0].Extensions["code"], "ErrVerifyCredentiblFbiled"; hbve != wbnt {
+				t.Fbtblf("wrong error code. wbnt=%q, hbve=%q", wbnt, hbve)
 			}
 		})
 
-		// First time it should work, because no site credential exists
-		apitest.MustExec(actorCtx, t, s, input, &response, mutationCreateCredential)
+		// First time it should work, becbuse no site credentibl exists
+		bpitest.MustExec(bctorCtx, t, s, input, &response, mutbtionCrebteCredentibl)
 
-		if response.CreateBatchChangesCredential.ID == "" {
-			t.Fatalf("expected credential to be created, but was not")
+		if response.CrebteBbtchChbngesCredentibl.ID == "" {
+			t.Fbtblf("expected credentibl to be crebted, but wbs not")
 		}
 
-		// Second time it should fail
-		errs := apitest.Exec(actorCtx, t, s, input, &response, mutationCreateCredential)
+		// Second time it should fbil
+		errs := bpitest.Exec(bctorCtx, t, s, input, &response, mutbtionCrebteCredentibl)
 
 		if len(errs) != 1 {
-			t.Fatalf("expected single errors, but got none")
+			t.Fbtblf("expected single errors, but got none")
 		}
-		if have, want := errs[0].Extensions["code"], "ErrDuplicateCredential"; have != want {
-			t.Fatalf("wrong error code. want=%q, have=%q", want, have)
+		if hbve, wbnt := errs[0].Extensions["code"], "ErrDuplicbteCredentibl"; hbve != wbnt {
+			t.Fbtblf("wrong error code. wbnt=%q, hbve=%q", wbnt, hbve)
 		}
 	})
 }
 
-const mutationCreateCredential = `
-mutation($user: ID, $externalServiceKind: ExternalServiceKind!, $externalServiceURL: String!, $credential: String!) {
-  createBatchChangesCredential(user: $user, externalServiceKind: $externalServiceKind, externalServiceURL: $externalServiceURL, credential: $credential) { id }
+const mutbtionCrebteCredentibl = `
+mutbtion($user: ID, $externblServiceKind: ExternblServiceKind!, $externblServiceURL: String!, $credentibl: String!) {
+  crebteBbtchChbngesCredentibl(user: $user, externblServiceKind: $externblServiceKind, externblServiceURL: $externblServiceURL, credentibl: $credentibl) { id }
 }
 `
 
-func TestDeleteBatchChangesCredential(t *testing.T) {
+func TestDeleteBbtchChbngesCredentibl(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
 
 	bt.MockRSAKeygen(t)
 	logger := logtest.Scoped(t)
-	ctx := context.Background()
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	ctx := context.Bbckground()
+	db := dbtbbbse.NewDB(logger, dbtest.NewDB(logger, t))
 
-	pruneUserCredentials(t, db, nil)
+	pruneUserCredentibls(t, db, nil)
 
-	userID := bt.CreateTestUser(t, db, true).ID
-	ctx = actor.WithActor(ctx, actor.FromUser(userID))
+	userID := bt.CrebteTestUser(t, db, true).ID
+	ctx = bctor.WithActor(ctx, bctor.FromUser(userID))
 
-	bstore := store.New(db, &observation.TestContext, nil)
+	bstore := store.New(db, &observbtion.TestContext, nil)
 
-	authenticator := &auth.OAuthBearerToken{Token: "SOSECRET"}
-	userCred, err := bstore.UserCredentials().Create(ctx, database.UserCredentialScope{
-		Domain:              database.UserCredentialDomainBatches,
-		ExternalServiceType: extsvc.TypeGitHub,
-		ExternalServiceID:   "https://github.com/",
+	buthenticbtor := &buth.OAuthBebrerToken{Token: "SOSECRET"}
+	userCred, err := bstore.UserCredentibls().Crebte(ctx, dbtbbbse.UserCredentiblScope{
+		Dombin:              dbtbbbse.UserCredentiblDombinBbtches,
+		ExternblServiceType: extsvc.TypeGitHub,
+		ExternblServiceID:   "https://github.com/",
 		UserID:              userID,
-	}, authenticator)
+	}, buthenticbtor)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
-	siteCred := &btypes.SiteCredential{
-		ExternalServiceType: extsvc.TypeGitHub,
-		ExternalServiceID:   "https://github.com/",
+	siteCred := &btypes.SiteCredentibl{
+		ExternblServiceType: extsvc.TypeGitHub,
+		ExternblServiceID:   "https://github.com/",
 	}
-	if err := bstore.CreateSiteCredential(ctx, siteCred, authenticator); err != nil {
-		t.Fatal(err)
+	if err := bstore.CrebteSiteCredentibl(ctx, siteCred, buthenticbtor); err != nil {
+		t.Fbtbl(err)
 	}
 
 	r := &Resolver{store: bstore}
-	s, err := newSchema(db, r)
+	s, err := newSchemb(db, r)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	t.Run("User credential", func(t *testing.T) {
-		input := map[string]any{
-			"batchChangesCredential": marshalBatchChangesCredentialID(userCred.ID, false),
+	t.Run("User credentibl", func(t *testing.T) {
+		input := mbp[string]bny{
+			"bbtchChbngesCredentibl": mbrshblBbtchChbngesCredentiblID(userCred.ID, fblse),
 		}
 
-		var response struct{ DeleteBatchChangesCredential apitest.EmptyResponse }
-		actorCtx := actor.WithActor(ctx, actor.FromUser(userID))
+		vbr response struct{ DeleteBbtchChbngesCredentibl bpitest.EmptyResponse }
+		bctorCtx := bctor.WithActor(ctx, bctor.FromUser(userID))
 
-		// First time it should work, because a credential exists
-		apitest.MustExec(actorCtx, t, s, input, &response, mutationDeleteCredential)
+		// First time it should work, becbuse b credentibl exists
+		bpitest.MustExec(bctorCtx, t, s, input, &response, mutbtionDeleteCredentibl)
 
-		// Second time it should fail
-		errs := apitest.Exec(actorCtx, t, s, input, &response, mutationDeleteCredential)
+		// Second time it should fbil
+		errs := bpitest.Exec(bctorCtx, t, s, input, &response, mutbtionDeleteCredentibl)
 
 		if len(errs) != 1 {
-			t.Fatalf("expected a single error, but got %d", len(errs))
+			t.Fbtblf("expected b single error, but got %d", len(errs))
 		}
-		if have, want := errs[0].Message, fmt.Sprintf("user credential not found: [%d]", userCred.ID); have != want {
-			t.Fatalf("wrong error code. want=%q, have=%q", want, have)
+		if hbve, wbnt := errs[0].Messbge, fmt.Sprintf("user credentibl not found: [%d]", userCred.ID); hbve != wbnt {
+			t.Fbtblf("wrong error code. wbnt=%q, hbve=%q", wbnt, hbve)
 		}
 	})
 
-	t.Run("Site credential", func(t *testing.T) {
-		input := map[string]any{
-			"batchChangesCredential": marshalBatchChangesCredentialID(userCred.ID, true),
+	t.Run("Site credentibl", func(t *testing.T) {
+		input := mbp[string]bny{
+			"bbtchChbngesCredentibl": mbrshblBbtchChbngesCredentiblID(userCred.ID, true),
 		}
 
-		var response struct{ DeleteBatchChangesCredential apitest.EmptyResponse }
-		actorCtx := actor.WithActor(ctx, actor.FromUser(userID))
+		vbr response struct{ DeleteBbtchChbngesCredentibl bpitest.EmptyResponse }
+		bctorCtx := bctor.WithActor(ctx, bctor.FromUser(userID))
 
-		// First time it should work, because a credential exists
-		apitest.MustExec(actorCtx, t, s, input, &response, mutationDeleteCredential)
+		// First time it should work, becbuse b credentibl exists
+		bpitest.MustExec(bctorCtx, t, s, input, &response, mutbtionDeleteCredentibl)
 
-		// Second time it should fail
-		errs := apitest.Exec(actorCtx, t, s, input, &response, mutationDeleteCredential)
+		// Second time it should fbil
+		errs := bpitest.Exec(bctorCtx, t, s, input, &response, mutbtionDeleteCredentibl)
 
 		if len(errs) != 1 {
-			t.Fatalf("expected single errors, but got none")
+			t.Fbtblf("expected single errors, but got none")
 		}
-		if have, want := errs[0].Message, "no results"; have != want {
-			t.Fatalf("wrong error code. want=%q, have=%q", want, have)
+		if hbve, wbnt := errs[0].Messbge, "no results"; hbve != wbnt {
+			t.Fbtblf("wrong error code. wbnt=%q, hbve=%q", wbnt, hbve)
 		}
 	})
 }
 
-const mutationDeleteCredential = `
-mutation($batchChangesCredential: ID!) {
-  deleteBatchChangesCredential(batchChangesCredential: $batchChangesCredential) { alwaysNil }
+const mutbtionDeleteCredentibl = `
+mutbtion($bbtchChbngesCredentibl: ID!) {
+  deleteBbtchChbngesCredentibl(bbtchChbngesCredentibl: $bbtchChbngesCredentibl) { blwbysNil }
 }
 `
 
-func TestCreateChangesetComments(t *testing.T) {
+func TestCrebteChbngesetComments(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
 
 	logger := logtest.Scoped(t)
-	ctx := context.Background()
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
-	bstore := store.New(db, &observation.TestContext, nil)
+	ctx := context.Bbckground()
+	db := dbtbbbse.NewDB(logger, dbtest.NewDB(logger, t))
+	bstore := store.New(db, &observbtion.TestContext, nil)
 
-	userID := bt.CreateTestUser(t, db, true).ID
-	// We give this user the `BATCH_CHANGES#WRITE` permission so they're authorized
-	// to create Batch Changes.
-	assignBatchChangesWritePermissionToUser(ctx, t, db, userID)
+	userID := bt.CrebteTestUser(t, db, true).ID
+	// We give this user the `BATCH_CHANGES#WRITE` permission so they're buthorized
+	// to crebte Bbtch Chbnges.
+	bssignBbtchChbngesWritePermissionToUser(ctx, t, db, userID)
 
-	unauthorizedUser := bt.CreateTestUser(t, db, false)
+	unbuthorizedUser := bt.CrebteTestUser(t, db, fblse)
 
-	batchSpec := bt.CreateBatchSpec(t, ctx, bstore, "test-comments", userID, 0)
-	otherBatchSpec := bt.CreateBatchSpec(t, ctx, bstore, "test-comments-other", userID, 0)
-	batchChange := bt.CreateBatchChange(t, ctx, bstore, "test-comments", userID, batchSpec.ID)
-	otherBatchChange := bt.CreateBatchChange(t, ctx, bstore, "test-comments-other", userID, otherBatchSpec.ID)
-	repo, _ := bt.CreateTestRepo(t, ctx, db)
-	changeset := bt.CreateChangeset(t, ctx, bstore, bt.TestChangesetOpts{
+	bbtchSpec := bt.CrebteBbtchSpec(t, ctx, bstore, "test-comments", userID, 0)
+	otherBbtchSpec := bt.CrebteBbtchSpec(t, ctx, bstore, "test-comments-other", userID, 0)
+	bbtchChbnge := bt.CrebteBbtchChbnge(t, ctx, bstore, "test-comments", userID, bbtchSpec.ID)
+	otherBbtchChbnge := bt.CrebteBbtchChbnge(t, ctx, bstore, "test-comments-other", userID, otherBbtchSpec.ID)
+	repo, _ := bt.CrebteTestRepo(t, ctx, db)
+	chbngeset := bt.CrebteChbngeset(t, ctx, bstore, bt.TestChbngesetOpts{
 		Repo:             repo.ID,
-		BatchChange:      batchChange.ID,
-		PublicationState: btypes.ChangesetPublicationStatePublished,
+		BbtchChbnge:      bbtchChbnge.ID,
+		PublicbtionStbte: btypes.ChbngesetPublicbtionStbtePublished,
 	})
-	otherChangeset := bt.CreateChangeset(t, ctx, bstore, bt.TestChangesetOpts{
+	otherChbngeset := bt.CrebteChbngeset(t, ctx, bstore, bt.TestChbngesetOpts{
 		Repo:             repo.ID,
-		BatchChange:      otherBatchChange.ID,
-		PublicationState: btypes.ChangesetPublicationStatePublished,
+		BbtchChbnge:      otherBbtchChbnge.ID,
+		PublicbtionStbte: btypes.ChbngesetPublicbtionStbtePublished,
 	})
 
 	r := &Resolver{store: bstore}
-	s, err := newSchema(db, r)
+	s, err := newSchemb(db, r)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	generateInput := func() map[string]any {
-		return map[string]any{
-			"batchChange": bgql.MarshalBatchChangeID(batchChange.ID),
-			"changesets":  []string{string(bgql.MarshalChangesetID(changeset.ID))},
+	generbteInput := func() mbp[string]bny {
+		return mbp[string]bny{
+			"bbtchChbnge": bgql.MbrshblBbtchChbngeID(bbtchChbnge.ID),
+			"chbngesets":  []string{string(bgql.MbrshblChbngesetID(chbngeset.ID))},
 			"body":        "test-body",
 		}
 	}
 
-	var response struct {
-		CreateChangesetComments apitest.BulkOperation
+	vbr response struct {
+		CrebteChbngesetComments bpitest.BulkOperbtion
 	}
-	actorCtx := actor.WithActor(ctx, actor.FromUser(userID))
+	bctorCtx := bctor.WithActor(ctx, bctor.FromUser(userID))
 
-	t.Run("unauthorized access", func(t *testing.T) {
-		input := generateInput()
-		unauthorizedCtx := actor.WithActor(ctx, actor.FromUser(unauthorizedUser.ID))
-		errs := apitest.Exec(unauthorizedCtx, t, s, input, &response, mutationCreateChangesetComments)
+	t.Run("unbuthorized bccess", func(t *testing.T) {
+		input := generbteInput()
+		unbuthorizedCtx := bctor.WithActor(ctx, bctor.FromUser(unbuthorizedUser.ID))
+		errs := bpitest.Exec(unbuthorizedCtx, t, s, input, &response, mutbtionCrebteChbngesetComments)
 		if errs == nil {
-			t.Fatal("expected error")
+			t.Fbtbl("expected error")
 		}
 		firstErr := errs[0]
-		if !strings.Contains(firstErr.Error(), fmt.Sprintf("user is missing permission %s", rbac.BatchChangesWritePermission)) {
-			t.Fatalf("expected unauthorized error, got %+v", err)
+		if !strings.Contbins(firstErr.Error(), fmt.Sprintf("user is missing permission %s", rbbc.BbtchChbngesWritePermission)) {
+			t.Fbtblf("expected unbuthorized error, got %+v", err)
 		}
 	})
 
-	t.Run("empty body fails", func(t *testing.T) {
-		input := generateInput()
+	t.Run("empty body fbils", func(t *testing.T) {
+		input := generbteInput()
 		input["body"] = ""
-		errs := apitest.Exec(actorCtx, t, s, input, &response, mutationCreateChangesetComments)
+		errs := bpitest.Exec(bctorCtx, t, s, input, &response, mutbtionCrebteChbngesetComments)
 
 		if len(errs) != 1 {
-			t.Fatalf("expected single errors, but got none")
+			t.Fbtblf("expected single errors, but got none")
 		}
-		if have, want := errs[0].Message, "empty comment body is not allowed"; have != want {
-			t.Fatalf("wrong error. want=%q, have=%q", want, have)
+		if hbve, wbnt := errs[0].Messbge, "empty comment body is not bllowed"; hbve != wbnt {
+			t.Fbtblf("wrong error. wbnt=%q, hbve=%q", wbnt, hbve)
 		}
 	})
 
-	t.Run("0 changesets fails", func(t *testing.T) {
-		input := generateInput()
-		input["changesets"] = []string{}
-		errs := apitest.Exec(actorCtx, t, s, input, &response, mutationCreateChangesetComments)
+	t.Run("0 chbngesets fbils", func(t *testing.T) {
+		input := generbteInput()
+		input["chbngesets"] = []string{}
+		errs := bpitest.Exec(bctorCtx, t, s, input, &response, mutbtionCrebteChbngesetComments)
 
 		if len(errs) != 1 {
-			t.Fatalf("expected single errors, but got none")
+			t.Fbtblf("expected single errors, but got none")
 		}
-		if have, want := errs[0].Message, "specify at least one changeset"; have != want {
-			t.Fatalf("wrong error. want=%q, have=%q", want, have)
+		if hbve, wbnt := errs[0].Messbge, "specify bt lebst one chbngeset"; hbve != wbnt {
+			t.Fbtblf("wrong error. wbnt=%q, hbve=%q", wbnt, hbve)
 		}
 	})
 
-	t.Run("changeset in different batch change fails", func(t *testing.T) {
-		input := generateInput()
-		input["changesets"] = []string{string(bgql.MarshalChangesetID(otherChangeset.ID))}
-		errs := apitest.Exec(actorCtx, t, s, input, &response, mutationCreateChangesetComments)
+	t.Run("chbngeset in different bbtch chbnge fbils", func(t *testing.T) {
+		input := generbteInput()
+		input["chbngesets"] = []string{string(bgql.MbrshblChbngesetID(otherChbngeset.ID))}
+		errs := bpitest.Exec(bctorCtx, t, s, input, &response, mutbtionCrebteChbngesetComments)
 
 		if len(errs) != 1 {
-			t.Fatalf("expected single errors, but got none")
+			t.Fbtblf("expected single errors, but got none")
 		}
-		if have, want := errs[0].Message, "some changesets could not be found"; have != want {
-			t.Fatalf("wrong error. want=%q, have=%q", want, have)
+		if hbve, wbnt := errs[0].Messbge, "some chbngesets could not be found"; hbve != wbnt {
+			t.Fbtblf("wrong error. wbnt=%q, hbve=%q", wbnt, hbve)
 		}
 	})
 
 	t.Run("runs successfully", func(t *testing.T) {
-		input := generateInput()
-		apitest.MustExec(actorCtx, t, s, input, &response, mutationCreateChangesetComments)
+		input := generbteInput()
+		bpitest.MustExec(bctorCtx, t, s, input, &response, mutbtionCrebteChbngesetComments)
 
-		if response.CreateChangesetComments.ID == "" {
-			t.Fatalf("expected bulk operation to be created, but was not")
+		if response.CrebteChbngesetComments.ID == "" {
+			t.Fbtblf("expected bulk operbtion to be crebted, but wbs not")
 		}
 	})
 }
 
-const mutationCreateChangesetComments = `
-mutation($batchChange: ID!, $changesets: [ID!]!, $body: String!) {
-    createChangesetComments(batchChange: $batchChange, changesets: $changesets, body: $body) { id }
+const mutbtionCrebteChbngesetComments = `
+mutbtion($bbtchChbnge: ID!, $chbngesets: [ID!]!, $body: String!) {
+    crebteChbngesetComments(bbtchChbnge: $bbtchChbnge, chbngesets: $chbngesets, body: $body) { id }
 }
 `
 
-func TestReenqueueChangesets(t *testing.T) {
+func TestReenqueueChbngesets(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
 
 	logger := logtest.Scoped(t)
-	ctx := context.Background()
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
-	bstore := store.New(db, &observation.TestContext, nil)
+	ctx := context.Bbckground()
+	db := dbtbbbse.NewDB(logger, dbtest.NewDB(logger, t))
+	bstore := store.New(db, &observbtion.TestContext, nil)
 
-	userID := bt.CreateTestUser(t, db, true).ID
-	// We give this user the `BATCH_CHANGES#WRITE` permission so they're authorized
-	// to create Batch Changes.
-	assignBatchChangesWritePermissionToUser(ctx, t, db, userID)
+	userID := bt.CrebteTestUser(t, db, true).ID
+	// We give this user the `BATCH_CHANGES#WRITE` permission so they're buthorized
+	// to crebte Bbtch Chbnges.
+	bssignBbtchChbngesWritePermissionToUser(ctx, t, db, userID)
 
-	unauthorizedUser := bt.CreateTestUser(t, db, false)
+	unbuthorizedUser := bt.CrebteTestUser(t, db, fblse)
 
-	batchSpec := bt.CreateBatchSpec(t, ctx, bstore, "test-reenqueue", userID, 0)
-	otherBatchSpec := bt.CreateBatchSpec(t, ctx, bstore, "test-reenqueue-other", userID, 0)
-	batchChange := bt.CreateBatchChange(t, ctx, bstore, "test-reenqueue", userID, batchSpec.ID)
-	otherBatchChange := bt.CreateBatchChange(t, ctx, bstore, "test-reenqueue-other", userID, otherBatchSpec.ID)
-	repo, _ := bt.CreateTestRepo(t, ctx, db)
-	changeset := bt.CreateChangeset(t, ctx, bstore, bt.TestChangesetOpts{
+	bbtchSpec := bt.CrebteBbtchSpec(t, ctx, bstore, "test-reenqueue", userID, 0)
+	otherBbtchSpec := bt.CrebteBbtchSpec(t, ctx, bstore, "test-reenqueue-other", userID, 0)
+	bbtchChbnge := bt.CrebteBbtchChbnge(t, ctx, bstore, "test-reenqueue", userID, bbtchSpec.ID)
+	otherBbtchChbnge := bt.CrebteBbtchChbnge(t, ctx, bstore, "test-reenqueue-other", userID, otherBbtchSpec.ID)
+	repo, _ := bt.CrebteTestRepo(t, ctx, db)
+	chbngeset := bt.CrebteChbngeset(t, ctx, bstore, bt.TestChbngesetOpts{
 		Repo:             repo.ID,
-		BatchChange:      batchChange.ID,
-		PublicationState: btypes.ChangesetPublicationStatePublished,
-		ReconcilerState:  btypes.ReconcilerStateFailed,
+		BbtchChbnge:      bbtchChbnge.ID,
+		PublicbtionStbte: btypes.ChbngesetPublicbtionStbtePublished,
+		ReconcilerStbte:  btypes.ReconcilerStbteFbiled,
 	})
-	otherChangeset := bt.CreateChangeset(t, ctx, bstore, bt.TestChangesetOpts{
+	otherChbngeset := bt.CrebteChbngeset(t, ctx, bstore, bt.TestChbngesetOpts{
 		Repo:             repo.ID,
-		BatchChange:      otherBatchChange.ID,
-		PublicationState: btypes.ChangesetPublicationStatePublished,
-		ReconcilerState:  btypes.ReconcilerStateFailed,
+		BbtchChbnge:      otherBbtchChbnge.ID,
+		PublicbtionStbte: btypes.ChbngesetPublicbtionStbtePublished,
+		ReconcilerStbte:  btypes.ReconcilerStbteFbiled,
 	})
-	successfulChangeset := bt.CreateChangeset(t, ctx, bstore, bt.TestChangesetOpts{
+	successfulChbngeset := bt.CrebteChbngeset(t, ctx, bstore, bt.TestChbngesetOpts{
 		Repo:             repo.ID,
-		BatchChange:      otherBatchChange.ID,
-		PublicationState: btypes.ChangesetPublicationStatePublished,
-		ReconcilerState:  btypes.ReconcilerStateCompleted,
-		ExternalState:    btypes.ChangesetExternalStateOpen,
+		BbtchChbnge:      otherBbtchChbnge.ID,
+		PublicbtionStbte: btypes.ChbngesetPublicbtionStbtePublished,
+		ReconcilerStbte:  btypes.ReconcilerStbteCompleted,
+		ExternblStbte:    btypes.ChbngesetExternblStbteOpen,
 	})
 
 	r := &Resolver{store: bstore}
-	s, err := newSchema(db, r)
+	s, err := newSchemb(db, r)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	generateInput := func() map[string]any {
-		return map[string]any{
-			"batchChange": bgql.MarshalBatchChangeID(batchChange.ID),
-			"changesets":  []string{string(bgql.MarshalChangesetID(changeset.ID))},
+	generbteInput := func() mbp[string]bny {
+		return mbp[string]bny{
+			"bbtchChbnge": bgql.MbrshblBbtchChbngeID(bbtchChbnge.ID),
+			"chbngesets":  []string{string(bgql.MbrshblChbngesetID(chbngeset.ID))},
 		}
 	}
 
-	var response struct {
-		ReenqueueChangesets apitest.BulkOperation
+	vbr response struct {
+		ReenqueueChbngesets bpitest.BulkOperbtion
 	}
-	actorCtx := actor.WithActor(ctx, actor.FromUser(userID))
+	bctorCtx := bctor.WithActor(ctx, bctor.FromUser(userID))
 
-	t.Run("unauthorized access", func(t *testing.T) {
-		unauthorizedCtx := actor.WithActor(ctx, actor.FromUser(unauthorizedUser.ID))
-		input := generateInput()
-		input["changesets"] = []string{string(bgql.MarshalChangesetID(successfulChangeset.ID))}
-		errs := apitest.Exec(unauthorizedCtx, t, s, input, &response, mutationReenqueueChangesets)
+	t.Run("unbuthorized bccess", func(t *testing.T) {
+		unbuthorizedCtx := bctor.WithActor(ctx, bctor.FromUser(unbuthorizedUser.ID))
+		input := generbteInput()
+		input["chbngesets"] = []string{string(bgql.MbrshblChbngesetID(successfulChbngeset.ID))}
+		errs := bpitest.Exec(unbuthorizedCtx, t, s, input, &response, mutbtionReenqueueChbngesets)
 		if errs == nil {
-			t.Fatal("expected error")
+			t.Fbtbl("expected error")
 		}
 		firstErr := errs[0]
-		if !strings.Contains(firstErr.Error(), fmt.Sprintf("user is missing permission %s", rbac.BatchChangesWritePermission)) {
-			t.Fatalf("expected unauthorized error, got %+v", err)
+		if !strings.Contbins(firstErr.Error(), fmt.Sprintf("user is missing permission %s", rbbc.BbtchChbngesWritePermission)) {
+			t.Fbtblf("expected unbuthorized error, got %+v", err)
 		}
 	})
 
-	t.Run("0 changesets fails", func(t *testing.T) {
-		input := generateInput()
-		input["changesets"] = []string{}
-		errs := apitest.Exec(actorCtx, t, s, input, &response, mutationReenqueueChangesets)
+	t.Run("0 chbngesets fbils", func(t *testing.T) {
+		input := generbteInput()
+		input["chbngesets"] = []string{}
+		errs := bpitest.Exec(bctorCtx, t, s, input, &response, mutbtionReenqueueChbngesets)
 
 		if len(errs) != 1 {
-			t.Fatalf("expected single errors, but got none")
+			t.Fbtblf("expected single errors, but got none")
 		}
-		if have, want := errs[0].Message, "specify at least one changeset"; have != want {
-			t.Fatalf("wrong error. want=%q, have=%q", want, have)
+		if hbve, wbnt := errs[0].Messbge, "specify bt lebst one chbngeset"; hbve != wbnt {
+			t.Fbtblf("wrong error. wbnt=%q, hbve=%q", wbnt, hbve)
 		}
 	})
 
-	t.Run("changeset in different batch change fails", func(t *testing.T) {
-		input := generateInput()
-		input["changesets"] = []string{string(bgql.MarshalChangesetID(otherChangeset.ID))}
-		errs := apitest.Exec(actorCtx, t, s, input, &response, mutationReenqueueChangesets)
+	t.Run("chbngeset in different bbtch chbnge fbils", func(t *testing.T) {
+		input := generbteInput()
+		input["chbngesets"] = []string{string(bgql.MbrshblChbngesetID(otherChbngeset.ID))}
+		errs := bpitest.Exec(bctorCtx, t, s, input, &response, mutbtionReenqueueChbngesets)
 
 		if len(errs) != 1 {
-			t.Fatalf("expected single errors, but got none")
+			t.Fbtblf("expected single errors, but got none")
 		}
-		if have, want := errs[0].Message, "some changesets could not be found"; have != want {
-			t.Fatalf("wrong error. want=%q, have=%q", want, have)
+		if hbve, wbnt := errs[0].Messbge, "some chbngesets could not be found"; hbve != wbnt {
+			t.Fbtblf("wrong error. wbnt=%q, hbve=%q", wbnt, hbve)
 		}
 	})
 
-	t.Run("successful changeset fails", func(t *testing.T) {
-		input := generateInput()
-		input["changesets"] = []string{string(bgql.MarshalChangesetID(successfulChangeset.ID))}
-		errs := apitest.Exec(actorCtx, t, s, input, &response, mutationReenqueueChangesets)
+	t.Run("successful chbngeset fbils", func(t *testing.T) {
+		input := generbteInput()
+		input["chbngesets"] = []string{string(bgql.MbrshblChbngesetID(successfulChbngeset.ID))}
+		errs := bpitest.Exec(bctorCtx, t, s, input, &response, mutbtionReenqueueChbngesets)
 
 		if len(errs) != 1 {
-			t.Fatalf("expected single errors, but got none")
+			t.Fbtblf("expected single errors, but got none")
 		}
-		if have, want := errs[0].Message, "some changesets could not be found"; have != want {
-			t.Fatalf("wrong error. want=%q, have=%q", want, have)
+		if hbve, wbnt := errs[0].Messbge, "some chbngesets could not be found"; hbve != wbnt {
+			t.Fbtblf("wrong error. wbnt=%q, hbve=%q", wbnt, hbve)
 		}
 	})
 
 	t.Run("runs successfully", func(t *testing.T) {
-		input := generateInput()
-		apitest.MustExec(actorCtx, t, s, input, &response, mutationReenqueueChangesets)
+		input := generbteInput()
+		bpitest.MustExec(bctorCtx, t, s, input, &response, mutbtionReenqueueChbngesets)
 
-		if response.ReenqueueChangesets.ID == "" {
-			t.Fatalf("expected bulk operation to be created, but was not")
+		if response.ReenqueueChbngesets.ID == "" {
+			t.Fbtblf("expected bulk operbtion to be crebted, but wbs not")
 		}
 	})
 }
 
-const mutationReenqueueChangesets = `
-mutation($batchChange: ID!, $changesets: [ID!]!) {
-    reenqueueChangesets(batchChange: $batchChange, changesets: $changesets) { id }
+const mutbtionReenqueueChbngesets = `
+mutbtion($bbtchChbnge: ID!, $chbngesets: [ID!]!) {
+    reenqueueChbngesets(bbtchChbnge: $bbtchChbnge, chbngesets: $chbngesets) { id }
 }
 `
 
-func TestMergeChangesets(t *testing.T) {
+func TestMergeChbngesets(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
 
 	logger := logtest.Scoped(t)
-	ctx := context.Background()
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
-	bstore := store.New(db, &observation.TestContext, nil)
+	ctx := context.Bbckground()
+	db := dbtbbbse.NewDB(logger, dbtest.NewDB(logger, t))
+	bstore := store.New(db, &observbtion.TestContext, nil)
 
-	userID := bt.CreateTestUser(t, db, true).ID
-	// We give this user the `BATCH_CHANGES#WRITE` permission so they're authorized
-	// to create Batch Changes.
-	assignBatchChangesWritePermissionToUser(ctx, t, db, userID)
+	userID := bt.CrebteTestUser(t, db, true).ID
+	// We give this user the `BATCH_CHANGES#WRITE` permission so they're buthorized
+	// to crebte Bbtch Chbnges.
+	bssignBbtchChbngesWritePermissionToUser(ctx, t, db, userID)
 
-	unauthorizedUser := bt.CreateTestUser(t, db, false)
+	unbuthorizedUser := bt.CrebteTestUser(t, db, fblse)
 
-	batchSpec := bt.CreateBatchSpec(t, ctx, bstore, "test-merge", userID, 0)
-	otherBatchSpec := bt.CreateBatchSpec(t, ctx, bstore, "test-merge-other", userID, 0)
-	batchChange := bt.CreateBatchChange(t, ctx, bstore, "test-merge", userID, batchSpec.ID)
-	otherBatchChange := bt.CreateBatchChange(t, ctx, bstore, "test-merge-other", userID, otherBatchSpec.ID)
-	repo, _ := bt.CreateTestRepo(t, ctx, db)
-	changeset := bt.CreateChangeset(t, ctx, bstore, bt.TestChangesetOpts{
+	bbtchSpec := bt.CrebteBbtchSpec(t, ctx, bstore, "test-merge", userID, 0)
+	otherBbtchSpec := bt.CrebteBbtchSpec(t, ctx, bstore, "test-merge-other", userID, 0)
+	bbtchChbnge := bt.CrebteBbtchChbnge(t, ctx, bstore, "test-merge", userID, bbtchSpec.ID)
+	otherBbtchChbnge := bt.CrebteBbtchChbnge(t, ctx, bstore, "test-merge-other", userID, otherBbtchSpec.ID)
+	repo, _ := bt.CrebteTestRepo(t, ctx, db)
+	chbngeset := bt.CrebteChbngeset(t, ctx, bstore, bt.TestChbngesetOpts{
 		Repo:             repo.ID,
-		BatchChange:      batchChange.ID,
-		PublicationState: btypes.ChangesetPublicationStatePublished,
-		ReconcilerState:  btypes.ReconcilerStateCompleted,
-		ExternalState:    btypes.ChangesetExternalStateOpen,
+		BbtchChbnge:      bbtchChbnge.ID,
+		PublicbtionStbte: btypes.ChbngesetPublicbtionStbtePublished,
+		ReconcilerStbte:  btypes.ReconcilerStbteCompleted,
+		ExternblStbte:    btypes.ChbngesetExternblStbteOpen,
 	})
-	otherChangeset := bt.CreateChangeset(t, ctx, bstore, bt.TestChangesetOpts{
+	otherChbngeset := bt.CrebteChbngeset(t, ctx, bstore, bt.TestChbngesetOpts{
 		Repo:             repo.ID,
-		BatchChange:      otherBatchChange.ID,
-		PublicationState: btypes.ChangesetPublicationStatePublished,
-		ReconcilerState:  btypes.ReconcilerStateCompleted,
-		ExternalState:    btypes.ChangesetExternalStateOpen,
+		BbtchChbnge:      otherBbtchChbnge.ID,
+		PublicbtionStbte: btypes.ChbngesetPublicbtionStbtePublished,
+		ReconcilerStbte:  btypes.ReconcilerStbteCompleted,
+		ExternblStbte:    btypes.ChbngesetExternblStbteOpen,
 	})
-	mergedChangeset := bt.CreateChangeset(t, ctx, bstore, bt.TestChangesetOpts{
+	mergedChbngeset := bt.CrebteChbngeset(t, ctx, bstore, bt.TestChbngesetOpts{
 		Repo:             repo.ID,
-		BatchChange:      otherBatchChange.ID,
-		PublicationState: btypes.ChangesetPublicationStatePublished,
-		ReconcilerState:  btypes.ReconcilerStateCompleted,
-		ExternalState:    btypes.ChangesetExternalStateMerged,
+		BbtchChbnge:      otherBbtchChbnge.ID,
+		PublicbtionStbte: btypes.ChbngesetPublicbtionStbtePublished,
+		ReconcilerStbte:  btypes.ReconcilerStbteCompleted,
+		ExternblStbte:    btypes.ChbngesetExternblStbteMerged,
 	})
 
 	r := &Resolver{store: bstore}
-	s, err := newSchema(db, r)
+	s, err := newSchemb(db, r)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	generateInput := func() map[string]any {
-		return map[string]any{
-			"batchChange": bgql.MarshalBatchChangeID(batchChange.ID),
-			"changesets":  []string{string(bgql.MarshalChangesetID(changeset.ID))},
+	generbteInput := func() mbp[string]bny {
+		return mbp[string]bny{
+			"bbtchChbnge": bgql.MbrshblBbtchChbngeID(bbtchChbnge.ID),
+			"chbngesets":  []string{string(bgql.MbrshblChbngesetID(chbngeset.ID))},
 		}
 	}
 
-	var response struct {
-		MergeChangesets apitest.BulkOperation
+	vbr response struct {
+		MergeChbngesets bpitest.BulkOperbtion
 	}
-	actorCtx := actor.WithActor(ctx, actor.FromUser(userID))
+	bctorCtx := bctor.WithActor(ctx, bctor.FromUser(userID))
 
-	t.Run("unauthorized access", func(t *testing.T) {
-		unauthorizedCtx := actor.WithActor(ctx, actor.FromUser(unauthorizedUser.ID))
-		input := generateInput()
-		errs := apitest.Exec(unauthorizedCtx, t, s, input, &response, mutationMergeChangesets)
+	t.Run("unbuthorized bccess", func(t *testing.T) {
+		unbuthorizedCtx := bctor.WithActor(ctx, bctor.FromUser(unbuthorizedUser.ID))
+		input := generbteInput()
+		errs := bpitest.Exec(unbuthorizedCtx, t, s, input, &response, mutbtionMergeChbngesets)
 		if errs == nil {
-			t.Fatal("expected error")
+			t.Fbtbl("expected error")
 		}
 		firstErr := errs[0]
-		if !strings.Contains(firstErr.Error(), fmt.Sprintf("user is missing permission %s", rbac.BatchChangesWritePermission)) {
-			t.Fatalf("expected unauthorized error, got %+v", err)
+		if !strings.Contbins(firstErr.Error(), fmt.Sprintf("user is missing permission %s", rbbc.BbtchChbngesWritePermission)) {
+			t.Fbtblf("expected unbuthorized error, got %+v", err)
 		}
 	})
 
-	t.Run("0 changesets fails", func(t *testing.T) {
-		input := generateInput()
-		input["changesets"] = []string{}
-		errs := apitest.Exec(actorCtx, t, s, input, &response, mutationMergeChangesets)
+	t.Run("0 chbngesets fbils", func(t *testing.T) {
+		input := generbteInput()
+		input["chbngesets"] = []string{}
+		errs := bpitest.Exec(bctorCtx, t, s, input, &response, mutbtionMergeChbngesets)
 
 		if len(errs) != 1 {
-			t.Fatalf("expected single errors, but got none")
+			t.Fbtblf("expected single errors, but got none")
 		}
-		if have, want := errs[0].Message, "specify at least one changeset"; have != want {
-			t.Fatalf("wrong error. want=%q, have=%q", want, have)
+		if hbve, wbnt := errs[0].Messbge, "specify bt lebst one chbngeset"; hbve != wbnt {
+			t.Fbtblf("wrong error. wbnt=%q, hbve=%q", wbnt, hbve)
 		}
 	})
 
-	t.Run("changeset in different batch change fails", func(t *testing.T) {
-		input := generateInput()
-		input["changesets"] = []string{string(bgql.MarshalChangesetID(otherChangeset.ID))}
-		errs := apitest.Exec(actorCtx, t, s, input, &response, mutationMergeChangesets)
+	t.Run("chbngeset in different bbtch chbnge fbils", func(t *testing.T) {
+		input := generbteInput()
+		input["chbngesets"] = []string{string(bgql.MbrshblChbngesetID(otherChbngeset.ID))}
+		errs := bpitest.Exec(bctorCtx, t, s, input, &response, mutbtionMergeChbngesets)
 
 		if len(errs) != 1 {
-			t.Fatalf("expected single errors, but got none")
+			t.Fbtblf("expected single errors, but got none")
 		}
-		if have, want := errs[0].Message, "some changesets could not be found"; have != want {
-			t.Fatalf("wrong error. want=%q, have=%q", want, have)
+		if hbve, wbnt := errs[0].Messbge, "some chbngesets could not be found"; hbve != wbnt {
+			t.Fbtblf("wrong error. wbnt=%q, hbve=%q", wbnt, hbve)
 		}
 	})
 
-	t.Run("merged changeset fails", func(t *testing.T) {
-		input := generateInput()
-		input["changesets"] = []string{string(bgql.MarshalChangesetID(mergedChangeset.ID))}
-		errs := apitest.Exec(actorCtx, t, s, input, &response, mutationMergeChangesets)
+	t.Run("merged chbngeset fbils", func(t *testing.T) {
+		input := generbteInput()
+		input["chbngesets"] = []string{string(bgql.MbrshblChbngesetID(mergedChbngeset.ID))}
+		errs := bpitest.Exec(bctorCtx, t, s, input, &response, mutbtionMergeChbngesets)
 
 		if len(errs) != 1 {
-			t.Fatalf("expected single errors, but got none")
+			t.Fbtblf("expected single errors, but got none")
 		}
-		if have, want := errs[0].Message, "some changesets could not be found"; have != want {
-			t.Fatalf("wrong error. want=%q, have=%q", want, have)
+		if hbve, wbnt := errs[0].Messbge, "some chbngesets could not be found"; hbve != wbnt {
+			t.Fbtblf("wrong error. wbnt=%q, hbve=%q", wbnt, hbve)
 		}
 	})
 
 	t.Run("runs successfully", func(t *testing.T) {
-		input := generateInput()
-		apitest.MustExec(actorCtx, t, s, input, &response, mutationMergeChangesets)
+		input := generbteInput()
+		bpitest.MustExec(bctorCtx, t, s, input, &response, mutbtionMergeChbngesets)
 
-		if response.MergeChangesets.ID == "" {
-			t.Fatalf("expected bulk operation to be created, but was not")
+		if response.MergeChbngesets.ID == "" {
+			t.Fbtblf("expected bulk operbtion to be crebted, but wbs not")
 		}
 	})
 }
 
-const mutationMergeChangesets = `
-mutation($batchChange: ID!, $changesets: [ID!]!, $squash: Boolean = false) {
-    mergeChangesets(batchChange: $batchChange, changesets: $changesets, squash: $squash) { id }
+const mutbtionMergeChbngesets = `
+mutbtion($bbtchChbnge: ID!, $chbngesets: [ID!]!, $squbsh: Boolebn = fblse) {
+    mergeChbngesets(bbtchChbnge: $bbtchChbnge, chbngesets: $chbngesets, squbsh: $squbsh) { id }
 }
 `
 
-func TestCloseChangesets(t *testing.T) {
+func TestCloseChbngesets(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
 
 	logger := logtest.Scoped(t)
-	ctx := context.Background()
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
-	bstore := store.New(db, &observation.TestContext, nil)
+	ctx := context.Bbckground()
+	db := dbtbbbse.NewDB(logger, dbtest.NewDB(logger, t))
+	bstore := store.New(db, &observbtion.TestContext, nil)
 
-	userID := bt.CreateTestUser(t, db, true).ID
-	// We give this user the `BATCH_CHANGES#WRITE` permission so they're authorized
-	// to create Batch Changes.
-	assignBatchChangesWritePermissionToUser(ctx, t, db, userID)
+	userID := bt.CrebteTestUser(t, db, true).ID
+	// We give this user the `BATCH_CHANGES#WRITE` permission so they're buthorized
+	// to crebte Bbtch Chbnges.
+	bssignBbtchChbngesWritePermissionToUser(ctx, t, db, userID)
 
-	unauthorizedUser := bt.CreateTestUser(t, db, false)
+	unbuthorizedUser := bt.CrebteTestUser(t, db, fblse)
 
-	batchSpec := bt.CreateBatchSpec(t, ctx, bstore, "test-close", userID, 0)
-	otherBatchSpec := bt.CreateBatchSpec(t, ctx, bstore, "test-close-other", userID, 0)
-	batchChange := bt.CreateBatchChange(t, ctx, bstore, "test-close", userID, batchSpec.ID)
-	otherBatchChange := bt.CreateBatchChange(t, ctx, bstore, "test-close-other", userID, otherBatchSpec.ID)
-	repo, _ := bt.CreateTestRepo(t, ctx, db)
-	changeset := bt.CreateChangeset(t, ctx, bstore, bt.TestChangesetOpts{
+	bbtchSpec := bt.CrebteBbtchSpec(t, ctx, bstore, "test-close", userID, 0)
+	otherBbtchSpec := bt.CrebteBbtchSpec(t, ctx, bstore, "test-close-other", userID, 0)
+	bbtchChbnge := bt.CrebteBbtchChbnge(t, ctx, bstore, "test-close", userID, bbtchSpec.ID)
+	otherBbtchChbnge := bt.CrebteBbtchChbnge(t, ctx, bstore, "test-close-other", userID, otherBbtchSpec.ID)
+	repo, _ := bt.CrebteTestRepo(t, ctx, db)
+	chbngeset := bt.CrebteChbngeset(t, ctx, bstore, bt.TestChbngesetOpts{
 		Repo:             repo.ID,
-		BatchChange:      batchChange.ID,
-		PublicationState: btypes.ChangesetPublicationStatePublished,
-		ReconcilerState:  btypes.ReconcilerStateCompleted,
-		ExternalState:    btypes.ChangesetExternalStateOpen,
+		BbtchChbnge:      bbtchChbnge.ID,
+		PublicbtionStbte: btypes.ChbngesetPublicbtionStbtePublished,
+		ReconcilerStbte:  btypes.ReconcilerStbteCompleted,
+		ExternblStbte:    btypes.ChbngesetExternblStbteOpen,
 	})
-	otherChangeset := bt.CreateChangeset(t, ctx, bstore, bt.TestChangesetOpts{
+	otherChbngeset := bt.CrebteChbngeset(t, ctx, bstore, bt.TestChbngesetOpts{
 		Repo:             repo.ID,
-		BatchChange:      otherBatchChange.ID,
-		PublicationState: btypes.ChangesetPublicationStatePublished,
-		ReconcilerState:  btypes.ReconcilerStateCompleted,
-		ExternalState:    btypes.ChangesetExternalStateOpen,
+		BbtchChbnge:      otherBbtchChbnge.ID,
+		PublicbtionStbte: btypes.ChbngesetPublicbtionStbtePublished,
+		ReconcilerStbte:  btypes.ReconcilerStbteCompleted,
+		ExternblStbte:    btypes.ChbngesetExternblStbteOpen,
 	})
-	mergedChangeset := bt.CreateChangeset(t, ctx, bstore, bt.TestChangesetOpts{
+	mergedChbngeset := bt.CrebteChbngeset(t, ctx, bstore, bt.TestChbngesetOpts{
 		Repo:             repo.ID,
-		BatchChange:      otherBatchChange.ID,
-		PublicationState: btypes.ChangesetPublicationStatePublished,
-		ReconcilerState:  btypes.ReconcilerStateCompleted,
-		ExternalState:    btypes.ChangesetExternalStateMerged,
+		BbtchChbnge:      otherBbtchChbnge.ID,
+		PublicbtionStbte: btypes.ChbngesetPublicbtionStbtePublished,
+		ReconcilerStbte:  btypes.ReconcilerStbteCompleted,
+		ExternblStbte:    btypes.ChbngesetExternblStbteMerged,
 	})
 
 	r := &Resolver{store: bstore}
-	s, err := newSchema(db, r)
+	s, err := newSchemb(db, r)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	generateInput := func() map[string]any {
-		return map[string]any{
-			"batchChange": bgql.MarshalBatchChangeID(batchChange.ID),
-			"changesets":  []string{string(bgql.MarshalChangesetID(changeset.ID))},
+	generbteInput := func() mbp[string]bny {
+		return mbp[string]bny{
+			"bbtchChbnge": bgql.MbrshblBbtchChbngeID(bbtchChbnge.ID),
+			"chbngesets":  []string{string(bgql.MbrshblChbngesetID(chbngeset.ID))},
 		}
 	}
 
-	var response struct {
-		CloseChangesets apitest.BulkOperation
+	vbr response struct {
+		CloseChbngesets bpitest.BulkOperbtion
 	}
-	actorCtx := actor.WithActor(ctx, actor.FromUser(userID))
+	bctorCtx := bctor.WithActor(ctx, bctor.FromUser(userID))
 
-	t.Run("unauthorized access", func(t *testing.T) {
-		unauthorizedCtx := actor.WithActor(ctx, actor.FromUser(unauthorizedUser.ID))
-		input := generateInput()
-		errs := apitest.Exec(unauthorizedCtx, t, s, input, &response, mutationCloseChangesets)
+	t.Run("unbuthorized bccess", func(t *testing.T) {
+		unbuthorizedCtx := bctor.WithActor(ctx, bctor.FromUser(unbuthorizedUser.ID))
+		input := generbteInput()
+		errs := bpitest.Exec(unbuthorizedCtx, t, s, input, &response, mutbtionCloseChbngesets)
 		if errs == nil {
-			t.Fatal("expected error")
+			t.Fbtbl("expected error")
 		}
 		firstErr := errs[0]
-		if !strings.Contains(firstErr.Error(), fmt.Sprintf("user is missing permission %s", rbac.BatchChangesWritePermission)) {
-			t.Fatalf("expected unauthorized error, got %+v", err)
+		if !strings.Contbins(firstErr.Error(), fmt.Sprintf("user is missing permission %s", rbbc.BbtchChbngesWritePermission)) {
+			t.Fbtblf("expected unbuthorized error, got %+v", err)
 		}
 	})
 
-	t.Run("0 changesets fails", func(t *testing.T) {
-		input := generateInput()
-		input["changesets"] = []string{}
-		errs := apitest.Exec(actorCtx, t, s, input, &response, mutationCloseChangesets)
+	t.Run("0 chbngesets fbils", func(t *testing.T) {
+		input := generbteInput()
+		input["chbngesets"] = []string{}
+		errs := bpitest.Exec(bctorCtx, t, s, input, &response, mutbtionCloseChbngesets)
 
 		if len(errs) != 1 {
-			t.Fatalf("expected single errors, but got none")
+			t.Fbtblf("expected single errors, but got none")
 		}
-		if have, want := errs[0].Message, "specify at least one changeset"; have != want {
-			t.Fatalf("wrong error. want=%q, have=%q", want, have)
+		if hbve, wbnt := errs[0].Messbge, "specify bt lebst one chbngeset"; hbve != wbnt {
+			t.Fbtblf("wrong error. wbnt=%q, hbve=%q", wbnt, hbve)
 		}
 	})
 
-	t.Run("changeset in different batch change fails", func(t *testing.T) {
-		input := generateInput()
-		input["changesets"] = []string{string(bgql.MarshalChangesetID(otherChangeset.ID))}
-		errs := apitest.Exec(actorCtx, t, s, input, &response, mutationCloseChangesets)
+	t.Run("chbngeset in different bbtch chbnge fbils", func(t *testing.T) {
+		input := generbteInput()
+		input["chbngesets"] = []string{string(bgql.MbrshblChbngesetID(otherChbngeset.ID))}
+		errs := bpitest.Exec(bctorCtx, t, s, input, &response, mutbtionCloseChbngesets)
 
 		if len(errs) != 1 {
-			t.Fatalf("expected single errors, but got none")
+			t.Fbtblf("expected single errors, but got none")
 		}
-		if have, want := errs[0].Message, "some changesets could not be found"; have != want {
-			t.Fatalf("wrong error. want=%q, have=%q", want, have)
+		if hbve, wbnt := errs[0].Messbge, "some chbngesets could not be found"; hbve != wbnt {
+			t.Fbtblf("wrong error. wbnt=%q, hbve=%q", wbnt, hbve)
 		}
 	})
 
-	t.Run("merged changeset fails", func(t *testing.T) {
-		input := generateInput()
-		input["changesets"] = []string{string(bgql.MarshalChangesetID(mergedChangeset.ID))}
-		errs := apitest.Exec(actorCtx, t, s, input, &response, mutationCloseChangesets)
+	t.Run("merged chbngeset fbils", func(t *testing.T) {
+		input := generbteInput()
+		input["chbngesets"] = []string{string(bgql.MbrshblChbngesetID(mergedChbngeset.ID))}
+		errs := bpitest.Exec(bctorCtx, t, s, input, &response, mutbtionCloseChbngesets)
 
 		if len(errs) != 1 {
-			t.Fatalf("expected single errors, but got none")
+			t.Fbtblf("expected single errors, but got none")
 		}
-		if have, want := errs[0].Message, "some changesets could not be found"; have != want {
-			t.Fatalf("wrong error. want=%q, have=%q", want, have)
+		if hbve, wbnt := errs[0].Messbge, "some chbngesets could not be found"; hbve != wbnt {
+			t.Fbtblf("wrong error. wbnt=%q, hbve=%q", wbnt, hbve)
 		}
 	})
 
 	t.Run("runs successfully", func(t *testing.T) {
-		input := generateInput()
-		apitest.MustExec(actorCtx, t, s, input, &response, mutationCloseChangesets)
+		input := generbteInput()
+		bpitest.MustExec(bctorCtx, t, s, input, &response, mutbtionCloseChbngesets)
 
-		if response.CloseChangesets.ID == "" {
-			t.Fatalf("expected bulk operation to be created, but was not")
+		if response.CloseChbngesets.ID == "" {
+			t.Fbtblf("expected bulk operbtion to be crebted, but wbs not")
 		}
 	})
 }
 
-const mutationCloseChangesets = `
-mutation($batchChange: ID!, $changesets: [ID!]!) {
-    closeChangesets(batchChange: $batchChange, changesets: $changesets) { id }
+const mutbtionCloseChbngesets = `
+mutbtion($bbtchChbnge: ID!, $chbngesets: [ID!]!) {
+    closeChbngesets(bbtchChbnge: $bbtchChbnge, chbngesets: $chbngesets) { id }
 }
 `
 
-func TestPublishChangesets(t *testing.T) {
+func TestPublishChbngesets(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
 
 	logger := logtest.Scoped(t)
-	ctx := context.Background()
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
-	bstore := store.New(db, &observation.TestContext, nil)
+	ctx := context.Bbckground()
+	db := dbtbbbse.NewDB(logger, dbtest.NewDB(logger, t))
+	bstore := store.New(db, &observbtion.TestContext, nil)
 
-	userID := bt.CreateTestUser(t, db, true).ID
-	// We give this user the `BATCH_CHANGES#WRITE` permission so they're authorized
-	// to create Batch Changes.
-	assignBatchChangesWritePermissionToUser(ctx, t, db, userID)
+	userID := bt.CrebteTestUser(t, db, true).ID
+	// We give this user the `BATCH_CHANGES#WRITE` permission so they're buthorized
+	// to crebte Bbtch Chbnges.
+	bssignBbtchChbngesWritePermissionToUser(ctx, t, db, userID)
 
-	unauthorizedUser := bt.CreateTestUser(t, db, false)
+	unbuthorizedUser := bt.CrebteTestUser(t, db, fblse)
 
-	batchSpec := bt.CreateBatchSpec(t, ctx, bstore, "test-close", userID, 0)
-	otherBatchSpec := bt.CreateBatchSpec(t, ctx, bstore, "test-close-other", userID, 0)
-	batchChange := bt.CreateBatchChange(t, ctx, bstore, "test-close", userID, batchSpec.ID)
-	otherBatchChange := bt.CreateBatchChange(t, ctx, bstore, "test-close-other", userID, otherBatchSpec.ID)
-	repo, _ := bt.CreateTestRepo(t, ctx, db)
-	publishableChangesetSpec := bt.CreateChangesetSpec(t, ctx, bstore, bt.TestSpecOpts{
+	bbtchSpec := bt.CrebteBbtchSpec(t, ctx, bstore, "test-close", userID, 0)
+	otherBbtchSpec := bt.CrebteBbtchSpec(t, ctx, bstore, "test-close-other", userID, 0)
+	bbtchChbnge := bt.CrebteBbtchChbnge(t, ctx, bstore, "test-close", userID, bbtchSpec.ID)
+	otherBbtchChbnge := bt.CrebteBbtchChbnge(t, ctx, bstore, "test-close-other", userID, otherBbtchSpec.ID)
+	repo, _ := bt.CrebteTestRepo(t, ctx, db)
+	publishbbleChbngesetSpec := bt.CrebteChbngesetSpec(t, ctx, bstore, bt.TestSpecOpts{
 		User:      userID,
 		Repo:      repo.ID,
-		BatchSpec: batchSpec.ID,
-		Typ:       btypes.ChangesetSpecTypeBranch,
-		HeadRef:   "main",
+		BbtchSpec: bbtchSpec.ID,
+		Typ:       btypes.ChbngesetSpecTypeBrbnch,
+		HebdRef:   "mbin",
 	})
-	unpublishableChangesetSpec := bt.CreateChangesetSpec(t, ctx, bstore, bt.TestSpecOpts{
+	unpublishbbleChbngesetSpec := bt.CrebteChbngesetSpec(t, ctx, bstore, bt.TestSpecOpts{
 		User:      userID,
 		Repo:      repo.ID,
-		BatchSpec: batchSpec.ID,
-		Typ:       btypes.ChangesetSpecTypeBranch,
-		HeadRef:   "main",
+		BbtchSpec: bbtchSpec.ID,
+		Typ:       btypes.ChbngesetSpecTypeBrbnch,
+		HebdRef:   "mbin",
 		Published: true,
 	})
-	otherChangesetSpec := bt.CreateChangesetSpec(t, ctx, bstore, bt.TestSpecOpts{
+	otherChbngesetSpec := bt.CrebteChbngesetSpec(t, ctx, bstore, bt.TestSpecOpts{
 		User:      userID,
 		Repo:      repo.ID,
-		BatchSpec: otherBatchSpec.ID,
-		Typ:       btypes.ChangesetSpecTypeBranch,
-		HeadRef:   "main",
+		BbtchSpec: otherBbtchSpec.ID,
+		Typ:       btypes.ChbngesetSpecTypeBrbnch,
+		HebdRef:   "mbin",
 	})
-	publishableChangeset := bt.CreateChangeset(t, ctx, bstore, bt.TestChangesetOpts{
+	publishbbleChbngeset := bt.CrebteChbngeset(t, ctx, bstore, bt.TestChbngesetOpts{
 		Repo:             repo.ID,
-		BatchChange:      batchChange.ID,
-		ReconcilerState:  btypes.ReconcilerStateCompleted,
-		PublicationState: btypes.ChangesetPublicationStateUnpublished,
-		CurrentSpec:      publishableChangesetSpec.ID,
+		BbtchChbnge:      bbtchChbnge.ID,
+		ReconcilerStbte:  btypes.ReconcilerStbteCompleted,
+		PublicbtionStbte: btypes.ChbngesetPublicbtionStbteUnpublished,
+		CurrentSpec:      publishbbleChbngesetSpec.ID,
 	})
-	unpublishableChangeset := bt.CreateChangeset(t, ctx, bstore, bt.TestChangesetOpts{
+	unpublishbbleChbngeset := bt.CrebteChbngeset(t, ctx, bstore, bt.TestChbngesetOpts{
 		Repo:             repo.ID,
-		BatchChange:      batchChange.ID,
-		ReconcilerState:  btypes.ReconcilerStateCompleted,
-		PublicationState: btypes.ChangesetPublicationStateUnpublished,
-		CurrentSpec:      unpublishableChangesetSpec.ID,
+		BbtchChbnge:      bbtchChbnge.ID,
+		ReconcilerStbte:  btypes.ReconcilerStbteCompleted,
+		PublicbtionStbte: btypes.ChbngesetPublicbtionStbteUnpublished,
+		CurrentSpec:      unpublishbbleChbngesetSpec.ID,
 	})
-	otherChangeset := bt.CreateChangeset(t, ctx, bstore, bt.TestChangesetOpts{
+	otherChbngeset := bt.CrebteChbngeset(t, ctx, bstore, bt.TestChbngesetOpts{
 		Repo:             repo.ID,
-		BatchChange:      otherBatchChange.ID,
-		ReconcilerState:  btypes.ReconcilerStateCompleted,
-		PublicationState: btypes.ChangesetPublicationStateUnpublished,
-		CurrentSpec:      otherChangesetSpec.ID,
+		BbtchChbnge:      otherBbtchChbnge.ID,
+		ReconcilerStbte:  btypes.ReconcilerStbteCompleted,
+		PublicbtionStbte: btypes.ChbngesetPublicbtionStbteUnpublished,
+		CurrentSpec:      otherChbngesetSpec.ID,
 	})
 
 	r := &Resolver{store: bstore}
-	s, err := newSchema(db, r)
+	s, err := newSchemb(db, r)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	generateInput := func() map[string]any {
-		return map[string]any{
-			"batchChange": bgql.MarshalBatchChangeID(batchChange.ID),
-			"changesets": []string{
-				string(bgql.MarshalChangesetID(publishableChangeset.ID)),
-				string(bgql.MarshalChangesetID(unpublishableChangeset.ID)),
+	generbteInput := func() mbp[string]bny {
+		return mbp[string]bny{
+			"bbtchChbnge": bgql.MbrshblBbtchChbngeID(bbtchChbnge.ID),
+			"chbngesets": []string{
+				string(bgql.MbrshblChbngesetID(publishbbleChbngeset.ID)),
+				string(bgql.MbrshblChbngesetID(unpublishbbleChbngeset.ID)),
 			},
-			"draft": true,
+			"drbft": true,
 		}
 	}
 
-	var response struct {
-		PublishChangesets apitest.BulkOperation
+	vbr response struct {
+		PublishChbngesets bpitest.BulkOperbtion
 	}
-	actorCtx := actor.WithActor(ctx, actor.FromUser(userID))
+	bctorCtx := bctor.WithActor(ctx, bctor.FromUser(userID))
 
-	t.Run("unauthorized access", func(t *testing.T) {
-		unauthorizedCtx := actor.WithActor(ctx, actor.FromUser(unauthorizedUser.ID))
-		input := generateInput()
-		errs := apitest.Exec(unauthorizedCtx, t, s, input, &response, mutationPublishChangesets)
+	t.Run("unbuthorized bccess", func(t *testing.T) {
+		unbuthorizedCtx := bctor.WithActor(ctx, bctor.FromUser(unbuthorizedUser.ID))
+		input := generbteInput()
+		errs := bpitest.Exec(unbuthorizedCtx, t, s, input, &response, mutbtionPublishChbngesets)
 		if errs == nil {
-			t.Fatal("expected error")
+			t.Fbtbl("expected error")
 		}
 		firstErr := errs[0]
-		if !strings.Contains(firstErr.Error(), fmt.Sprintf("user is missing permission %s", rbac.BatchChangesWritePermission)) {
-			t.Fatalf("expected unauthorized error, got %+v", err)
+		if !strings.Contbins(firstErr.Error(), fmt.Sprintf("user is missing permission %s", rbbc.BbtchChbngesWritePermission)) {
+			t.Fbtblf("expected unbuthorized error, got %+v", err)
 		}
 	})
 
-	t.Run("0 changesets fails", func(t *testing.T) {
-		input := generateInput()
-		input["changesets"] = []string{}
-		errs := apitest.Exec(actorCtx, t, s, input, &response, mutationPublishChangesets)
+	t.Run("0 chbngesets fbils", func(t *testing.T) {
+		input := generbteInput()
+		input["chbngesets"] = []string{}
+		errs := bpitest.Exec(bctorCtx, t, s, input, &response, mutbtionPublishChbngesets)
 
 		if len(errs) != 1 {
-			t.Fatalf("expected single errors, but got none")
+			t.Fbtblf("expected single errors, but got none")
 		}
-		if have, want := errs[0].Message, "specify at least one changeset"; have != want {
-			t.Fatalf("wrong error. want=%q, have=%q", want, have)
+		if hbve, wbnt := errs[0].Messbge, "specify bt lebst one chbngeset"; hbve != wbnt {
+			t.Fbtblf("wrong error. wbnt=%q, hbve=%q", wbnt, hbve)
 		}
 	})
 
-	t.Run("changeset in different batch change fails", func(t *testing.T) {
-		input := generateInput()
-		input["changesets"] = []string{string(bgql.MarshalChangesetID(otherChangeset.ID))}
-		errs := apitest.Exec(actorCtx, t, s, input, &response, mutationPublishChangesets)
+	t.Run("chbngeset in different bbtch chbnge fbils", func(t *testing.T) {
+		input := generbteInput()
+		input["chbngesets"] = []string{string(bgql.MbrshblChbngesetID(otherChbngeset.ID))}
+		errs := bpitest.Exec(bctorCtx, t, s, input, &response, mutbtionPublishChbngesets)
 
 		if len(errs) != 1 {
-			t.Fatalf("expected single errors, but got none")
+			t.Fbtblf("expected single errors, but got none")
 		}
-		if have, want := errs[0].Message, "some changesets could not be found"; have != want {
-			t.Fatalf("wrong error. want=%q, have=%q", want, have)
+		if hbve, wbnt := errs[0].Messbge, "some chbngesets could not be found"; hbve != wbnt {
+			t.Fbtblf("wrong error. wbnt=%q, hbve=%q", wbnt, hbve)
 		}
 	})
 
 	t.Run("runs successfully", func(t *testing.T) {
-		input := generateInput()
-		apitest.MustExec(actorCtx, t, s, input, &response, mutationPublishChangesets)
+		input := generbteInput()
+		bpitest.MustExec(bctorCtx, t, s, input, &response, mutbtionPublishChbngesets)
 
-		if response.PublishChangesets.ID == "" {
-			t.Fatalf("expected bulk operation to be created, but was not")
+		if response.PublishChbngesets.ID == "" {
+			t.Fbtblf("expected bulk operbtion to be crebted, but wbs not")
 		}
 	})
 }
 
-const mutationPublishChangesets = `
-mutation($batchChange: ID!, $changesets: [ID!]!, $draft: Boolean!) {
-	publishChangesets(batchChange: $batchChange, changesets: $changesets, draft: $draft) { id }
+const mutbtionPublishChbngesets = `
+mutbtion($bbtchChbnge: ID!, $chbngesets: [ID!]!, $drbft: Boolebn!) {
+	publishChbngesets(bbtchChbnge: $bbtchChbnge, chbngesets: $chbngesets, drbft: $drbft) { id }
 }
 `
 
-func TestCheckBatchChangesCredential(t *testing.T) {
+func TestCheckBbtchChbngesCredentibl(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
@@ -2702,198 +2702,198 @@ func TestCheckBatchChangesCredential(t *testing.T) {
 	bt.MockRSAKeygen(t)
 
 	logger := logtest.Scoped(t)
-	ctx := context.Background()
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	ctx := context.Bbckground()
+	db := dbtbbbse.NewDB(logger, dbtest.NewDB(logger, t))
 
-	pruneUserCredentials(t, db, nil)
+	pruneUserCredentibls(t, db, nil)
 
-	userID := bt.CreateTestUser(t, db, true).ID
-	ctx = actor.WithActor(ctx, actor.FromUser(userID))
+	userID := bt.CrebteTestUser(t, db, true).ID
+	ctx = bctor.WithActor(ctx, bctor.FromUser(userID))
 
-	bstore := store.New(db, &observation.TestContext, nil)
+	bstore := store.New(db, &observbtion.TestContext, nil)
 
-	authenticator := &auth.OAuthBearerToken{Token: "SOSECRET"}
-	userCred, err := bstore.UserCredentials().Create(ctx, database.UserCredentialScope{
-		Domain:              database.UserCredentialDomainBatches,
-		ExternalServiceType: extsvc.TypeGitHub,
-		ExternalServiceID:   "https://github.com/",
+	buthenticbtor := &buth.OAuthBebrerToken{Token: "SOSECRET"}
+	userCred, err := bstore.UserCredentibls().Crebte(ctx, dbtbbbse.UserCredentiblScope{
+		Dombin:              dbtbbbse.UserCredentiblDombinBbtches,
+		ExternblServiceType: extsvc.TypeGitHub,
+		ExternblServiceID:   "https://github.com/",
 		UserID:              userID,
-	}, authenticator)
+	}, buthenticbtor)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
-	siteCred := &btypes.SiteCredential{
-		ExternalServiceType: extsvc.TypeGitHub,
-		ExternalServiceID:   "https://github.com/",
+	siteCred := &btypes.SiteCredentibl{
+		ExternblServiceType: extsvc.TypeGitHub,
+		ExternblServiceID:   "https://github.com/",
 	}
-	if err := bstore.CreateSiteCredential(ctx, siteCred, authenticator); err != nil {
-		t.Fatal(err)
+	if err := bstore.CrebteSiteCredentibl(ctx, siteCred, buthenticbtor); err != nil {
+		t.Fbtbl(err)
 	}
 
 	r := &Resolver{store: bstore}
-	s, err := newSchema(db, r)
+	s, err := newSchemb(db, r)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	mockValidateAuthenticator := func(t *testing.T, err error) {
-		service.Mocks.ValidateAuthenticator = func(ctx context.Context, externalServiceID, externalServiceType string, a auth.Authenticator) error {
+	mockVblidbteAuthenticbtor := func(t *testing.T, err error) {
+		service.Mocks.VblidbteAuthenticbtor = func(ctx context.Context, externblServiceID, externblServiceType string, b buth.Authenticbtor) error {
 			return err
 		}
-		t.Cleanup(func() {
+		t.Clebnup(func() {
 			service.Mocks.Reset()
 		})
 	}
 
-	t.Run("valid site credential", func(t *testing.T) {
-		mockValidateAuthenticator(t, nil)
+	t.Run("vblid site credentibl", func(t *testing.T) {
+		mockVblidbteAuthenticbtor(t, nil)
 
-		input := map[string]any{
-			"batchChangesCredential": marshalBatchChangesCredentialID(userCred.ID, true),
+		input := mbp[string]bny{
+			"bbtchChbngesCredentibl": mbrshblBbtchChbngesCredentiblID(userCred.ID, true),
 		}
 
-		var response struct{ CheckBatchChangesCredential apitest.EmptyResponse }
-		actorCtx := actor.WithActor(ctx, actor.FromUser(userID))
+		vbr response struct{ CheckBbtchChbngesCredentibl bpitest.EmptyResponse }
+		bctorCtx := bctor.WithActor(ctx, bctor.FromUser(userID))
 
-		apitest.MustExec(actorCtx, t, s, input, &response, queryCheckCredential)
+		bpitest.MustExec(bctorCtx, t, s, input, &response, queryCheckCredentibl)
 	})
 
-	t.Run("valid user credential", func(t *testing.T) {
-		mockValidateAuthenticator(t, nil)
+	t.Run("vblid user credentibl", func(t *testing.T) {
+		mockVblidbteAuthenticbtor(t, nil)
 
-		input := map[string]any{
-			"batchChangesCredential": marshalBatchChangesCredentialID(userCred.ID, false),
+		input := mbp[string]bny{
+			"bbtchChbngesCredentibl": mbrshblBbtchChbngesCredentiblID(userCred.ID, fblse),
 		}
 
-		var response struct{ CheckBatchChangesCredential apitest.EmptyResponse }
-		actorCtx := actor.WithActor(ctx, actor.FromUser(userID))
+		vbr response struct{ CheckBbtchChbngesCredentibl bpitest.EmptyResponse }
+		bctorCtx := bctor.WithActor(ctx, bctor.FromUser(userID))
 
-		apitest.MustExec(actorCtx, t, s, input, &response, queryCheckCredential)
+		bpitest.MustExec(bctorCtx, t, s, input, &response, queryCheckCredentibl)
 	})
 
-	t.Run("invalid credential", func(t *testing.T) {
-		mockValidateAuthenticator(t, errors.New("credential is not authorized"))
+	t.Run("invblid credentibl", func(t *testing.T) {
+		mockVblidbteAuthenticbtor(t, errors.New("credentibl is not buthorized"))
 
-		input := map[string]any{
-			"batchChangesCredential": marshalBatchChangesCredentialID(userCred.ID, true),
+		input := mbp[string]bny{
+			"bbtchChbngesCredentibl": mbrshblBbtchChbngesCredentiblID(userCred.ID, true),
 		}
 
-		var response struct{ CheckBatchChangesCredential apitest.EmptyResponse }
-		actorCtx := actor.WithActor(ctx, actor.FromUser(userID))
+		vbr response struct{ CheckBbtchChbngesCredentibl bpitest.EmptyResponse }
+		bctorCtx := bctor.WithActor(ctx, bctor.FromUser(userID))
 
-		errs := apitest.Exec(actorCtx, t, s, input, &response, queryCheckCredential)
+		errs := bpitest.Exec(bctorCtx, t, s, input, &response, queryCheckCredentibl)
 
-		assert.Len(t, errs, 1)
-		assert.Equal(t, errs[0].Extensions["code"], "ErrVerifyCredentialFailed")
+		bssert.Len(t, errs, 1)
+		bssert.Equbl(t, errs[0].Extensions["code"], "ErrVerifyCredentiblFbiled")
 	})
 }
 
-const queryCheckCredential = `
-query($batchChangesCredential: ID!) {
-  checkBatchChangesCredential(batchChangesCredential: $batchChangesCredential) { alwaysNil }
+const queryCheckCredentibl = `
+query($bbtchChbngesCredentibl: ID!) {
+  checkBbtchChbngesCredentibl(bbtchChbngesCredentibl: $bbtchChbngesCredentibl) { blwbysNil }
 }
 `
 
-func TestMaxUnlicensedChangesets(t *testing.T) {
+func TestMbxUnlicensedChbngesets(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
 
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
-	userID := bt.CreateTestUser(t, db, true).ID
+	db := dbtbbbse.NewDB(logger, dbtest.NewDB(logger, t))
+	userID := bt.CrebteTestUser(t, db, true).ID
 
-	var response struct{ MaxUnlicensedChangesets int32 }
-	actorCtx := actor.WithActor(context.Background(), actor.FromUser(userID))
+	vbr response struct{ MbxUnlicensedChbngesets int32 }
+	bctorCtx := bctor.WithActor(context.Bbckground(), bctor.FromUser(userID))
 
-	bstore := store.New(db, &observation.TestContext, nil)
+	bstore := store.New(db, &observbtion.TestContext, nil)
 	r := &Resolver{store: bstore}
-	s, err := newSchema(db, r)
+	s, err := newSchemb(db, r)
 	require.NoError(t, err)
 
-	apitest.MustExec(actorCtx, t, s, nil, &response, querymaxUnlicensedChangesets)
+	bpitest.MustExec(bctorCtx, t, s, nil, &response, querymbxUnlicensedChbngesets)
 
-	assert.Equal(t, int32(10), response.MaxUnlicensedChangesets)
+	bssert.Equbl(t, int32(10), response.MbxUnlicensedChbngesets)
 }
 
-const querymaxUnlicensedChangesets = `
+const querymbxUnlicensedChbngesets = `
 query {
-  maxUnlicensedChangesets
+  mbxUnlicensedChbngesets
 }
 `
 
-func TestListBatchSpecs(t *testing.T) {
+func TestListBbtchSpecs(t *testing.T) {
 	logger := logtest.Scoped(t)
-	ctx := context.Background()
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	ctx := context.Bbckground()
+	db := dbtbbbse.NewDB(logger, dbtest.NewDB(logger, t))
 
-	user := bt.CreateTestUser(t, db, true)
+	user := bt.CrebteTestUser(t, db, true)
 	userID := user.ID
 
-	bstore := store.New(db, &observation.TestContext, nil)
+	bstore := store.New(db, &observbtion.TestContext, nil)
 
-	batchSpecs := make([]*btypes.BatchSpec, 0, 10)
+	bbtchSpecs := mbke([]*btypes.BbtchSpec, 0, 10)
 
-	for i := 0; i < cap(batchSpecs); i++ {
-		batchSpec := &btypes.BatchSpec{
-			RawSpec:         bt.TestRawBatchSpec,
+	for i := 0; i < cbp(bbtchSpecs); i++ {
+		bbtchSpec := &btypes.BbtchSpec{
+			RbwSpec:         bt.TestRbwBbtchSpec,
 			UserID:          userID,
-			NamespaceUserID: userID,
+			NbmespbceUserID: userID,
 		}
 
 		if i%2 == 0 {
-			// 5 batch specs will have `createdFromRaw` set to `true` while the remaining 5
-			// will be set to `false`.
-			batchSpec.CreatedFromRaw = true
+			// 5 bbtch specs will hbve `crebtedFromRbw` set to `true` while the rembining 5
+			// will be set to `fblse`.
+			bbtchSpec.CrebtedFromRbw = true
 		}
 
-		if err := bstore.CreateBatchSpec(ctx, batchSpec); err != nil {
-			t.Fatal(err)
+		if err := bstore.CrebteBbtchSpec(ctx, bbtchSpec); err != nil {
+			t.Fbtbl(err)
 		}
 
-		batchSpecs = append(batchSpecs, batchSpec)
+		bbtchSpecs = bppend(bbtchSpecs, bbtchSpec)
 	}
 
 	r := &Resolver{store: bstore}
-	s, err := newSchema(db, r)
+	s, err := newSchemb(db, r)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	t.Run("include locally executed batch specs", func(t *testing.T) {
-		input := map[string]any{
-			"includeLocallyExecutedSpecs": true,
+	t.Run("include locblly executed bbtch specs", func(t *testing.T) {
+		input := mbp[string]bny{
+			"includeLocbllyExecutedSpecs": true,
 		}
-		var response struct{ BatchSpecs apitest.BatchSpecConnection }
-		apitest.MustExec(ctx, t, s, input, &response, queryListBatchSpecs)
+		vbr response struct{ BbtchSpecs bpitest.BbtchSpecConnection }
+		bpitest.MustExec(ctx, t, s, input, &response, queryListBbtchSpecs)
 
-		// All batch specs should be returned here.
-		assert.Len(t, response.BatchSpecs.Nodes, len(batchSpecs))
+		// All bbtch specs should be returned here.
+		bssert.Len(t, response.BbtchSpecs.Nodes, len(bbtchSpecs))
 	})
 
-	t.Run("exclude locally executed batch specs", func(t *testing.T) {
-		input := map[string]any{
-			"includeLocallyExecutedSpecs": false,
+	t.Run("exclude locblly executed bbtch specs", func(t *testing.T) {
+		input := mbp[string]bny{
+			"includeLocbllyExecutedSpecs": fblse,
 		}
-		var response struct{ BatchSpecs apitest.BatchSpecConnection }
-		apitest.MustExec(ctx, t, s, input, &response, queryListBatchSpecs)
+		vbr response struct{ BbtchSpecs bpitest.BbtchSpecConnection }
+		bpitest.MustExec(ctx, t, s, input, &response, queryListBbtchSpecs)
 
-		// Only 5 batch specs are returned here because we excluded non-SSBC batch specs.
-		assert.Len(t, response.BatchSpecs.Nodes, 5)
+		// Only 5 bbtch specs bre returned here becbuse we excluded non-SSBC bbtch specs.
+		bssert.Len(t, response.BbtchSpecs.Nodes, 5)
 	})
 }
 
-const queryListBatchSpecs = `
-query($includeLocallyExecutedSpecs: Boolean!) {
-	batchSpecs(includeLocallyExecutedSpecs: $includeLocallyExecutedSpecs) { nodes { id } }
+const queryListBbtchSpecs = `
+query($includeLocbllyExecutedSpecs: Boolebn!) {
+	bbtchSpecs(includeLocbllyExecutedSpecs: $includeLocbllyExecutedSpecs) { nodes { id } }
 }
 `
 
-func assignBatchChangesWritePermissionToUser(ctx context.Context, t *testing.T, db database.DB, userID int32) (*types.Role, *types.Permission) {
-	role := bt.CreateTestRole(ctx, t, db, "TEST-ROLE-1")
+func bssignBbtchChbngesWritePermissionToUser(ctx context.Context, t *testing.T, db dbtbbbse.DB, userID int32) (*types.Role, *types.Permission) {
+	role := bt.CrebteTestRole(ctx, t, db, "TEST-ROLE-1")
 	bt.AssignRoleToUser(ctx, t, db, userID, role.ID)
 
-	perm := bt.CreateTestPermission(ctx, t, db, rbac.BatchChangesWritePermission)
+	perm := bt.CrebteTestPermission(ctx, t, db, rbbc.BbtchChbngesWritePermission)
 	bt.AssignPermissionToRole(ctx, t, db, perm.ID, role.ID)
 
 	return role, perm

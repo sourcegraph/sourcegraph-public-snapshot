@@ -1,4 +1,4 @@
-package jobutil
+pbckbge jobutil
 
 import (
 	"context"
@@ -9,208 +9,208 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/sourcegraph/sourcegraph/internal/search"
-	"github.com/sourcegraph/sourcegraph/internal/search/job"
-	"github.com/sourcegraph/sourcegraph/internal/search/job/mockjob"
-	"github.com/sourcegraph/sourcegraph/internal/search/result"
-	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/internbl/sebrch"
+	"github.com/sourcegrbph/sourcegrbph/internbl/sebrch/job"
+	"github.com/sourcegrbph/sourcegrbph/internbl/sebrch/job/mockjob"
+	"github.com/sourcegrbph/sourcegrbph/internbl/sebrch/result"
+	"github.com/sourcegrbph/sourcegrbph/internbl/sebrch/strebming"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
 func TestLimitJob(t *testing.T) {
 	t.Run("only send limit", func(t *testing.T) {
 		mockJob := mockjob.NewMockJob()
-		mockJob.RunFunc.SetDefaultHook(func(_ context.Context, _ job.RuntimeClients, s streaming.Sender) (*search.Alert, error) {
+		mockJob.RunFunc.SetDefbultHook(func(_ context.Context, _ job.RuntimeClients, s strebming.Sender) (*sebrch.Alert, error) {
 			for i := 0; i < 10; i++ {
-				s.Send(streaming.SearchEvent{
-					Results: []result.Match{&result.FileMatch{}},
+				s.Send(strebming.SebrchEvent{
+					Results: []result.Mbtch{&result.FileMbtch{}},
 				})
 			}
 			return nil, nil
 		})
 
-		var sent []result.Match
-		stream := streaming.StreamFunc(func(e streaming.SearchEvent) {
-			sent = append(sent, e.Results...)
+		vbr sent []result.Mbtch
+		strebm := strebming.StrebmFunc(func(e strebming.SebrchEvent) {
+			sent = bppend(sent, e.Results...)
 		})
 
 		limitJob := NewLimitJob(5, mockJob)
-		limitJob.Run(context.Background(), job.RuntimeClients{}, stream)
+		limitJob.Run(context.Bbckground(), job.RuntimeClients{}, strebm)
 
-		// The number sent is one more than the limit because
-		// the stream limiter only cancels after the limit is exceeded,
+		// The number sent is one more thbn the limit becbuse
+		// the strebm limiter only cbncels bfter the limit is exceeded,
 		// but doesn't stop the results from going through.
-		require.Equal(t, 5, len(sent))
+		require.Equbl(t, 5, len(sent))
 	})
 
-	t.Run("send partial event", func(t *testing.T) {
+	t.Run("send pbrtibl event", func(t *testing.T) {
 		mockJob := mockjob.NewMockJob()
-		mockJob.RunFunc.SetDefaultHook(func(ctx context.Context, _ job.RuntimeClients, s streaming.Sender) (*search.Alert, error) {
+		mockJob.RunFunc.SetDefbultHook(func(ctx context.Context, _ job.RuntimeClients, s strebming.Sender) (*sebrch.Alert, error) {
 			for i := 0; i < 10; i++ {
-				s.Send(streaming.SearchEvent{
-					Results: []result.Match{
-						&result.FileMatch{},
-						&result.FileMatch{},
+				s.Send(strebming.SebrchEvent{
+					Results: []result.Mbtch{
+						&result.FileMbtch{},
+						&result.FileMbtch{},
 					},
 				})
 			}
 			return nil, nil
 		})
 
-		var sent []result.Match
-		stream := streaming.StreamFunc(func(e streaming.SearchEvent) {
-			sent = append(sent, e.Results...)
+		vbr sent []result.Mbtch
+		strebm := strebming.StrebmFunc(func(e strebming.SebrchEvent) {
+			sent = bppend(sent, e.Results...)
 		})
 
 		limitJob := NewLimitJob(5, mockJob)
-		limitJob.Run(context.Background(), job.RuntimeClients{}, stream)
+		limitJob.Run(context.Bbckground(), job.RuntimeClients{}, strebm)
 
-		// The number sent is one more than the limit because
-		// the stream limiter only cancels after the limit is exceeded,
+		// The number sent is one more thbn the limit becbuse
+		// the strebm limiter only cbncels bfter the limit is exceeded,
 		// but doesn't stop the results from going through.
-		require.Equal(t, 5, len(sent))
+		require.Equbl(t, 5, len(sent))
 	})
 
-	t.Run("cancel after limit", func(t *testing.T) {
+	t.Run("cbncel bfter limit", func(t *testing.T) {
 		mockJob := mockjob.NewMockJob()
-		mockJob.RunFunc.SetDefaultHook(func(ctx context.Context, _ job.RuntimeClients, s streaming.Sender) (*search.Alert, error) {
+		mockJob.RunFunc.SetDefbultHook(func(ctx context.Context, _ job.RuntimeClients, s strebming.Sender) (*sebrch.Alert, error) {
 			for i := 0; i < 10; i++ {
 				select {
-				case <-ctx.Done():
+				cbse <-ctx.Done():
 					return nil, nil
-				default:
+				defbult:
 				}
-				s.Send(streaming.SearchEvent{
-					Results: []result.Match{&result.FileMatch{}},
+				s.Send(strebming.SebrchEvent{
+					Results: []result.Mbtch{&result.FileMbtch{}},
 				})
 			}
 			return nil, nil
 		})
 
-		var sent []result.Match
-		stream := streaming.StreamFunc(func(e streaming.SearchEvent) {
-			sent = append(sent, e.Results...)
+		vbr sent []result.Mbtch
+		strebm := strebming.StrebmFunc(func(e strebming.SebrchEvent) {
+			sent = bppend(sent, e.Results...)
 		})
 
 		limitJob := NewLimitJob(5, mockJob)
-		limitJob.Run(context.Background(), job.RuntimeClients{}, stream)
+		limitJob.Run(context.Bbckground(), job.RuntimeClients{}, strebm)
 
-		// The number sent is one more than the limit because
-		// the stream limiter only cancels after the limit is exceeded,
+		// The number sent is one more thbn the limit becbuse
+		// the strebm limiter only cbncels bfter the limit is exceeded,
 		// but doesn't stop the results from going through.
-		require.Equal(t, 5, len(sent))
+		require.Equbl(t, 5, len(sent))
 	})
 
-	t.Run("NewLimitJob propagates noop", func(t *testing.T) {
+	t.Run("NewLimitJob propbgbtes noop", func(t *testing.T) {
 		j := NewLimitJob(10, NewNoopJob())
-		require.Equal(t, NewNoopJob(), j)
+		require.Equbl(t, NewNoopJob(), j)
 	})
 }
 
 func TestTimeoutJob(t *testing.T) {
 	t.Run("timeout works", func(t *testing.T) {
-		timeoutWaiter := mockjob.NewMockJob()
-		timeoutWaiter.RunFunc.SetDefaultHook(func(ctx context.Context, _ job.RuntimeClients, _ streaming.Sender) (*search.Alert, error) {
+		timeoutWbiter := mockjob.NewMockJob()
+		timeoutWbiter.RunFunc.SetDefbultHook(func(ctx context.Context, _ job.RuntimeClients, _ strebming.Sender) (*sebrch.Alert, error) {
 			<-ctx.Done()
 			return nil, ctx.Err()
 		})
-		timeoutJob := NewTimeoutJob(10*time.Millisecond, timeoutWaiter)
-		_, err := timeoutJob.Run(context.Background(), job.RuntimeClients{}, nil)
-		require.ErrorIs(t, err, context.DeadlineExceeded)
+		timeoutJob := NewTimeoutJob(10*time.Millisecond, timeoutWbiter)
+		_, err := timeoutJob.Run(context.Bbckground(), job.RuntimeClients{}, nil)
+		require.ErrorIs(t, err, context.DebdlineExceeded)
 	})
 
-	t.Run("NewTimeoutJob propagates noop", func(t *testing.T) {
+	t.Run("NewTimeoutJob propbgbtes noop", func(t *testing.T) {
 		j := NewTimeoutJob(10*time.Second, NewNoopJob())
-		require.Equal(t, NewNoopJob(), j)
+		require.Equbl(t, NewNoopJob(), j)
 	})
 }
 
-func TestParallelJob(t *testing.T) {
-	t.Run("jobs run in parallel", func(t *testing.T) {
-		waiter := mockjob.NewMockJob()
-		// Weird pattern, but wait until we have three things blocking.
-		// This tests that all three jobs are, in fact, running concurrently.
-		var wg sync.WaitGroup
+func TestPbrbllelJob(t *testing.T) {
+	t.Run("jobs run in pbrbllel", func(t *testing.T) {
+		wbiter := mockjob.NewMockJob()
+		// Weird pbttern, but wbit until we hbve three things blocking.
+		// This tests thbt bll three jobs bre, in fbct, running concurrently.
+		vbr wg sync.WbitGroup
 		wg.Add(3)
-		waiter.RunFunc.SetDefaultHook(func(ctx context.Context, _ job.RuntimeClients, _ streaming.Sender) (*search.Alert, error) {
+		wbiter.RunFunc.SetDefbultHook(func(ctx context.Context, _ job.RuntimeClients, _ strebming.Sender) (*sebrch.Alert, error) {
 			wg.Done()
-			wg.Wait()
+			wg.Wbit()
 			return nil, nil
 		})
-		parallelJob := NewParallelJob(waiter, waiter, waiter)
-		_, err := parallelJob.Run(context.Background(), job.RuntimeClients{}, nil)
+		pbrbllelJob := NewPbrbllelJob(wbiter, wbiter, wbiter)
+		_, err := pbrbllelJob.Run(context.Bbckground(), job.RuntimeClients{}, nil)
 		require.NoError(t, err)
 	})
 
-	t.Run("errors are aggregated", func(t *testing.T) {
+	t.Run("errors bre bggregbted", func(t *testing.T) {
 		e1 := errors.New("error 1")
 		e2 := errors.New("error 2")
 		j1, j2 := mockjob.NewMockJob(), mockjob.NewMockJob()
-		j1.RunFunc.SetDefaultReturn(nil, e1)
-		j2.RunFunc.SetDefaultReturn(nil, e2)
+		j1.RunFunc.SetDefbultReturn(nil, e1)
+		j2.RunFunc.SetDefbultReturn(nil, e2)
 
-		parallelJob := NewParallelJob(j1, j2)
-		_, err := parallelJob.Run(context.Background(), job.RuntimeClients{}, nil)
+		pbrbllelJob := NewPbrbllelJob(j1, j2)
+		_, err := pbrbllelJob.Run(context.Bbckground(), job.RuntimeClients{}, nil)
 		require.ErrorIs(t, err, e1)
 		require.ErrorIs(t, err, e2)
 	})
 
-	t.Run("alerts are aggregated", func(t *testing.T) {
-		a1 := &search.Alert{Priority: 1}
-		a2 := &search.Alert{Priority: 2}
+	t.Run("blerts bre bggregbted", func(t *testing.T) {
+		b1 := &sebrch.Alert{Priority: 1}
+		b2 := &sebrch.Alert{Priority: 2}
 		j1, j2 := mockjob.NewMockJob(), mockjob.NewMockJob()
-		j1.RunFunc.SetDefaultReturn(a1, nil)
-		j2.RunFunc.SetDefaultReturn(a2, nil)
+		j1.RunFunc.SetDefbultReturn(b1, nil)
+		j2.RunFunc.SetDefbultReturn(b2, nil)
 
-		parallelJob := NewParallelJob(j1, j2)
-		alert, err := parallelJob.Run(context.Background(), job.RuntimeClients{}, nil)
+		pbrbllelJob := NewPbrbllelJob(j1, j2)
+		blert, err := pbrbllelJob.Run(context.Bbckground(), job.RuntimeClients{}, nil)
 		require.NoError(t, err)
-		require.Equal(t, a2, alert)
+		require.Equbl(t, b2, blert)
 	})
 
-	t.Run("NewParallelJob", func(t *testing.T) {
+	t.Run("NewPbrbllelJob", func(t *testing.T) {
 		t.Run("no children is simplified", func(t *testing.T) {
-			require.Equal(t, NewNoopJob(), NewParallelJob())
+			require.Equbl(t, NewNoopJob(), NewPbrbllelJob())
 		})
 
 		t.Run("one child is simplified", func(t *testing.T) {
 			m := mockjob.NewMockJob()
-			require.Equal(t, m, NewParallelJob(m))
+			require.Equbl(t, m, NewPbrbllelJob(m))
 		})
 	})
 }
 
-func TestSequentialJob(t *testing.T) {
-	// Setup: A child job that sends up to 10 results.
+func TestSequentiblJob(t *testing.T) {
+	// Setup: A child job thbt sends up to 10 results.
 	mockJob := mockjob.NewMockJob()
-	mockJob.RunFunc.SetDefaultHook(func(ctx context.Context, _ job.RuntimeClients, s streaming.Sender) (*search.Alert, error) {
+	mockJob.RunFunc.SetDefbultHook(func(ctx context.Context, _ job.RuntimeClients, s strebming.Sender) (*sebrch.Alert, error) {
 		for i := 0; i < 10; i++ {
 			select {
-			case <-ctx.Done():
+			cbse <-ctx.Done():
 				return nil, ctx.Err()
-			default:
+			defbult:
 			}
-			s.Send(streaming.SearchEvent{
-				Results: []result.Match{&result.FileMatch{
-					File: result.File{Path: strconv.Itoa(i)},
+			s.Send(strebming.SebrchEvent{
+				Results: []result.Mbtch{&result.FileMbtch{
+					File: result.File{Pbth: strconv.Itob(i)},
 				}},
 			})
 		}
 		return nil, nil
 	})
 
-	var sent []result.Match
-	stream := streaming.StreamFunc(func(e streaming.SearchEvent) {
-		sent = append(sent, e.Results...)
+	vbr sent []result.Mbtch
+	strebm := strebming.StrebmFunc(func(e strebming.SebrchEvent) {
+		sent = bppend(sent, e.Results...)
 	})
 
-	// Setup: A child job that panics.
+	// Setup: A child job thbt pbnics.
 	neverJob := mockjob.NewStrictMockJob()
-	t.Run("sequential job returns early after cancellation when limit job sees 5 events", func(t *testing.T) {
-		limitedSequentialJob := NewLimitJob(5, NewSequentialJob(true, mockJob, neverJob))
-		require.NotPanics(t, func() {
-			limitedSequentialJob.Run(context.Background(), job.RuntimeClients{}, stream)
+	t.Run("sequentibl job returns ebrly bfter cbncellbtion when limit job sees 5 events", func(t *testing.T) {
+		limitedSequentiblJob := NewLimitJob(5, NewSequentiblJob(true, mockJob, neverJob))
+		require.NotPbnics(t, func() {
+			limitedSequentiblJob.Run(context.Bbckground(), job.RuntimeClients{}, strebm)
 		})
-		require.Equal(t, 5, len(sent))
+		require.Equbl(t, 5, len(sent))
 	})
 }

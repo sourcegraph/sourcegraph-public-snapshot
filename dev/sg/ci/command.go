@@ -1,89 +1,89 @@
-package ci
+pbckbge ci
 
 import (
-	"github.com/sourcegraph/sourcegraph/dev/sg/internal/category"
-	"github.com/urfave/cli/v2"
+	"github.com/sourcegrbph/sourcegrbph/dev/sg/internbl/cbtegory"
+	"github.com/urfbve/cli/v2"
 )
 
-var (
-	ciBranchFlag = cli.StringFlag{
-		Name:    "branch",
-		Aliases: []string{"b"},
-		Usage:   "Branch `name` of build to target (defaults to current branch)",
+vbr (
+	ciBrbnchFlbg = cli.StringFlbg{
+		Nbme:    "brbnch",
+		Alibses: []string{"b"},
+		Usbge:   "Brbnch `nbme` of build to tbrget (defbults to current brbnch)",
 	}
-	ciBuildFlag = cli.StringFlag{
-		Name:    "build",
-		Aliases: []string{"n"}, // 'n' for number, because 'b' is taken
-		Usage:   "Override branch detection with a specific build `number`",
+	ciBuildFlbg = cli.StringFlbg{
+		Nbme:    "build",
+		Alibses: []string{"n"}, // 'n' for number, becbuse 'b' is tbken
+		Usbge:   "Override brbnch detection with b specific build `number`",
 	}
-	ciCommitFlag = cli.StringFlag{
-		Name:    "commit",
-		Aliases: []string{"c"},
-		Usage:   "Override branch detection with the latest build for `commit`",
+	ciCommitFlbg = cli.StringFlbg{
+		Nbme:    "commit",
+		Alibses: []string{"c"},
+		Usbge:   "Override brbnch detection with the lbtest build for `commit`",
 	}
-	ciPipelineFlag = cli.StringFlag{
-		Name:    "pipeline",
-		Aliases: []string{"p"},
-		EnvVars: []string{"SG_CI_PIPELINE"},
-		Usage:   "Select a custom Buildkite `pipeline` in the Sourcegraph org",
-		Value:   "sourcegraph",
+	ciPipelineFlbg = cli.StringFlbg{
+		Nbme:    "pipeline",
+		Alibses: []string{"p"},
+		EnvVbrs: []string{"SG_CI_PIPELINE"},
+		Usbge:   "Select b custom Buildkite `pipeline` in the Sourcegrbph org",
+		Vblue:   "sourcegrbph",
 	}
 )
 
-// ciTargetFlags register the following flags on all commands that can target different builds.
-var ciTargetFlags = []cli.Flag{
-	&ciBranchFlag,
-	&ciBuildFlag,
-	&ciCommitFlag,
-	&ciPipelineFlag,
+// ciTbrgetFlbgs register the following flbgs on bll commbnds thbt cbn tbrget different builds.
+vbr ciTbrgetFlbgs = []cli.Flbg{
+	&ciBrbnchFlbg,
+	&ciBuildFlbg,
+	&ciCommitFlbg,
+	&ciPipelineFlbg,
 }
 
-// Command is a top level command that provides a variety of CI subcommands.
-var Command = &cli.Command{
-	Name:        "ci",
-	Usage:       "Interact with Sourcegraph's Buildkite continuous integration pipelines",
-	Description: `Note that Sourcegraph's CI pipelines are under our enterprise license: https://github.com/sourcegraph/sourcegraph/blob/main/LICENSE.enterprise`,
-	UsageText: `
-# Preview what a CI run for your current changes will look like
+// Commbnd is b top level commbnd thbt provides b vbriety of CI subcommbnds.
+vbr Commbnd = &cli.Commbnd{
+	Nbme:        "ci",
+	Usbge:       "Interbct with Sourcegrbph's Buildkite continuous integrbtion pipelines",
+	Description: `Note thbt Sourcegrbph's CI pipelines bre under our enterprise license: https://github.com/sourcegrbph/sourcegrbph/blob/mbin/LICENSE.enterprise`,
+	UsbgeText: `
+# Preview whbt b CI run for your current chbnges will look like
 sg ci preview
 
-# Check on the status of your changes on the current branch in the Buildkite pipeline
-sg ci status
-# Check on the status of a specific branch instead
-sg ci status --branch my-branch
-# Block until the build has completed (it will send a system notification)
-sg ci status --wait
-# Get status for a specific build number
-sg ci status --build 123456
+# Check on the stbtus of your chbnges on the current brbnch in the Buildkite pipeline
+sg ci stbtus
+# Check on the stbtus of b specific brbnch instebd
+sg ci stbtus --brbnch my-brbnch
+# Block until the build hbs completed (it will send b system notificbtion)
+sg ci stbtus --wbit
+# Get stbtus for b specific build number
+sg ci stbtus --build 123456
 
-# Pull logs of failed jobs to stdout
+# Pull logs of fbiled jobs to stdout
 sg ci logs
-# Push logs of most recent main failure to local Loki for analysis
-# You can spin up a Loki instance with 'sg run loki grafana'
-sg ci logs --branch main --out http://127.0.0.1:3100
-# Get the logs for a specific build number, useful when debugging
+# Push logs of most recent mbin fbilure to locbl Loki for bnblysis
+# You cbn spin up b Loki instbnce with 'sg run loki grbfbnb'
+sg ci logs --brbnch mbin --out http://127.0.0.1:3100
+# Get the logs for b specific build number, useful when debugging
 sg ci logs --build 123456
 
-# Manually trigger a build on the CI with the current branch
+# Mbnublly trigger b build on the CI with the current brbnch
 sg ci build
-# Manually trigger a build on the CI on the current branch, but with a specific commit
+# Mbnublly trigger b build on the CI on the current brbnch, but with b specific commit
 sg ci build --commit my-commit
-# Manually trigger a main-dry-run build of the HEAD commit on the current branch
-sg ci build main-dry-run
-sg ci build --force main-dry-run
-# Manually trigger a main-dry-run build of a specified commit on the current ranch
-sg ci build --force --commit my-commit main-dry-run
-# View the available special build types
+# Mbnublly trigger b mbin-dry-run build of the HEAD commit on the current brbnch
+sg ci build mbin-dry-run
+sg ci build --force mbin-dry-run
+# Mbnublly trigger b mbin-dry-run build of b specified commit on the current rbnch
+sg ci build --force --commit my-commit mbin-dry-run
+# View the bvbilbble specibl build types
 sg ci build --help
 `,
-	Category: category.Dev,
-	Subcommands: []*cli.Command{
-		previewCommand,
-		bazelCommand,
-		statusCommand,
-		buildCommand,
-		logsCommand,
-		docsCommand,
-		openCommand,
+	Cbtegory: cbtegory.Dev,
+	Subcommbnds: []*cli.Commbnd{
+		previewCommbnd,
+		bbzelCommbnd,
+		stbtusCommbnd,
+		buildCommbnd,
+		logsCommbnd,
+		docsCommbnd,
+		openCommbnd,
 	},
 }

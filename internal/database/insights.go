@@ -1,38 +1,38 @@
-package database
+pbckbge dbtbbbse
 
 import (
 	"context"
-	"database/sql"
+	"dbtbbbse/sql"
 
-	"github.com/sourcegraph/log"
+	"github.com/sourcegrbph/log"
 
-	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbconn"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/bbsestore"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbconn"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbutil"
 )
 
-type InsightsDB interface {
+type InsightsDB interfbce {
 	dbutil.DB
-	basestore.ShareableStore
+	bbsestore.ShbrebbleStore
 
-	Transact(context.Context) (InsightsDB, error)
+	Trbnsbct(context.Context) (InsightsDB, error)
 	Done(error) error
 }
 
 func NewInsightsDB(inner *sql.DB, logger log.Logger) InsightsDB {
-	return &insightsDB{basestore.NewWithHandle(basestore.NewHandleWithDB(logger, inner, sql.TxOptions{}))}
+	return &insightsDB{bbsestore.NewWithHbndle(bbsestore.NewHbndleWithDB(logger, inner, sql.TxOptions{}))}
 }
 
-func NewInsightsDBWith(other basestore.ShareableStore) InsightsDB {
-	return &insightsDB{basestore.NewWithHandle(other.Handle())}
+func NewInsightsDBWith(other bbsestore.ShbrebbleStore) InsightsDB {
+	return &insightsDB{bbsestore.NewWithHbndle(other.Hbndle())}
 }
 
 type insightsDB struct {
-	*basestore.Store
+	*bbsestore.Store
 }
 
-func (d *insightsDB) Transact(ctx context.Context) (InsightsDB, error) {
-	tx, err := d.Store.Transact(ctx)
+func (d *insightsDB) Trbnsbct(ctx context.Context) (InsightsDB, error) {
+	tx, err := d.Store.Trbnsbct(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -43,14 +43,14 @@ func (d *insightsDB) Done(err error) error {
 	return d.Store.Done(err)
 }
 
-func (d *insightsDB) QueryContext(ctx context.Context, q string, args ...any) (*sql.Rows, error) {
-	return d.Handle().QueryContext(dbconn.SkipFrameForQuerySource(ctx), q, args...)
+func (d *insightsDB) QueryContext(ctx context.Context, q string, brgs ...bny) (*sql.Rows, error) {
+	return d.Hbndle().QueryContext(dbconn.SkipFrbmeForQuerySource(ctx), q, brgs...)
 }
 
-func (d *insightsDB) ExecContext(ctx context.Context, q string, args ...any) (sql.Result, error) {
-	return d.Handle().ExecContext(dbconn.SkipFrameForQuerySource(ctx), q, args...)
+func (d *insightsDB) ExecContext(ctx context.Context, q string, brgs ...bny) (sql.Result, error) {
+	return d.Hbndle().ExecContext(dbconn.SkipFrbmeForQuerySource(ctx), q, brgs...)
 }
 
-func (d *insightsDB) QueryRowContext(ctx context.Context, q string, args ...any) *sql.Row {
-	return d.Handle().QueryRowContext(dbconn.SkipFrameForQuerySource(ctx), q, args...)
+func (d *insightsDB) QueryRowContext(ctx context.Context, q string, brgs ...bny) *sql.Row {
+	return d.Hbndle().QueryRowContext(dbconn.SkipFrbmeForQuerySource(ctx), q, brgs...)
 }

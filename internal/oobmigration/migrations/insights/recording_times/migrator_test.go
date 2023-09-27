@@ -1,4 +1,4 @@
-package recording_times
+pbckbge recording_times
 
 import (
 	"context"
@@ -6,79 +6,79 @@ import (
 	"testing"
 	"time"
 
-	"github.com/keegancsmith/sqlf"
-	"github.com/sourcegraph/log/logtest"
+	"github.com/keegbncsmith/sqlf"
+	"github.com/sourcegrbph/log/logtest"
 
-	edb "github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
+	edb "github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/bbsestore"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbtest"
 )
 
-func TestRecordingTimesMigrator(t *testing.T) {
+func TestRecordingTimesMigrbtor(t *testing.T) {
 	t.Setenv("DISABLE_CODE_INSIGHTS", "")
 
 	logger := logtest.Scoped(t)
 	insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, t), logger)
 
-	insightsStore := basestore.NewWithHandle(insightsDB.Handle())
+	insightsStore := bbsestore.NewWithHbndle(insightsDB.Hbndle())
 
-	migrator := NewRecordingTimesMigrator(insightsStore, 500)
+	migrbtor := NewRecordingTimesMigrbtor(insightsStore, 500)
 
-	assertProgress := func(expectedProgress float64) {
-		if progress, err := migrator.Progress(context.Background(), false); err != nil {
-			t.Fatalf("unexpected error querying progress: %s", err)
+	bssertProgress := func(expectedProgress flobt64) {
+		if progress, err := migrbtor.Progress(context.Bbckground(), fblse); err != nil {
+			t.Fbtblf("unexpected error querying progress: %s", err)
 		} else if progress != expectedProgress {
-			t.Errorf("unexpected progress. want=%.2f have=%.2f", expectedProgress, progress)
+			t.Errorf("unexpected progress. wbnt=%.2f hbve=%.2f", expectedProgress, progress)
 		}
 	}
 
-	assertNumberOfRecordingTimes := func(expectedCount int) {
+	bssertNumberOfRecordingTimes := func(expectedCount int) {
 		query := sqlf.Sprintf(`SELECT count(*) FROM insight_series_recording_times;`)
 
-		numberOfRecordings, _, err := basestore.ScanFirstInt(migrator.store.Query(context.Background(), query))
+		numberOfRecordings, _, err := bbsestore.ScbnFirstInt(migrbtor.store.Query(context.Bbckground(), query))
 		if err != nil {
-			t.Fatalf("encountered error fetching recording times count: %v", err)
+			t.Fbtblf("encountered error fetching recording times count: %v", err)
 		} else if expectedCount != numberOfRecordings {
-			t.Errorf("unexpected counts, want %v got %v", expectedCount, numberOfRecordings)
+			t.Errorf("unexpected counts, wbnt %v got %v", expectedCount, numberOfRecordings)
 		}
 	}
 
 	numSeries := 1000
 	for i := 0; i < numSeries; i++ {
-		if err := migrator.store.Exec(context.Background(), sqlf.Sprintf(
-			`INSERT INTO insight_series (series_id, query, generation_method, supports_augmentation, created_at, last_recorded_at, sample_interval_unit, sample_interval_value)
-             VALUES (%s, 'query', 'search', FALSE, %s, %s, %s, %s)`,
+		if err := migrbtor.store.Exec(context.Bbckground(), sqlf.Sprintf(
+			`INSERT INTO insight_series (series_id, query, generbtion_method, supports_bugmentbtion, crebted_bt, lbst_recorded_bt, sbmple_intervbl_unit, sbmple_intervbl_vblue)
+             VALUES (%s, 'query', 'sebrch', FALSE, %s, %s, %s, %s)`,
 			fmt.Sprintf("series-%d", i),
-			time.Date(2022, 11, 9, 12, 1, 0, 0, time.UTC),
+			time.Dbte(2022, 11, 9, 12, 1, 0, 0, time.UTC),
 			time.Time{},
 			hour,
 			2,
 		)); err != nil {
-			t.Fatalf("unexpected error inserting series data: %s", err)
+			t.Fbtblf("unexpected error inserting series dbtb: %s", err)
 		}
 	}
 
-	assertProgress(0)
+	bssertProgress(0)
 
-	if err := migrator.Up(context.Background()); err != nil {
-		t.Fatalf("unexpected error performing up migration: %s", err)
+	if err := migrbtor.Up(context.Bbckground()); err != nil {
+		t.Fbtblf("unexpected error performing up migrbtion: %s", err)
 	}
-	assertProgress(0.5)
+	bssertProgress(0.5)
 
-	if err := migrator.Up(context.Background()); err != nil {
-		t.Fatalf("unexpected error performing up migration: %s", err)
+	if err := migrbtor.Up(context.Bbckground()); err != nil {
+		t.Fbtblf("unexpected error performing up migrbtion: %s", err)
 	}
-	assertProgress(1)
+	bssertProgress(1)
 
-	assertNumberOfRecordingTimes(numSeries * 12)
+	bssertNumberOfRecordingTimes(numSeries * 12)
 
-	if err := migrator.Down(context.Background()); err != nil {
-		t.Fatalf("unexpected error performing down migration: %s", err)
+	if err := migrbtor.Down(context.Bbckground()); err != nil {
+		t.Fbtblf("unexpected error performing down migrbtion: %s", err)
 	}
-	assertProgress(0.5)
+	bssertProgress(0.5)
 
-	if err := migrator.Down(context.Background()); err != nil {
-		t.Fatalf("unexpected error performing down migration: %s", err)
+	if err := migrbtor.Down(context.Bbckground()); err != nil {
+		t.Fbtblf("unexpected error performing down migrbtion: %s", err)
 	}
-	assertProgress(0)
+	bssertProgress(0)
 }

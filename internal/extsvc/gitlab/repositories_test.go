@@ -1,4 +1,4 @@
-package gitlab
+pbckbge gitlbb
 
 import (
 	"context"
@@ -11,17 +11,17 @@ func TestListTree(t *testing.T) {
 		responseBody: `
 [
   {
-    "id": "a1e8f8d745cc87e3a9248358d9352bb7f9a0aeba",
-    "name": "html",
+    "id": "b1e8f8d745cc87e3b9248358d9352bb7f9b0bebb",
+    "nbme": "html",
     "type": "tree",
-    "path": "files/html",
+    "pbth": "files/html",
     "mode": "040000"
   },
   {
-    "id": "4535904260b1082e14f867f7a24fd8c21495bde3",
-    "name": "images",
+    "id": "4535904260b1082e14f867f7b24fd8c21495bde3",
+    "nbme": "imbges",
     "type": "tree",
-    "path": "files/images",
+    "pbth": "files/imbges",
     "mode": "040000"
   }
 ]
@@ -30,52 +30,52 @@ func TestListTree(t *testing.T) {
 	c := newTestClient(t)
 	c.httpClient = &mock
 
-	want := []*Tree{
+	wbnt := []*Tree{
 		{
-			ID:   "a1e8f8d745cc87e3a9248358d9352bb7f9a0aeba",
-			Name: "html",
+			ID:   "b1e8f8d745cc87e3b9248358d9352bb7f9b0bebb",
+			Nbme: "html",
 			Type: "tree",
-			Path: "files/html",
+			Pbth: "files/html",
 			Mode: "040000",
 		},
 		{
-			ID:   "4535904260b1082e14f867f7a24fd8c21495bde3",
-			Name: "images",
+			ID:   "4535904260b1082e14f867f7b24fd8c21495bde3",
+			Nbme: "imbges",
 			Type: "tree",
-			Path: "files/images",
+			Pbth: "files/imbges",
 			Mode: "040000",
 		},
 	}
 
-	// Test first fetch (cache empty)
-	tree, err := c.ListTree(context.Background(), ListTreeOp{ProjPathWithNamespace: "n1/n2/r"})
+	// Test first fetch (cbche empty)
+	tree, err := c.ListTree(context.Bbckground(), ListTreeOp{ProjPbthWithNbmespbce: "n1/n2/r"})
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 	if tree == nil {
 		t.Error("tree == nil")
 	}
 	if mock.count != 1 {
-		t.Errorf("mock.count == %d, expected to miss cache once", mock.count)
+		t.Errorf("mock.count == %d, expected to miss cbche once", mock.count)
 	}
-	if !reflect.DeepEqual(tree, want) {
-		t.Errorf("got tree %+v, want %+v", tree, &want)
+	if !reflect.DeepEqubl(tree, wbnt) {
+		t.Errorf("got tree %+v, wbnt %+v", tree, &wbnt)
 	}
 
-	// Note: since caching is not currently implemented for this endpoint, we don't test it
+	// Note: since cbching is not currently implemented for this endpoint, we don't test it
 
-	// Test the `NoCache: true` option
-	tree, err = c.ListTree(context.Background(), ListTreeOp{ProjPathWithNamespace: "n1/n2/r", CommonOp: CommonOp{NoCache: true}})
+	// Test the `NoCbche: true` option
+	tree, err = c.ListTree(context.Bbckground(), ListTreeOp{ProjPbthWithNbmespbce: "n1/n2/r", CommonOp: CommonOp{NoCbche: true}})
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 	if tree == nil {
 		t.Error("tree == nil")
 	}
 	if mock.count != 2 {
-		t.Errorf("mock.count == %d, expected to miss cache once", mock.count)
+		t.Errorf("mock.count == %d, expected to miss cbche once", mock.count)
 	}
-	if !reflect.DeepEqual(tree, want) {
-		t.Errorf("got tree %+v, want %+v", tree, &want)
+	if !reflect.DeepEqubl(tree, wbnt) {
+		t.Errorf("got tree %+v, wbnt %+v", tree, &wbnt)
 	}
 }

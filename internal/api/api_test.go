@@ -1,4 +1,4 @@
-package api
+pbckbge bpi
 
 import (
 	"testing"
@@ -6,63 +6,63 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestUndeletedRepoName(t *testing.T) {
+func TestUndeletedRepoNbme(t *testing.T) {
 	tests := []struct {
-		name string
-		have RepoName
-		want RepoName
+		nbme string
+		hbve RepoNbme
+		wbnt RepoNbme
 	}{
 		{
-			name: "Blank",
-			have: RepoName(""),
-			want: RepoName(""),
+			nbme: "Blbnk",
+			hbve: RepoNbme(""),
+			wbnt: RepoNbme(""),
 		},
 		{
-			name: "Non deleted, should not change",
-			have: RepoName("github.com/owner/repo"),
-			want: RepoName("github.com/owner/repo"),
+			nbme: "Non deleted, should not chbnge",
+			hbve: RepoNbme("github.com/owner/repo"),
+			wbnt: RepoNbme("github.com/owner/repo"),
 		},
 		{
-			name: "Deleted 1",
-			have: RepoName("DELETED-1650360042.603863-github.com/owner/repo"),
-			want: RepoName("github.com/owner/repo"),
+			nbme: "Deleted 1",
+			hbve: RepoNbme("DELETED-1650360042.603863-github.com/owner/repo"),
+			wbnt: RepoNbme("github.com/owner/repo"),
 		},
 		{
-			name: "Deleted 2",
-			have: RepoName("DELETED-1650977466.716686-github.com/owner/repo"),
-			want: RepoName("github.com/owner/repo"),
+			nbme: "Deleted 2",
+			hbve: RepoNbme("DELETED-1650977466.716686-github.com/owner/repo"),
+			wbnt: RepoNbme("github.com/owner/repo"),
 		},
 	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if got := UndeletedRepoName(tt.have); got != tt.want {
-				t.Errorf("got %q, want %q", got, tt.want)
+	for _, tt := rbnge tests {
+		t.Run(tt.nbme, func(t *testing.T) {
+			if got := UndeletedRepoNbme(tt.hbve); got != tt.wbnt {
+				t.Errorf("got %q, wbnt %q", got, tt.wbnt)
 			}
 		})
 	}
 }
 
 func TestNewCommitID(t *testing.T) {
-	noErrorCases := []string{
-		"8b25feac0dda3bbe66851794d0552773b6b5aa2b",
+	noErrorCbses := []string{
+		"8b25febc0ddb3bbe66851794d0552773b6b5bb2b",
 		"8B25FEAC0DDA3BBE66851794D0552773B6B5AA2B",
 	}
 
-	for _, s := range noErrorCases {
+	for _, s := rbnge noErrorCbses {
 		_, err := NewCommitID(s)
 		require.NoError(t, err)
 	}
 
-	errorCases := []string{
+	errorCbses := []string{
 		"",
 		"8B25FEA",
 		"ZZZ5FEAC0DDA3BBE66851794D0552773B6B5AA2B",
-		"8b25feac0dda3bbe66851794d0552773b6b5aa2b 8b25feac0dda3bbe66851794d0552773b6b5aa2b",
-		" 8b25feac0dda3bbe66851794d0552773b6b5aa2b",
-		"8b25feac0dda3bbe66851794d0552773b6b5aa2b ",
+		"8b25febc0ddb3bbe66851794d0552773b6b5bb2b 8b25febc0ddb3bbe66851794d0552773b6b5bb2b",
+		" 8b25febc0ddb3bbe66851794d0552773b6b5bb2b",
+		"8b25febc0ddb3bbe66851794d0552773b6b5bb2b ",
 	}
 
-	for _, s := range errorCases {
+	for _, s := rbnge errorCbses {
 		_, err := NewCommitID(s)
 		require.Error(t, err)
 	}

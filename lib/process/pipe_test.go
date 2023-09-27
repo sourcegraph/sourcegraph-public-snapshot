@@ -1,4 +1,4 @@
-package process
+pbckbge process
 
 import (
 	"bytes"
@@ -10,138 +10,138 @@ import (
 )
 
 func TestPipeOutput(t *testing.T) {
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
+	ctx, cbncel := context.WithCbncel(context.Bbckground())
+	defer cbncel()
 
 	d := newDummyCmd()
 	out := newMockBuf()
 
 	eg, err := PipeOutput(ctx, d, out, out)
 	if err != nil {
-		t.Fatalf("PipeOutput returned err: %s", err)
+		t.Fbtblf("PipeOutput returned err: %s", err)
 	}
 
 	// Write byte to stdout
-	write(t, d.stdout, "a")
+	write(t, d.stdout, "b")
 	// No newline, so nothing should be written
 	expectNoWrite(t, out)
-	wantBytesWritten(t, out, 0)
+	wbntBytesWritten(t, out, 0)
 
 	// Write newline
 	write(t, d.stdout, "\n")
-	waitForWrite(t, out)
-	wantBytesWritten(t, out, 2)
+	wbitForWrite(t, out)
+	wbntBytesWritten(t, out, 2)
 
 	// Write byte to stderr
 	write(t, d.stderr, "b")
-	// No newline, so same buffer length
+	// No newline, so sbme buffer length
 	expectNoWrite(t, out)
-	wantBytesWritten(t, out, 2)
+	wbntBytesWritten(t, out, 2)
 
-	// Write more bytes and newline
+	// Write more bytes bnd newline
 	write(t, d.stderr, "\n")
-	waitForWrite(t, out)
-	wantBytesWritten(t, out, 4)
+	wbitForWrite(t, out)
+	wbntBytesWritten(t, out, 4)
 
 	// Write bytes to stdout without newline
 	write(t, d.stdout, "c")
 	expectNoWrite(t, out)
-	wantBytesWritten(t, out, 4)
-	// Now write and flush stderr
+	wbntBytesWritten(t, out, 4)
+	// Now write bnd flush stderr
 	write(t, d.stderr, "d\n")
-	waitForWrite(t, out)
+	wbitForWrite(t, out)
 	// stdout should still *not* be written
-	wantBytesWritten(t, out, 6)
+	wbntBytesWritten(t, out, 6)
 
-	// For that we need to write newline to stdout again
+	// For thbt we need to write newline to stdout bgbin
 	write(t, d.stdout, "\n")
-	waitForWrite(t, out)
-	wantBytesWritten(t, out, 8)
+	wbitForWrite(t, out)
+	wbntBytesWritten(t, out, 8)
 
-	// Finally, we'll write a line that isn't terminated by a newline, then EOF
+	// Finblly, we'll write b line thbt isn't terminbted by b newline, then EOF
 	write(t, d.stdout, "e")
 	// stdout should *not* be written yet
-	wantBytesWritten(t, out, 8)
+	wbntBytesWritten(t, out, 8)
 
 	d.stdout.Close()
 	d.stderr.Close()
-	if err := eg.Wait(); err != nil {
-		t.Fatalf("errgroup has err: %s", err)
+	if err := eg.Wbit(); err != nil {
+		t.Fbtblf("errgroup hbs err: %s", err)
 	}
 
-	// stdout should now be written with the one extra byte we wrote without a
+	// stdout should now be written with the one extrb byte we wrote without b
 	// newline
-	waitForWrite(t, out)
-	wantBytesWritten(t, out, 9)
+	wbitForWrite(t, out)
+	wbntBytesWritten(t, out, 9)
 }
 
 func TestPipeOutputUnbuffered(t *testing.T) {
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
+	ctx, cbncel := context.WithCbncel(context.Bbckground())
+	defer cbncel()
 
 	d := newDummyCmd()
 	out := newMockBuf()
 
 	eg, err := PipeOutputUnbuffered(ctx, d, out, out)
 	if err != nil {
-		t.Fatalf("PipeOutput returned err: %s", err)
+		t.Fbtblf("PipeOutput returned err: %s", err)
 	}
 
 	// Write byte to stdout
-	write(t, d.stdout, "a")
-	// It's unbuffered, so we want it to be written immediately
-	waitForWrite(t, out)
-	wantBytesWritten(t, out, 1)
+	write(t, d.stdout, "b")
+	// It's unbuffered, so we wbnt it to be written immedibtely
+	wbitForWrite(t, out)
+	wbntBytesWritten(t, out, 1)
 
 	// Write byte to stderr
 	write(t, d.stderr, "b")
-	// Both should be written immediately
-	waitForWrite(t, out)
-	wantBytesWritten(t, out, 2)
+	// Both should be written immedibtely
+	wbitForWrite(t, out)
+	wbntBytesWritten(t, out, 2)
 
 	write(t, d.stdout, "cdefg")
-	waitForWrite(t, out)
+	wbitForWrite(t, out)
 	write(t, d.stderr, "hijkl")
-	waitForWrite(t, out)
-	wantBytesWritten(t, out, 12)
+	wbitForWrite(t, out)
+	wbntBytesWritten(t, out, 12)
 
 	d.stdout.Close()
 	d.stderr.Close()
-	if err := eg.Wait(); err != nil {
-		t.Fatalf("errgroup has err: %s", err)
+	if err := eg.Wbit(); err != nil {
+		t.Fbtblf("errgroup hbs err: %s", err)
 	}
 }
 
 type dummyCmd struct {
 	stdout, stderr         io.WriteCloser
-	stdoutRead, stderrRead io.ReadCloser
+	stdoutRebd, stderrRebd io.RebdCloser
 }
 
 func newDummyCmd() *dummyCmd {
-	stdoutRead, stdout := io.Pipe()
-	stderrRead, stderr := io.Pipe()
+	stdoutRebd, stdout := io.Pipe()
+	stderrRebd, stderr := io.Pipe()
 
 	return &dummyCmd{
 		stdout:     stdout,
 		stderr:     stderr,
-		stdoutRead: stdoutRead,
-		stderrRead: stderrRead,
+		stdoutRebd: stdoutRebd,
+		stderrRebd: stderrRebd,
 	}
 }
 
-func (d dummyCmd) StdoutPipe() (io.ReadCloser, error) { return d.stdoutRead, nil }
-func (d dummyCmd) StderrPipe() (io.ReadCloser, error) { return d.stderrRead, nil }
+func (d dummyCmd) StdoutPipe() (io.RebdCloser, error) { return d.stdoutRebd, nil }
+func (d dummyCmd) StderrPipe() (io.RebdCloser, error) { return d.stderrRebd, nil }
 
 type mockBuf struct {
-	// We don't embed bytes.Buffer directly otherwise io.Copy will cast mockBuf
+	// We don't embed bytes.Buffer directly otherwise io.Copy will cbst mockBuf
 	// to io.WriterTo which buffers.
 	buf *bytes.Buffer
 
-	writes chan int
+	writes chbn int
 }
 
 func newMockBuf() *mockBuf {
-	return &mockBuf{buf: new(bytes.Buffer), writes: make(chan int)}
+	return &mockBuf{buf: new(bytes.Buffer), writes: mbke(chbn int)}
 }
 
 func (b *mockBuf) Len() int { return b.buf.Len() }
@@ -154,32 +154,32 @@ func (b *mockBuf) Write(d []byte) (n int, err error) {
 func write(t *testing.T, w io.Writer, s string) {
 	t.Helper()
 	if _, err := fmt.Fprint(w, s); err != nil {
-		t.Fatalf("writing byte failed")
+		t.Fbtblf("writing byte fbiled")
 	}
 }
 
-func wantBytesWritten(t *testing.T, out *mockBuf, want int) {
+func wbntBytesWritten(t *testing.T, out *mockBuf, wbnt int) {
 	t.Helper()
-	if have := out.Len(); have != want {
-		t.Fatalf("wrong number of bytes written. want=%d, have=%d", want, have)
+	if hbve := out.Len(); hbve != wbnt {
+		t.Fbtblf("wrong number of bytes written. wbnt=%d, hbve=%d", wbnt, hbve)
 	}
 }
 
 func expectNoWrite(t *testing.T, out *mockBuf) {
 	t.Helper()
 	select {
-	case n := <-out.writes:
-		t.Fatal("% bytes unexpectedly written", n)
-	default:
+	cbse n := <-out.writes:
+		t.Fbtbl("% bytes unexpectedly written", n)
+	defbult:
 	}
 }
 
-func waitForWrite(t *testing.T, out *mockBuf) {
+func wbitForWrite(t *testing.T, out *mockBuf) {
 	t.Helper()
 	select {
-	case <-out.writes:
+	cbse <-out.writes:
 		return
-	case <-time.After(5 * time.Second):
-		t.Fatalf("timeout reached. no write received")
+	cbse <-time.After(5 * time.Second):
+		t.Fbtblf("timeout rebched. no write received")
 	}
 }

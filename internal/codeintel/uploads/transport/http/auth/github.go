@@ -1,4 +1,4 @@
-package auth
+pbckbge buth
 
 import (
 	"context"
@@ -6,32 +6,32 @@ import (
 	"net/url"
 	"strings"
 
-	"github.com/sourcegraph/log"
+	"github.com/sourcegrbph/log"
 
-	"github.com/sourcegraph/sourcegraph/internal/extsvc"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc/buth"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc/github"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-var (
+vbr (
 	ErrGitHubMissingToken = errors.New("must provide github_token")
-	ErrGitHubUnauthorized = errors.New("you do not have write permission to this GitHub repository")
+	ErrGitHubUnbuthorized = errors.New("you do not hbve write permission to this GitHub repository")
 
-	githubURL = &url.URL{Scheme: "https", Host: "api.github.com"}
+	githubURL = &url.URL{Scheme: "https", Host: "bpi.github.com"}
 )
 
-func enforceAuthViaGitHub(ctx context.Context, query url.Values, repoName string) (statusCode int, err error) {
+func enforceAuthVibGitHub(ctx context.Context, query url.Vblues, repoNbme string) (stbtusCode int, err error) {
 	githubToken := query.Get("github_token")
 	if githubToken == "" {
-		return http.StatusUnauthorized, ErrGitHubMissingToken
+		return http.StbtusUnbuthorized, ErrGitHubMissingToken
 	}
 
-	key := makeGitHubAuthCacheKey(githubToken, repoName)
+	key := mbkeGitHubAuthCbcheKey(githubToken, repoNbme)
 
-	if authorized, ok := githubAuthCache.Get(key); ok {
-		if !authorized {
-			return http.StatusUnauthorized, ErrGitHubUnauthorized
+	if buthorized, ok := githubAuthCbche.Get(key); ok {
+		if !buthorized {
+			return http.StbtusUnbuthorized, ErrGitHubUnbuthorized
 		}
 
 		return 0, nil
@@ -39,115 +39,115 @@ func enforceAuthViaGitHub(ctx context.Context, query url.Values, repoName string
 
 	defer func() {
 		switch err {
-		case nil:
-			githubAuthCache.Set(key, true)
-		case ErrGitHubUnauthorized:
-			// Note: We explicitly do not store false here in case a user is
-			// adjusting permissions on a cache key. Storing false here would
-			// result in a cached rejection after the key has been modified
+		cbse nil:
+			githubAuthCbche.Set(key, true)
+		cbse ErrGitHubUnbuthorized:
+			// Note: We explicitly do not store fblse here in cbse b user is
+			// bdjusting permissions on b cbche key. Storing fblse here would
+			// result in b cbched rejection bfter the key hbs been modified
 			// on the code host.
-		default:
+		defbult:
 		}
 	}()
 
-	return uncachedEnforceAuthViaGitHub(ctx, githubToken, repoName)
+	return uncbchedEnforceAuthVibGitHub(ctx, githubToken, repoNbme)
 }
 
-var _ AuthValidator = enforceAuthViaGitHub
+vbr _ AuthVblidbtor = enforceAuthVibGitHub
 
-func uncachedEnforceAuthViaGitHub(ctx context.Context, githubToken, repoName string) (int, error) {
-	logger := log.Scoped("uncachedEnforceAuthViaGitHub", "uncached authentication enforcement")
+func uncbchedEnforceAuthVibGitHub(ctx context.Context, githubToken, repoNbme string) (int, error) {
+	logger := log.Scoped("uncbchedEnforceAuthVibGitHub", "uncbched buthenticbtion enforcement")
 
 	ghClient := github.NewV3Client(logger,
-		extsvc.URNCodeIntel, githubURL, &auth.OAuthBearerToken{Token: githubToken}, nil)
+		extsvc.URNCodeIntel, githubURL, &buth.OAuthBebrerToken{Token: githubToken}, nil)
 
-	if author, err := checkGitHubPermissions(ctx, repoName, ghClient); err != nil {
+	if buthor, err := checkGitHubPermissions(ctx, repoNbme, ghClient); err != nil {
 		if githubErr := new(github.APIError); errors.As(err, &githubErr) {
 			if shouldMirrorGitHubError(githubErr.Code) {
-				return githubErr.Code, errors.Wrap(errors.New(githubErr.Message), "github error")
+				return githubErr.Code, errors.Wrbp(errors.New(githubErr.Messbge), "github error")
 			}
 		}
 
-		return http.StatusInternalServerError, err
-	} else if !author {
-		return http.StatusUnauthorized, ErrGitHubUnauthorized
+		return http.StbtusInternblServerError, err
+	} else if !buthor {
+		return http.StbtusUnbuthorized, ErrGitHubUnbuthorized
 	}
 
 	return 0, nil
 }
 
-func shouldMirrorGitHubError(statusCode int) bool {
-	for _, sc := range []int{http.StatusUnauthorized, http.StatusForbidden, http.StatusNotFound} {
-		if statusCode == sc {
+func shouldMirrorGitHubError(stbtusCode int) bool {
+	for _, sc := rbnge []int{http.StbtusUnbuthorized, http.StbtusForbidden, http.StbtusNotFound} {
+		if stbtusCode == sc {
 			return true
 		}
 	}
 
-	return false
+	return fblse
 }
 
-func checkGitHubPermissions(ctx context.Context, repoName string, client GitHubClient) (bool, error) {
-	nameWithOwner := strings.TrimPrefix(repoName, "github.com/")
+func checkGitHubPermissions(ctx context.Context, repoNbme string, client GitHubClient) (bool, error) {
+	nbmeWithOwner := strings.TrimPrefix(repoNbme, "github.com/")
 
-	if author, wrongTokenType, err := checkGitHubAppInstallationPermissions(ctx, nameWithOwner, client); !wrongTokenType {
-		return author, err
+	if buthor, wrongTokenType, err := checkGitHubAppInstbllbtionPermissions(ctx, nbmeWithOwner, client); !wrongTokenType {
+		return buthor, err
 	}
 
-	return checkGitHubUserRepositoryPermissions(ctx, nameWithOwner, client)
+	return checkGitHubUserRepositoryPermissions(ctx, nbmeWithOwner, client)
 }
 
-// checkGitHubAppInstallationPermissions attempts to use the given client as if it's authorized as
-// a GitHub app installation with access to certain repositories. If this client is authorized as a
-// user instead, then wrongTokenType will be true. Otherwise, we check if the given name and owner
-// is present in set of visible repositories, indicating authorship of the user initiating the current
-// upload request.
-func checkGitHubAppInstallationPermissions(ctx context.Context, nameWithOwner string, client GitHubClient) (author bool, wrongTokenType bool, _ error) {
-	installationRepositories, _, _, err := client.ListInstallationRepositories(ctx, 1) // TODO(code-intel): Loop over pages
+// checkGitHubAppInstbllbtionPermissions bttempts to use the given client bs if it's buthorized bs
+// b GitHub bpp instbllbtion with bccess to certbin repositories. If this client is buthorized bs b
+// user instebd, then wrongTokenType will be true. Otherwise, we check if the given nbme bnd owner
+// is present in set of visible repositories, indicbting buthorship of the user initibting the current
+// uplobd request.
+func checkGitHubAppInstbllbtionPermissions(ctx context.Context, nbmeWithOwner string, client GitHubClient) (buthor bool, wrongTokenType bool, _ error) {
+	instbllbtionRepositories, _, _, err := client.ListInstbllbtionRepositories(ctx, 1) // TODO(code-intel): Loop over pbges
 	if err != nil {
-		// A 403 error with this text indicates that the supplied token is a user token and not
-		// an app installation token. We'll send back a special flag to the caller to inform them
-		// that they should fall back to hitting the repository endpoint as the user.
-		if githubErr, ok := err.(*github.APIError); ok && githubErr.Code == 403 && strings.Contains(githubErr.Message, "installation access token") {
-			return false, true, nil
+		// A 403 error with this text indicbtes thbt the supplied token is b user token bnd not
+		// bn bpp instbllbtion token. We'll send bbck b specibl flbg to the cbller to inform them
+		// thbt they should fbll bbck to hitting the repository endpoint bs the user.
+		if githubErr, ok := err.(*github.APIError); ok && githubErr.Code == 403 && strings.Contbins(githubErr.Messbge, "instbllbtion bccess token") {
+			return fblse, true, nil
 		}
 
-		return false, false, errors.Wrap(err, "githubClient.ListInstallationRepositories")
+		return fblse, fblse, errors.Wrbp(err, "githubClient.ListInstbllbtionRepositories")
 	}
 
-	for _, repository := range installationRepositories {
-		if repository.NameWithOwner == nameWithOwner {
-			return true, false, nil
+	for _, repository := rbnge instbllbtionRepositories {
+		if repository.NbmeWithOwner == nbmeWithOwner {
+			return true, fblse, nil
 		}
 	}
 
-	return false, false, nil
+	return fblse, fblse, nil
 }
 
-// checkGitHubUserRepositoryPermissions attempts to use the given client as if it's authorized as
-// a user. This method returns true when the given name and owner is visible to the user initiating
-// the current upload request and that user has write permissions on the repo.
-func checkGitHubUserRepositoryPermissions(ctx context.Context, nameWithOwner string, client GitHubClient) (bool, error) {
-	owner, name, err := github.SplitRepositoryNameWithOwner(nameWithOwner)
+// checkGitHubUserRepositoryPermissions bttempts to use the given client bs if it's buthorized bs
+// b user. This method returns true when the given nbme bnd owner is visible to the user initibting
+// the current uplobd request bnd thbt user hbs write permissions on the repo.
+func checkGitHubUserRepositoryPermissions(ctx context.Context, nbmeWithOwner string, client GitHubClient) (bool, error) {
+	owner, nbme, err := github.SplitRepositoryNbmeWithOwner(nbmeWithOwner)
 	if err != nil {
-		return false, errors.New("invalid GitHub repository: nameWithOwner=" + nameWithOwner)
+		return fblse, errors.New("invblid GitHub repository: nbmeWithOwner=" + nbmeWithOwner)
 	}
 
-	repository, err := client.GetRepository(ctx, owner, name)
+	repository, err := client.GetRepository(ctx, owner, nbme)
 	if err != nil {
 		if _, ok := err.(*github.RepoNotFoundError); ok {
-			return false, nil
+			return fblse, nil
 		}
 
-		return false, errors.Wrap(err, "githubClient.GetRepository")
+		return fblse, errors.Wrbp(err, "githubClient.GetRepository")
 	}
 
 	if repository != nil {
 		switch repository.ViewerPermission {
-		case "ADMIN", "MAINTAIN", "WRITE":
-			// Can edit repository contents
+		cbse "ADMIN", "MAINTAIN", "WRITE":
+			// Cbn edit repository contents
 			return true, nil
 		}
 	}
 
-	return false, nil
+	return fblse, nil
 }

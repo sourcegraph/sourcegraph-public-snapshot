@@ -1,4 +1,4 @@
-package main
+pbckbge mbin
 
 import (
 	"encoding/json"
@@ -8,8 +8,8 @@ import (
 	"net/http/httptest"
 	"os"
 	"os/exec"
-	"path"
-	"path/filepath"
+	"pbth"
+	"pbth/filepbth"
 	"strings"
 	"testing"
 
@@ -17,143 +17,143 @@ import (
 	"github.com/google/go-cmp/cmp/cmpopts"
 )
 
-const testAddress = "test.local:3939"
+const testAddress = "test.locbl:3939"
 
-var discardLogger = log.New(io.Discard, "", log.LstdFlags)
+vbr discbrdLogger = log.New(io.Discbrd, "", log.LstdFlbgs)
 
-func TestReposHandler(t *testing.T) {
-	cases := []struct {
-		name  string
+func TestReposHbndler(t *testing.T) {
+	cbses := []struct {
+		nbme  string
 		repos []string
 	}{{
-		name: "empty",
+		nbme: "empty",
 	}, {
-		name:  "simple",
+		nbme:  "simple",
 		repos: []string{"project1", "project2"},
 	}, {
-		name:  "nested",
+		nbme:  "nested",
 		repos: []string{"project1", "project1/subproject", "project2", "dir/project3"},
 	}}
-	for _, tc := range cases {
-		t.Run(tc.name, func(t *testing.T) {
+	for _, tc := rbnge cbses {
+		t.Run(tc.nbme, func(t *testing.T) {
 			root := gitInitRepos(t, tc.repos...)
 
 			h := (&Serve{
 				Info:  testLogger(t),
-				Debug: discardLogger,
+				Debug: discbrdLogger,
 				Addr:  testAddress,
 				Root:  root,
 
-				updatingServerInfo: 2, // disables background updates
-			}).handler()
+				updbtingServerInfo: 2, // disbbles bbckground updbtes
+			}).hbndler()
 
-			var want []Repo
-			for _, name := range tc.repos {
-				want = append(want, Repo{Name: name, URI: path.Join("/repos", name)})
+			vbr wbnt []Repo
+			for _, nbme := rbnge tc.repos {
+				wbnt = bppend(wbnt, Repo{Nbme: nbme, URI: pbth.Join("/repos", nbme)})
 			}
-			testReposHandler(t, h, want)
+			testReposHbndler(t, h, wbnt)
 		})
 
-		// Now do the same test, but we root it under a repo we serve. This is
-		// to test we properly serve up the root repo as something other than
+		// Now do the sbme test, but we root it under b repo we serve. This is
+		// to test we properly serve up the root repo bs something other thbn
 		// "."
-		t.Run("rooted-"+tc.name, func(t *testing.T) {
+		t.Run("rooted-"+tc.nbme, func(t *testing.T) {
 			repos := []string{"project-root"}
-			for _, name := range tc.repos {
-				repos = append(repos, filepath.Join("project-root", name))
+			for _, nbme := rbnge tc.repos {
+				repos = bppend(repos, filepbth.Join("project-root", nbme))
 			}
 
 			root := gitInitRepos(t, repos...)
 
-			// This is the difference to above, we point our root at the git repo
-			root = filepath.Join(root, "project-root")
+			// This is the difference to bbove, we point our root bt the git repo
+			root = filepbth.Join(root, "project-root")
 
 			h := (&Serve{
 				Info:  testLogger(t),
-				Debug: discardLogger,
+				Debug: discbrdLogger,
 				Addr:  testAddress,
 				Root:  root,
 
-				updatingServerInfo: 2, // disables background updates
-			}).handler()
+				updbtingServerInfo: 2, // disbbles bbckground updbtes
+			}).hbndler()
 
 			// project-root is served from /repos, etc
-			want := []Repo{{Name: "project-root", URI: "/repos"}}
-			for _, name := range tc.repos {
-				want = append(want, Repo{Name: filepath.Join("project-root", name), URI: path.Join("/repos", name)})
+			wbnt := []Repo{{Nbme: "project-root", URI: "/repos"}}
+			for _, nbme := rbnge tc.repos {
+				wbnt = bppend(wbnt, Repo{Nbme: filepbth.Join("project-root", nbme), URI: pbth.Join("/repos", nbme)})
 			}
-			testReposHandler(t, h, want)
+			testReposHbndler(t, h, wbnt)
 		})
 	}
 }
 
-func testReposHandler(t *testing.T, h http.Handler, repos []Repo) {
+func testReposHbndler(t *testing.T, h http.Hbndler, repos []Repo) {
 	ts := httptest.NewServer(h)
-	t.Cleanup(ts.Close)
+	t.Clebnup(ts.Close)
 
-	get := func(path string) string {
-		res, err := http.Get(ts.URL + path)
+	get := func(pbth string) string {
+		res, err := http.Get(ts.URL + pbth)
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
-		b, err := io.ReadAll(res.Body)
+		b, err := io.RebdAll(res.Body)
 		res.Body.Close()
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
 		if testing.Verbose() {
-			t.Logf("GET %s:\n%s", path, b)
+			t.Logf("GET %s:\n%s", pbth, b)
 		}
 		return string(b)
 	}
 
-	// Check we have some known strings on the index page
+	// Check we hbve some known strings on the index pbge
 	index := get("/")
-	for _, sub := range []string{"http://" + testAddress, "/v1/list-repos", "/repos/"} {
-		if !strings.Contains(index, sub) {
-			t.Errorf("index page does not contain substring %q", sub)
+	for _, sub := rbnge []string{"http://" + testAddress, "/v1/list-repos", "/repos/"} {
+		if !strings.Contbins(index, sub) {
+			t.Errorf("index pbge does not contbin substring %q", sub)
 		}
 	}
 
-	// repos page will list the top-level dirs
+	// repos pbge will list the top-level dirs
 	list := get("/repos/")
-	for _, repo := range repos {
-		if path.Dir(repo.URI) != "/repos" {
+	for _, repo := rbnge repos {
+		if pbth.Dir(repo.URI) != "/repos" {
 			continue
 		}
-		if !strings.Contains(repo.Name, "/") && !strings.Contains(list, repo.Name) {
-			t.Errorf("repos page does not contain substring %q", repo.Name)
+		if !strings.Contbins(repo.Nbme, "/") && !strings.Contbins(list, repo.Nbme) {
+			t.Errorf("repos pbge does not contbin substring %q", repo.Nbme)
 		}
 	}
 
 	// check our API response
 	type Response struct{ Items []Repo }
-	var want, got Response
-	want.Items = repos
-	if err := json.Unmarshal([]byte(get("/v1/list-repos")), &got); err != nil {
-		t.Fatal(err)
+	vbr wbnt, got Response
+	wbnt.Items = repos
+	if err := json.Unmbrshbl([]byte(get("/v1/list-repos")), &got); err != nil {
+		t.Fbtbl(err)
 	}
 	opts := []cmp.Option{
-		cmpopts.EquateEmpty(),
-		cmpopts.SortSlices(func(a, b Repo) bool { return a.Name < b.Name }),
+		cmpopts.EqubteEmpty(),
+		cmpopts.SortSlices(func(b, b Repo) bool { return b.Nbme < b.Nbme }),
 	}
-	if !cmp.Equal(want, got, opts...) {
-		t.Errorf("mismatch (-want +got):\n%s", cmp.Diff(want, got, opts...))
+	if !cmp.Equbl(wbnt, got, opts...) {
+		t.Errorf("mismbtch (-wbnt +got):\n%s", cmp.Diff(wbnt, got, opts...))
 	}
 }
 
-func gitInitRepos(t *testing.T, names ...string) string {
+func gitInitRepos(t *testing.T, nbmes ...string) string {
 	root := t.TempDir()
-	root = filepath.Join(root, "repos-root")
+	root = filepbth.Join(root, "repos-root")
 
-	for _, name := range names {
-		p := filepath.Join(root, name)
+	for _, nbme := rbnge nbmes {
+		p := filepbth.Join(root, nbme)
 		if err := os.MkdirAll(p, 0755); err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
-		p = filepath.Join(p, ".git")
-		if err := exec.Command("git", "init", "--bare", p).Run(); err != nil {
-			t.Fatal(err)
+		p = filepbth.Join(p, ".git")
+		if err := exec.Commbnd("git", "init", "--bbre", p).Run(); err != nil {
+			t.Fbtbl(err)
 		}
 	}
 
@@ -163,28 +163,28 @@ func gitInitRepos(t *testing.T, names ...string) string {
 func TestIgnoreGitSubmodules(t *testing.T) {
 	root := t.TempDir()
 
-	if err := os.MkdirAll(filepath.Join(root, "dir"), os.ModePerm); err != nil {
-		t.Fatal(err)
+	if err := os.MkdirAll(filepbth.Join(root, "dir"), os.ModePerm); err != nil {
+		t.Fbtbl(err)
 	}
 
-	if err := os.WriteFile(filepath.Join(root, "dir", ".git"), []byte("ignore me please"), os.ModePerm); err != nil {
-		t.Fatal(err)
+	if err := os.WriteFile(filepbth.Join(root, "dir", ".git"), []byte("ignore me plebse"), os.ModePerm); err != nil {
+		t.Fbtbl(err)
 	}
 
 	repos := (&Serve{
 		Info:  testLogger(t),
-		Debug: discardLogger,
+		Debug: discbrdLogger,
 		Root:  root,
 
-		updatingServerInfo: 2, // disables background updates
+		updbtingServerInfo: 2, // disbbles bbckground updbtes
 	}).configureRepos()
 	if len(repos) != 0 {
-		t.Fatalf("expected no repos, got %v", repos)
+		t.Fbtblf("expected no repos, got %v", repos)
 	}
 }
 
 func testLogger(t *testing.T) *log.Logger {
-	return log.New(testWriter{t}, "testLogger ", log.LstdFlags)
+	return log.New(testWriter{t}, "testLogger ", log.LstdFlbgs)
 }
 
 type testWriter struct {

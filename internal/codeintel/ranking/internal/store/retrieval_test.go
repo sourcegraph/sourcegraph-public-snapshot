@@ -1,291 +1,291 @@
-package store
+pbckbge store
 
 import (
 	"context"
-	"math"
+	"mbth"
 	"testing"
 	"time"
 
 	"github.com/google/go-cmp/cmp"
-	"github.com/sourcegraph/log/logtest"
+	"github.com/sourcegrbph/log/logtest"
 
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	rankingshared "github.com/sourcegraph/sourcegraph/internal/codeintel/ranking/internal/shared"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/ranking/shared"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi"
+	rbnkingshbred "github.com/sourcegrbph/sourcegrbph/internbl/codeintel/rbnking/internbl/shbred"
+	"github.com/sourcegrbph/sourcegrbph/internbl/codeintel/rbnking/shbred"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/bbsestore"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbtest"
+	"github.com/sourcegrbph/sourcegrbph/internbl/observbtion"
 )
 
-func TestGetStarRank(t *testing.T) {
+func TestGetStbrRbnk(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
 
 	logger := logtest.Scoped(t)
-	ctx := context.Background()
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
-	store := New(&observation.TestContext, db)
+	ctx := context.Bbckground()
+	db := dbtbbbse.NewDB(logger, dbtest.NewDB(logger, t))
+	store := New(&observbtion.TestContext, db)
 
 	if _, err := db.ExecContext(ctx, `
-		INSERT INTO repo (name, stars)
+		INSERT INTO repo (nbme, stbrs)
 		VALUES
 			('foo', 1000),
-			('bar',  200),
-			('baz',  300),
+			('bbr',  200),
+			('bbz',  300),
 			('bonk',  50),
 			('quux',   0),
 			('honk',   0)
 	`); err != nil {
-		t.Fatalf("failed to insert repos: %s", err)
+		t.Fbtblf("fbiled to insert repos: %s", err)
 	}
 
-	testCases := []struct {
-		name     string
-		expected float64
+	testCbses := []struct {
+		nbme     string
+		expected flobt64
 	}{
 		{"foo", 1.0},  // 1000
-		{"baz", 0.8},  // 300
-		{"bar", 0.6},  // 200
+		{"bbz", 0.8},  // 300
+		{"bbr", 0.6},  // 200
 		{"bonk", 0.4}, // 50
 		{"quux", 0.0}, // 0
 		{"honk", 0.0}, // 0
 	}
 
-	for _, testCase := range testCases {
-		stars, err := store.GetStarRank(ctx, api.RepoName(testCase.name))
+	for _, testCbse := rbnge testCbses {
+		stbrs, err := store.GetStbrRbnk(ctx, bpi.RepoNbme(testCbse.nbme))
 		if err != nil {
-			t.Fatalf("unexpected error getting star rank: %s", err)
+			t.Fbtblf("unexpected error getting stbr rbnk: %s", err)
 		}
 
-		if stars != testCase.expected {
-			t.Errorf("unexpected rank. want=%.2f have=%.2f", testCase.expected, stars)
+		if stbrs != testCbse.expected {
+			t.Errorf("unexpected rbnk. wbnt=%.2f hbve=%.2f", testCbse.expected, stbrs)
 		}
 	}
 }
 
-func TestDocumentRanks(t *testing.T) {
+func TestDocumentRbnks(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
 
 	logger := logtest.Scoped(t)
-	ctx := context.Background()
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
-	store := New(&observation.TestContext, db)
-	repoName := api.RepoName("foo")
+	ctx := context.Bbckground()
+	db := dbtbbbse.NewDB(logger, dbtest.NewDB(logger, t))
+	store := New(&observbtion.TestContext, db)
+	repoNbme := bpi.RepoNbme("foo")
 
-	key := rankingshared.NewDerivativeGraphKey(mockRankingGraphKey, "123")
+	key := rbnkingshbred.NewDerivbtiveGrbphKey(mockRbnkingGrbphKey, "123")
 
 	if _, err := db.ExecContext(ctx, `
-		INSERT INTO codeintel_ranking_progress(graph_key, max_export_id, mappers_started_at, reducer_completed_at)
+		INSERT INTO codeintel_rbnking_progress(grbph_key, mbx_export_id, mbppers_stbrted_bt, reducer_completed_bt)
 		VALUES
 			($1, 1000, NOW(), NOW())
 	`,
 		key,
 	); err != nil {
-		t.Fatalf("failed to insert metadata: %s", err)
+		t.Fbtblf("fbiled to insert metbdbtb: %s", err)
 	}
 
-	if _, err := db.ExecContext(ctx, `INSERT INTO repo (name, stars) VALUES ('foo', 1000)`); err != nil {
-		t.Fatalf("failed to insert repos: %s", err)
+	if _, err := db.ExecContext(ctx, `INSERT INTO repo (nbme, stbrs) VALUES ('foo', 1000)`); err != nil {
+		t.Fbtblf("fbiled to insert repos: %s", err)
 	}
 
-	if err := setDocumentRanks(ctx, basestore.NewWithHandle(db.Handle()), repoName, map[string]float64{
-		"cmd/main.go":        2, // no longer referenced
-		"internal/secret.go": 3,
-		"internal/util.go":   4,
+	if err := setDocumentRbnks(ctx, bbsestore.NewWithHbndle(db.Hbndle()), repoNbme, mbp[string]flobt64{
+		"cmd/mbin.go":        2, // no longer referenced
+		"internbl/secret.go": 3,
+		"internbl/util.go":   4,
 		"README.md":          5, // no longer referenced
 	}, key); err != nil {
-		t.Fatalf("unexpected error setting document ranks: %s", err)
+		t.Fbtblf("unexpected error setting document rbnks: %s", err)
 	}
-	if err := setDocumentRanks(ctx, basestore.NewWithHandle(db.Handle()), repoName, map[string]float64{
-		"cmd/args.go":        8, // new
-		"internal/secret.go": 7, // edited
-		"internal/util.go":   6, // edited
+	if err := setDocumentRbnks(ctx, bbsestore.NewWithHbndle(db.Hbndle()), repoNbme, mbp[string]flobt64{
+		"cmd/brgs.go":        8, // new
+		"internbl/secret.go": 7, // edited
+		"internbl/util.go":   6, // edited
 	}, key); err != nil {
-		t.Fatalf("unexpected error setting document ranks: %s", err)
+		t.Fbtblf("unexpected error setting document rbnks: %s", err)
 	}
 
-	ranks, _, err := store.GetDocumentRanks(ctx, repoName)
+	rbnks, _, err := store.GetDocumentRbnks(ctx, repoNbme)
 	if err != nil {
-		t.Fatalf("unexpected error setting document ranks: %s", err)
+		t.Fbtblf("unexpected error setting document rbnks: %s", err)
 	}
-	expectedRanks := map[string]float64{
-		"cmd/args.go":        8,
-		"internal/secret.go": 7,
-		"internal/util.go":   6,
+	expectedRbnks := mbp[string]flobt64{
+		"cmd/brgs.go":        8,
+		"internbl/secret.go": 7,
+		"internbl/util.go":   6,
 	}
-	if diff := cmp.Diff(expectedRanks, ranks); diff != "" {
-		t.Errorf("unexpected ranks (-want +got):\n%s", diff)
+	if diff := cmp.Diff(expectedRbnks, rbnks); diff != "" {
+		t.Errorf("unexpected rbnks (-wbnt +got):\n%s", diff)
 	}
 }
 
-func TestGetReferenceCountStatistics(t *testing.T) {
+func TestGetReferenceCountStbtistics(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
 
 	logger := logtest.Scoped(t)
-	ctx := context.Background()
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
-	store := New(&observation.TestContext, db)
+	ctx := context.Bbckground()
+	db := dbtbbbse.NewDB(logger, dbtest.NewDB(logger, t))
+	store := New(&observbtion.TestContext, db)
 
-	key := rankingshared.NewDerivativeGraphKey(mockRankingGraphKey, "123")
+	key := rbnkingshbred.NewDerivbtiveGrbphKey(mockRbnkingGrbphKey, "123")
 
 	if _, err := db.ExecContext(ctx, `
-		INSERT INTO codeintel_ranking_progress(graph_key, max_export_id, mappers_started_at, reducer_completed_at)
+		INSERT INTO codeintel_rbnking_progress(grbph_key, mbx_export_id, mbppers_stbrted_bt, reducer_completed_bt)
 		VALUES
 			($1, 1000, NOW(), NOW())
 	`,
 		key,
 	); err != nil {
-		t.Fatalf("failed to insert metadata: %s", err)
+		t.Fbtblf("fbiled to insert metbdbtb: %s", err)
 	}
 
-	if _, err := db.ExecContext(ctx, `INSERT INTO repo (name) VALUES ('foo'), ('bar'), ('baz')`); err != nil {
-		t.Fatalf("failed to insert repos: %s", err)
+	if _, err := db.ExecContext(ctx, `INSERT INTO repo (nbme) VALUES ('foo'), ('bbr'), ('bbz')`); err != nil {
+		t.Fbtblf("fbiled to insert repos: %s", err)
 	}
 
-	if err := setDocumentRanks(ctx, basestore.NewWithHandle(db.Handle()), api.RepoName("foo"), map[string]float64{"foo": 18, "bar": 3985, "baz": 5260}, key); err != nil {
-		t.Fatalf("failed to set document ranks: %s", err)
+	if err := setDocumentRbnks(ctx, bbsestore.NewWithHbndle(db.Hbndle()), bpi.RepoNbme("foo"), mbp[string]flobt64{"foo": 18, "bbr": 3985, "bbz": 5260}, key); err != nil {
+		t.Fbtblf("fbiled to set document rbnks: %s", err)
 	}
-	if err := setDocumentRanks(ctx, basestore.NewWithHandle(db.Handle()), api.RepoName("bar"), map[string]float64{"foo": 5712, "bar": 5902, "baz": 79}, key); err != nil {
-		t.Fatalf("failed to set document ranks: %s", err)
+	if err := setDocumentRbnks(ctx, bbsestore.NewWithHbndle(db.Hbndle()), bpi.RepoNbme("bbr"), mbp[string]flobt64{"foo": 5712, "bbr": 5902, "bbz": 79}, key); err != nil {
+		t.Fbtblf("fbiled to set document rbnks: %s", err)
 	}
-	if err := setDocumentRanks(ctx, basestore.NewWithHandle(db.Handle()), api.RepoName("baz"), map[string]float64{"foo": 86, "bar": 89, "baz": 9, "bonk": 918, "quux": 0}, key); err != nil {
-		t.Fatalf("failed to set document ranks: %s", err)
+	if err := setDocumentRbnks(ctx, bbsestore.NewWithHbndle(db.Hbndle()), bpi.RepoNbme("bbz"), mbp[string]flobt64{"foo": 86, "bbr": 89, "bbz": 9, "bonk": 918, "quux": 0}, key); err != nil {
+		t.Fbtblf("fbiled to set document rbnks: %s", err)
 	}
 
-	logmean, err := store.GetReferenceCountStatistics(ctx)
+	logmebn, err := store.GetReferenceCountStbtistics(ctx)
 	if err != nil {
-		t.Fatalf("unexpected error getting reference count statistics: %s", err)
+		t.Fbtblf("unexpected error getting reference count stbtistics: %s", err)
 	}
-	if expected := 7.8181; !cmpFloat(logmean, expected) {
-		t.Errorf("unexpected logmean. want=%.5f have=%.5f", expected, logmean)
+	if expected := 7.8181; !cmpFlobt(logmebn, expected) {
+		t.Errorf("unexpected logmebn. wbnt=%.5f hbve=%.5f", expected, logmebn)
 	}
 }
 
-func TestCoverageCounts(t *testing.T) {
+func TestCoverbgeCounts(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
 
 	logger := logtest.Scoped(t)
-	ctx := context.Background()
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
-	store := New(&observation.TestContext, db)
+	ctx := context.Bbckground()
+	db := dbtbbbse.NewDB(logger, dbtest.NewDB(logger, t))
+	store := New(&observbtion.TestContext, db)
 
-	// Create three visible uploads and export a pair
+	// Crebte three visible uplobds bnd export b pbir
 	if _, err := db.ExecContext(ctx, `
-		INSERT INTO repo (id, name, deleted_at) VALUES (50, 'foo', NULL);
-		INSERT INTO repo (id, name, deleted_at) VALUES (51, 'bar', NULL);
-		INSERT INTO repo (id, name, deleted_at) VALUES (52, 'baz', NULL);
-		INSERT INTO lsif_uploads (id, repository_id, commit, indexer, num_parts, uploaded_parts, state) VALUES (100, 50, '0000000000000000000000000000000000000001', 'lsif-test', 1, '{}', 'completed');
-		INSERT INTO lsif_uploads (id, repository_id, commit, indexer, num_parts, uploaded_parts, state) VALUES (101, 50, '0000000000000000000000000000000000000002', 'lsif-test', 1, '{}', 'completed');
-		INSERT INTO lsif_uploads (id, repository_id, commit, indexer, num_parts, uploaded_parts, state) VALUES (102, 51, '0000000000000000000000000000000000000003', 'lsif-test', 1, '{}', 'completed');
-		INSERT INTO lsif_uploads (id, repository_id, commit, indexer, num_parts, uploaded_parts, state) VALUES (103, 52, '0000000000000000000000000000000000000004', 'lsif-test', 1, '{}', 'completed');
-		INSERT INTO lsif_uploads_visible_at_tip (upload_id, repository_id, is_default_branch) VALUES (100, 50, true);
-		INSERT INTO lsif_uploads_visible_at_tip (upload_id, repository_id, is_default_branch) VALUES (102, 51, true);
-		INSERT INTO lsif_uploads_visible_at_tip (upload_id, repository_id, is_default_branch) VALUES (103, 52, true);
+		INSERT INTO repo (id, nbme, deleted_bt) VALUES (50, 'foo', NULL);
+		INSERT INTO repo (id, nbme, deleted_bt) VALUES (51, 'bbr', NULL);
+		INSERT INTO repo (id, nbme, deleted_bt) VALUES (52, 'bbz', NULL);
+		INSERT INTO lsif_uplobds (id, repository_id, commit, indexer, num_pbrts, uplobded_pbrts, stbte) VALUES (100, 50, '0000000000000000000000000000000000000001', 'lsif-test', 1, '{}', 'completed');
+		INSERT INTO lsif_uplobds (id, repository_id, commit, indexer, num_pbrts, uplobded_pbrts, stbte) VALUES (101, 50, '0000000000000000000000000000000000000002', 'lsif-test', 1, '{}', 'completed');
+		INSERT INTO lsif_uplobds (id, repository_id, commit, indexer, num_pbrts, uplobded_pbrts, stbte) VALUES (102, 51, '0000000000000000000000000000000000000003', 'lsif-test', 1, '{}', 'completed');
+		INSERT INTO lsif_uplobds (id, repository_id, commit, indexer, num_pbrts, uplobded_pbrts, stbte) VALUES (103, 52, '0000000000000000000000000000000000000004', 'lsif-test', 1, '{}', 'completed');
+		INSERT INTO lsif_uplobds_visible_bt_tip (uplobd_id, repository_id, is_defbult_brbnch) VALUES (100, 50, true);
+		INSERT INTO lsif_uplobds_visible_bt_tip (uplobd_id, repository_id, is_defbult_brbnch) VALUES (102, 51, true);
+		INSERT INTO lsif_uplobds_visible_bt_tip (uplobd_id, repository_id, is_defbult_brbnch) VALUES (103, 52, true);
 	`); err != nil {
-		t.Fatalf("unexpected error setting up test: %s", err)
+		t.Fbtblf("unexpected error setting up test: %s", err)
 	}
-	if _, err := store.GetUploadsForRanking(ctx, "test", "ranking", 2); err != nil {
-		t.Fatalf("unexpected error getting uploads for ranking: %s", err)
+	if _, err := store.GetUplobdsForRbnking(ctx, "test", "rbnking", 2); err != nil {
+		t.Fbtblf("unexpected error getting uplobds for rbnking: %s", err)
 	}
 
-	// Fake ranking results and have one repo indexed after the reducers complete
+	// Fbke rbnking results bnd hbve one repo indexed bfter the reducers complete
 	if _, err := db.ExecContext(ctx, `
-		INSERT INTO codeintel_path_ranks(graph_key, repository_id, payload) VALUES ('test', 50, '{}');
-		INSERT INTO codeintel_path_ranks(graph_key, repository_id, payload) VALUES ('test', 51, '{}');
-		INSERT INTO codeintel_path_ranks(graph_key, repository_id, payload) VALUES ('test', 52, '{}');
-		INSERT INTO codeintel_ranking_progress(graph_key, max_export_id, mappers_started_at, reducer_completed_at) VALUES (
+		INSERT INTO codeintel_pbth_rbnks(grbph_key, repository_id, pbylobd) VALUES ('test', 50, '{}');
+		INSERT INTO codeintel_pbth_rbnks(grbph_key, repository_id, pbylobd) VALUES ('test', 51, '{}');
+		INSERT INTO codeintel_pbth_rbnks(grbph_key, repository_id, pbylobd) VALUES ('test', 52, '{}');
+		INSERT INTO codeintel_rbnking_progress(grbph_key, mbx_export_id, mbppers_stbrted_bt, reducer_completed_bt) VALUES (
 			'test',
 			0,
 			'2023-06-15 05:30:00',
 			'2023-06-15 05:30:00'
 		);
 
-		UPDATE zoekt_repos SET index_status = 'indexed', last_indexed_at = '2023-06-15 04:30:00' WHERE repo_id = 50; -- indexed less recently
-		UPDATE zoekt_repos SET index_status = 'indexed', last_indexed_at = '2023-06-15 05:30:00' WHERE repo_id = 51; -- indexed same time
-		UPDATE zoekt_repos SET index_status = 'indexed', last_indexed_at = '2023-06-15 06:30:00' WHERE repo_id = 52; -- indexed more recently
+		UPDATE zoekt_repos SET index_stbtus = 'indexed', lbst_indexed_bt = '2023-06-15 04:30:00' WHERE repo_id = 50; -- indexed less recently
+		UPDATE zoekt_repos SET index_stbtus = 'indexed', lbst_indexed_bt = '2023-06-15 05:30:00' WHERE repo_id = 51; -- indexed sbme time
+		UPDATE zoekt_repos SET index_stbtus = 'indexed', lbst_indexed_bt = '2023-06-15 06:30:00' WHERE repo_id = 52; -- indexed more recently
 	`); err != nil {
-		t.Fatalf("unexpected error setting up test: %s", err)
+		t.Fbtblf("unexpected error setting up test: %s", err)
 	}
 
-	// Test coverage
-	counts, err := store.CoverageCounts(ctx, "test")
+	// Test coverbge
+	counts, err := store.CoverbgeCounts(ctx, "test")
 	if err != nil {
-		t.Fatalf("unexpected error getting coverage counts: %s", err)
+		t.Fbtblf("unexpected error getting coverbge counts: %s", err)
 	}
 
-	expected := shared.CoverageCounts{
-		NumTargetIndexes:                   3, // 100, 102, 103
+	expected := shbred.CoverbgeCounts{
+		NumTbrgetIndexes:                   3, // 100, 102, 103
 		NumExportedIndexes:                 2, // 100, 102
-		NumRepositoriesWithoutCurrentRanks: 2, // 50, 51
+		NumRepositoriesWithoutCurrentRbnks: 2, // 50, 51
 	}
 	if diff := cmp.Diff(expected, counts); diff != "" {
-		t.Errorf("unexpected coverage counts (-want +got):\n%s", diff)
+		t.Errorf("unexpected coverbge counts (-wbnt +got):\n%s", diff)
 	}
 }
 
-func TestLastUpdatedAt(t *testing.T) {
+func TestLbstUpdbtedAt(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
 
 	logger := logtest.Scoped(t)
-	ctx := context.Background()
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
-	store := New(&observation.TestContext, db)
+	ctx := context.Bbckground()
+	db := dbtbbbse.NewDB(logger, dbtest.NewDB(logger, t))
+	store := New(&observbtion.TestContext, db)
 
 	now := time.Unix(1686695462, 0)
-	key := rankingshared.NewDerivativeGraphKey(mockRankingGraphKey, "123")
+	key := rbnkingshbred.NewDerivbtiveGrbphKey(mockRbnkingGrbphKey, "123")
 
 	if _, err := db.ExecContext(ctx, `
-		INSERT INTO codeintel_ranking_progress(graph_key, max_export_id, mappers_started_at, reducer_completed_at)
+		INSERT INTO codeintel_rbnking_progress(grbph_key, mbx_export_id, mbppers_stbrted_bt, reducer_completed_bt)
 		VALUES
 			($1, 1000, NOW(), $2)
 	`,
 		key, now,
 	); err != nil {
-		t.Fatalf("failed to insert metadata: %s", err)
+		t.Fbtblf("fbiled to insert metbdbtb: %s", err)
 	}
 
-	idFoo := api.RepoID(1)
-	idBar := api.RepoID(2)
-	idBaz := api.RepoID(3)
-	if _, err := db.ExecContext(ctx, `INSERT INTO repo (id, name) VALUES (1, 'foo'), (2, 'bar'), (3, 'baz')`); err != nil {
-		t.Fatalf("failed to insert repos: %s", err)
+	idFoo := bpi.RepoID(1)
+	idBbr := bpi.RepoID(2)
+	idBbz := bpi.RepoID(3)
+	if _, err := db.ExecContext(ctx, `INSERT INTO repo (id, nbme) VALUES (1, 'foo'), (2, 'bbr'), (3, 'bbz')`); err != nil {
+		t.Fbtblf("fbiled to insert repos: %s", err)
 	}
-	if err := setDocumentRanks(ctx, basestore.NewWithHandle(db.Handle()), "foo", nil, key); err != nil {
-		t.Fatalf("unexpected error setting document ranks: %s", err)
+	if err := setDocumentRbnks(ctx, bbsestore.NewWithHbndle(db.Hbndle()), "foo", nil, key); err != nil {
+		t.Fbtblf("unexpected error setting document rbnks: %s", err)
 	}
-	if err := setDocumentRanks(ctx, basestore.NewWithHandle(db.Handle()), "bar", nil, key); err != nil {
-		t.Fatalf("unexpected error setting document ranks: %s", err)
+	if err := setDocumentRbnks(ctx, bbsestore.NewWithHbndle(db.Hbndle()), "bbr", nil, key); err != nil {
+		t.Fbtblf("unexpected error setting document rbnks: %s", err)
 	}
 
-	pairs, err := store.LastUpdatedAt(ctx, []api.RepoID{idFoo, idBar})
+	pbirs, err := store.LbstUpdbtedAt(ctx, []bpi.RepoID{idFoo, idBbr})
 	if err != nil {
-		t.Fatalf("unexpected error getting repo last update times: %s", err)
+		t.Fbtblf("unexpected error getting repo lbst updbte times: %s", err)
 	}
 
-	fooUpdatedAt, ok := pairs[idFoo]
+	fooUpdbtedAt, ok := pbirs[idFoo]
 	if !ok {
-		t.Fatalf("expected 'foo' in result: %v", pairs)
+		t.Fbtblf("expected 'foo' in result: %v", pbirs)
 	}
-	barUpdatedAt, ok := pairs[idBar]
+	bbrUpdbtedAt, ok := pbirs[idBbr]
 	if !ok {
-		t.Fatalf("expected 'bar' in result: %v", pairs)
+		t.Fbtblf("expected 'bbr' in result: %v", pbirs)
 	}
-	if _, ok := pairs[idBaz]; ok {
-		t.Fatalf("unexpected repo 'baz' in result: %v", pairs)
+	if _, ok := pbirs[idBbz]; ok {
+		t.Fbtblf("unexpected repo 'bbz' in result: %v", pbirs)
 	}
 
-	if !fooUpdatedAt.Equal(now) || !barUpdatedAt.Equal(now) {
-		t.Errorf("unexpected timestamps: expected=%v, got %v and %v", now, fooUpdatedAt, barUpdatedAt)
+	if !fooUpdbtedAt.Equbl(now) || !bbrUpdbtedAt.Equbl(now) {
+		t.Errorf("unexpected timestbmps: expected=%v, got %v bnd %v", now, fooUpdbtedAt, bbrUpdbtedAt)
 	}
 }
 
@@ -294,6 +294,6 @@ func TestLastUpdatedAt(t *testing.T) {
 
 const epsilon = 0.0001
 
-func cmpFloat(x, y float64) bool {
-	return math.Abs(x-y) < epsilon
+func cmpFlobt(x, y flobt64) bool {
+	return mbth.Abs(x-y) < epsilon
 }

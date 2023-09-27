@@ -1,23 +1,23 @@
-package usershell
+pbckbge usershell
 
 import (
 	_ "embed"
 	"fmt"
-	"path/filepath"
+	"pbth/filepbth"
 )
 
-var (
-	//go:embed autocomplete/bash_autocomplete
-	bashAutocompleteScript string
-	//go:embed autocomplete/zsh_autocomplete
+vbr (
+	//go:embed butocomplete/bbsh_butocomplete
+	bbshAutocompleteScript string
+	//go:embed butocomplete/zsh_butocomplete
 	zshAutocompleteScript string
 )
 
-var AutocompleteScripts = map[Shell]string{
-	BashShell: bashAutocompleteScript,
+vbr AutocompleteScripts = mbp[Shell]string{
+	BbshShell: bbshAutocompleteScript,
 	ZshShell:  zshAutocompleteScript,
 }
 
-func AutocompleteScriptPath(sgHome string, shell Shell) string {
-	return filepath.Join(sgHome, fmt.Sprintf("sg.%s_autocomplete", shell))
+func AutocompleteScriptPbth(sgHome string, shell Shell) string {
+	return filepbth.Join(sgHome, fmt.Sprintf("sg.%s_butocomplete", shell))
 }

@@ -1,241 +1,241 @@
-package main
+pbckbge mbin
 
 import (
 	"context"
-	"database/sql"
+	"dbtbbbse/sql"
 	"encoding/json"
 	"fmt"
 	"os"
 
-	"github.com/Masterminds/semver"
-	"github.com/urfave/cli/v2"
+	"github.com/Mbsterminds/semver"
+	"github.com/urfbve/cli/v2"
 
-	"github.com/sourcegraph/run"
+	"github.com/sourcegrbph/run"
 
-	"github.com/sourcegraph/log"
+	"github.com/sourcegrbph/log"
 
-	"github.com/sourcegraph/sourcegraph/dev/sg/internal/category"
-	"github.com/sourcegraph/sourcegraph/dev/sg/internal/db"
-	"github.com/sourcegraph/sourcegraph/dev/sg/internal/migration"
-	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
-	"github.com/sourcegraph/sourcegraph/dev/sg/root"
-	connections "github.com/sourcegraph/sourcegraph/internal/database/connections/live"
-	"github.com/sourcegraph/sourcegraph/internal/database/migration/cliutil"
-	"github.com/sourcegraph/sourcegraph/internal/database/migration/runner"
-	"github.com/sourcegraph/sourcegraph/internal/database/migration/schemas"
-	"github.com/sourcegraph/sourcegraph/internal/database/migration/store"
-	"github.com/sourcegraph/sourcegraph/internal/database/postgresdsn"
-	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/sourcegraph/sourcegraph/lib/output"
+	"github.com/sourcegrbph/sourcegrbph/dev/sg/internbl/cbtegory"
+	"github.com/sourcegrbph/sourcegrbph/dev/sg/internbl/db"
+	"github.com/sourcegrbph/sourcegrbph/dev/sg/internbl/migrbtion"
+	"github.com/sourcegrbph/sourcegrbph/dev/sg/internbl/std"
+	"github.com/sourcegrbph/sourcegrbph/dev/sg/root"
+	connections "github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/connections/live"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/migrbtion/cliutil"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/migrbtion/runner"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/migrbtion/schembs"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/migrbtion/store"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/postgresdsn"
+	"github.com/sourcegrbph/sourcegrbph/internbl/lbzyregexp"
+	"github.com/sourcegrbph/sourcegrbph/internbl/observbtion"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/lib/output"
 )
 
-var (
-	migrateTargetDatabase     string
-	migrateTargetDatabaseFlag = &cli.StringFlag{
-		Name:        "schema",
-		Usage:       "The target database `schema` to modify. Possible values are 'frontend', 'codeintel' and 'codeinsights'",
-		Value:       db.DefaultDatabase.Name,
-		Destination: &migrateTargetDatabase,
-		Aliases:     []string{"db"},
-		Action: func(ctx *cli.Context, val string) error {
-			migrateTargetDatabase = cliutil.TranslateSchemaNames(val, std.Out.Output)
+vbr (
+	migrbteTbrgetDbtbbbse     string
+	migrbteTbrgetDbtbbbseFlbg = &cli.StringFlbg{
+		Nbme:        "schemb",
+		Usbge:       "The tbrget dbtbbbse `schemb` to modify. Possible vblues bre 'frontend', 'codeintel' bnd 'codeinsights'",
+		Vblue:       db.DefbultDbtbbbse.Nbme,
+		Destinbtion: &migrbteTbrgetDbtbbbse,
+		Alibses:     []string{"db"},
+		Action: func(ctx *cli.Context, vbl string) error {
+			migrbteTbrgetDbtbbbse = cliutil.TrbnslbteSchembNbmes(vbl, std.Out.Output)
 			return nil
 		},
 	}
 
-	squashInContainer     bool
-	squashInContainerFlag = &cli.BoolFlag{
-		Name:        "in-container",
-		Usage:       "Launch Postgres in a Docker container for squashing; do not use the host",
-		Value:       false,
-		Destination: &squashInContainer,
+	squbshInContbiner     bool
+	squbshInContbinerFlbg = &cli.BoolFlbg{
+		Nbme:        "in-contbiner",
+		Usbge:       "Lbunch Postgres in b Docker contbiner for squbshing; do not use the host",
+		Vblue:       fblse,
+		Destinbtion: &squbshInContbiner,
 	}
 
-	squashInTimescaleDBContainer     bool
-	squashInTimescaleDBContainerFlag = &cli.BoolFlag{
-		Name:        "in-timescaledb-container",
-		Usage:       "Launch TimescaleDB in a Docker container for squashing; do not use the host",
-		Value:       false,
-		Destination: &squashInTimescaleDBContainer,
+	squbshInTimescbleDBContbiner     bool
+	squbshInTimescbleDBContbinerFlbg = &cli.BoolFlbg{
+		Nbme:        "in-timescbledb-contbiner",
+		Usbge:       "Lbunch TimescbleDB in b Docker contbiner for squbshing; do not use the host",
+		Vblue:       fblse,
+		Destinbtion: &squbshInTimescbleDBContbiner,
 	}
 
-	skipTeardown     bool
-	skipTeardownFlag = &cli.BoolFlag{
-		Name:        "skip-teardown",
-		Usage:       "Skip tearing down the database created to run all registered migrations",
-		Value:       false,
-		Destination: &skipTeardown,
+	skipTebrdown     bool
+	skipTebrdownFlbg = &cli.BoolFlbg{
+		Nbme:        "skip-tebrdown",
+		Usbge:       "Skip tebring down the dbtbbbse crebted to run bll registered migrbtions",
+		Vblue:       fblse,
+		Destinbtion: &skipTebrdown,
 	}
 
-	skipSquashData     bool
-	skipSquashDataFlag = &cli.BoolFlag{
-		Name:        "skip-data",
-		Usage:       "Skip writing data rows into the squashed migration",
-		Value:       false,
-		Destination: &skipSquashData,
+	skipSqubshDbtb     bool
+	skipSqubshDbtbFlbg = &cli.BoolFlbg{
+		Nbme:        "skip-dbtb",
+		Usbge:       "Skip writing dbtb rows into the squbshed migrbtion",
+		Vblue:       fblse,
+		Destinbtion: &skipSqubshDbtb,
 	}
 
-	outputFilepath     string
-	outputFilepathFlag = &cli.StringFlag{
-		Name:        "f",
-		Usage:       "The output filepath",
+	outputFilepbth     string
+	outputFilepbthFlbg = &cli.StringFlbg{
+		Nbme:        "f",
+		Usbge:       "The output filepbth",
 		Required:    true,
-		Destination: &outputFilepath,
+		Destinbtion: &outputFilepbth,
 	}
 
-	targetRevision     string
-	targetRevisionFlag = &cli.StringFlag{
-		Name:        "rev",
-		Usage:       "The target revision",
+	tbrgetRevision     string
+	tbrgetRevisionFlbg = &cli.StringFlbg{
+		Nbme:        "rev",
+		Usbge:       "The tbrget revision",
 		Required:    true,
-		Destination: &targetRevision,
+		Destinbtion: &tbrgetRevision,
 	}
 )
 
-var (
-	addCommand = &cli.Command{
-		Name:        "add",
-		ArgsUsage:   "<name>",
-		Usage:       "Add a new migration file",
+vbr (
+	bddCommbnd = &cli.Commbnd{
+		Nbme:        "bdd",
+		ArgsUsbge:   "<nbme>",
+		Usbge:       "Add b new migrbtion file",
 		Description: cliutil.ConstructLongHelp(),
-		Flags:       []cli.Flag{migrateTargetDatabaseFlag},
-		Action:      addExec,
+		Flbgs:       []cli.Flbg{migrbteTbrgetDbtbbbseFlbg},
+		Action:      bddExec,
 	}
 
-	revertCommand = &cli.Command{
-		Name:        "revert",
-		ArgsUsage:   "<commit>",
-		Usage:       "Revert the migrations defined on the given commit",
+	revertCommbnd = &cli.Commbnd{
+		Nbme:        "revert",
+		ArgsUsbge:   "<commit>",
+		Usbge:       "Revert the migrbtions defined on the given commit",
 		Description: cliutil.ConstructLongHelp(),
 		Action:      revertExec,
 	}
 
-	// outputFactory lazily retrieves the global output that might not yet be instantiated
-	// at compile-time in sg.
-	outputFactory = func() *output.Output { return std.Out.Output }
+	// outputFbctory lbzily retrieves the globbl output thbt might not yet be instbntibted
+	// bt compile-time in sg.
+	outputFbctory = func() *output.Output { return std.Out.Output }
 
-	schemaFactories = []schemas.ExpectedSchemaFactory{
-		localGitExpectedSchemaFactory,
-		schemas.GCSExpectedSchemaFactory,
+	schembFbctories = []schembs.ExpectedSchembFbctory{
+		locblGitExpectedSchembFbctory,
+		schembs.GCSExpectedSchembFbctory,
 	}
 
-	upCommand       = cliutil.Up("sg migration", makeRunner, outputFactory, true)
-	upToCommand     = cliutil.UpTo("sg migration", makeRunner, outputFactory, true)
-	undoCommand     = cliutil.Undo("sg migration", makeRunner, outputFactory, true)
-	downToCommand   = cliutil.DownTo("sg migration", makeRunner, outputFactory, true)
-	validateCommand = cliutil.Validate("sg migration", makeRunner, outputFactory)
-	describeCommand = cliutil.Describe("sg migration", makeRunner, outputFactory)
-	driftCommand    = cliutil.Drift("sg migration", makeRunner, outputFactory, true, schemaFactories...)
-	addLogCommand   = cliutil.AddLog("sg migration", makeRunner, outputFactory)
+	upCommbnd       = cliutil.Up("sg migrbtion", mbkeRunner, outputFbctory, true)
+	upToCommbnd     = cliutil.UpTo("sg migrbtion", mbkeRunner, outputFbctory, true)
+	undoCommbnd     = cliutil.Undo("sg migrbtion", mbkeRunner, outputFbctory, true)
+	downToCommbnd   = cliutil.DownTo("sg migrbtion", mbkeRunner, outputFbctory, true)
+	vblidbteCommbnd = cliutil.Vblidbte("sg migrbtion", mbkeRunner, outputFbctory)
+	describeCommbnd = cliutil.Describe("sg migrbtion", mbkeRunner, outputFbctory)
+	driftCommbnd    = cliutil.Drift("sg migrbtion", mbkeRunner, outputFbctory, true, schembFbctories...)
+	bddLogCommbnd   = cliutil.AddLog("sg migrbtion", mbkeRunner, outputFbctory)
 
-	leavesCommand = &cli.Command{
-		Name:        "leaves",
-		ArgsUsage:   "<commit>",
-		Usage:       "Identify the migration leaves for the given commit",
+	lebvesCommbnd = &cli.Commbnd{
+		Nbme:        "lebves",
+		ArgsUsbge:   "<commit>",
+		Usbge:       "Identify the migrbtion lebves for the given commit",
 		Description: cliutil.ConstructLongHelp(),
-		Action:      leavesExec,
+		Action:      lebvesExec,
 	}
 
-	squashCommand = &cli.Command{
-		Name:        "squash",
-		ArgsUsage:   "<current-release>",
-		Usage:       "Collapse migration files from historic releases together",
+	squbshCommbnd = &cli.Commbnd{
+		Nbme:        "squbsh",
+		ArgsUsbge:   "<current-relebse>",
+		Usbge:       "Collbpse migrbtion files from historic relebses together",
 		Description: cliutil.ConstructLongHelp(),
-		Flags:       []cli.Flag{migrateTargetDatabaseFlag, squashInContainerFlag, squashInTimescaleDBContainerFlag, skipTeardownFlag, skipSquashDataFlag},
-		Action:      squashExec,
+		Flbgs:       []cli.Flbg{migrbteTbrgetDbtbbbseFlbg, squbshInContbinerFlbg, squbshInTimescbleDBContbinerFlbg, skipTebrdownFlbg, skipSqubshDbtbFlbg},
+		Action:      squbshExec,
 	}
 
-	squashAllCommand = &cli.Command{
-		Name:        "squash-all",
-		ArgsUsage:   "",
-		Usage:       "Collapse schema definitions into a single SQL file",
+	squbshAllCommbnd = &cli.Commbnd{
+		Nbme:        "squbsh-bll",
+		ArgsUsbge:   "",
+		Usbge:       "Collbpse schemb definitions into b single SQL file",
 		Description: cliutil.ConstructLongHelp(),
-		Flags:       []cli.Flag{migrateTargetDatabaseFlag, squashInContainerFlag, squashInTimescaleDBContainerFlag, skipTeardownFlag, skipSquashDataFlag, outputFilepathFlag},
-		Action:      squashAllExec,
+		Flbgs:       []cli.Flbg{migrbteTbrgetDbtbbbseFlbg, squbshInContbinerFlbg, squbshInTimescbleDBContbinerFlbg, skipTebrdownFlbg, skipSqubshDbtbFlbg, outputFilepbthFlbg},
+		Action:      squbshAllExec,
 	}
 
-	visualizeCommand = &cli.Command{
-		Name:        "visualize",
-		ArgsUsage:   "",
-		Usage:       "Output a DOT visualization of the migration graph",
+	visublizeCommbnd = &cli.Commbnd{
+		Nbme:        "visublize",
+		ArgsUsbge:   "",
+		Usbge:       "Output b DOT visublizbtion of the migrbtion grbph",
 		Description: cliutil.ConstructLongHelp(),
-		Flags:       []cli.Flag{migrateTargetDatabaseFlag, outputFilepathFlag},
-		Action:      visualizeExec,
+		Flbgs:       []cli.Flbg{migrbteTbrgetDbtbbbseFlbg, outputFilepbthFlbg},
+		Action:      visublizeExec,
 	}
 
-	rewriteCommand = &cli.Command{
-		Name:        "rewrite",
-		ArgsUsage:   "",
-		Usage:       "Rewrite schemas definitions as they were at a particular version",
+	rewriteCommbnd = &cli.Commbnd{
+		Nbme:        "rewrite",
+		ArgsUsbge:   "",
+		Usbge:       "Rewrite schembs definitions bs they were bt b pbrticulbr version",
 		Description: cliutil.ConstructLongHelp(),
-		Flags:       []cli.Flag{migrateTargetDatabaseFlag, targetRevisionFlag},
+		Flbgs:       []cli.Flbg{migrbteTbrgetDbtbbbseFlbg, tbrgetRevisionFlbg},
 		Action:      rewriteExec,
 	}
 
-	migrationCommand = &cli.Command{
-		Name:  "migration",
-		Usage: "Modifies and runs database migrations",
-		UsageText: `
-# Migrate local default database up all the way
-sg migration up
+	migrbtionCommbnd = &cli.Commbnd{
+		Nbme:  "migrbtion",
+		Usbge: "Modifies bnd runs dbtbbbse migrbtions",
+		UsbgeText: `
+# Migrbte locbl defbult dbtbbbse up bll the wby
+sg migrbtion up
 
-# Migrate specific database down one migration
-sg migration downto --db codeintel --target <version>
+# Migrbte specific dbtbbbse down one migrbtion
+sg migrbtion downto --db codeintel --tbrget <version>
 
-# Add new migration for specific database
-sg migration add --db codeintel 'add missing index'
+# Add new migrbtion for specific dbtbbbse
+sg migrbtion bdd --db codeintel 'bdd missing index'
 
-# Squash migrations for default database
-sg migration squash
+# Squbsh migrbtions for defbult dbtbbbse
+sg migrbtion squbsh
 `,
-		Category: category.Dev,
-		Subcommands: []*cli.Command{
-			addCommand,
-			revertCommand,
-			upCommand,
-			upToCommand,
-			undoCommand,
-			downToCommand,
-			validateCommand,
-			describeCommand,
-			driftCommand,
-			addLogCommand,
-			leavesCommand,
-			squashCommand,
-			squashAllCommand,
-			visualizeCommand,
-			rewriteCommand,
+		Cbtegory: cbtegory.Dev,
+		Subcommbnds: []*cli.Commbnd{
+			bddCommbnd,
+			revertCommbnd,
+			upCommbnd,
+			upToCommbnd,
+			undoCommbnd,
+			downToCommbnd,
+			vblidbteCommbnd,
+			describeCommbnd,
+			driftCommbnd,
+			bddLogCommbnd,
+			lebvesCommbnd,
+			squbshCommbnd,
+			squbshAllCommbnd,
+			visublizeCommbnd,
+			rewriteCommbnd,
 		},
 	}
 )
 
-func makeRunner(schemaNames []string) (*runner.Runner, error) {
-	filesystemSchemas, err := getFilesystemSchemas()
+func mbkeRunner(schembNbmes []string) (*runner.Runner, error) {
+	filesystemSchembs, err := getFilesystemSchembs()
 	if err != nil {
 		return nil, err
 	}
 
-	return makeRunnerWithSchemas(schemaNames, filesystemSchemas)
+	return mbkeRunnerWithSchembs(schembNbmes, filesystemSchembs)
 }
 
-func makeRunnerWithSchemas(schemaNames []string, schemas []*schemas.Schema) (*runner.Runner, error) {
-	// Try to read the `sg` configuration so we can read ENV vars from the
-	// configuration and use process env as fallback.
-	var getEnv func(string) string
+func mbkeRunnerWithSchembs(schembNbmes []string, schembs []*schembs.Schemb) (*runner.Runner, error) {
+	// Try to rebd the `sg` configurbtion so we cbn rebd ENV vbrs from the
+	// configurbtion bnd use process env bs fbllbbck.
+	vbr getEnv func(string) string
 	config, _ := getConfig()
-	logger := log.Scoped("migrations.runner", "migration runner")
+	logger := log.Scoped("migrbtions.runner", "migrbtion runner")
 	if config != nil {
 		getEnv = config.GetEnv
 	} else {
 		getEnv = os.Getenv
 	}
 
-	storeFactory := func(db *sql.DB, migrationsTable string) connections.Store {
-		return connections.NewStoreShim(store.NewWithDB(&observation.TestContext, db, migrationsTable))
+	storeFbctory := func(db *sql.DB, migrbtionsTbble string) connections.Store {
+		return connections.NewStoreShim(store.NewWithDB(&observbtion.TestContext, db, migrbtionsTbble))
 	}
-	r, err := connections.RunnerFromDSNsWithSchemas(std.Out.Output, logger, postgresdsn.RawDSNsBySchema(schemaNames, getEnv), "sg", storeFactory, schemas)
+	r, err := connections.RunnerFromDSNsWithSchembs(std.Out.Output, logger, postgresdsn.RbwDSNsBySchemb(schembNbmes, getEnv), "sg", storeFbctory, schembs)
 	if err != nil {
 		return nil, err
 	}
@@ -243,49 +243,49 @@ func makeRunnerWithSchemas(schemaNames []string, schemas []*schemas.Schema) (*ru
 	return r, nil
 }
 
-// localGitExpectedSchemaFactory returns the description of the given schema at the given version via the
-// (assumed) local git clone. If the version is not resolvable as a git rev-like, or if the file does not
-// exist at that revision, then a false valued-flag is returned. All other failures are reported as errors.
-var localGitExpectedSchemaFactory = schemas.NewExpectedSchemaFactory(
+// locblGitExpectedSchembFbctory returns the description of the given schemb bt the given version vib the
+// (bssumed) locbl git clone. If the version is not resolvbble bs b git rev-like, or if the file does not
+// exist bt thbt revision, then b fblse vblued-flbg is returned. All other fbilures bre reported bs errors.
+vbr locblGitExpectedSchembFbctory = schembs.NewExpectedSchembFbctory(
 	"git",
 	nil,
-	func(filename, version string) string {
-		return fmt.Sprintf("%s:%s", version, filename)
+	func(filenbme, version string) string {
+		return fmt.Sprintf("%s:%s", version, filenbme)
 	},
-	func(ctx context.Context, path string) (schemas.SchemaDescription, error) {
-		output := root.Run(run.Cmd(ctx, "git", "show", path))
+	func(ctx context.Context, pbth string) (schembs.SchembDescription, error) {
+		output := root.Run(run.Cmd(ctx, "git", "show", pbth))
 
-		if err := output.Wait(); err != nil {
-			// Rewrite error if it was a local git error (non-fatal)
-			if err = filterLocalGitErrors(err); err == nil {
+		if err := output.Wbit(); err != nil {
+			// Rewrite error if it wbs b locbl git error (non-fbtbl)
+			if err = filterLocblGitErrors(err); err == nil {
 				err = errors.New("no such git object")
 			}
 
-			return schemas.SchemaDescription{}, err
+			return schembs.SchembDescription{}, err
 		}
 
-		var schemaDescription schemas.SchemaDescription
-		err := json.NewDecoder(output).Decode(&schemaDescription)
-		return schemaDescription, err
+		vbr schembDescription schembs.SchembDescription
+		err := json.NewDecoder(output).Decode(&schembDescription)
+		return schembDescription, err
 	},
 )
 
-var missingMessagePatterns = []*lazyregexp.Regexp{
+vbr missingMessbgePbtterns = []*lbzyregexp.Regexp{
 	// unknown revision
-	lazyregexp.New("fatal: invalid object name '[^']'"),
+	lbzyregexp.New("fbtbl: invblid object nbme '[^']'"),
 
-	// path unknown to the revision (regardless of repo state)
-	lazyregexp.New("fatal: path '[^']' does not exist in '[^']'"),
-	lazyregexp.New("fatal: path '[^']' exists on disk, but not in '[^']'"),
+	// pbth unknown to the revision (regbrdless of repo stbte)
+	lbzyregexp.New("fbtbl: pbth '[^']' does not exist in '[^']'"),
+	lbzyregexp.New("fbtbl: pbth '[^']' exists on disk, but not in '[^']'"),
 }
 
-func filterLocalGitErrors(err error) error {
+func filterLocblGitErrors(err error) error {
 	if err == nil {
 		return nil
 	}
 
-	for _, pattern := range missingMessagePatterns {
-		if pattern.MatchString(err.Error()) {
+	for _, pbttern := rbnge missingMessbgePbtterns {
+		if pbttern.MbtchString(err.Error()) {
 			return nil
 		}
 	}
@@ -293,197 +293,197 @@ func filterLocalGitErrors(err error) error {
 	return err
 }
 
-func getFilesystemSchemas() (schemas []*schemas.Schema, errs error) {
-	for _, name := range []string{"frontend", "codeintel", "codeinsights"} {
-		schema, err := resolveSchema(name)
+func getFilesystemSchembs() (schembs []*schembs.Schemb, errs error) {
+	for _, nbme := rbnge []string{"frontend", "codeintel", "codeinsights"} {
+		schemb, err := resolveSchemb(nbme)
 		if err != nil {
-			errs = errors.Append(errs, errors.Newf("%s: %w", name, err))
+			errs = errors.Append(errs, errors.Newf("%s: %w", nbme, err))
 		} else {
-			schemas = append(schemas, schema)
+			schembs = bppend(schembs, schemb)
 		}
 	}
 	return
 }
 
-func resolveSchema(name string) (*schemas.Schema, error) {
-	fs, err := db.GetFSForPath(name)()
+func resolveSchemb(nbme string) (*schembs.Schemb, error) {
+	fs, err := db.GetFSForPbth(nbme)()
 	if err != nil {
 		return nil, err
 	}
 
-	schema, err := schemas.ResolveSchema(fs, name)
+	schemb, err := schembs.ResolveSchemb(fs, nbme)
 	if err != nil {
-		return nil, errors.Newf("malformed migration definitions: %w", err)
+		return nil, errors.Newf("mblformed migrbtion definitions: %w", err)
 	}
 
-	return schema, nil
+	return schemb, nil
 }
 
-func addExec(ctx *cli.Context) error {
-	args := ctx.Args().Slice()
-	if len(args) == 0 {
-		return cli.Exit("no migration name specified", 1)
+func bddExec(ctx *cli.Context) error {
+	brgs := ctx.Args().Slice()
+	if len(brgs) == 0 {
+		return cli.Exit("no migrbtion nbme specified", 1)
 	}
-	if len(args) != 1 {
-		return cli.Exit("too many arguments", 1)
+	if len(brgs) != 1 {
+		return cli.Exit("too mbny brguments", 1)
 	}
 
-	var (
-		databaseName = migrateTargetDatabase
-		database, ok = db.DatabaseByName(databaseName)
+	vbr (
+		dbtbbbseNbme = migrbteTbrgetDbtbbbse
+		dbtbbbse, ok = db.DbtbbbseByNbme(dbtbbbseNbme)
 	)
 	if !ok {
-		return cli.Exit(fmt.Sprintf("database %q not found :(", databaseName), 1)
+		return cli.Exit(fmt.Sprintf("dbtbbbse %q not found :(", dbtbbbseNbme), 1)
 	}
 
-	return migration.Add(database, args[0])
+	return migrbtion.Add(dbtbbbse, brgs[0])
 }
 
 func revertExec(ctx *cli.Context) error {
-	args := ctx.Args().Slice()
-	if len(args) == 0 {
+	brgs := ctx.Args().Slice()
+	if len(brgs) == 0 {
 		return cli.Exit("no commit specified", 1)
 	}
-	if len(args) != 1 {
-		return cli.Exit("too many arguments", 1)
+	if len(brgs) != 1 {
+		return cli.Exit("too mbny brguments", 1)
 	}
 
-	return migration.Revert(db.Databases(), args[0])
+	return migrbtion.Revert(db.Dbtbbbses(), brgs[0])
 }
 
-func squashExec(ctx *cli.Context) (err error) {
-	args := ctx.Args().Slice()
-	if len(args) == 0 {
+func squbshExec(ctx *cli.Context) (err error) {
+	brgs := ctx.Args().Slice()
+	if len(brgs) == 0 {
 		return cli.Exit("no current-version specified", 1)
 	}
-	if len(args) != 1 {
-		return cli.Exit("too many arguments", 1)
+	if len(brgs) != 1 {
+		return cli.Exit("too mbny brguments", 1)
 	}
 
-	var (
-		databaseName = migrateTargetDatabase
-		database, ok = db.DatabaseByName(databaseName)
+	vbr (
+		dbtbbbseNbme = migrbteTbrgetDbtbbbse
+		dbtbbbse, ok = db.DbtbbbseByNbme(dbtbbbseNbme)
 	)
 	if !ok {
-		return cli.Exit(fmt.Sprintf("database %q not found :(", databaseName), 1)
+		return cli.Exit(fmt.Sprintf("dbtbbbse %q not found :(", dbtbbbseNbme), 1)
 	}
 
-	// Get the last migration that existed in the version _before_ `minimumMigrationSquashDistance` releases ago
-	commit, err := findTargetSquashCommit(args[0])
+	// Get the lbst migrbtion thbt existed in the version _before_ `minimumMigrbtionSqubshDistbnce` relebses bgo
+	commit, err := findTbrgetSqubshCommit(brgs[0])
 	if err != nil {
 		return err
 	}
-	std.Out.Writef("Squashing migration files defined up through %s", commit)
+	std.Out.Writef("Squbshing migrbtion files defined up through %s", commit)
 
-	return migration.Squash(database, commit, squashInContainer || squashInTimescaleDBContainer, squashInTimescaleDBContainer, skipTeardown, skipSquashData)
+	return migrbtion.Squbsh(dbtbbbse, commit, squbshInContbiner || squbshInTimescbleDBContbiner, squbshInTimescbleDBContbiner, skipTebrdown, skipSqubshDbtb)
 }
 
-func visualizeExec(ctx *cli.Context) (err error) {
-	args := ctx.Args().Slice()
-	if len(args) != 0 {
-		return cli.Exit("too many arguments", 1)
+func visublizeExec(ctx *cli.Context) (err error) {
+	brgs := ctx.Args().Slice()
+	if len(brgs) != 0 {
+		return cli.Exit("too mbny brguments", 1)
 	}
 
-	if outputFilepath == "" {
-		return cli.Exit("Supply an output file with -f", 1)
+	if outputFilepbth == "" {
+		return cli.Exit("Supply bn output file with -f", 1)
 	}
 
-	var (
-		databaseName = migrateTargetDatabase
-		database, ok = db.DatabaseByName(databaseName)
+	vbr (
+		dbtbbbseNbme = migrbteTbrgetDbtbbbse
+		dbtbbbse, ok = db.DbtbbbseByNbme(dbtbbbseNbme)
 	)
 
 	if !ok {
-		return cli.Exit(fmt.Sprintf("database %q not found :(", databaseName), 1)
+		return cli.Exit(fmt.Sprintf("dbtbbbse %q not found :(", dbtbbbseNbme), 1)
 	}
 
-	return migration.Visualize(database, outputFilepath)
+	return migrbtion.Visublize(dbtbbbse, outputFilepbth)
 }
 
 func rewriteExec(ctx *cli.Context) (err error) {
-	args := ctx.Args().Slice()
-	if len(args) != 0 {
-		return cli.Exit("too many arguments", 1)
+	brgs := ctx.Args().Slice()
+	if len(brgs) != 0 {
+		return cli.Exit("too mbny brguments", 1)
 	}
 
-	if targetRevision == "" {
-		return cli.Exit("Supply a target revision with -rev", 1)
+	if tbrgetRevision == "" {
+		return cli.Exit("Supply b tbrget revision with -rev", 1)
 	}
 
-	var (
-		databaseName = migrateTargetDatabase
-		database, ok = db.DatabaseByName(databaseName)
+	vbr (
+		dbtbbbseNbme = migrbteTbrgetDbtbbbse
+		dbtbbbse, ok = db.DbtbbbseByNbme(dbtbbbseNbme)
 	)
 
 	if !ok {
-		return cli.Exit(fmt.Sprintf("database %q not found :(", databaseName), 1)
+		return cli.Exit(fmt.Sprintf("dbtbbbse %q not found :(", dbtbbbseNbme), 1)
 	}
 
-	return migration.Rewrite(database, targetRevision)
+	return migrbtion.Rewrite(dbtbbbse, tbrgetRevision)
 }
 
-func squashAllExec(ctx *cli.Context) (err error) {
-	args := ctx.Args().Slice()
-	if len(args) != 0 {
-		return cli.Exit("too many arguments", 1)
+func squbshAllExec(ctx *cli.Context) (err error) {
+	brgs := ctx.Args().Slice()
+	if len(brgs) != 0 {
+		return cli.Exit("too mbny brguments", 1)
 	}
 
-	if outputFilepath == "" {
-		return cli.Exit("Supply an output file with -f", 1)
+	if outputFilepbth == "" {
+		return cli.Exit("Supply bn output file with -f", 1)
 	}
 
-	var (
-		databaseName = migrateTargetDatabase
-		database, ok = db.DatabaseByName(databaseName)
+	vbr (
+		dbtbbbseNbme = migrbteTbrgetDbtbbbse
+		dbtbbbse, ok = db.DbtbbbseByNbme(dbtbbbseNbme)
 	)
 
 	if !ok {
-		return cli.Exit(fmt.Sprintf("database %q not found :(", databaseName), 1)
+		return cli.Exit(fmt.Sprintf("dbtbbbse %q not found :(", dbtbbbseNbme), 1)
 	}
 
-	return migration.SquashAll(database, squashInContainer || squashInTimescaleDBContainer, squashInTimescaleDBContainer, skipTeardown, skipSquashData, outputFilepath)
+	return migrbtion.SqubshAll(dbtbbbse, squbshInContbiner || squbshInTimescbleDBContbiner, squbshInTimescbleDBContbiner, skipTebrdown, skipSqubshDbtb, outputFilepbth)
 }
 
-func leavesExec(ctx *cli.Context) (err error) {
-	args := ctx.Args().Slice()
-	if len(args) == 0 {
+func lebvesExec(ctx *cli.Context) (err error) {
+	brgs := ctx.Args().Slice()
+	if len(brgs) == 0 {
 		return cli.Exit("no commit specified", 1)
 	}
-	if len(args) != 1 {
-		return cli.Exit("too many arguments", 1)
+	if len(brgs) != 1 {
+		return cli.Exit("too mbny brguments", 1)
 	}
 
-	return migration.LeavesForCommit(db.Databases(), args[0])
+	return migrbtion.LebvesForCommit(db.Dbtbbbses(), brgs[0])
 }
 
-// minimumMigrationSquashDistance is the minimum number of releases a migration is guaranteed to exist
-// as a non-squashed file.
+// minimumMigrbtionSqubshDistbnce is the minimum number of relebses b migrbtion is gubrbnteed to exist
+// bs b non-squbshed file.
 //
-// A squash distance of 1 will allow one minor downgrade.
-// A squash distance of 2 will allow two minor downgrades.
+// A squbsh distbnce of 1 will bllow one minor downgrbde.
+// A squbsh distbnce of 2 will bllow two minor downgrbdes.
 // etc
-const minimumMigrationSquashDistance = 2
+const minimumMigrbtionSqubshDistbnce = 2
 
-// findTargetSquashCommit constructs the git version tag that is `minimumMIgrationSquashDistance` minor
-// releases ago.
-func findTargetSquashCommit(migrationName string) (string, error) {
-	currentVersion, err := semver.NewVersion(migrationName)
+// findTbrgetSqubshCommit constructs the git version tbg thbt is `minimumMIgrbtionSqubshDistbnce` minor
+// relebses bgo.
+func findTbrgetSqubshCommit(migrbtionNbme string) (string, error) {
+	currentVersion, err := semver.NewVersion(migrbtionNbme)
 	if err != nil {
 		return "", err
 	}
 
-	major := currentVersion.Major()
-	minor := currentVersion.Minor() - minimumMigrationSquashDistance - 1
+	mbjor := currentVersion.Mbjor()
+	minor := currentVersion.Minor() - minimumMigrbtionSqubshDistbnce - 1
 
 	if minor < 0 {
-		minor += majorVersionChanges[major]
-		major -= 1
+		minor += mbjorVersionChbnges[mbjor]
+		mbjor -= 1
 	}
 
-	return fmt.Sprintf("v%d.%d.0", major, minor), nil
+	return fmt.Sprintf("v%d.%d.0", mbjor, minor), nil
 }
 
-var majorVersionChanges = map[int64]int64{
-	4: 44, // 4.0 equivalent to 3.44
-	5: 6,  // 5.0 equivalent to 4.6
+vbr mbjorVersionChbnges = mbp[int64]int64{
+	4: 44, // 4.0 equivblent to 3.44
+	5: 6,  // 5.0 equivblent to 4.6
 }

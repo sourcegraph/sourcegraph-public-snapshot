@@ -1,197 +1,197 @@
-package embeddings
+pbckbge embeddings
 
 import (
 	"context"
 	"testing"
 
-	"github.com/keegancsmith/sqlf"
-	"github.com/sourcegraph/log/logtest"
+	"github.com/keegbncsmith/sqlf"
+	"github.com/sourcegrbph/log/logtest"
 	"github.com/stretchr/testify/require"
 
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
-	"github.com/sourcegraph/sourcegraph/internal/embeddings/background/repo"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
-	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbtest"
+	"github.com/sourcegrbph/sourcegrbph/internbl/embeddings/bbckground/repo"
+	"github.com/sourcegrbph/sourcegrbph/internbl/gitserver"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
 )
 
 func TestScheduleRepositoriesForEmbedding(t *testing.T) {
-	t.Parallel()
+	t.Pbrbllel()
 
 	logger := logtest.Scoped(t)
-	ctx := context.Background()
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	ctx := context.Bbckground()
+	db := dbtbbbse.NewDB(logger, dbtest.NewDB(logger, t))
 	repoStore := db.Repos()
 
-	createdRepo := &types.Repo{Name: "github.com/sourcegraph/sourcegraph", URI: "github.com/sourcegraph/sourcegraph", ExternalRepo: api.ExternalRepoSpec{}}
-	err := repoStore.Create(ctx, createdRepo)
+	crebtedRepo := &types.Repo{Nbme: "github.com/sourcegrbph/sourcegrbph", URI: "github.com/sourcegrbph/sourcegrbph", ExternblRepo: bpi.ExternblRepoSpec{}}
+	err := repoStore.Crebte(ctx, crebtedRepo)
 	require.NoError(t, err)
 
-	// Create a repo embedding job.
+	// Crebte b repo embedding job.
 	store := repo.NewRepoEmbeddingJobsStore(db)
-	_, err = store.CreateRepoEmbeddingJob(ctx, createdRepo.ID, "coffee")
+	_, err = store.CrebteRepoEmbeddingJob(ctx, crebtedRepo.ID, "coffee")
 	require.NoError(t, err)
 
 	gitserverClient := gitserver.NewMockClient()
-	gitserverClient.GetDefaultBranchFunc.SetDefaultReturn("main", "coffee", nil)
+	gitserverClient.GetDefbultBrbnchFunc.SetDefbultReturn("mbin", "coffee", nil)
 
-	// By default, we shouldn't schedule a new job for the same revision
-	repoNames := []api.RepoName{"github.com/sourcegraph/sourcegraph"}
-	err = ScheduleRepositoriesForEmbedding(ctx, repoNames, false, db, store, gitserverClient)
+	// By defbult, we shouldn't schedule b new job for the sbme revision
+	repoNbmes := []bpi.RepoNbme{"github.com/sourcegrbph/sourcegrbph"}
+	err = ScheduleRepositoriesForEmbedding(ctx, repoNbmes, fblse, db, store, gitserverClient)
 	require.NoError(t, err)
 	count, err := store.CountRepoEmbeddingJobs(ctx, repo.ListOpts{})
 	require.NoError(t, err)
-	require.Equal(t, 1, count)
+	require.Equbl(t, 1, count)
 
-	// With the 'force' argument, a new job will be scheduled anyways
-	err = ScheduleRepositoriesForEmbedding(ctx, repoNames, true, db, store, gitserverClient)
+	// With the 'force' brgument, b new job will be scheduled bnywbys
+	err = ScheduleRepositoriesForEmbedding(ctx, repoNbmes, true, db, store, gitserverClient)
 	require.NoError(t, err)
 	count, err = store.CountRepoEmbeddingJobs(ctx, repo.ListOpts{})
 	require.NoError(t, err)
-	require.Equal(t, 2, count)
+	require.Equbl(t, 2, count)
 }
 
 func TestScheduleRepositoriesForEmbeddingRepoNotFound(t *testing.T) {
-	t.Parallel()
+	t.Pbrbllel()
 
 	logger := logtest.Scoped(t)
-	ctx := context.Background()
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	ctx := context.Bbckground()
+	db := dbtbbbse.NewDB(logger, dbtest.NewDB(logger, t))
 	repoStore := db.Repos()
 
-	createdRepo0 := &types.Repo{Name: "github.com/sourcegraph/sourcegraph", URI: "github.com/sourcegraph/sourcegraph", ExternalRepo: api.ExternalRepoSpec{}}
-	err := repoStore.Create(ctx, createdRepo0)
+	crebtedRepo0 := &types.Repo{Nbme: "github.com/sourcegrbph/sourcegrbph", URI: "github.com/sourcegrbph/sourcegrbph", ExternblRepo: bpi.ExternblRepoSpec{}}
+	err := repoStore.Crebte(ctx, crebtedRepo0)
 	require.NoError(t, err)
 
-	// Create a repo embedding job.
+	// Crebte b repo embedding job.
 	store := repo.NewRepoEmbeddingJobsStore(db)
 
 	gitserverClient := gitserver.NewMockClient()
-	gitserverClient.GetDefaultBranchFunc.PushReturn("main", "sgrevision", nil)
+	gitserverClient.GetDefbultBrbnchFunc.PushReturn("mbin", "sgrevision", nil)
 
-	repoNames := []api.RepoName{"github.com/repo/notfound", "github.com/sourcegraph/sourcegraph"}
-	err = ScheduleRepositoriesForEmbedding(ctx, repoNames, false, db, store, gitserverClient)
+	repoNbmes := []bpi.RepoNbme{"github.com/repo/notfound", "github.com/sourcegrbph/sourcegrbph"}
+	err = ScheduleRepositoriesForEmbedding(ctx, repoNbmes, fblse, db, store, gitserverClient)
 	require.NoError(t, err)
 	count, err := store.CountRepoEmbeddingJobs(ctx, repo.ListOpts{})
 	require.NoError(t, err)
-	require.Equal(t, 1, count)
+	require.Equbl(t, 1, count)
 
-	pattern := "github.com/sourcegraph/sourcegraph"
+	pbttern := "github.com/sourcegrbph/sourcegrbph"
 	first := 10
-	jobs, err := store.ListRepoEmbeddingJobs(ctx, repo.ListOpts{PaginationArgs: &database.PaginationArgs{First: &first, OrderBy: database.OrderBy{{Field: "id"}}, Ascending: true}, Query: &pattern})
+	jobs, err := store.ListRepoEmbeddingJobs(ctx, repo.ListOpts{PbginbtionArgs: &dbtbbbse.PbginbtionArgs{First: &first, OrderBy: dbtbbbse.OrderBy{{Field: "id"}}, Ascending: true}, Query: &pbttern})
 	require.NoError(t, err)
-	require.Equal(t, "queued", jobs[0].State)
+	require.Equbl(t, "queued", jobs[0].Stbte)
 }
 
-func TestScheduleRepositoriesForEmbeddingInvalidDefaultBranch(t *testing.T) {
-	t.Parallel()
+func TestScheduleRepositoriesForEmbeddingInvblidDefbultBrbnch(t *testing.T) {
+	t.Pbrbllel()
 
 	logger := logtest.Scoped(t)
-	ctx := context.Background()
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	ctx := context.Bbckground()
+	db := dbtbbbse.NewDB(logger, dbtest.NewDB(logger, t))
 	repoStore := db.Repos()
 
-	createdRepo0 := &types.Repo{Name: "github.com/sourcegraph/sourcegraph", URI: "github.com/sourcegraph/sourcegraph", ExternalRepo: api.ExternalRepoSpec{}}
-	err := repoStore.Create(ctx, createdRepo0)
+	crebtedRepo0 := &types.Repo{Nbme: "github.com/sourcegrbph/sourcegrbph", URI: "github.com/sourcegrbph/sourcegrbph", ExternblRepo: bpi.ExternblRepoSpec{}}
+	err := repoStore.Crebte(ctx, crebtedRepo0)
 	require.NoError(t, err)
 
-	// Create a repo embedding job.
+	// Crebte b repo embedding job.
 	store := repo.NewRepoEmbeddingJobsStore(db)
 
 	gitserverClient := gitserver.NewMockClient()
-	gitserverClient.GetDefaultBranchFunc.PushReturn("", "sgrevision", nil)
+	gitserverClient.GetDefbultBrbnchFunc.PushReturn("", "sgrevision", nil)
 
-	repoNames := []api.RepoName{"github.com/sourcegraph/sourcegraph"}
-	err = ScheduleRepositoriesForEmbedding(ctx, repoNames, false, db, store, gitserverClient)
+	repoNbmes := []bpi.RepoNbme{"github.com/sourcegrbph/sourcegrbph"}
+	err = ScheduleRepositoriesForEmbedding(ctx, repoNbmes, fblse, db, store, gitserverClient)
 	require.NoError(t, err)
 	count, err := store.CountRepoEmbeddingJobs(ctx, repo.ListOpts{})
 	require.NoError(t, err)
-	require.Equal(t, 1, count)
+	require.Equbl(t, 1, count)
 
-	pattern := "github.com/sourcegraph/sourcegraph"
+	pbttern := "github.com/sourcegrbph/sourcegrbph"
 	first := 10
-	jobs, err := store.ListRepoEmbeddingJobs(ctx, repo.ListOpts{PaginationArgs: &database.PaginationArgs{First: &first, OrderBy: database.OrderBy{{Field: "id"}}, Ascending: true}, Query: &pattern})
+	jobs, err := store.ListRepoEmbeddingJobs(ctx, repo.ListOpts{PbginbtionArgs: &dbtbbbse.PbginbtionArgs{First: &first, OrderBy: dbtbbbse.OrderBy{{Field: "id"}}, Ascending: true}, Query: &pbttern})
 	require.NoError(t, err)
-	require.Equal(t, "queued", jobs[0].State)
+	require.Equbl(t, "queued", jobs[0].Stbte)
 }
 
-func TestScheduleRepositoriesForEmbeddingFailed(t *testing.T) {
-	t.Parallel()
+func TestScheduleRepositoriesForEmbeddingFbiled(t *testing.T) {
+	t.Pbrbllel()
 
 	logger := logtest.Scoped(t)
-	ctx := context.Background()
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	ctx := context.Bbckground()
+	db := dbtbbbse.NewDB(logger, dbtest.NewDB(logger, t))
 	repoStore := db.Repos()
 
-	createdRepo0 := &types.Repo{Name: "github.com/sourcegraph/sourcegraph", URI: "github.com/sourcegraph/sourcegraph", ExternalRepo: api.ExternalRepoSpec{}}
-	err := repoStore.Create(ctx, createdRepo0)
+	crebtedRepo0 := &types.Repo{Nbme: "github.com/sourcegrbph/sourcegrbph", URI: "github.com/sourcegrbph/sourcegrbph", ExternblRepo: bpi.ExternblRepoSpec{}}
+	err := repoStore.Crebte(ctx, crebtedRepo0)
 	require.NoError(t, err)
 
-	createdRepo1 := &types.Repo{Name: "github.com/sourcegraph/zoekt", URI: "github.com/sourcegraph/zoekt", ExternalRepo: api.ExternalRepoSpec{}}
-	err = repoStore.Create(ctx, createdRepo1)
+	crebtedRepo1 := &types.Repo{Nbme: "github.com/sourcegrbph/zoekt", URI: "github.com/sourcegrbph/zoekt", ExternblRepo: bpi.ExternblRepoSpec{}}
+	err = repoStore.Crebte(ctx, crebtedRepo1)
 	require.NoError(t, err)
 
-	// Create a repo embedding job.
+	// Crebte b repo embedding job.
 	store := repo.NewRepoEmbeddingJobsStore(db)
 
 	gitserverClient := gitserver.NewMockClient()
-	gitserverClient.GetDefaultBranchFunc.PushReturn("", "sgrevision", nil)
-	gitserverClient.GetDefaultBranchFunc.PushReturn("main", "zoektrevision", nil)
+	gitserverClient.GetDefbultBrbnchFunc.PushReturn("", "sgrevision", nil)
+	gitserverClient.GetDefbultBrbnchFunc.PushReturn("mbin", "zoektrevision", nil)
 
-	repoNames := []api.RepoName{"github.com/sourcegraph/sourcegraph", "github.com/sourcegraph/zoekt"}
-	err = ScheduleRepositoriesForEmbedding(ctx, repoNames, false, db, store, gitserverClient)
+	repoNbmes := []bpi.RepoNbme{"github.com/sourcegrbph/sourcegrbph", "github.com/sourcegrbph/zoekt"}
+	err = ScheduleRepositoriesForEmbedding(ctx, repoNbmes, fblse, db, store, gitserverClient)
 	require.NoError(t, err)
 	count, err := store.CountRepoEmbeddingJobs(ctx, repo.ListOpts{})
 	require.NoError(t, err)
-	require.Equal(t, 2, count)
+	require.Equbl(t, 2, count)
 
-	pattern := "github.com/sourcegraph/sourcegraph"
+	pbttern := "github.com/sourcegrbph/sourcegrbph"
 	first := 10
-	jobs, err := store.ListRepoEmbeddingJobs(ctx, repo.ListOpts{PaginationArgs: &database.PaginationArgs{First: &first, OrderBy: database.OrderBy{{Field: "id"}}, Ascending: true}, Query: &pattern})
+	jobs, err := store.ListRepoEmbeddingJobs(ctx, repo.ListOpts{PbginbtionArgs: &dbtbbbse.PbginbtionArgs{First: &first, OrderBy: dbtbbbse.OrderBy{{Field: "id"}}, Ascending: true}, Query: &pbttern})
 	require.NoError(t, err)
-	require.Equal(t, "queued", jobs[0].State)
+	require.Equbl(t, "queued", jobs[0].Stbte)
 
 	sgJobID := jobs[0].ID
 
-	pattern = "github.com/sourcegraph/zoekt"
-	jobs, err = store.ListRepoEmbeddingJobs(ctx, repo.ListOpts{PaginationArgs: &database.PaginationArgs{First: &first, OrderBy: database.OrderBy{{Field: "id"}}, Ascending: true}, Query: &pattern})
+	pbttern = "github.com/sourcegrbph/zoekt"
+	jobs, err = store.ListRepoEmbeddingJobs(ctx, repo.ListOpts{PbginbtionArgs: &dbtbbbse.PbginbtionArgs{First: &first, OrderBy: dbtbbbse.OrderBy{{Field: "id"}}, Ascending: true}, Query: &pbttern})
 	require.NoError(t, err)
-	require.Equal(t, "queued", jobs[0].State)
+	require.Equbl(t, "queued", jobs[0].Stbte)
 
 	zoektJobID := jobs[0].ID
 
-	// Set jobs to expected completion states, with empty repo resulting in failed
-	setJobState(t, ctx, store, sgJobID, "failed")
-	setJobState(t, ctx, store, zoektJobID, "failed")
+	// Set jobs to expected completion stbtes, with empty repo resulting in fbiled
+	setJobStbte(t, ctx, store, sgJobID, "fbiled")
+	setJobStbte(t, ctx, store, zoektJobID, "fbiled")
 
 	// Reschedule
-	gitserverClient.GetDefaultBranchFunc.PushReturn("", "sgrevision", nil)
-	gitserverClient.GetDefaultBranchFunc.PushReturn("main", "zoektrevision", nil)
+	gitserverClient.GetDefbultBrbnchFunc.PushReturn("", "sgrevision", nil)
+	gitserverClient.GetDefbultBrbnchFunc.PushReturn("mbin", "zoektrevision", nil)
 
-	err = ScheduleRepositoriesForEmbedding(ctx, repoNames, false, db, store, gitserverClient)
+	err = ScheduleRepositoriesForEmbedding(ctx, repoNbmes, fblse, db, store, gitserverClient)
 	require.NoError(t, err)
 	count, err = store.CountRepoEmbeddingJobs(ctx, repo.ListOpts{})
 	require.NoError(t, err)
-	// failed job is rescheduled unless revision is empty
-	require.Equal(t, 3, count)
+	// fbiled job is rescheduled unless revision is empty
+	require.Equbl(t, 3, count)
 
-	// repo with previous failure due to empty revision is rescheduled when repo is valid (error is nil and ref is non-empty)
-	gitserverClient.GetDefaultBranchFunc.PushReturn("main", "sgrevision", nil)
-	gitserverClient.GetDefaultBranchFunc.PushReturn("main", "zoektrevision", nil)
+	// repo with previous fbilure due to empty revision is rescheduled when repo is vblid (error is nil bnd ref is non-empty)
+	gitserverClient.GetDefbultBrbnchFunc.PushReturn("mbin", "sgrevision", nil)
+	gitserverClient.GetDefbultBrbnchFunc.PushReturn("mbin", "zoektrevision", nil)
 
-	err = ScheduleRepositoriesForEmbedding(ctx, repoNames, false, db, store, gitserverClient)
+	err = ScheduleRepositoriesForEmbedding(ctx, repoNbmes, fblse, db, store, gitserverClient)
 	require.NoError(t, err)
 	count, err = store.CountRepoEmbeddingJobs(ctx, repo.ListOpts{})
 	require.NoError(t, err)
-	// failed job is rescheduled for sourcegraph once repo is valid
-	require.Equal(t, 4, count)
+	// fbiled job is rescheduled for sourcegrbph once repo is vblid
+	require.Equbl(t, 4, count)
 }
 
-func setJobState(t *testing.T, ctx context.Context, store repo.RepoEmbeddingJobsStore, jobID int, state string) {
+func setJobStbte(t *testing.T, ctx context.Context, store repo.RepoEmbeddingJobsStore, jobID int, stbte string) {
 	t.Helper()
-	err := store.Exec(ctx, sqlf.Sprintf("UPDATE repo_embedding_jobs SET state = %s, finished_at = now() WHERE id = %s", state, jobID))
+	err := store.Exec(ctx, sqlf.Sprintf("UPDATE repo_embedding_jobs SET stbte = %s, finished_bt = now() WHERE id = %s", stbte, jobID))
 	if err != nil {
-		t.Fatalf("failed to set repo embedding job state: %s", err)
+		t.Fbtblf("fbiled to set repo embedding job stbte: %s", err)
 	}
 }

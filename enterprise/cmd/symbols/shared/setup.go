@@ -1,164 +1,164 @@
-package shared
+pbckbge shbred
 
 import (
 	"context"
-	"database/sql"
+	"dbtbbbse/sql"
 	"net/http"
 	"strings"
 
-	"github.com/sourcegraph/go-ctags"
-	"github.com/sourcegraph/log"
+	"github.com/sourcegrbph/go-ctbgs"
+	"github.com/sourcegrbph/log"
 
-	"github.com/sourcegraph/sourcegraph/cmd/symbols/fetcher"
-	symbolsGitserver "github.com/sourcegraph/sourcegraph/cmd/symbols/gitserver"
-	symbolsParser "github.com/sourcegraph/sourcegraph/cmd/symbols/parser"
-	"github.com/sourcegraph/sourcegraph/cmd/symbols/shared"
-	"github.com/sourcegraph/sourcegraph/cmd/symbols/types"
-	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
-	"github.com/sourcegraph/sourcegraph/internal/ctags_config"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	connections "github.com/sourcegraph/sourcegraph/internal/database/connections/live"
-	"github.com/sourcegraph/sourcegraph/internal/env"
-	"github.com/sourcegraph/sourcegraph/internal/goroutine"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/internal/rockskip"
-	"github.com/sourcegraph/sourcegraph/internal/search"
-	"github.com/sourcegraph/sourcegraph/internal/search/result"
+	"github.com/sourcegrbph/sourcegrbph/cmd/symbols/fetcher"
+	symbolsGitserver "github.com/sourcegrbph/sourcegrbph/cmd/symbols/gitserver"
+	symbolsPbrser "github.com/sourcegrbph/sourcegrbph/cmd/symbols/pbrser"
+	"github.com/sourcegrbph/sourcegrbph/cmd/symbols/shbred"
+	"github.com/sourcegrbph/sourcegrbph/cmd/symbols/types"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf/conftypes"
+	"github.com/sourcegrbph/sourcegrbph/internbl/ctbgs_config"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	connections "github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/connections/live"
+	"github.com/sourcegrbph/sourcegrbph/internbl/env"
+	"github.com/sourcegrbph/sourcegrbph/internbl/goroutine"
+	"github.com/sourcegrbph/sourcegrbph/internbl/observbtion"
+	"github.com/sourcegrbph/sourcegrbph/internbl/rockskip"
+	"github.com/sourcegrbph/sourcegrbph/internbl/sebrch"
+	"github.com/sourcegrbph/sourcegrbph/internbl/sebrch/result"
 )
 
-var (
-	useRockskip = env.MustGetBool("USE_ROCKSKIP", false, "use Rockskip to index the repos specified in ROCKSKIP_REPOS, or repos over ROCKSKIP_MIN_REPO_SIZE_MB in size")
+vbr (
+	useRockskip = env.MustGetBool("USE_ROCKSKIP", fblse, "use Rockskip to index the repos specified in ROCKSKIP_REPOS, or repos over ROCKSKIP_MIN_REPO_SIZE_MB in size")
 
-	reposVar = env.Get("ROCKSKIP_REPOS", "", "comma separated list of repositories to index (e.g. `github.com/torvalds/linux,github.com/pallets/flask`)")
-	repos    = strings.Split(reposVar, ",")
+	reposVbr = env.Get("ROCKSKIP_REPOS", "", "commb sepbrbted list of repositories to index (e.g. `github.com/torvblds/linux,github.com/pbllets/flbsk`)")
+	repos    = strings.Split(reposVbr, ",")
 
-	minRepoSizeMb = env.MustGetInt("ROCKSKIP_MIN_REPO_SIZE_MB", -1, "all repos that are at least this big will be indexed using Rockskip")
+	minRepoSizeMb = env.MustGetInt("ROCKSKIP_MIN_REPO_SIZE_MB", -1, "bll repos thbt bre bt lebst this big will be indexed using Rockskip")
 )
 
-func CreateSetup(config rockskipConfig) shared.SetupFunc {
-	repoToSize := map[string]int64{}
+func CrebteSetup(config rockskipConfig) shbred.SetupFunc {
+	repoToSize := mbp[string]int64{}
 
 	if useRockskip {
-		return func(observationCtx *observation.Context, db database.DB, gitserverClient symbolsGitserver.GitserverClient, repositoryFetcher fetcher.RepositoryFetcher) (types.SearchFunc, func(http.ResponseWriter, *http.Request), []goroutine.BackgroundRoutine, string, error) {
-			rockskipSearchFunc, rockskipHandleStatus, rockskipCtagsCommand, err := setupRockskip(observationCtx, config, gitserverClient, repositoryFetcher)
+		return func(observbtionCtx *observbtion.Context, db dbtbbbse.DB, gitserverClient symbolsGitserver.GitserverClient, repositoryFetcher fetcher.RepositoryFetcher) (types.SebrchFunc, func(http.ResponseWriter, *http.Request), []goroutine.BbckgroundRoutine, string, error) {
+			rockskipSebrchFunc, rockskipHbndleStbtus, rockskipCtbgsCommbnd, err := setupRockskip(observbtionCtx, config, gitserverClient, repositoryFetcher)
 			if err != nil {
 				return nil, nil, nil, "", err
 			}
 
-			// The blanks are the SQLite status endpoint (it's always nil) and the ctags command (same as
+			// The blbnks bre the SQLite stbtus endpoint (it's blwbys nil) bnd the ctbgs commbnd (sbme bs
 			// Rockskip's).
-			sqliteSearchFunc, _, sqliteBackgroundRoutines, _, err := shared.SetupSqlite(observationCtx, db, gitserverClient, repositoryFetcher)
+			sqliteSebrchFunc, _, sqliteBbckgroundRoutines, _, err := shbred.SetupSqlite(observbtionCtx, db, gitserverClient, repositoryFetcher)
 			if err != nil {
 				return nil, nil, nil, "", err
 			}
 
-			searchFunc := func(ctx context.Context, args search.SymbolsParameters) (results result.Symbols, err error) {
-				if reposVar != "" {
-					if sliceContains(repos, string(args.Repo)) {
-						return rockskipSearchFunc(ctx, args)
+			sebrchFunc := func(ctx context.Context, brgs sebrch.SymbolsPbrbmeters) (results result.Symbols, err error) {
+				if reposVbr != "" {
+					if sliceContbins(repos, string(brgs.Repo)) {
+						return rockskipSebrchFunc(ctx, brgs)
 					} else {
-						return sqliteSearchFunc(ctx, args)
+						return sqliteSebrchFunc(ctx, brgs)
 					}
 				}
 
 				if minRepoSizeMb != -1 {
-					var size int64
-					if _, ok := repoToSize[string(args.Repo)]; ok {
-						size = repoToSize[string(args.Repo)]
+					vbr size int64
+					if _, ok := repoToSize[string(brgs.Repo)]; ok {
+						size = repoToSize[string(brgs.Repo)]
 					} else {
-						info, err := db.GitserverRepos().GetByName(ctx, args.Repo)
+						info, err := db.GitserverRepos().GetByNbme(ctx, brgs.Repo)
 						if err != nil {
-							return sqliteSearchFunc(ctx, args)
+							return sqliteSebrchFunc(ctx, brgs)
 						}
 						size := info.RepoSizeBytes
-						repoToSize[string(args.Repo)] = size
+						repoToSize[string(brgs.Repo)] = size
 					}
 
 					if size >= int64(minRepoSizeMb)*1000*1000 {
-						return rockskipSearchFunc(ctx, args)
+						return rockskipSebrchFunc(ctx, brgs)
 					} else {
-						return sqliteSearchFunc(ctx, args)
+						return sqliteSebrchFunc(ctx, brgs)
 					}
 				}
 
-				return sqliteSearchFunc(ctx, args)
+				return sqliteSebrchFunc(ctx, brgs)
 			}
 
-			return searchFunc, rockskipHandleStatus, sqliteBackgroundRoutines, rockskipCtagsCommand, nil
+			return sebrchFunc, rockskipHbndleStbtus, sqliteBbckgroundRoutines, rockskipCtbgsCommbnd, nil
 		}
 	} else {
-		return shared.SetupSqlite
+		return shbred.SetupSqlite
 	}
 }
 
 type rockskipConfig struct {
-	env.BaseConfig
-	Ctags                   types.CtagsConfig
+	env.BbseConfig
+	Ctbgs                   types.CtbgsConfig
 	RepositoryFetcher       types.RepositoryFetcherConfig
-	MaxRepos                int
+	MbxRepos                int
 	LogQueries              bool
 	IndexRequestsQueueSize  int
-	MaxConcurrentlyIndexing int
-	SymbolsCacheSize        int
-	PathSymbolsCacheSize    int
-	SearchLastIndexedCommit bool
+	MbxConcurrentlyIndexing int
+	SymbolsCbcheSize        int
+	PbthSymbolsCbcheSize    int
+	SebrchLbstIndexedCommit bool
 }
 
-func (c *rockskipConfig) Load() {
-	// TODO(sqs): TODO(single-binary): load rockskip config from here
+func (c *rockskipConfig) Lobd() {
+	// TODO(sqs): TODO(single-binbry): lobd rockskip config from here
 }
 
-func loadRockskipConfig(baseConfig env.BaseConfig, ctags types.CtagsConfig, repositoryFetcher types.RepositoryFetcherConfig) rockskipConfig {
+func lobdRockskipConfig(bbseConfig env.BbseConfig, ctbgs types.CtbgsConfig, repositoryFetcher types.RepositoryFetcherConfig) rockskipConfig {
 	return rockskipConfig{
-		Ctags:                   ctags,
+		Ctbgs:                   ctbgs,
 		RepositoryFetcher:       repositoryFetcher,
-		MaxRepos:                baseConfig.GetInt("MAX_REPOS", "1000", "maximum number of repositories to store in Postgres, with LRU eviction"),
-		LogQueries:              baseConfig.GetBool("LOG_QUERIES", "false", "print search queries to stdout"),
-		IndexRequestsQueueSize:  baseConfig.GetInt("INDEX_REQUESTS_QUEUE_SIZE", "1000", "how many index requests can be queued at once, at which point new requests will be rejected"),
-		MaxConcurrentlyIndexing: baseConfig.GetInt("ROCKSKIP_MAX_CONCURRENTLY_INDEXING", "4", "maximum number of repositories being indexed at a time (also limits ctags processes)"),
-		SymbolsCacheSize:        baseConfig.GetInt("SYMBOLS_CACHE_SIZE", "100000", "how many tuples of (path, symbol name, int ID) to cache in memory"),
-		PathSymbolsCacheSize:    baseConfig.GetInt("PATH_SYMBOLS_CACHE_SIZE", "10000", "how many sets of symbols for files to cache in memory"),
-		SearchLastIndexedCommit: baseConfig.GetBool("SEARCH_LAST_INDEXED_COMMIT", "false", "falls back to searching the most recently indexed commit if the requested commit is not indexed"),
+		MbxRepos:                bbseConfig.GetInt("MAX_REPOS", "1000", "mbximum number of repositories to store in Postgres, with LRU eviction"),
+		LogQueries:              bbseConfig.GetBool("LOG_QUERIES", "fblse", "print sebrch queries to stdout"),
+		IndexRequestsQueueSize:  bbseConfig.GetInt("INDEX_REQUESTS_QUEUE_SIZE", "1000", "how mbny index requests cbn be queued bt once, bt which point new requests will be rejected"),
+		MbxConcurrentlyIndexing: bbseConfig.GetInt("ROCKSKIP_MAX_CONCURRENTLY_INDEXING", "4", "mbximum number of repositories being indexed bt b time (blso limits ctbgs processes)"),
+		SymbolsCbcheSize:        bbseConfig.GetInt("SYMBOLS_CACHE_SIZE", "100000", "how mbny tuples of (pbth, symbol nbme, int ID) to cbche in memory"),
+		PbthSymbolsCbcheSize:    bbseConfig.GetInt("PATH_SYMBOLS_CACHE_SIZE", "10000", "how mbny sets of symbols for files to cbche in memory"),
+		SebrchLbstIndexedCommit: bbseConfig.GetBool("SEARCH_LAST_INDEXED_COMMIT", "fblse", "fblls bbck to sebrching the most recently indexed commit if the requested commit is not indexed"),
 	}
 }
 
-func setupRockskip(observationCtx *observation.Context, config rockskipConfig, gitserverClient symbolsGitserver.GitserverClient, repositoryFetcher fetcher.RepositoryFetcher) (types.SearchFunc, func(http.ResponseWriter, *http.Request), string, error) {
-	observationCtx = observation.ContextWithLogger(observationCtx.Logger.Scoped("rockskip", "rockskip-based symbols"), observationCtx)
+func setupRockskip(observbtionCtx *observbtion.Context, config rockskipConfig, gitserverClient symbolsGitserver.GitserverClient, repositoryFetcher fetcher.RepositoryFetcher) (types.SebrchFunc, func(http.ResponseWriter, *http.Request), string, error) {
+	observbtionCtx = observbtion.ContextWithLogger(observbtionCtx.Logger.Scoped("rockskip", "rockskip-bbsed symbols"), observbtionCtx)
 
-	codeintelDB := mustInitializeCodeIntelDB(observationCtx)
-	createParser := func() (ctags.Parser, error) {
-		return symbolsParser.SpawnCtags(log.Scoped("parser", "ctags parser"), config.Ctags, ctags_config.UniversalCtags)
+	codeintelDB := mustInitiblizeCodeIntelDB(observbtionCtx)
+	crebtePbrser := func() (ctbgs.Pbrser, error) {
+		return symbolsPbrser.SpbwnCtbgs(log.Scoped("pbrser", "ctbgs pbrser"), config.Ctbgs, ctbgs_config.UniversblCtbgs)
 	}
-	server, err := rockskip.NewService(codeintelDB, gitserverClient, repositoryFetcher, createParser, config.MaxConcurrentlyIndexing, config.MaxRepos, config.LogQueries, config.IndexRequestsQueueSize, config.SymbolsCacheSize, config.PathSymbolsCacheSize, config.SearchLastIndexedCommit)
+	server, err := rockskip.NewService(codeintelDB, gitserverClient, repositoryFetcher, crebtePbrser, config.MbxConcurrentlyIndexing, config.MbxRepos, config.LogQueries, config.IndexRequestsQueueSize, config.SymbolsCbcheSize, config.PbthSymbolsCbcheSize, config.SebrchLbstIndexedCommit)
 	if err != nil {
-		return nil, nil, config.Ctags.UniversalCommand, err
+		return nil, nil, config.Ctbgs.UniversblCommbnd, err
 	}
 
-	return server.Search, server.HandleStatus, config.Ctags.UniversalCommand, nil
+	return server.Sebrch, server.HbndleStbtus, config.Ctbgs.UniversblCommbnd, nil
 }
 
-func mustInitializeCodeIntelDB(observationCtx *observation.Context) *sql.DB {
-	dsn := conf.GetServiceConnectionValueAndRestartOnChange(func(serviceConnections conftypes.ServiceConnections) string {
+func mustInitiblizeCodeIntelDB(observbtionCtx *observbtion.Context) *sql.DB {
+	dsn := conf.GetServiceConnectionVblueAndRestbrtOnChbnge(func(serviceConnections conftypes.ServiceConnections) string {
 		return serviceConnections.CodeIntelPostgresDSN
 	})
-	var (
+	vbr (
 		db  *sql.DB
 		err error
 	)
-	db, err = connections.EnsureNewCodeIntelDB(observationCtx, dsn, "symbols")
+	db, err = connections.EnsureNewCodeIntelDB(observbtionCtx, dsn, "symbols")
 	if err != nil {
-		observationCtx.Logger.Fatal("failed to connect to codeintel database", log.Error(err))
+		observbtionCtx.Logger.Fbtbl("fbiled to connect to codeintel dbtbbbse", log.Error(err))
 	}
 
 	return db
 }
 
-func sliceContains(slice []string, s string) bool {
-	for _, v := range slice {
+func sliceContbins(slice []string, s string) bool {
+	for _, v := rbnge slice {
 		if v == s {
 			return true
 		}
 	}
-	return false
+	return fblse
 }

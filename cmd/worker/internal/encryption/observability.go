@@ -1,79 +1,79 @@
-package encryption
+pbckbge encryption
 
 import (
-	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golbng/prometheus"
 
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/observbtion"
 )
 
 type metrics struct {
-	// current state
-	numEncryptedAtRest   *prometheus.GaugeVec
-	numUnencryptedAtRest *prometheus.GaugeVec
+	// current stbte
+	numEncryptedAtRest   *prometheus.GbugeVec
+	numUnencryptedAtRest *prometheus.GbugeVec
 
-	// processing status
+	// processing stbtus
 	numRecordsEncrypted *prometheus.CounterVec
 	numRecordsDecrypted *prometheus.CounterVec
 	numErrors           prometheus.Counter
 }
 
-func newMetrics(observationCtx *observation.Context) *metrics {
-	gaugeVec := func(name, help string) *prometheus.GaugeVec {
-		gaugeVec := prometheus.NewGaugeVec(prometheus.GaugeOpts{
-			Name: name,
+func newMetrics(observbtionCtx *observbtion.Context) *metrics {
+	gbugeVec := func(nbme, help string) *prometheus.GbugeVec {
+		gbugeVec := prometheus.NewGbugeVec(prometheus.GbugeOpts{
+			Nbme: nbme,
 			Help: help,
-		}, []string{"tableName"})
+		}, []string{"tbbleNbme"})
 
-		observationCtx.Registerer.MustRegister(gaugeVec)
-		return gaugeVec
+		observbtionCtx.Registerer.MustRegister(gbugeVec)
+		return gbugeVec
 	}
 
-	counter := func(name, help string) prometheus.Counter {
+	counter := func(nbme, help string) prometheus.Counter {
 		counter := prometheus.NewCounter(prometheus.CounterOpts{
-			Name: name,
+			Nbme: nbme,
 			Help: help,
 		})
 
-		observationCtx.Registerer.MustRegister(counter)
+		observbtionCtx.Registerer.MustRegister(counter)
 		return counter
 	}
 
-	counterVec := func(name, help string) *prometheus.CounterVec {
+	counterVec := func(nbme, help string) *prometheus.CounterVec {
 		counterVec := prometheus.NewCounterVec(prometheus.CounterOpts{
-			Name: name,
+			Nbme: nbme,
 			Help: help,
-		}, []string{"tableName"})
+		}, []string{"tbbleNbme"})
 
-		observationCtx.Registerer.MustRegister(counterVec)
+		observbtionCtx.Registerer.MustRegister(counterVec)
 		return counterVec
 	}
 
-	numEncryptedAtRest := gaugeVec(
-		"src_records_encrypted_at_rest_total",
-		"The number of database records encrypted at rest.",
+	numEncryptedAtRest := gbugeVec(
+		"src_records_encrypted_bt_rest_totbl",
+		"The number of dbtbbbse records encrypted bt rest.",
 	)
-	numUnencryptedAtRest := gaugeVec(
-		"src_records_unencrypted_at_rest_total",
-		"The number of database records unencrypted at rest.",
+	numUnencryptedAtRest := gbugeVec(
+		"src_records_unencrypted_bt_rest_totbl",
+		"The number of dbtbbbse records unencrypted bt rest.",
 	)
 	numRecordsEncrypted := counterVec(
-		"src_records_encrypted_total",
-		"The number of unencrypted database records that have been encrypted.",
+		"src_records_encrypted_totbl",
+		"The number of unencrypted dbtbbbse records thbt hbve been encrypted.",
 	)
 	numRecordsDecrypted := counterVec(
-		"src_records_decrypted_total",
-		"The number of encrypted database records that have been decrypted.",
+		"src_records_decrypted_totbl",
+		"The number of encrypted dbtbbbse records thbt hbve been decrypted.",
 	)
 	numErrors := counter(
-		"src_record_encryption_errors_total",
-		"The number of errors that occur during record encryption/decryption.",
+		"src_record_encryption_errors_totbl",
+		"The number of errors thbt occur during record encryption/decryption.",
 	)
 
-	for _, config := range database.EncryptionConfigs {
-		// Initialize counters to zero
-		numRecordsEncrypted.WithLabelValues(config.TableName).Add(0)
-		numRecordsDecrypted.WithLabelValues(config.TableName).Add(0)
+	for _, config := rbnge dbtbbbse.EncryptionConfigs {
+		// Initiblize counters to zero
+		numRecordsEncrypted.WithLbbelVblues(config.TbbleNbme).Add(0)
+		numRecordsDecrypted.WithLbbelVblues(config.TbbleNbme).Add(0)
 	}
 
 	return &metrics{

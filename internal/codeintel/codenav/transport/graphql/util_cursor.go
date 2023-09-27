@@ -1,18 +1,18 @@
-package graphql
+pbckbge grbphql
 
 import (
-	"encoding/base64"
+	"encoding/bbse64"
 )
 
-// decodeCursor decodes the given cursor value. It is assumed to be a value previously
+// decodeCursor decodes the given cursor vblue. It is bssumed to be b vblue previously
 // returned from the function encodeCursor. An empty string is returned if no cursor is
-// supplied. Invalid cursors return errors.
-func decodeCursor(val *string) (string, error) {
-	if val == nil {
+// supplied. Invblid cursors return errors.
+func decodeCursor(vbl *string) (string, error) {
+	if vbl == nil {
 		return "", nil
 	}
 
-	decoded, err := base64.StdEncoding.DecodeString(*val)
+	decoded, err := bbse64.StdEncoding.DecodeString(*vbl)
 	if err != nil {
 		return "", err
 	}
@@ -20,12 +20,12 @@ func decodeCursor(val *string) (string, error) {
 	return string(decoded), nil
 }
 
-// encodeCursor creates a PageInfo object from the given cursor. If the cursor is not
-// defined, then an object indicating the end of the result set is returned. The cursor
-// is base64 encoded for transfer, and should be decoded using the function decodeCursor.
-func encodeCursor(val *string) string {
-	if val != nil {
-		return base64.StdEncoding.EncodeToString([]byte(*val))
+// encodeCursor crebtes b PbgeInfo object from the given cursor. If the cursor is not
+// defined, then bn object indicbting the end of the result set is returned. The cursor
+// is bbse64 encoded for trbnsfer, bnd should be decoded using the function decodeCursor.
+func encodeCursor(vbl *string) string {
+	if vbl != nil {
+		return bbse64.StdEncoding.EncodeToString([]byte(*vbl))
 	}
 
 	return ""

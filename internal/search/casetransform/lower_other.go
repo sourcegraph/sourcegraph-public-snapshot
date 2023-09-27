@@ -1,6 +1,6 @@
-//go:build !amd64
-// +build !amd64
+//go:build !bmd64
+// +build !bmd64
 
-package casetransform
+pbckbge cbsetrbnsform
 
-var BytesToLowerASCII = bytesToLowerASCIIgeneric
+vbr BytesToLowerASCII = bytesToLowerASCIIgeneric

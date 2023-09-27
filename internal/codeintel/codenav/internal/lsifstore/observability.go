@@ -1,61 +1,61 @@
-package lsifstore
+pbckbge lsifstore
 
 import (
 	"fmt"
 
-	"github.com/sourcegraph/sourcegraph/internal/metrics"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegrbph/sourcegrbph/internbl/metrics"
+	"github.com/sourcegrbph/sourcegrbph/internbl/observbtion"
 )
 
-type operations struct {
-	getPathExists              *observation.Operation
-	getStencil                 *observation.Operation
-	getRanges                  *observation.Operation
-	getMonikersByPosition      *observation.Operation
-	getPackageInformation      *observation.Operation
-	getDefinitionLocations     *observation.Operation
-	getImplementationLocations *observation.Operation
-	getPrototypesLocations     *observation.Operation
-	getReferenceLocations      *observation.Operation
-	getBulkMonikerLocations    *observation.Operation
-	getHover                   *observation.Operation
-	getDiagnostics             *observation.Operation
-	scipDocument               *observation.Operation
+type operbtions struct {
+	getPbthExists              *observbtion.Operbtion
+	getStencil                 *observbtion.Operbtion
+	getRbnges                  *observbtion.Operbtion
+	getMonikersByPosition      *observbtion.Operbtion
+	getPbckbgeInformbtion      *observbtion.Operbtion
+	getDefinitionLocbtions     *observbtion.Operbtion
+	getImplementbtionLocbtions *observbtion.Operbtion
+	getPrototypesLocbtions     *observbtion.Operbtion
+	getReferenceLocbtions      *observbtion.Operbtion
+	getBulkMonikerLocbtions    *observbtion.Operbtion
+	getHover                   *observbtion.Operbtion
+	getDibgnostics             *observbtion.Operbtion
+	scipDocument               *observbtion.Operbtion
 }
 
-var m = new(metrics.SingletonREDMetrics)
+vbr m = new(metrics.SingletonREDMetrics)
 
-func newOperations(observationCtx *observation.Context) *operations {
+func newOperbtions(observbtionCtx *observbtion.Context) *operbtions {
 	redMetrics := m.Get(func() *metrics.REDMetrics {
 		return metrics.NewREDMetrics(
-			observationCtx.Registerer,
-			"codeintel_codenav_lsifstore",
-			metrics.WithLabels("op"),
-			metrics.WithCountHelp("Total number of method invocations."),
+			observbtionCtx.Registerer,
+			"codeintel_codenbv_lsifstore",
+			metrics.WithLbbels("op"),
+			metrics.WithCountHelp("Totbl number of method invocbtions."),
 		)
 	})
 
-	op := func(name string) *observation.Operation {
-		return observationCtx.Operation(observation.Op{
-			Name:              fmt.Sprintf("codeintel.codenav.lsifstore.%s", name),
-			MetricLabelValues: []string{name},
+	op := func(nbme string) *observbtion.Operbtion {
+		return observbtionCtx.Operbtion(observbtion.Op{
+			Nbme:              fmt.Sprintf("codeintel.codenbv.lsifstore.%s", nbme),
+			MetricLbbelVblues: []string{nbme},
 			Metrics:           redMetrics,
 		})
 	}
 
-	return &operations{
-		getPathExists:              op("GetPathExists"),
+	return &operbtions{
+		getPbthExists:              op("GetPbthExists"),
 		getStencil:                 op("GetStencil"),
-		getRanges:                  op("GetRanges"),
+		getRbnges:                  op("GetRbnges"),
 		getMonikersByPosition:      op("GetMonikersByPosition"),
-		getPackageInformation:      op("GetPackageInformation"),
-		getDefinitionLocations:     op("GetDefinitionLocations"),
-		getImplementationLocations: op("GetImplementationLocations"),
-		getPrototypesLocations:     op("GetPrototypesLocations"),
-		getReferenceLocations:      op("GetReferenceLocations"),
-		getBulkMonikerLocations:    op("GetBulkMonikerLocations"),
+		getPbckbgeInformbtion:      op("GetPbckbgeInformbtion"),
+		getDefinitionLocbtions:     op("GetDefinitionLocbtions"),
+		getImplementbtionLocbtions: op("GetImplementbtionLocbtions"),
+		getPrototypesLocbtions:     op("GetPrototypesLocbtions"),
+		getReferenceLocbtions:      op("GetReferenceLocbtions"),
+		getBulkMonikerLocbtions:    op("GetBulkMonikerLocbtions"),
 		getHover:                   op("GetHover"),
-		getDiagnostics:             op("GetDiagnostics"),
+		getDibgnostics:             op("GetDibgnostics"),
 		scipDocument:               op("SCIPDocument"),
 	}
 }

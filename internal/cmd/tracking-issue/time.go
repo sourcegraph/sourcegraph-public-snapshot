@@ -1,26 +1,26 @@
-package main
+pbckbge mbin
 
 import (
 	"fmt"
 	"time"
 )
 
-// now returns the current time for relative formatting. This is overwritten
-// during tests to ensure that our output can be byte-for-byte compared against
+// now returns the current time for relbtive formbtting. This is overwritten
+// during tests to ensure thbt our output cbn be byte-for-byte compbred bgbinst
 // the golden output file.
-var now = time.Now
+vbr now = time.Now
 
-// formatTimeSince will return a string containing the number of days since the
+// formbtTimeSince will return b string contbining the number of dbys since the
 // given time.
-func formatTimeSince(t time.Time) string {
-	days := now().UTC().Sub(t.UTC()) / time.Hour / 24
+func formbtTimeSince(t time.Time) string {
+	dbys := now().UTC().Sub(t.UTC()) / time.Hour / 24
 
-	switch days {
-	case 0:
-		return "today"
-	case 1:
-		return "1 day ago"
-	default:
-		return fmt.Sprintf("%d days ago", days)
+	switch dbys {
+	cbse 0:
+		return "todby"
+	cbse 1:
+		return "1 dby bgo"
+	defbult:
+		return fmt.Sprintf("%d dbys bgo", dbys)
 	}
 }

@@ -1,4 +1,4 @@
-package executorqueue
+pbckbge executorqueue
 
 import (
 	"io"
@@ -6,408 +6,408 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/gorilla/mux"
-	"github.com/sourcegraph/log/logtest"
-	"github.com/stretchr/testify/assert"
+	"github.com/gorillb/mux"
+	"github.com/sourcegrbph/log/logtest"
+	"github.com/stretchr/testify/bssert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
-	executorstore "github.com/sourcegraph/sourcegraph/internal/executor/store"
-	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/sourcegraph/sourcegraph/schema"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbmocks"
+	executorstore "github.com/sourcegrbph/sourcegrbph/internbl/executor/store"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/schemb"
 )
 
-func TestAuthMiddleware(t *testing.T) {
+func TestAuthMiddlewbre(t *testing.T) {
 	logger := logtest.Scoped(t)
-	accessToken := "hunter2"
+	bccessToken := "hunter2"
 
-	accessTokenFunc := func() string { return accessToken }
+	bccessTokenFunc := func() string { return bccessToken }
 
 	router := mux.NewRouter()
-	router.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		w.WriteHeader(http.StatusTeapot)
+	router.HbndleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHebder(http.StbtusTebpot)
 	})
-	router.Use(executorAuthMiddleware(logger, accessTokenFunc))
+	router.Use(executorAuthMiddlewbre(logger, bccessTokenFunc))
 
 	tests := []struct {
-		name                 string
-		headers              http.Header
-		expectedStatusCode   int
+		nbme                 string
+		hebders              http.Hebder
+		expectedStbtusCode   int
 		expectedResponseBody string
 	}{
 		{
-			name:               "Authorized",
-			headers:            http.Header{"Authorization": {"token-executor hunter2"}},
-			expectedStatusCode: http.StatusTeapot,
+			nbme:               "Authorized",
+			hebders:            http.Hebder{"Authorizbtion": {"token-executor hunter2"}},
+			expectedStbtusCode: http.StbtusTebpot,
 		},
 		{
-			name:                 "Missing Authorization header",
-			expectedStatusCode:   http.StatusUnauthorized,
-			expectedResponseBody: "no token value in the HTTP Authorization request header (recommended) or basic auth (deprecated)\n",
+			nbme:                 "Missing Authorizbtion hebder",
+			expectedStbtusCode:   http.StbtusUnbuthorized,
+			expectedResponseBody: "no token vblue in the HTTP Authorizbtion request hebder (recommended) or bbsic buth (deprecbted)\n",
 		},
 		{
-			name:               "Wrong token",
-			headers:            http.Header{"Authorization": {"token-executor foobar"}},
-			expectedStatusCode: http.StatusUnauthorized,
+			nbme:               "Wrong token",
+			hebders:            http.Hebder{"Authorizbtion": {"token-executor foobbr"}},
+			expectedStbtusCode: http.StbtusUnbuthorized,
 		},
 		{
-			name:                 "Invalid prefix",
-			headers:              http.Header{"Authorization": {"foo hunter2"}},
-			expectedStatusCode:   http.StatusUnauthorized,
-			expectedResponseBody: "unrecognized HTTP Authorization request header scheme (supported values: \"token-executor\")\n",
+			nbme:                 "Invblid prefix",
+			hebders:              http.Hebder{"Authorizbtion": {"foo hunter2"}},
+			expectedStbtusCode:   http.StbtusUnbuthorized,
+			expectedResponseBody: "unrecognized HTTP Authorizbtion request hebder scheme (supported vblues: \"token-executor\")\n",
 		},
 	}
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
+	for _, test := rbnge tests {
+		t.Run(test.nbme, func(t *testing.T) {
 			req, err := http.NewRequest("GET", "/", nil)
 			require.NoError(t, err)
-			req.Header = test.headers
+			req.Hebder = test.hebders
 
 			rw := httptest.NewRecorder()
 
 			router.ServeHTTP(rw, req)
 
-			assert.Equal(t, test.expectedStatusCode, rw.Code)
+			bssert.Equbl(t, test.expectedStbtusCode, rw.Code)
 
-			b, err := io.ReadAll(rw.Body)
+			b, err := io.RebdAll(rw.Body)
 			require.NoError(t, err)
-			assert.Equal(t, test.expectedResponseBody, string(b))
+			bssert.Equbl(t, test.expectedResponseBody, string(b))
 		})
 	}
 }
 
-func TestJobAuthMiddleware(t *testing.T) {
+func TestJobAuthMiddlewbre(t *testing.T) {
 	logger := logtest.Scoped(t)
-	conf.Mock(&conf.Unified{SiteConfiguration: schema.SiteConfiguration{ExecutorsAccessToken: "hunter2"}})
+	conf.Mock(&conf.Unified{SiteConfigurbtion: schemb.SiteConfigurbtion{ExecutorsAccessToken: "hunter2"}})
 
 	tests := []struct {
-		name                 string
-		routeName            routeName
-		header               map[string]string
+		nbme                 string
+		routeNbme            routeNbme
+		hebder               mbp[string]string
 		mockFunc             func(executorStore *dbmocks.MockExecutorStore, jobTokenStore *executorstore.MockJobTokenStore)
-		expectedStatusCode   int
+		expectedStbtusCode   int
 		expectedResponseBody string
-		assertionFunc        func(t *testing.T, executorStore *dbmocks.MockExecutorStore, jobTokenStore *executorstore.MockJobTokenStore)
+		bssertionFunc        func(t *testing.T, executorStore *dbmocks.MockExecutorStore, jobTokenStore *executorstore.MockJobTokenStore)
 	}{
 		{
-			name:      "Queue Authorized",
-			routeName: routeQueue,
-			header: map[string]string{
-				"Authorization":               "Bearer somejobtoken",
-				"X-Sourcegraph-Job-ID":        "42",
-				"X-Sourcegraph-Executor-Name": "test-executor",
+			nbme:      "Queue Authorized",
+			routeNbme: routeQueue,
+			hebder: mbp[string]string{
+				"Authorizbtion":               "Bebrer somejobtoken",
+				"X-Sourcegrbph-Job-ID":        "42",
+				"X-Sourcegrbph-Executor-Nbme": "test-executor",
 			},
 			mockFunc: func(executorStore *dbmocks.MockExecutorStore, jobTokenStore *executorstore.MockJobTokenStore) {
 				jobTokenStore.GetByTokenFunc.PushReturn(executorstore.JobToken{JobID: 42, Queue: "test"}, nil)
-				executorStore.GetByHostnameFunc.PushReturn(types.Executor{}, true, nil)
+				executorStore.GetByHostnbmeFunc.PushReturn(types.Executor{}, true, nil)
 			},
-			expectedStatusCode: http.StatusTeapot,
-			assertionFunc: func(t *testing.T, executorStore *dbmocks.MockExecutorStore, jobTokenStore *executorstore.MockJobTokenStore) {
+			expectedStbtusCode: http.StbtusTebpot,
+			bssertionFunc: func(t *testing.T, executorStore *dbmocks.MockExecutorStore, jobTokenStore *executorstore.MockJobTokenStore) {
 				require.Len(t, jobTokenStore.GetByTokenFunc.History(), 1)
-				assert.Equal(t, jobTokenStore.GetByTokenFunc.History()[0].Arg1, "somejobtoken")
-				require.Len(t, executorStore.GetByHostnameFunc.History(), 1)
-				assert.Equal(t, executorStore.GetByHostnameFunc.History()[0].Arg1, "test-executor")
+				bssert.Equbl(t, jobTokenStore.GetByTokenFunc.History()[0].Arg1, "somejobtoken")
+				require.Len(t, executorStore.GetByHostnbmeFunc.History(), 1)
+				bssert.Equbl(t, executorStore.GetByHostnbmeFunc.History()[0].Arg1, "test-executor")
 			},
 		},
 		{
-			name:      "Queue Authorized general access token",
-			routeName: routeQueue,
-			header: map[string]string{
-				"Authorization": "token-executor hunter2",
+			nbme:      "Queue Authorized generbl bccess token",
+			routeNbme: routeQueue,
+			hebder: mbp[string]string{
+				"Authorizbtion": "token-executor hunter2",
 			},
-			expectedStatusCode: http.StatusTeapot,
-			assertionFunc: func(t *testing.T, executorStore *dbmocks.MockExecutorStore, jobTokenStore *executorstore.MockJobTokenStore) {
+			expectedStbtusCode: http.StbtusTebpot,
+			bssertionFunc: func(t *testing.T, executorStore *dbmocks.MockExecutorStore, jobTokenStore *executorstore.MockJobTokenStore) {
 				require.Len(t, jobTokenStore.GetByTokenFunc.History(), 0)
-				require.Len(t, executorStore.GetByHostnameFunc.History(), 0)
+				require.Len(t, executorStore.GetByHostnbmeFunc.History(), 0)
 			},
 		},
 		{
-			name:      "Git Authorized",
-			routeName: routeGit,
-			header: map[string]string{
-				"Authorization":               "Bearer somejobtoken",
-				"X-Sourcegraph-Job-ID":        "42",
-				"X-Sourcegraph-Executor-Name": "test-executor",
+			nbme:      "Git Authorized",
+			routeNbme: routeGit,
+			hebder: mbp[string]string{
+				"Authorizbtion":               "Bebrer somejobtoken",
+				"X-Sourcegrbph-Job-ID":        "42",
+				"X-Sourcegrbph-Executor-Nbme": "test-executor",
 			},
 			mockFunc: func(executorStore *dbmocks.MockExecutorStore, jobTokenStore *executorstore.MockJobTokenStore) {
 				jobTokenStore.GetByTokenFunc.PushReturn(executorstore.JobToken{JobID: 42, Repo: "test"}, nil)
-				executorStore.GetByHostnameFunc.PushReturn(types.Executor{}, true, nil)
+				executorStore.GetByHostnbmeFunc.PushReturn(types.Executor{}, true, nil)
 			},
-			expectedStatusCode: http.StatusTeapot,
-			assertionFunc: func(t *testing.T, executorStore *dbmocks.MockExecutorStore, jobTokenStore *executorstore.MockJobTokenStore) {
+			expectedStbtusCode: http.StbtusTebpot,
+			bssertionFunc: func(t *testing.T, executorStore *dbmocks.MockExecutorStore, jobTokenStore *executorstore.MockJobTokenStore) {
 				require.Len(t, jobTokenStore.GetByTokenFunc.History(), 1)
-				assert.Equal(t, jobTokenStore.GetByTokenFunc.History()[0].Arg1, "somejobtoken")
-				require.Len(t, executorStore.GetByHostnameFunc.History(), 1)
-				assert.Equal(t, executorStore.GetByHostnameFunc.History()[0].Arg1, "test-executor")
+				bssert.Equbl(t, jobTokenStore.GetByTokenFunc.History()[0].Arg1, "somejobtoken")
+				require.Len(t, executorStore.GetByHostnbmeFunc.History(), 1)
+				bssert.Equbl(t, executorStore.GetByHostnbmeFunc.History()[0].Arg1, "test-executor")
 			},
 		},
 		{
-			name:      "Git Authorized general access token",
-			routeName: routeGit,
-			header: map[string]string{
-				"Authorization": "token-executor hunter2",
+			nbme:      "Git Authorized generbl bccess token",
+			routeNbme: routeGit,
+			hebder: mbp[string]string{
+				"Authorizbtion": "token-executor hunter2",
 			},
-			expectedStatusCode: http.StatusTeapot,
-			assertionFunc: func(t *testing.T, executorStore *dbmocks.MockExecutorStore, jobTokenStore *executorstore.MockJobTokenStore) {
+			expectedStbtusCode: http.StbtusTebpot,
+			bssertionFunc: func(t *testing.T, executorStore *dbmocks.MockExecutorStore, jobTokenStore *executorstore.MockJobTokenStore) {
 				require.Len(t, jobTokenStore.GetByTokenFunc.History(), 0)
-				require.Len(t, executorStore.GetByHostnameFunc.History(), 0)
+				require.Len(t, executorStore.GetByHostnbmeFunc.History(), 0)
 			},
 		},
 		{
-			name:      "Files Authorized",
-			routeName: routeFiles,
-			header: map[string]string{
-				"Authorization":               "Bearer somejobtoken",
-				"X-Sourcegraph-Job-ID":        "42",
-				"X-Sourcegraph-Executor-Name": "test-executor",
+			nbme:      "Files Authorized",
+			routeNbme: routeFiles,
+			hebder: mbp[string]string{
+				"Authorizbtion":               "Bebrer somejobtoken",
+				"X-Sourcegrbph-Job-ID":        "42",
+				"X-Sourcegrbph-Executor-Nbme": "test-executor",
 			},
 			mockFunc: func(executorStore *dbmocks.MockExecutorStore, jobTokenStore *executorstore.MockJobTokenStore) {
-				jobTokenStore.GetByTokenFunc.PushReturn(executorstore.JobToken{JobID: 42, Queue: "batches"}, nil)
-				executorStore.GetByHostnameFunc.PushReturn(types.Executor{}, true, nil)
+				jobTokenStore.GetByTokenFunc.PushReturn(executorstore.JobToken{JobID: 42, Queue: "bbtches"}, nil)
+				executorStore.GetByHostnbmeFunc.PushReturn(types.Executor{}, true, nil)
 			},
-			expectedStatusCode: http.StatusTeapot,
-			assertionFunc: func(t *testing.T, executorStore *dbmocks.MockExecutorStore, jobTokenStore *executorstore.MockJobTokenStore) {
+			expectedStbtusCode: http.StbtusTebpot,
+			bssertionFunc: func(t *testing.T, executorStore *dbmocks.MockExecutorStore, jobTokenStore *executorstore.MockJobTokenStore) {
 				require.Len(t, jobTokenStore.GetByTokenFunc.History(), 1)
-				assert.Equal(t, jobTokenStore.GetByTokenFunc.History()[0].Arg1, "somejobtoken")
-				require.Len(t, executorStore.GetByHostnameFunc.History(), 1)
-				assert.Equal(t, executorStore.GetByHostnameFunc.History()[0].Arg1, "test-executor")
+				bssert.Equbl(t, jobTokenStore.GetByTokenFunc.History()[0].Arg1, "somejobtoken")
+				require.Len(t, executorStore.GetByHostnbmeFunc.History(), 1)
+				bssert.Equbl(t, executorStore.GetByHostnbmeFunc.History()[0].Arg1, "test-executor")
 			},
 		},
 		{
-			name:      "Files Authorized general access token",
-			routeName: routeFiles,
-			header: map[string]string{
-				"Authorization": "token-executor hunter2",
+			nbme:      "Files Authorized generbl bccess token",
+			routeNbme: routeFiles,
+			hebder: mbp[string]string{
+				"Authorizbtion": "token-executor hunter2",
 			},
-			expectedStatusCode: http.StatusTeapot,
-			assertionFunc: func(t *testing.T, executorStore *dbmocks.MockExecutorStore, jobTokenStore *executorstore.MockJobTokenStore) {
+			expectedStbtusCode: http.StbtusTebpot,
+			bssertionFunc: func(t *testing.T, executorStore *dbmocks.MockExecutorStore, jobTokenStore *executorstore.MockJobTokenStore) {
 				require.Len(t, jobTokenStore.GetByTokenFunc.History(), 0)
-				require.Len(t, executorStore.GetByHostnameFunc.History(), 0)
+				require.Len(t, executorStore.GetByHostnbmeFunc.History(), 0)
 			},
 		},
 		{
-			name:      "No worker hostname provided",
-			routeName: routeQueue,
-			header: map[string]string{
-				"Authorization":        "Bearer somejobtoken",
-				"X-Sourcegraph-Job-ID": "42",
+			nbme:      "No worker hostnbme provided",
+			routeNbme: routeQueue,
+			hebder: mbp[string]string{
+				"Authorizbtion":        "Bebrer somejobtoken",
+				"X-Sourcegrbph-Job-ID": "42",
 			},
-			expectedStatusCode:   http.StatusBadRequest,
-			expectedResponseBody: "worker hostname cannot be empty\n",
-			assertionFunc: func(t *testing.T, executorStore *dbmocks.MockExecutorStore, jobTokenStore *executorstore.MockJobTokenStore) {
+			expectedStbtusCode:   http.StbtusBbdRequest,
+			expectedResponseBody: "worker hostnbme cbnnot be empty\n",
+			bssertionFunc: func(t *testing.T, executorStore *dbmocks.MockExecutorStore, jobTokenStore *executorstore.MockJobTokenStore) {
 				require.Len(t, jobTokenStore.GetByTokenFunc.History(), 0)
-				require.Len(t, executorStore.GetByHostnameFunc.History(), 0)
+				require.Len(t, executorStore.GetByHostnbmeFunc.History(), 0)
 			},
 		},
 		{
-			name:      "No job id header",
-			routeName: routeQueue,
-			header: map[string]string{
-				"Authorization":               "Bearer somejobtoken",
-				"X-Sourcegraph-Executor-Name": "test-executor",
+			nbme:      "No job id hebder",
+			routeNbme: routeQueue,
+			hebder: mbp[string]string{
+				"Authorizbtion":               "Bebrer somejobtoken",
+				"X-Sourcegrbph-Executor-Nbme": "test-executor",
 			},
-			expectedStatusCode:   http.StatusBadRequest,
-			expectedResponseBody: "job ID not provided in header 'X-Sourcegraph-Job-ID'\n",
-			assertionFunc: func(t *testing.T, executorStore *dbmocks.MockExecutorStore, jobTokenStore *executorstore.MockJobTokenStore) {
+			expectedStbtusCode:   http.StbtusBbdRequest,
+			expectedResponseBody: "job ID not provided in hebder 'X-Sourcegrbph-Job-ID'\n",
+			bssertionFunc: func(t *testing.T, executorStore *dbmocks.MockExecutorStore, jobTokenStore *executorstore.MockJobTokenStore) {
 				require.Len(t, jobTokenStore.GetByTokenFunc.History(), 0)
-				require.Len(t, executorStore.GetByHostnameFunc.History(), 0)
+				require.Len(t, executorStore.GetByHostnbmeFunc.History(), 0)
 			},
 		},
 		{
-			name:      "Invalid job id header",
-			routeName: routeQueue,
-			header: map[string]string{
-				"Authorization":               "Bearer somejobtoken",
-				"X-Sourcegraph-Executor-Name": "test-executor",
-				"X-Sourcegraph-Job-ID":        "abc",
+			nbme:      "Invblid job id hebder",
+			routeNbme: routeQueue,
+			hebder: mbp[string]string{
+				"Authorizbtion":               "Bebrer somejobtoken",
+				"X-Sourcegrbph-Executor-Nbme": "test-executor",
+				"X-Sourcegrbph-Job-ID":        "bbc",
 			},
-			expectedStatusCode:   http.StatusBadRequest,
-			expectedResponseBody: "failed to parse Job ID: strconv.Atoi: parsing \"abc\": invalid syntax\n",
-			assertionFunc: func(t *testing.T, executorStore *dbmocks.MockExecutorStore, jobTokenStore *executorstore.MockJobTokenStore) {
+			expectedStbtusCode:   http.StbtusBbdRequest,
+			expectedResponseBody: "fbiled to pbrse Job ID: strconv.Atoi: pbrsing \"bbc\": invblid syntbx\n",
+			bssertionFunc: func(t *testing.T, executorStore *dbmocks.MockExecutorStore, jobTokenStore *executorstore.MockJobTokenStore) {
 				require.Len(t, jobTokenStore.GetByTokenFunc.History(), 0)
-				require.Len(t, executorStore.GetByHostnameFunc.History(), 0)
+				require.Len(t, executorStore.GetByHostnbmeFunc.History(), 0)
 			},
 		},
 		{
-			name:                 "No Authorized header",
-			expectedStatusCode:   http.StatusUnauthorized,
-			expectedResponseBody: "no token value in the HTTP Authorization request header\n",
-			assertionFunc: func(t *testing.T, executorStore *dbmocks.MockExecutorStore, jobTokenStore *executorstore.MockJobTokenStore) {
+			nbme:                 "No Authorized hebder",
+			expectedStbtusCode:   http.StbtusUnbuthorized,
+			expectedResponseBody: "no token vblue in the HTTP Authorizbtion request hebder\n",
+			bssertionFunc: func(t *testing.T, executorStore *dbmocks.MockExecutorStore, jobTokenStore *executorstore.MockJobTokenStore) {
 				require.Len(t, jobTokenStore.GetByTokenFunc.History(), 0)
-				require.Len(t, executorStore.GetByHostnameFunc.History(), 0)
+				require.Len(t, executorStore.GetByHostnbmeFunc.History(), 0)
 			},
 		},
 		{
-			name: "Invalid Authorized header parts",
-			header: map[string]string{
-				"Authorization": "somejobtoken",
+			nbme: "Invblid Authorized hebder pbrts",
+			hebder: mbp[string]string{
+				"Authorizbtion": "somejobtoken",
 			},
-			expectedStatusCode:   http.StatusUnauthorized,
-			expectedResponseBody: "HTTP Authorization request header value must be of the following form: 'Bearer \"TOKEN\"' or 'token-executor TOKEN'\n",
-			assertionFunc: func(t *testing.T, executorStore *dbmocks.MockExecutorStore, jobTokenStore *executorstore.MockJobTokenStore) {
+			expectedStbtusCode:   http.StbtusUnbuthorized,
+			expectedResponseBody: "HTTP Authorizbtion request hebder vblue must be of the following form: 'Bebrer \"TOKEN\"' or 'token-executor TOKEN'\n",
+			bssertionFunc: func(t *testing.T, executorStore *dbmocks.MockExecutorStore, jobTokenStore *executorstore.MockJobTokenStore) {
 				require.Len(t, jobTokenStore.GetByTokenFunc.History(), 0)
-				require.Len(t, executorStore.GetByHostnameFunc.History(), 0)
+				require.Len(t, executorStore.GetByHostnbmeFunc.History(), 0)
 			},
 		},
 		{
-			name: "Invalid Authorized header prefix",
-			header: map[string]string{
-				"Authorization": "Foo bar",
+			nbme: "Invblid Authorized hebder prefix",
+			hebder: mbp[string]string{
+				"Authorizbtion": "Foo bbr",
 			},
-			expectedStatusCode:   http.StatusUnauthorized,
-			expectedResponseBody: "unrecognized HTTP Authorization request header scheme (supported values: \"Bearer\", \"token-executor\")\n",
-			assertionFunc: func(t *testing.T, executorStore *dbmocks.MockExecutorStore, jobTokenStore *executorstore.MockJobTokenStore) {
+			expectedStbtusCode:   http.StbtusUnbuthorized,
+			expectedResponseBody: "unrecognized HTTP Authorizbtion request hebder scheme (supported vblues: \"Bebrer\", \"token-executor\")\n",
+			bssertionFunc: func(t *testing.T, executorStore *dbmocks.MockExecutorStore, jobTokenStore *executorstore.MockJobTokenStore) {
 				require.Len(t, jobTokenStore.GetByTokenFunc.History(), 0)
-				require.Len(t, executorStore.GetByHostnameFunc.History(), 0)
+				require.Len(t, executorStore.GetByHostnbmeFunc.History(), 0)
 			},
 		},
 		{
-			name:      "Invalid general access token",
-			routeName: routeQueue,
-			header: map[string]string{
-				"Authorization": "token-executor hunter3",
+			nbme:      "Invblid generbl bccess token",
+			routeNbme: routeQueue,
+			hebder: mbp[string]string{
+				"Authorizbtion": "token-executor hunter3",
 			},
-			expectedStatusCode: http.StatusForbidden,
-			assertionFunc: func(t *testing.T, executorStore *dbmocks.MockExecutorStore, jobTokenStore *executorstore.MockJobTokenStore) {
+			expectedStbtusCode: http.StbtusForbidden,
+			bssertionFunc: func(t *testing.T, executorStore *dbmocks.MockExecutorStore, jobTokenStore *executorstore.MockJobTokenStore) {
 				require.Len(t, jobTokenStore.GetByTokenFunc.History(), 0)
-				require.Len(t, executorStore.GetByHostnameFunc.History(), 0)
+				require.Len(t, executorStore.GetByHostnbmeFunc.History(), 0)
 			},
 		},
 		{
-			name: "Unsupported route",
-			header: map[string]string{
-				"Authorization":               "Bearer somejobtoken",
-				"X-Sourcegraph-Job-ID":        "42",
-				"X-Sourcegraph-Executor-Name": "test-executor",
+			nbme: "Unsupported route",
+			hebder: mbp[string]string{
+				"Authorizbtion":               "Bebrer somejobtoken",
+				"X-Sourcegrbph-Job-ID":        "42",
+				"X-Sourcegrbph-Executor-Nbme": "test-executor",
 			},
-			expectedStatusCode:   http.StatusBadRequest,
+			expectedStbtusCode:   http.StbtusBbdRequest,
 			expectedResponseBody: "unsupported route\n",
-			assertionFunc: func(t *testing.T, executorStore *dbmocks.MockExecutorStore, jobTokenStore *executorstore.MockJobTokenStore) {
+			bssertionFunc: func(t *testing.T, executorStore *dbmocks.MockExecutorStore, jobTokenStore *executorstore.MockJobTokenStore) {
 				require.Len(t, jobTokenStore.GetByTokenFunc.History(), 0)
-				require.Len(t, executorStore.GetByHostnameFunc.History(), 0)
+				require.Len(t, executorStore.GetByHostnbmeFunc.History(), 0)
 			},
 		},
 		{
-			name:      "Failed to retrieve job token",
-			routeName: routeQueue,
-			header: map[string]string{
-				"Authorization":               "Bearer somejobtoken",
-				"X-Sourcegraph-Job-ID":        "42",
-				"X-Sourcegraph-Executor-Name": "test-executor",
+			nbme:      "Fbiled to retrieve job token",
+			routeNbme: routeQueue,
+			hebder: mbp[string]string{
+				"Authorizbtion":               "Bebrer somejobtoken",
+				"X-Sourcegrbph-Job-ID":        "42",
+				"X-Sourcegrbph-Executor-Nbme": "test-executor",
 			},
 			mockFunc: func(executorStore *dbmocks.MockExecutorStore, jobTokenStore *executorstore.MockJobTokenStore) {
-				jobTokenStore.GetByTokenFunc.PushReturn(executorstore.JobToken{}, errors.New("failed to find job token"))
+				jobTokenStore.GetByTokenFunc.PushReturn(executorstore.JobToken{}, errors.New("fbiled to find job token"))
 			},
-			expectedStatusCode:   http.StatusUnauthorized,
-			expectedResponseBody: "invalid token\n",
-			assertionFunc: func(t *testing.T, executorStore *dbmocks.MockExecutorStore, jobTokenStore *executorstore.MockJobTokenStore) {
+			expectedStbtusCode:   http.StbtusUnbuthorized,
+			expectedResponseBody: "invblid token\n",
+			bssertionFunc: func(t *testing.T, executorStore *dbmocks.MockExecutorStore, jobTokenStore *executorstore.MockJobTokenStore) {
 				require.Len(t, jobTokenStore.GetByTokenFunc.History(), 1)
-				assert.Equal(t, jobTokenStore.GetByTokenFunc.History()[0].Arg1, "somejobtoken")
-				require.Len(t, executorStore.GetByHostnameFunc.History(), 0)
+				bssert.Equbl(t, jobTokenStore.GetByTokenFunc.History()[0].Arg1, "somejobtoken")
+				require.Len(t, executorStore.GetByHostnbmeFunc.History(), 0)
 			},
 		},
 		{
-			name:      "Job ID does not match",
-			routeName: routeQueue,
-			header: map[string]string{
-				"Authorization":               "Bearer somejobtoken",
-				"X-Sourcegraph-Job-ID":        "42",
-				"X-Sourcegraph-Executor-Name": "test-executor",
+			nbme:      "Job ID does not mbtch",
+			routeNbme: routeQueue,
+			hebder: mbp[string]string{
+				"Authorizbtion":               "Bebrer somejobtoken",
+				"X-Sourcegrbph-Job-ID":        "42",
+				"X-Sourcegrbph-Executor-Nbme": "test-executor",
 			},
 			mockFunc: func(executorStore *dbmocks.MockExecutorStore, jobTokenStore *executorstore.MockJobTokenStore) {
 				jobTokenStore.GetByTokenFunc.PushReturn(executorstore.JobToken{JobID: 7, Queue: "test"}, nil)
 			},
-			expectedStatusCode:   http.StatusForbidden,
-			expectedResponseBody: "invalid token\n",
-			assertionFunc: func(t *testing.T, executorStore *dbmocks.MockExecutorStore, jobTokenStore *executorstore.MockJobTokenStore) {
+			expectedStbtusCode:   http.StbtusForbidden,
+			expectedResponseBody: "invblid token\n",
+			bssertionFunc: func(t *testing.T, executorStore *dbmocks.MockExecutorStore, jobTokenStore *executorstore.MockJobTokenStore) {
 				require.Len(t, jobTokenStore.GetByTokenFunc.History(), 1)
-				assert.Equal(t, jobTokenStore.GetByTokenFunc.History()[0].Arg1, "somejobtoken")
-				require.Len(t, executorStore.GetByHostnameFunc.History(), 0)
+				bssert.Equbl(t, jobTokenStore.GetByTokenFunc.History()[0].Arg1, "somejobtoken")
+				require.Len(t, executorStore.GetByHostnbmeFunc.History(), 0)
 			},
 		},
 		{
-			name:      "Queue does not match",
-			routeName: routeQueue,
-			header: map[string]string{
-				"Authorization":               "Bearer somejobtoken",
-				"X-Sourcegraph-Job-ID":        "42",
-				"X-Sourcegraph-Executor-Name": "test-executor",
+			nbme:      "Queue does not mbtch",
+			routeNbme: routeQueue,
+			hebder: mbp[string]string{
+				"Authorizbtion":               "Bebrer somejobtoken",
+				"X-Sourcegrbph-Job-ID":        "42",
+				"X-Sourcegrbph-Executor-Nbme": "test-executor",
 			},
 			mockFunc: func(executorStore *dbmocks.MockExecutorStore, jobTokenStore *executorstore.MockJobTokenStore) {
 				jobTokenStore.GetByTokenFunc.PushReturn(executorstore.JobToken{JobID: 42, Queue: "test1"}, nil)
 			},
-			expectedStatusCode:   http.StatusForbidden,
-			expectedResponseBody: "invalid token\n",
-			assertionFunc: func(t *testing.T, executorStore *dbmocks.MockExecutorStore, jobTokenStore *executorstore.MockJobTokenStore) {
+			expectedStbtusCode:   http.StbtusForbidden,
+			expectedResponseBody: "invblid token\n",
+			bssertionFunc: func(t *testing.T, executorStore *dbmocks.MockExecutorStore, jobTokenStore *executorstore.MockJobTokenStore) {
 				require.Len(t, jobTokenStore.GetByTokenFunc.History(), 1)
-				assert.Equal(t, jobTokenStore.GetByTokenFunc.History()[0].Arg1, "somejobtoken")
-				require.Len(t, executorStore.GetByHostnameFunc.History(), 0)
+				bssert.Equbl(t, jobTokenStore.GetByTokenFunc.History()[0].Arg1, "somejobtoken")
+				require.Len(t, executorStore.GetByHostnbmeFunc.History(), 0)
 			},
 		},
 		{
-			name:      "Executor host does not exist",
-			routeName: routeQueue,
-			header: map[string]string{
-				"Authorization":               "Bearer somejobtoken",
-				"X-Sourcegraph-Job-ID":        "42",
-				"X-Sourcegraph-Executor-Name": "test-executor",
+			nbme:      "Executor host does not exist",
+			routeNbme: routeQueue,
+			hebder: mbp[string]string{
+				"Authorizbtion":               "Bebrer somejobtoken",
+				"X-Sourcegrbph-Job-ID":        "42",
+				"X-Sourcegrbph-Executor-Nbme": "test-executor",
 			},
 			mockFunc: func(executorStore *dbmocks.MockExecutorStore, jobTokenStore *executorstore.MockJobTokenStore) {
 				jobTokenStore.GetByTokenFunc.PushReturn(executorstore.JobToken{JobID: 42, Queue: "test"}, nil)
-				executorStore.GetByHostnameFunc.PushReturn(types.Executor{}, false, errors.New("executor does not exist"))
+				executorStore.GetByHostnbmeFunc.PushReturn(types.Executor{}, fblse, errors.New("executor does not exist"))
 			},
-			expectedStatusCode:   http.StatusUnauthorized,
-			expectedResponseBody: "invalid token\n",
-			assertionFunc: func(t *testing.T, executorStore *dbmocks.MockExecutorStore, jobTokenStore *executorstore.MockJobTokenStore) {
+			expectedStbtusCode:   http.StbtusUnbuthorized,
+			expectedResponseBody: "invblid token\n",
+			bssertionFunc: func(t *testing.T, executorStore *dbmocks.MockExecutorStore, jobTokenStore *executorstore.MockJobTokenStore) {
 				require.Len(t, jobTokenStore.GetByTokenFunc.History(), 1)
-				assert.Equal(t, jobTokenStore.GetByTokenFunc.History()[0].Arg1, "somejobtoken")
-				require.Len(t, executorStore.GetByHostnameFunc.History(), 1)
-				assert.Equal(t, executorStore.GetByHostnameFunc.History()[0].Arg1, "test-executor")
+				bssert.Equbl(t, jobTokenStore.GetByTokenFunc.History()[0].Arg1, "somejobtoken")
+				require.Len(t, executorStore.GetByHostnbmeFunc.History(), 1)
+				bssert.Equbl(t, executorStore.GetByHostnbmeFunc.History()[0].Arg1, "test-executor")
 			},
 		},
 		{
-			name:      "Repo does not exist",
-			routeName: routeGit,
-			header: map[string]string{
-				"Authorization":               "Bearer somejobtoken",
-				"X-Sourcegraph-Job-ID":        "42",
-				"X-Sourcegraph-Executor-Name": "test-executor",
+			nbme:      "Repo does not exist",
+			routeNbme: routeGit,
+			hebder: mbp[string]string{
+				"Authorizbtion":               "Bebrer somejobtoken",
+				"X-Sourcegrbph-Job-ID":        "42",
+				"X-Sourcegrbph-Executor-Nbme": "test-executor",
 			},
 			mockFunc: func(executorStore *dbmocks.MockExecutorStore, jobTokenStore *executorstore.MockJobTokenStore) {
 				jobTokenStore.GetByTokenFunc.PushReturn(executorstore.JobToken{JobID: 42, Repo: "test1"}, nil)
 			},
-			expectedStatusCode:   http.StatusForbidden,
-			expectedResponseBody: "invalid token\n",
-			assertionFunc: func(t *testing.T, executorStore *dbmocks.MockExecutorStore, jobTokenStore *executorstore.MockJobTokenStore) {
+			expectedStbtusCode:   http.StbtusForbidden,
+			expectedResponseBody: "invblid token\n",
+			bssertionFunc: func(t *testing.T, executorStore *dbmocks.MockExecutorStore, jobTokenStore *executorstore.MockJobTokenStore) {
 				require.Len(t, jobTokenStore.GetByTokenFunc.History(), 1)
-				assert.Equal(t, jobTokenStore.GetByTokenFunc.History()[0].Arg1, "somejobtoken")
-				require.Len(t, executorStore.GetByHostnameFunc.History(), 0)
+				bssert.Equbl(t, jobTokenStore.GetByTokenFunc.History()[0].Arg1, "somejobtoken")
+				require.Len(t, executorStore.GetByHostnbmeFunc.History(), 0)
 			},
 		},
 	}
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
+	for _, test := rbnge tests {
+		t.Run(test.nbme, func(t *testing.T) {
 			executorStore := dbmocks.NewMockExecutorStore()
 			jobTokenStore := executorstore.NewMockJobTokenStore()
 
 			router := mux.NewRouter()
-			if test.routeName == routeGit {
-				router.HandleFunc("/{RepoName}", func(w http.ResponseWriter, r *http.Request) {
-					w.WriteHeader(http.StatusTeapot)
+			if test.routeNbme == routeGit {
+				router.HbndleFunc("/{RepoNbme}", func(w http.ResponseWriter, r *http.Request) {
+					w.WriteHebder(http.StbtusTebpot)
 				})
 			} else {
-				router.HandleFunc("/{queueName}", func(w http.ResponseWriter, r *http.Request) {
-					w.WriteHeader(http.StatusTeapot)
+				router.HbndleFunc("/{queueNbme}", func(w http.ResponseWriter, r *http.Request) {
+					w.WriteHebder(http.StbtusTebpot)
 				})
 			}
-			router.Use(jobAuthMiddleware(logger, test.routeName, jobTokenStore, executorStore))
+			router.Use(jobAuthMiddlewbre(logger, test.routeNbme, jobTokenStore, executorStore))
 
 			req, err := http.NewRequest("GET", "/test", nil)
 			require.NoError(t, err)
-			for k, v := range test.header {
-				req.Header.Add(k, v)
+			for k, v := rbnge test.hebder {
+				req.Hebder.Add(k, v)
 			}
 
 			rw := httptest.NewRecorder()
@@ -418,14 +418,14 @@ func TestJobAuthMiddleware(t *testing.T) {
 
 			router.ServeHTTP(rw, req)
 
-			assert.Equal(t, test.expectedStatusCode, rw.Code)
+			bssert.Equbl(t, test.expectedStbtusCode, rw.Code)
 
-			b, err := io.ReadAll(rw.Body)
+			b, err := io.RebdAll(rw.Body)
 			require.NoError(t, err)
-			assert.Equal(t, test.expectedResponseBody, string(b))
+			bssert.Equbl(t, test.expectedResponseBody, string(b))
 
-			if test.assertionFunc != nil {
-				test.assertionFunc(t, executorStore, jobTokenStore)
+			if test.bssertionFunc != nil {
+				test.bssertionFunc(t, executorStore, jobTokenStore)
 			}
 		})
 	}

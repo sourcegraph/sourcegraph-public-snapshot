@@ -1,4 +1,4 @@
-package store
+pbckbge store
 
 import (
 	"context"
@@ -7,179 +7,179 @@ import (
 	"time"
 
 	"github.com/google/go-cmp/cmp"
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/bssert"
 	"github.com/stretchr/testify/require"
 
-	bt "github.com/sourcegraph/sourcegraph/internal/batches/testing"
-	btypes "github.com/sourcegraph/sourcegraph/internal/batches/types"
+	bt "github.com/sourcegrbph/sourcegrbph/internbl/bbtches/testing"
+	btypes "github.com/sourcegrbph/sourcegrbph/internbl/bbtches/types"
 )
 
-func testStoreBatchSpecWorkspaceFiles(t *testing.T, ctx context.Context, s *Store, clock bt.Clock) {
-	files := make([]*btypes.BatchSpecWorkspaceFile, 0, 5)
+func testStoreBbtchSpecWorkspbceFiles(t *testing.T, ctx context.Context, s *Store, clock bt.Clock) {
+	files := mbke([]*btypes.BbtchSpecWorkspbceFile, 0, 5)
 
-	spec := &btypes.BatchSpec{
+	spec := &btypes.BbtchSpec{
 		UserID:          int32(1234),
-		NamespaceUserID: int32(1234),
+		NbmespbceUserID: int32(1234),
 	}
-	err := s.CreateBatchSpec(ctx, spec)
+	err := s.CrebteBbtchSpec(ctx, spec)
 	require.NoError(t, err)
 
-	t.Run("Create", func(t *testing.T) {
-		for i := 0; i < cap(files); i++ {
-			file := &btypes.BatchSpecWorkspaceFile{
-				BatchSpecID: spec.ID,
-				FileName:    fmt.Sprintf("hello-%d.txt", i),
-				Path:        "foo/bar",
+	t.Run("Crebte", func(t *testing.T) {
+		for i := 0; i < cbp(files); i++ {
+			file := &btypes.BbtchSpecWorkspbceFile{
+				BbtchSpecID: spec.ID,
+				FileNbme:    fmt.Sprintf("hello-%d.txt", i),
+				Pbth:        "foo/bbr",
 				Size:        12,
 				Content:     []byte("hello, world!"),
 				ModifiedAt:  clock.Now(),
 			}
 			expected := file.Clone()
 
-			err := s.UpsertBatchSpecWorkspaceFile(ctx, file)
+			err := s.UpsertBbtchSpecWorkspbceFile(ctx, file)
 			require.NoError(t, err)
 
 			expected.ID = file.ID
-			expected.RandID = file.RandID
-			expected.CreatedAt = file.CreatedAt
-			expected.UpdatedAt = file.UpdatedAt
+			expected.RbndID = file.RbndID
+			expected.CrebtedAt = file.CrebtedAt
+			expected.UpdbtedAt = file.UpdbtedAt
 
 			diff := cmp.Diff(file, expected)
 			require.Empty(t, diff)
 
-			files = append(files, file)
+			files = bppend(files, file)
 		}
-		assert.Len(t, files, 5)
+		bssert.Len(t, files, 5)
 	})
 
-	t.Run("Update", func(t *testing.T) {
+	t.Run("Updbte", func(t *testing.T) {
 		clock.Add(1 * time.Second)
 
 		file := files[0]
 		file.Size = 20
 
 		expected := file.Clone()
-		expected.UpdatedAt = clock.Now()
+		expected.UpdbtedAt = clock.Now()
 
-		err := s.UpsertBatchSpecWorkspaceFile(ctx, file)
+		err := s.UpsertBbtchSpecWorkspbceFile(ctx, file)
 		require.NoError(t, err)
 
 		diff := cmp.Diff(file, expected)
-		assert.Empty(t, diff)
+		bssert.Empty(t, diff)
 	})
 
 	t.Run("Get", func(t *testing.T) {
 		t.Run("ByID", func(t *testing.T) {
 			expected := files[0]
-			actual, err := s.GetBatchSpecWorkspaceFile(ctx, GetBatchSpecWorkspaceFileOpts{ID: expected.ID})
+			bctubl, err := s.GetBbtchSpecWorkspbceFile(ctx, GetBbtchSpecWorkspbceFileOpts{ID: expected.ID})
 			require.NoError(t, err)
 
-			diff := cmp.Diff(actual, expected)
-			assert.Empty(t, diff)
+			diff := cmp.Diff(bctubl, expected)
+			bssert.Empty(t, diff)
 		})
 
-		t.Run("ByRandID", func(t *testing.T) {
+		t.Run("ByRbndID", func(t *testing.T) {
 			expected := files[0]
-			actual, err := s.GetBatchSpecWorkspaceFile(ctx, GetBatchSpecWorkspaceFileOpts{RandID: expected.RandID})
+			bctubl, err := s.GetBbtchSpecWorkspbceFile(ctx, GetBbtchSpecWorkspbceFileOpts{RbndID: expected.RbndID})
 			require.NoError(t, err)
 
-			diff := cmp.Diff(actual, expected)
-			assert.Empty(t, diff)
+			diff := cmp.Diff(bctubl, expected)
+			bssert.Empty(t, diff)
 		})
 
 		t.Run("No Options", func(t *testing.T) {
-			file, err := s.GetBatchSpecWorkspaceFile(ctx, GetBatchSpecWorkspaceFileOpts{})
-			assert.Error(t, err)
-			assert.Nil(t, file)
+			file, err := s.GetBbtchSpecWorkspbceFile(ctx, GetBbtchSpecWorkspbceFileOpts{})
+			bssert.Error(t, err)
+			bssert.Nil(t, file)
 		})
 	})
 
 	t.Run("Count", func(t *testing.T) {
 		t.Run("ByID", func(t *testing.T) {
-			count, err := s.CountBatchSpecWorkspaceFiles(ctx, ListBatchSpecWorkspaceFileOpts{ID: files[0].ID})
+			count, err := s.CountBbtchSpecWorkspbceFiles(ctx, ListBbtchSpecWorkspbceFileOpts{ID: files[0].ID})
 			require.NoError(t, err)
-			assert.Equal(t, 1, count)
+			bssert.Equbl(t, 1, count)
 		})
 
-		t.Run("ByRandID", func(t *testing.T) {
-			count, err := s.CountBatchSpecWorkspaceFiles(ctx, ListBatchSpecWorkspaceFileOpts{RandID: files[0].RandID})
+		t.Run("ByRbndID", func(t *testing.T) {
+			count, err := s.CountBbtchSpecWorkspbceFiles(ctx, ListBbtchSpecWorkspbceFileOpts{RbndID: files[0].RbndID})
 			require.NoError(t, err)
-			assert.Equal(t, 1, count)
+			bssert.Equbl(t, 1, count)
 		})
 
-		t.Run("ByBatchSpecID", func(t *testing.T) {
-			count, err := s.CountBatchSpecWorkspaceFiles(ctx, ListBatchSpecWorkspaceFileOpts{BatchSpecID: spec.ID})
+		t.Run("ByBbtchSpecID", func(t *testing.T) {
+			count, err := s.CountBbtchSpecWorkspbceFiles(ctx, ListBbtchSpecWorkspbceFileOpts{BbtchSpecID: spec.ID})
 			require.NoError(t, err)
-			assert.Equal(t, len(files), count)
+			bssert.Equbl(t, len(files), count)
 		})
 
-		t.Run("ByBatchSpecRandID", func(t *testing.T) {
-			count, err := s.CountBatchSpecWorkspaceFiles(ctx, ListBatchSpecWorkspaceFileOpts{BatchSpecRandID: spec.RandID})
+		t.Run("ByBbtchSpecRbndID", func(t *testing.T) {
+			count, err := s.CountBbtchSpecWorkspbceFiles(ctx, ListBbtchSpecWorkspbceFileOpts{BbtchSpecRbndID: spec.RbndID})
 			require.NoError(t, err)
-			assert.Equal(t, len(files), count)
+			bssert.Equbl(t, len(files), count)
 		})
 	})
 
 	t.Run("List", func(t *testing.T) {
-		t.Run("ByBatchSpecID", func(t *testing.T) {
-			actual, next, err := s.ListBatchSpecWorkspaceFiles(ctx, ListBatchSpecWorkspaceFileOpts{BatchSpecID: spec.ID})
+		t.Run("ByBbtchSpecID", func(t *testing.T) {
+			bctubl, next, err := s.ListBbtchSpecWorkspbceFiles(ctx, ListBbtchSpecWorkspbceFileOpts{BbtchSpecID: spec.ID})
 			require.NoError(t, err)
-			assert.Zero(t, next)
-			assert.Len(t, actual, len(files))
+			bssert.Zero(t, next)
+			bssert.Len(t, bctubl, len(files))
 
-			for _, f := range actual {
+			for _, f := rbnge bctubl {
 				expected := getExpectedFile(f.ID, files)
 				diff := cmp.Diff(f, expected)
 				require.Empty(t, diff)
 			}
 		})
 
-		t.Run("ByBatchSpecRandID", func(t *testing.T) {
-			actual, next, err := s.ListBatchSpecWorkspaceFiles(ctx, ListBatchSpecWorkspaceFileOpts{BatchSpecRandID: spec.RawSpec})
+		t.Run("ByBbtchSpecRbndID", func(t *testing.T) {
+			bctubl, next, err := s.ListBbtchSpecWorkspbceFiles(ctx, ListBbtchSpecWorkspbceFileOpts{BbtchSpecRbndID: spec.RbwSpec})
 			require.NoError(t, err)
-			assert.Zero(t, next)
-			assert.Len(t, actual, len(files))
+			bssert.Zero(t, next)
+			bssert.Len(t, bctubl, len(files))
 
-			for _, f := range actual {
+			for _, f := rbnge bctubl {
 				expected := getExpectedFile(f.ID, files)
 				diff := cmp.Diff(f, expected)
 				require.Empty(t, diff)
 			}
 		})
 
-		t.Run("Large Limit", func(t *testing.T) {
-			opts := ListBatchSpecWorkspaceFileOpts{
+		t.Run("Lbrge Limit", func(t *testing.T) {
+			opts := ListBbtchSpecWorkspbceFileOpts{
 				LimitOpts: LimitOpts{
 					Limit: 100,
 				},
-				BatchSpecRandID: spec.RawSpec,
+				BbtchSpecRbndID: spec.RbwSpec,
 			}
-			actual, next, err := s.ListBatchSpecWorkspaceFiles(ctx, opts)
+			bctubl, next, err := s.ListBbtchSpecWorkspbceFiles(ctx, opts)
 			require.NoError(t, err)
-			assert.Zero(t, next)
-			assert.Len(t, actual, len(files))
+			bssert.Zero(t, next)
+			bssert.Len(t, bctubl, len(files))
 
-			for _, f := range actual {
+			for _, f := rbnge bctubl {
 				expected := getExpectedFile(f.ID, files)
 				diff := cmp.Diff(f, expected)
 				require.Empty(t, diff)
 			}
 		})
 
-		t.Run("Small Limit", func(t *testing.T) {
-			opts := ListBatchSpecWorkspaceFileOpts{
+		t.Run("Smbll Limit", func(t *testing.T) {
+			opts := ListBbtchSpecWorkspbceFileOpts{
 				LimitOpts: LimitOpts{
 					Limit: 2,
 				},
-				BatchSpecRandID: spec.RawSpec,
+				BbtchSpecRbndID: spec.RbwSpec,
 			}
-			actual, next, err := s.ListBatchSpecWorkspaceFiles(ctx, opts)
+			bctubl, next, err := s.ListBbtchSpecWorkspbceFiles(ctx, opts)
 			require.NoError(t, err)
 			// Limit
-			assert.Equal(t, files[2].ID, next)
-			assert.Len(t, actual, 2)
+			bssert.Equbl(t, files[2].ID, next)
+			bssert.Len(t, bctubl, 2)
 
-			for _, f := range actual {
+			for _, f := rbnge bctubl {
 				expected := getExpectedFile(f.ID, files)
 				diff := cmp.Diff(f, expected)
 				require.Empty(t, diff)
@@ -187,19 +187,19 @@ func testStoreBatchSpecWorkspaceFiles(t *testing.T, ctx context.Context, s *Stor
 		})
 
 		t.Run("From Cursor", func(t *testing.T) {
-			opts := ListBatchSpecWorkspaceFileOpts{
+			opts := ListBbtchSpecWorkspbceFileOpts{
 				LimitOpts: LimitOpts{
 					Limit: 3,
 				},
 				Cursor:          int64(3),
-				BatchSpecRandID: spec.RawSpec,
+				BbtchSpecRbndID: spec.RbwSpec,
 			}
-			actual, next, err := s.ListBatchSpecWorkspaceFiles(ctx, opts)
+			bctubl, next, err := s.ListBbtchSpecWorkspbceFiles(ctx, opts)
 			require.NoError(t, err)
-			assert.Zero(t, next)
-			assert.Len(t, actual, 3)
+			bssert.Zero(t, next)
+			bssert.Len(t, bctubl, 3)
 
-			for _, f := range actual {
+			for _, f := rbnge bctubl {
 				expected := getExpectedFile(f.ID, files)
 				diff := cmp.Diff(f, expected)
 				require.Empty(t, diff)
@@ -209,51 +209,51 @@ func testStoreBatchSpecWorkspaceFiles(t *testing.T, ctx context.Context, s *Stor
 
 	t.Run("Delete", func(t *testing.T) {
 		t.Run("No Options", func(t *testing.T) {
-			err := s.DeleteBatchSpecWorkspaceFile(ctx, DeleteBatchSpecWorkspaceFileOpts{})
-			assert.Error(t, err)
+			err := s.DeleteBbtchSpecWorkspbceFile(ctx, DeleteBbtchSpecWorkspbceFileOpts{})
+			bssert.Error(t, err)
 		})
 
 		t.Run("ByID", func(t *testing.T) {
-			err := s.DeleteBatchSpecWorkspaceFile(ctx, DeleteBatchSpecWorkspaceFileOpts{ID: files[0].ID})
+			err := s.DeleteBbtchSpecWorkspbceFile(ctx, DeleteBbtchSpecWorkspbceFileOpts{ID: files[0].ID})
 			require.NoError(t, err)
 
-			deletedFile, err := s.GetBatchSpecWorkspaceFile(ctx, GetBatchSpecWorkspaceFileOpts{ID: files[0].ID})
+			deletedFile, err := s.GetBbtchSpecWorkspbceFile(ctx, GetBbtchSpecWorkspbceFileOpts{ID: files[0].ID})
 			require.ErrorIs(t, err, ErrNoResults)
-			assert.Nil(t, deletedFile)
+			bssert.Nil(t, deletedFile)
 		})
 
-		t.Run("ByBatchSpecID", func(t *testing.T) {
-			// Add one more file just in case current ones have been deleted
-			newFile := &btypes.BatchSpecWorkspaceFile{
-				BatchSpecID: spec.ID,
-				FileName:    "by-spec-id.txt",
-				Path:        "foo/bar",
+		t.Run("ByBbtchSpecID", func(t *testing.T) {
+			// Add one more file just in cbse current ones hbve been deleted
+			newFile := &btypes.BbtchSpecWorkspbceFile{
+				BbtchSpecID: spec.ID,
+				FileNbme:    "by-spec-id.txt",
+				Pbth:        "foo/bbr",
 				Size:        12,
 				Content:     []byte("hello, world!"),
 				ModifiedAt:  clock.Now(),
 			}
-			err := s.UpsertBatchSpecWorkspaceFile(ctx, newFile)
+			err := s.UpsertBbtchSpecWorkspbceFile(ctx, newFile)
 			require.NoError(t, err)
 
-			err = s.DeleteBatchSpecWorkspaceFile(ctx, DeleteBatchSpecWorkspaceFileOpts{BatchSpecID: spec.ID})
+			err = s.DeleteBbtchSpecWorkspbceFile(ctx, DeleteBbtchSpecWorkspbceFileOpts{BbtchSpecID: spec.ID})
 			require.NoError(t, err)
 
-			for _, f := range files {
-				deletedFile, err := s.GetBatchSpecWorkspaceFile(ctx, GetBatchSpecWorkspaceFileOpts{ID: f.ID})
+			for _, f := rbnge files {
+				deletedFile, err := s.GetBbtchSpecWorkspbceFile(ctx, GetBbtchSpecWorkspbceFileOpts{ID: f.ID})
 				require.ErrorIs(t, err, ErrNoResults)
-				assert.Nil(t, deletedFile)
+				bssert.Nil(t, deletedFile)
 			}
 
-			// And check if the new one has also been deleted
-			deletedFile, err := s.GetBatchSpecWorkspaceFile(ctx, GetBatchSpecWorkspaceFileOpts{ID: newFile.ID})
+			// And check if the new one hbs blso been deleted
+			deletedFile, err := s.GetBbtchSpecWorkspbceFile(ctx, GetBbtchSpecWorkspbceFileOpts{ID: newFile.ID})
 			require.ErrorIs(t, err, ErrNoResults)
-			assert.Nil(t, deletedFile)
+			bssert.Nil(t, deletedFile)
 		})
 	})
 }
 
-func getExpectedFile(id int64, expects []*btypes.BatchSpecWorkspaceFile) *btypes.BatchSpecWorkspaceFile {
-	for _, expect := range expects {
+func getExpectedFile(id int64, expects []*btypes.BbtchSpecWorkspbceFile) *btypes.BbtchSpecWorkspbceFile {
+	for _, expect := rbnge expects {
 		if id == expect.ID {
 			return expect
 		}

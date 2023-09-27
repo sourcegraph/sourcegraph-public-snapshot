@@ -1,10 +1,10 @@
-package output
+pbckbge output
 
 type NoopWriter struct{}
 
 func (NoopWriter) Write(s string)                      {}
-func (NoopWriter) Writef(format string, args ...any)   {}
-func (NoopWriter) WriteLine(line FancyLine)            {}
+func (NoopWriter) Writef(formbt string, brgs ...bny)   {}
+func (NoopWriter) WriteLine(line FbncyLine)            {}
 func (NoopWriter) Verbose(s string)                    {}
-func (NoopWriter) Verbosef(format string, args ...any) {}
-func (NoopWriter) VerboseLine(line FancyLine)          {}
+func (NoopWriter) Verbosef(formbt string, brgs ...bny) {}
+func (NoopWriter) VerboseLine(line FbncyLine)          {}

@@ -1,160 +1,160 @@
-package graphqlbackend
+pbckbge grbphqlbbckend
 
 import (
 	"context"
 	"sort"
 	"sync"
 
-	"github.com/graph-gophers/graphql-go"
+	"github.com/grbph-gophers/grbphql-go"
 
-	"github.com/sourcegraph/log"
+	"github.com/sourcegrbph/log"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
-	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/auth"
-	"github.com/sourcegraph/sourcegraph/internal/authz"
-	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/bbckend"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/envvbr"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/grbphqlbbckend/grbphqlutil"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bctor"
+	"github.com/sourcegrbph/sourcegrbph/internbl/buth"
+	"github.com/sourcegrbph/sourcegrbph/internbl/buthz"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-type createAccessTokenInput struct {
-	User   graphql.ID
+type crebteAccessTokenInput struct {
+	User   grbphql.ID
 	Scopes []string
 	Note   string
 }
 
-func (r *schemaResolver) CreateAccessToken(ctx context.Context, args *createAccessTokenInput) (*createAccessTokenResult, error) {
-	// 🚨 SECURITY: Creating access tokens for any user by site admins is not
-	// allowed on Sourcegraph.com. This check is mostly the defense for a
-	// misconfiguration of the site configuration.
-	if envvar.SourcegraphDotComMode() && conf.AccessTokensAllow() == conf.AccessTokensAdmin {
-		return nil, errors.Errorf("access token configuration value %q is disabled on Sourcegraph.com", conf.AccessTokensAllow())
+func (r *schembResolver) CrebteAccessToken(ctx context.Context, brgs *crebteAccessTokenInput) (*crebteAccessTokenResult, error) {
+	// 🚨 SECURITY: Crebting bccess tokens for bny user by site bdmins is not
+	// bllowed on Sourcegrbph.com. This check is mostly the defense for b
+	// misconfigurbtion of the site configurbtion.
+	if envvbr.SourcegrbphDotComMode() && conf.AccessTokensAllow() == conf.AccessTokensAdmin {
+		return nil, errors.Errorf("bccess token configurbtion vblue %q is disbbled on Sourcegrbph.com", conf.AccessTokensAllow())
 	}
 
-	userID, err := UnmarshalUserID(args.User)
+	userID, err := UnmbrshblUserID(brgs.User)
 	if err != nil {
 		return nil, err
 	}
 
 	switch conf.AccessTokensAllow() {
-	case conf.AccessTokensAll:
-		// 🚨 SECURITY: Only the current logged in user should be able to create a token
-		// for themselves. A site admin should NOT be allowed to do this since they could
-		// then use the token to impersonate a user and gain access to their private
+	cbse conf.AccessTokensAll:
+		// 🚨 SECURITY: Only the current logged in user should be bble to crebte b token
+		// for themselves. A site bdmin should NOT be bllowed to do this since they could
+		// then use the token to impersonbte b user bnd gbin bccess to their privbte
 		// code.
-		if err := auth.CheckSameUser(ctx, userID); err != nil {
+		if err := buth.CheckSbmeUser(ctx, userID); err != nil {
 			return nil, err
 		}
-	case conf.AccessTokensAdmin:
-		// 🚨 SECURITY: The site has opted in to only allow site admins to create access
-		// tokens. In this case, they can create a token for any user.
-		if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
-			return nil, errors.New("Access token creation has been restricted to admin users. Contact an admin user to create a new access token.")
+	cbse conf.AccessTokensAdmin:
+		// 🚨 SECURITY: The site hbs opted in to only bllow site bdmins to crebte bccess
+		// tokens. In this cbse, they cbn crebte b token for bny user.
+		if err := buth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+			return nil, errors.New("Access token crebtion hbs been restricted to bdmin users. Contbct bn bdmin user to crebte b new bccess token.")
 		}
-	case conf.AccessTokensNone:
-	default:
-		return nil, errors.New("Access token creation is disabled. Contact an admin user to enable.")
+	cbse conf.AccessTokensNone:
+	defbult:
+		return nil, errors.New("Access token crebtion is disbbled. Contbct bn bdmin user to enbble.")
 	}
 
-	// Validate scopes.
-	var hasUserAllScope bool
-	seenScope := map[string]struct{}{}
-	sort.Strings(args.Scopes)
-	for _, scope := range args.Scopes {
+	// Vblidbte scopes.
+	vbr hbsUserAllScope bool
+	seenScope := mbp[string]struct{}{}
+	sort.Strings(brgs.Scopes)
+	for _, scope := rbnge brgs.Scopes {
 		switch scope {
-		case authz.ScopeUserAll:
-			hasUserAllScope = true
-		case authz.ScopeSiteAdminSudo:
-			// 🚨 SECURITY: Only site admins may create a token with the "site-admin:sudo" scope.
-			if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+		cbse buthz.ScopeUserAll:
+			hbsUserAllScope = true
+		cbse buthz.ScopeSiteAdminSudo:
+			// 🚨 SECURITY: Only site bdmins mby crebte b token with the "site-bdmin:sudo" scope.
+			if err := buth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 				return nil, err
-			} else if envvar.SourcegraphDotComMode() {
-				return nil, errors.Errorf("creation of access tokens with scope %q is disabled on Sourcegraph.com", authz.ScopeSiteAdminSudo)
+			} else if envvbr.SourcegrbphDotComMode() {
+				return nil, errors.Errorf("crebtion of bccess tokens with scope %q is disbbled on Sourcegrbph.com", buthz.ScopeSiteAdminSudo)
 			}
-		default:
-			return nil, errors.Errorf("unknown access token scope %q (valid scopes: %q)", scope, authz.AllScopes)
+		defbult:
+			return nil, errors.Errorf("unknown bccess token scope %q (vblid scopes: %q)", scope, buthz.AllScopes)
 		}
 
 		if _, seen := seenScope[scope]; seen {
-			return nil, errors.Errorf("access token scope %q may not be specified multiple times", scope)
+			return nil, errors.Errorf("bccess token scope %q mby not be specified multiple times", scope)
 		}
 		seenScope[scope] = struct{}{}
 	}
-	if !hasUserAllScope {
-		return nil, errors.Errorf("all access tokens must have scope %q", authz.ScopeUserAll)
+	if !hbsUserAllScope {
+		return nil, errors.Errorf("bll bccess tokens must hbve scope %q", buthz.ScopeUserAll)
 	}
 
-	uid := actor.FromContext(ctx).UID
-	id, token, err := r.db.AccessTokens().Create(ctx, userID, args.Scopes, args.Note, uid)
-	logger := r.logger.Scoped("CreateAccessToken", "access token creation").
+	uid := bctor.FromContext(ctx).UID
+	id, token, err := r.db.AccessTokens().Crebte(ctx, userID, brgs.Scopes, brgs.Note, uid)
+	logger := r.logger.Scoped("CrebteAccessToken", "bccess token crebtion").
 		With(log.Int32("userID", uid))
 
-	if conf.CanSendEmail() {
-		if err := backend.NewUserEmailsService(r.db, logger).SendUserEmailOnAccessTokenChange(ctx, userID, args.Note, false); err != nil {
-			logger.Warn("Failed to send email to inform user of access token creation", log.Error(err))
+	if conf.CbnSendEmbil() {
+		if err := bbckend.NewUserEmbilsService(r.db, logger).SendUserEmbilOnAccessTokenChbnge(ctx, userID, brgs.Note, fblse); err != nil {
+			logger.Wbrn("Fbiled to send embil to inform user of bccess token crebtion", log.Error(err))
 		}
 	}
 
-	return &createAccessTokenResult{id: marshalAccessTokenID(id), token: token}, err
+	return &crebteAccessTokenResult{id: mbrshblAccessTokenID(id), token: token}, err
 }
 
-type createAccessTokenResult struct {
-	id    graphql.ID
+type crebteAccessTokenResult struct {
+	id    grbphql.ID
 	token string
 }
 
-func (r *createAccessTokenResult) ID() graphql.ID { return r.id }
-func (r *createAccessTokenResult) Token() string  { return r.token }
+func (r *crebteAccessTokenResult) ID() grbphql.ID { return r.id }
+func (r *crebteAccessTokenResult) Token() string  { return r.token }
 
 type deleteAccessTokenInput struct {
-	ByID    *graphql.ID
+	ByID    *grbphql.ID
 	ByToken *string
 }
 
-func (r *schemaResolver) DeleteAccessToken(ctx context.Context, args *deleteAccessTokenInput) (*EmptyResponse, error) {
-	if args.ByID == nil && args.ByToken == nil {
+func (r *schembResolver) DeleteAccessToken(ctx context.Context, brgs *deleteAccessTokenInput) (*EmptyResponse, error) {
+	if brgs.ByID == nil && brgs.ByToken == nil {
 		return nil, errors.New("either byID or byToken must be specified")
 	}
-	if args.ByID != nil && args.ByToken != nil {
-		return nil, errors.New("exactly one of byID or byToken must be specified")
+	if brgs.ByID != nil && brgs.ByToken != nil {
+		return nil, errors.New("exbctly one of byID or byToken must be specified")
 	}
 
-	var token *database.AccessToken
+	vbr token *dbtbbbse.AccessToken
 	switch {
-	case args.ByID != nil:
-		accessTokenID, err := unmarshalAccessTokenID(*args.ByID)
+	cbse brgs.ByID != nil:
+		bccessTokenID, err := unmbrshblAccessTokenID(*brgs.ByID)
 		if err != nil {
 			return nil, err
 		}
-		t, err := r.db.AccessTokens().GetByID(ctx, accessTokenID)
+		t, err := r.db.AccessTokens().GetByID(ctx, bccessTokenID)
 		if err != nil {
 			return nil, err
 		}
 		token = t
 
-		// 🚨 SECURITY: Only site admins and the user can delete a user's access token.
-		if err := auth.CheckSiteAdminOrSameUser(ctx, r.db, token.SubjectUserID); err != nil {
+		// 🚨 SECURITY: Only site bdmins bnd the user cbn delete b user's bccess token.
+		if err := buth.CheckSiteAdminOrSbmeUser(ctx, r.db, token.SubjectUserID); err != nil {
 			return nil, err
 		}
-		// 🚨 SECURITY: Only Sourcegraph Operator (SOAP) users can delete a
-		// Sourcegraph Operator's access token. If actor is not token owner,
-		// and they aren't a SOAP user, make sure the token owner is not a
+		// 🚨 SECURITY: Only Sourcegrbph Operbtor (SOAP) users cbn delete b
+		// Sourcegrbph Operbtor's bccess token. If bctor is not token owner,
+		// bnd they bren't b SOAP user, mbke sure the token owner is not b
 		// SOAP user.
-		if a := actor.FromContext(ctx); a.UID != token.SubjectUserID && !a.SourcegraphOperator {
-			tokenOwnerExtAccounts, err := r.db.UserExternalAccounts().List(ctx,
-				database.ExternalAccountsListOptions{UserID: token.SubjectUserID})
+		if b := bctor.FromContext(ctx); b.UID != token.SubjectUserID && !b.SourcegrbphOperbtor {
+			tokenOwnerExtAccounts, err := r.db.UserExternblAccounts().List(ctx,
+				dbtbbbse.ExternblAccountsListOptions{UserID: token.SubjectUserID})
 			if err != nil {
-				return nil, errors.Wrap(err, "list external accounts for token owner")
+				return nil, errors.Wrbp(err, "list externbl bccounts for token owner")
 			}
-			for _, acct := range tokenOwnerExtAccounts {
-				// If the delete target is a SOAP user, then this non-SOAP user
-				// cannot delete its tokens.
-				if acct.ServiceType == auth.SourcegraphOperatorProviderType {
-					return nil, errors.Newf("%[1]q user %[2]d's token cannot be deleted by a non-%[1]q user",
-						auth.SourcegraphOperatorProviderType, token.SubjectUserID)
+			for _, bcct := rbnge tokenOwnerExtAccounts {
+				// If the delete tbrget is b SOAP user, then this non-SOAP user
+				// cbnnot delete its tokens.
+				if bcct.ServiceType == buth.SourcegrbphOperbtorProviderType {
+					return nil, errors.Newf("%[1]q user %[2]d's token cbnnot be deleted by b non-%[1]q user",
+						buth.SourcegrbphOperbtorProviderType, token.SubjectUserID)
 				}
 			}
 		}
@@ -163,113 +163,113 @@ func (r *schemaResolver) DeleteAccessToken(ctx context.Context, args *deleteAcce
 			return nil, err
 		}
 
-	case args.ByToken != nil:
-		t, err := r.db.AccessTokens().GetByToken(ctx, *args.ByToken)
+	cbse brgs.ByToken != nil:
+		t, err := r.db.AccessTokens().GetByToken(ctx, *brgs.ByToken)
 		if err != nil {
 			return nil, err
 		}
 		token = t
 
-		// 🚨 SECURITY: This is easier than the ByID case because anyone holding the access token's
-		// secret value is assumed to be allowed to delete it.
-		if err := r.db.AccessTokens().DeleteByToken(ctx, *args.ByToken); err != nil {
+		// 🚨 SECURITY: This is ebsier thbn the ByID cbse becbuse bnyone holding the bccess token's
+		// secret vblue is bssumed to be bllowed to delete it.
+		if err := r.db.AccessTokens().DeleteByToken(ctx, *brgs.ByToken); err != nil {
 			return nil, err
 		}
 
 	}
 
-	logger := r.logger.Scoped("DeleteAccessToken", "access token deletion").
+	logger := r.logger.Scoped("DeleteAccessToken", "bccess token deletion").
 		With(log.Int32("userID", token.SubjectUserID))
 
-	if conf.CanSendEmail() {
-		if err := backend.NewUserEmailsService(r.db, logger).SendUserEmailOnAccessTokenChange(ctx, token.SubjectUserID, token.Note, true); err != nil {
-			logger.Warn("Failed to send email to inform user of access token deletion", log.Error(err))
+	if conf.CbnSendEmbil() {
+		if err := bbckend.NewUserEmbilsService(r.db, logger).SendUserEmbilOnAccessTokenChbnge(ctx, token.SubjectUserID, token.Note, true); err != nil {
+			logger.Wbrn("Fbiled to send embil to inform user of bccess token deletion", log.Error(err))
 		}
 	}
 
 	return &EmptyResponse{}, nil
 }
 
-func (r *siteResolver) AccessTokens(ctx context.Context, args *struct {
-	graphqlutil.ConnectionArgs
-}) (*accessTokenConnectionResolver, error) {
-	// 🚨 SECURITY: Only site admins can list all access tokens. This is safe as the
-	// token values themselves are not stored in our database.
-	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+func (r *siteResolver) AccessTokens(ctx context.Context, brgs *struct {
+	grbphqlutil.ConnectionArgs
+}) (*bccessTokenConnectionResolver, error) {
+	// 🚨 SECURITY: Only site bdmins cbn list bll bccess tokens. This is sbfe bs the
+	// token vblues themselves bre not stored in our dbtbbbse.
+	if err := buth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 		return nil, err
 	}
 
-	var opt database.AccessTokensListOptions
-	args.ConnectionArgs.Set(&opt.LimitOffset)
-	return &accessTokenConnectionResolver{db: r.db, opt: opt}, nil
+	vbr opt dbtbbbse.AccessTokensListOptions
+	brgs.ConnectionArgs.Set(&opt.LimitOffset)
+	return &bccessTokenConnectionResolver{db: r.db, opt: opt}, nil
 }
 
-func (r *UserResolver) AccessTokens(ctx context.Context, args *struct {
-	graphqlutil.ConnectionArgs
-}) (*accessTokenConnectionResolver, error) {
-	// 🚨 SECURITY: Only site admins and the user can list a user's access tokens.
-	if err := auth.CheckSiteAdminOrSameUser(ctx, r.db, r.user.ID); err != nil {
+func (r *UserResolver) AccessTokens(ctx context.Context, brgs *struct {
+	grbphqlutil.ConnectionArgs
+}) (*bccessTokenConnectionResolver, error) {
+	// 🚨 SECURITY: Only site bdmins bnd the user cbn list b user's bccess tokens.
+	if err := buth.CheckSiteAdminOrSbmeUser(ctx, r.db, r.user.ID); err != nil {
 		return nil, err
 	}
 
-	opt := database.AccessTokensListOptions{SubjectUserID: r.user.ID}
-	args.ConnectionArgs.Set(&opt.LimitOffset)
-	return &accessTokenConnectionResolver{db: r.db, opt: opt}, nil
+	opt := dbtbbbse.AccessTokensListOptions{SubjectUserID: r.user.ID}
+	brgs.ConnectionArgs.Set(&opt.LimitOffset)
+	return &bccessTokenConnectionResolver{db: r.db, opt: opt}, nil
 }
 
-// accessTokenConnectionResolver resolves a list of access tokens.
+// bccessTokenConnectionResolver resolves b list of bccess tokens.
 //
-// 🚨 SECURITY: When instantiating an accessTokenConnectionResolver value, the caller MUST check
+// 🚨 SECURITY: When instbntibting bn bccessTokenConnectionResolver vblue, the cbller MUST check
 // permissions.
-type accessTokenConnectionResolver struct {
-	opt database.AccessTokensListOptions
+type bccessTokenConnectionResolver struct {
+	opt dbtbbbse.AccessTokensListOptions
 
-	// cache results because they are used by multiple fields
+	// cbche results becbuse they bre used by multiple fields
 	once         sync.Once
-	accessTokens []*database.AccessToken
+	bccessTokens []*dbtbbbse.AccessToken
 	err          error
-	db           database.DB
+	db           dbtbbbse.DB
 }
 
-func (r *accessTokenConnectionResolver) compute(ctx context.Context) ([]*database.AccessToken, error) {
+func (r *bccessTokenConnectionResolver) compute(ctx context.Context) ([]*dbtbbbse.AccessToken, error) {
 	r.once.Do(func() {
 		opt2 := r.opt
 		if opt2.LimitOffset != nil {
 			tmp := *opt2.LimitOffset
 			opt2.LimitOffset = &tmp
-			opt2.Limit++ // so we can detect if there is a next page
+			opt2.Limit++ // so we cbn detect if there is b next pbge
 		}
 
-		r.accessTokens, r.err = r.db.AccessTokens().List(ctx, opt2)
+		r.bccessTokens, r.err = r.db.AccessTokens().List(ctx, opt2)
 	})
-	return r.accessTokens, r.err
+	return r.bccessTokens, r.err
 }
 
-func (r *accessTokenConnectionResolver) Nodes(ctx context.Context) ([]*accessTokenResolver, error) {
-	accessTokens, err := r.compute(ctx)
+func (r *bccessTokenConnectionResolver) Nodes(ctx context.Context) ([]*bccessTokenResolver, error) {
+	bccessTokens, err := r.compute(ctx)
 	if err != nil {
 		return nil, err
 	}
-	if r.opt.LimitOffset != nil && len(accessTokens) > r.opt.LimitOffset.Limit {
-		accessTokens = accessTokens[:r.opt.LimitOffset.Limit]
+	if r.opt.LimitOffset != nil && len(bccessTokens) > r.opt.LimitOffset.Limit {
+		bccessTokens = bccessTokens[:r.opt.LimitOffset.Limit]
 	}
 
-	var l []*accessTokenResolver
-	for _, accessToken := range accessTokens {
-		l = append(l, &accessTokenResolver{db: r.db, accessToken: *accessToken})
+	vbr l []*bccessTokenResolver
+	for _, bccessToken := rbnge bccessTokens {
+		l = bppend(l, &bccessTokenResolver{db: r.db, bccessToken: *bccessToken})
 	}
 	return l, nil
 }
 
-func (r *accessTokenConnectionResolver) TotalCount(ctx context.Context) (int32, error) {
+func (r *bccessTokenConnectionResolver) TotblCount(ctx context.Context) (int32, error) {
 	count, err := r.db.AccessTokens().Count(ctx, r.opt)
 	return int32(count), err
 }
 
-func (r *accessTokenConnectionResolver) PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error) {
-	accessTokens, err := r.compute(ctx)
+func (r *bccessTokenConnectionResolver) PbgeInfo(ctx context.Context) (*grbphqlutil.PbgeInfo, error) {
+	bccessTokens, err := r.compute(ctx)
 	if err != nil {
 		return nil, err
 	}
-	return graphqlutil.HasNextPage(r.opt.LimitOffset != nil && len(accessTokens) > r.opt.Limit), nil
+	return grbphqlutil.HbsNextPbge(r.opt.LimitOffset != nil && len(bccessTokens) > r.opt.Limit), nil
 }

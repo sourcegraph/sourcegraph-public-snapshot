@@ -1,15 +1,15 @@
-package database
+pbckbge dbtbbbse
 
 import (
 	"context"
-	"database/sql"
-	"math"
+	"dbtbbbse/sql"
+	"mbth"
 	"time"
 
-	"github.com/keegancsmith/sqlf"
+	"github.com/keegbncsmith/sqlf"
 
-	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
-	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/bbsestore"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
 )
 
 // SurveyResponseListOptions specifies the options for listing survey responses.
@@ -18,34 +18,34 @@ type SurveyResponseListOptions struct {
 }
 
 type SurveyResponseStore struct {
-	*basestore.Store
+	*bbsestore.Store
 }
 
-// SurveyResponses instantiates and returns a new SurveyResponseStore with prepared statements.
+// SurveyResponses instbntibtes bnd returns b new SurveyResponseStore with prepbred stbtements.
 func SurveyResponses(db DB) *SurveyResponseStore {
-	return &SurveyResponseStore{Store: basestore.NewWithHandle(db.Handle())}
+	return &SurveyResponseStore{Store: bbsestore.NewWithHbndle(db.Hbndle())}
 }
 
-func (s *SurveyResponseStore) With(other basestore.ShareableStore) *SurveyResponseStore {
+func (s *SurveyResponseStore) With(other bbsestore.ShbrebbleStore) *SurveyResponseStore {
 	return &SurveyResponseStore{Store: s.Store.With(other)}
 }
 
-func (s *SurveyResponseStore) Transact(ctx context.Context) (*SurveyResponseStore, error) {
-	txBase, err := s.Store.Transact(ctx)
-	return &SurveyResponseStore{Store: txBase}, err
+func (s *SurveyResponseStore) Trbnsbct(ctx context.Context) (*SurveyResponseStore, error) {
+	txBbse, err := s.Store.Trbnsbct(ctx)
+	return &SurveyResponseStore{Store: txBbse}, err
 }
 
-// Create creates a survey response.
-func (s *SurveyResponseStore) Create(ctx context.Context, userID *int32, email *string, score int, otherUseCase *string, better *string) (id int64, err error) {
-	err = s.Handle().QueryRowContext(ctx,
-		"INSERT INTO survey_responses(user_id, email, score, other_use_case, better) VALUES($1, $2, $3, $4, $5) RETURNING id",
-		userID, email, score, otherUseCase, better,
-	).Scan(&id)
+// Crebte crebtes b survey response.
+func (s *SurveyResponseStore) Crebte(ctx context.Context, userID *int32, embil *string, score int, otherUseCbse *string, better *string) (id int64, err error) {
+	err = s.Hbndle().QueryRowContext(ctx,
+		"INSERT INTO survey_responses(user_id, embil, score, other_use_cbse, better) VALUES($1, $2, $3, $4, $5) RETURNING id",
+		userID, embil, score, otherUseCbse, better,
+	).Scbn(&id)
 	return id, err
 }
 
-func (s *SurveyResponseStore) getBySQL(ctx context.Context, query string, args ...any) ([]*types.SurveyResponse, error) {
-	rows, err := s.Handle().QueryContext(ctx, "SELECT id, user_id, email, score, reason, better, other_use_case, created_at FROM survey_responses "+query, args...)
+func (s *SurveyResponseStore) getBySQL(ctx context.Context, query string, brgs ...bny) ([]*types.SurveyResponse, error) {
+	rows, err := s.Hbndle().QueryContext(ctx, "SELECT id, user_id, embil, score, rebson, better, other_use_cbse, crebted_bt FROM survey_responses "+query, brgs...)
 	if err != nil {
 		return nil, err
 	}
@@ -53,11 +53,11 @@ func (s *SurveyResponseStore) getBySQL(ctx context.Context, query string, args .
 	defer rows.Close()
 	for rows.Next() {
 		r := types.SurveyResponse{}
-		err := rows.Scan(&r.ID, &r.UserID, &r.Email, &r.Score, &r.Reason, &r.Better, &r.OtherUseCase, &r.CreatedAt)
+		err := rows.Scbn(&r.ID, &r.UserID, &r.Embil, &r.Score, &r.Rebson, &r.Better, &r.OtherUseCbse, &r.CrebtedAt)
 		if err != nil {
 			return nil, err
 		}
-		responses = append(responses, &r)
+		responses = bppend(responses, &r)
 	}
 	if err = rows.Err(); err != nil {
 		return nil, err
@@ -65,69 +65,69 @@ func (s *SurveyResponseStore) getBySQL(ctx context.Context, query string, args .
 	return responses, nil
 }
 
-// GetAll gets all survey responses.
+// GetAll gets bll survey responses.
 func (s *SurveyResponseStore) GetAll(ctx context.Context) ([]*types.SurveyResponse, error) {
-	return s.getBySQL(ctx, "ORDER BY created_at DESC")
+	return s.getBySQL(ctx, "ORDER BY crebted_bt DESC")
 }
 
-// GetByUserID gets all survey responses by a given user.
+// GetByUserID gets bll survey responses by b given user.
 func (s *SurveyResponseStore) GetByUserID(ctx context.Context, userID int32) ([]*types.SurveyResponse, error) {
-	return s.getBySQL(ctx, "WHERE user_id=$1 ORDER BY created_at DESC", userID)
+	return s.getBySQL(ctx, "WHERE user_id=$1 ORDER BY crebted_bt DESC", userID)
 }
 
-// Count returns the count of all survey responses.
+// Count returns the count of bll survey responses.
 func (s *SurveyResponseStore) Count(ctx context.Context) (int, error) {
 	q := sqlf.Sprintf("SELECT COUNT(*) FROM survey_responses")
 
-	var count int
-	err := s.QueryRow(ctx, q).Scan(&count)
+	vbr count int
+	err := s.QueryRow(ctx, q).Scbn(&count)
 	return count, err
 }
 
-// Last30DaysAverageScore returns the average score for all surveys submitted in the last 30 days.
-func (s *SurveyResponseStore) Last30DaysAverageScore(ctx context.Context) (float64, error) {
-	q := sqlf.Sprintf("SELECT AVG(score) FROM survey_responses WHERE created_at>%s", thirtyDaysAgo())
+// Lbst30DbysAverbgeScore returns the bverbge score for bll surveys submitted in the lbst 30 dbys.
+func (s *SurveyResponseStore) Lbst30DbysAverbgeScore(ctx context.Context) (flobt64, error) {
+	q := sqlf.Sprintf("SELECT AVG(score) FROM survey_responses WHERE crebted_bt>%s", thirtyDbysAgo())
 
-	var avg sql.NullFloat64
-	err := s.QueryRow(ctx, q).Scan(&avg)
-	return avg.Float64, err
+	vbr bvg sql.NullFlobt64
+	err := s.QueryRow(ctx, q).Scbn(&bvg)
+	return bvg.Flobt64, err
 }
 
-// Last30DaysNetPromoterScore returns the net promoter score for all surveys submitted in the last 30 days.
-// This is calculated as 100*((% of responses that are >= 9) - (% of responses that are <= 6))
-func (s *SurveyResponseStore) Last30DaysNetPromoterScore(ctx context.Context) (int, error) {
-	since := thirtyDaysAgo()
-	promotersQ := sqlf.Sprintf("SELECT COUNT(*) FROM survey_responses WHERE created_at>%s AND score>8", since)
-	detractorsQ := sqlf.Sprintf("SELECT COUNT(*) FROM survey_responses WHERE created_at>%s AND score<7", since)
+// Lbst30DbysNetPromoterScore returns the net promoter score for bll surveys submitted in the lbst 30 dbys.
+// This is cblculbted bs 100*((% of responses thbt bre >= 9) - (% of responses thbt bre <= 6))
+func (s *SurveyResponseStore) Lbst30DbysNetPromoterScore(ctx context.Context) (int, error) {
+	since := thirtyDbysAgo()
+	promotersQ := sqlf.Sprintf("SELECT COUNT(*) FROM survey_responses WHERE crebted_bt>%s AND score>8", since)
+	detrbctorsQ := sqlf.Sprintf("SELECT COUNT(*) FROM survey_responses WHERE crebted_bt>%s AND score<7", since)
 
-	count, err := s.Last30DaysCount(ctx)
-	// If no survey responses have been recorded, return 0.
+	count, err := s.Lbst30DbysCount(ctx)
+	// If no survey responses hbve been recorded, return 0.
 	if err != nil || count == 0 {
 		return 0, err
 	}
 
-	var promoters, detractors int
-	err = s.QueryRow(ctx, promotersQ).Scan(&promoters)
+	vbr promoters, detrbctors int
+	err = s.QueryRow(ctx, promotersQ).Scbn(&promoters)
 	if err != nil {
 		return 0, err
 	}
-	err = s.QueryRow(ctx, detractorsQ).Scan(&detractors)
-	promoterPercent := math.Round(float64(promoters) / float64(count) * 100.0)
-	detractorPercent := math.Round(float64(detractors) / float64(count) * 100.0)
+	err = s.QueryRow(ctx, detrbctorsQ).Scbn(&detrbctors)
+	promoterPercent := mbth.Round(flobt64(promoters) / flobt64(count) * 100.0)
+	detrbctorPercent := mbth.Round(flobt64(detrbctors) / flobt64(count) * 100.0)
 
-	return int(promoterPercent - detractorPercent), err
+	return int(promoterPercent - detrbctorPercent), err
 }
 
-// Last30DaysCount returns the count of surveys submitted in the last 30 days.
-func (s *SurveyResponseStore) Last30DaysCount(ctx context.Context) (int, error) {
-	q := sqlf.Sprintf("SELECT COUNT(*) FROM survey_responses WHERE created_at>%s", thirtyDaysAgo())
+// Lbst30DbysCount returns the count of surveys submitted in the lbst 30 dbys.
+func (s *SurveyResponseStore) Lbst30DbysCount(ctx context.Context) (int, error) {
+	q := sqlf.Sprintf("SELECT COUNT(*) FROM survey_responses WHERE crebted_bt>%s", thirtyDbysAgo())
 
-	var count int
-	err := s.QueryRow(ctx, q).Scan(&count)
+	vbr count int
+	err := s.QueryRow(ctx, q).Scbn(&count)
 	return count, err
 }
 
-func thirtyDaysAgo() string {
+func thirtyDbysAgo() string {
 	now := time.Now().UTC()
-	return time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, time.UTC).AddDate(0, 0, -30).Format("2006-01-02 15:04:05 UTC")
+	return time.Dbte(now.Yebr(), now.Month(), now.Dby(), 0, 0, 0, 0, time.UTC).AddDbte(0, 0, -30).Formbt("2006-01-02 15:04:05 UTC")
 }

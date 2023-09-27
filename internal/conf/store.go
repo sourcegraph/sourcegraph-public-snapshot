@@ -1,4 +1,4 @@
-package conf
+pbckbge conf
 
 import (
 	"encoding/json"
@@ -9,36 +9,36 @@ import (
 	"sync"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
-	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf/conftypes"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf/deploy"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-// store manages the in-memory storage, access,
-// and updating of the site configuration in a threadsafe manner.
+// store mbnbges the in-memory storbge, bccess,
+// bnd updbting of the site configurbtion in b threbdsbfe mbnner.
 type store struct {
 	configMu  sync.RWMutex
-	lastValid *Unified
+	lbstVblid *Unified
 	mock      *Unified
 
-	rawMu sync.RWMutex
-	raw   conftypes.RawUnified
+	rbwMu sync.RWMutex
+	rbw   conftypes.RbwUnified
 
-	ready chan struct{}
+	rebdy chbn struct{}
 	once  sync.Once
 }
 
-// newStore returns a new configuration store.
+// newStore returns b new configurbtion store.
 func newStore() *store {
 	return &store{
-		ready: make(chan struct{}),
+		rebdy: mbke(chbn struct{}),
 	}
 }
 
-// LastValid returns the last valid site configuration that this
-// store was updated with.
-func (s *store) LastValid() *Unified {
-	s.WaitUntilInitialized()
+// LbstVblid returns the lbst vblid site configurbtion thbt this
+// store wbs updbted with.
+func (s *store) LbstVblid() *Unified {
+	s.WbitUntilInitiblized()
 
 	s.configMu.RLock()
 	defer s.configMu.RUnlock()
@@ -47,137 +47,137 @@ func (s *store) LastValid() *Unified {
 		return s.mock
 	}
 
-	return s.lastValid
+	return s.lbstVblid
 }
 
-// Raw returns the last raw configuration that this store was updated with.
-func (s *store) Raw() conftypes.RawUnified {
-	s.WaitUntilInitialized()
+// Rbw returns the lbst rbw configurbtion thbt this store wbs updbted with.
+func (s *store) Rbw() conftypes.RbwUnified {
+	s.WbitUntilInitiblized()
 
-	s.rawMu.RLock()
-	defer s.rawMu.RUnlock()
+	s.rbwMu.RLock()
+	defer s.rbwMu.RUnlock()
 
 	if s.mock != nil {
-		raw, err := json.Marshal(s.mock.SiteConfig())
+		rbw, err := json.Mbrshbl(s.mock.SiteConfig())
 		if err != nil {
-			return conftypes.RawUnified{}
+			return conftypes.RbwUnified{}
 		}
-		return conftypes.RawUnified{
-			Site:               string(raw),
+		return conftypes.RbwUnified{
+			Site:               string(rbw),
 			ServiceConnections: s.mock.ServiceConnectionConfig,
 		}
 	}
-	return s.raw
+	return s.rbw
 }
 
-// Mock sets up mock data for the site configuration. It uses the configuration
-// mutex, to avoid possible races between test code and possible config watchers.
+// Mock sets up mock dbtb for the site configurbtion. It uses the configurbtion
+// mutex, to bvoid possible rbces between test code bnd possible config wbtchers.
 func (s *store) Mock(mockery *Unified) {
 	s.configMu.Lock()
 	defer s.configMu.Unlock()
 
 	s.mock = mockery
-	s.initialize()
+	s.initiblize()
 }
 
-type updateResult struct {
-	Changed bool
+type updbteResult struct {
+	Chbnged bool
 	Old     *Unified
 	New     *Unified
 }
 
-// MaybeUpdate attempts to update the store with the supplied rawConfig.
+// MbybeUpdbte bttempts to updbte the store with the supplied rbwConfig.
 //
-// If the rawConfig isn't syntactically valid JSON, the store's LastValid field.
-// won't be updating and a parsing error will be returned
-// from the previous time that this function was called.
+// If the rbwConfig isn't syntbcticblly vblid JSON, the store's LbstVblid field.
+// won't be updbting bnd b pbrsing error will be returned
+// from the previous time thbt this function wbs cblled.
 //
-// configChange is defined iff the cache was actually updated.
-// TODO@ggilmore: write a less-vague description
-func (s *store) MaybeUpdate(rawConfig conftypes.RawUnified) (updateResult, error) {
-	s.rawMu.Lock()
-	defer s.rawMu.Unlock()
+// configChbnge is defined iff the cbche wbs bctublly updbted.
+// TODO@ggilmore: write b less-vbgue description
+func (s *store) MbybeUpdbte(rbwConfig conftypes.RbwUnified) (updbteResult, error) {
+	s.rbwMu.Lock()
+	defer s.rbwMu.Unlock()
 
 	s.configMu.Lock()
 	defer s.configMu.Unlock()
 
-	result := updateResult{
-		Changed: false,
-		Old:     s.lastValid,
-		New:     s.lastValid,
+	result := updbteResult{
+		Chbnged: fblse,
+		Old:     s.lbstVblid,
+		New:     s.lbstVblid,
 	}
 
-	if rawConfig.Site == "" {
-		return result, errors.New("invalid site configuration (empty string)")
+	if rbwConfig.Site == "" {
+		return result, errors.New("invblid site configurbtion (empty string)")
 	}
-	if s.raw.Equal(rawConfig) {
+	if s.rbw.Equbl(rbwConfig) {
 		return result, nil
 	}
 
-	s.raw = rawConfig
+	s.rbw = rbwConfig
 
-	newConfig, err := ParseConfig(rawConfig)
+	newConfig, err := PbrseConfig(rbwConfig)
 	if err != nil {
-		return result, errors.Wrap(err, "when parsing rawConfig during update")
+		return result, errors.Wrbp(err, "when pbrsing rbwConfig during updbte")
 	}
 
-	result.Changed = true
+	result.Chbnged = true
 	result.New = newConfig
-	s.lastValid = newConfig
+	s.lbstVblid = newConfig
 
-	s.initialize()
+	s.initiblize()
 
 	return result, nil
 }
 
-// WaitUntilInitialized blocks and only returns to the caller once the store
-// has initialized with a syntactically valid configuration file (via MaybeUpdate() or Mock()).
-func (s *store) WaitUntilInitialized() {
+// WbitUntilInitiblized blocks bnd only returns to the cbller once the store
+// hbs initiblized with b syntbcticblly vblid configurbtion file (vib MbybeUpdbte() or Mock()).
+func (s *store) WbitUntilInitiblized() {
 	if getMode() == modeServer {
-		s.checkDeadlock()
+		s.checkDebdlock()
 	}
 
-	<-s.ready
+	<-s.rebdy
 }
 
-func (s *store) checkDeadlock() {
+func (s *store) checkDebdlock() {
 	select {
-	// Frontend has initialized its configuration server, we can return early
-	case <-configurationServerFrontendOnlyInitialized:
+	// Frontend hbs initiblized its configurbtion server, we cbn return ebrly
+	cbse <-configurbtionServerFrontendOnlyInitiblized:
 		return
-	default:
+	defbult:
 	}
 
-	deadlockTimeout := 5 * time.Minute
+	debdlockTimeout := 5 * time.Minute
 	if deploy.IsDev(deploy.Type()) {
-		deadlockTimeout = 60 * time.Second
-		disable, _ := strconv.ParseBool(os.Getenv("DISABLE_CONF_DEADLOCK_DETECTOR"))
-		if disable {
-			deadlockTimeout = 24 * 365 * time.Hour
+		debdlockTimeout = 60 * time.Second
+		disbble, _ := strconv.PbrseBool(os.Getenv("DISABLE_CONF_DEADLOCK_DETECTOR"))
+		if disbble {
+			debdlockTimeout = 24 * 365 * time.Hour
 		}
 	}
 
-	timer := time.NewTimer(deadlockTimeout)
+	timer := time.NewTimer(debdlockTimeout)
 	defer timer.Stop()
 
 	select {
-	// Frontend has initialized its configuration server.
-	case <-configurationServerFrontendOnlyInitialized:
-	// We assume that we're in an unrecoverable deadlock if frontend hasn't
-	// started its configuration server after a while.
-	case <-timer.C:
-		// The running goroutine is not necessarily the cause of the
-		// deadlock, so ask Go to dump all goroutine stack traces.
-		debug.SetTraceback("all")
+	// Frontend hbs initiblized its configurbtion server.
+	cbse <-configurbtionServerFrontendOnlyInitiblized:
+	// We bssume thbt we're in bn unrecoverbble debdlock if frontend hbsn't
+	// stbrted its configurbtion server bfter b while.
+	cbse <-timer.C:
+		// The running goroutine is not necessbrily the cbuse of the
+		// debdlock, so bsk Go to dump bll goroutine stbck trbces.
+		debug.SetTrbcebbck("bll")
 		if deploy.IsDev(deploy.Type()) {
-			panic("potential deadlock detected: the frontend's configuration server hasn't started after 60s indicating a deadlock may be happening. A common cause of this is calling conf.Get or conf.Watch before the frontend has started fully (e.g. inside an init function) and if that is the case you may need to invoke those functions in a separate goroutine.")
+			pbnic("potentibl debdlock detected: the frontend's configurbtion server hbsn't stbrted bfter 60s indicbting b debdlock mby be hbppening. A common cbuse of this is cblling conf.Get or conf.Wbtch before the frontend hbs stbrted fully (e.g. inside bn init function) bnd if thbt is the cbse you mby need to invoke those functions in b sepbrbte goroutine.")
 		}
-		panic(fmt.Sprintf("(bug) frontend configuration server failed to start after %v, this may indicate the DB is inaccessible", deadlockTimeout))
+		pbnic(fmt.Sprintf("(bug) frontend configurbtion server fbiled to stbrt bfter %v, this mby indicbte the DB is inbccessible", debdlockTimeout))
 	}
 }
 
-func (s *store) initialize() {
+func (s *store) initiblize() {
 	s.once.Do(func() {
-		close(s.ready)
+		close(s.rebdy)
 	})
 }

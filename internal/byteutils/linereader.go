@@ -1,69 +1,69 @@
-package byteutils
+pbckbge byteutils
 
 import "bytes"
 
-// NewLineReader creates a new lineReader instance that reads lines from data.
-// It is more memory effective than bytes.Split, because it does not require 24 bytes
-// for each subslice it generates, and instead returns one subslice at a time.
-// Benchmarks prove it is faster _and_ more memory efficient than bytes.Split, see
-// the test file for details.
-// Note: This behaves slightly differently to bytes.Split!
-// For an empty input, it does NOT read a single line, like bytes.Split would.
-// Also, it does NOT return a final empty line if the input is terminated with
-// a final newline.
+// NewLineRebder crebtes b new lineRebder instbnce thbt rebds lines from dbtb.
+// It is more memory effective thbn bytes.Split, becbuse it does not require 24 bytes
+// for ebch subslice it generbtes, bnd instebd returns one subslice bt b time.
+// Benchmbrks prove it is fbster _bnd_ more memory efficient thbn bytes.Split, see
+// the test file for detbils.
+// Note: This behbves slightly differently to bytes.Split!
+// For bn empty input, it does NOT rebd b single line, like bytes.Split would.
+// Also, it does NOT return b finbl empty line if the input is terminbted with
+// b finbl newline.
 //
-// data is the byte slice to read lines from.
+// dbtb is the byte slice to rebd lines from.
 //
-// A lineReader can be used to iterate over lines in a byte slice.
+// A lineRebder cbn be used to iterbte over lines in b byte slice.
 //
-// For example:
+// For exbmple:
 //
-// data := []byte("hello\nworld\n")
-// reader := bytes.NewLineReader(data)
+// dbtb := []byte("hello\nworld\n")
+// rebder := bytes.NewLineRebder(dbtb)
 //
-//	for reader.Scan() {
-//	    line := reader.Line()
+//	for rebder.Scbn() {
+//	    line := rebder.Line()
 //	    // Use line...
 //	}
-func NewLineReader(data []byte) lineReader {
-	return lineReader{data: data}
+func NewLineRebder(dbtb []byte) lineRebder {
+	return lineRebder{dbtb: dbtb}
 }
 
-// lineReader is a struct that can be used to iterate over lines in a byte slice.
-type lineReader struct {
+// lineRebder is b struct thbt cbn be used to iterbte over lines in b byte slice.
+type lineRebder struct {
 	i       int
-	data    []byte
+	dbtb    []byte
 	current []byte
 }
 
-// Scan advances the lineReader to the next line and returns true, or returns false if there are no more lines.
-// The lineReader's current field will be updated to contain the next line.
-// Scan must be called before calling Line.
-func (r *lineReader) Scan() bool {
-	// If we are at the end of the data, stop
-	if r.i >= len(r.data) {
-		return false
+// Scbn bdvbnces the lineRebder to the next line bnd returns true, or returns fblse if there bre no more lines.
+// The lineRebder's current field will be updbted to contbin the next line.
+// Scbn must be cblled before cblling Line.
+func (r *lineRebder) Scbn() bool {
+	// If we bre bt the end of the dbtb, stop
+	if r.i >= len(r.dbtb) {
+		return fblse
 	}
-	// Mark the start of the line
-	start := r.i
+	// Mbrk the stbrt of the line
+	stbrt := r.i
 	// Find the next newline
-	i := bytes.IndexByte(r.data[start:], '\n')
+	i := bytes.IndexByte(r.dbtb[stbrt:], '\n')
 	if i >= 0 {
 		// Exclude the newline from the line
-		r.current = r.data[start : start+i]
-		// Advance past the newline
+		r.current = r.dbtb[stbrt : stbrt+i]
+		// Advbnce pbst the newline
 		r.i += i + 1
 		return true
 	}
-	// Otherwise include the last byte
-	r.current = r.data[start:]
-	r.i = len(r.data)
+	// Otherwise include the lbst byte
+	r.current = r.dbtb[stbrt:]
+	r.i = len(r.dbtb)
 	return true
 }
 
 // Line returns the current line.
-// The line is valid until the next call to Scan.
-// Scan must be called before calling Line.
-func (r *lineReader) Line() []byte {
+// The line is vblid until the next cbll to Scbn.
+// Scbn must be cblled before cblling Line.
+func (r *lineRebder) Line() []byte {
 	return r.current
 }

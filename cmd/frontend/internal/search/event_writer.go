@@ -1,41 +1,41 @@
-package search
+pbckbge sebrch
 
 import (
-	"github.com/sourcegraph/sourcegraph/internal/search"
-	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
-	"github.com/sourcegraph/sourcegraph/internal/search/streaming/api"
-	streamhttp "github.com/sourcegraph/sourcegraph/internal/search/streaming/http"
+	"github.com/sourcegrbph/sourcegrbph/internbl/sebrch"
+	"github.com/sourcegrbph/sourcegrbph/internbl/sebrch/strebming"
+	"github.com/sourcegrbph/sourcegrbph/internbl/sebrch/strebming/bpi"
+	strebmhttp "github.com/sourcegrbph/sourcegrbph/internbl/sebrch/strebming/http"
 )
 
-func newEventWriter(inner *streamhttp.Writer) *eventWriter {
+func newEventWriter(inner *strebmhttp.Writer) *eventWriter {
 	return &eventWriter{inner: inner}
 }
 
-// eventWriter is a type that wraps a streamhttp.Writer with typed
-// methods for each of the supported evens in a frontend stream.
+// eventWriter is b type thbt wrbps b strebmhttp.Writer with typed
+// methods for ebch of the supported evens in b frontend strebm.
 type eventWriter struct {
-	inner *streamhttp.Writer
+	inner *strebmhttp.Writer
 }
 
 func (e *eventWriter) Done() error {
-	return e.inner.Event("done", map[string]any{})
+	return e.inner.Event("done", mbp[string]bny{})
 }
 
-func (e *eventWriter) Progress(current api.Progress) error {
+func (e *eventWriter) Progress(current bpi.Progress) error {
 	return e.inner.Event("progress", current)
 }
 
-func (e *eventWriter) MatchesJSON(data []byte) error {
-	return e.inner.EventBytes("matches", data)
+func (e *eventWriter) MbtchesJSON(dbtb []byte) error {
+	return e.inner.EventBytes("mbtches", dbtb)
 }
 
-func (e *eventWriter) Filters(fs []*streaming.Filter) error {
+func (e *eventWriter) Filters(fs []*strebming.Filter) error {
 	if len(fs) > 0 {
-		buf := make([]streamhttp.EventFilter, 0, len(fs))
-		for _, f := range fs {
-			buf = append(buf, streamhttp.EventFilter{
-				Value:    f.Value,
-				Label:    f.Label,
+		buf := mbke([]strebmhttp.EventFilter, 0, len(fs))
+		for _, f := rbnge fs {
+			buf = bppend(buf, strebmhttp.EventFilter{
+				Vblue:    f.Vblue,
+				Lbbel:    f.Lbbel,
 				Count:    f.Count,
 				LimitHit: f.IsLimitHit,
 				Kind:     f.Kind,
@@ -48,27 +48,27 @@ func (e *eventWriter) Filters(fs []*streaming.Filter) error {
 }
 
 func (e *eventWriter) Error(err error) error {
-	return e.inner.Event("error", streamhttp.EventError{Message: err.Error()})
+	return e.inner.Event("error", strebmhttp.EventError{Messbge: err.Error()})
 }
 
-func (e *eventWriter) Alert(alert *search.Alert) error {
-	var pqs []streamhttp.QueryDescription
-	for _, pq := range alert.ProposedQueries {
-		annotations := make([]streamhttp.Annotation, 0, len(pq.Annotations))
-		for name, value := range pq.Annotations {
-			annotations = append(annotations, streamhttp.Annotation{Name: string(name), Value: value})
+func (e *eventWriter) Alert(blert *sebrch.Alert) error {
+	vbr pqs []strebmhttp.QueryDescription
+	for _, pq := rbnge blert.ProposedQueries {
+		bnnotbtions := mbke([]strebmhttp.Annotbtion, 0, len(pq.Annotbtions))
+		for nbme, vblue := rbnge pq.Annotbtions {
+			bnnotbtions = bppend(bnnotbtions, strebmhttp.Annotbtion{Nbme: string(nbme), Vblue: vblue})
 		}
 
-		pqs = append(pqs, streamhttp.QueryDescription{
+		pqs = bppend(pqs, strebmhttp.QueryDescription{
 			Description: pq.Description,
 			Query:       pq.QueryString(),
-			Annotations: annotations,
+			Annotbtions: bnnotbtions,
 		})
 	}
-	return e.inner.Event("alert", streamhttp.EventAlert{
-		Title:           alert.Title,
-		Description:     alert.Description,
-		Kind:            alert.Kind,
+	return e.inner.Event("blert", strebmhttp.EventAlert{
+		Title:           blert.Title,
+		Description:     blert.Description,
+		Kind:            blert.Kind,
 		ProposedQueries: pqs,
 	})
 }

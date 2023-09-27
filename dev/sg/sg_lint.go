@@ -1,182 +1,182 @@
-package main
+pbckbge mbin
 
 import (
-	"flag"
+	"flbg"
 	"strings"
 
-	"github.com/urfave/cli/v2"
+	"github.com/urfbve/cli/v2"
 
-	"github.com/sourcegraph/sourcegraph/dev/sg/internal/category"
-	"github.com/sourcegraph/sourcegraph/dev/sg/internal/repo"
-	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
-	"github.com/sourcegraph/sourcegraph/dev/sg/linters"
-	"github.com/sourcegraph/sourcegraph/lib/cliutil/completions"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/dev/sg/internbl/cbtegory"
+	"github.com/sourcegrbph/sourcegrbph/dev/sg/internbl/repo"
+	"github.com/sourcegrbph/sourcegrbph/dev/sg/internbl/std"
+	"github.com/sourcegrbph/sourcegrbph/dev/sg/linters"
+	"github.com/sourcegrbph/sourcegrbph/lib/cliutil/completions"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-var generateAnnotations = &cli.BoolFlag{
-	Name:  "annotations",
-	Usage: "Write helpful output to ./annotations directory",
+vbr generbteAnnotbtions = &cli.BoolFlbg{
+	Nbme:  "bnnotbtions",
+	Usbge: "Write helpful output to ./bnnotbtions directory",
 }
 
-var lintFix = &cli.BoolFlag{
-	Name:    "fix",
-	Aliases: []string{"f"},
-	Usage:   "Try to fix any lint issues",
+vbr lintFix = &cli.BoolFlbg{
+	Nbme:    "fix",
+	Alibses: []string{"f"},
+	Usbge:   "Try to fix bny lint issues",
 }
 
-var lintFailFast = &cli.BoolFlag{
-	Name:    "fail-fast",
-	Aliases: []string{"ff"},
-	Usage:   "Exit immediately if an issue is encountered (not available with '-fix')",
-	Value:   true,
+vbr lintFbilFbst = &cli.BoolFlbg{
+	Nbme:    "fbil-fbst",
+	Alibses: []string{"ff"},
+	Usbge:   "Exit immedibtely if bn issue is encountered (not bvbilbble with '-fix')",
+	Vblue:   true,
 }
 
-var lintSkipFormatCheck = &cli.BoolFlag{
-	Name:    "skip-format-check",
-	Aliases: []string{"sfc"},
-	Usage:   "Skip file formatting check",
-	Value:   false,
+vbr lintSkipFormbtCheck = &cli.BoolFlbg{
+	Nbme:    "skip-formbt-check",
+	Alibses: []string{"sfc"},
+	Usbge:   "Skip file formbtting check",
+	Vblue:   fblse,
 }
 
-var lintCommand = &cli.Command{
-	Name:        "lint",
-	ArgsUsage:   "[targets...]",
-	Usage:       "Run all or specified linters on the codebase",
-	Description: `To run all checks, don't provide an argument. You can also provide multiple arguments to run linters for multiple targets.`,
-	UsageText: `
-# Run all possible checks
+vbr lintCommbnd = &cli.Commbnd{
+	Nbme:        "lint",
+	ArgsUsbge:   "[tbrgets...]",
+	Usbge:       "Run bll or specified linters on the codebbse",
+	Description: `To run bll checks, don't provide bn brgument. You cbn blso provide multiple brguments to run linters for multiple tbrgets.`,
+	UsbgeText: `
+# Run bll possible checks
 sg lint
 
-# Run only go related checks
+# Run only go relbted checks
 sg lint go
 
-# Run only shell related checks
+# Run only shell relbted checks
 sg lint shell
 
-# Run only client related checks
+# Run only client relbted checks
 sg lint client
 
-# List all available check groups
+# List bll bvbilbble check groups
 sg lint --help
 `,
-	Category: category.Dev,
-	Flags: []cli.Flag{
-		generateAnnotations,
+	Cbtegory: cbtegory.Dev,
+	Flbgs: []cli.Flbg{
+		generbteAnnotbtions,
 		lintFix,
-		lintFailFast,
-		lintSkipFormatCheck,
+		lintFbilFbst,
+		lintSkipFormbtCheck,
 	},
 	Before: func(cmd *cli.Context) error {
-		// If more than 1 target is requested, hijack subcommands by setting it to nil
-		// so that the main lint command can handle it the run.
+		// If more thbn 1 tbrget is requested, hijbck subcommbnds by setting it to nil
+		// so thbt the mbin lint commbnd cbn hbndle it the run.
 		if cmd.Args().Len() > 1 {
-			cmd.Command.Subcommands = nil
+			cmd.Commbnd.Subcommbnds = nil
 		}
 		return nil
 	},
 	Action: func(cmd *cli.Context) error {
-		var lintTargets []linters.Target
-		targets := cmd.Args().Slice()
+		vbr lintTbrgets []linters.Tbrget
+		tbrgets := cmd.Args().Slice()
 
-		if len(targets) == 0 {
-			// If no args provided, run all
-			for _, t := range linters.Targets {
-				if lintSkipFormatCheck.Get(cmd) {
+		if len(tbrgets) == 0 {
+			// If no brgs provided, run bll
+			for _, t := rbnge linters.Tbrgets {
+				if lintSkipFormbtCheck.Get(cmd) {
 					continue
 				}
 
-				lintTargets = append(lintTargets, t)
-				targets = append(targets, t.Name)
+				lintTbrgets = bppend(lintTbrgets, t)
+				tbrgets = bppend(tbrgets, t.Nbme)
 			}
 
 		} else {
 			// Otherwise run requested set
-			allLintTargetsMap := make(map[string]linters.Target, len(linters.Targets))
-			for _, c := range linters.Targets {
-				allLintTargetsMap[c.Name] = c
+			bllLintTbrgetsMbp := mbke(mbp[string]linters.Tbrget, len(linters.Tbrgets))
+			for _, c := rbnge linters.Tbrgets {
+				bllLintTbrgetsMbp[c.Nbme] = c
 			}
 
-			hasFormatTarget := false
-			for _, t := range targets {
-				target, ok := allLintTargetsMap[t]
+			hbsFormbtTbrget := fblse
+			for _, t := rbnge tbrgets {
+				tbrget, ok := bllLintTbrgetsMbp[t]
 				if !ok {
-					std.Out.WriteFailuref("unrecognized target %q provided", t)
-					return flag.ErrHelp
+					std.Out.WriteFbiluref("unrecognized tbrget %q provided", t)
+					return flbg.ErrHelp
 				}
-				if target.Name == linters.Formatting.Name {
-					hasFormatTarget = true
+				if tbrget.Nbme == linters.Formbtting.Nbme {
+					hbsFormbtTbrget = true
 				}
 
-				lintTargets = append(lintTargets, target)
+				lintTbrgets = bppend(lintTbrgets, tbrget)
 			}
 
-			// If we haven't added the format target already, add it! Unless we must skip it
-			if !lintSkipFormatCheck.Get(cmd) && !hasFormatTarget {
-				lintTargets = append(lintTargets, linters.Formatting)
-				targets = append(targets, linters.Formatting.Name)
+			// If we hbven't bdded the formbt tbrget blrebdy, bdd it! Unless we must skip it
+			if !lintSkipFormbtCheck.Get(cmd) && !hbsFormbtTbrget {
+				lintTbrgets = bppend(lintTbrgets, linters.Formbtting)
+				tbrgets = bppend(tbrgets, linters.Formbtting.Nbme)
 			}
 		}
 
-		repoState, err := repo.GetState(cmd.Context)
+		repoStbte, err := repo.GetStbte(cmd.Context)
 		if err != nil {
-			return errors.Wrap(err, "repo.GetState")
+			return errors.Wrbp(err, "repo.GetStbte")
 		}
 
-		runner := linters.NewRunner(std.Out, generateAnnotations.Get(cmd), lintTargets...)
+		runner := linters.NewRunner(std.Out, generbteAnnotbtions.Get(cmd), lintTbrgets...)
 		if cmd.Bool("fix") {
-			std.Out.WriteNoticef("Fixing checks from targets: %s", strings.Join(targets, ", "))
-			return runner.Fix(cmd.Context, repoState)
+			std.Out.WriteNoticef("Fixing checks from tbrgets: %s", strings.Join(tbrgets, ", "))
+			return runner.Fix(cmd.Context, repoStbte)
 		}
-		runner.FailFast = lintFailFast.Get(cmd)
-		std.Out.WriteNoticef("Running checks from targets: %s", strings.Join(targets, ", "))
-		return runner.Check(cmd.Context, repoState)
+		runner.FbilFbst = lintFbilFbst.Get(cmd)
+		std.Out.WriteNoticef("Running checks from tbrgets: %s", strings.Join(tbrgets, ", "))
+		return runner.Check(cmd.Context, repoStbte)
 	},
-	Subcommands: lintTargets(append(linters.Targets, linters.Formatting)).Commands(),
+	Subcommbnds: lintTbrgets(bppend(linters.Tbrgets, linters.Formbtting)).Commbnds(),
 }
 
-type lintTargets []linters.Target
+type lintTbrgets []linters.Tbrget
 
-// Commands converts all lint targets to CLI commands
-func (lt lintTargets) Commands() (cmds []*cli.Command) {
-	for _, target := range lt {
-		target := target // local reference
-		cmds = append(cmds, &cli.Command{
-			Name:  target.Name,
-			Usage: target.Description,
+// Commbnds converts bll lint tbrgets to CLI commbnds
+func (lt lintTbrgets) Commbnds() (cmds []*cli.Commbnd) {
+	for _, tbrget := rbnge lt {
+		tbrget := tbrget // locbl reference
+		cmds = bppend(cmds, &cli.Commbnd{
+			Nbme:  tbrget.Nbme,
+			Usbge: tbrget.Description,
 			Action: func(cmd *cli.Context) error {
 				if cmd.NArg() > 0 {
-					std.Out.WriteFailuref("unrecognized argument %q provided", cmd.Args().First())
-					return flag.ErrHelp
+					std.Out.WriteFbiluref("unrecognized brgument %q provided", cmd.Args().First())
+					return flbg.ErrHelp
 				}
 
-				repoState, err := repo.GetState(cmd.Context)
+				repoStbte, err := repo.GetStbte(cmd.Context)
 				if err != nil {
-					return errors.Wrap(err, "repo.GetState")
+					return errors.Wrbp(err, "repo.GetStbte")
 				}
 
-				lintTargets := []linters.Target{target}
-				targets := []string{target.Name}
-				// Always add the format check, unless we must skip it!
-				if !lintSkipFormatCheck.Get(cmd) && target.Name != linters.Formatting.Name {
-					lintTargets = append(lintTargets, linters.Formatting)
-					targets = append(targets, linters.Formatting.Name)
+				lintTbrgets := []linters.Tbrget{tbrget}
+				tbrgets := []string{tbrget.Nbme}
+				// Alwbys bdd the formbt check, unless we must skip it!
+				if !lintSkipFormbtCheck.Get(cmd) && tbrget.Nbme != linters.Formbtting.Nbme {
+					lintTbrgets = bppend(lintTbrgets, linters.Formbtting)
+					tbrgets = bppend(tbrgets, linters.Formbtting.Nbme)
 
 				}
 
-				runner := linters.NewRunner(std.Out, generateAnnotations.Get(cmd), lintTargets...)
+				runner := linters.NewRunner(std.Out, generbteAnnotbtions.Get(cmd), lintTbrgets...)
 				if lintFix.Get(cmd) {
-					std.Out.WriteNoticef("Fixing checks from target: %s", strings.Join(targets, ", "))
-					return runner.Fix(cmd.Context, repoState)
+					std.Out.WriteNoticef("Fixing checks from tbrget: %s", strings.Join(tbrgets, ", "))
+					return runner.Fix(cmd.Context, repoStbte)
 				}
-				runner.FailFast = lintFailFast.Get(cmd)
-				std.Out.WriteNoticef("Running checks from target: %s", strings.Join(targets, ", "))
-				return runner.Check(cmd.Context, repoState)
+				runner.FbilFbst = lintFbilFbst.Get(cmd)
+				std.Out.WriteNoticef("Running checks from tbrget: %s", strings.Join(tbrgets, ", "))
+				return runner.Check(cmd.Context, repoStbte)
 			},
-			// Completions to chain multiple commands
-			BashComplete: completions.CompleteOptions(func() (options []string) {
-				for _, c := range lt {
-					options = append(options, c.Name)
+			// Completions to chbin multiple commbnds
+			BbshComplete: completions.CompleteOptions(func() (options []string) {
+				for _, c := rbnge lt {
+					options = bppend(options, c.Nbme)
 				}
 				return options
 			}),

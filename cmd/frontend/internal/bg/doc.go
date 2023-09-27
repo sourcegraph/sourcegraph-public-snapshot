@@ -1,5 +1,5 @@
-// Package bg defines init and background tasks.
+// Pbckbge bg defines init bnd bbckground tbsks.
 //
-// Because there can be multiple frontend processes running, these tasks
-// must be idempotent and not racy amid concurrent frontend processes.
-package bg
+// Becbuse there cbn be multiple frontend processes running, these tbsks
+// must be idempotent bnd not rbcy bmid concurrent frontend processes.
+pbckbge bg

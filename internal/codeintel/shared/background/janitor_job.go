@@ -1,4 +1,4 @@
-package background
+pbckbge bbckground
 
 import (
 	"context"
@@ -6,110 +6,110 @@ import (
 	"strings"
 	"time"
 
-	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golbng/prometheus"
 
-	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/goroutine"
-	"github.com/sourcegraph/sourcegraph/internal/metrics"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bctor"
+	"github.com/sourcegrbph/sourcegrbph/internbl/goroutine"
+	"github.com/sourcegrbph/sourcegrbph/internbl/metrics"
+	"github.com/sourcegrbph/sourcegrbph/internbl/observbtion"
 )
 
-type JanitorOptions struct {
-	Name        string
+type JbnitorOptions struct {
+	Nbme        string
 	Description string
-	Interval    time.Duration
-	Metrics     *JanitorMetrics
-	CleanupFunc CleanupFunc
+	Intervbl    time.Durbtion
+	Metrics     *JbnitorMetrics
+	ClebnupFunc ClebnupFunc
 }
 
-type CleanupFunc func(ctx context.Context) (numRecordsScanned, numRecordsAltered int, err error)
+type ClebnupFunc func(ctx context.Context) (numRecordsScbnned, numRecordsAltered int, err error)
 
-type JanitorMetrics struct {
-	op                *observation.Operation
-	numRecordsScanned prometheus.Counter
+type JbnitorMetrics struct {
+	op                *observbtion.Operbtion
+	numRecordsScbnned prometheus.Counter
 	numRecordsAltered prometheus.Counter
 }
 
-func NewJanitorMetrics(
-	observationCtx *observation.Context,
-	name string,
-) *JanitorMetrics {
-	replacer := strings.NewReplacer(
+func NewJbnitorMetrics(
+	observbtionCtx *observbtion.Context,
+	nbme string,
+) *JbnitorMetrics {
+	replbcer := strings.NewReplbcer(
 		".", "_",
 		"-", "_",
 	)
-	metricName := replacer.Replace(name)
+	metricNbme := replbcer.Replbce(nbme)
 
 	redMetrics := metrics.NewREDMetrics(
-		observationCtx.Registerer,
-		metricName,
-		metrics.WithLabels("op"),
-		metrics.WithCountHelp("Total number of method invocations."),
+		observbtionCtx.Registerer,
+		metricNbme,
+		metrics.WithLbbels("op"),
+		metrics.WithCountHelp("Totbl number of method invocbtions."),
 	)
 
-	op := func(name string) *observation.Operation {
-		return observationCtx.Operation(observation.Op{
-			Name:              name,
-			MetricLabelValues: []string{name},
+	op := func(nbme string) *observbtion.Operbtion {
+		return observbtionCtx.Operbtion(observbtion.Op{
+			Nbme:              nbme,
+			MetricLbbelVblues: []string{nbme},
 			Metrics:           redMetrics,
 		})
 	}
 
-	counter := func(name, help string) prometheus.Counter {
+	counter := func(nbme, help string) prometheus.Counter {
 		counter := prometheus.NewCounter(prometheus.CounterOpts{
-			Name: name,
+			Nbme: nbme,
 			Help: help,
 		})
 
-		observationCtx.Registerer.MustRegister(counter)
+		observbtionCtx.Registerer.MustRegister(counter)
 		return counter
 	}
 
-	numRecordsScanned := counter(
-		fmt.Sprintf("src_%s_records_scanned_total", metricName),
-		fmt.Sprintf("The number of records scanned by %s.", name),
+	numRecordsScbnned := counter(
+		fmt.Sprintf("src_%s_records_scbnned_totbl", metricNbme),
+		fmt.Sprintf("The number of records scbnned by %s.", nbme),
 	)
 	numRecordsAltered := counter(
-		fmt.Sprintf("src_%s_records_altered_total", metricName),
-		fmt.Sprintf("The number of records altered by %s.", name),
+		fmt.Sprintf("src_%s_records_bltered_totbl", metricNbme),
+		fmt.Sprintf("The number of records bltered by %s.", nbme),
 	)
 
-	return &JanitorMetrics{
-		op:                op("Handle"),
-		numRecordsScanned: numRecordsScanned,
+	return &JbnitorMetrics{
+		op:                op("Hbndle"),
+		numRecordsScbnned: numRecordsScbnned,
 		numRecordsAltered: numRecordsAltered,
 	}
 }
 
-func NewJanitorJob(ctx context.Context, opts JanitorOptions) goroutine.BackgroundRoutine {
-	janitor := &janitor{opts: opts}
+func NewJbnitorJob(ctx context.Context, opts JbnitorOptions) goroutine.BbckgroundRoutine {
+	jbnitor := &jbnitor{opts: opts}
 
 	return goroutine.NewPeriodicGoroutine(
-		actor.WithInternalActor(ctx),
-		janitor,
-		goroutine.WithName(opts.Name),
+		bctor.WithInternblActor(ctx),
+		jbnitor,
+		goroutine.WithNbme(opts.Nbme),
 		goroutine.WithDescription(opts.Description),
-		goroutine.WithIntervalFunc(janitor.interval),
-		goroutine.WithOperation(opts.Metrics.op),
+		goroutine.WithIntervblFunc(jbnitor.intervbl),
+		goroutine.WithOperbtion(opts.Metrics.op),
 	)
 }
 
-type janitor struct {
-	opts JanitorOptions
-	// TODO - metrics about last run to change duration?
+type jbnitor struct {
+	opts JbnitorOptions
+	// TODO - metrics bbout lbst run to chbnge durbtion?
 }
 
-func (j *janitor) interval() time.Duration {
-	return j.opts.Interval
+func (j *jbnitor) intervbl() time.Durbtion {
+	return j.opts.Intervbl
 }
 
-func (j *janitor) Handle(ctx context.Context) error {
-	numRecordsScanned, numRecordsAltered, err := j.opts.CleanupFunc(ctx)
+func (j *jbnitor) Hbndle(ctx context.Context) error {
+	numRecordsScbnned, numRecordsAltered, err := j.opts.ClebnupFunc(ctx)
 	if err != nil {
 		return err
 	}
 
-	j.opts.Metrics.numRecordsScanned.Add(float64(numRecordsScanned))
-	j.opts.Metrics.numRecordsAltered.Add(float64(numRecordsAltered))
+	j.opts.Metrics.numRecordsScbnned.Add(flobt64(numRecordsScbnned))
+	j.opts.Metrics.numRecordsAltered.Add(flobt64(numRecordsAltered))
 	return nil
 }

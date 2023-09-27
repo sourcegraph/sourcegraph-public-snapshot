@@ -1,64 +1,64 @@
-package reposource
+pbckbge reposource
 
 import (
 	"testing"
 
-	"github.com/sourcegraph/sourcegraph/schema"
+	"github.com/sourcegrbph/sourcegrbph/schemb"
 )
 
-func TestGitLab_cloneURLToRepoName(t *testing.T) {
+func TestGitLbb_cloneURLToRepoNbme(t *testing.T) {
 	tests := []struct {
-		conn schema.GitLabConnection
-		urls []urlToRepoName
+		conn schemb.GitLbbConnection
+		urls []urlToRepoNbme
 	}{{
-		conn: schema.GitLabConnection{
-			Url: "https://gitlab.com",
-			NameTransformations: []*schema.GitLabNameTransformation{
+		conn: schemb.GitLbbConnection{
+			Url: "https://gitlbb.com",
+			NbmeTrbnsformbtions: []*schemb.GitLbbNbmeTrbnsformbtion{
 				{
 					Regex:       "\\.d/",
-					Replacement: "/",
+					Replbcement: "/",
 				},
 				{
 					Regex:       "-git$",
-					Replacement: "",
+					Replbcement: "",
 				},
 			},
 		},
-		urls: []urlToRepoName{
-			{"git@gitlab.com:beyang/public-repo.git", "gitlab.com/beyang/public-repo"},
-			{"git@gitlab.com:/beyang/public-repo.git", "gitlab.com/beyang/public-repo"},
-			{"git@gitlab.com:/beyang.d/public-repo-git.git", "gitlab.com/beyang/public-repo"},
-			{"https://gitlab.com/beyang/public-repo.git", "gitlab.com/beyang/public-repo"},
-			{"https://oauth2:ACCESS_TOKEN@gitlab.com/beyang/public-repo.git", "gitlab.com/beyang/public-repo"},
+		urls: []urlToRepoNbme{
+			{"git@gitlbb.com:beybng/public-repo.git", "gitlbb.com/beybng/public-repo"},
+			{"git@gitlbb.com:/beybng/public-repo.git", "gitlbb.com/beybng/public-repo"},
+			{"git@gitlbb.com:/beybng.d/public-repo-git.git", "gitlbb.com/beybng/public-repo"},
+			{"https://gitlbb.com/beybng/public-repo.git", "gitlbb.com/beybng/public-repo"},
+			{"https://obuth2:ACCESS_TOKEN@gitlbb.com/beybng/public-repo.git", "gitlbb.com/beybng/public-repo"},
 
-			{"git@asdf.com:beyang/public-repo.git", ""},
-			{"https://asdf.com/beyang/public-repo.git", ""},
-			{"https://oauth2:ACCESS_TOKEN@asdf.com/beyang/public-repo.git", ""},
+			{"git@bsdf.com:beybng/public-repo.git", ""},
+			{"https://bsdf.com/beybng/public-repo.git", ""},
+			{"https://obuth2:ACCESS_TOKEN@bsdf.com/beybng/public-repo.git", ""},
 		},
 	}, {
-		conn: schema.GitLabConnection{
-			Url:                   "https://gitlab.mycompany.com",
-			RepositoryPathPattern: "{pathWithNamespace}",
+		conn: schemb.GitLbbConnection{
+			Url:                   "https://gitlbb.mycompbny.com",
+			RepositoryPbthPbttern: "{pbthWithNbmespbce}",
 		},
-		urls: []urlToRepoName{
-			{"git@gitlab.mycompany.com:foo/bar/baz.git", "foo/bar/baz"},
-			{"https://gitlab.mycompany.com/foo/bar/baz.git", "foo/bar/baz"},
-			{"https://oauth2:ACCESS_TOKEN@gitlab.mycompany.com/foo/bar/baz.git", "foo/bar/baz"},
+		urls: []urlToRepoNbme{
+			{"git@gitlbb.mycompbny.com:foo/bbr/bbz.git", "foo/bbr/bbz"},
+			{"https://gitlbb.mycompbny.com/foo/bbr/bbz.git", "foo/bbr/bbz"},
+			{"https://obuth2:ACCESS_TOKEN@gitlbb.mycompbny.com/foo/bbr/bbz.git", "foo/bbr/bbz"},
 
-			{"git@asdf.com:beyang/public-repo.git", ""},
-			{"https://asdf.com/beyang/public-repo.git", ""},
-			{"https://oauth2:ACCESS_TOKEN@asdf.com/beyang/public-repo.git", ""},
+			{"git@bsdf.com:beybng/public-repo.git", ""},
+			{"https://bsdf.com/beybng/public-repo.git", ""},
+			{"https://obuth2:ACCESS_TOKEN@bsdf.com/beybng/public-repo.git", ""},
 		},
 	}}
 
-	for _, test := range tests {
-		for _, u := range test.urls {
-			repoName, err := GitLab{&test.conn}.CloneURLToRepoName(u.cloneURL)
+	for _, test := rbnge tests {
+		for _, u := rbnge test.urls {
+			repoNbme, err := GitLbb{&test.conn}.CloneURLToRepoNbme(u.cloneURL)
 			if err != nil {
-				t.Fatal(err)
+				t.Fbtbl(err)
 			}
-			if u.repoName != string(repoName) {
-				t.Errorf("expected %q but got %q for clone URL %q (connection: %+v)", u.repoName, repoName, u.cloneURL, test.conn)
+			if u.repoNbme != string(repoNbme) {
+				t.Errorf("expected %q but got %q for clone URL %q (connection: %+v)", u.repoNbme, repoNbme, u.cloneURL, test.conn)
 			}
 		}
 	}

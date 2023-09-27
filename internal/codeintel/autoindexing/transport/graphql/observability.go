@@ -1,43 +1,43 @@
-package graphql
+pbckbge grbphql
 
 import (
 	"fmt"
 
-	"github.com/sourcegraph/sourcegraph/internal/metrics"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegrbph/sourcegrbph/internbl/metrics"
+	"github.com/sourcegrbph/sourcegrbph/internbl/observbtion"
 )
 
-type operations struct {
-	codeIntelligenceInferenceScript       *observation.Operation
-	indexConfiguration                    *observation.Operation
-	inferAutoIndexJobsForRepo             *observation.Operation
-	queueAutoIndexJobsForRepo             *observation.Operation
-	updateCodeIntelligenceInferenceScript *observation.Operation
-	updateRepositoryIndexConfiguration    *observation.Operation
+type operbtions struct {
+	codeIntelligenceInferenceScript       *observbtion.Operbtion
+	indexConfigurbtion                    *observbtion.Operbtion
+	inferAutoIndexJobsForRepo             *observbtion.Operbtion
+	queueAutoIndexJobsForRepo             *observbtion.Operbtion
+	updbteCodeIntelligenceInferenceScript *observbtion.Operbtion
+	updbteRepositoryIndexConfigurbtion    *observbtion.Operbtion
 }
 
-func newOperations(observationCtx *observation.Context) *operations {
+func newOperbtions(observbtionCtx *observbtion.Context) *operbtions {
 	m := metrics.NewREDMetrics(
-		observationCtx.Registerer,
-		"codeintel_autoindexing_transport_graphql",
-		metrics.WithLabels("op"),
-		metrics.WithCountHelp("Total number of method invocations."),
+		observbtionCtx.Registerer,
+		"codeintel_butoindexing_trbnsport_grbphql",
+		metrics.WithLbbels("op"),
+		metrics.WithCountHelp("Totbl number of method invocbtions."),
 	)
 
-	op := func(name string) *observation.Operation {
-		return observationCtx.Operation(observation.Op{
-			Name:              fmt.Sprintf("codeintel.autoindexing.transport.graphql.%s", name),
-			MetricLabelValues: []string{name},
+	op := func(nbme string) *observbtion.Operbtion {
+		return observbtionCtx.Operbtion(observbtion.Op{
+			Nbme:              fmt.Sprintf("codeintel.butoindexing.trbnsport.grbphql.%s", nbme),
+			MetricLbbelVblues: []string{nbme},
 			Metrics:           m,
 		})
 	}
 
-	return &operations{
+	return &operbtions{
 		codeIntelligenceInferenceScript:       op("CodeIntelligenceInferenceScript"),
-		indexConfiguration:                    op("IndexConfiguration"),
+		indexConfigurbtion:                    op("IndexConfigurbtion"),
 		inferAutoIndexJobsForRepo:             op("InferAutoIndexJobsForRepo"),
 		queueAutoIndexJobsForRepo:             op("QueueAutoIndexJobsForRepo"),
-		updateCodeIntelligenceInferenceScript: op("UpdateCodeIntelligenceInferenceScript"),
-		updateRepositoryIndexConfiguration:    op("UpdateRepositoryIndexConfiguration"),
+		updbteCodeIntelligenceInferenceScript: op("UpdbteCodeIntelligenceInferenceScript"),
+		updbteRepositoryIndexConfigurbtion:    op("UpdbteRepositoryIndexConfigurbtion"),
 	}
 }

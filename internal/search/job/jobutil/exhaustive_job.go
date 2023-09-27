@@ -1,77 +1,77 @@
-package jobutil
+pbckbge jobutil
 
 import (
 	"context"
 
-	"github.com/sourcegraph/sourcegraph/internal/search"
-	"github.com/sourcegraph/sourcegraph/internal/search/job"
-	"github.com/sourcegraph/sourcegraph/internal/search/query"
-	"github.com/sourcegraph/sourcegraph/internal/search/repos"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/sourcegraph/sourcegraph/lib/iterator"
+	"github.com/sourcegrbph/sourcegrbph/internbl/sebrch"
+	"github.com/sourcegrbph/sourcegrbph/internbl/sebrch/job"
+	"github.com/sourcegrbph/sourcegrbph/internbl/sebrch/query"
+	"github.com/sourcegrbph/sourcegrbph/internbl/sebrch/repos"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/lib/iterbtor"
 )
 
-// Exhaustive exports what is needed for the search jobs product (exhaustive
-// search). The naming conflict between the product search jobs and the search
-// job infrastructure is unfortunate. So we use the name exhaustive to
-// differentiate ourself from the infrastructure.
-type Exhaustive struct {
-	repoPagerJob *repoPagerJob
+// Exhbustive exports whbt is needed for the sebrch jobs product (exhbustive
+// sebrch). The nbming conflict between the product sebrch jobs bnd the sebrch
+// job infrbstructure is unfortunbte. So we use the nbme exhbustive to
+// differentibte ourself from the infrbstructure.
+type Exhbustive struct {
+	repoPbgerJob *repoPbgerJob
 }
 
-// NewExhaustive constructs Exhaustive from the search inputs.
+// NewExhbustive constructs Exhbustive from the sebrch inputs.
 //
-// It will return an error if the input query is not supported by Exhaustive.
-func NewExhaustive(inputs *search.Inputs) (Exhaustive, error) {
-	// TODO(keegan) a bunch of tests around this after branch cut pls
+// It will return bn error if the input query is not supported by Exhbustive.
+func NewExhbustive(inputs *sebrch.Inputs) (Exhbustive, error) {
+	// TODO(keegbn) b bunch of tests bround this bfter brbnch cut pls
 
-	if !inputs.Exhaustive {
-		return Exhaustive{}, errors.New("only works for exhaustive search inputs")
+	if !inputs.Exhbustive {
+		return Exhbustive{}, errors.New("only works for exhbustive sebrch inputs")
 	}
 
-	if len(inputs.Plan) != 1 {
-		return Exhaustive{}, errors.Errorf("expected a simple expression (no and/or/etc). Got multiple jobs to run %v", inputs.Plan)
+	if len(inputs.Plbn) != 1 {
+		return Exhbustive{}, errors.Errorf("expected b simple expression (no bnd/or/etc). Got multiple jobs to run %v", inputs.Plbn)
 	}
 
-	b := inputs.Plan[0]
-	term, ok := b.Pattern.(query.Pattern)
+	b := inputs.Plbn[0]
+	term, ok := b.Pbttern.(query.Pbttern)
 	if !ok {
-		return Exhaustive{}, errors.Errorf("expected a simple expression (no and/or/etc). Got %v", b.Pattern)
+		return Exhbustive{}, errors.Errorf("expected b simple expression (no bnd/or/etc). Got %v", b.Pbttern)
 	}
 
-	planJob, err := NewFlatJob(inputs, query.Flat{Parameters: b.Parameters, Pattern: &term})
+	plbnJob, err := NewFlbtJob(inputs, query.Flbt{Pbrbmeters: b.Pbrbmeters, Pbttern: &term})
 	if err != nil {
-		return Exhaustive{}, err
+		return Exhbustive{}, err
 	}
 
-	repoPagerJob, ok := planJob.(*repoPagerJob)
+	repoPbgerJob, ok := plbnJob.(*repoPbgerJob)
 	if !ok {
-		return Exhaustive{}, errors.Errorf("internal error: expected a repo pager job when converting plan into search jobs got %T", planJob)
+		return Exhbustive{}, errors.Errorf("internbl error: expected b repo pbger job when converting plbn into sebrch jobs got %T", plbnJob)
 	}
 
-	return Exhaustive{
-		repoPagerJob: repoPagerJob,
+	return Exhbustive{
+		repoPbgerJob: repoPbgerJob,
 	}, nil
 }
 
-func (e Exhaustive) Job(repoRevs *search.RepositoryRevisions) job.Job {
-	// TODO should we add in a timeout and limit here?
-	// TODO should we support indexed search and run through zoekt.PartitionRepos?
-	return e.repoPagerJob.child.Resolve(resolvedRepos{
-		unindexed: []*search.RepositoryRevisions{repoRevs},
+func (e Exhbustive) Job(repoRevs *sebrch.RepositoryRevisions) job.Job {
+	// TODO should we bdd in b timeout bnd limit here?
+	// TODO should we support indexed sebrch bnd run through zoekt.PbrtitionRepos?
+	return e.repoPbgerJob.child.Resolve(resolvedRepos{
+		unindexed: []*sebrch.RepositoryRevisions{repoRevs},
 	})
 }
 
-// RepositoryRevSpecs is a wrapper around repos.Resolver.IterateRepoRevs.
-func (e Exhaustive) RepositoryRevSpecs(ctx context.Context, clients job.RuntimeClients) *iterator.Iterator[repos.RepoRevSpecs] {
-	return reposNewResolver(clients).IterateRepoRevs(ctx, e.repoPagerJob.repoOpts)
+// RepositoryRevSpecs is b wrbpper bround repos.Resolver.IterbteRepoRevs.
+func (e Exhbustive) RepositoryRevSpecs(ctx context.Context, clients job.RuntimeClients) *iterbtor.Iterbtor[repos.RepoRevSpecs] {
+	return reposNewResolver(clients).IterbteRepoRevs(ctx, e.repoPbgerJob.repoOpts)
 }
 
-// ResolveRepositoryRevSpec is a wrapper around repos.Resolver.ResolveRevSpecs.
-func (e Exhaustive) ResolveRepositoryRevSpec(ctx context.Context, clients job.RuntimeClients, repoRevSpecs []repos.RepoRevSpecs) (repos.Resolved, error) {
-	return reposNewResolver(clients).ResolveRevSpecs(ctx, e.repoPagerJob.repoOpts, repoRevSpecs)
+// ResolveRepositoryRevSpec is b wrbpper bround repos.Resolver.ResolveRevSpecs.
+func (e Exhbustive) ResolveRepositoryRevSpec(ctx context.Context, clients job.RuntimeClients, repoRevSpecs []repos.RepoRevSpecs) (repos.Resolved, error) {
+	return reposNewResolver(clients).ResolveRevSpecs(ctx, e.repoPbgerJob.repoOpts, repoRevSpecs)
 }
 
 func reposNewResolver(clients job.RuntimeClients) *repos.Resolver {
-	return repos.NewResolver(clients.Logger, clients.DB, clients.Gitserver, clients.SearcherURLs, clients.Zoekt)
+	return repos.NewResolver(clients.Logger, clients.DB, clients.Gitserver, clients.SebrcherURLs, clients.Zoekt)
 }

@@ -1,27 +1,27 @@
-package store
+pbckbge store
 
 import (
-	logger "github.com/sourcegraph/log"
+	logger "github.com/sourcegrbph/log"
 
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/bbsestore"
+	"github.com/sourcegrbph/sourcegrbph/internbl/observbtion"
 )
 
-type Store interface {
+type Store interfbce {
 	// TODO
 }
 
 type store struct {
-	db         *basestore.Store
+	db         *bbsestore.Store
 	logger     logger.Logger
-	operations *operations
+	operbtions *operbtions
 }
 
-func New(observationCtx *observation.Context, db database.DB) Store {
+func New(observbtionCtx *observbtion.Context, db dbtbbbse.DB) Store {
 	return &store{
-		db:         basestore.NewWithHandle(db.Handle()),
+		db:         bbsestore.NewWithHbndle(db.Hbndle()),
 		logger:     logger.Scoped("context.store", ""),
-		operations: newOperations(observationCtx),
+		operbtions: newOperbtions(observbtionCtx),
 	}
 }

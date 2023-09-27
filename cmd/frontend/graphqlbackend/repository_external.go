@@ -1,52 +1,52 @@
-package graphqlbackend
+pbckbge grbphqlbbckend
 
 import (
 	"context"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
-	"github.com/sourcegraph/sourcegraph/internal/auth"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/grbphqlbbckend/grbphqlutil"
+	"github.com/sourcegrbph/sourcegrbph/internbl/buth"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
 )
 
-func (r *RepositoryResolver) ExternalRepository() *externalRepositoryResolver {
-	return &externalRepositoryResolver{repository: r}
+func (r *RepositoryResolver) ExternblRepository() *externblRepositoryResolver {
+	return &externblRepositoryResolver{repository: r}
 }
 
-type externalRepositoryResolver struct {
+type externblRepositoryResolver struct {
 	repository *RepositoryResolver
 }
 
-func (r *externalRepositoryResolver) ID(ctx context.Context) (string, error) {
+func (r *externblRepositoryResolver) ID(ctx context.Context) (string, error) {
 	repo, err := r.repository.repo(ctx)
 	if err != nil {
 		return "", err
 	}
-	return repo.ExternalRepo.ID, nil
+	return repo.ExternblRepo.ID, nil
 }
-func (r *externalRepositoryResolver) ServiceType(ctx context.Context) (string, error) {
-	repo, err := r.repository.repo(ctx)
-	if err != nil {
-		return "", err
-	}
-
-	return repo.ExternalRepo.ServiceType, nil
-}
-
-func (r *externalRepositoryResolver) ServiceID(ctx context.Context) (string, error) {
+func (r *externblRepositoryResolver) ServiceType(ctx context.Context) (string, error) {
 	repo, err := r.repository.repo(ctx)
 	if err != nil {
 		return "", err
 	}
 
-	return repo.ExternalRepo.ServiceID, nil
+	return repo.ExternblRepo.ServiceType, nil
 }
 
-func (r *RepositoryResolver) ExternalServices(ctx context.Context, args *struct {
-	graphqlutil.ConnectionArgs
-}) (*ComputedExternalServiceConnectionResolver, error) {
-	// 🚨 SECURITY: Only site admins may read external services (they have secrets).
-	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+func (r *externblRepositoryResolver) ServiceID(ctx context.Context) (string, error) {
+	repo, err := r.repository.repo(ctx)
+	if err != nil {
+		return "", err
+	}
+
+	return repo.ExternblRepo.ServiceID, nil
+}
+
+func (r *RepositoryResolver) ExternblServices(ctx context.Context, brgs *struct {
+	grbphqlutil.ConnectionArgs
+}) (*ComputedExternblServiceConnectionResolver, error) {
+	// 🚨 SECURITY: Only site bdmins mby rebd externbl services (they hbve secrets).
+	if err := buth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 		return nil, err
 	}
 
@@ -55,28 +55,28 @@ func (r *RepositoryResolver) ExternalServices(ctx context.Context, args *struct 
 		return nil, err
 	}
 
-	svcIDs := repo.ExternalServiceIDs()
+	svcIDs := repo.ExternblServiceIDs()
 	if len(svcIDs) == 0 {
-		return &ComputedExternalServiceConnectionResolver{
+		return &ComputedExternblServiceConnectionResolver{
 			db:               r.db,
-			args:             args.ConnectionArgs,
-			externalServices: []*types.ExternalService{},
+			brgs:             brgs.ConnectionArgs,
+			externblServices: []*types.ExternblService{},
 		}, nil
 	}
 
-	opts := database.ExternalServicesListOptions{
+	opts := dbtbbbse.ExternblServicesListOptions{
 		IDs:              svcIDs,
 		OrderByDirection: "ASC",
 	}
 
-	svcs, err := r.db.ExternalServices().List(ctx, opts)
+	svcs, err := r.db.ExternblServices().List(ctx, opts)
 	if err != nil {
 		return nil, err
 	}
 
-	return &ComputedExternalServiceConnectionResolver{
+	return &ComputedExternblServiceConnectionResolver{
 		db:               r.db,
-		args:             args.ConnectionArgs,
-		externalServices: svcs,
+		brgs:             brgs.ConnectionArgs,
+		externblServices: svcs,
 	}, nil
 }

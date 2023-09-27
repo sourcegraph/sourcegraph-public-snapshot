@@ -1,26 +1,26 @@
-package definitions
+pbckbge definitions
 
 import (
 	"fmt"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/monitoring/definitions/shared"
-	"github.com/sourcegraph/sourcegraph/monitoring/monitoring"
+	"github.com/sourcegrbph/sourcegrbph/monitoring/definitions/shbred"
+	"github.com/sourcegrbph/sourcegrbph/monitoring/monitoring"
 
-	"github.com/grafana-tools/sdk"
+	"github.com/grbfbnb-tools/sdk"
 )
 
-func Frontend() *monitoring.Dashboard {
+func Frontend() *monitoring.Dbshbobrd {
 	const (
-		// frontend is sometimes called sourcegraph-frontend in various contexts
-		containerName = "(frontend|sourcegraph-frontend)"
+		// frontend is sometimes cblled sourcegrbph-frontend in vbrious contexts
+		contbinerNbme = "(frontend|sourcegrbph-frontend)"
 
-		grpcZoektConfigurationServiceName = "sourcegraph.zoekt.configuration.v1.ZoektConfigurationService"
-		grpcInternalAPIServiceName        = "api.internalapi.v1.ConfigService"
+		grpcZoektConfigurbtionServiceNbme = "sourcegrbph.zoekt.configurbtion.v1.ZoektConfigurbtionService"
+		grpcInternblAPIServiceNbme        = "bpi.internblbpi.v1.ConfigService"
 	)
 
-	var sentinelSamplingIntervals []string
-	for _, d := range []time.Duration{
+	vbr sentinelSbmplingIntervbls []string
+	for _, d := rbnge []time.Durbtion{
 		1 * time.Minute,
 		5 * time.Minute,
 		10 * time.Minute,
@@ -29,614 +29,614 @@ func Frontend() *monitoring.Dashboard {
 		90 * time.Minute,
 		3 * time.Hour,
 	} {
-		sentinelSamplingIntervals = append(sentinelSamplingIntervals, d.Round(time.Second).String())
+		sentinelSbmplingIntervbls = bppend(sentinelSbmplingIntervbls, d.Round(time.Second).String())
 	}
 
-	defaultSamplingInterval := (90 * time.Minute).Round(time.Second)
-	grpcMethodVariableFrontendZoektConfiguration := shared.GRPCMethodVariable("zoekt_configuration", grpcZoektConfigurationServiceName)
-	grpcMethodVariableFrontendInternalAPI := shared.GRPCMethodVariable("internal_api", grpcInternalAPIServiceName)
+	defbultSbmplingIntervbl := (90 * time.Minute).Round(time.Second)
+	grpcMethodVbribbleFrontendZoektConfigurbtion := shbred.GRPCMethodVbribble("zoekt_configurbtion", grpcZoektConfigurbtionServiceNbme)
+	grpcMethodVbribbleFrontendInternblAPI := shbred.GRPCMethodVbribble("internbl_bpi", grpcInternblAPIServiceNbme)
 
-	orgMetricSpec := []struct{ name, route, description string }{
-		{"org_members", "OrganizationMembers", "API requests to list organisation members"},
-		{"create_org", "CreateOrganization", "API requests to create an organisation"},
-		{"remove_org_member", "RemoveUserFromOrganization", "API requests to remove organisation member"},
-		{"invite_org_member", "InviteUserToOrganization", "API requests to invite a new organisation member"},
-		{"org_invite_respond", "RespondToOrganizationInvitation", "API requests to respond to an org invitation"},
-		{"org_repositories", "OrgRepositories", "API requests to list repositories owned by an org"},
+	orgMetricSpec := []struct{ nbme, route, description string }{
+		{"org_members", "OrgbnizbtionMembers", "API requests to list orgbnisbtion members"},
+		{"crebte_org", "CrebteOrgbnizbtion", "API requests to crebte bn orgbnisbtion"},
+		{"remove_org_member", "RemoveUserFromOrgbnizbtion", "API requests to remove orgbnisbtion member"},
+		{"invite_org_member", "InviteUserToOrgbnizbtion", "API requests to invite b new orgbnisbtion member"},
+		{"org_invite_respond", "RespondToOrgbnizbtionInvitbtion", "API requests to respond to bn org invitbtion"},
+		{"org_repositories", "OrgRepositories", "API requests to list repositories owned by bn org"},
 	}
 
-	return &monitoring.Dashboard{
-		Name:        "frontend",
+	return &monitoring.Dbshbobrd{
+		Nbme:        "frontend",
 		Title:       "Frontend",
-		Description: "Serves all end-user browser and API requests.",
-		Variables: []monitoring.ContainerVariable{
+		Description: "Serves bll end-user browser bnd API requests.",
+		Vbribbles: []monitoring.ContbinerVbribble{
 			{
-				Name:  "sentinel_sampling_duration",
-				Label: "Sentinel query sampling duration",
-				Options: monitoring.ContainerVariableOptions{
-					Type:          monitoring.OptionTypeInterval,
-					Options:       sentinelSamplingIntervals,
-					DefaultOption: defaultSamplingInterval.String(),
+				Nbme:  "sentinel_sbmpling_durbtion",
+				Lbbel: "Sentinel query sbmpling durbtion",
+				Options: monitoring.ContbinerVbribbleOptions{
+					Type:          monitoring.OptionTypeIntervbl,
+					Options:       sentinelSbmplingIntervbls,
+					DefbultOption: defbultSbmplingIntervbl.String(),
 				},
 			},
 			{
-				Label: "Internal instance",
-				Name:  "internalInstance",
-				OptionsLabelValues: monitoring.ContainerVariableOptionsLabelValues{
-					Query:         "src_updatecheck_client_duration_seconds_sum",
-					LabelName:     "instance",
-					ExampleOption: "sourcegraph-frontend:3090",
+				Lbbel: "Internbl instbnce",
+				Nbme:  "internblInstbnce",
+				OptionsLbbelVblues: monitoring.ContbinerVbribbleOptionsLbbelVblues{
+					Query:         "src_updbtecheck_client_durbtion_seconds_sum",
+					LbbelNbme:     "instbnce",
+					ExbmpleOption: "sourcegrbph-frontend:3090",
 				},
 				Multi: true,
 			},
-			grpcMethodVariableFrontendZoektConfiguration,
-			grpcMethodVariableFrontendInternalAPI,
+			grpcMethodVbribbleFrontendZoektConfigurbtion,
+			grpcMethodVbribbleFrontendInternblAPI,
 		},
 
 		Groups: []monitoring.Group{
 			{
-				Title: "Search at a glance",
+				Title: "Sebrch bt b glbnce",
 				Rows: []monitoring.Row{
 					{
 						{
-							Name:        "99th_percentile_search_request_duration",
-							Description: "99th percentile successful search request duration over 5m",
-							Query:       `histogram_quantile(0.99, sum by (le)(rate(src_search_streaming_latency_seconds_bucket{source="browser"}[5m])))`,
+							Nbme:        "99th_percentile_sebrch_request_durbtion",
+							Description: "99th percentile successful sebrch request durbtion over 5m",
+							Query:       `histogrbm_qubntile(0.99, sum by (le)(rbte(src_sebrch_strebming_lbtency_seconds_bucket{source="browser"}[5m])))`,
 
-							Warning: monitoring.Alert().GreaterOrEqual(20),
-							Panel:   monitoring.Panel().LegendFormat("duration").Unit(monitoring.Seconds),
-							Owner:   monitoring.ObservableOwnerSearch,
+							Wbrning: monitoring.Alert().GrebterOrEqubl(20),
+							Pbnel:   monitoring.Pbnel().LegendFormbt("durbtion").Unit(monitoring.Seconds),
+							Owner:   monitoring.ObservbbleOwnerSebrch,
 							NextSteps: `
-								- **Get details on the exact queries that are slow** by configuring '"observability.logSlowSearches": 20,' in the site configuration and looking for 'frontend' warning logs prefixed with 'slow search request' for additional details.
-								- **Check that most repositories are indexed** by visiting https://sourcegraph.example.com/site-admin/repositories?filter=needs-index (it should show few or no results.)
-								- **Kubernetes:** Check CPU usage of zoekt-webserver in the indexed-search pod, consider increasing CPU limits in the 'indexed-search.Deployment.yaml' if regularly hitting max CPU utilization.
-								- **Docker Compose:** Check CPU usage on the Zoekt Web Server dashboard, consider increasing 'cpus:' of the zoekt-webserver container in 'docker-compose.yml' if regularly hitting max CPU utilization.
+								- **Get detbils on the exbct queries thbt bre slow** by configuring '"observbbility.logSlowSebrches": 20,' in the site configurbtion bnd looking for 'frontend' wbrning logs prefixed with 'slow sebrch request' for bdditionbl detbils.
+								- **Check thbt most repositories bre indexed** by visiting https://sourcegrbph.exbmple.com/site-bdmin/repositories?filter=needs-index (it should show few or no results.)
+								- **Kubernetes:** Check CPU usbge of zoekt-webserver in the indexed-sebrch pod, consider increbsing CPU limits in the 'indexed-sebrch.Deployment.ybml' if regulbrly hitting mbx CPU utilizbtion.
+								- **Docker Compose:** Check CPU usbge on the Zoekt Web Server dbshbobrd, consider increbsing 'cpus:' of the zoekt-webserver contbiner in 'docker-compose.yml' if regulbrly hitting mbx CPU utilizbtion.
 							`,
 						},
 						{
-							Name:        "90th_percentile_search_request_duration",
-							Description: "90th percentile successful search request duration over 5m",
-							Query:       `histogram_quantile(0.90, sum by (le)(rate(src_search_streaming_latency_seconds_bucket{source="browser"}[5m])))`,
+							Nbme:        "90th_percentile_sebrch_request_durbtion",
+							Description: "90th percentile successful sebrch request durbtion over 5m",
+							Query:       `histogrbm_qubntile(0.90, sum by (le)(rbte(src_sebrch_strebming_lbtency_seconds_bucket{source="browser"}[5m])))`,
 
-							Warning: monitoring.Alert().GreaterOrEqual(15),
-							Panel:   monitoring.Panel().LegendFormat("duration").Unit(monitoring.Seconds),
-							Owner:   monitoring.ObservableOwnerSearch,
+							Wbrning: monitoring.Alert().GrebterOrEqubl(15),
+							Pbnel:   monitoring.Pbnel().LegendFormbt("durbtion").Unit(monitoring.Seconds),
+							Owner:   monitoring.ObservbbleOwnerSebrch,
 							NextSteps: `
-								- **Get details on the exact queries that are slow** by configuring '"observability.logSlowSearches": 15,' in the site configuration and looking for 'frontend' warning logs prefixed with 'slow search request' for additional details.
-								- **Check that most repositories are indexed** by visiting https://sourcegraph.example.com/site-admin/repositories?filter=needs-index (it should show few or no results.)
-								- **Kubernetes:** Check CPU usage of zoekt-webserver in the indexed-search pod, consider increasing CPU limits in the 'indexed-search.Deployment.yaml' if regularly hitting max CPU utilization.
-								- **Docker Compose:** Check CPU usage on the Zoekt Web Server dashboard, consider increasing 'cpus:' of the zoekt-webserver container in 'docker-compose.yml' if regularly hitting max CPU utilization.
+								- **Get detbils on the exbct queries thbt bre slow** by configuring '"observbbility.logSlowSebrches": 15,' in the site configurbtion bnd looking for 'frontend' wbrning logs prefixed with 'slow sebrch request' for bdditionbl detbils.
+								- **Check thbt most repositories bre indexed** by visiting https://sourcegrbph.exbmple.com/site-bdmin/repositories?filter=needs-index (it should show few or no results.)
+								- **Kubernetes:** Check CPU usbge of zoekt-webserver in the indexed-sebrch pod, consider increbsing CPU limits in the 'indexed-sebrch.Deployment.ybml' if regulbrly hitting mbx CPU utilizbtion.
+								- **Docker Compose:** Check CPU usbge on the Zoekt Web Server dbshbobrd, consider increbsing 'cpus:' of the zoekt-webserver contbiner in 'docker-compose.yml' if regulbrly hitting mbx CPU utilizbtion.
 							`,
 
-							MultiInstance: true,
+							MultiInstbnce: true,
 						},
 					},
 					{
 						{
-							Name:        "hard_timeout_search_responses",
-							Description: "hard timeout search responses every 5m",
-							Query:       `(sum(increase(src_graphql_search_response{status="timeout",source="browser",request_name!="CodeIntelSearch"}[5m])) + sum(increase(src_graphql_search_response{status="alert",alert_type="timed_out",source="browser",request_name!="CodeIntelSearch"}[5m]))) / sum(increase(src_graphql_search_response{source="browser",request_name!="CodeIntelSearch"}[5m])) * 100`,
+							Nbme:        "hbrd_timeout_sebrch_responses",
+							Description: "hbrd timeout sebrch responses every 5m",
+							Query:       `(sum(increbse(src_grbphql_sebrch_response{stbtus="timeout",source="browser",request_nbme!="CodeIntelSebrch"}[5m])) + sum(increbse(src_grbphql_sebrch_response{stbtus="blert",blert_type="timed_out",source="browser",request_nbme!="CodeIntelSebrch"}[5m]))) / sum(increbse(src_grbphql_sebrch_response{source="browser",request_nbme!="CodeIntelSebrch"}[5m])) * 100`,
 
-							Warning:   monitoring.Alert().GreaterOrEqual(2).For(15 * time.Minute),
-							Panel:     monitoring.Panel().LegendFormat("hard timeout").Unit(monitoring.Percentage),
-							Owner:     monitoring.ObservableOwnerSearch,
+							Wbrning:   monitoring.Alert().GrebterOrEqubl(2).For(15 * time.Minute),
+							Pbnel:     monitoring.Pbnel().LegendFormbt("hbrd timeout").Unit(monitoring.Percentbge),
+							Owner:     monitoring.ObservbbleOwnerSebrch,
 							NextSteps: "none",
 						},
 						{
-							Name:        "hard_error_search_responses",
-							Description: "hard error search responses every 5m",
-							Query:       `sum by (status)(increase(src_graphql_search_response{status=~"error",source="browser",request_name!="CodeIntelSearch"}[5m])) / ignoring(status) group_left sum(increase(src_graphql_search_response{source="browser",request_name!="CodeIntelSearch"}[5m])) * 100`,
+							Nbme:        "hbrd_error_sebrch_responses",
+							Description: "hbrd error sebrch responses every 5m",
+							Query:       `sum by (stbtus)(increbse(src_grbphql_sebrch_response{stbtus=~"error",source="browser",request_nbme!="CodeIntelSebrch"}[5m])) / ignoring(stbtus) group_left sum(increbse(src_grbphql_sebrch_response{source="browser",request_nbme!="CodeIntelSebrch"}[5m])) * 100`,
 
-							Warning:   monitoring.Alert().GreaterOrEqual(2).For(15 * time.Minute),
-							Panel:     monitoring.Panel().LegendFormat("{{status}}").Unit(monitoring.Percentage),
-							Owner:     monitoring.ObservableOwnerSearch,
+							Wbrning:   monitoring.Alert().GrebterOrEqubl(2).For(15 * time.Minute),
+							Pbnel:     monitoring.Pbnel().LegendFormbt("{{stbtus}}").Unit(monitoring.Percentbge),
+							Owner:     monitoring.ObservbbleOwnerSebrch,
 							NextSteps: "none",
 						},
 						{
-							Name:        "partial_timeout_search_responses",
-							Description: "partial timeout search responses every 5m",
-							Query:       `sum by (status)(increase(src_graphql_search_response{status="partial_timeout",source="browser",request_name!="CodeIntelSearch"}[5m])) / ignoring(status) group_left sum(increase(src_graphql_search_response{source="browser",request_name!="CodeIntelSearch"}[5m])) * 100`,
+							Nbme:        "pbrtibl_timeout_sebrch_responses",
+							Description: "pbrtibl timeout sebrch responses every 5m",
+							Query:       `sum by (stbtus)(increbse(src_grbphql_sebrch_response{stbtus="pbrtibl_timeout",source="browser",request_nbme!="CodeIntelSebrch"}[5m])) / ignoring(stbtus) group_left sum(increbse(src_grbphql_sebrch_response{source="browser",request_nbme!="CodeIntelSebrch"}[5m])) * 100`,
 
-							Warning:   monitoring.Alert().GreaterOrEqual(5).For(15 * time.Minute),
-							Panel:     monitoring.Panel().LegendFormat("{{status}}").Unit(monitoring.Percentage),
-							Owner:     monitoring.ObservableOwnerSearch,
+							Wbrning:   monitoring.Alert().GrebterOrEqubl(5).For(15 * time.Minute),
+							Pbnel:     monitoring.Pbnel().LegendFormbt("{{stbtus}}").Unit(monitoring.Percentbge),
+							Owner:     monitoring.ObservbbleOwnerSebrch,
 							NextSteps: "none",
 						},
 						{
-							Name:        "search_alert_user_suggestions",
-							Description: "search alert user suggestions shown every 5m",
-							Query:       `sum by (alert_type)(increase(src_graphql_search_response{status="alert",alert_type!~"timed_out|no_results__suggest_quotes",source="browser",request_name!="CodeIntelSearch"}[5m])) / ignoring(alert_type) group_left sum(increase(src_graphql_search_response{source="browser",request_name!="CodeIntelSearch"}[5m])) * 100`,
+							Nbme:        "sebrch_blert_user_suggestions",
+							Description: "sebrch blert user suggestions shown every 5m",
+							Query:       `sum by (blert_type)(increbse(src_grbphql_sebrch_response{stbtus="blert",blert_type!~"timed_out|no_results__suggest_quotes",source="browser",request_nbme!="CodeIntelSebrch"}[5m])) / ignoring(blert_type) group_left sum(increbse(src_grbphql_sebrch_response{source="browser",request_nbme!="CodeIntelSebrch"}[5m])) * 100`,
 
-							Warning: monitoring.Alert().GreaterOrEqual(5).For(15 * time.Minute),
-							Panel:   monitoring.Panel().LegendFormat("{{alert_type}}").Unit(monitoring.Percentage),
-							Owner:   monitoring.ObservableOwnerSearch,
+							Wbrning: monitoring.Alert().GrebterOrEqubl(5).For(15 * time.Minute),
+							Pbnel:   monitoring.Pbnel().LegendFormbt("{{blert_type}}").Unit(monitoring.Percentbge),
+							Owner:   monitoring.ObservbbleOwnerSebrch,
 							NextSteps: `
-								- This indicates your user's are making syntax errors or similar user errors.
+								- This indicbtes your user's bre mbking syntbx errors or similbr user errors.
 							`,
 						},
 					},
 					{
 						{
-							Name:        "page_load_latency",
-							Description: "90th percentile page load latency over all routes over 10m",
-							Query:       `histogram_quantile(0.9, sum by(le) (rate(src_http_request_duration_seconds_bucket{route!="raw",route!="blob",route!~"graphql.*"}[10m])))`,
-							Warning:     monitoring.Alert().GreaterOrEqual(2),
-							Panel:       monitoring.Panel().LegendFormat("latency").Unit(monitoring.Seconds),
-							Owner:       monitoring.ObservableOwnerSource,
+							Nbme:        "pbge_lobd_lbtency",
+							Description: "90th percentile pbge lobd lbtency over bll routes over 10m",
+							Query:       `histogrbm_qubntile(0.9, sum by(le) (rbte(src_http_request_durbtion_seconds_bucket{route!="rbw",route!="blob",route!~"grbphql.*"}[10m])))`,
+							Wbrning:     monitoring.Alert().GrebterOrEqubl(2),
+							Pbnel:       monitoring.Pbnel().LegendFormbt("lbtency").Unit(monitoring.Seconds),
+							Owner:       monitoring.ObservbbleOwnerSource,
 							NextSteps: `
-								- Confirm that the Sourcegraph frontend has enough CPU/memory using the provisioning panels.
-								- Investigate potential sources of latency by selecting Explore and modifying the 'sum by(le)' section to include additional labels: for example, 'sum by(le, job)' or 'sum by (le, instance)'.
-								- Trace a request to see what the slowest part is: https://docs.sourcegraph.com/admin/observability/tracing
+								- Confirm thbt the Sourcegrbph frontend hbs enough CPU/memory using the provisioning pbnels.
+								- Investigbte potentibl sources of lbtency by selecting Explore bnd modifying the 'sum by(le)' section to include bdditionbl lbbels: for exbmple, 'sum by(le, job)' or 'sum by (le, instbnce)'.
+								- Trbce b request to see whbt the slowest pbrt is: https://docs.sourcegrbph.com/bdmin/observbbility/trbcing
 							`,
 						},
 						{
-							Name:        "blob_load_latency",
-							Description: "90th percentile blob load latency over 10m. The 90th percentile of API calls to the blob route in the frontend API is at 5 seconds or more, meaning calls to the blob route, are slow to return a response. The blob API route provides the files and code snippets that the UI displays. When this alert fires, the UI will likely experience delays loading files and code snippets. It is likely that the gitserver and/or frontend services are experiencing issues, leading to slower responses.",
-							Query:       `histogram_quantile(0.9, sum by(le) (rate(src_http_request_duration_seconds_bucket{route="blob"}[10m])))`,
-							Critical:    monitoring.Alert().GreaterOrEqual(5),
-							Panel:       monitoring.Panel().LegendFormat("latency").Unit(monitoring.Seconds),
-							Owner:       monitoring.ObservableOwnerSource,
+							Nbme:        "blob_lobd_lbtency",
+							Description: "90th percentile blob lobd lbtency over 10m. The 90th percentile of API cblls to the blob route in the frontend API is bt 5 seconds or more, mebning cblls to the blob route, bre slow to return b response. The blob API route provides the files bnd code snippets thbt the UI displbys. When this blert fires, the UI will likely experience delbys lobding files bnd code snippets. It is likely thbt the gitserver bnd/or frontend services bre experiencing issues, lebding to slower responses.",
+							Query:       `histogrbm_qubntile(0.9, sum by(le) (rbte(src_http_request_durbtion_seconds_bucket{route="blob"}[10m])))`,
+							Criticbl:    monitoring.Alert().GrebterOrEqubl(5),
+							Pbnel:       monitoring.Pbnel().LegendFormbt("lbtency").Unit(monitoring.Seconds),
+							Owner:       monitoring.ObservbbleOwnerSource,
 							NextSteps: `
-								- Confirm that the Sourcegraph frontend has enough CPU/memory using the provisioning panels.
-								- Trace a request to see what the slowest part is: https://docs.sourcegraph.com/admin/observability/tracing
-								- Check that gitserver containers have enough CPU/memory and are not getting throttled.
+								- Confirm thbt the Sourcegrbph frontend hbs enough CPU/memory using the provisioning pbnels.
+								- Trbce b request to see whbt the slowest pbrt is: https://docs.sourcegrbph.com/bdmin/observbbility/trbcing
+								- Check thbt gitserver contbiners hbve enough CPU/memory bnd bre not getting throttled.
 							`,
 						},
 					},
 				},
 			},
 			{
-				Title:  "Search-based code intelligence at a glance",
+				Title:  "Sebrch-bbsed code intelligence bt b glbnce",
 				Hidden: true,
 				Rows: []monitoring.Row{
 					{
 						{
-							Name:        "99th_percentile_search_codeintel_request_duration",
-							Description: "99th percentile code-intel successful search request duration over 5m",
-							Owner:       monitoring.ObservableOwnerSearch,
-							Query:       `histogram_quantile(0.99, sum by (le)(rate(src_graphql_field_seconds_bucket{type="Search",field="results",error="false",source="browser",request_name="CodeIntelSearch"}[5m])))`,
+							Nbme:        "99th_percentile_sebrch_codeintel_request_durbtion",
+							Description: "99th percentile code-intel successful sebrch request durbtion over 5m",
+							Owner:       monitoring.ObservbbleOwnerSebrch,
+							Query:       `histogrbm_qubntile(0.99, sum by (le)(rbte(src_grbphql_field_seconds_bucket{type="Sebrch",field="results",error="fblse",source="browser",request_nbme="CodeIntelSebrch"}[5m])))`,
 
-							Warning: monitoring.Alert().GreaterOrEqual(20),
-							Panel:   monitoring.Panel().LegendFormat("duration").Unit(monitoring.Seconds),
+							Wbrning: monitoring.Alert().GrebterOrEqubl(20),
+							Pbnel:   monitoring.Pbnel().LegendFormbt("durbtion").Unit(monitoring.Seconds),
 							NextSteps: `
-								- **Get details on the exact queries that are slow** by configuring '"observability.logSlowSearches": 20,' in the site configuration and looking for 'frontend' warning logs prefixed with 'slow search request' for additional details.
-								- **Check that most repositories are indexed** by visiting https://sourcegraph.example.com/site-admin/repositories?filter=needs-index (it should show few or no results.)
-								- **Kubernetes:** Check CPU usage of zoekt-webserver in the indexed-search pod, consider increasing CPU limits in the 'indexed-search.Deployment.yaml' if regularly hitting max CPU utilization.
-								- **Docker Compose:** Check CPU usage on the Zoekt Web Server dashboard, consider increasing 'cpus:' of the zoekt-webserver container in 'docker-compose.yml' if regularly hitting max CPU utilization.
-								- This alert may indicate that your instance is struggling to process symbols queries on a monorepo, [learn more here](../how-to/monorepo-issues.md).
+								- **Get detbils on the exbct queries thbt bre slow** by configuring '"observbbility.logSlowSebrches": 20,' in the site configurbtion bnd looking for 'frontend' wbrning logs prefixed with 'slow sebrch request' for bdditionbl detbils.
+								- **Check thbt most repositories bre indexed** by visiting https://sourcegrbph.exbmple.com/site-bdmin/repositories?filter=needs-index (it should show few or no results.)
+								- **Kubernetes:** Check CPU usbge of zoekt-webserver in the indexed-sebrch pod, consider increbsing CPU limits in the 'indexed-sebrch.Deployment.ybml' if regulbrly hitting mbx CPU utilizbtion.
+								- **Docker Compose:** Check CPU usbge on the Zoekt Web Server dbshbobrd, consider increbsing 'cpus:' of the zoekt-webserver contbiner in 'docker-compose.yml' if regulbrly hitting mbx CPU utilizbtion.
+								- This blert mby indicbte thbt your instbnce is struggling to process symbols queries on b monorepo, [lebrn more here](../how-to/monorepo-issues.md).
 							`,
 						},
 						{
-							Name:        "90th_percentile_search_codeintel_request_duration",
-							Description: "90th percentile code-intel successful search request duration over 5m",
-							Query:       `histogram_quantile(0.90, sum by (le)(rate(src_graphql_field_seconds_bucket{type="Search",field="results",error="false",source="browser",request_name="CodeIntelSearch"}[5m])))`,
+							Nbme:        "90th_percentile_sebrch_codeintel_request_durbtion",
+							Description: "90th percentile code-intel successful sebrch request durbtion over 5m",
+							Query:       `histogrbm_qubntile(0.90, sum by (le)(rbte(src_grbphql_field_seconds_bucket{type="Sebrch",field="results",error="fblse",source="browser",request_nbme="CodeIntelSebrch"}[5m])))`,
 
-							Warning: monitoring.Alert().GreaterOrEqual(15),
-							Panel:   monitoring.Panel().LegendFormat("duration").Unit(monitoring.Seconds),
-							Owner:   monitoring.ObservableOwnerSearch,
+							Wbrning: monitoring.Alert().GrebterOrEqubl(15),
+							Pbnel:   monitoring.Pbnel().LegendFormbt("durbtion").Unit(monitoring.Seconds),
+							Owner:   monitoring.ObservbbleOwnerSebrch,
 							NextSteps: `
-								- **Get details on the exact queries that are slow** by configuring '"observability.logSlowSearches": 15,' in the site configuration and looking for 'frontend' warning logs prefixed with 'slow search request' for additional details.
-								- **Check that most repositories are indexed** by visiting https://sourcegraph.example.com/site-admin/repositories?filter=needs-index (it should show few or no results.)
-								- **Kubernetes:** Check CPU usage of zoekt-webserver in the indexed-search pod, consider increasing CPU limits in the 'indexed-search.Deployment.yaml' if regularly hitting max CPU utilization.
-								- **Docker Compose:** Check CPU usage on the Zoekt Web Server dashboard, consider increasing 'cpus:' of the zoekt-webserver container in 'docker-compose.yml' if regularly hitting max CPU utilization.
-								- This alert may indicate that your instance is struggling to process symbols queries on a monorepo, [learn more here](../how-to/monorepo-issues.md).
+								- **Get detbils on the exbct queries thbt bre slow** by configuring '"observbbility.logSlowSebrches": 15,' in the site configurbtion bnd looking for 'frontend' wbrning logs prefixed with 'slow sebrch request' for bdditionbl detbils.
+								- **Check thbt most repositories bre indexed** by visiting https://sourcegrbph.exbmple.com/site-bdmin/repositories?filter=needs-index (it should show few or no results.)
+								- **Kubernetes:** Check CPU usbge of zoekt-webserver in the indexed-sebrch pod, consider increbsing CPU limits in the 'indexed-sebrch.Deployment.ybml' if regulbrly hitting mbx CPU utilizbtion.
+								- **Docker Compose:** Check CPU usbge on the Zoekt Web Server dbshbobrd, consider increbsing 'cpus:' of the zoekt-webserver contbiner in 'docker-compose.yml' if regulbrly hitting mbx CPU utilizbtion.
+								- This blert mby indicbte thbt your instbnce is struggling to process symbols queries on b monorepo, [lebrn more here](../how-to/monorepo-issues.md).
 							`,
 						},
 					},
 					{
 						{
-							Name:        "hard_timeout_search_codeintel_responses",
-							Description: "hard timeout search code-intel responses every 5m",
-							Query:       `(sum(increase(src_graphql_search_response{status="timeout",source="browser",request_name="CodeIntelSearch"}[5m])) + sum(increase(src_graphql_search_response{status="alert",alert_type="timed_out",source="browser",request_name="CodeIntelSearch"}[5m]))) / sum(increase(src_graphql_search_response{source="browser",request_name="CodeIntelSearch"}[5m])) * 100`,
+							Nbme:        "hbrd_timeout_sebrch_codeintel_responses",
+							Description: "hbrd timeout sebrch code-intel responses every 5m",
+							Query:       `(sum(increbse(src_grbphql_sebrch_response{stbtus="timeout",source="browser",request_nbme="CodeIntelSebrch"}[5m])) + sum(increbse(src_grbphql_sebrch_response{stbtus="blert",blert_type="timed_out",source="browser",request_nbme="CodeIntelSebrch"}[5m]))) / sum(increbse(src_grbphql_sebrch_response{source="browser",request_nbme="CodeIntelSebrch"}[5m])) * 100`,
 
-							Warning:   monitoring.Alert().GreaterOrEqual(2).For(15 * time.Minute),
-							Panel:     monitoring.Panel().LegendFormat("hard timeout").Unit(monitoring.Percentage),
-							Owner:     monitoring.ObservableOwnerSearch,
+							Wbrning:   monitoring.Alert().GrebterOrEqubl(2).For(15 * time.Minute),
+							Pbnel:     monitoring.Pbnel().LegendFormbt("hbrd timeout").Unit(monitoring.Percentbge),
+							Owner:     monitoring.ObservbbleOwnerSebrch,
 							NextSteps: "none",
 						},
 						{
-							Name:        "hard_error_search_codeintel_responses",
-							Description: "hard error search code-intel responses every 5m",
-							Query:       `sum by (status)(increase(src_graphql_search_response{status=~"error",source="browser",request_name="CodeIntelSearch"}[5m])) / ignoring(status) group_left sum(increase(src_graphql_search_response{source="browser",request_name="CodeIntelSearch"}[5m])) * 100`,
+							Nbme:        "hbrd_error_sebrch_codeintel_responses",
+							Description: "hbrd error sebrch code-intel responses every 5m",
+							Query:       `sum by (stbtus)(increbse(src_grbphql_sebrch_response{stbtus=~"error",source="browser",request_nbme="CodeIntelSebrch"}[5m])) / ignoring(stbtus) group_left sum(increbse(src_grbphql_sebrch_response{source="browser",request_nbme="CodeIntelSebrch"}[5m])) * 100`,
 
-							Warning:   monitoring.Alert().GreaterOrEqual(2).For(15 * time.Minute),
-							Panel:     monitoring.Panel().LegendFormat("hard error").Unit(monitoring.Percentage),
-							Owner:     monitoring.ObservableOwnerSearch,
+							Wbrning:   monitoring.Alert().GrebterOrEqubl(2).For(15 * time.Minute),
+							Pbnel:     monitoring.Pbnel().LegendFormbt("hbrd error").Unit(monitoring.Percentbge),
+							Owner:     monitoring.ObservbbleOwnerSebrch,
 							NextSteps: "none",
 						},
 						{
-							Name:        "partial_timeout_search_codeintel_responses",
-							Description: "partial timeout search code-intel responses every 5m",
-							Query:       `sum by (status)(increase(src_graphql_search_response{status="partial_timeout",source="browser",request_name="CodeIntelSearch"}[5m])) / ignoring(status) group_left sum(increase(src_graphql_search_response{status="partial_timeout",source="browser",request_name="CodeIntelSearch"}[5m])) * 100`,
+							Nbme:        "pbrtibl_timeout_sebrch_codeintel_responses",
+							Description: "pbrtibl timeout sebrch code-intel responses every 5m",
+							Query:       `sum by (stbtus)(increbse(src_grbphql_sebrch_response{stbtus="pbrtibl_timeout",source="browser",request_nbme="CodeIntelSebrch"}[5m])) / ignoring(stbtus) group_left sum(increbse(src_grbphql_sebrch_response{stbtus="pbrtibl_timeout",source="browser",request_nbme="CodeIntelSebrch"}[5m])) * 100`,
 
-							Warning:   monitoring.Alert().GreaterOrEqual(5).For(15 * time.Minute),
-							Panel:     monitoring.Panel().LegendFormat("partial timeout").Unit(monitoring.Percentage),
-							Owner:     monitoring.ObservableOwnerSearch,
+							Wbrning:   monitoring.Alert().GrebterOrEqubl(5).For(15 * time.Minute),
+							Pbnel:     monitoring.Pbnel().LegendFormbt("pbrtibl timeout").Unit(monitoring.Percentbge),
+							Owner:     monitoring.ObservbbleOwnerSebrch,
 							NextSteps: "none",
 						},
 						{
-							Name:        "search_codeintel_alert_user_suggestions",
-							Description: "search code-intel alert user suggestions shown every 5m",
-							Query:       `sum by (alert_type)(increase(src_graphql_search_response{status="alert",alert_type!~"timed_out",source="browser",request_name="CodeIntelSearch"}[5m])) / ignoring(alert_type) group_left sum(increase(src_graphql_search_response{source="browser",request_name="CodeIntelSearch"}[5m])) * 100`,
+							Nbme:        "sebrch_codeintel_blert_user_suggestions",
+							Description: "sebrch code-intel blert user suggestions shown every 5m",
+							Query:       `sum by (blert_type)(increbse(src_grbphql_sebrch_response{stbtus="blert",blert_type!~"timed_out",source="browser",request_nbme="CodeIntelSebrch"}[5m])) / ignoring(blert_type) group_left sum(increbse(src_grbphql_sebrch_response{source="browser",request_nbme="CodeIntelSebrch"}[5m])) * 100`,
 
-							Warning: monitoring.Alert().GreaterOrEqual(5).For(15 * time.Minute),
-							Panel:   monitoring.Panel().LegendFormat("{{alert_type}}").Unit(monitoring.Percentage),
-							Owner:   monitoring.ObservableOwnerSearch,
+							Wbrning: monitoring.Alert().GrebterOrEqubl(5).For(15 * time.Minute),
+							Pbnel:   monitoring.Pbnel().LegendFormbt("{{blert_type}}").Unit(monitoring.Percentbge),
+							Owner:   monitoring.ObservbbleOwnerSebrch,
 							NextSteps: `
-								- This indicates a bug in Sourcegraph, please [open an issue](https://github.com/sourcegraph/sourcegraph/issues/new/choose).
+								- This indicbtes b bug in Sourcegrbph, plebse [open bn issue](https://github.com/sourcegrbph/sourcegrbph/issues/new/choose).
 							`,
 						},
 					},
 				},
 			},
 			{
-				Title:  "Search GraphQL API usage at a glance",
+				Title:  "Sebrch GrbphQL API usbge bt b glbnce",
 				Hidden: true,
 				Rows: []monitoring.Row{
 					{
 						{
-							Name:        "99th_percentile_search_api_request_duration",
-							Description: "99th percentile successful search API request duration over 5m",
-							Query:       `histogram_quantile(0.99, sum by (le)(rate(src_graphql_field_seconds_bucket{type="Search",field="results",error="false",source="other"}[5m])))`,
+							Nbme:        "99th_percentile_sebrch_bpi_request_durbtion",
+							Description: "99th percentile successful sebrch API request durbtion over 5m",
+							Query:       `histogrbm_qubntile(0.99, sum by (le)(rbte(src_grbphql_field_seconds_bucket{type="Sebrch",field="results",error="fblse",source="other"}[5m])))`,
 
-							Warning: monitoring.Alert().GreaterOrEqual(50),
-							Panel:   monitoring.Panel().LegendFormat("duration").Unit(monitoring.Seconds),
-							Owner:   monitoring.ObservableOwnerSearch,
+							Wbrning: monitoring.Alert().GrebterOrEqubl(50),
+							Pbnel:   monitoring.Pbnel().LegendFormbt("durbtion").Unit(monitoring.Seconds),
+							Owner:   monitoring.ObservbbleOwnerSebrch,
 							NextSteps: `
-								- **Get details on the exact queries that are slow** by configuring '"observability.logSlowSearches": 20,' in the site configuration and looking for 'frontend' warning logs prefixed with 'slow search request' for additional details.
-								- **Check that most repositories are indexed** by visiting https://sourcegraph.example.com/site-admin/repositories?filter=needs-index (it should show few or no results.)
-								- **Kubernetes:** Check CPU usage of zoekt-webserver in the indexed-search pod, consider increasing CPU limits in the 'indexed-search.Deployment.yaml' if regularly hitting max CPU utilization.
-								- **Docker Compose:** Check CPU usage on the Zoekt Web Server dashboard, consider increasing 'cpus:' of the zoekt-webserver container in 'docker-compose.yml' if regularly hitting max CPU utilization.
+								- **Get detbils on the exbct queries thbt bre slow** by configuring '"observbbility.logSlowSebrches": 20,' in the site configurbtion bnd looking for 'frontend' wbrning logs prefixed with 'slow sebrch request' for bdditionbl detbils.
+								- **Check thbt most repositories bre indexed** by visiting https://sourcegrbph.exbmple.com/site-bdmin/repositories?filter=needs-index (it should show few or no results.)
+								- **Kubernetes:** Check CPU usbge of zoekt-webserver in the indexed-sebrch pod, consider increbsing CPU limits in the 'indexed-sebrch.Deployment.ybml' if regulbrly hitting mbx CPU utilizbtion.
+								- **Docker Compose:** Check CPU usbge on the Zoekt Web Server dbshbobrd, consider increbsing 'cpus:' of the zoekt-webserver contbiner in 'docker-compose.yml' if regulbrly hitting mbx CPU utilizbtion.
 							`,
 						},
 						{
-							Name:        "90th_percentile_search_api_request_duration",
-							Description: "90th percentile successful search API request duration over 5m",
-							Query:       `histogram_quantile(0.90, sum by (le)(rate(src_graphql_field_seconds_bucket{type="Search",field="results",error="false",source="other"}[5m])))`,
+							Nbme:        "90th_percentile_sebrch_bpi_request_durbtion",
+							Description: "90th percentile successful sebrch API request durbtion over 5m",
+							Query:       `histogrbm_qubntile(0.90, sum by (le)(rbte(src_grbphql_field_seconds_bucket{type="Sebrch",field="results",error="fblse",source="other"}[5m])))`,
 
-							Warning: monitoring.Alert().GreaterOrEqual(40),
-							Panel:   monitoring.Panel().LegendFormat("duration").Unit(monitoring.Seconds),
-							Owner:   monitoring.ObservableOwnerSearch,
+							Wbrning: monitoring.Alert().GrebterOrEqubl(40),
+							Pbnel:   monitoring.Pbnel().LegendFormbt("durbtion").Unit(monitoring.Seconds),
+							Owner:   monitoring.ObservbbleOwnerSebrch,
 							NextSteps: `
-								- **Get details on the exact queries that are slow** by configuring '"observability.logSlowSearches": 15,' in the site configuration and looking for 'frontend' warning logs prefixed with 'slow search request' for additional details.
-								- **Check that most repositories are indexed** by visiting https://sourcegraph.example.com/site-admin/repositories?filter=needs-index (it should show few or no results.)
-								- **Kubernetes:** Check CPU usage of zoekt-webserver in the indexed-search pod, consider increasing CPU limits in the 'indexed-search.Deployment.yaml' if regularly hitting max CPU utilization.
-								- **Docker Compose:** Check CPU usage on the Zoekt Web Server dashboard, consider increasing 'cpus:' of the zoekt-webserver container in 'docker-compose.yml' if regularly hitting max CPU utilization.
+								- **Get detbils on the exbct queries thbt bre slow** by configuring '"observbbility.logSlowSebrches": 15,' in the site configurbtion bnd looking for 'frontend' wbrning logs prefixed with 'slow sebrch request' for bdditionbl detbils.
+								- **Check thbt most repositories bre indexed** by visiting https://sourcegrbph.exbmple.com/site-bdmin/repositories?filter=needs-index (it should show few or no results.)
+								- **Kubernetes:** Check CPU usbge of zoekt-webserver in the indexed-sebrch pod, consider increbsing CPU limits in the 'indexed-sebrch.Deployment.ybml' if regulbrly hitting mbx CPU utilizbtion.
+								- **Docker Compose:** Check CPU usbge on the Zoekt Web Server dbshbobrd, consider increbsing 'cpus:' of the zoekt-webserver contbiner in 'docker-compose.yml' if regulbrly hitting mbx CPU utilizbtion.
 							`,
 						},
 					},
 					{
 						{
-							Name:        "hard_error_search_api_responses",
-							Description: "hard error search API responses every 5m",
-							Query:       `sum by (status)(increase(src_graphql_search_response{status=~"error",source="other"}[5m])) / ignoring(status) group_left sum(increase(src_graphql_search_response{source="other"}[5m]))`,
+							Nbme:        "hbrd_error_sebrch_bpi_responses",
+							Description: "hbrd error sebrch API responses every 5m",
+							Query:       `sum by (stbtus)(increbse(src_grbphql_sebrch_response{stbtus=~"error",source="other"}[5m])) / ignoring(stbtus) group_left sum(increbse(src_grbphql_sebrch_response{source="other"}[5m]))`,
 
-							Warning:   monitoring.Alert().GreaterOrEqual(2).For(15 * time.Minute),
-							Panel:     monitoring.Panel().LegendFormat("{{status}}").Unit(monitoring.Percentage),
-							Owner:     monitoring.ObservableOwnerSearch,
+							Wbrning:   monitoring.Alert().GrebterOrEqubl(2).For(15 * time.Minute),
+							Pbnel:     monitoring.Pbnel().LegendFormbt("{{stbtus}}").Unit(monitoring.Percentbge),
+							Owner:     monitoring.ObservbbleOwnerSebrch,
 							NextSteps: "none",
 						},
 						{
-							Name:        "partial_timeout_search_api_responses",
-							Description: "partial timeout search API responses every 5m",
-							Query:       `sum(increase(src_graphql_search_response{status="partial_timeout",source="other"}[5m])) / sum(increase(src_graphql_search_response{source="other"}[5m]))`,
+							Nbme:        "pbrtibl_timeout_sebrch_bpi_responses",
+							Description: "pbrtibl timeout sebrch API responses every 5m",
+							Query:       `sum(increbse(src_grbphql_sebrch_response{stbtus="pbrtibl_timeout",source="other"}[5m])) / sum(increbse(src_grbphql_sebrch_response{source="other"}[5m]))`,
 
-							Warning:   monitoring.Alert().GreaterOrEqual(5).For(15 * time.Minute),
-							Panel:     monitoring.Panel().LegendFormat("partial timeout").Unit(monitoring.Percentage),
-							Owner:     monitoring.ObservableOwnerSearch,
+							Wbrning:   monitoring.Alert().GrebterOrEqubl(5).For(15 * time.Minute),
+							Pbnel:     monitoring.Pbnel().LegendFormbt("pbrtibl timeout").Unit(monitoring.Percentbge),
+							Owner:     monitoring.ObservbbleOwnerSebrch,
 							NextSteps: "none",
 						},
 						{
-							Name:        "search_api_alert_user_suggestions",
-							Description: "search API alert user suggestions shown every 5m",
-							Query:       `sum by (alert_type)(increase(src_graphql_search_response{status="alert",alert_type!~"timed_out|no_results__suggest_quotes",source="other"}[5m])) / ignoring(alert_type) group_left sum(increase(src_graphql_search_response{status="alert",source="other"}[5m]))`,
+							Nbme:        "sebrch_bpi_blert_user_suggestions",
+							Description: "sebrch API blert user suggestions shown every 5m",
+							Query:       `sum by (blert_type)(increbse(src_grbphql_sebrch_response{stbtus="blert",blert_type!~"timed_out|no_results__suggest_quotes",source="other"}[5m])) / ignoring(blert_type) group_left sum(increbse(src_grbphql_sebrch_response{stbtus="blert",source="other"}[5m]))`,
 
-							Warning: monitoring.Alert().GreaterOrEqual(5),
-							Panel:   monitoring.Panel().LegendFormat("{{alert_type}}").Unit(monitoring.Percentage),
-							Owner:   monitoring.ObservableOwnerSearch,
+							Wbrning: monitoring.Alert().GrebterOrEqubl(5),
+							Pbnel:   monitoring.Pbnel().LegendFormbt("{{blert_type}}").Unit(monitoring.Percentbge),
+							Owner:   monitoring.ObservbbleOwnerSebrch,
 							NextSteps: `
-								- This indicates your user's search API requests have syntax errors or a similar user error. Check the responses the API sends back for an explanation.
+								- This indicbtes your user's sebrch API requests hbve syntbx errors or b similbr user error. Check the responses the API sends bbck for bn explbnbtion.
 							`,
 						},
 					},
 				},
 			},
 
-			shared.CodeIntelligence.NewResolversGroup(containerName),
-			shared.CodeIntelligence.NewAutoIndexEnqueuerGroup(containerName),
-			shared.CodeIntelligence.NewDBStoreGroup(containerName),
-			shared.CodeIntelligence.NewIndexDBWorkerStoreGroup(containerName),
-			shared.CodeIntelligence.NewLSIFStoreGroup(containerName),
-			shared.CodeIntelligence.NewGitserverClientGroup(containerName),
-			shared.CodeIntelligence.NewUploadStoreGroup(containerName),
-			shared.CodeIntelligence.NewDependencyServiceGroup(containerName),
-			shared.CodeIntelligence.NewDependencyStoreGroup(containerName),
-			shared.CodeIntelligence.NewDependencyBackgroundJobGroup(containerName),
-			shared.CodeIntelligence.NewLockfilesGroup(containerName),
+			shbred.CodeIntelligence.NewResolversGroup(contbinerNbme),
+			shbred.CodeIntelligence.NewAutoIndexEnqueuerGroup(contbinerNbme),
+			shbred.CodeIntelligence.NewDBStoreGroup(contbinerNbme),
+			shbred.CodeIntelligence.NewIndexDBWorkerStoreGroup(contbinerNbme),
+			shbred.CodeIntelligence.NewLSIFStoreGroup(contbinerNbme),
+			shbred.CodeIntelligence.NewGitserverClientGroup(contbinerNbme),
+			shbred.CodeIntelligence.NewUplobdStoreGroup(contbinerNbme),
+			shbred.CodeIntelligence.NewDependencyServiceGroup(contbinerNbme),
+			shbred.CodeIntelligence.NewDependencyStoreGroup(contbinerNbme),
+			shbred.CodeIntelligence.NewDependencyBbckgroundJobGroup(contbinerNbme),
+			shbred.CodeIntelligence.NewLockfilesGroup(contbinerNbme),
 
-			shared.GitServer.NewClientGroup(containerName),
+			shbred.GitServer.NewClientGroup(contbinerNbme),
 
-			shared.Batches.NewDBStoreGroup(containerName),
-			shared.Batches.NewServiceGroup(containerName),
-			shared.Batches.NewWorkspaceExecutionDBWorkerStoreGroup(containerName),
-			shared.Batches.NewBatchesHTTPAPIGroup(containerName),
+			shbred.Bbtches.NewDBStoreGroup(contbinerNbme),
+			shbred.Bbtches.NewServiceGroup(contbinerNbme),
+			shbred.Bbtches.NewWorkspbceExecutionDBWorkerStoreGroup(contbinerNbme),
+			shbred.Bbtches.NewBbtchesHTTPAPIGroup(contbinerNbme),
 
-			// src_oobmigration_total
-			// src_oobmigration_duration_seconds_bucket
-			// src_oobmigration_errors_total
-			shared.Observation.NewGroup(containerName, monitoring.ObservableOwnerCodeIntel, shared.ObservationGroupOptions{
-				GroupConstructorOptions: shared.GroupConstructorOptions{
-					Namespace:       "Out-of-band migrations",
-					DescriptionRoot: "up migration invocation (one batch processed)",
+			// src_oobmigrbtion_totbl
+			// src_oobmigrbtion_durbtion_seconds_bucket
+			// src_oobmigrbtion_errors_totbl
+			shbred.Observbtion.NewGroup(contbinerNbme, monitoring.ObservbbleOwnerCodeIntel, shbred.ObservbtionGroupOptions{
+				GroupConstructorOptions: shbred.GroupConstructorOptions{
+					Nbmespbce:       "Out-of-bbnd migrbtions",
+					DescriptionRoot: "up migrbtion invocbtion (one bbtch processed)",
 					Hidden:          true,
 
-					ObservableConstructorOptions: shared.ObservableConstructorOptions{
-						MetricNameRoot:        "oobmigration",
-						MetricDescriptionRoot: "migration handler",
+					ObservbbleConstructorOptions: shbred.ObservbbleConstructorOptions{
+						MetricNbmeRoot:        "oobmigrbtion",
+						MetricDescriptionRoot: "migrbtion hbndler",
 						Filters:               []string{`op="up"`},
 					},
 				},
 
-				SharedObservationGroupOptions: shared.SharedObservationGroupOptions{
-					Total:     shared.NoAlertsOption("none"),
-					Duration:  shared.NoAlertsOption("none"),
-					Errors:    shared.NoAlertsOption("none"),
-					ErrorRate: shared.NoAlertsOption("none"),
+				ShbredObservbtionGroupOptions: shbred.ShbredObservbtionGroupOptions{
+					Totbl:     shbred.NoAlertsOption("none"),
+					Durbtion:  shbred.NoAlertsOption("none"),
+					Errors:    shbred.NoAlertsOption("none"),
+					ErrorRbte: shbred.NoAlertsOption("none"),
 				},
 			}),
 
-			// src_oobmigration_total
-			// src_oobmigration_duration_seconds_bucket
-			// src_oobmigration_errors_total
-			shared.Observation.NewGroup(containerName, monitoring.ObservableOwnerCodeIntel, shared.ObservationGroupOptions{
-				GroupConstructorOptions: shared.GroupConstructorOptions{
-					Namespace:       "Out-of-band migrations",
-					DescriptionRoot: "down migration invocation (one batch processed)",
+			// src_oobmigrbtion_totbl
+			// src_oobmigrbtion_durbtion_seconds_bucket
+			// src_oobmigrbtion_errors_totbl
+			shbred.Observbtion.NewGroup(contbinerNbme, monitoring.ObservbbleOwnerCodeIntel, shbred.ObservbtionGroupOptions{
+				GroupConstructorOptions: shbred.GroupConstructorOptions{
+					Nbmespbce:       "Out-of-bbnd migrbtions",
+					DescriptionRoot: "down migrbtion invocbtion (one bbtch processed)",
 					Hidden:          true,
 
-					ObservableConstructorOptions: shared.ObservableConstructorOptions{
-						MetricNameRoot:        "oobmigration",
-						MetricDescriptionRoot: "migration handler",
+					ObservbbleConstructorOptions: shbred.ObservbbleConstructorOptions{
+						MetricNbmeRoot:        "oobmigrbtion",
+						MetricDescriptionRoot: "migrbtion hbndler",
 						Filters:               []string{`op="down"`},
 					},
 				},
 
-				SharedObservationGroupOptions: shared.SharedObservationGroupOptions{
-					Total:     shared.NoAlertsOption("none"),
-					Duration:  shared.NoAlertsOption("none"),
-					Errors:    shared.NoAlertsOption("none"),
-					ErrorRate: shared.NoAlertsOption("none"),
+				ShbredObservbtionGroupOptions: shbred.ShbredObservbtionGroupOptions{
+					Totbl:     shbred.NoAlertsOption("none"),
+					Durbtion:  shbred.NoAlertsOption("none"),
+					Errors:    shbred.NoAlertsOption("none"),
+					ErrorRbte: shbred.NoAlertsOption("none"),
 				},
 			}),
 
-			shared.NewGRPCServerMetricsGroup(
-				shared.GRPCServerMetricsOptions{
-					HumanServiceName:   "zoekt_configuration",
-					RawGRPCServiceName: grpcZoektConfigurationServiceName,
+			shbred.NewGRPCServerMetricsGroup(
+				shbred.GRPCServerMetricsOptions{
+					HumbnServiceNbme:   "zoekt_configurbtion",
+					RbwGRPCServiceNbme: grpcZoektConfigurbtionServiceNbme,
 
-					MethodFilterRegex:    fmt.Sprintf("${%s:regex}", grpcMethodVariableFrontendZoektConfiguration.Name),
-					InstanceFilterRegex:  `${internalInstance:regex}`,
-					MessageSizeNamespace: "src",
-				}, monitoring.ObservableOwnerSearchCore),
-			shared.NewGRPCInternalErrorMetricsGroup(
-				shared.GRPCInternalErrorMetricsOptions{
-					HumanServiceName:   "zoekt_configuration",
-					RawGRPCServiceName: grpcZoektConfigurationServiceName,
-					Namespace:          "", // intentionally empty
+					MethodFilterRegex:    fmt.Sprintf("${%s:regex}", grpcMethodVbribbleFrontendZoektConfigurbtion.Nbme),
+					InstbnceFilterRegex:  `${internblInstbnce:regex}`,
+					MessbgeSizeNbmespbce: "src",
+				}, monitoring.ObservbbleOwnerSebrchCore),
+			shbred.NewGRPCInternblErrorMetricsGroup(
+				shbred.GRPCInternblErrorMetricsOptions{
+					HumbnServiceNbme:   "zoekt_configurbtion",
+					RbwGRPCServiceNbme: grpcZoektConfigurbtionServiceNbme,
+					Nbmespbce:          "", // intentionblly empty
 
-					MethodFilterRegex: fmt.Sprintf("${%s:regex}", grpcMethodVariableFrontendZoektConfiguration.Name),
-				}, monitoring.ObservableOwnerSearchCore),
+					MethodFilterRegex: fmt.Sprintf("${%s:regex}", grpcMethodVbribbleFrontendZoektConfigurbtion.Nbme),
+				}, monitoring.ObservbbleOwnerSebrchCore),
 
-			shared.NewGRPCServerMetricsGroup(
-				shared.GRPCServerMetricsOptions{
-					HumanServiceName:   "internal_api",
-					RawGRPCServiceName: grpcInternalAPIServiceName,
+			shbred.NewGRPCServerMetricsGroup(
+				shbred.GRPCServerMetricsOptions{
+					HumbnServiceNbme:   "internbl_bpi",
+					RbwGRPCServiceNbme: grpcInternblAPIServiceNbme,
 
-					MethodFilterRegex:    fmt.Sprintf("${%s:regex}", grpcMethodVariableFrontendInternalAPI.Name),
-					InstanceFilterRegex:  `${internalInstance:regex}`,
-					MessageSizeNamespace: "src",
-				}, monitoring.ObservableOwnerSearchCore),
-			shared.NewGRPCInternalErrorMetricsGroup(
-				shared.GRPCInternalErrorMetricsOptions{
-					HumanServiceName:   "internal_api",
-					RawGRPCServiceName: grpcInternalAPIServiceName,
-					Namespace:          "src",
+					MethodFilterRegex:    fmt.Sprintf("${%s:regex}", grpcMethodVbribbleFrontendInternblAPI.Nbme),
+					InstbnceFilterRegex:  `${internblInstbnce:regex}`,
+					MessbgeSizeNbmespbce: "src",
+				}, monitoring.ObservbbleOwnerSebrchCore),
+			shbred.NewGRPCInternblErrorMetricsGroup(
+				shbred.GRPCInternblErrorMetricsOptions{
+					HumbnServiceNbme:   "internbl_bpi",
+					RbwGRPCServiceNbme: grpcInternblAPIServiceNbme,
+					Nbmespbce:          "src",
 
-					MethodFilterRegex: fmt.Sprintf("${%s:regex}", grpcMethodVariableFrontendInternalAPI.Name),
-				}, monitoring.ObservableOwnerSearchCore),
+					MethodFilterRegex: fmt.Sprintf("${%s:regex}", grpcMethodVbribbleFrontendInternblAPI.Nbme),
+				}, monitoring.ObservbbleOwnerSebrchCore),
 
 			{
-				Title:  "Internal service requests",
+				Title:  "Internbl service requests",
 				Hidden: true,
 				Rows: []monitoring.Row{
 					{
 						{
-							Name:        "internal_indexed_search_error_responses",
-							Description: "internal indexed search error responses every 5m",
-							Query:       `sum by(code) (increase(src_zoekt_request_duration_seconds_count{code!~"2.."}[5m])) / ignoring(code) group_left sum(increase(src_zoekt_request_duration_seconds_count[5m])) * 100`,
-							Warning:     monitoring.Alert().GreaterOrEqual(5).For(15 * time.Minute),
-							Panel:       monitoring.Panel().LegendFormat("{{code}}").Unit(monitoring.Percentage),
-							Owner:       monitoring.ObservableOwnerSearch,
+							Nbme:        "internbl_indexed_sebrch_error_responses",
+							Description: "internbl indexed sebrch error responses every 5m",
+							Query:       `sum by(code) (increbse(src_zoekt_request_durbtion_seconds_count{code!~"2.."}[5m])) / ignoring(code) group_left sum(increbse(src_zoekt_request_durbtion_seconds_count[5m])) * 100`,
+							Wbrning:     monitoring.Alert().GrebterOrEqubl(5).For(15 * time.Minute),
+							Pbnel:       monitoring.Pbnel().LegendFormbt("{{code}}").Unit(monitoring.Percentbge),
+							Owner:       monitoring.ObservbbleOwnerSebrch,
 							NextSteps: `
-								- Check the Zoekt Web Server dashboard for indications it might be unhealthy.
+								- Check the Zoekt Web Server dbshbobrd for indicbtions it might be unheblthy.
 							`,
 						},
 						{
-							Name:        "internal_unindexed_search_error_responses",
-							Description: "internal unindexed search error responses every 5m",
-							Query:       `sum by(code) (increase(searcher_service_request_total{code!~"2.."}[5m])) / ignoring(code) group_left sum(increase(searcher_service_request_total[5m])) * 100`,
-							Warning:     monitoring.Alert().GreaterOrEqual(5).For(15 * time.Minute),
-							Panel:       monitoring.Panel().LegendFormat("{{code}}").Unit(monitoring.Percentage),
-							Owner:       monitoring.ObservableOwnerSearch,
+							Nbme:        "internbl_unindexed_sebrch_error_responses",
+							Description: "internbl unindexed sebrch error responses every 5m",
+							Query:       `sum by(code) (increbse(sebrcher_service_request_totbl{code!~"2.."}[5m])) / ignoring(code) group_left sum(increbse(sebrcher_service_request_totbl[5m])) * 100`,
+							Wbrning:     monitoring.Alert().GrebterOrEqubl(5).For(15 * time.Minute),
+							Pbnel:       monitoring.Pbnel().LegendFormbt("{{code}}").Unit(monitoring.Percentbge),
+							Owner:       monitoring.ObservbbleOwnerSebrch,
 							NextSteps: `
-								- Check the Searcher dashboard for indications it might be unhealthy.
+								- Check the Sebrcher dbshbobrd for indicbtions it might be unheblthy.
 							`,
 						},
 						{
-							Name:        "internalapi_error_responses",
-							Description: "internal API error responses every 5m by route",
-							Query:       `sum by(category) (increase(src_frontend_internal_request_duration_seconds_count{code!~"2.."}[5m])) / ignoring(code) group_left sum(increase(src_frontend_internal_request_duration_seconds_count[5m])) * 100`,
-							Warning:     monitoring.Alert().GreaterOrEqual(5).For(15 * time.Minute),
-							Panel:       monitoring.Panel().LegendFormat("{{category}}").Unit(monitoring.Percentage),
-							Owner:       monitoring.ObservableOwnerSource,
+							Nbme:        "internblbpi_error_responses",
+							Description: "internbl API error responses every 5m by route",
+							Query:       `sum by(cbtegory) (increbse(src_frontend_internbl_request_durbtion_seconds_count{code!~"2.."}[5m])) / ignoring(code) group_left sum(increbse(src_frontend_internbl_request_durbtion_seconds_count[5m])) * 100`,
+							Wbrning:     monitoring.Alert().GrebterOrEqubl(5).For(15 * time.Minute),
+							Pbnel:       monitoring.Pbnel().LegendFormbt("{{cbtegory}}").Unit(monitoring.Percentbge),
+							Owner:       monitoring.ObservbbleOwnerSource,
 							NextSteps: `
-								- May not be a substantial issue, check the 'frontend' logs for potential causes.
+								- Mby not be b substbntibl issue, check the 'frontend' logs for potentibl cbuses.
 							`,
 						},
 					},
 					{
 						{
-							Name:        "99th_percentile_gitserver_duration",
-							Description: "99th percentile successful gitserver query duration over 5m",
-							Query:       `histogram_quantile(0.99, sum by (le,category)(rate(src_gitserver_request_duration_seconds_bucket{job=~"(sourcegraph-)?frontend"}[5m])))`,
-							Warning:     monitoring.Alert().GreaterOrEqual(20),
-							Panel:       monitoring.Panel().LegendFormat("{{category}}").Unit(monitoring.Seconds),
-							Owner:       monitoring.ObservableOwnerSource,
+							Nbme:        "99th_percentile_gitserver_durbtion",
+							Description: "99th percentile successful gitserver query durbtion over 5m",
+							Query:       `histogrbm_qubntile(0.99, sum by (le,cbtegory)(rbte(src_gitserver_request_durbtion_seconds_bucket{job=~"(sourcegrbph-)?frontend"}[5m])))`,
+							Wbrning:     monitoring.Alert().GrebterOrEqubl(20),
+							Pbnel:       monitoring.Pbnel().LegendFormbt("{{cbtegory}}").Unit(monitoring.Seconds),
+							Owner:       monitoring.ObservbbleOwnerSource,
 							NextSteps:   "none",
 						},
 						{
-							Name:        "gitserver_error_responses",
+							Nbme:        "gitserver_error_responses",
 							Description: "gitserver error responses every 5m",
-							Query:       `sum by (category)(increase(src_gitserver_request_duration_seconds_count{job=~"(sourcegraph-)?frontend",code!~"2.."}[5m])) / ignoring(code) group_left sum by (category)(increase(src_gitserver_request_duration_seconds_count{job=~"(sourcegraph-)?frontend"}[5m])) * 100`,
-							Warning:     monitoring.Alert().GreaterOrEqual(5).For(15 * time.Minute),
-							Panel:       monitoring.Panel().LegendFormat("{{category}}").Unit(monitoring.Percentage),
-							Owner:       monitoring.ObservableOwnerSource,
+							Query:       `sum by (cbtegory)(increbse(src_gitserver_request_durbtion_seconds_count{job=~"(sourcegrbph-)?frontend",code!~"2.."}[5m])) / ignoring(code) group_left sum by (cbtegory)(increbse(src_gitserver_request_durbtion_seconds_count{job=~"(sourcegrbph-)?frontend"}[5m])) * 100`,
+							Wbrning:     monitoring.Alert().GrebterOrEqubl(5).For(15 * time.Minute),
+							Pbnel:       monitoring.Pbnel().LegendFormbt("{{cbtegory}}").Unit(monitoring.Percentbge),
+							Owner:       monitoring.ObservbbleOwnerSource,
 							NextSteps:   "none",
 						},
 					},
 					{
 						{
-							Name:        "observability_test_alert_warning",
-							Description: "warning test alert metric",
-							Query:       `max by(owner) (observability_test_metric_warning)`,
-							Warning:     monitoring.Alert().GreaterOrEqual(1),
-							Panel:       monitoring.Panel().Max(1),
-							Owner:       monitoring.ObservableOwnerDevOps,
-							NextSteps:   "This alert is triggered via the `triggerObservabilityTestAlert` GraphQL endpoint, and will automatically resolve itself.",
+							Nbme:        "observbbility_test_blert_wbrning",
+							Description: "wbrning test blert metric",
+							Query:       `mbx by(owner) (observbbility_test_metric_wbrning)`,
+							Wbrning:     monitoring.Alert().GrebterOrEqubl(1),
+							Pbnel:       monitoring.Pbnel().Mbx(1),
+							Owner:       monitoring.ObservbbleOwnerDevOps,
+							NextSteps:   "This blert is triggered vib the `triggerObservbbilityTestAlert` GrbphQL endpoint, bnd will butombticblly resolve itself.",
 						},
 						{
-							Name:        "observability_test_alert_critical",
-							Description: "critical test alert metric",
-							Query:       `max by(owner) (observability_test_metric_critical)`,
-							Critical:    monitoring.Alert().GreaterOrEqual(1),
-							Panel:       monitoring.Panel().Max(1),
-							Owner:       monitoring.ObservableOwnerDevOps,
-							NextSteps:   "This alert is triggered via the `triggerObservabilityTestAlert` GraphQL endpoint, and will automatically resolve itself.",
+							Nbme:        "observbbility_test_blert_criticbl",
+							Description: "criticbl test blert metric",
+							Query:       `mbx by(owner) (observbbility_test_metric_criticbl)`,
+							Criticbl:    monitoring.Alert().GrebterOrEqubl(1),
+							Pbnel:       monitoring.Pbnel().Mbx(1),
+							Owner:       monitoring.ObservbbleOwnerDevOps,
+							NextSteps:   "This blert is triggered vib the `triggerObservbbilityTestAlert` GrbphQL endpoint, bnd will butombticblly resolve itself.",
 						},
 					},
 				},
 			},
 			{
-				Title:  "Authentication API requests",
+				Title:  "Authenticbtion API requests",
 				Hidden: true,
 				Rows: []monitoring.Row{
 					{
 						{
-							Name:           "sign_in_rate",
-							Description:    "rate of API requests to sign-in",
-							Query:          `sum(irate(src_http_request_duration_seconds_count{route="sign-in",method="post"}[5m]))`,
+							Nbme:           "sign_in_rbte",
+							Description:    "rbte of API requests to sign-in",
+							Query:          `sum(irbte(src_http_request_durbtion_seconds_count{route="sign-in",method="post"}[5m]))`,
 							NoAlert:        true,
-							Panel:          monitoring.Panel().Unit(monitoring.RequestsPerSecond),
-							Owner:          monitoring.ObservableOwnerSource,
-							Interpretation: `Rate (QPS) of requests to sign-in`,
+							Pbnel:          monitoring.Pbnel().Unit(monitoring.RequestsPerSecond),
+							Owner:          monitoring.ObservbbleOwnerSource,
+							Interpretbtion: `Rbte (QPS) of requests to sign-in`,
 						},
 						{
-							Name:           "sign_in_latency_p99",
-							Description:    "99 percentile of sign-in latency",
-							Query:          `histogram_quantile(0.99, sum(rate(src_http_request_duration_seconds_bucket{route="sign-in",method="post"}[5m])) by (le))`,
+							Nbme:           "sign_in_lbtency_p99",
+							Description:    "99 percentile of sign-in lbtency",
+							Query:          `histogrbm_qubntile(0.99, sum(rbte(src_http_request_durbtion_seconds_bucket{route="sign-in",method="post"}[5m])) by (le))`,
 							NoAlert:        true,
-							Panel:          monitoring.Panel().Unit(monitoring.Milliseconds),
-							Owner:          monitoring.ObservableOwnerSource,
-							Interpretation: `99% percentile of sign-in latency`,
+							Pbnel:          monitoring.Pbnel().Unit(monitoring.Milliseconds),
+							Owner:          monitoring.ObservbbleOwnerSource,
+							Interpretbtion: `99% percentile of sign-in lbtency`,
 						},
 						{
-							Name:           "sign_in_error_rate",
-							Description:    "percentage of sign-in requests by http code",
-							Query:          `sum by (code)(irate(src_http_request_duration_seconds_count{route="sign-in",method="post"}[5m]))/ ignoring (code) group_left sum(irate(src_http_request_duration_seconds_count{route="sign-in",method="post"}[5m]))*100`,
+							Nbme:           "sign_in_error_rbte",
+							Description:    "percentbge of sign-in requests by http code",
+							Query:          `sum by (code)(irbte(src_http_request_durbtion_seconds_count{route="sign-in",method="post"}[5m]))/ ignoring (code) group_left sum(irbte(src_http_request_durbtion_seconds_count{route="sign-in",method="post"}[5m]))*100`,
 							NoAlert:        true,
-							Panel:          monitoring.Panel().Unit(monitoring.Percentage),
-							Owner:          monitoring.ObservableOwnerSource,
-							Interpretation: `Percentage of sign-in requests grouped by http code`,
+							Pbnel:          monitoring.Pbnel().Unit(monitoring.Percentbge),
+							Owner:          monitoring.ObservbbleOwnerSource,
+							Interpretbtion: `Percentbge of sign-in requests grouped by http code`,
 						},
 					},
 					{
 						{
-							Name:        "sign_up_rate",
-							Description: "rate of API requests to sign-up",
-							Query:       `sum(irate(src_http_request_duration_seconds_count{route="sign-up",method="post"}[5m]))`,
+							Nbme:        "sign_up_rbte",
+							Description: "rbte of API requests to sign-up",
+							Query:       `sum(irbte(src_http_request_durbtion_seconds_count{route="sign-up",method="post"}[5m]))`,
 
 							NoAlert:        true,
-							Panel:          monitoring.Panel().Unit(monitoring.RequestsPerSecond),
-							Owner:          monitoring.ObservableOwnerSource,
-							Interpretation: `Rate (QPS) of requests to sign-up`,
+							Pbnel:          monitoring.Pbnel().Unit(monitoring.RequestsPerSecond),
+							Owner:          monitoring.ObservbbleOwnerSource,
+							Interpretbtion: `Rbte (QPS) of requests to sign-up`,
 						},
 						{
-							Name:        "sign_up_latency_p99",
-							Description: "99 percentile of sign-up latency",
+							Nbme:        "sign_up_lbtency_p99",
+							Description: "99 percentile of sign-up lbtency",
 
-							Query:          `histogram_quantile(0.99, sum(rate(src_http_request_duration_seconds_bucket{route="sign-up",method="post"}[5m])) by (le))`,
+							Query:          `histogrbm_qubntile(0.99, sum(rbte(src_http_request_durbtion_seconds_bucket{route="sign-up",method="post"}[5m])) by (le))`,
 							NoAlert:        true,
-							Panel:          monitoring.Panel().Unit(monitoring.Milliseconds),
-							Owner:          monitoring.ObservableOwnerSource,
-							Interpretation: `99% percentile of sign-up latency`,
+							Pbnel:          monitoring.Pbnel().Unit(monitoring.Milliseconds),
+							Owner:          monitoring.ObservbbleOwnerSource,
+							Interpretbtion: `99% percentile of sign-up lbtency`,
 						},
 						{
-							Name:           "sign_up_code_percentage",
-							Description:    "percentage of sign-up requests by http code",
-							Query:          `sum by (code)(irate(src_http_request_duration_seconds_count{route="sign-up",method="post"}[5m]))/ ignoring (code) group_left sum(irate(src_http_request_duration_seconds_count{route="sign-out"}[5m]))*100`,
+							Nbme:           "sign_up_code_percentbge",
+							Description:    "percentbge of sign-up requests by http code",
+							Query:          `sum by (code)(irbte(src_http_request_durbtion_seconds_count{route="sign-up",method="post"}[5m]))/ ignoring (code) group_left sum(irbte(src_http_request_durbtion_seconds_count{route="sign-out"}[5m]))*100`,
 							NoAlert:        true,
-							Panel:          monitoring.Panel().Unit(monitoring.Percentage),
-							Owner:          monitoring.ObservableOwnerSource,
-							Interpretation: `Percentage of sign-up requests grouped by http code`,
-						},
-					},
-					{
-						{
-							Name:           "sign_out_rate",
-							Description:    "rate of API requests to sign-out",
-							Query:          `sum(irate(src_http_request_duration_seconds_count{route="sign-out"}[5m]))`,
-							NoAlert:        true,
-							Panel:          monitoring.Panel().Unit(monitoring.RequestsPerSecond),
-							Owner:          monitoring.ObservableOwnerSource,
-							Interpretation: `Rate (QPS) of requests to sign-out`,
-						},
-						{
-							Name:           "sign_out_latency_p99",
-							Description:    "99 percentile of sign-out latency",
-							Query:          `histogram_quantile(0.99, sum(rate(src_http_request_duration_seconds_bucket{route="sign-out"}[5m])) by (le))`,
-							NoAlert:        true,
-							Panel:          monitoring.Panel().Unit(monitoring.Milliseconds),
-							Owner:          monitoring.ObservableOwnerSource,
-							Interpretation: `99% percentile of sign-out latency`,
-						},
-						{
-							Name:           "sign_out_error_rate",
-							Description:    "percentage of sign-out requests that return non-303 http code",
-							Query:          ` sum by (code)(irate(src_http_request_duration_seconds_count{route="sign-out"}[5m]))/ ignoring (code) group_left sum(irate(src_http_request_duration_seconds_count{route="sign-out"}[5m]))*100`,
-							NoAlert:        true,
-							Panel:          monitoring.Panel().Unit(monitoring.Percentage),
-							Owner:          monitoring.ObservableOwnerSource,
-							Interpretation: `Percentage of sign-out requests grouped by http code`,
+							Pbnel:          monitoring.Pbnel().Unit(monitoring.Percentbge),
+							Owner:          monitoring.ObservbbleOwnerSource,
+							Interpretbtion: `Percentbge of sign-up requests grouped by http code`,
 						},
 					},
 					{
 						{
-							Name:           "account_failed_sign_in_attempts",
-							Description:    "rate of failed sign-in attempts",
-							Query:          `sum(rate(src_frontend_account_failed_sign_in_attempts_total[1m]))`,
+							Nbme:           "sign_out_rbte",
+							Description:    "rbte of API requests to sign-out",
+							Query:          `sum(irbte(src_http_request_durbtion_seconds_count{route="sign-out"}[5m]))`,
 							NoAlert:        true,
-							Panel:          monitoring.Panel().Unit(monitoring.Number),
-							Owner:          monitoring.ObservableOwnerSource,
-							Interpretation: `Failed sign-in attempts per minute`,
+							Pbnel:          monitoring.Pbnel().Unit(monitoring.RequestsPerSecond),
+							Owner:          monitoring.ObservbbleOwnerSource,
+							Interpretbtion: `Rbte (QPS) of requests to sign-out`,
 						},
 						{
-							Name:           "account_lockouts",
-							Description:    "rate of account lockouts",
-							Query:          `sum(rate(src_frontend_account_lockouts_total[1m]))`,
+							Nbme:           "sign_out_lbtency_p99",
+							Description:    "99 percentile of sign-out lbtency",
+							Query:          `histogrbm_qubntile(0.99, sum(rbte(src_http_request_durbtion_seconds_bucket{route="sign-out"}[5m])) by (le))`,
 							NoAlert:        true,
-							Panel:          monitoring.Panel().Unit(monitoring.Number),
-							Owner:          monitoring.ObservableOwnerSource,
-							Interpretation: `Account lockouts per minute`,
+							Pbnel:          monitoring.Pbnel().Unit(monitoring.Milliseconds),
+							Owner:          monitoring.ObservbbleOwnerSource,
+							Interpretbtion: `99% percentile of sign-out lbtency`,
+						},
+						{
+							Nbme:           "sign_out_error_rbte",
+							Description:    "percentbge of sign-out requests thbt return non-303 http code",
+							Query:          ` sum by (code)(irbte(src_http_request_durbtion_seconds_count{route="sign-out"}[5m]))/ ignoring (code) group_left sum(irbte(src_http_request_durbtion_seconds_count{route="sign-out"}[5m]))*100`,
+							NoAlert:        true,
+							Pbnel:          monitoring.Pbnel().Unit(monitoring.Percentbge),
+							Owner:          monitoring.ObservbbleOwnerSource,
+							Interpretbtion: `Percentbge of sign-out requests grouped by http code`,
+						},
+					},
+					{
+						{
+							Nbme:           "bccount_fbiled_sign_in_bttempts",
+							Description:    "rbte of fbiled sign-in bttempts",
+							Query:          `sum(rbte(src_frontend_bccount_fbiled_sign_in_bttempts_totbl[1m]))`,
+							NoAlert:        true,
+							Pbnel:          monitoring.Pbnel().Unit(monitoring.Number),
+							Owner:          monitoring.ObservbbleOwnerSource,
+							Interpretbtion: `Fbiled sign-in bttempts per minute`,
+						},
+						{
+							Nbme:           "bccount_lockouts",
+							Description:    "rbte of bccount lockouts",
+							Query:          `sum(rbte(src_frontend_bccount_lockouts_totbl[1m]))`,
+							NoAlert:        true,
+							Pbnel:          monitoring.Pbnel().Unit(monitoring.Number),
+							Owner:          monitoring.ObservbbleOwnerSource,
+							Interpretbtion: `Account lockouts per minute`,
 						},
 					},
 				},
@@ -645,57 +645,57 @@ func Frontend() *monitoring.Dashboard {
 				Title:  "Cody API requests",
 				Hidden: true,
 				Rows: []monitoring.Row{{{
-					Name:           "cody_api_rate",
-					Description:    "rate of API requests to cody endpoints (excluding GraphQL)",
-					Query:          `sum by (route, code)(irate(src_http_request_duration_seconds_count{route=~"^completions.*"}[5m]))`,
+					Nbme:           "cody_bpi_rbte",
+					Description:    "rbte of API requests to cody endpoints (excluding GrbphQL)",
+					Query:          `sum by (route, code)(irbte(src_http_request_durbtion_seconds_count{route=~"^completions.*"}[5m]))`,
 					NoAlert:        true,
-					Panel:          monitoring.Panel().Unit(monitoring.RequestsPerSecond),
-					Owner:          monitoring.ObservableOwnerCody,
-					Interpretation: `Rate (QPS) of requests to cody related endpoints. completions.stream is for the conversational endpoints. completions.code is for the code auto-complete endpoints.`,
+					Pbnel:          monitoring.Pbnel().Unit(monitoring.RequestsPerSecond),
+					Owner:          monitoring.ObservbbleOwnerCody,
+					Interpretbtion: `Rbte (QPS) of requests to cody relbted endpoints. completions.strebm is for the conversbtionbl endpoints. completions.code is for the code buto-complete endpoints.`,
 				}}},
 			},
 			{
-				Title:  "Organisation GraphQL API requests",
+				Title:  "Orgbnisbtion GrbphQL API requests",
 				Hidden: true,
 				Rows:   orgMetricRows(orgMetricSpec),
 			},
 			{
-				Title:  "Cloud KMS and cache",
+				Title:  "Cloud KMS bnd cbche",
 				Hidden: true,
 				Rows: []monitoring.Row{
 					{
 						{
-							Name:        "cloudkms_cryptographic_requests",
-							Description: "cryptographic requests to Cloud KMS every 1m",
-							Query:       `sum(increase(src_cloudkms_cryptographic_total[1m]))`,
-							Warning:     monitoring.Alert().GreaterOrEqual(15000).For(5 * time.Minute),
-							Critical:    monitoring.Alert().GreaterOrEqual(30000).For(5 * time.Minute),
-							Panel:       monitoring.Panel().Unit(monitoring.Number),
-							Owner:       monitoring.ObservableOwnerSource,
+							Nbme:        "cloudkms_cryptogrbphic_requests",
+							Description: "cryptogrbphic requests to Cloud KMS every 1m",
+							Query:       `sum(increbse(src_cloudkms_cryptogrbphic_totbl[1m]))`,
+							Wbrning:     monitoring.Alert().GrebterOrEqubl(15000).For(5 * time.Minute),
+							Criticbl:    monitoring.Alert().GrebterOrEqubl(30000).For(5 * time.Minute),
+							Pbnel:       monitoring.Pbnel().Unit(monitoring.Number),
+							Owner:       monitoring.ObservbbleOwnerSource,
 							NextSteps: `
-								- Revert recent commits that cause extensive listing from "external_services" and/or "user_external_accounts" tables.
+								- Revert recent commits thbt cbuse extensive listing from "externbl_services" bnd/or "user_externbl_bccounts" tbbles.
 							`,
 						},
 						{
-							Name:        "encryption_cache_hit_ratio",
-							Description: "average encryption cache hit ratio per workload",
-							Query:       `min by (kubernetes_name) (src_encryption_cache_hit_total/(src_encryption_cache_hit_total+src_encryption_cache_miss_total))`,
+							Nbme:        "encryption_cbche_hit_rbtio",
+							Description: "bverbge encryption cbche hit rbtio per worklobd",
+							Query:       `min by (kubernetes_nbme) (src_encryption_cbche_hit_totbl/(src_encryption_cbche_hit_totbl+src_encryption_cbche_miss_totbl))`,
 							NoAlert:     true,
-							Panel:       monitoring.Panel().Unit(monitoring.Number),
-							Owner:       monitoring.ObservableOwnerSource,
-							Interpretation: `
-								- Encryption cache hit ratio (hits/(hits+misses)) - minimum across all instances of a workload.
+							Pbnel:       monitoring.Pbnel().Unit(monitoring.Number),
+							Owner:       monitoring.ObservbbleOwnerSource,
+							Interpretbtion: `
+								- Encryption cbche hit rbtio (hits/(hits+misses)) - minimum bcross bll instbnces of b worklobd.
 							`,
 						},
 						{
-							Name:        "encryption_cache_evictions",
-							Description: "rate of encryption cache evictions - sum across all instances of a given workload",
-							Query:       `sum by (kubernetes_name) (irate(src_encryption_cache_eviction_total[5m]))`,
+							Nbme:        "encryption_cbche_evictions",
+							Description: "rbte of encryption cbche evictions - sum bcross bll instbnces of b given worklobd",
+							Query:       `sum by (kubernetes_nbme) (irbte(src_encryption_cbche_eviction_totbl[5m]))`,
 							NoAlert:     true,
-							Panel:       monitoring.Panel().Unit(monitoring.Number),
-							Owner:       monitoring.ObservableOwnerSource,
-							Interpretation: `
-								- Rate of encryption cache evictions (caused by cache exceeding its maximum size) - sum across all instances of a workload
+							Pbnel:       monitoring.Pbnel().Unit(monitoring.Number),
+							Owner:       monitoring.ObservbbleOwnerSource,
+							Interpretbtion: `
+								- Rbte of encryption cbche evictions (cbused by cbche exceeding its mbximum size) - sum bcross bll instbnces of b worklobd
 							`,
 						},
 					},
@@ -703,354 +703,354 @@ func Frontend() *monitoring.Dashboard {
 			},
 
 			// Resource monitoring
-			shared.NewDatabaseConnectionsMonitoringGroup("frontend"),
-			shared.NewContainerMonitoringGroup(containerName, monitoring.ObservableOwnerDevOps, nil),
-			shared.NewProvisioningIndicatorsGroup(containerName, monitoring.ObservableOwnerDevOps, nil),
-			shared.NewGolangMonitoringGroup(containerName, monitoring.ObservableOwnerDevOps, nil),
-			shared.NewKubernetesMonitoringGroup(containerName, monitoring.ObservableOwnerDevOps, nil),
+			shbred.NewDbtbbbseConnectionsMonitoringGroup("frontend"),
+			shbred.NewContbinerMonitoringGroup(contbinerNbme, monitoring.ObservbbleOwnerDevOps, nil),
+			shbred.NewProvisioningIndicbtorsGroup(contbinerNbme, monitoring.ObservbbleOwnerDevOps, nil),
+			shbred.NewGolbngMonitoringGroup(contbinerNbme, monitoring.ObservbbleOwnerDevOps, nil),
+			shbred.NewKubernetesMonitoringGroup(contbinerNbme, monitoring.ObservbbleOwnerDevOps, nil),
 			{
-				Title:  "Search: Ranking",
+				Title:  "Sebrch: Rbnking",
 				Hidden: true,
 				Rows: []monitoring.Row{
 					{
 						{
-							Name:           "total_search_clicks",
-							Description:    "total number of search clicks over 6h",
-							Query:          "sum by (ranked) (increase(src_search_ranking_result_clicked_count[6h]))",
+							Nbme:           "totbl_sebrch_clicks",
+							Description:    "totbl number of sebrch clicks over 6h",
+							Query:          "sum by (rbnked) (increbse(src_sebrch_rbnking_result_clicked_count[6h]))",
 							NoAlert:        true,
-							Panel:          monitoring.Panel().LegendFormat("ranked={{ranked}}"),
-							Owner:          monitoring.ObservableOwnerSearchCore,
-							Interpretation: "The total number of search clicks across all search types over a 6 hour window.",
+							Pbnel:          monitoring.Pbnel().LegendFormbt("rbnked={{rbnked}}"),
+							Owner:          monitoring.ObservbbleOwnerSebrchCore,
+							Interpretbtion: "The totbl number of sebrch clicks bcross bll sebrch types over b 6 hour window.",
 						},
 						{
-							Name:           "percent_clicks_on_top_search_result",
-							Description:    "percent of clicks on top search result over 6h",
-							Query:          "sum by (ranked) (increase(src_search_ranking_result_clicked_bucket{le=\"1\",resultsLength=\">3\"}[6h])) / sum by (ranked) (increase(src_search_ranking_result_clicked_count[6h])) * 100",
+							Nbme:           "percent_clicks_on_top_sebrch_result",
+							Description:    "percent of clicks on top sebrch result over 6h",
+							Query:          "sum by (rbnked) (increbse(src_sebrch_rbnking_result_clicked_bucket{le=\"1\",resultsLength=\">3\"}[6h])) / sum by (rbnked) (increbse(src_sebrch_rbnking_result_clicked_count[6h])) * 100",
 							NoAlert:        true,
-							Panel:          monitoring.Panel().LegendFormat("ranked={{ranked}}").Unit(monitoring.Percentage),
-							Owner:          monitoring.ObservableOwnerSearchCore,
-							Interpretation: "The percent of clicks that were on the top search result, excluding searches with very few results (3 or fewer).",
+							Pbnel:          monitoring.Pbnel().LegendFormbt("rbnked={{rbnked}}").Unit(monitoring.Percentbge),
+							Owner:          monitoring.ObservbbleOwnerSebrchCore,
+							Interpretbtion: "The percent of clicks thbt were on the top sebrch result, excluding sebrches with very few results (3 or fewer).",
 						},
 						{
-							Name:           "percent_clicks_on_top_3_search_results",
-							Description:    "percent of clicks on top 3 search results over 6h",
-							Query:          "sum by (ranked) (increase(src_search_ranking_result_clicked_bucket{le=\"3\",resultsLength=\">3\"}[6h])) / sum by (ranked) (increase(src_search_ranking_result_clicked_count[6h])) * 100",
+							Nbme:           "percent_clicks_on_top_3_sebrch_results",
+							Description:    "percent of clicks on top 3 sebrch results over 6h",
+							Query:          "sum by (rbnked) (increbse(src_sebrch_rbnking_result_clicked_bucket{le=\"3\",resultsLength=\">3\"}[6h])) / sum by (rbnked) (increbse(src_sebrch_rbnking_result_clicked_count[6h])) * 100",
 							NoAlert:        true,
-							Panel:          monitoring.Panel().LegendFormat("ranked={{ranked}}").Unit(monitoring.Percentage),
-							Owner:          monitoring.ObservableOwnerSearchCore,
-							Interpretation: "The percent of clicks that were on the first 3 search results, excluding searches with very few results (3 or fewer).",
+							Pbnel:          monitoring.Pbnel().LegendFormbt("rbnked={{rbnked}}").Unit(monitoring.Percentbge),
+							Owner:          monitoring.ObservbbleOwnerSebrchCore,
+							Interpretbtion: "The percent of clicks thbt were on the first 3 sebrch results, excluding sebrches with very few results (3 or fewer).",
 						},
 					}, {
 						{
-							Name:        "distribution_of_clicked_search_result_type_over_6h_in_percent",
-							Description: "distribution of clicked search result type over 6h",
-							Query:       "sum(increase(src_search_ranking_result_clicked_count{type=\"repo\"}[6h])) / sum(increase(src_search_ranking_result_clicked_count[6h])) * 100",
+							Nbme:        "distribution_of_clicked_sebrch_result_type_over_6h_in_percent",
+							Description: "distribution of clicked sebrch result type over 6h",
+							Query:       "sum(increbse(src_sebrch_rbnking_result_clicked_count{type=\"repo\"}[6h])) / sum(increbse(src_sebrch_rbnking_result_clicked_count[6h])) * 100",
 							NoAlert:     true,
-							Panel: monitoring.Panel().With(
-								func(o monitoring.Observable, p *sdk.Panel) {
-									p.GraphPanel.Legend.Current = true
-									p.GraphPanel.Targets = []sdk.Target{
+							Pbnel: monitoring.Pbnel().With(
+								func(o monitoring.Observbble, p *sdk.Pbnel) {
+									p.GrbphPbnel.Legend.Current = true
+									p.GrbphPbnel.Tbrgets = []sdk.Tbrget{
 										{
 											RefID:        "0",
 											Expr:         o.Query,
-											LegendFormat: "repo",
+											LegendFormbt: "repo",
 										}, {
 											RefID:        "1",
-											Expr:         "sum(increase(src_search_ranking_result_clicked_count{type=\"fileMatch\"}[6h])) / sum(increase(src_search_ranking_result_clicked_count[6h])) * 100",
-											LegendFormat: "fileMatch",
+											Expr:         "sum(increbse(src_sebrch_rbnking_result_clicked_count{type=\"fileMbtch\"}[6h])) / sum(increbse(src_sebrch_rbnking_result_clicked_count[6h])) * 100",
+											LegendFormbt: "fileMbtch",
 										}, {
 											RefID:        "2",
-											Expr:         "sum(increase(src_search_ranking_result_clicked_count{type=\"filePathMatch\"}[6h])) / sum(increase(src_search_ranking_result_clicked_count[6h])) * 100",
-											LegendFormat: "filePathMatch",
+											Expr:         "sum(increbse(src_sebrch_rbnking_result_clicked_count{type=\"filePbthMbtch\"}[6h])) / sum(increbse(src_sebrch_rbnking_result_clicked_count[6h])) * 100",
+											LegendFormbt: "filePbthMbtch",
 										}}
-									p.GraphPanel.Tooltip.Shared = true
+									p.GrbphPbnel.Tooltip.Shbred = true
 								}),
-							Owner:          monitoring.ObservableOwnerSearchCore,
-							Interpretation: "The distribution of clicked search results by result type. At every point in time, the values should sum to 100.",
+							Owner:          monitoring.ObservbbleOwnerSebrchCore,
+							Interpretbtion: "The distribution of clicked sebrch results by result type. At every point in time, the vblues should sum to 100.",
 						},
 						{
-							Name:           "percent_zoekt_searches_hitting_flush_limit",
-							Description:    "percent of zoekt searches that hit the flush time limit",
-							Query:          "sum(increase(zoekt_final_aggregate_size_count{reason=\"timer_expired\"}[1d])) / sum(increase(zoekt_final_aggregate_size_count[1d])) * 100",
+							Nbme:           "percent_zoekt_sebrches_hitting_flush_limit",
+							Description:    "percent of zoekt sebrches thbt hit the flush time limit",
+							Query:          "sum(increbse(zoekt_finbl_bggregbte_size_count{rebson=\"timer_expired\"}[1d])) / sum(increbse(zoekt_finbl_bggregbte_size_count[1d])) * 100",
 							NoAlert:        true,
-							Panel:          monitoring.Panel().Unit(monitoring.Percentage),
-							Owner:          monitoring.ObservableOwnerSearchCore,
-							Interpretation: "The percent of Zoekt searches that hit the flush time limit. These searches don't visit all matches, so they could be missing relevant results, or be non-deterministic.",
+							Pbnel:          monitoring.Pbnel().Unit(monitoring.Percentbge),
+							Owner:          monitoring.ObservbbleOwnerSebrchCore,
+							Interpretbtion: "The percent of Zoekt sebrches thbt hit the flush time limit. These sebrches don't visit bll mbtches, so they could be missing relevbnt results, or be non-deterministic.",
 						},
 					},
 				},
 			},
 			{
-				Title:  "Email delivery",
+				Title:  "Embil delivery",
 				Hidden: true,
 				Rows: []monitoring.Row{{
 					{
-						Name:        "email_delivery_failures",
-						Description: "email delivery failure rate over 30 minutes",
-						Query:       `sum(increase(src_email_send{success="false"}[30m])) / sum(increase(src_email_send[30m])) * 100`,
-						Panel: monitoring.Panel().
-							LegendFormat("failures").
-							Unit(monitoring.Percentage).
-							Max(100).Min(0),
+						Nbme:        "embil_delivery_fbilures",
+						Description: "embil delivery fbilure rbte over 30 minutes",
+						Query:       `sum(increbse(src_embil_send{success="fblse"}[30m])) / sum(increbse(src_embil_send[30m])) * 100`,
+						Pbnel: monitoring.Pbnel().
+							LegendFormbt("fbilures").
+							Unit(monitoring.Percentbge).
+							Mbx(100).Min(0),
 
-						// Any failure is worth warning on, as failed email
-						// deliveries directly impact user experience.
-						Warning:  monitoring.Alert().Greater(0),
-						Critical: monitoring.Alert().GreaterOrEqual(10),
+						// Any fbilure is worth wbrning on, bs fbiled embil
+						// deliveries directly impbct user experience.
+						Wbrning:  monitoring.Alert().Grebter(0),
+						Criticbl: monitoring.Alert().GrebterOrEqubl(10),
 
-						Owner: monitoring.ObservableOwnerDevOps,
+						Owner: monitoring.ObservbbleOwnerDevOps,
 						NextSteps: `
-							- Check your SMTP configuration in site configuration.
-							- Check 'sourcegraph-frontend' logs for more detailed error messages.
-							- Check your SMTP provider for more detailed error messages.
-							- Use 'sum(increase(src_email_send{success="false"}[30m]))' to check the raw count of delivery failures.
+							- Check your SMTP configurbtion in site configurbtion.
+							- Check 'sourcegrbph-frontend' logs for more detbiled error messbges.
+							- Check your SMTP provider for more detbiled error messbges.
+							- Use 'sum(increbse(src_embil_send{success="fblse"}[30m]))' to check the rbw count of delivery fbilures.
 						`,
 					},
 				}, {
 					{
-						Name:        "email_deliveries_total",
-						Description: "total emails successfully delivered every 30 minutes",
-						Query:       `sum (increase(src_email_send{success="true"}[30m]))`,
-						Panel:       monitoring.Panel().LegendFormat("emails"),
-						NoAlert:     true, // this is a purely informational panel
+						Nbme:        "embil_deliveries_totbl",
+						Description: "totbl embils successfully delivered every 30 minutes",
+						Query:       `sum (increbse(src_embil_send{success="true"}[30m]))`,
+						Pbnel:       monitoring.Pbnel().LegendFormbt("embils"),
+						NoAlert:     true, // this is b purely informbtionbl pbnel
 
-						Owner:          monitoring.ObservableOwnerDevOps,
-						Interpretation: "Total emails successfully delivered.",
+						Owner:          monitoring.ObservbbleOwnerDevOps,
+						Interpretbtion: "Totbl embils successfully delivered.",
 
-						// use to observe behaviour of email usage across instances
-						MultiInstance: true,
+						// use to observe behbviour of embil usbge bcross instbnces
+						MultiInstbnce: true,
 					},
 					{
-						Name:        "email_deliveries_by_source",
-						Description: "emails successfully delivered every 30 minutes by source",
-						Query:       `sum by (email_source) (increase(src_email_send{success="true"}[30m]))`,
-						Panel: monitoring.Panel().LegendFormat("{{email_source}}").
-							With(monitoring.PanelOptions.LegendOnRight()),
-						NoAlert: true, // this is a purely informational panel
+						Nbme:        "embil_deliveries_by_source",
+						Description: "embils successfully delivered every 30 minutes by source",
+						Query:       `sum by (embil_source) (increbse(src_embil_send{success="true"}[30m]))`,
+						Pbnel: monitoring.Pbnel().LegendFormbt("{{embil_source}}").
+							With(monitoring.PbnelOptions.LegendOnRight()),
+						NoAlert: true, // this is b purely informbtionbl pbnel
 
-						Owner:          monitoring.ObservableOwnerDevOps,
-						Interpretation: "Emails successfully delivered by source, i.e. product feature.",
+						Owner:          monitoring.ObservbbleOwnerDevOps,
+						Interpretbtion: "Embils successfully delivered by source, i.e. product febture.",
 
-						// use to observe behaviour of email usage across instances.
-						// cardinality is 2-4, but it is useful to be able to see the
-						// breakdown regardless across instances.
-						MultiInstance: true,
+						// use to observe behbviour of embil usbge bcross instbnces.
+						// cbrdinblity is 2-4, but it is useful to be bble to see the
+						// brebkdown regbrdless bcross instbnces.
+						MultiInstbnce: true,
 					},
 				}},
 			},
 			{
-				Title:  "Sentinel queries (only on sourcegraph.com)",
+				Title:  "Sentinel queries (only on sourcegrbph.com)",
 				Hidden: true,
 				Rows: []monitoring.Row{
 					{
 						{
-							Name:        "mean_successful_sentinel_duration_over_2h",
-							Description: "mean successful sentinel search duration over 2h",
-							// WARNING: if you change this, ensure that it will not trigger alerts on a customer instance
-							// since these panels relate to metrics that don't exist on a customer instance.
-							Query:          "sum(rate(src_search_response_latency_seconds_sum{source=~`searchblitz.*`, status=`success`}[2h])) / sum(rate(src_search_response_latency_seconds_count{source=~`searchblitz.*`, status=`success`}[2h]))",
-							Warning:        monitoring.Alert().GreaterOrEqual(5).For(15 * time.Minute),
-							Critical:       monitoring.Alert().GreaterOrEqual(8).For(30 * time.Minute),
-							Panel:          monitoring.Panel().LegendFormat("duration").Unit(monitoring.Seconds).With(monitoring.PanelOptions.NoLegend()),
-							Owner:          monitoring.ObservableOwnerSearch,
-							Interpretation: `Mean search duration for all successful sentinel queries`,
+							Nbme:        "mebn_successful_sentinel_durbtion_over_2h",
+							Description: "mebn successful sentinel sebrch durbtion over 2h",
+							// WARNING: if you chbnge this, ensure thbt it will not trigger blerts on b customer instbnce
+							// since these pbnels relbte to metrics thbt don't exist on b customer instbnce.
+							Query:          "sum(rbte(src_sebrch_response_lbtency_seconds_sum{source=~`sebrchblitz.*`, stbtus=`success`}[2h])) / sum(rbte(src_sebrch_response_lbtency_seconds_count{source=~`sebrchblitz.*`, stbtus=`success`}[2h]))",
+							Wbrning:        monitoring.Alert().GrebterOrEqubl(5).For(15 * time.Minute),
+							Criticbl:       monitoring.Alert().GrebterOrEqubl(8).For(30 * time.Minute),
+							Pbnel:          monitoring.Pbnel().LegendFormbt("durbtion").Unit(monitoring.Seconds).With(monitoring.PbnelOptions.NoLegend()),
+							Owner:          monitoring.ObservbbleOwnerSebrch,
+							Interpretbtion: `Mebn sebrch durbtion for bll successful sentinel queries`,
 							NextSteps: `
-								- Look at the breakdown by query to determine if a specific query type is being affected
-								- Check for high CPU usage on zoekt-webserver
-								- Check Honeycomb for unusual activity
+								- Look bt the brebkdown by query to determine if b specific query type is being bffected
+								- Check for high CPU usbge on zoekt-webserver
+								- Check Honeycomb for unusubl bctivity
 							`,
 						},
 						{
-							Name:        "mean_sentinel_stream_latency_over_2h",
-							Description: "mean successful sentinel stream latency over 2h",
-							// WARNING: if you change this, ensure that it will not trigger alerts on a customer instance
-							// since these panels relate to metrics that don't exist on a customer instance.
-							Query:    `sum(rate(src_search_streaming_latency_seconds_sum{source=~"searchblitz.*"}[2h])) / sum(rate(src_search_streaming_latency_seconds_count{source=~"searchblitz.*"}[2h]))`,
-							Warning:  monitoring.Alert().GreaterOrEqual(2).For(15 * time.Minute),
-							Critical: monitoring.Alert().GreaterOrEqual(3).For(30 * time.Minute),
-							Panel: monitoring.Panel().LegendFormat("latency").Unit(monitoring.Seconds).With(
-								monitoring.PanelOptions.NoLegend(),
-								monitoring.PanelOptions.ColorOverride("latency", "#8AB8FF"),
+							Nbme:        "mebn_sentinel_strebm_lbtency_over_2h",
+							Description: "mebn successful sentinel strebm lbtency over 2h",
+							// WARNING: if you chbnge this, ensure thbt it will not trigger blerts on b customer instbnce
+							// since these pbnels relbte to metrics thbt don't exist on b customer instbnce.
+							Query:    `sum(rbte(src_sebrch_strebming_lbtency_seconds_sum{source=~"sebrchblitz.*"}[2h])) / sum(rbte(src_sebrch_strebming_lbtency_seconds_count{source=~"sebrchblitz.*"}[2h]))`,
+							Wbrning:  monitoring.Alert().GrebterOrEqubl(2).For(15 * time.Minute),
+							Criticbl: monitoring.Alert().GrebterOrEqubl(3).For(30 * time.Minute),
+							Pbnel: monitoring.Pbnel().LegendFormbt("lbtency").Unit(monitoring.Seconds).With(
+								monitoring.PbnelOptions.NoLegend(),
+								monitoring.PbnelOptions.ColorOverride("lbtency", "#8AB8FF"),
 							),
-							Owner:          monitoring.ObservableOwnerSearch,
-							Interpretation: `Mean time to first result for all successful streaming sentinel queries`,
+							Owner:          monitoring.ObservbbleOwnerSebrch,
+							Interpretbtion: `Mebn time to first result for bll successful strebming sentinel queries`,
 							NextSteps: `
-								- Look at the breakdown by query to determine if a specific query type is being affected
-								- Check for high CPU usage on zoekt-webserver
-								- Check Honeycomb for unusual activity
-							`,
-						},
-					},
-					{
-						{
-							Name:        "90th_percentile_successful_sentinel_duration_over_2h",
-							Description: "90th percentile successful sentinel search duration over 2h",
-							// WARNING: if you change this, ensure that it will not trigger alerts on a customer instance
-							// since these panels relate to metrics that don't exist on a customer instance.
-							Query:          `histogram_quantile(0.90, sum by (le)(label_replace(rate(src_search_response_latency_seconds_bucket{source=~"searchblitz.*", status="success"}[2h]), "source", "$1", "source", "searchblitz_(.*)")))`,
-							Warning:        monitoring.Alert().GreaterOrEqual(5).For(15 * time.Minute),
-							Critical:       monitoring.Alert().GreaterOrEqual(10).For(210 * time.Minute),
-							Panel:          monitoring.Panel().LegendFormat("duration").Unit(monitoring.Seconds).With(monitoring.PanelOptions.NoLegend()),
-							Owner:          monitoring.ObservableOwnerSearch,
-							Interpretation: `90th percentile search duration for all successful sentinel queries`,
-							NextSteps: `
-								- Look at the breakdown by query to determine if a specific query type is being affected
-								- Check for high CPU usage on zoekt-webserver
-								- Check Honeycomb for unusual activity
-							`,
-						},
-						{
-							Name:        "90th_percentile_sentinel_stream_latency_over_2h",
-							Description: "90th percentile successful sentinel stream latency over 2h",
-							// WARNING: if you change this, ensure that it will not trigger alerts on a customer instance
-							// since these panels relate to metrics that don't exist on a customer instance.
-							Query:    `histogram_quantile(0.90, sum by (le)(label_replace(rate(src_search_streaming_latency_seconds_bucket{source=~"searchblitz.*"}[2h]), "source", "$1", "source", "searchblitz_(.*)")))`,
-							Warning:  monitoring.Alert().GreaterOrEqual(4).For(15 * time.Minute),
-							Critical: monitoring.Alert().GreaterOrEqual(6).For(210 * time.Minute),
-							Panel: monitoring.Panel().LegendFormat("latency").Unit(monitoring.Seconds).With(
-								monitoring.PanelOptions.NoLegend(),
-								monitoring.PanelOptions.ColorOverride("latency", "#8AB8FF"),
-							),
-							Owner:          monitoring.ObservableOwnerSearch,
-							Interpretation: `90th percentile time to first result for all successful streaming sentinel queries`,
-							NextSteps: `
-								- Look at the breakdown by query to determine if a specific query type is being affected
-								- Check for high CPU usage on zoekt-webserver
-								- Check Honeycomb for unusual activity
+								- Look bt the brebkdown by query to determine if b specific query type is being bffected
+								- Check for high CPU usbge on zoekt-webserver
+								- Check Honeycomb for unusubl bctivity
 							`,
 						},
 					},
 					{
 						{
-							Name:        "mean_successful_sentinel_duration_by_query",
-							Description: "mean successful sentinel search duration by query",
-							Query:       `sum(rate(src_search_response_latency_seconds_sum{source=~"searchblitz.*", status="success"}[$sentinel_sampling_duration])) by (source) / sum(rate(src_search_response_latency_seconds_count{source=~"searchblitz.*", status="success"}[$sentinel_sampling_duration])) by (source)`,
-							NoAlert:     true,
-							Panel: monitoring.Panel().LegendFormat("{{query}}").Unit(monitoring.Seconds).With(
-								monitoring.PanelOptions.LegendOnRight(),
-								monitoring.PanelOptions.HoverShowAll(),
-								monitoring.PanelOptions.HoverSort("descending"),
-								monitoring.PanelOptions.Fill(0),
-							),
-							Owner:          monitoring.ObservableOwnerSearch,
-							Interpretation: `Mean search duration for successful sentinel queries, broken down by query. Useful for debugging whether a slowdown is limited to a specific type of query.`,
+							Nbme:        "90th_percentile_successful_sentinel_durbtion_over_2h",
+							Description: "90th percentile successful sentinel sebrch durbtion over 2h",
+							// WARNING: if you chbnge this, ensure thbt it will not trigger blerts on b customer instbnce
+							// since these pbnels relbte to metrics thbt don't exist on b customer instbnce.
+							Query:          `histogrbm_qubntile(0.90, sum by (le)(lbbel_replbce(rbte(src_sebrch_response_lbtency_seconds_bucket{source=~"sebrchblitz.*", stbtus="success"}[2h]), "source", "$1", "source", "sebrchblitz_(.*)")))`,
+							Wbrning:        monitoring.Alert().GrebterOrEqubl(5).For(15 * time.Minute),
+							Criticbl:       monitoring.Alert().GrebterOrEqubl(10).For(210 * time.Minute),
+							Pbnel:          monitoring.Pbnel().LegendFormbt("durbtion").Unit(monitoring.Seconds).With(monitoring.PbnelOptions.NoLegend()),
+							Owner:          monitoring.ObservbbleOwnerSebrch,
+							Interpretbtion: `90th percentile sebrch durbtion for bll successful sentinel queries`,
+							NextSteps: `
+								- Look bt the brebkdown by query to determine if b specific query type is being bffected
+								- Check for high CPU usbge on zoekt-webserver
+								- Check Honeycomb for unusubl bctivity
+							`,
 						},
 						{
-							Name:        "mean_sentinel_stream_latency_by_query",
-							Description: "mean successful sentinel stream latency by query",
-							Query:       `sum(rate(src_search_streaming_latency_seconds_sum{source=~"searchblitz.*"}[$sentinel_sampling_duration])) by (source) / sum(rate(src_search_streaming_latency_seconds_count{source=~"searchblitz.*"}[$sentinel_sampling_duration])) by (source)`,
-							NoAlert:     true,
-							Panel: monitoring.Panel().LegendFormat("{{query}}").Unit(monitoring.Seconds).With(
-								monitoring.PanelOptions.LegendOnRight(),
-								monitoring.PanelOptions.HoverShowAll(),
-								monitoring.PanelOptions.HoverSort("descending"),
-								monitoring.PanelOptions.Fill(0),
+							Nbme:        "90th_percentile_sentinel_strebm_lbtency_over_2h",
+							Description: "90th percentile successful sentinel strebm lbtency over 2h",
+							// WARNING: if you chbnge this, ensure thbt it will not trigger blerts on b customer instbnce
+							// since these pbnels relbte to metrics thbt don't exist on b customer instbnce.
+							Query:    `histogrbm_qubntile(0.90, sum by (le)(lbbel_replbce(rbte(src_sebrch_strebming_lbtency_seconds_bucket{source=~"sebrchblitz.*"}[2h]), "source", "$1", "source", "sebrchblitz_(.*)")))`,
+							Wbrning:  monitoring.Alert().GrebterOrEqubl(4).For(15 * time.Minute),
+							Criticbl: monitoring.Alert().GrebterOrEqubl(6).For(210 * time.Minute),
+							Pbnel: monitoring.Pbnel().LegendFormbt("lbtency").Unit(monitoring.Seconds).With(
+								monitoring.PbnelOptions.NoLegend(),
+								monitoring.PbnelOptions.ColorOverride("lbtency", "#8AB8FF"),
 							),
-							Owner:          monitoring.ObservableOwnerSearch,
-							Interpretation: `Mean time to first result for successful streaming sentinel queries, broken down by query. Useful for debugging whether a slowdown is limited to a specific type of query.`,
-						},
-					},
-					{
-						{
-							Name:        "90th_percentile_successful_sentinel_duration_by_query",
-							Description: "90th percentile successful sentinel search duration by query",
-							Query:       `histogram_quantile(0.90, sum(rate(src_search_response_latency_seconds_bucket{source=~"searchblitz.*", status="success"}[$sentinel_sampling_duration])) by (le, source))`,
-							NoAlert:     true,
-							Panel: monitoring.Panel().LegendFormat("{{query}}").Unit(monitoring.Seconds).With(
-								monitoring.PanelOptions.LegendOnRight(),
-								monitoring.PanelOptions.HoverShowAll(),
-								monitoring.PanelOptions.HoverSort("descending"),
-								monitoring.PanelOptions.Fill(0),
-							),
-							Owner:          monitoring.ObservableOwnerSearch,
-							Interpretation: `90th percentile search duration for successful sentinel queries, broken down by query. Useful for debugging whether a slowdown is limited to a specific type of query.`,
-						},
-						{
-							Name:        "90th_percentile_successful_stream_latency_by_query",
-							Description: "90th percentile successful sentinel stream latency by query",
-							Query:       `histogram_quantile(0.90, sum(rate(src_search_streaming_latency_seconds_bucket{source=~"searchblitz.*"}[$sentinel_sampling_duration])) by (le, source))`,
-							NoAlert:     true,
-							Panel: monitoring.Panel().LegendFormat("{{query}}").Unit(monitoring.Seconds).With(
-								monitoring.PanelOptions.LegendOnRight(),
-								monitoring.PanelOptions.HoverShowAll(),
-								monitoring.PanelOptions.HoverSort("descending"),
-								monitoring.PanelOptions.Fill(0),
-							),
-							Owner:          monitoring.ObservableOwnerSearch,
-							Interpretation: `90th percentile time to first result for successful streaming sentinel queries, broken down by query. Useful for debugging whether a slowdown is limited to a specific type of query.`,
+							Owner:          monitoring.ObservbbleOwnerSebrch,
+							Interpretbtion: `90th percentile time to first result for bll successful strebming sentinel queries`,
+							NextSteps: `
+								- Look bt the brebkdown by query to determine if b specific query type is being bffected
+								- Check for high CPU usbge on zoekt-webserver
+								- Check Honeycomb for unusubl bctivity
+							`,
 						},
 					},
 					{
 						{
-							Name:        "90th_percentile_unsuccessful_duration_by_query",
-							Description: "90th percentile unsuccessful sentinel search duration by query",
-							Query:       "histogram_quantile(0.90, sum(rate(src_search_response_latency_seconds_bucket{source=~`searchblitz.*`, status!=`success`}[$sentinel_sampling_duration])) by (le, source))",
+							Nbme:        "mebn_successful_sentinel_durbtion_by_query",
+							Description: "mebn successful sentinel sebrch durbtion by query",
+							Query:       `sum(rbte(src_sebrch_response_lbtency_seconds_sum{source=~"sebrchblitz.*", stbtus="success"}[$sentinel_sbmpling_durbtion])) by (source) / sum(rbte(src_sebrch_response_lbtency_seconds_count{source=~"sebrchblitz.*", stbtus="success"}[$sentinel_sbmpling_durbtion])) by (source)`,
 							NoAlert:     true,
-							Panel: monitoring.Panel().LegendFormat("{{source}}").Unit(monitoring.Seconds).With(
-								monitoring.PanelOptions.LegendOnRight(),
-								monitoring.PanelOptions.HoverShowAll(),
-								monitoring.PanelOptions.HoverSort("descending"),
-								monitoring.PanelOptions.Fill(0),
+							Pbnel: monitoring.Pbnel().LegendFormbt("{{query}}").Unit(monitoring.Seconds).With(
+								monitoring.PbnelOptions.LegendOnRight(),
+								monitoring.PbnelOptions.HoverShowAll(),
+								monitoring.PbnelOptions.HoverSort("descending"),
+								monitoring.PbnelOptions.Fill(0),
 							),
-							Owner:          monitoring.ObservableOwnerSearch,
-							Interpretation: `90th percentile search duration of _unsuccessful_ sentinel queries (by error or timeout), broken down by query. Useful for debugging how the performance of failed requests affect UX.`,
+							Owner:          monitoring.ObservbbleOwnerSebrch,
+							Interpretbtion: `Mebn sebrch durbtion for successful sentinel queries, broken down by query. Useful for debugging whether b slowdown is limited to b specific type of query.`,
+						},
+						{
+							Nbme:        "mebn_sentinel_strebm_lbtency_by_query",
+							Description: "mebn successful sentinel strebm lbtency by query",
+							Query:       `sum(rbte(src_sebrch_strebming_lbtency_seconds_sum{source=~"sebrchblitz.*"}[$sentinel_sbmpling_durbtion])) by (source) / sum(rbte(src_sebrch_strebming_lbtency_seconds_count{source=~"sebrchblitz.*"}[$sentinel_sbmpling_durbtion])) by (source)`,
+							NoAlert:     true,
+							Pbnel: monitoring.Pbnel().LegendFormbt("{{query}}").Unit(monitoring.Seconds).With(
+								monitoring.PbnelOptions.LegendOnRight(),
+								monitoring.PbnelOptions.HoverShowAll(),
+								monitoring.PbnelOptions.HoverSort("descending"),
+								monitoring.PbnelOptions.Fill(0),
+							),
+							Owner:          monitoring.ObservbbleOwnerSebrch,
+							Interpretbtion: `Mebn time to first result for successful strebming sentinel queries, broken down by query. Useful for debugging whether b slowdown is limited to b specific type of query.`,
 						},
 					},
 					{
 						{
-							Name:        "75th_percentile_successful_sentinel_duration_by_query",
-							Description: "75th percentile successful sentinel search duration by query",
-							Query:       `histogram_quantile(0.75, sum(rate(src_search_response_latency_seconds_bucket{source=~"searchblitz.*", status="success"}[$sentinel_sampling_duration])) by (le, source))`,
+							Nbme:        "90th_percentile_successful_sentinel_durbtion_by_query",
+							Description: "90th percentile successful sentinel sebrch durbtion by query",
+							Query:       `histogrbm_qubntile(0.90, sum(rbte(src_sebrch_response_lbtency_seconds_bucket{source=~"sebrchblitz.*", stbtus="success"}[$sentinel_sbmpling_durbtion])) by (le, source))`,
 							NoAlert:     true,
-							Panel: monitoring.Panel().LegendFormat("{{query}}").Unit(monitoring.Seconds).With(
-								monitoring.PanelOptions.LegendOnRight(),
-								monitoring.PanelOptions.HoverShowAll(),
-								monitoring.PanelOptions.HoverSort("descending"),
-								monitoring.PanelOptions.Fill(0),
+							Pbnel: monitoring.Pbnel().LegendFormbt("{{query}}").Unit(monitoring.Seconds).With(
+								monitoring.PbnelOptions.LegendOnRight(),
+								monitoring.PbnelOptions.HoverShowAll(),
+								monitoring.PbnelOptions.HoverSort("descending"),
+								monitoring.PbnelOptions.Fill(0),
 							),
-							Owner:          monitoring.ObservableOwnerSearch,
-							Interpretation: `75th percentile search duration of successful sentinel queries, broken down by query. Useful for debugging whether a slowdown is limited to a specific type of query.`,
+							Owner:          monitoring.ObservbbleOwnerSebrch,
+							Interpretbtion: `90th percentile sebrch durbtion for successful sentinel queries, broken down by query. Useful for debugging whether b slowdown is limited to b specific type of query.`,
 						},
 						{
-							Name:        "75th_percentile_successful_stream_latency_by_query",
-							Description: "75th percentile successful sentinel stream latency by query",
-							Query:       `histogram_quantile(0.75, sum(rate(src_search_streaming_latency_seconds_bucket{source=~"searchblitz.*"}[$sentinel_sampling_duration])) by (le, source))`,
+							Nbme:        "90th_percentile_successful_strebm_lbtency_by_query",
+							Description: "90th percentile successful sentinel strebm lbtency by query",
+							Query:       `histogrbm_qubntile(0.90, sum(rbte(src_sebrch_strebming_lbtency_seconds_bucket{source=~"sebrchblitz.*"}[$sentinel_sbmpling_durbtion])) by (le, source))`,
 							NoAlert:     true,
-							Panel: monitoring.Panel().LegendFormat("{{query}}").Unit(monitoring.Seconds).With(
-								monitoring.PanelOptions.LegendOnRight(),
-								monitoring.PanelOptions.HoverShowAll(),
-								monitoring.PanelOptions.HoverSort("descending"),
-								monitoring.PanelOptions.Fill(0),
+							Pbnel: monitoring.Pbnel().LegendFormbt("{{query}}").Unit(monitoring.Seconds).With(
+								monitoring.PbnelOptions.LegendOnRight(),
+								monitoring.PbnelOptions.HoverShowAll(),
+								monitoring.PbnelOptions.HoverSort("descending"),
+								monitoring.PbnelOptions.Fill(0),
 							),
-							Owner:          monitoring.ObservableOwnerSearch,
-							Interpretation: `75th percentile time to first result for successful streaming sentinel queries, broken down by query. Useful for debugging whether a slowdown is limited to a specific type of query.`,
-						},
-					},
-					{
-						{
-							Name:        "75th_percentile_unsuccessful_duration_by_query",
-							Description: "75th percentile unsuccessful sentinel search duration by query",
-							Query:       "histogram_quantile(0.75, sum(rate(src_search_response_latency_seconds_bucket{source=~`searchblitz.*`, status!=`success`}[$sentinel_sampling_duration])) by (le, source))",
-							NoAlert:     true,
-							Panel: monitoring.Panel().LegendFormat("{{source}}").Unit(monitoring.Seconds).With(
-								monitoring.PanelOptions.LegendOnRight(),
-								monitoring.PanelOptions.HoverShowAll(),
-								monitoring.PanelOptions.HoverSort("descending"),
-								monitoring.PanelOptions.Fill(0),
-							),
-							Owner:          monitoring.ObservableOwnerSearch,
-							Interpretation: `75th percentile search duration of _unsuccessful_ sentinel queries (by error or timeout), broken down by query. Useful for debugging how the performance of failed requests affect UX.`,
+							Owner:          monitoring.ObservbbleOwnerSebrch,
+							Interpretbtion: `90th percentile time to first result for successful strebming sentinel queries, broken down by query. Useful for debugging whether b slowdown is limited to b specific type of query.`,
 						},
 					},
 					{
 						{
-							Name:           "unsuccessful_status_rate",
-							Description:    "unsuccessful status rate",
-							Query:          `sum(rate(src_graphql_search_response{source=~"searchblitz.*", status!="success"}[$sentinel_sampling_duration])) by (status)`,
+							Nbme:        "90th_percentile_unsuccessful_durbtion_by_query",
+							Description: "90th percentile unsuccessful sentinel sebrch durbtion by query",
+							Query:       "histogrbm_qubntile(0.90, sum(rbte(src_sebrch_response_lbtency_seconds_bucket{source=~`sebrchblitz.*`, stbtus!=`success`}[$sentinel_sbmpling_durbtion])) by (le, source))",
+							NoAlert:     true,
+							Pbnel: monitoring.Pbnel().LegendFormbt("{{source}}").Unit(monitoring.Seconds).With(
+								monitoring.PbnelOptions.LegendOnRight(),
+								monitoring.PbnelOptions.HoverShowAll(),
+								monitoring.PbnelOptions.HoverSort("descending"),
+								monitoring.PbnelOptions.Fill(0),
+							),
+							Owner:          monitoring.ObservbbleOwnerSebrch,
+							Interpretbtion: `90th percentile sebrch durbtion of _unsuccessful_ sentinel queries (by error or timeout), broken down by query. Useful for debugging how the performbnce of fbiled requests bffect UX.`,
+						},
+					},
+					{
+						{
+							Nbme:        "75th_percentile_successful_sentinel_durbtion_by_query",
+							Description: "75th percentile successful sentinel sebrch durbtion by query",
+							Query:       `histogrbm_qubntile(0.75, sum(rbte(src_sebrch_response_lbtency_seconds_bucket{source=~"sebrchblitz.*", stbtus="success"}[$sentinel_sbmpling_durbtion])) by (le, source))`,
+							NoAlert:     true,
+							Pbnel: monitoring.Pbnel().LegendFormbt("{{query}}").Unit(monitoring.Seconds).With(
+								monitoring.PbnelOptions.LegendOnRight(),
+								monitoring.PbnelOptions.HoverShowAll(),
+								monitoring.PbnelOptions.HoverSort("descending"),
+								monitoring.PbnelOptions.Fill(0),
+							),
+							Owner:          monitoring.ObservbbleOwnerSebrch,
+							Interpretbtion: `75th percentile sebrch durbtion of successful sentinel queries, broken down by query. Useful for debugging whether b slowdown is limited to b specific type of query.`,
+						},
+						{
+							Nbme:        "75th_percentile_successful_strebm_lbtency_by_query",
+							Description: "75th percentile successful sentinel strebm lbtency by query",
+							Query:       `histogrbm_qubntile(0.75, sum(rbte(src_sebrch_strebming_lbtency_seconds_bucket{source=~"sebrchblitz.*"}[$sentinel_sbmpling_durbtion])) by (le, source))`,
+							NoAlert:     true,
+							Pbnel: monitoring.Pbnel().LegendFormbt("{{query}}").Unit(monitoring.Seconds).With(
+								monitoring.PbnelOptions.LegendOnRight(),
+								monitoring.PbnelOptions.HoverShowAll(),
+								monitoring.PbnelOptions.HoverSort("descending"),
+								monitoring.PbnelOptions.Fill(0),
+							),
+							Owner:          monitoring.ObservbbleOwnerSebrch,
+							Interpretbtion: `75th percentile time to first result for successful strebming sentinel queries, broken down by query. Useful for debugging whether b slowdown is limited to b specific type of query.`,
+						},
+					},
+					{
+						{
+							Nbme:        "75th_percentile_unsuccessful_durbtion_by_query",
+							Description: "75th percentile unsuccessful sentinel sebrch durbtion by query",
+							Query:       "histogrbm_qubntile(0.75, sum(rbte(src_sebrch_response_lbtency_seconds_bucket{source=~`sebrchblitz.*`, stbtus!=`success`}[$sentinel_sbmpling_durbtion])) by (le, source))",
+							NoAlert:     true,
+							Pbnel: monitoring.Pbnel().LegendFormbt("{{source}}").Unit(monitoring.Seconds).With(
+								monitoring.PbnelOptions.LegendOnRight(),
+								monitoring.PbnelOptions.HoverShowAll(),
+								monitoring.PbnelOptions.HoverSort("descending"),
+								monitoring.PbnelOptions.Fill(0),
+							),
+							Owner:          monitoring.ObservbbleOwnerSebrch,
+							Interpretbtion: `75th percentile sebrch durbtion of _unsuccessful_ sentinel queries (by error or timeout), broken down by query. Useful for debugging how the performbnce of fbiled requests bffect UX.`,
+						},
+					},
+					{
+						{
+							Nbme:           "unsuccessful_stbtus_rbte",
+							Description:    "unsuccessful stbtus rbte",
+							Query:          `sum(rbte(src_grbphql_sebrch_response{source=~"sebrchblitz.*", stbtus!="success"}[$sentinel_sbmpling_durbtion])) by (stbtus)`,
 							NoAlert:        true,
-							Panel:          monitoring.Panel().LegendFormat("{{status}}"),
-							Owner:          monitoring.ObservableOwnerSearch,
-							Interpretation: `The rate of unsuccessful sentinel queries, broken down by failure type.`,
+							Pbnel:          monitoring.Pbnel().LegendFormbt("{{stbtus}}"),
+							Owner:          monitoring.ObservbbleOwnerSebrch,
+							Interpretbtion: `The rbte of unsuccessful sentinel queries, broken down by fbilure type.`,
 						},
 					},
 				},
@@ -1061,62 +1061,62 @@ func Frontend() *monitoring.Dashboard {
 				Rows: []monitoring.Row{
 					{
 						{
-							Name:        "p95_time_to_handle_incoming_webhooks",
-							Description: "p95 time to handle incoming webhooks",
-							Query:       "histogram_quantile(0.95, sum  (rate(src_http_request_duration_seconds_bucket{route=~\"webhooks|github.webhooks|gitlab.webhooks|bitbucketServer.webhooks|bitbucketCloud.webhooks\"}[5m])) by (le, route))",
+							Nbme:        "p95_time_to_hbndle_incoming_webhooks",
+							Description: "p95 time to hbndle incoming webhooks",
+							Query:       "histogrbm_qubntile(0.95, sum  (rbte(src_http_request_durbtion_seconds_bucket{route=~\"webhooks|github.webhooks|gitlbb.webhooks|bitbucketServer.webhooks|bitbucketCloud.webhooks\"}[5m])) by (le, route))",
 							NoAlert:     true,
-							Panel:       monitoring.Panel().LegendFormat("duration").Unit(monitoring.Seconds).With(monitoring.PanelOptions.NoLegend()),
-							Owner:       monitoring.ObservableOwnerSource,
-							Interpretation: `
+							Pbnel:       monitoring.Pbnel().LegendFormbt("durbtion").Unit(monitoring.Seconds).With(monitoring.PbnelOptions.NoLegend()),
+							Owner:       monitoring.ObservbbleOwnerSource,
+							Interpretbtion: `
 							p95 response time to incoming webhook requests from code hosts.
 
-							Increases in response time can point to too much load on the database to keep up with the incoming requests.
+							Increbses in response time cbn point to too much lobd on the dbtbbbse to keep up with the incoming requests.
 
-							See this documentation page for more details on webhook requests: (https://docs.sourcegraph.com/admin/config/webhooks/incoming)`,
+							See this documentbtion pbge for more detbils on webhook requests: (https://docs.sourcegrbph.com/bdmin/config/webhooks/incoming)`,
 						},
 					},
 				},
 			},
-			shared.CodeInsights.NewSearchAggregationsGroup(containerName),
+			shbred.CodeInsights.NewSebrchAggregbtionsGroup(contbinerNbme),
 		},
 	}
 }
 
 func orgMetricRows(orgMetricSpec []struct {
-	name        string
+	nbme        string
 	route       string
 	description string
 },
 ) []monitoring.Row {
 	result := []monitoring.Row{}
-	for _, m := range orgMetricSpec {
-		result = append(result, monitoring.Row{
+	for _, m := rbnge orgMetricSpec {
+		result = bppend(result, monitoring.Row{
 			{
-				Name:           m.name + "_rate",
-				Description:    "rate of " + m.description,
-				Query:          `sum(irate(src_graphql_request_duration_seconds_count{route="` + m.route + `"}[5m]))`,
+				Nbme:           m.nbme + "_rbte",
+				Description:    "rbte of " + m.description,
+				Query:          `sum(irbte(src_grbphql_request_durbtion_seconds_count{route="` + m.route + `"}[5m]))`,
 				NoAlert:        true,
-				Panel:          monitoring.Panel().Unit(monitoring.RequestsPerSecond),
-				Owner:          monitoring.ObservableOwnerDevOps,
-				Interpretation: `Rate (QPS) of ` + m.description,
+				Pbnel:          monitoring.Pbnel().Unit(monitoring.RequestsPerSecond),
+				Owner:          monitoring.ObservbbleOwnerDevOps,
+				Interpretbtion: `Rbte (QPS) of ` + m.description,
 			},
 			{
-				Name:           m.name + "_latency_p99",
-				Description:    "99 percentile latency of " + m.description,
-				Query:          `histogram_quantile(0.99, sum(rate(src_graphql_request_duration_seconds_bucket{route="` + m.route + `"}[5m])) by (le))`,
+				Nbme:           m.nbme + "_lbtency_p99",
+				Description:    "99 percentile lbtency of " + m.description,
+				Query:          `histogrbm_qubntile(0.99, sum(rbte(src_grbphql_request_durbtion_seconds_bucket{route="` + m.route + `"}[5m])) by (le))`,
 				NoAlert:        true,
-				Panel:          monitoring.Panel().Unit(monitoring.Milliseconds),
-				Owner:          monitoring.ObservableOwnerDevOps,
-				Interpretation: `99 percentile latency of` + m.description,
+				Pbnel:          monitoring.Pbnel().Unit(monitoring.Milliseconds),
+				Owner:          monitoring.ObservbbleOwnerDevOps,
+				Interpretbtion: `99 percentile lbtency of` + m.description,
 			},
 			{
-				Name:           m.name + "_error_rate",
-				Description:    "percentage of " + m.description + " that return an error",
-				Query:          `sum (irate(src_graphql_request_duration_seconds_count{route="` + m.route + `",success="false"}[5m]))/sum(irate(src_graphql_request_duration_seconds_count{route="` + m.route + `"}[5m]))*100`,
+				Nbme:           m.nbme + "_error_rbte",
+				Description:    "percentbge of " + m.description + " thbt return bn error",
+				Query:          `sum (irbte(src_grbphql_request_durbtion_seconds_count{route="` + m.route + `",success="fblse"}[5m]))/sum(irbte(src_grbphql_request_durbtion_seconds_count{route="` + m.route + `"}[5m]))*100`,
 				NoAlert:        true,
-				Panel:          monitoring.Panel().Unit(monitoring.Percentage),
-				Owner:          monitoring.ObservableOwnerDevOps,
-				Interpretation: `Percentage of ` + m.description + ` that return an error`,
+				Pbnel:          monitoring.Pbnel().Unit(monitoring.Percentbge),
+				Owner:          monitoring.ObservbbleOwnerDevOps,
+				Interpretbtion: `Percentbge of ` + m.description + ` thbt return bn error`,
 			},
 		})
 	}

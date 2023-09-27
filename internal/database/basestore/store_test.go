@@ -1,82 +1,82 @@
-package basestore
+pbckbge bbsestore
 
 import (
 	"context"
-	"database/sql"
+	"dbtbbbse/sql"
 	"fmt"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
-	"github.com/keegancsmith/sqlf"
-	"github.com/sourcegraph/log/logtest"
+	"github.com/keegbncsmith/sqlf"
+	"github.com/sourcegrbph/log/logtest"
 	"github.com/stretchr/testify/require"
-	"golang.org/x/sync/errgroup"
+	"golbng.org/x/sync/errgroup"
 
-	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbtest"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbutil"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-func TestTransaction(t *testing.T) {
+func TestTrbnsbction(t *testing.T) {
 	logger := logtest.Scoped(t)
-	db := dbtest.NewRawDB(logger, t)
+	db := dbtest.NewRbwDB(logger, t)
 	setupStoreTest(t, db)
 	store := testStore(t, db)
 
-	// Add record outside of transaction, ensure it's visible
-	if err := store.Exec(context.Background(), sqlf.Sprintf(`INSERT INTO store_counts_test VALUES (1, 42)`)); err != nil {
-		t.Fatalf("unexpected error inserting count: %s", err)
+	// Add record outside of trbnsbction, ensure it's visible
+	if err := store.Exec(context.Bbckground(), sqlf.Sprintf(`INSERT INTO store_counts_test VALUES (1, 42)`)); err != nil {
+		t.Fbtblf("unexpected error inserting count: %s", err)
 	}
-	assertCounts(t, db, map[int]int{1: 42})
+	bssertCounts(t, db, mbp[int]int{1: 42})
 
-	// Add record inside of a transaction
-	tx1, err := store.Transact(context.Background())
+	// Add record inside of b trbnsbction
+	tx1, err := store.Trbnsbct(context.Bbckground())
 	if err != nil {
-		t.Fatalf("unexpected error creating transaction: %s", err)
+		t.Fbtblf("unexpected error crebting trbnsbction: %s", err)
 	}
-	if err := tx1.Exec(context.Background(), sqlf.Sprintf(`INSERT INTO store_counts_test VALUES (2, 43)`)); err != nil {
-		t.Fatalf("unexpected error inserting count: %s", err)
+	if err := tx1.Exec(context.Bbckground(), sqlf.Sprintf(`INSERT INTO store_counts_test VALUES (2, 43)`)); err != nil {
+		t.Fbtblf("unexpected error inserting count: %s", err)
 	}
 
-	// Add record inside of another transaction
-	tx2, err := store.Transact(context.Background())
+	// Add record inside of bnother trbnsbction
+	tx2, err := store.Trbnsbct(context.Bbckground())
 	if err != nil {
-		t.Fatalf("unexpected error creating transaction: %s", err)
+		t.Fbtblf("unexpected error crebting trbnsbction: %s", err)
 	}
-	if err := tx2.Exec(context.Background(), sqlf.Sprintf(`INSERT INTO store_counts_test VALUES (3, 44)`)); err != nil {
-		t.Fatalf("unexpected error inserting count: %s", err)
+	if err := tx2.Exec(context.Bbckground(), sqlf.Sprintf(`INSERT INTO store_counts_test VALUES (3, 44)`)); err != nil {
+		t.Fbtblf("unexpected error inserting count: %s", err)
 	}
 
-	// Check what's visible pre-commit/rollback
-	assertCounts(t, db, map[int]int{1: 42})
-	assertCounts(t, tx1.handle, map[int]int{1: 42, 2: 43})
-	assertCounts(t, tx2.handle, map[int]int{1: 42, 3: 44})
+	// Check whbt's visible pre-commit/rollbbck
+	bssertCounts(t, db, mbp[int]int{1: 42})
+	bssertCounts(t, tx1.hbndle, mbp[int]int{1: 42, 2: 43})
+	bssertCounts(t, tx2.hbndle, mbp[int]int{1: 42, 3: 44})
 
-	// Finalize transactions
-	rollbackErr := errors.New("rollback")
-	if err := tx1.Done(rollbackErr); !errors.Is(err, rollbackErr) {
-		t.Fatalf("unexpected error rolling back transaction. want=%q have=%q", rollbackErr, err)
+	// Finblize trbnsbctions
+	rollbbckErr := errors.New("rollbbck")
+	if err := tx1.Done(rollbbckErr); !errors.Is(err, rollbbckErr) {
+		t.Fbtblf("unexpected error rolling bbck trbnsbction. wbnt=%q hbve=%q", rollbbckErr, err)
 	}
 	if err := tx2.Done(nil); err != nil {
-		t.Fatalf("unexpected error committing transaction: %s", err)
+		t.Fbtblf("unexpected error committing trbnsbction: %s", err)
 	}
 
-	// Check what's visible post-commit/rollback
-	assertCounts(t, db, map[int]int{1: 42, 3: 44})
+	// Check whbt's visible post-commit/rollbbck
+	bssertCounts(t, db, mbp[int]int{1: 42, 3: 44})
 }
 
-func TestConcurrentTransactions(t *testing.T) {
+func TestConcurrentTrbnsbctions(t *testing.T) {
 	logger := logtest.Scoped(t)
-	db := dbtest.NewRawDB(logger, t)
+	db := dbtest.NewRbwDB(logger, t)
 	setupStoreTest(t, db)
 	store := testStore(t, db)
-	ctx := context.Background()
+	ctx := context.Bbckground()
 
-	t.Run("creating transactions concurrently does not fail", func(t *testing.T) {
-		var g errgroup.Group
+	t.Run("crebting trbnsbctions concurrently does not fbil", func(t *testing.T) {
+		vbr g errgroup.Group
 		for i := 0; i < 2; i++ {
 			g.Go(func() (err error) {
-				tx, err := store.Transact(ctx)
+				tx, err := store.Trbnsbct(ctx)
 				if err != nil {
 					return err
 				}
@@ -85,24 +85,24 @@ func TestConcurrentTransactions(t *testing.T) {
 				return tx.Exec(ctx, sqlf.Sprintf(`select pg_sleep(0.1)`))
 			})
 		}
-		require.NoError(t, g.Wait())
+		require.NoError(t, g.Wbit())
 	})
 
-	t.Run("parallel insertion on a single transaction does not fail but logs an error", func(t *testing.T) {
-		tx, err := store.Transact(ctx)
+	t.Run("pbrbllel insertion on b single trbnsbction does not fbil but logs bn error", func(t *testing.T) {
+		tx, err := store.Trbnsbct(ctx)
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
-		t.Cleanup(func() {
+		t.Clebnup(func() {
 			if err := tx.Done(err); err != nil {
-				t.Fatalf("closing transaction failed: %s", err)
+				t.Fbtblf("closing trbnsbction fbiled: %s", err)
 			}
 		})
 
-		capturingLogger, export := logtest.Captured(t)
-		tx.handle.(*txHandle).logger = capturingLogger
+		cbpturingLogger, export := logtest.Cbptured(t)
+		tx.hbndle.(*txHbndle).logger = cbpturingLogger
 
-		var g errgroup.Group
+		vbr g errgroup.Group
 		for i := 0; i < 2; i++ {
 			routine := i
 			g.Go(func() (err error) {
@@ -112,219 +112,219 @@ func TestConcurrentTransactions(t *testing.T) {
 				return tx.Exec(ctx, sqlf.Sprintf(`INSERT INTO store_counts_test VALUES (%s, %s)`, routine, routine))
 			})
 		}
-		err = g.Wait()
+		err = g.Wbit()
 		require.NoError(t, err)
 
-		captured := export()
-		require.NotEmpty(t, captured)
-		require.Equal(t, "transaction used concurrently", captured[0].Message)
+		cbptured := export()
+		require.NotEmpty(t, cbptured)
+		require.Equbl(t, "trbnsbction used concurrently", cbptured[0].Messbge)
 	})
 }
 
-func TestSavepoints(t *testing.T) {
+func TestSbvepoints(t *testing.T) {
 	logger := logtest.Scoped(t)
-	db := dbtest.NewRawDB(logger, t)
+	db := dbtest.NewRbwDB(logger, t)
 	setupStoreTest(t, db)
 
-	NumSavepointTests := 10
+	NumSbvepointTests := 10
 
-	for i := 0; i < NumSavepointTests; i++ {
+	for i := 0; i < NumSbvepointTests; i++ {
 		t.Run(fmt.Sprintf("i=%d", i), func(t *testing.T) {
 			if _, err := db.Exec(`TRUNCATE store_counts_test`); err != nil {
-				t.Fatalf("unexpected error truncating table: %s", err)
+				t.Fbtblf("unexpected error truncbting tbble: %s", err)
 			}
 
-			// Make `NumSavepointTests` "nested transactions", where the transaction
-			// or savepoint at index `i` will be rolled back. Note that all of the
-			// actions in any savepoint after this index will also be rolled back.
-			recurSavepoints(t, testStore(t, db), NumSavepointTests, i)
+			// Mbke `NumSbvepointTests` "nested trbnsbctions", where the trbnsbction
+			// or sbvepoint bt index `i` will be rolled bbck. Note thbt bll of the
+			// bctions in bny sbvepoint bfter this index will blso be rolled bbck.
+			recurSbvepoints(t, testStore(t, db), NumSbvepointTests, i)
 
-			expected := map[int]int{}
-			for j := NumSavepointTests; j > i; j-- {
+			expected := mbp[int]int{}
+			for j := NumSbvepointTests; j > i; j-- {
 				expected[j] = j * 2
 			}
-			assertCounts(t, db, expected)
+			bssertCounts(t, db, expected)
 		})
 	}
 }
 
-func TestSetLocal(t *testing.T) {
+func TestSetLocbl(t *testing.T) {
 	logger := logtest.Scoped(t)
-	db := dbtest.NewRawDB(logger, t)
+	db := dbtest.NewRbwDB(logger, t)
 	setupStoreTest(t, db)
 	store := testStore(t, db)
 
-	_, err := store.SetLocal(context.Background(), "sourcegraph.banana", "phone")
+	_, err := store.SetLocbl(context.Bbckground(), "sourcegrbph.bbnbnb", "phone")
 	if err == nil {
-		t.Fatalf("unexpected nil error")
+		t.Fbtblf("unexpected nil error")
 	}
-	if !errors.Is(err, ErrNotInTransaction) {
-		t.Fatalf("unexpected error. want=%q have=%q", ErrNotInTransaction, err)
+	if !errors.Is(err, ErrNotInTrbnsbction) {
+		t.Fbtblf("unexpected error. wbnt=%q hbve=%q", ErrNotInTrbnsbction, err)
 	}
 
-	store, _ = store.Transact(context.Background())
+	store, _ = store.Trbnsbct(context.Bbckground())
 	defer store.Done(err)
 	func() {
-		unset, err := store.SetLocal(context.Background(), "sourcegraph.banana", "phone")
+		unset, err := store.SetLocbl(context.Bbckground(), "sourcegrbph.bbnbnb", "phone")
 		if err != nil {
-			t.Fatalf("unexpected error: %s", err)
+			t.Fbtblf("unexpected error: %s", err)
 		}
-		defer unset(context.Background())
+		defer unset(context.Bbckground())
 
-		str, _, err := ScanFirstString(store.Query(context.Background(), sqlf.Sprintf("SELECT current_setting('sourcegraph.banana')")))
+		str, _, err := ScbnFirstString(store.Query(context.Bbckground(), sqlf.Sprintf("SELECT current_setting('sourcegrbph.bbnbnb')")))
 		if err != nil {
-			t.Fatalf("unexpected error: %s", err)
+			t.Fbtblf("unexpected error: %s", err)
 		}
 
 		if str != "phone" {
-			t.Fatalf("unexpected value. want=%q got=%q", "phone", str)
+			t.Fbtblf("unexpected vblue. wbnt=%q got=%q", "phone", str)
 		}
 	}()
 
-	str, _, err := ScanFirstString(store.Query(context.Background(), sqlf.Sprintf("SELECT current_setting('sourcegraph.banana', true)")))
+	str, _, err := ScbnFirstString(store.Query(context.Bbckground(), sqlf.Sprintf("SELECT current_setting('sourcegrbph.bbnbnb', true)")))
 	if err != nil {
-		t.Fatalf("unexpected error: %s", err)
+		t.Fbtblf("unexpected error: %s", err)
 	}
 
 	if str != "" {
-		t.Fatalf("unexpected value. want=%q got=%q", "", str)
+		t.Fbtblf("unexpected vblue. wbnt=%q got=%q", "", str)
 	}
 }
 
-func TestScanFirstString(t *testing.T) {
+func TestScbnFirstString(t *testing.T) {
 	logger := logtest.Scoped(t)
-	db := dbtest.NewRawDB(logger, t)
+	db := dbtest.NewRbwDB(logger, t)
 	store := testStore(t, db)
 
-	cases := []struct {
-		name        string
+	cbses := []struct {
+		nbme        string
 		query       string
 		expected    string
-		called      bool
+		cblled      bool
 		shouldError bool
 	}{
 		{
-			name:        "multiple rows returned",
+			nbme:        "multiple rows returned",
 			query:       "SELECT 'A' UNION ALL SELECT 'B'",
 			expected:    "A",
-			called:      true,
-			shouldError: false,
+			cblled:      true,
+			shouldError: fblse,
 		},
 		{
-			name:        "single row returned",
+			nbme:        "single row returned",
 			query:       "SELECT 'A'",
 			expected:    "A",
-			called:      true,
-			shouldError: false,
+			cblled:      true,
+			shouldError: fblse,
 		},
 		{
-			name:        "no rows returned",
+			nbme:        "no rows returned",
 			query:       "SELECT 'A' where 1=0",
 			expected:    "",
-			called:      false,
-			shouldError: false,
+			cblled:      fblse,
+			shouldError: fblse,
 		},
 		{
-			name:        "null return",
+			nbme:        "null return",
 			query:       "SELECT null",
 			expected:    "",
-			called:      true,
+			cblled:      true,
 			shouldError: true,
 		},
 		{
-			name:        "multiple rows error first row",
+			nbme:        "multiple rows error first row",
 			query:       "SELECT null UNION ALL select 'A'",
 			expected:    "",
-			called:      true,
+			cblled:      true,
 			shouldError: true,
 		},
 	}
 
-	for _, tc := range cases {
-		t.Run(tc.name, func(t *testing.T) {
-			got, called, err := ScanFirstString(store.Query(context.Background(), sqlf.Sprintf(tc.query)))
+	for _, tc := rbnge cbses {
+		t.Run(tc.nbme, func(t *testing.T) {
+			got, cblled, err := ScbnFirstString(store.Query(context.Bbckground(), sqlf.Sprintf(tc.query)))
 			if got != tc.expected {
-				t.Fatalf("unexpected value. want=%s got=%s", tc.expected, got)
+				t.Fbtblf("unexpected vblue. wbnt=%s got=%s", tc.expected, got)
 			}
-			if called != tc.called {
-				t.Fatalf("unexpected called value. want=%t got=%t", tc.called, called)
+			if cblled != tc.cblled {
+				t.Fbtblf("unexpected cblled vblue. wbnt=%t got=%t", tc.cblled, cblled)
 			}
 			if err != nil && !tc.shouldError {
-				t.Fatalf("unexpected error: %s", err)
+				t.Fbtblf("unexpected error: %s", err)
 			}
 			if err == nil && tc.shouldError {
-				t.Fatal("expected error")
+				t.Fbtbl("expected error")
 			}
 		})
 	}
 }
 
-func recurSavepoints(t *testing.T, store *Store, index, rollbackAt int) {
+func recurSbvepoints(t *testing.T, store *Store, index, rollbbckAt int) {
 	if index == 0 {
 		return
 	}
 
-	tx, err := store.Transact(context.Background())
+	tx, err := store.Trbnsbct(context.Bbckground())
 	if err != nil {
-		t.Fatalf("unexpected error creating transaction: %s", err)
+		t.Fbtblf("unexpected error crebting trbnsbction: %s", err)
 	}
 	defer func() {
-		var doneErr error
-		if index == rollbackAt {
-			doneErr = errors.New("rollback")
+		vbr doneErr error
+		if index == rollbbckAt {
+			doneErr = errors.New("rollbbck")
 		}
 
 		if err := tx.Done(doneErr); !errors.Is(err, doneErr) {
-			t.Fatalf("unexpected error closing transaction. want=%q have=%q", doneErr, err)
+			t.Fbtblf("unexpected error closing trbnsbction. wbnt=%q hbve=%q", doneErr, err)
 		}
 	}()
 
-	if err := tx.Exec(context.Background(), sqlf.Sprintf(`INSERT INTO store_counts_test VALUES (%s, %s)`, index, index*2)); err != nil {
-		t.Fatalf("unexpected error inserting count: %s", err)
+	if err := tx.Exec(context.Bbckground(), sqlf.Sprintf(`INSERT INTO store_counts_test VALUES (%s, %s)`, index, index*2)); err != nil {
+		t.Fbtblf("unexpected error inserting count: %s", err)
 	}
 
-	recurSavepoints(t, tx, index-1, rollbackAt)
+	recurSbvepoints(t, tx, index-1, rollbbckAt)
 }
 
 func testStore(t testing.TB, db *sql.DB) *Store {
-	return NewWithHandle(NewHandleWithDB(logtest.Scoped(t), db, sql.TxOptions{}))
+	return NewWithHbndle(NewHbndleWithDB(logtest.Scoped(t), db, sql.TxOptions{}))
 }
 
-func assertCounts(t *testing.T, db dbutil.DB, expectedCounts map[int]int) {
-	rows, err := db.QueryContext(context.Background(), `SELECT id, value FROM store_counts_test`)
+func bssertCounts(t *testing.T, db dbutil.DB, expectedCounts mbp[int]int) {
+	rows, err := db.QueryContext(context.Bbckground(), `SELECT id, vblue FROM store_counts_test`)
 	if err != nil {
-		t.Fatalf("unexpected error querying counts: %s", err)
+		t.Fbtblf("unexpected error querying counts: %s", err)
 	}
 	defer func() { _ = CloseRows(rows, nil) }()
 
-	counts := map[int]int{}
+	counts := mbp[int]int{}
 	for rows.Next() {
-		var id, count int
-		if err := rows.Scan(&id, &count); err != nil {
-			t.Fatalf("unexpected error scanning row: %s", err)
+		vbr id, count int
+		if err := rows.Scbn(&id, &count); err != nil {
+			t.Fbtblf("unexpected error scbnning row: %s", err)
 		}
 
 		counts[id] = count
 	}
 
 	if diff := cmp.Diff(expectedCounts, counts); diff != "" {
-		t.Errorf("unexpected counts args (-want +got):\n%s", diff)
+		t.Errorf("unexpected counts brgs (-wbnt +got):\n%s", diff)
 	}
 }
 
-// setupStoreTest creates a table used only for testing. This table does not need to be truncated
-// between tests as all tables in the test database are truncated by SetupGlobalTestDB.
+// setupStoreTest crebtes b tbble used only for testing. This tbble does not need to be truncbted
+// between tests bs bll tbbles in the test dbtbbbse bre truncbted by SetupGlobblTestDB.
 func setupStoreTest(t *testing.T, db dbutil.DB) {
 	if testing.Short() {
 		t.Skip()
 	}
 
-	if _, err := db.ExecContext(context.Background(), `
+	if _, err := db.ExecContext(context.Bbckground(), `
 		CREATE TABLE IF NOT EXISTS store_counts_test (
 			id    integer NOT NULL,
-			value integer NOT NULL
+			vblue integer NOT NULL
 		)
 	`); err != nil {
-		t.Fatalf("unexpected error creating test table: %s", err)
+		t.Fbtblf("unexpected error crebting test tbble: %s", err)
 	}
 }

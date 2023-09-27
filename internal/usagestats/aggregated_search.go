@@ -1,294 +1,294 @@
-package usagestats
+pbckbge usbgestbts
 
 import (
 	"context"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
 )
 
-// GetAggregatedSearchStats queries the database for search usage and returns
-// the aggregates statistics in the format of our BigQuery schema.
-func GetAggregatedSearchStats(ctx context.Context, db database.DB) (*types.SearchUsageStatistics, error) {
-	events, err := db.EventLogs().AggregatedSearchEvents(ctx, time.Now().UTC())
+// GetAggregbtedSebrchStbts queries the dbtbbbse for sebrch usbge bnd returns
+// the bggregbtes stbtistics in the formbt of our BigQuery schemb.
+func GetAggregbtedSebrchStbts(ctx context.Context, db dbtbbbse.DB) (*types.SebrchUsbgeStbtistics, error) {
+	events, err := db.EventLogs().AggregbtedSebrchEvents(ctx, time.Now().UTC())
 	if err != nil {
 		return nil, err
 	}
 
-	return groupAggregatedSearchStats(events), nil
+	return groupAggregbtedSebrchStbts(events), nil
 }
 
-// groupAggregatedSearchStats takes a set of input events (originating from
-// Sourcegraph's Postgres table) and returns a SearchUsageStatistics data type
-// that ends up being stored in BigQuery. SearchUsageStatistics corresponds to
-// the target DB schema.
-func groupAggregatedSearchStats(events []types.SearchAggregatedEvent) *types.SearchUsageStatistics {
-	searchUsageStats := &types.SearchUsageStatistics{
-		Daily:   []*types.SearchUsagePeriod{newSearchEventPeriod()},
-		Weekly:  []*types.SearchUsagePeriod{newSearchEventPeriod()},
-		Monthly: []*types.SearchUsagePeriod{newSearchEventPeriod()},
+// groupAggregbtedSebrchStbts tbkes b set of input events (originbting from
+// Sourcegrbph's Postgres tbble) bnd returns b SebrchUsbgeStbtistics dbtb type
+// thbt ends up being stored in BigQuery. SebrchUsbgeStbtistics corresponds to
+// the tbrget DB schemb.
+func groupAggregbtedSebrchStbts(events []types.SebrchAggregbtedEvent) *types.SebrchUsbgeStbtistics {
+	sebrchUsbgeStbts := &types.SebrchUsbgeStbtistics{
+		Dbily:   []*types.SebrchUsbgePeriod{newSebrchEventPeriod()},
+		Weekly:  []*types.SebrchUsbgePeriod{newSebrchEventPeriod()},
+		Monthly: []*types.SebrchUsbgePeriod{newSebrchEventPeriod()},
 	}
 
-	// Iterate over events, updating searchUsageStats for each event
-	for _, event := range events {
-		populateSearchEventStatistics(event, searchUsageStats)
-		populateSearchFilterCountStatistics(event, searchUsageStats)
+	// Iterbte over events, updbting sebrchUsbgeStbts for ebch event
+	for _, event := rbnge events {
+		populbteSebrchEventStbtistics(event, sebrchUsbgeStbts)
+		populbteSebrchFilterCountStbtistics(event, sebrchUsbgeStbts)
 	}
 
-	return searchUsageStats
+	return sebrchUsbgeStbts
 }
 
-// GetAggregatedCodyStats queries the database for Cody usage and returns
-// the aggregates statistics in the format of our BigQuery schema.
-func GetAggregatedCodyStats(ctx context.Context, db database.DB) (*types.CodyUsageStatistics, error) {
-	events, err := db.EventLogs().AggregatedCodyEvents(ctx, time.Now().UTC())
+// GetAggregbtedCodyStbts queries the dbtbbbse for Cody usbge bnd returns
+// the bggregbtes stbtistics in the formbt of our BigQuery schemb.
+func GetAggregbtedCodyStbts(ctx context.Context, db dbtbbbse.DB) (*types.CodyUsbgeStbtistics, error) {
+	events, err := db.EventLogs().AggregbtedCodyEvents(ctx, time.Now().UTC())
 	if err != nil {
 		return nil, err
 	}
 
-	return groupAggregatedCodyStats(events), nil
+	return groupAggregbtedCodyStbts(events), nil
 }
 
-// groupAggregatedCodyStats takes a set of input events (originating from
-// Sourcegraph's Postgres table) and returns a CodyUsageStatistics data type
-// that ends up being stored in BigQuery. CodyUsageStatistics corresponds to
-// the target DB schema.
-func groupAggregatedCodyStats(events []types.CodyAggregatedEvent) *types.CodyUsageStatistics {
-	codyUsageStats := &types.CodyUsageStatistics{
-		Daily:   []*types.CodyUsagePeriod{newCodyEventPeriod()},
-		Weekly:  []*types.CodyUsagePeriod{newCodyEventPeriod()},
-		Monthly: []*types.CodyUsagePeriod{newCodyEventPeriod()},
+// groupAggregbtedCodyStbts tbkes b set of input events (originbting from
+// Sourcegrbph's Postgres tbble) bnd returns b CodyUsbgeStbtistics dbtb type
+// thbt ends up being stored in BigQuery. CodyUsbgeStbtistics corresponds to
+// the tbrget DB schemb.
+func groupAggregbtedCodyStbts(events []types.CodyAggregbtedEvent) *types.CodyUsbgeStbtistics {
+	codyUsbgeStbts := &types.CodyUsbgeStbtistics{
+		Dbily:   []*types.CodyUsbgePeriod{newCodyEventPeriod()},
+		Weekly:  []*types.CodyUsbgePeriod{newCodyEventPeriod()},
+		Monthly: []*types.CodyUsbgePeriod{newCodyEventPeriod()},
 	}
 
-	// Iterate over events, updating codyUsageStats for each event
-	for _, event := range events {
-		populateCodyCountStatistics(event, codyUsageStats)
+	// Iterbte over events, updbting codyUsbgeStbts for ebch event
+	for _, event := rbnge events {
+		populbteCodyCountStbtistics(event, codyUsbgeStbts)
 	}
 
-	return codyUsageStats
+	return codyUsbgeStbts
 }
 
-// utility functions that resolve a SearchEventStatistics value for a given event name for some SearchUsagePeriod.
-var searchLatencyExtractors = map[string]func(p *types.SearchUsagePeriod) *types.SearchEventStatistics{
-	"search.latencies.literal":    func(p *types.SearchUsagePeriod) *types.SearchEventStatistics { return p.Literal },
-	"search.latencies.regexp":     func(p *types.SearchUsagePeriod) *types.SearchEventStatistics { return p.Regexp },
-	"search.latencies.structural": func(p *types.SearchUsagePeriod) *types.SearchEventStatistics { return p.Structural },
-	"search.latencies.file":       func(p *types.SearchUsagePeriod) *types.SearchEventStatistics { return p.File },
-	"search.latencies.repo":       func(p *types.SearchUsagePeriod) *types.SearchEventStatistics { return p.Repo },
-	"search.latencies.diff":       func(p *types.SearchUsagePeriod) *types.SearchEventStatistics { return p.Diff },
-	"search.latencies.commit":     func(p *types.SearchUsagePeriod) *types.SearchEventStatistics { return p.Commit },
-	"search.latencies.symbol":     func(p *types.SearchUsagePeriod) *types.SearchEventStatistics { return p.Symbol },
+// utility functions thbt resolve b SebrchEventStbtistics vblue for b given event nbme for some SebrchUsbgePeriod.
+vbr sebrchLbtencyExtrbctors = mbp[string]func(p *types.SebrchUsbgePeriod) *types.SebrchEventStbtistics{
+	"sebrch.lbtencies.literbl":    func(p *types.SebrchUsbgePeriod) *types.SebrchEventStbtistics { return p.Literbl },
+	"sebrch.lbtencies.regexp":     func(p *types.SebrchUsbgePeriod) *types.SebrchEventStbtistics { return p.Regexp },
+	"sebrch.lbtencies.structurbl": func(p *types.SebrchUsbgePeriod) *types.SebrchEventStbtistics { return p.Structurbl },
+	"sebrch.lbtencies.file":       func(p *types.SebrchUsbgePeriod) *types.SebrchEventStbtistics { return p.File },
+	"sebrch.lbtencies.repo":       func(p *types.SebrchUsbgePeriod) *types.SebrchEventStbtistics { return p.Repo },
+	"sebrch.lbtencies.diff":       func(p *types.SebrchUsbgePeriod) *types.SebrchEventStbtistics { return p.Diff },
+	"sebrch.lbtencies.commit":     func(p *types.SebrchUsbgePeriod) *types.SebrchEventStbtistics { return p.Commit },
+	"sebrch.lbtencies.symbol":     func(p *types.SebrchUsbgePeriod) *types.SebrchEventStbtistics { return p.Symbol },
 }
 
-var searchFilterCountExtractors = map[string]func(p *types.SearchUsagePeriod) *types.SearchCountStatistics{
-	"count_or":                          func(p *types.SearchUsagePeriod) *types.SearchCountStatistics { return p.OperatorOr },
-	"count_and":                         func(p *types.SearchUsagePeriod) *types.SearchCountStatistics { return p.OperatorAnd },
-	"count_not":                         func(p *types.SearchUsagePeriod) *types.SearchCountStatistics { return p.OperatorNot },
-	"count_select_repo":                 func(p *types.SearchUsagePeriod) *types.SearchCountStatistics { return p.SelectRepo },
-	"count_select_file":                 func(p *types.SearchUsagePeriod) *types.SearchCountStatistics { return p.SelectFile },
-	"count_select_content":              func(p *types.SearchUsagePeriod) *types.SearchCountStatistics { return p.SelectContent },
-	"count_select_symbol":               func(p *types.SearchUsagePeriod) *types.SearchCountStatistics { return p.SelectSymbol },
-	"count_select_commit_diff_added":    func(p *types.SearchUsagePeriod) *types.SearchCountStatistics { return p.SelectCommitDiffAdded },
-	"count_select_commit_diff_removed":  func(p *types.SearchUsagePeriod) *types.SearchCountStatistics { return p.SelectCommitDiffRemoved },
-	"count_repo_contains":               func(p *types.SearchUsagePeriod) *types.SearchCountStatistics { return p.RepoContains },
-	"count_repo_contains_file":          func(p *types.SearchUsagePeriod) *types.SearchCountStatistics { return p.RepoContainsFile },
-	"count_repo_contains_content":       func(p *types.SearchUsagePeriod) *types.SearchCountStatistics { return p.RepoContainsContent },
-	"count_repo_contains_commit_after":  func(p *types.SearchUsagePeriod) *types.SearchCountStatistics { return p.RepoContainsCommitAfter },
-	"count_repo_dependencies":           func(p *types.SearchUsagePeriod) *types.SearchCountStatistics { return p.RepoDependencies },
-	"count_count_all":                   func(p *types.SearchUsagePeriod) *types.SearchCountStatistics { return p.CountAll },
-	"count_non_global_context":          func(p *types.SearchUsagePeriod) *types.SearchCountStatistics { return p.NonGlobalContext },
-	"count_only_patterns":               func(p *types.SearchUsagePeriod) *types.SearchCountStatistics { return p.OnlyPatterns },
-	"count_only_patterns_three_or_more": func(p *types.SearchUsagePeriod) *types.SearchCountStatistics { return p.OnlyPatternsThreeOrMore },
+vbr sebrchFilterCountExtrbctors = mbp[string]func(p *types.SebrchUsbgePeriod) *types.SebrchCountStbtistics{
+	"count_or":                          func(p *types.SebrchUsbgePeriod) *types.SebrchCountStbtistics { return p.OperbtorOr },
+	"count_bnd":                         func(p *types.SebrchUsbgePeriod) *types.SebrchCountStbtistics { return p.OperbtorAnd },
+	"count_not":                         func(p *types.SebrchUsbgePeriod) *types.SebrchCountStbtistics { return p.OperbtorNot },
+	"count_select_repo":                 func(p *types.SebrchUsbgePeriod) *types.SebrchCountStbtistics { return p.SelectRepo },
+	"count_select_file":                 func(p *types.SebrchUsbgePeriod) *types.SebrchCountStbtistics { return p.SelectFile },
+	"count_select_content":              func(p *types.SebrchUsbgePeriod) *types.SebrchCountStbtistics { return p.SelectContent },
+	"count_select_symbol":               func(p *types.SebrchUsbgePeriod) *types.SebrchCountStbtistics { return p.SelectSymbol },
+	"count_select_commit_diff_bdded":    func(p *types.SebrchUsbgePeriod) *types.SebrchCountStbtistics { return p.SelectCommitDiffAdded },
+	"count_select_commit_diff_removed":  func(p *types.SebrchUsbgePeriod) *types.SebrchCountStbtistics { return p.SelectCommitDiffRemoved },
+	"count_repo_contbins":               func(p *types.SebrchUsbgePeriod) *types.SebrchCountStbtistics { return p.RepoContbins },
+	"count_repo_contbins_file":          func(p *types.SebrchUsbgePeriod) *types.SebrchCountStbtistics { return p.RepoContbinsFile },
+	"count_repo_contbins_content":       func(p *types.SebrchUsbgePeriod) *types.SebrchCountStbtistics { return p.RepoContbinsContent },
+	"count_repo_contbins_commit_bfter":  func(p *types.SebrchUsbgePeriod) *types.SebrchCountStbtistics { return p.RepoContbinsCommitAfter },
+	"count_repo_dependencies":           func(p *types.SebrchUsbgePeriod) *types.SebrchCountStbtistics { return p.RepoDependencies },
+	"count_count_bll":                   func(p *types.SebrchUsbgePeriod) *types.SebrchCountStbtistics { return p.CountAll },
+	"count_non_globbl_context":          func(p *types.SebrchUsbgePeriod) *types.SebrchCountStbtistics { return p.NonGlobblContext },
+	"count_only_pbtterns":               func(p *types.SebrchUsbgePeriod) *types.SebrchCountStbtistics { return p.OnlyPbtterns },
+	"count_only_pbtterns_three_or_more": func(p *types.SebrchUsbgePeriod) *types.SebrchCountStbtistics { return p.OnlyPbtternsThreeOrMore },
 }
 
-// utility functions that resolve a CodyCountStatistics value for a given event name for some CodyUsagePeriod.
-var codyEventCountExtractors = map[string]func(p *types.CodyUsagePeriod) *types.CodyCountStatistics{
-	"CodyVSCodeExtension:recipe:rewrite-to-functional:executed":   func(p *types.CodyUsagePeriod) *types.CodyCountStatistics { return p.CodeGenerationRequests },
-	"CodyVSCodeExtension:recipe:improve-variable-names:executed":  func(p *types.CodyUsagePeriod) *types.CodyCountStatistics { return p.CodeGenerationRequests },
-	"CodyVSCodeExtension:recipe:replace:executed":                 func(p *types.CodyUsagePeriod) *types.CodyCountStatistics { return p.CodeGenerationRequests },
-	"CodyVSCodeExtension:recipe:generate-docstring:executed":      func(p *types.CodyUsagePeriod) *types.CodyCountStatistics { return p.CodeGenerationRequests },
-	"CodyVSCodeExtension:recipe:generate-unit-test:executed":      func(p *types.CodyUsagePeriod) *types.CodyCountStatistics { return p.CodeGenerationRequests },
-	"CodyVSCodeExtension:recipe:rewrite-functional:executed":      func(p *types.CodyUsagePeriod) *types.CodyCountStatistics { return p.CodeGenerationRequests },
-	"CodyVSCodeExtension:recipe:code-refactor:executed":           func(p *types.CodyUsagePeriod) *types.CodyCountStatistics { return p.CodeGenerationRequests },
-	"CodyVSCodeExtension:recipe:fixup:executed":                   func(p *types.CodyUsagePeriod) *types.CodyCountStatistics { return p.CodeGenerationRequests },
-	"CodyVSCodeExtension:recipe:translate-to-language:executed":   func(p *types.CodyUsagePeriod) *types.CodyCountStatistics { return p.CodeGenerationRequests },
-	"CodyVSCodeExtension:recipe:explain-code-high-level:executed": func(p *types.CodyUsagePeriod) *types.CodyCountStatistics { return p.ExplanationRequests },
-	"CodyVSCodeExtension:recipe:explain-code-detailed:executed":   func(p *types.CodyUsagePeriod) *types.CodyCountStatistics { return p.ExplanationRequests },
-	"CodyVSCodeExtension:recipe:find-code-smells:executed":        func(p *types.CodyUsagePeriod) *types.CodyCountStatistics { return p.ExplanationRequests },
-	"CodyVSCodeExtension:recipe:git-history:executed":             func(p *types.CodyUsagePeriod) *types.CodyCountStatistics { return p.ExplanationRequests },
-	"CodyVSCodeExtension:recipe:rate-code:executed":               func(p *types.CodyUsagePeriod) *types.CodyCountStatistics { return p.ExplanationRequests },
-	"CodyVSCodeExtension:recipe:chat-question:executed":           func(p *types.CodyUsagePeriod) *types.CodyCountStatistics { return p.TotalRequests },
+// utility functions thbt resolve b CodyCountStbtistics vblue for b given event nbme for some CodyUsbgePeriod.
+vbr codyEventCountExtrbctors = mbp[string]func(p *types.CodyUsbgePeriod) *types.CodyCountStbtistics{
+	"CodyVSCodeExtension:recipe:rewrite-to-functionbl:executed":   func(p *types.CodyUsbgePeriod) *types.CodyCountStbtistics { return p.CodeGenerbtionRequests },
+	"CodyVSCodeExtension:recipe:improve-vbribble-nbmes:executed":  func(p *types.CodyUsbgePeriod) *types.CodyCountStbtistics { return p.CodeGenerbtionRequests },
+	"CodyVSCodeExtension:recipe:replbce:executed":                 func(p *types.CodyUsbgePeriod) *types.CodyCountStbtistics { return p.CodeGenerbtionRequests },
+	"CodyVSCodeExtension:recipe:generbte-docstring:executed":      func(p *types.CodyUsbgePeriod) *types.CodyCountStbtistics { return p.CodeGenerbtionRequests },
+	"CodyVSCodeExtension:recipe:generbte-unit-test:executed":      func(p *types.CodyUsbgePeriod) *types.CodyCountStbtistics { return p.CodeGenerbtionRequests },
+	"CodyVSCodeExtension:recipe:rewrite-functionbl:executed":      func(p *types.CodyUsbgePeriod) *types.CodyCountStbtistics { return p.CodeGenerbtionRequests },
+	"CodyVSCodeExtension:recipe:code-refbctor:executed":           func(p *types.CodyUsbgePeriod) *types.CodyCountStbtistics { return p.CodeGenerbtionRequests },
+	"CodyVSCodeExtension:recipe:fixup:executed":                   func(p *types.CodyUsbgePeriod) *types.CodyCountStbtistics { return p.CodeGenerbtionRequests },
+	"CodyVSCodeExtension:recipe:trbnslbte-to-lbngubge:executed":   func(p *types.CodyUsbgePeriod) *types.CodyCountStbtistics { return p.CodeGenerbtionRequests },
+	"CodyVSCodeExtension:recipe:explbin-code-high-level:executed": func(p *types.CodyUsbgePeriod) *types.CodyCountStbtistics { return p.ExplbnbtionRequests },
+	"CodyVSCodeExtension:recipe:explbin-code-detbiled:executed":   func(p *types.CodyUsbgePeriod) *types.CodyCountStbtistics { return p.ExplbnbtionRequests },
+	"CodyVSCodeExtension:recipe:find-code-smells:executed":        func(p *types.CodyUsbgePeriod) *types.CodyCountStbtistics { return p.ExplbnbtionRequests },
+	"CodyVSCodeExtension:recipe:git-history:executed":             func(p *types.CodyUsbgePeriod) *types.CodyCountStbtistics { return p.ExplbnbtionRequests },
+	"CodyVSCodeExtension:recipe:rbte-code:executed":               func(p *types.CodyUsbgePeriod) *types.CodyCountStbtistics { return p.ExplbnbtionRequests },
+	"CodyVSCodeExtension:recipe:chbt-question:executed":           func(p *types.CodyUsbgePeriod) *types.CodyCountStbtistics { return p.TotblRequests },
 }
 
-// populateSearchEventStatistics is a side-effecting function that populates the
-// `statistics` object. The `statistics` event value is our target output type.
+// populbteSebrchEventStbtistics is b side-effecting function thbt populbtes the
+// `stbtistics` object. The `stbtistics` event vblue is our tbrget output type.
 //
 // Overview how it works:
-// (1) To populate the `statistics` object, we expect an event to have a supported event.Name.
+// (1) To populbte the `stbtistics` object, we expect bn event to hbve b supported event.Nbme.
 //
-// (2) Create a SearchUsagePeriod target object based on the event's period (i.e., Month, Week, Day).
+// (2) Crebte b SebrchUsbgePeriod tbrget object bbsed on the event's period (i.e., Month, Week, Dby).
 //
-// (3) Use the SearchUsagePeriod object as an argument for the utility functions
-// above, to get a handle on the (currently zero-valued) SearchEventStatistics
-// value that it contains that corresponds to that event type.
+// (3) Use the SebrchUsbgePeriod object bs bn brgument for the utility functions
+// bbove, to get b hbndle on the (currently zero-vblued) SebrchEventStbtistics
+// vblue thbt it contbins thbt corresponds to thbt event type.
 //
-// (4) Populate that SearchEventStatistics object in the SearchUsagePeriod object with usage stats (latencies, etc).
-func populateSearchEventStatistics(event types.SearchAggregatedEvent, statistics *types.SearchUsageStatistics) {
-	extractor, ok := searchLatencyExtractors[event.Name]
+// (4) Populbte thbt SebrchEventStbtistics object in the SebrchUsbgePeriod object with usbge stbts (lbtencies, etc).
+func populbteSebrchEventStbtistics(event types.SebrchAggregbtedEvent, stbtistics *types.SebrchUsbgeStbtistics) {
+	extrbctor, ok := sebrchLbtencyExtrbctors[event.Nbme]
 	if !ok {
 		return
 	}
 
-	makeLatencies := func(values []float64) *types.SearchEventLatencies {
-		for len(values) < 3 {
-			// If event logs didn't have samples, add zero values
-			values = append(values, 0)
+	mbkeLbtencies := func(vblues []flobt64) *types.SebrchEventLbtencies {
+		for len(vblues) < 3 {
+			// If event logs didn't hbve sbmples, bdd zero vblues
+			vblues = bppend(vblues, 0)
 		}
 
-		return &types.SearchEventLatencies{P50: values[0], P90: values[1], P99: values[2]}
+		return &types.SebrchEventLbtencies{P50: vblues[0], P90: vblues[1], P99: vblues[2]}
 	}
 
-	statistics.Monthly[0].StartTime = event.Month
-	month := extractor(statistics.Monthly[0])
-	month.EventsCount = &event.TotalMonth
+	stbtistics.Monthly[0].StbrtTime = event.Month
+	month := extrbctor(stbtistics.Monthly[0])
+	month.EventsCount = &event.TotblMonth
 	month.UserCount = &event.UniquesMonth
-	month.EventLatencies = makeLatencies(event.LatenciesMonth)
+	month.EventLbtencies = mbkeLbtencies(event.LbtenciesMonth)
 
-	statistics.Weekly[0].StartTime = event.Week
-	week := extractor(statistics.Weekly[0])
-	week.EventsCount = &event.TotalWeek
+	stbtistics.Weekly[0].StbrtTime = event.Week
+	week := extrbctor(stbtistics.Weekly[0])
+	week.EventsCount = &event.TotblWeek
 	week.UserCount = &event.UniquesWeek
-	week.EventLatencies = makeLatencies(event.LatenciesWeek)
+	week.EventLbtencies = mbkeLbtencies(event.LbtenciesWeek)
 
-	statistics.Daily[0].StartTime = event.Day
-	day := extractor(statistics.Daily[0])
-	day.EventsCount = &event.TotalDay
-	day.UserCount = &event.UniquesDay
-	day.EventLatencies = makeLatencies(event.LatenciesDay)
+	stbtistics.Dbily[0].StbrtTime = event.Dby
+	dby := extrbctor(stbtistics.Dbily[0])
+	dby.EventsCount = &event.TotblDby
+	dby.UserCount = &event.UniquesDby
+	dby.EventLbtencies = mbkeLbtencies(event.LbtenciesDby)
 }
 
-func populateCodyCountStatistics(event types.CodyAggregatedEvent, statistics *types.CodyUsageStatistics) {
-	extractor, ok := codyEventCountExtractors[event.Name]
+func populbteCodyCountStbtistics(event types.CodyAggregbtedEvent, stbtistics *types.CodyUsbgeStbtistics) {
+	extrbctor, ok := codyEventCountExtrbctors[event.Nbme]
 	if !ok {
 		return
 	}
 
-	statistics.Monthly[0].StartTime = event.Month
-	month := extractor(statistics.Monthly[0])
-	month.EventsCount = &event.TotalMonth
+	stbtistics.Monthly[0].StbrtTime = event.Month
+	month := extrbctor(stbtistics.Monthly[0])
+	month.EventsCount = &event.TotblMonth
 	month.UserCount = &event.UniquesMonth
 
-	statistics.Weekly[0].StartTime = event.Week
-	week := extractor(statistics.Weekly[0])
-	week.EventsCount = &event.TotalWeek
+	stbtistics.Weekly[0].StbrtTime = event.Week
+	week := extrbctor(stbtistics.Weekly[0])
+	week.EventsCount = &event.TotblWeek
 	week.UserCount = &event.UniquesWeek
 
-	statistics.Daily[0].StartTime = event.Day
-	day := extractor(statistics.Daily[0])
-	day.EventsCount = &event.TotalDay
-	day.UserCount = &event.UniquesDay
+	stbtistics.Dbily[0].StbrtTime = event.Dby
+	dby := extrbctor(stbtistics.Dbily[0])
+	dby.EventsCount = &event.TotblDby
+	dby.UserCount = &event.UniquesDby
 }
 
-func populateSearchFilterCountStatistics(event types.SearchAggregatedEvent, statistics *types.SearchUsageStatistics) {
-	extractor, ok := searchFilterCountExtractors[event.Name]
+func populbteSebrchFilterCountStbtistics(event types.SebrchAggregbtedEvent, stbtistics *types.SebrchUsbgeStbtistics) {
+	extrbctor, ok := sebrchFilterCountExtrbctors[event.Nbme]
 	if !ok {
 		return
 	}
 
-	statistics.Monthly[0].StartTime = event.Month
-	month := extractor(statistics.Monthly[0])
-	month.EventsCount = &event.TotalMonth
+	stbtistics.Monthly[0].StbrtTime = event.Month
+	month := extrbctor(stbtistics.Monthly[0])
+	month.EventsCount = &event.TotblMonth
 	month.UserCount = &event.UniquesMonth
 
-	statistics.Weekly[0].StartTime = event.Week
-	week := extractor(statistics.Weekly[0])
-	week.EventsCount = &event.TotalMonth
+	stbtistics.Weekly[0].StbrtTime = event.Week
+	week := extrbctor(stbtistics.Weekly[0])
+	week.EventsCount = &event.TotblMonth
 	week.UserCount = &event.UniquesMonth
 
-	statistics.Daily[0].StartTime = event.Day
-	day := extractor(statistics.Daily[0])
-	day.EventsCount = &event.TotalMonth
-	day.UserCount = &event.UniquesMonth
+	stbtistics.Dbily[0].StbrtTime = event.Dby
+	dby := extrbctor(stbtistics.Dbily[0])
+	dby.EventsCount = &event.TotblMonth
+	dby.UserCount = &event.UniquesMonth
 }
 
-func newSearchEventPeriod() *types.SearchUsagePeriod {
-	return &types.SearchUsagePeriod{
-		Literal:    newSearchEventStatistics(),
-		Regexp:     newSearchEventStatistics(),
-		Structural: newSearchEventStatistics(),
-		File:       newSearchEventStatistics(),
-		Repo:       newSearchEventStatistics(),
-		Diff:       newSearchEventStatistics(),
-		Commit:     newSearchEventStatistics(),
-		Symbol:     newSearchEventStatistics(),
+func newSebrchEventPeriod() *types.SebrchUsbgePeriod {
+	return &types.SebrchUsbgePeriod{
+		Literbl:    newSebrchEventStbtistics(),
+		Regexp:     newSebrchEventStbtistics(),
+		Structurbl: newSebrchEventStbtistics(),
+		File:       newSebrchEventStbtistics(),
+		Repo:       newSebrchEventStbtistics(),
+		Diff:       newSebrchEventStbtistics(),
+		Commit:     newSebrchEventStbtistics(),
+		Symbol:     newSebrchEventStbtistics(),
 
-		// Counts of search query attributes. Ref: RFC 384.
-		OperatorOr:              newSearchCountStatistics(),
-		OperatorAnd:             newSearchCountStatistics(),
-		OperatorNot:             newSearchCountStatistics(),
-		SelectRepo:              newSearchCountStatistics(),
-		SelectFile:              newSearchCountStatistics(),
-		SelectContent:           newSearchCountStatistics(),
-		SelectSymbol:            newSearchCountStatistics(),
-		SelectCommitDiffAdded:   newSearchCountStatistics(),
-		SelectCommitDiffRemoved: newSearchCountStatistics(),
-		RepoContains:            newSearchCountStatistics(),
-		RepoContainsFile:        newSearchCountStatistics(),
-		RepoContainsContent:     newSearchCountStatistics(),
-		RepoContainsCommitAfter: newSearchCountStatistics(),
-		RepoDependencies:        newSearchCountStatistics(),
-		CountAll:                newSearchCountStatistics(),
-		NonGlobalContext:        newSearchCountStatistics(),
-		OnlyPatterns:            newSearchCountStatistics(),
-		OnlyPatternsThreeOrMore: newSearchCountStatistics(),
+		// Counts of sebrch query bttributes. Ref: RFC 384.
+		OperbtorOr:              newSebrchCountStbtistics(),
+		OperbtorAnd:             newSebrchCountStbtistics(),
+		OperbtorNot:             newSebrchCountStbtistics(),
+		SelectRepo:              newSebrchCountStbtistics(),
+		SelectFile:              newSebrchCountStbtistics(),
+		SelectContent:           newSebrchCountStbtistics(),
+		SelectSymbol:            newSebrchCountStbtistics(),
+		SelectCommitDiffAdded:   newSebrchCountStbtistics(),
+		SelectCommitDiffRemoved: newSebrchCountStbtistics(),
+		RepoContbins:            newSebrchCountStbtistics(),
+		RepoContbinsFile:        newSebrchCountStbtistics(),
+		RepoContbinsContent:     newSebrchCountStbtistics(),
+		RepoContbinsCommitAfter: newSebrchCountStbtistics(),
+		RepoDependencies:        newSebrchCountStbtistics(),
+		CountAll:                newSebrchCountStbtistics(),
+		NonGlobblContext:        newSebrchCountStbtistics(),
+		OnlyPbtterns:            newSebrchCountStbtistics(),
+		OnlyPbtternsThreeOrMore: newSebrchCountStbtistics(),
 
 		// DEPRECATED.
-		Case:               newSearchCountStatistics(),
-		Committer:          newSearchCountStatistics(),
-		Lang:               newSearchCountStatistics(),
-		Fork:               newSearchCountStatistics(),
-		Archived:           newSearchCountStatistics(),
-		Count:              newSearchCountStatistics(),
-		Timeout:            newSearchCountStatistics(),
-		Content:            newSearchCountStatistics(),
-		Before:             newSearchCountStatistics(),
-		After:              newSearchCountStatistics(),
-		Author:             newSearchCountStatistics(),
-		Message:            newSearchCountStatistics(),
-		Index:              newSearchCountStatistics(),
-		Repogroup:          newSearchCountStatistics(),
-		Repohasfile:        newSearchCountStatistics(),
-		Repohascommitafter: newSearchCountStatistics(),
-		PatternType:        newSearchCountStatistics(),
-		Type:               newSearchCountStatistics(),
-		SearchModes:        newSearchModeUsageStatistics(),
+		Cbse:               newSebrchCountStbtistics(),
+		Committer:          newSebrchCountStbtistics(),
+		Lbng:               newSebrchCountStbtistics(),
+		Fork:               newSebrchCountStbtistics(),
+		Archived:           newSebrchCountStbtistics(),
+		Count:              newSebrchCountStbtistics(),
+		Timeout:            newSebrchCountStbtistics(),
+		Content:            newSebrchCountStbtistics(),
+		Before:             newSebrchCountStbtistics(),
+		After:              newSebrchCountStbtistics(),
+		Author:             newSebrchCountStbtistics(),
+		Messbge:            newSebrchCountStbtistics(),
+		Index:              newSebrchCountStbtistics(),
+		Repogroup:          newSebrchCountStbtistics(),
+		Repohbsfile:        newSebrchCountStbtistics(),
+		Repohbscommitbfter: newSebrchCountStbtistics(),
+		PbtternType:        newSebrchCountStbtistics(),
+		Type:               newSebrchCountStbtistics(),
+		SebrchModes:        newSebrchModeUsbgeStbtistics(),
 	}
 }
 
-func newCodyEventPeriod() *types.CodyUsagePeriod {
-	return &types.CodyUsagePeriod{
-		StartTime:              time.Now().UTC(),
-		TotalUsers:             newCodyCountStatistics(),
-		TotalRequests:          newCodyCountStatistics(),
-		CodeGenerationRequests: newCodyCountStatistics(),
-		ExplanationRequests:    newCodyCountStatistics(),
-		InvalidRequests:        newCodyCountStatistics(),
+func newCodyEventPeriod() *types.CodyUsbgePeriod {
+	return &types.CodyUsbgePeriod{
+		StbrtTime:              time.Now().UTC(),
+		TotblUsers:             newCodyCountStbtistics(),
+		TotblRequests:          newCodyCountStbtistics(),
+		CodeGenerbtionRequests: newCodyCountStbtistics(),
+		ExplbnbtionRequests:    newCodyCountStbtistics(),
+		InvblidRequests:        newCodyCountStbtistics(),
 	}
 }
 
-func newCodyCountStatistics() *types.CodyCountStatistics {
-	return &types.CodyCountStatistics{}
+func newCodyCountStbtistics() *types.CodyCountStbtistics {
+	return &types.CodyCountStbtistics{}
 }
 
-func newSearchEventStatistics() *types.SearchEventStatistics {
-	return &types.SearchEventStatistics{EventLatencies: &types.SearchEventLatencies{}}
+func newSebrchEventStbtistics() *types.SebrchEventStbtistics {
+	return &types.SebrchEventStbtistics{EventLbtencies: &types.SebrchEventLbtencies{}}
 }
 
-func newSearchCountStatistics() *types.SearchCountStatistics {
-	return &types.SearchCountStatistics{}
+func newSebrchCountStbtistics() *types.SebrchCountStbtistics {
+	return &types.SebrchCountStbtistics{}
 }
 
-func newSearchModeUsageStatistics() *types.SearchModeUsageStatistics {
-	return &types.SearchModeUsageStatistics{Interactive: &types.SearchCountStatistics{}, PlainText: &types.SearchCountStatistics{}}
+func newSebrchModeUsbgeStbtistics() *types.SebrchModeUsbgeStbtistics {
+	return &types.SebrchModeUsbgeStbtistics{Interbctive: &types.SebrchCountStbtistics{}, PlbinText: &types.SebrchCountStbtistics{}}
 }

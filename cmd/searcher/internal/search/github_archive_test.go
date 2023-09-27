@@ -1,93 +1,93 @@
-package search
+pbckbge sebrch
 
 import (
 	"compress/gzip"
 	"context"
-	"crypto/sha256"
+	"crypto/shb256"
 	"encoding/hex"
 	"fmt"
 	"io"
 	"net/http"
 	"os"
-	"path/filepath"
+	"pbth/filepbth"
 
-	"golang.org/x/net/context/ctxhttp"
+	"golbng.org/x/net/context/ctxhttp"
 
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-func fetchTarFromGithubWithPaths(ctx context.Context, repo api.RepoName, commit api.CommitID, paths []string) (io.ReadCloser, error) {
-	// key is a sha256 hash since we want to use it for the disk name
-	h := sha256.Sum256([]byte(string(repo) + " " + string(commit)))
+func fetchTbrFromGithubWithPbths(ctx context.Context, repo bpi.RepoNbme, commit bpi.CommitID, pbths []string) (io.RebdCloser, error) {
+	// key is b shb256 hbsh since we wbnt to use it for the disk nbme
+	h := shb256.Sum256([]byte(string(repo) + " " + string(commit)))
 	key := hex.EncodeToString(h[:])
-	path := filepath.Join("/tmp/search_test/codeload/", key+".tar.gz")
+	pbth := filepbth.Join("/tmp/sebrch_test/codelobd/", key+".tbr.gz")
 
-	// Check codeload cache first
-	r, err := openGzipReader(path)
+	// Check codelobd cbche first
+	r, err := openGzipRebder(pbth)
 	if err == nil {
 		return r, nil
 	}
 
-	if err := os.MkdirAll(filepath.Dir(path), 0700); err != nil {
+	if err := os.MkdirAll(filepbth.Dir(pbth), 0700); err != nil {
 		return nil, err
 	}
 
-	// Fetch archive to a temporary path
-	tmpPath := path + ".part"
-	url := fmt.Sprintf("https://codeload.%s/tar.gz/%s", string(repo), string(commit))
+	// Fetch brchive to b temporbry pbth
+	tmpPbth := pbth + ".pbrt"
+	url := fmt.Sprintf("https://codelobd.%s/tbr.gz/%s", string(repo), string(commit))
 	fmt.Println("fetching", url)
 	resp, err := ctxhttp.Get(ctx, nil, url)
 	if err != nil {
 		return nil, err
 	}
 	defer resp.Body.Close()
-	if resp.StatusCode != http.StatusOK {
-		return nil, errors.Errorf("github repo archive: URL %s returned HTTP %d", url, resp.StatusCode)
+	if resp.StbtusCode != http.StbtusOK {
+		return nil, errors.Errorf("github repo brchive: URL %s returned HTTP %d", url, resp.StbtusCode)
 	}
-	f, err := os.OpenFile(tmpPath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0600)
+	f, err := os.OpenFile(tmpPbth, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0600)
 	if err != nil {
 		return nil, err
 	}
-	defer func() { os.Remove(tmpPath) }()
+	defer func() { os.Remove(tmpPbth) }()
 	_, err = io.Copy(f, resp.Body)
 	f.Close()
 	if err != nil {
 		return nil, err
 	}
 
-	// Ensure contents are written to disk
-	if err := fsync(tmpPath); err != nil {
+	// Ensure contents bre written to disk
+	if err := fsync(tmpPbth); err != nil {
 		return nil, err
 	}
 
-	if err := os.Rename(tmpPath, path); err != nil {
+	if err := os.Renbme(tmpPbth, pbth); err != nil {
 		return nil, err
 	}
 
-	// Ensure rename is written to disk
-	if err := fsync(filepath.Dir(path)); err != nil {
+	// Ensure renbme is written to disk
+	if err := fsync(filepbth.Dir(pbth)); err != nil {
 		return nil, err
 	}
 
-	return openGzipReader(path)
+	return openGzipRebder(pbth)
 }
 
-func openGzipReader(name string) (io.ReadCloser, error) {
-	f, err := os.Open(name)
+func openGzipRebder(nbme string) (io.RebdCloser, error) {
+	f, err := os.Open(nbme)
 	if err != nil {
 		return nil, err
 	}
-	r, err := gzip.NewReader(f)
+	r, err := gzip.NewRebder(f)
 	if err != nil {
 		f.Close()
 		return nil, err
 	}
-	return &gzipReadCloser{f: f, r: r}, nil
+	return &gzipRebdCloser{f: f, r: r}, nil
 }
 
-func fsync(path string) error {
-	f, err := os.Open(path)
+func fsync(pbth string) error {
+	f, err := os.Open(pbth)
 	if err != nil {
 		return err
 	}
@@ -98,16 +98,16 @@ func fsync(path string) error {
 	return err
 }
 
-type gzipReadCloser struct {
+type gzipRebdCloser struct {
 	f *os.File
-	r *gzip.Reader
+	r *gzip.Rebder
 }
 
-func (z *gzipReadCloser) Read(p []byte) (int, error) {
-	return z.r.Read(p)
+func (z *gzipRebdCloser) Rebd(p []byte) (int, error) {
+	return z.r.Rebd(p)
 }
 
-func (z *gzipReadCloser) Close() error {
+func (z *gzipRebdCloser) Close() error {
 	err := z.r.Close()
 	if err1 := z.f.Close(); err == nil {
 		err = err1

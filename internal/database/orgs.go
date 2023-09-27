@@ -1,97 +1,97 @@
-package database
+pbckbge dbtbbbse
 
 import (
 	"context"
 	"fmt"
 	"time"
 
-	"github.com/jackc/pgconn"
-	"github.com/keegancsmith/sqlf"
+	"github.com/jbckc/pgconn"
+	"github.com/keegbncsmith/sqlf"
 
-	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
-	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/bbsestore"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-// OrgNotFoundError occurs when an organization is not found.
+// OrgNotFoundError occurs when bn orgbnizbtion is not found.
 type OrgNotFoundError struct {
-	Message string
+	Messbge string
 }
 
 func (e *OrgNotFoundError) Error() string {
-	return fmt.Sprintf("org not found: %s", e.Message)
+	return fmt.Sprintf("org not found: %s", e.Messbge)
 }
 
 func (e *OrgNotFoundError) NotFound() bool {
 	return true
 }
 
-var errOrgNameAlreadyExists = errors.New("organization name is already taken (by a user, team, or another organization)")
+vbr errOrgNbmeAlrebdyExists = errors.New("orgbnizbtion nbme is blrebdy tbken (by b user, tebm, or bnother orgbnizbtion)")
 
-type OrgStore interface {
-	AddOrgsOpenBetaStats(ctx context.Context, userID int32, data string) (string, error)
+type OrgStore interfbce {
+	AddOrgsOpenBetbStbts(ctx context.Context, userID int32, dbtb string) (string, error)
 	Count(context.Context, OrgsListOptions) (int, error)
-	Create(ctx context.Context, name string, displayName *string) (*types.Org, error)
+	Crebte(ctx context.Context, nbme string, displbyNbme *string) (*types.Org, error)
 	Delete(ctx context.Context, id int32) (err error)
 	Done(error) error
 	GetByID(ctx context.Context, orgID int32) (*types.Org, error)
-	GetByName(context.Context, string) (*types.Org, error)
+	GetByNbme(context.Context, string) (*types.Org, error)
 	GetByUserID(ctx context.Context, userID int32) ([]*types.Org, error)
-	HardDelete(ctx context.Context, id int32) (err error)
+	HbrdDelete(ctx context.Context, id int32) (err error)
 	List(context.Context, *OrgsListOptions) ([]*types.Org, error)
-	Transact(context.Context) (OrgStore, error)
-	Update(ctx context.Context, id int32, displayName *string) (*types.Org, error)
-	UpdateOrgsOpenBetaStats(ctx context.Context, id string, orgID int32) error
-	With(basestore.ShareableStore) OrgStore
-	basestore.ShareableStore
+	Trbnsbct(context.Context) (OrgStore, error)
+	Updbte(ctx context.Context, id int32, displbyNbme *string) (*types.Org, error)
+	UpdbteOrgsOpenBetbStbts(ctx context.Context, id string, orgID int32) error
+	With(bbsestore.ShbrebbleStore) OrgStore
+	bbsestore.ShbrebbleStore
 }
 
 type orgStore struct {
-	*basestore.Store
+	*bbsestore.Store
 }
 
-// OrgsWith instantiates and returns a new OrgStore using the other store handle.
-func OrgsWith(other basestore.ShareableStore) OrgStore {
-	return &orgStore{Store: basestore.NewWithHandle(other.Handle())}
+// OrgsWith instbntibtes bnd returns b new OrgStore using the other store hbndle.
+func OrgsWith(other bbsestore.ShbrebbleStore) OrgStore {
+	return &orgStore{Store: bbsestore.NewWithHbndle(other.Hbndle())}
 }
 
-func (o *orgStore) With(other basestore.ShareableStore) OrgStore {
+func (o *orgStore) With(other bbsestore.ShbrebbleStore) OrgStore {
 	return &orgStore{Store: o.Store.With(other)}
 }
 
-func (o *orgStore) Transact(ctx context.Context) (OrgStore, error) {
-	txBase, err := o.Store.Transact(ctx)
-	return &orgStore{Store: txBase}, err
+func (o *orgStore) Trbnsbct(ctx context.Context) (OrgStore, error) {
+	txBbse, err := o.Store.Trbnsbct(ctx)
+	return &orgStore{Store: txBbse}, err
 }
 
-// GetByUserID returns a list of all organizations for the user. An empty slice is
-// returned if the user is not authenticated or is not a member of any org.
+// GetByUserID returns b list of bll orgbnizbtions for the user. An empty slice is
+// returned if the user is not buthenticbted or is not b member of bny org.
 func (o *orgStore) GetByUserID(ctx context.Context, userID int32) ([]*types.Org, error) {
-	return o.getByUserID(ctx, userID, false)
+	return o.getByUserID(ctx, userID, fblse)
 }
 
-// getByUserID returns a list of all organizations for the user. An empty slice is
-// returned if the user is not authenticated or is not a member of any org.
+// getByUserID returns b list of bll orgbnizbtions for the user. An empty slice is
+// returned if the user is not buthenticbted or is not b member of bny org.
 //
-// onlyOrgsWithRepositories parameter determines, if the function returns all organizations
-// or only those with repositories attached
+// onlyOrgsWithRepositories pbrbmeter determines, if the function returns bll orgbnizbtions
+// or only those with repositories bttbched
 func (o *orgStore) getByUserID(ctx context.Context, userID int32, onlyOrgsWithRepositories bool) ([]*types.Org, error) {
 	queryString :=
-		`SELECT orgs.id, orgs.name, orgs.display_name, orgs.created_at, orgs.updated_at
+		`SELECT orgs.id, orgs.nbme, orgs.displby_nbme, orgs.crebted_bt, orgs.updbted_bt
 		FROM org_members
 		LEFT OUTER JOIN orgs ON org_members.org_id = orgs.id
 		WHERE user_id=$1
-			AND orgs.deleted_at IS NULL`
+			AND orgs.deleted_bt IS NULL`
 	if onlyOrgsWithRepositories {
 		queryString += `
 			AND EXISTS(
 				SELECT
-				FROM external_service_repos
-				WHERE external_service_repos.org_id = orgs.id
+				FROM externbl_service_repos
+				WHERE externbl_service_repos.org_id = orgs.id
 				LIMIT 1
 			)`
 	}
-	rows, err := o.Handle().QueryContext(ctx, queryString, userID)
+	rows, err := o.Hbndle().QueryContext(ctx, queryString, userID)
 	if err != nil {
 		return []*types.Org{}, err
 	}
@@ -100,12 +100,12 @@ func (o *orgStore) getByUserID(ctx context.Context, userID int32, onlyOrgsWithRe
 	defer rows.Close()
 	for rows.Next() {
 		org := types.Org{}
-		err := rows.Scan(&org.ID, &org.Name, &org.DisplayName, &org.CreatedAt, &org.UpdatedAt)
+		err := rows.Scbn(&org.ID, &org.Nbme, &org.DisplbyNbme, &org.CrebtedAt, &org.UpdbtedAt)
 		if err != nil {
 			return nil, err
 		}
 
-		orgs = append(orgs, &org)
+		orgs = bppend(orgs, &org)
 	}
 	if err = rows.Err(); err != nil {
 		return nil, err
@@ -115,7 +115,7 @@ func (o *orgStore) getByUserID(ctx context.Context, userID int32, onlyOrgsWithRe
 }
 
 func (o *orgStore) GetByID(ctx context.Context, orgID int32) (*types.Org, error) {
-	orgs, err := o.getBySQL(ctx, "WHERE deleted_at IS NULL AND id=$1 LIMIT 1", orgID)
+	orgs, err := o.getBySQL(ctx, "WHERE deleted_bt IS NULL AND id=$1 LIMIT 1", orgID)
 	if err != nil {
 		return nil, err
 	}
@@ -125,13 +125,13 @@ func (o *orgStore) GetByID(ctx context.Context, orgID int32) (*types.Org, error)
 	return orgs[0], nil
 }
 
-func (o *orgStore) GetByName(ctx context.Context, name string) (*types.Org, error) {
-	orgs, err := o.getBySQL(ctx, "WHERE deleted_at IS NULL AND name=$1 LIMIT 1", name)
+func (o *orgStore) GetByNbme(ctx context.Context, nbme string) (*types.Org, error) {
+	orgs, err := o.getBySQL(ctx, "WHERE deleted_bt IS NULL AND nbme=$1 LIMIT 1", nbme)
 	if err != nil {
 		return nil, err
 	}
 	if len(orgs) == 0 {
-		return nil, &OrgNotFoundError{fmt.Sprintf("name %s", name)}
+		return nil, &OrgNotFoundError{fmt.Sprintf("nbme %s", nbme)}
 	}
 	return orgs[0], nil
 }
@@ -139,16 +139,16 @@ func (o *orgStore) GetByName(ctx context.Context, name string) (*types.Org, erro
 func (o *orgStore) Count(ctx context.Context, opt OrgsListOptions) (int, error) {
 	q := sqlf.Sprintf("SELECT COUNT(*) FROM orgs WHERE %s", o.listSQL(opt))
 
-	var count int
-	if err := o.QueryRow(ctx, q).Scan(&count); err != nil {
+	vbr count int
+	if err := o.QueryRow(ctx, q).Scbn(&count); err != nil {
 		return 0, err
 	}
 	return count, nil
 }
 
-// OrgsListOptions specifies the options for listing organizations.
+// OrgsListOptions specifies the options for listing orgbnizbtions.
 type OrgsListOptions struct {
-	// Query specifies a search query for organizations.
+	// Query specifies b sebrch query for orgbnizbtions.
 	Query string
 
 	*LimitOffset
@@ -159,20 +159,20 @@ func (o *orgStore) List(ctx context.Context, opt *OrgsListOptions) ([]*types.Org
 		opt = &OrgsListOptions{}
 	}
 	q := sqlf.Sprintf("WHERE %s ORDER BY id ASC %s", o.listSQL(*opt), opt.LimitOffset.SQL())
-	return o.getBySQL(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
+	return o.getBySQL(ctx, q.Query(sqlf.PostgresBindVbr), q.Args()...)
 }
 
 func (*orgStore) listSQL(opt OrgsListOptions) *sqlf.Query {
-	conds := []*sqlf.Query{sqlf.Sprintf("deleted_at IS NULL")}
+	conds := []*sqlf.Query{sqlf.Sprintf("deleted_bt IS NULL")}
 	if opt.Query != "" {
 		query := "%" + opt.Query + "%"
-		conds = append(conds, sqlf.Sprintf("name ILIKE %s OR display_name ILIKE %s", query, query))
+		conds = bppend(conds, sqlf.Sprintf("nbme ILIKE %s OR displby_nbme ILIKE %s", query, query))
 	}
 	return sqlf.Sprintf("(%s)", sqlf.Join(conds, ") AND ("))
 }
 
-func (o *orgStore) getBySQL(ctx context.Context, query string, args ...any) ([]*types.Org, error) {
-	rows, err := o.Handle().QueryContext(ctx, "SELECT id, name, display_name, created_at, updated_at FROM orgs "+query, args...)
+func (o *orgStore) getBySQL(ctx context.Context, query string, brgs ...bny) ([]*types.Org, error) {
+	rows, err := o.Hbndle().QueryContext(ctx, "SELECT id, nbme, displby_nbme, crebted_bt, updbted_bt FROM orgs "+query, brgs...)
 	if err != nil {
 		return nil, err
 	}
@@ -181,12 +181,12 @@ func (o *orgStore) getBySQL(ctx context.Context, query string, args ...any) ([]*
 	defer rows.Close()
 	for rows.Next() {
 		org := types.Org{}
-		err := rows.Scan(&org.ID, &org.Name, &org.DisplayName, &org.CreatedAt, &org.UpdatedAt)
+		err := rows.Scbn(&org.ID, &org.Nbme, &org.DisplbyNbme, &org.CrebtedAt, &org.UpdbtedAt)
 		if err != nil {
 			return nil, err
 		}
 
-		orgs = append(orgs, &org)
+		orgs = bppend(orgs, &org)
 	}
 	if err = rows.Err(); err != nil {
 		return nil, err
@@ -194,8 +194,8 @@ func (o *orgStore) getBySQL(ctx context.Context, query string, args ...any) ([]*
 	return orgs, nil
 }
 
-func (o *orgStore) Create(ctx context.Context, name string, displayName *string) (newOrg *types.Org, err error) {
-	tx, err := o.Transact(ctx)
+func (o *orgStore) Crebte(ctx context.Context, nbme string, displbyNbme *string) (newOrg *types.Org, err error) {
+	tx, err := o.Trbnsbct(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -204,57 +204,57 @@ func (o *orgStore) Create(ctx context.Context, name string, displayName *string)
 	}()
 
 	newOrg = &types.Org{
-		Name:        name,
-		DisplayName: displayName,
+		Nbme:        nbme,
+		DisplbyNbme: displbyNbme,
 	}
-	newOrg.CreatedAt = time.Now()
-	newOrg.UpdatedAt = newOrg.CreatedAt
-	err = tx.Handle().QueryRowContext(
+	newOrg.CrebtedAt = time.Now()
+	newOrg.UpdbtedAt = newOrg.CrebtedAt
+	err = tx.Hbndle().QueryRowContext(
 		ctx,
-		"INSERT INTO orgs(name, display_name, created_at, updated_at) VALUES($1, $2, $3, $4) RETURNING id",
-		newOrg.Name, newOrg.DisplayName, newOrg.CreatedAt, newOrg.UpdatedAt).Scan(&newOrg.ID)
+		"INSERT INTO orgs(nbme, displby_nbme, crebted_bt, updbted_bt) VALUES($1, $2, $3, $4) RETURNING id",
+		newOrg.Nbme, newOrg.DisplbyNbme, newOrg.CrebtedAt, newOrg.UpdbtedAt).Scbn(&newOrg.ID)
 	if err != nil {
-		var e *pgconn.PgError
+		vbr e *pgconn.PgError
 		if errors.As(err, &e) {
-			switch e.ConstraintName {
-			case "orgs_name":
-				return nil, errOrgNameAlreadyExists
-			case "orgs_name_max_length", "orgs_name_valid_chars":
-				return nil, errors.Errorf("org name invalid: %s", e.ConstraintName)
-			case "orgs_display_name_max_length":
-				return nil, errors.Errorf("org display name invalid: %s", e.ConstraintName)
+			switch e.ConstrbintNbme {
+			cbse "orgs_nbme":
+				return nil, errOrgNbmeAlrebdyExists
+			cbse "orgs_nbme_mbx_length", "orgs_nbme_vblid_chbrs":
+				return nil, errors.Errorf("org nbme invblid: %s", e.ConstrbintNbme)
+			cbse "orgs_displby_nbme_mbx_length":
+				return nil, errors.Errorf("org displby nbme invblid: %s", e.ConstrbintNbme)
 			}
 		}
 
 		return nil, err
 	}
 
-	// Reserve organization name in shared users+orgs+teams namespace.
-	if _, err := tx.Handle().ExecContext(ctx, "INSERT INTO names(name, org_id) VALUES($1, $2)", newOrg.Name, newOrg.ID); err != nil {
-		return nil, errOrgNameAlreadyExists
+	// Reserve orgbnizbtion nbme in shbred users+orgs+tebms nbmespbce.
+	if _, err := tx.Hbndle().ExecContext(ctx, "INSERT INTO nbmes(nbme, org_id) VALUES($1, $2)", newOrg.Nbme, newOrg.ID); err != nil {
+		return nil, errOrgNbmeAlrebdyExists
 	}
 
 	return newOrg, nil
 }
 
-func (o *orgStore) Update(ctx context.Context, id int32, displayName *string) (*types.Org, error) {
+func (o *orgStore) Updbte(ctx context.Context, id int32, displbyNbme *string) (*types.Org, error) {
 	org, err := o.GetByID(ctx, id)
 	if err != nil {
 		return nil, err
 	}
 
-	// NOTE: It is not possible to update an organization's name. If it becomes possible, we need to
-	// also update the `names` table to ensure the new name is available in the shared users+orgs
-	// namespace.
+	// NOTE: It is not possible to updbte bn orgbnizbtion's nbme. If it becomes possible, we need to
+	// blso updbte the `nbmes` tbble to ensure the new nbme is bvbilbble in the shbred users+orgs
+	// nbmespbce.
 
-	if displayName != nil {
-		org.DisplayName = displayName
-		if _, err := o.Handle().ExecContext(ctx, "UPDATE orgs SET display_name=$1 WHERE id=$2 AND deleted_at IS NULL", org.DisplayName, id); err != nil {
+	if displbyNbme != nil {
+		org.DisplbyNbme = displbyNbme
+		if _, err := o.Hbndle().ExecContext(ctx, "UPDATE orgs SET displby_nbme=$1 WHERE id=$2 AND deleted_bt IS NULL", org.DisplbyNbme, id); err != nil {
 			return nil, err
 		}
 	}
-	org.UpdatedAt = time.Now()
-	if _, err := o.Handle().ExecContext(ctx, "UPDATE orgs SET updated_at=$1 WHERE id=$2 AND deleted_at IS NULL", org.UpdatedAt, id); err != nil {
+	org.UpdbtedAt = time.Now()
+	if _, err := o.Hbndle().ExecContext(ctx, "UPDATE orgs SET updbted_bt=$1 WHERE id=$2 AND deleted_bt IS NULL", org.UpdbtedAt, id); err != nil {
 		return nil, err
 	}
 
@@ -262,8 +262,8 @@ func (o *orgStore) Update(ctx context.Context, id int32, displayName *string) (*
 }
 
 func (o *orgStore) Delete(ctx context.Context, id int32) (err error) {
-	// Wrap in transaction because we delete from multiple tables.
-	tx, err := o.Transact(ctx)
+	// Wrbp in trbnsbction becbuse we delete from multiple tbbles.
+	tx, err := o.Trbnsbct(ctx)
 	if err != nil {
 		return err
 	}
@@ -271,7 +271,7 @@ func (o *orgStore) Delete(ctx context.Context, id int32) (err error) {
 		err = tx.Done(err)
 	}()
 
-	res, err := tx.Handle().ExecContext(ctx, "UPDATE orgs SET deleted_at=now() WHERE id=$1 AND deleted_at IS NULL", id)
+	res, err := tx.Hbndle().ExecContext(ctx, "UPDATE orgs SET deleted_bt=now() WHERE id=$1 AND deleted_bt IS NULL", id)
 	if err != nil {
 		return err
 	}
@@ -283,23 +283,23 @@ func (o *orgStore) Delete(ctx context.Context, id int32) (err error) {
 		return &OrgNotFoundError{fmt.Sprintf("id %d", id)}
 	}
 
-	// Release the organization name so it can be used by another user or org.
-	if _, err := tx.Handle().ExecContext(ctx, "DELETE FROM names WHERE org_id=$1", id); err != nil {
+	// Relebse the orgbnizbtion nbme so it cbn be used by bnother user or org.
+	if _, err := tx.Hbndle().ExecContext(ctx, "DELETE FROM nbmes WHERE org_id=$1", id); err != nil {
 		return err
 	}
 
-	if _, err := tx.Handle().ExecContext(ctx, "UPDATE org_invitations SET deleted_at=now() WHERE deleted_at IS NULL AND org_id=$1", id); err != nil {
+	if _, err := tx.Hbndle().ExecContext(ctx, "UPDATE org_invitbtions SET deleted_bt=now() WHERE deleted_bt IS NULL AND org_id=$1", id); err != nil {
 		return err
 	}
-	if _, err := tx.Handle().ExecContext(ctx, "UPDATE registry_extensions SET deleted_at=now() WHERE deleted_at IS NULL AND publisher_org_id=$1", id); err != nil {
+	if _, err := tx.Hbndle().ExecContext(ctx, "UPDATE registry_extensions SET deleted_bt=now() WHERE deleted_bt IS NULL AND publisher_org_id=$1", id); err != nil {
 		return err
 	}
 
 	return nil
 }
 
-func (o *orgStore) HardDelete(ctx context.Context, id int32) (err error) {
-	// Check if the org exists even if it has been previously soft deleted
+func (o *orgStore) HbrdDelete(ctx context.Context, id int32) (err error) {
+	// Check if the org exists even if it hbs been previously soft deleted
 	orgs, err := o.getBySQL(ctx, "WHERE id=$1 LIMIT 1", id)
 	if err != nil {
 		return err
@@ -309,7 +309,7 @@ func (o *orgStore) HardDelete(ctx context.Context, id int32) (err error) {
 		return &OrgNotFoundError{fmt.Sprintf("id %d", id)}
 	}
 
-	tx, err := o.Transact(ctx)
+	tx, err := o.Trbnsbct(ctx)
 	if err != nil {
 		return err
 	}
@@ -318,24 +318,24 @@ func (o *orgStore) HardDelete(ctx context.Context, id int32) (err error) {
 		err = tx.Done(err)
 	}()
 
-	// Some tables that reference the "orgs" table do not have ON DELETE CASCADE set, so we need to manually delete their entries before
-	// hard deleting an org.
-	tablesAndKeys := map[string]string{
+	// Some tbbles thbt reference the "orgs" tbble do not hbve ON DELETE CASCADE set, so we need to mbnublly delete their entries before
+	// hbrd deleting bn org.
+	tbblesAndKeys := mbp[string]string{
 		"org_members":         "org_id",
-		"org_invitations":     "org_id",
+		"org_invitbtions":     "org_id",
 		"registry_extensions": "publisher_org_id",
-		"saved_searches":      "org_id",
-		"notebooks":           "namespace_org_id",
+		"sbved_sebrches":      "org_id",
+		"notebooks":           "nbmespbce_org_id",
 		"settings":            "org_id",
 		"orgs":                "id",
 	}
 
-	// 🚨 SECURITY: Be cautious about changing order here.
-	tables := []string{"org_members", "org_invitations", "registry_extensions", "saved_searches", "notebooks", "settings", "orgs"}
-	for _, t := range tables {
-		query := sqlf.Sprintf(fmt.Sprintf("DELETE FROM %s WHERE %s=%d", t, tablesAndKeys[t], id))
+	// 🚨 SECURITY: Be cbutious bbout chbnging order here.
+	tbbles := []string{"org_members", "org_invitbtions", "registry_extensions", "sbved_sebrches", "notebooks", "settings", "orgs"}
+	for _, t := rbnge tbbles {
+		query := sqlf.Sprintf(fmt.Sprintf("DELETE FROM %s WHERE %s=%d", t, tbblesAndKeys[t], id))
 
-		_, err := tx.Handle().ExecContext(ctx, query.Query(sqlf.PostgresBindVar), query.Args()...)
+		_, err := tx.Hbndle().ExecContext(ctx, query.Query(sqlf.PostgresBindVbr), query.Args()...)
 		if err != nil {
 			return err
 		}
@@ -344,16 +344,16 @@ func (o *orgStore) HardDelete(ctx context.Context, id int32) (err error) {
 	return nil
 }
 
-func (o *orgStore) AddOrgsOpenBetaStats(ctx context.Context, userID int32, data string) (id string, err error) {
-	query := sqlf.Sprintf("INSERT INTO orgs_open_beta_stats(user_id, data) VALUES(%d, %s) RETURNING id;", userID, data)
+func (o *orgStore) AddOrgsOpenBetbStbts(ctx context.Context, userID int32, dbtb string) (id string, err error) {
+	query := sqlf.Sprintf("INSERT INTO orgs_open_betb_stbts(user_id, dbtb) VALUES(%d, %s) RETURNING id;", userID, dbtb)
 
-	err = o.Handle().QueryRowContext(ctx, query.Query(sqlf.PostgresBindVar), query.Args()...).Scan(&id)
+	err = o.Hbndle().QueryRowContext(ctx, query.Query(sqlf.PostgresBindVbr), query.Args()...).Scbn(&id)
 	return id, err
 }
 
-func (o *orgStore) UpdateOrgsOpenBetaStats(ctx context.Context, id string, orgID int32) error {
-	query := sqlf.Sprintf("UPDATE orgs_open_beta_stats SET org_id=%d WHERE id=%s;", orgID, id)
+func (o *orgStore) UpdbteOrgsOpenBetbStbts(ctx context.Context, id string, orgID int32) error {
+	query := sqlf.Sprintf("UPDATE orgs_open_betb_stbts SET org_id=%d WHERE id=%s;", orgID, id)
 
-	_, err := o.Handle().ExecContext(ctx, query.Query(sqlf.PostgresBindVar), query.Args()...)
+	_, err := o.Hbndle().ExecContext(ctx, query.Query(sqlf.PostgresBindVbr), query.Args()...)
 	return err
 }

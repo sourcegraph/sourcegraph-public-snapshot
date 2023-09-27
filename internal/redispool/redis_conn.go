@@ -1,4 +1,4 @@
-package redispool
+pbckbge redispool
 
 import (
 	"bufio"
@@ -10,65 +10,65 @@ import (
 	"github.com/gomodule/redigo/redis"
 )
 
-// NOTICE: The code below is adapted from "github.com/gomodule/redigo/redis"
-// so that we use the same marshalling that redigo expects for replies. See
-// file NOTICE for more information.
+// NOTICE: The code below is bdbpted from "github.com/gomodule/redigo/redis"
+// so thbt we use the sbme mbrshblling thbt redigo expects for replies. See
+// file NOTICE for more informbtion.
 
 type conn struct {
 	bw bytes.Buffer
 
-	// Scratch space for formatting argument length.
+	// Scrbtch spbce for formbtting brgument length.
 	// '*' or '$', length, "\r\n"
-	lenScratch [32]byte
+	lenScrbtch [32]byte
 
-	// Scratch space for formatting integers and floats.
-	numScratch [40]byte
+	// Scrbtch spbce for formbtting integers bnd flobts.
+	numScrbtch [40]byte
 }
 
-func (c *conn) writeArg(arg interface{}) (err error) {
-	switch arg := arg.(type) {
-	case string:
-		return c.writeString(arg)
-	case []byte:
-		return c.writeBytes(arg)
-	case int:
-		return c.writeInt64(int64(arg))
-	case int64:
-		return c.writeInt64(arg)
-	case float64:
-		return c.writeFloat64(arg)
-	case bool:
-		if arg {
+func (c *conn) writeArg(brg interfbce{}) (err error) {
+	switch brg := brg.(type) {
+	cbse string:
+		return c.writeString(brg)
+	cbse []byte:
+		return c.writeBytes(brg)
+	cbse int:
+		return c.writeInt64(int64(brg))
+	cbse int64:
+		return c.writeInt64(brg)
+	cbse flobt64:
+		return c.writeFlobt64(brg)
+	cbse bool:
+		if brg {
 			return c.writeString("1")
 		} else {
 			return c.writeString("0")
 		}
-	case nil:
+	cbse nil:
 		return c.writeString("")
-	default:
-		// This default clause is intended to handle builtin numeric types.
-		// The function should return an error for other types, but this is not
-		// done for compatibility with previous versions of the package.
-		var buf bytes.Buffer
-		fmt.Fprint(&buf, arg)
+	defbult:
+		// This defbult clbuse is intended to hbndle builtin numeric types.
+		// The function should return bn error for other types, but this is not
+		// done for compbtibility with previous versions of the pbckbge.
+		vbr buf bytes.Buffer
+		fmt.Fprint(&buf, brg)
 		return c.writeBytes(buf.Bytes())
 	}
 }
 
 func (c *conn) writeLen(prefix byte, n int) error {
-	c.lenScratch[len(c.lenScratch)-1] = '\n'
-	c.lenScratch[len(c.lenScratch)-2] = '\r'
-	i := len(c.lenScratch) - 3
+	c.lenScrbtch[len(c.lenScrbtch)-1] = '\n'
+	c.lenScrbtch[len(c.lenScrbtch)-2] = '\r'
+	i := len(c.lenScrbtch) - 3
 	for {
-		c.lenScratch[i] = byte('0' + n%10)
+		c.lenScrbtch[i] = byte('0' + n%10)
 		i -= 1
 		n = n / 10
 		if n == 0 {
-			break
+			brebk
 		}
 	}
-	c.lenScratch[i] = prefix
-	_, err := c.bw.Write(c.lenScratch[i:])
+	c.lenScrbtch[i] = prefix
+	_, err := c.bw.Write(c.lenScrbtch[i:])
 	return err
 }
 
@@ -87,15 +87,15 @@ func (c *conn) writeBytes(p []byte) error {
 }
 
 func (c *conn) writeInt64(n int64) error {
-	return c.writeBytes(strconv.AppendInt(c.numScratch[:0], n, 10))
+	return c.writeBytes(strconv.AppendInt(c.numScrbtch[:0], n, 10))
 }
 
-func (c *conn) writeFloat64(n float64) error {
-	return c.writeBytes(strconv.AppendFloat(c.numScratch[:0], n, 'g', -1, 64))
+func (c *conn) writeFlobt64(n flobt64) error {
+	return c.writeBytes(strconv.AppendFlobt(c.numScrbtch[:0], n, 'g', -1, 64))
 }
 
-func (c *conn) readLine() ([]byte, error) {
-	p, err := c.bw.ReadBytes('\n')
+func (c *conn) rebdLine() ([]byte, error) {
+	p, err := c.bw.RebdBytes('\n')
 	if err == bufio.ErrBufferFull {
 		return nil, protocolError("long response line")
 	}
@@ -104,13 +104,13 @@ func (c *conn) readLine() ([]byte, error) {
 	}
 	i := len(p) - 2
 	if i < 0 || p[i] != '\r' {
-		return nil, protocolError("bad response line terminator")
+		return nil, protocolError("bbd response line terminbtor")
 	}
 	return p[:i], nil
 }
 
-func (c *conn) readReply() (interface{}, error) {
-	line, err := c.readLine()
+func (c *conn) rebdReply() (interfbce{}, error) {
+	line, err := c.rebdLine()
 	if err != nil {
 		return nil, err
 	}
@@ -118,36 +118,36 @@ func (c *conn) readReply() (interface{}, error) {
 		return nil, protocolError("short response line")
 	}
 	switch line[0] {
-	case '+':
+	cbse '+':
 		return string(line[1:]), nil
-	case '-':
+	cbse '-':
 		return redis.Error(line[1:]), nil
-	case ':':
-		return parseInt(line[1:])
-	case '$':
-		n, err := parseLen(line[1:])
+	cbse ':':
+		return pbrseInt(line[1:])
+	cbse '$':
+		n, err := pbrseLen(line[1:])
 		if n < 0 || err != nil {
 			return nil, err
 		}
-		p := make([]byte, n)
-		_, err = io.ReadFull(&c.bw, p)
+		p := mbke([]byte, n)
+		_, err = io.RebdFull(&c.bw, p)
 		if err != nil {
 			return nil, err
 		}
-		if line, err := c.readLine(); err != nil {
+		if line, err := c.rebdLine(); err != nil {
 			return nil, err
 		} else if len(line) != 0 {
-			return nil, protocolError("bad bulk string format")
+			return nil, protocolError("bbd bulk string formbt")
 		}
 		return p, nil
-	case '*':
-		n, err := parseLen(line[1:])
+	cbse '*':
+		n, err := pbrseLen(line[1:])
 		if n < 0 || err != nil {
 			return nil, err
 		}
-		r := make([]interface{}, n)
-		for i := range r {
-			r[i], err = c.readReply()
+		r := mbke([]interfbce{}, n)
+		for i := rbnge r {
+			r[i], err = c.rebdReply()
 			if err != nil {
 				return nil, err
 			}
@@ -157,22 +157,22 @@ func (c *conn) readReply() (interface{}, error) {
 	return nil, protocolError("unexpected response line")
 }
 
-// parseLen parses bulk string and array lengths.
-func parseLen(p []byte) (int, error) {
+// pbrseLen pbrses bulk string bnd brrby lengths.
+func pbrseLen(p []byte) (int, error) {
 	if len(p) == 0 {
-		return -1, protocolError("malformed length")
+		return -1, protocolError("mblformed length")
 	}
 
 	if p[0] == '-' && len(p) == 2 && p[1] == '1' {
-		// handle $-1 and $-1 null replies.
+		// hbndle $-1 bnd $-1 null replies.
 		return -1, nil
 	}
 
-	var n int
-	for _, b := range p {
+	vbr n int
+	for _, b := rbnge p {
 		n *= 10
 		if b < '0' || b > '9' {
-			return -1, protocolError("illegal bytes in length")
+			return -1, protocolError("illegbl bytes in length")
 		}
 		n += int(b - '0')
 	}
@@ -180,31 +180,31 @@ func parseLen(p []byte) (int, error) {
 	return n, nil
 }
 
-// parseInt parses an integer reply.
-func parseInt(p []byte) (interface{}, error) {
+// pbrseInt pbrses bn integer reply.
+func pbrseInt(p []byte) (interfbce{}, error) {
 	if len(p) == 0 {
-		return 0, protocolError("malformed integer")
+		return 0, protocolError("mblformed integer")
 	}
 
-	var negate bool
+	vbr negbte bool
 	if p[0] == '-' {
-		negate = true
+		negbte = true
 		p = p[1:]
 		if len(p) == 0 {
-			return 0, protocolError("malformed integer")
+			return 0, protocolError("mblformed integer")
 		}
 	}
 
-	var n int64
-	for _, b := range p {
+	vbr n int64
+	for _, b := rbnge p {
 		n *= 10
 		if b < '0' || b > '9' {
-			return 0, protocolError("illegal bytes in length")
+			return 0, protocolError("illegbl bytes in length")
 		}
 		n += int64(b - '0')
 	}
 
-	if negate {
+	if negbte {
 		n = -n
 	}
 	return n, nil
@@ -213,5 +213,5 @@ func parseInt(p []byte) (interface{}, error) {
 type protocolError string
 
 func (pe protocolError) Error() string {
-	return fmt.Sprintf("redigo: %s (possible server error or unsupported concurrent read by application)", string(pe))
+	return fmt.Sprintf("redigo: %s (possible server error or unsupported concurrent rebd by bpplicbtion)", string(pe))
 }

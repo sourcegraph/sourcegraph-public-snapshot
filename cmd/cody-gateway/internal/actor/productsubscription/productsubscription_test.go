@@ -1,72 +1,72 @@
-package productsubscription
+pbckbge productsubscription
 
 import (
 	"testing"
 	"time"
 
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/bssert"
 
-	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/dotcom"
-	"github.com/sourcegraph/sourcegraph/internal/codygateway"
+	"github.com/sourcegrbph/sourcegrbph/cmd/cody-gbtewby/internbl/dotcom"
+	"github.com/sourcegrbph/sourcegrbph/internbl/codygbtewby"
 )
 
 func TestNewActor(t *testing.T) {
-	concurrencyConfig := codygateway.ActorConcurrencyLimitConfig{
-		Percentage: 50,
-		Interval:   24 * time.Hour,
+	concurrencyConfig := codygbtewby.ActorConcurrencyLimitConfig{
+		Percentbge: 50,
+		Intervbl:   24 * time.Hour,
 	}
-	type args struct {
-		s               dotcom.ProductSubscriptionState
+	type brgs struct {
+		s               dotcom.ProductSubscriptionStbte
 		devLicensesOnly bool
 	}
 	tests := []struct {
-		name        string
-		args        args
-		wantEnabled bool
+		nbme        string
+		brgs        brgs
+		wbntEnbbled bool
 	}{
 		{
-			name: "not dev only",
-			args: args{
-				dotcom.ProductSubscriptionState{
-					CodyGatewayAccess: dotcom.ProductSubscriptionStateCodyGatewayAccess{
-						CodyGatewayAccessFields: dotcom.CodyGatewayAccessFields{
-							Enabled: true,
-							ChatCompletionsRateLimit: &dotcom.CodyGatewayAccessFieldsChatCompletionsRateLimitCodyGatewayRateLimit{
-								RateLimitFields: dotcom.RateLimitFields{
+			nbme: "not dev only",
+			brgs: brgs{
+				dotcom.ProductSubscriptionStbte{
+					CodyGbtewbyAccess: dotcom.ProductSubscriptionStbteCodyGbtewbyAccess{
+						CodyGbtewbyAccessFields: dotcom.CodyGbtewbyAccessFields{
+							Enbbled: true,
+							ChbtCompletionsRbteLimit: &dotcom.CodyGbtewbyAccessFieldsChbtCompletionsRbteLimitCodyGbtewbyRbteLimit{
+								RbteLimitFields: dotcom.RbteLimitFields{
 									Limit:           10,
-									IntervalSeconds: 10,
+									IntervblSeconds: 10,
 								},
 							},
-							CodeCompletionsRateLimit: &dotcom.CodyGatewayAccessFieldsCodeCompletionsRateLimitCodyGatewayRateLimit{
-								RateLimitFields: dotcom.RateLimitFields{
+							CodeCompletionsRbteLimit: &dotcom.CodyGbtewbyAccessFieldsCodeCompletionsRbteLimitCodyGbtewbyRbteLimit{
+								RbteLimitFields: dotcom.RbteLimitFields{
 									Limit:           10,
-									IntervalSeconds: 10,
+									IntervblSeconds: 10,
 								},
 							},
 						},
 					},
 				},
-				false,
+				fblse,
 			},
-			wantEnabled: true,
+			wbntEnbbled: true,
 		},
 		{
-			name: "dev only, not a dev license",
-			args: args{
-				dotcom.ProductSubscriptionState{
-					CodyGatewayAccess: dotcom.ProductSubscriptionStateCodyGatewayAccess{
-						CodyGatewayAccessFields: dotcom.CodyGatewayAccessFields{
-							Enabled: true,
-							ChatCompletionsRateLimit: &dotcom.CodyGatewayAccessFieldsChatCompletionsRateLimitCodyGatewayRateLimit{
-								RateLimitFields: dotcom.RateLimitFields{
+			nbme: "dev only, not b dev license",
+			brgs: brgs{
+				dotcom.ProductSubscriptionStbte{
+					CodyGbtewbyAccess: dotcom.ProductSubscriptionStbteCodyGbtewbyAccess{
+						CodyGbtewbyAccessFields: dotcom.CodyGbtewbyAccessFields{
+							Enbbled: true,
+							ChbtCompletionsRbteLimit: &dotcom.CodyGbtewbyAccessFieldsChbtCompletionsRbteLimitCodyGbtewbyRbteLimit{
+								RbteLimitFields: dotcom.RbteLimitFields{
 									Limit:           10,
-									IntervalSeconds: 10,
+									IntervblSeconds: 10,
 								},
 							},
-							CodeCompletionsRateLimit: &dotcom.CodyGatewayAccessFieldsCodeCompletionsRateLimitCodyGatewayRateLimit{
-								RateLimitFields: dotcom.RateLimitFields{
+							CodeCompletionsRbteLimit: &dotcom.CodyGbtewbyAccessFieldsCodeCompletionsRbteLimitCodyGbtewbyRbteLimit{
+								RbteLimitFields: dotcom.RbteLimitFields{
 									Limit:           10,
-									IntervalSeconds: 10,
+									IntervblSeconds: 10,
 								},
 							},
 						},
@@ -74,85 +74,85 @@ func TestNewActor(t *testing.T) {
 				},
 				true,
 			},
-			wantEnabled: false,
+			wbntEnbbled: fblse,
 		},
 		{
-			name: "dev only, is a dev license",
-			args: args{
-				dotcom.ProductSubscriptionState{
-					CodyGatewayAccess: dotcom.ProductSubscriptionStateCodyGatewayAccess{
-						CodyGatewayAccessFields: dotcom.CodyGatewayAccessFields{
-							Enabled: true,
-							ChatCompletionsRateLimit: &dotcom.CodyGatewayAccessFieldsChatCompletionsRateLimitCodyGatewayRateLimit{
-								RateLimitFields: dotcom.RateLimitFields{
+			nbme: "dev only, is b dev license",
+			brgs: brgs{
+				dotcom.ProductSubscriptionStbte{
+					CodyGbtewbyAccess: dotcom.ProductSubscriptionStbteCodyGbtewbyAccess{
+						CodyGbtewbyAccessFields: dotcom.CodyGbtewbyAccessFields{
+							Enbbled: true,
+							ChbtCompletionsRbteLimit: &dotcom.CodyGbtewbyAccessFieldsChbtCompletionsRbteLimitCodyGbtewbyRbteLimit{
+								RbteLimitFields: dotcom.RbteLimitFields{
 									Limit:           10,
-									IntervalSeconds: 10,
+									IntervblSeconds: 10,
 								},
 							},
-							CodeCompletionsRateLimit: &dotcom.CodyGatewayAccessFieldsCodeCompletionsRateLimitCodyGatewayRateLimit{
-								RateLimitFields: dotcom.RateLimitFields{
+							CodeCompletionsRbteLimit: &dotcom.CodyGbtewbyAccessFieldsCodeCompletionsRbteLimitCodyGbtewbyRbteLimit{
+								RbteLimitFields: dotcom.RbteLimitFields{
 									Limit:           10,
-									IntervalSeconds: 10,
+									IntervblSeconds: 10,
 								},
 							},
 						},
 					},
-					ActiveLicense: &dotcom.ProductSubscriptionStateActiveLicenseProductLicense{
-						Info: &dotcom.ProductSubscriptionStateActiveLicenseProductLicenseInfo{
-							Tags: []string{"dev"},
+					ActiveLicense: &dotcom.ProductSubscriptionStbteActiveLicenseProductLicense{
+						Info: &dotcom.ProductSubscriptionStbteActiveLicenseProductLicenseInfo{
+							Tbgs: []string{"dev"},
 						},
 					},
 				},
 				true,
 			},
-			wantEnabled: true,
+			wbntEnbbled: true,
 		},
 	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			act := newActor(nil, "", tt.args.s, tt.args.devLicensesOnly, concurrencyConfig)
-			assert.Equal(t, act.AccessEnabled, tt.wantEnabled)
+	for _, tt := rbnge tests {
+		t.Run(tt.nbme, func(t *testing.T) {
+			bct := newActor(nil, "", tt.brgs.s, tt.brgs.devLicensesOnly, concurrencyConfig)
+			bssert.Equbl(t, bct.AccessEnbbled, tt.wbntEnbbled)
 		})
 	}
 }
 
-func TestGetSubscriptionAccountName(t *testing.T) {
+func TestGetSubscriptionAccountNbme(t *testing.T) {
 	tests := []struct {
-		name         string
-		mockUsername string
-		mockTags     []string
-		wantName     string
+		nbme         string
+		mockUsernbme string
+		mockTbgs     []string
+		wbntNbme     string
 	}{
 		{
-			name:         "has special license tag",
-			mockUsername: "alice",
-			mockTags:     []string{"trial", "customer:acme"},
-			wantName:     "acme",
+			nbme:         "hbs specibl license tbg",
+			mockUsernbme: "blice",
+			mockTbgs:     []string{"tribl", "customer:bcme"},
+			wbntNbme:     "bcme",
 		},
 		{
-			name:         "use account username",
-			mockUsername: "alice",
-			mockTags:     []string{"plan:enterprise-1"},
-			wantName:     "alice",
+			nbme:         "use bccount usernbme",
+			mockUsernbme: "blice",
+			mockTbgs:     []string{"plbn:enterprise-1"},
+			wbntNbme:     "blice",
 		},
 		{
-			name:     "no account name",
-			wantName: "",
+			nbme:     "no bccount nbme",
+			wbntNbme: "",
 		},
 	}
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			got := getSubscriptionAccountName(dotcom.ProductSubscriptionState{
-				Account: &dotcom.ProductSubscriptionStateAccountUser{
-					Username: test.mockUsername,
+	for _, test := rbnge tests {
+		t.Run(test.nbme, func(t *testing.T) {
+			got := getSubscriptionAccountNbme(dotcom.ProductSubscriptionStbte{
+				Account: &dotcom.ProductSubscriptionStbteAccountUser{
+					Usernbme: test.mockUsernbme,
 				},
-				ActiveLicense: &dotcom.ProductSubscriptionStateActiveLicenseProductLicense{
-					Info: &dotcom.ProductSubscriptionStateActiveLicenseProductLicenseInfo{
-						Tags: test.mockTags,
+				ActiveLicense: &dotcom.ProductSubscriptionStbteActiveLicenseProductLicense{
+					Info: &dotcom.ProductSubscriptionStbteActiveLicenseProductLicenseInfo{
+						Tbgs: test.mockTbgs,
 					},
 				},
 			})
-			assert.Equal(t, test.wantName, got)
+			bssert.Equbl(t, test.wbntNbme, got)
 		})
 	}
 }

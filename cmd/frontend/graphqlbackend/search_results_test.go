@@ -1,4 +1,4 @@
-package graphqlbackend
+pbckbge grbphqlbbckend
 
 import (
 	"context"
@@ -10,403 +10,403 @@ import (
 
 	mockrequire "github.com/derision-test/go-mockgen/testutil/require"
 	"github.com/google/go-cmp/cmp"
-	"github.com/sourcegraph/log/logtest"
-	"github.com/sourcegraph/zoekt"
+	"github.com/sourcegrbph/log/logtest"
+	"github.com/sourcegrbph/zoekt"
 	"github.com/stretchr/testify/require"
 
-	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/authz"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
-	"github.com/sourcegraph/sourcegraph/internal/search"
-	searchbackend "github.com/sourcegraph/sourcegraph/internal/search/backend"
-	"github.com/sourcegraph/sourcegraph/internal/search/client"
-	"github.com/sourcegraph/sourcegraph/internal/search/job"
-	"github.com/sourcegraph/sourcegraph/internal/search/result"
-	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
-	"github.com/sourcegraph/sourcegraph/internal/settings"
-	"github.com/sourcegraph/sourcegraph/internal/telemetry/telemetrytest"
-	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/schema"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bctor"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi"
+	"github.com/sourcegrbph/sourcegrbph/internbl/buthz"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbmocks"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc"
+	"github.com/sourcegrbph/sourcegrbph/internbl/gitserver"
+	"github.com/sourcegrbph/sourcegrbph/internbl/sebrch"
+	sebrchbbckend "github.com/sourcegrbph/sourcegrbph/internbl/sebrch/bbckend"
+	"github.com/sourcegrbph/sourcegrbph/internbl/sebrch/client"
+	"github.com/sourcegrbph/sourcegrbph/internbl/sebrch/job"
+	"github.com/sourcegrbph/sourcegrbph/internbl/sebrch/result"
+	"github.com/sourcegrbph/sourcegrbph/internbl/sebrch/strebming"
+	"github.com/sourcegrbph/sourcegrbph/internbl/settings"
+	"github.com/sourcegrbph/sourcegrbph/internbl/telemetry/telemetrytest"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
+	"github.com/sourcegrbph/sourcegrbph/schemb"
 )
 
-func TestSearchResults(t *testing.T) {
+func TestSebrchResults(t *testing.T) {
 	if os.Getenv("CI") != "" {
-		// #25936: Some unit tests rely on external services that break
-		// in CI but not locally. They should be removed or improved.
-		t.Skip("TestSearchResults only works in local dev and is not reliable in CI")
+		// #25936: Some unit tests rely on externbl services thbt brebk
+		// in CI but not locblly. They should be removed or improved.
+		t.Skip("TestSebrchResults only works in locbl dev bnd is not relibble in CI")
 	}
 
-	ctx := context.Background()
+	ctx := context.Bbckground()
 	db := dbmocks.NewMockDB()
 
 	getResults := func(t *testing.T, query, version string) []string {
-		r, err := newSchemaResolver(db, gitserver.NewClient()).Search(ctx, &SearchArgs{Query: query, Version: version})
+		r, err := newSchembResolver(db, gitserver.NewClient()).Sebrch(ctx, &SebrchArgs{Query: query, Version: version})
 		require.Nil(t, err)
 
 		results, err := r.Results(ctx)
 		require.NoError(t, err)
 
-		resultDescriptions := make([]string, len(results.Matches))
-		for i, match := range results.Matches {
-			// NOTE: Only supports one match per line. If we need to test other cases,
-			// just remove that assumption in the following line of code.
-			switch m := match.(type) {
-			case *result.RepoMatch:
-				resultDescriptions[i] = fmt.Sprintf("repo:%s", m.Name)
-			case *result.FileMatch:
-				resultDescriptions[i] = fmt.Sprintf("%s:%d", m.Path, m.ChunkMatches[0].Ranges[0].Start.Line)
-			default:
-				t.Fatal("unexpected result type:", match)
+		resultDescriptions := mbke([]string, len(results.Mbtches))
+		for i, mbtch := rbnge results.Mbtches {
+			// NOTE: Only supports one mbtch per line. If we need to test other cbses,
+			// just remove thbt bssumption in the following line of code.
+			switch m := mbtch.(type) {
+			cbse *result.RepoMbtch:
+				resultDescriptions[i] = fmt.Sprintf("repo:%s", m.Nbme)
+			cbse *result.FileMbtch:
+				resultDescriptions[i] = fmt.Sprintf("%s:%d", m.Pbth, m.ChunkMbtches[0].Rbnges[0].Stbrt.Line)
+			defbult:
+				t.Fbtbl("unexpected result type:", mbtch)
 			}
 		}
 		// dedupe results since we expect our clients to do dedupping
 		if len(resultDescriptions) > 1 {
 			sort.Strings(resultDescriptions)
 			dedup := resultDescriptions[:1]
-			for _, s := range resultDescriptions[1:] {
+			for _, s := rbnge resultDescriptions[1:] {
 				if s != dedup[len(dedup)-1] {
-					dedup = append(dedup, s)
+					dedup = bppend(dedup, s)
 				}
 			}
 			resultDescriptions = dedup
 		}
 		return resultDescriptions
 	}
-	testCallResults := func(t *testing.T, query, version string, want []string) {
+	testCbllResults := func(t *testing.T, query, version string, wbnt []string) {
 		t.Helper()
 		results := getResults(t, query, version)
-		if d := cmp.Diff(want, results); d != "" {
-			t.Errorf("unexpected results (-want, +got):\n%s", d)
+		if d := cmp.Diff(wbnt, results); d != "" {
+			t.Errorf("unexpected results (-wbnt, +got):\n%s", d)
 		}
 	}
 
-	searchVersions := []string{"V1", "V2"}
+	sebrchVersions := []string{"V1", "V2"}
 
 	t.Run("repo: only", func(t *testing.T) {
-		settings.MockCurrentUserFinal = &schema.Settings{}
-		defer func() { settings.MockCurrentUserFinal = nil }()
+		settings.MockCurrentUserFinbl = &schemb.Settings{}
+		defer func() { settings.MockCurrentUserFinbl = nil }()
 
 		repos := dbmocks.NewMockRepoStore()
-		repos.ListMinimalReposFunc.SetDefaultHook(func(ctx context.Context, opt database.ReposListOptions) ([]types.MinimalRepo, error) {
-			require.Equal(t, []string{"r", "p"}, opt.IncludePatterns)
-			return []types.MinimalRepo{{ID: 1, Name: "repo"}}, nil
+		repos.ListMinimblReposFunc.SetDefbultHook(func(ctx context.Context, opt dbtbbbse.ReposListOptions) ([]types.MinimblRepo, error) {
+			require.Equbl(t, []string{"r", "p"}, opt.IncludePbtterns)
+			return []types.MinimblRepo{{ID: 1, Nbme: "repo"}}, nil
 		})
-		db.ReposFunc.SetDefaultReturn(repos)
+		db.ReposFunc.SetDefbultReturn(repos)
 
-		for _, v := range searchVersions {
-			testCallResults(t, `repo:r repo:p`, v, []string{"repo:repo"})
-			mockrequire.Called(t, repos.ListMinimalReposFunc)
+		for _, v := rbnge sebrchVersions {
+			testCbllResults(t, `repo:r repo:p`, v, []string{"repo:repo"})
+			mockrequire.Cblled(t, repos.ListMinimblReposFunc)
 		}
 	})
 }
 
-func TestSearchResolver_DynamicFilters(t *testing.T) {
-	repo := types.MinimalRepo{Name: "testRepo"}
-	repoMatch := &result.RepoMatch{Name: "testRepo"}
-	fileMatch := func(path string) *result.FileMatch {
-		return mkFileMatch(repo, path)
+func TestSebrchResolver_DynbmicFilters(t *testing.T) {
+	repo := types.MinimblRepo{Nbme: "testRepo"}
+	repoMbtch := &result.RepoMbtch{Nbme: "testRepo"}
+	fileMbtch := func(pbth string) *result.FileMbtch {
+		return mkFileMbtch(repo, pbth)
 	}
 
 	rev := "develop3.0"
-	fileMatchRev := fileMatch("/testFile.md")
-	fileMatchRev.InputRev = &rev
+	fileMbtchRev := fileMbtch("/testFile.md")
+	fileMbtchRev.InputRev = &rev
 
-	type testCase struct {
+	type testCbse struct {
 		descr                           string
-		searchResults                   []result.Match
-		expectedDynamicFilterStrsRegexp map[string]int
+		sebrchResults                   []result.Mbtch
+		expectedDynbmicFilterStrsRegexp mbp[string]int
 	}
 
-	tests := []testCase{
+	tests := []testCbse{
 
 		{
-			descr:         "single repo match",
-			searchResults: []result.Match{repoMatch},
-			expectedDynamicFilterStrsRegexp: map[string]int{
+			descr:         "single repo mbtch",
+			sebrchResults: []result.Mbtch{repoMbtch},
+			expectedDynbmicFilterStrsRegexp: mbp[string]int{
 				`repo:^testRepo$`: 1,
 			},
 		},
 
 		{
-			descr:         "single file match without revision in query",
-			searchResults: []result.Match{fileMatch("/testFile.md")},
-			expectedDynamicFilterStrsRegexp: map[string]int{
+			descr:         "single file mbtch without revision in query",
+			sebrchResults: []result.Mbtch{fileMbtch("/testFile.md")},
+			expectedDynbmicFilterStrsRegexp: mbp[string]int{
 				`repo:^testRepo$`: 1,
-				`lang:markdown`:   1,
+				`lbng:mbrkdown`:   1,
 			},
 		},
 
 		{
-			descr:         "single file match with specified revision",
-			searchResults: []result.Match{fileMatchRev},
-			expectedDynamicFilterStrsRegexp: map[string]int{
+			descr:         "single file mbtch with specified revision",
+			sebrchResults: []result.Mbtch{fileMbtchRev},
+			expectedDynbmicFilterStrsRegexp: mbp[string]int{
 				`repo:^testRepo$@develop3.0`: 1,
-				`lang:markdown`:              1,
+				`lbng:mbrkdown`:              1,
 			},
 		},
 		{
-			descr:         "file match from a language with two file extensions, using first extension",
-			searchResults: []result.Match{fileMatch("/testFile.ts")},
-			expectedDynamicFilterStrsRegexp: map[string]int{
+			descr:         "file mbtch from b lbngubge with two file extensions, using first extension",
+			sebrchResults: []result.Mbtch{fileMbtch("/testFile.ts")},
+			expectedDynbmicFilterStrsRegexp: mbp[string]int{
 				`repo:^testRepo$`: 1,
-				`lang:typescript`: 1,
+				`lbng:typescript`: 1,
 			},
 		},
 		{
-			descr:         "file match from a language with two file extensions, using second extension",
-			searchResults: []result.Match{fileMatch("/testFile.tsx")},
-			expectedDynamicFilterStrsRegexp: map[string]int{
+			descr:         "file mbtch from b lbngubge with two file extensions, using second extension",
+			sebrchResults: []result.Mbtch{fileMbtch("/testFile.tsx")},
+			expectedDynbmicFilterStrsRegexp: mbp[string]int{
 				`repo:^testRepo$`: 1,
-				`lang:typescript`: 1,
+				`lbng:typescript`: 1,
 			},
 		},
 		{
-			descr:         "file match which matches one of the common file filters",
-			searchResults: []result.Match{fileMatch("/anything/node_modules/testFile.md")},
-			expectedDynamicFilterStrsRegexp: map[string]int{
+			descr:         "file mbtch which mbtches one of the common file filters",
+			sebrchResults: []result.Mbtch{fileMbtch("/bnything/node_modules/testFile.md")},
+			expectedDynbmicFilterStrsRegexp: mbp[string]int{
 				`repo:^testRepo$`:          1,
 				`-file:(^|/)node_modules/`: 1,
-				`lang:markdown`:            1,
+				`lbng:mbrkdown`:            1,
 			},
 		},
 		{
-			descr:         "file match which matches one of the common file filters",
-			searchResults: []result.Match{fileMatch("/node_modules/testFile.md")},
-			expectedDynamicFilterStrsRegexp: map[string]int{
+			descr:         "file mbtch which mbtches one of the common file filters",
+			sebrchResults: []result.Mbtch{fileMbtch("/node_modules/testFile.md")},
+			expectedDynbmicFilterStrsRegexp: mbp[string]int{
 				`repo:^testRepo$`:          1,
 				`-file:(^|/)node_modules/`: 1,
-				`lang:markdown`:            1,
+				`lbng:mbrkdown`:            1,
 			},
 		},
 		{
-			descr: "file match which matches one of the common file filters",
-			searchResults: []result.Match{
-				fileMatch("/foo_test.go"),
-				fileMatch("/foo.go"),
+			descr: "file mbtch which mbtches one of the common file filters",
+			sebrchResults: []result.Mbtch{
+				fileMbtch("/foo_test.go"),
+				fileMbtch("/foo.go"),
 			},
-			expectedDynamicFilterStrsRegexp: map[string]int{
+			expectedDynbmicFilterStrsRegexp: mbp[string]int{
 				`repo:^testRepo$`:  2,
 				`-file:_test\.go$`: 1,
-				`lang:go`:          2,
+				`lbng:go`:          2,
 			},
 		},
 
 		{
 			descr: "prefer rust to renderscript",
-			searchResults: []result.Match{
-				fileMatch("/channel.rs"),
+			sebrchResults: []result.Mbtch{
+				fileMbtch("/chbnnel.rs"),
 			},
-			expectedDynamicFilterStrsRegexp: map[string]int{
+			expectedDynbmicFilterStrsRegexp: mbp[string]int{
 				`repo:^testRepo$`: 1,
-				`lang:rust`:       1,
+				`lbng:rust`:       1,
 			},
 		},
 
 		{
-			descr: "javascript filters",
-			searchResults: []result.Match{
-				fileMatch("/jsrender.min.js.map"),
-				fileMatch("playground/react/lib/app.js.map"),
-				fileMatch("assets/javascripts/bootstrap.min.js"),
+			descr: "jbvbscript filters",
+			sebrchResults: []result.Mbtch{
+				fileMbtch("/jsrender.min.js.mbp"),
+				fileMbtch("plbyground/rebct/lib/bpp.js.mbp"),
+				fileMbtch("bssets/jbvbscripts/bootstrbp.min.js"),
 			},
-			expectedDynamicFilterStrsRegexp: map[string]int{
+			expectedDynbmicFilterStrsRegexp: mbp[string]int{
 				`repo:^testRepo$`:  3,
 				`-file:\.min\.js$`: 1,
-				`-file:\.js\.map$`: 2,
-				`lang:javascript`:  1,
+				`-file:\.js\.mbp$`: 2,
+				`lbng:jbvbscript`:  1,
 			},
 		},
 
-		// If there are no search results, no filters should be displayed.
+		// If there bre no sebrch results, no filters should be displbyed.
 		{
 			descr:                           "no results",
-			searchResults:                   []result.Match{},
-			expectedDynamicFilterStrsRegexp: map[string]int{},
+			sebrchResults:                   []result.Mbtch{},
+			expectedDynbmicFilterStrsRegexp: mbp[string]int{},
 		},
 		{
-			descr:         "values containing spaces are quoted",
-			searchResults: []result.Match{fileMatch("/.gitignore")},
-			expectedDynamicFilterStrsRegexp: map[string]int{
+			descr:         "vblues contbining spbces bre quoted",
+			sebrchResults: []result.Mbtch{fileMbtch("/.gitignore")},
+			expectedDynbmicFilterStrsRegexp: mbp[string]int{
 				`repo:^testRepo$`:    1,
-				`lang:"ignore list"`: 1,
+				`lbng:"ignore list"`: 1,
 			},
 		},
 	}
 
-	settings.MockCurrentUserFinal = &schema.Settings{}
-	defer func() { settings.MockCurrentUserFinal = nil }()
+	settings.MockCurrentUserFinbl = &schemb.Settings{}
+	defer func() { settings.MockCurrentUserFinbl = nil }()
 
-	var expectedDynamicFilterStrs map[string]int
-	for _, test := range tests {
+	vbr expectedDynbmicFilterStrs mbp[string]int
+	for _, test := rbnge tests {
 		t.Run(test.descr, func(t *testing.T) {
-			actualDynamicFilters := (&SearchResultsResolver{db: dbmocks.NewMockDB(), Matches: test.searchResults}).DynamicFilters(context.Background())
-			actualDynamicFilterStrs := make(map[string]int)
+			bctublDynbmicFilters := (&SebrchResultsResolver{db: dbmocks.NewMockDB(), Mbtches: test.sebrchResults}).DynbmicFilters(context.Bbckground())
+			bctublDynbmicFilterStrs := mbke(mbp[string]int)
 
-			for _, filter := range actualDynamicFilters {
-				actualDynamicFilterStrs[filter.Value()] = int(filter.Count())
+			for _, filter := rbnge bctublDynbmicFilters {
+				bctublDynbmicFilterStrs[filter.Vblue()] = int(filter.Count())
 			}
 
-			expectedDynamicFilterStrs = test.expectedDynamicFilterStrsRegexp
-			if diff := cmp.Diff(expectedDynamicFilterStrs, actualDynamicFilterStrs); diff != "" {
-				t.Errorf("mismatch (-want, +got):\n%s", diff)
+			expectedDynbmicFilterStrs = test.expectedDynbmicFilterStrsRegexp
+			if diff := cmp.Diff(expectedDynbmicFilterStrs, bctublDynbmicFilterStrs); diff != "" {
+				t.Errorf("mismbtch (-wbnt, +got):\n%s", diff)
 			}
 		})
 	}
 }
 
-func TestSearchResultsHydration(t *testing.T) {
+func TestSebrchResultsHydrbtion(t *testing.T) {
 	id := 42
-	repoName := "reponame-foobar"
-	fileName := "foobar.go"
+	repoNbme := "reponbme-foobbr"
+	fileNbme := "foobbr.go"
 
 	repoWithIDs := &types.Repo{
-		ID:   api.RepoID(id),
-		Name: api.RepoName(repoName),
-		ExternalRepo: api.ExternalRepoSpec{
-			ID:          repoName,
+		ID:   bpi.RepoID(id),
+		Nbme: bpi.RepoNbme(repoNbme),
+		ExternblRepo: bpi.ExternblRepoSpec{
+			ID:          repoNbme,
 			ServiceType: extsvc.TypeGitHub,
 			ServiceID:   "https://github.com",
 		},
 	}
 
-	hydratedRepo := &types.Repo{
+	hydrbtedRepo := &types.Repo{
 		ID:           repoWithIDs.ID,
-		ExternalRepo: repoWithIDs.ExternalRepo,
-		Name:         repoWithIDs.Name,
-		URI:          fmt.Sprintf("github.com/my-org/%s", repoWithIDs.Name),
-		Description:  "This is a description of a repository",
-		Fork:         false,
+		ExternblRepo: repoWithIDs.ExternblRepo,
+		Nbme:         repoWithIDs.Nbme,
+		URI:          fmt.Sprintf("github.com/my-org/%s", repoWithIDs.Nbme),
+		Description:  "This is b description of b repository",
+		Fork:         fblse,
 	}
 
 	db := dbmocks.NewMockDB()
 
 	repos := dbmocks.NewMockRepoStore()
-	repos.GetFunc.SetDefaultReturn(hydratedRepo, nil)
-	repos.ListMinimalReposFunc.SetDefaultHook(func(ctx context.Context, opt database.ReposListOptions) ([]types.MinimalRepo, error) {
-		if opt.OnlyPrivate {
+	repos.GetFunc.SetDefbultReturn(hydrbtedRepo, nil)
+	repos.ListMinimblReposFunc.SetDefbultHook(func(ctx context.Context, opt dbtbbbse.ReposListOptions) ([]types.MinimblRepo, error) {
+		if opt.OnlyPrivbte {
 			return nil, nil
 		}
-		return []types.MinimalRepo{{ID: repoWithIDs.ID, Name: repoWithIDs.Name}}, nil
+		return []types.MinimblRepo{{ID: repoWithIDs.ID, Nbme: repoWithIDs.Nbme}}, nil
 	})
-	repos.CountFunc.SetDefaultReturn(0, nil)
-	db.ReposFunc.SetDefaultReturn(repos)
+	repos.CountFunc.SetDefbultReturn(0, nil)
+	db.ReposFunc.SetDefbultReturn(repos)
 
 	zoektRepo := &zoekt.RepoListEntry{
 		Repository: zoekt.Repository{
 			ID:       uint32(repoWithIDs.ID),
-			Name:     string(repoWithIDs.Name),
-			Branches: []zoekt.RepositoryBranch{{Name: "HEAD", Version: "deadbeef"}},
+			Nbme:     string(repoWithIDs.Nbme),
+			Brbnches: []zoekt.RepositoryBrbnch{{Nbme: "HEAD", Version: "debdbeef"}},
 		},
 	}
 
-	zoektFileMatches := []zoekt.FileMatch{{
+	zoektFileMbtches := []zoekt.FileMbtch{{
 		Score:        5.0,
-		FileName:     fileName,
+		FileNbme:     fileNbme,
 		RepositoryID: uint32(repoWithIDs.ID),
-		Repository:   string(repoWithIDs.Name), // Important: this needs to match a name in `repos`
-		Branches:     []string{"master"},
-		ChunkMatches: make([]zoekt.ChunkMatch, 1),
+		Repository:   string(repoWithIDs.Nbme), // Importbnt: this needs to mbtch b nbme in `repos`
+		Brbnches:     []string{"mbster"},
+		ChunkMbtches: mbke([]zoekt.ChunkMbtch, 1),
 		Checksum:     []byte{0, 1, 2},
 	}}
 
-	z := &searchbackend.FakeStreamer{
+	z := &sebrchbbckend.FbkeStrebmer{
 		Repos:   []*zoekt.RepoListEntry{zoektRepo},
-		Results: []*zoekt.SearchResult{{Files: zoektFileMatches}},
+		Results: []*zoekt.SebrchResult{{Files: zoektFileMbtches}},
 	}
 
-	// Act in a user context
-	var ctxUser int32 = 1234
-	ctx := actor.WithActor(context.Background(), actor.FromMockUser(ctxUser))
+	// Act in b user context
+	vbr ctxUser int32 = 1234
+	ctx := bctor.WithActor(context.Bbckground(), bctor.FromMockUser(ctxUser))
 
-	query := `foobar index:only count:350`
-	literalPatternType := "literal"
+	query := `foobbr index:only count:350`
+	literblPbtternType := "literbl"
 	cli := client.Mocked(job.RuntimeClients{
 		Logger: logtest.Scoped(t),
 		DB:     db,
 		Zoekt:  z,
 	})
-	searchInputs, err := cli.Plan(
+	sebrchInputs, err := cli.Plbn(
 		ctx,
 		"V2",
-		&literalPatternType,
+		&literblPbtternType,
 		query,
-		search.Precise,
-		search.Batch,
+		sebrch.Precise,
+		sebrch.Bbtch,
 	)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	resolver := &searchResolver{
+	resolver := &sebrchResolver{
 		client:       cli,
 		db:           db,
-		SearchInputs: searchInputs,
+		SebrchInputs: sebrchInputs,
 	}
 	results, err := resolver.Results(ctx)
 	if err != nil {
-		t.Fatal("Results:", err)
+		t.Fbtbl("Results:", err)
 	}
-	// We want one file match and one repository match
-	wantMatchCount := 2
-	if int(results.MatchCount()) != wantMatchCount {
-		t.Fatalf("wrong results length. want=%d, have=%d\n", wantMatchCount, results.MatchCount())
+	// We wbnt one file mbtch bnd one repository mbtch
+	wbntMbtchCount := 2
+	if int(results.MbtchCount()) != wbntMbtchCount {
+		t.Fbtblf("wrong results length. wbnt=%d, hbve=%d\n", wbntMbtchCount, results.MbtchCount())
 	}
 
-	for _, r := range results.Results() {
+	for _, r := rbnge results.Results() {
 		switch r := r.(type) {
-		case *FileMatchResolver:
-			assertRepoResolverHydrated(ctx, t, r.Repository(), hydratedRepo)
+		cbse *FileMbtchResolver:
+			bssertRepoResolverHydrbted(ctx, t, r.Repository(), hydrbtedRepo)
 
-		case *RepositoryResolver:
-			assertRepoResolverHydrated(ctx, t, r, hydratedRepo)
+		cbse *RepositoryResolver:
+			bssertRepoResolverHydrbted(ctx, t, r, hydrbtedRepo)
 		}
 	}
 }
 
-func TestSearchResultsResolver_ApproximateResultCount(t *testing.T) {
+func TestSebrchResultsResolver_ApproximbteResultCount(t *testing.T) {
 	type fields struct {
-		results             []result.Match
-		searchResultsCommon streaming.Stats
-		alert               *search.Alert
+		results             []result.Mbtch
+		sebrchResultsCommon strebming.Stbts
+		blert               *sebrch.Alert
 	}
 	tests := []struct {
-		name   string
+		nbme   string
 		fields fields
-		want   string
+		wbnt   string
 	}{
 		{
-			name:   "empty",
+			nbme:   "empty",
 			fields: fields{},
-			want:   "0",
+			wbnt:   "0",
 		},
 
 		{
-			name: "file matches",
+			nbme: "file mbtches",
 			fields: fields{
-				results: []result.Match{&result.FileMatch{}},
+				results: []result.Mbtch{&result.FileMbtch{}},
 			},
-			want: "1",
+			wbnt: "1",
 		},
 
 		{
-			name: "file matches limit hit",
+			nbme: "file mbtches limit hit",
 			fields: fields{
-				results:             []result.Match{&result.FileMatch{}},
-				searchResultsCommon: streaming.Stats{IsLimitHit: true},
+				results:             []result.Mbtch{&result.FileMbtch{}},
+				sebrchResultsCommon: strebming.Stbts{IsLimitHit: true},
 			},
-			want: "1+",
+			wbnt: "1+",
 		},
 
 		{
-			name: "symbol matches",
+			nbme: "symbol mbtches",
 			fields: fields{
-				results: []result.Match{
-					&result.FileMatch{
-						Symbols: []*result.SymbolMatch{
+				results: []result.Mbtch{
+					&result.FileMbtch{
+						Symbols: []*result.SymbolMbtch{
 							// 1
 							{},
 							// 2
@@ -415,15 +415,15 @@ func TestSearchResultsResolver_ApproximateResultCount(t *testing.T) {
 					},
 				},
 			},
-			want: "2",
+			wbnt: "2",
 		},
 
 		{
-			name: "symbol matches limit hit",
+			nbme: "symbol mbtches limit hit",
 			fields: fields{
-				results: []result.Match{
-					&result.FileMatch{
-						Symbols: []*result.SymbolMatch{
+				results: []result.Mbtch{
+					&result.FileMbtch{
+						Symbols: []*result.SymbolMbtch{
 							// 1
 							{},
 							// 2
@@ -431,215 +431,215 @@ func TestSearchResultsResolver_ApproximateResultCount(t *testing.T) {
 						},
 					},
 				},
-				searchResultsCommon: streaming.Stats{IsLimitHit: true},
+				sebrchResultsCommon: strebming.Stbts{IsLimitHit: true},
 			},
-			want: "2+",
+			wbnt: "2+",
 		},
 	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			sr := &SearchResultsResolver{
+	for _, tt := rbnge tests {
+		t.Run(tt.nbme, func(t *testing.T) {
+			sr := &SebrchResultsResolver{
 				db:          dbmocks.NewMockDB(),
-				Stats:       tt.fields.searchResultsCommon,
-				Matches:     tt.fields.results,
-				SearchAlert: tt.fields.alert,
+				Stbts:       tt.fields.sebrchResultsCommon,
+				Mbtches:     tt.fields.results,
+				SebrchAlert: tt.fields.blert,
 			}
-			if got := sr.ApproximateResultCount(); got != tt.want {
-				t.Errorf("searchResultsResolver.ApproximateResultCount() = %v, want %v", got, tt.want)
+			if got := sr.ApproximbteResultCount(); got != tt.wbnt {
+				t.Errorf("sebrchResultsResolver.ApproximbteResultCount() = %v, wbnt %v", got, tt.wbnt)
 			}
 		})
 	}
 }
 
-func TestCompareSearchResults(t *testing.T) {
-	makeResult := func(repo, file string) *result.FileMatch {
-		return &result.FileMatch{File: result.File{
-			Repo: types.MinimalRepo{Name: api.RepoName(repo)},
-			Path: file,
+func TestCompbreSebrchResults(t *testing.T) {
+	mbkeResult := func(repo, file string) *result.FileMbtch {
+		return &result.FileMbtch{File: result.File{
+			Repo: types.MinimblRepo{Nbme: bpi.RepoNbme(repo)},
+			Pbth: file,
 		}}
 	}
 
 	tests := []struct {
-		name    string
-		a       *result.FileMatch
-		b       *result.FileMatch
-		aIsLess bool
+		nbme    string
+		b       *result.FileMbtch
+		b       *result.FileMbtch
+		bIsLess bool
 	}{
 		{
-			name:    "alphabetical order",
-			a:       makeResult("arepo", "afile"),
-			b:       makeResult("arepo", "bfile"),
-			aIsLess: true,
+			nbme:    "blphbbeticbl order",
+			b:       mbkeResult("brepo", "bfile"),
+			b:       mbkeResult("brepo", "bfile"),
+			bIsLess: true,
 		},
 		{
-			name:    "same length, different files",
-			a:       makeResult("arepo", "bfile"),
-			b:       makeResult("arepo", "afile"),
-			aIsLess: false,
+			nbme:    "sbme length, different files",
+			b:       mbkeResult("brepo", "bfile"),
+			b:       mbkeResult("brepo", "bfile"),
+			bIsLess: fblse,
 		},
 		{
-			name:    "different repo, no exact patterns",
-			a:       makeResult("arepo", "file"),
-			b:       makeResult("brepo", "afile"),
-			aIsLess: true,
+			nbme:    "different repo, no exbct pbtterns",
+			b:       mbkeResult("brepo", "file"),
+			b:       mbkeResult("brepo", "bfile"),
+			bIsLess: true,
 		},
 		{
-			name:    "repo matches only",
-			a:       makeResult("arepo", ""),
-			b:       makeResult("brepo", ""),
-			aIsLess: true,
+			nbme:    "repo mbtches only",
+			b:       mbkeResult("brepo", ""),
+			b:       mbkeResult("brepo", ""),
+			bIsLess: true,
 		},
 		{
-			name:    "repo match and file match, same repo",
-			a:       makeResult("arepo", "file"),
-			b:       makeResult("arepo", ""),
-			aIsLess: false,
+			nbme:    "repo mbtch bnd file mbtch, sbme repo",
+			b:       mbkeResult("brepo", "file"),
+			b:       mbkeResult("brepo", ""),
+			bIsLess: fblse,
 		},
 		{
-			name:    "repo match and file match, different repos",
-			a:       makeResult("arepo", ""),
-			b:       makeResult("brepo", "file"),
-			aIsLess: true,
+			nbme:    "repo mbtch bnd file mbtch, different repos",
+			b:       mbkeResult("brepo", ""),
+			b:       mbkeResult("brepo", "file"),
+			bIsLess: true,
 		},
 	}
-	for _, tt := range tests {
+	for _, tt := rbnge tests {
 		t.Run("test", func(t *testing.T) {
-			if got := tt.a.Key().Less(tt.b.Key()); got != tt.aIsLess {
-				t.Errorf("compareSearchResults() = %v, aIsLess %v", got, tt.aIsLess)
+			if got := tt.b.Key().Less(tt.b.Key()); got != tt.bIsLess {
+				t.Errorf("compbreSebrchResults() = %v, bIsLess %v", got, tt.bIsLess)
 			}
 		})
 	}
 }
 
-func TestEvaluateAnd(t *testing.T) {
+func TestEvblubteAnd(t *testing.T) {
 	db := dbmocks.NewMockDB()
 
 	tests := []struct {
-		name         string
+		nbme         string
 		query        string
-		zoektMatches int
+		zoektMbtches int
 		filesSkipped int
-		wantAlert    bool
+		wbntAlert    bool
 	}{
 		{
-			name:         "zoekt returns enough matches, exhausted",
-			query:        "foo and bar index:only count:5",
-			zoektMatches: 5,
+			nbme:         "zoekt returns enough mbtches, exhbusted",
+			query:        "foo bnd bbr index:only count:5",
+			zoektMbtches: 5,
 			filesSkipped: 0,
-			wantAlert:    false,
+			wbntAlert:    fblse,
 		},
 		{
-			name:         "zoekt returns enough matches, not exhausted",
-			query:        "foo and bar index:only count:50",
-			zoektMatches: 50,
+			nbme:         "zoekt returns enough mbtches, not exhbusted",
+			query:        "foo bnd bbr index:only count:50",
+			zoektMbtches: 50,
 			filesSkipped: 1,
-			wantAlert:    false,
+			wbntAlert:    fblse,
 		},
 	}
 
-	minimalRepos, zoektRepos := generateRepos(5000)
+	minimblRepos, zoektRepos := generbteRepos(5000)
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			zoektFileMatches := generateZoektMatches(tt.zoektMatches)
-			z := &searchbackend.FakeStreamer{
+	for _, tt := rbnge tests {
+		t.Run(tt.nbme, func(t *testing.T) {
+			zoektFileMbtches := generbteZoektMbtches(tt.zoektMbtches)
+			z := &sebrchbbckend.FbkeStrebmer{
 				Repos:   zoektRepos,
-				Results: []*zoekt.SearchResult{{Files: zoektFileMatches, Stats: zoekt.Stats{FilesSkipped: tt.filesSkipped}}},
+				Results: []*zoekt.SebrchResult{{Files: zoektFileMbtches, Stbts: zoekt.Stbts{FilesSkipped: tt.filesSkipped}}},
 			}
 
-			ctx := context.Background()
+			ctx := context.Bbckground()
 
 			repos := dbmocks.NewMockRepoStore()
-			repos.ListMinimalReposFunc.SetDefaultHook(func(ctx context.Context, opt database.ReposListOptions) ([]types.MinimalRepo, error) {
-				if len(opt.IncludePatterns) > 0 || len(opt.ExcludePattern) > 0 {
+			repos.ListMinimblReposFunc.SetDefbultHook(func(ctx context.Context, opt dbtbbbse.ReposListOptions) ([]types.MinimblRepo, error) {
+				if len(opt.IncludePbtterns) > 0 || len(opt.ExcludePbttern) > 0 {
 					return nil, nil
 				}
-				repoNames := make([]types.MinimalRepo, len(minimalRepos))
-				for i := range minimalRepos {
-					repoNames[i] = types.MinimalRepo{ID: minimalRepos[i].ID, Name: minimalRepos[i].Name}
+				repoNbmes := mbke([]types.MinimblRepo, len(minimblRepos))
+				for i := rbnge minimblRepos {
+					repoNbmes[i] = types.MinimblRepo{ID: minimblRepos[i].ID, Nbme: minimblRepos[i].Nbme}
 				}
-				return repoNames, nil
+				return repoNbmes, nil
 			})
-			repos.CountFunc.SetDefaultReturn(len(minimalRepos), nil)
-			db.ReposFunc.SetDefaultReturn(repos)
+			repos.CountFunc.SetDefbultReturn(len(minimblRepos), nil)
+			db.ReposFunc.SetDefbultReturn(repos)
 
-			literalPatternType := "literal"
+			literblPbtternType := "literbl"
 			cli := client.Mocked(job.RuntimeClients{
 				Logger: logtest.Scoped(t),
 				DB:     db,
 				Zoekt:  z,
 			})
-			searchInputs, err := cli.Plan(
-				context.Background(),
+			sebrchInputs, err := cli.Plbn(
+				context.Bbckground(),
 				"V2",
-				&literalPatternType,
+				&literblPbtternType,
 				tt.query,
-				search.Precise,
-				search.Batch,
+				sebrch.Precise,
+				sebrch.Bbtch,
 			)
 			if err != nil {
-				t.Fatal(err)
+				t.Fbtbl(err)
 			}
 
-			resolver := &searchResolver{
+			resolver := &sebrchResolver{
 				client:       cli,
 				db:           db,
-				SearchInputs: searchInputs,
+				SebrchInputs: sebrchInputs,
 			}
 			results, err := resolver.Results(ctx)
 			if err != nil {
-				t.Fatal("Results:", err)
+				t.Fbtbl("Results:", err)
 			}
-			if tt.wantAlert {
-				if results.SearchAlert == nil {
-					t.Errorf("Expected alert")
+			if tt.wbntAlert {
+				if results.SebrchAlert == nil {
+					t.Errorf("Expected blert")
 				}
-			} else if int(results.MatchCount()) != len(zoektFileMatches) {
-				t.Errorf("wrong results length. want=%d, have=%d\n", len(zoektFileMatches), results.MatchCount())
+			} else if int(results.MbtchCount()) != len(zoektFileMbtches) {
+				t.Errorf("wrong results length. wbnt=%d, hbve=%d\n", len(zoektFileMbtches), results.MbtchCount())
 			}
 		})
 	}
 }
 
-func TestZeroElapsedMilliseconds(t *testing.T) {
-	r := &SearchResultsResolver{}
-	if got := r.ElapsedMilliseconds(); got != 0 {
-		t.Fatalf("got %d, want %d", got, 0)
+func TestZeroElbpsedMilliseconds(t *testing.T) {
+	r := &SebrchResultsResolver{}
+	if got := r.ElbpsedMilliseconds(); got != 0 {
+		t.Fbtblf("got %d, wbnt %d", got, 0)
 	}
 }
 
-// Detailed filtering tests are below in TestSubRepoFilterFunc, this test is more
-// of an integration test to ensure that things are threaded through correctly
+// Detbiled filtering tests bre below in TestSubRepoFilterFunc, this test is more
+// of bn integrbtion test to ensure thbt things bre threbded through correctly
 // from the resolver
 func TestSubRepoFiltering(t *testing.T) {
 	tts := []struct {
-		name        string
-		searchQuery string
-		wantCount   int
-		checker     func() authz.SubRepoPermissionChecker
+		nbme        string
+		sebrchQuery string
+		wbntCount   int
+		checker     func() buthz.SubRepoPermissionChecker
 	}{
 		{
-			name:        "simple search without filtering",
-			searchQuery: "foo",
-			wantCount:   3,
+			nbme:        "simple sebrch without filtering",
+			sebrchQuery: "foo",
+			wbntCount:   3,
 		},
 		{
-			name:        "simple search with filtering",
-			searchQuery: "foo ",
-			wantCount:   2,
-			checker: func() authz.SubRepoPermissionChecker {
-				checker := authz.NewMockSubRepoPermissionChecker()
-				checker.EnabledFunc.SetDefaultHook(func() bool {
+			nbme:        "simple sebrch with filtering",
+			sebrchQuery: "foo ",
+			wbntCount:   2,
+			checker: func() buthz.SubRepoPermissionChecker {
+				checker := buthz.NewMockSubRepoPermissionChecker()
+				checker.EnbbledFunc.SetDefbultHook(func() bool {
 					return true
 				})
 				// We'll just block the third file
-				checker.PermissionsFunc.SetDefaultHook(func(ctx context.Context, i int32, content authz.RepoContent) (authz.Perms, error) {
-					if strings.Contains(content.Path, "3") {
-						return authz.None, nil
+				checker.PermissionsFunc.SetDefbultHook(func(ctx context.Context, i int32, content buthz.RepoContent) (buthz.Perms, error) {
+					if strings.Contbins(content.Pbth, "3") {
+						return buthz.None, nil
 					}
-					return authz.Read, nil
+					return buthz.Rebd, nil
 				})
-				checker.EnabledForRepoFunc.SetDefaultHook(func(ctx context.Context, rn api.RepoName) (bool, error) {
+				checker.EnbbledForRepoFunc.SetDefbultHook(func(ctx context.Context, rn bpi.RepoNbme) (bool, error) {
 					return true, nil
 				})
 				return checker
@@ -647,73 +647,73 @@ func TestSubRepoFiltering(t *testing.T) {
 		},
 	}
 
-	zoektFileMatches := generateZoektMatches(3)
-	mockZoekt := &searchbackend.FakeStreamer{
+	zoektFileMbtches := generbteZoektMbtches(3)
+	mockZoekt := &sebrchbbckend.FbkeStrebmer{
 		Repos: []*zoekt.RepoListEntry{},
-		Results: []*zoekt.SearchResult{{
-			Files: zoektFileMatches,
+		Results: []*zoekt.SebrchResult{{
+			Files: zoektFileMbtches,
 		}},
 	}
 
-	for _, tt := range tts {
-		t.Run(tt.name, func(t *testing.T) {
+	for _, tt := rbnge tts {
+		t.Run(tt.nbme, func(t *testing.T) {
 			if tt.checker != nil {
-				old := authz.DefaultSubRepoPermsChecker
-				t.Cleanup(func() { authz.DefaultSubRepoPermsChecker = old })
-				authz.DefaultSubRepoPermsChecker = tt.checker()
+				old := buthz.DefbultSubRepoPermsChecker
+				t.Clebnup(func() { buthz.DefbultSubRepoPermsChecker = old })
+				buthz.DefbultSubRepoPermsChecker = tt.checker()
 			}
 
 			repos := dbmocks.NewMockRepoStore()
-			repos.ListMinimalReposFunc.SetDefaultReturn([]types.MinimalRepo{}, nil)
-			repos.CountFunc.SetDefaultReturn(0, nil)
+			repos.ListMinimblReposFunc.SetDefbultReturn([]types.MinimblRepo{}, nil)
+			repos.CountFunc.SetDefbultReturn(0, nil)
 
-			gss := dbmocks.NewMockGlobalStateStore()
-			gss.GetFunc.SetDefaultReturn(database.GlobalState{SiteID: "a"}, nil)
+			gss := dbmocks.NewMockGlobblStbteStore()
+			gss.GetFunc.SetDefbultReturn(dbtbbbse.GlobblStbte{SiteID: "b"}, nil)
 
 			db := dbmocks.NewMockDB()
-			db.GlobalStateFunc.SetDefaultReturn(gss)
-			db.ReposFunc.SetDefaultReturn(repos)
-			db.EventLogsFunc.SetDefaultHook(func() database.EventLogStore {
+			db.GlobblStbteFunc.SetDefbultReturn(gss)
+			db.ReposFunc.SetDefbultReturn(repos)
+			db.EventLogsFunc.SetDefbultHook(func() dbtbbbse.EventLogStore {
 				return dbmocks.NewMockEventLogStore()
 			})
-			db.TelemetryEventsExportQueueFunc.SetDefaultReturn(
+			db.TelemetryEventsExportQueueFunc.SetDefbultReturn(
 				telemetrytest.NewMockEventsExportQueueStore())
 
-			literalPatternType := "literal"
+			literblPbtternType := "literbl"
 			cli := client.Mocked(job.RuntimeClients{
 				Logger: logtest.Scoped(t),
 				DB:     db,
 				Zoekt:  mockZoekt,
 			})
-			searchInputs, err := cli.Plan(
-				context.Background(),
+			sebrchInputs, err := cli.Plbn(
+				context.Bbckground(),
 				"V2",
-				&literalPatternType,
-				tt.searchQuery,
-				search.Precise,
-				search.Batch,
+				&literblPbtternType,
+				tt.sebrchQuery,
+				sebrch.Precise,
+				sebrch.Bbtch,
 			)
 			if err != nil {
-				t.Fatal(err)
+				t.Fbtbl(err)
 			}
 
-			resolver := searchResolver{
+			resolver := sebrchResolver{
 				client:       cli,
-				SearchInputs: searchInputs,
+				SebrchInputs: sebrchInputs,
 				db:           db,
 			}
 
-			ctx := context.Background()
-			ctx = actor.WithActor(ctx, &actor.Actor{
+			ctx := context.Bbckground()
+			ctx = bctor.WithActor(ctx, &bctor.Actor{
 				UID: 1,
 			})
 			rr, err := resolver.Results(ctx)
 			if err != nil {
-				t.Fatal(err)
+				t.Fbtbl(err)
 			}
 
-			if len(rr.Matches) != tt.wantCount {
-				t.Fatalf("Want %d matches, got %d", tt.wantCount, len(rr.Matches))
+			if len(rr.Mbtches) != tt.wbntCount {
+				t.Fbtblf("Wbnt %d mbtches, got %d", tt.wbntCount, len(rr.Mbtches))
 			}
 		})
 	}

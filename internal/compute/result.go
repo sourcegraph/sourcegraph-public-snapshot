@@ -1,15 +1,15 @@
-package compute
+pbckbge compute
 
-type Result interface {
+type Result interfbce {
 	result()
 }
 
-var (
-	_ Result = (*MatchContext)(nil)
+vbr (
+	_ Result = (*MbtchContext)(nil)
 	_ Result = (*Text)(nil)
-	_ Result = (*TextExtra)(nil)
+	_ Result = (*TextExtrb)(nil)
 )
 
-func (*MatchContext) result() {}
+func (*MbtchContext) result() {}
 func (*Text) result()         {}
-func (*TextExtra) result()    {}
+func (*TextExtrb) result()    {}

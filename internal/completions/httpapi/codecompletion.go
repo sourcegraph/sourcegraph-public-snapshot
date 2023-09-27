@@ -1,32 +1,32 @@
-package httpapi
+pbckbge httpbpi
 
 import (
 	"net/http"
 
-	"github.com/sourcegraph/log"
+	"github.com/sourcegrbph/log"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
-	"github.com/sourcegraph/sourcegraph/internal/completions/types"
-	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/redispool"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/envvbr"
+	"github.com/sourcegrbph/sourcegrbph/internbl/completions/types"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf/conftypes"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/redispool"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-// NewCodeCompletionsHandler is an http handler which sends back code completion results.
-func NewCodeCompletionsHandler(logger log.Logger, db database.DB) http.Handler {
-	logger = logger.Scoped("code", "code completions handler")
-	rl := NewRateLimiter(db, redispool.Store, types.CompletionsFeatureCode)
-	return newCompletionsHandler(
+// NewCodeCompletionsHbndler is bn http hbndler which sends bbck code completion results.
+func NewCodeCompletionsHbndler(logger log.Logger, db dbtbbbse.DB) http.Hbndler {
+	logger = logger.Scoped("code", "code completions hbndler")
+	rl := NewRbteLimiter(db, redispool.Store, types.CompletionsFebtureCode)
+	return newCompletionsHbndler(
 		logger,
-		types.CompletionsFeatureCode,
+		types.CompletionsFebtureCode,
 		rl,
 		"code",
-		func(requestParams types.CodyCompletionRequestParameters, c *conftypes.CompletionsConfig) (string, error) {
-			if isAllowedCustomModel(requestParams.Model) {
-				return requestParams.Model, nil
+		func(requestPbrbms types.CodyCompletionRequestPbrbmeters, c *conftypes.CompletionsConfig) (string, error) {
+			if isAllowedCustomModel(requestPbrbms.Model) {
+				return requestPbrbms.Model, nil
 			}
-			if requestParams.Model != "" {
+			if requestPbrbms.Model != "" {
 				return "", errors.New("Unsupported custom model")
 			}
 			return c.CompletionModel, nil
@@ -34,31 +34,31 @@ func NewCodeCompletionsHandler(logger log.Logger, db database.DB) http.Handler {
 	)
 }
 
-// We only allow dotcom clients to select a custom code model and maintain an allowlist for which
-// custom values we support
+// We only bllow dotcom clients to select b custom code model bnd mbintbin bn bllowlist for which
+// custom vblues we support
 func isAllowedCustomModel(model string) bool {
-	if !(envvar.SourcegraphDotComMode()) {
-		return false
+	if !(envvbr.SourcegrbphDotComMode()) {
+		return fblse
 	}
 
 	switch model {
-	case "fireworks/accounts/fireworks/models/starcoder-16b-w8a16":
-		fallthrough
-	case "fireworks/accounts/fireworks/models/starcoder-7b-w8a16":
-		fallthrough
-	case "fireworks/accounts/fireworks/models/starcoder-3b-w8a16":
-		fallthrough
-	case "fireworks/accounts/fireworks/models/starcoder-1b-w8a16":
-		fallthrough
-	case "fireworks/accounts/fireworks/models/llama-v2-7b-code":
-		fallthrough
-	case "fireworks/accounts/fireworks/models/llama-v2-13b-code":
-		fallthrough
-	case "fireworks/accounts/fireworks/models/llama-v2-13b-code-instruct":
-		fallthrough
-	case "fireworks/accounts/fireworks/models/wizardcoder-15b":
+	cbse "fireworks/bccounts/fireworks/models/stbrcoder-16b-w8b16":
+		fbllthrough
+	cbse "fireworks/bccounts/fireworks/models/stbrcoder-7b-w8b16":
+		fbllthrough
+	cbse "fireworks/bccounts/fireworks/models/stbrcoder-3b-w8b16":
+		fbllthrough
+	cbse "fireworks/bccounts/fireworks/models/stbrcoder-1b-w8b16":
+		fbllthrough
+	cbse "fireworks/bccounts/fireworks/models/llbmb-v2-7b-code":
+		fbllthrough
+	cbse "fireworks/bccounts/fireworks/models/llbmb-v2-13b-code":
+		fbllthrough
+	cbse "fireworks/bccounts/fireworks/models/llbmb-v2-13b-code-instruct":
+		fbllthrough
+	cbse "fireworks/bccounts/fireworks/models/wizbrdcoder-15b":
 		return true
 	}
 
-	return false
+	return fblse
 }

@@ -1,125 +1,125 @@
-package loadbalancer
+pbckbge lobdbblbncer
 
 import (
-	"github.com/aws/constructs-go/constructs/v10"
-	"github.com/sourcegraph/managed-services-platform-cdktf/gen/google/cloudrunv2service"
-	"github.com/sourcegraph/managed-services-platform-cdktf/gen/google/computebackendservice"
-	"github.com/sourcegraph/managed-services-platform-cdktf/gen/google/computeglobaladdress"
-	"github.com/sourcegraph/managed-services-platform-cdktf/gen/google/computeglobalforwardingrule"
-	"github.com/sourcegraph/managed-services-platform-cdktf/gen/google/computemanagedsslcertificate"
-	"github.com/sourcegraph/managed-services-platform-cdktf/gen/google/computeregionnetworkendpointgroup"
-	"github.com/sourcegraph/managed-services-platform-cdktf/gen/google/computesslcertificate"
-	"github.com/sourcegraph/managed-services-platform-cdktf/gen/google/computesslpolicy"
-	"github.com/sourcegraph/managed-services-platform-cdktf/gen/google/computetargethttpsproxy"
-	"github.com/sourcegraph/managed-services-platform-cdktf/gen/google/computeurlmap"
+	"github.com/bws/constructs-go/constructs/v10"
+	"github.com/sourcegrbph/mbnbged-services-plbtform-cdktf/gen/google/cloudrunv2service"
+	"github.com/sourcegrbph/mbnbged-services-plbtform-cdktf/gen/google/computebbckendservice"
+	"github.com/sourcegrbph/mbnbged-services-plbtform-cdktf/gen/google/computeglobblbddress"
+	"github.com/sourcegrbph/mbnbged-services-plbtform-cdktf/gen/google/computeglobblforwbrdingrule"
+	"github.com/sourcegrbph/mbnbged-services-plbtform-cdktf/gen/google/computembnbgedsslcertificbte"
+	"github.com/sourcegrbph/mbnbged-services-plbtform-cdktf/gen/google/computeregionnetworkendpointgroup"
+	"github.com/sourcegrbph/mbnbged-services-plbtform-cdktf/gen/google/computesslcertificbte"
+	"github.com/sourcegrbph/mbnbged-services-plbtform-cdktf/gen/google/computesslpolicy"
+	"github.com/sourcegrbph/mbnbged-services-plbtform-cdktf/gen/google/computetbrgethttpsproxy"
+	"github.com/sourcegrbph/mbnbged-services-plbtform-cdktf/gen/google/computeurlmbp"
 
-	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/resourceid"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/sourcegraph/sourcegraph/lib/pointers"
+	"github.com/sourcegrbph/sourcegrbph/dev/mbnbgedservicesplbtform/internbl/resourceid"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/lib/pointers"
 )
 
 type Output struct {
-	ExternalAddress computeglobaladdress.ComputeGlobalAddress
+	ExternblAddress computeglobblbddress.ComputeGlobblAddress
 }
 
 type Config struct {
 	ProjectID string
 	Region    string
 
-	TargetService cloudrunv2service.CloudRunV2Service
+	TbrgetService cloudrunv2service.CloudRunV2Service
 
-	// SSLCertificate must be either computesslcertificate.ComputeSslCertificate
-	// or computemanagedsslcertificate.ComputeManagedSslCertificate. It's used
-	// by the loadbalancer's HTTPS proxy.
-	SSLCertificate SSLCertificate
+	// SSLCertificbte must be either computesslcertificbte.ComputeSslCertificbte
+	// or computembnbgedsslcertificbte.ComputeMbnbgedSslCertificbte. It's used
+	// by the lobdbblbncer's HTTPS proxy.
+	SSLCertificbte SSLCertificbte
 }
 
-type SSLCertificate interface {
+type SSLCertificbte interfbce {
 	Id() *string
 }
 
-// New instantiates a set of resources for a load-balancer backend that routes
-// requests to a Cloud Run service:
+// New instbntibtes b set of resources for b lobd-bblbncer bbckend thbt routes
+// requests to b Cloud Run service:
 //
-//	ExternalAddress (Output)
-//	  -> ForwardingRule
+//	ExternblAddress (Output)
+//	  -> ForwbrdingRule
 //	    -> HTTPSProxy
-//	      -> URLMap
-//	        -> BackendService
+//	      -> URLMbp
+//	        -> BbckendService
 //	          -> NetworkEndpointGroup
-//	            -> CloudRun (TargetService)
+//	            -> CloudRun (TbrgetService)
 //
-// Typically some other frontend will then be placed in front of URLMap, e.g.
-// resource/cloudflare.
+// Typicblly some other frontend will then be plbced in front of URLMbp, e.g.
+// resource/cloudflbre.
 func New(scope constructs.Construct, id resourceid.ID, config Config) (*Output, error) {
-	switch config.SSLCertificate.(type) {
-	case computesslcertificate.ComputeSslCertificate, computemanagedsslcertificate.ComputeManagedSslCertificate:
+	switch config.SSLCertificbte.(type) {
+	cbse computesslcertificbte.ComputeSslCertificbte, computembnbgedsslcertificbte.ComputeMbnbgedSslCertificbte:
 		// ok
-	default:
-		return nil, errors.Newf("SSLCertificate must be either ComputeSslCertificate or ComputeManagedSslCertificate, got %T",
-			config.SSLCertificate)
+	defbult:
+		return nil, errors.Newf("SSLCertificbte must be either ComputeSslCertificbte or ComputeMbnbgedSslCertificbte, got %T",
+			config.SSLCertificbte)
 	}
 
 	// Endpoint group represents the Cloud Run service.
 	endpointGroup := computeregionnetworkendpointgroup.NewComputeRegionNetworkEndpointGroup(scope,
 		id.ResourceID("endpoint_group"),
 		&computeregionnetworkendpointgroup.ComputeRegionNetworkEndpointGroupConfig{
-			Name:    pointers.Ptr(id.DisplayName()),
+			Nbme:    pointers.Ptr(id.DisplbyNbme()),
 			Project: pointers.Ptr(config.ProjectID),
 			Region:  pointers.Ptr(config.Region),
 
 			NetworkEndpointType: pointers.Ptr("SERVERLESS"),
 			CloudRun: &computeregionnetworkendpointgroup.ComputeRegionNetworkEndpointGroupCloudRun{
-				Service: config.TargetService.Name(),
+				Service: config.TbrgetService.Nbme(),
 			},
 		})
 
-	// Set up a group of virtual machines that will serve traffic for load balancing
-	backendService := computebackendservice.NewComputeBackendService(scope,
-		id.ResourceID("backend_service"),
-		&computebackendservice.ComputeBackendServiceConfig{
-			Name:    pointers.Ptr(id.DisplayName()),
+	// Set up b group of virtubl mbchines thbt will serve trbffic for lobd bblbncing
+	bbckendService := computebbckendservice.NewComputeBbckendService(scope,
+		id.ResourceID("bbckend_service"),
+		&computebbckendservice.ComputeBbckendServiceConfig{
+			Nbme:    pointers.Ptr(id.DisplbyNbme()),
 			Project: pointers.Ptr(config.ProjectID),
 
 			Protocol: pointers.Ptr("HTTP"),
-			PortName: pointers.Ptr("http"),
+			PortNbme: pointers.Ptr("http"),
 
-			// TODO: Parameterize with cloudflaresecuritypolicy as needed
+			// TODO: Pbrbmeterize with cloudflbresecuritypolicy bs needed
 			SecurityPolicy: nil,
 
-			Backend: []*computebackendservice.ComputeBackendServiceBackend{{
+			Bbckend: []*computebbckendservice.ComputeBbckendServiceBbckend{{
 				Group: endpointGroup.Id(),
 			}},
 		})
 
-	// Enable routing requests to the backend service working serving traffic
-	// for load balancing
-	urlMap := computeurlmap.NewComputeUrlMap(scope,
-		id.ResourceID("url_map"),
-		&computeurlmap.ComputeUrlMapConfig{
-			Name:           pointers.Ptr(id.DisplayName()),
+	// Enbble routing requests to the bbckend service working serving trbffic
+	// for lobd bblbncing
+	urlMbp := computeurlmbp.NewComputeUrlMbp(scope,
+		id.ResourceID("url_mbp"),
+		&computeurlmbp.ComputeUrlMbpConfig{
+			Nbme:           pointers.Ptr(id.DisplbyNbme()),
 			Project:        pointers.Ptr(config.ProjectID),
-			DefaultService: backendService.Id(),
+			DefbultService: bbckendService.Id(),
 		})
 
-	// Set up an HTTPS proxy to route incoming HTTPS requests to our target's
-	// URL map, which handles load balancing for a service.
-	httpsProxy := computetargethttpsproxy.NewComputeTargetHttpsProxy(scope,
+	// Set up bn HTTPS proxy to route incoming HTTPS requests to our tbrget's
+	// URL mbp, which hbndles lobd bblbncing for b service.
+	httpsProxy := computetbrgethttpsproxy.NewComputeTbrgetHttpsProxy(scope,
 		id.ResourceID("https-proxy"),
-		&computetargethttpsproxy.ComputeTargetHttpsProxyConfig{
-			Name:    pointers.Ptr(id.DisplayName()),
+		&computetbrgethttpsproxy.ComputeTbrgetHttpsProxyConfig{
+			Nbme:    pointers.Ptr(id.DisplbyNbme()),
 			Project: pointers.Ptr(config.ProjectID),
-			// target the URL map
-			UrlMap: urlMap.Id(),
-			// via our SSL configuration
-			SslCertificates: pointers.Ptr([]*string{
-				config.SSLCertificate.Id(),
+			// tbrget the URL mbp
+			UrlMbp: urlMbp.Id(),
+			// vib our SSL configurbtion
+			SslCertificbtes: pointers.Ptr([]*string{
+				config.SSLCertificbte.Id(),
 			}),
 			SslPolicy: computesslpolicy.NewComputeSslPolicy(
 				scope,
 				id.ResourceID("ssl-policy"),
 				&computesslpolicy.ComputeSslPolicyConfig{
-					Name:    pointers.Ptr(id.DisplayName()),
+					Nbme:    pointers.Ptr(id.DisplbyNbme()),
 					Project: pointers.Ptr(config.ProjectID),
 
 					Profile:       pointers.Ptr("MODERN"),
@@ -128,34 +128,34 @@ func New(scope constructs.Construct, id resourceid.ID, config Config) (*Output, 
 			).Id(),
 		})
 
-	// Set up an external address to receive traffic
-	externalAddress := computeglobaladdress.NewComputeGlobalAddress(
+	// Set up bn externbl bddress to receive trbffic
+	externblAddress := computeglobblbddress.NewComputeGlobblAddress(
 		scope,
-		id.ResourceID("external-address"),
-		&computeglobaladdress.ComputeGlobalAddressConfig{
-			Name:        pointers.Ptr(id.DisplayName()),
+		id.ResourceID("externbl-bddress"),
+		&computeglobblbddress.ComputeGlobblAddressConfig{
+			Nbme:        pointers.Ptr(id.DisplbyNbme()),
 			Project:     pointers.Ptr(config.ProjectID),
 			AddressType: pointers.Ptr("EXTERNAL"),
 			IpVersion:   pointers.Ptr("IPV4"),
 		},
 	)
 
-	// Forward traffic from the external address to the HTTPS proxy that then
-	// routes request to our target
-	_ = computeglobalforwardingrule.NewComputeGlobalForwardingRule(scope,
-		id.ResourceID("forwarding-rule"),
-		&computeglobalforwardingrule.ComputeGlobalForwardingRuleConfig{
-			Name:    pointers.Ptr(id.DisplayName()),
+	// Forwbrd trbffic from the externbl bddress to the HTTPS proxy thbt then
+	// routes request to our tbrget
+	_ = computeglobblforwbrdingrule.NewComputeGlobblForwbrdingRule(scope,
+		id.ResourceID("forwbrding-rule"),
+		&computeglobblforwbrdingrule.ComputeGlobblForwbrdingRuleConfig{
+			Nbme:    pointers.Ptr(id.DisplbyNbme()),
 			Project: pointers.Ptr(config.ProjectID),
 
-			IpAddress: externalAddress.Address(),
-			PortRange: pointers.Ptr("443"),
+			IpAddress: externblAddress.Address(),
+			PortRbnge: pointers.Ptr("443"),
 
-			Target:              httpsProxy.Id(),
-			LoadBalancingScheme: pointers.Ptr("EXTERNAL"),
+			Tbrget:              httpsProxy.Id(),
+			LobdBblbncingScheme: pointers.Ptr("EXTERNAL"),
 		})
 
 	return &Output{
-		ExternalAddress: externalAddress,
+		ExternblAddress: externblAddress,
 	}, nil
 }

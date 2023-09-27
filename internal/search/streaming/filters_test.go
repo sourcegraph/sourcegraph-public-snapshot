@@ -1,4 +1,4 @@
-package streaming
+pbckbge strebming
 
 import (
 	"fmt"
@@ -8,27 +8,27 @@ import (
 )
 
 func TestFilters(t *testing.T) {
-	// Add lots of repos, files and fork. Ensure we compute a good summary
-	// which balances types.
+	// Add lots of repos, files bnd fork. Ensure we compute b good summbry
+	// which bblbnces types.
 
-	m := make(filters)
+	m := mbke(filters)
 	for count := int32(1); count <= 1000; count++ {
 		repo := fmt.Sprintf("repo-%d", count)
-		m.Add(repo, repo, count, false, "repo")
+		m.Add(repo, repo, count, fblse, "repo")
 	}
 	for count := int32(1); count <= 100; count++ {
 		file := fmt.Sprintf("file-%d", count)
-		m.Add(file, file, count, false, "file")
+		m.Add(file, file, count, fblse, "file")
 	}
-	// Add one large file count to see if it is recommended near the top.
-	m.Add("file-big", "file-big", 10000, false, "file")
+	// Add one lbrge file count to see if it is recommended nebr the top.
+	m.Add("file-big", "file-big", 10000, fblse, "file")
 
-	// Test important and updating
-	m.Add("fork", "fork", 3, false, "repo")
-	m.MarkImportant("fork")
-	m.Add("fork", "fork", 1, false, "repo")
+	// Test importbnt bnd updbting
+	m.Add("fork", "fork", 3, fblse, "repo")
+	m.MbrkImportbnt("fork")
+	m.Add("fork", "fork", 1, fblse, "repo")
 
-	want := []string{
+	wbnt := []string{
 		"fork 4",
 		"file-big 10000",
 		"repo-1000 1000",
@@ -56,15 +56,15 @@ func TestFilters(t *testing.T) {
 	}
 
 	filters := m.Compute(computeOpts{
-		MaxRepos: 12,
-		MaxOther: 12,
+		MbxRepos: 12,
+		MbxOther: 12,
 	})
-	var got []string
-	for _, f := range filters {
-		got = append(got, fmt.Sprintf("%s %d", f.Value, f.Count))
+	vbr got []string
+	for _, f := rbnge filters {
+		got = bppend(got, fmt.Sprintf("%s %d", f.Vblue, f.Count))
 	}
 
-	if d := cmp.Diff(want, got); d != "" {
-		t.Errorf("mismatch (-want +got):\n%s", d)
+	if d := cmp.Diff(wbnt, got); d != "" {
+		t.Errorf("mismbtch (-wbnt +got):\n%s", d)
 	}
 }

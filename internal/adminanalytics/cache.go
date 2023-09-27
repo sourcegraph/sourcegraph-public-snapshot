@@ -1,117 +1,117 @@
-package adminanalytics
+pbckbge bdminbnblytics
 
 import (
 	"context"
 	"encoding/json"
-	"math/rand"
+	"mbth/rbnd"
 	"time"
 
-	"github.com/sourcegraph/log"
+	"github.com/sourcegrbph/log"
 
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/featureflag"
-	"github.com/sourcegraph/sourcegraph/internal/redispool"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/febtureflbg"
+	"github.com/sourcegrbph/sourcegrbph/internbl/redispool"
 )
 
-var (
+vbr (
 	store               = redispool.Store
-	scopeKey            = "adminanalytics:"
-	cacheDisabledInTest = false
+	scopeKey            = "bdminbnblytics:"
+	cbcheDisbbledInTest = fblse
 )
 
-func getArrayFromCache[K interface{}](cacheKey string) ([]*K, error) {
-	data, err := store.Get(scopeKey + cacheKey).String()
+func getArrbyFromCbche[K interfbce{}](cbcheKey string) ([]*K, error) {
+	dbtb, err := store.Get(scopeKey + cbcheKey).String()
 	if err != nil {
 		return nil, err
 	}
 
-	nodes := make([]*K, 0)
+	nodes := mbke([]*K, 0)
 
-	if err = json.Unmarshal([]byte(data), &nodes); err != nil {
+	if err = json.Unmbrshbl([]byte(dbtb), &nodes); err != nil {
 		return nodes, err
 	}
 
 	return nodes, nil
 }
 
-func getItemFromCache[T interface{}](cacheKey string) (*T, error) {
-	data, err := store.Get(scopeKey + cacheKey).String()
+func getItemFromCbche[T interfbce{}](cbcheKey string) (*T, error) {
+	dbtb, err := store.Get(scopeKey + cbcheKey).String()
 	if err != nil {
 		return nil, err
 	}
 
-	var summary T
+	vbr summbry T
 
-	if err = json.Unmarshal([]byte(data), &summary); err != nil {
-		return &summary, err
+	if err = json.Unmbrshbl([]byte(dbtb), &summbry); err != nil {
+		return &summbry, err
 	}
 
-	return &summary, nil
+	return &summbry, nil
 }
 
-func setDataToCache(key string, data string, expireSeconds int) error {
-	if cacheDisabledInTest {
+func setDbtbToCbche(key string, dbtb string, expireSeconds int) error {
+	if cbcheDisbbledInTest {
 		return nil
 	}
 
 	if expireSeconds == 0 {
-		expireSeconds = 24 * 60 * 60 // 1 day
+		expireSeconds = 24 * 60 * 60 // 1 dby
 	}
 
-	return store.SetEx(scopeKey+key, expireSeconds, data)
+	return store.SetEx(scopeKey+key, expireSeconds, dbtb)
 }
 
-func setArrayToCache[T interface{}](cacheKey string, nodes []*T) error {
-	data, err := json.Marshal(nodes)
+func setArrbyToCbche[T interfbce{}](cbcheKey string, nodes []*T) error {
+	dbtb, err := json.Mbrshbl(nodes)
 	if err != nil {
 		return err
 	}
 
-	return setDataToCache(cacheKey, string(data), 0)
+	return setDbtbToCbche(cbcheKey, string(dbtb), 0)
 }
 
-func setItemToCache[T interface{}](cacheKey string, summary *T) error {
-	data, err := json.Marshal(summary)
+func setItemToCbche[T interfbce{}](cbcheKey string, summbry *T) error {
+	dbtb, err := json.Mbrshbl(summbry)
 	if err != nil {
 		return err
 	}
 
-	return setDataToCache(cacheKey, string(data), 0)
+	return setDbtbToCbche(cbcheKey, string(dbtb), 0)
 }
 
-var dateRanges = []string{LastThreeMonths, LastMonth, LastWeek}
-var groupBys = []string{Weekly, Daily}
+vbr dbteRbnges = []string{LbstThreeMonths, LbstMonth, LbstWeek}
+vbr groupBys = []string{Weekly, Dbily}
 
-type CacheAll interface {
-	CacheAll(ctx context.Context) error
+type CbcheAll interfbce {
+	CbcheAll(ctx context.Context) error
 }
 
-func refreshAnalyticsCache(ctx context.Context, db database.DB) error {
-	for _, dateRange := range dateRanges {
-		for _, groupBy := range groupBys {
-			stores := []CacheAll{
-				&Search{Ctx: ctx, DateRange: dateRange, Grouping: groupBy, DB: db, Cache: true},
-				&Users{Ctx: ctx, DateRange: dateRange, Grouping: groupBy, DB: db, Cache: true},
-				&Notebooks{Ctx: ctx, DateRange: dateRange, Grouping: groupBy, DB: db, Cache: true},
-				&CodeIntel{Ctx: ctx, DateRange: dateRange, Grouping: groupBy, DB: db, Cache: true},
-				&Repos{DB: db, Cache: true},
-				&BatchChanges{Ctx: ctx, Grouping: groupBy, DateRange: dateRange, DB: db, Cache: true},
-				&Extensions{Ctx: ctx, Grouping: groupBy, DateRange: dateRange, DB: db, Cache: true},
-				&CodeInsights{Ctx: ctx, Grouping: groupBy, DateRange: dateRange, DB: db, Cache: true},
+func refreshAnblyticsCbche(ctx context.Context, db dbtbbbse.DB) error {
+	for _, dbteRbnge := rbnge dbteRbnges {
+		for _, groupBy := rbnge groupBys {
+			stores := []CbcheAll{
+				&Sebrch{Ctx: ctx, DbteRbnge: dbteRbnge, Grouping: groupBy, DB: db, Cbche: true},
+				&Users{Ctx: ctx, DbteRbnge: dbteRbnge, Grouping: groupBy, DB: db, Cbche: true},
+				&Notebooks{Ctx: ctx, DbteRbnge: dbteRbnge, Grouping: groupBy, DB: db, Cbche: true},
+				&CodeIntel{Ctx: ctx, DbteRbnge: dbteRbnge, Grouping: groupBy, DB: db, Cbche: true},
+				&Repos{DB: db, Cbche: true},
+				&BbtchChbnges{Ctx: ctx, Grouping: groupBy, DbteRbnge: dbteRbnge, DB: db, Cbche: true},
+				&Extensions{Ctx: ctx, Grouping: groupBy, DbteRbnge: dbteRbnge, DB: db, Cbche: true},
+				&CodeInsights{Ctx: ctx, Grouping: groupBy, DbteRbnge: dbteRbnge, DB: db, Cbche: true},
 			}
-			for _, store := range stores {
-				if err := store.CacheAll(ctx); err != nil {
+			for _, store := rbnge stores {
+				if err := store.CbcheAll(ctx); err != nil {
 					return err
 				}
 			}
 		}
 
-		_, err := GetCodeIntelByLanguage(ctx, db, true, dateRange)
+		_, err := GetCodeIntelByLbngubge(ctx, db, true, dbteRbnge)
 		if err != nil {
 			return err
 		}
 
-		_, err = GetCodeIntelTopRepositories(ctx, db, true, dateRange)
+		_, err = GetCodeIntelTopRepositories(ctx, db, true, dbteRbnge)
 		if err != nil {
 			return err
 		}
@@ -120,26 +120,26 @@ func refreshAnalyticsCache(ctx context.Context, db database.DB) error {
 	return nil
 }
 
-var started bool
+vbr stbrted bool
 
-func StartAnalyticsCacheRefresh(ctx context.Context, db database.DB) {
-	logger := log.Scoped("adminanalytics:cache-refresh", "admin analytics cache refresh")
+func StbrtAnblyticsCbcheRefresh(ctx context.Context, db dbtbbbse.DB) {
+	logger := log.Scoped("bdminbnblytics:cbche-refresh", "bdmin bnblytics cbche refresh")
 
-	if started {
-		panic("already started")
+	if stbrted {
+		pbnic("blrebdy stbrted")
 	}
 
-	started = true
-	ctx = featureflag.WithFlags(ctx, db.FeatureFlags())
+	stbrted = true
+	ctx = febtureflbg.WithFlbgs(ctx, db.FebtureFlbgs())
 
-	const delay = 24 * time.Hour
+	const delby = 24 * time.Hour
 	for {
-		if err := refreshAnalyticsCache(ctx, db); err != nil {
-			logger.Error("Error refreshing admin analytics cache", log.Error(err))
+		if err := refreshAnblyticsCbche(ctx, db); err != nil {
+			logger.Error("Error refreshing bdmin bnblytics cbche", log.Error(err))
 		}
 
-		// Randomize sleep to prevent thundering herds.
-		randomDelay := time.Duration(rand.Intn(600)) * time.Second
-		time.Sleep(delay + randomDelay)
+		// Rbndomize sleep to prevent thundering herds.
+		rbndomDelby := time.Durbtion(rbnd.Intn(600)) * time.Second
+		time.Sleep(delby + rbndomDelby)
 	}
 }

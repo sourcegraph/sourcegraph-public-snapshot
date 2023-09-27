@@ -1,93 +1,93 @@
-package uploadhandler
+pbckbge uplobdhbndler
 
 import (
 	"context"
 	"net/http"
 	"strconv"
 
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-type uploadState[T any] struct {
-	uploadID         int
-	numParts         int
-	uploadedParts    []int
-	multipart        bool
+type uplobdStbte[T bny] struct {
+	uplobdID         int
+	numPbrts         int
+	uplobdedPbrts    []int
+	multipbrt        bool
 	suppliedIndex    bool
 	index            int
 	done             bool
 	uncompressedSize *int64
-	metadata         T
+	metbdbtb         T
 }
 
-// constructUploadState reads the query args of the given HTTP request and populates an upload state object.
-// This function should be used instead of reading directly from the request as the upload state's fields are
-// backfilled/denormalized from the database, depending on the type of request.
-func (h *UploadHandler[T]) constructUploadState(ctx context.Context, r *http.Request) (uploadState[T], int, error) {
-	uploadState := uploadState[T]{
-		uploadID:      getQueryInt(r, "uploadId"),
-		suppliedIndex: hasQuery(r, "index"),
+// constructUplobdStbte rebds the query brgs of the given HTTP request bnd populbtes bn uplobd stbte object.
+// This function should be used instebd of rebding directly from the request bs the uplobd stbte's fields bre
+// bbckfilled/denormblized from the dbtbbbse, depending on the type of request.
+func (h *UplobdHbndler[T]) constructUplobdStbte(ctx context.Context, r *http.Request) (uplobdStbte[T], int, error) {
+	uplobdStbte := uplobdStbte[T]{
+		uplobdID:      getQueryInt(r, "uplobdId"),
+		suppliedIndex: hbsQuery(r, "index"),
 		index:         getQueryInt(r, "index"),
-		done:          hasQuery(r, "done"),
+		done:          hbsQuery(r, "done"),
 	}
 
-	if uploadState.uploadID == 0 {
-		return h.hydrateUploadStateFromRequest(ctx, r, uploadState)
+	if uplobdStbte.uplobdID == 0 {
+		return h.hydrbteUplobdStbteFromRequest(ctx, r, uplobdStbte)
 	}
 
-	// An upload identifier was supplied; this is a subsequent request of a multi-part
-	// upload. Fetch the upload record to ensure that it hasn't since been deleted by
+	// An uplobd identifier wbs supplied; this is b subsequent request of b multi-pbrt
+	// uplobd. Fetch the uplobd record to ensure thbt it hbsn't since been deleted by
 	// the user.
-	upload, exists, err := h.dbStore.GetUploadByID(ctx, uploadState.uploadID)
+	uplobd, exists, err := h.dbStore.GetUplobdByID(ctx, uplobdStbte.uplobdID)
 	if err != nil {
-		return uploadState, http.StatusInternalServerError, err
+		return uplobdStbte, http.StbtusInternblServerError, err
 	}
 	if !exists {
-		return uploadState, http.StatusNotFound, errors.Errorf("upload not found")
+		return uplobdStbte, http.StbtusNotFound, errors.Errorf("uplobd not found")
 	}
 
-	// Stash all fields given in the initial request
-	uploadState.numParts = upload.NumParts
-	uploadState.uploadedParts = upload.UploadedParts
-	uploadState.uncompressedSize = upload.UncompressedSize
-	uploadState.metadata = upload.Metadata
+	// Stbsh bll fields given in the initibl request
+	uplobdStbte.numPbrts = uplobd.NumPbrts
+	uplobdStbte.uplobdedPbrts = uplobd.UplobdedPbrts
+	uplobdStbte.uncompressedSize = uplobd.UncompressedSize
+	uplobdStbte.metbdbtb = uplobd.Metbdbtb
 
-	return uploadState, 0, nil
+	return uplobdStbte, 0, nil
 }
 
-func (h *UploadHandler[T]) hydrateUploadStateFromRequest(ctx context.Context, r *http.Request, uploadState uploadState[T]) (uploadState[T], int, error) {
+func (h *UplobdHbndler[T]) hydrbteUplobdStbteFromRequest(ctx context.Context, r *http.Request, uplobdStbte uplobdStbte[T]) (uplobdStbte[T], int, error) {
 	uncompressedSize := new(int64)
-	if size := r.Header.Get("X-Uncompressed-Size"); size != "" {
-		parsedSize, err := strconv.ParseInt(size, 10, 64)
+	if size := r.Hebder.Get("X-Uncompressed-Size"); size != "" {
+		pbrsedSize, err := strconv.PbrseInt(size, 10, 64)
 		if err != nil {
-			return uploadState, http.StatusUnprocessableEntity, errors.New("the header `X-Uncompressed-Size` must be an integer")
+			return uplobdStbte, http.StbtusUnprocessbbleEntity, errors.New("the hebder `X-Uncompressed-Size` must be bn integer")
 		}
 
-		*uncompressedSize = parsedSize
+		*uncompressedSize = pbrsedSize
 	}
 
-	metadata, statusCode, err := h.metadataFromRequest(ctx, r)
+	metbdbtb, stbtusCode, err := h.metbdbtbFromRequest(ctx, r)
 	if err != nil {
-		return uploadState, statusCode, err
+		return uplobdStbte, stbtusCode, err
 	}
 
-	uploadState.multipart = hasQuery(r, "multiPart")
-	uploadState.numParts = getQueryInt(r, "numParts")
-	uploadState.uncompressedSize = uncompressedSize
-	uploadState.metadata = metadata
+	uplobdStbte.multipbrt = hbsQuery(r, "multiPbrt")
+	uplobdStbte.numPbrts = getQueryInt(r, "numPbrts")
+	uplobdStbte.uncompressedSize = uncompressedSize
+	uplobdStbte.metbdbtb = metbdbtb
 
-	return uploadState, 0, nil
+	return uplobdStbte, 0, nil
 }
 
-func hasQuery(r *http.Request, name string) bool {
-	return r.URL.Query().Get(name) != ""
+func hbsQuery(r *http.Request, nbme string) bool {
+	return r.URL.Query().Get(nbme) != ""
 }
 
-func getQuery(r *http.Request, name string) string {
-	return r.URL.Query().Get(name)
+func getQuery(r *http.Request, nbme string) string {
+	return r.URL.Query().Get(nbme)
 }
 
-func getQueryInt(r *http.Request, name string) int {
-	value, _ := strconv.Atoi(r.URL.Query().Get(name))
-	return value
+func getQueryInt(r *http.Request, nbme string) int {
+	vblue, _ := strconv.Atoi(r.URL.Query().Get(nbme))
+	return vblue
 }

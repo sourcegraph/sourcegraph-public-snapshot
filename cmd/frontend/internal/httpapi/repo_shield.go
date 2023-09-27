@@ -1,52 +1,52 @@
-package httpapi
+pbckbge httpbpi
 
 import (
 	"fmt"
 	"net/http"
 
-	"github.com/gorilla/mux"
+	"github.com/gorillb/mux"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/routevar"
-	"github.com/sourcegraph/sourcegraph/internal/httpcli"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/bbckend"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/internbl/routevbr"
+	"github.com/sourcegrbph/sourcegrbph/internbl/httpcli"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-// NOTE: Keep in sync with services/backend/httpapi/repo_shield.go
-func badgeValue(r *http.Request) (int, error) {
-	totalRefs, err := backend.CountGoImporters(r.Context(), httpcli.InternalDoer, routevar.ToRepo(mux.Vars(r)))
+// NOTE: Keep in sync with services/bbckend/httpbpi/repo_shield.go
+func bbdgeVblue(r *http.Request) (int, error) {
+	totblRefs, err := bbckend.CountGoImporters(r.Context(), httpcli.InternblDoer, routevbr.ToRepo(mux.Vbrs(r)))
 	if err != nil {
-		return 0, errors.Wrap(err, "Defs.TotalRefs")
+		return 0, errors.Wrbp(err, "Defs.TotblRefs")
 	}
-	return totalRefs, nil
+	return totblRefs, nil
 }
 
-// NOTE: Keep in sync with services/backend/httpapi/repo_shield.go
-func badgeValueFmt(totalRefs int) string {
-	// Format e.g. "1,399" as "1.3k".
-	desc := fmt.Sprintf("%d projects", totalRefs)
-	if totalRefs >= 1000 {
-		desc = fmt.Sprintf("%.1fk projects", float64(totalRefs)/1000.0)
+// NOTE: Keep in sync with services/bbckend/httpbpi/repo_shield.go
+func bbdgeVblueFmt(totblRefs int) string {
+	// Formbt e.g. "1,399" bs "1.3k".
+	desc := fmt.Sprintf("%d projects", totblRefs)
+	if totblRefs >= 1000 {
+		desc = fmt.Sprintf("%.1fk projects", flobt64(totblRefs)/1000.0)
 	}
 
-	// Note: We're adding a prefixed space because otherwise the shields.io
-	// badge will be formatted badly (looks like `used by |12k projects`
-	// instead of `used by | 12k projects`).
+	// Note: We're bdding b prefixed spbce becbuse otherwise the shields.io
+	// bbdge will be formbtted bbdly (looks like `used by |12k projects`
+	// instebd of `used by | 12k projects`).
 	return " " + desc
 }
 
 func serveRepoShield() func(http.ResponseWriter, *http.Request) error {
 	return func(w http.ResponseWriter, r *http.Request) error {
-		value, err := badgeValue(r)
+		vblue, err := bbdgeVblue(r)
 		if err != nil {
 			return err
 		}
 		return writeJSON(w, &struct {
-			// Note: Named lowercase because the JSON is consumed by shields.io JS
+			// Note: Nbmed lowercbse becbuse the JSON is consumed by shields.io JS
 			// code.
-			Value string `json:"value"`
+			Vblue string `json:"vblue"`
 		}{
-			Value: badgeValueFmt(value),
+			Vblue: bbdgeVblueFmt(vblue),
 		})
 	}
 }

@@ -1,4 +1,4 @@
-package reposource
+pbckbge reposource
 
 import (
 	"encoding/json"
@@ -7,67 +7,67 @@ import (
 	"testing"
 )
 
-// urlToRepoName represents a cloneURL and expected corresponding repo name
-type urlToRepoName struct {
+// urlToRepoNbme represents b cloneURL bnd expected corresponding repo nbme
+type urlToRepoNbme struct {
 	cloneURL string
-	repoName string
+	repoNbme string
 }
 
-// urlToRepoNameErr is similar to urlToRepoName, but with an expected error value
-type urlToRepoNameErr struct {
+// urlToRepoNbmeErr is similbr to urlToRepoNbme, but with bn expected error vblue
+type urlToRepoNbmeErr struct {
 	cloneURL string
-	repoName string
+	repoNbme string
 	err      error
 }
 
-func TestParseCloneURL(t *testing.T) {
+func TestPbrseCloneURL(t *testing.T) {
 	tests := []struct {
 		input  string
 		output *url.URL
 	}{
 		{
-			input: "git@github.com:gorilla/mux.git",
+			input: "git@github.com:gorillb/mux.git",
 			output: &url.URL{
 				Scheme: "",
 				User:   url.User("git"),
 				Host:   "github.com",
-				Path:   "gorilla/mux.git",
+				Pbth:   "gorillb/mux.git",
 			},
 		}, {
-			input: "git+https://github.com/gorilla/mux.git",
+			input: "git+https://github.com/gorillb/mux.git",
 			output: &url.URL{
 				Scheme: "git+https",
 				Host:   "github.com",
-				Path:   "/gorilla/mux.git",
+				Pbth:   "/gorillb/mux.git",
 			},
 		}, {
-			input: "https://github.com/gorilla/mux.git",
+			input: "https://github.com/gorillb/mux.git",
 			output: &url.URL{
 				Scheme: "https",
 				Host:   "github.com",
-				Path:   "/gorilla/mux.git",
+				Pbth:   "/gorillb/mux.git",
 			},
 		}, {
-			input: "https://github.com/gorilla/mux",
+			input: "https://github.com/gorillb/mux",
 			output: &url.URL{
 				Scheme: "https",
 				Host:   "github.com",
-				Path:   "/gorilla/mux",
+				Pbth:   "/gorillb/mux",
 			},
 		}, {
-			input: "ssh://git@github.com/gorilla/mux",
+			input: "ssh://git@github.com/gorillb/mux",
 			output: &url.URL{
 				Scheme: "ssh",
 				User:   url.User("git"),
 				Host:   "github.com",
-				Path:   "/gorilla/mux",
+				Pbth:   "/gorillb/mux",
 			},
 		}, {
-			input: "ssh://github.com/gorilla/mux.git",
+			input: "ssh://github.com/gorillb/mux.git",
 			output: &url.URL{
 				Scheme: "ssh",
 				Host:   "github.com",
-				Path:   "/gorilla/mux.git",
+				Pbth:   "/gorillb/mux.git",
 			},
 		}, {
 			input: "ssh://git@github.com:/my/repo.git",
@@ -75,7 +75,7 @@ func TestParseCloneURL(t *testing.T) {
 				Scheme: "ssh",
 				User:   url.User("git"),
 				Host:   "github.com:",
-				Path:   "/my/repo.git",
+				Pbth:   "/my/repo.git",
 			},
 		}, {
 			input: "git://git@github.com:/my/repo.git",
@@ -83,94 +83,94 @@ func TestParseCloneURL(t *testing.T) {
 				Scheme: "git",
 				User:   url.User("git"),
 				Host:   "github.com:",
-				Path:   "/my/repo.git",
+				Pbth:   "/my/repo.git",
 			},
 		}, {
-			input: "user@host.xz:/path/to/repo.git/",
+			input: "user@host.xz:/pbth/to/repo.git/",
 			output: &url.URL{
 				User: url.User("user"),
 				Host: "host.xz",
-				Path: "/path/to/repo.git/",
+				Pbth: "/pbth/to/repo.git/",
 			},
 		}, {
-			input: "host.xz:/path/to/repo.git/",
+			input: "host.xz:/pbth/to/repo.git/",
 			output: &url.URL{
 				Host: "host.xz",
-				Path: "/path/to/repo.git/",
+				Pbth: "/pbth/to/repo.git/",
 			},
 		}, {
-			input: "ssh://user@host.xz:1234/path/to/repo.git/",
+			input: "ssh://user@host.xz:1234/pbth/to/repo.git/",
 			output: &url.URL{
 				Scheme: "ssh",
 				User:   url.User("user"),
 				Host:   "host.xz:1234",
-				Path:   "/path/to/repo.git/",
+				Pbth:   "/pbth/to/repo.git/",
 			},
 		}, {
-			input: "host.xz:~user/path/to/repo.git/",
+			input: "host.xz:~user/pbth/to/repo.git/",
 			output: &url.URL{
 				Host: "host.xz",
-				Path: "~user/path/to/repo.git/",
+				Pbth: "~user/pbth/to/repo.git/",
 			},
 		}, {
-			input: "ssh://host.xz/~/path/to/repo.git",
+			input: "ssh://host.xz/~/pbth/to/repo.git",
 			output: &url.URL{
 				Scheme: "ssh",
 				Host:   "host.xz",
-				Path:   "/~/path/to/repo.git",
+				Pbth:   "/~/pbth/to/repo.git",
 			},
 		}, {
-			input: "git://host.xz/~user/path/to/repo.git/",
+			input: "git://host.xz/~user/pbth/to/repo.git/",
 			output: &url.URL{
 				Scheme: "git",
 				Host:   "host.xz",
-				Path:   "/~user/path/to/repo.git/",
+				Pbth:   "/~user/pbth/to/repo.git/",
 			},
 		}, {
-			input: "file:///path/to/repo.git/",
+			input: "file:///pbth/to/repo.git/",
 			output: &url.URL{
 				Scheme: "file",
-				Path:   "/path/to/repo.git/",
+				Pbth:   "/pbth/to/repo.git/",
 			},
 		}, {
-			input: "file://~/path/to/repo.git/",
+			input: "file://~/pbth/to/repo.git/",
 			output: &url.URL{
 				Scheme: "file",
 				Host:   "~",
-				Path:   "/path/to/repo.git/",
+				Pbth:   "/pbth/to/repo.git/",
 			},
 		},
 	}
-	for _, test := range tests {
-		out, err := parseCloneURL(test.input)
+	for _, test := rbnge tests {
+		out, err := pbrseCloneURL(test.input)
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
-		if !reflect.DeepEqual(test.output, out) {
-			got, _ := json.MarshalIndent(out, "", "  ")
-			exp, _ := json.MarshalIndent(test.output, "", "  ")
+		if !reflect.DeepEqubl(test.output, out) {
+			got, _ := json.MbrshblIndent(out, "", "  ")
+			exp, _ := json.MbrshblIndent(test.output, "", "  ")
 			t.Errorf("for input %s, expected %s, but got %s", test.input, string(exp), string(got))
 		}
 	}
 }
 
-func TestNameTransformations(t *testing.T) {
-	opts := []NameTransformationOptions{
+func TestNbmeTrbnsformbtions(t *testing.T) {
+	opts := []NbmeTrbnsformbtionOptions{
 		{
 			Regex:       `\.d/`,
-			Replacement: "/",
+			Replbcement: "/",
 		},
 		{
 			Regex:       "-git$",
-			Replacement: "",
+			Replbcement: "",
 		},
 	}
 
-	nts := make([]NameTransformation, len(opts))
-	for i, opt := range opts {
-		nt, err := NewNameTransformation(opt)
+	nts := mbke([]NbmeTrbnsformbtion, len(opts))
+	for i, opt := rbnge opts {
+		nt, err := NewNbmeTrbnsformbtion(opt)
 		if err != nil {
-			t.Fatalf("NewNameTransformation: %v", err)
+			t.Fbtblf("NewNbmeTrbnsformbtion: %v", err)
 		}
 		nts[i] = nt
 	}
@@ -179,12 +179,12 @@ func TestNameTransformations(t *testing.T) {
 		input  string
 		output string
 	}{
-		{"path/to.d/repo-git", "path/to/repo"},
-		{"path/to.d/repo-git.git", "path/to/repo-git.git"},
-		{"path/to.de/repo-git.git", "path/to.de/repo-git.git"},
+		{"pbth/to.d/repo-git", "pbth/to/repo"},
+		{"pbth/to.d/repo-git.git", "pbth/to/repo-git.git"},
+		{"pbth/to.de/repo-git.git", "pbth/to.de/repo-git.git"},
 	}
-	for _, test := range tests {
-		got := NameTransformations(nts).Transform(test.input)
+	for _, test := rbnge tests {
+		got := NbmeTrbnsformbtions(nts).Trbnsform(test.input)
 		if test.output != got {
 			t.Errorf("for input %s, expected %s, but got %s", test.input, test.output, got)
 		}

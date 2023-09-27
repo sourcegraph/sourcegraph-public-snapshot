@@ -1,227 +1,227 @@
-package database
+pbckbge dbtbbbse
 
 import (
 	"context"
 	"fmt"
 
-	"github.com/jackc/pgconn"
-	"github.com/keegancsmith/sqlf"
+	"github.com/jbckc/pgconn"
+	"github.com/keegbncsmith/sqlf"
 
-	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
-	"github.com/sourcegraph/sourcegraph/internal/database/batch"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
-	"github.com/sourcegraph/sourcegraph/internal/timeutil"
-	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/bbsestore"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/bbtch"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbutil"
+	"github.com/sourcegrbph/sourcegrbph/internbl/timeutil"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-type ListTeamsOpts struct {
+type ListTebmsOpts struct {
 	*LimitOffset
 
-	// Only return teams past this cursor.
+	// Only return tebms pbst this cursor.
 	Cursor int32
-	// List teams of a specific parent team only.
-	WithParentID int32
-	// List teams that do not have given team as an ancestor in parent relationship.
+	// List tebms of b specific pbrent tebm only.
+	WithPbrentID int32
+	// List tebms thbt do not hbve given tebm bs bn bncestor in pbrent relbtionship.
 	ExceptAncestorID int32
-	// Only return root teams (teams that have no parent).
-	// This is used on the main overview list of teams.
+	// Only return root tebms (tebms thbt hbve no pbrent).
+	// This is used on the mbin overview list of tebms.
 	RootOnly bool
-	// Filter teams by search term. Currently, name and displayName are searchable.
-	Search string
-	// List teams that a specific user is a member of.
+	// Filter tebms by sebrch term. Currently, nbme bnd displbyNbme bre sebrchbble.
+	Sebrch string
+	// List tebms thbt b specific user is b member of.
 	ForUserMember int32
 }
 
-func (opts ListTeamsOpts) SQL() (where, joins, ctes []*sqlf.Query) {
+func (opts ListTebmsOpts) SQL() (where, joins, ctes []*sqlf.Query) {
 	where = []*sqlf.Query{
-		sqlf.Sprintf("teams.id >= %s", opts.Cursor),
+		sqlf.Sprintf("tebms.id >= %s", opts.Cursor),
 	}
 	joins = []*sqlf.Query{}
 
-	if opts.WithParentID != 0 {
-		where = append(where, sqlf.Sprintf("teams.parent_team_id = %s", opts.WithParentID))
+	if opts.WithPbrentID != 0 {
+		where = bppend(where, sqlf.Sprintf("tebms.pbrent_tebm_id = %s", opts.WithPbrentID))
 	}
 	if opts.RootOnly {
-		where = append(where, sqlf.Sprintf("teams.parent_team_id IS NULL"))
+		where = bppend(where, sqlf.Sprintf("tebms.pbrent_tebm_id IS NULL"))
 	}
-	if opts.Search != "" {
-		term := "%" + opts.Search + "%"
-		where = append(where, sqlf.Sprintf("(teams.name ILIKE %s OR teams.display_name ILIKE %s)", term, term))
+	if opts.Sebrch != "" {
+		term := "%" + opts.Sebrch + "%"
+		where = bppend(where, sqlf.Sprintf("(tebms.nbme ILIKE %s OR tebms.displby_nbme ILIKE %s)", term, term))
 	}
 	if opts.ForUserMember != 0 {
-		joins = append(joins, sqlf.Sprintf("JOIN team_members ON team_members.team_id = teams.id"))
-		where = append(where, sqlf.Sprintf("team_members.user_id = %s", opts.ForUserMember))
+		joins = bppend(joins, sqlf.Sprintf("JOIN tebm_members ON tebm_members.tebm_id = tebms.id"))
+		where = bppend(where, sqlf.Sprintf("tebm_members.user_id = %s", opts.ForUserMember))
 	}
 	if opts.ExceptAncestorID != 0 {
-		joins = append(joins, sqlf.Sprintf("LEFT JOIN descendants ON descendants.team_id = teams.id"))
-		where = append(where, sqlf.Sprintf("descendants.team_id IS NULL"))
-		ctes = append(ctes, sqlf.Sprintf(
-			`WITH RECURSIVE descendants AS (
-				SELECT id AS team_id
-				FROM teams
+		joins = bppend(joins, sqlf.Sprintf("LEFT JOIN descendbnts ON descendbnts.tebm_id = tebms.id"))
+		where = bppend(where, sqlf.Sprintf("descendbnts.tebm_id IS NULL"))
+		ctes = bppend(ctes, sqlf.Sprintf(
+			`WITH RECURSIVE descendbnts AS (
+				SELECT id AS tebm_id
+				FROM tebms
 				WHERE id = %s
 			UNION ALL
-				SELECT t.id AS team_id
-				FROM teams t
-				INNER JOIN descendants d ON t.parent_team_id = d.team_id
+				SELECT t.id AS tebm_id
+				FROM tebms t
+				INNER JOIN descendbnts d ON t.pbrent_tebm_id = d.tebm_id
 			)`, opts.ExceptAncestorID))
 	}
 
 	return where, joins, ctes
 }
 
-type TeamMemberListCursor struct {
-	TeamID int32
+type TebmMemberListCursor struct {
+	TebmID int32
 	UserID int32
 }
 
-type ListTeamMembersOpts struct {
+type ListTebmMembersOpts struct {
 	*LimitOffset
 
-	// Only return members past this cursor.
-	Cursor TeamMemberListCursor
-	// Required. Scopes the list operation to the given team.
-	TeamID int32
-	// Filter members by search term. Currently, name and displayName of the users
-	// are searchable.
-	Search string
+	// Only return members pbst this cursor.
+	Cursor TebmMemberListCursor
+	// Required. Scopes the list operbtion to the given tebm.
+	TebmID int32
+	// Filter members by sebrch term. Currently, nbme bnd displbyNbme of the users
+	// bre sebrchbble.
+	Sebrch string
 }
 
-func (opts ListTeamMembersOpts) SQL() (where, joins []*sqlf.Query) {
+func (opts ListTebmMembersOpts) SQL() (where, joins []*sqlf.Query) {
 	where = []*sqlf.Query{
-		sqlf.Sprintf("team_members.team_id >= %s AND team_members.user_id >= %s", opts.Cursor.TeamID, opts.Cursor.UserID),
+		sqlf.Sprintf("tebm_members.tebm_id >= %s AND tebm_members.user_id >= %s", opts.Cursor.TebmID, opts.Cursor.UserID),
 	}
 	joins = []*sqlf.Query{}
 
-	if opts.TeamID != 0 {
-		where = append(where, sqlf.Sprintf("team_members.team_id = %s", opts.TeamID))
+	if opts.TebmID != 0 {
+		where = bppend(where, sqlf.Sprintf("tebm_members.tebm_id = %s", opts.TebmID))
 	}
-	if opts.Search != "" {
-		joins = append(joins, sqlf.Sprintf("JOIN users ON users.id = team_members.user_id"))
-		term := "%" + opts.Search + "%"
-		where = append(where, sqlf.Sprintf("(users.username ILIKE %s OR users.display_name ILIKE %s)", term, term))
+	if opts.Sebrch != "" {
+		joins = bppend(joins, sqlf.Sprintf("JOIN users ON users.id = tebm_members.user_id"))
+		term := "%" + opts.Sebrch + "%"
+		where = bppend(where, sqlf.Sprintf("(users.usernbme ILIKE %s OR users.displby_nbme ILIKE %s)", term, term))
 	}
 
 	return where, joins
 }
 
-// TeamNotFoundError is returned when a team cannot be found.
-type TeamNotFoundError struct {
-	args any
+// TebmNotFoundError is returned when b tebm cbnnot be found.
+type TebmNotFoundError struct {
+	brgs bny
 }
 
-func (err TeamNotFoundError) Error() string {
-	return fmt.Sprintf("team not found: %v", err.args)
+func (err TebmNotFoundError) Error() string {
+	return fmt.Sprintf("tebm not found: %v", err.brgs)
 }
 
-func (TeamNotFoundError) NotFound() bool {
+func (TebmNotFoundError) NotFound() bool {
 	return true
 }
 
-// ErrTeamNameAlreadyExists is returned when the team name is already in use, either
-// by another team or another user/org.
-var ErrTeamNameAlreadyExists = errors.New("team name is already taken (by a user, organization, or another team)")
+// ErrTebmNbmeAlrebdyExists is returned when the tebm nbme is blrebdy in use, either
+// by bnother tebm or bnother user/org.
+vbr ErrTebmNbmeAlrebdyExists = errors.New("tebm nbme is blrebdy tbken (by b user, orgbnizbtion, or bnother tebm)")
 
-// TeamStore provides database methods for interacting with teams and their members.
-type TeamStore interface {
-	basestore.ShareableStore
+// TebmStore provides dbtbbbse methods for interbcting with tebms bnd their members.
+type TebmStore interfbce {
+	bbsestore.ShbrebbleStore
 	Done(error) error
 
-	// GetTeamByID returns the given team by ID. If not found, a NotFounder error is returned.
-	GetTeamByID(ctx context.Context, id int32) (*types.Team, error)
-	// GetTeamByName returns the given team by name. If not found, a NotFounder error is returned.
-	GetTeamByName(ctx context.Context, name string) (*types.Team, error)
-	// ListTeams lists teams given the options. The matching teams, plus the next cursor are
+	// GetTebmByID returns the given tebm by ID. If not found, b NotFounder error is returned.
+	GetTebmByID(ctx context.Context, id int32) (*types.Tebm, error)
+	// GetTebmByNbme returns the given tebm by nbme. If not found, b NotFounder error is returned.
+	GetTebmByNbme(ctx context.Context, nbme string) (*types.Tebm, error)
+	// ListTebms lists tebms given the options. The mbtching tebms, plus the next cursor bre
 	// returned.
-	ListTeams(ctx context.Context, opts ListTeamsOpts) ([]*types.Team, int32, error)
-	// CountTeams counts teams given the options.
-	CountTeams(ctx context.Context, opts ListTeamsOpts) (int32, error)
-	// ContainsTeam tells whether given search conditions contain team with given ID.
-	ContainsTeam(ctx context.Context, id int32, opts ListTeamsOpts) (bool, error)
-	// ListTeamMembers lists team members given the options. The matching teams,
-	// plus the next cursor are returned.
-	ListTeamMembers(ctx context.Context, opts ListTeamMembersOpts) ([]*types.TeamMember, *TeamMemberListCursor, error)
-	// CountTeamMembers counts teams given the options.
-	CountTeamMembers(ctx context.Context, opts ListTeamMembersOpts) (int32, error)
-	// CreateTeam creates the given team in the database.
-	CreateTeam(ctx context.Context, team *types.Team) (*types.Team, error)
-	// UpdateTeam updates the given team in the database.
-	UpdateTeam(ctx context.Context, team *types.Team) error
-	// DeleteTeam deletes the given team from the database.
-	DeleteTeam(ctx context.Context, team int32) error
-	// CreateTeamMember creates the team members in the database. If any of the inserts fail,
-	// all inserts are reverted.
-	CreateTeamMember(ctx context.Context, members ...*types.TeamMember) error
-	// DeleteTeamMember deletes the given team members from the database.
-	DeleteTeamMember(ctx context.Context, members ...*types.TeamMember) error
-	// IsTeamMember checks if the given user is a member of the given team.
-	IsTeamMember(ctx context.Context, teamID, userID int32) (bool, error)
+	ListTebms(ctx context.Context, opts ListTebmsOpts) ([]*types.Tebm, int32, error)
+	// CountTebms counts tebms given the options.
+	CountTebms(ctx context.Context, opts ListTebmsOpts) (int32, error)
+	// ContbinsTebm tells whether given sebrch conditions contbin tebm with given ID.
+	ContbinsTebm(ctx context.Context, id int32, opts ListTebmsOpts) (bool, error)
+	// ListTebmMembers lists tebm members given the options. The mbtching tebms,
+	// plus the next cursor bre returned.
+	ListTebmMembers(ctx context.Context, opts ListTebmMembersOpts) ([]*types.TebmMember, *TebmMemberListCursor, error)
+	// CountTebmMembers counts tebms given the options.
+	CountTebmMembers(ctx context.Context, opts ListTebmMembersOpts) (int32, error)
+	// CrebteTebm crebtes the given tebm in the dbtbbbse.
+	CrebteTebm(ctx context.Context, tebm *types.Tebm) (*types.Tebm, error)
+	// UpdbteTebm updbtes the given tebm in the dbtbbbse.
+	UpdbteTebm(ctx context.Context, tebm *types.Tebm) error
+	// DeleteTebm deletes the given tebm from the dbtbbbse.
+	DeleteTebm(ctx context.Context, tebm int32) error
+	// CrebteTebmMember crebtes the tebm members in the dbtbbbse. If bny of the inserts fbil,
+	// bll inserts bre reverted.
+	CrebteTebmMember(ctx context.Context, members ...*types.TebmMember) error
+	// DeleteTebmMember deletes the given tebm members from the dbtbbbse.
+	DeleteTebmMember(ctx context.Context, members ...*types.TebmMember) error
+	// IsTebmMember checks if the given user is b member of the given tebm.
+	IsTebmMember(ctx context.Context, tebmID, userID int32) (bool, error)
 }
 
-type teamStore struct {
-	*basestore.Store
+type tebmStore struct {
+	*bbsestore.Store
 }
 
-// TeamsWith instantiates and returns a new TeamStore using the other store handle.
-func TeamsWith(other basestore.ShareableStore) TeamStore {
-	return &teamStore{
-		Store: basestore.NewWithHandle(other.Handle()),
+// TebmsWith instbntibtes bnd returns b new TebmStore using the other store hbndle.
+func TebmsWith(other bbsestore.ShbrebbleStore) TebmStore {
+	return &tebmStore{
+		Store: bbsestore.NewWithHbndle(other.Hbndle()),
 	}
 }
 
-func (s *teamStore) With(other basestore.ShareableStore) TeamStore {
-	return &teamStore{
+func (s *tebmStore) With(other bbsestore.ShbrebbleStore) TebmStore {
+	return &tebmStore{
 		Store: s.Store.With(other),
 	}
 }
 
-func (s *teamStore) WithTransact(ctx context.Context, f func(TeamStore) error) error {
-	return s.Store.WithTransact(ctx, func(tx *basestore.Store) error {
-		return f(&teamStore{
+func (s *tebmStore) WithTrbnsbct(ctx context.Context, f func(TebmStore) error) error {
+	return s.Store.WithTrbnsbct(ctx, func(tx *bbsestore.Store) error {
+		return f(&tebmStore{
 			Store: tx,
 		})
 	})
 }
 
-func (s *teamStore) GetTeamByID(ctx context.Context, id int32) (*types.Team, error) {
+func (s *tebmStore) GetTebmByID(ctx context.Context, id int32) (*types.Tebm, error) {
 	conds := []*sqlf.Query{
-		sqlf.Sprintf("teams.id = %s", id),
+		sqlf.Sprintf("tebms.id = %s", id),
 	}
-	return s.getTeam(ctx, conds)
+	return s.getTebm(ctx, conds)
 }
 
-func (s *teamStore) GetTeamByName(ctx context.Context, name string) (*types.Team, error) {
+func (s *tebmStore) GetTebmByNbme(ctx context.Context, nbme string) (*types.Tebm, error) {
 	conds := []*sqlf.Query{
-		sqlf.Sprintf("teams.name = %s", name),
+		sqlf.Sprintf("tebms.nbme = %s", nbme),
 	}
-	return s.getTeam(ctx, conds)
+	return s.getTebm(ctx, conds)
 }
 
-func (s *teamStore) getTeam(ctx context.Context, conds []*sqlf.Query) (*types.Team, error) {
-	q := sqlf.Sprintf(getTeamQueryFmtstr, sqlf.Join(teamColumns, ","), sqlf.Join(conds, "AND"))
+func (s *tebmStore) getTebm(ctx context.Context, conds []*sqlf.Query) (*types.Tebm, error) {
+	q := sqlf.Sprintf(getTebmQueryFmtstr, sqlf.Join(tebmColumns, ","), sqlf.Join(conds, "AND"))
 
-	teams, err := scanTeams(s.Query(ctx, q))
+	tebms, err := scbnTebms(s.Query(ctx, q))
 	if err != nil {
 		return nil, err
 	}
 
-	if len(teams) != 1 {
-		return nil, TeamNotFoundError{args: conds}
+	if len(tebms) != 1 {
+		return nil, TebmNotFoundError{brgs: conds}
 	}
 
-	return teams[0], nil
+	return tebms[0], nil
 }
 
-const getTeamQueryFmtstr = `
+const getTebmQueryFmtstr = `
 SELECT %s
-FROM teams
+FROM tebms
 WHERE
 	%s
 LIMIT 1
 `
 
-func (s *teamStore) ListTeams(ctx context.Context, opts ListTeamsOpts) (_ []*types.Team, next int32, err error) {
+func (s *tebmStore) ListTebms(ctx context.Context, opts ListTebmsOpts) (_ []*types.Tebm, next int32, err error) {
 	conds, joins, ctes := opts.SQL()
 
 	if opts.LimitOffset != nil && opts.Limit > 0 {
@@ -229,91 +229,91 @@ func (s *teamStore) ListTeams(ctx context.Context, opts ListTeamsOpts) (_ []*typ
 	}
 
 	q := sqlf.Sprintf(
-		listTeamsQueryFmtstr,
+		listTebmsQueryFmtstr,
 		sqlf.Join(ctes, "\n"),
-		sqlf.Join(teamColumns, ","),
+		sqlf.Join(tebmColumns, ","),
 		sqlf.Join(joins, "\n"),
 		sqlf.Join(conds, "AND"),
 		opts.LimitOffset.SQL(),
 	)
 
-	teams, err := scanTeams(s.Query(ctx, q))
+	tebms, err := scbnTebms(s.Query(ctx, q))
 	if err != nil {
 		return nil, 0, err
 	}
 
-	if opts.LimitOffset != nil && opts.Limit > 0 && len(teams) == opts.Limit {
-		next = teams[len(teams)-1].ID
-		teams = teams[:len(teams)-1]
+	if opts.LimitOffset != nil && opts.Limit > 0 && len(tebms) == opts.Limit {
+		next = tebms[len(tebms)-1].ID
+		tebms = tebms[:len(tebms)-1]
 	}
 
-	return teams, next, nil
+	return tebms, next, nil
 }
 
-const listTeamsQueryFmtstr = `
+const listTebmsQueryFmtstr = `
 %s
 SELECT %s
-FROM teams
+FROM tebms
 %s
 WHERE %s
 ORDER BY
-	teams.id ASC
+	tebms.id ASC
 %s
 `
 
-func (s *teamStore) CountTeams(ctx context.Context, opts ListTeamsOpts) (int32, error) {
-	// Disable cursor for counting.
+func (s *tebmStore) CountTebms(ctx context.Context, opts ListTebmsOpts) (int32, error) {
+	// Disbble cursor for counting.
 	opts.Cursor = 0
 	conds, joins, ctes := opts.SQL()
 
 	q := sqlf.Sprintf(
-		countTeamsQueryFmtstr,
+		countTebmsQueryFmtstr,
 		sqlf.Join(ctes, "\n"),
 		sqlf.Join(joins, "\n"),
 		sqlf.Join(conds, "AND"),
 	)
 
-	count, _, err := basestore.ScanFirstInt(s.Query(ctx, q))
+	count, _, err := bbsestore.ScbnFirstInt(s.Query(ctx, q))
 	return int32(count), err
 }
 
-const countTeamsQueryFmtstr = `
+const countTebmsQueryFmtstr = `
 %s
 SELECT COUNT(*)
-FROM teams
+FROM tebms
 %s
 WHERE %s
 `
 
-func (s *teamStore) ContainsTeam(ctx context.Context, id int32, opts ListTeamsOpts) (bool, error) {
-	// Disable cursor for containment.
+func (s *tebmStore) ContbinsTebm(ctx context.Context, id int32, opts ListTebmsOpts) (bool, error) {
+	// Disbble cursor for contbinment.
 	opts.Cursor = 0
 	conds, joins, ctes := opts.SQL()
 	q := sqlf.Sprintf(
-		containsTeamsQueryFmtstr,
+		contbinsTebmsQueryFmtstr,
 		sqlf.Join(ctes, "\n"),
 		sqlf.Join(joins, "\n"),
 		id,
 		sqlf.Join(conds, "AND"),
 	)
-	ids, err := basestore.ScanInts(s.Query(ctx, q))
+	ids, err := bbsestore.ScbnInts(s.Query(ctx, q))
 	if err != nil {
-		return false, err
+		return fblse, err
 	}
 	return len(ids) > 0, nil
 }
 
-const containsTeamsQueryFmtstr = `
+const contbinsTebmsQueryFmtstr = `
 %s
 SELECT 1
-FROM teams
+FROM tebms
 %s
-WHERE teams.id = %s
+WHERE tebms.id = %s
 AND %s
 LIMIT 1
 `
 
-func (s *teamStore) ListTeamMembers(ctx context.Context, opts ListTeamMembersOpts) (_ []*types.TeamMember, next *TeamMemberListCursor, err error) {
+func (s *tebmStore) ListTebmMembers(ctx context.Context, opts ListTebmMembersOpts) (_ []*types.TebmMember, next *TebmMemberListCursor, err error) {
 	conds, joins := opts.SQL()
 
 	if opts.LimitOffset != nil && opts.Limit > 0 {
@@ -321,21 +321,21 @@ func (s *teamStore) ListTeamMembers(ctx context.Context, opts ListTeamMembersOpt
 	}
 
 	q := sqlf.Sprintf(
-		listTeamMembersQueryFmtstr,
-		sqlf.Join(teamMemberColumns, ","),
+		listTebmMembersQueryFmtstr,
+		sqlf.Join(tebmMemberColumns, ","),
 		sqlf.Join(joins, "\n"),
 		sqlf.Join(conds, "AND"),
 		opts.LimitOffset.SQL(),
 	)
 
-	tms, err := scanTeamMembers(s.Query(ctx, q))
+	tms, err := scbnTebmMembers(s.Query(ctx, q))
 	if err != nil {
 		return nil, nil, err
 	}
 
 	if opts.LimitOffset != nil && opts.Limit > 0 && len(tms) == opts.Limit {
-		next = &TeamMemberListCursor{
-			TeamID: tms[len(tms)-1].TeamID,
+		next = &TebmMemberListCursor{
+			TebmID: tms[len(tms)-1].TebmID,
 			UserID: tms[len(tms)-1].UserID,
 		}
 		tms = tms[:len(tms)-1]
@@ -344,163 +344,163 @@ func (s *teamStore) ListTeamMembers(ctx context.Context, opts ListTeamMembersOpt
 	return tms, next, nil
 }
 
-const listTeamMembersQueryFmtstr = `
+const listTebmMembersQueryFmtstr = `
 SELECT %s
-FROM team_members
+FROM tebm_members
 %s
 WHERE %s
 ORDER BY
-	team_members.team_id ASC, team_members.user_id ASC
+	tebm_members.tebm_id ASC, tebm_members.user_id ASC
 %s
 `
 
-func (s *teamStore) CountTeamMembers(ctx context.Context, opts ListTeamMembersOpts) (int32, error) {
-	// Disable cursor for counting.
-	opts.Cursor = TeamMemberListCursor{}
+func (s *tebmStore) CountTebmMembers(ctx context.Context, opts ListTebmMembersOpts) (int32, error) {
+	// Disbble cursor for counting.
+	opts.Cursor = TebmMemberListCursor{}
 	conds, joins := opts.SQL()
 
 	q := sqlf.Sprintf(
-		countTeamMembersQueryFmtstr,
+		countTebmMembersQueryFmtstr,
 		sqlf.Join(joins, "\n"),
 		sqlf.Join(conds, "AND"),
 	)
 
-	count, _, err := basestore.ScanFirstInt(s.Query(ctx, q))
+	count, _, err := bbsestore.ScbnFirstInt(s.Query(ctx, q))
 	return int32(count), err
 }
 
-const countTeamMembersQueryFmtstr = `
+const countTebmMembersQueryFmtstr = `
 SELECT COUNT(*)
-FROM team_members
+FROM tebm_members
 %s
 WHERE %s
 `
 
-func (s *teamStore) CreateTeam(ctx context.Context, team *types.Team) (*types.Team, error) {
-	tx, err := s.Transact(ctx)
+func (s *tebmStore) CrebteTebm(ctx context.Context, tebm *types.Tebm) (*types.Tebm, error) {
+	tx, err := s.Trbnsbct(ctx)
 	if err != nil {
 		return nil, err
 	}
 	defer func() { err = tx.Done(err) }()
 
-	if team.CreatedAt.IsZero() {
-		team.CreatedAt = timeutil.Now()
+	if tebm.CrebtedAt.IsZero() {
+		tebm.CrebtedAt = timeutil.Now()
 	}
 
-	if team.UpdatedAt.IsZero() {
-		team.UpdatedAt = team.CreatedAt
+	if tebm.UpdbtedAt.IsZero() {
+		tebm.UpdbtedAt = tebm.CrebtedAt
 	}
 
 	q := sqlf.Sprintf(
-		createTeamQueryFmtstr,
-		sqlf.Join(teamInsertColumns, ","),
-		team.Name,
-		dbutil.NewNullString(team.DisplayName),
-		team.ReadOnly,
-		dbutil.NewNullInt32(team.ParentTeamID),
-		dbutil.NewNullInt32(team.CreatorID),
-		team.CreatedAt,
-		team.UpdatedAt,
-		sqlf.Join(teamColumns, ","),
+		crebteTebmQueryFmtstr,
+		sqlf.Join(tebmInsertColumns, ","),
+		tebm.Nbme,
+		dbutil.NewNullString(tebm.DisplbyNbme),
+		tebm.RebdOnly,
+		dbutil.NewNullInt32(tebm.PbrentTebmID),
+		dbutil.NewNullInt32(tebm.CrebtorID),
+		tebm.CrebtedAt,
+		tebm.UpdbtedAt,
+		sqlf.Join(tebmColumns, ","),
 	)
 
-	row := tx.Handle().QueryRowContext(
+	row := tx.Hbndle().QueryRowContext(
 		ctx,
-		q.Query(sqlf.PostgresBindVar),
+		q.Query(sqlf.PostgresBindVbr),
 		q.Args()...,
 	)
 	if err := row.Err(); err != nil {
-		var e *pgconn.PgError
+		vbr e *pgconn.PgError
 		if errors.As(err, &e) {
-			switch e.ConstraintName {
-			case "teams_name":
-				return nil, ErrTeamNameAlreadyExists
-			case "orgs_name_max_length", "orgs_name_valid_chars":
-				return nil, errors.Errorf("team name invalid: %s", e.ConstraintName)
-			case "orgs_display_name_max_length":
-				return nil, errors.Errorf("team display name invalid: %s", e.ConstraintName)
+			switch e.ConstrbintNbme {
+			cbse "tebms_nbme":
+				return nil, ErrTebmNbmeAlrebdyExists
+			cbse "orgs_nbme_mbx_length", "orgs_nbme_vblid_chbrs":
+				return nil, errors.Errorf("tebm nbme invblid: %s", e.ConstrbintNbme)
+			cbse "orgs_displby_nbme_mbx_length":
+				return nil, errors.Errorf("tebm displby nbme invblid: %s", e.ConstrbintNbme)
 			}
 		}
 
 		return nil, err
 	}
 
-	if err := scanTeam(row, team); err != nil {
+	if err := scbnTebm(row, tebm); err != nil {
 		return nil, err
 	}
 
-	q = sqlf.Sprintf(createTeamNameReservationQueryFmtstr, team.Name, team.ID)
+	q = sqlf.Sprintf(crebteTebmNbmeReservbtionQueryFmtstr, tebm.Nbme, tebm.ID)
 
-	// Reserve team name in shared users+orgs+teams namespace.
-	if _, err := tx.Handle().ExecContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...); err != nil {
-		var e *pgconn.PgError
+	// Reserve tebm nbme in shbred users+orgs+tebms nbmespbce.
+	if _, err := tx.Hbndle().ExecContext(ctx, q.Query(sqlf.PostgresBindVbr), q.Args()...); err != nil {
+		vbr e *pgconn.PgError
 		if errors.As(err, &e) {
-			switch e.ConstraintName {
-			case "names_pkey":
-				return nil, ErrTeamNameAlreadyExists
+			switch e.ConstrbintNbme {
+			cbse "nbmes_pkey":
+				return nil, ErrTebmNbmeAlrebdyExists
 			}
 		}
 		return nil, err
 	}
 
-	return team, nil
+	return tebm, nil
 }
 
-const createTeamQueryFmtstr = `
-INSERT INTO teams
+const crebteTebmQueryFmtstr = `
+INSERT INTO tebms
 (%s)
 VALUES (%s, %s, %s, %s, %s, %s, %s)
 RETURNING %s
 `
 
-const createTeamNameReservationQueryFmtstr = `
-INSERT INTO names
-	(name, team_id)
+const crebteTebmNbmeReservbtionQueryFmtstr = `
+INSERT INTO nbmes
+	(nbme, tebm_id)
 VALUES
 	(%s, %s)
 `
 
-func (s *teamStore) UpdateTeam(ctx context.Context, team *types.Team) error {
-	team.UpdatedAt = timeutil.Now()
+func (s *tebmStore) UpdbteTebm(ctx context.Context, tebm *types.Tebm) error {
+	tebm.UpdbtedAt = timeutil.Now()
 
 	conds := []*sqlf.Query{
-		sqlf.Sprintf("id = %s", team.ID),
+		sqlf.Sprintf("id = %s", tebm.ID),
 	}
 
 	q := sqlf.Sprintf(
-		updateTeamQueryFmtstr,
-		dbutil.NewNullString(team.DisplayName),
-		dbutil.NewNullInt32(team.ParentTeamID),
-		team.UpdatedAt,
+		updbteTebmQueryFmtstr,
+		dbutil.NewNullString(tebm.DisplbyNbme),
+		dbutil.NewNullInt32(tebm.PbrentTebmID),
+		tebm.UpdbtedAt,
 		sqlf.Join(conds, "AND"),
-		sqlf.Join(teamColumns, ","),
+		sqlf.Join(tebmColumns, ","),
 	)
 
-	return scanTeam(s.QueryRow(ctx, q), team)
+	return scbnTebm(s.QueryRow(ctx, q), tebm)
 }
 
-const updateTeamQueryFmtstr = `
+const updbteTebmQueryFmtstr = `
 UPDATE
-	teams
+	tebms
 SET
-	display_name = %s,
-	parent_team_id = %s,
-	updated_at = %s
+	displby_nbme = %s,
+	pbrent_tebm_id = %s,
+	updbted_bt = %s
 WHERE
 	%s
 RETURNING
 	%s
 `
 
-func (s *teamStore) DeleteTeam(ctx context.Context, team int32) (err error) {
-	return s.WithTransact(ctx, func(tx TeamStore) error {
+func (s *tebmStore) DeleteTebm(ctx context.Context, tebm int32) (err error) {
+	return s.WithTrbnsbct(ctx, func(tx TebmStore) error {
 		conds := []*sqlf.Query{
-			sqlf.Sprintf("teams.id = %s", team),
+			sqlf.Sprintf("tebms.id = %s", tebm),
 		}
 
-		q := sqlf.Sprintf(deleteTeamQueryFmtstr, sqlf.Join(conds, "AND"))
+		q := sqlf.Sprintf(deleteTebmQueryFmtstr, sqlf.Join(conds, "AND"))
 
-		res, err := tx.Handle().ExecContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
+		res, err := tx.Hbndle().ExecContext(ctx, q.Query(sqlf.PostgresBindVbr), q.Args()...)
 		if err != nil {
 			return err
 		}
@@ -509,50 +509,50 @@ func (s *teamStore) DeleteTeam(ctx context.Context, team int32) (err error) {
 			return err
 		}
 		if rows == 0 {
-			return TeamNotFoundError{args: conds}
+			return TebmNotFoundError{brgs: conds}
 		}
 
 		conds = []*sqlf.Query{
-			sqlf.Sprintf("names.team_id = %s", team),
+			sqlf.Sprintf("nbmes.tebm_id = %s", tebm),
 		}
 
-		q = sqlf.Sprintf(deleteTeamNameReservationQueryFmtstr, sqlf.Join(conds, "AND"))
+		q = sqlf.Sprintf(deleteTebmNbmeReservbtionQueryFmtstr, sqlf.Join(conds, "AND"))
 
-		// Release the teams name so it can be used by another user, team or org.
-		_, err = tx.Handle().ExecContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
+		// Relebse the tebms nbme so it cbn be used by bnother user, tebm or org.
+		_, err = tx.Hbndle().ExecContext(ctx, q.Query(sqlf.PostgresBindVbr), q.Args()...)
 		return err
 	})
 }
 
-const deleteTeamQueryFmtstr = `
+const deleteTebmQueryFmtstr = `
 DELETE FROM
-	teams
+	tebms
 WHERE %s
 `
 
-const deleteTeamNameReservationQueryFmtstr = `
+const deleteTebmNbmeReservbtionQueryFmtstr = `
 DELETE FROM
-	names
+	nbmes
 WHERE %s
 `
 
-func (s *teamStore) CreateTeamMember(ctx context.Context, members ...*types.TeamMember) error {
-	inserter := func(inserter *batch.Inserter) error {
-		for _, m := range members {
-			if m.CreatedAt.IsZero() {
-				m.CreatedAt = timeutil.Now()
+func (s *tebmStore) CrebteTebmMember(ctx context.Context, members ...*types.TebmMember) error {
+	inserter := func(inserter *bbtch.Inserter) error {
+		for _, m := rbnge members {
+			if m.CrebtedAt.IsZero() {
+				m.CrebtedAt = timeutil.Now()
 			}
 
-			if m.UpdatedAt.IsZero() {
-				m.UpdatedAt = m.CreatedAt
+			if m.UpdbtedAt.IsZero() {
+				m.UpdbtedAt = m.CrebtedAt
 			}
 
 			if err := inserter.Insert(
 				ctx,
-				m.TeamID,
+				m.TebmID,
 				m.UserID,
-				m.CreatedAt,
-				m.UpdatedAt,
+				m.CrebtedAt,
+				m.UpdbtedAt,
 			); err != nil {
 				return err
 			}
@@ -561,132 +561,132 @@ func (s *teamStore) CreateTeamMember(ctx context.Context, members ...*types.Team
 	}
 
 	i := -1
-	return batch.WithInserterWithReturn(
+	return bbtch.WithInserterWithReturn(
 		ctx,
-		s.Handle(),
-		"team_members",
-		batch.MaxNumPostgresParameters,
-		teamMemberInsertColumns,
+		s.Hbndle(),
+		"tebm_members",
+		bbtch.MbxNumPostgresPbrbmeters,
+		tebmMemberInsertColumns,
 		"ON CONFLICT DO NOTHING",
-		teamMemberStringColumns,
-		func(sc dbutil.Scanner) error {
+		tebmMemberStringColumns,
+		func(sc dbutil.Scbnner) error {
 			i++
-			return scanTeamMember(sc, members[i])
+			return scbnTebmMember(sc, members[i])
 		},
 		inserter,
 	)
 }
 
-func (s *teamStore) DeleteTeamMember(ctx context.Context, members ...*types.TeamMember) error {
+func (s *tebmStore) DeleteTebmMember(ctx context.Context, members ...*types.TebmMember) error {
 	ms := []*sqlf.Query{}
-	for _, m := range members {
-		ms = append(ms, sqlf.Sprintf("(%s, %s)", m.TeamID, m.UserID))
+	for _, m := rbnge members {
+		ms = bppend(ms, sqlf.Sprintf("(%s, %s)", m.TebmID, m.UserID))
 	}
 	conds := []*sqlf.Query{
-		sqlf.Sprintf("(team_id, user_id) IN (%s)", sqlf.Join(ms, ",")),
+		sqlf.Sprintf("(tebm_id, user_id) IN (%s)", sqlf.Join(ms, ",")),
 	}
 
-	q := sqlf.Sprintf(deleteTeamMemberQueryFmtstr, sqlf.Join(conds, "AND"))
+	q := sqlf.Sprintf(deleteTebmMemberQueryFmtstr, sqlf.Join(conds, "AND"))
 	return s.Exec(ctx, q)
 }
 
-const deleteTeamMemberQueryFmtstr = `
+const deleteTebmMemberQueryFmtstr = `
 DELETE FROM
-	team_members
+	tebm_members
 WHERE %s
 `
 
-func (s *teamStore) IsTeamMember(ctx context.Context, teamID, userID int32) (bool, error) {
+func (s *tebmStore) IsTebmMember(ctx context.Context, tebmID, userID int32) (bool, error) {
 	conds := []*sqlf.Query{
-		sqlf.Sprintf("team_id = %s", teamID),
+		sqlf.Sprintf("tebm_id = %s", tebmID),
 		sqlf.Sprintf("user_id = %s", userID),
 	}
 
-	q := sqlf.Sprintf(isTeamMemberQueryFmtstr, sqlf.Join(conds, "AND"))
-	ok, _, err := basestore.ScanFirstBool(s.Query(ctx, q))
+	q := sqlf.Sprintf(isTebmMemberQueryFmtstr, sqlf.Join(conds, "AND"))
+	ok, _, err := bbsestore.ScbnFirstBool(s.Query(ctx, q))
 	return ok, err
 }
 
-const isTeamMemberQueryFmtstr = `
+const isTebmMemberQueryFmtstr = `
 SELECT
 	COUNT(*) = 1
 FROM
-	team_members
+	tebm_members
 WHERE %s
 `
 
-var teamColumns = []*sqlf.Query{
-	sqlf.Sprintf("teams.id"),
-	sqlf.Sprintf("teams.name"),
-	sqlf.Sprintf("teams.display_name"),
-	sqlf.Sprintf("teams.readonly"),
-	sqlf.Sprintf("teams.parent_team_id"),
-	sqlf.Sprintf("teams.creator_id"),
-	sqlf.Sprintf("teams.created_at"),
-	sqlf.Sprintf("teams.updated_at"),
+vbr tebmColumns = []*sqlf.Query{
+	sqlf.Sprintf("tebms.id"),
+	sqlf.Sprintf("tebms.nbme"),
+	sqlf.Sprintf("tebms.displby_nbme"),
+	sqlf.Sprintf("tebms.rebdonly"),
+	sqlf.Sprintf("tebms.pbrent_tebm_id"),
+	sqlf.Sprintf("tebms.crebtor_id"),
+	sqlf.Sprintf("tebms.crebted_bt"),
+	sqlf.Sprintf("tebms.updbted_bt"),
 }
 
-var teamInsertColumns = []*sqlf.Query{
-	sqlf.Sprintf("name"),
-	sqlf.Sprintf("display_name"),
-	sqlf.Sprintf("readonly"),
-	sqlf.Sprintf("parent_team_id"),
-	sqlf.Sprintf("creator_id"),
-	sqlf.Sprintf("created_at"),
-	sqlf.Sprintf("updated_at"),
+vbr tebmInsertColumns = []*sqlf.Query{
+	sqlf.Sprintf("nbme"),
+	sqlf.Sprintf("displby_nbme"),
+	sqlf.Sprintf("rebdonly"),
+	sqlf.Sprintf("pbrent_tebm_id"),
+	sqlf.Sprintf("crebtor_id"),
+	sqlf.Sprintf("crebted_bt"),
+	sqlf.Sprintf("updbted_bt"),
 }
 
-var teamMemberColumns = []*sqlf.Query{
-	sqlf.Sprintf("team_members.team_id"),
-	sqlf.Sprintf("team_members.user_id"),
-	sqlf.Sprintf("team_members.created_at"),
-	sqlf.Sprintf("team_members.updated_at"),
+vbr tebmMemberColumns = []*sqlf.Query{
+	sqlf.Sprintf("tebm_members.tebm_id"),
+	sqlf.Sprintf("tebm_members.user_id"),
+	sqlf.Sprintf("tebm_members.crebted_bt"),
+	sqlf.Sprintf("tebm_members.updbted_bt"),
 }
 
-var teamMemberStringColumns = []string{
-	"team_members.team_id",
-	"team_members.user_id",
-	"team_members.created_at",
-	"team_members.updated_at",
+vbr tebmMemberStringColumns = []string{
+	"tebm_members.tebm_id",
+	"tebm_members.user_id",
+	"tebm_members.crebted_bt",
+	"tebm_members.updbted_bt",
 }
 
-var teamMemberInsertColumns = []string{
-	"team_id",
+vbr tebmMemberInsertColumns = []string{
+	"tebm_id",
 	"user_id",
-	"created_at",
-	"updated_at",
+	"crebted_bt",
+	"updbted_bt",
 }
 
-var scanTeams = basestore.NewSliceScanner(func(s dbutil.Scanner) (*types.Team, error) {
-	var t types.Team
-	err := scanTeam(s, &t)
+vbr scbnTebms = bbsestore.NewSliceScbnner(func(s dbutil.Scbnner) (*types.Tebm, error) {
+	vbr t types.Tebm
+	err := scbnTebm(s, &t)
 	return &t, err
 })
 
-func scanTeam(sc dbutil.Scanner, t *types.Team) error {
-	return sc.Scan(
+func scbnTebm(sc dbutil.Scbnner, t *types.Tebm) error {
+	return sc.Scbn(
 		&t.ID,
-		&t.Name,
-		&dbutil.NullString{S: &t.DisplayName},
-		&t.ReadOnly,
-		&dbutil.NullInt32{N: &t.ParentTeamID},
-		&dbutil.NullInt32{N: &t.CreatorID},
-		&t.CreatedAt,
-		&t.UpdatedAt,
+		&t.Nbme,
+		&dbutil.NullString{S: &t.DisplbyNbme},
+		&t.RebdOnly,
+		&dbutil.NullInt32{N: &t.PbrentTebmID},
+		&dbutil.NullInt32{N: &t.CrebtorID},
+		&t.CrebtedAt,
+		&t.UpdbtedAt,
 	)
 }
 
-var scanTeamMembers = basestore.NewSliceScanner(func(s dbutil.Scanner) (*types.TeamMember, error) {
-	var t types.TeamMember
-	err := scanTeamMember(s, &t)
+vbr scbnTebmMembers = bbsestore.NewSliceScbnner(func(s dbutil.Scbnner) (*types.TebmMember, error) {
+	vbr t types.TebmMember
+	err := scbnTebmMember(s, &t)
 	return &t, err
 })
 
-func scanTeamMember(sc dbutil.Scanner, tm *types.TeamMember) error {
-	return sc.Scan(
-		&tm.TeamID,
+func scbnTebmMember(sc dbutil.Scbnner, tm *types.TebmMember) error {
+	return sc.Scbn(
+		&tm.TebmID,
 		&tm.UserID,
-		&tm.CreatedAt,
-		&tm.UpdatedAt,
+		&tm.CrebtedAt,
+		&tm.UpdbtedAt,
 	)
 }

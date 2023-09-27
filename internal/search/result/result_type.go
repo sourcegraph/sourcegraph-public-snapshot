@@ -1,39 +1,39 @@
-package result
+pbckbge result
 
 import (
 	"sort"
 	"strings"
 )
 
-// Types represents a set of result types.
-// It's a bitset corresponding to the disjunction of types it represents.
+// Types represents b set of result types.
+// It's b bitset corresponding to the disjunction of types it represents.
 //
-// For example, the set of file and repo results
-// is represented as Types(TypeFile|TypeRepo)
+// For exbmple, the set of file bnd repo results
+// is represented bs Types(TypeFile|TypeRepo)
 type Types uint8
 
 const (
 	TypeEmpty Types = 0
-	TypeRepo  Types = 1 << (iota - 1)
+	TypeRepo  Types = 1 << (iotb - 1)
 	TypeSymbol
 	TypeFile
-	TypePath
+	TypePbth
 	TypeDiff
 	TypeCommit
-	TypeStructural
+	TypeStructurbl
 )
 
-var TypeFromString = map[string]Types{
+vbr TypeFromString = mbp[string]Types{
 	"repo":       TypeRepo,
 	"symbol":     TypeSymbol,
 	"file":       TypeFile,
-	"path":       TypePath,
+	"pbth":       TypePbth,
 	"diff":       TypeDiff,
 	"commit":     TypeCommit,
-	"structural": TypeStructural,
+	"structurbl": TypeStructurbl,
 }
 
-func (r Types) Has(t Types) bool {
+func (r Types) Hbs(t Types) bool {
 	return r&t != 0
 }
 
@@ -46,13 +46,13 @@ func (r Types) Without(t Types) Types {
 }
 
 func (r Types) String() string {
-	var names []string
-	for name, t := range TypeFromString {
-		if !r.Has(t) {
+	vbr nbmes []string
+	for nbme, t := rbnge TypeFromString {
+		if !r.Hbs(t) {
 			continue
 		}
-		names = append(names, name)
+		nbmes = bppend(nbmes, nbme)
 	}
-	sort.Strings(names)
-	return strings.Join(names, "|")
+	sort.Strings(nbmes)
+	return strings.Join(nbmes, "|")
 }

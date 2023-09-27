@@ -1,69 +1,69 @@
-package client
+pbckbge client
 
 import (
 	"bytes"
 	"encoding/json"
 	"io"
 
-	streamapi "github.com/sourcegraph/sourcegraph/internal/search/streaming/api"
+	strebmbpi "github.com/sourcegrbph/sourcegrbph/internbl/sebrch/strebming/bpi"
 
-	"github.com/sourcegraph/sourcegraph/internal/compute"
-	"github.com/sourcegraph/sourcegraph/internal/search/streaming/http"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/internbl/compute"
+	"github.com/sourcegrbph/sourcegrbph/internbl/sebrch/strebming/http"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-type ComputeTextExtraStreamDecoder struct {
-	OnProgress func(progress *streamapi.Progress)
-	OnResult   func(results []compute.TextExtra)
+type ComputeTextExtrbStrebmDecoder struct {
+	OnProgress func(progress *strebmbpi.Progress)
+	OnResult   func(results []compute.TextExtrb)
 	OnAlert    func(*http.EventAlert)
 	OnError    func(*http.EventError)
-	OnUnknown  func(event, data []byte)
+	OnUnknown  func(event, dbtb []byte)
 }
 
-func (rr ComputeTextExtraStreamDecoder) ReadAll(r io.Reader) error {
+func (rr ComputeTextExtrbStrebmDecoder) RebdAll(r io.Rebder) error {
 	dec := http.NewDecoder(r)
 
-	for dec.Scan() {
+	for dec.Scbn() {
 		event := dec.Event()
-		data := dec.Data()
+		dbtb := dec.Dbtb()
 
-		if bytes.Equal(event, []byte("results")) {
+		if bytes.Equbl(event, []byte("results")) {
 			if rr.OnResult == nil {
 				continue
 			}
-			var d []compute.TextExtra
-			if err := json.Unmarshal(data, &d); err != nil {
-				return errors.Errorf("failed to decode compute compute text payload: %w", err)
+			vbr d []compute.TextExtrb
+			if err := json.Unmbrshbl(dbtb, &d); err != nil {
+				return errors.Errorf("fbiled to decode compute compute text pbylobd: %w", err)
 			}
 			rr.OnResult(d)
-		} else if bytes.Equal(event, []byte("alert")) {
-			// This decoder can handle alerts, but at the moment the only alert that is returned by
-			// the compute stream is if a query times out after 60 seconds.
+		} else if bytes.Equbl(event, []byte("blert")) {
+			// This decoder cbn hbndle blerts, but bt the moment the only blert thbt is returned by
+			// the compute strebm is if b query times out bfter 60 seconds.
 			if rr.OnAlert == nil {
 				continue
 			}
-			var d http.EventAlert
-			if err := json.Unmarshal(data, &d); err != nil {
-				return errors.Errorf("failed to decode alert payload: %w", err)
+			vbr d http.EventAlert
+			if err := json.Unmbrshbl(dbtb, &d); err != nil {
+				return errors.Errorf("fbiled to decode blert pbylobd: %w", err)
 			}
 			rr.OnAlert(&d)
-		} else if bytes.Equal(event, []byte("error")) {
+		} else if bytes.Equbl(event, []byte("error")) {
 			if rr.OnError == nil {
 				continue
 			}
-			var d http.EventError
-			if err := json.Unmarshal(data, &d); err != nil {
-				return errors.Errorf("failed to decode error payload: %w", err)
+			vbr d http.EventError
+			if err := json.Unmbrshbl(dbtb, &d); err != nil {
+				return errors.Errorf("fbiled to decode error pbylobd: %w", err)
 			}
 			rr.OnError(&d)
-		} else if bytes.Equal(event, []byte("done")) {
-			// Always the last event
-			break
+		} else if bytes.Equbl(event, []byte("done")) {
+			// Alwbys the lbst event
+			brebk
 		} else {
 			if rr.OnUnknown == nil {
 				continue
 			}
-			rr.OnUnknown(event, data)
+			rr.OnUnknown(event, dbtb)
 		}
 	}
 	return dec.Err()

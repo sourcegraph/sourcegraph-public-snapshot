@@ -1,70 +1,70 @@
-package graphqlbackend
+pbckbge grbphqlbbckend
 
 import (
 	"context"
 	"strings"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/externallink"
-	"github.com/sourcegraph/sourcegraph/internal/highlight"
-	"github.com/sourcegraph/sourcegraph/internal/markdown"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/grbphqlbbckend/externbllink"
+	"github.com/sourcegrbph/sourcegrbph/internbl/highlight"
+	"github.com/sourcegrbph/sourcegrbph/internbl/mbrkdown"
 )
 
-type FileResolver interface {
-	Path() string
-	Name() string
+type FileResolver interfbce {
+	Pbth() string
+	Nbme() string
 	IsDirectory() bool
-	Content(ctx context.Context, args *GitTreeContentPageArgs) (string, error)
+	Content(ctx context.Context, brgs *GitTreeContentPbgeArgs) (string, error)
 	ByteSize(ctx context.Context) (int32, error)
-	TotalLines(ctx context.Context) (int32, error)
-	Binary(ctx context.Context) (bool, error)
-	RichHTML(ctx context.Context, args *GitTreeContentPageArgs) (string, error)
+	TotblLines(ctx context.Context) (int32, error)
+	Binbry(ctx context.Context) (bool, error)
+	RichHTML(ctx context.Context, brgs *GitTreeContentPbgeArgs) (string, error)
 	URL(ctx context.Context) (string, error)
-	CanonicalURL() string
-	ChangelistURL(ctx context.Context) (*string, error)
-	ExternalURLs(ctx context.Context) ([]*externallink.Resolver, error)
-	Highlight(ctx context.Context, args *HighlightArgs) (*HighlightedFileResolver, error)
+	CbnonicblURL() string
+	ChbngelistURL(ctx context.Context) (*string, error)
+	ExternblURLs(ctx context.Context) ([]*externbllink.Resolver, error)
+	Highlight(ctx context.Context, brgs *HighlightArgs) (*HighlightedFileResolver, error)
 
 	ToGitBlob() (*GitTreeEntryResolver, bool)
-	ToVirtualFile() (*VirtualFileResolver, bool)
-	ToBatchSpecWorkspaceFile() (BatchWorkspaceFileResolver, bool)
+	ToVirtublFile() (*VirtublFileResolver, bool)
+	ToBbtchSpecWorkspbceFile() (BbtchWorkspbceFileResolver, bool)
 }
 
 func richHTML(content, ext string) (string, error) {
 	switch strings.ToLower(ext) {
-	case ".md", ".mdown", ".markdown", ".markdn":
-		break
-	default:
+	cbse ".md", ".mdown", ".mbrkdown", ".mbrkdn":
+		brebk
+	defbult:
 		return "", nil
 	}
-	return markdown.Render(content)
+	return mbrkdown.Render(content)
 }
 
-type markdownOptions struct {
-	AlwaysNil *string
+type mbrkdownOptions struct {
+	AlwbysNil *string
 }
 
-func (*schemaResolver) RenderMarkdown(args *struct {
-	Markdown string
-	Options  *markdownOptions
+func (*schembResolver) RenderMbrkdown(brgs *struct {
+	Mbrkdown string
+	Options  *mbrkdownOptions
 }) (string, error) {
-	return markdown.Render(args.Markdown)
+	return mbrkdown.Render(brgs.Mbrkdown)
 }
 
-func (*schemaResolver) HighlightCode(ctx context.Context, args *struct {
+func (*schembResolver) HighlightCode(ctx context.Context, brgs *struct {
 	Code           string
-	FuzzyLanguage  string
-	DisableTimeout bool
+	FuzzyLbngubge  string
+	DisbbleTimeout bool
 	IsLightTheme   *bool
 }) (string, error) {
-	language := highlight.SyntectLanguageMap[strings.ToLower(args.FuzzyLanguage)]
-	filePath := "file." + language
-	response, _, err := highlight.Code(ctx, highlight.Params{
-		Content:        []byte(args.Code),
-		Filepath:       filePath,
-		DisableTimeout: args.DisableTimeout,
+	lbngubge := highlight.SyntectLbngubgeMbp[strings.ToLower(brgs.FuzzyLbngubge)]
+	filePbth := "file." + lbngubge
+	response, _, err := highlight.Code(ctx, highlight.Pbrbms{
+		Content:        []byte(brgs.Code),
+		Filepbth:       filePbth,
+		DisbbleTimeout: brgs.DisbbleTimeout,
 	})
 	if err != nil {
-		return args.Code, err
+		return brgs.Code, err
 	}
 
 	html, err := response.HTML()

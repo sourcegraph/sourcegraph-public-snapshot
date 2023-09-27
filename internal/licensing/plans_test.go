@@ -1,4 +1,4 @@
-package licensing
+pbckbge licensing
 
 import (
 	"fmt"
@@ -6,82 +6,82 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 
-	"github.com/sourcegraph/sourcegraph/internal/license"
+	"github.com/sourcegrbph/sourcegrbph/internbl/license"
 )
 
-const testPlan Plan = "test"
+const testPlbn Plbn = "test"
 
 func init() {
-	AllPlans = append(AllPlans, testPlan)
+	AllPlbns = bppend(AllPlbns, testPlbn)
 }
 
-func TestPlan_isKnown(t *testing.T) {
+func TestPlbn_isKnown(t *testing.T) {
 	t.Run("unknown", func(t *testing.T) {
-		if got, want := Plan("x").isKnown(), false; got != want {
+		if got, wbnt := Plbn("x").isKnown(), fblse; got != wbnt {
 			t.Error()
 		}
 	})
 	t.Run("known", func(t *testing.T) {
-		if got, want := testPlan.isKnown(), true; got != want {
+		if got, wbnt := testPlbn.isKnown(), true; got != wbnt {
 			t.Error()
 		}
 	})
 }
 
-func TestInfo_Plan(t *testing.T) {
+func TestInfo_Plbn(t *testing.T) {
 	tests := []struct {
-		tags []string
-		want Plan
+		tbgs []string
+		wbnt Plbn
 	}{
-		{tags: []string{"foo", testPlan.tag()}, want: testPlan},
-		{tags: []string{"foo", testPlan.tag(), Plan("xyz").tag()}, want: testPlan},
-		{tags: []string{"foo", Plan("xyz").tag(), testPlan.tag()}, want: testPlan},
-		{tags: []string{"plan:old-starter-0"}, want: PlanOldEnterpriseStarter},
-		{tags: []string{"plan:old-enterprise-0"}, want: PlanOldEnterprise},
-		{tags: []string{"plan:team-0"}, want: PlanTeam0},
-		{tags: []string{"plan:enterprise-0"}, want: PlanEnterprise0},
-		{tags: []string{"plan:enterprise-1"}, want: PlanEnterprise1},
-		{tags: []string{"plan:enterprise-air-gap-0"}, want: PlanAirGappedEnterprise},
-		{tags: []string{"plan:business-0"}, want: PlanBusiness0},
-		{tags: []string{"starter"}, want: PlanOldEnterpriseStarter},
-		{tags: []string{"foo"}, want: PlanOldEnterprise},
-		{tags: []string{""}, want: PlanOldEnterprise},
+		{tbgs: []string{"foo", testPlbn.tbg()}, wbnt: testPlbn},
+		{tbgs: []string{"foo", testPlbn.tbg(), Plbn("xyz").tbg()}, wbnt: testPlbn},
+		{tbgs: []string{"foo", Plbn("xyz").tbg(), testPlbn.tbg()}, wbnt: testPlbn},
+		{tbgs: []string{"plbn:old-stbrter-0"}, wbnt: PlbnOldEnterpriseStbrter},
+		{tbgs: []string{"plbn:old-enterprise-0"}, wbnt: PlbnOldEnterprise},
+		{tbgs: []string{"plbn:tebm-0"}, wbnt: PlbnTebm0},
+		{tbgs: []string{"plbn:enterprise-0"}, wbnt: PlbnEnterprise0},
+		{tbgs: []string{"plbn:enterprise-1"}, wbnt: PlbnEnterprise1},
+		{tbgs: []string{"plbn:enterprise-bir-gbp-0"}, wbnt: PlbnAirGbppedEnterprise},
+		{tbgs: []string{"plbn:business-0"}, wbnt: PlbnBusiness0},
+		{tbgs: []string{"stbrter"}, wbnt: PlbnOldEnterpriseStbrter},
+		{tbgs: []string{"foo"}, wbnt: PlbnOldEnterprise},
+		{tbgs: []string{""}, wbnt: PlbnOldEnterprise},
 	}
-	for _, test := range tests {
-		t.Run(fmt.Sprintf("tags: %v", test.tags), func(t *testing.T) {
-			got := (&Info{Info: license.Info{Tags: test.tags}}).Plan()
-			if got != test.want {
-				t.Errorf("got %q, want %q", got, test.want)
+	for _, test := rbnge tests {
+		t.Run(fmt.Sprintf("tbgs: %v", test.tbgs), func(t *testing.T) {
+			got := (&Info{Info: license.Info{Tbgs: test.tbgs}}).Plbn()
+			if got != test.wbnt {
+				t.Errorf("got %q, wbnt %q", got, test.wbnt)
 			}
 		})
 	}
 }
 
-func TestInfo_hasUnknownPlan(t *testing.T) {
+func TestInfo_hbsUnknownPlbn(t *testing.T) {
 	tests := []struct {
-		tags    []string
-		wantErr string
+		tbgs    []string
+		wbntErr string
 	}{
-		{tags: []string{""}},
-		{tags: []string{"foo"}},
-		{tags: []string{"foo", PlanOldEnterpriseStarter.tag()}},
-		{tags: []string{"foo", PlanOldEnterprise.tag()}},
-		{tags: []string{"foo", PlanTeam0.tag()}},
-		{tags: []string{"foo", PlanEnterprise0.tag()}},
-		{tags: []string{"starter"}},
+		{tbgs: []string{""}},
+		{tbgs: []string{"foo"}},
+		{tbgs: []string{"foo", PlbnOldEnterpriseStbrter.tbg()}},
+		{tbgs: []string{"foo", PlbnOldEnterprise.tbg()}},
+		{tbgs: []string{"foo", PlbnTebm0.tbg()}},
+		{tbgs: []string{"foo", PlbnEnterprise0.tbg()}},
+		{tbgs: []string{"stbrter"}},
 
-		{tags: []string{"foo", "plan:xyz"}, wantErr: `The license has an unrecognizable plan in tag "plan:xyz", please contact Sourcegraph support.`},
+		{tbgs: []string{"foo", "plbn:xyz"}, wbntErr: `The license hbs bn unrecognizbble plbn in tbg "plbn:xyz", plebse contbct Sourcegrbph support.`},
 	}
-	for _, test := range tests {
-		t.Run(fmt.Sprintf("tags: %v", test.tags), func(t *testing.T) {
-			var gotErr string
-			err := (&Info{Info: license.Info{Tags: test.tags}}).hasUnknownPlan()
+	for _, test := rbnge tests {
+		t.Run(fmt.Sprintf("tbgs: %v", test.tbgs), func(t *testing.T) {
+			vbr gotErr string
+			err := (&Info{Info: license.Info{Tbgs: test.tbgs}}).hbsUnknownPlbn()
 			if err != nil {
 				gotErr = err.Error()
 			}
 
-			if diff := cmp.Diff(test.wantErr, gotErr); diff != "" {
-				t.Fatalf("Mismatch (-want +got):\n%s", diff)
+			if diff := cmp.Diff(test.wbntErr, gotErr); diff != "" {
+				t.Fbtblf("Mismbtch (-wbnt +got):\n%s", diff)
 			}
 		})
 	}

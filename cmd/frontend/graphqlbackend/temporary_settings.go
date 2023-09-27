@@ -1,50 +1,50 @@
-package graphqlbackend
+pbckbge grbphqlbbckend
 
 import (
 	"context"
 
-	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	ts "github.com/sourcegraph/sourcegraph/internal/temporarysettings"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bctor"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	ts "github.com/sourcegrbph/sourcegrbph/internbl/temporbrysettings"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-type TemporarySettingsResolver struct {
-	db    database.DB
-	inner *ts.TemporarySettings
+type TemporbrySettingsResolver struct {
+	db    dbtbbbse.DB
+	inner *ts.TemporbrySettings
 }
 
-func (r *schemaResolver) TemporarySettings(ctx context.Context) (*TemporarySettingsResolver, error) {
-	a := actor.FromContext(ctx)
-	if !a.IsAuthenticated() {
-		return nil, errors.New("not authenticated")
+func (r *schembResolver) TemporbrySettings(ctx context.Context) (*TemporbrySettingsResolver, error) {
+	b := bctor.FromContext(ctx)
+	if !b.IsAuthenticbted() {
+		return nil, errors.New("not buthenticbted")
 	}
 
-	temporarySettings, err := r.db.TemporarySettings().GetTemporarySettings(ctx, a.UID)
+	temporbrySettings, err := r.db.TemporbrySettings().GetTemporbrySettings(ctx, b.UID)
 	if err != nil {
 		return nil, err
 	}
-	return &TemporarySettingsResolver{db: r.db, inner: temporarySettings}, nil
+	return &TemporbrySettingsResolver{db: r.db, inner: temporbrySettings}, nil
 }
 
-func (t *TemporarySettingsResolver) Contents() string {
+func (t *TemporbrySettingsResolver) Contents() string {
 	return t.inner.Contents
 }
 
-func (r *schemaResolver) OverwriteTemporarySettings(ctx context.Context, args struct{ Contents string }) (*EmptyResponse, error) {
-	a := actor.FromContext(ctx)
-	if !a.IsAuthenticated() {
-		return nil, errors.New("not authenticated")
+func (r *schembResolver) OverwriteTemporbrySettings(ctx context.Context, brgs struct{ Contents string }) (*EmptyResponse, error) {
+	b := bctor.FromContext(ctx)
+	if !b.IsAuthenticbted() {
+		return nil, errors.New("not buthenticbted")
 	}
 
-	return &EmptyResponse{}, r.db.TemporarySettings().OverwriteTemporarySettings(ctx, a.UID, args.Contents)
+	return &EmptyResponse{}, r.db.TemporbrySettings().OverwriteTemporbrySettings(ctx, b.UID, brgs.Contents)
 }
 
-func (r *schemaResolver) EditTemporarySettings(ctx context.Context, args struct{ SettingsToEdit string }) (*EmptyResponse, error) {
-	a := actor.FromContext(ctx)
-	if !a.IsAuthenticated() {
-		return nil, errors.New("not authenticated")
+func (r *schembResolver) EditTemporbrySettings(ctx context.Context, brgs struct{ SettingsToEdit string }) (*EmptyResponse, error) {
+	b := bctor.FromContext(ctx)
+	if !b.IsAuthenticbted() {
+		return nil, errors.New("not buthenticbted")
 	}
 
-	return &EmptyResponse{}, r.db.TemporarySettings().EditTemporarySettings(ctx, a.UID, args.SettingsToEdit)
+	return &EmptyResponse{}, r.db.TemporbrySettings().EditTemporbrySettings(ctx, b.UID, brgs.SettingsToEdit)
 }

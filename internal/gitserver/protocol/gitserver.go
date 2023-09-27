@@ -1,23 +1,23 @@
-package protocol
+pbckbge protocol
 
 import (
 	"encoding/json"
 	"strings"
 	"time"
 
-	"go.opentelemetry.io/otel/attribute"
-	"google.golang.org/protobuf/types/known/durationpb"
-	"google.golang.org/protobuf/types/known/timestamppb"
+	"go.opentelemetry.io/otel/bttribute"
+	"google.golbng.org/protobuf/types/known/durbtionpb"
+	"google.golbng.org/protobuf/types/known/timestbmppb"
 
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
-	proto "github.com/sourcegraph/sourcegraph/internal/gitserver/v1"
-	"github.com/sourcegraph/sourcegraph/internal/search/result"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi"
+	"github.com/sourcegrbph/sourcegrbph/internbl/gitserver/gitdombin"
+	proto "github.com/sourcegrbph/sourcegrbph/internbl/gitserver/v1"
+	"github.com/sourcegrbph/sourcegrbph/internbl/sebrch/result"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-type SearchRequest struct {
-	Repo                 api.RepoName
+type SebrchRequest struct {
+	Repo                 bpi.RepoNbme
 	Revisions            []RevisionSpecifier
 	Query                Node
 	IncludeDiff          bool
@@ -25,12 +25,12 @@ type SearchRequest struct {
 	IncludeModifiedFiles bool
 }
 
-func (r *SearchRequest) ToProto() *proto.SearchRequest {
-	revs := make([]*proto.RevisionSpecifier, 0, len(r.Revisions))
-	for _, rev := range r.Revisions {
-		revs = append(revs, rev.ToProto())
+func (r *SebrchRequest) ToProto() *proto.SebrchRequest {
+	revs := mbke([]*proto.RevisionSpecifier, 0, len(r.Revisions))
+	for _, rev := rbnge r.Revisions {
+		revs = bppend(revs, rev.ToProto())
 	}
-	return &proto.SearchRequest{
+	return &proto.SebrchRequest{
 		Repo:                 string(r.Repo),
 		Revisions:            revs,
 		Query:                r.Query.ToProto(),
@@ -40,19 +40,19 @@ func (r *SearchRequest) ToProto() *proto.SearchRequest {
 	}
 }
 
-func SearchRequestFromProto(p *proto.SearchRequest) (*SearchRequest, error) {
+func SebrchRequestFromProto(p *proto.SebrchRequest) (*SebrchRequest, error) {
 	query, err := NodeFromProto(p.GetQuery())
 	if err != nil {
 		return nil, err
 	}
 
-	revisions := make([]RevisionSpecifier, 0, len(p.GetRevisions()))
-	for _, rev := range p.GetRevisions() {
-		revisions = append(revisions, RevisionSpecifierFromProto(rev))
+	revisions := mbke([]RevisionSpecifier, 0, len(p.GetRevisions()))
+	for _, rev := rbnge p.GetRevisions() {
+		revisions = bppend(revisions, RevisionSpecifierFromProto(rev))
 	}
 
-	return &SearchRequest{
-		Repo:                 api.RepoName(p.GetRepo()),
+	return &SebrchRequest{
+		Repo:                 bpi.RepoNbme(p.GetRepo()),
 		Revisions:            revisions,
 		Query:                query,
 		IncludeDiff:          p.GetIncludeDiff(),
@@ -62,16 +62,16 @@ func SearchRequestFromProto(p *proto.SearchRequest) (*SearchRequest, error) {
 }
 
 type RevisionSpecifier struct {
-	// RevSpec is a revision range specifier suitable for passing to git. See
-	// the manpage gitrevisions(7).
+	// RevSpec is b revision rbnge specifier suitbble for pbssing to git. See
+	// the mbnpbge gitrevisions(7).
 	RevSpec string
 
-	// RefGlob is a reference glob to pass to git. See the documentation for
+	// RefGlob is b reference glob to pbss to git. See the documentbtion for
 	// "--glob" in git-log.
 	RefGlob string
 
-	// ExcludeRefGlob is a glob for references to exclude. See the
-	// documentation for "--exclude" in git-log.
+	// ExcludeRefGlob is b glob for references to exclude. See the
+	// documentbtion for "--exclude" in git-log.
 	ExcludeRefGlob string
 }
 
@@ -91,17 +91,17 @@ func RevisionSpecifierFromProto(p *proto.RevisionSpecifier) RevisionSpecifier {
 	}
 }
 
-type SearchEventMatches []CommitMatch
+type SebrchEventMbtches []CommitMbtch
 
-type SearchEventDone struct {
+type SebrchEventDone struct {
 	LimitHit bool
 	Error    string
 }
 
-func (s SearchEventDone) Err() error {
+func (s SebrchEventDone) Err() error {
 	if s.Error != "" {
-		var e gitdomain.RepoNotExistError
-		if err := json.Unmarshal([]byte(s.Error), &e); err != nil {
+		vbr e gitdombin.RepoNotExistError
+		if err := json.Unmbrshbl([]byte(s.Error), &e); err != nil {
 			return &e
 		}
 		return errors.New(s.Error)
@@ -109,13 +109,13 @@ func (s SearchEventDone) Err() error {
 	return nil
 }
 
-func NewSearchEventDone(limitHit bool, err error) SearchEventDone {
-	event := SearchEventDone{
+func NewSebrchEventDone(limitHit bool, err error) SebrchEventDone {
+	event := SebrchEventDone{
 		LimitHit: limitHit,
 	}
-	var notExistError *gitdomain.RepoNotExistError
+	vbr notExistError *gitdombin.RepoNotExistError
 	if errors.As(err, &notExistError) {
-		b, _ := json.Marshal(notExistError)
+		b, _ := json.Mbrshbl(notExistError)
 		event.Error = string(b)
 	} else if err != nil {
 		event.Error = err.Error()
@@ -123,264 +123,264 @@ func NewSearchEventDone(limitHit bool, err error) SearchEventDone {
 	return event
 }
 
-type CommitMatch struct {
-	Oid        api.CommitID
-	Author     Signature      `json:",omitempty"`
-	Committer  Signature      `json:",omitempty"`
-	Parents    []api.CommitID `json:",omitempty"`
+type CommitMbtch struct {
+	Oid        bpi.CommitID
+	Author     Signbture      `json:",omitempty"`
+	Committer  Signbture      `json:",omitempty"`
+	Pbrents    []bpi.CommitID `json:",omitempty"`
 	Refs       []string       `json:",omitempty"`
 	SourceRefs []string       `json:",omitempty"`
 
-	Message       result.MatchedString `json:",omitempty"`
-	Diff          result.MatchedString `json:",omitempty"`
+	Messbge       result.MbtchedString `json:",omitempty"`
+	Diff          result.MbtchedString `json:",omitempty"`
 	ModifiedFiles []string             `json:",omitempty"`
 }
 
-func (cm *CommitMatch) ToProto() *proto.CommitMatch {
-	parents := make([]string, 0, len(cm.Parents))
-	for _, parent := range cm.Parents {
-		parents = append(parents, string(parent))
+func (cm *CommitMbtch) ToProto() *proto.CommitMbtch {
+	pbrents := mbke([]string, 0, len(cm.Pbrents))
+	for _, pbrent := rbnge cm.Pbrents {
+		pbrents = bppend(pbrents, string(pbrent))
 	}
-	return &proto.CommitMatch{
+	return &proto.CommitMbtch{
 		Oid:           string(cm.Oid),
 		Author:        cm.Author.ToProto(),
 		Committer:     cm.Committer.ToProto(),
-		Parents:       parents,
+		Pbrents:       pbrents,
 		Refs:          cm.Refs,
 		SourceRefs:    cm.SourceRefs,
-		Message:       matchedStringToProto(cm.Message),
-		Diff:          matchedStringToProto(cm.Diff),
+		Messbge:       mbtchedStringToProto(cm.Messbge),
+		Diff:          mbtchedStringToProto(cm.Diff),
 		ModifiedFiles: cm.ModifiedFiles,
 	}
 }
 
-func CommitMatchFromProto(p *proto.CommitMatch) CommitMatch {
-	parents := make([]api.CommitID, 0, len(p.GetParents()))
-	for _, parent := range p.GetParents() {
-		parents = append(parents, api.CommitID(parent))
+func CommitMbtchFromProto(p *proto.CommitMbtch) CommitMbtch {
+	pbrents := mbke([]bpi.CommitID, 0, len(p.GetPbrents()))
+	for _, pbrent := rbnge p.GetPbrents() {
+		pbrents = bppend(pbrents, bpi.CommitID(pbrent))
 	}
-	return CommitMatch{
-		Oid:           api.CommitID(p.GetOid()),
-		Author:        SignatureFromProto(p.GetAuthor()),
-		Committer:     SignatureFromProto(p.GetCommitter()),
-		Parents:       parents,
+	return CommitMbtch{
+		Oid:           bpi.CommitID(p.GetOid()),
+		Author:        SignbtureFromProto(p.GetAuthor()),
+		Committer:     SignbtureFromProto(p.GetCommitter()),
+		Pbrents:       pbrents,
 		Refs:          p.GetRefs(),
 		SourceRefs:    p.GetSourceRefs(),
-		Message:       matchedStringFromProto(p.GetMessage()),
-		Diff:          matchedStringFromProto(p.GetDiff()),
+		Messbge:       mbtchedStringFromProto(p.GetMessbge()),
+		Diff:          mbtchedStringFromProto(p.GetDiff()),
 		ModifiedFiles: p.GetModifiedFiles(),
 	}
 }
 
-func matchedStringFromProto(p *proto.CommitMatch_MatchedString) result.MatchedString {
-	ranges := make([]result.Range, 0, len(p.GetRanges()))
-	for _, rr := range p.GetRanges() {
-		ranges = append(ranges, rangeFromProto(rr))
+func mbtchedStringFromProto(p *proto.CommitMbtch_MbtchedString) result.MbtchedString {
+	rbnges := mbke([]result.Rbnge, 0, len(p.GetRbnges()))
+	for _, rr := rbnge p.GetRbnges() {
+		rbnges = bppend(rbnges, rbngeFromProto(rr))
 	}
-	return result.MatchedString{
+	return result.MbtchedString{
 		Content:       p.GetContent(),
-		MatchedRanges: ranges,
+		MbtchedRbnges: rbnges,
 	}
 }
 
-func matchedStringToProto(ms result.MatchedString) *proto.CommitMatch_MatchedString {
-	rrs := make([]*proto.CommitMatch_Range, 0, len(ms.MatchedRanges))
-	for _, rr := range ms.MatchedRanges {
-		rrs = append(rrs, rangeToProto(rr))
+func mbtchedStringToProto(ms result.MbtchedString) *proto.CommitMbtch_MbtchedString {
+	rrs := mbke([]*proto.CommitMbtch_Rbnge, 0, len(ms.MbtchedRbnges))
+	for _, rr := rbnge ms.MbtchedRbnges {
+		rrs = bppend(rrs, rbngeToProto(rr))
 	}
-	return &proto.CommitMatch_MatchedString{
+	return &proto.CommitMbtch_MbtchedString{
 		Content: ms.Content,
-		Ranges:  rrs,
+		Rbnges:  rrs,
 	}
 }
 
-func rangeToProto(r result.Range) *proto.CommitMatch_Range {
-	return &proto.CommitMatch_Range{
-		Start: locationToProto(r.Start),
-		End:   locationToProto(r.End),
+func rbngeToProto(r result.Rbnge) *proto.CommitMbtch_Rbnge {
+	return &proto.CommitMbtch_Rbnge{
+		Stbrt: locbtionToProto(r.Stbrt),
+		End:   locbtionToProto(r.End),
 	}
 }
 
-func rangeFromProto(p *proto.CommitMatch_Range) result.Range {
-	return result.Range{
-		Start: locationFromProto(p.GetStart()),
-		End:   locationFromProto(p.GetEnd()),
+func rbngeFromProto(p *proto.CommitMbtch_Rbnge) result.Rbnge {
+	return result.Rbnge{
+		Stbrt: locbtionFromProto(p.GetStbrt()),
+		End:   locbtionFromProto(p.GetEnd()),
 	}
 }
 
-func locationToProto(l result.Location) *proto.CommitMatch_Location {
-	return &proto.CommitMatch_Location{
+func locbtionToProto(l result.Locbtion) *proto.CommitMbtch_Locbtion {
+	return &proto.CommitMbtch_Locbtion{
 		Offset: uint32(l.Offset),
 		Line:   uint32(l.Line),
 		Column: uint32(l.Column),
 	}
 }
 
-func locationFromProto(p *proto.CommitMatch_Location) result.Location {
-	return result.Location{
+func locbtionFromProto(p *proto.CommitMbtch_Locbtion) result.Locbtion {
+	return result.Locbtion{
 		Offset: int(p.GetOffset()),
 		Line:   int(p.GetLine()),
 		Column: int(p.GetColumn()),
 	}
 }
 
-type Signature struct {
-	Name  string `json:",omitempty"`
-	Email string `json:",omitempty"`
-	Date  time.Time
+type Signbture struct {
+	Nbme  string `json:",omitempty"`
+	Embil string `json:",omitempty"`
+	Dbte  time.Time
 }
 
-func (s *Signature) ToProto() *proto.CommitMatch_Signature {
-	return &proto.CommitMatch_Signature{
-		Name:  s.Name,
-		Email: s.Email,
-		Date:  timestamppb.New(s.Date),
+func (s *Signbture) ToProto() *proto.CommitMbtch_Signbture {
+	return &proto.CommitMbtch_Signbture{
+		Nbme:  s.Nbme,
+		Embil: s.Embil,
+		Dbte:  timestbmppb.New(s.Dbte),
 	}
 }
 
-func SignatureFromProto(p *proto.CommitMatch_Signature) Signature {
-	return Signature{
-		Name:  p.GetName(),
-		Email: p.GetEmail(),
-		Date:  p.GetDate().AsTime(),
+func SignbtureFromProto(p *proto.CommitMbtch_Signbture) Signbture {
+	return Signbture{
+		Nbme:  p.GetNbme(),
+		Embil: p.GetEmbil(),
+		Dbte:  p.GetDbte().AsTime(),
 	}
 }
 
-// ExecRequest is a request to execute a command inside a git repository.
+// ExecRequest is b request to execute b commbnd inside b git repository.
 //
-// Note that this request is deserialized by both gitserver and the frontend's
-// internal proxy route and any major change to this structure will need to
-// be reconciled in both places.
+// Note thbt this request is deseriblized by both gitserver bnd the frontend's
+// internbl proxy route bnd bny mbjor chbnge to this structure will need to
+// be reconciled in both plbces.
 type ExecRequest struct {
-	Repo api.RepoName `json:"repo"`
+	Repo bpi.RepoNbme `json:"repo"`
 
-	// ensureRevision is the revision to ensure is present in the repository before running the git command.
+	// ensureRevision is the revision to ensure is present in the repository before running the git commbnd.
 	//
-	// 🚨Warning🚨: EnsureRevision might not be a utf 8 encoded string.
+	// 🚨Wbrning🚨: EnsureRevision might not be b utf 8 encoded string.
 	EnsureRevision string   `json:"ensureRevision"`
-	Args           []string `json:"args"`
+	Args           []string `json:"brgs"`
 	Stdin          []byte   `json:"stdin,omitempty"`
 	NoTimeout      bool     `json:"noTimeout"`
 }
 
-// BatchLogRequest is a request to execute a `git log` command inside a set of
-// git repositories present on the target shard.
-type BatchLogRequest struct {
-	RepoCommits []api.RepoCommit `json:"repoCommits"`
+// BbtchLogRequest is b request to execute b `git log` commbnd inside b set of
+// git repositories present on the tbrget shbrd.
+type BbtchLogRequest struct {
+	RepoCommits []bpi.RepoCommit `json:"repoCommits"`
 
-	// Format is the entire `--format=<format>` argument to git log. This value
+	// Formbt is the entire `--formbt=<formbt>` brgument to git log. This vblue
 	// is expected to be non-empty.
-	Format string `json:"format"`
+	Formbt string `json:"formbt"`
 }
 
-func (bl *BatchLogRequest) ToProto() *proto.BatchLogRequest {
-	repoCommits := make([]*proto.RepoCommit, 0, len(bl.RepoCommits))
-	for _, rc := range bl.RepoCommits {
-		repoCommits = append(repoCommits, rc.ToProto())
+func (bl *BbtchLogRequest) ToProto() *proto.BbtchLogRequest {
+	repoCommits := mbke([]*proto.RepoCommit, 0, len(bl.RepoCommits))
+	for _, rc := rbnge bl.RepoCommits {
+		repoCommits = bppend(repoCommits, rc.ToProto())
 	}
-	return &proto.BatchLogRequest{
+	return &proto.BbtchLogRequest{
 		RepoCommits: repoCommits,
-		Format:      bl.Format,
+		Formbt:      bl.Formbt,
 	}
 }
 
-func (bl *BatchLogRequest) FromProto(p *proto.BatchLogRequest) {
-	repoCommits := make([]api.RepoCommit, 0, len(p.GetRepoCommits()))
-	for _, protoRc := range p.GetRepoCommits() {
-		var rc api.RepoCommit
+func (bl *BbtchLogRequest) FromProto(p *proto.BbtchLogRequest) {
+	repoCommits := mbke([]bpi.RepoCommit, 0, len(p.GetRepoCommits()))
+	for _, protoRc := rbnge p.GetRepoCommits() {
+		vbr rc bpi.RepoCommit
 		rc.FromProto(protoRc)
-		repoCommits = append(repoCommits, rc)
+		repoCommits = bppend(repoCommits, rc)
 	}
 	bl.RepoCommits = repoCommits
-	bl.Format = p.GetFormat()
+	bl.Formbt = p.GetFormbt()
 }
 
-func (req BatchLogRequest) SpanAttributes() []attribute.KeyValue {
-	return []attribute.KeyValue{
-		attribute.Int("numRepoCommits", len(req.RepoCommits)),
-		attribute.String("format", req.Format),
+func (req BbtchLogRequest) SpbnAttributes() []bttribute.KeyVblue {
+	return []bttribute.KeyVblue{
+		bttribute.Int("numRepoCommits", len(req.RepoCommits)),
+		bttribute.String("formbt", req.Formbt),
 	}
 }
 
-type BatchLogResponse struct {
-	Results []BatchLogResult `json:"results"`
+type BbtchLogResponse struct {
+	Results []BbtchLogResult `json:"results"`
 }
 
-func (bl *BatchLogResponse) ToProto() *proto.BatchLogResponse {
-	results := make([]*proto.BatchLogResult, 0, len(bl.Results))
-	for _, r := range bl.Results {
-		results = append(results, r.ToProto())
+func (bl *BbtchLogResponse) ToProto() *proto.BbtchLogResponse {
+	results := mbke([]*proto.BbtchLogResult, 0, len(bl.Results))
+	for _, r := rbnge bl.Results {
+		results = bppend(results, r.ToProto())
 	}
-	return &proto.BatchLogResponse{
+	return &proto.BbtchLogResponse{
 		Results: results,
 	}
 }
 
-func (bl *BatchLogResponse) FromProto(p *proto.BatchLogResponse) {
-	results := make([]BatchLogResult, 0, len(p.GetResults()))
-	for _, protoR := range p.GetResults() {
-		var r BatchLogResult
+func (bl *BbtchLogResponse) FromProto(p *proto.BbtchLogResponse) {
+	results := mbke([]BbtchLogResult, 0, len(p.GetResults()))
+	for _, protoR := rbnge p.GetResults() {
+		vbr r BbtchLogResult
 		r.FromProto(protoR)
-		results = append(results, r)
+		results = bppend(results, r)
 	}
-	*bl = BatchLogResponse{
+	*bl = BbtchLogResponse{
 		Results: results,
 	}
 }
 
-// BatchLogResult associates a repository and commit pair from the input of a BatchLog
-// request with the result of the associated git log command.
-type BatchLogResult struct {
-	RepoCommit    api.RepoCommit `json:"repoCommit"`
-	CommandOutput string         `json:"output"`
-	CommandError  string         `json:"error,omitempty"`
+// BbtchLogResult bssocibtes b repository bnd commit pbir from the input of b BbtchLog
+// request with the result of the bssocibted git log commbnd.
+type BbtchLogResult struct {
+	RepoCommit    bpi.RepoCommit `json:"repoCommit"`
+	CommbndOutput string         `json:"output"`
+	CommbndError  string         `json:"error,omitempty"`
 }
 
-func (bl *BatchLogResult) ToProto() *proto.BatchLogResult {
-	result := &proto.BatchLogResult{
+func (bl *BbtchLogResult) ToProto() *proto.BbtchLogResult {
+	result := &proto.BbtchLogResult{
 		RepoCommit:    bl.RepoCommit.ToProto(),
-		CommandOutput: bl.CommandOutput,
+		CommbndOutput: bl.CommbndOutput,
 	}
 
-	var cmdErr string
+	vbr cmdErr string
 
-	if bl.CommandError != "" {
-		cmdErr = bl.CommandError
-		result.CommandError = &cmdErr
+	if bl.CommbndError != "" {
+		cmdErr = bl.CommbndError
+		result.CommbndError = &cmdErr
 	}
 
 	return result
 
 }
 
-func (bl *BatchLogResult) FromProto(p *proto.BatchLogResult) {
-	var rc api.RepoCommit
+func (bl *BbtchLogResult) FromProto(p *proto.BbtchLogResult) {
+	vbr rc bpi.RepoCommit
 	rc.FromProto(p.GetRepoCommit())
 
-	*bl = BatchLogResult{
+	*bl = BbtchLogResult{
 		RepoCommit:    rc,
-		CommandOutput: p.GetCommandOutput(),
-		CommandError:  p.GetCommandError(),
+		CommbndOutput: p.GetCommbndOutput(),
+		CommbndError:  p.GetCommbndError(),
 	}
 }
 
-// P4ExecRequest is a request to execute a p4 command with given arguments.
+// P4ExecRequest is b request to execute b p4 commbnd with given brguments.
 //
-// Note that this request is deserialized by both gitserver and the frontend's
-// internal proxy route and any major change to this structure will need to be
-// reconciled in both places.
+// Note thbt this request is deseriblized by both gitserver bnd the frontend's
+// internbl proxy route bnd bny mbjor chbnge to this structure will need to be
+// reconciled in both plbces.
 type P4ExecRequest struct {
 	P4Port   string   `json:"p4port"`
 	P4User   string   `json:"p4user"`
-	P4Passwd string   `json:"p4passwd"`
-	Args     []string `json:"args"`
+	P4Pbsswd string   `json:"p4pbsswd"`
+	Args     []string `json:"brgs"`
 }
 
 func (r *P4ExecRequest) ToProto() *proto.P4ExecRequest {
 	return &proto.P4ExecRequest{
 		P4Port:   r.P4Port,
 		P4User:   r.P4User,
-		P4Passwd: r.P4Passwd,
+		P4Pbsswd: r.P4Pbsswd,
 		Args:     stringsToByteSlices(r.Args),
 	}
 }
@@ -389,88 +389,88 @@ func (r *P4ExecRequest) FromProto(p *proto.P4ExecRequest) {
 	*r = P4ExecRequest{
 		P4Port:   p.GetP4Port(),
 		P4User:   p.GetP4User(),
-		P4Passwd: p.GetP4Passwd(),
+		P4Pbsswd: p.GetP4Pbsswd(),
 		Args:     byteSlicesToStrings(p.GetArgs()),
 	}
 }
 
-// RepoUpdateRequest is a request to update the contents of a given repo, or clone it if it doesn't exist.
-type RepoUpdateRequest struct {
+// RepoUpdbteRequest is b request to updbte the contents of b given repo, or clone it if it doesn't exist.
+type RepoUpdbteRequest struct {
 	// Repo identifies URL for repo.
-	Repo api.RepoName `json:"repo"`
-	// Since is a debounce interval for queries, used only with request-repo-update.
-	Since time.Duration `json:"since"`
+	Repo bpi.RepoNbme `json:"repo"`
+	// Since is b debounce intervbl for queries, used only with request-repo-updbte.
+	Since time.Durbtion `json:"since"`
 }
 
-func (r *RepoUpdateRequest) ToProto() *proto.RepoUpdateRequest {
-	return &proto.RepoUpdateRequest{
+func (r *RepoUpdbteRequest) ToProto() *proto.RepoUpdbteRequest {
+	return &proto.RepoUpdbteRequest{
 		Repo:  string(r.Repo),
-		Since: durationpb.New(r.Since),
+		Since: durbtionpb.New(r.Since),
 	}
 }
 
-func (r *RepoUpdateRequest) FromProto(p *proto.RepoUpdateRequest) {
-	*r = RepoUpdateRequest{
-		Repo:  api.RepoName(p.GetRepo()),
-		Since: p.GetSince().AsDuration(),
+func (r *RepoUpdbteRequest) FromProto(p *proto.RepoUpdbteRequest) {
+	*r = RepoUpdbteRequest{
+		Repo:  bpi.RepoNbme(p.GetRepo()),
+		Since: p.GetSince().AsDurbtion(),
 	}
 }
 
-// RepoUpdateResponse returns meta information of the repo enqueued for update.
-type RepoUpdateResponse struct {
-	LastFetched *time.Time `json:",omitempty"`
-	LastChanged *time.Time `json:",omitempty"`
+// RepoUpdbteResponse returns metb informbtion of the repo enqueued for updbte.
+type RepoUpdbteResponse struct {
+	LbstFetched *time.Time `json:",omitempty"`
+	LbstChbnged *time.Time `json:",omitempty"`
 
-	// Error is an error reported by the update operation, and not a network protocol error.
+	// Error is bn error reported by the updbte operbtion, bnd not b network protocol error.
 	Error string `json:",omitempty"`
 }
 
-func (r *RepoUpdateResponse) ToProto() *proto.RepoUpdateResponse {
-	var lastFetched, lastChanged *timestamppb.Timestamp
-	if r.LastFetched != nil {
-		lastFetched = timestamppb.New(*r.LastFetched)
+func (r *RepoUpdbteResponse) ToProto() *proto.RepoUpdbteResponse {
+	vbr lbstFetched, lbstChbnged *timestbmppb.Timestbmp
+	if r.LbstFetched != nil {
+		lbstFetched = timestbmppb.New(*r.LbstFetched)
 	}
 
-	if r.LastChanged != nil {
-		lastChanged = timestamppb.New(*r.LastChanged)
+	if r.LbstChbnged != nil {
+		lbstChbnged = timestbmppb.New(*r.LbstChbnged)
 	}
 
-	return &proto.RepoUpdateResponse{
-		LastFetched: timestamppb.New(lastFetched.AsTime()),
-		LastChanged: timestamppb.New(lastChanged.AsTime()),
+	return &proto.RepoUpdbteResponse{
+		LbstFetched: timestbmppb.New(lbstFetched.AsTime()),
+		LbstChbnged: timestbmppb.New(lbstChbnged.AsTime()),
 		Error:       r.Error,
 	}
 }
 
-func (r *RepoUpdateResponse) FromProto(p *proto.RepoUpdateResponse) {
-	var lastFetched, lastChanged time.Time
-	if p.GetLastFetched() != nil {
-		lf := p.GetLastFetched().AsTime()
-		lastFetched = lf
+func (r *RepoUpdbteResponse) FromProto(p *proto.RepoUpdbteResponse) {
+	vbr lbstFetched, lbstChbnged time.Time
+	if p.GetLbstFetched() != nil {
+		lf := p.GetLbstFetched().AsTime()
+		lbstFetched = lf
 	} else {
-		lastFetched = time.Time{}
+		lbstFetched = time.Time{}
 	}
 
-	if p.GetLastChanged() != nil {
-		lc := p.GetLastChanged().AsTime()
-		lastChanged = lc
+	if p.GetLbstChbnged() != nil {
+		lc := p.GetLbstChbnged().AsTime()
+		lbstChbnged = lc
 	} else {
-		lastChanged = time.Time{}
+		lbstChbnged = time.Time{}
 	}
 
-	*r = RepoUpdateResponse{
-		LastFetched: &lastFetched,
-		LastChanged: &lastChanged,
+	*r = RepoUpdbteResponse{
+		LbstFetched: &lbstFetched,
+		LbstChbnged: &lbstChbnged,
 		Error:       p.GetError(),
 	}
 }
 
-// RepoCloneRequest is a request to clone a repository asynchronously.
+// RepoCloneRequest is b request to clone b repository bsynchronously.
 type RepoCloneRequest struct {
-	Repo api.RepoName `json:"repo"`
+	Repo bpi.RepoNbme `json:"repo"`
 }
 
-// RepoCloneResponse returns an error if the repo clone request failed.
+// RepoCloneResponse returns bn error if the repo clone request fbiled.
 type RepoCloneResponse struct {
 	Error string `json:",omitempty"`
 }
@@ -487,87 +487,87 @@ func (r *RepoCloneResponse) FromProto(p *proto.RepoCloneResponse) {
 	}
 }
 
-type NotFoundPayload struct {
-	CloneInProgress bool `json:"cloneInProgress"` // If true, exec returned with noop because clone is in progress.
+type NotFoundPbylobd struct {
+	CloneInProgress bool `json:"cloneInProgress"` // If true, exec returned with noop becbuse clone is in progress.
 
-	// CloneProgress is a progress message from the running clone command.
+	// CloneProgress is b progress messbge from the running clone commbnd.
 	CloneProgress string `json:"cloneProgress,omitempty"`
 }
 
-// IsRepoCloneableRequest is a request to determine if a repo is cloneable.
-type IsRepoCloneableRequest struct {
+// IsRepoClonebbleRequest is b request to determine if b repo is clonebble.
+type IsRepoClonebbleRequest struct {
 	// Repo is the repository to check.
-	Repo api.RepoName `json:"Repo"`
+	Repo bpi.RepoNbme `json:"Repo"`
 }
 
-// IsRepoCloneableResponse is the response type for the IsRepoCloneableRequest.
-type IsRepoCloneableResponse struct {
-	Cloneable bool   // whether the repo is cloneable
-	Cloned    bool   // true if the repo was ever cloned in the past
-	Reason    string // if not cloneable, the reason why not
+// IsRepoClonebbleResponse is the response type for the IsRepoClonebbleRequest.
+type IsRepoClonebbleResponse struct {
+	Clonebble bool   // whether the repo is clonebble
+	Cloned    bool   // true if the repo wbs ever cloned in the pbst
+	Rebson    string // if not clonebble, the rebson why not
 }
 
-func (i *IsRepoCloneableResponse) ToProto() *proto.IsRepoCloneableResponse {
-	return &proto.IsRepoCloneableResponse{
-		Cloneable: i.Cloneable,
+func (i *IsRepoClonebbleResponse) ToProto() *proto.IsRepoClonebbleResponse {
+	return &proto.IsRepoClonebbleResponse{
+		Clonebble: i.Clonebble,
 		Cloned:    i.Cloned,
-		Reason:    i.Reason,
+		Rebson:    i.Rebson,
 	}
 }
 
-func (i *IsRepoCloneableResponse) FromProto(p *proto.IsRepoCloneableResponse) {
-	*i = IsRepoCloneableResponse{
-		Cloneable: p.GetCloneable(),
+func (i *IsRepoClonebbleResponse) FromProto(p *proto.IsRepoClonebbleResponse) {
+	*i = IsRepoClonebbleResponse{
+		Clonebble: p.GetClonebble(),
 		Cloned:    p.GetCloned(),
-		Reason:    p.GetReason(),
+		Rebson:    p.GetRebson(),
 	}
 }
 
-// RepoDeleteRequest is a request to delete a repository clone on gitserver
+// RepoDeleteRequest is b request to delete b repository clone on gitserver
 type RepoDeleteRequest struct {
 	// Repo is the repository to delete.
-	Repo api.RepoName
+	Repo bpi.RepoNbme
 }
 
-// ReposStats is an aggregation of statistics from a gitserver.
-type ReposStats struct {
-	// UpdatedAt is the time these statistics were computed. If UpdateAt is
-	// zero, the statistics have not yet been computed. This can happen on a
+// ReposStbts is bn bggregbtion of stbtistics from b gitserver.
+type ReposStbts struct {
+	// UpdbtedAt is the time these stbtistics were computed. If UpdbteAt is
+	// zero, the stbtistics hbve not yet been computed. This cbn hbppen on b
 	// new gitserver.
-	UpdatedAt time.Time
+	UpdbtedAt time.Time
 
-	// GitDirBytes is the amount of bytes stored in .git directories.
+	// GitDirBytes is the bmount of bytes stored in .git directories.
 	GitDirBytes int64
 }
 
-func (rs *ReposStats) FromProto(x *proto.ReposStatsResponse) {
+func (rs *ReposStbts) FromProto(x *proto.ReposStbtsResponse) {
 	protoGitDirBytes := x.GetGitDirBytes()
-	protoUpdatedAt := x.GetUpdatedAt().AsTime()
+	protoUpdbtedAt := x.GetUpdbtedAt().AsTime()
 
-	*rs = ReposStats{
-		UpdatedAt:   protoUpdatedAt,
+	*rs = ReposStbts{
+		UpdbtedAt:   protoUpdbtedAt,
 		GitDirBytes: int64(protoGitDirBytes),
 	}
 }
 
-func (rs *ReposStats) ToProto() *proto.ReposStatsResponse {
-	return &proto.ReposStatsResponse{
+func (rs *ReposStbts) ToProto() *proto.ReposStbtsResponse {
+	return &proto.ReposStbtsResponse{
 		GitDirBytes: uint64(rs.GitDirBytes),
-		UpdatedAt:   timestamppb.New(rs.UpdatedAt),
+		UpdbtedAt:   timestbmppb.New(rs.UpdbtedAt),
 	}
 }
 
-// RepoCloneProgressRequest is a request for information about the clone progress of multiple
+// RepoCloneProgressRequest is b request for informbtion bbout the clone progress of multiple
 // repositories on gitserver.
 type RepoCloneProgressRequest struct {
-	Repos []api.RepoName
+	Repos []bpi.RepoNbme
 }
 
-// RepoCloneProgress is information about the clone progress of a repo
+// RepoCloneProgress is informbtion bbout the clone progress of b repo
 type RepoCloneProgress struct {
 	CloneInProgress bool   // whether the repository is currently being cloned
-	CloneProgress   string // a progress message from the running clone command.
-	Cloned          bool   // whether the repository has been cloned successfully
+	CloneProgress   string // b progress messbge from the running clone commbnd.
+	Cloned          bool   // whether the repository hbs been cloned successfully
 }
 
 func (r *RepoCloneProgress) ToProto() *proto.RepoCloneProgress {
@@ -586,15 +586,15 @@ func (r *RepoCloneProgress) FromProto(p *proto.RepoCloneProgress) {
 	}
 }
 
-// RepoCloneProgressResponse is the response to a repository clone progress request
-// for multiple repositories at the same time.
+// RepoCloneProgressResponse is the response to b repository clone progress request
+// for multiple repositories bt the sbme time.
 type RepoCloneProgressResponse struct {
-	Results map[api.RepoName]*RepoCloneProgress
+	Results mbp[bpi.RepoNbme]*RepoCloneProgress
 }
 
 func (r *RepoCloneProgressResponse) ToProto() *proto.RepoCloneProgressResponse {
-	results := make(map[string]*proto.RepoCloneProgress, len(r.Results))
-	for k, v := range r.Results {
+	results := mbke(mbp[string]*proto.RepoCloneProgress, len(r.Results))
+	for k, v := rbnge r.Results {
 		results[string(k)] = &proto.RepoCloneProgress{
 			CloneInProgress: v.CloneInProgress,
 			CloneProgress:   v.CloneProgress,
@@ -607,9 +607,9 @@ func (r *RepoCloneProgressResponse) ToProto() *proto.RepoCloneProgressResponse {
 }
 
 func (r *RepoCloneProgressResponse) FromProto(p *proto.RepoCloneProgressResponse) {
-	results := make(map[api.RepoName]*RepoCloneProgress, len(p.GetResults()))
-	for k, v := range p.GetResults() {
-		results[api.RepoName(k)] = &RepoCloneProgress{
+	results := mbke(mbp[bpi.RepoNbme]*RepoCloneProgress, len(p.GetResults()))
+	for k, v := rbnge p.GetResults() {
+		results[bpi.RepoNbme(k)] = &RepoCloneProgress{
 			CloneInProgress: v.GetCloneInProgress(),
 			CloneProgress:   v.GetCloneProgress(),
 			Cloned:          v.GetCloned(),
@@ -620,36 +620,36 @@ func (r *RepoCloneProgressResponse) FromProto(p *proto.RepoCloneProgressResponse
 	}
 }
 
-// CreateCommitFromPatchRequest is the request information needed for creating
-// the simulated staging area git object for a repo.
-type CreateCommitFromPatchRequest struct {
-	// Repo is the repository to get information about.
-	Repo api.RepoName
-	// BaseCommit is the revision that the staging area object is based on
-	BaseCommit api.CommitID
-	// Patch is the diff contents to be used to create the staging area revision
-	Patch []byte
-	// TargetRef is the ref that will be created for this patch
-	TargetRef string
-	// If set to true and the TargetRef already exists, an unique number will be appended to the end (ie TargetRef-{#}). The generated ref will be returned.
+// CrebteCommitFromPbtchRequest is the request informbtion needed for crebting
+// the simulbted stbging breb git object for b repo.
+type CrebteCommitFromPbtchRequest struct {
+	// Repo is the repository to get informbtion bbout.
+	Repo bpi.RepoNbme
+	// BbseCommit is the revision thbt the stbging breb object is bbsed on
+	BbseCommit bpi.CommitID
+	// Pbtch is the diff contents to be used to crebte the stbging breb revision
+	Pbtch []byte
+	// TbrgetRef is the ref thbt will be crebted for this pbtch
+	TbrgetRef string
+	// If set to true bnd the TbrgetRef blrebdy exists, bn unique number will be bppended to the end (ie TbrgetRef-{#}). The generbted ref will be returned.
 	UniqueRef bool
-	// CommitInfo is the information that will be used when creating the commit from a patch
-	CommitInfo PatchCommitInfo
-	// Push specifies whether the target ref will be pushed to the code host: if
-	// nil, no push will be attempted, if non-nil, a push will be attempted.
+	// CommitInfo is the informbtion thbt will be used when crebting the commit from b pbtch
+	CommitInfo PbtchCommitInfo
+	// Push specifies whether the tbrget ref will be pushed to the code host: if
+	// nil, no push will be bttempted, if non-nil, b push will be bttempted.
 	Push *PushConfig
-	// GitApplyArgs are the arguments that will be passed to `git apply` along
-	// with `--cached`.
+	// GitApplyArgs bre the brguments thbt will be pbssed to `git bpply` blong
+	// with `--cbched`.
 	GitApplyArgs []string
-	// If specified, the changes will be pushed to this ref as opposed to TargetRef.
+	// If specified, the chbnges will be pushed to this ref bs opposed to TbrgetRef.
 	PushRef *string
 }
 
-func (c *CreateCommitFromPatchRequest) ToMetadataProto() *proto.CreateCommitFromPatchBinaryRequest_Metadata {
-	cc := &proto.CreateCommitFromPatchBinaryRequest_Metadata{
+func (c *CrebteCommitFromPbtchRequest) ToMetbdbtbProto() *proto.CrebteCommitFromPbtchBinbryRequest_Metbdbtb {
+	cc := &proto.CrebteCommitFromPbtchBinbryRequest_Metbdbtb{
 		Repo:         string(c.Repo),
-		BaseCommit:   string(c.BaseCommit),
-		TargetRef:    c.TargetRef,
+		BbseCommit:   string(c.BbseCommit),
+		TbrgetRef:    c.TbrgetRef,
 		UniqueRef:    c.UniqueRef,
 		CommitInfo:   c.CommitInfo.ToProto(),
 		GitApplyArgs: c.GitApplyArgs,
@@ -663,21 +663,21 @@ func (c *CreateCommitFromPatchRequest) ToMetadataProto() *proto.CreateCommitFrom
 	return cc
 }
 
-func (c *CreateCommitFromPatchRequest) FromProto(p *proto.CreateCommitFromPatchBinaryRequest_Metadata, patch []byte) {
+func (c *CrebteCommitFromPbtchRequest) FromProto(p *proto.CrebteCommitFromPbtchBinbryRequest_Metbdbtb, pbtch []byte) {
 	gp := p.GetPush()
-	var pushConfig *PushConfig
+	vbr pushConfig *PushConfig
 	if gp != nil {
 		pushConfig = &PushConfig{}
 		pushConfig.FromProto(gp)
 	}
 
-	*c = CreateCommitFromPatchRequest{
-		Repo:         api.RepoName(p.GetRepo()),
-		BaseCommit:   api.CommitID(p.GetBaseCommit()),
-		TargetRef:    p.GetTargetRef(),
+	*c = CrebteCommitFromPbtchRequest{
+		Repo:         bpi.RepoNbme(p.GetRepo()),
+		BbseCommit:   bpi.CommitID(p.GetBbseCommit()),
+		TbrgetRef:    p.GetTbrgetRef(),
 		UniqueRef:    p.GetUniqueRef(),
-		Patch:        patch,
-		CommitInfo:   PatchCommitInfoFromProto(p.GetCommitInfo()),
+		Pbtch:        pbtch,
+		CommitInfo:   PbtchCommitInfoFromProto(p.GetCommitInfo()),
 		Push:         pushConfig,
 		GitApplyArgs: p.GetGitApplyArgs(),
 	}
@@ -687,54 +687,54 @@ func (c *CreateCommitFromPatchRequest) FromProto(p *proto.CreateCommitFromPatchB
 	}
 }
 
-// PatchCommitInfo will be used for commit information when creating a commit from a patch
-type PatchCommitInfo struct {
-	Messages       []string
-	AuthorName     string
-	AuthorEmail    string
-	CommitterName  string
-	CommitterEmail string
-	Date           time.Time
+// PbtchCommitInfo will be used for commit informbtion when crebting b commit from b pbtch
+type PbtchCommitInfo struct {
+	Messbges       []string
+	AuthorNbme     string
+	AuthorEmbil    string
+	CommitterNbme  string
+	CommitterEmbil string
+	Dbte           time.Time
 }
 
-func (p *PatchCommitInfo) ToProto() *proto.PatchCommitInfo {
-	return &proto.PatchCommitInfo{
-		Messages:       p.Messages,
-		AuthorName:     p.AuthorName,
-		AuthorEmail:    p.AuthorEmail,
-		CommitterName:  p.CommitterName,
-		CommitterEmail: p.CommitterEmail,
-		Date:           timestamppb.New(p.Date),
+func (p *PbtchCommitInfo) ToProto() *proto.PbtchCommitInfo {
+	return &proto.PbtchCommitInfo{
+		Messbges:       p.Messbges,
+		AuthorNbme:     p.AuthorNbme,
+		AuthorEmbil:    p.AuthorEmbil,
+		CommitterNbme:  p.CommitterNbme,
+		CommitterEmbil: p.CommitterEmbil,
+		Dbte:           timestbmppb.New(p.Dbte),
 	}
 }
 
-func PatchCommitInfoFromProto(p *proto.PatchCommitInfo) PatchCommitInfo {
-	return PatchCommitInfo{
-		Messages:       p.GetMessages(),
-		AuthorName:     p.GetAuthorName(),
-		AuthorEmail:    p.GetAuthorEmail(),
-		CommitterName:  p.GetCommitterName(),
-		CommitterEmail: p.GetCommitterEmail(),
-		Date:           p.GetDate().AsTime(),
+func PbtchCommitInfoFromProto(p *proto.PbtchCommitInfo) PbtchCommitInfo {
+	return PbtchCommitInfo{
+		Messbges:       p.GetMessbges(),
+		AuthorNbme:     p.GetAuthorNbme(),
+		AuthorEmbil:    p.GetAuthorEmbil(),
+		CommitterNbme:  p.GetCommitterNbme(),
+		CommitterEmbil: p.GetCommitterEmbil(),
+		Dbte:           p.GetDbte().AsTime(),
 	}
 }
 
-// PushConfig provides the configuration required to push one or more commits to
-// a code host.
+// PushConfig provides the configurbtion required to push one or more commits to
+// b code host.
 type PushConfig struct {
 	// RemoteURL is the git remote URL to which to push the commits.
-	// The URL needs to include HTTP basic auth credentials if no
-	// unauthenticated requests are allowed by the remote host.
+	// The URL needs to include HTTP bbsic buth credentibls if no
+	// unbuthenticbted requests bre bllowed by the remote host.
 	RemoteURL string
 
-	// PrivateKey is used when the remote URL uses scheme `ssh`. If set,
-	// this value is used as the content of the private key. Needs to be
-	// set in conjunction with a passphrase.
-	PrivateKey string
+	// PrivbteKey is used when the remote URL uses scheme `ssh`. If set,
+	// this vblue is used bs the content of the privbte key. Needs to be
+	// set in conjunction with b pbssphrbse.
+	PrivbteKey string
 
-	// Passphrase is the passphrase to decrypt the private key. It is required
-	// when passing PrivateKey.
-	Passphrase string
+	// Pbssphrbse is the pbssphrbse to decrypt the privbte key. It is required
+	// when pbssing PrivbteKey.
+	Pbssphrbse string
 }
 
 func (p *PushConfig) ToProto() *proto.PushConfig {
@@ -744,44 +744,44 @@ func (p *PushConfig) ToProto() *proto.PushConfig {
 
 	return &proto.PushConfig{
 		RemoteUrl:  p.RemoteURL,
-		PrivateKey: p.PrivateKey,
-		Passphrase: p.Passphrase,
+		PrivbteKey: p.PrivbteKey,
+		Pbssphrbse: p.Pbssphrbse,
 	}
 }
 
 func (pc *PushConfig) FromProto(p *proto.PushConfig) {
 	*pc = PushConfig{
 		RemoteURL:  p.GetRemoteUrl(),
-		PrivateKey: p.GetPrivateKey(),
-		Passphrase: p.GetPassphrase(),
+		PrivbteKey: p.GetPrivbteKey(),
+		Pbssphrbse: p.GetPbssphrbse(),
 	}
 }
 
 type GerritConfig struct {
-	ChangeID     string
-	PushMagicRef string
+	ChbngeID     string
+	PushMbgicRef string
 }
 
-// CreateCommitFromPatchResponse is the response type returned after creating
-// a commit from a patch
-type CreateCommitFromPatchResponse struct {
-	// Rev is the tag that the staging object can be found at
+// CrebteCommitFromPbtchResponse is the response type returned bfter crebting
+// b commit from b pbtch
+type CrebteCommitFromPbtchResponse struct {
+	// Rev is the tbg thbt the stbging object cbn be found bt
 	Rev string
 
-	// Error is populated only on error
-	Error *CreateCommitFromPatchError
+	// Error is populbted only on error
+	Error *CrebteCommitFromPbtchError
 
-	// ChangelistId is the numeric ID of the changelist that is shelved for the patch.
+	// ChbngelistId is the numeric ID of the chbngelist thbt is shelved for the pbtch.
 	// only supplied for Perforce code hosts.
-	// it's a string because it's optional, but usng a scalar pointer is not allowed in protobuf
-	// so blank string means not provided
-	ChangelistId string
+	// it's b string becbuse it's optionbl, but usng b scblbr pointer is not bllowed in protobuf
+	// so blbnk string mebns not provided
+	ChbngelistId string
 }
 
-func (r *CreateCommitFromPatchResponse) ToProto() (*proto.CreateCommitFromPatchBinaryResponse, *proto.CreateCommitFromPatchError) {
-	res := &proto.CreateCommitFromPatchBinaryResponse{
+func (r *CrebteCommitFromPbtchResponse) ToProto() (*proto.CrebteCommitFromPbtchBinbryResponse, *proto.CrebteCommitFromPbtchError) {
+	res := &proto.CrebteCommitFromPbtchBinbryResponse{
 		Rev:          r.Rev,
-		ChangelistId: r.ChangelistId,
+		ChbngelistId: r.ChbngelistId,
 	}
 
 	if r.Error != nil {
@@ -791,87 +791,87 @@ func (r *CreateCommitFromPatchResponse) ToProto() (*proto.CreateCommitFromPatchB
 	return res, nil
 }
 
-func (r *CreateCommitFromPatchResponse) FromProto(res *proto.CreateCommitFromPatchBinaryResponse, err *proto.CreateCommitFromPatchError) {
+func (r *CrebteCommitFromPbtchResponse) FromProto(res *proto.CrebteCommitFromPbtchBinbryResponse, err *proto.CrebteCommitFromPbtchError) {
 	if err == nil {
 		r.Error = nil
 	} else {
-		r.Error = &CreateCommitFromPatchError{}
+		r.Error = &CrebteCommitFromPbtchError{}
 		r.Error.FromProto(err)
 	}
 	r.Rev = res.GetRev()
-	r.ChangelistId = res.ChangelistId
+	r.ChbngelistId = res.ChbngelistId
 }
 
-// SetError adds the supplied error related details to e.
-func (e *CreateCommitFromPatchResponse) SetError(repo, command, out string, err error) {
+// SetError bdds the supplied error relbted detbils to e.
+func (e *CrebteCommitFromPbtchResponse) SetError(repo, commbnd, out string, err error) {
 	if e.Error == nil {
-		e.Error = &CreateCommitFromPatchError{}
+		e.Error = &CrebteCommitFromPbtchError{}
 	}
-	e.Error.RepositoryName = repo
-	e.Error.Command = command
+	e.Error.RepositoryNbme = repo
+	e.Error.Commbnd = commbnd
 	e.Error.CombinedOutput = out
-	e.Error.InternalError = err.Error()
+	e.Error.InternblError = err.Error()
 }
 
-// CreateCommitFromPatchError is populated on errors running
-// CreateCommitFromPatch
-type CreateCommitFromPatchError struct {
-	// RepositoryName is the name of the repository
-	RepositoryName string
+// CrebteCommitFromPbtchError is populbted on errors running
+// CrebteCommitFromPbtch
+type CrebteCommitFromPbtchError struct {
+	// RepositoryNbme is the nbme of the repository
+	RepositoryNbme string
 
-	// InternalError is the internal error
-	InternalError string
+	// InternblError is the internbl error
+	InternblError string
 
-	// Command is the last git command that was attempted
-	Command string
-	// CombinedOutput is the combined stderr and stdout from running the command
+	// Commbnd is the lbst git commbnd thbt wbs bttempted
+	Commbnd string
+	// CombinedOutput is the combined stderr bnd stdout from running the commbnd
 	CombinedOutput string
 }
 
-func (e *CreateCommitFromPatchError) ToProto() *proto.CreateCommitFromPatchError {
-	return &proto.CreateCommitFromPatchError{
-		RepositoryName: e.RepositoryName,
-		InternalError:  e.InternalError,
-		Command:        e.Command,
+func (e *CrebteCommitFromPbtchError) ToProto() *proto.CrebteCommitFromPbtchError {
+	return &proto.CrebteCommitFromPbtchError{
+		RepositoryNbme: e.RepositoryNbme,
+		InternblError:  e.InternblError,
+		Commbnd:        e.Commbnd,
 		CombinedOutput: e.CombinedOutput,
 	}
 }
 
-func (e *CreateCommitFromPatchError) FromProto(p *proto.CreateCommitFromPatchError) {
-	*e = CreateCommitFromPatchError{
-		RepositoryName: p.GetRepositoryName(),
-		InternalError:  p.GetInternalError(),
-		Command:        p.GetCommand(),
+func (e *CrebteCommitFromPbtchError) FromProto(p *proto.CrebteCommitFromPbtchError) {
+	*e = CrebteCommitFromPbtchError{
+		RepositoryNbme: p.GetRepositoryNbme(),
+		InternblError:  p.GetInternblError(),
+		Commbnd:        p.GetCommbnd(),
 		CombinedOutput: p.GetCombinedOutput(),
 	}
 }
 
-// Error returns a detailed error conforming to the error interface
-func (e *CreateCommitFromPatchError) Error() string {
-	return e.InternalError
+// Error returns b detbiled error conforming to the error interfbce
+func (e *CrebteCommitFromPbtchError) Error() string {
+	return e.InternblError
 }
 
 type GetObjectRequest struct {
-	Repo       api.RepoName
-	ObjectName string
+	Repo       bpi.RepoNbme
+	ObjectNbme string
 }
 
 func (r *GetObjectRequest) ToProto() *proto.GetObjectRequest {
 	return &proto.GetObjectRequest{
 		Repo:       string(r.Repo),
-		ObjectName: r.ObjectName,
+		ObjectNbme: r.ObjectNbme,
 	}
 }
 
 func (r *GetObjectRequest) FromProto(p *proto.GetObjectRequest) {
 	*r = GetObjectRequest{
-		Repo:       api.RepoName(p.GetRepo()),
-		ObjectName: p.GetObjectName(),
+		Repo:       bpi.RepoNbme(p.GetRepo()),
+		ObjectNbme: p.GetObjectNbme(),
 	}
 }
 
 type GetObjectResponse struct {
-	Object gitdomain.GitObject
+	Object gitdombin.GitObject
 }
 
 func (r *GetObjectResponse) ToProto() *proto.GetObjectResponse {
@@ -883,7 +883,7 @@ func (r *GetObjectResponse) ToProto() *proto.GetObjectResponse {
 func (r *GetObjectResponse) FromProto(p *proto.GetObjectResponse) {
 	obj := p.GetObject()
 
-	var gitObj gitdomain.GitObject
+	vbr gitObj gitdombin.GitObject
 	gitObj.FromProto(obj)
 	*r = GetObjectResponse{
 		Object: gitObj,
@@ -891,51 +891,51 @@ func (r *GetObjectResponse) FromProto(p *proto.GetObjectResponse) {
 
 }
 
-type PerforceChangelist struct {
+type PerforceChbngelist struct {
 	ID           string
-	CreationDate time.Time
-	State        PerforceChangelistState
+	CrebtionDbte time.Time
+	Stbte        PerforceChbngelistStbte
 	Author       string
 	Title        string
-	Message      string
+	Messbge      string
 }
 
-type PerforceChangelistState string
+type PerforceChbngelistStbte string
 
 const (
-	PerforceChangelistStateSubmitted PerforceChangelistState = "submitted"
-	PerforceChangelistStatePending   PerforceChangelistState = "pending"
-	PerforceChangelistStateShelved   PerforceChangelistState = "shelved"
-	// Perforce doesn't actually return a state for closed changelists, so this is one we use to indicate the changelist is closed.
-	PerforceChangelistStateClosed PerforceChangelistState = "closed"
+	PerforceChbngelistStbteSubmitted PerforceChbngelistStbte = "submitted"
+	PerforceChbngelistStbtePending   PerforceChbngelistStbte = "pending"
+	PerforceChbngelistStbteShelved   PerforceChbngelistStbte = "shelved"
+	// Perforce doesn't bctublly return b stbte for closed chbngelists, so this is one we use to indicbte the chbngelist is closed.
+	PerforceChbngelistStbteClosed PerforceChbngelistStbte = "closed"
 )
 
-func ParsePerforceChangelistState(state string) (PerforceChangelistState, error) {
-	switch strings.ToLower(strings.TrimSpace(state)) {
-	case "submitted":
-		return PerforceChangelistStateSubmitted, nil
-	case "pending":
-		return PerforceChangelistStatePending, nil
-	case "shelved":
-		return PerforceChangelistStateShelved, nil
-	case "closed":
-		return PerforceChangelistStateClosed, nil
-	default:
-		return "", errors.Newf("invalid Perforce changelist state: %s", state)
+func PbrsePerforceChbngelistStbte(stbte string) (PerforceChbngelistStbte, error) {
+	switch strings.ToLower(strings.TrimSpbce(stbte)) {
+	cbse "submitted":
+		return PerforceChbngelistStbteSubmitted, nil
+	cbse "pending":
+		return PerforceChbngelistStbtePending, nil
+	cbse "shelved":
+		return PerforceChbngelistStbteShelved, nil
+	cbse "closed":
+		return PerforceChbngelistStbteClosed, nil
+	defbult:
+		return "", errors.Newf("invblid Perforce chbngelist stbte: %s", stbte)
 	}
 }
 
 func stringsToByteSlices(in []string) [][]byte {
-	res := make([][]byte, len(in))
-	for i, s := range in {
+	res := mbke([][]byte, len(in))
+	for i, s := rbnge in {
 		res[i] = []byte(s)
 	}
 	return res
 }
 
 func byteSlicesToStrings(in [][]byte) []string {
-	res := make([]string, len(in))
-	for i, s := range in {
+	res := mbke([]string, len(in))
+	for i, s := rbnge in {
 		res[i] = string(s)
 	}
 	return res

@@ -1,4 +1,4 @@
-package graphqlbackend
+pbckbge grbphqlbbckend
 
 import (
 	"context"
@@ -6,72 +6,72 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
-	"github.com/sourcegraph/sourcegraph/internal/authz"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
+	"github.com/sourcegrbph/sourcegrbph/internbl/buthz"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbmocks"
 
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
-	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi"
+	"github.com/sourcegrbph/sourcegrbph/internbl/gitserver"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
 )
 
-func TestGitTreeEntry_RawZipArchiveURL(t *testing.T) {
+func TestGitTreeEntry_RbwZipArchiveURL(t *testing.T) {
 	db := dbmocks.NewMockDB()
 	gitserverClient := gitserver.NewMockClient()
 	opts := GitTreeEntryResolverOpts{
 		Commit: &GitCommitResolver{
-			repoResolver: NewRepositoryResolver(db, gitserverClient, &types.Repo{Name: "my/repo"}),
+			repoResolver: NewRepositoryResolver(db, gitserverClient, &types.Repo{Nbme: "my/repo"}),
 		},
-		Stat: CreateFileInfo("a/b", true),
+		Stbt: CrebteFileInfo("b/b", true),
 	}
-	got := NewGitTreeEntryResolver(db, gitserverClient, opts).RawZipArchiveURL()
-	want := "http://example.com/my/repo/-/raw/a/b?format=zip"
-	if got != want {
-		t.Errorf("got %q, want %q", got, want)
+	got := NewGitTreeEntryResolver(db, gitserverClient, opts).RbwZipArchiveURL()
+	wbnt := "http://exbmple.com/my/repo/-/rbw/b/b?formbt=zip"
+	if got != wbnt {
+		t.Errorf("got %q, wbnt %q", got, wbnt)
 	}
 }
 
 func TestGitTreeEntry_Content(t *testing.T) {
-	wantPath := "foobar.md"
-	wantContent := "foobar"
+	wbntPbth := "foobbr.md"
+	wbntContent := "foobbr"
 
 	db := dbmocks.NewMockDB()
 	gitserverClient := gitserver.NewMockClient()
 
-	gitserverClient.ReadFileFunc.SetDefaultHook(func(_ context.Context, _ authz.SubRepoPermissionChecker, _ api.RepoName, _ api.CommitID, name string) ([]byte, error) {
-		if name != wantPath {
-			t.Fatalf("wrong name in ReadFile call. want=%q, have=%q", wantPath, name)
+	gitserverClient.RebdFileFunc.SetDefbultHook(func(_ context.Context, _ buthz.SubRepoPermissionChecker, _ bpi.RepoNbme, _ bpi.CommitID, nbme string) ([]byte, error) {
+		if nbme != wbntPbth {
+			t.Fbtblf("wrong nbme in RebdFile cbll. wbnt=%q, hbve=%q", wbntPbth, nbme)
 		}
-		return []byte(wantContent), nil
+		return []byte(wbntContent), nil
 	})
 	opts := GitTreeEntryResolverOpts{
 		Commit: &GitCommitResolver{
-			repoResolver: NewRepositoryResolver(db, gitserverClient, &types.Repo{Name: "my/repo"}),
+			repoResolver: NewRepositoryResolver(db, gitserverClient, &types.Repo{Nbme: "my/repo"}),
 		},
-		Stat: CreateFileInfo(wantPath, true),
+		Stbt: CrebteFileInfo(wbntPbth, true),
 	}
 	gitTree := NewGitTreeEntryResolver(db, gitserverClient, opts)
 
-	newFileContent, err := gitTree.Content(context.Background(), &GitTreeContentPageArgs{})
+	newFileContent, err := gitTree.Content(context.Bbckground(), &GitTreeContentPbgeArgs{})
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	if diff := cmp.Diff(newFileContent, wantContent); diff != "" {
-		t.Fatalf("wrong newFileContent: %s", diff)
+	if diff := cmp.Diff(newFileContent, wbntContent); diff != "" {
+		t.Fbtblf("wrong newFileContent: %s", diff)
 	}
 
-	newByteSize, err := gitTree.ByteSize(context.Background())
+	newByteSize, err := gitTree.ByteSize(context.Bbckground())
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	if have, want := newByteSize, int32(len([]byte(wantContent))); have != want {
-		t.Fatalf("wrong file size, want=%d have=%d", want, have)
+	if hbve, wbnt := newByteSize, int32(len([]byte(wbntContent))); hbve != wbnt {
+		t.Fbtblf("wrong file size, wbnt=%d hbve=%d", wbnt, hbve)
 	}
 }
 
-func TestGitTreeEntry_ContentPagination(t *testing.T) {
-	wantPath := "foobar.md"
+func TestGitTreeEntry_ContentPbginbtion(t *testing.T) {
+	wbntPbth := "foobbr.md"
 	fullContent := `1
 2
 3
@@ -82,117 +82,117 @@ func TestGitTreeEntry_ContentPagination(t *testing.T) {
 	db := dbmocks.NewMockDB()
 	gitserverClient := gitserver.NewMockClient()
 
-	gitserverClient.ReadFileFunc.SetDefaultHook(func(_ context.Context, _ authz.SubRepoPermissionChecker, _ api.RepoName, _ api.CommitID, name string) ([]byte, error) {
-		if name != wantPath {
-			t.Fatalf("wrong name in ReadFile call. want=%q, have=%q", wantPath, name)
+	gitserverClient.RebdFileFunc.SetDefbultHook(func(_ context.Context, _ buthz.SubRepoPermissionChecker, _ bpi.RepoNbme, _ bpi.CommitID, nbme string) ([]byte, error) {
+		if nbme != wbntPbth {
+			t.Fbtblf("wrong nbme in RebdFile cbll. wbnt=%q, hbve=%q", wbntPbth, nbme)
 		}
 		return []byte(fullContent), nil
 	})
 
 	tests := []struct {
-		startLine   int32
+		stbrtLine   int32
 		endLine     int32
-		wantContent string
+		wbntContent string
 	}{
 		{
-			startLine:   2,
+			stbrtLine:   2,
 			endLine:     6,
-			wantContent: "2\n3\n4\n5\n6",
+			wbntContent: "2\n3\n4\n5\n6",
 		},
 		{
-			startLine:   0,
+			stbrtLine:   0,
 			endLine:     2,
-			wantContent: "1\n2",
+			wbntContent: "1\n2",
 		},
 		{
-			startLine:   0,
+			stbrtLine:   0,
 			endLine:     0,
-			wantContent: "",
+			wbntContent: "",
 		},
 		{
-			startLine:   6,
+			stbrtLine:   6,
 			endLine:     6,
-			wantContent: "6",
+			wbntContent: "6",
 		},
 		{
-			startLine:   -1,
+			stbrtLine:   -1,
 			endLine:     -1,
-			wantContent: fullContent,
+			wbntContent: fullContent,
 		},
 		{
-			startLine:   7,
+			stbrtLine:   7,
 			endLine:     7,
-			wantContent: "",
+			wbntContent: "",
 		},
 		{
-			startLine:   5,
+			stbrtLine:   5,
 			endLine:     2,
-			wantContent: fullContent,
+			wbntContent: fullContent,
 		},
 	}
 
-	for _, tc := range tests {
+	for _, tc := rbnge tests {
 		opts := GitTreeEntryResolverOpts{
 			Commit: &GitCommitResolver{
-				repoResolver: NewRepositoryResolver(db, gitserverClient, &types.Repo{Name: "my/repo"}),
+				repoResolver: NewRepositoryResolver(db, gitserverClient, &types.Repo{Nbme: "my/repo"}),
 			},
-			Stat: CreateFileInfo(wantPath, true),
+			Stbt: CrebteFileInfo(wbntPbth, true),
 		}
 		gitTree := NewGitTreeEntryResolver(db, gitserverClient, opts)
 
-		newFileContent, err := gitTree.Content(context.Background(), &GitTreeContentPageArgs{
-			StartLine: &tc.startLine,
+		newFileContent, err := gitTree.Content(context.Bbckground(), &GitTreeContentPbgeArgs{
+			StbrtLine: &tc.stbrtLine,
 			EndLine:   &tc.endLine,
 		})
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
-		if diff := cmp.Diff(newFileContent, tc.wantContent); diff != "" {
-			t.Fatalf("wrong newFileContent: %s", diff)
+		if diff := cmp.Diff(newFileContent, tc.wbntContent); diff != "" {
+			t.Fbtblf("wrong newFileContent: %s", diff)
 		}
 
-		newByteSize, err := gitTree.ByteSize(context.Background())
+		newByteSize, err := gitTree.ByteSize(context.Bbckground())
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
 
-		if have, want := newByteSize, int32(len([]byte(fullContent))); have != want {
-			t.Fatalf("wrong file size, want=%d have=%d", want, have)
+		if hbve, wbnt := newByteSize, int32(len([]byte(fullContent))); hbve != wbnt {
+			t.Fbtblf("wrong file size, wbnt=%d hbve=%d", wbnt, hbve)
 		}
 
-		newTotalLines, err := gitTree.TotalLines(context.Background())
+		newTotblLines, err := gitTree.TotblLines(context.Bbckground())
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
 
-		if have, want := newTotalLines, int32(len(strings.Split(fullContent, "\n"))); have != want {
-			t.Fatalf("wrong file size, want=%d have=%d", want, have)
+		if hbve, wbnt := newTotblLines, int32(len(strings.Split(fullContent, "\n"))); hbve != wbnt {
+			t.Fbtblf("wrong file size, wbnt=%d hbve=%d", wbnt, hbve)
 		}
 	}
 
-	// Testing default (nils) for pagination.
+	// Testing defbult (nils) for pbginbtion.
 	opts := GitTreeEntryResolverOpts{
 		Commit: &GitCommitResolver{
-			repoResolver: NewRepositoryResolver(db, gitserverClient, &types.Repo{Name: "my/repo"}),
+			repoResolver: NewRepositoryResolver(db, gitserverClient, &types.Repo{Nbme: "my/repo"}),
 		},
-		Stat: CreateFileInfo(wantPath, true),
+		Stbt: CrebteFileInfo(wbntPbth, true),
 	}
 	gitTree := NewGitTreeEntryResolver(db, gitserverClient, opts)
 
-	newFileContent, err := gitTree.Content(context.Background(), &GitTreeContentPageArgs{})
+	newFileContent, err := gitTree.Content(context.Bbckground(), &GitTreeContentPbgeArgs{})
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 	if diff := cmp.Diff(newFileContent, fullContent); diff != "" {
-		t.Fatalf("wrong newFileContent: %s", diff)
+		t.Fbtblf("wrong newFileContent: %s", diff)
 	}
 
-	newByteSize, err := gitTree.ByteSize(context.Background())
+	newByteSize, err := gitTree.ByteSize(context.Bbckground())
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	if have, want := newByteSize, int32(len([]byte(fullContent))); have != want {
-		t.Fatalf("wrong file size, want=%d have=%d", want, have)
+	if hbve, wbnt := newByteSize, int32(len([]byte(fullContent))); hbve != wbnt {
+		t.Fbtblf("wrong file size, wbnt=%d hbve=%d", wbnt, hbve)
 	}
 }

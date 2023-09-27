@@ -1,7 +1,7 @@
-package buildkite
+pbckbge buildkite
 
 const (
-	AgentQueueStandard = "standard"
-	// TODO eventually replace with 'standard'
-	AgentQueueStateless = "stateless"
+	AgentQueueStbndbrd = "stbndbrd"
+	// TODO eventublly replbce with 'stbndbrd'
+	AgentQueueStbteless = "stbteless"
 )

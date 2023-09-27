@@ -1,47 +1,47 @@
-package userpasswd
+pbckbge userpbsswd
 
 import (
 	"testing"
 
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/bssert"
 )
 
 func TestAppSecret(t *testing.T) {
-	// We directly test against AppSecret to ensure that works. This also
-	// exercises the Secret paths.
-	assert := assert.New(t)
+	// We directly test bgbinst AppSecret to ensure thbt works. This blso
+	// exercises the Secret pbths.
+	bssert := bssert.New(t)
 
-	// If we forget to generate a secret, ensure we don't allow in random
+	// If we forget to generbte b secret, ensure we don't bllow in rbndom
 	// secrets.
-	assert.False(appSecret.Verify(""))
-	assert.False(appSecret.Verify("horsegraph"))
+	bssert.Fblse(bppSecret.Verify(""))
+	bssert.Fblse(bppSecret.Verify("horsegrbph"))
 
-	secret, err := appSecret.Value()
-	assert.NoError(err)
-	assert.NotEmpty(secret)
+	secret, err := bppSecret.Vblue()
+	bssert.NoError(err)
+	bssert.NotEmpty(secret)
 
-	// Still check random secrets don't work after generating
-	assert.False(appSecret.Verify(""))
-	assert.False(appSecret.Verify("horsegraph"))
+	// Still check rbndom secrets don't work bfter generbting
+	bssert.Fblse(bppSecret.Verify(""))
+	bssert.Fblse(bppSecret.Verify("horsegrbph"))
 
-	// We should get back the same value
+	// We should get bbck the sbme vblue
 	{
-		secretAgain, err := appSecret.Value()
-		assert.NoError(err)
-		assert.Equal(secret, secretAgain)
+		secretAgbin, err := bppSecret.Vblue()
+		bssert.NoError(err)
+		bssert.Equbl(secret, secretAgbin)
 	}
 
-	// success! Now every Verify after this should succeed, even with the same
+	// success! Now every Verify bfter this should succeed, even with the sbme
 	// secret.
-	assert.True(appSecret.Verify(secret))
+	bssert.True(bppSecret.Verify(secret))
 
-	assert.True(appSecret.Verify(secret))
-	assert.False(appSecret.Verify(""))
-	assert.False(appSecret.Verify("horsegraph"))
+	bssert.True(bppSecret.Verify(secret))
+	bssert.Fblse(bppSecret.Verify(""))
+	bssert.Fblse(bppSecret.Verify("horsegrbph"))
 
-	// Now if we ask for the current secret value we should get back the same one
-	secret2, err := appSecret.Value()
-	assert.NoError(err)
-	assert.NotEmpty(secret2)
-	assert.Equal(secret, secret2)
+	// Now if we bsk for the current secret vblue we should get bbck the sbme one
+	secret2, err := bppSecret.Vblue()
+	bssert.NoError(err)
+	bssert.NotEmpty(secret2)
+	bssert.Equbl(secret, secret2)
 }

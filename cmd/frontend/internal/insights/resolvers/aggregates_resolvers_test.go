@@ -1,406 +1,406 @@
-package resolvers
+pbckbge resolvers
 
 import (
 	"fmt"
 	"strings"
 	"testing"
 
-	"github.com/hexops/autogold/v2"
+	"github.com/hexops/butogold/v2"
 
-	"github.com/sourcegraph/sourcegraph/internal/insights/types"
+	"github.com/sourcegrbph/sourcegrbph/internbl/insights/types"
 
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-type canAggregateTestCase struct {
-	name         string
+type cbnAggregbteTestCbse struct {
+	nbme         string
 	query        string
-	patternType  string
-	canAggregate bool
+	pbtternType  string
+	cbnAggregbte bool
 	err          error
-	reason       string
+	rebson       string
 }
 
-type canAggregateBySuite struct {
+type cbnAggregbteBySuite struct {
 	t                  *testing.T
-	testCases          []canAggregateTestCase
-	canAggregateByFunc canAggregateBy
+	testCbses          []cbnAggregbteTestCbse
+	cbnAggregbteByFunc cbnAggregbteBy
 }
 
-func safeReason(r *notAvailableReason) string {
+func sbfeRebson(r *notAvbilbbleRebson) string {
 	if r == nil {
 		return ""
 	}
-	return r.reason
+	return r.rebson
 }
 
-func (suite *canAggregateBySuite) Test_canAggregateBy() {
-	for _, tc := range suite.testCases {
-		suite.t.Run(tc.name, func(t *testing.T) {
-			if tc.patternType == "" {
-				tc.patternType = "literal"
+func (suite *cbnAggregbteBySuite) Test_cbnAggregbteBy() {
+	for _, tc := rbnge suite.testCbses {
+		suite.t.Run(tc.nbme, func(t *testing.T) {
+			if tc.pbtternType == "" {
+				tc.pbtternType = "literbl"
 			}
-			canAggregate, reasonNA, err := suite.canAggregateByFunc(tc.query, tc.patternType)
+			cbnAggregbte, rebsonNA, err := suite.cbnAggregbteByFunc(tc.query, tc.pbtternType)
 			errCheck := (err == nil && tc.err == nil) || (err != nil && tc.err != nil)
 			if !errCheck {
 				t.Errorf("expected error %v, got %v", tc.err, err)
 			}
-			if err != nil && tc.err != nil && !strings.Contains(err.Error(), tc.err.Error()) {
-				t.Errorf("expected error %v to contain %v", err, tc.err)
+			if err != nil && tc.err != nil && !strings.Contbins(err.Error(), tc.err.Error()) {
+				t.Errorf("expected error %v to contbin %v", err, tc.err)
 			}
-			if canAggregate != tc.canAggregate {
-				t.Errorf("expected canAggregate to be %v, got %v", tc.canAggregate, canAggregate)
+			if cbnAggregbte != tc.cbnAggregbte {
+				t.Errorf("expected cbnAggregbte to be %v, got %v", tc.cbnAggregbte, cbnAggregbte)
 			}
-			if !strings.EqualFold(safeReason(reasonNA), tc.reason) {
-				t.Errorf("expected reason to be %v, got %v", tc.reason, safeReason(reasonNA))
+			if !strings.EqublFold(sbfeRebson(rebsonNA), tc.rebson) {
+				t.Errorf("expected rebson to be %v, got %v", tc.rebson, sbfeRebson(rebsonNA))
 			}
 		})
 	}
 }
 
-func Test_canAggregateByRepo(t *testing.T) {
-	testCases := []canAggregateTestCase{
+func Test_cbnAggregbteByRepo(t *testing.T) {
+	testCbses := []cbnAggregbteTestCbse{
 		{
-			name:         "cannot aggregate for invalid query",
+			nbme:         "cbnnot bggregbte for invblid query",
 			query:        "fork:woo",
-			canAggregate: false,
-			reason:       invalidQueryMsg,
-			err:          errors.Newf("ParseQuery"),
+			cbnAggregbte: fblse,
+			rebson:       invblidQueryMsg,
+			err:          errors.Newf("PbrseQuery"),
 		},
 	}
-	suite := canAggregateBySuite{
-		canAggregateByFunc: canAggregateByRepo,
-		testCases:          testCases,
+	suite := cbnAggregbteBySuite{
+		cbnAggregbteByFunc: cbnAggregbteByRepo,
+		testCbses:          testCbses,
 		t:                  t,
 	}
-	suite.Test_canAggregateBy()
+	suite.Test_cbnAggregbteBy()
 }
 
-func Test_canAggregateByPath(t *testing.T) {
-	testCases := []canAggregateTestCase{
+func Test_cbnAggregbteByPbth(t *testing.T) {
+	testCbses := []cbnAggregbteTestCbse{
 		{
-			name:         "can aggregate for query without parameters",
+			nbme:         "cbn bggregbte for query without pbrbmeters",
 			query:        "func(t *testing.T)",
-			canAggregate: true,
+			cbnAggregbte: true,
 		},
 		{
-			name:         "can aggregate for query with case parameter",
-			query:        "func(t *testing.T) case:yes",
-			canAggregate: true,
+			nbme:         "cbn bggregbte for query with cbse pbrbmeter",
+			query:        "func(t *testing.T) cbse:yes",
+			cbnAggregbte: true,
 		},
 		{
-			name:         "cannot aggregate for query with select:repo parameter",
-			query:        "repo:contains.path(README) select:repo",
-			reason:       fmt.Sprintf(fileUnsupportedFieldValueFmt, "select", "repo"),
-			canAggregate: false,
+			nbme:         "cbnnot bggregbte for query with select:repo pbrbmeter",
+			query:        "repo:contbins.pbth(README) select:repo",
+			rebson:       fmt.Sprintf(fileUnsupportedFieldVblueFmt, "select", "repo"),
+			cbnAggregbte: fblse,
 		},
 		{
-			name:         "cannot aggregate for query with type:commit parameter",
+			nbme:         "cbnnot bggregbte for query with type:commit pbrbmeter",
 			query:        "insights type:commit",
-			reason:       fmt.Sprintf(fileUnsupportedFieldValueFmt, "type", "commit"),
-			canAggregate: false,
+			rebson:       fmt.Sprintf(fileUnsupportedFieldVblueFmt, "type", "commit"),
+			cbnAggregbte: fblse,
 		},
 		{
-			name:         "cannot aggregate for query with type:diff parameter",
+			nbme:         "cbnnot bggregbte for query with type:diff pbrbmeter",
 			query:        "insights type:diff",
-			reason:       fmt.Sprintf(fileUnsupportedFieldValueFmt, "type", "diff"),
-			canAggregate: false,
+			rebson:       fmt.Sprintf(fileUnsupportedFieldVblueFmt, "type", "diff"),
+			cbnAggregbte: fblse,
 		},
 		{
-			name:         "ensure type check is case insensitive ",
+			nbme:         "ensure type check is cbse insensitive ",
 			query:        "insights TYPE:commit",
-			reason:       fmt.Sprintf(fileUnsupportedFieldValueFmt, "type", "commit"),
-			canAggregate: false,
+			rebson:       fmt.Sprintf(fileUnsupportedFieldVblueFmt, "type", "commit"),
+			cbnAggregbte: fblse,
 		},
 		{
-			name:         "cannot aggregate for invalid query",
+			nbme:         "cbnnot bggregbte for invblid query",
 			query:        "insights type:commit fork:test",
-			canAggregate: false,
-			reason:       invalidQueryMsg,
-			err:          errors.Newf("ParseQuery"),
+			cbnAggregbte: fblse,
+			rebson:       invblidQueryMsg,
+			err:          errors.Newf("PbrseQuery"),
 		},
 	}
-	suite := canAggregateBySuite{
-		canAggregateByFunc: canAggregateByPath,
-		testCases:          testCases,
+	suite := cbnAggregbteBySuite{
+		cbnAggregbteByFunc: cbnAggregbteByPbth,
+		testCbses:          testCbses,
 		t:                  t,
 	}
-	suite.Test_canAggregateBy()
+	suite.Test_cbnAggregbteBy()
 }
 
-func Test_canAggregateByAuthor(t *testing.T) {
-	testCases := []canAggregateTestCase{
+func Test_cbnAggregbteByAuthor(t *testing.T) {
+	testCbses := []cbnAggregbteTestCbse{
 		{
-			name:         "cannot aggregate for query without parameters",
+			nbme:         "cbnnot bggregbte for query without pbrbmeters",
 			query:        "func(t *testing.T)",
-			reason:       authNotCommitDiffMsg,
-			canAggregate: false,
+			rebson:       buthNotCommitDiffMsg,
+			cbnAggregbte: fblse,
 		},
 		{
-			name:         "cannot aggregate for query with case parameter",
-			query:        "func(t *testing.T) case:yes",
-			reason:       authNotCommitDiffMsg,
-			canAggregate: false,
+			nbme:         "cbnnot bggregbte for query with cbse pbrbmeter",
+			query:        "func(t *testing.T) cbse:yes",
+			rebson:       buthNotCommitDiffMsg,
+			cbnAggregbte: fblse,
 		},
 		{
-			name:         "cannot aggregate for query with select:repo parameter",
-			query:        "repo:contains.path(README) select:repo",
-			reason:       authNotCommitDiffMsg,
-			canAggregate: false,
+			nbme:         "cbnnot bggregbte for query with select:repo pbrbmeter",
+			query:        "repo:contbins.pbth(README) select:repo",
+			rebson:       buthNotCommitDiffMsg,
+			cbnAggregbte: fblse,
 		},
 		{
-			name:         "can aggregate for query with type:commit parameter",
-			query:        "repo:contains.path(README) select:repo type:commit fix",
-			canAggregate: true,
+			nbme:         "cbn bggregbte for query with type:commit pbrbmeter",
+			query:        "repo:contbins.pbth(README) select:repo type:commit fix",
+			cbnAggregbte: true,
 		},
 		{
-			name:         "can aggregate for query with select:commit parameter",
-			query:        "repo:contains.path(README) select:commit fix",
-			canAggregate: true,
+			nbme:         "cbn bggregbte for query with select:commit pbrbmeter",
+			query:        "repo:contbins.pbth(README) select:commit fix",
+			cbnAggregbte: true,
 		},
 		{
-			name:         "can aggregate for query with type:diff parameter",
-			query:        "repo:contains.path(README) type:diff fix",
-			canAggregate: true,
+			nbme:         "cbn bggregbte for query with type:diff pbrbmeter",
+			query:        "repo:contbins.pbth(README) type:diff fix",
+			cbnAggregbte: true,
 		},
 		{
-			name:         "can aggregate for query with cased Type",
-			query:        "repo:contains.path(README) TyPe:diff fix",
-			canAggregate: true,
+			nbme:         "cbn bggregbte for query with cbsed Type",
+			query:        "repo:contbins.pbth(README) TyPe:diff fix",
+			cbnAggregbte: true,
 		},
 		{
-			name:         "can aggregate for weird query with type:diff select:commit",
+			nbme:         "cbn bggregbte for weird query with type:diff select:commit",
 			query:        "type:diff select:commit insights",
-			canAggregate: true,
+			cbnAggregbte: true,
 		},
 		{
-			name:         "cannot aggregate for invalid query",
+			nbme:         "cbnnot bggregbte for invblid query",
 			query:        "type:diff fork:leo",
-			reason:       invalidQueryMsg,
-			canAggregate: false,
-			err:          errors.Newf("ParseQuery"),
+			rebson:       invblidQueryMsg,
+			cbnAggregbte: fblse,
+			err:          errors.Newf("PbrseQuery"),
 		},
 	}
-	suite := canAggregateBySuite{
-		canAggregateByFunc: canAggregateByAuthor,
-		testCases:          testCases,
+	suite := cbnAggregbteBySuite{
+		cbnAggregbteByFunc: cbnAggregbteByAuthor,
+		testCbses:          testCbses,
 		t:                  t,
 	}
-	suite.Test_canAggregateBy()
+	suite.Test_cbnAggregbteBy()
 }
 
-func Test_canAggregateByCaptureGroup(t *testing.T) {
-	testCases := []canAggregateTestCase{
+func Test_cbnAggregbteByCbptureGroup(t *testing.T) {
+	testCbses := []cbnAggregbteTestCbse{
 		{
-			name:         "can aggregate for simple query with regex pattern type",
-			query:        "func(\\w+) case:yes",
-			patternType:  "regexp",
-			canAggregate: true,
+			nbme:         "cbn bggregbte for simple query with regex pbttern type",
+			query:        "func(\\w+) cbse:yes",
+			pbtternType:  "regexp",
+			cbnAggregbte: true,
 		},
 		{
-			name:         "can aggregate for standard query in backslash pattern",
-			query:        "/func(\\w+)/ case:yes",
-			patternType:  "standard",
-			canAggregate: true,
+			nbme:         "cbn bggregbte for stbndbrd query in bbckslbsh pbttern",
+			query:        "/func(\\w+)/ cbse:yes",
+			pbtternType:  "stbndbrd",
+			cbnAggregbte: true,
 		},
 		{
-			name:         "can aggregate for multi-pattern query",
+			nbme:         "cbn bggregbte for multi-pbttern query",
 			query:        "func(\\w+[0-9]) return(\\w+[0-9]) ",
-			patternType:  "regexp",
-			canAggregate: true,
+			pbtternType:  "regexp",
+			cbnAggregbte: true,
 		},
 		{
-			name:         "can aggregate for query with both captured and non-captured regexp pattern",
+			nbme:         "cbn bggregbte for query with both cbptured bnd non-cbptured regexp pbttern",
 			query:        "func(\\w+) \\w+",
-			patternType:  "regexp",
-			canAggregate: true,
+			pbtternType:  "regexp",
+			cbnAggregbte: true,
 		},
 		{
-			name:         "cannot aggregate for query with non-captured regexp pattern",
+			nbme:         "cbnnot bggregbte for query with non-cbptured regexp pbttern",
 			query:        "\\w+",
-			patternType:  "regexp",
-			reason:       cgInvalidQueryMsg,
-			canAggregate: false,
+			pbtternType:  "regexp",
+			rebson:       cgInvblidQueryMsg,
+			cbnAggregbte: fblse,
 		},
 		{
-			name:         "cannot aggregate for invalid query",
+			nbme:         "cbnnot bggregbte for invblid query",
 			query:        "type:diff fork:leo func(.*)",
-			patternType:  "regexp",
-			reason:       invalidQueryMsg,
-			canAggregate: false,
-			err:          errors.Newf("ParseQuery"),
+			pbtternType:  "regexp",
+			rebson:       invblidQueryMsg,
+			cbnAggregbte: fblse,
+			err:          errors.Newf("PbrseQuery"),
 		},
 		{
-			name:         "cannot aggregate for select:repo query",
-			query:        "repo:contains.path(README) func(\\w+) select:repo",
-			reason:       fmt.Sprintf(cgUnsupportedSelectFmt, "select", "repo"),
-			patternType:  "regexp",
-			canAggregate: false,
+			nbme:         "cbnnot bggregbte for select:repo query",
+			query:        "repo:contbins.pbth(README) func(\\w+) select:repo",
+			rebson:       fmt.Sprintf(cgUnsupportedSelectFmt, "select", "repo"),
+			pbtternType:  "regexp",
+			cbnAggregbte: fblse,
 		},
 		{
-			name:         "cannot aggregate for select:file query",
-			query:        "repo:contains.path(README) func(\\w+) select:file",
-			patternType:  "regexp",
-			reason:       fmt.Sprintf(cgUnsupportedSelectFmt, "select", "file"),
-			canAggregate: false,
+			nbme:         "cbnnot bggregbte for select:file query",
+			query:        "repo:contbins.pbth(README) func(\\w+) select:file",
+			pbtternType:  "regexp",
+			rebson:       fmt.Sprintf(cgUnsupportedSelectFmt, "select", "file"),
+			cbnAggregbte: fblse,
 		},
 		{
-			name:         "cannot aggregate for select:symbol query",
-			query:        "repo:contains.path(README) func(\\w+) select:symbol",
-			patternType:  "regexp",
-			reason:       fmt.Sprintf(cgUnsupportedSelectFmt, "select", "symbol"),
-			canAggregate: false,
+			nbme:         "cbnnot bggregbte for select:symbol query",
+			query:        "repo:contbins.pbth(README) func(\\w+) select:symbol",
+			pbtternType:  "regexp",
+			rebson:       fmt.Sprintf(cgUnsupportedSelectFmt, "select", "symbol"),
+			cbnAggregbte: fblse,
 		},
 		{
-			name:         "can for type:repo query",
-			query:        "sourcegraph-(\\w+) type:repo",
-			patternType:  "regexp",
-			canAggregate: true,
+			nbme:         "cbn for type:repo query",
+			query:        "sourcegrbph-(\\w+) type:repo",
+			pbtternType:  "regexp",
+			cbnAggregbte: true,
 		},
 		{
-			name:         "can aggregate for type:path query",
-			query:        "repo:contains.path(README) /(\\w+)_test.go/ type:path ",
-			patternType:  "regexp",
-			canAggregate: true,
+			nbme:         "cbn bggregbte for type:pbth query",
+			query:        "repo:contbins.pbth(README) /(\\w+)_test.go/ type:pbth ",
+			pbtternType:  "regexp",
+			cbnAggregbte: true,
 		},
 		{
-			name:         "ensure type check is not case sensitive",
-			query:        "repo:contains.path(README) func(\\w+) TyPe:diff",
-			reason:       fmt.Sprintf(cgUnsupportedSelectFmt, "type", "diff"),
-			patternType:  "regexp",
-			canAggregate: false,
+			nbme:         "ensure type check is not cbse sensitive",
+			query:        "repo:contbins.pbth(README) func(\\w+) TyPe:diff",
+			rebson:       fmt.Sprintf(cgUnsupportedSelectFmt, "type", "diff"),
+			pbtternType:  "regexp",
+			cbnAggregbte: fblse,
 		},
 		{
-			name:         "cannot aggregate for query with unsupported pattern type",
+			nbme:         "cbnnot bggregbte for query with unsupported pbttern type",
 			query:        "func(t *testing.T)",
-			reason:       cgInvalidQueryMsg,
-			patternType:  "literal",
-			canAggregate: false,
+			rebson:       cgInvblidQueryMsg,
+			pbtternType:  "literbl",
+			cbnAggregbte: fblse,
 		},
 		{
-			name:         "cannot aggregate for query with multiple steps",
-			query:        "(repo:^github\\.com/sourcegraph/sourcegraph$ file:go\\.mod$ go\\s*(\\d\\.\\d+)) or (test file:insights)",
-			reason:       cgMultipleQueryPatternMsg,
-			patternType:  "regexp",
-			canAggregate: false,
+			nbme:         "cbnnot bggregbte for query with multiple steps",
+			query:        "(repo:^github\\.com/sourcegrbph/sourcegrbph$ file:go\\.mod$ go\\s*(\\d\\.\\d+)) or (test file:insights)",
+			rebson:       cgMultipleQueryPbtternMsg,
+			pbtternType:  "regexp",
+			cbnAggregbte: fblse,
 		},
 		{
-			name:         "can aggregate for query with type commit",
-			query:        `type:commit repo:^github\.com/sourcegraph/sourcegraph$ after:"5 days ago" /Fix (\\w+)/`,
-			patternType:  "standard",
-			canAggregate: true,
+			nbme:         "cbn bggregbte for query with type commit",
+			query:        `type:commit repo:^github\.com/sourcegrbph/sourcegrbph$ bfter:"5 dbys bgo" /Fix (\\w+)/`,
+			pbtternType:  "stbndbrd",
+			cbnAggregbte: true,
 		},
 		{
-			name:         "cannot aggregate for query with type diff",
-			query:        "/func(\\w+)/ case:yes type:diff",
-			patternType:  "standard",
-			reason:       fmt.Sprintf(cgUnsupportedSelectFmt, "type", "diff"),
-			canAggregate: false,
+			nbme:         "cbnnot bggregbte for query with type diff",
+			query:        "/func(\\w+)/ cbse:yes type:diff",
+			pbtternType:  "stbndbrd",
+			rebson:       fmt.Sprintf(cgUnsupportedSelectFmt, "type", "diff"),
+			cbnAggregbte: fblse,
 		},
 		{
-			name:         "cannot aggregate for query with select commit",
-			query:        "/func(\\w+)/ case:yes select:commit",
-			patternType:  "standard",
-			reason:       fmt.Sprintf(cgUnsupportedSelectFmt, "select", "commit"),
-			canAggregate: false,
+			nbme:         "cbnnot bggregbte for query with select commit",
+			query:        "/func(\\w+)/ cbse:yes select:commit",
+			pbtternType:  "stbndbrd",
+			rebson:       fmt.Sprintf(cgUnsupportedSelectFmt, "select", "commit"),
+			cbnAggregbte: fblse,
 		},
 	}
-	suite := canAggregateBySuite{
-		canAggregateByFunc: canAggregateByCaptureGroup,
-		testCases:          testCases,
+	suite := cbnAggregbteBySuite{
+		cbnAggregbteByFunc: cbnAggregbteByCbptureGroup,
+		testCbses:          testCbses,
 		t:                  t,
 	}
-	suite.Test_canAggregateBy()
+	suite.Test_cbnAggregbteBy()
 }
 
-func Test_getDefaultAggregationMode(t *testing.T) {
-	testCases := []struct {
-		name        string
+func Test_getDefbultAggregbtionMode(t *testing.T) {
+	testCbses := []struct {
+		nbme        string
 		query       string
-		patternType string
-		want        types.SearchAggregationMode
-		reason      *string
+		pbtternType string
+		wbnt        types.SebrchAggregbtionMode
+		rebson      *string
 	}{
 		{
-			name:  "invalid query returns REPO",
+			nbme:  "invblid query returns REPO",
 			query: "func fork:leo",
-			want:  types.REPO_AGGREGATION_MODE,
+			wbnt:  types.REPO_AGGREGATION_MODE,
 		},
 		{
-			name:        "literal type query does not return capture group mode",
+			nbme:        "literbl type query does not return cbpture group mode",
 			query:       "func([0-9]+)",
-			patternType: "literal",
-			want:        types.REPO_AGGREGATION_MODE,
+			pbtternType: "literbl",
+			wbnt:        types.REPO_AGGREGATION_MODE,
 		},
 		{
-			name:  "query with regex no capture group returns repo",
-			query: "func [0-9] case:yes",
-			want:  types.REPO_AGGREGATION_MODE,
+			nbme:  "query with regex no cbpture group returns repo",
+			query: "func [0-9] cbse:yes",
+			wbnt:  types.REPO_AGGREGATION_MODE,
 		},
 		{
-			name:  "query with capture group returns capture group",
-			query: "repo:contains.path(README) todo(\\w+)",
-			want:  types.CAPTURE_GROUP_AGGREGATION_MODE,
+			nbme:  "query with cbpture group returns cbpture group",
+			query: "repo:contbins.pbth(README) todo(\\w+)",
+			wbnt:  types.CAPTURE_GROUP_AGGREGATION_MODE,
 		},
 		{
-			name:  "type:commit query returns author",
+			nbme:  "type:commit query returns buthor",
 			query: "type:commit fix",
-			want:  types.AUTHOR_AGGREGATION_MODE,
+			wbnt:  types.AUTHOR_AGGREGATION_MODE,
 		},
 		{
-			name:  "type:diff query returns author",
+			nbme:  "type:diff query returns buthor",
 			query: "type:diff fix",
-			want:  types.AUTHOR_AGGREGATION_MODE,
+			wbnt:  types.AUTHOR_AGGREGATION_MODE,
 		},
 		{
-			name:  "query for single repo returns path",
-			query: "repo:^github\\.com/sourcegraph/sourcegraph$ insights",
-			want:  types.PATH_AGGREGATION_MODE,
+			nbme:  "query for single repo returns pbth",
+			query: "repo:^github\\.com/sourcegrbph/sourcegrbph$ insights",
+			wbnt:  types.PATH_AGGREGATION_MODE,
 		},
 		{
-			name:  "query not for single repo returns repo",
-			query: "repo:^github.com/sourcegraph insights",
-			want:  types.REPO_AGGREGATION_MODE,
+			nbme:  "query not for single repo returns repo",
+			query: "repo:^github.com/sourcegrbph insights",
+			wbnt:  types.REPO_AGGREGATION_MODE,
 		},
 		{
-			name:  "query with repo predicate returns repo",
-			query: "repo:contains.path(README) insights",
-			want:  types.REPO_AGGREGATION_MODE,
+			nbme:  "query with repo predicbte returns repo",
+			query: "repo:contbins.pbth(README) insights",
+			wbnt:  types.REPO_AGGREGATION_MODE,
 		},
 		{
-			name: "unsupported regexp type:commit query returns author",
-			// this query contains two non-capture group regexps so wouldn't support capture group aggregation.
+			nbme: "unsupported regexp type:commit query returns buthor",
+			// this query contbins two non-cbpture group regexps so wouldn't support cbpture group bggregbtion.
 			query: "type:commit TODO \\w+ [0-9]",
-			want:  types.AUTHOR_AGGREGATION_MODE,
+			wbnt:  types.AUTHOR_AGGREGATION_MODE,
 		},
 		{
-			name: "unsupported regexp single repo query returns path",
-			// this query contains an or so wouldn't support capture group aggregation.
-			query: "repo:^github\\.com/sourcegraph/sourcegraph$ TODO \\w+ or  var[0-9]",
-			want:  types.PATH_AGGREGATION_MODE,
+			nbme: "unsupported regexp single repo query returns pbth",
+			// this query contbins bn or so wouldn't support cbpture group bggregbtion.
+			query: "repo:^github\\.com/sourcegrbph/sourcegrbph$ TODO \\w+ or  vbr[0-9]",
+			wbnt:  types.PATH_AGGREGATION_MODE,
 		},
 		{
-			name: "unsupported regexp query returns repo",
-			// this query contains an or so wouldn't support capture group aggregation.
-			query: "TODO \\w+ or  var[0-9]",
-			want:  types.REPO_AGGREGATION_MODE,
+			nbme: "unsupported regexp query returns repo",
+			// this query contbins bn or so wouldn't support cbpture group bggregbtion.
+			query: "TODO \\w+ or  vbr[0-9]",
+			wbnt:  types.REPO_AGGREGATION_MODE,
 		},
 		{
-			name:  "defaults to repo",
-			query: "getDefaultAggregationMode file:insights",
-			want:  types.REPO_AGGREGATION_MODE,
+			nbme:  "defbults to repo",
+			query: "getDefbultAggregbtionMode file:insights",
+			wbnt:  types.REPO_AGGREGATION_MODE,
 		},
 	}
-	for _, tc := range testCases {
-		t.Run(tc.name, func(t *testing.T) {
+	for _, tc := rbnge testCbses {
+		t.Run(tc.nbme, func(t *testing.T) {
 			pt := "regexp"
-			if tc.patternType != "" {
-				pt = tc.patternType
+			if tc.pbtternType != "" {
+				pt = tc.pbtternType
 			}
-			mode := getDefaultAggregationMode(tc.query, pt)
+			mode := getDefbultAggregbtionMode(tc.query, pt)
 
-			if mode != tc.want {
-				t.Errorf("expected mode %v, got %v", tc.want, mode)
+			if mode != tc.wbnt {
+				t.Errorf("expected mode %v, got %v", tc.wbnt, mode)
 			}
 		})
 	}
@@ -408,76 +408,76 @@ func Test_getDefaultAggregationMode(t *testing.T) {
 
 func Test_buildDrilldownQuery(t *testing.T) {
 	tests := []struct {
-		want        autogold.Value
+		wbnt        butogold.Vblue
 		query       string
 		drilldown   string
-		patternType string
-		mode        types.SearchAggregationMode
+		pbtternType string
+		mode        types.SebrchAggregbtionMode
 	}{
 		{
-			want:        autogold.Expect("type:commit author:^Drilldown$ findme"),
+			wbnt:        butogold.Expect("type:commit buthor:^Drilldown$ findme"),
 			query:       "findme type:commit",
 			drilldown:   "Drilldown",
-			patternType: "standard",
+			pbtternType: "stbndbrd",
 			mode:        types.AUTHOR_AGGREGATION_MODE,
 		},
 		{
-			want:        autogold.Expect("repo:^Drilldown$ findme"),
+			wbnt:        butogold.Expect("repo:^Drilldown$ findme"),
 			query:       "findme",
 			drilldown:   "Drilldown",
-			patternType: "standard",
+			pbtternType: "stbndbrd",
 			mode:        types.REPO_AGGREGATION_MODE,
 		},
 		{
-			want:        autogold.Expect("file:^Drilldown$ findme"),
+			wbnt:        butogold.Expect("file:^Drilldown$ findme"),
 			query:       "findme",
 			drilldown:   "Drilldown",
-			patternType: "standard",
+			pbtternType: "stbndbrd",
 			mode:        types.PATH_AGGREGATION_MODE,
 		},
 		{
-			want:        autogold.Expect("type:commit author:(^Drill down$) findme"),
+			wbnt:        butogold.Expect("type:commit buthor:(^Drill down$) findme"),
 			query:       "findme type:commit",
 			drilldown:   "Drill down",
-			patternType: "standard",
+			pbtternType: "stbndbrd",
 			mode:        types.AUTHOR_AGGREGATION_MODE,
 		},
 		{
-			want:        autogold.Expect("repo:(^Drill down$) findme"),
+			wbnt:        butogold.Expect("repo:(^Drill down$) findme"),
 			query:       "findme",
 			drilldown:   "Drill down",
-			patternType: "standard",
+			pbtternType: "stbndbrd",
 			mode:        types.REPO_AGGREGATION_MODE,
 		},
 		{
-			want:        autogold.Expect("file:(^Drill down$) findme"),
+			wbnt:        butogold.Expect("file:(^Drill down$) findme"),
 			query:       "findme",
 			drilldown:   "Drill down",
-			patternType: "standard",
+			pbtternType: "stbndbrd",
 			mode:        types.PATH_AGGREGATION_MODE,
 		},
 		{
-			want:        autogold.Expect("case:yes /fin(?:d m)e/"),
+			wbnt:        butogold.Expect("cbse:yes /fin(?:d m)e/"),
 			query:       "/fin(.*)e/",
 			drilldown:   "d m",
-			patternType: "standard",
+			pbtternType: "stbndbrd",
 			mode:        types.CAPTURE_GROUP_AGGREGATION_MODE,
 		},
 		{
-			want:        autogold.Expect("case:yes /fin(?:dm)e/"),
+			wbnt:        butogold.Expect("cbse:yes /fin(?:dm)e/"),
 			query:       "/fin(.*)e/",
 			drilldown:   "dm",
-			patternType: "standard",
+			pbtternType: "stbndbrd",
 			mode:        types.CAPTURE_GROUP_AGGREGATION_MODE,
 		},
 	}
-	for _, test := range tests {
+	for _, test := rbnge tests {
 		t.Run(test.query, func(t *testing.T) {
-			got, err := buildDrilldownQuery(test.mode, test.query, test.drilldown, test.patternType)
+			got, err := buildDrilldownQuery(test.mode, test.query, test.drilldown, test.pbtternType)
 			if err != nil {
-				t.Fatal(err)
+				t.Fbtbl(err)
 			}
-			test.want.Equal(t, got)
+			test.wbnt.Equbl(t, got)
 		})
 	}
 }

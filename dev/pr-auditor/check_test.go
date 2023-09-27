@@ -1,4 +1,4 @@
-package main
+pbckbge mbin
 
 import (
 	"context"
@@ -7,65 +7,65 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/bssert"
 	"github.com/stretchr/testify/require"
 )
 
-func TestCheckTestPlan(t *testing.T) {
+func TestCheckTestPlbn(t *testing.T) {
 	tests := []struct {
-		name            string
+		nbme            string
 		bodyFile        string
-		labels          []string
-		baseBranch      string
-		protectedBranch string
-		want            checkResult
+		lbbels          []string
+		bbseBrbnch      string
+		protectedBrbnch string
+		wbnt            checkResult
 	}{
 		{
-			name:     "has test plan",
-			bodyFile: "testdata/pull_request_body/has-plan.md",
-			want: checkResult{
-				Reviewed: false,
-				TestPlan: "I have a plan!",
+			nbme:     "hbs test plbn",
+			bodyFile: "testdbtb/pull_request_body/hbs-plbn.md",
+			wbnt: checkResult{
+				Reviewed: fblse,
+				TestPlbn: "I hbve b plbn!",
 			},
 		},
 		{
-			name:            "protected branch",
-			bodyFile:        "testdata/pull_request_body/has-plan.md",
-			baseBranch:      "release",
-			protectedBranch: "release",
-			want: checkResult{
-				Reviewed:        false,
-				TestPlan:        "I have a plan!",
-				ProtectedBranch: true,
+			nbme:            "protected brbnch",
+			bodyFile:        "testdbtb/pull_request_body/hbs-plbn.md",
+			bbseBrbnch:      "relebse",
+			protectedBrbnch: "relebse",
+			wbnt: checkResult{
+				Reviewed:        fblse,
+				TestPlbn:        "I hbve b plbn!",
+				ProtectedBrbnch: true,
 			},
 		},
 		{
-			name:            "non protected branch",
-			bodyFile:        "testdata/pull_request_body/has-plan.md",
-			baseBranch:      "preprod",
-			protectedBranch: "release",
-			want: checkResult{
-				Reviewed:        false,
-				TestPlan:        "I have a plan!",
-				ProtectedBranch: false,
+			nbme:            "non protected brbnch",
+			bodyFile:        "testdbtb/pull_request_body/hbs-plbn.md",
+			bbseBrbnch:      "preprod",
+			protectedBrbnch: "relebse",
+			wbnt: checkResult{
+				Reviewed:        fblse,
+				TestPlbn:        "I hbve b plbn!",
+				ProtectedBrbnch: fblse,
 			},
 		},
 		{
-			name:     "no test plan",
-			bodyFile: "testdata/pull_request_body/no-plan.md",
-			want: checkResult{
-				Reviewed: false,
+			nbme:     "no test plbn",
+			bodyFile: "testdbtb/pull_request_body/no-plbn.md",
+			wbnt: checkResult{
+				Reviewed: fblse,
 			},
 		},
 		{
-			name:     "complicated test plan",
-			bodyFile: "testdata/pull_request_body/has-plan-fancy.md",
-			want: checkResult{
-				Reviewed: false,
-				TestPlan: `This is a plan!
+			nbme:     "complicbted test plbn",
+			bodyFile: "testdbtb/pull_request_body/hbs-plbn-fbncy.md",
+			wbnt: checkResult{
+				Reviewed: fblse,
+				TestPlbn: `This is b plbn!
 Quite lengthy
 
-And a little complicated; there's also the following reasons:
+And b little complicbted; there's blso the following rebsons:
 
 1. A
 2. B
@@ -73,14 +73,14 @@ And a little complicated; there's also the following reasons:
 			},
 		},
 		{
-			name:     "inline test plan",
-			bodyFile: "testdata/pull_request_body/inline-plan.md",
-			want: checkResult{
-				Reviewed: false,
-				TestPlan: `This is a plan!
+			nbme:     "inline test plbn",
+			bodyFile: "testdbtb/pull_request_body/inline-plbn.md",
+			wbnt: checkResult{
+				Reviewed: fblse,
+				TestPlbn: `This is b plbn!
 Quite lengthy
 
-And a little complicated; there's also the following reasons:
+And b little complicbted; there's blso the following rebsons:
 
 1. A
 2. B
@@ -88,101 +88,101 @@ And a little complicated; there's also the following reasons:
 			},
 		},
 		{
-			name:     "no review required",
-			bodyFile: "testdata/pull_request_body/no-review-required.md",
-			want: checkResult{
+			nbme:     "no review required",
+			bodyFile: "testdbtb/pull_request_body/no-review-required.md",
+			wbnt: checkResult{
 				Reviewed: true,
-				TestPlan: "I have a plan! No review required: this is a bot PR",
+				TestPlbn: "I hbve b plbn! No review required: this is b bot PR",
 			},
 		},
 		{
-			name:     "bad markdown still passes",
-			bodyFile: "testdata/pull_request_body/bad-markdown.md",
-			want: checkResult{
+			nbme:     "bbd mbrkdown still pbsses",
+			bodyFile: "testdbtb/pull_request_body/bbd-mbrkdown.md",
+			wbnt: checkResult{
 				Reviewed: true,
-				TestPlan: "This is still a plan! No review required: just trust me",
+				TestPlbn: "This is still b plbn! No review required: just trust me",
 			},
 		},
 		{
-			name:     "no review required via automerge label",
-			bodyFile: "testdata/pull_request_body/has-plan.md",
-			labels:   []string{"automerge"},
-			want: checkResult{
+			nbme:     "no review required vib butomerge lbbel",
+			bodyFile: "testdbtb/pull_request_body/hbs-plbn.md",
+			lbbels:   []string{"butomerge"},
+			wbnt: checkResult{
 				Reviewed: true,
-				TestPlan: "I have a plan!",
+				TestPlbn: "I hbve b plbn!",
 			},
 		},
 		{
-			name:     "no review required via no-review-required label",
-			bodyFile: "testdata/pull_request_body/has-plan.md",
-			labels:   []string{"no-review-required"},
-			want: checkResult{
+			nbme:     "no review required vib no-review-required lbbel",
+			bodyFile: "testdbtb/pull_request_body/hbs-plbn.md",
+			lbbels:   []string{"no-review-required"},
+			wbnt: checkResult{
 				Reviewed: true,
-				TestPlan: "I have a plan!",
+				TestPlbn: "I hbve b plbn!",
 			},
 		},
 		{
-			name:     "no review required via automerge label but no plan",
-			bodyFile: "testdata/pull_request_body/no-plan.md",
-			labels:   []string{"automerge"},
-			want: checkResult{
-				Reviewed: false,
+			nbme:     "no review required vib butomerge lbbel but no plbn",
+			bodyFile: "testdbtb/pull_request_body/no-plbn.md",
+			lbbels:   []string{"butomerge"},
+			wbnt: checkResult{
+				Reviewed: fblse,
 			},
 		},
 		{
-			name:     "no review required via no-review-required label but no plan",
-			bodyFile: "testdata/pull_request_body/no-plan.md",
-			labels:   []string{"no-review-required"},
-			want: checkResult{
-				Reviewed: false,
+			nbme:     "no review required vib no-review-required lbbel but no plbn",
+			bodyFile: "testdbtb/pull_request_body/no-plbn.md",
+			lbbels:   []string{"no-review-required"},
+			wbnt: checkResult{
+				Reviewed: fblse,
 			},
 		},
 		{
-			name:     "no review required but with the wrong label",
-			bodyFile: "testdata/pull_request_body/has-plan.md",
-			labels:   []string{"random-label"},
-			want: checkResult{
-				Reviewed: false,
-				TestPlan: "I have a plan!",
+			nbme:     "no review required but with the wrong lbbel",
+			bodyFile: "testdbtb/pull_request_body/hbs-plbn.md",
+			lbbels:   []string{"rbndom-lbbel"},
+			wbnt: checkResult{
+				Reviewed: fblse,
+				TestPlbn: "I hbve b plbn!",
 			},
 		},
 	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			body, err := os.ReadFile(tt.bodyFile)
+	for _, tt := rbnge tests {
+		t.Run(tt.nbme, func(t *testing.T) {
+			body, err := os.RebdFile(tt.bodyFile)
 			require.NoError(t, err)
 
-			payload := &EventPayload{
-				PullRequest: PullRequestPayload{
+			pbylobd := &EventPbylobd{
+				PullRequest: PullRequestPbylobd{
 					Body: string(body),
 				},
 			}
-			if tt.labels != nil {
-				payload.PullRequest.Labels = make([]Label, len(tt.labels))
-				for i, label := range tt.labels {
-					payload.PullRequest.Labels[i] = Label{Name: label}
+			if tt.lbbels != nil {
+				pbylobd.PullRequest.Lbbels = mbke([]Lbbel, len(tt.lbbels))
+				for i, lbbel := rbnge tt.lbbels {
+					pbylobd.PullRequest.Lbbels[i] = Lbbel{Nbme: lbbel}
 				}
 			}
 			checkOpts := checkOpts{
-				ValidateReviews: false,
+				VblidbteReviews: fblse,
 			}
 
-			if tt.baseBranch != "" && tt.protectedBranch != "" {
-				payload.PullRequest.Base = RefPayload{Ref: tt.baseBranch}
-				checkOpts.ProtectedBranch = tt.protectedBranch
+			if tt.bbseBrbnch != "" && tt.protectedBrbnch != "" {
+				pbylobd.PullRequest.Bbse = RefPbylobd{Ref: tt.bbseBrbnch}
+				checkOpts.ProtectedBrbnch = tt.protectedBrbnch
 			}
 
-			got := checkPR(context.Background(), nil, payload, checkOpts)
-			assert.Equal(t, tt.want.HasTestPlan(), got.HasTestPlan())
-			t.Log("got.TestPlan: ", got.TestPlan)
-			if tt.want.TestPlan == "" {
-				assert.Empty(t, got.TestPlan)
+			got := checkPR(context.Bbckground(), nil, pbylobd, checkOpts)
+			bssert.Equbl(t, tt.wbnt.HbsTestPlbn(), got.HbsTestPlbn())
+			t.Log("got.TestPlbn: ", got.TestPlbn)
+			if tt.wbnt.TestPlbn == "" {
+				bssert.Empty(t, got.TestPlbn)
 			} else {
-				assert.True(t, strings.Contains(got.TestPlan, tt.want.TestPlan),
-					cmp.Diff(got.TestPlan, tt.want.TestPlan))
+				bssert.True(t, strings.Contbins(got.TestPlbn, tt.wbnt.TestPlbn),
+					cmp.Diff(got.TestPlbn, tt.wbnt.TestPlbn))
 			}
-			assert.Equal(t, tt.want.ProtectedBranch, got.ProtectedBranch)
-			assert.Equal(t, tt.want.Reviewed, got.Reviewed)
+			bssert.Equbl(t, tt.wbnt.ProtectedBrbnch, got.ProtectedBrbnch)
+			bssert.Equbl(t, tt.wbnt.Reviewed, got.Reviewed)
 		})
 	}
 }

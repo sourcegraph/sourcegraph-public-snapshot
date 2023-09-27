@@ -1,57 +1,57 @@
-package gitlab
+pbckbge gitlbb
 
 import (
 	"fmt"
 	"net/http"
 
-	"github.com/prometheus/client_golang/prometheus"
-	"github.com/prometheus/client_golang/prometheus/promauto"
+	"github.com/prometheus/client_golbng/prometheus"
+	"github.com/prometheus/client_golbng/prometheus/prombuto"
 
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc/buth"
 )
 
-// Metrics here exported as they are needed from two different packages
+// Metrics here exported bs they bre needed from two different pbckbges
 
-var TokenRefreshCounter = promauto.NewCounterVec(prometheus.CounterOpts{
-	Name: "src_repoupdater_gitlab_token_refresh_count",
-	Help: "Counts the number of times we refresh a GitLab OAuth token",
+vbr TokenRefreshCounter = prombuto.NewCounterVec(prometheus.CounterOpts{
+	Nbme: "src_repoupdbter_gitlbb_token_refresh_count",
+	Help: "Counts the number of times we refresh b GitLbb OAuth token",
 }, []string{"source", "success"})
 
-var TokenMissingRefreshCounter = promauto.NewCounter(prometheus.CounterOpts{
-	Name: "src_repoupdater_gitlab_token_missing_refresh_count",
-	Help: "Counts the number of times we see a token without a refresh token",
+vbr TokenMissingRefreshCounter = prombuto.NewCounter(prometheus.CounterOpts{
+	Nbme: "src_repoupdbter_gitlbb_token_missing_refresh_count",
+	Help: "Counts the number of times we see b token without b refresh token",
 })
 
-// SudoableToken represents a personal access token with an optional sudo scope.
-type SudoableToken struct {
+// SudobbleToken represents b personbl bccess token with bn optionbl sudo scope.
+type SudobbleToken struct {
 	Token string
 	Sudo  string
 }
 
-var _ auth.Authenticator = &SudoableToken{}
+vbr _ buth.Authenticbtor = &SudobbleToken{}
 
-func (pat *SudoableToken) Authenticate(req *http.Request) error {
-	req.Header.Set("Private-Token", pat.Token)
+func (pbt *SudobbleToken) Authenticbte(req *http.Request) error {
+	req.Hebder.Set("Privbte-Token", pbt.Token)
 
-	if pat.Sudo != "" {
-		req.Header.Set("Sudo", pat.Sudo)
+	if pbt.Sudo != "" {
+		req.Hebder.Set("Sudo", pbt.Sudo)
 	}
 
 	return nil
 }
 
-func (pat *SudoableToken) Hash() string {
-	return fmt.Sprintf("pat::sudoku:%s::%s", pat.Sudo, pat.Token)
+func (pbt *SudobbleToken) Hbsh() string {
+	return fmt.Sprintf("pbt::sudoku:%s::%s", pbt.Sudo, pbt.Token)
 }
 
-// RequestedOAuthScopes returns the list of OAuth scopes given the default API
-// scope and any extra scopes.
-func RequestedOAuthScopes(defaultAPIScope string) []string {
-	scopes := []string{"read_user"}
-	if defaultAPIScope == "" {
-		scopes = append(scopes, "api")
+// RequestedOAuthScopes returns the list of OAuth scopes given the defbult API
+// scope bnd bny extrb scopes.
+func RequestedOAuthScopes(defbultAPIScope string) []string {
+	scopes := []string{"rebd_user"}
+	if defbultAPIScope == "" {
+		scopes = bppend(scopes, "bpi")
 	} else {
-		scopes = append(scopes, defaultAPIScope)
+		scopes = bppend(scopes, defbultAPIScope)
 	}
 
 	return scopes

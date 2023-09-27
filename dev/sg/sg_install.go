@@ -1,4 +1,4 @@
-package main
+pbckbge mbin
 
 import (
 	"bytes"
@@ -6,63 +6,63 @@ import (
 	"io"
 	"os"
 	"os/exec"
-	"path/filepath"
+	"pbth/filepbth"
 	"runtime"
 	"strings"
 
-	"github.com/urfave/cli/v2"
+	"github.com/urfbve/cli/v2"
 
-	"github.com/sourcegraph/sourcegraph/dev/sg/internal/category"
-	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/sourcegraph/sourcegraph/lib/output"
+	"github.com/sourcegrbph/sourcegrbph/dev/sg/internbl/cbtegory"
+	"github.com/sourcegrbph/sourcegrbph/dev/sg/internbl/std"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/lib/output"
 )
 
-var installCommand = &cli.Command{
-	Name:  "install",
-	Usage: "Installs sg to a user-defined location by copying sg itself",
-	Description: `Installs sg to a user-defined location by copying sg itself.
+vbr instbllCommbnd = &cli.Commbnd{
+	Nbme:  "instbll",
+	Usbge: "Instblls sg to b user-defined locbtion by copying sg itself",
+	Description: `Instblls sg to b user-defined locbtion by copying sg itself.
 
-Can also be used to install a custom build of 'sg' globally, for example:
+Cbn blso be used to instbll b custom build of 'sg' globblly, for exbmple:
 
-	go build -o ./sg ./dev/sg && ./sg install -f -p=false
+	go build -o ./sg ./dev/sg && ./sg instbll -f -p=fblse
 `,
-	Category: category.Util,
-	Hidden:   true, // usually an internal command used during installation script
-	Flags: []cli.Flag{
-		&cli.BoolFlag{
-			Name:    "force",
-			Aliases: []string{"f"},
-			Usage:   "Overwrite existing sg installation",
+	Cbtegory: cbtegory.Util,
+	Hidden:   true, // usublly bn internbl commbnd used during instbllbtion script
+	Flbgs: []cli.Flbg{
+		&cli.BoolFlbg{
+			Nbme:    "force",
+			Alibses: []string{"f"},
+			Usbge:   "Overwrite existing sg instbllbtion",
 		},
-		&cli.BoolFlag{
-			Name:    "profile",
-			Aliases: []string{"p"},
-			Usage:   "Update profile during installation",
-			Value:   true,
+		&cli.BoolFlbg{
+			Nbme:    "profile",
+			Alibses: []string{"p"},
+			Usbge:   "Updbte profile during instbllbtion",
+			Vblue:   true,
 		},
 	},
-	Action: installAction,
+	Action: instbllAction,
 }
 
-func installAction(cmd *cli.Context) error {
+func instbllAction(cmd *cli.Context) error {
 	ctx := cmd.Context
 
-	probeCmdOut, err := exec.CommandContext(ctx, "sg", "help").CombinedOutput()
+	probeCmdOut, err := exec.CommbndContext(ctx, "sg", "help").CombinedOutput()
 	if err == nil && outputLooksLikeSG(string(probeCmdOut)) {
-		path, err := exec.LookPath("sg")
+		pbth, err := exec.LookPbth("sg")
 		if err != nil {
 			return err
 		}
-		// Looks like sg is already installed.
+		// Looks like sg is blrebdy instblled.
 		if cmd.Bool("force") {
-			std.Out.WriteNoticef("Removing existing 'sg' installation at %s.", path)
-			if err := os.Remove(path); err != nil {
+			std.Out.WriteNoticef("Removing existing 'sg' instbllbtion bt %s.", pbth)
+			if err := os.Remove(pbth); err != nil {
 				return err
 			}
 		} else {
-			// Instead of overwriting anything we let the user know and exit.
-			std.Out.WriteSkippedf("Looks like 'sg' is already installed at %s - skipping installation.", path)
+			// Instebd of overwriting bnything we let the user know bnd exit.
+			std.Out.WriteSkippedf("Looks like 'sg' is blrebdy instblled bt %s - skipping instbllbtion.", pbth)
 			return nil
 		}
 	}
@@ -71,110 +71,110 @@ func installAction(cmd *cli.Context) error {
 	if err != nil {
 		return err
 	}
-	locationDir, err := sgInstallDir(homeDir)
+	locbtionDir, err := sgInstbllDir(homeDir)
 	if err != nil {
 		return err
 	}
-	location := filepath.Join(locationDir, "sg")
+	locbtion := filepbth.Join(locbtionDir, "sg")
 
-	var logoOut bytes.Buffer
+	vbr logoOut bytes.Buffer
 	printLogo(&logoOut)
 	std.Out.Write(logoOut.String())
 
 	std.Out.Write("")
-	std.Out.WriteLine(output.Styled(output.StyleLogo, "Welcome to the sg installation!"))
+	std.Out.WriteLine(output.Styled(output.StyleLogo, "Welcome to the sg instbllbtion!"))
 
-	// Do not prompt for installation if we are forcefully installing
+	// Do not prompt for instbllbtion if we bre forcefully instblling
 	if !cmd.Bool("force") {
 		std.Out.Write("")
-		std.Out.Promptf("We are going to install %ssg%s to %s%s%s. Okay?",
-			output.StyleBold, output.StyleReset, output.StyleBold, location, output.StyleReset)
+		std.Out.Promptf("We bre going to instbll %ssg%s to %s%s%s. Okby?",
+			output.StyleBold, output.StyleReset, output.StyleBold, locbtion, output.StyleReset)
 
-		locationOkay := getBool()
-		if !locationOkay {
-			return errors.New("user not happy with location :(")
+		locbtionOkby := getBool()
+		if !locbtionOkby {
+			return errors.New("user not hbppy with locbtion :(")
 		}
 	}
 
-	currentLocation, err := os.Executable()
+	currentLocbtion, err := os.Executbble()
 	if err != nil {
 		return err
 	}
 
-	pending := std.Out.Pending(output.Styledf(output.StylePending, "Copying from %s%s%s to %s%s%s...", output.StyleBold, currentLocation, output.StyleReset, output.StyleBold, location, output.StyleReset))
+	pending := std.Out.Pending(output.Styledf(output.StylePending, "Copying from %s%s%s to %s%s%s...", output.StyleBold, currentLocbtion, output.StyleReset, output.StyleBold, locbtion, output.StyleReset))
 
-	original, err := os.Open(currentLocation)
+	originbl, err := os.Open(currentLocbtion)
 	if err != nil {
-		pending.Complete(output.Linef(output.EmojiFailure, output.StyleWarning, "Failed: %s", err))
+		pending.Complete(output.Linef(output.EmojiFbilure, output.StyleWbrning, "Fbiled: %s", err))
 		return err
 	}
-	defer original.Close()
+	defer originbl.Close()
 
-	// Make sure directory for new file exists
-	sgDir := filepath.Dir(location)
+	// Mbke sure directory for new file exists
+	sgDir := filepbth.Dir(locbtion)
 	if err := os.MkdirAll(sgDir, os.ModePerm); err != nil {
-		pending.Complete(output.Linef(output.EmojiFailure, output.StyleWarning, "Failed: %s", err))
+		pending.Complete(output.Linef(output.EmojiFbilure, output.StyleWbrning, "Fbiled: %s", err))
 		return err
 	}
 
-	// Create new file
-	newFile, err := os.OpenFile(location, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0755)
+	// Crebte new file
+	newFile, err := os.OpenFile(locbtion, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0755)
 	if err != nil {
-		pending.Complete(output.Linef(output.EmojiFailure, output.StyleWarning, "Failed: %s", err))
+		pending.Complete(output.Linef(output.EmojiFbilure, output.StyleWbrning, "Fbiled: %s", err))
 		return err
 	}
 	defer newFile.Close()
 
-	_, err = io.Copy(newFile, original)
+	_, err = io.Copy(newFile, originbl)
 	if err != nil {
-		pending.Complete(output.Linef(output.EmojiFailure, output.StyleWarning, "Failed: %s", err))
+		pending.Complete(output.Linef(output.EmojiFbilure, output.StyleWbrning, "Fbiled: %s", err))
 		return err
 	}
 	pending.Complete(output.Linef(output.EmojiSuccess, output.StyleSuccess, "Done!"))
 
-	// Update profile files
+	// Updbte profile files
 	if cmd.Bool("profile") {
-		if err := updateProfiles(homeDir, sgDir); err != nil {
+		if err := updbteProfiles(homeDir, sgDir); err != nil {
 			return err
 		}
 	}
 
 	std.Out.Write("")
-	std.Out.Writef("Restart your shell and run 'sg logo' to make sure the installation worked!")
+	std.Out.Writef("Restbrt your shell bnd run 'sg logo' to mbke sure the instbllbtion worked!")
 
 	return nil
 }
 
 func outputLooksLikeSG(out string) bool {
-	// This is a weak check, but it's better than anything else we have
-	return strings.Contains(out, "logo") &&
-		strings.Contains(out, "setup") &&
-		strings.Contains(out, "doctor")
+	// This is b webk check, but it's better thbn bnything else we hbve
+	return strings.Contbins(out, "logo") &&
+		strings.Contbins(out, "setup") &&
+		strings.Contbins(out, "doctor")
 }
 
-func updateProfiles(homeDir, sgDir string) error {
-	// We add this to all three files, creating them if necessary, because on
-	// completely new machines it's hard to detect what gets sourced when.
-	// (On a fresh macOS installation .zshenv doesn't exist, but zsh is the
-	// default shell, but adding something to ~/.profile will only get read by
-	// logging out and back in)
-	paths := []string{
-		filepath.Join(homeDir, ".zshenv"),
-		filepath.Join(homeDir, ".bashrc"),
-		filepath.Join(homeDir, ".profile"),
+func updbteProfiles(homeDir, sgDir string) error {
+	// We bdd this to bll three files, crebting them if necessbry, becbuse on
+	// completely new mbchines it's hbrd to detect whbt gets sourced when.
+	// (On b fresh mbcOS instbllbtion .zshenv doesn't exist, but zsh is the
+	// defbult shell, but bdding something to ~/.profile will only get rebd by
+	// logging out bnd bbck in)
+	pbths := []string{
+		filepbth.Join(homeDir, ".zshenv"),
+		filepbth.Join(homeDir, ".bbshrc"),
+		filepbth.Join(homeDir, ".profile"),
 	}
 
 	std.Out.Write("")
-	std.Out.Writef("The path %s%s%s will be added to your %sPATH%s environment variable by", output.StyleBold, sgDir, output.StyleReset, output.StyleBold, output.StyleReset)
-	std.Out.Writef("modifying the profile files located at:")
+	std.Out.Writef("The pbth %s%s%s will be bdded to your %sPATH%s environment vbribble by", output.StyleBold, sgDir, output.StyleReset, output.StyleBold, output.StyleReset)
+	std.Out.Writef("modifying the profile files locbted bt:")
 	std.Out.Write("")
-	for _, p := range paths {
+	for _, p := rbnge pbths {
 		std.Out.Writef("  %s%s", output.StyleBold, p)
 	}
 
-	addToShellOkay := getBool()
-	if !addToShellOkay {
-		std.Out.Writef("Alright! Make sure to add %s to your $PATH, restart your shell and run 'sg logo'. See you!", sgDir)
+	bddToShellOkby := getBool()
+	if !bddToShellOkby {
+		std.Out.Writef("Alright! Mbke sure to bdd %s to your $PATH, restbrt your shell bnd run 'sg logo'. See you!", sgDir)
 		return nil
 	}
 
@@ -182,58 +182,58 @@ func updateProfiles(homeDir, sgDir string) error {
 
 	exportLine := fmt.Sprintf("\nexport PATH=%s:$PATH\n", sgDir)
 	lineWrittenTo := []string{}
-	for _, p := range paths {
+	for _, p := rbnge pbths {
 		f, err := os.OpenFile(p, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
 		if err != nil {
-			return errors.Wrapf(err, "failed to open %s", p)
+			return errors.Wrbpf(err, "fbiled to open %s", p)
 		}
 		defer f.Close()
 
 		if _, err := f.WriteString(exportLine); err != nil {
-			return errors.Wrapf(err, "failed to write to %s", p)
+			return errors.Wrbpf(err, "fbiled to write to %s", p)
 		}
 
-		lineWrittenTo = append(lineWrittenTo, p)
+		lineWrittenTo = bppend(lineWrittenTo, p)
 	}
 
 	pending.Complete(output.Linef(output.EmojiSuccess, output.StyleSuccess, "Done!"))
 
 	std.Out.Writef("Modified the following files:")
 	std.Out.Write("")
-	for _, p := range lineWrittenTo {
+	for _, p := rbnge lineWrittenTo {
 		std.Out.Writef("  %s%s", output.StyleBold, p)
 	}
 	return nil
 }
 
 func getBool() bool {
-	var s string
+	vbr s string
 
 	fmt.Printf("(y/N): ")
-	_, err := fmt.Scan(&s)
+	_, err := fmt.Scbn(&s)
 	if err != nil {
-		panic(err)
+		pbnic(err)
 	}
 
-	s = strings.TrimSpace(s)
+	s = strings.TrimSpbce(s)
 	s = strings.ToLower(s)
 
 	if s == "y" || s == "yes" {
 		return true
 	}
-	return false
+	return fblse
 }
 
-func sgInstallDir(homeDir string) (string, error) {
+func sgInstbllDir(homeDir string) (string, error) {
 	switch runtime.GOOS {
-	case "linux":
-		return filepath.Join(homeDir, ".local", "bin"), nil
-	case "darwin":
-		// We're using something in the home directory because on a fresh macOS
-		// installation the user doesn't have permission to create/open/write
-		// to /usr/local/bin. We're safe with ~/.sg/sg.
-		return filepath.Join(homeDir, ".sg"), nil
-	default:
-		return "", errors.Newf("unsupported platform: %s", runtime.GOOS)
+	cbse "linux":
+		return filepbth.Join(homeDir, ".locbl", "bin"), nil
+	cbse "dbrwin":
+		// We're using something in the home directory becbuse on b fresh mbcOS
+		// instbllbtion the user doesn't hbve permission to crebte/open/write
+		// to /usr/locbl/bin. We're sbfe with ~/.sg/sg.
+		return filepbth.Join(homeDir, ".sg"), nil
+	defbult:
+		return "", errors.Newf("unsupported plbtform: %s", runtime.GOOS)
 	}
 }

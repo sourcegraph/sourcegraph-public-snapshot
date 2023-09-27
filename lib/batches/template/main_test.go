@@ -1,8 +1,8 @@
-package template
+pbckbge templbte
 
-var testRepo1 = &Repository{
-	Name: "github.com/sourcegraph/src-cli",
-	FileMatches: []string{
-		"main.go", "README.md",
+vbr testRepo1 = &Repository{
+	Nbme: "github.com/sourcegrbph/src-cli",
+	FileMbtches: []string{
+		"mbin.go", "README.md",
 	},
 }

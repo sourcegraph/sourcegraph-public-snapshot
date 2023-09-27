@@ -1,57 +1,57 @@
-package search
+pbckbge sebrch
 
 import (
 	_ "embed"
 	"strings"
 	"testing"
 
-	"github.com/sourcegraph/go-diff/diff"
+	"github.com/sourcegrbph/go-diff/diff"
 	"github.com/stretchr/testify/require"
 
-	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
-	"github.com/sourcegraph/sourcegraph/internal/search/result"
+	"github.com/sourcegrbph/sourcegrbph/internbl/gitserver/protocol"
+	"github.com/sourcegrbph/sourcegrbph/internbl/sebrch/result"
 )
 
-var (
-	//go:embed testdata/small_diff.txt
-	smallDiff string
+vbr (
+	//go:embed testdbtb/smbll_diff.txt
+	smbllDiff string
 
-	//go:embed testdata/large_diff.txt
-	largeDiff string
+	//go:embed testdbtb/lbrge_diff.txt
+	lbrgeDiff string
 )
 
-func TestDiffSearch(t *testing.T) {
-	r := diff.NewMultiFileDiffReader(strings.NewReader(smallDiff))
-	fileDiffs, err := r.ReadAllFiles()
+func TestDiffSebrch(t *testing.T) {
+	r := diff.NewMultiFileDiffRebder(strings.NewRebder(smbllDiff))
+	fileDiffs, err := r.RebdAllFiles()
 	require.NoError(t, err)
 
-	query := &protocol.DiffMatches{Expr: "(?i)polly"}
-	matchTree, err := ToMatchTree(query)
+	query := &protocol.DiffMbtches{Expr: "(?i)polly"}
+	mbtchTree, err := ToMbtchTree(query)
 	require.NoError(t, err)
 
-	mergedResult, highlights, err := matchTree.Match(&LazyCommit{diff: fileDiffs})
+	mergedResult, highlights, err := mbtchTree.Mbtch(&LbzyCommit{diff: fileDiffs})
 	require.NoError(t, err)
-	require.True(t, mergedResult.Satisfies())
+	require.True(t, mergedResult.Sbtisfies())
 
-	expectedHighlights := MatchedCommit{
-		Diff: map[int]MatchedFileDiff{
+	expectedHighlights := MbtchedCommit{
+		Diff: mbp[int]MbtchedFileDiff{
 			1: {
-				MatchedHunks: map[int]MatchedHunk{
+				MbtchedHunks: mbp[int]MbtchedHunk{
 					0: {
-						MatchedLines: map[int]result.Ranges{
+						MbtchedLines: mbp[int]result.Rbnges{
 							3: {{
-								Start: result.Location{Offset: 9, Column: 9},
-								End:   result.Location{Offset: 14, Column: 14},
+								Stbrt: result.Locbtion{Offset: 9, Column: 9},
+								End:   result.Locbtion{Offset: 14, Column: 14},
 							}, {
-								Start: result.Location{Offset: 24, Column: 24},
-								End:   result.Location{Offset: 29, Column: 29},
+								Stbrt: result.Locbtion{Offset: 24, Column: 24},
+								End:   result.Locbtion{Offset: 29, Column: 29},
 							}},
 							4: {{
-								Start: result.Location{Offset: 9, Column: 9},
-								End:   result.Location{Offset: 14, Column: 14},
+								Stbrt: result.Locbtion{Offset: 9, Column: 9},
+								End:   result.Locbtion{Offset: 14, Column: 14},
 							}, {
-								Start: result.Location{Offset: 43, Column: 43},
-								End:   result.Location{Offset: 48, Column: 48},
+								Stbrt: result.Locbtion{Offset: 43, Column: 43},
+								End:   result.Locbtion{Offset: 48, Column: 48},
 							}},
 						},
 					},
@@ -59,114 +59,114 @@ func TestDiffSearch(t *testing.T) {
 			},
 		},
 	}
-	require.Equal(t, expectedHighlights, highlights)
+	require.Equbl(t, expectedHighlights, highlights)
 
-	formatted, ranges := FormatDiff(fileDiffs, highlights.Diff)
-	expectedFormatted := `web/src/integration/helpers.ts web/src/integration/helpers.ts
-@@ -7,3 +7,3 @@ import { createDriverForTest, Driver } from '../../../shared/src/testing/driver'
+	formbtted, rbnges := FormbtDiff(fileDiffs, highlights.Diff)
+	expectedFormbtted := `web/src/integrbtion/helpers.ts web/src/integrbtion/helpers.ts
+@@ -7,3 +7,3 @@ import { crebteDriverForTest, Driver } from '../../../shbred/src/testing/driver'
  import express from 'express'
 -import { Polly } from '@pollyjs/core'
 +import { Polly, Request, Response } from '@pollyjs/core'
- import { PuppeteerAdapter } from './polly/PuppeteerAdapter'
+ import { PuppeteerAdbpter } from './polly/PuppeteerAdbpter'
 `
 
-	expectedRanges := result.Ranges{{
-		Start: result.Location{Line: 3, Column: 10, Offset: 200},
-		End:   result.Location{Line: 3, Column: 15, Offset: 205},
+	expectedRbnges := result.Rbnges{{
+		Stbrt: result.Locbtion{Line: 3, Column: 10, Offset: 200},
+		End:   result.Locbtion{Line: 3, Column: 15, Offset: 205},
 	}, {
-		Start: result.Location{Line: 3, Column: 25, Offset: 215},
-		End:   result.Location{Line: 3, Column: 30, Offset: 220},
+		Stbrt: result.Locbtion{Line: 3, Column: 25, Offset: 215},
+		End:   result.Locbtion{Line: 3, Column: 30, Offset: 220},
 	}, {
-		Start: result.Location{Line: 4, Column: 10, Offset: 239},
-		End:   result.Location{Line: 4, Column: 15, Offset: 244},
+		Stbrt: result.Locbtion{Line: 4, Column: 10, Offset: 239},
+		End:   result.Locbtion{Line: 4, Column: 15, Offset: 244},
 	}, {
-		Start: result.Location{Line: 4, Column: 44, Offset: 273},
-		End:   result.Location{Line: 4, Column: 49, Offset: 278},
+		Stbrt: result.Locbtion{Line: 4, Column: 44, Offset: 273},
+		End:   result.Locbtion{Line: 4, Column: 49, Offset: 278},
 	}}
 
-	require.Equal(t, expectedFormatted, formatted)
-	require.Equal(t, expectedRanges, ranges)
+	require.Equbl(t, expectedFormbtted, formbtted)
+	require.Equbl(t, expectedRbnges, rbnges)
 
 }
 
-func BenchmarkDiffSearchCaseInsensitiveOptimization(b *testing.B) {
-	b.Run("small diff", func(b *testing.B) {
-		r := diff.NewMultiFileDiffReader(strings.NewReader(smallDiff))
-		fileDiffs, err := r.ReadAllFiles()
+func BenchmbrkDiffSebrchCbseInsensitiveOptimizbtion(b *testing.B) {
+	b.Run("smbll diff", func(b *testing.B) {
+		r := diff.NewMultiFileDiffRebder(strings.NewRebder(smbllDiff))
+		fileDiffs, err := r.RebdAllFiles()
 		require.NoError(b, err)
 
-		b.Run("with optimization", func(b *testing.B) {
-			query := &protocol.DiffMatches{Expr: "polly", IgnoreCase: true}
-			matchTree, err := ToMatchTree(query)
+		b.Run("with optimizbtion", func(b *testing.B) {
+			query := &protocol.DiffMbtches{Expr: "polly", IgnoreCbse: true}
+			mbtchTree, err := ToMbtchTree(query)
 			require.NoError(b, err)
 
 			for i := 0; i < b.N; i++ {
-				mergedResult, _, _ := matchTree.Match(&LazyCommit{diff: fileDiffs})
-				require.True(b, mergedResult.Satisfies())
+				mergedResult, _, _ := mbtchTree.Mbtch(&LbzyCommit{diff: fileDiffs})
+				require.True(b, mergedResult.Sbtisfies())
 			}
 		})
 
-		b.Run("without optimization", func(b *testing.B) {
-			query := &protocol.DiffMatches{Expr: "(?i)polly", IgnoreCase: false}
-			matchTree, err := ToMatchTree(query)
+		b.Run("without optimizbtion", func(b *testing.B) {
+			query := &protocol.DiffMbtches{Expr: "(?i)polly", IgnoreCbse: fblse}
+			mbtchTree, err := ToMbtchTree(query)
 			require.NoError(b, err)
 
 			for i := 0; i < b.N; i++ {
-				mergedResult, _, _ := matchTree.Match(&LazyCommit{diff: fileDiffs})
-				require.True(b, mergedResult.Satisfies())
+				mergedResult, _, _ := mbtchTree.Mbtch(&LbzyCommit{diff: fileDiffs})
+				require.True(b, mergedResult.Sbtisfies())
 			}
 		})
 	})
 
-	b.Run("large diff", func(b *testing.B) {
-		r := diff.NewMultiFileDiffReader(strings.NewReader(largeDiff))
-		fileDiffs, err := r.ReadAllFiles()
+	b.Run("lbrge diff", func(b *testing.B) {
+		r := diff.NewMultiFileDiffRebder(strings.NewRebder(lbrgeDiff))
+		fileDiffs, err := r.RebdAllFiles()
 		require.NoError(b, err)
 
-		b.Run("many matches", func(b *testing.B) {
-			b.Run("with optimization", func(b *testing.B) {
-				query := &protocol.DiffMatches{Expr: "suggestion", IgnoreCase: true}
-				matchTree, err := ToMatchTree(query)
+		b.Run("mbny mbtches", func(b *testing.B) {
+			b.Run("with optimizbtion", func(b *testing.B) {
+				query := &protocol.DiffMbtches{Expr: "suggestion", IgnoreCbse: true}
+				mbtchTree, err := ToMbtchTree(query)
 				require.NoError(b, err)
 
 				for i := 0; i < b.N; i++ {
-					mergedResult, _, _ := matchTree.Match(&LazyCommit{diff: fileDiffs})
-					require.True(b, mergedResult.Satisfies())
+					mergedResult, _, _ := mbtchTree.Mbtch(&LbzyCommit{diff: fileDiffs})
+					require.True(b, mergedResult.Sbtisfies())
 				}
 			})
 
-			b.Run("without optimization", func(b *testing.B) {
-				query := &protocol.DiffMatches{Expr: "(?i)suggestion", IgnoreCase: false}
-				matchTree, err := ToMatchTree(query)
+			b.Run("without optimizbtion", func(b *testing.B) {
+				query := &protocol.DiffMbtches{Expr: "(?i)suggestion", IgnoreCbse: fblse}
+				mbtchTree, err := ToMbtchTree(query)
 				require.NoError(b, err)
 
 				for i := 0; i < b.N; i++ {
-					mergedResult, _, _ := matchTree.Match(&LazyCommit{diff: fileDiffs})
-					require.True(b, mergedResult.Satisfies())
+					mergedResult, _, _ := mbtchTree.Mbtch(&LbzyCommit{diff: fileDiffs})
+					require.True(b, mergedResult.Sbtisfies())
 				}
 			})
 		})
 
-		b.Run("few matches", func(b *testing.B) {
-			b.Run("with optimization", func(b *testing.B) {
-				query := &protocol.DiffMatches{Expr: "limitoffset", IgnoreCase: true}
-				matchTree, err := ToMatchTree(query)
+		b.Run("few mbtches", func(b *testing.B) {
+			b.Run("with optimizbtion", func(b *testing.B) {
+				query := &protocol.DiffMbtches{Expr: "limitoffset", IgnoreCbse: true}
+				mbtchTree, err := ToMbtchTree(query)
 				require.NoError(b, err)
 
 				for i := 0; i < b.N; i++ {
-					mergedResult, _, _ := matchTree.Match(&LazyCommit{diff: fileDiffs})
-					require.True(b, mergedResult.Satisfies())
+					mergedResult, _, _ := mbtchTree.Mbtch(&LbzyCommit{diff: fileDiffs})
+					require.True(b, mergedResult.Sbtisfies())
 				}
 			})
 
-			b.Run("without optimization", func(b *testing.B) {
-				query := &protocol.DiffMatches{Expr: "(?i)limitoffset", IgnoreCase: false}
-				matchTree, err := ToMatchTree(query)
+			b.Run("without optimizbtion", func(b *testing.B) {
+				query := &protocol.DiffMbtches{Expr: "(?i)limitoffset", IgnoreCbse: fblse}
+				mbtchTree, err := ToMbtchTree(query)
 				require.NoError(b, err)
 
 				for i := 0; i < b.N; i++ {
-					mergedResult, _, _ := matchTree.Match(&LazyCommit{diff: fileDiffs})
-					require.True(b, mergedResult.Satisfies())
+					mergedResult, _, _ := mbtchTree.Mbtch(&LbzyCommit{diff: fileDiffs})
+					require.True(b, mergedResult.Sbtisfies())
 				}
 			})
 		})

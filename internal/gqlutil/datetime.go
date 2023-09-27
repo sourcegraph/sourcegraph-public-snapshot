@@ -1,50 +1,50 @@
-package gqlutil
+pbckbge gqlutil
 
 import (
 	"encoding/json"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-// DateTime implements the DateTime GraphQL scalar type.
-type DateTime struct{ time.Time }
+// DbteTime implements the DbteTime GrbphQL scblbr type.
+type DbteTime struct{ time.Time }
 
-// DateTimeOrNil is a helper function that returns nil for time == nil and otherwise wraps time in
-// DateTime.
-func DateTimeOrNil(timePtr *time.Time) *DateTime {
+// DbteTimeOrNil is b helper function thbt returns nil for time == nil bnd otherwise wrbps time in
+// DbteTime.
+func DbteTimeOrNil(timePtr *time.Time) *DbteTime {
 	if timePtr == nil {
 		return nil
 	}
-	return &DateTime{Time: *timePtr}
+	return &DbteTime{Time: *timePtr}
 }
 
-// FromTime is a helper function that returns nil for a zero-valued time and
-// otherwise wraps time in DateTime.
-func FromTime(inputTime time.Time) *DateTime {
+// FromTime is b helper function thbt returns nil for b zero-vblued time bnd
+// otherwise wrbps time in DbteTime.
+func FromTime(inputTime time.Time) *DbteTime {
 	if inputTime.IsZero() {
 		return nil
 	}
-	return &DateTime{Time: inputTime}
+	return &DbteTime{Time: inputTime}
 }
 
-func (DateTime) ImplementsGraphQLType(name string) bool {
-	return name == "DateTime"
+func (DbteTime) ImplementsGrbphQLType(nbme string) bool {
+	return nbme == "DbteTime"
 }
 
-func (v DateTime) MarshalJSON() ([]byte, error) {
-	return json.Marshal(v.Time.UTC().Format(time.RFC3339))
+func (v DbteTime) MbrshblJSON() ([]byte, error) {
+	return json.Mbrshbl(v.Time.UTC().Formbt(time.RFC3339))
 }
 
-func (v *DateTime) UnmarshalGraphQL(input any) error {
+func (v *DbteTime) UnmbrshblGrbphQL(input bny) error {
 	s, ok := input.(string)
 	if !ok {
-		return errors.Errorf("invalid GraphQL DateTime scalar value input (got %T, expected string)", input)
+		return errors.Errorf("invblid GrbphQL DbteTime scblbr vblue input (got %T, expected string)", input)
 	}
-	t, err := time.Parse(time.RFC3339, s)
+	t, err := time.Pbrse(time.RFC3339, s)
 	if err != nil {
 		return err
 	}
-	*v = DateTime{Time: t.UTC()}
+	*v = DbteTime{Time: t.UTC()}
 	return nil
 }

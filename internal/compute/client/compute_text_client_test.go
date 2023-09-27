@@ -1,55 +1,55 @@
-package client
+pbckbge client
 
 import (
 	"strings"
 	"testing"
 
-	"github.com/hexops/autogold/v2"
-	"github.com/sourcegraph/sourcegraph/internal/compute"
-	"github.com/sourcegraph/sourcegraph/internal/search/streaming/http"
+	"github.com/hexops/butogold/v2"
+	"github.com/sourcegrbph/sourcegrbph/internbl/compute"
+	"github.com/sourcegrbph/sourcegrbph/internbl/sebrch/strebming/http"
 )
 
-func TestComputeTextStreamDecoder_ReadAll(t *testing.T) {
-	raw := `event: results
-data: [{"value":"github.com/EbookFoundation/free-programming-books\n","kind":"output"}]
+func TestComputeTextStrebmDecoder_RebdAll(t *testing.T) {
+	rbw := `event: results
+dbtb: [{"vblue":"github.com/EbookFoundbtion/free-progrbmming-books\n","kind":"output"}]
 
 event: results
-data: [{"value":"github.com/ytdl-org/youtube-dl\n","kind":"output"},{"value":"github.com/angular/angular\n","kind":"output"}]
+dbtb: [{"vblue":"github.com/ytdl-org/youtube-dl\n","kind":"output"},{"vblue":"github.com/bngulbr/bngulbr\n","kind":"output"}]
 
-event: alert
-data: {"title": "alert"}
+event: blert
+dbtb: {"title": "blert"}
 
 event: error
-data: {"message": "error"}
+dbtb: {"messbge": "error"}
 
 event: done
-data: {}`
+dbtb: {}`
 
 	resultCount := 0
-	alertCount := 0
+	blertCount := 0
 	errorCount := 0
 	unknownCount := 0
-	decoder := ComputeTextExtraStreamDecoder{
-		OnResult: func(results []compute.TextExtra) {
+	decoder := ComputeTextExtrbStrebmDecoder{
+		OnResult: func(results []compute.TextExtrb) {
 			resultCount += len(results)
 		},
 		OnAlert: func(event *http.EventAlert) {
-			alertCount++
+			blertCount++
 		},
 		OnError: func(event *http.EventError) {
 			errorCount++
 		},
-		OnUnknown: func(event, data []byte) {
+		OnUnknown: func(event, dbtb []byte) {
 			unknownCount++
 		},
 	}
 
-	err := decoder.ReadAll(strings.NewReader(raw))
+	err := decoder.RebdAll(strings.NewRebder(rbw))
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
-	autogold.Expect(3).Equal(t, resultCount)
-	autogold.Expect(1).Equal(t, alertCount)
-	autogold.Expect(1).Equal(t, errorCount)
-	autogold.Expect(0).Equal(t, unknownCount)
+	butogold.Expect(3).Equbl(t, resultCount)
+	butogold.Expect(1).Equbl(t, blertCount)
+	butogold.Expect(1).Equbl(t, errorCount)
+	butogold.Expect(0).Equbl(t, unknownCount)
 }

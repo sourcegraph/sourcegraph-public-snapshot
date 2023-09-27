@@ -1,56 +1,56 @@
-package repos
+pbckbge repos
 
 import (
 	"context"
 	"os"
 	"testing"
 
-	"github.com/sourcegraph/sourcegraph/internal/extsvc"
-	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
-	"github.com/sourcegraph/sourcegraph/internal/testutil"
-	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/schema"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc"
+	"github.com/sourcegrbph/sourcegrbph/internbl/rbtelimit"
+	"github.com/sourcegrbph/sourcegrbph/internbl/testutil"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
+	"github.com/sourcegrbph/sourcegrbph/schemb"
 )
 
-// To update this test run:
-//  1. Set the env AZURE_DEV_OPS_USERNAME and AZURE_DEV_OPS_TOKEN (the secrets can be found in 1Password if you search for Azure test credentials)
-//  2. Run the test with the -update flag:
-//     `go test -run='TestAzureDevOpsSource_ListRepos' -update=TestAzureDevOpsSource_ListRepos`
+// To updbte this test run:
+//  1. Set the env AZURE_DEV_OPS_USERNAME bnd AZURE_DEV_OPS_TOKEN (the secrets cbn be found in 1Pbssword if you sebrch for Azure test credentibls)
+//  2. Run the test with the -updbte flbg:
+//     `go test -run='TestAzureDevOpsSource_ListRepos' -updbte=TestAzureDevOpsSource_ListRepos`
 func TestAzureDevOpsSource_ListRepos(t *testing.T) {
-	ratelimit.SetupForTest(t)
+	rbtelimit.SetupForTest(t)
 
-	conf := &schema.AzureDevOpsConnection{
-		Url:      "https://dev.azure.com",
-		Username: os.Getenv("AZURE_DEV_OPS_USERNAME"),
+	conf := &schemb.AzureDevOpsConnection{
+		Url:      "https://dev.bzure.com",
+		Usernbme: os.Getenv("AZURE_DEV_OPS_USERNAME"),
 		Token:    os.Getenv("AZURE_DEV_OPS_TOKEN"),
-		Projects: []string{"sgtestazure/sgtestazure", "sgtestazure/sg test with spaces"},
-		Exclude: []*schema.ExcludedAzureDevOpsServerRepo{
+		Projects: []string{"sgtestbzure/sgtestbzure", "sgtestbzure/sg test with spbces"},
+		Exclude: []*schemb.ExcludedAzureDevOpsServerRepo{
 			{
-				Name: "sgtestazure/sg test with spaces/sg test with spaces",
+				Nbme: "sgtestbzure/sg test with spbces/sg test with spbces",
 			},
 			{
-				Pattern: "^sgtestazure/sgtestazure/sgtestazure[3-9]",
+				Pbttern: "^sgtestbzure/sgtestbzure/sgtestbzure[3-9]",
 			},
 		},
 	}
-	cf, save := NewClientFactory(t, t.Name())
-	defer save(t)
+	cf, sbve := NewClientFbctory(t, t.Nbme())
+	defer sbve(t)
 
-	svc := &types.ExternalService{
+	svc := &types.ExternblService{
 		Kind:   extsvc.KindAzureDevOps,
-		Config: extsvc.NewUnencryptedConfig(MarshalJSON(t, conf)),
+		Config: extsvc.NewUnencryptedConfig(MbrshblJSON(t, conf)),
 	}
 
-	ctx := context.Background()
+	ctx := context.Bbckground()
 	src, err := NewAzureDevOpsSource(ctx, nil, svc, cf)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	repos, err := ListAll(context.Background(), src)
+	repos, err := ListAll(context.Bbckground(), src)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	testutil.AssertGolden(t, "testdata/sources/AZUREDEVOPS/"+t.Name(), Update(t.Name()), repos)
+	testutil.AssertGolden(t, "testdbtb/sources/AZUREDEVOPS/"+t.Nbme(), Updbte(t.Nbme()), repos)
 }

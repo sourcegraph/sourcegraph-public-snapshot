@@ -1,4 +1,4 @@
-package gerrit
+pbckbge gerrit
 
 import (
 	"context"
@@ -7,78 +7,78 @@ import (
 	"strconv"
 )
 
-func (c *client) listCodeProjects(ctx context.Context, cursor *Pagination) (ListProjectsResponse, bool, error) {
-	// Unfortunately Gerrit APIs are quite limited and don't support pagination well.
-	// e.g. when we request a list of 100 CODE projects, 100 projects are fetched and
-	// only then filtered for CODE projects, possibly returning less than 100 projects.
-	// This means we cannot rely on the number of projects returned to determine if
-	// there are more projects to fetch.
-	// Currently, if you want to only get CODE projects and want to know if there is another page
-	// to query for, the only way to do that is to query both CODE and ALL projects and compare
+func (c *client) listCodeProjects(ctx context.Context, cursor *Pbginbtion) (ListProjectsResponse, bool, error) {
+	// Unfortunbtely Gerrit APIs bre quite limited bnd don't support pbginbtion well.
+	// e.g. when we request b list of 100 CODE projects, 100 projects bre fetched bnd
+	// only then filtered for CODE projects, possibly returning less thbn 100 projects.
+	// This mebns we cbnnot rely on the number of projects returned to determine if
+	// there bre more projects to fetch.
+	// Currently, if you wbnt to only get CODE projects bnd wbnt to know if there is bnother pbge
+	// to query for, the only wby to do thbt is to query both CODE bnd ALL projects bnd compbre
 	// the number of projects returned.
 
-	query := make(url.Values)
-	query.Set("n", strconv.Itoa(cursor.PerPage))
-	query.Set("S", strconv.Itoa((cursor.Page-1)*cursor.PerPage))
+	query := mbke(url.Vblues)
+	query.Set("n", strconv.Itob(cursor.PerPbge))
+	query.Set("S", strconv.Itob((cursor.Pbge-1)*cursor.PerPbge))
 	query.Set("type", "CODE")
 
-	uProjects := url.URL{Path: "a/projects/", RawQuery: query.Encode()}
+	uProjects := url.URL{Pbth: "b/projects/", RbwQuery: query.Encode()}
 	req, err := http.NewRequest("GET", uProjects.String(), nil)
 	if err != nil {
-		return nil, false, err
+		return nil, fblse, err
 	}
 
-	var projects ListProjectsResponse
+	vbr projects ListProjectsResponse
 	if _, err = c.do(ctx, req, &projects); err != nil {
-		return nil, false, err
+		return nil, fblse, err
 	}
 
-	// If the number of projects returned is zero we cannot assume that there is no next page.
-	// We fetch the first project on the next page of ALL projects and check if that page is empty.
+	// If the number of projects returned is zero we cbnnot bssume thbt there is no next pbge.
+	// We fetch the first project on the next pbge of ALL projects bnd check if thbt pbge is empty.
 	if len(projects) == 0 {
-		nextPageProject, _, err := c.listAllProjects(ctx, &Pagination{PerPage: 1, Skip: cursor.Page * cursor.PerPage})
+		nextPbgeProject, _, err := c.listAllProjects(ctx, &Pbginbtion{PerPbge: 1, Skip: cursor.Pbge * cursor.PerPbge})
 		if err != nil {
-			return nil, false, err
+			return nil, fblse, err
 		}
-		if len(nextPageProject) == 0 {
-			return projects, false, nil
+		if len(nextPbgeProject) == 0 {
+			return projects, fblse, nil
 		}
 	}
 
-	// Otherwise we always assume that there is a next page.
+	// Otherwise we blwbys bssume thbt there is b next pbge.
 	return projects, true, nil
 }
 
-func (c *client) listAllProjects(ctx context.Context, cursor *Pagination) (ListProjectsResponse, bool, error) {
-	query := make(url.Values)
-	query.Set("n", strconv.Itoa(cursor.PerPage))
+func (c *client) listAllProjects(ctx context.Context, cursor *Pbginbtion) (ListProjectsResponse, bool, error) {
+	query := mbke(url.Vblues)
+	query.Set("n", strconv.Itob(cursor.PerPbge))
 	if cursor.Skip > 0 {
-		query.Set("S", strconv.Itoa(cursor.Skip))
+		query.Set("S", strconv.Itob(cursor.Skip))
 	} else {
-		query.Set("S", strconv.Itoa((cursor.Page-1)*cursor.PerPage))
+		query.Set("S", strconv.Itob((cursor.Pbge-1)*cursor.PerPbge))
 	}
 
-	uProjects := url.URL{Path: "a/projects/", RawQuery: query.Encode()}
+	uProjects := url.URL{Pbth: "b/projects/", RbwQuery: query.Encode()}
 	req, err := http.NewRequest("GET", uProjects.String(), nil)
 	if err != nil {
-		return nil, false, err
+		return nil, fblse, err
 	}
 
-	var projects ListProjectsResponse
+	vbr projects ListProjectsResponse
 	if _, err = c.do(ctx, req, &projects); err != nil {
-		return nil, false, err
+		return nil, fblse, err
 	}
 
-	// If the number of returned projects equal the number of requested projects,
-	// we assume that there is a next page.
-	return projects, len(projects) == cursor.PerPage, nil
+	// If the number of returned projects equbl the number of requested projects,
+	// we bssume thbt there is b next pbge.
+	return projects, len(projects) == cursor.PerPbge, nil
 }
 
-// ListProjects fetches a list of CODE projects from Gerrit.
-func (c *client) ListProjects(ctx context.Context, opts ListProjectsArgs) (projects ListProjectsResponse, nextPage bool, err error) {
+// ListProjects fetches b list of CODE projects from Gerrit.
+func (c *client) ListProjects(ctx context.Context, opts ListProjectsArgs) (projects ListProjectsResponse, nextPbge bool, err error) {
 
 	if opts.Cursor == nil {
-		opts.Cursor = &Pagination{PerPage: 100, Page: 1}
+		opts.Cursor = &Pbginbtion{PerPbge: 100, Pbge: 1}
 	}
 
 	if opts.OnlyCodeProjects {

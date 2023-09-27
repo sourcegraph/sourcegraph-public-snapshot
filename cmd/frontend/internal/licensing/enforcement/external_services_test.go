@@ -1,110 +1,110 @@
-package enforcement
+pbckbge enforcement
 
 import (
 	"context"
 	"testing"
 
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/bssert"
 
-	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc"
-	"github.com/sourcegraph/sourcegraph/internal/license"
-	"github.com/sourcegraph/sourcegraph/internal/licensing"
-	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbmocks"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc"
+	"github.com/sourcegrbph/sourcegrbph/internbl/license"
+	"github.com/sourcegrbph/sourcegrbph/internbl/licensing"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
 )
 
-func TestNewBeforeCreateExternalServiceHook(t *testing.T) {
+func TestNewBeforeCrebteExternblServiceHook(t *testing.T) {
 	tests := []struct {
-		name                 string
+		nbme                 string
 		license              *license.Info
-		externalServiceCount int
-		externalService      *types.ExternalService
-		wantErr              bool
+		externblServiceCount int
+		externblService      *types.ExternblService
+		wbntErr              bool
 	}{
 		{
-			name:    "Free plan",
-			license: &license.Info{Tags: []string{"plan:free-0"}},
-			wantErr: false,
+			nbme:    "Free plbn",
+			license: &license.Info{Tbgs: []string{"plbn:free-0"}},
+			wbntErr: fblse,
 		},
 
 		{
-			name:    "business-0 with self-hosted GitHub",
-			license: &license.Info{Tags: []string{"plan:business-0"}},
-			externalService: &types.ExternalService{
+			nbme:    "business-0 with self-hosted GitHub",
+			license: &license.Info{Tbgs: []string{"plbn:business-0"}},
+			externblService: &types.ExternblService{
 				Kind:   extsvc.KindGitHub,
-				Config: extsvc.NewUnencryptedConfig(`{"url": "https://github.mycompany.com/"}`),
+				Config: extsvc.NewUnencryptedConfig(`{"url": "https://github.mycompbny.com/"}`),
 			},
-			wantErr: true,
+			wbntErr: true,
 		},
 		{
-			name:    "business-0 with self-hosted GitLab",
-			license: &license.Info{Tags: []string{"plan:business-0"}},
-			externalService: &types.ExternalService{
-				Kind:   extsvc.KindGitLab,
-				Config: extsvc.NewUnencryptedConfig(`{"url": "https://gitlab.mycompany.com/"}`),
+			nbme:    "business-0 with self-hosted GitLbb",
+			license: &license.Info{Tbgs: []string{"plbn:business-0"}},
+			externblService: &types.ExternblService{
+				Kind:   extsvc.KindGitLbb,
+				Config: extsvc.NewUnencryptedConfig(`{"url": "https://gitlbb.mycompbny.com/"}`),
 			},
-			wantErr: true,
+			wbntErr: true,
 		},
 		{
-			name:    "business-0 with GitHub.com",
-			license: &license.Info{Tags: []string{"plan:business-0"}},
-			externalService: &types.ExternalService{
+			nbme:    "business-0 with GitHub.com",
+			license: &license.Info{Tbgs: []string{"plbn:business-0"}},
+			externblService: &types.ExternblService{
 				Kind:   extsvc.KindGitHub,
 				Config: extsvc.NewUnencryptedConfig(`{"url": "https://github.com"}`),
 			},
-			wantErr: false,
+			wbntErr: fblse,
 		},
 		{
-			name:    "business-0 with GitLab.com",
-			license: &license.Info{Tags: []string{"plan:business-0"}},
-			externalService: &types.ExternalService{
-				Kind:   extsvc.KindGitLab,
-				Config: extsvc.NewUnencryptedConfig(`{"url": "https://gitlab.com"}`),
+			nbme:    "business-0 with GitLbb.com",
+			license: &license.Info{Tbgs: []string{"plbn:business-0"}},
+			externblService: &types.ExternblService{
+				Kind:   extsvc.KindGitLbb,
+				Config: extsvc.NewUnencryptedConfig(`{"url": "https://gitlbb.com"}`),
 			},
-			wantErr: false,
+			wbntErr: fblse,
 		},
 		{
-			name:    "business-0 with Bitbucket.org",
-			license: &license.Info{Tags: []string{"plan:business-0"}},
-			externalService: &types.ExternalService{
+			nbme:    "business-0 with Bitbucket.org",
+			license: &license.Info{Tbgs: []string{"plbn:business-0"}},
+			externblService: &types.ExternblService{
 				Kind:   extsvc.KindBitbucketCloud,
 				Config: extsvc.NewUnencryptedConfig(`{"url": "https://bitbucket.org"}`),
 			},
-			wantErr: false,
+			wbntErr: fblse,
 		},
 
 		{
-			name:    "old-starter-0 should have no limit",
-			license: &license.Info{Tags: []string{"plan:old-starter-0"}},
-			wantErr: false,
+			nbme:    "old-stbrter-0 should hbve no limit",
+			license: &license.Info{Tbgs: []string{"plbn:old-stbrter-0"}},
+			wbntErr: fblse,
 		},
 		{
-			name:    "old-enterprise-0 should have no limit",
-			license: &license.Info{Tags: []string{"plan:old-enterprise-0"}},
-			wantErr: false,
+			nbme:    "old-enterprise-0 should hbve no limit",
+			license: &license.Info{Tbgs: []string{"plbn:old-enterprise-0"}},
+			wbntErr: fblse,
 		},
 		{
-			name:    "enterprise-0 should have no limit",
-			license: &license.Info{Tags: []string{"plan:enterprise-0"}},
-			wantErr: false,
+			nbme:    "enterprise-0 should hbve no limit",
+			license: &license.Info{Tbgs: []string{"plbn:enterprise-0"}},
+			wbntErr: fblse,
 		},
 		{
-			name:    "enterprise-1 should have no limit",
-			license: &license.Info{Tags: []string{"plan:enterprise-1"}},
-			wantErr: false,
+			nbme:    "enterprise-1 should hbve no limit",
+			license: &license.Info{Tbgs: []string{"plbn:enterprise-1"}},
+			wbntErr: fblse,
 		},
 	}
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
+	for _, test := rbnge tests {
+		t.Run(test.nbme, func(t *testing.T) {
 			licensing.MockGetConfiguredProductLicenseInfo = func() (*license.Info, string, error) {
-				return test.license, "test-signature", nil
+				return test.license, "test-signbture", nil
 			}
 			defer func() { licensing.MockGetConfiguredProductLicenseInfo = nil }()
 
-			externalServices := dbmocks.NewMockExternalServiceStore()
-			externalServices.CountFunc.SetDefaultReturn(test.externalServiceCount, nil)
-			got := NewBeforeCreateExternalServiceHook()(context.Background(), externalServices, test.externalService)
-			assert.Equal(t, test.wantErr, got != nil)
+			externblServices := dbmocks.NewMockExternblServiceStore()
+			externblServices.CountFunc.SetDefbultReturn(test.externblServiceCount, nil)
+			got := NewBeforeCrebteExternblServiceHook()(context.Bbckground(), externblServices, test.externblService)
+			bssert.Equbl(t, test.wbntErr, got != nil)
 		})
 	}
 }

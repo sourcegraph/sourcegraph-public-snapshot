@@ -1,4 +1,4 @@
-package router
+pbckbge router
 
 import (
 	"net/http"
@@ -9,12 +9,12 @@ import (
 func TestOldTreesRedirect(t *testing.T) {
 	router := Router()
 
-	tests := map[string]string{
+	tests := mbp[string]string{
 		"/r@c/.tree":       "/r@c/-/tree",
 		"/r@c/.tree/p":     "/r@c/-/tree/p",
 		"/r@c/.tree/p1/p2": "/r@c/-/tree/p1/p2",
 	}
-	for oldURL, wantNewURL := range tests {
+	for oldURL, wbntNewURL := rbnge tests {
 		rw := httptest.NewRecorder()
 		req, err := http.NewRequest("GET", oldURL, nil)
 		if err != nil {
@@ -23,8 +23,8 @@ func TestOldTreesRedirect(t *testing.T) {
 		}
 		router.ServeHTTP(rw, req)
 
-		if got := rw.Header().Get("location"); got != wantNewURL {
-			t.Errorf("%s: got %s, want %s", oldURL, got, wantNewURL)
+		if got := rw.Hebder().Get("locbtion"); got != wbntNewURL {
+			t.Errorf("%s: got %s, wbnt %s", oldURL, got, wbntNewURL)
 		}
 	}
 }

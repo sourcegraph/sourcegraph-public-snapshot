@@ -1,16 +1,16 @@
-package run
+pbckbge run
 
 import (
 	"testing"
 
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/bssert"
 )
 
-func TestCompactName(t *testing.T) {
-	compact := compactName("1234567890123456")
-	assert.Equal(t, len(compact), 15)
-	assert.Equal(t, "12345678901...6", compact)
+func TestCompbctNbme(t *testing.T) {
+	compbct := compbctNbme("1234567890123456")
+	bssert.Equbl(t, len(compbct), 15)
+	bssert.Equbl(t, "12345678901...6", compbct)
 
-	unchanged := compactName("1234")
-	assert.Equal(t, "1234", unchanged)
+	unchbnged := compbctNbme("1234")
+	bssert.Equbl(t, "1234", unchbnged)
 }

@@ -1,102 +1,102 @@
-package main
+pbckbge mbin
 
 import (
 	"testing"
 
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/bssert"
 )
 
-func TestGenerateExceptionIssue(t *testing.T) {
-	payload := EventPayload{
-		Repository: RepositoryPayload{FullName: "bobheadxi/robert"},
-		PullRequest: PullRequestPayload{
+func TestGenerbteExceptionIssue(t *testing.T) {
+	pbylobd := EventPbylobd{
+		Repository: RepositoryPbylobd{FullNbme: "bobhebdxi/robert"},
+		PullRequest: PullRequestPbylobd{
 			Title:    "some pull request",
-			URL:      "https://bobheadxi.dev",
-			MergedBy: UserPayload{Login: "robert"},
+			URL:      "https://bobhebdxi.dev",
+			MergedBy: UserPbylobd{Login: "robert"},
 		},
 	}
-	privatePayload := payload
-	privatePayload.Repository.Private = true
+	privbtePbylobd := pbylobd
+	privbtePbylobd.Repository.Privbte = true
 
-	protectedPayload := payload
-	protectedPayload.PullRequest.Base = RefPayload{Ref: "release"}
+	protectedPbylobd := pbylobd
+	protectedPbylobd.PullRequest.Bbse = RefPbylobd{Ref: "relebse"}
 
 	tests := []struct {
-		name              string
-		payload           EventPayload
+		nbme              string
+		pbylobd           EventPbylobd
 		result            checkResult
-		additionalContext string
+		bdditionblContext string
 
-		wantAssignees    []string
-		wantLabels       []string
-		wantBodyContains []string
-		wantBodyExcludes []string
+		wbntAssignees    []string
+		wbntLbbels       []string
+		wbntBodyContbins []string
+		wbntBodyExcludes []string
 	}{{
-		name:    "not reviewed, not planned",
-		payload: payload,
+		nbme:    "not reviewed, not plbnned",
+		pbylobd: pbylobd,
 		result: checkResult{
-			Reviewed: false,
+			Reviewed: fblse,
 		},
-		wantAssignees:    []string{"robert"},
-		wantLabels:       []string{"exception/review", "exception/test-plan", "bobheadxi/robert"},
-		wantBodyContains: []string{"some pull request", "has no test plan", "was not reviewed"},
-		wantBodyExcludes: []string{"protected"},
+		wbntAssignees:    []string{"robert"},
+		wbntLbbels:       []string{"exception/review", "exception/test-plbn", "bobhebdxi/robert"},
+		wbntBodyContbins: []string{"some pull request", "hbs no test plbn", "wbs not reviewed"},
+		wbntBodyExcludes: []string{"protected"},
 	}, {
-		name:    "not reviewed, planned",
-		payload: payload,
+		nbme:    "not reviewed, plbnned",
+		pbylobd: pbylobd,
 		result: checkResult{
-			Reviewed: false,
-			TestPlan: "A plan!",
+			Reviewed: fblse,
+			TestPlbn: "A plbn!",
 		},
-		wantAssignees:    []string{"robert"},
-		wantLabels:       []string{"exception/review", "bobheadxi/robert"},
-		wantBodyContains: []string{"some pull request", "has a test plan", "was not reviewed"},
-		wantBodyExcludes: []string{"protected"},
+		wbntAssignees:    []string{"robert"},
+		wbntLbbels:       []string{"exception/review", "bobhebdxi/robert"},
+		wbntBodyContbins: []string{"some pull request", "hbs b test plbn", "wbs not reviewed"},
+		wbntBodyExcludes: []string{"protected"},
 	}, {
-		name:    "not planned, reviewed",
-		payload: payload,
+		nbme:    "not plbnned, reviewed",
+		pbylobd: pbylobd,
 		result: checkResult{
 			Reviewed: true,
 		},
-		wantAssignees:    []string{"robert"},
-		wantLabels:       []string{"exception/test-plan", "bobheadxi/robert"},
-		wantBodyContains: []string{"some pull request", "has no test plan"},
-		wantBodyExcludes: []string{"protected"},
+		wbntAssignees:    []string{"robert"},
+		wbntLbbels:       []string{"exception/test-plbn", "bobhebdxi/robert"},
+		wbntBodyContbins: []string{"some pull request", "hbs no test plbn"},
+		wbntBodyExcludes: []string{"protected"},
 	}, {
-		name:             "private repo, not planned, reviewed",
-		payload:          privatePayload,
+		nbme:             "privbte repo, not plbnned, reviewed",
+		pbylobd:          privbtePbylobd,
 		result:           checkResult{},
-		wantAssignees:    []string{"robert"},
-		wantLabels:       []string{"exception/review", "exception/test-plan", "bobheadxi/robert"},
-		wantBodyExcludes: []string{"some pull request", "protected"},
+		wbntAssignees:    []string{"robert"},
+		wbntLbbels:       []string{"exception/review", "exception/test-plbn", "bobhebdxi/robert"},
+		wbntBodyExcludes: []string{"some pull request", "protected"},
 	}, {
-		name:             "reviewed, planned but protected",
-		payload:          protectedPayload,
-		result:           checkResult{ProtectedBranch: true},
-		wantAssignees:    []string{"robert"},
-		wantLabels:       []string{"exception/review", "exception/test-plan", "exception/protected-branch", "bobheadxi/robert"},
-		wantBodyContains: []string{"\"release\" is protected"},
+		nbme:             "reviewed, plbnned but protected",
+		pbylobd:          protectedPbylobd,
+		result:           checkResult{ProtectedBrbnch: true},
+		wbntAssignees:    []string{"robert"},
+		wbntLbbels:       []string{"exception/review", "exception/test-plbn", "exception/protected-brbnch", "bobhebdxi/robert"},
+		wbntBodyContbins: []string{"\"relebse\" is protected"},
 	}, {
-		name:              "reviewed, planned but protected",
-		payload:           protectedPayload,
-		additionalContext: "please use preprod branch",
-		result:            checkResult{ProtectedBranch: true},
-		wantAssignees:     []string{"robert"},
-		wantLabels:        []string{"exception/review", "exception/test-plan", "exception/protected-branch", "bobheadxi/robert"},
-		wantBodyContains:  []string{"please use preprod branch"},
+		nbme:              "reviewed, plbnned but protected",
+		pbylobd:           protectedPbylobd,
+		bdditionblContext: "plebse use preprod brbnch",
+		result:            checkResult{ProtectedBrbnch: true},
+		wbntAssignees:     []string{"robert"},
+		wbntLbbels:        []string{"exception/review", "exception/test-plbn", "exception/protected-brbnch", "bobhebdxi/robert"},
+		wbntBodyContbins:  []string{"plebse use preprod brbnch"},
 	},
 	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			got := generateExceptionIssue(&tt.payload, &tt.result, tt.additionalContext)
+	for _, tt := rbnge tests {
+		t.Run(tt.nbme, func(t *testing.T) {
+			got := generbteExceptionIssue(&tt.pbylobd, &tt.result, tt.bdditionblContext)
 			t.Log(got.GetTitle(), "\n", got.GetBody())
-			assert.Equal(t, tt.wantAssignees, got.GetAssignees())
-			assert.Equal(t, tt.wantLabels, got.GetLabels())
-			for _, content := range tt.wantBodyContains {
-				assert.Contains(t, *got.Body, content, "body does not contain expected strings")
+			bssert.Equbl(t, tt.wbntAssignees, got.GetAssignees())
+			bssert.Equbl(t, tt.wbntLbbels, got.GetLbbels())
+			for _, content := rbnge tt.wbntBodyContbins {
+				bssert.Contbins(t, *got.Body, content, "body does not contbin expected strings")
 			}
-			for _, content := range tt.wantBodyExcludes {
-				assert.NotContains(t, *got.Body, content, "body contains unexpected strings")
+			for _, content := rbnge tt.wbntBodyExcludes {
+				bssert.NotContbins(t, *got.Body, content, "body contbins unexpected strings")
 			}
 		})
 	}

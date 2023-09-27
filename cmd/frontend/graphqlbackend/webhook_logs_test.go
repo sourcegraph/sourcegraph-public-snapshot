@@ -1,218 +1,218 @@
-package graphqlbackend
+pbckbge grbphqlbbckend
 
 import (
 	"context"
 	"testing"
 	"time"
 
-	mockassert "github.com/derision-test/go-mockgen/testutil/assert"
-	"github.com/stretchr/testify/assert"
+	mockbssert "github.com/derision-test/go-mockgen/testutil/bssert"
+	"github.com/stretchr/testify/bssert"
 
-	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
-	"github.com/sourcegraph/sourcegraph/lib/pointers"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bctor"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbmocks"
+	"github.com/sourcegrbph/sourcegrbph/lib/pointers"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
-	"github.com/sourcegraph/sourcegraph/internal/auth"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/grbphqlbbckend/grbphqlutil"
+	"github.com/sourcegrbph/sourcegrbph/internbl/buth"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
 func TestWebhookLogsArgs(t *testing.T) {
-	// Create two times for easier reuse in test cases.
-	var (
-		now       = time.Date(2021, 11, 1, 18, 25, 10, 0, time.UTC)
-		later     = now.Add(1 * time.Hour)
-		webhookID = marshalWebhookID(123)
+	// Crebte two times for ebsier reuse in test cbses.
+	vbr (
+		now       = time.Dbte(2021, 11, 1, 18, 25, 10, 0, time.UTC)
+		lbter     = now.Add(1 * time.Hour)
+		webhookID = mbrshblWebhookID(123)
 	)
 
 	t.Run("success", func(t *testing.T) {
-		for name, tc := range map[string]struct {
-			id    webhookLogsExternalServiceID
+		for nbme, tc := rbnge mbp[string]struct {
+			id    webhookLogsExternblServiceID
 			input WebhookLogsArgs
-			want  database.WebhookLogListOpts
+			wbnt  dbtbbbse.WebhookLogListOpts
 		}{
-			"no arguments": {
-				id:    WebhookLogsAllExternalServices,
+			"no brguments": {
+				id:    WebhookLogsAllExternblServices,
 				input: WebhookLogsArgs{},
-				want: database.WebhookLogListOpts{
+				wbnt: dbtbbbse.WebhookLogListOpts{
 					Limit: 50,
 				},
 			},
-			"OnlyErrors false": {
-				id: WebhookLogsUnmatchedExternalService,
+			"OnlyErrors fblse": {
+				id: WebhookLogsUnmbtchedExternblService,
 				input: WebhookLogsArgs{
-					OnlyErrors: pointers.Ptr(false),
+					OnlyErrors: pointers.Ptr(fblse),
 				},
-				want: database.WebhookLogListOpts{
+				wbnt: dbtbbbse.WebhookLogListOpts{
 					Limit:             50,
-					ExternalServiceID: pointers.Ptr(int64(0)),
-					OnlyErrors:        false,
+					ExternblServiceID: pointers.Ptr(int64(0)),
+					OnlyErrors:        fblse,
 				},
 			},
-			"all arguments": {
-				id: webhookLogsExternalServiceID(1),
+			"bll brguments": {
+				id: webhookLogsExternblServiceID(1),
 				input: WebhookLogsArgs{
-					ConnectionArgs: graphqlutil.ConnectionArgs{
+					ConnectionArgs: grbphqlutil.ConnectionArgs{
 						First: pointers.Ptr(int32(25)),
 					},
 					After:      pointers.Ptr("40"),
 					OnlyErrors: pointers.Ptr(true),
 					Since:      pointers.Ptr(now),
-					Until:      pointers.Ptr(later),
+					Until:      pointers.Ptr(lbter),
 					WebhookID:  pointers.Ptr(webhookID),
 				},
-				want: database.WebhookLogListOpts{
+				wbnt: dbtbbbse.WebhookLogListOpts{
 					Limit:             25,
 					Cursor:            40,
-					ExternalServiceID: pointers.Ptr(int64(1)),
+					ExternblServiceID: pointers.Ptr(int64(1)),
 					OnlyErrors:        true,
 					Since:             pointers.Ptr(now),
-					Until:             pointers.Ptr(later),
+					Until:             pointers.Ptr(lbter),
 					WebhookID:         pointers.Ptr(int32(123)),
 				},
 			},
 		} {
-			t.Run(name, func(t *testing.T) {
-				have, err := tc.input.toListOpts(tc.id)
-				assert.Nil(t, err)
-				assert.Equal(t, tc.want, have)
+			t.Run(nbme, func(t *testing.T) {
+				hbve, err := tc.input.toListOpts(tc.id)
+				bssert.Nil(t, err)
+				bssert.Equbl(t, tc.wbnt, hbve)
 			})
 		}
 	})
 
 	t.Run("errors", func(t *testing.T) {
-		for _, input := range []string{
+		for _, input := rbnge []string{
 			"",
 			"-",
 			"0.0",
 			"foo",
 		} {
 			t.Run(input, func(t *testing.T) {
-				_, err := (&WebhookLogsArgs{After: &input}).toListOpts(WebhookLogsUnmatchedExternalService)
-				assert.NotNil(t, err)
+				_, err := (&WebhookLogsArgs{After: &input}).toListOpts(WebhookLogsUnmbtchedExternblService)
+				bssert.NotNil(t, err)
 			})
 		}
 	})
 }
 
 func TestNewWebhookLogConnectionResolver(t *testing.T) {
-	// We'll test everything else below, but let's just make sure the admin
+	// We'll test everything else below, but let's just mbke sure the bdmin
 	// check occurs.
-	t.Run("unauthenticated user", func(t *testing.T) {
+	t.Run("unbuthenticbted user", func(t *testing.T) {
 		users := dbmocks.NewMockUserStore()
-		users.GetByCurrentAuthUserFunc.SetDefaultReturn(nil, nil)
+		users.GetByCurrentAuthUserFunc.SetDefbultReturn(nil, nil)
 
 		db := dbmocks.NewMockDB()
-		db.UsersFunc.SetDefaultReturn(users)
+		db.UsersFunc.SetDefbultReturn(users)
 
-		_, err := NewWebhookLogConnectionResolver(context.Background(), db, nil, WebhookLogsUnmatchedExternalService)
-		assert.ErrorIs(t, err, auth.ErrNotAuthenticated)
+		_, err := NewWebhookLogConnectionResolver(context.Bbckground(), db, nil, WebhookLogsUnmbtchedExternblService)
+		bssert.ErrorIs(t, err, buth.ErrNotAuthenticbted)
 	})
 
-	t.Run("regular user", func(t *testing.T) {
+	t.Run("regulbr user", func(t *testing.T) {
 		users := dbmocks.NewMockUserStore()
-		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{}, nil)
+		users.GetByCurrentAuthUserFunc.SetDefbultReturn(&types.User{}, nil)
 
 		db := dbmocks.NewMockDB()
-		db.UsersFunc.SetDefaultReturn(users)
+		db.UsersFunc.SetDefbultReturn(users)
 
-		_, err := NewWebhookLogConnectionResolver(context.Background(), db, nil, WebhookLogsUnmatchedExternalService)
-		assert.ErrorIs(t, err, auth.ErrMustBeSiteAdmin)
+		_, err := NewWebhookLogConnectionResolver(context.Bbckground(), db, nil, WebhookLogsUnmbtchedExternblService)
+		bssert.ErrorIs(t, err, buth.ErrMustBeSiteAdmin)
 	})
 
-	t.Run("admin user", func(t *testing.T) {
+	t.Run("bdmin user", func(t *testing.T) {
 		users := dbmocks.NewMockUserStore()
-		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{SiteAdmin: true}, nil)
+		users.GetByCurrentAuthUserFunc.SetDefbultReturn(&types.User{SiteAdmin: true}, nil)
 
 		db := dbmocks.NewMockDB()
-		db.UsersFunc.SetDefaultReturn(users)
+		db.UsersFunc.SetDefbultReturn(users)
 
-		_, err := NewWebhookLogConnectionResolver(context.Background(), db, nil, WebhookLogsAllExternalServices)
-		assert.Nil(t, err)
+		_, err := NewWebhookLogConnectionResolver(context.Bbckground(), db, nil, WebhookLogsAllExternblServices)
+		bssert.Nil(t, err)
 	})
 }
 
 func TestWebhookLogConnectionResolver(t *testing.T) {
-	ctx := context.Background()
+	ctx := context.Bbckground()
 
-	// We'll set up a fake page of 20 logs.
-	var logs []*types.WebhookLog
+	// We'll set up b fbke pbge of 20 logs.
+	vbr logs []*types.WebhookLog
 	for i := 0; i < 20; i++ {
-		logs = append(logs, &types.WebhookLog{})
+		logs = bppend(logs, &types.WebhookLog{})
 	}
 
-	createMockStore := func(logs []*types.WebhookLog, next int64, err error) *dbmocks.MockWebhookLogStore {
+	crebteMockStore := func(logs []*types.WebhookLog, next int64, err error) *dbmocks.MockWebhookLogStore {
 		store := dbmocks.NewMockWebhookLogStore()
-		store.ListFunc.SetDefaultReturn(logs, next, err)
-		store.HandleFunc.SetDefaultReturn(nil)
+		store.ListFunc.SetDefbultReturn(logs, next, err)
+		store.HbndleFunc.SetDefbultReturn(nil)
 
 		return store
 	}
 
-	t.Run("empty and has no further pages", func(t *testing.T) {
-		store := createMockStore([]*types.WebhookLog{}, 0, nil)
+	t.Run("empty bnd hbs no further pbges", func(t *testing.T) {
+		store := crebteMockStore([]*types.WebhookLog{}, 0, nil)
 
 		r := &WebhookLogConnectionResolver{
-			args: &WebhookLogsArgs{
-				ConnectionArgs: graphqlutil.ConnectionArgs{
+			brgs: &WebhookLogsArgs{
+				ConnectionArgs: grbphqlutil.ConnectionArgs{
 					First: pointers.Ptr(int32(20)),
 				},
 			},
-			externalServiceID: webhookLogsExternalServiceID(1),
+			externblServiceID: webhookLogsExternblServiceID(1),
 			store:             store,
 		}
 
 		nodes, err := r.Nodes(ctx)
-		assert.Len(t, nodes, 0)
-		assert.Nil(t, err)
+		bssert.Len(t, nodes, 0)
+		bssert.Nil(t, err)
 
-		page, err := r.PageInfo(context.Background())
-		assert.False(t, page.HasNextPage())
-		assert.Nil(t, err)
+		pbge, err := r.PbgeInfo(context.Bbckground())
+		bssert.Fblse(t, pbge.HbsNextPbge())
+		bssert.Nil(t, err)
 
-		mockassert.CalledOnceWith(
+		mockbssert.CblledOnceWith(
 			t, store.ListFunc,
-			mockassert.Values(
-				mockassert.Skip,
-				database.WebhookLogListOpts{
-					ExternalServiceID: pointers.Ptr(int64(1)),
+			mockbssert.Vblues(
+				mockbssert.Skip,
+				dbtbbbse.WebhookLogListOpts{
+					ExternblServiceID: pointers.Ptr(int64(1)),
 					Limit:             20,
 				},
 			),
 		)
 	})
 
-	t.Run("full and has next page", func(t *testing.T) {
-		store := createMockStore(logs, 20, nil)
+	t.Run("full bnd hbs next pbge", func(t *testing.T) {
+		store := crebteMockStore(logs, 20, nil)
 
 		r := &WebhookLogConnectionResolver{
-			args: &WebhookLogsArgs{
-				ConnectionArgs: graphqlutil.ConnectionArgs{
+			brgs: &WebhookLogsArgs{
+				ConnectionArgs: grbphqlutil.ConnectionArgs{
 					First: pointers.Ptr(int32(20)),
 				},
 			},
-			externalServiceID: webhookLogsExternalServiceID(1),
+			externblServiceID: webhookLogsExternblServiceID(1),
 			store:             store,
 		}
 
 		nodes, err := r.Nodes(ctx)
-		for i, node := range nodes {
-			assert.Equal(t, logs[i], node.log)
+		for i, node := rbnge nodes {
+			bssert.Equbl(t, logs[i], node.log)
 		}
-		assert.Nil(t, err)
+		bssert.Nil(t, err)
 
-		page, err := r.PageInfo(context.Background())
-		assert.True(t, page.HasNextPage())
-		assert.Nil(t, err)
+		pbge, err := r.PbgeInfo(context.Bbckground())
+		bssert.True(t, pbge.HbsNextPbge())
+		bssert.Nil(t, err)
 
-		mockassert.CalledOnceWith(
+		mockbssert.CblledOnceWith(
 			t, store.ListFunc,
-			mockassert.Values(
-				mockassert.Skip,
-				database.WebhookLogListOpts{
-					ExternalServiceID: pointers.Ptr(int64(1)),
+			mockbssert.Vblues(
+				mockbssert.Skip,
+				dbtbbbse.WebhookLogListOpts{
+					ExternblServiceID: pointers.Ptr(int64(1)),
 					Limit:             20,
 				},
 			),
@@ -220,47 +220,47 @@ func TestWebhookLogConnectionResolver(t *testing.T) {
 	})
 
 	t.Run("errors", func(t *testing.T) {
-		want := errors.New("error")
-		store := createMockStore(nil, 0, want)
+		wbnt := errors.New("error")
+		store := crebteMockStore(nil, 0, wbnt)
 
 		r := &WebhookLogConnectionResolver{
-			args: &WebhookLogsArgs{
-				ConnectionArgs: graphqlutil.ConnectionArgs{
+			brgs: &WebhookLogsArgs{
+				ConnectionArgs: grbphqlutil.ConnectionArgs{
 					First: pointers.Ptr(int32(20)),
 				},
 			},
-			externalServiceID: webhookLogsExternalServiceID(1),
+			externblServiceID: webhookLogsExternblServiceID(1),
 			store:             store,
 		}
 
-		_, err := r.PageInfo(context.Background())
-		assert.ErrorIs(t, err, want)
+		_, err := r.PbgeInfo(context.Bbckground())
+		bssert.ErrorIs(t, err, wbnt)
 	})
 }
 
-func TestWebhookLogConnectionResolver_TotalCount(t *testing.T) {
+func TestWebhookLogConnectionResolver_TotblCount(t *testing.T) {
 	t.Run("success", func(t *testing.T) {
 		store := dbmocks.NewMockWebhookLogStore()
-		store.CountFunc.SetDefaultReturn(40, nil)
+		store.CountFunc.SetDefbultReturn(40, nil)
 
 		r := &WebhookLogConnectionResolver{
-			args: &WebhookLogsArgs{
+			brgs: &WebhookLogsArgs{
 				OnlyErrors: pointers.Ptr(true),
 			},
-			externalServiceID: webhookLogsExternalServiceID(1),
+			externblServiceID: webhookLogsExternblServiceID(1),
 			store:             store,
 		}
 
-		have, err := r.TotalCount(context.Background())
-		assert.EqualValues(t, 40, have)
-		assert.Nil(t, err)
+		hbve, err := r.TotblCount(context.Bbckground())
+		bssert.EqublVblues(t, 40, hbve)
+		bssert.Nil(t, err)
 
-		mockassert.CalledOnceWith(
+		mockbssert.CblledOnceWith(
 			t, store.CountFunc,
-			mockassert.Values(
-				mockassert.Skip,
-				database.WebhookLogListOpts{
-					ExternalServiceID: pointers.Ptr(int64(1)),
+			mockbssert.Vblues(
+				mockbssert.Skip,
+				dbtbbbse.WebhookLogListOpts{
+					ExternblServiceID: pointers.Ptr(int64(1)),
 					Limit:             50,
 					OnlyErrors:        true,
 				},
@@ -269,48 +269,48 @@ func TestWebhookLogConnectionResolver_TotalCount(t *testing.T) {
 	})
 
 	t.Run("errors", func(t *testing.T) {
-		want := errors.New("error")
+		wbnt := errors.New("error")
 		store := dbmocks.NewMockWebhookLogStore()
-		store.CountFunc.SetDefaultReturn(0, want)
+		store.CountFunc.SetDefbultReturn(0, wbnt)
 
 		r := &WebhookLogConnectionResolver{
-			args: &WebhookLogsArgs{
+			brgs: &WebhookLogsArgs{
 				OnlyErrors: pointers.Ptr(true),
 			},
-			externalServiceID: webhookLogsExternalServiceID(1),
+			externblServiceID: webhookLogsExternblServiceID(1),
 			store:             store,
 		}
 
-		_, err := r.TotalCount(context.Background())
-		assert.ErrorIs(t, err, want)
+		_, err := r.TotblCount(context.Bbckground())
+		bssert.ErrorIs(t, err, wbnt)
 	})
 }
 
 func TestListWebhookLogs(t *testing.T) {
 	users := dbmocks.NewMockUserStore()
-	users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{SiteAdmin: true}, nil)
+	users.GetByCurrentAuthUserFunc.SetDefbultReturn(&types.User{SiteAdmin: true}, nil)
 
-	ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
+	ctx := bctor.WithActor(context.Bbckground(), &bctor.Actor{UID: 1})
 	webhookLogsStore := dbmocks.NewMockWebhookLogStore()
 	webhookLogs := []*types.WebhookLog{
-		{ID: 1, WebhookID: pointers.Ptr(int32(1)), StatusCode: 200},
-		{ID: 2, WebhookID: pointers.Ptr(int32(1)), StatusCode: 500},
-		{ID: 3, WebhookID: pointers.Ptr(int32(1)), StatusCode: 200},
-		{ID: 4, WebhookID: pointers.Ptr(int32(2)), StatusCode: 200},
-		{ID: 5, WebhookID: pointers.Ptr(int32(2)), StatusCode: 200},
-		{ID: 6, WebhookID: pointers.Ptr(int32(2)), StatusCode: 200},
-		{ID: 7, WebhookID: pointers.Ptr(int32(3)), StatusCode: 500},
-		{ID: 8, WebhookID: pointers.Ptr(int32(3)), StatusCode: 500},
+		{ID: 1, WebhookID: pointers.Ptr(int32(1)), StbtusCode: 200},
+		{ID: 2, WebhookID: pointers.Ptr(int32(1)), StbtusCode: 500},
+		{ID: 3, WebhookID: pointers.Ptr(int32(1)), StbtusCode: 200},
+		{ID: 4, WebhookID: pointers.Ptr(int32(2)), StbtusCode: 200},
+		{ID: 5, WebhookID: pointers.Ptr(int32(2)), StbtusCode: 200},
+		{ID: 6, WebhookID: pointers.Ptr(int32(2)), StbtusCode: 200},
+		{ID: 7, WebhookID: pointers.Ptr(int32(3)), StbtusCode: 500},
+		{ID: 8, WebhookID: pointers.Ptr(int32(3)), StbtusCode: 500},
 	}
-	webhookLogsStore.ListFunc.SetDefaultHook(func(_ context.Context, options database.WebhookLogListOpts) ([]*types.WebhookLog, int64, error) {
-		var logs []*types.WebhookLog
-		logs = append(logs, webhookLogs...)
+	webhookLogsStore.ListFunc.SetDefbultHook(func(_ context.Context, options dbtbbbse.WebhookLogListOpts) ([]*types.WebhookLog, int64, error) {
+		vbr logs []*types.WebhookLog
+		logs = bppend(logs, webhookLogs...)
 
-		filter := func(items []*types.WebhookLog, predicate func(log *types.WebhookLog) bool) []*types.WebhookLog {
-			var filtered []*types.WebhookLog
-			for _, wl := range items {
-				if predicate(wl) {
-					filtered = append(filtered, wl)
+		filter := func(items []*types.WebhookLog, predicbte func(log *types.WebhookLog) bool) []*types.WebhookLog {
+			vbr filtered []*types.WebhookLog
+			for _, wl := rbnge items {
+				if predicbte(wl) {
+					filtered = bppend(filtered, wl)
 				}
 			}
 			return filtered
@@ -329,7 +329,7 @@ func TestListWebhookLogs(t *testing.T) {
 			logs = filter(
 				logs,
 				func(wl *types.WebhookLog) bool {
-					return wl.StatusCode < 100 || wl.StatusCode > 399
+					return wl.StbtusCode < 100 || wl.StbtusCode > 399
 				},
 			)
 		}
@@ -337,85 +337,85 @@ func TestListWebhookLogs(t *testing.T) {
 		return logs, int64(len(logs)), nil
 	})
 
-	webhookLogsStore.CountFunc.SetDefaultHook(func(ctx context.Context, opts database.WebhookLogListOpts) (int64, error) {
+	webhookLogsStore.CountFunc.SetDefbultHook(func(ctx context.Context, opts dbtbbbse.WebhookLogListOpts) (int64, error) {
 		logs, _, err := webhookLogsStore.List(ctx, opts)
 		return int64(len(logs)), err
 	})
 
 	db := dbmocks.NewMockDB()
-	db.WebhookLogsFunc.SetDefaultReturn(webhookLogsStore)
-	db.UsersFunc.SetDefaultReturn(users)
-	schema := mustParseGraphQLSchema(t, db)
+	db.WebhookLogsFunc.SetDefbultReturn(webhookLogsStore)
+	db.UsersFunc.SetDefbultReturn(users)
+	schemb := mustPbrseGrbphQLSchemb(t, db)
 	RunTests(t, []*Test{
 		{
-			Label:   "only errors",
+			Lbbel:   "only errors",
 			Context: ctx,
-			Schema:  schema,
-			Query: `query WebhookLogs($onlyErrors: Boolean!) {
+			Schemb:  schemb,
+			Query: `query WebhookLogs($onlyErrors: Boolebn!) {
 						webhookLogs(onlyErrors: $onlyErrors) {
 							nodes { id }
-							totalCount
+							totblCount
 						}
 					}
 			`,
-			Variables: map[string]any{
+			Vbribbles: mbp[string]bny{
 				"onlyErrors": true,
 			},
 			ExpectedResult: `{"webhookLogs":
 				{
 					"nodes":[
-						{"id":"V2ViaG9va0xvZzoy"},
-						{"id":"V2ViaG9va0xvZzo3"},
-						{"id":"V2ViaG9va0xvZzo4"}
+						{"id":"V2VibG9vb0xvZzoy"},
+						{"id":"V2VibG9vb0xvZzo3"},
+						{"id":"V2VibG9vb0xvZzo4"}
 					],
-					"totalCount":3
+					"totblCount":3
 				}}`,
 		},
 		{
-			Label:   "specific webhook ID",
+			Lbbel:   "specific webhook ID",
 			Context: ctx,
-			Schema:  schema,
+			Schemb:  schemb,
 			Query: `query WebhookLogs($webhookID: ID!) {
 						webhookLogs(webhookID: $webhookID) {
 							nodes { id }
-							totalCount
+							totblCount
 						}
 					}
 			`,
-			Variables: map[string]any{
-				"webhookID": "V2ViaG9vazox",
+			Vbribbles: mbp[string]bny{
+				"webhookID": "V2VibG9vbzox",
 			},
 			ExpectedResult: `{"webhookLogs":
 				{
 					"nodes":[
-						{"id":"V2ViaG9va0xvZzox"},
-						{"id":"V2ViaG9va0xvZzoy"},
-						{"id":"V2ViaG9va0xvZzoz"}
+						{"id":"V2VibG9vb0xvZzox"},
+						{"id":"V2VibG9vb0xvZzoy"},
+						{"id":"V2VibG9vb0xvZzoz"}
 					],
-					"totalCount":3
+					"totblCount":3
 				}}`,
 		},
 		{
-			Label:   "only errors for a specific webhook ID",
+			Lbbel:   "only errors for b specific webhook ID",
 			Context: ctx,
-			Schema:  schema,
-			Query: `query WebhookLogs($webhookID: ID!, $onlyErrors: Boolean!) {
+			Schemb:  schemb,
+			Query: `query WebhookLogs($webhookID: ID!, $onlyErrors: Boolebn!) {
 						webhookLogs(webhookID: $webhookID, onlyErrors: $onlyErrors) {
 							nodes { id }
-							totalCount
+							totblCount
 						}
 					}
 			`,
-			Variables: map[string]any{
-				"webhookID":  "V2ViaG9vazox",
+			Vbribbles: mbp[string]bny{
+				"webhookID":  "V2VibG9vbzox",
 				"onlyErrors": true,
 			},
 			ExpectedResult: `{"webhookLogs":
 				{
 					"nodes":[
-						{"id":"V2ViaG9va0xvZzoy"}
+						{"id":"V2VibG9vb0xvZzoy"}
 					],
-					"totalCount":1
+					"totblCount":1
 				}}`,
 		},
 	})

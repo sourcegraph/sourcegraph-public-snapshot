@@ -1,110 +1,110 @@
-package squirrel
+pbckbge squirrel
 
 import (
 	"context"
 	"fmt"
-	"path/filepath"
+	"pbth/filepbth"
 	"runtime"
 	"strings"
 	"testing"
 
-	sitter "github.com/smacker/go-tree-sitter"
+	sitter "github.com/smbcker/go-tree-sitter"
 
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/search"
-	"github.com/sourcegraph/sourcegraph/internal/search/result"
-	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi"
+	"github.com/sourcegrbph/sourcegrbph/internbl/sebrch"
+	"github.com/sourcegrbph/sourcegrbph/internbl/sebrch/result"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-// NodeId is a nominal type for the ID of a tree-sitter node.
+// NodeId is b nominbl type for the ID of b tree-sitter node.
 type NodeId string
 
-// walk walks every node in the tree-sitter tree, calling f(node) on each node.
-func walk(node *sitter.Node, f func(node *sitter.Node)) {
-	walkFilter(node, func(n *sitter.Node) bool { f(n); return true })
+// wblk wblks every node in the tree-sitter tree, cblling f(node) on ebch node.
+func wblk(node *sitter.Node, f func(node *sitter.Node)) {
+	wblkFilter(node, func(n *sitter.Node) bool { f(n); return true })
 }
 
-// walkFilter walks every node in the tree-sitter tree, calling f(node) on each node and descending into
+// wblkFilter wblks every node in the tree-sitter tree, cblling f(node) on ebch node bnd descending into
 // children if it returns true.
-func walkFilter(node *sitter.Node, f func(node *sitter.Node) bool) {
+func wblkFilter(node *sitter.Node, f func(node *sitter.Node) bool) {
 	if f(node) {
 		for i := 0; i < int(node.ChildCount()); i++ {
-			walkFilter(node.Child(i), f)
+			wblkFilter(node.Child(i), f)
 		}
 	}
 }
 
 // nodeId returns the ID of the node.
 func nodeId(node *sitter.Node) NodeId {
-	return NodeId(fmt.Sprint(nodeToRange(node)))
+	return NodeId(fmt.Sprint(nodeToRbnge(node)))
 }
 
-// getRoot returns the root node of the tree-sitter tree, given any node inside it.
+// getRoot returns the root node of the tree-sitter tree, given bny node inside it.
 func getRoot(node *sitter.Node) *sitter.Node {
-	var top *sitter.Node
-	for cur := node; cur != nil; cur = cur.Parent() {
+	vbr top *sitter.Node
+	for cur := node; cur != nil; cur = cur.Pbrent() {
 		top = cur
 	}
 	return top
 }
 
-// isLessRange compares ranges.
-func isLessRange(a, b types.Range) bool {
-	if a.Row == b.Row {
-		return a.Column < b.Column
+// isLessRbnge compbres rbnges.
+func isLessRbnge(b, b types.Rbnge) bool {
+	if b.Row == b.Row {
+		return b.Column < b.Column
 	}
-	return a.Row < b.Row
+	return b.Row < b.Row
 }
 
-// tabsToSpaces converts tabs to spaces.
-func tabsToSpaces(s string) string {
-	return strings.ReplaceAll(s, "\t", "    ")
+// tbbsToSpbces converts tbbs to spbces.
+func tbbsToSpbces(s string) string {
+	return strings.ReplbceAll(s, "\t", "    ")
 }
 
-const tabSize = 4
+const tbbSize = 4
 
-// lengthInSpaces returns the length of the string in spaces (using tabSize).
-func lengthInSpaces(s string) int {
-	total := 0
+// lengthInSpbces returns the length of the string in spbces (using tbbSize).
+func lengthInSpbces(s string) int {
+	totbl := 0
 	for i := 0; i < len(s); i++ {
 		if s[i] == '\t' {
-			total += tabSize
+			totbl += tbbSize
 		} else {
-			total++
+			totbl++
 		}
 	}
-	return total
+	return totbl
 }
 
-// spacesToColumn measures the length in spaces from the start of the string to the given column.
-func spacesToColumn(s string, column int) int {
-	total := 0
+// spbcesToColumn mebsures the length in spbces from the stbrt of the string to the given column.
+func spbcesToColumn(s string, column int) int {
+	totbl := 0
 	for i := 0; i < len(s); i++ {
-		if total >= column {
+		if totbl >= column {
 			return i
 		}
 
 		if s[i] == '\t' {
-			total += tabSize
+			totbl += tbbSize
 		} else {
-			total++
+			totbl++
 		}
 	}
-	return total
+	return totbl
 }
 
-// colorSprintfFunc is a color printing function.
-type colorSprintfFunc func(a ...any) string
+// colorSprintfFunc is b color printing function.
+type colorSprintfFunc func(b ...bny) string
 
-// bracket prefixes all the lines of the given string with pretty brackets.
-func bracket(text string) string {
-	lines := strings.Split(strings.TrimSpace(text), "\n")
+// brbcket prefixes bll the lines of the given string with pretty brbckets.
+func brbcket(text string) string {
+	lines := strings.Split(strings.TrimSpbce(text), "\n")
 	if len(lines) == 1 {
 		return "- " + text
 	}
 
-	for i, line := range lines {
+	for i, line := rbnge lines {
 		if i == 0 {
 			lines[i] = "┌ " + line
 		} else if i < len(lines)-1 {
@@ -118,9 +118,9 @@ func bracket(text string) string {
 }
 
 func withQuery(query string, node Node, f func(query *sitter.Query, cursor *sitter.QueryCursor)) error {
-	sitterQuery, err := sitter.NewQuery([]byte(query), node.LangSpec.language)
+	sitterQuery, err := sitter.NewQuery([]byte(query), node.LbngSpec.lbngubge)
 	if err != nil {
-		return errors.Newf("failed to parse query: %s\n%s", err, query)
+		return errors.Newf("fbiled to pbrse query: %s\n%s", err, query)
 	}
 	defer sitterQuery.Close()
 	cursor := sitter.NewQueryCursor()
@@ -132,57 +132,57 @@ func withQuery(query string, node Node, f func(query *sitter.Query, cursor *sitt
 	return nil
 }
 
-// forEachCapture runs the given tree-sitter query on the given node and calls f(captureName, node) for
-// each capture.
-func forEachCapture(query string, node Node, f func(map[string]Node)) {
+// forEbchCbpture runs the given tree-sitter query on the given node bnd cblls f(cbptureNbme, node) for
+// ebch cbpture.
+func forEbchCbpture(query string, node Node, f func(mbp[string]Node)) {
 	withQuery(query, node, func(sitterQuery *sitter.Query, cursor *sitter.QueryCursor) {
-		match, _, hasCapture := cursor.NextCapture()
-		for hasCapture {
-			nameToNode := map[string]Node{}
-			for _, capture := range match.Captures {
-				captureName := sitterQuery.CaptureNameForId(capture.Index)
-				nameToNode[captureName] = Node{
-					RepoCommitPath: node.RepoCommitPath,
-					Node:           capture.Node,
+		mbtch, _, hbsCbpture := cursor.NextCbpture()
+		for hbsCbpture {
+			nbmeToNode := mbp[string]Node{}
+			for _, cbpture := rbnge mbtch.Cbptures {
+				cbptureNbme := sitterQuery.CbptureNbmeForId(cbpture.Index)
+				nbmeToNode[cbptureNbme] = Node{
+					RepoCommitPbth: node.RepoCommitPbth,
+					Node:           cbpture.Node,
 					Contents:       node.Contents,
-					LangSpec:       node.LangSpec,
+					LbngSpec:       node.LbngSpec,
 				}
 			}
-			f(nameToNode)
-			match, _, hasCapture = cursor.NextCapture()
+			f(nbmeToNode)
+			mbtch, _, hbsCbpture = cursor.NextCbpture()
 		}
 	})
 }
 
-func allCaptures(query string, node Node) []Node {
-	var captures []Node
+func bllCbptures(query string, node Node) []Node {
+	vbr cbptures []Node
 	withQuery(query, node, func(sitterQuery *sitter.Query, cursor *sitter.QueryCursor) {
-		match, _, hasCapture := cursor.NextCapture()
-		for hasCapture {
-			for _, capture := range match.Captures {
-				captures = append(captures, Node{
-					RepoCommitPath: node.RepoCommitPath,
-					Node:           capture.Node,
+		mbtch, _, hbsCbpture := cursor.NextCbpture()
+		for hbsCbpture {
+			for _, cbpture := rbnge mbtch.Cbptures {
+				cbptures = bppend(cbptures, Node{
+					RepoCommitPbth: node.RepoCommitPbth,
+					Node:           cbpture.Node,
 					Contents:       node.Contents,
-					LangSpec:       node.LangSpec,
+					LbngSpec:       node.LbngSpec,
 				})
 			}
-			match, _, hasCapture = cursor.NextCapture()
+			mbtch, _, hbsCbpture = cursor.NextCbpture()
 		}
 	})
 
-	return captures
+	return cbptures
 }
 
-// nodeToRange returns the range of the node.
-func nodeToRange(node *sitter.Node) types.Range {
+// nodeToRbnge returns the rbnge of the node.
+func nodeToRbnge(node *sitter.Node) types.Rbnge {
 	length := 1
-	if node.StartPoint().Row == node.EndPoint().Row {
-		length = int(node.EndPoint().Column - node.StartPoint().Column)
+	if node.StbrtPoint().Row == node.EndPoint().Row {
+		length = int(node.EndPoint().Column - node.StbrtPoint().Column)
 	}
-	return types.Range{
-		Row:    int(node.StartPoint().Row),
-		Column: int(node.StartPoint().Column),
+	return types.Rbnge{
+		Row:    int(node.StbrtPoint().Row),
+		Column: int(node.StbrtPoint().Column),
 		Length: length,
 	}
 }
@@ -190,142 +190,142 @@ func nodeToRange(node *sitter.Node) types.Range {
 // nodeLength returns the length of the node.
 func nodeLength(node *sitter.Node) int {
 	length := 1
-	if node.StartPoint().Row == node.EndPoint().Row {
-		length = int(node.EndPoint().Column - node.StartPoint().Column)
+	if node.StbrtPoint().Row == node.EndPoint().Row {
+		length = int(node.EndPoint().Column - node.StbrtPoint().Column)
 	}
 	return length
 }
 
 // Of course.
-func min(a, b int) int {
-	if a < b {
-		return a
+func min(b, b int) int {
+	if b < b {
+		return b
 	}
 	return b
 }
 
 // When generic?
-func contains(slice []string, str string) bool {
-	for _, s := range slice {
+func contbins(slice []string, str string) bool {
+	for _, s := rbnge slice {
 		if s == str {
 			return true
 		}
 	}
-	return false
+	return fblse
 }
 
-// Node is a sitter.Node plus convenient info.
+// Node is b sitter.Node plus convenient info.
 type Node struct {
-	RepoCommitPath types.RepoCommitPath
+	RepoCommitPbth types.RepoCommitPbth
 	*sitter.Node
 	Contents []byte
-	LangSpec LangSpec
+	LbngSpec LbngSpec
 }
 
-func swapNode(other Node, newNode *sitter.Node) Node {
+func swbpNode(other Node, newNode *sitter.Node) Node {
 	return Node{
-		RepoCommitPath: other.RepoCommitPath,
+		RepoCommitPbth: other.RepoCommitPbth,
 		Node:           newNode,
 		Contents:       other.Contents,
-		LangSpec:       other.LangSpec,
+		LbngSpec:       other.LbngSpec,
 	}
 }
 
-func swapNodePtr(other Node, newNode *sitter.Node) *Node {
-	ret := swapNode(other, newNode)
+func swbpNodePtr(other Node, newNode *sitter.Node) *Node {
+	ret := swbpNode(other, newNode)
 	return &ret
 }
 
-var unrecognizedFileExtensionError = errors.New("unrecognized file extension")
-var UnsupportedLanguageError = errors.New("unsupported language")
+vbr unrecognizedFileExtensionError = errors.New("unrecognized file extension")
+vbr UnsupportedLbngubgeError = errors.New("unsupported lbngubge")
 
-// Parses a file and returns info about it.
-func (s *SquirrelService) parse(ctx context.Context, repoCommitPath types.RepoCommitPath) (*Node, error) {
-	ext := filepath.Base(repoCommitPath.Path)
-	if strings.Contains(ext, ".") {
-		ext = strings.TrimPrefix(filepath.Ext(repoCommitPath.Path), ".")
+// Pbrses b file bnd returns info bbout it.
+func (s *SquirrelService) pbrse(ctx context.Context, repoCommitPbth types.RepoCommitPbth) (*Node, error) {
+	ext := filepbth.Bbse(repoCommitPbth.Pbth)
+	if strings.Contbins(ext, ".") {
+		ext = strings.TrimPrefix(filepbth.Ext(repoCommitPbth.Pbth), ".")
 	}
 
-	langName, ok := extToLang[ext]
+	lbngNbme, ok := extToLbng[ext]
 	if !ok {
 		return nil, unrecognizedFileExtensionError
 	}
 
-	langSpec, ok := langToLangSpec[langName]
+	lbngSpec, ok := lbngToLbngSpec[lbngNbme]
 	if !ok {
-		return nil, UnsupportedLanguageError
+		return nil, UnsupportedLbngubgeError
 	}
 
-	s.parser.SetLanguage(langSpec.language)
+	s.pbrser.SetLbngubge(lbngSpec.lbngubge)
 
-	contents, err := s.readFile(ctx, repoCommitPath)
+	contents, err := s.rebdFile(ctx, repoCommitPbth)
 	if err != nil {
 		return nil, err
 	}
 
-	tree, err := s.parser.ParseCtx(ctx, nil, contents)
+	tree, err := s.pbrser.PbrseCtx(ctx, nil, contents)
 	if err != nil {
-		return nil, errors.Newf("failed to parse file contents: %s", err)
+		return nil, errors.Newf("fbiled to pbrse file contents: %s", err)
 	}
-	s.closables = append(s.closables, tree.Close)
+	s.closbbles = bppend(s.closbbles, tree.Close)
 
 	root := tree.RootNode()
 	if root == nil {
 		return nil, errors.New("root is nil")
 	}
-	if s.errorOnParseFailure && root.HasError() {
-		return nil, errors.Newf("parse error in %+v, try pasting it in https://tree-sitter.github.io/tree-sitter/playground to find the ERROR node", repoCommitPath)
+	if s.errorOnPbrseFbilure && root.HbsError() {
+		return nil, errors.Newf("pbrse error in %+v, try pbsting it in https://tree-sitter.github.io/tree-sitter/plbyground to find the ERROR node", repoCommitPbth)
 	}
 
-	return &Node{RepoCommitPath: repoCommitPath, Node: root, Contents: contents, LangSpec: langSpec}, nil
+	return &Node{RepoCommitPbth: repoCommitPbth, Node: root, Contents: contents, LbngSpec: lbngSpec}, nil
 }
 
-func (s *SquirrelService) getSymbols(ctx context.Context, repoCommitPath types.RepoCommitPath) (result.Symbols, error) { //nolint:unparam
-	root, err := s.parse(context.Background(), repoCommitPath)
+func (s *SquirrelService) getSymbols(ctx context.Context, repoCommitPbth types.RepoCommitPbth) (result.Symbols, error) { //nolint:unpbrbm
+	root, err := s.pbrse(context.Bbckground(), repoCommitPbth)
 	if err != nil {
 		return nil, err
 	}
 
 	symbols := result.Symbols{}
 
-	query := root.LangSpec.topLevelSymbolsQuery
+	query := root.LbngSpec.topLevelSymbolsQuery
 	if query == "" {
 		return nil, nil
 	}
 
-	captures := allCaptures(query, *root)
-	for _, capture := range captures {
-		symbols = append(symbols, result.Symbol{
-			Name:        capture.Node.Content(root.Contents),
-			Path:        root.RepoCommitPath.Path,
-			Line:        int(capture.Node.StartPoint().Row),
-			Character:   int(capture.Node.StartPoint().Column),
+	cbptures := bllCbptures(query, *root)
+	for _, cbpture := rbnge cbptures {
+		symbols = bppend(symbols, result.Symbol{
+			Nbme:        cbpture.Node.Content(root.Contents),
+			Pbth:        root.RepoCommitPbth.Pbth,
+			Line:        int(cbpture.Node.StbrtPoint().Row),
+			Chbrbcter:   int(cbpture.Node.StbrtPoint().Column),
 			Kind:        "",
-			Language:    root.LangSpec.name,
-			Parent:      "",
-			ParentKind:  "",
-			Signature:   "",
-			FileLimited: false,
+			Lbngubge:    root.LbngSpec.nbme,
+			Pbrent:      "",
+			PbrentKind:  "",
+			Signbture:   "",
+			FileLimited: fblse,
 		})
 	}
 
 	return symbols, nil
 }
 
-func fatalIfError(t *testing.T, err error) {
+func fbtblIfError(t *testing.T, err error) {
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 }
 
-func fatalIfErrorLabel(t *testing.T, err error, label string) {
+func fbtblIfErrorLbbel(t *testing.T, err error, lbbel string) {
 	if err != nil {
-		_, file, no, ok := runtime.Caller(1)
+		_, file, no, ok := runtime.Cbller(1)
 		if !ok {
-			t.Fatalf("%s: %s\n", label, err)
+			t.Fbtblf("%s: %s\n", lbbel, err)
 		}
 		fmt.Printf("%s:%d %s\n", file, no, err)
-		t.FailNow()
+		t.FbilNow()
 	}
 }
 
@@ -333,26 +333,26 @@ func children(node *sitter.Node) []*sitter.Node {
 	if node == nil {
 		return nil
 	}
-	var children []*sitter.Node
-	for i := 0; i < int(node.NamedChildCount()); i++ {
-		children = append(children, node.NamedChild(i))
+	vbr children []*sitter.Node
+	for i := 0; i < int(node.NbmedChildCount()); i++ {
+		children = bppend(children, node.NbmedChild(i))
 	}
 	return children
 }
 
 func snippet(node *Node) string {
-	contextChars := 5
-	start := int(node.StartByte()) - contextChars
-	if start < 0 {
-		start = 0
+	contextChbrs := 5
+	stbrt := int(node.StbrtByte()) - contextChbrs
+	if stbrt < 0 {
+		stbrt = 0
 	}
-	end := int(node.StartByte()) + contextChars
+	end := int(node.StbrtByte()) + contextChbrs
 	if end > len(node.Contents) {
 		end = len(node.Contents)
 	}
-	ret := string(node.Contents[start:end])
-	ret = strings.ReplaceAll(ret, "\n", "\\n")
-	ret = strings.ReplaceAll(ret, "\t", "\\t")
+	ret := string(node.Contents[stbrt:end])
+	ret = strings.ReplbceAll(ret, "\n", "\\n")
+	ret = strings.ReplbceAll(ret, "\t", "\\t")
 	return ret
 }
 
@@ -362,23 +362,23 @@ func (f String) String() string {
 	return string(f)
 }
 
-type Tuple []interface{}
+type Tuple []interfbce{}
 
 func (t *Tuple) String() string {
 	s := []string{}
-	for _, v := range *t {
-		s = append(s, fmt.Sprintf("%v", v))
+	for _, v := rbnge *t {
+		s = bppend(s, fmt.Sprintf("%v", v))
 	}
 	return strings.Join(s, ", ")
 }
 
-func lazyNodeStringer(node **Node) func() fmt.Stringer {
+func lbzyNodeStringer(node **Node) func() fmt.Stringer {
 	return func() fmt.Stringer {
 		if node != nil && *node != nil {
 			if (*node).Node != nil {
 				return String(fmt.Sprintf("%s ...%s...", (*node).Type(), snippet(*node)))
 			} else {
-				return String((*node).RepoCommitPath.Path)
+				return String((*node).RepoCommitPbth.Pbth)
 			}
 		} else {
 			return String("<nil>")
@@ -386,15 +386,15 @@ func lazyNodeStringer(node **Node) func() fmt.Stringer {
 	}
 }
 
-func (s *SquirrelService) symbolSearchOne(ctx context.Context, repo string, commit string, include []string, ident string) (*Node, error) {
-	symbols, err := s.symbolSearch(ctx, search.SymbolsParameters{
-		Repo:            api.RepoName(repo),
-		CommitID:        api.CommitID(commit),
+func (s *SquirrelService) symbolSebrchOne(ctx context.Context, repo string, commit string, include []string, ident string) (*Node, error) {
+	symbols, err := s.symbolSebrch(ctx, sebrch.SymbolsPbrbmeters{
+		Repo:            bpi.RepoNbme(repo),
+		CommitID:        bpi.CommitID(commit),
 		Query:           fmt.Sprintf("^%s$", ident),
 		IsRegExp:        true,
-		IsCaseSensitive: true,
-		IncludePatterns: include,
-		ExcludePattern:  "",
+		IsCbseSensitive: true,
+		IncludePbtterns: include,
+		ExcludePbttern:  "",
 		First:           1,
 	})
 	if err != nil {
@@ -404,12 +404,12 @@ func (s *SquirrelService) symbolSearchOne(ctx context.Context, repo string, comm
 		return nil, nil
 	}
 	symbol := symbols[0]
-	file, err := s.parse(ctx, types.RepoCommitPath{
+	file, err := s.pbrse(ctx, types.RepoCommitPbth{
 		Repo:   repo,
 		Commit: commit,
-		Path:   symbol.Path,
+		Pbth:   symbol.Pbth,
 	})
-	if errors.Is(err, UnsupportedLanguageError) || errors.Is(err, unrecognizedFileExtensionError) {
+	if errors.Is(err, UnsupportedLbngubgeError) || errors.Is(err, unrecognizedFileExtensionError) {
 		return nil, nil
 	}
 	if err != nil {
@@ -417,12 +417,12 @@ func (s *SquirrelService) symbolSearchOne(ctx context.Context, repo string, comm
 	}
 	point := sitter.Point{
 		Row:    uint32(symbol.Line),
-		Column: uint32(symbol.Character),
+		Column: uint32(symbol.Chbrbcter),
 	}
-	symbolNode := file.NamedDescendantForPointRange(point, point)
+	symbolNode := file.NbmedDescendbntForPointRbnge(point, point)
 	if symbolNode == nil {
 		return nil, nil
 	}
-	ret := swapNode(*file, symbolNode)
+	ret := swbpNode(*file, symbolNode)
 	return &ret, nil
 }

@@ -1,41 +1,41 @@
-package store
+pbckbge store
 
 import (
 	"context"
 
-	logger "github.com/sourcegraph/log"
+	logger "github.com/sourcegrbph/log"
 
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/sentinel/shared"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegrbph/sourcegrbph/internbl/codeintel/sentinel/shbred"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/bbsestore"
+	"github.com/sourcegrbph/sourcegrbph/internbl/observbtion"
 )
 
-type Store interface {
-	// Vulnerabilities
-	VulnerabilityByID(ctx context.Context, id int) (_ shared.Vulnerability, _ bool, err error)
-	GetVulnerabilitiesByIDs(ctx context.Context, ids ...int) (_ []shared.Vulnerability, err error)
-	GetVulnerabilities(ctx context.Context, args shared.GetVulnerabilitiesArgs) (_ []shared.Vulnerability, _ int, err error)
-	InsertVulnerabilities(ctx context.Context, vulnerabilities []shared.Vulnerability) (_ int, err error)
+type Store interfbce {
+	// Vulnerbbilities
+	VulnerbbilityByID(ctx context.Context, id int) (_ shbred.Vulnerbbility, _ bool, err error)
+	GetVulnerbbilitiesByIDs(ctx context.Context, ids ...int) (_ []shbred.Vulnerbbility, err error)
+	GetVulnerbbilities(ctx context.Context, brgs shbred.GetVulnerbbilitiesArgs) (_ []shbred.Vulnerbbility, _ int, err error)
+	InsertVulnerbbilities(ctx context.Context, vulnerbbilities []shbred.Vulnerbbility) (_ int, err error)
 
-	// Vulnerability matches
-	VulnerabilityMatchByID(ctx context.Context, id int) (shared.VulnerabilityMatch, bool, error)
-	GetVulnerabilityMatches(ctx context.Context, args shared.GetVulnerabilityMatchesArgs) ([]shared.VulnerabilityMatch, int, error)
-	GetVulnerabilityMatchesSummaryCount(ctx context.Context) (counts shared.GetVulnerabilityMatchesSummaryCounts, err error)
-	GetVulnerabilityMatchesCountByRepository(ctx context.Context, args shared.GetVulnerabilityMatchesCountByRepositoryArgs) (_ []shared.VulnerabilityMatchesByRepository, _ int, err error)
-	ScanMatches(ctx context.Context, batchSize int) (numReferencesScanned int, numVulnerabilityMatches int, _ error)
+	// Vulnerbbility mbtches
+	VulnerbbilityMbtchByID(ctx context.Context, id int) (shbred.VulnerbbilityMbtch, bool, error)
+	GetVulnerbbilityMbtches(ctx context.Context, brgs shbred.GetVulnerbbilityMbtchesArgs) ([]shbred.VulnerbbilityMbtch, int, error)
+	GetVulnerbbilityMbtchesSummbryCount(ctx context.Context) (counts shbred.GetVulnerbbilityMbtchesSummbryCounts, err error)
+	GetVulnerbbilityMbtchesCountByRepository(ctx context.Context, brgs shbred.GetVulnerbbilityMbtchesCountByRepositoryArgs) (_ []shbred.VulnerbbilityMbtchesByRepository, _ int, err error)
+	ScbnMbtches(ctx context.Context, bbtchSize int) (numReferencesScbnned int, numVulnerbbilityMbtches int, _ error)
 }
 
 type store struct {
-	db         *basestore.Store
+	db         *bbsestore.Store
 	logger     logger.Logger
-	operations *operations
+	operbtions *operbtions
 }
 
-func New(observationCtx *observation.Context, db database.DB) Store {
+func New(observbtionCtx *observbtion.Context, db dbtbbbse.DB) Store {
 	return &store{
-		db:         basestore.NewWithHandle(db.Handle()),
+		db:         bbsestore.NewWithHbndle(db.Hbndle()),
 		logger:     logger.Scoped("sentinel.store", ""),
-		operations: newOperations(observationCtx),
+		operbtions: newOperbtions(observbtionCtx),
 	}
 }

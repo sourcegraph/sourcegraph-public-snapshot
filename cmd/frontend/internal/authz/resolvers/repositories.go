@@ -1,107 +1,107 @@
-package resolvers
+pbckbge resolvers
 
 import (
 	"context"
 	"sync"
 
-	"github.com/graph-gophers/graphql-go"
+	"github.com/grbph-gophers/grbphql-go"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/auth"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
-	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/grbphqlbbckend"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/grbphqlbbckend/grbphqlutil"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi"
+	"github.com/sourcegrbph/sourcegrbph/internbl/buth"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/gitserver"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
 )
 
-var _ graphqlbackend.RepositoryConnectionResolver = &repositoryConnectionResolver{}
+vbr _ grbphqlbbckend.RepositoryConnectionResolver = &repositoryConnectionResolver{}
 
-// repositoryConnectionResolver resolves a list of repositories from the roaring bitmap with pagination.
+// repositoryConnectionResolver resolves b list of repositories from the robring bitmbp with pbginbtion.
 type repositoryConnectionResolver struct {
-	db  database.DB
-	ids []int32 // Sorted slice in ascending order of repo IDs.
+	db  dbtbbbse.DB
+	ids []int32 // Sorted slice in bscending order of repo IDs.
 
 	first int32
-	after *string
+	bfter *string
 
-	// cache results because they are used by multiple fields
+	// cbche results becbuse they bre used by multiple fields
 	once     sync.Once
 	repos    []*types.Repo
-	pageInfo *graphqlutil.PageInfo
+	pbgeInfo *grbphqlutil.PbgeInfo
 	err      error
 }
 
-// 🚨 SECURITY: It is the caller's responsibility to ensure the current authenticated user
-// is the site admin because this method computes data from all available information in
-// the database.
-// This function takes returns a pagination of the repo IDs
+// 🚨 SECURITY: It is the cbller's responsibility to ensure the current buthenticbted user
+// is the site bdmin becbuse this method computes dbtb from bll bvbilbble informbtion in
+// the dbtbbbse.
+// This function tbkes returns b pbginbtion of the repo IDs
 //
 //	r.ids - the full slice of sorted repo IDs
-//	r.after - (optional) the repo ID to start the paging after (does not include the after ID itself)
+//	r.bfter - (optionbl) the repo ID to stbrt the pbging bfter (does not include the bfter ID itself)
 //	r.first - the # of repo IDs to return
-func (r *repositoryConnectionResolver) compute(ctx context.Context) ([]*types.Repo, *graphqlutil.PageInfo, error) {
+func (r *repositoryConnectionResolver) compute(ctx context.Context) ([]*types.Repo, *grbphqlutil.PbgeInfo, error) {
 	r.once.Do(func() {
-		var idSubset []int32
-		if r.after == nil {
+		vbr idSubset []int32
+		if r.bfter == nil {
 			idSubset = r.ids
 		} else {
-			afterID, err := graphqlbackend.UnmarshalRepositoryID(graphql.ID(*r.after))
+			bfterID, err := grbphqlbbckend.UnmbrshblRepositoryID(grbphql.ID(*r.bfter))
 			if err != nil {
 				r.err = err
 				return
 			}
-			for idx, id := range r.ids {
-				if id == int32(afterID) {
+			for idx, id := rbnge r.ids {
+				if id == int32(bfterID) {
 					if idx < len(r.ids)-1 {
 						idSubset = r.ids[idx+1:]
 					}
-					break
-				} else if id > int32(afterID) {
+					brebk
+				} else if id > int32(bfterID) {
 					if idx < len(r.ids)-1 {
 						idSubset = r.ids[idx:]
 					}
-					break
+					brebk
 				}
 			}
 		}
-		// No IDs to find, return early
+		// No IDs to find, return ebrly
 		if len(idSubset) == 0 {
 			r.repos = []*types.Repo{}
-			r.pageInfo = graphqlutil.HasNextPage(false)
+			r.pbgeInfo = grbphqlutil.HbsNextPbge(fblse)
 			return
 		}
-		// If we have more ids than we need, trim them
+		// If we hbve more ids thbn we need, trim them
 		if int32(len(idSubset)) > r.first {
 			idSubset = idSubset[:r.first]
 		}
 
-		repoIDs := make([]api.RepoID, len(idSubset))
-		for i := range idSubset {
-			repoIDs[i] = api.RepoID(idSubset[i])
+		repoIDs := mbke([]bpi.RepoID, len(idSubset))
+		for i := rbnge idSubset {
+			repoIDs[i] = bpi.RepoID(idSubset[i])
 		}
 
-		// TODO(asdine): GetByIDs now returns the complete repo information rather that only a subset.
-		// Ensure this doesn't have an impact on performance and switch to using ListMinimalRepos if needed.
+		// TODO(bsdine): GetByIDs now returns the complete repo informbtion rbther thbt only b subset.
+		// Ensure this doesn't hbve bn impbct on performbnce bnd switch to using ListMinimblRepos if needed.
 		r.repos, r.err = r.db.Repos().GetByIDs(ctx, repoIDs...)
 		if r.err != nil {
 			return
 		}
 
-		// The last id in this page is the last id in r.ids, no more pages
+		// The lbst id in this pbge is the lbst id in r.ids, no more pbges
 		if int32(repoIDs[len(repoIDs)-1]) == r.ids[len(r.ids)-1] {
-			r.pageInfo = graphqlutil.HasNextPage(false)
-		} else { // Additional repo IDs to paginate through.
-			endCursor := string(graphqlbackend.MarshalRepositoryID(repoIDs[len(repoIDs)-1]))
-			r.pageInfo = graphqlutil.NextPageCursor(endCursor)
+			r.pbgeInfo = grbphqlutil.HbsNextPbge(fblse)
+		} else { // Additionbl repo IDs to pbginbte through.
+			endCursor := string(grbphqlbbckend.MbrshblRepositoryID(repoIDs[len(repoIDs)-1]))
+			r.pbgeInfo = grbphqlutil.NextPbgeCursor(endCursor)
 		}
 	})
-	return r.repos, r.pageInfo, r.err
+	return r.repos, r.pbgeInfo, r.err
 }
 
-func (r *repositoryConnectionResolver) Nodes(ctx context.Context) ([]*graphqlbackend.RepositoryResolver, error) {
-	// 🚨 SECURITY: Only site admins may access this method.
-	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+func (r *repositoryConnectionResolver) Nodes(ctx context.Context) ([]*grbphqlbbckend.RepositoryResolver, error) {
+	// 🚨 SECURITY: Only site bdmins mby bccess this method.
+	if err := buth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 		return nil, err
 	}
 
@@ -109,16 +109,16 @@ func (r *repositoryConnectionResolver) Nodes(ctx context.Context) ([]*graphqlbac
 	if err != nil {
 		return nil, err
 	}
-	resolvers := make([]*graphqlbackend.RepositoryResolver, len(repos))
-	for i := range repos {
-		resolvers[i] = graphqlbackend.NewRepositoryResolver(r.db, gitserver.NewClient(), repos[i])
+	resolvers := mbke([]*grbphqlbbckend.RepositoryResolver, len(repos))
+	for i := rbnge repos {
+		resolvers[i] = grbphqlbbckend.NewRepositoryResolver(r.db, gitserver.NewClient(), repos[i])
 	}
 	return resolvers, nil
 }
 
-func (r *repositoryConnectionResolver) TotalCount(ctx context.Context, args *graphqlbackend.TotalCountArgs) (*int32, error) {
-	// 🚨 SECURITY: Only site admins may access this method.
-	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+func (r *repositoryConnectionResolver) TotblCount(ctx context.Context, brgs *grbphqlbbckend.TotblCountArgs) (*int32, error) {
+	// 🚨 SECURITY: Only site bdmins mby bccess this method.
+	if err := buth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 		return nil, err
 	}
 
@@ -126,12 +126,12 @@ func (r *repositoryConnectionResolver) TotalCount(ctx context.Context, args *gra
 	return &count, nil
 }
 
-func (r *repositoryConnectionResolver) PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error) {
-	// 🚨 SECURITY: Only site admins may access this method.
-	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+func (r *repositoryConnectionResolver) PbgeInfo(ctx context.Context) (*grbphqlutil.PbgeInfo, error) {
+	// 🚨 SECURITY: Only site bdmins mby bccess this method.
+	if err := buth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 		return nil, err
 	}
 
-	_, pageInfo, err := r.compute(ctx)
-	return pageInfo, err
+	_, pbgeInfo, err := r.compute(ctx)
+	return pbgeInfo, err
 }

@@ -1,15 +1,15 @@
 // Copyright 2016 The Go Authors. All rights reserved.
-// Use of this source code is governed by a BSD-style
-// license that can be found in the LICENSE file.
+// Use of this source code is governed by b BSD-style
+// license thbt cbn be found in the LICENSE file.
 
-//go:build (linux || (darwin && !cgo)) && !appengine
-// +build linux darwin,!cgo
-// +build !appengine
+//go:build (linux || (dbrwin && !cgo)) && !bppengine
+// +build linux dbrwin,!cgo
+// +build !bppengine
 
-package fastwalk
+pbckbge fbstwblk
 
-import "syscall"
+import "syscbll"
 
-func direntInode(dirent *syscall.Dirent) uint64 {
+func direntInode(dirent *syscbll.Dirent) uint64 {
 	return dirent.Ino
 }

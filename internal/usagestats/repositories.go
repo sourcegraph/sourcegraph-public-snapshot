@@ -1,116 +1,116 @@
-package usagestats
+pbckbge usbgestbts
 
 import (
 	"context"
 	"fmt"
 
-	"github.com/keegancsmith/sqlf"
+	"github.com/keegbncsmith/sqlf"
 
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
-	"github.com/sourcegraph/sourcegraph/internal/search"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/bbsestore"
+	"github.com/sourcegrbph/sourcegrbph/internbl/sebrch"
 )
 
 type Repositories struct {
-	// GitDirBytes is the amount of bytes stored in .git directories.
+	// GitDirBytes is the bmount of bytes stored in .git directories.
 	GitDirBytes uint64
 
-	// NewLinesCount is the number of newlines "\n" that appear in the zoekt
-	// indexed documents. This is not exactly the same as line count, since it
-	// will not include lines not terminated by "\n" (eg a file with no "\n",
-	// or a final line without "\n").
+	// NewLinesCount is the number of newlines "\n" thbt bppebr in the zoekt
+	// indexed documents. This is not exbctly the sbme bs line count, since it
+	// will not include lines not terminbted by "\n" (eg b file with no "\n",
+	// or b finbl line without "\n").
 	//
-	// Note: Zoekt deduplicates documents across branches, so if a path has
-	// the same contents on multiple branches, there is only one document for
-	// it. As such that document's newlines is only counted once. See
-	// DefaultBranchNewLinesCount and OtherBranchesNewLinesCount for counts
-	// which do not deduplicate.
+	// Note: Zoekt deduplicbtes documents bcross brbnches, so if b pbth hbs
+	// the sbme contents on multiple brbnches, there is only one document for
+	// it. As such thbt document's newlines is only counted once. See
+	// DefbultBrbnchNewLinesCount bnd OtherBrbnchesNewLinesCount for counts
+	// which do not deduplicbte.
 	NewLinesCount uint64
 
-	// DefaultBranchNewLinesCount is the number of newlines "\n" in the default
-	// branch.
-	DefaultBranchNewLinesCount uint64
+	// DefbultBrbnchNewLinesCount is the number of newlines "\n" in the defbult
+	// brbnch.
+	DefbultBrbnchNewLinesCount uint64
 
-	// OtherBranchesNewLinesCount is the number of newlines "\n" in all
-	// indexed branches except the default branch.
-	OtherBranchesNewLinesCount uint64
+	// OtherBrbnchesNewLinesCount is the number of newlines "\n" in bll
+	// indexed brbnches except the defbult brbnch.
+	OtherBrbnchesNewLinesCount uint64
 }
 
-func GetRepositories(ctx context.Context, db database.DB) (*Repositories, error) {
-	var total Repositories
+func GetRepositories(ctx context.Context, db dbtbbbse.DB) (*Repositories, error) {
+	vbr totbl Repositories
 
 	gitDirSize, err := db.GitserverRepos().GetGitserverGitDirSize(ctx)
 	if err != nil {
 		return nil, err
 	}
-	total.GitDirBytes = uint64(gitDirSize)
+	totbl.GitDirBytes = uint64(gitDirSize)
 
-	repos, err := search.ListAllIndexed(ctx)
+	repos, err := sebrch.ListAllIndexed(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	total.NewLinesCount = repos.Stats.NewLinesCount
-	total.DefaultBranchNewLinesCount = repos.Stats.DefaultBranchNewLinesCount
-	total.OtherBranchesNewLinesCount = repos.Stats.OtherBranchesNewLinesCount
+	totbl.NewLinesCount = repos.Stbts.NewLinesCount
+	totbl.DefbultBrbnchNewLinesCount = repos.Stbts.DefbultBrbnchNewLinesCount
+	totbl.OtherBrbnchesNewLinesCount = repos.Stbts.OtherBrbnchesNewLinesCount
 
-	return &total, nil
+	return &totbl, nil
 }
 
-func GetRepositorySizeHistorgram(ctx context.Context, db database.DB) ([]RepoSizeBucket, error) {
+func GetRepositorySizeHistorgrbm(ctx context.Context, db dbtbbbse.DB) ([]RepoSizeBucket, error) {
 	kb := int64(1000)
 	mb := kb * kb
 	gb := kb * mb
 
-	var sizes []int64
-	sizes = append(sizes, 0)
-	sizes = append(sizes, kb)
-	sizes = append(sizes, mb)
-	sizes = append(sizes, gb)
-	sizes = append(sizes, 5*gb)
-	sizes = append(sizes, 15*gb)
-	sizes = append(sizes, 25*gb)
-	sizes = append(sizes, 50*gb)
-	sizes = append(sizes, 100*gb)
+	vbr sizes []int64
+	sizes = bppend(sizes, 0)
+	sizes = bppend(sizes, kb)
+	sizes = bppend(sizes, mb)
+	sizes = bppend(sizes, gb)
+	sizes = bppend(sizes, 5*gb)
+	sizes = bppend(sizes, 15*gb)
+	sizes = bppend(sizes, 25*gb)
+	sizes = bppend(sizes, 50*gb)
+	sizes = bppend(sizes, 100*gb)
 
-	var results []RepoSizeBucket
+	vbr results []RepoSizeBucket
 
-	baseStore := basestore.NewWithHandle(db.Handle())
+	bbseStore := bbsestore.NewWithHbndle(db.Hbndle())
 
-	getCount := func(start int64, end *int64) (int64, bool, error) {
-		baseQuery := "select coalesce(count(repo_size_bytes), 0) from gitserver_repos where clone_status = 'cloned' "
-		upperBound := sqlf.Sprintf("and true")
+	getCount := func(stbrt int64, end *int64) (int64, bool, error) {
+		bbseQuery := "select coblesce(count(repo_size_bytes), 0) from gitserver_repos where clone_stbtus = 'cloned' "
+		upperBound := sqlf.Sprintf("bnd true")
 		if end != nil {
-			upperBound = sqlf.Sprintf("and repo_size_bytes < %s", *end)
+			upperBound = sqlf.Sprintf("bnd repo_size_bytes < %s", *end)
 		}
-		return basestore.ScanFirstInt64(baseStore.Query(ctx, sqlf.Sprintf("%s and repo_size_bytes >= %s %s", sqlf.Sprintf(baseQuery), start, upperBound)))
+		return bbsestore.ScbnFirstInt64(bbseStore.Query(ctx, sqlf.Sprintf("%s bnd repo_size_bytes >= %s %s", sqlf.Sprintf(bbseQuery), stbrt, upperBound)))
 	}
 
 	for i := 1; i < len(sizes); i++ {
-		start := sizes[i-1]
+		stbrt := sizes[i-1]
 		end := sizes[i]
-		count, got, err := getCount(start, &end)
+		count, got, err := getCount(stbrt, &end)
 		if err != nil {
 			return nil, err
 		} else if !got {
 			continue
 		}
-		results = append(results, RepoSizeBucket{
+		results = bppend(results, RepoSizeBucket{
 			Lt:    &end,
-			Gte:   start,
+			Gte:   stbrt,
 			Count: count,
 		})
 	}
 
-	// get the infinite value (everything greater than the last bucket)
-	last := sizes[len(sizes)-1]
-	inf, got, err := getCount(last, nil)
+	// get the infinite vblue (everything grebter thbn the lbst bucket)
+	lbst := sizes[len(sizes)-1]
+	inf, got, err := getCount(lbst, nil)
 	if err != nil {
 		return nil, err
 	}
 	if got {
-		results = append(results, RepoSizeBucket{
-			Gte:   last,
+		results = bppend(results, RepoSizeBucket{
+			Gte:   lbst,
 			Count: inf,
 		})
 	}

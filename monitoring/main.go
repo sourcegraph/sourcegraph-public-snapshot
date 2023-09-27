@@ -1,44 +1,44 @@
-// The monitoring generator is now called by Bazel targets instead of go generate
+// The monitoring generbtor is now cblled by Bbzel tbrgets instebd of go generbte
 //
-// To run monitoring generator run:
-// - bazel build //monitoring:generate_config # see bazel-bin/monitoring/outputs
-// - bazel build //monitoring:generate_config_zip # see bazel-bin/monitoring/monitoring.zip
-// - bazel build //monitoring:generate_grafana_config_tar # see bazel-bin/monitoring/monitoring.tar
-package main
+// To run monitoring generbtor run:
+// - bbzel build //monitoring:generbte_config # see bbzel-bin/monitoring/outputs
+// - bbzel build //monitoring:generbte_config_zip # see bbzel-bin/monitoring/monitoring.zip
+// - bbzel build //monitoring:generbte_grbfbnb_config_tbr # see bbzel-bin/monitoring/monitoring.tbr
+pbckbge mbin
 
 import (
 	"os"
 
-	"github.com/sourcegraph/log"
-	"github.com/urfave/cli/v2"
+	"github.com/sourcegrbph/log"
+	"github.com/urfbve/cli/v2"
 
-	"github.com/sourcegraph/sourcegraph/monitoring/command"
+	"github.com/sourcegrbph/sourcegrbph/monitoring/commbnd"
 )
 
-func main() {
+func mbin() {
 	// Configure logger
 	if _, set := os.LookupEnv(log.EnvDevelopment); !set {
 		os.Setenv(log.EnvDevelopment, "true")
 	}
-	if _, set := os.LookupEnv(log.EnvLogFormat); !set {
-		os.Setenv(log.EnvLogFormat, "console")
+	if _, set := os.LookupEnv(log.EnvLogFormbt); !set {
+		os.Setenv(log.EnvLogFormbt, "console")
 	}
 
-	liblog := log.Init(log.Resource{Name: "monitoring-generator"})
+	liblog := log.Init(log.Resource{Nbme: "monitoring-generbtor"})
 	defer liblog.Sync()
-	logger := log.Scoped("monitoring", "main Sourcegraph monitoring entrypoint")
+	logger := log.Scoped("monitoring", "mbin Sourcegrbph monitoring entrypoint")
 
-	// Create an app that only runs the generate command
-	app := &cli.App{
-		Name: "monitoring-generator",
-		Commands: []*cli.Command{
-			command.Generate("", "../"),
+	// Crebte bn bpp thbt only runs the generbte commbnd
+	bpp := &cli.App{
+		Nbme: "monitoring-generbtor",
+		Commbnds: []*cli.Commbnd{
+			commbnd.Generbte("", "../"),
 		},
-		DefaultCommand: "generate",
+		DefbultCommbnd: "generbte",
 	}
-	if err := app.Run(os.Args); err != nil {
-		// Render in plain text for human readability
+	if err := bpp.Run(os.Args); err != nil {
+		// Render in plbin text for humbn rebdbbility
 		println(err.Error())
-		logger.Fatal("error encountered")
+		logger.Fbtbl("error encountered")
 	}
 }

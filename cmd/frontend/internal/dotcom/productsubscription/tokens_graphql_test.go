@@ -1,36 +1,36 @@
-package productsubscription
+pbckbge productsubscription
 
 import (
 	"context"
 	"testing"
 
-	"github.com/sourcegraph/log/logtest"
-	"github.com/stretchr/testify/assert"
+	"github.com/sourcegrbph/log/logtest"
+	"github.com/stretchr/testify/bssert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
-	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/grbphqlbbckend"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bctor"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbtest"
 )
 
 func TestProductSubscriptionByAccessToken(t *testing.T) {
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
-	ctx := context.Background()
+	db := dbtbbbse.NewDB(logger, dbtest.NewDB(logger, t))
+	ctx := context.Bbckground()
 	r := ProductSubscriptionLicensingResolver{Logger: logger, DB: db}
 
-	alice, err := db.Users().Create(ctx, database.NewUser{Username: "alice"})
+	blice, err := db.Users().Crebte(ctx, dbtbbbse.NewUser{Usernbme: "blice"})
 	require.NoError(t, err)
 
-	t.Run("failure case", func(t *testing.T) {
+	t.Run("fbilure cbse", func(t *testing.T) {
 		_, err := r.ProductSubscriptionByAccessToken(
-			actor.WithActor(ctx, &actor.Actor{UID: alice.ID}),
-			&graphqlbackend.ProductSubscriptionByAccessTokenArgs{
+			bctor.WithActor(ctx, &bctor.Actor{UID: blice.ID}),
+			&grbphqlbbckend.ProductSubscriptionByAccessTokenArgs{
 				AccessToken: "404",
 			},
 		)
 		_, got := err.(ErrProductSubscriptionNotFound)
-		assert.True(t, got, "should have error type ErrProductSubscriptionNotFound")
+		bssert.True(t, got, "should hbve error type ErrProductSubscriptionNotFound")
 	})
 }

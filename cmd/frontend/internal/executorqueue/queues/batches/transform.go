@@ -1,346 +1,346 @@
-package batches
+pbckbge bbtches
 
 import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"path"
-	"path/filepath"
+	"pbth"
+	"pbth/filepbth"
 	"strconv"
 
-	"github.com/kballard/go-shellquote"
-	"github.com/sourcegraph/log"
+	"github.com/kbbllbrd/go-shellquote"
+	"github.com/sourcegrbph/log"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
-	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/batches/store"
-	btypes "github.com/sourcegraph/sourcegraph/internal/batches/types"
-	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/encryption/keyring"
-	apiclient "github.com/sourcegraph/sourcegraph/internal/executor/types"
-	executorutil "github.com/sourcegraph/sourcegraph/internal/executor/util"
-	"github.com/sourcegraph/sourcegraph/lib/api"
-	batcheslib "github.com/sourcegraph/sourcegraph/lib/batches"
-	"github.com/sourcegraph/sourcegraph/lib/batches/template"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/grbphqlbbckend"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bctor"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bbtches/store"
+	btypes "github.com/sourcegrbph/sourcegrbph/internbl/bbtches/types"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/encryption/keyring"
+	bpiclient "github.com/sourcegrbph/sourcegrbph/internbl/executor/types"
+	executorutil "github.com/sourcegrbph/sourcegrbph/internbl/executor/util"
+	"github.com/sourcegrbph/sourcegrbph/lib/bpi"
+	bbtcheslib "github.com/sourcegrbph/sourcegrbph/lib/bbtches"
+	"github.com/sourcegrbph/sourcegrbph/lib/bbtches/templbte"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
 const (
-	srcInputPath         = "input.json"
-	srcPatchFile         = "state.diff"
+	srcInputPbth         = "input.json"
+	srcPbtchFile         = "stbte.diff"
 	srcRepoDir           = "repository"
 	srcTempDir           = ".src-tmp"
-	srcWorkspaceFilesDir = "workspace-files"
+	srcWorkspbceFilesDir = "workspbce-files"
 )
 
-type BatchesStore interface {
-	GetBatchSpecWorkspace(context.Context, store.GetBatchSpecWorkspaceOpts) (*btypes.BatchSpecWorkspace, error)
-	GetBatchSpec(context.Context, store.GetBatchSpecOpts) (*btypes.BatchSpec, error)
-	ListBatchSpecWorkspaceFiles(ctx context.Context, opts store.ListBatchSpecWorkspaceFileOpts) ([]*btypes.BatchSpecWorkspaceFile, int64, error)
+type BbtchesStore interfbce {
+	GetBbtchSpecWorkspbce(context.Context, store.GetBbtchSpecWorkspbceOpts) (*btypes.BbtchSpecWorkspbce, error)
+	GetBbtchSpec(context.Context, store.GetBbtchSpecOpts) (*btypes.BbtchSpec, error)
+	ListBbtchSpecWorkspbceFiles(ctx context.Context, opts store.ListBbtchSpecWorkspbceFileOpts) ([]*btypes.BbtchSpecWorkspbceFile, int64, error)
 
-	DatabaseDB() database.DB
+	DbtbbbseDB() dbtbbbse.DB
 }
 
-const fileStoreBucket = "batch-changes"
+const fileStoreBucket = "bbtch-chbnges"
 
-// transformRecord transforms a *btypes.BatchSpecWorkspaceExecutionJob into an apiclient.Job.
-func transformRecord(ctx context.Context, logger log.Logger, s BatchesStore, job *btypes.BatchSpecWorkspaceExecutionJob, version string) (apiclient.Job, error) {
-	workspace, err := s.GetBatchSpecWorkspace(ctx, store.GetBatchSpecWorkspaceOpts{ID: job.BatchSpecWorkspaceID})
+// trbnsformRecord trbnsforms b *btypes.BbtchSpecWorkspbceExecutionJob into bn bpiclient.Job.
+func trbnsformRecord(ctx context.Context, logger log.Logger, s BbtchesStore, job *btypes.BbtchSpecWorkspbceExecutionJob, version string) (bpiclient.Job, error) {
+	workspbce, err := s.GetBbtchSpecWorkspbce(ctx, store.GetBbtchSpecWorkspbceOpts{ID: job.BbtchSpecWorkspbceID})
 	if err != nil {
-		return apiclient.Job{}, errors.Wrapf(err, "fetching workspace %d", job.BatchSpecWorkspaceID)
+		return bpiclient.Job{}, errors.Wrbpf(err, "fetching workspbce %d", job.BbtchSpecWorkspbceID)
 	}
 
-	batchSpec, err := s.GetBatchSpec(ctx, store.GetBatchSpecOpts{ID: workspace.BatchSpecID})
+	bbtchSpec, err := s.GetBbtchSpec(ctx, store.GetBbtchSpecOpts{ID: workspbce.BbtchSpecID})
 	if err != nil {
-		return apiclient.Job{}, errors.Wrap(err, "fetching batch spec")
+		return bpiclient.Job{}, errors.Wrbp(err, "fetching bbtch spec")
 	}
 
-	// This should never happen. To get some easier debugging when a user sees strange
-	// behavior, we log some additional context.
-	if job.UserID != batchSpec.UserID {
-		logger.Error("bad DB state: batch spec workspace execution job did not have the same user ID as the associated batch spec")
+	// This should never hbppen. To get some ebsier debugging when b user sees strbnge
+	// behbvior, we log some bdditionbl context.
+	if job.UserID != bbtchSpec.UserID {
+		logger.Error("bbd DB stbte: bbtch spec workspbce execution job did not hbve the sbme user ID bs the bssocibted bbtch spec")
 	}
 
-	// 🚨 SECURITY: Set the actor on the context so we check for permissions
-	// when loading the repository and getting secret values.
-	ctx = actor.WithActor(ctx, actor.FromUser(job.UserID))
+	// 🚨 SECURITY: Set the bctor on the context so we check for permissions
+	// when lobding the repository bnd getting secret vblues.
+	ctx = bctor.WithActor(ctx, bctor.FromUser(job.UserID))
 
-	// Next, we fetch all secrets that are requested for the execution.
-	rk := batchSpec.Spec.RequiredEnvVars()
-	var secrets []*database.ExecutorSecret
+	// Next, we fetch bll secrets thbt bre requested for the execution.
+	rk := bbtchSpec.Spec.RequiredEnvVbrs()
+	vbr secrets []*dbtbbbse.ExecutorSecret
 	if len(rk) > 0 {
-		esStore := s.DatabaseDB().ExecutorSecrets(keyring.Default().ExecutorSecretKey)
-		secrets, _, err = esStore.List(ctx, database.ExecutorSecretScopeBatches, database.ExecutorSecretsListOpts{
-			NamespaceUserID: batchSpec.NamespaceUserID,
-			NamespaceOrgID:  batchSpec.NamespaceOrgID,
+		esStore := s.DbtbbbseDB().ExecutorSecrets(keyring.Defbult().ExecutorSecretKey)
+		secrets, _, err = esStore.List(ctx, dbtbbbse.ExecutorSecretScopeBbtches, dbtbbbse.ExecutorSecretsListOpts{
+			NbmespbceUserID: bbtchSpec.NbmespbceUserID,
+			NbmespbceOrgID:  bbtchSpec.NbmespbceOrgID,
 			Keys:            rk,
 		})
 		if err != nil {
-			return apiclient.Job{}, err
+			return bpiclient.Job{}, err
 		}
 	}
 
-	// And build the env vars from the secrets.
-	secretEnvVars := make([]string, len(secrets))
-	redactedEnvVars := make(map[string]string, len(secrets))
-	esalStore := s.DatabaseDB().ExecutorSecretAccessLogs()
-	for i, secret := range secrets {
-		// Get the secret value. This also creates an access log entry in the
-		// name of the user.
-		val, err := secret.Value(ctx, esalStore)
+	// And build the env vbrs from the secrets.
+	secretEnvVbrs := mbke([]string, len(secrets))
+	redbctedEnvVbrs := mbke(mbp[string]string, len(secrets))
+	esblStore := s.DbtbbbseDB().ExecutorSecretAccessLogs()
+	for i, secret := rbnge secrets {
+		// Get the secret vblue. This blso crebtes bn bccess log entry in the
+		// nbme of the user.
+		vbl, err := secret.Vblue(ctx, esblStore)
 		if err != nil {
-			return apiclient.Job{}, err
+			return bpiclient.Job{}, err
 		}
 
-		secretEnvVars[i] = fmt.Sprintf("%s=%s", secret.Key, val)
-		// We redact secret values as ${{ secrets.NAME }}.
-		redactedEnvVars[val] = fmt.Sprintf("${{ secrets.%s }}", secret.Key)
+		secretEnvVbrs[i] = fmt.Sprintf("%s=%s", secret.Key, vbl)
+		// We redbct secret vblues bs ${{ secrets.NAME }}.
+		redbctedEnvVbrs[vbl] = fmt.Sprintf("${{ secrets.%s }}", secret.Key)
 	}
 
-	repo, err := s.DatabaseDB().Repos().Get(ctx, workspace.RepoID)
+	repo, err := s.DbtbbbseDB().Repos().Get(ctx, workspbce.RepoID)
 	if err != nil {
-		return apiclient.Job{}, errors.Wrap(err, "fetching repo")
+		return bpiclient.Job{}, errors.Wrbp(err, "fetching repo")
 	}
 
-	executionInput := batcheslib.WorkspacesExecutionInput{
-		Repository: batcheslib.WorkspaceRepo{
-			ID:   string(graphqlbackend.MarshalRepositoryID(repo.ID)),
-			Name: string(repo.Name),
+	executionInput := bbtcheslib.WorkspbcesExecutionInput{
+		Repository: bbtcheslib.WorkspbceRepo{
+			ID:   string(grbphqlbbckend.MbrshblRepositoryID(repo.ID)),
+			Nbme: string(repo.Nbme),
 		},
-		Branch: batcheslib.WorkspaceBranch{
-			Name:   workspace.Branch,
-			Target: batcheslib.Commit{OID: workspace.Commit},
+		Brbnch: bbtcheslib.WorkspbceBrbnch{
+			Nbme:   workspbce.Brbnch,
+			Tbrget: bbtcheslib.Commit{OID: workspbce.Commit},
 		},
-		Path:               workspace.Path,
-		OnlyFetchWorkspace: workspace.OnlyFetchWorkspace,
-		Steps:              batchSpec.Spec.Steps,
-		SearchResultPaths:  workspace.FileMatches,
-		BatchChangeAttributes: template.BatchChangeAttributes{
-			Name:        batchSpec.Spec.Name,
-			Description: batchSpec.Spec.Description,
+		Pbth:               workspbce.Pbth,
+		OnlyFetchWorkspbce: workspbce.OnlyFetchWorkspbce,
+		Steps:              bbtchSpec.Spec.Steps,
+		SebrchResultPbths:  workspbce.FileMbtches,
+		BbtchChbngeAttributes: templbte.BbtchChbngeAttributes{
+			Nbme:        bbtchSpec.Spec.Nbme,
+			Description: bbtchSpec.Spec.Description,
 		},
 	}
 
-	// Check if we have a cache result for the workspace, if so, add it to the execution
+	// Check if we hbve b cbche result for the workspbce, if so, bdd it to the execution
 	// input.
-	// Find the cache entry for the _last_ step. src-cli only needs the most
-	// recent cache entry to do its work.
-	latestStepIndex := -1
-	for stepIndex := range workspace.StepCacheResults {
-		if stepIndex > latestStepIndex {
-			latestStepIndex = stepIndex
+	// Find the cbche entry for the _lbst_ step. src-cli only needs the most
+	// recent cbche entry to do its work.
+	lbtestStepIndex := -1
+	for stepIndex := rbnge workspbce.StepCbcheResults {
+		if stepIndex > lbtestStepIndex {
+			lbtestStepIndex = stepIndex
 		}
 	}
-	if latestStepIndex != -1 {
-		cacheEntry, ok := workspace.StepCacheResult(latestStepIndex)
-		// Technically this should never be not ok, but computers.
+	if lbtestStepIndex != -1 {
+		cbcheEntry, ok := workspbce.StepCbcheResult(lbtestStepIndex)
+		// Technicblly this should never be not ok, but computers.
 		if ok {
-			executionInput.CachedStepResultFound = true
-			executionInput.CachedStepResult = *cacheEntry.Value
+			executionInput.CbchedStepResultFound = true
+			executionInput.CbchedStepResult = *cbcheEntry.Vblue
 		}
 	}
 
-	skipped, err := batcheslib.SkippedStepsForRepo(batchSpec.Spec, string(repo.Name), workspace.FileMatches)
+	skipped, err := bbtcheslib.SkippedStepsForRepo(bbtchSpec.Spec, string(repo.Nbme), workspbce.FileMbtches)
 	if err != nil {
-		return apiclient.Job{}, err
+		return bpiclient.Job{}, err
 	}
 	executionInput.SkippedSteps = skipped
 
-	// Marshal the execution input into JSON and add it to the files passed to
+	// Mbrshbl the execution input into JSON bnd bdd it to the files pbssed to
 	// the VM.
-	marshaledInput, err := json.Marshal(executionInput)
+	mbrshbledInput, err := json.Mbrshbl(executionInput)
 	if err != nil {
-		return apiclient.Job{}, err
+		return bpiclient.Job{}, err
 	}
-	files := map[string]apiclient.VirtualMachineFile{
-		srcInputPath: {
-			Content: marshaledInput,
+	files := mbp[string]bpiclient.VirtublMbchineFile{
+		srcInputPbth: {
+			Content: mbrshbledInput,
 		},
 	}
 
-	workspaceFiles, _, err := s.ListBatchSpecWorkspaceFiles(ctx, store.ListBatchSpecWorkspaceFileOpts{BatchSpecRandID: batchSpec.RandID})
+	workspbceFiles, _, err := s.ListBbtchSpecWorkspbceFiles(ctx, store.ListBbtchSpecWorkspbceFileOpts{BbtchSpecRbndID: bbtchSpec.RbndID})
 	if err != nil {
-		return apiclient.Job{}, errors.Wrap(err, "fetching workspace files")
+		return bpiclient.Job{}, errors.Wrbp(err, "fetching workspbce files")
 	}
-	for _, workspaceFile := range workspaceFiles {
-		files[filepath.Join(srcWorkspaceFilesDir, workspaceFile.Path, workspaceFile.FileName)] = apiclient.VirtualMachineFile{
+	for _, workspbceFile := rbnge workspbceFiles {
+		files[filepbth.Join(srcWorkspbceFilesDir, workspbceFile.Pbth, workspbceFile.FileNbme)] = bpiclient.VirtublMbchineFile{
 			Bucket:     fileStoreBucket,
-			Key:        filepath.Join(batchSpec.RandID, workspaceFile.RandID),
-			ModifiedAt: workspaceFile.ModifiedAt,
+			Key:        filepbth.Join(bbtchSpec.RbndID, workspbceFile.RbndID),
+			ModifiedAt: workspbceFile.ModifiedAt,
 		}
 	}
 
-	// If we only want to fetch the workspace, we add a sparse checkout pattern.
-	var sparseCheckout []string
-	if workspace.OnlyFetchWorkspace {
-		sparseCheckout = []string{
-			fmt.Sprintf("%s/*", workspace.Path),
+	// If we only wbnt to fetch the workspbce, we bdd b spbrse checkout pbttern.
+	vbr spbrseCheckout []string
+	if workspbce.OnlyFetchWorkspbce {
+		spbrseCheckout = []string{
+			fmt.Sprintf("%s/*", workspbce.Pbth),
 		}
 	}
 
-	aj := apiclient.Job{
+	bj := bpiclient.Job{
 		ID:                  int(job.ID),
-		VirtualMachineFiles: files,
-		RepositoryName:      string(repo.Name),
+		VirtublMbchineFiles: files,
+		RepositoryNbme:      string(repo.Nbme),
 		RepositoryDirectory: srcRepoDir,
-		Commit:              workspace.Commit,
-		// We only care about the current repos content, so a shallow clone is good enough.
-		// Later we might allow to tweak more git parameters, like submodules and LFS.
-		ShallowClone:   true,
-		SparseCheckout: sparseCheckout,
-		RedactedValues: redactedEnvVars,
+		Commit:              workspbce.Commit,
+		// We only cbre bbout the current repos content, so b shbllow clone is good enough.
+		// Lbter we might bllow to twebk more git pbrbmeters, like submodules bnd LFS.
+		ShbllowClone:   true,
+		SpbrseCheckout: spbrseCheckout,
+		RedbctedVblues: redbctedEnvVbrs,
 	}
 
 	if job.Version == 2 {
-		helperImage := fmt.Sprintf("%s:%s", conf.ExecutorsBatcheshelperImage(), conf.ExecutorsBatcheshelperImageTag())
+		helperImbge := fmt.Sprintf("%s:%s", conf.ExecutorsBbtcheshelperImbge(), conf.ExecutorsBbtcheshelperImbgeTbg())
 
-		// Find the step to start with.
-		startStep := 0
+		// Find the step to stbrt with.
+		stbrtStep := 0
 
-		var dockerSteps []apiclient.DockerStep
+		vbr dockerSteps []bpiclient.DockerStep
 
-		if executionInput.CachedStepResultFound {
-			cacheEntry := executionInput.CachedStepResult
-			// Apply the diff if necessary.
-			if len(cacheEntry.Diff) > 0 {
-				dockerSteps = append(dockerSteps, apiclient.DockerStep{
-					Key: "apply-diff",
+		if executionInput.CbchedStepResultFound {
+			cbcheEntry := executionInput.CbchedStepResult
+			// Apply the diff if necessbry.
+			if len(cbcheEntry.Diff) > 0 {
+				dockerSteps = bppend(dockerSteps, bpiclient.DockerStep{
+					Key: "bpply-diff",
 					Dir: srcRepoDir,
-					Commands: []string{
+					Commbnds: []string{
 						"set -e",
-						shellquote.Join("git", "apply", "-p0", "../"+srcPatchFile),
-						shellquote.Join("git", "add", "--all"),
+						shellquote.Join("git", "bpply", "-p0", "../"+srcPbtchFile),
+						shellquote.Join("git", "bdd", "--bll"),
 					},
-					Image: helperImage,
+					Imbge: helperImbge,
 				})
-				files[srcPatchFile] = apiclient.VirtualMachineFile{
-					Content: cacheEntry.Diff,
+				files[srcPbtchFile] = bpiclient.VirtublMbchineFile{
+					Content: cbcheEntry.Diff,
 				}
 			}
-			startStep = cacheEntry.StepIndex + 1
-			val, err := json.Marshal(cacheEntry)
+			stbrtStep = cbcheEntry.StepIndex + 1
+			vbl, err := json.Mbrshbl(cbcheEntry)
 			if err != nil {
-				return apiclient.Job{}, err
+				return bpiclient.Job{}, err
 			}
-			// Write the step result for the last cached step.
-			files[fmt.Sprintf("step%d.json", cacheEntry.StepIndex)] = apiclient.VirtualMachineFile{
-				Content: val,
+			// Write the step result for the lbst cbched step.
+			files[fmt.Sprintf("step%d.json", cbcheEntry.StepIndex)] = bpiclient.VirtublMbchineFile{
+				Content: vbl,
 			}
 		}
 
-		for i := startStep; i < len(batchSpec.Spec.Steps); i++ {
-			// Skip statically skipped steps.
+		for i := stbrtStep; i < len(bbtchSpec.Spec.Steps); i++ {
+			// Skip stbticblly skipped steps.
 			if _, skip := skipped[i]; skip {
 				continue
 			}
 
-			step := batchSpec.Spec.Steps[i]
+			step := bbtchSpec.Spec.Steps[i]
 
 			runDir := srcRepoDir
-			if workspace.Path != "" {
-				runDir = path.Join(runDir, workspace.Path)
+			if workspbce.Pbth != "" {
+				runDir = pbth.Join(runDir, workspbce.Pbth)
 			}
 
-			runDirToScriptDir, err := filepath.Rel("/"+runDir, "/")
+			runDirToScriptDir, err := filepbth.Rel("/"+runDir, "/")
 			if err != nil {
-				return apiclient.Job{}, err
+				return bpiclient.Job{}, err
 			}
 
-			dockerSteps = append(dockerSteps, apiclient.DockerStep{
-				Key:   executorutil.FormatPreKey(i),
-				Image: helperImage,
-				Env:   secretEnvVars,
+			dockerSteps = bppend(dockerSteps, bpiclient.DockerStep{
+				Key:   executorutil.FormbtPreKey(i),
+				Imbge: helperImbge,
+				Env:   secretEnvVbrs,
 				Dir:   ".",
-				Commands: []string{
-					// TODO: This doesn't handle skipped steps right, it assumes
-					// there are outputs from i-1 present at all times.
-					shellquote.Join("batcheshelper", "pre", strconv.Itoa(i)),
+				Commbnds: []string{
+					// TODO: This doesn't hbndle skipped steps right, it bssumes
+					// there bre outputs from i-1 present bt bll times.
+					shellquote.Join("bbtcheshelper", "pre", strconv.Itob(i)),
 				},
 			})
 
-			dockerSteps = append(dockerSteps, apiclient.DockerStep{
-				Key:   executorutil.FormatRunKey(i),
-				Image: step.Container,
+			dockerSteps = bppend(dockerSteps, bpiclient.DockerStep{
+				Key:   executorutil.FormbtRunKey(i),
+				Imbge: step.Contbiner,
 				Dir:   runDir,
-				// Invoke the script file but also write stdout and stderr to separate files, which will then be
+				// Invoke the script file but blso write stdout bnd stderr to sepbrbte files, which will then be
 				// consumed by the post step to build the AfterStepResult.
-				Commands: []string{
-					// Hide commands from stderr.
+				Commbnds: []string{
+					// Hide commbnds from stderr.
 					"{ set +x; } 2>/dev/null",
-					"{ set -eo pipefail; } 2>/dev/null",
+					"{ set -eo pipefbil; } 2>/dev/null",
 					fmt.Sprintf(`(exec "%s/step%d.sh" | tee %s/stdout%d.log) 3>&1 1>&2 2>&3 | tee %s/stderr%d.log`, runDirToScriptDir, i, runDirToScriptDir, i, runDirToScriptDir, i),
 				},
 			})
 
-			// This step gets the diff, reads stdout and stderr, renders the outputs and builds the AfterStepResult.
-			dockerSteps = append(dockerSteps, apiclient.DockerStep{
-				Key:   executorutil.FormatPostKey(i),
-				Image: helperImage,
-				Env:   secretEnvVars,
+			// This step gets the diff, rebds stdout bnd stderr, renders the outputs bnd builds the AfterStepResult.
+			dockerSteps = bppend(dockerSteps, bpiclient.DockerStep{
+				Key:   executorutil.FormbtPostKey(i),
+				Imbge: helperImbge,
+				Env:   secretEnvVbrs,
 				Dir:   ".",
-				Commands: []string{
-					shellquote.Join("batcheshelper", "post", strconv.Itoa(i)),
+				Commbnds: []string{
+					shellquote.Join("bbtcheshelper", "post", strconv.Itob(i)),
 				},
 			})
 
-			aj.DockerSteps = dockerSteps
+			bj.DockerSteps = dockerSteps
 		}
 	} else {
-		commands := []string{
-			"batch",
+		commbnds := []string{
+			"bbtch",
 			"exec",
-			"-f", srcInputPath,
+			"-f", srcInputPbth,
 			"-repo", srcRepoDir,
-			// Tell src to store tmp files inside the workspace. Src currently
-			// runs on the host and we don't want pollution outside of the workspace.
+			// Tell src to store tmp files inside the workspbce. Src currently
+			// runs on the host bnd we don't wbnt pollution outside of the workspbce.
 			"-tmp", srcTempDir,
 		}
 
 		if version != "" {
-			canUseBinaryDiffs, err := api.CheckSourcegraphVersion(version, ">= 4.3.0-0", "2022-11-29")
+			cbnUseBinbryDiffs, err := bpi.CheckSourcegrbphVersion(version, ">= 4.3.0-0", "2022-11-29")
 			if err != nil {
-				return apiclient.Job{}, err
+				return bpiclient.Job{}, err
 			}
-			if canUseBinaryDiffs {
-				// Enable binary diffs.
-				commands = append(commands, "-binaryDiffs")
+			if cbnUseBinbryDiffs {
+				// Enbble binbry diffs.
+				commbnds = bppend(commbnds, "-binbryDiffs")
 			}
 		}
 
-		// Only add the workspaceFiles flag if there are files to mount. This helps with backwards compatibility.
-		if len(workspaceFiles) > 0 {
-			commands = append(commands, "-workspaceFiles", srcWorkspaceFilesDir)
+		// Only bdd the workspbceFiles flbg if there bre files to mount. This helps with bbckwbrds compbtibility.
+		if len(workspbceFiles) > 0 {
+			commbnds = bppend(commbnds, "-workspbceFiles", srcWorkspbceFilesDir)
 		}
-		aj.CliSteps = []apiclient.CliStep{
+		bj.CliSteps = []bpiclient.CliStep{
 			{
-				Key:      "batch-exec",
-				Commands: commands,
+				Key:      "bbtch-exec",
+				Commbnds: commbnds,
 				Dir:      ".",
-				Env:      secretEnvVars,
+				Env:      secretEnvVbrs,
 			},
 		}
 	}
 
-	// Append docker auth config.
-	esStore := s.DatabaseDB().ExecutorSecrets(keyring.Default().ExecutorSecretKey)
-	secrets, _, err = esStore.List(ctx, database.ExecutorSecretScopeBatches, database.ExecutorSecretsListOpts{
-		NamespaceUserID: batchSpec.NamespaceUserID,
-		NamespaceOrgID:  batchSpec.NamespaceOrgID,
+	// Append docker buth config.
+	esStore := s.DbtbbbseDB().ExecutorSecrets(keyring.Defbult().ExecutorSecretKey)
+	secrets, _, err = esStore.List(ctx, dbtbbbse.ExecutorSecretScopeBbtches, dbtbbbse.ExecutorSecretsListOpts{
+		NbmespbceUserID: bbtchSpec.NbmespbceUserID,
+		NbmespbceOrgID:  bbtchSpec.NbmespbceOrgID,
 		Keys:            []string{"DOCKER_AUTH_CONFIG"},
 	})
 	if err != nil {
-		return apiclient.Job{}, err
+		return bpiclient.Job{}, err
 	}
 	if len(secrets) == 1 {
-		val, err := secrets[0].Value(ctx, s.DatabaseDB().ExecutorSecretAccessLogs())
+		vbl, err := secrets[0].Vblue(ctx, s.DbtbbbseDB().ExecutorSecretAccessLogs())
 		if err != nil {
-			return apiclient.Job{}, err
+			return bpiclient.Job{}, err
 		}
-		if err := json.Unmarshal([]byte(val), &aj.DockerAuthConfig); err != nil {
-			return aj, err
+		if err := json.Unmbrshbl([]byte(vbl), &bj.DockerAuthConfig); err != nil {
+			return bj, err
 		}
 	}
 
-	return aj, nil
+	return bj, nil
 }

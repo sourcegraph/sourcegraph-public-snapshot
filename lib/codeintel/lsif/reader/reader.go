@@ -1,45 +1,45 @@
-package reader
+pbckbge rebder
 
 import (
 	"context"
 	"io"
 
-	"github.com/sourcegraph/sourcegraph/lib/codeintel/lsif/protocol/reader"
+	"github.com/sourcegrbph/sourcegrbph/lib/codeintel/lsif/protocol/rebder"
 )
 
-// ElementMapper is the type of function that is invoked for each parsed element.
-type ElementMapper func(lineContext LineContext)
+// ElementMbpper is the type of function thbt is invoked for ebch pbrsed element.
+type ElementMbpper func(lineContext LineContext)
 
-// Read consumes the given reader as newline-delimited JSON-encoded LSIF. Each parsed vertex and each
-// parsed edge element is registered to the given Stasher. If vertex or edge mappers are supplied, they
-// are invoked on each parsed element.
-func Read(r io.Reader, stasher *Stasher, vertexMapper, edgeMapper ElementMapper) error {
+// Rebd consumes the given rebder bs newline-delimited JSON-encoded LSIF. Ebch pbrsed vertex bnd ebch
+// pbrsed edge element is registered to the given Stbsher. If vertex or edge mbppers bre supplied, they
+// bre invoked on ebch pbrsed element.
+func Rebd(r io.Rebder, stbsher *Stbsher, vertexMbpper, edgeMbpper ElementMbpper) error {
 	index := 0
-	for pair := range reader.Read(context.Background(), r) {
-		if pair.Err != nil {
-			return pair.Err
+	for pbir := rbnge rebder.Rebd(context.Bbckground(), r) {
+		if pbir.Err != nil {
+			return pbir.Err
 		}
 
 		index++
 		lineContext := LineContext{
 			Index:   index,
-			Element: pair.Element,
+			Element: pbir.Element,
 		}
 
-		if pair.Element.Type == "vertex" {
-			if vertexMapper != nil {
-				vertexMapper(lineContext)
+		if pbir.Element.Type == "vertex" {
+			if vertexMbpper != nil {
+				vertexMbpper(lineContext)
 			}
 
-			stasher.StashVertex(lineContext)
+			stbsher.StbshVertex(lineContext)
 		}
 
-		if pair.Element.Type == "edge" {
-			if edgeMapper != nil {
-				edgeMapper(lineContext)
+		if pbir.Element.Type == "edge" {
+			if edgeMbpper != nil {
+				edgeMbpper(lineContext)
 			}
 
-			stasher.StashEdge(lineContext)
+			stbsher.StbshEdge(lineContext)
 		}
 	}
 

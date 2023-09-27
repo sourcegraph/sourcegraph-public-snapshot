@@ -1,4 +1,4 @@
-package batches
+pbckbge bbtches
 
 import (
 	"context"
@@ -6,159 +6,159 @@ import (
 	"testing"
 	"time"
 
-	mockassert "github.com/derision-test/go-mockgen/testutil/assert"
+	mockbssert "github.com/derision-test/go-mockgen/testutil/bssert"
 	"github.com/google/go-cmp/cmp"
-	"gopkg.in/yaml.v2"
+	"gopkg.in/ybml.v2"
 
-	"github.com/sourcegraph/log/logtest"
+	"github.com/sourcegrbph/log/logtest"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	btypes "github.com/sourcegraph/sourcegraph/internal/batches/types"
-	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
-	apiclient "github.com/sourcegraph/sourcegraph/internal/executor/types"
-	"github.com/sourcegraph/sourcegraph/internal/types"
-	batcheslib "github.com/sourcegraph/sourcegraph/lib/batches"
-	"github.com/sourcegraph/sourcegraph/lib/batches/execution"
-	"github.com/sourcegraph/sourcegraph/lib/batches/template"
-	"github.com/sourcegraph/sourcegraph/schema"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/grbphqlbbckend"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi"
+	btypes "github.com/sourcegrbph/sourcegrbph/internbl/bbtches/types"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbmocks"
+	bpiclient "github.com/sourcegrbph/sourcegrbph/internbl/executor/types"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
+	bbtcheslib "github.com/sourcegrbph/sourcegrbph/lib/bbtches"
+	"github.com/sourcegrbph/sourcegrbph/lib/bbtches/execution"
+	"github.com/sourcegrbph/sourcegrbph/lib/bbtches/templbte"
+	"github.com/sourcegrbph/sourcegrbph/schemb"
 )
 
-func TestTransformRecord(t *testing.T) {
+func TestTrbnsformRecord(t *testing.T) {
 	db := dbmocks.NewMockDB()
 	repos := dbmocks.NewMockRepoStore()
-	repos.GetFunc.SetDefaultHook(func(ctx context.Context, id api.RepoID) (*types.Repo, error) {
-		return &types.Repo{ID: id, Name: "github.com/sourcegraph/sourcegraph"}, nil
+	repos.GetFunc.SetDefbultHook(func(ctx context.Context, id bpi.RepoID) (*types.Repo, error) {
+		return &types.Repo{ID: id, Nbme: "github.com/sourcegrbph/sourcegrbph"}, nil
 	})
-	db.ReposFunc.SetDefaultReturn(repos)
+	db.ReposFunc.SetDefbultReturn(repos)
 
-	conf.Mock(&conf.Unified{SiteConfiguration: schema.SiteConfiguration{ExternalURL: "https://test.io"}})
-	t.Cleanup(func() {
+	conf.Mock(&conf.Unified{SiteConfigurbtion: schemb.SiteConfigurbtion{ExternblURL: "https://test.io"}})
+	t.Clebnup(func() {
 		conf.Mock(nil)
 	})
 
 	secs := dbmocks.NewMockExecutorSecretStore()
-	secs.ListFunc.SetDefaultHook(func(ctx context.Context, ess database.ExecutorSecretScope, eslo database.ExecutorSecretsListOpts) ([]*database.ExecutorSecret, int, error) {
+	secs.ListFunc.SetDefbultHook(func(ctx context.Context, ess dbtbbbse.ExecutorSecretScope, eslo dbtbbbse.ExecutorSecretsListOpts) ([]*dbtbbbse.ExecutorSecret, int, error) {
 		if len(eslo.Keys) == 1 && eslo.Keys[0] == "DOCKER_AUTH_CONFIG" {
 			return nil, 0, nil
 		}
-		return []*database.ExecutorSecret{
-			database.NewMockExecutorSecret(&database.ExecutorSecret{
+		return []*dbtbbbse.ExecutorSecret{
+			dbtbbbse.NewMockExecutorSecret(&dbtbbbse.ExecutorSecret{
 				Key:       "FOO",
-				Scope:     database.ExecutorSecretScopeBatches,
-				CreatorID: 1,
-			}, "bar"),
+				Scope:     dbtbbbse.ExecutorSecretScopeBbtches,
+				CrebtorID: 1,
+			}, "bbr"),
 		}, 0, nil
 	})
-	db.ExecutorSecretsFunc.SetDefaultReturn(secs)
+	db.ExecutorSecretsFunc.SetDefbultReturn(secs)
 
-	sal := dbmocks.NewMockExecutorSecretAccessLogStore()
-	db.ExecutorSecretAccessLogsFunc.SetDefaultReturn(sal)
+	sbl := dbmocks.NewMockExecutorSecretAccessLogStore()
+	db.ExecutorSecretAccessLogsFunc.SetDefbultReturn(sbl)
 
-	spec := batcheslib.BatchSpec{}
-	err := yaml.Unmarshal([]byte(`
+	spec := bbtcheslib.BbtchSpec{}
+	err := ybml.Unmbrshbl([]byte(`
 steps:
-  - run: echo lol >> readme.md
-    container: alpine:3
+  - run: echo lol >> rebdme.md
+    contbiner: blpine:3
     env:
       - FOO
-  - run: echo more lol >> readme.md
-    container: alpine:3
+  - run: echo more lol >> rebdme.md
+    contbiner: blpine:3
 `), &spec)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	batchSpec := &btypes.BatchSpec{
-		RandID:          "abc",
+	bbtchSpec := &btypes.BbtchSpec{
+		RbndID:          "bbc",
 		UserID:          123,
-		NamespaceUserID: 123,
-		RawSpec:         "horse",
+		NbmespbceUserID: 123,
+		RbwSpec:         "horse",
 		Spec:            &spec,
 	}
 
-	workspace := &btypes.BatchSpecWorkspace{
-		BatchSpecID:        batchSpec.ID,
-		ChangesetSpecIDs:   []int64{},
+	workspbce := &btypes.BbtchSpecWorkspbce{
+		BbtchSpecID:        bbtchSpec.ID,
+		ChbngesetSpecIDs:   []int64{},
 		RepoID:             5678,
-		Branch:             "refs/heads/base-branch",
+		Brbnch:             "refs/hebds/bbse-brbnch",
 		Commit:             "d34db33f",
-		Path:               "a/b/c",
-		FileMatches:        []string{"a/b/c/foobar.go"},
-		OnlyFetchWorkspace: true,
-		StepCacheResults: map[int]btypes.StepCacheResult{
+		Pbth:               "b/b/c",
+		FileMbtches:        []string{"b/b/c/foobbr.go"},
+		OnlyFetchWorkspbce: true,
+		StepCbcheResults: mbp[int]btypes.StepCbcheResult{
 			1: {
-				Key: "testcachekey",
-				Value: &execution.AfterStepResult{
+				Key: "testcbchekey",
+				Vblue: &execution.AfterStepResult{
 					Diff: []byte("123"),
 				},
 			},
 		},
 	}
 
-	workspaceExecutionJob := &btypes.BatchSpecWorkspaceExecutionJob{
+	workspbceExecutionJob := &btypes.BbtchSpecWorkspbceExecutionJob{
 		ID:                   42,
-		BatchSpecWorkspaceID: workspace.ID,
+		BbtchSpecWorkspbceID: workspbce.ID,
 		UserID:               123,
 	}
 
-	store := NewMockBatchesStore()
-	store.GetBatchSpecFunc.SetDefaultReturn(batchSpec, nil)
-	store.GetBatchSpecWorkspaceFunc.SetDefaultReturn(workspace, nil)
-	store.DatabaseDBFunc.SetDefaultReturn(db)
+	store := NewMockBbtchesStore()
+	store.GetBbtchSpecFunc.SetDefbultReturn(bbtchSpec, nil)
+	store.GetBbtchSpecWorkspbceFunc.SetDefbultReturn(workspbce, nil)
+	store.DbtbbbseDBFunc.SetDefbultReturn(db)
 
-	wantInput := func(cachedStepResultFound bool, cachedStepResult execution.AfterStepResult) batcheslib.WorkspacesExecutionInput {
-		return batcheslib.WorkspacesExecutionInput{
-			BatchChangeAttributes: template.BatchChangeAttributes{
-				Name:        batchSpec.Spec.Name,
-				Description: batchSpec.Spec.Description,
+	wbntInput := func(cbchedStepResultFound bool, cbchedStepResult execution.AfterStepResult) bbtcheslib.WorkspbcesExecutionInput {
+		return bbtcheslib.WorkspbcesExecutionInput{
+			BbtchChbngeAttributes: templbte.BbtchChbngeAttributes{
+				Nbme:        bbtchSpec.Spec.Nbme,
+				Description: bbtchSpec.Spec.Description,
 			},
-			Repository: batcheslib.WorkspaceRepo{
-				ID:   string(graphqlbackend.MarshalRepositoryID(workspace.RepoID)),
-				Name: "github.com/sourcegraph/sourcegraph",
+			Repository: bbtcheslib.WorkspbceRepo{
+				ID:   string(grbphqlbbckend.MbrshblRepositoryID(workspbce.RepoID)),
+				Nbme: "github.com/sourcegrbph/sourcegrbph",
 			},
-			Branch: batcheslib.WorkspaceBranch{
-				Name:   workspace.Branch,
-				Target: batcheslib.Commit{OID: workspace.Commit},
+			Brbnch: bbtcheslib.WorkspbceBrbnch{
+				Nbme:   workspbce.Brbnch,
+				Tbrget: bbtcheslib.Commit{OID: workspbce.Commit},
 			},
-			Path:                  workspace.Path,
-			OnlyFetchWorkspace:    workspace.OnlyFetchWorkspace,
-			Steps:                 batchSpec.Spec.Steps,
-			SearchResultPaths:     workspace.FileMatches,
-			CachedStepResultFound: cachedStepResultFound,
-			CachedStepResult:      cachedStepResult,
-			SkippedSteps:          make(map[int]struct{}),
+			Pbth:                  workspbce.Pbth,
+			OnlyFetchWorkspbce:    workspbce.OnlyFetchWorkspbce,
+			Steps:                 bbtchSpec.Spec.Steps,
+			SebrchResultPbths:     workspbce.FileMbtches,
+			CbchedStepResultFound: cbchedStepResultFound,
+			CbchedStepResult:      cbchedStepResult,
+			SkippedSteps:          mbke(mbp[int]struct{}),
 		}
 	}
 
-	t.Run("with cache entry", func(t *testing.T) {
-		job, err := transformRecord(context.Background(), logtest.Scoped(t), store, workspaceExecutionJob, "0.0.0-dev")
+	t.Run("with cbche entry", func(t *testing.T) {
+		job, err := trbnsformRecord(context.Bbckground(), logtest.Scoped(t), store, workspbceExecutionJob, "0.0.0-dev")
 		if err != nil {
-			t.Fatalf("unexpected error transforming record: %s", err)
+			t.Fbtblf("unexpected error trbnsforming record: %s", err)
 		}
 
-		marshaledInput, err := json.Marshal(wantInput(true, execution.AfterStepResult{Diff: []byte("123")}))
+		mbrshbledInput, err := json.Mbrshbl(wbntInput(true, execution.AfterStepResult{Diff: []byte("123")}))
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
 
-		expected := apiclient.Job{
-			ID:                  int(workspaceExecutionJob.ID),
-			RepositoryName:      "github.com/sourcegraph/sourcegraph",
+		expected := bpiclient.Job{
+			ID:                  int(workspbceExecutionJob.ID),
+			RepositoryNbme:      "github.com/sourcegrbph/sourcegrbph",
 			RepositoryDirectory: "repository",
-			Commit:              workspace.Commit,
-			ShallowClone:        true,
-			SparseCheckout:      []string{"a/b/c/*"},
-			VirtualMachineFiles: map[string]apiclient.VirtualMachineFile{
-				"input.json": {Content: marshaledInput},
+			Commit:              workspbce.Commit,
+			ShbllowClone:        true,
+			SpbrseCheckout:      []string{"b/b/c/*"},
+			VirtublMbchineFiles: mbp[string]bpiclient.VirtublMbchineFile{
+				"input.json": {Content: mbrshbledInput},
 			},
-			CliSteps: []apiclient.CliStep{
+			CliSteps: []bpiclient.CliStep{
 				{
-					Key: "batch-exec",
-					Commands: []string{
-						"batch",
+					Key: "bbtch-exec",
+					Commbnds: []string{
+						"bbtch",
 						"exec",
 						"-f",
 						"input.json",
@@ -169,55 +169,55 @@ steps:
 					},
 					Dir: ".",
 					Env: []string{
-						"FOO=bar",
+						"FOO=bbr",
 					},
 				},
 			},
-			RedactedValues: map[string]string{
-				"bar": "${{ secrets.FOO }}",
+			RedbctedVblues: mbp[string]string{
+				"bbr": "${{ secrets.FOO }}",
 			},
 		}
 		if diff := cmp.Diff(expected, job); diff != "" {
-			t.Errorf("unexpected job (-want +got):\n%s", diff)
+			t.Errorf("unexpected job (-wbnt +got):\n%s", diff)
 		}
 
-		mockassert.CalledN(t, secs.ListFunc, 2)
-		mockassert.CalledOnce(t, sal.CreateFunc)
+		mockbssert.CblledN(t, secs.ListFunc, 2)
+		mockbssert.CblledOnce(t, sbl.CrebteFunc)
 	})
 
-	t.Run("with cache disabled", func(t *testing.T) {
+	t.Run("with cbche disbbled", func(t *testing.T) {
 		// Copy.
-		workspace := *workspace
-		workspace.CachedResultFound = false
-		workspace.StepCacheResults = map[int]btypes.StepCacheResult{}
-		workspace.ChangesetSpecIDs = []int64{}
-		store.GetBatchSpecWorkspaceFunc.PushReturn(&workspace, nil)
+		workspbce := *workspbce
+		workspbce.CbchedResultFound = fblse
+		workspbce.StepCbcheResults = mbp[int]btypes.StepCbcheResult{}
+		workspbce.ChbngesetSpecIDs = []int64{}
+		store.GetBbtchSpecWorkspbceFunc.PushReturn(&workspbce, nil)
 
-		job, err := transformRecord(context.Background(), logtest.Scoped(t), store, workspaceExecutionJob, "0.0.0-dev")
+		job, err := trbnsformRecord(context.Bbckground(), logtest.Scoped(t), store, workspbceExecutionJob, "0.0.0-dev")
 		if err != nil {
-			t.Fatalf("unexpected error transforming record: %s", err)
+			t.Fbtblf("unexpected error trbnsforming record: %s", err)
 		}
 
-		marshaledInput, err := json.Marshal(wantInput(false, execution.AfterStepResult{}))
+		mbrshbledInput, err := json.Mbrshbl(wbntInput(fblse, execution.AfterStepResult{}))
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
 
-		expected := apiclient.Job{
-			ID:                  int(workspaceExecutionJob.ID),
-			RepositoryName:      "github.com/sourcegraph/sourcegraph",
+		expected := bpiclient.Job{
+			ID:                  int(workspbceExecutionJob.ID),
+			RepositoryNbme:      "github.com/sourcegrbph/sourcegrbph",
 			RepositoryDirectory: "repository",
-			Commit:              workspace.Commit,
-			ShallowClone:        true,
-			SparseCheckout:      []string{"a/b/c/*"},
-			VirtualMachineFiles: map[string]apiclient.VirtualMachineFile{
-				"input.json": {Content: marshaledInput},
+			Commit:              workspbce.Commit,
+			ShbllowClone:        true,
+			SpbrseCheckout:      []string{"b/b/c/*"},
+			VirtublMbchineFiles: mbp[string]bpiclient.VirtublMbchineFile{
+				"input.json": {Content: mbrshbledInput},
 			},
-			CliSteps: []apiclient.CliStep{
+			CliSteps: []bpiclient.CliStep{
 				{
-					Key: "batch-exec",
-					Commands: []string{
-						"batch",
+					Key: "bbtch-exec",
+					Commbnds: []string{
+						"bbtch",
 						"exec",
 						"-f",
 						"input.json",
@@ -228,68 +228,68 @@ steps:
 					},
 					Dir: ".",
 					Env: []string{
-						"FOO=bar",
+						"FOO=bbr",
 					},
 				},
 			},
-			RedactedValues: map[string]string{
-				"bar": "${{ secrets.FOO }}",
+			RedbctedVblues: mbp[string]string{
+				"bbr": "${{ secrets.FOO }}",
 			},
 		}
 		if diff := cmp.Diff(expected, job); diff != "" {
-			t.Errorf("unexpected job (-want +got):\n%s", diff)
+			t.Errorf("unexpected job (-wbnt +got):\n%s", diff)
 		}
 
-		mockassert.CalledN(t, secs.ListFunc, 4)
-		mockassert.CalledN(t, sal.CreateFunc, 2)
+		mockbssert.CblledN(t, secs.ListFunc, 4)
+		mockbssert.CblledN(t, sbl.CrebteFunc, 2)
 	})
 
-	t.Run("with docker auth config", func(t *testing.T) {
+	t.Run("with docker buth config", func(t *testing.T) {
 		// Copy.
-		workspace := *workspace
-		workspace.CachedResultFound = false
-		workspace.StepCacheResults = map[int]btypes.StepCacheResult{}
-		workspace.ChangesetSpecIDs = []int64{}
-		store.GetBatchSpecWorkspaceFunc.PushReturn(&workspace, nil)
+		workspbce := *workspbce
+		workspbce.CbchedResultFound = fblse
+		workspbce.StepCbcheResults = mbp[int]btypes.StepCbcheResult{}
+		workspbce.ChbngesetSpecIDs = []int64{}
+		store.GetBbtchSpecWorkspbceFunc.PushReturn(&workspbce, nil)
 
-		secs.ListFunc.PushReturn(secs.List(context.Background(), database.ExecutorSecretScopeBatches, database.ExecutorSecretsListOpts{}))
+		secs.ListFunc.PushReturn(secs.List(context.Bbckground(), dbtbbbse.ExecutorSecretScopeBbtches, dbtbbbse.ExecutorSecretsListOpts{}))
 		secs.ListFunc.PushReturn(
-			[]*database.ExecutorSecret{
-				database.NewMockExecutorSecret(&database.ExecutorSecret{
+			[]*dbtbbbse.ExecutorSecret{
+				dbtbbbse.NewMockExecutorSecret(&dbtbbbse.ExecutorSecret{
 					Key:       "DOCKER_AUTH_CONFIG",
-					Scope:     database.ExecutorSecretScopeBatches,
-					CreatorID: 1,
-				}, `{"auths": { "hub.docker.com": { "auth": "aHVudGVyOmh1bnRlcjI=" }}}`),
+					Scope:     dbtbbbse.ExecutorSecretScopeBbtches,
+					CrebtorID: 1,
+				}, `{"buths": { "hub.docker.com": { "buth": "bHVudGVyOmh1bnRlcjI=" }}}`),
 			},
 			0,
 			nil,
 		)
 
-		job, err := transformRecord(context.Background(), logtest.Scoped(t), store, workspaceExecutionJob, "0.0.0-dev")
+		job, err := trbnsformRecord(context.Bbckground(), logtest.Scoped(t), store, workspbceExecutionJob, "0.0.0-dev")
 		if err != nil {
-			t.Fatalf("unexpected error transforming record: %s", err)
+			t.Fbtblf("unexpected error trbnsforming record: %s", err)
 		}
 
-		marshaledInput, err := json.Marshal(wantInput(false, execution.AfterStepResult{}))
+		mbrshbledInput, err := json.Mbrshbl(wbntInput(fblse, execution.AfterStepResult{}))
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
 
-		expected := apiclient.Job{
-			ID:                  int(workspaceExecutionJob.ID),
-			RepositoryName:      "github.com/sourcegraph/sourcegraph",
+		expected := bpiclient.Job{
+			ID:                  int(workspbceExecutionJob.ID),
+			RepositoryNbme:      "github.com/sourcegrbph/sourcegrbph",
 			RepositoryDirectory: "repository",
-			Commit:              workspace.Commit,
-			ShallowClone:        true,
-			SparseCheckout:      []string{"a/b/c/*"},
-			VirtualMachineFiles: map[string]apiclient.VirtualMachineFile{
-				"input.json": {Content: marshaledInput},
+			Commit:              workspbce.Commit,
+			ShbllowClone:        true,
+			SpbrseCheckout:      []string{"b/b/c/*"},
+			VirtublMbchineFiles: mbp[string]bpiclient.VirtublMbchineFile{
+				"input.json": {Content: mbrshbledInput},
 			},
-			CliSteps: []apiclient.CliStep{
+			CliSteps: []bpiclient.CliStep{
 				{
-					Key: "batch-exec",
-					Commands: []string{
-						"batch",
+					Key: "bbtch-exec",
+					Commbnds: []string{
+						"bbtch",
 						"exec",
 						"-f",
 						"input.json",
@@ -300,75 +300,75 @@ steps:
 					},
 					Dir: ".",
 					Env: []string{
-						"FOO=bar",
+						"FOO=bbr",
 					},
 				},
 			},
-			RedactedValues: map[string]string{
-				"bar": "${{ secrets.FOO }}",
+			RedbctedVblues: mbp[string]string{
+				"bbr": "${{ secrets.FOO }}",
 			},
-			DockerAuthConfig: apiclient.DockerAuthConfig{
-				Auths: apiclient.DockerAuthConfigAuths{
-					"hub.docker.com": apiclient.DockerAuthConfigAuth{
+			DockerAuthConfig: bpiclient.DockerAuthConfig{
+				Auths: bpiclient.DockerAuthConfigAuths{
+					"hub.docker.com": bpiclient.DockerAuthConfigAuth{
 						Auth: []byte("hunter:hunter2"),
 					},
 				},
 			},
 		}
 		if diff := cmp.Diff(expected, job); diff != "" {
-			t.Errorf("unexpected job (-want +got):\n%s", diff)
+			t.Errorf("unexpected job (-wbnt +got):\n%s", diff)
 		}
 
-		mockassert.CalledN(t, secs.ListFunc, 7)
-		mockassert.CalledN(t, sal.CreateFunc, 4)
+		mockbssert.CblledN(t, secs.ListFunc, 7)
+		mockbssert.CblledN(t, sbl.CrebteFunc, 4)
 	})
 
-	t.Run("workspace file", func(t *testing.T) {
-		t.Cleanup(func() {
-			store.ListBatchSpecWorkspaceFilesFunc.SetDefaultReturn(nil, 0, nil)
+	t.Run("workspbce file", func(t *testing.T) {
+		t.Clebnup(func() {
+			store.ListBbtchSpecWorkspbceFilesFunc.SetDefbultReturn(nil, 0, nil)
 		})
 
-		workspaceFileModifiedAt := time.Now()
-		store.ListBatchSpecWorkspaceFilesFunc.SetDefaultReturn(
-			[]*btypes.BatchSpecWorkspaceFile{
+		workspbceFileModifiedAt := time.Now()
+		store.ListBbtchSpecWorkspbceFilesFunc.SetDefbultReturn(
+			[]*btypes.BbtchSpecWorkspbceFile{
 				{
-					RandID:     "xyz",
-					FileName:   "script.sh",
-					Path:       "foo/bar",
+					RbndID:     "xyz",
+					FileNbme:   "script.sh",
+					Pbth:       "foo/bbr",
 					Size:       12,
-					ModifiedAt: workspaceFileModifiedAt,
+					ModifiedAt: workspbceFileModifiedAt,
 				},
 			},
 			0,
 			nil,
 		)
 
-		job, err := transformRecord(context.Background(), logtest.Scoped(t), store, workspaceExecutionJob, "0.0.0-dev")
+		job, err := trbnsformRecord(context.Bbckground(), logtest.Scoped(t), store, workspbceExecutionJob, "0.0.0-dev")
 		if err != nil {
-			t.Fatalf("unexpected error transforming record: %s", err)
+			t.Fbtblf("unexpected error trbnsforming record: %s", err)
 		}
 
-		marshaledInput, err := json.Marshal(wantInput(true, execution.AfterStepResult{Diff: []byte("123")}))
+		mbrshbledInput, err := json.Mbrshbl(wbntInput(true, execution.AfterStepResult{Diff: []byte("123")}))
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
 
-		expected := apiclient.Job{
-			ID:                  int(workspaceExecutionJob.ID),
-			RepositoryName:      "github.com/sourcegraph/sourcegraph",
+		expected := bpiclient.Job{
+			ID:                  int(workspbceExecutionJob.ID),
+			RepositoryNbme:      "github.com/sourcegrbph/sourcegrbph",
 			RepositoryDirectory: "repository",
-			Commit:              workspace.Commit,
-			ShallowClone:        true,
-			SparseCheckout:      []string{"a/b/c/*"},
-			VirtualMachineFiles: map[string]apiclient.VirtualMachineFile{
-				"input.json":                        {Content: marshaledInput},
-				"workspace-files/foo/bar/script.sh": {Bucket: "batch-changes", Key: "abc/xyz", ModifiedAt: workspaceFileModifiedAt},
+			Commit:              workspbce.Commit,
+			ShbllowClone:        true,
+			SpbrseCheckout:      []string{"b/b/c/*"},
+			VirtublMbchineFiles: mbp[string]bpiclient.VirtublMbchineFile{
+				"input.json":                        {Content: mbrshbledInput},
+				"workspbce-files/foo/bbr/script.sh": {Bucket: "bbtch-chbnges", Key: "bbc/xyz", ModifiedAt: workspbceFileModifiedAt},
 			},
-			CliSteps: []apiclient.CliStep{
+			CliSteps: []bpiclient.CliStep{
 				{
-					Key: "batch-exec",
-					Commands: []string{
-						"batch",
+					Key: "bbtch-exec",
+					Commbnds: []string{
+						"bbtch",
 						"exec",
 						"-f",
 						"input.json",
@@ -376,24 +376,24 @@ steps:
 						"repository",
 						"-tmp",
 						".src-tmp",
-						"-workspaceFiles",
-						"workspace-files",
+						"-workspbceFiles",
+						"workspbce-files",
 					},
 					Dir: ".",
 					Env: []string{
-						"FOO=bar",
+						"FOO=bbr",
 					},
 				},
 			},
-			RedactedValues: map[string]string{
-				"bar": "${{ secrets.FOO }}",
+			RedbctedVblues: mbp[string]string{
+				"bbr": "${{ secrets.FOO }}",
 			},
 		}
 		if diff := cmp.Diff(expected, job); diff != "" {
-			t.Errorf("unexpected job (-want +got):\n%s", diff)
+			t.Errorf("unexpected job (-wbnt +got):\n%s", diff)
 		}
 
-		mockassert.CalledN(t, secs.ListFunc, 9)
-		mockassert.CalledN(t, sal.CreateFunc, 5)
+		mockbssert.CblledN(t, secs.ListFunc, 9)
+		mockbssert.CblledN(t, sbl.CrebteFunc, 5)
 	})
 }

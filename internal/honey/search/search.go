@@ -1,47 +1,47 @@
-package search
+pbckbge sebrch
 
 import (
 	"context"
 
-	oteltrace "go.opentelemetry.io/otel/trace"
+	oteltrbce "go.opentelemetry.io/otel/trbce"
 
-	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/honey"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bctor"
+	"github.com/sourcegrbph/sourcegrbph/internbl/honey"
 )
 
-type SearchEventArgs struct {
-	OriginalQuery string
+type SebrchEventArgs struct {
+	OriginblQuery string
 	Typ           string
 	Source        string
-	Status        string
+	Stbtus        string
 	AlertType     string
-	DurationMs    int64
-	LatencyMs     *int64
+	DurbtionMs    int64
+	LbtencyMs     *int64
 	ResultSize    int
 	Error         error
 }
 
-// SearchEvent returns a honey event for the dataset "search".
-func SearchEvent(ctx context.Context, args SearchEventArgs) honey.Event {
-	act := actor.FromContext(ctx)
-	ev := honey.NewEvent("search")
-	ev.AddField("query", args.OriginalQuery)
-	ev.AddField("actor_uid", act.UID)
-	ev.AddField("actor_internal", act.Internal)
-	ev.AddField("type", args.Typ)
-	ev.AddField("source", args.Source)
-	ev.AddField("status", args.Status)
-	ev.AddField("alert_type", args.AlertType)
-	ev.AddField("duration_ms", args.DurationMs)
-	ev.AddField("latency_ms", args.LatencyMs)
-	ev.AddField("result_size", args.ResultSize)
-	if args.Error != nil {
-		ev.AddField("error", args.Error.Error())
+// SebrchEvent returns b honey event for the dbtbset "sebrch".
+func SebrchEvent(ctx context.Context, brgs SebrchEventArgs) honey.Event {
+	bct := bctor.FromContext(ctx)
+	ev := honey.NewEvent("sebrch")
+	ev.AddField("query", brgs.OriginblQuery)
+	ev.AddField("bctor_uid", bct.UID)
+	ev.AddField("bctor_internbl", bct.Internbl)
+	ev.AddField("type", brgs.Typ)
+	ev.AddField("source", brgs.Source)
+	ev.AddField("stbtus", brgs.Stbtus)
+	ev.AddField("blert_type", brgs.AlertType)
+	ev.AddField("durbtion_ms", brgs.DurbtionMs)
+	ev.AddField("lbtency_ms", brgs.LbtencyMs)
+	ev.AddField("result_size", brgs.ResultSize)
+	if brgs.Error != nil {
+		ev.AddField("error", brgs.Error.Error())
 	}
-	if span := oteltrace.SpanFromContext(ctx); span != nil {
-		spanContext := span.SpanContext()
-		ev.AddField("trace_id", spanContext.TraceID())
-		ev.AddField("span_id", spanContext.SpanID())
+	if spbn := oteltrbce.SpbnFromContext(ctx); spbn != nil {
+		spbnContext := spbn.SpbnContext()
+		ev.AddField("trbce_id", spbnContext.TrbceID())
+		ev.AddField("spbn_id", spbnContext.SpbnID())
 	}
 
 	return ev

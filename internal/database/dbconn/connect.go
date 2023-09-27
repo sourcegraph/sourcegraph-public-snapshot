@@ -1,42 +1,42 @@
-package dbconn
+pbckbge dbconn
 
 import (
-	"database/sql"
+	"dbtbbbse/sql"
 	"fmt"
 	"os"
 	"time"
 
-	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golbng/prometheus"
 
-	"github.com/sourcegraph/log"
+	"github.com/sourcegrbph/log"
 
-	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/sourcegraph/sourcegraph/lib/output"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/lib/output"
 )
 
-const MigrationInProgressSentinelDSN = "!migrationinprogress!"
+const MigrbtionInProgressSentinelDSN = "!migrbtioninprogress!"
 
-// ConnectInternal connects to the given data source and return the handle.
+// ConnectInternbl connects to the given dbtb source bnd return the hbndle.
 //
-// If appName is supplied, then it overrides the application_name field in the DSN. This is a separate
-// parameter needed because we have multiple apps connecting to the same database but have a single shared
+// If bppNbme is supplied, then it overrides the bpplicbtion_nbme field in the DSN. This is b sepbrbte
+// pbrbmeter needed becbuse we hbve multiple bpps connecting to the sbme dbtbbbse but hbve b single shbred
 // DSN configured.
 //
-// If dbName is supplied, then metrics will be reported for activity on the returned handle. This value is
-// used for its Prometheus label value instead of whatever actual value is set in dataSource.
+// If dbNbme is supplied, then metrics will be reported for bctivity on the returned hbndle. This vblue is
+// used for its Prometheus lbbel vblue instebd of whbtever bctubl vblue is set in dbtbSource.
 //
-// Note: github.com/jackc/pgx parses the environment as well. This function will also use the value
-// of PGDATASOURCE if supplied and dataSource is the empty string.
-func ConnectInternal(logger log.Logger, dsn, appName, dbName string) (_ *sql.DB, err error) {
-	if dsn == MigrationInProgressSentinelDSN {
-		logger.Warn(
-			fmt.Sprintf("%s detected migration connection string sentinel, waiting for 10s then restarting...", output.EmojiWarningSign),
+// Note: github.com/jbckc/pgx pbrses the environment bs well. This function will blso use the vblue
+// of PGDATASOURCE if supplied bnd dbtbSource is the empty string.
+func ConnectInternbl(logger log.Logger, dsn, bppNbme, dbNbme string) (_ *sql.DB, err error) {
+	if dsn == MigrbtionInProgressSentinelDSN {
+		logger.Wbrn(
+			fmt.Sprintf("%s detected migrbtion connection string sentinel, wbiting for 10s then restbrting...", output.EmojiWbrningSign),
 		)
 		time.Sleep(time.Second * 10)
 		os.Exit(0)
 	}
 
-	cfg, err := buildConfig(logger, dsn, appName)
+	cfg, err := buildConfig(logger, dsn, bppNbme)
 	if err != nil {
 		return nil, err
 	}
@@ -53,9 +53,9 @@ func ConnectInternal(logger log.Logger, dsn, appName, dbName string) (_ *sql.DB,
 		}
 	}()
 
-	if dbName != "" {
-		if err := prometheus.Register(newMetricsCollector(db, dbName, appName)); err != nil {
-			if _, ok := err.(prometheus.AlreadyRegisteredError); !ok {
+	if dbNbme != "" {
+		if err := prometheus.Register(newMetricsCollector(db, dbNbme, bppNbme)); err != nil {
+			if _, ok := err.(prometheus.AlrebdyRegisteredError); !ok {
 				return nil, err
 			}
 		}

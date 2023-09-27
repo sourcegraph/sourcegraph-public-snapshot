@@ -1,21 +1,21 @@
-package graphqlbackend
+pbckbge grbphqlbbckend
 
 import (
 	"context"
 	"fmt"
 	"testing"
 
-	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
-	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bctor"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbmocks"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
 )
 
-func TestAutocompleteMembersSearch(t *testing.T) {
+func TestAutocompleteMembersSebrch(t *testing.T) {
 	users := dbmocks.NewMockUserStore()
-	users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{ID: 1}, nil)
+	users.GetByCurrentAuthUserFunc.SetDefbultReturn(&types.User{ID: 1}, nil)
 
 	orgMembers := dbmocks.NewMockOrgMemberStore()
-	autocompleteResults := []*types.OrgMemberAutocompleteSearchItem{
+	butocompleteResults := []*types.OrgMemberAutocompleteSebrchItem{
 		{
 			ID:    1,
 			InOrg: 1,
@@ -29,45 +29,45 @@ func TestAutocompleteMembersSearch(t *testing.T) {
 			InOrg: 0,
 		},
 	}
-	orgMembers.AutocompleteMembersSearchFunc.SetDefaultReturn(autocompleteResults, nil)
+	orgMembers.AutocompleteMembersSebrchFunc.SetDefbultReturn(butocompleteResults, nil)
 
 	db := dbmocks.NewMockDB()
-	//db.OrgsFunc.SetDefaultReturn(orgs)
-	db.UsersFunc.SetDefaultReturn(users)
-	db.OrgMembersFunc.SetDefaultReturn(orgMembers)
+	//db.OrgsFunc.SetDefbultReturn(orgs)
+	db.UsersFunc.SetDefbultReturn(users)
+	db.OrgMembersFunc.SetDefbultReturn(orgMembers)
 
-	ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
+	ctx := bctor.WithActor(context.Bbckground(), &bctor.Actor{UID: 1})
 
 	t.Run("Returns expected results in the response", func(t *testing.T) {
 		RunTests(t, []*Test{
 			{
-				Schema:  mustParseGraphQLSchema(t, db),
+				Schemb:  mustPbrseGrbphQLSchemb(t, db),
 				Context: ctx,
 				Query: `
-				query AutocompleteMembersSearch($organization: ID!, $query: String!) {
-					autocompleteMembersSearch(organization: $organization, query: $query) {
+				query AutocompleteMembersSebrch($orgbnizbtion: ID!, $query: String!) {
+					butocompleteMembersSebrch(orgbnizbtion: $orgbnizbtion, query: $query) {
 						id
 						inOrg
 					}
 				}
 				`,
-				Variables: map[string]any{
-					"organization": string(MarshalOrgID(1)),
+				Vbribbles: mbp[string]bny{
+					"orgbnizbtion": string(MbrshblOrgID(1)),
 					"query":        "test",
 				},
 				ExpectedResult: fmt.Sprintf(`{
-					"autocompleteMembersSearch": [
+					"butocompleteMembersSebrch": [
 						{ "id": "%s","inOrg": %t },
 						{ "id": "%s","inOrg": %t },
 						{ "id": "%s","inOrg": %t }
 					]
 				}`,
-					string(MarshalUserID(autocompleteResults[0].ID)),
+					string(MbrshblUserID(butocompleteResults[0].ID)),
 					true,
-					string(MarshalUserID(autocompleteResults[1].ID)),
-					false,
-					string(MarshalUserID(autocompleteResults[2].ID)),
-					false),
+					string(MbrshblUserID(butocompleteResults[1].ID)),
+					fblse,
+					string(MbrshblUserID(butocompleteResults[2].ID)),
+					fblse),
 			},
 		})
 	})

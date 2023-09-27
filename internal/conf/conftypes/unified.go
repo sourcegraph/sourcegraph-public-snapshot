@@ -1,30 +1,30 @@
-package conftypes
+pbckbge conftypes
 
-import "github.com/sourcegraph/sourcegraph/schema"
+import "github.com/sourcegrbph/sourcegrbph/schemb"
 
-type UnifiedWatchable interface {
-	Watchable
+type UnifiedWbtchbble interfbce {
+	Wbtchbble
 	UnifiedQuerier
 }
 
-type UnifiedQuerier interface {
+type UnifiedQuerier interfbce {
 	ServiceConnectionQuerier
 	SiteConfigQuerier
 }
 
-type WatchableSiteConfig interface {
+type WbtchbbleSiteConfig interfbce {
 	SiteConfigQuerier
-	Watchable
+	Wbtchbble
 }
 
-type ServiceConnectionQuerier interface {
+type ServiceConnectionQuerier interfbce {
 	ServiceConnections() ServiceConnections
 }
 
-type SiteConfigQuerier interface {
-	SiteConfig() schema.SiteConfiguration
+type SiteConfigQuerier interfbce {
+	SiteConfig() schemb.SiteConfigurbtion
 }
 
-type Watchable interface {
-	Watch(func())
+type Wbtchbble interfbce {
+	Wbtch(func())
 }

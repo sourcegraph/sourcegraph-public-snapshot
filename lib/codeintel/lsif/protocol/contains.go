@@ -1,19 +1,19 @@
-package protocol
+pbckbge protocol
 
-type Contains struct {
+type Contbins struct {
 	Edge
 	OutV uint64   `json:"outV"`
 	InVs []uint64 `json:"inVs"`
 }
 
-func NewContains(id, outV uint64, inVs []uint64) Contains {
-	return Contains{
+func NewContbins(id, outV uint64, inVs []uint64) Contbins {
+	return Contbins{
 		Edge: Edge{
 			Element: Element{
 				ID:   id,
 				Type: ElementEdge,
 			},
-			Label: EdgeContains,
+			Lbbel: EdgeContbins,
 		},
 		OutV: outV,
 		InVs: inVs,

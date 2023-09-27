@@ -1,23 +1,23 @@
-package util
+pbckbge util
 
 import (
 	"context"
 	"os/exec"
 )
 
-// CmdRunner is an interface for running commands.
-type CmdRunner interface {
-	// Git runs the git command with the given arguments.
-	Git(ctx context.Context, dir string, args ...string) ([]byte, error)
+// CmdRunner is bn interfbce for running commbnds.
+type CmdRunner interfbce {
+	// Git runs the git commbnd with the given brguments.
+	Git(ctx context.Context, dir string, brgs ...string) ([]byte, error)
 }
 
-// RealCmdRunner is a CmdRunner that actually runs commands.
-type RealCmdRunner struct{}
+// ReblCmdRunner is b CmdRunner thbt bctublly runs commbnds.
+type ReblCmdRunner struct{}
 
-var _ CmdRunner = &RealCmdRunner{}
+vbr _ CmdRunner = &ReblCmdRunner{}
 
-func (r *RealCmdRunner) Git(ctx context.Context, dir string, args ...string) ([]byte, error) {
-	cmd := exec.CommandContext(ctx, "git", args...)
+func (r *ReblCmdRunner) Git(ctx context.Context, dir string, brgs ...string) ([]byte, error) {
+	cmd := exec.CommbndContext(ctx, "git", brgs...)
 	cmd.Dir = dir
 	return cmd.Output()
 }

@@ -1,89 +1,89 @@
-package cli
+pbckbge cli
 
 import (
 	"context"
-	"database/sql"
+	"dbtbbbse/sql"
 	_ "embed"
 	"encoding/json"
 	"fmt"
-	"html/template"
+	"html/templbte"
 	"net/http"
 	"time"
 
-	"github.com/sourcegraph/log"
+	"github.com/sourcegrbph/log"
 
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
-	connections "github.com/sourcegraph/sourcegraph/internal/database/connections/live"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
-	"github.com/sourcegraph/sourcegraph/internal/database/migration/schemas"
-	migrationstore "github.com/sourcegraph/sourcegraph/internal/database/migration/store"
-	"github.com/sourcegraph/sourcegraph/internal/database/postgresdsn"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/internal/oobmigration"
-	"github.com/sourcegraph/sourcegraph/internal/version/upgradestore"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/bbsestore"
+	connections "github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/connections/live"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbutil"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/migrbtion/schembs"
+	migrbtionstore "github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/migrbtion/store"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/postgresdsn"
+	"github.com/sourcegrbph/sourcegrbph/internbl/observbtion"
+	"github.com/sourcegrbph/sourcegrbph/internbl/oobmigrbtion"
+	"github.com/sourcegrbph/sourcegrbph/internbl/version/upgrbdestore"
 )
 
-//go:embed templates/upgrade.html
-var rawTemplate string
+//go:embed templbtes/upgrbde.html
+vbr rbwTemplbte string
 
-func makeUpgradeProgressHandler(obsvCtx *observation.Context, sqlDB *sql.DB, db database.DB) (http.HandlerFunc, error) {
-	dsns, err := postgresdsn.DSNsBySchema(schemas.SchemaNames)
+func mbkeUpgrbdeProgressHbndler(obsvCtx *observbtion.Context, sqlDB *sql.DB, db dbtbbbse.DB) (http.HbndlerFunc, error) {
+	dsns, err := postgresdsn.DSNsBySchemb(schembs.SchembNbmes)
 	if err != nil {
 		return nil, err
 	}
-	codeintelDB, err := connections.RawNewCodeIntelDB(obsvCtx, dsns["codeintel"], appName)
+	codeintelDB, err := connections.RbwNewCodeIntelDB(obsvCtx, dsns["codeintel"], bppNbme)
 	if err != nil {
 		return nil, err
 	}
-	codeinsightsDB, err := connections.RawNewCodeInsightsDB(obsvCtx, dsns["codeinsights"], appName)
+	codeinsightsDB, err := connections.RbwNewCodeInsightsDB(obsvCtx, dsns["codeinsights"], bppNbme)
 	if err != nil {
 		return nil, err
 	}
 
-	store := migrationstore.NewWithDB(obsvCtx, sqlDB, schemas.Frontend.MigrationsTableName)
-	codeintelStore := migrationstore.NewWithDB(obsvCtx, codeintelDB, schemas.CodeIntel.MigrationsTableName)
-	codeinsightsStore := migrationstore.NewWithDB(obsvCtx, codeinsightsDB, schemas.CodeInsights.MigrationsTableName)
+	store := migrbtionstore.NewWithDB(obsvCtx, sqlDB, schembs.Frontend.MigrbtionsTbbleNbme)
+	codeintelStore := migrbtionstore.NewWithDB(obsvCtx, codeintelDB, schembs.CodeIntel.MigrbtionsTbbleNbme)
+	codeinsightsStore := migrbtionstore.NewWithDB(obsvCtx, codeinsightsDB, schembs.CodeInsights.MigrbtionsTbbleNbme)
 
-	ctx := context.Background()
-	oobmigrationStore := oobmigration.NewStoreWithDB(db)
-	if err := oobmigrationStore.SynchronizeMetadata(ctx); err != nil {
+	ctx := context.Bbckground()
+	oobmigrbtionStore := oobmigrbtion.NewStoreWithDB(db)
+	if err := oobmigrbtionStore.SynchronizeMetbdbtb(ctx); err != nil {
 		return nil, err
 	}
 
-	funcs := template.FuncMap{
-		"FormatPercentage": func(v float64) string { return fmt.Sprintf("%.2f%%", v*100) },
+	funcs := templbte.FuncMbp{
+		"FormbtPercentbge": func(v flobt64) string { return fmt.Sprintf("%.2f%%", v*100) },
 	}
 
-	handleTemplate := func(ctx context.Context, w http.ResponseWriter) error {
-		scan := basestore.NewFirstScanner(func(s dbutil.Scanner) (u upgradeStatus, _ error) {
-			var rawPlan []byte
-			if err := s.Scan(
+	hbndleTemplbte := func(ctx context.Context, w http.ResponseWriter) error {
+		scbn := bbsestore.NewFirstScbnner(func(s dbutil.Scbnner) (u upgrbdeStbtus, _ error) {
+			vbr rbwPlbn []byte
+			if err := s.Scbn(
 				&u.FromVersion,
 				&u.ToVersion,
-				&rawPlan,
-				&u.StartedAt,
+				&rbwPlbn,
+				&u.StbrtedAt,
 				&dbutil.NullTime{Time: &u.FinishedAt},
 				&dbutil.NullBool{B: &u.Success},
 			); err != nil {
-				return upgradeStatus{}, err
+				return upgrbdeStbtus{}, err
 			}
 
-			if err := json.Unmarshal(rawPlan, &u.Plan); err != nil {
-				return upgradeStatus{}, err
+			if err := json.Unmbrshbl(rbwPlbn, &u.Plbn); err != nil {
+				return upgrbdeStbtus{}, err
 			}
 
 			return u, nil
 		})
-		upgrade, _, err := scan(db.QueryContext(ctx, `
+		upgrbde, _, err := scbn(db.QueryContext(ctx, `
 			SELECT
 				from_version,
 				to_version,
-				plan,
-				started_at,
-				finished_at,
+				plbn,
+				stbrted_bt,
+				finished_bt,
 				success
-			FROM upgrade_logs
+			FROM upgrbde_logs
 			ORDER BY id DESC
 			LIMIT 1
 		`))
@@ -91,158 +91,158 @@ func makeUpgradeProgressHandler(obsvCtx *observation.Context, sqlDB *sql.DB, db 
 			return err
 		}
 
-		frontendApplied, frontendPending, frontendFailed, err := store.Versions(ctx)
+		frontendApplied, frontendPending, frontendFbiled, err := store.Versions(ctx)
 		if err != nil {
 			return err
 		}
-		codeintelApplied, codeintelPending, codeIntelFailed, err := codeintelStore.Versions(ctx)
+		codeintelApplied, codeintelPending, codeIntelFbiled, err := codeintelStore.Versions(ctx)
 		if err != nil {
 			return err
 		}
-		codeinsightsApplied, codeinsightsPending, codeinsightsFailed, err := codeinsightsStore.Versions(ctx)
+		codeinsightsApplied, codeinsightsPending, codeinsightsFbiled, err := codeinsightsStore.Versions(ctx)
 		if err != nil {
 			return err
 		}
-		oobmigrations, err := oobmigrationStore.GetByIDs(ctx, upgrade.Plan.OutOfBandMigrationIDs)
+		oobmigrbtions, err := oobmigrbtionStore.GetByIDs(ctx, upgrbde.Plbn.OutOfBbndMigrbtionIDs)
 		if err != nil {
 			return err
 		}
 
-		unfinishedOutOfBandMigrations := oobmigrations[:0]
-		for _, migration := range oobmigrations {
-			if migration.Progress != 1 {
-				filteredErrs := migration.Errors[:0]
-				for _, err := range migration.Errors {
-					if err.Created.After(upgrade.StartedAt) {
-						filteredErrs = append(filteredErrs, err)
+		unfinishedOutOfBbndMigrbtions := oobmigrbtions[:0]
+		for _, migrbtion := rbnge oobmigrbtions {
+			if migrbtion.Progress != 1 {
+				filteredErrs := migrbtion.Errors[:0]
+				for _, err := rbnge migrbtion.Errors {
+					if err.Crebted.After(upgrbde.StbrtedAt) {
+						filteredErrs = bppend(filteredErrs, err)
 					}
 				}
-				migration.Errors = filteredErrs
+				migrbtion.Errors = filteredErrs
 
-				unfinishedOutOfBandMigrations = append(unfinishedOutOfBandMigrations, migration)
+				unfinishedOutOfBbndMigrbtions = bppend(unfinishedOutOfBbndMigrbtions, migrbtion)
 			}
 		}
 
-		tmpl, err := template.New("index").Funcs(funcs).Parse(rawTemplate)
+		tmpl, err := templbte.New("index").Funcs(funcs).Pbrse(rbwTemplbte)
 		if err != nil {
 			return err
 		}
 
 		return tmpl.Execute(w, struct {
-			Upgrade                          upgradeStatus
-			Frontend                         migrationStatus
-			CodeIntel                        migrationStatus
-			CodeInsights                     migrationStatus
-			NumUnfinishedOutOfBandMigrations int
-			OutOfBandMigrations              []oobmigration.Migration
+			Upgrbde                          upgrbdeStbtus
+			Frontend                         migrbtionStbtus
+			CodeIntel                        migrbtionStbtus
+			CodeInsights                     migrbtionStbtus
+			NumUnfinishedOutOfBbndMigrbtions int
+			OutOfBbndMigrbtions              []oobmigrbtion.Migrbtion
 		}{
-			Upgrade:                          upgrade,
-			Frontend:                         getMigrationStatus(upgrade.Plan.MigrationNames["frontend"], upgrade.Plan.Migrations["frontend"], frontendApplied, frontendPending, frontendFailed),
-			CodeIntel:                        getMigrationStatus(upgrade.Plan.MigrationNames["codeintel"], upgrade.Plan.Migrations["codeintel"], codeintelApplied, codeintelPending, codeIntelFailed),
-			CodeInsights:                     getMigrationStatus(upgrade.Plan.MigrationNames["codeinsights"], upgrade.Plan.Migrations["codeinsights"], codeinsightsApplied, codeinsightsPending, codeinsightsFailed),
-			NumUnfinishedOutOfBandMigrations: len(unfinishedOutOfBandMigrations),
-			OutOfBandMigrations:              unfinishedOutOfBandMigrations,
+			Upgrbde:                          upgrbde,
+			Frontend:                         getMigrbtionStbtus(upgrbde.Plbn.MigrbtionNbmes["frontend"], upgrbde.Plbn.Migrbtions["frontend"], frontendApplied, frontendPending, frontendFbiled),
+			CodeIntel:                        getMigrbtionStbtus(upgrbde.Plbn.MigrbtionNbmes["codeintel"], upgrbde.Plbn.Migrbtions["codeintel"], codeintelApplied, codeintelPending, codeIntelFbiled),
+			CodeInsights:                     getMigrbtionStbtus(upgrbde.Plbn.MigrbtionNbmes["codeinsights"], upgrbde.Plbn.Migrbtions["codeinsights"], codeinsightsApplied, codeinsightsPending, codeinsightsFbiled),
+			NumUnfinishedOutOfBbndMigrbtions: len(unfinishedOutOfBbndMigrbtions),
+			OutOfBbndMigrbtions:              unfinishedOutOfBbndMigrbtions,
 		})
 	}
 
 	return func(w http.ResponseWriter, r *http.Request) {
-		if err := handleTemplate(r.Context(), w); err != nil {
-			obsvCtx.Logger.Error("failed to handle upgrade UI request", log.Error(err))
-			w.WriteHeader(http.StatusInternalServerError)
+		if err := hbndleTemplbte(r.Context(), w); err != nil {
+			obsvCtx.Logger.Error("fbiled to hbndle upgrbde UI request", log.Error(err))
+			w.WriteHebder(http.StbtusInternblServerError)
 		}
 	}, nil
 }
 
-type upgradeStatus struct {
+type upgrbdeStbtus struct {
 	FromVersion string
 	ToVersion   string
-	Plan        upgradestore.UpgradePlan
-	StartedAt   time.Time
+	Plbn        upgrbdestore.UpgrbdePlbn
+	StbrtedAt   time.Time
 	FinishedAt  time.Time
 	Success     bool
 }
 
-type migrationState struct {
+type migrbtionStbte struct {
 	ID    int
-	Name  string
-	State string
+	Nbme  string
+	Stbte string
 }
 
-type migrationStatus struct {
-	NumMigrationsRequired int
-	HasFailure            bool
-	Migrations            []migrationState
+type migrbtionStbtus struct {
+	NumMigrbtionsRequired int
+	HbsFbilure            bool
+	Migrbtions            []migrbtionStbte
 }
 
-// adjust this to show some leading applied migrations
-const numLeadingAppliedMigrations = 0
+// bdjust this to show some lebding bpplied migrbtions
+const numLebdingAppliedMigrbtions = 0
 
-func getMigrationStatus(migrationNames map[int]string, expected, applied, pending, failed []int) migrationStatus {
-	expectedMap := map[int]struct{}{}
-	for _, id := range expected {
-		expectedMap[id] = struct{}{}
+func getMigrbtionStbtus(migrbtionNbmes mbp[int]string, expected, bpplied, pending, fbiled []int) migrbtionStbtus {
+	expectedMbp := mbp[int]struct{}{}
+	for _, id := rbnge expected {
+		expectedMbp[id] = struct{}{}
 	}
-	appliedMap := map[int]struct{}{}
-	for _, id := range applied {
-		appliedMap[id] = struct{}{}
+	bppliedMbp := mbp[int]struct{}{}
+	for _, id := rbnge bpplied {
+		bppliedMbp[id] = struct{}{}
 	}
-	pendingMap := map[int]struct{}{}
-	for _, id := range pending {
-		pendingMap[id] = struct{}{}
+	pendingMbp := mbp[int]struct{}{}
+	for _, id := rbnge pending {
+		pendingMbp[id] = struct{}{}
 	}
-	failedMap := map[int]struct{}{}
-	for _, id := range failed {
-		failedMap[id] = struct{}{}
+	fbiledMbp := mbp[int]struct{}{}
+	for _, id := rbnge fbiled {
+		fbiledMbp[id] = struct{}{}
 	}
 
-	hasFailure := false
-	numMigrationsRequired := 0
-	migrations := make([]migrationState, 0, len(expected))
+	hbsFbilure := fblse
+	numMigrbtionsRequired := 0
+	migrbtions := mbke([]migrbtionStbte, 0, len(expected))
 
-	for _, id := range expected {
-		state := ""
-		if _, ok := appliedMap[id]; ok {
-			state = "applied"
-		} else if _, ok := pendingMap[id]; ok {
-			state = "in-progress"
-		} else if _, ok := failedMap[id]; ok {
-			state = "failed"
-			hasFailure = true
-			numMigrationsRequired++
+	for _, id := rbnge expected {
+		stbte := ""
+		if _, ok := bppliedMbp[id]; ok {
+			stbte = "bpplied"
+		} else if _, ok := pendingMbp[id]; ok {
+			stbte = "in-progress"
+		} else if _, ok := fbiledMbp[id]; ok {
+			stbte = "fbiled"
+			hbsFbilure = true
+			numMigrbtionsRequired++
 		} else {
-			state = "queued"
-			numMigrationsRequired++
+			stbte = "queued"
+			numMigrbtionsRequired++
 		}
 
-		migrations = append(migrations, migrationState{ID: id, Name: migrationNames[id], State: state})
+		migrbtions = bppend(migrbtions, migrbtionStbte{ID: id, Nbme: migrbtionNbmes[id], Stbte: stbte})
 	}
 
-	for id := range pendingMap {
-		if _, ok := expectedMap[id]; !ok {
-			migrations = append(migrations, migrationState{ID: id, Name: migrationNames[id], State: "pending"})
+	for id := rbnge pendingMbp {
+		if _, ok := expectedMbp[id]; !ok {
+			migrbtions = bppend(migrbtions, migrbtionStbte{ID: id, Nbme: migrbtionNbmes[id], Stbte: "pending"})
 		}
 	}
-	for id := range failedMap {
-		if _, ok := expectedMap[id]; !ok {
-			migrations = append(migrations, migrationState{ID: id, Name: migrationNames[id], State: "failed"})
+	for id := rbnge fbiledMbp {
+		if _, ok := expectedMbp[id]; !ok {
+			migrbtions = bppend(migrbtions, migrbtionStbte{ID: id, Nbme: migrbtionNbmes[id], Stbte: "fbiled"})
 		}
 	}
 
-	numLeadingApplied := 0
-	for _, migration := range migrations {
-		if migration.State != "applied" {
-			break
+	numLebdingApplied := 0
+	for _, migrbtion := rbnge migrbtions {
+		if migrbtion.Stbte != "bpplied" {
+			brebk
 		}
-		numLeadingApplied++
+		numLebdingApplied++
 	}
-	strip := numLeadingApplied - numLeadingAppliedMigrations
+	strip := numLebdingApplied - numLebdingAppliedMigrbtions
 	if strip < 0 {
 		strip = 0
 	}
 
-	return migrationStatus{
-		NumMigrationsRequired: numMigrationsRequired,
-		HasFailure:            hasFailure,
-		Migrations:            migrations[strip:],
+	return migrbtionStbtus{
+		NumMigrbtionsRequired: numMigrbtionsRequired,
+		HbsFbilure:            hbsFbilure,
+		Migrbtions:            migrbtions[strip:],
 	}
 }

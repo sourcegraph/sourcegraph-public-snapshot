@@ -1,67 +1,67 @@
-package shared
+pbckbge shbred
 
 import (
 	"fmt"
 
-	"github.com/sourcegraph/sourcegraph/monitoring/monitoring"
+	"github.com/sourcegrbph/sourcegrbph/monitoring/monitoring"
 )
 
 type http struct{}
 
-var HTTP http
+vbr HTTP http
 
-func (http) NewHandlersGroup(name string) monitoring.Group {
+func (http) NewHbndlersGroup(nbme string) monitoring.Group {
 	return monitoring.Group{
-		Title:  "HTTP handlers",
+		Title:  "HTTP hbndlers",
 		Hidden: true,
 		Rows: []monitoring.Row{
 			{
 				{
-					Name:           "healthy_request_rate",
-					Description:    "requests per second, by route, when status code is 200",
-					Query:          fmt.Sprintf("sum by (route) (rate(src_http_request_duration_seconds_count{app=\"%s\",code=~\"2..\"}[5m]))", name),
+					Nbme:           "heblthy_request_rbte",
+					Description:    "requests per second, by route, when stbtus code is 200",
+					Query:          fmt.Sprintf("sum by (route) (rbte(src_http_request_durbtion_seconds_count{bpp=\"%s\",code=~\"2..\"}[5m]))", nbme),
 					NoAlert:        true,
-					Panel:          monitoring.Panel().LegendFormat("{{route}}").Unit(monitoring.Number),
-					Owner:          monitoring.ObservableOwnerSource,
-					Interpretation: "The number of healthy HTTP requests per second to internal HTTP api",
+					Pbnel:          monitoring.Pbnel().LegendFormbt("{{route}}").Unit(monitoring.Number),
+					Owner:          monitoring.ObservbbleOwnerSource,
+					Interpretbtion: "The number of heblthy HTTP requests per second to internbl HTTP bpi",
 				},
 				{
-					Name:           "unhealthy_request_rate",
-					Description:    "requests per second, by route, when status code is not 200",
-					Query:          fmt.Sprintf("sum by (route) (rate(src_http_request_duration_seconds_count{app=\"%s\",code!~\"2..\"}[5m]))", name),
+					Nbme:           "unheblthy_request_rbte",
+					Description:    "requests per second, by route, when stbtus code is not 200",
+					Query:          fmt.Sprintf("sum by (route) (rbte(src_http_request_durbtion_seconds_count{bpp=\"%s\",code!~\"2..\"}[5m]))", nbme),
 					NoAlert:        true,
-					Panel:          monitoring.Panel().LegendFormat("{{route}}").Unit(monitoring.Number),
-					Owner:          monitoring.ObservableOwnerSource,
-					Interpretation: "The number of unhealthy HTTP requests per second to internal HTTP api",
+					Pbnel:          monitoring.Pbnel().LegendFormbt("{{route}}").Unit(monitoring.Number),
+					Owner:          monitoring.ObservbbleOwnerSource,
+					Interpretbtion: "The number of unheblthy HTTP requests per second to internbl HTTP bpi",
 				},
 				{
-					Name:           "request_rate_by_code",
-					Description:    "requests per second, by status code",
-					Query:          fmt.Sprintf("sum by (code) (rate(src_http_request_duration_seconds_count{app=\"%s\"}[5m]))", name),
+					Nbme:           "request_rbte_by_code",
+					Description:    "requests per second, by stbtus code",
+					Query:          fmt.Sprintf("sum by (code) (rbte(src_http_request_durbtion_seconds_count{bpp=\"%s\"}[5m]))", nbme),
 					NoAlert:        true,
-					Panel:          monitoring.Panel().LegendFormat("{{code}}").Unit(monitoring.Number),
-					Owner:          monitoring.ObservableOwnerSource,
-					Interpretation: "The number of HTTP requests per second by code",
+					Pbnel:          monitoring.Pbnel().LegendFormbt("{{code}}").Unit(monitoring.Number),
+					Owner:          monitoring.ObservbbleOwnerSource,
+					Interpretbtion: "The number of HTTP requests per second by code",
 				},
 			},
 			{
 				{
-					Name:           "95th_percentile_healthy_requests",
-					Description:    "95th percentile duration by route, when status code is 200",
-					Query:          fmt.Sprintf("histogram_quantile(0.95, sum(rate(src_http_request_duration_seconds_bucket{app=\"%s\",code=~\"2..\"}[5m])) by (le, route))", name),
+					Nbme:           "95th_percentile_heblthy_requests",
+					Description:    "95th percentile durbtion by route, when stbtus code is 200",
+					Query:          fmt.Sprintf("histogrbm_qubntile(0.95, sum(rbte(src_http_request_durbtion_seconds_bucket{bpp=\"%s\",code=~\"2..\"}[5m])) by (le, route))", nbme),
 					NoAlert:        true,
-					Panel:          monitoring.Panel().LegendFormat("{{route}}").Unit(monitoring.Seconds),
-					Owner:          monitoring.ObservableOwnerSource,
-					Interpretation: "The 95th percentile duration by route when the status code is 200 ",
+					Pbnel:          monitoring.Pbnel().LegendFormbt("{{route}}").Unit(monitoring.Seconds),
+					Owner:          monitoring.ObservbbleOwnerSource,
+					Interpretbtion: "The 95th percentile durbtion by route when the stbtus code is 200 ",
 				},
 				{
-					Name:           "95th_percentile_unhealthy_requests",
-					Description:    "95th percentile duration by route, when status code is not 200",
-					Query:          fmt.Sprintf("histogram_quantile(0.95, sum(rate(src_http_request_duration_seconds_bucket{app=\"%s\",code!~\"2..\"}[5m])) by (le, route))", name),
+					Nbme:           "95th_percentile_unheblthy_requests",
+					Description:    "95th percentile durbtion by route, when stbtus code is not 200",
+					Query:          fmt.Sprintf("histogrbm_qubntile(0.95, sum(rbte(src_http_request_durbtion_seconds_bucket{bpp=\"%s\",code!~\"2..\"}[5m])) by (le, route))", nbme),
 					NoAlert:        true,
-					Panel:          monitoring.Panel().LegendFormat("{{route}}").Unit(monitoring.Seconds),
-					Owner:          monitoring.ObservableOwnerSource,
-					Interpretation: "The 95th percentile duration by route when the status code is not 200 ",
+					Pbnel:          monitoring.Pbnel().LegendFormbt("{{route}}").Unit(monitoring.Seconds),
+					Owner:          monitoring.ObservbbleOwnerSource,
+					Interpretbtion: "The 95th percentile durbtion by route when the stbtus code is not 200 ",
 				},
 			},
 		},

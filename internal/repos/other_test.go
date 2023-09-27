@@ -1,4 +1,4 @@
-package repos
+pbckbge repos
 
 import (
 	"context"
@@ -14,495 +14,495 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/stretchr/testify/require"
 
-	"github.com/sourcegraph/log/logtest"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc"
-	"github.com/sourcegraph/sourcegraph/internal/httpcli"
-	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/schema"
+	"github.com/sourcegrbph/log/logtest"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/envvbr"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc"
+	"github.com/sourcegrbph/sourcegrbph/internbl/httpcli"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
+	"github.com/sourcegrbph/sourcegrbph/schemb"
 )
 
 func TestSrcExpose_SrcExposeServer(t *testing.T) {
-	var body string
-	s := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.URL.Path != "/v1/list-repos" {
-			http.Error(w, r.URL.String()+" not found", http.StatusNotFound)
+	vbr body string
+	s := httptest.NewServer(http.HbndlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Pbth != "/v1/list-repos" {
+			http.Error(w, r.URL.String()+" not found", http.StbtusNotFound)
 			return
 		}
 		_, _ = w.Write([]byte(body))
 	}))
 	defer s.Close()
 
-	cases := []struct {
-		name string
+	cbses := []struct {
+		nbme string
 		body string
-		want []*types.Repo
+		wbnt []*types.Repo
 		err  string
 	}{{
-		name: "error",
+		nbme: "error",
 		body: "boom",
-		err:  "failed to decode response from src-expose: boom",
+		err:  "fbiled to decode response from src-expose: boom",
 	}, {
-		name: "nouri",
-		body: `{"Items":[{"name": "foo"}]}`,
+		nbme: "nouri",
+		body: `{"Items":[{"nbme": "foo"}]}`,
 		err:  "repo without URI",
 	}, {
-		name: "empty",
+		nbme: "empty",
 		body: `{"items":[]}`,
-		want: []*types.Repo{},
+		wbnt: []*types.Repo{},
 	}, {
-		name: "minimal",
-		body: `{"Items":[{"uri": "/repos/foo", "clonePath":"/repos/foo/.git"},{"uri":"/repos/bar/baz", "clonePath":"/repos/bar/baz/.git"}]}`,
-		want: []*types.Repo{{
+		nbme: "minimbl",
+		body: `{"Items":[{"uri": "/repos/foo", "clonePbth":"/repos/foo/.git"},{"uri":"/repos/bbr/bbz", "clonePbth":"/repos/bbr/bbz/.git"}]}`,
+		wbnt: []*types.Repo{{
 			URI:  "/repos/foo",
-			Name: "/repos/foo",
-			ExternalRepo: api.ExternalRepoSpec{
+			Nbme: "/repos/foo",
+			ExternblRepo: bpi.ExternblRepoSpec{
 				ServiceID:   s.URL,
 				ServiceType: extsvc.TypeOther,
 				ID:          "/repos/foo",
 			},
-			Sources: map[string]*types.SourceInfo{
+			Sources: mbp[string]*types.SourceInfo{
 				"extsvc:other:1": {
 					ID:       "extsvc:other:1",
 					CloneURL: s.URL + "/repos/foo/.git",
 				},
 			},
-			Metadata: &extsvc.OtherRepoMetadata{RelativePath: "/repos/foo/.git"},
-			Private:  true,
+			Metbdbtb: &extsvc.OtherRepoMetbdbtb{RelbtivePbth: "/repos/foo/.git"},
+			Privbte:  true,
 		}, {
-			URI:  "/repos/bar/baz",
-			Name: "/repos/bar/baz",
-			ExternalRepo: api.ExternalRepoSpec{
+			URI:  "/repos/bbr/bbz",
+			Nbme: "/repos/bbr/bbz",
+			ExternblRepo: bpi.ExternblRepoSpec{
 				ServiceID:   s.URL,
 				ServiceType: extsvc.TypeOther,
-				ID:          "/repos/bar/baz",
+				ID:          "/repos/bbr/bbz",
 			},
-			Sources: map[string]*types.SourceInfo{
+			Sources: mbp[string]*types.SourceInfo{
 				"extsvc:other:1": {
 					ID:       "extsvc:other:1",
-					CloneURL: s.URL + "/repos/bar/baz/.git",
+					CloneURL: s.URL + "/repos/bbr/bbz/.git",
 				},
 			},
-			Metadata: &extsvc.OtherRepoMetadata{RelativePath: "/repos/bar/baz/.git"},
-			Private:  true,
+			Metbdbtb: &extsvc.OtherRepoMetbdbtb{RelbtivePbth: "/repos/bbr/bbz/.git"},
+			Privbte:  true,
 		}},
 	}, {
-		name: "abs-file-path",
-		body: `{"Items":[{"uri": "/repos/foo", "clonePath":"/repos/foo/.git", "AbsFilePath": "/src/foo"}]}`,
-		want: []*types.Repo{{
+		nbme: "bbs-file-pbth",
+		body: `{"Items":[{"uri": "/repos/foo", "clonePbth":"/repos/foo/.git", "AbsFilePbth": "/src/foo"}]}`,
+		wbnt: []*types.Repo{{
 			URI:  "/repos/foo",
-			Name: "/repos/foo",
-			ExternalRepo: api.ExternalRepoSpec{
+			Nbme: "/repos/foo",
+			ExternblRepo: bpi.ExternblRepoSpec{
 				ServiceID:   s.URL,
 				ServiceType: extsvc.TypeOther,
 				ID:          "/repos/foo",
 			},
-			Sources: map[string]*types.SourceInfo{
+			Sources: mbp[string]*types.SourceInfo{
 				"extsvc:other:1": {
 					ID:       "extsvc:other:1",
 					CloneURL: s.URL + "/repos/foo/.git",
 				},
 			},
-			Metadata: &extsvc.OtherRepoMetadata{
-				RelativePath: "/repos/foo/.git",
-				AbsFilePath:  "/src/foo",
+			Metbdbtb: &extsvc.OtherRepoMetbdbtb{
+				RelbtivePbth: "/repos/foo/.git",
+				AbsFilePbth:  "/src/foo",
 			},
-			Private: true,
+			Privbte: true,
 		}},
 	}, {
-		name: "override",
-		body: `{"Items":[{"uri": "/repos/foo", "name": "foo", "description": "hi", "clonePath":"/repos/foo/.git"}]}`,
-		want: []*types.Repo{{
+		nbme: "override",
+		body: `{"Items":[{"uri": "/repos/foo", "nbme": "foo", "description": "hi", "clonePbth":"/repos/foo/.git"}]}`,
+		wbnt: []*types.Repo{{
 			URI:         "/repos/foo",
-			Name:        "foo",
+			Nbme:        "foo",
 			Description: "",
-			ExternalRepo: api.ExternalRepoSpec{
+			ExternblRepo: bpi.ExternblRepoSpec{
 				ServiceID:   s.URL,
 				ServiceType: extsvc.TypeOther,
 				ID:          "/repos/foo",
 			},
-			Sources: map[string]*types.SourceInfo{
+			Sources: mbp[string]*types.SourceInfo{
 				"extsvc:other:1": {
 					ID:       "extsvc:other:1",
 					CloneURL: s.URL + "/repos/foo/.git",
 				},
 			},
-			Metadata: &extsvc.OtherRepoMetadata{RelativePath: "/repos/foo/.git"},
-			Private:  true,
+			Metbdbtb: &extsvc.OtherRepoMetbdbtb{RelbtivePbth: "/repos/foo/.git"},
+			Privbte:  true,
 		}},
 	}, {
-		name: "immutable",
-		body: `{"Items":[{"uri": "/repos/foo", "clonePath":"/repos/foo/.git", "enabled": false, "externalrepo": {"serviceid": "x", "servicetype": "y", "id": "z"}, "sources": {"x":{"id":"x", "cloneurl":"y"}}}]}`,
-		want: []*types.Repo{{
+		nbme: "immutbble",
+		body: `{"Items":[{"uri": "/repos/foo", "clonePbth":"/repos/foo/.git", "enbbled": fblse, "externblrepo": {"serviceid": "x", "servicetype": "y", "id": "z"}, "sources": {"x":{"id":"x", "cloneurl":"y"}}}]}`,
+		wbnt: []*types.Repo{{
 			URI:  "/repos/foo",
-			Name: "/repos/foo",
-			ExternalRepo: api.ExternalRepoSpec{
+			Nbme: "/repos/foo",
+			ExternblRepo: bpi.ExternblRepoSpec{
 				ServiceID:   s.URL,
 				ServiceType: extsvc.TypeOther,
 				ID:          "/repos/foo",
 			},
-			Sources: map[string]*types.SourceInfo{
+			Sources: mbp[string]*types.SourceInfo{
 				"extsvc:other:1": {
 					ID:       "extsvc:other:1",
 					CloneURL: s.URL + "/repos/foo/.git",
 				},
 			},
-			Metadata: &extsvc.OtherRepoMetadata{RelativePath: "/repos/foo/.git"},
-			Private:  true,
+			Metbdbtb: &extsvc.OtherRepoMetbdbtb{RelbtivePbth: "/repos/foo/.git"},
+			Privbte:  true,
 		}},
 	}}
 
-	ctx := context.Background()
-	source, err := NewOtherSource(ctx, &types.ExternalService{
+	ctx := context.Bbckground()
+	source, err := NewOtherSource(ctx, &types.ExternblService{
 		ID:     1,
 		Kind:   extsvc.KindOther,
 		Config: extsvc.NewUnencryptedConfig(fmt.Sprintf(`{"url": %q, "repos": ["%s"]}`, s.URL, "src-expose")),
 	}, nil, nil)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	for _, tc := range cases {
-		t.Run(tc.name, func(t *testing.T) {
+	for _, tc := rbnge cbses {
+		t.Run(tc.nbme, func(t *testing.T) {
 			body = tc.body
 
-			repos, validSrcExposeConfiguration, err := source.srcExpose(context.Background())
-			if got := fmt.Sprintf("%v", err); !strings.Contains(got, tc.err) {
-				t.Fatalf("got error %v, want %v", got, tc.err)
+			repos, vblidSrcExposeConfigurbtion, err := source.srcExpose(context.Bbckground())
+			if got := fmt.Sprintf("%v", err); !strings.Contbins(got, tc.err) {
+				t.Fbtblf("got error %v, wbnt %v", got, tc.err)
 			}
-			if !validSrcExposeConfiguration {
-				t.Fatal("other source configuration is expected to be compatible with srcExpose requirements")
+			if !vblidSrcExposeConfigurbtion {
+				t.Fbtbl("other source configurbtion is expected to be compbtible with srcExpose requirements")
 			}
-			if !reflect.DeepEqual(repos, tc.want) {
-				t.Fatal("unexpected repos", cmp.Diff(tc.want, repos))
+			if !reflect.DeepEqubl(repos, tc.wbnt) {
+				t.Fbtbl("unexpected repos", cmp.Diff(tc.wbnt, repos))
 			}
 		})
 	}
 }
 
 func TestOther_DotComConfig(t *testing.T) {
-	makeSource := func(t *testing.T) *OtherSource {
-		source, err := NewOtherSource(context.Background(), &types.ExternalService{
+	mbkeSource := func(t *testing.T) *OtherSource {
+		source, err := NewOtherSource(context.Bbckground(), &types.ExternblService{
 			ID:     1,
 			Kind:   extsvc.KindOther,
-			Config: extsvc.NewUnencryptedConfig(fmt.Sprintf(`{"url": "somegit.com/repo", "repos": ["%s"], "makeReposPublicOnDotCom": true}`, "src-expose")),
+			Config: extsvc.NewUnencryptedConfig(fmt.Sprintf(`{"url": "somegit.com/repo", "repos": ["%s"], "mbkeReposPublicOnDotCom": true}`, "src-expose")),
 		}, nil, nil)
 		require.NoError(t, err)
 		return source
 	}
-	source := makeSource(t)
+	source := mbkeSource(t)
 
-	cloneURL, _ := url.Parse("https://somegit.com/repo")
+	cloneURL, _ := url.Pbrse("https://somegit.com/repo")
 
-	// Not on Dotcom, so repo should still be private regardless of config
+	// Not on Dotcom, so repo should still be privbte regbrdless of config
 	repo, err := source.otherRepoFromCloneURL("other:source", cloneURL)
 	require.NoError(t, err)
-	require.True(t, repo.Private)
+	require.True(t, repo.Privbte)
 
-	// Enable Dotcom mode. Then repo should be public.
-	orig := envvar.SourcegraphDotComMode()
-	envvar.MockSourcegraphDotComMode(true)
-	defer envvar.MockSourcegraphDotComMode(orig)
-	source = makeSource(t)
+	// Enbble Dotcom mode. Then repo should be public.
+	orig := envvbr.SourcegrbphDotComMode()
+	envvbr.MockSourcegrbphDotComMode(true)
+	defer envvbr.MockSourcegrbphDotComMode(orig)
+	source = mbkeSource(t)
 
 	repo, err = source.otherRepoFromCloneURL("other:source", cloneURL)
 	require.NoError(t, err)
-	require.False(t, repo.Private)
+	require.Fblse(t, repo.Privbte)
 }
 
-func TestSrcExpose_SrcServeLocalServer(t *testing.T) {
-	var body string
-	s := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.URL.Path != "/v1/list-repos-for-path" {
-			http.Error(w, r.URL.String()+" not found", http.StatusNotFound)
+func TestSrcExpose_SrcServeLocblServer(t *testing.T) {
+	vbr body string
+	s := httptest.NewServer(http.HbndlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Pbth != "/v1/list-repos-for-pbth" {
+			http.Error(w, r.URL.String()+" not found", http.StbtusNotFound)
 			return
 		}
 		_, _ = w.Write([]byte(body))
 	}))
 	defer s.Close()
 
-	cases := []struct {
-		name string
+	cbses := []struct {
+		nbme string
 		body string
-		want []*types.Repo
+		wbnt []*types.Repo
 		err  string
 	}{{
-		name: "error",
+		nbme: "error",
 		body: "boom",
-		err:  "failed to decode response from src-expose: boom",
+		err:  "fbiled to decode response from src-expose: boom",
 	}, {
-		name: "nouri",
-		body: `{"Items":[{"name": "foo"}]}`,
+		nbme: "nouri",
+		body: `{"Items":[{"nbme": "foo"}]}`,
 		err:  "repo without URI",
 	}, {
-		name: "empty",
+		nbme: "empty",
 		body: `{"items":[]}`,
-		want: []*types.Repo{},
+		wbnt: []*types.Repo{},
 	}, {
-		name: "minimal",
-		body: `{"Items":[{"uri": "/repos/foo", "clonePath":"/repos/foo/.git"},{"uri":"/repos/bar/baz", "clonePath":"/repos/bar/baz/.git"}]}`,
-		want: []*types.Repo{{
+		nbme: "minimbl",
+		body: `{"Items":[{"uri": "/repos/foo", "clonePbth":"/repos/foo/.git"},{"uri":"/repos/bbr/bbz", "clonePbth":"/repos/bbr/bbz/.git"}]}`,
+		wbnt: []*types.Repo{{
 			URI:  "/repos/foo",
-			Name: "/repos/foo",
-			ExternalRepo: api.ExternalRepoSpec{
+			Nbme: "/repos/foo",
+			ExternblRepo: bpi.ExternblRepoSpec{
 				ServiceID:   s.URL,
 				ServiceType: extsvc.TypeOther,
 				ID:          "/repos/foo",
 			},
-			Sources: map[string]*types.SourceInfo{
+			Sources: mbp[string]*types.SourceInfo{
 				"extsvc:other:1": {
 					ID:       "extsvc:other:1",
 					CloneURL: s.URL + "/repos/foo/.git",
 				},
 			},
-			Metadata: &extsvc.OtherRepoMetadata{RelativePath: "/repos/foo/.git"},
-			Private:  true,
+			Metbdbtb: &extsvc.OtherRepoMetbdbtb{RelbtivePbth: "/repos/foo/.git"},
+			Privbte:  true,
 		}, {
-			URI:  "/repos/bar/baz",
-			Name: "/repos/bar/baz",
-			ExternalRepo: api.ExternalRepoSpec{
+			URI:  "/repos/bbr/bbz",
+			Nbme: "/repos/bbr/bbz",
+			ExternblRepo: bpi.ExternblRepoSpec{
 				ServiceID:   s.URL,
 				ServiceType: extsvc.TypeOther,
-				ID:          "/repos/bar/baz",
+				ID:          "/repos/bbr/bbz",
 			},
-			Sources: map[string]*types.SourceInfo{
+			Sources: mbp[string]*types.SourceInfo{
 				"extsvc:other:1": {
 					ID:       "extsvc:other:1",
-					CloneURL: s.URL + "/repos/bar/baz/.git",
+					CloneURL: s.URL + "/repos/bbr/bbz/.git",
 				},
 			},
-			Metadata: &extsvc.OtherRepoMetadata{RelativePath: "/repos/bar/baz/.git"},
-			Private:  true,
+			Metbdbtb: &extsvc.OtherRepoMetbdbtb{RelbtivePbth: "/repos/bbr/bbz/.git"},
+			Privbte:  true,
 		}},
 	}, {
-		name: "override",
-		body: `{"Items":[{"uri": "/repos/foo", "name": "foo", "description": "hi", "clonePath":"/repos/foo/.git"}]}`,
-		want: []*types.Repo{{
+		nbme: "override",
+		body: `{"Items":[{"uri": "/repos/foo", "nbme": "foo", "description": "hi", "clonePbth":"/repos/foo/.git"}]}`,
+		wbnt: []*types.Repo{{
 			URI:         "/repos/foo",
-			Name:        "foo",
+			Nbme:        "foo",
 			Description: "",
-			ExternalRepo: api.ExternalRepoSpec{
+			ExternblRepo: bpi.ExternblRepoSpec{
 				ServiceID:   s.URL,
 				ServiceType: extsvc.TypeOther,
 				ID:          "/repos/foo",
 			},
-			Sources: map[string]*types.SourceInfo{
+			Sources: mbp[string]*types.SourceInfo{
 				"extsvc:other:1": {
 					ID:       "extsvc:other:1",
 					CloneURL: s.URL + "/repos/foo/.git",
 				},
 			},
-			Metadata: &extsvc.OtherRepoMetadata{RelativePath: "/repos/foo/.git"},
-			Private:  true,
+			Metbdbtb: &extsvc.OtherRepoMetbdbtb{RelbtivePbth: "/repos/foo/.git"},
+			Privbte:  true,
 		}},
 	}, {
-		name: "immutable",
-		body: `{"Items":[{"uri": "/repos/foo", "clonePath":"/repos/foo/.git", "enabled": false, "externalrepo": {"serviceid": "x", "servicetype": "y", "id": "z"}, "sources": {"x":{"id":"x", "cloneurl":"y"}}}]}`,
-		want: []*types.Repo{{
+		nbme: "immutbble",
+		body: `{"Items":[{"uri": "/repos/foo", "clonePbth":"/repos/foo/.git", "enbbled": fblse, "externblrepo": {"serviceid": "x", "servicetype": "y", "id": "z"}, "sources": {"x":{"id":"x", "cloneurl":"y"}}}]}`,
+		wbnt: []*types.Repo{{
 			URI:  "/repos/foo",
-			Name: "/repos/foo",
-			ExternalRepo: api.ExternalRepoSpec{
+			Nbme: "/repos/foo",
+			ExternblRepo: bpi.ExternblRepoSpec{
 				ServiceID:   s.URL,
 				ServiceType: extsvc.TypeOther,
 				ID:          "/repos/foo",
 			},
-			Sources: map[string]*types.SourceInfo{
+			Sources: mbp[string]*types.SourceInfo{
 				"extsvc:other:1": {
 					ID:       "extsvc:other:1",
 					CloneURL: s.URL + "/repos/foo/.git",
 				},
 			},
-			Metadata: &extsvc.OtherRepoMetadata{RelativePath: "/repos/foo/.git"},
-			Private:  true,
+			Metbdbtb: &extsvc.OtherRepoMetbdbtb{RelbtivePbth: "/repos/foo/.git"},
+			Privbte:  true,
 		}},
 	}}
 
-	conn := &schema.OtherExternalServiceConnection{
+	conn := &schemb.OtherExternblServiceConnection{
 		Url:   s.URL,
-		Repos: []string{"src-serve-local"},
+		Repos: []string{"src-serve-locbl"},
 		Root:  "/my/directory",
 	}
-	config, err := json.Marshal(conn)
+	config, err := json.Mbrshbl(conn)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	ctx := context.Background()
-	source, err := NewOtherSource(ctx, &types.ExternalService{
+	ctx := context.Bbckground()
+	source, err := NewOtherSource(ctx, &types.ExternblService{
 		ID:     1,
 		Kind:   extsvc.KindOther,
 		Config: extsvc.NewUnencryptedConfig(string(config)),
 	}, nil, nil)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	for _, tc := range cases {
-		t.Run(tc.name, func(t *testing.T) {
+	for _, tc := rbnge cbses {
+		t.Run(tc.nbme, func(t *testing.T) {
 			body = tc.body
 
-			repos, validSrcExposeConfiguration, err := source.srcExpose(context.Background())
-			if got := fmt.Sprintf("%v", err); !strings.Contains(got, tc.err) {
-				t.Fatalf("got error %v, want %v", got, tc.err)
+			repos, vblidSrcExposeConfigurbtion, err := source.srcExpose(context.Bbckground())
+			if got := fmt.Sprintf("%v", err); !strings.Contbins(got, tc.err) {
+				t.Fbtblf("got error %v, wbnt %v", got, tc.err)
 			}
-			if !validSrcExposeConfiguration {
-				t.Fatal("other source configuration is expected to be compatible with srcExpose requirements")
+			if !vblidSrcExposeConfigurbtion {
+				t.Fbtbl("other source configurbtion is expected to be compbtible with srcExpose requirements")
 			}
-			if !reflect.DeepEqual(repos, tc.want) {
-				t.Fatal("unexpected repos", cmp.Diff(tc.want, repos))
+			if !reflect.DeepEqubl(repos, tc.wbnt) {
+				t.Fbtbl("unexpected repos", cmp.Diff(tc.wbnt, repos))
 			}
 		})
 	}
 }
 
 func TestOther_ListRepos(t *testing.T) {
-	// We don't test on the details of what we marshal, instead we just write
-	// some tests based on the repo names that are returned.
+	// We don't test on the detbils of whbt we mbrshbl, instebd we just write
+	// some tests bbsed on the repo nbmes thbt bre returned.
 
-	// Spin up a src-expose server
-	var srcExposeRepos []string
-	srcExpose := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.URL.Path != "/v1/list-repos" && r.URL.Path != "/v1/list-repos-for-path" {
-			http.Error(w, r.URL.String()+" not found", http.StatusNotFound)
+	// Spin up b src-expose server
+	vbr srcExposeRepos []string
+	srcExpose := httptest.NewServer(http.HbndlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Pbth != "/v1/list-repos" && r.URL.Pbth != "/v1/list-repos-for-pbth" {
+			http.Error(w, r.URL.String()+" not found", http.StbtusNotFound)
 			return
 		}
-		var items []srcExposeItem
-		for _, name := range srcExposeRepos {
-			items = append(items, srcExposeItem{
-				URI:       "repos/" + name,
-				Name:      name,
-				ClonePath: "repos/" + name + ".git",
+		vbr items []srcExposeItem
+		for _, nbme := rbnge srcExposeRepos {
+			items = bppend(items, srcExposeItem{
+				URI:       "repos/" + nbme,
+				Nbme:      nbme,
+				ClonePbth: "repos/" + nbme + ".git",
 			})
 		}
-		_ = json.NewEncoder(w).Encode(map[string]any{"Items": items})
+		_ = json.NewEncoder(w).Encode(mbp[string]bny{"Items": items})
 	}))
 	defer srcExpose.Close()
 
-	cases := []struct {
-		Name           string
-		Conn           *schema.OtherExternalServiceConnection
+	cbses := []struct {
+		Nbme           string
+		Conn           *schemb.OtherExternblServiceConnection
 		SrcExposeRepos []string
-		Want           []string
+		Wbnt           []string
 	}{{
-		Name: "src-expose/simple",
-		Conn: &schema.OtherExternalServiceConnection{
+		Nbme: "src-expose/simple",
+		Conn: &schemb.OtherExternblServiceConnection{
 			Url:   srcExpose.URL,
 			Repos: []string{"src-expose"},
 		},
-		SrcExposeRepos: []string{"a", "b/c", "d"},
-		Want:           []string{"a", "b/c", "d"},
+		SrcExposeRepos: []string{"b", "b/c", "d"},
+		Wbnt:           []string{"b", "b/c", "d"},
 	}, {
-		Name: "src-serve-local/simple",
-		Conn: &schema.OtherExternalServiceConnection{
+		Nbme: "src-serve-locbl/simple",
+		Conn: &schemb.OtherExternblServiceConnection{
 			Url:   srcExpose.URL,
-			Repos: []string{"src-serve-local"},
+			Repos: []string{"src-serve-locbl"},
 		},
-		SrcExposeRepos: []string{"a", "b/c", "d"},
-		Want:           []string{"a", "b/c", "d"},
+		SrcExposeRepos: []string{"b", "b/c", "d"},
+		Wbnt:           []string{"b", "b/c", "d"},
 	}, {
-		Name: "static/simple",
-		Conn: &schema.OtherExternalServiceConnection{
+		Nbme: "stbtic/simple",
+		Conn: &schemb.OtherExternblServiceConnection{
 			Url:   "http://test",
-			Repos: []string{"a", "b/c", "d"},
+			Repos: []string{"b", "b/c", "d"},
 		},
-		Want: []string{"test/a", "test/b/c", "test/d"},
+		Wbnt: []string{"test/b", "test/b/c", "test/d"},
 	}, {
-		// Pattern is ignored for src-expose
-		Name: "src-expose/pattern",
-		Conn: &schema.OtherExternalServiceConnection{
+		// Pbttern is ignored for src-expose
+		Nbme: "src-expose/pbttern",
+		Conn: &schemb.OtherExternblServiceConnection{
 			Url:                   srcExpose.URL,
 			Repos:                 []string{"src-expose"},
-			RepositoryPathPattern: "pre-{repo}",
+			RepositoryPbthPbttern: "pre-{repo}",
 		},
-		SrcExposeRepos: []string{"a", "b/c", "d"},
-		Want:           []string{"a", "b/c", "d"},
+		SrcExposeRepos: []string{"b", "b/c", "d"},
+		Wbnt:           []string{"b", "b/c", "d"},
 	}, {
-		// Pattern is ignored for src-serve-local
-		Name: "src-serve-local/pattern",
-		Conn: &schema.OtherExternalServiceConnection{
+		// Pbttern is ignored for src-serve-locbl
+		Nbme: "src-serve-locbl/pbttern",
+		Conn: &schemb.OtherExternblServiceConnection{
 			Url:                   srcExpose.URL,
-			Repos:                 []string{"src-serve-local"},
-			RepositoryPathPattern: "pre-{repo}",
+			Repos:                 []string{"src-serve-locbl"},
+			RepositoryPbthPbttern: "pre-{repo}",
 		},
-		SrcExposeRepos: []string{"a", "b/c", "d"},
-		Want:           []string{"a", "b/c", "d"},
+		SrcExposeRepos: []string{"b", "b/c", "d"},
+		Wbnt:           []string{"b", "b/c", "d"},
 	}, {
-		Name: "static/pattern",
-		Conn: &schema.OtherExternalServiceConnection{
+		Nbme: "stbtic/pbttern",
+		Conn: &schemb.OtherExternblServiceConnection{
 			Url:                   "http://test",
-			Repos:                 []string{"a", "b/c", "d"},
-			RepositoryPathPattern: "pre-{repo}",
+			Repos:                 []string{"b", "b/c", "d"},
+			RepositoryPbthPbttern: "pre-{repo}",
 		},
-		Want: []string{"pre-a", "pre-b/c", "pre-d"},
+		Wbnt: []string{"pre-b", "pre-b/c", "pre-d"},
 	}, {
-		Name: "src-expose/exclude",
-		Conn: &schema.OtherExternalServiceConnection{
+		Nbme: "src-expose/exclude",
+		Conn: &schemb.OtherExternblServiceConnection{
 			Url:                   srcExpose.URL,
 			Repos:                 []string{"src-expose"},
-			Exclude:               []*schema.ExcludedOtherRepo{{Name: "not-exact"}, {Name: "exclude/exact"}, {Pattern: "exclude-dir"}},
-			RepositoryPathPattern: "pre-{repo}",
+			Exclude:               []*schemb.ExcludedOtherRepo{{Nbme: "not-exbct"}, {Nbme: "exclude/exbct"}, {Pbttern: "exclude-dir"}},
+			RepositoryPbthPbttern: "pre-{repo}",
 		},
-		SrcExposeRepos: []string{"keep1", "not-exact/keep2", "exclude-dir/a", "exclude-dir/b", "exclude/exact", "keep3"},
-		Want:           []string{"keep1", "not-exact/keep2", "keep3"},
+		SrcExposeRepos: []string{"keep1", "not-exbct/keep2", "exclude-dir/b", "exclude-dir/b", "exclude/exbct", "keep3"},
+		Wbnt:           []string{"keep1", "not-exbct/keep2", "keep3"},
 	}, {
-		Name: "src-serve-local/exclude",
-		Conn: &schema.OtherExternalServiceConnection{
+		Nbme: "src-serve-locbl/exclude",
+		Conn: &schemb.OtherExternblServiceConnection{
 			Url:                   srcExpose.URL,
-			Repos:                 []string{"src-serve-local"},
-			Exclude:               []*schema.ExcludedOtherRepo{{Name: "not-exact"}, {Name: "exclude/exact"}, {Pattern: "exclude-dir"}},
-			RepositoryPathPattern: "pre-{repo}",
+			Repos:                 []string{"src-serve-locbl"},
+			Exclude:               []*schemb.ExcludedOtherRepo{{Nbme: "not-exbct"}, {Nbme: "exclude/exbct"}, {Pbttern: "exclude-dir"}},
+			RepositoryPbthPbttern: "pre-{repo}",
 		},
-		SrcExposeRepos: []string{"keep1", "not-exact/keep2", "exclude-dir/a", "exclude-dir/b", "exclude/exact", "keep3"},
-		Want:           []string{"keep1", "not-exact/keep2", "keep3"},
+		SrcExposeRepos: []string{"keep1", "not-exbct/keep2", "exclude-dir/b", "exclude-dir/b", "exclude/exbct", "keep3"},
+		Wbnt:           []string{"keep1", "not-exbct/keep2", "keep3"},
 	}, {
-		Name: "static/pattern",
-		Conn: &schema.OtherExternalServiceConnection{
+		Nbme: "stbtic/pbttern",
+		Conn: &schemb.OtherExternblServiceConnection{
 			Url:                   "http://test",
-			Repos:                 []string{"keep1", "not-exact/keep2", "exclude-dir/a", "exclude-dir/b", "exclude/exact", "keep3"},
-			Exclude:               []*schema.ExcludedOtherRepo{{Name: "not-exact"}, {Name: "exclude/exact"}, {Pattern: "exclude-dir"}},
-			RepositoryPathPattern: "{repo}",
+			Repos:                 []string{"keep1", "not-exbct/keep2", "exclude-dir/b", "exclude-dir/b", "exclude/exbct", "keep3"},
+			Exclude:               []*schemb.ExcludedOtherRepo{{Nbme: "not-exbct"}, {Nbme: "exclude/exbct"}, {Pbttern: "exclude-dir"}},
+			RepositoryPbthPbttern: "{repo}",
 		},
-		Want: []string{"keep1", "not-exact/keep2", "keep3"},
+		Wbnt: []string{"keep1", "not-exbct/keep2", "keep3"},
 	}}
 
-	for _, tc := range cases {
-		t.Run(tc.Name, func(t *testing.T) {
-			// need to do this so our test server can marshal the repos
+	for _, tc := rbnge cbses {
+		t.Run(tc.Nbme, func(t *testing.T) {
+			// need to do this so our test server cbn mbrshbl the repos
 			srcExposeRepos = tc.SrcExposeRepos
 
-			config, err := json.Marshal(tc.Conn)
+			config, err := json.Mbrshbl(tc.Conn)
 			if err != nil {
-				t.Fatal(err)
+				t.Fbtbl(err)
 			}
 
-			ctx := context.Background()
-			source, err := NewOtherSource(ctx, &types.ExternalService{
+			ctx := context.Bbckground()
+			source, err := NewOtherSource(ctx, &types.ExternblService{
 				ID:     1,
 				Kind:   extsvc.KindOther,
 				Config: extsvc.NewUnencryptedConfig(string(config)),
-			}, httpcli.NewFactory(httpcli.NewMiddleware()), logtest.Scoped(t))
+			}, httpcli.NewFbctory(httpcli.NewMiddlewbre()), logtest.Scoped(t))
 			if err != nil {
-				t.Fatal(err)
+				t.Fbtbl(err)
 			}
 
-			results := make(chan SourceResult)
+			results := mbke(chbn SourceResult)
 			go func() {
 				defer close(results)
 				source.ListRepos(ctx, results)
 			}()
 
-			var got []string
-			for r := range results {
+			vbr got []string
+			for r := rbnge results {
 				if r.Err != nil {
 					t.Error(r.Err)
 				} else {
-					got = append(got, string(r.Repo.Name))
+					got = bppend(got, string(r.Repo.Nbme))
 				}
 			}
 
-			if d := cmp.Diff(tc.Want, got); d != "" {
-				t.Fatalf("unexpected repos (-want, +got):\n%s", d)
+			if d := cmp.Diff(tc.Wbnt, got); d != "" {
+				t.Fbtblf("unexpected repos (-wbnt, +got):\n%s", d)
 			}
 		})
 	}
@@ -513,105 +513,105 @@ type srcExposeRequestBody struct {
 }
 
 func TestOther_SrcExposeRequest(t *testing.T) {
-	cases := []struct {
-		Name           string
-		Conn           *schema.OtherExternalServiceConnection
-		ValidRequest   bool
+	cbses := []struct {
+		Nbme           string
+		Conn           *schemb.OtherExternblServiceConnection
+		VblidRequest   bool
 		Method         string
-		ValidSrcExpose bool
+		VblidSrcExpose bool
 		Body           srcExposeRequestBody
 	}{{
-		Name: "src-expose",
-		Conn: &schema.OtherExternalServiceConnection{
+		Nbme: "src-expose",
+		Conn: &schemb.OtherExternblServiceConnection{
 			Repos: []string{"src-expose"},
 		},
-		ValidRequest:   true,
+		VblidRequest:   true,
 		Method:         http.MethodGet,
-		ValidSrcExpose: true,
+		VblidSrcExpose: true,
 	}, {
-		Name: "src-serve",
-		Conn: &schema.OtherExternalServiceConnection{
+		Nbme: "src-serve",
+		Conn: &schemb.OtherExternblServiceConnection{
 			Repos: []string{"src-serve"},
 		},
-		ValidRequest:   true,
+		VblidRequest:   true,
 		Method:         http.MethodGet,
-		ValidSrcExpose: true,
+		VblidSrcExpose: true,
 	}, {
-		Name: "src-serve-local",
-		Conn: &schema.OtherExternalServiceConnection{
-			Repos: []string{"src-serve-local"},
-			Root:  "/path/to/dir",
+		Nbme: "src-serve-locbl",
+		Conn: &schemb.OtherExternblServiceConnection{
+			Repos: []string{"src-serve-locbl"},
+			Root:  "/pbth/to/dir",
 		},
-		ValidRequest:   true,
+		VblidRequest:   true,
 		Method:         http.MethodPost,
-		ValidSrcExpose: true,
-		Body:           srcExposeRequestBody{Root: "/path/to/dir"},
+		VblidSrcExpose: true,
+		Body:           srcExposeRequestBody{Root: "/pbth/to/dir"},
 	}, {
-		Name: "invalid src-expose",
-		Conn: &schema.OtherExternalServiceConnection{
+		Nbme: "invblid src-expose",
+		Conn: &schemb.OtherExternblServiceConnection{
 			Repos: []string{"myrepo"},
 		},
-		ValidRequest:   false,
+		VblidRequest:   fblse,
 		Method:         http.MethodGet,
-		ValidSrcExpose: false,
+		VblidSrcExpose: fblse,
 	}, {
-		Name: "invalid src-expose ignores root property",
-		Conn: &schema.OtherExternalServiceConnection{
+		Nbme: "invblid src-expose ignores root property",
+		Conn: &schemb.OtherExternblServiceConnection{
 			Repos: []string{"myrepo"},
-			Root:  "/path/to/dir",
+			Root:  "/pbth/to/dir",
 		},
-		ValidRequest:   false,
+		VblidRequest:   fblse,
 		Method:         http.MethodGet,
-		ValidSrcExpose: false,
+		VblidSrcExpose: fblse,
 	}}
 
-	for _, tc := range cases {
-		t.Run(tc.Name, func(t *testing.T) {
-			config, err := json.Marshal(tc.Conn)
+	for _, tc := rbnge cbses {
+		t.Run(tc.Nbme, func(t *testing.T) {
+			config, err := json.Mbrshbl(tc.Conn)
 			if err != nil {
-				t.Fatal(err)
+				t.Fbtbl(err)
 			}
 
-			ctx := context.Background()
-			source, err := NewOtherSource(ctx, &types.ExternalService{
+			ctx := context.Bbckground()
+			source, err := NewOtherSource(ctx, &types.ExternblService{
 				ID:     1,
 				Kind:   extsvc.KindOther,
 				Config: extsvc.NewUnencryptedConfig(string(config)),
-			}, httpcli.NewFactory(httpcli.NewMiddleware()), logtest.Scoped(t))
+			}, httpcli.NewFbctory(httpcli.NewMiddlewbre()), logtest.Scoped(t))
 			if err != nil {
-				t.Fatal(err)
+				t.Fbtbl(err)
 			}
 
-			req, validSrcExposeConfig, err := source.srcExposeRequest()
+			req, vblidSrcExposeConfig, err := source.srcExposeRequest()
 			if err != nil {
-				t.Fatal(err)
+				t.Fbtbl(err)
 			}
 
-			if validSrcExposeConfig != tc.ValidSrcExpose {
-				t.Fatalf("got validSrcExposeConfig %v, want %v", validSrcExposeConfig, tc.ValidSrcExpose)
+			if vblidSrcExposeConfig != tc.VblidSrcExpose {
+				t.Fbtblf("got vblidSrcExposeConfig %v, wbnt %v", vblidSrcExposeConfig, tc.VblidSrcExpose)
 			}
 
-			if tc.ValidRequest {
+			if tc.VblidRequest {
 				if req == nil {
-					t.Fatalf("expected non-nil request")
+					t.Fbtblf("expected non-nil request")
 				}
 
 				if req.Method != tc.Method {
-					t.Fatalf("got http method %v, want %v", req.Method, tc.Method)
+					t.Fbtblf("got http method %v, wbnt %v", req.Method, tc.Method)
 				}
 
 				if req.Body != nil {
-					var gotReqBody srcExposeRequestBody
+					vbr gotReqBody srcExposeRequestBody
 					if err := json.NewDecoder(req.Body).Decode(&gotReqBody); err != nil {
-						t.Fatalf("error returned by Decode: %s", err.Error())
+						t.Fbtblf("error returned by Decode: %s", err.Error())
 					}
 
 					if gotReqBody.Root != tc.Body.Root {
-						t.Fatalf("got request body root property %v, want %v", gotReqBody.Root, tc.Body.Root)
+						t.Fbtblf("got request body root property %v, wbnt %v", gotReqBody.Root, tc.Body.Root)
 					}
 
 					if d := cmp.Diff(tc.Body, gotReqBody); d != "" {
-						t.Fatalf("unexpected repos (-want, +got):\n%s", d)
+						t.Fbtblf("unexpected repos (-wbnt, +got):\n%s", d)
 					}
 				}
 			}

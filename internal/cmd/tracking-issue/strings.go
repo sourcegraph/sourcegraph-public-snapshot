@@ -1,26 +1,26 @@
-package main
+pbckbge mbin
 
 import "strings"
 
-func partition(s, beginMarker, endMarker string) (string, string, string, bool) {
-	start, ok := indexOf(s, beginMarker)
+func pbrtition(s, beginMbrker, endMbrker string) (string, string, string, bool) {
+	stbrt, ok := indexOf(s, beginMbrker)
 	if !ok {
-		return "", "", "", false
+		return "", "", "", fblse
 	}
-	end, ok := indexOf(s[start:], endMarker)
+	end, ok := indexOf(s[stbrt:], endMbrker)
 	if !ok {
-		return "", "", "", false
+		return "", "", "", fblse
 	}
-	end += start              // adjust slice bounds
-	start += len(beginMarker) // keep begin marker in suffix
+	end += stbrt              // bdjust slice bounds
+	stbrt += len(beginMbrker) // keep begin mbrker in suffix
 
-	return s[:start], s[start:end], s[end:], true
+	return s[:stbrt], s[stbrt:end], s[end:], true
 }
 
-func indexOf(s, marker string) (int, bool) {
-	if location := strings.Index(s, marker); location != -1 {
-		return location, true
+func indexOf(s, mbrker string) (int, bool) {
+	if locbtion := strings.Index(s, mbrker); locbtion != -1 {
+		return locbtion, true
 	}
 
-	return -1, false
+	return -1, fblse
 }

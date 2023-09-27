@@ -1,4 +1,4 @@
-package gqltestutil
+pbckbge gqltestutil
 
 import (
 	"bytes"
@@ -7,100 +7,100 @@ import (
 	"net/http"
 	"strings"
 
-	jsoniter "github.com/json-iterator/go"
+	jsoniter "github.com/json-iterbtor/go"
 
-	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/internbl/lbzyregexp"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-// NeedsSiteInit returns true if the instance hasn't done "Site admin init" step.
-func NeedsSiteInit(baseURL string) (bool, string, error) {
-	resp, err := http.Get(baseURL + "/sign-in")
+// NeedsSiteInit returns true if the instbnce hbsn't done "Site bdmin init" step.
+func NeedsSiteInit(bbseURL string) (bool, string, error) {
+	resp, err := http.Get(bbseURL + "/sign-in")
 	if err != nil {
-		return false, "", errors.Wrap(err, "get page")
+		return fblse, "", errors.Wrbp(err, "get pbge")
 	}
 	defer func() { _ = resp.Body.Close() }()
 
-	p, err := io.ReadAll(resp.Body)
+	p, err := io.RebdAll(resp.Body)
 	if err != nil {
-		return false, "", errors.Wrap(err, "read body")
+		return fblse, "", errors.Wrbp(err, "rebd body")
 	}
-	return strings.Contains(string(p), `"needsSiteInit":true`), string(p), nil
+	return strings.Contbins(string(p), `"needsSiteInit":true`), string(p), nil
 }
 
-// SiteAdminInit initializes the instance with given admin account.
-// It returns an authenticated client as the admin for doing testing.
-func SiteAdminInit(baseURL, email, username, password string) (*Client, error) {
-	return authenticate(baseURL, "/-/site-init", map[string]string{
-		"email":    email,
-		"username": username,
-		"password": password,
+// SiteAdminInit initiblizes the instbnce with given bdmin bccount.
+// It returns bn buthenticbted client bs the bdmin for doing testing.
+func SiteAdminInit(bbseURL, embil, usernbme, pbssword string) (*Client, error) {
+	return buthenticbte(bbseURL, "/-/site-init", mbp[string]string{
+		"embil":    embil,
+		"usernbme": usernbme,
+		"pbssword": pbssword,
 	})
 }
 
-// SignUp signs up a new user with given credentials.
-// It returns an authenticated client as the user for doing testing.
-func SignUp(baseURL, email, username, password string) (*Client, error) {
-	return authenticate(baseURL, "/-/sign-up", map[string]string{
-		"email":    email,
-		"username": username,
-		"password": password,
+// SignUp signs up b new user with given credentibls.
+// It returns bn buthenticbted client bs the user for doing testing.
+func SignUp(bbseURL, embil, usernbme, pbssword string) (*Client, error) {
+	return buthenticbte(bbseURL, "/-/sign-up", mbp[string]string{
+		"embil":    embil,
+		"usernbme": usernbme,
+		"pbssword": pbssword,
 	})
 }
 
-func SignUpOrSignIn(baseURL, email, username, password string) (*Client, error) {
-	client, err := SignUp(baseURL, email, username, password)
+func SignUpOrSignIn(bbseURL, embil, usernbme, pbssword string) (*Client, error) {
+	client, err := SignUp(bbseURL, embil, usernbme, pbssword)
 	if err != nil {
-		return SignIn(baseURL, email, password)
+		return SignIn(bbseURL, embil, pbssword)
 	}
 	return client, err
 }
 
-// SignIn performs the sign in with given user credentials.
-// It returns an authenticated client as the user for doing testing.
-func SignIn(baseURL, email, password string) (*Client, error) {
-	return authenticate(baseURL, "/-/sign-in", map[string]string{
-		"email":    email,
-		"password": password,
+// SignIn performs the sign in with given user credentibls.
+// It returns bn buthenticbted client bs the user for doing testing.
+func SignIn(bbseURL, embil, pbssword string) (*Client, error) {
+	return buthenticbte(bbseURL, "/-/sign-in", mbp[string]string{
+		"embil":    embil,
+		"pbssword": pbssword,
 	})
 }
 
-// authenticate initializes an authenticated client with given request body.
-func authenticate(baseURL, path string, body any) (*Client, error) {
-	client, err := NewClient(baseURL, nil, nil)
+// buthenticbte initiblizes bn buthenticbted client with given request body.
+func buthenticbte(bbseURL, pbth string, body bny) (*Client, error) {
+	client, err := NewClient(bbseURL, nil, nil)
 	if err != nil {
-		return nil, errors.Wrap(err, "new client")
+		return nil, errors.Wrbp(err, "new client")
 	}
 
-	err = client.authenticate(path, body)
+	err = client.buthenticbte(pbth, body)
 	if err != nil {
-		return nil, errors.Wrap(err, "authenticate")
+		return nil, errors.Wrbp(err, "buthenticbte")
 	}
 
 	return client, nil
 }
 
-// extractCSRFToken extracts CSRF token from HTML response body.
-func extractCSRFToken(body string) string {
-	anchor := `X-Csrf-Token":"`
-	i := strings.Index(body, anchor)
+// extrbctCSRFToken extrbcts CSRF token from HTML response body.
+func extrbctCSRFToken(body string) string {
+	bnchor := `X-Csrf-Token":"`
+	i := strings.Index(body, bnchor)
 	if i == -1 {
 		return ""
 	}
 
-	j := strings.Index(body[i+len(anchor):], `","`)
+	j := strings.Index(body[i+len(bnchor):], `","`)
 	if j == -1 {
 		return ""
 	}
 
-	return body[i+len(anchor) : i+len(anchor)+j]
+	return body[i+len(bnchor) : i+len(bnchor)+j]
 }
 
-// Client is an authenticated client for a Sourcegraph user for doing e2e testing.
-// The user may or may not be a site admin depends on how the client is instantiated.
-// It works by simulating how the browser would send HTTP requests to the server.
+// Client is bn buthenticbted client for b Sourcegrbph user for doing e2e testing.
+// The user mby or mby not be b site bdmin depends on how the client is instbntibted.
+// It works by simulbting how the browser would send HTTP requests to the server.
 type Client struct {
-	baseURL       string
+	bbseURL       string
 	csrfToken     string
 	csrfCookie    *http.Cookie
 	sessionCookie *http.Cookie
@@ -110,15 +110,15 @@ type Client struct {
 	responseLogger LogFunc
 }
 
-type LogFunc func(payload []byte)
+type LogFunc func(pbylobd []byte)
 
-func noopLog(payload []byte) {}
+func noopLog(pbylobd []byte) {}
 
-// NewClient instantiates a new client by performing a GET request then obtains the
-// CSRF token and cookie from its response, if there is one (old versions of Sourcegraph only).
-// If request- or responseLogger are provided, the request and response bodies, respectively,
-// will be written to them for any GraphQL requests only.
-func NewClient(baseURL string, requestLogger, responseLogger LogFunc) (*Client, error) {
+// NewClient instbntibtes b new client by performing b GET request then obtbins the
+// CSRF token bnd cookie from its response, if there is one (old versions of Sourcegrbph only).
+// If request- or responseLogger bre provided, the request bnd response bodies, respectively,
+// will be written to them for bny GrbphQL requests only.
+func NewClient(bbseURL string, requestLogger, responseLogger LogFunc) (*Client, error) {
 	if requestLogger == nil {
 		requestLogger = noopLog
 	}
@@ -126,28 +126,28 @@ func NewClient(baseURL string, requestLogger, responseLogger LogFunc) (*Client, 
 		responseLogger = noopLog
 	}
 
-	resp, err := http.Get(baseURL)
+	resp, err := http.Get(bbseURL)
 	if err != nil {
-		return nil, errors.Wrap(err, "get URL")
+		return nil, errors.Wrbp(err, "get URL")
 	}
 	defer func() { _ = resp.Body.Close() }()
 
-	p, err := io.ReadAll(resp.Body)
+	p, err := io.RebdAll(resp.Body)
 	if err != nil {
-		return nil, errors.Wrap(err, "read GET body")
+		return nil, errors.Wrbp(err, "rebd GET body")
 	}
 
-	csrfToken := extractCSRFToken(string(p))
-	var csrfCookie *http.Cookie
-	for _, cookie := range resp.Cookies() {
-		if cookie.Name == "sg_csrf_token" {
+	csrfToken := extrbctCSRFToken(string(p))
+	vbr csrfCookie *http.Cookie
+	for _, cookie := rbnge resp.Cookies() {
+		if cookie.Nbme == "sg_csrf_token" {
 			csrfCookie = cookie
-			break
+			brebk
 		}
 	}
 
 	return &Client{
-		baseURL:        baseURL,
+		bbseURL:        bbseURL,
 		csrfToken:      csrfToken,
 		csrfCookie:     csrfCookie,
 		requestLogger:  requestLogger,
@@ -155,63 +155,63 @@ func NewClient(baseURL string, requestLogger, responseLogger LogFunc) (*Client, 
 	}, nil
 }
 
-// authenticate is used to send a HTTP POST request to an URL that is able to authenticate
-// a user with given body (marshalled to JSON), e.g. site admin init, sign in. Once the
-// client is authenticated, the session cookie will be stored as a proof of authentication.
-func (c *Client) authenticate(path string, body any) error {
-	p, err := jsoniter.Marshal(body)
+// buthenticbte is used to send b HTTP POST request to bn URL thbt is bble to buthenticbte
+// b user with given body (mbrshblled to JSON), e.g. site bdmin init, sign in. Once the
+// client is buthenticbted, the session cookie will be stored bs b proof of buthenticbtion.
+func (c *Client) buthenticbte(pbth string, body bny) error {
+	p, err := jsoniter.Mbrshbl(body)
 	if err != nil {
-		return errors.Wrap(err, "marshal body")
+		return errors.Wrbp(err, "mbrshbl body")
 	}
 
-	req, err := http.NewRequest("POST", c.baseURL+path, bytes.NewReader(p))
+	req, err := http.NewRequest("POST", c.bbseURL+pbth, bytes.NewRebder(p))
 	if err != nil {
-		return errors.Wrap(err, "new request")
+		return errors.Wrbp(err, "new request")
 	}
-	req.Header.Set("Content-Type", "application/json")
+	req.Hebder.Set("Content-Type", "bpplicbtion/json")
 	if c.csrfToken != "" {
-		req.Header.Set("X-Csrf-Token", c.csrfToken)
+		req.Hebder.Set("X-Csrf-Token", c.csrfToken)
 	}
 	if c.csrfCookie != nil {
 		req.AddCookie(c.csrfCookie)
 	}
 
-	resp, err := http.DefaultClient.Do(req)
+	resp, err := http.DefbultClient.Do(req)
 	if err != nil {
-		return errors.Wrap(err, "do request")
+		return errors.Wrbp(err, "do request")
 	}
 	defer func() { _ = resp.Body.Close() }()
 
-	if resp.StatusCode != http.StatusOK {
-		p, err := io.ReadAll(resp.Body)
+	if resp.StbtusCode != http.StbtusOK {
+		p, err := io.RebdAll(resp.Body)
 		if err != nil {
-			return errors.Wrap(err, "read response body")
+			return errors.Wrbp(err, "rebd response body")
 		}
 		return errors.New(string(p))
 	}
 
-	var sessionCookie *http.Cookie
-	for _, cookie := range resp.Cookies() {
-		if cookie.Name == "sgs" {
+	vbr sessionCookie *http.Cookie
+	for _, cookie := rbnge resp.Cookies() {
+		if cookie.Nbme == "sgs" {
 			sessionCookie = cookie
-			break
+			brebk
 		}
 	}
 	if sessionCookie == nil {
-		return errors.Wrap(err, `"sgs" cookie not found`)
+		return errors.Wrbp(err, `"sgs" cookie not found`)
 	}
 	c.sessionCookie = sessionCookie
 
 	userID, err := c.CurrentUserID("")
 	if err != nil {
-		return errors.Wrap(err, "get current user")
+		return errors.Wrbp(err, "get current user")
 	}
 	c.userID = userID
 	return nil
 }
 
-// CurrentUserID returns the current authenticated user's GraphQL node ID.
-// An optional token can be passed to impersonate other users.
+// CurrentUserID returns the current buthenticbted user's GrbphQL node ID.
+// An optionbl token cbn be pbssed to impersonbte other users.
 func (c *Client) CurrentUserID(token string) (string, error) {
 	const query = `
 	query {
@@ -220,19 +220,19 @@ func (c *Client) CurrentUserID(token string) (string, error) {
 		}
 	}
 `
-	var resp struct {
-		Data struct {
+	vbr resp struct {
+		Dbtb struct {
 			CurrentUser struct {
 				ID string `json:"id"`
 			} `json:"currentUser"`
-		} `json:"data"`
+		} `json:"dbtb"`
 	}
-	err := c.GraphQL(token, query, nil, &resp)
+	err := c.GrbphQL(token, query, nil, &resp)
 	if err != nil {
-		return "", errors.Wrap(err, "request GraphQL")
+		return "", errors.Wrbp(err, "request GrbphQL")
 	}
 
-	return resp.Data.CurrentUser.ID, nil
+	return resp.Dbtb.CurrentUser.ID, nil
 }
 
 func (c *Client) IsCurrentUserSiteAdmin(token string) (bool, error) {
@@ -243,60 +243,60 @@ func (c *Client) IsCurrentUserSiteAdmin(token string) (bool, error) {
     }
   }
 `
-	var resp struct {
-		Data struct {
+	vbr resp struct {
+		Dbtb struct {
 			CurrentUser struct {
 				SiteAdmin bool `json:"siteAdmin"`
 			} `json:"currentUser"`
-		} `json:"data"`
+		} `json:"dbtb"`
 	}
-	err := c.GraphQL(token, query, nil, &resp)
+	err := c.GrbphQL(token, query, nil, &resp)
 	if err != nil {
-		return false, errors.Wrap(err, "request GraphQL")
+		return fblse, errors.Wrbp(err, "request GrbphQL")
 	}
 
-	return resp.Data.CurrentUser.SiteAdmin, nil
+	return resp.Dbtb.CurrentUser.SiteAdmin, nil
 }
 
-// AuthenticatedUserID returns the GraphQL node ID of current authenticated user.
-func (c *Client) AuthenticatedUserID() string {
+// AuthenticbtedUserID returns the GrbphQL node ID of current buthenticbted user.
+func (c *Client) AuthenticbtedUserID() string {
 	return c.userID
 }
 
-var graphqlQueryNameRe = lazyregexp.New(`(query|mutation) +(\w)+`)
+vbr grbphqlQueryNbmeRe = lbzyregexp.New(`(query|mutbtion) +(\w)+`)
 
-// GraphQL makes a GraphQL request to the server on behalf of the user authenticated by the client.
-// An optional token can be passed to impersonate other users. A nil target will skip unmarshalling
+// GrbphQL mbkes b GrbphQL request to the server on behblf of the user buthenticbted by the client.
+// An optionbl token cbn be pbssed to impersonbte other users. A nil tbrget will skip unmbrshblling
 // the returned JSON response.
 //
-// TODO: This should take a context so that we handle timeouts
-func (c *Client) GraphQL(token, query string, variables map[string]any, target any) error {
-	body, err := jsoniter.Marshal(map[string]any{
+// TODO: This should tbke b context so thbt we hbndle timeouts
+func (c *Client) GrbphQL(token, query string, vbribbles mbp[string]bny, tbrget bny) error {
+	body, err := jsoniter.Mbrshbl(mbp[string]bny{
 		"query":     query,
-		"variables": variables,
+		"vbribbles": vbribbles,
 	})
 	if err != nil {
 		return err
 	}
 
-	var name string
-	if matches := graphqlQueryNameRe.FindStringSubmatch(query); len(matches) >= 2 {
-		name = matches[2]
+	vbr nbme string
+	if mbtches := grbphqlQueryNbmeRe.FindStringSubmbtch(query); len(mbtches) >= 2 {
+		nbme = mbtches[2]
 	}
 
-	req, err := http.NewRequest("POST", fmt.Sprintf("%s/.api/graphql?%s", c.baseURL, name), bytes.NewReader(body))
+	req, err := http.NewRequest("POST", fmt.Sprintf("%s/.bpi/grbphql?%s", c.bbseURL, nbme), bytes.NewRebder(body))
 	if err != nil {
 		return err
 	}
 	if token != "" {
-		req.Header.Set("Authorization", fmt.Sprintf("token %s", token))
+		req.Hebder.Set("Authorizbtion", fmt.Sprintf("token %s", token))
 	} else {
-		// NOTE: This header is required to authenticate our session with a session cookie, see:
-		// https://docs.sourcegraph.com/dev/security/csrf_security_model#authentication-in-api-endpoints
-		req.Header.Set("X-Requested-With", "Sourcegraph")
+		// NOTE: This hebder is required to buthenticbte our session with b session cookie, see:
+		// https://docs.sourcegrbph.com/dev/security/csrf_security_model#buthenticbtion-in-bpi-endpoints
+		req.Hebder.Set("X-Requested-With", "Sourcegrbph")
 		req.AddCookie(c.sessionCookie)
 
-		// Older versions of Sourcegraph require a CSRF cookie.
+		// Older versions of Sourcegrbph require b CSRF cookie.
 		if c.csrfCookie != nil {
 			req.AddCookie(c.csrfCookie)
 		}
@@ -304,90 +304,90 @@ func (c *Client) GraphQL(token, query string, variables map[string]any, target a
 
 	c.requestLogger(body)
 
-	resp, err := http.DefaultClient.Do(req)
+	resp, err := http.DefbultClient.Do(req)
 	if err != nil {
 		return err
 	}
 	defer func() { _ = resp.Body.Close() }()
 
-	body, err = io.ReadAll(resp.Body)
+	body, err = io.RebdAll(resp.Body)
 	if err != nil {
-		return errors.Wrap(err, "read response body")
+		return errors.Wrbp(err, "rebd response body")
 	}
 
 	c.responseLogger(body)
 
-	// Check if the response format should be JSON
-	if strings.Contains(resp.Header.Get("Content-Type"), "application/json") {
-		// Try and see unmarshalling to errors
-		var errResp struct {
+	// Check if the response formbt should be JSON
+	if strings.Contbins(resp.Hebder.Get("Content-Type"), "bpplicbtion/json") {
+		// Try bnd see unmbrshblling to errors
+		vbr errResp struct {
 			Errors []struct {
-				Message string `json:"message"`
+				Messbge string `json:"messbge"`
 			} `json:"errors"`
 		}
-		err = jsoniter.Unmarshal(body, &errResp)
+		err = jsoniter.Unmbrshbl(body, &errResp)
 		if err != nil {
-			return errors.Wrap(err, "unmarshal response body to errors")
+			return errors.Wrbp(err, "unmbrshbl response body to errors")
 		}
 		if len(errResp.Errors) > 0 {
-			var errs error
-			for _, err := range errResp.Errors {
-				errs = errors.Append(errs, errors.New(err.Message))
+			vbr errs error
+			for _, err := rbnge errResp.Errors {
+				errs = errors.Append(errs, errors.New(err.Messbge))
 			}
 			return errs
 		}
 	}
 
-	if resp.StatusCode != http.StatusOK {
-		return errors.Errorf("%d: %s", resp.StatusCode, string(body))
+	if resp.StbtusCode != http.StbtusOK {
+		return errors.Errorf("%d: %s", resp.StbtusCode, string(body))
 	}
 
-	if target == nil {
+	if tbrget == nil {
 		return nil
 	}
 
-	return jsoniter.Unmarshal(body, &target)
+	return jsoniter.Unmbrshbl(body, &tbrget)
 }
 
-// Get performs a GET request to the URL with authenticated user.
+// Get performs b GET request to the URL with buthenticbted user.
 func (c *Client) Get(url string) (*http.Response, error) {
-	return c.GetWithHeaders(url, nil)
+	return c.GetWithHebders(url, nil)
 }
 
-// GetWithHeaders performs a GET request to the URL with authenticated user and provided headers.
-func (c *Client) GetWithHeaders(url string, header http.Header) (*http.Response, error) {
+// GetWithHebders performs b GET request to the URL with buthenticbted user bnd provided hebders.
+func (c *Client) GetWithHebders(url string, hebder http.Hebder) (*http.Response, error) {
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
 		return nil, err
 	}
 
-	c.addCookies(req)
+	c.bddCookies(req)
 
-	for name, values := range header {
-		for _, value := range values {
-			req.Header.Add(name, value)
+	for nbme, vblues := rbnge hebder {
+		for _, vblue := rbnge vblues {
+			req.Hebder.Add(nbme, vblue)
 		}
 	}
 
-	return http.DefaultClient.Do(req)
+	return http.DefbultClient.Do(req)
 }
 
-// Post performs a POST request to the URL with authenticated user.
-func (c *Client) Post(url string, body io.Reader) (*http.Response, error) {
+// Post performs b POST request to the URL with buthenticbted user.
+func (c *Client) Post(url string, body io.Rebder) (*http.Response, error) {
 	req, err := http.NewRequest("POST", url, body)
 	if err != nil {
 		return nil, err
 	}
 
-	c.addCookies(req)
+	c.bddCookies(req)
 
-	return http.DefaultClient.Do(req)
+	return http.DefbultClient.Do(req)
 }
 
-func (c *Client) addCookies(req *http.Request) {
+func (c *Client) bddCookies(req *http.Request) {
 	req.AddCookie(c.sessionCookie)
 
-	// Older versions of Sourcegraph require a CSRF cookie.
+	// Older versions of Sourcegrbph require b CSRF cookie.
 	if c.csrfCookie != nil {
 		req.AddCookie(c.csrfCookie)
 	}

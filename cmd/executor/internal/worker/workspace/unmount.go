@@ -1,10 +1,10 @@
 //go:build !windows
 // +build !windows
 
-package workspace
+pbckbge workspbce
 
-import "syscall"
+import "syscbll"
 
-func unmount(dirPath string) error {
-	return syscall.Unmount(dirPath, 0)
+func unmount(dirPbth string) error {
+	return syscbll.Unmount(dirPbth, 0)
 }

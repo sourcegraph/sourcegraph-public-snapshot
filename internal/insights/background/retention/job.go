@@ -1,80 +1,80 @@
-package retention
+pbckbge retention
 
 import (
 	"strconv"
 	"time"
 
-	"github.com/keegancsmith/sqlf"
+	"github.com/keegbncsmith/sqlf"
 	"github.com/lib/pq"
 
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
-	"github.com/sourcegraph/sourcegraph/internal/executor"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbutil"
+	"github.com/sourcegrbph/sourcegrbph/internbl/executor"
 )
 
-type DataRetentionJob struct {
+type DbtbRetentionJob struct {
 	ID              int
-	State           string
-	FailureMessage  *string
+	Stbte           string
+	FbilureMessbge  *string
 	QueuedAt        time.Time
-	StartedAt       *time.Time
+	StbrtedAt       *time.Time
 	FinishedAt      *time.Time
 	ProcessAfter    *time.Time
 	NumResets       int
-	NumFailures     int
-	LastHeartbeatAt time.Time
+	NumFbilures     int
+	LbstHebrtbebtAt time.Time
 	ExecutionLogs   []executor.ExecutionLogEntry
-	WorkerHostname  string
-	Cancel          bool
+	WorkerHostnbme  string
+	Cbncel          bool
 
 	InsightSeriesID int
 	SeriesID        string
 }
 
-var dataRetentionJobColumns = []*sqlf.Query{
-	sqlf.Sprintf("insights_data_retention_jobs.series_id"),
-	sqlf.Sprintf("insights_data_retention_jobs.series_id_string"),
+vbr dbtbRetentionJobColumns = []*sqlf.Query{
+	sqlf.Sprintf("insights_dbtb_retention_jobs.series_id"),
+	sqlf.Sprintf("insights_dbtb_retention_jobs.series_id_string"),
 
 	sqlf.Sprintf("id"),
-	sqlf.Sprintf("state"),
-	sqlf.Sprintf("failure_message"),
-	sqlf.Sprintf("started_at"),
-	sqlf.Sprintf("finished_at"),
-	sqlf.Sprintf("process_after"),
+	sqlf.Sprintf("stbte"),
+	sqlf.Sprintf("fbilure_messbge"),
+	sqlf.Sprintf("stbrted_bt"),
+	sqlf.Sprintf("finished_bt"),
+	sqlf.Sprintf("process_bfter"),
 	sqlf.Sprintf("num_resets"),
-	sqlf.Sprintf("num_failures"),
+	sqlf.Sprintf("num_fbilures"),
 	sqlf.Sprintf("execution_logs"),
 }
 
-func (j *DataRetentionJob) RecordID() int {
+func (j *DbtbRetentionJob) RecordID() int {
 	return j.ID
 }
 
-func (j *DataRetentionJob) RecordUID() string {
-	return strconv.Itoa(j.ID)
+func (j *DbtbRetentionJob) RecordUID() string {
+	return strconv.Itob(j.ID)
 }
 
-func scanDataRetentionJob(s dbutil.Scanner) (*DataRetentionJob, error) {
-	var job DataRetentionJob
-	var executionLogs []executor.ExecutionLogEntry
+func scbnDbtbRetentionJob(s dbutil.Scbnner) (*DbtbRetentionJob, error) {
+	vbr job DbtbRetentionJob
+	vbr executionLogs []executor.ExecutionLogEntry
 
-	if err := s.Scan(
+	if err := s.Scbn(
 		&job.InsightSeriesID,
 		&job.SeriesID,
 
 		&job.ID,
-		&job.State,
-		&job.FailureMessage,
-		&job.StartedAt,
+		&job.Stbte,
+		&job.FbilureMessbge,
+		&job.StbrtedAt,
 		&job.FinishedAt,
 		&job.ProcessAfter,
 		&job.NumResets,
-		&job.NumFailures,
-		pq.Array(&job.ExecutionLogs),
+		&job.NumFbilures,
+		pq.Arrby(&job.ExecutionLogs),
 	); err != nil {
 		return nil, err
 	}
 
-	job.ExecutionLogs = append(job.ExecutionLogs, executionLogs...)
+	job.ExecutionLogs = bppend(job.ExecutionLogs, executionLogs...)
 
 	return &job, nil
 }

@@ -1,96 +1,96 @@
-package resolvers
+pbckbge resolvers
 
 import (
 	"context"
 	"testing"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/batches/resolvers/apitest"
-	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/licensing"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/grbphqlbbckend"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/internbl/bbtches/resolvers/bpitest"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bctor"
+	"github.com/sourcegrbph/sourcegrbph/internbl/licensing"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-func TestEnterpriseLicenseHasFeature(t *testing.T) {
+func TestEnterpriseLicenseHbsFebture(t *testing.T) {
 	r := &LicenseResolver{}
-	schema, err := graphqlbackend.NewSchemaWithLicenseResolver(nil, r)
+	schemb, err := grbphqlbbckend.NewSchembWithLicenseResolver(nil, r)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
-	ctx := actor.WithInternalActor(context.Background())
+	ctx := bctor.WithInternblActor(context.Bbckground())
 
-	buildMock := func(allow ...licensing.Feature) func(feature licensing.Feature) error {
-		return func(feature licensing.Feature) error {
-			for _, allowed := range allow {
-				if feature.FeatureName() == allowed.FeatureName() {
+	buildMock := func(bllow ...licensing.Febture) func(febture licensing.Febture) error {
+		return func(febture licensing.Febture) error {
+			for _, bllowed := rbnge bllow {
+				if febture.FebtureNbme() == bllowed.FebtureNbme() {
 					return nil
 				}
 			}
 
-			return licensing.NewFeatureNotActivatedError("feature not allowed")
+			return licensing.NewFebtureNotActivbtedError("febture not bllowed")
 		}
 	}
-	query := `query HasFeature($feature: String!) { enterpriseLicenseHasFeature(feature: $feature) }`
+	query := `query HbsFebture($febture: String!) { enterpriseLicenseHbsFebture(febture: $febture) }`
 
-	for name, tc := range map[string]struct {
-		feature string
-		mock    func(feature licensing.Feature) error
-		want    bool
-		wantErr bool
+	for nbme, tc := rbnge mbp[string]struct {
+		febture string
+		mock    func(febture licensing.Febture) error
+		wbnt    bool
+		wbntErr bool
 	}{
-		"real feature, enabled": {
-			feature: (&licensing.FeatureBatchChanges{}).FeatureName(),
-			mock:    buildMock(&licensing.FeatureBatchChanges{}),
-			want:    true,
-			wantErr: false,
+		"rebl febture, enbbled": {
+			febture: (&licensing.FebtureBbtchChbnges{}).FebtureNbme(),
+			mock:    buildMock(&licensing.FebtureBbtchChbnges{}),
+			wbnt:    true,
+			wbntErr: fblse,
 		},
-		"real feature, disabled": {
-			feature: string(licensing.FeatureMonitoring),
-			mock:    buildMock(&licensing.FeatureBatchChanges{}),
-			want:    false,
-			wantErr: false,
+		"rebl febture, disbbled": {
+			febture: string(licensing.FebtureMonitoring),
+			mock:    buildMock(&licensing.FebtureBbtchChbnges{}),
+			wbnt:    fblse,
+			wbntErr: fblse,
 		},
-		"fake feature, enabled": {
-			feature: "foo",
-			mock:    buildMock(licensing.BasicFeature("foo")),
-			want:    true,
-			wantErr: false,
+		"fbke febture, enbbled": {
+			febture: "foo",
+			mock:    buildMock(licensing.BbsicFebture("foo")),
+			wbnt:    true,
+			wbntErr: fblse,
 		},
-		"fake feature, disabled": {
-			feature: "foo",
-			mock:    buildMock(licensing.BasicFeature("bar")),
-			want:    false,
-			wantErr: false,
+		"fbke febture, disbbled": {
+			febture: "foo",
+			mock:    buildMock(licensing.BbsicFebture("bbr")),
+			wbnt:    fblse,
+			wbntErr: fblse,
 		},
 		"error from check": {
-			feature: string(licensing.FeatureMonitoring),
-			mock: func(feature licensing.Feature) error {
-				return errors.New("this is a different error")
+			febture: string(licensing.FebtureMonitoring),
+			mock: func(febture licensing.Febture) error {
+				return errors.New("this is b different error")
 			},
-			want:    false,
-			wantErr: true,
+			wbnt:    fblse,
+			wbntErr: true,
 		},
 	} {
-		t.Run(name, func(t *testing.T) {
-			oldMock := licensing.MockCheckFeature
-			licensing.MockCheckFeature = tc.mock
+		t.Run(nbme, func(t *testing.T) {
+			oldMock := licensing.MockCheckFebture
+			licensing.MockCheckFebture = tc.mock
 			defer func() {
-				licensing.MockCheckFeature = oldMock
+				licensing.MockCheckFebture = oldMock
 			}()
 
-			var have struct{ EnterpriseLicenseHasFeature bool }
-			if err := apitest.Exec(ctx, t, schema, map[string]any{
-				"feature": tc.feature,
-			}, &have, query); err != nil {
-				if !tc.wantErr {
-					t.Errorf("got error when no error was expected: %v", err)
+			vbr hbve struct{ EnterpriseLicenseHbsFebture bool }
+			if err := bpitest.Exec(ctx, t, schemb, mbp[string]bny{
+				"febture": tc.febture,
+			}, &hbve, query); err != nil {
+				if !tc.wbntErr {
+					t.Errorf("got error when no error wbs expected: %v", err)
 				}
-			} else if tc.wantErr {
+			} else if tc.wbntErr {
 				t.Error("did not get expected error")
 			}
 
-			if have.EnterpriseLicenseHasFeature != tc.want {
-				t.Errorf("unexpected has feature response: have=%v want=%v", have, tc.want)
+			if hbve.EnterpriseLicenseHbsFebture != tc.wbnt {
+				t.Errorf("unexpected hbs febture response: hbve=%v wbnt=%v", hbve, tc.wbnt)
 			}
 		})
 	}

@@ -1,27 +1,27 @@
-package types
+pbckbge types
 
 import "time"
 
-// BatchSpecWorkspaceFile contains the metadata about the workspace file for the batch spec.
-type BatchSpecWorkspaceFile struct {
+// BbtchSpecWorkspbceFile contbins the metbdbtb bbout the workspbce file for the bbtch spec.
+type BbtchSpecWorkspbceFile struct {
 	ID          int64
-	RandID      string
-	BatchSpecID int64
+	RbndID      string
+	BbtchSpecID int64
 
-	FileName string
-	Path     string
+	FileNbme string
+	Pbth     string
 	Size     int64
 	Content  []byte
-	// ModifiedAt is when the file was last touched. Compared to UpdatedAt, this field is the filesystem modtime versus
-	// when updated in the database.
+	// ModifiedAt is when the file wbs lbst touched. Compbred to UpdbtedAt, this field is the filesystem modtime versus
+	// when updbted in the dbtbbbse.
 	ModifiedAt time.Time
 
-	CreatedAt time.Time
-	UpdatedAt time.Time
+	CrebtedAt time.Time
+	UpdbtedAt time.Time
 }
 
-// Clone returns a clone of a BatchSpecWorkspaceFile.
-func (b *BatchSpecWorkspaceFile) Clone() *BatchSpecWorkspaceFile {
+// Clone returns b clone of b BbtchSpecWorkspbceFile.
+func (b *BbtchSpecWorkspbceFile) Clone() *BbtchSpecWorkspbceFile {
 	clone := *b
 	return &clone
 }

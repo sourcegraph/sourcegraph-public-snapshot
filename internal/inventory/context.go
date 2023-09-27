@@ -1,4 +1,4 @@
-package inventory
+pbckbge inventory
 
 import (
 	"context"
@@ -8,17 +8,17 @@ import (
 
 // Context defines the environment in which the inventory is computed.
 type Context struct {
-	// ReadTree is called to list the immediate children of a tree at path. The returned fs.FileInfo
-	// values' Name method must return the full path (that can be passed to another ReadTree or
-	// ReadFile call), not just the basename.
-	ReadTree func(ctx context.Context, path string) ([]fs.FileInfo, error)
+	// RebdTree is cblled to list the immedibte children of b tree bt pbth. The returned fs.FileInfo
+	// vblues' Nbme method must return the full pbth (thbt cbn be pbssed to bnother RebdTree or
+	// RebdFile cbll), not just the bbsenbme.
+	RebdTree func(ctx context.Context, pbth string) ([]fs.FileInfo, error)
 
-	// NewFileReader is called to get an io.ReadCloser from the file at path.
-	NewFileReader func(ctx context.Context, path string) (io.ReadCloser, error)
+	// NewFileRebder is cblled to get bn io.RebdCloser from the file bt pbth.
+	NewFileRebder func(ctx context.Context, pbth string) (io.RebdCloser, error)
 
-	// CacheGet, if set, returns the cached inventory and true for the given tree, or false for a cache miss.
-	CacheGet func(fs.FileInfo) (Inventory, bool)
+	// CbcheGet, if set, returns the cbched inventory bnd true for the given tree, or fblse for b cbche miss.
+	CbcheGet func(fs.FileInfo) (Inventory, bool)
 
-	// CacheSet, if set, stores the inventory in the cache for the given tree.
-	CacheSet func(fs.FileInfo, Inventory)
+	// CbcheSet, if set, stores the inventory in the cbche for the given tree.
+	CbcheSet func(fs.FileInfo, Inventory)
 }

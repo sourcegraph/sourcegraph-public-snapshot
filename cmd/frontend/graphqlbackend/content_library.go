@@ -1,55 +1,55 @@
-package graphqlbackend
+pbckbge grbphqlbbckend
 
 import (
 	"context"
-	"database/sql"
+	"dbtbbbse/sql"
 
-	"github.com/graph-gophers/graphql-go"
-	"github.com/graph-gophers/graphql-go/relay"
-	"github.com/keegancsmith/sqlf"
+	"github.com/grbph-gophers/grbphql-go"
+	"github.com/grbph-gophers/grbphql-go/relby"
+	"github.com/keegbncsmith/sqlf"
 
-	logger "github.com/sourcegraph/log"
-	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/auth"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	logger "github.com/sourcegrbph/log"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bctor"
+	"github.com/sourcegrbph/sourcegrbph/internbl/buth"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/bbsestore"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-var _ ContentLibraryResolver = &contentLibraryResolver{}
+vbr _ ContentLibrbryResolver = &contentLibrbryResolver{}
 
-type ContentLibraryResolver interface {
-	OnboardingTourContent(ctx context.Context) (OnboardingTourResolver, error)
-	UpdateOnboardingTourContent(ctx context.Context, args UpdateOnboardingTourArgs) (*EmptyResponse, error)
+type ContentLibrbryResolver interfbce {
+	OnbobrdingTourContent(ctx context.Context) (OnbobrdingTourResolver, error)
+	UpdbteOnbobrdingTourContent(ctx context.Context, brgs UpdbteOnbobrdingTourArgs) (*EmptyResponse, error)
 }
 
-type OnboardingTourResolver interface {
-	Current(ctx context.Context) (OnboardingTourContentResolver, error)
+type OnbobrdingTourResolver interfbce {
+	Current(ctx context.Context) (OnbobrdingTourContentResolver, error)
 }
 
-type onboardingTourResolver struct {
-	db     database.DB
+type onbobrdingTourResolver struct {
+	db     dbtbbbse.DB
 	logger logger.Logger
 }
 
-func (o *onboardingTourResolver) Current(ctx context.Context) (OnboardingTourContentResolver, error) {
-	store := basestore.NewWithHandle(o.db.Handle())
-	row := store.QueryRow(ctx, sqlf.Sprintf("select id, raw_json from user_onboarding_tour order by id desc limit 1;"))
+func (o *onbobrdingTourResolver) Current(ctx context.Context) (OnbobrdingTourContentResolver, error) {
+	store := bbsestore.NewWithHbndle(o.db.Hbndle())
+	row := store.QueryRow(ctx, sqlf.Sprintf("select id, rbw_json from user_onbobrding_tour order by id desc limit 1;"))
 
-	var id int
-	var val string
+	vbr id int
+	vbr vbl string
 
-	if err := row.Scan(
+	if err := row.Scbn(
 		&id,
-		&val,
+		&vbl,
 	); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, nil
 		}
-		return nil, errors.Wrap(err, "Current")
+		return nil, errors.Wrbp(err, "Current")
 	}
 
-	return &onboardingTourContentResolver{value: val, id: id}, nil
+	return &onbobrdingTourContentResolver{vblue: vbl, id: id}, nil
 }
 
 type AddContentEntryArgs struct {
@@ -57,47 +57,47 @@ type AddContentEntryArgs struct {
 	Query       string
 }
 
-type OnboardingTourContentResolver interface {
-	ID() graphql.ID
-	Value() string
+type OnbobrdingTourContentResolver interfbce {
+	ID() grbphql.ID
+	Vblue() string
 }
 
-type onboardingTourContentResolver struct {
+type onbobrdingTourContentResolver struct {
 	id    int
-	value string
+	vblue string
 }
 
-func (o *onboardingTourContentResolver) ID() graphql.ID {
-	return relay.MarshalID("onboardingtour", o.id)
+func (o *onbobrdingTourContentResolver) ID() grbphql.ID {
+	return relby.MbrshblID("onbobrdingtour", o.id)
 }
 
-func (o *onboardingTourContentResolver) Value() string {
-	return o.value
+func (o *onbobrdingTourContentResolver) Vblue() string {
+	return o.vblue
 }
 
-func NewContentLibraryResolver(db database.DB, logger logger.Logger) ContentLibraryResolver {
-	return &contentLibraryResolver{db: db, logger: logger}
+func NewContentLibrbryResolver(db dbtbbbse.DB, logger logger.Logger) ContentLibrbryResolver {
+	return &contentLibrbryResolver{db: db, logger: logger}
 }
 
-type contentLibraryResolver struct {
-	db     database.DB
+type contentLibrbryResolver struct {
+	db     dbtbbbse.DB
 	logger logger.Logger
 }
 
-func (c *contentLibraryResolver) OnboardingTourContent(ctx context.Context) (OnboardingTourResolver, error) {
-	return &onboardingTourResolver{db: c.db, logger: c.logger}, nil
+func (c *contentLibrbryResolver) OnbobrdingTourContent(ctx context.Context) (OnbobrdingTourResolver, error) {
+	return &onbobrdingTourResolver{db: c.db, logger: c.logger}, nil
 }
 
-func (c *contentLibraryResolver) UpdateOnboardingTourContent(ctx context.Context, args UpdateOnboardingTourArgs) (*EmptyResponse, error) {
-	actr := actor.FromContext(ctx)
-	if err := auth.CheckUserIsSiteAdmin(ctx, c.db, actr.UID); err != nil {
+func (c *contentLibrbryResolver) UpdbteOnbobrdingTourContent(ctx context.Context, brgs UpdbteOnbobrdingTourArgs) (*EmptyResponse, error) {
+	bctr := bctor.FromContext(ctx)
+	if err := buth.CheckUserIsSiteAdmin(ctx, c.db, bctr.UID); err != nil {
 		return &EmptyResponse{}, err
 	}
 
-	store := basestore.NewWithHandle(c.db.Handle())
-	return &EmptyResponse{}, store.Exec(ctx, sqlf.Sprintf("insert into user_onboarding_tour (raw_json, updated_by) VALUES (%s, %s)", args.Input, actr.UID))
+	store := bbsestore.NewWithHbndle(c.db.Hbndle())
+	return &EmptyResponse{}, store.Exec(ctx, sqlf.Sprintf("insert into user_onbobrding_tour (rbw_json, updbted_by) VALUES (%s, %s)", brgs.Input, bctr.UID))
 }
 
-type UpdateOnboardingTourArgs struct {
+type UpdbteOnbobrdingTourArgs struct {
 	Input string
 }

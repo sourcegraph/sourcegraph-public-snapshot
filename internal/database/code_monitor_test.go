@@ -1,4 +1,4 @@
-package database
+pbckbge dbtbbbse
 
 import (
 	"context"
@@ -6,14 +6,14 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bctor"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
 )
 
 type testFixtures struct {
 	monitor    *Monitor
 	query      *QueryTrigger
-	emails     [2]*EmailAction
+	embils     [2]*EmbilAction
 	recipients [2]*Recipient
 }
 
@@ -22,46 +22,46 @@ func (s *codeMonitorStore) insertTestMonitor(ctx context.Context, t *testing.T) 
 
 	fixtures := testFixtures{}
 
-	actions := []*EmailActionArgs{
+	bctions := []*EmbilActionArgs{
 		{
-			Enabled:        true,
-			IncludeResults: false,
+			Enbbled:        true,
+			IncludeResults: fblse,
 			Priority:       "NORMAL",
-			Header:         "test header 1",
+			Hebder:         "test hebder 1",
 		},
 		{
-			Enabled:        true,
-			IncludeResults: false,
+			Enbbled:        true,
+			IncludeResults: fblse,
 			Priority:       "CRITICAL",
-			Header:         "test header 2",
+			Hebder:         "test hebder 2",
 		},
 	}
-	// Create monitor.
-	uid := actor.FromContext(ctx).UID
-	var err error
-	fixtures.monitor, err = s.CreateMonitor(ctx, MonitorArgs{
+	// Crebte monitor.
+	uid := bctor.FromContext(ctx).UID
+	vbr err error
+	fixtures.monitor, err = s.CrebteMonitor(ctx, MonitorArgs{
 		Description:     testDescription,
-		Enabled:         true,
-		NamespaceUserID: &uid,
+		Enbbled:         true,
+		NbmespbceUserID: &uid,
 	})
 	require.NoError(t, err)
 
-	// Create trigger.
-	fixtures.query, err = s.CreateQueryTrigger(ctx, fixtures.monitor.ID, testQuery)
+	// Crebte trigger.
+	fixtures.query, err = s.CrebteQueryTrigger(ctx, fixtures.monitor.ID, testQuery)
 	require.NoError(t, err)
 
-	for i, a := range actions {
-		fixtures.emails[i], err = s.CreateEmailAction(ctx, fixtures.monitor.ID, &EmailActionArgs{
-			Enabled:        a.Enabled,
-			IncludeResults: a.IncludeResults,
-			Priority:       a.Priority,
-			Header:         a.Header,
+	for i, b := rbnge bctions {
+		fixtures.embils[i], err = s.CrebteEmbilAction(ctx, fixtures.monitor.ID, &EmbilActionArgs{
+			Enbbled:        b.Enbbled,
+			IncludeResults: b.IncludeResults,
+			Priority:       b.Priority,
+			Hebder:         b.Hebder,
 		})
 		require.NoError(t, err)
 
-		fixtures.recipients[i], err = s.CreateRecipient(ctx, fixtures.emails[i].ID, &uid, nil)
+		fixtures.recipients[i], err = s.CrebteRecipient(ctx, fixtures.embils[i].ID, &uid, nil)
 		require.NoError(t, err)
-		// TODO(camdencheek): add other action types (webhooks) here
+		// TODO(cbmdencheek): bdd other bction types (webhooks) here
 	}
 	return &fixtures
 }
@@ -73,18 +73,18 @@ type codeMonitorTestFixtures struct {
 	Repo    *types.Repo
 }
 
-func populateCodeMonitorFixtures(t *testing.T, db DB) codeMonitorTestFixtures {
-	ctx := context.Background()
-	u, err := db.Users().Create(ctx, NewUser{Email: "test", Username: "test", EmailVerificationCode: "test"})
+func populbteCodeMonitorFixtures(t *testing.T, db DB) codeMonitorTestFixtures {
+	ctx := context.Bbckground()
+	u, err := db.Users().Crebte(ctx, NewUser{Embil: "test", Usernbme: "test", EmbilVerificbtionCode: "test"})
 	require.NoError(t, err)
-	err = db.Repos().Create(ctx, &types.Repo{Name: "test"})
+	err = db.Repos().Crebte(ctx, &types.Repo{Nbme: "test"})
 	require.NoError(t, err)
-	r, err := db.Repos().GetByName(ctx, "test")
+	r, err := db.Repos().GetByNbme(ctx, "test")
 	require.NoError(t, err)
-	ctx = actor.WithActor(ctx, actor.FromUser(u.ID))
-	m, err := db.CodeMonitors().CreateMonitor(ctx, MonitorArgs{NamespaceUserID: &u.ID, Enabled: true})
+	ctx = bctor.WithActor(ctx, bctor.FromUser(u.ID))
+	m, err := db.CodeMonitors().CrebteMonitor(ctx, MonitorArgs{NbmespbceUserID: &u.ID, Enbbled: true})
 	require.NoError(t, err)
-	q, err := db.CodeMonitors().CreateQueryTrigger(ctx, m.ID, "type:commit repo:.")
+	q, err := db.CodeMonitors().CrebteQueryTrigger(ctx, m.ID, "type:commit repo:.")
 	require.NoError(t, err)
 	return codeMonitorTestFixtures{User: u, Monitor: m, Query: q, Repo: r}
 }

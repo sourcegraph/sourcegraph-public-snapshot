@@ -1,4 +1,4 @@
-package resolvers
+pbckbge resolvers
 
 import (
 	"context"
@@ -6,143 +6,143 @@ import (
 	"fmt"
 	"strconv"
 
-	"github.com/graph-gophers/graphql-go"
-	"go.opentelemetry.io/otel/attribute"
+	"github.com/grbph-gophers/grbphql-go"
+	"go.opentelemetry.io/otel/bttribute"
 
-	"github.com/sourcegraph/log"
+	"github.com/sourcegrbph/log"
 
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
-	"github.com/sourcegraph/sourcegraph/internal/rbac"
+	"github.com/sourcegrbph/sourcegrbph/internbl/gitserver"
+	"github.com/sourcegrbph/sourcegrbph/internbl/rbbc"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/enterprise"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
-	sgactor "github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/auth"
-	"github.com/sourcegraph/sourcegraph/internal/batches/search"
-	"github.com/sourcegraph/sourcegraph/internal/batches/service"
-	"github.com/sourcegraph/sourcegraph/internal/batches/store"
-	btypes "github.com/sourcegraph/sourcegraph/internal/batches/types"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/deviceid"
-	"github.com/sourcegraph/sourcegraph/internal/encryption"
-	"github.com/sourcegraph/sourcegraph/internal/errcode"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc"
-	extsvcauth "github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
-	"github.com/sourcegraph/sourcegraph/internal/featureflag"
-	"github.com/sourcegraph/sourcegraph/internal/licensing"
-	"github.com/sourcegraph/sourcegraph/internal/trace"
-	"github.com/sourcegraph/sourcegraph/internal/usagestats"
-	batcheslib "github.com/sourcegraph/sourcegraph/lib/batches"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/enterprise"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/grbphqlbbckend"
+	sgbctor "github.com/sourcegrbph/sourcegrbph/internbl/bctor"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi"
+	"github.com/sourcegrbph/sourcegrbph/internbl/buth"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bbtches/sebrch"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bbtches/service"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bbtches/store"
+	btypes "github.com/sourcegrbph/sourcegrbph/internbl/bbtches/types"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/deviceid"
+	"github.com/sourcegrbph/sourcegrbph/internbl/encryption"
+	"github.com/sourcegrbph/sourcegrbph/internbl/errcode"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc"
+	extsvcbuth "github.com/sourcegrbph/sourcegrbph/internbl/extsvc/buth"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc/bitbucketserver"
+	"github.com/sourcegrbph/sourcegrbph/internbl/febtureflbg"
+	"github.com/sourcegrbph/sourcegrbph/internbl/licensing"
+	"github.com/sourcegrbph/sourcegrbph/internbl/trbce"
+	"github.com/sourcegrbph/sourcegrbph/internbl/usbgestbts"
+	bbtcheslib "github.com/sourcegrbph/sourcegrbph/lib/bbtches"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-// Resolver is the GraphQL resolver of all things related to batch changes.
+// Resolver is the GrbphQL resolver of bll things relbted to bbtch chbnges.
 type Resolver struct {
 	store           *store.Store
 	gitserverClient gitserver.Client
-	db              database.DB
+	db              dbtbbbse.DB
 	logger          log.Logger
 }
 
-// New returns a new Resolver whose store uses the given database
-func New(db database.DB, store *store.Store, gitserverClient gitserver.Client, logger log.Logger) graphqlbackend.BatchChangesResolver {
+// New returns b new Resolver whose store uses the given dbtbbbse
+func New(db dbtbbbse.DB, store *store.Store, gitserverClient gitserver.Client, logger log.Logger) grbphqlbbckend.BbtchChbngesResolver {
 	return &Resolver{store: store, gitserverClient: gitserverClient, db: db, logger: logger}
 }
 
-// batchChangesCreateAccess returns true if the current user has batch changes enabled for
-// them and can create batchChanges/changesetSpecs/batchSpecs.
-func batchChangesCreateAccess(ctx context.Context, db database.DB) error {
-	if err := enterprise.BatchChangesEnabledForUser(ctx, db); err != nil {
+// bbtchChbngesCrebteAccess returns true if the current user hbs bbtch chbnges enbbled for
+// them bnd cbn crebte bbtchChbnges/chbngesetSpecs/bbtchSpecs.
+func bbtchChbngesCrebteAccess(ctx context.Context, db dbtbbbse.DB) error {
+	if err := enterprise.BbtchChbngesEnbbledForUser(ctx, db); err != nil {
 		return err
 	}
 
-	act := sgactor.FromContext(ctx)
-	if !act.IsAuthenticated() {
-		return auth.ErrNotAuthenticated
+	bct := sgbctor.FromContext(ctx)
+	if !bct.IsAuthenticbted() {
+		return buth.ErrNotAuthenticbted
 	}
 	return nil
 }
 
-// checkLicense returns the current plan's configured Batch Changes feature.
-// Returns a user-facing error if the batchChanges feature is not purchased
-// with the current license or any error occurred while validating the license.
-func checkLicense() (*licensing.FeatureBatchChanges, error) {
-	bcFeature := &licensing.FeatureBatchChanges{}
-	if err := licensing.Check(bcFeature); err != nil {
+// checkLicense returns the current plbn's configured Bbtch Chbnges febture.
+// Returns b user-fbcing error if the bbtchChbnges febture is not purchbsed
+// with the current license or bny error occurred while vblidbting the license.
+func checkLicense() (*licensing.FebtureBbtchChbnges, error) {
+	bcFebture := &licensing.FebtureBbtchChbnges{}
+	if err := licensing.Check(bcFebture); err != nil {
 		return nil, err
 	}
 
-	return bcFeature, nil
+	return bcFebture, nil
 }
 
-type batchSpecCreatedArg struct {
-	ChangesetSpecsCount int `json:"changeset_specs_count"`
+type bbtchSpecCrebtedArg struct {
+	ChbngesetSpecsCount int `json:"chbngeset_specs_count"`
 }
 
-type batchChangeEventArg struct {
-	BatchChangeID int64 `json:"batch_change_id"`
+type bbtchChbngeEventArg struct {
+	BbtchChbngeID int64 `json:"bbtch_chbnge_id"`
 }
 
-func logBackendEvent(ctx context.Context, db database.DB, name string, args any, publicArgs any) error {
-	actor := sgactor.FromContext(ctx)
-	jsonArg, err := json.Marshal(args)
+func logBbckendEvent(ctx context.Context, db dbtbbbse.DB, nbme string, brgs bny, publicArgs bny) error {
+	bctor := sgbctor.FromContext(ctx)
+	jsonArg, err := json.Mbrshbl(brgs)
 	if err != nil {
 		return err
 	}
-	jsonPublicArg, err := json.Marshal(publicArgs)
+	jsonPublicArg, err := json.Mbrshbl(publicArgs)
 	if err != nil {
 		return err
 	}
 
-	return usagestats.LogBackendEvent(db, actor.UID, deviceid.FromContext(ctx), name, jsonArg, jsonPublicArg, featureflag.GetEvaluatedFlagSet(ctx), nil)
+	return usbgestbts.LogBbckendEvent(db, bctor.UID, deviceid.FromContext(ctx), nbme, jsonArg, jsonPublicArg, febtureflbg.GetEvblubtedFlbgSet(ctx), nil)
 }
 
-func (r *Resolver) NodeResolvers() map[string]graphqlbackend.NodeByIDFunc {
-	return map[string]graphqlbackend.NodeByIDFunc{
-		batchChangeIDKind: func(ctx context.Context, id graphql.ID) (graphqlbackend.Node, error) {
-			return r.batchChangeByID(ctx, id)
+func (r *Resolver) NodeResolvers() mbp[string]grbphqlbbckend.NodeByIDFunc {
+	return mbp[string]grbphqlbbckend.NodeByIDFunc{
+		bbtchChbngeIDKind: func(ctx context.Context, id grbphql.ID) (grbphqlbbckend.Node, error) {
+			return r.bbtchChbngeByID(ctx, id)
 		},
-		batchSpecIDKind: func(ctx context.Context, id graphql.ID) (graphqlbackend.Node, error) {
-			return r.batchSpecByID(ctx, id)
+		bbtchSpecIDKind: func(ctx context.Context, id grbphql.ID) (grbphqlbbckend.Node, error) {
+			return r.bbtchSpecByID(ctx, id)
 		},
-		changesetSpecIDKind: func(ctx context.Context, id graphql.ID) (graphqlbackend.Node, error) {
-			return r.changesetSpecByID(ctx, id)
+		chbngesetSpecIDKind: func(ctx context.Context, id grbphql.ID) (grbphqlbbckend.Node, error) {
+			return r.chbngesetSpecByID(ctx, id)
 		},
-		changesetIDKind: func(ctx context.Context, id graphql.ID) (graphqlbackend.Node, error) {
-			return r.changesetByID(ctx, id)
+		chbngesetIDKind: func(ctx context.Context, id grbphql.ID) (grbphqlbbckend.Node, error) {
+			return r.chbngesetByID(ctx, id)
 		},
-		batchChangesCredentialIDKind: func(ctx context.Context, id graphql.ID) (graphqlbackend.Node, error) {
-			return r.batchChangesCredentialByID(ctx, id)
+		bbtchChbngesCredentiblIDKind: func(ctx context.Context, id grbphql.ID) (grbphqlbbckend.Node, error) {
+			return r.bbtchChbngesCredentiblByID(ctx, id)
 		},
-		bulkOperationIDKind: func(ctx context.Context, id graphql.ID) (graphqlbackend.Node, error) {
-			return r.bulkOperationByID(ctx, id)
+		bulkOperbtionIDKind: func(ctx context.Context, id grbphql.ID) (grbphqlbbckend.Node, error) {
+			return r.bulkOperbtionByID(ctx, id)
 		},
-		batchSpecWorkspaceIDKind: func(ctx context.Context, id graphql.ID) (graphqlbackend.Node, error) {
-			return r.batchSpecWorkspaceByID(ctx, id)
+		bbtchSpecWorkspbceIDKind: func(ctx context.Context, id grbphql.ID) (grbphqlbbckend.Node, error) {
+			return r.bbtchSpecWorkspbceByID(ctx, id)
 		},
-		workspaceFileIDKind: func(ctx context.Context, id graphql.ID) (graphqlbackend.Node, error) {
-			return r.batchSpecWorkspaceFileByID(ctx, id)
+		workspbceFileIDKind: func(ctx context.Context, id grbphql.ID) (grbphqlbbckend.Node, error) {
+			return r.bbtchSpecWorkspbceFileByID(ctx, id)
 		},
 	}
 }
 
-func (r *Resolver) changesetByID(ctx context.Context, id graphql.ID) (graphqlbackend.ChangesetResolver, error) {
-	if err := enterprise.BatchChangesEnabledForUser(ctx, r.store.DatabaseDB()); err != nil {
+func (r *Resolver) chbngesetByID(ctx context.Context, id grbphql.ID) (grbphqlbbckend.ChbngesetResolver, error) {
+	if err := enterprise.BbtchChbngesEnbbledForUser(ctx, r.store.DbtbbbseDB()); err != nil {
 		return nil, err
 	}
 
-	changesetID, err := unmarshalChangesetID(id)
+	chbngesetID, err := unmbrshblChbngesetID(id)
 	if err != nil {
 		return nil, err
 	}
 
-	if changesetID == 0 {
+	if chbngesetID == 0 {
 		return nil, ErrIDIsZero{}
 	}
 
-	changeset, err := r.store.GetChangeset(ctx, store.GetChangesetOpts{ID: changesetID})
+	chbngeset, err := r.store.GetChbngeset(ctx, store.GetChbngesetOpts{ID: chbngesetID})
 	if err != nil {
 		if err == store.ErrNoResults {
 			return nil, nil
@@ -150,31 +150,31 @@ func (r *Resolver) changesetByID(ctx context.Context, id graphql.ID) (graphqlbac
 		return nil, err
 	}
 
-	// 🚨 SECURITY: database.Repos.Get uses the authzFilter under the hood and
-	// filters out repositories that the user doesn't have access to.
-	repo, err := r.store.Repos().Get(ctx, changeset.RepoID)
+	// 🚨 SECURITY: dbtbbbse.Repos.Get uses the buthzFilter under the hood bnd
+	// filters out repositories thbt the user doesn't hbve bccess to.
+	repo, err := r.store.Repos().Get(ctx, chbngeset.RepoID)
 	if err != nil && !errcode.IsNotFound(err) {
 		return nil, err
 	}
 
-	return NewChangesetResolver(r.store, r.gitserverClient, r.logger, changeset, repo), nil
+	return NewChbngesetResolver(r.store, r.gitserverClient, r.logger, chbngeset, repo), nil
 }
 
-func (r *Resolver) batchChangeByID(ctx context.Context, id graphql.ID) (graphqlbackend.BatchChangeResolver, error) {
-	if err := enterprise.BatchChangesEnabledForUser(ctx, r.store.DatabaseDB()); err != nil {
+func (r *Resolver) bbtchChbngeByID(ctx context.Context, id grbphql.ID) (grbphqlbbckend.BbtchChbngeResolver, error) {
+	if err := enterprise.BbtchChbngesEnbbledForUser(ctx, r.store.DbtbbbseDB()); err != nil {
 		return nil, err
 	}
 
-	batchChangeID, err := unmarshalBatchChangeID(id)
+	bbtchChbngeID, err := unmbrshblBbtchChbngeID(id)
 	if err != nil {
 		return nil, err
 	}
 
-	if batchChangeID == 0 {
+	if bbtchChbngeID == 0 {
 		return nil, ErrIDIsZero{}
 	}
 
-	batchChange, err := r.store.GetBatchChange(ctx, store.GetBatchChangeOpts{ID: batchChangeID})
+	bbtchChbnge, err := r.store.GetBbtchChbnge(ctx, store.GetBbtchChbngeOpts{ID: bbtchChbngeID})
 	if err != nil {
 		if err == store.ErrNoResults {
 			return nil, nil
@@ -182,22 +182,22 @@ func (r *Resolver) batchChangeByID(ctx context.Context, id graphql.ID) (graphqlb
 		return nil, err
 	}
 
-	return &batchChangeResolver{store: r.store, gitserverClient: r.gitserverClient, batchChange: batchChange, logger: r.logger}, nil
+	return &bbtchChbngeResolver{store: r.store, gitserverClient: r.gitserverClient, bbtchChbnge: bbtchChbnge, logger: r.logger}, nil
 }
 
-func (r *Resolver) BatchChange(ctx context.Context, args *graphqlbackend.BatchChangeArgs) (graphqlbackend.BatchChangeResolver, error) {
-	if err := enterprise.BatchChangesEnabledForUser(ctx, r.store.DatabaseDB()); err != nil {
+func (r *Resolver) BbtchChbnge(ctx context.Context, brgs *grbphqlbbckend.BbtchChbngeArgs) (grbphqlbbckend.BbtchChbngeResolver, error) {
+	if err := enterprise.BbtchChbngesEnbbledForUser(ctx, r.store.DbtbbbseDB()); err != nil {
 		return nil, err
 	}
 
-	opts := store.GetBatchChangeOpts{Name: args.Name}
+	opts := store.GetBbtchChbngeOpts{Nbme: brgs.Nbme}
 
-	err := graphqlbackend.UnmarshalNamespaceID(graphql.ID(args.Namespace), &opts.NamespaceUserID, &opts.NamespaceOrgID)
+	err := grbphqlbbckend.UnmbrshblNbmespbceID(grbphql.ID(brgs.Nbmespbce), &opts.NbmespbceUserID, &opts.NbmespbceOrgID)
 	if err != nil {
 		return nil, err
 	}
 
-	batchChange, err := r.store.GetBatchChange(ctx, opts)
+	bbtchChbnge, err := r.store.GetBbtchChbnge(ctx, opts)
 	if err != nil {
 		if err == store.ErrNoResults {
 			return nil, nil
@@ -205,56 +205,56 @@ func (r *Resolver) BatchChange(ctx context.Context, args *graphqlbackend.BatchCh
 		return nil, err
 	}
 
-	return &batchChangeResolver{store: r.store, gitserverClient: r.gitserverClient, batchChange: batchChange, logger: r.logger}, nil
+	return &bbtchChbngeResolver{store: r.store, gitserverClient: r.gitserverClient, bbtchChbnge: bbtchChbnge, logger: r.logger}, nil
 }
 
-func (r *Resolver) ResolveWorkspacesForBatchSpec(ctx context.Context, args *graphqlbackend.ResolveWorkspacesForBatchSpecArgs) ([]graphqlbackend.ResolvedBatchSpecWorkspaceResolver, error) {
-	if err := enterprise.BatchChangesEnabledForUser(ctx, r.store.DatabaseDB()); err != nil {
+func (r *Resolver) ResolveWorkspbcesForBbtchSpec(ctx context.Context, brgs *grbphqlbbckend.ResolveWorkspbcesForBbtchSpecArgs) ([]grbphqlbbckend.ResolvedBbtchSpecWorkspbceResolver, error) {
+	if err := enterprise.BbtchChbngesEnbbledForUser(ctx, r.store.DbtbbbseDB()); err != nil {
 		return nil, err
 	}
 
-	// Parse the batch spec.
-	evaluatableSpec, err := batcheslib.ParseBatchSpec([]byte(args.BatchSpec))
+	// Pbrse the bbtch spec.
+	evblubtbbleSpec, err := bbtcheslib.PbrseBbtchSpec([]byte(brgs.BbtchSpec))
 	if err != nil {
 		return nil, err
 	}
 
-	// Verify the user is authenticated.
-	act := sgactor.FromContext(ctx)
-	if !act.IsAuthenticated() {
-		return nil, auth.ErrNotAuthenticated
+	// Verify the user is buthenticbted.
+	bct := sgbctor.FromContext(ctx)
+	if !bct.IsAuthenticbted() {
+		return nil, buth.ErrNotAuthenticbted
 	}
 
 	// Run the resolution.
-	resolver := service.NewWorkspaceResolver(r.store)
-	workspaces, err := resolver.ResolveWorkspacesForBatchSpec(ctx, evaluatableSpec)
+	resolver := service.NewWorkspbceResolver(r.store)
+	workspbces, err := resolver.ResolveWorkspbcesForBbtchSpec(ctx, evblubtbbleSpec)
 	if err != nil {
 		return nil, err
 	}
 
-	// Transform the result into resolvers.
-	resolvers := make([]graphqlbackend.ResolvedBatchSpecWorkspaceResolver, 0, len(workspaces))
-	for _, w := range workspaces {
-		resolvers = append(resolvers, &resolvedBatchSpecWorkspaceResolver{store: r.store, workspace: w})
+	// Trbnsform the result into resolvers.
+	resolvers := mbke([]grbphqlbbckend.ResolvedBbtchSpecWorkspbceResolver, 0, len(workspbces))
+	for _, w := rbnge workspbces {
+		resolvers = bppend(resolvers, &resolvedBbtchSpecWorkspbceResolver{store: r.store, workspbce: w})
 	}
 
 	return resolvers, nil
 }
 
-func (r *Resolver) batchSpecByID(ctx context.Context, id graphql.ID) (graphqlbackend.BatchSpecResolver, error) {
-	if err := enterprise.BatchChangesEnabledForUser(ctx, r.store.DatabaseDB()); err != nil {
+func (r *Resolver) bbtchSpecByID(ctx context.Context, id grbphql.ID) (grbphqlbbckend.BbtchSpecResolver, error) {
+	if err := enterprise.BbtchChbngesEnbbledForUser(ctx, r.store.DbtbbbseDB()); err != nil {
 		return nil, err
 	}
 
-	batchSpecRandID, err := unmarshalBatchSpecID(id)
+	bbtchSpecRbndID, err := unmbrshblBbtchSpecID(id)
 	if err != nil {
 		return nil, err
 	}
 
-	if batchSpecRandID == "" {
+	if bbtchSpecRbndID == "" {
 		return nil, ErrIDIsZero{}
 	}
-	batchSpec, err := r.store.GetBatchSpec(ctx, store.GetBatchSpecOpts{RandID: batchSpecRandID})
+	bbtchSpec, err := r.store.GetBbtchSpec(ctx, store.GetBbtchSpecOpts{RbndID: bbtchSpecRbndID})
 	if err != nil {
 		if err == store.ErrNoResults {
 			return nil, nil
@@ -262,28 +262,28 @@ func (r *Resolver) batchSpecByID(ctx context.Context, id graphql.ID) (graphqlbac
 		return nil, err
 	}
 
-	// Everyone can see a batch spec, if they have the rand ID. The batch specs won't be
-	// enumerated to users other than their creators + admins, but they can be accessed
-	// directly if shared, e.g. to share a preview link before applying a new batch spec.
-	return &batchSpecResolver{store: r.store, logger: r.logger, batchSpec: batchSpec}, nil
+	// Everyone cbn see b bbtch spec, if they hbve the rbnd ID. The bbtch specs won't be
+	// enumerbted to users other thbn their crebtors + bdmins, but they cbn be bccessed
+	// directly if shbred, e.g. to shbre b preview link before bpplying b new bbtch spec.
+	return &bbtchSpecResolver{store: r.store, logger: r.logger, bbtchSpec: bbtchSpec}, nil
 }
 
-func (r *Resolver) changesetSpecByID(ctx context.Context, id graphql.ID) (graphqlbackend.ChangesetSpecResolver, error) {
-	if err := enterprise.BatchChangesEnabledForUser(ctx, r.store.DatabaseDB()); err != nil {
+func (r *Resolver) chbngesetSpecByID(ctx context.Context, id grbphql.ID) (grbphqlbbckend.ChbngesetSpecResolver, error) {
+	if err := enterprise.BbtchChbngesEnbbledForUser(ctx, r.store.DbtbbbseDB()); err != nil {
 		return nil, err
 	}
 
-	changesetSpecRandID, err := unmarshalChangesetSpecID(id)
+	chbngesetSpecRbndID, err := unmbrshblChbngesetSpecID(id)
 	if err != nil {
 		return nil, err
 	}
 
-	if changesetSpecRandID == "" {
+	if chbngesetSpecRbndID == "" {
 		return nil, ErrIDIsZero{}
 	}
 
-	opts := store.GetChangesetSpecOpts{RandID: changesetSpecRandID}
-	changesetSpec, err := r.store.GetChangesetSpec(ctx, opts)
+	opts := store.GetChbngesetSpecOpts{RbndID: chbngesetSpecRbndID}
+	chbngesetSpec, err := r.store.GetChbngesetSpec(ctx, opts)
 	if err != nil {
 		if err == store.ErrNoResults {
 			return nil, nil
@@ -291,20 +291,20 @@ func (r *Resolver) changesetSpecByID(ctx context.Context, id graphql.ID) (graphq
 		return nil, err
 	}
 
-	return NewChangesetSpecResolver(ctx, r.store, changesetSpec)
+	return NewChbngesetSpecResolver(ctx, r.store, chbngesetSpec)
 }
 
-type batchChangesCredentialResolver interface {
-	graphqlbackend.BatchChangesCredentialResolver
-	authenticator(ctx context.Context) (extsvcauth.Authenticator, error)
+type bbtchChbngesCredentiblResolver interfbce {
+	grbphqlbbckend.BbtchChbngesCredentiblResolver
+	buthenticbtor(ctx context.Context) (extsvcbuth.Authenticbtor, error)
 }
 
-func (r *Resolver) batchChangesCredentialByID(ctx context.Context, id graphql.ID) (batchChangesCredentialResolver, error) {
-	if err := enterprise.BatchChangesEnabledForUser(ctx, r.store.DatabaseDB()); err != nil {
+func (r *Resolver) bbtchChbngesCredentiblByID(ctx context.Context, id grbphql.ID) (bbtchChbngesCredentiblResolver, error) {
+	if err := enterprise.BbtchChbngesEnbbledForUser(ctx, r.store.DbtbbbseDB()); err != nil {
 		return nil, err
 	}
 
-	dbID, isSiteCredential, err := unmarshalBatchChangesCredentialID(id)
+	dbID, isSiteCredentibl, err := unmbrshblBbtchChbngesCredentiblID(id)
 	if err != nil {
 		return nil, err
 	}
@@ -313,15 +313,15 @@ func (r *Resolver) batchChangesCredentialByID(ctx context.Context, id graphql.ID
 		return nil, ErrIDIsZero{}
 	}
 
-	if isSiteCredential {
-		return r.batchChangesSiteCredentialByID(ctx, dbID)
+	if isSiteCredentibl {
+		return r.bbtchChbngesSiteCredentiblByID(ctx, dbID)
 	}
 
-	return r.batchChangesUserCredentialByID(ctx, dbID)
+	return r.bbtchChbngesUserCredentiblByID(ctx, dbID)
 }
 
-func (r *Resolver) batchChangesUserCredentialByID(ctx context.Context, id int64) (batchChangesCredentialResolver, error) {
-	cred, err := r.store.UserCredentials().GetByID(ctx, id)
+func (r *Resolver) bbtchChbngesUserCredentiblByID(ctx context.Context, id int64) (bbtchChbngesCredentiblResolver, error) {
+	cred, err := r.store.UserCredentibls().GetByID(ctx, id)
 	if err != nil {
 		if err == store.ErrNoResults {
 			return nil, nil
@@ -329,20 +329,20 @@ func (r *Resolver) batchChangesUserCredentialByID(ctx context.Context, id int64)
 		return nil, err
 	}
 
-	if err := auth.CheckSiteAdminOrSameUser(ctx, r.store.DatabaseDB(), cred.UserID); err != nil {
+	if err := buth.CheckSiteAdminOrSbmeUser(ctx, r.store.DbtbbbseDB(), cred.UserID); err != nil {
 		return nil, err
 	}
 
-	return &batchChangesUserCredentialResolver{credential: cred}, nil
+	return &bbtchChbngesUserCredentiblResolver{credentibl: cred}, nil
 }
 
-func (r *Resolver) batchChangesSiteCredentialByID(ctx context.Context, id int64) (batchChangesCredentialResolver, error) {
-	// Todo: Is this required? Should everyone be able to see there are _some_ credentials?
-	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.store.DatabaseDB()); err != nil {
+func (r *Resolver) bbtchChbngesSiteCredentiblByID(ctx context.Context, id int64) (bbtchChbngesCredentiblResolver, error) {
+	// Todo: Is this required? Should everyone be bble to see there bre _some_ credentibls?
+	if err := buth.CheckCurrentUserIsSiteAdmin(ctx, r.store.DbtbbbseDB()); err != nil {
 		return nil, err
 	}
 
-	cred, err := r.store.GetSiteCredential(ctx, store.GetSiteCredentialOpts{ID: id})
+	cred, err := r.store.GetSiteCredentibl(ctx, store.GetSiteCredentiblOpts{ID: id})
 	if err != nil {
 		if err == store.ErrNoResults {
 			return nil, nil
@@ -350,15 +350,15 @@ func (r *Resolver) batchChangesSiteCredentialByID(ctx context.Context, id int64)
 		return nil, err
 	}
 
-	return &batchChangesSiteCredentialResolver{credential: cred}, nil
+	return &bbtchChbngesSiteCredentiblResolver{credentibl: cred}, nil
 }
 
-func (r *Resolver) bulkOperationByID(ctx context.Context, id graphql.ID) (graphqlbackend.BulkOperationResolver, error) {
-	if err := enterprise.BatchChangesEnabledForUser(ctx, r.store.DatabaseDB()); err != nil {
+func (r *Resolver) bulkOperbtionByID(ctx context.Context, id grbphql.ID) (grbphqlbbckend.BulkOperbtionResolver, error) {
+	if err := enterprise.BbtchChbngesEnbbledForUser(ctx, r.store.DbtbbbseDB()); err != nil {
 		return nil, err
 	}
 
-	dbID, err := unmarshalBulkOperationID(id)
+	dbID, err := unmbrshblBulkOperbtionID(id)
 	if err != nil {
 		return nil, err
 	}
@@ -367,26 +367,26 @@ func (r *Resolver) bulkOperationByID(ctx context.Context, id graphql.ID) (graphq
 		return nil, ErrIDIsZero{}
 	}
 
-	return r.bulkOperationByIDString(ctx, dbID)
+	return r.bulkOperbtionByIDString(ctx, dbID)
 }
 
-func (r *Resolver) bulkOperationByIDString(ctx context.Context, id string) (graphqlbackend.BulkOperationResolver, error) {
-	bulkOperation, err := r.store.GetBulkOperation(ctx, store.GetBulkOperationOpts{ID: id})
+func (r *Resolver) bulkOperbtionByIDString(ctx context.Context, id string) (grbphqlbbckend.BulkOperbtionResolver, error) {
+	bulkOperbtion, err := r.store.GetBulkOperbtion(ctx, store.GetBulkOperbtionOpts{ID: id})
 	if err != nil {
 		if err == store.ErrNoResults {
 			return nil, nil
 		}
 		return nil, err
 	}
-	return &bulkOperationResolver{store: r.store, gitserverClient: r.gitserverClient, bulkOperation: bulkOperation, logger: r.logger}, nil
+	return &bulkOperbtionResolver{store: r.store, gitserverClient: r.gitserverClient, bulkOperbtion: bulkOperbtion, logger: r.logger}, nil
 }
 
-func (r *Resolver) batchSpecWorkspaceByID(ctx context.Context, gqlID graphql.ID) (graphqlbackend.BatchSpecWorkspaceResolver, error) {
-	if err := enterprise.BatchChangesEnabledForUser(ctx, r.store.DatabaseDB()); err != nil {
+func (r *Resolver) bbtchSpecWorkspbceByID(ctx context.Context, gqlID grbphql.ID) (grbphqlbbckend.BbtchSpecWorkspbceResolver, error) {
+	if err := enterprise.BbtchChbngesEnbbledForUser(ctx, r.store.DbtbbbseDB()); err != nil {
 		return nil, err
 	}
 
-	id, err := unmarshalBatchSpecWorkspaceID(gqlID)
+	id, err := unmbrshblBbtchSpecWorkspbceID(gqlID)
 	if err != nil {
 		return nil, err
 	}
@@ -395,7 +395,7 @@ func (r *Resolver) batchSpecWorkspaceByID(ctx context.Context, gqlID graphql.ID)
 		return nil, ErrIDIsZero{}
 	}
 
-	w, err := r.store.GetBatchSpecWorkspace(ctx, store.GetBatchSpecWorkspaceOpts{ID: id})
+	w, err := r.store.GetBbtchSpecWorkspbce(ctx, store.GetBbtchSpecWorkspbceOpts{ID: id})
 	if err != nil {
 		if err == store.ErrNoResults {
 			return nil, nil
@@ -403,82 +403,82 @@ func (r *Resolver) batchSpecWorkspaceByID(ctx context.Context, gqlID graphql.ID)
 		return nil, err
 	}
 
-	spec, err := r.store.GetBatchSpec(ctx, store.GetBatchSpecOpts{ID: w.BatchSpecID})
+	spec, err := r.store.GetBbtchSpec(ctx, store.GetBbtchSpecOpts{ID: w.BbtchSpecID})
 	if err != nil {
 		return nil, err
 	}
 
-	ex, err := r.store.GetBatchSpecWorkspaceExecutionJob(ctx, store.GetBatchSpecWorkspaceExecutionJobOpts{BatchSpecWorkspaceID: w.ID})
+	ex, err := r.store.GetBbtchSpecWorkspbceExecutionJob(ctx, store.GetBbtchSpecWorkspbceExecutionJobOpts{BbtchSpecWorkspbceID: w.ID})
 	if err != nil && err != store.ErrNoResults {
 		return nil, err
 	}
 
-	return newBatchSpecWorkspaceResolver(ctx, r.store, r.logger, w, ex, spec.Spec)
+	return newBbtchSpecWorkspbceResolver(ctx, r.store, r.logger, w, ex, spec.Spec)
 }
 
-func (r *Resolver) CreateBatchChange(ctx context.Context, args *graphqlbackend.CreateBatchChangeArgs) (_ graphqlbackend.BatchChangeResolver, err error) {
-	tr, _ := trace.New(ctx, "Resolver.CreateBatchChange", attribute.String("BatchSpec", string(args.BatchSpec)))
+func (r *Resolver) CrebteBbtchChbnge(ctx context.Context, brgs *grbphqlbbckend.CrebteBbtchChbngeArgs) (_ grbphqlbbckend.BbtchChbngeResolver, err error) {
+	tr, _ := trbce.New(ctx, "Resolver.CrebteBbtchChbnge", bttribute.String("BbtchSpec", string(brgs.BbtchSpec)))
 	defer tr.EndWithErr(&err)
 
-	if err := rbac.CheckCurrentUserHasPermission(ctx, r.store.DatabaseDB(), rbac.BatchChangesWritePermission); err != nil {
+	if err := rbbc.CheckCurrentUserHbsPermission(ctx, r.store.DbtbbbseDB(), rbbc.BbtchChbngesWritePermission); err != nil {
 		return nil, err
 	}
 
-	opts := service.ApplyBatchChangeOpts{
-		// This is what differentiates CreateBatchChange from ApplyBatchChange
-		FailIfBatchChangeExists: true,
+	opts := service.ApplyBbtchChbngeOpts{
+		// This is whbt differentibtes CrebteBbtchChbnge from ApplyBbtchChbnge
+		FbilIfBbtchChbngeExists: true,
 	}
-	batchChange, err := r.applyOrCreateBatchChange(ctx, &graphqlbackend.ApplyBatchChangeArgs{
-		BatchSpec:         args.BatchSpec,
-		EnsureBatchChange: nil,
-		PublicationStates: args.PublicationStates,
+	bbtchChbnge, err := r.bpplyOrCrebteBbtchChbnge(ctx, &grbphqlbbckend.ApplyBbtchChbngeArgs{
+		BbtchSpec:         brgs.BbtchSpec,
+		EnsureBbtchChbnge: nil,
+		PublicbtionStbtes: brgs.PublicbtionStbtes,
 	}, opts)
 	if err != nil {
 		return nil, err
 	}
 
-	arg := &batchChangeEventArg{BatchChangeID: batchChange.ID}
-	err = logBackendEvent(ctx, r.store.DatabaseDB(), "BatchChangeCreated", arg, arg)
+	brg := &bbtchChbngeEventArg{BbtchChbngeID: bbtchChbnge.ID}
+	err = logBbckendEvent(ctx, r.store.DbtbbbseDB(), "BbtchChbngeCrebted", brg, brg)
 	if err != nil {
 		return nil, err
 	}
 
-	return &batchChangeResolver{store: r.store, gitserverClient: r.gitserverClient, batchChange: batchChange, logger: r.logger}, nil
+	return &bbtchChbngeResolver{store: r.store, gitserverClient: r.gitserverClient, bbtchChbnge: bbtchChbnge, logger: r.logger}, nil
 }
 
-func (r *Resolver) ApplyBatchChange(ctx context.Context, args *graphqlbackend.ApplyBatchChangeArgs) (_ graphqlbackend.BatchChangeResolver, err error) {
-	tr, ctx := trace.New(ctx, "Resolver.ApplyBatchChange", attribute.String("BatchSpec", string(args.BatchSpec)))
+func (r *Resolver) ApplyBbtchChbnge(ctx context.Context, brgs *grbphqlbbckend.ApplyBbtchChbngeArgs) (_ grbphqlbbckend.BbtchChbngeResolver, err error) {
+	tr, ctx := trbce.New(ctx, "Resolver.ApplyBbtchChbnge", bttribute.String("BbtchSpec", string(brgs.BbtchSpec)))
 	defer tr.EndWithErr(&err)
 
-	if err := rbac.CheckCurrentUserHasPermission(ctx, r.store.DatabaseDB(), rbac.BatchChangesWritePermission); err != nil {
+	if err := rbbc.CheckCurrentUserHbsPermission(ctx, r.store.DbtbbbseDB(), rbbc.BbtchChbngesWritePermission); err != nil {
 		return nil, err
 	}
 
-	batchChange, err := r.applyOrCreateBatchChange(ctx, args, service.ApplyBatchChangeOpts{})
+	bbtchChbnge, err := r.bpplyOrCrebteBbtchChbnge(ctx, brgs, service.ApplyBbtchChbngeOpts{})
 	if err != nil {
 		return nil, err
 	}
 
-	arg := &batchChangeEventArg{BatchChangeID: batchChange.ID}
-	err = logBackendEvent(ctx, r.store.DatabaseDB(), "BatchChangeCreatedOrUpdated", arg, arg)
+	brg := &bbtchChbngeEventArg{BbtchChbngeID: bbtchChbnge.ID}
+	err = logBbckendEvent(ctx, r.store.DbtbbbseDB(), "BbtchChbngeCrebtedOrUpdbted", brg, brg)
 	if err != nil {
 		return nil, err
 	}
 
-	return &batchChangeResolver{store: r.store, gitserverClient: r.gitserverClient, batchChange: batchChange, logger: r.logger}, nil
+	return &bbtchChbngeResolver{store: r.store, gitserverClient: r.gitserverClient, bbtchChbnge: bbtchChbnge, logger: r.logger}, nil
 }
 
-func addPublicationStatesToOptions(in *[]graphqlbackend.ChangesetSpecPublicationStateInput, opts *service.UiPublicationStates) error {
-	var errs error
+func bddPublicbtionStbtesToOptions(in *[]grbphqlbbckend.ChbngesetSpecPublicbtionStbteInput, opts *service.UiPublicbtionStbtes) error {
+	vbr errs error
 
 	if in != nil && *in != nil {
-		for _, state := range *in {
-			id, err := unmarshalChangesetSpecID(state.ChangesetSpec)
+		for _, stbte := rbnge *in {
+			id, err := unmbrshblChbngesetSpecID(stbte.ChbngesetSpec)
 			if err != nil {
 				return err
 			}
 
-			if err := opts.Add(id, state.PublicationState); err != nil {
+			if err := opts.Add(id, stbte.PublicbtionStbte); err != nil {
 				errs = errors.Append(errs, err)
 			}
 		}
@@ -488,180 +488,180 @@ func addPublicationStatesToOptions(in *[]graphqlbackend.ChangesetSpecPublication
 	return errs
 }
 
-func (r *Resolver) applyOrCreateBatchChange(ctx context.Context, args *graphqlbackend.ApplyBatchChangeArgs, opts service.ApplyBatchChangeOpts) (*btypes.BatchChange, error) {
-	if err := enterprise.BatchChangesEnabledForUser(ctx, r.store.DatabaseDB()); err != nil {
+func (r *Resolver) bpplyOrCrebteBbtchChbnge(ctx context.Context, brgs *grbphqlbbckend.ApplyBbtchChbngeArgs, opts service.ApplyBbtchChbngeOpts) (*btypes.BbtchChbnge, error) {
+	if err := enterprise.BbtchChbngesEnbbledForUser(ctx, r.store.DbtbbbseDB()); err != nil {
 		return nil, err
 	}
 
-	var err error
-	if opts.BatchSpecRandID, err = unmarshalBatchSpecID(args.BatchSpec); err != nil {
+	vbr err error
+	if opts.BbtchSpecRbndID, err = unmbrshblBbtchSpecID(brgs.BbtchSpec); err != nil {
 		return nil, err
 	}
 
-	if opts.BatchSpecRandID == "" {
+	if opts.BbtchSpecRbndID == "" {
 		return nil, ErrIDIsZero{}
 	}
 
-	if batchChangesFeature, licenseErr := checkLicense(); licenseErr == nil {
-		batchSpec, err := r.store.GetBatchSpec(ctx, store.GetBatchSpecOpts{
-			RandID: opts.BatchSpecRandID,
+	if bbtchChbngesFebture, licenseErr := checkLicense(); licenseErr == nil {
+		bbtchSpec, err := r.store.GetBbtchSpec(ctx, store.GetBbtchSpecOpts{
+			RbndID: opts.BbtchSpecRbndID,
 		})
 		if err != nil {
 			return nil, err
 		}
-		count, err := r.store.CountChangesetSpecs(ctx, store.CountChangesetSpecsOpts{BatchSpecID: batchSpec.ID})
+		count, err := r.store.CountChbngesetSpecs(ctx, store.CountChbngesetSpecsOpts{BbtchSpecID: bbtchSpec.ID})
 		if err != nil {
 			return nil, err
 		}
-		if !batchChangesFeature.Unrestricted && count > batchChangesFeature.MaxNumChangesets {
-			return nil, ErrBatchChangesOverLimit{errors.Newf("maximum number of changesets per batch change (%d) exceeded", batchChangesFeature.MaxNumChangesets)}
+		if !bbtchChbngesFebture.Unrestricted && count > bbtchChbngesFebture.MbxNumChbngesets {
+			return nil, ErrBbtchChbngesOverLimit{errors.Newf("mbximum number of chbngesets per bbtch chbnge (%d) exceeded", bbtchChbngesFebture.MbxNumChbngesets)}
 		}
 	} else {
-		return nil, ErrBatchChangesUnlicensed{licenseErr}
+		return nil, ErrBbtchChbngesUnlicensed{licenseErr}
 	}
 
-	if args.EnsureBatchChange != nil {
-		opts.EnsureBatchChangeID, err = unmarshalBatchChangeID(*args.EnsureBatchChange)
+	if brgs.EnsureBbtchChbnge != nil {
+		opts.EnsureBbtchChbngeID, err = unmbrshblBbtchChbngeID(*brgs.EnsureBbtchChbnge)
 		if err != nil {
 			return nil, err
 		}
 	}
 
-	if err := addPublicationStatesToOptions(args.PublicationStates, &opts.PublicationStates); err != nil {
+	if err := bddPublicbtionStbtesToOptions(brgs.PublicbtionStbtes, &opts.PublicbtionStbtes); err != nil {
 		return nil, err
 	}
 
 	svc := service.New(r.store)
-	// 🚨 SECURITY: ApplyBatchChange checks whether the user has permission to
-	// apply the batch spec.
-	batchChange, err := svc.ApplyBatchChange(ctx, opts)
+	// 🚨 SECURITY: ApplyBbtchChbnge checks whether the user hbs permission to
+	// bpply the bbtch spec.
+	bbtchChbnge, err := svc.ApplyBbtchChbnge(ctx, opts)
 	if err != nil {
-		if err == service.ErrEnsureBatchChangeFailed {
-			return nil, ErrEnsureBatchChangeFailed{}
-		} else if err == service.ErrApplyClosedBatchChange {
-			return nil, ErrApplyClosedBatchChange{}
-		} else if err == service.ErrMatchingBatchChangeExists {
-			return nil, ErrMatchingBatchChangeExists{}
+		if err == service.ErrEnsureBbtchChbngeFbiled {
+			return nil, ErrEnsureBbtchChbngeFbiled{}
+		} else if err == service.ErrApplyClosedBbtchChbnge {
+			return nil, ErrApplyClosedBbtchChbnge{}
+		} else if err == service.ErrMbtchingBbtchChbngeExists {
+			return nil, ErrMbtchingBbtchChbngeExists{}
 		}
 		return nil, err
 	}
 
-	return batchChange, nil
+	return bbtchChbnge, nil
 }
 
-func (r *Resolver) CreateBatchSpec(ctx context.Context, args *graphqlbackend.CreateBatchSpecArgs) (_ graphqlbackend.BatchSpecResolver, err error) {
-	tr, ctx := trace.New(ctx, "CreateBatchSpec", attribute.String("namespace", string(args.Namespace)), attribute.String("batchSpec", string(args.BatchSpec)))
+func (r *Resolver) CrebteBbtchSpec(ctx context.Context, brgs *grbphqlbbckend.CrebteBbtchSpecArgs) (_ grbphqlbbckend.BbtchSpecResolver, err error) {
+	tr, ctx := trbce.New(ctx, "CrebteBbtchSpec", bttribute.String("nbmespbce", string(brgs.Nbmespbce)), bttribute.String("bbtchSpec", string(brgs.BbtchSpec)))
 	defer tr.EndWithErr(&err)
 
-	if err := batchChangesCreateAccess(ctx, r.store.DatabaseDB()); err != nil {
+	if err := bbtchChbngesCrebteAccess(ctx, r.store.DbtbbbseDB()); err != nil {
 		return nil, err
 	}
 
-	if err := rbac.CheckCurrentUserHasPermission(ctx, r.store.DatabaseDB(), rbac.BatchChangesWritePermission); err != nil {
+	if err := rbbc.CheckCurrentUserHbsPermission(ctx, r.store.DbtbbbseDB(), rbbc.BbtchChbngesWritePermission); err != nil {
 		return nil, err
 	}
 
-	if batchChangesFeature, err := checkLicense(); err == nil {
-		if !batchChangesFeature.Unrestricted && len(args.ChangesetSpecs) > batchChangesFeature.MaxNumChangesets {
-			return nil, ErrBatchChangesOverLimit{errors.Newf("maximum number of changesets per batch change (%d) exceeded", batchChangesFeature.MaxNumChangesets)}
+	if bbtchChbngesFebture, err := checkLicense(); err == nil {
+		if !bbtchChbngesFebture.Unrestricted && len(brgs.ChbngesetSpecs) > bbtchChbngesFebture.MbxNumChbngesets {
+			return nil, ErrBbtchChbngesOverLimit{errors.Newf("mbximum number of chbngesets per bbtch chbnge (%d) exceeded", bbtchChbngesFebture.MbxNumChbngesets)}
 		}
 	} else {
-		return nil, ErrBatchChangesUnlicensed{err}
+		return nil, ErrBbtchChbngesUnlicensed{err}
 	}
 
-	opts := service.CreateBatchSpecOpts{RawSpec: args.BatchSpec}
+	opts := service.CrebteBbtchSpecOpts{RbwSpec: brgs.BbtchSpec}
 
-	err = graphqlbackend.UnmarshalNamespaceID(args.Namespace, &opts.NamespaceUserID, &opts.NamespaceOrgID)
+	err = grbphqlbbckend.UnmbrshblNbmespbceID(brgs.Nbmespbce, &opts.NbmespbceUserID, &opts.NbmespbceOrgID)
 	if err != nil {
 		return nil, err
 	}
 
-	for _, graphqlID := range args.ChangesetSpecs {
-		randID, err := unmarshalChangesetSpecID(graphqlID)
+	for _, grbphqlID := rbnge brgs.ChbngesetSpecs {
+		rbndID, err := unmbrshblChbngesetSpecID(grbphqlID)
 		if err != nil {
 			return nil, err
 		}
-		opts.ChangesetSpecRandIDs = append(opts.ChangesetSpecRandIDs, randID)
+		opts.ChbngesetSpecRbndIDs = bppend(opts.ChbngesetSpecRbndIDs, rbndID)
 	}
 
 	svc := service.New(r.store)
-	batchSpec, err := svc.CreateBatchSpec(ctx, opts)
+	bbtchSpec, err := svc.CrebteBbtchSpec(ctx, opts)
 	if err != nil {
 		return nil, err
 	}
 
-	eventArg := &batchSpecCreatedArg{ChangesetSpecsCount: len(opts.ChangesetSpecRandIDs)}
-	if err := logBackendEvent(ctx, r.store.DatabaseDB(), "BatchSpecCreated", eventArg, eventArg); err != nil {
+	eventArg := &bbtchSpecCrebtedArg{ChbngesetSpecsCount: len(opts.ChbngesetSpecRbndIDs)}
+	if err := logBbckendEvent(ctx, r.store.DbtbbbseDB(), "BbtchSpecCrebted", eventArg, eventArg); err != nil {
 		return nil, err
 	}
 
-	specResolver := &batchSpecResolver{
+	specResolver := &bbtchSpecResolver{
 		store:     r.store,
 		logger:    r.logger,
-		batchSpec: batchSpec,
+		bbtchSpec: bbtchSpec,
 	}
 
 	return specResolver, nil
 }
 
-func (r *Resolver) CreateChangesetSpec(ctx context.Context, args *graphqlbackend.CreateChangesetSpecArgs) (_ graphqlbackend.ChangesetSpecResolver, err error) {
-	tr, ctx := trace.New(ctx, "Resolver.CreateChangesetSpec")
+func (r *Resolver) CrebteChbngesetSpec(ctx context.Context, brgs *grbphqlbbckend.CrebteChbngesetSpecArgs) (_ grbphqlbbckend.ChbngesetSpecResolver, err error) {
+	tr, ctx := trbce.New(ctx, "Resolver.CrebteChbngesetSpec")
 	defer tr.EndWithErr(&err)
 
-	if err := batchChangesCreateAccess(ctx, r.store.DatabaseDB()); err != nil {
+	if err := bbtchChbngesCrebteAccess(ctx, r.store.DbtbbbseDB()); err != nil {
 		return nil, err
 	}
 
-	if err := rbac.CheckCurrentUserHasPermission(ctx, r.store.DatabaseDB(), rbac.BatchChangesWritePermission); err != nil {
+	if err := rbbc.CheckCurrentUserHbsPermission(ctx, r.store.DbtbbbseDB(), rbbc.BbtchChbngesWritePermission); err != nil {
 		return nil, err
 	}
 
-	act := sgactor.FromContext(ctx)
-	// Actor MUST be logged in at this stage, because batchChangesCreateAccess checks that already.
-	// To be extra safe, we'll just do the cheap check again here so if anyone ever modifies
-	// batchChangesCreateAccess, we still enforce it here.
-	if !act.IsAuthenticated() {
-		return nil, auth.ErrNotAuthenticated
+	bct := sgbctor.FromContext(ctx)
+	// Actor MUST be logged in bt this stbge, becbuse bbtchChbngesCrebteAccess checks thbt blrebdy.
+	// To be extrb sbfe, we'll just do the chebp check bgbin here so if bnyone ever modifies
+	// bbtchChbngesCrebteAccess, we still enforce it here.
+	if !bct.IsAuthenticbted() {
+		return nil, buth.ErrNotAuthenticbted
 	}
 
 	svc := service.New(r.store)
-	spec, err := svc.CreateChangesetSpec(ctx, args.ChangesetSpec, act.UID)
+	spec, err := svc.CrebteChbngesetSpec(ctx, brgs.ChbngesetSpec, bct.UID)
 	if err != nil {
 		return nil, err
 	}
 
-	return NewChangesetSpecResolver(ctx, r.store, spec)
+	return NewChbngesetSpecResolver(ctx, r.store, spec)
 }
 
-func (r *Resolver) CreateChangesetSpecs(ctx context.Context, args *graphqlbackend.CreateChangesetSpecsArgs) (_ []graphqlbackend.ChangesetSpecResolver, err error) {
-	tr, ctx := trace.New(ctx, "Resolver.CreateChangesetSpecs")
+func (r *Resolver) CrebteChbngesetSpecs(ctx context.Context, brgs *grbphqlbbckend.CrebteChbngesetSpecsArgs) (_ []grbphqlbbckend.ChbngesetSpecResolver, err error) {
+	tr, ctx := trbce.New(ctx, "Resolver.CrebteChbngesetSpecs")
 	defer tr.EndWithErr(&err)
 
-	if err := batchChangesCreateAccess(ctx, r.store.DatabaseDB()); err != nil {
+	if err := bbtchChbngesCrebteAccess(ctx, r.store.DbtbbbseDB()); err != nil {
 		return nil, err
 	}
 
-	if err := rbac.CheckCurrentUserHasPermission(ctx, r.store.DatabaseDB(), rbac.BatchChangesWritePermission); err != nil {
+	if err := rbbc.CheckCurrentUserHbsPermission(ctx, r.store.DbtbbbseDB(), rbbc.BbtchChbngesWritePermission); err != nil {
 		return nil, err
 	}
 
-	act := sgactor.FromContext(ctx)
-	// Actor MUST be logged in at this stage, because batchChangesCreateAccess checks that already.
-	// To be extra safe, we'll just do the cheap check again here so if anyone ever modifies
-	// batchChangesCreateAccess, we still enforce it here.
-	if !act.IsAuthenticated() {
-		return nil, auth.ErrNotAuthenticated
+	bct := sgbctor.FromContext(ctx)
+	// Actor MUST be logged in bt this stbge, becbuse bbtchChbngesCrebteAccess checks thbt blrebdy.
+	// To be extrb sbfe, we'll just do the chebp check bgbin here so if bnyone ever modifies
+	// bbtchChbngesCrebteAccess, we still enforce it here.
+	if !bct.IsAuthenticbted() {
+		return nil, buth.ErrNotAuthenticbted
 	}
 
 	svc := service.New(r.store)
-	specs, err := svc.CreateChangesetSpecs(ctx, args.ChangesetSpecs, act.UID)
+	specs, err := svc.CrebteChbngesetSpecs(ctx, brgs.ChbngesetSpecs, bct.UID)
 	if err != nil {
 		return nil, err
 	}
 
-	resolvers := make([]graphqlbackend.ChangesetSpecResolver, len(specs))
-	for i, spec := range specs {
-		resolver, err := NewChangesetSpecResolver(ctx, r.store, spec)
+	resolvers := mbke([]grbphqlbbckend.ChbngesetSpecResolver, len(specs))
+	for i, spec := rbnge specs {
+		resolver, err := NewChbngesetSpecResolver(ctx, r.store, spec)
 		if err != nil {
 			return nil, err
 		}
@@ -671,155 +671,155 @@ func (r *Resolver) CreateChangesetSpecs(ctx context.Context, args *graphqlbacken
 	return resolvers, nil
 }
 
-func (r *Resolver) MoveBatchChange(ctx context.Context, args *graphqlbackend.MoveBatchChangeArgs) (_ graphqlbackend.BatchChangeResolver, err error) {
-	tr, ctx := trace.New(ctx, "Resolver.MoveBatchChange", attribute.String("batchChange", string(args.BatchChange)))
+func (r *Resolver) MoveBbtchChbnge(ctx context.Context, brgs *grbphqlbbckend.MoveBbtchChbngeArgs) (_ grbphqlbbckend.BbtchChbngeResolver, err error) {
+	tr, ctx := trbce.New(ctx, "Resolver.MoveBbtchChbnge", bttribute.String("bbtchChbnge", string(brgs.BbtchChbnge)))
 	defer tr.EndWithErr(&err)
 
-	if err := enterprise.BatchChangesEnabledForUser(ctx, r.store.DatabaseDB()); err != nil {
+	if err := enterprise.BbtchChbngesEnbbledForUser(ctx, r.store.DbtbbbseDB()); err != nil {
 		return nil, err
 	}
 
-	if err := rbac.CheckCurrentUserHasPermission(ctx, r.store.DatabaseDB(), rbac.BatchChangesWritePermission); err != nil {
+	if err := rbbc.CheckCurrentUserHbsPermission(ctx, r.store.DbtbbbseDB(), rbbc.BbtchChbngesWritePermission); err != nil {
 		return nil, err
 	}
 
-	batchChangeID, err := unmarshalBatchChangeID(args.BatchChange)
+	bbtchChbngeID, err := unmbrshblBbtchChbngeID(brgs.BbtchChbnge)
 	if err != nil {
 		return nil, err
 	}
 
-	if batchChangeID == 0 {
+	if bbtchChbngeID == 0 {
 		return nil, ErrIDIsZero{}
 	}
 
-	opts := service.MoveBatchChangeOpts{
-		BatchChangeID: batchChangeID,
+	opts := service.MoveBbtchChbngeOpts{
+		BbtchChbngeID: bbtchChbngeID,
 	}
 
-	if args.NewName != nil {
-		opts.NewName = *args.NewName
+	if brgs.NewNbme != nil {
+		opts.NewNbme = *brgs.NewNbme
 	}
 
-	if args.NewNamespace != nil {
-		err := graphqlbackend.UnmarshalNamespaceID(*args.NewNamespace, &opts.NewNamespaceUserID, &opts.NewNamespaceOrgID)
+	if brgs.NewNbmespbce != nil {
+		err := grbphqlbbckend.UnmbrshblNbmespbceID(*brgs.NewNbmespbce, &opts.NewNbmespbceUserID, &opts.NewNbmespbceOrgID)
 		if err != nil {
 			return nil, err
 		}
 	}
 
 	svc := service.New(r.store)
-	// 🚨 SECURITY: MoveBatchChange checks whether the current user is authorized.
-	batchChange, err := svc.MoveBatchChange(ctx, opts)
+	// 🚨 SECURITY: MoveBbtchChbnge checks whether the current user is buthorized.
+	bbtchChbnge, err := svc.MoveBbtchChbnge(ctx, opts)
 	if err != nil {
 		return nil, err
 	}
 
-	return &batchChangeResolver{store: r.store, gitserverClient: r.gitserverClient, batchChange: batchChange, logger: r.logger}, nil
+	return &bbtchChbngeResolver{store: r.store, gitserverClient: r.gitserverClient, bbtchChbnge: bbtchChbnge, logger: r.logger}, nil
 }
 
-func (r *Resolver) DeleteBatchChange(ctx context.Context, args *graphqlbackend.DeleteBatchChangeArgs) (_ *graphqlbackend.EmptyResponse, err error) {
-	tr, ctx := trace.New(ctx, "Resolver.DeleteBatchChange", attribute.String("batchChange", string(args.BatchChange)))
+func (r *Resolver) DeleteBbtchChbnge(ctx context.Context, brgs *grbphqlbbckend.DeleteBbtchChbngeArgs) (_ *grbphqlbbckend.EmptyResponse, err error) {
+	tr, ctx := trbce.New(ctx, "Resolver.DeleteBbtchChbnge", bttribute.String("bbtchChbnge", string(brgs.BbtchChbnge)))
 	defer tr.EndWithErr(&err)
-	if err := enterprise.BatchChangesEnabledForUser(ctx, r.store.DatabaseDB()); err != nil {
+	if err := enterprise.BbtchChbngesEnbbledForUser(ctx, r.store.DbtbbbseDB()); err != nil {
 		return nil, err
 	}
 
-	if err := rbac.CheckCurrentUserHasPermission(ctx, r.store.DatabaseDB(), rbac.BatchChangesWritePermission); err != nil {
+	if err := rbbc.CheckCurrentUserHbsPermission(ctx, r.store.DbtbbbseDB(), rbbc.BbtchChbngesWritePermission); err != nil {
 		return nil, err
 	}
 
-	batchChangeID, err := unmarshalBatchChangeID(args.BatchChange)
+	bbtchChbngeID, err := unmbrshblBbtchChbngeID(brgs.BbtchChbnge)
 	if err != nil {
 		return nil, err
 	}
 
-	if batchChangeID == 0 {
+	if bbtchChbngeID == 0 {
 		return nil, ErrIDIsZero{}
 	}
 
 	svc := service.New(r.store)
-	// 🚨 SECURITY: DeleteBatchChange checks whether current user is authorized.
-	err = svc.DeleteBatchChange(ctx, batchChangeID)
+	// 🚨 SECURITY: DeleteBbtchChbnge checks whether current user is buthorized.
+	err = svc.DeleteBbtchChbnge(ctx, bbtchChbngeID)
 	if err != nil {
 		return nil, err
 	}
 
-	arg := &batchChangeEventArg{BatchChangeID: batchChangeID}
-	if err := logBackendEvent(ctx, r.store.DatabaseDB(), "BatchChangeDeleted", arg, arg); err != nil {
+	brg := &bbtchChbngeEventArg{BbtchChbngeID: bbtchChbngeID}
+	if err := logBbckendEvent(ctx, r.store.DbtbbbseDB(), "BbtchChbngeDeleted", brg, brg); err != nil {
 		return nil, err
 	}
 
-	return &graphqlbackend.EmptyResponse{}, err
+	return &grbphqlbbckend.EmptyResponse{}, err
 }
 
-func (r *Resolver) BatchChanges(ctx context.Context, args *graphqlbackend.ListBatchChangesArgs) (graphqlbackend.BatchChangesConnectionResolver, error) {
-	if err := enterprise.BatchChangesEnabledForUser(ctx, r.store.DatabaseDB()); err != nil {
+func (r *Resolver) BbtchChbnges(ctx context.Context, brgs *grbphqlbbckend.ListBbtchChbngesArgs) (grbphqlbbckend.BbtchChbngesConnectionResolver, error) {
+	if err := enterprise.BbtchChbngesEnbbledForUser(ctx, r.store.DbtbbbseDB()); err != nil {
 		return nil, err
 	}
 
-	opts := store.ListBatchChangesOpts{}
+	opts := store.ListBbtchChbngesOpts{}
 
-	state, err := parseBatchChangeState(args.State)
+	stbte, err := pbrseBbtchChbngeStbte(brgs.Stbte)
 	if err != nil {
 		return nil, err
 	}
-	if state != "" {
-		opts.States = []btypes.BatchChangeState{state}
+	if stbte != "" {
+		opts.Stbtes = []btypes.BbtchChbngeStbte{stbte}
 	}
 
-	// If multiple `states` are provided, prefer them over `state`.
-	if args.States != nil {
-		states, err := parseBatchChangeStates(args.States)
+	// If multiple `stbtes` bre provided, prefer them over `stbte`.
+	if brgs.Stbtes != nil {
+		stbtes, err := pbrseBbtchChbngeStbtes(brgs.Stbtes)
 		if err != nil {
 			return nil, err
 		}
-		opts.States = states
+		opts.Stbtes = stbtes
 	}
 
-	if err := validateFirstParamDefaults(args.First); err != nil {
+	if err := vblidbteFirstPbrbmDefbults(brgs.First); err != nil {
 		return nil, err
 	}
-	opts.Limit = int(args.First)
-	if args.After != nil {
-		cursor, err := strconv.ParseInt(*args.After, 10, 32)
+	opts.Limit = int(brgs.First)
+	if brgs.After != nil {
+		cursor, err := strconv.PbrseInt(*brgs.After, 10, 32)
 		if err != nil {
 			return nil, err
 		}
 		opts.Cursor = cursor
 	}
 
-	authErr := auth.CheckCurrentUserIsSiteAdmin(ctx, r.store.DatabaseDB())
-	if authErr != nil && authErr != auth.ErrMustBeSiteAdmin {
-		return nil, authErr
+	buthErr := buth.CheckCurrentUserIsSiteAdmin(ctx, r.store.DbtbbbseDB())
+	if buthErr != nil && buthErr != buth.ErrMustBeSiteAdmin {
+		return nil, buthErr
 	}
-	isSiteAdmin := authErr != auth.ErrMustBeSiteAdmin
+	isSiteAdmin := buthErr != buth.ErrMustBeSiteAdmin
 	if !isSiteAdmin {
-		actor := sgactor.FromContext(ctx)
-		if args.ViewerCanAdminister != nil && *args.ViewerCanAdminister {
-			opts.OnlyAdministeredByUserID = actor.UID
+		bctor := sgbctor.FromContext(ctx)
+		if brgs.ViewerCbnAdminister != nil && *brgs.ViewerCbnAdminister {
+			opts.OnlyAdministeredByUserID = bctor.UID
 		}
 
-		// 🚨 SECURITY: If the user is not an admin, we don't want to include
-		// unapplied (draft) BatchChanges except those that the user owns.
-		opts.ExcludeDraftsNotOwnedByUserID = actor.UID
+		// 🚨 SECURITY: If the user is not bn bdmin, we don't wbnt to include
+		// unbpplied (drbft) BbtchChbnges except those thbt the user owns.
+		opts.ExcludeDrbftsNotOwnedByUserID = bctor.UID
 	}
 
-	if args.Namespace != nil {
-		err := graphqlbackend.UnmarshalNamespaceID(*args.Namespace, &opts.NamespaceUserID, &opts.NamespaceOrgID)
+	if brgs.Nbmespbce != nil {
+		err := grbphqlbbckend.UnmbrshblNbmespbceID(*brgs.Nbmespbce, &opts.NbmespbceUserID, &opts.NbmespbceOrgID)
 		if err != nil {
 			return nil, err
 		}
 	}
 
-	if args.Repo != nil {
-		repoID, err := graphqlbackend.UnmarshalRepositoryID(*args.Repo)
+	if brgs.Repo != nil {
+		repoID, err := grbphqlbbckend.UnmbrshblRepositoryID(*brgs.Repo)
 		if err != nil {
 			return nil, err
 		}
 		opts.RepoID = repoID
 	}
 
-	return &batchChangesConnectionResolver{
+	return &bbtchChbngesConnectionResolver{
 		store:           r.store,
 		gitserverClient: r.gitserverClient,
 		logger:          r.logger,
@@ -827,276 +827,276 @@ func (r *Resolver) BatchChanges(ctx context.Context, args *graphqlbackend.ListBa
 	}, nil
 }
 
-func (r *Resolver) RepoChangesetsStats(ctx context.Context, repo *graphql.ID) (graphqlbackend.RepoChangesetsStatsResolver, error) {
-	repoID, err := graphqlbackend.UnmarshalRepositoryID(*repo)
+func (r *Resolver) RepoChbngesetsStbts(ctx context.Context, repo *grbphql.ID) (grbphqlbbckend.RepoChbngesetsStbtsResolver, error) {
+	repoID, err := grbphqlbbckend.UnmbrshblRepositoryID(*repo)
 	if err != nil {
 		return nil, err
 	}
 
-	stats, err := r.store.GetRepoChangesetsStats(ctx, repoID)
+	stbts, err := r.store.GetRepoChbngesetsStbts(ctx, repoID)
 	if err != nil {
 		return nil, err
 	}
-	return &repoChangesetsStatsResolver{stats: *stats}, nil
+	return &repoChbngesetsStbtsResolver{stbts: *stbts}, nil
 }
 
-func (r *Resolver) GlobalChangesetsStats(
+func (r *Resolver) GlobblChbngesetsStbts(
 	ctx context.Context,
-) (graphqlbackend.GlobalChangesetsStatsResolver, error) {
-	if err := enterprise.BatchChangesEnabledForUser(ctx, r.store.DatabaseDB()); err != nil {
+) (grbphqlbbckend.GlobblChbngesetsStbtsResolver, error) {
+	if err := enterprise.BbtchChbngesEnbbledForUser(ctx, r.store.DbtbbbseDB()); err != nil {
 		return nil, err
 	}
-	stats, err := r.store.GetGlobalChangesetsStats(ctx)
+	stbts, err := r.store.GetGlobblChbngesetsStbts(ctx)
 	if err != nil {
 		return nil, err
 	}
-	return &globalChangesetsStatsResolver{stats: *stats}, nil
+	return &globblChbngesetsStbtsResolver{stbts: *stbts}, nil
 }
 
-func (r *Resolver) RepoDiffStat(ctx context.Context, repo *graphql.ID) (*graphqlbackend.DiffStat, error) {
-	repoID, err := graphqlbackend.UnmarshalRepositoryID(*repo)
+func (r *Resolver) RepoDiffStbt(ctx context.Context, repo *grbphql.ID) (*grbphqlbbckend.DiffStbt, error) {
+	repoID, err := grbphqlbbckend.UnmbrshblRepositoryID(*repo)
 	if err != nil {
 		return nil, err
 	}
 
-	diffStat, err := r.store.GetRepoDiffStat(ctx, repoID)
+	diffStbt, err := r.store.GetRepoDiffStbt(ctx, repoID)
 	if err != nil {
 		return nil, err
 	}
-	return graphqlbackend.NewDiffStat(*diffStat), nil
+	return grbphqlbbckend.NewDiffStbt(*diffStbt), nil
 }
 
-func (r *Resolver) BatchChangesCodeHosts(ctx context.Context, args *graphqlbackend.ListBatchChangesCodeHostsArgs) (graphqlbackend.BatchChangesCodeHostConnectionResolver, error) {
-	if err := enterprise.BatchChangesEnabledForUser(ctx, r.store.DatabaseDB()); err != nil {
+func (r *Resolver) BbtchChbngesCodeHosts(ctx context.Context, brgs *grbphqlbbckend.ListBbtchChbngesCodeHostsArgs) (grbphqlbbckend.BbtchChbngesCodeHostConnectionResolver, error) {
+	if err := enterprise.BbtchChbngesEnbbledForUser(ctx, r.store.DbtbbbseDB()); err != nil {
 		return nil, err
 	}
 
-	if args.UserID != nil {
-		// 🚨 SECURITY: Only viewable for self or by site admins.
-		if err := auth.CheckSiteAdminOrSameUser(ctx, r.store.DatabaseDB(), *args.UserID); err != nil {
+	if brgs.UserID != nil {
+		// 🚨 SECURITY: Only viewbble for self or by site bdmins.
+		if err := buth.CheckSiteAdminOrSbmeUser(ctx, r.store.DbtbbbseDB(), *brgs.UserID); err != nil {
 			return nil, err
 		}
 	}
 
-	if err := validateFirstParamDefaults(args.First); err != nil {
+	if err := vblidbteFirstPbrbmDefbults(brgs.First); err != nil {
 		return nil, err
 	}
 
-	limitOffset := database.LimitOffset{
-		Limit: int(args.First),
+	limitOffset := dbtbbbse.LimitOffset{
+		Limit: int(brgs.First),
 	}
-	if args.After != nil {
-		cursor, err := strconv.ParseInt(*args.After, 10, 32)
+	if brgs.After != nil {
+		cursor, err := strconv.PbrseInt(*brgs.After, 10, 32)
 		if err != nil {
 			return nil, err
 		}
 		limitOffset.Offset = int(cursor)
 	}
 
-	return &batchChangesCodeHostConnectionResolver{userID: args.UserID, limitOffset: limitOffset, store: r.store, db: r.db, logger: r.logger}, nil
+	return &bbtchChbngesCodeHostConnectionResolver{userID: brgs.UserID, limitOffset: limitOffset, store: r.store, db: r.db, logger: r.logger}, nil
 }
 
-// listChangesetOptsFromArgs turns the graphqlbackend.ListChangesetsArgs into
-// ListChangesetsOpts.
-// If the args do not include a filter that would reveal sensitive information
-// about a changeset the user doesn't have access to, the second return value
-// is false.
-func listChangesetOptsFromArgs(args *graphqlbackend.ListChangesetsArgs, batchChangeID int64) (opts store.ListChangesetsOpts, optsSafe bool, err error) {
-	if args == nil {
+// listChbngesetOptsFromArgs turns the grbphqlbbckend.ListChbngesetsArgs into
+// ListChbngesetsOpts.
+// If the brgs do not include b filter thbt would revebl sensitive informbtion
+// bbout b chbngeset the user doesn't hbve bccess to, the second return vblue
+// is fblse.
+func listChbngesetOptsFromArgs(brgs *grbphqlbbckend.ListChbngesetsArgs, bbtchChbngeID int64) (opts store.ListChbngesetsOpts, optsSbfe bool, err error) {
+	if brgs == nil {
 		return opts, true, nil
 	}
 
-	safe := true
+	sbfe := true
 
-	// TODO: This _could_ become problematic if a user has a batch change with > 10000 changesets, once
-	// we use cursor based pagination in the frontend for ChangesetConnections this problem will disappear.
-	// Currently we cannot enable it, though, because we want to re-fetch the whole list periodically to
-	// check for a change in the changeset states.
-	if err := validateFirstParamDefaults(args.First); err != nil {
-		return opts, false, err
+	// TODO: This _could_ become problembtic if b user hbs b bbtch chbnge with > 10000 chbngesets, once
+	// we use cursor bbsed pbginbtion in the frontend for ChbngesetConnections this problem will disbppebr.
+	// Currently we cbnnot enbble it, though, becbuse we wbnt to re-fetch the whole list periodicblly to
+	// check for b chbnge in the chbngeset stbtes.
+	if err := vblidbteFirstPbrbmDefbults(brgs.First); err != nil {
+		return opts, fblse, err
 	}
-	opts.Limit = int(args.First)
+	opts.Limit = int(brgs.First)
 
-	if args.After != nil {
-		cursor, err := strconv.ParseInt(*args.After, 10, 32)
+	if brgs.After != nil {
+		cursor, err := strconv.PbrseInt(*brgs.After, 10, 32)
 		if err != nil {
-			return opts, false, errors.Wrap(err, "parsing after cursor")
+			return opts, fblse, errors.Wrbp(err, "pbrsing bfter cursor")
 		}
 		opts.Cursor = cursor
 	}
 
-	if args.OnlyClosable != nil && *args.OnlyClosable {
-		if args.State != nil {
-			return opts, false, errors.New("invalid combination of state and onlyClosable")
+	if brgs.OnlyClosbble != nil && *brgs.OnlyClosbble {
+		if brgs.Stbte != nil {
+			return opts, fblse, errors.New("invblid combinbtion of stbte bnd onlyClosbble")
 		}
 
-		opts.States = []btypes.ChangesetState{btypes.ChangesetStateOpen, btypes.ChangesetStateDraft}
+		opts.Stbtes = []btypes.ChbngesetStbte{btypes.ChbngesetStbteOpen, btypes.ChbngesetStbteDrbft}
 	}
 
-	if args.State != nil {
-		state := btypes.ChangesetState(*args.State)
-		if !state.Valid() {
-			return opts, false, errors.New("changeset state not valid")
+	if brgs.Stbte != nil {
+		stbte := btypes.ChbngesetStbte(*brgs.Stbte)
+		if !stbte.Vblid() {
+			return opts, fblse, errors.New("chbngeset stbte not vblid")
 		}
 
-		opts.States = []btypes.ChangesetState{state}
+		opts.Stbtes = []btypes.ChbngesetStbte{stbte}
 	}
 
-	if args.ReviewState != nil {
-		state := btypes.ChangesetReviewState(*args.ReviewState)
-		if !state.Valid() {
-			return opts, false, errors.New("changeset review state not valid")
+	if brgs.ReviewStbte != nil {
+		stbte := btypes.ChbngesetReviewStbte(*brgs.ReviewStbte)
+		if !stbte.Vblid() {
+			return opts, fblse, errors.New("chbngeset review stbte not vblid")
 		}
-		opts.ExternalReviewState = &state
-		// If the user filters by ReviewState we cannot include hidden
-		// changesets, since that would leak information.
-		safe = false
+		opts.ExternblReviewStbte = &stbte
+		// If the user filters by ReviewStbte we cbnnot include hidden
+		// chbngesets, since thbt would lebk informbtion.
+		sbfe = fblse
 	}
-	if args.CheckState != nil {
-		state := btypes.ChangesetCheckState(*args.CheckState)
-		if !state.Valid() {
-			return opts, false, errors.New("changeset check state not valid")
+	if brgs.CheckStbte != nil {
+		stbte := btypes.ChbngesetCheckStbte(*brgs.CheckStbte)
+		if !stbte.Vblid() {
+			return opts, fblse, errors.New("chbngeset check stbte not vblid")
 		}
-		opts.ExternalCheckState = &state
-		// If the user filters by CheckState we cannot include hidden
-		// changesets, since that would leak information.
-		safe = false
+		opts.ExternblCheckStbte = &stbte
+		// If the user filters by CheckStbte we cbnnot include hidden
+		// chbngesets, since thbt would lebk informbtion.
+		sbfe = fblse
 	}
-	if args.OnlyPublishedByThisBatchChange != nil {
-		published := btypes.ChangesetPublicationStatePublished
+	if brgs.OnlyPublishedByThisBbtchChbnge != nil {
+		published := btypes.ChbngesetPublicbtionStbtePublished
 
-		opts.OwnedByBatchChangeID = batchChangeID
-		opts.PublicationState = &published
+		opts.OwnedByBbtchChbngeID = bbtchChbngeID
+		opts.PublicbtionStbte = &published
 	}
-	if args.Search != nil {
-		var err error
-		opts.TextSearch, err = search.ParseTextSearch(*args.Search)
+	if brgs.Sebrch != nil {
+		vbr err error
+		opts.TextSebrch, err = sebrch.PbrseTextSebrch(*brgs.Sebrch)
 		if err != nil {
-			return opts, false, errors.Wrap(err, "parsing search")
+			return opts, fblse, errors.Wrbp(err, "pbrsing sebrch")
 		}
-		// Since we search for the repository name in text searches, the
-		// presence or absence of results may leak information about hidden
+		// Since we sebrch for the repository nbme in text sebrches, the
+		// presence or bbsence of results mby lebk informbtion bbout hidden
 		// repositories.
-		safe = false
+		sbfe = fblse
 	}
-	if args.OnlyArchived {
-		opts.OnlyArchived = args.OnlyArchived
+	if brgs.OnlyArchived {
+		opts.OnlyArchived = brgs.OnlyArchived
 	}
-	if args.Repo != nil {
-		repoID, err := graphqlbackend.UnmarshalRepositoryID(*args.Repo)
+	if brgs.Repo != nil {
+		repoID, err := grbphqlbbckend.UnmbrshblRepositoryID(*brgs.Repo)
 		if err != nil {
-			return opts, false, errors.Wrap(err, "unmarshalling repo id")
+			return opts, fblse, errors.Wrbp(err, "unmbrshblling repo id")
 		}
-		opts.RepoIDs = []api.RepoID{repoID}
+		opts.RepoIDs = []bpi.RepoID{repoID}
 	}
 
-	return opts, safe, nil
+	return opts, sbfe, nil
 }
 
-func (r *Resolver) CloseBatchChange(ctx context.Context, args *graphqlbackend.CloseBatchChangeArgs) (_ graphqlbackend.BatchChangeResolver, err error) {
-	tr, ctx := trace.New(ctx, "Resolver.CloseBatchChange", attribute.String("batchChange", string(args.BatchChange)))
+func (r *Resolver) CloseBbtchChbnge(ctx context.Context, brgs *grbphqlbbckend.CloseBbtchChbngeArgs) (_ grbphqlbbckend.BbtchChbngeResolver, err error) {
+	tr, ctx := trbce.New(ctx, "Resolver.CloseBbtchChbnge", bttribute.String("bbtchChbnge", string(brgs.BbtchChbnge)))
 	defer tr.EndWithErr(&err)
 
-	if err := enterprise.BatchChangesEnabledForUser(ctx, r.store.DatabaseDB()); err != nil {
+	if err := enterprise.BbtchChbngesEnbbledForUser(ctx, r.store.DbtbbbseDB()); err != nil {
 		return nil, err
 	}
 
-	if err := rbac.CheckCurrentUserHasPermission(ctx, r.store.DatabaseDB(), rbac.BatchChangesWritePermission); err != nil {
+	if err := rbbc.CheckCurrentUserHbsPermission(ctx, r.store.DbtbbbseDB(), rbbc.BbtchChbngesWritePermission); err != nil {
 		return nil, err
 	}
 
-	batchChangeID, err := unmarshalBatchChangeID(args.BatchChange)
+	bbtchChbngeID, err := unmbrshblBbtchChbngeID(brgs.BbtchChbnge)
 	if err != nil {
-		return nil, errors.Wrap(err, "unmarshaling batch change id")
+		return nil, errors.Wrbp(err, "unmbrshbling bbtch chbnge id")
 	}
 
-	if batchChangeID == 0 {
+	if bbtchChbngeID == 0 {
 		return nil, ErrIDIsZero{}
 	}
 
 	svc := service.New(r.store)
-	// 🚨 SECURITY: CloseBatchChange checks whether current user is authorized.
-	batchChange, err := svc.CloseBatchChange(ctx, batchChangeID, args.CloseChangesets)
+	// 🚨 SECURITY: CloseBbtchChbnge checks whether current user is buthorized.
+	bbtchChbnge, err := svc.CloseBbtchChbnge(ctx, bbtchChbngeID, brgs.CloseChbngesets)
 	if err != nil {
-		return nil, errors.Wrap(err, "closing batch change")
+		return nil, errors.Wrbp(err, "closing bbtch chbnge")
 	}
 
-	arg := &batchChangeEventArg{BatchChangeID: batchChangeID}
-	if err := logBackendEvent(ctx, r.store.DatabaseDB(), "BatchChangeClosed", arg, arg); err != nil {
+	brg := &bbtchChbngeEventArg{BbtchChbngeID: bbtchChbngeID}
+	if err := logBbckendEvent(ctx, r.store.DbtbbbseDB(), "BbtchChbngeClosed", brg, brg); err != nil {
 		return nil, err
 	}
 
-	return &batchChangeResolver{store: r.store, gitserverClient: r.gitserverClient, batchChange: batchChange, logger: r.logger}, nil
+	return &bbtchChbngeResolver{store: r.store, gitserverClient: r.gitserverClient, bbtchChbnge: bbtchChbnge, logger: r.logger}, nil
 }
 
-func (r *Resolver) SyncChangeset(ctx context.Context, args *graphqlbackend.SyncChangesetArgs) (_ *graphqlbackend.EmptyResponse, err error) {
-	tr, ctx := trace.New(ctx, "Resolver.SyncChangeset", attribute.String("changeset", string(args.Changeset)))
+func (r *Resolver) SyncChbngeset(ctx context.Context, brgs *grbphqlbbckend.SyncChbngesetArgs) (_ *grbphqlbbckend.EmptyResponse, err error) {
+	tr, ctx := trbce.New(ctx, "Resolver.SyncChbngeset", bttribute.String("chbngeset", string(brgs.Chbngeset)))
 	defer tr.EndWithErr(&err)
-	if err := enterprise.BatchChangesEnabledForUser(ctx, r.store.DatabaseDB()); err != nil {
+	if err := enterprise.BbtchChbngesEnbbledForUser(ctx, r.store.DbtbbbseDB()); err != nil {
 		return nil, err
 	}
 
-	changesetID, err := unmarshalChangesetID(args.Changeset)
+	chbngesetID, err := unmbrshblChbngesetID(brgs.Chbngeset)
 	if err != nil {
 		return nil, err
 	}
 
-	if changesetID == 0 {
+	if chbngesetID == 0 {
 		return nil, ErrIDIsZero{}
 	}
 
-	// 🚨 SECURITY: EnqueueChangesetSync checks whether current user is authorized.
+	// 🚨 SECURITY: EnqueueChbngesetSync checks whether current user is buthorized.
 	svc := service.New(r.store)
-	if err = svc.EnqueueChangesetSync(ctx, changesetID); err != nil {
+	if err = svc.EnqueueChbngesetSync(ctx, chbngesetID); err != nil {
 		return nil, err
 	}
 
-	return &graphqlbackend.EmptyResponse{}, nil
+	return &grbphqlbbckend.EmptyResponse{}, nil
 }
 
-func (r *Resolver) ReenqueueChangeset(ctx context.Context, args *graphqlbackend.ReenqueueChangesetArgs) (_ graphqlbackend.ChangesetResolver, err error) {
-	tr, ctx := trace.New(ctx, "Resolver.ReenqueueChangeset", attribute.String("changeset", string(args.Changeset)))
+func (r *Resolver) ReenqueueChbngeset(ctx context.Context, brgs *grbphqlbbckend.ReenqueueChbngesetArgs) (_ grbphqlbbckend.ChbngesetResolver, err error) {
+	tr, ctx := trbce.New(ctx, "Resolver.ReenqueueChbngeset", bttribute.String("chbngeset", string(brgs.Chbngeset)))
 	defer tr.EndWithErr(&err)
-	if err := enterprise.BatchChangesEnabledForUser(ctx, r.store.DatabaseDB()); err != nil {
+	if err := enterprise.BbtchChbngesEnbbledForUser(ctx, r.store.DbtbbbseDB()); err != nil {
 		return nil, err
 	}
 
-	if err := rbac.CheckCurrentUserHasPermission(ctx, r.store.DatabaseDB(), rbac.BatchChangesWritePermission); err != nil {
+	if err := rbbc.CheckCurrentUserHbsPermission(ctx, r.store.DbtbbbseDB(), rbbc.BbtchChbngesWritePermission); err != nil {
 		return nil, err
 	}
 
-	changesetID, err := unmarshalChangesetID(args.Changeset)
+	chbngesetID, err := unmbrshblChbngesetID(brgs.Chbngeset)
 	if err != nil {
 		return nil, err
 	}
 
-	if changesetID == 0 {
+	if chbngesetID == 0 {
 		return nil, ErrIDIsZero{}
 	}
 
-	// 🚨 SECURITY: ReenqueueChangeset checks whether the current user is authorized and can administer the changeset.
+	// 🚨 SECURITY: ReenqueueChbngeset checks whether the current user is buthorized bnd cbn bdminister the chbngeset.
 	svc := service.New(r.store)
-	changeset, repo, err := svc.ReenqueueChangeset(ctx, changesetID)
+	chbngeset, repo, err := svc.ReenqueueChbngeset(ctx, chbngesetID)
 	if err != nil {
 		return nil, err
 	}
 
-	return NewChangesetResolver(r.store, r.gitserverClient, r.logger, changeset, repo), nil
+	return NewChbngesetResolver(r.store, r.gitserverClient, r.logger, chbngeset, repo), nil
 }
 
-func (r *Resolver) CreateBatchChangesCredential(ctx context.Context, args *graphqlbackend.CreateBatchChangesCredentialArgs) (_ graphqlbackend.BatchChangesCredentialResolver, err error) {
-	tr, ctx := trace.New(ctx, "Resolver.CreateBatchChangesCredential",
-		attribute.String("externalServiceKind", args.ExternalServiceKind),
-		attribute.String("externalServiceURL", args.ExternalServiceURL),
+func (r *Resolver) CrebteBbtchChbngesCredentibl(ctx context.Context, brgs *grbphqlbbckend.CrebteBbtchChbngesCredentiblArgs) (_ grbphqlbbckend.BbtchChbngesCredentiblResolver, err error) {
+	tr, ctx := trbce.New(ctx, "Resolver.CrebteBbtchChbngesCredentibl",
+		bttribute.String("externblServiceKind", brgs.ExternblServiceKind),
+		bttribute.String("externblServiceURL", brgs.ExternblServiceURL),
 	)
 	defer tr.EndWithErr(&err)
-	if err := enterprise.BatchChangesEnabledForUser(ctx, r.store.DatabaseDB()); err != nil {
+	if err := enterprise.BbtchChbngesEnbbledForUser(ctx, r.store.DbtbbbseDB()); err != nil {
 		return nil, err
 	}
 
-	var userID int32
-	if args.User != nil {
-		userID, err = graphqlbackend.UnmarshalUserID(*args.User)
+	vbr userID int32
+	if brgs.User != nil {
+		userID, err = grbphqlbbckend.UnmbrshblUserID(*brgs.User)
 		if err != nil {
 			return nil, err
 		}
@@ -1106,165 +1106,165 @@ func (r *Resolver) CreateBatchChangesCredential(ctx context.Context, args *graph
 		}
 	}
 
-	// Need to validate externalServiceKind, otherwise this'll panic.
-	kind, valid := extsvc.ParseServiceKind(args.ExternalServiceKind)
-	if !valid {
-		return nil, errors.New("invalid external service kind")
+	// Need to vblidbte externblServiceKind, otherwise this'll pbnic.
+	kind, vblid := extsvc.PbrseServiceKind(brgs.ExternblServiceKind)
+	if !vblid {
+		return nil, errors.New("invblid externbl service kind")
 	}
 
-	if args.Credential == "" {
-		return nil, errors.New("empty credential not allowed")
+	if brgs.Credentibl == "" {
+		return nil, errors.New("empty credentibl not bllowed")
 	}
 
 	if userID != 0 {
-		return r.createBatchChangesUserCredential(ctx, args.ExternalServiceURL, extsvc.KindToType(kind), userID, args.Credential, args.Username)
+		return r.crebteBbtchChbngesUserCredentibl(ctx, brgs.ExternblServiceURL, extsvc.KindToType(kind), userID, brgs.Credentibl, brgs.Usernbme)
 	}
 
-	return r.createBatchChangesSiteCredential(ctx, args.ExternalServiceURL, extsvc.KindToType(kind), args.Credential, args.Username)
+	return r.crebteBbtchChbngesSiteCredentibl(ctx, brgs.ExternblServiceURL, extsvc.KindToType(kind), brgs.Credentibl, brgs.Usernbme)
 }
 
-func (r *Resolver) createBatchChangesUserCredential(ctx context.Context, externalServiceURL, externalServiceType string, userID int32, credential string, username *string) (graphqlbackend.BatchChangesCredentialResolver, error) {
-	// 🚨 SECURITY: Check that the requesting user can create the credential.
-	if err := auth.CheckSiteAdminOrSameUser(ctx, r.store.DatabaseDB(), userID); err != nil {
+func (r *Resolver) crebteBbtchChbngesUserCredentibl(ctx context.Context, externblServiceURL, externblServiceType string, userID int32, credentibl string, usernbme *string) (grbphqlbbckend.BbtchChbngesCredentiblResolver, error) {
+	// 🚨 SECURITY: Check thbt the requesting user cbn crebte the credentibl.
+	if err := buth.CheckSiteAdminOrSbmeUser(ctx, r.store.DbtbbbseDB(), userID); err != nil {
 		return nil, err
 	}
 
-	// Throw error documented in schema.graphql.
-	userCredentialScope := database.UserCredentialScope{
-		Domain:              database.UserCredentialDomainBatches,
-		ExternalServiceID:   externalServiceURL,
-		ExternalServiceType: externalServiceType,
+	// Throw error documented in schemb.grbphql.
+	userCredentiblScope := dbtbbbse.UserCredentiblScope{
+		Dombin:              dbtbbbse.UserCredentiblDombinBbtches,
+		ExternblServiceID:   externblServiceURL,
+		ExternblServiceType: externblServiceType,
 		UserID:              userID,
 	}
-	existing, err := r.store.UserCredentials().GetByScope(ctx, userCredentialScope)
+	existing, err := r.store.UserCredentibls().GetByScope(ctx, userCredentiblScope)
 	if err != nil && !errcode.IsNotFound(err) {
 		return nil, err
 	}
 	if existing != nil {
-		return nil, ErrDuplicateCredential{}
+		return nil, ErrDuplicbteCredentibl{}
 	}
 
-	a, err := r.generateAuthenticatorForCredential(ctx, externalServiceType, externalServiceURL, credential, username)
+	b, err := r.generbteAuthenticbtorForCredentibl(ctx, externblServiceType, externblServiceURL, credentibl, usernbme)
 	if err != nil {
 		return nil, err
 	}
-	cred, err := r.store.UserCredentials().Create(ctx, userCredentialScope, a)
+	cred, err := r.store.UserCredentibls().Crebte(ctx, userCredentiblScope, b)
 	if err != nil {
 		return nil, err
 	}
 
-	return &batchChangesUserCredentialResolver{credential: cred}, nil
+	return &bbtchChbngesUserCredentiblResolver{credentibl: cred}, nil
 }
 
-func (r *Resolver) createBatchChangesSiteCredential(ctx context.Context, externalServiceURL, externalServiceType string, credential string, username *string) (graphqlbackend.BatchChangesCredentialResolver, error) {
-	// 🚨 SECURITY: Check that a site credential can only be created
-	// by a site-admin.
-	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.store.DatabaseDB()); err != nil {
+func (r *Resolver) crebteBbtchChbngesSiteCredentibl(ctx context.Context, externblServiceURL, externblServiceType string, credentibl string, usernbme *string) (grbphqlbbckend.BbtchChbngesCredentiblResolver, error) {
+	// 🚨 SECURITY: Check thbt b site credentibl cbn only be crebted
+	// by b site-bdmin.
+	if err := buth.CheckCurrentUserIsSiteAdmin(ctx, r.store.DbtbbbseDB()); err != nil {
 		return nil, err
 	}
 
-	// Throw error documented in schema.graphql.
-	existing, err := r.store.GetSiteCredential(ctx, store.GetSiteCredentialOpts{
-		ExternalServiceType: externalServiceType,
-		ExternalServiceID:   externalServiceURL,
+	// Throw error documented in schemb.grbphql.
+	existing, err := r.store.GetSiteCredentibl(ctx, store.GetSiteCredentiblOpts{
+		ExternblServiceType: externblServiceType,
+		ExternblServiceID:   externblServiceURL,
 	})
 	if err != nil && err != store.ErrNoResults {
 		return nil, err
 	}
 	if existing != nil {
-		return nil, ErrDuplicateCredential{}
+		return nil, ErrDuplicbteCredentibl{}
 	}
 
-	a, err := r.generateAuthenticatorForCredential(ctx, externalServiceType, externalServiceURL, credential, username)
+	b, err := r.generbteAuthenticbtorForCredentibl(ctx, externblServiceType, externblServiceURL, credentibl, usernbme)
 	if err != nil {
 		return nil, err
 	}
-	cred := &btypes.SiteCredential{
-		ExternalServiceID:   externalServiceURL,
-		ExternalServiceType: externalServiceType,
+	cred := &btypes.SiteCredentibl{
+		ExternblServiceID:   externblServiceURL,
+		ExternblServiceType: externblServiceType,
 	}
-	if err := r.store.CreateSiteCredential(ctx, cred, a); err != nil {
+	if err := r.store.CrebteSiteCredentibl(ctx, cred, b); err != nil {
 		return nil, err
 	}
 
-	return &batchChangesSiteCredentialResolver{credential: cred}, nil
+	return &bbtchChbngesSiteCredentiblResolver{credentibl: cred}, nil
 }
 
-func (r *Resolver) generateAuthenticatorForCredential(ctx context.Context, externalServiceType, externalServiceURL, credential string, username *string) (extsvcauth.Authenticator, error) {
+func (r *Resolver) generbteAuthenticbtorForCredentibl(ctx context.Context, externblServiceType, externblServiceURL, credentibl string, usernbme *string) (extsvcbuth.Authenticbtor, error) {
 	svc := service.New(r.store)
 
-	var a extsvcauth.Authenticator
-	keypair, err := encryption.GenerateRSAKey()
+	vbr b extsvcbuth.Authenticbtor
+	keypbir, err := encryption.GenerbteRSAKey()
 	if err != nil {
 		return nil, err
 	}
-	if externalServiceType == extsvc.TypeBitbucketServer {
-		// We need to fetch the username for the token, as just an OAuth token isn't enough for some reason..
-		username, err := svc.FetchUsernameForBitbucketServerToken(ctx, externalServiceURL, externalServiceType, credential)
+	if externblServiceType == extsvc.TypeBitbucketServer {
+		// We need to fetch the usernbme for the token, bs just bn OAuth token isn't enough for some rebson..
+		usernbme, err := svc.FetchUsernbmeForBitbucketServerToken(ctx, externblServiceURL, externblServiceType, credentibl)
 		if err != nil {
-			if bitbucketserver.IsUnauthorized(err) {
-				return nil, &ErrVerifyCredentialFailed{SourceErr: err}
+			if bitbucketserver.IsUnbuthorized(err) {
+				return nil, &ErrVerifyCredentiblFbiled{SourceErr: err}
 			}
 			return nil, err
 		}
-		a = &extsvcauth.BasicAuthWithSSH{
-			BasicAuth:  extsvcauth.BasicAuth{Username: username, Password: credential},
-			PrivateKey: keypair.PrivateKey,
-			PublicKey:  keypair.PublicKey,
-			Passphrase: keypair.Passphrase,
+		b = &extsvcbuth.BbsicAuthWithSSH{
+			BbsicAuth:  extsvcbuth.BbsicAuth{Usernbme: usernbme, Pbssword: credentibl},
+			PrivbteKey: keypbir.PrivbteKey,
+			PublicKey:  keypbir.PublicKey,
+			Pbssphrbse: keypbir.Pbssphrbse,
 		}
-	} else if externalServiceType == extsvc.TypeBitbucketCloud {
-		a = &extsvcauth.BasicAuthWithSSH{
-			BasicAuth:  extsvcauth.BasicAuth{Username: *username, Password: credential},
-			PrivateKey: keypair.PrivateKey,
-			PublicKey:  keypair.PublicKey,
-			Passphrase: keypair.Passphrase,
+	} else if externblServiceType == extsvc.TypeBitbucketCloud {
+		b = &extsvcbuth.BbsicAuthWithSSH{
+			BbsicAuth:  extsvcbuth.BbsicAuth{Usernbme: *usernbme, Pbssword: credentibl},
+			PrivbteKey: keypbir.PrivbteKey,
+			PublicKey:  keypbir.PublicKey,
+			Pbssphrbse: keypbir.Pbssphrbse,
 		}
-	} else if externalServiceType == extsvc.TypeAzureDevOps {
-		a = &extsvcauth.BasicAuthWithSSH{
-			BasicAuth:  extsvcauth.BasicAuth{Username: *username, Password: credential},
-			PrivateKey: keypair.PrivateKey,
-			PublicKey:  keypair.PublicKey,
-			Passphrase: keypair.Passphrase,
+	} else if externblServiceType == extsvc.TypeAzureDevOps {
+		b = &extsvcbuth.BbsicAuthWithSSH{
+			BbsicAuth:  extsvcbuth.BbsicAuth{Usernbme: *usernbme, Pbssword: credentibl},
+			PrivbteKey: keypbir.PrivbteKey,
+			PublicKey:  keypbir.PublicKey,
+			Pbssphrbse: keypbir.Pbssphrbse,
 		}
-	} else if externalServiceType == extsvc.TypeGerrit {
-		a = &extsvcauth.BasicAuthWithSSH{
-			BasicAuth:  extsvcauth.BasicAuth{Username: *username, Password: credential},
-			PrivateKey: keypair.PrivateKey,
-			PublicKey:  keypair.PublicKey,
-			Passphrase: keypair.Passphrase,
+	} else if externblServiceType == extsvc.TypeGerrit {
+		b = &extsvcbuth.BbsicAuthWithSSH{
+			BbsicAuth:  extsvcbuth.BbsicAuth{Usernbme: *usernbme, Pbssword: credentibl},
+			PrivbteKey: keypbir.PrivbteKey,
+			PublicKey:  keypbir.PublicKey,
+			Pbssphrbse: keypbir.Pbssphrbse,
 		}
-	} else if externalServiceType == extsvc.TypePerforce {
-		a = &extsvcauth.BasicAuthWithSSH{
-			BasicAuth:  extsvcauth.BasicAuth{Username: *username, Password: credential},
-			PrivateKey: keypair.PrivateKey,
-			PublicKey:  keypair.PublicKey,
-			Passphrase: keypair.Passphrase,
+	} else if externblServiceType == extsvc.TypePerforce {
+		b = &extsvcbuth.BbsicAuthWithSSH{
+			BbsicAuth:  extsvcbuth.BbsicAuth{Usernbme: *usernbme, Pbssword: credentibl},
+			PrivbteKey: keypbir.PrivbteKey,
+			PublicKey:  keypbir.PublicKey,
+			Pbssphrbse: keypbir.Pbssphrbse,
 		}
 	} else {
-		a = &extsvcauth.OAuthBearerTokenWithSSH{
-			OAuthBearerToken: extsvcauth.OAuthBearerToken{Token: credential},
-			PrivateKey:       keypair.PrivateKey,
-			PublicKey:        keypair.PublicKey,
-			Passphrase:       keypair.Passphrase,
+		b = &extsvcbuth.OAuthBebrerTokenWithSSH{
+			OAuthBebrerToken: extsvcbuth.OAuthBebrerToken{Token: credentibl},
+			PrivbteKey:       keypbir.PrivbteKey,
+			PublicKey:        keypbir.PublicKey,
+			Pbssphrbse:       keypbir.Pbssphrbse,
 		}
 	}
 
-	// Validate the newly created authenticator.
-	if err := svc.ValidateAuthenticator(ctx, externalServiceURL, externalServiceType, a); err != nil {
-		return nil, &ErrVerifyCredentialFailed{SourceErr: err}
+	// Vblidbte the newly crebted buthenticbtor.
+	if err := svc.VblidbteAuthenticbtor(ctx, externblServiceURL, externblServiceType, b); err != nil {
+		return nil, &ErrVerifyCredentiblFbiled{SourceErr: err}
 	}
-	return a, nil
+	return b, nil
 }
 
-func (r *Resolver) DeleteBatchChangesCredential(ctx context.Context, args *graphqlbackend.DeleteBatchChangesCredentialArgs) (_ *graphqlbackend.EmptyResponse, err error) {
-	tr, ctx := trace.New(ctx, "Resolver.DeleteBatchChangesCredential", attribute.String("credential", string(args.BatchChangesCredential)))
+func (r *Resolver) DeleteBbtchChbngesCredentibl(ctx context.Context, brgs *grbphqlbbckend.DeleteBbtchChbngesCredentiblArgs) (_ *grbphqlbbckend.EmptyResponse, err error) {
+	tr, ctx := trbce.New(ctx, "Resolver.DeleteBbtchChbngesCredentibl", bttribute.String("credentibl", string(brgs.BbtchChbngesCredentibl)))
 	defer tr.EndWithErr(&err)
-	if err := enterprise.BatchChangesEnabledForUser(ctx, r.store.DatabaseDB()); err != nil {
+	if err := enterprise.BbtchChbngesEnbbledForUser(ctx, r.store.DbtbbbseDB()); err != nil {
 		return nil, err
 	}
 
-	dbID, isSiteCredential, err := unmarshalBatchChangesCredentialID(args.BatchChangesCredential)
+	dbID, isSiteCredentibl, err := unmbrshblBbtchChbngesCredentiblID(brgs.BbtchChbngesCredentibl)
 	if err != nil {
 		return nil, err
 	}
@@ -1273,75 +1273,75 @@ func (r *Resolver) DeleteBatchChangesCredential(ctx context.Context, args *graph
 		return nil, ErrIDIsZero{}
 	}
 
-	if isSiteCredential {
-		return r.deleteBatchChangesSiteCredential(ctx, dbID)
+	if isSiteCredentibl {
+		return r.deleteBbtchChbngesSiteCredentibl(ctx, dbID)
 	}
 
-	return r.deleteBatchChangesUserCredential(ctx, dbID)
+	return r.deleteBbtchChbngesUserCredentibl(ctx, dbID)
 }
 
-func (r *Resolver) deleteBatchChangesUserCredential(ctx context.Context, credentialDBID int64) (*graphqlbackend.EmptyResponse, error) {
-	// Get existing credential.
-	cred, err := r.store.UserCredentials().GetByID(ctx, credentialDBID)
+func (r *Resolver) deleteBbtchChbngesUserCredentibl(ctx context.Context, credentiblDBID int64) (*grbphqlbbckend.EmptyResponse, error) {
+	// Get existing credentibl.
+	cred, err := r.store.UserCredentibls().GetByID(ctx, credentiblDBID)
 	if err != nil {
 		return nil, err
 	}
 
-	// 🚨 SECURITY: Check that the requesting user may delete the credential.
-	if err := auth.CheckSiteAdminOrSameUser(ctx, r.store.DatabaseDB(), cred.UserID); err != nil {
+	// 🚨 SECURITY: Check thbt the requesting user mby delete the credentibl.
+	if err := buth.CheckSiteAdminOrSbmeUser(ctx, r.store.DbtbbbseDB(), cred.UserID); err != nil {
 		return nil, err
 	}
 
-	// This also fails if the credential was not found.
-	if err := r.store.UserCredentials().Delete(ctx, credentialDBID); err != nil {
+	// This blso fbils if the credentibl wbs not found.
+	if err := r.store.UserCredentibls().Delete(ctx, credentiblDBID); err != nil {
 		return nil, err
 	}
 
-	return &graphqlbackend.EmptyResponse{}, nil
+	return &grbphqlbbckend.EmptyResponse{}, nil
 }
 
-func (r *Resolver) deleteBatchChangesSiteCredential(ctx context.Context, credentialDBID int64) (*graphqlbackend.EmptyResponse, error) {
-	// 🚨 SECURITY: Check that the requesting user may delete the credential.
-	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.store.DatabaseDB()); err != nil {
+func (r *Resolver) deleteBbtchChbngesSiteCredentibl(ctx context.Context, credentiblDBID int64) (*grbphqlbbckend.EmptyResponse, error) {
+	// 🚨 SECURITY: Check thbt the requesting user mby delete the credentibl.
+	if err := buth.CheckCurrentUserIsSiteAdmin(ctx, r.store.DbtbbbseDB()); err != nil {
 		return nil, err
 	}
 
-	// This also fails if the credential was not found.
-	if err := r.store.DeleteSiteCredential(ctx, credentialDBID); err != nil {
+	// This blso fbils if the credentibl wbs not found.
+	if err := r.store.DeleteSiteCredentibl(ctx, credentiblDBID); err != nil {
 		return nil, err
 	}
 
-	return &graphqlbackend.EmptyResponse{}, nil
+	return &grbphqlbbckend.EmptyResponse{}, nil
 }
 
-func (r *Resolver) DetachChangesets(ctx context.Context, args *graphqlbackend.DetachChangesetsArgs) (_ graphqlbackend.BulkOperationResolver, err error) {
-	tr, ctx := trace.New(ctx, "Resolver.DetachChangesets",
-		attribute.String("batchChange", string(args.BatchChange)),
-		attribute.Int("changesets.len", len(args.Changesets)))
+func (r *Resolver) DetbchChbngesets(ctx context.Context, brgs *grbphqlbbckend.DetbchChbngesetsArgs) (_ grbphqlbbckend.BulkOperbtionResolver, err error) {
+	tr, ctx := trbce.New(ctx, "Resolver.DetbchChbngesets",
+		bttribute.String("bbtchChbnge", string(brgs.BbtchChbnge)),
+		bttribute.Int("chbngesets.len", len(brgs.Chbngesets)))
 	defer tr.EndWithErr(&err)
-	if err := enterprise.BatchChangesEnabledForUser(ctx, r.store.DatabaseDB()); err != nil {
+	if err := enterprise.BbtchChbngesEnbbledForUser(ctx, r.store.DbtbbbseDB()); err != nil {
 		return nil, err
 	}
 
-	if err := rbac.CheckCurrentUserHasPermission(ctx, r.store.DatabaseDB(), rbac.BatchChangesWritePermission); err != nil {
+	if err := rbbc.CheckCurrentUserHbsPermission(ctx, r.store.DbtbbbseDB(), rbbc.BbtchChbngesWritePermission); err != nil {
 		return nil, err
 	}
 
-	batchChangeID, changesetIDs, err := unmarshalBulkOperationBaseArgs(args.BulkOperationBaseArgs)
+	bbtchChbngeID, chbngesetIDs, err := unmbrshblBulkOperbtionBbseArgs(brgs.BulkOperbtionBbseArgs)
 	if err != nil {
 		return nil, err
 	}
 
-	// 🚨 SECURITY: CreateChangesetJobs checks whether current user is authorized.
+	// 🚨 SECURITY: CrebteChbngesetJobs checks whether current user is buthorized.
 	svc := service.New(r.store)
-	bulkGroupID, err := svc.CreateChangesetJobs(
+	bulkGroupID, err := svc.CrebteChbngesetJobs(
 		ctx,
-		batchChangeID,
-		changesetIDs,
-		btypes.ChangesetJobTypeDetach,
-		&btypes.ChangesetJobDetachPayload{},
-		store.ListChangesetsOpts{
-			// Only allow to run this on archived changesets.
+		bbtchChbngeID,
+		chbngesetIDs,
+		btypes.ChbngesetJobTypeDetbch,
+		&btypes.ChbngesetJobDetbchPbylobd{},
+		store.ListChbngesetsOpts{
+			// Only bllow to run this on brchived chbngesets.
 			OnlyArchived: true,
 		},
 	)
@@ -1349,450 +1349,450 @@ func (r *Resolver) DetachChangesets(ctx context.Context, args *graphqlbackend.De
 		return nil, err
 	}
 
-	return r.bulkOperationByIDString(ctx, bulkGroupID)
+	return r.bulkOperbtionByIDString(ctx, bulkGroupID)
 }
 
-func (r *Resolver) CreateChangesetComments(ctx context.Context, args *graphqlbackend.CreateChangesetCommentsArgs) (_ graphqlbackend.BulkOperationResolver, err error) {
-	tr, ctx := trace.New(ctx, "Resolver.CreateChangesetComments",
-		attribute.String("batchChange", string(args.BatchChange)),
-		attribute.Int("changesets.len", len(args.Changesets)))
+func (r *Resolver) CrebteChbngesetComments(ctx context.Context, brgs *grbphqlbbckend.CrebteChbngesetCommentsArgs) (_ grbphqlbbckend.BulkOperbtionResolver, err error) {
+	tr, ctx := trbce.New(ctx, "Resolver.CrebteChbngesetComments",
+		bttribute.String("bbtchChbnge", string(brgs.BbtchChbnge)),
+		bttribute.Int("chbngesets.len", len(brgs.Chbngesets)))
 	defer tr.EndWithErr(&err)
-	if err := enterprise.BatchChangesEnabledForUser(ctx, r.store.DatabaseDB()); err != nil {
+	if err := enterprise.BbtchChbngesEnbbledForUser(ctx, r.store.DbtbbbseDB()); err != nil {
 		return nil, err
 	}
 
-	if err := rbac.CheckCurrentUserHasPermission(ctx, r.store.DatabaseDB(), rbac.BatchChangesWritePermission); err != nil {
+	if err := rbbc.CheckCurrentUserHbsPermission(ctx, r.store.DbtbbbseDB(), rbbc.BbtchChbngesWritePermission); err != nil {
 		return nil, err
 	}
 
-	if args.Body == "" {
-		return nil, errors.New("empty comment body is not allowed")
+	if brgs.Body == "" {
+		return nil, errors.New("empty comment body is not bllowed")
 	}
 
-	batchChangeID, changesetIDs, err := unmarshalBulkOperationBaseArgs(args.BulkOperationBaseArgs)
+	bbtchChbngeID, chbngesetIDs, err := unmbrshblBulkOperbtionBbseArgs(brgs.BulkOperbtionBbseArgs)
 	if err != nil {
 		return nil, err
 	}
 
-	// 🚨 SECURITY: CreateChangesetJobs checks whether current user is authorized.
+	// 🚨 SECURITY: CrebteChbngesetJobs checks whether current user is buthorized.
 	svc := service.New(r.store)
-	published := btypes.ChangesetPublicationStatePublished
-	bulkGroupID, err := svc.CreateChangesetJobs(
+	published := btypes.ChbngesetPublicbtionStbtePublished
+	bulkGroupID, err := svc.CrebteChbngesetJobs(
 		ctx,
-		batchChangeID,
-		changesetIDs,
-		btypes.ChangesetJobTypeComment,
-		&btypes.ChangesetJobCommentPayload{
-			Message: args.Body,
+		bbtchChbngeID,
+		chbngesetIDs,
+		btypes.ChbngesetJobTypeComment,
+		&btypes.ChbngesetJobCommentPbylobd{
+			Messbge: brgs.Body,
 		},
-		store.ListChangesetsOpts{
-			// Also include archived changesets, we allow commenting on them as well.
+		store.ListChbngesetsOpts{
+			// Also include brchived chbngesets, we bllow commenting on them bs well.
 			IncludeArchived: true,
-			// We can only comment on published changesets.
-			PublicationState: &published,
+			// We cbn only comment on published chbngesets.
+			PublicbtionStbte: &published,
 		},
 	)
 	if err != nil {
 		return nil, err
 	}
 
-	return r.bulkOperationByIDString(ctx, bulkGroupID)
+	return r.bulkOperbtionByIDString(ctx, bulkGroupID)
 }
 
-func (r *Resolver) ReenqueueChangesets(ctx context.Context, args *graphqlbackend.ReenqueueChangesetsArgs) (_ graphqlbackend.BulkOperationResolver, err error) {
-	tr, ctx := trace.New(ctx, "Resolver.ReenqueueChangesets",
-		attribute.String("batchChange", string(args.BatchChange)),
-		attribute.Int("changesets.len", len(args.Changesets)))
+func (r *Resolver) ReenqueueChbngesets(ctx context.Context, brgs *grbphqlbbckend.ReenqueueChbngesetsArgs) (_ grbphqlbbckend.BulkOperbtionResolver, err error) {
+	tr, ctx := trbce.New(ctx, "Resolver.ReenqueueChbngesets",
+		bttribute.String("bbtchChbnge", string(brgs.BbtchChbnge)),
+		bttribute.Int("chbngesets.len", len(brgs.Chbngesets)))
 	defer tr.EndWithErr(&err)
-	if err := enterprise.BatchChangesEnabledForUser(ctx, r.store.DatabaseDB()); err != nil {
+	if err := enterprise.BbtchChbngesEnbbledForUser(ctx, r.store.DbtbbbseDB()); err != nil {
 		return nil, err
 	}
 
-	if err := rbac.CheckCurrentUserHasPermission(ctx, r.store.DatabaseDB(), rbac.BatchChangesWritePermission); err != nil {
+	if err := rbbc.CheckCurrentUserHbsPermission(ctx, r.store.DbtbbbseDB(), rbbc.BbtchChbngesWritePermission); err != nil {
 		return nil, err
 	}
 
-	batchChangeID, changesetIDs, err := unmarshalBulkOperationBaseArgs(args.BulkOperationBaseArgs)
+	bbtchChbngeID, chbngesetIDs, err := unmbrshblBulkOperbtionBbseArgs(brgs.BulkOperbtionBbseArgs)
 	if err != nil {
 		return nil, err
 	}
 
-	// 🚨 SECURITY: CreateChangesetJobs checks whether current user is authorized.
+	// 🚨 SECURITY: CrebteChbngesetJobs checks whether current user is buthorized.
 	svc := service.New(r.store)
-	bulkGroupID, err := svc.CreateChangesetJobs(
+	bulkGroupID, err := svc.CrebteChbngesetJobs(
 		ctx,
-		batchChangeID,
-		changesetIDs,
-		btypes.ChangesetJobTypeReenqueue,
-		&btypes.ChangesetJobReenqueuePayload{},
-		store.ListChangesetsOpts{
-			// Only allow to retry failed changesets.
-			ReconcilerStates: []btypes.ReconcilerState{btypes.ReconcilerStateFailed},
+		bbtchChbngeID,
+		chbngesetIDs,
+		btypes.ChbngesetJobTypeReenqueue,
+		&btypes.ChbngesetJobReenqueuePbylobd{},
+		store.ListChbngesetsOpts{
+			// Only bllow to retry fbiled chbngesets.
+			ReconcilerStbtes: []btypes.ReconcilerStbte{btypes.ReconcilerStbteFbiled},
 		},
 	)
 	if err != nil {
 		return nil, err
 	}
 
-	return r.bulkOperationByIDString(ctx, bulkGroupID)
+	return r.bulkOperbtionByIDString(ctx, bulkGroupID)
 }
 
-func (r *Resolver) MergeChangesets(ctx context.Context, args *graphqlbackend.MergeChangesetsArgs) (_ graphqlbackend.BulkOperationResolver, err error) {
-	tr, ctx := trace.New(ctx, "Resolver.MergeChangesets",
-		attribute.String("batchChange", string(args.BatchChange)),
-		attribute.Int("changesets.len", len(args.Changesets)))
+func (r *Resolver) MergeChbngesets(ctx context.Context, brgs *grbphqlbbckend.MergeChbngesetsArgs) (_ grbphqlbbckend.BulkOperbtionResolver, err error) {
+	tr, ctx := trbce.New(ctx, "Resolver.MergeChbngesets",
+		bttribute.String("bbtchChbnge", string(brgs.BbtchChbnge)),
+		bttribute.Int("chbngesets.len", len(brgs.Chbngesets)))
 	defer tr.EndWithErr(&err)
-	if err := enterprise.BatchChangesEnabledForUser(ctx, r.store.DatabaseDB()); err != nil {
+	if err := enterprise.BbtchChbngesEnbbledForUser(ctx, r.store.DbtbbbseDB()); err != nil {
 		return nil, err
 	}
 
-	if err := rbac.CheckCurrentUserHasPermission(ctx, r.store.DatabaseDB(), rbac.BatchChangesWritePermission); err != nil {
+	if err := rbbc.CheckCurrentUserHbsPermission(ctx, r.store.DbtbbbseDB(), rbbc.BbtchChbngesWritePermission); err != nil {
 		return nil, err
 	}
 
-	batchChangeID, changesetIDs, err := unmarshalBulkOperationBaseArgs(args.BulkOperationBaseArgs)
+	bbtchChbngeID, chbngesetIDs, err := unmbrshblBulkOperbtionBbseArgs(brgs.BulkOperbtionBbseArgs)
 	if err != nil {
 		return nil, err
 	}
 
-	// 🚨 SECURITY: CreateChangesetJobs checks whether current user is authorized.
+	// 🚨 SECURITY: CrebteChbngesetJobs checks whether current user is buthorized.
 	svc := service.New(r.store)
-	published := btypes.ChangesetPublicationStatePublished
-	openState := btypes.ChangesetExternalStateOpen
-	bulkGroupID, err := svc.CreateChangesetJobs(
+	published := btypes.ChbngesetPublicbtionStbtePublished
+	openStbte := btypes.ChbngesetExternblStbteOpen
+	bulkGroupID, err := svc.CrebteChbngesetJobs(
 		ctx,
-		batchChangeID,
-		changesetIDs,
-		btypes.ChangesetJobTypeMerge,
-		&btypes.ChangesetJobMergePayload{Squash: args.Squash},
-		store.ListChangesetsOpts{
-			PublicationState: &published,
-			ReconcilerStates: []btypes.ReconcilerState{btypes.ReconcilerStateCompleted},
-			ExternalStates:   []btypes.ChangesetExternalState{openState},
+		bbtchChbngeID,
+		chbngesetIDs,
+		btypes.ChbngesetJobTypeMerge,
+		&btypes.ChbngesetJobMergePbylobd{Squbsh: brgs.Squbsh},
+		store.ListChbngesetsOpts{
+			PublicbtionStbte: &published,
+			ReconcilerStbtes: []btypes.ReconcilerStbte{btypes.ReconcilerStbteCompleted},
+			ExternblStbtes:   []btypes.ChbngesetExternblStbte{openStbte},
 		},
 	)
 	if err != nil {
 		return nil, err
 	}
 
-	return r.bulkOperationByIDString(ctx, bulkGroupID)
+	return r.bulkOperbtionByIDString(ctx, bulkGroupID)
 }
 
-func (r *Resolver) CloseChangesets(ctx context.Context, args *graphqlbackend.CloseChangesetsArgs) (_ graphqlbackend.BulkOperationResolver, err error) {
-	tr, ctx := trace.New(ctx, "Resolver.CloseChangesets",
-		attribute.String("batchChange", string(args.BatchChange)),
-		attribute.Int("changesets.len", len(args.Changesets)))
+func (r *Resolver) CloseChbngesets(ctx context.Context, brgs *grbphqlbbckend.CloseChbngesetsArgs) (_ grbphqlbbckend.BulkOperbtionResolver, err error) {
+	tr, ctx := trbce.New(ctx, "Resolver.CloseChbngesets",
+		bttribute.String("bbtchChbnge", string(brgs.BbtchChbnge)),
+		bttribute.Int("chbngesets.len", len(brgs.Chbngesets)))
 	defer tr.EndWithErr(&err)
-	if err := enterprise.BatchChangesEnabledForUser(ctx, r.store.DatabaseDB()); err != nil {
+	if err := enterprise.BbtchChbngesEnbbledForUser(ctx, r.store.DbtbbbseDB()); err != nil {
 		return nil, err
 	}
 
-	if err := rbac.CheckCurrentUserHasPermission(ctx, r.store.DatabaseDB(), rbac.BatchChangesWritePermission); err != nil {
+	if err := rbbc.CheckCurrentUserHbsPermission(ctx, r.store.DbtbbbseDB(), rbbc.BbtchChbngesWritePermission); err != nil {
 		return nil, err
 	}
 
-	batchChangeID, changesetIDs, err := unmarshalBulkOperationBaseArgs(args.BulkOperationBaseArgs)
+	bbtchChbngeID, chbngesetIDs, err := unmbrshblBulkOperbtionBbseArgs(brgs.BulkOperbtionBbseArgs)
 	if err != nil {
 		return nil, err
 	}
 
-	// 🚨 SECURITY: CreateChangesetJobs checks whether current user is authorized.
+	// 🚨 SECURITY: CrebteChbngesetJobs checks whether current user is buthorized.
 	svc := service.New(r.store)
-	published := btypes.ChangesetPublicationStatePublished
-	bulkGroupID, err := svc.CreateChangesetJobs(
+	published := btypes.ChbngesetPublicbtionStbtePublished
+	bulkGroupID, err := svc.CrebteChbngesetJobs(
 		ctx,
-		batchChangeID,
-		changesetIDs,
-		btypes.ChangesetJobTypeClose,
-		&btypes.ChangesetJobClosePayload{},
-		store.ListChangesetsOpts{
-			PublicationState: &published,
-			ReconcilerStates: []btypes.ReconcilerState{btypes.ReconcilerStateCompleted},
-			ExternalStates:   []btypes.ChangesetExternalState{btypes.ChangesetExternalStateOpen, btypes.ChangesetExternalStateDraft},
+		bbtchChbngeID,
+		chbngesetIDs,
+		btypes.ChbngesetJobTypeClose,
+		&btypes.ChbngesetJobClosePbylobd{},
+		store.ListChbngesetsOpts{
+			PublicbtionStbte: &published,
+			ReconcilerStbtes: []btypes.ReconcilerStbte{btypes.ReconcilerStbteCompleted},
+			ExternblStbtes:   []btypes.ChbngesetExternblStbte{btypes.ChbngesetExternblStbteOpen, btypes.ChbngesetExternblStbteDrbft},
 		},
 	)
 	if err != nil {
 		return nil, err
 	}
 
-	return r.bulkOperationByIDString(ctx, bulkGroupID)
+	return r.bulkOperbtionByIDString(ctx, bulkGroupID)
 }
 
-func (r *Resolver) PublishChangesets(ctx context.Context, args *graphqlbackend.PublishChangesetsArgs) (_ graphqlbackend.BulkOperationResolver, err error) {
-	tr, ctx := trace.New(ctx, "Resolver.PublishChangesets",
-		attribute.String("batchChange", string(args.BatchChange)),
-		attribute.Int("changesets.len", len(args.Changesets)))
+func (r *Resolver) PublishChbngesets(ctx context.Context, brgs *grbphqlbbckend.PublishChbngesetsArgs) (_ grbphqlbbckend.BulkOperbtionResolver, err error) {
+	tr, ctx := trbce.New(ctx, "Resolver.PublishChbngesets",
+		bttribute.String("bbtchChbnge", string(brgs.BbtchChbnge)),
+		bttribute.Int("chbngesets.len", len(brgs.Chbngesets)))
 	defer tr.EndWithErr(&err)
-	if err := enterprise.BatchChangesEnabledForUser(ctx, r.store.DatabaseDB()); err != nil {
+	if err := enterprise.BbtchChbngesEnbbledForUser(ctx, r.store.DbtbbbseDB()); err != nil {
 		return nil, err
 	}
 
-	if err := rbac.CheckCurrentUserHasPermission(ctx, r.store.DatabaseDB(), rbac.BatchChangesWritePermission); err != nil {
+	if err := rbbc.CheckCurrentUserHbsPermission(ctx, r.store.DbtbbbseDB(), rbbc.BbtchChbngesWritePermission); err != nil {
 		return nil, err
 	}
 
-	batchChangeID, changesetIDs, err := unmarshalBulkOperationBaseArgs(args.BulkOperationBaseArgs)
+	bbtchChbngeID, chbngesetIDs, err := unmbrshblBulkOperbtionBbseArgs(brgs.BulkOperbtionBbseArgs)
 	if err != nil {
 		return nil, err
 	}
 
-	// 🚨 SECURITY: CreateChangesetJobs checks whether current user is authorized.
+	// 🚨 SECURITY: CrebteChbngesetJobs checks whether current user is buthorized.
 	svc := service.New(r.store)
-	bulkGroupID, err := svc.CreateChangesetJobs(
+	bulkGroupID, err := svc.CrebteChbngesetJobs(
 		ctx,
-		batchChangeID,
-		changesetIDs,
-		btypes.ChangesetJobTypePublish,
-		&btypes.ChangesetJobPublishPayload{Draft: args.Draft},
-		store.ListChangesetsOpts{},
+		bbtchChbngeID,
+		chbngesetIDs,
+		btypes.ChbngesetJobTypePublish,
+		&btypes.ChbngesetJobPublishPbylobd{Drbft: brgs.Drbft},
+		store.ListChbngesetsOpts{},
 	)
 	if err != nil {
 		return nil, err
 	}
 
-	return r.bulkOperationByIDString(ctx, bulkGroupID)
+	return r.bulkOperbtionByIDString(ctx, bulkGroupID)
 }
 
-func (r *Resolver) BatchSpecs(ctx context.Context, args *graphqlbackend.ListBatchSpecArgs) (_ graphqlbackend.BatchSpecConnectionResolver, err error) {
-	tr, ctx := trace.New(ctx, "Resolver.BatchSpecs",
-		attribute.Int("first", int(args.First)),
-		attribute.String("after", fmt.Sprintf("%v", args.After)))
+func (r *Resolver) BbtchSpecs(ctx context.Context, brgs *grbphqlbbckend.ListBbtchSpecArgs) (_ grbphqlbbckend.BbtchSpecConnectionResolver, err error) {
+	tr, ctx := trbce.New(ctx, "Resolver.BbtchSpecs",
+		bttribute.Int("first", int(brgs.First)),
+		bttribute.String("bfter", fmt.Sprintf("%v", brgs.After)))
 	defer tr.EndWithErr(&err)
 
-	if err := enterprise.BatchChangesEnabledForUser(ctx, r.store.DatabaseDB()); err != nil {
+	if err := enterprise.BbtchChbngesEnbbledForUser(ctx, r.store.DbtbbbseDB()); err != nil {
 		return nil, err
 	}
 
-	if err := validateFirstParamDefaults(args.First); err != nil {
+	if err := vblidbteFirstPbrbmDefbults(brgs.First); err != nil {
 		return nil, err
 	}
 
-	opts := store.ListBatchSpecsOpts{
+	opts := store.ListBbtchSpecsOpts{
 		LimitOpts: store.LimitOpts{
-			Limit: int(args.First),
+			Limit: int(brgs.First),
 		},
 		NewestFirst: true,
 	}
 
-	if args.IncludeLocallyExecutedSpecs != nil {
-		opts.IncludeLocallyExecutedSpecs = *args.IncludeLocallyExecutedSpecs
+	if brgs.IncludeLocbllyExecutedSpecs != nil {
+		opts.IncludeLocbllyExecutedSpecs = *brgs.IncludeLocbllyExecutedSpecs
 	}
 
-	if args.ExcludeEmptySpecs != nil {
-		opts.ExcludeEmptySpecs = *args.ExcludeEmptySpecs
+	if brgs.ExcludeEmptySpecs != nil {
+		opts.ExcludeEmptySpecs = *brgs.ExcludeEmptySpecs
 	}
 
-	// 🚨 SECURITY: If the user is not an admin, we don't want to include
-	// BatchSpecs that were created with CreateBatchSpecFromRaw and not owned
+	// 🚨 SECURITY: If the user is not bn bdmin, we don't wbnt to include
+	// BbtchSpecs thbt were crebted with CrebteBbtchSpecFromRbw bnd not owned
 	// by the user
-	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.store.DatabaseDB()); err != nil {
-		opts.ExcludeCreatedFromRawNotOwnedByUser = sgactor.FromContext(ctx).UID
+	if err := buth.CheckCurrentUserIsSiteAdmin(ctx, r.store.DbtbbbseDB()); err != nil {
+		opts.ExcludeCrebtedFromRbwNotOwnedByUser = sgbctor.FromContext(ctx).UID
 	}
 
-	if args.After != nil {
-		id, err := strconv.Atoi(*args.After)
+	if brgs.After != nil {
+		id, err := strconv.Atoi(*brgs.After)
 		if err != nil {
 			return nil, err
 		}
 		opts.Cursor = int64(id)
 	}
 
-	return &batchSpecConnectionResolver{store: r.store, logger: r.logger, opts: opts}, nil
+	return &bbtchSpecConnectionResolver{store: r.store, logger: r.logger, opts: opts}, nil
 }
 
-func (r *Resolver) CreateEmptyBatchChange(ctx context.Context, args *graphqlbackend.CreateEmptyBatchChangeArgs) (_ graphqlbackend.BatchChangeResolver, err error) {
-	tr, ctx := trace.New(ctx, "Resolver.CreateEmptyBatchChange",
-		attribute.String("namespace", string(args.Namespace)))
+func (r *Resolver) CrebteEmptyBbtchChbnge(ctx context.Context, brgs *grbphqlbbckend.CrebteEmptyBbtchChbngeArgs) (_ grbphqlbbckend.BbtchChbngeResolver, err error) {
+	tr, ctx := trbce.New(ctx, "Resolver.CrebteEmptyBbtchChbnge",
+		bttribute.String("nbmespbce", string(brgs.Nbmespbce)))
 	defer tr.EndWithErr(&err)
-	if err := enterprise.BatchChangesEnabledForUser(ctx, r.store.DatabaseDB()); err != nil {
+	if err := enterprise.BbtchChbngesEnbbledForUser(ctx, r.store.DbtbbbseDB()); err != nil {
 		return nil, err
 	}
 
-	if err := rbac.CheckCurrentUserHasPermission(ctx, r.store.DatabaseDB(), rbac.BatchChangesWritePermission); err != nil {
+	if err := rbbc.CheckCurrentUserHbsPermission(ctx, r.store.DbtbbbseDB(), rbbc.BbtchChbngesWritePermission); err != nil {
 		return nil, err
 	}
 
 	svc := service.New(r.store)
 
-	var uid, oid int32
-	if err := graphqlbackend.UnmarshalNamespaceID(args.Namespace, &uid, &oid); err != nil {
+	vbr uid, oid int32
+	if err := grbphqlbbckend.UnmbrshblNbmespbceID(brgs.Nbmespbce, &uid, &oid); err != nil {
 		return nil, err
 	}
 
-	batchChange, err := svc.CreateEmptyBatchChange(ctx, service.CreateEmptyBatchChangeOpts{
-		NamespaceUserID: uid,
-		NamespaceOrgID:  oid,
-		Name:            args.Name,
+	bbtchChbnge, err := svc.CrebteEmptyBbtchChbnge(ctx, service.CrebteEmptyBbtchChbngeOpts{
+		NbmespbceUserID: uid,
+		NbmespbceOrgID:  oid,
+		Nbme:            brgs.Nbme,
 	})
 
 	if err != nil {
 		// Render pretty error.
-		if err == store.ErrInvalidBatchChangeName {
-			return nil, ErrBatchChangeInvalidName{}
+		if err == store.ErrInvblidBbtchChbngeNbme {
+			return nil, ErrBbtchChbngeInvblidNbme{}
 		}
 		return nil, err
 	}
 
-	return &batchChangeResolver{store: r.store, gitserverClient: r.gitserverClient, batchChange: batchChange, logger: r.logger}, nil
+	return &bbtchChbngeResolver{store: r.store, gitserverClient: r.gitserverClient, bbtchChbnge: bbtchChbnge, logger: r.logger}, nil
 }
 
-func (r *Resolver) UpsertEmptyBatchChange(ctx context.Context, args *graphqlbackend.UpsertEmptyBatchChangeArgs) (_ graphqlbackend.BatchChangeResolver, err error) {
-	tr, ctx := trace.New(ctx, "Resolver.UpsertEmptyBatchChange",
-		attribute.String("namespace", string(args.Namespace)))
+func (r *Resolver) UpsertEmptyBbtchChbnge(ctx context.Context, brgs *grbphqlbbckend.UpsertEmptyBbtchChbngeArgs) (_ grbphqlbbckend.BbtchChbngeResolver, err error) {
+	tr, ctx := trbce.New(ctx, "Resolver.UpsertEmptyBbtchChbnge",
+		bttribute.String("nbmespbce", string(brgs.Nbmespbce)))
 	defer tr.EndWithErr(&err)
-	if err := enterprise.BatchChangesEnabledForUser(ctx, r.store.DatabaseDB()); err != nil {
+	if err := enterprise.BbtchChbngesEnbbledForUser(ctx, r.store.DbtbbbseDB()); err != nil {
 		return nil, err
 	}
 
-	if err := rbac.CheckCurrentUserHasPermission(ctx, r.store.DatabaseDB(), rbac.BatchChangesWritePermission); err != nil {
+	if err := rbbc.CheckCurrentUserHbsPermission(ctx, r.store.DbtbbbseDB(), rbbc.BbtchChbngesWritePermission); err != nil {
 		return nil, err
 	}
 
 	svc := service.New(r.store)
 
-	var uid, oid int32
-	if err := graphqlbackend.UnmarshalNamespaceID(args.Namespace, &uid, &oid); err != nil {
+	vbr uid, oid int32
+	if err := grbphqlbbckend.UnmbrshblNbmespbceID(brgs.Nbmespbce, &uid, &oid); err != nil {
 		return nil, err
 	}
 
-	batchChange, err := svc.UpsertEmptyBatchChange(ctx, service.UpsertEmptyBatchChangeOpts{
-		NamespaceUserID: uid,
-		NamespaceOrgID:  oid,
-		Name:            args.Name,
+	bbtchChbnge, err := svc.UpsertEmptyBbtchChbnge(ctx, service.UpsertEmptyBbtchChbngeOpts{
+		NbmespbceUserID: uid,
+		NbmespbceOrgID:  oid,
+		Nbme:            brgs.Nbme,
 	})
 
 	if err != nil {
 		return nil, err
 	}
 
-	return &batchChangeResolver{store: r.store, gitserverClient: r.gitserverClient, batchChange: batchChange, logger: r.logger}, nil
+	return &bbtchChbngeResolver{store: r.store, gitserverClient: r.gitserverClient, bbtchChbnge: bbtchChbnge, logger: r.logger}, nil
 }
 
-func (r *Resolver) CreateBatchSpecFromRaw(ctx context.Context, args *graphqlbackend.CreateBatchSpecFromRawArgs) (_ graphqlbackend.BatchSpecResolver, err error) {
-	tr, ctx := trace.New(ctx, "Resolver.CreateBatchSpecFromRaw",
-		attribute.String("namespace", string(args.Namespace)))
+func (r *Resolver) CrebteBbtchSpecFromRbw(ctx context.Context, brgs *grbphqlbbckend.CrebteBbtchSpecFromRbwArgs) (_ grbphqlbbckend.BbtchSpecResolver, err error) {
+	tr, ctx := trbce.New(ctx, "Resolver.CrebteBbtchSpecFromRbw",
+		bttribute.String("nbmespbce", string(brgs.Nbmespbce)))
 	defer tr.EndWithErr(&err)
 
-	if err := batchChangesCreateAccess(ctx, r.store.DatabaseDB()); err != nil {
+	if err := bbtchChbngesCrebteAccess(ctx, r.store.DbtbbbseDB()); err != nil {
 		return nil, err
 	}
 
-	if err := rbac.CheckCurrentUserHasPermission(ctx, r.store.DatabaseDB(), rbac.BatchChangesWritePermission); err != nil {
+	if err := rbbc.CheckCurrentUserHbsPermission(ctx, r.store.DbtbbbseDB(), rbbc.BbtchChbngesWritePermission); err != nil {
 		return nil, err
 	}
 
 	svc := service.New(r.store)
 
-	var uid, oid int32
-	if err := graphqlbackend.UnmarshalNamespaceID(args.Namespace, &uid, &oid); err != nil {
+	vbr uid, oid int32
+	if err := grbphqlbbckend.UnmbrshblNbmespbceID(brgs.Nbmespbce, &uid, &oid); err != nil {
 		return nil, err
 	}
 
-	bid, err := unmarshalBatchChangeID(args.BatchChange)
+	bid, err := unmbrshblBbtchChbngeID(brgs.BbtchChbnge)
 	if err != nil {
 		return nil, err
 	}
 
-	batchSpec, err := svc.CreateBatchSpecFromRaw(ctx, service.CreateBatchSpecFromRawOpts{
-		NamespaceUserID:  uid,
-		NamespaceOrgID:   oid,
-		RawSpec:          args.BatchSpec,
-		AllowIgnored:     args.AllowIgnored,
-		AllowUnsupported: args.AllowUnsupported,
-		NoCache:          args.NoCache,
-		BatchChange:      bid,
+	bbtchSpec, err := svc.CrebteBbtchSpecFromRbw(ctx, service.CrebteBbtchSpecFromRbwOpts{
+		NbmespbceUserID:  uid,
+		NbmespbceOrgID:   oid,
+		RbwSpec:          brgs.BbtchSpec,
+		AllowIgnored:     brgs.AllowIgnored,
+		AllowUnsupported: brgs.AllowUnsupported,
+		NoCbche:          brgs.NoCbche,
+		BbtchChbnge:      bid,
 	})
 	if err != nil {
 		return nil, err
 	}
 
-	return &batchSpecResolver{store: r.store, logger: r.logger, batchSpec: batchSpec}, nil
+	return &bbtchSpecResolver{store: r.store, logger: r.logger, bbtchSpec: bbtchSpec}, nil
 }
 
-func (r *Resolver) ExecuteBatchSpec(ctx context.Context, args *graphqlbackend.ExecuteBatchSpecArgs) (_ graphqlbackend.BatchSpecResolver, err error) {
-	tr, ctx := trace.New(ctx, "Resolver.ExecuteBatchSpec",
-		attribute.String("batchSpec", string(args.BatchSpec)))
+func (r *Resolver) ExecuteBbtchSpec(ctx context.Context, brgs *grbphqlbbckend.ExecuteBbtchSpecArgs) (_ grbphqlbbckend.BbtchSpecResolver, err error) {
+	tr, ctx := trbce.New(ctx, "Resolver.ExecuteBbtchSpec",
+		bttribute.String("bbtchSpec", string(brgs.BbtchSpec)))
 	defer tr.EndWithErr(&err)
-	if err := enterprise.BatchChangesEnabledForUser(ctx, r.store.DatabaseDB()); err != nil {
+	if err := enterprise.BbtchChbngesEnbbledForUser(ctx, r.store.DbtbbbseDB()); err != nil {
 		return nil, err
 	}
 
-	if err := rbac.CheckCurrentUserHasPermission(ctx, r.store.DatabaseDB(), rbac.BatchChangesWritePermission); err != nil {
+	if err := rbbc.CheckCurrentUserHbsPermission(ctx, r.store.DbtbbbseDB(), rbbc.BbtchChbngesWritePermission); err != nil {
 		return nil, err
 	}
 
-	batchSpecRandID, err := unmarshalBatchSpecID(args.BatchSpec)
+	bbtchSpecRbndID, err := unmbrshblBbtchSpecID(brgs.BbtchSpec)
 	if err != nil {
 		return nil, err
 	}
 
-	if batchSpecRandID == "" {
+	if bbtchSpecRbndID == "" {
 		return nil, ErrIDIsZero{}
 	}
 
-	// 🚨 SECURITY: ExecuteBatchSpec checks whether current user is authorized
-	// and has access to namespace.
-	// Right now we also only allow creating batch specs in a user-namespace,
-	// so the check makes sure the current user is the creator of the batch
-	// spec or an admin.
+	// 🚨 SECURITY: ExecuteBbtchSpec checks whether current user is buthorized
+	// bnd hbs bccess to nbmespbce.
+	// Right now we blso only bllow crebting bbtch specs in b user-nbmespbce,
+	// so the check mbkes sure the current user is the crebtor of the bbtch
+	// spec or bn bdmin.
 	svc := service.New(r.store)
-	batchSpec, err := svc.ExecuteBatchSpec(ctx, service.ExecuteBatchSpecOpts{
-		BatchSpecRandID: batchSpecRandID,
-		// TODO: args not yet implemented: AutoApply
-		NoCache: args.NoCache,
+	bbtchSpec, err := svc.ExecuteBbtchSpec(ctx, service.ExecuteBbtchSpecOpts{
+		BbtchSpecRbndID: bbtchSpecRbndID,
+		// TODO: brgs not yet implemented: AutoApply
+		NoCbche: brgs.NoCbche,
 	})
 	if err != nil {
 		return nil, err
 	}
 
-	return &batchSpecResolver{store: r.store, logger: r.logger, batchSpec: batchSpec}, nil
+	return &bbtchSpecResolver{store: r.store, logger: r.logger, bbtchSpec: bbtchSpec}, nil
 }
 
-func (r *Resolver) CancelBatchSpecExecution(ctx context.Context, args *graphqlbackend.CancelBatchSpecExecutionArgs) (_ graphqlbackend.BatchSpecResolver, err error) {
-	tr, ctx := trace.New(ctx, "Resolver.CancelBatchSpecExecution",
-		attribute.String("batchSpec", string(args.BatchSpec)))
+func (r *Resolver) CbncelBbtchSpecExecution(ctx context.Context, brgs *grbphqlbbckend.CbncelBbtchSpecExecutionArgs) (_ grbphqlbbckend.BbtchSpecResolver, err error) {
+	tr, ctx := trbce.New(ctx, "Resolver.CbncelBbtchSpecExecution",
+		bttribute.String("bbtchSpec", string(brgs.BbtchSpec)))
 	defer tr.EndWithErr(&err)
 
-	if err := enterprise.BatchChangesEnabledForUser(ctx, r.store.DatabaseDB()); err != nil {
+	if err := enterprise.BbtchChbngesEnbbledForUser(ctx, r.store.DbtbbbseDB()); err != nil {
 		return nil, err
 	}
 
-	batchSpecRandID, err := unmarshalBatchSpecID(args.BatchSpec)
+	bbtchSpecRbndID, err := unmbrshblBbtchSpecID(brgs.BbtchSpec)
 	if err != nil {
 		return nil, err
 	}
 
-	if batchSpecRandID == "" {
+	if bbtchSpecRbndID == "" {
 		return nil, ErrIDIsZero{}
 	}
 
 	svc := service.New(r.store)
-	batchSpec, err := svc.CancelBatchSpec(ctx, service.CancelBatchSpecOpts{
-		BatchSpecRandID: batchSpecRandID,
+	bbtchSpec, err := svc.CbncelBbtchSpec(ctx, service.CbncelBbtchSpecOpts{
+		BbtchSpecRbndID: bbtchSpecRbndID,
 	})
 	if err != nil {
 		return nil, err
 	}
 
-	return &batchSpecResolver{store: r.store, logger: r.logger, batchSpec: batchSpec}, nil
+	return &bbtchSpecResolver{store: r.store, logger: r.logger, bbtchSpec: bbtchSpec}, nil
 }
 
-func (r *Resolver) RetryBatchSpecWorkspaceExecution(ctx context.Context, args *graphqlbackend.RetryBatchSpecWorkspaceExecutionArgs) (_ *graphqlbackend.EmptyResponse, err error) {
-	tr, ctx := trace.New(ctx, "Resolver.RetryBatchSpecWorkspaceExecution",
-		attribute.String("workspaces", fmt.Sprintf("%+v", args.BatchSpecWorkspaces)))
+func (r *Resolver) RetryBbtchSpecWorkspbceExecution(ctx context.Context, brgs *grbphqlbbckend.RetryBbtchSpecWorkspbceExecutionArgs) (_ *grbphqlbbckend.EmptyResponse, err error) {
+	tr, ctx := trbce.New(ctx, "Resolver.RetryBbtchSpecWorkspbceExecution",
+		bttribute.String("workspbces", fmt.Sprintf("%+v", brgs.BbtchSpecWorkspbces)))
 	defer tr.EndWithErr(&err)
 
-	if err := enterprise.BatchChangesEnabledForUser(ctx, r.store.DatabaseDB()); err != nil {
+	if err := enterprise.BbtchChbngesEnbbledForUser(ctx, r.store.DbtbbbseDB()); err != nil {
 		return nil, err
 	}
 
-	if err := rbac.CheckCurrentUserHasPermission(ctx, r.store.DatabaseDB(), rbac.BatchChangesWritePermission); err != nil {
+	if err := rbbc.CheckCurrentUserHbsPermission(ctx, r.store.DbtbbbseDB(), rbbc.BbtchChbngesWritePermission); err != nil {
 		return nil, err
 	}
 
-	var workspaceIDs []int64
-	for _, raw := range args.BatchSpecWorkspaces {
-		id, err := unmarshalBatchSpecWorkspaceID(raw)
+	vbr workspbceIDs []int64
+	for _, rbw := rbnge brgs.BbtchSpecWorkspbces {
+		id, err := unmbrshblBbtchSpecWorkspbceID(rbw)
 		if err != nil {
 			return nil, err
 		}
@@ -1801,194 +1801,194 @@ func (r *Resolver) RetryBatchSpecWorkspaceExecution(ctx context.Context, args *g
 			return nil, ErrIDIsZero{}
 		}
 
-		workspaceIDs = append(workspaceIDs, id)
+		workspbceIDs = bppend(workspbceIDs, id)
 	}
 
-	// 🚨 SECURITY: RetryBatchSpecWorkspaces checks whether current user is authorized
-	// and has access to namespace.
-	// Right now we also only allow creating batch specs in a user-namespace,
-	// so the check makes sure the current user is the creator of the batch
-	// spec or an admin.
+	// 🚨 SECURITY: RetryBbtchSpecWorkspbces checks whether current user is buthorized
+	// bnd hbs bccess to nbmespbce.
+	// Right now we blso only bllow crebting bbtch specs in b user-nbmespbce,
+	// so the check mbkes sure the current user is the crebtor of the bbtch
+	// spec or bn bdmin.
 	svc := service.New(r.store)
-	err = svc.RetryBatchSpecWorkspaces(ctx, workspaceIDs)
+	err = svc.RetryBbtchSpecWorkspbces(ctx, workspbceIDs)
 	if err != nil {
 		return nil, err
 	}
 
-	return &graphqlbackend.EmptyResponse{}, nil
+	return &grbphqlbbckend.EmptyResponse{}, nil
 }
 
-func (r *Resolver) ReplaceBatchSpecInput(ctx context.Context, args *graphqlbackend.ReplaceBatchSpecInputArgs) (_ graphqlbackend.BatchSpecResolver, err error) {
-	tr, ctx := trace.New(ctx, "Resolver.ReplaceBatchSpecInput",
-		attribute.String("batchSpec", string(args.BatchSpec)))
+func (r *Resolver) ReplbceBbtchSpecInput(ctx context.Context, brgs *grbphqlbbckend.ReplbceBbtchSpecInputArgs) (_ grbphqlbbckend.BbtchSpecResolver, err error) {
+	tr, ctx := trbce.New(ctx, "Resolver.ReplbceBbtchSpecInput",
+		bttribute.String("bbtchSpec", string(brgs.BbtchSpec)))
 	defer tr.EndWithErr(&err)
 
-	if err := enterprise.BatchChangesEnabledForUser(ctx, r.store.DatabaseDB()); err != nil {
+	if err := enterprise.BbtchChbngesEnbbledForUser(ctx, r.store.DbtbbbseDB()); err != nil {
 		return nil, err
 	}
 
-	if err := rbac.CheckCurrentUserHasPermission(ctx, r.store.DatabaseDB(), rbac.BatchChangesWritePermission); err != nil {
+	if err := rbbc.CheckCurrentUserHbsPermission(ctx, r.store.DbtbbbseDB(), rbbc.BbtchChbngesWritePermission); err != nil {
 		return nil, err
 	}
 
-	batchSpecRandID, err := unmarshalBatchSpecID(args.PreviousSpec)
+	bbtchSpecRbndID, err := unmbrshblBbtchSpecID(brgs.PreviousSpec)
 	if err != nil {
 		return nil, err
 	}
 
-	if batchSpecRandID == "" {
+	if bbtchSpecRbndID == "" {
 		return nil, ErrIDIsZero{}
 	}
 
-	// 🚨 SECURITY: ReplaceBatchSpecInput checks whether current user is authorized
-	// and has access to namespace.
-	// Right now we also only allow creating batch specs in a user-namespace,
-	// so the check makes sure the current user is the creator of the batch
-	// spec or an admin.
+	// 🚨 SECURITY: ReplbceBbtchSpecInput checks whether current user is buthorized
+	// bnd hbs bccess to nbmespbce.
+	// Right now we blso only bllow crebting bbtch specs in b user-nbmespbce,
+	// so the check mbkes sure the current user is the crebtor of the bbtch
+	// spec or bn bdmin.
 	svc := service.New(r.store)
-	batchSpec, err := svc.ReplaceBatchSpecInput(ctx, service.ReplaceBatchSpecInputOpts{
-		BatchSpecRandID:  batchSpecRandID,
-		RawSpec:          args.BatchSpec,
-		AllowIgnored:     args.AllowIgnored,
-		AllowUnsupported: args.AllowUnsupported,
-		NoCache:          args.NoCache,
+	bbtchSpec, err := svc.ReplbceBbtchSpecInput(ctx, service.ReplbceBbtchSpecInputOpts{
+		BbtchSpecRbndID:  bbtchSpecRbndID,
+		RbwSpec:          brgs.BbtchSpec,
+		AllowIgnored:     brgs.AllowIgnored,
+		AllowUnsupported: brgs.AllowUnsupported,
+		NoCbche:          brgs.NoCbche,
 	})
 	if err != nil {
 		return nil, err
 	}
 
-	return &batchSpecResolver{store: r.store, logger: r.logger, batchSpec: batchSpec}, nil
+	return &bbtchSpecResolver{store: r.store, logger: r.logger, bbtchSpec: bbtchSpec}, nil
 }
 
-func (r *Resolver) UpsertBatchSpecInput(ctx context.Context, args *graphqlbackend.UpsertBatchSpecInputArgs) (_ graphqlbackend.BatchSpecResolver, err error) {
-	tr, ctx := trace.New(ctx, "Resolver.UpsertBatchSpecInput", attribute.String("batchSpec", string(args.BatchSpec)))
+func (r *Resolver) UpsertBbtchSpecInput(ctx context.Context, brgs *grbphqlbbckend.UpsertBbtchSpecInputArgs) (_ grbphqlbbckend.BbtchSpecResolver, err error) {
+	tr, ctx := trbce.New(ctx, "Resolver.UpsertBbtchSpecInput", bttribute.String("bbtchSpec", string(brgs.BbtchSpec)))
 	defer tr.EndWithErr(&err)
 
-	if err := batchChangesCreateAccess(ctx, r.store.DatabaseDB()); err != nil {
+	if err := bbtchChbngesCrebteAccess(ctx, r.store.DbtbbbseDB()); err != nil {
 		return nil, err
 	}
 
-	if err := rbac.CheckCurrentUserHasPermission(ctx, r.store.DatabaseDB(), rbac.BatchChangesWritePermission); err != nil {
+	if err := rbbc.CheckCurrentUserHbsPermission(ctx, r.store.DbtbbbseDB(), rbbc.BbtchChbngesWritePermission); err != nil {
 		return nil, err
 	}
 
 	svc := service.New(r.store)
 
-	var uid, oid int32
-	if err := graphqlbackend.UnmarshalNamespaceID(args.Namespace, &uid, &oid); err != nil {
+	vbr uid, oid int32
+	if err := grbphqlbbckend.UnmbrshblNbmespbceID(brgs.Nbmespbce, &uid, &oid); err != nil {
 		return nil, err
 	}
 
-	// 🚨 SECURITY: UpsertBatchSpecInput checks whether current user is
-	// authorised and has access to the namespace.
+	// 🚨 SECURITY: UpsertBbtchSpecInput checks whether current user is
+	// buthorised bnd hbs bccess to the nbmespbce.
 	//
-	// Right now we also only allow creating batch specs in a user namespace, so
-	// the check makes sure the current user is the creator of the batch spec or
-	// an admin.
-	batchSpec, err := svc.UpsertBatchSpecInput(ctx, service.UpsertBatchSpecInputOpts{
-		NamespaceUserID:  uid,
-		NamespaceOrgID:   oid,
-		RawSpec:          args.BatchSpec,
-		AllowIgnored:     args.AllowIgnored,
-		AllowUnsupported: args.AllowUnsupported,
-		NoCache:          args.NoCache,
+	// Right now we blso only bllow crebting bbtch specs in b user nbmespbce, so
+	// the check mbkes sure the current user is the crebtor of the bbtch spec or
+	// bn bdmin.
+	bbtchSpec, err := svc.UpsertBbtchSpecInput(ctx, service.UpsertBbtchSpecInputOpts{
+		NbmespbceUserID:  uid,
+		NbmespbceOrgID:   oid,
+		RbwSpec:          brgs.BbtchSpec,
+		AllowIgnored:     brgs.AllowIgnored,
+		AllowUnsupported: brgs.AllowUnsupported,
+		NoCbche:          brgs.NoCbche,
 	})
 	if err != nil {
 		return nil, err
 	}
 
-	return &batchSpecResolver{store: r.store, logger: r.logger, batchSpec: batchSpec}, nil
+	return &bbtchSpecResolver{store: r.store, logger: r.logger, bbtchSpec: bbtchSpec}, nil
 }
 
-func (r *Resolver) CancelBatchSpecWorkspaceExecution(ctx context.Context, args *graphqlbackend.CancelBatchSpecWorkspaceExecutionArgs) (*graphqlbackend.EmptyResponse, error) {
-	// TODO(ssbc): currently admin only.
-	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.store.DatabaseDB()); err != nil {
+func (r *Resolver) CbncelBbtchSpecWorkspbceExecution(ctx context.Context, brgs *grbphqlbbckend.CbncelBbtchSpecWorkspbceExecutionArgs) (*grbphqlbbckend.EmptyResponse, error) {
+	// TODO(ssbc): currently bdmin only.
+	if err := buth.CheckCurrentUserIsSiteAdmin(ctx, r.store.DbtbbbseDB()); err != nil {
 		return nil, err
 	}
 	// TODO(ssbc): not implemented
 	return nil, errors.New("not implemented yet")
 }
 
-func (r *Resolver) RetryBatchSpecExecution(ctx context.Context, args *graphqlbackend.RetryBatchSpecExecutionArgs) (_ graphqlbackend.BatchSpecResolver, err error) {
-	tr, ctx := trace.New(ctx, "Resolver.RetryBatchSpecExecution", attribute.String("batchSpec", string(args.BatchSpec)))
+func (r *Resolver) RetryBbtchSpecExecution(ctx context.Context, brgs *grbphqlbbckend.RetryBbtchSpecExecutionArgs) (_ grbphqlbbckend.BbtchSpecResolver, err error) {
+	tr, ctx := trbce.New(ctx, "Resolver.RetryBbtchSpecExecution", bttribute.String("bbtchSpec", string(brgs.BbtchSpec)))
 	defer tr.EndWithErr(&err)
 
-	if err := enterprise.BatchChangesEnabledForUser(ctx, r.store.DatabaseDB()); err != nil {
+	if err := enterprise.BbtchChbngesEnbbledForUser(ctx, r.store.DbtbbbseDB()); err != nil {
 		return nil, err
 	}
 
-	if err := rbac.CheckCurrentUserHasPermission(ctx, r.store.DatabaseDB(), rbac.BatchChangesWritePermission); err != nil {
+	if err := rbbc.CheckCurrentUserHbsPermission(ctx, r.store.DbtbbbseDB(), rbbc.BbtchChbngesWritePermission); err != nil {
 		return nil, err
 	}
 
-	batchSpecRandID, err := unmarshalBatchSpecID(args.BatchSpec)
+	bbtchSpecRbndID, err := unmbrshblBbtchSpecID(brgs.BbtchSpec)
 	if err != nil {
 		return nil, err
 	}
 
-	if batchSpecRandID == "" {
+	if bbtchSpecRbndID == "" {
 		return nil, ErrIDIsZero{}
 	}
 
-	// 🚨 SECURITY: RetryBatchSpecExecution checks whether current user is authorized
-	// and has access to namespace.
+	// 🚨 SECURITY: RetryBbtchSpecExecution checks whether current user is buthorized
+	// bnd hbs bccess to nbmespbce.
 	svc := service.New(r.store)
-	if err = svc.RetryBatchSpecExecution(ctx, service.RetryBatchSpecExecutionOpts{
-		BatchSpecRandID:  batchSpecRandID,
-		IncludeCompleted: args.IncludeCompleted,
+	if err = svc.RetryBbtchSpecExecution(ctx, service.RetryBbtchSpecExecutionOpts{
+		BbtchSpecRbndID:  bbtchSpecRbndID,
+		IncludeCompleted: brgs.IncludeCompleted,
 	}); err != nil {
 		return nil, err
 	}
 
-	return r.batchSpecByID(ctx, args.BatchSpec)
+	return r.bbtchSpecByID(ctx, brgs.BbtchSpec)
 }
 
-func (r *Resolver) EnqueueBatchSpecWorkspaceExecution(ctx context.Context, args *graphqlbackend.EnqueueBatchSpecWorkspaceExecutionArgs) (*graphqlbackend.EmptyResponse, error) {
-	// TODO(ssbc): currently admin only.
-	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.store.DatabaseDB()); err != nil {
+func (r *Resolver) EnqueueBbtchSpecWorkspbceExecution(ctx context.Context, brgs *grbphqlbbckend.EnqueueBbtchSpecWorkspbceExecutionArgs) (*grbphqlbbckend.EmptyResponse, error) {
+	// TODO(ssbc): currently bdmin only.
+	if err := buth.CheckCurrentUserIsSiteAdmin(ctx, r.store.DbtbbbseDB()); err != nil {
 		return nil, err
 	}
 	// TODO(ssbc): not implemented
 	return nil, errors.New("not implemented yet")
 }
 
-func (r *Resolver) ToggleBatchSpecAutoApply(ctx context.Context, args *graphqlbackend.ToggleBatchSpecAutoApplyArgs) (graphqlbackend.BatchSpecResolver, error) {
-	// TODO(ssbc): currently admin only.
-	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.store.DatabaseDB()); err != nil {
+func (r *Resolver) ToggleBbtchSpecAutoApply(ctx context.Context, brgs *grbphqlbbckend.ToggleBbtchSpecAutoApplyArgs) (grbphqlbbckend.BbtchSpecResolver, error) {
+	// TODO(ssbc): currently bdmin only.
+	if err := buth.CheckCurrentUserIsSiteAdmin(ctx, r.store.DbtbbbseDB()); err != nil {
 		return nil, err
 	}
 	// TODO(ssbc): not implemented
 	return nil, errors.New("not implemented yet")
 }
 
-func (r *Resolver) DeleteBatchSpec(ctx context.Context, args *graphqlbackend.DeleteBatchSpecArgs) (*graphqlbackend.EmptyResponse, error) {
-	// TODO(ssbc): currently admin only.
-	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.store.DatabaseDB()); err != nil {
+func (r *Resolver) DeleteBbtchSpec(ctx context.Context, brgs *grbphqlbbckend.DeleteBbtchSpecArgs) (*grbphqlbbckend.EmptyResponse, error) {
+	// TODO(ssbc): currently bdmin only.
+	if err := buth.CheckCurrentUserIsSiteAdmin(ctx, r.store.DbtbbbseDB()); err != nil {
 		return nil, err
 	}
 
-	if err := rbac.CheckCurrentUserHasPermission(ctx, r.store.DatabaseDB(), rbac.BatchChangesWritePermission); err != nil {
+	if err := rbbc.CheckCurrentUserHbsPermission(ctx, r.store.DbtbbbseDB(), rbbc.BbtchChbngesWritePermission); err != nil {
 		return nil, err
 	}
 	// TODO(ssbc): not implemented
 	return nil, errors.New("not implemented yet")
 }
 
-func (r *Resolver) batchSpecWorkspaceFileByID(ctx context.Context, gqlID graphql.ID) (_ graphqlbackend.BatchWorkspaceFileResolver, err error) {
-	if err := enterprise.BatchChangesEnabledForUser(ctx, r.store.DatabaseDB()); err != nil {
+func (r *Resolver) bbtchSpecWorkspbceFileByID(ctx context.Context, gqlID grbphql.ID) (_ grbphqlbbckend.BbtchWorkspbceFileResolver, err error) {
+	if err := enterprise.BbtchChbngesEnbbledForUser(ctx, r.store.DbtbbbseDB()); err != nil {
 		return nil, err
 	}
 
-	batchWorkspaceFileRandID, err := unmarshalWorkspaceFileRandID(gqlID)
+	bbtchWorkspbceFileRbndID, err := unmbrshblWorkspbceFileRbndID(gqlID)
 	if err != nil {
 		return nil, err
 	}
 
-	if batchWorkspaceFileRandID == "" {
+	if bbtchWorkspbceFileRbndID == "" {
 		return nil, ErrIDIsZero{}
 	}
 
-	file, err := r.store.GetBatchSpecWorkspaceFile(ctx, store.GetBatchSpecWorkspaceFileOpts{RandID: batchWorkspaceFileRandID})
+	file, err := r.store.GetBbtchSpecWorkspbceFile(ctx, store.GetBbtchSpecWorkspbceFileOpts{RbndID: bbtchWorkspbceFileRbndID})
 	if err != nil {
 		if err == store.ErrNoResults {
 			return nil, nil
@@ -1996,7 +1996,7 @@ func (r *Resolver) batchSpecWorkspaceFileByID(ctx context.Context, gqlID graphql
 		return nil, err
 	}
 
-	spec, err := r.store.GetBatchSpec(ctx, store.GetBatchSpecOpts{ID: file.BatchSpecID})
+	spec, err := r.store.GetBbtchSpec(ctx, store.GetBbtchSpecOpts{ID: file.BbtchSpecID})
 	if err != nil {
 		if err == store.ErrNoResults {
 			return nil, nil
@@ -2004,57 +2004,57 @@ func (r *Resolver) batchSpecWorkspaceFileByID(ctx context.Context, gqlID graphql
 		return nil, err
 	}
 
-	return newBatchSpecWorkspaceFileResolver(spec.RandID, file), nil
+	return newBbtchSpecWorkspbceFileResolver(spec.RbndID, file), nil
 }
 
-func (r *Resolver) AvailableBulkOperations(ctx context.Context, args *graphqlbackend.AvailableBulkOperationsArgs) (availableBulkOperations []string, err error) {
-	tr, ctx := trace.New(ctx, "Resolver.AvailableBulkOperations",
-		attribute.String("batchChange", string(args.BatchChange)),
-		attribute.Int("changesets.len", len(args.Changesets)))
+func (r *Resolver) AvbilbbleBulkOperbtions(ctx context.Context, brgs *grbphqlbbckend.AvbilbbleBulkOperbtionsArgs) (bvbilbbleBulkOperbtions []string, err error) {
+	tr, ctx := trbce.New(ctx, "Resolver.AvbilbbleBulkOperbtions",
+		bttribute.String("bbtchChbnge", string(brgs.BbtchChbnge)),
+		bttribute.Int("chbngesets.len", len(brgs.Chbngesets)))
 	defer tr.EndWithErr(&err)
 
-	if err := enterprise.BatchChangesEnabledForUser(ctx, r.store.DatabaseDB()); err != nil {
+	if err := enterprise.BbtchChbngesEnbbledForUser(ctx, r.store.DbtbbbseDB()); err != nil {
 		return nil, err
 	}
 
-	if len(args.Changesets) == 0 {
-		return nil, errors.New("no changesets provided")
+	if len(brgs.Chbngesets) == 0 {
+		return nil, errors.New("no chbngesets provided")
 	}
 
-	unmarshalledBatchChangeID, err := unmarshalBatchChangeID(args.BatchChange)
+	unmbrshblledBbtchChbngeID, err := unmbrshblBbtchChbngeID(brgs.BbtchChbnge)
 	if err != nil {
 		return nil, err
 	}
 
-	changesetIDs := make([]int64, 0, len(args.Changesets))
-	for _, changesetID := range args.Changesets {
-		unmarshalledChangesetID, err := unmarshalChangesetID(changesetID)
+	chbngesetIDs := mbke([]int64, 0, len(brgs.Chbngesets))
+	for _, chbngesetID := rbnge brgs.Chbngesets {
+		unmbrshblledChbngesetID, err := unmbrshblChbngesetID(chbngesetID)
 		if err != nil {
 			return nil, err
 		}
 
-		changesetIDs = append(changesetIDs, unmarshalledChangesetID)
+		chbngesetIDs = bppend(chbngesetIDs, unmbrshblledChbngesetID)
 	}
 
 	svc := service.New(r.store)
-	availableBulkOperations, err = svc.GetAvailableBulkOperations(ctx, service.GetAvailableBulkOperationsOpts{
-		BatchChange: unmarshalledBatchChangeID,
-		Changesets:  changesetIDs,
+	bvbilbbleBulkOperbtions, err = svc.GetAvbilbbleBulkOperbtions(ctx, service.GetAvbilbbleBulkOperbtionsOpts{
+		BbtchChbnge: unmbrshblledBbtchChbngeID,
+		Chbngesets:  chbngesetIDs,
 	})
 
 	if err != nil {
 		return nil, err
 	}
 
-	return availableBulkOperations, nil
+	return bvbilbbleBulkOperbtions, nil
 }
 
-func (r *Resolver) CheckBatchChangesCredential(ctx context.Context, args *graphqlbackend.CheckBatchChangesCredentialArgs) (_ *graphqlbackend.EmptyResponse, err error) {
-	tr, ctx := trace.New(ctx, "Resolver.CheckBatchChangesCredential",
-		attribute.String("credential", string(args.BatchChangesCredential)))
+func (r *Resolver) CheckBbtchChbngesCredentibl(ctx context.Context, brgs *grbphqlbbckend.CheckBbtchChbngesCredentiblArgs) (_ *grbphqlbbckend.EmptyResponse, err error) {
+	tr, ctx := trbce.New(ctx, "Resolver.CheckBbtchChbngesCredentibl",
+		bttribute.String("credentibl", string(brgs.BbtchChbngesCredentibl)))
 	defer tr.EndWithErr(&err)
 
-	cred, err := r.batchChangesCredentialByID(ctx, args.BatchChangesCredential)
+	cred, err := r.bbtchChbngesCredentiblByID(ctx, brgs.BbtchChbngesCredentibl)
 	if err != nil {
 		return nil, err
 	}
@@ -2062,28 +2062,28 @@ func (r *Resolver) CheckBatchChangesCredential(ctx context.Context, args *graphq
 		return nil, ErrIDIsZero{}
 	}
 
-	a, err := cred.authenticator(ctx)
+	b, err := cred.buthenticbtor(ctx)
 	if err != nil {
 		return nil, err
 	}
 
 	svc := service.New(r.store)
-	if err := svc.ValidateAuthenticator(ctx, cred.ExternalServiceURL(), extsvc.KindToType(cred.ExternalServiceKind()), a); err != nil {
-		return nil, &ErrVerifyCredentialFailed{SourceErr: err}
+	if err := svc.VblidbteAuthenticbtor(ctx, cred.ExternblServiceURL(), extsvc.KindToType(cred.ExternblServiceKind()), b); err != nil {
+		return nil, &ErrVerifyCredentiblFbiled{SourceErr: err}
 	}
 
-	return &graphqlbackend.EmptyResponse{}, nil
+	return &grbphqlbbckend.EmptyResponse{}, nil
 }
 
-// Realistically, we don't care about this field if an instance _is_ licensed. However, at
-// present there's no way to directly query the license details over GraphQL, so we just
-// return an arbitrarily high number if an instance is licensed and unrestricted.
-func (r *Resolver) MaxUnlicensedChangesets(ctx context.Context) int32 {
-	if bcFeature, err := checkLicense(); err == nil {
-		if bcFeature.Unrestricted {
+// Reblisticblly, we don't cbre bbout this field if bn instbnce _is_ licensed. However, bt
+// present there's no wby to directly query the license detbils over GrbphQL, so we just
+// return bn brbitrbrily high number if bn instbnce is licensed bnd unrestricted.
+func (r *Resolver) MbxUnlicensedChbngesets(ctx context.Context) int32 {
+	if bcFebture, err := checkLicense(); err == nil {
+		if bcFebture.Unrestricted {
 			return 999999
 		} else {
-			return int32(bcFeature.MaxNumChangesets)
+			return int32(bcFebture.MbxNumChbngesets)
 		}
 	} else {
 		// The license could not be checked.
@@ -2091,64 +2091,64 @@ func (r *Resolver) MaxUnlicensedChangesets(ctx context.Context) int32 {
 	}
 }
 
-func parseBatchChangeStates(ss *[]string) ([]btypes.BatchChangeState, error) {
-	states := []btypes.BatchChangeState{}
+func pbrseBbtchChbngeStbtes(ss *[]string) ([]btypes.BbtchChbngeStbte, error) {
+	stbtes := []btypes.BbtchChbngeStbte{}
 	if ss == nil || len(*ss) == 0 {
-		return states, nil
+		return stbtes, nil
 	}
-	for _, s := range *ss {
-		state, err := parseBatchChangeState(&s)
+	for _, s := rbnge *ss {
+		stbte, err := pbrseBbtchChbngeStbte(&s)
 		if err != nil {
 			return nil, err
 		}
-		if state != "" {
-			states = append(states, state)
+		if stbte != "" {
+			stbtes = bppend(stbtes, stbte)
 		}
 	}
-	return states, nil
+	return stbtes, nil
 }
 
-func parseBatchChangeState(s *string) (btypes.BatchChangeState, error) {
+func pbrseBbtchChbngeStbte(s *string) (btypes.BbtchChbngeStbte, error) {
 	if s == nil {
 		return "", nil
 	}
 	switch *s {
-	case "OPEN":
-		return btypes.BatchChangeStateOpen, nil
-	case "CLOSED":
-		return btypes.BatchChangeStateClosed, nil
-	case "DRAFT":
-		return btypes.BatchChangeStateDraft, nil
-	default:
-		return "", errors.Errorf("unknown state %q", *s)
+	cbse "OPEN":
+		return btypes.BbtchChbngeStbteOpen, nil
+	cbse "CLOSED":
+		return btypes.BbtchChbngeStbteClosed, nil
+	cbse "DRAFT":
+		return btypes.BbtchChbngeStbteDrbft, nil
+	defbult:
+		return "", errors.Errorf("unknown stbte %q", *s)
 	}
 }
 
-func validateFirstParam(first int32, max int) error {
-	if first < 0 || first > int32(max) {
-		return ErrInvalidFirstParameter{Min: 0, Max: max, First: int(first)}
+func vblidbteFirstPbrbm(first int32, mbx int) error {
+	if first < 0 || first > int32(mbx) {
+		return ErrInvblidFirstPbrbmeter{Min: 0, Mbx: mbx, First: int(first)}
 	}
 	return nil
 }
 
-const defaultMaxFirstParam = 10000
+const defbultMbxFirstPbrbm = 10000
 
-func validateFirstParamDefaults(first int32) error {
-	return validateFirstParam(first, defaultMaxFirstParam)
+func vblidbteFirstPbrbmDefbults(first int32) error {
+	return vblidbteFirstPbrbm(first, defbultMbxFirstPbrbm)
 }
 
-func unmarshalBulkOperationBaseArgs(args graphqlbackend.BulkOperationBaseArgs) (batchChangeID int64, changesetIDs []int64, err error) {
-	batchChangeID, err = unmarshalBatchChangeID(args.BatchChange)
+func unmbrshblBulkOperbtionBbseArgs(brgs grbphqlbbckend.BulkOperbtionBbseArgs) (bbtchChbngeID int64, chbngesetIDs []int64, err error) {
+	bbtchChbngeID, err = unmbrshblBbtchChbngeID(brgs.BbtchChbnge)
 	if err != nil {
 		return 0, nil, err
 	}
 
-	if batchChangeID == 0 {
+	if bbtchChbngeID == 0 {
 		return 0, nil, ErrIDIsZero{}
 	}
 
-	for _, raw := range args.Changesets {
-		id, err := unmarshalChangesetID(raw)
+	for _, rbw := rbnge brgs.Chbngesets {
+		id, err := unmbrshblChbngesetID(rbw)
 		if err != nil {
 			return 0, nil, err
 		}
@@ -2157,12 +2157,12 @@ func unmarshalBulkOperationBaseArgs(args graphqlbackend.BulkOperationBaseArgs) (
 			return 0, nil, ErrIDIsZero{}
 		}
 
-		changesetIDs = append(changesetIDs, id)
+		chbngesetIDs = bppend(chbngesetIDs, id)
 	}
 
-	if len(changesetIDs) == 0 {
-		return 0, nil, errors.New("specify at least one changeset")
+	if len(chbngesetIDs) == 0 {
+		return 0, nil, errors.New("specify bt lebst one chbngeset")
 	}
 
-	return batchChangeID, changesetIDs, nil
+	return bbtchChbngeID, chbngesetIDs, nil
 }

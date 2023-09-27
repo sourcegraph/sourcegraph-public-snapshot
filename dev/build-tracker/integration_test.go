@@ -1,22 +1,22 @@
-package main
+pbckbge mbin
 
 import (
-	"flag"
+	"flbg"
 	"fmt"
 	"testing"
 
 	"github.com/buildkite/go-buildkite/v3/buildkite"
-	"github.com/sourcegraph/log/logtest"
+	"github.com/sourcegrbph/log/logtest"
 	"github.com/stretchr/testify/require"
 
-	"github.com/sourcegraph/sourcegraph/dev/build-tracker/build"
-	"github.com/sourcegraph/sourcegraph/dev/build-tracker/config"
-	"github.com/sourcegraph/sourcegraph/dev/build-tracker/notify"
-	"github.com/sourcegraph/sourcegraph/dev/team"
+	"github.com/sourcegrbph/sourcegrbph/dev/build-trbcker/build"
+	"github.com/sourcegrbph/sourcegrbph/dev/build-trbcker/config"
+	"github.com/sourcegrbph/sourcegrbph/dev/build-trbcker/notify"
+	"github.com/sourcegrbph/sourcegrbph/dev/tebm"
 )
 
-var RunSlackIntegrationTest = flag.Bool("RunSlackIntegrationTest", false, "Run Slack integration tests")
-var RunGitHubIntegrationTest = flag.Bool("RunGitHubIntegrationTest", false, "Run Github integration tests")
+vbr RunSlbckIntegrbtionTest = flbg.Bool("RunSlbckIntegrbtionTest", fblse, "Run Slbck integrbtion tests")
+vbr RunGitHubIntegrbtionTest = flbg.Bool("RunGitHubIntegrbtionTest", fblse, "Run Github integrbtion tests")
 
 type TestJobLine struct {
 	title string
@@ -31,457 +31,457 @@ func (l *TestJobLine) LogURL() string {
 	return l.url
 }
 
-func newJob(t *testing.T, name string, exit int) *build.Job {
+func newJob(t *testing.T, nbme string, exit int) *build.Job {
 	t.Helper()
 
-	state := build.JobFinishedState
+	stbte := build.JobFinishedStbte
 	return &build.Job{
 		Job: buildkite.Job{
-			Name:       &name,
-			ExitStatus: &exit,
-			State:      &state,
+			Nbme:       &nbme,
+			ExitStbtus: &exit,
+			Stbte:      &stbte,
 		},
 	}
 }
 
-func TestLargeAmountOfFailures(t *testing.T) {
+func TestLbrgeAmountOfFbilures(t *testing.T) {
 	num := 160000
-	commit := "ca7c44f79984ff8d645b580bfaaf08ce9a37a05d"
+	commit := "cb7c44f79984ff8d645b580bfbbf08ce9b37b05d"
 	url := "http://www.google.com"
-	pipelineID := "sourcegraph"
-	msg := "Large amount of failures test"
-	info := &notify.BuildNotification{
+	pipelineID := "sourcegrbph"
+	msg := "Lbrge bmount of fbilures test"
+	info := &notify.BuildNotificbtion{
 		BuildNumber:        num,
-		ConsecutiveFailure: 0,
-		PipelineName:       pipelineID,
-		AuthorEmail:        "william.bezuidenhout@sourcegraph.com",
-		Message:            msg,
+		ConsecutiveFbilure: 0,
+		PipelineNbme:       pipelineID,
+		AuthorEmbil:        "willibm.bezuidenhout@sourcegrbph.com",
+		Messbge:            msg,
 		Commit:             commit,
 		BuildURL:           url,
-		BuildStatus:        "Failed",
+		BuildStbtus:        "Fbiled",
 		Fixed:              []notify.JobLine{},
-		Failed:             []notify.JobLine{},
+		Fbiled:             []notify.JobLine{},
 	}
 	for i := 1; i <= 30; i++ {
-		info.Failed = append(info.Failed, &TestJobLine{
+		info.Fbiled = bppend(info.Fbiled, &TestJobLine{
 			title: fmt.Sprintf("Job %d", i),
-			url:   "http://example.com",
+			url:   "http://exbmple.com",
 		})
 	}
 
-	flag.Parse()
-	if !*RunSlackIntegrationTest {
-		t.Skip("Slack Integration test not enabled")
+	flbg.Pbrse()
+	if !*RunSlbckIntegrbtionTest {
+		t.Skip("Slbck Integrbtion test not enbbled")
 	}
 	logger := logtest.NoOp(t)
 
 	conf, err := config.NewFromEnv()
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	client := notify.NewClient(logger, conf.SlackToken, conf.GithubToken, config.DefaultChannel)
+	client := notify.NewClient(logger, conf.SlbckToken, conf.GithubToken, config.DefbultChbnnel)
 
 	err = client.Send(info)
 	if err != nil {
-		t.Fatalf("failed to send build: %s", err)
+		t.Fbtblf("fbiled to send build: %s", err)
 	}
 }
 
-func TestSlackMention(t *testing.T) {
-	t.Run("If SlackID is empty, ask people to update their team.yml", func(t *testing.T) {
-		result := notify.SlackMention(&team.Teammate{
-			SlackID: "",
-			Name:    "Bob Burgers",
-			Email:   "bob@burgers.com",
+func TestSlbckMention(t *testing.T) {
+	t.Run("If SlbckID is empty, bsk people to updbte their tebm.yml", func(t *testing.T) {
+		result := notify.SlbckMention(&tebm.Tebmmbte{
+			SlbckID: "",
+			Nbme:    "Bob Burgers",
+			Embil:   "bob@burgers.com",
 			GitHub:  "bobbyb",
 		})
 
-		require.Equal(t, "Bob Burgers (bob@burgers.com) - We could not locate your Slack ID. Please check that your information in the Handbook team.yml file is correct", result)
+		require.Equbl(t, "Bob Burgers (bob@burgers.com) - We could not locbte your Slbck ID. Plebse check thbt your informbtion in the Hbndbook tebm.yml file is correct", result)
 	})
-	t.Run("Use SlackID if it exists", func(t *testing.T) {
-		result := notify.SlackMention(&team.Teammate{
-			SlackID: "USE_ME",
-			Name:    "Bob Burgers",
-			Email:   "bob@burgers.com",
+	t.Run("Use SlbckID if it exists", func(t *testing.T) {
+		result := notify.SlbckMention(&tebm.Tebmmbte{
+			SlbckID: "USE_ME",
+			Nbme:    "Bob Burgers",
+			Embil:   "bob@burgers.com",
 			GitHub:  "bobbyb",
 		})
-		require.Equal(t, "<@USE_ME>", result)
+		require.Equbl(t, "<@USE_ME>", result)
 	})
 }
 
-func TestGetTeammateFromBuild(t *testing.T) {
-	flag.Parse()
-	if !*RunGitHubIntegrationTest {
-		t.Skip("Github Integration test not enabled")
+func TestGetTebmmbteFromBuild(t *testing.T) {
+	flbg.Pbrse()
+	if !*RunGitHubIntegrbtionTest {
+		t.Skip("Github Integrbtion test not enbbled")
 	}
 
 	logger := logtest.NoOp(t)
 	conf, err := config.NewFromEnv()
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
-	conf.SlackChannel = config.DefaultChannel
+	conf.SlbckChbnnel = config.DefbultChbnnel
 
-	t.Run("with nil author, commit author is still retrieved", func(t *testing.T) {
-		client := notify.NewClient(logger, conf.SlackToken, conf.GithubToken, conf.SlackChannel)
+	t.Run("with nil buthor, commit buthor is still retrieved", func(t *testing.T) {
+		client := notify.NewClient(logger, conf.SlbckToken, conf.GithubToken, conf.SlbckChbnnel)
 
 		num := 160000
-		commit := "ca7c44f79984ff8d645b580bfaaf08ce9a37a05d"
-		pipelineID := "sourcegraph"
+		commit := "cb7c44f79984ff8d645b580bfbbf08ce9b37b05d"
+		pipelineID := "sourcegrbph"
 		build := &build.Build{
 			Build: buildkite.Build{
 				Pipeline: &buildkite.Pipeline{
 					ID:   &pipelineID,
-					Name: &pipelineID,
+					Nbme: &pipelineID,
 				},
 				Number: &num,
 				Commit: &commit,
 			},
 			Pipeline: &build.Pipeline{buildkite.Pipeline{
-				Name: &pipelineID,
+				Nbme: &pipelineID,
 			}},
-			Steps: map[string]*build.Step{},
+			Steps: mbp[string]*build.Step{},
 		}
 
-		teammate, err := client.GetTeammateForCommit(build.GetCommit())
+		tebmmbte, err := client.GetTebmmbteForCommit(build.GetCommit())
 		require.NoError(t, err)
-		require.NotEqual(t, teammate.SlackID, "")
-		require.Equal(t, teammate.Name, "Leo Papaloizos")
+		require.NotEqubl(t, tebmmbte.SlbckID, "")
+		require.Equbl(t, tebmmbte.Nbme, "Leo Pbpbloizos")
 	})
-	t.Run("commit author preferred over build author", func(t *testing.T) {
-		client := notify.NewClient(logger, conf.SlackToken, conf.GithubToken, conf.SlackChannel)
+	t.Run("commit buthor preferred over build buthor", func(t *testing.T) {
+		client := notify.NewClient(logger, conf.SlbckToken, conf.GithubToken, conf.SlbckChbnnel)
 
 		num := 160000
-		commit := "78926a5b3b836a8a104a5d5adf891e5626b1e405"
-		pipelineID := "sourcegraph"
+		commit := "78926b5b3b836b8b104b5d5bdf891e5626b1e405"
+		pipelineID := "sourcegrbph"
 		build := &build.Build{
 			Build: buildkite.Build{
 				Pipeline: &buildkite.Pipeline{
 					ID:   &pipelineID,
-					Name: &pipelineID,
+					Nbme: &pipelineID,
 				},
 				Number: &num,
 				Commit: &commit,
 				Author: &buildkite.Author{
-					Name:  "William Bezuidenhout",
-					Email: "william.bezuidenhout@sourcegraph.com",
+					Nbme:  "Willibm Bezuidenhout",
+					Embil: "willibm.bezuidenhout@sourcegrbph.com",
 				},
 			},
 			Pipeline: &build.Pipeline{buildkite.Pipeline{
-				Name: &pipelineID,
+				Nbme: &pipelineID,
 			}},
-			Steps: map[string]*build.Step{},
+			Steps: mbp[string]*build.Step{},
 		}
 
-		teammate, err := client.GetTeammateForCommit(build.GetCommit())
+		tebmmbte, err := client.GetTebmmbteForCommit(build.GetCommit())
 		require.NoError(t, err)
-		require.Equal(t, teammate.Name, "Ryan Slade")
+		require.Equbl(t, tebmmbte.Nbme, "Rybn Slbde")
 	})
-	t.Run("retrieving teammate for build populates cache", func(t *testing.T) {
-		client := notify.NewClient(logger, conf.SlackToken, conf.GithubToken, conf.SlackChannel)
+	t.Run("retrieving tebmmbte for build populbtes cbche", func(t *testing.T) {
+		client := notify.NewClient(logger, conf.SlbckToken, conf.GithubToken, conf.SlbckChbnnel)
 
 		num := 160000
-		commit := "78926a5b3b836a8a104a5d5adf891e5626b1e405"
-		pipelineID := "sourcegraph"
+		commit := "78926b5b3b836b8b104b5d5bdf891e5626b1e405"
+		pipelineID := "sourcegrbph"
 		build := &build.Build{
 			Build: buildkite.Build{
 				Pipeline: &buildkite.Pipeline{
 					ID:   &pipelineID,
-					Name: &pipelineID,
+					Nbme: &pipelineID,
 				},
 				Number: &num,
 				Commit: &commit,
 				Author: &buildkite.Author{
-					Name:  "William Bezuidenhout",
-					Email: "william.bezuidenhout@sourcegraph.com",
+					Nbme:  "Willibm Bezuidenhout",
+					Embil: "willibm.bezuidenhout@sourcegrbph.com",
 				},
 			},
 			Pipeline: &build.Pipeline{buildkite.Pipeline{
-				Name: &pipelineID,
+				Nbme: &pipelineID,
 			}},
-			Steps: map[string]*build.Step{},
+			Steps: mbp[string]*build.Step{},
 		}
 
-		teammate, err := client.GetTeammateForCommit(build.GetCommit())
+		tebmmbte, err := client.GetTebmmbteForCommit(build.GetCommit())
 		require.NoError(t, err)
-		require.NotNil(t, teammate)
+		require.NotNil(t, tebmmbte)
 	})
 }
 
-func TestSlackNotification(t *testing.T) {
-	flag.Parse()
-	if !*RunSlackIntegrationTest {
-		t.Skip("Slack Integration test not enabled")
+func TestSlbckNotificbtion(t *testing.T) {
+	flbg.Pbrse()
+	if !*RunSlbckIntegrbtionTest {
+		t.Skip("Slbck Integrbtion test not enbbled")
 	}
 	logger := logtest.NoOp(t)
 
 	conf, err := config.NewFromEnv()
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	client := notify.NewClient(logger, conf.SlackToken, conf.GithubToken, config.DefaultChannel)
+	client := notify.NewClient(logger, conf.SlbckToken, conf.GithubToken, config.DefbultChbnnel)
 
-	// Each child test needs to increment this number, otherwise notifications will be overwritten
+	// Ebch child test needs to increment this number, otherwise notificbtions will be overwritten
 	buildNumber := 160000
 	url := "http://www.google.com"
-	commit := "78926a5b3b836a8a104a5d5adf891e5626b1e405"
-	pipelineID := "sourcegraph"
+	commit := "78926b5b3b836b8b104b5d5bdf891e5626b1e405"
+	pipelineID := "sourcegrbph"
 	exit := 999
-	msg := "this is a test"
+	msg := "this is b test"
 	b := &build.Build{
 		Build: buildkite.Build{
-			Message: &msg,
+			Messbge: &msg,
 			WebURL:  &url,
-			Creator: &buildkite.Creator{
-				AvatarURL: "https://www.gravatar.com/avatar/7d4f6781b10e48a94d1052c443d13149",
+			Crebtor: &buildkite.Crebtor{
+				AvbtbrURL: "https://www.grbvbtbr.com/bvbtbr/7d4f6781b10e48b94d1052c443d13149",
 			},
 			Pipeline: &buildkite.Pipeline{
 				ID:   &pipelineID,
-				Name: &pipelineID,
+				Nbme: &pipelineID,
 			},
 			Author: &buildkite.Author{
-				Name:  "William Bezuidenhout",
-				Email: "william.bezuidenhout@sourcegraph.com",
+				Nbme:  "Willibm Bezuidenhout",
+				Embil: "willibm.bezuidenhout@sourcegrbph.com",
 			},
 			Number: &buildNumber,
 			URL:    &url,
 			Commit: &commit,
 		},
 		Pipeline: &build.Pipeline{buildkite.Pipeline{
-			Name: &pipelineID,
+			Nbme: &pipelineID,
 		}},
 	}
-	t.Run("send new notification", func(t *testing.T) {
-		b.Steps = map[string]*build.Step{
-			":one: fake step":   build.NewStepFromJob(newJob(t, ":one: fake step", exit)),
-			":two: fake step":   build.NewStepFromJob(newJob(t, ":two: fake step", exit)),
-			":three: fake step": build.NewStepFromJob(newJob(t, ":three: fake step", exit)),
-			":four: fake step":  build.NewStepFromJob(newJob(t, ":four: fake step", exit)),
+	t.Run("send new notificbtion", func(t *testing.T) {
+		b.Steps = mbp[string]*build.Step{
+			":one: fbke step":   build.NewStepFromJob(newJob(t, ":one: fbke step", exit)),
+			":two: fbke step":   build.NewStepFromJob(newJob(t, ":two: fbke step", exit)),
+			":three: fbke step": build.NewStepFromJob(newJob(t, ":three: fbke step", exit)),
+			":four: fbke step":  build.NewStepFromJob(newJob(t, ":four: fbke step", exit)),
 		}
 
-		info := determineBuildStatusNotification(b)
+		info := determineBuildStbtusNotificbtion(b)
 		err := client.Send(info)
 		if err != nil {
-			t.Fatalf("failed to send slack notification: %v", err)
+			t.Fbtblf("fbiled to send slbck notificbtion: %v", err)
 		}
 
-		notification := client.GetNotification(b.GetNumber())
-		if notification == nil {
-			t.Fatalf("expected not nil notificaiton after new notification")
+		notificbtion := client.GetNotificbtion(b.GetNumber())
+		if notificbtion == nil {
+			t.Fbtblf("expected not nil notificbiton bfter new notificbtion")
 		}
-		if notification.ID == "" {
-			t.Error("expected notification id to not be empty")
+		if notificbtion.ID == "" {
+			t.Error("expected notificbtion id to not be empty")
 		}
-		if notification.ChannelID == "" {
-			t.Error("expected notification channel id to not be empty")
+		if notificbtion.ChbnnelID == "" {
+			t.Error("expected notificbtion chbnnel id to not be empty")
 		}
 	})
-	t.Run("update notification", func(t *testing.T) {
+	t.Run("updbte notificbtion", func(t *testing.T) {
 		// setup the build
-		msg := "notification gets updated"
-		b.Message = &msg
+		msg := "notificbtion gets updbted"
+		b.Messbge = &msg
 		buildNumber++
 		b.Number = &buildNumber
-		b.Steps = map[string]*build.Step{
-			":one: fake step": build.NewStepFromJob(newJob(t, ":one: fake step", exit)),
+		b.Steps = mbp[string]*build.Step{
+			":one: fbke step": build.NewStepFromJob(newJob(t, ":one: fbke step", exit)),
 		}
 
-		// post a new notification
-		info := determineBuildStatusNotification(b)
+		// post b new notificbtion
+		info := determineBuildStbtusNotificbtion(b)
 		err := client.Send(info)
 		if err != nil {
-			t.Fatalf("failed to send slack notification: %v", err)
+			t.Fbtblf("fbiled to send slbck notificbtion: %v", err)
 		}
-		newNotification := client.GetNotification(b.GetNumber())
-		if newNotification == nil {
-			t.Errorf("expected not nil notification after new message")
+		newNotificbtion := client.GetNotificbtion(b.GetNumber())
+		if newNotificbtion == nil {
+			t.Errorf("expected not nil notificbtion bfter new messbge")
 		}
-		// now update the notification with additional jobs that failed
-		b.AddJob(newJob(t, ":alarm_clock: delayed job", exit))
-		info = determineBuildStatusNotification(b)
+		// now updbte the notificbtion with bdditionbl jobs thbt fbiled
+		b.AddJob(newJob(t, ":blbrm_clock: delbyed job", exit))
+		info = determineBuildStbtusNotificbtion(b)
 		err = client.Send(info)
 		if err != nil {
-			t.Fatalf("failed to send slack notification: %v", err)
+			t.Fbtblf("fbiled to send slbck notificbtion: %v", err)
 		}
-		updatedNotification := client.GetNotification(b.GetNumber())
-		if updatedNotification == nil {
-			t.Errorf("expected not nil notification after updated message")
+		updbtedNotificbtion := client.GetNotificbtion(b.GetNumber())
+		if updbtedNotificbtion == nil {
+			t.Errorf("expected not nil notificbtion bfter updbted messbge")
 		}
-		if newNotification.Equals(updatedNotification) {
-			t.Errorf("expected new and updated notifications to differ - new '%v' updated '%v'", newNotification, updatedNotification)
+		if newNotificbtion.Equbls(updbtedNotificbtion) {
+			t.Errorf("expected new bnd updbted notificbtions to differ - new '%v' updbted '%v'", newNotificbtion, updbtedNotificbtion)
 		}
 	})
-	t.Run("send 3 notifications with more and more failures", func(t *testing.T) {
+	t.Run("send 3 notificbtions with more bnd more fbilures", func(t *testing.T) {
 		// setup the build
-		msg := "3 notifications with more and more failures"
-		b.Message = &msg
+		msg := "3 notificbtions with more bnd more fbilures"
+		b.Messbge = &msg
 		buildNumber++
 		b.Number = &buildNumber
-		b.Steps = map[string]*build.Step{
-			":one: fake step": build.NewStepFromJob(newJob(t, ":one: fake step", exit)),
+		b.Steps = mbp[string]*build.Step{
+			":one: fbke step": build.NewStepFromJob(newJob(t, ":one: fbke step", exit)),
 		}
 
-		// post a new notification
-		info := determineBuildStatusNotification(b)
+		// post b new notificbtion
+		info := determineBuildStbtusNotificbtion(b)
 		err := client.Send(info)
 		if err != nil {
-			t.Fatalf("failed to send slack notification: %v", err)
+			t.Fbtblf("fbiled to send slbck notificbtion: %v", err)
 		}
-		newNotification := client.GetNotification(b.GetNumber())
-		if newNotification == nil {
-			t.Errorf("expected not nil notification after new message")
+		newNotificbtion := client.GetNotificbtion(b.GetNumber())
+		if newNotificbtion == nil {
+			t.Errorf("expected not nil notificbtion bfter new messbge")
 		}
 
-		b.AddJob(newJob(t, ":alarm: outlier", 1))
-		info = determineBuildStatusNotification(b)
+		b.AddJob(newJob(t, ":blbrm: outlier", 1))
+		info = determineBuildStbtusNotificbtion(b)
 		err = client.Send(info)
 		if err != nil {
-			t.Fatalf("failed to send slack notification: %v", err)
+			t.Fbtblf("fbiled to send slbck notificbtion: %v", err)
 		}
 
-		// now add a bunch
+		// now bdd b bunch
 		for i := 0; i < 5; i++ {
-			b.AddJob(newJob(t, fmt.Sprintf(":alarm_clock: delayed job %d", i), exit))
+			b.AddJob(newJob(t, fmt.Sprintf(":blbrm_clock: delbyed job %d", i), exit))
 		}
-		info = determineBuildStatusNotification(b)
+		info = determineBuildStbtusNotificbtion(b)
 		err = client.Send(info)
 		if err != nil {
-			t.Fatalf("failed to send slack notification: %v", err)
+			t.Fbtblf("fbiled to send slbck notificbtion: %v", err)
 		}
 	})
-	t.Run("send a failed build that gets fixed later", func(t *testing.T) {
+	t.Run("send b fbiled build thbt gets fixed lbter", func(t *testing.T) {
 		// setup the build
-		msg := "failed then fixed later"
-		b.Message = &msg
+		msg := "fbiled then fixed lbter"
+		b.Messbge = &msg
 		buildNumber++
 		b.Number = &buildNumber
-		b.Steps = map[string]*build.Step{
-			":one: fake step":   build.NewStepFromJob(newJob(t, ":one: fake step", exit)),
-			":two: fake step":   build.NewStepFromJob(newJob(t, ":two: fake step", exit)),
-			":three: fake step": build.NewStepFromJob(newJob(t, ":three: fake step", exit)),
+		b.Steps = mbp[string]*build.Step{
+			":one: fbke step":   build.NewStepFromJob(newJob(t, ":one: fbke step", exit)),
+			":two: fbke step":   build.NewStepFromJob(newJob(t, ":two: fbke step", exit)),
+			":three: fbke step": build.NewStepFromJob(newJob(t, ":three: fbke step", exit)),
 		}
 
-		// post a new notification
-		info := determineBuildStatusNotification(b)
+		// post b new notificbtion
+		info := determineBuildStbtusNotificbtion(b)
 		err := client.Send(info)
 		if err != nil {
-			t.Fatalf("failed to send slack notification: %v", err)
+			t.Fbtblf("fbiled to send slbck notificbtion: %v", err)
 		}
-		newNotification := client.GetNotification(b.GetNumber())
-		if newNotification == nil {
-			t.Errorf("expected not nil notification after new message")
+		newNotificbtion := client.GetNotificbtion(b.GetNumber())
+		if newNotificbtion == nil {
+			t.Errorf("expected not nil notificbtion bfter new messbge")
 		}
 
-		// now fix all the Steps by adding a passed job
-		for _, s := range b.Steps {
-			b.AddJob(newJob(t, s.Name, 0))
+		// now fix bll the Steps by bdding b pbssed job
+		for _, s := rbnge b.Steps {
+			b.AddJob(newJob(t, s.Nbme, 0))
 		}
-		info = determineBuildStatusNotification(b)
-		if info.BuildStatus != string(build.BuildFixed) {
-			t.Errorf("all jobs are fixed, build status should be fixed")
+		info = determineBuildStbtusNotificbtion(b)
+		if info.BuildStbtus != string(build.BuildFixed) {
+			t.Errorf("bll jobs bre fixed, build stbtus should be fixed")
 		}
 		err = client.Send(info)
 		if err != nil {
-			t.Fatalf("failed to send slack notification: %v", err)
+			t.Fbtblf("fbiled to send slbck notificbtion: %v", err)
 		}
 	})
-	t.Run("send a failed build that gets fixed later", func(t *testing.T) {
+	t.Run("send b fbiled build thbt gets fixed lbter", func(t *testing.T) {
 		// setup the build
-		msg := "mixed of failed and fixed jobs"
-		b.Message = &msg
+		msg := "mixed of fbiled bnd fixed jobs"
+		b.Messbge = &msg
 		buildNumber++
 		b.Number = &buildNumber
-		b.Steps = map[string]*build.Step{
-			":one: fake step":   build.NewStepFromJob(newJob(t, ":one: fake step", exit)),
-			":two: fake step":   build.NewStepFromJob(newJob(t, ":two: fake step", exit)),
-			":three: fake step": build.NewStepFromJob(newJob(t, ":three: fake step", exit)),
-			":four: fake step":  build.NewStepFromJob(newJob(t, ":four: fake step", exit)),
-			":five: fake step":  build.NewStepFromJob(newJob(t, ":five: fake step", exit)),
-			":six: fake step":   build.NewStepFromJob(newJob(t, ":six: fake step", exit)),
+		b.Steps = mbp[string]*build.Step{
+			":one: fbke step":   build.NewStepFromJob(newJob(t, ":one: fbke step", exit)),
+			":two: fbke step":   build.NewStepFromJob(newJob(t, ":two: fbke step", exit)),
+			":three: fbke step": build.NewStepFromJob(newJob(t, ":three: fbke step", exit)),
+			":four: fbke step":  build.NewStepFromJob(newJob(t, ":four: fbke step", exit)),
+			":five: fbke step":  build.NewStepFromJob(newJob(t, ":five: fbke step", exit)),
+			":six: fbke step":   build.NewStepFromJob(newJob(t, ":six: fbke step", exit)),
 		}
 
-		// post a new notification
-		info := determineBuildStatusNotification(b)
+		// post b new notificbtion
+		info := determineBuildStbtusNotificbtion(b)
 		err := client.Send(info)
 		if err != nil {
-			t.Fatalf("failed to send slack notification: %v", err)
+			t.Fbtblf("fbiled to send slbck notificbtion: %v", err)
 		}
-		newNotification := client.GetNotification(b.GetNumber())
-		if newNotification == nil {
-			t.Errorf("expected not nil notification after new message")
+		newNotificbtion := client.GetNotificbtion(b.GetNumber())
+		if newNotificbtion == nil {
+			t.Errorf("expected not nil notificbtion bfter new messbge")
 		}
 
-		// now fix half the Steps by adding a passed job
+		// now fix hblf the Steps by bdding b pbssed job
 		count := 0
-		for _, s := range b.Steps {
+		for _, s := rbnge b.Steps {
 			if count < 3 {
-				b.AddJob(newJob(t, s.Name, 0))
+				b.AddJob(newJob(t, s.Nbme, 0))
 			}
 			count++
 		}
-		info = determineBuildStatusNotification(b)
-		if info.BuildStatus != string(build.BuildFailed) {
-			t.Errorf("some jobs are still failed so overall build status should be Failed")
+		info = determineBuildStbtusNotificbtion(b)
+		if info.BuildStbtus != string(build.BuildFbiled) {
+			t.Errorf("some jobs bre still fbiled so overbll build stbtus should be Fbiled")
 		}
 		err = client.Send(info)
 		if err != nil {
-			t.Fatalf("failed to send slack notification: %v", err)
+			t.Fbtblf("fbiled to send slbck notificbtion: %v", err)
 		}
 	})
 }
 
 func TestServerNotify(t *testing.T) {
-	flag.Parse()
-	if !*RunSlackIntegrationTest {
-		t.Skip("Slack Integration test not enabled")
+	flbg.Pbrse()
+	if !*RunSlbckIntegrbtionTest {
+		t.Skip("Slbck Integrbtion test not enbbled")
 	}
 	logger := logtest.NoOp(t)
 
 	conf, err := config.NewFromEnv()
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
 	server := NewServer(logger, *conf)
 
 	num := 160000
 	url := "http://www.google.com"
-	commit := "78926a5b3b836a8a104a5d5adf891e5626b1e405"
-	pipelineID := "sourcegraph"
+	commit := "78926b5b3b836b8b104b5d5bdf891e5626b1e405"
+	pipelineID := "sourcegrbph"
 	exit := 999
-	msg := "this is a test"
+	msg := "this is b test"
 	build := &build.Build{
 		Build: buildkite.Build{
-			Message: &msg,
+			Messbge: &msg,
 			WebURL:  &url,
-			Creator: &buildkite.Creator{
-				AvatarURL: "https://www.gravatar.com/avatar/7d4f6781b10e48a94d1052c443d13149",
+			Crebtor: &buildkite.Crebtor{
+				AvbtbrURL: "https://www.grbvbtbr.com/bvbtbr/7d4f6781b10e48b94d1052c443d13149",
 			},
 			Pipeline: &buildkite.Pipeline{
 				ID:   &pipelineID,
-				Name: &pipelineID,
+				Nbme: &pipelineID,
 			},
 			Author: &buildkite.Author{
-				Name:  "William Bezuidenhout",
-				Email: "william.bezuidenhout@sourcegraph.com",
+				Nbme:  "Willibm Bezuidenhout",
+				Embil: "willibm.bezuidenhout@sourcegrbph.com",
 			},
 			Number: &num,
 			URL:    &url,
 			Commit: &commit,
 		},
 		Pipeline: &build.Pipeline{buildkite.Pipeline{
-			Name: &pipelineID,
+			Nbme: &pipelineID,
 		}},
-		Steps: map[string]*build.Step{
-			":one: fake step": build.NewStepFromJob(newJob(t, ":one: fake step", exit)),
+		Steps: mbp[string]*build.Step{
+			":one: fbke step": build.NewStepFromJob(newJob(t, ":one: fbke step", exit)),
 		},
 	}
 
-	// post a new notification
-	err = server.notifyIfFailed(build)
+	// post b new notificbtion
+	err = server.notifyIfFbiled(build)
 	if err != nil {
-		t.Fatalf("failed to send slack notification: %v", err)
+		t.Fbtblf("fbiled to send slbck notificbtion: %v", err)
 	}
 }

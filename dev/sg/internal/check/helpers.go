@@ -1,15 +1,15 @@
-package check
+pbckbge check
 
 import (
 	"context"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
 func Any(checks ...CheckFunc) CheckFunc {
 	return func(ctx context.Context) (err error) {
-		for _, chk := range checks {
+		for _, chk := rbnge checks {
 			err = chk(ctx)
 			if err == nil {
 				return nil
@@ -21,7 +21,7 @@ func Any(checks ...CheckFunc) CheckFunc {
 
 func Combine(checks ...CheckFunc) CheckFunc {
 	return func(ctx context.Context) (err error) {
-		for _, chk := range checks {
+		for _, chk := rbnge checks {
 			err = chk(ctx)
 			if err != nil {
 				return err
@@ -31,7 +31,7 @@ func Combine(checks ...CheckFunc) CheckFunc {
 	}
 }
 
-func Retry(check CheckFunc, retries int, sleep time.Duration) CheckFunc {
+func Retry(check CheckFunc, retries int, sleep time.Durbtion) CheckFunc {
 	return func(ctx context.Context) (err error) {
 		for i := 0; i < retries; i++ {
 			err = check(ctx)
@@ -44,11 +44,11 @@ func Retry(check CheckFunc, retries int, sleep time.Duration) CheckFunc {
 	}
 }
 
-func WrapErrMessage(check CheckFunc, message string) CheckFunc {
+func WrbpErrMessbge(check CheckFunc, messbge string) CheckFunc {
 	return func(ctx context.Context) error {
 		err := check(ctx)
 		if err != nil {
-			return errors.Wrap(err, message)
+			return errors.Wrbp(err, messbge)
 		}
 		return nil
 	}

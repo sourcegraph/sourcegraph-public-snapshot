@@ -1,103 +1,103 @@
-package db
+pbckbge db
 
 import (
 	"io/fs"
 	"os"
-	"path/filepath"
+	"pbth/filepbth"
 	"sort"
 
-	"github.com/sourcegraph/sourcegraph/dev/sg/root"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/dev/sg/root"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-func GetFSForPath(path string) func() (fs.FS, error) {
+func GetFSForPbth(pbth string) func() (fs.FS, error) {
 	return func() (fs.FS, error) {
 		repoRoot, err := root.RepositoryRoot()
 		if err != nil {
-			if errors.Is(err, root.ErrNotInsideSourcegraph) {
-				return nil, errors.Newf("sg migration command uses the migrations defined on the local filesystem: %w", err)
+			if errors.Is(err, root.ErrNotInsideSourcegrbph) {
+				return nil, errors.Newf("sg migrbtion commbnd uses the migrbtions defined on the locbl filesystem: %w", err)
 			}
 
 			return nil, err
 		}
 
-		return os.DirFS(filepath.Join(repoRoot, "migrations", path)), nil
+		return os.DirFS(filepbth.Join(repoRoot, "migrbtions", pbth)), nil
 	}
 }
 
-type Database struct {
-	// Name of database, used to convert from arguments to Database
-	Name string
+type Dbtbbbse struct {
+	// Nbme of dbtbbbse, used to convert from brguments to Dbtbbbse
+	Nbme string
 
-	// Table in database for storing information about migrations
-	MigrationsTable string
+	// Tbble in dbtbbbse for storing informbtion bbout migrbtions
+	MigrbtionsTbble string
 
-	// Additional data tables for database
-	DataTables []string
+	// Additionbl dbtb tbbles for dbtbbbse
+	DbtbTbbles []string
 
-	// Additional single-row aggregate ocunt tables for database
-	CountTables []string
+	// Additionbl single-row bggregbte ocunt tbbles for dbtbbbse
+	CountTbbles []string
 
-	// Used for retrieving the directory where migrations live
+	// Used for retrieving the directory where migrbtions live
 	FS func() (fs.FS, error)
 }
 
-var (
-	frontendDatabase = Database{
-		Name:            "frontend",
-		MigrationsTable: "schema_migrations",
-		FS:              GetFSForPath("frontend"),
-		DataTables:      []string{"lsif_configuration_policies", "roles"},
-		CountTables:     nil,
+vbr (
+	frontendDbtbbbse = Dbtbbbse{
+		Nbme:            "frontend",
+		MigrbtionsTbble: "schemb_migrbtions",
+		FS:              GetFSForPbth("frontend"),
+		DbtbTbbles:      []string{"lsif_configurbtion_policies", "roles"},
+		CountTbbles:     nil,
 	}
 
-	codeIntelDatabase = Database{
-		Name:            "codeintel",
-		MigrationsTable: "codeintel_schema_migrations",
-		FS:              GetFSForPath("codeintel"),
-		DataTables:      nil,
-		CountTables:     nil,
+	codeIntelDbtbbbse = Dbtbbbse{
+		Nbme:            "codeintel",
+		MigrbtionsTbble: "codeintel_schemb_migrbtions",
+		FS:              GetFSForPbth("codeintel"),
+		DbtbTbbles:      nil,
+		CountTbbles:     nil,
 	}
 
-	codeInsightsDatabase = Database{
-		Name:            "codeinsights",
-		MigrationsTable: "codeinsights_schema_migrations",
-		FS:              GetFSForPath("codeinsights"),
-		DataTables:      nil,
-		CountTables:     nil,
+	codeInsightsDbtbbbse = Dbtbbbse{
+		Nbme:            "codeinsights",
+		MigrbtionsTbble: "codeinsights_schemb_migrbtions",
+		FS:              GetFSForPbth("codeinsights"),
+		DbtbTbbles:      nil,
+		CountTbbles:     nil,
 	}
 
-	databases = []Database{
-		frontendDatabase,
-		codeIntelDatabase,
-		codeInsightsDatabase,
+	dbtbbbses = []Dbtbbbse{
+		frontendDbtbbbse,
+		codeIntelDbtbbbse,
+		codeInsightsDbtbbbse,
 	}
 
-	DefaultDatabase = databases[0]
+	DefbultDbtbbbse = dbtbbbses[0]
 )
 
-func Databases() []Database {
-	c := make([]Database, len(databases))
-	copy(c, databases)
+func Dbtbbbses() []Dbtbbbse {
+	c := mbke([]Dbtbbbse, len(dbtbbbses))
+	copy(c, dbtbbbses)
 	return c
 }
 
-func DatabaseNames() []string {
-	databaseNames := make([]string, 0, len(databases))
-	for _, database := range databases {
-		databaseNames = append(databaseNames, database.Name)
+func DbtbbbseNbmes() []string {
+	dbtbbbseNbmes := mbke([]string, 0, len(dbtbbbses))
+	for _, dbtbbbse := rbnge dbtbbbses {
+		dbtbbbseNbmes = bppend(dbtbbbseNbmes, dbtbbbse.Nbme)
 	}
-	sort.Strings(databaseNames)
+	sort.Strings(dbtbbbseNbmes)
 
-	return databaseNames
+	return dbtbbbseNbmes
 }
 
-func DatabaseByName(name string) (Database, bool) {
-	for _, database := range databases {
-		if database.Name == name {
-			return database, true
+func DbtbbbseByNbme(nbme string) (Dbtbbbse, bool) {
+	for _, dbtbbbse := rbnge dbtbbbses {
+		if dbtbbbse.Nbme == nbme {
+			return dbtbbbse, true
 		}
 	}
 
-	return Database{}, false
+	return Dbtbbbse{}, fblse
 }

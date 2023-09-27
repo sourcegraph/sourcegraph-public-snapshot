@@ -1,4 +1,4 @@
-package expirer
+pbckbge expirer
 
 import (
 	"context"
@@ -9,90 +9,90 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/policies"
-	policiesshared "github.com/sourcegraph/sourcegraph/internal/codeintel/policies/shared"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared"
-	uploadsshared "github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/internal/timeutil"
-	internaltypes "github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/lib/pointers"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi"
+	"github.com/sourcegrbph/sourcegrbph/internbl/codeintel/policies"
+	policiesshbred "github.com/sourcegrbph/sourcegrbph/internbl/codeintel/policies/shbred"
+	"github.com/sourcegrbph/sourcegrbph/internbl/codeintel/uplobds/shbred"
+	uplobdsshbred "github.com/sourcegrbph/sourcegrbph/internbl/codeintel/uplobds/shbred"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbmocks"
+	"github.com/sourcegrbph/sourcegrbph/internbl/observbtion"
+	"github.com/sourcegrbph/sourcegrbph/internbl/timeutil"
+	internbltypes "github.com/sourcegrbph/sourcegrbph/internbl/types"
+	"github.com/sourcegrbph/sourcegrbph/lib/pointers"
 )
 
-func TestUploadExpirer(t *testing.T) {
+func TestUplobdExpirer(t *testing.T) {
 	now := timeutil.Now()
-	uploadSvc := setupMockUploadService(now)
+	uplobdSvc := setupMockUplobdService(now)
 	policySvc := setupMockPolicyService()
-	policyMatcher := testUploadExpirerMockPolicyMatcher()
-	repoStore := defaultMockRepoStore()
-	expirationMetrics := NewExpirationMetrics(&observation.TestContext)
+	policyMbtcher := testUplobdExpirerMockPolicyMbtcher()
+	repoStore := defbultMockRepoStore()
+	expirbtionMetrics := NewExpirbtionMetrics(&observbtion.TestContext)
 
-	uploadExpirer := &expirer{
-		store:         uploadSvc,
+	uplobdExpirer := &expirer{
+		store:         uplobdSvc,
 		policySvc:     policySvc,
-		policyMatcher: policyMatcher,
+		policyMbtcher: policyMbtcher,
 		repoStore:     repoStore,
 	}
 
-	if err := uploadExpirer.HandleExpiredUploadsBatch(context.Background(), expirationMetrics, &Config{
-		RepositoryProcessDelay: 24 * time.Hour,
-		RepositoryBatchSize:    100,
-		UploadProcessDelay:     24 * time.Hour,
-		UploadBatchSize:        100,
-		CommitBatchSize:        100,
+	if err := uplobdExpirer.HbndleExpiredUplobdsBbtch(context.Bbckground(), expirbtionMetrics, &Config{
+		RepositoryProcessDelby: 24 * time.Hour,
+		RepositoryBbtchSize:    100,
+		UplobdProcessDelby:     24 * time.Hour,
+		UplobdBbtchSize:        100,
+		CommitBbtchSize:        100,
 	}); err != nil {
-		t.Fatalf("unexpected error from handle: %s", err)
+		t.Fbtblf("unexpected error from hbndle: %s", err)
 	}
 
-	var protectedIDs []int
-	for _, call := range uploadSvc.UpdateUploadRetentionFunc.History() {
-		protectedIDs = append(protectedIDs, call.Arg1...)
+	vbr protectedIDs []int
+	for _, cbll := rbnge uplobdSvc.UpdbteUplobdRetentionFunc.History() {
+		protectedIDs = bppend(protectedIDs, cbll.Arg1...)
 	}
 	sort.Ints(protectedIDs)
 
-	var expiredIDs []int
-	for _, call := range uploadSvc.UpdateUploadRetentionFunc.History() {
-		expiredIDs = append(expiredIDs, call.Arg2...)
+	vbr expiredIDs []int
+	for _, cbll := rbnge uplobdSvc.UpdbteUplobdRetentionFunc.History() {
+		expiredIDs = bppend(expiredIDs, cbll.Arg2...)
 	}
 	sort.Ints(expiredIDs)
 
 	expectedProtectedIDs := []int{12, 16, 18, 20, 25, 26, 27, 28}
 	if diff := cmp.Diff(expectedProtectedIDs, protectedIDs); diff != "" {
-		t.Errorf("unexpected protected upload identifiers (-want +got):\n%s", diff)
+		t.Errorf("unexpected protected uplobd identifiers (-wbnt +got):\n%s", diff)
 	}
 
 	expectedExpiredIDs := []int{11, 13, 14, 15, 17, 19, 21, 22, 23, 24, 29, 30}
 	if diff := cmp.Diff(expectedExpiredIDs, expiredIDs); diff != "" {
-		t.Errorf("unexpected expired upload identifiers (-want +got):\n%s", diff)
+		t.Errorf("unexpected expired uplobd identifiers (-wbnt +got):\n%s", diff)
 	}
 
-	calls := policyMatcher.CommitsDescribedByPolicyFunc.History()
-	if len(calls) != 4 {
-		t.Fatalf("unexpected number of calls to CommitsDescribedByPolicy. want=%d have=%d", 4, len(calls))
+	cblls := policyMbtcher.CommitsDescribedByPolicyFunc.History()
+	if len(cblls) != 4 {
+		t.Fbtblf("unexpected number of cblls to CommitsDescribedByPolicy. wbnt=%d hbve=%d", 4, len(cblls))
 	}
-	for _, call := range calls {
-		var policyIDs []int
-		for _, policy := range call.Arg3 {
-			policyIDs = append(policyIDs, policy.ID)
+	for _, cbll := rbnge cblls {
+		vbr policyIDs []int
+		for _, policy := rbnge cbll.Arg3 {
+			policyIDs = bppend(policyIDs, policy.ID)
 		}
 		sort.Ints(policyIDs)
 
-		expectedPolicyIDs := map[int][]int{
+		expectedPolicyIDs := mbp[int][]int{
 			50: {1, 3, 4, 5},
 			51: {1, 3, 4},
 			52: {1, 3, 4},
 			53: {1, 2, 3, 4},
 		}
-		if diff := cmp.Diff(expectedPolicyIDs[call.Arg1], policyIDs); diff != "" {
-			t.Errorf("unexpected policies supplied to CommitsDescribedByPolicy(%d) (-want +got):\n%s", call.Arg1, diff)
+		if diff := cmp.Diff(expectedPolicyIDs[cbll.Arg1], policyIDs); diff != "" {
+			t.Errorf("unexpected policies supplied to CommitsDescribedByPolicy(%d) (-wbnt +got):\n%s", cbll.Arg1, diff)
 		}
 	}
 }
 
 func setupMockPolicyService() *MockPolicyService {
-	policies := []policiesshared.ConfigurationPolicy{
+	policies := []policiesshbred.ConfigurbtionPolicy{
 		{ID: 1, RepositoryID: nil},
 		{ID: 2, RepositoryID: pointers.Ptr(53)},
 		{ID: 3, RepositoryID: nil},
@@ -100,10 +100,10 @@ func setupMockPolicyService() *MockPolicyService {
 		{ID: 5, RepositoryID: pointers.Ptr(50)},
 	}
 
-	getConfigurationPolicies := func(ctx context.Context, opts policiesshared.GetConfigurationPoliciesOptions) (filtered []policiesshared.ConfigurationPolicy, _ int, _ error) {
-		for _, policy := range policies {
+	getConfigurbtionPolicies := func(ctx context.Context, opts policiesshbred.GetConfigurbtionPoliciesOptions) (filtered []policiesshbred.ConfigurbtionPolicy, _ int, _ error) {
+		for _, policy := rbnge policies {
 			if policy.RepositoryID == nil || *policy.RepositoryID == opts.RepositoryID {
-				filtered = append(filtered, policy)
+				filtered = bppend(filtered, policy)
 			}
 		}
 
@@ -111,99 +111,99 @@ func setupMockPolicyService() *MockPolicyService {
 	}
 
 	policySvc := NewMockPolicyService()
-	policySvc.GetConfigurationPoliciesFunc.SetDefaultHook(getConfigurationPolicies)
+	policySvc.GetConfigurbtionPoliciesFunc.SetDefbultHook(getConfigurbtionPolicies)
 
 	return policySvc
 }
 
-func setupMockUploadService(now time.Time) *MockStore {
-	uploads := []shared.Upload{
-		{ID: 11, State: "completed", RepositoryID: 50, Commit: "deadbeef01", UploadedAt: daysAgo(now, 1)}, // repo 50
-		{ID: 12, State: "completed", RepositoryID: 50, Commit: "deadbeef02", UploadedAt: daysAgo(now, 2)},
-		{ID: 13, State: "completed", RepositoryID: 50, Commit: "deadbeef03", UploadedAt: daysAgo(now, 3)},
-		{ID: 14, State: "completed", RepositoryID: 50, Commit: "deadbeef04", UploadedAt: daysAgo(now, 4)},
-		{ID: 15, State: "completed", RepositoryID: 50, Commit: "deadbeef05", UploadedAt: daysAgo(now, 5)},
-		{ID: 16, State: "completed", RepositoryID: 51, Commit: "deadbeef06", UploadedAt: daysAgo(now, 6)}, // repo 51
-		{ID: 17, State: "completed", RepositoryID: 51, Commit: "deadbeef07", UploadedAt: daysAgo(now, 7)},
-		{ID: 18, State: "completed", RepositoryID: 51, Commit: "deadbeef08", UploadedAt: daysAgo(now, 8)},
-		{ID: 19, State: "completed", RepositoryID: 51, Commit: "deadbeef09", UploadedAt: daysAgo(now, 9)},
-		{ID: 20, State: "completed", RepositoryID: 51, Commit: "deadbeef10", UploadedAt: daysAgo(now, 1)},
-		{ID: 21, State: "completed", RepositoryID: 52, Commit: "deadbeef11", UploadedAt: daysAgo(now, 9)}, // repo 52
-		{ID: 22, State: "completed", RepositoryID: 52, Commit: "deadbeef12", UploadedAt: daysAgo(now, 8)},
-		{ID: 23, State: "completed", RepositoryID: 52, Commit: "deadbeef13", UploadedAt: daysAgo(now, 7)},
-		{ID: 24, State: "completed", RepositoryID: 52, Commit: "deadbeef14", UploadedAt: daysAgo(now, 6)},
-		{ID: 25, State: "completed", RepositoryID: 52, Commit: "deadbeef15", UploadedAt: daysAgo(now, 5)},
-		{ID: 26, State: "completed", RepositoryID: 53, Commit: "deadbeef16", UploadedAt: daysAgo(now, 4)}, // repo 53
-		{ID: 27, State: "completed", RepositoryID: 53, Commit: "deadbeef17", UploadedAt: daysAgo(now, 3)},
-		{ID: 28, State: "completed", RepositoryID: 53, Commit: "deadbeef18", UploadedAt: daysAgo(now, 2)},
-		{ID: 29, State: "completed", RepositoryID: 53, Commit: "deadbeef19", UploadedAt: daysAgo(now, 1)},
-		{ID: 30, State: "completed", RepositoryID: 53, Commit: "deadbeef20", UploadedAt: daysAgo(now, 9)},
+func setupMockUplobdService(now time.Time) *MockStore {
+	uplobds := []shbred.Uplobd{
+		{ID: 11, Stbte: "completed", RepositoryID: 50, Commit: "debdbeef01", UplobdedAt: dbysAgo(now, 1)}, // repo 50
+		{ID: 12, Stbte: "completed", RepositoryID: 50, Commit: "debdbeef02", UplobdedAt: dbysAgo(now, 2)},
+		{ID: 13, Stbte: "completed", RepositoryID: 50, Commit: "debdbeef03", UplobdedAt: dbysAgo(now, 3)},
+		{ID: 14, Stbte: "completed", RepositoryID: 50, Commit: "debdbeef04", UplobdedAt: dbysAgo(now, 4)},
+		{ID: 15, Stbte: "completed", RepositoryID: 50, Commit: "debdbeef05", UplobdedAt: dbysAgo(now, 5)},
+		{ID: 16, Stbte: "completed", RepositoryID: 51, Commit: "debdbeef06", UplobdedAt: dbysAgo(now, 6)}, // repo 51
+		{ID: 17, Stbte: "completed", RepositoryID: 51, Commit: "debdbeef07", UplobdedAt: dbysAgo(now, 7)},
+		{ID: 18, Stbte: "completed", RepositoryID: 51, Commit: "debdbeef08", UplobdedAt: dbysAgo(now, 8)},
+		{ID: 19, Stbte: "completed", RepositoryID: 51, Commit: "debdbeef09", UplobdedAt: dbysAgo(now, 9)},
+		{ID: 20, Stbte: "completed", RepositoryID: 51, Commit: "debdbeef10", UplobdedAt: dbysAgo(now, 1)},
+		{ID: 21, Stbte: "completed", RepositoryID: 52, Commit: "debdbeef11", UplobdedAt: dbysAgo(now, 9)}, // repo 52
+		{ID: 22, Stbte: "completed", RepositoryID: 52, Commit: "debdbeef12", UplobdedAt: dbysAgo(now, 8)},
+		{ID: 23, Stbte: "completed", RepositoryID: 52, Commit: "debdbeef13", UplobdedAt: dbysAgo(now, 7)},
+		{ID: 24, Stbte: "completed", RepositoryID: 52, Commit: "debdbeef14", UplobdedAt: dbysAgo(now, 6)},
+		{ID: 25, Stbte: "completed", RepositoryID: 52, Commit: "debdbeef15", UplobdedAt: dbysAgo(now, 5)},
+		{ID: 26, Stbte: "completed", RepositoryID: 53, Commit: "debdbeef16", UplobdedAt: dbysAgo(now, 4)}, // repo 53
+		{ID: 27, Stbte: "completed", RepositoryID: 53, Commit: "debdbeef17", UplobdedAt: dbysAgo(now, 3)},
+		{ID: 28, Stbte: "completed", RepositoryID: 53, Commit: "debdbeef18", UplobdedAt: dbysAgo(now, 2)},
+		{ID: 29, Stbte: "completed", RepositoryID: 53, Commit: "debdbeef19", UplobdedAt: dbysAgo(now, 1)},
+		{ID: 30, Stbte: "completed", RepositoryID: 53, Commit: "debdbeef20", UplobdedAt: dbysAgo(now, 9)},
 	}
 
-	repositoryIDMap := map[int]struct{}{}
-	for _, upload := range uploads {
-		repositoryIDMap[upload.RepositoryID] = struct{}{}
+	repositoryIDMbp := mbp[int]struct{}{}
+	for _, uplobd := rbnge uplobds {
+		repositoryIDMbp[uplobd.RepositoryID] = struct{}{}
 	}
 
-	repositoryIDs := make([]int, 0, len(repositoryIDMap))
-	for repositoryID := range repositoryIDMap {
-		repositoryIDs = append(repositoryIDs, repositoryID)
+	repositoryIDs := mbke([]int, 0, len(repositoryIDMbp))
+	for repositoryID := rbnge repositoryIDMbp {
+		repositoryIDs = bppend(repositoryIDs, repositoryID)
 	}
 
-	protected := map[int]time.Time{}
-	expired := map[int]struct{}{}
+	protected := mbp[int]time.Time{}
+	expired := mbp[int]struct{}{}
 
-	setRepositoriesForRetentionScanFunc := func(ctx context.Context, processDelay time.Duration, limit int) (scannedIDs []int, _ error) {
+	setRepositoriesForRetentionScbnFunc := func(ctx context.Context, processDelby time.Durbtion, limit int) (scbnnedIDs []int, _ error) {
 		if len(repositoryIDs) <= limit {
-			scannedIDs, repositoryIDs = repositoryIDs, nil
+			scbnnedIDs, repositoryIDs = repositoryIDs, nil
 		} else {
-			scannedIDs, repositoryIDs = repositoryIDs[:limit], repositoryIDs[limit:]
+			scbnnedIDs, repositoryIDs = repositoryIDs[:limit], repositoryIDs[limit:]
 		}
 
-		return scannedIDs, nil
+		return scbnnedIDs, nil
 	}
 
-	getUploads := func(ctx context.Context, opts uploadsshared.GetUploadsOptions) ([]shared.Upload, int, error) {
-		var filtered []shared.Upload
-		for _, upload := range uploads {
-			if upload.RepositoryID != opts.RepositoryID {
+	getUplobds := func(ctx context.Context, opts uplobdsshbred.GetUplobdsOptions) ([]shbred.Uplobd, int, error) {
+		vbr filtered []shbred.Uplobd
+		for _, uplobd := rbnge uplobds {
+			if uplobd.RepositoryID != opts.RepositoryID {
 				continue
 			}
-			if _, ok := expired[upload.ID]; ok {
+			if _, ok := expired[uplobd.ID]; ok {
 				continue
 			}
-			if lastScanned, ok := protected[upload.ID]; ok && !lastScanned.Before(*opts.LastRetentionScanBefore) {
+			if lbstScbnned, ok := protected[uplobd.ID]; ok && !lbstScbnned.Before(*opts.LbstRetentionScbnBefore) {
 				continue
 			}
 
-			filtered = append(filtered, upload)
+			filtered = bppend(filtered, uplobd)
 		}
 
 		if len(filtered) > opts.Limit {
 			filtered = filtered[:opts.Limit]
 		}
 
-		return filtered, len(uploads), nil
+		return filtered, len(uplobds), nil
 	}
 
-	updateUploadRetention := func(ctx context.Context, protectedIDs, expiredIDs []int) error {
-		for _, id := range protectedIDs {
+	updbteUplobdRetention := func(ctx context.Context, protectedIDs, expiredIDs []int) error {
+		for _, id := rbnge protectedIDs {
 			protected[id] = time.Now()
 		}
 
-		for _, id := range expiredIDs {
+		for _, id := rbnge expiredIDs {
 			expired[id] = struct{}{}
 		}
 
 		return nil
 	}
 
-	getCommitsVisibleToUpload := func(ctx context.Context, uploadID, limit int, token *string) ([]string, *string, error) {
-		for _, upload := range uploads {
-			if upload.ID == uploadID {
+	getCommitsVisibleToUplobd := func(ctx context.Context, uplobdID, limit int, token *string) ([]string, *string, error) {
+		for _, uplobd := rbnge uplobds {
+			if uplobd.ID == uplobdID {
 				return []string{
-					upload.Commit,
-					"deadcafe" + upload.Commit[8:],
+					uplobd.Commit,
+					"debdcbfe" + uplobd.Commit[8:],
 				}, nil, nil
 			}
 		}
@@ -211,72 +211,72 @@ func setupMockUploadService(now time.Time) *MockStore {
 		return nil, nil, nil
 	}
 
-	uploadSvc := NewMockStore()
-	uploadSvc.SetRepositoriesForRetentionScanFunc.SetDefaultHook(setRepositoriesForRetentionScanFunc)
-	uploadSvc.GetUploadsFunc.SetDefaultHook(getUploads)
-	uploadSvc.UpdateUploadRetentionFunc.SetDefaultHook(updateUploadRetention)
-	uploadSvc.GetCommitsVisibleToUploadFunc.SetDefaultHook(getCommitsVisibleToUpload)
+	uplobdSvc := NewMockStore()
+	uplobdSvc.SetRepositoriesForRetentionScbnFunc.SetDefbultHook(setRepositoriesForRetentionScbnFunc)
+	uplobdSvc.GetUplobdsFunc.SetDefbultHook(getUplobds)
+	uplobdSvc.UpdbteUplobdRetentionFunc.SetDefbultHook(updbteUplobdRetention)
+	uplobdSvc.GetCommitsVisibleToUplobdFunc.SetDefbultHook(getCommitsVisibleToUplobd)
 
-	return uploadSvc
+	return uplobdSvc
 }
 
-func testUploadExpirerMockPolicyMatcher() *MockPolicyMatcher {
-	policyMatches := map[int]map[string][]policies.PolicyMatch{
+func testUplobdExpirerMockPolicyMbtcher() *MockPolicyMbtcher {
+	policyMbtches := mbp[int]mbp[string][]policies.PolicyMbtch{
 		50: {
-			"deadbeef01": {{PolicyDuration: days(1)}}, // 1 = 1
-			"deadbeef02": {{PolicyDuration: days(9)}}, // 9 > 2 (protected)
-			"deadbeef03": {{PolicyDuration: days(2)}}, // 2 < 3
-			"deadbeef04": {},
-			"deadbeef05": {},
+			"debdbeef01": {{PolicyDurbtion: dbys(1)}}, // 1 = 1
+			"debdbeef02": {{PolicyDurbtion: dbys(9)}}, // 9 > 2 (protected)
+			"debdbeef03": {{PolicyDurbtion: dbys(2)}}, // 2 < 3
+			"debdbeef04": {},
+			"debdbeef05": {},
 		},
 		51: {
-			// N.B. deadcafe (alt visible commit) used here
-			"deadcafe06": {{PolicyDuration: days(7)}}, // 7 > 6 (protected)
-			"deadcafe07": {{PolicyDuration: days(6)}}, // 6 < 7
-			"deadbeef08": {{PolicyDuration: days(9)}}, // 9 > 8 (protected)
-			"deadbeef09": {{PolicyDuration: days(9)}}, // 9 = 9
-			"deadbeef10": {{PolicyDuration: days(9)}}, // 9 > 1 (protected)
+			// N.B. debdcbfe (blt visible commit) used here
+			"debdcbfe06": {{PolicyDurbtion: dbys(7)}}, // 7 > 6 (protected)
+			"debdcbfe07": {{PolicyDurbtion: dbys(6)}}, // 6 < 7
+			"debdbeef08": {{PolicyDurbtion: dbys(9)}}, // 9 > 8 (protected)
+			"debdbeef09": {{PolicyDurbtion: dbys(9)}}, // 9 = 9
+			"debdbeef10": {{PolicyDurbtion: dbys(9)}}, // 9 > 1 (protected)
 		},
 		52: {
-			"deadbeef11": {{PolicyDuration: days(5)}},                        // 5 < 9
-			"deadbeef12": {{PolicyDuration: days(5)}},                        // 5 < 8
-			"deadbeef13": {{PolicyDuration: days(5)}},                        // 5 < 7
-			"deadbeef14": {{PolicyDuration: days(5)}},                        // 5 < 6
-			"deadbeef15": {{PolicyDuration: days(5)}, {PolicyDuration: nil}}, // 5 = 5, catch-all (protected)
+			"debdbeef11": {{PolicyDurbtion: dbys(5)}},                        // 5 < 9
+			"debdbeef12": {{PolicyDurbtion: dbys(5)}},                        // 5 < 8
+			"debdbeef13": {{PolicyDurbtion: dbys(5)}},                        // 5 < 7
+			"debdbeef14": {{PolicyDurbtion: dbys(5)}},                        // 5 < 6
+			"debdbeef15": {{PolicyDurbtion: dbys(5)}, {PolicyDurbtion: nil}}, // 5 = 5, cbtch-bll (protected)
 		},
 		53: {
-			"deadbeef16": {{PolicyDuration: days(5)}}, // 5 > 4 (protected)
-			"deadbeef17": {{PolicyDuration: days(5)}}, // 5 > 3 (protected)
-			"deadbeef18": {{PolicyDuration: days(5)}}, // 5 > 2 (protected)
-			"deadbeef19": {},
-			"deadbeef20": {},
+			"debdbeef16": {{PolicyDurbtion: dbys(5)}}, // 5 > 4 (protected)
+			"debdbeef17": {{PolicyDurbtion: dbys(5)}}, // 5 > 3 (protected)
+			"debdbeef18": {{PolicyDurbtion: dbys(5)}}, // 5 > 2 (protected)
+			"debdbeef19": {},
+			"debdbeef20": {},
 		},
 	}
 
-	commitsDescribedByPolicy := func(ctx context.Context, repositoryID int, repoName api.RepoName, policies []policiesshared.ConfigurationPolicy, now time.Time, _ ...string) (map[string][]policies.PolicyMatch, error) {
-		return policyMatches[repositoryID], nil
+	commitsDescribedByPolicy := func(ctx context.Context, repositoryID int, repoNbme bpi.RepoNbme, policies []policiesshbred.ConfigurbtionPolicy, now time.Time, _ ...string) (mbp[string][]policies.PolicyMbtch, error) {
+		return policyMbtches[repositoryID], nil
 	}
 
-	policyMatcher := NewMockPolicyMatcher()
-	policyMatcher.CommitsDescribedByPolicyFunc.SetDefaultHook(commitsDescribedByPolicy)
-	return policyMatcher
+	policyMbtcher := NewMockPolicyMbtcher()
+	policyMbtcher.CommitsDescribedByPolicyFunc.SetDefbultHook(commitsDescribedByPolicy)
+	return policyMbtcher
 }
 
-func days(n int) *time.Duration {
-	t := time.Hour * 24 * time.Duration(n)
+func dbys(n int) *time.Durbtion {
+	t := time.Hour * 24 * time.Durbtion(n)
 	return &t
 }
 
-func daysAgo(now time.Time, n int) time.Time {
-	return now.Add(-time.Hour * 24 * time.Duration(n))
+func dbysAgo(now time.Time, n int) time.Time {
+	return now.Add(-time.Hour * 24 * time.Durbtion(n))
 }
 
-func defaultMockRepoStore() *dbmocks.MockRepoStore {
+func defbultMockRepoStore() *dbmocks.MockRepoStore {
 	repoStore := dbmocks.NewMockRepoStore()
-	repoStore.GetFunc.SetDefaultHook(func(ctx context.Context, id api.RepoID) (*internaltypes.Repo, error) {
-		return &internaltypes.Repo{
+	repoStore.GetFunc.SetDefbultHook(func(ctx context.Context, id bpi.RepoID) (*internbltypes.Repo, error) {
+		return &internbltypes.Repo{
 			ID:   id,
-			Name: api.RepoName(fmt.Sprintf("r%d", id)),
+			Nbme: bpi.RepoNbme(fmt.Sprintf("r%d", id)),
 		}, nil
 	})
 	return repoStore

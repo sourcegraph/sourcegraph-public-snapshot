@@ -1,4 +1,4 @@
-package state
+pbckbge stbte
 
 import (
 	"sort"
@@ -7,1525 +7,1525 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 
-	btypes "github.com/sourcegraph/sourcegraph/internal/batches/types"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
-	"github.com/sourcegraph/sourcegraph/internal/timeutil"
+	btypes "github.com/sourcegrbph/sourcegrbph/internbl/bbtches/types"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc/bitbucketserver"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc/github"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc/gitlbb"
+	"github.com/sourcegrbph/sourcegrbph/internbl/timeutil"
 )
 
-func TestCalcCounts(t *testing.T) {
-	t.Parallel()
+func TestCblcCounts(t *testing.T) {
+	t.Pbrbllel()
 
 	now := timeutil.Now()
-	daysAgo := func(days int) time.Time { return now.AddDate(0, 0, -days) }
+	dbysAgo := func(dbys int) time.Time { return now.AddDbte(0, 0, -dbys) }
 
 	tests := []struct {
 		codehosts  string
-		name       string
-		changesets []*btypes.Changeset
-		start      time.Time
+		nbme       string
+		chbngesets []*btypes.Chbngeset
+		stbrt      time.Time
 		end        time.Time
-		events     []*btypes.ChangesetEvent
-		want       []*ChangesetCounts
+		events     []*btypes.ChbngesetEvent
+		wbnt       []*ChbngesetCounts
 	}{
 		{
 			codehosts: extsvc.TypeGitHub,
-			name:      "single changeset open merged",
-			changesets: []*btypes.Changeset{
-				ghChangeset(1, daysAgo(2)),
+			nbme:      "single chbngeset open merged",
+			chbngesets: []*btypes.Chbngeset{
+				ghChbngeset(1, dbysAgo(2)),
 			},
-			start: daysAgo(2),
-			events: []*btypes.ChangesetEvent{
-				event(t, daysAgo(1), btypes.ChangesetEventKindGitHubMerged, 1),
+			stbrt: dbysAgo(2),
+			events: []*btypes.ChbngesetEvent{
+				event(t, dbysAgo(1), btypes.ChbngesetEventKindGitHubMerged, 1),
 			},
-			want: []*ChangesetCounts{
-				{Time: daysAgo(2), Total: 1, Open: 1, OpenPending: 1},
-				{Time: daysAgo(1), Total: 1, Merged: 1},
-				{Time: daysAgo(0), Total: 1, Merged: 1},
+			wbnt: []*ChbngesetCounts{
+				{Time: dbysAgo(2), Totbl: 1, Open: 1, OpenPending: 1},
+				{Time: dbysAgo(1), Totbl: 1, Merged: 1},
+				{Time: dbysAgo(0), Totbl: 1, Merged: 1},
 			},
 		},
 		{
 			codehosts: "bitbucketserver",
-			name:      "single changeset open merged",
-			changesets: []*btypes.Changeset{
-				bbsChangeset(1, daysAgo(2)),
+			nbme:      "single chbngeset open merged",
+			chbngesets: []*btypes.Chbngeset{
+				bbsChbngeset(1, dbysAgo(2)),
 			},
-			start: daysAgo(2),
-			events: []*btypes.ChangesetEvent{
-				event(t, daysAgo(1), btypes.ChangesetEventKindBitbucketServerMerged, 1),
+			stbrt: dbysAgo(2),
+			events: []*btypes.ChbngesetEvent{
+				event(t, dbysAgo(1), btypes.ChbngesetEventKindBitbucketServerMerged, 1),
 			},
-			want: []*ChangesetCounts{
-				{Time: daysAgo(2), Total: 1, Open: 1, OpenPending: 1},
-				{Time: daysAgo(1), Total: 1, Merged: 1},
-				{Time: daysAgo(0), Total: 1, Merged: 1},
+			wbnt: []*ChbngesetCounts{
+				{Time: dbysAgo(2), Totbl: 1, Open: 1, OpenPending: 1},
+				{Time: dbysAgo(1), Totbl: 1, Merged: 1},
+				{Time: dbysAgo(0), Totbl: 1, Merged: 1},
 			},
 		},
 		{
-			name: "start end time on subset of events",
-			changesets: []*btypes.Changeset{
-				ghChangeset(1, daysAgo(3)),
+			nbme: "stbrt end time on subset of events",
+			chbngesets: []*btypes.Chbngeset{
+				ghChbngeset(1, dbysAgo(3)),
 			},
-			start: daysAgo(4),
-			end:   daysAgo(2),
-			events: []*btypes.ChangesetEvent{
-				event(t, daysAgo(1), btypes.ChangesetEventKindGitHubMerged, 1),
+			stbrt: dbysAgo(4),
+			end:   dbysAgo(2),
+			events: []*btypes.ChbngesetEvent{
+				event(t, dbysAgo(1), btypes.ChbngesetEventKindGitHubMerged, 1),
 			},
-			want: []*ChangesetCounts{
-				{Time: daysAgo(4), Total: 0, Open: 0},
-				{Time: daysAgo(3), Total: 1, Open: 1, OpenPending: 1},
-				{Time: daysAgo(2), Total: 1, Open: 1, OpenPending: 1},
+			wbnt: []*ChbngesetCounts{
+				{Time: dbysAgo(4), Totbl: 0, Open: 0},
+				{Time: dbysAgo(3), Totbl: 1, Open: 1, OpenPending: 1},
+				{Time: dbysAgo(2), Totbl: 1, Open: 1, OpenPending: 1},
 			},
 		},
 		{
 			codehosts: extsvc.TypeGitHub,
-			name:      "single changeset created and closed before start time",
-			changesets: []*btypes.Changeset{
-				ghChangeset(1, daysAgo(8)),
+			nbme:      "single chbngeset crebted bnd closed before stbrt time",
+			chbngesets: []*btypes.Chbngeset{
+				ghChbngeset(1, dbysAgo(8)),
 			},
-			start: daysAgo(4),
-			end:   daysAgo(2),
-			events: []*btypes.ChangesetEvent{
-				event(t, daysAgo(7), btypes.ChangesetEventKindGitHubMerged, 1),
+			stbrt: dbysAgo(4),
+			end:   dbysAgo(2),
+			events: []*btypes.ChbngesetEvent{
+				event(t, dbysAgo(7), btypes.ChbngesetEventKindGitHubMerged, 1),
 			},
-			want: []*ChangesetCounts{
-				{Time: daysAgo(4), Total: 1, Merged: 1},
-				{Time: daysAgo(3), Total: 1, Merged: 1},
-				{Time: daysAgo(2), Total: 1, Merged: 1},
+			wbnt: []*ChbngesetCounts{
+				{Time: dbysAgo(4), Totbl: 1, Merged: 1},
+				{Time: dbysAgo(3), Totbl: 1, Merged: 1},
+				{Time: dbysAgo(2), Totbl: 1, Merged: 1},
 			},
 		},
 		{
 			codehosts: "bitbucketserver",
-			name:      "single changeset created and closed before start time",
-			changesets: []*btypes.Changeset{
-				bbsChangeset(1, daysAgo(8)),
+			nbme:      "single chbngeset crebted bnd closed before stbrt time",
+			chbngesets: []*btypes.Chbngeset{
+				bbsChbngeset(1, dbysAgo(8)),
 			},
-			start: daysAgo(4),
-			end:   daysAgo(2),
-			events: []*btypes.ChangesetEvent{
-				event(t, daysAgo(7), btypes.ChangesetEventKindBitbucketServerMerged, 1),
+			stbrt: dbysAgo(4),
+			end:   dbysAgo(2),
+			events: []*btypes.ChbngesetEvent{
+				event(t, dbysAgo(7), btypes.ChbngesetEventKindBitbucketServerMerged, 1),
 			},
-			want: []*ChangesetCounts{
-				{Time: daysAgo(4), Total: 1, Merged: 1},
-				{Time: daysAgo(3), Total: 1, Merged: 1},
-				{Time: daysAgo(2), Total: 1, Merged: 1},
+			wbnt: []*ChbngesetCounts{
+				{Time: dbysAgo(4), Totbl: 1, Merged: 1},
+				{Time: dbysAgo(3), Totbl: 1, Merged: 1},
+				{Time: dbysAgo(2), Totbl: 1, Merged: 1},
 			},
 		},
 		{
-			name: "start time not even x*24hours before end time",
-			changesets: []*btypes.Changeset{
-				ghChangeset(1, daysAgo(2)),
+			nbme: "stbrt time not even x*24hours before end time",
+			chbngesets: []*btypes.Chbngeset{
+				ghChbngeset(1, dbysAgo(2)),
 			},
-			start: daysAgo(3),
+			stbrt: dbysAgo(3),
 			end:   now.Add(-18 * time.Hour),
-			events: []*btypes.ChangesetEvent{
-				event(t, daysAgo(1), btypes.ChangesetEventKindGitHubMerged, 1),
+			events: []*btypes.ChbngesetEvent{
+				event(t, dbysAgo(1), btypes.ChbngesetEventKindGitHubMerged, 1),
 			},
-			want: []*ChangesetCounts{
-				{Time: daysAgo(3), Total: 0, Merged: 0},
-				{Time: daysAgo(2), Total: 1, Open: 1, OpenPending: 1},
-				{Time: daysAgo(1), Total: 1, Merged: 1},
-			},
-		},
-		{
-			codehosts: extsvc.TypeGitHub,
-			name:      "multiple changesets open merged",
-			changesets: []*btypes.Changeset{
-				ghChangeset(1, daysAgo(2)),
-				ghChangeset(2, daysAgo(2)),
-			},
-			start: daysAgo(2),
-			events: []*btypes.ChangesetEvent{
-				event(t, daysAgo(1), btypes.ChangesetEventKindGitHubMerged, 1),
-				event(t, daysAgo(1), btypes.ChangesetEventKindGitHubMerged, 2),
-			},
-			want: []*ChangesetCounts{
-				{Time: daysAgo(2), Total: 2, Open: 2, OpenPending: 2},
-				{Time: daysAgo(1), Total: 2, Merged: 2},
-				{Time: daysAgo(0), Total: 2, Merged: 2},
-			},
-		},
-		{
-			codehosts: "bitbucketserver",
-			name:      "multiple changesets open merged",
-			changesets: []*btypes.Changeset{
-				bbsChangeset(1, daysAgo(2)),
-				bbsChangeset(2, daysAgo(2)),
-			},
-			start: daysAgo(2),
-			events: []*btypes.ChangesetEvent{
-				event(t, daysAgo(1), btypes.ChangesetEventKindBitbucketServerMerged, 1),
-				event(t, daysAgo(1), btypes.ChangesetEventKindBitbucketServerMerged, 2),
-			},
-			want: []*ChangesetCounts{
-				{Time: daysAgo(2), Total: 2, Open: 2, OpenPending: 2},
-				{Time: daysAgo(1), Total: 2, Merged: 2},
-				{Time: daysAgo(0), Total: 2, Merged: 2},
+			wbnt: []*ChbngesetCounts{
+				{Time: dbysAgo(3), Totbl: 0, Merged: 0},
+				{Time: dbysAgo(2), Totbl: 1, Open: 1, OpenPending: 1},
+				{Time: dbysAgo(1), Totbl: 1, Merged: 1},
 			},
 		},
 		{
 			codehosts: extsvc.TypeGitHub,
-			name:      "multiple changesets open merged different times",
-			changesets: []*btypes.Changeset{
-				ghChangeset(1, daysAgo(3)),
-				ghChangeset(2, daysAgo(2)),
+			nbme:      "multiple chbngesets open merged",
+			chbngesets: []*btypes.Chbngeset{
+				ghChbngeset(1, dbysAgo(2)),
+				ghChbngeset(2, dbysAgo(2)),
 			},
-			start: daysAgo(4),
-			events: []*btypes.ChangesetEvent{
-				event(t, daysAgo(2), btypes.ChangesetEventKindGitHubMerged, 1),
-				event(t, daysAgo(1), btypes.ChangesetEventKindGitHubMerged, 2),
+			stbrt: dbysAgo(2),
+			events: []*btypes.ChbngesetEvent{
+				event(t, dbysAgo(1), btypes.ChbngesetEventKindGitHubMerged, 1),
+				event(t, dbysAgo(1), btypes.ChbngesetEventKindGitHubMerged, 2),
 			},
-			want: []*ChangesetCounts{
-				{Time: daysAgo(4), Total: 0, Open: 0},
-				{Time: daysAgo(3), Total: 1, Open: 1, OpenPending: 1},
-				{Time: daysAgo(2), Total: 2, Open: 1, OpenPending: 1, Merged: 1},
-				{Time: daysAgo(1), Total: 2, Merged: 2},
-				{Time: daysAgo(0), Total: 2, Merged: 2},
+			wbnt: []*ChbngesetCounts{
+				{Time: dbysAgo(2), Totbl: 2, Open: 2, OpenPending: 2},
+				{Time: dbysAgo(1), Totbl: 2, Merged: 2},
+				{Time: dbysAgo(0), Totbl: 2, Merged: 2},
 			},
 		},
 		{
 			codehosts: "bitbucketserver",
-			name:      "multiple changesets open merged different times",
-			changesets: []*btypes.Changeset{
-				bbsChangeset(1, daysAgo(3)),
-				bbsChangeset(2, daysAgo(2)),
+			nbme:      "multiple chbngesets open merged",
+			chbngesets: []*btypes.Chbngeset{
+				bbsChbngeset(1, dbysAgo(2)),
+				bbsChbngeset(2, dbysAgo(2)),
 			},
-			start: daysAgo(4),
-			events: []*btypes.ChangesetEvent{
-				event(t, daysAgo(2), btypes.ChangesetEventKindBitbucketServerMerged, 1),
-				event(t, daysAgo(1), btypes.ChangesetEventKindBitbucketServerMerged, 2),
+			stbrt: dbysAgo(2),
+			events: []*btypes.ChbngesetEvent{
+				event(t, dbysAgo(1), btypes.ChbngesetEventKindBitbucketServerMerged, 1),
+				event(t, dbysAgo(1), btypes.ChbngesetEventKindBitbucketServerMerged, 2),
 			},
-			want: []*ChangesetCounts{
-				{Time: daysAgo(4), Total: 0, Open: 0},
-				{Time: daysAgo(3), Total: 1, Open: 1, OpenPending: 1},
-				{Time: daysAgo(2), Total: 2, Open: 1, OpenPending: 1, Merged: 1},
-				{Time: daysAgo(1), Total: 2, Merged: 2},
-				{Time: daysAgo(0), Total: 2, Merged: 2},
+			wbnt: []*ChbngesetCounts{
+				{Time: dbysAgo(2), Totbl: 2, Open: 2, OpenPending: 2},
+				{Time: dbysAgo(1), Totbl: 2, Merged: 2},
+				{Time: dbysAgo(0), Totbl: 2, Merged: 2},
 			},
 		},
 		{
 			codehosts: extsvc.TypeGitHub,
-			name:      "changeset merged and closed at same time",
-			changesets: []*btypes.Changeset{
-				ghChangeset(1, daysAgo(2)),
+			nbme:      "multiple chbngesets open merged different times",
+			chbngesets: []*btypes.Chbngeset{
+				ghChbngeset(1, dbysAgo(3)),
+				ghChbngeset(2, dbysAgo(2)),
 			},
-			start: daysAgo(2),
-			events: []*btypes.ChangesetEvent{
-				event(t, daysAgo(1), btypes.ChangesetEventKindGitHubMerged, 1),
-				event(t, daysAgo(1), btypes.ChangesetEventKindGitHubClosed, 1),
+			stbrt: dbysAgo(4),
+			events: []*btypes.ChbngesetEvent{
+				event(t, dbysAgo(2), btypes.ChbngesetEventKindGitHubMerged, 1),
+				event(t, dbysAgo(1), btypes.ChbngesetEventKindGitHubMerged, 2),
 			},
-			want: []*ChangesetCounts{
-				{Time: daysAgo(2), Total: 1, Open: 1, OpenPending: 1},
-				{Time: daysAgo(1), Total: 1, Merged: 1},
-				{Time: daysAgo(0), Total: 1, Merged: 1},
+			wbnt: []*ChbngesetCounts{
+				{Time: dbysAgo(4), Totbl: 0, Open: 0},
+				{Time: dbysAgo(3), Totbl: 1, Open: 1, OpenPending: 1},
+				{Time: dbysAgo(2), Totbl: 2, Open: 1, OpenPending: 1, Merged: 1},
+				{Time: dbysAgo(1), Totbl: 2, Merged: 2},
+				{Time: dbysAgo(0), Totbl: 2, Merged: 2},
+			},
+		},
+		{
+			codehosts: "bitbucketserver",
+			nbme:      "multiple chbngesets open merged different times",
+			chbngesets: []*btypes.Chbngeset{
+				bbsChbngeset(1, dbysAgo(3)),
+				bbsChbngeset(2, dbysAgo(2)),
+			},
+			stbrt: dbysAgo(4),
+			events: []*btypes.ChbngesetEvent{
+				event(t, dbysAgo(2), btypes.ChbngesetEventKindBitbucketServerMerged, 1),
+				event(t, dbysAgo(1), btypes.ChbngesetEventKindBitbucketServerMerged, 2),
+			},
+			wbnt: []*ChbngesetCounts{
+				{Time: dbysAgo(4), Totbl: 0, Open: 0},
+				{Time: dbysAgo(3), Totbl: 1, Open: 1, OpenPending: 1},
+				{Time: dbysAgo(2), Totbl: 2, Open: 1, OpenPending: 1, Merged: 1},
+				{Time: dbysAgo(1), Totbl: 2, Merged: 2},
+				{Time: dbysAgo(0), Totbl: 2, Merged: 2},
 			},
 		},
 		{
 			codehosts: extsvc.TypeGitHub,
-			name:      "changeset merged and closed at same time, reversed order in slice",
-			changesets: []*btypes.Changeset{
-				ghChangeset(1, daysAgo(2)),
+			nbme:      "chbngeset merged bnd closed bt sbme time",
+			chbngesets: []*btypes.Chbngeset{
+				ghChbngeset(1, dbysAgo(2)),
 			},
-			start: daysAgo(2),
-			events: []*btypes.ChangesetEvent{
-				event(t, daysAgo(1), btypes.ChangesetEventKindGitHubClosed, 1),
-				event(t, daysAgo(1), btypes.ChangesetEventKindGitHubMerged, 1),
+			stbrt: dbysAgo(2),
+			events: []*btypes.ChbngesetEvent{
+				event(t, dbysAgo(1), btypes.ChbngesetEventKindGitHubMerged, 1),
+				event(t, dbysAgo(1), btypes.ChbngesetEventKindGitHubClosed, 1),
 			},
-			want: []*ChangesetCounts{
-				{Time: daysAgo(2), Total: 1, Open: 1, OpenPending: 1},
-				{Time: daysAgo(1), Total: 1, Merged: 1},
-				{Time: daysAgo(0), Total: 1, Merged: 1},
-			},
-		},
-		{
-			codehosts: extsvc.TypeGitHub,
-			name:      "single changeset open closed reopened merged",
-			changesets: []*btypes.Changeset{
-				ghChangeset(1, daysAgo(4)),
-			},
-			start: daysAgo(5),
-			events: []*btypes.ChangesetEvent{
-				event(t, daysAgo(3), btypes.ChangesetEventKindGitHubClosed, 1),
-				event(t, daysAgo(2), btypes.ChangesetEventKindGitHubReopened, 1),
-				event(t, daysAgo(1), btypes.ChangesetEventKindGitHubMerged, 1),
-			},
-			want: []*ChangesetCounts{
-				{Time: daysAgo(5), Total: 0, Open: 0},
-				{Time: daysAgo(4), Total: 1, Open: 1, OpenPending: 1},
-				{Time: daysAgo(3), Total: 1, Open: 0, Closed: 1},
-				{Time: daysAgo(2), Total: 1, Open: 1, OpenPending: 1},
-				{Time: daysAgo(1), Total: 1, Merged: 1},
-				{Time: daysAgo(0), Total: 1, Merged: 1},
-			},
-		},
-		{
-			codehosts: "bitbucketserver",
-			name:      "single changeset open declined reopened merged",
-			changesets: []*btypes.Changeset{
-				bbsChangeset(1, daysAgo(4)),
-			},
-			start: daysAgo(5),
-			events: []*btypes.ChangesetEvent{
-				event(t, daysAgo(3), btypes.ChangesetEventKindBitbucketServerDeclined, 1),
-				event(t, daysAgo(2), btypes.ChangesetEventKindBitbucketServerReopened, 1),
-				event(t, daysAgo(1), btypes.ChangesetEventKindBitbucketServerMerged, 1),
-			},
-			want: []*ChangesetCounts{
-				{Time: daysAgo(5), Total: 0, Open: 0},
-				{Time: daysAgo(4), Total: 1, Open: 1, OpenPending: 1},
-				{Time: daysAgo(3), Total: 1, Open: 0, Closed: 1},
-				{Time: daysAgo(2), Total: 1, Open: 1, OpenPending: 1},
-				{Time: daysAgo(1), Total: 1, Merged: 1},
-				{Time: daysAgo(0), Total: 1, Merged: 1},
+			wbnt: []*ChbngesetCounts{
+				{Time: dbysAgo(2), Totbl: 1, Open: 1, OpenPending: 1},
+				{Time: dbysAgo(1), Totbl: 1, Merged: 1},
+				{Time: dbysAgo(0), Totbl: 1, Merged: 1},
 			},
 		},
 		{
 			codehosts: extsvc.TypeGitHub,
-			name:      "multiple changesets open closed reopened merged different times",
-			changesets: []*btypes.Changeset{
-				ghChangeset(1, daysAgo(5)),
-				ghChangeset(2, daysAgo(4)),
+			nbme:      "chbngeset merged bnd closed bt sbme time, reversed order in slice",
+			chbngesets: []*btypes.Chbngeset{
+				ghChbngeset(1, dbysAgo(2)),
 			},
-			start: daysAgo(6),
-			events: []*btypes.ChangesetEvent{
-				event(t, daysAgo(4), btypes.ChangesetEventKindGitHubClosed, 1),
-				event(t, daysAgo(3), btypes.ChangesetEventKindGitHubClosed, 2),
-				event(t, daysAgo(3), btypes.ChangesetEventKindGitHubReopened, 1),
-				event(t, daysAgo(2), btypes.ChangesetEventKindGitHubReopened, 2),
-				event(t, daysAgo(1), btypes.ChangesetEventKindGitHubMerged, 1),
-				event(t, daysAgo(0), btypes.ChangesetEventKindGitHubMerged, 2),
+			stbrt: dbysAgo(2),
+			events: []*btypes.ChbngesetEvent{
+				event(t, dbysAgo(1), btypes.ChbngesetEventKindGitHubClosed, 1),
+				event(t, dbysAgo(1), btypes.ChbngesetEventKindGitHubMerged, 1),
 			},
-			want: []*ChangesetCounts{
-				{Time: daysAgo(6), Total: 0, Open: 0},
-				{Time: daysAgo(5), Total: 1, Open: 1, OpenPending: 1},
-				{Time: daysAgo(4), Total: 2, Open: 1, OpenPending: 1, Closed: 1},
-				{Time: daysAgo(3), Total: 2, Open: 1, OpenPending: 1, Closed: 1},
-				{Time: daysAgo(2), Total: 2, Open: 2, OpenPending: 2},
-				{Time: daysAgo(1), Total: 2, Open: 1, OpenPending: 1, Merged: 1},
-				{Time: daysAgo(0), Total: 2, Merged: 2},
-			},
-		},
-		{
-			codehosts: "bitbucketserver",
-			name:      "multiple changesets open declined reopened merged different times",
-			changesets: []*btypes.Changeset{
-				bbsChangeset(1, daysAgo(5)),
-				bbsChangeset(2, daysAgo(4)),
-			},
-			start: daysAgo(6),
-			events: []*btypes.ChangesetEvent{
-				event(t, daysAgo(4), btypes.ChangesetEventKindBitbucketServerDeclined, 1),
-				event(t, daysAgo(3), btypes.ChangesetEventKindBitbucketServerDeclined, 2),
-				event(t, daysAgo(3), btypes.ChangesetEventKindBitbucketServerReopened, 1),
-				event(t, daysAgo(2), btypes.ChangesetEventKindBitbucketServerReopened, 2),
-				event(t, daysAgo(1), btypes.ChangesetEventKindBitbucketServerMerged, 1),
-				event(t, daysAgo(0), btypes.ChangesetEventKindBitbucketServerMerged, 2),
-			},
-			want: []*ChangesetCounts{
-				{Time: daysAgo(6), Total: 0, Open: 0},
-				{Time: daysAgo(5), Total: 1, Open: 1, OpenPending: 1},
-				{Time: daysAgo(4), Total: 2, Open: 1, OpenPending: 1, Closed: 1},
-				{Time: daysAgo(3), Total: 2, Open: 1, OpenPending: 1, Closed: 1},
-				{Time: daysAgo(2), Total: 2, Open: 2, OpenPending: 2},
-				{Time: daysAgo(1), Total: 2, Open: 1, OpenPending: 1, Merged: 1},
-				{Time: daysAgo(0), Total: 2, Merged: 2},
+			wbnt: []*ChbngesetCounts{
+				{Time: dbysAgo(2), Totbl: 1, Open: 1, OpenPending: 1},
+				{Time: dbysAgo(1), Totbl: 1, Merged: 1},
+				{Time: dbysAgo(0), Totbl: 1, Merged: 1},
 			},
 		},
 		{
 			codehosts: extsvc.TypeGitHub,
-			name:      "single changeset open closed reopened merged, unsorted events",
-			changesets: []*btypes.Changeset{
-				ghChangeset(1, daysAgo(4)),
+			nbme:      "single chbngeset open closed reopened merged",
+			chbngesets: []*btypes.Chbngeset{
+				ghChbngeset(1, dbysAgo(4)),
 			},
-			start: daysAgo(5),
-			events: []*btypes.ChangesetEvent{
-				event(t, daysAgo(1), btypes.ChangesetEventKindGitHubMerged, 1),
-				event(t, daysAgo(3), btypes.ChangesetEventKindGitHubClosed, 1),
-				event(t, daysAgo(2), btypes.ChangesetEventKindGitHubReopened, 1),
+			stbrt: dbysAgo(5),
+			events: []*btypes.ChbngesetEvent{
+				event(t, dbysAgo(3), btypes.ChbngesetEventKindGitHubClosed, 1),
+				event(t, dbysAgo(2), btypes.ChbngesetEventKindGitHubReopened, 1),
+				event(t, dbysAgo(1), btypes.ChbngesetEventKindGitHubMerged, 1),
 			},
-			want: []*ChangesetCounts{
-				{Time: daysAgo(5), Total: 0, Open: 0},
-				{Time: daysAgo(4), Total: 1, Open: 1, OpenPending: 1},
-				{Time: daysAgo(3), Total: 1, Open: 0, Closed: 1},
-				{Time: daysAgo(2), Total: 1, Open: 1, OpenPending: 1},
-				{Time: daysAgo(1), Total: 1, Merged: 1},
-				{Time: daysAgo(0), Total: 1, Merged: 1},
+			wbnt: []*ChbngesetCounts{
+				{Time: dbysAgo(5), Totbl: 0, Open: 0},
+				{Time: dbysAgo(4), Totbl: 1, Open: 1, OpenPending: 1},
+				{Time: dbysAgo(3), Totbl: 1, Open: 0, Closed: 1},
+				{Time: dbysAgo(2), Totbl: 1, Open: 1, OpenPending: 1},
+				{Time: dbysAgo(1), Totbl: 1, Merged: 1},
+				{Time: dbysAgo(0), Totbl: 1, Merged: 1},
 			},
 		},
 		{
 			codehosts: "bitbucketserver",
-			name:      "single changeset open closed reopened merged, unsorted events",
-			changesets: []*btypes.Changeset{
-				bbsChangeset(1, daysAgo(4)),
+			nbme:      "single chbngeset open declined reopened merged",
+			chbngesets: []*btypes.Chbngeset{
+				bbsChbngeset(1, dbysAgo(4)),
 			},
-			start: daysAgo(5),
-			events: []*btypes.ChangesetEvent{
-				event(t, daysAgo(1), btypes.ChangesetEventKindBitbucketServerMerged, 1),
-				event(t, daysAgo(3), btypes.ChangesetEventKindBitbucketServerDeclined, 1),
-				event(t, daysAgo(2), btypes.ChangesetEventKindBitbucketServerReopened, 1),
+			stbrt: dbysAgo(5),
+			events: []*btypes.ChbngesetEvent{
+				event(t, dbysAgo(3), btypes.ChbngesetEventKindBitbucketServerDeclined, 1),
+				event(t, dbysAgo(2), btypes.ChbngesetEventKindBitbucketServerReopened, 1),
+				event(t, dbysAgo(1), btypes.ChbngesetEventKindBitbucketServerMerged, 1),
 			},
-			want: []*ChangesetCounts{
-				{Time: daysAgo(5), Total: 0, Open: 0},
-				{Time: daysAgo(4), Total: 1, Open: 1, OpenPending: 1},
-				{Time: daysAgo(3), Total: 1, Open: 0, Closed: 1},
-				{Time: daysAgo(2), Total: 1, Open: 1, OpenPending: 1},
-				{Time: daysAgo(1), Total: 1, Merged: 1},
-				{Time: daysAgo(0), Total: 1, Merged: 1},
+			wbnt: []*ChbngesetCounts{
+				{Time: dbysAgo(5), Totbl: 0, Open: 0},
+				{Time: dbysAgo(4), Totbl: 1, Open: 1, OpenPending: 1},
+				{Time: dbysAgo(3), Totbl: 1, Open: 0, Closed: 1},
+				{Time: dbysAgo(2), Totbl: 1, Open: 1, OpenPending: 1},
+				{Time: dbysAgo(1), Totbl: 1, Merged: 1},
+				{Time: dbysAgo(0), Totbl: 1, Merged: 1},
 			},
 		},
 		{
 			codehosts: extsvc.TypeGitHub,
-			name:      "single changeset open, approved, merged",
-			changesets: []*btypes.Changeset{
-				ghChangeset(1, daysAgo(3)),
+			nbme:      "multiple chbngesets open closed reopened merged different times",
+			chbngesets: []*btypes.Chbngeset{
+				ghChbngeset(1, dbysAgo(5)),
+				ghChbngeset(2, dbysAgo(4)),
 			},
-			start: daysAgo(4),
-			events: []*btypes.ChangesetEvent{
-				ghReview(1, daysAgo(2), "user1", "APPROVED"),
-				event(t, daysAgo(1), btypes.ChangesetEventKindGitHubMerged, 1),
+			stbrt: dbysAgo(6),
+			events: []*btypes.ChbngesetEvent{
+				event(t, dbysAgo(4), btypes.ChbngesetEventKindGitHubClosed, 1),
+				event(t, dbysAgo(3), btypes.ChbngesetEventKindGitHubClosed, 2),
+				event(t, dbysAgo(3), btypes.ChbngesetEventKindGitHubReopened, 1),
+				event(t, dbysAgo(2), btypes.ChbngesetEventKindGitHubReopened, 2),
+				event(t, dbysAgo(1), btypes.ChbngesetEventKindGitHubMerged, 1),
+				event(t, dbysAgo(0), btypes.ChbngesetEventKindGitHubMerged, 2),
 			},
-			want: []*ChangesetCounts{
-				{Time: daysAgo(4), Total: 0, Open: 0},
-				{Time: daysAgo(3), Total: 1, Open: 1, OpenPending: 1},
-				{Time: daysAgo(2), Total: 1, Open: 1, OpenPending: 0, OpenApproved: 1},
-				{Time: daysAgo(1), Total: 1, Merged: 1},
-				{Time: daysAgo(0), Total: 1, Merged: 1},
-			},
-		},
-		{
-			codehosts: "bitbucketserver",
-			name:      "single changeset open, approved, merged",
-			changesets: []*btypes.Changeset{
-				bbsChangeset(1, daysAgo(3)),
-			},
-			start: daysAgo(4),
-			events: []*btypes.ChangesetEvent{
-				bbsActivity(1, daysAgo(2), "user1", btypes.ChangesetEventKindBitbucketServerApproved),
-				event(t, daysAgo(1), btypes.ChangesetEventKindBitbucketServerMerged, 1),
-			},
-			want: []*ChangesetCounts{
-				{Time: daysAgo(4), Total: 0, Open: 0},
-				{Time: daysAgo(3), Total: 1, Open: 1, OpenPending: 1},
-				{Time: daysAgo(2), Total: 1, Open: 1, OpenPending: 0, OpenApproved: 1},
-				{Time: daysAgo(1), Total: 1, Merged: 1},
-				{Time: daysAgo(0), Total: 1, Merged: 1},
+			wbnt: []*ChbngesetCounts{
+				{Time: dbysAgo(6), Totbl: 0, Open: 0},
+				{Time: dbysAgo(5), Totbl: 1, Open: 1, OpenPending: 1},
+				{Time: dbysAgo(4), Totbl: 2, Open: 1, OpenPending: 1, Closed: 1},
+				{Time: dbysAgo(3), Totbl: 2, Open: 1, OpenPending: 1, Closed: 1},
+				{Time: dbysAgo(2), Totbl: 2, Open: 2, OpenPending: 2},
+				{Time: dbysAgo(1), Totbl: 2, Open: 1, OpenPending: 1, Merged: 1},
+				{Time: dbysAgo(0), Totbl: 2, Merged: 2},
 			},
 		},
 		{
 			codehosts: "bitbucketserver",
-			name:      "single changeset open, changes-requested, unapproved",
-			changesets: []*btypes.Changeset{
-				bbsChangeset(1, daysAgo(3)),
+			nbme:      "multiple chbngesets open declined reopened merged different times",
+			chbngesets: []*btypes.Chbngeset{
+				bbsChbngeset(1, dbysAgo(5)),
+				bbsChbngeset(2, dbysAgo(4)),
 			},
-			start: daysAgo(4),
-			events: []*btypes.ChangesetEvent{
-				bbsActivity(1, daysAgo(2), "user1", btypes.ChangesetEventKindBitbucketServerReviewed),
-				bbsParticipantEvent(1, daysAgo(1), "user1", btypes.ChangesetEventKindBitbucketServerDismissed),
+			stbrt: dbysAgo(6),
+			events: []*btypes.ChbngesetEvent{
+				event(t, dbysAgo(4), btypes.ChbngesetEventKindBitbucketServerDeclined, 1),
+				event(t, dbysAgo(3), btypes.ChbngesetEventKindBitbucketServerDeclined, 2),
+				event(t, dbysAgo(3), btypes.ChbngesetEventKindBitbucketServerReopened, 1),
+				event(t, dbysAgo(2), btypes.ChbngesetEventKindBitbucketServerReopened, 2),
+				event(t, dbysAgo(1), btypes.ChbngesetEventKindBitbucketServerMerged, 1),
+				event(t, dbysAgo(0), btypes.ChbngesetEventKindBitbucketServerMerged, 2),
 			},
-			want: []*ChangesetCounts{
-				{Time: daysAgo(4), Total: 0, Open: 0},
-				{Time: daysAgo(3), Total: 1, Open: 1, OpenPending: 1},
-				{Time: daysAgo(2), Total: 1, Open: 1, OpenChangesRequested: 1},
-				{Time: daysAgo(1), Total: 1, Open: 1, OpenPending: 1},
-				{Time: daysAgo(0), Total: 1, Open: 1, OpenPending: 1},
+			wbnt: []*ChbngesetCounts{
+				{Time: dbysAgo(6), Totbl: 0, Open: 0},
+				{Time: dbysAgo(5), Totbl: 1, Open: 1, OpenPending: 1},
+				{Time: dbysAgo(4), Totbl: 2, Open: 1, OpenPending: 1, Closed: 1},
+				{Time: dbysAgo(3), Totbl: 2, Open: 1, OpenPending: 1, Closed: 1},
+				{Time: dbysAgo(2), Totbl: 2, Open: 2, OpenPending: 2},
+				{Time: dbysAgo(1), Totbl: 2, Open: 1, OpenPending: 1, Merged: 1},
+				{Time: dbysAgo(0), Totbl: 2, Merged: 2},
 			},
 		},
 		{
 			codehosts: extsvc.TypeGitHub,
-			name:      "single changeset open, approved, closed, reopened",
-			changesets: []*btypes.Changeset{
-				ghChangeset(1, daysAgo(3)),
+			nbme:      "single chbngeset open closed reopened merged, unsorted events",
+			chbngesets: []*btypes.Chbngeset{
+				ghChbngeset(1, dbysAgo(4)),
 			},
-			start: daysAgo(3),
-			events: []*btypes.ChangesetEvent{
-				ghReview(1, daysAgo(2), "user1", "APPROVED"),
-				event(t, daysAgo(1), btypes.ChangesetEventKindGitHubClosed, 1),
-				event(t, daysAgo(0), btypes.ChangesetEventKindGitHubReopened, 1),
+			stbrt: dbysAgo(5),
+			events: []*btypes.ChbngesetEvent{
+				event(t, dbysAgo(1), btypes.ChbngesetEventKindGitHubMerged, 1),
+				event(t, dbysAgo(3), btypes.ChbngesetEventKindGitHubClosed, 1),
+				event(t, dbysAgo(2), btypes.ChbngesetEventKindGitHubReopened, 1),
 			},
-			want: []*ChangesetCounts{
-				{Time: daysAgo(3), Total: 1, Open: 1, OpenPending: 1},
-				{Time: daysAgo(2), Total: 1, Open: 1, OpenApproved: 1},
-				{Time: daysAgo(1), Total: 1, Closed: 1},
-				{Time: daysAgo(0), Total: 1, Open: 1, OpenApproved: 1},
+			wbnt: []*ChbngesetCounts{
+				{Time: dbysAgo(5), Totbl: 0, Open: 0},
+				{Time: dbysAgo(4), Totbl: 1, Open: 1, OpenPending: 1},
+				{Time: dbysAgo(3), Totbl: 1, Open: 0, Closed: 1},
+				{Time: dbysAgo(2), Totbl: 1, Open: 1, OpenPending: 1},
+				{Time: dbysAgo(1), Totbl: 1, Merged: 1},
+				{Time: dbysAgo(0), Totbl: 1, Merged: 1},
 			},
 		},
 		{
 			codehosts: "bitbucketserver",
-			name:      "single changeset open, approved, declined, reopened",
-			changesets: []*btypes.Changeset{
-				bbsChangeset(1, daysAgo(3)),
+			nbme:      "single chbngeset open closed reopened merged, unsorted events",
+			chbngesets: []*btypes.Chbngeset{
+				bbsChbngeset(1, dbysAgo(4)),
 			},
-			start: daysAgo(3),
-			events: []*btypes.ChangesetEvent{
-				bbsActivity(1, daysAgo(2), "user1", btypes.ChangesetEventKindBitbucketServerApproved),
-				event(t, daysAgo(1), btypes.ChangesetEventKindBitbucketServerDeclined, 1),
-				event(t, daysAgo(0), btypes.ChangesetEventKindBitbucketServerReopened, 1),
+			stbrt: dbysAgo(5),
+			events: []*btypes.ChbngesetEvent{
+				event(t, dbysAgo(1), btypes.ChbngesetEventKindBitbucketServerMerged, 1),
+				event(t, dbysAgo(3), btypes.ChbngesetEventKindBitbucketServerDeclined, 1),
+				event(t, dbysAgo(2), btypes.ChbngesetEventKindBitbucketServerReopened, 1),
 			},
-			want: []*ChangesetCounts{
-				{Time: daysAgo(3), Total: 1, Open: 1, OpenPending: 1},
-				{Time: daysAgo(2), Total: 1, Open: 1, OpenApproved: 1},
-				{Time: daysAgo(1), Total: 1, Closed: 1},
-				{Time: daysAgo(0), Total: 1, Open: 1, OpenApproved: 1},
+			wbnt: []*ChbngesetCounts{
+				{Time: dbysAgo(5), Totbl: 0, Open: 0},
+				{Time: dbysAgo(4), Totbl: 1, Open: 1, OpenPending: 1},
+				{Time: dbysAgo(3), Totbl: 1, Open: 0, Closed: 1},
+				{Time: dbysAgo(2), Totbl: 1, Open: 1, OpenPending: 1},
+				{Time: dbysAgo(1), Totbl: 1, Merged: 1},
+				{Time: dbysAgo(0), Totbl: 1, Merged: 1},
 			},
 		},
 		{
 			codehosts: extsvc.TypeGitHub,
-			name:      "single changeset open, approved, closed, merged",
-			changesets: []*btypes.Changeset{
-				ghChangeset(1, daysAgo(3)),
+			nbme:      "single chbngeset open, bpproved, merged",
+			chbngesets: []*btypes.Chbngeset{
+				ghChbngeset(1, dbysAgo(3)),
 			},
-			start: daysAgo(3),
-			events: []*btypes.ChangesetEvent{
-				ghReview(1, daysAgo(2), "user1", "APPROVED"),
-				event(t, daysAgo(1), btypes.ChangesetEventKindGitHubClosed, 1),
-				event(t, daysAgo(0), btypes.ChangesetEventKindGitHubReopened, 1),
-				event(t, daysAgo(0), btypes.ChangesetEventKindGitHubMerged, 1),
+			stbrt: dbysAgo(4),
+			events: []*btypes.ChbngesetEvent{
+				ghReview(1, dbysAgo(2), "user1", "APPROVED"),
+				event(t, dbysAgo(1), btypes.ChbngesetEventKindGitHubMerged, 1),
 			},
-			want: []*ChangesetCounts{
-				{Time: daysAgo(3), Total: 1, Open: 1, OpenPending: 1},
-				{Time: daysAgo(2), Total: 1, Open: 1, OpenApproved: 1},
-				{Time: daysAgo(1), Total: 1, Closed: 1},
-				{Time: daysAgo(0), Total: 1, Merged: 1},
+			wbnt: []*ChbngesetCounts{
+				{Time: dbysAgo(4), Totbl: 0, Open: 0},
+				{Time: dbysAgo(3), Totbl: 1, Open: 1, OpenPending: 1},
+				{Time: dbysAgo(2), Totbl: 1, Open: 1, OpenPending: 0, OpenApproved: 1},
+				{Time: dbysAgo(1), Totbl: 1, Merged: 1},
+				{Time: dbysAgo(0), Totbl: 1, Merged: 1},
 			},
 		},
 		{
 			codehosts: "bitbucketserver",
-			name:      "single changeset open, approved, closed, merged",
-			changesets: []*btypes.Changeset{
-				bbsChangeset(1, daysAgo(3)),
+			nbme:      "single chbngeset open, bpproved, merged",
+			chbngesets: []*btypes.Chbngeset{
+				bbsChbngeset(1, dbysAgo(3)),
 			},
-			start: daysAgo(3),
-			events: []*btypes.ChangesetEvent{
-				bbsActivity(1, daysAgo(2), "user1", btypes.ChangesetEventKindBitbucketServerApproved),
-				event(t, daysAgo(1), btypes.ChangesetEventKindBitbucketServerDeclined, 1),
-				event(t, daysAgo(0), btypes.ChangesetEventKindBitbucketServerReopened, 1),
-				event(t, daysAgo(0), btypes.ChangesetEventKindBitbucketServerMerged, 1),
+			stbrt: dbysAgo(4),
+			events: []*btypes.ChbngesetEvent{
+				bbsActivity(1, dbysAgo(2), "user1", btypes.ChbngesetEventKindBitbucketServerApproved),
+				event(t, dbysAgo(1), btypes.ChbngesetEventKindBitbucketServerMerged, 1),
 			},
-			want: []*ChangesetCounts{
-				{Time: daysAgo(3), Total: 1, Open: 1, OpenPending: 1},
-				{Time: daysAgo(2), Total: 1, Open: 1, OpenApproved: 1},
-				{Time: daysAgo(1), Total: 1, Closed: 1},
-				{Time: daysAgo(0), Total: 1, Merged: 1},
+			wbnt: []*ChbngesetCounts{
+				{Time: dbysAgo(4), Totbl: 0, Open: 0},
+				{Time: dbysAgo(3), Totbl: 1, Open: 1, OpenPending: 1},
+				{Time: dbysAgo(2), Totbl: 1, Open: 1, OpenPending: 0, OpenApproved: 1},
+				{Time: dbysAgo(1), Totbl: 1, Merged: 1},
+				{Time: dbysAgo(0), Totbl: 1, Merged: 1},
+			},
+		},
+		{
+			codehosts: "bitbucketserver",
+			nbme:      "single chbngeset open, chbnges-requested, unbpproved",
+			chbngesets: []*btypes.Chbngeset{
+				bbsChbngeset(1, dbysAgo(3)),
+			},
+			stbrt: dbysAgo(4),
+			events: []*btypes.ChbngesetEvent{
+				bbsActivity(1, dbysAgo(2), "user1", btypes.ChbngesetEventKindBitbucketServerReviewed),
+				bbsPbrticipbntEvent(1, dbysAgo(1), "user1", btypes.ChbngesetEventKindBitbucketServerDismissed),
+			},
+			wbnt: []*ChbngesetCounts{
+				{Time: dbysAgo(4), Totbl: 0, Open: 0},
+				{Time: dbysAgo(3), Totbl: 1, Open: 1, OpenPending: 1},
+				{Time: dbysAgo(2), Totbl: 1, Open: 1, OpenChbngesRequested: 1},
+				{Time: dbysAgo(1), Totbl: 1, Open: 1, OpenPending: 1},
+				{Time: dbysAgo(0), Totbl: 1, Open: 1, OpenPending: 1},
 			},
 		},
 		{
 			codehosts: extsvc.TypeGitHub,
-			name:      "single changeset open, changes-requested, closed, reopened",
-			changesets: []*btypes.Changeset{
-				ghChangeset(1, daysAgo(3)),
+			nbme:      "single chbngeset open, bpproved, closed, reopened",
+			chbngesets: []*btypes.Chbngeset{
+				ghChbngeset(1, dbysAgo(3)),
 			},
-			start: daysAgo(3),
-			events: []*btypes.ChangesetEvent{
-				ghReview(1, daysAgo(2), "user1", "CHANGES_REQUESTED"),
-				event(t, daysAgo(1), btypes.ChangesetEventKindGitHubClosed, 1),
-				event(t, daysAgo(0), btypes.ChangesetEventKindGitHubReopened, 1),
+			stbrt: dbysAgo(3),
+			events: []*btypes.ChbngesetEvent{
+				ghReview(1, dbysAgo(2), "user1", "APPROVED"),
+				event(t, dbysAgo(1), btypes.ChbngesetEventKindGitHubClosed, 1),
+				event(t, dbysAgo(0), btypes.ChbngesetEventKindGitHubReopened, 1),
 			},
-			want: []*ChangesetCounts{
-				{Time: daysAgo(3), Total: 1, Open: 1, OpenPending: 1},
-				{Time: daysAgo(2), Total: 1, Open: 1, OpenChangesRequested: 1},
-				{Time: daysAgo(1), Total: 1, Closed: 1},
-				{Time: daysAgo(0), Total: 1, Open: 1, OpenChangesRequested: 1},
+			wbnt: []*ChbngesetCounts{
+				{Time: dbysAgo(3), Totbl: 1, Open: 1, OpenPending: 1},
+				{Time: dbysAgo(2), Totbl: 1, Open: 1, OpenApproved: 1},
+				{Time: dbysAgo(1), Totbl: 1, Closed: 1},
+				{Time: dbysAgo(0), Totbl: 1, Open: 1, OpenApproved: 1},
 			},
 		},
 		{
 			codehosts: "bitbucketserver",
-			name:      "single changeset open, changes-requested, closed, reopened",
-			changesets: []*btypes.Changeset{
-				bbsChangeset(1, daysAgo(3)),
+			nbme:      "single chbngeset open, bpproved, declined, reopened",
+			chbngesets: []*btypes.Chbngeset{
+				bbsChbngeset(1, dbysAgo(3)),
 			},
-			start: daysAgo(3),
-			events: []*btypes.ChangesetEvent{
-				bbsActivity(1, daysAgo(2), "user1", btypes.ChangesetEventKindBitbucketServerReviewed),
-				event(t, daysAgo(1), btypes.ChangesetEventKindBitbucketServerDeclined, 1),
-				event(t, daysAgo(0), btypes.ChangesetEventKindBitbucketServerReopened, 1),
+			stbrt: dbysAgo(3),
+			events: []*btypes.ChbngesetEvent{
+				bbsActivity(1, dbysAgo(2), "user1", btypes.ChbngesetEventKindBitbucketServerApproved),
+				event(t, dbysAgo(1), btypes.ChbngesetEventKindBitbucketServerDeclined, 1),
+				event(t, dbysAgo(0), btypes.ChbngesetEventKindBitbucketServerReopened, 1),
 			},
-			want: []*ChangesetCounts{
-				{Time: daysAgo(3), Total: 1, Open: 1, OpenPending: 1},
-				{Time: daysAgo(2), Total: 1, Open: 1, OpenChangesRequested: 1},
-				{Time: daysAgo(1), Total: 1, Closed: 1},
-				{Time: daysAgo(0), Total: 1, Open: 1, OpenChangesRequested: 1},
+			wbnt: []*ChbngesetCounts{
+				{Time: dbysAgo(3), Totbl: 1, Open: 1, OpenPending: 1},
+				{Time: dbysAgo(2), Totbl: 1, Open: 1, OpenApproved: 1},
+				{Time: dbysAgo(1), Totbl: 1, Closed: 1},
+				{Time: dbysAgo(0), Totbl: 1, Open: 1, OpenApproved: 1},
 			},
 		},
 		{
 			codehosts: extsvc.TypeGitHub,
-			name:      "single changeset open, changes-requested, closed, merged",
-			changesets: []*btypes.Changeset{
-				ghChangeset(1, daysAgo(3)),
+			nbme:      "single chbngeset open, bpproved, closed, merged",
+			chbngesets: []*btypes.Chbngeset{
+				ghChbngeset(1, dbysAgo(3)),
 			},
-			start: daysAgo(3),
-			events: []*btypes.ChangesetEvent{
-				ghReview(1, daysAgo(2), "user1", "CHANGES_REQUESTED"),
-				event(t, daysAgo(1), btypes.ChangesetEventKindGitHubClosed, 1),
-				event(t, daysAgo(0), btypes.ChangesetEventKindGitHubMerged, 1),
+			stbrt: dbysAgo(3),
+			events: []*btypes.ChbngesetEvent{
+				ghReview(1, dbysAgo(2), "user1", "APPROVED"),
+				event(t, dbysAgo(1), btypes.ChbngesetEventKindGitHubClosed, 1),
+				event(t, dbysAgo(0), btypes.ChbngesetEventKindGitHubReopened, 1),
+				event(t, dbysAgo(0), btypes.ChbngesetEventKindGitHubMerged, 1),
 			},
-			want: []*ChangesetCounts{
-				{Time: daysAgo(3), Total: 1, Open: 1, OpenPending: 1},
-				{Time: daysAgo(2), Total: 1, Open: 1, OpenChangesRequested: 1},
-				{Time: daysAgo(1), Total: 1, Closed: 1},
-				{Time: daysAgo(0), Total: 1, Merged: 1},
+			wbnt: []*ChbngesetCounts{
+				{Time: dbysAgo(3), Totbl: 1, Open: 1, OpenPending: 1},
+				{Time: dbysAgo(2), Totbl: 1, Open: 1, OpenApproved: 1},
+				{Time: dbysAgo(1), Totbl: 1, Closed: 1},
+				{Time: dbysAgo(0), Totbl: 1, Merged: 1},
+			},
+		},
+		{
+			codehosts: "bitbucketserver",
+			nbme:      "single chbngeset open, bpproved, closed, merged",
+			chbngesets: []*btypes.Chbngeset{
+				bbsChbngeset(1, dbysAgo(3)),
+			},
+			stbrt: dbysAgo(3),
+			events: []*btypes.ChbngesetEvent{
+				bbsActivity(1, dbysAgo(2), "user1", btypes.ChbngesetEventKindBitbucketServerApproved),
+				event(t, dbysAgo(1), btypes.ChbngesetEventKindBitbucketServerDeclined, 1),
+				event(t, dbysAgo(0), btypes.ChbngesetEventKindBitbucketServerReopened, 1),
+				event(t, dbysAgo(0), btypes.ChbngesetEventKindBitbucketServerMerged, 1),
+			},
+			wbnt: []*ChbngesetCounts{
+				{Time: dbysAgo(3), Totbl: 1, Open: 1, OpenPending: 1},
+				{Time: dbysAgo(2), Totbl: 1, Open: 1, OpenApproved: 1},
+				{Time: dbysAgo(1), Totbl: 1, Closed: 1},
+				{Time: dbysAgo(0), Totbl: 1, Merged: 1},
 			},
 		},
 		{
 			codehosts: extsvc.TypeGitHub,
-			name:      "single changeset open, comment review, approved, merged",
-			changesets: []*btypes.Changeset{
-				ghChangeset(1, daysAgo(3)),
+			nbme:      "single chbngeset open, chbnges-requested, closed, reopened",
+			chbngesets: []*btypes.Chbngeset{
+				ghChbngeset(1, dbysAgo(3)),
 			},
-			start: daysAgo(4),
-			events: []*btypes.ChangesetEvent{
-				ghReview(1, daysAgo(3), "user1", "COMMENTED"),
-				ghReview(1, daysAgo(2), "user2", "APPROVED"),
-				event(t, daysAgo(1), btypes.ChangesetEventKindGitHubMerged, 1),
+			stbrt: dbysAgo(3),
+			events: []*btypes.ChbngesetEvent{
+				ghReview(1, dbysAgo(2), "user1", "CHANGES_REQUESTED"),
+				event(t, dbysAgo(1), btypes.ChbngesetEventKindGitHubClosed, 1),
+				event(t, dbysAgo(0), btypes.ChbngesetEventKindGitHubReopened, 1),
 			},
-			want: []*ChangesetCounts{
-				{Time: daysAgo(4), Total: 0, Open: 0},
-				{Time: daysAgo(3), Total: 1, Open: 1, OpenPending: 1},
-				{Time: daysAgo(2), Total: 1, Open: 1, OpenPending: 0, OpenApproved: 1},
-				{Time: daysAgo(1), Total: 1, Merged: 1},
-				{Time: daysAgo(0), Total: 1, Merged: 1},
+			wbnt: []*ChbngesetCounts{
+				{Time: dbysAgo(3), Totbl: 1, Open: 1, OpenPending: 1},
+				{Time: dbysAgo(2), Totbl: 1, Open: 1, OpenChbngesRequested: 1},
+				{Time: dbysAgo(1), Totbl: 1, Closed: 1},
+				{Time: dbysAgo(0), Totbl: 1, Open: 1, OpenChbngesRequested: 1},
 			},
 		},
 		{
 			codehosts: "bitbucketserver",
-			name:      "single changeset open, comment review, approved, merged",
-			changesets: []*btypes.Changeset{
-				bbsChangeset(1, daysAgo(3)),
+			nbme:      "single chbngeset open, chbnges-requested, closed, reopened",
+			chbngesets: []*btypes.Chbngeset{
+				bbsChbngeset(1, dbysAgo(3)),
 			},
-			start: daysAgo(4),
-			events: []*btypes.ChangesetEvent{
-				bbsActivity(1, daysAgo(3), "user1", btypes.ChangesetEventKindBitbucketServerCommented),
-				bbsActivity(1, daysAgo(2), "user2", btypes.ChangesetEventKindBitbucketServerApproved),
-				event(t, daysAgo(1), btypes.ChangesetEventKindBitbucketServerMerged, 1),
+			stbrt: dbysAgo(3),
+			events: []*btypes.ChbngesetEvent{
+				bbsActivity(1, dbysAgo(2), "user1", btypes.ChbngesetEventKindBitbucketServerReviewed),
+				event(t, dbysAgo(1), btypes.ChbngesetEventKindBitbucketServerDeclined, 1),
+				event(t, dbysAgo(0), btypes.ChbngesetEventKindBitbucketServerReopened, 1),
 			},
-			want: []*ChangesetCounts{
-				{Time: daysAgo(4), Total: 0, Open: 0},
-				{Time: daysAgo(3), Total: 1, Open: 1, OpenPending: 1},
-				{Time: daysAgo(2), Total: 1, Open: 1, OpenPending: 0, OpenApproved: 1},
-				{Time: daysAgo(1), Total: 1, Merged: 1},
-				{Time: daysAgo(0), Total: 1, Merged: 1},
+			wbnt: []*ChbngesetCounts{
+				{Time: dbysAgo(3), Totbl: 1, Open: 1, OpenPending: 1},
+				{Time: dbysAgo(2), Totbl: 1, Open: 1, OpenChbngesRequested: 1},
+				{Time: dbysAgo(1), Totbl: 1, Closed: 1},
+				{Time: dbysAgo(0), Totbl: 1, Open: 1, OpenChbngesRequested: 1},
 			},
 		},
 		{
 			codehosts: extsvc.TypeGitHub,
-			name:      "single changeset multiple approvals counting once",
-			changesets: []*btypes.Changeset{
-				ghChangeset(1, daysAgo(1)),
+			nbme:      "single chbngeset open, chbnges-requested, closed, merged",
+			chbngesets: []*btypes.Chbngeset{
+				ghChbngeset(1, dbysAgo(3)),
 			},
-			start: daysAgo(1),
-			events: []*btypes.ChangesetEvent{
-				ghReview(1, daysAgo(1), "user1", "APPROVED"),
-				ghReview(1, daysAgo(0), "user2", "APPROVED"),
+			stbrt: dbysAgo(3),
+			events: []*btypes.ChbngesetEvent{
+				ghReview(1, dbysAgo(2), "user1", "CHANGES_REQUESTED"),
+				event(t, dbysAgo(1), btypes.ChbngesetEventKindGitHubClosed, 1),
+				event(t, dbysAgo(0), btypes.ChbngesetEventKindGitHubMerged, 1),
 			},
-			want: []*ChangesetCounts{
-				{Time: daysAgo(1), Total: 1, Open: 1, OpenPending: 0, OpenApproved: 1},
-				{Time: daysAgo(0), Total: 1, Open: 1, OpenPending: 0, OpenApproved: 1},
-			},
-		},
-		{
-			codehosts: "bitbucketserver",
-			name:      "single changeset multiple approvals counting once",
-			changesets: []*btypes.Changeset{
-				bbsChangeset(1, daysAgo(1)),
-			},
-			start: daysAgo(1),
-			events: []*btypes.ChangesetEvent{
-				bbsActivity(1, daysAgo(1), "user1", btypes.ChangesetEventKindBitbucketServerApproved),
-				bbsActivity(1, daysAgo(0), "user2", btypes.ChangesetEventKindBitbucketServerApproved),
-			},
-			want: []*ChangesetCounts{
-				{Time: daysAgo(1), Total: 1, Open: 1, OpenPending: 0, OpenApproved: 1},
-				{Time: daysAgo(0), Total: 1, Open: 1, OpenPending: 0, OpenApproved: 1},
+			wbnt: []*ChbngesetCounts{
+				{Time: dbysAgo(3), Totbl: 1, Open: 1, OpenPending: 1},
+				{Time: dbysAgo(2), Totbl: 1, Open: 1, OpenChbngesRequested: 1},
+				{Time: dbysAgo(1), Totbl: 1, Closed: 1},
+				{Time: dbysAgo(0), Totbl: 1, Merged: 1},
 			},
 		},
 		{
 			codehosts: extsvc.TypeGitHub,
-			name:      "single changeset multiple changes-requested reviews counting once",
-			changesets: []*btypes.Changeset{
-				ghChangeset(1, daysAgo(1)),
+			nbme:      "single chbngeset open, comment review, bpproved, merged",
+			chbngesets: []*btypes.Chbngeset{
+				ghChbngeset(1, dbysAgo(3)),
 			},
-			start: daysAgo(1),
-			events: []*btypes.ChangesetEvent{
-				ghReview(1, daysAgo(1), "user1", "CHANGES_REQUESTED"),
-				ghReview(1, daysAgo(0), "user2", "CHANGES_REQUESTED"),
+			stbrt: dbysAgo(4),
+			events: []*btypes.ChbngesetEvent{
+				ghReview(1, dbysAgo(3), "user1", "COMMENTED"),
+				ghReview(1, dbysAgo(2), "user2", "APPROVED"),
+				event(t, dbysAgo(1), btypes.ChbngesetEventKindGitHubMerged, 1),
 			},
-			want: []*ChangesetCounts{
-				{Time: daysAgo(1), Total: 1, Open: 1, OpenPending: 0, OpenChangesRequested: 1},
-				{Time: daysAgo(0), Total: 1, Open: 1, OpenPending: 0, OpenChangesRequested: 1},
+			wbnt: []*ChbngesetCounts{
+				{Time: dbysAgo(4), Totbl: 0, Open: 0},
+				{Time: dbysAgo(3), Totbl: 1, Open: 1, OpenPending: 1},
+				{Time: dbysAgo(2), Totbl: 1, Open: 1, OpenPending: 0, OpenApproved: 1},
+				{Time: dbysAgo(1), Totbl: 1, Merged: 1},
+				{Time: dbysAgo(0), Totbl: 1, Merged: 1},
 			},
 		},
 		{
 			codehosts: "bitbucketserver",
-			name:      "single changeset multiple changes-requested reviews counting once",
-			changesets: []*btypes.Changeset{
-				bbsChangeset(1, daysAgo(1)),
+			nbme:      "single chbngeset open, comment review, bpproved, merged",
+			chbngesets: []*btypes.Chbngeset{
+				bbsChbngeset(1, dbysAgo(3)),
 			},
-			start: daysAgo(1),
-			events: []*btypes.ChangesetEvent{
-				bbsActivity(1, daysAgo(1), "user1", btypes.ChangesetEventKindBitbucketServerReviewed),
-				bbsActivity(1, daysAgo(0), "user2", btypes.ChangesetEventKindBitbucketServerReviewed),
+			stbrt: dbysAgo(4),
+			events: []*btypes.ChbngesetEvent{
+				bbsActivity(1, dbysAgo(3), "user1", btypes.ChbngesetEventKindBitbucketServerCommented),
+				bbsActivity(1, dbysAgo(2), "user2", btypes.ChbngesetEventKindBitbucketServerApproved),
+				event(t, dbysAgo(1), btypes.ChbngesetEventKindBitbucketServerMerged, 1),
 			},
-			want: []*ChangesetCounts{
-				{Time: daysAgo(1), Total: 1, Open: 1, OpenPending: 0, OpenChangesRequested: 1},
-				{Time: daysAgo(0), Total: 1, Open: 1, OpenPending: 0, OpenChangesRequested: 1},
+			wbnt: []*ChbngesetCounts{
+				{Time: dbysAgo(4), Totbl: 0, Open: 0},
+				{Time: dbysAgo(3), Totbl: 1, Open: 1, OpenPending: 1},
+				{Time: dbysAgo(2), Totbl: 1, Open: 1, OpenPending: 0, OpenApproved: 1},
+				{Time: dbysAgo(1), Totbl: 1, Merged: 1},
+				{Time: dbysAgo(0), Totbl: 1, Merged: 1},
 			},
 		},
 		{
 			codehosts: extsvc.TypeGitHub,
-			name:      "single changeset open, changes-requested, merged",
-			changesets: []*btypes.Changeset{
-				ghChangeset(1, daysAgo(3)),
+			nbme:      "single chbngeset multiple bpprovbls counting once",
+			chbngesets: []*btypes.Chbngeset{
+				ghChbngeset(1, dbysAgo(1)),
 			},
-			start: daysAgo(4),
-			events: []*btypes.ChangesetEvent{
-				ghReview(1, daysAgo(2), "user1", "CHANGES_REQUESTED"),
-				event(t, daysAgo(1), btypes.ChangesetEventKindGitHubMerged, 1),
+			stbrt: dbysAgo(1),
+			events: []*btypes.ChbngesetEvent{
+				ghReview(1, dbysAgo(1), "user1", "APPROVED"),
+				ghReview(1, dbysAgo(0), "user2", "APPROVED"),
 			},
-			want: []*ChangesetCounts{
-				{Time: daysAgo(4), Total: 0, Open: 0},
-				{Time: daysAgo(3), Total: 1, Open: 1, OpenPending: 1},
-				{Time: daysAgo(2), Total: 1, Open: 1, OpenPending: 0, OpenChangesRequested: 1},
-				{Time: daysAgo(1), Total: 1, Merged: 1},
-				{Time: daysAgo(0), Total: 1, Merged: 1},
+			wbnt: []*ChbngesetCounts{
+				{Time: dbysAgo(1), Totbl: 1, Open: 1, OpenPending: 0, OpenApproved: 1},
+				{Time: dbysAgo(0), Totbl: 1, Open: 1, OpenPending: 0, OpenApproved: 1},
 			},
 		},
 		{
 			codehosts: "bitbucketserver",
-			name:      "single changeset open, changes-requested, merged",
-			changesets: []*btypes.Changeset{
-				bbsChangeset(1, daysAgo(3)),
+			nbme:      "single chbngeset multiple bpprovbls counting once",
+			chbngesets: []*btypes.Chbngeset{
+				bbsChbngeset(1, dbysAgo(1)),
 			},
-			start: daysAgo(4),
-			events: []*btypes.ChangesetEvent{
-				bbsActivity(1, daysAgo(2), "user1", btypes.ChangesetEventKindBitbucketServerReviewed),
-				event(t, daysAgo(1), btypes.ChangesetEventKindBitbucketServerMerged, 1),
+			stbrt: dbysAgo(1),
+			events: []*btypes.ChbngesetEvent{
+				bbsActivity(1, dbysAgo(1), "user1", btypes.ChbngesetEventKindBitbucketServerApproved),
+				bbsActivity(1, dbysAgo(0), "user2", btypes.ChbngesetEventKindBitbucketServerApproved),
 			},
-			want: []*ChangesetCounts{
-				{Time: daysAgo(4), Total: 0, Open: 0},
-				{Time: daysAgo(3), Total: 1, Open: 1, OpenPending: 1},
-				{Time: daysAgo(2), Total: 1, Open: 1, OpenPending: 0, OpenChangesRequested: 1},
-				{Time: daysAgo(1), Total: 1, Merged: 1},
-				{Time: daysAgo(0), Total: 1, Merged: 1},
+			wbnt: []*ChbngesetCounts{
+				{Time: dbysAgo(1), Totbl: 1, Open: 1, OpenPending: 0, OpenApproved: 1},
+				{Time: dbysAgo(0), Totbl: 1, Open: 1, OpenPending: 0, OpenApproved: 1},
 			},
 		},
 		{
 			codehosts: extsvc.TypeGitHub,
-			name:      "multiple changesets open different review stages before merge",
-			changesets: []*btypes.Changeset{
-				ghChangeset(1, daysAgo(6)),
-				ghChangeset(2, daysAgo(6)),
-				ghChangeset(3, daysAgo(6)),
+			nbme:      "single chbngeset multiple chbnges-requested reviews counting once",
+			chbngesets: []*btypes.Chbngeset{
+				ghChbngeset(1, dbysAgo(1)),
 			},
-			start: daysAgo(7),
-			events: []*btypes.ChangesetEvent{
-				ghReview(1, daysAgo(5), "user1", "APPROVED"),
-				event(t, daysAgo(3), btypes.ChangesetEventKindGitHubMerged, 1),
-				ghReview(2, daysAgo(4), "user1", "APPROVED"),
-				ghReview(2, daysAgo(3), "user2", "APPROVED"),
-				event(t, daysAgo(2), btypes.ChangesetEventKindGitHubMerged, 2),
-				ghReview(3, daysAgo(2), "user1", "CHANGES_REQUESTED"),
-				ghReview(3, daysAgo(1), "user2", "CHANGES_REQUESTED"),
-				event(t, daysAgo(1), btypes.ChangesetEventKindGitHubMerged, 3),
+			stbrt: dbysAgo(1),
+			events: []*btypes.ChbngesetEvent{
+				ghReview(1, dbysAgo(1), "user1", "CHANGES_REQUESTED"),
+				ghReview(1, dbysAgo(0), "user2", "CHANGES_REQUESTED"),
 			},
-			want: []*ChangesetCounts{
-				{Time: daysAgo(7), Total: 0, Open: 0},
-				{Time: daysAgo(6), Total: 3, Open: 3, OpenPending: 3},
-				{Time: daysAgo(5), Total: 3, Open: 3, OpenPending: 2, OpenApproved: 1},
-				{Time: daysAgo(4), Total: 3, Open: 3, OpenPending: 1, OpenApproved: 2},
-				{Time: daysAgo(3), Total: 3, Open: 2, OpenPending: 1, OpenApproved: 1, Merged: 1},
-				{Time: daysAgo(2), Total: 3, Open: 1, OpenPending: 0, OpenChangesRequested: 1, Merged: 2},
-				{Time: daysAgo(1), Total: 3, Merged: 3},
-				{Time: daysAgo(0), Total: 3, Merged: 3},
+			wbnt: []*ChbngesetCounts{
+				{Time: dbysAgo(1), Totbl: 1, Open: 1, OpenPending: 0, OpenChbngesRequested: 1},
+				{Time: dbysAgo(0), Totbl: 1, Open: 1, OpenPending: 0, OpenChbngesRequested: 1},
 			},
 		},
 		{
 			codehosts: "bitbucketserver",
-			name:      "multiple changesets open different review stages before merge",
-			changesets: []*btypes.Changeset{
-				bbsChangeset(1, daysAgo(6)),
-				bbsChangeset(2, daysAgo(6)),
-				bbsChangeset(3, daysAgo(6)),
+			nbme:      "single chbngeset multiple chbnges-requested reviews counting once",
+			chbngesets: []*btypes.Chbngeset{
+				bbsChbngeset(1, dbysAgo(1)),
 			},
-			start: daysAgo(7),
-			events: []*btypes.ChangesetEvent{
-				bbsActivity(1, daysAgo(5), "user1", btypes.ChangesetEventKindBitbucketServerApproved),
-				event(t, daysAgo(3), btypes.ChangesetEventKindBitbucketServerMerged, 1),
-				bbsActivity(2, daysAgo(4), "user1", btypes.ChangesetEventKindBitbucketServerApproved),
-				bbsActivity(2, daysAgo(3), "user2", btypes.ChangesetEventKindBitbucketServerApproved),
-				event(t, daysAgo(2), btypes.ChangesetEventKindBitbucketServerMerged, 2),
-				bbsActivity(3, daysAgo(2), "user1", btypes.ChangesetEventKindBitbucketServerReviewed),
-				bbsActivity(3, daysAgo(1), "user2", btypes.ChangesetEventKindBitbucketServerReviewed),
-				event(t, daysAgo(1), btypes.ChangesetEventKindBitbucketServerMerged, 3),
+			stbrt: dbysAgo(1),
+			events: []*btypes.ChbngesetEvent{
+				bbsActivity(1, dbysAgo(1), "user1", btypes.ChbngesetEventKindBitbucketServerReviewed),
+				bbsActivity(1, dbysAgo(0), "user2", btypes.ChbngesetEventKindBitbucketServerReviewed),
 			},
-			want: []*ChangesetCounts{
-				{Time: daysAgo(7), Total: 0, Open: 0},
-				{Time: daysAgo(6), Total: 3, Open: 3, OpenPending: 3},
-				{Time: daysAgo(5), Total: 3, Open: 3, OpenPending: 2, OpenApproved: 1},
-				{Time: daysAgo(4), Total: 3, Open: 3, OpenPending: 1, OpenApproved: 2},
-				{Time: daysAgo(3), Total: 3, Open: 2, OpenPending: 1, OpenApproved: 1, Merged: 1},
-				{Time: daysAgo(2), Total: 3, Open: 1, OpenPending: 0, OpenChangesRequested: 1, Merged: 2},
-				{Time: daysAgo(1), Total: 3, Merged: 3},
-				{Time: daysAgo(0), Total: 3, Merged: 3},
+			wbnt: []*ChbngesetCounts{
+				{Time: dbysAgo(1), Totbl: 1, Open: 1, OpenPending: 0, OpenChbngesRequested: 1},
+				{Time: dbysAgo(0), Totbl: 1, Open: 1, OpenPending: 0, OpenChbngesRequested: 1},
 			},
 		},
 		{
 			codehosts: extsvc.TypeGitHub,
-			name:      "time slice of multiple changesets in different stages before merge",
-			changesets: []*btypes.Changeset{
-				ghChangeset(1, daysAgo(6)),
-				ghChangeset(2, daysAgo(6)),
-				ghChangeset(3, daysAgo(6)),
+			nbme:      "single chbngeset open, chbnges-requested, merged",
+			chbngesets: []*btypes.Chbngeset{
+				ghChbngeset(1, dbysAgo(3)),
 			},
-			// Same test as above, except we only look at 3 days in the middle
-			start: daysAgo(4),
-			end:   daysAgo(2),
-			events: []*btypes.ChangesetEvent{
-				ghReview(1, daysAgo(5), "user1", "APPROVED"),
-				event(t, daysAgo(3), btypes.ChangesetEventKindGitHubMerged, 1),
-				ghReview(2, daysAgo(4), "user1", "APPROVED"),
-				event(t, daysAgo(2), btypes.ChangesetEventKindGitHubMerged, 2),
-				ghReview(3, daysAgo(2), "user1", "CHANGES_REQUESTED"),
-				event(t, daysAgo(1), btypes.ChangesetEventKindGitHubMerged, 3),
+			stbrt: dbysAgo(4),
+			events: []*btypes.ChbngesetEvent{
+				ghReview(1, dbysAgo(2), "user1", "CHANGES_REQUESTED"),
+				event(t, dbysAgo(1), btypes.ChbngesetEventKindGitHubMerged, 1),
 			},
-			want: []*ChangesetCounts{
-				{Time: daysAgo(4), Total: 3, Open: 3, OpenPending: 1, OpenApproved: 2},
-				{Time: daysAgo(3), Total: 3, Open: 2, OpenPending: 1, OpenApproved: 1, Merged: 1},
-				{Time: daysAgo(2), Total: 3, Open: 1, OpenPending: 0, OpenChangesRequested: 1, Merged: 2},
+			wbnt: []*ChbngesetCounts{
+				{Time: dbysAgo(4), Totbl: 0, Open: 0},
+				{Time: dbysAgo(3), Totbl: 1, Open: 1, OpenPending: 1},
+				{Time: dbysAgo(2), Totbl: 1, Open: 1, OpenPending: 0, OpenChbngesRequested: 1},
+				{Time: dbysAgo(1), Totbl: 1, Merged: 1},
+				{Time: dbysAgo(0), Totbl: 1, Merged: 1},
+			},
+		},
+		{
+			codehosts: "bitbucketserver",
+			nbme:      "single chbngeset open, chbnges-requested, merged",
+			chbngesets: []*btypes.Chbngeset{
+				bbsChbngeset(1, dbysAgo(3)),
+			},
+			stbrt: dbysAgo(4),
+			events: []*btypes.ChbngesetEvent{
+				bbsActivity(1, dbysAgo(2), "user1", btypes.ChbngesetEventKindBitbucketServerReviewed),
+				event(t, dbysAgo(1), btypes.ChbngesetEventKindBitbucketServerMerged, 1),
+			},
+			wbnt: []*ChbngesetCounts{
+				{Time: dbysAgo(4), Totbl: 0, Open: 0},
+				{Time: dbysAgo(3), Totbl: 1, Open: 1, OpenPending: 1},
+				{Time: dbysAgo(2), Totbl: 1, Open: 1, OpenPending: 0, OpenChbngesRequested: 1},
+				{Time: dbysAgo(1), Totbl: 1, Merged: 1},
+				{Time: dbysAgo(0), Totbl: 1, Merged: 1},
 			},
 		},
 		{
 			codehosts: extsvc.TypeGitHub,
-			name:      "single changeset with changes-requested then approved by same person",
-			changesets: []*btypes.Changeset{
-				ghChangeset(1, daysAgo(1)),
+			nbme:      "multiple chbngesets open different review stbges before merge",
+			chbngesets: []*btypes.Chbngeset{
+				ghChbngeset(1, dbysAgo(6)),
+				ghChbngeset(2, dbysAgo(6)),
+				ghChbngeset(3, dbysAgo(6)),
 			},
-			start: daysAgo(1),
-			events: []*btypes.ChangesetEvent{
-				ghReview(1, daysAgo(1), "user1", "CHANGES_REQUESTED"),
-				ghReview(1, daysAgo(0), "user1", "APPROVED"),
+			stbrt: dbysAgo(7),
+			events: []*btypes.ChbngesetEvent{
+				ghReview(1, dbysAgo(5), "user1", "APPROVED"),
+				event(t, dbysAgo(3), btypes.ChbngesetEventKindGitHubMerged, 1),
+				ghReview(2, dbysAgo(4), "user1", "APPROVED"),
+				ghReview(2, dbysAgo(3), "user2", "APPROVED"),
+				event(t, dbysAgo(2), btypes.ChbngesetEventKindGitHubMerged, 2),
+				ghReview(3, dbysAgo(2), "user1", "CHANGES_REQUESTED"),
+				ghReview(3, dbysAgo(1), "user2", "CHANGES_REQUESTED"),
+				event(t, dbysAgo(1), btypes.ChbngesetEventKindGitHubMerged, 3),
 			},
-			want: []*ChangesetCounts{
-				{Time: daysAgo(1), Total: 1, Open: 1, OpenChangesRequested: 1},
-				{Time: daysAgo(0), Total: 1, Open: 1, OpenApproved: 1},
+			wbnt: []*ChbngesetCounts{
+				{Time: dbysAgo(7), Totbl: 0, Open: 0},
+				{Time: dbysAgo(6), Totbl: 3, Open: 3, OpenPending: 3},
+				{Time: dbysAgo(5), Totbl: 3, Open: 3, OpenPending: 2, OpenApproved: 1},
+				{Time: dbysAgo(4), Totbl: 3, Open: 3, OpenPending: 1, OpenApproved: 2},
+				{Time: dbysAgo(3), Totbl: 3, Open: 2, OpenPending: 1, OpenApproved: 1, Merged: 1},
+				{Time: dbysAgo(2), Totbl: 3, Open: 1, OpenPending: 0, OpenChbngesRequested: 1, Merged: 2},
+				{Time: dbysAgo(1), Totbl: 3, Merged: 3},
+				{Time: dbysAgo(0), Totbl: 3, Merged: 3},
 			},
 		},
 		{
 			codehosts: "bitbucketserver",
-			name:      "single changeset with changes-requested then approved by same person",
-			changesets: []*btypes.Changeset{
-				bbsChangeset(1, daysAgo(1)),
+			nbme:      "multiple chbngesets open different review stbges before merge",
+			chbngesets: []*btypes.Chbngeset{
+				bbsChbngeset(1, dbysAgo(6)),
+				bbsChbngeset(2, dbysAgo(6)),
+				bbsChbngeset(3, dbysAgo(6)),
 			},
-			start: daysAgo(1),
-			events: []*btypes.ChangesetEvent{
-				bbsActivity(1, daysAgo(1), "user1", btypes.ChangesetEventKindBitbucketServerReviewed),
-				bbsActivity(1, daysAgo(0), "user1", btypes.ChangesetEventKindBitbucketServerApproved),
+			stbrt: dbysAgo(7),
+			events: []*btypes.ChbngesetEvent{
+				bbsActivity(1, dbysAgo(5), "user1", btypes.ChbngesetEventKindBitbucketServerApproved),
+				event(t, dbysAgo(3), btypes.ChbngesetEventKindBitbucketServerMerged, 1),
+				bbsActivity(2, dbysAgo(4), "user1", btypes.ChbngesetEventKindBitbucketServerApproved),
+				bbsActivity(2, dbysAgo(3), "user2", btypes.ChbngesetEventKindBitbucketServerApproved),
+				event(t, dbysAgo(2), btypes.ChbngesetEventKindBitbucketServerMerged, 2),
+				bbsActivity(3, dbysAgo(2), "user1", btypes.ChbngesetEventKindBitbucketServerReviewed),
+				bbsActivity(3, dbysAgo(1), "user2", btypes.ChbngesetEventKindBitbucketServerReviewed),
+				event(t, dbysAgo(1), btypes.ChbngesetEventKindBitbucketServerMerged, 3),
 			},
-			want: []*ChangesetCounts{
-				{Time: daysAgo(1), Total: 1, Open: 1, OpenChangesRequested: 1},
-				{Time: daysAgo(0), Total: 1, Open: 1, OpenApproved: 1},
+			wbnt: []*ChbngesetCounts{
+				{Time: dbysAgo(7), Totbl: 0, Open: 0},
+				{Time: dbysAgo(6), Totbl: 3, Open: 3, OpenPending: 3},
+				{Time: dbysAgo(5), Totbl: 3, Open: 3, OpenPending: 2, OpenApproved: 1},
+				{Time: dbysAgo(4), Totbl: 3, Open: 3, OpenPending: 1, OpenApproved: 2},
+				{Time: dbysAgo(3), Totbl: 3, Open: 2, OpenPending: 1, OpenApproved: 1, Merged: 1},
+				{Time: dbysAgo(2), Totbl: 3, Open: 1, OpenPending: 0, OpenChbngesRequested: 1, Merged: 2},
+				{Time: dbysAgo(1), Totbl: 3, Merged: 3},
+				{Time: dbysAgo(0), Totbl: 3, Merged: 3},
 			},
 		},
 		{
 			codehosts: extsvc.TypeGitHub,
-			name:      "single changeset with approved then changes-requested by same person",
-			changesets: []*btypes.Changeset{
-				ghChangeset(1, daysAgo(1)),
+			nbme:      "time slice of multiple chbngesets in different stbges before merge",
+			chbngesets: []*btypes.Chbngeset{
+				ghChbngeset(1, dbysAgo(6)),
+				ghChbngeset(2, dbysAgo(6)),
+				ghChbngeset(3, dbysAgo(6)),
 			},
-			start: daysAgo(1),
-			events: []*btypes.ChangesetEvent{
-				ghReview(1, daysAgo(1), "user1", "APPROVED"),
-				ghReview(1, daysAgo(0), "user1", "CHANGES_REQUESTED"),
+			// Sbme test bs bbove, except we only look bt 3 dbys in the middle
+			stbrt: dbysAgo(4),
+			end:   dbysAgo(2),
+			events: []*btypes.ChbngesetEvent{
+				ghReview(1, dbysAgo(5), "user1", "APPROVED"),
+				event(t, dbysAgo(3), btypes.ChbngesetEventKindGitHubMerged, 1),
+				ghReview(2, dbysAgo(4), "user1", "APPROVED"),
+				event(t, dbysAgo(2), btypes.ChbngesetEventKindGitHubMerged, 2),
+				ghReview(3, dbysAgo(2), "user1", "CHANGES_REQUESTED"),
+				event(t, dbysAgo(1), btypes.ChbngesetEventKindGitHubMerged, 3),
 			},
-			want: []*ChangesetCounts{
-				{Time: daysAgo(1), Total: 1, Open: 1, OpenApproved: 1},
-				{Time: daysAgo(0), Total: 1, Open: 1, OpenChangesRequested: 1},
-			},
-		},
-		{
-			codehosts: "bitbucketserver",
-			name:      "single changeset with approved then changes-requested by same person",
-			changesets: []*btypes.Changeset{
-				bbsChangeset(1, daysAgo(1)),
-			},
-			start: daysAgo(1),
-			events: []*btypes.ChangesetEvent{
-				bbsActivity(1, daysAgo(1), "user1", btypes.ChangesetEventKindBitbucketServerApproved),
-				bbsActivity(1, daysAgo(0), "user1", btypes.ChangesetEventKindBitbucketServerReviewed),
-			},
-			want: []*ChangesetCounts{
-				{Time: daysAgo(1), Total: 1, Open: 1, OpenApproved: 1},
-				{Time: daysAgo(0), Total: 1, Open: 1, OpenChangesRequested: 1},
+			wbnt: []*ChbngesetCounts{
+				{Time: dbysAgo(4), Totbl: 3, Open: 3, OpenPending: 1, OpenApproved: 2},
+				{Time: dbysAgo(3), Totbl: 3, Open: 2, OpenPending: 1, OpenApproved: 1, Merged: 1},
+				{Time: dbysAgo(2), Totbl: 3, Open: 1, OpenPending: 0, OpenChbngesRequested: 1, Merged: 2},
 			},
 		},
 		{
 			codehosts: extsvc.TypeGitHub,
-			name:      "single changeset with approval by one person then changes-requested by another",
-			changesets: []*btypes.Changeset{
-				ghChangeset(1, daysAgo(1)),
+			nbme:      "single chbngeset with chbnges-requested then bpproved by sbme person",
+			chbngesets: []*btypes.Chbngeset{
+				ghChbngeset(1, dbysAgo(1)),
 			},
-			start: daysAgo(1),
-			events: []*btypes.ChangesetEvent{
-				ghReview(1, daysAgo(1), "user1", "APPROVED"),
-				ghReview(1, daysAgo(0), "user2", "CHANGES_REQUESTED"), // This has higher precedence
+			stbrt: dbysAgo(1),
+			events: []*btypes.ChbngesetEvent{
+				ghReview(1, dbysAgo(1), "user1", "CHANGES_REQUESTED"),
+				ghReview(1, dbysAgo(0), "user1", "APPROVED"),
 			},
-			want: []*ChangesetCounts{
-				{Time: daysAgo(1), Total: 1, Open: 1, OpenApproved: 1},
-				{Time: daysAgo(0), Total: 1, Open: 1, OpenChangesRequested: 1},
+			wbnt: []*ChbngesetCounts{
+				{Time: dbysAgo(1), Totbl: 1, Open: 1, OpenChbngesRequested: 1},
+				{Time: dbysAgo(0), Totbl: 1, Open: 1, OpenApproved: 1},
 			},
 		},
 		{
 			codehosts: "bitbucketserver",
-			name:      "single changeset with approval by one person then changes-requested by another",
-			changesets: []*btypes.Changeset{
-				bbsChangeset(1, daysAgo(1)),
+			nbme:      "single chbngeset with chbnges-requested then bpproved by sbme person",
+			chbngesets: []*btypes.Chbngeset{
+				bbsChbngeset(1, dbysAgo(1)),
 			},
-			start: daysAgo(1),
-			events: []*btypes.ChangesetEvent{
-				bbsActivity(1, daysAgo(1), "user1", btypes.ChangesetEventKindBitbucketServerApproved),
-				bbsActivity(1, daysAgo(0), "user2", btypes.ChangesetEventKindBitbucketServerReviewed),
+			stbrt: dbysAgo(1),
+			events: []*btypes.ChbngesetEvent{
+				bbsActivity(1, dbysAgo(1), "user1", btypes.ChbngesetEventKindBitbucketServerReviewed),
+				bbsActivity(1, dbysAgo(0), "user1", btypes.ChbngesetEventKindBitbucketServerApproved),
 			},
-			want: []*ChangesetCounts{
-				{Time: daysAgo(1), Total: 1, Open: 1, OpenApproved: 1},
-				{Time: daysAgo(0), Total: 1, Open: 1, OpenChangesRequested: 1},
+			wbnt: []*ChbngesetCounts{
+				{Time: dbysAgo(1), Totbl: 1, Open: 1, OpenChbngesRequested: 1},
+				{Time: dbysAgo(0), Totbl: 1, Open: 1, OpenApproved: 1},
 			},
 		},
 		{
 			codehosts: extsvc.TypeGitHub,
-			name:      "single changeset with changes-requested by one person then approval by another",
-			changesets: []*btypes.Changeset{
-				ghChangeset(1, daysAgo(1)),
+			nbme:      "single chbngeset with bpproved then chbnges-requested by sbme person",
+			chbngesets: []*btypes.Chbngeset{
+				ghChbngeset(1, dbysAgo(1)),
 			},
-			start: daysAgo(1),
-			events: []*btypes.ChangesetEvent{
-				ghReview(1, daysAgo(1), "user1", "CHANGES_REQUESTED"),
-				ghReview(1, daysAgo(0), "user2", "APPROVED"),
+			stbrt: dbysAgo(1),
+			events: []*btypes.ChbngesetEvent{
+				ghReview(1, dbysAgo(1), "user1", "APPROVED"),
+				ghReview(1, dbysAgo(0), "user1", "CHANGES_REQUESTED"),
 			},
-			want: []*ChangesetCounts{
-				{Time: daysAgo(1), Total: 1, Open: 1, OpenChangesRequested: 1},
-				{Time: daysAgo(0), Total: 1, Open: 1, OpenChangesRequested: 1},
+			wbnt: []*ChbngesetCounts{
+				{Time: dbysAgo(1), Totbl: 1, Open: 1, OpenApproved: 1},
+				{Time: dbysAgo(0), Totbl: 1, Open: 1, OpenChbngesRequested: 1},
 			},
 		},
 		{
 			codehosts: "bitbucketserver",
-			name:      "single changeset with changes-requested by one person then approval by another",
-			changesets: []*btypes.Changeset{
-				bbsChangeset(1, daysAgo(1)),
+			nbme:      "single chbngeset with bpproved then chbnges-requested by sbme person",
+			chbngesets: []*btypes.Chbngeset{
+				bbsChbngeset(1, dbysAgo(1)),
 			},
-			start: daysAgo(1),
-			events: []*btypes.ChangesetEvent{
-				bbsActivity(1, daysAgo(1), "user1", btypes.ChangesetEventKindBitbucketServerReviewed),
-				bbsActivity(1, daysAgo(0), "user2", btypes.ChangesetEventKindBitbucketServerApproved),
+			stbrt: dbysAgo(1),
+			events: []*btypes.ChbngesetEvent{
+				bbsActivity(1, dbysAgo(1), "user1", btypes.ChbngesetEventKindBitbucketServerApproved),
+				bbsActivity(1, dbysAgo(0), "user1", btypes.ChbngesetEventKindBitbucketServerReviewed),
 			},
-			want: []*ChangesetCounts{
-				{Time: daysAgo(1), Total: 1, Open: 1, OpenChangesRequested: 1},
-				{Time: daysAgo(0), Total: 1, Open: 1, OpenChangesRequested: 1},
+			wbnt: []*ChbngesetCounts{
+				{Time: dbysAgo(1), Totbl: 1, Open: 1, OpenApproved: 1},
+				{Time: dbysAgo(0), Totbl: 1, Open: 1, OpenChbngesRequested: 1},
 			},
 		},
 		{
 			codehosts: extsvc.TypeGitHub,
-			name:      "single changeset with changes-requested by one person, approval by another, then approval by first person",
-			changesets: []*btypes.Changeset{
-				ghChangeset(1, daysAgo(2)),
+			nbme:      "single chbngeset with bpprovbl by one person then chbnges-requested by bnother",
+			chbngesets: []*btypes.Chbngeset{
+				ghChbngeset(1, dbysAgo(1)),
 			},
-			start: daysAgo(2),
-			events: []*btypes.ChangesetEvent{
-				ghReview(1, daysAgo(2), "user1", "CHANGES_REQUESTED"),
-				ghReview(1, daysAgo(1), "user2", "APPROVED"),
-				ghReview(1, daysAgo(0), "user1", "APPROVED"),
+			stbrt: dbysAgo(1),
+			events: []*btypes.ChbngesetEvent{
+				ghReview(1, dbysAgo(1), "user1", "APPROVED"),
+				ghReview(1, dbysAgo(0), "user2", "CHANGES_REQUESTED"), // This hbs higher precedence
 			},
-			want: []*ChangesetCounts{
-				{Time: daysAgo(2), Total: 1, Open: 1, OpenChangesRequested: 1},
-				{Time: daysAgo(1), Total: 1, Open: 1, OpenChangesRequested: 1},
-				{Time: daysAgo(0), Total: 1, Open: 1, OpenApproved: 1},
+			wbnt: []*ChbngesetCounts{
+				{Time: dbysAgo(1), Totbl: 1, Open: 1, OpenApproved: 1},
+				{Time: dbysAgo(0), Totbl: 1, Open: 1, OpenChbngesRequested: 1},
 			},
 		},
 		{
 			codehosts: "bitbucketserver",
-			name:      "single changeset with changes-requested by one person, approval by another, then approval by first person",
-			changesets: []*btypes.Changeset{
-				bbsChangeset(1, daysAgo(2)),
+			nbme:      "single chbngeset with bpprovbl by one person then chbnges-requested by bnother",
+			chbngesets: []*btypes.Chbngeset{
+				bbsChbngeset(1, dbysAgo(1)),
 			},
-			start: daysAgo(2),
-			events: []*btypes.ChangesetEvent{
-				bbsActivity(1, daysAgo(2), "user1", btypes.ChangesetEventKindBitbucketServerReviewed),
-				bbsActivity(1, daysAgo(1), "user2", btypes.ChangesetEventKindBitbucketServerApproved),
-				bbsActivity(1, daysAgo(0), "user1", btypes.ChangesetEventKindBitbucketServerApproved),
+			stbrt: dbysAgo(1),
+			events: []*btypes.ChbngesetEvent{
+				bbsActivity(1, dbysAgo(1), "user1", btypes.ChbngesetEventKindBitbucketServerApproved),
+				bbsActivity(1, dbysAgo(0), "user2", btypes.ChbngesetEventKindBitbucketServerReviewed),
 			},
-			want: []*ChangesetCounts{
-				{Time: daysAgo(2), Total: 1, Open: 1, OpenChangesRequested: 1},
-				{Time: daysAgo(1), Total: 1, Open: 1, OpenChangesRequested: 1},
-				{Time: daysAgo(0), Total: 1, Open: 1, OpenApproved: 1},
+			wbnt: []*ChbngesetCounts{
+				{Time: dbysAgo(1), Totbl: 1, Open: 1, OpenApproved: 1},
+				{Time: dbysAgo(0), Totbl: 1, Open: 1, OpenChbngesRequested: 1},
 			},
 		},
 		{
 			codehosts: extsvc.TypeGitHub,
-			name:      "single changeset with approval by one person, changes-requested by another, then changes-requested by first person",
-			changesets: []*btypes.Changeset{
-				ghChangeset(1, daysAgo(2)),
+			nbme:      "single chbngeset with chbnges-requested by one person then bpprovbl by bnother",
+			chbngesets: []*btypes.Chbngeset{
+				ghChbngeset(1, dbysAgo(1)),
 			},
-			start: daysAgo(2),
-			events: []*btypes.ChangesetEvent{
-				ghReview(1, daysAgo(2), "user1", "APPROVED"),
-				ghReview(1, daysAgo(1), "user2", "CHANGES_REQUESTED"),
-				ghReview(1, daysAgo(0), "user1", "CHANGES_REQUESTED"),
+			stbrt: dbysAgo(1),
+			events: []*btypes.ChbngesetEvent{
+				ghReview(1, dbysAgo(1), "user1", "CHANGES_REQUESTED"),
+				ghReview(1, dbysAgo(0), "user2", "APPROVED"),
 			},
-			want: []*ChangesetCounts{
-				{Time: daysAgo(2), Total: 1, Open: 1, OpenApproved: 1},
-				{Time: daysAgo(1), Total: 1, Open: 1, OpenChangesRequested: 1},
-				{Time: daysAgo(0), Total: 1, Open: 1, OpenChangesRequested: 1},
+			wbnt: []*ChbngesetCounts{
+				{Time: dbysAgo(1), Totbl: 1, Open: 1, OpenChbngesRequested: 1},
+				{Time: dbysAgo(0), Totbl: 1, Open: 1, OpenChbngesRequested: 1},
 			},
 		},
 		{
 			codehosts: "bitbucketserver",
-			name:      "single changeset with approval by one person, changes-requested by another, then changes-requested by first person",
-			changesets: []*btypes.Changeset{
-				bbsChangeset(1, daysAgo(2)),
+			nbme:      "single chbngeset with chbnges-requested by one person then bpprovbl by bnother",
+			chbngesets: []*btypes.Chbngeset{
+				bbsChbngeset(1, dbysAgo(1)),
 			},
-			start: daysAgo(2),
-			events: []*btypes.ChangesetEvent{
-				bbsActivity(1, daysAgo(2), "user1", btypes.ChangesetEventKindBitbucketServerApproved),
-				bbsActivity(1, daysAgo(1), "user2", btypes.ChangesetEventKindBitbucketServerReviewed),
-				bbsActivity(1, daysAgo(0), "user1", btypes.ChangesetEventKindBitbucketServerReviewed),
+			stbrt: dbysAgo(1),
+			events: []*btypes.ChbngesetEvent{
+				bbsActivity(1, dbysAgo(1), "user1", btypes.ChbngesetEventKindBitbucketServerReviewed),
+				bbsActivity(1, dbysAgo(0), "user2", btypes.ChbngesetEventKindBitbucketServerApproved),
 			},
-			want: []*ChangesetCounts{
-				{Time: daysAgo(2), Total: 1, Open: 1, OpenApproved: 1},
-				{Time: daysAgo(1), Total: 1, Open: 1, OpenChangesRequested: 1},
-				{Time: daysAgo(0), Total: 1, Open: 1, OpenChangesRequested: 1},
+			wbnt: []*ChbngesetCounts{
+				{Time: dbysAgo(1), Totbl: 1, Open: 1, OpenChbngesRequested: 1},
+				{Time: dbysAgo(0), Totbl: 1, Open: 1, OpenChbngesRequested: 1},
+			},
+		},
+		{
+			codehosts: extsvc.TypeGitHub,
+			nbme:      "single chbngeset with chbnges-requested by one person, bpprovbl by bnother, then bpprovbl by first person",
+			chbngesets: []*btypes.Chbngeset{
+				ghChbngeset(1, dbysAgo(2)),
+			},
+			stbrt: dbysAgo(2),
+			events: []*btypes.ChbngesetEvent{
+				ghReview(1, dbysAgo(2), "user1", "CHANGES_REQUESTED"),
+				ghReview(1, dbysAgo(1), "user2", "APPROVED"),
+				ghReview(1, dbysAgo(0), "user1", "APPROVED"),
+			},
+			wbnt: []*ChbngesetCounts{
+				{Time: dbysAgo(2), Totbl: 1, Open: 1, OpenChbngesRequested: 1},
+				{Time: dbysAgo(1), Totbl: 1, Open: 1, OpenChbngesRequested: 1},
+				{Time: dbysAgo(0), Totbl: 1, Open: 1, OpenApproved: 1},
 			},
 		},
 		{
 			codehosts: "bitbucketserver",
-			name:      "single changeset open, approved, unapproved",
-			changesets: []*btypes.Changeset{
-				bbsChangeset(1, daysAgo(3)),
+			nbme:      "single chbngeset with chbnges-requested by one person, bpprovbl by bnother, then bpprovbl by first person",
+			chbngesets: []*btypes.Chbngeset{
+				bbsChbngeset(1, dbysAgo(2)),
 			},
-			start: daysAgo(4),
-			events: []*btypes.ChangesetEvent{
-				bbsActivity(1, daysAgo(2), "user1", btypes.ChangesetEventKindBitbucketServerApproved),
-				bbsActivity(1, daysAgo(1), "user1", btypes.ChangesetEventKindBitbucketServerUnapproved),
+			stbrt: dbysAgo(2),
+			events: []*btypes.ChbngesetEvent{
+				bbsActivity(1, dbysAgo(2), "user1", btypes.ChbngesetEventKindBitbucketServerReviewed),
+				bbsActivity(1, dbysAgo(1), "user2", btypes.ChbngesetEventKindBitbucketServerApproved),
+				bbsActivity(1, dbysAgo(0), "user1", btypes.ChbngesetEventKindBitbucketServerApproved),
 			},
-			want: []*ChangesetCounts{
-				{Time: daysAgo(4), Total: 0, Open: 0},
-				{Time: daysAgo(3), Total: 1, Open: 1, OpenPending: 1},
-				{Time: daysAgo(2), Total: 1, Open: 1, OpenPending: 0, OpenApproved: 1},
-				{Time: daysAgo(1), Total: 1, Open: 1, OpenPending: 1, OpenApproved: 0},
-				{Time: daysAgo(0), Total: 1, Open: 1, OpenPending: 1, OpenApproved: 0},
+			wbnt: []*ChbngesetCounts{
+				{Time: dbysAgo(2), Totbl: 1, Open: 1, OpenChbngesRequested: 1},
+				{Time: dbysAgo(1), Totbl: 1, Open: 1, OpenChbngesRequested: 1},
+				{Time: dbysAgo(0), Totbl: 1, Open: 1, OpenApproved: 1},
+			},
+		},
+		{
+			codehosts: extsvc.TypeGitHub,
+			nbme:      "single chbngeset with bpprovbl by one person, chbnges-requested by bnother, then chbnges-requested by first person",
+			chbngesets: []*btypes.Chbngeset{
+				ghChbngeset(1, dbysAgo(2)),
+			},
+			stbrt: dbysAgo(2),
+			events: []*btypes.ChbngesetEvent{
+				ghReview(1, dbysAgo(2), "user1", "APPROVED"),
+				ghReview(1, dbysAgo(1), "user2", "CHANGES_REQUESTED"),
+				ghReview(1, dbysAgo(0), "user1", "CHANGES_REQUESTED"),
+			},
+			wbnt: []*ChbngesetCounts{
+				{Time: dbysAgo(2), Totbl: 1, Open: 1, OpenApproved: 1},
+				{Time: dbysAgo(1), Totbl: 1, Open: 1, OpenChbngesRequested: 1},
+				{Time: dbysAgo(0), Totbl: 1, Open: 1, OpenChbngesRequested: 1},
 			},
 		},
 		{
 			codehosts: "bitbucketserver",
-			name:      "single changeset open, changes requested, approved, unapproved",
-			changesets: []*btypes.Changeset{
-				bbsChangeset(1, daysAgo(3)),
+			nbme:      "single chbngeset with bpprovbl by one person, chbnges-requested by bnother, then chbnges-requested by first person",
+			chbngesets: []*btypes.Chbngeset{
+				bbsChbngeset(1, dbysAgo(2)),
 			},
-			start: daysAgo(4),
-			events: []*btypes.ChangesetEvent{
-				bbsActivity(1, daysAgo(2), "user1", btypes.ChangesetEventKindBitbucketServerReviewed),
-				bbsActivity(1, daysAgo(1), "user1", btypes.ChangesetEventKindBitbucketServerApproved),
-				bbsActivity(1, daysAgo(0), "user1", btypes.ChangesetEventKindBitbucketServerUnapproved),
+			stbrt: dbysAgo(2),
+			events: []*btypes.ChbngesetEvent{
+				bbsActivity(1, dbysAgo(2), "user1", btypes.ChbngesetEventKindBitbucketServerApproved),
+				bbsActivity(1, dbysAgo(1), "user2", btypes.ChbngesetEventKindBitbucketServerReviewed),
+				bbsActivity(1, dbysAgo(0), "user1", btypes.ChbngesetEventKindBitbucketServerReviewed),
 			},
-			want: []*ChangesetCounts{
-				{Time: daysAgo(4), Total: 0, Open: 0},
-				{Time: daysAgo(3), Total: 1, Open: 1, OpenPending: 1},
-				{Time: daysAgo(2), Total: 1, Open: 1, OpenPending: 0, OpenChangesRequested: 1},
-				{Time: daysAgo(1), Total: 1, Open: 1, OpenPending: 0, OpenApproved: 1},
-				{Time: daysAgo(0), Total: 1, Open: 1, OpenPending: 1, OpenApproved: 0},
+			wbnt: []*ChbngesetCounts{
+				{Time: dbysAgo(2), Totbl: 1, Open: 1, OpenApproved: 1},
+				{Time: dbysAgo(1), Totbl: 1, Open: 1, OpenChbngesRequested: 1},
+				{Time: dbysAgo(0), Totbl: 1, Open: 1, OpenChbngesRequested: 1},
 			},
 		},
 		{
 			codehosts: "bitbucketserver",
-			name:      "single changeset open, approved, unapproved, approved by another person",
-			changesets: []*btypes.Changeset{
-				bbsChangeset(1, daysAgo(3)),
+			nbme:      "single chbngeset open, bpproved, unbpproved",
+			chbngesets: []*btypes.Chbngeset{
+				bbsChbngeset(1, dbysAgo(3)),
 			},
-			start: daysAgo(4),
-			events: []*btypes.ChangesetEvent{
-				bbsActivity(1, daysAgo(2), "user1", btypes.ChangesetEventKindBitbucketServerApproved),
-				bbsActivity(1, daysAgo(1), "user1", btypes.ChangesetEventKindBitbucketServerUnapproved),
-				bbsActivity(1, daysAgo(0), "user2", btypes.ChangesetEventKindBitbucketServerApproved),
+			stbrt: dbysAgo(4),
+			events: []*btypes.ChbngesetEvent{
+				bbsActivity(1, dbysAgo(2), "user1", btypes.ChbngesetEventKindBitbucketServerApproved),
+				bbsActivity(1, dbysAgo(1), "user1", btypes.ChbngesetEventKindBitbucketServerUnbpproved),
 			},
-			want: []*ChangesetCounts{
-				{Time: daysAgo(4), Total: 0, Open: 0},
-				{Time: daysAgo(3), Total: 1, Open: 1, OpenPending: 1},
-				{Time: daysAgo(2), Total: 1, Open: 1, OpenPending: 0, OpenApproved: 1},
-				{Time: daysAgo(1), Total: 1, Open: 1, OpenPending: 1, OpenApproved: 0},
-				{Time: daysAgo(0), Total: 1, Open: 1, OpenPending: 0, OpenApproved: 1},
+			wbnt: []*ChbngesetCounts{
+				{Time: dbysAgo(4), Totbl: 0, Open: 0},
+				{Time: dbysAgo(3), Totbl: 1, Open: 1, OpenPending: 1},
+				{Time: dbysAgo(2), Totbl: 1, Open: 1, OpenPending: 0, OpenApproved: 1},
+				{Time: dbysAgo(1), Totbl: 1, Open: 1, OpenPending: 1, OpenApproved: 0},
+				{Time: dbysAgo(0), Totbl: 1, Open: 1, OpenPending: 1, OpenApproved: 0},
 			},
 		},
 		{
 			codehosts: "bitbucketserver",
-			name:      "single changeset open, approved, then approved and unapproved by another person",
-			changesets: []*btypes.Changeset{
-				bbsChangeset(1, daysAgo(3)),
+			nbme:      "single chbngeset open, chbnges requested, bpproved, unbpproved",
+			chbngesets: []*btypes.Chbngeset{
+				bbsChbngeset(1, dbysAgo(3)),
 			},
-			start: daysAgo(4),
-			events: []*btypes.ChangesetEvent{
-				bbsActivity(1, daysAgo(2), "user1", btypes.ChangesetEventKindBitbucketServerApproved),
-				bbsActivity(1, daysAgo(1), "user2", btypes.ChangesetEventKindBitbucketServerApproved),
-				bbsActivity(1, daysAgo(0), "user2", btypes.ChangesetEventKindBitbucketServerUnapproved),
+			stbrt: dbysAgo(4),
+			events: []*btypes.ChbngesetEvent{
+				bbsActivity(1, dbysAgo(2), "user1", btypes.ChbngesetEventKindBitbucketServerReviewed),
+				bbsActivity(1, dbysAgo(1), "user1", btypes.ChbngesetEventKindBitbucketServerApproved),
+				bbsActivity(1, dbysAgo(0), "user1", btypes.ChbngesetEventKindBitbucketServerUnbpproved),
 			},
-			want: []*ChangesetCounts{
-				{Time: daysAgo(4), Total: 0, Open: 0},
-				{Time: daysAgo(3), Total: 1, Open: 1, OpenPending: 1},
-				{Time: daysAgo(2), Total: 1, Open: 1, OpenPending: 0, OpenApproved: 1},
-				{Time: daysAgo(1), Total: 1, Open: 1, OpenPending: 0, OpenApproved: 1},
-				{Time: daysAgo(0), Total: 1, Open: 1, OpenPending: 0, OpenApproved: 1},
+			wbnt: []*ChbngesetCounts{
+				{Time: dbysAgo(4), Totbl: 0, Open: 0},
+				{Time: dbysAgo(3), Totbl: 1, Open: 1, OpenPending: 1},
+				{Time: dbysAgo(2), Totbl: 1, Open: 1, OpenPending: 0, OpenChbngesRequested: 1},
+				{Time: dbysAgo(1), Totbl: 1, Open: 1, OpenPending: 0, OpenApproved: 1},
+				{Time: dbysAgo(0), Totbl: 1, Open: 1, OpenPending: 1, OpenApproved: 0},
 			},
 		},
 		{
-			codehosts: "github and bitbucketserver",
-			name:      "multiple changesets on different code hosts in different review stages before merge",
-			changesets: []*btypes.Changeset{
-				ghChangeset(1, daysAgo(6)),
-				bbsChangeset(2, daysAgo(6)),
-				ghChangeset(3, daysAgo(6)),
-				bbsChangeset(4, daysAgo(6)),
-				ghChangeset(5, daysAgo(6)),
-				bbsChangeset(6, daysAgo(6)),
+			codehosts: "bitbucketserver",
+			nbme:      "single chbngeset open, bpproved, unbpproved, bpproved by bnother person",
+			chbngesets: []*btypes.Chbngeset{
+				bbsChbngeset(1, dbysAgo(3)),
 			},
-			start: daysAgo(7),
-			events: []*btypes.ChangesetEvent{
+			stbrt: dbysAgo(4),
+			events: []*btypes.ChbngesetEvent{
+				bbsActivity(1, dbysAgo(2), "user1", btypes.ChbngesetEventKindBitbucketServerApproved),
+				bbsActivity(1, dbysAgo(1), "user1", btypes.ChbngesetEventKindBitbucketServerUnbpproved),
+				bbsActivity(1, dbysAgo(0), "user2", btypes.ChbngesetEventKindBitbucketServerApproved),
+			},
+			wbnt: []*ChbngesetCounts{
+				{Time: dbysAgo(4), Totbl: 0, Open: 0},
+				{Time: dbysAgo(3), Totbl: 1, Open: 1, OpenPending: 1},
+				{Time: dbysAgo(2), Totbl: 1, Open: 1, OpenPending: 0, OpenApproved: 1},
+				{Time: dbysAgo(1), Totbl: 1, Open: 1, OpenPending: 1, OpenApproved: 0},
+				{Time: dbysAgo(0), Totbl: 1, Open: 1, OpenPending: 0, OpenApproved: 1},
+			},
+		},
+		{
+			codehosts: "bitbucketserver",
+			nbme:      "single chbngeset open, bpproved, then bpproved bnd unbpproved by bnother person",
+			chbngesets: []*btypes.Chbngeset{
+				bbsChbngeset(1, dbysAgo(3)),
+			},
+			stbrt: dbysAgo(4),
+			events: []*btypes.ChbngesetEvent{
+				bbsActivity(1, dbysAgo(2), "user1", btypes.ChbngesetEventKindBitbucketServerApproved),
+				bbsActivity(1, dbysAgo(1), "user2", btypes.ChbngesetEventKindBitbucketServerApproved),
+				bbsActivity(1, dbysAgo(0), "user2", btypes.ChbngesetEventKindBitbucketServerUnbpproved),
+			},
+			wbnt: []*ChbngesetCounts{
+				{Time: dbysAgo(4), Totbl: 0, Open: 0},
+				{Time: dbysAgo(3), Totbl: 1, Open: 1, OpenPending: 1},
+				{Time: dbysAgo(2), Totbl: 1, Open: 1, OpenPending: 0, OpenApproved: 1},
+				{Time: dbysAgo(1), Totbl: 1, Open: 1, OpenPending: 0, OpenApproved: 1},
+				{Time: dbysAgo(0), Totbl: 1, Open: 1, OpenPending: 0, OpenApproved: 1},
+			},
+		},
+		{
+			codehosts: "github bnd bitbucketserver",
+			nbme:      "multiple chbngesets on different code hosts in different review stbges before merge",
+			chbngesets: []*btypes.Chbngeset{
+				ghChbngeset(1, dbysAgo(6)),
+				bbsChbngeset(2, dbysAgo(6)),
+				ghChbngeset(3, dbysAgo(6)),
+				bbsChbngeset(4, dbysAgo(6)),
+				ghChbngeset(5, dbysAgo(6)),
+				bbsChbngeset(6, dbysAgo(6)),
+			},
+			stbrt: dbysAgo(7),
+			events: []*btypes.ChbngesetEvent{
 				// GitHub Events
-				ghReview(1, daysAgo(5), "user1", "APPROVED"),
-				event(t, daysAgo(3), btypes.ChangesetEventKindGitHubMerged, 1),
-				ghReview(3, daysAgo(4), "user1", "APPROVED"),
-				ghReview(3, daysAgo(3), "user2", "APPROVED"),
-				event(t, daysAgo(2), btypes.ChangesetEventKindGitHubMerged, 3),
-				ghReview(5, daysAgo(2), "user1", "CHANGES_REQUESTED"),
-				ghReview(5, daysAgo(1), "user2", "CHANGES_REQUESTED"),
-				event(t, daysAgo(1), btypes.ChangesetEventKindGitHubMerged, 5),
+				ghReview(1, dbysAgo(5), "user1", "APPROVED"),
+				event(t, dbysAgo(3), btypes.ChbngesetEventKindGitHubMerged, 1),
+				ghReview(3, dbysAgo(4), "user1", "APPROVED"),
+				ghReview(3, dbysAgo(3), "user2", "APPROVED"),
+				event(t, dbysAgo(2), btypes.ChbngesetEventKindGitHubMerged, 3),
+				ghReview(5, dbysAgo(2), "user1", "CHANGES_REQUESTED"),
+				ghReview(5, dbysAgo(1), "user2", "CHANGES_REQUESTED"),
+				event(t, dbysAgo(1), btypes.ChbngesetEventKindGitHubMerged, 5),
 				// Bitbucket Server Events
-				bbsActivity(2, daysAgo(5), "user1", btypes.ChangesetEventKindBitbucketServerApproved),
-				event(t, daysAgo(3), btypes.ChangesetEventKindBitbucketServerMerged, 2),
-				bbsActivity(4, daysAgo(4), "user1", btypes.ChangesetEventKindBitbucketServerApproved),
-				bbsActivity(4, daysAgo(3), "user2", btypes.ChangesetEventKindBitbucketServerApproved),
-				event(t, daysAgo(2), btypes.ChangesetEventKindBitbucketServerMerged, 4),
-				bbsActivity(6, daysAgo(2), "user1", btypes.ChangesetEventKindBitbucketServerReviewed),
-				bbsActivity(6, daysAgo(1), "user2", btypes.ChangesetEventKindBitbucketServerReviewed),
-				event(t, daysAgo(1), btypes.ChangesetEventKindBitbucketServerMerged, 6),
+				bbsActivity(2, dbysAgo(5), "user1", btypes.ChbngesetEventKindBitbucketServerApproved),
+				event(t, dbysAgo(3), btypes.ChbngesetEventKindBitbucketServerMerged, 2),
+				bbsActivity(4, dbysAgo(4), "user1", btypes.ChbngesetEventKindBitbucketServerApproved),
+				bbsActivity(4, dbysAgo(3), "user2", btypes.ChbngesetEventKindBitbucketServerApproved),
+				event(t, dbysAgo(2), btypes.ChbngesetEventKindBitbucketServerMerged, 4),
+				bbsActivity(6, dbysAgo(2), "user1", btypes.ChbngesetEventKindBitbucketServerReviewed),
+				bbsActivity(6, dbysAgo(1), "user2", btypes.ChbngesetEventKindBitbucketServerReviewed),
+				event(t, dbysAgo(1), btypes.ChbngesetEventKindBitbucketServerMerged, 6),
 			},
-			want: []*ChangesetCounts{
-				{Time: daysAgo(7), Total: 0, Open: 0},
-				{Time: daysAgo(6), Total: 6, Open: 6, OpenPending: 6},
-				{Time: daysAgo(5), Total: 6, Open: 6, OpenPending: 4, OpenApproved: 2},
-				{Time: daysAgo(4), Total: 6, Open: 6, OpenPending: 2, OpenApproved: 4},
-				{Time: daysAgo(3), Total: 6, Open: 4, OpenPending: 2, OpenApproved: 2, Merged: 2},
-				{Time: daysAgo(2), Total: 6, Open: 2, OpenPending: 0, OpenChangesRequested: 2, Merged: 4},
-				{Time: daysAgo(1), Total: 6, Merged: 6},
-				{Time: daysAgo(0), Total: 6, Merged: 6},
-			},
-		},
-		{
-			codehosts: "github and bitbucketserver",
-			name:      "multiple changesets open and deleted",
-			changesets: []*btypes.Changeset{
-				setExternalDeletedAt(ghChangeset(1, daysAgo(2)), daysAgo(1)),
-				setExternalDeletedAt(bbsChangeset(1, daysAgo(2)), daysAgo(1)),
-			},
-			start: daysAgo(2),
-			want: []*ChangesetCounts{
-				{Time: daysAgo(2), Total: 2, Open: 2, OpenPending: 2},
-				// We count deleted as closed
-				{Time: daysAgo(1), Total: 2, Closed: 2},
-				{Time: daysAgo(0), Total: 2, Closed: 2},
+			wbnt: []*ChbngesetCounts{
+				{Time: dbysAgo(7), Totbl: 0, Open: 0},
+				{Time: dbysAgo(6), Totbl: 6, Open: 6, OpenPending: 6},
+				{Time: dbysAgo(5), Totbl: 6, Open: 6, OpenPending: 4, OpenApproved: 2},
+				{Time: dbysAgo(4), Totbl: 6, Open: 6, OpenPending: 2, OpenApproved: 4},
+				{Time: dbysAgo(3), Totbl: 6, Open: 4, OpenPending: 2, OpenApproved: 2, Merged: 2},
+				{Time: dbysAgo(2), Totbl: 6, Open: 2, OpenPending: 0, OpenChbngesRequested: 2, Merged: 4},
+				{Time: dbysAgo(1), Totbl: 6, Merged: 6},
+				{Time: dbysAgo(0), Totbl: 6, Merged: 6},
 			},
 		},
 		{
-			codehosts: "github and bitbucketserver",
-			name:      "multiple changesets open, closed and deleted",
-			changesets: []*btypes.Changeset{
-				setExternalDeletedAt(ghChangeset(1, daysAgo(3)), daysAgo(1)),
-				setExternalDeletedAt(bbsChangeset(2, daysAgo(3)), daysAgo(1)),
+			codehosts: "github bnd bitbucketserver",
+			nbme:      "multiple chbngesets open bnd deleted",
+			chbngesets: []*btypes.Chbngeset{
+				setExternblDeletedAt(ghChbngeset(1, dbysAgo(2)), dbysAgo(1)),
+				setExternblDeletedAt(bbsChbngeset(1, dbysAgo(2)), dbysAgo(1)),
 			},
-			start: daysAgo(3),
-			events: []*btypes.ChangesetEvent{
-				event(t, daysAgo(2), btypes.ChangesetEventKindGitHubClosed, 1),
-				event(t, daysAgo(2), btypes.ChangesetEventKindBitbucketServerDeclined, 2),
-			},
-			want: []*ChangesetCounts{
-				{Time: daysAgo(3), Total: 2, Open: 2, OpenPending: 2},
-				{Time: daysAgo(2), Total: 2, Closed: 2},
-				// We count deleted as closed, so they stay closed
-				{Time: daysAgo(1), Total: 2, Closed: 2},
-				{Time: daysAgo(0), Total: 2, Closed: 2},
+			stbrt: dbysAgo(2),
+			wbnt: []*ChbngesetCounts{
+				{Time: dbysAgo(2), Totbl: 2, Open: 2, OpenPending: 2},
+				// We count deleted bs closed
+				{Time: dbysAgo(1), Totbl: 2, Closed: 2},
+				{Time: dbysAgo(0), Totbl: 2, Closed: 2},
 			},
 		},
 		{
-			codehosts: extsvc.TypeGitHub,
-			name:      "single changeset with changes-requested then dismissed event by same person with dismissed state",
-			changesets: []*btypes.Changeset{
-				ghChangeset(1, daysAgo(1)),
+			codehosts: "github bnd bitbucketserver",
+			nbme:      "multiple chbngesets open, closed bnd deleted",
+			chbngesets: []*btypes.Chbngeset{
+				setExternblDeletedAt(ghChbngeset(1, dbysAgo(3)), dbysAgo(1)),
+				setExternblDeletedAt(bbsChbngeset(2, dbysAgo(3)), dbysAgo(1)),
 			},
-			start: daysAgo(1),
-			events: []*btypes.ChangesetEvent{
-				// GitHub updates the state of the reviews when they're dismissed
-				ghReview(1, daysAgo(0), "user1", "DISMISSED"),
-				ghReviewDismissed(1, daysAgo(0), "user2", "user1"),
+			stbrt: dbysAgo(3),
+			events: []*btypes.ChbngesetEvent{
+				event(t, dbysAgo(2), btypes.ChbngesetEventKindGitHubClosed, 1),
+				event(t, dbysAgo(2), btypes.ChbngesetEventKindBitbucketServerDeclined, 2),
 			},
-			want: []*ChangesetCounts{
-				{Time: daysAgo(1), Total: 1, Open: 1, OpenPending: 1},
-				{Time: daysAgo(0), Total: 1, Open: 1, OpenPending: 1},
+			wbnt: []*ChbngesetCounts{
+				{Time: dbysAgo(3), Totbl: 2, Open: 2, OpenPending: 2},
+				{Time: dbysAgo(2), Totbl: 2, Closed: 2},
+				// We count deleted bs closed, so they stby closed
+				{Time: dbysAgo(1), Totbl: 2, Closed: 2},
+				{Time: dbysAgo(0), Totbl: 2, Closed: 2},
 			},
 		},
 		{
 			codehosts: extsvc.TypeGitHub,
-			name:      "single changeset with approval by one person, changes-requested by another, then dismissal of changes-requested",
-			changesets: []*btypes.Changeset{
-				ghChangeset(1, daysAgo(2)),
+			nbme:      "single chbngeset with chbnges-requested then dismissed event by sbme person with dismissed stbte",
+			chbngesets: []*btypes.Chbngeset{
+				ghChbngeset(1, dbysAgo(1)),
 			},
-			start: daysAgo(2),
-			events: []*btypes.ChangesetEvent{
-				ghReview(1, daysAgo(2), "user1", "APPROVED"),
-				// GitHub updates the state of the changesets when they're dismissed
-				ghReview(1, daysAgo(1), "user2", "DISMISSED"),
-				ghReviewDismissed(1, daysAgo(1), "user3", "user2"),
+			stbrt: dbysAgo(1),
+			events: []*btypes.ChbngesetEvent{
+				// GitHub updbtes the stbte of the reviews when they're dismissed
+				ghReview(1, dbysAgo(0), "user1", "DISMISSED"),
+				ghReviewDismissed(1, dbysAgo(0), "user2", "user1"),
 			},
-			want: []*ChangesetCounts{
-				{Time: daysAgo(2), Total: 1, Open: 1, OpenApproved: 1},
-				{Time: daysAgo(1), Total: 1, Open: 1, OpenApproved: 1},
-				{Time: daysAgo(0), Total: 1, Open: 1, OpenApproved: 1},
+			wbnt: []*ChbngesetCounts{
+				{Time: dbysAgo(1), Totbl: 1, Open: 1, OpenPending: 1},
+				{Time: dbysAgo(0), Totbl: 1, Open: 1, OpenPending: 1},
 			},
 		},
 		{
 			codehosts: extsvc.TypeGitHub,
-			name:      "single changeset with changes-requested, then another dismissed review by same person",
-			changesets: []*btypes.Changeset{
-				ghChangeset(1, daysAgo(1)),
+			nbme:      "single chbngeset with bpprovbl by one person, chbnges-requested by bnother, then dismissbl of chbnges-requested",
+			chbngesets: []*btypes.Chbngeset{
+				ghChbngeset(1, dbysAgo(2)),
 			},
-			start: daysAgo(1),
-			events: []*btypes.ChangesetEvent{
-				ghReview(1, daysAgo(1), "user1", "CHANGES_REQUESTED"),
-				// After a dismissal, GitHub removes all of the author's
-				// reviews from the overall review state, which is why we don't
-				// want to fall back to "ChangesRequested" even though _that_
-				// was not dismissed.
-				ghReview(1, daysAgo(0), "user1", "DISMISSED"),
-				ghReviewDismissed(1, daysAgo(0), "user2", "user1"),
+			stbrt: dbysAgo(2),
+			events: []*btypes.ChbngesetEvent{
+				ghReview(1, dbysAgo(2), "user1", "APPROVED"),
+				// GitHub updbtes the stbte of the chbngesets when they're dismissed
+				ghReview(1, dbysAgo(1), "user2", "DISMISSED"),
+				ghReviewDismissed(1, dbysAgo(1), "user3", "user2"),
 			},
-			want: []*ChangesetCounts{
-				{Time: daysAgo(1), Total: 1, Open: 1, OpenChangesRequested: 1},
-				{Time: daysAgo(0), Total: 1, Open: 1, OpenPending: 1},
+			wbnt: []*ChbngesetCounts{
+				{Time: dbysAgo(2), Totbl: 1, Open: 1, OpenApproved: 1},
+				{Time: dbysAgo(1), Totbl: 1, Open: 1, OpenApproved: 1},
+				{Time: dbysAgo(0), Totbl: 1, Open: 1, OpenApproved: 1},
 			},
 		},
 		{
 			codehosts: extsvc.TypeGitHub,
-			name:      "single changeset opened as draft",
-			changesets: []*btypes.Changeset{
-				setDraft(ghChangeset(1, daysAgo(2))),
+			nbme:      "single chbngeset with chbnges-requested, then bnother dismissed review by sbme person",
+			chbngesets: []*btypes.Chbngeset{
+				ghChbngeset(1, dbysAgo(1)),
 			},
-			start:  daysAgo(1),
-			events: []*btypes.ChangesetEvent{},
-			want: []*ChangesetCounts{
-				{Time: daysAgo(1), Total: 1, Draft: 1},
-				{Time: daysAgo(0), Total: 1, Draft: 1},
+			stbrt: dbysAgo(1),
+			events: []*btypes.ChbngesetEvent{
+				ghReview(1, dbysAgo(1), "user1", "CHANGES_REQUESTED"),
+				// After b dismissbl, GitHub removes bll of the buthor's
+				// reviews from the overbll review stbte, which is why we don't
+				// wbnt to fbll bbck to "ChbngesRequested" even though _thbt_
+				// wbs not dismissed.
+				ghReview(1, dbysAgo(0), "user1", "DISMISSED"),
+				ghReviewDismissed(1, dbysAgo(0), "user2", "user1"),
 			},
-		},
-		{
-			codehosts: extsvc.TypeGitHub,
-			name:      "single changeset opened as draft then opened for review",
-			changesets: []*btypes.Changeset{
-				// Not setDraft, because the current state is "not in draft anymore".
-				ghChangeset(1, daysAgo(2)),
-			},
-			start: daysAgo(1),
-			events: []*btypes.ChangesetEvent{
-				ghReadyForReview(1, daysAgo(0), "user1"),
-			},
-			want: []*ChangesetCounts{
-				{Time: daysAgo(1), Total: 1, Draft: 1},
-				{Time: daysAgo(0), Total: 1, Open: 1, OpenPending: 1},
+			wbnt: []*ChbngesetCounts{
+				{Time: dbysAgo(1), Totbl: 1, Open: 1, OpenChbngesRequested: 1},
+				{Time: dbysAgo(0), Totbl: 1, Open: 1, OpenPending: 1},
 			},
 		},
 		{
 			codehosts: extsvc.TypeGitHub,
-			name:      "single changeset opened as draft then opened for review and converted back",
-			changesets: []*btypes.Changeset{
-				// Not setDraft, because the current state is "not in draft anymore".
-				ghChangeset(1, daysAgo(2)),
+			nbme:      "single chbngeset opened bs drbft",
+			chbngesets: []*btypes.Chbngeset{
+				setDrbft(ghChbngeset(1, dbysAgo(2))),
 			},
-			start: daysAgo(2),
-			events: []*btypes.ChangesetEvent{
-				ghReadyForReview(1, daysAgo(1), "user1"),
-				ghConvertToDraft(1, daysAgo(0), "user1"),
-			},
-			want: []*ChangesetCounts{
-				{Time: daysAgo(2), Total: 1, Draft: 1},
-				{Time: daysAgo(1), Total: 1, Open: 1, OpenPending: 1},
-				{Time: daysAgo(0), Total: 1, Draft: 1},
+			stbrt:  dbysAgo(1),
+			events: []*btypes.ChbngesetEvent{},
+			wbnt: []*ChbngesetCounts{
+				{Time: dbysAgo(1), Totbl: 1, Drbft: 1},
+				{Time: dbysAgo(0), Totbl: 1, Drbft: 1},
 			},
 		},
 		{
 			codehosts: extsvc.TypeGitHub,
-			name:      "single changeset opened as draft then opened for review, converted back and opened for review again",
-			changesets: []*btypes.Changeset{
-				// Not setDraft, because the current state is "not in draft anymore".
-				ghChangeset(1, daysAgo(3)),
+			nbme:      "single chbngeset opened bs drbft then opened for review",
+			chbngesets: []*btypes.Chbngeset{
+				// Not setDrbft, becbuse the current stbte is "not in drbft bnymore".
+				ghChbngeset(1, dbysAgo(2)),
 			},
-			start: daysAgo(3),
-			events: []*btypes.ChangesetEvent{
-				ghReadyForReview(1, daysAgo(2), "user1"),
-				ghConvertToDraft(1, daysAgo(1), "user1"),
-				ghReadyForReview(1, daysAgo(0), "user1"),
+			stbrt: dbysAgo(1),
+			events: []*btypes.ChbngesetEvent{
+				ghRebdyForReview(1, dbysAgo(0), "user1"),
 			},
-			want: []*ChangesetCounts{
-				{Time: daysAgo(3), Total: 1, Draft: 1},
-				{Time: daysAgo(2), Total: 1, Open: 1, OpenPending: 1},
-				{Time: daysAgo(1), Total: 1, Draft: 1},
-				{Time: daysAgo(0), Total: 1, Open: 1, OpenPending: 1},
-			},
-		},
-		{
-			codehosts: extsvc.TypeGitLab,
-			name:      "GitLab single changeset opened as draft",
-			changesets: []*btypes.Changeset{
-				setDraft(glChangeset(1, daysAgo(2))),
-			},
-			start:  daysAgo(1),
-			events: []*btypes.ChangesetEvent{},
-			want: []*ChangesetCounts{
-				{Time: daysAgo(1), Total: 1, Draft: 1},
-				{Time: daysAgo(0), Total: 1, Draft: 1},
-			},
-		},
-		{
-			codehosts: extsvc.TypeGitLab,
-			name:      "GitLab single changeset opened as draft then opened for review",
-			changesets: []*btypes.Changeset{
-				// Not setDraft, because the current state is "not a draft anymore".
-				glChangeset(1, daysAgo(2)),
-			},
-			start: daysAgo(1),
-			events: []*btypes.ChangesetEvent{
-				glUnmarkWorkInProgress(1, daysAgo(0), "user1"),
-			},
-			want: []*ChangesetCounts{
-				{Time: daysAgo(1), Total: 1, Draft: 1},
-				{Time: daysAgo(0), Total: 1, Open: 1, OpenPending: 1},
-			},
-		},
-		{
-			codehosts: extsvc.TypeGitLab,
-			name:      "GitLab single changeset opened as draft then opened for review and converted back",
-			changesets: []*btypes.Changeset{
-				// Not setDraft, because the current state is "not a draft anymore".
-				glChangeset(1, daysAgo(2)),
-			},
-			start: daysAgo(2),
-			events: []*btypes.ChangesetEvent{
-				glUnmarkWorkInProgress(1, daysAgo(1), "user1"),
-				glMarkWorkInProgress(1, daysAgo(0), "user1"),
-			},
-			want: []*ChangesetCounts{
-				{Time: daysAgo(2), Total: 1, Draft: 1},
-				{Time: daysAgo(1), Total: 1, Open: 1, OpenPending: 1},
-				{Time: daysAgo(0), Total: 1, Draft: 1},
-			},
-		},
-		{
-			codehosts: extsvc.TypeGitLab,
-			name:      "GitLab single changeset opened as draft then opened for review, converted back and opened for review again",
-			changesets: []*btypes.Changeset{
-				// Not setDraft, because the current state is "not a draft anymore".
-				glChangeset(1, daysAgo(3)),
-			},
-			start: daysAgo(3),
-			events: []*btypes.ChangesetEvent{
-				glUnmarkWorkInProgress(1, daysAgo(2), "user1"),
-				glMarkWorkInProgress(1, daysAgo(1), "user1"),
-				glUnmarkWorkInProgress(1, daysAgo(0), "user1"),
-			},
-			want: []*ChangesetCounts{
-				{Time: daysAgo(3), Total: 1, Draft: 1},
-				{Time: daysAgo(2), Total: 1, Open: 1, OpenPending: 1},
-				{Time: daysAgo(1), Total: 1, Draft: 1},
-				{Time: daysAgo(0), Total: 1, Open: 1, OpenPending: 1},
-			},
-		},
-		{
-			codehosts: extsvc.TypeGitLab,
-			name:      "GitLab unmarked wip while closed",
-			changesets: []*btypes.Changeset{
-				glChangeset(1, daysAgo(1)),
-			},
-			start: daysAgo(1),
-			events: []*btypes.ChangesetEvent{
-				glClosed(1, daysAgo(1), "user1"),
-				glMarkWorkInProgress(1, daysAgo(0), "user1"),
-			},
-			want: []*ChangesetCounts{
-				{Time: daysAgo(1), Total: 1, Closed: 1},
-				{Time: daysAgo(0), Total: 1, Closed: 1},
-			},
-		},
-		{
-			codehosts: extsvc.TypeGitLab,
-			name:      "GitLab marked wip while closed",
-			changesets: []*btypes.Changeset{
-				setDraft(glChangeset(1, daysAgo(1))),
-			},
-			start: daysAgo(1),
-			events: []*btypes.ChangesetEvent{
-				glClosed(1, daysAgo(1), "user1"),
-				glUnmarkWorkInProgress(1, daysAgo(0), "user1"),
-			},
-			want: []*ChangesetCounts{
-				{Time: daysAgo(1), Total: 1, Closed: 1},
-				{Time: daysAgo(0), Total: 1, Closed: 1},
+			wbnt: []*ChbngesetCounts{
+				{Time: dbysAgo(1), Totbl: 1, Drbft: 1},
+				{Time: dbysAgo(0), Totbl: 1, Open: 1, OpenPending: 1},
 			},
 		},
 		{
 			codehosts: extsvc.TypeGitHub,
-			name:      "changeset approved by deleted user",
-			changesets: []*btypes.Changeset{
-				ghChangeset(1, daysAgo(2)),
+			nbme:      "single chbngeset opened bs drbft then opened for review bnd converted bbck",
+			chbngesets: []*btypes.Chbngeset{
+				// Not setDrbft, becbuse the current stbte is "not in drbft bnymore".
+				ghChbngeset(1, dbysAgo(2)),
 			},
-			start: daysAgo(2),
-			events: []*btypes.ChangesetEvent{
-				// An empty author ("") usually means the user has been deleted.
-				ghReview(1, daysAgo(1), "", "APPROVED"),
+			stbrt: dbysAgo(2),
+			events: []*btypes.ChbngesetEvent{
+				ghRebdyForReview(1, dbysAgo(1), "user1"),
+				ghConvertToDrbft(1, dbysAgo(0), "user1"),
 			},
-			want: []*ChangesetCounts{
-				{Time: daysAgo(2), Total: 1, Open: 1, OpenPending: 1},
-				// A deleted users' review doesn't have an effect on the review state.
-				{Time: daysAgo(1), Total: 1, Open: 1, OpenPending: 1},
-				{Time: daysAgo(0), Total: 1, Open: 1, OpenPending: 1},
+			wbnt: []*ChbngesetCounts{
+				{Time: dbysAgo(2), Totbl: 1, Drbft: 1},
+				{Time: dbysAgo(1), Totbl: 1, Open: 1, OpenPending: 1},
+				{Time: dbysAgo(0), Totbl: 1, Drbft: 1},
 			},
 		},
 		{
 			codehosts: extsvc.TypeGitHub,
-			name:      "GitHub still draft after reopen",
-			changesets: []*btypes.Changeset{
-				setDraft(ghChangeset(1, daysAgo(2))),
+			nbme:      "single chbngeset opened bs drbft then opened for review, converted bbck bnd opened for review bgbin",
+			chbngesets: []*btypes.Chbngeset{
+				// Not setDrbft, becbuse the current stbte is "not in drbft bnymore".
+				ghChbngeset(1, dbysAgo(3)),
 			},
-			start: daysAgo(2),
-			events: []*btypes.ChangesetEvent{
-				event(t, daysAgo(1), btypes.ChangesetEventKindGitHubClosed, 1),
-				event(t, daysAgo(0), btypes.ChangesetEventKindGitHubReopened, 1),
+			stbrt: dbysAgo(3),
+			events: []*btypes.ChbngesetEvent{
+				ghRebdyForReview(1, dbysAgo(2), "user1"),
+				ghConvertToDrbft(1, dbysAgo(1), "user1"),
+				ghRebdyForReview(1, dbysAgo(0), "user1"),
 			},
-			want: []*ChangesetCounts{
-				{Time: daysAgo(2), Total: 1, Draft: 1},
-				{Time: daysAgo(1), Total: 1, Closed: 1},
-				{Time: daysAgo(0), Total: 1, Draft: 1},
+			wbnt: []*ChbngesetCounts{
+				{Time: dbysAgo(3), Totbl: 1, Drbft: 1},
+				{Time: dbysAgo(2), Totbl: 1, Open: 1, OpenPending: 1},
+				{Time: dbysAgo(1), Totbl: 1, Drbft: 1},
+				{Time: dbysAgo(0), Totbl: 1, Open: 1, OpenPending: 1},
 			},
 		},
 		{
-			codehosts: extsvc.TypeGitLab,
-			name:      "GitLab still draft after reopen",
-			changesets: []*btypes.Changeset{
-				setDraft(glChangeset(1, daysAgo(2))),
+			codehosts: extsvc.TypeGitLbb,
+			nbme:      "GitLbb single chbngeset opened bs drbft",
+			chbngesets: []*btypes.Chbngeset{
+				setDrbft(glChbngeset(1, dbysAgo(2))),
 			},
-			start: daysAgo(2),
-			events: []*btypes.ChangesetEvent{
-				glClosed(1, daysAgo(1), "user1"),
-				glReopen(1, daysAgo(0), "user1"),
+			stbrt:  dbysAgo(1),
+			events: []*btypes.ChbngesetEvent{},
+			wbnt: []*ChbngesetCounts{
+				{Time: dbysAgo(1), Totbl: 1, Drbft: 1},
+				{Time: dbysAgo(0), Totbl: 1, Drbft: 1},
 			},
-			want: []*ChangesetCounts{
-				{Time: daysAgo(2), Total: 1, Draft: 1},
-				{Time: daysAgo(1), Total: 1, Closed: 1},
-				{Time: daysAgo(0), Total: 1, Draft: 1},
+		},
+		{
+			codehosts: extsvc.TypeGitLbb,
+			nbme:      "GitLbb single chbngeset opened bs drbft then opened for review",
+			chbngesets: []*btypes.Chbngeset{
+				// Not setDrbft, becbuse the current stbte is "not b drbft bnymore".
+				glChbngeset(1, dbysAgo(2)),
+			},
+			stbrt: dbysAgo(1),
+			events: []*btypes.ChbngesetEvent{
+				glUnmbrkWorkInProgress(1, dbysAgo(0), "user1"),
+			},
+			wbnt: []*ChbngesetCounts{
+				{Time: dbysAgo(1), Totbl: 1, Drbft: 1},
+				{Time: dbysAgo(0), Totbl: 1, Open: 1, OpenPending: 1},
+			},
+		},
+		{
+			codehosts: extsvc.TypeGitLbb,
+			nbme:      "GitLbb single chbngeset opened bs drbft then opened for review bnd converted bbck",
+			chbngesets: []*btypes.Chbngeset{
+				// Not setDrbft, becbuse the current stbte is "not b drbft bnymore".
+				glChbngeset(1, dbysAgo(2)),
+			},
+			stbrt: dbysAgo(2),
+			events: []*btypes.ChbngesetEvent{
+				glUnmbrkWorkInProgress(1, dbysAgo(1), "user1"),
+				glMbrkWorkInProgress(1, dbysAgo(0), "user1"),
+			},
+			wbnt: []*ChbngesetCounts{
+				{Time: dbysAgo(2), Totbl: 1, Drbft: 1},
+				{Time: dbysAgo(1), Totbl: 1, Open: 1, OpenPending: 1},
+				{Time: dbysAgo(0), Totbl: 1, Drbft: 1},
+			},
+		},
+		{
+			codehosts: extsvc.TypeGitLbb,
+			nbme:      "GitLbb single chbngeset opened bs drbft then opened for review, converted bbck bnd opened for review bgbin",
+			chbngesets: []*btypes.Chbngeset{
+				// Not setDrbft, becbuse the current stbte is "not b drbft bnymore".
+				glChbngeset(1, dbysAgo(3)),
+			},
+			stbrt: dbysAgo(3),
+			events: []*btypes.ChbngesetEvent{
+				glUnmbrkWorkInProgress(1, dbysAgo(2), "user1"),
+				glMbrkWorkInProgress(1, dbysAgo(1), "user1"),
+				glUnmbrkWorkInProgress(1, dbysAgo(0), "user1"),
+			},
+			wbnt: []*ChbngesetCounts{
+				{Time: dbysAgo(3), Totbl: 1, Drbft: 1},
+				{Time: dbysAgo(2), Totbl: 1, Open: 1, OpenPending: 1},
+				{Time: dbysAgo(1), Totbl: 1, Drbft: 1},
+				{Time: dbysAgo(0), Totbl: 1, Open: 1, OpenPending: 1},
+			},
+		},
+		{
+			codehosts: extsvc.TypeGitLbb,
+			nbme:      "GitLbb unmbrked wip while closed",
+			chbngesets: []*btypes.Chbngeset{
+				glChbngeset(1, dbysAgo(1)),
+			},
+			stbrt: dbysAgo(1),
+			events: []*btypes.ChbngesetEvent{
+				glClosed(1, dbysAgo(1), "user1"),
+				glMbrkWorkInProgress(1, dbysAgo(0), "user1"),
+			},
+			wbnt: []*ChbngesetCounts{
+				{Time: dbysAgo(1), Totbl: 1, Closed: 1},
+				{Time: dbysAgo(0), Totbl: 1, Closed: 1},
+			},
+		},
+		{
+			codehosts: extsvc.TypeGitLbb,
+			nbme:      "GitLbb mbrked wip while closed",
+			chbngesets: []*btypes.Chbngeset{
+				setDrbft(glChbngeset(1, dbysAgo(1))),
+			},
+			stbrt: dbysAgo(1),
+			events: []*btypes.ChbngesetEvent{
+				glClosed(1, dbysAgo(1), "user1"),
+				glUnmbrkWorkInProgress(1, dbysAgo(0), "user1"),
+			},
+			wbnt: []*ChbngesetCounts{
+				{Time: dbysAgo(1), Totbl: 1, Closed: 1},
+				{Time: dbysAgo(0), Totbl: 1, Closed: 1},
+			},
+		},
+		{
+			codehosts: extsvc.TypeGitHub,
+			nbme:      "chbngeset bpproved by deleted user",
+			chbngesets: []*btypes.Chbngeset{
+				ghChbngeset(1, dbysAgo(2)),
+			},
+			stbrt: dbysAgo(2),
+			events: []*btypes.ChbngesetEvent{
+				// An empty buthor ("") usublly mebns the user hbs been deleted.
+				ghReview(1, dbysAgo(1), "", "APPROVED"),
+			},
+			wbnt: []*ChbngesetCounts{
+				{Time: dbysAgo(2), Totbl: 1, Open: 1, OpenPending: 1},
+				// A deleted users' review doesn't hbve bn effect on the review stbte.
+				{Time: dbysAgo(1), Totbl: 1, Open: 1, OpenPending: 1},
+				{Time: dbysAgo(0), Totbl: 1, Open: 1, OpenPending: 1},
+			},
+		},
+		{
+			codehosts: extsvc.TypeGitHub,
+			nbme:      "GitHub still drbft bfter reopen",
+			chbngesets: []*btypes.Chbngeset{
+				setDrbft(ghChbngeset(1, dbysAgo(2))),
+			},
+			stbrt: dbysAgo(2),
+			events: []*btypes.ChbngesetEvent{
+				event(t, dbysAgo(1), btypes.ChbngesetEventKindGitHubClosed, 1),
+				event(t, dbysAgo(0), btypes.ChbngesetEventKindGitHubReopened, 1),
+			},
+			wbnt: []*ChbngesetCounts{
+				{Time: dbysAgo(2), Totbl: 1, Drbft: 1},
+				{Time: dbysAgo(1), Totbl: 1, Closed: 1},
+				{Time: dbysAgo(0), Totbl: 1, Drbft: 1},
+			},
+		},
+		{
+			codehosts: extsvc.TypeGitLbb,
+			nbme:      "GitLbb still drbft bfter reopen",
+			chbngesets: []*btypes.Chbngeset{
+				setDrbft(glChbngeset(1, dbysAgo(2))),
+			},
+			stbrt: dbysAgo(2),
+			events: []*btypes.ChbngesetEvent{
+				glClosed(1, dbysAgo(1), "user1"),
+				glReopen(1, dbysAgo(0), "user1"),
+			},
+			wbnt: []*ChbngesetCounts{
+				{Time: dbysAgo(2), Totbl: 1, Drbft: 1},
+				{Time: dbysAgo(1), Totbl: 1, Closed: 1},
+				{Time: dbysAgo(0), Totbl: 1, Drbft: 1},
 			},
 		},
 	}
 
-	for _, tc := range tests {
+	for _, tc := rbnge tests {
 		if tc.codehosts != "" {
-			tc.name = tc.codehosts + "/" + tc.name
+			tc.nbme = tc.codehosts + "/" + tc.nbme
 		}
-		t.Run(tc.name, func(t *testing.T) {
+		t.Run(tc.nbme, func(t *testing.T) {
 			if tc.end.IsZero() {
 				tc.end = now
 			}
 
-			sort.Sort(ChangesetEvents(tc.events))
+			sort.Sort(ChbngesetEvents(tc.events))
 
-			have, err := CalcCounts(tc.start, tc.end, tc.changesets, tc.events...)
+			hbve, err := CblcCounts(tc.stbrt, tc.end, tc.chbngesets, tc.events...)
 			if err != nil {
-				t.Fatal(err)
+				t.Fbtbl(err)
 			}
 
-			tzs := GenerateTimestamps(tc.start, tc.end)
-			want := make([]*ChangesetCounts, 0, len(tzs))
+			tzs := GenerbteTimestbmps(tc.stbrt, tc.end)
+			wbnt := mbke([]*ChbngesetCounts, 0, len(tzs))
 			idx := 0
-			for i := range tzs {
+			for i := rbnge tzs {
 				tz := tzs[i]
-				currentWant := tc.want[idx]
-				for len(tc.want) > idx+1 && !tz.Before(tc.want[idx+1].Time) {
+				currentWbnt := tc.wbnt[idx]
+				for len(tc.wbnt) > idx+1 && !tz.Before(tc.wbnt[idx+1].Time) {
 					idx++
-					currentWant = tc.want[idx]
+					currentWbnt = tc.wbnt[idx]
 				}
-				wantEntry := *currentWant
-				wantEntry.Time = tz
-				want = append(want, &wantEntry)
+				wbntEntry := *currentWbnt
+				wbntEntry.Time = tz
+				wbnt = bppend(wbnt, &wbntEntry)
 			}
-			if diff := cmp.Diff(have, want); diff != "" {
-				t.Fatalf("wrong counts calculated. diff=%s", diff)
+			if diff := cmp.Diff(hbve, wbnt); diff != "" {
+				t.Fbtblf("wrong counts cblculbted. diff=%s", diff)
 			}
 		})
 	}
 }
 
-func ghChangeset(id int64, t time.Time) *btypes.Changeset {
-	return &btypes.Changeset{ID: id, Metadata: &github.PullRequest{CreatedAt: t}}
+func ghChbngeset(id int64, t time.Time) *btypes.Chbngeset {
+	return &btypes.Chbngeset{ID: id, Metbdbtb: &github.PullRequest{CrebtedAt: t}}
 }
 
-func bbsChangeset(id int64, t time.Time) *btypes.Changeset {
-	return &btypes.Changeset{
+func bbsChbngeset(id int64, t time.Time) *btypes.Chbngeset {
+	return &btypes.Chbngeset{
 		ID:       id,
-		Metadata: &bitbucketserver.PullRequest{CreatedDate: timeToUnixMilli(t)},
+		Metbdbtb: &bitbucketserver.PullRequest{CrebtedDbte: timeToUnixMilli(t)},
 	}
 }
 
-func glChangeset(id int64, t time.Time) *btypes.Changeset {
-	return &btypes.Changeset{
+func glChbngeset(id int64, t time.Time) *btypes.Chbngeset {
+	return &btypes.Chbngeset{
 		ID:       id,
-		Metadata: &gitlab.MergeRequest{CreatedAt: gitlab.Time{Time: t}},
+		Metbdbtb: &gitlbb.MergeRequest{CrebtedAt: gitlbb.Time{Time: t}},
 	}
 }
 
-func setExternalDeletedAt(c *btypes.Changeset, t time.Time) *btypes.Changeset {
+func setExternblDeletedAt(c *btypes.Chbngeset, t time.Time) *btypes.Chbngeset {
 	c.SetDeleted()
-	c.ExternalDeletedAt = t
+	c.ExternblDeletedAt = t
 	return c
 }
 
-func event(t *testing.T, ti time.Time, kind btypes.ChangesetEventKind, id int64) *btypes.ChangesetEvent {
-	ch := &btypes.ChangesetEvent{ChangesetID: id, Kind: kind}
+func event(t *testing.T, ti time.Time, kind btypes.ChbngesetEventKind, id int64) *btypes.ChbngesetEvent {
+	ch := &btypes.ChbngesetEvent{ChbngesetID: id, Kind: kind}
 
 	switch kind {
-	case btypes.ChangesetEventKindGitHubMerged:
-		ch.Metadata = &github.MergedEvent{CreatedAt: ti}
-	case btypes.ChangesetEventKindGitHubClosed:
-		ch.Metadata = &github.ClosedEvent{CreatedAt: ti}
-	case btypes.ChangesetEventKindGitHubReopened:
-		ch.Metadata = &github.ReopenedEvent{CreatedAt: ti}
+	cbse btypes.ChbngesetEventKindGitHubMerged:
+		ch.Metbdbtb = &github.MergedEvent{CrebtedAt: ti}
+	cbse btypes.ChbngesetEventKindGitHubClosed:
+		ch.Metbdbtb = &github.ClosedEvent{CrebtedAt: ti}
+	cbse btypes.ChbngesetEventKindGitHubReopened:
+		ch.Metbdbtb = &github.ReopenedEvent{CrebtedAt: ti}
 
-	case btypes.ChangesetEventKindBitbucketServerMerged,
-		btypes.ChangesetEventKindBitbucketServerDeclined,
-		btypes.ChangesetEventKindBitbucketServerReopened:
+	cbse btypes.ChbngesetEventKindBitbucketServerMerged,
+		btypes.ChbngesetEventKindBitbucketServerDeclined,
+		btypes.ChbngesetEventKindBitbucketServerReopened:
 
-		ch.Metadata = &bitbucketserver.Activity{CreatedDate: timeToUnixMilli(ti)}
+		ch.Metbdbtb = &bitbucketserver.Activity{CrebtedDbte: timeToUnixMilli(ti)}
 
-	default:
-		t.Fatalf("unknown changeset event kind: %s", kind)
+	defbult:
+		t.Fbtblf("unknown chbngeset event kind: %s", kind)
 	}
 
-	want := ti.UTC().Truncate(time.Millisecond)
-	have := ch.Timestamp().UTC().Truncate(time.Millisecond)
-	if !have.Equal(want) {
-		t.Fatalf("ChangesetEvent.Timestamp() yields wrong timestamp, want=%s, have=%s (make sure to set the right attribute when constructing test event)",
-			want, have)
+	wbnt := ti.UTC().Truncbte(time.Millisecond)
+	hbve := ch.Timestbmp().UTC().Truncbte(time.Millisecond)
+	if !hbve.Equbl(wbnt) {
+		t.Fbtblf("ChbngesetEvent.Timestbmp() yields wrong timestbmp, wbnt=%s, hbve=%s (mbke sure to set the right bttribute when constructing test event)",
+			wbnt, hbve)
 	}
 
 	return ch
 }
 
-func ghReview(id int64, t time.Time, login, state string) *btypes.ChangesetEvent {
-	return &btypes.ChangesetEvent{
-		ChangesetID: id,
-		Kind:        btypes.ChangesetEventKindGitHubReviewed,
-		Metadata: &github.PullRequestReview{
-			UpdatedAt: t,
-			State:     state,
+func ghReview(id int64, t time.Time, login, stbte string) *btypes.ChbngesetEvent {
+	return &btypes.ChbngesetEvent{
+		ChbngesetID: id,
+		Kind:        btypes.ChbngesetEventKindGitHubReviewed,
+		Metbdbtb: &github.PullRequestReview{
+			UpdbtedAt: t,
+			Stbte:     stbte,
 			Author: github.Actor{
 				Login: login,
 			},
@@ -1533,12 +1533,12 @@ func ghReview(id int64, t time.Time, login, state string) *btypes.ChangesetEvent
 	}
 }
 
-func ghReviewDismissed(id int64, t time.Time, login, reviewer string) *btypes.ChangesetEvent {
-	return &btypes.ChangesetEvent{
-		ChangesetID: id,
-		Kind:        btypes.ChangesetEventKindGitHubReviewDismissed,
-		Metadata: &github.ReviewDismissedEvent{
-			CreatedAt: t,
+func ghReviewDismissed(id int64, t time.Time, login, reviewer string) *btypes.ChbngesetEvent {
+	return &btypes.ChbngesetEvent{
+		ChbngesetID: id,
+		Kind:        btypes.ChbngesetEventKindGitHubReviewDismissed,
+		Metbdbtb: &github.ReviewDismissedEvent{
+			CrebtedAt: t,
 			Actor:     github.Actor{Login: login},
 			Review: github.PullRequestReview{
 				Author: github.Actor{
@@ -1549,12 +1549,12 @@ func ghReviewDismissed(id int64, t time.Time, login, reviewer string) *btypes.Ch
 	}
 }
 
-func ghReadyForReview(id int64, t time.Time, login string) *btypes.ChangesetEvent {
-	return &btypes.ChangesetEvent{
-		ChangesetID: id,
-		Kind:        btypes.ChangesetEventKindGitHubReadyForReview,
-		Metadata: &github.ReadyForReviewEvent{
-			CreatedAt: t,
+func ghRebdyForReview(id int64, t time.Time, login string) *btypes.ChbngesetEvent {
+	return &btypes.ChbngesetEvent{
+		ChbngesetID: id,
+		Kind:        btypes.ChbngesetEventKindGitHubRebdyForReview,
+		Metbdbtb: &github.RebdyForReviewEvent{
+			CrebtedAt: t,
 			Actor: github.Actor{
 				Login: login,
 			},
@@ -1562,12 +1562,12 @@ func ghReadyForReview(id int64, t time.Time, login string) *btypes.ChangesetEven
 	}
 }
 
-func ghConvertToDraft(id int64, t time.Time, login string) *btypes.ChangesetEvent {
-	return &btypes.ChangesetEvent{
-		ChangesetID: id,
-		Kind:        btypes.ChangesetEventKindGitHubConvertToDraft,
-		Metadata: &github.ConvertToDraftEvent{
-			CreatedAt: t,
+func ghConvertToDrbft(id int64, t time.Time, login string) *btypes.ChbngesetEvent {
+	return &btypes.ChbngesetEvent{
+		ChbngesetID: id,
+		Kind:        btypes.ChbngesetEventKindGitHubConvertToDrbft,
+		Metbdbtb: &github.ConvertToDrbftEvent{
+			CrebtedAt: t,
 			Actor: github.Actor{
 				Login: login,
 			},
@@ -1575,91 +1575,91 @@ func ghConvertToDraft(id int64, t time.Time, login string) *btypes.ChangesetEven
 	}
 }
 
-func glUnmarkWorkInProgress(id int64, t time.Time, login string) *btypes.ChangesetEvent {
-	return &btypes.ChangesetEvent{
-		ChangesetID: id,
-		Kind:        btypes.ChangesetEventKindGitLabUnmarkWorkInProgress,
-		Metadata: &gitlab.UnmarkWorkInProgressEvent{
-			Note: &gitlab.Note{
+func glUnmbrkWorkInProgress(id int64, t time.Time, login string) *btypes.ChbngesetEvent {
+	return &btypes.ChbngesetEvent{
+		ChbngesetID: id,
+		Kind:        btypes.ChbngesetEventKindGitLbbUnmbrkWorkInProgress,
+		Metbdbtb: &gitlbb.UnmbrkWorkInProgressEvent{
+			Note: &gitlbb.Note{
 				System:    true,
-				Body:      gitlab.SystemNoteBodyUnmarkedWorkInProgress,
-				CreatedAt: gitlab.Time{Time: t},
-				Author: gitlab.User{
-					Username: login,
+				Body:      gitlbb.SystemNoteBodyUnmbrkedWorkInProgress,
+				CrebtedAt: gitlbb.Time{Time: t},
+				Author: gitlbb.User{
+					Usernbme: login,
 				},
 			},
 		},
 	}
 }
 
-func glMarkWorkInProgress(id int64, t time.Time, login string) *btypes.ChangesetEvent {
-	return &btypes.ChangesetEvent{
-		ChangesetID: id,
-		Kind:        btypes.ChangesetEventKindGitLabMarkWorkInProgress,
-		Metadata: &gitlab.MarkWorkInProgressEvent{
-			Note: &gitlab.Note{
+func glMbrkWorkInProgress(id int64, t time.Time, login string) *btypes.ChbngesetEvent {
+	return &btypes.ChbngesetEvent{
+		ChbngesetID: id,
+		Kind:        btypes.ChbngesetEventKindGitLbbMbrkWorkInProgress,
+		Metbdbtb: &gitlbb.MbrkWorkInProgressEvent{
+			Note: &gitlbb.Note{
 				System:    true,
-				Body:      gitlab.SystemNoteBodyMarkedWorkInProgress,
-				CreatedAt: gitlab.Time{Time: t},
-				Author: gitlab.User{
-					Username: login,
+				Body:      gitlbb.SystemNoteBodyMbrkedWorkInProgress,
+				CrebtedAt: gitlbb.Time{Time: t},
+				Author: gitlbb.User{
+					Usernbme: login,
 				},
 			},
 		},
 	}
 }
 
-func glClosed(id int64, t time.Time, login string) *btypes.ChangesetEvent {
-	return &btypes.ChangesetEvent{
-		ChangesetID: id,
-		Kind:        btypes.ChangesetEventKindGitLabClosed,
-		Metadata: &gitlab.MergeRequestClosedEvent{
-			ResourceStateEvent: &gitlab.ResourceStateEvent{
-				CreatedAt: gitlab.Time{Time: t},
-				User:      gitlab.User{Username: login},
-				State:     gitlab.ResourceStateEventStateClosed,
+func glClosed(id int64, t time.Time, login string) *btypes.ChbngesetEvent {
+	return &btypes.ChbngesetEvent{
+		ChbngesetID: id,
+		Kind:        btypes.ChbngesetEventKindGitLbbClosed,
+		Metbdbtb: &gitlbb.MergeRequestClosedEvent{
+			ResourceStbteEvent: &gitlbb.ResourceStbteEvent{
+				CrebtedAt: gitlbb.Time{Time: t},
+				User:      gitlbb.User{Usernbme: login},
+				Stbte:     gitlbb.ResourceStbteEventStbteClosed,
 			},
 		},
-		CreatedAt: t,
+		CrebtedAt: t,
 	}
 }
 
-func glReopen(id int64, t time.Time, login string) *btypes.ChangesetEvent {
-	return &btypes.ChangesetEvent{
-		ChangesetID: id,
-		Kind:        btypes.ChangesetEventKindGitLabReopened,
-		Metadata: &gitlab.MergeRequestReopenedEvent{
-			ResourceStateEvent: &gitlab.ResourceStateEvent{
-				CreatedAt: gitlab.Time{Time: t},
-				User:      gitlab.User{Username: login},
-				State:     gitlab.ResourceStateEventStateReopened,
+func glReopen(id int64, t time.Time, login string) *btypes.ChbngesetEvent {
+	return &btypes.ChbngesetEvent{
+		ChbngesetID: id,
+		Kind:        btypes.ChbngesetEventKindGitLbbReopened,
+		Metbdbtb: &gitlbb.MergeRequestReopenedEvent{
+			ResourceStbteEvent: &gitlbb.ResourceStbteEvent{
+				CrebtedAt: gitlbb.Time{Time: t},
+				User:      gitlbb.User{Usernbme: login},
+				Stbte:     gitlbb.ResourceStbteEventStbteReopened,
 			},
 		},
-		CreatedAt: t,
+		CrebtedAt: t,
 	}
 }
 
-func bbsActivity(id int64, t time.Time, username string, kind btypes.ChangesetEventKind) *btypes.ChangesetEvent {
-	return &btypes.ChangesetEvent{
-		ChangesetID: id,
+func bbsActivity(id int64, t time.Time, usernbme string, kind btypes.ChbngesetEventKind) *btypes.ChbngesetEvent {
+	return &btypes.ChbngesetEvent{
+		ChbngesetID: id,
 		Kind:        kind,
-		Metadata: &bitbucketserver.Activity{
-			CreatedDate: timeToUnixMilli(t),
+		Metbdbtb: &bitbucketserver.Activity{
+			CrebtedDbte: timeToUnixMilli(t),
 			User: bitbucketserver.User{
-				Name: username,
+				Nbme: usernbme,
 			},
 		},
 	}
 }
 
-func bbsParticipantEvent(id int64, t time.Time, username string, kind btypes.ChangesetEventKind) *btypes.ChangesetEvent {
-	return &btypes.ChangesetEvent{
-		ChangesetID: id,
+func bbsPbrticipbntEvent(id int64, t time.Time, usernbme string, kind btypes.ChbngesetEventKind) *btypes.ChbngesetEvent {
+	return &btypes.ChbngesetEvent{
+		ChbngesetID: id,
 		Kind:        kind,
-		Metadata: &bitbucketserver.ParticipantStatusEvent{
-			CreatedDate: timeToUnixMilli(t),
+		Metbdbtb: &bitbucketserver.PbrticipbntStbtusEvent{
+			CrebtedDbte: timeToUnixMilli(t),
 			User: bitbucketserver.User{
-				Name: username,
+				Nbme: usernbme,
 			},
 		},
 	}

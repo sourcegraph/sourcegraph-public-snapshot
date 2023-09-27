@@ -1,4 +1,4 @@
-package events
+pbckbge events
 
 import (
 	"context"
@@ -6,46 +6,46 @@ import (
 	"fmt"
 
 	"go.opentelemetry.io/otel"
-	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/bttribute"
 	"go.opentelemetry.io/otel/codes"
-	"go.opentelemetry.io/otel/trace"
+	"go.opentelemetry.io/otel/trbce"
 )
 
-var tracer = otel.GetTracerProvider().Tracer("cody-gateway/internal/events")
+vbr trbcer = otel.GetTrbcerProvider().Trbcer("cody-gbtewby/internbl/events")
 
 type instrumentedLogger struct {
 	Scope string
 	Logger
 }
 
-var _ Logger = &DelayedLogger{}
+vbr _ Logger = &DelbyedLogger{}
 
-func (i *instrumentedLogger) LogEvent(spanCtx context.Context, event Event) error {
-	_, span := tracer.Start(backgroundContextWithSpan(spanCtx), fmt.Sprintf("%s.LogEvent", i.Scope),
-		trace.WithAttributes(
-			attribute.String("source", event.Source),
-			attribute.String("event.name", string(event.Name))))
-	defer span.End()
+func (i *instrumentedLogger) LogEvent(spbnCtx context.Context, event Event) error {
+	_, spbn := trbcer.Stbrt(bbckgroundContextWithSpbn(spbnCtx), fmt.Sprintf("%s.LogEvent", i.Scope),
+		trbce.WithAttributes(
+			bttribute.String("source", event.Source),
+			bttribute.String("event.nbme", string(event.Nbme))))
+	defer spbn.End()
 
-	// Best-effort attempt to record event metadata
-	if metadataJSON, err := json.Marshal(event.Metadata); err == nil {
-		span.SetAttributes(attribute.String("event.metadata", string(metadataJSON)))
+	// Best-effort bttempt to record event metbdbtb
+	if metbdbtbJSON, err := json.Mbrshbl(event.Metbdbtb); err == nil {
+		spbn.SetAttributes(bttribute.String("event.metbdbtb", string(metbdbtbJSON)))
 	}
 
-	if err := i.Logger.LogEvent(spanCtx, event); err != nil {
+	if err := i.Logger.LogEvent(spbnCtx, event); err != nil {
 		if err != nil {
-			span.SetStatus(codes.Error, err.Error())
+			spbn.SetStbtus(codes.Error, err.Error())
 		}
-		span.SetStatus(codes.Error, "failed to log event")
+		spbn.SetStbtus(codes.Error, "fbiled to log event")
 		return err
 	}
 	return nil
 }
 
-// backgroundContextWithSpan extracts the span from the context and creates a new
-// context.Background() with the span attached. Using context.Background() is
-// desireable in Logger implementations because we still want to log the event
-// in the case of a request cancellation, but we want to retain the parent span.
-func backgroundContextWithSpan(ctx context.Context) context.Context {
-	return trace.ContextWithSpan(context.Background(), trace.SpanFromContext(ctx))
+// bbckgroundContextWithSpbn extrbcts the spbn from the context bnd crebtes b new
+// context.Bbckground() with the spbn bttbched. Using context.Bbckground() is
+// desirebble in Logger implementbtions becbuse we still wbnt to log the event
+// in the cbse of b request cbncellbtion, but we wbnt to retbin the pbrent spbn.
+func bbckgroundContextWithSpbn(ctx context.Context) context.Context {
+	return trbce.ContextWithSpbn(context.Bbckground(), trbce.SpbnFromContext(ctx))
 }

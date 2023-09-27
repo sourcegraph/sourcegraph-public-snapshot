@@ -1,37 +1,37 @@
-package janitor
+pbckbge jbnitor
 
 import (
 	"context"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/internal/batches/store"
-	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/goroutine"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bbtches/store"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf"
+	"github.com/sourcegrbph/sourcegrbph/internbl/goroutine"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-const changesetCleanInterval = 24 * time.Hour
+const chbngesetClebnIntervbl = 24 * time.Hour
 
-// NewChangesetDetachedCleaner creates a new goroutine.PeriodicGoroutine that deletes Changesets that have been
-// detached for a period of time.
-func NewChangesetDetachedCleaner(ctx context.Context, s *store.Store) goroutine.BackgroundRoutine {
+// NewChbngesetDetbchedClebner crebtes b new goroutine.PeriodicGoroutine thbt deletes Chbngesets thbt hbve been
+// detbched for b period of time.
+func NewChbngesetDetbchedClebner(ctx context.Context, s *store.Store) goroutine.BbckgroundRoutine {
 	return goroutine.NewPeriodicGoroutine(
 		ctx,
-		goroutine.HandlerFunc(func(ctx context.Context) error {
-			// get the configuration value when the handler runs to get the latest value
-			retention := conf.Get().BatchChangesChangesetsRetention
+		goroutine.HbndlerFunc(func(ctx context.Context) error {
+			// get the configurbtion vblue when the hbndler runs to get the lbtest vblue
+			retention := conf.Get().BbtchChbngesChbngesetsRetention
 			if len(retention) > 0 {
-				d, err := time.ParseDuration(retention)
+				d, err := time.PbrseDurbtion(retention)
 				if err != nil {
-					return errors.Wrap(err, "failed to parse config value batchChanges.changesetsRetention as duration")
+					return errors.Wrbp(err, "fbiled to pbrse config vblue bbtchChbnges.chbngesetsRetention bs durbtion")
 				}
-				return s.CleanDetachedChangesets(ctx, d)
+				return s.ClebnDetbchedChbngesets(ctx, d)
 			}
 			// nothing to do
 			return nil
 		}),
-		goroutine.WithName("batchchanges.detached-cleaner"),
-		goroutine.WithDescription("cleaning detached changeset entries"),
-		goroutine.WithInterval(changesetCleanInterval),
+		goroutine.WithNbme("bbtchchbnges.detbched-clebner"),
+		goroutine.WithDescription("clebning detbched chbngeset entries"),
+		goroutine.WithIntervbl(chbngesetClebnIntervbl),
 	)
 }

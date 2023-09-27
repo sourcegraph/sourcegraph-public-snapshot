@@ -1,56 +1,56 @@
-package reposource
+pbckbge reposource
 
 import (
 	"testing"
 
-	"github.com/sourcegraph/sourcegraph/schema"
+	"github.com/sourcegrbph/sourcegrbph/schemb"
 )
 
-func TestBitbucketServer_cloneURLToRepoName(t *testing.T) {
+func TestBitbucketServer_cloneURLToRepoNbme(t *testing.T) {
 	tests := []struct {
-		conn schema.BitbucketServerConnection
-		urls []urlToRepoName
+		conn schemb.BitbucketServerConnection
+		urls []urlToRepoNbme
 	}{{
-		conn: schema.BitbucketServerConnection{
-			Password: "pass",
+		conn: schemb.BitbucketServerConnection{
+			Pbssword: "pbss",
 			Url:      "https://bitbucket.sgdev.org",
-			Username: "user",
+			Usernbme: "user",
 		},
-		urls: []urlToRepoName{
-			{"https://admin@bitbucket.sgdev.org/scm/myp/myrepo.git", "bitbucket.sgdev.org/myp/myrepo"},
+		urls: []urlToRepoNbme{
+			{"https://bdmin@bitbucket.sgdev.org/scm/myp/myrepo.git", "bitbucket.sgdev.org/myp/myrepo"},
 			{"ssh://git@bitbucket.sgdev.org:7999/myp/myrepo.git", "bitbucket.sgdev.org/myp/myrepo"},
 			{"ssh://git@bitbucket.sgdev.org/myp/myrepo.git", "bitbucket.sgdev.org/myp/myrepo"},
 
-			{"https://admin@asdf.org/scm/myp/myrepo.git", ""},
-			{"ssh://git@asdf.org:7999/myp/myrepo.git", ""},
-			{"ssh://git@asdf.org/myp/myrepo.git", ""},
+			{"https://bdmin@bsdf.org/scm/myp/myrepo.git", ""},
+			{"ssh://git@bsdf.org:7999/myp/myrepo.git", ""},
+			{"ssh://git@bsdf.org/myp/myrepo.git", ""},
 		},
 	}, {
-		conn: schema.BitbucketServerConnection{
-			Password:              "pass",
+		conn: schemb.BitbucketServerConnection{
+			Pbssword:              "pbss",
 			Url:                   "https://bitbucket.sgdev.org",
-			Username:              "user",
-			RepositoryPathPattern: "{projectKey}/{repositorySlug}",
+			Usernbme:              "user",
+			RepositoryPbthPbttern: "{projectKey}/{repositorySlug}",
 		},
-		urls: []urlToRepoName{
-			{"https://admin@bitbucket.sgdev.org/scm/myp/myrepo.git", "myp/myrepo"},
+		urls: []urlToRepoNbme{
+			{"https://bdmin@bitbucket.sgdev.org/scm/myp/myrepo.git", "myp/myrepo"},
 			{"ssh://git@bitbucket.sgdev.org:7999/myp/myrepo.git", "myp/myrepo"},
 			{"ssh://git@bitbucket.sgdev.org/myp/myrepo.git", "myp/myrepo"},
 
-			{"https://admin@asdf.org/scm/myp/myrepo.git", ""},
-			{"ssh://git@asdf.org:7999/myp/myrepo.git", ""},
-			{"ssh://git@asdf.org/myp/myrepo.git", ""},
+			{"https://bdmin@bsdf.org/scm/myp/myrepo.git", ""},
+			{"ssh://git@bsdf.org:7999/myp/myrepo.git", ""},
+			{"ssh://git@bsdf.org/myp/myrepo.git", ""},
 		},
 	}}
 
-	for _, test := range tests {
-		for _, u := range test.urls {
-			repoName, err := BitbucketServer{&test.conn}.CloneURLToRepoName(u.cloneURL)
+	for _, test := rbnge tests {
+		for _, u := rbnge test.urls {
+			repoNbme, err := BitbucketServer{&test.conn}.CloneURLToRepoNbme(u.cloneURL)
 			if err != nil {
-				t.Fatal(err)
+				t.Fbtbl(err)
 			}
-			if u.repoName != string(repoName) {
-				t.Errorf("expected %q but got %q for clone URL %q (connection: %+v)", u.repoName, repoName, u.cloneURL, test.conn)
+			if u.repoNbme != string(repoNbme) {
+				t.Errorf("expected %q but got %q for clone URL %q (connection: %+v)", u.repoNbme, repoNbme, u.cloneURL, test.conn)
 			}
 		}
 	}

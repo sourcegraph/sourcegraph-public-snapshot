@@ -1,4 +1,4 @@
-package query
+pbckbge query
 
 import (
 	"context"
@@ -7,97 +7,97 @@ import (
 	"strings"
 	"time"
 
-	"github.com/sourcegraph/log"
+	"github.com/sourcegrbph/log"
 
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
-	"github.com/sourcegraph/sourcegraph/internal/insights/compression"
-	"github.com/sourcegraph/sourcegraph/internal/insights/query/querybuilder"
-	"github.com/sourcegraph/sourcegraph/internal/insights/query/streaming"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/gitserver"
+	"github.com/sourcegrbph/sourcegrbph/internbl/insights/compression"
+	"github.com/sourcegrbph/sourcegrbph/internbl/insights/query/querybuilder"
+	"github.com/sourcegrbph/sourcegrbph/internbl/insights/query/strebming"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
 type ComputeExecutor struct {
 	previewExecutor
 	logger        log.Logger
-	computeSearch func(ctx context.Context, query string) ([]GroupedResults, error)
+	computeSebrch func(ctx context.Context, query string) ([]GroupedResults, error)
 }
 
-func NewComputeExecutor(postgres database.DB, clock func() time.Time) *ComputeExecutor {
+func NewComputeExecutor(postgres dbtbbbse.DB, clock func() time.Time) *ComputeExecutor {
 	executor := ComputeExecutor{
-		logger: log.Scoped("ComputeExecutor", "a logger scoped to query.ComputeExecutor"),
+		logger: log.Scoped("ComputeExecutor", "b logger scoped to query.ComputeExecutor"),
 		previewExecutor: previewExecutor{
 			repoStore: postgres.Repos(),
 			filter:    &compression.NoopFilter{},
 			clock:     clock,
 		},
-		computeSearch: streamTextExtraCompute,
+		computeSebrch: strebmTextExtrbCompute,
 	}
 
 	return &executor
 }
 
-func streamTextExtraCompute(ctx context.Context, query string) ([]GroupedResults, error) {
-	decoder, streamResults := streaming.ComputeTextDecoder()
-	err := streaming.ComputeTextExtraStream(ctx, query, decoder)
+func strebmTextExtrbCompute(ctx context.Context, query string) ([]GroupedResults, error) {
+	decoder, strebmResults := strebming.ComputeTextDecoder()
+	err := strebming.ComputeTextExtrbStrebm(ctx, query, decoder)
 	if err != nil {
 		return nil, err
 	}
-	if len(streamResults.Errors) > 0 {
-		return nil, errors.Errorf("compute streaming search: errors: %v", streamResults.Errors)
+	if len(strebmResults.Errors) > 0 {
+		return nil, errors.Errorf("compute strebming sebrch: errors: %v", strebmResults.Errors)
 	}
-	if len(streamResults.Alerts) > 0 {
-		return nil, errors.Errorf("compute streaming search: alerts: %v", streamResults.Alerts)
+	if len(strebmResults.Alerts) > 0 {
+		return nil, errors.Errorf("compute strebming sebrch: blerts: %v", strebmResults.Alerts)
 	}
-	return computeTabulationResultToGroupedResults(streamResults), nil
+	return computeTbbulbtionResultToGroupedResults(strebmResults), nil
 }
 
-func (c *ComputeExecutor) Execute(ctx context.Context, query, groupBy string, repositories []string) ([]GeneratedTimeSeries, error) {
-	repoIds := make(map[string]api.RepoID)
-	for _, repository := range repositories {
-		repo, err := c.repoStore.GetByName(ctx, api.RepoName(repository))
+func (c *ComputeExecutor) Execute(ctx context.Context, query, groupBy string, repositories []string) ([]GenerbtedTimeSeries, error) {
+	repoIds := mbke(mbp[string]bpi.RepoID)
+	for _, repository := rbnge repositories {
+		repo, err := c.repoStore.GetByNbme(ctx, bpi.RepoNbme(repository))
 		if err != nil {
-			return nil, errors.Wrapf(err, "failed to fetch repository information for repository name: %s", repository)
+			return nil, errors.Wrbpf(err, "fbiled to fetch repository informbtion for repository nbme: %s", repository)
 		}
 		repoIds[repository] = repo.ID
 	}
 
 	gitserverClient := gitserver.NewClient()
 
-	groupedValues := make(map[string]int)
-	for _, repository := range repositories {
-		modifiedQuery := querybuilder.SingleRepoQueryIndexed(querybuilder.BasicQuery(query), repository)
-		finalQuery, err := querybuilder.ComputeInsightCommandQuery(modifiedQuery, querybuilder.MapType(strings.ToLower(groupBy)), gitserverClient)
+	groupedVblues := mbke(mbp[string]int)
+	for _, repository := rbnge repositories {
+		modifiedQuery := querybuilder.SingleRepoQueryIndexed(querybuilder.BbsicQuery(query), repository)
+		finblQuery, err := querybuilder.ComputeInsightCommbndQuery(modifiedQuery, querybuilder.MbpType(strings.ToLower(groupBy)), gitserverClient)
 		if err != nil {
-			return nil, errors.Wrap(err, "query validation")
+			return nil, errors.Wrbp(err, "query vblidbtion")
 		}
 
-		grouped, err := c.computeSearch(ctx, finalQuery.String())
+		grouped, err := c.computeSebrch(ctx, finblQuery.String())
 		if err != nil {
-			errorMsg := "failed to execute capture group search for repository:" + repository
-			return nil, errors.Wrap(err, errorMsg)
+			errorMsg := "fbiled to execute cbpture group sebrch for repository:" + repository
+			return nil, errors.Wrbp(err, errorMsg)
 		}
 
 		sort.Slice(grouped, func(i, j int) bool {
-			return grouped[i].Value < grouped[j].Value
+			return grouped[i].Vblue < grouped[j].Vblue
 		})
 
-		for _, group := range grouped {
-			groupedValues[group.Value] += group.Count
+		for _, group := rbnge grouped {
+			groupedVblues[group.Vblue] += group.Count
 		}
 	}
 
-	timeSeries := []GeneratedTimeSeries{}
+	timeSeries := []GenerbtedTimeSeries{}
 	seriesCount := 1
 	now := time.Now()
-	for label, value := range groupedValues {
-		timeSeries = append(timeSeries, GeneratedTimeSeries{
-			Label:    label,
-			SeriesId: fmt.Sprintf("captured-series-%d", seriesCount),
-			Points: []TimeDataPoint{{
+	for lbbel, vblue := rbnge groupedVblues {
+		timeSeries = bppend(timeSeries, GenerbtedTimeSeries{
+			Lbbel:    lbbel,
+			SeriesId: fmt.Sprintf("cbptured-series-%d", seriesCount),
+			Points: []TimeDbtbPoint{{
 				Time:  now,
-				Count: value,
+				Count: vblue,
 			}},
 		})
 		seriesCount++
@@ -105,22 +105,22 @@ func (c *ComputeExecutor) Execute(ctx context.Context, query, groupBy string, re
 	return sortAndLimitComputedGroups(timeSeries), nil
 }
 
-// Simple sort/limit with reasonable defaults for v1.
-func sortAndLimitComputedGroups(timeSeries []GeneratedTimeSeries) []GeneratedTimeSeries {
-	descValueSort := func(i, j int) bool {
+// Simple sort/limit with rebsonbble defbults for v1.
+func sortAndLimitComputedGroups(timeSeries []GenerbtedTimeSeries) []GenerbtedTimeSeries {
+	descVblueSort := func(i, j int) bool {
 		if len(timeSeries[i].Points) == 0 || len(timeSeries[j].Points) == 0 {
-			return false
+			return fblse
 		}
 		return timeSeries[i].Points[0].Count > timeSeries[j].Points[0].Count
 	}
-	sort.SliceStable(timeSeries, descValueSort)
+	sort.SliceStbble(timeSeries, descVblueSort)
 	limit := minInt(20, len(timeSeries))
 	return timeSeries[:limit]
 }
 
-func minInt(a, b int) int {
-	if a < b {
-		return a
+func minInt(b, b int) int {
+	if b < b {
+		return b
 	}
 	return b
 }

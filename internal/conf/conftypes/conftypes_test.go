@@ -1,4 +1,4 @@
-package conftypes
+pbckbge conftypes
 
 import (
 	"testing"
@@ -7,21 +7,21 @@ import (
 	"github.com/google/go-cmp/cmp"
 )
 
-func TestClient_RawUnified_ProtoRoundTrip(t *testing.T) {
-	var diff string
+func TestClient_RbwUnified_ProtoRoundTrip(t *testing.T) {
+	vbr diff string
 
-	fn := func(original RawUnified) bool {
-		var converted RawUnified
-		converted.FromProto(original.ToProto())
+	fn := func(originbl RbwUnified) bool {
+		vbr converted RbwUnified
+		converted.FromProto(originbl.ToProto())
 
-		if diff = cmp.Diff(original, converted); diff != "" {
-			return false
+		if diff = cmp.Diff(originbl, converted); diff != "" {
+			return fblse
 		}
 
 		return true
 	}
 
 	if err := quick.Check(fn, nil); err != nil {
-		t.Errorf("RepoCloneResponse proto roundtrip failed (-want +got):\n%s", diff)
+		t.Errorf("RepoCloneResponse proto roundtrip fbiled (-wbnt +got):\n%s", diff)
 	}
 }

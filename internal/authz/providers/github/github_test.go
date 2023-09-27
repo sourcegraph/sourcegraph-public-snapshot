@@ -1,4 +1,4 @@
-package github
+pbckbge github
 
 import (
 	"context"
@@ -10,27 +10,27 @@ import (
 	"time"
 
 	"github.com/google/go-cmp/cmp"
-	"github.com/gregjones/httpcache"
+	"github.com/gregjones/httpcbche"
 
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/authz"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi"
+	"github.com/sourcegrbph/sourcegrbph/internbl/buthz"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbmocks"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc/buth"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc/github"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
 func mustURL(t *testing.T, u string) *url.URL {
-	parsed, err := url.Parse(u)
+	pbrsed, err := url.Pbrse(u)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
-	return parsed
+	return pbrsed
 }
 
-func memGroupsCache() *cachedGroups {
-	return &cachedGroups{cache: httpcache.NewMemoryCache()}
+func memGroupsCbche() *cbchedGroups {
+	return &cbchedGroups{cbche: httpcbche.NewMemoryCbche()}
 }
 
 func mockClientFunc(mockClient client) func() (client, error) {
@@ -39,504 +39,504 @@ func mockClientFunc(mockClient client) func() (client, error) {
 	}
 }
 
-// newMockClientWithTokenMock is used to keep the behaviour of WithToken function mocking
-// which is lost during moving the client interface to mockgen usage
+// newMockClientWithTokenMock is used to keep the behbviour of WithToken function mocking
+// which is lost during moving the client interfbce to mockgen usbge
 func newMockClientWithTokenMock() *MockClient {
 	mockClient := NewMockClient()
-	mockClient.WithAuthenticatorFunc.SetDefaultReturn(mockClient)
+	mockClient.WithAuthenticbtorFunc.SetDefbultReturn(mockClient)
 	return mockClient
 }
 
 func TestProvider_FetchUserPerms(t *testing.T) {
 	db := dbmocks.NewMockDB()
-	t.Run("nil account", func(t *testing.T) {
+	t.Run("nil bccount", func(t *testing.T) {
 		p := NewProvider("", ProviderOptions{GitHubURL: mustURL(t, "https://github.com"), DB: db})
-		_, err := p.FetchUserPerms(context.Background(), nil, authz.FetchPermsOptions{})
-		want := "no account provided"
+		_, err := p.FetchUserPerms(context.Bbckground(), nil, buthz.FetchPermsOptions{})
+		wbnt := "no bccount provided"
 		got := fmt.Sprintf("%v", err)
-		if got != want {
-			t.Fatalf("err: want %q but got %q", want, got)
+		if got != wbnt {
+			t.Fbtblf("err: wbnt %q but got %q", wbnt, got)
 		}
 	})
 
-	t.Run("not the code host of the account", func(t *testing.T) {
+	t.Run("not the code host of the bccount", func(t *testing.T) {
 		p := NewProvider("", ProviderOptions{GitHubURL: mustURL(t, "https://github.com"), DB: db})
-		_, err := p.FetchUserPerms(context.Background(),
+		_, err := p.FetchUserPerms(context.Bbckground(),
 			&extsvc.Account{
 				AccountSpec: extsvc.AccountSpec{
-					ServiceType: "gitlab",
-					ServiceID:   "https://gitlab.com/",
+					ServiceType: "gitlbb",
+					ServiceID:   "https://gitlbb.com/",
 				},
 			},
-			authz.FetchPermsOptions{},
+			buthz.FetchPermsOptions{},
 		)
-		want := `not a code host of the account: want "https://gitlab.com/" but have "https://github.com/"`
+		wbnt := `not b code host of the bccount: wbnt "https://gitlbb.com/" but hbve "https://github.com/"`
 		got := fmt.Sprintf("%v", err)
-		if got != want {
-			t.Fatalf("err: want %q but got %q", want, got)
+		if got != wbnt {
+			t.Fbtblf("err: wbnt %q but got %q", wbnt, got)
 		}
 	})
 
-	t.Run("no token found in account data", func(t *testing.T) {
+	t.Run("no token found in bccount dbtb", func(t *testing.T) {
 		p := NewProvider("", ProviderOptions{GitHubURL: mustURL(t, "https://github.com"), DB: db})
-		_, err := p.FetchUserPerms(context.Background(),
+		_, err := p.FetchUserPerms(context.Bbckground(),
 			&extsvc.Account{
 				AccountSpec: extsvc.AccountSpec{
 					ServiceType: "github",
 					ServiceID:   "https://github.com/",
 				},
-				AccountData: extsvc.AccountData{},
+				AccountDbtb: extsvc.AccountDbtb{},
 			},
-			authz.FetchPermsOptions{},
+			buthz.FetchPermsOptions{},
 		)
-		want := `no token found in the external account data`
+		wbnt := `no token found in the externbl bccount dbtb`
 		got := fmt.Sprintf("%v", err)
-		if got != want {
-			t.Fatalf("err: want %q but got %q", want, got)
+		if got != wbnt {
+			t.Fbtblf("err: wbnt %q but got %q", wbnt, got)
 		}
 	})
 
-	var (
-		authData    = json.RawMessage(`{"access_token": "my_access_token"}`)
+	vbr (
+		buthDbtb    = json.RbwMessbge(`{"bccess_token": "my_bccess_token"}`)
 		mockAccount = &extsvc.Account{
 			AccountSpec: extsvc.AccountSpec{
 				AccountID:   "4567",
 				ServiceType: "github",
 				ServiceID:   "https://github.com/",
 			},
-			AccountData: extsvc.AccountData{
-				AuthData: extsvc.NewUnencryptedData(authData),
+			AccountDbtb: extsvc.AccountDbtb{
+				AuthDbtb: extsvc.NewUnencryptedDbtb(buthDbtb),
 			},
 		}
 
-		mockListAffiliatedRepositories = func(_ context.Context, _ github.Visibility, page int, perPage int, _ ...github.RepositoryAffiliation) ([]*github.Repository, bool, int, error) {
-			switch page {
-			case 1:
+		mockListAffilibtedRepositories = func(_ context.Context, _ github.Visibility, pbge int, perPbge int, _ ...github.RepositoryAffilibtion) ([]*github.Repository, bool, int, error) {
+			switch pbge {
+			cbse 1:
 				return []*github.Repository{
-					{ID: "MDEwOlJlcG9zaXRvcnkyNTI0MjU2NzE="},
-					{ID: "MDEwOlJlcG9zaXRvcnkyNDQ1MTc1MzY="},
+					{ID: "MDEwOlJlcG9zbXRvcnkyNTI0MjU2NzE="},
+					{ID: "MDEwOlJlcG9zbXRvcnkyNDQ1MTc1MzY="},
 				}, true, 1, nil
-			case 2:
+			cbse 2:
 				return []*github.Repository{
-					{ID: "MDEwOlJlcG9zaXRvcnkyNDI2NTEwMDA="},
-				}, false, 1, nil
+					{ID: "MDEwOlJlcG9zbXRvcnkyNDI2NTEwMDA="},
+				}, fblse, 1, nil
 			}
 
-			return []*github.Repository{}, false, 1, nil
+			return []*github.Repository{}, fblse, 1, nil
 		}
 
-		mockOrgNoRead      = &github.OrgDetails{Org: github.Org{Login: "not-sourcegraph"}, DefaultRepositoryPermission: "none"}
-		mockOrgNoRead2     = &github.OrgDetails{Org: github.Org{Login: "not-sourcegraph-2"}, DefaultRepositoryPermission: "none"}
-		mockOrgRead        = &github.OrgDetails{Org: github.Org{Login: "sourcegraph"}, DefaultRepositoryPermission: "read"}
-		mockListOrgDetails = func(_ context.Context, page int) (orgs []github.OrgDetailsAndMembership, hasNextPage bool, rateLimitCost int, err error) {
-			switch page {
-			case 1:
-				return []github.OrgDetailsAndMembership{{
-					// does not have access to this org
-					OrgDetails: mockOrgNoRead,
+		mockOrgNoRebd      = &github.OrgDetbils{Org: github.Org{Login: "not-sourcegrbph"}, DefbultRepositoryPermission: "none"}
+		mockOrgNoRebd2     = &github.OrgDetbils{Org: github.Org{Login: "not-sourcegrbph-2"}, DefbultRepositoryPermission: "none"}
+		mockOrgRebd        = &github.OrgDetbils{Org: github.Org{Login: "sourcegrbph"}, DefbultRepositoryPermission: "rebd"}
+		mockListOrgDetbils = func(_ context.Context, pbge int) (orgs []github.OrgDetbilsAndMembership, hbsNextPbge bool, rbteLimitCost int, err error) {
+			switch pbge {
+			cbse 1:
+				return []github.OrgDetbilsAndMembership{{
+					// does not hbve bccess to this org
+					OrgDetbils: mockOrgNoRebd,
 				}, {
-					// does not have access to this org
-					OrgDetails: mockOrgNoRead2,
-					// but is an admin, so has access to all org repos
-					OrgMembership: &github.OrgMembership{State: "active", Role: "admin"},
+					// does not hbve bccess to this org
+					OrgDetbils: mockOrgNoRebd2,
+					// but is bn bdmin, so hbs bccess to bll org repos
+					OrgMembership: &github.OrgMembership{Stbte: "bctive", Role: "bdmin"},
 				}}, true, 1, nil
-			case 2:
-				return []github.OrgDetailsAndMembership{{
-					// has access to this org
-					OrgDetails: mockOrgRead,
-				}}, false, 1, nil
+			cbse 2:
+				return []github.OrgDetbilsAndMembership{{
+					// hbs bccess to this org
+					OrgDetbils: mockOrgRebd,
+				}}, fblse, 1, nil
 			}
-			return nil, false, 1, nil
+			return nil, fblse, 1, nil
 		}
 
-		mockListOrgRepositories = func(_ context.Context, org string, page int, _ string) (repos []*github.Repository, hasNextPage bool, rateLimitCost int, err error) {
+		mockListOrgRepositories = func(_ context.Context, org string, pbge int, _ string) (repos []*github.Repository, hbsNextPbge bool, rbteLimitCost int, err error) {
 			switch org {
-			case mockOrgRead.Login:
-				switch page {
-				case 1:
+			cbse mockOrgRebd.Login:
+				switch pbge {
+				cbse 1:
 					return []*github.Repository{
-						{ID: "MDEwOlJlcG9zaXRvcnkyNTI0MjU2NzE="}, // existing repo
-						{ID: "MDEwOlJlcG9zaXRvcnkyNDQ1MTc1234="},
+						{ID: "MDEwOlJlcG9zbXRvcnkyNTI0MjU2NzE="}, // existing repo
+						{ID: "MDEwOlJlcG9zbXRvcnkyNDQ1MTc1234="},
 					}, true, 1, nil
-				case 2:
+				cbse 2:
 					return []*github.Repository{
-						{ID: "MDEwOlJlcG9zaXRvcnkyNDI2NTE5678="},
-					}, false, 1, nil
+						{ID: "MDEwOlJlcG9zbXRvcnkyNDI2NTE5678="},
+					}, fblse, 1, nil
 				}
-			case mockOrgNoRead2.Login:
-				return []*github.Repository{{ID: "MDEwOlJlcG9zaXRvcnkyNDI2NTadmin="}}, false, 1, nil
+			cbse mockOrgNoRebd2.Login:
+				return []*github.Repository{{ID: "MDEwOlJlcG9zbXRvcnkyNDI2NTbdmin="}}, fblse, 1, nil
 			}
-			t.Fatalf("unexpected call to ListOrgRepositories with org %q page %d", org, page)
-			return nil, false, 1, nil
+			t.Fbtblf("unexpected cbll to ListOrgRepositories with org %q pbge %d", org, pbge)
+			return nil, fblse, 1, nil
 		}
 	)
 
-	t.Run("cache disabled", func(t *testing.T) {
+	t.Run("cbche disbbled", func(t *testing.T) {
 		mockClient := newMockClientWithTokenMock()
-		mockClient.ListAffiliatedRepositoriesFunc.SetDefaultHook(
-			func(ctx context.Context, visibility github.Visibility, page int, perPage int, affiliations ...github.RepositoryAffiliation) (repos []*github.Repository, hasNextPage bool, rateLimitCost int, err error) {
-				if len(affiliations) != 0 {
-					t.Fatalf("Expected 0 affiliations, got %+v", affiliations)
+		mockClient.ListAffilibtedRepositoriesFunc.SetDefbultHook(
+			func(ctx context.Context, visibility github.Visibility, pbge int, perPbge int, bffilibtions ...github.RepositoryAffilibtion) (repos []*github.Repository, hbsNextPbge bool, rbteLimitCost int, err error) {
+				if len(bffilibtions) != 0 {
+					t.Fbtblf("Expected 0 bffilibtions, got %+v", bffilibtions)
 				}
-				return mockListAffiliatedRepositories(ctx, visibility, page, perPage, affiliations...)
+				return mockListAffilibtedRepositories(ctx, visibility, pbge, perPbge, bffilibtions...)
 			})
 
 		p := NewProvider("", ProviderOptions{
 			GitHubURL:      mustURL(t, "https://github.com"),
-			GroupsCacheTTL: time.Duration(-1),
+			GroupsCbcheTTL: time.Durbtion(-1),
 			DB:             db,
 		})
 		p.client = mockClientFunc(mockClient)
-		if p.groupsCache != nil {
-			t.Fatal("expected nil groupsCache")
+		if p.groupsCbche != nil {
+			t.Fbtbl("expected nil groupsCbche")
 		}
 
-		repoIDs, err := p.FetchUserPerms(context.Background(),
+		repoIDs, err := p.FetchUserPerms(context.Bbckground(),
 			mockAccount,
-			authz.FetchPermsOptions{},
+			buthz.FetchPermsOptions{},
 		)
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
 
-		wantRepoIDs := []extsvc.RepoID{
-			"MDEwOlJlcG9zaXRvcnkyNTI0MjU2NzE=",
-			"MDEwOlJlcG9zaXRvcnkyNDQ1MTc1MzY=",
-			"MDEwOlJlcG9zaXRvcnkyNDI2NTEwMDA=",
+		wbntRepoIDs := []extsvc.RepoID{
+			"MDEwOlJlcG9zbXRvcnkyNTI0MjU2NzE=",
+			"MDEwOlJlcG9zbXRvcnkyNDQ1MTc1MzY=",
+			"MDEwOlJlcG9zbXRvcnkyNDI2NTEwMDA=",
 		}
-		if diff := cmp.Diff(wantRepoIDs, repoIDs.Exacts); diff != "" {
-			t.Fatalf("RepoIDs mismatch (-want +got):\n%s", diff)
+		if diff := cmp.Diff(wbntRepoIDs, repoIDs.Exbcts); diff != "" {
+			t.Fbtblf("RepoIDs mismbtch (-wbnt +got):\n%s", diff)
 		}
 	})
 
-	t.Run("cache enabled", func(t *testing.T) {
-		t.Run("user has no orgs and teams", func(t *testing.T) {
+	t.Run("cbche enbbled", func(t *testing.T) {
+		t.Run("user hbs no orgs bnd tebms", func(t *testing.T) {
 			mockClient := newMockClientWithTokenMock()
-			mockClient.ListAffiliatedRepositoriesFunc.SetDefaultHook(mockListAffiliatedRepositories)
-			mockClient.GetAuthenticatedUserOrgsDetailsAndMembershipFunc.SetDefaultHook(
-				func(ctx context.Context, page int) (orgs []github.OrgDetailsAndMembership, hasNextPage bool, rateLimitCost int, err error) {
+			mockClient.ListAffilibtedRepositoriesFunc.SetDefbultHook(mockListAffilibtedRepositories)
+			mockClient.GetAuthenticbtedUserOrgsDetbilsAndMembershipFunc.SetDefbultHook(
+				func(ctx context.Context, pbge int) (orgs []github.OrgDetbilsAndMembership, hbsNextPbge bool, rbteLimitCost int, err error) {
 					// No orgs
-					return nil, false, 1, nil
+					return nil, fblse, 1, nil
 				})
-			mockClient.GetAuthenticatedUserTeamsFunc.SetDefaultHook(
-				func(ctx context.Context, page int) (teams []*github.Team, hasNextPage bool, rateLimitCost int, err error) {
-					// No teams
-					return nil, false, 1, nil
+			mockClient.GetAuthenticbtedUserTebmsFunc.SetDefbultHook(
+				func(ctx context.Context, pbge int) (tebms []*github.Tebm, hbsNextPbge bool, rbteLimitCost int, err error) {
+					// No tebms
+					return nil, fblse, 1, nil
 				})
-			// should call with token
-			calledWithToken := false
-			mockClient.WithAuthenticatorFunc.SetDefaultHook(
-				func(_ auth.Authenticator) client {
-					calledWithToken = true
+			// should cbll with token
+			cblledWithToken := fblse
+			mockClient.WithAuthenticbtorFunc.SetDefbultHook(
+				func(_ buth.Authenticbtor) client {
+					cblledWithToken = true
 					return mockClient
 				})
 
 			p := NewProvider("", ProviderOptions{GitHubURL: mustURL(t, "https://github.com"), DB: db})
 			p.client = mockClientFunc(mockClient)
-			if p.groupsCache == nil {
-				t.Fatal("expected groupsCache")
+			if p.groupsCbche == nil {
+				t.Fbtbl("expected groupsCbche")
 			}
-			p.groupsCache = memGroupsCache()
+			p.groupsCbche = memGroupsCbche()
 
-			repoIDs, err := p.FetchUserPerms(context.Background(), mockAccount, authz.FetchPermsOptions{})
+			repoIDs, err := p.FetchUserPerms(context.Bbckground(), mockAccount, buthz.FetchPermsOptions{})
 			if err != nil {
-				t.Fatal(err)
+				t.Fbtbl(err)
 			}
 
-			if !calledWithToken {
-				t.Fatal("!calledWithToken")
+			if !cblledWithToken {
+				t.Fbtbl("!cblledWithToken")
 			}
 
-			wantRepoIDs := []extsvc.RepoID{
-				"MDEwOlJlcG9zaXRvcnkyNTI0MjU2NzE=",
-				"MDEwOlJlcG9zaXRvcnkyNDQ1MTc1MzY=",
-				"MDEwOlJlcG9zaXRvcnkyNDI2NTEwMDA=",
+			wbntRepoIDs := []extsvc.RepoID{
+				"MDEwOlJlcG9zbXRvcnkyNTI0MjU2NzE=",
+				"MDEwOlJlcG9zbXRvcnkyNDQ1MTc1MzY=",
+				"MDEwOlJlcG9zbXRvcnkyNDI2NTEwMDA=",
 			}
-			if diff := cmp.Diff(wantRepoIDs, repoIDs.Exacts); diff != "" {
-				t.Fatalf("RepoIDs mismatch (-want +got):\n%s", diff)
+			if diff := cmp.Diff(wbntRepoIDs, repoIDs.Exbcts); diff != "" {
+				t.Fbtblf("RepoIDs mismbtch (-wbnt +got):\n%s", diff)
 			}
 		})
 
 		t.Run("user in orgs", func(t *testing.T) {
 			mockClient := newMockClientWithTokenMock()
-			mockClient.ListAffiliatedRepositoriesFunc.SetDefaultHook(mockListAffiliatedRepositories)
-			mockClient.GetAuthenticatedUserOrgsDetailsAndMembershipFunc.SetDefaultHook(mockListOrgDetails)
-			mockClient.GetAuthenticatedUserTeamsFunc.SetDefaultHook(
-				func(ctx context.Context, page int) (teams []*github.Team, hasNextPage bool, rateLimitCost int, err error) {
-					// No teams
-					return nil, false, 1, nil
+			mockClient.ListAffilibtedRepositoriesFunc.SetDefbultHook(mockListAffilibtedRepositories)
+			mockClient.GetAuthenticbtedUserOrgsDetbilsAndMembershipFunc.SetDefbultHook(mockListOrgDetbils)
+			mockClient.GetAuthenticbtedUserTebmsFunc.SetDefbultHook(
+				func(ctx context.Context, pbge int) (tebms []*github.Tebm, hbsNextPbge bool, rbteLimitCost int, err error) {
+					// No tebms
+					return nil, fblse, 1, nil
 				})
-			mockClient.ListOrgRepositoriesFunc.SetDefaultHook(mockListOrgRepositories)
+			mockClient.ListOrgRepositoriesFunc.SetDefbultHook(mockListOrgRepositories)
 
 			p := setupProvider(t, mockClient)
 
-			repoIDs, err := p.FetchUserPerms(context.Background(),
+			repoIDs, err := p.FetchUserPerms(context.Bbckground(),
 				mockAccount,
-				authz.FetchPermsOptions{},
+				buthz.FetchPermsOptions{},
 			)
 			if err != nil {
-				t.Fatal(err)
+				t.Fbtbl(err)
 			}
 
-			wantRepoIDs := []extsvc.RepoID{
-				"MDEwOlJlcG9zaXRvcnkyNTI0MjU2NzE=",
-				"MDEwOlJlcG9zaXRvcnkyNDQ1MTc1MzY=",
-				"MDEwOlJlcG9zaXRvcnkyNDI2NTEwMDA=",
-				"MDEwOlJlcG9zaXRvcnkyNDI2NTadmin=",
-				"MDEwOlJlcG9zaXRvcnkyNDQ1MTc1234=",
-				"MDEwOlJlcG9zaXRvcnkyNDI2NTE5678=",
+			wbntRepoIDs := []extsvc.RepoID{
+				"MDEwOlJlcG9zbXRvcnkyNTI0MjU2NzE=",
+				"MDEwOlJlcG9zbXRvcnkyNDQ1MTc1MzY=",
+				"MDEwOlJlcG9zbXRvcnkyNDI2NTEwMDA=",
+				"MDEwOlJlcG9zbXRvcnkyNDI2NTbdmin=",
+				"MDEwOlJlcG9zbXRvcnkyNDQ1MTc1234=",
+				"MDEwOlJlcG9zbXRvcnkyNDI2NTE5678=",
 			}
-			if diff := cmp.Diff(wantRepoIDs, repoIDs.Exacts); diff != "" {
-				t.Fatalf("RepoIDs mismatch (-want +got):\n%s", diff)
+			if diff := cmp.Diff(wbntRepoIDs, repoIDs.Exbcts); diff != "" {
+				t.Fbtblf("RepoIDs mismbtch (-wbnt +got):\n%s", diff)
 			}
 		})
 
-		t.Run("user in orgs and teams", func(t *testing.T) {
+		t.Run("user in orgs bnd tebms", func(t *testing.T) {
 			mockClient := newMockClientWithTokenMock()
-			mockClient.ListAffiliatedRepositoriesFunc.SetDefaultHook(mockListAffiliatedRepositories)
-			mockClient.GetAuthenticatedUserOrgsDetailsAndMembershipFunc.SetDefaultHook(mockListOrgDetails)
-			mockClient.GetAuthenticatedUserTeamsFunc.SetDefaultHook(
-				func(_ context.Context, page int) (teams []*github.Team, hasNextPage bool, rateLimitCost int, err error) {
-					switch page {
-					case 1:
-						return []*github.Team{
-							// should not get repos from this team because parent org has default read permissions
-							{Organization: &mockOrgRead.Org, Name: "ns team", Slug: "ns-team"},
-							// should not get repos from this team since it has no repos
-							{Organization: &mockOrgNoRead.Org, Name: "ns team", Slug: "ns-team", ReposCount: 0},
+			mockClient.ListAffilibtedRepositoriesFunc.SetDefbultHook(mockListAffilibtedRepositories)
+			mockClient.GetAuthenticbtedUserOrgsDetbilsAndMembershipFunc.SetDefbultHook(mockListOrgDetbils)
+			mockClient.GetAuthenticbtedUserTebmsFunc.SetDefbultHook(
+				func(_ context.Context, pbge int) (tebms []*github.Tebm, hbsNextPbge bool, rbteLimitCost int, err error) {
+					switch pbge {
+					cbse 1:
+						return []*github.Tebm{
+							// should not get repos from this tebm becbuse pbrent org hbs defbult rebd permissions
+							{Orgbnizbtion: &mockOrgRebd.Org, Nbme: "ns tebm", Slug: "ns-tebm"},
+							// should not get repos from this tebm since it hbs no repos
+							{Orgbnizbtion: &mockOrgNoRebd.Org, Nbme: "ns tebm", Slug: "ns-tebm", ReposCount: 0},
 						}, true, 1, nil
-					case 2:
-						return []*github.Team{
-							// should get repos from this team
-							{Organization: &mockOrgNoRead.Org, Name: "ns team 2", Slug: "ns-team-2", ReposCount: 3},
-						}, false, 1, nil
+					cbse 2:
+						return []*github.Tebm{
+							// should get repos from this tebm
+							{Orgbnizbtion: &mockOrgNoRebd.Org, Nbme: "ns tebm 2", Slug: "ns-tebm-2", ReposCount: 3},
+						}, fblse, 1, nil
 					}
-					return nil, false, 1, nil
+					return nil, fblse, 1, nil
 				})
-			mockClient.ListOrgRepositoriesFunc.SetDefaultHook(mockListOrgRepositories)
-			mockClient.ListTeamRepositoriesFunc.SetDefaultHook(
-				func(_ context.Context, org, team string, page int) (repos []*github.Repository, hasNextPage bool, rateLimitCost int, err error) {
+			mockClient.ListOrgRepositoriesFunc.SetDefbultHook(mockListOrgRepositories)
+			mockClient.ListTebmRepositoriesFunc.SetDefbultHook(
+				func(_ context.Context, org, tebm string, pbge int) (repos []*github.Repository, hbsNextPbge bool, rbteLimitCost int, err error) {
 					switch org {
-					case "not-sourcegraph":
-						switch team {
-						case "ns-team-2":
-							switch page {
-							case 1:
+					cbse "not-sourcegrbph":
+						switch tebm {
+						cbse "ns-tebm-2":
+							switch pbge {
+							cbse 1:
 								return []*github.Repository{
-									{ID: "MDEwOlJlcG9zaXRvcnkyNDI2NTEwMDA="}, // existing repo
-									{ID: "MDEwOlJlcG9zaXRvcnkyNDQ1nsteam1="},
+									{ID: "MDEwOlJlcG9zbXRvcnkyNDI2NTEwMDA="}, // existing repo
+									{ID: "MDEwOlJlcG9zbXRvcnkyNDQ1nstebm1="},
 								}, true, 1, nil
-							case 2:
+							cbse 2:
 								return []*github.Repository{
-									{ID: "MDEwOlJlcG9zaXRvcnkyNDI2nsteam2="},
-								}, false, 1, nil
+									{ID: "MDEwOlJlcG9zbXRvcnkyNDI2nstebm2="},
+								}, fblse, 1, nil
 							}
 						}
 					}
-					t.Fatalf("unexpected call to ListTeamRepositories with org %q team %q page %d", org, team, page)
-					return nil, false, 1, nil
+					t.Fbtblf("unexpected cbll to ListTebmRepositories with org %q tebm %q pbge %d", org, tebm, pbge)
+					return nil, fblse, 1, nil
 				})
 
 			p := setupProvider(t, mockClient)
 
-			repoIDs, err := p.FetchUserPerms(context.Background(),
+			repoIDs, err := p.FetchUserPerms(context.Bbckground(),
 				mockAccount,
-				authz.FetchPermsOptions{InvalidateCaches: true},
+				buthz.FetchPermsOptions{InvblidbteCbches: true},
 			)
 			if err != nil {
-				t.Fatal(err)
+				t.Fbtbl(err)
 			}
 
-			wantRepoIDs := []extsvc.RepoID{
-				"MDEwOlJlcG9zaXRvcnkyNTI0MjU2NzE=",
-				"MDEwOlJlcG9zaXRvcnkyNDQ1MTc1MzY=",
-				"MDEwOlJlcG9zaXRvcnkyNDI2NTEwMDA=",
-				"MDEwOlJlcG9zaXRvcnkyNDI2NTadmin=",
-				"MDEwOlJlcG9zaXRvcnkyNDQ1MTc1234=",
-				"MDEwOlJlcG9zaXRvcnkyNDI2NTE5678=",
-				"MDEwOlJlcG9zaXRvcnkyNDQ1nsteam1=",
-				"MDEwOlJlcG9zaXRvcnkyNDI2nsteam2=",
+			wbntRepoIDs := []extsvc.RepoID{
+				"MDEwOlJlcG9zbXRvcnkyNTI0MjU2NzE=",
+				"MDEwOlJlcG9zbXRvcnkyNDQ1MTc1MzY=",
+				"MDEwOlJlcG9zbXRvcnkyNDI2NTEwMDA=",
+				"MDEwOlJlcG9zbXRvcnkyNDI2NTbdmin=",
+				"MDEwOlJlcG9zbXRvcnkyNDQ1MTc1234=",
+				"MDEwOlJlcG9zbXRvcnkyNDI2NTE5678=",
+				"MDEwOlJlcG9zbXRvcnkyNDQ1nstebm1=",
+				"MDEwOlJlcG9zbXRvcnkyNDI2nstebm2=",
 			}
-			if diff := cmp.Diff(wantRepoIDs, repoIDs.Exacts); diff != "" {
-				t.Fatalf("RepoIDs mismatch (-want +got):\n%s", diff)
+			if diff := cmp.Diff(wbntRepoIDs, repoIDs.Exbcts); diff != "" {
+				t.Fbtblf("RepoIDs mismbtch (-wbnt +got):\n%s", diff)
 			}
 		})
 
-		makeStatusCodeTest := func(code int) func(t *testing.T) {
+		mbkeStbtusCodeTest := func(code int) func(t *testing.T) {
 			return func(t *testing.T) {
 				mockClient := newMockClientWithTokenMock()
-				mockClient.ListAffiliatedRepositoriesFunc.SetDefaultHook(mockListAffiliatedRepositories)
-				mockClient.GetAuthenticatedUserOrgsDetailsAndMembershipFunc.SetDefaultHook(mockListOrgDetails)
-				mockClient.GetAuthenticatedUserTeamsFunc.SetDefaultHook(
-					func(_ context.Context, page int) (teams []*github.Team, hasNextPage bool, rateLimitCost int, err error) {
-						switch page {
-						case 1:
-							return []*github.Team{
-								// should not get repos from this team because parent org has default read permissions
-								{Organization: &mockOrgRead.Org, Name: "ns team", Slug: "ns-team"},
-								// should not get repos from this team since it has no repos
-								{Organization: &mockOrgNoRead.Org, Name: "ns team", Slug: "ns-team", ReposCount: 0},
+				mockClient.ListAffilibtedRepositoriesFunc.SetDefbultHook(mockListAffilibtedRepositories)
+				mockClient.GetAuthenticbtedUserOrgsDetbilsAndMembershipFunc.SetDefbultHook(mockListOrgDetbils)
+				mockClient.GetAuthenticbtedUserTebmsFunc.SetDefbultHook(
+					func(_ context.Context, pbge int) (tebms []*github.Tebm, hbsNextPbge bool, rbteLimitCost int, err error) {
+						switch pbge {
+						cbse 1:
+							return []*github.Tebm{
+								// should not get repos from this tebm becbuse pbrent org hbs defbult rebd permissions
+								{Orgbnizbtion: &mockOrgRebd.Org, Nbme: "ns tebm", Slug: "ns-tebm"},
+								// should not get repos from this tebm since it hbs no repos
+								{Orgbnizbtion: &mockOrgNoRebd.Org, Nbme: "ns tebm", Slug: "ns-tebm", ReposCount: 0},
 							}, true, 1, nil
-						case 2:
-							return []*github.Team{
-								// should get repos from this team
-								{Organization: &mockOrgNoRead.Org, Name: "ns team 2", Slug: "ns-team-2", ReposCount: 3},
-							}, false, 1, nil
+						cbse 2:
+							return []*github.Tebm{
+								// should get repos from this tebm
+								{Orgbnizbtion: &mockOrgNoRebd.Org, Nbme: "ns tebm 2", Slug: "ns-tebm-2", ReposCount: 3},
+							}, fblse, 1, nil
 						}
-						return nil, false, 1, nil
+						return nil, fblse, 1, nil
 					})
-				mockClient.ListOrgRepositoriesFunc.SetDefaultHook(mockListOrgRepositories)
-				mockClient.ListTeamRepositoriesFunc.SetDefaultHook(
-					func(_ context.Context, org, team string, page int) (repos []*github.Repository, hasNextPage bool, rateLimitCost int, err error) {
-						return nil, false, 1, &github.APIError{Code: code}
+				mockClient.ListOrgRepositoriesFunc.SetDefbultHook(mockListOrgRepositories)
+				mockClient.ListTebmRepositoriesFunc.SetDefbultHook(
+					func(_ context.Context, org, tebm string, pbge int) (repos []*github.Repository, hbsNextPbge bool, rbteLimitCost int, err error) {
+						return nil, fblse, 1, &github.APIError{Code: code}
 					})
 
 				p := setupProvider(t, mockClient)
 
-				repoIDs, err := p.FetchUserPerms(context.Background(),
+				repoIDs, err := p.FetchUserPerms(context.Bbckground(),
 					mockAccount,
-					authz.FetchPermsOptions{InvalidateCaches: true},
+					buthz.FetchPermsOptions{InvblidbteCbches: true},
 				)
 				if err != nil {
-					t.Fatal(err)
+					t.Fbtbl(err)
 				}
 
-				wantRepoIDs := []extsvc.RepoID{
-					"MDEwOlJlcG9zaXRvcnkyNTI0MjU2NzE=", // from ListAffiliatedRepos
-					"MDEwOlJlcG9zaXRvcnkyNDQ1MTc1MzY=", // from ListAffiliatedRepos
-					"MDEwOlJlcG9zaXRvcnkyNDI2NTEwMDA=", // from ListAffiliatedRepos
-					"MDEwOlJlcG9zaXRvcnkyNDI2NTadmin=", // from ListOrgRepositories
-					"MDEwOlJlcG9zaXRvcnkyNDQ1MTc1234=", // from ListOrgRepositories
-					"MDEwOlJlcG9zaXRvcnkyNDI2NTE5678=", // from ListOrgRepositories
+				wbntRepoIDs := []extsvc.RepoID{
+					"MDEwOlJlcG9zbXRvcnkyNTI0MjU2NzE=", // from ListAffilibtedRepos
+					"MDEwOlJlcG9zbXRvcnkyNDQ1MTc1MzY=", // from ListAffilibtedRepos
+					"MDEwOlJlcG9zbXRvcnkyNDI2NTEwMDA=", // from ListAffilibtedRepos
+					"MDEwOlJlcG9zbXRvcnkyNDI2NTbdmin=", // from ListOrgRepositories
+					"MDEwOlJlcG9zbXRvcnkyNDQ1MTc1234=", // from ListOrgRepositories
+					"MDEwOlJlcG9zbXRvcnkyNDI2NTE5678=", // from ListOrgRepositories
 				}
-				if diff := cmp.Diff(wantRepoIDs, repoIDs.Exacts); diff != "" {
-					t.Fatalf("RepoIDs mismatch (-want +got):\n%s", diff)
+				if diff := cmp.Diff(wbntRepoIDs, repoIDs.Exbcts); diff != "" {
+					t.Fbtblf("RepoIDs mismbtch (-wbnt +got):\n%s", diff)
 				}
-				_, found := p.groupsCache.getGroup("not-sourcegraph", "ns-team-2")
+				_, found := p.groupsCbche.getGroup("not-sourcegrbph", "ns-tebm-2")
 				if !found {
-					t.Error("expected to find group in cache")
+					t.Error("expected to find group in cbche")
 				}
 			}
 		}
 
-		t.Run("special case: ListTeamRepositories returns 404", makeStatusCodeTest(404))
-		t.Run("special case: ListTeamRepositories returns 403", makeStatusCodeTest(403))
+		t.Run("specibl cbse: ListTebmRepositories returns 404", mbkeStbtusCodeTest(404))
+		t.Run("specibl cbse: ListTebmRepositories returns 403", mbkeStbtusCodeTest(403))
 
-		t.Run("cache and invalidate: user in orgs and teams", func(t *testing.T) {
-			callsToListOrgRepos := 0
-			callsToListTeamRepos := 0
+		t.Run("cbche bnd invblidbte: user in orgs bnd tebms", func(t *testing.T) {
+			cbllsToListOrgRepos := 0
+			cbllsToListTebmRepos := 0
 			mockClient := newMockClientWithTokenMock()
-			mockClient.ListAffiliatedRepositoriesFunc.SetDefaultHook(mockListAffiliatedRepositories)
-			mockClient.GetAuthenticatedUserOrgsDetailsAndMembershipFunc.SetDefaultHook(mockListOrgDetails)
-			mockClient.GetAuthenticatedUserTeamsFunc.SetDefaultHook(
-				func(ctx context.Context, page int) (teams []*github.Team, hasNextPage bool, rateLimitCost int, err error) {
-					return []*github.Team{
-						{Organization: &mockOrgNoRead.Org, Name: "ns team 2", Slug: "ns-team-2", ReposCount: 3},
-					}, false, 1, nil
+			mockClient.ListAffilibtedRepositoriesFunc.SetDefbultHook(mockListAffilibtedRepositories)
+			mockClient.GetAuthenticbtedUserOrgsDetbilsAndMembershipFunc.SetDefbultHook(mockListOrgDetbils)
+			mockClient.GetAuthenticbtedUserTebmsFunc.SetDefbultHook(
+				func(ctx context.Context, pbge int) (tebms []*github.Tebm, hbsNextPbge bool, rbteLimitCost int, err error) {
+					return []*github.Tebm{
+						{Orgbnizbtion: &mockOrgNoRebd.Org, Nbme: "ns tebm 2", Slug: "ns-tebm-2", ReposCount: 3},
+					}, fblse, 1, nil
 				})
-			mockClient.ListOrgRepositoriesFunc.SetDefaultHook(
-				func(ctx context.Context, org string, page int, repoType string) (repos []*github.Repository, hasNextPage bool, rateLimitCost int, err error) {
-					callsToListOrgRepos++
-					return mockListOrgRepositories(ctx, org, page, repoType)
+			mockClient.ListOrgRepositoriesFunc.SetDefbultHook(
+				func(ctx context.Context, org string, pbge int, repoType string) (repos []*github.Repository, hbsNextPbge bool, rbteLimitCost int, err error) {
+					cbllsToListOrgRepos++
+					return mockListOrgRepositories(ctx, org, pbge, repoType)
 				})
-			mockClient.ListTeamRepositoriesFunc.SetDefaultHook(
-				func(_ context.Context, _, _ string, _ int) (repos []*github.Repository, hasNextPage bool, rateLimitCost int, err error) {
-					callsToListTeamRepos++
+			mockClient.ListTebmRepositoriesFunc.SetDefbultHook(
+				func(_ context.Context, _, _ string, _ int) (repos []*github.Repository, hbsNextPbge bool, rbteLimitCost int, err error) {
+					cbllsToListTebmRepos++
 					return []*github.Repository{
-						{ID: "MDEwOlJlcG9zaXRvcnkyNDI2nsteam1="},
-					}, false, 1, nil
+						{ID: "MDEwOlJlcG9zbXRvcnkyNDI2nstebm1="},
+					}, fblse, 1, nil
 				})
 
 			p := NewProvider("", ProviderOptions{GitHubURL: mustURL(t, "https://github.com"), DB: db})
 			p.client = mockClientFunc(mockClient)
-			memCache := memGroupsCache()
-			p.groupsCache = memCache
+			memCbche := memGroupsCbche()
+			p.groupsCbche = memCbche
 
-			wantRepoIDs := []extsvc.RepoID{
-				"MDEwOlJlcG9zaXRvcnkyNTI0MjU2NzE=",
-				"MDEwOlJlcG9zaXRvcnkyNDQ1MTc1MzY=",
-				"MDEwOlJlcG9zaXRvcnkyNDI2NTEwMDA=",
-				"MDEwOlJlcG9zaXRvcnkyNDI2NTadmin=",
-				"MDEwOlJlcG9zaXRvcnkyNDQ1MTc1234=",
-				"MDEwOlJlcG9zaXRvcnkyNDI2NTE5678=",
-				"MDEwOlJlcG9zaXRvcnkyNDI2nsteam1=",
+			wbntRepoIDs := []extsvc.RepoID{
+				"MDEwOlJlcG9zbXRvcnkyNTI0MjU2NzE=",
+				"MDEwOlJlcG9zbXRvcnkyNDQ1MTc1MzY=",
+				"MDEwOlJlcG9zbXRvcnkyNDI2NTEwMDA=",
+				"MDEwOlJlcG9zbXRvcnkyNDI2NTbdmin=",
+				"MDEwOlJlcG9zbXRvcnkyNDQ1MTc1234=",
+				"MDEwOlJlcG9zbXRvcnkyNDI2NTE5678=",
+				"MDEwOlJlcG9zbXRvcnkyNDI2nstebm1=",
 			}
 
-			// first call
-			t.Run("first call", func(t *testing.T) {
-				repoIDs, err := p.FetchUserPerms(context.Background(),
+			// first cbll
+			t.Run("first cbll", func(t *testing.T) {
+				repoIDs, err := p.FetchUserPerms(context.Bbckground(),
 					mockAccount,
-					authz.FetchPermsOptions{},
+					buthz.FetchPermsOptions{},
 				)
 				if err != nil {
-					t.Fatal(err)
+					t.Fbtbl(err)
 				}
-				if callsToListOrgRepos == 0 || callsToListTeamRepos == 0 {
-					t.Fatalf("expected repos to be listed: callsToListOrgRepos=%d, callsToListTeamRepos=%d",
-						callsToListOrgRepos, callsToListTeamRepos)
+				if cbllsToListOrgRepos == 0 || cbllsToListTebmRepos == 0 {
+					t.Fbtblf("expected repos to be listed: cbllsToListOrgRepos=%d, cbllsToListTebmRepos=%d",
+						cbllsToListOrgRepos, cbllsToListTebmRepos)
 				}
-				if diff := cmp.Diff(wantRepoIDs, repoIDs.Exacts); diff != "" {
-					t.Fatalf("RepoIDs mismatch (-want +got):\n%s", diff)
+				if diff := cmp.Diff(wbntRepoIDs, repoIDs.Exbcts); diff != "" {
+					t.Fbtblf("RepoIDs mismbtch (-wbnt +got):\n%s", diff)
 				}
 			})
 
-			// second call should use cache
-			t.Run("second call", func(t *testing.T) {
-				callsToListOrgRepos = 0
-				callsToListTeamRepos = 0
-				repoIDs, err := p.FetchUserPerms(context.Background(),
+			// second cbll should use cbche
+			t.Run("second cbll", func(t *testing.T) {
+				cbllsToListOrgRepos = 0
+				cbllsToListTebmRepos = 0
+				repoIDs, err := p.FetchUserPerms(context.Bbckground(),
 					mockAccount,
-					authz.FetchPermsOptions{InvalidateCaches: false},
+					buthz.FetchPermsOptions{InvblidbteCbches: fblse},
 				)
 				if err != nil {
-					t.Fatal(err)
+					t.Fbtbl(err)
 				}
-				if callsToListOrgRepos > 0 || callsToListTeamRepos > 0 {
-					t.Fatalf("expected repos not to be listed: callsToListOrgRepos=%d, callsToListTeamRepos=%d",
-						callsToListOrgRepos, callsToListTeamRepos)
+				if cbllsToListOrgRepos > 0 || cbllsToListTebmRepos > 0 {
+					t.Fbtblf("expected repos not to be listed: cbllsToListOrgRepos=%d, cbllsToListTebmRepos=%d",
+						cbllsToListOrgRepos, cbllsToListTebmRepos)
 				}
-				if diff := cmp.Diff(wantRepoIDs, repoIDs.Exacts); diff != "" {
-					t.Fatalf("RepoIDs mismatch (-want +got):\n%s", diff)
+				if diff := cmp.Diff(wbntRepoIDs, repoIDs.Exbcts); diff != "" {
+					t.Fbtblf("RepoIDs mismbtch (-wbnt +got):\n%s", diff)
 				}
 			})
 
-			// third call should make a fresh query when invalidating cache
-			t.Run("third call", func(t *testing.T) {
-				callsToListOrgRepos = 0
-				callsToListTeamRepos = 0
-				repoIDs, err := p.FetchUserPerms(context.Background(),
+			// third cbll should mbke b fresh query when invblidbting cbche
+			t.Run("third cbll", func(t *testing.T) {
+				cbllsToListOrgRepos = 0
+				cbllsToListTebmRepos = 0
+				repoIDs, err := p.FetchUserPerms(context.Bbckground(),
 					mockAccount,
-					authz.FetchPermsOptions{InvalidateCaches: true},
+					buthz.FetchPermsOptions{InvblidbteCbches: true},
 				)
 				if err != nil {
-					t.Fatal(err)
+					t.Fbtbl(err)
 				}
-				if callsToListOrgRepos == 0 || callsToListTeamRepos == 0 {
-					t.Fatalf("expected repos to be listed: callsToListOrgRepos=%d, callsToListTeamRepos=%d",
-						callsToListOrgRepos, callsToListTeamRepos)
+				if cbllsToListOrgRepos == 0 || cbllsToListTebmRepos == 0 {
+					t.Fbtblf("expected repos to be listed: cbllsToListOrgRepos=%d, cbllsToListTebmRepos=%d",
+						cbllsToListOrgRepos, cbllsToListTebmRepos)
 				}
-				if diff := cmp.Diff(wantRepoIDs, repoIDs.Exacts); diff != "" {
-					t.Fatalf("RepoIDs mismatch (-want +got):\n%s", diff)
+				if diff := cmp.Diff(wbntRepoIDs, repoIDs.Exbcts); diff != "" {
+					t.Fbtblf("RepoIDs mismbtch (-wbnt +got):\n%s", diff)
 				}
 			})
 		})
 
-		t.Run("cache partial update", func(t *testing.T) {
+		t.Run("cbche pbrtibl updbte", func(t *testing.T) {
 			mockClient := newMockClientWithTokenMock()
-			mockClient.ListAffiliatedRepositoriesFunc.SetDefaultHook(mockListAffiliatedRepositories)
-			mockClient.GetAuthenticatedUserOrgsDetailsAndMembershipFunc.SetDefaultHook(mockListOrgDetails)
-			mockClient.GetAuthenticatedUserTeamsFunc.SetDefaultHook(
-				func(ctx context.Context, page int) (teams []*github.Team, hasNextPage bool, rateLimitCost int, err error) {
-					return []*github.Team{
-						{Organization: &mockOrgNoRead.Org, Name: "ns team 2", Slug: "ns-team-2", ReposCount: 3},
-					}, false, 1, nil
+			mockClient.ListAffilibtedRepositoriesFunc.SetDefbultHook(mockListAffilibtedRepositories)
+			mockClient.GetAuthenticbtedUserOrgsDetbilsAndMembershipFunc.SetDefbultHook(mockListOrgDetbils)
+			mockClient.GetAuthenticbtedUserTebmsFunc.SetDefbultHook(
+				func(ctx context.Context, pbge int) (tebms []*github.Tebm, hbsNextPbge bool, rbteLimitCost int, err error) {
+					return []*github.Tebm{
+						{Orgbnizbtion: &mockOrgNoRebd.Org, Nbme: "ns tebm 2", Slug: "ns-tebm-2", ReposCount: 3},
+					}, fblse, 1, nil
 				})
-			mockClient.ListOrgRepositoriesFunc.SetDefaultHook(mockListOrgRepositories)
-			mockClient.ListTeamRepositoriesFunc.SetDefaultHook(
-				func(ctx context.Context, org, team string, page int) (repos []*github.Repository, hasNextPage bool, rateLimitCost int, err error) {
+			mockClient.ListOrgRepositoriesFunc.SetDefbultHook(mockListOrgRepositories)
+			mockClient.ListTebmRepositoriesFunc.SetDefbultHook(
+				func(ctx context.Context, org, tebm string, pbge int) (repos []*github.Repository, hbsNextPbge bool, rbteLimitCost int, err error) {
 					return []*github.Repository{
-						{ID: "MDEwOlJlcG9zaXRvcnkyNDI2nsteam1="},
-					}, false, 1, nil
+						{ID: "MDEwOlJlcG9zbXRvcnkyNDI2nstebm1="},
+					}, fblse, 1, nil
 				})
 
 			p := NewProvider("", ProviderOptions{
@@ -544,50 +544,50 @@ func TestProvider_FetchUserPerms(t *testing.T) {
 				DB:        db,
 			})
 			p.client = mockClientFunc(mockClient)
-			memCache := memGroupsCache()
-			p.groupsCache = memCache
+			memCbche := memGroupsCbche()
+			p.groupsCbche = memCbche
 
-			// cache populated from repo-centric sync (should add self)
-			p.groupsCache.setGroup(cachedGroup{
-				Org:          mockOrgRead.Login,
+			// cbche populbted from repo-centric sync (should bdd self)
+			p.groupsCbche.setGroup(cbchedGroup{
+				Org:          mockOrgRebd.Login,
 				Users:        []extsvc.AccountID{"1234"},
 				Repositories: []extsvc.RepoID{},
 			},
 			)
-			// cache populated from user-centric sync (should not add self)
-			p.groupsCache.setGroup(cachedGroup{
-				Org:          mockOrgNoRead.Login,
-				Team:         "ns-team-2",
+			// cbche populbted from user-centric sync (should not bdd self)
+			p.groupsCbche.setGroup(cbchedGroup{
+				Org:          mockOrgNoRebd.Login,
+				Tebm:         "ns-tebm-2",
 				Users:        []extsvc.AccountID{},
-				Repositories: []extsvc.RepoID{"MDEwOlJlcG9zaXRvcnkyNTI0MjU2NzE="},
+				Repositories: []extsvc.RepoID{"MDEwOlJlcG9zbXRvcnkyNTI0MjU2NzE="},
 			},
 			)
 
-			// run a sync
-			_, err := p.FetchUserPerms(context.Background(),
+			// run b sync
+			_, err := p.FetchUserPerms(context.Bbckground(),
 				mockAccount,
-				authz.FetchPermsOptions{InvalidateCaches: false},
+				buthz.FetchPermsOptions{InvblidbteCbches: fblse},
 			)
 			if err != nil {
-				t.Fatal(err)
+				t.Fbtbl(err)
 			}
 
-			// mock user should have added self to complete cache
-			group, found := p.groupsCache.getGroup(mockOrgRead.Login, "")
+			// mock user should hbve bdded self to complete cbche
+			group, found := p.groupsCbche.getGroup(mockOrgRebd.Login, "")
 			if !found {
-				t.Fatal("expected group")
+				t.Fbtbl("expected group")
 			}
 			if len(group.Users) != 2 {
-				t.Fatal("expected an additional user in partial cache group")
+				t.Fbtbl("expected bn bdditionbl user in pbrtibl cbche group")
 			}
 
-			// mock user should not have added self to incomplete cache
-			group, found = p.groupsCache.getGroup(mockOrgNoRead.Login, "ns-team-2")
+			// mock user should not hbve bdded self to incomplete cbche
+			group, found = p.groupsCbche.getGroup(mockOrgNoRebd.Login, "ns-tebm-2")
 			if !found {
-				t.Fatal("expected group")
+				t.Fbtbl("expected group")
 			}
 			if len(group.Users) != 0 {
-				t.Fatal("expected users not to be updated")
+				t.Fbtbl("expected users not to be updbted")
 			}
 		})
 	})
@@ -596,37 +596,37 @@ func TestProvider_FetchUserPerms(t *testing.T) {
 func TestProvider_FetchRepoPerms(t *testing.T) {
 	t.Run("nil repository", func(t *testing.T) {
 		p := NewProvider("", ProviderOptions{GitHubURL: mustURL(t, "https://github.com")})
-		_, err := p.FetchRepoPerms(context.Background(), nil, authz.FetchPermsOptions{})
-		want := "no repository provided"
+		_, err := p.FetchRepoPerms(context.Bbckground(), nil, buthz.FetchPermsOptions{})
+		wbnt := "no repository provided"
 		got := fmt.Sprintf("%v", err)
-		if got != want {
-			t.Fatalf("err: want %q but got %q", want, got)
+		if got != wbnt {
+			t.Fbtblf("err: wbnt %q but got %q", wbnt, got)
 		}
 	})
 
 	t.Run("not the code host of the repository", func(t *testing.T) {
 		p := NewProvider("", ProviderOptions{GitHubURL: mustURL(t, "https://github.com")})
-		_, err := p.FetchRepoPerms(context.Background(),
+		_, err := p.FetchRepoPerms(context.Bbckground(),
 			&extsvc.Repository{
-				URI: "gitlab.com/user/repo",
-				ExternalRepoSpec: api.ExternalRepoSpec{
-					ServiceType: "gitlab",
-					ServiceID:   "https://gitlab.com/",
+				URI: "gitlbb.com/user/repo",
+				ExternblRepoSpec: bpi.ExternblRepoSpec{
+					ServiceType: "gitlbb",
+					ServiceID:   "https://gitlbb.com/",
 				},
 			},
-			authz.FetchPermsOptions{},
+			buthz.FetchPermsOptions{},
 		)
-		want := `not a code host of the repository: want "https://gitlab.com/" but have "https://github.com/"`
+		wbnt := `not b code host of the repository: wbnt "https://gitlbb.com/" but hbve "https://github.com/"`
 		got := fmt.Sprintf("%v", err)
-		if got != want {
-			t.Fatalf("err: want %q but got %q", want, got)
+		if got != wbnt {
+			t.Fbtblf("err: wbnt %q but got %q", wbnt, got)
 		}
 	})
 
-	var (
+	vbr (
 		mockUserRepo = extsvc.Repository{
 			URI: "github.com/user/user-repo",
-			ExternalRepoSpec: api.ExternalRepoSpec{
+			ExternblRepoSpec: bpi.ExternblRepoSpec{
 				ID:          "github_project_id",
 				ServiceType: "github",
 				ServiceID:   "https://github.com/",
@@ -635,177 +635,177 @@ func TestProvider_FetchRepoPerms(t *testing.T) {
 
 		mockOrgRepo = extsvc.Repository{
 			URI: "github.com/org/org-repo",
-			ExternalRepoSpec: api.ExternalRepoSpec{
+			ExternblRepoSpec: bpi.ExternblRepoSpec{
 				ID:          "github_project_id",
 				ServiceType: "github",
 				ServiceID:   "https://github.com/",
 			},
 		}
 
-		mockListCollaborators = func(_ context.Context, _, _ string, page int, _ github.CollaboratorAffiliation) ([]*github.Collaborator, bool, error) {
-			switch page {
-			case 1:
-				return []*github.Collaborator{
-					{DatabaseID: 57463526},
-					{DatabaseID: 67471},
+		mockListCollbborbtors = func(_ context.Context, _, _ string, pbge int, _ github.CollbborbtorAffilibtion) ([]*github.Collbborbtor, bool, error) {
+			switch pbge {
+			cbse 1:
+				return []*github.Collbborbtor{
+					{DbtbbbseID: 57463526},
+					{DbtbbbseID: 67471},
 				}, true, nil
-			case 2:
-				return []*github.Collaborator{
-					{DatabaseID: 187831},
-				}, false, nil
+			cbse 2:
+				return []*github.Collbborbtor{
+					{DbtbbbseID: 187831},
+				}, fblse, nil
 			}
 
-			return []*github.Collaborator{}, false, nil
+			return []*github.Collbborbtor{}, fblse, nil
 		}
 	)
 
-	t.Run("cache disabled", func(t *testing.T) {
+	t.Run("cbche disbbled", func(t *testing.T) {
 		p := NewProvider("", ProviderOptions{
 			GitHubURL:      mustURL(t, "https://github.com"),
-			GroupsCacheTTL: -1,
+			GroupsCbcheTTL: -1,
 		})
 		mockClient := newMockClientWithTokenMock()
-		mockClient.ListRepositoryCollaboratorsFunc.SetDefaultHook(
-			func(ctx context.Context, owner, repo string, page int, affiliation github.CollaboratorAffiliation) (users []*github.Collaborator, hasNextPage bool, _ error) {
-				if affiliation != "" {
-					t.Fatal("unexpected affiliation filter provided")
+		mockClient.ListRepositoryCollbborbtorsFunc.SetDefbultHook(
+			func(ctx context.Context, owner, repo string, pbge int, bffilibtion github.CollbborbtorAffilibtion) (users []*github.Collbborbtor, hbsNextPbge bool, _ error) {
+				if bffilibtion != "" {
+					t.Fbtbl("unexpected bffilibtion filter provided")
 				}
-				return mockListCollaborators(ctx, owner, repo, page, affiliation)
+				return mockListCollbborbtors(ctx, owner, repo, pbge, bffilibtion)
 			})
 		p.client = mockClientFunc(mockClient)
 
-		accountIDs, err := p.FetchRepoPerms(context.Background(), &mockUserRepo,
-			authz.FetchPermsOptions{})
+		bccountIDs, err := p.FetchRepoPerms(context.Bbckground(), &mockUserRepo,
+			buthz.FetchPermsOptions{})
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
 
-		wantAccountIDs := []extsvc.AccountID{
-			// mockListCollaborators members
+		wbntAccountIDs := []extsvc.AccountID{
+			// mockListCollbborbtors members
 			"57463526",
 			"67471",
 			"187831",
 		}
-		if diff := cmp.Diff(wantAccountIDs, accountIDs); diff != "" {
-			t.Fatalf("AccountIDs mismatch (-want +got):\n%s", diff)
+		if diff := cmp.Diff(wbntAccountIDs, bccountIDs); diff != "" {
+			t.Fbtblf("AccountIDs mismbtch (-wbnt +got):\n%s", diff)
 		}
 	})
 
-	t.Run("cache enabled", func(t *testing.T) {
+	t.Run("cbche enbbled", func(t *testing.T) {
 		t.Run("repo not in org", func(t *testing.T) {
 			p := NewProvider("", ProviderOptions{
 				GitHubURL: mustURL(t, "https://github.com"),
 			})
 			mockClient := newMockClientWithTokenMock()
-			mockClient.ListRepositoryCollaboratorsFunc.SetDefaultHook(
-				func(ctx context.Context, owner, repo string, page int, affiliation github.CollaboratorAffiliation) (users []*github.Collaborator, hasNextPage bool, _ error) {
-					if affiliation == "" {
-						t.Fatal("expected affiliation filter")
+			mockClient.ListRepositoryCollbborbtorsFunc.SetDefbultHook(
+				func(ctx context.Context, owner, repo string, pbge int, bffilibtion github.CollbborbtorAffilibtion) (users []*github.Collbborbtor, hbsNextPbge bool, _ error) {
+					if bffilibtion == "" {
+						t.Fbtbl("expected bffilibtion filter")
 					}
-					return mockListCollaborators(ctx, owner, repo, page, affiliation)
+					return mockListCollbborbtors(ctx, owner, repo, pbge, bffilibtion)
 				})
-			mockClient.GetOrganizationFunc.SetDefaultHook(
-				func(_ context.Context, login string) (org *github.OrgDetails, err error) {
+			mockClient.GetOrgbnizbtionFunc.SetDefbultHook(
+				func(_ context.Context, login string) (org *github.OrgDetbils, err error) {
 					if login == "user" {
 						return nil, &github.OrgNotFoundError{}
 					}
-					t.Fatalf("unexpected call to GetOrganization with %q", login)
+					t.Fbtblf("unexpected cbll to GetOrgbnizbtion with %q", login)
 					return nil, nil
 				})
 			p.client = mockClientFunc(mockClient)
-			if p.groupsCache == nil {
-				t.Fatal("expected groupsCache")
+			if p.groupsCbche == nil {
+				t.Fbtbl("expected groupsCbche")
 			}
-			memCache := memGroupsCache()
-			p.groupsCache = memCache
+			memCbche := memGroupsCbche()
+			p.groupsCbche = memCbche
 
-			accountIDs, err := p.FetchRepoPerms(context.Background(), &mockUserRepo,
-				authz.FetchPermsOptions{})
+			bccountIDs, err := p.FetchRepoPerms(context.Bbckground(), &mockUserRepo,
+				buthz.FetchPermsOptions{})
 			if err != nil {
-				t.Fatal(err)
+				t.Fbtbl(err)
 			}
 
-			wantAccountIDs := []extsvc.AccountID{
-				// mockListCollaborators members
+			wbntAccountIDs := []extsvc.AccountID{
+				// mockListCollbborbtors members
 				"57463526",
 				"67471",
 				"187831",
 			}
-			if diff := cmp.Diff(wantAccountIDs, accountIDs); diff != "" {
-				t.Fatalf("AccountIDs mismatch (-want +got):\n%s", diff)
+			if diff := cmp.Diff(wbntAccountIDs, bccountIDs); diff != "" {
+				t.Fbtblf("AccountIDs mismbtch (-wbnt +got):\n%s", diff)
 			}
 		})
 
-		t.Run("repo in read org", func(t *testing.T) {
+		t.Run("repo in rebd org", func(t *testing.T) {
 			p := NewProvider("", ProviderOptions{
 				GitHubURL: mustURL(t, "https://github.com"),
 			})
 			mockClient := newMockClientWithTokenMock()
-			mockClient.ListRepositoryCollaboratorsFunc.SetDefaultHook(
-				func(ctx context.Context, owner, repo string, page int, affiliation github.CollaboratorAffiliation) (users []*github.Collaborator, hasNextPage bool, _ error) {
-					if affiliation == "" {
-						t.Fatal("expected affiliation filter")
+			mockClient.ListRepositoryCollbborbtorsFunc.SetDefbultHook(
+				func(ctx context.Context, owner, repo string, pbge int, bffilibtion github.CollbborbtorAffilibtion) (users []*github.Collbborbtor, hbsNextPbge bool, _ error) {
+					if bffilibtion == "" {
+						t.Fbtbl("expected bffilibtion filter")
 					}
-					return mockListCollaborators(ctx, owner, repo, page, affiliation)
+					return mockListCollbborbtors(ctx, owner, repo, pbge, bffilibtion)
 				})
-			mockClient.GetOrganizationFunc.SetDefaultHook(
-				func(_ context.Context, login string) (org *github.OrgDetails, err error) {
+			mockClient.GetOrgbnizbtionFunc.SetDefbultHook(
+				func(_ context.Context, login string) (org *github.OrgDetbils, err error) {
 					if login == "org" {
-						return &github.OrgDetails{
-							DefaultRepositoryPermission: "read",
+						return &github.OrgDetbils{
+							DefbultRepositoryPermission: "rebd",
 						}, nil
 					}
-					t.Fatalf("unexpected call to GetOrganization with %q", login)
+					t.Fbtblf("unexpected cbll to GetOrgbnizbtion with %q", login)
 					return nil, nil
 				})
-			mockClient.ListOrganizationMembersFunc.SetDefaultHook(
-				func(_ context.Context, _ string, page int, adminOnly bool) (users []*github.Collaborator, hasNextPage bool, _ error) {
-					if adminOnly {
-						t.Fatal("unexpected adminOnly ListOrganizationMembers")
+			mockClient.ListOrgbnizbtionMembersFunc.SetDefbultHook(
+				func(_ context.Context, _ string, pbge int, bdminOnly bool) (users []*github.Collbborbtor, hbsNextPbge bool, _ error) {
+					if bdminOnly {
+						t.Fbtbl("unexpected bdminOnly ListOrgbnizbtionMembers")
 					}
-					switch page {
-					case 1:
-						return []*github.Collaborator{
-							{DatabaseID: 1234},
-							{DatabaseID: 67471}, // duplicate from collaborators
+					switch pbge {
+					cbse 1:
+						return []*github.Collbborbtor{
+							{DbtbbbseID: 1234},
+							{DbtbbbseID: 67471}, // duplicbte from collbborbtors
 						}, true, nil
-					case 2:
-						return []*github.Collaborator{
-							{DatabaseID: 5678},
-						}, false, nil
+					cbse 2:
+						return []*github.Collbborbtor{
+							{DbtbbbseID: 5678},
+						}, fblse, nil
 					}
 
-					return []*github.Collaborator{}, false, nil
+					return []*github.Collbborbtor{}, fblse, nil
 				})
 			p.client = mockClientFunc(mockClient)
-			memCache := memGroupsCache()
-			p.groupsCache = memCache
+			memCbche := memGroupsCbche()
+			p.groupsCbche = memCbche
 
-			accountIDs, err := p.FetchRepoPerms(context.Background(), &mockOrgRepo,
-				authz.FetchPermsOptions{})
+			bccountIDs, err := p.FetchRepoPerms(context.Bbckground(), &mockOrgRepo,
+				buthz.FetchPermsOptions{})
 			if err != nil {
-				t.Fatal(err)
+				t.Fbtbl(err)
 			}
 
-			wantAccountIDs := []extsvc.AccountID{
-				// mockListCollaborators members
+			wbntAccountIDs := []extsvc.AccountID{
+				// mockListCollbborbtors members
 				"57463526",
 				"67471",
 				"187831",
-				// dedpulicated MockListOrganizationMembers users
+				// dedpulicbted MockListOrgbnizbtionMembers users
 				"1234",
 				"5678",
 			}
-			if diff := cmp.Diff(wantAccountIDs, accountIDs); diff != "" {
-				t.Fatalf("AccountIDs mismatch (-want +got):\n%s", diff)
+			if diff := cmp.Diff(wbntAccountIDs, bccountIDs); diff != "" {
+				t.Fbtblf("AccountIDs mismbtch (-wbnt +got):\n%s", diff)
 			}
 		})
 
-		t.Run("internal repo in org", func(t *testing.T) {
-			mockInternalOrgRepo := github.Repository{
+		t.Run("internbl repo in org", func(t *testing.T) {
+			mockInternblOrgRepo := github.Repository{
 				ID:         "github_repo_id",
-				IsPrivate:  true,
-				Visibility: github.VisibilityInternal,
+				IsPrivbte:  true,
+				Visibility: github.VisibilityInternbl,
 			}
 
 			p := NewProvider("", ProviderOptions{
@@ -813,466 +813,466 @@ func TestProvider_FetchRepoPerms(t *testing.T) {
 			})
 
 			mockClient := newMockClientWithTokenMock()
-			mockClient.ListRepositoryCollaboratorsFunc.SetDefaultHook(mockListCollaborators)
-			mockClient.ListOrganizationMembersFunc.SetDefaultHook(
-				func(_ context.Context, _ string, page int, adminOnly bool) (users []*github.Collaborator, hasNextPage bool, _ error) {
-					if adminOnly {
-						return []*github.Collaborator{
-							{DatabaseID: 9999},
-						}, false, nil
+			mockClient.ListRepositoryCollbborbtorsFunc.SetDefbultHook(mockListCollbborbtors)
+			mockClient.ListOrgbnizbtionMembersFunc.SetDefbultHook(
+				func(_ context.Context, _ string, pbge int, bdminOnly bool) (users []*github.Collbborbtor, hbsNextPbge bool, _ error) {
+					if bdminOnly {
+						return []*github.Collbborbtor{
+							{DbtbbbseID: 9999},
+						}, fblse, nil
 					}
 
-					switch page {
-					case 1:
-						return []*github.Collaborator{
-							{DatabaseID: 1234},
-							{DatabaseID: 67471}, // duplicate from collaborators
+					switch pbge {
+					cbse 1:
+						return []*github.Collbborbtor{
+							{DbtbbbseID: 1234},
+							{DbtbbbseID: 67471}, // duplicbte from collbborbtors
 						}, true, nil
-					case 2:
-						return []*github.Collaborator{
-							{DatabaseID: 5678},
-						}, false, nil
+					cbse 2:
+						return []*github.Collbborbtor{
+							{DbtbbbseID: 5678},
+						}, fblse, nil
 					}
 
-					return []*github.Collaborator{}, false, nil
+					return []*github.Collbborbtor{}, fblse, nil
 				})
-			mockClient.ListRepositoryTeamsFunc.SetDefaultHook(
-				func(ctx context.Context, owner, repo string, page int) (teams []*github.Team, hasNextPage bool, _ error) {
-					// No team has exlicit access to mockInternalOrgRepo. It's an internal repo so everyone in the org should have access to it.
-					return []*github.Team{}, false, nil
+			mockClient.ListRepositoryTebmsFunc.SetDefbultHook(
+				func(ctx context.Context, owner, repo string, pbge int) (tebms []*github.Tebm, hbsNextPbge bool, _ error) {
+					// No tebm hbs exlicit bccess to mockInternblOrgRepo. It's bn internbl repo so everyone in the org should hbve bccess to it.
+					return []*github.Tebm{}, fblse, nil
 				})
-			mockClient.GetRepositoryFunc.SetDefaultHook(
+			mockClient.GetRepositoryFunc.SetDefbultHook(
 				func(ctx context.Context, owner, repo string) (*github.Repository, error) {
-					return &mockInternalOrgRepo, nil
+					return &mockInternblOrgRepo, nil
 				})
-			mockClient.GetOrganizationFunc.SetDefaultHook(
-				func(_ context.Context, login string) (org *github.OrgDetails, err error) {
+			mockClient.GetOrgbnizbtionFunc.SetDefbultHook(
+				func(_ context.Context, login string) (org *github.OrgDetbils, err error) {
 					if login == "org" {
-						return &github.OrgDetails{
-							DefaultRepositoryPermission: "none",
+						return &github.OrgDetbils{
+							DefbultRepositoryPermission: "none",
 						}, nil
 					}
 
-					t.Fatalf("unexpected call to GetOrganization with %q", login)
+					t.Fbtblf("unexpected cbll to GetOrgbnizbtion with %q", login)
 					return nil, nil
 				})
 
 			p.client = mockClientFunc(mockClient)
-			// Ideally don't want a feature flag for this and want this internal repos to sync for
-			// all users inside an org. Since we're introducing a new feature this is guarded behind
-			// a feature flag, thus we also test against it. Once we're reasonably sure this works
-			// as intended, we will remove the feature flag and enable the behaviour by default.
-			t.Run("feature flag disabled", func(t *testing.T) {
-				p.enableGithubInternalRepoVisibility = false
+			// Ideblly don't wbnt b febture flbg for this bnd wbnt this internbl repos to sync for
+			// bll users inside bn org. Since we're introducing b new febture this is gubrded behind
+			// b febture flbg, thus we blso test bgbinst it. Once we're rebsonbbly sure this works
+			// bs intended, we will remove the febture flbg bnd enbble the behbviour by defbult.
+			t.Run("febture flbg disbbled", func(t *testing.T) {
+				p.enbbleGithubInternblRepoVisibility = fblse
 
-				memCache := memGroupsCache()
-				p.groupsCache = memCache
+				memCbche := memGroupsCbche()
+				p.groupsCbche = memCbche
 
-				accountIDs, err := p.FetchRepoPerms(
-					context.Background(), &mockOrgRepo, authz.FetchPermsOptions{},
+				bccountIDs, err := p.FetchRepoPerms(
+					context.Bbckground(), &mockOrgRepo, buthz.FetchPermsOptions{},
 				)
 				if err != nil {
-					t.Fatal(err)
+					t.Fbtbl(err)
 				}
 
-				// These account IDs will have access to the internal repo.
-				wantAccountIDs := []extsvc.AccountID{
-					// expect mockListCollaborators members only - we do not want to include org members
-					// if internal repository support is not enabled.
+				// These bccount IDs will hbve bccess to the internbl repo.
+				wbntAccountIDs := []extsvc.AccountID{
+					// expect mockListCollbborbtors members only - we do not wbnt to include org members
+					// if internbl repository support is not enbbled.
 					"57463526",
 					"67471",
 					"187831",
-					// The admin is expected to be in this list.
+					// The bdmin is expected to be in this list.
 					"9999",
 				}
-				if diff := cmp.Diff(wantAccountIDs, accountIDs); diff != "" {
-					t.Fatalf("AccountIDs mismatch (-want +got):\n%s", diff)
+				if diff := cmp.Diff(wbntAccountIDs, bccountIDs); diff != "" {
+					t.Fbtblf("AccountIDs mismbtch (-wbnt +got):\n%s", diff)
 				}
 			})
 
-			t.Run("feature flag enabled", func(t *testing.T) {
-				p.enableGithubInternalRepoVisibility = true
-				memCache := memGroupsCache()
-				p.groupsCache = memCache
+			t.Run("febture flbg enbbled", func(t *testing.T) {
+				p.enbbleGithubInternblRepoVisibility = true
+				memCbche := memGroupsCbche()
+				p.groupsCbche = memCbche
 
-				accountIDs, err := p.FetchRepoPerms(
-					context.Background(), &mockOrgRepo, authz.FetchPermsOptions{},
+				bccountIDs, err := p.FetchRepoPerms(
+					context.Bbckground(), &mockOrgRepo, buthz.FetchPermsOptions{},
 				)
 				if err != nil {
-					t.Fatal(err)
+					t.Fbtbl(err)
 				}
 
-				// These account IDs will have access to the internal repo.
-				wantAccountIDs := []extsvc.AccountID{
-					// mockListCollaborators members.
+				// These bccount IDs will hbve bccess to the internbl repo.
+				wbntAccountIDs := []extsvc.AccountID{
+					// mockListCollbborbtors members.
 					"57463526",
 					"67471",
 					"187831",
-					// expect dedpulicated MockListOrganizationMembers users as well since we want to grant access
-					// to org members as well if the target repo has visibility "internal"
+					// expect dedpulicbted MockListOrgbnizbtionMembers users bs well since we wbnt to grbnt bccess
+					// to org members bs well if the tbrget repo hbs visibility "internbl"
 					"1234",
 					"5678",
 				}
-				if diff := cmp.Diff(wantAccountIDs, accountIDs); diff != "" {
-					t.Fatalf("AccountIDs mismatch (-want +got):\n%s", diff)
+				if diff := cmp.Diff(wbntAccountIDs, bccountIDs); diff != "" {
+					t.Fbtblf("AccountIDs mismbtch (-wbnt +got):\n%s", diff)
 				}
 			})
 		})
 
-		t.Run("repo in non-read org but in teams", func(t *testing.T) {
+		t.Run("repo in non-rebd org but in tebms", func(t *testing.T) {
 			p := NewProvider("", ProviderOptions{
 				GitHubURL: mustURL(t, "https://github.com"),
 			})
 			mockClient := newMockClientWithTokenMock()
-			mockClient.ListRepositoryCollaboratorsFunc.SetDefaultHook(
-				func(ctx context.Context, owner, repo string, page int, affiliation github.CollaboratorAffiliation) (users []*github.Collaborator, hasNextPage bool, _ error) {
-					if affiliation == "" {
-						t.Fatal("expected affiliation filter")
+			mockClient.ListRepositoryCollbborbtorsFunc.SetDefbultHook(
+				func(ctx context.Context, owner, repo string, pbge int, bffilibtion github.CollbborbtorAffilibtion) (users []*github.Collbborbtor, hbsNextPbge bool, _ error) {
+					if bffilibtion == "" {
+						t.Fbtbl("expected bffilibtion filter")
 					}
-					return mockListCollaborators(ctx, owner, repo, page, affiliation)
+					return mockListCollbborbtors(ctx, owner, repo, pbge, bffilibtion)
 				})
-			mockClient.GetOrganizationFunc.SetDefaultHook(
-				func(_ context.Context, login string) (org *github.OrgDetails, err error) {
+			mockClient.GetOrgbnizbtionFunc.SetDefbultHook(
+				func(_ context.Context, login string) (org *github.OrgDetbils, err error) {
 					if login == "org" {
-						return &github.OrgDetails{
-							DefaultRepositoryPermission: "none",
+						return &github.OrgDetbils{
+							DefbultRepositoryPermission: "none",
 						}, nil
 					}
-					t.Fatalf("unexpected call to GetOrganization with %q", login)
+					t.Fbtblf("unexpected cbll to GetOrgbnizbtion with %q", login)
 					return nil, nil
 				})
-			mockClient.ListOrganizationMembersFunc.SetDefaultHook(
-				func(_ context.Context, org string, _ int, adminOnly bool) (users []*github.Collaborator, hasNextPage bool, _ error) {
+			mockClient.ListOrgbnizbtionMembersFunc.SetDefbultHook(
+				func(_ context.Context, org string, _ int, bdminOnly bool) (users []*github.Collbborbtor, hbsNextPbge bool, _ error) {
 					if org != "org" {
-						t.Fatalf("unexpected call to list org members with %q", org)
+						t.Fbtblf("unexpected cbll to list org members with %q", org)
 					}
-					if !adminOnly {
-						t.Fatal("expected adminOnly ListOrganizationMembers")
+					if !bdminOnly {
+						t.Fbtbl("expected bdminOnly ListOrgbnizbtionMembers")
 					}
-					return []*github.Collaborator{
-						{DatabaseID: 3456},
-					}, false, nil
+					return []*github.Collbborbtor{
+						{DbtbbbseID: 3456},
+					}, fblse, nil
 				})
-			mockClient.ListRepositoryTeamsFunc.SetDefaultHook(func(_ context.Context, _, _ string, page int) (teams []*github.Team, hasNextPage bool, _ error) {
-				switch page {
-				case 1:
-					return []*github.Team{
-						{Slug: "team1"},
+			mockClient.ListRepositoryTebmsFunc.SetDefbultHook(func(_ context.Context, _, _ string, pbge int) (tebms []*github.Tebm, hbsNextPbge bool, _ error) {
+				switch pbge {
+				cbse 1:
+					return []*github.Tebm{
+						{Slug: "tebm1"},
 					}, true, nil
-				case 2:
-					return []*github.Team{
-						{Slug: "team2"},
-					}, false, nil
+				cbse 2:
+					return []*github.Tebm{
+						{Slug: "tebm2"},
+					}, fblse, nil
 				}
 
-				return []*github.Team{}, false, nil
+				return []*github.Tebm{}, fblse, nil
 			})
-			mockClient.ListTeamMembersFunc.SetDefaultHook(func(_ context.Context, _, team string, page int) (users []*github.Collaborator, hasNextPage bool, _ error) {
-				switch page {
-				case 1:
-					return []*github.Collaborator{
-						{DatabaseID: 1234}, // duplicate across both teams
+			mockClient.ListTebmMembersFunc.SetDefbultHook(func(_ context.Context, _, tebm string, pbge int) (users []*github.Collbborbtor, hbsNextPbge bool, _ error) {
+				switch pbge {
+				cbse 1:
+					return []*github.Collbborbtor{
+						{DbtbbbseID: 1234}, // duplicbte bcross both tebms
 					}, true, nil
-				case 2:
-					switch team {
-					case "team1":
-						return []*github.Collaborator{
-							{DatabaseID: 5678},
-						}, false, nil
-					case "team2":
-						return []*github.Collaborator{
-							{DatabaseID: 6789},
-						}, false, nil
+				cbse 2:
+					switch tebm {
+					cbse "tebm1":
+						return []*github.Collbborbtor{
+							{DbtbbbseID: 5678},
+						}, fblse, nil
+					cbse "tebm2":
+						return []*github.Collbborbtor{
+							{DbtbbbseID: 6789},
+						}, fblse, nil
 					}
 				}
 
-				return []*github.Collaborator{}, false, nil
+				return []*github.Collbborbtor{}, fblse, nil
 			})
 			p.client = mockClientFunc(mockClient)
-			memCache := memGroupsCache()
-			p.groupsCache = memCache
+			memCbche := memGroupsCbche()
+			p.groupsCbche = memCbche
 
-			accountIDs, err := p.FetchRepoPerms(context.Background(), &mockOrgRepo,
-				authz.FetchPermsOptions{})
+			bccountIDs, err := p.FetchRepoPerms(context.Bbckground(), &mockOrgRepo,
+				buthz.FetchPermsOptions{})
 			if err != nil {
-				t.Fatal(err)
+				t.Fbtbl(err)
 			}
 
-			wantAccountIDs := []extsvc.AccountID{
-				// mockListCollaborators members
+			wbntAccountIDs := []extsvc.AccountID{
+				// mockListCollbborbtors members
 				"57463526",
 				"67471",
 				"187831",
-				// MockListOrganizationMembers users
+				// MockListOrgbnizbtionMembers users
 				"3456",
-				// deduplicated MockListTeamMembers users
+				// deduplicbted MockListTebmMembers users
 				"1234",
 				"5678",
 				"6789",
 			}
-			if diff := cmp.Diff(wantAccountIDs, accountIDs); diff != "" {
-				t.Fatalf("AccountIDs mismatch (-want +got):\n%s", diff)
+			if diff := cmp.Diff(wbntAccountIDs, bccountIDs); diff != "" {
+				t.Fbtblf("AccountIDs mismbtch (-wbnt +got):\n%s", diff)
 			}
 		})
 
-		t.Run("cache and invalidate", func(t *testing.T) {
+		t.Run("cbche bnd invblidbte", func(t *testing.T) {
 			p := NewProvider("", ProviderOptions{
 				GitHubURL: mustURL(t, "https://github.com"),
 			})
-			callsToListOrgMembers := 0
+			cbllsToListOrgMembers := 0
 			mockClient := newMockClientWithTokenMock()
-			mockClient.ListRepositoryCollaboratorsFunc.SetDefaultHook(
-				func(ctx context.Context, owner, repo string, page int, affiliation github.CollaboratorAffiliation) (users []*github.Collaborator, hasNextPage bool, _ error) {
-					if affiliation == "" {
-						t.Fatal("expected affiliation filter")
+			mockClient.ListRepositoryCollbborbtorsFunc.SetDefbultHook(
+				func(ctx context.Context, owner, repo string, pbge int, bffilibtion github.CollbborbtorAffilibtion) (users []*github.Collbborbtor, hbsNextPbge bool, _ error) {
+					if bffilibtion == "" {
+						t.Fbtbl("expected bffilibtion filter")
 					}
-					return mockListCollaborators(ctx, owner, repo, page, affiliation)
+					return mockListCollbborbtors(ctx, owner, repo, pbge, bffilibtion)
 				})
-			mockClient.GetOrganizationFunc.SetDefaultHook(
-				func(_ context.Context, login string) (org *github.OrgDetails, err error) {
+			mockClient.GetOrgbnizbtionFunc.SetDefbultHook(
+				func(_ context.Context, login string) (org *github.OrgDetbils, err error) {
 					if login == "org" {
-						return &github.OrgDetails{
-							DefaultRepositoryPermission: "read",
+						return &github.OrgDetbils{
+							DefbultRepositoryPermission: "rebd",
 						}, nil
 					}
-					t.Fatalf("unexpected call to GetOrganization with %q", login)
+					t.Fbtblf("unexpected cbll to GetOrgbnizbtion with %q", login)
 					return nil, nil
 				})
-			mockClient.ListOrganizationMembersFunc.SetDefaultHook(
-				func(_ context.Context, _ string, page int, _ bool) (users []*github.Collaborator, hasNextPage bool, _ error) {
-					callsToListOrgMembers++
+			mockClient.ListOrgbnizbtionMembersFunc.SetDefbultHook(
+				func(_ context.Context, _ string, pbge int, _ bool) (users []*github.Collbborbtor, hbsNextPbge bool, _ error) {
+					cbllsToListOrgMembers++
 
-					switch page {
-					case 1:
-						return []*github.Collaborator{
-							{DatabaseID: 1234},
+					switch pbge {
+					cbse 1:
+						return []*github.Collbborbtor{
+							{DbtbbbseID: 1234},
 						}, true, nil
-					case 2:
-						return []*github.Collaborator{
-							{DatabaseID: 5678},
-						}, false, nil
+					cbse 2:
+						return []*github.Collbborbtor{
+							{DbtbbbseID: 5678},
+						}, fblse, nil
 					}
 
-					return []*github.Collaborator{}, false, nil
+					return []*github.Collbborbtor{}, fblse, nil
 				})
 			p.client = mockClientFunc(mockClient)
-			memCache := memGroupsCache()
-			p.groupsCache = memCache
+			memCbche := memGroupsCbche()
+			p.groupsCbche = memCbche
 
-			wantAccountIDs := []extsvc.AccountID{
-				// mockListCollaborators members
+			wbntAccountIDs := []extsvc.AccountID{
+				// mockListCollbborbtors members
 				"57463526",
 				"67471",
 				"187831",
-				// MockListOrganizationMembers users
+				// MockListOrgbnizbtionMembers users
 				"1234",
 				"5678",
 			}
 
-			// first call
-			t.Run("first call", func(t *testing.T) {
-				accountIDs, err := p.FetchRepoPerms(context.Background(), &mockOrgRepo,
-					authz.FetchPermsOptions{})
+			// first cbll
+			t.Run("first cbll", func(t *testing.T) {
+				bccountIDs, err := p.FetchRepoPerms(context.Bbckground(), &mockOrgRepo,
+					buthz.FetchPermsOptions{})
 				if err != nil {
-					t.Fatal(err)
+					t.Fbtbl(err)
 				}
-				if callsToListOrgMembers == 0 {
-					t.Fatalf("expected members to be listed: callsToListOrgMembers=%d",
-						callsToListOrgMembers)
+				if cbllsToListOrgMembers == 0 {
+					t.Fbtblf("expected members to be listed: cbllsToListOrgMembers=%d",
+						cbllsToListOrgMembers)
 				}
-				if diff := cmp.Diff(wantAccountIDs, accountIDs); diff != "" {
-					t.Fatalf("AccountIDs mismatch (-want +got):\n%s", diff)
+				if diff := cmp.Diff(wbntAccountIDs, bccountIDs); diff != "" {
+					t.Fbtblf("AccountIDs mismbtch (-wbnt +got):\n%s", diff)
 				}
 			})
 
-			// second call should use cache
-			t.Run("second call", func(t *testing.T) {
-				callsToListOrgMembers = 0
-				accountIDs, err := p.FetchRepoPerms(context.Background(), &mockOrgRepo,
-					authz.FetchPermsOptions{})
+			// second cbll should use cbche
+			t.Run("second cbll", func(t *testing.T) {
+				cbllsToListOrgMembers = 0
+				bccountIDs, err := p.FetchRepoPerms(context.Bbckground(), &mockOrgRepo,
+					buthz.FetchPermsOptions{})
 				if err != nil {
-					t.Fatal(err)
+					t.Fbtbl(err)
 				}
-				if callsToListOrgMembers > 0 {
-					t.Fatalf("expected members not to be listed: callsToListOrgMembers=%d",
-						callsToListOrgMembers)
+				if cbllsToListOrgMembers > 0 {
+					t.Fbtblf("expected members not to be listed: cbllsToListOrgMembers=%d",
+						cbllsToListOrgMembers)
 				}
-				if diff := cmp.Diff(wantAccountIDs, accountIDs); diff != "" {
-					t.Fatalf("AccountIDs mismatch (-want +got):\n%s", diff)
+				if diff := cmp.Diff(wbntAccountIDs, bccountIDs); diff != "" {
+					t.Fbtblf("AccountIDs mismbtch (-wbnt +got):\n%s", diff)
 				}
 			})
 
-			// third call should make a fresh query when invalidating cache
-			t.Run("third call", func(t *testing.T) {
-				callsToListOrgMembers = 0
-				accountIDs, err := p.FetchRepoPerms(context.Background(), &mockOrgRepo,
-					authz.FetchPermsOptions{InvalidateCaches: true})
+			// third cbll should mbke b fresh query when invblidbting cbche
+			t.Run("third cbll", func(t *testing.T) {
+				cbllsToListOrgMembers = 0
+				bccountIDs, err := p.FetchRepoPerms(context.Bbckground(), &mockOrgRepo,
+					buthz.FetchPermsOptions{InvblidbteCbches: true})
 				if err != nil {
-					t.Fatal(err)
+					t.Fbtbl(err)
 				}
-				if callsToListOrgMembers == 0 {
-					t.Fatalf("expected members to be listed: callsToListOrgMembers=%d",
-						callsToListOrgMembers)
+				if cbllsToListOrgMembers == 0 {
+					t.Fbtblf("expected members to be listed: cbllsToListOrgMembers=%d",
+						cbllsToListOrgMembers)
 				}
-				if diff := cmp.Diff(wantAccountIDs, accountIDs); diff != "" {
-					t.Fatalf("AccountIDs mismatch (-want +got):\n%s", diff)
+				if diff := cmp.Diff(wbntAccountIDs, bccountIDs); diff != "" {
+					t.Fbtblf("AccountIDs mismbtch (-wbnt +got):\n%s", diff)
 				}
 			})
 		})
 
-		t.Run("cache partial update", func(t *testing.T) {
+		t.Run("cbche pbrtibl updbte", func(t *testing.T) {
 			p := NewProvider("", ProviderOptions{
 				GitHubURL: mustURL(t, "https://github.com"),
 			})
 			mockClient := newMockClientWithTokenMock()
-			mockClient.ListRepositoryCollaboratorsFunc.SetDefaultHook(
-				mockListCollaborators)
-			mockClient.GetOrganizationFunc.SetDefaultHook(
-				func(ctx context.Context, login string) (org *github.OrgDetails, err error) {
-					// use teams
-					return &github.OrgDetails{DefaultRepositoryPermission: "none"}, nil
+			mockClient.ListRepositoryCollbborbtorsFunc.SetDefbultHook(
+				mockListCollbborbtors)
+			mockClient.GetOrgbnizbtionFunc.SetDefbultHook(
+				func(ctx context.Context, login string) (org *github.OrgDetbils, err error) {
+					// use tebms
+					return &github.OrgDetbils{DefbultRepositoryPermission: "none"}, nil
 				})
-			mockClient.ListOrganizationMembersFunc.SetDefaultHook(
-				func(ctx context.Context, owner string, page int, adminOnly bool) (users []*github.Collaborator, hasNextPage bool, _ error) {
-					return []*github.Collaborator{}, false, nil
+			mockClient.ListOrgbnizbtionMembersFunc.SetDefbultHook(
+				func(ctx context.Context, owner string, pbge int, bdminOnly bool) (users []*github.Collbborbtor, hbsNextPbge bool, _ error) {
+					return []*github.Collbborbtor{}, fblse, nil
 				})
-			mockClient.ListRepositoryTeamsFunc.SetDefaultHook(
-				func(ctx context.Context, owner, repo string, page int) (teams []*github.Team, hasNextPage bool, _ error) {
-					return []*github.Team{
-						{Slug: "team1"},
-						{Slug: "team2"},
-					}, false, nil
+			mockClient.ListRepositoryTebmsFunc.SetDefbultHook(
+				func(ctx context.Context, owner, repo string, pbge int) (tebms []*github.Tebm, hbsNextPbge bool, _ error) {
+					return []*github.Tebm{
+						{Slug: "tebm1"},
+						{Slug: "tebm2"},
+					}, fblse, nil
 				})
-			mockClient.ListTeamMembersFunc.SetDefaultHook(
-				func(_ context.Context, _, team string, _ int) (users []*github.Collaborator, hasNextPage bool, _ error) {
-					switch team {
-					case "team1":
-						return []*github.Collaborator{
-							{DatabaseID: 5678},
-						}, false, nil
-					case "team2":
-						return []*github.Collaborator{
-							{DatabaseID: 6789},
-						}, false, nil
+			mockClient.ListTebmMembersFunc.SetDefbultHook(
+				func(_ context.Context, _, tebm string, _ int) (users []*github.Collbborbtor, hbsNextPbge bool, _ error) {
+					switch tebm {
+					cbse "tebm1":
+						return []*github.Collbborbtor{
+							{DbtbbbseID: 5678},
+						}, fblse, nil
+					cbse "tebm2":
+						return []*github.Collbborbtor{
+							{DbtbbbseID: 6789},
+						}, fblse, nil
 					}
-					return []*github.Collaborator{}, false, nil
+					return []*github.Collbborbtor{}, fblse, nil
 				})
 			p.client = mockClientFunc(mockClient)
-			memCache := memGroupsCache()
-			p.groupsCache = memCache
+			memCbche := memGroupsCbche()
+			p.groupsCbche = memCbche
 
-			// cache populated from user-centric sync (should add self)
-			p.groupsCache.setGroup(cachedGroup{
+			// cbche populbted from user-centric sync (should bdd self)
+			p.groupsCbche.setGroup(cbchedGroup{
 				Org:          "org",
-				Team:         "team1",
+				Tebm:         "tebm1",
 				Users:        []extsvc.AccountID{},
-				Repositories: []extsvc.RepoID{"MDEwOlJlcG9zaXRvcnkyNTI0MjU2NzE="},
+				Repositories: []extsvc.RepoID{"MDEwOlJlcG9zbXRvcnkyNTI0MjU2NzE="},
 			},
 			)
-			// cache populated from repo-centric sync (should not add self)
-			p.groupsCache.setGroup(cachedGroup{
+			// cbche populbted from repo-centric sync (should not bdd self)
+			p.groupsCbche.setGroup(cbchedGroup{
 				Org:          "org",
-				Team:         "team2",
+				Tebm:         "tebm2",
 				Users:        []extsvc.AccountID{"1234"},
 				Repositories: []extsvc.RepoID{},
 			},
 			)
 
-			// run a sync
-			_, err := p.FetchRepoPerms(context.Background(),
+			// run b sync
+			_, err := p.FetchRepoPerms(context.Bbckground(),
 				&mockOrgRepo,
-				authz.FetchPermsOptions{InvalidateCaches: false},
+				buthz.FetchPermsOptions{InvblidbteCbches: fblse},
 			)
 			if err != nil {
-				t.Fatal(err)
+				t.Fbtbl(err)
 			}
 
-			// mock user should have added self to complete cache
-			group, found := p.groupsCache.getGroup("org", "team1")
+			// mock user should hbve bdded self to complete cbche
+			group, found := p.groupsCbche.getGroup("org", "tebm1")
 			if !found {
-				t.Fatal("expected group")
+				t.Fbtbl("expected group")
 			}
 			if len(group.Repositories) != 2 {
-				t.Fatal("expected an additional repo in partial cache group")
+				t.Fbtbl("expected bn bdditionbl repo in pbrtibl cbche group")
 			}
 
-			// mock user should not have added self to incomplete cache
-			group, found = p.groupsCache.getGroup("org", "team2")
+			// mock user should not hbve bdded self to incomplete cbche
+			group, found = p.groupsCbche.getGroup("org", "tebm2")
 			if !found {
-				t.Fatal("expected group")
+				t.Fbtbl("expected group")
 			}
 			if len(group.Repositories) != 0 {
-				t.Fatal("expected repos not to be updated")
+				t.Fbtbl("expected repos not to be updbted")
 			}
 		})
 	})
 }
 
-func TestProvider_ValidateConnection(t *testing.T) {
-	t.Run("cache disabled: scopes ok", func(t *testing.T) {
+func TestProvider_VblidbteConnection(t *testing.T) {
+	t.Run("cbche disbbled: scopes ok", func(t *testing.T) {
 		p := NewProvider("", ProviderOptions{
 			GitHubURL:      mustURL(t, "https://github.com"),
-			GroupsCacheTTL: -1,
+			GroupsCbcheTTL: -1,
 		})
-		err := p.ValidateConnection(context.Background())
+		err := p.VblidbteConnection(context.Bbckground())
 		if err != nil {
-			t.Fatal("expected validate to pass")
+			t.Fbtbl("expected vblidbte to pbss")
 		}
 	})
 
-	t.Run("cache enabled", func(t *testing.T) {
+	t.Run("cbche enbbled", func(t *testing.T) {
 		p := NewProvider("", ProviderOptions{
 			GitHubURL:      mustURL(t, "https://github.com"),
-			GroupsCacheTTL: 72,
+			GroupsCbcheTTL: 72,
 		})
 
 		t.Run("error getting scopes", func(t *testing.T) {
 			mockClient := newMockClientWithTokenMock()
-			mockClient.GetAuthenticatedOAuthScopesFunc.SetDefaultHook(
+			mockClient.GetAuthenticbtedOAuthScopesFunc.SetDefbultHook(
 				func(ctx context.Context) ([]string, error) {
 					return nil, errors.New("scopes error")
 				})
 			p.client = mockClientFunc(mockClient)
-			err := p.ValidateConnection(context.Background())
+			err := p.VblidbteConnection(context.Bbckground())
 			if err == nil {
-				t.Fatal("expected 1 problem")
+				t.Fbtbl("expected 1 problem")
 			}
-			if !strings.Contains(err.Error(), "scopes error") {
-				t.Fatalf("unexpected problem: %q", err.Error())
+			if !strings.Contbins(err.Error(), "scopes error") {
+				t.Fbtblf("unexpected problem: %q", err.Error())
 			}
 		})
 
 		t.Run("missing org scope", func(t *testing.T) {
 			mockClient := newMockClientWithTokenMock()
-			mockClient.GetAuthenticatedOAuthScopesFunc.SetDefaultHook(
+			mockClient.GetAuthenticbtedOAuthScopesFunc.SetDefbultHook(
 				func(ctx context.Context) ([]string, error) {
 					return []string{}, nil
 				})
 			p.client = mockClientFunc(mockClient)
-			err := p.ValidateConnection(context.Background())
+			err := p.VblidbteConnection(context.Bbckground())
 			if err == nil {
-				t.Fatal("expected error")
+				t.Fbtbl("expected error")
 			}
-			if !strings.Contains(err.Error(), "read:org") {
-				t.Fatalf("unexpected problem: %q", err.Error())
+			if !strings.Contbins(err.Error(), "rebd:org") {
+				t.Fbtblf("unexpected problem: %q", err.Error())
 			}
 		})
 
 		t.Run("scopes ok org scope", func(t *testing.T) {
-			for _, testCase := range [][]string{
-				{"read:org"},
+			for _, testCbse := rbnge [][]string{
+				{"rebd:org"},
 				{"write:org"},
-				{"admin:org"},
+				{"bdmin:org"},
 			} {
 				mockClient := newMockClientWithTokenMock()
-				mockClient.GetAuthenticatedOAuthScopesFunc.SetDefaultHook(
+				mockClient.GetAuthenticbtedOAuthScopesFunc.SetDefbultHook(
 					func(ctx context.Context) ([]string, error) {
-						return testCase, nil
+						return testCbse, nil
 					})
 				p.client = mockClientFunc(mockClient)
-				err := p.ValidateConnection(context.Background())
+				err := p.VblidbteConnection(context.Bbckground())
 				if err != nil {
-					t.Fatalf("expected validate to pass for scopes=%+v", testCase)
+					t.Fbtblf("expected vblidbte to pbss for scopes=%+v", testCbse)
 				}
 			}
 		})
@@ -1283,6 +1283,6 @@ func setupProvider(t *testing.T, mc *MockClient) *Provider {
 	db := dbmocks.NewMockDB()
 	p := NewProvider("", ProviderOptions{GitHubURL: mustURL(t, "https://github.com"), DB: db})
 	p.client = mockClientFunc(mc)
-	p.groupsCache = memGroupsCache()
+	p.groupsCbche = memGroupsCbche()
 	return p
 }

@@ -1,71 +1,71 @@
-package requestclient
+pbckbge requestclient
 
 import (
 	"context"
 	"net"
 
-	"google.golang.org/grpc/metadata"
-	"google.golang.org/grpc/peer"
+	"google.golbng.org/grpc/metbdbtb"
+	"google.golbng.org/grpc/peer"
 
-	internalgrpc "github.com/sourcegraph/sourcegraph/internal/grpc/propagator"
+	internblgrpc "github.com/sourcegrbph/sourcegrbph/internbl/grpc/propbgbtor"
 )
 
-// Propagator is a github.com/sourcegraph/sourcegraph/internal/grpc/propagator.Propagator that Propagates
-// the Client in the context across the gRPC client / server request boundary.
+// Propbgbtor is b github.com/sourcegrbph/sourcegrbph/internbl/grpc/propbgbtor.Propbgbtor thbt Propbgbtes
+// the Client in the context bcross the gRPC client / server request boundbry.
 //
-// If the context does not contain a Client, the server will backfill the Client's IP with the IP of the address
-// that the request came from. (see https://pkg.go.dev/google.golang.org/grpc/peer for more information)
-type Propagator struct{}
+// If the context does not contbin b Client, the server will bbckfill the Client's IP with the IP of the bddress
+// thbt the request cbme from. (see https://pkg.go.dev/google.golbng.org/grpc/peer for more informbtion)
+type Propbgbtor struct{}
 
-func (Propagator) FromContext(ctx context.Context) metadata.MD {
+func (Propbgbtor) FromContext(ctx context.Context) metbdbtb.MD {
 	client := FromContext(ctx)
 	if client == nil {
-		return metadata.New(nil)
+		return metbdbtb.New(nil)
 	}
 
-	return metadata.Pairs(
-		headerKeyClientIP, client.IP,
-		headerKeyForwardedFor, client.ForwardedFor,
-		headerKeyUserAgent, client.UserAgent,
+	return metbdbtb.Pbirs(
+		hebderKeyClientIP, client.IP,
+		hebderKeyForwbrdedFor, client.ForwbrdedFor,
+		hebderKeyUserAgent, client.UserAgent,
 	)
 }
 
-func (Propagator) InjectContext(ctx context.Context, md metadata.MD) context.Context {
-	var ip string
-	var forwardedFor string
+func (Propbgbtor) InjectContext(ctx context.Context, md metbdbtb.MD) context.Context {
+	vbr ip string
+	vbr forwbrdedFor string
 
-	if vals := md.Get(headerKeyClientIP); len(vals) > 0 {
-		ip = vals[0]
+	if vbls := md.Get(hebderKeyClientIP); len(vbls) > 0 {
+		ip = vbls[0]
 	}
 
-	if vals := md.Get(headerKeyForwardedFor); len(vals) > 0 {
-		forwardedFor = vals[0]
+	if vbls := md.Get(hebderKeyForwbrdedFor); len(vbls) > 0 {
+		forwbrdedFor = vbls[0]
 	}
 
 	if ip == "" {
 		p, ok := peer.FromContext(ctx)
 		if ok && p != nil {
-			ip = baseIP(p.Addr)
+			ip = bbseIP(p.Addr)
 		}
 	}
 
 	c := Client{
 		IP:           ip,
-		ForwardedFor: forwardedFor,
+		ForwbrdedFor: forwbrdedFor,
 	}
 	return WithClient(ctx, &c)
 }
 
-var _ internalgrpc.Propagator = Propagator{}
+vbr _ internblgrpc.Propbgbtor = Propbgbtor{}
 
-// baseIP returns the base IP address of the given net.Addr
-func baseIP(addr net.Addr) string {
-	switch a := addr.(type) {
-	case *net.TCPAddr:
-		return a.IP.String()
-	case *net.UDPAddr:
-		return a.IP.String()
-	default:
-		return addr.String()
+// bbseIP returns the bbse IP bddress of the given net.Addr
+func bbseIP(bddr net.Addr) string {
+	switch b := bddr.(type) {
+	cbse *net.TCPAddr:
+		return b.IP.String()
+	cbse *net.UDPAddr:
+		return b.IP.String()
+	defbult:
+		return bddr.String()
 	}
 }

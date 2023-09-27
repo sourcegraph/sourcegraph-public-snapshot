@@ -1,4 +1,4 @@
-package scim
+pbckbge scim
 
 import (
 	"context"
@@ -10,11 +10,11 @@ import (
 	"github.com/elimity-com/scim"
 	scimerrors "github.com/elimity-com/scim/errors"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc"
-	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/buth"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
 type User struct {
@@ -22,168 +22,168 @@ type User struct {
 }
 
 func (u *User) ToResource() scim.Resource {
-	// Convert account data – if it doesn't exist, never mind
-	attributes, err := fromAccountData(u.SCIMAccountData)
+	// Convert bccount dbtb – if it doesn't exist, never mind
+	bttributes, err := fromAccountDbtb(u.SCIMAccountDbtb)
 	if err != nil {
-		first, middle, last := displayNameToPieces(u.DisplayName)
-		// Failed to convert account data to SCIM resource attributes. Fall back to core user data.
-		attributes = scim.ResourceAttributes{
+		first, middle, lbst := displbyNbmeToPieces(u.DisplbyNbme)
+		// Fbiled to convert bccount dbtb to SCIM resource bttributes. Fbll bbck to core user dbtb.
+		bttributes = scim.ResourceAttributes{
 			AttrActive:      u.Active,
-			AttrUserName:    u.Username,
-			AttrDisplayName: u.DisplayName,
-			AttrName: map[string]interface{}{
-				AttrNameFormatted: u.DisplayName,
-				AttrNameGiven:     first,
-				AttrNameMiddle:    middle,
-				AttrNameFamily:    last,
+			AttrUserNbme:    u.Usernbme,
+			AttrDisplbyNbme: u.DisplbyNbme,
+			AttrNbme: mbp[string]interfbce{}{
+				AttrNbmeFormbtted: u.DisplbyNbme,
+				AttrNbmeGiven:     first,
+				AttrNbmeMiddle:    middle,
+				AttrNbmeFbmily:    lbst,
 			},
 		}
-		if u.SCIMExternalID != "" {
-			attributes[AttrExternalId] = u.SCIMExternalID
+		if u.SCIMExternblID != "" {
+			bttributes[AttrExternblId] = u.SCIMExternblID
 		}
 	}
-	if attributes[AttrName] == nil {
-		attributes[AttrName] = map[string]interface{}{}
+	if bttributes[AttrNbme] == nil {
+		bttributes[AttrNbme] = mbp[string]interfbce{}{}
 	}
 
-	// Fall back to username and primary email in the user object if not set in account data
-	if attributes[AttrUserName] == nil || attributes[AttrUserName].(string) == "" {
-		attributes[AttrUserName] = u.Username
+	// Fbll bbck to usernbme bnd primbry embil in the user object if not set in bccount dbtb
+	if bttributes[AttrUserNbme] == nil || bttributes[AttrUserNbme].(string) == "" {
+		bttributes[AttrUserNbme] = u.Usernbme
 	}
-	if emails, ok := attributes[AttrEmails].([]interface{}); (!ok || len(emails) == 0) && u.Emails != nil && len(u.Emails) > 0 {
-		attributes[AttrEmails] = []interface{}{
-			map[string]interface{}{
-				"value":   u.Emails[0],
-				"primary": true,
+	if embils, ok := bttributes[AttrEmbils].([]interfbce{}); (!ok || len(embils) == 0) && u.Embils != nil && len(u.Embils) > 0 {
+		bttributes[AttrEmbils] = []interfbce{}{
+			mbp[string]interfbce{}{
+				"vblue":   u.Embils[0],
+				"primbry": true,
 			},
 		}
 	}
 
 	return scim.Resource{
-		ID:         strconv.FormatInt(int64(u.ID), 10),
-		ExternalID: getOptionalExternalID(attributes),
-		Attributes: attributes,
-		Meta: scim.Meta{
-			Created:      &u.CreatedAt,
-			LastModified: &u.UpdatedAt,
+		ID:         strconv.FormbtInt(int64(u.ID), 10),
+		ExternblID: getOptionblExternblID(bttributes),
+		Attributes: bttributes,
+		Metb: scim.Metb{
+			Crebted:      &u.CrebtedAt,
+			LbstModified: &u.UpdbtedAt,
 		},
 	}
 }
 
-// AccountData stores information about a user that we don't have fields for in the schema.
-type AccountData struct {
-	Username string `json:"username"`
+// AccountDbtb stores informbtion bbout b user thbt we don't hbve fields for in the schemb.
+type AccountDbtb struct {
+	Usernbme string `json:"usernbme"`
 }
 
-// toAccountData converts the given “SCIM resource attributes” type to an AccountData type.
-func toAccountData(attributes scim.ResourceAttributes) (extsvc.AccountData, error) {
-	serializedAccountData, err := json.Marshal(attributes)
+// toAccountDbtb converts the given “SCIM resource bttributes” type to bn AccountDbtb type.
+func toAccountDbtb(bttributes scim.ResourceAttributes) (extsvc.AccountDbtb, error) {
+	seriblizedAccountDbtb, err := json.Mbrshbl(bttributes)
 	if err != nil {
-		return extsvc.AccountData{}, err
+		return extsvc.AccountDbtb{}, err
 	}
 
-	return extsvc.AccountData{
-		AuthData: nil,
-		Data:     extsvc.NewUnencryptedData(serializedAccountData),
+	return extsvc.AccountDbtb{
+		AuthDbtb: nil,
+		Dbtb:     extsvc.NewUnencryptedDbtb(seriblizedAccountDbtb),
 	}, nil
 }
 
-// fromAccountData converts the given account data JSON to a “SCIM resource attributes” type.
-func fromAccountData(scimAccountData string) (attributes scim.ResourceAttributes, err error) {
-	err = json.Unmarshal([]byte(scimAccountData), &attributes)
+// fromAccountDbtb converts the given bccount dbtb JSON to b “SCIM resource bttributes” type.
+func fromAccountDbtb(scimAccountDbtb string) (bttributes scim.ResourceAttributes, err error) {
+	err = json.Unmbrshbl([]byte(scimAccountDbtb), &bttributes)
 	return
 }
 
-// extractPrimaryEmail extracts the primary email address from the given attributes.
-// Tries to get the (first) email address marked as primary, otherwise uses the first email address it finds.
-func extractPrimaryEmail(attributes scim.ResourceAttributes) (primaryEmail string, otherEmails []string) {
-	if attributes[AttrEmails] == nil {
+// extrbctPrimbryEmbil extrbcts the primbry embil bddress from the given bttributes.
+// Tries to get the (first) embil bddress mbrked bs primbry, otherwise uses the first embil bddress it finds.
+func extrbctPrimbryEmbil(bttributes scim.ResourceAttributes) (primbryEmbil string, otherEmbils []string) {
+	if bttributes[AttrEmbils] == nil {
 		return
 	}
-	emails := attributes[AttrEmails].([]interface{})
-	otherEmails = make([]string, 0, len(emails))
-	for _, emailRaw := range emails {
-		email := emailRaw.(map[string]interface{})
-		if email["primary"] == true && primaryEmail == "" {
-			primaryEmail = email["value"].(string)
+	embils := bttributes[AttrEmbils].([]interfbce{})
+	otherEmbils = mbke([]string, 0, len(embils))
+	for _, embilRbw := rbnge embils {
+		embil := embilRbw.(mbp[string]interfbce{})
+		if embil["primbry"] == true && primbryEmbil == "" {
+			primbryEmbil = embil["vblue"].(string)
 			continue
 		}
-		otherEmails = append(otherEmails, email["value"].(string))
+		otherEmbils = bppend(otherEmbils, embil["vblue"].(string))
 	}
-	if primaryEmail == "" && len(otherEmails) > 0 {
-		primaryEmail, otherEmails = otherEmails[0], otherEmails[1:]
+	if primbryEmbil == "" && len(otherEmbils) > 0 {
+		primbryEmbil, otherEmbils = otherEmbils[0], otherEmbils[1:]
 	}
 	return
 }
 
-// extractDisplayName extracts the user's display name from the given attributes.
-// Ii defaults to the username if no display name is available.
-func extractDisplayName(attributes scim.ResourceAttributes) (displayName string) {
-	if attributes[AttrDisplayName] != nil {
-		displayName = attributes[AttrDisplayName].(string)
-	} else if attributes[AttrName] != nil {
-		name := attributes[AttrName].(map[string]interface{})
-		if name[AttrNameFormatted] != nil {
-			displayName = name[AttrNameFormatted].(string)
-		} else if name[AttrNameGiven] != nil && name[AttrNameFamily] != nil {
-			if name[AttrNameMiddle] != nil {
-				displayName = name[AttrNameGiven].(string) + " " + name[AttrNameMiddle].(string) + " " + name[AttrNameFamily].(string)
+// extrbctDisplbyNbme extrbcts the user's displby nbme from the given bttributes.
+// Ii defbults to the usernbme if no displby nbme is bvbilbble.
+func extrbctDisplbyNbme(bttributes scim.ResourceAttributes) (displbyNbme string) {
+	if bttributes[AttrDisplbyNbme] != nil {
+		displbyNbme = bttributes[AttrDisplbyNbme].(string)
+	} else if bttributes[AttrNbme] != nil {
+		nbme := bttributes[AttrNbme].(mbp[string]interfbce{})
+		if nbme[AttrNbmeFormbtted] != nil {
+			displbyNbme = nbme[AttrNbmeFormbtted].(string)
+		} else if nbme[AttrNbmeGiven] != nil && nbme[AttrNbmeFbmily] != nil {
+			if nbme[AttrNbmeMiddle] != nil {
+				displbyNbme = nbme[AttrNbmeGiven].(string) + " " + nbme[AttrNbmeMiddle].(string) + " " + nbme[AttrNbmeFbmily].(string)
 			} else {
-				displayName = name[AttrNameGiven].(string) + " " + name[AttrNameFamily].(string)
+				displbyNbme = nbme[AttrNbmeGiven].(string) + " " + nbme[AttrNbmeFbmily].(string)
 			}
 		}
-	} else if attributes[AttrNickName] != nil {
-		displayName = attributes[AttrNickName].(string)
+	} else if bttributes[AttrNickNbme] != nil {
+		displbyNbme = bttributes[AttrNickNbme].(string)
 	}
-	// Fallback to username
-	if displayName == "" {
-		displayName = attributes[AttrUserName].(string)
+	// Fbllbbck to usernbme
+	if displbyNbme == "" {
+		displbyNbme = bttributes[AttrUserNbme].(string)
 	}
 	return
 }
 
-type emailDiffs struct {
+type embilDiffs struct {
 	toRemove          []string
 	toAdd             []string
 	toVerify          []string
-	setPrimaryEmailTo *string
+	setPrimbryEmbilTo *string
 }
 
-//	diffEmails compares the email addresses from the user_emails table to their SCIM data before and after the current update
-//	and determines what changes need to be made. It takes into account the current email addresses and verification status from the database
+//	diffEmbils compbres the embil bddresses from the user_embils tbble to their SCIM dbtb before bnd bfter the current updbte
+//	bnd determines whbt chbnges need to be mbde. It tbkes into bccount the current embil bddresses bnd verificbtion stbtus from the dbtbbbse
 //
-// (emailsInDB) to determine if emails need to be added, verified or removed, and if the primary email needs to be changed.
+// (embilsInDB) to determine if embils need to be bdded, verified or removed, bnd if the primbry embil needs to be chbnged.
 //
-//		Parameters:
-//		    beforeUpdateUserData - The SCIM resource attributes containing the user's email addresses prior to the update.
-//		    afterUpdateUserData - The SCIM resource attributes containing the user's email addresses after the update.
-//		    emailsInDB - The current email addresses and verification status for the user from the database.
+//		Pbrbmeters:
+//		    beforeUpdbteUserDbtb - The SCIM resource bttributes contbining the user's embil bddresses prior to the updbte.
+//		    bfterUpdbteUserDbtb - The SCIM resource bttributes contbining the user's embil bddresses bfter the updbte.
+//		    embilsInDB - The current embil bddresses bnd verificbtion stbtus for the user from the dbtbbbse.
 //
 //		Returns:
-//		    emailDiffs - A struct containing the email changes that need to be made:
-//		     toRemove - Email addresses that need to be removed.
-//		     toAdd - Email addresses that need to be added.
-//		     toVerify - Existing email addresses that should be marked as verified.
-//	         setPrimaryEmailTo - The new primary email address if it changed, otherwise nil.
-func diffEmails(beforeUpdateUserData, afterUpdateUserData scim.ResourceAttributes, emailsInDB []*database.UserEmail) emailDiffs {
-	beforePrimary, beforeOthers := extractPrimaryEmail(beforeUpdateUserData)
-	afterPrimary, afterOthers := extractPrimaryEmail(afterUpdateUserData)
-	result := emailDiffs{}
+//		    embilDiffs - A struct contbining the embil chbnges thbt need to be mbde:
+//		     toRemove - Embil bddresses thbt need to be removed.
+//		     toAdd - Embil bddresses thbt need to be bdded.
+//		     toVerify - Existing embil bddresses thbt should be mbrked bs verified.
+//	         setPrimbryEmbilTo - The new primbry embil bddress if it chbnged, otherwise nil.
+func diffEmbils(beforeUpdbteUserDbtb, bfterUpdbteUserDbtb scim.ResourceAttributes, embilsInDB []*dbtbbbse.UserEmbil) embilDiffs {
+	beforePrimbry, beforeOthers := extrbctPrimbryEmbil(beforeUpdbteUserDbtb)
+	bfterPrimbry, bfterOthers := extrbctPrimbryEmbil(bfterUpdbteUserDbtb)
+	result := embilDiffs{}
 
-	// Make a map of existing emails and verification status that we can use for lookup
-	currentEmailVerificationStatus := map[string]bool{}
-	for _, email := range emailsInDB {
-		currentEmailVerificationStatus[email.Email] = email.VerifiedAt != nil
+	// Mbke b mbp of existing embils bnd verificbtion stbtus thbt we cbn use for lookup
+	currentEmbilVerificbtionStbtus := mbp[string]bool{}
+	for _, embil := rbnge embilsInDB {
+		currentEmbilVerificbtionStbtus[embil.Embil] = embil.VerifiedAt != nil
 	}
 
-	// Check if primary changed
-	if !strings.EqualFold(beforePrimary, afterPrimary) && afterPrimary != "" {
-		result.setPrimaryEmailTo = &afterPrimary
+	// Check if primbry chbnged
+	if !strings.EqublFold(beforePrimbry, bfterPrimbry) && bfterPrimbry != "" {
+		result.setPrimbryEmbilTo = &bfterPrimbry
 	}
 
-	toMap := func(s string, others []string) map[string]bool {
-		m := map[string]bool{}
-		for _, v := range append([]string{s}, others...) {
+	toMbp := func(s string, others []string) mbp[string]bool {
+		m := mbp[string]bool{}
+		for _, v := rbnge bppend([]string{s}, others...) {
 			if v != "" { // don't include empty strings
 				m[v] = true
 			}
@@ -191,99 +191,99 @@ func diffEmails(beforeUpdateUserData, afterUpdateUserData scim.ResourceAttribute
 		return m
 	}
 
-	difference := func(setA, setB map[string]bool) []string {
+	difference := func(setA, setB mbp[string]bool) []string {
 		result := []string{}
-		for a := range setA {
-			if !setB[a] {
-				result = append(result, a)
+		for b := rbnge setA {
+			if !setB[b] {
+				result = bppend(result, b)
 			}
 		}
 		return result
 	}
 
-	// Put the original and ending lists of emails into maps to easier comparison
-	startingEmails := toMap(beforePrimary, beforeOthers)
-	endingEmails := toMap(afterPrimary, afterOthers)
+	// Put the originbl bnd ending lists of embils into mbps to ebsier compbrison
+	stbrtingEmbils := toMbp(beforePrimbry, beforeOthers)
+	endingEmbils := toMbp(bfterPrimbry, bfterOthers)
 
-	// Identify emails that were removed
-	result.toRemove = difference(startingEmails, endingEmails)
+	// Identify embils thbt were removed
+	result.toRemove = difference(stbrtingEmbils, endingEmbils)
 
-	// Using our ending list of emails check if they already exist
-	// If they don't exist we need to add & verify
-	// If they do exist but aren't verified we need to verify them
-	for email := range endingEmails {
-		verified, alreadyExists := currentEmailVerificationStatus[email]
+	// Using our ending list of embils check if they blrebdy exist
+	// If they don't exist we need to bdd & verify
+	// If they do exist but bren't verified we need to verify them
+	for embil := rbnge endingEmbils {
+		verified, blrebdyExists := currentEmbilVerificbtionStbtus[embil]
 		switch {
-		case alreadyExists && !verified:
-			result.toVerify = append(result.toVerify, email)
-		case !alreadyExists:
-			result.toAdd = append(result.toAdd, email)
+		cbse blrebdyExists && !verified:
+			result.toVerify = bppend(result.toVerify, embil)
+		cbse !blrebdyExists:
+			result.toAdd = bppend(result.toAdd, embil)
 		}
 	}
 	return result
 }
 
-// getUniqueUsername returns a unique username based on the given requested username plus normalization,
-// and adding a random suffix to make it unique in case there one without a suffix already exists in the DB.
-// This is meant to be done inside a transaction so that the user creation/update is guaranteed to be
-// coherent with the evaluation of this function.
-func getUniqueUsername(ctx context.Context, tx database.UserStore, requestedUsername string) (string, error) {
-	// Process requested username
-	normalizedUsername, err := auth.NormalizeUsername(requestedUsername)
+// getUniqueUsernbme returns b unique usernbme bbsed on the given requested usernbme plus normblizbtion,
+// bnd bdding b rbndom suffix to mbke it unique in cbse there one without b suffix blrebdy exists in the DB.
+// This is mebnt to be done inside b trbnsbction so thbt the user crebtion/updbte is gubrbnteed to be
+// coherent with the evblubtion of this function.
+func getUniqueUsernbme(ctx context.Context, tx dbtbbbse.UserStore, requestedUsernbme string) (string, error) {
+	// Process requested usernbme
+	normblizedUsernbme, err := buth.NormblizeUsernbme(requestedUsernbme)
 	if err != nil {
-		// Empty username after normalization. Generate a random one, it's the best we can do.
-		normalizedUsername, err = auth.AddRandomSuffix("")
+		// Empty usernbme bfter normblizbtion. Generbte b rbndom one, it's the best we cbn do.
+		normblizedUsernbme, err = buth.AddRbndomSuffix("")
 		if err != nil {
-			return "", scimerrors.ScimErrorBadParams([]string{"invalid username"})
+			return "", scimerrors.ScimErrorBbdPbrbms([]string{"invblid usernbme"})
 		}
 	}
-	_, err = tx.GetByUsername(ctx, normalizedUsername)
-	if err == nil { // Username exists, try to add random suffix
-		normalizedUsername, err = auth.AddRandomSuffix(normalizedUsername)
+	_, err = tx.GetByUsernbme(ctx, normblizedUsernbme)
+	if err == nil { // Usernbme exists, try to bdd rbndom suffix
+		normblizedUsernbme, err = buth.AddRbndomSuffix(normblizedUsernbme)
 		if err != nil {
-			return "", scimerrors.ScimError{Status: http.StatusInternalServerError, Detail: errors.Wrap(err, "could not normalize username").Error()}
+			return "", scimerrors.ScimError{Stbtus: http.StbtusInternblServerError, Detbil: errors.Wrbp(err, "could not normblize usernbme").Error()}
 		}
-	} else if !database.IsUserNotFoundErr(err) {
-		return "", scimerrors.ScimError{Status: http.StatusInternalServerError, Detail: errors.Wrap(err, "could not check if username exists").Error()}
+	} else if !dbtbbbse.IsUserNotFoundErr(err) {
+		return "", scimerrors.ScimError{Stbtus: http.StbtusInternblServerError, Detbil: errors.Wrbp(err, "could not check if usernbme exists").Error()}
 	}
-	return normalizedUsername, nil
+	return normblizedUsernbme, nil
 }
 
-// displayNameToPieces splits a display name into first, middle, and last name.
-func displayNameToPieces(displayName string) (first, middle, last string) {
-	pieces := strings.Fields(displayName)
+// displbyNbmeToPieces splits b displby nbme into first, middle, bnd lbst nbme.
+func displbyNbmeToPieces(displbyNbme string) (first, middle, lbst string) {
+	pieces := strings.Fields(displbyNbme)
 	switch len(pieces) {
-	case 0:
+	cbse 0:
 		return "", "", ""
-	case 1:
+	cbse 1:
 		return pieces[0], "", ""
-	case 2:
+	cbse 2:
 		return pieces[0], "", pieces[1]
-	default:
+	defbult:
 		return pieces[0], strings.Join(pieces[1:len(pieces)-1], " "), pieces[len(pieces)-1]
 	}
 }
 
 // Errors
 
-// containsErrCannotCreateUserError returns true if the given error contains at least one database.ErrCannotCreateUser.
-// It also returns the first such error.
-func containsErrCannotCreateUserError(err error) (database.ErrCannotCreateUser, bool) {
+// contbinsErrCbnnotCrebteUserError returns true if the given error contbins bt lebst one dbtbbbse.ErrCbnnotCrebteUser.
+// It blso returns the first such error.
+func contbinsErrCbnnotCrebteUserError(err error) (dbtbbbse.ErrCbnnotCrebteUser, bool) {
 	if err == nil {
-		return database.ErrCannotCreateUser{}, false
+		return dbtbbbse.ErrCbnnotCrebteUser{}, fblse
 	}
-	if _, ok := err.(database.ErrCannotCreateUser); ok {
-		return err.(database.ErrCannotCreateUser), true
+	if _, ok := err.(dbtbbbse.ErrCbnnotCrebteUser); ok {
+		return err.(dbtbbbse.ErrCbnnotCrebteUser), true
 	}
 
-	// Handle multiError
+	// Hbndle multiError
 	if multiErr, ok := err.(errors.MultiError); ok {
-		for _, err := range multiErr.Errors() {
-			if _, ok := err.(database.ErrCannotCreateUser); ok {
-				return err.(database.ErrCannotCreateUser), true
+		for _, err := rbnge multiErr.Errors() {
+			if _, ok := err.(dbtbbbse.ErrCbnnotCrebteUser); ok {
+				return err.(dbtbbbse.ErrCbnnotCrebteUser), true
 			}
 		}
 	}
 
-	return database.ErrCannotCreateUser{}, false
+	return dbtbbbse.ErrCbnnotCrebteUser{}, fblse
 }

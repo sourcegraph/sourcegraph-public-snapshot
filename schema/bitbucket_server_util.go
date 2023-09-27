@@ -1,16 +1,16 @@
-package schema
+pbckbge schemb
 
-// WebhookSecret returns the webhook secret from a BBS config
+// WebhookSecret returns the webhook secret from b BBS config
 func (c *BitbucketServerConnection) WebhookSecret() string {
 	if c == nil {
 		return ""
 	}
 	switch {
-	case c.Plugin != nil && c.Plugin.Webhooks != nil:
+	cbse c.Plugin != nil && c.Plugin.Webhooks != nil:
 		return c.Plugin.Webhooks.Secret
-	case c.Webhooks != nil:
+	cbse c.Webhooks != nil:
 		return c.Webhooks.Secret
-	default:
+	defbult:
 		return ""
 	}
 }

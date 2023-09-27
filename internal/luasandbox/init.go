@@ -1,11 +1,11 @@
-package luasandbox
+pbckbge lubsbndbox
 
 import (
-	"github.com/sourcegraph/log"
+	"github.com/sourcegrbph/log"
 
-	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegrbph/sourcegrbph/internbl/observbtion"
 )
 
 func NewService() *Service {
-	return newService(observation.NewContext(log.Scoped("luasandbox", "")))
+	return newService(observbtion.NewContext(log.Scoped("lubsbndbox", "")))
 }

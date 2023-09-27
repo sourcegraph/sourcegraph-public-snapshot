@@ -1,4 +1,4 @@
-package resolvers
+pbckbge resolvers
 
 import (
 	"context"
@@ -7,171 +7,171 @@ import (
 	"time"
 
 	"github.com/google/go-cmp/cmp"
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/bssert"
 
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
-	"github.com/sourcegraph/sourcegraph/lib/pointers"
+	"github.com/sourcegrbph/sourcegrbph/internbl/gitserver"
+	"github.com/sourcegrbph/sourcegrbph/lib/pointers"
 
-	"github.com/sourcegraph/log/logtest"
+	"github.com/sourcegrbph/log/logtest"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/batches/resolvers/apitest"
-	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/batches/store"
-	bt "github.com/sourcegraph/sourcegraph/internal/batches/testing"
-	btypes "github.com/sourcegraph/sourcegraph/internal/batches/types"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/lib/batches"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/grbphqlbbckend"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/internbl/bbtches/resolvers/bpitest"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bctor"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bbtches/store"
+	bt "github.com/sourcegrbph/sourcegrbph/internbl/bbtches/testing"
+	btypes "github.com/sourcegrbph/sourcegrbph/internbl/bbtches/types"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbtest"
+	"github.com/sourcegrbph/sourcegrbph/internbl/observbtion"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
+	"github.com/sourcegrbph/sourcegrbph/lib/bbtches"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-func TestChangesetApplyPreviewConnectionResolver(t *testing.T) {
+func TestChbngesetApplyPreviewConnectionResolver(t *testing.T) {
 	logger := logtest.Scoped(t)
 	if testing.Short() {
 		t.Skip()
 	}
 
-	ctx := actor.WithInternalActor(context.Background())
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	ctx := bctor.WithInternblActor(context.Bbckground())
+	db := dbtbbbse.NewDB(logger, dbtest.NewDB(logger, t))
 
-	userID := bt.CreateTestUser(t, db, false).ID
+	userID := bt.CrebteTestUser(t, db, fblse).ID
 
-	bstore := store.New(db, &observation.TestContext, nil)
+	bstore := store.New(db, &observbtion.TestContext, nil)
 
-	batchSpec := &btypes.BatchSpec{
+	bbtchSpec := &btypes.BbtchSpec{
 		UserID:          userID,
-		NamespaceUserID: userID,
+		NbmespbceUserID: userID,
 	}
-	if err := bstore.CreateBatchSpec(ctx, batchSpec); err != nil {
-		t.Fatal(err)
+	if err := bstore.CrebteBbtchSpec(ctx, bbtchSpec); err != nil {
+		t.Fbtbl(err)
 	}
 
-	esStore := database.ExternalServicesWith(logger, bstore)
-	repoStore := database.ReposWith(logger, bstore)
+	esStore := dbtbbbse.ExternblServicesWith(logger, bstore)
+	repoStore := dbtbbbse.ReposWith(logger, bstore)
 
-	rs := make([]*types.Repo, 0, 3)
-	for i := 0; i < cap(rs); i++ {
-		name := fmt.Sprintf("github.com/sourcegraph/test-changeset-apply-preview-connection-repo-%d", i)
-		r := newGitHubTestRepo(name, newGitHubExternalService(t, esStore))
-		if err := repoStore.Create(ctx, r); err != nil {
-			t.Fatal(err)
+	rs := mbke([]*types.Repo, 0, 3)
+	for i := 0; i < cbp(rs); i++ {
+		nbme := fmt.Sprintf("github.com/sourcegrbph/test-chbngeset-bpply-preview-connection-repo-%d", i)
+		r := newGitHubTestRepo(nbme, newGitHubExternblService(t, esStore))
+		if err := repoStore.Crebte(ctx, r); err != nil {
+			t.Fbtbl(err)
 		}
-		rs = append(rs, r)
+		rs = bppend(rs, r)
 	}
 
-	changesetSpecs := make([]*btypes.ChangesetSpec, 0, len(rs))
-	for i, r := range rs {
-		repoID := graphqlbackend.MarshalRepositoryID(r.ID)
-		s, err := btypes.NewChangesetSpecFromRaw(bt.NewRawChangesetSpecGitBranch(repoID, fmt.Sprintf("d34db33f-%d", i)))
+	chbngesetSpecs := mbke([]*btypes.ChbngesetSpec, 0, len(rs))
+	for i, r := rbnge rs {
+		repoID := grbphqlbbckend.MbrshblRepositoryID(r.ID)
+		s, err := btypes.NewChbngesetSpecFromRbw(bt.NewRbwChbngesetSpecGitBrbnch(repoID, fmt.Sprintf("d34db33f-%d", i)))
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
-		s.BatchSpecID = batchSpec.ID
+		s.BbtchSpecID = bbtchSpec.ID
 		s.UserID = userID
-		s.BaseRepoID = r.ID
+		s.BbseRepoID = r.ID
 
-		if err := bstore.CreateChangesetSpec(ctx, s); err != nil {
-			t.Fatal(err)
+		if err := bstore.CrebteChbngesetSpec(ctx, s); err != nil {
+			t.Fbtbl(err)
 		}
 
-		changesetSpecs = append(changesetSpecs, s)
+		chbngesetSpecs = bppend(chbngesetSpecs, s)
 	}
 
-	s, err := newSchema(db, &Resolver{store: bstore})
+	s, err := newSchemb(db, &Resolver{store: bstore})
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	apiID := string(marshalBatchSpecRandID(batchSpec.RandID))
+	bpiID := string(mbrshblBbtchSpecRbndID(bbtchSpec.RbndID))
 
 	tests := []struct {
 		first int
 
-		wantTotalCount  int
-		wantHasNextPage bool
+		wbntTotblCount  int
+		wbntHbsNextPbge bool
 	}{
-		{first: 1, wantTotalCount: 3, wantHasNextPage: true},
-		{first: 2, wantTotalCount: 3, wantHasNextPage: true},
-		{first: 3, wantTotalCount: 3, wantHasNextPage: false},
+		{first: 1, wbntTotblCount: 3, wbntHbsNextPbge: true},
+		{first: 2, wbntTotblCount: 3, wbntHbsNextPbge: true},
+		{first: 3, wbntTotblCount: 3, wbntHbsNextPbge: fblse},
 	}
 
-	for _, tc := range tests {
-		input := map[string]any{"batchSpec": apiID, "first": tc.first}
-		var response struct{ Node apitest.BatchSpec }
-		apitest.MustExec(ctx, t, s, input, &response, queryChangesetApplyPreviewConnection)
+	for _, tc := rbnge tests {
+		input := mbp[string]bny{"bbtchSpec": bpiID, "first": tc.first}
+		vbr response struct{ Node bpitest.BbtchSpec }
+		bpitest.MustExec(ctx, t, s, input, &response, queryChbngesetApplyPreviewConnection)
 
 		specs := response.Node.ApplyPreview
-		if diff := cmp.Diff(tc.wantTotalCount, specs.TotalCount); diff != "" {
-			t.Fatalf("first=%d, unexpected total count (-want +got):\n%s", tc.first, diff)
+		if diff := cmp.Diff(tc.wbntTotblCount, specs.TotblCount); diff != "" {
+			t.Fbtblf("first=%d, unexpected totbl count (-wbnt +got):\n%s", tc.first, diff)
 		}
 
-		if diff := cmp.Diff(tc.wantHasNextPage, specs.PageInfo.HasNextPage); diff != "" {
-			t.Fatalf("first=%d, unexpected hasNextPage (-want +got):\n%s", tc.first, diff)
+		if diff := cmp.Diff(tc.wbntHbsNextPbge, specs.PbgeInfo.HbsNextPbge); diff != "" {
+			t.Fbtblf("first=%d, unexpected hbsNextPbge (-wbnt +got):\n%s", tc.first, diff)
 		}
 	}
 
-	var endCursor *string
-	for i := range changesetSpecs {
-		input := map[string]any{"batchSpec": apiID, "first": 1}
+	vbr endCursor *string
+	for i := rbnge chbngesetSpecs {
+		input := mbp[string]bny{"bbtchSpec": bpiID, "first": 1}
 		if endCursor != nil {
-			input["after"] = *endCursor
+			input["bfter"] = *endCursor
 		}
-		wantHasNextPage := i != len(changesetSpecs)-1
+		wbntHbsNextPbge := i != len(chbngesetSpecs)-1
 
-		var response struct{ Node apitest.BatchSpec }
-		apitest.MustExec(ctx, t, s, input, &response, queryChangesetApplyPreviewConnection)
+		vbr response struct{ Node bpitest.BbtchSpec }
+		bpitest.MustExec(ctx, t, s, input, &response, queryChbngesetApplyPreviewConnection)
 
 		specs := response.Node.ApplyPreview
 		if diff := cmp.Diff(1, len(specs.Nodes)); diff != "" {
-			t.Fatalf("unexpected number of nodes (-want +got):\n%s", diff)
+			t.Fbtblf("unexpected number of nodes (-wbnt +got):\n%s", diff)
 		}
 
-		if diff := cmp.Diff(len(changesetSpecs), specs.TotalCount); diff != "" {
-			t.Fatalf("unexpected total count (-want +got):\n%s", diff)
+		if diff := cmp.Diff(len(chbngesetSpecs), specs.TotblCount); diff != "" {
+			t.Fbtblf("unexpected totbl count (-wbnt +got):\n%s", diff)
 		}
 
-		if diff := cmp.Diff(wantHasNextPage, specs.PageInfo.HasNextPage); diff != "" {
-			t.Fatalf("unexpected hasNextPage (-want +got):\n%s", diff)
+		if diff := cmp.Diff(wbntHbsNextPbge, specs.PbgeInfo.HbsNextPbge); diff != "" {
+			t.Fbtblf("unexpected hbsNextPbge (-wbnt +got):\n%s", diff)
 		}
 
-		endCursor = specs.PageInfo.EndCursor
-		if want, have := wantHasNextPage, endCursor != nil; have != want {
-			t.Fatalf("unexpected endCursor existence. want=%t, have=%t", want, have)
+		endCursor = specs.PbgeInfo.EndCursor
+		if wbnt, hbve := wbntHbsNextPbge, endCursor != nil; hbve != wbnt {
+			t.Fbtblf("unexpected endCursor existence. wbnt=%t, hbve=%t", wbnt, hbve)
 		}
 	}
 }
 
-const queryChangesetApplyPreviewConnection = `
-query($batchSpec: ID!, $first: Int!, $after: String) {
-  node(id: $batchSpec) {
-    __typename
+const queryChbngesetApplyPreviewConnection = `
+query($bbtchSpec: ID!, $first: Int!, $bfter: String) {
+  node(id: $bbtchSpec) {
+    __typenbme
 
-    ... on BatchSpec {
+    ... on BbtchSpec {
       id
 
-      applyPreview(first: $first, after: $after) {
-        totalCount
-        pageInfo { hasNextPage, endCursor }
+      bpplyPreview(first: $first, bfter: $bfter) {
+        totblCount
+        pbgeInfo { hbsNextPbge, endCursor }
         nodes {
-          __typename
+          __typenbme
         }
-        stats {
+        stbts {
           push
-          update
-          undraft
+          updbte
+          undrbft
           publish
-          publishDraft
+          publishDrbft
           sync
           import
           close
           reopen
           sleep
-          detach
+          detbch
 
-          added
+          bdded
           modified
           removed
         }
@@ -181,382 +181,382 @@ query($batchSpec: ID!, $first: Int!, $after: String) {
 }
 `
 
-func TestRewirerMappings(t *testing.T) {
-	addResolverFixture := func(rw *rewirerMappingsFacade, mapping *btypes.RewirerMapping, resolver graphqlbackend.ChangesetApplyPreviewResolver) {
+func TestRewirerMbppings(t *testing.T) {
+	bddResolverFixture := func(rw *rewirerMbppingsFbcbde, mbpping *btypes.RewirerMbpping, resolver grbphqlbbckend.ChbngesetApplyPreviewResolver) {
 		rw.resolversMu.Lock()
 		defer rw.resolversMu.Unlock()
 
-		rw.resolvers[mapping] = resolver
+		rw.resolvers[mbpping] = resolver
 	}
-	ctx := context.Background()
+	ctx := context.Bbckground()
 
-	t.Run("Page", func(t *testing.T) {
-		// Set up a scenario that allows for some filtering.
-		var (
-			detach   = &btypes.RewirerMapping{ChangesetSpecID: 1}
-			hidden   = &btypes.RewirerMapping{ChangesetSpecID: 2}
-			noAction = &btypes.RewirerMapping{ChangesetSpecID: 3}
-			publishA = &btypes.RewirerMapping{ChangesetSpecID: 4}
-			publishB = &btypes.RewirerMapping{ChangesetSpecID: 5}
+	t.Run("Pbge", func(t *testing.T) {
+		// Set up b scenbrio thbt bllows for some filtering.
+		vbr (
+			detbch   = &btypes.RewirerMbpping{ChbngesetSpecID: 1}
+			hidden   = &btypes.RewirerMbpping{ChbngesetSpecID: 2}
+			noAction = &btypes.RewirerMbpping{ChbngesetSpecID: 3}
+			publishA = &btypes.RewirerMbpping{ChbngesetSpecID: 4}
+			publishB = &btypes.RewirerMbpping{ChbngesetSpecID: 5}
 		)
 		logger := logtest.Scoped(t)
-		rmf := newRewirerMappingsFacade(nil, gitserver.NewMockClient(), logger, 0, nil)
-		rmf.All = btypes.RewirerMappings{detach, hidden, noAction, publishA, publishB}
-		addResolverFixture(rmf, detach, &mockChangesetApplyPreviewResolver{
-			visible: &mockVisibleChangesetApplyPreviewResolver{
-				operations: []btypes.ReconcilerOperation{btypes.ReconcilerOperationDetach},
+		rmf := newRewirerMbppingsFbcbde(nil, gitserver.NewMockClient(), logger, 0, nil)
+		rmf.All = btypes.RewirerMbppings{detbch, hidden, noAction, publishA, publishB}
+		bddResolverFixture(rmf, detbch, &mockChbngesetApplyPreviewResolver{
+			visible: &mockVisibleChbngesetApplyPreviewResolver{
+				operbtions: []btypes.ReconcilerOperbtion{btypes.ReconcilerOperbtionDetbch},
 			},
 		})
-		addResolverFixture(rmf, hidden, &mockChangesetApplyPreviewResolver{
-			hidden: &mockHiddenChangesetApplyPreviewResolver{},
+		bddResolverFixture(rmf, hidden, &mockChbngesetApplyPreviewResolver{
+			hidden: &mockHiddenChbngesetApplyPreviewResolver{},
 		})
-		addResolverFixture(rmf, noAction, &mockChangesetApplyPreviewResolver{
-			visible: &mockVisibleChangesetApplyPreviewResolver{
-				operations: []btypes.ReconcilerOperation{},
+		bddResolverFixture(rmf, noAction, &mockChbngesetApplyPreviewResolver{
+			visible: &mockVisibleChbngesetApplyPreviewResolver{
+				operbtions: []btypes.ReconcilerOperbtion{},
 			},
 		})
-		addResolverFixture(rmf, publishA, &mockChangesetApplyPreviewResolver{
-			visible: &mockVisibleChangesetApplyPreviewResolver{
-				operations: []btypes.ReconcilerOperation{btypes.ReconcilerOperationPublish},
+		bddResolverFixture(rmf, publishA, &mockChbngesetApplyPreviewResolver{
+			visible: &mockVisibleChbngesetApplyPreviewResolver{
+				operbtions: []btypes.ReconcilerOperbtion{btypes.ReconcilerOperbtionPublish},
 			},
 		})
-		addResolverFixture(rmf, publishB, &mockChangesetApplyPreviewResolver{
-			visible: &mockVisibleChangesetApplyPreviewResolver{
-				operations: []btypes.ReconcilerOperation{btypes.ReconcilerOperationPublish},
+		bddResolverFixture(rmf, publishB, &mockChbngesetApplyPreviewResolver{
+			visible: &mockVisibleChbngesetApplyPreviewResolver{
+				operbtions: []btypes.ReconcilerOperbtion{btypes.ReconcilerOperbtionPublish},
 			},
 		})
 
-		// Scenario done! Let's run some tests where we expect success. Note
-		// that the existence of hidden is important: any time we're filtering
-		// by operation, it should never appear in the result.
-		for name, tc := range map[string]struct {
-			opts rewirerMappingPageOpts
-			want rewirerMappingPage
+		// Scenbrio done! Let's run some tests where we expect success. Note
+		// thbt the existence of hidden is importbnt: bny time we're filtering
+		// by operbtion, it should never bppebr in the result.
+		for nbme, tc := rbnge mbp[string]struct {
+			opts rewirerMbppingPbgeOpts
+			wbnt rewirerMbppingPbge
 		}{
 			"no ops or limit": {
-				opts: rewirerMappingPageOpts{},
-				want: rewirerMappingPage{
-					Mappings:   rmf.All,
-					TotalCount: len(rmf.All),
+				opts: rewirerMbppingPbgeOpts{},
+				wbnt: rewirerMbppingPbge{
+					Mbppings:   rmf.All,
+					TotblCount: len(rmf.All),
 				},
 			},
 			"no ops, first 3": {
-				opts: rewirerMappingPageOpts{
-					LimitOffset: &database.LimitOffset{Limit: 3},
+				opts: rewirerMbppingPbgeOpts{
+					LimitOffset: &dbtbbbse.LimitOffset{Limit: 3},
 				},
-				want: rewirerMappingPage{
-					Mappings:   rmf.All[0:3],
-					TotalCount: len(rmf.All),
-				},
-			},
-			"no ops, last 2": {
-				opts: rewirerMappingPageOpts{
-					LimitOffset: &database.LimitOffset{Limit: 3, Offset: 3},
-				},
-				want: rewirerMappingPage{
-					Mappings:   rmf.All[3:],
-					TotalCount: len(rmf.All),
+				wbnt: rewirerMbppingPbge{
+					Mbppings:   rmf.All[0:3],
+					TotblCount: len(rmf.All),
 				},
 			},
-			"no ops, last 2 without limit": {
-				opts: rewirerMappingPageOpts{
-					LimitOffset: &database.LimitOffset{Offset: 3},
+			"no ops, lbst 2": {
+				opts: rewirerMbppingPbgeOpts{
+					LimitOffset: &dbtbbbse.LimitOffset{Limit: 3, Offset: 3},
 				},
-				want: rewirerMappingPage{
-					Mappings:   rmf.All[3:],
-					TotalCount: len(rmf.All),
-				},
-			},
-			"no ops, negative limit": {
-				opts: rewirerMappingPageOpts{
-					LimitOffset: &database.LimitOffset{Limit: -1},
-				},
-				want: rewirerMappingPage{
-					Mappings:   btypes.RewirerMappings{},
-					TotalCount: len(rmf.All),
+				wbnt: rewirerMbppingPbge{
+					Mbppings:   rmf.All[3:],
+					TotblCount: len(rmf.All),
 				},
 			},
-			"no ops, negative offset": {
-				opts: rewirerMappingPageOpts{
-					LimitOffset: &database.LimitOffset{Offset: -1},
+			"no ops, lbst 2 without limit": {
+				opts: rewirerMbppingPbgeOpts{
+					LimitOffset: &dbtbbbse.LimitOffset{Offset: 3},
 				},
-				want: rewirerMappingPage{
-					Mappings:   btypes.RewirerMappings{},
-					TotalCount: len(rmf.All),
+				wbnt: rewirerMbppingPbge{
+					Mbppings:   rmf.All[3:],
+					TotblCount: len(rmf.All),
+				},
+			},
+			"no ops, negbtive limit": {
+				opts: rewirerMbppingPbgeOpts{
+					LimitOffset: &dbtbbbse.LimitOffset{Limit: -1},
+				},
+				wbnt: rewirerMbppingPbge{
+					Mbppings:   btypes.RewirerMbppings{},
+					TotblCount: len(rmf.All),
+				},
+			},
+			"no ops, negbtive offset": {
+				opts: rewirerMbppingPbgeOpts{
+					LimitOffset: &dbtbbbse.LimitOffset{Offset: -1},
+				},
+				wbnt: rewirerMbppingPbge{
+					Mbppings:   btypes.RewirerMbppings{},
+					TotblCount: len(rmf.All),
 				},
 			},
 			"no ops, out of bounds offset": {
-				opts: rewirerMappingPageOpts{
-					LimitOffset: &database.LimitOffset{Offset: 5},
+				opts: rewirerMbppingPbgeOpts{
+					LimitOffset: &dbtbbbse.LimitOffset{Offset: 5},
 				},
-				want: rewirerMappingPage{
-					Mappings:   btypes.RewirerMappings{},
-					TotalCount: len(rmf.All),
+				wbnt: rewirerMbppingPbge{
+					Mbppings:   btypes.RewirerMbppings{},
+					TotblCount: len(rmf.All),
 				},
 			},
 			"non-existent op": {
-				opts: rewirerMappingPageOpts{
-					Op: pointers.Ptr(btypes.ReconcilerOperationClose),
+				opts: rewirerMbppingPbgeOpts{
+					Op: pointers.Ptr(btypes.ReconcilerOperbtionClose),
 				},
-				want: rewirerMappingPage{
-					Mappings:   btypes.RewirerMappings{},
-					TotalCount: 0,
-				},
-			},
-			"extant op, no limit": {
-				opts: rewirerMappingPageOpts{
-					Op: pointers.Ptr(btypes.ReconcilerOperationPublish),
-				},
-				want: rewirerMappingPage{
-					Mappings:   btypes.RewirerMappings{publishA, publishB},
-					TotalCount: 2,
+				wbnt: rewirerMbppingPbge{
+					Mbppings:   btypes.RewirerMbppings{},
+					TotblCount: 0,
 				},
 			},
-			"extant op, high limit": {
-				opts: rewirerMappingPageOpts{
-					LimitOffset: &database.LimitOffset{Limit: 5},
-					Op:          pointers.Ptr(btypes.ReconcilerOperationPublish),
+			"extbnt op, no limit": {
+				opts: rewirerMbppingPbgeOpts{
+					Op: pointers.Ptr(btypes.ReconcilerOperbtionPublish),
 				},
-				want: rewirerMappingPage{
-					Mappings:   btypes.RewirerMappings{publishA, publishB},
-					TotalCount: 2,
-				},
-			},
-			"extant op, low limit": {
-				opts: rewirerMappingPageOpts{
-					LimitOffset: &database.LimitOffset{Limit: 1},
-					Op:          pointers.Ptr(btypes.ReconcilerOperationPublish),
-				},
-				want: rewirerMappingPage{
-					Mappings:   btypes.RewirerMappings{publishA},
-					TotalCount: 2,
+				wbnt: rewirerMbppingPbge{
+					Mbppings:   btypes.RewirerMbppings{publishA, publishB},
+					TotblCount: 2,
 				},
 			},
-			"extant op, low limit and offset": {
-				opts: rewirerMappingPageOpts{
-					LimitOffset: &database.LimitOffset{Limit: 1, Offset: 1},
-					Op:          pointers.Ptr(btypes.ReconcilerOperationPublish),
+			"extbnt op, high limit": {
+				opts: rewirerMbppingPbgeOpts{
+					LimitOffset: &dbtbbbse.LimitOffset{Limit: 5},
+					Op:          pointers.Ptr(btypes.ReconcilerOperbtionPublish),
 				},
-				want: rewirerMappingPage{
-					Mappings:   btypes.RewirerMappings{publishB},
-					TotalCount: 2,
+				wbnt: rewirerMbppingPbge{
+					Mbppings:   btypes.RewirerMbppings{publishA, publishB},
+					TotblCount: 2,
+				},
+			},
+			"extbnt op, low limit": {
+				opts: rewirerMbppingPbgeOpts{
+					LimitOffset: &dbtbbbse.LimitOffset{Limit: 1},
+					Op:          pointers.Ptr(btypes.ReconcilerOperbtionPublish),
+				},
+				wbnt: rewirerMbppingPbge{
+					Mbppings:   btypes.RewirerMbppings{publishA},
+					TotblCount: 2,
+				},
+			},
+			"extbnt op, low limit bnd offset": {
+				opts: rewirerMbppingPbgeOpts{
+					LimitOffset: &dbtbbbse.LimitOffset{Limit: 1, Offset: 1},
+					Op:          pointers.Ptr(btypes.ReconcilerOperbtionPublish),
+				},
+				wbnt: rewirerMbppingPbge{
+					Mbppings:   btypes.RewirerMbppings{publishB},
+					TotblCount: 2,
 				},
 			},
 		} {
-			t.Run(name, func(t *testing.T) {
-				// We'll run the test twice to ensure we hit the memoisation.
+			t.Run(nbme, func(t *testing.T) {
+				// We'll run the test twice to ensure we hit the memoisbtion.
 				test := func(t *testing.T) {
-					have, err := rmf.Page(ctx, tc.opts)
+					hbve, err := rmf.Pbge(ctx, tc.opts)
 					if err != nil {
 						t.Errorf("unexpected error: %+v", err)
 					}
-					if diff := cmp.Diff(have, &tc.want); diff != "" {
-						t.Errorf("unexpected page (-have +want):\n%s", diff)
+					if diff := cmp.Diff(hbve, &tc.wbnt); diff != "" {
+						t.Errorf("unexpected pbge (-hbve +wbnt):\n%s", diff)
 					}
 				}
 
-				t.Run("cold cache", test)
-				t.Run("cache check", func(t *testing.T) {
-					if _, ok := rmf.pages[tc.opts]; !ok {
-						t.Error("unexpected cache miss")
+				t.Run("cold cbche", test)
+				t.Run("cbche check", func(t *testing.T) {
+					if _, ok := rmf.pbges[tc.opts]; !ok {
+						t.Error("unexpected cbche miss")
 					}
 				})
-				t.Run("warm cache", test)
+				t.Run("wbrm cbche", test)
 			})
 		}
 
-		// And now, let's make sure we handle our one failure case gracefully by
-		// replacing the detach resolver with one that errors.
-		addResolverFixture(rmf, detach, &mockChangesetApplyPreviewResolver{
-			visible: &mockVisibleChangesetApplyPreviewResolver{
-				operationsErr: errors.New("just as reliable as the Canucks"),
+		// And now, let's mbke sure we hbndle our one fbilure cbse grbcefully by
+		// replbcing the detbch resolver with one thbt errors.
+		bddResolverFixture(rmf, detbch, &mockChbngesetApplyPreviewResolver{
+			visible: &mockVisibleChbngesetApplyPreviewResolver{
+				operbtionsErr: errors.New("just bs relibble bs the Cbnucks"),
 			},
 		})
 
-		if _, err := rmf.Page(ctx, rewirerMappingPageOpts{
-			Op: pointers.Ptr(btypes.ReconcilerOperationClose),
+		if _, err := rmf.Pbge(ctx, rewirerMbppingPbgeOpts{
+			Op: pointers.Ptr(btypes.ReconcilerOperbtionClose),
 		}); err == nil {
 			t.Error("unexpected nil error")
 		}
 	})
 
 	t.Run("Resolver", func(t *testing.T) {
-		compareResolvers := func(t *testing.T, have, want *changesetApplyPreviewResolver) {
+		compbreResolvers := func(t *testing.T, hbve, wbnt *chbngesetApplyPreviewResolver) {
 			t.Helper()
 
-			if have.store != want.store {
-				t.Errorf("unexpected store: have=%p want=%p", have.store, want.store)
+			if hbve.store != wbnt.store {
+				t.Errorf("unexpected store: hbve=%p wbnt=%p", hbve.store, wbnt.store)
 			}
-			if have.mapping != want.mapping {
-				t.Errorf("unexpected mapping: have=%p want=%p", have.mapping, want.mapping)
+			if hbve.mbpping != wbnt.mbpping {
+				t.Errorf("unexpected mbpping: hbve=%p wbnt=%p", hbve.mbpping, wbnt.mbpping)
 			}
-			if have.preloadedBatchChange != want.preloadedBatchChange {
-				t.Errorf("unexpected batch change: have=%p want=%p", have.preloadedBatchChange, want.preloadedBatchChange)
+			if hbve.prelobdedBbtchChbnge != wbnt.prelobdedBbtchChbnge {
+				t.Errorf("unexpected bbtch chbnge: hbve=%p wbnt=%p", hbve.prelobdedBbtchChbnge, wbnt.prelobdedBbtchChbnge)
 			}
-			if !have.preloadedNextSync.Equal(want.preloadedNextSync) {
-				t.Errorf("unexpected next sync: have=%s want=%s", have.preloadedNextSync, want.preloadedNextSync)
+			if !hbve.prelobdedNextSync.Equbl(wbnt.prelobdedNextSync) {
+				t.Errorf("unexpected next sync: hbve=%s wbnt=%s", hbve.prelobdedNextSync, wbnt.prelobdedNextSync)
 			}
-			if have.batchSpecID != want.batchSpecID {
-				t.Errorf("unexpected spec ID: have=%d want=%d", have.batchSpecID, want.batchSpecID)
+			if hbve.bbtchSpecID != wbnt.bbtchSpecID {
+				t.Errorf("unexpected spec ID: hbve=%d wbnt=%d", hbve.bbtchSpecID, wbnt.bbtchSpecID)
 			}
 		}
 
 		s := &store.Store{}
 		logger := logtest.Scoped(t)
-		rmf := newRewirerMappingsFacade(s, gitserver.NewMockClient(), logger, 1, nil)
-		rmf.batchChange = &btypes.BatchChange{}
+		rmf := newRewirerMbppingsFbcbde(s, gitserver.NewMockClient(), logger, 1, nil)
+		rmf.bbtchChbnge = &btypes.BbtchChbnge{}
 
-		mapping := &btypes.RewirerMapping{}
+		mbpping := &btypes.RewirerMbpping{}
 
-		have := rmf.Resolver(mapping).(*changesetApplyPreviewResolver)
-		want := &changesetApplyPreviewResolver{
+		hbve := rmf.Resolver(mbpping).(*chbngesetApplyPreviewResolver)
+		wbnt := &chbngesetApplyPreviewResolver{
 			store:                s,
-			mapping:              mapping,
-			preloadedBatchChange: rmf.batchChange,
-			batchSpecID:          1,
+			mbpping:              mbpping,
+			prelobdedBbtchChbnge: rmf.bbtchChbnge,
+			bbtchSpecID:          1,
 		}
-		compareResolvers(t, have, want)
+		compbreResolvers(t, hbve, wbnt)
 
-		// Ensure we get the same resolver the second time.
-		if cached := rmf.Resolver(mapping).(*changesetApplyPreviewResolver); cached != have {
-			t.Errorf("unexpected resolver from warm cache: have=%v want=%v", cached, have)
+		// Ensure we get the sbme resolver the second time.
+		if cbched := rmf.Resolver(mbpping).(*chbngesetApplyPreviewResolver); cbched != hbve {
+			t.Errorf("unexpected resolver from wbrm cbche: hbve=%v wbnt=%v", cbched, hbve)
 		}
 
-		// Ensure we get a resolver with the correct next sync time if given.
+		// Ensure we get b resolver with the correct next sync time if given.
 		nextSync := time.Now()
-		have = rmf.ResolverWithNextSync(mapping, nextSync).(*changesetApplyPreviewResolver)
-		want.preloadedNextSync = nextSync
-		compareResolvers(t, have, want)
+		hbve = rmf.ResolverWithNextSync(mbpping, nextSync).(*chbngesetApplyPreviewResolver)
+		wbnt.prelobdedNextSync = nextSync
+		compbreResolvers(t, hbve, wbnt)
 	})
 }
 
-func TestPublicationStateMap(t *testing.T) {
+func TestPublicbtionStbteMbp(t *testing.T) {
 	t.Run("errors", func(t *testing.T) {
-		for name, in := range map[string]*[]graphqlbackend.ChangesetSpecPublicationStateInput{
-			"invalid GraphQL ID": {
-				graphqlbackend.ChangesetSpecPublicationStateInput{
-					ChangesetSpec: "not a valid ID",
+		for nbme, in := rbnge mbp[string]*[]grbphqlbbckend.ChbngesetSpecPublicbtionStbteInput{
+			"invblid GrbphQL ID": {
+				grbphqlbbckend.ChbngesetSpecPublicbtionStbteInput{
+					ChbngesetSpec: "not b vblid ID",
 				},
 			},
-			"duplicate GraphQL ID": {
-				graphqlbackend.ChangesetSpecPublicationStateInput{
-					ChangesetSpec: marshalChangesetSpecRandID("foo"),
+			"duplicbte GrbphQL ID": {
+				grbphqlbbckend.ChbngesetSpecPublicbtionStbteInput{
+					ChbngesetSpec: mbrshblChbngesetSpecRbndID("foo"),
 				},
-				graphqlbackend.ChangesetSpecPublicationStateInput{
-					ChangesetSpec: marshalChangesetSpecRandID("foo"),
+				grbphqlbbckend.ChbngesetSpecPublicbtionStbteInput{
+					ChbngesetSpec: mbrshblChbngesetSpecRbndID("foo"),
 				},
 			},
 		} {
-			t.Run(name, func(t *testing.T) {
-				have, err := newPublicationStateMap(in)
-				assert.Error(t, err)
-				assert.Nil(t, have)
+			t.Run(nbme, func(t *testing.T) {
+				hbve, err := newPublicbtionStbteMbp(in)
+				bssert.Error(t, err)
+				bssert.Nil(t, hbve)
 			})
 		}
 	})
 
 	t.Run("success", func(t *testing.T) {
-		for name, tc := range map[string]struct {
-			in   *[]graphqlbackend.ChangesetSpecPublicationStateInput
-			want publicationStateMap
+		for nbme, tc := rbnge mbp[string]struct {
+			in   *[]grbphqlbbckend.ChbngesetSpecPublicbtionStbteInput
+			wbnt publicbtionStbteMbp
 		}{
 			"nil input": {
 				in:   nil,
-				want: publicationStateMap{},
+				wbnt: publicbtionStbteMbp{},
 			},
 			"empty input": {
-				in:   &[]graphqlbackend.ChangesetSpecPublicationStateInput{},
-				want: publicationStateMap{},
+				in:   &[]grbphqlbbckend.ChbngesetSpecPublicbtionStbteInput{},
+				wbnt: publicbtionStbteMbp{},
 			},
 			"non-empty input": {
-				in: &[]graphqlbackend.ChangesetSpecPublicationStateInput{
+				in: &[]grbphqlbbckend.ChbngesetSpecPublicbtionStbteInput{
 					{
-						ChangesetSpec:    marshalChangesetSpecRandID("true"),
-						PublicationState: batches.PublishedValue{Val: true},
+						ChbngesetSpec:    mbrshblChbngesetSpecRbndID("true"),
+						PublicbtionStbte: bbtches.PublishedVblue{Vbl: true},
 					},
 					{
-						ChangesetSpec:    marshalChangesetSpecRandID("false"),
-						PublicationState: batches.PublishedValue{Val: false},
+						ChbngesetSpec:    mbrshblChbngesetSpecRbndID("fblse"),
+						PublicbtionStbte: bbtches.PublishedVblue{Vbl: fblse},
 					},
 					{
-						ChangesetSpec:    marshalChangesetSpecRandID("draft"),
-						PublicationState: batches.PublishedValue{Val: "draft"},
+						ChbngesetSpec:    mbrshblChbngesetSpecRbndID("drbft"),
+						PublicbtionStbte: bbtches.PublishedVblue{Vbl: "drbft"},
 					},
 					{
-						ChangesetSpec:    marshalChangesetSpecRandID("nil"),
-						PublicationState: batches.PublishedValue{Val: nil},
+						ChbngesetSpec:    mbrshblChbngesetSpecRbndID("nil"),
+						PublicbtionStbte: bbtches.PublishedVblue{Vbl: nil},
 					},
 				},
-				want: publicationStateMap{
-					"true":  {Val: true},
-					"false": {Val: false},
-					"draft": {Val: "draft"},
-					"nil":   {Val: nil},
+				wbnt: publicbtionStbteMbp{
+					"true":  {Vbl: true},
+					"fblse": {Vbl: fblse},
+					"drbft": {Vbl: "drbft"},
+					"nil":   {Vbl: nil},
 				},
 			},
 		} {
-			t.Run(name, func(t *testing.T) {
-				have, err := newPublicationStateMap(tc.in)
-				assert.NoError(t, err)
-				assert.EqualValues(t, tc.want, have)
+			t.Run(nbme, func(t *testing.T) {
+				hbve, err := newPublicbtionStbteMbp(tc.in)
+				bssert.NoError(t, err)
+				bssert.EqublVblues(t, tc.wbnt, hbve)
 			})
 		}
 	})
 }
 
-type mockChangesetApplyPreviewResolver struct {
-	hidden  graphqlbackend.HiddenChangesetApplyPreviewResolver
-	visible graphqlbackend.VisibleChangesetApplyPreviewResolver
+type mockChbngesetApplyPreviewResolver struct {
+	hidden  grbphqlbbckend.HiddenChbngesetApplyPreviewResolver
+	visible grbphqlbbckend.VisibleChbngesetApplyPreviewResolver
 }
 
-func (r *mockChangesetApplyPreviewResolver) ToHiddenChangesetApplyPreview() (graphqlbackend.HiddenChangesetApplyPreviewResolver, bool) {
+func (r *mockChbngesetApplyPreviewResolver) ToHiddenChbngesetApplyPreview() (grbphqlbbckend.HiddenChbngesetApplyPreviewResolver, bool) {
 	return r.hidden, r.hidden != nil
 }
 
-func (r *mockChangesetApplyPreviewResolver) ToVisibleChangesetApplyPreview() (graphqlbackend.VisibleChangesetApplyPreviewResolver, bool) {
+func (r *mockChbngesetApplyPreviewResolver) ToVisibleChbngesetApplyPreview() (grbphqlbbckend.VisibleChbngesetApplyPreviewResolver, bool) {
 	return r.visible, r.visible != nil
 }
 
-var _ graphqlbackend.ChangesetApplyPreviewResolver = &mockChangesetApplyPreviewResolver{}
+vbr _ grbphqlbbckend.ChbngesetApplyPreviewResolver = &mockChbngesetApplyPreviewResolver{}
 
-type mockHiddenChangesetApplyPreviewResolver struct{}
+type mockHiddenChbngesetApplyPreviewResolver struct{}
 
-func (*mockHiddenChangesetApplyPreviewResolver) Operations(context.Context) ([]string, error) {
-	return nil, errors.New("hidden changeset")
+func (*mockHiddenChbngesetApplyPreviewResolver) Operbtions(context.Context) ([]string, error) {
+	return nil, errors.New("hidden chbngeset")
 }
 
-func (*mockHiddenChangesetApplyPreviewResolver) Delta(context.Context) (graphqlbackend.ChangesetSpecDeltaResolver, error) {
-	return nil, errors.New("hidden changeset")
+func (*mockHiddenChbngesetApplyPreviewResolver) Deltb(context.Context) (grbphqlbbckend.ChbngesetSpecDeltbResolver, error) {
+	return nil, errors.New("hidden chbngeset")
 }
 
-func (*mockHiddenChangesetApplyPreviewResolver) Targets() graphqlbackend.HiddenApplyPreviewTargetsResolver {
+func (*mockHiddenChbngesetApplyPreviewResolver) Tbrgets() grbphqlbbckend.HiddenApplyPreviewTbrgetsResolver {
 	return nil
 }
 
-var _ graphqlbackend.HiddenChangesetApplyPreviewResolver = &mockHiddenChangesetApplyPreviewResolver{}
+vbr _ grbphqlbbckend.HiddenChbngesetApplyPreviewResolver = &mockHiddenChbngesetApplyPreviewResolver{}
 
-type mockVisibleChangesetApplyPreviewResolver struct {
-	operations    []btypes.ReconcilerOperation
-	operationsErr error
-	delta         graphqlbackend.ChangesetSpecDeltaResolver
-	deltaErr      error
-	targets       graphqlbackend.VisibleApplyPreviewTargetsResolver
+type mockVisibleChbngesetApplyPreviewResolver struct {
+	operbtions    []btypes.ReconcilerOperbtion
+	operbtionsErr error
+	deltb         grbphqlbbckend.ChbngesetSpecDeltbResolver
+	deltbErr      error
+	tbrgets       grbphqlbbckend.VisibleApplyPreviewTbrgetsResolver
 }
 
-func (r *mockVisibleChangesetApplyPreviewResolver) Operations(context.Context) ([]string, error) {
-	strOps := make([]string, 0, len(r.operations))
-	for _, op := range r.operations {
-		strOps = append(strOps, string(op))
+func (r *mockVisibleChbngesetApplyPreviewResolver) Operbtions(context.Context) ([]string, error) {
+	strOps := mbke([]string, 0, len(r.operbtions))
+	for _, op := rbnge r.operbtions {
+		strOps = bppend(strOps, string(op))
 	}
-	return strOps, r.operationsErr
+	return strOps, r.operbtionsErr
 }
 
-func (r *mockVisibleChangesetApplyPreviewResolver) Delta(context.Context) (graphqlbackend.ChangesetSpecDeltaResolver, error) {
-	return r.delta, r.deltaErr
+func (r *mockVisibleChbngesetApplyPreviewResolver) Deltb(context.Context) (grbphqlbbckend.ChbngesetSpecDeltbResolver, error) {
+	return r.deltb, r.deltbErr
 }
 
-func (r *mockVisibleChangesetApplyPreviewResolver) Targets() graphqlbackend.VisibleApplyPreviewTargetsResolver {
-	return r.targets
+func (r *mockVisibleChbngesetApplyPreviewResolver) Tbrgets() grbphqlbbckend.VisibleApplyPreviewTbrgetsResolver {
+	return r.tbrgets
 }
 
-var _ graphqlbackend.VisibleChangesetApplyPreviewResolver = &mockVisibleChangesetApplyPreviewResolver{}
+vbr _ grbphqlbbckend.VisibleChbngesetApplyPreviewResolver = &mockVisibleChbngesetApplyPreviewResolver{}

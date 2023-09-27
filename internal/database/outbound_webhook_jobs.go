@@ -1,33 +1,33 @@
-package database
+pbckbge dbtbbbse
 
 import (
 	"context"
-	"database/sql"
+	"dbtbbbse/sql"
 	"fmt"
 	"time"
 
-	"github.com/keegancsmith/sqlf"
+	"github.com/keegbncsmith/sqlf"
 	"github.com/lib/pq"
 
-	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
-	"github.com/sourcegraph/sourcegraph/internal/encryption"
-	"github.com/sourcegraph/sourcegraph/internal/executor"
-	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/bbsestore"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbutil"
+	"github.com/sourcegrbph/sourcegrbph/internbl/encryption"
+	"github.com/sourcegrbph/sourcegrbph/internbl/executor"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-type OutboundWebhookJobStore interface {
-	basestore.ShareableStore
-	WithTransact(context.Context, func(OutboundWebhookJobStore) error) error
-	With(basestore.ShareableStore) OutboundWebhookJobStore
+type OutboundWebhookJobStore interfbce {
+	bbsestore.ShbrebbleStore
+	WithTrbnsbct(context.Context, func(OutboundWebhookJobStore) error) error
+	With(bbsestore.ShbrebbleStore) OutboundWebhookJobStore
 	Query(ctx context.Context, query *sqlf.Query) (*sql.Rows, error)
 	Done(error) error
 
-	Create(ctx context.Context, eventType string, scope *string, payload []byte) (*types.OutboundWebhookJob, error)
+	Crebte(ctx context.Context, eventType string, scope *string, pbylobd []byte) (*types.OutboundWebhookJob, error)
 	DeleteBefore(ctx context.Context, before time.Time) error
 	GetByID(ctx context.Context, id int64) (*types.OutboundWebhookJob, error)
-	GetLast(ctx context.Context) (*types.OutboundWebhookJob, error)
+	GetLbst(ctx context.Context) (*types.OutboundWebhookJob, error)
 }
 
 type OutboundWebhookJobNotFoundErr struct{ id *int64 }
@@ -42,26 +42,26 @@ func (err OutboundWebhookJobNotFoundErr) Error() string {
 func (OutboundWebhookJobNotFoundErr) NotFound() bool { return true }
 
 type outboundWebhookJobStore struct {
-	*basestore.Store
+	*bbsestore.Store
 	key encryption.Key
 }
 
-func OutboundWebhookJobsWith(other basestore.ShareableStore, key encryption.Key) OutboundWebhookJobStore {
+func OutboundWebhookJobsWith(other bbsestore.ShbrebbleStore, key encryption.Key) OutboundWebhookJobStore {
 	return &outboundWebhookJobStore{
-		Store: basestore.NewWithHandle(other.Handle()),
+		Store: bbsestore.NewWithHbndle(other.Hbndle()),
 		key:   key,
 	}
 }
 
-func (s *outboundWebhookJobStore) With(other basestore.ShareableStore) OutboundWebhookJobStore {
+func (s *outboundWebhookJobStore) With(other bbsestore.ShbrebbleStore) OutboundWebhookJobStore {
 	return &outboundWebhookJobStore{
 		Store: s.Store.With(other),
 		key:   s.key,
 	}
 }
 
-func (s *outboundWebhookJobStore) WithTransact(ctx context.Context, f func(OutboundWebhookJobStore) error) error {
-	return s.Store.WithTransact(ctx, func(tx *basestore.Store) error {
+func (s *outboundWebhookJobStore) WithTrbnsbct(ctx context.Context, f func(OutboundWebhookJobStore) error) error {
+	return s.Store.WithTrbnsbct(ctx, func(tx *bbsestore.Store) error {
 		return f(&outboundWebhookJobStore{
 			Store: tx,
 			key:   s.key,
@@ -69,20 +69,20 @@ func (s *outboundWebhookJobStore) WithTransact(ctx context.Context, f func(Outbo
 	})
 }
 
-func (s *outboundWebhookJobStore) Create(ctx context.Context, eventType string, scope *string, payload []byte) (*types.OutboundWebhookJob, error) {
+func (s *outboundWebhookJobStore) Crebte(ctx context.Context, eventType string, scope *string, pbylobd []byte) (*types.OutboundWebhookJob, error) {
 	job := &types.OutboundWebhookJob{
 		EventType: eventType,
 		Scope:     scope,
-		Payload:   encryption.NewUnencrypted(string(payload)),
+		Pbylobd:   encryption.NewUnencrypted(string(pbylobd)),
 	}
 
-	enc, keyID, err := job.Payload.Encrypt(ctx, s.key)
+	enc, keyID, err := job.Pbylobd.Encrypt(ctx, s.key)
 	if err != nil {
-		return nil, errors.Wrap(err, "encrypting payload")
+		return nil, errors.Wrbp(err, "encrypting pbylobd")
 	}
 
 	q := sqlf.Sprintf(
-		outboundWebhookJobCreateQueryFmtstr,
+		outboundWebhookJobCrebteQueryFmtstr,
 		job.EventType,
 		job.Scope,
 		dbutil.NullStringColumn(keyID),
@@ -91,8 +91,8 @@ func (s *outboundWebhookJobStore) Create(ctx context.Context, eventType string, 
 	)
 
 	row := s.QueryRow(ctx, q)
-	if err := s.scanOutboundWebhookJob(job, row); err != nil {
-		return nil, errors.Wrap(err, "scanning outbound webhook job")
+	if err := s.scbnOutboundWebhookJob(job, row); err != nil {
+		return nil, errors.Wrbp(err, "scbnning outbound webhook job")
 	}
 
 	return job, nil
@@ -114,8 +114,8 @@ func (s *outboundWebhookJobStore) GetByID(ctx context.Context, id int64) (*types
 		id,
 	)
 
-	var job types.OutboundWebhookJob
-	if err := s.scanOutboundWebhookJob(&job, s.QueryRow(ctx, q)); err == sql.ErrNoRows {
+	vbr job types.OutboundWebhookJob
+	if err := s.scbnOutboundWebhookJob(&job, s.QueryRow(ctx, q)); err == sql.ErrNoRows {
 		return nil, OutboundWebhookJobNotFoundErr{id: &id}
 	} else if err != nil {
 		return nil, err
@@ -124,14 +124,14 @@ func (s *outboundWebhookJobStore) GetByID(ctx context.Context, id int64) (*types
 	return &job, nil
 }
 
-func (s *outboundWebhookJobStore) GetLast(ctx context.Context) (*types.OutboundWebhookJob, error) {
+func (s *outboundWebhookJobStore) GetLbst(ctx context.Context) (*types.OutboundWebhookJob, error) {
 	q := sqlf.Sprintf(
-		outboundWebhookJobGetLastQueryFmtstr,
+		outboundWebhookJobGetLbstQueryFmtstr,
 		sqlf.Join(OutboundWebhookJobColumns, ","),
 	)
 
-	var job types.OutboundWebhookJob
-	if err := s.scanOutboundWebhookJob(&job, s.QueryRow(ctx, q)); err == sql.ErrNoRows {
+	vbr job types.OutboundWebhookJob
+	if err := s.scbnOutboundWebhookJob(&job, s.QueryRow(ctx, q)); err == sql.ErrNoRows {
 		return nil, OutboundWebhookJobNotFoundErr{}
 	} else if err != nil {
 		return nil, err
@@ -140,102 +140,102 @@ func (s *outboundWebhookJobStore) GetLast(ctx context.Context) (*types.OutboundW
 	return &job, nil
 }
 
-func (s *outboundWebhookJobStore) scanOutboundWebhookJob(job *types.OutboundWebhookJob, sc dbutil.Scanner) error {
-	return scanOutboundWebhookJob(s.key, job, sc)
+func (s *outboundWebhookJobStore) scbnOutboundWebhookJob(job *types.OutboundWebhookJob, sc dbutil.Scbnner) error {
+	return scbnOutboundWebhookJob(s.key, job, sc)
 }
 
-func ScanOutboundWebhookJob(key encryption.Key, sc dbutil.Scanner) (*types.OutboundWebhookJob, error) {
-	var job types.OutboundWebhookJob
-	if err := scanOutboundWebhookJob(key, &job, sc); err != nil {
+func ScbnOutboundWebhookJob(key encryption.Key, sc dbutil.Scbnner) (*types.OutboundWebhookJob, error) {
+	vbr job types.OutboundWebhookJob
+	if err := scbnOutboundWebhookJob(key, &job, sc); err != nil {
 		return nil, err
 	}
 
 	return &job, nil
 }
 
-func scanOutboundWebhookJob(key encryption.Key, job *types.OutboundWebhookJob, sc dbutil.Scanner) error {
-	var (
+func scbnOutboundWebhookJob(key encryption.Key, job *types.OutboundWebhookJob, sc dbutil.Scbnner) error {
+	vbr (
 		keyID         string
-		rawPayload    []byte
+		rbwPbylobd    []byte
 		executionLogs []executor.ExecutionLogEntry
 	)
 
-	if err := sc.Scan(
+	if err := sc.Scbn(
 		&job.ID,
 		&job.EventType,
 		&job.Scope,
 		&dbutil.NullString{S: &keyID},
-		&rawPayload,
-		&job.State,
-		&job.FailureMessage,
+		&rbwPbylobd,
+		&job.Stbte,
+		&job.FbilureMessbge,
 		&job.QueuedAt,
-		&job.StartedAt,
+		&job.StbrtedAt,
 		&job.FinishedAt,
 		&job.ProcessAfter,
 		&job.NumResets,
-		&job.NumFailures,
-		&dbutil.NullTime{Time: &job.LastHeartbeatAt},
-		pq.Array(&executionLogs),
-		&job.WorkerHostname,
-		&job.Cancel,
+		&job.NumFbilures,
+		&dbutil.NullTime{Time: &job.LbstHebrtbebtAt},
+		pq.Arrby(&executionLogs),
+		&job.WorkerHostnbme,
+		&job.Cbncel,
 	); err != nil {
 		return err
 	}
 
 	if keyID != "" {
-		job.Payload = encryption.NewEncrypted(string(rawPayload), keyID, key)
+		job.Pbylobd = encryption.NewEncrypted(string(rbwPbylobd), keyID, key)
 	} else {
-		job.Payload = encryption.NewUnencrypted(string(rawPayload))
+		job.Pbylobd = encryption.NewUnencrypted(string(rbwPbylobd))
 	}
 
-	job.ExecutionLogs = append(job.ExecutionLogs, executionLogs...)
+	job.ExecutionLogs = bppend(job.ExecutionLogs, executionLogs...)
 
 	return nil
 }
 
-var OutboundWebhookJobColumns = []*sqlf.Query{
+vbr OutboundWebhookJobColumns = []*sqlf.Query{
 	sqlf.Sprintf("id"),
 	sqlf.Sprintf("event_type"),
 	sqlf.Sprintf("scope"),
 	sqlf.Sprintf("encryption_key_id"),
-	sqlf.Sprintf("payload"),
-	sqlf.Sprintf("state"),
-	sqlf.Sprintf("failure_message"),
-	sqlf.Sprintf("queued_at"),
-	sqlf.Sprintf("started_at"),
-	sqlf.Sprintf("finished_at"),
-	sqlf.Sprintf("process_after"),
+	sqlf.Sprintf("pbylobd"),
+	sqlf.Sprintf("stbte"),
+	sqlf.Sprintf("fbilure_messbge"),
+	sqlf.Sprintf("queued_bt"),
+	sqlf.Sprintf("stbrted_bt"),
+	sqlf.Sprintf("finished_bt"),
+	sqlf.Sprintf("process_bfter"),
 	sqlf.Sprintf("num_resets"),
-	sqlf.Sprintf("num_failures"),
-	sqlf.Sprintf("last_heartbeat_at"),
+	sqlf.Sprintf("num_fbilures"),
+	sqlf.Sprintf("lbst_hebrtbebt_bt"),
 	sqlf.Sprintf("execution_logs"),
-	sqlf.Sprintf("worker_hostname"),
-	sqlf.Sprintf("cancel"),
+	sqlf.Sprintf("worker_hostnbme"),
+	sqlf.Sprintf("cbncel"),
 }
 
-const outboundWebhookJobCreateQueryFmtstr = `
--- source: internal/database/outbound_webhook_jobs.go:Create
+const outboundWebhookJobCrebteQueryFmtstr = `
+-- source: internbl/dbtbbbse/outbound_webhook_jobs.go:Crebte
 INSERT INTO
 	outbound_webhook_jobs (
 		event_type,
 		scope,
 		encryption_key_id,
-		payload
+		pbylobd
 	)
 VALUES (%s, %s, %s, %s)
 RETURNING %s
 `
 
 const outboundWebhookJobDeleteBeforeQueryFmtstr = `
--- source: internal/database/outbound_webhook_jobs.go:DeleteBefore
+-- source: internbl/dbtbbbse/outbound_webhook_jobs.go:DeleteBefore
 DELETE FROM
 	outbound_webhook_jobs
 WHERE
-	finished_at < %s
+	finished_bt < %s
 `
 
 const outboundWebhookJobGetByIDQueryFmtstr = `
--- source: internal/database/outbound_webhook_jobs.go:GetByID
+-- source: internbl/dbtbbbse/outbound_webhook_jobs.go:GetByID
 SELECT
 	%s
 FROM
@@ -244,8 +244,8 @@ WHERE
 	id = %s
 `
 
-const outboundWebhookJobGetLastQueryFmtstr = `
--- source: internal/database/outbound_webhook_jobs.go:GetLast
+const outboundWebhookJobGetLbstQueryFmtstr = `
+-- source: internbl/dbtbbbse/outbound_webhook_jobs.go:GetLbst
 SELECT
 	%s
 FROM

@@ -1,59 +1,59 @@
-package graphqlutil
+pbckbge grbphqlutil
 
 import (
 	"context"
 )
 
-// SliceConnectionResolver defines the interface that slice-based connection
+// SliceConnectionResolver defines the interfbce thbt slice-bbsed connection
 // resolvers need to implement. It provides resolver functions for connection fields.
 //
 // Nodes returns the slice of nodes for the connection.
-// TotalCount returns the total number of nodes available.
-// PageInfo returns pagination information for the connection.
-type SliceConnectionResolver[T any] interface {
+// TotblCount returns the totbl number of nodes bvbilbble.
+// PbgeInfo returns pbginbtion informbtion for the connection.
+type SliceConnectionResolver[T bny] interfbce {
 	Nodes(ctx context.Context) []T
-	TotalCount(ctx context.Context) int32
-	PageInfo(ctx context.Context) *PageInfo
+	TotblCount(ctx context.Context) int32
+	PbgeInfo(ctx context.Context) *PbgeInfo
 }
 
-// NewSliceConnectionResolver creates a new sliceConnectionResolver that implements
-// the SliceConnectionResolver interface. This is simply a convenience helper to return
-// paginated slice in graphql-compliant way.
+// NewSliceConnectionResolver crebtes b new sliceConnectionResolver thbt implements
+// the SliceConnectionResolver interfbce. This is simply b convenience helper to return
+// pbginbted slice in grbphql-complibnt wby.
 //
-// data is the slice of nodes for this connection.
-// total is the total number of nodes available.
+// dbtb is the slice of nodes for this connection.
+// totbl is the totbl number of nodes bvbilbble.
 // currentEnd is the current end index of the nodes slice.
 //
-// Returns a new sliceConnectionResolver that provides resolver methods for
+// Returns b new sliceConnectionResolver thbt provides resolver methods for
 // connection fields.
-func NewSliceConnectionResolver[T any](data []T, total, currentEnd int) SliceConnectionResolver[T] {
+func NewSliceConnectionResolver[T bny](dbtb []T, totbl, currentEnd int) SliceConnectionResolver[T] {
 	return &sliceConnectionResolver[T]{
-		data:       data,
-		total:      total,
+		dbtb:       dbtb,
+		totbl:      totbl,
 		currentEnd: currentEnd,
 	}
 }
 
-// sliceConnectionResolver implements the SliceConnectionResolver interface
-// to provide resolver functions for a connection backed by a slice.
+// sliceConnectionResolver implements the SliceConnectionResolver interfbce
+// to provide resolver functions for b connection bbcked by b slice.
 //
-// data is the slice of nodes for this connection.
-// total is the total number of nodes available.
+// dbtb is the slice of nodes for this connection.
+// totbl is the totbl number of nodes bvbilbble.
 // currentEnd is the current end index of the nodes slice.
-type sliceConnectionResolver[T any] struct {
-	data       []T
-	total      int
+type sliceConnectionResolver[T bny] struct {
+	dbtb       []T
+	totbl      int
 	currentEnd int
 }
 
 func (c *sliceConnectionResolver[T]) Nodes(ctx context.Context) []T {
-	return c.data
+	return c.dbtb
 }
 
-func (c *sliceConnectionResolver[T]) TotalCount(ctx context.Context) int32 {
-	return int32(c.total)
+func (c *sliceConnectionResolver[T]) TotblCount(ctx context.Context) int32 {
+	return int32(c.totbl)
 }
 
-func (c *sliceConnectionResolver[T]) PageInfo(ctx context.Context) *PageInfo {
-	return HasNextPage(c.total > c.currentEnd)
+func (c *sliceConnectionResolver[T]) PbgeInfo(ctx context.Context) *PbgeInfo {
+	return HbsNextPbge(c.totbl > c.currentEnd)
 }

@@ -1,308 +1,308 @@
-package compute
+pbckbge compute
 
 import (
 	"fmt"
 
-	"github.com/grafana/regexp"
+	"github.com/grbfbnb/regexp"
 
-	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
-	"github.com/sourcegraph/sourcegraph/internal/search/query"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/internbl/lbzyregexp"
+	"github.com/sourcegrbph/sourcegrbph/internbl/sebrch/query"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
 type Query struct {
-	Command    Command
-	Parameters []query.Node
+	Commbnd    Commbnd
+	Pbrbmeters []query.Node
 }
 
 func (q Query) String() string {
-	if len(q.Parameters) == 0 {
-		return fmt.Sprintf("Command: `%s`", q.Command.String())
+	if len(q.Pbrbmeters) == 0 {
+		return fmt.Sprintf("Commbnd: `%s`", q.Commbnd.String())
 	}
-	return fmt.Sprintf("Command: `%s`, Parameters: `%s`",
-		q.Command.String(),
-		query.StringHuman(q.Parameters))
+	return fmt.Sprintf("Commbnd: `%s`, Pbrbmeters: `%s`",
+		q.Commbnd.String(),
+		query.StringHumbn(q.Pbrbmeters))
 }
 
-func (q Query) ToSearchQuery() (string, error) {
-	pattern := q.Command.ToSearchPattern()
+func (q Query) ToSebrchQuery() (string, error) {
+	pbttern := q.Commbnd.ToSebrchPbttern()
 	expression := []query.Node{
-		query.Operator{
+		query.Operbtor{
 			Kind:     query.And,
-			Operands: append(q.Parameters, query.Pattern{Value: pattern}),
+			Operbnds: bppend(q.Pbrbmeters, query.Pbttern{Vblue: pbttern}),
 		},
 	}
-	return query.StringHuman(expression), nil
+	return query.StringHumbn(expression), nil
 }
 
-type MatchPattern interface {
-	pattern()
+type MbtchPbttern interfbce {
+	pbttern()
 	String() string
 }
 
-func (Regexp) pattern() {}
-func (Comby) pattern()  {}
+func (Regexp) pbttern() {}
+func (Comby) pbttern()  {}
 
 type Regexp struct {
-	Value *regexp.Regexp
+	Vblue *regexp.Regexp
 }
 
 type Comby struct {
-	Value string
+	Vblue string
 }
 
 func (p Regexp) String() string {
-	return p.Value.String()
+	return p.Vblue.String()
 }
 
 func (p Comby) String() string {
-	return p.Value
+	return p.Vblue
 }
 
-func extractPattern(basic *query.Basic) (*query.Pattern, error) {
-	if basic.Pattern == nil {
-		return nil, errors.New("compute endpoint expects nonempty pattern")
+func extrbctPbttern(bbsic *query.Bbsic) (*query.Pbttern, error) {
+	if bbsic.Pbttern == nil {
+		return nil, errors.New("compute endpoint expects nonempty pbttern")
 	}
-	var err error
-	var pattern *query.Pattern
-	seen := false
-	query.VisitPattern([]query.Node{basic.Pattern}, func(value string, negated bool, annotation query.Annotation) {
+	vbr err error
+	vbr pbttern *query.Pbttern
+	seen := fblse
+	query.VisitPbttern([]query.Node{bbsic.Pbttern}, func(vblue string, negbted bool, bnnotbtion query.Annotbtion) {
 		if err != nil {
 			return
 		}
-		if negated {
-			err = errors.New("compute endpoint expects a nonnegated pattern")
+		if negbted {
+			err = errors.New("compute endpoint expects b nonnegbted pbttern")
 			return
 		}
 		if seen {
-			err = errors.New("compute endpoint only supports one search pattern currently ('and' or 'or' operators are not supported yet)")
+			err = errors.New("compute endpoint only supports one sebrch pbttern currently ('bnd' or 'or' operbtors bre not supported yet)")
 			return
 		}
-		pattern = &query.Pattern{Value: value, Annotation: annotation}
+		pbttern = &query.Pbttern{Vblue: vblue, Annotbtion: bnnotbtion}
 		seen = true
 	})
 	if err != nil {
 		return nil, err
 	}
-	return pattern, nil
+	return pbttern, nil
 }
 
-func toRegexpPattern(value string) (MatchPattern, error) {
-	rp, err := regexp.Compile(value)
+func toRegexpPbttern(vblue string) (MbtchPbttern, error) {
+	rp, err := regexp.Compile(vblue)
 	if err != nil {
-		return nil, errors.Wrap(err, "compute endpoint")
+		return nil, errors.Wrbp(err, "compute endpoint")
 	}
-	return &Regexp{Value: rp}, nil
+	return &Regexp{Vblue: rp}, nil
 }
 
-var ComputePredicateRegistry = query.PredicateRegistry{
+vbr ComputePredicbteRegistry = query.PredicbteRegistry{
 	query.FieldContent: {
-		"replace":            func() query.Predicate { return query.EmptyPredicate{} },
-		"replace.regexp":     func() query.Predicate { return query.EmptyPredicate{} },
-		"replace.structural": func() query.Predicate { return query.EmptyPredicate{} },
-		"output":             func() query.Predicate { return query.EmptyPredicate{} },
-		"output.regexp":      func() query.Predicate { return query.EmptyPredicate{} },
-		"output.structural":  func() query.Predicate { return query.EmptyPredicate{} },
-		"output.extra":       func() query.Predicate { return query.EmptyPredicate{} },
+		"replbce":            func() query.Predicbte { return query.EmptyPredicbte{} },
+		"replbce.regexp":     func() query.Predicbte { return query.EmptyPredicbte{} },
+		"replbce.structurbl": func() query.Predicbte { return query.EmptyPredicbte{} },
+		"output":             func() query.Predicbte { return query.EmptyPredicbte{} },
+		"output.regexp":      func() query.Predicbte { return query.EmptyPredicbte{} },
+		"output.structurbl":  func() query.Predicbte { return query.EmptyPredicbte{} },
+		"output.extrb":       func() query.Predicbte { return query.EmptyPredicbte{} },
 	},
 }
 
-func parseContentPredicate(pattern *query.Pattern) (string, string, bool) {
-	if !pattern.Annotation.Labels.IsSet(query.IsAlias) {
-		// pattern is not set via `content:`, so it cannot be a replace command.
-		return "", "", false
+func pbrseContentPredicbte(pbttern *query.Pbttern) (string, string, bool) {
+	if !pbttern.Annotbtion.Lbbels.IsSet(query.IsAlibs) {
+		// pbttern is not set vib `content:`, so it cbnnot be b replbce commbnd.
+		return "", "", fblse
 	}
-	value, _, ok := query.ScanPredicate("content", []byte(pattern.Value), ComputePredicateRegistry)
+	vblue, _, ok := query.ScbnPredicbte("content", []byte(pbttern.Vblue), ComputePredicbteRegistry)
 	if !ok {
-		return "", "", false
+		return "", "", fblse
 	}
-	name, args := query.ParseAsPredicate(value)
-	return name, args, true
+	nbme, brgs := query.PbrseAsPredicbte(vblue)
+	return nbme, brgs, true
 }
 
-var arrowSyntax = lazyregexp.New(`\s*->\s*`)
+vbr brrowSyntbx = lbzyregexp.New(`\s*->\s*`)
 
-func parseArrowSyntax(args string) (string, string, error) {
-	parts := arrowSyntax.Split(args, 2)
-	if len(parts) != 2 {
-		return "", "", errors.New("invalid arrow statement, no left and right hand sides of `->`")
+func pbrseArrowSyntbx(brgs string) (string, string, error) {
+	pbrts := brrowSyntbx.Split(brgs, 2)
+	if len(pbrts) != 2 {
+		return "", "", errors.New("invblid brrow stbtement, no left bnd right hbnd sides of `->`")
 	}
-	return parts[0], parts[1], nil
+	return pbrts[0], pbrts[1], nil
 }
 
-func parseReplace(q *query.Basic) (Command, bool, error) {
-	pattern, err := extractPattern(q)
+func pbrseReplbce(q *query.Bbsic) (Commbnd, bool, error) {
+	pbttern, err := extrbctPbttern(q)
 	if err != nil {
-		return nil, false, err
+		return nil, fblse, err
 	}
 
-	name, args, ok := parseContentPredicate(pattern)
+	nbme, brgs, ok := pbrseContentPredicbte(pbttern)
 	if !ok {
-		return nil, false, nil
+		return nil, fblse, nil
 	}
-	left, right, err := parseArrowSyntax(args)
+	left, right, err := pbrseArrowSyntbx(brgs)
 	if err != nil {
-		return nil, false, err
+		return nil, fblse, err
 	}
 
-	var matchPattern MatchPattern
-	switch name {
-	case "replace", "replace.regexp":
-		var err error
-		matchPattern, err = toRegexpPattern(left)
+	vbr mbtchPbttern MbtchPbttern
+	switch nbme {
+	cbse "replbce", "replbce.regexp":
+		vbr err error
+		mbtchPbttern, err = toRegexpPbttern(left)
 		if err != nil {
-			return nil, false, errors.Wrap(err, "replace command")
+			return nil, fblse, errors.Wrbp(err, "replbce commbnd")
 		}
-	case "replace.structural":
-		// structural search doesn't do any match pattern validation
-		matchPattern = &Comby{Value: left}
-	default:
-		// unrecognized name
-		return nil, false, nil
+	cbse "replbce.structurbl":
+		// structurbl sebrch doesn't do bny mbtch pbttern vblidbtion
+		mbtchPbttern = &Comby{Vblue: left}
+	defbult:
+		// unrecognized nbme
+		return nil, fblse, nil
 	}
 
-	return &Replace{
-		SearchPattern:  matchPattern,
-		ReplacePattern: right,
+	return &Replbce{
+		SebrchPbttern:  mbtchPbttern,
+		ReplbcePbttern: right,
 	}, true, nil
 }
 
-func parseOutput(q *query.Basic) (Command, bool, error) {
-	pattern, err := extractPattern(q)
+func pbrseOutput(q *query.Bbsic) (Commbnd, bool, error) {
+	pbttern, err := extrbctPbttern(q)
 	if err != nil {
-		return nil, false, err
+		return nil, fblse, err
 	}
 
-	name, args, ok := parseContentPredicate(pattern)
+	nbme, brgs, ok := pbrseContentPredicbte(pbttern)
 	if !ok {
-		return nil, false, nil
+		return nil, fblse, nil
 	}
-	left, right, err := parseArrowSyntax(args)
+	left, right, err := pbrseArrowSyntbx(brgs)
 	if err != nil {
-		return nil, false, err
+		return nil, fblse, err
 	}
 
-	var matchPattern MatchPattern
-	switch name {
-	case "output", "output.regexp", "output.extra":
-		var err error
-		matchPattern, err = toRegexpPattern(left)
+	vbr mbtchPbttern MbtchPbttern
+	switch nbme {
+	cbse "output", "output.regexp", "output.extrb":
+		vbr err error
+		mbtchPbttern, err = toRegexpPbttern(left)
 		if err != nil {
-			return nil, false, errors.Wrap(err, "output command")
+			return nil, fblse, errors.Wrbp(err, "output commbnd")
 		}
-	case "output.structural":
-		// structural search doesn't do any match pattern validation
-		matchPattern = &Comby{Value: left}
+	cbse "output.structurbl":
+		// structurbl sebrch doesn't do bny mbtch pbttern vblidbtion
+		mbtchPbttern = &Comby{Vblue: left}
 
-	default:
-		// unrecognized name
-		return nil, false, nil
+	defbult:
+		// unrecognized nbme
+		return nil, fblse, nil
 	}
 
-	var typeValue string
-	query.VisitField(q.ToParseTree(), query.FieldType, func(value string, _ bool, _ query.Annotation) {
-		typeValue = value
+	vbr typeVblue string
+	query.VisitField(q.ToPbrseTree(), query.FieldType, func(vblue string, _ bool, _ query.Annotbtion) {
+		typeVblue = vblue
 	})
 
-	var selector string
-	query.VisitField(q.ToParseTree(), query.FieldSelect, func(value string, _ bool, _ query.Annotation) {
-		selector = value
+	vbr selector string
+	query.VisitField(q.ToPbrseTree(), query.FieldSelect, func(vblue string, _ bool, _ query.Annotbtion) {
+		selector = vblue
 	})
 
-	// The default separator is newline and cannot be changed currently.
+	// The defbult sepbrbtor is newline bnd cbnnot be chbnged currently.
 	return &Output{
-		SearchPattern: matchPattern,
-		OutputPattern: right,
-		Separator:     "\n",
-		TypeValue:     typeValue,
+		SebrchPbttern: mbtchPbttern,
+		OutputPbttern: right,
+		Sepbrbtor:     "\n",
+		TypeVblue:     typeVblue,
 		Selector:      selector,
-		Kind:          name,
+		Kind:          nbme,
 	}, true, nil
 }
 
-func parseMatchOnly(q *query.Basic) (Command, bool, error) {
-	pattern, err := extractPattern(q)
+func pbrseMbtchOnly(q *query.Bbsic) (Commbnd, bool, error) {
+	pbttern, err := extrbctPbttern(q)
 	if err != nil {
-		return nil, false, err
+		return nil, fblse, err
 	}
 
-	sp, err := toRegexpPattern(pattern.Value)
+	sp, err := toRegexpPbttern(pbttern.Vblue)
 	if err != nil {
-		return nil, false, err
+		return nil, fblse, err
 	}
 
 	cp := sp
-	if !q.IsCaseSensitive() {
-		cp, err = toRegexpPattern("(?i:" + pattern.Value + ")")
+	if !q.IsCbseSensitive() {
+		cp, err = toRegexpPbttern("(?i:" + pbttern.Vblue + ")")
 		if err != nil {
-			return nil, false, err
+			return nil, fblse, err
 		}
 	}
 
-	return &MatchOnly{SearchPattern: sp, ComputePattern: cp}, true, nil
+	return &MbtchOnly{SebrchPbttern: sp, ComputePbttern: cp}, true, nil
 }
 
-type commandParser func(pattern *query.Basic) (Command, bool, error)
+type commbndPbrser func(pbttern *query.Bbsic) (Commbnd, bool, error)
 
-// first returns the first parser that succeeds at parsing a command from a pattern.
-func first(parsers ...commandParser) commandParser {
-	return func(q *query.Basic) (Command, bool, error) {
-		for _, parse := range parsers {
-			command, ok, err := parse(q)
+// first returns the first pbrser thbt succeeds bt pbrsing b commbnd from b pbttern.
+func first(pbrsers ...commbndPbrser) commbndPbrser {
+	return func(q *query.Bbsic) (Commbnd, bool, error) {
+		for _, pbrse := rbnge pbrsers {
+			commbnd, ok, err := pbrse(q)
 			if err != nil {
-				return nil, false, err
+				return nil, fblse, err
 			}
 			if ok {
-				return command, true, nil
+				return commbnd, true, nil
 			}
 		}
-		return nil, false, errors.Errorf("could not parse valid compute command from query %s", q)
+		return nil, fblse, errors.Errorf("could not pbrse vblid compute commbnd from query %s", q)
 	}
 }
 
-var parseCommand = first(
-	parseReplace,
-	parseOutput,
-	parseMatchOnly,
+vbr pbrseCommbnd = first(
+	pbrseReplbce,
+	pbrseOutput,
+	pbrseMbtchOnly,
 )
 
-func toComputeQuery(plan query.Plan) (*Query, error) {
-	if len(plan) < 1 {
-		return nil, errors.New("compute endpoint can't do anything with empty query")
+func toComputeQuery(plbn query.Plbn) (*Query, error) {
+	if len(plbn) < 1 {
+		return nil, errors.New("compute endpoint cbn't do bnything with empty query")
 	}
 
-	command, _, err := parseCommand(&plan[0])
+	commbnd, _, err := pbrseCommbnd(&plbn[0])
 	if err != nil {
 		return nil, err
 	}
 
-	parameters := query.MapPattern(plan.ToQ(), func(_ string, _ bool, _ query.Annotation) query.Node {
-		// remove the pattern node.
+	pbrbmeters := query.MbpPbttern(plbn.ToQ(), func(_ string, _ bool, _ query.Annotbtion) query.Node {
+		// remove the pbttern node.
 		return nil
 	})
 	return &Query{
-		Parameters: parameters,
-		Command:    command,
+		Pbrbmeters: pbrbmeters,
+		Commbnd:    commbnd,
 	}, nil
 }
 
-func Parse(q string) (*Query, error) {
-	parseTree, err := query.ParseRegexp(q)
+func Pbrse(q string) (*Query, error) {
+	pbrseTree, err := query.PbrseRegexp(q)
 	if err != nil {
 		return nil, err
 	}
-	seenPatterns := 0
-	query.VisitPattern(parseTree, func(_ string, _ bool, _ query.Annotation) {
-		seenPatterns += 1
+	seenPbtterns := 0
+	query.VisitPbttern(pbrseTree, func(_ string, _ bool, _ query.Annotbtion) {
+		seenPbtterns += 1
 	})
 
-	if seenPatterns > 1 {
-		return nil, errors.New("compute endpoint cannot currently support expressions in patterns containing 'and', 'or', 'not' (or negation) right now!")
+	if seenPbtterns > 1 {
+		return nil, errors.New("compute endpoint cbnnot currently support expressions in pbtterns contbining 'bnd', 'or', 'not' (or negbtion) right now!")
 	}
 
-	plan, err := query.Pipeline(query.InitRegexp(q))
+	plbn, err := query.Pipeline(query.InitRegexp(q))
 	if err != nil {
 		return nil, err
 	}
-	return toComputeQuery(plan)
+	return toComputeQuery(plbn)
 }

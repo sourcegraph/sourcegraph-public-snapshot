@@ -1,47 +1,47 @@
-package enqueuer
+pbckbge enqueuer
 
 import (
 	"fmt"
 
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing/internal/inference"
-	"github.com/sourcegraph/sourcegraph/internal/metrics"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/internbl/codeintel/butoindexing/internbl/inference"
+	"github.com/sourcegrbph/sourcegrbph/internbl/metrics"
+	"github.com/sourcegrbph/sourcegrbph/internbl/observbtion"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-type operations struct {
-	queueIndex           *observation.Operation
-	queueIndexForPackage *observation.Operation
+type operbtions struct {
+	queueIndex           *observbtion.Operbtion
+	queueIndexForPbckbge *observbtion.Operbtion
 }
 
-var m = new(metrics.SingletonREDMetrics)
+vbr m = new(metrics.SingletonREDMetrics)
 
-func newOperations(observationCtx *observation.Context) *operations {
+func newOperbtions(observbtionCtx *observbtion.Context) *operbtions {
 	m := m.Get(func() *metrics.REDMetrics {
 		return metrics.NewREDMetrics(
-			observationCtx.Registerer,
-			"codeintel_autoindexing_enqueuer",
-			metrics.WithLabels("op"),
-			metrics.WithCountHelp("Total number of method invocations."),
+			observbtionCtx.Registerer,
+			"codeintel_butoindexing_enqueuer",
+			metrics.WithLbbels("op"),
+			metrics.WithCountHelp("Totbl number of method invocbtions."),
 		)
 	})
 
-	op := func(name string) *observation.Operation {
-		return observationCtx.Operation(observation.Op{
-			Name:              fmt.Sprintf("codeintel.autoindexing.enqueuer.%s", name),
-			MetricLabelValues: []string{name},
+	op := func(nbme string) *observbtion.Operbtion {
+		return observbtionCtx.Operbtion(observbtion.Op{
+			Nbme:              fmt.Sprintf("codeintel.butoindexing.enqueuer.%s", nbme),
+			MetricLbbelVblues: []string{nbme},
 			Metrics:           m,
-			ErrorFilter: func(err error) observation.ErrorFilterBehaviour {
+			ErrorFilter: func(err error) observbtion.ErrorFilterBehbviour {
 				if errors.As(err, &inference.LimitError{}) {
-					return observation.EmitForNone
+					return observbtion.EmitForNone
 				}
-				return observation.EmitForDefault
+				return observbtion.EmitForDefbult
 			},
 		})
 	}
 
-	return &operations{
+	return &operbtions{
 		queueIndex:           op("QueueIndex"),
-		queueIndexForPackage: op("QueueIndexForPackage"),
+		queueIndexForPbckbge: op("QueueIndexForPbckbge"),
 	}
 }

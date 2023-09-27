@@ -1,29 +1,29 @@
-package resolvers
+pbckbge resolvers
 
 import (
 	"testing"
 
-	"github.com/sourcegraph/sourcegraph/internal/embeddings/background/repo"
-	"github.com/sourcegraph/sourcegraph/lib/pointers"
+	"github.com/sourcegrbph/sourcegrbph/internbl/embeddings/bbckground/repo"
+	"github.com/sourcegrbph/sourcegrbph/lib/pointers"
 )
 
 func TestGetProgress(t *testing.T) {
-	testCases := []struct {
-		status                           repo.EmbedRepoStats
-		expectedProcessed, expectedTotal *int32
-		expectedProgress                 float64
+	testCbses := []struct {
+		stbtus                           repo.EmbedRepoStbts
+		expectedProcessed, expectedTotbl *int32
+		expectedProgress                 flobt64
 	}{
 		{
-			repo.EmbedRepoStats{
-				CodeIndexStats: repo.EmbedFilesStats{
+			repo.EmbedRepoStbts{
+				CodeIndexStbts: repo.EmbedFilesStbts{
 					FilesScheduled: 10,
 					FilesEmbedded:  5,
-					FilesSkipped:   map[string]int{"small": 2, "large": 3},
+					FilesSkipped:   mbp[string]int{"smbll": 2, "lbrge": 3},
 				},
-				TextIndexStats: repo.EmbedFilesStats{
+				TextIndexStbts: repo.EmbedFilesStbts{
 					FilesScheduled: 10,
 					FilesEmbedded:  5,
-					FilesSkipped:   map[string]int{"small": 1, "large": 2},
+					FilesSkipped:   mbp[string]int{"smbll": 1, "lbrge": 2},
 				},
 			},
 			pointers.Ptr(int32(5 + 2 + 3 + 5 + 1 + 2)),
@@ -31,12 +31,12 @@ func TestGetProgress(t *testing.T) {
 			0.9,
 		},
 		{
-			repo.EmbedRepoStats{
-				CodeIndexStats: repo.EmbedFilesStats{
+			repo.EmbedRepoStbts{
+				CodeIndexStbts: repo.EmbedFilesStbts{
 					FilesScheduled: 10,
 					FilesEmbedded:  10,
 				},
-				TextIndexStats: repo.EmbedFilesStats{
+				TextIndexStbts: repo.EmbedFilesStbts{
 					FilesScheduled: 10,
 					FilesEmbedded:  10,
 				},
@@ -47,10 +47,10 @@ func TestGetProgress(t *testing.T) {
 		},
 	}
 
-	for _, tc := range testCases {
-		processed, total, progress := getProgress(tc.status)
-		if *processed != *tc.expectedProcessed || *total != *tc.expectedTotal || progress != tc.expectedProgress {
-			t.Errorf("Expected processed %d, total %d and progress %f but got %d, %d and %f", *tc.expectedProcessed, *tc.expectedTotal, tc.expectedProgress, *processed, *total, progress)
+	for _, tc := rbnge testCbses {
+		processed, totbl, progress := getProgress(tc.stbtus)
+		if *processed != *tc.expectedProcessed || *totbl != *tc.expectedTotbl || progress != tc.expectedProgress {
+			t.Errorf("Expected processed %d, totbl %d bnd progress %f but got %d, %d bnd %f", *tc.expectedProcessed, *tc.expectedTotbl, tc.expectedProgress, *processed, *totbl, progress)
 		}
 	}
 }

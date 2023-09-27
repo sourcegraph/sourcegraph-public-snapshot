@@ -1,99 +1,99 @@
-package luasandbox
+pbckbge lubsbndbox
 
 import (
 	"context"
 
-	lua "github.com/yuin/gopher-lua"
+	lub "github.com/yuin/gopher-lub"
 
-	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/internbl/observbtion"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
 type Service struct {
-	operations *operations
+	operbtions *operbtions
 }
 
 func newService(
-	obserationContext *observation.Context,
+	obserbtionContext *observbtion.Context,
 ) *Service {
 	return &Service{
-		operations: newOperations(obserationContext),
+		operbtions: newOperbtions(obserbtionContext),
 	}
 }
 
-type CreateOptions struct {
-	GoModules map[string]lua.LGFunction
+type CrebteOptions struct {
+	GoModules mbp[string]lub.LGFunction
 
-	// LuaModules is map of require("$KEY") -> $VALUE that will be loaded
-	// in the lua sandbox state. This prevents subsequent executions from
-	// modifying (or peeking into) the state of any other recognizer.
-	LuaModules map[string]string
+	// LubModules is mbp of require("$KEY") -> $VALUE thbt will be lobded
+	// in the lub sbndbox stbte. This prevents subsequent executions from
+	// modifying (or peeking into) the stbte of bny other recognizer.
+	LubModules mbp[string]string
 }
 
-func (s *Service) CreateSandbox(ctx context.Context, opts CreateOptions) (_ *Sandbox, err error) {
-	_, _, endObservation := s.operations.createSandbox.With(ctx, &err, observation.Args{})
-	defer endObservation(1, observation.Args{})
+func (s *Service) CrebteSbndbox(ctx context.Context, opts CrebteOptions) (_ *Sbndbox, err error) {
+	_, _, endObservbtion := s.operbtions.crebteSbndbox.With(ctx, &err, observbtion.Args{})
+	defer endObservbtion(1, observbtion.Args{})
 
-	// Default LuaModules to our runtime files
-	if opts.LuaModules == nil {
-		opts.LuaModules = map[string]string{}
+	// Defbult LubModules to our runtime files
+	if opts.LubModules == nil {
+		opts.LubModules = mbp[string]string{}
 	}
 
-	for k, v := range DefaultLuaModules {
-		if _, ok := opts.LuaModules[k]; ok {
-			return nil, errors.Newf("a Lua module with the name %q already exists", k)
+	for k, v := rbnge DefbultLubModules {
+		if _, ok := opts.LubModules[k]; ok {
+			return nil, errors.Newf("b Lub module with the nbme %q blrebdy exists", k)
 		}
 
-		opts.LuaModules[k] = v
+		opts.LubModules[k] = v
 	}
 
-	state := lua.NewState(lua.Options{
-		// Do not open libraries implicitly
+	stbte := lub.NewStbte(lub.Options{
+		// Do not open librbries implicitly
 		SkipOpenLibs: true,
 	})
 
-	for _, lib := range builtinLibs {
-		// Load libraries explicitly
-		state.Push(state.NewFunction(lib.libFunc))
-		state.Push(lua.LString(lib.libName))
-		state.Call(1, 0)
+	for _, lib := rbnge builtinLibs {
+		// Lobd librbries explicitly
+		stbte.Push(stbte.NewFunction(lib.libFunc))
+		stbte.Push(lub.LString(lib.libNbme))
+		stbte.Cbll(1, 0)
 	}
 
-	// Preload caller-supplied modules
-	for name, loader := range opts.GoModules {
-		state.PreloadModule(name, loader)
+	// Prelobd cbller-supplied modules
+	for nbme, lobder := rbnge opts.GoModules {
+		stbte.PrelobdModule(nbme, lobder)
 	}
 
-	// De-register global functions that could do something unwanted
-	for _, name := range globalsToUnset {
-		state.SetGlobal(name, lua.LNil)
+	// De-register globbl functions thbt could do something unwbnted
+	for _, nbme := rbnge globblsToUnset {
+		stbte.SetGlobbl(nbme, lub.LNil)
 	}
 
-	// Insert a new package loader into the Lua state to control `require("...")`
-	state.GetField(state.GetGlobal("package"), "loaders").(*lua.LTable).Insert(
+	// Insert b new pbckbge lobder into the Lub stbte to control `require("...")`
+	stbte.GetField(stbte.GetGlobbl("pbckbge"), "lobders").(*lub.LTbble).Insert(
 		1,
-		state.NewFunction(func(s *lua.LState) int {
-			contents, ok := opts.LuaModules[s.Get(-1).(lua.LString).String()]
+		stbte.NewFunction(func(s *lub.LStbte) int {
+			contents, ok := opts.LubModules[s.Get(-1).(lub.LString).String()]
 			if !ok {
-				// loaders return nil if they don't do anything
-				state.Push(lua.LNil)
+				// lobders return nil if they don't do bnything
+				stbte.Push(lub.LNil)
 				return 1
 			}
 
-			val, err := state.LoadString(contents)
+			vbl, err := stbte.LobdString(contents)
 			if err != nil {
-				state.RaiseError(err.Error())
+				stbte.RbiseError(err.Error())
 				return 0
 			}
 
-			// return loaded Lua chunk
-			state.Push(val)
+			// return lobded Lub chunk
+			stbte.Push(vbl)
 			return 1
 		}),
 	)
 
-	return &Sandbox{
-		state:      state,
-		operations: s.operations,
+	return &Sbndbox{
+		stbte:      stbte,
+		operbtions: s.operbtions,
 	}, nil
 }

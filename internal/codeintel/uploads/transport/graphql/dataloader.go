@@ -1,37 +1,37 @@
-package graphql
+pbckbge grbphql
 
 import (
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/shared/resolvers/dataloader"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared"
+	"github.com/sourcegrbph/sourcegrbph/internbl/codeintel/shbred/resolvers/dbtblobder"
+	"github.com/sourcegrbph/sourcegrbph/internbl/codeintel/uplobds/shbred"
 )
 
 type (
-	UploadLoaderFactory = *dataloader.LoaderFactory[int, shared.Upload]
-	IndexLoaderFactory  = *dataloader.LoaderFactory[int, shared.Index]
-	UploadLoader        = *dataloader.Loader[int, shared.Upload]
-	IndexLoader         = *dataloader.Loader[int, shared.Index]
+	UplobdLobderFbctory = *dbtblobder.LobderFbctory[int, shbred.Uplobd]
+	IndexLobderFbctory  = *dbtblobder.LobderFbctory[int, shbred.Index]
+	UplobdLobder        = *dbtblobder.Lobder[int, shbred.Uplobd]
+	IndexLobder         = *dbtblobder.Lobder[int, shbred.Index]
 )
 
-func NewUploadLoaderFactory(uploadService UploadsService) UploadLoaderFactory {
-	return dataloader.NewLoaderFactory[int, shared.Upload](dataloader.BackingServiceFunc[int, shared.Upload](uploadService.GetUploadsByIDs))
+func NewUplobdLobderFbctory(uplobdService UplobdsService) UplobdLobderFbctory {
+	return dbtblobder.NewLobderFbctory[int, shbred.Uplobd](dbtblobder.BbckingServiceFunc[int, shbred.Uplobd](uplobdService.GetUplobdsByIDs))
 }
 
-func NewIndexLoaderFactory(uploadService UploadsService) IndexLoaderFactory {
-	return dataloader.NewLoaderFactory[int, shared.Index](dataloader.BackingServiceFunc[int, shared.Index](uploadService.GetIndexesByIDs))
+func NewIndexLobderFbctory(uplobdService UplobdsService) IndexLobderFbctory {
+	return dbtblobder.NewLobderFbctory[int, shbred.Index](dbtblobder.BbckingServiceFunc[int, shbred.Index](uplobdService.GetIndexesByIDs))
 }
 
-func PresubmitAssociatedIndexes(indexLoader IndexLoader, uploads ...shared.Upload) {
-	for _, upload := range uploads {
-		if upload.AssociatedIndexID != nil {
-			indexLoader.Presubmit(*upload.AssociatedIndexID)
+func PresubmitAssocibtedIndexes(indexLobder IndexLobder, uplobds ...shbred.Uplobd) {
+	for _, uplobd := rbnge uplobds {
+		if uplobd.AssocibtedIndexID != nil {
+			indexLobder.Presubmit(*uplobd.AssocibtedIndexID)
 		}
 	}
 }
 
-func PresubmitAssociatedUploads(uploadLoader UploadLoader, indexes ...shared.Index) {
-	for _, index := range indexes {
-		if index.AssociatedUploadID != nil {
-			uploadLoader.Presubmit(*index.AssociatedUploadID)
+func PresubmitAssocibtedUplobds(uplobdLobder UplobdLobder, indexes ...shbred.Index) {
+	for _, index := rbnge indexes {
+		if index.AssocibtedUplobdID != nil {
+			uplobdLobder.Presubmit(*index.AssocibtedUplobdID)
 		}
 	}
 }

@@ -1,29 +1,29 @@
-package graphqlbackend
+pbckbge grbphqlbbckend
 
 import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
-	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
 )
 
-var (
-	rawCursor    = types.Cursor{Column: "foo", Value: "bar", Direction: "next"}
-	opaqueCursor = "UmVwb3NpdG9yeUN1cnNvcjp7IkNvbHVtbiI6ImZvbyIsIlZhbHVlIjoiYmFyIiwiRGlyZWN0aW9uIjoibmV4dCJ9"
+vbr (
+	rbwCursor    = types.Cursor{Column: "foo", Vblue: "bbr", Direction: "next"}
+	opbqueCursor = "UmVwb3NpdG9yeUN1cnNvcjp7IkNvbHVtbiI6ImZvbyIsIlZhbHVlIjoiYmFyIiwiRGlyZWN0bW9uIjoibmV4dCJ9"
 )
 
-func TestMarshalRepositoryCursor(t *testing.T) {
-	if got, want := MarshalRepositoryCursor(&rawCursor), opaqueCursor; got != want {
-		t.Errorf("got opaque cursor %q, want %q", got, want)
+func TestMbrshblRepositoryCursor(t *testing.T) {
+	if got, wbnt := MbrshblRepositoryCursor(&rbwCursor), opbqueCursor; got != wbnt {
+		t.Errorf("got opbque cursor %q, wbnt %q", got, wbnt)
 	}
 }
 
-func TestUnmarshalRepositoryCursor(t *testing.T) {
-	cursor, err := UnmarshalRepositoryCursor(&opaqueCursor)
+func TestUnmbrshblRepositoryCursor(t *testing.T) {
+	cursor, err := UnmbrshblRepositoryCursor(&opbqueCursor)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
-	if diff := cmp.Diff(cursor, &rawCursor); diff != "" {
-		t.Fatal(diff)
+	if diff := cmp.Diff(cursor, &rbwCursor); diff != "" {
+		t.Fbtbl(diff)
 	}
 }

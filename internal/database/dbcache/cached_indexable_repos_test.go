@@ -1,30 +1,30 @@
-package dbcache
+pbckbge dbcbche
 
 import (
 	"context"
 	"testing"
 
-	"github.com/sourcegraph/log/logtest"
+	"github.com/sourcegrbph/log/logtest"
 
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbtest"
 )
 
-func BenchmarkIndexableRepos_List_Empty(b *testing.B) {
+func BenchmbrkIndexbbleRepos_List_Empty(b *testing.B) {
 	logger := logtest.Scoped(b)
-	db := database.NewDB(logger, dbtest.NewDB(logger, b))
+	db := dbtbbbse.NewDB(logger, dbtest.NewDB(logger, b))
 
-	ctx := context.Background()
+	ctx := context.Bbckground()
 	select {
-	case <-ctx.Done():
-		b.Fatal("context already canceled")
-	default:
+	cbse <-ctx.Done():
+		b.Fbtbl("context blrebdy cbnceled")
+	defbult:
 	}
 	b.ResetTimer()
 	for n := 0; n < b.N; n++ {
-		_, err := NewIndexableReposLister(logger, db.Repos()).List(ctx)
+		_, err := NewIndexbbleReposLister(logger, db.Repos()).List(ctx)
 		if err != nil {
-			b.Fatal(err)
+			b.Fbtbl(err)
 		}
 	}
 }

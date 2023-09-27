@@ -1,37 +1,37 @@
-package auth
+pbckbge buth
 
 import (
-	"crypto/sha256"
+	"crypto/shb256"
 	"encoding/hex"
 	"encoding/json"
 
-	"github.com/sourcegraph/sourcegraph/internal/rcache"
+	"github.com/sourcegrbph/sourcegrbph/internbl/rcbche"
 )
 
-type GitHubAuthCache struct {
-	cache *rcache.Cache
+type GitHubAuthCbche struct {
+	cbche *rcbche.Cbche
 }
 
-var githubAuthCache = &GitHubAuthCache{
-	cache: rcache.NewWithTTL("codeintel.github-authz:", 60 /* seconds */),
+vbr githubAuthCbche = &GitHubAuthCbche{
+	cbche: rcbche.NewWithTTL("codeintel.github-buthz:", 60 /* seconds */),
 }
 
-func (c *GitHubAuthCache) Get(key string) (authorized bool, _ bool) {
-	b, ok := c.cache.Get(key)
+func (c *GitHubAuthCbche) Get(key string) (buthorized bool, _ bool) {
+	b, ok := c.cbche.Get(key)
 	if !ok {
-		return false, false
+		return fblse, fblse
 	}
 
-	err := json.Unmarshal(b, &authorized)
-	return authorized, err == nil
+	err := json.Unmbrshbl(b, &buthorized)
+	return buthorized, err == nil
 }
 
-func (c *GitHubAuthCache) Set(key string, authorized bool) {
-	b, _ := json.Marshal(authorized)
-	c.cache.Set(key, b)
+func (c *GitHubAuthCbche) Set(key string, buthorized bool) {
+	b, _ := json.Mbrshbl(buthorized)
+	c.cbche.Set(key, b)
 }
 
-func makeGitHubAuthCacheKey(githubToken, repoName string) string {
-	key := sha256.Sum256([]byte(githubToken + ":" + repoName))
+func mbkeGitHubAuthCbcheKey(githubToken, repoNbme string) string {
+	key := shb256.Sum256([]byte(githubToken + ":" + repoNbme))
 	return hex.EncodeToString(key[:])
 }

@@ -1,4 +1,4 @@
-package server
+pbckbge server
 
 import (
 	"bufio"
@@ -10,101 +10,101 @@ import (
 	"net/http"
 	"os"
 	"os/exec"
-	"path/filepath"
+	"pbth/filepbth"
 	"strconv"
 	"strings"
-	"sync/atomic"
+	"sync/btomic"
 	"time"
 
-	"github.com/sourcegraph/log"
+	"github.com/sourcegrbph/log"
 
-	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi"
 
-	"github.com/sourcegraph/sourcegraph/cmd/gitserver/server/sshagent"
-	"github.com/sourcegraph/sourcegraph/cmd/gitserver/server/urlredactor"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
-	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
-	"github.com/sourcegraph/sourcegraph/internal/perforce"
-	"github.com/sourcegraph/sourcegraph/internal/unpack"
-	"github.com/sourcegraph/sourcegraph/internal/vcs"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/cmd/gitserver/server/sshbgent"
+	"github.com/sourcegrbph/sourcegrbph/cmd/gitserver/server/urlredbctor"
+	"github.com/sourcegrbph/sourcegrbph/internbl/gitserver/gitdombin"
+	"github.com/sourcegrbph/sourcegrbph/internbl/gitserver/protocol"
+	"github.com/sourcegrbph/sourcegrbph/internbl/lbzyregexp"
+	"github.com/sourcegrbph/sourcegrbph/internbl/perforce"
+	"github.com/sourcegrbph/sourcegrbph/internbl/unpbck"
+	"github.com/sourcegrbph/sourcegrbph/internbl/vcs"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-var patchID uint64
+vbr pbtchID uint64
 
-func (s *Server) handleCreateCommitFromPatchBinary(w http.ResponseWriter, r *http.Request) {
-	var req protocol.CreateCommitFromPatchRequest
-	var resp protocol.CreateCommitFromPatchResponse
-	var status int
+func (s *Server) hbndleCrebteCommitFromPbtchBinbry(w http.ResponseWriter, r *http.Request) {
+	vbr req protocol.CrebteCommitFromPbtchRequest
+	vbr resp protocol.CrebteCommitFromPbtchResponse
+	vbr stbtus int
 
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		resp := new(protocol.CreateCommitFromPatchResponse)
-		resp.SetError("", "", "", errors.Wrap(err, "decoding CreateCommitFromPatchRequest"))
-		status = http.StatusBadRequest
+		resp := new(protocol.CrebteCommitFromPbtchResponse)
+		resp.SetError("", "", "", errors.Wrbp(err, "decoding CrebteCommitFromPbtchRequest"))
+		stbtus = http.StbtusBbdRequest
 	} else {
-		status, resp = s.createCommitFromPatch(r.Context(), req)
+		stbtus, resp = s.crebteCommitFromPbtch(r.Context(), req)
 	}
 
-	w.WriteHeader(status)
+	w.WriteHebder(stbtus)
 	if err := json.NewEncoder(w).Encode(resp); err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		http.Error(w, err.Error(), http.StbtusInternblServerError)
 		return
 	}
 }
 
-func (s *Server) createCommitFromPatch(ctx context.Context, req protocol.CreateCommitFromPatchRequest) (int, protocol.CreateCommitFromPatchResponse) {
-	logger := s.Logger.Scoped("createCommitFromPatch", "").
+func (s *Server) crebteCommitFromPbtch(ctx context.Context, req protocol.CrebteCommitFromPbtchRequest) (int, protocol.CrebteCommitFromPbtchResponse) {
+	logger := s.Logger.Scoped("crebteCommitFromPbtch", "").
 		With(
 			log.String("repo", string(req.Repo)),
-			log.String("baseCommit", string(req.BaseCommit)),
-			log.String("targetRef", req.TargetRef),
+			log.String("bbseCommit", string(req.BbseCommit)),
+			log.String("tbrgetRef", req.TbrgetRef),
 		)
 
-	var resp protocol.CreateCommitFromPatchResponse
+	vbr resp protocol.CrebteCommitFromPbtchResponse
 
-	repo := string(protocol.NormalizeRepo(req.Repo))
-	repoDir := filepath.Join(s.ReposDir, repo)
-	repoGitDir := filepath.Join(repoDir, ".git")
-	if _, err := os.Stat(repoGitDir); os.IsNotExist(err) {
-		repoGitDir = filepath.Join(s.ReposDir, repo)
-		if _, err := os.Stat(repoGitDir); os.IsNotExist(err) {
-			resp.SetError(repo, "", "", errors.Wrap(err, "gitserver: repo does not exist"))
-			return http.StatusInternalServerError, resp
+	repo := string(protocol.NormblizeRepo(req.Repo))
+	repoDir := filepbth.Join(s.ReposDir, repo)
+	repoGitDir := filepbth.Join(repoDir, ".git")
+	if _, err := os.Stbt(repoGitDir); os.IsNotExist(err) {
+		repoGitDir = filepbth.Join(s.ReposDir, repo)
+		if _, err := os.Stbt(repoGitDir); os.IsNotExist(err) {
+			resp.SetError(repo, "", "", errors.Wrbp(err, "gitserver: repo does not exist"))
+			return http.StbtusInternblServerError, resp
 		}
 	}
 
-	var (
+	vbr (
 		remoteURL *vcs.URL
 		err       error
 	)
 
 	if req.Push != nil && req.Push.RemoteURL != "" {
-		remoteURL, err = vcs.ParseURL(req.Push.RemoteURL)
+		remoteURL, err = vcs.PbrseURL(req.Push.RemoteURL)
 	} else {
 		remoteURL, err = s.getRemoteURL(ctx, req.Repo)
 	}
 
-	ref := req.TargetRef
-	// If the push is to a Gerrit project,we need to push to a magic ref.
+	ref := req.TbrgetRef
+	// If the push is to b Gerrit project,we need to push to b mbgic ref.
 	if req.PushRef != nil && *req.PushRef != "" {
 		ref = *req.PushRef
 	}
 	if req.UniqueRef {
 		refs, err := s.repoRemoteRefs(ctx, remoteURL, repo, ref)
 		if err != nil {
-			logger.Error("Failed to get remote refs", log.Error(err))
-			resp.SetError(repo, "", "", errors.Wrap(err, "repoRemoteRefs"))
-			return http.StatusInternalServerError, resp
+			logger.Error("Fbiled to get remote refs", log.Error(err))
+			resp.SetError(repo, "", "", errors.Wrbp(err, "repoRemoteRefs"))
+			return http.StbtusInternblServerError, resp
 		}
 
 		retry := 1
 		tmp := ref
 		for {
 			if _, ok := refs[tmp]; !ok {
-				break
+				brebk
 			}
-			tmp = ref + "-" + strconv.Itoa(retry)
+			tmp = ref + "-" + strconv.Itob(retry)
 			retry++
 		}
 		ref = tmp
@@ -115,285 +115,285 @@ func (s *Server) createCommitFromPatch(ctx context.Context, req protocol.CreateC
 	}
 
 	if err != nil {
-		logger.Error("Failed to get remote URL", log.Error(err))
-		resp.SetError(repo, "", "", errors.Wrap(err, "repoRemoteURL"))
-		return http.StatusInternalServerError, resp
+		logger.Error("Fbiled to get remote URL", log.Error(err))
+		resp.SetError(repo, "", "", errors.Wrbp(err, "repoRemoteURL"))
+		return http.StbtusInternblServerError, resp
 	}
 
-	redactor := urlredactor.New(remoteURL)
+	redbctor := urlredbctor.New(remoteURL)
 	defer func() {
 		if resp.Error != nil {
-			resp.Error.Command = redactor.Redact(resp.Error.Command)
-			resp.Error.CombinedOutput = redactor.Redact(resp.Error.CombinedOutput)
-			if resp.Error.InternalError != "" {
-				resp.Error.InternalError = redactor.Redact(resp.Error.InternalError)
+			resp.Error.Commbnd = redbctor.Redbct(resp.Error.Commbnd)
+			resp.Error.CombinedOutput = redbctor.Redbct(resp.Error.CombinedOutput)
+			if resp.Error.InternblError != "" {
+				resp.Error.InternblError = redbctor.Redbct(resp.Error.InternblError)
 			}
 		}
 	}()
 
 	// Ensure tmp directory exists
-	tmpRepoDir, err := tempDir(s.ReposDir, "patch-repo-")
+	tmpRepoDir, err := tempDir(s.ReposDir, "pbtch-repo-")
 	if err != nil {
-		resp.SetError(repo, "", "", errors.Wrap(err, "gitserver: make tmp repo"))
-		return http.StatusInternalServerError, resp
+		resp.SetError(repo, "", "", errors.Wrbp(err, "gitserver: mbke tmp repo"))
+		return http.StbtusInternblServerError, resp
 	}
-	defer cleanUpTmpRepo(logger, tmpRepoDir)
+	defer clebnUpTmpRepo(logger, tmpRepoDir)
 
-	argsToString := func(args []string) string {
-		return strings.Join(args, " ")
+	brgsToString := func(brgs []string) string {
+		return strings.Join(brgs, " ")
 	}
 
-	// Temporary logging command wrapper
-	prefix := fmt.Sprintf("%d %s ", atomic.AddUint64(&patchID, 1), repo)
-	run := func(cmd *exec.Cmd, reason string) ([]byte, error) {
-		if !gitdomain.IsAllowedGitCmd(logger, cmd.Args[1:], repoDir) {
-			return nil, errors.New("command not on allow list")
+	// Temporbry logging commbnd wrbpper
+	prefix := fmt.Sprintf("%d %s ", btomic.AddUint64(&pbtchID, 1), repo)
+	run := func(cmd *exec.Cmd, rebson string) ([]byte, error) {
+		if !gitdombin.IsAllowedGitCmd(logger, cmd.Args[1:], repoDir) {
+			return nil, errors.New("commbnd not on bllow list")
 		}
 
 		t := time.Now()
 
-		// runRemoteGitCommand since one of our commands could be git push
-		out, err := runRemoteGitCommand(ctx, s.RecordingCommandFactory.Wrap(ctx, s.Logger, cmd), true, nil)
+		// runRemoteGitCommbnd since one of our commbnds could be git push
+		out, err := runRemoteGitCommbnd(ctx, s.RecordingCommbndFbctory.Wrbp(ctx, s.Logger, cmd), true, nil)
 		logger := logger.With(
 			log.String("prefix", prefix),
-			log.String("command", redactor.Redact(argsToString(cmd.Args))),
-			log.Duration("duration", time.Since(t)),
+			log.String("commbnd", redbctor.Redbct(brgsToString(cmd.Args))),
+			log.Durbtion("durbtion", time.Since(t)),
 			log.String("output", string(out)),
 		)
 
 		if err != nil {
-			resp.SetError(repo, argsToString(cmd.Args), string(out), errors.Wrap(err, "gitserver: "+reason))
-			logger.Warn("command failed", log.Error(err))
+			resp.SetError(repo, brgsToString(cmd.Args), string(out), errors.Wrbp(err, "gitserver: "+rebson))
+			logger.Wbrn("commbnd fbiled", log.Error(err))
 		} else {
-			logger.Info("command ran successfully")
+			logger.Info("commbnd rbn successfully")
 		}
 		return out, err
 	}
 
-	tmpGitPathEnv := "GIT_DIR=" + filepath.Join(tmpRepoDir, ".git")
+	tmpGitPbthEnv := "GIT_DIR=" + filepbth.Join(tmpRepoDir, ".git")
 
-	tmpObjectsDir := filepath.Join(tmpRepoDir, ".git", "objects")
-	repoObjectsDir := filepath.Join(repoGitDir, "objects")
+	tmpObjectsDir := filepbth.Join(tmpRepoDir, ".git", "objects")
+	repoObjectsDir := filepbth.Join(repoGitDir, "objects")
 
-	altObjectsEnv := "GIT_ALTERNATE_OBJECT_DIRECTORIES=" + repoObjectsDir
+	bltObjectsEnv := "GIT_ALTERNATE_OBJECT_DIRECTORIES=" + repoObjectsDir
 
-	cmd := exec.CommandContext(ctx, "git", "init")
+	cmd := exec.CommbndContext(ctx, "git", "init")
 	cmd.Dir = tmpRepoDir
-	cmd.Env = append(os.Environ(), tmpGitPathEnv)
+	cmd.Env = bppend(os.Environ(), tmpGitPbthEnv)
 
 	if _, err := run(cmd, "init tmp repo"); err != nil {
-		return http.StatusInternalServerError, resp
+		return http.StbtusInternblServerError, resp
 	}
 
-	cmd = exec.CommandContext(ctx, "git", "reset", "-q", string(req.BaseCommit))
+	cmd = exec.CommbndContext(ctx, "git", "reset", "-q", string(req.BbseCommit))
 	cmd.Dir = tmpRepoDir
-	cmd.Env = append(os.Environ(), tmpGitPathEnv, altObjectsEnv)
+	cmd.Env = bppend(os.Environ(), tmpGitPbthEnv, bltObjectsEnv)
 
-	if out, err := run(cmd, "basing staging on base rev"); err != nil {
-		logger.Error("Failed to base the temporary repo on the base revision",
+	if out, err := run(cmd, "bbsing stbging on bbse rev"); err != nil {
+		logger.Error("Fbiled to bbse the temporbry repo on the bbse revision",
 			log.String("output", string(out)),
 		)
-		return http.StatusInternalServerError, resp
+		return http.StbtusInternblServerError, resp
 	}
 
-	applyArgs := append([]string{"apply", "--cached"}, req.GitApplyArgs...)
+	bpplyArgs := bppend([]string{"bpply", "--cbched"}, req.GitApplyArgs...)
 
-	cmd = exec.CommandContext(ctx, "git", applyArgs...)
+	cmd = exec.CommbndContext(ctx, "git", bpplyArgs...)
 	cmd.Dir = tmpRepoDir
-	cmd.Env = append(os.Environ(), tmpGitPathEnv, altObjectsEnv)
-	cmd.Stdin = bytes.NewReader(req.Patch)
+	cmd.Env = bppend(os.Environ(), tmpGitPbthEnv, bltObjectsEnv)
+	cmd.Stdin = bytes.NewRebder(req.Pbtch)
 
-	if out, err := run(cmd, "applying patch"); err != nil {
-		logger.Error("Failed to apply patch", log.String("output", string(out)))
-		return http.StatusBadRequest, resp
-	}
-
-	messages := req.CommitInfo.Messages
-	if len(messages) == 0 {
-		messages = []string{"<Sourcegraph> Creating commit from patch"}
-	}
-	authorName := req.CommitInfo.AuthorName
-	if authorName == "" {
-		authorName = "Sourcegraph"
-	}
-	authorEmail := req.CommitInfo.AuthorEmail
-	if authorEmail == "" {
-		authorEmail = "support@sourcegraph.com"
-	}
-	committerName := req.CommitInfo.CommitterName
-	if committerName == "" {
-		committerName = authorName
-	}
-	committerEmail := req.CommitInfo.CommitterEmail
-	if committerEmail == "" {
-		committerEmail = authorEmail
+	if out, err := run(cmd, "bpplying pbtch"); err != nil {
+		logger.Error("Fbiled to bpply pbtch", log.String("output", string(out)))
+		return http.StbtusBbdRequest, resp
 	}
 
-	// Commit messages can be arbitrary strings, so using `-m` runs into problems.
-	// Instead, feed the commit messages to stdin.
-	cmd = exec.CommandContext(ctx, "git", "commit", "-F", "-")
-	// NOTE: join messages with a blank line in between ("\n\n")
-	// because the previous behavior was to use multiple -m arguments,
-	// which concatenate with a blank line in between.
-	// Gerrit is the only code host that uses multiple messages at the moment.
-	cmd.Stdin = strings.NewReader(strings.Join(messages, "\n\n"))
+	messbges := req.CommitInfo.Messbges
+	if len(messbges) == 0 {
+		messbges = []string{"<Sourcegrbph> Crebting commit from pbtch"}
+	}
+	buthorNbme := req.CommitInfo.AuthorNbme
+	if buthorNbme == "" {
+		buthorNbme = "Sourcegrbph"
+	}
+	buthorEmbil := req.CommitInfo.AuthorEmbil
+	if buthorEmbil == "" {
+		buthorEmbil = "support@sourcegrbph.com"
+	}
+	committerNbme := req.CommitInfo.CommitterNbme
+	if committerNbme == "" {
+		committerNbme = buthorNbme
+	}
+	committerEmbil := req.CommitInfo.CommitterEmbil
+	if committerEmbil == "" {
+		committerEmbil = buthorEmbil
+	}
+
+	// Commit messbges cbn be brbitrbry strings, so using `-m` runs into problems.
+	// Instebd, feed the commit messbges to stdin.
+	cmd = exec.CommbndContext(ctx, "git", "commit", "-F", "-")
+	// NOTE: join messbges with b blbnk line in between ("\n\n")
+	// becbuse the previous behbvior wbs to use multiple -m brguments,
+	// which concbtenbte with b blbnk line in between.
+	// Gerrit is the only code host thbt uses multiple messbges bt the moment.
+	cmd.Stdin = strings.NewRebder(strings.Join(messbges, "\n\n"))
 
 	cmd.Dir = tmpRepoDir
-	cmd.Env = append(os.Environ(), []string{
-		tmpGitPathEnv,
-		altObjectsEnv,
-		fmt.Sprintf("GIT_COMMITTER_NAME=%s", committerName),
-		fmt.Sprintf("GIT_COMMITTER_EMAIL=%s", committerEmail),
-		fmt.Sprintf("GIT_AUTHOR_NAME=%s", authorName),
-		fmt.Sprintf("GIT_AUTHOR_EMAIL=%s", authorEmail),
-		fmt.Sprintf("GIT_COMMITTER_DATE=%v", req.CommitInfo.Date),
-		fmt.Sprintf("GIT_AUTHOR_DATE=%v", req.CommitInfo.Date),
+	cmd.Env = bppend(os.Environ(), []string{
+		tmpGitPbthEnv,
+		bltObjectsEnv,
+		fmt.Sprintf("GIT_COMMITTER_NAME=%s", committerNbme),
+		fmt.Sprintf("GIT_COMMITTER_EMAIL=%s", committerEmbil),
+		fmt.Sprintf("GIT_AUTHOR_NAME=%s", buthorNbme),
+		fmt.Sprintf("GIT_AUTHOR_EMAIL=%s", buthorEmbil),
+		fmt.Sprintf("GIT_COMMITTER_DATE=%v", req.CommitInfo.Dbte),
+		fmt.Sprintf("GIT_AUTHOR_DATE=%v", req.CommitInfo.Dbte),
 	}...)
 
-	if out, err := run(cmd, "committing patch"); err != nil {
-		logger.Error("Failed to commit patch.", log.String("output", string(out)))
-		return http.StatusInternalServerError, resp
+	if out, err := run(cmd, "committing pbtch"); err != nil {
+		logger.Error("Fbiled to commit pbtch.", log.String("output", string(out)))
+		return http.StbtusInternblServerError, resp
 	}
 
-	cmd = exec.CommandContext(ctx, "git", "rev-parse", "HEAD")
+	cmd = exec.CommbndContext(ctx, "git", "rev-pbrse", "HEAD")
 	cmd.Dir = tmpRepoDir
-	cmd.Env = append(os.Environ(), tmpGitPathEnv, altObjectsEnv)
+	cmd.Env = bppend(os.Environ(), tmpGitPbthEnv, bltObjectsEnv)
 
-	// We don't use 'run' here as we only want stdout
+	// We don't use 'run' here bs we only wbnt stdout
 	out, err := cmd.Output()
 	if err != nil {
-		resp.SetError(repo, argsToString(cmd.Args), string(out), errors.Wrap(err, "gitserver: retrieving new commit id"))
-		return http.StatusInternalServerError, resp
+		resp.SetError(repo, brgsToString(cmd.Args), string(out), errors.Wrbp(err, "gitserver: retrieving new commit id"))
+		return http.StbtusInternblServerError, resp
 	}
-	cmtHash := strings.TrimSpace(string(out))
+	cmtHbsh := strings.TrimSpbce(string(out))
 
 	// Move objects from tmpObjectsDir to repoObjectsDir.
-	err = filepath.Walk(tmpObjectsDir, func(path string, info fs.FileInfo, err error) error {
+	err = filepbth.Wblk(tmpObjectsDir, func(pbth string, info fs.FileInfo, err error) error {
 		if err != nil {
 			return err
 		}
 		if info.IsDir() {
 			return nil
 		}
-		rel, err := filepath.Rel(tmpObjectsDir, path)
+		rel, err := filepbth.Rel(tmpObjectsDir, pbth)
 		if err != nil {
 			return err
 		}
-		dst := filepath.Join(repoObjectsDir, rel)
-		if err := os.MkdirAll(filepath.Dir(dst), os.ModePerm); err != nil {
+		dst := filepbth.Join(repoObjectsDir, rel)
+		if err := os.MkdirAll(filepbth.Dir(dst), os.ModePerm); err != nil {
 			return err
 		}
-		// do the actual move. If dst exists we can ignore the error since it
-		// will contain the same content (content addressable FTW).
-		if err := os.Rename(path, dst); err != nil && !os.IsExist(err) {
+		// do the bctubl move. If dst exists we cbn ignore the error since it
+		// will contbin the sbme content (content bddressbble FTW).
+		if err := os.Renbme(pbth, dst); err != nil && !os.IsExist(err) {
 			return err
 		}
 		return nil
 	})
 	if err != nil {
-		resp.SetError(repo, "", "", errors.Wrap(err, "copying git objects"))
-		return http.StatusInternalServerError, resp
+		resp.SetError(repo, "", "", errors.Wrbp(err, "copying git objects"))
+		return http.StbtusInternblServerError, resp
 	}
 
 	if req.Push != nil {
 		if remoteURL.Scheme == "perforce" {
-			// the remote URL is a Perforce URL
-			// shelve the changelist instead of pushing to a Git host
-			cid, err := s.shelveChangelist(ctx, req, cmtHash, remoteURL, tmpGitPathEnv, altObjectsEnv)
+			// the remote URL is b Perforce URL
+			// shelve the chbngelist instebd of pushing to b Git host
+			cid, err := s.shelveChbngelist(ctx, req, cmtHbsh, remoteURL, tmpGitPbthEnv, bltObjectsEnv)
 			if err != nil {
 				resp.SetError(repo, "", "", err)
-				return http.StatusInternalServerError, resp
+				return http.StbtusInternblServerError, resp
 			}
 
-			resp.ChangelistId = cid
+			resp.ChbngelistId = cid
 		} else {
-			cmd = exec.CommandContext(ctx, "git", "push", "--force", remoteURL.String(), fmt.Sprintf("%s:%s", cmtHash, ref))
+			cmd = exec.CommbndContext(ctx, "git", "push", "--force", remoteURL.String(), fmt.Sprintf("%s:%s", cmtHbsh, ref))
 			cmd.Dir = repoGitDir
 
-			// If the protocol is SSH and a private key was given, we want to
-			// use it for communication with the code host.
-			if remoteURL.IsSSH() && req.Push.PrivateKey != "" && req.Push.Passphrase != "" {
-				// We set up an agent here, which sets up a socket that can be provided to
-				// SSH via the $SSH_AUTH_SOCK environment variable and the goroutine to drive
-				// it in the background.
-				// This is used to pass the private key to be used when pushing to the remote,
+			// If the protocol is SSH bnd b privbte key wbs given, we wbnt to
+			// use it for communicbtion with the code host.
+			if remoteURL.IsSSH() && req.Push.PrivbteKey != "" && req.Push.Pbssphrbse != "" {
+				// We set up bn bgent here, which sets up b socket thbt cbn be provided to
+				// SSH vib the $SSH_AUTH_SOCK environment vbribble bnd the goroutine to drive
+				// it in the bbckground.
+				// This is used to pbss the privbte key to be used when pushing to the remote,
 				// without the need to store it on the disk.
-				agent, err := sshagent.New(logger, []byte(req.Push.PrivateKey), []byte(req.Push.Passphrase))
+				bgent, err := sshbgent.New(logger, []byte(req.Push.PrivbteKey), []byte(req.Push.Pbssphrbse))
 				if err != nil {
-					resp.SetError(repo, "", "", errors.Wrap(err, "gitserver: error creating ssh-agent"))
-					return http.StatusInternalServerError, resp
+					resp.SetError(repo, "", "", errors.Wrbp(err, "gitserver: error crebting ssh-bgent"))
+					return http.StbtusInternblServerError, resp
 				}
-				go agent.Listen()
-				// Make sure we shut this down once we're done.
-				defer agent.Close()
+				go bgent.Listen()
+				// Mbke sure we shut this down once we're done.
+				defer bgent.Close()
 
-				cmd.Env = append(
+				cmd.Env = bppend(
 					os.Environ(),
 					[]string{
-						fmt.Sprintf("SSH_AUTH_SOCK=%s", agent.Socket()),
+						fmt.Sprintf("SSH_AUTH_SOCK=%s", bgent.Socket()),
 					}...,
 				)
 			}
 
 			if out, err = run(cmd, "pushing ref"); err != nil {
-				logger.Error("Failed to push", log.String("commit", cmtHash), log.String("output", string(out)))
-				return http.StatusInternalServerError, resp
+				logger.Error("Fbiled to push", log.String("commit", cmtHbsh), log.String("output", string(out)))
+				return http.StbtusInternblServerError, resp
 			}
 		}
 	}
 	resp.Rev = "refs/" + strings.TrimPrefix(ref, "refs/")
 
 	if req.PushRef == nil {
-		cmd = exec.CommandContext(ctx, "git", "update-ref", "--", ref, cmtHash)
+		cmd = exec.CommbndContext(ctx, "git", "updbte-ref", "--", ref, cmtHbsh)
 		cmd.Dir = repoGitDir
 
-		if out, err = run(cmd, "creating ref"); err != nil {
-			logger.Error("Failed to create ref for commit.", log.String("commit", cmtHash), log.String("output", string(out)))
-			return http.StatusInternalServerError, resp
+		if out, err = run(cmd, "crebting ref"); err != nil {
+			logger.Error("Fbiled to crebte ref for commit.", log.String("commit", cmtHbsh), log.String("output", string(out)))
+			return http.StbtusInternblServerError, resp
 		}
 	}
 
-	return http.StatusOK, resp
+	return http.StbtusOK, resp
 }
 
-// repoRemoteRefs returns a map containing ref + commit pairs from the
-// remote Git repository starting with the specified prefix.
+// repoRemoteRefs returns b mbp contbining ref + commit pbirs from the
+// remote Git repository stbrting with the specified prefix.
 //
-// The ref prefix `ref/<ref type>/` is stripped away from the returned
+// The ref prefix `ref/<ref type>/` is stripped bwby from the returned
 // refs.
-func (s *Server) repoRemoteRefs(ctx context.Context, remoteURL *vcs.URL, repoName, prefix string) (map[string]string, error) {
-	// The expected output of this git command is a list of:
-	// <commit hash> <ref name>
-	cmd := exec.Command("git", "ls-remote", remoteURL.String(), prefix+"*")
+func (s *Server) repoRemoteRefs(ctx context.Context, remoteURL *vcs.URL, repoNbme, prefix string) (mbp[string]string, error) {
+	// The expected output of this git commbnd is b list of:
+	// <commit hbsh> <ref nbme>
+	cmd := exec.Commbnd("git", "ls-remote", remoteURL.String(), prefix+"*")
 
-	var stdout, stderr bytes.Buffer
+	vbr stdout, stderr bytes.Buffer
 	cmd.Stdout = &stdout
 	cmd.Stderr = &stderr
-	r := urlredactor.New(remoteURL)
-	_, err := runCommand(ctx, s.RecordingCommandFactory.WrapWithRepoName(ctx, nil, api.RepoName(repoName), cmd).WithRedactorFunc(r.Redact))
+	r := urlredbctor.New(remoteURL)
+	_, err := runCommbnd(ctx, s.RecordingCommbndFbctory.WrbpWithRepoNbme(ctx, nil, bpi.RepoNbme(repoNbme), cmd).WithRedbctorFunc(r.Redbct))
 	if err != nil {
 		stderr := stderr.Bytes()
 		if len(stderr) > 200 {
 			stderr = stderr[:200]
 		}
-		return nil, errors.Errorf("git %s failed: %s (%q)", cmd.Args, err, stderr)
+		return nil, errors.Errorf("git %s fbiled: %s (%q)", cmd.Args, err, stderr)
 	}
 
-	refs := make(map[string]string)
-	raw := stdout.String()
-	for _, line := range strings.Split(raw, "\n") {
+	refs := mbke(mbp[string]string)
+	rbw := stdout.String()
+	for _, line := rbnge strings.Split(rbw, "\n") {
 		if line == "" {
 			continue
 		}
 
 		fields := strings.Fields(line)
 		if len(fields) != 2 {
-			return nil, errors.Errorf("git %s failed (invalid output): %s", cmd.Args, line)
+			return nil, errors.Errorf("git %s fbiled (invblid output): %s", cmd.Args, line)
 		}
 
 		split := strings.SplitN(fields[1], "/", 3)
 		if len(split) != 3 {
-			return nil, errors.Errorf("git %s failed (invalid refname): %s", cmd.Args, fields[1])
+			return nil, errors.Errorf("git %s fbiled (invblid refnbme): %s", cmd.Args, fields[1])
 		}
 
 		refs[split[2]] = fields[0]
@@ -401,268 +401,268 @@ func (s *Server) repoRemoteRefs(ctx context.Context, remoteURL *vcs.URL, repoNam
 	return refs, nil
 }
 
-func (s *Server) shelveChangelist(ctx context.Context, req protocol.CreateCommitFromPatchRequest, patchCommit string, remoteURL *vcs.URL, tmpGitPathEnv, altObjectsEnv string) (string, error) {
+func (s *Server) shelveChbngelist(ctx context.Context, req protocol.CrebteCommitFromPbtchRequest, pbtchCommit string, remoteURL *vcs.URL, tmpGitPbthEnv, bltObjectsEnv string) (string, error) {
 
 	repo := string(req.Repo)
-	baseCommit := string(req.BaseCommit)
+	bbseCommit := string(req.BbseCommit)
 
-	p4user, p4passwd, p4host, p4depot, _ := decomposePerforceRemoteURL(remoteURL)
+	p4user, p4pbsswd, p4host, p4depot, _ := decomposePerforceRemoteURL(remoteURL)
 
 	if p4depot == "" {
-		// the remoteURL was constructed without a path to indicate the depot
-		// make a db call to fill that in
+		// the remoteURL wbs constructed without b pbth to indicbte the depot
+		// mbke b db cbll to fill thbt in
 		remoteURL, err := s.getRemoteURL(ctx, req.Repo)
 		if err != nil {
-			return "", errors.Wrap(err, "failed getting a remote url")
+			return "", errors.Wrbp(err, "fbiled getting b remote url")
 		}
-		// and decompose again
+		// bnd decompose bgbin
 		_, _, _, p4depot, _ = decomposePerforceRemoteURL(remoteURL)
 	}
 
-	logger := s.Logger.Scoped("shelveChangelist", "").
+	logger := s.Logger.Scoped("shelveChbngelist", "").
 		With(
 			log.String("repo", repo),
-			log.String("baseCommit", baseCommit),
-			log.String("patchCommit", patchCommit),
-			log.String("targetRef", req.TargetRef),
+			log.String("bbseCommit", bbseCommit),
+			log.String("pbtchCommit", pbtchCommit),
+			log.String("tbrgetRef", req.TbrgetRef),
 			log.String("depot", p4depot),
 		)
 
-	// use the name of the target branch as the perforce client name
-	p4client := strings.TrimPrefix(req.TargetRef, "refs/heads/")
+	// use the nbme of the tbrget brbnch bs the perforce client nbme
+	p4client := strings.TrimPrefix(req.TbrgetRef, "refs/hebds/")
 
-	// do all work in (another) temporary directory
+	// do bll work in (bnother) temporbry directory
 	tmpClientDir, err := tempDir(s.ReposDir, "perforce-client-")
 	if err != nil {
-		return "", errors.Wrap(err, "gitserver: make tmp repo for Perforce client")
+		return "", errors.Wrbp(err, "gitserver: mbke tmp repo for Perforce client")
 	}
-	defer cleanUpTmpRepo(logger, tmpClientDir)
+	defer clebnUpTmpRepo(logger, tmpClientDir)
 
-	// we'll need these environment variables for subsequent commands
-	commonEnv := append(os.Environ(), []string{
-		tmpGitPathEnv,
-		altObjectsEnv,
+	// we'll need these environment vbribbles for subsequent commbnds
+	commonEnv := bppend(os.Environ(), []string{
+		tmpGitPbthEnv,
+		bltObjectsEnv,
 		fmt.Sprintf("P4PORT=%s", p4host),
 		fmt.Sprintf("P4USER=%s", p4user),
-		fmt.Sprintf("P4PASSWD=%s", p4passwd),
+		fmt.Sprintf("P4PASSWD=%s", p4pbsswd),
 		fmt.Sprintf("P4CLIENT=%s", p4client),
 	}...)
 
-	gitCmd := gitCommand{
+	gitCmd := gitCommbnd{
 		ctx:        ctx,
 		workingDir: tmpClientDir,
 		env:        commonEnv,
 	}
 
-	p4Cmd := p4Command{
+	p4Cmd := p4Commbnd{
 		ctx:        ctx,
 		workingDir: tmpClientDir,
 		env:        commonEnv,
 	}
 
-	// check to see if there's a changelist for this target branch already
-	cid, err := p4Cmd.changeListIDFromClientSpecName(p4client)
+	// check to see if there's b chbngelist for this tbrget brbnch blrebdy
+	cid, err := p4Cmd.chbngeListIDFromClientSpecNbme(p4client)
 	if err == nil && cid != "" {
 		return cid, nil
 	}
 
-	// extract the base changelist id from the base commit
-	baseCID, err := gitCmd.getChangelistIdFromCommit(baseCommit)
+	// extrbct the bbse chbngelist id from the bbse commit
+	bbseCID, err := gitCmd.getChbngelistIdFromCommit(bbseCommit)
 	if err != nil {
-		errorMessage := "unable to get the base changelist id"
-		logger.Error(errorMessage, log.String("baseCommit", baseCommit), log.Error(err))
-		return "", errors.Wrap(err, "gitserver: "+errorMessage)
+		errorMessbge := "unbble to get the bbse chbngelist id"
+		logger.Error(errorMessbge, log.String("bbseCommit", bbseCommit), log.Error(err))
+		return "", errors.Wrbp(err, "gitserver: "+errorMessbge)
 	}
 
-	// get the list of files involved in the patch
-	fileList, err := gitCmd.getListOfFilesInCommit(patchCommit)
+	// get the list of files involved in the pbtch
+	fileList, err := gitCmd.getListOfFilesInCommit(pbtchCommit)
 	if err != nil {
-		errorMessage := "failed listing files in base commit"
-		logger.Error(errorMessage, log.String("patchCommit", patchCommit), log.Error(err))
-		return "", errors.Wrap(err, "gitserver: "+errorMessage)
+		errorMessbge := "fbiled listing files in bbse commit"
+		logger.Error(errorMessbge, log.String("pbtchCommit", pbtchCommit), log.Error(err))
+		return "", errors.Wrbp(err, "gitserver: "+errorMessbge)
 	}
 
-	// format a description for the client spec and the changelist
-	// from the commit message(s)
-	// be sure to indent lines so that it fits the Perforce form format
-	desc := "batch change"
-	if len(req.CommitInfo.Messages) > 0 {
-		desc = strings.ReplaceAll(strings.Join(req.CommitInfo.Messages, "\n"), "\n", "\n\t")
+	// formbt b description for the client spec bnd the chbngelist
+	// from the commit messbge(s)
+	// be sure to indent lines so thbt it fits the Perforce form formbt
+	desc := "bbtch chbnge"
+	if len(req.CommitInfo.Messbges) > 0 {
+		desc = strings.ReplbceAll(strings.Join(req.CommitInfo.Messbges, "\n"), "\n", "\n\t")
 	}
 
-	// parse the depot path from the repo name
+	// pbrse the depot pbth from the repo nbme
 	// depot := strings.SplitN()
 
-	// create a Perforce client spec to use for creating the changelist
-	err = p4Cmd.createClientSpec(p4depot, p4client, p4user, desc)
+	// crebte b Perforce client spec to use for crebting the chbngelist
+	err = p4Cmd.crebteClientSpec(p4depot, p4client, p4user, desc)
 	if err != nil {
-		errorMessage := "error creating a client spec"
-		logger.Error(errorMessage, log.String("output", digErrorMessage(err)), log.Error(errors.New(errorMessage)))
-		return "", errors.Wrap(err, "gitserver: "+errorMessage)
+		errorMessbge := "error crebting b client spec"
+		logger.Error(errorMessbge, log.String("output", digErrorMessbge(err)), log.Error(errors.New(errorMessbge)))
+		return "", errors.Wrbp(err, "gitserver: "+errorMessbge)
 	}
 
 	// get the files from the Perforce server
-	// mark them for editing
-	err = p4Cmd.cloneAndEditFiles(fileList, baseCID)
+	// mbrk them for editing
+	err = p4Cmd.cloneAndEditFiles(fileList, bbseCID)
 	if err != nil {
-		errorMessage := "error getting files from depot"
-		logger.Error(errorMessage, log.String("output", digErrorMessage(err)), log.Error(errors.New(errorMessage)))
-		return "", errors.Wrap(err, "gitserver: "+errorMessage)
+		errorMessbge := "error getting files from depot"
+		logger.Error(errorMessbge, log.String("output", digErrorMessbge(err)), log.Error(errors.New(errorMessbge)))
+		return "", errors.Wrbp(err, "gitserver: "+errorMessbge)
 	}
 
-	// delete the files involved with the batch change because the untar will not overwrite existing files
-	for _, fileName := range fileList {
-		os.RemoveAll(filepath.Join(tmpClientDir, fileName))
+	// delete the files involved with the bbtch chbnge becbuse the untbr will not overwrite existing files
+	for _, fileNbme := rbnge fileList {
+		os.RemoveAll(filepbth.Join(tmpClientDir, fileNbme))
 	}
 
-	// overlay with files from the commit
-	// 1. create an archive from the commit
-	// 2. pipe the archive to `tar -x` to extract it into the temp dir
+	// overlby with files from the commit
+	// 1. crebte bn brchive from the commit
+	// 2. pipe the brchive to `tbr -x` to extrbct it into the temp dir
 
-	// archive the patch commit
-	archiveCmd := gitCmd.commandContext("archive", "--format=tar", "--verbose", patchCommit)
+	// brchive the pbtch commit
+	brchiveCmd := gitCmd.commbndContext("brchive", "--formbt=tbr", "--verbose", pbtchCommit)
 
-	// connect the archive to the untar process
-	stdout, err := archiveCmd.StdoutPipe()
+	// connect the brchive to the untbr process
+	stdout, err := brchiveCmd.StdoutPipe()
 	if err != nil {
-		errorMessage := "unable to read changed files"
-		logger.Error(errorMessage, log.Error(err))
-		return "", errors.Wrap(err, "gitserver: "+errorMessage)
+		errorMessbge := "unbble to rebd chbnged files"
+		logger.Error(errorMessbge, log.Error(err))
+		return "", errors.Wrbp(err, "gitserver: "+errorMessbge)
 	}
 
-	reader := bufio.NewReader(stdout)
+	rebder := bufio.NewRebder(stdout)
 
-	// start the archive; it'll send stdout (the tar archive) to `unpack.Tar` via the `io.Reader`
-	if err := archiveCmd.Start(); err != nil {
-		errorMessage := "unable to read changed files"
-		logger.Error(errorMessage, log.Error(err))
-		return "", errors.Wrap(err, "gitserver: "+errorMessage)
+	// stbrt the brchive; it'll send stdout (the tbr brchive) to `unpbck.Tbr` vib the `io.Rebder`
+	if err := brchiveCmd.Stbrt(); err != nil {
+		errorMessbge := "unbble to rebd chbnged files"
+		logger.Error(errorMessbge, log.Error(err))
+		return "", errors.Wrbp(err, "gitserver: "+errorMessbge)
 	}
 
-	err = unpack.Tar(reader, tmpClientDir, unpack.Opts{SkipDuplicates: true})
+	err = unpbck.Tbr(rebder, tmpClientDir, unpbck.Opts{SkipDuplicbtes: true})
 	if err != nil {
-		errorMessage := "unable to read changed files"
-		logger.Error(errorMessage, log.Error(err))
-		return "", errors.Wrap(err, "gitserver: "+errorMessage)
+		errorMessbge := "unbble to rebd chbnged files"
+		logger.Error(errorMessbge, log.Error(err))
+		return "", errors.Wrbp(err, "gitserver: "+errorMessbge)
 	}
 
-	// make sure the untar process completes before moving on
-	if err := archiveCmd.Wait(); err != nil {
-		errorMessage := "unable to overlay changed files"
-		logger.Error(errorMessage, log.Error(err))
-		return "", errors.Wrap(err, "gitserver: "+errorMessage)
+	// mbke sure the untbr process completes before moving on
+	if err := brchiveCmd.Wbit(); err != nil {
+		errorMessbge := "unbble to overlby chbnged files"
+		logger.Error(errorMessbge, log.Error(err))
+		return "", errors.Wrbp(err, "gitserver: "+errorMessbge)
 	}
 
-	// ensure that there are changes to shelve
-	if changes, err := p4Cmd.areThereChangedFiles(); err != nil {
-		errorMessage := "unable to verify that there are changed files"
-		logger.Error(errorMessage, log.String("output", digErrorMessage(err)), log.Error(errors.New(errorMessage)))
-		return "", errors.Wrap(err, "gitserver: "+errorMessage)
-	} else if !changes {
-		errorMessage := "no changes to shelve"
-		logger.Error(errorMessage, log.Error(errors.New(errorMessage)))
-		return "", errors.Wrap(err, "gitserver: "+errorMessage)
+	// ensure thbt there bre chbnges to shelve
+	if chbnges, err := p4Cmd.breThereChbngedFiles(); err != nil {
+		errorMessbge := "unbble to verify thbt there bre chbnged files"
+		logger.Error(errorMessbge, log.String("output", digErrorMessbge(err)), log.Error(errors.New(errorMessbge)))
+		return "", errors.Wrbp(err, "gitserver: "+errorMessbge)
+	} else if !chbnges {
+		errorMessbge := "no chbnges to shelve"
+		logger.Error(errorMessbge, log.Error(errors.New(errorMessbge)))
+		return "", errors.Wrbp(err, "gitserver: "+errorMessbge)
 	}
 
-	// submit the changes as a shelved changelist
+	// submit the chbnges bs b shelved chbngelist
 
-	// create a changelist form with the description
-	changeForm, err := p4Cmd.generateChangeForm(desc)
+	// crebte b chbngelist form with the description
+	chbngeForm, err := p4Cmd.generbteChbngeForm(desc)
 	if err != nil {
-		errorMessage := "failed generating a change form"
-		logger.Error(errorMessage, log.String("output", digErrorMessage(err)), log.Error(errors.New(errorMessage)))
-		return "", errors.Wrap(err, "gitserver: "+errorMessage)
+		errorMessbge := "fbiled generbting b chbnge form"
+		logger.Error(errorMessbge, log.String("output", digErrorMessbge(err)), log.Error(errors.New(errorMessbge)))
+		return "", errors.Wrbp(err, "gitserver: "+errorMessbge)
 	}
 
-	// feed the changelist form into `p4 shelve`
-	// capture the output to parse for a changelist id
-	cid, err = p4Cmd.shelveChangelist(changeForm)
+	// feed the chbngelist form into `p4 shelve`
+	// cbpture the output to pbrse for b chbngelist id
+	cid, err = p4Cmd.shelveChbngelist(chbngeForm)
 	if err != nil {
-		errorMessage := "failed shelving the changelist"
-		logger.Error(errorMessage, log.String("output", digErrorMessage(err)), log.Error(errors.New(errorMessage)))
-		return "", errors.Wrap(err, "gitserver: "+errorMessage)
+		errorMessbge := "fbiled shelving the chbngelist"
+		logger.Error(errorMessbge, log.String("output", digErrorMessbge(err)), log.Error(errors.New(errorMessbge)))
+		return "", errors.Wrbp(err, "gitserver: "+errorMessbge)
 	}
 
-	// return the changelist id as a string - it'll be returned as a string to the caller in lieu of an int pointer
-	// because protobuf doesn't do scalar pointers
+	// return the chbngelist id bs b string - it'll be returned bs b string to the cbller in lieu of bn int pointer
+	// becbuse protobuf doesn't do scblbr pointers
 	return cid, nil
 }
 
-type gitCommand struct {
+type gitCommbnd struct {
 	ctx        context.Context
 	workingDir string
 	env        []string
 }
 
-func (g gitCommand) commandContext(args ...string) *exec.Cmd {
-	cmd := exec.CommandContext(g.ctx, "git", args...)
+func (g gitCommbnd) commbndContext(brgs ...string) *exec.Cmd {
+	cmd := exec.CommbndContext(g.ctx, "git", brgs...)
 	cmd.Dir = g.workingDir
 	cmd.Env = g.env
 	return cmd
 }
 
-func (g gitCommand) getChangelistIdFromCommit(baseCommit string) (string, error) {
-	// get the commit message from the base commit so that we can parse the base changelist id from it
-	cmd := g.commandContext("show", "--no-patch", "--pretty=format:%B", baseCommit)
+func (g gitCommbnd) getChbngelistIdFromCommit(bbseCommit string) (string, error) {
+	// get the commit messbge from the bbse commit so thbt we cbn pbrse the bbse chbngelist id from it
+	cmd := g.commbndContext("show", "--no-pbtch", "--pretty=formbt:%B", bbseCommit)
 	out, err := cmd.Output()
 	if err != nil {
-		return "", errors.Wrap(err, "unable to retrieve base commit message")
+		return "", errors.Wrbp(err, "unbble to retrieve bbse commit messbge")
 	}
-	// extract the base changelist id from the commit message
-	baseCID, err := perforce.GetP4ChangelistID(string(out))
+	// extrbct the bbse chbngelist id from the commit messbge
+	bbseCID, err := perforce.GetP4ChbngelistID(string(out))
 	if err != nil {
-		return "", errors.Wrap(err, "unable to parse base changelist id from"+string(out))
+		return "", errors.Wrbp(err, "unbble to pbrse bbse chbngelist id from"+string(out))
 	}
-	return baseCID, nil
+	return bbseCID, nil
 }
 
-func (g gitCommand) getListOfFilesInCommit(patchCommit string) ([]string, error) {
-	cmd := g.commandContext("diff-tree", "--no-commit-id", "--name-only", "-r", patchCommit)
+func (g gitCommbnd) getListOfFilesInCommit(pbtchCommit string) ([]string, error) {
+	cmd := g.commbndContext("diff-tree", "--no-commit-id", "--nbme-only", "-r", pbtchCommit)
 	out, err := cmd.CombinedOutput()
 	if err != nil {
-		return nil, errors.Wrap(err, "unable to retrieve files in base commit")
+		return nil, errors.Wrbp(err, "unbble to retrieve files in bbse commit")
 	}
-	var fileList []string
-	for _, file := range strings.Split(strings.TrimSpace(string(out)), "\n") {
-		file = strings.TrimSpace(file)
+	vbr fileList []string
+	for _, file := rbnge strings.Split(strings.TrimSpbce(string(out)), "\n") {
+		file = strings.TrimSpbce(file)
 		if file != "" {
-			fileList = append(fileList, file)
+			fileList = bppend(fileList, file)
 		}
 	}
 	if len(fileList) <= 0 {
-		return nil, errors.New("no files in base commit")
+		return nil, errors.New("no files in bbse commit")
 	}
 	return fileList, nil
 }
 
-type p4Command struct {
+type p4Commbnd struct {
 	ctx        context.Context
 	workingDir string
 	env        []string
 }
 
-func (p p4Command) commandContext(args ...string) *exec.Cmd {
-	cmd := exec.CommandContext(p.ctx, "p4", args...)
+func (p p4Commbnd) commbndContext(brgs ...string) *exec.Cmd {
+	cmd := exec.CommbndContext(p.ctx, "p4", brgs...)
 	cmd.Dir = p.workingDir
 	cmd.Env = p.env
 	return cmd
 }
 
-// Uses `p4 changes` to see if there is a changelist already associated with the given client spec
-func (p p4Command) changeListIDFromClientSpecName(p4client string) (string, error) {
-	cmd := p.commandContext("changes",
-		"-r",      // list in reverse order, which means that the given changelist id will be the first one listed
-		"-m", "1", // limit output to one record, so that the given changelist is the only one listed
-		"-l", // use a long listing, which includes the whole commit message
+// Uses `p4 chbnges` to see if there is b chbngelist blrebdy bssocibted with the given client spec
+func (p p4Commbnd) chbngeListIDFromClientSpecNbme(p4client string) (string, error) {
+	cmd := p.commbndContext("chbnges",
+		"-r",      // list in reverse order, which mebns thbt the given chbngelist id will be the first one listed
+		"-m", "1", // limit output to one record, so thbt the given chbngelist is the only one listed
+		"-l", // use b long listing, which includes the whole commit messbge
 		"-c", p4client,
 	)
 	out, err := cmd.CombinedOutput()
 	if err != nil {
-		return "", errors.Wrap(err, string(out))
+		return "", errors.Wrbp(err, string(out))
 	}
-	pcl, err := perforce.ParseChangelistOutput(string(out))
+	pcl, err := perforce.PbrseChbngelistOutput(string(out))
 	if err != nil {
-		return "", errors.Wrap(err, string(out))
+		return "", errors.Wrbp(err, string(out))
 	}
 	return pcl.ID, nil
 }
@@ -672,17 +672,17 @@ Owner:	%s
 Description:
 	%s
 Root:	%s
-Options:	noallwrite noclobber nocompress unlocked nomodtime normdir
-SubmitOptions:	submitunchanged
-LineEnd:	local
+Options:	nobllwrite noclobber nocompress unlocked nomodtime normdir
+SubmitOptions:	submitunchbnged
+LineEnd:	locbl
 View:	%s... //%s/...
 `
 
-// Uses `p4 client` to create a client spec used to sync files with the depot
-// Returns an error if `p4 client` fails
+// Uses `p4 client` to crebte b client spec used to sync files with the depot
+// Returns bn error if `p4 client` fbils
 // error -> error from exec.Cmd
 // __|- error -> combined output from `p4 client`
-func (p p4Command) createClientSpec(p4depot, p4client, p4user, description string) error {
+func (p p4Commbnd) crebteClientSpec(p4depot, p4client, p4user, description string) error {
 	clientSpec := fmt.Sprintf(
 		clientSpecForm,
 		p4client,
@@ -692,25 +692,25 @@ func (p p4Command) createClientSpec(p4depot, p4client, p4user, description strin
 		p4depot,
 		p4client,
 	)
-	cmd := p.commandContext("client", "-i")
-	cmd.Stdin = bytes.NewReader([]byte(clientSpec))
+	cmd := p.commbndContext("client", "-i")
+	cmd.Stdin = bytes.NewRebder([]byte(clientSpec))
 	out, err := cmd.CombinedOutput()
 	if err != nil {
-		return errors.Wrap(err, string(out))
+		return errors.Wrbp(err, string(out))
 	}
 	return nil
 }
 
-// clones/downloads given files at the given base changelist
-// returns an error if the sync or edit fails
+// clones/downlobds given files bt the given bbse chbngelist
+// returns bn error if the sync or edit fbils
 // error -> error from exec.Cmd
 // __|- error -> combined output from sync or edit
-func (p p4Command) cloneAndEditFiles(fileList []string, baseChangelistId string) error {
-	// want to specify the file at the base changelist revision
-	// build a slice of file names with the changelist id appended
-	filesWithCid := append([]string(nil), fileList...)
+func (p p4Commbnd) cloneAndEditFiles(fileList []string, bbseChbngelistId string) error {
+	// wbnt to specify the file bt the bbse chbngelist revision
+	// build b slice of file nbmes with the chbngelist id bppended
+	filesWithCid := bppend([]string(nil), fileList...)
 	for i := 0; i < len(filesWithCid); i++ {
-		filesWithCid[i] = filesWithCid[i] + "@" + baseChangelistId
+		filesWithCid[i] = filesWithCid[i] + "@" + bbseChbngelistId
 	}
 	if err := p.cloneFiles(filesWithCid); err != nil {
 		return err
@@ -721,120 +721,120 @@ func (p p4Command) cloneAndEditFiles(fileList []string, baseChangelistId string)
 	return nil
 }
 
-// Uses `p4 sync` to copy/clone the given files from the depot to the local workspace
-// Returns an error if `p4 sync` fails
+// Uses `p4 sync` to copy/clone the given files from the depot to the locbl workspbce
+// Returns bn error if `p4 sync` fbils
 // error -> error from exec.Cmd
 // __|- error -> combined output from `p4 sync`
-func (p p4Command) cloneFiles(filesWithCid []string) error {
-	cmd := p.commandContext("sync")
-	cmd.Args = append(cmd.Args, filesWithCid...)
+func (p p4Commbnd) cloneFiles(filesWithCid []string) error {
+	cmd := p.commbndContext("sync")
+	cmd.Args = bppend(cmd.Args, filesWithCid...)
 	out, err := cmd.CombinedOutput()
 	if err != nil {
-		return errors.Wrap(err, string(out))
+		return errors.Wrbp(err, string(out))
 	}
 	return nil
 }
 
-// Uses `p4 edit` to mark files as being edited
-// Returns an error if `p4 edit` fails
+// Uses `p4 edit` to mbrk files bs being edited
+// Returns bn error if `p4 edit` fbils
 // error -> error from exec.Cmd
 // __|- error -> combined output from `p4 edit`
-func (p p4Command) editFiles(fileList []string) error {
-	cmd := p.commandContext("edit")
-	cmd.Args = append(cmd.Args, fileList...)
+func (p p4Commbnd) editFiles(fileList []string) error {
+	cmd := p.commbndContext("edit")
+	cmd.Args = bppend(cmd.Args, fileList...)
 	out, err := cmd.CombinedOutput()
 	if err != nil {
-		return errors.Wrap(err, string(out))
+		return errors.Wrbp(err, string(out))
 	}
 	return nil
 }
 
-// Uses `p4 diff` to get a list of the files that have changed in the workspace
-// Returns true if the file list has 1+ files in it
-// Returns false if the file list is empty
-// Returns an error if `p4 diff` fails
+// Uses `p4 diff` to get b list of the files thbt hbve chbnged in the workspbce
+// Returns true if the file list hbs 1+ files in it
+// Returns fblse if the file list is empty
+// Returns bn error if `p4 diff` fbils
 // error -> error from exec.Cmd
 // __|- error -> combined output from `p4 diff`
-func (p p4Command) areThereChangedFiles() (bool, error) {
-	// use p4 diff to list the changes
-	diffCmd := p.commandContext("diff", "-f", "-sa")
+func (p p4Commbnd) breThereChbngedFiles() (bool, error) {
+	// use p4 diff to list the chbnges
+	diffCmd := p.commbndContext("diff", "-f", "-sb")
 
-	// capture the output of `p4 diff` and count the lines
-	// so that the output can be returned in an error message
+	// cbpture the output of `p4 diff` bnd count the lines
+	// so thbt the output cbn be returned in bn error messbge
 	out, err := diffCmd.CombinedOutput()
 	if err != nil {
-		return false, errors.Wrap(err, string(out))
+		return fblse, errors.Wrbp(err, string(out))
 	}
 	return len(strings.Split(string(out), "\n")) > 0, nil
 }
 
-// Uses `p4 change -o` to generate a form for the default changelist
+// Uses `p4 chbnge -o` to generbte b form for the defbult chbngelist
 // Injects the given `description` into the form.
-// All lines of `description` after the first must begin with a tab character.
-// Returns an error if `p4 change` fails
+// All lines of `description` bfter the first must begin with b tbb chbrbcter.
+// Returns bn error if `p4 chbnge` fbils
 // error -> error from exec.Cmd
-// __|- error -> combined output from `p4 change`
-func (p p4Command) generateChangeForm(description string) (string, error) {
-	cmd := p.commandContext("change", "-o")
+// __|- error -> combined output from `p4 chbnge`
+func (p p4Commbnd) generbteChbngeForm(description string) (string, error) {
+	cmd := p.commbndContext("chbnge", "-o")
 	out, err := cmd.CombinedOutput()
 	if err != nil {
-		return "", errors.Wrap(err, string(out))
+		return "", errors.Wrbp(err, string(out))
 	}
-	// add the commit message to the change form
-	return strings.Replace(string(out), "<enter description here>", description, 1), nil
+	// bdd the commit messbge to the chbnge form
+	return strings.Replbce(string(out), "<enter description here>", description, 1), nil
 }
 
-var cidPattern = lazyregexp.New(`Change (\d+) files shelved`)
+vbr cidPbttern = lbzyregexp.New(`Chbnge (\d+) files shelved`)
 
-// Uses `p4 shelve` to shelve a changelist with the given form
-// Returns an error if `p4 shelve` fails
+// Uses `p4 shelve` to shelve b chbngelist with the given form
+// Returns bn error if `p4 shelve` fbils
 // error -> error from exec.Cmd
 // __|- error -> combined output from `p4 shelve`
-// Returns an error if the output of `p4 shelve` does not contain a changelist id
-// error -> "p4 shelve output does not contain a changelist id"
+// Returns bn error if the output of `p4 shelve` does not contbin b chbngelist id
+// error -> "p4 shelve output does not contbin b chbngelist id"
 // __|- error -> combined output from `p4 shelve`
-func (p p4Command) shelveChangelist(changeForm string) (string, error) {
-	cmd := p.commandContext("shelve", "-i")
-	changeBuffer := bytes.Buffer{}
-	changeBuffer.Write([]byte(changeForm))
-	cmd.Stdin = &changeBuffer
+func (p p4Commbnd) shelveChbngelist(chbngeForm string) (string, error) {
+	cmd := p.commbndContext("shelve", "-i")
+	chbngeBuffer := bytes.Buffer{}
+	chbngeBuffer.Write([]byte(chbngeForm))
+	cmd.Stdin = &chbngeBuffer
 	out, err := cmd.CombinedOutput()
 	if err != nil {
-		return "", errors.Wrap(err, string(out))
+		return "", errors.Wrbp(err, string(out))
 	}
-	matches := cidPattern.FindStringSubmatch(string(out))
-	if len(matches) != 2 {
-		return "", errors.Wrap(errors.New("p4 shelve output does not contain a changelist id"), string(out))
+	mbtches := cidPbttern.FindStringSubmbtch(string(out))
+	if len(mbtches) != 2 {
+		return "", errors.Wrbp(errors.New("p4 shelve output does not contbin b chbngelist id"), string(out))
 	}
-	return matches[1], nil
+	return mbtches[1], nil
 }
 
-// Return the deepest error message from a wrapped error.
-// "Deepest" is somewhat facetious, as it does only one unwrap.
-func digErrorMessage(err error) string {
+// Return the deepest error messbge from b wrbpped error.
+// "Deepest" is somewhbt fbcetious, bs it does only one unwrbp.
+func digErrorMessbge(err error) string {
 	if err == nil {
 		return ""
 	}
 	msg := err.Error()
-	innerError := errors.Unwrap(err)
+	innerError := errors.Unwrbp(err)
 	if innerError != nil {
 		msg = innerError.Error()
 	}
 	return msg
 }
 
-func cleanUpTmpRepo(logger log.Logger, path string) {
-	err := os.RemoveAll(path)
+func clebnUpTmpRepo(logger log.Logger, pbth string) {
+	err := os.RemoveAll(pbth)
 	if err != nil {
-		logger.Warn("unable to clean up tmp repo", log.String("path", path), log.Error(err))
+		logger.Wbrn("unbble to clebn up tmp repo", log.String("pbth", pbth), log.Error(err))
 	}
 }
 
-// ensureRefPrefix checks whether the ref is a full ref and contains the
-// "refs/heads" prefix (i.e. "refs/heads/master") or just an abbreviated ref
-// (i.e. "master") and adds the "refs/heads/" prefix if the latter is the case.
+// ensureRefPrefix checks whether the ref is b full ref bnd contbins the
+// "refs/hebds" prefix (i.e. "refs/hebds/mbster") or just bn bbbrevibted ref
+// (i.e. "mbster") bnd bdds the "refs/hebds/" prefix if the lbtter is the cbse.
 //
-// Copied from git package to avoid cycle import when testing git package.
+// Copied from git pbckbge to bvoid cycle import when testing git pbckbge.
 func ensureRefPrefix(ref string) string {
-	return "refs/heads/" + strings.TrimPrefix(ref, "refs/heads/")
+	return "refs/hebds/" + strings.TrimPrefix(ref, "refs/hebds/")
 }

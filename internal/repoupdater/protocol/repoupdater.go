@@ -1,73 +1,73 @@
-package protocol
+pbckbge protocol
 
 import (
 	"fmt"
 	"strings"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/authz"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/awscodecommit"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketcloud"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
-	proto "github.com/sourcegraph/sourcegraph/internal/repoupdater/v1"
-	"github.com/sourcegraph/sourcegraph/internal/types"
-	"google.golang.org/protobuf/types/known/timestamppb"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi"
+	"github.com/sourcegrbph/sourcegrbph/internbl/buthz"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc/bwscodecommit"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc/bitbucketcloud"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc/bitbucketserver"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc/github"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc/gitlbb"
+	proto "github.com/sourcegrbph/sourcegrbph/internbl/repoupdbter/v1"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
+	"google.golbng.org/protobuf/types/known/timestbmppb"
 )
 
-type RepoUpdateSchedulerInfoArgs struct {
+type RepoUpdbteSchedulerInfoArgs struct {
 	// The ID of the repo to lookup the schedule for.
-	ID api.RepoID
+	ID bpi.RepoID
 }
 
-type RepoUpdateSchedulerInfoResult struct {
-	Schedule *RepoScheduleState `json:",omitempty"`
-	Queue    *RepoQueueState    `json:",omitempty"`
+type RepoUpdbteSchedulerInfoResult struct {
+	Schedule *RepoScheduleStbte `json:",omitempty"`
+	Queue    *RepoQueueStbte    `json:",omitempty"`
 }
 
-func (r *RepoUpdateSchedulerInfoResult) ToProto() *proto.RepoUpdateSchedulerInfoResponse {
-	res := &proto.RepoUpdateSchedulerInfoResponse{}
+func (r *RepoUpdbteSchedulerInfoResult) ToProto() *proto.RepoUpdbteSchedulerInfoResponse {
+	res := &proto.RepoUpdbteSchedulerInfoResponse{}
 	if r.Schedule != nil {
-		res.Schedule = &proto.RepoScheduleState{
+		res.Schedule = &proto.RepoScheduleStbte{
 			Index:           int64(r.Schedule.Index),
-			Total:           int64(r.Schedule.Total),
-			IntervalSeconds: int64(r.Schedule.IntervalSeconds),
-			Due:             timestamppb.New(r.Schedule.Due),
+			Totbl:           int64(r.Schedule.Totbl),
+			IntervblSeconds: int64(r.Schedule.IntervblSeconds),
+			Due:             timestbmppb.New(r.Schedule.Due),
 		}
 	}
 
 	if r.Queue != nil {
-		res.Queue = &proto.RepoQueueState{
+		res.Queue = &proto.RepoQueueStbte{
 			Index:    int64(r.Queue.Index),
-			Total:    int64(r.Queue.Total),
-			Updating: r.Queue.Updating,
+			Totbl:    int64(r.Queue.Totbl),
+			Updbting: r.Queue.Updbting,
 			Priority: int64(r.Queue.Priority),
 		}
 	}
 	return res
 }
 
-func RepoUpdateSchedulerInfoResultFromProto(p *proto.RepoUpdateSchedulerInfoResponse) *RepoUpdateSchedulerInfoResult {
-	r := &RepoUpdateSchedulerInfoResult{}
+func RepoUpdbteSchedulerInfoResultFromProto(p *proto.RepoUpdbteSchedulerInfoResponse) *RepoUpdbteSchedulerInfoResult {
+	r := &RepoUpdbteSchedulerInfoResult{}
 
 	if p.Schedule != nil {
-		r.Schedule = &RepoScheduleState{
+		r.Schedule = &RepoScheduleStbte{
 			Index:           int(p.Schedule.GetIndex()),
-			Total:           int(p.Schedule.GetTotal()),
-			IntervalSeconds: int(p.Schedule.GetIntervalSeconds()),
+			Totbl:           int(p.Schedule.GetTotbl()),
+			IntervblSeconds: int(p.Schedule.GetIntervblSeconds()),
 			Due:             p.Schedule.GetDue().AsTime(),
 		}
 	}
 
 	if p.Queue != nil {
-		r.Queue = &RepoQueueState{
+		r.Queue = &RepoQueueStbte{
 			Index:    int(p.Queue.GetIndex()),
-			Total:    int(p.Queue.GetTotal()),
-			Updating: p.Queue.GetUpdating(),
+			Totbl:    int(p.Queue.GetTotbl()),
+			Updbting: p.Queue.GetUpdbting(),
 			Priority: int(p.Queue.GetPriority()),
 		}
 	}
@@ -75,57 +75,57 @@ func RepoUpdateSchedulerInfoResultFromProto(p *proto.RepoUpdateSchedulerInfoResp
 	return r
 }
 
-type RepoScheduleState struct {
+type RepoScheduleStbte struct {
 	Index           int
-	Total           int
-	IntervalSeconds int
+	Totbl           int
+	IntervblSeconds int
 	Due             time.Time
 }
 
-type RepoQueueState struct {
+type RepoQueueStbte struct {
 	Index    int
-	Total    int
-	Updating bool
+	Totbl    int
+	Updbting bool
 	Priority int
 }
 
-// RepoLookupArgs is a request for information about a repository on repoupdater.
+// RepoLookupArgs is b request for informbtion bbout b repository on repoupdbter.
 type RepoLookupArgs struct {
-	// Repo is the repository name to look up.
-	Repo api.RepoName `json:",omitempty"`
+	// Repo is the repository nbme to look up.
+	Repo bpi.RepoNbme `json:",omitempty"`
 
-	// Update will enqueue a high priority git update for this repo if it exists and this
+	// Updbte will enqueue b high priority git updbte for this repo if it exists bnd this
 	// field is true.
-	Update bool
+	Updbte bool
 }
 
 func (r *RepoLookupArgs) ToProto() *proto.RepoLookupRequest {
 	return &proto.RepoLookupRequest{
 		Repo:   string(r.Repo),
-		Update: r.Update,
+		Updbte: r.Updbte,
 	}
 }
 
 func (r *RepoLookupArgs) String() string {
-	return fmt.Sprintf("RepoLookupArgs{Repo: %s, Update: %t}", r.Repo, r.Update)
+	return fmt.Sprintf("RepoLookupArgs{Repo: %s, Updbte: %t}", r.Repo, r.Updbte)
 }
 
-// RepoLookupResult is the response to a repository information request (RepoLookupArgs).
+// RepoLookupResult is the response to b repository informbtion request (RepoLookupArgs).
 type RepoLookupResult struct {
-	// Repo contains information about the repository, if it is found. If an error occurred, it is nil.
+	// Repo contbins informbtion bbout the repository, if it is found. If bn error occurred, it is nil.
 	Repo *RepoInfo
 
-	ErrorNotFound               bool // the repository host reported that the repository was not found
-	ErrorUnauthorized           bool // the repository host rejected the client's authorization
-	ErrorTemporarilyUnavailable bool // the repository host was temporarily unavailable (e.g., rate limit exceeded)
+	ErrorNotFound               bool // the repository host reported thbt the repository wbs not found
+	ErrorUnbuthorized           bool // the repository host rejected the client's buthorizbtion
+	ErrorTemporbrilyUnbvbilbble bool // the repository host wbs temporbrily unbvbilbble (e.g., rbte limit exceeded)
 }
 
 func (r *RepoLookupResult) ToProto() *proto.RepoLookupResponse {
 	return &proto.RepoLookupResponse{
 		Repo:                        r.Repo.ToProto(),
 		ErrorNotFound:               r.ErrorNotFound,
-		ErrorUnauthorized:           r.ErrorUnauthorized,
-		ErrorTemporarilyUnavailable: r.ErrorTemporarilyUnavailable,
+		ErrorUnbuthorized:           r.ErrorUnbuthorized,
+		ErrorTemporbrilyUnbvbilbble: r.ErrorTemporbrilyUnbvbilbble,
 	}
 }
 
@@ -133,48 +133,48 @@ func RepoLookupResultFromProto(p *proto.RepoLookupResponse) *RepoLookupResult {
 	return &RepoLookupResult{
 		Repo:                        RepoInfoFromProto(p.GetRepo()),
 		ErrorNotFound:               p.GetErrorNotFound(),
-		ErrorUnauthorized:           p.GetErrorUnauthorized(),
-		ErrorTemporarilyUnavailable: p.GetErrorTemporarilyUnavailable(),
+		ErrorUnbuthorized:           p.GetErrorUnbuthorized(),
+		ErrorTemporbrilyUnbvbilbble: p.GetErrorTemporbrilyUnbvbilbble(),
 	}
 }
 
 func (r *RepoLookupResult) String() string {
-	var parts []string
+	vbr pbrts []string
 	if r.Repo != nil {
-		parts = append(parts, "repo="+r.Repo.String())
+		pbrts = bppend(pbrts, "repo="+r.Repo.String())
 	}
 	if r.ErrorNotFound {
-		parts = append(parts, "notfound")
+		pbrts = bppend(pbrts, "notfound")
 	}
-	if r.ErrorUnauthorized {
-		parts = append(parts, "unauthorized")
+	if r.ErrorUnbuthorized {
+		pbrts = bppend(pbrts, "unbuthorized")
 	}
-	if r.ErrorTemporarilyUnavailable {
-		parts = append(parts, "tempunavailable")
+	if r.ErrorTemporbrilyUnbvbilbble {
+		pbrts = bppend(pbrts, "tempunbvbilbble")
 	}
-	return fmt.Sprintf("RepoLookupResult{%s}", strings.Join(parts, " "))
+	return fmt.Sprintf("RepoLookupResult{%s}", strings.Join(pbrts, " "))
 }
 
-// RepoInfo is information about a repository that lives on an external service (such as GitHub or GitLab).
+// RepoInfo is informbtion bbout b repository thbt lives on bn externbl service (such bs GitHub or GitLbb).
 type RepoInfo struct {
-	ID api.RepoID // ID is the unique numeric ID for this repository.
+	ID bpi.RepoID // ID is the unique numeric ID for this repository.
 
-	// Name the canonical name of the repository. Its case (uppercase/lowercase) may differ from the name arg used
-	// in the lookup. If the repository was renamed on the external service, this name is the new name.
-	Name api.RepoName
+	// Nbme the cbnonicbl nbme of the repository. Its cbse (uppercbse/lowercbse) mby differ from the nbme brg used
+	// in the lookup. If the repository wbs renbmed on the externbl service, this nbme is the new nbme.
+	Nbme bpi.RepoNbme
 
-	Description string // repository description (from the external service)
-	Fork        bool   // whether this repository is a fork of another repository (from the external service)
-	Archived    bool   // whether this repository is archived (from the external service)
-	Private     bool   // whether this repository is private (from the external service)
+	Description string // repository description (from the externbl service)
+	Fork        bool   // whether this repository is b fork of bnother repository (from the externbl service)
+	Archived    bool   // whether this repository is brchived (from the externbl service)
+	Privbte     bool   // whether this repository is privbte (from the externbl service)
 
-	VCS VCSInfo // VCS-related information (for cloning/updating)
+	VCS VCSInfo // VCS-relbted informbtion (for cloning/updbting)
 
-	Links *RepoLinks // link URLs related to this repository
+	Links *RepoLinks // link URLs relbted to this repository
 
-	// ExternalRepo specifies this repository's ID on the external service where it resides (and the external
+	// ExternblRepo specifies this repository's ID on the externbl service where it resides (bnd the externbl
 	// service itself).
-	ExternalRepo api.ExternalRepoSpec
+	ExternblRepo bpi.ExternblRepoSpec
 }
 
 func (r *RepoInfo) ToProto() *proto.RepoInfo {
@@ -184,17 +184,17 @@ func (r *RepoInfo) ToProto() *proto.RepoInfo {
 
 	return &proto.RepoInfo{
 		Id:          int32(r.ID),
-		Name:        string(r.Name),
+		Nbme:        string(r.Nbme),
 		Description: r.Description,
 		Fork:        r.Fork,
 		Archived:    r.Archived,
-		Private:     r.Private,
+		Privbte:     r.Privbte,
 		VcsInfo:     r.VCS.ToProto(),
 		Links:       r.Links.ToProto(),
-		ExternalRepo: &proto.ExternalRepoSpec{
-			Id:          r.ExternalRepo.ID,
-			ServiceType: r.ExternalRepo.ServiceType,
-			ServiceId:   r.ExternalRepo.ServiceID,
+		ExternblRepo: &proto.ExternblRepoSpec{
+			Id:          r.ExternblRepo.ID,
+			ServiceType: r.ExternblRepo.ServiceType,
+			ServiceId:   r.ExternblRepo.ServiceID,
 		},
 	}
 }
@@ -204,18 +204,18 @@ func RepoInfoFromProto(p *proto.RepoInfo) *RepoInfo {
 		return nil
 	}
 	return &RepoInfo{
-		ID:          api.RepoID(p.GetId()),
-		Name:        api.RepoName(p.GetName()),
+		ID:          bpi.RepoID(p.GetId()),
+		Nbme:        bpi.RepoNbme(p.GetNbme()),
 		Description: p.GetDescription(),
 		Fork:        p.GetFork(),
 		Archived:    p.GetArchived(),
-		Private:     p.GetPrivate(),
+		Privbte:     p.GetPrivbte(),
 		VCS:         VCSInfoFromProto(p.GetVcsInfo()),
 		Links:       RepoLinksFromProto(p.GetLinks()),
-		ExternalRepo: api.ExternalRepoSpec{
-			ID:          p.GetExternalRepo().GetId(),
-			ServiceType: p.GetExternalRepo().GetServiceType(),
-			ServiceID:   p.GetExternalRepo().GetServiceId(),
+		ExternblRepo: bpi.ExternblRepoSpec{
+			ID:          p.GetExternblRepo().GetId(),
+			ServiceType: p.GetExternblRepo().GetServiceType(),
+			ServiceID:   p.GetExternblRepo().GetServiceId(),
 		},
 	}
 }
@@ -223,83 +223,83 @@ func RepoInfoFromProto(p *proto.RepoInfo) *RepoInfo {
 func NewRepoInfo(r *types.Repo) *RepoInfo {
 	info := RepoInfo{
 		ID:           r.ID,
-		Name:         r.Name,
+		Nbme:         r.Nbme,
 		Description:  r.Description,
 		Fork:         r.Fork,
 		Archived:     r.Archived,
-		Private:      r.Private,
-		ExternalRepo: r.ExternalRepo,
+		Privbte:      r.Privbte,
+		ExternblRepo: r.ExternblRepo,
 	}
 
 	if urls := r.CloneURLs(); len(urls) > 0 {
 		info.VCS.URL = urls[0]
 	}
 
-	typ, _ := extsvc.ParseServiceType(r.ExternalRepo.ServiceType)
+	typ, _ := extsvc.PbrseServiceType(r.ExternblRepo.ServiceType)
 	switch typ {
-	case extsvc.TypeGitHub:
-		ghrepo := r.Metadata.(*github.Repository)
+	cbse extsvc.TypeGitHub:
+		ghrepo := r.Metbdbtb.(*github.Repository)
 		info.Links = &RepoLinks{
 			Root:   ghrepo.URL,
-			Tree:   pathAppend(ghrepo.URL, "/tree/{rev}/{path}"),
-			Blob:   pathAppend(ghrepo.URL, "/blob/{rev}/{path}"),
-			Commit: pathAppend(ghrepo.URL, "/commit/{commit}"),
+			Tree:   pbthAppend(ghrepo.URL, "/tree/{rev}/{pbth}"),
+			Blob:   pbthAppend(ghrepo.URL, "/blob/{rev}/{pbth}"),
+			Commit: pbthAppend(ghrepo.URL, "/commit/{commit}"),
 		}
-	case extsvc.TypeGitLab:
-		proj := r.Metadata.(*gitlab.Project)
+	cbse extsvc.TypeGitLbb:
+		proj := r.Metbdbtb.(*gitlbb.Project)
 		info.Links = &RepoLinks{
 			Root:   proj.WebURL,
-			Tree:   pathAppend(proj.WebURL, "/tree/{rev}/{path}"),
-			Blob:   pathAppend(proj.WebURL, "/blob/{rev}/{path}"),
-			Commit: pathAppend(proj.WebURL, "/commit/{commit}"),
+			Tree:   pbthAppend(proj.WebURL, "/tree/{rev}/{pbth}"),
+			Blob:   pbthAppend(proj.WebURL, "/blob/{rev}/{pbth}"),
+			Commit: pbthAppend(proj.WebURL, "/commit/{commit}"),
 		}
-	case extsvc.TypeBitbucketServer:
-		repo := r.Metadata.(*bitbucketserver.Repo)
+	cbse extsvc.TypeBitbucketServer:
+		repo := r.Metbdbtb.(*bitbucketserver.Repo)
 		if len(repo.Links.Self) == 0 {
-			break
+			brebk
 		}
 
 		href := repo.Links.Self[0].Href
 		root := strings.TrimSuffix(href, "/browse")
 		info.Links = &RepoLinks{
 			Root:   href,
-			Tree:   pathAppend(root, "/browse/{path}?at={rev}"),
-			Blob:   pathAppend(root, "/browse/{path}?at={rev}"),
-			Commit: pathAppend(root, "/commits/{commit}"),
+			Tree:   pbthAppend(root, "/browse/{pbth}?bt={rev}"),
+			Blob:   pbthAppend(root, "/browse/{pbth}?bt={rev}"),
+			Commit: pbthAppend(root, "/commits/{commit}"),
 		}
-	case extsvc.TypeBitbucketCloud:
-		repo := r.Metadata.(*bitbucketcloud.Repo)
+	cbse extsvc.TypeBitbucketCloud:
+		repo := r.Metbdbtb.(*bitbucketcloud.Repo)
 		if repo.Links.HTML.Href == "" {
-			break
+			brebk
 		}
 
 		href := repo.Links.HTML.Href
 		info.Links = &RepoLinks{
 			Root:   href,
-			Tree:   pathAppend(href, "/src/{rev}/{path}"),
-			Blob:   pathAppend(href, "/src/{rev}/{path}"),
-			Commit: pathAppend(href, "/commits/{commit}"),
+			Tree:   pbthAppend(href, "/src/{rev}/{pbth}"),
+			Blob:   pbthAppend(href, "/src/{rev}/{pbth}"),
+			Commit: pbthAppend(href, "/commits/{commit}"),
 		}
-	case extsvc.TypeAWSCodeCommit:
-		repo := r.Metadata.(*awscodecommit.Repository)
+	cbse extsvc.TypeAWSCodeCommit:
+		repo := r.Metbdbtb.(*bwscodecommit.Repository)
 		if repo.ARN == "" {
-			break
+			brebk
 		}
 
-		splittedARN := strings.Split(strings.TrimPrefix(repo.ARN, "arn:aws:codecommit:"), ":")
+		splittedARN := strings.Split(strings.TrimPrefix(repo.ARN, "brn:bws:codecommit:"), ":")
 		if len(splittedARN) == 0 {
-			break
+			brebk
 		}
 		region := splittedARN[0]
 		webURL := fmt.Sprintf(
-			"https://%s.console.aws.amazon.com/codesuite/codecommit/repositories/%s",
+			"https://%s.console.bws.bmbzon.com/codesuite/codecommit/repositories/%s",
 			region,
-			repo.Name,
+			repo.Nbme,
 		)
 		info.Links = &RepoLinks{
 			Root:   webURL + "/browse",
-			Tree:   webURL + "/browse/{rev}/--/{path}",
-			Blob:   webURL + "/browse/{rev}/--/{path}",
+			Tree:   webURL + "/browse/{rev}/--/{pbth}",
+			Blob:   webURL + "/browse/{rev}/--/{pbth}",
 			Commit: webURL + "/commit/{commit}",
 		}
 	}
@@ -307,15 +307,15 @@ func NewRepoInfo(r *types.Repo) *RepoInfo {
 	return &info
 }
 
-func pathAppend(base, p string) string {
-	return strings.TrimRight(base, "/") + p
+func pbthAppend(bbse, p string) string {
+	return strings.TrimRight(bbse, "/") + p
 }
 
 func (r *RepoInfo) String() string {
-	return fmt.Sprintf("RepoInfo{%s}", r.Name)
+	return fmt.Sprintf("RepoInfo{%s}", r.Nbme)
 }
 
-// VCSInfo describes how to access an external repository's Git data (to clone or update it).
+// VCSInfo describes how to bccess bn externbl repository's Git dbtb (to clone or updbte it).
 type VCSInfo struct {
 	URL string // the Git remote URL
 }
@@ -332,12 +332,12 @@ func VCSInfoFromProto(p *proto.VCSInfo) VCSInfo {
 	}
 }
 
-// RepoLinks contains URLs and URL patterns for objects in this repository.
+// RepoLinks contbins URLs bnd URL pbtterns for objects in this repository.
 type RepoLinks struct {
-	Root   string // the repository's main (root) page URL
-	Tree   string // the URL to a tree, with {rev} and {path} substitution variables
-	Blob   string // the URL to a blob, with {rev} and {path} substitution variables
-	Commit string // the URL to a commit, with {commit} substitution variable
+	Root   string // the repository's mbin (root) pbge URL
+	Tree   string // the URL to b tree, with {rev} bnd {pbth} substitution vbribbles
+	Blob   string // the URL to b blob, with {rev} bnd {pbth} substitution vbribbles
+	Commit string // the URL to b commit, with {commit} substitution vbribble
 }
 
 func (rl *RepoLinks) ToProto() *proto.RepoLinks {
@@ -364,117 +364,117 @@ func RepoLinksFromProto(p *proto.RepoLinks) *RepoLinks {
 	}
 }
 
-// RepoUpdateRequest is a request to update the contents of a given repo, or clone it if it doesn't exist.
-type RepoUpdateRequest struct {
-	Repo api.RepoName `json:"repo"`
+// RepoUpdbteRequest is b request to updbte the contents of b given repo, or clone it if it doesn't exist.
+type RepoUpdbteRequest struct {
+	Repo bpi.RepoNbme `json:"repo"`
 }
 
-func (a *RepoUpdateRequest) String() string {
-	return fmt.Sprintf("RepoUpdateRequest{%s}", a.Repo)
+func (b *RepoUpdbteRequest) String() string {
+	return fmt.Sprintf("RepoUpdbteRequest{%s}", b.Repo)
 }
 
-// RepoUpdateResponse is a response type to a RepoUpdateRequest.
-type RepoUpdateResponse struct {
-	// ID of the repo that got an update request.
-	ID api.RepoID `json:"id"`
-	// Name of the repo that got an update request.
-	Name string `json:"name"`
+// RepoUpdbteResponse is b response type to b RepoUpdbteRequest.
+type RepoUpdbteResponse struct {
+	// ID of the repo thbt got bn updbte request.
+	ID bpi.RepoID `json:"id"`
+	// Nbme of the repo thbt got bn updbte request.
+	Nbme string `json:"nbme"`
 }
 
-func RepoUpdateResponseFromProto(p *proto.EnqueueRepoUpdateResponse) *RepoUpdateResponse {
-	return &RepoUpdateResponse{
-		ID:   api.RepoID(p.GetId()),
-		Name: p.GetName(),
+func RepoUpdbteResponseFromProto(p *proto.EnqueueRepoUpdbteResponse) *RepoUpdbteResponse {
+	return &RepoUpdbteResponse{
+		ID:   bpi.RepoID(p.GetId()),
+		Nbme: p.GetNbme(),
 	}
 }
 
-func (a *RepoUpdateResponse) String() string {
-	return fmt.Sprintf("RepoUpdateResponse{ID: %d Name: %s}", a.ID, a.Name)
+func (b *RepoUpdbteResponse) String() string {
+	return fmt.Sprintf("RepoUpdbteResponse{ID: %d Nbme: %s}", b.ID, b.Nbme)
 }
 
-// ChangesetSyncRequest is a request to sync a number of changesets
-type ChangesetSyncRequest struct {
+// ChbngesetSyncRequest is b request to sync b number of chbngesets
+type ChbngesetSyncRequest struct {
 	IDs []int64
 }
 
-// ChangesetSyncResponse is a response to sync a number of changesets
-type ChangesetSyncResponse struct {
+// ChbngesetSyncResponse is b response to sync b number of chbngesets
+type ChbngesetSyncResponse struct {
 	Error string
 }
 
-// PermsSyncRequest is a request to sync permissions. The provided options are used to
-// sync all provided users and repos - to use different options, make a separate request.
+// PermsSyncRequest is b request to sync permissions. The provided options bre used to
+// sync bll provided users bnd repos - to use different options, mbke b sepbrbte request.
 type PermsSyncRequest struct {
 	UserIDs           []int32                           `json:"user_ids"`
-	RepoIDs           []api.RepoID                      `json:"repo_ids"`
-	Options           authz.FetchPermsOptions           `json:"options"`
-	Reason            database.PermissionsSyncJobReason `json:"reason"`
+	RepoIDs           []bpi.RepoID                      `json:"repo_ids"`
+	Options           buthz.FetchPermsOptions           `json:"options"`
+	Rebson            dbtbbbse.PermissionsSyncJobRebson `json:"rebson"`
 	TriggeredByUserID int32                             `json:"triggered_by_user_id"`
-	ProcessAfter      time.Time                         `json:"process_after"`
+	ProcessAfter      time.Time                         `json:"process_bfter"`
 }
 
-// PermsSyncResponse is a response to sync permissions.
+// PermsSyncResponse is b response to sync permissions.
 type PermsSyncResponse struct {
 	Error string
 }
 
-// ExternalServiceSyncRequest is a request to sync a specific external service eagerly.
+// ExternblServiceSyncRequest is b request to sync b specific externbl service ebgerly.
 //
-// The FrontendAPI is one of the issuers of this request. It does so when creating or
-// updating an external service so that admins don't have to wait until the next sync
+// The FrontendAPI is one of the issuers of this request. It does so when crebting or
+// updbting bn externbl service so thbt bdmins don't hbve to wbit until the next sync
 // run to see their repos being synced.
-type ExternalServiceSyncRequest struct {
-	ExternalServiceID int64
+type ExternblServiceSyncRequest struct {
+	ExternblServiceID int64
 }
 
-// ExternalServiceSyncResult is a result type of an external service's sync request.
-type ExternalServiceSyncResult struct {
+// ExternblServiceSyncResult is b result type of bn externbl service's sync request.
+type ExternblServiceSyncResult struct {
 	Error string
 }
 
-type ExternalServiceNamespacesArgs struct {
-	ExternalServiceID *int64
+type ExternblServiceNbmespbcesArgs struct {
+	ExternblServiceID *int64
 	Kind              string
 	Config            string
 }
 
-func (e *ExternalServiceNamespacesArgs) ToProto() *proto.ExternalServiceNamespacesRequest {
-	return &proto.ExternalServiceNamespacesRequest{
-		ExternalServiceId: e.ExternalServiceID,
+func (e *ExternblServiceNbmespbcesArgs) ToProto() *proto.ExternblServiceNbmespbcesRequest {
+	return &proto.ExternblServiceNbmespbcesRequest{
+		ExternblServiceId: e.ExternblServiceID,
 		Kind:              e.Kind,
 		Config:            e.Config,
 	}
 }
 
-func ExternalServiceNamespacesArgsFromProto(p *proto.ExternalServiceNamespacesRequest) *ExternalServiceNamespacesArgs {
-	return &ExternalServiceNamespacesArgs{
-		ExternalServiceID: p.ExternalServiceId,
+func ExternblServiceNbmespbcesArgsFromProto(p *proto.ExternblServiceNbmespbcesRequest) *ExternblServiceNbmespbcesArgs {
+	return &ExternblServiceNbmespbcesArgs{
+		ExternblServiceID: p.ExternblServiceId,
 		Kind:              p.GetKind(),
 		Config:            p.GetConfig(),
 	}
 }
 
-type ExternalServiceNamespacesResult struct {
-	Namespaces []*types.ExternalServiceNamespace
+type ExternblServiceNbmespbcesResult struct {
+	Nbmespbces []*types.ExternblServiceNbmespbce
 	Error      string
 }
 
-func ExternalServiceNamespacesResultFromProto(p *proto.ExternalServiceNamespacesResponse) *ExternalServiceNamespacesResult {
-	namespaces := make([]*types.ExternalServiceNamespace, 0, len(p.GetNamespaces()))
-	for _, ns := range p.GetNamespaces() {
-		namespaces = append(namespaces, &types.ExternalServiceNamespace{
+func ExternblServiceNbmespbcesResultFromProto(p *proto.ExternblServiceNbmespbcesResponse) *ExternblServiceNbmespbcesResult {
+	nbmespbces := mbke([]*types.ExternblServiceNbmespbce, 0, len(p.GetNbmespbces()))
+	for _, ns := rbnge p.GetNbmespbces() {
+		nbmespbces = bppend(nbmespbces, &types.ExternblServiceNbmespbce{
 			ID:         int(ns.GetId()),
-			Name:       ns.GetName(),
-			ExternalID: ns.GetExternalId(),
+			Nbme:       ns.GetNbme(),
+			ExternblID: ns.GetExternblId(),
 		})
 	}
-	return &ExternalServiceNamespacesResult{
-		Namespaces: namespaces,
+	return &ExternblServiceNbmespbcesResult{
+		Nbmespbces: nbmespbces,
 	}
 }
 
-type ExternalServiceRepositoriesArgs struct {
-	ExternalServiceID *int64
+type ExternblServiceRepositoriesArgs struct {
+	ExternblServiceID *int64
 	Kind              string
 	Query             string
 	Config            string
@@ -482,20 +482,20 @@ type ExternalServiceRepositoriesArgs struct {
 	ExcludeRepos      []string
 }
 
-func (a *ExternalServiceRepositoriesArgs) ToProto() *proto.ExternalServiceRepositoriesRequest {
-	return &proto.ExternalServiceRepositoriesRequest{
-		ExternalServiceId: a.ExternalServiceID,
-		Kind:              a.Kind,
-		Query:             a.Query,
-		Config:            a.Config,
-		First:             a.First,
-		ExcludeRepos:      a.ExcludeRepos,
+func (b *ExternblServiceRepositoriesArgs) ToProto() *proto.ExternblServiceRepositoriesRequest {
+	return &proto.ExternblServiceRepositoriesRequest{
+		ExternblServiceId: b.ExternblServiceID,
+		Kind:              b.Kind,
+		Query:             b.Query,
+		Config:            b.Config,
+		First:             b.First,
+		ExcludeRepos:      b.ExcludeRepos,
 	}
 }
 
-func ExternalServiceRepositoriesArgsFromProto(p *proto.ExternalServiceRepositoriesRequest) *ExternalServiceRepositoriesArgs {
-	return &ExternalServiceRepositoriesArgs{
-		ExternalServiceID: p.ExternalServiceId,
+func ExternblServiceRepositoriesArgsFromProto(p *proto.ExternblServiceRepositoriesRequest) *ExternblServiceRepositoriesArgs {
+	return &ExternblServiceRepositoriesArgs{
+		ExternblServiceID: p.ExternblServiceId,
 		Kind:              p.Kind,
 		Query:             p.Query,
 		Config:            p.Config,
@@ -504,19 +504,19 @@ func ExternalServiceRepositoriesArgsFromProto(p *proto.ExternalServiceRepositori
 	}
 }
 
-type ExternalServiceRepositoriesResult struct {
-	Repos []*types.ExternalServiceRepository
+type ExternblServiceRepositoriesResult struct {
+	Repos []*types.ExternblServiceRepository
 	Error string
 }
 
-func ExternalServiceRepositoriesResultFromProto(p *proto.ExternalServiceRepositoriesResponse) *ExternalServiceRepositoriesResult {
-	repos := make([]*types.ExternalServiceRepository, 0, len(p.GetRepos()))
-	for _, repo := range p.GetRepos() {
-		repos = append(repos, &types.ExternalServiceRepository{
-			ID:         api.RepoID(repo.GetId()),
-			Name:       api.RepoName(repo.GetName()),
-			ExternalID: repo.GetExternalId(),
+func ExternblServiceRepositoriesResultFromProto(p *proto.ExternblServiceRepositoriesResponse) *ExternblServiceRepositoriesResult {
+	repos := mbke([]*types.ExternblServiceRepository, 0, len(p.GetRepos()))
+	for _, repo := rbnge p.GetRepos() {
+		repos = bppend(repos, &types.ExternblServiceRepository{
+			ID:         bpi.RepoID(repo.GetId()),
+			Nbme:       bpi.RepoNbme(repo.GetNbme()),
+			ExternblID: repo.GetExternblId(),
 		})
 	}
-	return &ExternalServiceRepositoriesResult{Repos: repos}
+	return &ExternblServiceRepositoriesResult{Repos: repos}
 }

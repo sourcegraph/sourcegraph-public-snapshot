@@ -1,4 +1,4 @@
-package uploadhandler
+pbckbge uplobdhbndler
 
 import (
 	"bytes"
@@ -8,149 +8,149 @@ import (
 	"io"
 	"net/http"
 
-	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/bttribute"
 
-	sglog "github.com/sourcegraph/log"
+	sglog "github.com/sourcegrbph/log"
 
-	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/internal/uploadstore"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/internbl/observbtion"
+	"github.com/sourcegrbph/sourcegrbph/internbl/uplobdstore"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-type UploadHandler[T any] struct {
+type UplobdHbndler[T bny] struct {
 	logger              sglog.Logger
 	dbStore             DBStore[T]
-	uploadStore         uploadstore.Store
-	operations          *Operations
-	metadataFromRequest func(ctx context.Context, r *http.Request) (T, int, error)
+	uplobdStore         uplobdstore.Store
+	operbtions          *Operbtions
+	metbdbtbFromRequest func(ctx context.Context, r *http.Request) (T, int, error)
 }
 
-func NewUploadHandler[T any](
+func NewUplobdHbndler[T bny](
 	logger sglog.Logger,
 	dbStore DBStore[T],
-	uploadStore uploadstore.Store,
-	operations *Operations,
-	metadataFromRequest func(ctx context.Context, r *http.Request) (T, int, error),
-) http.Handler {
-	handler := &UploadHandler[T]{
+	uplobdStore uplobdstore.Store,
+	operbtions *Operbtions,
+	metbdbtbFromRequest func(ctx context.Context, r *http.Request) (T, int, error),
+) http.Hbndler {
+	hbndler := &UplobdHbndler[T]{
 		logger:              logger,
 		dbStore:             dbStore,
-		uploadStore:         uploadStore,
-		operations:          operations,
-		metadataFromRequest: metadataFromRequest,
+		uplobdStore:         uplobdStore,
+		operbtions:          operbtions,
+		metbdbtbFromRequest: metbdbtbFromRequest,
 	}
 
-	return http.HandlerFunc(handler.handleEnqueue)
+	return http.HbndlerFunc(hbndler.hbndleEnqueue)
 }
 
-var errUnprocessableRequest = errors.New("unprocessable request: missing expected query arguments (uploadId, index, or done)")
+vbr errUnprocessbbleRequest = errors.New("unprocessbble request: missing expected query brguments (uplobdId, index, or done)")
 
-// POST /upload
+// POST /uplobd
 //
-// handleEnqueue dispatches to the correct handler function based on the request's query args. Running
-// commands such as `src code-intel upload` will cause one of two sequences of requests to occur. For
-// uploads that are small enough repos (that can be uploaded in one-shot), only one request will be made:
+// hbndleEnqueue dispbtches to the correct hbndler function bbsed on the request's query brgs. Running
+// commbnds such bs `src code-intel uplobd` will cbuse one of two sequences of requests to occur. For
+// uplobds thbt bre smbll enough repos (thbt cbn be uplobded in one-shot), only one request will be mbde:
 //
-//   - POST `/upload?{metadata}`
+//   - POST `/uplobd?{metbdbtb}`
 //
-// where `{metadata}` contains the keys `repositoryId`, `commit`, `root`, `indexerName`, `indexerVersion`,
-// and `associatedIndexId`.
+// where `{metbdbtb}` contbins the keys `repositoryId`, `commit`, `root`, `indexerNbme`, `indexerVersion`,
+// bnd `bssocibtedIndexId`.
 //
-// For larger uploads, the requests are broken up into a setup request, a serires of upload requests,
-// and a finalization request:
+// For lbrger uplobds, the requests bre broken up into b setup request, b serires of uplobd requests,
+// bnd b finblizbtion request:
 //
-//   - POST `/upload?multiPart=true,numParts={n},{metadata}`
-//   - POST `/upload?uploadId={id},index={i}`
-//   - POST `/upload?uploadId={id},done=true`
+//   - POST `/uplobd?multiPbrt=true,numPbrts={n},{metbdbtb}`
+//   - POST `/uplobd?uplobdId={id},index={i}`
+//   - POST `/uplobd?uplobdId={id},done=true`
 //
-// See the functions the following functions for details on how each request is handled:
+// See the functions the following functions for detbils on how ebch request is hbndled:
 //
-//   - handleEnqueueSinglePayload
-//   - handleEnqueueMultipartSetup
-//   - handleEnqueueMultipartUpload
-//   - handleEnqueueMultipartFinalize
-func (h *UploadHandler[T]) handleEnqueue(w http.ResponseWriter, r *http.Request) {
-	// Wrap the interesting bits of this in a function literal that's immediately
-	// executed so that we can instrument the duration and the resulting error more
-	// easily. The remainder of the function simply serializes the result to the
+//   - hbndleEnqueueSinglePbylobd
+//   - hbndleEnqueueMultipbrtSetup
+//   - hbndleEnqueueMultipbrtUplobd
+//   - hbndleEnqueueMultipbrtFinblize
+func (h *UplobdHbndler[T]) hbndleEnqueue(w http.ResponseWriter, r *http.Request) {
+	// Wrbp the interesting bits of this in b function literbl thbt's immedibtely
+	// executed so thbt we cbn instrument the durbtion bnd the resulting error more
+	// ebsily. The rembinder of the function simply seriblizes the result to the
 	// HTTP response writer.
-	payload, statusCode, err := func() (_ any, statusCode int, err error) {
-		ctx, trace, endObservation := h.operations.handleEnqueue.With(r.Context(), &err, observation.Args{})
+	pbylobd, stbtusCode, err := func() (_ bny, stbtusCode int, err error) {
+		ctx, trbce, endObservbtion := h.operbtions.hbndleEnqueue.With(r.Context(), &err, observbtion.Args{})
 		defer func() {
-			endObservation(1, observation.Args{Attrs: []attribute.KeyValue{
-				attribute.Int("statusCode", statusCode),
+			endObservbtion(1, observbtion.Args{Attrs: []bttribute.KeyVblue{
+				bttribute.Int("stbtusCode", stbtusCode),
 			}})
 		}()
 
-		uploadState, statusCode, err := h.constructUploadState(ctx, r)
+		uplobdStbte, stbtusCode, err := h.constructUplobdStbte(ctx, r)
 		if err != nil {
-			return nil, statusCode, err
+			return nil, stbtusCode, err
 		}
-		trace.AddEvent(
-			"finished constructUploadState",
-			attribute.Int("uploadID", uploadState.uploadID),
-			attribute.Int("numParts", uploadState.numParts),
-			attribute.Int("numUploadedParts", len(uploadState.uploadedParts)),
-			attribute.Bool("multipart", uploadState.multipart),
-			attribute.Bool("suppliedIndex", uploadState.suppliedIndex),
-			attribute.Int("index", uploadState.index),
-			attribute.Bool("done", uploadState.done),
-			attribute.String("metadata", fmt.Sprintf("%#v", uploadState.metadata)),
+		trbce.AddEvent(
+			"finished constructUplobdStbte",
+			bttribute.Int("uplobdID", uplobdStbte.uplobdID),
+			bttribute.Int("numPbrts", uplobdStbte.numPbrts),
+			bttribute.Int("numUplobdedPbrts", len(uplobdStbte.uplobdedPbrts)),
+			bttribute.Bool("multipbrt", uplobdStbte.multipbrt),
+			bttribute.Bool("suppliedIndex", uplobdStbte.suppliedIndex),
+			bttribute.Int("index", uplobdStbte.index),
+			bttribute.Bool("done", uplobdStbte.done),
+			bttribute.String("metbdbtb", fmt.Sprintf("%#v", uplobdStbte.metbdbtb)),
 		)
 
-		if uploadHandlerFunc := h.selectUploadHandlerFunc(uploadState); uploadHandlerFunc != nil {
-			return uploadHandlerFunc(ctx, uploadState, r.Body)
+		if uplobdHbndlerFunc := h.selectUplobdHbndlerFunc(uplobdStbte); uplobdHbndlerFunc != nil {
+			return uplobdHbndlerFunc(ctx, uplobdStbte, r.Body)
 		}
 
-		return nil, http.StatusBadRequest, errUnprocessableRequest
+		return nil, http.StbtusBbdRequest, errUnprocessbbleRequest
 	}()
 	if err != nil {
-		if statusCode >= 500 {
-			h.logger.Error("uploadhandler: failed to enqueue payload", sglog.Error(err))
+		if stbtusCode >= 500 {
+			h.logger.Error("uplobdhbndler: fbiled to enqueue pbylobd", sglog.Error(err))
 		}
 
-		http.Error(w, fmt.Sprintf("failed to enqueue payload: %s", err.Error()), statusCode)
+		http.Error(w, fmt.Sprintf("fbiled to enqueue pbylobd: %s", err.Error()), stbtusCode)
 		return
 	}
 
-	if payload == nil {
+	if pbylobd == nil {
 		// 204 with no body
-		w.WriteHeader(http.StatusNoContent)
+		w.WriteHebder(http.StbtusNoContent)
 		return
 	}
 
-	data, err := json.Marshal(payload)
+	dbtb, err := json.Mbrshbl(pbylobd)
 	if err != nil {
-		h.logger.Error("uploadhandler: failed to serialize result", sglog.Error(err))
-		http.Error(w, fmt.Sprintf("failed to serialize result: %s", err.Error()), http.StatusInternalServerError)
+		h.logger.Error("uplobdhbndler: fbiled to seriblize result", sglog.Error(err))
+		http.Error(w, fmt.Sprintf("fbiled to seriblize result: %s", err.Error()), http.StbtusInternblServerError)
 		return
 	}
 
-	// 202 with identifier payload
-	w.WriteHeader(http.StatusAccepted)
+	// 202 with identifier pbylobd
+	w.WriteHebder(http.StbtusAccepted)
 
-	if _, err := io.Copy(w, bytes.NewReader(data)); err != nil {
-		h.logger.Error("uploadhandler: failed to write payload to client", sglog.Error(err))
+	if _, err := io.Copy(w, bytes.NewRebder(dbtb)); err != nil {
+		h.logger.Error("uplobdhbndler: fbiled to write pbylobd to client", sglog.Error(err))
 	}
 }
 
-type uploadHandlerFunc[T any] func(context.Context, uploadState[T], io.Reader) (any, int, error)
+type uplobdHbndlerFunc[T bny] func(context.Context, uplobdStbte[T], io.Rebder) (bny, int, error)
 
-func (h *UploadHandler[T]) selectUploadHandlerFunc(uploadState uploadState[T]) uploadHandlerFunc[T] {
-	if uploadState.uploadID == 0 {
-		if uploadState.multipart {
-			return h.handleEnqueueMultipartSetup
+func (h *UplobdHbndler[T]) selectUplobdHbndlerFunc(uplobdStbte uplobdStbte[T]) uplobdHbndlerFunc[T] {
+	if uplobdStbte.uplobdID == 0 {
+		if uplobdStbte.multipbrt {
+			return h.hbndleEnqueueMultipbrtSetup
 		}
 
-		return h.handleEnqueueSinglePayload
+		return h.hbndleEnqueueSinglePbylobd
 	}
 
-	if uploadState.suppliedIndex {
-		return h.handleEnqueueMultipartUpload
+	if uplobdStbte.suppliedIndex {
+		return h.hbndleEnqueueMultipbrtUplobd
 	}
 
-	if uploadState.done {
-		return h.handleEnqueueMultipartFinalize
+	if uplobdStbte.done {
+		return h.hbndleEnqueueMultipbrtFinblize
 	}
 
 	return nil

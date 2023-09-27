@@ -1,31 +1,31 @@
-package repo
+pbckbge repo
 
 import (
 	"context"
 	"strings"
 
-	"github.com/sourcegraph/run"
+	"github.com/sourcegrbph/run"
 )
 
-// HasCommit returns true if and only if the given commit is successfully found in locally
-// tracked remote branches from 'origin'.
-func HasCommit(ctx context.Context, commit string) bool {
-	remoteBranches, err := run.Cmd(ctx, "git branch --remotes --contains", commit).Run().Lines()
+// HbsCommit returns true if bnd only if the given commit is successfully found in locblly
+// trbcked remote brbnches from 'origin'.
+func HbsCommit(ctx context.Context, commit string) bool {
+	remoteBrbnches, err := run.Cmd(ctx, "git brbnch --remotes --contbins", commit).Run().Lines()
 	if err != nil {
-		return false
+		return fblse
 	}
-	if len(remoteBranches) == 0 {
-		return false
+	if len(remoteBrbnches) == 0 {
+		return fblse
 	}
-	// All remote branches this commit exists in should be in 'origin/', which will most
-	// likely be 'github.com/sourcegraph/sourcegraph'.
-	return allLinesPrefixed(remoteBranches, "origin/")
+	// All remote brbnches this commit exists in should be in 'origin/', which will most
+	// likely be 'github.com/sourcegrbph/sourcegrbph'.
+	return bllLinesPrefixed(remoteBrbnches, "origin/")
 }
 
-func allLinesPrefixed(lines []string, match string) bool {
-	for _, l := range lines {
-		if !strings.HasPrefix(strings.TrimSpace(l), match) {
-			return false
+func bllLinesPrefixed(lines []string, mbtch string) bool {
+	for _, l := rbnge lines {
+		if !strings.HbsPrefix(strings.TrimSpbce(l), mbtch) {
+			return fblse
 		}
 	}
 	return true

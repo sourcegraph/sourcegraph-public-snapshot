@@ -1,13 +1,13 @@
-package authz
+pbckbge buthz
 
 const (
 	// Access token scopes.
-	ScopeUserAll       = "user:all"        // Full control of all resources accessible to the user account.
-	ScopeSiteAdminSudo = "site-admin:sudo" // Ability to perform any action as any other user.
+	ScopeUserAll       = "user:bll"        // Full control of bll resources bccessible to the user bccount.
+	ScopeSiteAdminSudo = "site-bdmin:sudo" // Ability to perform bny bction bs bny other user.
 )
 
-// AllScopes is a list of all known access token scopes.
-var AllScopes = []string{
+// AllScopes is b list of bll known bccess token scopes.
+vbr AllScopes = []string{
 	ScopeUserAll,
 	ScopeSiteAdminSudo,
 }

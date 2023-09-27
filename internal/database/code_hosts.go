@@ -1,68 +1,68 @@
-package database
+pbckbge dbtbbbse
 
 import (
 	"context"
-	"database/sql"
+	"dbtbbbse/sql"
 	"fmt"
 
-	"github.com/keegancsmith/sqlf"
-	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
-	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/keegbncsmith/sqlf"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/bbsestore"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbutil"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
 )
 
 type ListCodeHostsOpts struct {
 	*LimitOffset
 
-	// Only list code hosts with the given ID. This makes if effectively a getByID.
+	// Only list code hosts with the given ID. This mbkes if effectively b getByID.
 	ID int32
-	// Only list code hosts with the given URL. This makes if effectively a getByURL.
+	// Only list code hosts with the given URL. This mbkes if effectively b getByURL.
 	URL string
-	// Cursor is used for pagination, it's the ID of the next code host to look at.
+	// Cursor is used for pbginbtion, it's the ID of the next code host to look bt.
 	Cursor int32
-	// IncludeDeleted causes deleted code hosts to be returned as well. Note:
-	// For now deletion is a virtual concept where we check if all referencing
-	// external services are soft or hard deleted.
+	// IncludeDeleted cbuses deleted code hosts to be returned bs well. Note:
+	// For now deletion is b virtubl concept where we check if bll referencing
+	// externbl services bre soft or hbrd deleted.
 	IncludeDeleted bool
-	// Search is an optional string to search through kind and URL.
-	Search string
+	// Sebrch is bn optionbl string to sebrch through kind bnd URL.
+	Sebrch string
 }
 
-// CodeHostStore provides access to the code_hosts table.
-type CodeHostStore interface {
-	basestore.ShareableStore
+// CodeHostStore provides bccess to the code_hosts tbble.
+type CodeHostStore interfbce {
+	bbsestore.ShbrebbleStore
 
-	With(other basestore.ShareableStore) CodeHostStore
-	WithTransact(context.Context, func(CodeHostStore) error) error
+	With(other bbsestore.ShbrebbleStore) CodeHostStore
+	WithTrbnsbct(context.Context, func(CodeHostStore) error) error
 	Count(ctx context.Context, opts ListCodeHostsOpts) (int32, error)
 
-	// GetByID gets the code host matching the specified ID.
+	// GetByID gets the code host mbtching the specified ID.
 	GetByID(ctx context.Context, id int32) (*types.CodeHost, error)
-	// GetByURL gets the code host matching the specified url.
+	// GetByURL gets the code host mbtching the specified url.
 	GetByURL(ctx context.Context, url string) (*types.CodeHost, error)
-	// List lists all code hosts matching the specified options.
+	// List lists bll code hosts mbtching the specified options.
 	List(ctx context.Context, opts ListCodeHostsOpts) (chs []*types.CodeHost, next int32, err error)
-	// Create creates a new code host in the db.
+	// Crebte crebtes b new code host in the db.
 	//
-	// If a code host with the given url already exists, it returns the existing code host.
-	Create(ctx context.Context, ch *types.CodeHost) error
-	// Update updates a code host, it uses the id field to match.
-	Update(ctx context.Context, ch *types.CodeHost) error
+	// If b code host with the given url blrebdy exists, it returns the existing code host.
+	Crebte(ctx context.Context, ch *types.CodeHost) error
+	// Updbte updbtes b code host, it uses the id field to mbtch.
+	Updbte(ctx context.Context, ch *types.CodeHost) error
 	// Delete deletes the code host specified by the id.
 	Delete(ctx context.Context, id int32) error
 }
 
-// CodeHostsWith instantiates and returns a new CodeHostStore using the other stores
-// handle.
-func CodeHostsWith(other basestore.ShareableStore) CodeHostStore {
-	return &codeHostStore{Store: basestore.NewWithHandle(other.Handle())}
+// CodeHostsWith instbntibtes bnd returns b new CodeHostStore using the other stores
+// hbndle.
+func CodeHostsWith(other bbsestore.ShbrebbleStore) CodeHostStore {
+	return &codeHostStore{Store: bbsestore.NewWithHbndle(other.Hbndle())}
 }
 
 type codeHostStore struct {
-	*basestore.Store
+	*bbsestore.Store
 }
 
-func (s *codeHostStore) With(other basestore.ShareableStore) CodeHostStore {
+func (s *codeHostStore) With(other bbsestore.ShbrebbleStore) CodeHostStore {
 	return &codeHostStore{Store: s.Store.With(other)}
 }
 
@@ -72,24 +72,24 @@ func (s *codeHostStore) copy() *codeHostStore {
 	}
 }
 
-func (s *codeHostStore) WithTransact(ctx context.Context, f func(CodeHostStore) error) error {
-	return s.Store.WithTransact(ctx, func(tx *basestore.Store) error {
+func (s *codeHostStore) WithTrbnsbct(ctx context.Context, f func(CodeHostStore) error) error {
+	return s.Store.WithTrbnsbct(ctx, func(tx *bbsestore.Store) error {
 		c := s.copy()
 		c.Store = tx
 		return f(c)
 	})
 }
 
-var codeHostColumnExpressions = []*sqlf.Query{
+vbr codeHostColumnExpressions = []*sqlf.Query{
 	sqlf.Sprintf("code_hosts.id"),
 	sqlf.Sprintf("code_hosts.kind"),
 	sqlf.Sprintf("code_hosts.url"),
-	sqlf.Sprintf("code_hosts.api_rate_limit_quota"),
-	sqlf.Sprintf("code_hosts.api_rate_limit_interval_seconds"),
-	sqlf.Sprintf("code_hosts.git_rate_limit_quota"),
-	sqlf.Sprintf("code_hosts.git_rate_limit_interval_seconds"),
-	sqlf.Sprintf("code_hosts.created_at"),
-	sqlf.Sprintf("code_hosts.updated_at"),
+	sqlf.Sprintf("code_hosts.bpi_rbte_limit_quotb"),
+	sqlf.Sprintf("code_hosts.bpi_rbte_limit_intervbl_seconds"),
+	sqlf.Sprintf("code_hosts.git_rbte_limit_quotb"),
+	sqlf.Sprintf("code_hosts.git_rbte_limit_intervbl_seconds"),
+	sqlf.Sprintf("code_hosts.crebted_bt"),
+	sqlf.Sprintf("code_hosts.updbted_bt"),
 }
 
 type errCodeHostNotFound struct {
@@ -119,8 +119,8 @@ func (s *codeHostStore) GetByID(ctx context.Context, id int32) (*types.CodeHost,
 }
 
 func (s *codeHostStore) GetByURL(ctx context.Context, url string) (*types.CodeHost, error) {
-	// We would normally parse the URL here to verify its valid, but some code hosts have connections that
-	// have multiple URLs and in the code host table, they are represented by a code_hosts.url of:
+	// We would normblly pbrse the URL here to verify its vblid, but some code hosts hbve connections thbt
+	// hbve multiple URLs bnd in the code host tbble, they bre represented by b code_hosts.url of:
 	// python/gomodules/etc...
 	chs, _, err := s.List(ctx, ListCodeHostsOpts{LimitOffset: &LimitOffset{Limit: 1}, URL: url})
 	if err != nil {
@@ -132,31 +132,31 @@ func (s *codeHostStore) GetByURL(ctx context.Context, url string) (*types.CodeHo
 	return chs[0], nil
 }
 
-func (s *codeHostStore) Create(ctx context.Context, ch *types.CodeHost) error {
-	query := createCodeHostQuery(ch)
+func (s *codeHostStore) Crebte(ctx context.Context, ch *types.CodeHost) error {
+	query := crebteCodeHostQuery(ch)
 	row := s.QueryRow(ctx, query)
-	return scan(row, ch)
+	return scbn(row, ch)
 }
 
-func createCodeHostQuery(ch *types.CodeHost) *sqlf.Query {
+func crebteCodeHostQuery(ch *types.CodeHost) *sqlf.Query {
 	return sqlf.Sprintf(
-		createCodeHostQueryFmtstr,
+		crebteCodeHostQueryFmtstr,
 		ch.Kind,
 		ch.URL,
-		ch.APIRateLimitQuota,
-		ch.APIRateLimitIntervalSeconds,
-		ch.GitRateLimitQuota,
-		ch.GitRateLimitIntervalSeconds,
+		ch.APIRbteLimitQuotb,
+		ch.APIRbteLimitIntervblSeconds,
+		ch.GitRbteLimitQuotb,
+		ch.GitRbteLimitIntervblSeconds,
 		sqlf.Join(codeHostColumnExpressions, ","),
 		sqlf.Join(codeHostColumnExpressions, ","),
 		ch.URL,
 	)
 }
 
-const createCodeHostQueryFmtstr = `
+const crebteCodeHostQueryFmtstr = `
 WITH inserted AS (
 	INSERT INTO
-		code_hosts (kind, url, api_rate_limit_quota, api_rate_limit_interval_seconds, git_rate_limit_quota, git_rate_limit_interval_seconds)
+		code_hosts (kind, url, bpi_rbte_limit_quotb, bpi_rbte_limit_intervbl_seconds, git_rbte_limit_quotb, git_rbte_limit_intervbl_seconds)
 	VALUES (%s, %s, %s, %s, %s, %s)
 	ON CONFLICT(url) DO NOTHING
 	RETURNING
@@ -173,13 +173,13 @@ WHERE url = %s
 
 func (s *codeHostStore) List(ctx context.Context, opts ListCodeHostsOpts) (chs []*types.CodeHost, next int32, err error) {
 	query := listCodeHostsQuery(opts)
-	chs, err = basestore.NewSliceScanner(scanCodeHosts)(s.Query(ctx, query))
+	chs, err = bbsestore.NewSliceScbnner(scbnCodeHosts)(s.Query(ctx, query))
 	if err != nil || chs == nil {
-		// Return an empty list in case of no results
+		// Return bn empty list in cbse of no results
 		return []*types.CodeHost{}, 0, err
 	}
 
-	// Set the next value if we were able to fetch Limit + 1
+	// Set the next vblue if we were bble to fetch Limit + 1
 	if opts.LimitOffset != nil && opts.Limit > 0 && len(chs) == opts.Limit+1 {
 		next = chs[len(chs)-1].ID
 		chs = chs[:len(chs)-1]
@@ -188,7 +188,7 @@ func (s *codeHostStore) List(ctx context.Context, opts ListCodeHostsOpts) (chs [
 }
 
 func listCodeHostsQuery(opts ListCodeHostsOpts) *sqlf.Query {
-	// We fetch an extra one so that we have the `next` value
+	// We fetch bn extrb one so thbt we hbve the `next` vblue
 	newLimitOffset := opts.LimitOffset
 	if newLimitOffset != nil && newLimitOffset.Limit > 0 {
 		newLimitOffset.Limit += 1
@@ -208,11 +208,11 @@ ORDER BY id ASC
 %s
 `
 
-func (s *codeHostStore) Update(ctx context.Context, ch *types.CodeHost) error {
-	query := updateCodeHostQuery(ch)
+func (s *codeHostStore) Updbte(ctx context.Context, ch *types.CodeHost) error {
+	query := updbteCodeHostQuery(ch)
 
 	row := s.QueryRow(ctx, query)
-	err := scan(row, ch)
+	err := scbn(row, ch)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			return errCodeHostNotFound{ch.ID}
@@ -222,29 +222,29 @@ func (s *codeHostStore) Update(ctx context.Context, ch *types.CodeHost) error {
 	return nil
 }
 
-func updateCodeHostQuery(ch *types.CodeHost) *sqlf.Query {
+func updbteCodeHostQuery(ch *types.CodeHost) *sqlf.Query {
 	return sqlf.Sprintf(
-		updateCodeHostQueryFmtstr,
+		updbteCodeHostQueryFmtstr,
 		ch.Kind,
 		ch.URL,
-		ch.APIRateLimitQuota,
-		ch.APIRateLimitIntervalSeconds,
-		ch.GitRateLimitQuota,
-		ch.GitRateLimitIntervalSeconds,
+		ch.APIRbteLimitQuotb,
+		ch.APIRbteLimitIntervblSeconds,
+		ch.GitRbteLimitQuotb,
+		ch.GitRbteLimitIntervblSeconds,
 		ch.ID,
 		sqlf.Join(codeHostColumnExpressions, ","),
 	)
 }
 
-const updateCodeHostQueryFmtstr = `
+const updbteCodeHostQueryFmtstr = `
 UPDATE code_hosts
 	SET
 		kind = %s,
 		url = %s,
-		api_rate_limit_quota = %s,
-		api_rate_limit_interval_seconds = %s,
-		git_rate_limit_quota = %s,
-		git_rate_limit_interval_seconds = %s
+		bpi_rbte_limit_quotb = %s,
+		bpi_rbte_limit_intervbl_seconds = %s,
+		git_rbte_limit_quotb = %s,
+		git_rbte_limit_intervbl_seconds = %s
 	WHERE
 		id = %s
 	RETURNING
@@ -276,7 +276,7 @@ WHERE
 
 func (e *codeHostStore) Count(ctx context.Context, opts ListCodeHostsOpts) (int32, error) {
 	q := countCodeHostsQuery(opts)
-	count, _, err := basestore.ScanFirstInt(e.Query(ctx, q))
+	count, _, err := bbsestore.ScbnFirstInt(e.Query(ctx, q))
 	return int32(count), err
 }
 
@@ -297,24 +297,24 @@ func listCodeHostsWhereQuery(opts ListCodeHostsOpts) *sqlf.Query {
 	conds := []*sqlf.Query{}
 
 	if !opts.IncludeDeleted {
-		// Don't show code hosts for which all external services are soft-deleted or hard-deleted.
-		conds = append(conds, sqlf.Sprintf("(EXISTS (SELECT 1 FROM external_services WHERE external_services.code_host_id = code_hosts.id AND deleted_at IS NULL))"))
+		// Don't show code hosts for which bll externbl services bre soft-deleted or hbrd-deleted.
+		conds = bppend(conds, sqlf.Sprintf("(EXISTS (SELECT 1 FROM externbl_services WHERE externbl_services.code_host_id = code_hosts.id AND deleted_bt IS NULL))"))
 	}
 
 	if opts.ID > 0 {
-		conds = append(conds, sqlf.Sprintf("code_hosts.id = %s", opts.ID))
+		conds = bppend(conds, sqlf.Sprintf("code_hosts.id = %s", opts.ID))
 	}
 
 	if opts.URL != "" {
-		conds = append(conds, sqlf.Sprintf("code_hosts.url = %s", opts.URL))
+		conds = bppend(conds, sqlf.Sprintf("code_hosts.url = %s", opts.URL))
 	}
 
 	if opts.Cursor > 0 {
-		conds = append(conds, sqlf.Sprintf("code_hosts.id >= %s", opts.Cursor))
+		conds = bppend(conds, sqlf.Sprintf("code_hosts.id >= %s", opts.Cursor))
 	}
 
-	if opts.Search != "" {
-		conds = append(conds, sqlf.Sprintf("(code_hosts.kind ILIKE %s OR code_hosts.url ILIKE %s)", "%"+opts.Search+"%", "%"+opts.Search+"%"))
+	if opts.Sebrch != "" {
+		conds = bppend(conds, sqlf.Sprintf("(code_hosts.kind ILIKE %s OR code_hosts.url ILIKE %s)", "%"+opts.Sebrch+"%", "%"+opts.Sebrch+"%"))
 	}
 	if len(conds) == 0 {
 		return sqlf.Sprintf("TRUE")
@@ -323,25 +323,25 @@ func listCodeHostsWhereQuery(opts ListCodeHostsOpts) *sqlf.Query {
 	return sqlf.Join(conds, "AND")
 }
 
-func scanCodeHosts(s dbutil.Scanner) (*types.CodeHost, error) {
-	var ch types.CodeHost
-	err := scan(s, &ch)
+func scbnCodeHosts(s dbutil.Scbnner) (*types.CodeHost, error) {
+	vbr ch types.CodeHost
+	err := scbn(s, &ch)
 	if err != nil {
 		return &types.CodeHost{}, err
 	}
 	return &ch, nil
 }
 
-func scan(s dbutil.Scanner, ch *types.CodeHost) error {
-	return s.Scan(
+func scbn(s dbutil.Scbnner, ch *types.CodeHost) error {
+	return s.Scbn(
 		&ch.ID,
 		&ch.Kind,
 		&ch.URL,
-		&ch.APIRateLimitQuota,
-		&ch.APIRateLimitIntervalSeconds,
-		&ch.GitRateLimitQuota,
-		&ch.GitRateLimitIntervalSeconds,
-		&dbutil.NullTime{Time: &ch.CreatedAt},
-		&dbutil.NullTime{Time: &ch.UpdatedAt},
+		&ch.APIRbteLimitQuotb,
+		&ch.APIRbteLimitIntervblSeconds,
+		&ch.GitRbteLimitQuotb,
+		&ch.GitRbteLimitIntervblSeconds,
+		&dbutil.NullTime{Time: &ch.CrebtedAt},
+		&dbutil.NullTime{Time: &ch.UpdbtedAt},
 	)
 }

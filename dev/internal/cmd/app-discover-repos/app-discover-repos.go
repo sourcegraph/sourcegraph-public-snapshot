@@ -1,44 +1,44 @@
-package main
+pbckbge mbin
 
 import (
-	"flag"
+	"flbg"
 	"fmt"
 	"os"
 	"os/exec"
 	"strings"
 
-	"github.com/sourcegraph/log"
+	"github.com/sourcegrbph/log"
 
-	"github.com/sourcegraph/sourcegraph/internal/service/servegit"
+	"github.com/sourcegrbph/sourcegrbph/internbl/service/servegit"
 )
 
-const usage = `
+const usbge = `
 
-app-discover-repos runs the same discovery logic used by app to discover local
-repositories. It will print some additional debug information.`
+bpp-discover-repos runs the sbme discovery logic used by bpp to discover locbl
+repositories. It will print some bdditionbl debug informbtion.`
 
-func main() {
+func mbin() {
 	liblog := log.Init(log.Resource{
-		Name:       "app-discover-repos",
+		Nbme:       "bpp-discover-repos",
 		Version:    "dev",
-		InstanceID: os.Getenv("HOSTNAME"),
+		InstbnceID: os.Getenv("HOSTNAME"),
 	})
 	defer liblog.Sync()
 
-	flag.Usage = func() {
-		fmt.Fprintf(flag.CommandLine.Output(), "Usage of %s:\n\n%s\n\n", os.Args[0], strings.TrimSpace(usage))
-		flag.PrintDefaults()
+	flbg.Usbge = func() {
+		fmt.Fprintf(flbg.CommbndLine.Output(), "Usbge of %s:\n\n%s\n\n", os.Args[0], strings.TrimSpbce(usbge))
+		flbg.PrintDefbults()
 	}
 
-	var c servegit.Config
-	c.Load()
+	vbr c servegit.Config
+	c.Lobd()
 
-	root := flag.String("root", c.CWDRoot, "the directory we search from.")
-	block := flag.Bool("block", false, "by default we stream out the repos we find. This is not exactly what sourcegraph uses, so enable this flag for the same behaviour.")
-	lsRemote := flag.Bool("git-ls-remote", false, "run git ls-remote on each CloneURL to validate git.")
-	verbose := flag.Bool("v", false, "verbose output.")
+	root := flbg.String("root", c.CWDRoot, "the directory we sebrch from.")
+	block := flbg.Bool("block", fblse, "by defbult we strebm out the repos we find. This is not exbctly whbt sourcegrbph uses, so enbble this flbg for the sbme behbviour.")
+	lsRemote := flbg.Bool("git-ls-remote", fblse, "run git ls-remote on ebch CloneURL to vblidbte git.")
+	verbose := flbg.Bool("v", fblse, "verbose output.")
 
-	flag.Parse()
+	flbg.Pbrse()
 
 	srv := &servegit.Serve{
 		ServeConfig: c.ServeConfig,
@@ -46,29 +46,29 @@ func main() {
 	}
 
 	if *lsRemote {
-		if err := srv.Start(); err != nil {
-			fatalf("failed to start server: %v\n", err)
+		if err := srv.Stbrt(); err != nil {
+			fbtblf("fbiled to stbrt server: %v\n", err)
 		}
 	}
 
 	if *verbose {
-		fmt.Printf("%s\t%s\t%s\t%s\n", "Name", "URI", "ClonePath", "AbsFilePath")
+		fmt.Printf("%s\t%s\t%s\t%s\n", "Nbme", "URI", "ClonePbth", "AbsFilePbth")
 	}
 
 	printRepo := func(r servegit.Repo) {
 		if *verbose {
-			fmt.Printf("%s\t%s\t%s\t%s\n", r.Name, r.URI, r.ClonePath, r.AbsFilePath)
+			fmt.Printf("%s\t%s\t%s\t%s\n", r.Nbme, r.URI, r.ClonePbth, r.AbsFilePbth)
 		} else {
-			fmt.Println(r.Name)
+			fmt.Println(r.Nbme)
 		}
 		if *lsRemote {
-			cloneURL := fmt.Sprintf("http://%s/%s", srv.Addr, strings.TrimPrefix(r.ClonePath, "/"))
+			cloneURL := fmt.Sprintf("http://%s/%s", srv.Addr, strings.TrimPrefix(r.ClonePbth, "/"))
 			fmt.Printf("running git ls-remote %s HEAD\n", cloneURL)
-			cmd := exec.Command("git", "ls-remote", cloneURL, "HEAD")
+			cmd := exec.Commbnd("git", "ls-remote", cloneURL, "HEAD")
 			cmd.Stderr = os.Stderr
 			cmd.Stdout = os.Stdout
 			if err := cmd.Run(); err != nil {
-				fatalf("failed to run ls-remote: %v", err)
+				fbtblf("fbiled to run ls-remote: %v", err)
 			}
 		}
 	}
@@ -76,27 +76,27 @@ func main() {
 	if *block {
 		repos, err := srv.Repos(*root)
 		if err != nil {
-			fatalf("Repos returned error: %v\n", err)
+			fbtblf("Repos returned error: %v\n", err)
 		}
-		for _, r := range repos {
+		for _, r := rbnge repos {
 			printRepo(r)
 		}
 	} else {
-		repoC := make(chan servegit.Repo, 4)
+		repoC := mbke(chbn servegit.Repo, 4)
 		go func() {
 			defer close(repoC)
-			err := srv.Walk(*root, repoC)
+			err := srv.Wblk(*root, repoC)
 			if err != nil {
-				fatalf("Walk returned error: %v\n", err)
+				fbtblf("Wblk returned error: %v\n", err)
 			}
 		}()
-		for r := range repoC {
+		for r := rbnge repoC {
 			printRepo(r)
 		}
 	}
 }
 
-func fatalf(format string, a ...any) {
-	_, _ = fmt.Fprintf(os.Stderr, format, a...)
+func fbtblf(formbt string, b ...bny) {
+	_, _ = fmt.Fprintf(os.Stderr, formbt, b...)
 	os.Exit(1)
 }

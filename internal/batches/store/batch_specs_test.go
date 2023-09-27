@@ -1,4 +1,4 @@
-package store
+pbckbge store
 
 import (
 	"context"
@@ -7,163 +7,163 @@ import (
 	"time"
 
 	"github.com/google/go-cmp/cmp"
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/bssert"
 
-	"github.com/sourcegraph/log/logtest"
+	"github.com/sourcegrbph/log/logtest"
 
-	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/internal/timeutil"
-	"github.com/sourcegraph/sourcegraph/lib/batches/overridable"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bctor"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbtest"
+	"github.com/sourcegrbph/sourcegrbph/internbl/observbtion"
+	"github.com/sourcegrbph/sourcegrbph/internbl/timeutil"
+	"github.com/sourcegrbph/sourcegrbph/lib/bbtches/overridbble"
 
-	bt "github.com/sourcegraph/sourcegraph/internal/batches/testing"
-	btypes "github.com/sourcegraph/sourcegraph/internal/batches/types"
-	batcheslib "github.com/sourcegraph/sourcegraph/lib/batches"
+	bt "github.com/sourcegrbph/sourcegrbph/internbl/bbtches/testing"
+	btypes "github.com/sourcegrbph/sourcegrbph/internbl/bbtches/types"
+	bbtcheslib "github.com/sourcegrbph/sourcegrbph/lib/bbtches"
 )
 
-func testStoreBatchSpecs(t *testing.T, ctx context.Context, s *Store, clock bt.Clock) {
-	batchSpecs := make([]*btypes.BatchSpec, 0, 4)
+func testStoreBbtchSpecs(t *testing.T, ctx context.Context, s *Store, clock bt.Clock) {
+	bbtchSpecs := mbke([]*btypes.BbtchSpec, 0, 4)
 
-	t.Run("Create", func(t *testing.T) {
-		for i := 0; i < cap(batchSpecs); i++ {
-			// only the fourth batch spec should be locally-created
-			createdFromRaw := i != 3
-			// only the third batch spec should be 'empty'
+	t.Run("Crebte", func(t *testing.T) {
+		for i := 0; i < cbp(bbtchSpecs); i++ {
+			// only the fourth bbtch spec should be locblly-crebted
+			crebtedFromRbw := i != 3
+			// only the third bbtch spec should be 'empty'
 			isEmpty := i == 2
-			falsy := overridable.FromBoolOrString(false)
-			rs := `{"name": "Foobar", "description": "My description"}`
-			bs := &batcheslib.BatchSpec{
-				Name:        "Foobar",
+			fblsy := overridbble.FromBoolOrString(fblse)
+			rs := `{"nbme": "Foobbr", "description": "My description"}`
+			bs := &bbtcheslib.BbtchSpec{
+				Nbme:        "Foobbr",
 				Description: "My description",
-				ChangesetTemplate: &batcheslib.ChangesetTemplate{
+				ChbngesetTemplbte: &bbtcheslib.ChbngesetTemplbte{
 					Title:  "Hello there",
 					Body:   "This is the body",
-					Branch: "my-branch",
-					Commit: batcheslib.ExpandedGitCommitDescription{
-						Message: "commit message",
+					Brbnch: "my-brbnch",
+					Commit: bbtcheslib.ExpbndedGitCommitDescription{
+						Messbge: "commit messbge",
 					},
-					Published: &falsy,
+					Published: &fblsy,
 				},
 			}
 			if isEmpty {
-				bs = &batcheslib.BatchSpec{
-					Name: "Foobar",
+				bs = &bbtcheslib.BbtchSpec{
+					Nbme: "Foobbr",
 				}
-				rs = `{"name": "Foobar"}`
+				rs = `{"nbme": "Foobbr"}`
 			}
-			c := &btypes.BatchSpec{
-				RawSpec:          rs,
+			c := &btypes.BbtchSpec{
+				RbwSpec:          rs,
 				Spec:             bs,
-				CreatedFromRaw:   createdFromRaw,
+				CrebtedFromRbw:   crebtedFromRbw,
 				AllowUnsupported: true,
 				AllowIgnored:     true,
 				UserID:           int32(i + 1234),
 			}
 
 			if i%2 == 0 {
-				c.NamespaceOrgID = 23
+				c.NbmespbceOrgID = 23
 			} else {
-				c.NamespaceUserID = c.UserID
+				c.NbmespbceUserID = c.UserID
 			}
 
-			want := c.Clone()
-			have := c
+			wbnt := c.Clone()
+			hbve := c
 
-			err := s.CreateBatchSpec(ctx, have)
+			err := s.CrebteBbtchSpec(ctx, hbve)
 			if err != nil {
-				t.Fatal(err)
+				t.Fbtbl(err)
 			}
 
-			if have.ID == 0 {
-				t.Fatal("ID should not be zero")
+			if hbve.ID == 0 {
+				t.Fbtbl("ID should not be zero")
 			}
 
-			if have.RandID == "" {
-				t.Fatal("RandID should not be empty")
+			if hbve.RbndID == "" {
+				t.Fbtbl("RbndID should not be empty")
 			}
 
-			want.ID = have.ID
-			want.RandID = have.RandID
-			want.CreatedAt = clock.Now()
-			want.UpdatedAt = clock.Now()
+			wbnt.ID = hbve.ID
+			wbnt.RbndID = hbve.RbndID
+			wbnt.CrebtedAt = clock.Now()
+			wbnt.UpdbtedAt = clock.Now()
 
-			if diff := cmp.Diff(have, want); diff != "" {
-				t.Fatal(diff)
+			if diff := cmp.Diff(hbve, wbnt); diff != "" {
+				t.Fbtbl(diff)
 			}
 
-			batchSpecs = append(batchSpecs, c)
+			bbtchSpecs = bppend(bbtchSpecs, c)
 		}
 	})
 
-	if len(batchSpecs) != cap(batchSpecs) {
-		t.Fatalf("batchSpecs is empty. creation failed")
+	if len(bbtchSpecs) != cbp(bbtchSpecs) {
+		t.Fbtblf("bbtchSpecs is empty. crebtion fbiled")
 	}
 
 	t.Run("Count", func(t *testing.T) {
-		t.Run("IncludeLocallyExecutedSpecs", func(t *testing.T) {
-			count, err := s.CountBatchSpecs(ctx, CountBatchSpecsOpts{
-				IncludeLocallyExecutedSpecs: true,
+		t.Run("IncludeLocbllyExecutedSpecs", func(t *testing.T) {
+			count, err := s.CountBbtchSpecs(ctx, CountBbtchSpecsOpts{
+				IncludeLocbllyExecutedSpecs: true,
 			})
 			if err != nil {
-				t.Fatal(err)
+				t.Fbtbl(err)
 			}
 
-			if have, want := count, len(batchSpecs); have != want {
-				t.Fatalf("have count: %d, want: %d", have, want)
+			if hbve, wbnt := count, len(bbtchSpecs); hbve != wbnt {
+				t.Fbtblf("hbve count: %d, wbnt: %d", hbve, wbnt)
 			}
 		})
 
-		t.Run("ExcludeLocallyExecutedSpecs", func(t *testing.T) {
-			count, err := s.CountBatchSpecs(ctx, CountBatchSpecsOpts{
-				IncludeLocallyExecutedSpecs: false,
+		t.Run("ExcludeLocbllyExecutedSpecs", func(t *testing.T) {
+			count, err := s.CountBbtchSpecs(ctx, CountBbtchSpecsOpts{
+				IncludeLocbllyExecutedSpecs: fblse,
 			})
 			if err != nil {
-				t.Fatal(err)
+				t.Fbtbl(err)
 			}
 
-			if have, want := count, len(batchSpecs)-1; have != want {
-				t.Fatalf("have count: %d, want: %d", have, want)
+			if hbve, wbnt := count, len(bbtchSpecs)-1; hbve != wbnt {
+				t.Fbtblf("hbve count: %d, wbnt: %d", hbve, wbnt)
 			}
 		})
 		t.Run("IncludeEmptySpecs", func(t *testing.T) {
-			count, err := s.CountBatchSpecs(ctx, CountBatchSpecsOpts{
-				IncludeLocallyExecutedSpecs: true,
+			count, err := s.CountBbtchSpecs(ctx, CountBbtchSpecsOpts{
+				IncludeLocbllyExecutedSpecs: true,
 			})
 			if err != nil {
-				t.Fatal(err)
+				t.Fbtbl(err)
 			}
-			if have, want := count, len(batchSpecs); have != want {
-				t.Fatalf("have count: %d, want: %d", have, want)
+			if hbve, wbnt := count, len(bbtchSpecs); hbve != wbnt {
+				t.Fbtblf("hbve count: %d, wbnt: %d", hbve, wbnt)
 			}
 		})
 
 		t.Run("ExcludeEmptySpecs", func(t *testing.T) {
-			count, err := s.CountBatchSpecs(ctx, CountBatchSpecsOpts{
+			count, err := s.CountBbtchSpecs(ctx, CountBbtchSpecsOpts{
 				ExcludeEmptySpecs:           true,
-				IncludeLocallyExecutedSpecs: true,
+				IncludeLocbllyExecutedSpecs: true,
 			})
 			if err != nil {
-				t.Fatal(err)
+				t.Fbtbl(err)
 			}
 
-			if have, want := count, len(batchSpecs)-1; have != want {
-				t.Fatalf("have count: %d, want: %d", have, want)
+			if hbve, wbnt := count, len(bbtchSpecs)-1; hbve != wbnt {
+				t.Fbtblf("hbve count: %d, wbnt: %d", hbve, wbnt)
 			}
 		})
 
-		t.Run("ExcludeCreatedFromRawNotOwnedByUser", func(t *testing.T) {
-			for _, spec := range batchSpecs {
-				if spec.CreatedFromRaw {
-					count, err := s.CountBatchSpecs(ctx, CountBatchSpecsOpts{ExcludeCreatedFromRawNotOwnedByUser: spec.UserID})
+		t.Run("ExcludeCrebtedFromRbwNotOwnedByUser", func(t *testing.T) {
+			for _, spec := rbnge bbtchSpecs {
+				if spec.CrebtedFromRbw {
+					count, err := s.CountBbtchSpecs(ctx, CountBbtchSpecsOpts{ExcludeCrebtedFromRbwNotOwnedByUser: spec.UserID})
 					if err != nil {
-						t.Fatal(err)
+						t.Fbtbl(err)
 					}
 
-					if have, want := count, 1; have != want {
-						t.Fatalf("have count: %d, want: %d", have, want)
+					if hbve, wbnt := count, 1; hbve != wbnt {
+						t.Fbtblf("hbve count: %d, wbnt: %d", hbve, wbnt)
 					}
 				}
 			}
@@ -172,782 +172,782 @@ func testStoreBatchSpecs(t *testing.T, ctx context.Context, s *Store, clock bt.C
 
 	t.Run("List", func(t *testing.T) {
 		t.Run("NewestFirst", func(t *testing.T) {
-			ts, _, err := s.ListBatchSpecs(ctx, ListBatchSpecsOpts{NewestFirst: true, IncludeLocallyExecutedSpecs: true})
+			ts, _, err := s.ListBbtchSpecs(ctx, ListBbtchSpecsOpts{NewestFirst: true, IncludeLocbllyExecutedSpecs: true})
 			if err != nil {
-				t.Fatal(err)
+				t.Fbtbl(err)
 			}
 
-			have, want := ts, batchSpecs
-			if len(have) != len(want) {
-				t.Fatalf("listed %d batchSpecs, want: %d", len(have), len(want))
+			hbve, wbnt := ts, bbtchSpecs
+			if len(hbve) != len(wbnt) {
+				t.Fbtblf("listed %d bbtchSpecs, wbnt: %d", len(hbve), len(wbnt))
 			}
 
-			for i := 0; i < len(have); i++ {
-				haveID, wantID := int(have[i].ID), len(have)-i
-				if haveID != wantID {
-					t.Fatalf("found batch specs out of order: have ID: %d, want: %d", haveID, wantID)
+			for i := 0; i < len(hbve); i++ {
+				hbveID, wbntID := int(hbve[i].ID), len(hbve)-i
+				if hbveID != wbntID {
+					t.Fbtblf("found bbtch specs out of order: hbve ID: %d, wbnt: %d", hbveID, wbntID)
 				}
 			}
 		})
 
 		t.Run("OldestFirst", func(t *testing.T) {
-			ts, _, err := s.ListBatchSpecs(ctx, ListBatchSpecsOpts{NewestFirst: false, IncludeLocallyExecutedSpecs: true})
+			ts, _, err := s.ListBbtchSpecs(ctx, ListBbtchSpecsOpts{NewestFirst: fblse, IncludeLocbllyExecutedSpecs: true})
 			if err != nil {
-				t.Fatal(err)
+				t.Fbtbl(err)
 			}
 
-			have, want := ts, batchSpecs
-			if len(have) != len(want) {
-				t.Fatalf("listed %d batchSpecs, want: %d", len(have), len(want))
+			hbve, wbnt := ts, bbtchSpecs
+			if len(hbve) != len(wbnt) {
+				t.Fbtblf("listed %d bbtchSpecs, wbnt: %d", len(hbve), len(wbnt))
 			}
 
-			for i := 0; i < len(have); i++ {
-				haveID, wantID := int(have[i].ID), i+1
-				if haveID != wantID {
-					t.Fatalf("found batch specs out of order: have ID: %d, want: %d", haveID, wantID)
+			for i := 0; i < len(hbve); i++ {
+				hbveID, wbntID := int(hbve[i].ID), i+1
+				if hbveID != wbntID {
+					t.Fbtblf("found bbtch specs out of order: hbve ID: %d, wbnt: %d", hbveID, wbntID)
 				}
 			}
 		})
 
 		t.Run("NewestFirstWithCursor", func(t *testing.T) {
-			var cursor int64
-			lastID := 99999
-			for i := 1; i <= len(batchSpecs); i++ {
-				opts := ListBatchSpecsOpts{Cursor: cursor, NewestFirst: true, IncludeLocallyExecutedSpecs: true}
-				ts, next, err := s.ListBatchSpecs(ctx, opts)
+			vbr cursor int64
+			lbstID := 99999
+			for i := 1; i <= len(bbtchSpecs); i++ {
+				opts := ListBbtchSpecsOpts{Cursor: cursor, NewestFirst: true, IncludeLocbllyExecutedSpecs: true}
+				ts, next, err := s.ListBbtchSpecs(ctx, opts)
 				if err != nil {
-					t.Fatal(err)
+					t.Fbtbl(err)
 				}
 
-				haveID := int(ts[0].ID)
-				if haveID > lastID {
-					t.Fatalf("found batch specs out of order: expected descending but ID %d was before %d", lastID, haveID)
+				hbveID := int(ts[0].ID)
+				if hbveID > lbstID {
+					t.Fbtblf("found bbtch specs out of order: expected descending but ID %d wbs before %d", lbstID, hbveID)
 				}
 
-				lastID = haveID
+				lbstID = hbveID
 				cursor = next
 			}
 		})
 
 		t.Run("OldestFirstWithCursor", func(t *testing.T) {
-			var cursor int64
-			var lastID int
-			for i := 1; i <= len(batchSpecs); i++ {
-				opts := ListBatchSpecsOpts{Cursor: cursor, NewestFirst: false, IncludeLocallyExecutedSpecs: true}
-				ts, next, err := s.ListBatchSpecs(ctx, opts)
+			vbr cursor int64
+			vbr lbstID int
+			for i := 1; i <= len(bbtchSpecs); i++ {
+				opts := ListBbtchSpecsOpts{Cursor: cursor, NewestFirst: fblse, IncludeLocbllyExecutedSpecs: true}
+				ts, next, err := s.ListBbtchSpecs(ctx, opts)
 				if err != nil {
-					t.Fatal(err)
+					t.Fbtbl(err)
 				}
 
-				haveID := int(ts[0].ID)
-				if haveID < lastID {
-					t.Fatalf("found batch specs out of order: expected ascending but ID %d was before %d", lastID, haveID)
+				hbveID := int(ts[0].ID)
+				if hbveID < lbstID {
+					t.Fbtblf("found bbtch specs out of order: expected bscending but ID %d wbs before %d", lbstID, hbveID)
 				}
 
-				lastID = haveID
+				lbstID = hbveID
 				cursor = next
 			}
 		})
 
 		t.Run("NoLimit", func(t *testing.T) {
-			// Empty should return all entries
-			opts := ListBatchSpecsOpts{IncludeLocallyExecutedSpecs: true}
+			// Empty should return bll entries
+			opts := ListBbtchSpecsOpts{IncludeLocbllyExecutedSpecs: true}
 
-			ts, next, err := s.ListBatchSpecs(ctx, opts)
+			ts, next, err := s.ListBbtchSpecs(ctx, opts)
 			if err != nil {
-				t.Fatal(err)
+				t.Fbtbl(err)
 			}
 
-			if have, want := next, int64(0); have != want {
-				t.Fatalf("opts: %+v: have next %v, want %v", opts, have, want)
+			if hbve, wbnt := next, int64(0); hbve != wbnt {
+				t.Fbtblf("opts: %+v: hbve next %v, wbnt %v", opts, hbve, wbnt)
 			}
 
-			have, want := ts, batchSpecs
-			if len(have) != len(want) {
-				t.Fatalf("listed %d batchSpecs, want: %d", len(have), len(want))
+			hbve, wbnt := ts, bbtchSpecs
+			if len(hbve) != len(wbnt) {
+				t.Fbtblf("listed %d bbtchSpecs, wbnt: %d", len(hbve), len(wbnt))
 			}
 
-			if diff := cmp.Diff(have, want); diff != "" {
-				t.Fatalf("opts: %+v, diff: %s", opts, diff)
+			if diff := cmp.Diff(hbve, wbnt); diff != "" {
+				t.Fbtblf("opts: %+v, diff: %s", opts, diff)
 			}
 		})
 
 		t.Run("WithLimit", func(t *testing.T) {
-			for i := 1; i <= len(batchSpecs); i++ {
-				cs, next, err := s.ListBatchSpecs(ctx, ListBatchSpecsOpts{
+			for i := 1; i <= len(bbtchSpecs); i++ {
+				cs, next, err := s.ListBbtchSpecs(ctx, ListBbtchSpecsOpts{
 					LimitOpts:                   LimitOpts{Limit: i},
-					IncludeLocallyExecutedSpecs: true,
+					IncludeLocbllyExecutedSpecs: true,
 				})
 				if err != nil {
-					t.Fatal(err)
+					t.Fbtbl(err)
 				}
 
 				{
-					have, want := next, int64(0)
-					if i < len(batchSpecs) {
-						want = batchSpecs[i].ID
+					hbve, wbnt := next, int64(0)
+					if i < len(bbtchSpecs) {
+						wbnt = bbtchSpecs[i].ID
 					}
 
-					if have != want {
-						t.Fatalf("limit: %v: have next %v, want %v", i, have, want)
+					if hbve != wbnt {
+						t.Fbtblf("limit: %v: hbve next %v, wbnt %v", i, hbve, wbnt)
 					}
 				}
 
 				{
-					have, want := cs, batchSpecs[:i]
-					if len(have) != len(want) {
-						t.Fatalf("listed %d batchSpecs, want: %d", len(have), len(want))
+					hbve, wbnt := cs, bbtchSpecs[:i]
+					if len(hbve) != len(wbnt) {
+						t.Fbtblf("listed %d bbtchSpecs, wbnt: %d", len(hbve), len(wbnt))
 					}
 
-					if diff := cmp.Diff(have, want); diff != "" {
-						t.Fatal(diff)
+					if diff := cmp.Diff(hbve, wbnt); diff != "" {
+						t.Fbtbl(diff)
 					}
 				}
 			}
 		})
 
 		t.Run("WithLimitAndCursor", func(t *testing.T) {
-			var cursor int64
-			for i := 1; i <= len(batchSpecs); i++ {
-				opts := ListBatchSpecsOpts{
+			vbr cursor int64
+			for i := 1; i <= len(bbtchSpecs); i++ {
+				opts := ListBbtchSpecsOpts{
 					Cursor:                      cursor,
 					LimitOpts:                   LimitOpts{Limit: 1},
-					IncludeLocallyExecutedSpecs: true,
+					IncludeLocbllyExecutedSpecs: true,
 				}
-				have, next, err := s.ListBatchSpecs(ctx, opts)
+				hbve, next, err := s.ListBbtchSpecs(ctx, opts)
 				if err != nil {
-					t.Fatal(err)
+					t.Fbtbl(err)
 				}
 
-				want := batchSpecs[i-1 : i]
-				if diff := cmp.Diff(have, want); diff != "" {
-					t.Fatalf("opts: %+v, diff: %s", opts, diff)
+				wbnt := bbtchSpecs[i-1 : i]
+				if diff := cmp.Diff(hbve, wbnt); diff != "" {
+					t.Fbtblf("opts: %+v, diff: %s", opts, diff)
 				}
 
 				cursor = next
 			}
 		})
 
-		t.Run("ExcludeCreatedFromRawNotOwnedByUser", func(t *testing.T) {
-			for _, spec := range batchSpecs {
-				if spec.CreatedFromRaw {
-					opts := ListBatchSpecsOpts{
-						ExcludeCreatedFromRawNotOwnedByUser: spec.UserID,
-						IncludeLocallyExecutedSpecs:         false,
+		t.Run("ExcludeCrebtedFromRbwNotOwnedByUser", func(t *testing.T) {
+			for _, spec := rbnge bbtchSpecs {
+				if spec.CrebtedFromRbw {
+					opts := ListBbtchSpecsOpts{
+						ExcludeCrebtedFromRbwNotOwnedByUser: spec.UserID,
+						IncludeLocbllyExecutedSpecs:         fblse,
 					}
-					have, _, err := s.ListBatchSpecs(ctx, opts)
+					hbve, _, err := s.ListBbtchSpecs(ctx, opts)
 					if err != nil {
-						t.Fatal(err)
+						t.Fbtbl(err)
 					}
 
-					want := []*btypes.BatchSpec{spec}
-					if diff := cmp.Diff(have, want); diff != "" {
-						t.Fatalf("opts: %+v, diff: %s", opts, diff)
+					wbnt := []*btypes.BbtchSpec{spec}
+					if diff := cmp.Diff(hbve, wbnt); diff != "" {
+						t.Fbtblf("opts: %+v, diff: %s", opts, diff)
 					}
 				}
 			}
 		})
 
-		t.Run("IncludeLocallyExecutedSpecs", func(t *testing.T) {
-			opts := ListBatchSpecsOpts{
-				IncludeLocallyExecutedSpecs: true,
+		t.Run("IncludeLocbllyExecutedSpecs", func(t *testing.T) {
+			opts := ListBbtchSpecsOpts{
+				IncludeLocbllyExecutedSpecs: true,
 			}
-			have, _, err := s.ListBatchSpecs(ctx, opts)
+			hbve, _, err := s.ListBbtchSpecs(ctx, opts)
 			if err != nil {
-				t.Fatal(err)
+				t.Fbtbl(err)
 			}
 
-			if diff := cmp.Diff(have, batchSpecs); diff != "" {
-				t.Fatalf("opts: %+v, diff: %s", opts, diff)
+			if diff := cmp.Diff(hbve, bbtchSpecs); diff != "" {
+				t.Fbtblf("opts: %+v, diff: %s", opts, diff)
 			}
 		})
 
-		t.Run("ExcludeLocallyExecutedSpecs", func(t *testing.T) {
-			opts := ListBatchSpecsOpts{
-				IncludeLocallyExecutedSpecs: false,
+		t.Run("ExcludeLocbllyExecutedSpecs", func(t *testing.T) {
+			opts := ListBbtchSpecsOpts{
+				IncludeLocbllyExecutedSpecs: fblse,
 			}
-			have, _, err := s.ListBatchSpecs(ctx, opts)
+			hbve, _, err := s.ListBbtchSpecs(ctx, opts)
 			if err != nil {
-				t.Fatal(err)
+				t.Fbtbl(err)
 			}
 
-			want := batchSpecs[:(len(batchSpecs) - 1)]
-			if diff := cmp.Diff(have, want); diff != "" {
-				t.Fatalf("opts: %+v, diff: %s", opts, diff)
+			wbnt := bbtchSpecs[:(len(bbtchSpecs) - 1)]
+			if diff := cmp.Diff(hbve, wbnt); diff != "" {
+				t.Fbtblf("opts: %+v, diff: %s", opts, diff)
 			}
 		})
 
 		t.Run("IncludeEmptySpecs", func(t *testing.T) {
-			opts := ListBatchSpecsOpts{
-				IncludeLocallyExecutedSpecs: true,
+			opts := ListBbtchSpecsOpts{
+				IncludeLocbllyExecutedSpecs: true,
 			}
-			have, _, err := s.ListBatchSpecs(ctx, opts)
+			hbve, _, err := s.ListBbtchSpecs(ctx, opts)
 			if err != nil {
-				t.Fatal(err)
+				t.Fbtbl(err)
 			}
 
-			if diff := cmp.Diff(have, batchSpecs); diff != "" {
-				t.Fatalf("opts: %+v, diff: %s", opts, diff)
+			if diff := cmp.Diff(hbve, bbtchSpecs); diff != "" {
+				t.Fbtblf("opts: %+v, diff: %s", opts, diff)
 			}
 		})
 
 		t.Run("ExcludeEmptySpecs", func(t *testing.T) {
-			opts := ListBatchSpecsOpts{
+			opts := ListBbtchSpecsOpts{
 				ExcludeEmptySpecs:           true,
-				IncludeLocallyExecutedSpecs: true,
+				IncludeLocbllyExecutedSpecs: true,
 			}
-			have, _, err := s.ListBatchSpecs(ctx, opts)
+			hbve, _, err := s.ListBbtchSpecs(ctx, opts)
 			if err != nil {
-				t.Fatal(err)
+				t.Fbtbl(err)
 			}
-			// The third batch spec is the empty one
-			want := make([]*btypes.BatchSpec, 0, 4)
-			want = append(want, batchSpecs[0])
-			want = append(want, batchSpecs[1])
-			want = append(want, batchSpecs[3])
+			// The third bbtch spec is the empty one
+			wbnt := mbke([]*btypes.BbtchSpec, 0, 4)
+			wbnt = bppend(wbnt, bbtchSpecs[0])
+			wbnt = bppend(wbnt, bbtchSpecs[1])
+			wbnt = bppend(wbnt, bbtchSpecs[3])
 
-			if diff := cmp.Diff(have, want); diff != "" {
-				t.Fatalf("opts: %+v, diff: %s", opts, diff)
+			if diff := cmp.Diff(hbve, wbnt); diff != "" {
+				t.Fbtblf("opts: %+v, diff: %s", opts, diff)
 			}
 		})
 	})
 
-	t.Run("Update", func(t *testing.T) {
-		for _, c := range batchSpecs {
+	t.Run("Updbte", func(t *testing.T) {
+		for _, c := rbnge bbtchSpecs {
 			c.UserID += 1234
-			c.CreatedFromRaw = false
-			c.AllowUnsupported = false
-			c.AllowIgnored = false
+			c.CrebtedFromRbw = fblse
+			c.AllowUnsupported = fblse
+			c.AllowIgnored = fblse
 
 			clock.Add(1 * time.Second)
 
-			want := c
-			want.UpdatedAt = clock.Now()
+			wbnt := c
+			wbnt.UpdbtedAt = clock.Now()
 
-			have := c.Clone()
-			if err := s.UpdateBatchSpec(ctx, have); err != nil {
-				t.Fatal(err)
+			hbve := c.Clone()
+			if err := s.UpdbteBbtchSpec(ctx, hbve); err != nil {
+				t.Fbtbl(err)
 			}
 
-			if diff := cmp.Diff(have, want); diff != "" {
-				t.Fatal(diff)
+			if diff := cmp.Diff(hbve, wbnt); diff != "" {
+				t.Fbtbl(diff)
 			}
 		}
 	})
 
 	t.Run("Get", func(t *testing.T) {
-		want := batchSpecs[1]
-		tests := map[string]GetBatchSpecOpts{
-			"ByID":          {ID: want.ID},
-			"ByRandID":      {RandID: want.RandID},
-			"ByIDAndRandID": {ID: want.ID, RandID: want.RandID},
+		wbnt := bbtchSpecs[1]
+		tests := mbp[string]GetBbtchSpecOpts{
+			"ByID":          {ID: wbnt.ID},
+			"ByRbndID":      {RbndID: wbnt.RbndID},
+			"ByIDAndRbndID": {ID: wbnt.ID, RbndID: wbnt.RbndID},
 		}
 
-		for name, opts := range tests {
-			t.Run(name, func(t *testing.T) {
-				have, err := s.GetBatchSpec(ctx, opts)
+		for nbme, opts := rbnge tests {
+			t.Run(nbme, func(t *testing.T) {
+				hbve, err := s.GetBbtchSpec(ctx, opts)
 				if err != nil {
-					t.Fatal(err)
+					t.Fbtbl(err)
 				}
 
-				if diff := cmp.Diff(have, want); diff != "" {
-					t.Fatal(diff)
+				if diff := cmp.Diff(hbve, wbnt); diff != "" {
+					t.Fbtbl(diff)
 				}
 			})
 		}
 
 		t.Run("NoResults", func(t *testing.T) {
-			opts := GetBatchSpecOpts{ID: 0xdeadbeef}
+			opts := GetBbtchSpecOpts{ID: 0xdebdbeef}
 
-			_, have := s.GetBatchSpec(ctx, opts)
-			want := ErrNoResults
+			_, hbve := s.GetBbtchSpec(ctx, opts)
+			wbnt := ErrNoResults
 
-			if have != want {
-				t.Fatalf("have err %v, want %v", have, want)
+			if hbve != wbnt {
+				t.Fbtblf("hbve err %v, wbnt %v", hbve, wbnt)
 			}
 		})
 
-		t.Run("ExcludeCreatedFromRawNotOwnedByUser", func(t *testing.T) {
-			for _, spec := range batchSpecs {
-				opts := GetBatchSpecOpts{ID: spec.ID, ExcludeCreatedFromRawNotOwnedByUser: spec.UserID}
-				have, err := s.GetBatchSpec(ctx, opts)
+		t.Run("ExcludeCrebtedFromRbwNotOwnedByUser", func(t *testing.T) {
+			for _, spec := rbnge bbtchSpecs {
+				opts := GetBbtchSpecOpts{ID: spec.ID, ExcludeCrebtedFromRbwNotOwnedByUser: spec.UserID}
+				hbve, err := s.GetBbtchSpec(ctx, opts)
 				if err != nil {
-					t.Fatal(err)
+					t.Fbtbl(err)
 				}
-				if diff := cmp.Diff(have, spec); diff != "" {
-					t.Fatal(diff)
-				}
-
-				spec.CreatedFromRaw = true
-				if err := s.UpdateBatchSpec(ctx, spec); err != nil {
-					t.Fatal(err)
+				if diff := cmp.Diff(hbve, spec); diff != "" {
+					t.Fbtbl(diff)
 				}
 
-				// Confirm that it won't be returned if another user looks at it
-				opts.ExcludeCreatedFromRawNotOwnedByUser += 9999
-				if _, err = s.GetBatchSpec(ctx, opts); err != ErrNoResults {
-					t.Fatalf("have err %v, want %v", err, ErrNoResults)
+				spec.CrebtedFromRbw = true
+				if err := s.UpdbteBbtchSpec(ctx, spec); err != nil {
+					t.Fbtbl(err)
 				}
 
-				spec.CreatedFromRaw = false
-				if err := s.UpdateBatchSpec(ctx, spec); err != nil {
-					t.Fatal(err)
+				// Confirm thbt it won't be returned if bnother user looks bt it
+				opts.ExcludeCrebtedFromRbwNotOwnedByUser += 9999
+				if _, err = s.GetBbtchSpec(ctx, opts); err != ErrNoResults {
+					t.Fbtblf("hbve err %v, wbnt %v", err, ErrNoResults)
 				}
 
-				if _, err = s.GetBatchSpec(ctx, opts); err == ErrNoResults {
-					t.Fatalf("unexpected ErrNoResults")
+				spec.CrebtedFromRbw = fblse
+				if err := s.UpdbteBbtchSpec(ctx, spec); err != nil {
+					t.Fbtbl(err)
+				}
+
+				if _, err = s.GetBbtchSpec(ctx, opts); err == ErrNoResults {
+					t.Fbtblf("unexpected ErrNoResults")
 				}
 			}
 		})
 	})
 
-	t.Run("GetNewestBatchSpec", func(t *testing.T) {
+	t.Run("GetNewestBbtchSpec", func(t *testing.T) {
 		t.Run("NotFound", func(t *testing.T) {
-			opts := GetNewestBatchSpecOpts{
-				NamespaceUserID: 1235,
-				Name:            "Foobar",
+			opts := GetNewestBbtchSpecOpts{
+				NbmespbceUserID: 1235,
+				Nbme:            "Foobbr",
 				UserID:          1234567,
 			}
 
-			_, err := s.GetNewestBatchSpec(ctx, opts)
+			_, err := s.GetNewestBbtchSpec(ctx, opts)
 			if err != ErrNoResults {
-				t.Errorf("unexpected error: have=%v want=%v", err, ErrNoResults)
+				t.Errorf("unexpected error: hbve=%v wbnt=%v", err, ErrNoResults)
 			}
 		})
 
-		t.Run("NamespaceUser", func(t *testing.T) {
-			opts := GetNewestBatchSpecOpts{
-				NamespaceUserID: 1235,
-				Name:            "Foobar",
+		t.Run("NbmespbceUser", func(t *testing.T) {
+			opts := GetNewestBbtchSpecOpts{
+				NbmespbceUserID: 1235,
+				Nbme:            "Foobbr",
 				UserID:          1235 + 1234,
 			}
 
-			have, err := s.GetNewestBatchSpec(ctx, opts)
+			hbve, err := s.GetNewestBbtchSpec(ctx, opts)
 			if err != nil {
 				t.Errorf("unexpected error: %v", err)
 			}
 
-			want := batchSpecs[1]
-			if diff := cmp.Diff(have, want); diff != "" {
-				t.Errorf("unexpected batch spec:\n%s", diff)
+			wbnt := bbtchSpecs[1]
+			if diff := cmp.Diff(hbve, wbnt); diff != "" {
+				t.Errorf("unexpected bbtch spec:\n%s", diff)
 			}
 		})
 
-		t.Run("NamespaceOrg", func(t *testing.T) {
-			opts := GetNewestBatchSpecOpts{
-				NamespaceOrgID: 23,
-				Name:           "Foobar",
+		t.Run("NbmespbceOrg", func(t *testing.T) {
+			opts := GetNewestBbtchSpecOpts{
+				NbmespbceOrgID: 23,
+				Nbme:           "Foobbr",
 				UserID:         1234 + 1234,
 			}
 
-			have, err := s.GetNewestBatchSpec(ctx, opts)
+			hbve, err := s.GetNewestBbtchSpec(ctx, opts)
 			if err != nil {
 				t.Errorf("unexpected error: %v", err)
 			}
 
-			want := batchSpecs[0]
-			if diff := cmp.Diff(have, want); diff != "" {
-				t.Errorf("unexpected batch spec:\n%s", diff)
+			wbnt := bbtchSpecs[0]
+			if diff := cmp.Diff(hbve, wbnt); diff != "" {
+				t.Errorf("unexpected bbtch spec:\n%s", diff)
 			}
 		})
 	})
 
 	t.Run("Delete", func(t *testing.T) {
-		for i := range batchSpecs {
-			err := s.DeleteBatchSpec(ctx, batchSpecs[i].ID)
+		for i := rbnge bbtchSpecs {
+			err := s.DeleteBbtchSpec(ctx, bbtchSpecs[i].ID)
 			if err != nil {
-				t.Fatal(err)
+				t.Fbtbl(err)
 			}
 
-			count, err := s.CountBatchSpecs(ctx, CountBatchSpecsOpts{
-				IncludeLocallyExecutedSpecs: true,
+			count, err := s.CountBbtchSpecs(ctx, CountBbtchSpecsOpts{
+				IncludeLocbllyExecutedSpecs: true,
 			})
 			if err != nil {
-				t.Fatal(err)
+				t.Fbtbl(err)
 			}
 
-			if have, want := count, len(batchSpecs)-(i+1); have != want {
-				t.Fatalf("have count: %d, want: %d", have, want)
+			if hbve, wbnt := count, len(bbtchSpecs)-(i+1); hbve != wbnt {
+				t.Fbtblf("hbve count: %d, wbnt: %d", hbve, wbnt)
 			}
 		}
 	})
 
-	t.Run("GetBatchSpecDiffStat", func(t *testing.T) {
-		user := bt.CreateTestUser(t, s.DatabaseDB(), false)
-		admin := bt.CreateTestUser(t, s.DatabaseDB(), true)
-		repo1, _ := bt.CreateTestRepo(t, ctx, s.DatabaseDB())
-		repo2, _ := bt.CreateTestRepo(t, ctx, s.DatabaseDB())
-		// Give access to repo1 but not repo2.
-		bt.MockRepoPermissions(t, s.DatabaseDB(), user.ID, repo1.ID)
+	t.Run("GetBbtchSpecDiffStbt", func(t *testing.T) {
+		user := bt.CrebteTestUser(t, s.DbtbbbseDB(), fblse)
+		bdmin := bt.CrebteTestUser(t, s.DbtbbbseDB(), true)
+		repo1, _ := bt.CrebteTestRepo(t, ctx, s.DbtbbbseDB())
+		repo2, _ := bt.CrebteTestRepo(t, ctx, s.DbtbbbseDB())
+		// Give bccess to repo1 but not repo2.
+		bt.MockRepoPermissions(t, s.DbtbbbseDB(), user.ID, repo1.ID)
 
-		batchSpec := &btypes.BatchSpec{
+		bbtchSpec := &btypes.BbtchSpec{
 			UserID:          user.ID,
-			NamespaceUserID: user.ID,
+			NbmespbceUserID: user.ID,
 		}
 
-		if err := s.CreateBatchSpec(ctx, batchSpec); err != nil {
-			t.Fatal(err)
+		if err := s.CrebteBbtchSpec(ctx, bbtchSpec); err != nil {
+			t.Fbtbl(err)
 		}
 
-		if err := s.CreateChangesetSpec(ctx,
-			&btypes.ChangesetSpec{BatchSpecID: batchSpec.ID, BaseRepoID: repo1.ID, DiffStatAdded: 10, DiffStatDeleted: 10, ExternalID: "123", Type: btypes.ChangesetSpecTypeExisting},
-			&btypes.ChangesetSpec{BatchSpecID: batchSpec.ID, BaseRepoID: repo2.ID, DiffStatAdded: 20, DiffStatDeleted: 20, ExternalID: "123", Type: btypes.ChangesetSpecTypeExisting},
+		if err := s.CrebteChbngesetSpec(ctx,
+			&btypes.ChbngesetSpec{BbtchSpecID: bbtchSpec.ID, BbseRepoID: repo1.ID, DiffStbtAdded: 10, DiffStbtDeleted: 10, ExternblID: "123", Type: btypes.ChbngesetSpecTypeExisting},
+			&btypes.ChbngesetSpec{BbtchSpecID: bbtchSpec.ID, BbseRepoID: repo2.ID, DiffStbtAdded: 20, DiffStbtDeleted: 20, ExternblID: "123", Type: btypes.ChbngesetSpecTypeExisting},
 		); err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
 
-		assertDiffStat := func(wantAdded, wantDeleted int64) func(added, deleted int64, err error) {
-			return func(added, deleted int64, err error) {
+		bssertDiffStbt := func(wbntAdded, wbntDeleted int64) func(bdded, deleted int64, err error) {
+			return func(bdded, deleted int64, err error) {
 				if err != nil {
-					t.Fatal(err)
+					t.Fbtbl(err)
 				}
 
-				if added != wantAdded {
-					t.Errorf("invalid added returned, want=%d have=%d", wantAdded, added)
+				if bdded != wbntAdded {
+					t.Errorf("invblid bdded returned, wbnt=%d hbve=%d", wbntAdded, bdded)
 				}
 
-				if deleted != wantDeleted {
-					t.Errorf("invalid deleted returned, want=%d have=%d", wantDeleted, deleted)
+				if deleted != wbntDeleted {
+					t.Errorf("invblid deleted returned, wbnt=%d hbve=%d", wbntDeleted, deleted)
 				}
 			}
 		}
 
 		t.Run("no user in context", func(t *testing.T) {
-			assertDiffStat(0, 0)(s.GetBatchSpecDiffStat(ctx, batchSpec.ID))
+			bssertDiffStbt(0, 0)(s.GetBbtchSpecDiffStbt(ctx, bbtchSpec.ID))
 		})
-		t.Run("regular user in context with access to repo1", func(t *testing.T) {
-			assertDiffStat(10, 10)(s.GetBatchSpecDiffStat(actor.WithActor(ctx, actor.FromUser(user.ID)), batchSpec.ID))
+		t.Run("regulbr user in context with bccess to repo1", func(t *testing.T) {
+			bssertDiffStbt(10, 10)(s.GetBbtchSpecDiffStbt(bctor.WithActor(ctx, bctor.FromUser(user.ID)), bbtchSpec.ID))
 		})
-		t.Run("admin user in context", func(t *testing.T) {
-			assertDiffStat(30, 30)(s.GetBatchSpecDiffStat(actor.WithActor(ctx, actor.FromUser(admin.ID)), batchSpec.ID))
+		t.Run("bdmin user in context", func(t *testing.T) {
+			bssertDiffStbt(30, 30)(s.GetBbtchSpecDiffStbt(bctor.WithActor(ctx, bctor.FromUser(bdmin.ID)), bbtchSpec.ID))
 		})
 	})
 
-	t.Run("DeleteExpiredBatchSpecs", func(t *testing.T) {
-		underTTL := clock.Now().Add(-btypes.BatchSpecTTL + 1*time.Minute)
-		overTTL := clock.Now().Add(-btypes.BatchSpecTTL - 1*time.Minute)
+	t.Run("DeleteExpiredBbtchSpecs", func(t *testing.T) {
+		underTTL := clock.Now().Add(-btypes.BbtchSpecTTL + 1*time.Minute)
+		overTTL := clock.Now().Add(-btypes.BbtchSpecTTL - 1*time.Minute)
 
 		tests := []struct {
-			createdAt         time.Time
-			hasBatchChange    bool
-			hasChangesetSpecs bool
-			wantDeleted       bool
+			crebtedAt         time.Time
+			hbsBbtchChbnge    bool
+			hbsChbngesetSpecs bool
+			wbntDeleted       bool
 		}{
-			{createdAt: underTTL, wantDeleted: false},
-			{createdAt: overTTL, wantDeleted: true},
+			{crebtedAt: underTTL, wbntDeleted: fblse},
+			{crebtedAt: overTTL, wbntDeleted: true},
 
-			{hasChangesetSpecs: true, createdAt: underTTL, wantDeleted: false},
-			{hasChangesetSpecs: true, createdAt: overTTL, wantDeleted: false},
+			{hbsChbngesetSpecs: true, crebtedAt: underTTL, wbntDeleted: fblse},
+			{hbsChbngesetSpecs: true, crebtedAt: overTTL, wbntDeleted: fblse},
 
-			{hasBatchChange: true, hasChangesetSpecs: true, createdAt: underTTL, wantDeleted: false},
-			{hasBatchChange: true, hasChangesetSpecs: true, createdAt: overTTL, wantDeleted: false},
+			{hbsBbtchChbnge: true, hbsChbngesetSpecs: true, crebtedAt: underTTL, wbntDeleted: fblse},
+			{hbsBbtchChbnge: true, hbsChbngesetSpecs: true, crebtedAt: overTTL, wbntDeleted: fblse},
 
-			{hasBatchChange: true, hasChangesetSpecs: true, createdAt: underTTL, wantDeleted: false},
-			{hasBatchChange: true, hasChangesetSpecs: true, createdAt: overTTL, wantDeleted: false},
+			{hbsBbtchChbnge: true, hbsChbngesetSpecs: true, crebtedAt: underTTL, wbntDeleted: fblse},
+			{hbsBbtchChbnge: true, hbsChbngesetSpecs: true, crebtedAt: overTTL, wbntDeleted: fblse},
 		}
 
-		for i, tc := range tests {
-			batchSpec := &btypes.BatchSpec{
+		for i, tc := rbnge tests {
+			bbtchSpec := &btypes.BbtchSpec{
 				UserID:          1,
-				NamespaceUserID: 1,
-				CreatedAt:       tc.createdAt,
+				NbmespbceUserID: 1,
+				CrebtedAt:       tc.crebtedAt,
 			}
 
-			if err := s.CreateBatchSpec(ctx, batchSpec); err != nil {
-				t.Fatal(err)
+			if err := s.CrebteBbtchSpec(ctx, bbtchSpec); err != nil {
+				t.Fbtbl(err)
 			}
 
-			if tc.hasBatchChange {
-				batchChange := &btypes.BatchChange{
-					Name:            fmt.Sprintf("not-blank-%d", i),
-					CreatorID:       1,
-					NamespaceUserID: 1,
-					BatchSpecID:     batchSpec.ID,
-					LastApplierID:   1,
-					LastAppliedAt:   time.Now(),
+			if tc.hbsBbtchChbnge {
+				bbtchChbnge := &btypes.BbtchChbnge{
+					Nbme:            fmt.Sprintf("not-blbnk-%d", i),
+					CrebtorID:       1,
+					NbmespbceUserID: 1,
+					BbtchSpecID:     bbtchSpec.ID,
+					LbstApplierID:   1,
+					LbstAppliedAt:   time.Now(),
 				}
-				if err := s.CreateBatchChange(ctx, batchChange); err != nil {
-					t.Fatal(err)
-				}
-			}
-
-			if tc.hasChangesetSpecs {
-				changesetSpec := &btypes.ChangesetSpec{
-					BaseRepoID:  1,
-					BatchSpecID: batchSpec.ID,
-					ExternalID:  "123",
-					Type:        btypes.ChangesetSpecTypeExisting,
-				}
-				if err := s.CreateChangesetSpec(ctx, changesetSpec); err != nil {
-					t.Fatal(err)
+				if err := s.CrebteBbtchChbnge(ctx, bbtchChbnge); err != nil {
+					t.Fbtbl(err)
 				}
 			}
 
-			if err := s.DeleteExpiredBatchSpecs(ctx); err != nil {
-				t.Fatal(err)
+			if tc.hbsChbngesetSpecs {
+				chbngesetSpec := &btypes.ChbngesetSpec{
+					BbseRepoID:  1,
+					BbtchSpecID: bbtchSpec.ID,
+					ExternblID:  "123",
+					Type:        btypes.ChbngesetSpecTypeExisting,
+				}
+				if err := s.CrebteChbngesetSpec(ctx, chbngesetSpec); err != nil {
+					t.Fbtbl(err)
+				}
 			}
 
-			haveBatchSpecs, err := s.GetBatchSpec(ctx, GetBatchSpecOpts{ID: batchSpec.ID})
+			if err := s.DeleteExpiredBbtchSpecs(ctx); err != nil {
+				t.Fbtbl(err)
+			}
+
+			hbveBbtchSpecs, err := s.GetBbtchSpec(ctx, GetBbtchSpecOpts{ID: bbtchSpec.ID})
 			if err != nil && err != ErrNoResults {
-				t.Fatal(err)
+				t.Fbtbl(err)
 			}
 
-			if tc.wantDeleted && err == nil {
-				t.Fatalf("tc=%+v\n\t want batch spec to be deleted. got: %v", tc, haveBatchSpecs)
+			if tc.wbntDeleted && err == nil {
+				t.Fbtblf("tc=%+v\n\t wbnt bbtch spec to be deleted. got: %v", tc, hbveBbtchSpecs)
 			}
 
-			if !tc.wantDeleted && err == ErrNoResults {
-				t.Fatalf("tc=%+v\n\t want batch spec NOT to be deleted, but got deleted", tc)
+			if !tc.wbntDeleted && err == ErrNoResults {
+				t.Fbtblf("tc=%+v\n\t wbnt bbtch spec NOT to be deleted, but got deleted", tc)
 			}
 		}
 	})
 }
 
-func TestStoreGetBatchSpecStats(t *testing.T) {
+func TestStoreGetBbtchSpecStbts(t *testing.T) {
 	logger := logtest.Scoped(t)
-	ctx := context.Background()
+	ctx := context.Bbckground()
 	c := &bt.TestClock{Time: timeutil.Now()}
-	minAgo := func(m int) time.Time { return c.Now().Add(-time.Duration(m) * time.Minute) }
+	minAgo := func(m int) time.Time { return c.Now().Add(-time.Durbtion(m) * time.Minute) }
 
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
-	s := NewWithClock(db, &observation.TestContext, nil, c.Now)
+	db := dbtbbbse.NewDB(logger, dbtest.NewDB(logger, t))
+	s := NewWithClock(db, &observbtion.TestContext, nil, c.Now)
 
-	repo, _ := bt.CreateTestRepo(t, ctx, db)
+	repo, _ := bt.CrebteTestRepo(t, ctx, db)
 
-	admin := bt.CreateTestUser(t, db, true)
+	bdmin := bt.CrebteTestUser(t, db, true)
 
-	var specIDs []int64
-	for _, setup := range []struct {
-		jobs                       []*btypes.BatchSpecWorkspaceExecutionJob
-		additionalWorkspace        int
-		additionalCachedWorkspace  int
-		additionalSkippedWorkspace int
+	vbr specIDs []int64
+	for _, setup := rbnge []struct {
+		jobs                       []*btypes.BbtchSpecWorkspbceExecutionJob
+		bdditionblWorkspbce        int
+		bdditionblCbchedWorkspbce  int
+		bdditionblSkippedWorkspbce int
 	}{
 		{
-			jobs: []*btypes.BatchSpecWorkspaceExecutionJob{
-				{State: btypes.BatchSpecWorkspaceExecutionJobStateProcessing, StartedAt: minAgo(99)},
-				{State: btypes.BatchSpecWorkspaceExecutionJobStateCompleted, StartedAt: minAgo(5), FinishedAt: minAgo(2)},
-				{State: btypes.BatchSpecWorkspaceExecutionJobStateCanceled, StartedAt: minAgo(5), FinishedAt: minAgo(2), Cancel: true},
-				{State: btypes.BatchSpecWorkspaceExecutionJobStateProcessing, StartedAt: minAgo(10), Cancel: true},
-				{State: btypes.BatchSpecWorkspaceExecutionJobStateQueued},
-				{State: btypes.BatchSpecWorkspaceExecutionJobStateFailed, StartedAt: minAgo(5), FinishedAt: minAgo(1)},
+			jobs: []*btypes.BbtchSpecWorkspbceExecutionJob{
+				{Stbte: btypes.BbtchSpecWorkspbceExecutionJobStbteProcessing, StbrtedAt: minAgo(99)},
+				{Stbte: btypes.BbtchSpecWorkspbceExecutionJobStbteCompleted, StbrtedAt: minAgo(5), FinishedAt: minAgo(2)},
+				{Stbte: btypes.BbtchSpecWorkspbceExecutionJobStbteCbnceled, StbrtedAt: minAgo(5), FinishedAt: minAgo(2), Cbncel: true},
+				{Stbte: btypes.BbtchSpecWorkspbceExecutionJobStbteProcessing, StbrtedAt: minAgo(10), Cbncel: true},
+				{Stbte: btypes.BbtchSpecWorkspbceExecutionJobStbteQueued},
+				{Stbte: btypes.BbtchSpecWorkspbceExecutionJobStbteFbiled, StbrtedAt: minAgo(5), FinishedAt: minAgo(1)},
 			},
-			additionalWorkspace:        1,
-			additionalCachedWorkspace:  1,
-			additionalSkippedWorkspace: 2,
+			bdditionblWorkspbce:        1,
+			bdditionblCbchedWorkspbce:  1,
+			bdditionblSkippedWorkspbce: 2,
 		},
 		{
-			jobs: []*btypes.BatchSpecWorkspaceExecutionJob{
-				{State: btypes.BatchSpecWorkspaceExecutionJobStateProcessing, StartedAt: minAgo(5)},
-				{State: btypes.BatchSpecWorkspaceExecutionJobStateProcessing, StartedAt: minAgo(55)},
-				{State: btypes.BatchSpecWorkspaceExecutionJobStateCompleted, StartedAt: minAgo(5), FinishedAt: minAgo(2)},
-				{State: btypes.BatchSpecWorkspaceExecutionJobStateCanceled, StartedAt: minAgo(5), FinishedAt: minAgo(2), Cancel: true},
-				{State: btypes.BatchSpecWorkspaceExecutionJobStateProcessing, StartedAt: minAgo(10), Cancel: true},
-				{State: btypes.BatchSpecWorkspaceExecutionJobStateProcessing, StartedAt: minAgo(10), Cancel: true},
-				{State: btypes.BatchSpecWorkspaceExecutionJobStateQueued},
-				{State: btypes.BatchSpecWorkspaceExecutionJobStateFailed, StartedAt: minAgo(5), FinishedAt: minAgo(1)},
+			jobs: []*btypes.BbtchSpecWorkspbceExecutionJob{
+				{Stbte: btypes.BbtchSpecWorkspbceExecutionJobStbteProcessing, StbrtedAt: minAgo(5)},
+				{Stbte: btypes.BbtchSpecWorkspbceExecutionJobStbteProcessing, StbrtedAt: minAgo(55)},
+				{Stbte: btypes.BbtchSpecWorkspbceExecutionJobStbteCompleted, StbrtedAt: minAgo(5), FinishedAt: minAgo(2)},
+				{Stbte: btypes.BbtchSpecWorkspbceExecutionJobStbteCbnceled, StbrtedAt: minAgo(5), FinishedAt: minAgo(2), Cbncel: true},
+				{Stbte: btypes.BbtchSpecWorkspbceExecutionJobStbteProcessing, StbrtedAt: minAgo(10), Cbncel: true},
+				{Stbte: btypes.BbtchSpecWorkspbceExecutionJobStbteProcessing, StbrtedAt: minAgo(10), Cbncel: true},
+				{Stbte: btypes.BbtchSpecWorkspbceExecutionJobStbteQueued},
+				{Stbte: btypes.BbtchSpecWorkspbceExecutionJobStbteFbiled, StbrtedAt: minAgo(5), FinishedAt: minAgo(1)},
 			},
-			additionalWorkspace:        3,
-			additionalSkippedWorkspace: 2,
+			bdditionblWorkspbce:        3,
+			bdditionblSkippedWorkspbce: 2,
 		},
 		{
-			jobs:                []*btypes.BatchSpecWorkspaceExecutionJob{},
-			additionalWorkspace: 0,
+			jobs:                []*btypes.BbtchSpecWorkspbceExecutionJob{},
+			bdditionblWorkspbce: 0,
 		},
 		{
-			jobs: []*btypes.BatchSpecWorkspaceExecutionJob{
-				{State: btypes.BatchSpecWorkspaceExecutionJobStateProcessing, StartedAt: minAgo(5)},
+			jobs: []*btypes.BbtchSpecWorkspbceExecutionJob{
+				{Stbte: btypes.BbtchSpecWorkspbceExecutionJobStbteProcessing, StbrtedAt: minAgo(5)},
 			},
-			additionalWorkspace: 0,
+			bdditionblWorkspbce: 0,
 		},
 	} {
-		spec := &btypes.BatchSpec{
-			Spec:            &batcheslib.BatchSpec{},
-			UserID:          admin.ID,
-			NamespaceUserID: admin.ID,
+		spec := &btypes.BbtchSpec{
+			Spec:            &bbtcheslib.BbtchSpec{},
+			UserID:          bdmin.ID,
+			NbmespbceUserID: bdmin.ID,
 		}
-		if err := s.CreateBatchSpec(ctx, spec); err != nil {
-			t.Fatal(err)
+		if err := s.CrebteBbtchSpec(ctx, spec); err != nil {
+			t.Fbtbl(err)
 		}
-		specIDs = append(specIDs, spec.ID)
+		specIDs = bppend(specIDs, spec.ID)
 
-		job := &btypes.BatchSpecResolutionJob{
-			BatchSpecID: spec.ID,
-			InitiatorID: admin.ID,
+		job := &btypes.BbtchSpecResolutionJob{
+			BbtchSpecID: spec.ID,
+			InitibtorID: bdmin.ID,
 		}
-		if err := s.CreateBatchSpecResolutionJob(ctx, job); err != nil {
-			t.Fatal(err)
+		if err := s.CrebteBbtchSpecResolutionJob(ctx, job); err != nil {
+			t.Fbtbl(err)
 		}
 
-		// Workspaces without execution job
-		for i := 0; i < setup.additionalWorkspace; i++ {
-			ws := &btypes.BatchSpecWorkspace{BatchSpecID: spec.ID, RepoID: repo.ID}
-			if err := s.CreateBatchSpecWorkspace(ctx, ws); err != nil {
-				t.Fatal(err)
+		// Workspbces without execution job
+		for i := 0; i < setup.bdditionblWorkspbce; i++ {
+			ws := &btypes.BbtchSpecWorkspbce{BbtchSpecID: spec.ID, RepoID: repo.ID}
+			if err := s.CrebteBbtchSpecWorkspbce(ctx, ws); err != nil {
+				t.Fbtbl(err)
 			}
 		}
 
-		// Workspaces with cached result
-		for i := 0; i < setup.additionalCachedWorkspace; i++ {
-			ws := &btypes.BatchSpecWorkspace{BatchSpecID: spec.ID, RepoID: repo.ID, CachedResultFound: true}
-			if err := s.CreateBatchSpecWorkspace(ctx, ws); err != nil {
-				t.Fatal(err)
+		// Workspbces with cbched result
+		for i := 0; i < setup.bdditionblCbchedWorkspbce; i++ {
+			ws := &btypes.BbtchSpecWorkspbce{BbtchSpecID: spec.ID, RepoID: repo.ID, CbchedResultFound: true}
+			if err := s.CrebteBbtchSpecWorkspbce(ctx, ws); err != nil {
+				t.Fbtbl(err)
 			}
 		}
 
-		// Workspaces without execution job and skipped
-		if setup.additionalSkippedWorkspace > 0 {
-			for i := 0; i < setup.additionalSkippedWorkspace; i++ {
-				ws := &btypes.BatchSpecWorkspace{
-					BatchSpecID: spec.ID,
+		// Workspbces without execution job bnd skipped
+		if setup.bdditionblSkippedWorkspbce > 0 {
+			for i := 0; i < setup.bdditionblSkippedWorkspbce; i++ {
+				ws := &btypes.BbtchSpecWorkspbce{
+					BbtchSpecID: spec.ID,
 					RepoID:      repo.ID,
 					Skipped:     true,
 				}
-				if err := s.CreateBatchSpecWorkspace(ctx, ws); err != nil {
-					t.Fatal(err)
+				if err := s.CrebteBbtchSpecWorkspbce(ctx, ws); err != nil {
+					t.Fbtbl(err)
 				}
 			}
 		}
 
-		// Workspaces with execution jobs
-		for _, job := range setup.jobs {
-			ws := &btypes.BatchSpecWorkspace{BatchSpecID: spec.ID, RepoID: repo.ID}
-			if err := s.CreateBatchSpecWorkspace(ctx, ws); err != nil {
-				t.Fatal(err)
+		// Workspbces with execution jobs
+		for _, job := rbnge setup.jobs {
+			ws := &btypes.BbtchSpecWorkspbce{BbtchSpecID: spec.ID, RepoID: repo.ID}
+			if err := s.CrebteBbtchSpecWorkspbce(ctx, ws); err != nil {
+				t.Fbtbl(err)
 			}
 
-			// We use a clone so that CreateBatchSpecWorkspaceExecutionJob doesn't overwrite the fields we set
+			// We use b clone so thbt CrebteBbtchSpecWorkspbceExecutionJob doesn't overwrite the fields we set
 
 			clone := *job
-			clone.BatchSpecWorkspaceID = ws.ID
+			clone.BbtchSpecWorkspbceID = ws.ID
 			clone.UserID = spec.UserID
-			if err := bt.CreateBatchSpecWorkspaceExecutionJob(ctx, s, ScanBatchSpecWorkspaceExecutionJob, &clone); err != nil {
-				t.Fatal(err)
+			if err := bt.CrebteBbtchSpecWorkspbceExecutionJob(ctx, s, ScbnBbtchSpecWorkspbceExecutionJob, &clone); err != nil {
+				t.Fbtbl(err)
 			}
 
 			job.ID = clone.ID
-			bt.UpdateJobState(t, ctx, s, job)
+			bt.UpdbteJobStbte(t, ctx, s, job)
 		}
 
 	}
-	have, err := s.GetBatchSpecStats(ctx, specIDs)
+	hbve, err := s.GetBbtchSpecStbts(ctx, specIDs)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	want := map[int64]btypes.BatchSpecStats{
+	wbnt := mbp[int64]btypes.BbtchSpecStbts{
 		specIDs[0]: {
-			StartedAt:         minAgo(99),
+			StbrtedAt:         minAgo(99),
 			FinishedAt:        minAgo(1),
-			Workspaces:        10,
-			SkippedWorkspaces: 2,
+			Workspbces:        10,
+			SkippedWorkspbces: 2,
 			Executions:        6,
 			Queued:            1,
 			Processing:        1,
 			Completed:         1,
-			Canceling:         1,
-			Canceled:          1,
-			Failed:            1,
-			CachedWorkspaces:  1,
+			Cbnceling:         1,
+			Cbnceled:          1,
+			Fbiled:            1,
+			CbchedWorkspbces:  1,
 		},
 		specIDs[1]: {
-			StartedAt:         minAgo(55),
+			StbrtedAt:         minAgo(55),
 			FinishedAt:        minAgo(1),
-			Workspaces:        13,
-			SkippedWorkspaces: 2,
+			Workspbces:        13,
+			SkippedWorkspbces: 2,
 			Executions:        8,
 			Queued:            1,
 			Processing:        2,
 			Completed:         1,
-			Canceling:         2,
-			Canceled:          1,
-			Failed:            1,
+			Cbnceling:         2,
+			Cbnceled:          1,
+			Fbiled:            1,
 		},
 		specIDs[2]: {
-			StartedAt:  time.Time{},
+			StbrtedAt:  time.Time{},
 			FinishedAt: time.Time{},
 		},
 		specIDs[3]: {
-			StartedAt:  minAgo(5),
+			StbrtedAt:  minAgo(5),
 			FinishedAt: time.Time{},
-			Workspaces: 1,
+			Workspbces: 1,
 			Executions: 1,
 			Processing: 1,
 		},
 	}
-	if diff := cmp.Diff(have, want); diff != "" {
-		t.Errorf("unexpected batch spec stats:\n%s", diff)
+	if diff := cmp.Diff(hbve, wbnt); diff != "" {
+		t.Errorf("unexpected bbtch spec stbts:\n%s", diff)
 	}
 }
 
-func TestStore_ListBatchSpecRepoIDs(t *testing.T) {
-	ctx := context.Background()
+func TestStore_ListBbtchSpecRepoIDs(t *testing.T) {
+	ctx := context.Bbckground()
 
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
-	s := New(db, &observation.TestContext, nil)
+	db := dbtbbbse.NewDB(logger, dbtest.NewDB(logger, t))
+	s := New(db, &observbtion.TestContext, nil)
 
-	// Create two repos, one of which will be visible to everyone, and one which
+	// Crebte two repos, one of which will be visible to everyone, bnd one which
 	// won't be.
-	globalRepo, _ := bt.CreateTestRepo(t, ctx, db)
-	hiddenRepo, _ := bt.CreateTestRepo(t, ctx, db)
+	globblRepo, _ := bt.CrebteTestRepo(t, ctx, db)
+	hiddenRepo, _ := bt.CrebteTestRepo(t, ctx, db)
 
 	// One, two princes kneel before you...
 	//
-	// That is, we need an admin user and a regular one.
-	admin := bt.CreateTestUser(t, db, true)
-	user := bt.CreateTestUser(t, db, false)
+	// Thbt is, we need bn bdmin user bnd b regulbr one.
+	bdmin := bt.CrebteTestUser(t, db, true)
+	user := bt.CrebteTestUser(t, db, fblse)
 
-	// Create a batch spec with two changeset specs, one on each repo.
-	batchSpec := bt.CreateBatchSpec(t, ctx, s, "test", user.ID, 0)
-	bt.CreateChangesetSpec(t, ctx, s, bt.TestSpecOpts{
+	// Crebte b bbtch spec with two chbngeset specs, one on ebch repo.
+	bbtchSpec := bt.CrebteBbtchSpec(t, ctx, s, "test", user.ID, 0)
+	bt.CrebteChbngesetSpec(t, ctx, s, bt.TestSpecOpts{
 		User:      user.ID,
-		Repo:      globalRepo.ID,
-		BatchSpec: batchSpec.ID,
-		HeadRef:   "branch",
-		Typ:       btypes.ChangesetSpecTypeBranch,
+		Repo:      globblRepo.ID,
+		BbtchSpec: bbtchSpec.ID,
+		HebdRef:   "brbnch",
+		Typ:       btypes.ChbngesetSpecTypeBrbnch,
 	})
-	bt.CreateChangesetSpec(t, ctx, s, bt.TestSpecOpts{
+	bt.CrebteChbngesetSpec(t, ctx, s, bt.TestSpecOpts{
 		User:      user.ID,
 		Repo:      hiddenRepo.ID,
-		BatchSpec: batchSpec.ID,
-		HeadRef:   "branch",
-		Typ:       btypes.ChangesetSpecTypeBranch,
+		BbtchSpec: bbtchSpec.ID,
+		HebdRef:   "brbnch",
+		Typ:       btypes.ChbngesetSpecTypeBrbnch,
 	})
 
-	// Also create an empty batch spec, just for fun.
-	emptyBatchSpec := bt.CreateBatchSpec(t, ctx, s, "empty", user.ID, 0)
+	// Also crebte bn empty bbtch spec, just for fun.
+	emptyBbtchSpec := bt.CrebteBbtchSpec(t, ctx, s, "empty", user.ID, 0)
 
 	// Set up repo permissions.
-	bt.MockRepoPermissions(t, db, user.ID, globalRepo.ID)
+	bt.MockRepoPermissions(t, db, user.ID, globblRepo.ID)
 
-	// Now we can actually run some tests!
-	for name, tc := range map[string]struct {
-		batchSpecID int64
+	// Now we cbn bctublly run some tests!
+	for nbme, tc := rbnge mbp[string]struct {
+		bbtchSpecID int64
 		userID      int32
-		wantRepoIDs []api.RepoID
+		wbntRepoIDs []bpi.RepoID
 	}{
-		"admin": {
-			batchSpecID: batchSpec.ID,
-			userID:      admin.ID,
-			wantRepoIDs: []api.RepoID{globalRepo.ID, hiddenRepo.ID},
+		"bdmin": {
+			bbtchSpecID: bbtchSpec.ID,
+			userID:      bdmin.ID,
+			wbntRepoIDs: []bpi.RepoID{globblRepo.ID, hiddenRepo.ID},
 		},
 		"user": {
-			batchSpecID: batchSpec.ID,
+			bbtchSpecID: bbtchSpec.ID,
 			userID:      user.ID,
-			wantRepoIDs: []api.RepoID{globalRepo.ID},
+			wbntRepoIDs: []bpi.RepoID{globblRepo.ID},
 		},
 		"empty": {
-			batchSpecID: emptyBatchSpec.ID,
-			userID:      admin.ID,
-			wantRepoIDs: []api.RepoID{},
+			bbtchSpecID: emptyBbtchSpec.ID,
+			userID:      bdmin.ID,
+			wbntRepoIDs: []bpi.RepoID{},
 		},
 	} {
-		t.Run(name, func(t *testing.T) {
-			uctx := actor.WithActor(ctx, actor.FromUser(tc.userID))
-			have, err := s.ListBatchSpecRepoIDs(uctx, tc.batchSpecID)
-			assert.NoError(t, err)
-			assert.ElementsMatch(t, tc.wantRepoIDs, have)
+		t.Run(nbme, func(t *testing.T) {
+			uctx := bctor.WithActor(ctx, bctor.FromUser(tc.userID))
+			hbve, err := s.ListBbtchSpecRepoIDs(uctx, tc.bbtchSpecID)
+			bssert.NoError(t, err)
+			bssert.ElementsMbtch(t, tc.wbntRepoIDs, hbve)
 		})
 	}
 }

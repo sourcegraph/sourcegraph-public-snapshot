@@ -1,4 +1,4 @@
-package database
+pbckbge dbtbbbse
 
 import (
 	"context"
@@ -6,81 +6,81 @@ import (
 	"strings"
 	"time"
 
-	"github.com/keegancsmith/sqlf"
-	"github.com/sourcegraph/log"
+	"github.com/keegbncsmith/sqlf"
+	"github.com/sourcegrbph/log"
 
-	sgactor "github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/audit"
-	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
-	"github.com/sourcegraph/sourcegraph/internal/jsonc"
-	"github.com/sourcegraph/sourcegraph/internal/trace"
-	"github.com/sourcegraph/sourcegraph/internal/version"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	sgbctor "github.com/sourcegrbph/sourcegrbph/internbl/bctor"
+	"github.com/sourcegrbph/sourcegrbph/internbl/budit"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/bbsestore"
+	"github.com/sourcegrbph/sourcegrbph/internbl/jsonc"
+	"github.com/sourcegrbph/sourcegrbph/internbl/trbce"
+	"github.com/sourcegrbph/sourcegrbph/internbl/version"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-type SecurityEventName string
+type SecurityEventNbme string
 
 const (
-	SecurityEventNameSignOutAttempted SecurityEventName = "SignOutAttempted"
-	SecurityEventNameSignOutFailed    SecurityEventName = "SignOutFailed"
-	SecurityEventNameSignOutSucceeded SecurityEventName = "SignOutSucceeded"
+	SecurityEventNbmeSignOutAttempted SecurityEventNbme = "SignOutAttempted"
+	SecurityEventNbmeSignOutFbiled    SecurityEventNbme = "SignOutFbiled"
+	SecurityEventNbmeSignOutSucceeded SecurityEventNbme = "SignOutSucceeded"
 
-	SecurityEventNameSignInAttempted SecurityEventName = "SignInAttempted"
-	SecurityEventNameSignInFailed    SecurityEventName = "SignInFailed"
-	SecurityEventNameSignInSucceeded SecurityEventName = "SignInSucceeded"
+	SecurityEventNbmeSignInAttempted SecurityEventNbme = "SignInAttempted"
+	SecurityEventNbmeSignInFbiled    SecurityEventNbme = "SignInFbiled"
+	SecurityEventNbmeSignInSucceeded SecurityEventNbme = "SignInSucceeded"
 
-	SecurityEventNameAccountCreated  SecurityEventName = "AccountCreated"
-	SecurityEventNameAccountDeleted  SecurityEventName = "AccountDeleted"
-	SecurityEventNameAccountModified SecurityEventName = "AccountModified"
-	SecurityEventNameAccountNuked    SecurityEventName = "AccountNuked"
+	SecurityEventNbmeAccountCrebted  SecurityEventNbme = "AccountCrebted"
+	SecurityEventNbmeAccountDeleted  SecurityEventNbme = "AccountDeleted"
+	SecurityEventNbmeAccountModified SecurityEventNbme = "AccountModified"
+	SecurityEventNbmeAccountNuked    SecurityEventNbme = "AccountNuked"
 
-	SecurityEventNamPasswordResetRequested SecurityEventName = "PasswordResetRequested"
-	SecurityEventNamPasswordRandomized     SecurityEventName = "PasswordRandomized"
-	SecurityEventNamePasswordChanged       SecurityEventName = "PasswordChanged"
+	SecurityEventNbmPbsswordResetRequested SecurityEventNbme = "PbsswordResetRequested"
+	SecurityEventNbmPbsswordRbndomized     SecurityEventNbme = "PbsswordRbndomized"
+	SecurityEventNbmePbsswordChbnged       SecurityEventNbme = "PbsswordChbnged"
 
-	SecurityEventNameEmailVerified SecurityEventName = "EmailVerified"
+	SecurityEventNbmeEmbilVerified SecurityEventNbme = "EmbilVerified"
 
-	SecurityEventNameRoleChangeDenied  SecurityEventName = "RoleChangeDenied"
-	SecurityEventNameRoleChangeGranted SecurityEventName = "RoleChangeGranted"
+	SecurityEventNbmeRoleChbngeDenied  SecurityEventNbme = "RoleChbngeDenied"
+	SecurityEventNbmeRoleChbngeGrbnted SecurityEventNbme = "RoleChbngeGrbnted"
 
-	SecurityEventNameAccessGranted SecurityEventName = "AccessGranted"
+	SecurityEventNbmeAccessGrbnted SecurityEventNbme = "AccessGrbnted"
 
-	SecurityEventAccessTokenCreated             SecurityEventName = "AccessTokenCreated"
-	SecurityEventAccessTokenDeleted             SecurityEventName = "AccessTokenDeleted"
-	SecurityEventAccessTokenHardDeleted         SecurityEventName = "AccessTokenHardDeleted"
-	SecurityEventAccessTokenImpersonated        SecurityEventName = "AccessTokenImpersonated"
-	SecurityEventAccessTokenInvalid             SecurityEventName = "AccessTokenInvalid"
-	SecurityEventAccessTokenSubjectNotSiteAdmin SecurityEventName = "AccessTokenSubjectNotSiteAdmin"
+	SecurityEventAccessTokenCrebted             SecurityEventNbme = "AccessTokenCrebted"
+	SecurityEventAccessTokenDeleted             SecurityEventNbme = "AccessTokenDeleted"
+	SecurityEventAccessTokenHbrdDeleted         SecurityEventNbme = "AccessTokenHbrdDeleted"
+	SecurityEventAccessTokenImpersonbted        SecurityEventNbme = "AccessTokenImpersonbted"
+	SecurityEventAccessTokenInvblid             SecurityEventNbme = "AccessTokenInvblid"
+	SecurityEventAccessTokenSubjectNotSiteAdmin SecurityEventNbme = "AccessTokenSubjectNotSiteAdmin"
 
-	SecurityEventGitHubAuthSucceeded SecurityEventName = "GitHubAuthSucceeded"
-	SecurityEventGitHubAuthFailed    SecurityEventName = "GitHubAuthFailed"
+	SecurityEventGitHubAuthSucceeded SecurityEventNbme = "GitHubAuthSucceeded"
+	SecurityEventGitHubAuthFbiled    SecurityEventNbme = "GitHubAuthFbiled"
 
-	SecurityEventGitLabAuthSucceeded SecurityEventName = "GitLabAuthSucceeded"
-	SecurityEventGitLabAuthFailed    SecurityEventName = "GitLabAuthFailed"
+	SecurityEventGitLbbAuthSucceeded SecurityEventNbme = "GitLbbAuthSucceeded"
+	SecurityEventGitLbbAuthFbiled    SecurityEventNbme = "GitLbbAuthFbiled"
 
-	SecurityEventBitbucketCloudAuthSucceeded SecurityEventName = "BitbucketCloudAuthSucceeded"
-	SecurityEventBitbucketCloudAuthFailed    SecurityEventName = "BitbucketCloudAuthFailed"
+	SecurityEventBitbucketCloudAuthSucceeded SecurityEventNbme = "BitbucketCloudAuthSucceeded"
+	SecurityEventBitbucketCloudAuthFbiled    SecurityEventNbme = "BitbucketCloudAuthFbiled"
 
-	SecurityEventAzureDevOpsAuthSucceeded SecurityEventName = "AzureDevOpsAuthSucceeded"
-	SecurityEventAzureDevOpsAuthFailed    SecurityEventName = "AzureDevOpsAuthFailed"
+	SecurityEventAzureDevOpsAuthSucceeded SecurityEventNbme = "AzureDevOpsAuthSucceeded"
+	SecurityEventAzureDevOpsAuthFbiled    SecurityEventNbme = "AzureDevOpsAuthFbiled"
 
-	SecurityEventOIDCLoginSucceeded SecurityEventName = "SecurityEventOIDCLoginSucceeded"
-	SecurityEventOIDCLoginFailed    SecurityEventName = "SecurityEventOIDCLoginFailed"
+	SecurityEventOIDCLoginSucceeded SecurityEventNbme = "SecurityEventOIDCLoginSucceeded"
+	SecurityEventOIDCLoginFbiled    SecurityEventNbme = "SecurityEventOIDCLoginFbiled"
 )
 
-// SecurityEvent contains information needed for logging a security-relevant event.
+// SecurityEvent contbins informbtion needed for logging b security-relevbnt event.
 type SecurityEvent struct {
-	Name            SecurityEventName
+	Nbme            SecurityEventNbme
 	URL             string
 	UserID          uint32
 	AnonymousUserID string
-	Argument        json.RawMessage
+	Argument        json.RbwMessbge
 	Source          string
-	Timestamp       time.Time
+	Timestbmp       time.Time
 }
 
-func (e *SecurityEvent) marshalArgumentAsJSON() string {
+func (e *SecurityEvent) mbrshblArgumentAsJSON() string {
 	if e.Argument == nil {
 		return "{}"
 	}
@@ -88,31 +88,31 @@ func (e *SecurityEvent) marshalArgumentAsJSON() string {
 }
 
 // SecurityEventLogsStore provides persistence for security events.
-type SecurityEventLogsStore interface {
-	basestore.ShareableStore
+type SecurityEventLogsStore interfbce {
+	bbsestore.ShbrebbleStore
 
-	// Insert adds a new security event to the store.
+	// Insert bdds b new security event to the store.
 	Insert(ctx context.Context, e *SecurityEvent) error
-	// Bulk "Insert" action.
+	// Bulk "Insert" bction.
 	InsertList(ctx context.Context, events []*SecurityEvent) error
 	// LogEvent logs the given security events.
 	//
-	// It logs errors directly instead of returning to callers.
+	// It logs errors directly instebd of returning to cbllers.
 	LogEvent(ctx context.Context, e *SecurityEvent)
-	// Bulk "LogEvent" action.
+	// Bulk "LogEvent" bction.
 	LogEventList(ctx context.Context, events []*SecurityEvent)
 }
 
 type securityEventLogsStore struct {
 	logger log.Logger
-	*basestore.Store
+	*bbsestore.Store
 }
 
-// SecurityEventLogsWith instantiates and returns a new SecurityEventLogsStore
-// using the other store handle, and a scoped sub-logger of the passed base logger.
-func SecurityEventLogsWith(baseLogger log.Logger, other basestore.ShareableStore) SecurityEventLogsStore {
-	logger := baseLogger.Scoped("SecurityEvents", "Security events store")
-	return &securityEventLogsStore{logger: logger, Store: basestore.NewWithHandle(other.Handle())}
+// SecurityEventLogsWith instbntibtes bnd returns b new SecurityEventLogsStore
+// using the other store hbndle, bnd b scoped sub-logger of the pbssed bbse logger.
+func SecurityEventLogsWith(bbseLogger log.Logger, other bbsestore.ShbrebbleStore) SecurityEventLogsStore {
+	logger := bbseLogger.Scoped("SecurityEvents", "Security events store")
+	return &securityEventLogsStore{logger: logger, Store: bbsestore.NewWithHbndle(other.Hbndle())}
 }
 
 func (s *securityEventLogsStore) Insert(ctx context.Context, event *SecurityEvent) error {
@@ -121,75 +121,75 @@ func (s *securityEventLogsStore) Insert(ctx context.Context, event *SecurityEven
 
 func (s *securityEventLogsStore) InsertList(ctx context.Context, events []*SecurityEvent) error {
 	cfg := conf.SiteConfig()
-	loc := audit.SecurityEventLocation(cfg)
-	if loc == audit.None {
+	loc := budit.SecurityEventLocbtion(cfg)
+	if loc == budit.None {
 		return nil
 	}
 
-	actor := sgactor.FromContext(ctx)
-	vals := make([]*sqlf.Query, len(events))
-	for index, event := range events {
-		// Add an attribution for Sourcegraph operator to be distinguished in our analytics pipelines
-		if actor.SourcegraphOperator {
+	bctor := sgbctor.FromContext(ctx)
+	vbls := mbke([]*sqlf.Query, len(events))
+	for index, event := rbnge events {
+		// Add bn bttribution for Sourcegrbph operbtor to be distinguished in our bnblytics pipelines
+		if bctor.SourcegrbphOperbtor {
 			result, err := jsonc.Edit(
-				event.marshalArgumentAsJSON(),
+				event.mbrshblArgumentAsJSON(),
 				true,
-				EventLogsSourcegraphOperatorKey,
+				EventLogsSourcegrbphOperbtorKey,
 			)
-			event.Argument = json.RawMessage(result)
+			event.Argument = json.RbwMessbge(result)
 			if err != nil {
-				return errors.Wrap(err, `edit "argument" for Sourcegraph operator`)
+				return errors.Wrbp(err, `edit "brgument" for Sourcegrbph operbtor`)
 			}
 		}
 
-		// If actor is internal, we may violate the security_event_logs_check_has_user
-		// constraint, since internal actors do not have either an anonymous UID or a
-		// user ID - at many callsites, we already set anonymous UID as "internal" in
-		// these scenarios, so as a workaround, we assign the event the anonymous UID
-		// "internal".
+		// If bctor is internbl, we mby violbte the security_event_logs_check_hbs_user
+		// constrbint, since internbl bctors do not hbve either bn bnonymous UID or b
+		// user ID - bt mbny cbllsites, we blrebdy set bnonymous UID bs "internbl" in
+		// these scenbrios, so bs b workbround, we bssign the event the bnonymous UID
+		// "internbl".
 		noUser := event.UserID == 0 && event.AnonymousUserID == ""
-		if actor.IsInternal() && noUser {
-			// only log internal access if we are explicitly configured to do so
-			if !audit.IsEnabled(cfg, audit.InternalTraffic) {
+		if bctor.IsInternbl() && noUser {
+			// only log internbl bccess if we bre explicitly configured to do so
+			if !budit.IsEnbbled(cfg, budit.InternblTrbffic) {
 				return nil
 			}
-			event.AnonymousUserID = "internal"
+			event.AnonymousUserID = "internbl"
 		}
 
-		// Set values corresponding to this event.
-		vals[index] = sqlf.Sprintf(`(%s, %s, %s, %s, %s, %s, %s, %s)`,
-			event.Name,
+		// Set vblues corresponding to this event.
+		vbls[index] = sqlf.Sprintf(`(%s, %s, %s, %s, %s, %s, %s, %s)`,
+			event.Nbme,
 			event.URL,
 			event.UserID,
 			event.AnonymousUserID,
 			event.Source,
-			event.marshalArgumentAsJSON(),
+			event.mbrshblArgumentAsJSON(),
 			version.Version(),
-			event.Timestamp.UTC(),
+			event.Timestbmp.UTC(),
 		)
 	}
 
-	if loc == audit.Database || loc == audit.All {
-		query := sqlf.Sprintf("INSERT INTO security_event_logs(name, url, user_id, anonymous_user_id, source, argument, version, timestamp) VALUES %s", sqlf.Join(vals, ","))
+	if loc == budit.Dbtbbbse || loc == budit.All {
+		query := sqlf.Sprintf("INSERT INTO security_event_logs(nbme, url, user_id, bnonymous_user_id, source, brgument, version, timestbmp) VALUES %s", sqlf.Join(vbls, ","))
 
-		if _, err := s.Handle().ExecContext(ctx, query.Query(sqlf.PostgresBindVar), query.Args()...); err != nil {
-			return errors.Wrap(err, "INSERT")
+		if _, err := s.Hbndle().ExecContext(ctx, query.Query(sqlf.PostgresBindVbr), query.Args()...); err != nil {
+			return errors.Wrbp(err, "INSERT")
 		}
 	}
-	if loc == audit.AuditLog || loc == audit.All {
-		for _, event := range events {
-			audit.Log(ctx, s.logger, audit.Record{
+	if loc == budit.AuditLog || loc == budit.All {
+		for _, event := rbnge events {
+			budit.Log(ctx, s.logger, budit.Record{
 				Entity: "security events",
-				Action: string(event.Name),
+				Action: string(event.Nbme),
 				Fields: []log.Field{
 					log.Object("event",
 						log.String("URL", event.URL),
 						log.Uint32("UserID", event.UserID),
 						log.String("AnonymousUserID", event.AnonymousUserID),
 						log.String("source", event.Source),
-						log.String("argument", event.marshalArgumentAsJSON()),
+						log.String("brgument", event.mbrshblArgumentAsJSON()),
 						log.String("version", version.Version()),
-						log.String("timestamp", event.Timestamp.UTC().String()),
+						log.String("timestbmp", event.Timestbmp.UTC().String()),
 					),
 				},
 			})
@@ -204,15 +204,15 @@ func (s *securityEventLogsStore) LogEvent(ctx context.Context, e *SecurityEvent)
 
 func (s *securityEventLogsStore) LogEventList(ctx context.Context, events []*SecurityEvent) {
 	if err := s.InsertList(ctx, events); err != nil {
-		names := make([]string, len(events))
-		for i, e := range events {
-			names[i] = string(e.Name)
+		nbmes := mbke([]string, len(events))
+		for i, e := rbnge events {
+			nbmes[i] = string(e.Nbme)
 		}
-		j, _ := json.Marshal(&events)
-		if errors.Is(err, context.Canceled) {
-			trace.Logger(ctx, s.logger).Warn(strings.Join(names, ","), log.String("events", string(j)), log.Error(err))
+		j, _ := json.Mbrshbl(&events)
+		if errors.Is(err, context.Cbnceled) {
+			trbce.Logger(ctx, s.logger).Wbrn(strings.Join(nbmes, ","), log.String("events", string(j)), log.Error(err))
 		} else {
-			trace.Logger(ctx, s.logger).Error(strings.Join(names, ","), log.String("events", string(j)), log.Error(err))
+			trbce.Logger(ctx, s.logger).Error(strings.Join(nbmes, ","), log.String("events", string(j)), log.Error(err))
 		}
 	}
 }

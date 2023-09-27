@@ -1,43 +1,43 @@
-package writer
+pbckbge writer
 
 import (
 	"context"
 	"fmt"
 
-	"github.com/sourcegraph/sourcegraph/cmd/symbols/internal/api/observability"
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/diskcache"
-	"github.com/sourcegraph/sourcegraph/internal/search"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/cmd/symbols/internbl/bpi/observbbility"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi"
+	"github.com/sourcegrbph/sourcegrbph/internbl/diskcbche"
+	"github.com/sourcegrbph/sourcegrbph/internbl/sebrch"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-type CachedDatabaseWriter interface {
-	GetOrCreateDatabaseFile(ctx context.Context, args search.SymbolsParameters) (string, error)
+type CbchedDbtbbbseWriter interfbce {
+	GetOrCrebteDbtbbbseFile(ctx context.Context, brgs sebrch.SymbolsPbrbmeters) (string, error)
 }
 
-type cachedDatabaseWriter struct {
-	databaseWriter DatabaseWriter
-	cache          diskcache.Store
+type cbchedDbtbbbseWriter struct {
+	dbtbbbseWriter DbtbbbseWriter
+	cbche          diskcbche.Store
 }
 
-func NewCachedDatabaseWriter(databaseWriter DatabaseWriter, cache diskcache.Store) CachedDatabaseWriter {
-	return &cachedDatabaseWriter{
-		databaseWriter: databaseWriter,
-		cache:          cache,
+func NewCbchedDbtbbbseWriter(dbtbbbseWriter DbtbbbseWriter, cbche diskcbche.Store) CbchedDbtbbbseWriter {
+	return &cbchedDbtbbbseWriter{
+		dbtbbbseWriter: dbtbbbseWriter,
+		cbche:          cbche,
 	}
 }
 
-// The version of the symbols database schema. This is included in the database filenames to prevent a
-// newer version of the symbols service from attempting to read from a database created by an older and
-// likely incompatible symbols service. Increment this when you change the database schema.
+// The version of the symbols dbtbbbse schemb. This is included in the dbtbbbse filenbmes to prevent b
+// newer version of the symbols service from bttempting to rebd from b dbtbbbse crebted by bn older bnd
+// likely incompbtible symbols service. Increment this when you chbnge the dbtbbbse schemb.
 const symbolsDBVersion = 5
 
-func (w *cachedDatabaseWriter) GetOrCreateDatabaseFile(ctx context.Context, args search.SymbolsParameters) (string, error) {
-	// set to noop parse originally, this will be overridden if the fetcher func below is called
-	observability.SetParseAmount(ctx, observability.CachedParse)
-	cacheFile, err := w.cache.OpenWithPath(ctx, repoCommitKey(args.Repo, args.CommitID), func(fetcherCtx context.Context, tempDBFile string) error {
-		if err := w.databaseWriter.WriteDBFile(fetcherCtx, args, tempDBFile); err != nil {
-			return errors.Wrap(err, "databaseWriter.WriteDBFile")
+func (w *cbchedDbtbbbseWriter) GetOrCrebteDbtbbbseFile(ctx context.Context, brgs sebrch.SymbolsPbrbmeters) (string, error) {
+	// set to noop pbrse originblly, this will be overridden if the fetcher func below is cblled
+	observbbility.SetPbrseAmount(ctx, observbbility.CbchedPbrse)
+	cbcheFile, err := w.cbche.OpenWithPbth(ctx, repoCommitKey(brgs.Repo, brgs.CommitID), func(fetcherCtx context.Context, tempDBFile string) error {
+		if err := w.dbtbbbseWriter.WriteDBFile(fetcherCtx, brgs, tempDBFile); err != nil {
+			return errors.Wrbp(err, "dbtbbbseWriter.WriteDBFile")
 		}
 
 		return nil
@@ -45,13 +45,13 @@ func (w *cachedDatabaseWriter) GetOrCreateDatabaseFile(ctx context.Context, args
 	if err != nil {
 		return "", err
 	}
-	defer cacheFile.File.Close()
+	defer cbcheFile.File.Close()
 
-	return cacheFile.File.Name(), err
+	return cbcheFile.File.Nbme(), err
 }
 
-// repoCommitKey returns the diskcache key for a repo and commit (points to a SQLite DB file).
-func repoCommitKey(repo api.RepoName, commitID api.CommitID) []string {
+// repoCommitKey returns the diskcbche key for b repo bnd commit (points to b SQLite DB file).
+func repoCommitKey(repo bpi.RepoNbme, commitID bpi.CommitID) []string {
 	return []string{
 		fmt.Sprint(symbolsDBVersion),
 		string(repo),
@@ -59,8 +59,8 @@ func repoCommitKey(repo api.RepoName, commitID api.CommitID) []string {
 	}
 }
 
-// repoKey returns the diskcache key for a repo (points to a directory).
-func repoKey(repo api.RepoName) []string {
+// repoKey returns the diskcbche key for b repo (points to b directory).
+func repoKey(repo bpi.RepoNbme) []string {
 	return []string{
 		fmt.Sprint(symbolsDBVersion),
 		string(repo),

@@ -1,13 +1,13 @@
-package gsmsecret
+pbckbge gsmsecret
 
 import (
-	"github.com/aws/constructs-go/constructs/v10"
-	"github.com/sourcegraph/managed-services-platform-cdktf/gen/google/datagooglesecretmanagersecretversion"
-	"github.com/sourcegraph/managed-services-platform-cdktf/gen/google/secretmanagersecret"
-	"github.com/sourcegraph/managed-services-platform-cdktf/gen/google/secretmanagersecretversion"
+	"github.com/bws/constructs-go/constructs/v10"
+	"github.com/sourcegrbph/mbnbged-services-plbtform-cdktf/gen/google/dbtbgooglesecretmbnbgersecretversion"
+	"github.com/sourcegrbph/mbnbged-services-plbtform-cdktf/gen/google/secretmbnbgersecret"
+	"github.com/sourcegrbph/mbnbged-services-plbtform-cdktf/gen/google/secretmbnbgersecretversion"
 
-	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/resourceid"
-	"github.com/sourcegraph/sourcegraph/lib/pointers"
+	"github.com/sourcegrbph/sourcegrbph/dev/mbnbgedservicesplbtform/internbl/resourceid"
+	"github.com/sourcegrbph/sourcegrbph/lib/pointers"
 )
 
 type Output struct {
@@ -19,25 +19,25 @@ type Config struct {
 	ProjectID string
 
 	ID    string
-	Value string
+	Vblue string
 }
 
 func New(scope constructs.Construct, id resourceid.ID, config Config) *Output {
-	secret := secretmanagersecret.NewSecretManagerSecret(scope,
+	secret := secretmbnbgersecret.NewSecretMbnbgerSecret(scope,
 		id.ResourceID("secret"),
-		&secretmanagersecret.SecretManagerSecretConfig{
+		&secretmbnbgersecret.SecretMbnbgerSecretConfig{
 			Project:  &config.ProjectID,
 			SecretId: &config.ID,
-			Replication: &secretmanagersecret.SecretManagerSecretReplication{
-				Automatic: pointers.Ptr(true),
+			Replicbtion: &secretmbnbgersecret.SecretMbnbgerSecretReplicbtion{
+				Autombtic: pointers.Ptr(true),
 			},
 		})
 
-	version := secretmanagersecretversion.NewSecretManagerSecretVersion(scope,
+	version := secretmbnbgersecretversion.NewSecretMbnbgerSecretVersion(scope,
 		id.ResourceID("secret_version"),
-		&secretmanagersecretversion.SecretManagerSecretVersionConfig{
+		&secretmbnbgersecretversion.SecretMbnbgerSecretVersionConfig{
 			Secret:     secret.Id(),
-			SecretData: &config.Value,
+			SecretDbtb: &config.Vblue,
 		})
 
 	return &Output{
@@ -46,21 +46,21 @@ func New(scope constructs.Construct, id resourceid.ID, config Config) *Output {
 	}
 }
 
-type Data struct {
-	Value string
+type Dbtb struct {
+	Vblue string
 }
 
-type DataConfig struct {
+type DbtbConfig struct {
 	Secret    string
 	ProjectID string
 }
 
-func Get(scope constructs.Construct, id resourceid.ID, config DataConfig) *Data {
-	data := datagooglesecretmanagersecretversion.NewDataGoogleSecretManagerSecretVersion(scope,
-		id.ResourceID("version_data"),
-		&datagooglesecretmanagersecretversion.DataGoogleSecretManagerSecretVersionConfig{
+func Get(scope constructs.Construct, id resourceid.ID, config DbtbConfig) *Dbtb {
+	dbtb := dbtbgooglesecretmbnbgersecretversion.NewDbtbGoogleSecretMbnbgerSecretVersion(scope,
+		id.ResourceID("version_dbtb"),
+		&dbtbgooglesecretmbnbgersecretversion.DbtbGoogleSecretMbnbgerSecretVersionConfig{
 			Secret:  &config.Secret,
 			Project: &config.ProjectID,
-		}).SecretData()
-	return &Data{Value: *data}
+		}).SecretDbtb()
+	return &Dbtb{Vblue: *dbtb}
 }

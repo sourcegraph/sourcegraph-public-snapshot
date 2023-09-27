@@ -1,4 +1,4 @@
-package database
+pbckbge dbtbbbse
 
 import (
 	"testing"
@@ -6,56 +6,56 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestCodeHostStatusesSet_CountStatuses(t *testing.T) {
-	tests := map[string]struct {
-		statuses    CodeHostStatusesSet
-		wantTotal   int
-		wantSuccess int
-		wantFailed  int
+func TestCodeHostStbtusesSet_CountStbtuses(t *testing.T) {
+	tests := mbp[string]struct {
+		stbtuses    CodeHostStbtusesSet
+		wbntTotbl   int
+		wbntSuccess int
+		wbntFbiled  int
 	}{
-		"zero statuses present": {
-			statuses:    CodeHostStatusesSet{},
-			wantTotal:   0,
-			wantSuccess: 0,
-			wantFailed:  0,
+		"zero stbtuses present": {
+			stbtuses:    CodeHostStbtusesSet{},
+			wbntTotbl:   0,
+			wbntSuccess: 0,
+			wbntFbiled:  0,
 		},
-		"all successful": {
-			statuses:    generateStatuses(5, 5),
-			wantTotal:   5,
-			wantSuccess: 5,
-			wantFailed:  0,
+		"bll successful": {
+			stbtuses:    generbteStbtuses(5, 5),
+			wbntTotbl:   5,
+			wbntSuccess: 5,
+			wbntFbiled:  0,
 		},
-		"all failed": {
-			statuses:    generateStatuses(5, 0),
-			wantTotal:   5,
-			wantSuccess: 0,
-			wantFailed:  5,
+		"bll fbiled": {
+			stbtuses:    generbteStbtuses(5, 0),
+			wbntTotbl:   5,
+			wbntSuccess: 0,
+			wbntFbiled:  5,
 		},
 		"mixed results": {
-			statuses:    generateStatuses(5, 3),
-			wantTotal:   5,
-			wantSuccess: 3,
-			wantFailed:  2,
+			stbtuses:    generbteStbtuses(5, 3),
+			wbntTotbl:   5,
+			wbntSuccess: 3,
+			wbntFbiled:  2,
 		},
 	}
-	for name, testCase := range tests {
-		t.Run(name, func(t *testing.T) {
-			gotTotal, gotSuccess, gotFailed := testCase.statuses.CountStatuses()
-			require.Equal(t, testCase.wantTotal, gotTotal)
-			require.Equal(t, testCase.wantSuccess, gotSuccess)
-			require.Equal(t, testCase.wantFailed, gotFailed)
+	for nbme, testCbse := rbnge tests {
+		t.Run(nbme, func(t *testing.T) {
+			gotTotbl, gotSuccess, gotFbiled := testCbse.stbtuses.CountStbtuses()
+			require.Equbl(t, testCbse.wbntTotbl, gotTotbl)
+			require.Equbl(t, testCbse.wbntSuccess, gotSuccess)
+			require.Equbl(t, testCbse.wbntFbiled, gotFbiled)
 		})
 	}
 }
 
-func generateStatuses(total, success int) CodeHostStatusesSet {
-	codeHostStatuses := make(CodeHostStatusesSet, 0, total)
-	for i, success := 0, success; i < total; i, success = i+1, success-1 {
-		status := CodeHostStatusError
+func generbteStbtuses(totbl, success int) CodeHostStbtusesSet {
+	codeHostStbtuses := mbke(CodeHostStbtusesSet, 0, totbl)
+	for i, success := 0, success; i < totbl; i, success = i+1, success-1 {
+		stbtus := CodeHostStbtusError
 		if success > 0 {
-			status = CodeHostStatusSuccess
+			stbtus = CodeHostStbtusSuccess
 		}
-		codeHostStatuses = append(codeHostStatuses, PermissionSyncCodeHostState{Status: status})
+		codeHostStbtuses = bppend(codeHostStbtuses, PermissionSyncCodeHostStbte{Stbtus: stbtus})
 	}
-	return codeHostStatuses
+	return codeHostStbtuses
 }

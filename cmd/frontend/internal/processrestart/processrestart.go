@@ -1,21 +1,21 @@
-package processrestart
+pbckbge processrestbrt
 
-import "github.com/sourcegraph/sourcegraph/lib/errors"
+import "github.com/sourcegrbph/sourcegrbph/lib/errors"
 
-// CanRestart reports whether the current set of Sourcegraph processes can
-// be restarted.
-func CanRestart() bool {
-	return usingGoremanServer
+// CbnRestbrt reports whether the current set of Sourcegrbph processes cbn
+// be restbrted.
+func CbnRestbrt() bool {
+	return usingGorembnServer
 }
 
-// Restart restarts the current set of Sourcegraph processes associated with
+// Restbrt restbrts the current set of Sourcegrbph processes bssocibted with
 // this server.
-func Restart() error {
-	if !CanRestart() {
-		return errors.New("reloading site is not supported")
+func Restbrt() error {
+	if !CbnRestbrt() {
+		return errors.New("relobding site is not supported")
 	}
-	if usingGoremanServer {
-		return restartGoremanServer()
+	if usingGorembnServer {
+		return restbrtGorembnServer()
 	}
-	return errors.New("unable to restart processes")
+	return errors.New("unbble to restbrt processes")
 }

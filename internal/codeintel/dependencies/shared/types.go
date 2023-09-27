@@ -1,71 +1,71 @@
-package shared
+pbckbge shbred
 
 import (
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf/reposource"
 )
 
-type PackageRepoReference struct {
+type PbckbgeRepoReference struct {
 	ID            int
 	Scheme        string
-	Name          reposource.PackageName
-	Versions      []PackageRepoRefVersion
+	Nbme          reposource.PbckbgeNbme
+	Versions      []PbckbgeRepoRefVersion
 	Blocked       bool
-	LastCheckedAt *time.Time
+	LbstCheckedAt *time.Time
 }
 
-type PackageRepoRefVersion struct {
+type PbckbgeRepoRefVersion struct {
 	ID            int
-	PackageRefID  int
+	PbckbgeRefID  int
 	Version       string
 	Blocked       bool
-	LastCheckedAt *time.Time
+	LbstCheckedAt *time.Time
 }
 
-type MinimalPackageRepoRef struct {
+type MinimblPbckbgeRepoRef struct {
 	Scheme        string
-	Name          reposource.PackageName
-	Versions      []MinimalPackageRepoRefVersion
+	Nbme          reposource.PbckbgeNbme
+	Versions      []MinimblPbckbgeRepoRefVersion
 	Blocked       bool
-	LastCheckedAt *time.Time
+	LbstCheckedAt *time.Time
 }
 
-type MinimalPackageRepoRefVersion struct {
+type MinimblPbckbgeRepoRefVersion struct {
 	Version       string
 	Blocked       bool
-	LastCheckedAt *time.Time
+	LbstCheckedAt *time.Time
 }
 
-type MinimialVersionedPackageRepo struct {
+type MinimiblVersionedPbckbgeRepo struct {
 	Scheme  string
-	Name    reposource.PackageName
+	Nbme    reposource.PbckbgeNbme
 	Version string
 }
 
-type MinimalPackageFilter struct {
-	PackageScheme string
-	Behaviour     *string
-	NameFilter    *struct {
-		PackageGlob string
+type MinimblPbckbgeFilter struct {
+	PbckbgeScheme string
+	Behbviour     *string
+	NbmeFilter    *struct {
+		PbckbgeGlob string
 	}
 	VersionFilter *struct {
-		PackageName string
+		PbckbgeNbme string
 		VersionGlob string
 	}
 }
 
-type PackageRepoFilter struct {
+type PbckbgeRepoFilter struct {
 	ID            int
-	Behaviour     string
-	PackageScheme string
-	NameFilter    *struct {
-		PackageGlob string
+	Behbviour     string
+	PbckbgeScheme string
+	NbmeFilter    *struct {
+		PbckbgeGlob string
 	}
 	VersionFilter *struct {
-		PackageName string
+		PbckbgeNbme string
 		VersionGlob string
 	}
 	DeletedAt *time.Time
-	UpdatedAt time.Time
+	UpdbtedAt time.Time
 }

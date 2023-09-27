@@ -1,5 +1,5 @@
-package temporarysettings
+pbckbge temporbrysettings
 
-type TemporarySettings struct {
+type TemporbrySettings struct {
 	Contents string
 }

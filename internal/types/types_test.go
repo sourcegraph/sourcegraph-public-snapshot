@@ -1,29 +1,29 @@
-package types
+pbckbge types
 
 import (
 	"strconv"
 	"testing"
 
-	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi"
 )
 
-func TestRepos_NamesSummary(t *testing.T) {
-	var rps Repos
+func TestRepos_NbmesSummbry(t *testing.T) {
+	vbr rps Repos
 
-	eid := func(id int) api.ExternalRepoSpec {
-		return api.ExternalRepoSpec{
-			ID:          strconv.Itoa(id),
-			ServiceType: "fake",
-			ServiceID:   "https://fake.com",
+	eid := func(id int) bpi.ExternblRepoSpec {
+		return bpi.ExternblRepoSpec{
+			ID:          strconv.Itob(id),
+			ServiceType: "fbke",
+			ServiceID:   "https://fbke.com",
 		}
 	}
 
 	for i := 0; i < 5; i++ {
-		rps = append(rps, &Repo{Name: "bar", ExternalRepo: eid(i)})
+		rps = bppend(rps, &Repo{Nbme: "bbr", ExternblRepo: eid(i)})
 	}
 
-	expected := "bar bar bar bar bar"
-	ns := rps.NamesSummary()
+	expected := "bbr bbr bbr bbr bbr"
+	ns := rps.NbmesSummbry()
 	if ns != expected {
 		t.Errorf("expected %s, got %s", expected, ns)
 	}
@@ -31,11 +31,11 @@ func TestRepos_NamesSummary(t *testing.T) {
 	rps = nil
 
 	for i := 0; i < 22; i++ {
-		rps = append(rps, &Repo{Name: "b", ExternalRepo: eid(i)})
+		rps = bppend(rps, &Repo{Nbme: "b", ExternblRepo: eid(i)})
 	}
 
 	expected = "b b b b b b b b b b b b b b b b b b b b..."
-	ns = rps.NamesSummary()
+	ns = rps.NbmesSummbry()
 	if ns != expected {
 		t.Errorf("expected %s, got %s", expected, ns)
 	}

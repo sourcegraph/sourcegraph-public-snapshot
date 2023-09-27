@@ -1,4 +1,4 @@
-package bitbucketcloud
+pbckbge bitbucketcloud
 
 import (
 	"bytes"
@@ -12,141 +12,141 @@ import (
 	"strings"
 	"time"
 
-	"github.com/sourcegraph/log"
+	"github.com/sourcegrbph/log"
 
-	"github.com/sourcegraph/sourcegraph/internal/errcode"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
-	"github.com/sourcegraph/sourcegraph/internal/httpcli"
-	"github.com/sourcegraph/sourcegraph/internal/metrics"
-	"github.com/sourcegraph/sourcegraph/internal/oauthutil"
-	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
-	"github.com/sourcegraph/sourcegraph/internal/timeutil"
-	"github.com/sourcegraph/sourcegraph/internal/trace"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/sourcegraph/sourcegraph/schema"
+	"github.com/sourcegrbph/sourcegrbph/internbl/errcode"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc/buth"
+	"github.com/sourcegrbph/sourcegrbph/internbl/httpcli"
+	"github.com/sourcegrbph/sourcegrbph/internbl/metrics"
+	"github.com/sourcegrbph/sourcegrbph/internbl/obuthutil"
+	"github.com/sourcegrbph/sourcegrbph/internbl/rbtelimit"
+	"github.com/sourcegrbph/sourcegrbph/internbl/timeutil"
+	"github.com/sourcegrbph/sourcegrbph/internbl/trbce"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/schemb"
 )
 
-// The metric generated here will be named as "src_bitbucket_cloud_requests_total".
-var requestCounter = metrics.NewRequestMeter("bitbucket_cloud", "Total number of requests sent to the Bitbucket Cloud API.")
+// The metric generbted here will be nbmed bs "src_bitbucket_cloud_requests_totbl".
+vbr requestCounter = metrics.NewRequestMeter("bitbucket_cloud", "Totbl number of requests sent to the Bitbucket Cloud API.")
 
-type Client interface {
-	Authenticator() auth.Authenticator
-	WithAuthenticator(a auth.Authenticator) Client
+type Client interfbce {
+	Authenticbtor() buth.Authenticbtor
+	WithAuthenticbtor(b buth.Authenticbtor) Client
 
 	Ping(ctx context.Context) error
 
-	CreatePullRequest(ctx context.Context, repo *Repo, input PullRequestInput) (*PullRequest, error)
+	CrebtePullRequest(ctx context.Context, repo *Repo, input PullRequestInput) (*PullRequest, error)
 	DeclinePullRequest(ctx context.Context, repo *Repo, id int64) (*PullRequest, error)
 	GetPullRequest(ctx context.Context, repo *Repo, id int64) (*PullRequest, error)
-	GetPullRequestStatuses(repo *Repo, id int64) (*PaginatedResultSet, error)
-	UpdatePullRequest(ctx context.Context, repo *Repo, id int64, input PullRequestInput) (*PullRequest, error)
-	CreatePullRequestComment(ctx context.Context, repo *Repo, id int64, input CommentInput) (*Comment, error)
+	GetPullRequestStbtuses(repo *Repo, id int64) (*PbginbtedResultSet, error)
+	UpdbtePullRequest(ctx context.Context, repo *Repo, id int64, input PullRequestInput) (*PullRequest, error)
+	CrebtePullRequestComment(ctx context.Context, repo *Repo, id int64, input CommentInput) (*Comment, error)
 	MergePullRequest(ctx context.Context, repo *Repo, id int64, opts MergePullRequestOpts) (*PullRequest, error)
 
-	Repo(ctx context.Context, namespace, slug string) (*Repo, error)
-	Repos(ctx context.Context, pageToken *PageToken, accountName string, opts *ReposOptions) ([]*Repo, *PageToken, error)
-	ForkRepository(ctx context.Context, upstream *Repo, input ForkInput) (*Repo, error)
+	Repo(ctx context.Context, nbmespbce, slug string) (*Repo, error)
+	Repos(ctx context.Context, pbgeToken *PbgeToken, bccountNbme string, opts *ReposOptions) ([]*Repo, *PbgeToken, error)
+	ForkRepository(ctx context.Context, upstrebm *Repo, input ForkInput) (*Repo, error)
 
-	ListExplicitUserPermsForRepo(ctx context.Context, pageToken *PageToken, owner, slug string, opts *RequestOptions) ([]*Account, *PageToken, error)
+	ListExplicitUserPermsForRepo(ctx context.Context, pbgeToken *PbgeToken, owner, slug string, opts *RequestOptions) ([]*Account, *PbgeToken, error)
 
 	CurrentUser(ctx context.Context) (*User, error)
-	CurrentUserEmails(ctx context.Context, pageToken *PageToken) ([]*UserEmail, *PageToken, error)
-	AllCurrentUserEmails(ctx context.Context) ([]*UserEmail, error)
+	CurrentUserEmbils(ctx context.Context, pbgeToken *PbgeToken) ([]*UserEmbil, *PbgeToken, error)
+	AllCurrentUserEmbils(ctx context.Context) ([]*UserEmbil, error)
 }
 
 type RequestOptions struct {
 	FetchAll bool
 }
 
-// client access a Bitbucket Cloud via the REST API 2.0.
+// client bccess b Bitbucket Cloud vib the REST API 2.0.
 type client struct {
-	// HTTP Client used to communicate with the API
+	// HTTP Client used to communicbte with the API
 	httpClient httpcli.Doer
 
-	// URL is the base URL of Bitbucket Cloud.
+	// URL is the bbse URL of Bitbucket Cloud.
 	URL *url.URL
 
-	// Auth is the authentication method used when accessing the server. Only
-	// auth.BasicAuth is currently supported.
-	Auth auth.Authenticator
+	// Auth is the buthenticbtion method used when bccessing the server. Only
+	// buth.BbsicAuth is currently supported.
+	Auth buth.Authenticbtor
 
-	// RateLimit is the self-imposed rate limiter (since Bitbucket does not have a concept
-	// of rate limiting in HTTP response headers).
-	rateLimit *ratelimit.InstrumentedLimiter
+	// RbteLimit is the self-imposed rbte limiter (since Bitbucket does not hbve b concept
+	// of rbte limiting in HTTP response hebders).
+	rbteLimit *rbtelimit.InstrumentedLimiter
 }
 
-// NewClient creates a new Bitbucket Cloud API client from the given external
-// service configuration. If a nil httpClient is provided, http.DefaultClient
+// NewClient crebtes b new Bitbucket Cloud API client from the given externbl
+// service configurbtion. If b nil httpClient is provided, http.DefbultClient
 // will be used.
-func NewClient(urn string, config *schema.BitbucketCloudConnection, httpClient httpcli.Doer) (Client, error) {
+func NewClient(urn string, config *schemb.BitbucketCloudConnection, httpClient httpcli.Doer) (Client, error) {
 	return newClient(urn, config, httpClient)
 }
 
-func newClient(urn string, config *schema.BitbucketCloudConnection, httpClient httpcli.Doer) (*client, error) {
+func newClient(urn string, config *schemb.BitbucketCloudConnection, httpClient httpcli.Doer) (*client, error) {
 	if httpClient == nil {
-		httpClient = httpcli.ExternalDoer
+		httpClient = httpcli.ExternblDoer
 	}
 
 	httpClient = requestCounter.Doer(httpClient, func(u *url.URL) string {
-		// The second component of the Path mostly maps to the type of API
-		// request we are making.
-		var category string
-		if parts := strings.SplitN(u.Path, "/", 4); len(parts) > 2 {
-			category = parts[2]
+		// The second component of the Pbth mostly mbps to the type of API
+		// request we bre mbking.
+		vbr cbtegory string
+		if pbrts := strings.SplitN(u.Pbth, "/", 4); len(pbrts) > 2 {
+			cbtegory = pbrts[2]
 		}
-		return category
+		return cbtegory
 	})
 
-	apiURL, err := UrlFromConfig(config)
+	bpiURL, err := UrlFromConfig(config)
 	if err != nil {
 		return nil, err
 	}
 
 	return &client{
 		httpClient: httpClient,
-		URL:        extsvc.NormalizeBaseURL(apiURL),
-		Auth: &auth.BasicAuth{
-			Username: config.Username,
-			Password: config.AppPassword,
+		URL:        extsvc.NormblizeBbseURL(bpiURL),
+		Auth: &buth.BbsicAuth{
+			Usernbme: config.Usernbme,
+			Pbssword: config.AppPbssword,
 		},
-		// Default limits are defined in extsvc.GetLimitFromConfig
-		rateLimit: ratelimit.NewInstrumentedLimiter(urn, ratelimit.NewGlobalRateLimiter(log.Scoped("BitbucketCloudClient", ""), urn)),
+		// Defbult limits bre defined in extsvc.GetLimitFromConfig
+		rbteLimit: rbtelimit.NewInstrumentedLimiter(urn, rbtelimit.NewGlobblRbteLimiter(log.Scoped("BitbucketCloudClient", ""), urn)),
 	}, nil
 }
 
-func (c *client) Authenticator() auth.Authenticator {
+func (c *client) Authenticbtor() buth.Authenticbtor {
 	return c.Auth
 }
 
-// WithAuthenticator returns a new Client that uses the same configuration,
-// HTTPClient, and RateLimiter as the current Client, except authenticated with
-// the given authenticator instance.
+// WithAuthenticbtor returns b new Client thbt uses the sbme configurbtion,
+// HTTPClient, bnd RbteLimiter bs the current Client, except buthenticbted with
+// the given buthenticbtor instbnce.
 //
-// Note that using an unsupported Authenticator implementation may result in
-// unexpected behaviour, or (more likely) errors. At present, only BasicAuth is
+// Note thbt using bn unsupported Authenticbtor implementbtion mby result in
+// unexpected behbviour, or (more likely) errors. At present, only BbsicAuth is
 // supported.
-func (c *client) WithAuthenticator(a auth.Authenticator) Client {
+func (c *client) WithAuthenticbtor(b buth.Authenticbtor) Client {
 	return &client{
 		httpClient: c.httpClient,
 		URL:        c.URL,
-		Auth:       a,
-		rateLimit:  c.rateLimit,
+		Auth:       b,
+		rbteLimit:  c.rbteLimit,
 	}
 }
 
-// Ping makes a request to the API root, thereby validating that the current
-// authenticator is valid.
+// Ping mbkes b request to the API root, thereby vblidbting thbt the current
+// buthenticbtor is vblid.
 func (c *client) Ping(ctx context.Context) error {
-	// This relies on an implementation detail: Bitbucket Cloud doesn't have an
-	// API endpoint at /2.0/, but does the authentication check before returning
-	// the 404, so we can distinguish based on the response code.
+	// This relies on bn implementbtion detbil: Bitbucket Cloud doesn't hbve bn
+	// API endpoint bt /2.0/, but does the buthenticbtion check before returning
+	// the 404, so we cbn distinguish bbsed on the response code.
 	//
-	// The reason we do this is because there literally isn't an API call
-	// available that doesn't require a specific scope.
+	// The rebson we do this is becbuse there literblly isn't bn API cbll
+	// bvbilbble thbt doesn't require b specific scope.
 	req, err := http.NewRequest("GET", "/2.0/", nil)
 	if err != nil {
-		return errors.Wrap(err, "creating request")
+		return errors.Wrbp(err, "crebting request")
 	}
 
 	_, err = c.do(ctx, req, nil)
@@ -156,52 +156,52 @@ func (c *client) Ping(ctx context.Context) error {
 	return nil
 }
 
-func fetchAll[T any](ctx context.Context, c *client, results []T, next *PageToken, err error) ([]T, error) {
-	var page []T
-	var nextURL *url.URL
-	for err == nil && next.HasMore() {
-		nextURL, err = url.Parse(next.Next)
+func fetchAll[T bny](ctx context.Context, c *client, results []T, next *PbgeToken, err error) ([]T, error) {
+	vbr pbge []T
+	vbr nextURL *url.URL
+	for err == nil && next.HbsMore() {
+		nextURL, err = url.Pbrse(next.Next)
 		if err != nil {
 			return nil, err
 		}
-		next, err = c.page(ctx, nextURL.Path, nil, next, &page)
-		results = append(results, page...)
+		next, err = c.pbge(ctx, nextURL.Pbth, nil, next, &pbge)
+		results = bppend(results, pbge...)
 	}
 
 	return results, err
 }
 
-func (c *client) page(ctx context.Context, path string, qry url.Values, token *PageToken, results any) (*PageToken, error) {
+func (c *client) pbge(ctx context.Context, pbth string, qry url.Vblues, token *PbgeToken, results bny) (*PbgeToken, error) {
 	if qry == nil {
-		qry = make(url.Values)
+		qry = mbke(url.Vblues)
 	}
 
-	for k, vs := range token.Values() {
-		qry[k] = append(qry[k], vs...)
+	for k, vs := rbnge token.Vblues() {
+		qry[k] = bppend(qry[k], vs...)
 	}
 
-	u := url.URL{Path: path, RawQuery: qry.Encode()}
-	return c.reqPage(ctx, u.String(), results)
+	u := url.URL{Pbth: pbth, RbwQuery: qry.Encode()}
+	return c.reqPbge(ctx, u.String(), results)
 }
 
-// reqPage directly requests resources from given URL assuming all attributes have been
-// included in the URL parameter. This is particular useful since the Bitbucket Cloud
-// API 2.0 pagination renders the full link of next page in the response.
-// See more at https://developer.atlassian.com/bitbucket/api/2/reference/meta/pagination
-// However, for the very first request, use method page instead.
-func (c *client) reqPage(ctx context.Context, url string, results any) (*PageToken, error) {
+// reqPbge directly requests resources from given URL bssuming bll bttributes hbve been
+// included in the URL pbrbmeter. This is pbrticulbr useful since the Bitbucket Cloud
+// API 2.0 pbginbtion renders the full link of next pbge in the response.
+// See more bt https://developer.btlbssibn.com/bitbucket/bpi/2/reference/metb/pbginbtion
+// However, for the very first request, use method pbge instebd.
+func (c *client) reqPbge(ctx context.Context, url string, results bny) (*PbgeToken, error) {
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
 		return nil, err
 	}
 
-	var next PageToken
+	vbr next PbgeToken
 	_, err = c.do(ctx, req, &struct {
-		*PageToken
-		Values any `json:"values"`
+		*PbgeToken
+		Vblues bny `json:"vblues"`
 	}{
-		PageToken: &next,
-		Values:    results,
+		PbgeToken: &next,
+		Vblues:    results,
 	})
 
 	if err != nil {
@@ -211,132 +211,132 @@ func (c *client) reqPage(ctx context.Context, url string, results any) (*PageTok
 	return &next, nil
 }
 
-func (c *client) do(ctx context.Context, req *http.Request, result any) (code int, err error) {
-	tr, ctx := trace.New(ctx, "BitbucketCloud.do")
+func (c *client) do(ctx context.Context, req *http.Request, result bny) (code int, err error) {
+	tr, ctx := trbce.New(ctx, "BitbucketCloud.do")
 	defer tr.EndWithErr(&err)
 	req = req.WithContext(ctx)
 
 	req.URL = c.URL.ResolveReference(req.URL)
 
-	// If the request doesn't expect a body, then including a content-type can
-	// actually cause errors on the Bitbucket side. So we need to pick apart the
-	// request just a touch to figure out if we should add the header.
-	var reqBody []byte
+	// If the request doesn't expect b body, then including b content-type cbn
+	// bctublly cbuse errors on the Bitbucket side. So we need to pick bpbrt the
+	// request just b touch to figure out if we should bdd the hebder.
+	vbr reqBody []byte
 	if req.Body != nil {
-		req.Header.Set("Content-Type", "application/json; charset=utf-8")
-		reqBody, err = io.ReadAll(req.Body)
+		req.Hebder.Set("Content-Type", "bpplicbtion/json; chbrset=utf-8")
+		reqBody, err = io.RebdAll(req.Body)
 		if err != nil {
 			return code, err
 		}
 	}
-	req.Body = io.NopCloser(bytes.NewReader(reqBody))
+	req.Body = io.NopCloser(bytes.NewRebder(reqBody))
 
-	if err = c.rateLimit.Wait(ctx); err != nil {
+	if err = c.rbteLimit.Wbit(ctx); err != nil {
 		return code, err
 	}
 
-	// Because we have no external rate limiting data for Bitbucket Cloud, we do an exponential
-	// back-off and retry for requests where we recieve a 429 Too Many Requests.
-	// If we still don't succeed after waiting a total of 5 min, we give up.
-	var resp *http.Response
+	// Becbuse we hbve no externbl rbte limiting dbtb for Bitbucket Cloud, we do bn exponentibl
+	// bbck-off bnd retry for requests where we recieve b 429 Too Mbny Requests.
+	// If we still don't succeed bfter wbiting b totbl of 5 min, we give up.
+	vbr resp *http.Response
 	sleepTime := 10 * time.Second
 	for {
-		resp, err = oauthutil.DoRequest(ctx, nil, c.httpClient, req, c.Auth, func(r *http.Request) (*http.Response, error) {
+		resp, err = obuthutil.DoRequest(ctx, nil, c.httpClient, req, c.Auth, func(r *http.Request) (*http.Response, error) {
 			return c.httpClient.Do(r)
 		})
 		if resp != nil {
-			code = resp.StatusCode
+			code = resp.StbtusCode
 		}
 		if err != nil {
 			return code, err
 		}
 
-		if code != http.StatusTooManyRequests {
-			break
+		if code != http.StbtusTooMbnyRequests {
+			brebk
 		}
 
 		timeutil.SleepWithContext(ctx, sleepTime)
 		sleepTime = sleepTime * 2
 		if sleepTime.Seconds() > 160 {
-			break
+			brebk
 		}
-		req.Body = io.NopCloser(bytes.NewReader(reqBody))
+		req.Body = io.NopCloser(bytes.NewRebder(reqBody))
 	}
 
 	defer resp.Body.Close()
 
-	bs, err := io.ReadAll(resp.Body)
+	bs, err := io.RebdAll(resp.Body)
 	if err != nil {
 		return code, err
 	}
 
-	if code < http.StatusOK || code >= http.StatusBadRequest {
-		return code, errors.WithStack(&httpError{
+	if code < http.StbtusOK || code >= http.StbtusBbdRequest {
+		return code, errors.WithStbck(&httpError{
 			URL:        req.URL,
-			StatusCode: code,
+			StbtusCode: code,
 			Body:       string(bs),
 		})
 	}
 
 	if result != nil {
-		return code, json.Unmarshal(bs, result)
+		return code, json.Unmbrshbl(bs, result)
 	}
 
 	return code, nil
 }
 
-type PageToken struct {
+type PbgeToken struct {
 	Size    int    `json:"size"`
-	Page    int    `json:"page"`
-	Pagelen int    `json:"pagelen"`
+	Pbge    int    `json:"pbge"`
+	Pbgelen int    `json:"pbgelen"`
 	Next    string `json:"next"`
 }
 
-func (t *PageToken) HasMore() bool {
+func (t *PbgeToken) HbsMore() bool {
 	if t == nil {
-		return false
+		return fblse
 	}
 	return len(t.Next) > 0
 }
 
-func (t *PageToken) Values() url.Values {
-	v := url.Values{}
+func (t *PbgeToken) Vblues() url.Vblues {
+	v := url.Vblues{}
 	if t == nil {
 		return v
 	}
 	if t.Next != "" {
-		nextURL, err := url.Parse(t.Next)
+		nextURL, err := url.Pbrse(t.Next)
 		if err == nil {
 			v = nextURL.Query()
 		}
 	}
-	if t.Pagelen != 0 {
-		v.Set("pagelen", strconv.Itoa(t.Pagelen))
+	if t.Pbgelen != 0 {
+		v.Set("pbgelen", strconv.Itob(t.Pbgelen))
 	}
 	return v
 }
 
 type httpError struct {
-	StatusCode int
+	StbtusCode int
 	URL        *url.URL
 	Body       string
 }
 
 func (e *httpError) Error() string {
-	return fmt.Sprintf("Bitbucket Cloud API HTTP error: code=%d url=%q body=%q", e.StatusCode, e.URL, e.Body)
+	return fmt.Sprintf("Bitbucket Cloud API HTTP error: code=%d url=%q body=%q", e.StbtusCode, e.URL, e.Body)
 }
 
-func (e *httpError) Unauthorized() bool {
-	return e.StatusCode == http.StatusUnauthorized
+func (e *httpError) Unbuthorized() bool {
+	return e.StbtusCode == http.StbtusUnbuthorized
 }
 
 func (e *httpError) NotFound() bool {
-	return e.StatusCode == http.StatusNotFound
+	return e.StbtusCode == http.StbtusNotFound
 }
 
-func UrlFromConfig(config *schema.BitbucketCloudConnection) (*url.URL, error) {
+func UrlFromConfig(config *schemb.BitbucketCloudConnection) (*url.URL, error) {
 	if config.ApiURL == "" {
-		return url.Parse("https://api.bitbucket.org")
+		return url.Pbrse("https://bpi.bitbucket.org")
 	}
-	return url.Parse(config.ApiURL)
+	return url.Pbrse(config.ApiURL)
 }

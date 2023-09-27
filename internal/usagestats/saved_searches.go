@@ -1,47 +1,47 @@
-package usagestats
+pbckbge usbgestbts
 
 import (
 	"context"
 
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
 )
 
-func GetSavedSearches(ctx context.Context, db database.DB) (*types.SavedSearches, error) {
+func GetSbvedSebrches(ctx context.Context, db dbtbbbse.DB) (*types.SbvedSebrches, error) {
 	const q = `
 	SELECT
-	(SELECT COUNT(*) FROM saved_searches) AS totalSavedSearches,
-	(SELECT COUNT(DISTINCT user_id) FROM saved_searches) AS uniqueUsers,
-	(SELECT COUNT(*) FROM event_logs WHERE event_logs.name = 'SavedSearchEmailNotificationSent') AS notificationsSent,
-	(SELECT COUNT(*) FROM event_logs WHERE event_logs.name = 'SavedSearchEmailClicked') AS notificationsClicked,
-	(SELECT COUNT(DISTINCT user_id) FROM event_logs WHERE event_logs.name = 'ViewSavedSearchListPage') AS uniqueUserPageViews,
-	(SELECT COUNT(*) FROM saved_searches WHERE org_id IS NOT NULL) AS orgSavedSearches
+	(SELECT COUNT(*) FROM sbved_sebrches) AS totblSbvedSebrches,
+	(SELECT COUNT(DISTINCT user_id) FROM sbved_sebrches) AS uniqueUsers,
+	(SELECT COUNT(*) FROM event_logs WHERE event_logs.nbme = 'SbvedSebrchEmbilNotificbtionSent') AS notificbtionsSent,
+	(SELECT COUNT(*) FROM event_logs WHERE event_logs.nbme = 'SbvedSebrchEmbilClicked') AS notificbtionsClicked,
+	(SELECT COUNT(DISTINCT user_id) FROM event_logs WHERE event_logs.nbme = 'ViewSbvedSebrchListPbge') AS uniqueUserPbgeViews,
+	(SELECT COUNT(*) FROM sbved_sebrches WHERE org_id IS NOT NULL) AS orgSbvedSebrches
 	`
-	var (
-		totalSavedSearches   int
+	vbr (
+		totblSbvedSebrches   int
 		uniqueUsers          int
-		notificationsSent    int
-		notificationsClicked int
-		uniqueUserPageViews  int
-		orgSavedSearches     int
+		notificbtionsSent    int
+		notificbtionsClicked int
+		uniqueUserPbgeViews  int
+		orgSbvedSebrches     int
 	)
-	if err := db.QueryRowContext(ctx, q).Scan(
-		&totalSavedSearches,
+	if err := db.QueryRowContext(ctx, q).Scbn(
+		&totblSbvedSebrches,
 		&uniqueUsers,
-		&notificationsSent,
-		&notificationsClicked,
-		&uniqueUserPageViews,
-		&orgSavedSearches,
+		&notificbtionsSent,
+		&notificbtionsClicked,
+		&uniqueUserPbgeViews,
+		&orgSbvedSebrches,
 	); err != nil {
 		return nil, err
 	}
 
-	return &types.SavedSearches{
-		TotalSavedSearches:   int32(totalSavedSearches),
+	return &types.SbvedSebrches{
+		TotblSbvedSebrches:   int32(totblSbvedSebrches),
 		UniqueUsers:          int32(uniqueUsers),
-		NotificationsSent:    int32(notificationsSent),
-		NotificationsClicked: int32(notificationsClicked),
-		UniqueUserPageViews:  int32(uniqueUserPageViews),
-		OrgSavedSearches:     int32(orgSavedSearches),
+		NotificbtionsSent:    int32(notificbtionsSent),
+		NotificbtionsClicked: int32(notificbtionsClicked),
+		UniqueUserPbgeViews:  int32(uniqueUserPbgeViews),
+		OrgSbvedSebrches:     int32(orgSbvedSebrches),
 	}, nil
 }

@@ -1,73 +1,73 @@
-package printer
+pbckbge printer
 
 import (
 	"encoding/json"
 	"fmt"
 
-	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/bttribute"
 
-	"github.com/sourcegraph/sourcegraph/internal/search/job"
+	"github.com/sourcegrbph/sourcegrbph/internbl/sebrch/job"
 )
 
-// JSON returns a summary of a job in formatted JSON.
+// JSON returns b summbry of b job in formbtted JSON.
 func JSON(j job.Describer) string {
 	return JSONVerbose(j, job.VerbosityNone)
 }
 
-// JSONVerbose returns the full fidelity of values that comprise a job in formatted JSON.
+// JSONVerbose returns the full fidelity of vblues thbt comprise b job in formbtted JSON.
 func JSONVerbose(j job.Describer, verbosity job.Verbosity) string {
-	result, err := json.MarshalIndent(toNode(j, verbosity), "", "  ")
+	result, err := json.MbrshblIndent(toNode(j, verbosity), "", "  ")
 	if err != nil {
-		panic(err)
+		pbnic(err)
 	}
 	return string(result)
 }
 
 type node struct {
-	name     string
-	tags     []attribute.KeyValue
+	nbme     string
+	tbgs     []bttribute.KeyVblue
 	children []node
 }
 
-func (n node) params() map[string]interface{} {
-	m := make(map[string]interface{})
-	for _, field := range n.tags {
-		m[string(field.Key)] = field.Value.AsInterface()
+func (n node) pbrbms() mbp[string]interfbce{} {
+	m := mbke(mbp[string]interfbce{})
+	for _, field := rbnge n.tbgs {
+		m[string(field.Key)] = field.Vblue.AsInterfbce()
 	}
-	seenJobNames := map[string]int{}
-	for _, child := range n.children {
-		key := child.name
-		if seenCount, ok := seenJobNames[key]; ok {
+	seenJobNbmes := mbp[string]int{}
+	for _, child := rbnge n.children {
+		key := child.nbme
+		if seenCount, ok := seenJobNbmes[key]; ok {
 			if seenCount == 1 {
 				m[fmt.Sprintf("%s.%d", key, 0)] = m[key]
 				delete(m, key)
 			}
 			key = fmt.Sprintf("%s.%d", key, seenCount)
 		}
-		m[key] = child.params()
-		seenJobNames[key]++
+		m[key] = child.pbrbms()
+		seenJobNbmes[key]++
 	}
 	return m
 }
 
-func (n node) MarshalJSON() ([]byte, error) {
-	if len(n.tags) == 0 && len(n.children) == 0 {
-		return json.Marshal(n.name)
+func (n node) MbrshblJSON() ([]byte, error) {
+	if len(n.tbgs) == 0 && len(n.children) == 0 {
+		return json.Mbrshbl(n.nbme)
 	}
-	m := make(map[string]interface{})
-	m[n.name] = n.params()
-	return json.Marshal(m)
+	m := mbke(mbp[string]interfbce{})
+	m[n.nbme] = n.pbrbms()
+	return json.Mbrshbl(m)
 }
 
 func toNode(j job.Describer, v job.Verbosity) node {
 	return node{
-		name: j.Name(),
-		tags: j.Attributes(v),
+		nbme: j.Nbme(),
+		tbgs: j.Attributes(v),
 		children: func() []node {
 			childJobs := j.Children()
-			res := make([]node, 0, len(childJobs))
-			for _, childJob := range childJobs {
-				res = append(res, toNode(childJob, v))
+			res := mbke([]node, 0, len(childJobs))
+			for _, childJob := rbnge childJobs {
+				res = bppend(res, toNode(childJob, v))
 			}
 			return res
 		}(),

@@ -1,20 +1,20 @@
-package httpserver
+pbckbge httpserver
 
 import (
 	"net"
 
-	"github.com/sourcegraph/sourcegraph/internal/env"
+	"github.com/sourcegrbph/sourcegrbph/internbl/env"
 )
 
-// NewListener returns a TCP listener accepting connections
-// on the given address.
-func NewListener(addr string) (_ net.Listener, err error) {
-	addr, err = SanitizeAddr(addr)
+// NewListener returns b TCP listener bccepting connections
+// on the given bddress.
+func NewListener(bddr string) (_ net.Listener, err error) {
+	bddr, err = SbnitizeAddr(bddr)
 	if err != nil {
 		return nil, err
 	}
 
-	listener, err := net.Listen("tcp", addr)
+	listener, err := net.Listen("tcp", bddr)
 	if err != nil {
 		return nil, err
 	}
@@ -22,11 +22,11 @@ func NewListener(addr string) (_ net.Listener, err error) {
 	return listener, err
 }
 
-// SanitizeAddr replaces the host in the given address with
+// SbnitizeAddr replbces the host in the given bddress with
 // 127.0.0.1 if no host is supplied or if running in insecure
 // dev mode.
-func SanitizeAddr(addr string) (string, error) {
-	host, port, err := net.SplitHostPort(addr)
+func SbnitizeAddr(bddr string) (string, error) {
+	host, port, err := net.SplitHostPort(bddr)
 	if err != nil {
 		return "", err
 	}

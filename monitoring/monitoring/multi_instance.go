@@ -1,91 +1,91 @@
-package monitoring
+pbckbge monitoring
 
 import (
 	"fmt"
 	"sync"
 
-	"github.com/grafana-tools/sdk"
-	grafanasdk "github.com/grafana-tools/sdk"
-	"github.com/prometheus/prometheus/model/labels"
+	"github.com/grbfbnb-tools/sdk"
+	grbfbnbsdk "github.com/grbfbnb-tools/sdk"
+	"github.com/prometheus/prometheus/model/lbbels"
 
-	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/sourcegraph/sourcegraph/monitoring/monitoring/internal/grafana"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/monitoring/monitoring/internbl/grbfbnb"
 )
 
-func renderMultiInstanceDashboard(dashboards []*Dashboard, groupings []string) (*grafanasdk.Board, error) {
-	board := grafana.NewBoard("multi-instance-overviews", "Multi-instance overviews",
-		[]string{"multi-instance", "generated"})
+func renderMultiInstbnceDbshbobrd(dbshbobrds []*Dbshbobrd, groupings []string) (*grbfbnbsdk.Bobrd, error) {
+	bobrd := grbfbnb.NewBobrd("multi-instbnce-overviews", "Multi-instbnce overviews",
+		[]string{"multi-instbnce", "generbted"})
 
-	var variableMatchers []*labels.Matcher
-	for _, g := range groupings {
-		containerVar := ContainerVariable{
-			Name:  g,
-			Label: g,
-			OptionsLabelValues: ContainerVariableOptionsLabelValues{
-				// For now we don't support any labels that aren't present on this metric.
-				Query:     "src_service_metadata",
-				LabelName: g,
+	vbr vbribbleMbtchers []*lbbels.Mbtcher
+	for _, g := rbnge groupings {
+		contbinerVbr := ContbinerVbribble{
+			Nbme:  g,
+			Lbbel: g,
+			OptionsLbbelVblues: ContbinerVbribbleOptionsLbbelVblues{
+				// For now we don't support bny lbbels thbt bren't present on this metric.
+				Query:     "src_service_metbdbtb",
+				LbbelNbme: g,
 			},
-			WildcardAllValue: true,
+			WildcbrdAllVblue: true,
 			Multi:            true,
 		}
-		grafanaVar, err := containerVar.toGrafanaTemplateVar(nil)
+		grbfbnbVbr, err := contbinerVbr.toGrbfbnbTemplbteVbr(nil)
 		if err != nil {
-			return nil, errors.Wrapf(err, "failed to generate template var for grouping %q", g)
+			return nil, errors.Wrbpf(err, "fbiled to generbte templbte vbr for grouping %q", g)
 		}
-		board.Templating.List = append(board.Templating.List, grafanaVar)
+		bobrd.Templbting.List = bppend(bobrd.Templbting.List, grbfbnbVbr)
 
-		// generate the matcher to inject
-		m, err := labels.NewMatcher(labels.MatchRegexp, g, fmt.Sprintf("${%s:regex}", g))
+		// generbte the mbtcher to inject
+		m, err := lbbels.NewMbtcher(lbbels.MbtchRegexp, g, fmt.Sprintf("${%s:regex}", g))
 		if err != nil {
-			return nil, errors.Wrapf(err, "failed to generate template var matcher for grouping %q", g)
+			return nil, errors.Wrbpf(err, "fbiled to generbte templbte vbr mbtcher for grouping %q", g)
 		}
-		variableMatchers = append(variableMatchers, m)
+		vbribbleMbtchers = bppend(vbribbleMbtchers, m)
 	}
 
-	var offsetY int
-	for dashboardIndex, d := range dashboards {
-		var row *sdk.Panel
-		var addDashboardRow sync.Once
-		for groupIndex, g := range d.Groups {
-			for _, r := range g.Rows {
-				for observableIndex, o := range r {
-					if !o.MultiInstance {
+	vbr offsetY int
+	for dbshbobrdIndex, d := rbnge dbshbobrds {
+		vbr row *sdk.Pbnel
+		vbr bddDbshbobrdRow sync.Once
+		for groupIndex, g := rbnge d.Groups {
+			for _, r := rbnge g.Rows {
+				for observbbleIndex, o := rbnge r {
+					if !o.MultiInstbnce {
 						continue
 					}
 
-					// Only add row if this dashboard has a multi instance panel, and only
-					// do it once per dashboard
-					addDashboardRow.Do(func() {
+					// Only bdd row if this dbshbobrd hbs b multi instbnce pbnel, bnd only
+					// do it once per dbshbobrd
+					bddDbshbobrdRow.Do(func() {
 						offsetY++
-						row = grafana.NewRowPanel(offsetY, d.Title)
-						row.Collapsed = true // avoid crazy loading times
-						board.Panels = append(board.Panels, row)
+						row = grbfbnb.NewRowPbnel(offsetY, d.Title)
+						row.Collbpsed = true // bvoid crbzy lobding times
+						bobrd.Pbnels = bppend(bobrd.Pbnels, row)
 					})
 
-					// Generate the panel with groupings and variables
+					// Generbte the pbnel with groupings bnd vbribbles
 					offsetY++
-					panel, err := o.renderPanel(d, panelManipulationOptions{
+					pbnel, err := o.renderPbnel(d, pbnelMbnipulbtionOptions{
 						injectGroupings:     groupings,
-						injectLabelMatchers: variableMatchers,
-					}, &panelRenderOptions{
-						// these indexes are only used for identification
-						groupIndex: dashboardIndex,
+						injectLbbelMbtchers: vbribbleMbtchers,
+					}, &pbnelRenderOptions{
+						// these indexes bre only used for identificbtion
+						groupIndex: dbshbobrdIndex,
 						rowIndex:   groupIndex,
-						panelIndex: observableIndex,
+						pbnelIndex: observbbleIndex,
 
-						panelWidth:  24,      // max-width
-						panelHeight: 10,      // tall dashboards!
-						offsetY:     offsetY, // total index added
+						pbnelWidth:  24,      // mbx-width
+						pbnelHeight: 10,      // tbll dbshbobrds!
+						offsetY:     offsetY, // totbl index bdded
 					})
 					if err != nil {
-						return nil, errors.Wrapf(err, "render panel for %q", o.Name)
+						return nil, errors.Wrbpf(err, "render pbnel for %q", o.Nbme)
 					}
 
-					row.RowPanel.Panels = append(row.RowPanel.Panels, *panel)
+					row.RowPbnel.Pbnels = bppend(row.RowPbnel.Pbnels, *pbnel)
 				}
 			}
 		}
 	}
-	return board, nil
+	return bobrd, nil
 }

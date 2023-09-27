@@ -1,150 +1,150 @@
-package streaming
+pbckbge strebming
 
 import (
 	"fmt"
-	"path"
+	"pbth"
 	"strconv"
 	"strings"
 
-	"github.com/grafana/regexp"
+	"github.com/grbfbnb/regexp"
 
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/inventory"
-	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
-	"github.com/sourcegraph/sourcegraph/internal/search"
-	"github.com/sourcegraph/sourcegraph/internal/search/result"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi"
+	"github.com/sourcegrbph/sourcegrbph/internbl/inventory"
+	"github.com/sourcegrbph/sourcegrbph/internbl/lbzyregexp"
+	"github.com/sourcegrbph/sourcegrbph/internbl/sebrch"
+	"github.com/sourcegrbph/sourcegrbph/internbl/sebrch/result"
 )
 
-// SearchFilters computes the filters to show a user based on results.
+// SebrchFilters computes the filters to show b user bbsed on results.
 //
-// Note: it currently live in graphqlbackend. However, once we have a non
-// resolver based SearchResult type it can be extracted. It lives in its own
-// file to make that more obvious. We already have the filter type extracted
+// Note: it currently live in grbphqlbbckend. However, once we hbve b non
+// resolver bbsed SebrchResult type it cbn be extrbcted. It lives in its own
+// file to mbke thbt more obvious. We blrebdy hbve the filter type extrbcted
 // (Filter).
-type SearchFilters struct {
+type SebrchFilters struct {
 	filters filters
 }
 
-// commonFileFilters are common filters used. It is used by SearchFilters to
-// propose them if they match shown results.
-var commonFileFilters = []struct {
-	label       string
-	regexp      *lazyregexp.Regexp
+// commonFileFilters bre common filters used. It is used by SebrchFilters to
+// propose them if they mbtch shown results.
+vbr commonFileFilters = []struct {
+	lbbel       string
+	regexp      *lbzyregexp.Regexp
 	regexFilter string
 	globFilter  string
 }{
 	{
-		label:       "Exclude Go tests",
-		regexp:      lazyregexp.New(`_test\.go$`),
+		lbbel:       "Exclude Go tests",
+		regexp:      lbzyregexp.New(`_test\.go$`),
 		regexFilter: `-file:_test\.go$`,
 		globFilter:  `-file:**_test.go`,
 	},
 	{
-		label:       "Exclude Go vendor",
-		regexp:      lazyregexp.New(`(^|/)vendor/`),
+		lbbel:       "Exclude Go vendor",
+		regexp:      lbzyregexp.New(`(^|/)vendor/`),
 		regexFilter: `-file:(^|/)vendor/`,
 		globFilter:  `-file:vendor/** -file:**/vendor/**`,
 	},
 	{
-		label:       "Exclude node_modules",
-		regexp:      lazyregexp.New(`(^|/)node_modules/`),
+		lbbel:       "Exclude node_modules",
+		regexp:      lbzyregexp.New(`(^|/)node_modules/`),
 		regexFilter: `-file:(^|/)node_modules/`,
 		globFilter:  `-file:node_modules/** -file:**/node_modules/**`,
 	},
 	{
-		label:       "Exclude minified JavaScript",
-		regexp:      lazyregexp.New(`\.min\.js$`),
+		lbbel:       "Exclude minified JbvbScript",
+		regexp:      lbzyregexp.New(`\.min\.js$`),
 		regexFilter: `-file:\.min\.js$`,
 		globFilter:  `-file:**.min.js`,
 	},
 	{
-		label:       "Exclude JavaScript maps",
-		regexp:      lazyregexp.New(`\.js\.map$`),
-		regexFilter: `-file:\.js\.map$`,
-		globFilter:  `-file:**.js.map`,
+		lbbel:       "Exclude JbvbScript mbps",
+		regexp:      lbzyregexp.New(`\.js\.mbp$`),
+		regexFilter: `-file:\.js\.mbp$`,
+		globFilter:  `-file:**.js.mbp`,
 	},
 }
 
-// Update internal state for the results in event.
-func (s *SearchFilters) Update(event SearchEvent) {
-	// Initialize state on first call.
+// Updbte internbl stbte for the results in event.
+func (s *SebrchFilters) Updbte(event SebrchEvent) {
+	// Initiblize stbte on first cbll.
 	if s.filters == nil {
-		s.filters = make(filters)
+		s.filters = mbke(filters)
 	}
 
-	addRepoFilter := func(repoName api.RepoName, repoID api.RepoID, rev string, lineMatchCount int32) {
-		filter := fmt.Sprintf(`repo:^%s$`, regexp.QuoteMeta(string(repoName)))
+	bddRepoFilter := func(repoNbme bpi.RepoNbme, repoID bpi.RepoID, rev string, lineMbtchCount int32) {
+		filter := fmt.Sprintf(`repo:^%s$`, regexp.QuoteMetb(string(repoNbme)))
 		if rev != "" {
-			// We don't need to quote rev. The only special characters we interpret
-			// are @ and :, both of which are disallowed in git refs
+			// We don't need to quote rev. The only specibl chbrbcters we interpret
+			// bre @ bnd :, both of which bre disbllowed in git refs
 			filter = filter + fmt.Sprintf(`@%s`, rev)
 		}
-		limitHit := event.Stats.Status.Get(repoID)&search.RepoStatusLimitHit != 0
-		s.filters.Add(filter, string(repoName), lineMatchCount, limitHit, "repo")
+		limitHit := event.Stbts.Stbtus.Get(repoID)&sebrch.RepoStbtusLimitHit != 0
+		s.filters.Add(filter, string(repoNbme), lineMbtchCount, limitHit, "repo")
 	}
 
-	addFileFilter := func(fileMatchPath string, lineMatchCount int32, limitHit bool) {
-		for _, ff := range commonFileFilters {
-			// use regexp to match file paths unconditionally, whether globbing is enabled or not,
-			// since we have no native library call to match `**` for globs.
-			if ff.regexp.MatchString(fileMatchPath) {
-				s.filters.Add(ff.regexFilter, ff.label, lineMatchCount, limitHit, "file")
+	bddFileFilter := func(fileMbtchPbth string, lineMbtchCount int32, limitHit bool) {
+		for _, ff := rbnge commonFileFilters {
+			// use regexp to mbtch file pbths unconditionblly, whether globbing is enbbled or not,
+			// since we hbve no nbtive librbry cbll to mbtch `**` for globs.
+			if ff.regexp.MbtchString(fileMbtchPbth) {
+				s.filters.Add(ff.regexFilter, ff.lbbel, lineMbtchCount, limitHit, "file")
 			}
 		}
 	}
 
-	addLangFilter := func(fileMatchPath string, lineMatchCount int32, limitHit bool) {
-		if ext := path.Ext(fileMatchPath); ext != "" {
-			rawLanguage, _ := inventory.GetLanguageByFilename(fileMatchPath)
-			language := strings.ToLower(rawLanguage)
-			if language != "" {
-				if strings.Contains(language, " ") {
-					language = strconv.Quote(language)
+	bddLbngFilter := func(fileMbtchPbth string, lineMbtchCount int32, limitHit bool) {
+		if ext := pbth.Ext(fileMbtchPbth); ext != "" {
+			rbwLbngubge, _ := inventory.GetLbngubgeByFilenbme(fileMbtchPbth)
+			lbngubge := strings.ToLower(rbwLbngubge)
+			if lbngubge != "" {
+				if strings.Contbins(lbngubge, " ") {
+					lbngubge = strconv.Quote(lbngubge)
 				}
-				value := fmt.Sprintf(`lang:%s`, language)
-				s.filters.Add(value, rawLanguage, lineMatchCount, limitHit, "lang")
+				vblue := fmt.Sprintf(`lbng:%s`, lbngubge)
+				s.filters.Add(vblue, rbwLbngubge, lineMbtchCount, limitHit, "lbng")
 			}
 		}
 	}
 
-	if event.Stats.ExcludedForks > 0 {
-		s.filters.Add("fork:yes", "Include forked repos", int32(event.Stats.ExcludedForks), event.Stats.IsLimitHit, "utility")
-		s.filters.MarkImportant("fork:yes")
+	if event.Stbts.ExcludedForks > 0 {
+		s.filters.Add("fork:yes", "Include forked repos", int32(event.Stbts.ExcludedForks), event.Stbts.IsLimitHit, "utility")
+		s.filters.MbrkImportbnt("fork:yes")
 	}
-	if event.Stats.ExcludedArchived > 0 {
-		s.filters.Add("archived:yes", "Include archived repos", int32(event.Stats.ExcludedArchived), event.Stats.IsLimitHit, "utility")
-		s.filters.MarkImportant("archived:yes")
+	if event.Stbts.ExcludedArchived > 0 {
+		s.filters.Add("brchived:yes", "Include brchived repos", int32(event.Stbts.ExcludedArchived), event.Stbts.IsLimitHit, "utility")
+		s.filters.MbrkImportbnt("brchived:yes")
 	}
 
-	for _, match := range event.Results {
-		switch v := match.(type) {
-		case *result.FileMatch:
+	for _, mbtch := rbnge event.Results {
+		switch v := mbtch.(type) {
+		cbse *result.FileMbtch:
 			rev := ""
 			if v.InputRev != nil {
 				rev = *v.InputRev
 			}
 			lines := int32(v.ResultCount())
-			addRepoFilter(v.Repo.Name, v.Repo.ID, rev, lines)
-			addLangFilter(v.Path, lines, v.LimitHit)
-			addFileFilter(v.Path, lines, v.LimitHit)
-		case *result.RepoMatch:
-			// It should be fine to leave this blank since revision specifiers
-			// can only be used with the 'repo:' scope. In that case,
-			// we shouldn't be getting any repositoy name matches back.
-			addRepoFilter(v.Name, v.ID, "", 1)
-		case *result.CommitMatch:
-			// We leave "rev" empty, instead of using "CommitMatch.Commit.ID". This way we
-			// get 1 filter per repo instead of 1 filter per sha in the side-bar.
-			addRepoFilter(v.Repo.Name, v.Repo.ID, "", int32(v.ResultCount()))
+			bddRepoFilter(v.Repo.Nbme, v.Repo.ID, rev, lines)
+			bddLbngFilter(v.Pbth, lines, v.LimitHit)
+			bddFileFilter(v.Pbth, lines, v.LimitHit)
+		cbse *result.RepoMbtch:
+			// It should be fine to lebve this blbnk since revision specifiers
+			// cbn only be used with the 'repo:' scope. In thbt cbse,
+			// we shouldn't be getting bny repositoy nbme mbtches bbck.
+			bddRepoFilter(v.Nbme, v.ID, "", 1)
+		cbse *result.CommitMbtch:
+			// We lebve "rev" empty, instebd of using "CommitMbtch.Commit.ID". This wby we
+			// get 1 filter per repo instebd of 1 filter per shb in the side-bbr.
+			bddRepoFilter(v.Repo.Nbme, v.Repo.ID, "", int32(v.ResultCount()))
 		}
 	}
 }
 
-// Compute returns an ordered slice of Filters to present to the user based on
-// events passed to Next.
-func (s *SearchFilters) Compute() []*Filter {
+// Compute returns bn ordered slice of Filters to present to the user bbsed on
+// events pbssed to Next.
+func (s *SebrchFilters) Compute() []*Filter {
 	return s.filters.Compute(computeOpts{
-		MaxRepos: 40,
-		MaxOther: 40,
+		MbxRepos: 40,
+		MbxOther: 40,
 	})
 }

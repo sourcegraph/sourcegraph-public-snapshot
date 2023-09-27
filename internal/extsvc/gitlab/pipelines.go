@@ -1,4 +1,4 @@
-package gitlab
+pbckbge gitlbb
 
 import (
 	"context"
@@ -6,77 +6,77 @@ import (
 	"net/http"
 	"net/url"
 
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-// GetMergeRequestPipelines retrieves the pipelines that have been executed as
-// part of the given merge request. As the pipelines are paginated, a function
-// is returned that may be invoked to return the next page of results. An empty
-// slice and a nil error indicates that all pages have been returned.
+// GetMergeRequestPipelines retrieves the pipelines thbt hbve been executed bs
+// pbrt of the given merge request. As the pipelines bre pbginbted, b function
+// is returned thbt mby be invoked to return the next pbge of results. An empty
+// slice bnd b nil error indicbtes thbt bll pbges hbve been returned.
 func (c *Client) GetMergeRequestPipelines(ctx context.Context, project *Project, iid ID) func() ([]*Pipeline, error) {
 	if MockGetMergeRequestPipelines != nil {
 		return MockGetMergeRequestPipelines(c, ctx, project, iid)
 	}
 
-	baseURL := fmt.Sprintf("projects/%d/merge_requests/%d/pipelines", project.ID, iid)
-	currentPage := "1"
+	bbseURL := fmt.Sprintf("projects/%d/merge_requests/%d/pipelines", project.ID, iid)
+	currentPbge := "1"
 	return func() ([]*Pipeline, error) {
-		page := []*Pipeline{}
+		pbge := []*Pipeline{}
 
-		// If there aren't any further pages, we'll return the empty slice we
-		// just created.
-		if currentPage == "" {
-			return page, nil
+		// If there bren't bny further pbges, we'll return the empty slice we
+		// just crebted.
+		if currentPbge == "" {
+			return pbge, nil
 		}
 
-		parsedUrl, err := url.Parse(baseURL)
+		pbrsedUrl, err := url.Pbrse(bbseURL)
 		if err != nil {
 			return nil, err
 		}
-		q := parsedUrl.Query()
-		q.Add("page", currentPage)
-		parsedUrl.RawQuery = q.Encode()
+		q := pbrsedUrl.Query()
+		q.Add("pbge", currentPbge)
+		pbrsedUrl.RbwQuery = q.Encode()
 
-		req, err := http.NewRequest("GET", parsedUrl.String(), nil)
+		req, err := http.NewRequest("GET", pbrsedUrl.String(), nil)
 		if err != nil {
-			return nil, errors.Wrap(err, "creating pipeline request")
+			return nil, errors.Wrbp(err, "crebting pipeline request")
 		}
 
-		header, _, err := c.do(ctx, req, &page)
+		hebder, _, err := c.do(ctx, req, &pbge)
 		if err != nil {
-			return nil, errors.Wrap(err, "requesting pipeline page")
+			return nil, errors.Wrbp(err, "requesting pipeline pbge")
 		}
 
-		// If there's another page, this will be a page number. If there's not, then
-		// this will be an empty string, and we can detect that next iteration
+		// If there's bnother pbge, this will be b pbge number. If there's not, then
+		// this will be bn empty string, bnd we cbn detect thbt next iterbtion
 		// to short circuit.
-		currentPage = header.Get("X-Next-Page")
+		currentPbge = hebder.Get("X-Next-Pbge")
 
-		return page, nil
+		return pbge, nil
 	}
 }
 
 type Pipeline struct {
 	ID        ID             `json:"id"`
-	SHA       string         `json:"sha"`
+	SHA       string         `json:"shb"`
 	Ref       string         `json:"ref"`
-	Status    PipelineStatus `json:"status"`
+	Stbtus    PipelineStbtus `json:"stbtus"`
 	WebURL    string         `json:"web_url"`
-	CreatedAt Time           `json:"created_at"`
-	UpdatedAt Time           `json:"updated_at"`
+	CrebtedAt Time           `json:"crebted_bt"`
+	UpdbtedAt Time           `json:"updbted_bt"`
 }
 
-type PipelineStatus string
+type PipelineStbtus string
 
 const (
-	PipelineStatusRunning  PipelineStatus = "running"
-	PipelineStatusPending  PipelineStatus = "pending"
-	PipelineStatusSuccess  PipelineStatus = "success"
-	PipelineStatusFailed   PipelineStatus = "failed"
-	PipelineStatusCanceled PipelineStatus = "canceled"
-	PipelineStatusSkipped  PipelineStatus = "skipped"
-	PipelineStatusCreated  PipelineStatus = "created"
-	PipelineStatusManual   PipelineStatus = "manual"
+	PipelineStbtusRunning  PipelineStbtus = "running"
+	PipelineStbtusPending  PipelineStbtus = "pending"
+	PipelineStbtusSuccess  PipelineStbtus = "success"
+	PipelineStbtusFbiled   PipelineStbtus = "fbiled"
+	PipelineStbtusCbnceled PipelineStbtus = "cbnceled"
+	PipelineStbtusSkipped  PipelineStbtus = "skipped"
+	PipelineStbtusCrebted  PipelineStbtus = "crebted"
+	PipelineStbtusMbnubl   PipelineStbtus = "mbnubl"
 )
 
 func (p *Pipeline) Key() string {

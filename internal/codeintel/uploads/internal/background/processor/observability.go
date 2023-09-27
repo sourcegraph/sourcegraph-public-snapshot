@@ -1,35 +1,35 @@
-package processor
+pbckbge processor
 
 import (
-	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golbng/prometheus"
 
-	"github.com/sourcegraph/sourcegraph/internal/honey"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegrbph/sourcegrbph/internbl/honey"
+	"github.com/sourcegrbph/sourcegrbph/internbl/observbtion"
 )
 
-type workerOperations struct {
-	uploadProcessor *observation.Operation
-	uploadSizeGauge prometheus.Gauge
+type workerOperbtions struct {
+	uplobdProcessor *observbtion.Operbtion
+	uplobdSizeGbuge prometheus.Gbuge
 }
 
-func newWorkerOperations(observationCtx *observation.Context) *workerOperations {
-	honeyObservationCtx := *observationCtx
-	honeyObservationCtx.HoneyDataset = &honey.Dataset{Name: "codeintel-worker"}
-	uploadProcessor := honeyObservationCtx.Operation(observation.Op{
-		Name: "codeintel.uploadHandler",
-		ErrorFilter: func(err error) observation.ErrorFilterBehaviour {
-			return observation.EmitForTraces | observation.EmitForHoney
+func newWorkerOperbtions(observbtionCtx *observbtion.Context) *workerOperbtions {
+	honeyObservbtionCtx := *observbtionCtx
+	honeyObservbtionCtx.HoneyDbtbset = &honey.Dbtbset{Nbme: "codeintel-worker"}
+	uplobdProcessor := honeyObservbtionCtx.Operbtion(observbtion.Op{
+		Nbme: "codeintel.uplobdHbndler",
+		ErrorFilter: func(err error) observbtion.ErrorFilterBehbviour {
+			return observbtion.EmitForTrbces | observbtion.EmitForHoney
 		},
 	})
 
-	uploadSizeGauge := prometheus.NewGauge(prometheus.GaugeOpts{
-		Name: "src_codeintel_upload_processor_upload_size",
-		Help: "The combined size of uploads being processed at this instant by this worker.",
+	uplobdSizeGbuge := prometheus.NewGbuge(prometheus.GbugeOpts{
+		Nbme: "src_codeintel_uplobd_processor_uplobd_size",
+		Help: "The combined size of uplobds being processed bt this instbnt by this worker.",
 	})
-	observationCtx.Registerer.MustRegister(uploadSizeGauge)
+	observbtionCtx.Registerer.MustRegister(uplobdSizeGbuge)
 
-	return &workerOperations{
-		uploadProcessor: uploadProcessor,
-		uploadSizeGauge: uploadSizeGauge,
+	return &workerOperbtions{
+		uplobdProcessor: uplobdProcessor,
+		uplobdSizeGbuge: uplobdSizeGbuge,
 	}
 }

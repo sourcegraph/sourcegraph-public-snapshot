@@ -1,33 +1,33 @@
-package util
+pbckbge util
 
 import (
 	"testing"
 
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/bssert"
 )
 
-func TestFormatQueueNamesForMetrics(t *testing.T) {
+func TestFormbtQueueNbmesForMetrics(t *testing.T) {
 	tests := []struct {
-		name       string
-		queueName  string
-		queueNames []string
-		want       string
+		nbme       string
+		queueNbme  string
+		queueNbmes []string
+		wbnt       string
 	}{
 		{
-			name:      "single queue",
-			queueName: "single",
-			want:      "single",
+			nbme:      "single queue",
+			queueNbme: "single",
+			wbnt:      "single",
 		},
 		{
-			name:       "multiple queues",
-			queueNames: []string{"first", "second"},
-			want:       "first_second",
+			nbme:       "multiple queues",
+			queueNbmes: []string{"first", "second"},
+			wbnt:       "first_second",
 		},
 	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			formatted := FormatQueueNamesForMetrics(tt.queueName, tt.queueNames)
-			assert.Equalf(t, tt.want, formatted, "FormatQueueNamesForMetrics(%v)", tt.queueNames)
+	for _, tt := rbnge tests {
+		t.Run(tt.nbme, func(t *testing.T) {
+			formbtted := FormbtQueueNbmesForMetrics(tt.queueNbme, tt.queueNbmes)
+			bssert.Equblf(t, tt.wbnt, formbtted, "FormbtQueueNbmesForMetrics(%v)", tt.queueNbmes)
 		})
 	}
 }

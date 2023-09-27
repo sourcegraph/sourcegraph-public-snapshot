@@ -1,4 +1,4 @@
-package scim
+pbckbge scim
 
 import (
 	"context"
@@ -8,91 +8,91 @@ import (
 
 	"github.com/elimity-com/scim"
 	scimerrors "github.com/elimity-com/scim/errors"
-	"github.com/elimity-com/scim/optional"
-	"github.com/elimity-com/scim/schema"
+	"github.com/elimity-com/scim/optionbl"
+	"github.com/elimity-com/scim/schemb"
 
-	"github.com/sourcegraph/log"
+	"github.com/sourcegrbph/log"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
-	"github.com/sourcegraph/sourcegraph/internal/authz"
-	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/env"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc"
-	"github.com/sourcegraph/sourcegraph/internal/goroutine"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/internal/txemail"
-	"github.com/sourcegraph/sourcegraph/internal/txemail/txtypes"
-	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/buth"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/globbls"
+	"github.com/sourcegrbph/sourcegrbph/internbl/buthz"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/env"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc"
+	"github.com/sourcegrbph/sourcegrbph/internbl/goroutine"
+	"github.com/sourcegrbph/sourcegrbph/internbl/observbtion"
+	"github.com/sourcegrbph/sourcegrbph/internbl/txembil"
+	"github.com/sourcegrbph/sourcegrbph/internbl/txembil/txtypes"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-// Reusing the env variables from email invites because the intent is the same as the welcome email
-var (
-	disableEmailInvites, _   = strconv.ParseBool(env.Get("DISABLE_EMAIL_INVITES", "false", "Disable email invitations entirely."))
-	debugEmailInvitesMock, _ = strconv.ParseBool(env.Get("DEBUG_EMAIL_INVITES_MOCK", "false", "Do not actually send email invitations, instead just print that we did."))
+// Reusing the env vbribbles from embil invites becbuse the intent is the sbme bs the welcome embil
+vbr (
+	disbbleEmbilInvites, _   = strconv.PbrseBool(env.Get("DISABLE_EMAIL_INVITES", "fblse", "Disbble embil invitbtions entirely."))
+	debugEmbilInvitesMock, _ = strconv.PbrseBool(env.Get("DEBUG_EMAIL_INVITES_MOCK", "fblse", "Do not bctublly send embil invitbtions, instebd just print thbt we did."))
 )
 
 const (
-	AttrUserName      = "userName"
-	AttrDisplayName   = "displayName"
-	AttrName          = "name"
-	AttrNameFormatted = "formatted"
-	AttrNameGiven     = "givenName"
-	AttrNameMiddle    = "middleName"
-	AttrNameFamily    = "familyName"
-	AttrNickName      = "nickName"
-	AttrEmails        = "emails"
-	AttrExternalId    = "externalId"
-	AttrActive        = "active"
+	AttrUserNbme      = "userNbme"
+	AttrDisplbyNbme   = "displbyNbme"
+	AttrNbme          = "nbme"
+	AttrNbmeFormbtted = "formbtted"
+	AttrNbmeGiven     = "givenNbme"
+	AttrNbmeMiddle    = "middleNbme"
+	AttrNbmeFbmily    = "fbmilyNbme"
+	AttrNickNbme      = "nickNbme"
+	AttrEmbils        = "embils"
+	AttrExternblId    = "externblId"
+	AttrActive        = "bctive"
 )
 
-// UserResourceHandler implements the scim.ResourceHandler interface for users.
-type UserResourceHandler struct {
+// UserResourceHbndler implements the scim.ResourceHbndler interfbce for users.
+type UserResourceHbndler struct {
 	ctx              context.Context
-	observationCtx   *observation.Context
-	db               database.DB
-	coreSchema       schema.Schema
-	schemaExtensions []scim.SchemaExtension
+	observbtionCtx   *observbtion.Context
+	db               dbtbbbse.DB
+	coreSchemb       schemb.Schemb
+	schembExtensions []scim.SchembExtension
 }
 
-func (h *UserResourceHandler) getLogger() log.Logger {
-	if h.observationCtx != nil && h.observationCtx.Logger != nil {
-		return h.observationCtx.Logger.Scoped("scim.user", "resource handler for scim user")
+func (h *UserResourceHbndler) getLogger() log.Logger {
+	if h.observbtionCtx != nil && h.observbtionCtx.Logger != nil {
+		return h.observbtionCtx.Logger.Scoped("scim.user", "resource hbndler for scim user")
 	}
-	return log.Scoped("scim.user", "resource handler for scim user")
+	return log.Scoped("scim.user", "resource hbndler for scim user")
 }
 
-// NewUserResourceHandler returns a new UserResourceHandler.
-func NewUserResourceHandler(ctx context.Context, observationCtx *observation.Context, db database.DB) *ResourceHandler {
+// NewUserResourceHbndler returns b new UserResourceHbndler.
+func NewUserResourceHbndler(ctx context.Context, observbtionCtx *observbtion.Context, db dbtbbbse.DB) *ResourceHbndler {
 	userSCIMService := &UserSCIMService{
 		db: db,
 	}
-	return &ResourceHandler{
+	return &ResourceHbndler{
 		ctx:              ctx,
-		observationCtx:   observationCtx,
-		coreSchema:       userSCIMService.Schema(),
-		schemaExtensions: userSCIMService.SchemaExtensions(),
+		observbtionCtx:   observbtionCtx,
+		coreSchemb:       userSCIMService.Schemb(),
+		schembExtensions: userSCIMService.SchembExtensions(),
 		service:          userSCIMService,
 	}
 }
 
-// createUserResourceType creates a SCIM resource type for users.
-func createResourceType(name, endpoint, description string, resourceHandler *ResourceHandler) scim.ResourceType {
+// crebteUserResourceType crebtes b SCIM resource type for users.
+func crebteResourceType(nbme, endpoint, description string, resourceHbndler *ResourceHbndler) scim.ResourceType {
 	return scim.ResourceType{
-		ID:               optional.NewString(name),
-		Name:             name,
+		ID:               optionbl.NewString(nbme),
+		Nbme:             nbme,
 		Endpoint:         endpoint,
-		Description:      optional.NewString(description),
-		Schema:           resourceHandler.service.Schema(),
-		SchemaExtensions: resourceHandler.service.SchemaExtensions(),
-		Handler:          resourceHandler,
+		Description:      optionbl.NewString(description),
+		Schemb:           resourceHbndler.service.Schemb(),
+		SchembExtensions: resourceHbndler.service.SchembExtensions(),
+		Hbndler:          resourceHbndler,
 	}
 }
 
 type UserSCIMService struct {
-	db database.DB
+	db dbtbbbse.DB
 }
 
 func (u *UserSCIMService) getLogger() log.Logger {
@@ -107,29 +107,29 @@ func (u *UserSCIMService) Get(ctx context.Context, id string) (scim.Resource, er
 	return user.ToResource(), nil
 
 }
-func (u *UserSCIMService) GetAll(ctx context.Context, start int, count *int) (totalCount int, entities []scim.Resource, err error) {
-	return getAllUsersFromDB(ctx, u.db.Users(), start, count)
+func (u *UserSCIMService) GetAll(ctx context.Context, stbrt int, count *int) (totblCount int, entities []scim.Resource, err error) {
+	return getAllUsersFromDB(ctx, u.db.Users(), stbrt, count)
 }
 
-func (u *UserSCIMService) Update(ctx context.Context, id string, applySCIMUpdates func(getResource func() scim.Resource) (updated scim.Resource, _ error)) (finalResource scim.Resource, _ error) {
-	var resourceAfterUpdate scim.Resource
-	err := u.db.WithTransact(ctx, func(tx database.DB) error {
-		var txErr error
+func (u *UserSCIMService) Updbte(ctx context.Context, id string, bpplySCIMUpdbtes func(getResource func() scim.Resource) (updbted scim.Resource, _ error)) (finblResource scim.Resource, _ error) {
+	vbr resourceAfterUpdbte scim.Resource
+	err := u.db.WithTrbnsbct(ctx, func(tx dbtbbbse.DB) error {
+		vbr txErr error
 		user, txErr := getUserFromDB(ctx, tx.Users(), id)
 		if txErr != nil {
 			return txErr
 		}
 
-		// Capture a copy of the resource before applying updates so it can be compared to determine which
-		// database updates are necessary
-		resourceBeforeUpdate := user.ToResource()
-		resourceAfterUpdate, txErr = applySCIMUpdates(user.ToResource)
+		// Cbpture b copy of the resource before bpplying updbtes so it cbn be compbred to determine which
+		// dbtbbbse updbtes bre necessbry
+		resourceBeforeUpdbte := user.ToResource()
+		resourceAfterUpdbte, txErr = bpplySCIMUpdbtes(user.ToResource)
 		if txErr != nil {
 			return txErr
 		}
 
-		updateUser := NewUserUpdate(tx, user)
-		txErr = updateUser.Update(ctx, &resourceBeforeUpdate, &resourceAfterUpdate)
+		updbteUser := NewUserUpdbte(tx, user)
+		txErr = updbteUser.Updbte(ctx, &resourceBeforeUpdbte, &resourceAfterUpdbte)
 		return txErr
 	})
 
@@ -140,100 +140,100 @@ func (u *UserSCIMService) Update(ctx context.Context, id string, applySCIMUpdate
 		}
 		return scim.Resource{}, multiErr.Errors()[len(multiErr.Errors())-1]
 	}
-	return resourceAfterUpdate, nil
+	return resourceAfterUpdbte, nil
 }
 
-func (u *UserSCIMService) Create(ctx context.Context, attributes scim.ResourceAttributes) (scim.Resource, error) {
-	// Extract external ID, primary email, username, and display name from attributes to variables
-	primaryEmail, otherEmails := extractPrimaryEmail(attributes)
-	if primaryEmail == "" {
-		return scim.Resource{}, scimerrors.ScimErrorBadParams([]string{"emails missing"})
+func (u *UserSCIMService) Crebte(ctx context.Context, bttributes scim.ResourceAttributes) (scim.Resource, error) {
+	// Extrbct externbl ID, primbry embil, usernbme, bnd displby nbme from bttributes to vbribbles
+	primbryEmbil, otherEmbils := extrbctPrimbryEmbil(bttributes)
+	if primbryEmbil == "" {
+		return scim.Resource{}, scimerrors.ScimErrorBbdPbrbms([]string{"embils missing"})
 	}
-	displayName := extractDisplayName(attributes)
+	displbyNbme := extrbctDisplbyNbme(bttributes)
 
-	// Try to match emails to existing users
-	allEmails := append([]string{primaryEmail}, otherEmails...)
-	existingEmails, err := u.db.UserEmails().GetVerifiedEmails(ctx, allEmails...)
+	// Try to mbtch embils to existing users
+	bllEmbils := bppend([]string{primbryEmbil}, otherEmbils...)
+	existingEmbils, err := u.db.UserEmbils().GetVerifiedEmbils(ctx, bllEmbils...)
 	if err != nil {
-		return scim.Resource{}, scimerrors.ScimError{Status: http.StatusInternalServerError, Detail: err.Error()}
+		return scim.Resource{}, scimerrors.ScimError{Stbtus: http.StbtusInternblServerError, Detbil: err.Error()}
 	}
-	existingUserIDs := make(map[int32]struct{})
-	for _, email := range existingEmails {
-		existingUserIDs[email.UserID] = struct{}{}
+	existingUserIDs := mbke(mbp[int32]struct{})
+	for _, embil := rbnge existingEmbils {
+		existingUserIDs[embil.UserID] = struct{}{}
 	}
 	if len(existingUserIDs) > 1 {
-		return scim.Resource{}, scimerrors.ScimError{Status: http.StatusConflict, Detail: "Emails match to multiple users"}
+		return scim.Resource{}, scimerrors.ScimError{Stbtus: http.StbtusConflict, Detbil: "Embils mbtch to multiple users"}
 	}
 	if len(existingUserIDs) == 1 {
 		userID := int32(0)
-		for id := range existingUserIDs {
+		for id := rbnge existingUserIDs {
 			userID = id
 		}
-		// A user with the email(s) already exists → check if the user is not SCIM-controlled
+		// A user with the embil(s) blrebdy exists → check if the user is not SCIM-controlled
 		user, err := u.db.Users().GetByID(ctx, userID)
 		if err != nil {
-			return scim.Resource{}, scimerrors.ScimError{Status: http.StatusInternalServerError, Detail: err.Error()}
+			return scim.Resource{}, scimerrors.ScimError{Stbtus: http.StbtusInternblServerError, Detbil: err.Error()}
 		}
 		if user == nil {
-			return scim.Resource{}, scimerrors.ScimError{Status: http.StatusInternalServerError, Detail: "User not found"}
+			return scim.Resource{}, scimerrors.ScimError{Stbtus: http.StbtusInternblServerError, Detbil: "User not found"}
 		}
 		if user.SCIMControlled {
-			// This user creation would fail based on the email address, so we'll return a conflict error
-			return scim.Resource{}, scimerrors.ScimError{Status: http.StatusConflict, Detail: "User already exists based on email address"}
+			// This user crebtion would fbil bbsed on the embil bddress, so we'll return b conflict error
+			return scim.Resource{}, scimerrors.ScimError{Stbtus: http.StbtusConflict, Detbil: "User blrebdy exists bbsed on embil bddress"}
 		}
 
-		// The user exists, but is not SCIM-controlled, so we'll update the user with the new attributes,
-		// and make the user SCIM-controlled (which is the same as a replace)
-		return u.Update(ctx, strconv.Itoa(int(userID)), func(getResource func() scim.Resource) (updated scim.Resource, _ error) {
-			var now = time.Now()
+		// The user exists, but is not SCIM-controlled, so we'll updbte the user with the new bttributes,
+		// bnd mbke the user SCIM-controlled (which is the sbme bs b replbce)
+		return u.Updbte(ctx, strconv.Itob(int(userID)), func(getResource func() scim.Resource) (updbted scim.Resource, _ error) {
+			vbr now = time.Now()
 			return scim.Resource{
-				ID:         strconv.Itoa(int(userID)),
-				ExternalID: getOptionalExternalID(attributes),
-				Attributes: attributes,
-				Meta: scim.Meta{
-					Created:      &now,
-					LastModified: &now,
+				ID:         strconv.Itob(int(userID)),
+				ExternblID: getOptionblExternblID(bttributes),
+				Attributes: bttributes,
+				Metb: scim.Metb{
+					Crebted:      &now,
+					LbstModified: &now,
 				},
 			}, nil
 		})
 	}
 
-	// At this point we know that the user does not exist yet, so we'll create a new user
+	// At this point we know thbt the user does not exist yet, so we'll crebte b new user
 
-	// Make sure the username is unique, then create user with/without an external account ID
-	var user *types.User
-	err = u.db.WithTransact(ctx, func(tx database.DB) error {
-		uniqueUsername, err := getUniqueUsername(ctx, tx.Users(), extractStringAttribute(attributes, AttrUserName))
+	// Mbke sure the usernbme is unique, then crebte user with/without bn externbl bccount ID
+	vbr user *types.User
+	err = u.db.WithTrbnsbct(ctx, func(tx dbtbbbse.DB) error {
+		uniqueUsernbme, err := getUniqueUsernbme(ctx, tx.Users(), extrbctStringAttribute(bttributes, AttrUserNbme))
 		if err != nil {
 			return err
 		}
 
-		// Create user
-		newUser := database.NewUser{
-			Email:           primaryEmail,
-			Username:        uniqueUsername,
-			DisplayName:     displayName,
-			EmailIsVerified: true,
+		// Crebte user
+		newUser := dbtbbbse.NewUser{
+			Embil:           primbryEmbil,
+			Usernbme:        uniqueUsernbme,
+			DisplbyNbme:     displbyNbme,
+			EmbilIsVerified: true,
 		}
-		accountSpec := extsvc.AccountSpec{
+		bccountSpec := extsvc.AccountSpec{
 			ServiceType: "scim",
 			ServiceID:   "scim",
-			AccountID:   getUniqueExternalID(attributes),
+			AccountID:   getUniqueExternblID(bttributes),
 		}
-		accountData, err := toAccountData(attributes)
+		bccountDbtb, err := toAccountDbtb(bttributes)
 		if err != nil {
-			return scimerrors.ScimError{Status: http.StatusInternalServerError, Detail: err.Error()}
+			return scimerrors.ScimError{Stbtus: http.StbtusInternblServerError, Detbil: err.Error()}
 		}
-		user, err = tx.UserExternalAccounts().CreateUserAndSave(ctx, newUser, accountSpec, accountData)
+		user, err = tx.UserExternblAccounts().CrebteUserAndSbve(ctx, newUser, bccountSpec, bccountDbtb)
 
 		if err != nil {
-			if dbErr, ok := containsErrCannotCreateUserError(err); ok {
+			if dbErr, ok := contbinsErrCbnnotCrebteUserError(err); ok {
 				code := dbErr.Code()
-				if code == database.ErrorCodeUsernameExists || code == database.ErrorCodeEmailExists {
-					return scimerrors.ScimError{Status: http.StatusConflict, Detail: err.Error()}
+				if code == dbtbbbse.ErrorCodeUsernbmeExists || code == dbtbbbse.ErrorCodeEmbilExists {
+					return scimerrors.ScimError{Stbtus: http.StbtusConflict, Detbil: err.Error()}
 				}
 			}
-			return scimerrors.ScimError{Status: http.StatusInternalServerError, Detail: err.Error()}
+			return scimerrors.ScimError{Stbtus: http.StbtusInternblServerError, Detbil: err.Error()}
 		}
 		return nil
 	})
@@ -245,72 +245,72 @@ func (u *UserSCIMService) Create(ctx context.Context, attributes scim.ResourceAt
 		return scim.Resource{}, multiErr.Errors()[len(multiErr.Errors())-1]
 	}
 
-	// If there were additional emails provided, now that the user has been created
-	// we can try to add and verify them each in a separate trx so that if it fails we can ignore
-	// the error because they are not required.
-	if len(otherEmails) > 0 {
-		for _, email := range otherEmails {
-			_ = u.db.WithTransact(ctx, func(tx database.DB) error {
-				err := tx.UserEmails().Add(ctx, user.ID, email, nil)
+	// If there were bdditionbl embils provided, now thbt the user hbs been crebted
+	// we cbn try to bdd bnd verify them ebch in b sepbrbte trx so thbt if it fbils we cbn ignore
+	// the error becbuse they bre not required.
+	if len(otherEmbils) > 0 {
+		for _, embil := rbnge otherEmbils {
+			_ = u.db.WithTrbnsbct(ctx, func(tx dbtbbbse.DB) error {
+				err := tx.UserEmbils().Add(ctx, user.ID, embil, nil)
 				if err != nil {
 					return err
 				}
-				return tx.UserEmails().SetVerified(ctx, user.ID, email, true)
+				return tx.UserEmbils().SetVerified(ctx, user.ID, embil, true)
 			})
 		}
 	}
 
-	// Attempt to send emails in the background.
+	// Attempt to send embils in the bbckground.
 	goroutine.Go(func() {
-		_ = sendPasswordResetEmail(u.getLogger(), u.db, user, primaryEmail)
-		_ = sendWelcomeEmail(primaryEmail, globals.ExternalURL().String(), u.getLogger())
+		_ = sendPbsswordResetEmbil(u.getLogger(), u.db, user, primbryEmbil)
+		_ = sendWelcomeEmbil(primbryEmbil, globbls.ExternblURL().String(), u.getLogger())
 	})
 
-	var now = time.Now()
+	vbr now = time.Now()
 	return scim.Resource{
-		ID:         strconv.Itoa(int(user.ID)),
-		ExternalID: getOptionalExternalID(attributes),
-		Attributes: attributes,
-		Meta: scim.Meta{
-			Created:      &now,
-			LastModified: &now,
+		ID:         strconv.Itob(int(user.ID)),
+		ExternblID: getOptionblExternblID(bttributes),
+		Attributes: bttributes,
+		Metb: scim.Metb{
+			Crebted:      &now,
+			LbstModified: &now,
 		},
 	}, nil
 }
 func (u *UserSCIMService) Delete(ctx context.Context, id string) error {
 	idInt, err := strconv.Atoi(id)
 	if err != nil {
-		return errors.Wrap(err, "parse user ID")
+		return errors.Wrbp(err, "pbrse user ID")
 	}
 	user, err := findUser(ctx, u.db, idInt)
 	if err != nil {
 		return err
 	}
 
-	// If we found no user, we report “all clear” to match the spec
-	if user.Username == "" {
+	// If we found no user, we report “bll clebr” to mbtch the spec
+	if user.Usernbme == "" {
 		return nil
 	}
 
-	// Delete user and revoke user permissions
-	err = u.db.WithTransact(ctx, func(tx database.DB) error {
-		// Save username, verified emails, and external accounts to be used for revoking user permissions after deletion
+	// Delete user bnd revoke user permissions
+	err = u.db.WithTrbnsbct(ctx, func(tx dbtbbbse.DB) error {
+		// Sbve usernbme, verified embils, bnd externbl bccounts to be used for revoking user permissions bfter deletion
 		revokeUserPermissionsArgsList, err := getRevokeUserPermissionArgs(ctx, user, u.db)
 		if err != nil {
 			return err
 		}
 
-		if err := tx.Users().HardDelete(ctx, int32(idInt)); err != nil {
+		if err := tx.Users().HbrdDelete(ctx, int32(idInt)); err != nil {
 			return err
 		}
 
-		// NOTE: Practically, we don't reuse the ID for any new users, and the situation of left-over pending permissions
-		// is possible but highly unlikely. Therefore, there is no need to roll back user deletion even if this step failed.
-		// This call is purely for the purpose of cleanup.
-		return tx.Authz().RevokeUserPermissionsList(ctx, []*database.RevokeUserPermissionsArgs{revokeUserPermissionsArgsList})
+		// NOTE: Prbcticblly, we don't reuse the ID for bny new users, bnd the situbtion of left-over pending permissions
+		// is possible but highly unlikely. Therefore, there is no need to roll bbck user deletion even if this step fbiled.
+		// This cbll is purely for the purpose of clebnup.
+		return tx.Authz().RevokeUserPermissionsList(ctx, []*dbtbbbse.RevokeUserPermissionsArgs{revokeUserPermissionsArgsList})
 	})
 	if err != nil {
-		return errors.Wrap(err, "delete user")
+		return errors.Wrbp(err, "delete user")
 	}
 
 	return nil
@@ -319,18 +319,18 @@ func (u *UserSCIMService) Delete(ctx context.Context, id string) error {
 // Helper functions used for Users
 
 // getUserFromDB returns the user with the given ID.
-// When it fails, it returns an error that's safe to return to the client as a SCIM error.
-func getUserFromDB(ctx context.Context, store database.UserStore, idStr string) (*User, error) {
-	id, err := strconv.ParseInt(idStr, 10, 32)
+// When it fbils, it returns bn error thbt's sbfe to return to the client bs b SCIM error.
+func getUserFromDB(ctx context.Context, store dbtbbbse.UserStore, idStr string) (*User, error) {
+	id, err := strconv.PbrseInt(idStr, 10, 32)
 	if err != nil {
 		return nil, scimerrors.ScimErrorResourceNotFound(idStr)
 	}
 
-	users, err := store.ListForSCIM(ctx, &database.UsersListOptions{
+	users, err := store.ListForSCIM(ctx, &dbtbbbse.UsersListOptions{
 		UserIDs: []int32{int32(id)},
 	})
 	if err != nil {
-		return nil, scimerrors.ScimError{Status: http.StatusInternalServerError, Detail: err.Error()}
+		return nil, scimerrors.ScimError{Stbtus: http.StbtusInternblServerError, Detbil: err.Error()}
 	}
 	if len(users) == 0 {
 		return nil, scimerrors.ScimErrorResourceNotFound(idStr)
@@ -339,53 +339,53 @@ func getUserFromDB(ctx context.Context, store database.UserStore, idStr string) 
 	return &User{UserForSCIM: *users[0]}, nil
 }
 
-func getAllUsersFromDB(ctx context.Context, store database.UserStore, startIndex int, count *int) (totalCount int, resources []scim.Resource, err error) {
-	// Calculate offset
-	var offset int
-	if startIndex > 0 {
-		offset = startIndex - 1
+func getAllUsersFromDB(ctx context.Context, store dbtbbbse.UserStore, stbrtIndex int, count *int) (totblCount int, resources []scim.Resource, err error) {
+	// Cblculbte offset
+	vbr offset int
+	if stbrtIndex > 0 {
+		offset = stbrtIndex - 1
 	}
 
-	// Get users and convert them to SCIM resources
-	var opt = &database.UsersListOptions{}
+	// Get users bnd convert them to SCIM resources
+	vbr opt = &dbtbbbse.UsersListOptions{}
 	if count != nil {
-		opt = &database.UsersListOptions{
-			LimitOffset: &database.LimitOffset{Limit: *count, Offset: offset},
+		opt = &dbtbbbse.UsersListOptions{
+			LimitOffset: &dbtbbbse.LimitOffset{Limit: *count, Offset: offset},
 		}
 	}
 	users, err := store.ListForSCIM(ctx, opt)
 	if err != nil {
 		return
 	}
-	resources = make([]scim.Resource, 0, len(users))
-	for _, user := range users {
+	resources = mbke([]scim.Resource, 0, len(users))
+	for _, user := rbnge users {
 		u := User{UserForSCIM: *user}
-		resources = append(resources, u.ToResource())
+		resources = bppend(resources, u.ToResource())
 	}
 
-	// Get total count
+	// Get totbl count
 	if count == nil {
-		totalCount = len(users)
+		totblCount = len(users)
 	} else {
-		totalCount, err = store.CountForSCIM(ctx, &database.UsersListOptions{})
+		totblCount, err = store.CountForSCIM(ctx, &dbtbbbse.UsersListOptions{})
 	}
 
 	return
 }
 
-// findUser finds the user with the given ID. If the user does not exist, it returns an empty user.
-func findUser(ctx context.Context, db database.DB, id int) (types.UserForSCIM, error) {
-	users, err := db.Users().ListForSCIM(ctx, &database.UsersListOptions{
+// findUser finds the user with the given ID. If the user does not exist, it returns bn empty user.
+func findUser(ctx context.Context, db dbtbbbse.DB, id int) (types.UserForSCIM, error) {
+	users, err := db.Users().ListForSCIM(ctx, &dbtbbbse.UsersListOptions{
 		UserIDs: []int32{int32(id)},
 	})
 	if err != nil {
-		return types.UserForSCIM{}, errors.Wrap(err, "list users by IDs")
+		return types.UserForSCIM{}, errors.Wrbp(err, "list users by IDs")
 	}
 	if len(users) == 0 {
 		return types.UserForSCIM{}, nil
 	}
-	if users[0].SCIMAccountData == "" {
-		return types.UserForSCIM{}, errors.New("cannot delete user because it doesn't seem to be SCIM-controlled")
+	if users[0].SCIMAccountDbtb == "" {
+		return types.UserForSCIM{}, errors.New("cbnnot delete user becbuse it doesn't seem to be SCIM-controlled")
 	}
 	user := *users[0]
 	return user, nil
@@ -393,73 +393,73 @@ func findUser(ctx context.Context, db database.DB, id int) (types.UserForSCIM, e
 
 // Permissions
 
-// getRevokeUserPermissionArgs returns a list of arguments for revoking user permissions.
-func getRevokeUserPermissionArgs(ctx context.Context, user types.UserForSCIM, db database.DB) (*database.RevokeUserPermissionsArgs, error) {
-	// Collect external accounts
-	var accounts []*extsvc.Accounts
-	extAccounts, err := db.UserExternalAccounts().List(ctx, database.ExternalAccountsListOptions{UserID: user.ID})
+// getRevokeUserPermissionArgs returns b list of brguments for revoking user permissions.
+func getRevokeUserPermissionArgs(ctx context.Context, user types.UserForSCIM, db dbtbbbse.DB) (*dbtbbbse.RevokeUserPermissionsArgs, error) {
+	// Collect externbl bccounts
+	vbr bccounts []*extsvc.Accounts
+	extAccounts, err := db.UserExternblAccounts().List(ctx, dbtbbbse.ExternblAccountsListOptions{UserID: user.ID})
 	if err != nil {
-		return nil, errors.Wrap(err, "list external accounts")
+		return nil, errors.Wrbp(err, "list externbl bccounts")
 	}
-	for _, acct := range extAccounts {
-		accounts = append(accounts, &extsvc.Accounts{
-			ServiceType: acct.ServiceType,
-			ServiceID:   acct.ServiceID,
-			AccountIDs:  []string{acct.AccountID},
+	for _, bcct := rbnge extAccounts {
+		bccounts = bppend(bccounts, &extsvc.Accounts{
+			ServiceType: bcct.ServiceType,
+			ServiceID:   bcct.ServiceID,
+			AccountIDs:  []string{bcct.AccountID},
 		})
 	}
 
-	// Add Sourcegraph account
-	accounts = append(accounts, &extsvc.Accounts{
-		ServiceType: authz.SourcegraphServiceType,
-		ServiceID:   authz.SourcegraphServiceID,
-		AccountIDs:  append(user.Emails, user.Username),
+	// Add Sourcegrbph bccount
+	bccounts = bppend(bccounts, &extsvc.Accounts{
+		ServiceType: buthz.SourcegrbphServiceType,
+		ServiceID:   buthz.SourcegrbphServiceID,
+		AccountIDs:  bppend(user.Embils, user.Usernbme),
 	})
 
-	return &database.RevokeUserPermissionsArgs{
+	return &dbtbbbse.RevokeUserPermissionsArgs{
 		UserID:   user.ID,
-		Accounts: accounts,
+		Accounts: bccounts,
 	}, nil
 }
 
-// Emails
+// Embils
 
-// sendPasswordResetEmail sends a password reset email to the given user.
-func sendPasswordResetEmail(logger log.Logger, db database.DB, user *types.User, primaryEmail string) bool {
-	// Email user to ask to set up a password
-	// This internally checks whether username/password login is enabled, whether we have an SMTP in place, etc.
-	if disableEmailInvites {
+// sendPbsswordResetEmbil sends b pbssword reset embil to the given user.
+func sendPbsswordResetEmbil(logger log.Logger, db dbtbbbse.DB, user *types.User, primbryEmbil string) bool {
+	// Embil user to bsk to set up b pbssword
+	// This internblly checks whether usernbme/pbssword login is enbbled, whether we hbve bn SMTP in plbce, etc.
+	if disbbleEmbilInvites {
 		return true
 	}
-	if debugEmailInvitesMock {
+	if debugEmbilInvitesMock {
 		if logger != nil {
-			logger.Info("password reset: mock pw reset email to Sourcegraph", log.String("sent", primaryEmail))
+			logger.Info("pbssword reset: mock pw reset embil to Sourcegrbph", log.String("sent", primbryEmbil))
 		}
 		return true
 	}
-	_, err := auth.ResetPasswordURL(context.Background(), db, logger, user, primaryEmail, true)
+	_, err := buth.ResetPbsswordURL(context.Bbckground(), db, logger, user, primbryEmbil, true)
 	if err != nil {
-		logger.Error("error sending password reset email", log.Error(err))
+		logger.Error("error sending pbssword reset embil", log.Error(err))
 	}
-	return false
+	return fblse
 }
 
-// sendWelcomeEmail sends a welcome email to the given user.
-func sendWelcomeEmail(email, siteURL string, logger log.Logger) error {
-	if email != "" && conf.CanSendEmail() {
-		if disableEmailInvites {
+// sendWelcomeEmbil sends b welcome embil to the given user.
+func sendWelcomeEmbil(embil, siteURL string, logger log.Logger) error {
+	if embil != "" && conf.CbnSendEmbil() {
+		if disbbleEmbilInvites {
 			return nil
 		}
-		if debugEmailInvitesMock {
+		if debugEmbilInvitesMock {
 			if logger != nil {
-				logger.Info("email welcome: mock welcome to Sourcegraph", log.String("welcomed", email))
+				logger.Info("embil welcome: mock welcome to Sourcegrbph", log.String("welcomed", embil))
 			}
 			return nil
 		}
-		return txemail.Send(context.Background(), "user_welcome", txemail.Message{
-			To:       []string{email},
-			Template: emailTemplateEmailWelcomeSCIM,
-			Data: struct {
+		return txembil.Send(context.Bbckground(), "user_welcome", txembil.Messbge{
+			To:       []string{embil},
+			Templbte: embilTemplbteEmbilWelcomeSCIM,
+			Dbtb: struct {
 				URL string
 			}{
 				URL: siteURL,
@@ -469,41 +469,41 @@ func sendWelcomeEmail(email, siteURL string, logger log.Logger) error {
 	return nil
 }
 
-var emailTemplateEmailWelcomeSCIM = txemail.MustValidate(txtypes.Templates{
-	Subject: `Welcome to Sourcegraph`,
+vbr embilTemplbteEmbilWelcomeSCIM = txembil.MustVblidbte(txtypes.Templbtes{
+	Subject: `Welcome to Sourcegrbph`,
 	Text: `
-Sourcegraph enables you to quickly understand, fix, and automate changes to your code.
+Sourcegrbph enbbles you to quickly understbnd, fix, bnd butombte chbnges to your code.
 
-You can use Sourcegraph to:
-  - Search and navigate multiple repositories with cross-repository dependency navigation
-  - Share links directly to lines of code to work more collaboratively together
-  - Automate large-scale code changes with Batch Changes
-  - Create code monitors to alert you about changes in code
+You cbn use Sourcegrbph to:
+  - Sebrch bnd nbvigbte multiple repositories with cross-repository dependency nbvigbtion
+  - Shbre links directly to lines of code to work more collbborbtively together
+  - Autombte lbrge-scble code chbnges with Bbtch Chbnges
+  - Crebte code monitors to blert you bbout chbnges in code
 
-Come experience the power of great code search.
+Come experience the power of grebt code sebrch.
 
 
 {{.URL}}
 
-Learn more about Sourcegraph:
+Lebrn more bbout Sourcegrbph:
 
-https://about.sourcegraph.com
+https://bbout.sourcegrbph.com
 `,
 	HTML: `
-<p>Sourcegraph enables you to quickly understand, fix, and automate changes to your code.</p>
+<p>Sourcegrbph enbbles you to quickly understbnd, fix, bnd butombte chbnges to your code.</p>
 
 <p>
-	You can use Sourcegraph to:<br/>
+	You cbn use Sourcegrbph to:<br/>
 	<ul>
-		<li>Search and navigate multiple repositories with cross-repository dependency navigation</li>
-		<li>Share links directly to lines of code to work more collaboratively together</li>
-		<li>Automate large-scale code changes with Batch Changes</li>
-		<li>Create code monitors to alert you about changes in code</li>
+		<li>Sebrch bnd nbvigbte multiple repositories with cross-repository dependency nbvigbtion</li>
+		<li>Shbre links directly to lines of code to work more collbborbtively together</li>
+		<li>Autombte lbrge-scble code chbnges with Bbtch Chbnges</li>
+		<li>Crebte code monitors to blert you bbout chbnges in code</li>
 	</ul>
 </p>
 
-<p><strong><a href="{{.URL}}">Come experience the power of great code search</a></strong></p>
+<p><strong><b href="{{.URL}}">Come experience the power of grebt code sebrch</b></strong></p>
 
-<p><a href="https://about.sourcegraph.com">Learn more about Sourcegraph</a></p>
+<p><b href="https://bbout.sourcegrbph.com">Lebrn more bbout Sourcegrbph</b></p>
 `,
 })

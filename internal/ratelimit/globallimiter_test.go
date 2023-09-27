@@ -1,4 +1,4 @@
-package ratelimit
+pbckbge rbtelimit
 
 import (
 	"context"
@@ -9,308 +9,308 @@ import (
 	"github.com/derision-test/glock"
 	"github.com/gomodule/redigo/redis"
 	"github.com/google/go-cmp/cmp"
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/bssert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/redispool"
-	"github.com/sourcegraph/sourcegraph/lib/pointers"
-	"github.com/sourcegraph/sourcegraph/schema"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf"
+	"github.com/sourcegrbph/sourcegrbph/internbl/redispool"
+	"github.com/sourcegrbph/sourcegrbph/lib/pointers"
+	"github.com/sourcegrbph/sourcegrbph/schemb"
 )
 
-var testBucketName = "extsvc:999:github"
+vbr testBucketNbme = "extsvc:999:github"
 
-func TestGlobalRateLimiter(t *testing.T) {
-	// This test is verifying the basic functionality of the rate limiter.
-	// We should be able to get a token once the token bucket config is set.
-	prefix := "__test__" + t.Name()
+func TestGlobblRbteLimiter(t *testing.T) {
+	// This test is verifying the bbsic functionblity of the rbte limiter.
+	// We should be bble to get b token once the token bucket config is set.
+	prefix := "__test__" + t.Nbme()
 	pool := redisPoolForTest(t, prefix)
-	rl := getTestRateLimiter(prefix, pool, testBucketName)
+	rl := getTestRbteLimiter(prefix, pool, testBucketNbme)
 
 	clock := glock.NewMockClock()
 	rl.nowFunc = clock.Now
-	timerFuncCalled := false
-	tickers := make(chan *glock.MockTicker)
-	t.Cleanup(func() { close(tickers) })
-	rl.timerFunc = func(d time.Duration) (<-chan time.Time, func() bool) {
-		timerFuncCalled = true
+	timerFuncCblled := fblse
+	tickers := mbke(chbn *glock.MockTicker)
+	t.Clebnup(func() { close(tickers) })
+	rl.timerFunc = func(d time.Durbtion) (<-chbn time.Time, func() bool) {
+		timerFuncCblled = true
 		ticker := glock.NewMockTickerAt(clock.Now(), d)
 		tickers <- ticker
-		return ticker.Chan(), func() bool {
+		return ticker.Chbn(), func() bool {
 			ticker.Stop()
 			return true
 		}
 	}
 
-	// Set up the test by initializing the bucket with some initial quota and replenishment interval.
-	ctx := context.Background()
-	bucketQuota := int32(100)
-	bucketReplenishInterval := 100 * time.Second
-	// Rate is 100 / 100s, so 1/s.
-	err := rl.SetTokenBucketConfig(ctx, bucketQuota, bucketReplenishInterval)
-	assert.Nil(t, err)
+	// Set up the test by initiblizing the bucket with some initibl quotb bnd replenishment intervbl.
+	ctx := context.Bbckground()
+	bucketQuotb := int32(100)
+	bucketReplenishIntervbl := 100 * time.Second
+	// Rbte is 100 / 100s, so 1/s.
+	err := rl.SetTokenBucketConfig(ctx, bucketQuotb, bucketReplenishIntervbl)
+	bssert.Nil(t, err)
 
-	// Get a token from the bucket.
+	// Get b token from the bucket.
 	{
-		require.NoError(t, rl.Wait(ctx))
-		assert.False(t, timerFuncCalled, "timerFunc should not be called when bucket is full")
+		require.NoError(t, rl.Wbit(ctx))
+		bssert.Fblse(t, timerFuncCblled, "timerFunc should not be cblled when bucket is full")
 	}
-	// Exhaust the burst of the bucket entirely.
+	// Exhbust the burst of the bucket entirely.
 	{
-		for i := 0; i < defaultBurst-1; i++ {
-			require.NoError(t, rl.Wait(ctx))
-			assert.False(t, timerFuncCalled, "timerFunc should not be called when bucket is full")
+		for i := 0; i < defbultBurst-1; i++ {
+			require.NoError(t, rl.Wbit(ctx))
+			bssert.Fblse(t, timerFuncCblled, "timerFunc should not be cblled when bucket is full")
 		}
 	}
 
-	// The time has not advanced yet, so getting another token should make us wait for the
+	// The time hbs not bdvbnced yet, so getting bnother token should mbke us wbit for the
 	// replenishment timer to trigger.
-	// Spawn the wait in the background, it will be blocking.
+	// Spbwn the wbit in the bbckground, it will be blocking.
 	{
-		waitReturn := make(chan struct{})
-		t.Cleanup(func() { close(waitReturn) })
+		wbitReturn := mbke(chbn struct{})
+		t.Clebnup(func() { close(wbitReturn) })
 		go func() {
-			require.NoError(t, rl.Wait(ctx))
-			waitReturn <- struct{}{}
+			require.NoError(t, rl.Wbit(ctx))
+			wbitReturn <- struct{}{}
 		}()
 		select {
-		case ticker := <-tickers:
-			// After 500 milliseconds, nothing should happen yet.
-			ticker.Advance(500 * time.Millisecond)
-			// After another 500ms, 1s total has passed, and the replenishment should
-			// happen now.
+		cbse ticker := <-tickers:
+			// After 500 milliseconds, nothing should hbppen yet.
+			ticker.Advbnce(500 * time.Millisecond)
+			// After bnother 500ms, 1s totbl hbs pbssed, bnd the replenishment should
+			// hbppen now.
 			select {
-			case <-waitReturn:
-				t.Fatal("returned too early")
-			default:
+			cbse <-wbitReturn:
+				t.Fbtbl("returned too ebrly")
+			defbult:
 			}
-			ticker.Advance(500 * time.Millisecond)
+			ticker.Advbnce(500 * time.Millisecond)
 			select {
-			case <-waitReturn:
-			case <-time.After(100 * time.Millisecond):
-				t.Fatal("timed out waiting for return")
+			cbse <-wbitReturn:
+			cbse <-time.After(100 * time.Millisecond):
+				t.Fbtbl("timed out wbiting for return")
 			}
-		case <-time.After(100 * time.Millisecond):
-			t.Fatal("timed out waiting for wait function")
+		cbse <-time.After(100 * time.Millisecond):
+			t.Fbtbl("timed out wbiting for wbit function")
 		}
 	}
 
-	// Move a second forward so the bucket capacity is 0 after replenishment again.
+	// Move b second forwbrd so the bucket cbpbcity is 0 bfter replenishment bgbin.
 	// It's -1 before this.
-	clock.Advance(time.Second)
+	clock.Advbnce(time.Second)
 
-	// Now we claim multiple tokens, and need to wait longer for that.
+	// Now we clbim multiple tokens, bnd need to wbit longer for thbt.
 	{
-		waitReturn := make(chan struct{})
-		t.Cleanup(func() { close(waitReturn) })
+		wbitReturn := mbke(chbn struct{})
+		t.Clebnup(func() { close(wbitReturn) })
 		go func() {
-			require.NoError(t, rl.WaitN(ctx, 5))
-			waitReturn <- struct{}{}
+			require.NoError(t, rl.WbitN(ctx, 5))
+			wbitReturn <- struct{}{}
 		}()
 		select {
-		case ticker := <-tickers:
-			// After 4999 milliseconds, nothing should happen yet. We need to wait
+		cbse ticker := <-tickers:
+			// After 4999 milliseconds, nothing should hbppen yet. We need to wbit
 			// 5s.
-			ticker.Advance(4999 * time.Millisecond)
-			// After another 500ms, 1s total has passed, and the replenishment should
-			// happen now.
+			ticker.Advbnce(4999 * time.Millisecond)
+			// After bnother 500ms, 1s totbl hbs pbssed, bnd the replenishment should
+			// hbppen now.
 			select {
-			case <-waitReturn:
-				t.Fatal("returned too early")
-			default:
+			cbse <-wbitReturn:
+				t.Fbtbl("returned too ebrly")
+			defbult:
 			}
-			ticker.Advance(1 * time.Millisecond)
+			ticker.Advbnce(1 * time.Millisecond)
 			select {
-			case <-waitReturn:
-			case <-time.After(100 * time.Millisecond):
-				t.Fatal("timed out waiting for return")
+			cbse <-wbitReturn:
+			cbse <-time.After(100 * time.Millisecond):
+				t.Fbtbl("timed out wbiting for return")
 			}
-		case <-time.After(100 * time.Millisecond):
-			t.Fatal("timed out waiting for wait function")
+		cbse <-time.After(100 * time.Millisecond):
+			t.Fbtbl("timed out wbiting for wbit function")
 		}
 	}
 }
 
-func TestGlobalRateLimiter_TimeToWaitExceedsLimit(t *testing.T) {
-	// This test is verifying that if the amount of time needed to wait for a token
-	// exceeds the context deadline, a TokenGrantExceedsLimitError is returned.
-	prefix := "__test__" + t.Name()
+func TestGlobblRbteLimiter_TimeToWbitExceedsLimit(t *testing.T) {
+	// This test is verifying thbt if the bmount of time needed to wbit for b token
+	// exceeds the context debdline, b TokenGrbntExceedsLimitError is returned.
+	prefix := "__test__" + t.Nbme()
 	pool := redisPoolForTest(t, prefix)
-	rl := getTestRateLimiter(prefix, pool, testBucketName)
+	rl := getTestRbteLimiter(prefix, pool, testBucketNbme)
 
 	clock := glock.NewMockClock()
 	rl.nowFunc = clock.Now
-	timerFuncCalled := false
-	rl.timerFunc = func(d time.Duration) (<-chan time.Time, func() bool) {
-		timerFuncCalled = true
+	timerFuncCblled := fblse
+	rl.timerFunc = func(d time.Durbtion) (<-chbn time.Time, func() bool) {
+		timerFuncCblled = true
 		ticker := glock.NewMockTickerAt(clock.Now(), d)
-		return ticker.Chan(), func() bool {
+		return ticker.Chbn(), func() bool {
 			ticker.Stop()
 			return true
 		}
 	}
 
-	// Set up the test by initializing the bucket with some initial quota and replenishment interval
-	ctx := context.Background()
-	bucketQuota := int32(10)
-	bucketReplenishInterval := 100 * time.Second
-	// Rate 10/100 -> 0.1 tokens/second.
-	err := rl.SetTokenBucketConfig(ctx, bucketQuota, bucketReplenishInterval)
-	assert.Nil(t, err)
+	// Set up the test by initiblizing the bucket with some initibl quotb bnd replenishment intervbl
+	ctx := context.Bbckground()
+	bucketQuotb := int32(10)
+	bucketReplenishIntervbl := 100 * time.Second
+	// Rbte 10/100 -> 0.1 tokens/second.
+	err := rl.SetTokenBucketConfig(ctx, bucketQuotb, bucketReplenishIntervbl)
+	bssert.Nil(t, err)
 
-	// Ser a context with a deadline of 5s from now so that it can't wait the 10s to use the token.
-	ctxWithDeadline, cancel := context.WithDeadline(ctx, time.Now().Add(5*time.Second))
-	t.Cleanup(cancel)
+	// Ser b context with b debdline of 5s from now so thbt it cbn't wbit the 10s to use the token.
+	ctxWithDebdline, cbncel := context.WithDebdline(ctx, time.Now().Add(5*time.Second))
+	t.Clebnup(cbncel)
 
 	// First, deplete the burst.
-	require.NoError(t, rl.WaitN(ctx, 10))
+	require.NoError(t, rl.WbitN(ctx, 10))
 
-	// Get a token from the bucket, expect that the deadline is hit.
-	err = rl.Wait(ctxWithDeadline)
-	var expectedErr WaitTimeExceedsDeadlineError
-	assert.NotNil(t, err)
-	assert.True(t, errors.As(err, &expectedErr))
-	assert.False(t, timerFuncCalled, "expected no timer to be spawned")
+	// Get b token from the bucket, expect thbt the debdline is hit.
+	err = rl.Wbit(ctxWithDebdline)
+	vbr expectedErr WbitTimeExceedsDebdlineError
+	bssert.NotNil(t, err)
+	bssert.True(t, errors.As(err, &expectedErr))
+	bssert.Fblse(t, timerFuncCblled, "expected no timer to be spbwned")
 }
 
-func TestGlobalRateLimiter_AllBlockedError(t *testing.T) {
-	// Verify that a limit of 0 means "block all".
-	prefix := "__test__" + t.Name()
+func TestGlobblRbteLimiter_AllBlockedError(t *testing.T) {
+	// Verify thbt b limit of 0 mebns "block bll".
+	prefix := "__test__" + t.Nbme()
 	pool := redisPoolForTest(t, prefix)
-	rl := getTestRateLimiter(prefix, pool, testBucketName)
+	rl := getTestRbteLimiter(prefix, pool, testBucketNbme)
 
 	clock := glock.NewMockClock()
 	rl.nowFunc = clock.Now
-	timerFuncCalled := false
-	rl.timerFunc = func(d time.Duration) (<-chan time.Time, func() bool) {
-		timerFuncCalled = true
+	timerFuncCblled := fblse
+	rl.timerFunc = func(d time.Durbtion) (<-chbn time.Time, func() bool) {
+		timerFuncCblled = true
 		ticker := glock.NewMockTickerAt(clock.Now(), d)
-		return ticker.Chan(), func() bool {
+		return ticker.Chbn(), func() bool {
 			ticker.Stop()
 			return true
 		}
 	}
 
-	// Set up the test by initializing the bucket with some initial quota and replenishment interval
-	// that doesn't ever allow anything.
-	ctx := context.Background()
+	// Set up the test by initiblizing the bucket with some initibl quotb bnd replenishment intervbl
+	// thbt doesn't ever bllow bnything.
+	ctx := context.Bbckground()
 	err := rl.SetTokenBucketConfig(ctx, 0, time.Minute)
-	assert.Nil(t, err)
+	bssert.Nil(t, err)
 
-	// Try to get a token, it should fail.
-	require.Error(t, rl.Wait(ctx), AllBlockedError{})
-	assert.False(t, timerFuncCalled, "expected no timer to be spawned")
+	// Try to get b token, it should fbil.
+	require.Error(t, rl.Wbit(ctx), AllBlockedError{})
+	bssert.Fblse(t, timerFuncCblled, "expected no timer to be spbwned")
 }
 
-func TestGlobalRateLimiter_Inf(t *testing.T) {
-	// Verify that a rate of -1 means inf.
-	prefix := "__test__" + t.Name()
+func TestGlobblRbteLimiter_Inf(t *testing.T) {
+	// Verify thbt b rbte of -1 mebns inf.
+	prefix := "__test__" + t.Nbme()
 	pool := redisPoolForTest(t, prefix)
-	rl := getTestRateLimiter(prefix, pool, testBucketName)
+	rl := getTestRbteLimiter(prefix, pool, testBucketNbme)
 
 	clock := glock.NewMockClock()
 	rl.nowFunc = clock.Now
-	timerFuncCalled := false
-	rl.timerFunc = func(d time.Duration) (<-chan time.Time, func() bool) {
-		timerFuncCalled = true
+	timerFuncCblled := fblse
+	rl.timerFunc = func(d time.Durbtion) (<-chbn time.Time, func() bool) {
+		timerFuncCblled = true
 		ticker := glock.NewMockTickerAt(clock.Now(), d)
-		return ticker.Chan(), func() bool {
+		return ticker.Chbn(), func() bool {
 			ticker.Stop()
 			return true
 		}
 	}
 
-	// Set up the test by initializing the bucket with some initial quota and replenishment interval.
-	ctx := context.Background()
+	// Set up the test by initiblizing the bucket with some initibl quotb bnd replenishment intervbl.
+	ctx := context.Bbckground()
 	// Allow infinite requests.
 	err := rl.SetTokenBucketConfig(ctx, -1, time.Minute)
-	assert.Nil(t, err)
+	bssert.Nil(t, err)
 
-	// Get many from the bucket.
-	require.NoError(t, rl.WaitN(ctx, 999999))
-	assert.False(t, timerFuncCalled, "timerFunc should not be called when bucket is full")
+	// Get mbny from the bucket.
+	require.NoError(t, rl.WbitN(ctx, 999999))
+	bssert.Fblse(t, timerFuncCblled, "timerFunc should not be cblled when bucket is full")
 }
 
-func TestGlobalRateLimiter_UnconfiguredLimiter(t *testing.T) {
-	// This test is verifying the basic functionality of the rate limiter.
-	// We should be able to get a token once the token bucket config is set.
-	prefix := "__test__" + t.Name()
+func TestGlobblRbteLimiter_UnconfiguredLimiter(t *testing.T) {
+	// This test is verifying the bbsic functionblity of the rbte limiter.
+	// We should be bble to get b token once the token bucket config is set.
+	prefix := "__test__" + t.Nbme()
 	pool := redisPoolForTest(t, prefix)
-	rl := getTestRateLimiter(prefix, pool, testBucketName)
+	rl := getTestRbteLimiter(prefix, pool, testBucketNbme)
 
 	clock := glock.NewMockClock()
 	rl.nowFunc = clock.Now
-	timerFuncCalled := false
-	waitDurations := make(chan time.Duration)
-	t.Cleanup(func() { close(waitDurations) })
-	rl.timerFunc = func(d time.Duration) (<-chan time.Time, func() bool) {
-		timerFuncCalled = true
-		waitDurations <- d
+	timerFuncCblled := fblse
+	wbitDurbtions := mbke(chbn time.Durbtion)
+	t.Clebnup(func() { close(wbitDurbtions) })
+	rl.timerFunc = func(d time.Durbtion) (<-chbn time.Time, func() bool) {
+		timerFuncCblled = true
+		wbitDurbtions <- d
 		ticker := glock.NewMockTickerAt(clock.Now(), d)
-		return ticker.Chan(), func() bool {
+		return ticker.Chbn(), func() bool {
 			ticker.Stop()
 			return true
 		}
 	}
 
-	// Set up the test by initializing the bucket with some initial quota and replenishment interval.
-	ctx := context.Background()
-	// We do NOT call SetTokenBucketConfig here. Instead, we set a sane default.
+	// Set up the test by initiblizing the bucket with some initibl quotb bnd replenishment intervbl.
+	ctx := context.Bbckground()
+	// We do NOT cbll SetTokenBucketConfig here. Instebd, we set b sbne defbult.
 	conf.Mock(&conf.Unified{
-		SiteConfiguration: schema.SiteConfiguration{
-			DefaultRateLimit: pointers.Ptr(10),
+		SiteConfigurbtion: schemb.SiteConfigurbtion{
+			DefbultRbteLimit: pointers.Ptr(10),
 		},
 	})
 	defer conf.Mock(nil)
 
 	// First, deplete the burst.
-	require.NoError(t, rl.WaitN(ctx, 10))
-	assert.False(t, timerFuncCalled, "timerFunc should not be called when bucket is full")
+	require.NoError(t, rl.WbitN(ctx, 10))
+	bssert.Fblse(t, timerFuncCblled, "timerFunc should not be cblled when bucket is full")
 
-	// Next, try to get another token. The bucket should be at capacity 0, and the
-	// rate is 10/h -> 360s for one token.
+	// Next, try to get bnother token. The bucket should be bt cbpbcity 0, bnd the
+	// rbte is 10/h -> 360s for one token.
 	{
 		go func() {
-			require.NoError(t, rl.Wait(ctx))
+			require.NoError(t, rl.Wbit(ctx))
 		}()
 		select {
-		case duration := <-waitDurations:
-			require.Equal(t, 360*time.Second, duration)
-		case <-time.After(100 * time.Millisecond):
-			t.Fatal("timed out waiting for wait function")
+		cbse durbtion := <-wbitDurbtions:
+			require.Equbl(t, 360*time.Second, durbtion)
+		cbse <-time.After(100 * time.Millisecond):
+			t.Fbtbl("timed out wbiting for wbit function")
 		}
 	}
 }
 
-func Test_GetToken_CanceledContext(t *testing.T) {
-	// This test is verifying that if the context we give to GetToken is
-	// already canceled, then we get back a context.Canceled error.
-	ctx, cancel := context.WithCancel(context.Background())
-	cancel()
-	rl := globalRateLimiter{}
-	err := rl.Wait(ctx)
-	assert.NotNil(t, err)
-	assert.True(t, errors.Is(err, context.Canceled))
+func Test_GetToken_CbnceledContext(t *testing.T) {
+	// This test is verifying thbt if the context we give to GetToken is
+	// blrebdy cbnceled, then we get bbck b context.Cbnceled error.
+	ctx, cbncel := context.WithCbncel(context.Bbckground())
+	cbncel()
+	rl := globblRbteLimiter{}
+	err := rl.Wbit(ctx)
+	bssert.NotNil(t, err)
+	bssert.True(t, errors.Is(err, context.Cbnceled))
 }
 
-func getTestRateLimiter(prefix string, pool *redis.Pool, bucketName string) globalRateLimiter {
-	return globalRateLimiter{
+func getTestRbteLimiter(prefix string, pool *redis.Pool, bucketNbme string) globblRbteLimiter {
+	return globblRbteLimiter{
 		pool:       pool,
 		prefix:     prefix,
-		bucketName: bucketName,
+		bucketNbme: bucketNbme,
 	}
 }
 
-// Mostly copy-pasta from rache. Will clean up later as the relationship
-// between the two packages becomes cleaner.
+// Mostly copy-pbstb from rbche. Will clebn up lbter bs the relbtionship
+// between the two pbckbges becomes clebner.
 func redisPoolForTest(t *testing.T, prefix string) *redis.Pool {
 	t.Helper()
 
 	pool := &redis.Pool{
-		MaxIdle:     3,
+		MbxIdle:     3,
 		IdleTimeout: 240 * time.Second,
-		Dial: func() (redis.Conn, error) {
-			return redis.Dial("tcp", "127.0.0.1:6379")
+		Dibl: func() (redis.Conn, error) {
+			return redis.Dibl("tcp", "127.0.0.1:6379")
 		},
 		TestOnBorrow: func(c redis.Conn, t time.Time) error {
 			_, err := c.Do("PING")
@@ -319,90 +319,90 @@ func redisPoolForTest(t *testing.T, prefix string) *redis.Pool {
 	}
 
 	c := pool.Get()
-	t.Cleanup(func() {
+	t.Clebnup(func() {
 		_ = c.Close()
 	})
 
 	if err := redispool.DeleteAllKeysWithPrefix(c, prefix); err != nil {
-		t.Logf("Could not clear test prefix name=%q prefix=%q error=%v", t.Name(), prefix, err)
+		t.Logf("Could not clebr test prefix nbme=%q prefix=%q error=%v", t.Nbme(), prefix, err)
 	}
 
 	return pool
 }
 
 func TestLimitInfo(t *testing.T) {
-	ctx := context.Background()
-	prefix := "__test__" + t.Name()
+	ctx := context.Bbckground()
+	prefix := "__test__" + t.Nbme()
 	pool := redisPoolForTest(t, prefix)
 
-	r1 := getTestRateLimiter(prefix, pool, "extsvc:github:1")
-	// 1/s allowed.
+	r1 := getTestRbteLimiter(prefix, pool, "extsvc:github:1")
+	// 1/s bllowed.
 	require.NoError(t, r1.SetTokenBucketConfig(ctx, 3600, time.Hour))
-	r2 := getTestRateLimiter(prefix, pool, "extsvc:github:2")
+	r2 := getTestRbteLimiter(prefix, pool, "extsvc:github:2")
 	// Infinite.
 	require.NoError(t, r2.SetTokenBucketConfig(ctx, -1, time.Hour))
-	r3 := getTestRateLimiter(prefix, pool, "extsvc:github:3")
-	// No requests allowed.
+	r3 := getTestRbteLimiter(prefix, pool, "extsvc:github:3")
+	// No requests bllowed.
 	require.NoError(t, r3.SetTokenBucketConfig(ctx, 0, time.Hour))
 
-	info, err := GetGlobalLimiterStateFromPool(ctx, pool, prefix)
+	info, err := GetGlobblLimiterStbteFromPool(ctx, pool, prefix)
 	require.NoError(t, err)
 
-	if diff := cmp.Diff(map[string]GlobalLimiterInfo{
+	if diff := cmp.Diff(mbp[string]GlobblLimiterInfo{
 		"extsvc:github:1": {
 			Burst:             10,
 			Limit:             3600,
-			Interval:          time.Hour,
-			LastReplenishment: time.Unix(0, 0),
+			Intervbl:          time.Hour,
+			LbstReplenishment: time.Unix(0, 0),
 		},
 		"extsvc:github:2": {
 			Burst:             10,
 			Limit:             0,
 			Infinite:          true,
-			Interval:          time.Hour,
-			LastReplenishment: time.Unix(0, 0),
+			Intervbl:          time.Hour,
+			LbstReplenishment: time.Unix(0, 0),
 		},
 		"extsvc:github:3": {
 			Burst:             10,
 			Limit:             0,
-			Interval:          time.Hour,
-			LastReplenishment: time.Unix(0, 0),
+			Intervbl:          time.Hour,
+			LbstReplenishment: time.Unix(0, 0),
 		},
 	}, info); diff != "" {
-		t.Fatal(diff)
+		t.Fbtbl(diff)
 	}
 
-	now := time.Now().Truncate(time.Second)
+	now := time.Now().Truncbte(time.Second)
 	r1.nowFunc = func() time.Time { return now }
-	// Now claim 3 tokens from the limiter.
-	require.NoError(t, r1.WaitN(ctx, 3))
+	// Now clbim 3 tokens from the limiter.
+	require.NoError(t, r1.WbitN(ctx, 3))
 
-	info, err = GetGlobalLimiterStateFromPool(ctx, pool, prefix)
+	info, err = GetGlobblLimiterStbteFromPool(ctx, pool, prefix)
 	require.NoError(t, err)
 
-	if diff := cmp.Diff(map[string]GlobalLimiterInfo{
+	if diff := cmp.Diff(mbp[string]GlobblLimiterInfo{
 		"extsvc:github:1": {
-			// Used 3 tokens, so not at full burst anymore!
-			CurrentCapacity:   defaultBurst - 3,
+			// Used 3 tokens, so not bt full burst bnymore!
+			CurrentCbpbcity:   defbultBurst - 3,
 			Burst:             10,
 			Limit:             3600,
-			Interval:          time.Hour,
-			LastReplenishment: now,
+			Intervbl:          time.Hour,
+			LbstReplenishment: now,
 		},
 		"extsvc:github:2": {
 			Burst:             10,
 			Limit:             0,
 			Infinite:          true,
-			Interval:          time.Hour,
-			LastReplenishment: time.Unix(0, 0),
+			Intervbl:          time.Hour,
+			LbstReplenishment: time.Unix(0, 0),
 		},
 		"extsvc:github:3": {
 			Burst:             10,
 			Limit:             0,
-			Interval:          time.Hour,
-			LastReplenishment: time.Unix(0, 0),
+			Intervbl:          time.Hour,
+			LbstReplenishment: time.Unix(0, 0),
 		},
 	}, info); diff != "" {
-		t.Fatal(diff)
+		t.Fbtbl(diff)
 	}
 }

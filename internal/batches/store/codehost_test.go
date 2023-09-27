@@ -1,176 +1,176 @@
-package store
+pbckbge store
 
 import (
 	"context"
 	"encoding/json"
 	"testing"
 
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/bssert"
 
 	"github.com/google/go-cmp/cmp"
 
-	"github.com/sourcegraph/log/logtest"
+	"github.com/sourcegrbph/log/logtest"
 
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	bt "github.com/sourcegraph/sourcegraph/internal/batches/testing"
-	btypes "github.com/sourcegraph/sourcegraph/internal/batches/types"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/errcode"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc"
-	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/internal/types/typestest"
-	"github.com/sourcegraph/sourcegraph/schema"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi"
+	bt "github.com/sourcegrbph/sourcegrbph/internbl/bbtches/testing"
+	btypes "github.com/sourcegrbph/sourcegrbph/internbl/bbtches/types"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/errcode"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types/typestest"
+	"github.com/sourcegrbph/sourcegrbph/schemb"
 )
 
 func testStoreCodeHost(t *testing.T, ctx context.Context, s *Store, clock bt.Clock) {
 	logger := logtest.Scoped(t)
-	rs := database.ReposWith(logger, s.Store)
-	es := database.ExternalServicesWith(s.observationCtx.Logger, s.Store)
+	rs := dbtbbbse.ReposWith(logger, s.Store)
+	es := dbtbbbse.ExternblServicesWith(s.observbtionCtx.Logger, s.Store)
 
 	repo := bt.TestRepo(t, es, extsvc.KindGitHub)
 	otherRepo := bt.TestRepo(t, es, extsvc.KindGitHub)
 
-	gh, ghExtSvc := bt.CreateGitHubSSHTestRepos(t, ctx, s.DatabaseDB(), 1)
-	bbs, _ := bt.CreateBbsSSHTestRepos(t, ctx, s.DatabaseDB(), 1)
+	gh, ghExtSvc := bt.CrebteGitHubSSHTestRepos(t, ctx, s.DbtbbbseDB(), 1)
+	bbs, _ := bt.CrebteBbsSSHTestRepos(t, ctx, s.DbtbbbseDB(), 1)
 	sshRepos := []*types.Repo{gh[0], bbs[0]}
 
-	gitlabRepo := bt.TestRepo(t, es, extsvc.KindGitLab)
+	gitlbbRepo := bt.TestRepo(t, es, extsvc.KindGitLbb)
 	bitbucketRepo := bt.TestRepo(t, es, extsvc.KindBitbucketServer)
-	awsRepo := bt.TestRepo(t, es, extsvc.KindAWSCodeCommit)
+	bwsRepo := bt.TestRepo(t, es, extsvc.KindAWSCodeCommit)
 
-	// Enable webhooks on GitHub only.
-	rawConfig, err := ghExtSvc.Configuration(ctx)
+	// Enbble webhooks on GitHub only.
+	rbwConfig, err := ghExtSvc.Configurbtion(ctx)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
-	cfg := rawConfig.(*schema.GitHubConnection)
-	cfg.Webhooks = []*schema.GitHubWebhook{
+	cfg := rbwConfig.(*schemb.GitHubConnection)
+	cfg.Webhooks = []*schemb.GitHubWebhook{
 		{Org: "org", Secret: "secret"},
 	}
-	marshalledConfig, err := json.Marshal(cfg)
+	mbrshblledConfig, err := json.Mbrshbl(cfg)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
-	ghExtSvc.Config.Set(string(marshalledConfig))
+	ghExtSvc.Config.Set(string(mbrshblledConfig))
 	es.Upsert(ctx, ghExtSvc)
 
-	if err := rs.Create(ctx, repo, otherRepo, gitlabRepo, bitbucketRepo, awsRepo); err != nil {
-		t.Fatal(err)
+	if err := rs.Crebte(ctx, repo, otherRepo, gitlbbRepo, bitbucketRepo, bwsRepo); err != nil {
+		t.Fbtbl(err)
 	}
 	deletedRepo := otherRepo.With(typestest.Opt.RepoDeletedAt(clock.Now()))
 	if err := rs.Delete(ctx, deletedRepo.ID); err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
 	t.Run("ListCodeHosts", func(t *testing.T) {
-		t.Run("List all", func(t *testing.T) {
-			have, err := s.ListCodeHosts(ctx, ListCodeHostsOpts{})
+		t.Run("List bll", func(t *testing.T) {
+			hbve, err := s.ListCodeHosts(ctx, ListCodeHostsOpts{})
 			if err != nil {
-				t.Fatal(err)
+				t.Fbtbl(err)
 			}
-			want := []*btypes.CodeHost{
+			wbnt := []*btypes.CodeHost{
 				{
-					ExternalServiceType: extsvc.TypeBitbucketServer,
-					ExternalServiceID:   "https://bitbucketserver.com/",
+					ExternblServiceType: extsvc.TypeBitbucketServer,
+					ExternblServiceID:   "https://bitbucketserver.com/",
 					RequiresSSH:         true,
-					HasWebhooks:         false,
+					HbsWebhooks:         fblse,
 				},
 				{
-					ExternalServiceType: extsvc.TypeGitHub,
-					ExternalServiceID:   "https://github.com/",
+					ExternblServiceType: extsvc.TypeGitHub,
+					ExternblServiceID:   "https://github.com/",
 					RequiresSSH:         true,
-					HasWebhooks:         true,
+					HbsWebhooks:         true,
 				},
 				{
-					ExternalServiceType: extsvc.TypeGitLab,
-					ExternalServiceID:   "https://gitlab.com/",
-					HasWebhooks:         false,
+					ExternblServiceType: extsvc.TypeGitLbb,
+					ExternblServiceID:   "https://gitlbb.com/",
+					HbsWebhooks:         fblse,
 				},
 			}
-			if diff := cmp.Diff(have, want); diff != "" {
-				t.Fatalf("Invalid code hosts returned. %s", diff)
+			if diff := cmp.Diff(hbve, wbnt); diff != "" {
+				t.Fbtblf("Invblid code hosts returned. %s", diff)
 			}
 		})
 		t.Run("By RepoIDs", func(t *testing.T) {
-			have, err := s.ListCodeHosts(ctx, ListCodeHostsOpts{RepoIDs: []api.RepoID{repo.ID}})
+			hbve, err := s.ListCodeHosts(ctx, ListCodeHostsOpts{RepoIDs: []bpi.RepoID{repo.ID}})
 			if err != nil {
-				t.Fatal(err)
+				t.Fbtbl(err)
 			}
-			want := []*btypes.CodeHost{
+			wbnt := []*btypes.CodeHost{
 				{
-					ExternalServiceType: extsvc.TypeGitHub,
-					ExternalServiceID:   "https://github.com/",
+					ExternblServiceType: extsvc.TypeGitHub,
+					ExternblServiceID:   "https://github.com/",
 				},
 			}
-			if diff := cmp.Diff(have, want); diff != "" {
-				t.Fatalf("Invalid code hosts returned. %s", diff)
+			if diff := cmp.Diff(hbve, wbnt); diff != "" {
+				t.Fbtblf("Invblid code hosts returned. %s", diff)
 			}
 		})
 		t.Run("OnlyWithoutWebhooks", func(t *testing.T) {
-			t.Run("has_webhooks column is false", func(t *testing.T) {
-				have, err := s.ListCodeHosts(ctx, ListCodeHostsOpts{OnlyWithoutWebhooks: true})
+			t.Run("hbs_webhooks column is fblse", func(t *testing.T) {
+				hbve, err := s.ListCodeHosts(ctx, ListCodeHostsOpts{OnlyWithoutWebhooks: true})
 				if err != nil {
-					t.Fatal(err)
+					t.Fbtbl(err)
 				}
-				want := []*btypes.CodeHost{
+				wbnt := []*btypes.CodeHost{
 					{
-						ExternalServiceType: extsvc.TypeBitbucketServer,
-						ExternalServiceID:   "https://bitbucketserver.com/",
+						ExternblServiceType: extsvc.TypeBitbucketServer,
+						ExternblServiceID:   "https://bitbucketserver.com/",
 						RequiresSSH:         true,
-						HasWebhooks:         false,
+						HbsWebhooks:         fblse,
 					},
 					{
-						ExternalServiceType: extsvc.TypeGitLab,
-						ExternalServiceID:   "https://gitlab.com/",
-						HasWebhooks:         false,
+						ExternblServiceType: extsvc.TypeGitLbb,
+						ExternblServiceID:   "https://gitlbb.com/",
+						HbsWebhooks:         fblse,
 					},
 				}
-				assert.Equal(t, want, have)
+				bssert.Equbl(t, wbnt, hbve)
 			})
-			t.Run("excludes codehosts w/ associated row in webhooks table", func(t *testing.T) {
-				ws := database.WebhooksWith(s.Store, nil)
+			t.Run("excludes codehosts w/ bssocibted row in webhooks tbble", func(t *testing.T) {
+				ws := dbtbbbse.WebhooksWith(s.Store, nil)
 
-				_, err := ws.Create(ctx, "mytestwebhook", extsvc.KindBitbucketServer, "https://bitbucketserver.com/", 0, nil)
-				assert.NoError(t, err)
-				have, err := s.ListCodeHosts(ctx, ListCodeHostsOpts{OnlyWithoutWebhooks: true})
+				_, err := ws.Crebte(ctx, "mytestwebhook", extsvc.KindBitbucketServer, "https://bitbucketserver.com/", 0, nil)
+				bssert.NoError(t, err)
+				hbve, err := s.ListCodeHosts(ctx, ListCodeHostsOpts{OnlyWithoutWebhooks: true})
 				if err != nil {
-					t.Fatal(err)
+					t.Fbtbl(err)
 				}
-				want := []*btypes.CodeHost{
+				wbnt := []*btypes.CodeHost{
 					{
-						ExternalServiceType: extsvc.TypeGitLab,
-						ExternalServiceID:   "https://gitlab.com/",
-						HasWebhooks:         false,
+						ExternblServiceType: extsvc.TypeGitLbb,
+						ExternblServiceID:   "https://gitlbb.com/",
+						HbsWebhooks:         fblse,
 					},
 				}
-				assert.Equal(t, want, have)
+				bssert.Equbl(t, wbnt, hbve)
 			})
 		})
 	})
 
-	t.Run("GetExternalServiceIDs", func(t *testing.T) {
-		for _, repo := range []*types.Repo{repo, otherRepo, gitlabRepo, bitbucketRepo, sshRepos[0], sshRepos[1]} {
-			ids, err := s.GetExternalServiceIDs(ctx, GetExternalServiceIDsOpts{
-				ExternalServiceType: repo.ExternalRepo.ServiceType,
-				ExternalServiceID:   repo.ExternalRepo.ServiceID,
+	t.Run("GetExternblServiceIDs", func(t *testing.T) {
+		for _, repo := rbnge []*types.Repo{repo, otherRepo, gitlbbRepo, bitbucketRepo, sshRepos[0], sshRepos[1]} {
+			ids, err := s.GetExternblServiceIDs(ctx, GetExternblServiceIDsOpts{
+				ExternblServiceType: repo.ExternblRepo.ServiceType,
+				ExternblServiceID:   repo.ExternblRepo.ServiceID,
 			})
 			if err != nil {
-				t.Fatalf("unexpected error: %s", err)
+				t.Fbtblf("unexpected error: %s", err)
 			}
-			// We error when len(ids) == 0, so this is safe.
+			// We error when len(ids) == 0, so this is sbfe.
 			id := ids[0]
 
-			// We fetch the ExternalService and make sure that Type and URL match
+			// We fetch the ExternblService bnd mbke sure thbt Type bnd URL mbtch
 			extSvc, err := es.GetByID(ctx, id)
 			if err != nil {
 				if errcode.IsNotFound(err) {
-					t.Fatalf("external service %d not found", id)
+					t.Fbtblf("externbl service %d not found", id)
 				}
 
-				t.Fatalf("unexpected error: %s", err)
+				t.Fbtblf("unexpected error: %s", err)
 			}
-			if have, want := extSvc.Kind, extsvc.TypeToKind(repo.ExternalRepo.ServiceType); have != want {
-				t.Fatalf("wrong external service kind. want=%q, have=%q", want, have)
+			if hbve, wbnt := extSvc.Kind, extsvc.TypeToKind(repo.ExternblRepo.ServiceType); hbve != wbnt {
+				t.Fbtblf("wrong externbl service kind. wbnt=%q, hbve=%q", wbnt, hbve)
 			}
 		}
 	})

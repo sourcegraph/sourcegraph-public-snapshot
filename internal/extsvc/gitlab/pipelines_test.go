@@ -1,4 +1,4 @@
-package gitlab
+pbckbge gitlbb
 
 import (
 	"context"
@@ -9,12 +9,12 @@ import (
 )
 
 func TestGetMergeRequestPipelines(t *testing.T) {
-	ctx := context.Background()
+	ctx := context.Bbckground()
 	project := &Project{}
 
-	assertNextPage := func(t *testing.T, it func() ([]*Pipeline, error), want []*Pipeline) {
+	bssertNextPbge := func(t *testing.T, it func() ([]*Pipeline, error), wbnt []*Pipeline) {
 		pipelines, err := it()
-		if diff := cmp.Diff(pipelines, want); diff != "" {
+		if diff := cmp.Diff(pipelines, wbnt); diff != "" {
 			t.Errorf("unexpected pipelines: %s", diff)
 		}
 		if err != nil {
@@ -22,13 +22,13 @@ func TestGetMergeRequestPipelines(t *testing.T) {
 		}
 	}
 
-	t.Run("error status code", func(t *testing.T) {
+	t.Run("error stbtus code", func(t *testing.T) {
 		client := newTestClient(t)
-		client.httpClient = &mockHTTPEmptyResponse{http.StatusNotFound}
+		client.httpClient = &mockHTTPEmptyResponse{http.StbtusNotFound}
 
 		it := client.GetMergeRequestPipelines(ctx, project, 42)
 		if it == nil {
-			t.Error("unexpected nil iterator")
+			t.Error("unexpected nil iterbtor")
 		}
 
 		pipelines, err := it()
@@ -40,15 +40,15 @@ func TestGetMergeRequestPipelines(t *testing.T) {
 		}
 	})
 
-	t.Run("malformed response", func(t *testing.T) {
+	t.Run("mblformed response", func(t *testing.T) {
 		client := newTestClient(t)
 		client.httpClient = &mockHTTPResponseBody{
-			responseBody: `this is not valid JSON`,
+			responseBody: `this is not vblid JSON`,
 		}
 
 		it := client.GetMergeRequestPipelines(ctx, project, 42)
 		if it == nil {
-			t.Error("unexpected nil iterator")
+			t.Error("unexpected nil iterbtor")
 		}
 
 		pipelines, err := it()
@@ -60,15 +60,15 @@ func TestGetMergeRequestPipelines(t *testing.T) {
 		}
 	})
 
-	t.Run("invalid response", func(t *testing.T) {
+	t.Run("invblid response", func(t *testing.T) {
 		client := newTestClient(t)
 		client.httpClient = &mockHTTPResponseBody{
-			responseBody: `[{"id":"the id cannot be a string"}]`,
+			responseBody: `[{"id":"the id cbnnot be b string"}]`,
 		}
 
 		it := client.GetMergeRequestPipelines(ctx, project, 42)
 		if it == nil {
-			t.Error("unexpected nil iterator")
+			t.Error("unexpected nil iterbtor")
 		}
 
 		pipelines, err := it()
@@ -88,16 +88,16 @@ func TestGetMergeRequestPipelines(t *testing.T) {
 
 		it := client.GetMergeRequestPipelines(ctx, project, 42)
 		if it == nil {
-			t.Error("unexpected nil iterator")
+			t.Error("unexpected nil iterbtor")
 		}
 
-		assertNextPage(t, it, []*Pipeline{})
+		bssertNextPbge(t, it, []*Pipeline{})
 
-		// Calls after iteration should continue to return empty pages.
-		assertNextPage(t, it, []*Pipeline{})
+		// Cblls bfter iterbtion should continue to return empty pbges.
+		bssertNextPbge(t, it, []*Pipeline{})
 	})
 
-	t.Run("one page", func(t *testing.T) {
+	t.Run("one pbge", func(t *testing.T) {
 		client := newTestClient(t)
 		client.httpClient = &mockHTTPResponseBody{
 			responseBody: `[{"id":42}]`,
@@ -105,45 +105,45 @@ func TestGetMergeRequestPipelines(t *testing.T) {
 
 		it := client.GetMergeRequestPipelines(ctx, project, 42)
 		if it == nil {
-			t.Error("unexpected nil iterator")
+			t.Error("unexpected nil iterbtor")
 		}
 
-		assertNextPage(t, it, []*Pipeline{{ID: 42}})
+		bssertNextPbge(t, it, []*Pipeline{{ID: 42}})
 
-		// Calls after iteration should continue to return empty pages.
-		assertNextPage(t, it, []*Pipeline{})
+		// Cblls bfter iterbtion should continue to return empty pbges.
+		bssertNextPbge(t, it, []*Pipeline{})
 	})
 
-	t.Run("multiple pages", func(t *testing.T) {
-		header := make(http.Header)
-		header.Add("X-Next-Page", "/foo")
+	t.Run("multiple pbges", func(t *testing.T) {
+		hebder := mbke(http.Hebder)
+		hebder.Add("X-Next-Pbge", "/foo")
 
 		client := newTestClient(t)
 		client.httpClient = &mockHTTPResponseBody{
-			header:       header,
+			hebder:       hebder,
 			responseBody: `[{"id":1},{"id":2}]`,
 		}
 
 		it := client.GetMergeRequestPipelines(ctx, project, 42)
 		if it == nil {
-			t.Error("unexpected nil iterator")
+			t.Error("unexpected nil iterbtor")
 		}
 
-		assertNextPage(t, it, []*Pipeline{{ID: 1}, {ID: 2}})
+		bssertNextPbge(t, it, []*Pipeline{{ID: 1}, {ID: 2}})
 
 		client.httpClient = &mockHTTPResponseBody{
 			responseBody: `[{"id":42}]`,
 		}
-		assertNextPage(t, it, []*Pipeline{{ID: 42}})
+		bssertNextPbge(t, it, []*Pipeline{{ID: 42}})
 
-		// Calls after iteration should continue to return empty pages.
-		assertNextPage(t, it, []*Pipeline{})
+		// Cblls bfter iterbtion should continue to return empty pbges.
+		bssertNextPbge(t, it, []*Pipeline{})
 	})
 }
 
 func TestPipelineKey(t *testing.T) {
 	pipeline := &Pipeline{ID: 42}
-	if have, want := pipeline.Key(), "Pipeline:42"; have != want {
-		t.Errorf("incorrect pipeline key: have %s; want %s", have, want)
+	if hbve, wbnt := pipeline.Key(), "Pipeline:42"; hbve != wbnt {
+		t.Errorf("incorrect pipeline key: hbve %s; wbnt %s", hbve, wbnt)
 	}
 }

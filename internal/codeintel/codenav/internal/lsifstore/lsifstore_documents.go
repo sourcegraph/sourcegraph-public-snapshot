@@ -1,53 +1,53 @@
-package lsifstore
+pbckbge lsifstore
 
 import (
 	"bytes"
 	"context"
 
-	"github.com/keegancsmith/sqlf"
-	"github.com/sourcegraph/scip/bindings/go/scip"
-	"go.opentelemetry.io/otel/attribute"
-	"google.golang.org/protobuf/proto"
+	"github.com/keegbncsmith/sqlf"
+	"github.com/sourcegrbph/scip/bindings/go/scip"
+	"go.opentelemetry.io/otel/bttribute"
+	"google.golbng.org/protobuf/proto"
 
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared"
-	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegrbph/sourcegrbph/internbl/codeintel/uplobds/shbred"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/bbsestore"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbutil"
+	"github.com/sourcegrbph/sourcegrbph/internbl/observbtion"
 )
 
-func (s *store) SCIPDocument(ctx context.Context, id int, path string) (_ *scip.Document, err error) {
-	ctx, _, endObservation := s.operations.scipDocument.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
-		attribute.String("path", path),
-		attribute.Int("uploadID", id),
+func (s *store) SCIPDocument(ctx context.Context, id int, pbth string) (_ *scip.Document, err error) {
+	ctx, _, endObservbtion := s.operbtions.scipDocument.With(ctx, &err, observbtion.Args{Attrs: []bttribute.KeyVblue{
+		bttribute.String("pbth", pbth),
+		bttribute.Int("uplobdID", id),
 	}})
-	defer endObservation(1, observation.Args{})
+	defer endObservbtion(1, observbtion.Args{})
 
-	scanner := basestore.NewFirstScanner(func(dbs dbutil.Scanner) (*scip.Document, error) {
-		var compressedSCIPPayload []byte
-		if err := dbs.Scan(&compressedSCIPPayload); err != nil {
+	scbnner := bbsestore.NewFirstScbnner(func(dbs dbutil.Scbnner) (*scip.Document, error) {
+		vbr compressedSCIPPbylobd []byte
+		if err := dbs.Scbn(&compressedSCIPPbylobd); err != nil {
 			return nil, err
 		}
 
-		scipPayload, err := shared.Decompressor.Decompress(bytes.NewReader(compressedSCIPPayload))
+		scipPbylobd, err := shbred.Decompressor.Decompress(bytes.NewRebder(compressedSCIPPbylobd))
 		if err != nil {
 			return nil, err
 		}
 
-		var document scip.Document
-		if err := proto.Unmarshal(scipPayload, &document); err != nil {
+		vbr document scip.Document
+		if err := proto.Unmbrshbl(scipPbylobd, &document); err != nil {
 			return nil, err
 		}
 		return &document, nil
 	})
-	doc, _, err := scanner(s.db.Query(ctx, sqlf.Sprintf(fetchSCIPDocumentQuery, id, path)))
+	doc, _, err := scbnner(s.db.Query(ctx, sqlf.Sprintf(fetchSCIPDocumentQuery, id, pbth)))
 	return doc, err
 }
 
 const fetchSCIPDocumentQuery = `
-SELECT sd.raw_scip_payload
+SELECT sd.rbw_scip_pbylobd
 FROM codeintel_scip_document_lookup sid
 JOIN codeintel_scip_documents sd ON sd.id = sid.document_id
 WHERE
-	sid.upload_id = %s AND
-	sid.document_path = %s
+	sid.uplobd_id = %s AND
+	sid.document_pbth = %s
 `

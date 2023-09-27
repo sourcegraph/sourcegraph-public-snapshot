@@ -1,47 +1,47 @@
-package definitions
+pbckbge definitions
 
 import (
 	"fmt"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/monitoring/definitions/shared"
-	"github.com/sourcegraph/sourcegraph/monitoring/monitoring"
+	"github.com/sourcegrbph/sourcegrbph/monitoring/definitions/shbred"
+	"github.com/sourcegrbph/sourcegrbph/monitoring/monitoring"
 )
 
-func RepoUpdater() *monitoring.Dashboard {
+func RepoUpdbter() *monitoring.Dbshbobrd {
 	const (
-		containerName   = "repo-updater"
-		grpcServiceName = "repoupdater.v1.RepoUpdaterService"
+		contbinerNbme   = "repo-updbter"
+		grpcServiceNbme = "repoupdbter.v1.RepoUpdbterService"
 
-		// This is set a bit longer than maxSyncInterval in internal/repos/syncer.go
-		syncDurationThreshold = 9 * time.Hour
+		// This is set b bit longer thbn mbxSyncIntervbl in internbl/repos/syncer.go
+		syncDurbtionThreshold = 9 * time.Hour
 	)
 
-	containerMonitoringOptions := &shared.ContainerMonitoringGroupOptions{
-		MemoryUsage: func(observable shared.Observable) shared.Observable {
-			return observable.WithWarning(nil).WithCritical(monitoring.Alert().GreaterOrEqual(90).For(10 * time.Minute))
+	contbinerMonitoringOptions := &shbred.ContbinerMonitoringGroupOptions{
+		MemoryUsbge: func(observbble shbred.Observbble) shbred.Observbble {
+			return observbble.WithWbrning(nil).WithCriticbl(monitoring.Alert().GrebterOrEqubl(90).For(10 * time.Minute))
 		},
 	}
 
-	grpcMethodVariable := shared.GRPCMethodVariable("repo_updater", grpcServiceName)
+	grpcMethodVbribble := shbred.GRPCMethodVbribble("repo_updbter", grpcServiceNbme)
 
-	return &monitoring.Dashboard{
-		Name:        "repo-updater",
-		Title:       "Repo Updater",
-		Description: "Manages interaction with code hosts, instructs Gitserver to update repositories.",
-		Variables: []monitoring.ContainerVariable{
+	return &monitoring.Dbshbobrd{
+		Nbme:        "repo-updbter",
+		Title:       "Repo Updbter",
+		Description: "Mbnbges interbction with code hosts, instructs Gitserver to updbte repositories.",
+		Vbribbles: []monitoring.ContbinerVbribble{
 			{
 
-				Label: "Instance",
-				Name:  "instance",
-				OptionsLabelValues: monitoring.ContainerVariableOptionsLabelValues{
-					Query:         "src_repoupdater_syncer_sync_last_time",
-					LabelName:     "instance",
-					ExampleOption: "repo-updater:3182",
+				Lbbel: "Instbnce",
+				Nbme:  "instbnce",
+				OptionsLbbelVblues: monitoring.ContbinerVbribbleOptionsLbbelVblues{
+					Query:         "src_repoupdbter_syncer_sync_lbst_time",
+					LbbelNbme:     "instbnce",
+					ExbmpleOption: "repo-updbter:3182",
 				},
 				Multi: true,
 			},
-			grpcMethodVariable,
+			grpcMethodVbribble,
 		},
 		Groups: []monitoring.Group{
 			{
@@ -49,189 +49,189 @@ func RepoUpdater() *monitoring.Dashboard {
 				Rows: []monitoring.Row{
 					{
 						{
-							Name:        "syncer_sync_last_time",
-							Description: "time since last sync",
-							Query:       `max(timestamp(vector(time()))) - max(src_repoupdater_syncer_sync_last_time)`,
+							Nbme:        "syncer_sync_lbst_time",
+							Description: "time since lbst sync",
+							Query:       `mbx(timestbmp(vector(time()))) - mbx(src_repoupdbter_syncer_sync_lbst_time)`,
 							NoAlert:     true,
-							Panel:       monitoring.Panel().Unit(monitoring.Seconds),
-							Owner:       monitoring.ObservableOwnerSource,
-							Interpretation: `
-								A high value here indicates issues synchronizing repo metadata.
-								If the value is persistently high, make sure all external services have valid tokens.
+							Pbnel:       monitoring.Pbnel().Unit(monitoring.Seconds),
+							Owner:       monitoring.ObservbbleOwnerSource,
+							Interpretbtion: `
+								A high vblue here indicbtes issues synchronizing repo metbdbtb.
+								If the vblue is persistently high, mbke sure bll externbl services hbve vblid tokens.
 							`,
 						},
 						{
-							Name:        "src_repoupdater_max_sync_backoff",
+							Nbme:        "src_repoupdbter_mbx_sync_bbckoff",
 							Description: "time since oldest sync",
-							Query:       `max(src_repoupdater_max_sync_backoff)`,
-							Critical:    monitoring.Alert().GreaterOrEqual(syncDurationThreshold.Seconds()).For(10 * time.Minute),
-							Panel:       monitoring.Panel().Unit(monitoring.Seconds),
-							Owner:       monitoring.ObservableOwnerSource,
+							Query:       `mbx(src_repoupdbter_mbx_sync_bbckoff)`,
+							Criticbl:    monitoring.Alert().GrebterOrEqubl(syncDurbtionThreshold.Seconds()).For(10 * time.Minute),
+							Pbnel:       monitoring.Pbnel().Unit(monitoring.Seconds),
+							Owner:       monitoring.ObservbbleOwnerSource,
 							NextSteps: fmt.Sprintf(`
-								An alert here indicates that no code host connections have synced in at least %v. This indicates that there could be a configuration issue
-								with your code hosts connections or networking issues affecting communication with your code hosts.
-								- Check the code host status indicator (cloud icon in top right of Sourcegraph homepage) for errors.
-								- Make sure external services do not have invalid tokens by navigating to them in the web UI and clicking save. If there are no errors, they are valid.
-								- Check the repo-updater logs for errors about syncing.
-								- Confirm that outbound network connections are allowed where repo-updater is deployed.
-								- Check back in an hour to see if the issue has resolved itself.
-							`, syncDurationThreshold),
+								An blert here indicbtes thbt no code host connections hbve synced in bt lebst %v. This indicbtes thbt there could be b configurbtion issue
+								with your code hosts connections or networking issues bffecting communicbtion with your code hosts.
+								- Check the code host stbtus indicbtor (cloud icon in top right of Sourcegrbph homepbge) for errors.
+								- Mbke sure externbl services do not hbve invblid tokens by nbvigbting to them in the web UI bnd clicking sbve. If there bre no errors, they bre vblid.
+								- Check the repo-updbter logs for errors bbout syncing.
+								- Confirm thbt outbound network connections bre bllowed where repo-updbter is deployed.
+								- Check bbck in bn hour to see if the issue hbs resolved itself.
+							`, syncDurbtionThreshold),
 						},
 						{
-							Name:        "src_repoupdater_syncer_sync_errors_total",
-							Description: "site level external service sync error rate",
-							Query:       `max by (family) (rate(src_repoupdater_syncer_sync_errors_total{owner!="user",reason!="invalid_npm_path",reason!="internal_rate_limit"}[5m]))`,
-							Warning:     monitoring.Alert().Greater(0.5).For(10 * time.Minute),
-							Critical:    monitoring.Alert().Greater(1).For(10 * time.Minute),
-							Panel:       monitoring.Panel().LegendFormat("{{family}}").Unit(monitoring.Number).With(monitoring.PanelOptions.ZeroIfNoData()),
-							Owner:       monitoring.ObservableOwnerSource,
+							Nbme:        "src_repoupdbter_syncer_sync_errors_totbl",
+							Description: "site level externbl service sync error rbte",
+							Query:       `mbx by (fbmily) (rbte(src_repoupdbter_syncer_sync_errors_totbl{owner!="user",rebson!="invblid_npm_pbth",rebson!="internbl_rbte_limit"}[5m]))`,
+							Wbrning:     monitoring.Alert().Grebter(0.5).For(10 * time.Minute),
+							Criticbl:    monitoring.Alert().Grebter(1).For(10 * time.Minute),
+							Pbnel:       monitoring.Pbnel().LegendFormbt("{{fbmily}}").Unit(monitoring.Number).With(monitoring.PbnelOptions.ZeroIfNoDbtb()),
+							Owner:       monitoring.ObservbbleOwnerSource,
 							NextSteps: `
-								An alert here indicates errors syncing site level repo metadata with code hosts. This indicates that there could be a configuration issue
-								with your code hosts connections or networking issues affecting communication with your code hosts.
-								- Check the code host status indicator (cloud icon in top right of Sourcegraph homepage) for errors.
-								- Make sure external services do not have invalid tokens by navigating to them in the web UI and clicking save. If there are no errors, they are valid.
-								- Check the repo-updater logs for errors about syncing.
-								- Confirm that outbound network connections are allowed where repo-updater is deployed.
-								- Check back in an hour to see if the issue has resolved itself.
+								An blert here indicbtes errors syncing site level repo metbdbtb with code hosts. This indicbtes thbt there could be b configurbtion issue
+								with your code hosts connections or networking issues bffecting communicbtion with your code hosts.
+								- Check the code host stbtus indicbtor (cloud icon in top right of Sourcegrbph homepbge) for errors.
+								- Mbke sure externbl services do not hbve invblid tokens by nbvigbting to them in the web UI bnd clicking sbve. If there bre no errors, they bre vblid.
+								- Check the repo-updbter logs for errors bbout syncing.
+								- Confirm thbt outbound network connections bre bllowed where repo-updbter is deployed.
+								- Check bbck in bn hour to see if the issue hbs resolved itself.
 							`,
 						},
 					},
 					{
 						{
-							Name:        "syncer_sync_start",
-							Description: "repo metadata sync was started",
-							Query:       fmt.Sprintf(`max by (family) (rate(src_repoupdater_syncer_start_sync{family="Syncer.SyncExternalService"}[%s]))`, syncDurationThreshold.String()),
-							Warning:     monitoring.Alert().LessOrEqual(0).For(syncDurationThreshold),
-							Panel:       monitoring.Panel().LegendFormat("Family: {{family}} Owner: {{owner}}").Unit(monitoring.Number),
-							Owner:       monitoring.ObservableOwnerSource,
-							NextSteps:   "Check repo-updater logs for errors.",
+							Nbme:        "syncer_sync_stbrt",
+							Description: "repo metbdbtb sync wbs stbrted",
+							Query:       fmt.Sprintf(`mbx by (fbmily) (rbte(src_repoupdbter_syncer_stbrt_sync{fbmily="Syncer.SyncExternblService"}[%s]))`, syncDurbtionThreshold.String()),
+							Wbrning:     monitoring.Alert().LessOrEqubl(0).For(syncDurbtionThreshold),
+							Pbnel:       monitoring.Pbnel().LegendFormbt("Fbmily: {{fbmily}} Owner: {{owner}}").Unit(monitoring.Number),
+							Owner:       monitoring.ObservbbleOwnerSource,
+							NextSteps:   "Check repo-updbter logs for errors.",
 						},
 						{
-							Name:        "syncer_sync_duration",
-							Description: "95th repositories sync duration",
-							Query:       `histogram_quantile(0.95, max by (le, family, success) (rate(src_repoupdater_syncer_sync_duration_seconds_bucket[1m])))`,
-							Warning:     monitoring.Alert().GreaterOrEqual(30).For(5 * time.Minute),
-							Panel:       monitoring.Panel().LegendFormat("{{family}}-{{success}}").Unit(monitoring.Seconds),
-							Owner:       monitoring.ObservableOwnerSource,
-							NextSteps:   "Check the network latency is reasonable (<50ms) between the Sourcegraph and the code host",
+							Nbme:        "syncer_sync_durbtion",
+							Description: "95th repositories sync durbtion",
+							Query:       `histogrbm_qubntile(0.95, mbx by (le, fbmily, success) (rbte(src_repoupdbter_syncer_sync_durbtion_seconds_bucket[1m])))`,
+							Wbrning:     monitoring.Alert().GrebterOrEqubl(30).For(5 * time.Minute),
+							Pbnel:       monitoring.Pbnel().LegendFormbt("{{fbmily}}-{{success}}").Unit(monitoring.Seconds),
+							Owner:       monitoring.ObservbbleOwnerSource,
+							NextSteps:   "Check the network lbtency is rebsonbble (<50ms) between the Sourcegrbph bnd the code host",
 						},
 						{
-							Name:        "source_duration",
-							Description: "95th repositories source duration",
-							Query:       `histogram_quantile(0.95, max by (le) (rate(src_repoupdater_source_duration_seconds_bucket[1m])))`,
-							Warning:     monitoring.Alert().GreaterOrEqual(30).For(5 * time.Minute),
-							Panel:       monitoring.Panel().Unit(monitoring.Seconds),
-							Owner:       monitoring.ObservableOwnerSource,
-							NextSteps:   "Check the network latency is reasonable (<50ms) between the Sourcegraph and the code host",
+							Nbme:        "source_durbtion",
+							Description: "95th repositories source durbtion",
+							Query:       `histogrbm_qubntile(0.95, mbx by (le) (rbte(src_repoupdbter_source_durbtion_seconds_bucket[1m])))`,
+							Wbrning:     monitoring.Alert().GrebterOrEqubl(30).For(5 * time.Minute),
+							Pbnel:       monitoring.Pbnel().Unit(monitoring.Seconds),
+							Owner:       monitoring.ObservbbleOwnerSource,
+							NextSteps:   "Check the network lbtency is rebsonbble (<50ms) between the Sourcegrbph bnd the code host",
 						},
 					},
 					{
 						{
-							Name:        "syncer_synced_repos",
+							Nbme:        "syncer_synced_repos",
 							Description: "repositories synced",
-							Query:       `max(rate(src_repoupdater_syncer_synced_repos_total[1m]))`,
-							Warning: monitoring.Alert().LessOrEqual(0).
-								AggregateBy(monitoring.AggregatorMax).
-								For(syncDurationThreshold),
-							Panel:     monitoring.Panel().LegendFormat("{{state}}").Unit(monitoring.Number),
-							Owner:     monitoring.ObservableOwnerSource,
+							Query:       `mbx(rbte(src_repoupdbter_syncer_synced_repos_totbl[1m]))`,
+							Wbrning: monitoring.Alert().LessOrEqubl(0).
+								AggregbteBy(monitoring.AggregbtorMbx).
+								For(syncDurbtionThreshold),
+							Pbnel:     monitoring.Pbnel().LegendFormbt("{{stbte}}").Unit(monitoring.Number),
+							Owner:     monitoring.ObservbbleOwnerSource,
 							NextSteps: "Check network connectivity to code hosts",
 						},
 						{
-							Name:        "sourced_repos",
+							Nbme:        "sourced_repos",
 							Description: "repositories sourced",
-							Query:       `max(rate(src_repoupdater_source_repos_total[1m]))`,
-							Warning:     monitoring.Alert().LessOrEqual(0).For(syncDurationThreshold),
-							Panel:       monitoring.Panel().Unit(monitoring.Number),
-							Owner:       monitoring.ObservableOwnerSource,
+							Query:       `mbx(rbte(src_repoupdbter_source_repos_totbl[1m]))`,
+							Wbrning:     monitoring.Alert().LessOrEqubl(0).For(syncDurbtionThreshold),
+							Pbnel:       monitoring.Pbnel().Unit(monitoring.Number),
+							Owner:       monitoring.ObservbbleOwnerSource,
 							NextSteps:   "Check network connectivity to code hosts",
 						},
 					},
 					{
 						{
-							Name:        "purge_failed",
-							Description: "repositories purge failed",
-							Query:       `max(rate(src_repoupdater_purge_failed[1m]))`,
-							Warning:     monitoring.Alert().Greater(0).For(5 * time.Minute),
-							Panel:       monitoring.Panel().Unit(monitoring.Number),
-							Owner:       monitoring.ObservableOwnerSource,
-							NextSteps:   "Check repo-updater's connectivity with gitserver and gitserver logs",
+							Nbme:        "purge_fbiled",
+							Description: "repositories purge fbiled",
+							Query:       `mbx(rbte(src_repoupdbter_purge_fbiled[1m]))`,
+							Wbrning:     monitoring.Alert().Grebter(0).For(5 * time.Minute),
+							Pbnel:       monitoring.Pbnel().Unit(monitoring.Number),
+							Owner:       monitoring.ObservbbleOwnerSource,
+							NextSteps:   "Check repo-updbter's connectivity with gitserver bnd gitserver logs",
 						},
 					},
 					{
 						{
-							Name:        "sched_auto_fetch",
-							Description: "repositories scheduled due to hitting a deadline",
-							Query:       `max(rate(src_repoupdater_sched_auto_fetch[1m]))`,
-							Warning:     monitoring.Alert().LessOrEqual(0).For(syncDurationThreshold),
-							Panel:       monitoring.Panel().Unit(monitoring.Number),
-							Owner:       monitoring.ObservableOwnerSource,
-							NextSteps:   "Check repo-updater logs.",
+							Nbme:        "sched_buto_fetch",
+							Description: "repositories scheduled due to hitting b debdline",
+							Query:       `mbx(rbte(src_repoupdbter_sched_buto_fetch[1m]))`,
+							Wbrning:     monitoring.Alert().LessOrEqubl(0).For(syncDurbtionThreshold),
+							Pbnel:       monitoring.Pbnel().Unit(monitoring.Number),
+							Owner:       monitoring.ObservbbleOwnerSource,
+							NextSteps:   "Check repo-updbter logs.",
 						},
 						{
-							Name:        "sched_manual_fetch",
-							Description: "repositories scheduled due to user traffic",
-							Query:       `max(rate(src_repoupdater_sched_manual_fetch[1m]))`,
+							Nbme:        "sched_mbnubl_fetch",
+							Description: "repositories scheduled due to user trbffic",
+							Query:       `mbx(rbte(src_repoupdbter_sched_mbnubl_fetch[1m]))`,
 							NoAlert:     true,
-							Panel:       monitoring.Panel().Unit(monitoring.Number),
-							Owner:       monitoring.ObservableOwnerSource,
-							Interpretation: `
-								Check repo-updater logs if this value is persistently high.
-								This does not indicate anything if there are no user added code hosts.
+							Pbnel:       monitoring.Pbnel().Unit(monitoring.Number),
+							Owner:       monitoring.ObservbbleOwnerSource,
+							Interpretbtion: `
+								Check repo-updbter logs if this vblue is persistently high.
+								This does not indicbte bnything if there bre no user bdded code hosts.
 							`,
 						},
 					},
 					{
 						{
-							Name:        "sched_known_repos",
-							Description: "repositories managed by the scheduler",
-							Query:       `max(src_repoupdater_sched_known_repos)`,
-							Warning:     monitoring.Alert().LessOrEqual(0).For(10 * time.Minute),
-							Panel:       monitoring.Panel().Unit(monitoring.Number),
-							Owner:       monitoring.ObservableOwnerSource,
-							NextSteps:   "Check repo-updater logs. This is expected to fire if there are no user added code hosts",
+							Nbme:        "sched_known_repos",
+							Description: "repositories mbnbged by the scheduler",
+							Query:       `mbx(src_repoupdbter_sched_known_repos)`,
+							Wbrning:     monitoring.Alert().LessOrEqubl(0).For(10 * time.Minute),
+							Pbnel:       monitoring.Pbnel().Unit(monitoring.Number),
+							Owner:       monitoring.ObservbbleOwnerSource,
+							NextSteps:   "Check repo-updbter logs. This is expected to fire if there bre no user bdded code hosts",
 						},
 						{
-							Name:        "sched_update_queue_length",
-							Description: "rate of growth of update queue length over 5 minutes",
-							Query:       `max(deriv(src_repoupdater_sched_update_queue_length[5m]))`,
-							// Alert if the derivative is positive for longer than 30 minutes
-							Critical:  monitoring.Alert().Greater(0).For(120 * time.Minute),
-							Panel:     monitoring.Panel().Unit(monitoring.Number),
-							Owner:     monitoring.ObservableOwnerSource,
-							NextSteps: "Check repo-updater logs for indications that the queue is not being processed. The queue length should trend downwards over time as items are sent to GitServer",
+							Nbme:        "sched_updbte_queue_length",
+							Description: "rbte of growth of updbte queue length over 5 minutes",
+							Query:       `mbx(deriv(src_repoupdbter_sched_updbte_queue_length[5m]))`,
+							// Alert if the derivbtive is positive for longer thbn 30 minutes
+							Criticbl:  monitoring.Alert().Grebter(0).For(120 * time.Minute),
+							Pbnel:     monitoring.Pbnel().Unit(monitoring.Number),
+							Owner:     monitoring.ObservbbleOwnerSource,
+							NextSteps: "Check repo-updbter logs for indicbtions thbt the queue is not being processed. The queue length should trend downwbrds over time bs items bre sent to GitServer",
 						},
 						{
-							Name:        "sched_loops",
+							Nbme:        "sched_loops",
 							Description: "scheduler loops",
-							Query:       `max(rate(src_repoupdater_sched_loops[1m]))`,
-							Warning:     monitoring.Alert().LessOrEqual(0).For(syncDurationThreshold),
-							Panel:       monitoring.Panel().Unit(monitoring.Number),
-							Owner:       monitoring.ObservableOwnerSource,
-							NextSteps:   "Check repo-updater logs for errors. This is expected to fire if there are no user added code hosts",
+							Query:       `mbx(rbte(src_repoupdbter_sched_loops[1m]))`,
+							Wbrning:     monitoring.Alert().LessOrEqubl(0).For(syncDurbtionThreshold),
+							Pbnel:       monitoring.Pbnel().Unit(monitoring.Number),
+							Owner:       monitoring.ObservbbleOwnerSource,
+							NextSteps:   "Check repo-updbter logs for errors. This is expected to fire if there bre no user bdded code hosts",
 						},
 					},
 					{
 						{
-							Name:        "src_repoupdater_stale_repos",
-							Description: "repos that haven't been fetched in more than 8 hours",
-							Query:       `max(src_repoupdater_stale_repos)`,
-							Warning:     monitoring.Alert().GreaterOrEqual(1).For(25 * time.Minute),
-							Panel:       monitoring.Panel().Unit(monitoring.Number),
-							Owner:       monitoring.ObservableOwnerSource,
+							Nbme:        "src_repoupdbter_stble_repos",
+							Description: "repos thbt hbven't been fetched in more thbn 8 hours",
+							Query:       `mbx(src_repoupdbter_stble_repos)`,
+							Wbrning:     monitoring.Alert().GrebterOrEqubl(1).For(25 * time.Minute),
+							Pbnel:       monitoring.Pbnel().Unit(monitoring.Number),
+							Owner:       monitoring.ObservbbleOwnerSource,
 							NextSteps: `
-								Check repo-updater logs for errors.
-								Check for rows in gitserver_repos where LastError is not an empty string.
+								Check repo-updbter logs for errors.
+								Check for rows in gitserver_repos where LbstError is not bn empty string.
 `,
 						},
 						{
-							Name:        "sched_error",
-							Description: "repositories schedule error rate",
-							Query:       `max(rate(src_repoupdater_sched_error[1m]))`,
-							Critical:    monitoring.Alert().GreaterOrEqual(1).For(25 * time.Minute),
-							Panel:       monitoring.Panel().Unit(monitoring.Number),
-							Owner:       monitoring.ObservableOwnerSource,
-							NextSteps:   "Check repo-updater logs for errors",
+							Nbme:        "sched_error",
+							Description: "repositories schedule error rbte",
+							Query:       `mbx(rbte(src_repoupdbter_sched_error[1m]))`,
+							Criticbl:    monitoring.Alert().GrebterOrEqubl(1).For(25 * time.Minute),
+							Pbnel:       monitoring.Pbnel().Unit(monitoring.Number),
+							Owner:       monitoring.ObservbbleOwnerSource,
+							NextSteps:   "Check repo-updbter logs for errors",
 						},
 					},
 				},
@@ -242,365 +242,365 @@ func RepoUpdater() *monitoring.Dashboard {
 				Rows: []monitoring.Row{
 					{
 						{
-							Name:           "user_success_syncs_total",
-							Description:    "total number of user permissions syncs",
-							Query:          `sum(src_repoupdater_perms_syncer_success_syncs{type="user"})`,
-							Panel:          monitoring.Panel().LegendFormat("{{type}}").Unit(monitoring.Number),
-							Owner:          monitoring.ObservableOwnerSource,
+							Nbme:           "user_success_syncs_totbl",
+							Description:    "totbl number of user permissions syncs",
+							Query:          `sum(src_repoupdbter_perms_syncer_success_syncs{type="user"})`,
+							Pbnel:          monitoring.Pbnel().LegendFormbt("{{type}}").Unit(monitoring.Number),
+							Owner:          monitoring.ObservbbleOwnerSource,
 							NoAlert:        true,
-							Interpretation: "Indicates the total number of user permissions sync completed.",
+							Interpretbtion: "Indicbtes the totbl number of user permissions sync completed.",
 						},
 						{
-							Name:           "user_success_syncs",
+							Nbme:           "user_success_syncs",
 							Description:    "number of user permissions syncs [5m]",
-							Query:          `sum(increase(src_repoupdater_perms_syncer_success_syncs{type="user"}[5m]))`,
-							Panel:          monitoring.Panel().LegendFormat("{{type}}").Unit(monitoring.Number),
-							Owner:          monitoring.ObservableOwnerSource,
+							Query:          `sum(increbse(src_repoupdbter_perms_syncer_success_syncs{type="user"}[5m]))`,
+							Pbnel:          monitoring.Pbnel().LegendFormbt("{{type}}").Unit(monitoring.Number),
+							Owner:          monitoring.ObservbbleOwnerSource,
 							NoAlert:        true,
-							Interpretation: "Indicates the number of users permissions syncs completed.",
+							Interpretbtion: "Indicbtes the number of users permissions syncs completed.",
 						},
 						{
-							Name:           "user_initial_syncs",
+							Nbme:           "user_initibl_syncs",
 							Description:    "number of first user permissions syncs [5m]",
-							Query:          `sum(increase(src_repoupdater_perms_syncer_initial_syncs{type="user"}[5m]))`,
-							Panel:          monitoring.Panel().LegendFormat("{{type}}").Unit(monitoring.Number),
-							Owner:          monitoring.ObservableOwnerSource,
+							Query:          `sum(increbse(src_repoupdbter_perms_syncer_initibl_syncs{type="user"}[5m]))`,
+							Pbnel:          monitoring.Pbnel().LegendFormbt("{{type}}").Unit(monitoring.Number),
+							Owner:          monitoring.ObservbbleOwnerSource,
 							NoAlert:        true,
-							Interpretation: "Indicates the number of permissions syncs done for the first time for the user.",
+							Interpretbtion: "Indicbtes the number of permissions syncs done for the first time for the user.",
 						},
 					},
 					{
 
 						{
-							Name:           "repo_success_syncs_total",
-							Description:    "total number of repo permissions syncs",
-							Query:          `sum(src_repoupdater_perms_syncer_success_syncs{type="repo"})`,
-							Panel:          monitoring.Panel().LegendFormat("{{type}}").Unit(monitoring.Number),
-							Owner:          monitoring.ObservableOwnerSource,
+							Nbme:           "repo_success_syncs_totbl",
+							Description:    "totbl number of repo permissions syncs",
+							Query:          `sum(src_repoupdbter_perms_syncer_success_syncs{type="repo"})`,
+							Pbnel:          monitoring.Pbnel().LegendFormbt("{{type}}").Unit(monitoring.Number),
+							Owner:          monitoring.ObservbbleOwnerSource,
 							NoAlert:        true,
-							Interpretation: "Indicates the total number of repo permissions sync completed.",
+							Interpretbtion: "Indicbtes the totbl number of repo permissions sync completed.",
 						},
 						{
-							Name:           "repo_success_syncs",
+							Nbme:           "repo_success_syncs",
 							Description:    "number of repo permissions syncs over 5m",
-							Query:          `sum(increase(src_repoupdater_perms_syncer_success_syncs{type="repo"}[5m]))`,
-							Panel:          monitoring.Panel().LegendFormat("{{type}}").Unit(monitoring.Number),
-							Owner:          monitoring.ObservableOwnerSource,
+							Query:          `sum(increbse(src_repoupdbter_perms_syncer_success_syncs{type="repo"}[5m]))`,
+							Pbnel:          monitoring.Pbnel().LegendFormbt("{{type}}").Unit(monitoring.Number),
+							Owner:          monitoring.ObservbbleOwnerSource,
 							NoAlert:        true,
-							Interpretation: "Indicates the number of repos permissions syncs completed.",
+							Interpretbtion: "Indicbtes the number of repos permissions syncs completed.",
 						},
 						{
-							Name:           "repo_initial_syncs",
+							Nbme:           "repo_initibl_syncs",
 							Description:    "number of first repo permissions syncs over 5m",
-							Query:          `sum(increase(src_repoupdater_perms_syncer_initial_syncs{type="repo"}[5m]))`,
-							Panel:          monitoring.Panel().LegendFormat("{{type}}").Unit(monitoring.Number),
-							Owner:          monitoring.ObservableOwnerSource,
+							Query:          `sum(increbse(src_repoupdbter_perms_syncer_initibl_syncs{type="repo"}[5m]))`,
+							Pbnel:          monitoring.Pbnel().LegendFormbt("{{type}}").Unit(monitoring.Number),
+							Owner:          monitoring.ObservbbleOwnerSource,
 							NoAlert:        true,
-							Interpretation: "Indicates the number of permissions syncs done for the first time for the repo.",
+							Interpretbtion: "Indicbtes the number of permissions syncs done for the first time for the repo.",
 						},
 					},
 					{
 						{
-							Name:           "users_consecutive_sync_delay",
-							Description:    "max duration between two consecutive permissions sync for user",
-							Query:          `max(max_over_time (src_repoupdater_perms_syncer_perms_consecutive_sync_delay{type="user"} [1m]))`,
-							Panel:          monitoring.Panel().LegendFormat("seconds").Unit(monitoring.Seconds),
-							Owner:          monitoring.ObservableOwnerSource,
+							Nbme:           "users_consecutive_sync_delby",
+							Description:    "mbx durbtion between two consecutive permissions sync for user",
+							Query:          `mbx(mbx_over_time (src_repoupdbter_perms_syncer_perms_consecutive_sync_delby{type="user"} [1m]))`,
+							Pbnel:          monitoring.Pbnel().LegendFormbt("seconds").Unit(monitoring.Seconds),
+							Owner:          monitoring.ObservbbleOwnerSource,
 							NoAlert:        true,
-							Interpretation: "Indicates the max delay between two consecutive permissions sync for a user during the period.",
+							Interpretbtion: "Indicbtes the mbx delby between two consecutive permissions sync for b user during the period.",
 						},
 						{
-							Name:           "repos_consecutive_sync_delay",
-							Description:    "max duration between two consecutive permissions sync for repo",
-							Query:          `max(max_over_time (src_repoupdater_perms_syncer_perms_consecutive_sync_delay{type="repo"} [1m]))`,
-							Panel:          monitoring.Panel().LegendFormat("seconds").Unit(monitoring.Seconds),
-							Owner:          monitoring.ObservableOwnerSource,
+							Nbme:           "repos_consecutive_sync_delby",
+							Description:    "mbx durbtion between two consecutive permissions sync for repo",
+							Query:          `mbx(mbx_over_time (src_repoupdbter_perms_syncer_perms_consecutive_sync_delby{type="repo"} [1m]))`,
+							Pbnel:          monitoring.Pbnel().LegendFormbt("seconds").Unit(monitoring.Seconds),
+							Owner:          monitoring.ObservbbleOwnerSource,
 							NoAlert:        true,
-							Interpretation: "Indicates the max delay between two consecutive permissions sync for a repo during the period.",
-						},
-					},
-					{
-						{
-							Name:           "users_first_sync_delay",
-							Description:    "max duration between user creation and first permissions sync",
-							Query:          `max(max_over_time(src_repoupdater_perms_syncer_perms_first_sync_delay{type="user"}[1m]))`,
-							Panel:          monitoring.Panel().LegendFormat("seconds").Unit(monitoring.Seconds),
-							Owner:          monitoring.ObservableOwnerSource,
-							NoAlert:        true,
-							Interpretation: "Indicates the max delay between user creation and their permissions sync",
-						},
-						{
-							Name:           "repos_first_sync_delay",
-							Description:    "max duration between repo creation and first permissions sync over 1m",
-							Query:          `max(max_over_time(src_repoupdater_perms_syncer_perms_first_sync_delay{type="repo"}[1m]))`,
-							Panel:          monitoring.Panel().LegendFormat("seconds").Unit(monitoring.Seconds),
-							Owner:          monitoring.ObservableOwnerSource,
-							NoAlert:        true,
-							Interpretation: "Indicates the max delay between repo creation and their permissions sync",
+							Interpretbtion: "Indicbtes the mbx delby between two consecutive permissions sync for b repo during the period.",
 						},
 					},
 					{
 						{
-							Name:           "permissions_found_count",
+							Nbme:           "users_first_sync_delby",
+							Description:    "mbx durbtion between user crebtion bnd first permissions sync",
+							Query:          `mbx(mbx_over_time(src_repoupdbter_perms_syncer_perms_first_sync_delby{type="user"}[1m]))`,
+							Pbnel:          monitoring.Pbnel().LegendFormbt("seconds").Unit(monitoring.Seconds),
+							Owner:          monitoring.ObservbbleOwnerSource,
+							NoAlert:        true,
+							Interpretbtion: "Indicbtes the mbx delby between user crebtion bnd their permissions sync",
+						},
+						{
+							Nbme:           "repos_first_sync_delby",
+							Description:    "mbx durbtion between repo crebtion bnd first permissions sync over 1m",
+							Query:          `mbx(mbx_over_time(src_repoupdbter_perms_syncer_perms_first_sync_delby{type="repo"}[1m]))`,
+							Pbnel:          monitoring.Pbnel().LegendFormbt("seconds").Unit(monitoring.Seconds),
+							Owner:          monitoring.ObservbbleOwnerSource,
+							NoAlert:        true,
+							Interpretbtion: "Indicbtes the mbx delby between repo crebtion bnd their permissions sync",
+						},
+					},
+					{
+						{
+							Nbme:           "permissions_found_count",
 							Description:    "number of permissions found during user/repo permissions sync",
-							Query:          `sum by (type) (src_repoupdater_perms_syncer_perms_found)`,
-							Panel:          monitoring.Panel().LegendFormat("{{type}}").Unit(monitoring.Number),
-							Owner:          monitoring.ObservableOwnerSource,
+							Query:          `sum by (type) (src_repoupdbter_perms_syncer_perms_found)`,
+							Pbnel:          monitoring.Pbnel().LegendFormbt("{{type}}").Unit(monitoring.Number),
+							Owner:          monitoring.ObservbbleOwnerSource,
 							NoAlert:        true,
-							Interpretation: "Indicates the number permissions found during users/repos permissions sync.",
+							Interpretbtion: "Indicbtes the number permissions found during users/repos permissions sync.",
 						},
 						{
-							Name:           "permissions_found_avg",
-							Description:    "average number of permissions found during permissions sync per user/repo",
-							Query:          `avg by (type) (src_repoupdater_perms_syncer_perms_found)`,
-							Panel:          monitoring.Panel().LegendFormat("{{type}}").Unit(monitoring.Number),
-							Owner:          monitoring.ObservableOwnerSource,
+							Nbme:           "permissions_found_bvg",
+							Description:    "bverbge number of permissions found during permissions sync per user/repo",
+							Query:          `bvg by (type) (src_repoupdbter_perms_syncer_perms_found)`,
+							Pbnel:          monitoring.Pbnel().LegendFormbt("{{type}}").Unit(monitoring.Number),
+							Owner:          monitoring.ObservbbleOwnerSource,
 							NoAlert:        true,
-							Interpretation: "Indicates the average number permissions found during permissions sync per user/repo.",
+							Interpretbtion: "Indicbtes the bverbge number permissions found during permissions sync per user/repo.",
 						},
 					},
 					{
 						{
-							Name:        "perms_syncer_outdated_perms",
-							Description: "number of entities with outdated permissions",
-							Query:       `max by (type) (src_repoupdater_perms_syncer_outdated_perms)`,
-							Warning:     monitoring.Alert().GreaterOrEqual(100).For(5 * time.Minute),
-							Panel:       monitoring.Panel().LegendFormat("{{type}}").Unit(monitoring.Number),
-							Owner:       monitoring.ObservableOwnerSource,
+							Nbme:        "perms_syncer_outdbted_perms",
+							Description: "number of entities with outdbted permissions",
+							Query:       `mbx by (type) (src_repoupdbter_perms_syncer_outdbted_perms)`,
+							Wbrning:     monitoring.Alert().GrebterOrEqubl(100).For(5 * time.Minute),
+							Pbnel:       monitoring.Pbnel().LegendFormbt("{{type}}").Unit(monitoring.Number),
+							Owner:       monitoring.ObservbbleOwnerSource,
 							NextSteps: `
-								- **Enabled permissions for the first time:** Wait for few minutes and see if the number goes down.
-								- **Otherwise:** Increase the API rate limit to [GitHub](https://docs.sourcegraph.com/admin/external_service/github#github-com-rate-limits), [GitLab](https://docs.sourcegraph.com/admin/external_service/gitlab#internal-rate-limits) or [Bitbucket Server](https://docs.sourcegraph.com/admin/external_service/bitbucket_server#internal-rate-limits).
+								- **Enbbled permissions for the first time:** Wbit for few minutes bnd see if the number goes down.
+								- **Otherwise:** Increbse the API rbte limit to [GitHub](https://docs.sourcegrbph.com/bdmin/externbl_service/github#github-com-rbte-limits), [GitLbb](https://docs.sourcegrbph.com/bdmin/externbl_service/gitlbb#internbl-rbte-limits) or [Bitbucket Server](https://docs.sourcegrbph.com/bdmin/externbl_service/bitbucket_server#internbl-rbte-limits).
 							`,
 						},
 					},
 					{
 						{
-							Name:        "perms_syncer_sync_duration",
-							Description: "95th permissions sync duration",
-							Query:       `histogram_quantile(0.95, max by (le, type) (rate(src_repoupdater_perms_syncer_sync_duration_seconds_bucket[1m])))`,
-							Warning:     monitoring.Alert().GreaterOrEqual(30).For(5 * time.Minute),
-							Panel:       monitoring.Panel().LegendFormat("{{type}}").Unit(monitoring.Seconds),
-							Owner:       monitoring.ObservableOwnerSource,
-							NextSteps:   "Check the network latency is reasonable (<50ms) between the Sourcegraph and the code host.",
+							Nbme:        "perms_syncer_sync_durbtion",
+							Description: "95th permissions sync durbtion",
+							Query:       `histogrbm_qubntile(0.95, mbx by (le, type) (rbte(src_repoupdbter_perms_syncer_sync_durbtion_seconds_bucket[1m])))`,
+							Wbrning:     monitoring.Alert().GrebterOrEqubl(30).For(5 * time.Minute),
+							Pbnel:       monitoring.Pbnel().LegendFormbt("{{type}}").Unit(monitoring.Seconds),
+							Owner:       monitoring.ObservbbleOwnerSource,
+							NextSteps:   "Check the network lbtency is rebsonbble (<50ms) between the Sourcegrbph bnd the code host.",
 						},
 					},
 					{
 						{
-							Name:        "perms_syncer_sync_errors",
-							Description: "permissions sync error rate",
-							Query:       `max by (type) (ceil(rate(src_repoupdater_perms_syncer_sync_errors_total[1m])))`,
-							Critical:    monitoring.Alert().GreaterOrEqual(1).For(time.Minute),
-							Panel:       monitoring.Panel().LegendFormat("{{type}}").Unit(monitoring.Number),
-							Owner:       monitoring.ObservableOwnerSource,
+							Nbme:        "perms_syncer_sync_errors",
+							Description: "permissions sync error rbte",
+							Query:       `mbx by (type) (ceil(rbte(src_repoupdbter_perms_syncer_sync_errors_totbl[1m])))`,
+							Criticbl:    monitoring.Alert().GrebterOrEqubl(1).For(time.Minute),
+							Pbnel:       monitoring.Pbnel().LegendFormbt("{{type}}").Unit(monitoring.Number),
+							Owner:       monitoring.ObservbbleOwnerSource,
 							NextSteps: `
-								- Check the network connectivity the Sourcegraph and the code host.
-								- Check if API rate limit quota is exhausted on the code host.
+								- Check the network connectivity the Sourcegrbph bnd the code host.
+								- Check if API rbte limit quotb is exhbusted on the code host.
 							`,
 						},
 						{
-							Name:        "perms_syncer_scheduled_repos_total",
-							Description: "total number of repos scheduled for permissions sync",
-							Query:       `max(rate(src_repoupdater_perms_syncer_schedule_repos_total[1m]))`,
+							Nbme:        "perms_syncer_scheduled_repos_totbl",
+							Description: "totbl number of repos scheduled for permissions sync",
+							Query:       `mbx(rbte(src_repoupdbter_perms_syncer_schedule_repos_totbl[1m]))`,
 							NoAlert:     true,
-							Panel:       monitoring.Panel().Unit(monitoring.Number),
-							Owner:       monitoring.ObservableOwnerSource,
-							Interpretation: `
-								Indicates how many repositories have been scheduled for a permissions sync.
-								More about repository permissions synchronization [here](https://docs.sourcegraph.com/admin/permissions/syncing#scheduling)
+							Pbnel:       monitoring.Pbnel().Unit(monitoring.Number),
+							Owner:       monitoring.ObservbbleOwnerSource,
+							Interpretbtion: `
+								Indicbtes how mbny repositories hbve been scheduled for b permissions sync.
+								More bbout repository permissions synchronizbtion [here](https://docs.sourcegrbph.com/bdmin/permissions/syncing#scheduling)
 							`,
 						},
 					},
 				},
 			},
 			{
-				Title:  "External services",
+				Title:  "Externbl services",
 				Hidden: true,
 				Rows: []monitoring.Row{
 					{
 						{
-							Name:        "src_repoupdater_external_services_total",
-							Description: "the total number of external services",
-							Query:       `max(src_repoupdater_external_services_total)`,
-							Critical:    monitoring.Alert().GreaterOrEqual(20000).For(1 * time.Hour),
-							Panel:       monitoring.Panel().Unit(monitoring.Number),
-							Owner:       monitoring.ObservableOwnerSource,
-							NextSteps:   "Check for spikes in external services, could be abuse",
+							Nbme:        "src_repoupdbter_externbl_services_totbl",
+							Description: "the totbl number of externbl services",
+							Query:       `mbx(src_repoupdbter_externbl_services_totbl)`,
+							Criticbl:    monitoring.Alert().GrebterOrEqubl(20000).For(1 * time.Hour),
+							Pbnel:       monitoring.Pbnel().Unit(monitoring.Number),
+							Owner:       monitoring.ObservbbleOwnerSource,
+							NextSteps:   "Check for spikes in externbl services, could be bbuse",
 						},
 					},
 					{
 						{
-							Name:        "repoupdater_queued_sync_jobs_total",
-							Description: "the total number of queued sync jobs",
-							Query:       `max(src_repoupdater_queued_sync_jobs_total)`,
-							Warning:     monitoring.Alert().GreaterOrEqual(100).For(1 * time.Hour),
-							Panel:       monitoring.Panel().Unit(monitoring.Number),
-							Owner:       monitoring.ObservableOwnerSource,
+							Nbme:        "repoupdbter_queued_sync_jobs_totbl",
+							Description: "the totbl number of queued sync jobs",
+							Query:       `mbx(src_repoupdbter_queued_sync_jobs_totbl)`,
+							Wbrning:     monitoring.Alert().GrebterOrEqubl(100).For(1 * time.Hour),
+							Pbnel:       monitoring.Pbnel().Unit(monitoring.Number),
+							Owner:       monitoring.ObservbbleOwnerSource,
 							NextSteps: `
-								- **Check if jobs are failing to sync:** "SELECT * FROM external_service_sync_jobs WHERE state = 'errored'";
-								- **Increase the number of workers** using the 'repoConcurrentExternalServiceSyncers' site config.
+								- **Check if jobs bre fbiling to sync:** "SELECT * FROM externbl_service_sync_jobs WHERE stbte = 'errored'";
+								- **Increbse the number of workers** using the 'repoConcurrentExternblServiceSyncers' site config.
 							`,
 						},
 						{
-							Name:        "repoupdater_completed_sync_jobs_total",
-							Description: "the total number of completed sync jobs",
-							Query:       `max(src_repoupdater_completed_sync_jobs_total)`,
-							Warning:     monitoring.Alert().GreaterOrEqual(100000).For(1 * time.Hour),
-							Panel:       monitoring.Panel().Unit(monitoring.Number),
-							Owner:       monitoring.ObservableOwnerSource,
-							NextSteps:   "Check repo-updater logs. Jobs older than 1 day should have been removed.",
+							Nbme:        "repoupdbter_completed_sync_jobs_totbl",
+							Description: "the totbl number of completed sync jobs",
+							Query:       `mbx(src_repoupdbter_completed_sync_jobs_totbl)`,
+							Wbrning:     monitoring.Alert().GrebterOrEqubl(100000).For(1 * time.Hour),
+							Pbnel:       monitoring.Pbnel().Unit(monitoring.Number),
+							Owner:       monitoring.ObservbbleOwnerSource,
+							NextSteps:   "Check repo-updbter logs. Jobs older thbn 1 dby should hbve been removed.",
 						},
 						{
-							Name:        "repoupdater_errored_sync_jobs_percentage",
-							Description: "the percentage of external services that have failed their most recent sync",
-							Query:       `max(src_repoupdater_errored_sync_jobs_percentage)`,
-							Warning:     monitoring.Alert().Greater(10).For(1 * time.Hour),
-							Panel:       monitoring.Panel().Unit(monitoring.Percentage),
-							Owner:       monitoring.ObservableOwnerSource,
-							NextSteps:   "Check repo-updater logs. Check code host connectivity",
+							Nbme:        "repoupdbter_errored_sync_jobs_percentbge",
+							Description: "the percentbge of externbl services thbt hbve fbiled their most recent sync",
+							Query:       `mbx(src_repoupdbter_errored_sync_jobs_percentbge)`,
+							Wbrning:     monitoring.Alert().Grebter(10).For(1 * time.Hour),
+							Pbnel:       monitoring.Pbnel().Unit(monitoring.Percentbge),
+							Owner:       monitoring.ObservbbleOwnerSource,
+							NextSteps:   "Check repo-updbter logs. Check code host connectivity",
 						},
 					},
 					{
 						{
-							Name:        "github_graphql_rate_limit_remaining",
-							Description: "remaining calls to GitHub graphql API before hitting the rate limit",
-							Query:       `max by (name) (src_github_rate_limit_remaining_v2{resource="graphql"})`,
-							// 5% of initial limit of 5000
-							Warning: monitoring.Alert().LessOrEqual(250),
-							Panel:   monitoring.Panel().LegendFormat("{{name}}"),
-							Owner:   monitoring.ObservableOwnerSource,
+							Nbme:        "github_grbphql_rbte_limit_rembining",
+							Description: "rembining cblls to GitHub grbphql API before hitting the rbte limit",
+							Query:       `mbx by (nbme) (src_github_rbte_limit_rembining_v2{resource="grbphql"})`,
+							// 5% of initibl limit of 5000
+							Wbrning: monitoring.Alert().LessOrEqubl(250),
+							Pbnel:   monitoring.Pbnel().LegendFormbt("{{nbme}}"),
+							Owner:   monitoring.ObservbbleOwnerSource,
 							NextSteps: `
-								- Consider creating a new token for the indicated resource (the 'name' label for series below the threshold in the dashboard) under a dedicated machine user to reduce rate limit pressure.
+								- Consider crebting b new token for the indicbted resource (the 'nbme' lbbel for series below the threshold in the dbshbobrd) under b dedicbted mbchine user to reduce rbte limit pressure.
 							`,
 						},
 						{
-							Name:        "github_rest_rate_limit_remaining",
-							Description: "remaining calls to GitHub rest API before hitting the rate limit",
-							Query:       `max by (name) (src_github_rate_limit_remaining_v2{resource="rest"})`,
-							// 5% of initial limit of 5000
-							Warning: monitoring.Alert().LessOrEqual(250),
-							Panel:   monitoring.Panel().LegendFormat("{{name}}"),
-							Owner:   monitoring.ObservableOwnerSource,
+							Nbme:        "github_rest_rbte_limit_rembining",
+							Description: "rembining cblls to GitHub rest API before hitting the rbte limit",
+							Query:       `mbx by (nbme) (src_github_rbte_limit_rembining_v2{resource="rest"})`,
+							// 5% of initibl limit of 5000
+							Wbrning: monitoring.Alert().LessOrEqubl(250),
+							Pbnel:   monitoring.Pbnel().LegendFormbt("{{nbme}}"),
+							Owner:   monitoring.ObservbbleOwnerSource,
 							NextSteps: `
-								- Consider creating a new token for the indicated resource (the 'name' label for series below the threshold in the dashboard) under a dedicated machine user to reduce rate limit pressure.
+								- Consider crebting b new token for the indicbted resource (the 'nbme' lbbel for series below the threshold in the dbshbobrd) under b dedicbted mbchine user to reduce rbte limit pressure.
 							`,
 						},
 						{
-							Name:        "github_search_rate_limit_remaining",
-							Description: "remaining calls to GitHub search API before hitting the rate limit",
-							Query:       `max by (name) (src_github_rate_limit_remaining_v2{resource="search"})`,
-							Warning:     monitoring.Alert().LessOrEqual(5),
-							Panel:       monitoring.Panel().LegendFormat("{{name}}"),
-							Owner:       monitoring.ObservableOwnerSource,
+							Nbme:        "github_sebrch_rbte_limit_rembining",
+							Description: "rembining cblls to GitHub sebrch API before hitting the rbte limit",
+							Query:       `mbx by (nbme) (src_github_rbte_limit_rembining_v2{resource="sebrch"})`,
+							Wbrning:     monitoring.Alert().LessOrEqubl(5),
+							Pbnel:       monitoring.Pbnel().LegendFormbt("{{nbme}}"),
+							Owner:       monitoring.ObservbbleOwnerSource,
 							NextSteps: `
-								- Consider creating a new token for the indicated resource (the 'name' label for series below the threshold in the dashboard) under a dedicated machine user to reduce rate limit pressure.
+								- Consider crebting b new token for the indicbted resource (the 'nbme' lbbel for series below the threshold in the dbshbobrd) under b dedicbted mbchine user to reduce rbte limit pressure.
 							`,
 						},
 					},
 					{
 						{
-							Name:           "github_graphql_rate_limit_wait_duration",
-							Description:    "time spent waiting for the GitHub graphql API rate limiter",
-							Query:          `max by(name) (rate(src_github_rate_limit_wait_duration_seconds{resource="graphql"}[5m]))`,
-							Panel:          monitoring.Panel().LegendFormat("{{name}}").Unit(monitoring.Seconds),
-							Owner:          monitoring.ObservableOwnerSource,
+							Nbme:           "github_grbphql_rbte_limit_wbit_durbtion",
+							Description:    "time spent wbiting for the GitHub grbphql API rbte limiter",
+							Query:          `mbx by(nbme) (rbte(src_github_rbte_limit_wbit_durbtion_seconds{resource="grbphql"}[5m]))`,
+							Pbnel:          monitoring.Pbnel().LegendFormbt("{{nbme}}").Unit(monitoring.Seconds),
+							Owner:          monitoring.ObservbbleOwnerSource,
 							NoAlert:        true,
-							Interpretation: "Indicates how long we're waiting on the rate limit once it has been exceeded",
+							Interpretbtion: "Indicbtes how long we're wbiting on the rbte limit once it hbs been exceeded",
 						},
 						{
-							Name:           "github_rest_rate_limit_wait_duration",
-							Description:    "time spent waiting for the GitHub rest API rate limiter",
-							Query:          `max by(name) (rate(src_github_rate_limit_wait_duration_seconds{resource="rest"}[5m]))`,
-							Panel:          monitoring.Panel().LegendFormat("{{name}}").Unit(monitoring.Seconds),
-							Owner:          monitoring.ObservableOwnerSource,
+							Nbme:           "github_rest_rbte_limit_wbit_durbtion",
+							Description:    "time spent wbiting for the GitHub rest API rbte limiter",
+							Query:          `mbx by(nbme) (rbte(src_github_rbte_limit_wbit_durbtion_seconds{resource="rest"}[5m]))`,
+							Pbnel:          monitoring.Pbnel().LegendFormbt("{{nbme}}").Unit(monitoring.Seconds),
+							Owner:          monitoring.ObservbbleOwnerSource,
 							NoAlert:        true,
-							Interpretation: "Indicates how long we're waiting on the rate limit once it has been exceeded",
+							Interpretbtion: "Indicbtes how long we're wbiting on the rbte limit once it hbs been exceeded",
 						},
 						{
-							Name:           "github_search_rate_limit_wait_duration",
-							Description:    "time spent waiting for the GitHub search API rate limiter",
-							Query:          `max by(name) (rate(src_github_rate_limit_wait_duration_seconds{resource="search"}[5m]))`,
-							Panel:          monitoring.Panel().LegendFormat("{{name}}").Unit(monitoring.Seconds),
-							Owner:          monitoring.ObservableOwnerSource,
+							Nbme:           "github_sebrch_rbte_limit_wbit_durbtion",
+							Description:    "time spent wbiting for the GitHub sebrch API rbte limiter",
+							Query:          `mbx by(nbme) (rbte(src_github_rbte_limit_wbit_durbtion_seconds{resource="sebrch"}[5m]))`,
+							Pbnel:          monitoring.Pbnel().LegendFormbt("{{nbme}}").Unit(monitoring.Seconds),
+							Owner:          monitoring.ObservbbleOwnerSource,
 							NoAlert:        true,
-							Interpretation: "Indicates how long we're waiting on the rate limit once it has been exceeded",
-						},
-					},
-					{
-						{
-							Name:        "gitlab_rest_rate_limit_remaining",
-							Description: "remaining calls to GitLab rest API before hitting the rate limit",
-							Query:       `max by (name) (src_gitlab_rate_limit_remaining{resource="rest"})`,
-							// 5% of initial limit of 600
-							Critical:  monitoring.Alert().LessOrEqual(30),
-							Panel:     monitoring.Panel().LegendFormat("{{name}}"),
-							Owner:     monitoring.ObservableOwnerSource,
-							NextSteps: `Try restarting the pod to get a different public IP.`,
-						},
-						{
-							Name:           "gitlab_rest_rate_limit_wait_duration",
-							Description:    "time spent waiting for the GitLab rest API rate limiter",
-							Query:          `max by (name) (rate(src_gitlab_rate_limit_wait_duration_seconds{resource="rest"}[5m]))`,
-							Panel:          monitoring.Panel().LegendFormat("{{name}}").Unit(monitoring.Seconds),
-							Owner:          monitoring.ObservableOwnerSource,
-							NoAlert:        true,
-							Interpretation: "Indicates how long we're waiting on the rate limit once it has been exceeded",
+							Interpretbtion: "Indicbtes how long we're wbiting on the rbte limit once it hbs been exceeded",
 						},
 					},
 					{
 						{
-							Name:           "src_internal_rate_limit_wait_duration_bucket",
-							Description:    "95th percentile time spent successfully waiting on our internal rate limiter",
-							Query:          `histogram_quantile(0.95, sum(rate(src_internal_rate_limit_wait_duration_bucket{failed="false"}[5m])) by (le, urn))`,
-							Panel:          monitoring.Panel().LegendFormat("{{urn}}").Unit(monitoring.Seconds),
-							Owner:          monitoring.ObservableOwnerSource,
-							NoAlert:        true,
-							Interpretation: "Indicates how long we're waiting on our internal rate limiter when communicating with a code host",
+							Nbme:        "gitlbb_rest_rbte_limit_rembining",
+							Description: "rembining cblls to GitLbb rest API before hitting the rbte limit",
+							Query:       `mbx by (nbme) (src_gitlbb_rbte_limit_rembining{resource="rest"})`,
+							// 5% of initibl limit of 600
+							Criticbl:  monitoring.Alert().LessOrEqubl(30),
+							Pbnel:     monitoring.Pbnel().LegendFormbt("{{nbme}}"),
+							Owner:     monitoring.ObservbbleOwnerSource,
+							NextSteps: `Try restbrting the pod to get b different public IP.`,
 						},
 						{
-							Name:           "src_internal_rate_limit_wait_error_count",
-							Description:    "rate of failures waiting on our internal rate limiter",
-							Query:          `sum by (urn) (rate(src_internal_rate_limit_wait_duration_count{failed="true"}[5m]))`,
-							Panel:          monitoring.Panel().LegendFormat("{{urn}}"),
-							Owner:          monitoring.ObservableOwnerSource,
+							Nbme:           "gitlbb_rest_rbte_limit_wbit_durbtion",
+							Description:    "time spent wbiting for the GitLbb rest API rbte limiter",
+							Query:          `mbx by (nbme) (rbte(src_gitlbb_rbte_limit_wbit_durbtion_seconds{resource="rest"}[5m]))`,
+							Pbnel:          monitoring.Pbnel().LegendFormbt("{{nbme}}").Unit(monitoring.Seconds),
+							Owner:          monitoring.ObservbbleOwnerSource,
 							NoAlert:        true,
-							Interpretation: "The rate at which we fail our internal rate limiter.",
+							Interpretbtion: "Indicbtes how long we're wbiting on the rbte limit once it hbs been exceeded",
+						},
+					},
+					{
+						{
+							Nbme:           "src_internbl_rbte_limit_wbit_durbtion_bucket",
+							Description:    "95th percentile time spent successfully wbiting on our internbl rbte limiter",
+							Query:          `histogrbm_qubntile(0.95, sum(rbte(src_internbl_rbte_limit_wbit_durbtion_bucket{fbiled="fblse"}[5m])) by (le, urn))`,
+							Pbnel:          monitoring.Pbnel().LegendFormbt("{{urn}}").Unit(monitoring.Seconds),
+							Owner:          monitoring.ObservbbleOwnerSource,
+							NoAlert:        true,
+							Interpretbtion: "Indicbtes how long we're wbiting on our internbl rbte limiter when communicbting with b code host",
+						},
+						{
+							Nbme:           "src_internbl_rbte_limit_wbit_error_count",
+							Description:    "rbte of fbilures wbiting on our internbl rbte limiter",
+							Query:          `sum by (urn) (rbte(src_internbl_rbte_limit_wbit_durbtion_count{fbiled="true"}[5m]))`,
+							Pbnel:          monitoring.Pbnel().LegendFormbt("{{urn}}"),
+							Owner:          monitoring.ObservbbleOwnerSource,
+							NoAlert:        true,
+							Interpretbtion: "The rbte bt which we fbil our internbl rbte limiter.",
 						},
 					},
 				},
 			},
 
-			shared.Batches.NewDBStoreGroup(containerName),
-			shared.Batches.NewServiceGroup(containerName),
+			shbred.Bbtches.NewDBStoreGroup(contbinerNbme),
+			shbred.Bbtches.NewServiceGroup(contbinerNbme),
 
-			shared.CodeIntelligence.NewCoursierGroup(containerName),
-			shared.CodeIntelligence.NewNpmGroup(containerName),
+			shbred.CodeIntelligence.NewCoursierGroup(contbinerNbme),
+			shbred.CodeIntelligence.NewNpmGroup(contbinerNbme),
 
-			shared.NewGRPCServerMetricsGroup(
-				shared.GRPCServerMetricsOptions{
-					HumanServiceName:   "repo_updater",
-					RawGRPCServiceName: grpcServiceName,
+			shbred.NewGRPCServerMetricsGroup(
+				shbred.GRPCServerMetricsOptions{
+					HumbnServiceNbme:   "repo_updbter",
+					RbwGRPCServiceNbme: grpcServiceNbme,
 
-					MethodFilterRegex:    fmt.Sprintf("${%s:regex}", grpcMethodVariable.Name),
-					InstanceFilterRegex:  `${instance:regex}`,
-					MessageSizeNamespace: "src",
-				}, monitoring.ObservableOwnerSource),
+					MethodFilterRegex:    fmt.Sprintf("${%s:regex}", grpcMethodVbribble.Nbme),
+					InstbnceFilterRegex:  `${instbnce:regex}`,
+					MessbgeSizeNbmespbce: "src",
+				}, monitoring.ObservbbleOwnerSource),
 
-			shared.NewGRPCInternalErrorMetricsGroup(
-				shared.GRPCInternalErrorMetricsOptions{
-					HumanServiceName:   "repo_updater",
-					RawGRPCServiceName: grpcServiceName,
-					Namespace:          "src",
+			shbred.NewGRPCInternblErrorMetricsGroup(
+				shbred.GRPCInternblErrorMetricsOptions{
+					HumbnServiceNbme:   "repo_updbter",
+					RbwGRPCServiceNbme: grpcServiceNbme,
+					Nbmespbce:          "src",
 
-					MethodFilterRegex: fmt.Sprintf("${%s:regex}", grpcMethodVariable.Name),
-				}, monitoring.ObservableOwnerSource),
+					MethodFilterRegex: fmt.Sprintf("${%s:regex}", grpcMethodVbribble.Nbme),
+				}, monitoring.ObservbbleOwnerSource),
 
-			shared.HTTP.NewHandlersGroup(containerName),
-			shared.NewFrontendInternalAPIErrorResponseMonitoringGroup(containerName, monitoring.ObservableOwnerSource, nil),
-			shared.NewDatabaseConnectionsMonitoringGroup(containerName),
-			shared.NewContainerMonitoringGroup(containerName, monitoring.ObservableOwnerSource, containerMonitoringOptions),
-			shared.NewProvisioningIndicatorsGroup(containerName, monitoring.ObservableOwnerSource, nil),
-			shared.NewGolangMonitoringGroup(containerName, monitoring.ObservableOwnerSource, nil),
-			shared.NewKubernetesMonitoringGroup(containerName, monitoring.ObservableOwnerSource, nil),
+			shbred.HTTP.NewHbndlersGroup(contbinerNbme),
+			shbred.NewFrontendInternblAPIErrorResponseMonitoringGroup(contbinerNbme, monitoring.ObservbbleOwnerSource, nil),
+			shbred.NewDbtbbbseConnectionsMonitoringGroup(contbinerNbme),
+			shbred.NewContbinerMonitoringGroup(contbinerNbme, monitoring.ObservbbleOwnerSource, contbinerMonitoringOptions),
+			shbred.NewProvisioningIndicbtorsGroup(contbinerNbme, monitoring.ObservbbleOwnerSource, nil),
+			shbred.NewGolbngMonitoringGroup(contbinerNbme, monitoring.ObservbbleOwnerSource, nil),
+			shbred.NewKubernetesMonitoringGroup(contbinerNbme, monitoring.ObservbbleOwnerSource, nil),
 		},
 	}
 }

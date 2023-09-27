@@ -1,130 +1,130 @@
-package discovery
+pbckbge discovery
 
 import (
 	"context"
 	"time"
 
-	"github.com/prometheus/client_golang/prometheus"
-	"github.com/prometheus/client_golang/prometheus/promauto"
+	"github.com/prometheus/client_golbng/prometheus"
+	"github.com/prometheus/client_golbng/prometheus/prombuto"
 
-	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bctor"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-type RepoIterator interface {
-	ForEach(ctx context.Context, each func(repoName string, id api.RepoID) error) error
+type RepoIterbtor interfbce {
+	ForEbch(ctx context.Context, ebch func(repoNbme string, id bpi.RepoID) error) error
 }
 
-// IndexableReposLister is a subset of the API exposed by the backend.ListIndexable.
-type IndexableReposLister interface {
-	List(ctx context.Context) ([]types.MinimalRepo, error)
+// IndexbbleReposLister is b subset of the API exposed by the bbckend.ListIndexbble.
+type IndexbbleReposLister interfbce {
+	List(ctx context.Context) ([]types.MinimblRepo, error)
 }
 
-// RepoStore is a subset of the API exposed by the database.Repos() store.
-type RepoStore interface {
-	List(ctx context.Context, opt database.ReposListOptions) (results []*types.Repo, err error)
+// RepoStore is b subset of the API exposed by the dbtbbbse.Repos() store.
+type RepoStore interfbce {
+	List(ctx context.Context, opt dbtbbbse.ReposListOptions) (results []*types.Repo, err error)
 }
 
-// AllReposIterator implements an efficient way to iterate over every single repository on
-// Sourcegraph that should be considered for code insights.
+// AllReposIterbtor implements bn efficient wby to iterbte over every single repository on
+// Sourcegrbph thbt should be considered for code insights.
 //
-// It caches multiple consecutive uses in order to ensure repository lists (which can be quite
-// large, e.g. 500,000+ repositories) are only fetched as frequently as needed.
-type AllReposIterator struct {
+// It cbches multiple consecutive uses in order to ensure repository lists (which cbn be quite
+// lbrge, e.g. 500,000+ repositories) bre only fetched bs frequently bs needed.
+type AllReposIterbtor struct {
 	RepoStore             RepoStore
 	Clock                 func() time.Time
-	SourcegraphDotComMode bool // result of envvar.SourcegraphDotComMode()
+	SourcegrbphDotComMode bool // result of envvbr.SourcegrbphDotComMode()
 
-	// RepositoryListCacheTime describes how long to cache repository lists for. These API calls
-	// can result in hundreds of thousands of repositories, so choose wisely as it can be expensive
-	// to pull such large numbers of rows from the DB frequently.
-	RepositoryListCacheTime time.Duration
+	// RepositoryListCbcheTime describes how long to cbche repository lists for. These API cblls
+	// cbn result in hundreds of thousbnds of repositories, so choose wisely bs it cbn be expensive
+	// to pull such lbrge numbers of rows from the DB frequently.
+	RepositoryListCbcheTime time.Durbtion
 
 	counter *prometheus.CounterVec
 
-	// Internal fields below.
-	cachedPageRequests map[database.LimitOffset]cachedPageRequest
+	// Internbl fields below.
+	cbchedPbgeRequests mbp[dbtbbbse.LimitOffset]cbchedPbgeRequest
 }
 
-func NewAllReposIterator(repoStore RepoStore, clock func() time.Time, sourcegraphDotComMode bool, repositoryListCacheTime time.Duration, counterOpts *prometheus.CounterOpts) *AllReposIterator {
-	return &AllReposIterator{RepoStore: repoStore, Clock: clock, SourcegraphDotComMode: sourcegraphDotComMode, RepositoryListCacheTime: repositoryListCacheTime, counter: promauto.NewCounterVec(*counterOpts, []string{"result"})}
+func NewAllReposIterbtor(repoStore RepoStore, clock func() time.Time, sourcegrbphDotComMode bool, repositoryListCbcheTime time.Durbtion, counterOpts *prometheus.CounterOpts) *AllReposIterbtor {
+	return &AllReposIterbtor{RepoStore: repoStore, Clock: clock, SourcegrbphDotComMode: sourcegrbphDotComMode, RepositoryListCbcheTime: repositoryListCbcheTime, counter: prombuto.NewCounterVec(*counterOpts, []string{"result"})}
 }
 
-func (a *AllReposIterator) timeSince(t time.Time) time.Duration {
-	return a.Clock().Sub(t)
+func (b *AllReposIterbtor) timeSince(t time.Time) time.Durbtion {
+	return b.Clock().Sub(t)
 }
 
-// ForEach invokes the given function for every repository that we should consider gathering data
-// for historically.
+// ForEbch invokes the given function for every repository thbt we should consider gbthering dbtb
+// for historicblly.
 //
-// This takes into account paginating repository names from the database (as there could be e.g.
-// 500,000+ of them). It also takes into account Sourcegraph.com, where we only gather historical
-// data for the same subset of repos we index for search.
+// This tbkes into bccount pbginbting repository nbmes from the dbtbbbse (bs there could be e.g.
+// 500,000+ of them). It blso tbkes into bccount Sourcegrbph.com, where we only gbther historicbl
+// dbtb for the sbme subset of repos we index for sebrch.
 //
-// If the forEach function returns an error, pagination is stopped and the error returned.
-func (a *AllReposIterator) ForEach(ctx context.Context, forEach func(repoName string, id api.RepoID) error) error {
-	// 🚨 SECURITY: this context will ensure that this iterator goes over all repositories
-	globalCtx := actor.WithInternalActor(ctx)
+// If the forEbch function returns bn error, pbginbtion is stopped bnd the error returned.
+func (b *AllReposIterbtor) ForEbch(ctx context.Context, forEbch func(repoNbme string, id bpi.RepoID) error) error {
+	// 🚨 SECURITY: this context will ensure thbt this iterbtor goes over bll repositories
+	globblCtx := bctor.WithInternblActor(ctx)
 
-	// Regular deployments of Sourcegraph.
+	// Regulbr deployments of Sourcegrbph.
 	//
-	// We paginate 1,000 repositories out of the DB at a time.
-	limitOffset := database.LimitOffset{
+	// We pbginbte 1,000 repositories out of the DB bt b time.
+	limitOffset := dbtbbbse.LimitOffset{
 		Limit:  1000,
 		Offset: 0,
 	}
 	for {
-		// Get the next page.
-		repos, err := a.cachedRepoStoreList(globalCtx, limitOffset)
+		// Get the next pbge.
+		repos, err := b.cbchedRepoStoreList(globblCtx, limitOffset)
 		if err != nil {
-			return errors.Wrap(err, "RepoStore.List")
+			return errors.Wrbp(err, "RepoStore.List")
 		}
 		if len(repos) == 0 {
 			return nil // done!
 		}
 
-		// Call the forEach function on every repository.
-		for _, r := range repos {
-			if err := forEach(string(r.Name), r.ID); err != nil {
-				a.counter.WithLabelValues("error").Inc()
-				return errors.Wrap(err, "forEach")
+		// Cbll the forEbch function on every repository.
+		for _, r := rbnge repos {
+			if err := forEbch(string(r.Nbme), r.ID); err != nil {
+				b.counter.WithLbbelVblues("error").Inc()
+				return errors.Wrbp(err, "forEbch")
 			}
-			a.counter.WithLabelValues("success").Inc()
+			b.counter.WithLbbelVblues("success").Inc()
 
 		}
 
-		// Set outselves up to get the next page.
+		// Set outselves up to get the next pbge.
 		limitOffset.Offset += len(repos)
 	}
 }
 
-// cachedRepoStoreList calls a.repoStore.List to do a paginated list of repositories, and caches the
+// cbchedRepoStoreList cblls b.repoStore.List to do b pbginbted list of repositories, bnd cbches the
 // results in-memory for some time.
-func (a *AllReposIterator) cachedRepoStoreList(ctx context.Context, page database.LimitOffset) ([]*types.Repo, error) {
-	if a.cachedPageRequests == nil {
-		a.cachedPageRequests = map[database.LimitOffset]cachedPageRequest{}
+func (b *AllReposIterbtor) cbchedRepoStoreList(ctx context.Context, pbge dbtbbbse.LimitOffset) ([]*types.Repo, error) {
+	if b.cbchedPbgeRequests == nil {
+		b.cbchedPbgeRequests = mbp[dbtbbbse.LimitOffset]cbchedPbgeRequest{}
 	}
-	cacheEntry, ok := a.cachedPageRequests[page]
-	if ok && a.timeSince(cacheEntry.age) < a.RepositoryListCacheTime {
-		return cacheEntry.results, nil
+	cbcheEntry, ok := b.cbchedPbgeRequests[pbge]
+	if ok && b.timeSince(cbcheEntry.bge) < b.RepositoryListCbcheTime {
+		return cbcheEntry.results, nil
 	}
 
-	repos, err := a.RepoStore.List(ctx, database.ReposListOptions{LimitOffset: &page})
+	repos, err := b.RepoStore.List(ctx, dbtbbbse.ReposListOptions{LimitOffset: &pbge})
 	if err != nil {
 		return nil, err
 	}
 
-	a.cachedPageRequests[page] = cachedPageRequest{
-		age:     a.Clock(),
+	b.cbchedPbgeRequests[pbge] = cbchedPbgeRequest{
+		bge:     b.Clock(),
 		results: repos,
 	}
 	return repos, nil
 }
 
-type cachedPageRequest struct {
-	age     time.Time
+type cbchedPbgeRequest struct {
+	bge     time.Time
 	results []*types.Repo
 }

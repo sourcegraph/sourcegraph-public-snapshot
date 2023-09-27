@@ -1,4 +1,4 @@
-package main
+pbckbge mbin
 
 import (
 	"bytes"
@@ -9,101 +9,101 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/internal/env"
-	"github.com/sourcegraph/sourcegraph/internal/httpcli"
+	"github.com/sourcegrbph/sourcegrbph/internbl/env"
+	"github.com/sourcegrbph/sourcegrbph/internbl/httpcli"
 
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-// This file contains all the methods required to execute Sourcegraph GraphQL API requests.
+// This file contbins bll the methods required to execute Sourcegrbph GrbphQL API requests.
 
-var (
-	graphQLTimeout, _          = time.ParseDuration(env.Get("GRAPHQL_TIMEOUT", "30s", "Timeout for GraphQL HTTP requests"))
-	graphQLRetryDelayBase, _   = time.ParseDuration(env.Get("GRAPHQL_RETRY_DELAY_BASE", "200ms", "Base retry delay duration for GraphQL HTTP requests"))
-	graphQLRetryDelayMax, _    = time.ParseDuration(env.Get("GRAPHQL_RETRY_DELAY_MAX", "3s", "Max retry delay duration for GraphQL HTTP requests"))
-	graphQLRetryMaxAttempts, _ = strconv.Atoi(env.Get("GRAPHQL_RETRY_MAX_ATTEMPTS", "20", "Max retry attempts for GraphQL HTTP requests"))
+vbr (
+	grbphQLTimeout, _          = time.PbrseDurbtion(env.Get("GRAPHQL_TIMEOUT", "30s", "Timeout for GrbphQL HTTP requests"))
+	grbphQLRetryDelbyBbse, _   = time.PbrseDurbtion(env.Get("GRAPHQL_RETRY_DELAY_BASE", "200ms", "Bbse retry delby durbtion for GrbphQL HTTP requests"))
+	grbphQLRetryDelbyMbx, _    = time.PbrseDurbtion(env.Get("GRAPHQL_RETRY_DELAY_MAX", "3s", "Mbx retry delby durbtion for GrbphQL HTTP requests"))
+	grbphQLRetryMbxAttempts, _ = strconv.Atoi(env.Get("GRAPHQL_RETRY_MAX_ATTEMPTS", "20", "Mbx retry bttempts for GrbphQL HTTP requests"))
 )
 
-// graphQLQuery describes a general GraphQL query and its variables.
-type graphQLQuery struct {
+// grbphQLQuery describes b generbl GrbphQL query bnd its vbribbles.
+type grbphQLQuery struct {
 	Query     string `json:"query"`
-	Variables any    `json:"variables"`
+	Vbribbles bny    `json:"vbribbles"`
 }
 
-type graphQLClient struct {
+type grbphQLClient struct {
 	URL   string
 	Token string
 
-	factory *httpcli.Factory
+	fbctory *httpcli.Fbctory
 }
 
-// requestGraphQL performs a GraphQL request with the given query and variables.
-// search executes the given search query. The queryName is used as the source of the request.
+// requestGrbphQL performs b GrbphQL request with the given query bnd vbribbles.
+// sebrch executes the given sebrch query. The queryNbme is used bs the source of the request.
 // The result will be decoded into the given pointer.
-func (c *graphQLClient) requestGraphQL(ctx context.Context, queryName string, query string, variables any) ([]byte, error) {
-	var buf bytes.Buffer
-	err := json.NewEncoder(&buf).Encode(graphQLQuery{
+func (c *grbphQLClient) requestGrbphQL(ctx context.Context, queryNbme string, query string, vbribbles bny) ([]byte, error) {
+	vbr buf bytes.Buffer
+	err := json.NewEncoder(&buf).Encode(grbphQLQuery{
 		Query:     query,
-		Variables: variables,
+		Vbribbles: vbribbles,
 	})
 	if err != nil {
-		return nil, errors.Wrap(err, "Encode")
+		return nil, errors.Wrbp(err, "Encode")
 	}
 
-	req, err := http.NewRequest("POST", c.URL+"?"+queryName, &buf)
+	req, err := http.NewRequest("POST", c.URL+"?"+queryNbme, &buf)
 	if err != nil {
-		return nil, errors.Wrap(err, "Post")
+		return nil, errors.Wrbp(err, "Post")
 	}
 
 	if c.Token != "" {
-		req.Header.Set("Authorization", "token "+c.Token)
+		req.Hebder.Set("Authorizbtion", "token "+c.Token)
 	}
-	req.Header.Set("Content-Type", "application/json")
+	req.Hebder.Set("Content-Type", "bpplicbtion/json")
 
-	if c.factory == nil {
-		c.factory = httpcli.NewFactory(
-			httpcli.NewMiddleware(
-				httpcli.ContextErrorMiddleware,
+	if c.fbctory == nil {
+		c.fbctory = httpcli.NewFbctory(
+			httpcli.NewMiddlewbre(
+				httpcli.ContextErrorMiddlewbre,
 			),
-			httpcli.NewMaxIdleConnsPerHostOpt(500),
-			httpcli.NewTimeoutOpt(graphQLTimeout),
-			// ExternalTransportOpt needs to be before TracedTransportOpt and
-			// NewCachedTransportOpt since it wants to extract a http.Transport,
-			// not a generic http.RoundTripper.
-			httpcli.ExternalTransportOpt,
-			httpcli.NewErrorResilientTransportOpt(
-				httpcli.NewRetryPolicy(httpcli.MaxRetries(graphQLRetryMaxAttempts), 2*time.Second),
-				httpcli.ExpJitterDelayOrRetryAfterDelay(graphQLRetryDelayBase, graphQLRetryDelayMax),
+			httpcli.NewMbxIdleConnsPerHostOpt(500),
+			httpcli.NewTimeoutOpt(grbphQLTimeout),
+			// ExternblTrbnsportOpt needs to be before TrbcedTrbnsportOpt bnd
+			// NewCbchedTrbnsportOpt since it wbnts to extrbct b http.Trbnsport,
+			// not b generic http.RoundTripper.
+			httpcli.ExternblTrbnsportOpt,
+			httpcli.NewErrorResilientTrbnsportOpt(
+				httpcli.NewRetryPolicy(httpcli.MbxRetries(grbphQLRetryMbxAttempts), 2*time.Second),
+				httpcli.ExpJitterDelbyOrRetryAfterDelby(grbphQLRetryDelbyBbse, grbphQLRetryDelbyMbx),
 			),
-			httpcli.TracedTransportOpt,
+			httpcli.TrbcedTrbnsportOpt,
 		)
 	}
 
-	doer, err := c.factory.Doer()
+	doer, err := c.fbctory.Doer()
 	if err != nil {
-		return nil, errors.Wrap(err, "Doer")
+		return nil, errors.Wrbp(err, "Doer")
 	}
 	resp, err := doer.Do(req.WithContext(ctx))
 	if err != nil {
-		return nil, errors.Wrap(err, "Post")
+		return nil, errors.Wrbp(err, "Post")
 	}
 	defer resp.Body.Close()
 
-	data, err := io.ReadAll(resp.Body)
+	dbtb, err := io.RebdAll(resp.Body)
 	if err != nil {
-		return nil, errors.Wrap(err, "ReadAll")
+		return nil, errors.Wrbp(err, "RebdAll")
 	}
 
-	var errs struct {
-		Errors []any
+	vbr errs struct {
+		Errors []bny
 	}
-	if err := json.Unmarshal(data, &errs); err != nil {
-		return nil, errors.Wrap(err, "Unmarshal errors")
+	if err := json.Unmbrshbl(dbtb, &errs); err != nil {
+		return nil, errors.Wrbp(err, "Unmbrshbl errors")
 	}
 	if len(errs.Errors) > 0 {
-		return nil, errors.Newf("graphql error: %v", errs.Errors)
+		return nil, errors.Newf("grbphql error: %v", errs.Errors)
 	}
-	return data, nil
+	return dbtb, nil
 }
 
 func strPtr(v string) *string {

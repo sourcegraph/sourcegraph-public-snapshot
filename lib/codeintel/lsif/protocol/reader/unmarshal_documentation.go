@@ -1,56 +1,56 @@
-package reader
+pbckbge rebder
 
-import "github.com/sourcegraph/sourcegraph/lib/codeintel/lsif/protocol"
+import "github.com/sourcegrbph/sourcegrbph/lib/codeintel/lsif/protocol"
 
-// This file contains code for the Sourcegraph documentation LSIF extension.
+// This file contbins code for the Sourcegrbph documentbtion LSIF extension.
 
 func init() {
-	// Vertex unmarshalers
-	vertexUnmarshalers[string(protocol.VertexSourcegraphDocumentationResult)] = unmarshalDocumentationResult
-	vertexUnmarshalers[string(protocol.VertexSourcegraphDocumentationString)] = unmarshalDocumentationString
+	// Vertex unmbrshblers
+	vertexUnmbrshblers[string(protocol.VertexSourcegrbphDocumentbtionResult)] = unmbrshblDocumentbtionResult
+	vertexUnmbrshblers[string(protocol.VertexSourcegrbphDocumentbtionString)] = unmbrshblDocumentbtionString
 
-	// Edge unmarshalers
-	edgeUnmarshalers[string(protocol.EdgeSourcegraphDocumentationString)] = unmarshalDocumentationStringEdge
+	// Edge unmbrshblers
+	edgeUnmbrshblers[string(protocol.EdgeSourcegrbphDocumentbtionString)] = unmbrshblDocumentbtionStringEdge
 }
 
-func unmarshalDocumentationResult(line []byte) (any, error) {
-	var payload struct {
-		Result protocol.Documentation `json:"result"`
+func unmbrshblDocumentbtionResult(line []byte) (bny, error) {
+	vbr pbylobd struct {
+		Result protocol.Documentbtion `json:"result"`
 	}
-	if err := unmarshaller.Unmarshal(line, &payload); err != nil {
+	if err := unmbrshbller.Unmbrshbl(line, &pbylobd); err != nil {
 		return nil, err
 	}
-	return payload.Result, nil
+	return pbylobd.Result, nil
 }
 
-func unmarshalDocumentationString(line []byte) (any, error) {
-	var payload struct {
-		Result protocol.MarkupContent `json:"result"`
+func unmbrshblDocumentbtionString(line []byte) (bny, error) {
+	vbr pbylobd struct {
+		Result protocol.MbrkupContent `json:"result"`
 	}
-	if err := unmarshaller.Unmarshal(line, &payload); err != nil {
+	if err := unmbrshbller.Unmbrshbl(line, &pbylobd); err != nil {
 		return nil, err
 	}
-	return payload.Result, nil
+	return pbylobd.Result, nil
 }
 
-type DocumentationStringEdge struct {
+type DocumentbtionStringEdge struct {
 	OutV int
 	InV  int
-	Kind protocol.DocumentationStringKind
+	Kind protocol.DocumentbtionStringKind
 }
 
-func unmarshalDocumentationStringEdge(line []byte) (any, error) {
-	var payload struct {
+func unmbrshblDocumentbtionStringEdge(line []byte) (bny, error) {
+	vbr pbylobd struct {
 		OutV int    `json:"outV"`
 		InV  int    `json:"inV"`
 		Kind string `json:"kind"`
 	}
-	if err := unmarshaller.Unmarshal(line, &payload); err != nil {
-		return DocumentationStringEdge{}, err
+	if err := unmbrshbller.Unmbrshbl(line, &pbylobd); err != nil {
+		return DocumentbtionStringEdge{}, err
 	}
-	return DocumentationStringEdge{
-		OutV: payload.OutV,
-		InV:  payload.InV,
-		Kind: protocol.DocumentationStringKind(payload.Kind),
+	return DocumentbtionStringEdge{
+		OutV: pbylobd.OutV,
+		InV:  pbylobd.InV,
+		Kind: protocol.DocumentbtionStringKind(pbylobd.Kind),
 	}, nil
 }

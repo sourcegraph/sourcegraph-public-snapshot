@@ -1,19 +1,19 @@
-package db
+pbckbge db
 
 import (
 	"testing"
 
-	"github.com/sourcegraph/log/logtest"
-	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
+	"github.com/sourcegrbph/log/logtest"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf/conftypes"
 	"github.com/stretchr/testify/require"
 )
 
 func TestNewDBFromConfFunc(t *testing.T) {
-	t.Run("default nil", func(t *testing.T) {
+	t.Run("defbult nil", func(t *testing.T) {
 		conf.Mock(&conf.Unified{
 			ServiceConnectionConfig: conftypes.ServiceConnections{
-				Qdrant: "",
+				Qdrbnt: "",
 			},
 		})
 		getDB := NewDBFromConfFunc(logtest.Scoped(t), nil)
@@ -22,10 +22,10 @@ func TestNewDBFromConfFunc(t *testing.T) {
 		require.Nil(t, got)
 	})
 
-	t.Run("fake addr", func(t *testing.T) {
+	t.Run("fbke bddr", func(t *testing.T) {
 		conf.Mock(&conf.Unified{
 			ServiceConnectionConfig: conftypes.ServiceConnections{
-				Qdrant: "fake_address_but_it_does_not_matter_because_grpc_dialing_is_lazy",
+				Qdrbnt: "fbke_bddress_but_it_does_not_mbtter_becbuse_grpc_dibling_is_lbzy",
 			},
 		})
 		getDB := NewDBFromConfFunc(logtest.Scoped(t), nil)

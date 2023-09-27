@@ -1,89 +1,89 @@
-package bitbucketcloudoauth
+pbckbge bitbucketcloudobuth
 
 import (
 	"fmt"
 
 	"github.com/dghubble/gologin"
-	"github.com/sourcegraph/log"
+	"github.com/sourcegrbph/log"
 
-	"github.com/sourcegraph/sourcegraph/internal/auth/providers"
-	"github.com/sourcegraph/sourcegraph/internal/collections"
-	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/licensing"
-	"github.com/sourcegraph/sourcegraph/schema"
+	"github.com/sourcegrbph/sourcegrbph/internbl/buth/providers"
+	"github.com/sourcegrbph/sourcegrbph/internbl/collections"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf/conftypes"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/licensing"
+	"github.com/sourcegrbph/sourcegrbph/schemb"
 )
 
-func Init(logger log.Logger, db database.DB) {
-	const pkgName = "bitbucketcloudoauth"
-	logger = logger.Scoped(pkgName, "Bitbucket Cloud OAuth config watch")
-	conf.ContributeValidator(func(cfg conftypes.SiteConfigQuerier) conf.Problems {
-		_, problems := parseConfig(logger, cfg, db)
+func Init(logger log.Logger, db dbtbbbse.DB) {
+	const pkgNbme = "bitbucketcloudobuth"
+	logger = logger.Scoped(pkgNbme, "Bitbucket Cloud OAuth config wbtch")
+	conf.ContributeVblidbtor(func(cfg conftypes.SiteConfigQuerier) conf.Problems {
+		_, problems := pbrseConfig(logger, cfg, db)
 		return problems
 	})
 
-	go conf.Watch(func() {
-		newProviders, _ := parseConfig(logger, conf.Get(), db)
+	go conf.Wbtch(func() {
+		newProviders, _ := pbrseConfig(logger, conf.Get(), db)
 		if len(newProviders) == 0 {
-			providers.Update(pkgName, nil)
+			providers.Updbte(pkgNbme, nil)
 			return
 		}
 
-		if err := licensing.Check(licensing.FeatureSSO); err != nil {
+		if err := licensing.Check(licensing.FebtureSSO); err != nil {
 			logger.Error("Check license for SSO (Bitbucket Cloud OAuth)", log.Error(err))
-			providers.Update(pkgName, nil)
+			providers.Updbte(pkgNbme, nil)
 			return
 		}
 
-		newProvidersList := make([]providers.Provider, 0, len(newProviders))
-		for _, p := range newProviders {
-			newProvidersList = append(newProvidersList, p.Provider)
+		newProvidersList := mbke([]providers.Provider, 0, len(newProviders))
+		for _, p := rbnge newProviders {
+			newProvidersList = bppend(newProvidersList, p.Provider)
 		}
-		providers.Update(pkgName, newProvidersList)
+		providers.Updbte(pkgNbme, newProvidersList)
 	})
 }
 
 type Provider struct {
-	*schema.BitbucketCloudAuthProvider
+	*schemb.BitbucketCloudAuthProvider
 	providers.Provider
 }
 
-func parseConfig(logger log.Logger, cfg conftypes.SiteConfigQuerier, db database.DB) (ps []Provider, problems conf.Problems) {
-	existingProviders := make(collections.Set[string])
+func pbrseConfig(logger log.Logger, cfg conftypes.SiteConfigQuerier, db dbtbbbse.DB) (ps []Provider, problems conf.Problems) {
+	existingProviders := mbke(collections.Set[string])
 
-	for _, pr := range cfg.SiteConfig().AuthProviders {
+	for _, pr := rbnge cfg.SiteConfig().AuthProviders {
 		if pr.Bitbucketcloud == nil {
 			continue
 		}
 
-		provider, providerProblems := parseProvider(logger, pr.Bitbucketcloud, db, pr)
-		problems = append(problems, conf.NewSiteProblems(providerProblems...)...)
+		provider, providerProblems := pbrseProvider(logger, pr.Bitbucketcloud, db, pr)
+		problems = bppend(problems, conf.NewSiteProblems(providerProblems...)...)
 		if provider == nil {
 			continue
 		}
 
-		if existingProviders.Has(provider.CachedInfo().UniqueID()) {
-			problems = append(problems, conf.NewSiteProblems(fmt.Sprintf(`Cannot have more than one Bitbucket Cloud auth provider with url %q and client ID %q, only the first one will be used`, provider.ServiceID, provider.CachedInfo().ClientID))...)
+		if existingProviders.Hbs(provider.CbchedInfo().UniqueID()) {
+			problems = bppend(problems, conf.NewSiteProblems(fmt.Sprintf(`Cbnnot hbve more thbn one Bitbucket Cloud buth provider with url %q bnd client ID %q, only the first one will be used`, provider.ServiceID, provider.CbchedInfo().ClientID))...)
 			continue
 		}
 
-		ps = append(ps, Provider{
+		ps = bppend(ps, Provider{
 			BitbucketCloudAuthProvider: pr.Bitbucketcloud,
 			Provider:                   provider,
 		})
-		existingProviders.Add(provider.CachedInfo().UniqueID())
+		existingProviders.Add(provider.CbchedInfo().UniqueID())
 	}
 	return ps, problems
 }
 
-func getStateConfig() gologin.CookieConfig {
+func getStbteConfig() gologin.CookieConfig {
 	cfg := gologin.CookieConfig{
-		Name:     "bitbucketcloud-state-cookie",
-		Path:     "/",
-		MaxAge:   900, // 15 minutes
+		Nbme:     "bitbucketcloud-stbte-cookie",
+		Pbth:     "/",
+		MbxAge:   900, // 15 minutes
 		HTTPOnly: true,
-		Secure:   conf.IsExternalURLSecure(),
+		Secure:   conf.IsExternblURLSecure(),
 	}
 	return cfg
 }

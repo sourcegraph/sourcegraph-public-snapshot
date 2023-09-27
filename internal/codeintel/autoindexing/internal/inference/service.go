@@ -1,7 +1,7 @@
-package inference
+pbckbge inference
 
 import (
-	"archive/tar"
+	"brchive/tbr"
 	"bytes"
 	"context"
 	"fmt"
@@ -9,44 +9,44 @@ import (
 	"strings"
 	"time"
 
-	baselua "github.com/yuin/gopher-lua"
-	"go.opentelemetry.io/otel/attribute"
+	bbselub "github.com/yuin/gopher-lub"
+	"go.opentelemetry.io/otel/bttribute"
 
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing/internal/inference/lua"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing/internal/inference/luatypes"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing/shared"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
-	"github.com/sourcegraph/sourcegraph/internal/luasandbox"
-	"github.com/sourcegraph/sourcegraph/internal/luasandbox/util"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
-	"github.com/sourcegraph/sourcegraph/lib/codeintel/autoindex/config"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi"
+	"github.com/sourcegrbph/sourcegrbph/internbl/codeintel/butoindexing/internbl/inference/lub"
+	"github.com/sourcegrbph/sourcegrbph/internbl/codeintel/butoindexing/internbl/inference/lubtypes"
+	"github.com/sourcegrbph/sourcegrbph/internbl/codeintel/butoindexing/shbred"
+	"github.com/sourcegrbph/sourcegrbph/internbl/gitserver"
+	"github.com/sourcegrbph/sourcegrbph/internbl/gitserver/gitdombin"
+	"github.com/sourcegrbph/sourcegrbph/internbl/lubsbndbox"
+	"github.com/sourcegrbph/sourcegrbph/internbl/lubsbndbox/util"
+	"github.com/sourcegrbph/sourcegrbph/internbl/observbtion"
+	"github.com/sourcegrbph/sourcegrbph/internbl/rbtelimit"
+	"github.com/sourcegrbph/sourcegrbph/lib/codeintel/butoindex/config"
 )
 
 type Service struct {
-	sandboxService                  SandboxService
+	sbndboxService                  SbndboxService
 	gitService                      GitService
-	limiter                         *ratelimit.InstrumentedLimiter
-	maximumFilesWithContentCount    int
-	maximumFileWithContentSizeBytes int
-	operations                      *operations
+	limiter                         *rbtelimit.InstrumentedLimiter
+	mbximumFilesWithContentCount    int
+	mbximumFileWithContentSizeBytes int
+	operbtions                      *operbtions
 }
 
-type invocationContext struct {
-	sandbox    *luasandbox.Sandbox
+type invocbtionContext struct {
+	sbndbox    *lubsbndbox.Sbndbox
 	printSink  io.Writer
 	gitService GitService
-	repo       api.RepoName
+	repo       bpi.RepoNbme
 	commit     string
-	invocationFunctionTable
+	invocbtionFunctionTbble
 }
 
-type invocationFunctionTable struct {
-	linearize    func(recognizer *luatypes.Recognizer) []*luatypes.Recognizer
-	callback     func(recognizer *luatypes.Recognizer) *baselua.LFunction
-	scanLuaValue func(value baselua.LValue) ([]config.IndexJob, error)
+type invocbtionFunctionTbble struct {
+	linebrize    func(recognizer *lubtypes.Recognizer) []*lubtypes.Recognizer
+	cbllbbck     func(recognizer *lubtypes.Recognizer) *bbselub.LFunction
+	scbnLubVblue func(vblue bbselub.LVblue) ([]config.IndexJob, error)
 }
 
 type LimitError struct {
@@ -58,197 +58,197 @@ func (e LimitError) Error() string {
 }
 
 func newService(
-	observationCtx *observation.Context,
-	sandboxService SandboxService,
+	observbtionCtx *observbtion.Context,
+	sbndboxService SbndboxService,
 	gitService GitService,
-	limiter *ratelimit.InstrumentedLimiter,
-	maximumFilesWithContentCount int,
-	maximumFileWithContentSizeBytes int,
+	limiter *rbtelimit.InstrumentedLimiter,
+	mbximumFilesWithContentCount int,
+	mbximumFileWithContentSizeBytes int,
 ) *Service {
 	return &Service{
-		sandboxService:                  sandboxService,
+		sbndboxService:                  sbndboxService,
 		gitService:                      gitService,
 		limiter:                         limiter,
-		maximumFilesWithContentCount:    maximumFilesWithContentCount,
-		maximumFileWithContentSizeBytes: maximumFileWithContentSizeBytes,
-		operations:                      newOperations(observationCtx),
+		mbximumFilesWithContentCount:    mbximumFilesWithContentCount,
+		mbximumFileWithContentSizeBytes: mbximumFileWithContentSizeBytes,
+		operbtions:                      newOperbtions(observbtionCtx),
 	}
 }
 
-// InferIndexJobs invokes the given script in a fresh Lua sandbox. The return value of this script
-// is assumed to be a table of recognizer instances. Keys conflicting with the default recognizers
-// will overwrite them (to disable or change default behavior). Each recognizer's generate function
-// is invoked and the resulting index jobs are combined into a flattened list.
-func (s *Service) InferIndexJobs(ctx context.Context, repo api.RepoName, commit, overrideScript string) (_ *shared.InferenceResult, err error) {
-	ctx, _, endObservation := s.operations.inferIndexJobs.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
+// InferIndexJobs invokes the given script in b fresh Lub sbndbox. The return vblue of this script
+// is bssumed to be b tbble of recognizer instbnces. Keys conflicting with the defbult recognizers
+// will overwrite them (to disbble or chbnge defbult behbvior). Ebch recognizer's generbte function
+// is invoked bnd the resulting index jobs bre combined into b flbttened list.
+func (s *Service) InferIndexJobs(ctx context.Context, repo bpi.RepoNbme, commit, overrideScript string) (_ *shbred.InferenceResult, err error) {
+	ctx, _, endObservbtion := s.operbtions.inferIndexJobs.With(ctx, &err, observbtion.Args{Attrs: []bttribute.KeyVblue{
 		repo.Attr(),
-		attribute.String("commit", commit),
+		bttribute.String("commit", commit),
 	}})
-	defer endObservation(1, observation.Args{})
+	defer endObservbtion(1, observbtion.Args{})
 
-	functionTable := invocationFunctionTable{
-		linearize: luatypes.LinearizeGenerator,
-		callback:  func(recognizer *luatypes.Recognizer) *baselua.LFunction { return recognizer.Generator() },
-		scanLuaValue: func(value baselua.LValue) ([]config.IndexJob, error) {
-			return util.MapSliceOrSingleton(value, luatypes.IndexJobFromTable)
+	functionTbble := invocbtionFunctionTbble{
+		linebrize: lubtypes.LinebrizeGenerbtor,
+		cbllbbck:  func(recognizer *lubtypes.Recognizer) *bbselub.LFunction { return recognizer.Generbtor() },
+		scbnLubVblue: func(vblue bbselub.LVblue) ([]config.IndexJob, error) {
+			return util.MbpSliceOrSingleton(vblue, lubtypes.IndexJobFromTbble)
 		},
 	}
 
-	jobs, logs, err := s.inferIndexJobs(ctx, repo, commit, overrideScript, functionTable)
+	jobs, logs, err := s.inferIndexJobs(ctx, repo, commit, overrideScript, functionTbble)
 	if err != nil {
 		return nil, err
 	}
 
-	return &shared.InferenceResult{
+	return &shbred.InferenceResult{
 		IndexJobs:       jobs,
 		InferenceOutput: logs,
 	}, nil
 }
 
-// inferIndexJobs invokes the given script in a fresh Lua sandbox. The return value of this script
-// is assumed to be a table of recognizer instances. Keys conflicting with the default recognizers will
-// overwrite them (to disable or change default behavior). Each recognizer's callback function is invoked
-// and the resulting values are combined into a flattened list. See InferIndexJobs and InferIndexJobHints
-// for concrete implementations of the given function table.
+// inferIndexJobs invokes the given script in b fresh Lub sbndbox. The return vblue of this script
+// is bssumed to be b tbble of recognizer instbnces. Keys conflicting with the defbult recognizers will
+// overwrite them (to disbble or chbnge defbult behbvior). Ebch recognizer's cbllbbck function is invoked
+// bnd the resulting vblues bre combined into b flbttened list. See InferIndexJobs bnd InferIndexJobHints
+// for concrete implementbtions of the given function tbble.
 func (s *Service) inferIndexJobs(
 	ctx context.Context,
-	repo api.RepoName,
+	repo bpi.RepoNbme,
 	commit string,
 	overrideScript string,
-	invocationContextMethods invocationFunctionTable,
+	invocbtionContextMethods invocbtionFunctionTbble,
 ) (_ []config.IndexJob, logs string, _ error) {
-	sandbox, err := s.createSandbox(ctx)
+	sbndbox, err := s.crebteSbndbox(ctx)
 	if err != nil {
 		return nil, "", err
 	}
-	defer sandbox.Close()
+	defer sbndbox.Close()
 
-	var buf bytes.Buffer
+	vbr buf bytes.Buffer
 	defer func() { logs = buf.String() }()
 
-	invocationContext := invocationContext{
-		sandbox:                 sandbox,
+	invocbtionContext := invocbtionContext{
+		sbndbox:                 sbndbox,
 		printSink:               &buf,
 		gitService:              s.gitService,
 		repo:                    repo,
 		commit:                  commit,
-		invocationFunctionTable: invocationContextMethods,
+		invocbtionFunctionTbble: invocbtionContextMethods,
 	}
 
-	recognizers, err := s.setupRecognizers(ctx, invocationContext, overrideScript)
+	recognizers, err := s.setupRecognizers(ctx, invocbtionContext, overrideScript)
 	if err != nil || len(recognizers) == 0 {
 		return nil, logs, err
 	}
 
-	jobs, err := s.invokeRecognizers(ctx, invocationContext, recognizers)
+	jobs, err := s.invokeRecognizers(ctx, invocbtionContext, recognizers)
 	return jobs, logs, err
 }
 
-// createSandbox creates a Lua sandbox wih the modules loaded for use with auto indexing inference.
-func (s *Service) createSandbox(ctx context.Context) (_ *luasandbox.Sandbox, err error) {
-	ctx, _, endObservation := s.operations.createSandbox.With(ctx, &err, observation.Args{})
-	defer endObservation(1, observation.Args{})
+// crebteSbndbox crebtes b Lub sbndbox wih the modules lobded for use with buto indexing inference.
+func (s *Service) crebteSbndbox(ctx context.Context) (_ *lubsbndbox.Sbndbox, err error) {
+	ctx, _, endObservbtion := s.operbtions.crebteSbndbox.With(ctx, &err, observbtion.Args{})
+	defer endObservbtion(1, observbtion.Args{})
 
-	defaultModules, err := defaultModules.Init()
+	defbultModules, err := defbultModules.Init()
 	if err != nil {
 		return nil, err
 	}
-	luaModules, err := luasandbox.LuaModulesFromFS(lua.Scripts, ".", "sg.autoindex")
+	lubModules, err := lubsbndbox.LubModulesFromFS(lub.Scripts, ".", "sg.butoindex")
 	if err != nil {
 		return nil, err
 	}
-	opts := luasandbox.CreateOptions{
-		GoModules:  defaultModules,
-		LuaModules: luaModules,
+	opts := lubsbndbox.CrebteOptions{
+		GoModules:  defbultModules,
+		LubModules: lubModules,
 	}
-	sandbox, err := s.sandboxService.CreateSandbox(ctx, opts)
+	sbndbox, err := s.sbndboxService.CrebteSbndbox(ctx, opts)
 	if err != nil {
 		return nil, err
 	}
 
-	return sandbox, nil
+	return sbndbox, nil
 }
 
-// setupRecognizers runs the given default and override scripts in the given sandbox and converts the
-// script return values to a list of recognizer instances.
-func (s *Service) setupRecognizers(ctx context.Context, invocationContext invocationContext, overrideScript string) (_ []*luatypes.Recognizer, err error) {
-	ctx, _, endObservation := s.operations.setupRecognizers.With(ctx, &err, observation.Args{})
-	defer endObservation(1, observation.Args{})
+// setupRecognizers runs the given defbult bnd override scripts in the given sbndbox bnd converts the
+// script return vblues to b list of recognizer instbnces.
+func (s *Service) setupRecognizers(ctx context.Context, invocbtionContext invocbtionContext, overrideScript string) (_ []*lubtypes.Recognizer, err error) {
+	ctx, _, endObservbtion := s.operbtions.setupRecognizers.With(ctx, &err, observbtion.Args{})
+	defer endObservbtion(1, observbtion.Args{})
 
-	opts := luasandbox.RunOptions{
-		PrintSink: invocationContext.printSink,
+	opts := lubsbndbox.RunOptions{
+		PrintSink: invocbtionContext.printSink,
 	}
-	rawRecognizers, err := invocationContext.sandbox.RunScriptNamed(ctx, opts, lua.Scripts, "recognizers.lua")
+	rbwRecognizers, err := invocbtionContext.sbndbox.RunScriptNbmed(ctx, opts, lub.Scripts, "recognizers.lub")
 	if err != nil {
 		return nil, err
 	}
 
-	recognizerMap, err := luatypes.NamedRecognizersFromUserDataMap(rawRecognizers, false)
+	recognizerMbp, err := lubtypes.NbmedRecognizersFromUserDbtbMbp(rbwRecognizers, fblse)
 	if err != nil {
 		return nil, err
 	}
 
 	if overrideScript != "" {
-		rawRecognizers, err := invocationContext.sandbox.RunScript(ctx, opts, overrideScript)
+		rbwRecognizers, err := invocbtionContext.sbndbox.RunScript(ctx, opts, overrideScript)
 		if err != nil {
 			return nil, err
 		}
 
-		// Allow false values here, which will be indicated by a nil recognizer. In the loop below we will
-		// add (or replace) any recognizer with the same name. To _unset_ a recognizer, we allow a user to
-		// add nil as the table value.
+		// Allow fblse vblues here, which will be indicbted by b nil recognizer. In the loop below we will
+		// bdd (or replbce) bny recognizer with the sbme nbme. To _unset_ b recognizer, we bllow b user to
+		// bdd nil bs the tbble vblue.
 
-		overrideRecognizerMap, err := luatypes.NamedRecognizersFromUserDataMap(rawRecognizers, true)
+		overrideRecognizerMbp, err := lubtypes.NbmedRecognizersFromUserDbtbMbp(rbwRecognizers, true)
 		if err != nil {
 			return nil, err
 		}
 
-		for name, recognizer := range overrideRecognizerMap {
+		for nbme, recognizer := rbnge overrideRecognizerMbp {
 			if recognizer == nil {
-				delete(recognizerMap, name)
+				delete(recognizerMbp, nbme)
 			} else {
-				recognizerMap[name] = recognizer
+				recognizerMbp[nbme] = recognizer
 			}
 		}
 	}
 
-	recognizers := make([]*luatypes.Recognizer, 0, len(recognizerMap))
-	for _, recognizer := range recognizerMap {
-		recognizers = append(recognizers, recognizer)
+	recognizers := mbke([]*lubtypes.Recognizer, 0, len(recognizerMbp))
+	for _, recognizer := rbnge recognizerMbp {
+		recognizers = bppend(recognizers, recognizer)
 	}
 
 	return recognizers, nil
 }
 
-// invokeRecognizers invokes each of the given recognizer's callback function and returns the resulting
-// index job or hint values. This function is called iteratively with recognizers registered by a previous
-// invocation of a recognizer. Calls to gitserver are made in as few batches across all recognizer invocations
-// as possible.
+// invokeRecognizers invokes ebch of the given recognizer's cbllbbck function bnd returns the resulting
+// index job or hint vblues. This function is cblled iterbtively with recognizers registered by b previous
+// invocbtion of b recognizer. Cblls to gitserver bre mbde in bs few bbtches bcross bll recognizer invocbtions
+// bs possible.
 func (s *Service) invokeRecognizers(
 	ctx context.Context,
-	invocationContext invocationContext,
-	recognizers []*luatypes.Recognizer,
+	invocbtionContext invocbtionContext,
+	recognizers []*lubtypes.Recognizer,
 ) (_ []config.IndexJob, err error) {
-	ctx, _, endObservation := s.operations.invokeRecognizers.With(ctx, &err, observation.Args{})
-	defer endObservation(1, observation.Args{})
+	ctx, _, endObservbtion := s.operbtions.invokeRecognizers.With(ctx, &err, observbtion.Args{})
+	defer endObservbtion(1, observbtion.Args{})
 
-	patternsForPaths := luatypes.FlattenRecognizerPatterns(recognizers, false)
-	patternsForContent := luatypes.FlattenRecognizerPatterns(recognizers, true)
+	pbtternsForPbths := lubtypes.FlbttenRecognizerPbtterns(recognizers, fblse)
+	pbtternsForContent := lubtypes.FlbttenRecognizerPbtterns(recognizers, true)
 
-	// Find the list of paths that match either of the partitioned pattern sets. We will feed the
-	// concrete paths from this call into the archive call that follows, at least for the concrete
-	// paths that match the path-for-content patterns.
-	paths, err := s.resolvePaths(ctx, invocationContext, append(patternsForPaths, patternsForContent...))
+	// Find the list of pbths thbt mbtch either of the pbrtitioned pbttern sets. We will feed the
+	// concrete pbths from this cbll into the brchive cbll thbt follows, bt lebst for the concrete
+	// pbths thbt mbtch the pbth-for-content pbtterns.
+	pbths, err := s.resolvePbths(ctx, invocbtionContext, bppend(pbtternsForPbths, pbtternsForContent...))
 	if err != nil {
 		return nil, err
 	}
 
-	contentsByPath, err := s.resolveFileContents(ctx, invocationContext, paths, patternsForContent)
+	contentsByPbth, err := s.resolveFileContents(ctx, invocbtionContext, pbths, pbtternsForContent)
 	if err != nil {
 		return nil, err
 	}
 
-	jobs, err := s.invokeRecognizerChains(ctx, invocationContext, recognizers, paths, contentsByPath)
+	jobs, err := s.invokeRecognizerChbins(ctx, invocbtionContext, recognizers, pbths, contentsByPbth)
 	if err != nil {
 		return nil, err
 	}
@@ -256,201 +256,201 @@ func (s *Service) invokeRecognizers(
 	return jobs, err
 }
 
-// resolvePaths requests all paths matching the given combined regular expression from gitserver. This
-// list will likely be a superset of any one recognizer's expected set of paths, so we'll need to filter
-// the data before each individual recognizer invocation so that we only pass in what matches the set of
-// patterns specific to that recognizer instance.
-func (s *Service) resolvePaths(
+// resolvePbths requests bll pbths mbtching the given combined regulbr expression from gitserver. This
+// list will likely be b superset of bny one recognizer's expected set of pbths, so we'll need to filter
+// the dbtb before ebch individubl recognizer invocbtion so thbt we only pbss in whbt mbtches the set of
+// pbtterns specific to thbt recognizer instbnce.
+func (s *Service) resolvePbths(
 	ctx context.Context,
-	invocationContext invocationContext,
-	patternsForPaths []*luatypes.PathPattern,
+	invocbtionContext invocbtionContext,
+	pbtternsForPbths []*lubtypes.PbthPbttern,
 ) (_ []string, err error) {
-	ctx, traceLogger, endObservation := s.operations.resolvePaths.With(ctx, &err, observation.Args{})
-	defer endObservation(1, observation.Args{})
+	ctx, trbceLogger, endObservbtion := s.operbtions.resolvePbths.With(ctx, &err, observbtion.Args{})
+	defer endObservbtion(1, observbtion.Args{})
 
-	start := time.Now()
-	rateLimitErr := s.limiter.Wait(ctx)
-	traceLogger.AddEvent("rate_limit", attribute.Int("wait_duration_ms", int(time.Since(start).Milliseconds())))
-	if rateLimitErr != nil {
+	stbrt := time.Now()
+	rbteLimitErr := s.limiter.Wbit(ctx)
+	trbceLogger.AddEvent("rbte_limit", bttribute.Int("wbit_durbtion_ms", int(time.Since(stbrt).Milliseconds())))
+	if rbteLimitErr != nil {
 		return nil, err
 	}
 
-	globs, pathspecs, err := flattenPatterns(patternsForPaths, false)
+	globs, pbthspecs, err := flbttenPbtterns(pbtternsForPbths, fblse)
 	if err != nil {
 		return nil, err
 	}
 
-	// Ideally we can pass the globs we explicitly filter by below
-	paths, err := invocationContext.gitService.LsFiles(ctx, invocationContext.repo, invocationContext.commit, pathspecs...)
+	// Ideblly we cbn pbss the globs we explicitly filter by below
+	pbths, err := invocbtionContext.gitService.LsFiles(ctx, invocbtionContext.repo, invocbtionContext.commit, pbthspecs...)
 	if err != nil {
 		return nil, err
 	}
 
-	return filterPaths(paths, globs, nil), nil
+	return filterPbths(pbths, globs, nil), nil
 }
 
-// resolveFileContents requests the content of the paths that match the given combined regular expression.
-// The contents are fetched via a single git archive call.
+// resolveFileContents requests the content of the pbths thbt mbtch the given combined regulbr expression.
+// The contents bre fetched vib b single git brchive cbll.
 func (s *Service) resolveFileContents(
 	ctx context.Context,
-	invocationContext invocationContext,
-	paths []string,
-	patternsForContent []*luatypes.PathPattern,
-) (_ map[string]string, err error) {
-	ctx, traceLogger, endObservation := s.operations.resolveFileContents.With(ctx, &err, observation.Args{})
-	defer endObservation(1, observation.Args{})
+	invocbtionContext invocbtionContext,
+	pbths []string,
+	pbtternsForContent []*lubtypes.PbthPbttern,
+) (_ mbp[string]string, err error) {
+	ctx, trbceLogger, endObservbtion := s.operbtions.resolveFileContents.With(ctx, &err, observbtion.Args{})
+	defer endObservbtion(1, observbtion.Args{})
 
-	relevantPaths, err := filterPathsByPatterns(paths, patternsForContent)
+	relevbntPbths, err := filterPbthsByPbtterns(pbths, pbtternsForContent)
 	if err != nil {
 		return nil, err
 	}
-	if len(relevantPaths) == 0 {
+	if len(relevbntPbths) == 0 {
 		return nil, nil
 	}
 
-	start := time.Now()
-	rateLimitErr := s.limiter.Wait(ctx)
-	traceLogger.AddEvent("rate_limit", attribute.Int("wait_duration_ms", int(time.Since(start).Milliseconds())))
-	if rateLimitErr != nil {
+	stbrt := time.Now()
+	rbteLimitErr := s.limiter.Wbit(ctx)
+	trbceLogger.AddEvent("rbte_limit", bttribute.Int("wbit_durbtion_ms", int(time.Since(stbrt).Milliseconds())))
+	if rbteLimitErr != nil {
 		return nil, err
 	}
 
-	pathspecs := make([]gitdomain.Pathspec, 0, len(relevantPaths))
-	for _, p := range relevantPaths {
-		pathspecs = append(pathspecs, gitdomain.PathspecLiteral(p))
+	pbthspecs := mbke([]gitdombin.Pbthspec, 0, len(relevbntPbths))
+	for _, p := rbnge relevbntPbths {
+		pbthspecs = bppend(pbthspecs, gitdombin.PbthspecLiterbl(p))
 	}
 	opts := gitserver.ArchiveOptions{
-		Treeish:   invocationContext.commit,
-		Format:    gitserver.ArchiveFormatTar,
-		Pathspecs: pathspecs,
+		Treeish:   invocbtionContext.commit,
+		Formbt:    gitserver.ArchiveFormbtTbr,
+		Pbthspecs: pbthspecs,
 	}
-	rc, err := invocationContext.gitService.Archive(ctx, invocationContext.repo, opts)
+	rc, err := invocbtionContext.gitService.Archive(ctx, invocbtionContext.repo, opts)
 	if err != nil {
 		return nil, err
 	}
 	defer rc.Close()
 
-	contentsByPath := map[string]string{}
+	contentsByPbth := mbp[string]string{}
 
-	tr := tar.NewReader(rc)
+	tr := tbr.NewRebder(rc)
 	for {
-		header, err := tr.Next()
+		hebder, err := tr.Next()
 		if err != nil {
 			if err != io.EOF {
 				return nil, err
 			}
 
-			break
+			brebk
 		}
 
-		if len(contentsByPath) >= s.maximumFilesWithContentCount {
+		if len(contentsByPbth) >= s.mbximumFilesWithContentCount {
 			return nil, LimitError{
 				description: fmt.Sprintf(
-					"inference limit: requested content for more than %d (%d) files",
-					s.maximumFilesWithContentCount,
-					len(contentsByPath),
+					"inference limit: requested content for more thbn %d (%d) files",
+					s.mbximumFilesWithContentCount,
+					len(contentsByPbth),
 				),
 			}
 		}
-		if int(header.Size) > s.maximumFileWithContentSizeBytes {
+		if int(hebder.Size) > s.mbximumFileWithContentSizeBytes {
 			return nil, LimitError{
 				description: fmt.Sprintf(
-					"inference limit: requested content for a file larger than %d (%d) bytes",
-					s.maximumFileWithContentSizeBytes,
-					int(header.Size),
+					"inference limit: requested content for b file lbrger thbn %d (%d) bytes",
+					s.mbximumFileWithContentSizeBytes,
+					int(hebder.Size),
 				),
 			}
 		}
 
-		var buf bytes.Buffer
-		if _, err := io.CopyN(&buf, tr, header.Size); err != nil {
+		vbr buf bytes.Buffer
+		if _, err := io.CopyN(&buf, tr, hebder.Size); err != nil {
 			return nil, err
 		}
 
-		// Since we quoted all literal path specs on entry, we need to remove it from
-		// the returned filepaths.
-		contentsByPath[strings.TrimPrefix(header.Name, ":(literal)")] = buf.String()
+		// Since we quoted bll literbl pbth specs on entry, we need to remove it from
+		// the returned filepbths.
+		contentsByPbth[strings.TrimPrefix(hebder.Nbme, ":(literbl)")] = buf.String()
 	}
 
-	return contentsByPath, nil
+	return contentsByPbth, nil
 }
 
-type registrationAPI struct {
-	recognizers []*luatypes.Recognizer
+type registrbtionAPI struct {
+	recognizers []*lubtypes.Recognizer
 }
 
-// Register adds another recognizer to be run at a later point.
+// Register bdds bnother recognizer to be run bt b lbter point.
 //
-// WARNING: This function is exposed directly to Lua through the 'api' parameter
-// of the generate(..) function, so changing the signature may break existing
-// auto-indexing scripts.
-func (api *registrationAPI) Register(recognizer *luatypes.Recognizer) {
-	api.recognizers = append(api.recognizers, recognizer)
+// WARNING: This function is exposed directly to Lub through the 'bpi' pbrbmeter
+// of the generbte(..) function, so chbnging the signbture mby brebk existing
+// buto-indexing scripts.
+func (bpi *registrbtionAPI) Register(recognizer *lubtypes.Recognizer) {
+	bpi.recognizers = bppend(bpi.recognizers, recognizer)
 }
 
-// invokeRecognizerChains invokes each of the given recognizer's callback function and combines
+// invokeRecognizerChbins invokes ebch of the given recognizer's cbllbbck function bnd combines
 // their complete output.
-func (s *Service) invokeRecognizerChains(
+func (s *Service) invokeRecognizerChbins(
 	ctx context.Context,
-	invocationContext invocationContext,
-	recognizers []*luatypes.Recognizer,
-	paths []string,
-	contentsByPath map[string]string,
+	invocbtionContext invocbtionContext,
+	recognizers []*lubtypes.Recognizer,
+	pbths []string,
+	contentsByPbth mbp[string]string,
 ) (jobs []config.IndexJob, _ error) {
-	registrationAPI := &registrationAPI{}
+	registrbtionAPI := &registrbtionAPI{}
 
-	// Invoke the recognizers and gather the resulting jobs or hints
-	for _, recognizer := range recognizers {
-		additionalJobs, err := s.invokeRecognizerChainUntilResults(
+	// Invoke the recognizers bnd gbther the resulting jobs or hints
+	for _, recognizer := rbnge recognizers {
+		bdditionblJobs, err := s.invokeRecognizerChbinUntilResults(
 			ctx,
-			invocationContext,
+			invocbtionContext,
 			recognizer,
-			registrationAPI,
-			paths,
-			contentsByPath,
+			registrbtionAPI,
+			pbths,
+			contentsByPbth,
 		)
 		if err != nil {
 			return nil, err
 		}
 
-		jobs = append(jobs, additionalJobs...)
+		jobs = bppend(jobs, bdditionblJobs...)
 	}
 
-	if len(registrationAPI.recognizers) != 0 {
-		// Recursively call any recognizers that were registered from the previous invocation
-		// of recognizers. This allows users to have control over conditional execution so that
-		// gitserver data requests re minimal when requested with the expected query patterns.
+	if len(registrbtionAPI.recognizers) != 0 {
+		// Recursively cbll bny recognizers thbt were registered from the previous invocbtion
+		// of recognizers. This bllows users to hbve control over conditionbl execution so thbt
+		// gitserver dbtb requests re minimbl when requested with the expected query pbtterns.
 
-		additionalJobs, err := s.invokeRecognizers(ctx, invocationContext, registrationAPI.recognizers)
+		bdditionblJobs, err := s.invokeRecognizers(ctx, invocbtionContext, registrbtionAPI.recognizers)
 		if err != nil {
 			return nil, err
 		}
-		jobs = append(jobs, additionalJobs...)
+		jobs = bppend(jobs, bdditionblJobs...)
 	}
 
 	return jobs, nil
 }
 
-// invokeRecognizerChainUntilResults invokes the callback function from each recognizer reachable
-// from the given root recognizer. Once a non-nil error or non-empty set of results are returned
-// from a recognizer, the chain invocation halts and the recognizer's index job or hint values
-// are returned.
-func (s *Service) invokeRecognizerChainUntilResults(
+// invokeRecognizerChbinUntilResults invokes the cbllbbck function from ebch recognizer rebchbble
+// from the given root recognizer. Once b non-nil error or non-empty set of results bre returned
+// from b recognizer, the chbin invocbtion hblts bnd the recognizer's index job or hint vblues
+// bre returned.
+func (s *Service) invokeRecognizerChbinUntilResults(
 	ctx context.Context,
-	invocationContext invocationContext,
-	recognizer *luatypes.Recognizer,
-	registrationAPI *registrationAPI,
-	paths []string,
-	contentsByPath map[string]string,
+	invocbtionContext invocbtionContext,
+	recognizer *lubtypes.Recognizer,
+	registrbtionAPI *registrbtionAPI,
+	pbths []string,
+	contentsByPbth mbp[string]string,
 ) ([]config.IndexJob, error) {
-	for _, recognizer := range invocationContext.linearize(recognizer) {
-		if jobs, err := s.invokeLinearizedRecognizer(
+	for _, recognizer := rbnge invocbtionContext.linebrize(recognizer) {
+		if jobs, err := s.invokeLinebrizedRecognizer(
 			ctx,
-			invocationContext,
+			invocbtionContext,
 			recognizer,
-			registrationAPI,
-			paths,
-			contentsByPath,
+			registrbtionAPI,
+			pbths,
+			contentsByPbth,
 		); err != nil || len(jobs) > 0 {
 			return jobs, err
 		}
@@ -459,36 +459,36 @@ func (s *Service) invokeRecognizerChainUntilResults(
 	return nil, nil
 }
 
-// invokeLinearizedRecognizer invokes a single recognizer callback.
-func (s *Service) invokeLinearizedRecognizer(
+// invokeLinebrizedRecognizer invokes b single recognizer cbllbbck.
+func (s *Service) invokeLinebrizedRecognizer(
 	ctx context.Context,
-	invocationContext invocationContext,
-	recognizer *luatypes.Recognizer,
-	registrationAPI *registrationAPI,
-	paths []string,
-	contentsByPath map[string]string,
+	invocbtionContext invocbtionContext,
+	recognizer *lubtypes.Recognizer,
+	registrbtionAPI *registrbtionAPI,
+	pbths []string,
+	contentsByPbth mbp[string]string,
 ) (_ []config.IndexJob, err error) {
-	ctx, _, endObservation := s.operations.invokeLinearizedRecognizer.With(ctx, &err, observation.Args{})
-	defer endObservation(1, observation.Args{})
+	ctx, _, endObservbtion := s.operbtions.invokeLinebrizedRecognizer.With(ctx, &err, observbtion.Args{})
+	defer endObservbtion(1, observbtion.Args{})
 
-	callPaths, callContentsByPath, err := s.filterPathsForRecognizer(recognizer, paths, contentsByPath)
+	cbllPbths, cbllContentsByPbth, err := s.filterPbthsForRecognizer(recognizer, pbths, contentsByPbth)
 	if err != nil {
 		return nil, err
 	}
-	if len(callPaths) == 0 && len(callContentsByPath) == 0 {
+	if len(cbllPbths) == 0 && len(cbllContentsByPbth) == 0 {
 		return nil, nil
 	}
 
-	opts := luasandbox.RunOptions{
-		PrintSink: invocationContext.printSink,
+	opts := lubsbndbox.RunOptions{
+		PrintSink: invocbtionContext.printSink,
 	}
-	args := []any{registrationAPI, callPaths, callContentsByPath}
-	value, err := invocationContext.sandbox.Call(ctx, opts, invocationContext.callback(recognizer), args...)
+	brgs := []bny{registrbtionAPI, cbllPbths, cbllContentsByPbth}
+	vblue, err := invocbtionContext.sbndbox.Cbll(ctx, opts, invocbtionContext.cbllbbck(recognizer), brgs...)
 	if err != nil {
 		return nil, err
 	}
 
-	jobs, err := invocationContext.scanLuaValue(value)
+	jobs, err := invocbtionContext.scbnLubVblue(vblue)
 	if err != nil {
 		return nil, err
 	}
@@ -496,30 +496,30 @@ func (s *Service) invokeLinearizedRecognizer(
 	return jobs, nil
 }
 
-// filterPathsForRecognizer creates a copy of the the given path slice and file content map
-// that only contain elements matching the patterns attached to the given recognizer.
-func (s *Service) filterPathsForRecognizer(
-	recognizer *luatypes.Recognizer,
-	paths []string,
-	contentsByPath map[string]string,
-) ([]string, map[string]string, error) {
-	// Filter out paths which are not interesting to this recognizer
-	filteredPaths, err := filterPathsByPatterns(paths, recognizer.Patterns(false))
+// filterPbthsForRecognizer crebtes b copy of the the given pbth slice bnd file content mbp
+// thbt only contbin elements mbtching the pbtterns bttbched to the given recognizer.
+func (s *Service) filterPbthsForRecognizer(
+	recognizer *lubtypes.Recognizer,
+	pbths []string,
+	contentsByPbth mbp[string]string,
+) ([]string, mbp[string]string, error) {
+	// Filter out pbths which bre not interesting to this recognizer
+	filteredPbths, err := filterPbthsByPbtterns(pbths, recognizer.Pbtterns(fblse))
 	if err != nil {
 		return nil, nil, err
 	}
 
-	// Filter out paths which are not interesting to this recognizer
-	filteredPathsWithContent, err := filterPathsByPatterns(paths, recognizer.Patterns(true))
+	// Filter out pbths which bre not interesting to this recognizer
+	filteredPbthsWithContent, err := filterPbthsByPbtterns(pbths, recognizer.Pbtterns(true))
 	if err != nil {
 		return nil, nil, err
 	}
 
-	// Copy over content for remaining paths in map
-	filteredContentsByPath := make(map[string]string, len(filteredPathsWithContent))
-	for _, key := range filteredPathsWithContent {
-		filteredContentsByPath[key] = contentsByPath[key]
+	// Copy over content for rembining pbths in mbp
+	filteredContentsByPbth := mbke(mbp[string]string, len(filteredPbthsWithContent))
+	for _, key := rbnge filteredPbthsWithContent {
+		filteredContentsByPbth[key] = contentsByPbth[key]
 	}
 
-	return filteredPaths, filteredContentsByPath, nil
+	return filteredPbths, filteredContentsByPbth, nil
 }

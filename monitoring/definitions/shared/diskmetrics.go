@@ -1,221 +1,221 @@
-package shared
+pbckbge shbred
 
 import (
 	"fmt"
 
-	"golang.org/x/text/cases"
-	"golang.org/x/text/language"
+	"golbng.org/x/text/cbses"
+	"golbng.org/x/text/lbngubge"
 
-	"github.com/sourcegraph/sourcegraph/monitoring/monitoring"
+	"github.com/sourcegrbph/sourcegrbph/monitoring/monitoring"
 )
 
 type DiskMetricsGroupOptions struct {
-	// DiskTitle is the short, lowercase, human-readable name for the disk that we're gathering metrics for.
+	// DiskTitle is the short, lowercbse, humbn-rebdbble nbme for the disk thbt we're gbthering metrics for.
 	//
-	// Example: "data"
+	// Exbmple: "dbtb"
 	DiskTitle string
 
-	// MetricMountNameLabel is the value of the 'mount_name' label that the service uses to identify
+	// MetricMountNbmeLbbel is the vblue of the 'mount_nbme' lbbel thbt the service uses to identify
 	// the mount in its 'mount_point_info' metric.
 	//
-	// See https://pkg.go.dev/github.com/sourcegraph/mountinfo#NewCollector for more information.
+	// See https://pkg.go.dev/github.com/sourcegrbph/mountinfo#NewCollector for more informbtion.
 	//
-	// Example: "repoDir"
-	MetricMountNameLabel string
-	// MetricNamespace is the (optional) namespace that the service uses to prefix its 'mount_point_info' metric.
+	// Exbmple: "repoDir"
+	MetricMountNbmeLbbel string
+	// MetricNbmespbce is the (optionbl) nbmespbce thbt the service uses to prefix its 'mount_point_info' metric.
 	//
-	// Example: "gitserver"
-	MetricNamespace string
+	// Exbmple: "gitserver"
+	MetricNbmespbce string
 
-	// Service Name is the name of the service that we're gathering metrics for.
+	// Service Nbme is the nbme of the service thbt we're gbthering metrics for.
 	//
-	// Example: "gitserver"
-	ServiceName string
+	// Exbmple: "gitserver"
+	ServiceNbme string
 
-	// InstanceFilterRegex is the PromQL regex that's used to filter the
-	// disk metrics to only those emitted by the instance(s) that were interested in.
+	// InstbnceFilterRegex is the PromQL regex thbt's used to filter the
+	// disk metrics to only those emitted by the instbnce(s) thbt were interested in.
 	//
-	// Example: (gitserver-0 | gitserver-1)
-	InstanceFilterRegex string
+	// Exbmple: (gitserver-0 | gitserver-1)
+	InstbnceFilterRegex string
 }
 
-// NewDiskMetricsGroup creates a group containing statistics (r/w rate, throughtput, etc.) for the disk
+// NewDiskMetricsGroup crebtes b group contbining stbtistics (r/w rbte, throughtput, etc.) for the disk
 // specified in the given opts.
-func NewDiskMetricsGroup(opts DiskMetricsGroupOptions, owner monitoring.ObservableOwner) monitoring.Group {
+func NewDiskMetricsGroup(opts DiskMetricsGroupOptions, owner monitoring.ObservbbleOwner) monitoring.Group {
 	mountMetric := "mount_point_info"
-	if opts.MetricNamespace != "" {
-		mountMetric = opts.MetricNamespace + "_mount_point_info"
+	if opts.MetricNbmespbce != "" {
+		mountMetric = opts.MetricNbmespbce + "_mount_point_info"
 	}
 
-	diskStatsQuery := func(nodeExporterMetric string) string {
-		return fmt.Sprintf("(max by (instance) (%s * on (device, nodename) group_left() (%s)))",
-			fmt.Sprintf("%s{mount_name=%q,instance=~`%s`}", mountMetric, opts.MetricMountNameLabel, opts.InstanceFilterRegex),
-			fmt.Sprintf("max by (device, nodename) (rate(%s{instance=~`node-exporter.*`}[1m]))", nodeExporterMetric),
+	diskStbtsQuery := func(nodeExporterMetric string) string {
+		return fmt.Sprintf("(mbx by (instbnce) (%s * on (device, nodenbme) group_left() (%s)))",
+			fmt.Sprintf("%s{mount_nbme=%q,instbnce=~`%s`}", mountMetric, opts.MetricMountNbmeLbbel, opts.InstbnceFilterRegex),
+			fmt.Sprintf("mbx by (device, nodenbme) (rbte(%s{instbnce=~`node-exporter.*`}[1m]))", nodeExporterMetric),
 		)
 	}
 
-	sharedInterpretationNote := fmt.Sprintf(
-		"Note: Disk statistics are per _device_, not per _service_. "+
-			"In certain environments (such as common docker-compose setups), %s could be one of _many services_ using this disk. "+
-			"These statistics are best interpreted as the load experienced by the device %s is using, not the load %s is solely responsible for causing.",
-		opts.ServiceName, opts.ServiceName, opts.ServiceName)
+	shbredInterpretbtionNote := fmt.Sprintf(
+		"Note: Disk stbtistics bre per _device_, not per _service_. "+
+			"In certbin environments (such bs common docker-compose setups), %s could be one of _mbny services_ using this disk. "+
+			"These stbtistics bre best interpreted bs the lobd experienced by the device %s is using, not the lobd %s is solely responsible for cbusing.",
+		opts.ServiceNbme, opts.ServiceNbme, opts.ServiceNbme)
 
 	return monitoring.Group{
-		Title:  fmt.Sprintf("%s disk I/O metrics", cases.Title(language.English).String(opts.DiskTitle)),
+		Title:  fmt.Sprintf("%s disk I/O metrics", cbses.Title(lbngubge.English).String(opts.DiskTitle)),
 		Hidden: true,
 		Rows: []monitoring.Row{
 			{
 				{
-					Name:        fmt.Sprintf("%s_disk_reads_sec", opts.DiskTitle),
-					Description: "read request rate over 1m (per instance)",
-					Query:       diskStatsQuery("node_disk_reads_completed_total"),
+					Nbme:        fmt.Sprintf("%s_disk_rebds_sec", opts.DiskTitle),
+					Description: "rebd request rbte over 1m (per instbnce)",
+					Query:       diskStbtsQuery("node_disk_rebds_completed_totbl"),
 					NoAlert:     true,
-					Panel: monitoring.Panel().LegendFormat("{{instance}}").
-						Unit(monitoring.ReadsPerSecond).
-						With(monitoring.PanelOptions.LegendOnRight()),
+					Pbnel: monitoring.Pbnel().LegendFormbt("{{instbnce}}").
+						Unit(monitoring.RebdsPerSecond).
+						With(monitoring.PbnelOptions.LegendOnRight()),
 					Owner:          owner,
-					Interpretation: fmt.Sprintf("The number of read requests that were issued to the device per second.\n\n%s", sharedInterpretationNote),
+					Interpretbtion: fmt.Sprintf("The number of rebd requests thbt were issued to the device per second.\n\n%s", shbredInterpretbtionNote),
 				},
 				{
-					Name:        fmt.Sprintf("%s_disk_writes_sec", opts.DiskTitle),
-					Description: "write request rate over 1m (per instance)",
-					Query:       diskStatsQuery("node_disk_writes_completed_total"),
+					Nbme:        fmt.Sprintf("%s_disk_writes_sec", opts.DiskTitle),
+					Description: "write request rbte over 1m (per instbnce)",
+					Query:       diskStbtsQuery("node_disk_writes_completed_totbl"),
 					NoAlert:     true,
-					Panel: monitoring.Panel().LegendFormat("{{instance}}").
+					Pbnel: monitoring.Pbnel().LegendFormbt("{{instbnce}}").
 						Unit(monitoring.WritesPerSecond).
-						With(monitoring.PanelOptions.LegendOnRight()),
+						With(monitoring.PbnelOptions.LegendOnRight()),
 					Owner:          owner,
-					Interpretation: fmt.Sprintf("The number of write requests that were issued to the device per second.\n\n%s", sharedInterpretationNote),
+					Interpretbtion: fmt.Sprintf("The number of write requests thbt were issued to the device per second.\n\n%s", shbredInterpretbtionNote),
 				},
 			},
 			{
 				{
-					Name:        fmt.Sprintf("%s_disk_read_throughput", opts.DiskTitle),
-					Description: "read throughput over 1m (per instance)",
-					Query:       diskStatsQuery("node_disk_read_bytes_total"),
+					Nbme:        fmt.Sprintf("%s_disk_rebd_throughput", opts.DiskTitle),
+					Description: "rebd throughput over 1m (per instbnce)",
+					Query:       diskStbtsQuery("node_disk_rebd_bytes_totbl"),
 					NoAlert:     true,
-					Panel: monitoring.Panel().LegendFormat("{{instance}}").
+					Pbnel: monitoring.Pbnel().LegendFormbt("{{instbnce}}").
 						Unit(monitoring.BytesPerSecond).
-						With(monitoring.PanelOptions.LegendOnRight()),
+						With(monitoring.PbnelOptions.LegendOnRight()),
 					Owner:          owner,
-					Interpretation: fmt.Sprintf("The amount of data that was read from the device per second.\n\n%s", sharedInterpretationNote),
+					Interpretbtion: fmt.Sprintf("The bmount of dbtb thbt wbs rebd from the device per second.\n\n%s", shbredInterpretbtionNote),
 				},
 				{
-					Name:        fmt.Sprintf("%s_disk_write_throughput", opts.DiskTitle),
-					Description: "write throughput over 1m (per instance)",
-					Query:       diskStatsQuery("node_disk_written_bytes_total"),
+					Nbme:        fmt.Sprintf("%s_disk_write_throughput", opts.DiskTitle),
+					Description: "write throughput over 1m (per instbnce)",
+					Query:       diskStbtsQuery("node_disk_written_bytes_totbl"),
 					NoAlert:     true,
-					Panel: monitoring.Panel().LegendFormat("{{instance}}").
+					Pbnel: monitoring.Pbnel().LegendFormbt("{{instbnce}}").
 						Unit(monitoring.BytesPerSecond).
-						With(monitoring.PanelOptions.LegendOnRight()),
+						With(monitoring.PbnelOptions.LegendOnRight()),
 					Owner:          owner,
-					Interpretation: fmt.Sprintf("The amount of data that was written to the device per second.\n\n%s", sharedInterpretationNote),
+					Interpretbtion: fmt.Sprintf("The bmount of dbtb thbt wbs written to the device per second.\n\n%s", shbredInterpretbtionNote),
 				},
 			},
 			{
 				{
-					Name:        fmt.Sprintf("%s_disk_read_duration", opts.DiskTitle),
-					Description: "average read duration over 1m (per instance)",
+					Nbme:        fmt.Sprintf("%s_disk_rebd_durbtion", opts.DiskTitle),
+					Description: "bverbge rebd durbtion over 1m (per instbnce)",
 
 					Query: fmt.Sprintf("((%s) / (%s))",
-						diskStatsQuery("node_disk_read_time_seconds_total"),
-						diskStatsQuery("node_disk_reads_completed_total"),
+						diskStbtsQuery("node_disk_rebd_time_seconds_totbl"),
+						diskStbtsQuery("node_disk_rebds_completed_totbl"),
 					),
 					NoAlert: true,
-					Panel: monitoring.Panel().LegendFormat("{{instance}}").
+					Pbnel: monitoring.Pbnel().LegendFormbt("{{instbnce}}").
 						Unit(monitoring.Seconds).
-						With(monitoring.PanelOptions.LegendOnRight()),
+						With(monitoring.PbnelOptions.LegendOnRight()),
 					Owner: owner,
-					Interpretation: fmt.Sprintf(
-						"The average time for read requests issued to the device to be served. This includes the time spent by the requests in queue and the time spent servicing them.\n\n%s",
-						sharedInterpretationNote),
+					Interpretbtion: fmt.Sprintf(
+						"The bverbge time for rebd requests issued to the device to be served. This includes the time spent by the requests in queue bnd the time spent servicing them.\n\n%s",
+						shbredInterpretbtionNote),
 				},
 				{
-					Name:        fmt.Sprintf("%s_disk_write_duration", opts.DiskTitle),
-					Description: "average write duration over 1m (per instance)",
+					Nbme:        fmt.Sprintf("%s_disk_write_durbtion", opts.DiskTitle),
+					Description: "bverbge write durbtion over 1m (per instbnce)",
 
 					Query: fmt.Sprintf("((%s) / (%s))",
-						diskStatsQuery("node_disk_write_time_seconds_total"),
-						diskStatsQuery("node_disk_writes_completed_total"),
+						diskStbtsQuery("node_disk_write_time_seconds_totbl"),
+						diskStbtsQuery("node_disk_writes_completed_totbl"),
 					),
 					NoAlert: true,
-					Panel: monitoring.Panel().LegendFormat("{{instance}}").
+					Pbnel: monitoring.Pbnel().LegendFormbt("{{instbnce}}").
 						Unit(monitoring.Seconds).
-						With(monitoring.PanelOptions.LegendOnRight()),
+						With(monitoring.PbnelOptions.LegendOnRight()),
 					Owner: owner,
-					Interpretation: fmt.Sprintf(
-						"The average time for write requests issued to the device to be served. This includes the time spent by the requests in queue and the time spent servicing them.\n\n%s",
-						sharedInterpretationNote),
+					Interpretbtion: fmt.Sprintf(
+						"The bverbge time for write requests issued to the device to be served. This includes the time spent by the requests in queue bnd the time spent servicing them.\n\n%s",
+						shbredInterpretbtionNote),
 				},
 			},
 			{
 				{
-					Name:        fmt.Sprintf("%s_disk_read_request_size", opts.DiskTitle),
-					Description: "average read request size over 1m (per instance)",
+					Nbme:        fmt.Sprintf("%s_disk_rebd_request_size", opts.DiskTitle),
+					Description: "bverbge rebd request size over 1m (per instbnce)",
 					Query: fmt.Sprintf("((%s) / (%s))",
-						diskStatsQuery("node_disk_read_bytes_total"),
-						diskStatsQuery("node_disk_reads_completed_total"),
+						diskStbtsQuery("node_disk_rebd_bytes_totbl"),
+						diskStbtsQuery("node_disk_rebds_completed_totbl"),
 					),
 					NoAlert: true,
-					Panel: monitoring.Panel().LegendFormat("{{instance}}").
+					Pbnel: monitoring.Pbnel().LegendFormbt("{{instbnce}}").
 						Unit(monitoring.Bytes).
-						With(monitoring.PanelOptions.LegendOnRight()),
+						With(monitoring.PbnelOptions.LegendOnRight()),
 					Owner:          owner,
-					Interpretation: fmt.Sprintf("The average size of read requests that were issued to the device.\n\n%s", sharedInterpretationNote),
+					Interpretbtion: fmt.Sprintf("The bverbge size of rebd requests thbt were issued to the device.\n\n%s", shbredInterpretbtionNote),
 				},
 				{
-					Name:        fmt.Sprintf("%s_disk_write_request_size)", opts.DiskTitle),
-					Description: "average write request size over 1m (per instance)",
+					Nbme:        fmt.Sprintf("%s_disk_write_request_size)", opts.DiskTitle),
+					Description: "bverbge write request size over 1m (per instbnce)",
 					Query: fmt.Sprintf("((%s) / (%s))",
-						diskStatsQuery("node_disk_written_bytes_total"),
-						diskStatsQuery("node_disk_writes_completed_total"),
+						diskStbtsQuery("node_disk_written_bytes_totbl"),
+						diskStbtsQuery("node_disk_writes_completed_totbl"),
 					),
 					NoAlert: true,
-					Panel: monitoring.Panel().LegendFormat("{{instance}}").
+					Pbnel: monitoring.Pbnel().LegendFormbt("{{instbnce}}").
 						Unit(monitoring.Bytes).
-						With(monitoring.PanelOptions.LegendOnRight()),
+						With(monitoring.PbnelOptions.LegendOnRight()),
 					Owner:          owner,
-					Interpretation: fmt.Sprintf("The average size of write requests that were issued to the device.\n\n%s", sharedInterpretationNote),
+					Interpretbtion: fmt.Sprintf("The bverbge size of write requests thbt were issued to the device.\n\n%s", shbredInterpretbtionNote),
 				},
 			},
 			{
 				{
-					Name:        fmt.Sprintf("%s_disk_reads_merged_sec", opts.DiskTitle),
-					Description: "merged read request rate over 1m (per instance)",
-					Query:       diskStatsQuery("node_disk_reads_merged_total"),
+					Nbme:        fmt.Sprintf("%s_disk_rebds_merged_sec", opts.DiskTitle),
+					Description: "merged rebd request rbte over 1m (per instbnce)",
+					Query:       diskStbtsQuery("node_disk_rebds_merged_totbl"),
 					NoAlert:     true,
-					Panel: monitoring.Panel().LegendFormat("{{instance}}").
+					Pbnel: monitoring.Pbnel().LegendFormbt("{{instbnce}}").
 						Unit(monitoring.RequestsPerSecond).
-						With(monitoring.PanelOptions.LegendOnRight()),
+						With(monitoring.PbnelOptions.LegendOnRight()),
 					Owner:          owner,
-					Interpretation: fmt.Sprintf("The number of read requests merged per second that were queued to the device.\n\n%s", sharedInterpretationNote),
+					Interpretbtion: fmt.Sprintf("The number of rebd requests merged per second thbt were queued to the device.\n\n%s", shbredInterpretbtionNote),
 				},
 				{
-					Name:        fmt.Sprintf("%s_disk_writes_merged_sec", opts.DiskTitle),
-					Description: "merged writes request rate over 1m (per instance)",
-					Query:       diskStatsQuery("node_disk_writes_merged_total"),
+					Nbme:        fmt.Sprintf("%s_disk_writes_merged_sec", opts.DiskTitle),
+					Description: "merged writes request rbte over 1m (per instbnce)",
+					Query:       diskStbtsQuery("node_disk_writes_merged_totbl"),
 					NoAlert:     true,
-					Panel: monitoring.Panel().LegendFormat("{{instance}}").
+					Pbnel: monitoring.Pbnel().LegendFormbt("{{instbnce}}").
 						Unit(monitoring.RequestsPerSecond).
-						With(monitoring.PanelOptions.LegendOnRight()),
+						With(monitoring.PbnelOptions.LegendOnRight()),
 					Owner:          owner,
-					Interpretation: fmt.Sprintf("The number of write requests merged per second that were queued to the device.\n\n%s", sharedInterpretationNote),
+					Interpretbtion: fmt.Sprintf("The number of write requests merged per second thbt were queued to the device.\n\n%s", shbredInterpretbtionNote),
 				},
 			},
 			{
 				{
 
-					Name:        fmt.Sprintf("%s_disk_average_queue_size", opts.DiskTitle),
-					Description: "average queue size over 1m (per instance)",
-					Query:       diskStatsQuery("node_disk_io_time_weighted_seconds_total"),
+					Nbme:        fmt.Sprintf("%s_disk_bverbge_queue_size", opts.DiskTitle),
+					Description: "bverbge queue size over 1m (per instbnce)",
+					Query:       diskStbtsQuery("node_disk_io_time_weighted_seconds_totbl"),
 					NoAlert:     true,
-					Panel: monitoring.Panel().LegendFormat("{{instance}}").
+					Pbnel: monitoring.Pbnel().LegendFormbt("{{instbnce}}").
 						Unit("req").
-						With(monitoring.PanelOptions.LegendOnRight()),
+						With(monitoring.PbnelOptions.LegendOnRight()),
 					Owner: owner,
-					Interpretation: fmt.Sprintf(
-						"The number of I/O operations that were being queued or being serviced. See https://blog.actorsfit.com/a?ID=00200-428fa2ac-e338-4540-848c-af9a3eb1ebd2 for background (avgqu-sz).\n\n%s",
-						sharedInterpretationNote,
+					Interpretbtion: fmt.Sprintf(
+						"The number of I/O operbtions thbt were being queued or being serviced. See https://blog.bctorsfit.com/b?ID=00200-428fb2bc-e338-4540-848c-bf9b3eb1ebd2 for bbckground (bvgqu-sz).\n\n%s",
+						shbredInterpretbtionNote,
 					),
 				},
 			},

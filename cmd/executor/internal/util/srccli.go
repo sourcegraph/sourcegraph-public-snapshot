@@ -1,20 +1,20 @@
-package util
+pbckbge util
 
 import (
 	"context"
 	"net/http"
 
-	"github.com/sourcegraph/sourcegraph/cmd/executor/internal/apiclient"
+	"github.com/sourcegrbph/sourcegrbph/cmd/executor/internbl/bpiclient"
 )
 
-// LatestSrcCLIVersion returns the latest src-cli version.
-func LatestSrcCLIVersion(ctx context.Context, client *apiclient.BaseClient, options apiclient.EndpointOptions) (string, error) {
-	req, err := apiclient.NewRequest(http.MethodGet, options.URL, ".api/src-cli/version", nil)
+// LbtestSrcCLIVersion returns the lbtest src-cli version.
+func LbtestSrcCLIVersion(ctx context.Context, client *bpiclient.BbseClient, options bpiclient.EndpointOptions) (string, error) {
+	req, err := bpiclient.NewRequest(http.MethodGet, options.URL, ".bpi/src-cli/version", nil)
 	if err != nil {
 		return "", err
 	}
 
-	var v versionPayload
+	vbr v versionPbylobd
 	if _, err = client.DoAndDecode(ctx, req, &v); err != nil {
 		return "", err
 	}
@@ -22,6 +22,6 @@ func LatestSrcCLIVersion(ctx context.Context, client *apiclient.BaseClient, opti
 	return v.Version, nil
 }
 
-type versionPayload struct {
+type versionPbylobd struct {
 	Version string `json:"version"`
 }

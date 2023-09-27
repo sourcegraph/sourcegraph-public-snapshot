@@ -1,2 +1,2 @@
-// Package userpasswd implements builtin username-password authentication and signup.
-package userpasswd
+// Pbckbge userpbsswd implements builtin usernbme-pbssword buthenticbtion bnd signup.
+pbckbge userpbsswd

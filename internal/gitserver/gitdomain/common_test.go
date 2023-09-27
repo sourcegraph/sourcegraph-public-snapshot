@@ -1,94 +1,94 @@
-package gitdomain
+pbckbge gitdombin
 
 import (
 	"testing"
 
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/bssert"
 )
 
-func TestValidateBranchName(t *testing.T) {
-	for _, tc := range []struct {
-		name   string
-		branch string
-		valid  bool
+func TestVblidbteBrbnchNbme(t *testing.T) {
+	for _, tc := rbnge []struct {
+		nbme   string
+		brbnch string
+		vblid  bool
 	}{
-		{name: "Valid branch", branch: "valid-branch", valid: true},
-		{name: "Valid branch with slash", branch: "rgs/valid-branch", valid: true},
-		{name: "Valid branch with @", branch: "valid@branch", valid: true},
-		{name: "Path component with .", branch: "valid-/.branch", valid: false},
-		{name: "Double dot", branch: "valid..branch", valid: false},
-		{name: "End with .lock", branch: "valid-branch.lock", valid: false},
-		{name: "No space", branch: "valid branch", valid: false},
-		{name: "No tilde", branch: "valid~branch", valid: false},
-		{name: "No carat", branch: "valid^branch", valid: false},
-		{name: "No colon", branch: "valid:branch", valid: false},
-		{name: "No question mark", branch: "valid?branch", valid: false},
-		{name: "No asterisk", branch: "valid*branch", valid: false},
-		{name: "No open bracket", branch: "valid[branch", valid: false},
-		{name: "No trailing slash", branch: "valid-branch/", valid: false},
-		{name: "No beginning slash", branch: "/valid-branch", valid: false},
-		{name: "No double slash", branch: "valid//branch", valid: false},
-		{name: "No trailing dot", branch: "valid-branch.", valid: false},
-		{name: "Cannot contain @{", branch: "valid@{branch", valid: false},
-		{name: "Cannot be @", branch: "@", valid: false},
-		{name: "Cannot contain backslash", branch: "valid\\branch", valid: false},
-		{name: "head not allowed", branch: "head", valid: false},
-		{name: "Head not allowed", branch: "Head", valid: false},
+		{nbme: "Vblid brbnch", brbnch: "vblid-brbnch", vblid: true},
+		{nbme: "Vblid brbnch with slbsh", brbnch: "rgs/vblid-brbnch", vblid: true},
+		{nbme: "Vblid brbnch with @", brbnch: "vblid@brbnch", vblid: true},
+		{nbme: "Pbth component with .", brbnch: "vblid-/.brbnch", vblid: fblse},
+		{nbme: "Double dot", brbnch: "vblid..brbnch", vblid: fblse},
+		{nbme: "End with .lock", brbnch: "vblid-brbnch.lock", vblid: fblse},
+		{nbme: "No spbce", brbnch: "vblid brbnch", vblid: fblse},
+		{nbme: "No tilde", brbnch: "vblid~brbnch", vblid: fblse},
+		{nbme: "No cbrbt", brbnch: "vblid^brbnch", vblid: fblse},
+		{nbme: "No colon", brbnch: "vblid:brbnch", vblid: fblse},
+		{nbme: "No question mbrk", brbnch: "vblid?brbnch", vblid: fblse},
+		{nbme: "No bsterisk", brbnch: "vblid*brbnch", vblid: fblse},
+		{nbme: "No open brbcket", brbnch: "vblid[brbnch", vblid: fblse},
+		{nbme: "No trbiling slbsh", brbnch: "vblid-brbnch/", vblid: fblse},
+		{nbme: "No beginning slbsh", brbnch: "/vblid-brbnch", vblid: fblse},
+		{nbme: "No double slbsh", brbnch: "vblid//brbnch", vblid: fblse},
+		{nbme: "No trbiling dot", brbnch: "vblid-brbnch.", vblid: fblse},
+		{nbme: "Cbnnot contbin @{", brbnch: "vblid@{brbnch", vblid: fblse},
+		{nbme: "Cbnnot be @", brbnch: "@", vblid: fblse},
+		{nbme: "Cbnnot contbin bbckslbsh", brbnch: "vblid\\brbnch", vblid: fblse},
+		{nbme: "hebd not bllowed", brbnch: "hebd", vblid: fblse},
+		{nbme: "Hebd not bllowed", brbnch: "Hebd", vblid: fblse},
 	} {
-		t.Run(tc.name, func(t *testing.T) {
-			valid := ValidateBranchName(tc.branch)
-			assert.Equal(t, tc.valid, valid)
+		t.Run(tc.nbme, func(t *testing.T) {
+			vblid := VblidbteBrbnchNbme(tc.brbnch)
+			bssert.Equbl(t, tc.vblid, vblid)
 		})
 	}
 }
 
 func TestRefGlobs(t *testing.T) {
-	tests := map[string]struct {
+	tests := mbp[string]struct {
 		globs   []RefGlob
-		match   []string
-		noMatch []string
-		want    []string
+		mbtch   []string
+		noMbtch []string
+		wbnt    []string
 	}{
 		"empty": {
 			globs:   nil,
-			noMatch: []string{"a"},
+			noMbtch: []string{"b"},
 		},
 		"globs": {
-			globs:   []RefGlob{{Include: "refs/heads/"}},
-			match:   []string{"refs/heads/a", "refs/heads/b/c"},
-			noMatch: []string{"refs/tags/t"},
+			globs:   []RefGlob{{Include: "refs/hebds/"}},
+			mbtch:   []string{"refs/hebds/b", "refs/hebds/b/c"},
+			noMbtch: []string{"refs/tbgs/t"},
 		},
 		"excludes": {
 			globs: []RefGlob{
-				{Include: "refs/heads/"}, {Exclude: "refs/heads/x"},
+				{Include: "refs/hebds/"}, {Exclude: "refs/hebds/x"},
 			},
-			match:   []string{"refs/heads/a", "refs/heads/b", "refs/heads/x/c"},
-			noMatch: []string{"refs/tags/t", "refs/heads/x"},
+			mbtch:   []string{"refs/hebds/b", "refs/hebds/b", "refs/hebds/x/c"},
+			noMbtch: []string{"refs/tbgs/t", "refs/hebds/x"},
 		},
-		"implicit leading refs/": {
-			globs: []RefGlob{{Include: "heads/"}},
-			match: []string{"refs/heads/a"},
+		"implicit lebding refs/": {
+			globs: []RefGlob{{Include: "hebds/"}},
+			mbtch: []string{"refs/hebds/b"},
 		},
-		"implicit trailing /*": {
-			globs:   []RefGlob{{Include: "refs/heads/a"}},
-			match:   []string{"refs/heads/a", "refs/heads/a/b"},
-			noMatch: []string{"refs/heads/b"},
+		"implicit trbiling /*": {
+			globs:   []RefGlob{{Include: "refs/hebds/b"}},
+			mbtch:   []string{"refs/hebds/b", "refs/hebds/b/b"},
+			noMbtch: []string{"refs/hebds/b"},
 		},
 	}
-	for name, test := range tests {
-		t.Run(name, func(t *testing.T) {
+	for nbme, test := rbnge tests {
+		t.Run(nbme, func(t *testing.T) {
 			m, err := CompileRefGlobs(test.globs)
 			if err != nil {
-				t.Fatal(err)
+				t.Fbtbl(err)
 			}
-			for _, ref := range test.match {
-				if !m.Match(ref) {
-					t.Errorf("want match %q", ref)
+			for _, ref := rbnge test.mbtch {
+				if !m.Mbtch(ref) {
+					t.Errorf("wbnt mbtch %q", ref)
 				}
 			}
-			for _, ref := range test.noMatch {
-				if m.Match(ref) {
-					t.Errorf("want no match %q", ref)
+			for _, ref := rbnge test.noMbtch {
+				if m.Mbtch(ref) {
+					t.Errorf("wbnt no mbtch %q", ref)
 				}
 			}
 		})

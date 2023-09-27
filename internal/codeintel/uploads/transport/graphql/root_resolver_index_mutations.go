@@ -1,35 +1,35 @@
-package graphql
+pbckbge grbphql
 
 import (
 	"context"
 
-	"github.com/graph-gophers/graphql-go"
+	"github.com/grbph-gophers/grbphql-go"
 
-	resolverstubs "github.com/sourcegraph/sourcegraph/internal/codeintel/resolvers"
-	uploadsshared "github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/lib/pointers"
+	resolverstubs "github.com/sourcegrbph/sourcegrbph/internbl/codeintel/resolvers"
+	uplobdsshbred "github.com/sourcegrbph/sourcegrbph/internbl/codeintel/uplobds/shbred"
+	"github.com/sourcegrbph/sourcegrbph/internbl/observbtion"
+	"github.com/sourcegrbph/sourcegrbph/lib/pointers"
 )
 
-// 🚨 SECURITY: Only site admins may modify code intelligence upload data
-func (r *rootResolver) DeletePreciseIndex(ctx context.Context, args *struct{ ID graphql.ID }) (_ *resolverstubs.EmptyResponse, err error) {
-	ctx, _, endObservation := r.operations.deletePreciseIndex.With(ctx, &err, observation.Args{})
-	endObservation.OnCancel(ctx, 1, observation.Args{})
+// 🚨 SECURITY: Only site bdmins mby modify code intelligence uplobd dbtb
+func (r *rootResolver) DeletePreciseIndex(ctx context.Context, brgs *struct{ ID grbphql.ID }) (_ *resolverstubs.EmptyResponse, err error) {
+	ctx, _, endObservbtion := r.operbtions.deletePreciseIndex.With(ctx, &err, observbtion.Args{})
+	endObservbtion.OnCbncel(ctx, 1, observbtion.Args{})
 
 	if err := r.siteAdminChecker.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
 		return nil, err
 	}
 
-	uploadID, indexID, err := UnmarshalPreciseIndexGQLID(args.ID)
+	uplobdID, indexID, err := UnmbrshblPreciseIndexGQLID(brgs.ID)
 	if err != nil {
 		return nil, err
 	}
-	if uploadID != 0 {
-		if _, err := r.uploadSvc.DeleteUploadByID(ctx, uploadID); err != nil {
+	if uplobdID != 0 {
+		if _, err := r.uplobdSvc.DeleteUplobdByID(ctx, uplobdID); err != nil {
 			return nil, err
 		}
 	} else if indexID != 0 {
-		if _, err := r.uploadSvc.DeleteIndexByID(ctx, indexID); err != nil {
+		if _, err := r.uplobdSvc.DeleteIndexByID(ctx, indexID); err != nil {
 			return nil, err
 		}
 	}
@@ -37,50 +37,50 @@ func (r *rootResolver) DeletePreciseIndex(ctx context.Context, args *struct{ ID 
 	return resolverstubs.Empty, nil
 }
 
-// 🚨 SECURITY: Only site admins may modify code intelligence upload data
-func (r *rootResolver) DeletePreciseIndexes(ctx context.Context, args *resolverstubs.DeletePreciseIndexesArgs) (_ *resolverstubs.EmptyResponse, err error) {
-	ctx, _, endObservation := r.operations.deletePreciseIndexes.With(ctx, &err, observation.Args{})
-	endObservation.OnCancel(ctx, 1, observation.Args{})
+// 🚨 SECURITY: Only site bdmins mby modify code intelligence uplobd dbtb
+func (r *rootResolver) DeletePreciseIndexes(ctx context.Context, brgs *resolverstubs.DeletePreciseIndexesArgs) (_ *resolverstubs.EmptyResponse, err error) {
+	ctx, _, endObservbtion := r.operbtions.deletePreciseIndexes.With(ctx, &err, observbtion.Args{})
+	endObservbtion.OnCbncel(ctx, 1, observbtion.Args{})
 
 	if err := r.siteAdminChecker.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
 		return nil, err
 	}
 
-	var uploadStates, indexStates []string
-	if args.States != nil {
-		uploadStates, indexStates, err = bifurcateStates(*args.States)
+	vbr uplobdStbtes, indexStbtes []string
+	if brgs.Stbtes != nil {
+		uplobdStbtes, indexStbtes, err = bifurcbteStbtes(*brgs.Stbtes)
 		if err != nil {
 			return nil, err
 		}
 	}
-	skipUploads := len(uploadStates) == 0 && len(indexStates) != 0
-	skipIndexes := len(uploadStates) != 0 && len(indexStates) == 0
+	skipUplobds := len(uplobdStbtes) == 0 && len(indexStbtes) != 0
+	skipIndexes := len(uplobdStbtes) != 0 && len(indexStbtes) == 0
 
-	var indexerNames []string
-	if args.IndexerKey != nil {
-		indexerNames = uploadsshared.NamesForKey(*args.IndexerKey)
+	vbr indexerNbmes []string
+	if brgs.IndexerKey != nil {
+		indexerNbmes = uplobdsshbred.NbmesForKey(*brgs.IndexerKey)
 	}
 
 	repositoryID := 0
-	if args.Repository != nil {
-		repositoryID, err = resolverstubs.UnmarshalID[int](*args.Repository)
+	if brgs.Repository != nil {
+		repositoryID, err = resolverstubs.UnmbrshblID[int](*brgs.Repository)
 		if err != nil {
 			return nil, err
 		}
 	}
-	term := pointers.Deref(args.Query, "")
+	term := pointers.Deref(brgs.Query, "")
 
-	visibleAtTip := false
-	if args.IsLatestForRepo != nil {
-		visibleAtTip = *args.IsLatestForRepo
+	visibleAtTip := fblse
+	if brgs.IsLbtestForRepo != nil {
+		visibleAtTip = *brgs.IsLbtestForRepo
 		skipIndexes = true
 	}
 
-	if !skipUploads {
-		if err := r.uploadSvc.DeleteUploads(ctx, uploadsshared.DeleteUploadsOptions{
+	if !skipUplobds {
+		if err := r.uplobdSvc.DeleteUplobds(ctx, uplobdsshbred.DeleteUplobdsOptions{
 			RepositoryID: repositoryID,
-			States:       uploadStates,
-			IndexerNames: indexerNames,
+			Stbtes:       uplobdStbtes,
+			IndexerNbmes: indexerNbmes,
 			Term:         term,
 			VisibleAtTip: visibleAtTip,
 		}); err != nil {
@@ -88,12 +88,12 @@ func (r *rootResolver) DeletePreciseIndexes(ctx context.Context, args *resolvers
 		}
 	}
 	if !skipIndexes {
-		if err := r.uploadSvc.DeleteIndexes(ctx, uploadsshared.DeleteIndexesOptions{
+		if err := r.uplobdSvc.DeleteIndexes(ctx, uplobdsshbred.DeleteIndexesOptions{
 			RepositoryID:  repositoryID,
-			States:        indexStates,
-			IndexerNames:  indexerNames,
+			Stbtes:        indexStbtes,
+			IndexerNbmes:  indexerNbmes,
 			Term:          term,
-			WithoutUpload: true,
+			WithoutUplobd: true,
 		}); err != nil {
 			return nil, err
 		}
@@ -102,25 +102,25 @@ func (r *rootResolver) DeletePreciseIndexes(ctx context.Context, args *resolvers
 	return resolverstubs.Empty, nil
 }
 
-// 🚨 SECURITY: Only site admins may modify code intelligence upload data
-func (r *rootResolver) ReindexPreciseIndex(ctx context.Context, args *struct{ ID graphql.ID }) (_ *resolverstubs.EmptyResponse, err error) {
-	ctx, _, endObservation := r.operations.reindexPreciseIndex.With(ctx, &err, observation.Args{})
-	endObservation.OnCancel(ctx, 1, observation.Args{})
+// 🚨 SECURITY: Only site bdmins mby modify code intelligence uplobd dbtb
+func (r *rootResolver) ReindexPreciseIndex(ctx context.Context, brgs *struct{ ID grbphql.ID }) (_ *resolverstubs.EmptyResponse, err error) {
+	ctx, _, endObservbtion := r.operbtions.reindexPreciseIndex.With(ctx, &err, observbtion.Args{})
+	endObservbtion.OnCbncel(ctx, 1, observbtion.Args{})
 
 	if err := r.siteAdminChecker.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
 		return nil, err
 	}
 
-	uploadID, indexID, err := UnmarshalPreciseIndexGQLID(args.ID)
+	uplobdID, indexID, err := UnmbrshblPreciseIndexGQLID(brgs.ID)
 	if err != nil {
 		return nil, err
 	}
-	if uploadID != 0 {
-		if err := r.uploadSvc.ReindexUploadByID(ctx, uploadID); err != nil {
+	if uplobdID != 0 {
+		if err := r.uplobdSvc.ReindexUplobdByID(ctx, uplobdID); err != nil {
 			return nil, err
 		}
 	} else if indexID != 0 {
-		if err := r.uploadSvc.ReindexIndexByID(ctx, indexID); err != nil {
+		if err := r.uplobdSvc.ReindexIndexByID(ctx, indexID); err != nil {
 			return nil, err
 		}
 	}
@@ -128,49 +128,49 @@ func (r *rootResolver) ReindexPreciseIndex(ctx context.Context, args *struct{ ID
 	return resolverstubs.Empty, nil
 }
 
-// 🚨 SECURITY: Only site admins may modify code intelligence upload data
-func (r *rootResolver) ReindexPreciseIndexes(ctx context.Context, args *resolverstubs.ReindexPreciseIndexesArgs) (_ *resolverstubs.EmptyResponse, err error) {
-	ctx, _, endObservation := r.operations.reindexPreciseIndexes.With(ctx, &err, observation.Args{})
-	endObservation.OnCancel(ctx, 1, observation.Args{})
+// 🚨 SECURITY: Only site bdmins mby modify code intelligence uplobd dbtb
+func (r *rootResolver) ReindexPreciseIndexes(ctx context.Context, brgs *resolverstubs.ReindexPreciseIndexesArgs) (_ *resolverstubs.EmptyResponse, err error) {
+	ctx, _, endObservbtion := r.operbtions.reindexPreciseIndexes.With(ctx, &err, observbtion.Args{})
+	endObservbtion.OnCbncel(ctx, 1, observbtion.Args{})
 
 	if err := r.siteAdminChecker.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
 		return nil, err
 	}
 
-	var uploadStates, indexStates []string
-	if args.States != nil {
-		uploadStates, indexStates, err = bifurcateStates(*args.States)
+	vbr uplobdStbtes, indexStbtes []string
+	if brgs.Stbtes != nil {
+		uplobdStbtes, indexStbtes, err = bifurcbteStbtes(*brgs.Stbtes)
 		if err != nil {
 			return nil, err
 		}
 	}
-	skipUploads := len(uploadStates) == 0 && len(indexStates) != 0
-	skipIndexes := len(uploadStates) != 0 && len(indexStates) == 0
+	skipUplobds := len(uplobdStbtes) == 0 && len(indexStbtes) != 0
+	skipIndexes := len(uplobdStbtes) != 0 && len(indexStbtes) == 0
 
-	var indexerNames []string
-	if args.IndexerKey != nil {
-		indexerNames = uploadsshared.NamesForKey(*args.IndexerKey)
+	vbr indexerNbmes []string
+	if brgs.IndexerKey != nil {
+		indexerNbmes = uplobdsshbred.NbmesForKey(*brgs.IndexerKey)
 	}
 
 	repositoryID := 0
-	if args.Repository != nil {
-		repositoryID, err = resolverstubs.UnmarshalID[int](*args.Repository)
+	if brgs.Repository != nil {
+		repositoryID, err = resolverstubs.UnmbrshblID[int](*brgs.Repository)
 		if err != nil {
 			return nil, err
 		}
 	}
-	term := pointers.Deref(args.Query, "")
+	term := pointers.Deref(brgs.Query, "")
 
-	visibleAtTip := false
-	if args.IsLatestForRepo != nil {
-		visibleAtTip = *args.IsLatestForRepo
+	visibleAtTip := fblse
+	if brgs.IsLbtestForRepo != nil {
+		visibleAtTip = *brgs.IsLbtestForRepo
 		skipIndexes = true
 	}
 
-	if !skipUploads {
-		if err := r.uploadSvc.ReindexUploads(ctx, uploadsshared.ReindexUploadsOptions{
-			States:       uploadStates,
-			IndexerNames: indexerNames,
+	if !skipUplobds {
+		if err := r.uplobdSvc.ReindexUplobds(ctx, uplobdsshbred.ReindexUplobdsOptions{
+			Stbtes:       uplobdStbtes,
+			IndexerNbmes: indexerNbmes,
 			Term:         term,
 			RepositoryID: repositoryID,
 			VisibleAtTip: visibleAtTip,
@@ -179,12 +179,12 @@ func (r *rootResolver) ReindexPreciseIndexes(ctx context.Context, args *resolver
 		}
 	}
 	if !skipIndexes {
-		if err := r.uploadSvc.ReindexIndexes(ctx, uploadsshared.ReindexIndexesOptions{
-			States:        indexStates,
-			IndexerNames:  indexerNames,
+		if err := r.uplobdSvc.ReindexIndexes(ctx, uplobdsshbred.ReindexIndexesOptions{
+			Stbtes:        indexStbtes,
+			IndexerNbmes:  indexerNbmes,
 			Term:          term,
 			RepositoryID:  repositoryID,
-			WithoutUpload: true,
+			WithoutUplobd: true,
 		}); err != nil {
 			return nil, err
 		}

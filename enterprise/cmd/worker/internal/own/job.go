@@ -1,14 +1,14 @@
-package own
+pbckbge own
 
 import (
 	"context"
 
-	"github.com/sourcegraph/sourcegraph/cmd/worker/job"
-	workerdb "github.com/sourcegraph/sourcegraph/cmd/worker/shared/init/db"
-	"github.com/sourcegraph/sourcegraph/internal/env"
-	"github.com/sourcegraph/sourcegraph/internal/goroutine"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/internal/own/background"
+	"github.com/sourcegrbph/sourcegrbph/cmd/worker/job"
+	workerdb "github.com/sourcegrbph/sourcegrbph/cmd/worker/shbred/init/db"
+	"github.com/sourcegrbph/sourcegrbph/internbl/env"
+	"github.com/sourcegrbph/sourcegrbph/internbl/goroutine"
+	"github.com/sourcegrbph/sourcegrbph/internbl/observbtion"
+	"github.com/sourcegrbph/sourcegrbph/internbl/own/bbckground"
 )
 
 type ownRepoIndexingQueue struct{}
@@ -18,22 +18,22 @@ func NewOwnRepoIndexingQueue() job.Job {
 }
 
 func (o *ownRepoIndexingQueue) Description() string {
-	return "Queue used to index ownership data partitioned per repository"
+	return "Queue used to index ownership dbtb pbrtitioned per repository"
 }
 
 func (o *ownRepoIndexingQueue) Config() []env.Config {
 	return nil
 }
 
-func (o *ownRepoIndexingQueue) Routines(startupCtx context.Context, observationCtx *observation.Context) ([]goroutine.BackgroundRoutine, error) {
-	db, err := workerdb.InitDB(observationCtx)
+func (o *ownRepoIndexingQueue) Routines(stbrtupCtx context.Context, observbtionCtx *observbtion.Context) ([]goroutine.BbckgroundRoutine, error) {
+	db, err := workerdb.InitDB(observbtionCtx)
 	if err != nil {
 		return nil, err
 	}
 
-	var routines []goroutine.BackgroundRoutine
-	routines = append(routines, background.NewOwnBackgroundWorker(context.Background(), db, observationCtx)...)
-	routines = append(routines, background.GetOwnIndexSchedulerRoutines(db, observationCtx)...)
+	vbr routines []goroutine.BbckgroundRoutine
+	routines = bppend(routines, bbckground.NewOwnBbckgroundWorker(context.Bbckground(), db, observbtionCtx)...)
+	routines = bppend(routines, bbckground.GetOwnIndexSchedulerRoutines(db, observbtionCtx)...)
 
 	return routines, nil
 }

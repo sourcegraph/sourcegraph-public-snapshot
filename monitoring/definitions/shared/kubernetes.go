@@ -1,44 +1,44 @@
-package shared
+pbckbge shbred
 
 import (
 	"fmt"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/monitoring/monitoring"
+	"github.com/sourcegrbph/sourcegrbph/monitoring/monitoring"
 )
 
 // Kubernetes monitoring overviews.
 //
-// These observables should only use metrics exported by Kubernetes, or use Prometheus
-// metrics in a way that only applies in Kubernetes deployments.
-const TitleKubernetesMonitoring = "Kubernetes monitoring (only available on Kubernetes)"
+// These observbbles should only use metrics exported by Kubernetes, or use Prometheus
+// metrics in b wby thbt only bpplies in Kubernetes deployments.
+const TitleKubernetesMonitoring = "Kubernetes monitoring (only bvbilbble on Kubernetes)"
 
-var KubernetesPodsAvailable sharedObservable = func(containerName string, owner monitoring.ObservableOwner) Observable {
-	return Observable{
-		Name:        "pods_available_percentage",
-		Description: "percentage pods available",
-		// the 'app' label is only available in Kubernetes deloyments - it indicates the pod.
-		Query:    fmt.Sprintf(`sum by(app) (up{app=~".*%[1]s"}) / count by (app) (up{app=~".*%[1]s"}) * 100`, containerName),
-		Critical: monitoring.Alert().LessOrEqual(90).For(10 * time.Minute),
-		Panel:    monitoring.Panel().LegendFormat("{{name}}").Unit(monitoring.Percentage).Max(100).Min(0),
+vbr KubernetesPodsAvbilbble shbredObservbble = func(contbinerNbme string, owner monitoring.ObservbbleOwner) Observbble {
+	return Observbble{
+		Nbme:        "pods_bvbilbble_percentbge",
+		Description: "percentbge pods bvbilbble",
+		// the 'bpp' lbbel is only bvbilbble in Kubernetes deloyments - it indicbtes the pod.
+		Query:    fmt.Sprintf(`sum by(bpp) (up{bpp=~".*%[1]s"}) / count by (bpp) (up{bpp=~".*%[1]s"}) * 100`, contbinerNbme),
+		Criticbl: monitoring.Alert().LessOrEqubl(90).For(10 * time.Minute),
+		Pbnel:    monitoring.Pbnel().LegendFormbt("{{nbme}}").Unit(monitoring.Percentbge).Mbx(100).Min(0),
 		Owner:    owner,
-		// Solutions similar to the ContainerMissing solutions.
+		// Solutions similbr to the ContbinerMissing solutions.
 		NextSteps: fmt.Sprintf(`
-				- Determine if the pod was OOM killed using 'kubectl describe pod %[1]s' (look for 'OOMKilled: true') and, if so, consider increasing the memory limit in the relevant 'Deployment.yaml'.
-				- Check the logs before the container restarted to see if there are 'panic:' messages or similar using 'kubectl logs -p %[1]s'.
-			`, containerName),
+				- Determine if the pod wbs OOM killed using 'kubectl describe pod %[1]s' (look for 'OOMKilled: true') bnd, if so, consider increbsing the memory limit in the relevbnt 'Deployment.ybml'.
+				- Check the logs before the contbiner restbrted to see if there bre 'pbnic:' messbges or similbr using 'kubectl logs -p %[1]s'.
+			`, contbinerNbme),
 	}
 }
 
 type KubernetesMonitoringOptions struct {
-	// PodsAvailable transforms the default observable used to construct the pods available panel.
-	PodsAvailable ObservableOption
+	// PodsAvbilbble trbnsforms the defbult observbble used to construct the pods bvbilbble pbnel.
+	PodsAvbilbble ObservbbleOption
 }
 
-// NewProvisioningIndicatorsGroup creates a group containing panels displaying
-// provisioning indication metrics - long and short term usage for both CPU and
-// memory usage - for the given container.
-func NewKubernetesMonitoringGroup(containerName string, owner monitoring.ObservableOwner, options *KubernetesMonitoringOptions) monitoring.Group {
+// NewProvisioningIndicbtorsGroup crebtes b group contbining pbnels displbying
+// provisioning indicbtion metrics - long bnd short term usbge for both CPU bnd
+// memory usbge - for the given contbiner.
+func NewKubernetesMonitoringGroup(contbinerNbme string, owner monitoring.ObservbbleOwner, options *KubernetesMonitoringOptions) monitoring.Group {
 	if options == nil {
 		options = &KubernetesMonitoringOptions{}
 	}
@@ -48,7 +48,7 @@ func NewKubernetesMonitoringGroup(containerName string, owner monitoring.Observa
 		Hidden: true,
 		Rows: []monitoring.Row{
 			{
-				options.PodsAvailable.safeApply(KubernetesPodsAvailable(containerName, owner)).Observable(),
+				options.PodsAvbilbble.sbfeApply(KubernetesPodsAvbilbble(contbinerNbme, owner)).Observbble(),
 			},
 		},
 	}

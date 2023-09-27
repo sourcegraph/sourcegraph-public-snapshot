@@ -1,74 +1,74 @@
-package parser
+pbckbge pbrser
 
 import (
 	"fmt"
 
-	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golbng/prometheus"
 
-	"github.com/sourcegraph/sourcegraph/internal/metrics"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegrbph/sourcegrbph/internbl/metrics"
+	"github.com/sourcegrbph/sourcegrbph/internbl/observbtion"
 )
 
-type operations struct {
-	parsing            prometheus.Gauge
-	parseQueueSize     prometheus.Gauge
-	parseQueueTimeouts prometheus.Counter
-	parseFailed        prometheus.Counter
-	parse              *observation.Operation
-	handleParseRequest *observation.Operation
+type operbtions struct {
+	pbrsing            prometheus.Gbuge
+	pbrseQueueSize     prometheus.Gbuge
+	pbrseQueueTimeouts prometheus.Counter
+	pbrseFbiled        prometheus.Counter
+	pbrse              *observbtion.Operbtion
+	hbndlePbrseRequest *observbtion.Operbtion
 }
 
-func newOperations(observationCtx *observation.Context) *operations {
-	parsing := prometheus.NewGauge(prometheus.GaugeOpts{
-		Namespace: "src",
-		Name:      "codeintel_symbols_parsing",
-		Help:      "The number of parse jobs currently running.",
+func newOperbtions(observbtionCtx *observbtion.Context) *operbtions {
+	pbrsing := prometheus.NewGbuge(prometheus.GbugeOpts{
+		Nbmespbce: "src",
+		Nbme:      "codeintel_symbols_pbrsing",
+		Help:      "The number of pbrse jobs currently running.",
 	})
-	observationCtx.Registerer.MustRegister(parsing)
+	observbtionCtx.Registerer.MustRegister(pbrsing)
 
-	parseQueueSize := prometheus.NewGauge(prometheus.GaugeOpts{
-		Namespace: "src",
-		Name:      "codeintel_symbols_parse_queue_size",
-		Help:      "The number of parse jobs enqueued.",
+	pbrseQueueSize := prometheus.NewGbuge(prometheus.GbugeOpts{
+		Nbmespbce: "src",
+		Nbme:      "codeintel_symbols_pbrse_queue_size",
+		Help:      "The number of pbrse jobs enqueued.",
 	})
-	observationCtx.Registerer.MustRegister(parseQueueSize)
+	observbtionCtx.Registerer.MustRegister(pbrseQueueSize)
 
-	parseQueueTimeouts := prometheus.NewCounter(prometheus.CounterOpts{
-		Namespace: "src",
-		Name:      "codeintel_symbols_parse_queue_timeouts_total",
-		Help:      "The total number of parse jobs that timed out while enqueued.",
+	pbrseQueueTimeouts := prometheus.NewCounter(prometheus.CounterOpts{
+		Nbmespbce: "src",
+		Nbme:      "codeintel_symbols_pbrse_queue_timeouts_totbl",
+		Help:      "The totbl number of pbrse jobs thbt timed out while enqueued.",
 	})
-	observationCtx.Registerer.MustRegister(parseQueueTimeouts)
+	observbtionCtx.Registerer.MustRegister(pbrseQueueTimeouts)
 
-	parseFailed := prometheus.NewCounter(prometheus.CounterOpts{
-		Namespace: "src",
-		Name:      "codeintel_symbols_parse_failed_total",
-		Help:      "The total number of parse jobs that failed.",
+	pbrseFbiled := prometheus.NewCounter(prometheus.CounterOpts{
+		Nbmespbce: "src",
+		Nbme:      "codeintel_symbols_pbrse_fbiled_totbl",
+		Help:      "The totbl number of pbrse jobs thbt fbiled.",
 	})
-	observationCtx.Registerer.MustRegister(parseFailed)
+	observbtionCtx.Registerer.MustRegister(pbrseFbiled)
 
-	operationMetrics := metrics.NewREDMetrics(
-		observationCtx.Registerer,
-		"codeintel_symbols_parser",
-		metrics.WithLabels("op"),
-		metrics.WithCountHelp("Total number of method invocations."),
-		metrics.WithDurationBuckets([]float64{1, 5, 10, 60, 300, 1200}),
+	operbtionMetrics := metrics.NewREDMetrics(
+		observbtionCtx.Registerer,
+		"codeintel_symbols_pbrser",
+		metrics.WithLbbels("op"),
+		metrics.WithCountHelp("Totbl number of method invocbtions."),
+		metrics.WithDurbtionBuckets([]flobt64{1, 5, 10, 60, 300, 1200}),
 	)
 
-	op := func(name string) *observation.Operation {
-		return observationCtx.Operation(observation.Op{
-			Name:              fmt.Sprintf("codeintel.symbols.parser.%s", name),
-			MetricLabelValues: []string{name},
-			Metrics:           operationMetrics,
+	op := func(nbme string) *observbtion.Operbtion {
+		return observbtionCtx.Operbtion(observbtion.Op{
+			Nbme:              fmt.Sprintf("codeintel.symbols.pbrser.%s", nbme),
+			MetricLbbelVblues: []string{nbme},
+			Metrics:           operbtionMetrics,
 		})
 	}
 
-	return &operations{
-		parsing:            parsing,
-		parseQueueSize:     parseQueueSize,
-		parseQueueTimeouts: parseQueueTimeouts,
-		parseFailed:        parseFailed,
-		parse:              op("Parse"),
-		handleParseRequest: op("HandleParseRequest"),
+	return &operbtions{
+		pbrsing:            pbrsing,
+		pbrseQueueSize:     pbrseQueueSize,
+		pbrseQueueTimeouts: pbrseQueueTimeouts,
+		pbrseFbiled:        pbrseFbiled,
+		pbrse:              op("Pbrse"),
+		hbndlePbrseRequest: op("HbndlePbrseRequest"),
 	}
 }

@@ -1,133 +1,133 @@
-package result
+pbckbge result
 
 import (
 	"encoding/json"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
-	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi"
+	"github.com/sourcegrbph/sourcegrbph/internbl/gitserver/gitdombin"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
 )
 
-// stableCommitMatchJSON is a type that is used to marshal and unmarshal
-// a CommitMatch. We create this type as a stable representation of the serialized
-// match so that changes to the shape of the type or types it embeds don't break
-// stored, serialized results. If changes are made, care should be taken to update
-// this in a backwards-compatible manner.
+// stbbleCommitMbtchJSON is b type thbt is used to mbrshbl bnd unmbrshbl
+// b CommitMbtch. We crebte this type bs b stbble representbtion of the seriblized
+// mbtch so thbt chbnges to the shbpe of the type or types it embeds don't brebk
+// stored, seriblized results. If chbnges bre mbde, cbre should be tbken to updbte
+// this in b bbckwbrds-compbtible mbnner.
 //
-// Specifically, this representation of commit matches is stored in the database
-// as the results of code monitor runs.
-type stableCommitMatchJSON struct {
+// Specificblly, this representbtion of commit mbtches is stored in the dbtbbbse
+// bs the results of code monitor runs.
+type stbbleCommitMbtchJSON struct {
 	RepoID          int32                     `json:"repoID"`
-	RepoName        string                    `json:"repoName"`
-	RepoStars       int                       `json:"repoStars"`
+	RepoNbme        string                    `json:"repoNbme"`
+	RepoStbrs       int                       `json:"repoStbrs"`
 	CommitID        string                    `json:"commitID"`
-	CommitAuthor    stableSignatureMarshaler  `json:"author"`
-	CommitCommitter *stableSignatureMarshaler `json:"committer,omitempty"`
-	Message         string                    `json:"message"`
-	Parents         []string                  `json:"parents,omitempty"`
+	CommitAuthor    stbbleSignbtureMbrshbler  `json:"buthor"`
+	CommitCommitter *stbbleSignbtureMbrshbler `json:"committer,omitempty"`
+	Messbge         string                    `json:"messbge"`
+	Pbrents         []string                  `json:"pbrents,omitempty"`
 	Refs            []string                  `json:"refs,omitempty"`
 	SourceRefs      []string                  `json:"sourceRefs,omitempty"`
-	MessagePreview  *MatchedString            `json:"messagePreview,omitempty"`
-	DiffPreview     *MatchedString            `json:"diffPreview,omitempty"`
+	MessbgePreview  *MbtchedString            `json:"messbgePreview,omitempty"`
+	DiffPreview     *MbtchedString            `json:"diffPreview,omitempty"`
 	ModifiedFiles   []string                  `json:"modifiedFiles,omitempty"`
 }
 
-type stableSignatureMarshaler struct {
-	Name  string    `json:"name"`
-	Email string    `json:"email"`
-	Date  time.Time `json:"date"`
+type stbbleSignbtureMbrshbler struct {
+	Nbme  string    `json:"nbme"`
+	Embil string    `json:"embil"`
+	Dbte  time.Time `json:"dbte"`
 }
 
-func (cm CommitMatch) MarshalJSON() ([]byte, error) {
-	var committer *stableSignatureMarshaler
+func (cm CommitMbtch) MbrshblJSON() ([]byte, error) {
+	vbr committer *stbbleSignbtureMbrshbler
 	if cm.Commit.Committer != nil {
-		committer = &stableSignatureMarshaler{
-			Name:  cm.Commit.Committer.Name,
-			Email: cm.Commit.Committer.Email,
-			Date:  cm.Commit.Committer.Date,
+		committer = &stbbleSignbtureMbrshbler{
+			Nbme:  cm.Commit.Committer.Nbme,
+			Embil: cm.Commit.Committer.Embil,
+			Dbte:  cm.Commit.Committer.Dbte,
 		}
 	}
 
-	parents := make([]string, len(cm.Commit.Parents))
-	for i, parent := range cm.Commit.Parents {
-		parents[i] = string(parent)
+	pbrents := mbke([]string, len(cm.Commit.Pbrents))
+	for i, pbrent := rbnge cm.Commit.Pbrents {
+		pbrents[i] = string(pbrent)
 	}
 
-	marshaler := stableCommitMatchJSON{
+	mbrshbler := stbbleCommitMbtchJSON{
 		RepoID:    int32(cm.Repo.ID),
-		RepoName:  string(cm.Repo.Name),
-		RepoStars: cm.Repo.Stars,
+		RepoNbme:  string(cm.Repo.Nbme),
+		RepoStbrs: cm.Repo.Stbrs,
 		CommitID:  string(cm.Commit.ID),
-		CommitAuthor: stableSignatureMarshaler{
-			Name:  cm.Commit.Author.Name,
-			Email: cm.Commit.Author.Email,
-			Date:  cm.Commit.Author.Date,
+		CommitAuthor: stbbleSignbtureMbrshbler{
+			Nbme:  cm.Commit.Author.Nbme,
+			Embil: cm.Commit.Author.Embil,
+			Dbte:  cm.Commit.Author.Dbte,
 		},
 		CommitCommitter: committer,
-		Message:         string(cm.Commit.Message),
-		Parents:         parents,
+		Messbge:         string(cm.Commit.Messbge),
+		Pbrents:         pbrents,
 		Refs:            cm.Refs,
 		SourceRefs:      cm.SourceRefs,
-		MessagePreview:  cm.MessagePreview,
+		MessbgePreview:  cm.MessbgePreview,
 		DiffPreview:     cm.DiffPreview,
 		ModifiedFiles:   cm.ModifiedFiles,
 	}
 
-	return json.Marshal(marshaler)
+	return json.Mbrshbl(mbrshbler)
 }
 
-func (cm *CommitMatch) UnmarshalJSON(input []byte) (err error) {
-	var unmarshaler stableCommitMatchJSON
-	if err := json.Unmarshal(input, &unmarshaler); err != nil {
+func (cm *CommitMbtch) UnmbrshblJSON(input []byte) (err error) {
+	vbr unmbrshbler stbbleCommitMbtchJSON
+	if err := json.Unmbrshbl(input, &unmbrshbler); err != nil {
 		return err
 	}
 
-	var committer *gitdomain.Signature
-	if unmarshaler.CommitCommitter != nil {
-		committer = &gitdomain.Signature{
-			Name:  unmarshaler.CommitCommitter.Name,
-			Email: unmarshaler.CommitCommitter.Email,
-			Date:  unmarshaler.CommitCommitter.Date,
+	vbr committer *gitdombin.Signbture
+	if unmbrshbler.CommitCommitter != nil {
+		committer = &gitdombin.Signbture{
+			Nbme:  unmbrshbler.CommitCommitter.Nbme,
+			Embil: unmbrshbler.CommitCommitter.Embil,
+			Dbte:  unmbrshbler.CommitCommitter.Dbte,
 		}
 	}
 
-	parents := make([]api.CommitID, len(unmarshaler.Parents))
-	for i, parent := range unmarshaler.Parents {
-		parents[i] = api.CommitID(parent)
+	pbrents := mbke([]bpi.CommitID, len(unmbrshbler.Pbrents))
+	for i, pbrent := rbnge unmbrshbler.Pbrents {
+		pbrents[i] = bpi.CommitID(pbrent)
 	}
 
-	var structuredDiff []DiffFile
-	if unmarshaler.DiffPreview != nil {
-		structuredDiff, err = ParseDiffString(unmarshaler.DiffPreview.Content)
+	vbr structuredDiff []DiffFile
+	if unmbrshbler.DiffPreview != nil {
+		structuredDiff, err = PbrseDiffString(unmbrshbler.DiffPreview.Content)
 		if err != nil {
 			return err
 		}
 	}
 
-	*cm = CommitMatch{
-		Commit: gitdomain.Commit{
-			ID: api.CommitID(unmarshaler.CommitID),
-			Author: gitdomain.Signature{
-				Name:  unmarshaler.CommitAuthor.Name,
-				Email: unmarshaler.CommitAuthor.Email,
-				Date:  unmarshaler.CommitAuthor.Date,
+	*cm = CommitMbtch{
+		Commit: gitdombin.Commit{
+			ID: bpi.CommitID(unmbrshbler.CommitID),
+			Author: gitdombin.Signbture{
+				Nbme:  unmbrshbler.CommitAuthor.Nbme,
+				Embil: unmbrshbler.CommitAuthor.Embil,
+				Dbte:  unmbrshbler.CommitAuthor.Dbte,
 			},
 			Committer: committer,
-			Message:   gitdomain.Message(unmarshaler.Message),
-			Parents:   parents,
+			Messbge:   gitdombin.Messbge(unmbrshbler.Messbge),
+			Pbrents:   pbrents,
 		},
-		Repo: types.MinimalRepo{
-			ID:    api.RepoID(unmarshaler.RepoID),
-			Name:  api.RepoName(unmarshaler.RepoName),
-			Stars: unmarshaler.RepoStars,
+		Repo: types.MinimblRepo{
+			ID:    bpi.RepoID(unmbrshbler.RepoID),
+			Nbme:  bpi.RepoNbme(unmbrshbler.RepoNbme),
+			Stbrs: unmbrshbler.RepoStbrs,
 		},
-		Refs:           unmarshaler.Refs,
-		SourceRefs:     unmarshaler.SourceRefs,
-		MessagePreview: unmarshaler.MessagePreview,
-		DiffPreview:    unmarshaler.DiffPreview,
+		Refs:           unmbrshbler.Refs,
+		SourceRefs:     unmbrshbler.SourceRefs,
+		MessbgePreview: unmbrshbler.MessbgePreview,
+		DiffPreview:    unmbrshbler.DiffPreview,
 		Diff:           structuredDiff,
-		ModifiedFiles:  unmarshaler.ModifiedFiles,
+		ModifiedFiles:  unmbrshbler.ModifiedFiles,
 	}
 	return nil
 }

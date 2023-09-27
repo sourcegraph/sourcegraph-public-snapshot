@@ -1,4 +1,4 @@
-package webhooks
+pbckbge webhooks
 
 import (
 	"bytes"
@@ -7,8 +7,8 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"os"
-	"path"
-	"path/filepath"
+	"pbth"
+	"pbth/filepbth"
 	"strings"
 	"testing"
 	"time"
@@ -18,47 +18,47 @@ import (
 	gh "github.com/google/go-github/v43/github"
 	"github.com/stretchr/testify/require"
 
-	"github.com/sourcegraph/log/logtest"
+	"github.com/sourcegrbph/log/logtest"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/webhooks"
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/batches/sources"
-	"github.com/sourcegraph/sourcegraph/internal/batches/store"
-	"github.com/sourcegraph/sourcegraph/internal/batches/syncer"
-	bt "github.com/sourcegraph/sourcegraph/internal/batches/testing"
-	btypes "github.com/sourcegraph/sourcegraph/internal/batches/types"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
-	"github.com/sourcegraph/sourcegraph/internal/httptestutil"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
-	"github.com/sourcegraph/sourcegraph/internal/rcache"
-	"github.com/sourcegraph/sourcegraph/internal/repos"
-	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
-	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/schema"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/webhooks"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bbtches/sources"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bbtches/store"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bbtches/syncer"
+	bt "github.com/sourcegrbph/sourcegrbph/internbl/bbtches/testing"
+	btypes "github.com/sourcegrbph/sourcegrbph/internbl/bbtches/types"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc/buth"
+	"github.com/sourcegrbph/sourcegrbph/internbl/gitserver"
+	"github.com/sourcegrbph/sourcegrbph/internbl/httptestutil"
+	"github.com/sourcegrbph/sourcegrbph/internbl/observbtion"
+	"github.com/sourcegrbph/sourcegrbph/internbl/rbtelimit"
+	"github.com/sourcegrbph/sourcegrbph/internbl/rcbche"
+	"github.com/sourcegrbph/sourcegrbph/internbl/repos"
+	"github.com/sourcegrbph/sourcegrbph/internbl/repoupdbter/protocol"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
+	"github.com/sourcegrbph/sourcegrbph/schemb"
 )
 
-// Run from webhooks_integration_test.go
-func testGitHubWebhook(db database.DB, userID int32) func(*testing.T) {
+// Run from webhooks_integrbtion_test.go
+func testGitHubWebhook(db dbtbbbse.DB, userID int32) func(*testing.T) {
 	return func(t *testing.T) {
-		ratelimit.SetupForTest(t)
+		rbtelimit.SetupForTest(t)
 
-		// @BolajiOlajide hardcoded the time here because we use the time to generate the key
-		// for events in the `fixtures`. This key needs to be static else the tests fails, and it's not
-		// advisable to ignore the `key` field because if the logic changes, our tests won't catch it.
-		clock := func() time.Time { return time.Date(2023, time.May, 16, 12, 0, 0, 0, time.UTC) }
+		// @BolbjiOlbjide hbrdcoded the time here becbuse we use the time to generbte the key
+		// for events in the `fixtures`. This key needs to be stbtic else the tests fbils, bnd it's not
+		// bdvisbble to ignore the `key` field becbuse if the logic chbnges, our tests won't cbtch it.
+		clock := func() time.Time { return time.Dbte(2023, time.Mby, 16, 12, 0, 0, 0, time.UTC) }
 
-		ctx := context.Background()
+		ctx := context.Bbckground()
 
-		rcache.SetupForTest(t)
+		rcbche.SetupForTest(t)
 
-		bt.TruncateTables(t, db, "changeset_events", "changesets")
+		bt.TruncbteTbbles(t, db, "chbngeset_events", "chbngesets")
 
-		cf, save := httptestutil.NewGitHubRecorderFactory(t, *update, "github-webhooks")
-		defer save()
+		cf, sbve := httptestutil.NewGitHubRecorderFbctory(t, *updbte, "github-webhooks")
+		defer sbve()
 
 		secret := "secret"
 		token := os.Getenv("GITHUB_TOKEN")
@@ -66,202 +66,202 @@ func testGitHubWebhook(db database.DB, userID int32) func(*testing.T) {
 			token = "no-GITHUB_TOKEN-set"
 		}
 		repoStore := db.Repos()
-		esStore := db.ExternalServices()
-		extSvc := &types.ExternalService{
+		esStore := db.ExternblServices()
+		extSvc := &types.ExternblService{
 			Kind:        extsvc.KindGitHub,
-			DisplayName: "GitHub",
-			Config: extsvc.NewUnencryptedConfig(bt.MarshalJSON(t, &schema.GitHubConnection{
+			DisplbyNbme: "GitHub",
+			Config: extsvc.NewUnencryptedConfig(bt.MbrshblJSON(t, &schemb.GitHubConnection{
 				Url:      "https://github.com",
-				Repos:    []string{"sourcegraph/sourcegraph"},
-				Webhooks: []*schema.GitHubWebhook{{Org: "sourcegraph", Secret: secret}},
-				Token:    "abc",
+				Repos:    []string{"sourcegrbph/sourcegrbph"},
+				Webhooks: []*schemb.GitHubWebhook{{Org: "sourcegrbph", Secret: secret}},
+				Token:    "bbc",
 			})),
 		}
 
 		err := esStore.Upsert(ctx, extSvc)
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
 
 		githubSrc, err := repos.NewGitHubSource(ctx, logtest.Scoped(t), db, extSvc, cf)
 		if err != nil {
-			t.Fatal(t)
+			t.Fbtbl(t)
 		}
 
-		githubRepo, err := githubSrc.GetRepo(ctx, "sourcegraph/sourcegraph")
+		githubRepo, err := githubSrc.GetRepo(ctx, "sourcegrbph/sourcegrbph")
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
 
-		err = repoStore.Create(ctx, githubRepo)
+		err = repoStore.Crebte(ctx, githubRepo)
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
 
-		s := store.NewWithClock(db, &observation.TestContext, nil, clock)
-		if err := s.CreateSiteCredential(ctx, &btypes.SiteCredential{
-			ExternalServiceType: githubRepo.ExternalRepo.ServiceType,
-			ExternalServiceID:   githubRepo.ExternalRepo.ServiceID,
+		s := store.NewWithClock(db, &observbtion.TestContext, nil, clock)
+		if err := s.CrebteSiteCredentibl(ctx, &btypes.SiteCredentibl{
+			ExternblServiceType: githubRepo.ExternblRepo.ServiceType,
+			ExternblServiceID:   githubRepo.ExternblRepo.ServiceID,
 		},
-			&auth.OAuthBearerTokenWithSSH{
-				OAuthBearerToken: auth.OAuthBearerToken{Token: token},
+			&buth.OAuthBebrerTokenWithSSH{
+				OAuthBebrerToken: buth.OAuthBebrerToken{Token: token},
 			},
 		); err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
 		sourcer := sources.NewSourcer(cf)
 
-		spec := &btypes.BatchSpec{
-			NamespaceUserID: userID,
+		spec := &btypes.BbtchSpec{
+			NbmespbceUserID: userID,
 			UserID:          userID,
 		}
-		if err := s.CreateBatchSpec(ctx, spec); err != nil {
-			t.Fatal(err)
+		if err := s.CrebteBbtchSpec(ctx, spec); err != nil {
+			t.Fbtbl(err)
 		}
 
-		batchChange := &btypes.BatchChange{
-			Name:            "Test-batch-changes",
+		bbtchChbnge := &btypes.BbtchChbnge{
+			Nbme:            "Test-bbtch-chbnges",
 			Description:     "Testing THE WEBHOOKS",
-			CreatorID:       userID,
-			NamespaceUserID: userID,
-			LastApplierID:   userID,
-			LastAppliedAt:   clock(),
-			BatchSpecID:     spec.ID,
+			CrebtorID:       userID,
+			NbmespbceUserID: userID,
+			LbstApplierID:   userID,
+			LbstAppliedAt:   clock(),
+			BbtchSpecID:     spec.ID,
 		}
 
-		err = s.CreateBatchChange(ctx, batchChange)
+		err = s.CrebteBbtchChbnge(ctx, bbtchChbnge)
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
 
-		// NOTE: Your sample payload should apply to a PR with the number matching below
-		changeset := &btypes.Changeset{
+		// NOTE: Your sbmple pbylobd should bpply to b PR with the number mbtching below
+		chbngeset := &btypes.Chbngeset{
 			RepoID:              githubRepo.ID,
-			ExternalID:          "10156",
-			ExternalServiceType: githubRepo.ExternalRepo.ServiceType,
-			BatchChanges:        []btypes.BatchChangeAssoc{{BatchChangeID: batchChange.ID}},
+			ExternblID:          "10156",
+			ExternblServiceType: githubRepo.ExternblRepo.ServiceType,
+			BbtchChbnges:        []btypes.BbtchChbngeAssoc{{BbtchChbngeID: bbtchChbnge.ID}},
 		}
 
-		err = s.CreateChangeset(ctx, changeset)
+		err = s.CrebteChbngeset(ctx, chbngeset)
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
 
-		// Set up mocks to prevent the diffstat computation from trying to
-		// use a real gitserver, and so we can control what diff is used to
-		// create the diffstat.
-		state := bt.MockChangesetSyncState(&protocol.RepoInfo{
-			Name: "repo",
-			VCS:  protocol.VCSInfo{URL: "https://example.com/repo/"},
+		// Set up mocks to prevent the diffstbt computbtion from trying to
+		// use b rebl gitserver, bnd so we cbn control whbt diff is used to
+		// crebte the diffstbt.
+		stbte := bt.MockChbngesetSyncStbte(&protocol.RepoInfo{
+			Nbme: "repo",
+			VCS:  protocol.VCSInfo{URL: "https://exbmple.com/repo/"},
 		})
-		defer state.Unmock()
+		defer stbte.Unmock()
 
-		src, err := sourcer.ForChangeset(ctx, s, changeset, sources.AuthenticationStrategyUserCredential)
+		src, err := sourcer.ForChbngeset(ctx, s, chbngeset, sources.AuthenticbtionStrbtegyUserCredentibl)
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
 
 		gsClient := gitserver.NewMockClient()
-		gsClient.ResolveRevisionFunc.SetDefaultHook(func(context.Context, api.RepoName, string, gitserver.ResolveRevisionOptions) (api.CommitID, error) {
+		gsClient.ResolveRevisionFunc.SetDefbultHook(func(context.Context, bpi.RepoNbme, string, gitserver.ResolveRevisionOptions) (bpi.CommitID, error) {
 			return "", nil
 		})
 
-		err = syncer.SyncChangeset(ctx, s, gsClient, src, githubRepo, changeset)
+		err = syncer.SyncChbngeset(ctx, s, gsClient, src, githubRepo, chbngeset)
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
 
 		hook := NewGitHubWebhook(s, gsClient, logtest.Scoped(t))
 
-		fixtureFiles, err := filepath.Glob("testdata/fixtures/webhooks/github/*.json")
+		fixtureFiles, err := filepbth.Glob("testdbtb/fixtures/webhooks/github/*.json")
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
 
-		for _, fixtureFile := range fixtureFiles {
-			_, name := path.Split(fixtureFile)
-			name = strings.TrimSuffix(name, ".json")
-			t.Run(name, func(t *testing.T) {
-				bt.TruncateTables(t, db, "changeset_events")
+		for _, fixtureFile := rbnge fixtureFiles {
+			_, nbme := pbth.Split(fixtureFile)
+			nbme = strings.TrimSuffix(nbme, ".json")
+			t.Run(nbme, func(t *testing.T) {
+				bt.TruncbteTbbles(t, db, "chbngeset_events")
 
-				tc := loadWebhookTestCase(t, fixtureFile)
+				tc := lobdWebhookTestCbse(t, fixtureFile)
 
-				// Send all events twice to ensure we are idempotent
+				// Send bll events twice to ensure we bre idempotent
 				for i := 0; i < 2; i++ {
-					for _, event := range tc.Payloads {
-						handler := webhooks.GitHubWebhook{
+					for _, event := rbnge tc.Pbylobds {
+						hbndler := webhooks.GitHubWebhook{
 							Router: &webhooks.Router{
 								DB: db,
 							},
 						}
-						hook.Register(handler.Router)
+						hook.Register(hbndler.Router)
 
-						u, err := extsvc.WebhookURL(extsvc.TypeGitHub, extSvc.ID, nil, "https://example.com/")
+						u, err := extsvc.WebhookURL(extsvc.TypeGitHub, extSvc.ID, nil, "https://exbmple.com/")
 						if err != nil {
-							t.Fatal(err)
+							t.Fbtbl(err)
 						}
 
-						req, err := http.NewRequest("POST", u, bytes.NewReader(event.Data))
+						req, err := http.NewRequest("POST", u, bytes.NewRebder(event.Dbtb))
 						if err != nil {
-							t.Fatal(err)
+							t.Fbtbl(err)
 						}
-						req.Header.Set("X-Github-Event", event.PayloadType)
-						req.Header.Set("X-Hub-Signature", sign(t, event.Data, []byte(secret)))
+						req.Hebder.Set("X-Github-Event", event.PbylobdType)
+						req.Hebder.Set("X-Hub-Signbture", sign(t, event.Dbtb, []byte(secret)))
 
 						rec := httptest.NewRecorder()
-						handler.ServeHTTP(rec, req)
+						hbndler.ServeHTTP(rec, req)
 						resp := rec.Result()
 
-						if resp.StatusCode != http.StatusOK {
-							t.Fatalf("Non 200 code: %v", resp.StatusCode)
+						if resp.StbtusCode != http.StbtusOK {
+							t.Fbtblf("Non 200 code: %v", resp.StbtusCode)
 						}
 					}
 				}
 
-				have, _, err := s.ListChangesetEvents(ctx, store.ListChangesetEventsOpts{})
+				hbve, _, err := s.ListChbngesetEvents(ctx, store.ListChbngesetEventsOpts{})
 				if err != nil {
-					t.Fatal(err)
+					t.Fbtbl(err)
 				}
 
-				// Overwrite and format test case
-				if *update {
-					tc.ChangesetEvents = have
-					data, err := json.MarshalIndent(tc, "  ", "  ")
+				// Overwrite bnd formbt test cbse
+				if *updbte {
+					tc.ChbngesetEvents = hbve
+					dbtb, err := json.MbrshblIndent(tc, "  ", "  ")
 					if err != nil {
-						t.Fatal(err)
+						t.Fbtbl(err)
 					}
-					err = os.WriteFile(fixtureFile, data, 0o666)
+					err = os.WriteFile(fixtureFile, dbtb, 0o666)
 					if err != nil {
-						t.Fatal(err)
+						t.Fbtbl(err)
 					}
 				}
 
 				opts := []cmp.Option{
-					cmpopts.IgnoreFields(btypes.ChangesetEvent{}, "CreatedAt"),
-					cmpopts.IgnoreFields(btypes.ChangesetEvent{}, "UpdatedAt"),
+					cmpopts.IgnoreFields(btypes.ChbngesetEvent{}, "CrebtedAt"),
+					cmpopts.IgnoreFields(btypes.ChbngesetEvent{}, "UpdbtedAt"),
 				}
 
-				if diff := cmp.Diff(tc.ChangesetEvents, have, opts...); diff != "" {
+				if diff := cmp.Diff(tc.ChbngesetEvents, hbve, opts...); diff != "" {
 					t.Error(diff)
 				}
 			})
 		}
 
-		t.Run("unexpected payload", func(t *testing.T) {
-			// GitHub pull request events are processed based on the action
-			// embedded within them, but that action is just a string that could
-			// be anything. We need to ensure that this is hardened against
+		t.Run("unexpected pbylobd", func(t *testing.T) {
+			// GitHub pull request events bre processed bbsed on the bction
+			// embedded within them, but thbt bction is just b string thbt could
+			// be bnything. We need to ensure thbt this is hbrdened bgbinst
 			// unexpected input.
 			n := 10156
-			action := "this is a bad action"
-			u, err := extsvc.NewCodeHostBaseURL("github.com")
+			bction := "this is b bbd bction"
+			u, err := extsvc.NewCodeHostBbseURL("github.com")
 			require.NoError(t, err)
-			if err := hook.handleGitHubWebhook(ctx, db, u, &gh.PullRequestEvent{
+			if err := hook.hbndleGitHubWebhook(ctx, db, u, &gh.PullRequestEvent{
 				Number: &n,
 				Repo: &gh.Repository{
-					NodeID: &githubRepo.ExternalRepo.ID,
+					NodeID: &githubRepo.ExternblRepo.ID,
 				},
-				Action: &action,
+				Action: &bction,
 			}); err != nil {
 				t.Errorf("unexpected non-nil error: %v", err)
 			}

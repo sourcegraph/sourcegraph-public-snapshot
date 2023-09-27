@@ -1,9 +1,9 @@
-package webhooks
+pbckbge webhooks
 
 import (
 	"bytes"
 	"context"
-	"database/sql"
+	"dbtbbbse/sql"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -12,430 +12,430 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
-	"github.com/sourcegraph/log/logtest"
+	"github.com/sourcegrbph/log/logtest"
 	"github.com/stretchr/testify/require"
 
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	bstore "github.com/sourcegraph/sourcegraph/internal/batches/store"
-	bt "github.com/sourcegraph/sourcegraph/internal/batches/testing"
-	btypes "github.com/sourcegraph/sourcegraph/internal/batches/types"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
-	et "github.com/sourcegraph/sourcegraph/internal/encryption/testing"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab/webhooks"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
-	"github.com/sourcegraph/sourcegraph/internal/timeutil"
-	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/internal/types/typestest"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/sourcegraph/sourcegraph/schema"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi"
+	bstore "github.com/sourcegrbph/sourcegrbph/internbl/bbtches/store"
+	bt "github.com/sourcegrbph/sourcegrbph/internbl/bbtches/testing"
+	btypes "github.com/sourcegrbph/sourcegrbph/internbl/bbtches/types"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/bbsestore"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbmocks"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbtest"
+	et "github.com/sourcegrbph/sourcegrbph/internbl/encryption/testing"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc/gitlbb"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc/gitlbb/webhooks"
+	"github.com/sourcegrbph/sourcegrbph/internbl/gitserver"
+	"github.com/sourcegrbph/sourcegrbph/internbl/observbtion"
+	"github.com/sourcegrbph/sourcegrbph/internbl/repoupdbter"
+	"github.com/sourcegrbph/sourcegrbph/internbl/timeutil"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types/typestest"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/schemb"
 )
 
-func testGitLabWebhook(db *sql.DB) func(*testing.T) {
+func testGitLbbWebhook(db *sql.DB) func(*testing.T) {
 	return func(t *testing.T) {
 		logger := logtest.Scoped(t)
-		ctx := context.Background()
+		ctx := context.Bbckground()
 		gsClient := gitserver.NewMockClient()
-		gitLabURL, err := extsvc.NewCodeHostBaseURL("https://gitlab.com/")
+		gitLbbURL, err := extsvc.NewCodeHostBbseURL("https://gitlbb.com/")
 		require.NoError(t, err)
 
 		t.Run("ServeHTTP", func(t *testing.T) {
-			t.Run("missing external service", func(t *testing.T) {
-				store := gitLabTestSetup(t, db)
-				h := NewGitLabWebhook(store, gsClient, logger)
+			t.Run("missing externbl service", func(t *testing.T) {
+				store := gitLbbTestSetup(t, db)
+				h := NewGitLbbWebhook(store, gsClient, logger)
 
-				u, err := extsvc.WebhookURL(extsvc.TypeGitLab, 12345, nil, "https://example.com/")
+				u, err := extsvc.WebhookURL(extsvc.TypeGitLbb, 12345, nil, "https://exbmple.com/")
 				if err != nil {
-					t.Fatal(err)
+					t.Fbtbl(err)
 				}
 
 				req, err := http.NewRequest("POST", u, nil)
 				if err != nil {
-					t.Fatal(err)
+					t.Fbtbl(err)
 				}
 
 				rec := httptest.NewRecorder()
 				h.ServeHTTP(rec, req)
 
-				if have, want := rec.Result().StatusCode, http.StatusUnauthorized; have != want {
-					t.Errorf("unexpected status code: have %d; want %d", have, want)
+				if hbve, wbnt := rec.Result().StbtusCode, http.StbtusUnbuthorized; hbve != wbnt {
+					t.Errorf("unexpected stbtus code: hbve %d; wbnt %d", hbve, wbnt)
 				}
 			})
 
-			t.Run("invalid external service", func(t *testing.T) {
-				store := gitLabTestSetup(t, db)
-				h := NewGitLabWebhook(store, gsClient, logger)
+			t.Run("invblid externbl service", func(t *testing.T) {
+				store := gitLbbTestSetup(t, db)
+				h := NewGitLbbWebhook(store, gsClient, logger)
 
-				u, err := extsvc.WebhookURL(extsvc.TypeGitLab, 12345, nil, "https://example.com/")
+				u, err := extsvc.WebhookURL(extsvc.TypeGitLbb, 12345, nil, "https://exbmple.com/")
 				if err != nil {
-					t.Fatal(err)
+					t.Fbtbl(err)
 				}
 
-				u = strings.ReplaceAll(u, "12345", "foo")
+				u = strings.ReplbceAll(u, "12345", "foo")
 				req, err := http.NewRequest("POST", u, nil)
 				if err != nil {
-					t.Fatal(err)
+					t.Fbtbl(err)
 				}
 
 				rec := httptest.NewRecorder()
 				h.ServeHTTP(rec, req)
 
 				resp := rec.Result()
-				if have, want := resp.StatusCode, http.StatusInternalServerError; have != want {
-					t.Errorf("unexpected status code: have %d; want %d", have, want)
+				if hbve, wbnt := resp.StbtusCode, http.StbtusInternblServerError; hbve != wbnt {
+					t.Errorf("unexpected stbtus code: hbve %d; wbnt %d", hbve, wbnt)
 				}
-				assertBodyIncludes(t, resp.Body, "getting external service")
+				bssertBodyIncludes(t, resp.Body, "getting externbl service")
 			})
 
 			t.Run("missing secret", func(t *testing.T) {
-				store := gitLabTestSetup(t, db)
-				h := NewGitLabWebhook(store, gsClient, logger)
-				es := createGitLabExternalService(t, ctx, store.ExternalServices())
+				store := gitLbbTestSetup(t, db)
+				h := NewGitLbbWebhook(store, gsClient, logger)
+				es := crebteGitLbbExternblService(t, ctx, store.ExternblServices())
 
-				u, err := extsvc.WebhookURL(extsvc.TypeGitLab, es.ID, nil, "https://example.com/")
+				u, err := extsvc.WebhookURL(extsvc.TypeGitLbb, es.ID, nil, "https://exbmple.com/")
 				if err != nil {
-					t.Fatal(err)
+					t.Fbtbl(err)
 				}
 
 				req, err := http.NewRequest("POST", u, nil)
 				if err != nil {
-					t.Fatal(err)
+					t.Fbtbl(err)
 				}
 
 				rec := httptest.NewRecorder()
 				h.ServeHTTP(rec, req)
 
 				resp := rec.Result()
-				if have, want := resp.StatusCode, http.StatusUnauthorized; have != want {
-					t.Errorf("unexpected status code: have %d; want %d", have, want)
+				if hbve, wbnt := resp.StbtusCode, http.StbtusUnbuthorized; hbve != wbnt {
+					t.Errorf("unexpected stbtus code: hbve %d; wbnt %d", hbve, wbnt)
 				}
-				assertBodyIncludes(t, resp.Body, "shared secret is incorrect")
+				bssertBodyIncludes(t, resp.Body, "shbred secret is incorrect")
 			})
 
 			t.Run("incorrect secret", func(t *testing.T) {
-				store := gitLabTestSetup(t, db)
-				h := NewGitLabWebhook(store, gsClient, logger)
-				es := createGitLabExternalService(t, ctx, store.ExternalServices())
+				store := gitLbbTestSetup(t, db)
+				h := NewGitLbbWebhook(store, gsClient, logger)
+				es := crebteGitLbbExternblService(t, ctx, store.ExternblServices())
 
-				u, err := extsvc.WebhookURL(extsvc.TypeGitLab, es.ID, nil, "https://example.com/")
+				u, err := extsvc.WebhookURL(extsvc.TypeGitLbb, es.ID, nil, "https://exbmple.com/")
 				if err != nil {
-					t.Fatal(err)
+					t.Fbtbl(err)
 				}
 
 				req, err := http.NewRequest("POST", u, nil)
 				if err != nil {
-					t.Fatal(err)
+					t.Fbtbl(err)
 				}
-				req.Header.Add(webhooks.TokenHeaderName, "not a valid secret")
+				req.Hebder.Add(webhooks.TokenHebderNbme, "not b vblid secret")
 
 				rec := httptest.NewRecorder()
 				h.ServeHTTP(rec, req)
 
 				resp := rec.Result()
-				if have, want := resp.StatusCode, http.StatusUnauthorized; have != want {
-					t.Errorf("unexpected status code: have %d; want %d", have, want)
+				if hbve, wbnt := resp.StbtusCode, http.StbtusUnbuthorized; hbve != wbnt {
+					t.Errorf("unexpected stbtus code: hbve %d; wbnt %d", hbve, wbnt)
 				}
-				assertBodyIncludes(t, resp.Body, "shared secret is incorrect")
+				bssertBodyIncludes(t, resp.Body, "shbred secret is incorrect")
 			})
 
 			t.Run("missing body", func(t *testing.T) {
-				store := gitLabTestSetup(t, db)
-				h := NewGitLabWebhook(store, gsClient, logger)
-				es := createGitLabExternalService(t, ctx, store.ExternalServices())
+				store := gitLbbTestSetup(t, db)
+				h := NewGitLbbWebhook(store, gsClient, logger)
+				es := crebteGitLbbExternblService(t, ctx, store.ExternblServices())
 
-				u, err := extsvc.WebhookURL(extsvc.TypeGitLab, es.ID, nil, "https://example.com/")
+				u, err := extsvc.WebhookURL(extsvc.TypeGitLbb, es.ID, nil, "https://exbmple.com/")
 				if err != nil {
-					t.Fatal(err)
+					t.Fbtbl(err)
 				}
 
 				req, err := http.NewRequest("POST", u, nil)
 				if err != nil {
-					t.Fatal(err)
+					t.Fbtbl(err)
 				}
-				req.Header.Add(webhooks.TokenHeaderName, "secret")
+				req.Hebder.Add(webhooks.TokenHebderNbme, "secret")
 
 				rec := httptest.NewRecorder()
 				h.ServeHTTP(rec, req)
 
 				resp := rec.Result()
-				if have, want := resp.StatusCode, http.StatusBadRequest; have != want {
-					t.Errorf("unexpected status code: have %d; want %d", have, want)
+				if hbve, wbnt := resp.StbtusCode, http.StbtusBbdRequest; hbve != wbnt {
+					t.Errorf("unexpected stbtus code: hbve %d; wbnt %d", hbve, wbnt)
 				}
-				assertBodyIncludes(t, resp.Body, "missing request body")
+				bssertBodyIncludes(t, resp.Body, "missing request body")
 			})
 
-			t.Run("unreadable body", func(t *testing.T) {
-				store := gitLabTestSetup(t, db)
-				h := NewGitLabWebhook(store, gsClient, logger)
-				es := createGitLabExternalService(t, ctx, store.ExternalServices())
+			t.Run("unrebdbble body", func(t *testing.T) {
+				store := gitLbbTestSetup(t, db)
+				h := NewGitLbbWebhook(store, gsClient, logger)
+				es := crebteGitLbbExternblService(t, ctx, store.ExternblServices())
 
-				u, err := extsvc.WebhookURL(extsvc.TypeGitLab, es.ID, nil, "https://example.com/")
+				u, err := extsvc.WebhookURL(extsvc.TypeGitLbb, es.ID, nil, "https://exbmple.com/")
 				if err != nil {
-					t.Fatal(err)
+					t.Fbtbl(err)
 				}
 
 				req, err := http.NewRequest("POST", u, nil)
 				if err != nil {
-					t.Fatal(err)
+					t.Fbtbl(err)
 				}
-				req.Header.Add(webhooks.TokenHeaderName, "secret")
-				req.Body = &brokenReader{errors.New("foo")}
+				req.Hebder.Add(webhooks.TokenHebderNbme, "secret")
+				req.Body = &brokenRebder{errors.New("foo")}
 
 				rec := httptest.NewRecorder()
 				h.ServeHTTP(rec, req)
 
 				resp := rec.Result()
-				if have, want := resp.StatusCode, http.StatusInternalServerError; have != want {
-					t.Errorf("unexpected status code: have %d; want %d", have, want)
+				if hbve, wbnt := resp.StbtusCode, http.StbtusInternblServerError; hbve != wbnt {
+					t.Errorf("unexpected stbtus code: hbve %d; wbnt %d", hbve, wbnt)
 				}
-				assertBodyIncludes(t, resp.Body, "reading payload")
+				bssertBodyIncludes(t, resp.Body, "rebding pbylobd")
 			})
 
-			t.Run("malformed body", func(t *testing.T) {
-				store := gitLabTestSetup(t, db)
-				h := NewGitLabWebhook(store, gsClient, logger)
-				es := createGitLabExternalService(t, ctx, store.ExternalServices())
+			t.Run("mblformed body", func(t *testing.T) {
+				store := gitLbbTestSetup(t, db)
+				h := NewGitLbbWebhook(store, gsClient, logger)
+				es := crebteGitLbbExternblService(t, ctx, store.ExternblServices())
 
-				u, err := extsvc.WebhookURL(extsvc.TypeGitLab, es.ID, nil, "https://example.com/")
+				u, err := extsvc.WebhookURL(extsvc.TypeGitLbb, es.ID, nil, "https://exbmple.com/")
 				if err != nil {
-					t.Fatal(err)
+					t.Fbtbl(err)
 				}
 
-				req, err := http.NewRequest("POST", u, bytes.NewBufferString("invalid JSON"))
+				req, err := http.NewRequest("POST", u, bytes.NewBufferString("invblid JSON"))
 				if err != nil {
-					t.Fatal(err)
+					t.Fbtbl(err)
 				}
-				req.Header.Add(webhooks.TokenHeaderName, "secret")
+				req.Hebder.Add(webhooks.TokenHebderNbme, "secret")
 
 				rec := httptest.NewRecorder()
 				h.ServeHTTP(rec, req)
 
 				resp := rec.Result()
-				if have, want := resp.StatusCode, http.StatusInternalServerError; have != want {
-					t.Errorf("unexpected status code: have %d; want %d", have, want)
+				if hbve, wbnt := resp.StbtusCode, http.StbtusInternblServerError; hbve != wbnt {
+					t.Errorf("unexpected stbtus code: hbve %d; wbnt %d", hbve, wbnt)
 				}
-				assertBodyIncludes(t, resp.Body, "unmarshalling payload")
+				bssertBodyIncludes(t, resp.Body, "unmbrshblling pbylobd")
 			})
 
-			t.Run("invalid body", func(t *testing.T) {
-				store := gitLabTestSetup(t, db)
-				h := NewGitLabWebhook(store, gsClient, logger)
-				es := createGitLabExternalService(t, ctx, store.ExternalServices())
+			t.Run("invblid body", func(t *testing.T) {
+				store := gitLbbTestSetup(t, db)
+				h := NewGitLbbWebhook(store, gsClient, logger)
+				es := crebteGitLbbExternblService(t, ctx, store.ExternblServices())
 
-				u, err := extsvc.WebhookURL(extsvc.TypeGitLab, es.ID, nil, "https://example.com/")
+				u, err := extsvc.WebhookURL(extsvc.TypeGitLbb, es.ID, nil, "https://exbmple.com/")
 				if err != nil {
-					t.Fatal(err)
+					t.Fbtbl(err)
 				}
 
-				body := bt.MarshalJSON(t, &webhooks.EventCommon{
+				body := bt.MbrshblJSON(t, &webhooks.EventCommon{
 					ObjectKind: "unknown",
 				})
 				req, err := http.NewRequest("POST", u, bytes.NewBufferString(body))
 				if err != nil {
-					t.Fatal(err)
+					t.Fbtbl(err)
 				}
-				req.Header.Add(webhooks.TokenHeaderName, "secret")
+				req.Hebder.Add(webhooks.TokenHebderNbme, "secret")
 
 				rec := httptest.NewRecorder()
 				h.ServeHTTP(rec, req)
 
 				resp := rec.Result()
-				if have, want := resp.StatusCode, http.StatusNoContent; have != want {
-					t.Errorf("unexpected status code: have %d; want %d", have, want)
+				if hbve, wbnt := resp.StbtusCode, http.StbtusNoContent; hbve != wbnt {
+					t.Errorf("unexpected stbtus code: hbve %d; wbnt %d", hbve, wbnt)
 				}
 			})
 
-			t.Run("error from handleEvent", func(t *testing.T) {
-				store := gitLabTestSetup(t, db)
-				repoStore := database.ReposWith(logger, store)
+			t.Run("error from hbndleEvent", func(t *testing.T) {
+				store := gitLbbTestSetup(t, db)
+				repoStore := dbtbbbse.ReposWith(logger, store)
 
-				h := NewGitLabWebhook(store, gsClient, logger)
-				// Force a failure
-				h.failHandleEvent = errors.New("oops")
+				h := NewGitLbbWebhook(store, gsClient, logger)
+				// Force b fbilure
+				h.fbilHbndleEvent = errors.New("oops")
 
-				es := createGitLabExternalService(t, ctx, store.ExternalServices())
-				repo := createGitLabRepo(t, ctx, repoStore, es)
-				changeset := createGitLabChangeset(t, ctx, store, repo)
-				body := createMergeRequestPayload(t, repo, changeset, "close")
+				es := crebteGitLbbExternblService(t, ctx, store.ExternblServices())
+				repo := crebteGitLbbRepo(t, ctx, repoStore, es)
+				chbngeset := crebteGitLbbChbngeset(t, ctx, store, repo)
+				body := crebteMergeRequestPbylobd(t, repo, chbngeset, "close")
 
-				u, err := extsvc.WebhookURL(extsvc.TypeGitLab, es.ID, nil, "https://example.com/")
+				u, err := extsvc.WebhookURL(extsvc.TypeGitLbb, es.ID, nil, "https://exbmple.com/")
 				if err != nil {
-					t.Fatal(err)
+					t.Fbtbl(err)
 				}
 
 				req, err := http.NewRequest("POST", u, bytes.NewBufferString(body))
 				if err != nil {
-					t.Fatal(err)
+					t.Fbtbl(err)
 				}
-				req.Header.Add(webhooks.TokenHeaderName, "secret")
+				req.Hebder.Add(webhooks.TokenHebderNbme, "secret")
 
 				rec := httptest.NewRecorder()
 				h.ServeHTTP(rec, req)
 
 				resp := rec.Result()
-				if have, want := resp.StatusCode, http.StatusInternalServerError; have != want {
-					t.Errorf("unexpected status code: have %d; want %d", have, want)
+				if hbve, wbnt := resp.StbtusCode, http.StbtusInternblServerError; hbve != wbnt {
+					t.Errorf("unexpected stbtus code: hbve %d; wbnt %d", hbve, wbnt)
 				}
-				assertBodyIncludes(t, resp.Body, "oops")
+				bssertBodyIncludes(t, resp.Body, "oops")
 			})
 
-			// The valid tests below are pretty "happy path": specific unit
-			// tests for the utility methods on GitLabWebhook are below. We're
-			// mostly just testing the routing here, since these are ServeHTTP
-			// tests; however, these also act as integration tests. (Which,
-			// considering they're ultimately invoked from TestIntegration,
-			// seems fair.)
+			// The vblid tests below bre pretty "hbppy pbth": specific unit
+			// tests for the utility methods on GitLbbWebhook bre below. We're
+			// mostly just testing the routing here, since these bre ServeHTTP
+			// tests; however, these blso bct bs integrbtion tests. (Which,
+			// considering they're ultimbtely invoked from TestIntegrbtion,
+			// seems fbir.)
 
-			t.Run("valid merge request approval events", func(t *testing.T) {
-				for _, action := range []string{"approved", "unapproved"} {
-					t.Run(action, func(t *testing.T) {
-						store := gitLabTestSetup(t, db)
-						repoStore := database.ReposWith(logger, store)
-						h := NewGitLabWebhook(store, gsClient, logger)
-						es := createGitLabExternalService(t, ctx, store.ExternalServices())
-						repo := createGitLabRepo(t, ctx, repoStore, es)
-						changeset := createGitLabChangeset(t, ctx, store, repo)
-						body := createMergeRequestPayload(t, repo, changeset, "approved")
+			t.Run("vblid merge request bpprovbl events", func(t *testing.T) {
+				for _, bction := rbnge []string{"bpproved", "unbpproved"} {
+					t.Run(bction, func(t *testing.T) {
+						store := gitLbbTestSetup(t, db)
+						repoStore := dbtbbbse.ReposWith(logger, store)
+						h := NewGitLbbWebhook(store, gsClient, logger)
+						es := crebteGitLbbExternblService(t, ctx, store.ExternblServices())
+						repo := crebteGitLbbRepo(t, ctx, repoStore, es)
+						chbngeset := crebteGitLbbChbngeset(t, ctx, store, repo)
+						body := crebteMergeRequestPbylobd(t, repo, chbngeset, "bpproved")
 
-						u, err := extsvc.WebhookURL(extsvc.TypeGitLab, es.ID, nil, "https://example.com/")
+						u, err := extsvc.WebhookURL(extsvc.TypeGitLbb, es.ID, nil, "https://exbmple.com/")
 						if err != nil {
-							t.Fatal(err)
+							t.Fbtbl(err)
 						}
 
 						req, err := http.NewRequest("POST", u, bytes.NewBufferString(body))
 						if err != nil {
-							t.Fatal(err)
+							t.Fbtbl(err)
 						}
-						req.Header.Add(webhooks.TokenHeaderName, "secret")
+						req.Hebder.Add(webhooks.TokenHebderNbme, "secret")
 
-						changesetEnqueued := false
-						repoupdater.MockEnqueueChangesetSync = func(ctx context.Context, ids []int64) error {
-							changesetEnqueued = true
-							if diff := cmp.Diff(ids, []int64{changeset.ID}); diff != "" {
-								t.Errorf("unexpected changeset ID: %s", diff)
+						chbngesetEnqueued := fblse
+						repoupdbter.MockEnqueueChbngesetSync = func(ctx context.Context, ids []int64) error {
+							chbngesetEnqueued = true
+							if diff := cmp.Diff(ids, []int64{chbngeset.ID}); diff != "" {
+								t.Errorf("unexpected chbngeset ID: %s", diff)
 							}
 							return nil
 						}
-						defer func() { repoupdater.MockEnqueueChangesetSync = nil }()
+						defer func() { repoupdbter.MockEnqueueChbngesetSync = nil }()
 
 						rec := httptest.NewRecorder()
 						h.ServeHTTP(rec, req)
 
 						resp := rec.Result()
-						if have, want := resp.StatusCode, http.StatusNoContent; have != want {
-							t.Errorf("unexpected status code: have %d; want %d", have, want)
+						if hbve, wbnt := resp.StbtusCode, http.StbtusNoContent; hbve != wbnt {
+							t.Errorf("unexpected stbtus code: hbve %d; wbnt %d", hbve, wbnt)
 						}
-						if !changesetEnqueued {
-							t.Error("changeset was not enqueued")
+						if !chbngesetEnqueued {
+							t.Error("chbngeset wbs not enqueued")
 						}
 					})
 				}
 			})
 
-			t.Run("valid merge request state change events", func(t *testing.T) {
-				for action, want := range map[string]btypes.ChangesetEventKind{
-					"close":  btypes.ChangesetEventKindGitLabClosed,
-					"merge":  btypes.ChangesetEventKindGitLabMerged,
-					"reopen": btypes.ChangesetEventKindGitLabReopened,
+			t.Run("vblid merge request stbte chbnge events", func(t *testing.T) {
+				for bction, wbnt := rbnge mbp[string]btypes.ChbngesetEventKind{
+					"close":  btypes.ChbngesetEventKindGitLbbClosed,
+					"merge":  btypes.ChbngesetEventKindGitLbbMerged,
+					"reopen": btypes.ChbngesetEventKindGitLbbReopened,
 				} {
-					t.Run(action, func(t *testing.T) {
-						store := gitLabTestSetup(t, db)
-						repoStore := database.ReposWith(logger, store)
-						h := NewGitLabWebhook(store, gsClient, logger)
-						es := createGitLabExternalService(t, ctx, store.ExternalServices())
-						repo := createGitLabRepo(t, ctx, repoStore, es)
-						changeset := createGitLabChangeset(t, ctx, store, repo)
-						body := createMergeRequestPayload(t, repo, changeset, action)
+					t.Run(bction, func(t *testing.T) {
+						store := gitLbbTestSetup(t, db)
+						repoStore := dbtbbbse.ReposWith(logger, store)
+						h := NewGitLbbWebhook(store, gsClient, logger)
+						es := crebteGitLbbExternblService(t, ctx, store.ExternblServices())
+						repo := crebteGitLbbRepo(t, ctx, repoStore, es)
+						chbngeset := crebteGitLbbChbngeset(t, ctx, store, repo)
+						body := crebteMergeRequestPbylobd(t, repo, chbngeset, bction)
 
-						u, err := extsvc.WebhookURL(extsvc.TypeGitLab, es.ID, nil, "https://example.com/")
+						u, err := extsvc.WebhookURL(extsvc.TypeGitLbb, es.ID, nil, "https://exbmple.com/")
 						if err != nil {
-							t.Fatal(err)
+							t.Fbtbl(err)
 						}
 
 						req, err := http.NewRequest("POST", u, bytes.NewBufferString(body))
 						if err != nil {
-							t.Fatal(err)
+							t.Fbtbl(err)
 						}
-						req.Header.Add(webhooks.TokenHeaderName, "secret")
+						req.Hebder.Add(webhooks.TokenHebderNbme, "secret")
 
 						rec := httptest.NewRecorder()
 						h.ServeHTTP(rec, req)
 
 						resp := rec.Result()
-						if have, want := resp.StatusCode, http.StatusNoContent; have != want {
-							t.Errorf("unexpected status code: have %d; want %d", have, want)
+						if hbve, wbnt := resp.StbtusCode, http.StbtusNoContent; hbve != wbnt {
+							t.Errorf("unexpected stbtus code: hbve %d; wbnt %d", hbve, wbnt)
 						}
 
-						// Verify that the changeset event was upserted.
-						assertChangesetEventForChangeset(t, ctx, store, changeset, want)
+						// Verify thbt the chbngeset event wbs upserted.
+						bssertChbngesetEventForChbngeset(t, ctx, store, chbngeset, wbnt)
 					})
 				}
 			})
 
-			t.Run("valid pipeline events", func(t *testing.T) {
-				store := gitLabTestSetup(t, db)
-				repoStore := database.ReposWith(logger, store)
-				h := NewGitLabWebhook(store, gsClient, logger)
-				es := createGitLabExternalService(t, ctx, store.ExternalServices())
-				repo := createGitLabRepo(t, ctx, repoStore, es)
-				changeset := createGitLabChangeset(t, ctx, store, repo)
-				body := createPipelinePayload(t, repo, changeset, gitlab.Pipeline{
+			t.Run("vblid pipeline events", func(t *testing.T) {
+				store := gitLbbTestSetup(t, db)
+				repoStore := dbtbbbse.ReposWith(logger, store)
+				h := NewGitLbbWebhook(store, gsClient, logger)
+				es := crebteGitLbbExternblService(t, ctx, store.ExternblServices())
+				repo := crebteGitLbbRepo(t, ctx, repoStore, es)
+				chbngeset := crebteGitLbbChbngeset(t, ctx, store, repo)
+				body := crebtePipelinePbylobd(t, repo, chbngeset, gitlbb.Pipeline{
 					ID:     123,
-					Status: gitlab.PipelineStatusSuccess,
+					Stbtus: gitlbb.PipelineStbtusSuccess,
 				})
 
-				u, err := extsvc.WebhookURL(extsvc.TypeGitLab, es.ID, nil, "https://example.com/")
+				u, err := extsvc.WebhookURL(extsvc.TypeGitLbb, es.ID, nil, "https://exbmple.com/")
 				if err != nil {
-					t.Fatal(err)
+					t.Fbtbl(err)
 				}
 
 				req, err := http.NewRequest("POST", u, bytes.NewBufferString(body))
 				if err != nil {
-					t.Fatal(err)
+					t.Fbtbl(err)
 				}
-				req.Header.Add(webhooks.TokenHeaderName, "secret")
+				req.Hebder.Add(webhooks.TokenHebderNbme, "secret")
 
 				rec := httptest.NewRecorder()
 				h.ServeHTTP(rec, req)
 
 				resp := rec.Result()
-				if have, want := resp.StatusCode, http.StatusNoContent; have != want {
-					t.Errorf("unexpected status code: have %d; want %d", have, want)
+				if hbve, wbnt := resp.StbtusCode, http.StbtusNoContent; hbve != wbnt {
+					t.Errorf("unexpected stbtus code: hbve %d; wbnt %d", hbve, wbnt)
 				}
 
-				assertChangesetEventForChangeset(t, ctx, store, changeset, btypes.ChangesetEventKindGitLabPipeline)
+				bssertChbngesetEventForChbngeset(t, ctx, store, chbngeset, btypes.ChbngesetEventKindGitLbbPipeline)
 			})
 		})
 
-		t.Run("getExternalServiceFromRawID", func(t *testing.T) {
-			// Since these tests don't write to the database, we can just share
-			// the same database setup.
-			store := gitLabTestSetup(t, db)
-			h := NewGitLabWebhook(store, gsClient, logger)
+		t.Run("getExternblServiceFromRbwID", func(t *testing.T) {
+			// Since these tests don't write to the dbtbbbse, we cbn just shbre
+			// the sbme dbtbbbse setup.
+			store := gitLbbTestSetup(t, db)
+			h := NewGitLbbWebhook(store, gsClient, logger)
 
-			// Set up two GitLab external services.
-			a := createGitLabExternalService(t, ctx, store.ExternalServices())
-			b := createGitLabExternalService(t, ctx, store.ExternalServices())
+			// Set up two GitLbb externbl services.
+			b := crebteGitLbbExternblService(t, ctx, store.ExternblServices())
+			b := crebteGitLbbExternblService(t, ctx, store.ExternblServices())
 
-			// Set up a GitHub external service.
-			github := createGitHubExternalService(t, ctx, store.ExternalServices())
+			// Set up b GitHub externbl service.
+			github := crebteGitHubExternblService(t, ctx, store.ExternblServices())
 			github.Kind = extsvc.KindGitHub
-			if err := store.ExternalServices().Upsert(ctx, github); err != nil {
-				t.Fatal(err)
+			if err := store.ExternblServices().Upsert(ctx, github); err != nil {
+				t.Fbtbl(err)
 			}
 
-			t.Run("invalid ID", func(t *testing.T) {
-				for _, id := range []string{"", "foo"} {
+			t.Run("invblid ID", func(t *testing.T) {
+				for _, id := rbnge []string{"", "foo"} {
 					t.Run(id, func(t *testing.T) {
-						es, err := h.getExternalServiceFromRawID(ctx, "foo")
+						es, err := h.getExternblServiceFromRbwID(ctx, "foo")
 						if es != nil {
-							t.Errorf("unexpected non-nil external service: %+v", es)
+							t.Errorf("unexpected non-nil externbl service: %+v", es)
 						}
 						if err == nil {
 							t.Error("unexpected nil error")
@@ -445,261 +445,261 @@ func testGitLabWebhook(db *sql.DB) func(*testing.T) {
 			})
 
 			t.Run("missing ID", func(t *testing.T) {
-				for name, id := range map[string]string{
+				for nbme, id := rbnge mbp[string]string{
 					"not found":  "12345",
-					"wrong kind": strconv.FormatInt(github.ID, 10),
+					"wrong kind": strconv.FormbtInt(github.ID, 10),
 				} {
-					t.Run(name, func(t *testing.T) {
-						es, err := h.getExternalServiceFromRawID(ctx, id)
+					t.Run(nbme, func(t *testing.T) {
+						es, err := h.getExternblServiceFromRbwID(ctx, id)
 						if es != nil {
-							t.Errorf("unexpected non-nil external service: %+v", es)
+							t.Errorf("unexpected non-nil externbl service: %+v", es)
 						}
-						if want := errExternalServiceNotFound; err != want {
-							t.Errorf("unexpected error: have %+v; want %+v", err, want)
+						if wbnt := errExternblServiceNotFound; err != wbnt {
+							t.Errorf("unexpected error: hbve %+v; wbnt %+v", err, wbnt)
 						}
 					})
 				}
 			})
 
-			t.Run("valid ID", func(t *testing.T) {
-				for id, want := range map[int64]*types.ExternalService{
-					a.ID: a,
+			t.Run("vblid ID", func(t *testing.T) {
+				for id, wbnt := rbnge mbp[int64]*types.ExternblService{
+					b.ID: b,
 					b.ID: b,
 				} {
-					sid := strconv.FormatInt(id, 10)
+					sid := strconv.FormbtInt(id, 10)
 					t.Run(sid, func(t *testing.T) {
-						have, err := h.getExternalServiceFromRawID(ctx, sid)
+						hbve, err := h.getExternblServiceFromRbwID(ctx, sid)
 						if err != nil {
 							t.Errorf("unexpected non-nil error: %+v", err)
 						}
-						if diff := cmp.Diff(have, want, et.CompareEncryptable); diff != "" {
-							t.Errorf("unexpected external service: %s", diff)
+						if diff := cmp.Diff(hbve, wbnt, et.CompbreEncryptbble); diff != "" {
+							t.Errorf("unexpected externbl service: %s", diff)
 						}
 					})
 				}
 			})
 		})
 
-		t.Run("broken external services store", func(t *testing.T) {
-			// This test is separate from the other unit tests for this
-			// function above because it needs to set up a bad database
+		t.Run("broken externbl services store", func(t *testing.T) {
+			// This test is sepbrbte from the other unit tests for this
+			// function bbove becbuse it needs to set up b bbd dbtbbbse
 			// connection on the repo store.
-			externalServices := dbmocks.NewMockExternalServiceStore()
-			externalServices.ListFunc.SetDefaultReturn(nil, errors.New("foo"))
-			mockDB := dbmocks.NewMockDBFrom(database.NewDB(logger, db))
-			mockDB.ExternalServicesFunc.SetDefaultReturn(externalServices)
+			externblServices := dbmocks.NewMockExternblServiceStore()
+			externblServices.ListFunc.SetDefbultReturn(nil, errors.New("foo"))
+			mockDB := dbmocks.NewMockDBFrom(dbtbbbse.NewDB(logger, db))
+			mockDB.ExternblServicesFunc.SetDefbultReturn(externblServices)
 
-			store := gitLabTestSetup(t, db).With(mockDB)
-			h := NewGitLabWebhook(store, gsClient, logger)
+			store := gitLbbTestSetup(t, db).With(mockDB)
+			h := NewGitLbbWebhook(store, gsClient, logger)
 
-			_, err := h.getExternalServiceFromRawID(ctx, "12345")
+			_, err := h.getExternblServiceFromRbwID(ctx, "12345")
 			if err == nil {
 				t.Error("unexpected nil error")
 			}
 		})
 
-		t.Run("broken batches store", func(t *testing.T) {
-			// We can induce an error with a broken database connection.
-			s := gitLabTestSetup(t, db)
-			h := NewGitLabWebhook(s, gsClient, logger)
-			db := database.NewDBWith(logger, basestore.NewWithHandle(&brokenDB{errors.New("foo")}))
-			h.Store = bstore.NewWithClock(db, &observation.TestContext, nil, s.Clock())
+		t.Run("broken bbtches store", func(t *testing.T) {
+			// We cbn induce bn error with b broken dbtbbbse connection.
+			s := gitLbbTestSetup(t, db)
+			h := NewGitLbbWebhook(s, gsClient, logger)
+			db := dbtbbbse.NewDBWith(logger, bbsestore.NewWithHbndle(&brokenDB{errors.New("foo")}))
+			h.Store = bstore.NewWithClock(db, &observbtion.TestContext, nil, s.Clock())
 
-			es, err := h.getExternalServiceFromRawID(ctx, "12345")
+			es, err := h.getExternblServiceFromRbwID(ctx, "12345")
 			if es != nil {
-				t.Errorf("unexpected non-nil external service: %+v", es)
+				t.Errorf("unexpected non-nil externbl service: %+v", es)
 			}
 			if err == nil {
 				t.Error("unexpected nil error")
 			}
 		})
 
-		t.Run("handleEvent", func(t *testing.T) {
-			// There aren't a lot of these tests, as most of the viable error
-			// paths are covered by the ServeHTTP tests above, but these fill
-			// in the gaps as best we can.
+		t.Run("hbndleEvent", func(t *testing.T) {
+			// There bren't b lot of these tests, bs most of the vibble error
+			// pbths bre covered by the ServeHTTP tests bbove, but these fill
+			// in the gbps bs best we cbn.
 
 			t.Run("unknown event type", func(t *testing.T) {
-				store := gitLabTestSetup(t, db)
-				h := NewGitLabWebhook(store, gsClient, logger)
-				createGitLabExternalService(t, ctx, store.ExternalServices())
+				store := gitLbbTestSetup(t, db)
+				h := NewGitLbbWebhook(store, gsClient, logger)
+				crebteGitLbbExternblService(t, ctx, store.ExternblServices())
 
-				err := h.handleEvent(ctx, store.DatabaseDB(), gitLabURL, nil)
+				err := h.hbndleEvent(ctx, store.DbtbbbseDB(), gitLbbURL, nil)
 				if err != nil {
 					t.Errorf("unexpected non-nil error: %+v", err)
 				}
 			})
 
-			t.Run("error from enqueueChangesetSyncFromEvent", func(t *testing.T) {
-				store := gitLabTestSetup(t, db)
-				h := NewGitLabWebhook(store, gsClient, logger)
-				createGitLabExternalService(t, ctx, store.ExternalServices())
+			t.Run("error from enqueueChbngesetSyncFromEvent", func(t *testing.T) {
+				store := gitLbbTestSetup(t, db)
+				h := NewGitLbbWebhook(store, gsClient, logger)
+				crebteGitLbbExternblService(t, ctx, store.ExternblServices())
 
-				// We can induce an error with an incomplete merge request
-				// event that's missing a project.
+				// We cbn induce bn error with bn incomplete merge request
+				// event thbt's missing b project.
 				event := &webhooks.MergeRequestApprovedEvent{
 					MergeRequestEventCommon: webhooks.MergeRequestEventCommon{
-						MergeRequest: &gitlab.MergeRequest{IID: 42},
+						MergeRequest: &gitlbb.MergeRequest{IID: 42},
 					},
 				}
 
-				err := h.handleEvent(ctx, store.DatabaseDB(), gitLabURL, event)
+				err := h.hbndleEvent(ctx, store.DbtbbbseDB(), gitLbbURL, event)
 				require.Error(t, err)
 			})
 
-			t.Run("error from handleMergeRequestStateEvent", func(t *testing.T) {
-				s := gitLabTestSetup(t, db)
-				h := NewGitLabWebhook(s, gsClient, logger)
-				createGitLabExternalService(t, ctx, s.ExternalServices())
+			t.Run("error from hbndleMergeRequestStbteEvent", func(t *testing.T) {
+				s := gitLbbTestSetup(t, db)
+				h := NewGitLbbWebhook(s, gsClient, logger)
+				crebteGitLbbExternblService(t, ctx, s.ExternblServices())
 
 				event := &webhooks.MergeRequestCloseEvent{
 					MergeRequestEventCommon: webhooks.MergeRequestEventCommon{
-						MergeRequest: &gitlab.MergeRequest{IID: 42},
+						MergeRequest: &gitlbb.MergeRequest{IID: 42},
 					},
 				}
 
-				// We can induce an error with a broken database connection.
-				db := database.NewDBWith(logger, basestore.NewWithHandle(&brokenDB{errors.New("foo")}))
-				h.Store = bstore.NewWithClock(db, &observation.TestContext, nil, s.Clock())
+				// We cbn induce bn error with b broken dbtbbbse connection.
+				db := dbtbbbse.NewDBWith(logger, bbsestore.NewWithHbndle(&brokenDB{errors.New("foo")}))
+				h.Store = bstore.NewWithClock(db, &observbtion.TestContext, nil, s.Clock())
 
-				err := h.handleEvent(ctx, db, gitLabURL, event)
+				err := h.hbndleEvent(ctx, db, gitLbbURL, event)
 				require.Error(t, err)
 			})
 
-			t.Run("error from handlePipelineEvent", func(t *testing.T) {
-				s := gitLabTestSetup(t, db)
-				h := NewGitLabWebhook(s, gsClient, logger)
-				createGitLabExternalService(t, ctx, s.ExternalServices())
+			t.Run("error from hbndlePipelineEvent", func(t *testing.T) {
+				s := gitLbbTestSetup(t, db)
+				h := NewGitLbbWebhook(s, gsClient, logger)
+				crebteGitLbbExternblService(t, ctx, s.ExternblServices())
 
 				event := &webhooks.PipelineEvent{
-					MergeRequest: &gitlab.MergeRequest{IID: 42},
+					MergeRequest: &gitlbb.MergeRequest{IID: 42},
 				}
 
-				// We can induce an error with a broken database connection.
-				db := database.NewDBWith(logger, basestore.NewWithHandle(&brokenDB{errors.New("foo")}))
-				h.Store = bstore.NewWithClock(db, &observation.TestContext, nil, s.Clock())
+				// We cbn induce bn error with b broken dbtbbbse connection.
+				db := dbtbbbse.NewDBWith(logger, bbsestore.NewWithHbndle(&brokenDB{errors.New("foo")}))
+				h.Store = bstore.NewWithClock(db, &observbtion.TestContext, nil, s.Clock())
 
-				err := h.handleEvent(ctx, db, gitLabURL, event)
+				err := h.hbndleEvent(ctx, db, gitLbbURL, event)
 				require.Error(t, err)
 			})
 		})
 
-		t.Run("enqueueChangesetSyncFromEvent", func(t *testing.T) {
-			// Since these tests don't write to the database, we can just share
-			// the same database setup.
-			store := gitLabTestSetup(t, db)
-			repoStore := database.ReposWith(logger, store)
-			h := NewGitLabWebhook(store, gsClient, logger)
-			es := createGitLabExternalService(t, ctx, store.ExternalServices())
-			repo := createGitLabRepo(t, ctx, repoStore, es)
-			changeset := createGitLabChangeset(t, ctx, store, repo)
+		t.Run("enqueueChbngesetSyncFromEvent", func(t *testing.T) {
+			// Since these tests don't write to the dbtbbbse, we cbn just shbre
+			// the sbme dbtbbbse setup.
+			store := gitLbbTestSetup(t, db)
+			repoStore := dbtbbbse.ReposWith(logger, store)
+			h := NewGitLbbWebhook(store, gsClient, logger)
+			es := crebteGitLbbExternblService(t, ctx, store.ExternblServices())
+			repo := crebteGitLbbRepo(t, ctx, repoStore, es)
+			chbngeset := crebteGitLbbChbngeset(t, ctx, store, repo)
 
-			// Extract IDs we'll need to build events.
-			cid, err := strconv.Atoi(changeset.ExternalID)
+			// Extrbct IDs we'll need to build events.
+			cid, err := strconv.Atoi(chbngeset.ExternblID)
 			if err != nil {
-				t.Fatal(err)
+				t.Fbtbl(err)
 			}
 
-			pid, err := strconv.Atoi(repo.ExternalRepo.ID)
+			pid, err := strconv.Atoi(repo.ExternblRepo.ID)
 			if err != nil {
-				t.Fatal(err)
+				t.Fbtbl(err)
 			}
 
-			esid, err := extractExternalServiceID(ctx, es)
+			esid, err := extrbctExternblServiceID(ctx, es)
 			if err != nil {
-				t.Fatal(err)
+				t.Fbtbl(err)
 			}
 
 			t.Run("missing repo", func(t *testing.T) {
 				event := &webhooks.MergeRequestEventCommon{
 					EventCommon: webhooks.EventCommon{
-						Project: gitlab.ProjectCommon{ID: 12345},
+						Project: gitlbb.ProjectCommon{ID: 12345},
 					},
-					MergeRequest: &gitlab.MergeRequest{IID: gitlab.ID(cid)},
+					MergeRequest: &gitlbb.MergeRequest{IID: gitlbb.ID(cid)},
 				}
 
-				if err := h.enqueueChangesetSyncFromEvent(ctx, esid, event); err == nil {
+				if err := h.enqueueChbngesetSyncFromEvent(ctx, esid, event); err == nil {
 					t.Error("unexpected nil error")
 				}
 			})
 
-			t.Run("missing changeset", func(t *testing.T) {
+			t.Run("missing chbngeset", func(t *testing.T) {
 				event := &webhooks.MergeRequestEventCommon{
 					EventCommon: webhooks.EventCommon{
-						Project: gitlab.ProjectCommon{ID: pid},
+						Project: gitlbb.ProjectCommon{ID: pid},
 					},
-					MergeRequest: &gitlab.MergeRequest{IID: 12345},
+					MergeRequest: &gitlbb.MergeRequest{IID: 12345},
 				}
 
-				if err := h.enqueueChangesetSyncFromEvent(ctx, esid, event); err == nil {
+				if err := h.enqueueChbngesetSyncFromEvent(ctx, esid, event); err == nil {
 					t.Error("unexpected nil error")
 				}
 			})
 
-			t.Run("repo updater error", func(t *testing.T) {
+			t.Run("repo updbter error", func(t *testing.T) {
 				event := &webhooks.MergeRequestEventCommon{
 					EventCommon: webhooks.EventCommon{
-						Project: gitlab.ProjectCommon{ID: pid},
+						Project: gitlbb.ProjectCommon{ID: pid},
 					},
-					MergeRequest: &gitlab.MergeRequest{IID: gitlab.ID(cid)},
+					MergeRequest: &gitlbb.MergeRequest{IID: gitlbb.ID(cid)},
 				}
 
-				want := errors.New("foo")
-				repoupdater.MockEnqueueChangesetSync = func(ctx context.Context, ids []int64) error {
-					return want
+				wbnt := errors.New("foo")
+				repoupdbter.MockEnqueueChbngesetSync = func(ctx context.Context, ids []int64) error {
+					return wbnt
 				}
-				defer func() { repoupdater.MockEnqueueChangesetSync = nil }()
+				defer func() { repoupdbter.MockEnqueueChbngesetSync = nil }()
 
-				if have := h.enqueueChangesetSyncFromEvent(ctx, esid, event); !errors.Is(have, want) {
-					t.Errorf("unexpected error: have %+v; want %+v", have, want)
+				if hbve := h.enqueueChbngesetSyncFromEvent(ctx, esid, event); !errors.Is(hbve, wbnt) {
+					t.Errorf("unexpected error: hbve %+v; wbnt %+v", hbve, wbnt)
 				}
 			})
 
 			t.Run("success", func(t *testing.T) {
 				event := &webhooks.MergeRequestEventCommon{
 					EventCommon: webhooks.EventCommon{
-						Project: gitlab.ProjectCommon{ID: pid},
+						Project: gitlbb.ProjectCommon{ID: pid},
 					},
-					MergeRequest: &gitlab.MergeRequest{IID: gitlab.ID(cid)},
+					MergeRequest: &gitlbb.MergeRequest{IID: gitlbb.ID(cid)},
 				}
 
-				repoupdater.MockEnqueueChangesetSync = func(ctx context.Context, ids []int64) error {
+				repoupdbter.MockEnqueueChbngesetSync = func(ctx context.Context, ids []int64) error {
 					return nil
 				}
-				defer func() { repoupdater.MockEnqueueChangesetSync = nil }()
+				defer func() { repoupdbter.MockEnqueueChbngesetSync = nil }()
 
-				if err := h.enqueueChangesetSyncFromEvent(ctx, esid, event); err != nil {
+				if err := h.enqueueChbngesetSyncFromEvent(ctx, esid, event); err != nil {
 					t.Errorf("unexpected non-nil error: %+v", err)
 				}
 			})
 		})
 
-		t.Run("handlePipelineEvent", func(t *testing.T) {
-			// As with the handleMergeRequestStateEvent test above, we don't
-			// really need to test the success path here. However, there's one
-			// extra error path, so we'll use two sub-tests to ensure we hit
+		t.Run("hbndlePipelineEvent", func(t *testing.T) {
+			// As with the hbndleMergeRequestStbteEvent test bbove, we don't
+			// reblly need to test the success pbth here. However, there's one
+			// extrb error pbth, so we'll use two sub-tests to ensure we hit
 			// them both.
 			//
-			// Again, we're going to set up a poisoned store database that will
-			// error if a transaction is started.
-			s := gitLabTestSetup(t, db)
-			store := bstore.NewWithClock(database.NewDBWith(logger, basestore.NewWithHandle(&noNestingTx{s.Handle()})), &observation.TestContext, nil, s.Clock())
-			h := NewGitLabWebhook(store, gsClient, logger)
+			// Agbin, we're going to set up b poisoned store dbtbbbse thbt will
+			// error if b trbnsbction is stbrted.
+			s := gitLbbTestSetup(t, db)
+			store := bstore.NewWithClock(dbtbbbse.NewDBWith(logger, bbsestore.NewWithHbndle(&noNestingTx{s.Hbndle()})), &observbtion.TestContext, nil, s.Clock())
+			h := NewGitLbbWebhook(store, gsClient, logger)
 
 			t.Run("missing merge request", func(t *testing.T) {
 				event := &webhooks.PipelineEvent{}
 
-				if have := h.handlePipelineEvent(ctx, extsvc.CodeHostBaseURL{}, event); have != errPipelineMissingMergeRequest {
-					t.Errorf("unexpected error: have %+v; want %+v", have, errPipelineMissingMergeRequest)
+				if hbve := h.hbndlePipelineEvent(ctx, extsvc.CodeHostBbseURL{}, event); hbve != errPipelineMissingMergeRequest {
+					t.Errorf("unexpected error: hbve %+v; wbnt %+v", hbve, errPipelineMissingMergeRequest)
 				}
 			})
 
-			t.Run("changeset upsert error", func(t *testing.T) {
+			t.Run("chbngeset upsert error", func(t *testing.T) {
 				event := &webhooks.PipelineEvent{
-					MergeRequest: &gitlab.MergeRequest{},
+					MergeRequest: &gitlbb.MergeRequest{},
 				}
 
-				if err := h.handlePipelineEvent(ctx, extsvc.CodeHostBaseURL{}, event); err == nil || err == errPipelineMissingMergeRequest {
+				if err := h.hbndlePipelineEvent(ctx, extsvc.CodeHostBbseURL{}, event); err == nil || err == errPipelineMissingMergeRequest {
 					t.Errorf("unexpected error: %+v", err)
 				}
 			})
@@ -707,11 +707,11 @@ func testGitLabWebhook(db *sql.DB) func(*testing.T) {
 	}
 }
 
-func TestValidateGitLabSecret(t *testing.T) {
-	t.Parallel()
+func TestVblidbteGitLbbSecret(t *testing.T) {
+	t.Pbrbllel()
 
 	t.Run("empty secret", func(t *testing.T) {
-		ok, err := validateGitLabSecret(context.Background(), nil, "")
+		ok, err := vblidbteGitLbbSecret(context.Bbckground(), nil, "")
 		if ok {
 			t.Errorf("unexpected ok: %v", ok)
 		}
@@ -720,11 +720,11 @@ func TestValidateGitLabSecret(t *testing.T) {
 		}
 	})
 
-	t.Run("invalid configuration", func(t *testing.T) {
-		es := &types.ExternalService{
+	t.Run("invblid configurbtion", func(t *testing.T) {
+		es := &types.ExternblService{
 			Config: extsvc.NewEmptyConfig(),
 		}
-		ok, err := validateGitLabSecret(context.Background(), es, "secret")
+		ok, err := vblidbteGitLbbSecret(context.Bbckground(), es, "secret")
 		if ok {
 			t.Errorf("unexpected ok: %v", ok)
 		}
@@ -733,29 +733,29 @@ func TestValidateGitLabSecret(t *testing.T) {
 		}
 	})
 
-	t.Run("not a GitLab connection", func(t *testing.T) {
-		es := &types.ExternalService{
+	t.Run("not b GitLbb connection", func(t *testing.T) {
+		es := &types.ExternblService{
 			Kind:   extsvc.KindGitHub,
 			Config: extsvc.NewEmptyConfig(),
 		}
-		ok, err := validateGitLabSecret(context.Background(), es, "secret")
+		ok, err := vblidbteGitLbbSecret(context.Bbckground(), es, "secret")
 		if ok {
 			t.Errorf("unexpected ok: %v", ok)
 		}
-		if err != errExternalServiceWrongKind {
-			t.Errorf("unexpected error: have %+v; want %+v", err, errExternalServiceWrongKind)
+		if err != errExternblServiceWrongKind {
+			t.Errorf("unexpected error: hbve %+v; wbnt %+v", err, errExternblServiceWrongKind)
 		}
 	})
 
 	t.Run("no webhooks", func(t *testing.T) {
-		es := &types.ExternalService{
-			Kind: extsvc.KindGitLab,
-			Config: extsvc.NewUnencryptedConfig(bt.MarshalJSON(t, &schema.GitLabConnection{
-				Webhooks: []*schema.GitLabWebhook{},
+		es := &types.ExternblService{
+			Kind: extsvc.KindGitLbb,
+			Config: extsvc.NewUnencryptedConfig(bt.MbrshblJSON(t, &schemb.GitLbbConnection{
+				Webhooks: []*schemb.GitLbbWebhook{},
 			})),
 		}
 
-		ok, err := validateGitLabSecret(context.Background(), es, "secret")
+		ok, err := vblidbteGitLbbSecret(context.Bbckground(), es, "secret")
 		if ok {
 			t.Errorf("unexpected ok: %v", ok)
 		}
@@ -764,26 +764,26 @@ func TestValidateGitLabSecret(t *testing.T) {
 		}
 	})
 
-	t.Run("valid webhooks", func(t *testing.T) {
-		for secret, want := range map[string]bool{
-			"not secret": false,
+	t.Run("vblid webhooks", func(t *testing.T) {
+		for secret, wbnt := rbnge mbp[string]bool{
+			"not secret": fblse,
 			"secret":     true,
 			"super":      true,
 		} {
 			t.Run(secret, func(t *testing.T) {
-				es := &types.ExternalService{
-					Kind: extsvc.KindGitLab,
-					Config: extsvc.NewUnencryptedConfig(bt.MarshalJSON(t, &schema.GitLabConnection{
-						Webhooks: []*schema.GitLabWebhook{
+				es := &types.ExternblService{
+					Kind: extsvc.KindGitLbb,
+					Config: extsvc.NewUnencryptedConfig(bt.MbrshblJSON(t, &schemb.GitLbbConnection{
+						Webhooks: []*schemb.GitLbbWebhook{
 							{Secret: "super"},
 							{Secret: "secret"},
 						},
 					})),
 				}
 
-				ok, err := validateGitLabSecret(context.Background(), es, secret)
-				if ok != want {
-					t.Errorf("unexpected ok: have %v; want %v", ok, want)
+				ok, err := vblidbteGitLbbSecret(context.Bbckground(), es, secret)
+				if ok != wbnt {
+					t.Errorf("unexpected ok: hbve %v; wbnt %v", ok, wbnt)
 				}
 				if err != nil {
 					t.Errorf("unexpected non-nil error: %+v", err)
@@ -793,23 +793,23 @@ func TestValidateGitLabSecret(t *testing.T) {
 	})
 }
 
-// brokenDB provides a dbutil.DB that always fails: for methods that return an
+// brokenDB provides b dbutil.DB thbt blwbys fbils: for methods thbt return bn
 // error, the err field will be returned; otherwise nil will be returned.
 type brokenDB struct{ err error }
 
-func (db *brokenDB) QueryContext(ctx context.Context, q string, args ...any) (*sql.Rows, error) {
+func (db *brokenDB) QueryContext(ctx context.Context, q string, brgs ...bny) (*sql.Rows, error) {
 	return nil, db.err
 }
 
-func (db *brokenDB) ExecContext(ctx context.Context, q string, args ...any) (sql.Result, error) {
+func (db *brokenDB) ExecContext(ctx context.Context, q string, brgs ...bny) (sql.Result, error) {
 	return nil, db.err
 }
 
-func (db *brokenDB) QueryRowContext(ctx context.Context, q string, args ...any) *sql.Row {
+func (db *brokenDB) QueryRowContext(ctx context.Context, q string, brgs ...bny) *sql.Row {
 	return nil
 }
 
-func (db *brokenDB) Transact(context.Context) (basestore.TransactableHandle, error) {
+func (db *brokenDB) Trbnsbct(context.Context) (bbsestore.TrbnsbctbbleHbndle, error) {
 	return nil, db.err
 }
 
@@ -817,111 +817,111 @@ func (db *brokenDB) Done(err error) error {
 	return err
 }
 
-func (db *brokenDB) InTransaction() bool {
-	return false
+func (db *brokenDB) InTrbnsbction() bool {
+	return fblse
 }
 
-var _ basestore.TransactableHandle = (*brokenDB)(nil)
+vbr _ bbsestore.TrbnsbctbbleHbndle = (*brokenDB)(nil)
 
-// brokenReader implements an io.ReadCloser that always returns an error when
-// read.
-type brokenReader struct{ err error }
+// brokenRebder implements bn io.RebdCloser thbt blwbys returns bn error when
+// rebd.
+type brokenRebder struct{ err error }
 
-func (br *brokenReader) Close() error { return nil }
+func (br *brokenRebder) Close() error { return nil }
 
-func (br *brokenReader) Read(p []byte) (int, error) {
+func (br *brokenRebder) Rebd(p []byte) (int, error) {
 	return 0, br.err
 }
 
-// nestedTx wraps an existing transaction and overrides its transaction methods
-// to be no-ops. This allows us to have a master transaction used in tests that
-// test functions that attempt to create and commit transactions: since
-// PostgreSQL doesn't support nested transactions, we can still use the master
-// transaction to manage the test database state without rollback/commit
-// already performed errors.
+// nestedTx wrbps bn existing trbnsbction bnd overrides its trbnsbction methods
+// to be no-ops. This bllows us to hbve b mbster trbnsbction used in tests thbt
+// test functions thbt bttempt to crebte bnd commit trbnsbctions: since
+// PostgreSQL doesn't support nested trbnsbctions, we cbn still use the mbster
+// trbnsbction to mbnbge the test dbtbbbse stbte without rollbbck/commit
+// blrebdy performed errors.
 //
-// It would be theoretically possible to use savepoints to implement something
-// resembling the semantics of a true nested transaction, but that's
-// unnecessary for these tests.
-type nestedTx struct{ basestore.TransactableHandle }
+// It would be theoreticblly possible to use sbvepoints to implement something
+// resembling the sembntics of b true nested trbnsbction, but thbt's
+// unnecessbry for these tests.
+type nestedTx struct{ bbsestore.TrbnsbctbbleHbndle }
 
 func (ntx *nestedTx) Done(error) error                                               { return nil }
-func (ntx *nestedTx) Transact(context.Context) (basestore.TransactableHandle, error) { return ntx, nil }
+func (ntx *nestedTx) Trbnsbct(context.Context) (bbsestore.TrbnsbctbbleHbndle, error) { return ntx, nil }
 
-// noNestingTx is another transaction wrapper that always returns an error when
-// a transaction is attempted.
-type noNestingTx struct{ basestore.TransactableHandle }
+// noNestingTx is bnother trbnsbction wrbpper thbt blwbys returns bn error when
+// b trbnsbction is bttempted.
+type noNestingTx struct{ bbsestore.TrbnsbctbbleHbndle }
 
-func (ntx *noNestingTx) Transact(context.Context) (basestore.TransactableHandle, error) {
+func (ntx *noNestingTx) Trbnsbct(context.Context) (bbsestore.TrbnsbctbbleHbndle, error) {
 	return nil, errors.New("foo")
 }
 
-// gitLabTestSetup instantiates the stores and a clock for use within tests.
-// Any changes made to the stores will be rolled back after the test is
+// gitLbbTestSetup instbntibtes the stores bnd b clock for use within tests.
+// Any chbnges mbde to the stores will be rolled bbck bfter the test is
 // complete.
-func gitLabTestSetup(t *testing.T, sqlDB *sql.DB) *bstore.Store {
+func gitLbbTestSetup(t *testing.T, sqlDB *sql.DB) *bstore.Store {
 	logger := logtest.Scoped(t)
 	c := &bt.TestClock{Time: timeutil.Now()}
 	tx := dbtest.NewTx(t, sqlDB)
 
-	// Note that tx is wrapped in nestedTx to effectively neuter further use of
-	// transactions within the test.
-	db := database.NewDBWith(logger, basestore.NewWithHandle(&nestedTx{basestore.NewHandleWithTx(tx, sql.TxOptions{})}))
+	// Note thbt tx is wrbpped in nestedTx to effectively neuter further use of
+	// trbnsbctions within the test.
+	db := dbtbbbse.NewDBWith(logger, bbsestore.NewWithHbndle(&nestedTx{bbsestore.NewHbndleWithTx(tx, sql.TxOptions{})}))
 
-	// Note that tx is wrapped in nestedTx to effectively neuter further use of
-	// transactions within the test.
-	return bstore.NewWithClock(db, &observation.TestContext, nil, c.Now)
+	// Note thbt tx is wrbpped in nestedTx to effectively neuter further use of
+	// trbnsbctions within the test.
+	return bstore.NewWithClock(db, &observbtion.TestContext, nil, c.Now)
 }
 
-// assertBodyIncludes checks for a specific substring within the given response
-// body, and generates a test error if the substring is not found. This is
-// mostly useful to look for wrapped errors in the output.
-func assertBodyIncludes(t *testing.T, r io.Reader, want string) {
-	body, err := io.ReadAll(r)
+// bssertBodyIncludes checks for b specific substring within the given response
+// body, bnd generbtes b test error if the substring is not found. This is
+// mostly useful to look for wrbpped errors in the output.
+func bssertBodyIncludes(t *testing.T, r io.Rebder, wbnt string) {
+	body, err := io.RebdAll(r)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
-	if !bytes.Contains(body, []byte(want)) {
-		t.Errorf("cannot find expected string in output: want: %s; have:\n%s", want, string(body))
+	if !bytes.Contbins(body, []byte(wbnt)) {
+		t.Errorf("cbnnot find expected string in output: wbnt: %s; hbve:\n%s", wbnt, string(body))
 	}
 }
 
-// assertChangesetEventForChangeset checks that one (and only one) changeset
-// event has been created on the given changeset, and that it is of the given
+// bssertChbngesetEventForChbngeset checks thbt one (bnd only one) chbngeset
+// event hbs been crebted on the given chbngeset, bnd thbt it is of the given
 // kind.
-func assertChangesetEventForChangeset(t *testing.T, ctx context.Context, tx *bstore.Store, changeset *btypes.Changeset, want btypes.ChangesetEventKind) {
-	ces, _, err := tx.ListChangesetEvents(ctx, bstore.ListChangesetEventsOpts{
-		ChangesetIDs: []int64{changeset.ID},
+func bssertChbngesetEventForChbngeset(t *testing.T, ctx context.Context, tx *bstore.Store, chbngeset *btypes.Chbngeset, wbnt btypes.ChbngesetEventKind) {
+	ces, _, err := tx.ListChbngesetEvents(ctx, bstore.ListChbngesetEventsOpts{
+		ChbngesetIDs: []int64{chbngeset.ID},
 		LimitOpts:    bstore.LimitOpts{Limit: 100},
 	})
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 	if len(ces) == 1 {
 		ce := ces[0]
 
-		if ce.ChangesetID != changeset.ID {
-			t.Errorf("unexpected changeset ID: have %d; want %d", ce.ChangesetID, changeset.ID)
+		if ce.ChbngesetID != chbngeset.ID {
+			t.Errorf("unexpected chbngeset ID: hbve %d; wbnt %d", ce.ChbngesetID, chbngeset.ID)
 		}
-		if ce.Kind != want {
+		if ce.Kind != wbnt {
 			t.Errorf(
-				"unexpected changeset event kind: have %v; want %v", ce.Kind, want)
+				"unexpected chbngeset event kind: hbve %v; wbnt %v", ce.Kind, wbnt)
 		}
 	} else {
-		t.Errorf("unexpected number of changeset events; got %+v", ces)
+		t.Errorf("unexpected number of chbngeset events; got %+v", ces)
 	}
 }
 
-// createGitLabExternalService creates a mock GitLab service with a valid
-// configuration, including the secrets "super" and "secret".
-func createGitLabExternalService(t *testing.T, ctx context.Context, esStore database.ExternalServiceStore) *types.ExternalService {
-	es := &types.ExternalService{
-		Kind:        extsvc.KindGitLab,
-		DisplayName: "gitlab",
-		Config: extsvc.NewUnencryptedConfig(bt.MarshalJSON(t, &schema.GitLabConnection{
-			Url:   "https://gitlab.com/",
-			Token: "secret-gitlab-token",
-			Webhooks: []*schema.GitLabWebhook{
+// crebteGitLbbExternblService crebtes b mock GitLbb service with b vblid
+// configurbtion, including the secrets "super" bnd "secret".
+func crebteGitLbbExternblService(t *testing.T, ctx context.Context, esStore dbtbbbse.ExternblServiceStore) *types.ExternblService {
+	es := &types.ExternblService{
+		Kind:        extsvc.KindGitLbb,
+		DisplbyNbme: "gitlbb",
+		Config: extsvc.NewUnencryptedConfig(bt.MbrshblJSON(t, &schemb.GitLbbConnection{
+			Url:   "https://gitlbb.com/",
+			Token: "secret-gitlbb-token",
+			Webhooks: []*schemb.GitLbbWebhook{
 				{Secret: "super"},
 				{Secret: "secret"},
 			},
@@ -929,124 +929,124 @@ func createGitLabExternalService(t *testing.T, ctx context.Context, esStore data
 		})),
 	}
 	if err := esStore.Upsert(ctx, es); err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
 	return es
 }
 
-// createGitLabExternalService creates a mock GitHub service with a valid
-// configuration, including the secrets "super" and "secret".
-func createGitHubExternalService(t *testing.T, ctx context.Context, esStore database.ExternalServiceStore) *types.ExternalService {
-	es := &types.ExternalService{
+// crebteGitLbbExternblService crebtes b mock GitHub service with b vblid
+// configurbtion, including the secrets "super" bnd "secret".
+func crebteGitHubExternblService(t *testing.T, ctx context.Context, esStore dbtbbbse.ExternblServiceStore) *types.ExternblService {
+	es := &types.ExternblService{
 		Kind:        extsvc.KindGitHub,
-		DisplayName: "github",
-		Config: extsvc.NewUnencryptedConfig(bt.MarshalJSON(t, &schema.GitHubConnection{
+		DisplbyNbme: "github",
+		Config: extsvc.NewUnencryptedConfig(bt.MbrshblJSON(t, &schemb.GitHubConnection{
 			Url:   "https://github.com/",
 			Token: "secret-github-token",
-			Webhooks: []*schema.GitHubWebhook{
+			Webhooks: []*schemb.GitHubWebhook{
 				{Org: "org1", Secret: "super"},
 				{Org: "org2", Secret: "secret"},
 			},
-			Repos: []string{"owner/name"},
+			Repos: []string{"owner/nbme"},
 		})),
 	}
 	if err := esStore.Upsert(ctx, es); err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
 	return es
 }
 
-// createGitLabRepo creates a mock GitLab repo attached to the given external
+// crebteGitLbbRepo crebtes b mock GitLbb repo bttbched to the given externbl
 // service.
-func createGitLabRepo(t *testing.T, ctx context.Context, rstore database.RepoStore, es *types.ExternalService) *types.Repo {
+func crebteGitLbbRepo(t *testing.T, ctx context.Context, rstore dbtbbbse.RepoStore, es *types.ExternblService) *types.Repo {
 	repo := (&types.Repo{
-		Name: "gitlab.com/sourcegraph/test",
-		URI:  "gitlab.com/sourcegraph/test",
-		ExternalRepo: api.ExternalRepoSpec{
+		Nbme: "gitlbb.com/sourcegrbph/test",
+		URI:  "gitlbb.com/sourcegrbph/test",
+		ExternblRepo: bpi.ExternblRepoSpec{
 			ID:          "123",
-			ServiceType: extsvc.TypeGitLab,
-			ServiceID:   "https://gitlab.com/",
+			ServiceType: extsvc.TypeGitLbb,
+			ServiceID:   "https://gitlbb.com/",
 		},
 	}).With(typestest.Opt.RepoSources(es.URN()))
-	if err := rstore.Create(ctx, repo); err != nil {
-		t.Fatal(err)
+	if err := rstore.Crebte(ctx, repo); err != nil {
+		t.Fbtbl(err)
 	}
 
 	return repo
 }
 
-// createGitLabChangeset creates a mock GitLab changeset.
-func createGitLabChangeset(t *testing.T, ctx context.Context, store *bstore.Store, repo *types.Repo) *btypes.Changeset {
-	c := &btypes.Changeset{
+// crebteGitLbbChbngeset crebtes b mock GitLbb chbngeset.
+func crebteGitLbbChbngeset(t *testing.T, ctx context.Context, store *bstore.Store, repo *types.Repo) *btypes.Chbngeset {
+	c := &btypes.Chbngeset{
 		RepoID:              repo.ID,
-		ExternalID:          "1",
-		ExternalServiceType: extsvc.TypeGitLab,
+		ExternblID:          "1",
+		ExternblServiceType: extsvc.TypeGitLbb,
 	}
-	if err := store.CreateChangeset(ctx, c); err != nil {
-		t.Fatal(err)
+	if err := store.CrebteChbngeset(ctx, c); err != nil {
+		t.Fbtbl(err)
 	}
 
 	return c
 }
 
-// createMergeRequestPayload creates a mock GitLab webhook payload of the merge
+// crebteMergeRequestPbylobd crebtes b mock GitLbb webhook pbylobd of the merge
 // request object kind.
-func createMergeRequestPayload(t *testing.T, repo *types.Repo, changeset *btypes.Changeset, action string) string {
-	cid, err := strconv.Atoi(changeset.ExternalID)
+func crebteMergeRequestPbylobd(t *testing.T, repo *types.Repo, chbngeset *btypes.Chbngeset, bction string) string {
+	cid, err := strconv.Atoi(chbngeset.ExternblID)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	pid, err := strconv.Atoi(repo.ExternalRepo.ID)
+	pid, err := strconv.Atoi(repo.ExternblRepo.ID)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	// We use an untyped set of maps here because the webhooks package doesn't
-	// export its internal mergeRequestEvent type that is used for
-	// unmarshalling. (Which is fine; it's an implementation detail.)
-	return bt.MarshalJSON(t, map[string]any{
+	// We use bn untyped set of mbps here becbuse the webhooks pbckbge doesn't
+	// export its internbl mergeRequestEvent type thbt is used for
+	// unmbrshblling. (Which is fine; it's bn implementbtion detbil.)
+	return bt.MbrshblJSON(t, mbp[string]bny{
 		"object_kind": "merge_request",
-		"project": map[string]any{
+		"project": mbp[string]bny{
 			"id": pid,
 		},
-		"object_attributes": map[string]any{
+		"object_bttributes": mbp[string]bny{
 			"iid":    cid,
-			"action": action,
+			"bction": bction,
 		},
 	})
 }
 
-// createPipelinePayload creates a mock GitLab webhook payload of the pipeline
+// crebtePipelinePbylobd crebtes b mock GitLbb webhook pbylobd of the pipeline
 // object kind.
-func createPipelinePayload(t *testing.T, repo *types.Repo, changeset *btypes.Changeset, pipeline gitlab.Pipeline) string {
-	pid, err := strconv.Atoi(repo.ExternalRepo.ID)
+func crebtePipelinePbylobd(t *testing.T, repo *types.Repo, chbngeset *btypes.Chbngeset, pipeline gitlbb.Pipeline) string {
+	pid, err := strconv.Atoi(repo.ExternblRepo.ID)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	payload := &webhooks.PipelineEvent{
+	pbylobd := &webhooks.PipelineEvent{
 		EventCommon: webhooks.EventCommon{
 			ObjectKind: "pipeline",
-			Project: gitlab.ProjectCommon{
+			Project: gitlbb.ProjectCommon{
 				ID: pid,
 			},
 		},
 		Pipeline: pipeline,
 	}
 
-	if changeset != nil {
-		cid, err := strconv.Atoi(changeset.ExternalID)
+	if chbngeset != nil {
+		cid, err := strconv.Atoi(chbngeset.ExternblID)
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
 
-		payload.MergeRequest = &gitlab.MergeRequest{
-			IID: gitlab.ID(cid),
+		pbylobd.MergeRequest = &gitlbb.MergeRequest{
+			IID: gitlbb.ID(cid),
 		}
 	}
 
-	return bt.MarshalJSON(t, payload)
+	return bt.MbrshblJSON(t, pbylobd)
 }

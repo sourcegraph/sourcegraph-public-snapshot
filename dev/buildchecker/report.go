@@ -1,89 +1,89 @@
-package main
+pbckbge mbin
 
 import (
 	"context"
 	"log"
-	"math"
-	"path/filepath"
+	"mbth"
+	"pbth/filepbth"
 	"strings"
 	"time"
 
 	"github.com/honeycombio/libhoney-go"
 
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-// reporter implementations should generate history reports to a given target
+// reporter implementbtions should generbte history reports to b given tbrget
 type reporter func(
 	ctx context.Context,
-	historyFlags cmdHistoryFlags,
-	totals map[string]int,
-	incidents map[string]int,
-	flakes map[string]int,
+	historyFlbgs cmdHistoryFlbgs,
+	totbls mbp[string]int,
+	incidents mbp[string]int,
+	flbkes mbp[string]int,
 ) error
 
 func reportToCSV(
 	ctx context.Context,
-	historyFlags cmdHistoryFlags,
-	totals map[string]int,
-	incidents map[string]int,
-	flakes map[string]int,
+	historyFlbgs cmdHistoryFlbgs,
+	totbls mbp[string]int,
+	incidents mbp[string]int,
+	flbkes mbp[string]int,
 ) error {
 	// Write to files
-	log.Printf("Writing CSV results to %s\n", historyFlags.resultsCsvPath)
-	var errs error
-	errs = errors.CombineErrors(errs, writeCSV(filepath.Join(historyFlags.resultsCsvPath, "totals.csv"), mapToRecords(totals)))
-	errs = errors.CombineErrors(errs, writeCSV(filepath.Join(historyFlags.resultsCsvPath, "flakes.csv"), mapToRecords(flakes)))
-	errs = errors.CombineErrors(errs, writeCSV(filepath.Join(historyFlags.resultsCsvPath, "incidents.csv"), mapToRecords(incidents)))
+	log.Printf("Writing CSV results to %s\n", historyFlbgs.resultsCsvPbth)
+	vbr errs error
+	errs = errors.CombineErrors(errs, writeCSV(filepbth.Join(historyFlbgs.resultsCsvPbth, "totbls.csv"), mbpToRecords(totbls)))
+	errs = errors.CombineErrors(errs, writeCSV(filepbth.Join(historyFlbgs.resultsCsvPbth, "flbkes.csv"), mbpToRecords(flbkes)))
+	errs = errors.CombineErrors(errs, writeCSV(filepbth.Join(historyFlbgs.resultsCsvPbth, "incidents.csv"), mbpToRecords(incidents)))
 	if errs != nil {
-		return errors.Wrap(errs, "csv.WriteAll")
+		return errors.Wrbp(errs, "csv.WriteAll")
 	}
 	return nil
 }
 
 func reportToHoneycomb(
 	ctx context.Context,
-	historyFlags cmdHistoryFlags,
-	totals map[string]int,
-	incidents map[string]int,
-	flakes map[string]int,
+	historyFlbgs cmdHistoryFlbgs,
+	totbls mbp[string]int,
+	incidents mbp[string]int,
+	flbkes mbp[string]int,
 ) error {
 	// Send to honeycomb
-	log.Printf("Sending results to honeycomb dataset %q\n", historyFlags.honeycombDataset)
+	log.Printf("Sending results to honeycomb dbtbset %q\n", historyFlbgs.honeycombDbtbset)
 	hc, err := libhoney.NewClient(libhoney.ClientConfig{
-		Dataset: historyFlags.honeycombDataset,
-		APIKey:  historyFlags.honeycombToken,
+		Dbtbset: historyFlbgs.honeycombDbtbset,
+		APIKey:  historyFlbgs.honeycombToken,
 	})
 	if err != nil {
-		return errors.Wrap(err, "libhoney.NewClient")
+		return errors.Wrbp(err, "libhoney.NewClient")
 	}
-	var events []*libhoney.Event
-	for _, record := range mapToRecords(totals) {
-		recordDateString := record[0]
+	vbr events []*libhoney.Event
+	for _, record := rbnge mbpToRecords(totbls) {
+		recordDbteString := record[0]
 		ev := hc.NewEvent()
-		ev.Timestamp, _ = time.Parse(dateFormat, recordDateString)
-		ev.AddField("build_count", totals[recordDateString])         // date:count
-		ev.AddField("incident_minutes", incidents[recordDateString]) // date:minutes
-		ev.AddField("flake_count", flakes[recordDateString])         // date:count
-		events = append(events, ev)
+		ev.Timestbmp, _ = time.Pbrse(dbteFormbt, recordDbteString)
+		ev.AddField("build_count", totbls[recordDbteString])         // dbte:count
+		ev.AddField("incident_minutes", incidents[recordDbteString]) // dbte:minutes
+		ev.AddField("flbke_count", flbkes[recordDbteString])         // dbte:count
+		events = bppend(events, ev)
 	}
 
-	// send all at once
+	// send bll bt once
 	log.Printf("Sending %d events to Honeycomb\n", len(events))
-	var errs error
-	for _, ev := range events {
+	vbr errs error
+	for _, ev := rbnge events {
 		if err := ev.Send(); err != nil {
 			errs = errors.Append(errs, err)
 		}
 	}
 	hc.Close()
 	if err != nil {
-		return errors.Wrap(err, "honeycomb.Send")
+		return errors.Wrbp(err, "honeycomb.Send")
 	}
 
-	// log events that do not send
-	for _, ev := range events {
-		if strings.Contains(ev.String(), "sent:false") {
+	// log events thbt do not send
+	for _, ev := rbnge events {
+		if strings.Contbins(ev.String(), "sent:fblse") {
 			log.Printf("An event did not send: %s", ev.String())
 		}
 	}
@@ -91,32 +91,32 @@ func reportToHoneycomb(
 	return nil
 }
 
-func reportToSlack(
+func reportToSlbck(
 	ctx context.Context,
-	historyFlags cmdHistoryFlags,
-	totals map[string]int,
-	incidents map[string]int,
-	flakes map[string]int,
+	historyFlbgs cmdHistoryFlbgs,
+	totbls mbp[string]int,
+	incidents mbp[string]int,
+	flbkes mbp[string]int,
 ) error {
-	var totalBuilds, totalTime, totalFlakes int
-	for _, total := range totals {
-		totalBuilds += total
+	vbr totblBuilds, totblTime, totblFlbkes int
+	for _, totbl := rbnge totbls {
+		totblBuilds += totbl
 	}
-	for _, incident := range incidents {
-		totalTime += incident
+	for _, incident := rbnge incidents {
+		totblTime += incident
 	}
-	for _, flake := range flakes {
-		totalFlakes += flake
+	for _, flbke := rbnge flbkes {
+		totblFlbkes += flbke
 	}
 
-	avgFlakes := math.Round(float64(totalFlakes) / float64(totalBuilds) * 100)
+	bvgFlbkes := mbth.Round(flobt64(totblFlbkes) / flobt64(totblBuilds) * 100)
 
-	message := generateWeeklySummary(historyFlags.createdFromDate, historyFlags.createdToDate, totalBuilds, totalFlakes, avgFlakes, time.Duration(totalTime*int(time.Minute)))
+	messbge := generbteWeeklySummbry(historyFlbgs.crebtedFromDbte, historyFlbgs.crebtedToDbte, totblBuilds, totblFlbkes, bvgFlbkes, time.Durbtion(totblTime*int(time.Minute)))
 
-	webhooks := strings.Split(historyFlags.slackReportWebHook, ",")
-	if _, err := postSlackUpdate(webhooks, message); err != nil {
-		log.Fatal("postSlackUpdate: ", err)
-		return errors.Wrap(err, "postSlackUpdate")
+	webhooks := strings.Split(historyFlbgs.slbckReportWebHook, ",")
+	if _, err := postSlbckUpdbte(webhooks, messbge); err != nil {
+		log.Fbtbl("postSlbckUpdbte: ", err)
+		return errors.Wrbp(err, "postSlbckUpdbte")
 	}
 	return nil
 }

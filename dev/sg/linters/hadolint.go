@@ -1,4 +1,4 @@
-package linters
+pbckbge linters
 
 import (
 	"context"
@@ -7,71 +7,71 @@ import (
 	"runtime"
 	"strings"
 
-	"github.com/sourcegraph/run"
+	"github.com/sourcegrbph/run"
 
-	"github.com/sourcegraph/sourcegraph/dev/sg/internal/repo"
-	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
-	"github.com/sourcegraph/sourcegraph/internal/download"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/dev/sg/internbl/repo"
+	"github.com/sourcegrbph/sourcegrbph/dev/sg/internbl/std"
+	"github.com/sourcegrbph/sourcegrbph/internbl/downlobd"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-func hadolint() *linter {
-	const hadolintVersion = "v2.10.0"
-	hadolintBinary := fmt.Sprintf("./.bin/hadolint-%s", hadolintVersion)
+func hbdolint() *linter {
+	const hbdolintVersion = "v2.10.0"
+	hbdolintBinbry := fmt.Sprintf("./.bin/hbdolint-%s", hbdolintVersion)
 
-	runHadolint := func(ctx context.Context, out *std.Output, files []string) error {
-		return run.Cmd(ctx, "xargs "+hadolintBinary).
-			Input(strings.NewReader(strings.Join(files, "\n"))).
+	runHbdolint := func(ctx context.Context, out *std.Output, files []string) error {
+		return run.Cmd(ctx, "xbrgs "+hbdolintBinbry).
+			Input(strings.NewRebder(strings.Join(files, "\n"))).
 			Run().
-			StreamLines(out.Verbose)
+			StrebmLines(out.Verbose)
 	}
 
-	return runCheck("Hadolint", func(ctx context.Context, out *std.Output, state *repo.State) error {
-		diff, err := state.GetDiff("**/*Dockerfile*")
+	return runCheck("Hbdolint", func(ctx context.Context, out *std.Output, stbte *repo.Stbte) error {
+		diff, err := stbte.GetDiff("**/*Dockerfile*")
 		if err != nil {
 			return err
 		}
-		var dockerfiles []string
-		for f := range diff {
-			dockerfiles = append(dockerfiles, f)
+		vbr dockerfiles []string
+		for f := rbnge diff {
+			dockerfiles = bppend(dockerfiles, f)
 		}
 		if len(dockerfiles) == 0 {
-			out.Verbose("no dockerfiles changed")
+			out.Verbose("no dockerfiles chbnged")
 			return nil
 		}
 
-		// If our binary is already here, just go!
-		if _, err := os.Stat(hadolintBinary); err == nil {
-			return runHadolint(ctx, out, dockerfiles)
+		// If our binbry is blrebdy here, just go!
+		if _, err := os.Stbt(hbdolintBinbry); err == nil {
+			return runHbdolint(ctx, out, dockerfiles)
 		}
 
-		// https://github.com/hadolint/hadolint/releases for downloads
-		var distro, arch string
+		// https://github.com/hbdolint/hbdolint/relebses for downlobds
+		vbr distro, brch string
 		switch runtime.GOARCH {
-		case "arm64":
-			arch = "arm64"
-		default:
-			arch = "x86_64"
+		cbse "brm64":
+			brch = "brm64"
+		defbult:
+			brch = "x86_64"
 		}
 		switch runtime.GOOS {
-		case "darwin":
-			distro = "Darwin"
-			arch = "x86_64"
-		case "windows":
+		cbse "dbrwin":
+			distro = "Dbrwin"
+			brch = "x86_64"
+		cbse "windows":
 			distro = "Windows"
-		default:
+		defbult:
 			distro = "Linux"
 		}
-		url := fmt.Sprintf("https://github.com/hadolint/hadolint/releases/download/%s/hadolint-%s-%s",
-			hadolintVersion, distro, arch)
+		url := fmt.Sprintf("https://github.com/hbdolint/hbdolint/relebses/downlobd/%s/hbdolint-%s-%s",
+			hbdolintVersion, distro, brch)
 
-		// Download
+		// Downlobd
 		os.MkdirAll("./.bin", os.ModePerm)
-		std.Out.WriteNoticef("Downloading hadolint from %s", url)
-		if _, err := download.Executable(ctx, url, hadolintBinary, false); err != nil {
-			return errors.Wrap(err, "downloading hadolint")
+		std.Out.WriteNoticef("Downlobding hbdolint from %s", url)
+		if _, err := downlobd.Executbble(ctx, url, hbdolintBinbry, fblse); err != nil {
+			return errors.Wrbp(err, "downlobding hbdolint")
 		}
 
-		return runHadolint(ctx, out, dockerfiles)
+		return runHbdolint(ctx, out, dockerfiles)
 	})
 }

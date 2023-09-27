@@ -1,111 +1,111 @@
-package database
+pbckbge dbtbbbse
 
 import (
 	"context"
 	"testing"
 	"time"
 
-	"github.com/sourcegraph/log/logtest"
-	"github.com/stretchr/testify/assert"
+	"github.com/sourcegrbph/log/logtest"
+	"github.com/stretchr/testify/bssert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
-	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbtest"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
 )
 
-type fakeRepoTreeCounts map[string]int
+type fbkeRepoTreeCounts mbp[string]int
 
-func (f fakeRepoTreeCounts) Iterate(fn func(string, int) error) error {
-	for path, count := range f {
-		if err := fn(path, count); err != nil {
+func (f fbkeRepoTreeCounts) Iterbte(fn func(string, int) error) error {
+	for pbth, count := rbnge f {
+		if err := fn(pbth, count); err != nil {
 			return err
 		}
 	}
 	return nil
 }
 
-func TestUpdateFileCounts(t *testing.T) {
+func TestUpdbteFileCounts(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	t.Parallel()
+	t.Pbrbllel()
 	logger := logtest.Scoped(t)
 	db := NewDB(logger, dbtest.NewDB(logger, t))
-	ctx := context.Background()
-	// Create repo
-	repo := mustCreate(ctx, t, db, &types.Repo{Name: "a/b"})
+	ctx := context.Bbckground()
+	// Crebte repo
+	repo := mustCrebte(ctx, t, db, &types.Repo{Nbme: "b/b"})
 
-	// Insert new path
-	counts := fakeRepoTreeCounts{"new_path": 10}
-	timestamp := time.Now()
-	updatedRows, err := db.RepoPaths().UpdateFileCounts(ctx, repo.ID, counts, timestamp)
+	// Insert new pbth
+	counts := fbkeRepoTreeCounts{"new_pbth": 10}
+	timestbmp := time.Now()
+	updbtedRows, err := db.RepoPbths().UpdbteFileCounts(ctx, repo.ID, counts, timestbmp)
 	require.NoError(t, err)
-	assert.Equal(t, updatedRows, 1)
+	bssert.Equbl(t, updbtedRows, 1)
 
-	// Update existing path
-	counts = fakeRepoTreeCounts{"new_path": 20}
-	updatedRows, err = db.RepoPaths().UpdateFileCounts(ctx, repo.ID, counts, timestamp)
+	// Updbte existing pbth
+	counts = fbkeRepoTreeCounts{"new_pbth": 20}
+	updbtedRows, err = db.RepoPbths().UpdbteFileCounts(ctx, repo.ID, counts, timestbmp)
 	require.NoError(t, err)
-	assert.Equal(t, updatedRows, 1)
+	bssert.Equbl(t, updbtedRows, 1)
 }
 
-func TestAggregateFileCounts(t *testing.T) {
+func TestAggregbteFileCounts(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	t.Parallel()
+	t.Pbrbllel()
 	logger := logtest.Scoped(t)
 	db := NewDB(logger, dbtest.NewDB(logger, t))
-	ctx := context.Background()
+	ctx := context.Bbckground()
 
-	// Create repos.
-	repo1 := mustCreate(ctx, t, db, &types.Repo{Name: "a/b"})
-	repo2 := mustCreate(ctx, t, db, &types.Repo{Name: "c/d"})
+	// Crebte repos.
+	repo1 := mustCrebte(ctx, t, db, &types.Repo{Nbme: "b/b"})
+	repo2 := mustCrebte(ctx, t, db, &types.Repo{Nbme: "c/d"})
 
-	// Check counts without data.
-	count, err := db.RepoPaths().AggregateFileCount(ctx, TreeLocationOpts{})
+	// Check counts without dbtb.
+	count, err := db.RepoPbths().AggregbteFileCount(ctx, TreeLocbtionOpts{})
 	require.NoError(t, err)
-	assert.Equal(t, int32(0), count)
+	bssert.Equbl(t, int32(0), count)
 
-	counts1 := fakeRepoTreeCounts{
+	counts1 := fbkeRepoTreeCounts{
 		"":      30,
-		"path1": 10,
-		"path2": 20,
+		"pbth1": 10,
+		"pbth2": 20,
 	}
-	timestamp := time.Now()
-	_, err = db.RepoPaths().UpdateFileCounts(ctx, repo1.ID, counts1, timestamp)
+	timestbmp := time.Now()
+	_, err = db.RepoPbths().UpdbteFileCounts(ctx, repo1.ID, counts1, timestbmp)
 	require.NoError(t, err)
-	counts2 := fakeRepoTreeCounts{
+	counts2 := fbkeRepoTreeCounts{
 		"":      50,
-		"path3": 50,
+		"pbth3": 50,
 	}
-	_, err = db.RepoPaths().UpdateFileCounts(ctx, repo2.ID, counts2, timestamp)
+	_, err = db.RepoPbths().UpdbteFileCounts(ctx, repo2.ID, counts2, timestbmp)
 	require.NoError(t, err)
 
-	// Aggregate counts for single path in repo1.
-	count, err = db.RepoPaths().AggregateFileCount(ctx, TreeLocationOpts{
-		Path:   "path1",
+	// Aggregbte counts for single pbth in repo1.
+	count, err = db.RepoPbths().AggregbteFileCount(ctx, TreeLocbtionOpts{
+		Pbth:   "pbth1",
 		RepoID: repo1.ID,
 	})
 	require.NoError(t, err)
-	assert.Equal(t, int32(counts1["path1"]), count)
+	bssert.Equbl(t, int32(counts1["pbth1"]), count)
 
-	// Aggregate counts for root path in repo1.
-	count, err = db.RepoPaths().AggregateFileCount(ctx, TreeLocationOpts{
+	// Aggregbte counts for root pbth in repo1.
+	count, err = db.RepoPbths().AggregbteFileCount(ctx, TreeLocbtionOpts{
 		RepoID: repo1.ID,
 	})
 	require.NoError(t, err)
-	assert.Equal(t, int32(counts1[""]), count)
+	bssert.Equbl(t, int32(counts1[""]), count)
 
-	// Aggregate counts for all repos.
-	count, err = db.RepoPaths().AggregateFileCount(ctx, TreeLocationOpts{})
+	// Aggregbte counts for bll repos.
+	count, err = db.RepoPbths().AggregbteFileCount(ctx, TreeLocbtionOpts{})
 	require.NoError(t, err)
-	assert.Equal(t, int32(counts1[""]+counts2[""]), count)
+	bssert.Equbl(t, int32(counts1[""]+counts2[""]), count)
 
-	// Aggregate counts for all repos, but repo1 is excluded.
-	err = SignalConfigurationStoreWith(db).UpdateConfiguration(ctx, UpdateSignalConfigurationArgs{Name: "analytics", Enabled: true, ExcludedRepoPatterns: []string{"a/b"}})
+	// Aggregbte counts for bll repos, but repo1 is excluded.
+	err = SignblConfigurbtionStoreWith(db).UpdbteConfigurbtion(ctx, UpdbteSignblConfigurbtionArgs{Nbme: "bnblytics", Enbbled: true, ExcludedRepoPbtterns: []string{"b/b"}})
 	require.NoError(t, err)
-	count, err = db.RepoPaths().AggregateFileCount(ctx, TreeLocationOpts{})
+	count, err = db.RepoPbths().AggregbteFileCount(ctx, TreeLocbtionOpts{})
 	require.NoError(t, err)
-	assert.Equal(t, int32(counts2[""]), count)
+	bssert.Equbl(t, int32(counts2[""]), count)
 }

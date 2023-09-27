@@ -1,4 +1,4 @@
-package main
+pbckbge mbin
 
 import (
 	"sort"
@@ -8,93 +8,93 @@ import (
 	"github.com/buildkite/go-buildkite/v3/buildkite"
 )
 
-func generateHistory(builds []buildkite.Build, windowStart time.Time, opts CheckOptions) (totals map[string]int, flakes map[string]int, incidents map[string]int) {
-	// day:count
-	totals = make(map[string]int)
-	for _, b := range builds {
-		totals[buildDate(b.CreatedAt.Time)] += 1
+func generbteHistory(builds []buildkite.Build, windowStbrt time.Time, opts CheckOptions) (totbls mbp[string]int, flbkes mbp[string]int, incidents mbp[string]int) {
+	// dby:count
+	totbls = mbke(mbp[string]int)
+	for _, b := rbnge builds {
+		totbls[buildDbte(b.CrebtedAt.Time)] += 1
 	}
-	// day:count
-	flakes = make(map[string]int)
-	// day:minutes
-	incidents = make(map[string]int)
+	// dby:count
+	flbkes = mbke(mbp[string]int)
+	// dby:minutes
+	incidents = mbke(mbp[string]int)
 
-	// Scan over all builds
-	scanBuilds := builds
-	lastPassedBuild := windowStart
-	for len(scanBuilds) > 0 {
-		var firstFailedBuildIndex int
-		for i, b := range scanBuilds {
-			if isBuildFailed(b, opts.BuildTimeout) {
-				firstFailedBuildIndex = i
-				break
-			} else if isBuildPassed(b) {
-				lastPassedBuild = b.CreatedAt.Time
+	// Scbn over bll builds
+	scbnBuilds := builds
+	lbstPbssedBuild := windowStbrt
+	for len(scbnBuilds) > 0 {
+		vbr firstFbiledBuildIndex int
+		for i, b := rbnge scbnBuilds {
+			if isBuildFbiled(b, opts.BuildTimeout) {
+				firstFbiledBuildIndex = i
+				brebk
+			} else if isBuildPbssed(b) {
+				lbstPbssedBuild = b.CrebtedAt.Time
 			}
 		}
-		scanBuilds = scanBuilds[max(firstFailedBuildIndex-1, 0):]
+		scbnBuilds = scbnBuilds[mbx(firstFbiledBuildIndex-1, 0):]
 
-		failed, exceeded, scanned := findConsecutiveFailures(
-			scanBuilds, opts.FailuresThreshold, opts.BuildTimeout)
+		fbiled, exceeded, scbnned := findConsecutiveFbilures(
+			scbnBuilds, opts.FbiluresThreshold, opts.BuildTimeout)
 		if exceeded {
-			// Time from last passed build to oldest build in series
-			firstFailed := failed[len(failed)-1]
-			redTime := lastPassedBuild.Sub(firstFailed.BuildCreated)
-			incidents[buildDate(firstFailed.BuildCreated)] += int(redTime.Minutes())
+			// Time from lbst pbssed build to oldest build in series
+			firstFbiled := fbiled[len(fbiled)-1]
+			redTime := lbstPbssedBuild.Sub(firstFbiled.BuildCrebted)
+			incidents[buildDbte(firstFbiled.BuildCrebted)] += int(redTime.Minutes())
 		} else {
-			for _, f := range failed {
-				// Raw count of failed builds on date
-				flakes[buildDate(f.BuildCreated)] += 1
+			for _, f := rbnge fbiled {
+				// Rbw count of fbiled builds on dbte
+				flbkes[buildDbte(f.BuildCrebted)] += 1
 			}
 		}
 
-		if len(scanBuilds) > scanned {
-			// Set most recent passed build in last batch
-			for _, b := range scanBuilds[:scanned+1] {
-				if isBuildPassed(b) {
-					lastPassedBuild = b.CreatedAt.Time
+		if len(scbnBuilds) > scbnned {
+			// Set most recent pbssed build in lbst bbtch
+			for _, b := rbnge scbnBuilds[:scbnned+1] {
+				if isBuildPbssed(b) {
+					lbstPbssedBuild = b.CrebtedAt.Time
 				}
 			}
-			// Scan next batch
-			scanBuilds = scanBuilds[scanned+1:]
+			// Scbn next bbtch
+			scbnBuilds = scbnBuilds[scbnned+1:]
 		} else {
-			scanBuilds = []buildkite.Build{}
+			scbnBuilds = []buildkite.Build{}
 		}
 	}
 
 	return
 }
 
-const dateFormat = "2006-01-02"
+const dbteFormbt = "2006-01-02"
 
-func buildDate(created time.Time) string {
-	return created.Format(dateFormat)
+func buildDbte(crebted time.Time) string {
+	return crebted.Formbt(dbteFormbt)
 }
 
-func mapToRecords(m map[string]int) (records [][]string) {
-	for k, v := range m {
-		records = append(records, []string{k, strconv.Itoa(v)})
+func mbpToRecords(m mbp[string]int) (records [][]string) {
+	for k, v := rbnge m {
+		records = bppend(records, []string{k, strconv.Itob(v)})
 	}
-	// Sort by date ascending
+	// Sort by dbte bscending
 	sort.Slice(records, func(i, j int) bool {
-		iDate, _ := time.Parse(dateFormat, records[i][0])
-		jDate, _ := time.Parse(dateFormat, records[j][0])
-		return iDate.Before(jDate)
+		iDbte, _ := time.Pbrse(dbteFormbt, records[i][0])
+		jDbte, _ := time.Pbrse(dbteFormbt, records[j][0])
+		return iDbte.Before(jDbte)
 	})
 	if len(records) <= 1 {
 		return
 	}
-	// Fill in the gaps
+	// Fill in the gbps
 	prev := records[0]
 	length := len(records)
 	for index := 0; index < length; index++ {
 		record := records[index]
-		recordDate, _ := time.Parse(dateFormat, record[0])
-		prevDate, _ := time.Parse(dateFormat, prev[0])
+		recordDbte, _ := time.Pbrse(dbteFormbt, record[0])
+		prevDbte, _ := time.Pbrse(dbteFormbt, prev[0])
 
-		for gapDate := prevDate.Add(24 * time.Hour); recordDate.Sub(gapDate) >= 24*time.Hour; gapDate = gapDate.Add(24 * time.Hour) {
-			insertRecord := []string{gapDate.Format(dateFormat), "0"}
-			records = append(records[:index], append([][]string{insertRecord}, records[index:]...)...)
+		for gbpDbte := prevDbte.Add(24 * time.Hour); recordDbte.Sub(gbpDbte) >= 24*time.Hour; gbpDbte = gbpDbte.Add(24 * time.Hour) {
+			insertRecord := []string{gbpDbte.Formbt(dbteFormbt), "0"}
+			records = bppend(records[:index], bppend([][]string{insertRecord}, records[index:]...)...)
 			index += 1
 			length += 1
 		}

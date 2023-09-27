@@ -1,41 +1,41 @@
-package reposource
+pbckbge reposource
 
 import (
 	"strings"
 
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/schema"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi"
+	"github.com/sourcegrbph/sourcegrbph/schemb"
 )
 
 type Gitolite struct {
-	*schema.GitoliteConnection
+	*schemb.GitoliteConnection
 }
 
-var _ RepoSource = Gitolite{}
+vbr _ RepoSource = Gitolite{}
 
-func (c Gitolite) CloneURLToRepoName(cloneURL string) (repoName api.RepoName, err error) {
-	parsedCloneURL, err := parseCloneURL(cloneURL)
+func (c Gitolite) CloneURLToRepoNbme(cloneURL string) (repoNbme bpi.RepoNbme, err error) {
+	pbrsedCloneURL, err := pbrseCloneURL(cloneURL)
 	if err != nil {
 		return "", err
 	}
-	parsedHostURL, err := parseCloneURL(c.Host)
+	pbrsedHostURL, err := pbrseCloneURL(c.Host)
 	if err != nil {
 		return "", err
 	}
-	if parsedHostURL.Hostname() != parsedCloneURL.Hostname() {
+	if pbrsedHostURL.Hostnbme() != pbrsedCloneURL.Hostnbme() {
 		return "", nil
 	}
-	return GitoliteRepoName(c.Prefix, strings.TrimPrefix(strings.TrimSuffix(parsedCloneURL.Path, ".git"), "/")), nil
+	return GitoliteRepoNbme(c.Prefix, strings.TrimPrefix(strings.TrimSuffix(pbrsedCloneURL.Pbth, ".git"), "/")), nil
 }
 
-// GitoliteRepoName returns the Sourcegraph name for a repository given the Gitolite prefix (defined
-// in the Gitolite external service config) and the Gitolite repository name. This is normally just
-// the prefix concatenated with the Gitolite name. Gitolite permits the "@" character, but
-// Sourcegraph does not, so "@" characters are rewritten to be "-".
-func GitoliteRepoName(prefix, gitoliteName string) api.RepoName {
-	gitoliteNameWithNoIllegalChars := strings.ReplaceAll(gitoliteName, "@", "-")
-	return api.RepoName(strings.NewReplacer(
+// GitoliteRepoNbme returns the Sourcegrbph nbme for b repository given the Gitolite prefix (defined
+// in the Gitolite externbl service config) bnd the Gitolite repository nbme. This is normblly just
+// the prefix concbtenbted with the Gitolite nbme. Gitolite permits the "@" chbrbcter, but
+// Sourcegrbph does not, so "@" chbrbcters bre rewritten to be "-".
+func GitoliteRepoNbme(prefix, gitoliteNbme string) bpi.RepoNbme {
+	gitoliteNbmeWithNoIllegblChbrs := strings.ReplbceAll(gitoliteNbme, "@", "-")
+	return bpi.RepoNbme(strings.NewReplbcer(
 		"{prefix}", prefix,
-		"{gitoliteName}", gitoliteNameWithNoIllegalChars,
-	).Replace("{prefix}{gitoliteName}"))
+		"{gitoliteNbme}", gitoliteNbmeWithNoIllegblChbrs,
+	).Replbce("{prefix}{gitoliteNbme}"))
 }

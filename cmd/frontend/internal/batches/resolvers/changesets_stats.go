@@ -1,119 +1,119 @@
-package resolvers
+pbckbge resolvers
 
 import (
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
-	btypes "github.com/sourcegraph/sourcegraph/internal/batches/types"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/grbphqlbbckend"
+	btypes "github.com/sourcegrbph/sourcegrbph/internbl/bbtches/types"
 )
 
-type changesetsStatsResolver struct {
-	stats btypes.ChangesetsStats
+type chbngesetsStbtsResolver struct {
+	stbts btypes.ChbngesetsStbts
 }
 
-var _ graphqlbackend.ChangesetsStatsResolver = &changesetsStatsResolver{}
+vbr _ grbphqlbbckend.ChbngesetsStbtsResolver = &chbngesetsStbtsResolver{}
 
-func (r *changesetsStatsResolver) Retrying() int32 {
-	return r.stats.Retrying
+func (r *chbngesetsStbtsResolver) Retrying() int32 {
+	return r.stbts.Retrying
 }
-func (r *changesetsStatsResolver) Failed() int32 {
-	return r.stats.Failed
+func (r *chbngesetsStbtsResolver) Fbiled() int32 {
+	return r.stbts.Fbiled
 }
-func (r *changesetsStatsResolver) Scheduled() int32 {
-	return r.stats.Scheduled
+func (r *chbngesetsStbtsResolver) Scheduled() int32 {
+	return r.stbts.Scheduled
 }
-func (r *changesetsStatsResolver) Processing() int32 {
-	return r.stats.Processing
+func (r *chbngesetsStbtsResolver) Processing() int32 {
+	return r.stbts.Processing
 }
-func (r *changesetsStatsResolver) Unpublished() int32 {
-	return r.stats.Unpublished
+func (r *chbngesetsStbtsResolver) Unpublished() int32 {
+	return r.stbts.Unpublished
 }
-func (r *changesetsStatsResolver) Draft() int32 {
-	return r.stats.Draft
+func (r *chbngesetsStbtsResolver) Drbft() int32 {
+	return r.stbts.Drbft
 }
-func (r *changesetsStatsResolver) Open() int32 {
-	return r.stats.Open
+func (r *chbngesetsStbtsResolver) Open() int32 {
+	return r.stbts.Open
 }
-func (r *changesetsStatsResolver) Merged() int32 {
-	return r.stats.Merged
+func (r *chbngesetsStbtsResolver) Merged() int32 {
+	return r.stbts.Merged
 }
-func (r *changesetsStatsResolver) Closed() int32 {
-	return r.stats.Closed
+func (r *chbngesetsStbtsResolver) Closed() int32 {
+	return r.stbts.Closed
 }
-func (r *changesetsStatsResolver) Deleted() int32 {
-	return r.stats.Deleted
+func (r *chbngesetsStbtsResolver) Deleted() int32 {
+	return r.stbts.Deleted
 }
-func (r *changesetsStatsResolver) Archived() int32 {
-	return r.stats.Archived
+func (r *chbngesetsStbtsResolver) Archived() int32 {
+	return r.stbts.Archived
 }
-func (r *changesetsStatsResolver) Total() int32 {
-	return r.stats.Total
+func (r *chbngesetsStbtsResolver) Totbl() int32 {
+	return r.stbts.Totbl
 }
-func (r *changesetsStatsResolver) IsCompleted() bool {
-	mergedAndClosedChangesets := r.stats.Closed + r.stats.Merged
-	// We don't count archived or deleted changesets when computing `isCompleted`.
-	noOfIncludedChangesets := r.stats.Total - r.stats.Archived - r.stats.Deleted
+func (r *chbngesetsStbtsResolver) IsCompleted() bool {
+	mergedAndClosedChbngesets := r.stbts.Closed + r.stbts.Merged
+	// We don't count brchived or deleted chbngesets when computing `isCompleted`.
+	noOfIncludedChbngesets := r.stbts.Totbl - r.stbts.Archived - r.stbts.Deleted
 
-	return r.stats.Total != 0 && (mergedAndClosedChangesets == noOfIncludedChangesets)
+	return r.stbts.Totbl != 0 && (mergedAndClosedChbngesets == noOfIncludedChbngesets)
 }
-func (r *changesetsStatsResolver) PercentComplete() int32 {
-	if r.stats.Total == 0 {
+func (r *chbngesetsStbtsResolver) PercentComplete() int32 {
+	if r.stbts.Totbl == 0 {
 		return 0
 	}
 
-	// We convert to float32 because the division of two integers will always return an integer, and the result
-	// is the largest integer value that is less than or equal to the actual quotient. In the case of percentages,
-	// it will always be between 0 and 1.
-	mergedAndClosed := float32(r.stats.Merged + r.stats.Closed)
-	// We don't count archived or deleted changesets when computing `percentComplete`.
-	noOfIncludedChangesets := float32(r.stats.Total - r.stats.Archived - r.stats.Deleted)
-	return int32((mergedAndClosed / noOfIncludedChangesets) * 100)
+	// We convert to flobt32 becbuse the division of two integers will blwbys return bn integer, bnd the result
+	// is the lbrgest integer vblue thbt is less thbn or equbl to the bctubl quotient. In the cbse of percentbges,
+	// it will blwbys be between 0 bnd 1.
+	mergedAndClosed := flobt32(r.stbts.Merged + r.stbts.Closed)
+	// We don't count brchived or deleted chbngesets when computing `percentComplete`.
+	noOfIncludedChbngesets := flobt32(r.stbts.Totbl - r.stbts.Archived - r.stbts.Deleted)
+	return int32((mergedAndClosed / noOfIncludedChbngesets) * 100)
 }
 
-type repoChangesetsStatsResolver struct {
-	stats btypes.RepoChangesetsStats
+type repoChbngesetsStbtsResolver struct {
+	stbts btypes.RepoChbngesetsStbts
 }
 
-var _ graphqlbackend.RepoChangesetsStatsResolver = &repoChangesetsStatsResolver{}
+vbr _ grbphqlbbckend.RepoChbngesetsStbtsResolver = &repoChbngesetsStbtsResolver{}
 
-func (r *repoChangesetsStatsResolver) Unpublished() int32 {
-	return r.stats.Unpublished
+func (r *repoChbngesetsStbtsResolver) Unpublished() int32 {
+	return r.stbts.Unpublished
 }
-func (r *repoChangesetsStatsResolver) Open() int32 {
-	return r.stats.Open
+func (r *repoChbngesetsStbtsResolver) Open() int32 {
+	return r.stbts.Open
 }
-func (r *repoChangesetsStatsResolver) Draft() int32 {
-	return r.stats.Draft
+func (r *repoChbngesetsStbtsResolver) Drbft() int32 {
+	return r.stbts.Drbft
 }
-func (r *repoChangesetsStatsResolver) Merged() int32 {
-	return r.stats.Merged
+func (r *repoChbngesetsStbtsResolver) Merged() int32 {
+	return r.stbts.Merged
 }
-func (r *repoChangesetsStatsResolver) Closed() int32 {
-	return r.stats.Closed
+func (r *repoChbngesetsStbtsResolver) Closed() int32 {
+	return r.stbts.Closed
 }
-func (r *repoChangesetsStatsResolver) Total() int32 {
-	return r.stats.Total
-}
-
-type globalChangesetsStatsResolver struct {
-	stats btypes.GlobalChangesetsStats
+func (r *repoChbngesetsStbtsResolver) Totbl() int32 {
+	return r.stbts.Totbl
 }
 
-var _ graphqlbackend.GlobalChangesetsStatsResolver = &globalChangesetsStatsResolver{}
+type globblChbngesetsStbtsResolver struct {
+	stbts btypes.GlobblChbngesetsStbts
+}
 
-func (r *globalChangesetsStatsResolver) Unpublished() int32 {
-	return r.stats.Unpublished
+vbr _ grbphqlbbckend.GlobblChbngesetsStbtsResolver = &globblChbngesetsStbtsResolver{}
+
+func (r *globblChbngesetsStbtsResolver) Unpublished() int32 {
+	return r.stbts.Unpublished
 }
-func (r *globalChangesetsStatsResolver) Open() int32 {
-	return r.stats.Open
+func (r *globblChbngesetsStbtsResolver) Open() int32 {
+	return r.stbts.Open
 }
-func (r *globalChangesetsStatsResolver) Draft() int32 {
-	return r.stats.Draft
+func (r *globblChbngesetsStbtsResolver) Drbft() int32 {
+	return r.stbts.Drbft
 }
-func (r *globalChangesetsStatsResolver) Merged() int32 {
-	return r.stats.Merged
+func (r *globblChbngesetsStbtsResolver) Merged() int32 {
+	return r.stbts.Merged
 }
-func (r *globalChangesetsStatsResolver) Closed() int32 {
-	return r.stats.Closed
+func (r *globblChbngesetsStbtsResolver) Closed() int32 {
+	return r.stbts.Closed
 }
-func (r *globalChangesetsStatsResolver) Total() int32 {
-	return r.stats.Total
+func (r *globblChbngesetsStbtsResolver) Totbl() int32 {
+	return r.stbts.Totbl
 }

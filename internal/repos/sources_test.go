@@ -1,4 +1,4 @@
-package repos
+pbckbge repos
 
 import (
 	"context"
@@ -10,211 +10,211 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/dnaeon/go-vcr/cassette"
-	"github.com/dnaeon/go-vcr/recorder"
+	"github.com/dnbeon/go-vcr/cbssette"
+	"github.com/dnbeon/go-vcr/recorder"
 	"github.com/google/go-cmp/cmp"
-	"github.com/grafana/regexp"
+	"github.com/grbfbnb/regexp"
 
-	"github.com/sourcegraph/log/logtest"
+	"github.com/sourcegrbph/log/logtest"
 
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/phabricator"
-	"github.com/sourcegraph/sourcegraph/internal/httpcli"
-	"github.com/sourcegraph/sourcegraph/internal/httptestutil"
-	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/internal/types/typestest"
-	"github.com/sourcegraph/sourcegraph/schema"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf/conftypes"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbmocks"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc/phbbricbtor"
+	"github.com/sourcegrbph/sourcegrbph/internbl/httpcli"
+	"github.com/sourcegrbph/sourcegrbph/internbl/httptestutil"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types/typestest"
+	"github.com/sourcegrbph/sourcegrbph/schemb"
 )
 
 func TestSources_ListRepos(t *testing.T) {
 	conf.Mock(&conf.Unified{
 		ServiceConnectionConfig: conftypes.ServiceConnections{
 			GitServers: []string{"127.0.0.1:3178"},
-		}, SiteConfiguration: schema.SiteConfiguration{
-			ExperimentalFeatures: &schema.ExperimentalFeatures{
-				EnableGRPC: boolPointer(false),
+		}, SiteConfigurbtion: schemb.SiteConfigurbtion{
+			ExperimentblFebtures: &schemb.ExperimentblFebtures{
+				EnbbleGRPC: boolPointer(fblse),
 			},
 		},
 	})
 	defer conf.Mock(nil)
 
-	type testCase struct {
-		name   string
+	type testCbse struct {
+		nbme   string
 		ctx    context.Context
-		svcs   types.ExternalServices
-		assert func(*types.ExternalService) typestest.ReposAssertion
+		svcs   types.ExternblServices
+		bssert func(*types.ExternblService) typestest.ReposAssertion
 		err    string
 	}
 
-	var testCases []testCase
+	vbr testCbses []testCbse
 
 	{
-		svcs := types.ExternalServices{
+		svcs := types.ExternblServices{
 			{
 				Kind: extsvc.KindGitHub,
-				Config: extsvc.NewUnencryptedConfig(MarshalJSON(t, &schema.GitHubConnection{
+				Config: extsvc.NewUnencryptedConfig(MbrshblJSON(t, &schemb.GitHubConnection{
 					Url:   "https://github.com",
 					Token: os.Getenv("GITHUB_ACCESS_TOKEN"),
 					RepositoryQuery: []string{
-						"user:tsenart in:name patrol",
+						"user:tsenbrt in:nbme pbtrol",
 					},
 					Repos: []string{
-						"sourcegraph/Sourcegraph",
-						"keegancsmith/sqlf",
-						"tsenart/VEGETA",
-						"tsenart/go-tsz", // fork
+						"sourcegrbph/Sourcegrbph",
+						"keegbncsmith/sqlf",
+						"tsenbrt/VEGETA",
+						"tsenbrt/go-tsz", // fork
 					},
-					Exclude: []*schema.ExcludedGitHubRepo{
-						{Name: "tsenart/Vegeta"},
-						{Id: "MDEwOlJlcG9zaXRvcnkxNTM2NTcyNDU="}, // tsenart/patrol ID
-						{Pattern: "^keegancsmith/.*"},
+					Exclude: []*schemb.ExcludedGitHubRepo{
+						{Nbme: "tsenbrt/Vegetb"},
+						{Id: "MDEwOlJlcG9zbXRvcnkxNTM2NTcyNDU="}, // tsenbrt/pbtrol ID
+						{Pbttern: "^keegbncsmith/.*"},
 						{Forks: true},
 					},
 				})),
 			},
 			{
-				Kind: extsvc.KindGitLab,
-				Config: extsvc.NewUnencryptedConfig(MarshalJSON(t, &schema.GitLabConnection{
-					Url:   "https://gitlab.com",
+				Kind: extsvc.KindGitLbb,
+				Config: extsvc.NewUnencryptedConfig(MbrshblJSON(t, &schemb.GitLbbConnection{
+					Url:   "https://gitlbb.com",
 					Token: os.Getenv("GITLAB_ACCESS_TOKEN"),
 					ProjectQuery: []string{
-						"?search=gokulkarthick",
-						"?search=dotfiles-vegetableman",
+						"?sebrch=gokulkbrthick",
+						"?sebrch=dotfiles-vegetbblembn",
 					},
-					Exclude: []*schema.ExcludedGitLabProject{
-						{Name: "gokulkarthick/gokulkarthick"},
+					Exclude: []*schemb.ExcludedGitLbbProject{
+						{Nbme: "gokulkbrthick/gokulkbrthick"},
 						{Id: 7789240},
 					},
 				})),
 			},
 			{
 				Kind: extsvc.KindBitbucketServer,
-				Config: extsvc.NewUnencryptedConfig(MarshalJSON(t, &schema.BitbucketServerConnection{
+				Config: extsvc.NewUnencryptedConfig(MbrshblJSON(t, &schemb.BitbucketServerConnection{
 					Url:   "https://bitbucket.sgdev.org",
 					Token: os.Getenv("BITBUCKET_SERVER_TOKEN"),
 					Repos: []string{
-						"SOUR/vegeta",
-						"sour/sourcegraph",
+						"SOUR/vegetb",
+						"sour/sourcegrbph",
 					},
 					RepositoryQuery: []string{
-						"?visibility=private",
+						"?visibility=privbte",
 					},
-					Exclude: []*schema.ExcludedBitbucketServerRepo{
-						{Name: "SOUR/Vegeta"},      // test case insensitivity
-						{Id: 10067},                // sourcegraph repo id
-						{Pattern: ".*/automation"}, // only matches automation-testing repo
+					Exclude: []*schemb.ExcludedBitbucketServerRepo{
+						{Nbme: "SOUR/Vegetb"},      // test cbse insensitivity
+						{Id: 10067},                // sourcegrbph repo id
+						{Pbttern: ".*/butombtion"}, // only mbtches butombtion-testing repo
 					},
 				})),
 			},
 			{
 				Kind: extsvc.KindAWSCodeCommit,
-				Config: extsvc.NewUnencryptedConfig(MarshalJSON(t, &schema.AWSCodeCommitConnection{
+				Config: extsvc.NewUnencryptedConfig(MbrshblJSON(t, &schemb.AWSCodeCommitConnection{
 					AccessKeyID:     getAWSEnv("AWS_ACCESS_KEY_ID"),
 					SecretAccessKey: getAWSEnv("AWS_SECRET_ACCESS_KEY"),
 					Region:          "us-west-1",
-					GitCredentials: schema.AWSCodeCommitGitCredentials{
-						Username: "git-username",
-						Password: "git-password",
+					GitCredentibls: schemb.AWSCodeCommitGitCredentibls{
+						Usernbme: "git-usernbme",
+						Pbssword: "git-pbssword",
 					},
-					Exclude: []*schema.ExcludedAWSCodeCommitRepo{
-						{Name: "stRIPE-gO"},
-						{Id: "020a4751-0f46-4e19-82bf-07d0989b67dd"},                // ID of `test`
-						{Name: "test2", Id: "2686d63d-bff4-4a3e-a94f-3e6df904238d"}, // ID of `test2`
+					Exclude: []*schemb.ExcludedAWSCodeCommitRepo{
+						{Nbme: "stRIPE-gO"},
+						{Id: "020b4751-0f46-4e19-82bf-07d0989b67dd"},                // ID of `test`
+						{Nbme: "test2", Id: "2686d63d-bff4-4b3e-b94f-3e6df904238d"}, // ID of `test2`
 					},
 				})),
 			},
 			{
 				Kind: extsvc.KindGitolite,
-				Config: extsvc.NewUnencryptedConfig(MarshalJSON(t, &schema.GitoliteConnection{
+				Config: extsvc.NewUnencryptedConfig(MbrshblJSON(t, &schemb.GitoliteConnection{
 					Prefix: "gitolite.mycorp.com/",
 					Host:   "ssh://git@127.0.0.1:2222",
-					Exclude: []*schema.ExcludedGitoliteRepo{
-						{Name: "bar"},
+					Exclude: []*schemb.ExcludedGitoliteRepo{
+						{Nbme: "bbr"},
 					},
 				})),
 			},
 		}
 
-		testCases = append(testCases, testCase{
-			name: "excluded repos are never yielded",
+		testCbses = bppend(testCbses, testCbse{
+			nbme: "excluded repos bre never yielded",
 			svcs: svcs,
-			assert: func(s *types.ExternalService) typestest.ReposAssertion {
+			bssert: func(s *types.ExternblService) typestest.ReposAssertion {
 				return func(t testing.TB, rs types.Repos) {
 					t.Helper()
 
-					set := make(map[string]bool)
-					var patterns []*regexp.Regexp
+					set := mbke(mbp[string]bool)
+					vbr pbtterns []*regexp.Regexp
 
-					ctx := context.Background()
-					c, err := s.Configuration(ctx)
+					ctx := context.Bbckground()
+					c, err := s.Configurbtion(ctx)
 					if err != nil {
-						t.Fatal(err)
+						t.Fbtbl(err)
 					}
 
 					type excluded struct {
-						name, id, pattern string
+						nbme, id, pbttern string
 					}
 
-					var ex []excluded
+					vbr ex []excluded
 					switch cfg := c.(type) {
-					case *schema.GitHubConnection:
-						for _, e := range cfg.Exclude {
-							ex = append(ex, excluded{name: e.Name, id: e.Id, pattern: e.Pattern})
+					cbse *schemb.GitHubConnection:
+						for _, e := rbnge cfg.Exclude {
+							ex = bppend(ex, excluded{nbme: e.Nbme, id: e.Id, pbttern: e.Pbttern})
 						}
-					case *schema.GitLabConnection:
-						for _, e := range cfg.Exclude {
-							ex = append(ex, excluded{name: e.Name, id: strconv.Itoa(e.Id)})
+					cbse *schemb.GitLbbConnection:
+						for _, e := rbnge cfg.Exclude {
+							ex = bppend(ex, excluded{nbme: e.Nbme, id: strconv.Itob(e.Id)})
 						}
-					case *schema.BitbucketServerConnection:
-						for _, e := range cfg.Exclude {
-							ex = append(ex, excluded{name: e.Name, id: strconv.Itoa(e.Id), pattern: e.Pattern})
+					cbse *schemb.BitbucketServerConnection:
+						for _, e := rbnge cfg.Exclude {
+							ex = bppend(ex, excluded{nbme: e.Nbme, id: strconv.Itob(e.Id), pbttern: e.Pbttern})
 						}
-					case *schema.AWSCodeCommitConnection:
-						for _, e := range cfg.Exclude {
-							ex = append(ex, excluded{name: e.Name, id: e.Id})
+					cbse *schemb.AWSCodeCommitConnection:
+						for _, e := rbnge cfg.Exclude {
+							ex = bppend(ex, excluded{nbme: e.Nbme, id: e.Id})
 						}
-					case *schema.GitoliteConnection:
-						for _, e := range cfg.Exclude {
-							ex = append(ex, excluded{name: e.Name, pattern: e.Pattern})
+					cbse *schemb.GitoliteConnection:
+						for _, e := rbnge cfg.Exclude {
+							ex = bppend(ex, excluded{nbme: e.Nbme, pbttern: e.Pbttern})
 						}
 					}
 
 					if len(ex) == 0 {
-						t.Fatal("exclude list must not be empty")
+						t.Fbtbl("exclude list must not be empty")
 					}
 
-					for _, e := range ex {
-						name := e.name
+					for _, e := rbnge ex {
+						nbme := e.nbme
 						switch s.Kind {
-						case extsvc.KindGitHub, extsvc.KindBitbucketServer:
-							name = strings.ToLower(name)
+						cbse extsvc.KindGitHub, extsvc.KindBitbucketServer:
+							nbme = strings.ToLower(nbme)
 						}
-						set[name], set[e.id] = true, true
-						if e.pattern != "" {
-							re, err := regexp.Compile(e.pattern)
+						set[nbme], set[e.id] = true, true
+						if e.pbttern != "" {
+							re, err := regexp.Compile(e.pbttern)
 							if err != nil {
-								t.Fatal(err)
+								t.Fbtbl(err)
 							}
-							patterns = append(patterns, re)
+							pbtterns = bppend(pbtterns, re)
 						}
 					}
 
-					for _, r := range rs {
+					for _, r := rbnge rs {
 						if r.Fork {
-							t.Errorf("excluded fork was yielded: %s", r.Name)
+							t.Errorf("excluded fork wbs yielded: %s", r.Nbme)
 						}
 
-						if set[string(r.Name)] || set[r.ExternalRepo.ID] {
-							t.Errorf("excluded repo{name=%s, id=%s} was yielded", r.Name, r.ExternalRepo.ID)
+						if set[string(r.Nbme)] || set[r.ExternblRepo.ID] {
+							t.Errorf("excluded repo{nbme=%s, id=%s} wbs yielded", r.Nbme, r.ExternblRepo.ID)
 						}
 
-						for _, re := range patterns {
-							if re.MatchString(string(r.Name)) {
-								t.Errorf("excluded repo{name=%s} matching %q was yielded", r.Name, re.String())
+						for _, re := rbnge pbtterns {
+							if re.MbtchString(string(r.Nbme)) {
+								t.Errorf("excluded repo{nbme=%s} mbtching %q wbs yielded", r.Nbme, re.String())
 							}
 						}
 					}
@@ -225,47 +225,47 @@ func TestSources_ListRepos(t *testing.T) {
 	}
 
 	{
-		svcs := types.ExternalServices{
+		svcs := types.ExternblServices{
 			{
 				Kind: extsvc.KindGitHub,
-				Config: extsvc.NewUnencryptedConfig(MarshalJSON(t, &schema.GitHubConnection{
+				Config: extsvc.NewUnencryptedConfig(MbrshblJSON(t, &schemb.GitHubConnection{
 					Url:   "https://github.com",
 					Token: os.Getenv("GITHUB_ACCESS_TOKEN"),
 					Repos: []string{
-						"sourcegraph/Sourcegraph",
-						"tsenart/Vegeta",
-						"tsenart/vegeta-missing",
+						"sourcegrbph/Sourcegrbph",
+						"tsenbrt/Vegetb",
+						"tsenbrt/vegetb-missing",
 					},
 				})),
 			},
 			{
-				Kind: extsvc.KindGitLab,
-				Config: extsvc.NewUnencryptedConfig(MarshalJSON(t, &schema.GitLabConnection{
-					Url:          "https://gitlab.com",
+				Kind: extsvc.KindGitLbb,
+				Config: extsvc.NewUnencryptedConfig(MbrshblJSON(t, &schemb.GitLbbConnection{
+					Url:          "https://gitlbb.com",
 					Token:        os.Getenv("GITLAB_ACCESS_TOKEN"),
 					ProjectQuery: []string{"none"},
-					Projects: []*schema.GitLabProject{
-						{Name: "gnachman/iterm2"},
-						{Name: "gnachman/iterm2-missing"},
-						{Id: 13083}, // https://gitlab.com/gitlab-org/gitlab-ce
+					Projects: []*schemb.GitLbbProject{
+						{Nbme: "gnbchmbn/iterm2"},
+						{Nbme: "gnbchmbn/iterm2-missing"},
+						{Id: 13083}, // https://gitlbb.com/gitlbb-org/gitlbb-ce
 					},
 				})),
 			},
 			{
 				Kind: extsvc.KindBitbucketServer,
-				Config: extsvc.NewUnencryptedConfig(MarshalJSON(t, &schema.BitbucketServerConnection{
+				Config: extsvc.NewUnencryptedConfig(MbrshblJSON(t, &schemb.BitbucketServerConnection{
 					Url:             "https://bitbucket.sgdev.org",
 					Token:           os.Getenv("BITBUCKET_SERVER_TOKEN"),
 					RepositoryQuery: []string{"none"},
 					Repos: []string{
 						"Sour/vegetA",
-						"sour/sourcegraph",
+						"sour/sourcegrbph",
 					},
 				})),
 			},
 			{
 				Kind: extsvc.KindOther,
-				Config: extsvc.NewUnencryptedConfig(MarshalJSON(t, &schema.OtherExternalServiceConnection{
+				Config: extsvc.NewUnencryptedConfig(MbrshblJSON(t, &schemb.OtherExternblServiceConnection{
 					Url: "https://github.com",
 					Repos: []string{
 						"google/go-cmp",
@@ -274,61 +274,61 @@ func TestSources_ListRepos(t *testing.T) {
 			},
 			{
 				Kind: extsvc.KindAWSCodeCommit,
-				Config: extsvc.NewUnencryptedConfig(MarshalJSON(t, &schema.AWSCodeCommitConnection{
+				Config: extsvc.NewUnencryptedConfig(MbrshblJSON(t, &schemb.AWSCodeCommitConnection{
 					AccessKeyID:     getAWSEnv("AWS_ACCESS_KEY_ID"),
 					SecretAccessKey: getAWSEnv("AWS_SECRET_ACCESS_KEY"),
 					Region:          "us-west-1",
-					GitCredentials: schema.AWSCodeCommitGitCredentials{
-						Username: "git-username",
-						Password: "git-password",
+					GitCredentibls: schemb.AWSCodeCommitGitCredentibls{
+						Usernbme: "git-usernbme",
+						Pbssword: "git-pbssword",
 					},
 				})),
 			},
 		}
 
-		testCases = append(testCases, testCase{
-			name: "included repos that exist are yielded",
+		testCbses = bppend(testCbses, testCbse{
+			nbme: "included repos thbt exist bre yielded",
 			svcs: svcs,
-			assert: func(s *types.ExternalService) typestest.ReposAssertion {
+			bssert: func(s *types.ExternblService) typestest.ReposAssertion {
 				return func(t testing.TB, rs types.Repos) {
 					t.Helper()
 
-					have := rs.Names()
-					sort.Strings(have)
+					hbve := rs.Nbmes()
+					sort.Strings(hbve)
 
-					var want []string
+					vbr wbnt []string
 					switch s.Kind {
-					case extsvc.KindGitHub:
-						want = []string{
-							"github.com/sourcegraph/sourcegraph",
-							"github.com/tsenart/vegeta",
+					cbse extsvc.KindGitHub:
+						wbnt = []string{
+							"github.com/sourcegrbph/sourcegrbph",
+							"github.com/tsenbrt/vegetb",
 						}
-					case extsvc.KindBitbucketServer:
-						want = []string{
-							"bitbucket.sgdev.org/SOUR/sourcegraph",
-							"bitbucket.sgdev.org/SOUR/vegeta",
+					cbse extsvc.KindBitbucketServer:
+						wbnt = []string{
+							"bitbucket.sgdev.org/SOUR/sourcegrbph",
+							"bitbucket.sgdev.org/SOUR/vegetb",
 						}
-					case extsvc.KindGitLab:
-						want = []string{
-							"gitlab.com/gitlab-org/gitlab-ce",
-							"gitlab.com/gnachman/iterm2",
+					cbse extsvc.KindGitLbb:
+						wbnt = []string{
+							"gitlbb.com/gitlbb-org/gitlbb-ce",
+							"gitlbb.com/gnbchmbn/iterm2",
 						}
-					case extsvc.KindAWSCodeCommit:
-						want = []string{
+					cbse extsvc.KindAWSCodeCommit:
+						wbnt = []string{
 							"__WARNING_DO_NOT_PUT_ANY_PRIVATE_CODE_IN_HERE",
 							"empty-repo",
 							"stripe-go",
 							"test",
 							"test2",
 						}
-					case extsvc.KindOther:
-						want = []string{
+					cbse extsvc.KindOther:
+						wbnt = []string{
 							"github.com/google/go-cmp",
 						}
 					}
 
-					if !reflect.DeepEqual(have, want) {
-						t.Error(cmp.Diff(have, want))
+					if !reflect.DeepEqubl(hbve, wbnt) {
+						t.Error(cmp.Diff(hbve, wbnt))
 					}
 				}
 			},
@@ -337,129 +337,129 @@ func TestSources_ListRepos(t *testing.T) {
 	}
 
 	{
-		svcs := types.ExternalServices{
+		svcs := types.ExternblServices{
 			{
 				Kind: extsvc.KindGitHub,
-				Config: extsvc.NewUnencryptedConfig(MarshalJSON(t, &schema.GitHubConnection{
+				Config: extsvc.NewUnencryptedConfig(MbrshblJSON(t, &schemb.GitHubConnection{
 					Url:                   "https://github.com",
 					Token:                 os.Getenv("GITHUB_ACCESS_TOKEN"),
-					RepositoryPathPattern: "{host}/a/b/c/{nameWithOwner}",
+					RepositoryPbthPbttern: "{host}/b/b/c/{nbmeWithOwner}",
 					RepositoryQuery:       []string{"none"},
-					Repos:                 []string{"tsenart/vegeta"},
+					Repos:                 []string{"tsenbrt/vegetb"},
 				})),
 			},
 			{
-				Kind: extsvc.KindGitLab,
-				Config: extsvc.NewUnencryptedConfig(MarshalJSON(t, &schema.GitLabConnection{
-					Url:                   "https://gitlab.com",
+				Kind: extsvc.KindGitLbb,
+				Config: extsvc.NewUnencryptedConfig(MbrshblJSON(t, &schemb.GitLbbConnection{
+					Url:                   "https://gitlbb.com",
 					Token:                 os.Getenv("GITLAB_ACCESS_TOKEN"),
-					RepositoryPathPattern: "{host}/a/b/c/{pathWithNamespace}",
+					RepositoryPbthPbttern: "{host}/b/b/c/{pbthWithNbmespbce}",
 					ProjectQuery:          []string{"none"},
-					Projects: []*schema.GitLabProject{
-						{Name: "gnachman/iterm2"},
+					Projects: []*schemb.GitLbbProject{
+						{Nbme: "gnbchmbn/iterm2"},
 					},
 				})),
 			},
 			{
 				Kind: extsvc.KindBitbucketServer,
-				Config: extsvc.NewUnencryptedConfig(MarshalJSON(t, &schema.BitbucketServerConnection{
+				Config: extsvc.NewUnencryptedConfig(MbrshblJSON(t, &schemb.BitbucketServerConnection{
 					Url:                   "https://bitbucket.sgdev.org",
 					Token:                 os.Getenv("BITBUCKET_SERVER_TOKEN"),
-					RepositoryPathPattern: "{host}/a/b/c/{projectKey}/{repositorySlug}",
+					RepositoryPbthPbttern: "{host}/b/b/c/{projectKey}/{repositorySlug}",
 					RepositoryQuery:       []string{"none"},
-					Repos:                 []string{"sour/vegeta"},
+					Repos:                 []string{"sour/vegetb"},
 				})),
 			},
 			{
 				Kind: extsvc.KindAWSCodeCommit,
-				Config: extsvc.NewUnencryptedConfig(MarshalJSON(t, &schema.AWSCodeCommitConnection{
+				Config: extsvc.NewUnencryptedConfig(MbrshblJSON(t, &schemb.AWSCodeCommitConnection{
 					AccessKeyID:     getAWSEnv("AWS_ACCESS_KEY_ID"),
 					SecretAccessKey: getAWSEnv("AWS_SECRET_ACCESS_KEY"),
 					Region:          "us-west-1",
-					GitCredentials: schema.AWSCodeCommitGitCredentials{
-						Username: "git-username",
-						Password: "git-password",
+					GitCredentibls: schemb.AWSCodeCommitGitCredentibls{
+						Usernbme: "git-usernbme",
+						Pbssword: "git-pbssword",
 					},
-					RepositoryPathPattern: "a/b/c/{name}",
+					RepositoryPbthPbttern: "b/b/c/{nbme}",
 				})),
 			},
 			{
 				Kind: extsvc.KindGitolite,
-				Config: extsvc.NewUnencryptedConfig(MarshalJSON(t, &schema.GitoliteConnection{
-					// Prefix serves as a sort of repositoryPathPattern for Gitolite
+				Config: extsvc.NewUnencryptedConfig(MbrshblJSON(t, &schemb.GitoliteConnection{
+					// Prefix serves bs b sort of repositoryPbthPbttern for Gitolite
 					Prefix: "gitolite.mycorp.com/",
 					Host:   "ssh://git@127.0.0.1:2222",
 				})),
 			},
 		}
 
-		testCases = append(testCases, testCase{
-			name: "repositoryPathPattern determines the repo name",
+		testCbses = bppend(testCbses, testCbse{
+			nbme: "repositoryPbthPbttern determines the repo nbme",
 			svcs: svcs,
-			assert: func(s *types.ExternalService) typestest.ReposAssertion {
+			bssert: func(s *types.ExternblService) typestest.ReposAssertion {
 				return func(t testing.TB, rs types.Repos) {
 					t.Helper()
 
-					haveNames := rs.Names()
-					var haveURIs []string
-					for _, r := range rs {
-						haveURIs = append(haveURIs, r.URI)
+					hbveNbmes := rs.Nbmes()
+					vbr hbveURIs []string
+					for _, r := rbnge rs {
+						hbveURIs = bppend(hbveURIs, r.URI)
 					}
 
-					var wantNames, wantURIs []string
+					vbr wbntNbmes, wbntURIs []string
 					switch s.Kind {
-					case extsvc.KindGitHub:
-						wantNames = []string{
-							"github.com/a/b/c/tsenart/vegeta",
+					cbse extsvc.KindGitHub:
+						wbntNbmes = []string{
+							"github.com/b/b/c/tsenbrt/vegetb",
 						}
-						wantURIs = []string{
-							"github.com/tsenart/vegeta",
+						wbntURIs = []string{
+							"github.com/tsenbrt/vegetb",
 						}
-					case extsvc.KindGitLab:
-						wantNames = []string{
-							"gitlab.com/a/b/c/gnachman/iterm2",
+					cbse extsvc.KindGitLbb:
+						wbntNbmes = []string{
+							"gitlbb.com/b/b/c/gnbchmbn/iterm2",
 						}
-						wantURIs = []string{
-							"gitlab.com/gnachman/iterm2",
+						wbntURIs = []string{
+							"gitlbb.com/gnbchmbn/iterm2",
 						}
-					case extsvc.KindBitbucketServer:
-						wantNames = []string{
-							"bitbucket.sgdev.org/a/b/c/SOUR/vegeta",
+					cbse extsvc.KindBitbucketServer:
+						wbntNbmes = []string{
+							"bitbucket.sgdev.org/b/b/c/SOUR/vegetb",
 						}
-						wantURIs = []string{
-							"bitbucket.sgdev.org/SOUR/vegeta",
+						wbntURIs = []string{
+							"bitbucket.sgdev.org/SOUR/vegetb",
 						}
-					case extsvc.KindAWSCodeCommit:
-						wantNames = []string{
-							"a/b/c/empty-repo",
-							"a/b/c/stripe-go",
-							"a/b/c/test2",
-							"a/b/c/__WARNING_DO_NOT_PUT_ANY_PRIVATE_CODE_IN_HERE",
-							"a/b/c/test",
+					cbse extsvc.KindAWSCodeCommit:
+						wbntNbmes = []string{
+							"b/b/c/empty-repo",
+							"b/b/c/stripe-go",
+							"b/b/c/test2",
+							"b/b/c/__WARNING_DO_NOT_PUT_ANY_PRIVATE_CODE_IN_HERE",
+							"b/b/c/test",
 						}
-						wantURIs = []string{
+						wbntURIs = []string{
 							"empty-repo",
 							"stripe-go",
 							"test2",
 							"__WARNING_DO_NOT_PUT_ANY_PRIVATE_CODE_IN_HERE",
 							"test",
 						}
-					case extsvc.KindGitolite:
-						wantNames = []string{
-							"gitolite.mycorp.com/bar",
-							"gitolite.mycorp.com/baz",
+					cbse extsvc.KindGitolite:
+						wbntNbmes = []string{
+							"gitolite.mycorp.com/bbr",
+							"gitolite.mycorp.com/bbz",
 							"gitolite.mycorp.com/foo",
-							"gitolite.mycorp.com/gitolite-admin",
+							"gitolite.mycorp.com/gitolite-bdmin",
 							"gitolite.mycorp.com/testing",
 						}
-						wantURIs = wantNames
+						wbntURIs = wbntNbmes
 					}
 
-					if !reflect.DeepEqual(haveNames, wantNames) {
-						t.Error(cmp.Diff(haveNames, wantNames))
+					if !reflect.DeepEqubl(hbveNbmes, wbntNbmes) {
+						t.Error(cmp.Diff(hbveNbmes, wbntNbmes))
 					}
-					if !reflect.DeepEqual(haveURIs, wantURIs) {
-						t.Error(cmp.Diff(haveURIs, wantURIs))
+					if !reflect.DeepEqubl(hbveURIs, wbntURIs) {
+						t.Error(cmp.Diff(hbveURIs, wbntURIs))
 					}
 				}
 			},
@@ -468,53 +468,53 @@ func TestSources_ListRepos(t *testing.T) {
 	}
 
 	{
-		svcs := types.ExternalServices{
+		svcs := types.ExternblServices{
 			{
-				Kind: extsvc.KindGitLab,
-				Config: extsvc.NewUnencryptedConfig(MarshalJSON(t, &schema.GitLabConnection{
-					Url:                   "https://gitlab.com",
+				Kind: extsvc.KindGitLbb,
+				Config: extsvc.NewUnencryptedConfig(MbrshblJSON(t, &schemb.GitLbbConnection{
+					Url:                   "https://gitlbb.com",
 					Token:                 os.Getenv("GITLAB_ACCESS_TOKEN"),
-					RepositoryPathPattern: "{host}/{pathWithNamespace}",
+					RepositoryPbthPbttern: "{host}/{pbthWithNbmespbce}",
 					ProjectQuery:          []string{"none"},
-					Projects: []*schema.GitLabProject{
-						{Name: "sg-test.d/repo-git"},
-						{Name: "sg-test.d/repo-gitrepo"},
+					Projects: []*schemb.GitLbbProject{
+						{Nbme: "sg-test.d/repo-git"},
+						{Nbme: "sg-test.d/repo-gitrepo"},
 					},
-					NameTransformations: []*schema.GitLabNameTransformation{
+					NbmeTrbnsformbtions: []*schemb.GitLbbNbmeTrbnsformbtion{
 						{
 							Regex:       "\\.d/",
-							Replacement: "/",
+							Replbcement: "/",
 						},
 						{
 							Regex:       "-git$",
-							Replacement: "",
+							Replbcement: "",
 						},
 					},
 				})),
 			},
 		}
 
-		testCases = append(testCases, testCase{
-			name: "nameTransformations updates the repo name",
+		testCbses = bppend(testCbses, testCbse{
+			nbme: "nbmeTrbnsformbtions updbtes the repo nbme",
 			svcs: svcs,
-			assert: func(s *types.ExternalService) typestest.ReposAssertion {
+			bssert: func(s *types.ExternblService) typestest.ReposAssertion {
 				return func(t testing.TB, rs types.Repos) {
 					t.Helper()
 
-					have := rs.Names()
-					sort.Strings(have)
+					hbve := rs.Nbmes()
+					sort.Strings(hbve)
 
-					var want []string
+					vbr wbnt []string
 					switch s.Kind {
-					case extsvc.KindGitLab:
-						want = []string{
-							"gitlab.com/sg-test/repo",
-							"gitlab.com/sg-test/repo-gitrepo",
+					cbse extsvc.KindGitLbb:
+						wbnt = []string{
+							"gitlbb.com/sg-test/repo",
+							"gitlbb.com/sg-test/repo-gitrepo",
 						}
 					}
 
-					if !reflect.DeepEqual(have, want) {
-						t.Error(cmp.Diff(have, want))
+					if !reflect.DeepEqubl(hbve, wbnt) {
+						t.Error(cmp.Diff(hbve, wbnt))
 					}
 				}
 			},
@@ -523,49 +523,49 @@ func TestSources_ListRepos(t *testing.T) {
 	}
 
 	{
-		svcs := types.ExternalServices{
+		svcs := types.ExternblServices{
 			{
-				Kind: extsvc.KindPhabricator,
-				Config: extsvc.NewUnencryptedConfig(MarshalJSON(t, &schema.PhabricatorConnection{
-					Url:   "https://secure.phabricator.com",
+				Kind: extsvc.KindPhbbricbtor,
+				Config: extsvc.NewUnencryptedConfig(MbrshblJSON(t, &schemb.PhbbricbtorConnection{
+					Url:   "https://secure.phbbricbtor.com",
 					Token: os.Getenv("PHABRICATOR_TOKEN"),
 				})),
 			},
 		}
 
-		testCases = append(testCases, testCase{
-			name: "phabricator",
+		testCbses = bppend(testCbses, testCbse{
+			nbme: "phbbricbtor",
 			svcs: svcs,
-			assert: func(*types.ExternalService) typestest.ReposAssertion {
+			bssert: func(*types.ExternblService) typestest.ReposAssertion {
 				return func(t testing.TB, rs types.Repos) {
 					t.Helper()
 
 					if len(rs) == 0 {
-						t.Fatalf("no repos yielded")
+						t.Fbtblf("no repos yielded")
 					}
 
-					for _, r := range rs {
-						repo := r.Metadata.(*phabricator.Repo)
+					for _, r := rbnge rs {
+						repo := r.Metbdbtb.(*phbbricbtor.Repo)
 						if repo.VCS != "git" {
-							t.Fatalf("non git repo yielded: %+v", repo)
+							t.Fbtblf("non git repo yielded: %+v", repo)
 						}
 
-						if repo.Status == "inactive" {
-							t.Fatalf("inactive repo yielded: %+v", repo)
+						if repo.Stbtus == "inbctive" {
+							t.Fbtblf("inbctive repo yielded: %+v", repo)
 						}
 
-						if repo.Name == "" {
-							t.Fatalf("empty repo name: %+v", repo)
+						if repo.Nbme == "" {
+							t.Fbtblf("empty repo nbme: %+v", repo)
 						}
 
-						ext := api.ExternalRepoSpec{
+						ext := bpi.ExternblRepoSpec{
 							ID:          repo.PHID,
-							ServiceType: extsvc.TypePhabricator,
-							ServiceID:   "https://secure.phabricator.com",
+							ServiceType: extsvc.TypePhbbricbtor,
+							ServiceID:   "https://secure.phbbricbtor.com",
 						}
 
-						if have, want := r.ExternalRepo, ext; have != want {
-							t.Fatal(cmp.Diff(have, want))
+						if hbve, wbnt := r.ExternblRepo, ext; hbve != wbnt {
+							t.Fbtbl(cmp.Diff(hbve, wbnt))
 						}
 					}
 				}
@@ -575,37 +575,37 @@ func TestSources_ListRepos(t *testing.T) {
 	}
 
 	{
-		svcs := types.ExternalServices{
+		svcs := types.ExternblServices{
 			{
 				Kind: extsvc.KindBitbucketServer,
-				Config: extsvc.NewUnencryptedConfig(MarshalJSON(t, &schema.BitbucketServerConnection{
+				Config: extsvc.NewUnencryptedConfig(MbrshblJSON(t, &schemb.BitbucketServerConnection{
 					Url:                   "https://bitbucket.sgdev.org",
 					Token:                 os.Getenv("BITBUCKET_SERVER_TOKEN"),
-					RepositoryPathPattern: "{repositorySlug}",
+					RepositoryPbthPbttern: "{repositorySlug}",
 					RepositoryQuery:       []string{"none"},
-					Repos:                 []string{"sour/vegeta", "PUBLIC/archived-repo"},
+					Repos:                 []string{"sour/vegetb", "PUBLIC/brchived-repo"},
 				})),
 			},
 		}
 
-		testCases = append(testCases, testCase{
-			name: "bitbucketserver archived",
+		testCbses = bppend(testCbses, testCbse{
+			nbme: "bitbucketserver brchived",
 			svcs: svcs,
-			assert: func(s *types.ExternalService) typestest.ReposAssertion {
+			bssert: func(s *types.ExternblService) typestest.ReposAssertion {
 				return func(t testing.TB, rs types.Repos) {
 					t.Helper()
 
-					want := map[string]bool{
-						"vegeta":        false,
-						"archived-repo": true,
+					wbnt := mbp[string]bool{
+						"vegetb":        fblse,
+						"brchived-repo": true,
 					}
-					got := map[string]bool{}
-					for _, r := range rs {
-						got[string(r.Name)] = r.Archived
+					got := mbp[string]bool{}
+					for _, r := rbnge rs {
+						got[string(r.Nbme)] = r.Archived
 					}
 
-					if !reflect.DeepEqual(got, want) {
-						t.Error("mismatch archived state (-want +got):\n", cmp.Diff(want, got))
+					if !reflect.DeepEqubl(got, wbnt) {
+						t.Error("mismbtch brchived stbte (-wbnt +got):\n", cmp.Diff(wbnt, got))
 					}
 				}
 			},
@@ -613,68 +613,68 @@ func TestSources_ListRepos(t *testing.T) {
 		})
 	}
 
-	for _, tc := range testCases {
+	for _, tc := rbnge testCbses {
 		tc := tc
-		for _, svc := range tc.svcs {
-			name := svc.Kind + "/" + tc.name
-			t.Run(name, func(t *testing.T) {
-				cf, save := NewClientFactory(t, name)
-				defer save(t)
+		for _, svc := rbnge tc.svcs {
+			nbme := svc.Kind + "/" + tc.nbme
+			t.Run(nbme, func(t *testing.T) {
+				cf, sbve := NewClientFbctory(t, nbme)
+				defer sbve(t)
 
 				logger := logtest.Scoped(t)
 				obs := ObservedSource(logger, NewSourceMetrics())
 				src, err := NewSourcer(logtest.Scoped(t), dbmocks.NewMockDB(), cf, obs)(tc.ctx, svc)
 				if err != nil {
-					t.Fatal(err)
+					t.Fbtbl(err)
 				}
 
 				ctx := tc.ctx
 				if ctx == nil {
-					ctx = context.Background()
+					ctx = context.Bbckground()
 				}
 
 				repos, err := ListAll(ctx, src)
-				if have, want := fmt.Sprint(err), tc.err; have != want {
-					t.Errorf("error:\nhave: %q\nwant: %q", have, want)
+				if hbve, wbnt := fmt.Sprint(err), tc.err; hbve != wbnt {
+					t.Errorf("error:\nhbve: %q\nwbnt: %q", hbve, wbnt)
 				}
 
-				if tc.assert != nil {
-					tc.assert(svc)(t, repos)
+				if tc.bssert != nil {
+					tc.bssert(svc)(t, repos)
 				}
 			})
 		}
 	}
 }
 
-func newClientFactoryWithOpt(t testing.TB, name string, opt httpcli.Opt) (*httpcli.Factory, func(testing.TB)) {
-	mw, rec := TestClientFactorySetup(t, name)
-	return httpcli.NewFactory(mw, opt, httptestutil.NewRecorderOpt(rec)),
-		func(t testing.TB) { Save(t, rec) }
+func newClientFbctoryWithOpt(t testing.TB, nbme string, opt httpcli.Opt) (*httpcli.Fbctory, func(testing.TB)) {
+	mw, rec := TestClientFbctorySetup(t, nbme)
+	return httpcli.NewFbctory(mw, opt, httptestutil.NewRecorderOpt(rec)),
+		func(t testing.TB) { Sbve(t, rec) }
 }
 
 func newRecorder(t testing.TB, file string, record bool) *recorder.Recorder {
-	rec, err := httptestutil.NewRecorder(file, record, func(i *cassette.Interaction) error {
-		// The ratelimit.Monitor type resets its internal timestamp if it's
-		// updated with a timestamp in the past. This makes tests ran with
-		// recorded interations just wait for a very long time. Removing
-		// these headers from the casseste effectively disables rate-limiting
-		// in tests which replay HTTP interactions, which is desired behaviour.
-		for _, name := range [...]string{
-			"RateLimit-Limit",
-			"RateLimit-Observed",
-			"RateLimit-Remaining",
-			"RateLimit-Reset",
-			"RateLimit-Resettime",
-			"X-RateLimit-Limit",
-			"X-RateLimit-Remaining",
-			"X-RateLimit-Reset",
+	rec, err := httptestutil.NewRecorder(file, record, func(i *cbssette.Interbction) error {
+		// The rbtelimit.Monitor type resets its internbl timestbmp if it's
+		// updbted with b timestbmp in the pbst. This mbkes tests rbn with
+		// recorded interbtions just wbit for b very long time. Removing
+		// these hebders from the cbsseste effectively disbbles rbte-limiting
+		// in tests which replby HTTP interbctions, which is desired behbviour.
+		for _, nbme := rbnge [...]string{
+			"RbteLimit-Limit",
+			"RbteLimit-Observed",
+			"RbteLimit-Rembining",
+			"RbteLimit-Reset",
+			"RbteLimit-Resettime",
+			"X-RbteLimit-Limit",
+			"X-RbteLimit-Rembining",
+			"X-RbteLimit-Reset",
 		} {
-			i.Response.Headers.Del(name)
+			i.Response.Hebders.Del(nbme)
 		}
 
-		// Phabricator requests include a token in the form and body.
-		ua := i.Request.Headers.Get("User-Agent")
-		if strings.Contains(strings.ToLower(ua), extsvc.TypePhabricator) {
+		// Phbbricbtor requests include b token in the form bnd body.
+		ub := i.Request.Hebders.Get("User-Agent")
+		if strings.Contbins(strings.ToLower(ub), extsvc.TypePhbbricbtor) {
 			i.Request.Body = ""
 			i.Request.Form = nil
 		}
@@ -682,16 +682,16 @@ func newRecorder(t testing.TB, file string, record bool) *recorder.Recorder {
 		return nil
 	})
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
 	return rec
 }
 
-func getAWSEnv(envVar string) string {
-	s := os.Getenv(envVar)
+func getAWSEnv(envVbr string) string {
+	s := os.Getenv(envVbr)
 	if s == "" {
-		s = fmt.Sprintf("BOGUS-%s", envVar)
+		s = fmt.Sprintf("BOGUS-%s", envVbr)
 	}
 	return s
 }

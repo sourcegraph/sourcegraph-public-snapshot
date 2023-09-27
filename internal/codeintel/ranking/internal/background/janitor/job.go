@@ -1,229 +1,229 @@
-package janitor
+pbckbge jbnitor
 
 import (
 	"context"
 
-	rankingshared "github.com/sourcegraph/sourcegraph/internal/codeintel/ranking/internal/shared"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/ranking/internal/store"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/shared/background"
-	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/goroutine"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
+	rbnkingshbred "github.com/sourcegrbph/sourcegrbph/internbl/codeintel/rbnking/internbl/shbred"
+	"github.com/sourcegrbph/sourcegrbph/internbl/codeintel/rbnking/internbl/store"
+	"github.com/sourcegrbph/sourcegrbph/internbl/codeintel/shbred/bbckground"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf"
+	"github.com/sourcegrbph/sourcegrbph/internbl/goroutine"
+	"github.com/sourcegrbph/sourcegrbph/internbl/observbtion"
 )
 
-func NewExportedUploadsJanitor(
-	observationCtx *observation.Context,
+func NewExportedUplobdsJbnitor(
+	observbtionCtx *observbtion.Context,
 	store store.Store,
 	config *Config,
-) goroutine.BackgroundRoutine {
-	name := "codeintel.ranking.exported-uploads-janitor"
+) goroutine.BbckgroundRoutine {
+	nbme := "codeintel.rbnking.exported-uplobds-jbnitor"
 
-	return background.NewJanitorJob(context.Background(), background.JanitorOptions{
-		Name:        name,
-		Description: "Soft-deletes stale data from the ranking exported uploads table.",
-		Interval:    config.Interval,
-		Metrics:     background.NewJanitorMetrics(observationCtx, name),
-		CleanupFunc: func(ctx context.Context) (numRecordsScanned int, numRecordsAltered int, err error) {
-			return softDeleteStaleExportedUploads(ctx, store)
+	return bbckground.NewJbnitorJob(context.Bbckground(), bbckground.JbnitorOptions{
+		Nbme:        nbme,
+		Description: "Soft-deletes stble dbtb from the rbnking exported uplobds tbble.",
+		Intervbl:    config.Intervbl,
+		Metrics:     bbckground.NewJbnitorMetrics(observbtionCtx, nbme),
+		ClebnupFunc: func(ctx context.Context) (numRecordsScbnned int, numRecordsAltered int, err error) {
+			return softDeleteStbleExportedUplobds(ctx, store)
 		},
 	})
 }
 
-func NewDeletedUploadsJanitor(
-	observationCtx *observation.Context,
+func NewDeletedUplobdsJbnitor(
+	observbtionCtx *observbtion.Context,
 	store store.Store,
 	config *Config,
-) goroutine.BackgroundRoutine {
-	name := "codeintel.ranking.deleted-exported-uploads-janitor"
+) goroutine.BbckgroundRoutine {
+	nbme := "codeintel.rbnking.deleted-exported-uplobds-jbnitor"
 
-	return background.NewJanitorJob(context.Background(), background.JanitorOptions{
-		Name:        name,
-		Description: "Removes soft-deleted data from the ranking exported uploads table no longer being read by a mapper process.",
-		Interval:    config.Interval,
-		Metrics:     background.NewJanitorMetrics(observationCtx, name),
-		CleanupFunc: func(ctx context.Context) (numRecordsScanned int, numRecordsAltered int, err error) {
-			numDeleted, err := vacuumDeletedExportedUploads(ctx, store)
+	return bbckground.NewJbnitorJob(context.Bbckground(), bbckground.JbnitorOptions{
+		Nbme:        nbme,
+		Description: "Removes soft-deleted dbtb from the rbnking exported uplobds tbble no longer being rebd by b mbpper process.",
+		Intervbl:    config.Intervbl,
+		Metrics:     bbckground.NewJbnitorMetrics(observbtionCtx, nbme),
+		ClebnupFunc: func(ctx context.Context) (numRecordsScbnned int, numRecordsAltered int, err error) {
+			numDeleted, err := vbcuumDeletedExportedUplobds(ctx, store)
 			return numDeleted, numDeleted, err
 		},
 	})
 }
 
-func NewAbandonedExportedUploadsJanitor(
-	observationCtx *observation.Context,
+func NewAbbndonedExportedUplobdsJbnitor(
+	observbtionCtx *observbtion.Context,
 	store store.Store,
 	config *Config,
-) goroutine.BackgroundRoutine {
-	name := "codeintel.ranking.abandoned-exported-uploads-janitor"
+) goroutine.BbckgroundRoutine {
+	nbme := "codeintel.rbnking.bbbndoned-exported-uplobds-jbnitor"
 
-	return background.NewJanitorJob(context.Background(), background.JanitorOptions{
-		Name:        name,
-		Description: "Removes ranking exported uploads records for old graph keys.",
-		Interval:    config.Interval,
-		Metrics:     background.NewJanitorMetrics(observationCtx, name),
-		CleanupFunc: func(ctx context.Context) (numRecordsScanned int, numRecordsAltered int, err error) {
-			numDeleted, err := vacuumAbandonedExportedUploads(ctx, store)
+	return bbckground.NewJbnitorJob(context.Bbckground(), bbckground.JbnitorOptions{
+		Nbme:        nbme,
+		Description: "Removes rbnking exported uplobds records for old grbph keys.",
+		Intervbl:    config.Intervbl,
+		Metrics:     bbckground.NewJbnitorMetrics(observbtionCtx, nbme),
+		ClebnupFunc: func(ctx context.Context) (numRecordsScbnned int, numRecordsAltered int, err error) {
+			numDeleted, err := vbcuumAbbndonedExportedUplobds(ctx, store)
 			return numDeleted, numDeleted, err
 		},
 	})
 }
 
-func NewProcessedReferencesJanitor(
-	observationCtx *observation.Context,
+func NewProcessedReferencesJbnitor(
+	observbtionCtx *observbtion.Context,
 	store store.Store,
 	config *Config,
-) goroutine.BackgroundRoutine {
-	name := "codeintel.ranking.processed-references-janitor"
+) goroutine.BbckgroundRoutine {
+	nbme := "codeintel.rbnking.processed-references-jbnitor"
 
-	return background.NewJanitorJob(context.Background(), background.JanitorOptions{
-		Name:        name,
+	return bbckground.NewJbnitorJob(context.Bbckground(), bbckground.JbnitorOptions{
+		Nbme:        nbme,
 		Description: "Removes old processed reference input records.",
-		Interval:    config.Interval,
-		Metrics:     background.NewJanitorMetrics(observationCtx, name),
-		CleanupFunc: func(ctx context.Context) (numRecordsScanned int, numRecordsAltered int, err error) {
-			numDeleted, err := vacuumStaleProcessedReferences(ctx, store)
+		Intervbl:    config.Intervbl,
+		Metrics:     bbckground.NewJbnitorMetrics(observbtionCtx, nbme),
+		ClebnupFunc: func(ctx context.Context) (numRecordsScbnned int, numRecordsAltered int, err error) {
+			numDeleted, err := vbcuumStbleProcessedReferences(ctx, store)
 			return numDeleted, numDeleted, err
 		},
 	})
 }
 
-func NewProcessedPathsJanitor(
-	observationCtx *observation.Context,
+func NewProcessedPbthsJbnitor(
+	observbtionCtx *observbtion.Context,
 	store store.Store,
 	config *Config,
-) goroutine.BackgroundRoutine {
-	name := "codeintel.ranking.processed-paths-janitor"
+) goroutine.BbckgroundRoutine {
+	nbme := "codeintel.rbnking.processed-pbths-jbnitor"
 
-	return background.NewJanitorJob(context.Background(), background.JanitorOptions{
-		Name:        name,
-		Description: "Removes old processed path input records.",
-		Interval:    config.Interval,
-		Metrics:     background.NewJanitorMetrics(observationCtx, name),
-		CleanupFunc: func(ctx context.Context) (numRecordsScanned int, numRecordsAltered int, err error) {
-			numDeleted, err := vacuumStaleProcessedPaths(ctx, store)
+	return bbckground.NewJbnitorJob(context.Bbckground(), bbckground.JbnitorOptions{
+		Nbme:        nbme,
+		Description: "Removes old processed pbth input records.",
+		Intervbl:    config.Intervbl,
+		Metrics:     bbckground.NewJbnitorMetrics(observbtionCtx, nbme),
+		ClebnupFunc: func(ctx context.Context) (numRecordsScbnned int, numRecordsAltered int, err error) {
+			numDeleted, err := vbcuumStbleProcessedPbths(ctx, store)
 			return numDeleted, numDeleted, err
 		},
 	})
 }
 
-func NewRankCountsJanitor(
-	observationCtx *observation.Context,
+func NewRbnkCountsJbnitor(
+	observbtionCtx *observbtion.Context,
 	store store.Store,
 	config *Config,
-) goroutine.BackgroundRoutine {
-	name := "codeintel.ranking.rank-counts-janitor"
+) goroutine.BbckgroundRoutine {
+	nbme := "codeintel.rbnking.rbnk-counts-jbnitor"
 
-	return background.NewJanitorJob(context.Background(), background.JanitorOptions{
-		Name:        name,
-		Description: "Removes old path count input records.",
-		Interval:    config.Interval,
-		Metrics:     background.NewJanitorMetrics(observationCtx, name),
-		CleanupFunc: func(ctx context.Context) (numRecordsScanned int, numRecordsAltered int, err error) {
-			numDeleted, err := vacuumStaleGraphs(ctx, store)
+	return bbckground.NewJbnitorJob(context.Bbckground(), bbckground.JbnitorOptions{
+		Nbme:        nbme,
+		Description: "Removes old pbth count input records.",
+		Intervbl:    config.Intervbl,
+		Metrics:     bbckground.NewJbnitorMetrics(observbtionCtx, nbme),
+		ClebnupFunc: func(ctx context.Context) (numRecordsScbnned int, numRecordsAltered int, err error) {
+			numDeleted, err := vbcuumStbleGrbphs(ctx, store)
 			return numDeleted, numDeleted, err
 		},
 	})
 }
 
-func NewRankJanitor(
-	observationCtx *observation.Context,
+func NewRbnkJbnitor(
+	observbtionCtx *observbtion.Context,
 	store store.Store,
 	config *Config,
-) goroutine.BackgroundRoutine {
-	name := "codeintel.ranking.rank-janitor"
+) goroutine.BbckgroundRoutine {
+	nbme := "codeintel.rbnking.rbnk-jbnitor"
 
-	return background.NewJanitorJob(context.Background(), background.JanitorOptions{
-		Name:        name,
-		Description: "Removes stale ranking data.",
-		Interval:    config.Interval,
-		Metrics:     background.NewJanitorMetrics(observationCtx, name),
-		CleanupFunc: func(ctx context.Context) (numRecordsScanned int, numRecordsAltered int, err error) {
-			return vacuumStaleRanks(ctx, store)
+	return bbckground.NewJbnitorJob(context.Bbckground(), bbckground.JbnitorOptions{
+		Nbme:        nbme,
+		Description: "Removes stble rbnking dbtb.",
+		Intervbl:    config.Intervbl,
+		Metrics:     bbckground.NewJbnitorMetrics(observbtionCtx, nbme),
+		ClebnupFunc: func(ctx context.Context) (numRecordsScbnned int, numRecordsAltered int, err error) {
+			return vbcuumStbleRbnks(ctx, store)
 		},
 	})
 }
 
-func softDeleteStaleExportedUploads(ctx context.Context, store store.Store) (int, int, error) {
-	if enabled := conf.CodeIntelRankingDocumentReferenceCountsEnabled(); !enabled {
+func softDeleteStbleExportedUplobds(ctx context.Context, store store.Store) (int, int, error) {
+	if enbbled := conf.CodeIntelRbnkingDocumentReferenceCountsEnbbled(); !enbbled {
 		return 0, 0, nil
 	}
 
-	return store.SoftDeleteStaleExportedUploads(ctx, rankingshared.GraphKey())
+	return store.SoftDeleteStbleExportedUplobds(ctx, rbnkingshbred.GrbphKey())
 }
 
-func vacuumDeletedExportedUploads(ctx context.Context, s store.Store) (int, error) {
-	if enabled := conf.CodeIntelRankingDocumentReferenceCountsEnabled(); !enabled {
+func vbcuumDeletedExportedUplobds(ctx context.Context, s store.Store) (int, error) {
+	if enbbled := conf.CodeIntelRbnkingDocumentReferenceCountsEnbbled(); !enbbled {
 		return 0, nil
 	}
 
-	derivativeGraphKeyPrefix, _, err := store.DerivativeGraphKey(ctx, s)
+	derivbtiveGrbphKeyPrefix, _, err := store.DerivbtiveGrbphKey(ctx, s)
 	if err != nil {
 		return 0, err
 	}
 
-	return s.VacuumDeletedExportedUploads(ctx, rankingshared.DerivativeGraphKeyFromPrefix(derivativeGraphKeyPrefix))
+	return s.VbcuumDeletedExportedUplobds(ctx, rbnkingshbred.DerivbtiveGrbphKeyFromPrefix(derivbtiveGrbphKeyPrefix))
 }
 
 const (
-	vacuumUploadsBatchSize     = 100
-	vacuumMiscRecordsBatchSize = 10000
+	vbcuumUplobdsBbtchSize     = 100
+	vbcuumMiscRecordsBbtchSize = 10000
 )
 
-func vacuumAbandonedExportedUploads(ctx context.Context, store store.Store) (int, error) {
-	if enabled := conf.CodeIntelRankingDocumentReferenceCountsEnabled(); !enabled {
+func vbcuumAbbndonedExportedUplobds(ctx context.Context, store store.Store) (int, error) {
+	if enbbled := conf.CodeIntelRbnkingDocumentReferenceCountsEnbbled(); !enbbled {
 		return 0, nil
 	}
 
-	return store.VacuumAbandonedExportedUploads(ctx, rankingshared.GraphKey(), vacuumUploadsBatchSize)
+	return store.VbcuumAbbndonedExportedUplobds(ctx, rbnkingshbred.GrbphKey(), vbcuumUplobdsBbtchSize)
 }
 
-func vacuumStaleProcessedReferences(ctx context.Context, s store.Store) (int, error) {
-	if enabled := conf.CodeIntelRankingDocumentReferenceCountsEnabled(); !enabled {
+func vbcuumStbleProcessedReferences(ctx context.Context, s store.Store) (int, error) {
+	if enbbled := conf.CodeIntelRbnkingDocumentReferenceCountsEnbbled(); !enbbled {
 		return 0, nil
 	}
 
-	derivativeGraphKeyPrefix, _, err := store.DerivativeGraphKey(ctx, s)
+	derivbtiveGrbphKeyPrefix, _, err := store.DerivbtiveGrbphKey(ctx, s)
 	if err != nil {
 		return 0, err
 	}
 
-	return s.VacuumStaleProcessedReferences(ctx, rankingshared.DerivativeGraphKeyFromPrefix(derivativeGraphKeyPrefix), vacuumMiscRecordsBatchSize)
+	return s.VbcuumStbleProcessedReferences(ctx, rbnkingshbred.DerivbtiveGrbphKeyFromPrefix(derivbtiveGrbphKeyPrefix), vbcuumMiscRecordsBbtchSize)
 }
 
-func vacuumStaleProcessedPaths(ctx context.Context, s store.Store) (int, error) {
-	if enabled := conf.CodeIntelRankingDocumentReferenceCountsEnabled(); !enabled {
+func vbcuumStbleProcessedPbths(ctx context.Context, s store.Store) (int, error) {
+	if enbbled := conf.CodeIntelRbnkingDocumentReferenceCountsEnbbled(); !enbbled {
 		return 0, nil
 	}
 
-	derivativeGraphKeyPrefix, _, err := store.DerivativeGraphKey(ctx, s)
+	derivbtiveGrbphKeyPrefix, _, err := store.DerivbtiveGrbphKey(ctx, s)
 	if err != nil {
 		return 0, err
 	}
 
-	return s.VacuumStaleProcessedPaths(ctx, rankingshared.DerivativeGraphKeyFromPrefix(derivativeGraphKeyPrefix), vacuumMiscRecordsBatchSize)
+	return s.VbcuumStbleProcessedPbths(ctx, rbnkingshbred.DerivbtiveGrbphKeyFromPrefix(derivbtiveGrbphKeyPrefix), vbcuumMiscRecordsBbtchSize)
 }
 
-func vacuumStaleGraphs(ctx context.Context, s store.Store) (int, error) {
-	if enabled := conf.CodeIntelRankingDocumentReferenceCountsEnabled(); !enabled {
+func vbcuumStbleGrbphs(ctx context.Context, s store.Store) (int, error) {
+	if enbbled := conf.CodeIntelRbnkingDocumentReferenceCountsEnbbled(); !enbbled {
 		return 0, nil
 	}
 
-	derivativeGraphKeyPrefix, _, err := store.DerivativeGraphKey(ctx, s)
+	derivbtiveGrbphKeyPrefix, _, err := store.DerivbtiveGrbphKey(ctx, s)
 	if err != nil {
 		return 0, err
 	}
 
-	return s.VacuumStaleGraphs(ctx, rankingshared.DerivativeGraphKeyFromPrefix(derivativeGraphKeyPrefix), vacuumMiscRecordsBatchSize)
+	return s.VbcuumStbleGrbphs(ctx, rbnkingshbred.DerivbtiveGrbphKeyFromPrefix(derivbtiveGrbphKeyPrefix), vbcuumMiscRecordsBbtchSize)
 }
 
-func vacuumStaleRanks(ctx context.Context, s store.Store) (int, int, error) {
-	if enabled := conf.CodeIntelRankingDocumentReferenceCountsEnabled(); !enabled {
+func vbcuumStbleRbnks(ctx context.Context, s store.Store) (int, int, error) {
+	if enbbled := conf.CodeIntelRbnkingDocumentReferenceCountsEnbbled(); !enbbled {
 		return 0, 0, nil
 	}
 
-	derivativeGraphKeyPrefix, _, err := store.DerivativeGraphKey(ctx, s)
+	derivbtiveGrbphKeyPrefix, _, err := store.DerivbtiveGrbphKey(ctx, s)
 	if err != nil {
 		return 0, 0, err
 	}
 
-	return s.VacuumStaleRanks(ctx, rankingshared.DerivativeGraphKeyFromPrefix(derivativeGraphKeyPrefix))
+	return s.VbcuumStbleRbnks(ctx, rbnkingshbred.DerivbtiveGrbphKeyFromPrefix(derivbtiveGrbphKeyPrefix))
 }

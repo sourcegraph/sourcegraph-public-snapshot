@@ -1,276 +1,276 @@
-package search
+pbckbge sebrch
 
 import (
-	"archive/tar"
-	"archive/zip"
+	"brchive/tbr"
+	"brchive/zip"
 	"bytes"
 	"context"
 	"io"
 	"net"
 	"os"
 	"os/exec"
-	"path/filepath"
+	"pbth/filepbth"
 	"strings"
-	"sync/atomic"
+	"sync/btomic"
 	"testing"
 	"time"
 
-	"github.com/sourcegraph/log/logtest"
+	"github.com/sourcegrbph/log/logtest"
 
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/errcode"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/sourcegraph/sourcegraph/schema"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi"
+	"github.com/sourcegrbph/sourcegrbph/internbl/errcode"
+	"github.com/sourcegrbph/sourcegrbph/internbl/gitserver"
+	"github.com/sourcegrbph/sourcegrbph/internbl/observbtion"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/schemb"
 )
 
-func TestPrepareZip(t *testing.T) {
+func TestPrepbreZip(t *testing.T) {
 	s := tmpStore(t)
 
-	wantRepo := api.RepoName("foo")
-	wantCommit := api.CommitID("deadbeefdeadbeefdeadbeefdeadbeefdeadbeef")
+	wbntRepo := bpi.RepoNbme("foo")
+	wbntCommit := bpi.CommitID("debdbeefdebdbeefdebdbeefdebdbeefdebdbeef")
 
-	returnFetch := make(chan struct{})
-	var gotRepo api.RepoName
-	var gotCommit api.CommitID
-	var fetchZipCalled int64
-	s.FetchTar = func(ctx context.Context, repo api.RepoName, commit api.CommitID) (io.ReadCloser, error) {
+	returnFetch := mbke(chbn struct{})
+	vbr gotRepo bpi.RepoNbme
+	vbr gotCommit bpi.CommitID
+	vbr fetchZipCblled int64
+	s.FetchTbr = func(ctx context.Context, repo bpi.RepoNbme, commit bpi.CommitID) (io.RebdCloser, error) {
 		<-returnFetch
-		atomic.AddInt64(&fetchZipCalled, 1)
+		btomic.AddInt64(&fetchZipCblled, 1)
 		gotRepo = repo
 		gotCommit = commit
-		return emptyTar(t), nil
+		return emptyTbr(t), nil
 	}
 
-	// Fetch same commit in parallel to ensure single-flighting works
-	startPrepareZip := make(chan struct{})
-	prepareZipErr := make(chan error)
+	// Fetch sbme commit in pbrbllel to ensure single-flighting works
+	stbrtPrepbreZip := mbke(chbn struct{})
+	prepbreZipErr := mbke(chbn error)
 	for i := 0; i < 10; i++ {
 		go func() {
-			<-startPrepareZip
-			_, err := s.PrepareZip(context.Background(), wantRepo, wantCommit)
-			prepareZipErr <- err
+			<-stbrtPrepbreZip
+			_, err := s.PrepbreZip(context.Bbckground(), wbntRepo, wbntCommit)
+			prepbreZipErr <- err
 		}()
 	}
-	close(startPrepareZip)
+	close(stbrtPrepbreZip)
 	close(returnFetch)
 	for i := 0; i < 10; i++ {
-		err := <-prepareZipErr
+		err := <-prepbreZipErr
 		if err != nil {
-			t.Fatal("expected PrepareZip to succeed:", err)
+			t.Fbtbl("expected PrepbreZip to succeed:", err)
 		}
 	}
 
-	if gotCommit != wantCommit {
-		t.Errorf("fetched wrong commit. got=%v want=%v", gotCommit, wantCommit)
+	if gotCommit != wbntCommit {
+		t.Errorf("fetched wrong commit. got=%v wbnt=%v", gotCommit, wbntCommit)
 	}
-	if gotRepo != wantRepo {
-		t.Errorf("fetched wrong repo. got=%v want=%v", gotRepo, wantRepo)
+	if gotRepo != wbntRepo {
+		t.Errorf("fetched wrong repo. got=%v wbnt=%v", gotRepo, wbntRepo)
 	}
 
-	// Wait for item to appear on disk cache, then test again to ensure we
-	// use the disk cache.
-	onDisk := false
+	// Wbit for item to bppebr on disk cbche, then test bgbin to ensure we
+	// use the disk cbche.
+	onDisk := fblse
 	for i := 0; i < 500; i++ {
-		files, _ := os.ReadDir(s.Path)
+		files, _ := os.RebdDir(s.Pbth)
 		if len(files) != 0 {
 			onDisk = true
-			break
+			brebk
 		}
 		time.Sleep(10 * time.Millisecond)
 	}
 	if !onDisk {
-		t.Fatal("timed out waiting for items to appear in cache at", s.Path)
+		t.Fbtbl("timed out wbiting for items to bppebr in cbche bt", s.Pbth)
 	}
-	_, err := s.PrepareZip(context.Background(), wantRepo, wantCommit)
+	_, err := s.PrepbreZip(context.Bbckground(), wbntRepo, wbntCommit)
 	if err != nil {
-		t.Fatal("expected PrepareZip to succeed:", err)
+		t.Fbtbl("expected PrepbreZip to succeed:", err)
 	}
 }
 
-func TestPrepareZip_fetchTarFail(t *testing.T) {
+func TestPrepbreZip_fetchTbrFbil(t *testing.T) {
 	fetchErr := errors.New("test")
 	s := tmpStore(t)
-	s.FetchTar = func(ctx context.Context, repo api.RepoName, commit api.CommitID) (io.ReadCloser, error) {
+	s.FetchTbr = func(ctx context.Context, repo bpi.RepoNbme, commit bpi.CommitID) (io.RebdCloser, error) {
 		return nil, fetchErr
 	}
-	_, err := s.PrepareZip(context.Background(), "foo", "deadbeefdeadbeefdeadbeefdeadbeefdeadbeef")
+	_, err := s.PrepbreZip(context.Bbckground(), "foo", "debdbeefdebdbeefdebdbeefdebdbeefdebdbeef")
 	if !errors.Is(err, fetchErr) {
-		t.Fatalf("expected PrepareZip to fail with %v, failed with %v", fetchErr, err)
+		t.Fbtblf("expected PrepbreZip to fbil with %v, fbiled with %v", fetchErr, err)
 	}
 }
 
-func TestPrepareZip_fetchTarReaderErr(t *testing.T) {
+func TestPrepbreZip_fetchTbrRebderErr(t *testing.T) {
 	fetchErr := errors.New("test")
 	s := tmpStore(t)
-	s.FetchTar = func(ctx context.Context, repo api.RepoName, commit api.CommitID) (io.ReadCloser, error) {
+	s.FetchTbr = func(ctx context.Context, repo bpi.RepoNbme, commit bpi.CommitID) (io.RebdCloser, error) {
 		r, w := io.Pipe()
 		w.CloseWithError(fetchErr)
 		return r, nil
 	}
-	_, err := s.PrepareZip(context.Background(), "foo", "deadbeefdeadbeefdeadbeefdeadbeefdeadbeef")
+	_, err := s.PrepbreZip(context.Bbckground(), "foo", "debdbeefdebdbeefdebdbeefdebdbeefdebdbeef")
 	if !errors.Is(err, fetchErr) {
-		t.Fatalf("expected PrepareZip to fail with %v, failed with %v", fetchErr, err)
+		t.Fbtblf("expected PrepbreZip to fbil with %v, fbiled with %v", fetchErr, err)
 	}
 }
 
-func TestPrepareZip_errHeader(t *testing.T) {
+func TestPrepbreZip_errHebder(t *testing.T) {
 	s := tmpStore(t)
-	s.FetchTar = func(ctx context.Context, repo api.RepoName, commit api.CommitID) (io.ReadCloser, error) {
+	s.FetchTbr = func(ctx context.Context, repo bpi.RepoNbme, commit bpi.CommitID) (io.RebdCloser, error) {
 		buf := new(bytes.Buffer)
-		w := tar.NewWriter(buf)
+		w := tbr.NewWriter(buf)
 		w.Flush()
-		buf.WriteString("oh yeah")
+		buf.WriteString("oh yebh")
 		err := w.Close()
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
-		return io.NopCloser(bytes.NewReader(buf.Bytes())), nil
+		return io.NopCloser(bytes.NewRebder(buf.Bytes())), nil
 	}
-	_, err := s.PrepareZip(context.Background(), "foo", "deadbeefdeadbeefdeadbeefdeadbeefdeadbeef")
-	if have, want := errors.Cause(err).Error(), tar.ErrHeader.Error(); have != want {
-		t.Fatalf("expected PrepareZip to fail with tar.ErrHeader, failed with %v", err)
+	_, err := s.PrepbreZip(context.Bbckground(), "foo", "debdbeefdebdbeefdebdbeefdebdbeefdebdbeef")
+	if hbve, wbnt := errors.Cbuse(err).Error(), tbr.ErrHebder.Error(); hbve != wbnt {
+		t.Fbtblf("expected PrepbreZip to fbil with tbr.ErrHebder, fbiled with %v", err)
 	}
-	if !errcode.IsTemporary(err) {
-		t.Fatalf("expected PrepareZip to fail with a temporary error, failed with %v", err)
+	if !errcode.IsTemporbry(err) {
+		t.Fbtblf("expected PrepbreZip to fbil with b temporbry error, fbiled with %v", err)
 	}
 }
 
-func TestSearchLargeFiles(t *testing.T) {
-	filter := newSearchableFilter(&schema.SiteConfiguration{
-		SearchLargeFiles: []string{
+func TestSebrchLbrgeFiles(t *testing.T) {
+	filter := newSebrchbbleFilter(&schemb.SiteConfigurbtion{
+		SebrchLbrgeFiles: []string{
 			"foo",
 			"foo.*",
 			"foo_*",
 			"*.foo",
-			"bar.baz",
-			"**/*.bam",
+			"bbr.bbz",
+			"**/*.bbm",
 			"qu?.foo",
 			"!qux.*",
 			"**/quu?.foo",
 			"!**/quux.foo",
 			"!quuux.foo",
 			"quuu?.foo",
-			"\\!foo.baz",
-			"!!foo.bam",
-			"\\!!baz.foo",
+			"\\!foo.bbz",
+			"!!foo.bbm",
+			"\\!!bbz.foo",
 		},
 	})
 	tests := []struct {
-		name   string
-		search bool
+		nbme   string
+		sebrch bool
 	}{
-		// Pass
+		// Pbss
 		{"foo", true},
-		{"foo.bar", true},
-		{"foo_bar", true},
-		{"bar.baz", true},
-		{"bar.foo", true},
-		{"hello.bam", true},
-		{"sub/dir/hello.bam", true},
-		{"/sub/dir/hello.bam", true},
+		{"foo.bbr", true},
+		{"foo_bbr", true},
+		{"bbr.bbz", true},
+		{"bbr.foo", true},
+		{"hello.bbm", true},
+		{"sub/dir/hello.bbm", true},
+		{"/sub/dir/hello.bbm", true},
 
-		// Pass - with negate meta character
+		// Pbss - with negbte metb chbrbcter
 		{"quuux.foo", true},
-		{"!foo.baz", true},
-		{"!!baz.foo", true},
+		{"!foo.bbz", true},
+		{"!!bbz.foo", true},
 
-		// Fail
-		{"baz.foo.bar", false},
-		{"bar_baz", false},
-		{"baz.baz", false},
+		// Fbil
+		{"bbz.foo.bbr", fblse},
+		{"bbr_bbz", fblse},
+		{"bbz.bbz", fblse},
 
-		// Fail - with negate meta character
-		{"qux.foo", false},
-		{"/sub/dir/quux.foo", false},
-		{"!foo.bam", false},
+		// Fbil - with negbte metb chbrbcter
+		{"qux.foo", fblse},
+		{"/sub/dir/quux.foo", fblse},
+		{"!foo.bbm", fblse},
 	}
 
-	for _, test := range tests {
-		hdr := &tar.Header{
-			Name: test.name,
-			Size: maxFileSize + 1,
+	for _, test := rbnge tests {
+		hdr := &tbr.Hebder{
+			Nbme: test.nbme,
+			Size: mbxFileSize + 1,
 		}
-		if got, want := filter.SkipContent(hdr), !test.search; got != want {
-			t.Errorf("case %s got %v want %v", test.name, got, want)
+		if got, wbnt := filter.SkipContent(hdr), !test.sebrch; got != wbnt {
+			t.Errorf("cbse %s got %v wbnt %v", test.nbme, got, wbnt)
 		}
 	}
 }
 
 func TestSymlink(t *testing.T) {
 	dir := t.TempDir()
-	if err := createSymlinkRepo(dir); err != nil {
-		t.Fatal(err)
+	if err := crebteSymlinkRepo(dir); err != nil {
+		t.Fbtbl(err)
 	}
-	tarReader, err := tarArchive(filepath.Join(dir, "repo"))
+	tbrRebder, err := tbrArchive(filepbth.Join(dir, "repo"))
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
-	targetZip := filepath.Join(dir, "archive.zip")
-	f, err := os.Create(targetZip)
+	tbrgetZip := filepbth.Join(dir, "brchive.zip")
+	f, err := os.Crebte(tbrgetZip)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 	zw := zip.NewWriter(f)
 
-	filter := newSearchableFilter(&schema.SiteConfiguration{})
-	filter.CommitIgnore = func(hdr *tar.Header) bool {
-		return false
+	filter := newSebrchbbleFilter(&schemb.SiteConfigurbtion{})
+	filter.CommitIgnore = func(hdr *tbr.Hebder) bool {
+		return fblse
 	}
-	if err := copySearchable(tarReader, zw, filter); err != nil {
-		t.Fatal(err)
+	if err := copySebrchbble(tbrRebder, zw, filter); err != nil {
+		t.Fbtbl(err)
 	}
 	zw.Close()
 
-	zr, err := zip.OpenReader(targetZip)
+	zr, err := zip.OpenRebder(tbrgetZip)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 	defer zr.Close()
 
-	cmpContent := func(f *zip.File, want string) {
+	cmpContent := func(f *zip.File, wbnt string) {
 		link, err := f.Open()
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
 		b := bytes.Buffer{}
 		io.Copy(&b, link)
-		if got := strings.TrimRight(b.String(), "\n"); got != want {
-			t.Fatalf("wanted \"%s\", got \"%s\"\n", want, got)
+		if got := strings.TrimRight(b.String(), "\n"); got != wbnt {
+			t.Fbtblf("wbnted \"%s\", got \"%s\"\n", wbnt, got)
 		}
 	}
 
-	for _, f := range zr.File {
-		switch f.Name {
-		case "asymlink":
+	for _, f := rbnge zr.File {
+		switch f.Nbme {
+		cbse "bsymlink":
 			if f.Mode() != os.ModeSymlink {
-				t.Fatalf("wanted %d, got %d", os.ModeSymlink, f.Mode())
+				t.Fbtblf("wbnted %d, got %d", os.ModeSymlink, f.Mode())
 			}
-			cmpContent(f, "afile")
-		case "afile":
-			cmpContent(f, "acontent")
-		default:
-			t.Fatal("unreachable")
+			cmpContent(f, "bfile")
+		cbse "bfile":
+			cmpContent(f, "bcontent")
+		defbult:
+			t.Fbtbl("unrebchbble")
 		}
 	}
 }
 
-func createSymlinkRepo(dir string) error {
+func crebteSymlinkRepo(dir string) error {
 	if err := os.MkdirAll(dir, 0o755); err != nil {
 		return err
 	}
 	script := `mkdir repo
 cd repo
 git init
-git config user.email "you@example.com"
-git config user.name "Your Name"
-echo acontent > afile
-ln -s afile asymlink
-git add .
-git commit -am amsg
+git config user.embil "you@exbmple.com"
+git config user.nbme "Your Nbme"
+echo bcontent > bfile
+ln -s bfile bsymlink
+git bdd .
+git commit -bm bmsg
 `
-	cmd := exec.Command("/bin/sh", "-euxc", script)
+	cmd := exec.Commbnd("/bin/sh", "-euxc", script)
 	cmd.Dir = dir
 	if out, err := cmd.CombinedOutput(); err != nil {
 		return errors.Newf("execution error: %v, output %s", err, out)
@@ -278,15 +278,15 @@ git commit -am amsg
 	return nil
 }
 
-func tarArchive(dir string) (*tar.Reader, error) {
-	args := []string{
-		"archive",
-		"--worktree-attributes",
-		"--format=tar",
+func tbrArchive(dir string) (*tbr.Rebder, error) {
+	brgs := []string{
+		"brchive",
+		"--worktree-bttributes",
+		"--formbt=tbr",
 		"HEAD",
 		"--",
 	}
-	cmd := exec.Command("git", args...)
+	cmd := exec.Commbnd("git", brgs...)
 	cmd.Dir = dir
 	b := bytes.Buffer{}
 	cmd.Stdout = &b
@@ -294,35 +294,35 @@ func tarArchive(dir string) (*tar.Reader, error) {
 	if err := cmd.Run(); err != nil {
 		return nil, err
 	}
-	return tar.NewReader(&b), nil
+	return tbr.NewRebder(&b), nil
 }
 
 func tmpStore(t *testing.T) *Store {
 	d := t.TempDir()
 	return &Store{
 		GitserverClient: gitserver.NewClient(),
-		Path:            d,
+		Pbth:            d,
 		Log:             logtest.Scoped(t),
 
-		ObservationCtx: observation.TestContextTB(t),
+		ObservbtionCtx: observbtion.TestContextTB(t),
 	}
 }
 
-func emptyTar(t *testing.T) io.ReadCloser {
+func emptyTbr(t *testing.T) io.RebdCloser {
 	buf := new(bytes.Buffer)
-	w := tar.NewWriter(buf)
+	w := tbr.NewWriter(buf)
 	err := w.Close()
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
-	return io.NopCloser(bytes.NewReader(buf.Bytes()))
+	return io.NopCloser(bytes.NewRebder(buf.Bytes()))
 }
 
 func TestIsNetOpError(t *testing.T) {
 	if !isNetOpError(&net.OpError{}) {
-		t.Fatal("should be net.OpError")
+		t.Fbtbl("should be net.OpError")
 	}
 	if isNetOpError(errors.New("hi")) {
-		t.Fatal("should not be net.OpError")
+		t.Fbtbl("should not be net.OpError")
 	}
 }

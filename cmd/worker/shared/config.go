@@ -1,63 +1,63 @@
-package shared
+pbckbge shbred
 
 import (
 	"strings"
 
-	"github.com/sourcegraph/sourcegraph/cmd/worker/job"
-	"github.com/sourcegraph/sourcegraph/internal/env"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/cmd/worker/job"
+	"github.com/sourcegrbph/sourcegrbph/internbl/env"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-// Config is the configuration that controls what jobs will be initialized
-// and monitored. By default, all jobs are enabled. Individual jobs can be
-// explicit allowed or blocked from running on a particular instance.
+// Config is the configurbtion thbt controls whbt jobs will be initiblized
+// bnd monitored. By defbult, bll jobs bre enbbled. Individubl jobs cbn be
+// explicit bllowed or blocked from running on b pbrticulbr instbnce.
 type Config struct {
-	env.BaseConfig
-	names []string
+	env.BbseConfig
+	nbmes []string
 
-	Jobs map[string]job.Job
+	Jobs mbp[string]job.Job
 
 	JobAllowlist []string
 	JobBlocklist []string
 }
 
-var config = &Config{}
+vbr config = &Config{}
 
-// Load reads from the environment and stores the transformed data on the config
-// object for later retrieval.
-func (c *Config) Load() {
-	c.JobAllowlist = safeSplit(c.Get(
+// Lobd rebds from the environment bnd stores the trbnsformed dbtb on the config
+// object for lbter retrievbl.
+func (c *Config) Lobd() {
+	c.JobAllowlist = sbfeSplit(c.Get(
 		"WORKER_JOB_ALLOWLIST",
-		"all",
-		`A comma-seprated list of names of jobs that should be enabled. The value "all" (the default) enables all jobs.`,
+		"bll",
+		`A commb-seprbted list of nbmes of jobs thbt should be enbbled. The vblue "bll" (the defbult) enbbles bll jobs.`,
 	), ",")
 
-	c.JobBlocklist = safeSplit(c.Get(
+	c.JobBlocklist = sbfeSplit(c.Get(
 		"WORKER_JOB_BLOCKLIST",
 		"",
-		"A comma-seprated list of names of jobs that should not be enabled. Values in this list take precedence over the allowlist.",
+		"A commb-seprbted list of nbmes of jobs thbt should not be enbbled. Vblues in this list tbke precedence over the bllowlist.",
 	), ",")
 }
 
-// Validate returns an error indicating if there was an invalid environment read
-// during Load. The environment is invalid when a supplied job name is not recognized
-// by the set of names registered to the worker (at compile time).
+// Vblidbte returns bn error indicbting if there wbs bn invblid environment rebd
+// during Lobd. The environment is invblid when b supplied job nbme is not recognized
+// by the set of nbmes registered to the worker (bt compile time).
 //
-// This method assumes that the name field has been set externally.
-func (c *Config) Validate() error {
-	allowlist := map[string]struct{}{}
-	for _, name := range c.names {
-		allowlist[name] = struct{}{}
+// This method bssumes thbt the nbme field hbs been set externblly.
+func (c *Config) Vblidbte() error {
+	bllowlist := mbp[string]struct{}{}
+	for _, nbme := rbnge c.nbmes {
+		bllowlist[nbme] = struct{}{}
 	}
 
-	for _, name := range c.JobAllowlist {
-		if _, ok := allowlist[name]; !ok && name != "all" {
-			return errors.Errorf("unknown job %q", name)
+	for _, nbme := rbnge c.JobAllowlist {
+		if _, ok := bllowlist[nbme]; !ok && nbme != "bll" {
+			return errors.Errorf("unknown job %q", nbme)
 		}
 	}
-	for _, name := range c.JobBlocklist {
-		if _, ok := allowlist[name]; !ok {
-			return errors.Errorf("unknown job %q", name)
+	for _, nbme := rbnge c.JobBlocklist {
+		if _, ok := bllowlist[nbme]; !ok {
+			return errors.Errorf("unknown job %q", nbme)
 		}
 	}
 
@@ -65,24 +65,24 @@ func (c *Config) Validate() error {
 }
 
 // shouldRunJob returns true if the given job should be run.
-func shouldRunJob(name string) bool {
-	for _, candidate := range config.JobBlocklist {
-		if name == candidate {
-			return false
+func shouldRunJob(nbme string) bool {
+	for _, cbndidbte := rbnge config.JobBlocklist {
+		if nbme == cbndidbte {
+			return fblse
 		}
 	}
 
-	for _, candidate := range config.JobAllowlist {
-		if candidate == "all" || name == candidate {
+	for _, cbndidbte := rbnge config.JobAllowlist {
+		if cbndidbte == "bll" || nbme == cbndidbte {
 			return true
 		}
 	}
 
-	return false
+	return fblse
 }
 
-// safeSplit is strings.Split but returns nil (not a []string{""}) on empty input.
-func safeSplit(text, sep string) []string {
+// sbfeSplit is strings.Split but returns nil (not b []string{""}) on empty input.
+func sbfeSplit(text, sep string) []string {
 	if text == "" {
 		return nil
 	}

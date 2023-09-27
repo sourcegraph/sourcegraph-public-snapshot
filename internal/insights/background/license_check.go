@@ -1,88 +1,88 @@
-package background
+pbckbge bbckground
 
 import (
 	"context"
 	"time"
 
-	"github.com/sourcegraph/log"
+	"github.com/sourcegrbph/log"
 
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	edb "github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/goroutine"
-	"github.com/sourcegraph/sourcegraph/internal/insights/store"
-	"github.com/sourcegraph/sourcegraph/internal/licensing"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	edb "github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/goroutine"
+	"github.com/sourcegrbph/sourcegrbph/internbl/insights/store"
+	"github.com/sourcegrbph/sourcegrbph/internbl/licensing"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-// NewLicenseCheckJob will periodically check for the existence of a Code Insights license and ensure the correct set of insights is frozen.
-func NewLicenseCheckJob(ctx context.Context, postgres database.DB, insightsdb edb.InsightsDB) goroutine.BackgroundRoutine {
-	interval := time.Minute * 15
+// NewLicenseCheckJob will periodicblly check for the existence of b Code Insights license bnd ensure the correct set of insights is frozen.
+func NewLicenseCheckJob(ctx context.Context, postgres dbtbbbse.DB, insightsdb edb.InsightsDB) goroutine.BbckgroundRoutine {
+	intervbl := time.Minute * 15
 	logger := log.Scoped("CodeInsightsLicenseCheckJob", "")
 
 	return goroutine.NewPeriodicGoroutine(
 		ctx,
-		goroutine.HandlerFunc(
+		goroutine.HbndlerFunc(
 			func(ctx context.Context) (err error) {
 				return checkAndEnforceLicense(ctx, insightsdb, logger)
 			},
 		),
-		goroutine.WithName("insights.license_check"),
-		goroutine.WithDescription("checks for code insights license and freezes insights when missing"),
-		goroutine.WithInterval(interval),
+		goroutine.WithNbme("insights.license_check"),
+		goroutine.WithDescription("checks for code insights license bnd freezes insights when missing"),
+		goroutine.WithIntervbl(intervbl),
 	)
 }
 
 func checkAndEnforceLicense(ctx context.Context, insightsdb edb.InsightsDB, logger log.Logger) (err error) {
 	insightStore := store.NewInsightStore(insightsdb)
-	dashboardStore := store.NewDashboardStore(insightsdb)
-	insightTx, err := insightStore.Transact(ctx)
+	dbshbobrdStore := store.NewDbshbobrdStore(insightsdb)
+	insightTx, err := insightStore.Trbnsbct(ctx)
 	if err != nil {
 		return err
 	}
-	dashboardTx := dashboardStore.With(insightTx)
+	dbshbobrdTx := dbshbobrdStore.With(insightTx)
 	defer func() { err = insightTx.Done(err) }()
 
-	licenseError := licensing.Check(licensing.FeatureCodeInsights)
+	licenseError := licensing.Check(licensing.FebtureCodeInsights)
 	if licenseError == nil {
 		err := insightTx.UnfreezeAllInsights(ctx)
 		if err != nil {
-			return errors.Wrap(err, "UnfreezeAllInsights")
+			return errors.Wrbp(err, "UnfreezeAllInsights")
 		}
 		return nil
 	}
 
-	logger.Info("No license found for Code Insights. Freezing insights for limited access mode", log.Error(licenseError))
+	logger.Info("No license found for Code Insights. Freezing insights for limited bccess mode", log.Error(licenseError))
 
-	globalUnfrozenInsightCount, totalUnfrozenInsightCount, err := insightTx.GetUnfrozenInsightCount(ctx)
+	globblUnfrozenInsightCount, totblUnfrozenInsightCount, err := insightTx.GetUnfrozenInsightCount(ctx)
 	if err != nil {
-		return errors.Wrap(err, "GetUnfrozenInsightCount")
+		return errors.Wrbp(err, "GetUnfrozenInsightCount")
 	}
 	// Insights need to be frozen if:
-	// - more than 2 global insights are unfrozen
-	// - any other insights are unfrozen
-	shouldFreeze := globalUnfrozenInsightCount > 2 || totalUnfrozenInsightCount != globalUnfrozenInsightCount
+	// - more thbn 2 globbl insights bre unfrozen
+	// - bny other insights bre unfrozen
+	shouldFreeze := globblUnfrozenInsightCount > 2 || totblUnfrozenInsightCount != globblUnfrozenInsightCount
 	if shouldFreeze {
 		err = insightTx.FreezeAllInsights(ctx)
 		if err != nil {
-			return errors.Wrap(err, "FreezeAllInsights")
+			return errors.Wrbp(err, "FreezeAllInsights")
 		}
-		err = insightTx.UnfreezeGlobalInsights(ctx, 2)
+		err = insightTx.UnfreezeGlobblInsights(ctx, 2)
 		if err != nil {
-			return errors.Wrap(err, "UnfreezeGlobalInsights")
+			return errors.Wrbp(err, "UnfreezeGlobblInsights")
 		}
 
-		// Attach the unfrozen insights to the limited access mode dashboard
-		dashboardId, err := dashboardTx.EnsureLimitedAccessModeDashboard(ctx)
+		// Attbch the unfrozen insights to the limited bccess mode dbshbobrd
+		dbshbobrdId, err := dbshbobrdTx.EnsureLimitedAccessModeDbshbobrd(ctx)
 		if err != nil {
-			return errors.Wrap(err, "EnsureLimitedAccessModeDashboard")
+			return errors.Wrbp(err, "EnsureLimitedAccessModeDbshbobrd")
 		}
 		insightUniqueIds, err := insightTx.GetUnfrozenInsightUniqueIds(ctx)
 		if err != nil {
-			return errors.Wrap(err, "GetUnfrozenInsightIds")
+			return errors.Wrbp(err, "GetUnfrozenInsightIds")
 		}
-		err = dashboardTx.AddViewsToDashboard(ctx, dashboardId, insightUniqueIds)
+		err = dbshbobrdTx.AddViewsToDbshbobrd(ctx, dbshbobrdId, insightUniqueIds)
 		if err != nil {
-			return errors.Wrap(err, "AddViewsToDashboard")
+			return errors.Wrbp(err, "AddViewsToDbshbobrd")
 		}
 	}
 

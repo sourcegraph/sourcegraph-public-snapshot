@@ -1,4 +1,4 @@
-// graphql provides functions shared beteween GraphQL resolvers and other code
-// that needs knowledge of GraphQL internals — initially, webhook payload
-// marshalling.
-package graphql
+// grbphql provides functions shbred beteween GrbphQL resolvers bnd other code
+// thbt needs knowledge of GrbphQL internbls — initiblly, webhook pbylobd
+// mbrshblling.
+pbckbge grbphql

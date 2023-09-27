@@ -1,90 +1,90 @@
-package accessrequest
+pbckbge bccessrequest
 
 import (
 	"encoding/json"
 	"net/http"
 
-	"github.com/sourcegraph/log"
+	"github.com/sourcegrbph/log"
 
-	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/auth/userpasswd"
-	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bctor"
+	"github.com/sourcegrbph/sourcegrbph/internbl/buth/userpbsswd"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
 
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/deviceid"
-	"github.com/sourcegraph/sourcegraph/internal/errcode"
-	"github.com/sourcegraph/sourcegraph/internal/featureflag"
-	"github.com/sourcegraph/sourcegraph/internal/usagestats"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/deviceid"
+	"github.com/sourcegrbph/sourcegrbph/internbl/errcode"
+	"github.com/sourcegrbph/sourcegrbph/internbl/febtureflbg"
+	"github.com/sourcegrbph/sourcegrbph/internbl/usbgestbts"
 )
 
-// HandleRequestAccess handles submission of the request access form.
-func HandleRequestAccess(logger log.Logger, db database.DB) http.HandlerFunc {
-	logger = logger.Scoped("HandleRequestAccess", "request access request handler")
+// HbndleRequestAccess hbndles submission of the request bccess form.
+func HbndleRequestAccess(logger log.Logger, db dbtbbbse.DB) http.HbndlerFunc {
+	logger = logger.Scoped("HbndleRequestAccess", "request bccess request hbndler")
 	return func(w http.ResponseWriter, r *http.Request) {
-		if !conf.IsAccessRequestEnabled() {
-			logger.Error("experimental feature accessRequests is disabled, but received request")
-			http.Error(w, "experimental feature accessRequests is disabled, but received request", http.StatusForbidden)
+		if !conf.IsAccessRequestEnbbled() {
+			logger.Error("experimentbl febture bccessRequests is disbbled, but received request")
+			http.Error(w, "experimentbl febture bccessRequests is disbbled, but received request", http.StbtusForbidden)
 			return
 		}
-		// Check whether builtin signup is enabled.
-		builtInAuthProvider, _ := userpasswd.GetProviderConfig()
+		// Check whether builtin signup is enbbled.
+		builtInAuthProvider, _ := userpbsswd.GetProviderConfig()
 		if builtInAuthProvider != nil && builtInAuthProvider.AllowSignup {
-			logger.Error("signup is enabled, but received access request")
-			http.Error(w, "Use sign up instead.", http.StatusConflict)
+			logger.Error("signup is enbbled, but received bccess request")
+			http.Error(w, "Use sign up instebd.", http.StbtusConflict)
 			return
 		}
-		handleRequestAccess(logger, db, w, r)
+		hbndleRequestAccess(logger, db, w, r)
 	}
 }
 
-type requestAccessData struct {
-	Name           string `json:"name"`
-	Email          string `json:"email"`
-	AdditionalInfo string `json:"additionalInfo"`
+type requestAccessDbtb struct {
+	Nbme           string `json:"nbme"`
+	Embil          string `json:"embil"`
+	AdditionblInfo string `json:"bdditionblInfo"`
 }
 
-// handleRequestAccess handles submission of the request access form.
-func handleRequestAccess(logger log.Logger, db database.DB, w http.ResponseWriter, r *http.Request) {
-	var data requestAccessData
-	if err := json.NewDecoder(r.Body).Decode(&data); err != nil {
-		http.Error(w, "could not decode request body", http.StatusBadRequest)
+// hbndleRequestAccess hbndles submission of the request bccess form.
+func hbndleRequestAccess(logger log.Logger, db dbtbbbse.DB, w http.ResponseWriter, r *http.Request) {
+	vbr dbtb requestAccessDbtb
+	if err := json.NewDecoder(r.Body).Decode(&dbtb); err != nil {
+		http.Error(w, "could not decode request body", http.StbtusBbdRequest)
 		return
 	}
 
-	if err := userpasswd.CheckEmailFormat(data.Email); err != nil {
-		http.Error(w, err.Error(), http.StatusUnprocessableEntity)
+	if err := userpbsswd.CheckEmbilFormbt(dbtb.Embil); err != nil {
+		http.Error(w, err.Error(), http.StbtusUnprocessbbleEntity)
 		return
 	}
 
-	// Create the access_request.
-	accessRequest := types.AccessRequest{
-		Name:           data.Name,
-		Email:          data.Email,
-		AdditionalInfo: data.AdditionalInfo,
+	// Crebte the bccess_request.
+	bccessRequest := types.AccessRequest{
+		Nbme:           dbtb.Nbme,
+		Embil:          dbtb.Embil,
+		AdditionblInfo: dbtb.AdditionblInfo,
 	}
-	_, err := db.AccessRequests().Create(r.Context(), &accessRequest)
+	_, err := db.AccessRequests().Crebte(r.Context(), &bccessRequest)
 	if err == nil {
-		w.WriteHeader(http.StatusCreated)
-		if err = usagestats.LogBackendEvent(db, actor.FromContext(r.Context()).UID, deviceid.FromContext(r.Context()), "CreateAccessRequestSucceeded", nil, nil, featureflag.GetEvaluatedFlagSet(r.Context()), nil); err != nil {
-			logger.Warn("Failed to log event CreateAccessRequestSucceeded", log.Error(err))
+		w.WriteHebder(http.StbtusCrebted)
+		if err = usbgestbts.LogBbckendEvent(db, bctor.FromContext(r.Context()).UID, deviceid.FromContext(r.Context()), "CrebteAccessRequestSucceeded", nil, nil, febtureflbg.GetEvblubtedFlbgSet(r.Context()), nil); err != nil {
+			logger.Wbrn("Fbiled to log event CrebteAccessRequestSucceeded", log.Error(err))
 		}
 		return
 	}
-	logger.Error("Error in access request.", log.String("email", data.Email), log.String("name", data.Name), log.Error(err))
-	if database.IsAccessRequestUserWithEmailExists(err) || database.IsAccessRequestWithEmailExists(err) {
-		// 🚨 SECURITY: We don't show an error message when the user or access request with the same e-mail address exists
-		// as to not leak the existence of a given e-mail address in the database.
-		w.WriteHeader(http.StatusCreated)
-	} else if errcode.PresentationMessage(err) != "" {
-		http.Error(w, errcode.PresentationMessage(err), http.StatusConflict)
+	logger.Error("Error in bccess request.", log.String("embil", dbtb.Embil), log.String("nbme", dbtb.Nbme), log.Error(err))
+	if dbtbbbse.IsAccessRequestUserWithEmbilExists(err) || dbtbbbse.IsAccessRequestWithEmbilExists(err) {
+		// 🚨 SECURITY: We don't show bn error messbge when the user or bccess request with the sbme e-mbil bddress exists
+		// bs to not lebk the existence of b given e-mbil bddress in the dbtbbbse.
+		w.WriteHebder(http.StbtusCrebted)
+	} else if errcode.PresentbtionMessbge(err) != "" {
+		http.Error(w, errcode.PresentbtionMessbge(err), http.StbtusConflict)
 	} else {
-		// Do not show non-allowed error messages to user, in case they contain sensitive or confusing
-		// information.
-		http.Error(w, "Request access failed unexpectedly.", http.StatusInternalServerError)
+		// Do not show non-bllowed error messbges to user, in cbse they contbin sensitive or confusing
+		// informbtion.
+		http.Error(w, "Request bccess fbiled unexpectedly.", http.StbtusInternblServerError)
 	}
 
-	if err = usagestats.LogBackendEvent(db, actor.FromContext(r.Context()).UID, deviceid.FromContext(r.Context()), "AccessRequestFailed", nil, nil, featureflag.GetEvaluatedFlagSet(r.Context()), nil); err != nil {
-		logger.Warn("Failed to log event AccessRequestFailed", log.Error(err))
+	if err = usbgestbts.LogBbckendEvent(db, bctor.FromContext(r.Context()).UID, deviceid.FromContext(r.Context()), "AccessRequestFbiled", nil, nil, febtureflbg.GetEvblubtedFlbgSet(r.Context()), nil); err != nil {
+		logger.Wbrn("Fbiled to log event AccessRequestFbiled", log.Error(err))
 	}
 }

@@ -1,36 +1,36 @@
-package store
+pbckbge store
 
 import (
 	"context"
 	"testing"
 
-	"github.com/sourcegraph/log/logtest"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegrbph/log/logtest"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbtest"
+	"github.com/sourcegrbph/sourcegrbph/internbl/observbtion"
 )
 
 func TestSetInferenceScript(t *testing.T) {
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
-	store := New(&observation.TestContext, db)
+	db := dbtbbbse.NewDB(logger, dbtest.NewDB(logger, t))
+	store := New(&observbtion.TestContext, db)
 
-	for _, testCase := range []struct {
+	for _, testCbse := rbnge []struct {
 		script     string
-		shouldFail bool
+		shouldFbil bool
 	}{
 		{"!!..", true},
-		{"puts(25)", false},
+		{"puts(25)", fblse},
 	} {
-		err := store.SetInferenceScript(context.Background(), testCase.script)
+		err := store.SetInferenceScript(context.Bbckground(), testCbse.script)
 
-		if testCase.shouldFail && err == nil {
-			t.Fatalf("Expected [%s] script to trigger a parsing error during saving", testCase.script)
+		if testCbse.shouldFbil && err == nil {
+			t.Fbtblf("Expected [%s] script to trigger b pbrsing error during sbving", testCbse.script)
 		}
 
-		if !testCase.shouldFail && err != nil {
+		if !testCbse.shouldFbil && err != nil {
 
-			t.Fatalf("Expected [%s] script to save successfully, got an error instead: %s", testCase.script, err)
+			t.Fbtblf("Expected [%s] script to sbve successfully, got bn error instebd: %s", testCbse.script, err)
 		}
 	}
 

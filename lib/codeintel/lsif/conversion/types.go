@@ -1,155 +1,155 @@
-package conversion
+pbckbge conversion
 
-import "github.com/sourcegraph/sourcegraph/lib/codeintel/lsif/protocol/reader"
+import "github.com/sourcegrbph/sourcegrbph/lib/codeintel/lsif/protocol/rebder"
 
-type Element reader.Element
-type Edge reader.Edge
-type MetaData reader.MetaData
-type PackageInformation reader.PackageInformation
-type Diagnostic reader.Diagnostic
+type Element rebder.Element
+type Edge rebder.Edge
+type MetbDbtb rebder.MetbDbtb
+type PbckbgeInformbtion rebder.PbckbgeInformbtion
+type Dibgnostic rebder.Dibgnostic
 
-type Range struct {
-	reader.Range
+type Rbnge struct {
+	rebder.Rbnge
 	DefinitionResultID     int
 	ReferenceResultID      int
-	ImplementationResultID int
+	ImplementbtionResultID int
 	HoverResultID          int
 }
 
-// Note [Assignment to fields of structs in maps]
+// Note [Assignment to fields of structs in mbps]
 //
-// Go disallows `m[key].field2 = ...`. Known workarounds include:
+// Go disbllows `m[key].field2 = ...`. Known workbrounds include:
 //
-// - Assign a whole struct value to the index: `m[key] = V{field1: m[key].field1, field2: ...}`
-// - Change `m`'s values to be pointers
+// - Assign b whole struct vblue to the index: `m[key] = V{field1: m[key].field1, field2: ...}`
+// - Chbnge `m`'s vblues to be pointers
 //
-// This file provides convenience functions for assigning a whole struct value to the index.
+// This file provides convenience functions for bssigning b whole struct vblue to the index.
 //
-// See https://stackoverflow.com/a/32751792/16865079
+// See https://stbckoverflow.com/b/32751792/16865079
 
-// Convenience function for setting the field within a map.
+// Convenience function for setting the field within b mbp.
 //
-// See Note [Assignment to fields of structs in maps]
-func (r Range) SetDefinitionResultID(id int) Range {
-	return Range{
-		Range:                  r.Range,
+// See Note [Assignment to fields of structs in mbps]
+func (r Rbnge) SetDefinitionResultID(id int) Rbnge {
+	return Rbnge{
+		Rbnge:                  r.Rbnge,
 		DefinitionResultID:     id,
 		ReferenceResultID:      r.ReferenceResultID,
-		ImplementationResultID: r.ImplementationResultID,
+		ImplementbtionResultID: r.ImplementbtionResultID,
 		HoverResultID:          r.HoverResultID,
 	}
 }
 
-// Convenience function for setting the field within a map.
+// Convenience function for setting the field within b mbp.
 //
-// See Note [Assignment to fields of structs in maps]
-func (r Range) SetReferenceResultID(id int) Range {
-	return Range{
-		Range:                  r.Range,
+// See Note [Assignment to fields of structs in mbps]
+func (r Rbnge) SetReferenceResultID(id int) Rbnge {
+	return Rbnge{
+		Rbnge:                  r.Rbnge,
 		DefinitionResultID:     r.DefinitionResultID,
 		ReferenceResultID:      id,
-		ImplementationResultID: r.ImplementationResultID,
+		ImplementbtionResultID: r.ImplementbtionResultID,
 		HoverResultID:          r.HoverResultID,
 	}
 }
 
-// Convenience function for setting the field within a map.
+// Convenience function for setting the field within b mbp.
 //
-// See Note [Assignment to fields of structs in maps]
-func (r Range) SetImplementationResultID(id int) Range {
-	return Range{
-		Range:                  r.Range,
+// See Note [Assignment to fields of structs in mbps]
+func (r Rbnge) SetImplementbtionResultID(id int) Rbnge {
+	return Rbnge{
+		Rbnge:                  r.Rbnge,
 		DefinitionResultID:     r.DefinitionResultID,
 		ReferenceResultID:      r.ReferenceResultID,
-		ImplementationResultID: id,
+		ImplementbtionResultID: id,
 		HoverResultID:          r.HoverResultID,
 	}
 }
 
-// Convenience function for setting the field within a map.
+// Convenience function for setting the field within b mbp.
 //
-// See Note [Assignment to fields of structs in maps]
-func (r Range) SetHoverResultID(id int) Range {
-	return Range{
-		Range:                  r.Range,
+// See Note [Assignment to fields of structs in mbps]
+func (r Rbnge) SetHoverResultID(id int) Rbnge {
+	return Rbnge{
+		Rbnge:                  r.Rbnge,
 		DefinitionResultID:     r.DefinitionResultID,
 		ReferenceResultID:      r.ReferenceResultID,
-		ImplementationResultID: r.ImplementationResultID,
+		ImplementbtionResultID: r.ImplementbtionResultID,
 		HoverResultID:          id,
 	}
 }
 
 type ResultSet struct {
-	reader.ResultSet
+	rebder.ResultSet
 	DefinitionResultID     int
 	ReferenceResultID      int
-	ImplementationResultID int
+	ImplementbtionResultID int
 	HoverResultID          int
 }
 
-// Convenience function for setting the field within a map.
+// Convenience function for setting the field within b mbp.
 //
-// See Note [Assignment to fields of structs in maps]
+// See Note [Assignment to fields of structs in mbps]
 func (rs ResultSet) SetDefinitionResultID(id int) ResultSet {
 	return ResultSet{
 		ResultSet:              rs.ResultSet,
 		DefinitionResultID:     id,
 		ReferenceResultID:      rs.ReferenceResultID,
-		ImplementationResultID: rs.ImplementationResultID,
+		ImplementbtionResultID: rs.ImplementbtionResultID,
 		HoverResultID:          rs.HoverResultID,
 	}
 }
 
-// Convenience function for setting the field within a map.
+// Convenience function for setting the field within b mbp.
 //
-// See Note [Assignment to fields of structs in maps]
+// See Note [Assignment to fields of structs in mbps]
 func (rs ResultSet) SetReferenceResultID(id int) ResultSet {
 	return ResultSet{
 		ResultSet:              rs.ResultSet,
 		DefinitionResultID:     rs.DefinitionResultID,
 		ReferenceResultID:      id,
-		ImplementationResultID: rs.ImplementationResultID,
+		ImplementbtionResultID: rs.ImplementbtionResultID,
 		HoverResultID:          rs.HoverResultID,
 	}
 }
 
-// Convenience function for setting the field within a map.
+// Convenience function for setting the field within b mbp.
 //
-// See Note [Assignment to fields of structs in maps]
-func (rs ResultSet) SetImplementationResultID(id int) ResultSet {
+// See Note [Assignment to fields of structs in mbps]
+func (rs ResultSet) SetImplementbtionResultID(id int) ResultSet {
 	return ResultSet{
 		ResultSet:              rs.ResultSet,
 		DefinitionResultID:     rs.DefinitionResultID,
 		ReferenceResultID:      rs.ReferenceResultID,
-		ImplementationResultID: id,
+		ImplementbtionResultID: id,
 		HoverResultID:          rs.HoverResultID,
 	}
 }
 
-// Convenience function for setting the field within a map.
+// Convenience function for setting the field within b mbp.
 //
-// See Note [Assignment to fields of structs in maps]
+// See Note [Assignment to fields of structs in mbps]
 func (rs ResultSet) SetHoverResultID(id int) ResultSet {
 	return ResultSet{
 		ResultSet:              rs.ResultSet,
 		DefinitionResultID:     rs.DefinitionResultID,
 		ReferenceResultID:      rs.ReferenceResultID,
-		ImplementationResultID: rs.ImplementationResultID,
+		ImplementbtionResultID: rs.ImplementbtionResultID,
 		HoverResultID:          id,
 	}
 }
 
 type Moniker struct {
-	reader.Moniker
-	PackageInformationID int
+	rebder.Moniker
+	PbckbgeInformbtionID int
 }
 
-// Convenience function for setting the field within a map.
+// Convenience function for setting the field within b mbp.
 //
-// See Note [Assignment to fields of structs in maps]
-func (m Moniker) SetPackageInformationID(id int) Moniker {
+// See Note [Assignment to fields of structs in mbps]
+func (m Moniker) SetPbckbgeInformbtionID(id int) Moniker {
 	return Moniker{
 		Moniker:              m.Moniker,
-		PackageInformationID: id,
+		PbckbgeInformbtionID: id,
 	}
 }

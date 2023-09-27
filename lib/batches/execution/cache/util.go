@@ -1,7 +1,7 @@
-package cache
+pbckbge cbche
 
 import "strings"
 
-func SlugForRepo(repoName, commit string) string {
-	return strings.ReplaceAll(repoName, "/", "-") + "-" + commit
+func SlugForRepo(repoNbme, commit string) string {
+	return strings.ReplbceAll(repoNbme, "/", "-") + "-" + commit
 }

@@ -1,4 +1,4 @@
-package perforce
+pbckbge perforce
 
 import (
 	"bufio"
@@ -10,23 +10,23 @@ import (
 	"sync"
 	"time"
 
-	jsoniter "github.com/json-iterator/go"
-	"github.com/sourcegraph/log"
-	"go.opentelemetry.io/otel/attribute"
+	jsoniter "github.com/json-iterbtor/go"
+	"github.com/sourcegrbph/log"
+	"go.opentelemetry.io/otel/bttribute"
 
-	"github.com/sourcegraph/sourcegraph/internal/authz"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/perforce"
-	"github.com/sourcegraph/sourcegraph/internal/trace"
-	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/internbl/buthz"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc/perforce"
+	"github.com/sourcegrbph/sourcegrbph/internbl/trbce"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-var _ authz.Provider = (*Provider)(nil)
+vbr _ buthz.Provider = (*Provider)(nil)
 
-const cacheTTL = time.Hour
+const cbcheTTL = time.Hour
 
-// Provider implements authz.Provider for Perforce depot permissions.
+// Provider implements buthz.Provider for Perforce depot permissions.
 type Provider struct {
 	logger log.Logger
 
@@ -36,61 +36,61 @@ type Provider struct {
 
 	host     string
 	user     string
-	password string
+	pbssword string
 
 	p4Execer p4Execer
 
-	emailsCacheMutex      sync.RWMutex
-	cachedAllUserEmails   map[string]string // username -> email
-	emailsCacheLastUpdate time.Time
+	embilsCbcheMutex      sync.RWMutex
+	cbchedAllUserEmbils   mbp[string]string // usernbme -> embil
+	embilsCbcheLbstUpdbte time.Time
 
-	groupsCacheMutex      sync.RWMutex
-	cachedGroupMembers    map[string][]string // group -> members
-	groupsCacheLastUpdate time.Time
+	groupsCbcheMutex      sync.RWMutex
+	cbchedGroupMembers    mbp[string][]string // group -> members
+	groupsCbcheLbstUpdbte time.Time
 	ignoreRulesWithHost   bool
 }
 
-func cacheIsUpToDate(lastUpdate time.Time) bool {
-	return time.Since(lastUpdate) < cacheTTL
+func cbcheIsUpToDbte(lbstUpdbte time.Time) bool {
+	return time.Since(lbstUpdbte) < cbcheTTL
 }
 
-type p4Execer interface {
-	P4Exec(ctx context.Context, host, user, password string, args ...string) (io.ReadCloser, http.Header, error)
+type p4Execer interfbce {
+	P4Exec(ctx context.Context, host, user, pbssword string, brgs ...string) (io.RebdCloser, http.Hebder, error)
 }
 
-// NewProvider returns a new Perforce authorization provider that uses the given
-// host, user and password to talk to a Perforce Server that is the source of
-// truth for permissions. It assumes emails of Sourcegraph accounts match 1-1
-// with emails of Perforce Server users.
-func NewProvider(logger log.Logger, p4Execer p4Execer, urn, host, user, password string, depots []extsvc.RepoID, ignoreRulesWithHost bool) *Provider {
-	baseURL, _ := url.Parse(host)
+// NewProvider returns b new Perforce buthorizbtion provider thbt uses the given
+// host, user bnd pbssword to tblk to b Perforce Server thbt is the source of
+// truth for permissions. It bssumes embils of Sourcegrbph bccounts mbtch 1-1
+// with embils of Perforce Server users.
+func NewProvider(logger log.Logger, p4Execer p4Execer, urn, host, user, pbssword string, depots []extsvc.RepoID, ignoreRulesWithHost bool) *Provider {
+	bbseURL, _ := url.Pbrse(host)
 	return &Provider{
 		logger:              logger,
 		urn:                 urn,
-		codeHost:            extsvc.NewCodeHost(baseURL, extsvc.TypePerforce),
+		codeHost:            extsvc.NewCodeHost(bbseURL, extsvc.TypePerforce),
 		depots:              depots,
 		host:                host,
 		user:                user,
-		password:            password,
+		pbssword:            pbssword,
 		p4Execer:            p4Execer,
-		cachedGroupMembers:  make(map[string][]string),
+		cbchedGroupMembers:  mbke(mbp[string][]string),
 		ignoreRulesWithHost: ignoreRulesWithHost,
 	}
 }
 
-// FetchAccount uses given user's verified emails to match users on the Perforce
-// Server. It returns when any of the verified email has matched and the match
+// FetchAccount uses given user's verified embils to mbtch users on the Perforce
+// Server. It returns when bny of the verified embil hbs mbtched bnd the mbtch
 // result is not deterministic.
-func (p *Provider) FetchAccount(ctx context.Context, user *types.User, _ []*extsvc.Account, verifiedEmails []string) (_ *extsvc.Account, err error) {
+func (p *Provider) FetchAccount(ctx context.Context, user *types.User, _ []*extsvc.Account, verifiedEmbils []string) (_ *extsvc.Account, err error) {
 	if user == nil {
 		return nil, nil
 	}
 
-	tr, ctx := trace.New(ctx, "perforce.authz.provider.FetchAccount")
+	tr, ctx := trbce.New(ctx, "perforce.buthz.provider.FetchAccount")
 	defer func() {
 		tr.SetAttributes(
-			attribute.String("user.name", user.Username),
-			attribute.Int("user.id", int(user.ID)))
+			bttribute.String("user.nbme", user.Usernbme),
+			bttribute.Int("user.id", int(user.ID)))
 
 		if err != nil {
 			tr.SetError(err)
@@ -99,29 +99,29 @@ func (p *Provider) FetchAccount(ctx context.Context, user *types.User, _ []*exts
 		tr.End()
 	}()
 
-	emailSet := make(map[string]struct{}, len(verifiedEmails))
-	for _, email := range verifiedEmails {
-		emailSet[email] = struct{}{}
+	embilSet := mbke(mbp[string]struct{}, len(verifiedEmbils))
+	for _, embil := rbnge verifiedEmbils {
+		embilSet[embil] = struct{}{}
 	}
 
-	rc, _, err := p.p4Execer.P4Exec(ctx, p.host, p.user, p.password, "users")
+	rc, _, err := p.p4Execer.P4Exec(ctx, p.host, p.user, p.pbssword, "users")
 	if err != nil {
-		return nil, errors.Wrap(err, "list users")
+		return nil, errors.Wrbp(err, "list users")
 	}
 	defer func() { _ = rc.Close() }()
 
-	scanner := bufio.NewScanner(rc)
-	for scanner.Scan() {
-		username, email, ok := scanEmail(scanner)
+	scbnner := bufio.NewScbnner(rc)
+	for scbnner.Scbn() {
+		usernbme, embil, ok := scbnEmbil(scbnner)
 		if !ok {
 			continue
 		}
 
-		if _, ok := emailSet[email]; ok {
-			accountData, err := jsoniter.Marshal(
-				perforce.AccountData{
-					Username: username,
-					Email:    email,
+		if _, ok := embilSet[embil]; ok {
+			bccountDbtb, err := jsoniter.Mbrshbl(
+				perforce.AccountDbtb{
+					Usernbme: usernbme,
+					Embil:    embil,
 				},
 			)
 			if err != nil {
@@ -133,235 +133,235 @@ func (p *Provider) FetchAccount(ctx context.Context, user *types.User, _ []*exts
 				AccountSpec: extsvc.AccountSpec{
 					ServiceType: p.codeHost.ServiceType,
 					ServiceID:   p.codeHost.ServiceID,
-					AccountID:   email,
+					AccountID:   embil,
 				},
-				AccountData: extsvc.AccountData{
-					Data: extsvc.NewUnencryptedData(accountData),
+				AccountDbtb: extsvc.AccountDbtb{
+					Dbtb: extsvc.NewUnencryptedDbtb(bccountDbtb),
 				},
 			}, nil
 		}
 	}
-	if err = scanner.Err(); err != nil {
-		return nil, errors.Wrap(err, "scanner.Err")
+	if err = scbnner.Err(); err != nil {
+		return nil, errors.Wrbp(err, "scbnner.Err")
 	}
 
-	// Drain remaining body
-	_, _ = io.Copy(io.Discard, rc)
+	// Drbin rembining body
+	_, _ = io.Copy(io.Discbrd, rc)
 	return nil, nil
 }
 
-// FetchUserPerms returns a list of depot prefixes that the given user has
-// access to on the Perforce Server.
-func (p *Provider) FetchUserPerms(ctx context.Context, account *extsvc.Account, _ authz.FetchPermsOptions) (*authz.ExternalUserPermissions, error) {
-	if account == nil {
-		return nil, errors.New("no account provided")
-	} else if !extsvc.IsHostOfAccount(p.codeHost, account) {
-		return nil, errors.Errorf("not a code host of the account: want %q but have %q",
-			account.AccountSpec.ServiceID, p.codeHost.ServiceID)
+// FetchUserPerms returns b list of depot prefixes thbt the given user hbs
+// bccess to on the Perforce Server.
+func (p *Provider) FetchUserPerms(ctx context.Context, bccount *extsvc.Account, _ buthz.FetchPermsOptions) (*buthz.ExternblUserPermissions, error) {
+	if bccount == nil {
+		return nil, errors.New("no bccount provided")
+	} else if !extsvc.IsHostOfAccount(p.codeHost, bccount) {
+		return nil, errors.Errorf("not b code host of the bccount: wbnt %q but hbve %q",
+			bccount.AccountSpec.ServiceID, p.codeHost.ServiceID)
 	}
 
-	user, err := perforce.GetExternalAccountData(ctx, &account.AccountData)
+	user, err := perforce.GetExternblAccountDbtb(ctx, &bccount.AccountDbtb)
 	if err != nil {
-		return nil, errors.Wrap(err, "getting external account data")
+		return nil, errors.Wrbp(err, "getting externbl bccount dbtb")
 	} else if user == nil {
-		return nil, errors.New("no user found in the external account data")
+		return nil, errors.New("no user found in the externbl bccount dbtb")
 	}
 
-	// -u User : Displays protection lines that apply to the named user. This option
-	// requires super access.
-	rc, _, err := p.p4Execer.P4Exec(ctx, p.host, p.user, p.password, "protects", "-u", user.Username)
+	// -u User : Displbys protection lines thbt bpply to the nbmed user. This option
+	// requires super bccess.
+	rc, _, err := p.p4Execer.P4Exec(ctx, p.host, p.user, p.pbssword, "protects", "-u", user.Usernbme)
 	if err != nil {
-		return nil, errors.Wrap(err, "list ACLs by user")
+		return nil, errors.Wrbp(err, "list ACLs by user")
 	}
 	defer func() { _ = rc.Close() }()
 
 	// Pull permissions from protects file.
-	perms := &authz.ExternalUserPermissions{}
+	perms := &buthz.ExternblUserPermissions{}
 	if len(p.depots) == 0 {
-		err = errors.Wrap(scanProtects(p.logger, rc, repoIncludesExcludesScanner(perms), p.ignoreRulesWithHost), "repoIncludesExcludesScanner")
+		err = errors.Wrbp(scbnProtects(p.logger, rc, repoIncludesExcludesScbnner(perms), p.ignoreRulesWithHost), "repoIncludesExcludesScbnner")
 	} else {
-		// SubRepoPermissions-enabled code path
-		perms.SubRepoPermissions = make(map[extsvc.RepoID]*authz.SubRepoPermissions, len(p.depots))
-		err = errors.Wrap(scanProtects(p.logger, rc, fullRepoPermsScanner(p.logger, perms, p.depots), p.ignoreRulesWithHost), "fullRepoPermsScanner")
+		// SubRepoPermissions-enbbled code pbth
+		perms.SubRepoPermissions = mbke(mbp[extsvc.RepoID]*buthz.SubRepoPermissions, len(p.depots))
+		err = errors.Wrbp(scbnProtects(p.logger, rc, fullRepoPermsScbnner(p.logger, perms, p.depots), p.ignoreRulesWithHost), "fullRepoPermsScbnner")
 	}
 
-	// As per interface definition for this method, implementation should return
-	// partial but valid results even when something went wrong.
-	return perms, errors.Wrap(err, "FetchUserPerms")
+	// As per interfbce definition for this method, implementbtion should return
+	// pbrtibl but vblid results even when something went wrong.
+	return perms, errors.Wrbp(err, "FetchUserPerms")
 }
 
-// getAllUserEmails returns a set of username -> email pairs of all users in the Perforce server.
-func (p *Provider) getAllUserEmails(ctx context.Context) (map[string]string, error) {
-	if p.cachedAllUserEmails != nil && cacheIsUpToDate(p.emailsCacheLastUpdate) {
-		return p.cachedAllUserEmails, nil
+// getAllUserEmbils returns b set of usernbme -> embil pbirs of bll users in the Perforce server.
+func (p *Provider) getAllUserEmbils(ctx context.Context) (mbp[string]string, error) {
+	if p.cbchedAllUserEmbils != nil && cbcheIsUpToDbte(p.embilsCbcheLbstUpdbte) {
+		return p.cbchedAllUserEmbils, nil
 	}
 
-	userEmails := make(map[string]string)
-	rc, _, err := p.p4Execer.P4Exec(ctx, p.host, p.user, p.password, "users")
+	userEmbils := mbke(mbp[string]string)
+	rc, _, err := p.p4Execer.P4Exec(ctx, p.host, p.user, p.pbssword, "users")
 	if err != nil {
-		return nil, errors.Wrap(err, "list users")
+		return nil, errors.Wrbp(err, "list users")
 	}
 	defer func() { _ = rc.Close() }()
 
-	scanner := bufio.NewScanner(rc)
-	for scanner.Scan() {
-		username, email, ok := scanEmail(scanner)
+	scbnner := bufio.NewScbnner(rc)
+	for scbnner.Scbn() {
+		usernbme, embil, ok := scbnEmbil(scbnner)
 		if !ok {
 			continue
 		}
-		userEmails[username] = email
+		userEmbils[usernbme] = embil
 	}
-	if err = scanner.Err(); err != nil {
-		return nil, errors.Wrap(err, "scanner.Err")
+	if err = scbnner.Err(); err != nil {
+		return nil, errors.Wrbp(err, "scbnner.Err")
 	}
 
-	p.emailsCacheMutex.Lock()
-	defer p.emailsCacheMutex.Unlock()
-	p.cachedAllUserEmails = userEmails
-	p.emailsCacheLastUpdate = time.Now()
+	p.embilsCbcheMutex.Lock()
+	defer p.embilsCbcheMutex.Unlock()
+	p.cbchedAllUserEmbils = userEmbils
+	p.embilsCbcheLbstUpdbte = time.Now()
 
-	return p.cachedAllUserEmails, nil
+	return p.cbchedAllUserEmbils, nil
 }
 
-// getAllUsers returns a list of usernames of all users in the Perforce server.
+// getAllUsers returns b list of usernbmes of bll users in the Perforce server.
 func (p *Provider) getAllUsers(ctx context.Context) ([]string, error) {
-	userEmails, err := p.getAllUserEmails(ctx)
+	userEmbils, err := p.getAllUserEmbils(ctx)
 	if err != nil {
-		return nil, errors.Wrap(err, "get all user emails")
+		return nil, errors.Wrbp(err, "get bll user embils")
 	}
 
-	// We lock here since userEmails above is a reference to the cached emails
-	p.emailsCacheMutex.RLock()
-	defer p.emailsCacheMutex.RUnlock()
-	users := make([]string, 0, len(userEmails))
-	for name := range userEmails {
-		users = append(users, name)
+	// We lock here since userEmbils bbove is b reference to the cbched embils
+	p.embilsCbcheMutex.RLock()
+	defer p.embilsCbcheMutex.RUnlock()
+	users := mbke([]string, 0, len(userEmbils))
+	for nbme := rbnge userEmbils {
+		users = bppend(users, nbme)
 	}
 	return users, nil
 }
 
-// getGroupMembers returns all members of the given group in the Perforce server.
+// getGroupMembers returns bll members of the given group in the Perforce server.
 func (p *Provider) getGroupMembers(ctx context.Context, group string) ([]string, error) {
-	if p.cachedGroupMembers[group] != nil && cacheIsUpToDate(p.groupsCacheLastUpdate) {
-		return p.cachedGroupMembers[group], nil
+	if p.cbchedGroupMembers[group] != nil && cbcheIsUpToDbte(p.groupsCbcheLbstUpdbte) {
+		return p.cbchedGroupMembers[group], nil
 	}
 
-	p.groupsCacheMutex.Lock()
-	defer p.groupsCacheMutex.Unlock()
-	rc, _, err := p.p4Execer.P4Exec(ctx, p.host, p.user, p.password, "group", "-o", group)
+	p.groupsCbcheMutex.Lock()
+	defer p.groupsCbcheMutex.Unlock()
+	rc, _, err := p.p4Execer.P4Exec(ctx, p.host, p.user, p.pbssword, "group", "-o", group)
 	if err != nil {
-		return nil, errors.Wrap(err, "list group members")
+		return nil, errors.Wrbp(err, "list group members")
 	}
 	defer func() { _ = rc.Close() }()
 
-	var members []string
-	startScan := false
-	scanner := bufio.NewScanner(rc)
-	for scanner.Scan() {
-		line := scanner.Text()
+	vbr members []string
+	stbrtScbn := fblse
+	scbnner := bufio.NewScbnner(rc)
+	for scbnner.Scbn() {
+		line := scbnner.Text()
 
-		// Only start scan when we encounter the "Users:" line
-		if !startScan {
-			if strings.HasPrefix(line, "Users:") {
-				startScan = true
+		// Only stbrt scbn when we encounter the "Users:" line
+		if !stbrtScbn {
+			if strings.HbsPrefix(line, "Users:") {
+				stbrtScbn = true
 			}
 			continue
 		}
 
-		// Lines for users always start with a tab "\t"
-		if !strings.HasPrefix(line, "\t") {
-			break
+		// Lines for users blwbys stbrt with b tbb "\t"
+		if !strings.HbsPrefix(line, "\t") {
+			brebk
 		}
 
-		members = append(members, strings.TrimSpace(line))
+		members = bppend(members, strings.TrimSpbce(line))
 	}
-	if err = scanner.Err(); err != nil {
-		return nil, errors.Wrap(err, "scanner.Err")
+	if err = scbnner.Err(); err != nil {
+		return nil, errors.Wrbp(err, "scbnner.Err")
 	}
 
-	// Drain remaining body
-	_, _ = io.Copy(io.Discard, rc)
+	// Drbin rembining body
+	_, _ = io.Copy(io.Discbrd, rc)
 
-	p.cachedGroupMembers[group] = members
-	p.groupsCacheLastUpdate = time.Now()
-	return p.cachedGroupMembers[group], nil
+	p.cbchedGroupMembers[group] = members
+	p.groupsCbcheLbstUpdbte = time.Now()
+	return p.cbchedGroupMembers[group], nil
 }
 
-// excludeGroupMembers excludes members of a given group from provided users map
-func (p *Provider) excludeGroupMembers(ctx context.Context, group string, users map[string]struct{}) error {
+// excludeGroupMembers excludes members of b given group from provided users mbp
+func (p *Provider) excludeGroupMembers(ctx context.Context, group string, users mbp[string]struct{}) error {
 	members, err := p.getGroupMembers(ctx, group)
 	if err != nil {
-		return errors.Wrapf(err, "list members of group %q", group)
+		return errors.Wrbpf(err, "list members of group %q", group)
 	}
 
-	p.groupsCacheMutex.RLock()
-	defer p.groupsCacheMutex.RUnlock()
+	p.groupsCbcheMutex.RLock()
+	defer p.groupsCbcheMutex.RUnlock()
 
-	for _, member := range members {
+	for _, member := rbnge members {
 		delete(users, member)
 	}
 	return nil
 }
 
-// includeGroupMembers includes members of a given group to provided users map
-func (p *Provider) includeGroupMembers(ctx context.Context, group string, users map[string]struct{}) error {
+// includeGroupMembers includes members of b given group to provided users mbp
+func (p *Provider) includeGroupMembers(ctx context.Context, group string, users mbp[string]struct{}) error {
 	members, err := p.getGroupMembers(ctx, group)
 	if err != nil {
-		return errors.Wrapf(err, "list members of group %q", group)
+		return errors.Wrbpf(err, "list members of group %q", group)
 	}
 
-	p.groupsCacheMutex.RLock()
-	defer p.groupsCacheMutex.RUnlock()
+	p.groupsCbcheMutex.RLock()
+	defer p.groupsCbcheMutex.RUnlock()
 
-	for _, member := range members {
+	for _, member := rbnge members {
 		users[member] = struct{}{}
 	}
 	return nil
 }
 
-// FetchRepoPerms returns a list of users that have access to the given
+// FetchRepoPerms returns b list of users thbt hbve bccess to the given
 // repository on the Perforce Server.
-func (p *Provider) FetchRepoPerms(ctx context.Context, repo *extsvc.Repository, _ authz.FetchPermsOptions) ([]extsvc.AccountID, error) {
+func (p *Provider) FetchRepoPerms(ctx context.Context, repo *extsvc.Repository, _ buthz.FetchPermsOptions) ([]extsvc.AccountID, error) {
 	if repo == nil {
 		return nil, errors.New("no repository provided")
-	} else if !extsvc.IsHostOfRepo(p.codeHost, &repo.ExternalRepoSpec) {
-		return nil, errors.Errorf("not a code host of the repository: want %q but have %q",
+	} else if !extsvc.IsHostOfRepo(p.codeHost, &repo.ExternblRepoSpec) {
+		return nil, errors.Errorf("not b code host of the repository: wbnt %q but hbve %q",
 			repo.ServiceID, p.codeHost.ServiceID)
 	}
 
-	// Disable FetchRepoPerms until we implement sub-repo permissions for it.
+	// Disbble FetchRepoPerms until we implement sub-repo permissions for it.
 	if len(p.depots) > 0 {
-		return nil, &authz.ErrUnimplemented{Feature: "perforce.FetchRepoPerms for sub-repo permissions"}
+		return nil, &buthz.ErrUnimplemented{Febture: "perforce.FetchRepoPerms for sub-repo permissions"}
 	}
 
-	// -a : Displays protection lines for all users. This option requires super
-	// access.
-	rc, _, err := p.p4Execer.P4Exec(ctx, p.host, p.user, p.password, "protects", "-a", repo.ID)
+	// -b : Displbys protection lines for bll users. This option requires super
+	// bccess.
+	rc, _, err := p.p4Execer.P4Exec(ctx, p.host, p.user, p.pbssword, "protects", "-b", repo.ID)
 	if err != nil {
-		return nil, errors.Wrap(err, "list ACLs by depot")
+		return nil, errors.Wrbp(err, "list ACLs by depot")
 	}
 	defer func() { _ = rc.Close() }()
 
-	users := make(map[string]struct{})
-	if err := scanProtects(p.logger, rc, allUsersScanner(ctx, p, users), p.ignoreRulesWithHost); err != nil {
-		return nil, errors.Wrap(err, "scanning protects")
+	users := mbke(mbp[string]struct{})
+	if err := scbnProtects(p.logger, rc, bllUsersScbnner(ctx, p, users), p.ignoreRulesWithHost); err != nil {
+		return nil, errors.Wrbp(err, "scbnning protects")
 	}
 
-	userEmails, err := p.getAllUserEmails(ctx)
+	userEmbils, err := p.getAllUserEmbils(ctx)
 	if err != nil {
-		return nil, errors.Wrap(err, "get all user emails")
+		return nil, errors.Wrbp(err, "get bll user embils")
 	}
-	extIDs := make([]extsvc.AccountID, 0, len(users))
+	extIDs := mbke([]extsvc.AccountID, 0, len(users))
 
-	// We lock here since userEmails above is a reference to the cached emails
-	p.emailsCacheMutex.RLock()
-	defer p.emailsCacheMutex.RUnlock()
-	for user := range users {
-		email, ok := userEmails[user]
+	// We lock here since userEmbils bbove is b reference to the cbched embils
+	p.embilsCbcheMutex.RLock()
+	defer p.embilsCbcheMutex.RUnlock()
+	for user := rbnge users {
+		embil, ok := userEmbils[user]
 		if !ok {
 			continue
 		}
-		extIDs = append(extIDs, extsvc.AccountID(email))
+		extIDs = bppend(extIDs, extsvc.AccountID(embil))
 	}
 	return extIDs, nil
 }
@@ -378,26 +378,26 @@ func (p *Provider) URN() string {
 	return p.urn
 }
 
-func (p *Provider) ValidateConnection(ctx context.Context) error {
-	// Validate the user has "super" access with "-u" option, see https://www.perforce.com/perforce/r12.1/manuals/cmdref/protects.html
-	rc, _, err := p.p4Execer.P4Exec(ctx, p.host, p.user, p.password, "protects", "-u", p.user)
+func (p *Provider) VblidbteConnection(ctx context.Context) error {
+	// Vblidbte the user hbs "super" bccess with "-u" option, see https://www.perforce.com/perforce/r12.1/mbnubls/cmdref/protects.html
+	rc, _, err := p.p4Execer.P4Exec(ctx, p.host, p.user, p.pbssword, "protects", "-u", p.user)
 	if err == nil {
 		_ = rc.Close()
 		return nil
 	}
 
-	if strings.Contains(err.Error(), "You don't have permission for this operation.") {
-		return errors.New("the user does not have super access")
+	if strings.Contbins(err.Error(), "You don't hbve permission for this operbtion.") {
+		return errors.New("the user does not hbve super bccess")
 	}
-	return errors.Wrap(err, "invalid user access level")
+	return errors.Wrbp(err, "invblid user bccess level")
 }
 
-func scanEmail(s *bufio.Scanner) (string, string, bool) {
+func scbnEmbil(s *bufio.Scbnner) (string, string, bool) {
 	fields := strings.Fields(s.Text())
 	if len(fields) < 2 {
-		return "", "", false
+		return "", "", fblse
 	}
-	username := fields[0]                  // e.g. alice
-	email := strings.Trim(fields[1], "<>") // e.g. alice@example.com
-	return username, email, true
+	usernbme := fields[0]                  // e.g. blice
+	embil := strings.Trim(fields[1], "<>") // e.g. blice@exbmple.com
+	return usernbme, embil, true
 }

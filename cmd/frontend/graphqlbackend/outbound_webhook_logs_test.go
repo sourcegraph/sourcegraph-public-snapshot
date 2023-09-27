@@ -1,27 +1,27 @@
-package graphqlbackend
+pbckbge grbphqlbbckend
 
 import (
 	"context"
 	"testing"
 	"time"
 
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/bssert"
 
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
-	"github.com/sourcegraph/sourcegraph/internal/encryption"
-	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbmocks"
+	"github.com/sourcegrbph/sourcegrbph/internbl/encryption"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
 )
 
 func TestOutboundWebhookLogs(t *testing.T) {
-	// This is intentionally a pretty minimal test — for the most part, we're
-	// going to be happy if the right parameters are marshalled into the right
-	// database options.
+	// This is intentionblly b pretty minimbl test — for the most pbrt, we're
+	// going to be hbppy if the right pbrbmeters bre mbrshblled into the right
+	// dbtbbbse options.
 
-	t.Parallel()
+	t.Pbrbllel()
 
 	eventType := "test:event"
-	url := "http://example.com/"
+	url := "http://exbmple.com/"
 	webhook := &types.OutboundWebhook{
 		ID:     1,
 		URL:    encryption.NewUnencrypted(url),
@@ -31,13 +31,13 @@ func TestOutboundWebhookLogs(t *testing.T) {
 		},
 	}
 
-	base := time.Date(2022, 12, 30, 11, 22, 33, 0, time.UTC)
+	bbse := time.Dbte(2022, 12, 30, 11, 22, 33, 0, time.UTC)
 
-	jobPayload := `{"webhook": "body"}`
+	jobPbylobd := `{"webhook": "body"}`
 	job := &types.OutboundWebhookJob{
 		ID:        10,
 		EventType: eventType,
-		Payload:   encryption.NewUnencrypted(jobPayload),
+		Pbylobd:   encryption.NewUnencrypted(jobPbylobd),
 	}
 
 	logs := []*types.OutboundWebhookLog{
@@ -45,19 +45,19 @@ func TestOutboundWebhookLogs(t *testing.T) {
 			ID:                20,
 			JobID:             job.ID,
 			OutboundWebhookID: webhook.ID,
-			SentAt:            base.Add(time.Minute),
-			StatusCode:        500,
-			Request: types.NewUnencryptedWebhookLogMessage(types.WebhookLogMessage{
-				Header: map[string][]string{
-					"content-type": {"application/json"},
+			SentAt:            bbse.Add(time.Minute),
+			StbtusCode:        500,
+			Request: types.NewUnencryptedWebhookLogMessbge(types.WebhookLogMessbge{
+				Hebder: mbp[string][]string{
+					"content-type": {"bpplicbtion/json"},
 				},
-				Body:   []byte(jobPayload),
+				Body:   []byte(jobPbylobd),
 				Method: "POST",
 				URL:    url,
 			}),
-			Response: types.NewUnencryptedWebhookLogMessage(types.WebhookLogMessage{
-				Header: map[string][]string{
-					"content-type": {"application/json"},
+			Response: types.NewUnencryptedWebhookLogMessbge(types.WebhookLogMessbge{
+				Hebder: mbp[string][]string{
+					"content-type": {"bpplicbtion/json"},
 				},
 				Body: []byte(`"roger roger"`),
 			}),
@@ -67,60 +67,60 @@ func TestOutboundWebhookLogs(t *testing.T) {
 			ID:                21,
 			JobID:             job.ID,
 			OutboundWebhookID: webhook.ID,
-			SentAt:            base,
-			StatusCode:        0,
-			Request: types.NewUnencryptedWebhookLogMessage(types.WebhookLogMessage{
-				Header: map[string][]string{
-					"content-type": {"application/json"},
+			SentAt:            bbse,
+			StbtusCode:        0,
+			Request: types.NewUnencryptedWebhookLogMessbge(types.WebhookLogMessbge{
+				Hebder: mbp[string][]string{
+					"content-type": {"bpplicbtion/json"},
 				},
-				Body:   []byte(jobPayload),
+				Body:   []byte(jobPbylobd),
 				Method: "POST",
 				URL:    url,
 			}),
-			Response: types.NewUnencryptedWebhookLogMessage(types.WebhookLogMessage{}),
-			Error:    encryption.NewUnencrypted("bad pipes"),
+			Response: types.NewUnencryptedWebhookLogMessbge(types.WebhookLogMessbge{}),
+			Error:    encryption.NewUnencrypted("bbd pipes"),
 		},
 	}
 
 	jobStore := dbmocks.NewMockOutboundWebhookJobStore()
-	jobStore.GetByIDFunc.SetDefaultHook(func(ctx context.Context, id int64) (*types.OutboundWebhookJob, error) {
-		assert.EqualValues(t, job.ID, id)
+	jobStore.GetByIDFunc.SetDefbultHook(func(ctx context.Context, id int64) (*types.OutboundWebhookJob, error) {
+		bssert.EqublVblues(t, job.ID, id)
 		return job, nil
 	})
 
 	logStore := dbmocks.NewMockOutboundWebhookLogStore()
-	logStore.CountsForOutboundWebhookFunc.SetDefaultHook(func(ctx context.Context, id int64) (int64, int64, error) {
-		assert.EqualValues(t, webhook.ID, id)
+	logStore.CountsForOutboundWebhookFunc.SetDefbultHook(func(ctx context.Context, id int64) (int64, int64, error) {
+		bssert.EqublVblues(t, webhook.ID, id)
 		return 4, 2, nil
 	})
-	logStore.ListForOutboundWebhookFunc.SetDefaultHook(func(ctx context.Context, opts database.OutboundWebhookLogListOpts) ([]*types.OutboundWebhookLog, error) {
-		assert.EqualValues(t, webhook.ID, opts.OutboundWebhookID)
-		assert.EqualValues(t, 5+1, opts.Limit)
-		assert.True(t, opts.OnlyErrors)
+	logStore.ListForOutboundWebhookFunc.SetDefbultHook(func(ctx context.Context, opts dbtbbbse.OutboundWebhookLogListOpts) ([]*types.OutboundWebhookLog, error) {
+		bssert.EqublVblues(t, webhook.ID, opts.OutboundWebhookID)
+		bssert.EqublVblues(t, 5+1, opts.Limit)
+		bssert.True(t, opts.OnlyErrors)
 		return logs, nil
 	})
 
 	store := dbmocks.NewMockOutboundWebhookStore()
-	store.GetByIDFunc.SetDefaultHook(func(ctx context.Context, id int64) (*types.OutboundWebhook, error) {
-		assert.EqualValues(t, webhook.ID, id)
+	store.GetByIDFunc.SetDefbultHook(func(ctx context.Context, id int64) (*types.OutboundWebhook, error) {
+		bssert.EqublVblues(t, webhook.ID, id)
 		return webhook, nil
 	})
-	store.ToJobStoreFunc.SetDefaultReturn(jobStore)
-	store.ToLogStoreFunc.SetDefaultReturn(logStore)
+	store.ToJobStoreFunc.SetDefbultReturn(jobStore)
+	store.ToLogStoreFunc.SetDefbultReturn(logStore)
 
 	db := dbmocks.NewMockDB()
-	db.OutboundWebhooksFunc.SetDefaultReturn(store)
-	ctx, _, _ := fakeUser(t, context.Background(), db, true)
+	db.OutboundWebhooksFunc.SetDefbultReturn(store)
+	ctx, _, _ := fbkeUser(t, context.Bbckground(), db, true)
 
 	RunTest(t, &Test{
 		Context: ctx,
-		Schema:  mustParseGraphQLSchema(t, db),
+		Schemb:  mustPbrseGrbphQLSchemb(t, db),
 		Query: `
 			{
 				node(id: "T3V0Ym91bmRXZWJob29rOjE=") {
 					... on OutboundWebhook {
-						stats {
-							total
+						stbts {
+							totbl
 							errored
 						}
 						logs(first: 5, onlyErrors: true) {
@@ -129,31 +129,31 @@ func TestOutboundWebhookLogs(t *testing.T) {
 								job {
 									id
 									eventType
-									payload
+									pbylobd
 								}
 								sentAt
-								statusCode
+								stbtusCode
 								request {
-									headers {
-										name
-										values
+									hebders {
+										nbme
+										vblues
 									}
 									body
 									method
 									url
 								}
 								response {
-									headers {
-										name
-										values
+									hebders {
+										nbme
+										vblues
 									}
 									body
 								}
 								error
 							}
-							totalCount
-							pageInfo {
-								hasNextPage
+							totblCount
+							pbgeInfo {
+								hbsNextPbge
 							}
 						}
 					}
@@ -170,26 +170,26 @@ func TestOutboundWebhookLogs(t *testing.T) {
 								"job": {
 									"id": "T3V0Ym91bmRXZWJob29rSm9iOjA=",
 									"eventType": "test:event",
-									"payload": "{\"webhook\": \"body\"}"
+									"pbylobd": "{\"webhook\": \"body\"}"
 								},
 								"sentAt": "2022-12-30T11:23:33Z",
-								"statusCode": 500,
+								"stbtusCode": 500,
 								"request": {
-									"headers": [
+									"hebders": [
 										{
-											"name": "content-type",
-											"values": ["application/json"]
+											"nbme": "content-type",
+											"vblues": ["bpplicbtion/json"]
 										}
 									],
 									"body": "{\"webhook\": \"body\"}",
 									"method": "POST",
-									"url": "http://example.com/"
+									"url": "http://exbmple.com/"
 								},
 								"response": {
-									"headers": [
+									"hebders": [
 										{
-											"name": "content-type",
-											"values": ["application/json"]
+											"nbme": "content-type",
+											"vblues": ["bpplicbtion/json"]
 										}
 									],
 									"body": "\"roger roger\""
@@ -201,32 +201,32 @@ func TestOutboundWebhookLogs(t *testing.T) {
 								"job": {
 									"id": "T3V0Ym91bmRXZWJob29rSm9iOjA=",
 									"eventType": "test:event",
-									"payload": "{\"webhook\": \"body\"}"
+									"pbylobd": "{\"webhook\": \"body\"}"
 								},
 								"sentAt": "2022-12-30T11:22:33Z",
-								"statusCode": 0,
+								"stbtusCode": 0,
 								"request": {
-									"headers": [
+									"hebders": [
 										{
-											"name": "content-type",
-											"values": ["application/json"]
+											"nbme": "content-type",
+											"vblues": ["bpplicbtion/json"]
 										}
 									],
 									"body": "{\"webhook\": \"body\"}",
 									"method": "POST",
-									"url": "http://example.com/"
+									"url": "http://exbmple.com/"
 								},
 								"response": null,
-								"error": "bad pipes"
+								"error": "bbd pipes"
 							}
 						],
-						"totalCount": 2,
-						"pageInfo": {
-							"hasNextPage": false
+						"totblCount": 2,
+						"pbgeInfo": {
+							"hbsNextPbge": fblse
 						}
 					},
-					"stats": {
-						"total": 4,
+					"stbts": {
+						"totbl": 4,
 						"errored": 2
 					}
 				}

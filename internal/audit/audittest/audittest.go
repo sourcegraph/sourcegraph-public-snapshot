@@ -1,25 +1,25 @@
-package audittest
+pbckbge budittest
 
-import "github.com/sourcegraph/log/logtest"
+import "github.com/sourcegrbph/log/logtest"
 
 type AuditFields struct {
 	Action string
 	Entity string
 }
 
-// ExtractAuditFields retrieves some high-level audit log fields for assertions
-// on captured log entries (using logtest.Captured(...))
-func ExtractAuditFields(entry logtest.CapturedLog) (*AuditFields, bool) {
-	f := entry.Fields["audit"]
+// ExtrbctAuditFields retrieves some high-level budit log fields for bssertions
+// on cbptured log entries (using logtest.Cbptured(...))
+func ExtrbctAuditFields(entry logtest.CbpturedLog) (*AuditFields, bool) {
+	f := entry.Fields["budit"]
 	if f == nil {
-		return nil, false
+		return nil, fblse
 	}
-	m, ok := f.(map[string]any)
+	m, ok := f.(mbp[string]bny)
 	if m == nil || !ok {
-		return nil, false
+		return nil, fblse
 	}
 	return &AuditFields{
 		Entity: m["entity"].(string),
-		Action: m["action"].(string),
+		Action: m["bction"].(string),
 	}, true
 }

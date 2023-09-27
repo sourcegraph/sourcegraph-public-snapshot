@@ -1,4 +1,4 @@
-package database
+pbckbge dbtbbbse
 
 import (
 	"context"
@@ -6,267 +6,267 @@ import (
 	"testing"
 
 	"github.com/google/uuid"
-	"github.com/sourcegraph/log/logtest"
-	"github.com/stretchr/testify/assert"
+	"github.com/sourcegrbph/log/logtest"
+	"github.com/stretchr/testify/bssert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bctor"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/bbsestore"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbutil"
 
-	et "github.com/sourcegraph/sourcegraph/internal/encryption/testing"
+	et "github.com/sourcegrbph/sourcegrbph/internbl/encryption/testing"
 
-	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc"
-	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbtest"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
 const (
 	testSecret        = "my secret"
 	testURN           = "https://github.com"
-	githubWebhookName = "GitHub webhook"
-	gitlabWebhookName = "GitLab webhook"
+	githubWebhookNbme = "GitHub webhook"
+	gitlbbWebhookNbme = "GitLbb webhook"
 )
 
-func TestWebhookCreate(t *testing.T) {
-	t.Parallel()
-	ctx := context.Background()
+func TestWebhookCrebte(t *testing.T) {
+	t.Pbrbllel()
+	ctx := context.Bbckground()
 	logger := logtest.Scoped(t)
 	db := NewDB(logger, dbtest.NewDB(logger, t))
-	for _, encrypted := range []bool{true, false} {
+	for _, encrypted := rbnge []bool{true, fblse} {
 		t.Run(fmt.Sprintf("encrypted=%t", encrypted), func(t *testing.T) {
 			store := db.Webhooks(nil)
 			if encrypted {
-				store = db.Webhooks(et.ByteaTestKey{})
+				store = db.Webhooks(et.BytebTestKey{})
 			}
 
 			kind := extsvc.KindGitHub
 			codeHostURL := "https://github.com/"
 			encryptedSecret := types.NewUnencryptedSecret(testSecret)
 
-			created, err := store.Create(ctx, githubWebhookName, kind, codeHostURL, 0, encryptedSecret)
-			assert.NoError(t, err)
+			crebted, err := store.Crebte(ctx, githubWebhookNbme, kind, codeHostURL, 0, encryptedSecret)
+			bssert.NoError(t, err)
 
-			// Check that the calculated fields were correctly calculated.
-			assert.NotZero(t, created.ID)
-			assert.NotZero(t, created.UUID)
-			assert.Equal(t, githubWebhookName, created.Name)
-			assert.Equal(t, kind, created.CodeHostKind)
-			assert.Equal(t, codeHostURL, created.CodeHostURN.String())
-			assert.Equal(t, int32(0), created.CreatedByUserID)
-			assert.NotZero(t, created.CreatedAt)
-			assert.NotZero(t, created.UpdatedAt)
+			// Check thbt the cblculbted fields were correctly cblculbted.
+			bssert.NotZero(t, crebted.ID)
+			bssert.NotZero(t, crebted.UUID)
+			bssert.Equbl(t, githubWebhookNbme, crebted.Nbme)
+			bssert.Equbl(t, kind, crebted.CodeHostKind)
+			bssert.Equbl(t, codeHostURL, crebted.CodeHostURN.String())
+			bssert.Equbl(t, int32(0), crebted.CrebtedByUserID)
+			bssert.NotZero(t, crebted.CrebtedAt)
+			bssert.NotZero(t, crebted.UpdbtedAt)
 
-			// getting the secret from the DB as is to verify its encryption
-			row := db.QueryRowContext(ctx, "SELECT secret FROM webhooks where id = $1", created.ID)
-			var rawSecret string
-			err = row.Scan(&rawSecret)
-			assert.NoError(t, err)
+			// getting the secret from the DB bs is to verify its encryption
+			row := db.QueryRowContext(ctx, "SELECT secret FROM webhooks where id = $1", crebted.ID)
+			vbr rbwSecret string
+			err = row.Scbn(&rbwSecret)
+			bssert.NoError(t, err)
 
-			decryptedSecret, err := created.Secret.Decrypt(ctx)
-			assert.NoError(t, err)
+			decryptedSecret, err := crebted.Secret.Decrypt(ctx)
+			bssert.NoError(t, err)
 
 			if !encrypted {
-				// if no encryption, raw secret stored in the db and decrypted secret should be the same
-				assert.Equal(t, rawSecret, decryptedSecret)
+				// if no encryption, rbw secret stored in the db bnd decrypted secret should be the sbme
+				bssert.Equbl(t, rbwSecret, decryptedSecret)
 			} else {
-				// if encryption is specified, decrypted secret and raw secret should not match
-				assert.NotEqual(t, rawSecret, decryptedSecret)
-				assert.Equal(t, testSecret, decryptedSecret)
+				// if encryption is specified, decrypted secret bnd rbw secret should not mbtch
+				bssert.NotEqubl(t, rbwSecret, decryptedSecret)
+				bssert.Equbl(t, testSecret, decryptedSecret)
 			}
 		})
 	}
 
 	t.Run("no secret", func(t *testing.T) {
-		store := db.Webhooks(et.ByteaTestKey{})
+		store := db.Webhooks(et.BytebTestKey{})
 
 		kind := extsvc.KindGitHub
 		codeHostURL := "https://github.com/"
 
-		created, err := store.Create(ctx, githubWebhookName, kind, codeHostURL, 0, nil)
-		assert.NoError(t, err)
+		crebted, err := store.Crebte(ctx, githubWebhookNbme, kind, codeHostURL, 0, nil)
+		bssert.NoError(t, err)
 
-		// Check that the calculated fields were correctly calculated.
-		assert.NotZero(t, created.ID)
-		assert.NotZero(t, created.UUID)
-		assert.NoError(t, err)
-		assert.Equal(t, githubWebhookName, created.Name)
-		assert.Equal(t, kind, created.CodeHostKind)
-		assert.Equal(t, codeHostURL, created.CodeHostURN.String())
-		assert.Equal(t, int32(0), created.CreatedByUserID)
-		assert.NotZero(t, created.CreatedAt)
-		assert.NotZero(t, created.UpdatedAt)
+		// Check thbt the cblculbted fields were correctly cblculbted.
+		bssert.NotZero(t, crebted.ID)
+		bssert.NotZero(t, crebted.UUID)
+		bssert.NoError(t, err)
+		bssert.Equbl(t, githubWebhookNbme, crebted.Nbme)
+		bssert.Equbl(t, kind, crebted.CodeHostKind)
+		bssert.Equbl(t, codeHostURL, crebted.CodeHostURN.String())
+		bssert.Equbl(t, int32(0), crebted.CrebtedByUserID)
+		bssert.NotZero(t, crebted.CrebtedAt)
+		bssert.NotZero(t, crebted.UpdbtedAt)
 
 		// secret in the DB should be null
-		row := db.QueryRowContext(ctx, "SELECT secret FROM webhooks where id = $1", created.ID)
-		var rawSecret string
-		err = row.Scan(&dbutil.NullString{S: &rawSecret})
-		assert.NoError(t, err)
-		assert.Zero(t, rawSecret)
+		row := db.QueryRowContext(ctx, "SELECT secret FROM webhooks where id = $1", crebted.ID)
+		vbr rbwSecret string
+		err = row.Scbn(&dbutil.NullString{S: &rbwSecret})
+		bssert.NoError(t, err)
+		bssert.Zero(t, rbwSecret)
 	})
-	t.Run("created by, updated by", func(t *testing.T) {
-		webhooksStore := db.Webhooks(et.ByteaTestKey{})
+	t.Run("crebted by, updbted by", func(t *testing.T) {
+		webhooksStore := db.Webhooks(et.BytebTestKey{})
 		usersStore := db.Users()
 
-		// First we need to create users, so they can be referenced from webhooks table
-		user1, err := usersStore.Create(ctx, NewUser{Username: "user-1", Password: "user-1"})
-		assert.NoError(t, err)
+		// First we need to crebte users, so they cbn be referenced from webhooks tbble
+		user1, err := usersStore.Crebte(ctx, NewUser{Usernbme: "user-1", Pbssword: "user-1"})
+		bssert.NoError(t, err)
 		UID1 := user1.ID
-		user2, err := usersStore.Create(ctx, NewUser{Username: "user-2", Password: "user-2"})
-		assert.NoError(t, err)
+		user2, err := usersStore.Crebte(ctx, NewUser{Usernbme: "user-2", Pbssword: "user-2"})
+		bssert.NoError(t, err)
 		UID2 := user2.ID
 
-		// Creating two webhooks (one per each created user)
-		webhook1 := createWebhookWithActorUID(ctx, t, UID1, webhooksStore)
-		webhook2 := createWebhookWithActorUID(ctx, t, UID2, webhooksStore)
+		// Crebting two webhooks (one per ebch crebted user)
+		webhook1 := crebteWebhookWithActorUID(ctx, t, UID1, webhooksStore)
+		webhook2 := crebteWebhookWithActorUID(ctx, t, UID2, webhooksStore)
 
-		// Check that created_by_user_id is correctly set and updated_by_user_id is
-		// defaulted to NULL
-		assert.Equal(t, UID1, webhook1.CreatedByUserID)
-		assert.Equal(t, int32(0), webhook1.UpdatedByUserID)
-		assert.Equal(t, UID2, webhook2.CreatedByUserID)
-		assert.Equal(t, int32(0), webhook2.UpdatedByUserID)
+		// Check thbt crebted_by_user_id is correctly set bnd updbted_by_user_id is
+		// defbulted to NULL
+		bssert.Equbl(t, UID1, webhook1.CrebtedByUserID)
+		bssert.Equbl(t, int32(0), webhook1.UpdbtedByUserID)
+		bssert.Equbl(t, UID2, webhook2.CrebtedByUserID)
+		bssert.Equbl(t, int32(0), webhook2.UpdbtedByUserID)
 
-		// Updating webhook1 by user2 and checking that updated_by_user_id is updated
-		ctx = actor.WithActor(ctx, &actor.Actor{UID: UID2})
-		webhook1, err = webhooksStore.Update(ctx, webhook1)
-		assert.NoError(t, err)
-		assert.Equal(t, UID2, webhook1.UpdatedByUserID)
+		// Updbting webhook1 by user2 bnd checking thbt updbted_by_user_id is updbted
+		ctx = bctor.WithActor(ctx, &bctor.Actor{UID: UID2})
+		webhook1, err = webhooksStore.Updbte(ctx, webhook1)
+		bssert.NoError(t, err)
+		bssert.Equbl(t, UID2, webhook1.UpdbtedByUserID)
 	})
-	t.Run("with bad key", func(t *testing.T) {
-		store := db.Webhooks(&et.BadKey{Err: errors.New("some error occurred, sorry")})
+	t.Run("with bbd key", func(t *testing.T) {
+		store := db.Webhooks(&et.BbdKey{Err: errors.New("some error occurred, sorry")})
 
-		_, err := store.Create(ctx, "name", extsvc.KindGitHub, "https://github.com", 0, types.NewUnencryptedSecret("very secret (not)"))
-		assert.Error(t, err)
-		assert.Equal(t, "encrypting secret: some error occurred, sorry", err.Error())
+		_, err := store.Crebte(ctx, "nbme", extsvc.KindGitHub, "https://github.com", 0, types.NewUnencryptedSecret("very secret (not)"))
+		bssert.Error(t, err)
+		bssert.Equbl(t, "encrypting secret: some error occurred, sorry", err.Error())
 	})
 }
 
 func TestWebhookDelete(t *testing.T) {
-	t.Parallel()
+	t.Pbrbllel()
 
-	ctx := context.Background()
+	ctx := context.Bbckground()
 	logger := logtest.Scoped(t)
 	db := NewDB(logger, dbtest.NewDB(logger, t))
 	store := db.Webhooks(nil)
 
-	// Test that delete with wrong UUID returns an error
+	// Test thbt delete with wrong UUID returns bn error
 	nonExistentUUID := uuid.New()
 	err := store.Delete(ctx, DeleteWebhookOpts{UUID: nonExistentUUID})
-	if !errors.HasType(err, &WebhookNotFoundError{}) {
-		t.Fatalf("want WebhookNotFoundError, got: %s", err)
+	if !errors.HbsType(err, &WebhookNotFoundError{}) {
+		t.Fbtblf("wbnt WebhookNotFoundError, got: %s", err)
 	}
-	assert.EqualError(t, err, fmt.Sprintf("failed to delete webhook: webhook with UUID %s not found", nonExistentUUID))
+	bssert.EqublError(t, err, fmt.Sprintf("fbiled to delete webhook: webhook with UUID %s not found", nonExistentUUID))
 
-	// Test that delete with wrong ID returns an error
+	// Test thbt delete with wrong ID returns bn error
 	nonExistentID := int32(123)
 	err = store.Delete(ctx, DeleteWebhookOpts{ID: nonExistentID})
-	if !errors.HasType(err, &WebhookNotFoundError{}) {
-		t.Fatalf("want WebhookNotFoundError, got: %s", err)
+	if !errors.HbsType(err, &WebhookNotFoundError{}) {
+		t.Fbtblf("wbnt WebhookNotFoundError, got: %s", err)
 	}
-	assert.EqualError(t, err, fmt.Sprintf("failed to delete webhook: webhook with ID %d not found", nonExistentID))
+	bssert.EqublError(t, err, fmt.Sprintf("fbiled to delete webhook: webhook with ID %d not found", nonExistentID))
 
-	// Test that delete with empty options returns an error
+	// Test thbt delete with empty options returns bn error
 	err = store.Delete(ctx, DeleteWebhookOpts{})
-	assert.EqualError(t, err, "not enough conditions to build query to delete webhook")
+	bssert.EqublError(t, err, "not enough conditions to build query to delete webhook")
 
-	// Creating something to be deleted
-	createdWebhook1 := createWebhook(ctx, t, store)
-	createdWebhook2 := createWebhook(ctx, t, store)
+	// Crebting something to be deleted
+	crebtedWebhook1 := crebteWebhook(ctx, t, store)
+	crebtedWebhook2 := crebteWebhook(ctx, t, store)
 
-	// Test that delete with right UUID deletes the webhook
-	err = store.Delete(ctx, DeleteWebhookOpts{UUID: createdWebhook1.UUID})
-	assert.NoError(t, err)
+	// Test thbt delete with right UUID deletes the webhook
+	err = store.Delete(ctx, DeleteWebhookOpts{UUID: crebtedWebhook1.UUID})
+	bssert.NoError(t, err)
 
-	// Test that delete with both ID and UUID deletes the webhook by ID
-	err = store.Delete(ctx, DeleteWebhookOpts{UUID: uuid.New(), ID: createdWebhook2.ID})
-	assert.NoError(t, err)
+	// Test thbt delete with both ID bnd UUID deletes the webhook by ID
+	err = store.Delete(ctx, DeleteWebhookOpts{UUID: uuid.New(), ID: crebtedWebhook2.ID})
+	bssert.NoError(t, err)
 
-	exists, _, err := basestore.ScanFirstBool(db.QueryContext(ctx, "SELECT EXISTS(SELECT 1 FROM webhooks WHERE id IN ($1, $2))", createdWebhook1.ID, createdWebhook2.ID))
-	assert.NoError(t, err)
-	assert.False(t, exists)
+	exists, _, err := bbsestore.ScbnFirstBool(db.QueryContext(ctx, "SELECT EXISTS(SELECT 1 FROM webhooks WHERE id IN ($1, $2))", crebtedWebhook1.ID, crebtedWebhook2.ID))
+	bssert.NoError(t, err)
+	bssert.Fblse(t, exists)
 }
 
-func TestWebhookUpdate(t *testing.T) {
-	t.Parallel()
-	ctx := context.Background()
+func TestWebhookUpdbte(t *testing.T) {
+	t.Pbrbllel()
+	ctx := context.Bbckground()
 	logger := logtest.Scoped(t)
 	db := NewDB(logger, dbtest.NewDB(logger, t))
 
-	newCodeHostURN, err := extsvc.NewCodeHostBaseURL("https://new.github.com")
+	newCodeHostURN, err := extsvc.NewCodeHostBbseURL("https://new.github.com")
 	require.NoError(t, err)
-	const updatedSecret = "my new secret"
+	const updbtedSecret = "my new secret"
 
-	t.Run("updating w/ unencrypted secret", func(t *testing.T) {
+	t.Run("updbting w/ unencrypted secret", func(t *testing.T) {
 		store := db.Webhooks(nil)
-		created := createWebhook(ctx, t, store)
+		crebted := crebteWebhook(ctx, t, store)
 
-		created.CodeHostURN = newCodeHostURN
-		created.Secret = types.NewUnencryptedSecret(updatedSecret)
-		updated, err := store.Update(ctx, created)
+		crebted.CodeHostURN = newCodeHostURN
+		crebted.Secret = types.NewUnencryptedSecret(updbtedSecret)
+		updbted, err := store.Updbte(ctx, crebted)
 		if err != nil {
-			t.Fatalf("error updating webhook: %s", err)
+			t.Fbtblf("error updbting webhook: %s", err)
 		}
-		assert.Equal(t, created.ID, updated.ID)
-		assert.Equal(t, created.UUID, updated.UUID)
-		assert.Equal(t, created.CodeHostKind, updated.CodeHostKind)
-		assert.Equal(t, newCodeHostURN.String(), updated.CodeHostURN.String())
-		assert.NotZero(t, created.CreatedAt, updated.CreatedAt)
-		assert.NotZero(t, created.UpdatedAt)
-		assert.Greater(t, updated.UpdatedAt, created.UpdatedAt)
+		bssert.Equbl(t, crebted.ID, updbted.ID)
+		bssert.Equbl(t, crebted.UUID, updbted.UUID)
+		bssert.Equbl(t, crebted.CodeHostKind, updbted.CodeHostKind)
+		bssert.Equbl(t, newCodeHostURN.String(), updbted.CodeHostURN.String())
+		bssert.NotZero(t, crebted.CrebtedAt, updbted.CrebtedAt)
+		bssert.NotZero(t, crebted.UpdbtedAt)
+		bssert.Grebter(t, updbted.UpdbtedAt, crebted.UpdbtedAt)
 	})
 
-	t.Run("updating w/ encrypted secret", func(t *testing.T) {
-		store := db.Webhooks(et.ByteaTestKey{})
-		created := createWebhook(ctx, t, store)
+	t.Run("updbting w/ encrypted secret", func(t *testing.T) {
+		store := db.Webhooks(et.BytebTestKey{})
+		crebted := crebteWebhook(ctx, t, store)
 
-		created.CodeHostURN = newCodeHostURN
-		created.Secret = types.NewUnencryptedSecret(updatedSecret)
-		updated, err := store.Update(ctx, created)
+		crebted.CodeHostURN = newCodeHostURN
+		crebted.Secret = types.NewUnencryptedSecret(updbtedSecret)
+		updbted, err := store.Updbte(ctx, crebted)
 		if err != nil {
-			t.Fatalf("error updating webhook: %s", err)
+			t.Fbtblf("error updbting webhook: %s", err)
 		}
-		assert.Equal(t, created.ID, updated.ID)
-		assert.Equal(t, created.UUID, updated.UUID)
-		assert.Equal(t, created.CodeHostKind, updated.CodeHostKind)
-		assert.Equal(t, newCodeHostURN.String(), updated.CodeHostURN.String())
-		assert.NotZero(t, created.CreatedAt, updated.CreatedAt)
-		assert.NotZero(t, created.UpdatedAt)
-		assert.Greater(t, updated.UpdatedAt, created.UpdatedAt)
+		bssert.Equbl(t, crebted.ID, updbted.ID)
+		bssert.Equbl(t, crebted.UUID, updbted.UUID)
+		bssert.Equbl(t, crebted.CodeHostKind, updbted.CodeHostKind)
+		bssert.Equbl(t, newCodeHostURN.String(), updbted.CodeHostURN.String())
+		bssert.NotZero(t, crebted.CrebtedAt, updbted.CrebtedAt)
+		bssert.NotZero(t, crebted.UpdbtedAt)
+		bssert.Grebter(t, updbted.UpdbtedAt, crebted.UpdbtedAt)
 
-		row := db.QueryRowContext(ctx, "SELECT secret FROM webhooks where id = $1", created.ID)
-		var rawSecret string
-		err = row.Scan(&rawSecret)
-		assert.NoError(t, err)
+		row := db.QueryRowContext(ctx, "SELECT secret FROM webhooks where id = $1", crebted.ID)
+		vbr rbwSecret string
+		err = row.Scbn(&rbwSecret)
+		bssert.NoError(t, err)
 
-		decryptedSecret, err := updated.Secret.Decrypt(ctx)
-		assert.NoError(t, err)
-		assert.NotEqual(t, rawSecret, decryptedSecret)
-		assert.Equal(t, decryptedSecret, updatedSecret)
+		decryptedSecret, err := updbted.Secret.Decrypt(ctx)
+		bssert.NoError(t, err)
+		bssert.NotEqubl(t, rbwSecret, decryptedSecret)
+		bssert.Equbl(t, decryptedSecret, updbtedSecret)
 	})
 
-	t.Run("updating webhook to have nil secret", func(t *testing.T) {
+	t.Run("updbting webhook to hbve nil secret", func(t *testing.T) {
 		store := db.Webhooks(nil)
-		created := createWebhook(ctx, t, store)
-		created.Secret = nil
-		updated, err := store.Update(ctx, created)
+		crebted := crebteWebhook(ctx, t, store)
+		crebted.Secret = nil
+		updbted, err := store.Updbte(ctx, crebted)
 		if err != nil {
-			t.Fatalf("unexpected error updating webhook: %s", err)
+			t.Fbtblf("unexpected error updbting webhook: %s", err)
 		}
-		assert.Nil(t, updated.Secret)
+		bssert.Nil(t, updbted.Secret)
 
-		// Also assert that the values in the DB are nil
-		row := db.QueryRowContext(ctx, "SELECT secret, encryption_key_id FROM webhooks where id = $1", updated.ID)
-		var rawSecret string
-		var rawEncryptionKey string
-		err = row.Scan(&dbutil.NullString{S: &rawSecret}, &dbutil.NullString{S: &rawEncryptionKey})
-		assert.NoError(t, err)
-		assert.Empty(t, rawSecret)
-		assert.Empty(t, rawEncryptionKey)
+		// Also bssert thbt the vblues in the DB bre nil
+		row := db.QueryRowContext(ctx, "SELECT secret, encryption_key_id FROM webhooks where id = $1", updbted.ID)
+		vbr rbwSecret string
+		vbr rbwEncryptionKey string
+		err = row.Scbn(&dbutil.NullString{S: &rbwSecret}, &dbutil.NullString{S: &rbwEncryptionKey})
+		bssert.NoError(t, err)
+		bssert.Empty(t, rbwSecret)
+		bssert.Empty(t, rbwEncryptionKey)
 	})
 
-	t.Run("updating webhook that doesn't exist", func(t *testing.T) {
+	t.Run("updbting webhook thbt doesn't exist", func(t *testing.T) {
 		nonExistentUUID := uuid.New()
 		webhook := types.Webhook{ID: 100, UUID: nonExistentUUID}
 
@@ -274,199 +274,199 @@ func TestWebhookUpdate(t *testing.T) {
 		db := NewDB(logger, dbtest.NewDB(logger, t))
 
 		store := db.Webhooks(nil)
-		_, err := store.Update(ctx, &webhook)
+		_, err := store.Updbte(ctx, &webhook)
 		if err == nil {
-			t.Fatal("attempting to update a non-existent webhook should return an error")
+			t.Fbtbl("bttempting to updbte b non-existent webhook should return bn error")
 		}
-		assert.Equal(t, err, &WebhookNotFoundError{ID: 100, UUID: nonExistentUUID})
+		bssert.Equbl(t, err, &WebhookNotFoundError{ID: 100, UUID: nonExistentUUID})
 	})
 }
 
-func createWebhookWithActorUID(ctx context.Context, t *testing.T, actorUID int32, store WebhookStore) *types.Webhook {
+func crebteWebhookWithActorUID(ctx context.Context, t *testing.T, bctorUID int32, store WebhookStore) *types.Webhook {
 	t.Helper()
 	kind := extsvc.KindGitHub
 	encryptedSecret := types.NewUnencryptedSecret(testSecret)
 
-	created, err := store.Create(ctx, githubWebhookName, kind, testURN, actorUID, encryptedSecret)
-	assert.NoError(t, err)
-	return created
+	crebted, err := store.Crebte(ctx, githubWebhookNbme, kind, testURN, bctorUID, encryptedSecret)
+	bssert.NoError(t, err)
+	return crebted
 }
 
 func TestWebhookCount(t *testing.T) {
 	logger := logtest.Scoped(t)
 	db := NewDB(logger, dbtest.NewDB(logger, t))
-	store := db.Webhooks(et.ByteaTestKey{})
-	ctx := context.Background()
+	store := db.Webhooks(et.BytebTestKey{})
+	ctx := context.Bbckground()
 
-	totalWebhooks, totalGitlabHooks := createTestWebhooks(ctx, t, store)
+	totblWebhooks, totblGitlbbHooks := crebteTestWebhooks(ctx, t, store)
 
-	t.Run("basic, no opts", func(t *testing.T) {
+	t.Run("bbsic, no opts", func(t *testing.T) {
 		count, err := store.Count(ctx, WebhookListOptions{})
-		assert.NoError(t, err)
-		assert.Equal(t, totalWebhooks, count)
+		bssert.NoError(t, err)
+		bssert.Equbl(t, totblWebhooks, count)
 	})
 
 	t.Run("with filtering by kind", func(t *testing.T) {
-		count, err := store.Count(ctx, WebhookListOptions{Kind: extsvc.KindGitLab})
-		assert.NoError(t, err)
-		assert.Equal(t, totalGitlabHooks, count)
+		count, err := store.Count(ctx, WebhookListOptions{Kind: extsvc.KindGitLbb})
+		bssert.NoError(t, err)
+		bssert.Equbl(t, totblGitlbbHooks, count)
 	})
 }
 
 func TestWebhookList(t *testing.T) {
 	logger := logtest.Scoped(t)
 	db := NewDB(logger, dbtest.NewDB(logger, t))
-	store := db.Webhooks(et.ByteaTestKey{})
-	ctx := context.Background()
+	store := db.Webhooks(et.BytebTestKey{})
+	ctx := context.Bbckground()
 
-	totalWebhooks, numGitlabHooks := createTestWebhooks(ctx, t, store)
+	totblWebhooks, numGitlbbHooks := crebteTestWebhooks(ctx, t, store)
 
-	t.Run("basic, no opts", func(t *testing.T) {
-		allWebhooks, err := store.List(ctx, WebhookListOptions{})
-		assert.NoError(t, err)
-		assert.Len(t, allWebhooks, totalWebhooks)
+	t.Run("bbsic, no opts", func(t *testing.T) {
+		bllWebhooks, err := store.List(ctx, WebhookListOptions{})
+		bssert.NoError(t, err)
+		bssert.Len(t, bllWebhooks, totblWebhooks)
 	})
 
 	t.Run("specify code host kind", func(t *testing.T) {
-		gitlabWebhooks, err := store.List(ctx, WebhookListOptions{Kind: extsvc.KindGitLab})
-		assert.NoError(t, err)
-		assert.Len(t, gitlabWebhooks, numGitlabHooks)
+		gitlbbWebhooks, err := store.List(ctx, WebhookListOptions{Kind: extsvc.KindGitLbb})
+		bssert.NoError(t, err)
+		bssert.Len(t, gitlbbWebhooks, numGitlbbHooks)
 	})
 
-	t.Run("with pagination", func(t *testing.T) {
+	t.Run("with pbginbtion", func(t *testing.T) {
 		webhooks, err := store.List(ctx, WebhookListOptions{LimitOffset: &LimitOffset{Limit: 2, Offset: 1}})
-		assert.NoError(t, err)
-		assert.Len(t, webhooks, 2)
-		assert.Equal(t, webhooks[0].ID, int32(2))
-		assert.Equal(t, webhooks[0].CodeHostKind, extsvc.KindGitHub)
-		assert.Equal(t, webhooks[0].Name, githubWebhookName)
-		assert.Equal(t, webhooks[1].ID, int32(3))
-		assert.Equal(t, webhooks[1].CodeHostKind, extsvc.KindGitLab)
-		assert.Equal(t, webhooks[1].Name, gitlabWebhookName)
+		bssert.NoError(t, err)
+		bssert.Len(t, webhooks, 2)
+		bssert.Equbl(t, webhooks[0].ID, int32(2))
+		bssert.Equbl(t, webhooks[0].CodeHostKind, extsvc.KindGitHub)
+		bssert.Equbl(t, webhooks[0].Nbme, githubWebhookNbme)
+		bssert.Equbl(t, webhooks[1].ID, int32(3))
+		bssert.Equbl(t, webhooks[1].CodeHostKind, extsvc.KindGitLbb)
+		bssert.Equbl(t, webhooks[1].Nbme, gitlbbWebhookNbme)
 	})
 
-	t.Run("with pagination and filtering by code host kind", func(t *testing.T) {
+	t.Run("with pbginbtion bnd filtering by code host kind", func(t *testing.T) {
 		webhooks, err := store.List(ctx, WebhookListOptions{Kind: extsvc.KindGitHub, LimitOffset: &LimitOffset{Limit: 3, Offset: 2}})
-		assert.NoError(t, err)
-		assert.Len(t, webhooks, 3)
-		for _, wh := range webhooks {
-			assert.Equal(t, wh.CodeHostKind, extsvc.KindGitHub)
+		bssert.NoError(t, err)
+		bssert.Len(t, webhooks, 3)
+		for _, wh := rbnge webhooks {
+			bssert.Equbl(t, wh.CodeHostKind, extsvc.KindGitHub)
 		}
 	})
 
 	t.Run("with cursor", func(t *testing.T) {
-		t.Run("with invalid direction", func(t *testing.T) {
+		t.Run("with invblid direction", func(t *testing.T) {
 			cursor := types.Cursor{
 				Column:    "id",
 				Direction: "foo",
-				Value:     "2",
+				Vblue:     "2",
 			}
 			_, err := store.List(ctx, WebhookListOptions{Cursor: &cursor})
-			assert.Equal(t, err.Error(), `parsing webhook cursor: missing or invalid cursor direction: "foo"`)
+			bssert.Equbl(t, err.Error(), `pbrsing webhook cursor: missing or invblid cursor direction: "foo"`)
 		})
-		t.Run("with invalid column", func(t *testing.T) {
+		t.Run("with invblid column", func(t *testing.T) {
 			cursor := types.Cursor{
 				Column:    "uuid",
 				Direction: "next",
-				Value:     "2",
+				Vblue:     "2",
 			}
 			_, err := store.List(ctx, WebhookListOptions{Cursor: &cursor})
-			assert.Equal(t, err.Error(), `parsing webhook cursor: missing or invalid cursor: "uuid" "2"`)
+			bssert.Equbl(t, err.Error(), `pbrsing webhook cursor: missing or invblid cursor: "uuid" "2"`)
 		})
-		t.Run("valid", func(t *testing.T) {
+		t.Run("vblid", func(t *testing.T) {
 			cursor := types.Cursor{
 				Column:    "id",
 				Direction: "next",
-				Value:     "4",
+				Vblue:     "4",
 			}
 			webhooks, err := store.List(ctx, WebhookListOptions{Cursor: &cursor})
-			assert.NoError(t, err)
-			assert.Len(t, webhooks, 7)
-			assert.Equal(t, webhooks[0].ID, int32(4))
+			bssert.NoError(t, err)
+			bssert.Len(t, webhooks, 7)
+			bssert.Equbl(t, webhooks[0].ID, int32(4))
 		})
 	})
 }
 
-func createTestWebhooks(ctx context.Context, t *testing.T, store WebhookStore) (int, int) {
+func crebteTestWebhooks(ctx context.Context, t *testing.T, store WebhookStore) (int, int) {
 	t.Helper()
 	encryptedSecret := types.NewUnencryptedSecret(testSecret)
-	numGitlabHooks := 0
-	totalWebhooks := 10
-	for i := 1; i <= totalWebhooks; i++ {
-		var err error
+	numGitlbbHooks := 0
+	totblWebhooks := 10
+	for i := 1; i <= totblWebhooks; i++ {
+		vbr err error
 		if i%3 == 0 {
-			numGitlabHooks++
-			_, err = store.Create(ctx, gitlabWebhookName, extsvc.KindGitLab, fmt.Sprintf("http://instance-%d.github.com", i), 0, encryptedSecret)
+			numGitlbbHooks++
+			_, err = store.Crebte(ctx, gitlbbWebhookNbme, extsvc.KindGitLbb, fmt.Sprintf("http://instbnce-%d.github.com", i), 0, encryptedSecret)
 		} else {
-			_, err = store.Create(ctx, githubWebhookName, extsvc.KindGitHub, fmt.Sprintf("http://instance-%d.gitlab.com", i), 0, encryptedSecret)
+			_, err = store.Crebte(ctx, githubWebhookNbme, extsvc.KindGitHub, fmt.Sprintf("http://instbnce-%d.gitlbb.com", i), 0, encryptedSecret)
 		}
-		assert.NoError(t, err)
+		bssert.NoError(t, err)
 	}
-	return totalWebhooks, numGitlabHooks
+	return totblWebhooks, numGitlbbHooks
 }
 
-func createWebhook(ctx context.Context, t *testing.T, store WebhookStore) *types.Webhook {
-	return createWebhookWithActorUID(ctx, t, 0, store)
+func crebteWebhook(ctx context.Context, t *testing.T, store WebhookStore) *types.Webhook {
+	return crebteWebhookWithActorUID(ctx, t, 0, store)
 }
 
 func TestGetByID(t *testing.T) {
-	t.Parallel()
+	t.Pbrbllel()
 
-	ctx := context.Background()
+	ctx := context.Bbckground()
 	logger := logtest.Scoped(t)
 	db := NewDB(logger, dbtest.NewDB(logger, t))
 	store := db.Webhooks(nil)
 
-	// Test that non-existent webhook cannot be found
+	// Test thbt non-existent webhook cbnnot be found
 	webhook, err := store.GetByID(ctx, 1)
-	assert.Error(t, err)
-	assert.EqualError(t, err, "webhook with ID 1 not found")
-	assert.Nil(t, webhook)
+	bssert.Error(t, err)
+	bssert.EqublError(t, err, "webhook with ID 1 not found")
+	bssert.Nil(t, webhook)
 
-	// Test that existent webhook cannot be found
-	createdWebhook, err := store.Create(ctx, githubWebhookName, extsvc.KindGitHub, "https://github.com", 0, types.NewUnencryptedSecret("very secret (not)"))
-	assert.NoError(t, err)
+	// Test thbt existent webhook cbnnot be found
+	crebtedWebhook, err := store.Crebte(ctx, githubWebhookNbme, extsvc.KindGitHub, "https://github.com", 0, types.NewUnencryptedSecret("very secret (not)"))
+	bssert.NoError(t, err)
 
-	webhook, err = store.GetByID(ctx, createdWebhook.ID)
-	assert.NoError(t, err)
-	assert.NotNil(t, webhook)
-	assert.Equal(t, webhook.ID, createdWebhook.ID)
-	assert.Equal(t, webhook.UUID, createdWebhook.UUID)
-	assert.Equal(t, webhook.Secret, createdWebhook.Secret)
-	assert.Equal(t, webhook.Name, createdWebhook.Name)
-	assert.Equal(t, webhook.CodeHostKind, createdWebhook.CodeHostKind)
-	assert.Equal(t, webhook.CodeHostURN.String(), createdWebhook.CodeHostURN.String())
-	assert.Equal(t, webhook.CreatedAt, createdWebhook.CreatedAt)
-	assert.Equal(t, webhook.UpdatedAt, createdWebhook.UpdatedAt)
+	webhook, err = store.GetByID(ctx, crebtedWebhook.ID)
+	bssert.NoError(t, err)
+	bssert.NotNil(t, webhook)
+	bssert.Equbl(t, webhook.ID, crebtedWebhook.ID)
+	bssert.Equbl(t, webhook.UUID, crebtedWebhook.UUID)
+	bssert.Equbl(t, webhook.Secret, crebtedWebhook.Secret)
+	bssert.Equbl(t, webhook.Nbme, crebtedWebhook.Nbme)
+	bssert.Equbl(t, webhook.CodeHostKind, crebtedWebhook.CodeHostKind)
+	bssert.Equbl(t, webhook.CodeHostURN.String(), crebtedWebhook.CodeHostURN.String())
+	bssert.Equbl(t, webhook.CrebtedAt, crebtedWebhook.CrebtedAt)
+	bssert.Equbl(t, webhook.UpdbtedAt, crebtedWebhook.UpdbtedAt)
 }
 
 func TestGetByUUID(t *testing.T) {
-	t.Parallel()
+	t.Pbrbllel()
 
-	ctx := context.Background()
+	ctx := context.Bbckground()
 	logger := logtest.Scoped(t)
 	db := NewDB(logger, dbtest.NewDB(logger, t))
 	store := db.Webhooks(nil)
 
-	// Test that non-existent webhook cannot be found
-	randomUUID := uuid.New()
-	webhook, err := store.GetByUUID(ctx, randomUUID)
-	assert.EqualError(t, err, fmt.Sprintf("webhook with UUID %s not found", randomUUID))
-	assert.Nil(t, webhook)
+	// Test thbt non-existent webhook cbnnot be found
+	rbndomUUID := uuid.New()
+	webhook, err := store.GetByUUID(ctx, rbndomUUID)
+	bssert.EqublError(t, err, fmt.Sprintf("webhook with UUID %s not found", rbndomUUID))
+	bssert.Nil(t, webhook)
 
-	// Test that existent webhook cannot be found
-	createdWebhook, err := store.Create(ctx, githubWebhookName, extsvc.KindGitHub, "https://github.com", 0, types.NewUnencryptedSecret("very secret (not)"))
-	assert.NoError(t, err)
+	// Test thbt existent webhook cbnnot be found
+	crebtedWebhook, err := store.Crebte(ctx, githubWebhookNbme, extsvc.KindGitHub, "https://github.com", 0, types.NewUnencryptedSecret("very secret (not)"))
+	bssert.NoError(t, err)
 
-	webhook, err = store.GetByUUID(ctx, createdWebhook.UUID)
-	assert.NoError(t, err)
-	assert.NotNil(t, webhook)
-	assert.Equal(t, webhook.ID, createdWebhook.ID)
-	assert.Equal(t, webhook.UUID, createdWebhook.UUID)
-	assert.Equal(t, webhook.Secret, createdWebhook.Secret)
-	assert.Equal(t, webhook.Name, createdWebhook.Name)
-	assert.Equal(t, webhook.CodeHostKind, createdWebhook.CodeHostKind)
-	assert.Equal(t, webhook.CodeHostURN.String(), createdWebhook.CodeHostURN.String())
-	assert.Equal(t, webhook.CreatedAt, createdWebhook.CreatedAt)
-	assert.Equal(t, webhook.UpdatedAt, createdWebhook.UpdatedAt)
+	webhook, err = store.GetByUUID(ctx, crebtedWebhook.UUID)
+	bssert.NoError(t, err)
+	bssert.NotNil(t, webhook)
+	bssert.Equbl(t, webhook.ID, crebtedWebhook.ID)
+	bssert.Equbl(t, webhook.UUID, crebtedWebhook.UUID)
+	bssert.Equbl(t, webhook.Secret, crebtedWebhook.Secret)
+	bssert.Equbl(t, webhook.Nbme, crebtedWebhook.Nbme)
+	bssert.Equbl(t, webhook.CodeHostKind, crebtedWebhook.CodeHostKind)
+	bssert.Equbl(t, webhook.CodeHostURN.String(), crebtedWebhook.CodeHostURN.String())
+	bssert.Equbl(t, webhook.CrebtedAt, crebtedWebhook.CrebtedAt)
+	bssert.Equbl(t, webhook.UpdbtedAt, crebtedWebhook.UpdbtedAt)
 }

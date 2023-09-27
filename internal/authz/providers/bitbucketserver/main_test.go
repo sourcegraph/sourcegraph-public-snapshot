@@ -1,17 +1,17 @@
-package bitbucketserver
+pbckbge bitbucketserver
 
 import (
-	"flag"
+	"flbg"
 	"os"
 	"testing"
 
-	"github.com/inconshreveable/log15"
+	"github.com/inconshrevebble/log15"
 )
 
-func TestMain(m *testing.M) {
-	flag.Parse()
+func TestMbin(m *testing.M) {
+	flbg.Pbrse()
 	if !testing.Verbose() {
-		log15.Root().SetHandler(log15.DiscardHandler())
+		log15.Root().SetHbndler(log15.DiscbrdHbndler())
 	}
 	os.Exit(m.Run())
 }

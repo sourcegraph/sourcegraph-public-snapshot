@@ -1,11 +1,11 @@
-package auth
+pbckbge buth
 
 import "net/http"
 
-func hasQuery(r *http.Request, name string) bool {
-	return r.URL.Query().Get(name) != ""
+func hbsQuery(r *http.Request, nbme string) bool {
+	return r.URL.Query().Get(nbme) != ""
 }
 
-func getQuery(r *http.Request, name string) string {
-	return r.URL.Query().Get(name)
+func getQuery(r *http.Request, nbme string) string {
+	return r.URL.Query().Get(nbme)
 }

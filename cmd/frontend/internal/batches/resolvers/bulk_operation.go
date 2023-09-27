@@ -1,147 +1,147 @@
-package resolvers
+pbckbge resolvers
 
 import (
 	"context"
 
-	"github.com/graph-gophers/graphql-go"
-	"github.com/graph-gophers/graphql-go/relay"
+	"github.com/grbph-gophers/grbphql-go"
+	"github.com/grbph-gophers/grbphql-go/relby"
 
-	"github.com/sourcegraph/log"
+	"github.com/sourcegrbph/log"
 
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"github.com/sourcegrbph/sourcegrbph/internbl/gitserver"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/batches/store"
-	btypes "github.com/sourcegraph/sourcegraph/internal/batches/types"
-	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
-	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/grbphqlbbckend"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bbtches/store"
+	btypes "github.com/sourcegrbph/sourcegrbph/internbl/bbtches/types"
+	"github.com/sourcegrbph/sourcegrbph/internbl/gqlutil"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-const bulkOperationIDKind = "BulkOperation"
+const bulkOperbtionIDKind = "BulkOperbtion"
 
-func marshalBulkOperationID(id string) graphql.ID {
-	return relay.MarshalID(bulkOperationIDKind, id)
+func mbrshblBulkOperbtionID(id string) grbphql.ID {
+	return relby.MbrshblID(bulkOperbtionIDKind, id)
 }
 
-func unmarshalBulkOperationID(id graphql.ID) (bulkOperationID string, err error) {
-	err = relay.UnmarshalSpec(id, &bulkOperationID)
+func unmbrshblBulkOperbtionID(id grbphql.ID) (bulkOperbtionID string, err error) {
+	err = relby.UnmbrshblSpec(id, &bulkOperbtionID)
 	return
 }
 
-type bulkOperationResolver struct {
+type bulkOperbtionResolver struct {
 	store           *store.Store
 	logger          log.Logger
-	bulkOperation   *btypes.BulkOperation
+	bulkOperbtion   *btypes.BulkOperbtion
 	gitserverClient gitserver.Client
 }
 
-var _ graphqlbackend.BulkOperationResolver = &bulkOperationResolver{}
+vbr _ grbphqlbbckend.BulkOperbtionResolver = &bulkOperbtionResolver{}
 
-func (r *bulkOperationResolver) ID() graphql.ID {
-	return marshalBulkOperationID(r.bulkOperation.ID)
+func (r *bulkOperbtionResolver) ID() grbphql.ID {
+	return mbrshblBulkOperbtionID(r.bulkOperbtion.ID)
 }
 
-func (r *bulkOperationResolver) Type() (string, error) {
-	return changesetJobTypeToBulkOperationType(r.bulkOperation.Type)
+func (r *bulkOperbtionResolver) Type() (string, error) {
+	return chbngesetJobTypeToBulkOperbtionType(r.bulkOperbtion.Type)
 }
 
-func (r *bulkOperationResolver) State() string {
-	return string(r.bulkOperation.State)
+func (r *bulkOperbtionResolver) Stbte() string {
+	return string(r.bulkOperbtion.Stbte)
 }
 
-func (r *bulkOperationResolver) Progress() float64 {
-	return r.bulkOperation.Progress
+func (r *bulkOperbtionResolver) Progress() flobt64 {
+	return r.bulkOperbtion.Progress
 }
 
-func (r *bulkOperationResolver) Errors(ctx context.Context) ([]graphqlbackend.ChangesetJobErrorResolver, error) {
-	boErrors, err := r.store.ListBulkOperationErrors(ctx, store.ListBulkOperationErrorsOpts{BulkOperationID: r.bulkOperation.ID})
+func (r *bulkOperbtionResolver) Errors(ctx context.Context) ([]grbphqlbbckend.ChbngesetJobErrorResolver, error) {
+	boErrors, err := r.store.ListBulkOperbtionErrors(ctx, store.ListBulkOperbtionErrorsOpts{BulkOperbtionID: r.bulkOperbtion.ID})
 	if err != nil {
 		return nil, err
 	}
 
-	changesetIDs := uniqueChangesetIDsForBulkOperationErrors(boErrors)
+	chbngesetIDs := uniqueChbngesetIDsForBulkOperbtionErrors(boErrors)
 
-	changesetsByID := map[int64]*btypes.Changeset{}
-	reposByID := map[api.RepoID]*types.Repo{}
-	if len(changesetIDs) > 0 {
-		// Load all changesets and repos at once, to avoid N+1 queries.
-		changesets, _, err := r.store.ListChangesets(ctx, store.ListChangesetsOpts{IDs: changesetIDs})
+	chbngesetsByID := mbp[int64]*btypes.Chbngeset{}
+	reposByID := mbp[bpi.RepoID]*types.Repo{}
+	if len(chbngesetIDs) > 0 {
+		// Lobd bll chbngesets bnd repos bt once, to bvoid N+1 queries.
+		chbngesets, _, err := r.store.ListChbngesets(ctx, store.ListChbngesetsOpts{IDs: chbngesetIDs})
 		if err != nil {
 			return nil, err
 		}
-		for _, ch := range changesets {
-			changesetsByID[ch.ID] = ch
+		for _, ch := rbnge chbngesets {
+			chbngesetsByID[ch.ID] = ch
 		}
-		// 🚨 SECURITY: database.Repos.GetReposSetByIDs uses the authzFilter under the hood and
-		// filters out repositories that the user doesn't have access to.
-		reposByID, err = r.store.Repos().GetReposSetByIDs(ctx, changesets.RepoIDs()...)
+		// 🚨 SECURITY: dbtbbbse.Repos.GetReposSetByIDs uses the buthzFilter under the hood bnd
+		// filters out repositories thbt the user doesn't hbve bccess to.
+		reposByID, err = r.store.Repos().GetReposSetByIDs(ctx, chbngesets.RepoIDs()...)
 		if err != nil {
 			return nil, err
 		}
 	}
 
-	res := make([]graphqlbackend.ChangesetJobErrorResolver, 0, len(boErrors))
-	for _, e := range boErrors {
-		ch := changesetsByID[e.ChangesetID]
-		repo, accessible := reposByID[ch.RepoID]
-		resolver := &changesetJobErrorResolver{store: r.store, gitserverClient: r.gitserverClient, logger: r.logger, changeset: ch, repo: repo}
-		if accessible {
+	res := mbke([]grbphqlbbckend.ChbngesetJobErrorResolver, 0, len(boErrors))
+	for _, e := rbnge boErrors {
+		ch := chbngesetsByID[e.ChbngesetID]
+		repo, bccessible := reposByID[ch.RepoID]
+		resolver := &chbngesetJobErrorResolver{store: r.store, gitserverClient: r.gitserverClient, logger: r.logger, chbngeset: ch, repo: repo}
+		if bccessible {
 			resolver.error = e.Error
 		}
-		res = append(res, resolver)
+		res = bppend(res, resolver)
 	}
 	return res, nil
 }
 
-func (r *bulkOperationResolver) Initiator(ctx context.Context) (*graphqlbackend.UserResolver, error) {
-	return graphqlbackend.UserByIDInt32(ctx, r.store.DatabaseDB(), r.bulkOperation.UserID)
+func (r *bulkOperbtionResolver) Initibtor(ctx context.Context) (*grbphqlbbckend.UserResolver, error) {
+	return grbphqlbbckend.UserByIDInt32(ctx, r.store.DbtbbbseDB(), r.bulkOperbtion.UserID)
 }
 
-func (r *bulkOperationResolver) ChangesetCount() int32 {
-	return r.bulkOperation.ChangesetCount
+func (r *bulkOperbtionResolver) ChbngesetCount() int32 {
+	return r.bulkOperbtion.ChbngesetCount
 }
 
-func (r *bulkOperationResolver) CreatedAt() gqlutil.DateTime {
-	return gqlutil.DateTime{Time: r.bulkOperation.CreatedAt}
+func (r *bulkOperbtionResolver) CrebtedAt() gqlutil.DbteTime {
+	return gqlutil.DbteTime{Time: r.bulkOperbtion.CrebtedAt}
 }
 
-func (r *bulkOperationResolver) FinishedAt() *gqlutil.DateTime {
-	if r.bulkOperation.FinishedAt.IsZero() {
+func (r *bulkOperbtionResolver) FinishedAt() *gqlutil.DbteTime {
+	if r.bulkOperbtion.FinishedAt.IsZero() {
 		return nil
 	}
-	return &gqlutil.DateTime{Time: r.bulkOperation.FinishedAt}
+	return &gqlutil.DbteTime{Time: r.bulkOperbtion.FinishedAt}
 }
 
-func changesetJobTypeToBulkOperationType(t btypes.ChangesetJobType) (string, error) {
+func chbngesetJobTypeToBulkOperbtionType(t btypes.ChbngesetJobType) (string, error) {
 	switch t {
-	case btypes.ChangesetJobTypeComment:
+	cbse btypes.ChbngesetJobTypeComment:
 		return "COMMENT", nil
-	case btypes.ChangesetJobTypeDetach:
+	cbse btypes.ChbngesetJobTypeDetbch:
 		return "DETACH", nil
-	case btypes.ChangesetJobTypeReenqueue:
+	cbse btypes.ChbngesetJobTypeReenqueue:
 		return "REENQUEUE", nil
-	case btypes.ChangesetJobTypeMerge:
+	cbse btypes.ChbngesetJobTypeMerge:
 		return "MERGE", nil
-	case btypes.ChangesetJobTypeClose:
+	cbse btypes.ChbngesetJobTypeClose:
 		return "CLOSE", nil
-	case btypes.ChangesetJobTypePublish:
+	cbse btypes.ChbngesetJobTypePublish:
 		return "PUBLISH", nil
-	default:
-		return "", errors.Errorf("invalid job type %q", t)
+	defbult:
+		return "", errors.Errorf("invblid job type %q", t)
 	}
 }
 
-func uniqueChangesetIDsForBulkOperationErrors(errors []*btypes.BulkOperationError) []int64 {
-	changesetIDsMap := map[int64]struct{}{}
-	changesetIDs := []int64{}
-	for _, e := range errors {
-		if _, ok := changesetIDsMap[e.ChangesetID]; ok {
+func uniqueChbngesetIDsForBulkOperbtionErrors(errors []*btypes.BulkOperbtionError) []int64 {
+	chbngesetIDsMbp := mbp[int64]struct{}{}
+	chbngesetIDs := []int64{}
+	for _, e := rbnge errors {
+		if _, ok := chbngesetIDsMbp[e.ChbngesetID]; ok {
 			continue
 		}
-		changesetIDs = append(changesetIDs, e.ChangesetID)
-		changesetIDsMap[e.ChangesetID] = struct{}{}
+		chbngesetIDs = bppend(chbngesetIDs, e.ChbngesetID)
+		chbngesetIDsMbp[e.ChbngesetID] = struct{}{}
 	}
-	return changesetIDs
+	return chbngesetIDs
 }

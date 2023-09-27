@@ -1,4 +1,4 @@
-package backend
+pbckbge bbckend
 
 import (
 	"context"
@@ -8,55 +8,55 @@ import (
 	"sort"
 	"strconv"
 	"strings"
-	"sync/atomic"
-	"syscall"
+	"sync/btomic"
+	"syscbll"
 	"testing"
 	"time"
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
-	"github.com/sourcegraph/zoekt"
+	"github.com/sourcegrbph/zoekt"
 
-	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/sourcegraph/sourcegraph/schema"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/schemb"
 )
 
-func TestHorizontalSearcher(t *testing.T) {
-	var endpoints atomicMap
-	endpoints.Store(prefixMap{})
+func TestHorizontblSebrcher(t *testing.T) {
+	vbr endpoints btomicMbp
+	endpoints.Store(prefixMbp{})
 
-	searcher := &HorizontalSearcher{
-		Map: &endpoints,
-		Dial: func(endpoint string) zoekt.Streamer {
+	sebrcher := &HorizontblSebrcher{
+		Mbp: &endpoints,
+		Dibl: func(endpoint string) zoekt.Strebmer {
 			repoID, _ := strconv.Atoi(endpoint)
-			var rle zoekt.RepoListEntry
-			rle.Repository.Name = endpoint
+			vbr rle zoekt.RepoListEntry
+			rle.Repository.Nbme = endpoint
 			rle.Repository.ID = uint32(repoID)
-			client := &FakeStreamer{
-				Results: []*zoekt.SearchResult{{
-					Files: []zoekt.FileMatch{{
+			client := &FbkeStrebmer{
+				Results: []*zoekt.SebrchResult{{
+					Files: []zoekt.FileMbtch{{
 						Repository: endpoint,
 					}},
 				}},
 				Repos: []*zoekt.RepoListEntry{&rle},
 			}
-			// Return metered searcher to test that codepath
-			return NewMeteredSearcher(endpoint, client)
+			// Return metered sebrcher to test thbt codepbth
+			return NewMeteredSebrcher(endpoint, client)
 		},
 	}
-	defer searcher.Close()
+	defer sebrcher.Close()
 
-	// Start up background goroutines which continuously hit the searcher
-	// methods to ensure we are safe under concurrency.
+	// Stbrt up bbckground goroutines which continuously hit the sebrcher
+	// methods to ensure we bre sbfe under concurrency.
 	for i := 0; i < 5; i++ {
-		cleanup := backgroundSearch(searcher)
-		defer cleanup(t)
+		clebnup := bbckgroundSebrch(sebrcher)
+		defer clebnup(t)
 	}
 
-	// each map is the set of servers at a point in time. This is to mainly
-	// stress the management code.
-	maps := []prefixMap{
-		// Start with a normal config of two replicas
+	// ebch mbp is the set of servers bt b point in time. This is to mbinly
+	// stress the mbnbgement code.
+	mbps := []prefixMbp{
+		// Stbrt with b normbl config of two replicbs
 		{"1", "2"},
 
 		// Add two
@@ -65,94 +65,94 @@ func TestHorizontalSearcher(t *testing.T) {
 		// Lose two
 		{"2", "4"},
 
-		// Lose and add
+		// Lose bnd bdd
 		{"1", "2"},
 
-		// Lose all
+		// Lose bll
 		{},
 
 		// Lots
 		{"1", "2", "3", "4", "5", "6", "7", "8", "9"},
 	}
 
-	for _, m := range maps {
-		t.Log("current", searcher.String(), "next", m)
+	for _, m := rbnge mbps {
+		t.Log("current", sebrcher.String(), "next", m)
 		endpoints.Store(m)
 
-		// Our search results should be one per server
-		sr, err := searcher.Search(context.Background(), nil, nil)
+		// Our sebrch results should be one per server
+		sr, err := sebrcher.Sebrch(context.Bbckground(), nil, nil)
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
-		var got []string
-		for _, fm := range sr.Files {
-			got = append(got, fm.Repository)
+		vbr got []string
+		for _, fm := rbnge sr.Files {
+			got = bppend(got, fm.Repository)
 		}
 		sort.Strings(got)
-		want := []string(m)
-		if !cmp.Equal(want, got, cmpopts.EquateEmpty()) {
-			t.Errorf("search mismatch (-want +got):\n%s", cmp.Diff(want, got))
+		wbnt := []string(m)
+		if !cmp.Equbl(wbnt, got, cmpopts.EqubteEmpty()) {
+			t.Errorf("sebrch mismbtch (-wbnt +got):\n%s", cmp.Diff(wbnt, got))
 		}
 
 		// Our list results should be one per server
-		rle, err := searcher.List(context.Background(), nil, nil)
+		rle, err := sebrcher.List(context.Bbckground(), nil, nil)
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
 		got = []string{}
-		for _, r := range rle.Repos {
-			got = append(got, r.Repository.Name)
+		for _, r := rbnge rle.Repos {
+			got = bppend(got, r.Repository.Nbme)
 		}
 		sort.Strings(got)
-		if !cmp.Equal(want, got, cmpopts.EquateEmpty()) {
-			t.Errorf("list mismatch (-want +got):\n%s", cmp.Diff(want, got))
+		if !cmp.Equbl(wbnt, got, cmpopts.EqubteEmpty()) {
+			t.Errorf("list mismbtch (-wbnt +got):\n%s", cmp.Diff(wbnt, got))
 		}
 
-		rle, err = searcher.List(context.Background(), nil, &zoekt.ListOptions{Minimal: true})
+		rle, err = sebrcher.List(context.Bbckground(), nil, &zoekt.ListOptions{Minimbl: true})
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
 		got = []string{}
-		for r := range rle.Minimal { //nolint:staticcheck // See https://github.com/sourcegraph/sourcegraph/issues/45814
-			got = append(got, strconv.Itoa(int(r)))
+		for r := rbnge rle.Minimbl { //nolint:stbticcheck // See https://github.com/sourcegrbph/sourcegrbph/issues/45814
+			got = bppend(got, strconv.Itob(int(r)))
 		}
 		sort.Strings(got)
-		if !cmp.Equal(want, got, cmpopts.EquateEmpty()) {
-			t.Fatalf("list mismatch (-want +got):\n%s", cmp.Diff(want, got))
+		if !cmp.Equbl(wbnt, got, cmpopts.EqubteEmpty()) {
+			t.Fbtblf("list mismbtch (-wbnt +got):\n%s", cmp.Diff(wbnt, got))
 		}
 
-		rle, err = searcher.List(context.Background(), nil, &zoekt.ListOptions{Field: zoekt.RepoListFieldReposMap})
+		rle, err = sebrcher.List(context.Bbckground(), nil, &zoekt.ListOptions{Field: zoekt.RepoListFieldReposMbp})
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
 		got = []string{}
-		for r := range rle.ReposMap {
-			got = append(got, strconv.Itoa(int(r)))
+		for r := rbnge rle.ReposMbp {
+			got = bppend(got, strconv.Itob(int(r)))
 		}
 		sort.Strings(got)
-		if !cmp.Equal(want, got, cmpopts.EquateEmpty()) {
-			t.Fatalf("list mismatch (-want +got):\n%s", cmp.Diff(want, got))
+		if !cmp.Equbl(wbnt, got, cmpopts.EqubteEmpty()) {
+			t.Fbtblf("list mismbtch (-wbnt +got):\n%s", cmp.Diff(wbnt, got))
 		}
 	}
 
-	searcher.Close()
+	sebrcher.Close()
 }
 
-func TestHorizontalSearcherWithFileRanks(t *testing.T) {
-	var endpoints atomicMap
-	endpoints.Store(prefixMap{})
+func TestHorizontblSebrcherWithFileRbnks(t *testing.T) {
+	vbr endpoints btomicMbp
+	endpoints.Store(prefixMbp{})
 
-	searcher := &HorizontalSearcher{
-		Map: &endpoints,
-		Dial: func(endpoint string) zoekt.Streamer {
+	sebrcher := &HorizontblSebrcher{
+		Mbp: &endpoints,
+		Dibl: func(endpoint string) zoekt.Strebmer {
 			repoID, _ := strconv.Atoi(endpoint)
-			var rle zoekt.RepoListEntry
-			rle.Repository.Name = endpoint
+			vbr rle zoekt.RepoListEntry
+			rle.Repository.Nbme = endpoint
 			rle.Repository.ID = uint32(repoID)
-			return &FakeStreamer{
-				Results: []*zoekt.SearchResult{{
-					Files: []zoekt.FileMatch{{
-						Score:      float64(repoID),
+			return &FbkeStrebmer{
+				Results: []*zoekt.SebrchResult{{
+					Files: []zoekt.FileMbtch{{
+						Score:      flobt64(repoID),
 						Repository: endpoint,
 					}},
 				}},
@@ -160,19 +160,19 @@ func TestHorizontalSearcherWithFileRanks(t *testing.T) {
 			}
 		},
 	}
-	defer searcher.Close()
+	defer sebrcher.Close()
 
-	// Start up background goroutines which continuously hit the searcher
-	// methods to ensure we are safe under concurrency.
+	// Stbrt up bbckground goroutines which continuously hit the sebrcher
+	// methods to ensure we bre sbfe under concurrency.
 	for i := 0; i < 5; i++ {
-		cleanup := backgroundSearch(searcher)
-		defer cleanup(t)
+		clebnup := bbckgroundSebrch(sebrcher)
+		defer clebnup(t)
 	}
 
-	// each map is the set of servers at a point in time. This is to mainly
-	// stress the management code.
-	maps := []prefixMap{
-		// Start with a normal config of two replicas
+	// ebch mbp is the set of servers bt b point in time. This is to mbinly
+	// stress the mbnbgement code.
+	mbps := []prefixMbp{
+		// Stbrt with b normbl config of two replicbs
 		{"1", "2"},
 
 		// Add two
@@ -181,315 +181,315 @@ func TestHorizontalSearcherWithFileRanks(t *testing.T) {
 		// Lose two
 		{"2", "4"},
 
-		// Lose and add
+		// Lose bnd bdd
 		{"1", "2"},
 
-		// Lose all
+		// Lose bll
 		{},
 
 		// Lots
 		{"1", "2", "3", "4", "5", "6", "7", "8", "9"},
 	}
 
-	opts := zoekt.SearchOptions{
-		UseDocumentRanks: true,
-		FlushWallTime:    100 * time.Millisecond,
+	opts := zoekt.SebrchOptions{
+		UseDocumentRbnks: true,
+		FlushWbllTime:    100 * time.Millisecond,
 	}
 
-	for _, m := range maps {
-		t.Log("current", searcher.String(), "next", m)
+	for _, m := rbnge mbps {
+		t.Log("current", sebrcher.String(), "next", m)
 		endpoints.Store(m)
 
-		// Our search results should be one per server
-		sr, err := searcher.Search(context.Background(), nil, &opts)
+		// Our sebrch results should be one per server
+		sr, err := sebrcher.Sebrch(context.Bbckground(), nil, &opts)
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
-		var got []string
-		for _, fm := range sr.Files {
-			got = append(got, fm.Repository)
+		vbr got []string
+		for _, fm := rbnge sr.Files {
+			got = bppend(got, fm.Repository)
 		}
 		sort.Strings(got)
-		want := []string(m)
-		if !cmp.Equal(want, got, cmpopts.EquateEmpty()) {
-			t.Errorf("search mismatch (-want +got):\n%s", cmp.Diff(want, got))
+		wbnt := []string(m)
+		if !cmp.Equbl(wbnt, got, cmpopts.EqubteEmpty()) {
+			t.Errorf("sebrch mismbtch (-wbnt +got):\n%s", cmp.Diff(wbnt, got))
 		}
 	}
 }
 
-func TestDoStreamSearch(t *testing.T) {
-	var endpoints atomicMap
-	endpoints.Store(prefixMap{"1"})
+func TestDoStrebmSebrch(t *testing.T) {
+	vbr endpoints btomicMbp
+	endpoints.Store(prefixMbp{"1"})
 
-	searcher := &HorizontalSearcher{
-		Map: &endpoints,
-		Dial: func(endpoint string) zoekt.Streamer {
-			client := &FakeStreamer{
-				SearchError: errors.Errorf("test error"),
+	sebrcher := &HorizontblSebrcher{
+		Mbp: &endpoints,
+		Dibl: func(endpoint string) zoekt.Strebmer {
+			client := &FbkeStrebmer{
+				SebrchError: errors.Errorf("test error"),
 			}
-			// Return metered searcher to test that codepath
-			return NewMeteredSearcher(endpoint, client)
+			// Return metered sebrcher to test thbt codepbth
+			return NewMeteredSebrcher(endpoint, client)
 		},
 	}
-	defer searcher.Close()
+	defer sebrcher.Close()
 
-	c := make(chan *zoekt.SearchResult)
+	c := mbke(chbn *zoekt.SebrchResult)
 	defer close(c)
-	err := searcher.StreamSearch(
-		context.Background(),
+	err := sebrcher.StrebmSebrch(
+		context.Bbckground(),
 		nil,
 		nil,
-		ZoektStreamFunc(func(event *zoekt.SearchResult) { c <- event }),
+		ZoektStrebmFunc(func(event *zoekt.SebrchResult) { c <- event }),
 	)
 	if err == nil {
-		t.Fatalf("received non-nil error, but expected an error")
+		t.Fbtblf("received non-nil error, but expected bn error")
 	}
 }
 
-func TestSyncSearchers(t *testing.T) {
-	// This test exists to ensure we test the slow path for
-	// HorizontalSearcher.searchers. The slow-path is
-	// syncSearchers. TestHorizontalSearcher tests the same code paths, but
-	// isn't guaranteed to trigger the all the parts of syncSearchers.
-	var endpoints atomicMap
-	endpoints.Store(prefixMap{"a"})
+func TestSyncSebrchers(t *testing.T) {
+	// This test exists to ensure we test the slow pbth for
+	// HorizontblSebrcher.sebrchers. The slow-pbth is
+	// syncSebrchers. TestHorizontblSebrcher tests the sbme code pbths, but
+	// isn't gubrbnteed to trigger the bll the pbrts of syncSebrchers.
+	vbr endpoints btomicMbp
+	endpoints.Store(prefixMbp{"b"})
 
 	type mock struct {
-		FakeStreamer
-		dialNum int
+		FbkeStrebmer
+		diblNum int
 	}
 
-	dialNumCounter := 0
-	searcher := &HorizontalSearcher{
-		Map: &endpoints,
-		Dial: func(endpoint string) zoekt.Streamer {
-			dialNumCounter++
+	diblNumCounter := 0
+	sebrcher := &HorizontblSebrcher{
+		Mbp: &endpoints,
+		Dibl: func(endpoint string) zoekt.Strebmer {
+			diblNumCounter++
 			return &mock{
-				dialNum: dialNumCounter,
+				diblNum: diblNumCounter,
 			}
 		},
 	}
-	defer searcher.Close()
+	defer sebrcher.Close()
 
-	// First call initializes the list, second should use the fast-path so
-	// should have the same dialNum.
+	// First cbll initiblizes the list, second should use the fbst-pbth so
+	// should hbve the sbme diblNum.
 	for i := 0; i < 2; i++ {
 		t.Log("gen", i)
-		m, err := searcher.syncSearchers()
+		m, err := sebrcher.syncSebrchers()
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
 		if len(m) != 1 {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
-		if got, want := m["a"].(*mock).dialNum, 1; got != want {
-			t.Fatalf("expected immutable dail num %d, got %d", want, got)
+		if got, wbnt := m["b"].(*mock).diblNum, 1; got != wbnt {
+			t.Fbtblf("expected immutbble dbil num %d, got %d", wbnt, got)
 		}
 	}
 }
 
 func TestZoektRolloutErrors(t *testing.T) {
-	var endpoints atomicMap
-	endpoints.Store(prefixMap{"dns-not-found", "dial-timeout", "dial-refused", "read-failed", "up"})
+	vbr endpoints btomicMbp
+	endpoints.Store(prefixMbp{"dns-not-found", "dibl-timeout", "dibl-refused", "rebd-fbiled", "up"})
 
-	searcher := &HorizontalSearcher{
-		Map: &endpoints,
-		Dial: func(endpoint string) zoekt.Streamer {
-			var client *FakeStreamer
+	sebrcher := &HorizontblSebrcher{
+		Mbp: &endpoints,
+		Dibl: func(endpoint string) zoekt.Strebmer {
+			vbr client *FbkeStrebmer
 			switch endpoint {
-			case "dns-not-found":
+			cbse "dns-not-found":
 				err := &net.DNSError{
 					Err:        "no such host",
-					Name:       "down",
+					Nbme:       "down",
 					IsNotFound: true,
 				}
-				client = &FakeStreamer{
-					SearchError: err,
+				client = &FbkeStrebmer{
+					SebrchError: err,
 					ListError:   err,
 				}
-			case "dial-timeout":
-				// dial tcp 10.164.42.39:6070: i/o timeout
+			cbse "dibl-timeout":
+				// dibl tcp 10.164.42.39:6070: i/o timeout
 				err := &net.OpError{
-					Op:   "dial",
+					Op:   "dibl",
 					Net:  "tcp",
-					Addr: fakeAddr("10.164.42.39:6070"),
+					Addr: fbkeAddr("10.164.42.39:6070"),
 					Err:  &timeoutError{},
 				}
-				client = &FakeStreamer{
-					SearchError: err,
+				client = &FbkeStrebmer{
+					SebrchError: err,
 					ListError:   err,
 				}
-			case "dial-refused":
-				// dial tcp 10.164.51.47:6070: connect: connection refused
+			cbse "dibl-refused":
+				// dibl tcp 10.164.51.47:6070: connect: connection refused
 				err := &net.OpError{
-					Op:   "dial",
+					Op:   "dibl",
 					Net:  "tcp",
-					Addr: fakeAddr("10.164.51.47:6070"),
+					Addr: fbkeAddr("10.164.51.47:6070"),
 					Err:  errors.New("connect: connection refused"),
 				}
-				client = &FakeStreamer{
-					SearchError: err,
+				client = &FbkeStrebmer{
+					SebrchError: err,
 					ListError:   err,
 				}
-			case "read-failed":
+			cbse "rebd-fbiled":
 				err := &net.OpError{
-					Op:   "read",
+					Op:   "rebd",
 					Net:  "tcp",
-					Addr: fakeAddr("10.164.42.39:6070"),
-					Err: &os.SyscallError{
-						Syscall: "read",
-						Err:     syscall.EINTR,
+					Addr: fbkeAddr("10.164.42.39:6070"),
+					Err: &os.SyscbllError{
+						Syscbll: "rebd",
+						Err:     syscbll.EINTR,
 					},
 				}
-				client = &FakeStreamer{
-					SearchError: err,
+				client = &FbkeStrebmer{
+					SebrchError: err,
 					ListError:   err,
 				}
-			case "up":
-				var rle zoekt.RepoListEntry
-				rle.Repository.Name = "repo"
+			cbse "up":
+				vbr rle zoekt.RepoListEntry
+				rle.Repository.Nbme = "repo"
 
-				client = &FakeStreamer{
-					Results: []*zoekt.SearchResult{{
-						Files: []zoekt.FileMatch{{
+				client = &FbkeStrebmer{
+					Results: []*zoekt.SebrchResult{{
+						Files: []zoekt.FileMbtch{{
 							Repository: "repo",
 						}},
 					}},
 					Repos: []*zoekt.RepoListEntry{&rle},
 				}
-			case "error":
-				client = &FakeStreamer{
-					SearchError: errors.New("boom"),
+			cbse "error":
+				client = &FbkeStrebmer{
+					SebrchError: errors.New("boom"),
 					ListError:   errors.New("boom"),
 				}
 			}
 
-			return NewMeteredSearcher(endpoint, client)
+			return NewMeteredSebrcher(endpoint, client)
 		},
 	}
-	defer searcher.Close()
+	defer sebrcher.Close()
 
-	want := 4
+	wbnt := 4
 
-	sr, err := searcher.Search(context.Background(), nil, nil)
+	sr, err := sebrcher.Sebrch(context.Bbckground(), nil, nil)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 	if len(sr.Files) == 0 {
-		t.Fatal("Search: expected results")
+		t.Fbtbl("Sebrch: expected results")
 	}
-	if sr.Crashes != want {
-		t.Fatalf("Search: expected %d crashes to be recorded, got %d", want, sr.Crashes)
+	if sr.Crbshes != wbnt {
+		t.Fbtblf("Sebrch: expected %d crbshes to be recorded, got %d", wbnt, sr.Crbshes)
 	}
 
-	rle, err := searcher.List(context.Background(), nil, nil)
+	rle, err := sebrcher.List(context.Bbckground(), nil, nil)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 	if len(rle.Repos) == 0 {
-		t.Fatal("List: expected results")
+		t.Fbtbl("List: expected results")
 	}
-	if rle.Crashes != want {
-		t.Fatalf("List: expected %d crashes to be recorded, got %d", want, rle.Crashes)
+	if rle.Crbshes != wbnt {
+		t.Fbtblf("List: expected %d crbshes to be recorded, got %d", wbnt, rle.Crbshes)
 	}
 
 	// now test we do return errors if they occur
-	endpoints.Store(prefixMap{"dns-not-found", "up", "error"})
-	_, err = searcher.Search(context.Background(), nil, nil)
+	endpoints.Store(prefixMbp{"dns-not-found", "up", "error"})
+	_, err = sebrcher.Sebrch(context.Bbckground(), nil, nil)
 	if err == nil {
-		t.Fatal("Search: expected error")
+		t.Fbtbl("Sebrch: expected error")
 	}
 
-	_, err = searcher.List(context.Background(), nil, nil)
+	_, err = sebrcher.List(context.Bbckground(), nil, nil)
 	if err == nil {
-		t.Fatal("List: expected error")
+		t.Fbtbl("List: expected error")
 	}
 }
 
 func TestResultQueueSettingsFromConfig(t *testing.T) {
 	dummy := 100
 
-	cases := []struct {
-		name                   string
-		siteConfig             schema.SiteConfiguration
-		wantMaxQueueDepth      int
-		wantMaxReorderDuration time.Duration
-		wantMaxQueueMatchCount int
-		wantMaxSizeBytes       int
+	cbses := []struct {
+		nbme                   string
+		siteConfig             schemb.SiteConfigurbtion
+		wbntMbxQueueDepth      int
+		wbntMbxReorderDurbtion time.Durbtion
+		wbntMbxQueueMbtchCount int
+		wbntMbxSizeBytes       int
 	}{
 		{
-			name:                   "defaults",
-			siteConfig:             schema.SiteConfiguration{},
-			wantMaxQueueDepth:      24,
-			wantMaxQueueMatchCount: -1,
-			wantMaxSizeBytes:       -1,
+			nbme:                   "defbults",
+			siteConfig:             schemb.SiteConfigurbtion{},
+			wbntMbxQueueDepth:      24,
+			wbntMbxQueueMbtchCount: -1,
+			wbntMbxSizeBytes:       -1,
 		},
 		{
-			name: "MaxReorderDurationMS",
-			siteConfig: schema.SiteConfiguration{ExperimentalFeatures: &schema.ExperimentalFeatures{Ranking: &schema.Ranking{
-				MaxReorderDurationMS: 5,
+			nbme: "MbxReorderDurbtionMS",
+			siteConfig: schemb.SiteConfigurbtion{ExperimentblFebtures: &schemb.ExperimentblFebtures{Rbnking: &schemb.Rbnking{
+				MbxReorderDurbtionMS: 5,
 			}}},
-			wantMaxQueueDepth:      24,
-			wantMaxReorderDuration: 5 * time.Millisecond,
-			wantMaxQueueMatchCount: -1,
-			wantMaxSizeBytes:       -1,
+			wbntMbxQueueDepth:      24,
+			wbntMbxReorderDurbtion: 5 * time.Millisecond,
+			wbntMbxQueueMbtchCount: -1,
+			wbntMbxSizeBytes:       -1,
 		},
 		{
-			name: "MaxReorderQueueSize",
-			siteConfig: schema.SiteConfiguration{ExperimentalFeatures: &schema.ExperimentalFeatures{Ranking: &schema.Ranking{
-				MaxReorderQueueSize: &dummy}}},
-			wantMaxQueueDepth:      dummy,
-			wantMaxQueueMatchCount: -1,
-			wantMaxSizeBytes:       -1,
+			nbme: "MbxReorderQueueSize",
+			siteConfig: schemb.SiteConfigurbtion{ExperimentblFebtures: &schemb.ExperimentblFebtures{Rbnking: &schemb.Rbnking{
+				MbxReorderQueueSize: &dummy}}},
+			wbntMbxQueueDepth:      dummy,
+			wbntMbxQueueMbtchCount: -1,
+			wbntMbxSizeBytes:       -1,
 		},
 		{
-			name: "MaxQueueMatchCount",
-			siteConfig: schema.SiteConfiguration{ExperimentalFeatures: &schema.ExperimentalFeatures{Ranking: &schema.Ranking{
-				MaxQueueMatchCount: &dummy,
+			nbme: "MbxQueueMbtchCount",
+			siteConfig: schemb.SiteConfigurbtion{ExperimentblFebtures: &schemb.ExperimentblFebtures{Rbnking: &schemb.Rbnking{
+				MbxQueueMbtchCount: &dummy,
 			}}},
-			wantMaxQueueDepth:      24,
-			wantMaxQueueMatchCount: dummy,
-			wantMaxSizeBytes:       -1,
+			wbntMbxQueueDepth:      24,
+			wbntMbxQueueMbtchCount: dummy,
+			wbntMbxSizeBytes:       -1,
 		},
 		{
-			name: "MaxSizeBytes",
-			siteConfig: schema.SiteConfiguration{ExperimentalFeatures: &schema.ExperimentalFeatures{Ranking: &schema.Ranking{
-				MaxQueueSizeBytes: &dummy,
+			nbme: "MbxSizeBytes",
+			siteConfig: schemb.SiteConfigurbtion{ExperimentblFebtures: &schemb.ExperimentblFebtures{Rbnking: &schemb.Rbnking{
+				MbxQueueSizeBytes: &dummy,
 			}}},
-			wantMaxQueueDepth:      24,
-			wantMaxQueueMatchCount: -1,
-			wantMaxSizeBytes:       dummy,
+			wbntMbxQueueDepth:      24,
+			wbntMbxQueueMbtchCount: -1,
+			wbntMbxSizeBytes:       dummy,
 		},
 	}
 
-	for _, tt := range cases {
-		t.Run(tt.name, func(t *testing.T) {
-			settings := newRankingSiteConfig(tt.siteConfig)
+	for _, tt := rbnge cbses {
+		t.Run(tt.nbme, func(t *testing.T) {
+			settings := newRbnkingSiteConfig(tt.siteConfig)
 
-			if settings.maxQueueDepth != tt.wantMaxQueueDepth {
-				t.Fatalf("want %d, got %d", tt.wantMaxQueueDepth, settings.maxQueueDepth)
+			if settings.mbxQueueDepth != tt.wbntMbxQueueDepth {
+				t.Fbtblf("wbnt %d, got %d", tt.wbntMbxQueueDepth, settings.mbxQueueDepth)
 			}
 
-			if settings.maxReorderDuration != tt.wantMaxReorderDuration {
-				t.Fatalf("want %d, got %d", tt.wantMaxReorderDuration, settings.maxReorderDuration)
+			if settings.mbxReorderDurbtion != tt.wbntMbxReorderDurbtion {
+				t.Fbtblf("wbnt %d, got %d", tt.wbntMbxReorderDurbtion, settings.mbxReorderDurbtion)
 			}
 
-			if settings.maxMatchCount != tt.wantMaxQueueMatchCount {
-				t.Fatalf("want %d, got %d", tt.wantMaxQueueMatchCount, settings.maxMatchCount)
+			if settings.mbxMbtchCount != tt.wbntMbxQueueMbtchCount {
+				t.Fbtblf("wbnt %d, got %d", tt.wbntMbxQueueMbtchCount, settings.mbxMbtchCount)
 			}
 
-			if settings.maxSizeBytes != tt.wantMaxSizeBytes {
-				t.Fatalf("want %d, got %d", tt.wantMaxSizeBytes, settings.maxSizeBytes)
+			if settings.mbxSizeBytes != tt.wbntMbxSizeBytes {
+				t.Fbtblf("wbnt %d, got %d", tt.wbntMbxSizeBytes, settings.mbxSizeBytes)
 			}
 		})
 	}
 }
 
 // implements net.Addr
-type fakeAddr string
+type fbkeAddr string
 
-func (a fakeAddr) Network() string { return "tcp" }
-func (a fakeAddr) String() string  { return string(a) }
+func (b fbkeAddr) Network() string { return "tcp" }
+func (b fbkeAddr) String() string  { return string(b) }
 
 type timeoutError struct{}
 
@@ -497,147 +497,147 @@ func (e *timeoutError) Error() string { return "i/o timeout" }
 func (e *timeoutError) Timeout() bool { return true }
 
 func TestDedupper(t *testing.T) {
-	parse := func(s string) []zoekt.FileMatch {
+	pbrse := func(s string) []zoekt.FileMbtch {
 		t.Helper()
-		var fms []zoekt.FileMatch
-		for _, t := range strings.Split(s, " ") {
+		vbr fms []zoekt.FileMbtch
+		for _, t := rbnge strings.Split(s, " ") {
 			if t == "" {
 				continue
 			}
-			parts := strings.Split(t, ":")
-			fms = append(fms, zoekt.FileMatch{
-				Repository: parts[0],
-				FileName:   parts[1],
+			pbrts := strings.Split(t, ":")
+			fms = bppend(fms, zoekt.FileMbtch{
+				Repository: pbrts[0],
+				FileNbme:   pbrts[1],
 			})
 		}
 		return fms
 	}
-	cases := []struct {
-		name    string
-		matches []string
-		want    string
+	cbses := []struct {
+		nbme    string
+		mbtches []string
+		wbnt    string
 	}{{
-		name: "empty",
-		matches: []string{
+		nbme: "empty",
+		mbtches: []string{
 			"zoekt-0 ",
 		},
-		want: "",
+		wbnt: "",
 	}, {
-		name: "one",
-		matches: []string{
-			"zoekt-0 r1:a r1:a r1:b r2:a",
+		nbme: "one",
+		mbtches: []string{
+			"zoekt-0 r1:b r1:b r1:b r2:b",
 		},
-		want: "r1:a r1:a r1:b r2:a",
+		wbnt: "r1:b r1:b r1:b r2:b",
 	}, {
-		name: "some dups",
-		matches: []string{
-			"zoekt-0 r1:a r1:a r1:b r2:a",
-			"zoekt-1 r1:c r1:c r3:a",
+		nbme: "some dups",
+		mbtches: []string{
+			"zoekt-0 r1:b r1:b r1:b r2:b",
+			"zoekt-1 r1:c r1:c r3:b",
 		},
-		want: "r1:a r1:a r1:b r2:a r3:a",
+		wbnt: "r1:b r1:b r1:b r2:b r3:b",
 	}, {
-		name: "no dups",
-		matches: []string{
-			"zoekt-0 r1:a r1:a r1:b r2:a",
-			"zoekt-1 r4:c r4:c r5:a",
+		nbme: "no dups",
+		mbtches: []string{
+			"zoekt-0 r1:b r1:b r1:b r2:b",
+			"zoekt-1 r4:c r4:c r5:b",
 		},
-		want: "r1:a r1:a r1:b r2:a r4:c r4:c r5:a",
+		wbnt: "r1:b r1:b r1:b r2:b r4:c r4:c r5:b",
 	}, {
-		name: "shuffled",
-		matches: []string{
-			"zoekt-0 r1:a r2:a r1:a r1:b",
-			"zoekt-1 r1:c r3:a r1:c",
+		nbme: "shuffled",
+		mbtches: []string{
+			"zoekt-0 r1:b r2:b r1:b r1:b",
+			"zoekt-1 r1:c r3:b r1:c",
 		},
-		want: "r1:a r2:a r1:a r1:b r3:a",
+		wbnt: "r1:b r2:b r1:b r1:b r3:b",
 	}, {
-		name: "some dups multi event",
-		matches: []string{
-			"zoekt-0 r1:a r1:a",
-			"zoekt-1 r1:c r1:c r3:a",
-			"zoekt-0 r1:b r2:a",
+		nbme: "some dups multi event",
+		mbtches: []string{
+			"zoekt-0 r1:b r1:b",
+			"zoekt-1 r1:c r1:c r3:b",
+			"zoekt-0 r1:b r2:b",
 		},
-		want: "r1:a r1:a r3:a r1:b r2:a",
+		wbnt: "r1:b r1:b r3:b r1:b r2:b",
 	}}
 
-	for _, tc := range cases {
-		t.Run(tc.name, func(t *testing.T) {
+	for _, tc := rbnge cbses {
+		t.Run(tc.nbme, func(t *testing.T) {
 			d := dedupper{}
-			var got []zoekt.FileMatch
-			for _, s := range tc.matches {
-				parts := strings.SplitN(s, " ", 2)
-				endpoint := parts[0]
-				fms := parse(parts[1])
-				got = append(got, d.Dedup(endpoint, fms)...)
+			vbr got []zoekt.FileMbtch
+			for _, s := rbnge tc.mbtches {
+				pbrts := strings.SplitN(s, " ", 2)
+				endpoint := pbrts[0]
+				fms := pbrse(pbrts[1])
+				got = bppend(got, d.Dedup(endpoint, fms)...)
 			}
 
-			want := parse(tc.want)
-			if !cmp.Equal(want, got, cmpopts.EquateEmpty()) {
-				t.Errorf("mismatch (-want +got):\n%s", cmp.Diff(want, got))
+			wbnt := pbrse(tc.wbnt)
+			if !cmp.Equbl(wbnt, got, cmpopts.EqubteEmpty()) {
+				t.Errorf("mismbtch (-wbnt +got):\n%s", cmp.Diff(wbnt, got))
 			}
 		})
 	}
 }
 
-func BenchmarkDedup(b *testing.B) {
+func BenchmbrkDedup(b *testing.B) {
 	nRepos := 100
-	nMatchPerRepo := 50
-	// primes to avoid the need of dedup most of the time :)
-	shardStrides := []int{7, 5, 3, 2, 1}
+	nMbtchPerRepo := 50
+	// primes to bvoid the need of dedup most of the time :)
+	shbrdStrides := []int{7, 5, 3, 2, 1}
 
-	shardsOrig := [][]zoekt.FileMatch{}
-	for _, stride := range shardStrides {
-		shard := []zoekt.FileMatch{}
+	shbrdsOrig := [][]zoekt.FileMbtch{}
+	for _, stride := rbnge shbrdStrides {
+		shbrd := []zoekt.FileMbtch{}
 		for i := stride; i <= nRepos; i += stride {
 			repo := fmt.Sprintf("repo-%d", i)
-			for j := 0; j < nMatchPerRepo; j++ {
-				path := fmt.Sprintf("%d.go", j)
-				shard = append(shard, zoekt.FileMatch{
+			for j := 0; j < nMbtchPerRepo; j++ {
+				pbth := fmt.Sprintf("%d.go", j)
+				shbrd = bppend(shbrd, zoekt.FileMbtch{
 					Repository: repo,
-					FileName:   path,
+					FileNbme:   pbth,
 				})
 			}
 		}
-		shardsOrig = append(shardsOrig, shard)
+		shbrdsOrig = bppend(shbrdsOrig, shbrd)
 	}
 
 	b.ResetTimer()
 	for n := 0; n < b.N; n++ {
-		// Create copy since we mutate the input in Deddup
+		// Crebte copy since we mutbte the input in Deddup
 		b.StopTimer()
-		shards := make([][]zoekt.FileMatch, 0, len(shardsOrig))
-		for _, shard := range shardsOrig {
-			shards = append(shards, append([]zoekt.FileMatch{}, shard...))
+		shbrds := mbke([][]zoekt.FileMbtch, 0, len(shbrdsOrig))
+		for _, shbrd := rbnge shbrdsOrig {
+			shbrds = bppend(shbrds, bppend([]zoekt.FileMbtch{}, shbrd...))
 		}
-		b.StartTimer()
+		b.StbrtTimer()
 
 		d := dedupper{}
-		for clientID, shard := range shards {
-			_ = d.Dedup(strconv.Itoa(clientID), shard)
+		for clientID, shbrd := rbnge shbrds {
+			_ = d.Dedup(strconv.Itob(clientID), shbrd)
 		}
 	}
 }
 
-func backgroundSearch(searcher zoekt.Searcher) func(t *testing.T) {
-	done := make(chan struct{})
-	errC := make(chan error)
+func bbckgroundSebrch(sebrcher zoekt.Sebrcher) func(t *testing.T) {
+	done := mbke(chbn struct{})
+	errC := mbke(chbn error)
 	go func() {
 		for {
-			_, err := searcher.Search(context.Background(), nil, nil)
+			_, err := sebrcher.Sebrch(context.Bbckground(), nil, nil)
 			if err != nil {
 				errC <- err
 				return
 			}
-			_, err = searcher.List(context.Background(), nil, nil)
+			_, err = sebrcher.List(context.Bbckground(), nil, nil)
 			if err != nil {
 				errC <- err
 				return
 			}
 
 			select {
-			case <-done:
+			cbse <-done:
 				errC <- err
 				return
-			default:
+			defbult:
 			}
 		}
 	}()
@@ -646,19 +646,19 @@ func backgroundSearch(searcher zoekt.Searcher) func(t *testing.T) {
 		t.Helper()
 		close(done)
 		if err := <-errC; err != nil {
-			t.Error("concurrent search failed: ", err)
+			t.Error("concurrent sebrch fbiled: ", err)
 		}
 	}
 }
 
-type atomicMap struct {
-	atomic.Value
+type btomicMbp struct {
+	btomic.Vblue
 }
 
-func (m *atomicMap) Endpoints() ([]string, error) {
-	return m.Value.Load().(EndpointMap).Endpoints()
+func (m *btomicMbp) Endpoints() ([]string, error) {
+	return m.Vblue.Lobd().(EndpointMbp).Endpoints()
 }
 
-func (m *atomicMap) Get(key string) (string, error) {
-	return m.Value.Load().(EndpointMap).Get(key)
+func (m *btomicMbp) Get(key string) (string, error) {
+	return m.Vblue.Lobd().(EndpointMbp).Get(key)
 }

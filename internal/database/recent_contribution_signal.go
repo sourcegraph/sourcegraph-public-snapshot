@@ -1,164 +1,164 @@
-package database
+pbckbge dbtbbbse
 
 import (
 	"context"
 	"time"
 
-	"github.com/keegancsmith/sqlf"
+	"github.com/keegbncsmith/sqlf"
 
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/bbsestore"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbutil"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-type RecentContributionSignalStore interface {
+type RecentContributionSignblStore interfbce {
 	AddCommit(ctx context.Context, commit Commit) error
-	FindRecentAuthors(ctx context.Context, repoID api.RepoID, path string) ([]RecentContributorSummary, error)
-	ClearSignals(ctx context.Context, repoID api.RepoID) error
-	WithTransact(context.Context, func(store RecentContributionSignalStore) error) error
+	FindRecentAuthors(ctx context.Context, repoID bpi.RepoID, pbth string) ([]RecentContributorSummbry, error)
+	ClebrSignbls(ctx context.Context, repoID bpi.RepoID) error
+	WithTrbnsbct(context.Context, func(store RecentContributionSignblStore) error) error
 }
 
-func RecentContributionSignalStoreWith(other basestore.ShareableStore) RecentContributionSignalStore {
-	return &recentContributionSignalStore{Store: basestore.NewWithHandle(other.Handle())}
+func RecentContributionSignblStoreWith(other bbsestore.ShbrebbleStore) RecentContributionSignblStore {
+	return &recentContributionSignblStore{Store: bbsestore.NewWithHbndle(other.Hbndle())}
 }
 
 type Commit struct {
-	RepoID       api.RepoID
-	AuthorName   string
-	AuthorEmail  string
-	Timestamp    time.Time
+	RepoID       bpi.RepoID
+	AuthorNbme   string
+	AuthorEmbil  string
+	Timestbmp    time.Time
 	CommitSHA    string
-	FilesChanged []string
+	FilesChbnged []string
 }
 
-type RecentContributorSummary struct {
-	AuthorName        string
-	AuthorEmail       string
+type RecentContributorSummbry struct {
+	AuthorNbme        string
+	AuthorEmbil       string
 	ContributionCount int
 }
 
-type recentContributionSignalStore struct {
-	*basestore.Store
+type recentContributionSignblStore struct {
+	*bbsestore.Store
 }
 
-func (s *recentContributionSignalStore) WithTransact(ctx context.Context, f func(store RecentContributionSignalStore) error) error {
-	return s.Store.WithTransact(ctx, func(tx *basestore.Store) error {
-		return f(RecentContributionSignalStoreWith(tx))
+func (s *recentContributionSignblStore) WithTrbnsbct(ctx context.Context, f func(store RecentContributionSignblStore) error) error {
+	return s.Store.WithTrbnsbct(ctx, func(tx *bbsestore.Store) error {
+		return f(RecentContributionSignblStoreWith(tx))
 	})
 }
 
-func (s *recentContributionSignalStore) With(other basestore.ShareableStore) *recentContributionSignalStore {
-	return &recentContributionSignalStore{Store: s.Store.With(other)}
+func (s *recentContributionSignblStore) With(other bbsestore.ShbrebbleStore) *recentContributionSignblStore {
+	return &recentContributionSignblStore{Store: s.Store.With(other)}
 }
 
 const commitAuthorInsertFmtstr = `
-	WITH already_exists (id) AS (
+	WITH blrebdy_exists (id) AS (
 		SELECT id
-		FROM commit_authors
-		WHERE name = %s
-		AND email = %s
+		FROM commit_buthors
+		WHERE nbme = %s
+		AND embil = %s
 	),
 	need_to_insert (id) AS (
-		INSERT INTO commit_authors (name, email)
+		INSERT INTO commit_buthors (nbme, embil)
 		VALUES (%s, %s)
-		ON CONFLICT (name, email) DO NOTHING
+		ON CONFLICT (nbme, embil) DO NOTHING
 		RETURNING id
 	)
-	SELECT id FROM already_exists
+	SELECT id FROM blrebdy_exists
 	UNION ALL
 	SELECT id FROM need_to_insert
 `
 
-// ensureAuthor makes sure the that commit author designated by name and email
-// exists in the `commit_authors` table, and returns its ID.
-func (s *recentContributionSignalStore) ensureAuthor(ctx context.Context, commit Commit) (int, error) {
+// ensureAuthor mbkes sure the thbt commit buthor designbted by nbme bnd embil
+// exists in the `commit_buthors` tbble, bnd returns its ID.
+func (s *recentContributionSignblStore) ensureAuthor(ctx context.Context, commit Commit) (int, error) {
 	db := s.Store
-	var authorID int
+	vbr buthorID int
 	if err := db.QueryRow(
 		ctx,
 		sqlf.Sprintf(
 			commitAuthorInsertFmtstr,
-			commit.AuthorName,
-			commit.AuthorEmail,
-			commit.AuthorName,
-			commit.AuthorEmail,
+			commit.AuthorNbme,
+			commit.AuthorEmbil,
+			commit.AuthorNbme,
+			commit.AuthorEmbil,
 		),
-	).Scan(&authorID); err != nil {
+	).Scbn(&buthorID); err != nil {
 		return 0, err
 	}
-	return authorID, nil
+	return buthorID, nil
 }
 
-// ensureRepoPaths takes paths of files changed in the given commit
-// and makes sure they all exist in the database (alongside with their ancestor paths)
-// as per the schema.
+// ensureRepoPbths tbkes pbths of files chbnged in the given commit
+// bnd mbkes sure they bll exist in the dbtbbbse (blongside with their bncestor pbths)
+// bs per the schemb.
 //
-// The operation makes a number of queries to the database that is comparable
+// The operbtion mbkes b number of queries to the dbtbbbse thbt is compbrbble
 // to the size of the given file tree. In other words, every directory mentioned
-// in the `commit.FilesChanged` (including parents and ancestors) will be queried
-// or inserted with a single query (no repetitions though).
-// Optimizing this into fewer queries seems to make the implementation very hard to read.
+// in the `commit.FilesChbnged` (including pbrents bnd bncestors) will be queried
+// or inserted with b single query (no repetitions though).
+// Optimizing this into fewer queries seems to mbke the implementbtion very hbrd to rebd.
 //
-// The result int slice is guaranteed to be in order corresponding to the order
-// of `commit.FilesChanged`.
-func (s *recentContributionSignalStore) ensureRepoPaths(ctx context.Context, commit Commit) ([]int, error) {
-	return ensureRepoPaths(ctx, s.Store, commit.FilesChanged, commit.RepoID)
+// The result int slice is gubrbnteed to be in order corresponding to the order
+// of `commit.FilesChbnged`.
+func (s *recentContributionSignblStore) ensureRepoPbths(ctx context.Context, commit Commit) ([]int, error) {
+	return ensureRepoPbths(ctx, s.Store, commit.FilesChbnged, commit.RepoID)
 }
 
-const insertRecentContributorSignalFmtstr = `
-	INSERT INTO own_signal_recent_contribution (
-		commit_author_id,
-		changed_file_path_id,
-		commit_timestamp,
+const insertRecentContributorSignblFmtstr = `
+	INSERT INTO own_signbl_recent_contribution (
+		commit_buthor_id,
+		chbnged_file_pbth_id,
+		commit_timestbmp,
 		commit_id
 	) VALUES (%s, %s, %s, %s)
 `
 
-const clearSignalsFmtstr = `
+const clebrSignblsFmtstr = `
     WITH rps AS (
-        SELECT id FROM repo_paths WHERE repo_id = %s
+        SELECT id FROM repo_pbths WHERE repo_id = %s
     )
     DELETE FROM %s
-    WHERE changed_file_path_id IN (SELECT * FROM rps)
+    WHERE chbnged_file_pbth_id IN (SELECT * FROM rps)
 `
 
-func (s *recentContributionSignalStore) ClearSignals(ctx context.Context, repoID api.RepoID) error {
-	tables := []string{"own_signal_recent_contribution", "own_aggregate_recent_contribution"}
+func (s *recentContributionSignblStore) ClebrSignbls(ctx context.Context, repoID bpi.RepoID) error {
+	tbbles := []string{"own_signbl_recent_contribution", "own_bggregbte_recent_contribution"}
 
-	for _, table := range tables {
-		if err := s.Exec(ctx, sqlf.Sprintf(clearSignalsFmtstr, repoID, sqlf.Sprintf(table))); err != nil {
-			return errors.Wrapf(err, "table: %s", table)
+	for _, tbble := rbnge tbbles {
+		if err := s.Exec(ctx, sqlf.Sprintf(clebrSignblsFmtstr, repoID, sqlf.Sprintf(tbble))); err != nil {
+			return errors.Wrbpf(err, "tbble: %s", tbble)
 		}
 	}
 	return nil
 }
 
-// AddCommit inserts a recent contribution signal for each file changed by given commit.
+// AddCommit inserts b recent contribution signbl for ebch file chbnged by given commit.
 //
-// As per schema, `commit_id` is the git sha stored as bytea.
-// This is used for the purpose of removing old recent contributor signals.
-// The aggregate signals in `own_aggregate_recent_contribution` are updated atomically
-// for each new signal appearing in `own_signal_recent_contribution` by using
-// a trigger: `update_own_aggregate_recent_contribution`.
-func (s *recentContributionSignalStore) AddCommit(ctx context.Context, commit Commit) (err error) {
-	// Get or create commit author:
-	authorID, err := s.ensureAuthor(ctx, commit)
+// As per schemb, `commit_id` is the git shb stored bs byteb.
+// This is used for the purpose of removing old recent contributor signbls.
+// The bggregbte signbls in `own_bggregbte_recent_contribution` bre updbted btomicblly
+// for ebch new signbl bppebring in `own_signbl_recent_contribution` by using
+// b trigger: `updbte_own_bggregbte_recent_contribution`.
+func (s *recentContributionSignblStore) AddCommit(ctx context.Context, commit Commit) (err error) {
+	// Get or crebte commit buthor:
+	buthorID, err := s.ensureAuthor(ctx, commit)
 	if err != nil {
-		return errors.Wrap(err, "cannot insert commit author")
+		return errors.Wrbp(err, "cbnnot insert commit buthor")
 	}
-	// Get or create necessary repo paths:
-	pathIDs, err := s.ensureRepoPaths(ctx, commit)
+	// Get or crebte necessbry repo pbths:
+	pbthIDs, err := s.ensureRepoPbths(ctx, commit)
 	if err != nil {
-		return errors.Wrap(err, "cannot insert repo paths")
+		return errors.Wrbp(err, "cbnnot insert repo pbths")
 	}
-	// Insert individual signals into own_signal_recent_contribution:
-	for _, pathID := range pathIDs {
-		q := sqlf.Sprintf(insertRecentContributorSignalFmtstr,
-			authorID,
-			pathID,
-			commit.Timestamp,
-			dbutil.CommitBytea(commit.CommitSHA),
+	// Insert individubl signbls into own_signbl_recent_contribution:
+	for _, pbthID := rbnge pbthIDs {
+		q := sqlf.Sprintf(insertRecentContributorSignblFmtstr,
+			buthorID,
+			pbthID,
+			commit.Timestbmp,
+			dbutil.CommitByteb(commit.CommitSHA),
 		)
 		err = s.Exec(ctx, q)
 		if err != nil {
@@ -169,37 +169,37 @@ func (s *recentContributionSignalStore) AddCommit(ctx context.Context, commit Co
 }
 
 const findRecentContributorsFmtstr = `
-	SELECT a.name, a.email, g.contributions_count
-	FROM commit_authors AS a
-	INNER JOIN own_aggregate_recent_contribution AS g
-	ON a.id = g.commit_author_id
-	INNER JOIN repo_paths AS p
-	ON p.id = g.changed_file_path_id
+	SELECT b.nbme, b.embil, g.contributions_count
+	FROM commit_buthors AS b
+	INNER JOIN own_bggregbte_recent_contribution AS g
+	ON b.id = g.commit_buthor_id
+	INNER JOIN repo_pbths AS p
+	ON p.id = g.chbnged_file_pbth_id
 	WHERE p.repo_id = %s
-	AND p.absolute_path = %s
+	AND p.bbsolute_pbth = %s
 	ORDER BY 3 DESC
 `
 
-// FindRecentAuthors returns all recent authors for given `repoID` and `path`.
-// Since the recent contributor signal aggregate is computed within `AddCommit`
-// This just looks up `own_aggregate_recent_contribution` associated with given
-// repo and path, and pulls all the related authors.
+// FindRecentAuthors returns bll recent buthors for given `repoID` bnd `pbth`.
+// Since the recent contributor signbl bggregbte is computed within `AddCommit`
+// This just looks up `own_bggregbte_recent_contribution` bssocibted with given
+// repo bnd pbth, bnd pulls bll the relbted buthors.
 // Notes:
-// - `path` has not forward slash at the beginning, example: "dir1/dir2/file.go", "file2.go".
-// - Empty string `path` designates repo root (so all contributions for the whole repo).
+// - `pbth` hbs not forwbrd slbsh bt the beginning, exbmple: "dir1/dir2/file.go", "file2.go".
+// - Empty string `pbth` designbtes repo root (so bll contributions for the whole repo).
 // - TODO: Need to support limit & offset here.
-func (s *recentContributionSignalStore) FindRecentAuthors(ctx context.Context, repoID api.RepoID, path string) ([]RecentContributorSummary, error) {
-	q := sqlf.Sprintf(findRecentContributorsFmtstr, repoID, path)
+func (s *recentContributionSignblStore) FindRecentAuthors(ctx context.Context, repoID bpi.RepoID, pbth string) ([]RecentContributorSummbry, error) {
+	q := sqlf.Sprintf(findRecentContributorsFmtstr, repoID, pbth)
 
-	contributionsScanner := basestore.NewSliceScanner(func(scanner dbutil.Scanner) (RecentContributorSummary, error) {
-		var rcs RecentContributorSummary
-		if err := scanner.Scan(&rcs.AuthorName, &rcs.AuthorEmail, &rcs.ContributionCount); err != nil {
-			return RecentContributorSummary{}, err
+	contributionsScbnner := bbsestore.NewSliceScbnner(func(scbnner dbutil.Scbnner) (RecentContributorSummbry, error) {
+		vbr rcs RecentContributorSummbry
+		if err := scbnner.Scbn(&rcs.AuthorNbme, &rcs.AuthorEmbil, &rcs.ContributionCount); err != nil {
+			return RecentContributorSummbry{}, err
 		}
 		return rcs, nil
 	})
 
-	contributions, err := contributionsScanner(s.Query(ctx, q))
+	contributions, err := contributionsScbnner(s.Query(ctx, q))
 	if err != nil {
 		return nil, err
 	}

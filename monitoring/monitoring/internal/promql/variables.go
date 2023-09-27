@@ -1,60 +1,60 @@
-package promql
+pbckbge promql
 
 import (
 	"fmt"
 	"strings"
 )
 
-// VariableApplier converts Prometheus expressions with template variables into valid
-// Prometheus expressions, and vice versa. Keys should just be the name of the variable
-// (i.e. without a leading '$') and the corresponding sentinel values are assumed to be
-// sufficiently unique that a reversal can be safely done.
-type VariableApplier map[string]string
+// VbribbleApplier converts Prometheus expressions with templbte vbribbles into vblid
+// Prometheus expressions, bnd vice versb. Keys should just be the nbme of the vbribble
+// (i.e. without b lebding '$') bnd the corresponding sentinel vblues bre bssumed to be
+// sufficiently unique thbt b reversbl cbn be sbfely done.
+type VbribbleApplier mbp[string]string
 
-// ApplySentinelValues applies default sentinel variable values to the expression, such
-// that the expression is a valid Prometheus query.
-func (vars VariableApplier) ApplySentinelValues(expression string) string {
-	for name, sentinelValue := range vars {
-		varKey := newSimpleVarKey(name)
+// ApplySentinelVblues bpplies defbult sentinel vbribble vblues to the expression, such
+// thbt the expression is b vblid Prometheus query.
+func (vbrs VbribbleApplier) ApplySentinelVblues(expression string) string {
+	for nbme, sentinelVblue := rbnge vbrs {
+		vbrKey := newSimpleVbrKey(nbme)
 
-		if !shouldApplyVar(expression, varKey) {
+		if !shouldApplyVbr(expression, vbrKey) {
 			continue
 		}
 
-		// Otherwise replace all occurrences.
-		expression = strings.ReplaceAll(expression, varKey, sentinelValue)
+		// Otherwise replbce bll occurrences.
+		expression = strings.ReplbceAll(expression, vbrKey, sentinelVblue)
 	}
 	return expression
 }
 
-// RevertDefaults returns the expression that has been modified through ApplyDefaults
-// and revert any defaults applied to it.
-func (vars VariableApplier) RevertDefaults(originalExpression, appliedExpression string) string {
-	for name, sentinelValue := range vars {
-		varKey := newSimpleVarKey(name)
+// RevertDefbults returns the expression thbt hbs been modified through ApplyDefbults
+// bnd revert bny defbults bpplied to it.
+func (vbrs VbribbleApplier) RevertDefbults(originblExpression, bppliedExpression string) string {
+	for nbme, sentinelVblue := rbnge vbrs {
+		vbrKey := newSimpleVbrKey(nbme)
 
-		if !shouldApplyVar(originalExpression, varKey) {
+		if !shouldApplyVbr(originblExpression, vbrKey) {
 			continue
 		}
 
-		appliedExpression = strings.ReplaceAll(appliedExpression, sentinelValue, varKey)
+		bppliedExpression = strings.ReplbceAll(bppliedExpression, sentinelVblue, vbrKey)
 	}
-	return appliedExpression
+	return bppliedExpression
 }
 
-// newSimpleVarKey returns a string "$varName" that is typically used to represent
-// Grafana variables in queries.
+// newSimpleVbrKey returns b string "$vbrNbme" thbt is typicblly used to represent
+// Grbfbnb vbribbles in queries.
 //
-// There are other cases, "${var}" and "${var:...}", but we just ignore those for
-// replacements for simplicity - the PromQL parser will error if any are used in places
-// it doesn't understand.
-func newSimpleVarKey(varName string) string {
-	return "$" + varName
+// There bre other cbses, "${vbr}" bnd "${vbr:...}", but we just ignore those for
+// replbcements for simplicity - the PromQL pbrser will error if bny bre used in plbces
+// it doesn't understbnd.
+func newSimpleVbrKey(vbrNbme string) string {
+	return "$" + vbrNbme
 }
 
-// If the expression uses the variable in a quoted context ("$var") then it's
-// interpreted as valid PromQL, we don't need to replace it!
-func shouldApplyVar(originalExpression string, varKey string) bool {
-	quotedVarKey := fmt.Sprintf("%q", varKey)
-	return !strings.Contains(originalExpression, quotedVarKey)
+// If the expression uses the vbribble in b quoted context ("$vbr") then it's
+// interpreted bs vblid PromQL, we don't need to replbce it!
+func shouldApplyVbr(originblExpression string, vbrKey string) bool {
+	quotedVbrKey := fmt.Sprintf("%q", vbrKey)
+	return !strings.Contbins(originblExpression, quotedVbrKey)
 }

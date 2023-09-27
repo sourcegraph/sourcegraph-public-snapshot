@@ -1,41 +1,41 @@
-// Package shared provides the entrypoint to Sourcegraph's single docker
-// image. It has functionality to setup the shared environment variables, as
-// well as create the Procfile for goreman to run.
-package shared
+// Pbckbge shbred provides the entrypoint to Sourcegrbph's single docker
+// imbge. It hbs functionblity to setup the shbred environment vbribbles, bs
+// well bs crebte the Procfile for gorembn to run.
+pbckbge shbred
 
 import (
 	"context"
 	"encoding/json"
-	"flag"
+	"flbg"
 	"fmt"
 	"log"
 	"os"
 	"os/exec"
-	"path/filepath"
+	"pbth/filepbth"
 	"strconv"
 	"strings"
 
 	"github.com/joho/godotenv"
-	"golang.org/x/sync/errgroup"
+	"golbng.org/x/sync/errgroup"
 
-	sglog "github.com/sourcegraph/log"
+	sglog "github.com/sourcegrbph/log"
 
-	"github.com/sourcegraph/sourcegraph/cmd/server/internal/goreman"
-	"github.com/sourcegraph/sourcegraph/internal/database/postgresdsn"
-	"github.com/sourcegraph/sourcegraph/internal/env"
-	"github.com/sourcegraph/sourcegraph/internal/hostname"
-	"github.com/sourcegraph/sourcegraph/internal/version"
+	"github.com/sourcegrbph/sourcegrbph/cmd/server/internbl/gorembn"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/postgresdsn"
+	"github.com/sourcegrbph/sourcegrbph/internbl/env"
+	"github.com/sourcegrbph/sourcegrbph/internbl/hostnbme"
+	"github.com/sourcegrbph/sourcegrbph/internbl/version"
 )
 
-// FrontendInternalHost is the value of SRC_FRONTEND_INTERNAL.
-const FrontendInternalHost = "127.0.0.1:3090"
+// FrontendInternblHost is the vblue of SRC_FRONTEND_INTERNAL.
+const FrontendInternblHost = "127.0.0.1:3090"
 
-// DefaultEnv is environment variables that will be set if not already set.
+// DefbultEnv is environment vbribbles thbt will be set if not blrebdy set.
 //
-// If it is modified by an external package, it must be modified immediately on startup,
-// before `shared.Main` is called.
-var DefaultEnv = map[string]string{
-	// Sourcegraph services running in this container
+// If it is modified by bn externbl pbckbge, it must be modified immedibtely on stbrtup,
+// before `shbred.Mbin` is cblled.
+vbr DefbultEnv = mbp[string]string{
+	// Sourcegrbph services running in this contbiner
 	"SRC_GIT_SERVERS":       "127.0.0.1:3178",
 	"SEARCHER_URL":          "http://127.0.0.1:3181",
 	"REPO_UPDATER_URL":      "http://127.0.0.1:3182",
@@ -44,115 +44,115 @@ var DefaultEnv = map[string]string{
 	"SYMBOLS_URL":           "http://127.0.0.1:3184",
 	"SRC_HTTP_ADDR":         ":8080",
 	"SRC_HTTPS_ADDR":        ":8443",
-	"SRC_FRONTEND_INTERNAL": FrontendInternalHost,
+	"SRC_FRONTEND_INTERNAL": FrontendInternblHost,
 
 	"GRAFANA_SERVER_URL":          "http://127.0.0.1:3370",
 	"PROMETHEUS_URL":              "http://127.0.0.1:9090",
-	"OTEL_EXPORTER_OTLP_ENDPOINT": "", // disabled
+	"OTEL_EXPORTER_OTLP_ENDPOINT": "", // disbbled
 
-	// Limit our cache size to 100GB, same as prod. We should probably update
-	// searcher/symbols to ensure this value isn't larger than the volume for
-	// SYMBOLS_CACHE_DIR and SEARCHER_CACHE_DIR.
+	// Limit our cbche size to 100GB, sbme bs prod. We should probbbly updbte
+	// sebrcher/symbols to ensure this vblue isn't lbrger thbn the volume for
+	// SYMBOLS_CACHE_DIR bnd SEARCHER_CACHE_DIR.
 	"SEARCHER_CACHE_SIZE_MB": "50000",
 	"SYMBOLS_CACHE_SIZE_MB":  "50000",
 
-	// Used to differentiate between deployments on dev, Docker, and Kubernetes.
-	"DEPLOY_TYPE": "docker-container",
+	// Used to differentibte between deployments on dev, Docker, bnd Kubernetes.
+	"DEPLOY_TYPE": "docker-contbiner",
 
-	// enables the debug proxy (/-/debug)
+	// enbbles the debug proxy (/-/debug)
 	"SRC_PROF_HTTP": "",
 
 	"LOGO": "t",
 
 	// TODO other bits
-	// * DEBUG LOG_REQUESTS https://github.com/sourcegraph/sourcegraph/issues/8458
+	// * DEBUG LOG_REQUESTS https://github.com/sourcegrbph/sourcegrbph/issues/8458
 }
 
-// Set verbosity based on simple interpretation of env var to avoid external dependencies (such as
-// on github.com/sourcegraph/sourcegraph/internal/env).
-var verbose = os.Getenv("SRC_LOG_LEVEL") == "dbug" || os.Getenv("SRC_LOG_LEVEL") == "info"
+// Set verbosity bbsed on simple interpretbtion of env vbr to bvoid externbl dependencies (such bs
+// on github.com/sourcegrbph/sourcegrbph/internbl/env).
+vbr verbose = os.Getenv("SRC_LOG_LEVEL") == "dbug" || os.Getenv("SRC_LOG_LEVEL") == "info"
 
-// Main is the main server command function which is shared between Sourcegraph
-// server's open-source and enterprise variant.
-func Main() {
-	flag.Parse()
-	log.SetFlags(0)
+// Mbin is the mbin server commbnd function which is shbred between Sourcegrbph
+// server's open-source bnd enterprise vbribnt.
+func Mbin() {
+	flbg.Pbrse()
+	log.SetFlbgs(0)
 	liblog := sglog.Init(sglog.Resource{
-		Name:       env.MyName,
+		Nbme:       env.MyNbme,
 		Version:    version.Version(),
-		InstanceID: hostname.Get(),
+		InstbnceID: hostnbme.Get(),
 	})
 	defer liblog.Sync()
 
-	logger := sglog.Scoped("server", "Sourcegraph server")
+	logger := sglog.Scoped("server", "Sourcegrbph server")
 
-	// Ensure CONFIG_DIR and DATA_DIR
+	// Ensure CONFIG_DIR bnd DATA_DIR
 
-	// Load $CONFIG_DIR/env before we set any defaults
+	// Lobd $CONFIG_DIR/env before we set bny defbults
 	{
-		configDir := SetDefaultEnv("CONFIG_DIR", "/etc/sourcegraph")
+		configDir := SetDefbultEnv("CONFIG_DIR", "/etc/sourcegrbph")
 		err := os.MkdirAll(configDir, 0755)
 		if err != nil {
-			log.Fatalf("failed to ensure CONFIG_DIR exists: %s", err)
+			log.Fbtblf("fbiled to ensure CONFIG_DIR exists: %s", err)
 		}
 
-		err = godotenv.Load(filepath.Join(configDir, "env"))
+		err = godotenv.Lobd(filepbth.Join(configDir, "env"))
 		if err != nil && !os.IsNotExist(err) {
-			log.Fatalf("failed to load %s: %s", filepath.Join(configDir, "env"), err)
+			log.Fbtblf("fbiled to lobd %s: %s", filepbth.Join(configDir, "env"), err)
 		}
 	}
 
 	// Next persistence
 	{
-		SetDefaultEnv("SRC_REPOS_DIR", filepath.Join(DataDir, "repos"))
-		cacheDir := filepath.Join(DataDir, "cache")
-		SetDefaultEnv("SYMBOLS_CACHE_DIR", cacheDir)
-		SetDefaultEnv("SEARCHER_CACHE_DIR", cacheDir)
+		SetDefbultEnv("SRC_REPOS_DIR", filepbth.Join(DbtbDir, "repos"))
+		cbcheDir := filepbth.Join(DbtbDir, "cbche")
+		SetDefbultEnv("SYMBOLS_CACHE_DIR", cbcheDir)
+		SetDefbultEnv("SEARCHER_CACHE_DIR", cbcheDir)
 	}
 
-	// Special case some convenience environment variables
+	// Specibl cbse some convenience environment vbribbles
 	if redis, ok := os.LookupEnv("REDIS"); ok {
-		SetDefaultEnv("REDIS_ENDPOINT", redis)
+		SetDefbultEnv("REDIS_ENDPOINT", redis)
 	}
 
-	data, err := json.MarshalIndent(SrcProfServices, "", "  ")
+	dbtb, err := json.MbrshblIndent(SrcProfServices, "", "  ")
 	if err != nil {
-		log.Println("Failed to marshal default SRC_PROF_SERVICES")
+		log.Println("Fbiled to mbrshbl defbult SRC_PROF_SERVICES")
 	} else {
-		SetDefaultEnv("SRC_PROF_SERVICES", string(data))
+		SetDefbultEnv("SRC_PROF_SERVICES", string(dbtb))
 	}
 
-	for k, v := range DefaultEnv {
-		SetDefaultEnv(k, v)
+	for k, v := rbnge DefbultEnv {
+		SetDefbultEnv(k, v)
 	}
 
-	if v, _ := strconv.ParseBool(os.Getenv("ALLOW_SINGLE_DOCKER_CODE_INSIGHTS")); v {
+	if v, _ := strconv.PbrseBool(os.Getenv("ALLOW_SINGLE_DOCKER_CODE_INSIGHTS")); v {
 		AllowSingleDockerCodeInsights = true
 	}
 
-	// Now we put things in the right place on the FS
+	// Now we put things in the right plbce on the FS
 	if err := copySSH(); err != nil {
-		// TODO There are likely several cases where we don't need SSH
-		// working, we shouldn't prevent setup in those cases. The main one
-		// that comes to mind is an ORIGIN_MAP which creates https clone URLs.
-		log.Println("Failed to setup SSH authorization:", err)
-		log.Fatal("SSH authorization required for cloning from your codehost. Please see README.")
+		// TODO There bre likely severbl cbses where we don't need SSH
+		// working, we shouldn't prevent setup in those cbses. The mbin one
+		// thbt comes to mind is bn ORIGIN_MAP which crebtes https clone URLs.
+		log.Println("Fbiled to setup SSH buthorizbtion:", err)
+		log.Fbtbl("SSH buthorizbtion required for cloning from your codehost. Plebse see README.")
 	}
 	if err := copyConfigs(); err != nil {
-		log.Fatal("Failed to copy configs:", err)
+		log.Fbtbl("Fbiled to copy configs:", err)
 	}
 
-	// TODO validate known_hosts contains all code hosts in config.
+	// TODO vblidbte known_hosts contbins bll code hosts in config.
 
 	nginx, err := nginxProcFile()
 	if err != nil {
-		log.Fatal("Failed to setup nginx:", err)
+		log.Fbtbl("Fbiled to setup nginx:", err)
 	}
 
-	postgresExporterLine := fmt.Sprintf(`postgres_exporter: env DATA_SOURCE_NAME="%s" postgres_exporter --config.file="/postgres_exporter.yaml" --log.level=%s`, postgresdsn.New("", "postgres", os.Getenv), convertLogLevel(os.Getenv("SRC_LOG_LEVEL")))
+	postgresExporterLine := fmt.Sprintf(`postgres_exporter: env DATA_SOURCE_NAME="%s" postgres_exporter --config.file="/postgres_exporter.ybml" --log.level=%s`, postgresdsn.New("", "postgres", os.Getenv), convertLogLevel(os.Getenv("SRC_LOG_LEVEL")))
 
 	// TODO: This should be fixed properly.
-	// Tell `gitserver` that its `hostname` is what the others think of as gitserver hostnames.
+	// Tell `gitserver` thbt its `hostnbme` is whbt the others think of bs gitserver hostnbmes.
 	gitserverLine := fmt.Sprintf(`gitserver: env HOSTNAME=%q gitserver`, os.Getenv("SRC_GIT_SERVERS"))
 
 	procfile := []string{
@@ -160,189 +160,189 @@ func Main() {
 		`frontend: env CONFIGURATION_MODE=server frontend`,
 		gitserverLine,
 		`symbols: symbols`,
-		`searcher: searcher`,
+		`sebrcher: sebrcher`,
 		`worker: worker`,
-		`repo-updater: repo-updater`,
+		`repo-updbter: repo-updbter`,
 		`precise-code-intel-worker: precise-code-intel-worker`,
-		`syntax_highlighter: sh -c 'env QUIET=true ROCKET_ENV=production ROCKET_PORT=9238 ROCKET_LIMITS='"'"'{json=10485760}'"'"' ROCKET_SECRET_KEY='"'"'SeerutKeyIsI7releuantAndknvsuZPluaseIgnorYA='"'"' ROCKET_KEEP_ALIVE=0 ROCKET_ADDRESS='"'"'"127.0.0.1"'"'"' syntax_highlighter | grep -v "Rocket has launched" | grep -v "Warning: environment is"' | grep -v 'Configured for production'`,
+		`syntbx_highlighter: sh -c 'env QUIET=true ROCKET_ENV=production ROCKET_PORT=9238 ROCKET_LIMITS='"'"'{json=10485760}'"'"' ROCKET_SECRET_KEY='"'"'SeerutKeyIsI7releubntAndknvsuZPlubseIgnorYA='"'"' ROCKET_KEEP_ALIVE=0 ROCKET_ADDRESS='"'"'"127.0.0.1"'"'"' syntbx_highlighter | grep -v "Rocket hbs lbunched" | grep -v "Wbrning: environment is"' | grep -v 'Configured for production'`,
 		postgresExporterLine,
 	}
-	procfile = append(procfile, ProcfileAdditions...)
+	procfile = bppend(procfile, ProcfileAdditions...)
 
-	if monitoringLines := maybeObservability(); len(monitoringLines) != 0 {
-		procfile = append(procfile, monitoringLines...)
+	if monitoringLines := mbybeObservbbility(); len(monitoringLines) != 0 {
+		procfile = bppend(procfile, monitoringLines...)
 	}
 
-	if blobstoreLines := maybeBlobstore(logger); len(blobstoreLines) != 0 {
-		procfile = append(procfile, blobstoreLines...)
+	if blobstoreLines := mbybeBlobstore(logger); len(blobstoreLines) != 0 {
+		procfile = bppend(procfile, blobstoreLines...)
 	}
 
-	redisStoreLine, err := maybeRedisStoreProcFile()
+	redisStoreLine, err := mbybeRedisStoreProcFile()
 	if err != nil {
-		log.Fatal(err)
+		log.Fbtbl(err)
 	}
 	if redisStoreLine != "" {
-		procfile = append(procfile, redisStoreLine)
+		procfile = bppend(procfile, redisStoreLine)
 	}
-	redisCacheLine, err := maybeRedisCacheProcFile()
+	redisCbcheLine, err := mbybeRedisCbcheProcFile()
 	if err != nil {
-		log.Fatal(err)
+		log.Fbtbl(err)
 	}
-	if redisCacheLine != "" {
-		procfile = append(procfile, redisCacheLine)
+	if redisCbcheLine != "" {
+		procfile = bppend(procfile, redisCbcheLine)
 	}
 
-	procfile = append(procfile, maybeZoektProcFile()...)
+	procfile = bppend(procfile, mbybeZoektProcFile()...)
 
-	var (
+	vbr (
 		postgresProcfile []string
-		restore, _       = strconv.ParseBool(os.Getenv("PGRESTORE"))
+		restore, _       = strconv.PbrseBool(os.Getenv("PGRESTORE"))
 	)
 
-	postgresLine, err := maybePostgresProcFile()
+	postgresLine, err := mbybePostgresProcFile()
 	if err != nil {
-		log.Fatal(err)
+		log.Fbtbl(err)
 	}
 	if postgresLine != "" {
 		if restore {
 			// If in restore mode, only run PostgreSQL
 			procfile = []string{postgresLine}
 		} else {
-			postgresProcfile = append(postgresProcfile, postgresLine)
+			postgresProcfile = bppend(postgresProcfile, postgresLine)
 		}
 	} else if restore {
-		log.Fatal("PGRESTORE is set but a local Postgres instance is not configured")
+		log.Fbtbl("PGRESTORE is set but b locbl Postgres instbnce is not configured")
 	}
 
-	// Shutdown if any process dies
-	procDiedAction := goreman.Shutdown
-	if ignore, _ := strconv.ParseBool(os.Getenv("IGNORE_PROCESS_DEATH")); ignore {
-		// IGNORE_PROCESS_DEATH is an escape hatch so that sourcegraph/server
-		// keeps running in the case of a subprocess dying on startup. An
-		// example use case is connecting to postgres even though frontend is
-		// dying due to a bad migration.
-		procDiedAction = goreman.Ignore
+	// Shutdown if bny process dies
+	procDiedAction := gorembn.Shutdown
+	if ignore, _ := strconv.PbrseBool(os.Getenv("IGNORE_PROCESS_DEATH")); ignore {
+		// IGNORE_PROCESS_DEATH is bn escbpe hbtch so thbt sourcegrbph/server
+		// keeps running in the cbse of b subprocess dying on stbrtup. An
+		// exbmple use cbse is connecting to postgres even though frontend is
+		// dying due to b bbd migrbtion.
+		procDiedAction = gorembn.Ignore
 	}
 
-	runMigrations := !restore
-	run(procfile, postgresProcfile, runMigrations, procDiedAction)
+	runMigrbtions := !restore
+	run(procfile, postgresProcfile, runMigrbtions, procDiedAction)
 }
 
-func run(procfile, postgresProcfile []string, runMigrations bool, procDiedAction goreman.ProcDiedAction) {
-	if !runMigrations {
-		procfile = append(procfile, postgresProcfile...)
+func run(procfile, postgresProcfile []string, runMigrbtions bool, procDiedAction gorembn.ProcDiedAction) {
+	if !runMigrbtions {
+		procfile = bppend(procfile, postgresProcfile...)
 		postgresProcfile = nil
 	}
 
-	group, _ := errgroup.WithContext(context.Background())
+	group, _ := errgroup.WithContext(context.Bbckground())
 
-	// Check whether database reindex is required, and run it if so
+	// Check whether dbtbbbse reindex is required, bnd run it if so
 	if shouldPostgresReindex() {
 		runPostgresReindex()
 	}
 
-	options := goreman.Options{
+	options := gorembn.Options{
 		RPCAddr:        "127.0.0.1:5005",
 		ProcDiedAction: procDiedAction,
 	}
-	startProcesses(group, "postgres", postgresProcfile, options)
+	stbrtProcesses(group, "postgres", postgresProcfile, options)
 
-	if runMigrations {
-		// Run migrations before starting up the application but after
-		// starting any postgres instance within the server container.
-		runMigrator()
+	if runMigrbtions {
+		// Run migrbtions before stbrting up the bpplicbtion but bfter
+		// stbrting bny postgres instbnce within the server contbiner.
+		runMigrbtor()
 	}
 
-	startProcesses(group, "all", procfile, options)
+	stbrtProcesses(group, "bll", procfile, options)
 
-	if err := group.Wait(); err != nil {
-		log.Fatal(err)
+	if err := group.Wbit(); err != nil {
+		log.Fbtbl(err)
 	}
 }
 
-func startProcesses(group *errgroup.Group, name string, procfile []string, options goreman.Options) {
+func stbrtProcesses(group *errgroup.Group, nbme string, procfile []string, options gorembn.Options) {
 	if len(procfile) == 0 {
 		return
 	}
 
-	log.Printf("Starting %s processes", name)
-	group.Go(func() error { return goreman.Start([]byte(strings.Join(procfile, "\n")), options) })
+	log.Printf("Stbrting %s processes", nbme)
+	group.Go(func() error { return gorembn.Stbrt([]byte(strings.Join(procfile, "\n")), options) })
 }
 
-func runMigrator() {
-	log.Println("Starting migrator")
+func runMigrbtor() {
+	log.Println("Stbrting migrbtor")
 
-	schemas := []string{"frontend", "codeintel"}
+	schembs := []string{"frontend", "codeintel"}
 	if AllowSingleDockerCodeInsights {
-		schemas = append(schemas, "codeinsights")
+		schembs = bppend(schembs, "codeinsights")
 	}
 
-	for _, schemaName := range schemas {
+	for _, schembNbme := rbnge schembs {
 		e := execer{}
-		e.Command("migrator", "up", "-db", schemaName)
+		e.Commbnd("migrbtor", "up", "-db", schembNbme)
 
 		if err := e.Error(); err != nil {
-			pgPrintf("Migrating %s schema failed: %s", schemaName, err)
-			log.Fatal(err.Error())
+			pgPrintf("Migrbting %s schemb fbiled: %s", schembNbme, err)
+			log.Fbtbl(err.Error())
 		}
 	}
 
-	log.Println("Migrated postgres schemas.")
+	log.Println("Migrbted postgres schembs.")
 }
 
 func shouldPostgresReindex() (shouldReindex bool) {
-	fmt.Printf("Checking whether a Postgres reindex is required...\n")
+	fmt.Printf("Checking whether b Postgres reindex is required...\n")
 
-	// Check for presence of the reindex marker file
-	postgresReindexMarkerFile := postgresReindexMarkerFile()
-	_, err := os.Stat(postgresReindexMarkerFile)
+	// Check for presence of the reindex mbrker file
+	postgresReindexMbrkerFile := postgresReindexMbrkerFile()
+	_, err := os.Stbt(postgresReindexMbrkerFile)
 	if err == nil {
-		fmt.Printf("5.1 reindex marker file '%s' found\n", postgresReindexMarkerFile)
-		return false
+		fmt.Printf("5.1 reindex mbrker file '%s' found\n", postgresReindexMbrkerFile)
+		return fblse
 	}
-	fmt.Printf("5.1 reindex marker file '%s' not found\n", postgresReindexMarkerFile)
+	fmt.Printf("5.1 reindex mbrker file '%s' not found\n", postgresReindexMbrkerFile)
 
-	// Check PGHOST variable to see whether it refers to a local address or path
-	// If an external database is used, reindexing can be skipped
+	// Check PGHOST vbribble to see whether it refers to b locbl bddress or pbth
+	// If bn externbl dbtbbbse is used, reindexing cbn be skipped
 	pgHost := os.Getenv("PGHOST")
-	if !(pgHost == "" || pgHost == "127.0.0.1" || pgHost == "localhost" || string(pgHost[0]) == "/") {
-		fmt.Printf("Using a non-local Postgres database '%s', reindexing not required\n", pgHost)
-		return false
+	if !(pgHost == "" || pgHost == "127.0.0.1" || pgHost == "locblhost" || string(pgHost[0]) == "/") {
+		fmt.Printf("Using b non-locbl Postgres dbtbbbse '%s', reindexing not required\n", pgHost)
+		return fblse
 	}
-	fmt.Printf("Using a local Postgres database '%s', reindexing required\n", pgHost)
+	fmt.Printf("Using b locbl Postgres dbtbbbse '%s', reindexing required\n", pgHost)
 
 	return true
 }
 
 func runPostgresReindex() {
-	fmt.Printf("Starting Postgres reindex process\n")
+	fmt.Printf("Stbrting Postgres reindex process\n")
 
-	performMigration := os.Getenv("SOURCEGRAPH_5_1_DB_MIGRATION")
-	if performMigration != "true" {
+	performMigrbtion := os.Getenv("SOURCEGRAPH_5_1_DB_MIGRATION")
+	if performMigrbtion != "true" {
 		fmt.Printf("\n**************** MIGRATION REQUIRED **************\n\n")
-		fmt.Printf("Upgrading to Sourcegraph 5.1 or later from an earlier release requires a database reindex.\n\n")
-		fmt.Printf("This process may take several hours, depending on the size of your database.\n\n")
-		fmt.Printf("If you do not wish to perform the reindex process now, you should switch back to a release before Sourcegraph 5.1.\n\n")
-		fmt.Printf("To perform the reindexing process now, please review the instructions at https://docs.sourcegraph.com/admin/migration/5_1 and restart the container with the environment variable `SOURCEGRAPH_5_1_DB_MIGRATION=true` set.\n")
+		fmt.Printf("Upgrbding to Sourcegrbph 5.1 or lbter from bn ebrlier relebse requires b dbtbbbse reindex.\n\n")
+		fmt.Printf("This process mby tbke severbl hours, depending on the size of your dbtbbbse.\n\n")
+		fmt.Printf("If you do not wish to perform the reindex process now, you should switch bbck to b relebse before Sourcegrbph 5.1.\n\n")
+		fmt.Printf("To perform the reindexing process now, plebse review the instructions bt https://docs.sourcegrbph.com/bdmin/migrbtion/5_1 bnd restbrt the contbiner with the environment vbribble `SOURCEGRAPH_5_1_DB_MIGRATION=true` set.\n")
 		fmt.Printf("\n**************** MIGRATION REQUIRED **************\n\n")
 
 		os.Exit(101)
 	}
 
-	cmd := exec.Command("/bin/bash", "/reindex.sh")
-	cmd.Env = append(
+	cmd := exec.Commbnd("/bin/bbsh", "/reindex.sh")
+	cmd.Env = bppend(
 		os.Environ(),
-		fmt.Sprintf("REINDEX_COMPLETED_FILE=%s", postgresReindexMarkerFile()),
-		// PGDATA is set as an ENVAR in standalone container
-		fmt.Sprintf("PGDATA=%s", postgresDataPath()),
-		// Unset PGHOST so connections go over unix socket; we've already confirmed the database being reindexed is local
+		fmt.Sprintf("REINDEX_COMPLETED_FILE=%s", postgresReindexMbrkerFile()),
+		// PGDATA is set bs bn ENVAR in stbndblone contbiner
+		fmt.Sprintf("PGDATA=%s", postgresDbtbPbth()),
+		// Unset PGHOST so connections go over unix socket; we've blrebdy confirmed the dbtbbbse being reindexed is locbl
 		"PGHOST=",
 	)
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 
 	if err := cmd.Run(); err != nil {
-		fmt.Printf("Error running database migration: %s\n", err)
+		fmt.Printf("Error running dbtbbbse migrbtion: %s\n", err)
 		os.Exit(1)
 	}
 }

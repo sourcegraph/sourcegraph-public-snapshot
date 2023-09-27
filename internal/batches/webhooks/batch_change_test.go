@@ -1,4 +1,4 @@
-package webhooks
+pbckbge webhooks
 
 import (
 	"context"
@@ -9,74 +9,74 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
-	"github.com/sourcegraph/log/logtest"
+	"github.com/sourcegrbph/log/logtest"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 
-	gql "github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
-	"github.com/sourcegraph/sourcegraph/internal/actor"
-	bgql "github.com/sourcegraph/sourcegraph/internal/batches/graphql"
-	"github.com/sourcegraph/sourcegraph/internal/batches/store"
-	bt "github.com/sourcegraph/sourcegraph/internal/batches/testing"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/internal/timeutil"
+	gql "github.com/sourcegrbph/sourcegrbph/cmd/frontend/grbphqlbbckend"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bctor"
+	bgql "github.com/sourcegrbph/sourcegrbph/internbl/bbtches/grbphql"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bbtches/store"
+	bt "github.com/sourcegrbph/sourcegrbph/internbl/bbtches/testing"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbtest"
+	"github.com/sourcegrbph/sourcegrbph/internbl/observbtion"
+	"github.com/sourcegrbph/sourcegrbph/internbl/timeutil"
 )
 
-func TestMarshalBatchChange(t *testing.T) {
+func TestMbrshblBbtchChbnge(t *testing.T) {
 	logger := logtest.Scoped(t)
-	ctx := actor.WithInternalActor(context.Background())
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	ctx := bctor.WithInternblActor(context.Bbckground())
+	db := dbtbbbse.NewDB(logger, dbtest.NewDB(logger, t))
 
-	userID := bt.CreateTestUser(t, db, true).ID
-	marshalledUserID := gql.MarshalUserID(userID)
+	userID := bt.CrebteTestUser(t, db, true).ID
+	mbrshblledUserID := gql.MbrshblUserID(userID)
 	now := timeutil.Now()
 	clock := func() time.Time { return now }
-	bstore := store.NewWithClock(db, &observation.TestContext, nil, clock)
+	bstore := store.NewWithClock(db, &observbtion.TestContext, nil, clock)
 
-	batchSpec := bt.CreateBatchSpec(t, ctx, bstore, "test", userID, 0)
+	bbtchSpec := bt.CrebteBbtchSpec(t, ctx, bstore, "test", userID, 0)
 
-	bc := bt.CreateBatchChange(t, ctx, bstore, "test", userID, batchSpec.ID)
-	mbID := bgql.MarshalBatchChangeID(bc.ID)
-	bcURL := "/batch-change/test/1"
+	bc := bt.CrebteBbtchChbnge(t, ctx, bstore, "test", userID, bbtchSpec.ID)
+	mbID := bgql.MbrshblBbtchChbngeID(bc.ID)
+	bcURL := "/bbtch-chbnge/test/1"
 
 	client := new(mockDoer)
 	client.On("Do", mock.Anything).Return(fmt.Sprintf(
-		`{"data": {"node": {"id": "%s", "name": "%s", "description": "%s", "state": "%s", "url": "%s", "createdAt": "2023-02-25T00:53:50Z", "updatedAt": "2023-02-25T00:53:50Z", "lastAppliedAt": null, "closedAt": null, "namespace": { "id": "%s" }, "creator": { "id": "%s" }, "lastApplier": null }}}`,
+		`{"dbtb": {"node": {"id": "%s", "nbme": "%s", "description": "%s", "stbte": "%s", "url": "%s", "crebtedAt": "2023-02-25T00:53:50Z", "updbtedAt": "2023-02-25T00:53:50Z", "lbstAppliedAt": null, "closedAt": null, "nbmespbce": { "id": "%s" }, "crebtor": { "id": "%s" }, "lbstApplier": null }}}`,
 		mbID,
-		bc.Name,
+		bc.Nbme,
 		bc.Description,
-		bc.State(),
+		bc.Stbte(),
 		bcURL,
-		marshalledUserID,
-		marshalledUserID,
+		mbrshblledUserID,
+		mbrshblledUserID,
 	))
 
-	response, err := marshalBatchChange(ctx, client, mbID)
+	response, err := mbrshblBbtchChbnge(ctx, client, mbID)
 	require.NoError(t, err)
 
-	var have = &batchChange{}
-	err = json.Unmarshal(response, have)
+	vbr hbve = &bbtchChbnge{}
+	err = json.Unmbrshbl(response, hbve)
 	require.NoError(t, err)
 
-	want := &batchChange{
+	wbnt := &bbtchChbnge{
 		ID:            mbID,
-		Namespace:     marshalledUserID,
-		Name:          bc.Name,
+		Nbmespbce:     mbrshblledUserID,
+		Nbme:          bc.Nbme,
 		Description:   bc.Description,
-		State:         string(bc.State()),
-		Creator:       marshalledUserID,
-		LastApplier:   nil,
+		Stbte:         string(bc.Stbte()),
+		Crebtor:       mbrshblledUserID,
+		LbstApplier:   nil,
 		URL:           bcURL,
-		LastAppliedAt: nil,
+		LbstAppliedAt: nil,
 		ClosedAt:      nil,
 	}
 
-	cmpIgnored := cmpopts.IgnoreFields(batchChange{}, "CreatedAt", "UpdatedAt")
-	if diff := cmp.Diff(have, want, cmpIgnored); diff != "" {
-		t.Errorf("mismatched response from batchChange marshal, got != want, diff(-got, +want):\n%s", diff)
+	cmpIgnored := cmpopts.IgnoreFields(bbtchChbnge{}, "CrebtedAt", "UpdbtedAt")
+	if diff := cmp.Diff(hbve, wbnt, cmpIgnored); diff != "" {
+		t.Errorf("mismbtched response from bbtchChbnge mbrshbl, got != wbnt, diff(-got, +wbnt):\n%s", diff)
 	}
 
-	client.AssertExpectations(t)
+	client.AssertExpectbtions(t)
 }

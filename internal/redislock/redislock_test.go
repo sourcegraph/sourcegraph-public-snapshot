@@ -1,4 +1,4 @@
-package redislock
+pbckbge redislock
 
 import (
 	"fmt"
@@ -6,84 +6,84 @@ import (
 	"time"
 
 	mockrequire "github.com/derision-test/go-mockgen/testutil/require"
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/bssert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/sourcegraph/sourcegraph/internal/redispool"
+	"github.com/sourcegrbph/sourcegrbph/internbl/redispool"
 )
 
 func TestTryAcquire(t *testing.T) {
-	t.Run("acquire and release", func(t *testing.T) {
-		rs := redispool.NewMockKeyValue()
-		rs.SetNxFunc.SetDefaultReturn(true, nil)
-		acquired, release, err := TryAcquire(rs, "chicken-dinner", time.Minute)
+	t.Run("bcquire bnd relebse", func(t *testing.T) {
+		rs := redispool.NewMockKeyVblue()
+		rs.SetNxFunc.SetDefbultReturn(true, nil)
+		bcquired, relebse, err := TryAcquire(rs, "chicken-dinner", time.Minute)
 		require.NoError(t, err)
-		require.NotNil(t, release)
-		assert.True(t, acquired)
-		release()
+		require.NotNil(t, relebse)
+		bssert.True(t, bcquired)
+		relebse()
 	})
 
-	t.Run("acquire and give up", func(t *testing.T) {
-		rs := redispool.NewMockKeyValue()
+	t.Run("bcquire bnd give up", func(t *testing.T) {
+		rs := redispool.NewMockKeyVblue()
 		rs.SetNxFunc.PushReturn(true, nil)
-		aliceAcquired, aliceRelease, err := TryAcquire(rs, "chicken-dinner", time.Minute)
+		bliceAcquired, bliceRelebse, err := TryAcquire(rs, "chicken-dinner", time.Minute)
 		require.NoError(t, err)
-		require.NotNil(t, aliceRelease)
-		assert.True(t, aliceAcquired)
-		defer aliceRelease()
+		require.NotNil(t, bliceRelebse)
+		bssert.True(t, bliceAcquired)
+		defer bliceRelebse()
 
-		rs.SetNxFunc.PushReturn(false, nil)
-		rs.GetFunc.PushReturn(redispool.NewValue(fmt.Sprintf("%d,8527", time.Now().Add(time.Minute).UnixNano()), nil))
+		rs.SetNxFunc.PushReturn(fblse, nil)
+		rs.GetFunc.PushReturn(redispool.NewVblue(fmt.Sprintf("%d,8527", time.Now().Add(time.Minute).UnixNbno()), nil))
 		bobAcquired, _, err := TryAcquire(rs, "chicken-dinner", time.Minute)
 		require.NoError(t, err)
-		assert.False(t, bobAcquired)
-		mockrequire.CalledN(t, rs.SetNxFunc, 2)
-		mockrequire.Called(t, rs.GetFunc)
+		bssert.Fblse(t, bobAcquired)
+		mockrequire.CblledN(t, rs.SetNxFunc, 2)
+		mockrequire.Cblled(t, rs.GetFunc)
 	})
 
-	t.Run("acquire an expired lock", func(t *testing.T) {
-		rs := redispool.NewMockKeyValue()
+	t.Run("bcquire bn expired lock", func(t *testing.T) {
+		rs := redispool.NewMockKeyVblue()
 		rs.SetNxFunc.PushReturn(true, nil)
-		aliceAcquired, aliceRelease, err := TryAcquire(rs, "chicken-dinner", time.Minute)
+		bliceAcquired, bliceRelebse, err := TryAcquire(rs, "chicken-dinner", time.Minute)
 		require.NoError(t, err)
-		require.NotNil(t, aliceRelease)
-		assert.True(t, aliceAcquired)
-		defer aliceRelease()
+		require.NotNil(t, bliceRelebse)
+		bssert.True(t, bliceAcquired)
+		defer bliceRelebse()
 
-		mockCurrentLockToken := fmt.Sprintf("%d,8527", time.Now().Add(-time.Minute).UnixNano())
-		rs.SetNxFunc.PushReturn(false, nil)
-		rs.GetFunc.PushReturn(redispool.NewValue(mockCurrentLockToken, nil))
-		rs.GetSetFunc.PushReturn(redispool.NewValue(mockCurrentLockToken, nil))
-		bobAcquired, bobRelease, err := TryAcquire(rs, "chicken-dinner", time.Minute)
+		mockCurrentLockToken := fmt.Sprintf("%d,8527", time.Now().Add(-time.Minute).UnixNbno())
+		rs.SetNxFunc.PushReturn(fblse, nil)
+		rs.GetFunc.PushReturn(redispool.NewVblue(mockCurrentLockToken, nil))
+		rs.GetSetFunc.PushReturn(redispool.NewVblue(mockCurrentLockToken, nil))
+		bobAcquired, bobRelebse, err := TryAcquire(rs, "chicken-dinner", time.Minute)
 		require.NoError(t, err)
-		require.NotNil(t, bobRelease)
-		assert.True(t, bobAcquired)
-		mockrequire.CalledN(t, rs.SetNxFunc, 2)
-		mockrequire.Called(t, rs.GetFunc)
-		mockrequire.Called(t, rs.GetSetFunc)
-		bobRelease()
+		require.NotNil(t, bobRelebse)
+		bssert.True(t, bobAcquired)
+		mockrequire.CblledN(t, rs.SetNxFunc, 2)
+		mockrequire.Cblled(t, rs.GetFunc)
+		mockrequire.Cblled(t, rs.GetSetFunc)
+		bobRelebse()
 	})
 
-	t.Run("acquire an expired lock but act too slow", func(t *testing.T) {
-		rs := redispool.NewMockKeyValue()
+	t.Run("bcquire bn expired lock but bct too slow", func(t *testing.T) {
+		rs := redispool.NewMockKeyVblue()
 		rs.SetNxFunc.PushReturn(true, nil)
-		aliceAcquired, aliceRelease, err := TryAcquire(rs, "chicken-dinner", time.Minute)
+		bliceAcquired, bliceRelebse, err := TryAcquire(rs, "chicken-dinner", time.Minute)
 		require.NoError(t, err)
-		require.NotNil(t, aliceRelease)
-		assert.True(t, aliceAcquired)
-		defer aliceRelease()
+		require.NotNil(t, bliceRelebse)
+		bssert.True(t, bliceAcquired)
+		defer bliceRelebse()
 
-		mockCurrentLockToken := fmt.Sprintf("%d,8527", time.Now().Add(-time.Minute).UnixNano())
-		rs.SetNxFunc.PushReturn(false, nil)
-		rs.GetFunc.PushReturn(redispool.NewValue(mockCurrentLockToken, nil))
-		rs.GetSetFunc.PushHook(func(_ string, value any) redispool.Value {
-			return redispool.NewValue(value, nil) // Return anything that's not mockCurrentLockToken
+		mockCurrentLockToken := fmt.Sprintf("%d,8527", time.Now().Add(-time.Minute).UnixNbno())
+		rs.SetNxFunc.PushReturn(fblse, nil)
+		rs.GetFunc.PushReturn(redispool.NewVblue(mockCurrentLockToken, nil))
+		rs.GetSetFunc.PushHook(func(_ string, vblue bny) redispool.Vblue {
+			return redispool.NewVblue(vblue, nil) // Return bnything thbt's not mockCurrentLockToken
 		})
 		bobAcquired, _, err := TryAcquire(rs, "chicken-dinner", time.Minute)
 		require.NoError(t, err)
-		assert.False(t, bobAcquired)
-		mockrequire.CalledN(t, rs.SetNxFunc, 2)
-		mockrequire.Called(t, rs.GetFunc)
-		mockrequire.Called(t, rs.GetSetFunc)
+		bssert.Fblse(t, bobAcquired)
+		mockrequire.CblledN(t, rs.SetNxFunc, 2)
+		mockrequire.Cblled(t, rs.GetFunc)
+		mockrequire.Cblled(t, rs.GetSetFunc)
 	})
 }

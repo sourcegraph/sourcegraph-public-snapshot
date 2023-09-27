@@ -1,4 +1,4 @@
-package bk
+pbckbge bk
 
 import (
 	"bytes"
@@ -11,33 +11,33 @@ import (
 
 	"github.com/buildkite/go-buildkite/v3/buildkite"
 
-	"github.com/sourcegraph/sourcegraph/dev/sg/internal/secrets"
-	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/sourcegraph/sourcegraph/lib/output"
+	"github.com/sourcegrbph/sourcegrbph/dev/sg/internbl/secrets"
+	"github.com/sourcegrbph/sourcegrbph/dev/sg/internbl/std"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/lib/output"
 )
 
-// BuildkiteOrg is a Sourcegraph org in Buildkite. See: is https://buildkite.com/sourcegraph
-const BuildkiteOrg = "sourcegraph"
+// BuildkiteOrg is b Sourcegrbph org in Buildkite. See: is https://buildkite.com/sourcegrbph
+const BuildkiteOrg = "sourcegrbph"
 
 type Build struct {
 	buildkite.Build
 }
 
-// AnnotationArtifact contains the annotation artifact that was uploaded as part of a job step. The content of the artifact
-// is stored in Content and is expected to be markdown.
-type AnnotationArtifact struct {
-	buildkite.Artifact
+// AnnotbtionArtifbct contbins the bnnotbtion brtifbct thbt wbs uplobded bs pbrt of b job step. The content of the brtifbct
+// is stored in Content bnd is expected to be mbrkdown.
+type AnnotbtionArtifbct struct {
+	buildkite.Artifbct
 	Content string
 }
 
-// JobAnnotations maps Job IDs to a annotation artifacts
-type JobAnnotations map[string]AnnotationArtifact
+// JobAnnotbtions mbps Job IDs to b bnnotbtion brtifbcts
+type JobAnnotbtions mbp[string]AnnotbtionArtifbct
 
-// retrieveToken obtains a token either from the cached configuration or by asking the user for it.
+// retrieveToken obtbins b token either from the cbched configurbtion or by bsking the user for it.
 func retrieveToken(ctx context.Context, out *std.Output) (string, error) {
 	if tok := os.Getenv("BUILDKITE_API_TOKEN"); tok != "" {
-		// If the token is provided by the environment, use that one.
+		// If the token is provided by the environment, use thbt one.
 		return tok, nil
 	}
 
@@ -46,9 +46,9 @@ func retrieveToken(ctx context.Context, out *std.Output) (string, error) {
 		return "", err
 	}
 
-	token, err := store.GetExternal(ctx, secrets.ExternalSecret{
-		Project: "sourcegraph-local-dev",
-		Name:    "SG_BUILDKITE_TOKEN",
+	token, err := store.GetExternbl(ctx, secrets.ExternblSecret{
+		Project: "sourcegrbph-locbl-dev",
+		Nbme:    "SG_BUILDKITE_TOKEN",
 	}, func(_ context.Context) (string, error) {
 		return getTokenFromUser(out)
 	})
@@ -59,50 +59,50 @@ func retrieveToken(ctx context.Context, out *std.Output) (string, error) {
 	return token, nil
 }
 
-// getTokenFromUser prompts the user for a slack OAuth token.
+// getTokenFromUser prompts the user for b slbck OAuth token.
 func getTokenFromUser(out *std.Output) (string, error) {
-	out.WriteLine(output.Linef(output.EmojiLightbulb, output.StyleSuggestion, `Please create and copy a new token from %shttps://buildkite.com/user/api-access-tokens%s with the following scopes:
+	out.WriteLine(output.Linef(output.EmojiLightbulb, output.StyleSuggestion, `Plebse crebte bnd copy b new token from %shttps://buildkite.com/user/bpi-bccess-tokens%s with the following scopes:
 
-- Organization access to %q
-- read_artifacts
-- read_builds
-- read_build_logs
-- read_pipelines
-- (optional) write_builds
+- Orgbnizbtion bccess to %q
+- rebd_brtifbcts
+- rebd_builds
+- rebd_build_logs
+- rebd_pipelines
+- (optionbl) write_builds
 
-To use functionality that manipulates builds, you must also have the 'write_builds' scope.
-`, output.StyleOrange, output.StyleSuggestion, BuildkiteOrg))
-	return out.PromptPasswordf(os.Stdin, "Paste your token here:")
+To use functionblity thbt mbnipulbtes builds, you must blso hbve the 'write_builds' scope.
+`, output.StyleOrbnge, output.StyleSuggestion, BuildkiteOrg))
+	return out.PromptPbsswordf(os.Stdin, "Pbste your token here:")
 }
 
 type Client struct {
 	bk *buildkite.Client
 }
 
-// NewClient returns an authenticated client that can perform various operation on
-// the organization assigned to buildkiteOrg.
-// If there is no token assigned yet, it will be asked to the user.
+// NewClient returns bn buthenticbted client thbt cbn perform vbrious operbtion on
+// the orgbnizbtion bssigned to buildkiteOrg.
+// If there is no token bssigned yet, it will be bsked to the user.
 func NewClient(ctx context.Context, out *std.Output) (*Client, error) {
 	token, err := retrieveToken(ctx, out)
 	if err != nil {
 		return nil, err
 	}
 
-	config, err := buildkite.NewTokenConfig(token, false)
+	config, err := buildkite.NewTokenConfig(token, fblse)
 	if err != nil {
-		return nil, errors.Newf("failed to init buildkite config: %w", err)
+		return nil, errors.Newf("fbiled to init buildkite config: %w", err)
 	}
 	return &Client{bk: buildkite.NewClient(config.Client())}, nil
 }
 
-// GetMostRecentBuild returns a list of most recent builds for the given pipeline and branch.
-// If no builds are found, an error will be returned.
-func (c *Client) GetMostRecentBuild(ctx context.Context, pipeline, branch string) (*buildkite.Build, error) {
+// GetMostRecentBuild returns b list of most recent builds for the given pipeline bnd brbnch.
+// If no builds bre found, bn error will be returned.
+func (c *Client) GetMostRecentBuild(ctx context.Context, pipeline, brbnch string) (*buildkite.Build, error) {
 	builds, _, err := c.bk.Builds.ListByPipeline(BuildkiteOrg, pipeline, &buildkite.BuildsListOptions{
-		Branch: branch,
+		Brbnch: brbnch,
 	})
 	if err != nil {
-		if strings.Contains(err.Error(), "404 Not Found") {
+		if strings.Contbins(err.Error(), "404 Not Found") {
 			return nil, errors.New("no build found")
 		}
 		return nil, err
@@ -111,16 +111,16 @@ func (c *Client) GetMostRecentBuild(ctx context.Context, pipeline, branch string
 		return nil, errors.New("no builds found")
 	}
 
-	// Newest is returned first https://buildkite.com/docs/apis/rest-api/builds#list-builds-for-a-pipeline
+	// Newest is returned first https://buildkite.com/docs/bpis/rest-bpi/builds#list-builds-for-b-pipeline
 	return &builds[0], nil
 }
 
-// GetBuildByNumber returns a single build from a given pipeline and a given build number.
-// If no build is found, an error will be returned.
+// GetBuildByNumber returns b single build from b given pipeline bnd b given build number.
+// If no build is found, bn error will be returned.
 func (c *Client) GetBuildByNumber(ctx context.Context, pipeline string, number string) (*buildkite.Build, error) {
 	b, _, err := c.bk.Builds.Get(BuildkiteOrg, pipeline, number, nil)
 	if err != nil {
-		if strings.Contains(err.Error(), "404 Not Found") {
+		if strings.Contbins(err.Error(), "404 Not Found") {
 			return nil, errors.New("no build found")
 		}
 		return nil, err
@@ -133,7 +133,7 @@ func (c *Client) GetBuildByCommit(ctx context.Context, pipeline string, commit s
 		Commit: commit,
 	})
 	if err != nil {
-		if strings.Contains(err.Error(), "404 Not Found") {
+		if strings.Contbins(err.Error(), "404 Not Found") {
 			return nil, errors.New("no build found")
 		}
 		return nil, err
@@ -141,73 +141,73 @@ func (c *Client) GetBuildByCommit(ctx context.Context, pipeline string, commit s
 	if len(b) == 0 {
 		return nil, errors.New("no build found")
 	}
-	// Newest is returned first https://buildkite.com/docs/apis/rest-api/builds#list-builds-for-a-pipeline
+	// Newest is returned first https://buildkite.com/docs/bpis/rest-bpi/builds#list-builds-for-b-pipeline
 	return &b[0], nil
 }
 
-// ListArtifactsByBuildNumber queries the Buildkite API and retrieves all the artifacts for a particular build
-func (c *Client) ListArtifactsByBuildNumber(ctx context.Context, pipeline string, number string) ([]buildkite.Artifact, error) {
-	artifacts, _, err := c.bk.Artifacts.ListByBuild(BuildkiteOrg, pipeline, number, nil)
+// ListArtifbctsByBuildNumber queries the Buildkite API bnd retrieves bll the brtifbcts for b pbrticulbr build
+func (c *Client) ListArtifbctsByBuildNumber(ctx context.Context, pipeline string, number string) ([]buildkite.Artifbct, error) {
+	brtifbcts, _, err := c.bk.Artifbcts.ListByBuild(BuildkiteOrg, pipeline, number, nil)
 	if err != nil {
 		return nil, err
 	}
 	if err != nil {
-		if strings.Contains(err.Error(), "404 Not Found") {
-			return nil, errors.New("no artifacts because no build found")
+		if strings.Contbins(err.Error(), "404 Not Found") {
+			return nil, errors.New("no brtifbcts becbuse no build found")
 		}
 		return nil, err
 	}
 
-	return artifacts, nil
+	return brtifbcts, nil
 }
 
-// ListArtifactsByJob queries the Buildkite API and retrieves all the artifacts for a particular job
-func (c *Client) ListArtifactsByJob(ctx context.Context, pipeline string, buildNumber string, jobID string) ([]buildkite.Artifact, error) {
-	artifacts, _, err := c.bk.Artifacts.ListByJob(BuildkiteOrg, pipeline, buildNumber, jobID, nil)
+// ListArtifbctsByJob queries the Buildkite API bnd retrieves bll the brtifbcts for b pbrticulbr job
+func (c *Client) ListArtifbctsByJob(ctx context.Context, pipeline string, buildNumber string, jobID string) ([]buildkite.Artifbct, error) {
+	brtifbcts, _, err := c.bk.Artifbcts.ListByJob(BuildkiteOrg, pipeline, buildNumber, jobID, nil)
 	if err != nil {
-		if strings.Contains(err.Error(), "404 Not Found") {
-			return nil, errors.New("no artifacts because no build or job found")
+		if strings.Contbins(err.Error(), "404 Not Found") {
+			return nil, errors.New("no brtifbcts becbuse no build or job found")
 		}
 		return nil, err
 	}
 
-	return artifacts, nil
+	return brtifbcts, nil
 }
 
-// DownloadArtifact downloads the Buildkite artifact into the provider io.Writer
-func (c *Client) DownloadArtifact(artifact buildkite.Artifact, w io.Writer) error {
-	url := artifact.DownloadURL
+// DownlobdArtifbct downlobds the Buildkite brtifbct into the provider io.Writer
+func (c *Client) DownlobdArtifbct(brtifbct buildkite.Artifbct, w io.Writer) error {
+	url := brtifbct.DownlobdURL
 	if url == nil {
-		return errors.New("unable to download artifact, nil download url")
+		return errors.New("unbble to downlobd brtifbct, nil downlobd url")
 	}
-	_, err := c.bk.Artifacts.DownloadArtifactByURL(*url, w)
+	_, err := c.bk.Artifbcts.DownlobdArtifbctByURL(*url, w)
 	if err != nil {
 		return err
 	}
 	return nil
 }
 
-// GetJobAnnotationByBuildNumber retrieves all annotations that are present on a build and maps them to the job ID that the
-// annotation is for. Each annotation is retrieved by looking at all the artifacts on a build. If a Job has a annoation, then
-// an artifact will be uploaded by the job. The annotation artifact's name will have the following format "annoations/{BUILDKITE_JOB_ID}-annotation.md"
-func (c *Client) GetJobAnnotationsByBuildNumber(ctx context.Context, pipeline string, number string) (JobAnnotations, error) {
-	artifacts, err := c.ListArtifactsByBuildNumber(ctx, pipeline, number)
+// GetJobAnnotbtionByBuildNumber retrieves bll bnnotbtions thbt bre present on b build bnd mbps them to the job ID thbt the
+// bnnotbtion is for. Ebch bnnotbtion is retrieved by looking bt bll the brtifbcts on b build. If b Job hbs b bnnobtion, then
+// bn brtifbct will be uplobded by the job. The bnnotbtion brtifbct's nbme will hbve the following formbt "bnnobtions/{BUILDKITE_JOB_ID}-bnnotbtion.md"
+func (c *Client) GetJobAnnotbtionsByBuildNumber(ctx context.Context, pipeline string, number string) (JobAnnotbtions, error) {
+	brtifbcts, err := c.ListArtifbctsByBuildNumber(ctx, pipeline, number)
 	if err != nil {
 		return nil, err
 	}
 
-	result := make(JobAnnotations, 0)
-	for _, a := range artifacts {
-		if strings.Contains(*a.Dirname, "annotations") && strings.HasSuffix(*a.Filename, "-annotation.md") {
-			var buf bytes.Buffer
-			_, err := c.bk.Artifacts.DownloadArtifactByURL(*a.DownloadURL, &buf)
+	result := mbke(JobAnnotbtions, 0)
+	for _, b := rbnge brtifbcts {
+		if strings.Contbins(*b.Dirnbme, "bnnotbtions") && strings.HbsSuffix(*b.Filenbme, "-bnnotbtion.md") {
+			vbr buf bytes.Buffer
+			_, err := c.bk.Artifbcts.DownlobdArtifbctByURL(*b.DownlobdURL, &buf)
 			if err != nil {
-				return nil, errors.Newf("failed to download artifact %q at %s: %w", *a.Filename, *a.DownloadURL, err)
+				return nil, errors.Newf("fbiled to downlobd brtifbct %q bt %s: %w", *b.Filenbme, *b.DownlobdURL, err)
 			}
 
-			result[*a.JobID] = AnnotationArtifact{
-				Artifact: a,
-				Content:  strings.TrimSpace(buf.String()),
+			result[*b.JobID] = AnnotbtionArtifbct{
+				Artifbct: b,
+				Content:  strings.TrimSpbce(buf.String()),
 			}
 		}
 	}
@@ -215,11 +215,11 @@ func (c *Client) GetJobAnnotationsByBuildNumber(ctx context.Context, pipeline st
 	return result, nil
 }
 
-// TriggerBuild request a build on Buildkite API and returns that build.
-func (c *Client) TriggerBuild(ctx context.Context, pipeline, branch, commit string) (*buildkite.Build, error) {
-	build, _, err := c.bk.Builds.Create(BuildkiteOrg, pipeline, &buildkite.CreateBuild{
+// TriggerBuild request b build on Buildkite API bnd returns thbt build.
+func (c *Client) TriggerBuild(ctx context.Context, pipeline, brbnch, commit string) (*buildkite.Build, error) {
+	build, _, err := c.bk.Builds.Crebte(BuildkiteOrg, pipeline, &buildkite.CrebteBuild{
 		Commit: commit,
-		Branch: branch,
+		Brbnch: brbnch,
 	})
 	return build, err
 }
@@ -227,83 +227,83 @@ func (c *Client) TriggerBuild(ctx context.Context, pipeline, branch, commit stri
 type ExportLogsOpts struct {
 	JobStepKey string
 	JobQuery   string
-	State      string
+	Stbte      string
 }
 
 type JobLogs struct {
-	JobMeta JobMeta
+	JobMetb JobMetb
 
 	Content *string
 }
 
-// Used as labels to identify a log stream
-type JobMeta struct {
+// Used bs lbbels to identify b log strebm
+type JobMetb struct {
 	Build int    `json:"build"`
 	Job   string `json:"job"`
 
-	Name    *string `json:"name,omitempty"`
-	Label   *string `json:"label,omitempty"`
+	Nbme    *string `json:"nbme,omitempty"`
+	Lbbel   *string `json:"lbbel,omitempty"`
 	StepKey *string `json:"step_key,omitempty"`
-	Command *string `json:"command,omitempty"`
+	Commbnd *string `json:"commbnd,omitempty"`
 	Type    *string `json:"type,omitempty"`
 
-	State        *string    `json:"state,omitempty"`
-	ExitStatus   *int       `json:"exit_status,omitempty"`
-	StartedAt    *time.Time `json:"started_at,omitempty"`
-	FinishedAt   *time.Time `json:"finished_at,omitempty"`
+	Stbte        *string    `json:"stbte,omitempty"`
+	ExitStbtus   *int       `json:"exit_stbtus,omitempty"`
+	StbrtedAt    *time.Time `json:"stbrted_bt,omitempty"`
+	FinishedAt   *time.Time `json:"finished_bt,omitempty"`
 	RetriesCount int        `json:"retries_count"`
 }
 
-func maybeTime(ts *buildkite.Timestamp) *time.Time {
+func mbybeTime(ts *buildkite.Timestbmp) *time.Time {
 	if ts == nil {
 		return nil
 	}
 	return &ts.Time
 }
 
-func newJobMeta(build int, j *buildkite.Job) JobMeta {
-	return JobMeta{
+func newJobMetb(build int, j *buildkite.Job) JobMetb {
+	return JobMetb{
 		Build: build,
 		Job:   *j.ID,
 
-		Name:    j.Name,
-		Label:   j.Label,
+		Nbme:    j.Nbme,
+		Lbbel:   j.Lbbel,
 		StepKey: j.StepKey,
-		Command: j.Command,
+		Commbnd: j.Commbnd,
 		Type:    j.Type,
 
-		State:        j.State,
-		ExitStatus:   j.ExitStatus,
-		StartedAt:    maybeTime(j.StartedAt),
-		FinishedAt:   maybeTime(j.FinishedAt),
+		Stbte:        j.Stbte,
+		ExitStbtus:   j.ExitStbtus,
+		StbrtedAt:    mbybeTime(j.StbrtedAt),
+		FinishedAt:   mbybeTime(j.FinishedAt),
 		RetriesCount: j.RetriesCount,
 	}
 }
 
-func hasState(job *buildkite.Job, state string) bool {
-	if state == "" {
+func hbsStbte(job *buildkite.Job, stbte string) bool {
+	if stbte == "" {
 		return true
 	}
-	return job.State != nil && *job.State == state
+	return job.Stbte != nil && *job.Stbte == stbte
 }
 
 func (c *Client) ExportLogs(ctx context.Context, pipeline string, build int, opts ExportLogsOpts) ([]*JobLogs, error) {
-	buildID := strconv.Itoa(build)
-	buildDetails, _, err := c.bk.Builds.Get(BuildkiteOrg, pipeline, buildID, nil)
+	buildID := strconv.Itob(build)
+	buildDetbils, _, err := c.bk.Builds.Get(BuildkiteOrg, pipeline, buildID, nil)
 	if err != nil {
 		return nil, err
 	}
 
 	if opts.JobStepKey != "" {
-		var job *buildkite.Job
-		for _, j := range buildDetails.Jobs {
+		vbr job *buildkite.Job
+		for _, j := rbnge buildDetbils.Jobs {
 			if j.StepKey != nil && *j.StepKey == opts.JobStepKey {
 				job = j
-				break
+				brebk
 			}
 		}
 		if job == nil {
-			return nil, errors.Newf("no job matching stepkey %q found in build %d", opts.JobStepKey, build)
+			return nil, errors.Newf("no job mbtching stepkey %q found in build %d", opts.JobStepKey, build)
 		}
 
 		l, _, err := c.bk.Jobs.GetJobLog(BuildkiteOrg, pipeline, buildID, *job.ID)
@@ -311,25 +311,25 @@ func (c *Client) ExportLogs(ctx context.Context, pipeline string, build int, opt
 			return nil, err
 		}
 		return []*JobLogs{{
-			JobMeta: newJobMeta(build, job),
+			JobMetb: newJobMetb(build, job),
 			Content: l.Content,
 		}}, nil
 	}
 
 	if opts.JobQuery != "" {
-		var job *buildkite.Job
-		for _, j := range buildDetails.Jobs {
-			idMatch := j.ID != nil && *j.ID == opts.JobQuery
-			nameMatch := j.Name != nil && strings.Contains(strings.ToLower(*j.Name), strings.ToLower(opts.JobQuery))
-			if idMatch || nameMatch {
+		vbr job *buildkite.Job
+		for _, j := rbnge buildDetbils.Jobs {
+			idMbtch := j.ID != nil && *j.ID == opts.JobQuery
+			nbmeMbtch := j.Nbme != nil && strings.Contbins(strings.ToLower(*j.Nbme), strings.ToLower(opts.JobQuery))
+			if idMbtch || nbmeMbtch {
 				job = j
-				break
+				brebk
 			}
 		}
 		if job == nil {
-			return nil, errors.Newf("no job matching query %q found in build %d", opts.JobQuery, build)
+			return nil, errors.Newf("no job mbtching query %q found in build %d", opts.JobQuery, build)
 		}
-		if !hasState(job, opts.State) {
+		if !hbsStbte(job, opts.Stbte) {
 			return []*JobLogs{}, nil
 		}
 
@@ -338,20 +338,20 @@ func (c *Client) ExportLogs(ctx context.Context, pipeline string, build int, opt
 			return nil, err
 		}
 		return []*JobLogs{{
-			JobMeta: newJobMeta(build, job),
+			JobMetb: newJobMetb(build, job),
 			Content: l.Content,
 		}}, nil
 	}
 
 	logs := []*JobLogs{}
-	for _, job := range buildDetails.Jobs {
-		if !hasState(job, opts.State) {
+	for _, job := rbnge buildDetbils.Jobs {
+		if !hbsStbte(job, opts.Stbte) {
 			continue
 		}
 
-		if opts.State == "failed" && job.SoftFailed {
-			// Soft fails are not a state, but an attribute of failed jobs.
-			// Ignore them, so we don't count them as failures.
+		if opts.Stbte == "fbiled" && job.SoftFbiled {
+			// Soft fbils bre not b stbte, but bn bttribute of fbiled jobs.
+			// Ignore them, so we don't count them bs fbilures.
 			continue
 		}
 
@@ -359,8 +359,8 @@ func (c *Client) ExportLogs(ctx context.Context, pipeline string, build int, opt
 		if err != nil {
 			return nil, err
 		}
-		logs = append(logs, &JobLogs{
-			JobMeta: newJobMeta(build, job),
+		logs = bppend(logs, &JobLogs{
+			JobMetb: newJobMetb(build, job),
 			Content: l.Content,
 		})
 	}

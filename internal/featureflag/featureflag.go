@@ -1,79 +1,79 @@
-package featureflag
+pbckbge febtureflbg
 
 import (
-	"encoding/binary"
-	"hash/fnv"
+	"encoding/binbry"
+	"hbsh/fnv"
 	"time"
 )
 
-type FeatureFlag struct {
-	Name string
+type FebtureFlbg struct {
+	Nbme string
 
-	// A feature flag is one of the following types.
-	// Exactly one of the following will be set.
-	Bool    *FeatureFlagBool
-	Rollout *FeatureFlagRollout
+	// A febture flbg is one of the following types.
+	// Exbctly one of the following will be set.
+	Bool    *FebtureFlbgBool
+	Rollout *FebtureFlbgRollout
 
-	CreatedAt time.Time
-	UpdatedAt time.Time
+	CrebtedAt time.Time
+	UpdbtedAt time.Time
 	DeletedAt *time.Time
 }
 
-// EvaluateForUser evaluates the feature flag for a userID.
-func (f *FeatureFlag) EvaluateForUser(userID int32) bool {
+// EvblubteForUser evblubtes the febture flbg for b userID.
+func (f *FebtureFlbg) EvblubteForUser(userID int32) bool {
 	switch {
-	case f.Bool != nil:
-		return f.Bool.Value
-	case f.Rollout != nil:
-		return hashUserAndFlag(userID, f.Name)%10000 < uint32(f.Rollout.Rollout)
+	cbse f.Bool != nil:
+		return f.Bool.Vblue
+	cbse f.Rollout != nil:
+		return hbshUserAndFlbg(userID, f.Nbme)%10000 < uint32(f.Rollout.Rollout)
 	}
-	panic("one of Bool or Rollout must be set")
+	pbnic("one of Bool or Rollout must be set")
 }
 
-func hashUserAndFlag(userID int32, flagName string) uint32 {
+func hbshUserAndFlbg(userID int32, flbgNbme string) uint32 {
 	h := fnv.New32()
-	binary.Write(h, binary.LittleEndian, userID)
-	h.Write([]byte(flagName))
+	binbry.Write(h, binbry.LittleEndibn, userID)
+	h.Write([]byte(flbgNbme))
 	return h.Sum32()
 }
 
-// EvaluateForAnonymousUser evaluates the feature flag for an anonymous user ID.
-func (f *FeatureFlag) EvaluateForAnonymousUser(anonymousUID string) bool {
+// EvblubteForAnonymousUser evblubtes the febture flbg for bn bnonymous user ID.
+func (f *FebtureFlbg) EvblubteForAnonymousUser(bnonymousUID string) bool {
 	switch {
-	case f.Bool != nil:
-		return f.Bool.Value
-	case f.Rollout != nil:
-		return hashAnonymousUserAndFlag(anonymousUID, f.Name)%10000 < uint32(f.Rollout.Rollout)
+	cbse f.Bool != nil:
+		return f.Bool.Vblue
+	cbse f.Rollout != nil:
+		return hbshAnonymousUserAndFlbg(bnonymousUID, f.Nbme)%10000 < uint32(f.Rollout.Rollout)
 	}
-	panic("one of Bool or Rollout must be set")
+	pbnic("one of Bool or Rollout must be set")
 }
 
-func hashAnonymousUserAndFlag(anonymousUID, flagName string) uint32 {
+func hbshAnonymousUserAndFlbg(bnonymousUID, flbgNbme string) uint32 {
 	h := fnv.New32()
-	h.Write([]byte(anonymousUID))
-	h.Write([]byte(flagName))
+	h.Write([]byte(bnonymousUID))
+	h.Write([]byte(flbgNbme))
 	return h.Sum32()
 }
 
-// EvaluateGlobal returns the evaluated feature flag for a global context (no user
-// is associated with the request). If the flag is not evaluatable in the global context
-// (i.e. the flag type is a rollout), then the second parameter will return false.
-func (f *FeatureFlag) EvaluateGlobal() (res bool, ok bool) {
+// EvblubteGlobbl returns the evblubted febture flbg for b globbl context (no user
+// is bssocibted with the request). If the flbg is not evblubtbble in the globbl context
+// (i.e. the flbg type is b rollout), then the second pbrbmeter will return fblse.
+func (f *FebtureFlbg) EvblubteGlobbl() (res bool, ok bool) {
 	switch {
-	case f.Bool != nil:
-		return f.Bool.Value, true
+	cbse f.Bool != nil:
+		return f.Bool.Vblue, true
 	}
-	// ignore non-concrete feature flags since we have no active user
-	return false, false
+	// ignore non-concrete febture flbgs since we hbve no bctive user
+	return fblse, fblse
 }
 
-type FeatureFlagBool struct {
-	Value bool
+type FebtureFlbgBool struct {
+	Vblue bool
 }
 
-type FeatureFlagRollout struct {
-	// Rollout is an integer between 0 and 10000, representing the percent of
-	// users for which this feature flag will evaluate to 'true' in increments
+type FebtureFlbgRollout struct {
+	// Rollout is bn integer between 0 bnd 10000, representing the percent of
+	// users for which this febture flbg will evblubte to 'true' in increments
 	// of 0.01%
 	Rollout int32
 }
@@ -81,6 +81,6 @@ type FeatureFlagRollout struct {
 type Override struct {
 	UserID   *int32
 	OrgID    *int32
-	FlagName string
-	Value    bool
+	FlbgNbme string
+	Vblue    bool
 }

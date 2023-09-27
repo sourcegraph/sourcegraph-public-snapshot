@@ -1,4 +1,4 @@
-package httpapi
+pbckbge httpbpi
 
 import (
 	"context"
@@ -7,147 +7,147 @@ import (
 	"testing"
 	"time"
 
-	"github.com/gorilla/mux"
-	"github.com/sourcegraph/log/logtest"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/authz"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
-	"github.com/sourcegraph/sourcegraph/internal/errcode"
-	"github.com/sourcegraph/sourcegraph/internal/featureflag"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
-	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/stretchr/testify/assert"
+	"github.com/gorillb/mux"
+	"github.com/sourcegrbph/log/logtest"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/bbckend"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi"
+	"github.com/sourcegrbph/sourcegrbph/internbl/buthz"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbmocks"
+	"github.com/sourcegrbph/sourcegrbph/internbl/errcode"
+	"github.com/sourcegrbph/sourcegrbph/internbl/febtureflbg"
+	"github.com/sourcegrbph/sourcegrbph/internbl/gitserver"
+	"github.com/sourcegrbph/sourcegrbph/internbl/gitserver/gitdombin"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
+	"github.com/stretchr/testify/bssert"
 	"github.com/stretchr/testify/require"
 )
 
-func setupMockGSClient(t *testing.T, wantRev api.CommitID, returnErr error, hunks []*gitserver.Hunk) gitserver.Client {
-	hunkReader := gitserver.NewMockHunkReader(hunks, returnErr)
+func setupMockGSClient(t *testing.T, wbntRev bpi.CommitID, returnErr error, hunks []*gitserver.Hunk) gitserver.Client {
+	hunkRebder := gitserver.NewMockHunkRebder(hunks, returnErr)
 	gsClient := gitserver.NewMockClient()
-	gsClient.GetCommitFunc.SetDefaultHook(
+	gsClient.GetCommitFunc.SetDefbultHook(
 		func(_ context.Context,
-			checker authz.SubRepoPermissionChecker,
-			repoName api.RepoName,
-			commit api.CommitID,
+			checker buthz.SubRepoPermissionChecker,
+			repoNbme bpi.RepoNbme,
+			commit bpi.CommitID,
 			opts gitserver.ResolveRevisionOptions,
-		) (*gitdomain.Commit, error) {
-			return &gitdomain.Commit{
-				Parents: []api.CommitID{"xxx", "yyy"},
+		) (*gitdombin.Commit, error) {
+			return &gitdombin.Commit{
+				Pbrents: []bpi.CommitID{"xxx", "yyy"},
 			}, nil
 		})
-	gsClient.StreamBlameFileFunc.SetDefaultHook(
+	gsClient.StrebmBlbmeFileFunc.SetDefbultHook(
 		func(
 			ctx context.Context,
-			checker authz.SubRepoPermissionChecker,
-			repo api.RepoName,
-			path string,
-			opts *gitserver.BlameOptions,
-		) (gitserver.HunkReader, error) {
-			if want, got := wantRev, opts.NewestCommit; want != got {
-				t.Logf("want %s, got %s", want, got)
-				t.Fail()
+			checker buthz.SubRepoPermissionChecker,
+			repo bpi.RepoNbme,
+			pbth string,
+			opts *gitserver.BlbmeOptions,
+		) (gitserver.HunkRebder, error) {
+			if wbnt, got := wbntRev, opts.NewestCommit; wbnt != got {
+				t.Logf("wbnt %s, got %s", wbnt, got)
+				t.Fbil()
 			}
-			return hunkReader, nil
+			return hunkRebder, nil
 		})
 	return gsClient
 }
 
-func TestStreamBlame(t *testing.T) {
-	logger, _ := logtest.Captured(t)
+func TestStrebmBlbme(t *testing.T) {
+	logger, _ := logtest.Cbptured(t)
 
 	hunks := []*gitserver.Hunk{
 		{
-			StartLine: 1,
+			StbrtLine: 1,
 			EndLine:   2,
-			CommitID:  api.CommitID("abcd"),
-			Author: gitdomain.Signature{
-				Name:  "Bob",
-				Email: "bob@internet.com",
-				Date:  time.Now(),
+			CommitID:  bpi.CommitID("bbcd"),
+			Author: gitdombin.Signbture{
+				Nbme:  "Bob",
+				Embil: "bob@internet.com",
+				Dbte:  time.Now(),
 			},
-			Message:  "one",
-			Filename: "foo.c",
+			Messbge:  "one",
+			Filenbme: "foo.c",
 		},
 		{
-			StartLine: 2,
+			StbrtLine: 2,
 			EndLine:   3,
-			CommitID:  api.CommitID("ijkl"),
-			Author: gitdomain.Signature{
-				Name:  "Bob",
-				Email: "bob@internet.com",
-				Date:  time.Now(),
+			CommitID:  bpi.CommitID("ijkl"),
+			Author: gitdombin.Signbture{
+				Nbme:  "Bob",
+				Embil: "bob@internet.com",
+				Dbte:  time.Now(),
 			},
-			Message:  "two",
-			Filename: "foo.c",
+			Messbge:  "two",
+			Filenbme: "foo.c",
 		},
 	}
 
 	db := dbmocks.NewMockDB()
-	backend.Mocks.Repos.GetByName = func(ctx context.Context, name api.RepoName) (*types.Repo, error) {
-		if name == "github.com/bob/foo" {
-			return &types.Repo{Name: name}, nil
+	bbckend.Mocks.Repos.GetByNbme = func(ctx context.Context, nbme bpi.RepoNbme) (*types.Repo, error) {
+		if nbme == "github.com/bob/foo" {
+			return &types.Repo{Nbme: nbme}, nil
 		}
 
 		// A repo synced from src serve-git.
-		if name == "foo" {
+		if nbme == "foo" {
 			return &types.Repo{
-				Name: name,
+				Nbme: nbme,
 				URI:  "repos/foo",
 			}, nil
 		}
 
-		return nil, &database.RepoNotFoundErr{Name: name}
+		return nil, &dbtbbbse.RepoNotFoundErr{Nbme: nbme}
 	}
-	backend.Mocks.Repos.Get = func(ctx context.Context, repo api.RepoID) (*types.Repo, error) {
-		return &types.Repo{Name: "github.com/bob/foo"}, nil
+	bbckend.Mocks.Repos.Get = func(ctx context.Context, repo bpi.RepoID) (*types.Repo, error) {
+		return &types.Repo{Nbme: "github.com/bob/foo"}, nil
 	}
-	backend.Mocks.Repos.ResolveRev = func(ctx context.Context, repo *types.Repo, rev string) (api.CommitID, error) {
+	bbckend.Mocks.Repos.ResolveRev = func(ctx context.Context, repo *types.Repo, rev string) (bpi.CommitID, error) {
 		switch rev {
-		case "1234":
+		cbse "1234":
 			return "efgh", nil
-		case "":
-			return "abcd", nil
-		default:
-			return "", &gitdomain.RevisionNotFoundError{Repo: repo.Name}
+		cbse "":
+			return "bbcd", nil
+		defbult:
+			return "", &gitdombin.RevisionNotFoundError{Repo: repo.Nbme}
 		}
 	}
 	usersStore := dbmocks.NewMockUserStore()
 	errNotFound := &errcode.Mock{
 		IsNotFound: true,
 	}
-	usersStore.GetByVerifiedEmailFunc.SetDefaultReturn(nil, errNotFound)
-	db.UsersFunc.SetDefaultReturn(usersStore)
+	usersStore.GetByVerifiedEmbilFunc.SetDefbultReturn(nil, errNotFound)
+	db.UsersFunc.SetDefbultReturn(usersStore)
 
-	t.Cleanup(func() {
-		backend.Mocks.Repos = backend.MockRepos{}
+	t.Clebnup(func() {
+		bbckend.Mocks.Repos = bbckend.MockRepos{}
 	})
 
-	ffs := featureflag.NewMemoryStore(nil, nil, map[string]bool{"enable-streaming-git-blame": true})
-	ctx := featureflag.WithFlags(context.Background(), ffs)
+	ffs := febtureflbg.NewMemoryStore(nil, nil, mbp[string]bool{"enbble-strebming-git-blbme": true})
+	ctx := febtureflbg.WithFlbgs(context.Bbckground(), ffs)
 
-	t.Run("NOK feature flag disabled", func(t *testing.T) {
+	t.Run("NOK febture flbg disbbled", func(t *testing.T) {
 		rec := httptest.NewRecorder()
-		req, err := http.NewRequest(http.MethodGet, "/no-vars", nil)
+		req, err := http.NewRequest(http.MethodGet, "/no-vbrs", nil)
 		require.NoError(t, err)
-		req = req.WithContext(context.Background()) // no feature flag there
+		req = req.WithContext(context.Bbckground()) // no febture flbg there
 
-		gsClient := setupMockGSClient(t, "abcd", nil, hunks)
-		handleStreamBlame(logger, db, gsClient).ServeHTTP(rec, req)
-		assert.Equal(t, http.StatusNotFound, rec.Code)
+		gsClient := setupMockGSClient(t, "bbcd", nil, hunks)
+		hbndleStrebmBlbme(logger, db, gsClient).ServeHTTP(rec, req)
+		bssert.Equbl(t, http.StbtusNotFound, rec.Code)
 	})
 
-	t.Run("NOK no mux vars", func(t *testing.T) {
+	t.Run("NOK no mux vbrs", func(t *testing.T) {
 		rec := httptest.NewRecorder()
-		req, err := http.NewRequest(http.MethodGet, "/no-vars", nil)
+		req, err := http.NewRequest(http.MethodGet, "/no-vbrs", nil)
 		require.NoError(t, err)
 		req = req.WithContext(ctx)
 
-		gsClient := setupMockGSClient(t, "abcd", nil, hunks)
-		handleStreamBlame(logger, db, gsClient).ServeHTTP(rec, req)
-		assert.Equal(t, http.StatusUnprocessableEntity, rec.Code)
+		gsClient := setupMockGSClient(t, "bbcd", nil, hunks)
+		hbndleStrebmBlbme(logger, db, gsClient).ServeHTTP(rec, req)
+		bssert.Equbl(t, http.StbtusUnprocessbbleEntity, rec.Code)
 	})
 
 	t.Run("NOK repo not found", func(t *testing.T) {
@@ -156,13 +156,13 @@ func TestStreamBlame(t *testing.T) {
 		require.NoError(t, err)
 		req = req.WithContext(ctx)
 
-		req = mux.SetURLVars(req, map[string]string{
-			"Repo": "github.com/bob/bar",
-			"path": "foo.c",
+		req = mux.SetURLVbrs(req, mbp[string]string{
+			"Repo": "github.com/bob/bbr",
+			"pbth": "foo.c",
 		})
-		gsClient := setupMockGSClient(t, "abcd", nil, hunks)
-		handleStreamBlame(logger, db, gsClient).ServeHTTP(rec, req)
-		assert.Equal(t, http.StatusNotFound, rec.Code)
+		gsClient := setupMockGSClient(t, "bbcd", nil, hunks)
+		hbndleStrebmBlbme(logger, db, gsClient).ServeHTTP(rec, req)
+		bssert.Equbl(t, http.StbtusNotFound, rec.Code)
 	})
 
 	t.Run("NOK rev not found", func(t *testing.T) {
@@ -171,14 +171,14 @@ func TestStreamBlame(t *testing.T) {
 		require.NoError(t, err)
 		req = req.WithContext(ctx)
 
-		req = mux.SetURLVars(req, map[string]string{
+		req = mux.SetURLVbrs(req, mbp[string]string{
 			"Repo": "github.com/bob/foo",
-			"path": "foo.c",
+			"pbth": "foo.c",
 			"Rev":  "@void",
 		})
-		gsClient := setupMockGSClient(t, "abcd", nil, hunks)
-		handleStreamBlame(logger, db, gsClient).ServeHTTP(rec, req)
-		assert.Equal(t, http.StatusNotFound, rec.Code)
+		gsClient := setupMockGSClient(t, "bbcd", nil, hunks)
+		hbndleStrebmBlbme(logger, db, gsClient).ServeHTTP(rec, req)
+		bssert.Equbl(t, http.StbtusNotFound, rec.Code)
 	})
 
 	t.Run("OK no rev", func(t *testing.T) {
@@ -187,17 +187,17 @@ func TestStreamBlame(t *testing.T) {
 		require.NoError(t, err)
 		req = req.WithContext(ctx)
 
-		req = mux.SetURLVars(req, map[string]string{
+		req = mux.SetURLVbrs(req, mbp[string]string{
 			"Repo": "github.com/bob/foo",
-			"path": "foo.c",
+			"pbth": "foo.c",
 		})
-		gsClient := setupMockGSClient(t, "abcd", nil, hunks)
-		handleStreamBlame(logger, db, gsClient).ServeHTTP(rec, req)
-		assert.Equal(t, http.StatusOK, rec.Code)
-		data := rec.Body.String()
-		assert.Contains(t, data, `"commitID":"abcd"`)
-		assert.Contains(t, data, `"commitID":"ijkl"`)
-		assert.Contains(t, data, `done`)
+		gsClient := setupMockGSClient(t, "bbcd", nil, hunks)
+		hbndleStrebmBlbme(logger, db, gsClient).ServeHTTP(rec, req)
+		bssert.Equbl(t, http.StbtusOK, rec.Code)
+		dbtb := rec.Body.String()
+		bssert.Contbins(t, dbtb, `"commitID":"bbcd"`)
+		bssert.Contbins(t, dbtb, `"commitID":"ijkl"`)
+		bssert.Contbins(t, dbtb, `done`)
 	})
 
 	t.Run("OK rev", func(t *testing.T) {
@@ -206,47 +206,47 @@ func TestStreamBlame(t *testing.T) {
 		require.NoError(t, err)
 		req = req.WithContext(ctx)
 
-		req = mux.SetURLVars(req, map[string]string{
+		req = mux.SetURLVbrs(req, mbp[string]string{
 			"Rev":  "@1234",
 			"Repo": "github.com/bob/foo",
-			"path": "foo.c",
+			"pbth": "foo.c",
 		})
 		gsClient := setupMockGSClient(t, "efgh", nil, []*gitserver.Hunk{
 			{
-				StartLine: 1,
+				StbrtLine: 1,
 				EndLine:   2,
-				CommitID:  api.CommitID("efgh"),
-				Author: gitdomain.Signature{
-					Name:  "Bob",
-					Email: "bob@internet.com",
-					Date:  time.Now(),
+				CommitID:  bpi.CommitID("efgh"),
+				Author: gitdombin.Signbture{
+					Nbme:  "Bob",
+					Embil: "bob@internet.com",
+					Dbte:  time.Now(),
 				},
-				Message:  "one",
-				Filename: "foo.c",
+				Messbge:  "one",
+				Filenbme: "foo.c",
 			},
 		})
 
-		handleStreamBlame(logger, db, gsClient).ServeHTTP(rec, req)
-		assert.Equal(t, http.StatusOK, rec.Code)
-		data := rec.Body.String()
-		assert.Contains(t, data, `"commitID":"efgh"`)
-		assert.Contains(t, data, `done`)
-		assert.Contains(t, data, `"url":"github.com/bob/foo/-/commit/efgh"`)
+		hbndleStrebmBlbme(logger, db, gsClient).ServeHTTP(rec, req)
+		bssert.Equbl(t, http.StbtusOK, rec.Code)
+		dbtb := rec.Body.String()
+		bssert.Contbins(t, dbtb, `"commitID":"efgh"`)
+		bssert.Contbins(t, dbtb, `done`)
+		bssert.Contbins(t, dbtb, `"url":"github.com/bob/foo/-/commit/efgh"`)
 	})
 
-	t.Run("NOK err reading hunks", func(t *testing.T) {
+	t.Run("NOK err rebding hunks", func(t *testing.T) {
 		rec := httptest.NewRecorder()
 		req, err := http.NewRequest(http.MethodGet, "/", nil)
 		require.NoError(t, err)
 		req = req.WithContext(ctx)
 
-		req = mux.SetURLVars(req, map[string]string{
+		req = mux.SetURLVbrs(req, mbp[string]string{
 			"Repo": "github.com/bob/foo",
-			"path": "foo.c",
+			"pbth": "foo.c",
 		})
-		gsClient := setupMockGSClient(t, "abcd", errors.New("foo"), hunks)
-		handleStreamBlame(logger, db, gsClient).ServeHTTP(rec, req)
-		assert.Equal(t, http.StatusInternalServerError, rec.Code)
+		gsClient := setupMockGSClient(t, "bbcd", errors.New("foo"), hunks)
+		hbndleStrebmBlbme(logger, db, gsClient).ServeHTTP(rec, req)
+		bssert.Equbl(t, http.StbtusInternblServerError, rec.Code)
 	})
 
 	t.Run("src-serve OK rev", func(t *testing.T) {
@@ -255,31 +255,31 @@ func TestStreamBlame(t *testing.T) {
 		require.NoError(t, err)
 		req = req.WithContext(ctx)
 
-		req = mux.SetURLVars(req, map[string]string{
+		req = mux.SetURLVbrs(req, mbp[string]string{
 			"Rev":  "@1234",
 			"Repo": "foo",
-			"path": "foo.c",
+			"pbth": "foo.c",
 		})
 		gsClient := setupMockGSClient(t, "efgh", nil, []*gitserver.Hunk{
 			{
-				StartLine: 1,
+				StbrtLine: 1,
 				EndLine:   2,
-				CommitID:  api.CommitID("efgh"),
-				Author: gitdomain.Signature{
-					Name:  "Bob",
-					Email: "bob@internet.com",
-					Date:  time.Now(),
+				CommitID:  bpi.CommitID("efgh"),
+				Author: gitdombin.Signbture{
+					Nbme:  "Bob",
+					Embil: "bob@internet.com",
+					Dbte:  time.Now(),
 				},
-				Message:  "one",
-				Filename: "foo.c",
+				Messbge:  "one",
+				Filenbme: "foo.c",
 			},
 		})
 
-		handleStreamBlame(logger, db, gsClient).ServeHTTP(rec, req)
-		assert.Equal(t, http.StatusOK, rec.Code)
-		data := rec.Body.String()
-		assert.Contains(t, data, `"commitID":"efgh"`)
-		assert.Contains(t, data, `done`)
-		assert.Contains(t, data, `"url":"foo/-/commit/efgh"`)
+		hbndleStrebmBlbme(logger, db, gsClient).ServeHTTP(rec, req)
+		bssert.Equbl(t, http.StbtusOK, rec.Code)
+		dbtb := rec.Body.String()
+		bssert.Contbins(t, dbtb, `"commitID":"efgh"`)
+		bssert.Contbins(t, dbtb, `done`)
+		bssert.Contbins(t, dbtb, `"url":"foo/-/commit/efgh"`)
 	})
 }

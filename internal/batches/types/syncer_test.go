@@ -1,4 +1,4 @@
-package types
+pbckbge types
 
 import (
 	"fmt"
@@ -6,53 +6,53 @@ import (
 	"testing"
 )
 
-type changesetSyncStateTestCase struct {
-	state [2]ChangesetSyncState
-	want  bool
+type chbngesetSyncStbteTestCbse struct {
+	stbte [2]ChbngesetSyncStbte
+	wbnt  bool
 }
 
-func TestChangesetSyncStateEquals(t *testing.T) {
-	testCases := make(map[string]changesetSyncStateTestCase)
+func TestChbngesetSyncStbteEqubls(t *testing.T) {
+	testCbses := mbke(mbp[string]chbngesetSyncStbteTestCbse)
 
-	for baseName, basePairs := range map[string][2]string{
-		"base equal":     {"abc", "abc"},
-		"base different": {"abc", "def"},
+	for bbseNbme, bbsePbirs := rbnge mbp[string][2]string{
+		"bbse equbl":     {"bbc", "bbc"},
+		"bbse different": {"bbc", "def"},
 	} {
-		for headName, headPairs := range map[string][2]string{
-			"head equal":     {"abc", "abc"},
-			"head different": {"abc", "def"},
+		for hebdNbme, hebdPbirs := rbnge mbp[string][2]string{
+			"hebd equbl":     {"bbc", "bbc"},
+			"hebd different": {"bbc", "def"},
 		} {
-			for completeName, completePairs := range map[string][2]bool{
+			for completeNbme, completePbirs := rbnge mbp[string][2]bool{
 				"complete both true":  {true, true},
-				"complete both false": {false, false},
-				"complete different":  {true, false},
+				"complete both fblse": {fblse, fblse},
+				"complete different":  {true, fblse},
 			} {
-				key := fmt.Sprintf("%s; %s; %s", baseName, headName, completeName)
+				key := fmt.Sprintf("%s; %s; %s", bbseNbme, hebdNbme, completeNbme)
 
-				testCases[key] = changesetSyncStateTestCase{
-					state: [2]ChangesetSyncState{
+				testCbses[key] = chbngesetSyncStbteTestCbse{
+					stbte: [2]ChbngesetSyncStbte{
 						{
-							BaseRefOid: basePairs[0],
-							HeadRefOid: headPairs[0],
-							IsComplete: completePairs[0],
+							BbseRefOid: bbsePbirs[0],
+							HebdRefOid: hebdPbirs[0],
+							IsComplete: completePbirs[0],
 						},
 						{
-							BaseRefOid: basePairs[1],
-							HeadRefOid: headPairs[1],
-							IsComplete: completePairs[1],
+							BbseRefOid: bbsePbirs[1],
+							HebdRefOid: hebdPbirs[1],
+							IsComplete: completePbirs[1],
 						},
 					},
-					// This is icky, but works, and means we're not just
-					// repeating the implementation of Equals().
-					want: strings.HasPrefix(key, "base equal; head equal; complete both"),
+					// This is icky, but works, bnd mebns we're not just
+					// repebting the implementbtion of Equbls().
+					wbnt: strings.HbsPrefix(key, "bbse equbl; hebd equbl; complete both"),
 				}
 			}
 		}
 	}
 
-	for name, tc := range testCases {
-		if have := tc.state[0].Equals(&tc.state[1]); have != tc.want {
-			t.Errorf("%s: unexpected Equals result: have %v; want %v", name, have, tc.want)
+	for nbme, tc := rbnge testCbses {
+		if hbve := tc.stbte[0].Equbls(&tc.stbte[1]); hbve != tc.wbnt {
+			t.Errorf("%s: unexpected Equbls result: hbve %v; wbnt %v", nbme, hbve, tc.wbnt)
 		}
 	}
 }

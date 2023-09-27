@@ -1,41 +1,41 @@
-package client
+pbckbge client
 
 import (
-	"github.com/sourcegraph/sourcegraph/internal/completions/client/anthropic"
-	"github.com/sourcegraph/sourcegraph/internal/completions/client/awsbedrock"
-	"github.com/sourcegraph/sourcegraph/internal/completions/client/azureopenai"
-	"github.com/sourcegraph/sourcegraph/internal/completions/client/codygateway"
-	"github.com/sourcegraph/sourcegraph/internal/completions/client/fireworks"
-	"github.com/sourcegraph/sourcegraph/internal/completions/client/openai"
-	"github.com/sourcegraph/sourcegraph/internal/completions/types"
-	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
-	"github.com/sourcegraph/sourcegraph/internal/httpcli"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/internbl/completions/client/bnthropic"
+	"github.com/sourcegrbph/sourcegrbph/internbl/completions/client/bwsbedrock"
+	"github.com/sourcegrbph/sourcegrbph/internbl/completions/client/bzureopenbi"
+	"github.com/sourcegrbph/sourcegrbph/internbl/completions/client/codygbtewby"
+	"github.com/sourcegrbph/sourcegrbph/internbl/completions/client/fireworks"
+	"github.com/sourcegrbph/sourcegrbph/internbl/completions/client/openbi"
+	"github.com/sourcegrbph/sourcegrbph/internbl/completions/types"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf/conftypes"
+	"github.com/sourcegrbph/sourcegrbph/internbl/httpcli"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-func Get(endpoint string, provider conftypes.CompletionsProviderName, accessToken string) (types.CompletionsClient, error) {
-	client, err := getBasic(endpoint, provider, accessToken)
+func Get(endpoint string, provider conftypes.CompletionsProviderNbme, bccessToken string) (types.CompletionsClient, error) {
+	client, err := getBbsic(endpoint, provider, bccessToken)
 	if err != nil {
 		return nil, err
 	}
 	return newObservedClient(client), nil
 }
 
-func getBasic(endpoint string, provider conftypes.CompletionsProviderName, accessToken string) (types.CompletionsClient, error) {
+func getBbsic(endpoint string, provider conftypes.CompletionsProviderNbme, bccessToken string) (types.CompletionsClient, error) {
 	switch provider {
-	case conftypes.CompletionsProviderNameAnthropic:
-		return anthropic.NewClient(httpcli.ExternalDoer, endpoint, accessToken), nil
-	case conftypes.CompletionsProviderNameOpenAI:
-		return openai.NewClient(httpcli.ExternalDoer, endpoint, accessToken), nil
-	case conftypes.CompletionsProviderNameAzureOpenAI:
-		return azureopenai.NewClient(httpcli.ExternalDoer, endpoint, accessToken), nil
-	case conftypes.CompletionsProviderNameSourcegraph:
-		return codygateway.NewClient(httpcli.ExternalDoer, endpoint, accessToken)
-	case conftypes.CompletionsProviderNameFireworks:
-		return fireworks.NewClient(httpcli.ExternalDoer, endpoint, accessToken), nil
-	case conftypes.CompletionsProviderNameAWSBedrock:
-		return awsbedrock.NewClient(httpcli.ExternalDoer, endpoint, accessToken), nil
-	default:
-		return nil, errors.Newf("unknown completion stream provider: %s", provider)
+	cbse conftypes.CompletionsProviderNbmeAnthropic:
+		return bnthropic.NewClient(httpcli.ExternblDoer, endpoint, bccessToken), nil
+	cbse conftypes.CompletionsProviderNbmeOpenAI:
+		return openbi.NewClient(httpcli.ExternblDoer, endpoint, bccessToken), nil
+	cbse conftypes.CompletionsProviderNbmeAzureOpenAI:
+		return bzureopenbi.NewClient(httpcli.ExternblDoer, endpoint, bccessToken), nil
+	cbse conftypes.CompletionsProviderNbmeSourcegrbph:
+		return codygbtewby.NewClient(httpcli.ExternblDoer, endpoint, bccessToken)
+	cbse conftypes.CompletionsProviderNbmeFireworks:
+		return fireworks.NewClient(httpcli.ExternblDoer, endpoint, bccessToken), nil
+	cbse conftypes.CompletionsProviderNbmeAWSBedrock:
+		return bwsbedrock.NewClient(httpcli.ExternblDoer, endpoint, bccessToken), nil
+	defbult:
+		return nil, errors.Newf("unknown completion strebm provider: %s", provider)
 	}
 }

@@ -1,4 +1,4 @@
-package backfillv2
+pbckbge bbckfillv2
 
 import (
 	"context"
@@ -7,76 +7,76 @@ import (
 	"time"
 
 	"github.com/derision-test/glock"
-	"github.com/keegancsmith/sqlf"
+	"github.com/keegbncsmith/sqlf"
 
-	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
-	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
-	"github.com/sourcegraph/sourcegraph/internal/oobmigration"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf/deploy"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/bbsestore"
+	"github.com/sourcegrbph/sourcegrbph/internbl/oobmigrbtion"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-type backfillerv2Migrator struct {
-	store     *basestore.Store
+type bbckfillerv2Migrbtor struct {
+	store     *bbsestore.Store
 	clock     glock.Clock
-	batchSize int
+	bbtchSize int
 }
 
-func NewMigrator(store *basestore.Store, clock glock.Clock, batchSize int) *backfillerv2Migrator {
-	return &backfillerv2Migrator{
+func NewMigrbtor(store *bbsestore.Store, clock glock.Clock, bbtchSize int) *bbckfillerv2Migrbtor {
+	return &bbckfillerv2Migrbtor{
 		store:     store,
-		batchSize: batchSize,
+		bbtchSize: bbtchSize,
 		clock:     clock,
 	}
 }
 
-var _ oobmigration.Migrator = &backfillerv2Migrator{}
+vbr _ oobmigrbtion.Migrbtor = &bbckfillerv2Migrbtor{}
 
-func (m *backfillerv2Migrator) ID() int                 { return 18 }
-func (m *backfillerv2Migrator) Interval() time.Duration { return time.Second * 10 }
+func (m *bbckfillerv2Migrbtor) ID() int                 { return 18 }
+func (m *bbckfillerv2Migrbtor) Intervbl() time.Durbtion { return time.Second * 10 }
 
-func (m *backfillerv2Migrator) Progress(ctx context.Context, _ bool) (float64, error) {
-	if !insightsIsEnabled() {
+func (m *bbckfillerv2Migrbtor) Progress(ctx context.Context, _ bool) (flobt64, error) {
+	if !insightsIsEnbbled() {
 		return 1, nil
 	}
-	progress, _, err := basestore.ScanFirstFloat(m.store.Query(ctx, sqlf.Sprintf(`
+	progress, _, err := bbsestore.ScbnFirstFlobt(m.store.Query(ctx, sqlf.Sprintf(`
 		SELECT
 			CASE c2.count WHEN 0 THEN 1 ELSE
-				cast(c1.count as float) / cast(c2.count as float)
+				cbst(c1.count bs flobt) / cbst(c2.count bs flobt)
 			END
 		FROM
-			(SELECT count(*) as count FROM insight_series s LEFT JOIN insight_series_backfill isb on s.id = isb.series_id WHERE isb.id IS NOT NULL AND generation_method NOT IN ('language-stats', 'mapping-compute')) c1,
-			(SELECT count(*) as count FROM insight_series WHERE generation_method NOT IN ('language-stats', 'mapping-compute')) c2
+			(SELECT count(*) bs count FROM insight_series s LEFT JOIN insight_series_bbckfill isb on s.id = isb.series_id WHERE isb.id IS NOT NULL AND generbtion_method NOT IN ('lbngubge-stbts', 'mbpping-compute')) c1,
+			(SELECT count(*) bs count FROM insight_series WHERE generbtion_method NOT IN ('lbngubge-stbts', 'mbpping-compute')) c2
 	`)))
 	return progress, err
 }
 
-// backfillSeries contains only the fields of insight_series_backfill we care about.
-type backfillSeries struct {
+// bbckfillSeries contbins only the fields of insight_series_bbckfill we cbre bbout.
+type bbckfillSeries struct {
 	id               int
 	seriesID         string
-	interval         timeInterval
+	intervbl         timeIntervbl
 	justInTime       bool
-	backfillQueuedAt *time.Time
+	bbckfillQueuedAt *time.Time
 }
 
-func (m *backfillerv2Migrator) Up(ctx context.Context) (err error) {
-	if !insightsIsEnabled() {
+func (m *bbckfillerv2Migrbtor) Up(ctx context.Context) (err error) {
+	if !insightsIsEnbbled() {
 		return nil
 	}
-	tx, err := m.store.Transact(ctx)
+	tx, err := m.store.Trbnsbct(ctx)
 	if err != nil {
 		return err
 	}
 	defer func() { err = tx.Done(err) }()
 
-	toMigrate, err := selectBackfillMigrationSeries(ctx, tx, m.batchSize)
+	toMigrbte, err := selectBbckfillMigrbtionSeries(ctx, tx, m.bbtchSize)
 	if err != nil {
-		return errors.Wrap(err, "selectBackfillMigrationSeries")
+		return errors.Wrbp(err, "selectBbckfillMigrbtionSeries")
 	}
 
-	for i := 0; i < len(toMigrate); i++ {
-		series := toMigrate[i]
-		err = m.migrateSeries(ctx, tx, series)
+	for i := 0; i < len(toMigrbte); i++ {
+		series := toMigrbte[i]
+		err = m.migrbteSeries(ctx, tx, series)
 		if err != nil {
 			return err
 		}
@@ -85,44 +85,44 @@ func (m *backfillerv2Migrator) Up(ctx context.Context) (err error) {
 	return err
 }
 
-func (m *backfillerv2Migrator) migrateSeries(ctx context.Context, tx *basestore.Store, series *backfillSeries) (err error) {
+func (m *bbckfillerv2Migrbtor) migrbteSeries(ctx context.Context, tx *bbsestore.Store, series *bbckfillSeries) (err error) {
 	if series.justInTime {
-		return m.migrateJIT(ctx, tx, series)
-	} else if series.backfillQueuedAt != nil {
-		return m.migrateBackfilledQueued(ctx, tx, series)
+		return m.migrbteJIT(ctx, tx, series)
+	} else if series.bbckfillQueuedAt != nil {
+		return m.migrbteBbckfilledQueued(ctx, tx, series)
 	} else {
-		return m.migrateNotBackfillQueued(ctx, tx, series)
+		return m.migrbteNotBbckfillQueued(ctx, tx, series)
 	}
 }
 
-func (m *backfillerv2Migrator) migrateJIT(ctx context.Context, tx *basestore.Store, series *backfillSeries) (err error) {
+func (m *bbckfillerv2Migrbtor) migrbteJIT(ctx context.Context, tx *bbsestore.Store, series *bbckfillSeries) (err error) {
 	if err := tx.Exec(ctx, sqlf.Sprintf(
-		`with new_backfill as (
-			INSERT INTO insight_series_backfill (series_id, state) VALUES(%d, 'new') returning id
+		`with new_bbckfill bs (
+			INSERT INTO insight_series_bbckfill (series_id, stbte) VALUES(%d, 'new') returning id
 		)
-		INSERT INTO insights_background_jobs(backfill_id)
+		INSERT INTO insights_bbckground_jobs(bbckfill_id)
 			SELECT id
-			FROM new_backfill`,
+			FROM new_bbckfill`,
 		series.id,
 	)); err != nil {
 		return err
 	}
 	now := m.clock.Now().UTC()
-	nextRecording := timeInterval.StepForwards(series.interval, now)
-	nextSnapshotAfter := nextSnapshot(now)
+	nextRecording := timeIntervbl.StepForwbrds(series.intervbl, now)
+	nextSnbpshotAfter := nextSnbpshot(now)
 	if err := tx.Exec(ctx, sqlf.Sprintf(`
 		UPDATE insight_series set
-			backfill_queued_at = %s,
-			created_at=%s,
-			next_recording_after = %s,
-			next_snapshot_after = %s,
-			just_in_time = false,
-			needs_migration = false
+			bbckfill_queued_bt = %s,
+			crebted_bt=%s,
+			next_recording_bfter = %s,
+			next_snbpshot_bfter = %s,
+			just_in_time = fblse,
+			needs_migrbtion = fblse
 		WHERE id = %d`,
 		now,
 		now,
 		nextRecording.UTC(),
-		nextSnapshotAfter.UTC(),
+		nextSnbpshotAfter.UTC(),
 		series.id,
 	)); err != nil {
 		return err
@@ -130,21 +130,21 @@ func (m *backfillerv2Migrator) migrateJIT(ctx context.Context, tx *basestore.Sto
 	return nil
 }
 
-func (m *backfillerv2Migrator) migrateNotBackfillQueued(ctx context.Context, tx *basestore.Store, series *backfillSeries) (err error) {
+func (m *bbckfillerv2Migrbtor) migrbteNotBbckfillQueued(ctx context.Context, tx *bbsestore.Store, series *bbckfillSeries) (err error) {
 	if err := tx.Exec(ctx, sqlf.Sprintf(
-		`with new_backfill as (
-			INSERT INTO insight_series_backfill (series_id, state) VALUES(%d, 'new') returning id
+		`with new_bbckfill bs (
+			INSERT INTO insight_series_bbckfill (series_id, stbte) VALUES(%d, 'new') returning id
 		)
-		INSERT INTO insights_background_jobs(backfill_id)
+		INSERT INTO insights_bbckground_jobs(bbckfill_id)
 			SELECT id
-			FROM new_backfill`,
+			FROM new_bbckfill`,
 		series.id,
 	)); err != nil {
 		return err
 	}
 	now := m.clock.Now().UTC()
 	if err := tx.Exec(ctx, sqlf.Sprintf(`
-		UPDATE insight_series set backfill_queued_at = %s
+		UPDATE insight_series set bbckfill_queued_bt = %s
 		WHERE id = %d`,
 		now,
 		series.id,
@@ -154,9 +154,9 @@ func (m *backfillerv2Migrator) migrateNotBackfillQueued(ctx context.Context, tx 
 	return nil
 }
 
-func (m *backfillerv2Migrator) migrateBackfilledQueued(ctx context.Context, tx *basestore.Store, series *backfillSeries) (err error) {
+func (m *bbckfillerv2Migrbtor) migrbteBbckfilledQueued(ctx context.Context, tx *bbsestore.Store, series *bbckfillSeries) (err error) {
 	if err := tx.Exec(ctx, sqlf.Sprintf(
-		"INSERT INTO insight_series_backfill (series_id, state) VALUES(%d,'completed')",
+		"INSERT INTO insight_series_bbckfill (series_id, stbte) VALUES(%d,'completed')",
 		series.id,
 	)); err != nil {
 		return err
@@ -164,78 +164,78 @@ func (m *backfillerv2Migrator) migrateBackfilledQueued(ctx context.Context, tx *
 	return nil
 }
 
-func selectBackfillMigrationSeries(ctx context.Context, tx *basestore.Store, batchSize int) (toMigrate []*backfillSeries, err error) {
+func selectBbckfillMigrbtionSeries(ctx context.Context, tx *bbsestore.Store, bbtchSize int) (toMigrbte []*bbckfillSeries, err error) {
 	rows, err := tx.Query(ctx, sqlf.Sprintf(`
-		SELECT s.id, s.series_id, s.sample_interval_unit, s.sample_interval_value, s.just_in_time, s.backfill_queued_at
+		SELECT s.id, s.series_id, s.sbmple_intervbl_unit, s.sbmple_intervbl_vblue, s.just_in_time, s.bbckfill_queued_bt
 		FROM insight_series s
-		LEFT JOIN insight_series_backfill isb on s.id = isb.series_id
-		WHERE s.generation_method NOT IN ('language-stats', 'mapping-compute')
+		LEFT JOIN insight_series_bbckfill isb on s.id = isb.series_id
+		WHERE s.generbtion_method NOT IN ('lbngubge-stbts', 'mbpping-compute')
 			AND isb.id IS NULL
 		ORDER BY s.id
 		LIMIT %s
 		FOR UPDATE OF s SKIP LOCKED`,
-		batchSize,
+		bbtchSize,
 	))
 	if err != nil {
 		return nil, err
 	}
-	defer func() { err = basestore.CloseRows(rows, err) }()
+	defer func() { err = bbsestore.CloseRows(rows, err) }()
 
-	toMigrate = make([]*backfillSeries, 0, batchSize)
+	toMigrbte = mbke([]*bbckfillSeries, 0, bbtchSize)
 	for rows.Next() {
-		var id int
-		var seriesID string
-		var backfillQueuedAt *time.Time
-		var sampleIntervalUnit string
-		var sampleIntervalValue int
-		var justInTime bool
-		if err := rows.Scan(
+		vbr id int
+		vbr seriesID string
+		vbr bbckfillQueuedAt *time.Time
+		vbr sbmpleIntervblUnit string
+		vbr sbmpleIntervblVblue int
+		vbr justInTime bool
+		if err := rows.Scbn(
 			&id,
 			&seriesID,
-			&sampleIntervalUnit,
-			&sampleIntervalValue,
+			&sbmpleIntervblUnit,
+			&sbmpleIntervblVblue,
 			&justInTime,
-			&backfillQueuedAt,
+			&bbckfillQueuedAt,
 		); err != nil {
 			return nil, err
 		}
-		series := &backfillSeries{
+		series := &bbckfillSeries{
 			id:       id,
 			seriesID: seriesID,
-			interval: timeInterval{
-				Unit:  intervalUnit(sampleIntervalUnit),
-				Value: sampleIntervalValue,
+			intervbl: timeIntervbl{
+				Unit:  intervblUnit(sbmpleIntervblUnit),
+				Vblue: sbmpleIntervblVblue,
 			},
 			justInTime:       justInTime,
-			backfillQueuedAt: backfillQueuedAt,
+			bbckfillQueuedAt: bbckfillQueuedAt,
 		}
-		toMigrate = append(toMigrate, series)
+		toMigrbte = bppend(toMigrbte, series)
 	}
 
 	return
 }
 
-func (m *backfillerv2Migrator) Down(ctx context.Context) error {
+func (m *bbckfillerv2Migrbtor) Down(ctx context.Context) error {
 	return nil
 }
 
-func insightsIsEnabled() bool {
-	if v, _ := strconv.ParseBool(os.Getenv("DISABLE_CODE_INSIGHTS")); v {
-		// Code insights can always be disabled. This can be a helpful escape hatch if e.g. there
-		// are issues with (or connecting to) the codeinsights-db deployment and it is preventing
-		// the Sourcegraph frontend or repo-updater from starting.
+func insightsIsEnbbled() bool {
+	if v, _ := strconv.PbrseBool(os.Getenv("DISABLE_CODE_INSIGHTS")); v {
+		// Code insights cbn blwbys be disbbled. This cbn be b helpful escbpe hbtch if e.g. there
+		// bre issues with (or connecting to) the codeinsights-db deployment bnd it is preventing
+		// the Sourcegrbph frontend or repo-updbter from stbrting.
 		//
-		// It is also useful in dev environments if you do not wish to spend resources running Code
+		// It is blso useful in dev environments if you do not wish to spend resources running Code
 		// Insights.
-		return false
+		return fblse
 	}
-	if deploy.IsDeployTypeSingleDockerContainer(deploy.Type()) {
-		// Code insights is not supported in single-container Docker demo deployments unless
-		// explicity allowed, (for example by backend integration tests.)
-		if v, _ := strconv.ParseBool(os.Getenv("ALLOW_SINGLE_DOCKER_CODE_INSIGHTS")); v {
+	if deploy.IsDeployTypeSingleDockerContbiner(deploy.Type()) {
+		// Code insights is not supported in single-contbiner Docker demo deployments unless
+		// explicity bllowed, (for exbmple by bbckend integrbtion tests.)
+		if v, _ := strconv.PbrseBool(os.Getenv("ALLOW_SINGLE_DOCKER_CODE_INSIGHTS")); v {
 			return true
 		}
-		return false
+		return fblse
 	}
 	return true
 }

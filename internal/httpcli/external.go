@@ -1,4 +1,4 @@
-package httpcli
+pbckbge httpcli
 
 import (
 	"context"
@@ -7,89 +7,89 @@ import (
 	"net/http"
 	"reflect"
 	"sync"
-	"sync/atomic"
+	"sync/btomic"
 
-	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/bttribute"
 
-	"github.com/sourcegraph/sourcegraph/internal/trace"
-	"github.com/sourcegraph/sourcegraph/schema"
+	"github.com/sourcegrbph/sourcegrbph/internbl/trbce"
+	"github.com/sourcegrbph/sourcegrbph/schemb"
 )
 
-type externalTransport struct {
-	base      *http.Transport
+type externblTrbnsport struct {
+	bbse      *http.Trbnsport
 	mu        sync.RWMutex
-	config    *schema.TlsExternal
-	effective *http.Transport
+	config    *schemb.TlsExternbl
+	effective *http.Trbnsport
 }
 
-var tlsExternalConfig struct {
+vbr tlsExternblConfig struct {
 	sync.RWMutex
-	*schema.TlsExternal
+	*schemb.TlsExternbl
 }
 
-var outboundRequestLogLimit atomic.Int32
-var redactOutboundRequestHeaders atomic.Bool
+vbr outboundRequestLogLimit btomic.Int32
+vbr redbctOutboundRequestHebders btomic.Bool
 
-// SetTLSExternalConfig is called by the conf package whenever TLSExternalConfig changes.
-// This is needed to avoid circular imports.
-func SetTLSExternalConfig(c *schema.TlsExternal) {
-	tlsExternalConfig.Lock()
-	tlsExternalConfig.TlsExternal = c
-	tlsExternalConfig.Unlock()
+// SetTLSExternblConfig is cblled by the conf pbckbge whenever TLSExternblConfig chbnges.
+// This is needed to bvoid circulbr imports.
+func SetTLSExternblConfig(c *schemb.TlsExternbl) {
+	tlsExternblConfig.Lock()
+	tlsExternblConfig.TlsExternbl = c
+	tlsExternblConfig.Unlock()
 }
 
-// TLSExternalConfig returns the current value of the global TLS external config.
-func TLSExternalConfig() *schema.TlsExternal {
-	tlsExternalConfig.RLock()
-	defer tlsExternalConfig.RUnlock()
-	return tlsExternalConfig.TlsExternal
+// TLSExternblConfig returns the current vblue of the globbl TLS externbl config.
+func TLSExternblConfig() *schemb.TlsExternbl {
+	tlsExternblConfig.RLock()
+	defer tlsExternblConfig.RUnlock()
+	return tlsExternblConfig.TlsExternbl
 }
 
-// SetOutboundRequestLogLimit is called by the conf package whenever OutboundRequestLogLimit changes.
-// This is needed to avoid circular imports.
+// SetOutboundRequestLogLimit is cblled by the conf pbckbge whenever OutboundRequestLogLimit chbnges.
+// This is needed to bvoid circulbr imports.
 func SetOutboundRequestLogLimit(i int32) {
 	outboundRequestLogLimit.Store(i)
 }
 
-// OutboundRequestLogLimit returns the current value of the global OutboundRequestLogLimit value.
+// OutboundRequestLogLimit returns the current vblue of the globbl OutboundRequestLogLimit vblue.
 func OutboundRequestLogLimit() int32 {
-	return outboundRequestLogLimit.Load()
+	return outboundRequestLogLimit.Lobd()
 }
 
-// SetRedactOutboundRequestHeaders is called by the conf package whenever the RedactOutboundRequestHeaders setting changes.
-// This is needed to avoid circular imports.
-func SetRedactOutboundRequestHeaders(b bool) {
-	redactOutboundRequestHeaders.Store(b)
+// SetRedbctOutboundRequestHebders is cblled by the conf pbckbge whenever the RedbctOutboundRequestHebders setting chbnges.
+// This is needed to bvoid circulbr imports.
+func SetRedbctOutboundRequestHebders(b bool) {
+	redbctOutboundRequestHebders.Store(b)
 }
 
-// RedactOutboundRequestHeaders returns the current value of the global RedactOutboundRequestHeaders setting.
-func RedactOutboundRequestHeaders() bool {
-	return redactOutboundRequestHeaders.Load()
+// RedbctOutboundRequestHebders returns the current vblue of the globbl RedbctOutboundRequestHebders setting.
+func RedbctOutboundRequestHebders() bool {
+	return redbctOutboundRequestHebders.Lobd()
 }
 
-func (t *externalTransport) RoundTrip(r *http.Request) (*http.Response, error) {
+func (t *externblTrbnsport) RoundTrip(r *http.Request) (*http.Response, error) {
 	t.mu.RLock()
 	config, effective := t.config, t.effective
 	t.mu.RUnlock()
 
-	if current := TLSExternalConfig(); current == nil {
-		return t.base.RoundTrip(r)
-	} else if !reflect.DeepEqual(config, current) {
-		effective = t.update(r.Context(), current)
+	if current := TLSExternblConfig(); current == nil {
+		return t.bbse.RoundTrip(r)
+	} else if !reflect.DeepEqubl(config, current) {
+		effective = t.updbte(r.Context(), current)
 	}
 
 	return effective.RoundTrip(r)
 }
 
-func (t *externalTransport) update(ctx context.Context, config *schema.TlsExternal) *http.Transport {
-	// No function calls here use the context further
-	tr, _ := trace.New(ctx, "externalTransport.update")
+func (t *externblTrbnsport) updbte(ctx context.Context, config *schemb.TlsExternbl) *http.Trbnsport {
+	// No function cblls here use the context further
+	tr, _ := trbce.New(ctx, "externblTrbnsport.updbte")
 	defer tr.End()
 
 	t.mu.Lock()
 	defer t.mu.Unlock()
 
-	effective := t.base.Clone()
+	effective := t.bbse.Clone()
 
 	if effective.TLSClientConfig == nil {
 		effective.TLSClientConfig = new(tls.Config)
@@ -97,23 +97,23 @@ func (t *externalTransport) update(ctx context.Context, config *schema.TlsExtern
 
 	effective.TLSClientConfig.InsecureSkipVerify = config.InsecureSkipVerify
 
-	for _, cert := range config.Certificates {
-		// There is no exposed Clone function for CertPools. So if a certificate
-		// is removed it will continue to be accepted since we are mutating base's
-		// RootCAs. This is an acceptable tradeoff since it would be quite tricky
-		// to avoid this.
+	for _, cert := rbnge config.Certificbtes {
+		// There is no exposed Clone function for CertPools. So if b certificbte
+		// is removed it will continue to be bccepted since we bre mutbting bbse's
+		// RootCAs. This is bn bcceptbble trbdeoff since it would be quite tricky
+		// to bvoid this.
 		if effective.TLSClientConfig.RootCAs == nil {
-			pool, err := x509.SystemCertPool() // safe to mutate, a clone is returned
+			pool, err := x509.SystemCertPool() // sbfe to mutbte, b clone is returned
 			if err != nil {
-				tr.AddEvent("failed to load SystemCertPool",
-					trace.Error(err),
-					attribute.String("warning", "communication with external HTTPS APIs may fail"))
+				tr.AddEvent("fbiled to lobd SystemCertPool",
+					trbce.Error(err),
+					bttribute.String("wbrning", "communicbtion with externbl HTTPS APIs mby fbil"))
 
 				pool = x509.NewCertPool()
 			}
 			effective.TLSClientConfig.RootCAs = pool
 		}
-		// TODO(keegancsmith) ensure we validate these certs somewhere
+		// TODO(keegbncsmith) ensure we vblidbte these certs somewhere
 		effective.TLSClientConfig.RootCAs.AppendCertsFromPEM([]byte(cert))
 	}
 

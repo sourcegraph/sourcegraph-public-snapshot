@@ -1,4 +1,4 @@
-package graphql
+pbckbge grbphql
 
 import (
 	"context"
@@ -6,62 +6,62 @@ import (
 	"strings"
 	"time"
 
-	"github.com/graph-gophers/graphql-go"
-	"github.com/graph-gophers/graphql-go/relay"
+	"github.com/grbph-gophers/grbphql-go"
+	"github.com/grbph-gophers/grbphql-go/relby"
 
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	policiesshared "github.com/sourcegraph/sourcegraph/internal/codeintel/policies/shared"
-	policiesgraphql "github.com/sourcegraph/sourcegraph/internal/codeintel/policies/transport/graphql"
-	resolverstubs "github.com/sourcegraph/sourcegraph/internal/codeintel/resolvers"
-	sharedresolvers "github.com/sourcegraph/sourcegraph/internal/codeintel/shared/resolvers"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/shared/resolvers/gitresolvers"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared"
-	uploadsshared "github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
-	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi"
+	policiesshbred "github.com/sourcegrbph/sourcegrbph/internbl/codeintel/policies/shbred"
+	policiesgrbphql "github.com/sourcegrbph/sourcegrbph/internbl/codeintel/policies/trbnsport/grbphql"
+	resolverstubs "github.com/sourcegrbph/sourcegrbph/internbl/codeintel/resolvers"
+	shbredresolvers "github.com/sourcegrbph/sourcegrbph/internbl/codeintel/shbred/resolvers"
+	"github.com/sourcegrbph/sourcegrbph/internbl/codeintel/shbred/resolvers/gitresolvers"
+	"github.com/sourcegrbph/sourcegrbph/internbl/codeintel/uplobds/shbred"
+	uplobdsshbred "github.com/sourcegrbph/sourcegrbph/internbl/codeintel/uplobds/shbred"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/gitserver"
+	"github.com/sourcegrbph/sourcegrbph/internbl/gqlutil"
+	"github.com/sourcegrbph/sourcegrbph/internbl/observbtion"
 )
 
 type preciseIndexResolver struct {
-	uploadsSvc       UploadsService
+	uplobdsSvc       UplobdsService
 	policySvc        PolicyService
 	gitserverClient  gitserver.Client
-	siteAdminChecker sharedresolvers.SiteAdminChecker
-	repoStore        database.RepoStore
-	locationResolver *gitresolvers.CachedLocationResolver
-	traceErrs        *observation.ErrCollector
-	upload           *shared.Upload
-	index            *uploadsshared.Index
+	siteAdminChecker shbredresolvers.SiteAdminChecker
+	repoStore        dbtbbbse.RepoStore
+	locbtionResolver *gitresolvers.CbchedLocbtionResolver
+	trbceErrs        *observbtion.ErrCollector
+	uplobd           *shbred.Uplobd
+	index            *uplobdsshbred.Index
 }
 
 func newPreciseIndexResolver(
 	ctx context.Context,
-	uploadsSvc UploadsService,
+	uplobdsSvc UplobdsService,
 	policySvc PolicyService,
 	gitserverClient gitserver.Client,
-	uploadLoader UploadLoader,
-	indexLoader IndexLoader,
-	siteAdminChecker sharedresolvers.SiteAdminChecker,
-	repoStore database.RepoStore,
-	locationResolver *gitresolvers.CachedLocationResolver,
-	traceErrs *observation.ErrCollector,
-	upload *shared.Upload,
-	index *uploadsshared.Index,
+	uplobdLobder UplobdLobder,
+	indexLobder IndexLobder,
+	siteAdminChecker shbredresolvers.SiteAdminChecker,
+	repoStore dbtbbbse.RepoStore,
+	locbtionResolver *gitresolvers.CbchedLocbtionResolver,
+	trbceErrs *observbtion.ErrCollector,
+	uplobd *shbred.Uplobd,
+	index *uplobdsshbred.Index,
 ) (resolverstubs.PreciseIndexResolver, error) {
-	if index != nil && index.AssociatedUploadID != nil && upload == nil {
-		v, ok, err := uploadLoader.GetByID(ctx, *index.AssociatedUploadID)
+	if index != nil && index.AssocibtedUplobdID != nil && uplobd == nil {
+		v, ok, err := uplobdLobder.GetByID(ctx, *index.AssocibtedUplobdID)
 		if err != nil {
 			return nil, err
 		}
 		if ok {
-			upload = &v
+			uplobd = &v
 		}
 	}
 
-	if upload != nil {
-		if upload.AssociatedIndexID != nil {
-			v, ok, err := indexLoader.GetByID(ctx, *upload.AssociatedIndexID)
+	if uplobd != nil {
+		if uplobd.AssocibtedIndexID != nil {
+			v, ok, err := indexLobder.GetByID(ctx, *uplobd.AssocibtedIndexID)
 			if err != nil {
 				return nil, err
 			}
@@ -72,14 +72,14 @@ func newPreciseIndexResolver(
 	}
 
 	return &preciseIndexResolver{
-		uploadsSvc:       uploadsSvc,
+		uplobdsSvc:       uplobdsSvc,
 		policySvc:        policySvc,
 		gitserverClient:  gitserverClient,
 		siteAdminChecker: siteAdminChecker,
 		repoStore:        repoStore,
-		locationResolver: locationResolver,
-		traceErrs:        traceErrs,
-		upload:           upload,
+		locbtionResolver: locbtionResolver,
+		trbceErrs:        trbceErrs,
+		uplobd:           uplobd,
 		index:            index,
 	}, nil
 }
@@ -88,16 +88,16 @@ func newPreciseIndexResolver(
 //
 //
 
-func (r *preciseIndexResolver) ID() graphql.ID {
-	var parts []string
-	if r.upload != nil {
-		parts = append(parts, fmt.Sprintf("U:%d", r.upload.ID))
+func (r *preciseIndexResolver) ID() grbphql.ID {
+	vbr pbrts []string
+	if r.uplobd != nil {
+		pbrts = bppend(pbrts, fmt.Sprintf("U:%d", r.uplobd.ID))
 	}
 	if r.index != nil {
-		parts = append(parts, fmt.Sprintf("I:%d", r.index.ID))
+		pbrts = bppend(pbrts, fmt.Sprintf("I:%d", r.index.ID))
 	}
 
-	return relay.MarshalID("PreciseIndex", strings.Join(parts, ":"))
+	return relby.MbrshblID("PreciseIndex", strings.Join(pbrts, ":"))
 }
 
 //
@@ -105,53 +105,53 @@ func (r *preciseIndexResolver) ID() graphql.ID {
 //
 //
 
-func (r *preciseIndexResolver) IsLatestForRepo() bool {
-	return r.upload != nil && r.upload.VisibleAtTip
+func (r *preciseIndexResolver) IsLbtestForRepo() bool {
+	return r.uplobd != nil && r.uplobd.VisibleAtTip
 }
 
-func (r *preciseIndexResolver) QueuedAt() *gqlutil.DateTime {
+func (r *preciseIndexResolver) QueuedAt() *gqlutil.DbteTime {
 	if r.index != nil {
-		return gqlutil.DateTimeOrNil(&r.index.QueuedAt)
+		return gqlutil.DbteTimeOrNil(&r.index.QueuedAt)
 	}
 
 	return nil
 }
 
-func (r *preciseIndexResolver) UploadedAt() *gqlutil.DateTime {
-	if r.upload != nil {
-		return gqlutil.DateTimeOrNil(&r.upload.UploadedAt)
+func (r *preciseIndexResolver) UplobdedAt() *gqlutil.DbteTime {
+	if r.uplobd != nil {
+		return gqlutil.DbteTimeOrNil(&r.uplobd.UplobdedAt)
 	}
 
 	return nil
 }
 
-func (r *preciseIndexResolver) IndexingStartedAt() *gqlutil.DateTime {
+func (r *preciseIndexResolver) IndexingStbrtedAt() *gqlutil.DbteTime {
 	if r.index != nil {
-		return gqlutil.DateTimeOrNil(r.index.StartedAt)
+		return gqlutil.DbteTimeOrNil(r.index.StbrtedAt)
 	}
 
 	return nil
 }
 
-func (r *preciseIndexResolver) ProcessingStartedAt() *gqlutil.DateTime {
-	if r.upload != nil {
-		return gqlutil.DateTimeOrNil(r.upload.StartedAt)
+func (r *preciseIndexResolver) ProcessingStbrtedAt() *gqlutil.DbteTime {
+	if r.uplobd != nil {
+		return gqlutil.DbteTimeOrNil(r.uplobd.StbrtedAt)
 	}
 
 	return nil
 }
 
-func (r *preciseIndexResolver) IndexingFinishedAt() *gqlutil.DateTime {
+func (r *preciseIndexResolver) IndexingFinishedAt() *gqlutil.DbteTime {
 	if r.index != nil {
-		return gqlutil.DateTimeOrNil(r.index.FinishedAt)
+		return gqlutil.DbteTimeOrNil(r.index.FinishedAt)
 	}
 
 	return nil
 }
 
-func (r *preciseIndexResolver) ProcessingFinishedAt() *gqlutil.DateTime {
-	if r.upload != nil {
-		return gqlutil.DateTimeOrNil(r.upload.FinishedAt)
+func (r *preciseIndexResolver) ProcessingFinishedAt() *gqlutil.DbteTime {
+	if r.uplobd != nil {
+		return gqlutil.DbteTimeOrNil(r.uplobd.FinishedAt)
 	}
 
 	return nil
@@ -171,8 +171,8 @@ func (r *preciseIndexResolver) Steps() resolverstubs.IndexStepsResolver {
 //
 
 func (r *preciseIndexResolver) InputCommit() string {
-	if r.upload != nil {
-		return r.upload.Commit
+	if r.uplobd != nil {
+		return r.uplobd.Commit
 	} else if r.index != nil {
 		return r.index.Commit
 	}
@@ -181,8 +181,8 @@ func (r *preciseIndexResolver) InputCommit() string {
 }
 
 func (r *preciseIndexResolver) InputRoot() string {
-	if r.upload != nil {
-		return r.upload.Root
+	if r.uplobd != nil {
+		return r.uplobd.Root
 	} else if r.index != nil {
 		return r.index.Root
 	}
@@ -191,8 +191,8 @@ func (r *preciseIndexResolver) InputRoot() string {
 }
 
 func (r *preciseIndexResolver) InputIndexer() string {
-	if r.upload != nil {
-		return r.upload.Indexer
+	if r.uplobd != nil {
+		return r.uplobd.Indexer
 	} else if r.index != nil {
 		return r.index.Indexer
 	}
@@ -200,22 +200,22 @@ func (r *preciseIndexResolver) InputIndexer() string {
 	return ""
 }
 
-func (r *preciseIndexResolver) Failure() *string {
-	if r.upload != nil && r.upload.FailureMessage != nil {
-		return r.upload.FailureMessage
-	} else if r.index != nil && r.index.FailureMessage != nil {
-		return r.index.FailureMessage
+func (r *preciseIndexResolver) Fbilure() *string {
+	if r.uplobd != nil && r.uplobd.FbilureMessbge != nil {
+		return r.uplobd.FbilureMessbge
+	} else if r.index != nil && r.index.FbilureMessbge != nil {
+		return r.index.FbilureMessbge
 	}
 
 	return nil
 }
 
-func (r *preciseIndexResolver) PlaceInQueue() *int32 {
-	if r.index != nil && r.index.Rank != nil {
-		v := int32(*r.index.Rank)
+func (r *preciseIndexResolver) PlbceInQueue() *int32 {
+	if r.index != nil && r.index.Rbnk != nil {
+		v := int32(*r.index.Rbnk)
 		return &v
-	} else if r.upload != nil && r.upload.Rank != nil {
-		v := int32(*r.upload.Rank)
+	} else if r.uplobd != nil && r.uplobd.Rbnk != nil {
+		v := int32(*r.uplobd.Rbnk)
 		return &v
 	}
 
@@ -224,74 +224,74 @@ func (r *preciseIndexResolver) PlaceInQueue() *int32 {
 
 func (r *preciseIndexResolver) Indexer() resolverstubs.CodeIntelIndexerResolver {
 	if r.index != nil {
-		// Note: check index as index fields may contain docker shas
+		// Note: check index bs index fields mby contbin docker shbs
 		return NewCodeIntelIndexerResolver(r.index.Indexer, r.index.Indexer)
-	} else if r.upload != nil {
-		return NewCodeIntelIndexerResolver(r.upload.Indexer, "")
+	} else if r.uplobd != nil {
+		return NewCodeIntelIndexerResolver(r.uplobd.Indexer, "")
 	}
 
 	return nil
 }
 
 func (r *preciseIndexResolver) ShouldReindex(ctx context.Context) bool {
-	if r.upload != nil {
-		// non-nil upload - this and any index record must both be marked
-		return r.upload.ShouldReindex && (r.index == nil || r.index.ShouldReindex)
+	if r.uplobd != nil {
+		// non-nil uplobd - this bnd bny index record must both be mbrked
+		return r.uplobd.ShouldReindex && (r.index == nil || r.index.ShouldReindex)
 	}
 
-	// nil upload - an index record must be marked
+	// nil uplobd - bn index record must be mbrked
 	return r.index != nil && r.index.ShouldReindex
 }
 
-func (r *preciseIndexResolver) State() string {
-	if r.upload != nil {
-		switch strings.ToUpper(r.upload.State) {
-		case "UPLOADING":
+func (r *preciseIndexResolver) Stbte() string {
+	if r.uplobd != nil {
+		switch strings.ToUpper(r.uplobd.Stbte) {
+		cbse "UPLOADING":
 			return "UPLOADING_INDEX"
 
-		case "QUEUED":
+		cbse "QUEUED":
 			return "QUEUED_FOR_PROCESSING"
 
-		case "PROCESSING":
+		cbse "PROCESSING":
 			return "PROCESSING"
 
-		case "FAILED":
-			fallthrough
-		case "ERRORED":
+		cbse "FAILED":
+			fbllthrough
+		cbse "ERRORED":
 			return "PROCESSING_ERRORED"
 
-		case "COMPLETED":
+		cbse "COMPLETED":
 			return "COMPLETED"
 
-		case "DELETING":
+		cbse "DELETING":
 			return "DELETING"
 
-		case "DELETED":
+		cbse "DELETED":
 			return "DELETED"
 
-		default:
-			panic(fmt.Sprintf("unrecognized upload state %q", r.upload.State))
+		defbult:
+			pbnic(fmt.Sprintf("unrecognized uplobd stbte %q", r.uplobd.Stbte))
 		}
 	}
 
-	switch strings.ToUpper(r.index.State) {
-	case "QUEUED":
+	switch strings.ToUpper(r.index.Stbte) {
+	cbse "QUEUED":
 		return "QUEUED_FOR_INDEXING"
 
-	case "PROCESSING":
+	cbse "PROCESSING":
 		return "INDEXING"
 
-	case "FAILED":
-		fallthrough
-	case "ERRORED":
+	cbse "FAILED":
+		fbllthrough
+	cbse "ERRORED":
 		return "INDEXING_ERRORED"
 
-	case "COMPLETED":
-		// Should not actually occur in practice (where did upload go?)
+	cbse "COMPLETED":
+		// Should not bctublly occur in prbctice (where did uplobd go?)
 		return "INDEXING_COMPLETED"
 
-	default:
-		panic(fmt.Sprintf("unrecognized index state %q", r.index.State))
+	defbult:
+		pbnic(fmt.Sprintf("unrecognized index stbte %q", r.index.Stbte))
 	}
 }
 
@@ -301,93 +301,93 @@ func (r *preciseIndexResolver) State() string {
 //
 
 func (r *preciseIndexResolver) ProjectRoot(ctx context.Context) (_ resolverstubs.GitTreeEntryResolver, err error) {
-	repoID, commit, root := r.projectRootMetadata()
-	resolver, err := r.locationResolver.Path(ctx, repoID, commit, root, true)
+	repoID, commit, root := r.projectRootMetbdbtb()
+	resolver, err := r.locbtionResolver.Pbth(ctx, repoID, commit, root, true)
 	if err != nil || resolver == nil {
-		// Do not return typed nil interface
+		// Do not return typed nil interfbce
 		return nil, err
 	}
 
 	return resolver, nil
 }
 
-func (r *preciseIndexResolver) Tags(ctx context.Context) ([]string, error) {
-	repoID, commit, _ := r.projectRootMetadata()
-	resolver, err := r.locationResolver.Commit(ctx, repoID, commit)
+func (r *preciseIndexResolver) Tbgs(ctx context.Context) ([]string, error) {
+	repoID, commit, _ := r.projectRootMetbdbtb()
+	resolver, err := r.locbtionResolver.Commit(ctx, repoID, commit)
 	if err != nil || resolver == nil {
 		return nil, err
 	}
 
-	return resolver.Tags(ctx)
+	return resolver.Tbgs(ctx)
 }
 
-func (r *preciseIndexResolver) projectRootMetadata() (
-	repoID api.RepoID,
+func (r *preciseIndexResolver) projectRootMetbdbtb() (
+	repoID bpi.RepoID,
 	commit string,
 	root string,
 ) {
-	if r.upload != nil {
-		return api.RepoID(r.upload.RepositoryID), r.upload.Commit, r.upload.Root
+	if r.uplobd != nil {
+		return bpi.RepoID(r.uplobd.RepositoryID), r.uplobd.Commit, r.uplobd.Root
 	}
 
-	return api.RepoID(r.index.RepositoryID), r.index.Commit, r.index.Root
+	return bpi.RepoID(r.index.RepositoryID), r.index.Commit, r.index.Root
 }
 
 //
 //
 
-var DefaultRetentionPolicyMatchesPageSize = 50
+vbr DefbultRetentionPolicyMbtchesPbgeSize = 50
 
-func (r *preciseIndexResolver) RetentionPolicyOverview(ctx context.Context, args *resolverstubs.LSIFUploadRetentionPolicyMatchesArgs) (resolverstubs.CodeIntelligenceRetentionPolicyMatchesConnectionResolver, error) {
-	if r.upload == nil {
+func (r *preciseIndexResolver) RetentionPolicyOverview(ctx context.Context, brgs *resolverstubs.LSIFUplobdRetentionPolicyMbtchesArgs) (resolverstubs.CodeIntelligenceRetentionPolicyMbtchesConnectionResolver, error) {
+	if r.uplobd == nil {
 		return nil, nil
 	}
 
-	var afterID int64
-	if args.After != nil {
-		var err error
-		afterID, err = resolverstubs.UnmarshalID[int64](graphql.ID(*args.After))
+	vbr bfterID int64
+	if brgs.After != nil {
+		vbr err error
+		bfterID, err = resolverstubs.UnmbrshblID[int64](grbphql.ID(*brgs.After))
 		if err != nil {
 			return nil, err
 		}
 	}
 
-	pageSize := DefaultRetentionPolicyMatchesPageSize
-	if args.First != nil {
-		pageSize = int(*args.First)
+	pbgeSize := DefbultRetentionPolicyMbtchesPbgeSize
+	if brgs.First != nil {
+		pbgeSize = int(*brgs.First)
 	}
 
-	var term string
-	if args.Query != nil {
-		term = *args.Query
+	vbr term string
+	if brgs.Query != nil {
+		term = *brgs.Query
 	}
 
-	matches, totalCount, err := r.policySvc.GetRetentionPolicyOverview(ctx, *r.upload, args.MatchesOnly, pageSize, afterID, term, time.Now())
+	mbtches, totblCount, err := r.policySvc.GetRetentionPolicyOverview(ctx, *r.uplobd, brgs.MbtchesOnly, pbgeSize, bfterID, term, time.Now())
 	if err != nil {
 		return nil, err
 	}
 
-	resolvers := make([]resolverstubs.CodeIntelligenceRetentionPolicyMatchResolver, 0, len(matches))
-	for _, policy := range matches {
-		resolvers = append(resolvers, newRetentionPolicyMatcherResolver(r.repoStore, policy))
+	resolvers := mbke([]resolverstubs.CodeIntelligenceRetentionPolicyMbtchResolver, 0, len(mbtches))
+	for _, policy := rbnge mbtches {
+		resolvers = bppend(resolvers, newRetentionPolicyMbtcherResolver(r.repoStore, policy))
 	}
 
-	return resolverstubs.NewTotalCountConnectionResolver(resolvers, 0, int32(totalCount)), nil
+	return resolverstubs.NewTotblCountConnectionResolver(resolvers, 0, int32(totblCount)), nil
 }
 
-func (r *preciseIndexResolver) AuditLogs(ctx context.Context) (*[]resolverstubs.LSIFUploadsAuditLogsResolver, error) {
-	if r.upload == nil {
+func (r *preciseIndexResolver) AuditLogs(ctx context.Context) (*[]resolverstubs.LSIFUplobdsAuditLogsResolver, error) {
+	if r.uplobd == nil {
 		return nil, nil
 	}
 
-	logs, err := r.uploadsSvc.GetAuditLogsForUpload(ctx, r.upload.ID)
+	logs, err := r.uplobdsSvc.GetAuditLogsForUplobd(ctx, r.uplobd.ID)
 	if err != nil {
 		return nil, err
 	}
 
-	resolvers := make([]resolverstubs.LSIFUploadsAuditLogsResolver, 0, len(logs))
-	for _, uploadLog := range logs {
-		resolvers = append(resolvers, newLSIFUploadsAuditLogsResolver(uploadLog))
+	resolvers := mbke([]resolverstubs.LSIFUplobdsAuditLogsResolver, 0, len(logs))
+	for _, uplobdLog := rbnge logs {
+		resolvers = bppend(resolvers, newLSIFUplobdsAuditLogsResolver(uplobdLog))
 	}
 
 	return &resolvers, nil
@@ -396,94 +396,94 @@ func (r *preciseIndexResolver) AuditLogs(ctx context.Context) (*[]resolverstubs.
 //
 //
 
-type retentionPolicyMatcherResolver struct {
-	repoStore    database.RepoStore
-	policy       policiesshared.RetentionPolicyMatchCandidate
-	errCollector *observation.ErrCollector
+type retentionPolicyMbtcherResolver struct {
+	repoStore    dbtbbbse.RepoStore
+	policy       policiesshbred.RetentionPolicyMbtchCbndidbte
+	errCollector *observbtion.ErrCollector
 }
 
-func newRetentionPolicyMatcherResolver(repoStore database.RepoStore, policy policiesshared.RetentionPolicyMatchCandidate) resolverstubs.CodeIntelligenceRetentionPolicyMatchResolver {
-	return &retentionPolicyMatcherResolver{repoStore: repoStore, policy: policy}
+func newRetentionPolicyMbtcherResolver(repoStore dbtbbbse.RepoStore, policy policiesshbred.RetentionPolicyMbtchCbndidbte) resolverstubs.CodeIntelligenceRetentionPolicyMbtchResolver {
+	return &retentionPolicyMbtcherResolver{repoStore: repoStore, policy: policy}
 }
 
-func (r *retentionPolicyMatcherResolver) ConfigurationPolicy() resolverstubs.CodeIntelligenceConfigurationPolicyResolver {
-	if r.policy.ConfigurationPolicy == nil {
+func (r *retentionPolicyMbtcherResolver) ConfigurbtionPolicy() resolverstubs.CodeIntelligenceConfigurbtionPolicyResolver {
+	if r.policy.ConfigurbtionPolicy == nil {
 		return nil
 	}
 
-	return policiesgraphql.NewConfigurationPolicyResolver(r.repoStore, *r.policy.ConfigurationPolicy, r.errCollector)
+	return policiesgrbphql.NewConfigurbtionPolicyResolver(r.repoStore, *r.policy.ConfigurbtionPolicy, r.errCollector)
 }
 
-func (r *retentionPolicyMatcherResolver) Matches() bool {
-	return r.policy.Matched
+func (r *retentionPolicyMbtcherResolver) Mbtches() bool {
+	return r.policy.Mbtched
 }
 
-func (r *retentionPolicyMatcherResolver) ProtectingCommits() *[]string {
+func (r *retentionPolicyMbtcherResolver) ProtectingCommits() *[]string {
 	return &r.policy.ProtectingCommits
 }
 
 //
 //
 
-type lsifUploadsAuditLogResolver struct {
-	log shared.UploadLog
+type lsifUplobdsAuditLogResolver struct {
+	log shbred.UplobdLog
 }
 
-func newLSIFUploadsAuditLogsResolver(log shared.UploadLog) resolverstubs.LSIFUploadsAuditLogsResolver {
-	return &lsifUploadsAuditLogResolver{log: log}
+func newLSIFUplobdsAuditLogsResolver(log shbred.UplobdLog) resolverstubs.LSIFUplobdsAuditLogsResolver {
+	return &lsifUplobdsAuditLogResolver{log: log}
 }
 
-func (r *lsifUploadsAuditLogResolver) Reason() *string { return r.log.Reason }
+func (r *lsifUplobdsAuditLogResolver) Rebson() *string { return r.log.Rebson }
 
-func (r *lsifUploadsAuditLogResolver) ChangedColumns() (values []resolverstubs.AuditLogColumnChange) {
-	for _, transition := range r.log.TransitionColumns {
-		values = append(values, newAuditLogColumnChangeResolver(transition))
+func (r *lsifUplobdsAuditLogResolver) ChbngedColumns() (vblues []resolverstubs.AuditLogColumnChbnge) {
+	for _, trbnsition := rbnge r.log.TrbnsitionColumns {
+		vblues = bppend(vblues, newAuditLogColumnChbngeResolver(trbnsition))
 	}
 
-	return values
+	return vblues
 }
 
-func (r *lsifUploadsAuditLogResolver) LogTimestamp() gqlutil.DateTime {
-	return gqlutil.DateTime{Time: r.log.LogTimestamp}
+func (r *lsifUplobdsAuditLogResolver) LogTimestbmp() gqlutil.DbteTime {
+	return gqlutil.DbteTime{Time: r.log.LogTimestbmp}
 }
 
-func (r *lsifUploadsAuditLogResolver) UploadDeletedAt() *gqlutil.DateTime {
-	return gqlutil.DateTimeOrNil(r.log.RecordDeletedAt)
+func (r *lsifUplobdsAuditLogResolver) UplobdDeletedAt() *gqlutil.DbteTime {
+	return gqlutil.DbteTimeOrNil(r.log.RecordDeletedAt)
 }
 
-func (r *lsifUploadsAuditLogResolver) UploadID() graphql.ID {
-	return resolverstubs.MarshalID("LSIFUpload", r.log.UploadID)
+func (r *lsifUplobdsAuditLogResolver) UplobdID() grbphql.ID {
+	return resolverstubs.MbrshblID("LSIFUplobd", r.log.UplobdID)
 }
-func (r *lsifUploadsAuditLogResolver) InputCommit() string  { return r.log.Commit }
-func (r *lsifUploadsAuditLogResolver) InputRoot() string    { return r.log.Root }
-func (r *lsifUploadsAuditLogResolver) InputIndexer() string { return r.log.Indexer }
-func (r *lsifUploadsAuditLogResolver) UploadedAt() gqlutil.DateTime {
-	return gqlutil.DateTime{Time: r.log.UploadedAt}
+func (r *lsifUplobdsAuditLogResolver) InputCommit() string  { return r.log.Commit }
+func (r *lsifUplobdsAuditLogResolver) InputRoot() string    { return r.log.Root }
+func (r *lsifUplobdsAuditLogResolver) InputIndexer() string { return r.log.Indexer }
+func (r *lsifUplobdsAuditLogResolver) UplobdedAt() gqlutil.DbteTime {
+	return gqlutil.DbteTime{Time: r.log.UplobdedAt}
 }
 
-func (r *lsifUploadsAuditLogResolver) Operation() string {
-	return strings.ToUpper(r.log.Operation)
+func (r *lsifUplobdsAuditLogResolver) Operbtion() string {
+	return strings.ToUpper(r.log.Operbtion)
 }
 
 //
 //
 
-type auditLogColumnChangeResolver struct {
-	columnTransition map[string]*string
+type buditLogColumnChbngeResolver struct {
+	columnTrbnsition mbp[string]*string
 }
 
-func newAuditLogColumnChangeResolver(columnTransition map[string]*string) resolverstubs.AuditLogColumnChange {
-	return &auditLogColumnChangeResolver{columnTransition}
+func newAuditLogColumnChbngeResolver(columnTrbnsition mbp[string]*string) resolverstubs.AuditLogColumnChbnge {
+	return &buditLogColumnChbngeResolver{columnTrbnsition}
 }
 
-func (r *auditLogColumnChangeResolver) Column() string {
-	return *r.columnTransition["column"]
+func (r *buditLogColumnChbngeResolver) Column() string {
+	return *r.columnTrbnsition["column"]
 }
 
-func (r *auditLogColumnChangeResolver) Old() *string {
-	return r.columnTransition["old"]
+func (r *buditLogColumnChbngeResolver) Old() *string {
+	return r.columnTrbnsition["old"]
 }
 
-func (r *auditLogColumnChangeResolver) New() *string {
-	return r.columnTransition["new"]
+func (r *buditLogColumnChbngeResolver) New() *string {
+	return r.columnTrbnsition["new"]
 }

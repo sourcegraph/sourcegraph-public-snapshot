@@ -1,186 +1,186 @@
-package store
+pbckbge store
 
 import (
 	"fmt"
 
-	"github.com/sourcegraph/sourcegraph/internal/metrics"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegrbph/sourcegrbph/internbl/metrics"
+	"github.com/sourcegrbph/sourcegrbph/internbl/observbtion"
 )
 
-type operations struct {
+type operbtions struct {
 	// Not used yet.
-	list *observation.Operation
+	list *observbtion.Operbtion
 
 	// Commits
-	getStaleSourcedCommits              *observation.Operation
-	deleteSourcedCommits                *observation.Operation
-	updateSourcedCommits                *observation.Operation
-	getCommitsVisibleToUpload           *observation.Operation
-	getOldestCommitDate                 *observation.Operation
-	getCommitGraphMetadata              *observation.Operation
-	hasCommit                           *observation.Operation
-	repositoryIDsWithErrors             *observation.Operation
-	numRepositoriesWithCodeIntelligence *observation.Operation
-	getRecentIndexesSummary             *observation.Operation
+	getStbleSourcedCommits              *observbtion.Operbtion
+	deleteSourcedCommits                *observbtion.Operbtion
+	updbteSourcedCommits                *observbtion.Operbtion
+	getCommitsVisibleToUplobd           *observbtion.Operbtion
+	getOldestCommitDbte                 *observbtion.Operbtion
+	getCommitGrbphMetbdbtb              *observbtion.Operbtion
+	hbsCommit                           *observbtion.Operbtion
+	repositoryIDsWithErrors             *observbtion.Operbtion
+	numRepositoriesWithCodeIntelligence *observbtion.Operbtion
+	getRecentIndexesSummbry             *observbtion.Operbtion
 
 	// Repositories
-	getRepositoriesForIndexScan             *observation.Operation
-	getRepositoriesMaxStaleAge              *observation.Operation
-	getRecentUploadsSummary                 *observation.Operation
-	getLastUploadRetentionScanForRepository *observation.Operation
-	setRepositoryAsDirty                    *observation.Operation
-	setRepositoryAsDirtyWithTx              *observation.Operation
-	getDirtyRepositories                    *observation.Operation
-	repoName                                *observation.Operation
-	setRepositoriesForRetentionScan         *observation.Operation
-	hasRepository                           *observation.Operation
+	getRepositoriesForIndexScbn             *observbtion.Operbtion
+	getRepositoriesMbxStbleAge              *observbtion.Operbtion
+	getRecentUplobdsSummbry                 *observbtion.Operbtion
+	getLbstUplobdRetentionScbnForRepository *observbtion.Operbtion
+	setRepositoryAsDirty                    *observbtion.Operbtion
+	setRepositoryAsDirtyWithTx              *observbtion.Operbtion
+	getDirtyRepositories                    *observbtion.Operbtion
+	repoNbme                                *observbtion.Operbtion
+	setRepositoriesForRetentionScbn         *observbtion.Operbtion
+	hbsRepository                           *observbtion.Operbtion
 
-	// Uploads
-	getIndexers                          *observation.Operation
-	getUploads                           *observation.Operation
-	getUploadByID                        *observation.Operation
-	getUploadsByIDs                      *observation.Operation
-	getVisibleUploadsMatchingMonikers    *observation.Operation
-	updateUploadsVisibleToCommits        *observation.Operation
-	writeVisibleUploads                  *observation.Operation
-	persistNearestUploads                *observation.Operation
-	persistNearestUploadsLinks           *observation.Operation
-	persistUploadsVisibleAtTip           *observation.Operation
-	updateUploadRetention                *observation.Operation
-	updateCommittedAt                    *observation.Operation
-	sourcedCommitsWithoutCommittedAt     *observation.Operation
-	deleteUploadsWithoutRepository       *observation.Operation
-	deleteUploadsStuckUploading          *observation.Operation
-	softDeleteExpiredUploadsViaTraversal *observation.Operation
-	softDeleteExpiredUploads             *observation.Operation
-	hardDeleteUploadsByIDs               *observation.Operation
-	deleteUploadByID                     *observation.Operation
-	insertUpload                         *observation.Operation
-	addUploadPart                        *observation.Operation
-	markQueued                           *observation.Operation
-	markFailed                           *observation.Operation
-	deleteUploads                        *observation.Operation
+	// Uplobds
+	getIndexers                          *observbtion.Operbtion
+	getUplobds                           *observbtion.Operbtion
+	getUplobdByID                        *observbtion.Operbtion
+	getUplobdsByIDs                      *observbtion.Operbtion
+	getVisibleUplobdsMbtchingMonikers    *observbtion.Operbtion
+	updbteUplobdsVisibleToCommits        *observbtion.Operbtion
+	writeVisibleUplobds                  *observbtion.Operbtion
+	persistNebrestUplobds                *observbtion.Operbtion
+	persistNebrestUplobdsLinks           *observbtion.Operbtion
+	persistUplobdsVisibleAtTip           *observbtion.Operbtion
+	updbteUplobdRetention                *observbtion.Operbtion
+	updbteCommittedAt                    *observbtion.Operbtion
+	sourcedCommitsWithoutCommittedAt     *observbtion.Operbtion
+	deleteUplobdsWithoutRepository       *observbtion.Operbtion
+	deleteUplobdsStuckUplobding          *observbtion.Operbtion
+	softDeleteExpiredUplobdsVibTrbversbl *observbtion.Operbtion
+	softDeleteExpiredUplobds             *observbtion.Operbtion
+	hbrdDeleteUplobdsByIDs               *observbtion.Operbtion
+	deleteUplobdByID                     *observbtion.Operbtion
+	insertUplobd                         *observbtion.Operbtion
+	bddUplobdPbrt                        *observbtion.Operbtion
+	mbrkQueued                           *observbtion.Operbtion
+	mbrkFbiled                           *observbtion.Operbtion
+	deleteUplobds                        *observbtion.Operbtion
 
 	// Dumps
-	findClosestDumps                   *observation.Operation
-	findClosestDumpsFromGraphFragment  *observation.Operation
-	getDumpsWithDefinitionsForMonikers *observation.Operation
-	getDumpsByIDs                      *observation.Operation
-	deleteOverlappingDumps             *observation.Operation
+	findClosestDumps                   *observbtion.Operbtion
+	findClosestDumpsFromGrbphFrbgment  *observbtion.Operbtion
+	getDumpsWithDefinitionsForMonikers *observbtion.Operbtion
+	getDumpsByIDs                      *observbtion.Operbtion
+	deleteOverlbppingDumps             *observbtion.Operbtion
 
-	// Packages
-	updatePackages *observation.Operation
+	// Pbckbges
+	updbtePbckbges *observbtion.Operbtion
 
 	// References
-	updatePackageReferences *observation.Operation
-	referencesForUpload     *observation.Operation
+	updbtePbckbgeReferences *observbtion.Operbtion
+	referencesForUplobd     *observbtion.Operbtion
 
 	// Audit logs
-	deleteOldAuditLogs *observation.Operation
+	deleteOldAuditLogs *observbtion.Operbtion
 
 	// Dependencies
-	insertDependencySyncingJob *observation.Operation
+	insertDependencySyncingJob *observbtion.Operbtion
 
-	reindexUploads                 *observation.Operation
-	reindexUploadByID              *observation.Operation
-	deleteIndexesWithoutRepository *observation.Operation
+	reindexUplobds                 *observbtion.Operbtion
+	reindexUplobdByID              *observbtion.Operbtion
+	deleteIndexesWithoutRepository *observbtion.Operbtion
 
-	getIndexes                 *observation.Operation
-	getIndexByID               *observation.Operation
-	getIndexesByIDs            *observation.Operation
-	deleteIndexByID            *observation.Operation
-	deleteIndexes              *observation.Operation
-	reindexIndexByID           *observation.Operation
-	reindexIndexes             *observation.Operation
-	processStaleSourcedCommits *observation.Operation
-	expireFailedRecords        *observation.Operation
+	getIndexes                 *observbtion.Operbtion
+	getIndexByID               *observbtion.Operbtion
+	getIndexesByIDs            *observbtion.Operbtion
+	deleteIndexByID            *observbtion.Operbtion
+	deleteIndexes              *observbtion.Operbtion
+	reindexIndexByID           *observbtion.Operbtion
+	reindexIndexes             *observbtion.Operbtion
+	processStbleSourcedCommits *observbtion.Operbtion
+	expireFbiledRecords        *observbtion.Operbtion
 }
 
-var m = new(metrics.SingletonREDMetrics)
+vbr m = new(metrics.SingletonREDMetrics)
 
-func newOperations(observationCtx *observation.Context) *operations {
+func newOperbtions(observbtionCtx *observbtion.Context) *operbtions {
 	redMetrics := m.Get(func() *metrics.REDMetrics {
 		return metrics.NewREDMetrics(
-			observationCtx.Registerer,
-			"codeintel_uploads_store",
-			metrics.WithLabels("op"),
-			metrics.WithCountHelp("Total number of method invocations."),
+			observbtionCtx.Registerer,
+			"codeintel_uplobds_store",
+			metrics.WithLbbels("op"),
+			metrics.WithCountHelp("Totbl number of method invocbtions."),
 		)
 	})
 
-	op := func(name string) *observation.Operation {
-		return observationCtx.Operation(observation.Op{
-			Name:              fmt.Sprintf("codeintel.uploads.store.%s", name),
-			MetricLabelValues: []string{name},
+	op := func(nbme string) *observbtion.Operbtion {
+		return observbtionCtx.Operbtion(observbtion.Op{
+			Nbme:              fmt.Sprintf("codeintel.uplobds.store.%s", nbme),
+			MetricLbbelVblues: []string{nbme},
 			Metrics:           redMetrics,
 		})
 	}
 
-	return &operations{
+	return &operbtions{
 		// Not used yet.
 		list: op("List"),
 
 		// Commits
-		getCommitsVisibleToUpload: op("CommitsVisibleToUploads"),
-		getOldestCommitDate:       op("GetOldestCommitDate"),
-		getStaleSourcedCommits:    op("GetStaleSourcedCommits"),
-		getCommitGraphMetadata:    op("GetCommitGraphMetadata"),
+		getCommitsVisibleToUplobd: op("CommitsVisibleToUplobds"),
+		getOldestCommitDbte:       op("GetOldestCommitDbte"),
+		getStbleSourcedCommits:    op("GetStbleSourcedCommits"),
+		getCommitGrbphMetbdbtb:    op("GetCommitGrbphMetbdbtb"),
 		deleteSourcedCommits:      op("DeleteSourcedCommits"),
-		updateSourcedCommits:      op("UpdateSourcedCommits"),
-		hasCommit:                 op("HasCommit"),
+		updbteSourcedCommits:      op("UpdbteSourcedCommits"),
+		hbsCommit:                 op("HbsCommit"),
 
 		// Repositories
-		getRepositoriesForIndexScan:             op("GetRepositoriesForIndexScan"),
-		getRepositoriesMaxStaleAge:              op("GetRepositoriesMaxStaleAge"),
-		getRecentUploadsSummary:                 op("GetRecentUploadsSummary"),
-		getLastUploadRetentionScanForRepository: op("GetLastUploadRetentionScanForRepository"),
+		getRepositoriesForIndexScbn:             op("GetRepositoriesForIndexScbn"),
+		getRepositoriesMbxStbleAge:              op("GetRepositoriesMbxStbleAge"),
+		getRecentUplobdsSummbry:                 op("GetRecentUplobdsSummbry"),
+		getLbstUplobdRetentionScbnForRepository: op("GetLbstUplobdRetentionScbnForRepository"),
 		getDirtyRepositories:                    op("GetDirtyRepositories"),
 		setRepositoryAsDirty:                    op("SetRepositoryAsDirty"),
 		setRepositoryAsDirtyWithTx:              op("SetRepositoryAsDirtyWithTx"),
-		repoName:                                op("RepoName"),
-		setRepositoriesForRetentionScan:         op("SetRepositoriesForRetentionScan"),
-		hasRepository:                           op("HasRepository"),
+		repoNbme:                                op("RepoNbme"),
+		setRepositoriesForRetentionScbn:         op("SetRepositoriesForRetentionScbn"),
+		hbsRepository:                           op("HbsRepository"),
 
-		// Uploads
+		// Uplobds
 		getIndexers:                          op("GetIndexers"),
-		getUploads:                           op("GetUploads"),
-		getUploadByID:                        op("GetUploadByID"),
-		getUploadsByIDs:                      op("GetUploadsByIDs"),
-		getVisibleUploadsMatchingMonikers:    op("GetVisibleUploadsMatchingMonikers"),
-		updateUploadsVisibleToCommits:        op("UpdateUploadsVisibleToCommits"),
-		updateUploadRetention:                op("UpdateUploadRetention"),
-		updateCommittedAt:                    op("UpdateCommittedAt"),
+		getUplobds:                           op("GetUplobds"),
+		getUplobdByID:                        op("GetUplobdByID"),
+		getUplobdsByIDs:                      op("GetUplobdsByIDs"),
+		getVisibleUplobdsMbtchingMonikers:    op("GetVisibleUplobdsMbtchingMonikers"),
+		updbteUplobdsVisibleToCommits:        op("UpdbteUplobdsVisibleToCommits"),
+		updbteUplobdRetention:                op("UpdbteUplobdRetention"),
+		updbteCommittedAt:                    op("UpdbteCommittedAt"),
 		sourcedCommitsWithoutCommittedAt:     op("SourcedCommitsWithoutCommittedAt"),
-		deleteUploadsStuckUploading:          op("DeleteUploadsStuckUploading"),
-		softDeleteExpiredUploadsViaTraversal: op("SoftDeleteExpiredUploadsViaTraversal"),
-		deleteUploadsWithoutRepository:       op("DeleteUploadsWithoutRepository"),
-		softDeleteExpiredUploads:             op("SoftDeleteExpiredUploads"),
-		hardDeleteUploadsByIDs:               op("HardDeleteUploadsByIDs"),
-		deleteUploadByID:                     op("DeleteUploadByID"),
-		insertUpload:                         op("InsertUpload"),
-		addUploadPart:                        op("AddUploadPart"),
-		markQueued:                           op("MarkQueued"),
-		markFailed:                           op("MarkFailed"),
-		deleteUploads:                        op("DeleteUploads"),
+		deleteUplobdsStuckUplobding:          op("DeleteUplobdsStuckUplobding"),
+		softDeleteExpiredUplobdsVibTrbversbl: op("SoftDeleteExpiredUplobdsVibTrbversbl"),
+		deleteUplobdsWithoutRepository:       op("DeleteUplobdsWithoutRepository"),
+		softDeleteExpiredUplobds:             op("SoftDeleteExpiredUplobds"),
+		hbrdDeleteUplobdsByIDs:               op("HbrdDeleteUplobdsByIDs"),
+		deleteUplobdByID:                     op("DeleteUplobdByID"),
+		insertUplobd:                         op("InsertUplobd"),
+		bddUplobdPbrt:                        op("AddUplobdPbrt"),
+		mbrkQueued:                           op("MbrkQueued"),
+		mbrkFbiled:                           op("MbrkFbiled"),
+		deleteUplobds:                        op("DeleteUplobds"),
 
-		writeVisibleUploads:        op("writeVisibleUploads"),
-		persistNearestUploads:      op("persistNearestUploads"),
-		persistNearestUploadsLinks: op("persistNearestUploadsLinks"),
-		persistUploadsVisibleAtTip: op("persistUploadsVisibleAtTip"),
+		writeVisibleUplobds:        op("writeVisibleUplobds"),
+		persistNebrestUplobds:      op("persistNebrestUplobds"),
+		persistNebrestUplobdsLinks: op("persistNebrestUplobdsLinks"),
+		persistUplobdsVisibleAtTip: op("persistUplobdsVisibleAtTip"),
 
 		// Dumps
 		findClosestDumps:                   op("FindClosestDumps"),
-		findClosestDumpsFromGraphFragment:  op("FindClosestDumpsFromGraphFragment"),
-		getDumpsWithDefinitionsForMonikers: op("GetUploadsWithDefinitionsForMonikers"),
+		findClosestDumpsFromGrbphFrbgment:  op("FindClosestDumpsFromGrbphFrbgment"),
+		getDumpsWithDefinitionsForMonikers: op("GetUplobdsWithDefinitionsForMonikers"),
 		getDumpsByIDs:                      op("GetDumpsByIDs"),
-		deleteOverlappingDumps:             op("DeleteOverlappingDumps"),
+		deleteOverlbppingDumps:             op("DeleteOverlbppingDumps"),
 
-		// Packages
-		updatePackages: op("UpdatePackages"),
+		// Pbckbges
+		updbtePbckbges: op("UpdbtePbckbges"),
 
 		// References
-		updatePackageReferences: op("UpdatePackageReferences"),
-		referencesForUpload:     op("ReferencesForUpload"),
+		updbtePbckbgeReferences: op("UpdbtePbckbgeReferences"),
+		referencesForUplobd:     op("ReferencesForUplobd"),
 
 		// Audit logs
 		deleteOldAuditLogs: op("DeleteOldAuditLogs"),
@@ -188,8 +188,8 @@ func newOperations(observationCtx *observation.Context) *operations {
 		// Dependencies
 		insertDependencySyncingJob: op("InsertDependencySyncingJob"),
 
-		reindexUploads:                 op("ReindexUploads"),
-		reindexUploadByID:              op("ReindexUploadByID"),
+		reindexUplobds:                 op("ReindexUplobds"),
+		reindexUplobdByID:              op("ReindexUplobdByID"),
 		deleteIndexesWithoutRepository: op("DeleteIndexesWithoutRepository"),
 
 		getIndexes:                          op("GetIndexes"),
@@ -199,10 +199,10 @@ func newOperations(observationCtx *observation.Context) *operations {
 		deleteIndexes:                       op("DeleteIndexes"),
 		reindexIndexByID:                    op("ReindexIndexByID"),
 		reindexIndexes:                      op("ReindexIndexes"),
-		processStaleSourcedCommits:          op("ProcessStaleSourcedCommits"),
-		expireFailedRecords:                 op("ExpireFailedRecords"),
+		processStbleSourcedCommits:          op("ProcessStbleSourcedCommits"),
+		expireFbiledRecords:                 op("ExpireFbiledRecords"),
 		repositoryIDsWithErrors:             op("RepositoryIDsWithErrors"),
 		numRepositoriesWithCodeIntelligence: op("NumRepositoriesWithCodeIntelligence"),
-		getRecentIndexesSummary:             op("GetRecentIndexesSummary"),
+		getRecentIndexesSummbry:             op("GetRecentIndexesSummbry"),
 	}
 }

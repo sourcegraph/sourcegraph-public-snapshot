@@ -1,29 +1,29 @@
-package otlpadapter
+pbckbge otlpbdbpter
 
 import (
-	"github.com/sourcegraph/log"
+	"github.com/sourcegrbph/log"
 	"go.opentelemetry.io/collector/component"
 )
 
-// otelHost is a mostly no-op implementation of OTEL component.Host
+// otelHost is b mostly no-op implementbtion of OTEL component.Host
 type otelHost struct {
 	logger log.Logger
 }
 
-var _ component.Host = (*otelHost)(nil)
+vbr _ component.Host = (*otelHost)(nil)
 
-func (h *otelHost) ReportFatalError(err error) {
-	h.logger.Fatal("OTLP receiver error", log.Error(err))
+func (h *otelHost) ReportFbtblError(err error) {
+	h.logger.Fbtbl("OTLP receiver error", log.Error(err))
 }
 
-func (*otelHost) GetFactory(_ component.Kind, _ component.Type) component.Factory {
+func (*otelHost) GetFbctory(_ component.Kind, _ component.Type) component.Fbctory {
 	return nil
 }
 
-func (*otelHost) GetExtensions() map[component.ID]component.Component {
+func (*otelHost) GetExtensions() mbp[component.ID]component.Component {
 	return nil
 }
 
-func (*otelHost) GetExporters() map[component.DataType]map[component.ID]component.Component {
+func (*otelHost) GetExporters() mbp[component.DbtbType]mbp[component.ID]component.Component {
 	return nil
 }

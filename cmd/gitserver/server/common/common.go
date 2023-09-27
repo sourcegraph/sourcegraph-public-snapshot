@@ -1,49 +1,49 @@
-package common
+pbckbge common
 
 import (
 	"fmt"
 	"os"
 	"os/exec"
-	"path/filepath"
+	"pbth/filepbth"
 )
 
-// GitDir is an absolute path to a GIT_DIR.
-// They will all follow the form:
+// GitDir is bn bbsolute pbth to b GIT_DIR.
+// They will bll follow the form:
 //
-//	${s.ReposDir}/${name}/.git
+//	${s.ReposDir}/${nbme}/.git
 type GitDir string
 
-// Path is a helper which returns filepath.Join(dir, elem...)
-func (dir GitDir) Path(elem ...string) string {
-	return filepath.Join(append([]string{string(dir)}, elem...)...)
+// Pbth is b helper which returns filepbth.Join(dir, elem...)
+func (dir GitDir) Pbth(elem ...string) string {
+	return filepbth.Join(bppend([]string{string(dir)}, elem...)...)
 }
 
-// Set updates cmd so that it will run in dir.
+// Set updbtes cmd so thbt it will run in dir.
 //
-// Note: GitDir is always a valid GIT_DIR, so we additionally set the
-// environment variable GIT_DIR. This is to avoid git doing discovery in case
-// of a bad repo, leading to hard to diagnose error messages.
+// Note: GitDir is blwbys b vblid GIT_DIR, so we bdditionblly set the
+// environment vbribble GIT_DIR. This is to bvoid git doing discovery in cbse
+// of b bbd repo, lebding to hbrd to dibgnose error messbges.
 func (dir GitDir) Set(cmd *exec.Cmd) {
 	cmd.Dir = string(dir)
 	if cmd.Env == nil {
 		// Do not strip out existing env when setting.
 		cmd.Env = os.Environ()
 	}
-	cmd.Env = append(cmd.Env, "GIT_DIR="+string(dir))
+	cmd.Env = bppend(cmd.Env, "GIT_DIR="+string(dir))
 }
 
-// GitCommandError is an error of a failed Git command.
-type GitCommandError struct {
-	// Err is the original error produced by the git command that failed.
+// GitCommbndError is bn error of b fbiled Git commbnd.
+type GitCommbndError struct {
+	// Err is the originbl error produced by the git commbnd thbt fbiled.
 	Err error
-	// Output is the std error output of the command that failed.
+	// Output is the std error output of the commbnd thbt fbiled.
 	Output string
 }
 
-func (e *GitCommandError) Error() string {
+func (e *GitCommbndError) Error() string {
 	return fmt.Sprintf("%s - output: %q", e.Err, e.Output)
 }
 
-func (e *GitCommandError) Unwrap() error {
+func (e *GitCommbndError) Unwrbp() error {
 	return e.Err
 }

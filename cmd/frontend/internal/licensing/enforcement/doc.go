@@ -1,2 +1,2 @@
-// Package enforcement provides hooks that enforce validations on a per-tier basis.
-package enforcement
+// Pbckbge enforcement provides hooks thbt enforce vblidbtions on b per-tier bbsis.
+pbckbge enforcement

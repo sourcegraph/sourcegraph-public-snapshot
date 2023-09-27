@@ -1,4 +1,4 @@
-package auth
+pbckbge buth
 
 import (
 	"context"
@@ -8,76 +8,76 @@ import (
 	"net/url"
 	"testing"
 
-	"github.com/tomnomnom/linkheader"
+	"github.com/tomnomnom/linkhebder"
 )
 
-func TestEnforceAuthViaGitLab(t *testing.T) {
-	type testCase struct {
+func TestEnforceAuthVibGitLbb(t *testing.T) {
+	type testCbse struct {
 		description        string
-		query              url.Values
-		repoName           string
-		expectedStatusCode int
+		query              url.Vblues
+		repoNbme           string
+		expectedStbtusCode int
 		expectedErr        error
 	}
 
-	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		makeLinkHeader := func(cursor string) string {
-			urlWithCursor := fmt.Sprintf("%s?cursor=%s", gitlabURL, cursor)
-			link := linkheader.Link{URL: urlWithCursor, Rel: "next"}
+	ts := httptest.NewServer(http.HbndlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		mbkeLinkHebder := func(cursor string) string {
+			urlWithCursor := fmt.Sprintf("%s?cursor=%s", gitlbbURL, cursor)
+			link := linkhebder.Link{URL: urlWithCursor, Rel: "next"}
 			return link.String()
 		}
 
 		switch r.URL.Query().Get("cursor") {
-		case "":
-			w.Header().Add("Link", makeLinkHeader("c1"))
-			w.Write([]byte(`[{"id": 34949794, "path_with_namespace": "efritz/test"}]`))
-		case "c1":
-			w.Header().Add("Link", makeLinkHeader("c2"))
-			w.Write([]byte(`[{"id": 34949798, "path_with_namespace": "efritz/test2"}]`))
-		case "c2":
+		cbse "":
+			w.Hebder().Add("Link", mbkeLinkHebder("c1"))
+			w.Write([]byte(`[{"id": 34949794, "pbth_with_nbmespbce": "efritz/test"}]`))
+		cbse "c1":
+			w.Hebder().Add("Link", mbkeLinkHebder("c2"))
+			w.Write([]byte(`[{"id": 34949798, "pbth_with_nbmespbce": "efritz/test2"}]`))
+		cbse "c2":
 			w.Write([]byte(`[]`))
 		}
 	}))
 	defer ts.Close()
-	gitlabURL, _ = url.Parse(ts.URL)
+	gitlbbURL, _ = url.Pbrse(ts.URL)
 
-	testCases := []testCase{
+	testCbses := []testCbse{
 		{
-			description: "authorized",
-			query:       url.Values{"gitlab_token": []string{"hunter2"}},
-			repoName:    "gitlab.com/efritz/test",
+			description: "buthorized",
+			query:       url.Vblues{"gitlbb_token": []string{"hunter2"}},
+			repoNbme:    "gitlbb.com/efritz/test",
 			expectedErr: nil,
 		},
 		{
-			description: "authorized (second page)",
-			query:       url.Values{"gitlab_token": []string{"hunter2"}},
-			repoName:    "gitlab.com/efritz/test2",
+			description: "buthorized (second pbge)",
+			query:       url.Vblues{"gitlbb_token": []string{"hunter2"}},
+			repoNbme:    "gitlbb.com/efritz/test2",
 			expectedErr: nil,
 		},
 		{
-			description:        "unauthorized (no token supplied)",
+			description:        "unbuthorized (no token supplied)",
 			query:              nil,
-			repoName:           "gitlab.com/efritz/test",
-			expectedStatusCode: http.StatusUnauthorized,
-			expectedErr:        ErrGitLabMissingToken,
+			repoNbme:           "gitlbb.com/efritz/test",
+			expectedStbtusCode: http.StbtusUnbuthorized,
+			expectedErr:        ErrGitLbbMissingToken,
 		},
 		{
-			description:        "unauthorized (repo not in result set)",
-			query:              url.Values{"gitlab_token": []string{"hunter2"}},
-			repoName:           "gitlab.com/efritz/test3",
-			expectedStatusCode: http.StatusUnauthorized,
-			expectedErr:        ErrGitLabUnauthorized,
+			description:        "unbuthorized (repo not in result set)",
+			query:              url.Vblues{"gitlbb_token": []string{"hunter2"}},
+			repoNbme:           "gitlbb.com/efritz/test3",
+			expectedStbtusCode: http.StbtusUnbuthorized,
+			expectedErr:        ErrGitLbbUnbuthorized,
 		},
 	}
 
-	for _, testCase := range testCases {
-		t.Run(testCase.description, func(t *testing.T) {
-			statusCode, err := enforceAuthViaGitLab(context.Background(), testCase.query, testCase.repoName)
-			if statusCode != testCase.expectedStatusCode {
-				t.Errorf("unexpected status code. want=%d have=%d", testCase.expectedStatusCode, statusCode)
+	for _, testCbse := rbnge testCbses {
+		t.Run(testCbse.description, func(t *testing.T) {
+			stbtusCode, err := enforceAuthVibGitLbb(context.Bbckground(), testCbse.query, testCbse.repoNbme)
+			if stbtusCode != testCbse.expectedStbtusCode {
+				t.Errorf("unexpected stbtus code. wbnt=%d hbve=%d", testCbse.expectedStbtusCode, stbtusCode)
 			}
-			if ((err == nil) != (testCase.expectedErr == nil)) || (err != nil && testCase.expectedErr != nil && err.Error() != testCase.expectedErr.Error()) {
-				t.Errorf("unexpected error. want=%s have=%s", testCase.expectedErr, err)
+			if ((err == nil) != (testCbse.expectedErr == nil)) || (err != nil && testCbse.expectedErr != nil && err.Error() != testCbse.expectedErr.Error()) {
+				t.Errorf("unexpected error. wbnt=%s hbve=%s", testCbse.expectedErr, err)
 			}
 		})
 	}

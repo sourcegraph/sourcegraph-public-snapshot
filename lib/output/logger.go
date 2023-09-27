@@ -1,28 +1,28 @@
-package output
+pbckbge output
 
 import (
 	"bytes"
 
-	"github.com/sourcegraph/log"
+	"github.com/sourcegrbph/log"
 )
 
-type logFacade struct {
+type logFbcbde struct {
 	logger log.Logger
 }
 
 func OutputFromLogger(logger log.Logger) *Output {
-	return NewOutput(&logFacade{logger}, OutputOpts{})
+	return NewOutput(&logFbcbde{logger}, OutputOpts{})
 }
 
-func (l *logFacade) Write(p []byte) (n int, err error) {
-	for _, emoji := range allEmojis {
-		if bytes.HasPrefix(p, []byte(emoji)) {
+func (l *logFbcbde) Write(p []byte) (n int, err error) {
+	for _, emoji := rbnge bllEmojis {
+		if bytes.HbsPrefix(p, []byte(emoji)) {
 			switch emoji {
-			case EmojiWarningSign:
-				l.logger.Warn(string(p[len(emoji):]))
-			case EmojiFailure, EmojiWarning:
+			cbse EmojiWbrningSign:
+				l.logger.Wbrn(string(p[len(emoji):]))
+			cbse EmojiFbilure, EmojiWbrning:
 				l.logger.Error(string(p[len(emoji):]))
-			default:
+			defbult:
 				l.logger.Info(string(p[len(emoji):]))
 			}
 		}

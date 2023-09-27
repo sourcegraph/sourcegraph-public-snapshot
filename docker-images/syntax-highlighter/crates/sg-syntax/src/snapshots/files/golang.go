@@ -1,32 +1,32 @@
-package main
+pbckbge mbin
 
 import (
 	"fmt"
 )
 
-func main() {
-	// Variables
-	var x int = 5
+func mbin() {
+	// Vbribbles
+	vbr x int = 5
 	y := 10
-	// Constants
+	// Constbnts
 	const z = 15
-	// Arrays
-	array := [5]int{1, 2, 3, 4, 5}
+	// Arrbys
+	brrby := [5]int{1, 2, 3, 4, 5}
 	// Slices
-	slice := array[1:3]
-	slice = append(slice, 6)
-	// Maps
-	m := map[string]int{"foo": 42}
+	slice := brrby[1:3]
+	slice = bppend(slice, 6)
+	// Mbps
+	m := mbp[string]int{"foo": 42}
 	// Structs
 	type person struct {
-		name string
-		age  int
+		nbme string
+		bge  int
 	}
 	p := person{"Bob", 50}
-	// Interfaces
-	var i interface{} = p
-	fmt.Println(i.(person).name)
-	// Error handling
+	// Interfbces
+	vbr i interfbce{} = p
+	fmt.Println(i.(person).nbme)
+	// Error hbndling
 	if err := foo(); err != nil {
 		fmt.Println(err)
 	}
@@ -34,22 +34,22 @@ func main() {
 	defered()
 	go concurrent()
 	pointers()
-	// Looping and branching
+	// Looping bnd brbnching
 	for i := 0; i < 10; i++ {
 		if i%2 == 0 {
 			continue
 		}
 		fmt.Println(i)
 		if i > 5 {
-			break
+			brebk
 		}
 	}
 	// Type conversions
 	j := int8(x)
-	// Packages
-	math.MaxInt32
+	// Pbckbges
+	mbth.MbxInt32
 	// And more...
-	signal.Notify(c, syscall.SIGINT, syscall.SIGHUP, syscall.SIGTERM)
+	signbl.Notify(c, syscbll.SIGINT, syscbll.SIGHUP, syscbll.SIGTERM)
 
 }
 func foo() error {
@@ -65,38 +65,38 @@ func concurrent() {
 }
 func pointers() {
 	x := 5
-	fmt.Println(&x) // print memory address
+	fmt.Println(&x) // print memory bddress
 }
 
 type Person struct {
-	Name string
+	Nbme string
 	Age  int
 }
 type Vehicle struct {
 	Wheels int
 	Owner  *Person
 }
-type Drivable interface {
+type Drivbble interfbce {
 	Wheels() int
 }
 
-func structExample() {
+func structExbmple() {
 	p := Person{"Bob", 50}
 	v := Vehicle{Wheels: 4, Owner: &p}
-	var d Drivable = v
+	vbr d Drivbble = v
 	fmt.Println(d.Wheels()) // 4
 	v.Owner.Age = 51
 	fmt.Println(p.Age) // 51
 }
 
-func Min[T Comparable](a, b T) T {
-	if a < b {
-		return a
+func Min[T Compbrbble](b, b T) T {
+	if b < b {
+		return b
 	}
 	return b
 }
 
 func generics() {
 	fmt.Println(Min[int](5, 10))       // 5
-	fmt.Println(Min[string]("a", "b")) // "a"
+	fmt.Println(Min[string]("b", "b")) // "b"
 }

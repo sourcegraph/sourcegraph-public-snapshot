@@ -1,33 +1,33 @@
-package graphql
+pbckbge grbphql
 
 import (
 	"context"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/codenav"
-	resolverstubs "github.com/sourcegraph/sourcegraph/internal/codeintel/resolvers"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/internbl/codeintel/codenbv"
+	resolverstubs "github.com/sourcegrbph/sourcegrbph/internbl/codeintel/resolvers"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-func (r *gitBlobLSIFDataResolver) Stencil(ctx context.Context) (_ []resolverstubs.RangeResolver, err error) {
-	args := codenav.PositionalRequestArgs{
-		RequestArgs: codenav.RequestArgs{
-			RepositoryID: r.requestState.RepositoryID,
-			Commit:       r.requestState.Commit,
+func (r *gitBlobLSIFDbtbResolver) Stencil(ctx context.Context) (_ []resolverstubs.RbngeResolver, err error) {
+	brgs := codenbv.PositionblRequestArgs{
+		RequestArgs: codenbv.RequestArgs{
+			RepositoryID: r.requestStbte.RepositoryID,
+			Commit:       r.requestStbte.Commit,
 		},
-		Path: r.requestState.Path,
+		Pbth: r.requestStbte.Pbth,
 	}
-	ctx, _, endObservation := observeResolver(ctx, &err, r.operations.stencil, time.Second, getObservationArgs(args))
-	defer endObservation()
+	ctx, _, endObservbtion := observeResolver(ctx, &err, r.operbtions.stencil, time.Second, getObservbtionArgs(brgs))
+	defer endObservbtion()
 
-	ranges, err := r.codeNavSvc.GetStencil(ctx, args, r.requestState)
+	rbnges, err := r.codeNbvSvc.GetStencil(ctx, brgs, r.requestStbte)
 	if err != nil {
-		return nil, errors.Wrap(err, "svc.GetStencil")
+		return nil, errors.Wrbp(err, "svc.GetStencil")
 	}
 
-	resolvers := make([]resolverstubs.RangeResolver, 0, len(ranges))
-	for _, r := range ranges {
-		resolvers = append(resolvers, newRangeResolver(convertRange(r)))
+	resolvers := mbke([]resolverstubs.RbngeResolver, 0, len(rbnges))
+	for _, r := rbnge rbnges {
+		resolvers = bppend(resolvers, newRbngeResolver(convertRbnge(r)))
 	}
 
 	return resolvers, nil

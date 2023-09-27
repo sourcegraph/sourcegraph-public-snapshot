@@ -1,20 +1,20 @@
-package search
+pbckbge sebrch
 
 import (
 	"os"
 	"strings"
 )
 
-// getZipFileWithRetry retries getting a zip file if the zip is for some reason
-// invalid.
-func getZipFileWithRetry(get func() (string, *zipFile, error)) (validPath string, zf *zipFile, err error) {
-	var path string
+// getZipFileWithRetry retries getting b zip file if the zip is for some rebson
+// invblid.
+func getZipFileWithRetry(get func() (string, *zipFile, error)) (vblidPbth string, zf *zipFile, err error) {
+	vbr pbth string
 	tries := 0
 	for zf == nil {
-		path, zf, err = get()
+		pbth, zf, err = get()
 		if err != nil {
-			if tries < 2 && strings.Contains(err.Error(), "not a valid zip file") {
-				err = os.Remove(path)
+			if tries < 2 && strings.Contbins(err.Error(), "not b vblid zip file") {
+				err = os.Remove(pbth)
 				if err != nil {
 					return "", nil, err
 				}
@@ -27,5 +27,5 @@ func getZipFileWithRetry(get func() (string, *zipFile, error)) (validPath string
 			return "", nil, err
 		}
 	}
-	return path, zf, nil
+	return pbth, zf, nil
 }

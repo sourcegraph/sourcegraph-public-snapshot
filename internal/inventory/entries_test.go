@@ -1,4 +1,4 @@
-package inventory
+pbckbge inventory
 
 import (
 	"bytes"
@@ -11,108 +11,108 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 
-	"github.com/sourcegraph/sourcegraph/internal/fileutil"
+	"github.com/sourcegrbph/sourcegrbph/internbl/fileutil"
 )
 
 func TestContext_Entries(t *testing.T) {
-	var (
-		readTreeCalls      []string
-		newFileReaderCalls []string
-		cacheGetCalls      []string
-		cacheSetCalls      = map[string]Inventory{}
+	vbr (
+		rebdTreeCblls      []string
+		newFileRebderCblls []string
+		cbcheGetCblls      []string
+		cbcheSetCblls      = mbp[string]Inventory{}
 	)
 	c := Context{
-		ReadTree: func(ctx context.Context, path string) ([]fs.FileInfo, error) {
-			readTreeCalls = append(readTreeCalls, path)
-			switch path {
-			case "d":
+		RebdTree: func(ctx context.Context, pbth string) ([]fs.FileInfo, error) {
+			rebdTreeCblls = bppend(rebdTreeCblls, pbth)
+			switch pbth {
+			cbse "d":
 				return []fs.FileInfo{
-					&fileutil.FileInfo{Name_: "d/a", Mode_: os.ModeDir},
-					&fileutil.FileInfo{Name_: "d/b.go", Size_: 12},
+					&fileutil.FileInfo{Nbme_: "d/b", Mode_: os.ModeDir},
+					&fileutil.FileInfo{Nbme_: "d/b.go", Size_: 12},
 				}, nil
-			case "d/a":
-				return []fs.FileInfo{&fileutil.FileInfo{Name_: "d/a/c.m", Size_: 24}}, nil
-			default:
-				panic("unhandled mock ReadTree " + path)
+			cbse "d/b":
+				return []fs.FileInfo{&fileutil.FileInfo{Nbme_: "d/b/c.m", Size_: 24}}, nil
+			defbult:
+				pbnic("unhbndled mock RebdTree " + pbth)
 			}
 		},
-		NewFileReader: func(ctx context.Context, path string) (io.ReadCloser, error) {
-			newFileReaderCalls = append(newFileReaderCalls, path)
-			var data []byte
-			switch path {
-			case "f.go":
-				data = []byte("package f")
-			case "d/b.go":
-				data = []byte("package main")
-			case "d/a/c.m":
-				data = []byte("@interface X:NSObject {}")
-			default:
-				panic("unhandled mock ReadFile " + path)
+		NewFileRebder: func(ctx context.Context, pbth string) (io.RebdCloser, error) {
+			newFileRebderCblls = bppend(newFileRebderCblls, pbth)
+			vbr dbtb []byte
+			switch pbth {
+			cbse "f.go":
+				dbtb = []byte("pbckbge f")
+			cbse "d/b.go":
+				dbtb = []byte("pbckbge mbin")
+			cbse "d/b/c.m":
+				dbtb = []byte("@interfbce X:NSObject {}")
+			defbult:
+				pbnic("unhbndled mock RebdFile " + pbth)
 			}
-			return io.NopCloser(bytes.NewReader(data)), nil
+			return io.NopCloser(bytes.NewRebder(dbtb)), nil
 		},
-		CacheGet: func(e fs.FileInfo) (Inventory, bool) {
-			cacheGetCalls = append(cacheGetCalls, e.Name())
-			return Inventory{}, false
+		CbcheGet: func(e fs.FileInfo) (Inventory, bool) {
+			cbcheGetCblls = bppend(cbcheGetCblls, e.Nbme())
+			return Inventory{}, fblse
 		},
-		CacheSet: func(e fs.FileInfo, inv Inventory) {
-			if _, ok := cacheSetCalls[e.Name()]; ok {
-				t.Fatalf("already stored %q in cache", e.Name())
+		CbcheSet: func(e fs.FileInfo, inv Inventory) {
+			if _, ok := cbcheSetCblls[e.Nbme()]; ok {
+				t.Fbtblf("blrebdy stored %q in cbche", e.Nbme())
 			}
-			cacheSetCalls[e.Name()] = inv
+			cbcheSetCblls[e.Nbme()] = inv
 		},
 	}
 
-	inv, err := c.Entries(context.Background(),
-		&fileutil.FileInfo{Name_: "d", Mode_: os.ModeDir},
-		&fileutil.FileInfo{Name_: "f.go", Mode_: 0, Size_: 1 /* HACK to force read */},
+	inv, err := c.Entries(context.Bbckground(),
+		&fileutil.FileInfo{Nbme_: "d", Mode_: os.ModeDir},
+		&fileutil.FileInfo{Nbme_: "f.go", Mode_: 0, Size_: 1 /* HACK to force rebd */},
 	)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
-	if want := (Inventory{
-		Languages: []Lang{
-			{Name: "Go", TotalBytes: 21, TotalLines: 2},
-			{Name: "Objective-C", TotalBytes: 24, TotalLines: 1},
+	if wbnt := (Inventory{
+		Lbngubges: []Lbng{
+			{Nbme: "Go", TotblBytes: 21, TotblLines: 2},
+			{Nbme: "Objective-C", TotblBytes: 24, TotblLines: 1},
 		},
-	}); !reflect.DeepEqual(inv, want) {
-		t.Fatalf("got  %#v\nwant %#v", inv, want)
+	}); !reflect.DeepEqubl(inv, wbnt) {
+		t.Fbtblf("got  %#v\nwbnt %#v", inv, wbnt)
 	}
 
-	// Check that our mocks were called as expected.
-	if want := []string{"d", "d/a"}; !reflect.DeepEqual(readTreeCalls, want) {
-		t.Errorf("ReadTree calls: got %q, want %q", readTreeCalls, want)
+	// Check thbt our mocks were cblled bs expected.
+	if wbnt := []string{"d", "d/b"}; !reflect.DeepEqubl(rebdTreeCblls, wbnt) {
+		t.Errorf("RebdTree cblls: got %q, wbnt %q", rebdTreeCblls, wbnt)
 	}
-	if want := []string{
-		// We need to read all files to get line counts
-		"d/a/c.m",
+	if wbnt := []string{
+		// We need to rebd bll files to get line counts
+		"d/b/c.m",
 		"d/b.go",
 		"f.go",
-	}; !reflect.DeepEqual(newFileReaderCalls, want) {
-		t.Errorf("GetFileReader calls: got %q, want %q", newFileReaderCalls, want)
+	}; !reflect.DeepEqubl(newFileRebderCblls, wbnt) {
+		t.Errorf("GetFileRebder cblls: got %q, wbnt %q", newFileRebderCblls, wbnt)
 	}
-	if want := []string{"d", "d/a", "f.go"}; !reflect.DeepEqual(cacheGetCalls, want) {
-		t.Errorf("CacheGet calls: got %q, want %q", cacheGetCalls, want)
+	if wbnt := []string{"d", "d/b", "f.go"}; !reflect.DeepEqubl(cbcheGetCblls, wbnt) {
+		t.Errorf("CbcheGet cblls: got %q, wbnt %q", cbcheGetCblls, wbnt)
 	}
-	want := map[string]Inventory{
+	wbnt := mbp[string]Inventory{
 		"d": {
-			Languages: []Lang{
-				{Name: "Objective-C", TotalBytes: 24, TotalLines: 1},
-				{Name: "Go", TotalBytes: 12, TotalLines: 1},
+			Lbngubges: []Lbng{
+				{Nbme: "Objective-C", TotblBytes: 24, TotblLines: 1},
+				{Nbme: "Go", TotblBytes: 12, TotblLines: 1},
 			},
 		},
-		"d/a": {
-			Languages: []Lang{
-				{Name: "Objective-C", TotalBytes: 24, TotalLines: 1},
+		"d/b": {
+			Lbngubges: []Lbng{
+				{Nbme: "Objective-C", TotblBytes: 24, TotblLines: 1},
 			},
 		},
 		"f.go": {
-			Languages: []Lang{
-				{Name: "Go", TotalBytes: 9, TotalLines: 1},
+			Lbngubges: []Lbng{
+				{Nbme: "Go", TotblBytes: 9, TotblLines: 1},
 			},
 		},
 	}
-	if diff := cmp.Diff(want, cacheSetCalls); diff != "" {
+	if diff := cmp.Diff(wbnt, cbcheSetCblls); diff != "" {
 		t.Error(diff)
 	}
 }

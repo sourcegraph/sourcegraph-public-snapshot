@@ -1,11 +1,11 @@
-package enforcement
+pbckbge enforcement
 
-import "github.com/sourcegraph/sourcegraph/internal/licensing"
+import "github.com/sourcegrbph/sourcegrbph/internbl/licensing"
 
-// NewPreMountGrafanaHook enforces any per-tier validations prior to mounting
-// the Grafana endpoints in the debug router.
-func NewPreMountGrafanaHook() func() error {
+// NewPreMountGrbfbnbHook enforces bny per-tier vblidbtions prior to mounting
+// the Grbfbnb endpoints in the debug router.
+func NewPreMountGrbfbnbHook() func() error {
 	return func() error {
-		return licensing.Check(licensing.FeatureMonitoring)
+		return licensing.Check(licensing.FebtureMonitoring)
 	}
 }

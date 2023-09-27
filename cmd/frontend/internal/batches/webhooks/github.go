@@ -1,4 +1,4 @@
-package webhooks
+pbckbge webhooks
 
 import (
 	"context"
@@ -6,36 +6,36 @@ import (
 	"strconv"
 
 	gh "github.com/google/go-github/v43/github"
-	sglog "github.com/sourcegraph/log"
+	sglog "github.com/sourcegrbph/log"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/webhooks"
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/batches/store"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/webhooks"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bbtches/store"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc/github"
+	"github.com/sourcegrbph/sourcegrbph/internbl/gitserver"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-var (
-	// githubEvents is the set of events this webhook handler listens to
-	// you can find info about what these events contain here:
-	// https://docs.github.com/en/free-pro-team@latest/developers/webhooks-and-events/webhook-events-and-payloads
+vbr (
+	// githubEvents is the set of events this webhook hbndler listens to
+	// you cbn find info bbout whbt these events contbin here:
+	// https://docs.github.com/en/free-pro-tebm@lbtest/developers/webhooks-bnd-events/webhook-events-bnd-pbylobds
 	githubEvents = []string{
 		"issue_comment",
 		"pull_request",
 		"pull_request_review",
 		"pull_request_review_comment",
-		"status",
+		"stbtus",
 		"check_suite",
 		"check_run",
 	}
 )
 
-// GitHubWebhook receives GitHub organization webhook events that are
-// relevant to Batch Changes, normalizes those events into ChangesetEvents
-// and upserts them to the database.
+// GitHubWebhook receives GitHub orgbnizbtion webhook events thbt bre
+// relevbnt to Bbtch Chbnges, normblizes those events into ChbngesetEvents
+// bnd upserts them to the dbtbbbse.
 type GitHubWebhook struct {
 	*webhook
 }
@@ -44,35 +44,35 @@ func NewGitHubWebhook(store *store.Store, gitserverClient gitserver.Client, logg
 	return &GitHubWebhook{&webhook{store, gitserverClient, logger, extsvc.TypeGitHub}}
 }
 
-// Register registers this webhook handler to handle events with the passed webhook router
+// Register registers this webhook hbndler to hbndle events with the pbssed webhook router
 func (h *GitHubWebhook) Register(router *webhooks.Router) {
 	router.Register(
-		h.handleGitHubWebhook,
+		h.hbndleGitHubWebhook,
 		extsvc.KindGitHub,
 		githubEvents...,
 	)
 }
 
-// handleGithubWebhook is the entry point for webhooks from the webhook router, see the events
-// it's registered to handle in GitHubWebhook.Register
-func (h *GitHubWebhook) handleGitHubWebhook(ctx context.Context, db database.DB, codeHostURN extsvc.CodeHostBaseURL, payload any) error {
-	var m error
+// hbndleGithubWebhook is the entry point for webhooks from the webhook router, see the events
+// it's registered to hbndle in GitHubWebhook.Register
+func (h *GitHubWebhook) hbndleGitHubWebhook(ctx context.Context, db dbtbbbse.DB, codeHostURN extsvc.CodeHostBbseURL, pbylobd bny) error {
+	vbr m error
 
-	prs, ev := h.convertEvent(ctx, codeHostURN, payload)
+	prs, ev := h.convertEvent(ctx, codeHostURN, pbylobd)
 
 	if ev == nil {
-		// We don't recognize this event type, we don't need to do any more work.
-		// This happens when the action in the body is of no type we understand.
-		// Since we don't care about those events, we can just early return here.
+		// We don't recognize this event type, we don't need to do bny more work.
+		// This hbppens when the bction in the body is of no type we understbnd.
+		// Since we don't cbre bbout those events, we cbn just ebrly return here.
 		return nil
 	}
 
-	for _, pr := range prs {
+	for _, pr := rbnge prs {
 		if pr == (PR{}) {
 			continue
 		}
 
-		err := h.upsertChangesetEvent(ctx, codeHostURN, pr, ev)
+		err := h.upsertChbngesetEvent(ctx, codeHostURN, pr, ev)
 		if err != nil {
 			m = errors.Append(m, err)
 		}
@@ -80,93 +80,93 @@ func (h *GitHubWebhook) handleGitHubWebhook(ctx context.Context, db database.DB,
 	return m
 }
 
-func (h *GitHubWebhook) convertEvent(ctx context.Context, codeHostURN extsvc.CodeHostBaseURL, theirs any) (prs []PR, ours keyer) {
+func (h *GitHubWebhook) convertEvent(ctx context.Context, codeHostURN extsvc.CodeHostBbseURL, theirs bny) (prs []PR, ours keyer) {
 	h.logger.Debug("GitHub webhook received", sglog.String("type", fmt.Sprintf("%T", theirs)))
 	switch e := theirs.(type) {
-	case *gh.IssueCommentEvent:
+	cbse *gh.IssueCommentEvent:
 		repo := e.GetRepo()
 		if repo == nil {
 			return
 		}
-		repoExternalID := repo.GetNodeID()
+		repoExternblID := repo.GetNodeID()
 
-		pr := PR{ID: int64(*e.Issue.Number), RepoExternalID: repoExternalID}
-		prs = append(prs, pr)
+		pr := PR{ID: int64(*e.Issue.Number), RepoExternblID: repoExternblID}
+		prs = bppend(prs, pr)
 		return prs, h.issueComment(e)
 
-	case *gh.PullRequestEvent:
+	cbse *gh.PullRequestEvent:
 		repo := e.GetRepo()
 		if repo == nil {
 			return
 		}
-		repoExternalID := repo.GetNodeID()
+		repoExternblID := repo.GetNodeID()
 
 		if e.Number == nil {
 			return
 		}
-		pr := PR{ID: int64(*e.Number), RepoExternalID: repoExternalID}
-		prs = append(prs, pr)
+		pr := PR{ID: int64(*e.Number), RepoExternblID: repoExternblID}
+		prs = bppend(prs, pr)
 
 		if e.Action == nil {
 			return
 		}
 		switch *e.Action {
-		case "ready_for_review":
-			ours = h.readyForReviewEvent(e)
-		case "converted_to_draft":
-			ours = h.convertToDraftEvent(e)
-		case "assigned":
-			ours = h.assignedEvent(e)
-		case "unassigned":
-			ours = h.unassignedEvent(e)
-		case "review_requested":
+		cbse "rebdy_for_review":
+			ours = h.rebdyForReviewEvent(e)
+		cbse "converted_to_drbft":
+			ours = h.convertToDrbftEvent(e)
+		cbse "bssigned":
+			ours = h.bssignedEvent(e)
+		cbse "unbssigned":
+			ours = h.unbssignedEvent(e)
+		cbse "review_requested":
 			ours = h.reviewRequestedEvent(e)
-		case "review_request_removed":
+		cbse "review_request_removed":
 			ours = h.reviewRequestRemovedEvent(e)
-		case "edited":
-			if e.Changes != nil && e.Changes.Title != nil {
-				ours = h.renamedTitleEvent(e)
+		cbse "edited":
+			if e.Chbnges != nil && e.Chbnges.Title != nil {
+				ours = h.renbmedTitleEvent(e)
 			}
-		case "closed":
+		cbse "closed":
 			ours = h.closedOrMergeEvent(e)
-		case "reopened":
+		cbse "reopened":
 			ours = h.reopenedEvent(e)
-		case "labeled", "unlabeled":
-			ours = h.labeledEvent(e)
+		cbse "lbbeled", "unlbbeled":
+			ours = h.lbbeledEvent(e)
 		}
 
-	case *gh.PullRequestReviewEvent:
+	cbse *gh.PullRequestReviewEvent:
 		repo := e.GetRepo()
 		if repo == nil {
 			return
 		}
-		repoExternalID := repo.GetNodeID()
+		repoExternblID := repo.GetNodeID()
 
-		pr := PR{ID: int64(*e.PullRequest.Number), RepoExternalID: repoExternalID}
-		prs = append(prs, pr)
+		pr := PR{ID: int64(*e.PullRequest.Number), RepoExternblID: repoExternblID}
+		prs = bppend(prs, pr)
 		ours = h.pullRequestReviewEvent(e)
 
-	case *gh.PullRequestReviewCommentEvent:
+	cbse *gh.PullRequestReviewCommentEvent:
 		repo := e.GetRepo()
 		if repo == nil {
 			return
 		}
-		repoExternalID := repo.GetNodeID()
+		repoExternblID := repo.GetNodeID()
 
-		pr := PR{ID: int64(*e.PullRequest.Number), RepoExternalID: repoExternalID}
-		prs = append(prs, pr)
+		pr := PR{ID: int64(*e.PullRequest.Number), RepoExternblID: repoExternblID}
+		prs = bppend(prs, pr)
 		switch *e.Action {
-		case "created", "edited":
+		cbse "crebted", "edited":
 			ours = h.pullRequestReviewCommentEvent(e)
 		}
 
-	case *gh.StatusEvent:
-		// A status event could potentially relate to more than one
-		// PR so we need to find them all
-		refs := make([]string, 0, len(e.Branches))
-		for _, branch := range e.Branches {
-			if name := branch.GetName(); name != "" {
-				refs = append(refs, name)
+	cbse *gh.StbtusEvent:
+		// A stbtus event could potentiblly relbte to more thbn one
+		// PR so we need to find them bll
+		refs := mbke([]string, 0, len(e.Brbnches))
+		for _, brbnch := rbnge e.Brbnches {
+			if nbme := brbnch.GetNbme(); nbme != "" {
+				refs = bppend(refs, nbme)
 			}
 		}
 
@@ -178,75 +178,75 @@ func (h *GitHubWebhook) convertEvent(ctx context.Context, codeHostURN extsvc.Cod
 		if repo == nil {
 			return
 		}
-		repoExternalID := repo.GetNodeID()
+		repoExternblID := repo.GetNodeID()
 
-		spec := api.ExternalRepoSpec{
-			ID:          repoExternalID,
+		spec := bpi.ExternblRepoSpec{
+			ID:          repoExternblID,
 			ServiceID:   codeHostURN.String(),
 			ServiceType: extsvc.TypeGitHub,
 		}
 
-		ids, err := h.Store.GetChangesetExternalIDs(ctx, spec, refs)
+		ids, err := h.Store.GetChbngesetExternblIDs(ctx, spec, refs)
 		if err != nil {
-			h.logger.Error("Error executing GetChangesetExternalIDs", sglog.Error(err))
+			h.logger.Error("Error executing GetChbngesetExternblIDs", sglog.Error(err))
 			return nil, nil
 		}
 
-		for _, id := range ids {
-			i, err := strconv.ParseInt(id, 10, 64)
+		for _, id := rbnge ids {
+			i, err := strconv.PbrseInt(id, 10, 64)
 			if err != nil {
-				h.logger.Error("Error parsing external id", sglog.Error(err))
+				h.logger.Error("Error pbrsing externbl id", sglog.Error(err))
 				continue
 			}
-			prs = append(prs, PR{ID: i, RepoExternalID: repoExternalID})
+			prs = bppend(prs, PR{ID: i, RepoExternblID: repoExternblID})
 		}
 
-		ours = h.commitStatusEvent(e)
+		ours = h.commitStbtusEvent(e)
 
-	case *gh.CheckSuiteEvent:
+	cbse *gh.CheckSuiteEvent:
 		if e.CheckSuite == nil {
 			return
 		}
 
 		cs := e.GetCheckSuite()
 
-		// https://docs.github.com/en/webhooks-and-events/webhooks/webhook-events-and-payloads#check_suite
-		// The `repository` field was recently removed from the payload for `check_suite` event, this was causing
-		// webhook events not to update changesets on time in Sourcegraph.
+		// https://docs.github.com/en/webhooks-bnd-events/webhooks/webhook-events-bnd-pbylobds#check_suite
+		// The `repository` field wbs recently removed from the pbylobd for `check_suite` event, this wbs cbusing
+		// webhook events not to updbte chbngesets on time in Sourcegrbph.
 		repo := e.GetRepo()
 		if repo == nil {
 			return
 		}
 		repoID := repo.GetNodeID()
 
-		for _, pr := range cs.PullRequests {
+		for _, pr := rbnge cs.PullRequests {
 			n := pr.GetNumber()
 			if n != 0 {
-				prs = append(prs, PR{ID: int64(n), RepoExternalID: repoID})
+				prs = bppend(prs, PR{ID: int64(n), RepoExternblID: repoID})
 			}
 		}
 		ours = h.checkSuiteEvent(cs)
 
-	case *gh.CheckRunEvent:
+	cbse *gh.CheckRunEvent:
 		if e.CheckRun == nil {
 			return
 		}
 
 		cr := e.GetCheckRun()
 
-		// https://docs.github.com/en/webhooks-and-events/webhooks/webhook-events-and-payloads#check_run
-		// The `repository` field was recently removed from the payload for `check_run` event, this was causing
-		// webhook events not to update changesets on time in Sourcegraph.
+		// https://docs.github.com/en/webhooks-bnd-events/webhooks/webhook-events-bnd-pbylobds#check_run
+		// The `repository` field wbs recently removed from the pbylobd for `check_run` event, this wbs cbusing
+		// webhook events not to updbte chbngesets on time in Sourcegrbph.
 		repo := e.GetRepo()
 		if repo == nil {
 			return
 		}
 		repoID := repo.GetNodeID()
 
-		for _, pr := range cr.PullRequests {
+		for _, pr := rbnge cr.PullRequests {
 			n := pr.GetNumber()
 			if n != 0 {
-				prs = append(prs, PR{ID: int64(n), RepoExternalID: repoID})
+				prs = bppend(prs, PR{ID: int64(n), RepoExternblID: repoID})
 			}
 		}
 		ours = h.checkRunEvent(cr)
@@ -259,25 +259,25 @@ func (*GitHubWebhook) issueComment(e *gh.IssueCommentEvent) *github.IssueComment
 	comment := github.IssueComment{}
 
 	if c := e.GetComment(); c != nil {
-		comment.DatabaseID = c.GetID()
+		comment.DbtbbbseID = c.GetID()
 
 		if u := c.GetUser(); u != nil {
-			comment.Author.AvatarURL = u.GetAvatarURL()
+			comment.Author.AvbtbrURL = u.GetAvbtbrURL()
 			comment.Author.Login = u.GetLogin()
 			comment.Author.URL = u.GetURL()
 		}
 
-		comment.AuthorAssociation = c.GetAuthorAssociation()
+		comment.AuthorAssocibtion = c.GetAuthorAssocibtion()
 		comment.Body = c.GetBody()
 		comment.URL = c.GetURL()
-		comment.CreatedAt = c.GetCreatedAt()
-		comment.UpdatedAt = c.GetUpdatedAt()
+		comment.CrebtedAt = c.GetCrebtedAt()
+		comment.UpdbtedAt = c.GetUpdbtedAt()
 	}
 
-	comment.IncludesCreatedEdit = e.GetAction() == "edited"
-	if s := e.GetSender(); s != nil && comment.IncludesCreatedEdit {
+	comment.IncludesCrebtedEdit = e.GetAction() == "edited"
+	if s := e.GetSender(); s != nil && comment.IncludesCrebtedEdit {
 		comment.Editor = &github.Actor{
-			AvatarURL: s.GetAvatarURL(),
+			AvbtbrURL: s.GetAvbtbrURL(),
 			Login:     s.GetLogin(),
 			URL:       s.GetURL(),
 		}
@@ -286,132 +286,132 @@ func (*GitHubWebhook) issueComment(e *gh.IssueCommentEvent) *github.IssueComment
 	return &comment
 }
 
-func (*GitHubWebhook) labeledEvent(e *gh.PullRequestEvent) *github.LabelEvent {
-	labelEvent := &github.LabelEvent{
-		Removed: e.GetAction() == "unlabeled",
+func (*GitHubWebhook) lbbeledEvent(e *gh.PullRequestEvent) *github.LbbelEvent {
+	lbbelEvent := &github.LbbelEvent{
+		Removed: e.GetAction() == "unlbbeled",
 	}
 
 	if pr := e.GetPullRequest(); pr != nil {
-		labelEvent.CreatedAt = pr.GetUpdatedAt()
+		lbbelEvent.CrebtedAt = pr.GetUpdbtedAt()
 	}
 
-	if l := e.GetLabel(); l != nil {
-		labelEvent.Label.Color = l.GetColor()
-		labelEvent.Label.Description = l.GetDescription()
-		labelEvent.Label.Name = l.GetName()
-		labelEvent.Label.ID = l.GetNodeID()
+	if l := e.GetLbbel(); l != nil {
+		lbbelEvent.Lbbel.Color = l.GetColor()
+		lbbelEvent.Lbbel.Description = l.GetDescription()
+		lbbelEvent.Lbbel.Nbme = l.GetNbme()
+		lbbelEvent.Lbbel.ID = l.GetNodeID()
 	}
 
 	if s := e.GetSender(); s != nil {
-		labelEvent.Actor.AvatarURL = s.GetAvatarURL()
-		labelEvent.Actor.Login = s.GetLogin()
-		labelEvent.Actor.URL = s.GetURL()
+		lbbelEvent.Actor.AvbtbrURL = s.GetAvbtbrURL()
+		lbbelEvent.Actor.Login = s.GetLogin()
+		lbbelEvent.Actor.URL = s.GetURL()
 	}
 
-	return labelEvent
+	return lbbelEvent
 }
 
-func (*GitHubWebhook) readyForReviewEvent(e *gh.PullRequestEvent) *github.ReadyForReviewEvent {
-	readyForReviewEvent := &github.ReadyForReviewEvent{}
+func (*GitHubWebhook) rebdyForReviewEvent(e *gh.PullRequestEvent) *github.RebdyForReviewEvent {
+	rebdyForReviewEvent := &github.RebdyForReviewEvent{}
 
 	if pr := e.GetPullRequest(); pr != nil {
-		readyForReviewEvent.CreatedAt = pr.GetUpdatedAt()
+		rebdyForReviewEvent.CrebtedAt = pr.GetUpdbtedAt()
 	}
 
 	if s := e.GetSender(); s != nil {
-		readyForReviewEvent.Actor.AvatarURL = s.GetAvatarURL()
-		readyForReviewEvent.Actor.Login = s.GetLogin()
-		readyForReviewEvent.Actor.URL = s.GetURL()
+		rebdyForReviewEvent.Actor.AvbtbrURL = s.GetAvbtbrURL()
+		rebdyForReviewEvent.Actor.Login = s.GetLogin()
+		rebdyForReviewEvent.Actor.URL = s.GetURL()
 	}
 
-	return readyForReviewEvent
+	return rebdyForReviewEvent
 }
 
-func (*GitHubWebhook) convertToDraftEvent(e *gh.PullRequestEvent) *github.ConvertToDraftEvent {
-	convertToDraftEvent := &github.ConvertToDraftEvent{}
+func (*GitHubWebhook) convertToDrbftEvent(e *gh.PullRequestEvent) *github.ConvertToDrbftEvent {
+	convertToDrbftEvent := &github.ConvertToDrbftEvent{}
 
 	if pr := e.GetPullRequest(); pr != nil {
-		convertToDraftEvent.CreatedAt = pr.GetUpdatedAt()
+		convertToDrbftEvent.CrebtedAt = pr.GetUpdbtedAt()
 	}
 
 	if s := e.GetSender(); s != nil {
-		convertToDraftEvent.Actor.AvatarURL = s.GetAvatarURL()
-		convertToDraftEvent.Actor.Login = s.GetLogin()
-		convertToDraftEvent.Actor.URL = s.GetURL()
+		convertToDrbftEvent.Actor.AvbtbrURL = s.GetAvbtbrURL()
+		convertToDrbftEvent.Actor.Login = s.GetLogin()
+		convertToDrbftEvent.Actor.URL = s.GetURL()
 	}
 
-	return convertToDraftEvent
+	return convertToDrbftEvent
 }
 
-func (*GitHubWebhook) assignedEvent(e *gh.PullRequestEvent) *github.AssignedEvent {
-	assignedEvent := &github.AssignedEvent{}
+func (*GitHubWebhook) bssignedEvent(e *gh.PullRequestEvent) *github.AssignedEvent {
+	bssignedEvent := &github.AssignedEvent{}
 
 	if pr := e.GetPullRequest(); pr != nil {
-		assignedEvent.CreatedAt = pr.GetUpdatedAt()
+		bssignedEvent.CrebtedAt = pr.GetUpdbtedAt()
 	}
 
 	if s := e.GetSender(); s != nil {
-		assignedEvent.Actor.AvatarURL = s.GetAvatarURL()
-		assignedEvent.Actor.Login = s.GetLogin()
-		assignedEvent.Actor.URL = s.GetURL()
+		bssignedEvent.Actor.AvbtbrURL = s.GetAvbtbrURL()
+		bssignedEvent.Actor.Login = s.GetLogin()
+		bssignedEvent.Actor.URL = s.GetURL()
 	}
 
-	if a := e.GetAssignee(); a != nil {
-		assignedEvent.Assignee.AvatarURL = a.GetAvatarURL()
-		assignedEvent.Assignee.Login = a.GetLogin()
-		assignedEvent.Assignee.URL = a.GetURL()
+	if b := e.GetAssignee(); b != nil {
+		bssignedEvent.Assignee.AvbtbrURL = b.GetAvbtbrURL()
+		bssignedEvent.Assignee.Login = b.GetLogin()
+		bssignedEvent.Assignee.URL = b.GetURL()
 	}
 
-	return assignedEvent
+	return bssignedEvent
 }
 
-func (*GitHubWebhook) unassignedEvent(e *gh.PullRequestEvent) *github.UnassignedEvent {
-	unassignedEvent := &github.UnassignedEvent{}
+func (*GitHubWebhook) unbssignedEvent(e *gh.PullRequestEvent) *github.UnbssignedEvent {
+	unbssignedEvent := &github.UnbssignedEvent{}
 
 	if pr := e.GetPullRequest(); pr != nil {
-		unassignedEvent.CreatedAt = pr.GetUpdatedAt()
+		unbssignedEvent.CrebtedAt = pr.GetUpdbtedAt()
 	}
 
 	if s := e.GetSender(); s != nil {
-		unassignedEvent.Actor.AvatarURL = s.GetAvatarURL()
-		unassignedEvent.Actor.Login = s.GetLogin()
-		unassignedEvent.Actor.URL = s.GetURL()
+		unbssignedEvent.Actor.AvbtbrURL = s.GetAvbtbrURL()
+		unbssignedEvent.Actor.Login = s.GetLogin()
+		unbssignedEvent.Actor.URL = s.GetURL()
 	}
 
-	if a := e.GetAssignee(); a != nil {
-		unassignedEvent.Assignee.AvatarURL = a.GetAvatarURL()
-		unassignedEvent.Assignee.Login = a.GetLogin()
-		unassignedEvent.Assignee.URL = a.GetURL()
+	if b := e.GetAssignee(); b != nil {
+		unbssignedEvent.Assignee.AvbtbrURL = b.GetAvbtbrURL()
+		unbssignedEvent.Assignee.Login = b.GetLogin()
+		unbssignedEvent.Assignee.URL = b.GetURL()
 	}
 
-	return unassignedEvent
+	return unbssignedEvent
 }
 
 func (*GitHubWebhook) reviewRequestedEvent(e *gh.PullRequestEvent) *github.ReviewRequestedEvent {
 	event := &github.ReviewRequestedEvent{}
 
 	if s := e.GetSender(); s != nil {
-		event.Actor.AvatarURL = s.GetAvatarURL()
+		event.Actor.AvbtbrURL = s.GetAvbtbrURL()
 		event.Actor.Login = s.GetLogin()
 		event.Actor.URL = s.GetURL()
 	}
 
 	if pr := e.GetPullRequest(); pr != nil {
-		event.CreatedAt = pr.GetUpdatedAt()
+		event.CrebtedAt = pr.GetUpdbtedAt()
 	}
 
 	if e.RequestedReviewer != nil {
 		event.RequestedReviewer = github.Actor{
-			AvatarURL: e.RequestedReviewer.GetAvatarURL(),
+			AvbtbrURL: e.RequestedReviewer.GetAvbtbrURL(),
 			Login:     e.RequestedReviewer.GetLogin(),
 			URL:       e.RequestedReviewer.GetURL(),
 		}
 	}
 
-	if e.RequestedTeam != nil {
-		event.RequestedTeam = github.Team{
-			Name: e.RequestedTeam.GetName(),
-			URL:  e.RequestedTeam.GetURL(),
+	if e.RequestedTebm != nil {
+		event.RequestedTebm = github.Tebm{
+			Nbme: e.RequestedTebm.GetNbme(),
+			URL:  e.RequestedTebm.GetURL(),
 		}
 	}
 
@@ -422,84 +422,84 @@ func (*GitHubWebhook) reviewRequestRemovedEvent(e *gh.PullRequestEvent) *github.
 	event := &github.ReviewRequestRemovedEvent{}
 
 	if s := e.GetSender(); s != nil {
-		event.Actor.AvatarURL = s.GetAvatarURL()
+		event.Actor.AvbtbrURL = s.GetAvbtbrURL()
 		event.Actor.Login = s.GetLogin()
 		event.Actor.URL = s.GetURL()
 	}
 
 	if pr := e.GetPullRequest(); pr != nil {
-		event.CreatedAt = pr.GetUpdatedAt()
+		event.CrebtedAt = pr.GetUpdbtedAt()
 	}
 
 	if e.RequestedReviewer != nil {
 		event.RequestedReviewer = github.Actor{
-			AvatarURL: e.RequestedReviewer.GetAvatarURL(),
+			AvbtbrURL: e.RequestedReviewer.GetAvbtbrURL(),
 			Login:     e.RequestedReviewer.GetLogin(),
 			URL:       e.RequestedReviewer.GetURL(),
 		}
 	}
 
-	if e.RequestedTeam != nil {
-		event.RequestedTeam = github.Team{
-			Name: e.RequestedTeam.GetName(),
-			URL:  e.RequestedTeam.GetURL(),
+	if e.RequestedTebm != nil {
+		event.RequestedTebm = github.Tebm{
+			Nbme: e.RequestedTebm.GetNbme(),
+			URL:  e.RequestedTebm.GetURL(),
 		}
 	}
 
 	return event
 }
 
-func (*GitHubWebhook) renamedTitleEvent(e *gh.PullRequestEvent) *github.RenamedTitleEvent {
-	event := &github.RenamedTitleEvent{}
+func (*GitHubWebhook) renbmedTitleEvent(e *gh.PullRequestEvent) *github.RenbmedTitleEvent {
+	event := &github.RenbmedTitleEvent{}
 
 	if s := e.GetSender(); s != nil {
-		event.Actor.AvatarURL = s.GetAvatarURL()
+		event.Actor.AvbtbrURL = s.GetAvbtbrURL()
 		event.Actor.Login = s.GetLogin()
 		event.Actor.URL = s.GetURL()
 	}
 
 	if pr := e.GetPullRequest(); pr != nil {
 		event.CurrentTitle = pr.GetTitle()
-		event.CreatedAt = pr.GetUpdatedAt()
+		event.CrebtedAt = pr.GetUpdbtedAt()
 	}
 
-	if ch := e.GetChanges(); ch != nil && ch.Title != nil && ch.Title.From != nil {
+	if ch := e.GetChbnges(); ch != nil && ch.Title != nil && ch.Title.From != nil {
 		event.PreviousTitle = *ch.Title.From
 	}
 
 	return event
 }
 
-// closed events from github have a 'merged flag which identifies them as
-// merge events instead.
+// closed events from github hbve b 'merged flbg which identifies them bs
+// merge events instebd.
 func (*GitHubWebhook) closedOrMergeEvent(e *gh.PullRequestEvent) keyer {
 	closeEvent := &github.ClosedEvent{}
 
 	if s := e.GetSender(); s != nil {
-		closeEvent.Actor.AvatarURL = s.GetAvatarURL()
+		closeEvent.Actor.AvbtbrURL = s.GetAvbtbrURL()
 		closeEvent.Actor.Login = s.GetLogin()
 		closeEvent.Actor.URL = s.GetURL()
 	}
 
 	if pr := e.GetPullRequest(); pr != nil {
-		closeEvent.CreatedAt = pr.GetUpdatedAt()
+		closeEvent.CrebtedAt = pr.GetUpdbtedAt()
 
-		// This is different from the URL returned by GraphQL because the precise
-		// event URL isn't available in this webhook payload. This means if we expose
-		// this URL in the UI, and users click it, they'll just go to the PR page, rather
-		// than the precise location of the "close" event, until the background syncing
-		// runs and updates this URL to the exact one.
+		// This is different from the URL returned by GrbphQL becbuse the precise
+		// event URL isn't bvbilbble in this webhook pbylobd. This mebns if we expose
+		// this URL in the UI, bnd users click it, they'll just go to the PR pbge, rbther
+		// thbn the precise locbtion of the "close" event, until the bbckground syncing
+		// runs bnd updbtes this URL to the exbct one.
 		closeEvent.URL = pr.GetURL()
 
-		// We actually have a merged event
+		// We bctublly hbve b merged event
 		if pr.GetMerged() {
 			mergedEvent := &github.MergedEvent{
 				Actor:     closeEvent.Actor,
 				URL:       closeEvent.URL,
-				CreatedAt: closeEvent.CreatedAt,
+				CrebtedAt: closeEvent.CrebtedAt,
 			}
-			if base := pr.GetBase(); base != nil {
-				mergedEvent.MergeRefName = base.GetRef()
+			if bbse := pr.GetBbse(); bbse != nil {
+				mergedEvent.MergeRefNbme = bbse.GetRef()
 			}
 			return mergedEvent
 		}
@@ -512,13 +512,13 @@ func (*GitHubWebhook) reopenedEvent(e *gh.PullRequestEvent) *github.ReopenedEven
 	event := &github.ReopenedEvent{}
 
 	if s := e.GetSender(); s != nil {
-		event.Actor.AvatarURL = s.GetAvatarURL()
+		event.Actor.AvbtbrURL = s.GetAvbtbrURL()
 		event.Actor.Login = s.GetLogin()
 		event.Actor.URL = s.GetURL()
 	}
 
 	if pr := e.GetPullRequest(); pr != nil {
-		event.CreatedAt = pr.GetUpdatedAt()
+		event.CrebtedAt = pr.GetUpdbtedAt()
 	}
 
 	return event
@@ -528,15 +528,15 @@ func (*GitHubWebhook) pullRequestReviewEvent(e *gh.PullRequestReviewEvent) *gith
 	review := &github.PullRequestReview{}
 
 	if r := e.GetReview(); r != nil {
-		review.DatabaseID = r.GetID()
+		review.DbtbbbseID = r.GetID()
 		review.Body = e.Review.GetBody()
-		review.State = e.Review.GetState()
+		review.Stbte = e.Review.GetStbte()
 		review.URL = e.Review.GetHTMLURL()
-		review.CreatedAt = e.Review.GetSubmittedAt()
-		review.UpdatedAt = e.Review.GetSubmittedAt()
+		review.CrebtedAt = e.Review.GetSubmittedAt()
+		review.UpdbtedAt = e.Review.GetSubmittedAt()
 
 		if u := r.GetUser(); u != nil {
-			review.Author.AvatarURL = u.GetAvatarURL()
+			review.Author.AvbtbrURL = u.GetAvbtbrURL()
 			review.Author.Login = u.GetLogin()
 			review.Author.URL = u.GetURL()
 		}
@@ -553,26 +553,26 @@ func (*GitHubWebhook) pullRequestReviewCommentEvent(e *gh.PullRequestReviewComme
 	user := github.Actor{}
 
 	if c := e.GetComment(); c != nil {
-		comment.DatabaseID = c.GetID()
-		comment.AuthorAssociation = c.GetAuthorAssociation()
+		comment.DbtbbbseID = c.GetID()
+		comment.AuthorAssocibtion = c.GetAuthorAssocibtion()
 		comment.Commit = github.Commit{
 			OID: c.GetCommitID(),
 		}
 		comment.Body = c.GetBody()
 		comment.URL = c.GetURL()
-		comment.CreatedAt = c.GetCreatedAt()
-		comment.UpdatedAt = c.GetUpdatedAt()
+		comment.CrebtedAt = c.GetCrebtedAt()
+		comment.UpdbtedAt = c.GetUpdbtedAt()
 
 		if u := c.GetUser(); u != nil {
-			user.AvatarURL = u.GetAvatarURL()
+			user.AvbtbrURL = u.GetAvbtbrURL()
 			user.Login = u.GetLogin()
 			user.URL = u.GetURL()
 		}
 	}
 
-	comment.IncludesCreatedEdit = e.GetAction() == "edited"
+	comment.IncludesCrebtedEdit = e.GetAction() == "edited"
 
-	if comment.IncludesCreatedEdit {
+	if comment.IncludesCrebtedEdit {
 		comment.Editor = user
 	} else {
 		comment.Author = user
@@ -581,10 +581,10 @@ func (*GitHubWebhook) pullRequestReviewCommentEvent(e *gh.PullRequestReviewComme
 	return &comment
 }
 
-func (h *GitHubWebhook) commitStatusEvent(e *gh.StatusEvent) *github.CommitStatus {
-	return &github.CommitStatus{
+func (h *GitHubWebhook) commitStbtusEvent(e *gh.StbtusEvent) *github.CommitStbtus {
+	return &github.CommitStbtus{
 		SHA:        e.GetSHA(),
-		State:      e.GetState(),
+		Stbte:      e.GetStbte(),
 		Context:    e.GetContext(),
 		ReceivedAt: h.Store.Clock()(),
 	}
@@ -593,7 +593,7 @@ func (h *GitHubWebhook) commitStatusEvent(e *gh.StatusEvent) *github.CommitStatu
 func (h *GitHubWebhook) checkSuiteEvent(cs *gh.CheckSuite) *github.CheckSuite {
 	return &github.CheckSuite{
 		ID:         cs.GetNodeID(),
-		Status:     cs.GetStatus(),
+		Stbtus:     cs.GetStbtus(),
 		Conclusion: cs.GetConclusion(),
 		ReceivedAt: h.Store.Clock()(),
 	}
@@ -602,7 +602,7 @@ func (h *GitHubWebhook) checkSuiteEvent(cs *gh.CheckSuite) *github.CheckSuite {
 func (h *GitHubWebhook) checkRunEvent(cr *gh.CheckRun) *github.CheckRun {
 	return &github.CheckRun{
 		ID:         cr.GetNodeID(),
-		Status:     cr.GetStatus(),
+		Stbtus:     cr.GetStbtus(),
 		Conclusion: cr.GetConclusion(),
 		ReceivedAt: h.Store.Clock()(),
 	}

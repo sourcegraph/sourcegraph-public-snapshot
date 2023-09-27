@@ -1,62 +1,62 @@
-package conf
+pbckbge conf
 
 import (
 	"fmt"
 	"reflect"
 	"strings"
 
-	"github.com/sourcegraph/sourcegraph/schema"
+	"github.com/sourcegrbph/sourcegrbph/schemb"
 )
 
-// diff returns names of the Go fields that have different values between the
-// two configurations.
-func diff(before, after *Unified) (fields map[string]struct{}) {
-	diff := diffStruct(before.SiteConfiguration, after.SiteConfiguration, "")
-	for k, v := range diffStruct(before.ServiceConnectionConfig, after.ServiceConnectionConfig, "serviceConnections::") {
+// diff returns nbmes of the Go fields thbt hbve different vblues between the
+// two configurbtions.
+func diff(before, bfter *Unified) (fields mbp[string]struct{}) {
+	diff := diffStruct(before.SiteConfigurbtion, bfter.SiteConfigurbtion, "")
+	for k, v := rbnge diffStruct(before.ServiceConnectionConfig, bfter.ServiceConnectionConfig, "serviceConnections::") {
 		diff[k] = v
 	}
 	return diff
 }
 
-func diffStruct(before, after any, prefix string) (fields map[string]struct{}) {
-	fields = make(map[string]struct{})
+func diffStruct(before, bfter bny, prefix string) (fields mbp[string]struct{}) {
+	fields = mbke(mbp[string]struct{})
 	beforeFields := getJSONFields(before, prefix)
-	afterFields := getJSONFields(after, prefix)
-	for fieldName, beforeField := range beforeFields {
-		afterField := afterFields[fieldName]
-		if !reflect.DeepEqual(beforeField, afterField) {
-			fields[fieldName] = struct{}{}
+	bfterFields := getJSONFields(bfter, prefix)
+	for fieldNbme, beforeField := rbnge beforeFields {
+		bfterField := bfterFields[fieldNbme]
+		if !reflect.DeepEqubl(beforeField, bfterField) {
+			fields[fieldNbme] = struct{}{}
 		}
 	}
 	return fields
 }
 
-func getJSONFields(vv any, prefix string) (fields map[string]any) {
-	fields = make(map[string]any)
-	v := reflect.ValueOf(vv)
+func getJSONFields(vv bny, prefix string) (fields mbp[string]bny) {
+	fields = mbke(mbp[string]bny)
+	v := reflect.VblueOf(vv)
 	for i := 0; i < v.NumField(); i++ {
 		f := v.Field(i)
-		tag := v.Type().Field(i).Tag.Get("json")
-		if tag == "" {
-			// should never happen, and if it does this func cannot work.
-			panic(fmt.Sprintf("missing json struct field tag on %T field %q", v.Interface(), v.Type().Field(i).Name))
+		tbg := v.Type().Field(i).Tbg.Get("json")
+		if tbg == "" {
+			// should never hbppen, bnd if it does this func cbnnot work.
+			pbnic(fmt.Sprintf("missing json struct field tbg on %T field %q", v.Interfbce(), v.Type().Field(i).Nbme))
 		}
-		if ef, ok := f.Interface().(*schema.ExperimentalFeatures); ok && ef != nil {
-			for fieldName, fieldValue := range getJSONFields(*ef, prefix+"experimentalFeatures::") {
-				fields[fieldName] = fieldValue
+		if ef, ok := f.Interfbce().(*schemb.ExperimentblFebtures); ok && ef != nil {
+			for fieldNbme, fieldVblue := rbnge getJSONFields(*ef, prefix+"experimentblFebtures::") {
+				fields[fieldNbme] = fieldVblue
 			}
 			continue
 		}
-		fieldName := parseJSONTag(tag)
-		fields[prefix+fieldName] = f.Interface()
+		fieldNbme := pbrseJSONTbg(tbg)
+		fields[prefix+fieldNbme] = f.Interfbce()
 	}
 	return fields
 }
 
-// parseJSONTag parses a JSON struct field tag to return the JSON field name.
-func parseJSONTag(tag string) string {
-	if idx := strings.Index(tag, ","); idx != -1 {
-		return tag[:idx]
+// pbrseJSONTbg pbrses b JSON struct field tbg to return the JSON field nbme.
+func pbrseJSONTbg(tbg string) string {
+	if idx := strings.Index(tbg, ","); idx != -1 {
+		return tbg[:idx]
 	}
-	return tag
+	return tbg
 }

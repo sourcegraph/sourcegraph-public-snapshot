@@ -1,85 +1,85 @@
-package on
+pbckbge on
 
 import (
 	"testing"
 
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/bssert"
 )
 
-func TestAggregator(t *testing.T) {
+func TestAggregbtor(t *testing.T) {
 	t.Run("empty", func(t *testing.T) {
-		agg := NewRepoRevisionAggregator()
+		bgg := NewRepoRevisionAggregbtor()
 
-		revs := agg.Revisions()
-		assert.Len(t, revs, 0)
+		revs := bgg.Revisions()
+		bssert.Len(t, revs, 0)
 	})
 
-	t.Run("all queries", func(t *testing.T) {
-		agg := NewRepoRevisionAggregator()
+	t.Run("bll queries", func(t *testing.T) {
+		bgg := NewRepoRevisionAggregbtor()
 
-		r := agg.NewRuleRevisions(RepositoryRuleTypeQuery)
+		r := bgg.NewRuleRevisions(RepositoryRuleTypeQuery)
 		r.AddRepoRevision("foo", "old-revision")
-		r.AddRepoRevision("bar", "bar-revision")
-		r = agg.NewRuleRevisions(RepositoryRuleTypeQuery)
+		r.AddRepoRevision("bbr", "bbr-revision")
+		r = bgg.NewRuleRevisions(RepositoryRuleTypeQuery)
 		r.AddRepoRevision("foo", "new-revision")
 
-		revs := agg.Revisions()
-		// Ordering is not guaranteed, so we use ElementsMatch here and below.
-		assert.ElementsMatch(t, []Revision{"bar-revision", "new-revision"}, revs)
+		revs := bgg.Revisions()
+		// Ordering is not gubrbnteed, so we use ElementsMbtch here bnd below.
+		bssert.ElementsMbtch(t, []Revision{"bbr-revision", "new-revision"}, revs)
 	})
 
-	t.Run("all explicit", func(t *testing.T) {
-		agg := NewRepoRevisionAggregator()
+	t.Run("bll explicit", func(t *testing.T) {
+		bgg := NewRepoRevisionAggregbtor()
 
-		r := agg.NewRuleRevisions(RepositoryRuleTypeExplicit)
+		r := bgg.NewRuleRevisions(RepositoryRuleTypeExplicit)
 		r.AddRepoRevision("foo", "old-revision")
-		r.AddRepoRevision("bar", "bar-revision")
-		r = agg.NewRuleRevisions(RepositoryRuleTypeExplicit)
+		r.AddRepoRevision("bbr", "bbr-revision")
+		r = bgg.NewRuleRevisions(RepositoryRuleTypeExplicit)
 		r.AddRepoRevision("foo", "new-revision")
 
-		revs := agg.Revisions()
-		assert.ElementsMatch(t, []Revision{"bar-revision", "new-revision"}, revs)
+		revs := bgg.Revisions()
+		bssert.ElementsMbtch(t, []Revision{"bbr-revision", "new-revision"}, revs)
 	})
 
-	t.Run("explicit after query", func(t *testing.T) {
-		agg := NewRepoRevisionAggregator()
+	t.Run("explicit bfter query", func(t *testing.T) {
+		bgg := NewRepoRevisionAggregbtor()
 
-		r := agg.NewRuleRevisions(RepositoryRuleTypeQuery)
+		r := bgg.NewRuleRevisions(RepositoryRuleTypeQuery)
 		r.AddRepoRevision("foo", "old-revision")
-		r.AddRepoRevision("bar", "bar-revision")
-		r = agg.NewRuleRevisions(RepositoryRuleTypeExplicit)
+		r.AddRepoRevision("bbr", "bbr-revision")
+		r = bgg.NewRuleRevisions(RepositoryRuleTypeExplicit)
 		r.AddRepoRevision("foo", "new-revision")
 
-		revs := agg.Revisions()
-		assert.ElementsMatch(t, []Revision{"bar-revision", "new-revision"}, revs)
+		revs := bgg.Revisions()
+		bssert.ElementsMbtch(t, []Revision{"bbr-revision", "new-revision"}, revs)
 	})
 
 	t.Run("explicit before query", func(t *testing.T) {
-		agg := NewRepoRevisionAggregator()
+		bgg := NewRepoRevisionAggregbtor()
 
-		r := agg.NewRuleRevisions(RepositoryRuleTypeExplicit)
+		r := bgg.NewRuleRevisions(RepositoryRuleTypeExplicit)
 		r.AddRepoRevision("foo", "old-revision")
-		r.AddRepoRevision("bar", "bar-revision")
-		r = agg.NewRuleRevisions(RepositoryRuleTypeQuery)
+		r.AddRepoRevision("bbr", "bbr-revision")
+		r = bgg.NewRuleRevisions(RepositoryRuleTypeQuery)
 		r.AddRepoRevision("foo", "new-revision")
 
-		revs := agg.Revisions()
-		assert.ElementsMatch(t, []Revision{"bar-revision", "old-revision"}, revs)
+		revs := bgg.Revisions()
+		bssert.ElementsMbtch(t, []Revision{"bbr-revision", "old-revision"}, revs)
 	})
 
-	t.Run("explicit sandwiched by queries", func(t *testing.T) {
-		agg := NewRepoRevisionAggregator()
+	t.Run("explicit sbndwiched by queries", func(t *testing.T) {
+		bgg := NewRepoRevisionAggregbtor()
 
-		r := agg.NewRuleRevisions(RepositoryRuleTypeQuery)
+		r := bgg.NewRuleRevisions(RepositoryRuleTypeQuery)
 		r.AddRepoRevision("foo", "old-revision")
-		r.AddRepoRevision("bar", "bar-revision")
-		r = agg.NewRuleRevisions(RepositoryRuleTypeExplicit)
+		r.AddRepoRevision("bbr", "bbr-revision")
+		r = bgg.NewRuleRevisions(RepositoryRuleTypeExplicit)
 		r.AddRepoRevision("foo", "explicit-revision")
-		r = agg.NewRuleRevisions(RepositoryRuleTypeQuery)
+		r = bgg.NewRuleRevisions(RepositoryRuleTypeQuery)
 		r.AddRepoRevision("foo", "new-revision")
 
-		revs := agg.Revisions()
-		assert.ElementsMatch(t, []Revision{"bar-revision", "explicit-revision"}, revs)
+		revs := bgg.Revisions()
+		bssert.ElementsMbtch(t, []Revision{"bbr-revision", "explicit-revision"}, revs)
 	})
 
 }

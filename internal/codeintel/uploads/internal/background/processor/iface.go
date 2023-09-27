@@ -1,12 +1,12 @@
-package processor
+pbckbge processor
 
 import (
 	"context"
 
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
 )
 
-type RepoStore interface {
-	Get(ctx context.Context, repo api.RepoID) (_ *types.Repo, err error)
+type RepoStore interfbce {
+	Get(ctx context.Context, repo bpi.RepoID) (_ *types.Repo, err error)
 }

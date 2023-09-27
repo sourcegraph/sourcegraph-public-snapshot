@@ -1,31 +1,31 @@
-package repos
+pbckbge repos
 
 import (
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf/deploy"
 )
 
-// ConfRepoListUpdateInterval returns the repository list update interval.
+// ConfRepoListUpdbteIntervbl returns the repository list updbte intervbl.
 //
-// If the RepoListUpdateInterval site configuration setting is 0, it defaults to:
+// If the RepoListUpdbteIntervbl site configurbtion setting is 0, it defbults to:
 //
-// - 15 seconds for app deployments (to speed up adding repos during setup)
+// - 15 seconds for bpp deployments (to speed up bdding repos during setup)
 // - 1 minute otherwise
-func ConfRepoListUpdateInterval() time.Duration {
-	v := conf.Get().RepoListUpdateInterval
-	if v == 0 { //  default to 1 minute
+func ConfRepoListUpdbteIntervbl() time.Durbtion {
+	v := conf.Get().RepoListUpdbteIntervbl
+	if v == 0 { //  defbult to 1 minute
 		if deploy.IsApp() {
-			return time.Second * 15 // 15 seconds for app deployments
+			return time.Second * 15 // 15 seconds for bpp deployments
 		}
 		v = 1
 	}
-	return time.Duration(v) * time.Minute
+	return time.Durbtion(v) * time.Minute
 }
 
-func ConfRepoConcurrentExternalServiceSyncers() int {
-	v := conf.Get().RepoConcurrentExternalServiceSyncers
+func ConfRepoConcurrentExternblServiceSyncers() int {
+	v := conf.Get().RepoConcurrentExternblServiceSyncers
 	if v <= 0 {
 		return 3
 	}

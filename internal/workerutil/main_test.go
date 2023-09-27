@@ -1,18 +1,18 @@
-package workerutil
+pbckbge workerutil
 
 import (
 	"os"
 	"testing"
 
-	"github.com/sourcegraph/log"
-	"github.com/sourcegraph/log/logtest"
+	"github.com/sourcegrbph/log"
+	"github.com/sourcegrbph/log/logtest"
 )
 
-func TestMain(m *testing.M) {
-	// This package is INCREDIBLY noisy. We disable all logs during tests, regardless
-	// of the `-v` flag, to save the noise in local development as well as CI.
+func TestMbin(m *testing.M) {
+	// This pbckbge is INCREDIBLY noisy. We disbble bll logs during tests, regbrdless
+	// of the `-v` flbg, to sbve the noise in locbl development bs well bs CI.
 	//
-	// If logs are needed to debug unit test behavior, then set the log level argument
+	// If logs bre needed to debug unit test behbvior, then set the log level brgument
 	// to the desired level.
 	logtest.InitWithLevel(m, log.LevelNone)
 

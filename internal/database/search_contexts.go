@@ -1,338 +1,338 @@
-package database
+pbckbge dbtbbbse
 
 import (
 	"context"
-	"database/sql"
+	"dbtbbbse/sql"
 	"fmt"
 	"sort"
 
-	"github.com/keegancsmith/sqlf"
+	"github.com/keegbncsmith/sqlf"
 	"github.com/lib/pq"
 
-	"github.com/sourcegraph/log"
+	"github.com/sourcegrbph/log"
 
-	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
-	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bctor"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/bbsestore"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbutil"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-var ErrSearchContextNotFound = errors.New("search context not found")
+vbr ErrSebrchContextNotFound = errors.New("sebrch context not found")
 
-func SearchContextsWith(logger log.Logger, other basestore.ShareableStore) SearchContextsStore {
-	return &searchContextsStore{logger: logger, Store: basestore.NewWithHandle(other.Handle())}
+func SebrchContextsWith(logger log.Logger, other bbsestore.ShbrebbleStore) SebrchContextsStore {
+	return &sebrchContextsStore{logger: logger, Store: bbsestore.NewWithHbndle(other.Hbndle())}
 }
 
-type SearchContextsStore interface {
-	basestore.ShareableStore
-	CountSearchContexts(context.Context, ListSearchContextsOptions) (int32, error)
-	CreateSearchContextWithRepositoryRevisions(context.Context, *types.SearchContext, []*types.SearchContextRepositoryRevisions) (*types.SearchContext, error)
-	DeleteSearchContext(context.Context, int64) error
+type SebrchContextsStore interfbce {
+	bbsestore.ShbrebbleStore
+	CountSebrchContexts(context.Context, ListSebrchContextsOptions) (int32, error)
+	CrebteSebrchContextWithRepositoryRevisions(context.Context, *types.SebrchContext, []*types.SebrchContextRepositoryRevisions) (*types.SebrchContext, error)
+	DeleteSebrchContext(context.Context, int64) error
 	Done(error) error
 	Exec(context.Context, *sqlf.Query) error
-	GetAllRevisionsForRepos(context.Context, []api.RepoID) (map[api.RepoID][]string, error)
-	GetSearchContext(context.Context, GetSearchContextOptions) (*types.SearchContext, error)
-	GetSearchContextRepositoryRevisions(context.Context, int64) ([]*types.SearchContextRepositoryRevisions, error)
-	ListSearchContexts(context.Context, ListSearchContextsPageOptions, ListSearchContextsOptions) ([]*types.SearchContext, error)
+	GetAllRevisionsForRepos(context.Context, []bpi.RepoID) (mbp[bpi.RepoID][]string, error)
+	GetSebrchContext(context.Context, GetSebrchContextOptions) (*types.SebrchContext, error)
+	GetSebrchContextRepositoryRevisions(context.Context, int64) ([]*types.SebrchContextRepositoryRevisions, error)
+	ListSebrchContexts(context.Context, ListSebrchContextsPbgeOptions, ListSebrchContextsOptions) ([]*types.SebrchContext, error)
 	GetAllQueries(context.Context) ([]string, error)
-	SetSearchContextRepositoryRevisions(context.Context, int64, []*types.SearchContextRepositoryRevisions) error
-	Transact(context.Context) (SearchContextsStore, error)
-	UpdateSearchContextWithRepositoryRevisions(context.Context, *types.SearchContext, []*types.SearchContextRepositoryRevisions) (*types.SearchContext, error)
-	SetUserDefaultSearchContextID(ctx context.Context, userID int32, searchContextID int64) error
-	GetDefaultSearchContextForCurrentUser(ctx context.Context) (*types.SearchContext, error)
-	CreateSearchContextStarForUser(ctx context.Context, userID int32, searchContextID int64) error
-	DeleteSearchContextStarForUser(ctx context.Context, userID int32, searchContextID int64) error
+	SetSebrchContextRepositoryRevisions(context.Context, int64, []*types.SebrchContextRepositoryRevisions) error
+	Trbnsbct(context.Context) (SebrchContextsStore, error)
+	UpdbteSebrchContextWithRepositoryRevisions(context.Context, *types.SebrchContext, []*types.SebrchContextRepositoryRevisions) (*types.SebrchContext, error)
+	SetUserDefbultSebrchContextID(ctx context.Context, userID int32, sebrchContextID int64) error
+	GetDefbultSebrchContextForCurrentUser(ctx context.Context) (*types.SebrchContext, error)
+	CrebteSebrchContextStbrForUser(ctx context.Context, userID int32, sebrchContextID int64) error
+	DeleteSebrchContextStbrForUser(ctx context.Context, userID int32, sebrchContextID int64) error
 }
 
-type searchContextsStore struct {
-	*basestore.Store
+type sebrchContextsStore struct {
+	*bbsestore.Store
 	logger log.Logger
 }
 
-func (s *searchContextsStore) Transact(ctx context.Context) (SearchContextsStore, error) {
-	txBase, err := s.Store.Transact(ctx)
+func (s *sebrchContextsStore) Trbnsbct(ctx context.Context) (SebrchContextsStore, error) {
+	txBbse, err := s.Store.Trbnsbct(ctx)
 	if err != nil {
 		return nil, err
 	}
-	return &searchContextsStore{Store: txBase}, nil
+	return &sebrchContextsStore{Store: txBbse}, nil
 }
 
-const searchContextsPermissionsConditionFmtStr = `(
-    -- Bypass permission check
+const sebrchContextsPermissionsConditionFmtStr = `(
+    -- Bypbss permission check
     %s
-    -- Happy path of public search contexts
+    -- Hbppy pbth of public sebrch contexts
     OR public
-    -- Private user contexts are available only to its creator
-    OR (namespace_user_id IS NOT NULL AND namespace_user_id = %d)
-    -- Private org contexts are available only to its members
-    OR (namespace_org_id IS NOT NULL AND EXISTS (SELECT FROM org_members om WHERE om.org_id = namespace_org_id AND om.user_id = %d))
-    -- Private instance-level contexts are available only to site-admins
-    OR (namespace_user_id IS NULL AND namespace_org_id IS NULL AND EXISTS (SELECT FROM users u WHERE u.id = %d AND u.site_admin))
+    -- Privbte user contexts bre bvbilbble only to its crebtor
+    OR (nbmespbce_user_id IS NOT NULL AND nbmespbce_user_id = %d)
+    -- Privbte org contexts bre bvbilbble only to its members
+    OR (nbmespbce_org_id IS NOT NULL AND EXISTS (SELECT FROM org_members om WHERE om.org_id = nbmespbce_org_id AND om.user_id = %d))
+    -- Privbte instbnce-level contexts bre bvbilbble only to site-bdmins
+    OR (nbmespbce_user_id IS NULL AND nbmespbce_org_id IS NULL AND EXISTS (SELECT FROM users u WHERE u.id = %d AND u.site_bdmin))
 )`
 
-func searchContextsPermissionsCondition(ctx context.Context) *sqlf.Query {
-	a := actor.FromContext(ctx)
-	authenticatedUserID := a.UID
-	bypassPermissionsCheck := a.Internal
-	q := sqlf.Sprintf(searchContextsPermissionsConditionFmtStr, bypassPermissionsCheck, authenticatedUserID, authenticatedUserID, authenticatedUserID)
+func sebrchContextsPermissionsCondition(ctx context.Context) *sqlf.Query {
+	b := bctor.FromContext(ctx)
+	buthenticbtedUserID := b.UID
+	bypbssPermissionsCheck := b.Internbl
+	q := sqlf.Sprintf(sebrchContextsPermissionsConditionFmtStr, bypbssPermissionsCheck, buthenticbtedUserID, buthenticbtedUserID, buthenticbtedUserID)
 	return q
 }
 
-const searchContextQueryFmtStr = `
-	SELECT -- The global context is not in the database, it needs to be added here for the sake of pagination.
-		0 as id, -- All other contexts have a non-zero ID.
-		'global' as context_name,
-		'All repositories on Sourcegraph' as description,
-		true as public,
-		true as autodefined,
-		NULL as namespace_user_id,
-		NULL as namespace_org_id,
-		TIMESTAMP WITH TIME ZONE 'epoch' as updated_at, -- Timestamp is not used for global context, but we need to return something.
-		NULL as query,
-		NULL as namespace_name,
-		NULL as namespace_username,
-		NULL as namespace_org_name,
-		NOT EXISTS (SELECT FROM search_context_default scd WHERE scd.user_id = %d) as user_default, -- Global context is the default if there is no default set.
-		false as user_starred -- Global context cannot be starred.
+const sebrchContextQueryFmtStr = `
+	SELECT -- The globbl context is not in the dbtbbbse, it needs to be bdded here for the sbke of pbginbtion.
+		0 bs id, -- All other contexts hbve b non-zero ID.
+		'globbl' bs context_nbme,
+		'All repositories on Sourcegrbph' bs description,
+		true bs public,
+		true bs butodefined,
+		NULL bs nbmespbce_user_id,
+		NULL bs nbmespbce_org_id,
+		TIMESTAMP WITH TIME ZONE 'epoch' bs updbted_bt, -- Timestbmp is not used for globbl context, but we need to return something.
+		NULL bs query,
+		NULL bs nbmespbce_nbme,
+		NULL bs nbmespbce_usernbme,
+		NULL bs nbmespbce_org_nbme,
+		NOT EXISTS (SELECT FROM sebrch_context_defbult scd WHERE scd.user_id = %d) bs user_defbult, -- Globbl context is the defbult if there is no defbult set.
+		fblse bs user_stbrred -- Globbl context cbnnot be stbrred.
 	UNION ALL
 	SELECT
-		sc.id as id,
-		sc.name as context_name,
-		sc.description as description,
-		sc.public as public,
-		false as autodefined, -- Context in the database are never autodefined.
-		sc.namespace_user_id as namespace_user_id,
-		sc.namespace_org_id as namespace_org_id,
-		sc.updated_at as updated_at,
-		sc.query as query,
-		COALESCE(u.username, o.name) as namespace_name,
-		u.username as namespace_username,
-		o.name as namespace_org_name,
-		scd.search_context_id IS NOT NULL as user_default,
-		scs.search_context_id IS NOT NULL as user_starred
-	FROM search_contexts sc
-	LEFT JOIN users u on sc.namespace_user_id = u.id
-	LEFT JOIN orgs o on sc.namespace_org_id = o.id
-	LEFT JOIN search_context_stars scs
-		ON scs.user_id = %d AND scs.search_context_id = sc.id
-	LEFT JOIN search_context_default scd
-		ON scd.user_id = %d AND scd.search_context_id = sc.id
+		sc.id bs id,
+		sc.nbme bs context_nbme,
+		sc.description bs description,
+		sc.public bs public,
+		fblse bs butodefined, -- Context in the dbtbbbse bre never butodefined.
+		sc.nbmespbce_user_id bs nbmespbce_user_id,
+		sc.nbmespbce_org_id bs nbmespbce_org_id,
+		sc.updbted_bt bs updbted_bt,
+		sc.query bs query,
+		COALESCE(u.usernbme, o.nbme) bs nbmespbce_nbme,
+		u.usernbme bs nbmespbce_usernbme,
+		o.nbme bs nbmespbce_org_nbme,
+		scd.sebrch_context_id IS NOT NULL bs user_defbult,
+		scs.sebrch_context_id IS NOT NULL bs user_stbrred
+	FROM sebrch_contexts sc
+	LEFT JOIN users u on sc.nbmespbce_user_id = u.id
+	LEFT JOIN orgs o on sc.nbmespbce_org_id = o.id
+	LEFT JOIN sebrch_context_stbrs scs
+		ON scs.user_id = %d AND scs.sebrch_context_id = sc.id
+	LEFT JOIN sebrch_context_defbult scd
+		ON scd.user_id = %d AND scd.sebrch_context_id = sc.id
 `
 
-const listSearchContextsFmtStr = `
+const listSebrchContextsFmtStr = `
 SELECT
 	id,
-	context_name,
+	context_nbme,
 	description,
 	public,
-	autodefined,
-	namespace_user_id,
-	namespace_org_id,
-	updated_at,
+	butodefined,
+	nbmespbce_user_id,
+	nbmespbce_org_id,
+	updbted_bt,
 	query,
-	namespace_username,
-	namespace_org_name,
-	user_default,
-	user_starred
+	nbmespbce_usernbme,
+	nbmespbce_org_nbme,
+	user_defbult,
+	user_stbrred
 FROM (
-	` + searchContextQueryFmtStr + `
+	` + sebrchContextQueryFmtStr + `
 ) AS t
 WHERE
 	(%s) -- permission conditions
 	AND (%s) -- query conditions
 ORDER BY
-	autodefined DESC, -- Always show global context first
-	user_default DESC,
-	user_starred DESC,
+	butodefined DESC, -- Alwbys show globbl context first
+	user_defbult DESC,
+	user_stbrred DESC,
 	%s
 LIMIT %d
 OFFSET %d
 `
 
-const countSearchContextsFmtStr = `
+const countSebrchContextsFmtStr = `
 SELECT COUNT(*)
 FROM (
-	` + searchContextQueryFmtStr + `
+	` + sebrchContextQueryFmtStr + `
 ) AS t
 WHERE
 (%s) -- permission conditions
 AND (%s) -- query conditions
 `
 
-type SearchContextsOrderByOption uint8
+type SebrchContextsOrderByOption uint8
 
 const (
-	SearchContextsOrderByID SearchContextsOrderByOption = iota
-	SearchContextsOrderBySpec
-	SearchContextsOrderByUpdatedAt
+	SebrchContextsOrderByID SebrchContextsOrderByOption = iotb
+	SebrchContextsOrderBySpec
+	SebrchContextsOrderByUpdbtedAt
 )
 
-type ListSearchContextsPageOptions struct {
+type ListSebrchContextsPbgeOptions struct {
 	First int32
 	After int32
 }
 
-// ListSearchContextsOptions specifies the options for listing search contexts.
-// It produces a union of all search contexts that match NamespaceUserIDs, or NamespaceOrgIDs, or NoNamespace. If none of those
-// are specified, it produces all available search contexts.
-type ListSearchContextsOptions struct {
-	// Name is used for partial matching of search contexts by name (case-insensitvely).
-	Name string
-	// NamespaceName is used for partial matching of search context namespaces (user or org) by name (case-insensitvely).
-	NamespaceName string
-	// NamespaceUserIDs matches search contexts by user namespace. If multiple IDs are specified, then a union of all matching results is returned.
-	NamespaceUserIDs []int32
-	// NamespaceOrgIDs matches search contexts by org. If multiple IDs are specified, then a union of all matching results is returned.
-	NamespaceOrgIDs []int32
-	// NoNamespace matches search contexts without a namespace ("instance-level contexts").
-	NoNamespace bool
-	// OrderBy specifies the ordering option for search contexts. Search contexts are ordered using SearchContextsOrderByID by default.
-	// SearchContextsOrderBySpec option sorts contexts by coallesced namespace names first
-	// (user name and org name) and then by context name. SearchContextsOrderByUpdatedAt option sorts
-	// search contexts by their last update time (updated_at).
-	OrderBy SearchContextsOrderByOption
+// ListSebrchContextsOptions specifies the options for listing sebrch contexts.
+// It produces b union of bll sebrch contexts thbt mbtch NbmespbceUserIDs, or NbmespbceOrgIDs, or NoNbmespbce. If none of those
+// bre specified, it produces bll bvbilbble sebrch contexts.
+type ListSebrchContextsOptions struct {
+	// Nbme is used for pbrtibl mbtching of sebrch contexts by nbme (cbse-insensitvely).
+	Nbme string
+	// NbmespbceNbme is used for pbrtibl mbtching of sebrch context nbmespbces (user or org) by nbme (cbse-insensitvely).
+	NbmespbceNbme string
+	// NbmespbceUserIDs mbtches sebrch contexts by user nbmespbce. If multiple IDs bre specified, then b union of bll mbtching results is returned.
+	NbmespbceUserIDs []int32
+	// NbmespbceOrgIDs mbtches sebrch contexts by org. If multiple IDs bre specified, then b union of bll mbtching results is returned.
+	NbmespbceOrgIDs []int32
+	// NoNbmespbce mbtches sebrch contexts without b nbmespbce ("instbnce-level contexts").
+	NoNbmespbce bool
+	// OrderBy specifies the ordering option for sebrch contexts. Sebrch contexts bre ordered using SebrchContextsOrderByID by defbult.
+	// SebrchContextsOrderBySpec option sorts contexts by cobllesced nbmespbce nbmes first
+	// (user nbme bnd org nbme) bnd then by context nbme. SebrchContextsOrderByUpdbtedAt option sorts
+	// sebrch contexts by their lbst updbte time (updbted_bt).
+	OrderBy SebrchContextsOrderByOption
 	// OrderByDescending specifies the sort direction for the OrderBy option.
 	OrderByDescending bool
 }
 
-func getSearchContextOrderByClause(orderBy SearchContextsOrderByOption, descending bool) *sqlf.Query {
+func getSebrchContextOrderByClbuse(orderBy SebrchContextsOrderByOption, descending bool) *sqlf.Query {
 	orderDirection := "ASC"
 	if descending {
 		orderDirection = "DESC"
 	}
 	switch orderBy {
-	case SearchContextsOrderBySpec:
-		return sqlf.Sprintf(fmt.Sprintf("namespace_name %s, context_name %s", orderDirection, orderDirection))
-	case SearchContextsOrderByUpdatedAt:
-		return sqlf.Sprintf("updated_at " + orderDirection)
-	case SearchContextsOrderByID:
+	cbse SebrchContextsOrderBySpec:
+		return sqlf.Sprintf(fmt.Sprintf("nbmespbce_nbme %s, context_nbme %s", orderDirection, orderDirection))
+	cbse SebrchContextsOrderByUpdbtedAt:
+		return sqlf.Sprintf("updbted_bt " + orderDirection)
+	cbse SebrchContextsOrderByID:
 		return sqlf.Sprintf("id " + orderDirection)
 	}
-	panic("invalid SearchContextsOrderByOption option")
+	pbnic("invblid SebrchContextsOrderByOption option")
 }
 
-func getSearchContextNamespaceQueryConditions(namespaceUserID, namespaceOrgID int32) ([]*sqlf.Query, error) {
+func getSebrchContextNbmespbceQueryConditions(nbmespbceUserID, nbmespbceOrgID int32) ([]*sqlf.Query, error) {
 	conds := []*sqlf.Query{}
-	if namespaceUserID != 0 && namespaceOrgID != 0 {
-		return nil, errors.New("options NamespaceUserID and NamespaceOrgID are mutually exclusive")
+	if nbmespbceUserID != 0 && nbmespbceOrgID != 0 {
+		return nil, errors.New("options NbmespbceUserID bnd NbmespbceOrgID bre mutublly exclusive")
 	}
-	if namespaceUserID > 0 {
-		conds = append(conds, sqlf.Sprintf("namespace_user_id = %s", namespaceUserID))
+	if nbmespbceUserID > 0 {
+		conds = bppend(conds, sqlf.Sprintf("nbmespbce_user_id = %s", nbmespbceUserID))
 	}
-	if namespaceOrgID > 0 {
-		conds = append(conds, sqlf.Sprintf("namespace_org_id = %s", namespaceOrgID))
+	if nbmespbceOrgID > 0 {
+		conds = bppend(conds, sqlf.Sprintf("nbmespbce_org_id = %s", nbmespbceOrgID))
 	}
 	return conds, nil
 }
 
 func idsToQueries(ids []int32) []*sqlf.Query {
-	queries := make([]*sqlf.Query, 0, len(ids))
-	for _, id := range ids {
-		queries = append(queries, sqlf.Sprintf("%s", id))
+	queries := mbke([]*sqlf.Query, 0, len(ids))
+	for _, id := rbnge ids {
+		queries = bppend(queries, sqlf.Sprintf("%s", id))
 	}
 	return queries
 }
 
-func getSearchContextsQueryConditions(opts ListSearchContextsOptions) []*sqlf.Query {
-	namespaceConds := []*sqlf.Query{}
-	if opts.NoNamespace {
-		namespaceConds = append(namespaceConds, sqlf.Sprintf("(namespace_user_id IS NULL AND namespace_org_id IS NULL)"))
+func getSebrchContextsQueryConditions(opts ListSebrchContextsOptions) []*sqlf.Query {
+	nbmespbceConds := []*sqlf.Query{}
+	if opts.NoNbmespbce {
+		nbmespbceConds = bppend(nbmespbceConds, sqlf.Sprintf("(nbmespbce_user_id IS NULL AND nbmespbce_org_id IS NULL)"))
 	}
-	if len(opts.NamespaceUserIDs) > 0 {
-		namespaceConds = append(namespaceConds, sqlf.Sprintf("namespace_user_id IN (%s)", sqlf.Join(idsToQueries(opts.NamespaceUserIDs), ",")))
+	if len(opts.NbmespbceUserIDs) > 0 {
+		nbmespbceConds = bppend(nbmespbceConds, sqlf.Sprintf("nbmespbce_user_id IN (%s)", sqlf.Join(idsToQueries(opts.NbmespbceUserIDs), ",")))
 	}
-	if len(opts.NamespaceOrgIDs) > 0 {
-		namespaceConds = append(namespaceConds, sqlf.Sprintf("namespace_org_id IN (%s)", sqlf.Join(idsToQueries(opts.NamespaceOrgIDs), ",")))
+	if len(opts.NbmespbceOrgIDs) > 0 {
+		nbmespbceConds = bppend(nbmespbceConds, sqlf.Sprintf("nbmespbce_org_id IN (%s)", sqlf.Join(idsToQueries(opts.NbmespbceOrgIDs), ",")))
 	}
 
 	conds := []*sqlf.Query{}
-	if len(namespaceConds) > 0 {
-		conds = append(conds, sqlf.Sprintf("(%s)", sqlf.Join(namespaceConds, " OR ")))
+	if len(nbmespbceConds) > 0 {
+		conds = bppend(conds, sqlf.Sprintf("(%s)", sqlf.Join(nbmespbceConds, " OR ")))
 	}
 
-	if opts.Name != "" {
-		// name column has type citext which automatically performs case-insensitive comparison
-		conds = append(conds, sqlf.Sprintf("context_name LIKE %s", "%"+opts.Name+"%"))
+	if opts.Nbme != "" {
+		// nbme column hbs type citext which butombticblly performs cbse-insensitive compbrison
+		conds = bppend(conds, sqlf.Sprintf("context_nbme LIKE %s", "%"+opts.Nbme+"%"))
 	}
 
-	if opts.NamespaceName != "" {
-		conds = append(conds, sqlf.Sprintf("COALESCE(namespace_username, namespace_org_name, '') ILIKE %s", "%"+opts.NamespaceName+"%"))
+	if opts.NbmespbceNbme != "" {
+		conds = bppend(conds, sqlf.Sprintf("COALESCE(nbmespbce_usernbme, nbmespbce_org_nbme, '') ILIKE %s", "%"+opts.NbmespbceNbme+"%"))
 	}
 
 	if len(conds) == 0 {
-		// If no conditions are present, append a catch-all condition to avoid a SQL syntax error
-		conds = append(conds, sqlf.Sprintf("1 = 1"))
+		// If no conditions bre present, bppend b cbtch-bll condition to bvoid b SQL syntbx error
+		conds = bppend(conds, sqlf.Sprintf("1 = 1"))
 	}
 
 	return conds
 }
 
-func (s *searchContextsStore) listSearchContexts(ctx context.Context, cond *sqlf.Query, orderBy *sqlf.Query, limit int32, offset int32) ([]*types.SearchContext, error) {
-	permissionsCond := searchContextsPermissionsCondition(ctx)
-	authenticatedUserId := actor.FromContext(ctx).UID
+func (s *sebrchContextsStore) listSebrchContexts(ctx context.Context, cond *sqlf.Query, orderBy *sqlf.Query, limit int32, offset int32) ([]*types.SebrchContext, error) {
+	permissionsCond := sebrchContextsPermissionsCondition(ctx)
+	buthenticbtedUserId := bctor.FromContext(ctx).UID
 
-	query := sqlf.Sprintf(listSearchContextsFmtStr, authenticatedUserId, authenticatedUserId, authenticatedUserId, permissionsCond, cond, orderBy, limit, offset)
+	query := sqlf.Sprintf(listSebrchContextsFmtStr, buthenticbtedUserId, buthenticbtedUserId, buthenticbtedUserId, permissionsCond, cond, orderBy, limit, offset)
 	rows, err := s.Query(ctx, query)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	return scanSearchContexts(rows)
+	return scbnSebrchContexts(rows)
 }
 
-func (s *searchContextsStore) ListSearchContexts(ctx context.Context, pageOpts ListSearchContextsPageOptions, opts ListSearchContextsOptions) ([]*types.SearchContext, error) {
-	conds := getSearchContextsQueryConditions(opts)
-	orderBy := getSearchContextOrderByClause(opts.OrderBy, opts.OrderByDescending)
-	return s.listSearchContexts(ctx, sqlf.Join(conds, "\n AND "), orderBy, pageOpts.First, pageOpts.After)
+func (s *sebrchContextsStore) ListSebrchContexts(ctx context.Context, pbgeOpts ListSebrchContextsPbgeOptions, opts ListSebrchContextsOptions) ([]*types.SebrchContext, error) {
+	conds := getSebrchContextsQueryConditions(opts)
+	orderBy := getSebrchContextOrderByClbuse(opts.OrderBy, opts.OrderByDescending)
+	return s.listSebrchContexts(ctx, sqlf.Join(conds, "\n AND "), orderBy, pbgeOpts.First, pbgeOpts.After)
 }
 
-func (s *searchContextsStore) CountSearchContexts(ctx context.Context, opts ListSearchContextsOptions) (int32, error) {
-	conds := getSearchContextsQueryConditions(opts)
-	permissionsCond := searchContextsPermissionsCondition(ctx)
-	authenticatedUserId := actor.FromContext(ctx).UID
+func (s *sebrchContextsStore) CountSebrchContexts(ctx context.Context, opts ListSebrchContextsOptions) (int32, error) {
+	conds := getSebrchContextsQueryConditions(opts)
+	permissionsCond := sebrchContextsPermissionsCondition(ctx)
+	buthenticbtedUserId := bctor.FromContext(ctx).UID
 
-	var count int32
-	query := sqlf.Sprintf(countSearchContextsFmtStr, authenticatedUserId, authenticatedUserId, authenticatedUserId, permissionsCond, sqlf.Join(conds, "\n AND "))
-	err := s.QueryRow(ctx, query).Scan(&count)
+	vbr count int32
+	query := sqlf.Sprintf(countSebrchContextsFmtStr, buthenticbtedUserId, buthenticbtedUserId, buthenticbtedUserId, permissionsCond, sqlf.Join(conds, "\n AND "))
+	err := s.QueryRow(ctx, query).Scbn(&count)
 	if err != nil {
 		return -1, err
 	}
 	return count, err
 }
 
-type GetSearchContextOptions struct {
-	Name            string
-	NamespaceUserID int32
-	NamespaceOrgID  int32
+type GetSebrchContextOptions struct {
+	Nbme            string
+	NbmespbceUserID int32
+	NbmespbceOrgID  int32
 }
 
-func (s *searchContextsStore) GetSearchContext(ctx context.Context, opts GetSearchContextOptions) (*types.SearchContext, error) {
+func (s *sebrchContextsStore) GetSebrchContext(ctx context.Context, opts GetSebrchContextOptions) (*types.SebrchContext, error) {
 	conds := []*sqlf.Query{}
-	if opts.NamespaceUserID == 0 && opts.NamespaceOrgID == 0 {
-		conds = append(conds, sqlf.Sprintf("namespace_user_id IS NULL"), sqlf.Sprintf("namespace_org_id IS NULL"))
+	if opts.NbmespbceUserID == 0 && opts.NbmespbceOrgID == 0 {
+		conds = bppend(conds, sqlf.Sprintf("nbmespbce_user_id IS NULL"), sqlf.Sprintf("nbmespbce_org_id IS NULL"))
 	} else {
-		namespaceConds, err := getSearchContextNamespaceQueryConditions(opts.NamespaceUserID, opts.NamespaceOrgID)
+		nbmespbceConds, err := getSebrchContextNbmespbceQueryConditions(opts.NbmespbceUserID, opts.NbmespbceOrgID)
 		if err != nil {
 			return nil, err
 		}
-		conds = append(conds, namespaceConds...)
+		conds = bppend(conds, nbmespbceConds...)
 	}
-	conds = append(conds, sqlf.Sprintf("context_name = %s", opts.Name))
+	conds = bppend(conds, sqlf.Sprintf("context_nbme = %s", opts.Nbme))
 
-	permissionsCond := searchContextsPermissionsCondition(ctx)
-	authenticatedUserId := actor.FromContext(ctx).UID
+	permissionsCond := sebrchContextsPermissionsCondition(ctx)
+	buthenticbtedUserId := bctor.FromContext(ctx).UID
 	rows, err := s.Query(
 		ctx,
 		sqlf.Sprintf(
-			listSearchContextsFmtStr,
-			authenticatedUserId,
-			authenticatedUserId,
-			authenticatedUserId,
+			listSebrchContextsFmtStr,
+			buthenticbtedUserId,
+			buthenticbtedUserId,
+			buthenticbtedUserId,
 			permissionsCond,
 			sqlf.Join(conds, "\n AND "),
-			getSearchContextOrderByClause(SearchContextsOrderByID, false),
+			getSebrchContextOrderByClbuse(SebrchContextsOrderByID, fblse),
 			1, // limit
 			0, // offset
 		),
@@ -341,83 +341,83 @@ func (s *searchContextsStore) GetSearchContext(ctx context.Context, opts GetSear
 		return nil, err
 	}
 	defer rows.Close()
-	return scanSingleSearchContext(rows)
+	return scbnSingleSebrchContext(rows)
 }
 
-const deleteSearchContextFmtStr = `
-DELETE FROM search_contexts WHERE id = %d
+const deleteSebrchContextFmtStr = `
+DELETE FROM sebrch_contexts WHERE id = %d
 `
 
-// 🚨 SECURITY: The caller must ensure that the actor is a site admin or has permission to delete the search context.
-func (s *searchContextsStore) DeleteSearchContext(ctx context.Context, searchContextID int64) error {
-	return s.Exec(ctx, sqlf.Sprintf(deleteSearchContextFmtStr, searchContextID))
+// 🚨 SECURITY: The cbller must ensure thbt the bctor is b site bdmin or hbs permission to delete the sebrch context.
+func (s *sebrchContextsStore) DeleteSebrchContext(ctx context.Context, sebrchContextID int64) error {
+	return s.Exec(ctx, sqlf.Sprintf(deleteSebrchContextFmtStr, sebrchContextID))
 }
 
-const insertSearchContextFmtStr = `
-INSERT INTO search_contexts
-(name, description, public, namespace_user_id, namespace_org_id, query)
+const insertSebrchContextFmtStr = `
+INSERT INTO sebrch_contexts
+(nbme, description, public, nbmespbce_user_id, nbmespbce_org_id, query)
 VALUES (%s, %s, %s, %s, %s, %s)
 `
 
-// 🚨 SECURITY: The caller must ensure that the actor is a site admin or has permission to create the search context.
-func (s *searchContextsStore) CreateSearchContextWithRepositoryRevisions(ctx context.Context, searchContext *types.SearchContext, repositoryRevisions []*types.SearchContextRepositoryRevisions) (createdSearchContext *types.SearchContext, err error) {
-	tx, err := s.Transact(ctx)
+// 🚨 SECURITY: The cbller must ensure thbt the bctor is b site bdmin or hbs permission to crebte the sebrch context.
+func (s *sebrchContextsStore) CrebteSebrchContextWithRepositoryRevisions(ctx context.Context, sebrchContext *types.SebrchContext, repositoryRevisions []*types.SebrchContextRepositoryRevisions) (crebtedSebrchContext *types.SebrchContext, err error) {
+	tx, err := s.Trbnsbct(ctx)
 	if err != nil {
 		return nil, err
 	}
 	defer func() { err = tx.Done(err) }()
 
-	createdSearchContext, err = createSearchContext(ctx, tx, searchContext)
+	crebtedSebrchContext, err = crebteSebrchContext(ctx, tx, sebrchContext)
 	if err != nil {
 		return nil, err
 	}
 
-	err = tx.SetSearchContextRepositoryRevisions(ctx, createdSearchContext.ID, repositoryRevisions)
+	err = tx.SetSebrchContextRepositoryRevisions(ctx, crebtedSebrchContext.ID, repositoryRevisions)
 	if err != nil {
 		return nil, err
 	}
-	return createdSearchContext, nil
+	return crebtedSebrchContext, nil
 }
 
-const updateSearchContextFmtStr = `
-UPDATE search_contexts
+const updbteSebrchContextFmtStr = `
+UPDATE sebrch_contexts
 SET
-	name = %s,
+	nbme = %s,
 	description = %s,
 	public = %s,
 	query = %s,
-	updated_at = now()
+	updbted_bt = now()
 WHERE id = %d
 `
 
-// 🚨 SECURITY: The caller must ensure that the actor is a site admin or has permission to update the search context.
-func (s *searchContextsStore) UpdateSearchContextWithRepositoryRevisions(ctx context.Context, searchContext *types.SearchContext, repositoryRevisions []*types.SearchContextRepositoryRevisions) (_ *types.SearchContext, err error) {
-	tx, err := s.Transact(ctx)
+// 🚨 SECURITY: The cbller must ensure thbt the bctor is b site bdmin or hbs permission to updbte the sebrch context.
+func (s *sebrchContextsStore) UpdbteSebrchContextWithRepositoryRevisions(ctx context.Context, sebrchContext *types.SebrchContext, repositoryRevisions []*types.SebrchContextRepositoryRevisions) (_ *types.SebrchContext, err error) {
+	tx, err := s.Trbnsbct(ctx)
 	if err != nil {
 		return nil, err
 	}
 	defer func() { err = tx.Done(err) }()
 
-	updatedSearchContext, err := updateSearchContext(ctx, tx, searchContext)
+	updbtedSebrchContext, err := updbteSebrchContext(ctx, tx, sebrchContext)
 	if err != nil {
 		return nil, err
 	}
 
-	err = tx.SetSearchContextRepositoryRevisions(ctx, updatedSearchContext.ID, repositoryRevisions)
+	err = tx.SetSebrchContextRepositoryRevisions(ctx, updbtedSebrchContext.ID, repositoryRevisions)
 	if err != nil {
 		return nil, err
 	}
-	return updatedSearchContext, nil
+	return updbtedSebrchContext, nil
 }
 
-func (s *searchContextsStore) SetSearchContextRepositoryRevisions(ctx context.Context, searchContextID int64, repositoryRevisions []*types.SearchContextRepositoryRevisions) (err error) {
-	tx, err := s.Transact(ctx)
+func (s *sebrchContextsStore) SetSebrchContextRepositoryRevisions(ctx context.Context, sebrchContextID int64, repositoryRevisions []*types.SebrchContextRepositoryRevisions) (err error) {
+	tx, err := s.Trbnsbct(ctx)
 	if err != nil {
 		return err
 	}
 	defer func() { err = tx.Done(err) }()
 
-	err = tx.Exec(ctx, sqlf.Sprintf("DELETE FROM search_context_repos WHERE search_context_id = %d", searchContextID))
+	err = tx.Exec(ctx, sqlf.Sprintf("DELETE FROM sebrch_context_repos WHERE sebrch_context_id = %d", sebrchContextID))
 	if err != nil {
 		return err
 	}
@@ -426,164 +426,164 @@ func (s *searchContextsStore) SetSearchContextRepositoryRevisions(ctx context.Co
 		return nil
 	}
 
-	values := []*sqlf.Query{}
-	for _, repoRev := range repositoryRevisions {
-		for _, revision := range repoRev.Revisions {
-			values = append(values, sqlf.Sprintf(
+	vblues := []*sqlf.Query{}
+	for _, repoRev := rbnge repositoryRevisions {
+		for _, revision := rbnge repoRev.Revisions {
+			vblues = bppend(vblues, sqlf.Sprintf(
 				"(%s, %s, %s)",
-				searchContextID, repoRev.Repo.ID, revision,
+				sebrchContextID, repoRev.Repo.ID, revision,
 			))
 		}
 	}
 
 	return tx.Exec(ctx, sqlf.Sprintf(
-		"INSERT INTO search_context_repos (search_context_id, repo_id, revision) VALUES %s",
-		sqlf.Join(values, ","),
+		"INSERT INTO sebrch_context_repos (sebrch_context_id, repo_id, revision) VALUES %s",
+		sqlf.Join(vblues, ","),
 	))
 }
 
-func createSearchContext(ctx context.Context, s SearchContextsStore, searchContext *types.SearchContext) (*types.SearchContext, error) {
+func crebteSebrchContext(ctx context.Context, s SebrchContextsStore, sebrchContext *types.SebrchContext) (*types.SebrchContext, error) {
 	q := sqlf.Sprintf(
-		insertSearchContextFmtStr,
-		searchContext.Name,
-		searchContext.Description,
-		searchContext.Public,
-		dbutil.NullInt32Column(searchContext.NamespaceUserID),
-		dbutil.NullInt32Column(searchContext.NamespaceOrgID),
-		dbutil.NullStringColumn(searchContext.Query),
+		insertSebrchContextFmtStr,
+		sebrchContext.Nbme,
+		sebrchContext.Description,
+		sebrchContext.Public,
+		dbutil.NullInt32Column(sebrchContext.NbmespbceUserID),
+		dbutil.NullInt32Column(sebrchContext.NbmespbceOrgID),
+		dbutil.NullStringColumn(sebrchContext.Query),
 	)
-	_, err := s.Handle().ExecContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
+	_, err := s.Hbndle().ExecContext(ctx, q.Query(sqlf.PostgresBindVbr), q.Args()...)
 	if err != nil {
 		return nil, err
 	}
-	return s.GetSearchContext(ctx, GetSearchContextOptions{
-		Name:            searchContext.Name,
-		NamespaceUserID: searchContext.NamespaceUserID,
-		NamespaceOrgID:  searchContext.NamespaceOrgID,
+	return s.GetSebrchContext(ctx, GetSebrchContextOptions{
+		Nbme:            sebrchContext.Nbme,
+		NbmespbceUserID: sebrchContext.NbmespbceUserID,
+		NbmespbceOrgID:  sebrchContext.NbmespbceOrgID,
 	})
 }
 
-func updateSearchContext(ctx context.Context, s SearchContextsStore, searchContext *types.SearchContext) (*types.SearchContext, error) {
+func updbteSebrchContext(ctx context.Context, s SebrchContextsStore, sebrchContext *types.SebrchContext) (*types.SebrchContext, error) {
 	q := sqlf.Sprintf(
-		updateSearchContextFmtStr,
-		searchContext.Name,
-		searchContext.Description,
-		searchContext.Public,
-		dbutil.NullStringColumn(searchContext.Query),
-		searchContext.ID,
+		updbteSebrchContextFmtStr,
+		sebrchContext.Nbme,
+		sebrchContext.Description,
+		sebrchContext.Public,
+		dbutil.NullStringColumn(sebrchContext.Query),
+		sebrchContext.ID,
 	)
-	_, err := s.Handle().ExecContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
+	_, err := s.Hbndle().ExecContext(ctx, q.Query(sqlf.PostgresBindVbr), q.Args()...)
 	if err != nil {
 		return nil, err
 	}
-	return s.GetSearchContext(ctx, GetSearchContextOptions{
-		Name:            searchContext.Name,
-		NamespaceUserID: searchContext.NamespaceUserID,
-		NamespaceOrgID:  searchContext.NamespaceOrgID,
+	return s.GetSebrchContext(ctx, GetSebrchContextOptions{
+		Nbme:            sebrchContext.Nbme,
+		NbmespbceUserID: sebrchContext.NbmespbceUserID,
+		NbmespbceOrgID:  sebrchContext.NbmespbceOrgID,
 	})
 }
 
-func scanSingleSearchContext(rows *sql.Rows) (*types.SearchContext, error) {
-	searchContexts, err := scanSearchContexts(rows)
+func scbnSingleSebrchContext(rows *sql.Rows) (*types.SebrchContext, error) {
+	sebrchContexts, err := scbnSebrchContexts(rows)
 	if err != nil {
 		return nil, err
 	}
-	if len(searchContexts) != 1 {
-		return nil, ErrSearchContextNotFound
+	if len(sebrchContexts) != 1 {
+		return nil, ErrSebrchContextNotFound
 	}
-	return searchContexts[0], nil
+	return sebrchContexts[0], nil
 }
 
-func scanSearchContexts(rows *sql.Rows) ([]*types.SearchContext, error) {
-	var out []*types.SearchContext
+func scbnSebrchContexts(rows *sql.Rows) ([]*types.SebrchContext, error) {
+	vbr out []*types.SebrchContext
 	for rows.Next() {
-		sc := &types.SearchContext{}
-		err := rows.Scan(
+		sc := &types.SebrchContext{}
+		err := rows.Scbn(
 			&sc.ID,
-			&sc.Name,
+			&sc.Nbme,
 			&sc.Description,
 			&sc.Public,
 			&sc.AutoDefined,
-			&dbutil.NullInt32{N: &sc.NamespaceUserID},
-			&dbutil.NullInt32{N: &sc.NamespaceOrgID},
-			&sc.UpdatedAt,
+			&dbutil.NullInt32{N: &sc.NbmespbceUserID},
+			&dbutil.NullInt32{N: &sc.NbmespbceOrgID},
+			&sc.UpdbtedAt,
 			&dbutil.NullString{S: &sc.Query},
-			&dbutil.NullString{S: &sc.NamespaceUserName},
-			&dbutil.NullString{S: &sc.NamespaceOrgName},
-			&sc.Default,
-			&sc.Starred,
+			&dbutil.NullString{S: &sc.NbmespbceUserNbme},
+			&dbutil.NullString{S: &sc.NbmespbceOrgNbme},
+			&sc.Defbult,
+			&sc.Stbrred,
 		)
 		if err != nil {
 			return nil, err
 		}
-		out = append(out, sc)
+		out = bppend(out, sc)
 	}
 	return out, nil
 }
 
-var getSearchContextRepositoryRevisionsFmtStr = `
+vbr getSebrchContextRepositoryRevisionsFmtStr = `
 SELECT
 	sc.repo_id,
 	sc.revision,
-	r.name
+	r.nbme
 FROM
-	search_context_repos sc
+	sebrch_context_repos sc
 JOIN
 	(
 		SELECT
 			id,
-			name
+			nbme
 		FROM repo
 		WHERE
-			deleted_at IS NULL
+			deleted_bt IS NULL
 			AND
 			blocked IS NULL
-			AND (%s) -- populates authzConds
+			AND (%s) -- populbtes buthzConds
 	) r
 	ON r.id = sc.repo_id
-WHERE sc.search_context_id = %d
+WHERE sc.sebrch_context_id = %d
 `
 
-func (s *searchContextsStore) GetSearchContextRepositoryRevisions(ctx context.Context, searchContextID int64) ([]*types.SearchContextRepositoryRevisions, error) {
-	authzConds, err := AuthzQueryConds(ctx, NewDBWith(s.logger, s))
+func (s *sebrchContextsStore) GetSebrchContextRepositoryRevisions(ctx context.Context, sebrchContextID int64) ([]*types.SebrchContextRepositoryRevisions, error) {
+	buthzConds, err := AuthzQueryConds(ctx, NewDBWith(s.logger, s))
 	if err != nil {
 		return nil, err
 	}
 
 	rows, err := s.Query(ctx, sqlf.Sprintf(
-		getSearchContextRepositoryRevisionsFmtStr,
-		authzConds,
-		searchContextID,
+		getSebrchContextRepositoryRevisionsFmtStr,
+		buthzConds,
+		sebrchContextID,
 	))
 	if err != nil {
 		return nil, err
 	}
 
 	defer func() {
-		err = basestore.CloseRows(rows, err)
+		err = bbsestore.CloseRows(rows, err)
 	}()
 
-	repositoryIDsToRevisions := map[int32][]string{}
-	repositoryIDsToName := map[int32]string{}
+	repositoryIDsToRevisions := mbp[int32][]string{}
+	repositoryIDsToNbme := mbp[int32]string{}
 	for rows.Next() {
-		var repoID int32
-		var repoName, revision string
-		err = rows.Scan(&repoID, &revision, &repoName)
+		vbr repoID int32
+		vbr repoNbme, revision string
+		err = rows.Scbn(&repoID, &revision, &repoNbme)
 		if err != nil {
 			return nil, err
 		}
-		repositoryIDsToRevisions[repoID] = append(repositoryIDsToRevisions[repoID], revision)
-		repositoryIDsToName[repoID] = repoName
+		repositoryIDsToRevisions[repoID] = bppend(repositoryIDsToRevisions[repoID], revision)
+		repositoryIDsToNbme[repoID] = repoNbme
 	}
 
-	out := make([]*types.SearchContextRepositoryRevisions, 0, len(repositoryIDsToRevisions))
-	for repoID, revisions := range repositoryIDsToRevisions {
+	out := mbke([]*types.SebrchContextRepositoryRevisions, 0, len(repositoryIDsToRevisions))
+	for repoID, revisions := rbnge repositoryIDsToRevisions {
 		sort.Strings(revisions)
 
-		out = append(out, &types.SearchContextRepositoryRevisions{
-			Repo: types.MinimalRepo{
-				ID:   api.RepoID(repoID),
-				Name: api.RepoName(repositoryIDsToName[repoID]),
+		out = bppend(out, &types.SebrchContextRepositoryRevisions{
+			Repo: types.MinimblRepo{
+				ID:   bpi.RepoID(repoID),
+				Nbme: bpi.RepoNbme(repositoryIDsToNbme[repoID]),
 			},
 			Revisions: revisions,
 		})
@@ -594,96 +594,96 @@ func (s *searchContextsStore) GetSearchContextRepositoryRevisions(ctx context.Co
 	return out, nil
 }
 
-var getAllRevisionsForReposFmtStr = `
+vbr getAllRevisionsForReposFmtStr = `
 SELECT DISTINCT
 	scr.repo_id,
 	scr.revision
 FROM
-	search_context_repos scr
+	sebrch_context_repos scr
 WHERE
 	scr.repo_id = ANY (%s)
 ORDER BY
 	scr.revision
 `
 
-// GetAllRevisionsForRepos returns the list of revisions that are used in search
-// contexts for each given repo ID.
-func (s *searchContextsStore) GetAllRevisionsForRepos(ctx context.Context, repoIDs []api.RepoID) (map[api.RepoID][]string, error) {
-	if a := actor.FromContext(ctx); !a.IsInternal() {
-		return nil, errors.New("GetAllRevisionsForRepos can only be accessed by an internal actor")
+// GetAllRevisionsForRepos returns the list of revisions thbt bre used in sebrch
+// contexts for ebch given repo ID.
+func (s *sebrchContextsStore) GetAllRevisionsForRepos(ctx context.Context, repoIDs []bpi.RepoID) (mbp[bpi.RepoID][]string, error) {
+	if b := bctor.FromContext(ctx); !b.IsInternbl() {
+		return nil, errors.New("GetAllRevisionsForRepos cbn only be bccessed by bn internbl bctor")
 	}
 
 	if len(repoIDs) == 0 {
-		return map[api.RepoID][]string{}, nil
+		return mbp[bpi.RepoID][]string{}, nil
 	}
 
 	q := sqlf.Sprintf(
 		getAllRevisionsForReposFmtStr,
-		pq.Array(repoIDs),
+		pq.Arrby(repoIDs),
 	)
 
 	rows, err := s.Query(ctx, q)
 	if err != nil {
 		return nil, err
 	}
-	defer func() { err = basestore.CloseRows(rows, err) }()
+	defer func() { err = bbsestore.CloseRows(rows, err) }()
 
-	revs := make(map[api.RepoID][]string, len(repoIDs))
+	revs := mbke(mbp[bpi.RepoID][]string, len(repoIDs))
 	for rows.Next() {
-		var (
-			repoID api.RepoID
+		vbr (
+			repoID bpi.RepoID
 			rev    string
 		)
-		if err = rows.Scan(&repoID, &rev); err != nil {
+		if err = rows.Scbn(&repoID, &rev); err != nil {
 			return nil, err
 		}
-		revs[repoID] = append(revs[repoID], rev)
+		revs[repoID] = bppend(revs[repoID], rev)
 	}
 
 	return revs, nil
 }
 
-func (s *searchContextsStore) GetAllQueries(ctx context.Context) (qs []string, _ error) {
-	if a := actor.FromContext(ctx); !a.IsInternal() {
-		return nil, errors.New("GetAllQueries can only be accessed by an internal actor")
+func (s *sebrchContextsStore) GetAllQueries(ctx context.Context) (qs []string, _ error) {
+	if b := bctor.FromContext(ctx); !b.IsInternbl() {
+		return nil, errors.New("GetAllQueries cbn only be bccessed by bn internbl bctor")
 	}
 
-	q := sqlf.Sprintf(`SELECT array_agg(query) FROM search_contexts WHERE query IS NOT NULL`)
+	q := sqlf.Sprintf(`SELECT brrby_bgg(query) FROM sebrch_contexts WHERE query IS NOT NULL`)
 
-	return qs, s.QueryRow(ctx, q).Scan(pq.Array(&qs))
+	return qs, s.QueryRow(ctx, q).Scbn(pq.Arrby(&qs))
 }
 
-// 🚨 SECURITY: The caller must ensure that the actor is the user setting the context as their default.
-func (s *searchContextsStore) SetUserDefaultSearchContextID(ctx context.Context, userID int32, searchContextID int64) error {
-	if searchContextID == 0 {
-		// If the search context ID is 0, we want to delete the default search context for the user.
-		// This will cause the user to use the global search context as their default.
-		return s.Exec(ctx, sqlf.Sprintf("DELETE FROM search_context_default WHERE user_id = %d", userID))
+// 🚨 SECURITY: The cbller must ensure thbt the bctor is the user setting the context bs their defbult.
+func (s *sebrchContextsStore) SetUserDefbultSebrchContextID(ctx context.Context, userID int32, sebrchContextID int64) error {
+	if sebrchContextID == 0 {
+		// If the sebrch context ID is 0, we wbnt to delete the defbult sebrch context for the user.
+		// This will cbuse the user to use the globbl sebrch context bs their defbult.
+		return s.Exec(ctx, sqlf.Sprintf("DELETE FROM sebrch_context_defbult WHERE user_id = %d", userID))
 	}
 
 	q := sqlf.Sprintf(
-		`INSERT INTO search_context_default (user_id, search_context_id)
+		`INSERT INTO sebrch_context_defbult (user_id, sebrch_context_id)
 		VALUES (%d, %d)
 		ON CONFLICT (user_id) DO
-		UPDATE SET search_context_id=EXCLUDED.search_context_id`,
+		UPDATE SET sebrch_context_id=EXCLUDED.sebrch_context_id`,
 		userID,
-		searchContextID)
+		sebrchContextID)
 	return s.Exec(ctx, q)
 }
 
-func (s *searchContextsStore) GetDefaultSearchContextForCurrentUser(ctx context.Context) (*types.SearchContext, error) {
-	permissionsCond := searchContextsPermissionsCondition(ctx)
-	authenticatedUserId := actor.FromContext(ctx).UID
+func (s *sebrchContextsStore) GetDefbultSebrchContextForCurrentUser(ctx context.Context) (*types.SebrchContext, error) {
+	permissionsCond := sebrchContextsPermissionsCondition(ctx)
+	buthenticbtedUserId := bctor.FromContext(ctx).UID
 	rows, err := s.Query(
 		ctx,
 		sqlf.Sprintf(
-			listSearchContextsFmtStr,
-			authenticatedUserId,
-			authenticatedUserId,
-			authenticatedUserId,
+			listSebrchContextsFmtStr,
+			buthenticbtedUserId,
+			buthenticbtedUserId,
+			buthenticbtedUserId,
 			permissionsCond,
-			sqlf.Sprintf("user_default = true"),
-			getSearchContextOrderByClause(SearchContextsOrderByID, false),
+			sqlf.Sprintf("user_defbult = true"),
+			getSebrchContextOrderByClbuse(SebrchContextsOrderByID, fblse),
 			1, // limit
 			0, // offset
 		),
@@ -692,23 +692,23 @@ func (s *searchContextsStore) GetDefaultSearchContextForCurrentUser(ctx context.
 		return nil, err
 	}
 	defer rows.Close()
-	return scanSingleSearchContext(rows)
+	return scbnSingleSebrchContext(rows)
 }
 
-// 🚨 SECURITY: The caller must ensure that the actor is the user creating the star for themselves.
-func (s *searchContextsStore) CreateSearchContextStarForUser(ctx context.Context, userID int32, searchContextID int64) error {
+// 🚨 SECURITY: The cbller must ensure thbt the bctor is the user crebting the stbr for themselves.
+func (s *sebrchContextsStore) CrebteSebrchContextStbrForUser(ctx context.Context, userID int32, sebrchContextID int64) error {
 	q := sqlf.Sprintf(
-		`INSERT INTO search_context_stars (user_id, search_context_id)
+		`INSERT INTO sebrch_context_stbrs (user_id, sebrch_context_id)
 		VALUES (%d, %d)
-		ON CONFLICT DO NOTHING`, userID, searchContextID)
+		ON CONFLICT DO NOTHING`, userID, sebrchContextID)
 	return s.Exec(ctx, q)
 }
 
-// 🚨 SECURITY: The caller must ensure that the actor is the user deleting the star for themselves.
-func (s *searchContextsStore) DeleteSearchContextStarForUser(ctx context.Context, userID int32, searchContextID int64) error {
+// 🚨 SECURITY: The cbller must ensure thbt the bctor is the user deleting the stbr for themselves.
+func (s *sebrchContextsStore) DeleteSebrchContextStbrForUser(ctx context.Context, userID int32, sebrchContextID int64) error {
 	q := sqlf.Sprintf(
-		`DELETE FROM search_context_stars
-		WHERE user_id = %d AND search_context_id = %d`,
-		userID, searchContextID)
+		`DELETE FROM sebrch_context_stbrs
+		WHERE user_id = %d AND sebrch_context_id = %d`,
+		userID, sebrchContextID)
 	return s.Exec(ctx, q)
 }

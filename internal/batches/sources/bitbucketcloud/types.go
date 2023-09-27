@@ -1,12 +1,12 @@
-package bitbucketcloud
+pbckbge bitbucketcloud
 
-import "github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketcloud"
+import "github.com/sourcegrbph/sourcegrbph/internbl/extsvc/bitbucketcloud"
 
-// AnnotatedPullRequest adds metadata we need that lives outside the main
-// PullRequest type returned by the Bitbucket API alongside the pull request.
-// This type is used as the primary metadata type for Bitbucket Cloud
-// changesets.
-type AnnotatedPullRequest struct {
+// AnnotbtedPullRequest bdds metbdbtb we need thbt lives outside the mbin
+// PullRequest type returned by the Bitbucket API blongside the pull request.
+// This type is used bs the primbry metbdbtb type for Bitbucket Cloud
+// chbngesets.
+type AnnotbtedPullRequest struct {
 	*bitbucketcloud.PullRequest
-	Statuses []*bitbucketcloud.PullRequestStatus
+	Stbtuses []*bitbucketcloud.PullRequestStbtus
 }

@@ -1,4 +1,4 @@
-package deviceid
+pbckbge deviceid
 
 import (
 	"context"
@@ -7,23 +7,23 @@ import (
 
 	"github.com/google/uuid"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
-	"github.com/sourcegraph/sourcegraph/internal/cookie"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/globbls"
+	"github.com/sourcegrbph/sourcegrbph/internbl/cookie"
 )
 
 type deviceIDKey struct{}
 
-func Middleware(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Add("Vary", "Cookie")
+func Middlewbre(next http.Hbndler) http.Hbndler {
+	return http.HbndlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Hebder().Add("Vbry", "Cookie")
 		if _, ok := cookie.DeviceID(r); !ok {
-			newDeviceId, _ := uuid.NewRandom()
+			newDeviceId, _ := uuid.NewRbndom()
 			http.SetCookie(w, &http.Cookie{
-				Name:    "sourcegraphDeviceId",
-				Value:   newDeviceId.String(),
-				Expires: time.Now().AddDate(1, 0, 0),
-				Secure:  globals.ExternalURL().Scheme == "https",
-				Domain:  r.URL.Host,
+				Nbme:    "sourcegrbphDeviceId",
+				Vblue:   newDeviceId.String(),
+				Expires: time.Now().AddDbte(1, 0, 0),
+				Secure:  globbls.ExternblURL().Scheme == "https",
+				Dombin:  r.URL.Host,
 			})
 		}
 		next.ServeHTTP(w, r.WithContext(contextWithDeviceID(r)))
@@ -32,14 +32,14 @@ func Middleware(next http.Handler) http.Handler {
 
 func contextWithDeviceID(r *http.Request) context.Context {
 	if deviceID, ok := cookie.DeviceID(r); ok {
-		return context.WithValue(r.Context(), deviceIDKey{}, deviceID)
+		return context.WithVblue(r.Context(), deviceIDKey{}, deviceID)
 	}
 
 	return r.Context()
 }
 
 func FromContext(ctx context.Context) string {
-	if deviceID := ctx.Value(deviceIDKey{}); deviceID != nil {
+	if deviceID := ctx.Vblue(deviceIDKey{}); deviceID != nil {
 		return deviceID.(string)
 	}
 	return ""

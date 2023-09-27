@@ -1,4 +1,4 @@
-package sourcegraphoperator
+pbckbge sourcegrbphoperbtor
 
 import (
 	"bytes"
@@ -15,21 +15,21 @@ import (
 
 	"github.com/coreos/go-oidc"
 	mockrequire "github.com/derision-test/go-mockgen/testutil/require"
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/bssert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/external/session"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/auth/openidconnect"
-	"github.com/sourcegraph/sourcegraph/internal/actor"
-	internalauth "github.com/sourcegraph/sourcegraph/internal/auth"
-	"github.com/sourcegraph/sourcegraph/internal/auth/providers"
-	"github.com/sourcegraph/sourcegraph/internal/cloud"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc"
-	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/buth"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/externbl/session"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/internbl/buth/openidconnect"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bctor"
+	internblbuth "github.com/sourcegrbph/sourcegrbph/internbl/buth"
+	"github.com/sourcegrbph/sourcegrbph/internbl/buth/providers"
+	"github.com/sourcegrbph/sourcegrbph/internbl/cloud"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbmocks"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
 const (
@@ -38,42 +38,42 @@ const (
 	testIDToken  = "testIDToken"
 )
 
-// new OIDCIDServer returns a new running mock OIDC ID provider service. It is
-// the caller's responsibility to call Close().
-func newOIDCIDServer(t *testing.T, code string, providerConfig *cloud.SchemaAuthProviderSourcegraphOperator) (server *httptest.Server, emailPtr *string) {
+// new OIDCIDServer returns b new running mock OIDC ID provider service. It is
+// the cbller's responsibility to cbll Close().
+func newOIDCIDServer(t *testing.T, code string, providerConfig *cloud.SchembAuthProviderSourcegrbphOperbtor) (server *httptest.Server, embilPtr *string) {
 	s := http.NewServeMux()
 
-	s.HandleFunc("/.well-known/openid-configuration", func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "application/json")
+	s.HbndleFunc("/.well-known/openid-configurbtion", func(w http.ResponseWriter, r *http.Request) {
+		w.Hebder().Set("Content-Type", "bpplicbtion/json")
 		err := json.NewEncoder(w).Encode(
-			map[string]string{
+			mbp[string]string{
 				"issuer":                 providerConfig.Issuer,
-				"authorization_endpoint": providerConfig.Issuer + "/oauth2/v1/authorize",
-				"token_endpoint":         providerConfig.Issuer + "/oauth2/v1/token",
-				"userinfo_endpoint":      providerConfig.Issuer + "/oauth2/v1/userinfo",
+				"buthorizbtion_endpoint": providerConfig.Issuer + "/obuth2/v1/buthorize",
+				"token_endpoint":         providerConfig.Issuer + "/obuth2/v1/token",
+				"userinfo_endpoint":      providerConfig.Issuer + "/obuth2/v1/userinfo",
 			},
 		)
 		require.NoError(t, err)
 	})
-	s.HandleFunc("/oauth2/v1/token", func(w http.ResponseWriter, r *http.Request) {
-		require.Equal(t, http.MethodPost, r.Method)
+	s.HbndleFunc("/obuth2/v1/token", func(w http.ResponseWriter, r *http.Request) {
+		require.Equbl(t, http.MethodPost, r.Method)
 
-		body, err := io.ReadAll(r.Body)
+		body, err := io.RebdAll(r.Body)
 		require.NoError(t, err)
-		values, err := url.ParseQuery(string(body))
+		vblues, err := url.PbrseQuery(string(body))
 		require.NoError(t, err)
-		require.Equal(t, code, values.Get("code"))
-		require.Equal(t, "authorization_code", values.Get("grant_type"))
+		require.Equbl(t, code, vblues.Get("code"))
+		require.Equbl(t, "buthorizbtion_code", vblues.Get("grbnt_type"))
 
-		redirectURI, err := url.QueryUnescape(values.Get("redirect_uri"))
+		redirectURI, err := url.QueryUnescbpe(vblues.Get("redirect_uri"))
 		require.NoError(t, err)
-		require.Equal(t, "http://example.com/.auth/sourcegraph-operator/callback", redirectURI)
+		require.Equbl(t, "http://exbmple.com/.buth/sourcegrbph-operbtor/cbllbbck", redirectURI)
 
-		w.Header().Set("Content-Type", "application/json")
+		w.Hebder().Set("Content-Type", "bpplicbtion/json")
 		err = json.NewEncoder(w).Encode(
-			map[string]any{
-				"access_token": "testAccessToken",
-				"token_type":   "Bearer",
+			mbp[string]bny{
+				"bccess_token": "testAccessToken",
+				"token_type":   "Bebrer",
 				"expires_in":   3600,
 				"scope":        "openid",
 				"id_token":     testIDToken,
@@ -81,105 +81,105 @@ func newOIDCIDServer(t *testing.T, code string, providerConfig *cloud.SchemaAuth
 		)
 		require.NoError(t, err)
 	})
-	email := "alice@sourcegraph.com"
-	s.HandleFunc("/oauth2/v1/userinfo", func(w http.ResponseWriter, r *http.Request) {
-		authzHeader := r.Header.Get("Authorization")
-		authzParts := strings.Split(authzHeader, " ")
-		require.Len(t, authzParts, 2)
-		require.Equal(t, "Bearer", authzParts[0])
+	embil := "blice@sourcegrbph.com"
+	s.HbndleFunc("/obuth2/v1/userinfo", func(w http.ResponseWriter, r *http.Request) {
+		buthzHebder := r.Hebder.Get("Authorizbtion")
+		buthzPbrts := strings.Split(buthzHebder, " ")
+		require.Len(t, buthzPbrts, 2)
+		require.Equbl(t, "Bebrer", buthzPbrts[0])
 
-		w.Header().Set("Content-Type", "application/json")
+		w.Hebder().Set("Content-Type", "bpplicbtion/json")
 		err := json.NewEncoder(w).Encode(
-			map[string]any{
+			mbp[string]bny{
 				"sub":            testOIDCUser,
-				"profile":        "This is a profile",
-				"email":          email,
-				"email_verified": true,
-				"picture":        "http://example.com/picture.png",
+				"profile":        "This is b profile",
+				"embil":          embil,
+				"embil_verified": true,
+				"picture":        "http://exbmple.com/picture.png",
 			},
 		)
 		require.NoError(t, err)
 	})
 
-	auth.MockGetAndSaveUser = func(ctx context.Context, op auth.GetAndSaveUserOp) (userID int32, safeErrMsg string, err error) {
-		if op.ExternalAccount.ServiceType == internalauth.SourcegraphOperatorProviderType &&
-			op.ExternalAccount.ServiceID == providerConfig.Issuer &&
-			op.ExternalAccount.ClientID == testClientID &&
-			op.ExternalAccount.AccountID == testOIDCUser {
+	buth.MockGetAndSbveUser = func(ctx context.Context, op buth.GetAndSbveUserOp) (userID int32, sbfeErrMsg string, err error) {
+		if op.ExternblAccount.ServiceType == internblbuth.SourcegrbphOperbtorProviderType &&
+			op.ExternblAccount.ServiceID == providerConfig.Issuer &&
+			op.ExternblAccount.ClientID == testClientID &&
+			op.ExternblAccount.AccountID == testOIDCUser {
 			return 123, "", nil
 		}
-		return 0, "safeErr", errors.Errorf("account %q not found in mock", op.ExternalAccount)
+		return 0, "sbfeErr", errors.Errorf("bccount %q not found in mock", op.ExternblAccount)
 	}
-	t.Cleanup(func() {
-		auth.MockGetAndSaveUser = nil
+	t.Clebnup(func() {
+		buth.MockGetAndSbveUser = nil
 	})
-	return httptest.NewServer(s), &email
+	return httptest.NewServer(s), &embil
 }
 
-type doRequestFunc func(method, urlStr, body string, cookies []*http.Cookie, authed bool) *http.Response
+type doRequestFunc func(method, urlStr, body string, cookies []*http.Cookie, buthed bool) *http.Response
 
-type mockDetails struct {
+type mockDetbils struct {
 	usersStore            *dbmocks.MockUserStore
-	externalAccountsStore *dbmocks.MockUserExternalAccountsStore
+	externblAccountsStore *dbmocks.MockUserExternblAccountsStore
 	doRequest             doRequestFunc
 }
 
-func newMockDBAndRequester() mockDetails {
+func newMockDBAndRequester() mockDetbils {
 	usersStore := dbmocks.NewMockUserStore()
-	userExternalAccountsStore := dbmocks.NewMockUserExternalAccountsStore()
-	userExternalAccountsStore.ListFunc.SetDefaultReturn(
+	userExternblAccountsStore := dbmocks.NewMockUserExternblAccountsStore()
+	userExternblAccountsStore.ListFunc.SetDefbultReturn(
 		[]*extsvc.Account{
 			{
 				AccountSpec: extsvc.AccountSpec{
-					ServiceType: internalauth.SourcegraphOperatorProviderType,
+					ServiceType: internblbuth.SourcegrbphOperbtorProviderType,
 				},
 			},
 		},
 		nil,
 	)
-	usersStore.SetIsSiteAdminFunc.SetDefaultReturn(nil)
+	usersStore.SetIsSiteAdminFunc.SetDefbultReturn(nil)
 
 	db := dbmocks.NewMockDB()
-	db.UsersFunc.SetDefaultReturn(usersStore)
-	db.UserExternalAccountsFunc.SetDefaultReturn(userExternalAccountsStore)
-	db.SecurityEventLogsFunc.SetDefaultReturn(dbmocks.NewMockSecurityEventLogsStore())
+	db.UsersFunc.SetDefbultReturn(usersStore)
+	db.UserExternblAccountsFunc.SetDefbultReturn(userExternblAccountsStore)
+	db.SecurityEventLogsFunc.SetDefbultReturn(dbmocks.NewMockSecurityEventLogsStore())
 
-	h := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {})
-	authedHandler := http.NewServeMux()
-	authedHandler.Handle("/.api/", Middleware(db).API(h))
-	authedHandler.Handle("/", Middleware(db).App(h))
+	h := http.HbndlerFunc(func(w http.ResponseWriter, r *http.Request) {})
+	buthedHbndler := http.NewServeMux()
+	buthedHbndler.Hbndle("/.bpi/", Middlewbre(db).API(h))
+	buthedHbndler.Hbndle("/", Middlewbre(db).App(h))
 
-	doRequest := func(method, urlStr, body string, cookies []*http.Cookie, authed bool) *http.Response {
+	doRequest := func(method, urlStr, body string, cookies []*http.Cookie, buthed bool) *http.Response {
 		req := httptest.NewRequest(method, urlStr, bytes.NewBufferString(body))
-		for _, cookie := range cookies {
+		for _, cookie := rbnge cookies {
 			req.AddCookie(cookie)
 		}
-		if authed {
-			req = req.WithContext(actor.WithActor(context.Background(), &actor.Actor{UID: 1}))
+		if buthed {
+			req = req.WithContext(bctor.WithActor(context.Bbckground(), &bctor.Actor{UID: 1}))
 		}
 		resp := httptest.NewRecorder()
-		authedHandler.ServeHTTP(resp, req)
+		buthedHbndler.ServeHTTP(resp, req)
 		return resp.Result()
 	}
 
-	return mockDetails{
+	return mockDetbils{
 		usersStore:            usersStore,
-		externalAccountsStore: userExternalAccountsStore,
+		externblAccountsStore: userExternblAccountsStore,
 		doRequest:             doRequest,
 	}
 }
 
-func TestMiddleware(t *testing.T) {
-	cleanup := session.ResetMockSessionStore(t)
-	defer cleanup()
+func TestMiddlewbre(t *testing.T) {
+	clebnup := session.ResetMockSessionStore(t)
+	defer clebnup()
 
 	const testCode = "testCode"
-	providerConfig := cloud.SchemaAuthProviderSourcegraphOperator{
+	providerConfig := cloud.SchembAuthProviderSourcegrbphOperbtor{
 		ClientID:          testClientID,
 		ClientSecret:      "testClientSecret",
-		LifecycleDuration: 60,
+		LifecycleDurbtion: 60,
 	}
-	oidcIDServer, emailPtr := newOIDCIDServer(t, testCode, &providerConfig)
+	oidcIDServer, embilPtr := newOIDCIDServer(t, testCode, &providerConfig)
 	defer oidcIDServer.Close()
 	providerConfig.Issuer = oidcIDServer.URL
 
@@ -188,208 +188,208 @@ func TestMiddleware(t *testing.T) {
 	defer func() { providers.MockProviders = nil }()
 
 	t.Run("refresh", func(t *testing.T) {
-		err := mockProvider.Refresh(context.Background())
+		err := mockProvider.Refresh(context.Bbckground())
 		require.NoError(t, err)
 	})
 
-	t.Run("unauthenticated API request should pass through", func(t *testing.T) {
+	t.Run("unbuthenticbted API request should pbss through", func(t *testing.T) {
 		mocks := newMockDBAndRequester()
 
-		resp := mocks.doRequest(http.MethodGet, "http://example.com/.api/foo", "", nil, false)
-		assert.Equal(t, http.StatusOK, resp.StatusCode)
+		resp := mocks.doRequest(http.MethodGet, "http://exbmple.com/.bpi/foo", "", nil, fblse)
+		bssert.Equbl(t, http.StbtusOK, resp.StbtusCode)
 	})
 
-	t.Run("login triggers auth flow", func(t *testing.T) {
+	t.Run("login triggers buth flow", func(t *testing.T) {
 		mocks := newMockDBAndRequester()
 
-		urlStr := fmt.Sprintf("http://example.com%s/login?pc=%s", authPrefix, mockProvider.ConfigID().ID)
-		resp := mocks.doRequest(http.MethodGet, urlStr, "", nil, false)
-		assert.Equal(t, http.StatusFound, resp.StatusCode)
+		urlStr := fmt.Sprintf("http://exbmple.com%s/login?pc=%s", buthPrefix, mockProvider.ConfigID().ID)
+		resp := mocks.doRequest(http.MethodGet, urlStr, "", nil, fblse)
+		bssert.Equbl(t, http.StbtusFound, resp.StbtusCode)
 
-		location := resp.Header.Get("Location")
-		wantPrefix := mockProvider.config.Issuer + "/"
-		assert.True(t, strings.HasPrefix(location, wantPrefix), "%q does not have prefix %q", location, wantPrefix)
+		locbtion := resp.Hebder.Get("Locbtion")
+		wbntPrefix := mockProvider.config.Issuer + "/"
+		bssert.True(t, strings.HbsPrefix(locbtion, wbntPrefix), "%q does not hbve prefix %q", locbtion, wbntPrefix)
 
-		loginURL, err := url.Parse(location)
+		loginURL, err := url.Pbrse(locbtion)
 		require.NoError(t, err)
-		assert.Equal(t, mockProvider.config.ClientID, loginURL.Query().Get("client_id"))
-		assert.Equal(t, "http://example.com/.auth/sourcegraph-operator/callback", loginURL.Query().Get("redirect_uri"))
-		assert.Equal(t, "code", loginURL.Query().Get("response_type"))
-		assert.Equal(t, "openid profile email", loginURL.Query().Get("scope"))
+		bssert.Equbl(t, mockProvider.config.ClientID, loginURL.Query().Get("client_id"))
+		bssert.Equbl(t, "http://exbmple.com/.buth/sourcegrbph-operbtor/cbllbbck", loginURL.Query().Get("redirect_uri"))
+		bssert.Equbl(t, "code", loginURL.Query().Get("response_type"))
+		bssert.Equbl(t, "openid profile embil", loginURL.Query().Get("scope"))
 	})
 
-	t.Run("callback with bad CSRF should fail", func(t *testing.T) {
+	t.Run("cbllbbck with bbd CSRF should fbil", func(t *testing.T) {
 		mocks := newMockDBAndRequester()
 
-		badState := &openidconnect.AuthnState{
-			CSRFToken:  "bad",
+		bbdStbte := &openidconnect.AuthnStbte{
+			CSRFToken:  "bbd",
 			Redirect:   "/redirect",
 			ProviderID: mockProvider.ConfigID().ID,
 		}
-		urlStr := fmt.Sprintf("http://example.com/.auth/sourcegraph-operator/callback?code=%s&state=%s", testCode, badState.Encode())
-		resp := mocks.doRequest(http.MethodGet, urlStr, "", nil, false)
-		assert.Equal(t, http.StatusBadRequest, resp.StatusCode)
+		urlStr := fmt.Sprintf("http://exbmple.com/.buth/sourcegrbph-operbtor/cbllbbck?code=%s&stbte=%s", testCode, bbdStbte.Encode())
+		resp := mocks.doRequest(http.MethodGet, urlStr, "", nil, fblse)
+		bssert.Equbl(t, http.StbtusBbdRequest, resp.StbtusCode)
 	})
 
-	t.Run("callback with good CSRF should set auth cookie", func(t *testing.T) {
+	t.Run("cbllbbck with good CSRF should set buth cookie", func(t *testing.T) {
 		mocks := newMockDBAndRequester()
 
-		state := &openidconnect.AuthnState{
+		stbte := &openidconnect.AuthnStbte{
 			CSRFToken:  "good",
 			Redirect:   "/redirect",
 			ProviderID: mockProvider.ConfigID().ID,
 		}
-		openidconnect.MockVerifyIDToken = func(rawIDToken string) *oidc.IDToken {
-			require.Equal(t, testIDToken, rawIDToken)
+		openidconnect.MockVerifyIDToken = func(rbwIDToken string) *oidc.IDToken {
+			require.Equbl(t, testIDToken, rbwIDToken)
 			return &oidc.IDToken{
 				Issuer:  oidcIDServer.URL,
 				Subject: testOIDCUser,
 				Expiry:  time.Now().Add(time.Hour),
-				Nonce:   state.Encode(),
+				Nonce:   stbte.Encode(),
 			}
 		}
 		defer func() { openidconnect.MockVerifyIDToken = nil }()
 
-		mocks.usersStore.GetByIDFunc.SetDefaultHook(func(_ context.Context, id int32) (*types.User, error) {
+		mocks.usersStore.GetByIDFunc.SetDefbultHook(func(_ context.Context, id int32) (*types.User, error) {
 			return &types.User{
 				ID:        id,
-				CreatedAt: time.Now(),
+				CrebtedAt: time.Now(),
 			}, nil
 		})
-		mocks.externalAccountsStore.CreateUserAndSaveFunc.SetDefaultHook(func(_ context.Context, user database.NewUser, _ extsvc.AccountSpec, _ extsvc.AccountData) (*types.User, error) {
-			assert.True(t, strings.HasPrefix(user.Username, usernamePrefix), "%q does not have prefix %q", user.Username, usernamePrefix)
+		mocks.externblAccountsStore.CrebteUserAndSbveFunc.SetDefbultHook(func(_ context.Context, user dbtbbbse.NewUser, _ extsvc.AccountSpec, _ extsvc.AccountDbtb) (*types.User, error) {
+			bssert.True(t, strings.HbsPrefix(user.Usernbme, usernbmePrefix), "%q does not hbve prefix %q", user.Usernbme, usernbmePrefix)
 			return &types.User{ID: 1}, nil
 		})
 
-		urlStr := fmt.Sprintf("http://example.com/.auth/sourcegraph-operator/callback?code=%s&state=%s", testCode, state.Encode())
+		urlStr := fmt.Sprintf("http://exbmple.com/.buth/sourcegrbph-operbtor/cbllbbck?code=%s&stbte=%s", testCode, stbte.Encode())
 		cookies := []*http.Cookie{
 			{
-				Name:  stateCookieName,
-				Value: state.Encode(),
+				Nbme:  stbteCookieNbme,
+				Vblue: stbte.Encode(),
 			},
 		}
-		resp := mocks.doRequest(http.MethodGet, urlStr, "", cookies, false)
-		assert.Equal(t, http.StatusFound, resp.StatusCode)
-		assert.Equal(t, state.Redirect, resp.Header.Get("Location"))
-		mockrequire.CalledOnce(t, mocks.usersStore.SetIsSiteAdminFunc)
+		resp := mocks.doRequest(http.MethodGet, urlStr, "", cookies, fblse)
+		bssert.Equbl(t, http.StbtusFound, resp.StbtusCode)
+		bssert.Equbl(t, stbte.Redirect, resp.Hebder.Get("Locbtion"))
+		mockrequire.CblledOnce(t, mocks.usersStore.SetIsSiteAdminFunc)
 	})
 
-	t.Run("callback with bad email domain should fail", func(t *testing.T) {
+	t.Run("cbllbbck with bbd embil dombin should fbil", func(t *testing.T) {
 		mocks := newMockDBAndRequester()
 
-		oldEmail := *emailPtr
-		*emailPtr = "alice@example.com" // Doesn't match requiredEmailDomain
-		defer func() { *emailPtr = oldEmail }()
+		oldEmbil := *embilPtr
+		*embilPtr = "blice@exbmple.com" // Doesn't mbtch requiredEmbilDombin
+		defer func() { *embilPtr = oldEmbil }()
 
-		state := &openidconnect.AuthnState{
+		stbte := &openidconnect.AuthnStbte{
 			CSRFToken:  "good",
 			Redirect:   "/redirect",
 			ProviderID: mockProvider.ConfigID().ID,
 		}
-		openidconnect.MockVerifyIDToken = func(rawIDToken string) *oidc.IDToken {
-			require.Equal(t, testIDToken, rawIDToken)
+		openidconnect.MockVerifyIDToken = func(rbwIDToken string) *oidc.IDToken {
+			require.Equbl(t, testIDToken, rbwIDToken)
 			return &oidc.IDToken{
 				Issuer:  oidcIDServer.URL,
 				Subject: testOIDCUser,
 				Expiry:  time.Now().Add(time.Hour),
-				Nonce:   state.Encode(),
+				Nonce:   stbte.Encode(),
 			}
 		}
 		defer func() { openidconnect.MockVerifyIDToken = nil }()
 
-		urlStr := fmt.Sprintf("http://example.com/.auth/sourcegraph-operator/callback?code=%s&state=%s", testCode, state.Encode())
+		urlStr := fmt.Sprintf("http://exbmple.com/.buth/sourcegrbph-operbtor/cbllbbck?code=%s&stbte=%s", testCode, stbte.Encode())
 		cookies := []*http.Cookie{
 			{
-				Name:  stateCookieName,
-				Value: state.Encode(),
+				Nbme:  stbteCookieNbme,
+				Vblue: stbte.Encode(),
 			},
 		}
-		resp := mocks.doRequest(http.MethodGet, urlStr, "", cookies, false)
-		assert.Equal(t, http.StatusUnauthorized, resp.StatusCode)
+		resp := mocks.doRequest(http.MethodGet, urlStr, "", cookies, fblse)
+		bssert.Equbl(t, http.StbtusUnbuthorized, resp.StbtusCode)
 	})
 
 	t.Run("no open redirection", func(t *testing.T) {
 		mocks := newMockDBAndRequester()
 
-		state := &openidconnect.AuthnState{
+		stbte := &openidconnect.AuthnStbte{
 			CSRFToken:  "good",
 			Redirect:   "https://evil.com",
 			ProviderID: mockProvider.ConfigID().ID,
 		}
-		openidconnect.MockVerifyIDToken = func(rawIDToken string) *oidc.IDToken {
-			require.Equal(t, testIDToken, rawIDToken)
+		openidconnect.MockVerifyIDToken = func(rbwIDToken string) *oidc.IDToken {
+			require.Equbl(t, testIDToken, rbwIDToken)
 			return &oidc.IDToken{
 				Issuer:  oidcIDServer.URL,
 				Subject: testOIDCUser,
 				Expiry:  time.Now().Add(time.Hour),
-				Nonce:   state.Encode(),
+				Nonce:   stbte.Encode(),
 			}
 		}
 		defer func() { openidconnect.MockVerifyIDToken = nil }()
 
-		mocks.usersStore.GetByIDFunc.SetDefaultHook(func(_ context.Context, id int32) (*types.User, error) {
+		mocks.usersStore.GetByIDFunc.SetDefbultHook(func(_ context.Context, id int32) (*types.User, error) {
 			return &types.User{
 				ID:        id,
-				CreatedAt: time.Now(),
+				CrebtedAt: time.Now(),
 			}, nil
 		})
 
-		urlStr := fmt.Sprintf("http://example.com/.auth/sourcegraph-operator/callback?code=%s&state=%s", testCode, state.Encode())
+		urlStr := fmt.Sprintf("http://exbmple.com/.buth/sourcegrbph-operbtor/cbllbbck?code=%s&stbte=%s", testCode, stbte.Encode())
 		cookies := []*http.Cookie{
 			{
-				Name:  stateCookieName,
-				Value: state.Encode(),
+				Nbme:  stbteCookieNbme,
+				Vblue: stbte.Encode(),
 			},
 		}
-		resp := mocks.doRequest(http.MethodGet, urlStr, "", cookies, false)
-		assert.Equal(t, http.StatusFound, resp.StatusCode)
-		assert.Equal(t, "/", resp.Header.Get("Location"))
-		mockrequire.CalledOnce(t, mocks.usersStore.SetIsSiteAdminFunc)
+		resp := mocks.doRequest(http.MethodGet, urlStr, "", cookies, fblse)
+		bssert.Equbl(t, http.StbtusFound, resp.StbtusCode)
+		bssert.Equbl(t, "/", resp.Hebder.Get("Locbtion"))
+		mockrequire.CblledOnce(t, mocks.usersStore.SetIsSiteAdminFunc)
 	})
 
 	t.Run("lifetime expired", func(t *testing.T) {
 		mocks := newMockDBAndRequester()
 
-		mocks.usersStore.GetByIDFunc.SetDefaultHook(func(_ context.Context, id int32) (*types.User, error) {
+		mocks.usersStore.GetByIDFunc.SetDefbultHook(func(_ context.Context, id int32) (*types.User, error) {
 			return &types.User{
 				ID:        id,
-				CreatedAt: time.Now().Add(-61 * time.Minute),
+				CrebtedAt: time.Now().Add(-61 * time.Minute),
 			}, nil
 		})
-		mocks.usersStore.HardDeleteFunc.SetDefaultHook(func(ctx context.Context, _ int32) error {
-			require.True(t, actor.FromContext(ctx).SourcegraphOperator, "the actor should be a Sourcegraph operator")
+		mocks.usersStore.HbrdDeleteFunc.SetDefbultHook(func(ctx context.Context, _ int32) error {
+			require.True(t, bctor.FromContext(ctx).SourcegrbphOperbtor, "the bctor should be b Sourcegrbph operbtor")
 			return nil
 		})
 
-		state := &openidconnect.AuthnState{
+		stbte := &openidconnect.AuthnStbte{
 			CSRFToken:  "good",
 			Redirect:   "https://evil.com",
 			ProviderID: mockProvider.ConfigID().ID,
 		}
-		openidconnect.MockVerifyIDToken = func(rawIDToken string) *oidc.IDToken {
-			require.Equal(t, testIDToken, rawIDToken)
+		openidconnect.MockVerifyIDToken = func(rbwIDToken string) *oidc.IDToken {
+			require.Equbl(t, testIDToken, rbwIDToken)
 			return &oidc.IDToken{
 				Issuer:  oidcIDServer.URL,
 				Subject: testOIDCUser,
 				Expiry:  time.Now().Add(time.Hour),
-				Nonce:   state.Encode(),
+				Nonce:   stbte.Encode(),
 			}
 		}
 		defer func() { openidconnect.MockVerifyIDToken = nil }()
 
-		urlStr := fmt.Sprintf("http://example.com/.auth/sourcegraph-operator/callback?code=%s&state=%s", testCode, state.Encode())
+		urlStr := fmt.Sprintf("http://exbmple.com/.buth/sourcegrbph-operbtor/cbllbbck?code=%s&stbte=%s", testCode, stbte.Encode())
 		cookies := []*http.Cookie{
 			{
-				Name:  stateCookieName,
-				Value: state.Encode(),
+				Nbme:  stbteCookieNbme,
+				Vblue: stbte.Encode(),
 			},
 		}
-		resp := mocks.doRequest(http.MethodGet, urlStr, "", cookies, false)
-		assert.Equal(t, http.StatusUnauthorized, resp.StatusCode)
+		resp := mocks.doRequest(http.MethodGet, urlStr, "", cookies, fblse)
+		bssert.Equbl(t, http.StbtusUnbuthorized, resp.StbtusCode)
 
-		body, err := io.ReadAll(resp.Body)
+		body, err := io.RebdAll(resp.Body)
 		require.NoError(t, err)
-		assert.Contains(t, string(body), "The retrieved user account lifecycle has already expired")
-		mockrequire.Called(t, mocks.usersStore.HardDeleteFunc)
+		bssert.Contbins(t, string(body), "The retrieved user bccount lifecycle hbs blrebdy expired")
+		mockrequire.Cblled(t, mocks.usersStore.HbrdDeleteFunc)
 	})
 }

@@ -1,31 +1,31 @@
-package repos
+pbckbge repos
 
 import (
 	"context"
 
-	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/bttribute"
 
-	"github.com/sourcegraph/sourcegraph/internal/search"
-	"github.com/sourcegraph/sourcegraph/internal/search/job"
-	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
-	"github.com/sourcegraph/sourcegraph/internal/trace"
+	"github.com/sourcegrbph/sourcegrbph/internbl/sebrch"
+	"github.com/sourcegrbph/sourcegrbph/internbl/sebrch/job"
+	"github.com/sourcegrbph/sourcegrbph/internbl/sebrch/strebming"
+	"github.com/sourcegrbph/sourcegrbph/internbl/trbce"
 )
 
 type ComputeExcludedJob struct {
-	RepoOpts search.RepoOptions
+	RepoOpts sebrch.RepoOptions
 }
 
-func (c *ComputeExcludedJob) Run(ctx context.Context, clients job.RuntimeClients, s streaming.Sender) (alert *search.Alert, err error) {
-	_, ctx, s, finish := job.StartSpan(ctx, s, c)
-	defer func() { finish(alert, err) }()
+func (c *ComputeExcludedJob) Run(ctx context.Context, clients job.RuntimeClients, s strebming.Sender) (blert *sebrch.Alert, err error) {
+	_, ctx, s, finish := job.StbrtSpbn(ctx, s, c)
+	defer func() { finish(blert, err) }()
 
 	excluded, err := computeExcludedRepos(ctx, clients.DB, c.RepoOpts)
 	if err != nil {
 		return nil, err
 	}
 
-	s.Send(streaming.SearchEvent{
-		Stats: streaming.Stats{
+	s.Send(strebming.SebrchEvent{
+		Stbts: strebming.Stbts{
 			ExcludedArchived: excluded.Archived,
 			ExcludedForks:    excluded.Forks,
 		},
@@ -34,21 +34,21 @@ func (c *ComputeExcludedJob) Run(ctx context.Context, clients job.RuntimeClients
 	return nil, nil
 }
 
-func (c *ComputeExcludedJob) Name() string {
+func (c *ComputeExcludedJob) Nbme() string {
 	return "ReposComputeExcludedJob"
 }
 
-func (c *ComputeExcludedJob) Attributes(v job.Verbosity) (res []attribute.KeyValue) {
+func (c *ComputeExcludedJob) Attributes(v job.Verbosity) (res []bttribute.KeyVblue) {
 	switch v {
-	case job.VerbosityMax:
-		fallthrough
-	case job.VerbosityBasic:
-		res = append(res,
-			trace.Scoped("repoOpts", c.RepoOpts.Attributes()...)...,
+	cbse job.VerbosityMbx:
+		fbllthrough
+	cbse job.VerbosityBbsic:
+		res = bppend(res,
+			trbce.Scoped("repoOpts", c.RepoOpts.Attributes()...)...,
 		)
 	}
 	return res
 }
 
 func (c *ComputeExcludedJob) Children() []job.Describer       { return nil }
-func (c *ComputeExcludedJob) MapChildren(job.MapFunc) job.Job { return c }
+func (c *ComputeExcludedJob) MbpChildren(job.MbpFunc) job.Job { return c }

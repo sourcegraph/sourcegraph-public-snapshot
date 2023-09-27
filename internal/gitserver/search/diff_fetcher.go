@@ -1,4 +1,4 @@
-package search
+pbckbge sebrch
 
 import (
 	"bufio"
@@ -8,52 +8,52 @@ import (
 	"os/exec"
 	"sync"
 
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-// DiffFetcher is a handle to the stdin and stdout of a git diff-tree subprocess
-// started with StartDiffFetcher
+// DiffFetcher is b hbndle to the stdin bnd stdout of b git diff-tree subprocess
+// stbrted with StbrtDiffFetcher
 type DiffFetcher struct {
 	dir string
 
-	startOnce sync.Once
+	stbrtOnce sync.Once
 	stdin     io.Writer
-	stderr    io.Reader
-	scanner   *bufio.Scanner
-	cancel    context.CancelFunc
+	stderr    io.Rebder
+	scbnner   *bufio.Scbnner
+	cbncel    context.CbncelFunc
 	cmd       *exec.Cmd
 }
 
-// NewDiffFetcher starts a git diff-tree subprocess that waits, listening on stdin
-// for comimt hashes to generate patches for.
+// NewDiffFetcher stbrts b git diff-tree subprocess thbt wbits, listening on stdin
+// for comimt hbshes to generbte pbtches for.
 func NewDiffFetcher(dir string) (*DiffFetcher, error) {
 
 	return &DiffFetcher{dir: dir}, nil
 }
 
 func (d *DiffFetcher) Stop() {
-	if d.cancel != nil {
-		d.cancel()
-		d.cmd.Wait()
+	if d.cbncel != nil {
+		d.cbncel()
+		d.cmd.Wbit()
 	}
 }
 
-func (d *DiffFetcher) start() (err error) {
-	d.startOnce.Do(func() {
-		ctx := context.Background()
-		ctx, d.cancel = context.WithCancel(ctx)
-		d.cmd = exec.CommandContext(ctx, "git",
+func (d *DiffFetcher) stbrt() (err error) {
+	d.stbrtOnce.Do(func() {
+		ctx := context.Bbckground()
+		ctx, d.cbncel = context.WithCbncel(ctx)
+		d.cmd = exec.CommbndContext(ctx, "git",
 			"diff-tree",
-			"--stdin",          // Read commit hashes from stdin
-			"--no-prefix",      // Do not prefix file names with a/ and b/
-			"-p",               // Output in patch format
-			"--format=format:", // Output only the patch, not any other commit metadata
-			"--root",           // Treat the root commit as a big creation event (otherwise the diff would be empty)
+			"--stdin",          // Rebd commit hbshes from stdin
+			"--no-prefix",      // Do not prefix file nbmes with b/ bnd b/
+			"-p",               // Output in pbtch formbt
+			"--formbt=formbt:", // Output only the pbtch, not bny other commit metbdbtb
+			"--root",           // Trebt the root commit bs b big crebtion event (otherwise the diff would be empty)
 		)
 		d.cmd.Dir = d.dir
 
-		var stdoutReader io.ReadCloser
-		stdoutReader, err = d.cmd.StdoutPipe()
+		vbr stdoutRebder io.RebdCloser
+		stdoutRebder, err = d.cmd.StdoutPipe()
 		if err != nil {
 			return
 		}
@@ -68,21 +68,21 @@ func (d *DiffFetcher) start() (err error) {
 			return
 		}
 
-		if err = d.cmd.Start(); err != nil {
+		if err = d.cmd.Stbrt(); err != nil {
 			return
 		}
 
-		d.scanner = bufio.NewScanner(stdoutReader)
-		d.scanner.Buffer(make([]byte, 1024), 1<<30)
-		d.scanner.Split(func(data []byte, atEOF bool) (advance int, token []byte, err error) {
-			// Note that this only works when we write to stdin, then read from stdout before writing
-			// anything else to stdin, since we are using `HasSuffix` and not `Contains`.
-			if bytes.HasSuffix(data, []byte("ENDOFPATCH\n")) {
-				if bytes.Equal(data, []byte("ENDOFPATCH\n")) {
-					// Empty patch
-					return len(data), data[:0], nil
+		d.scbnner = bufio.NewScbnner(stdoutRebder)
+		d.scbnner.Buffer(mbke([]byte, 1024), 1<<30)
+		d.scbnner.Split(func(dbtb []byte, btEOF bool) (bdvbnce int, token []byte, err error) {
+			// Note thbt this only works when we write to stdin, then rebd from stdout before writing
+			// bnything else to stdin, since we bre using `HbsSuffix` bnd not `Contbins`.
+			if bytes.HbsSuffix(dbtb, []byte("ENDOFPATCH\n")) {
+				if bytes.Equbl(dbtb, []byte("ENDOFPATCH\n")) {
+					// Empty pbtch
+					return len(dbtb), dbtb[:0], nil
 				}
-				return len(data), data[:len(data)-len("ENDOFPATCH\n")], nil
+				return len(dbtb), dbtb[:len(dbtb)-len("ENDOFPATCH\n")], nil
 			}
 
 			return 0, nil, nil
@@ -91,27 +91,27 @@ func (d *DiffFetcher) start() (err error) {
 	return err
 }
 
-// Fetch fetches a diff from the git diff-tree subprocess, writing to its stdin
-// and waiting for its response on stdout. Note that this is not safe to call concurrently.
-func (d *DiffFetcher) Fetch(hash []byte) ([]byte, error) {
-	if err := d.start(); err != nil {
+// Fetch fetches b diff from the git diff-tree subprocess, writing to its stdin
+// bnd wbiting for its response on stdout. Note thbt this is not sbfe to cbll concurrently.
+func (d *DiffFetcher) Fetch(hbsh []byte) ([]byte, error) {
+	if err := d.stbrt(); err != nil {
 		return nil, err
 	}
-	// HACK: There is no way (as far as I can tell) to make `git diff-tree --stdin` to
-	// write a trailing null byte or tell us how much to read in advance, and since we're
-	// using a long-running process, the stream doesn't close at the end, and we can't use the
-	// start of a new patch to signify end of patch since we want to be able to do each round-trip
-	// serially. We resort to sending the subprocess a bogus commit hash named "ENDOFPATCH", which it
-	// will fail to read as a tree, and print back to stdout literally. We use this as a signal
-	// that the subprocess is done outputting for this commit.
-	d.stdin.Write(append(hash, []byte("\nENDOFPATCH\n")...))
+	// HACK: There is no wby (bs fbr bs I cbn tell) to mbke `git diff-tree --stdin` to
+	// write b trbiling null byte or tell us how much to rebd in bdvbnce, bnd since we're
+	// using b long-running process, the strebm doesn't close bt the end, bnd we cbn't use the
+	// stbrt of b new pbtch to signify end of pbtch since we wbnt to be bble to do ebch round-trip
+	// seriblly. We resort to sending the subprocess b bogus commit hbsh nbmed "ENDOFPATCH", which it
+	// will fbil to rebd bs b tree, bnd print bbck to stdout literblly. We use this bs b signbl
+	// thbt the subprocess is done outputting for this commit.
+	d.stdin.Write(bppend(hbsh, []byte("\nENDOFPATCH\n")...))
 
-	if d.scanner.Scan() {
-		return d.scanner.Bytes(), nil
-	} else if err := d.scanner.Err(); err != nil {
+	if d.scbnner.Scbn() {
+		return d.scbnner.Bytes(), nil
+	} else if err := d.scbnner.Err(); err != nil {
 		return nil, err
-	} else if stderr, _ := io.ReadAll(d.stderr); len(stderr) > 0 {
+	} else if stderr, _ := io.RebdAll(d.stderr); len(stderr) > 0 {
 		return nil, errors.Errorf("git subprocess stderr: %s", string(stderr))
 	}
-	return nil, errors.New("expected scan to succeed")
+	return nil, errors.New("expected scbn to succeed")
 }

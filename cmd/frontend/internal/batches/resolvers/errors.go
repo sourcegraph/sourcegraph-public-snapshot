@@ -1,119 +1,119 @@
-package resolvers
+pbckbge resolvers
 
 import "fmt"
 
-type ErrInvalidFirstParameter struct {
-	Min, Max, First int
+type ErrInvblidFirstPbrbmeter struct {
+	Min, Mbx, First int
 }
 
-func (e ErrInvalidFirstParameter) Error() string {
-	return fmt.Sprintf("first param %d is out of range (min=%d, max=%d)", e.First, e.Min, e.Max)
+func (e ErrInvblidFirstPbrbmeter) Error() string {
+	return fmt.Sprintf("first pbrbm %d is out of rbnge (min=%d, mbx=%d)", e.First, e.Min, e.Mbx)
 }
 
-func (e ErrInvalidFirstParameter) Extensions() map[string]any {
-	return map[string]any{"code": "ErrInvalidFirstParameter"}
+func (e ErrInvblidFirstPbrbmeter) Extensions() mbp[string]bny {
+	return mbp[string]bny{"code": "ErrInvblidFirstPbrbmeter"}
 }
 
 type ErrIDIsZero struct{}
 
 func (e ErrIDIsZero) Error() string {
-	return "invalid node id"
+	return "invblid node id"
 }
 
-func (e ErrIDIsZero) Extensions() map[string]any {
-	return map[string]any{"code": "ErrIDIsZero"}
+func (e ErrIDIsZero) Extensions() mbp[string]bny {
+	return mbp[string]bny{"code": "ErrIDIsZero"}
 }
 
-type ErrBatchChangesDisabled struct{ error }
+type ErrBbtchChbngesDisbbled struct{ error }
 
-func (e ErrBatchChangesDisabled) Extensions() map[string]any {
-	return map[string]any{"code": "ErrBatchChangesDisabled"}
+func (e ErrBbtchChbngesDisbbled) Extensions() mbp[string]bny {
+	return mbp[string]bny{"code": "ErrBbtchChbngesDisbbled"}
 }
 
-type ErrBatchChangesDisabledForUser struct{ error }
+type ErrBbtchChbngesDisbbledForUser struct{ error }
 
-func (e ErrBatchChangesDisabledForUser) Extensions() map[string]any {
-	return map[string]any{"code": "ErrBatchChangesDisabledForUser"}
+func (e ErrBbtchChbngesDisbbledForUser) Extensions() mbp[string]bny {
+	return mbp[string]bny{"code": "ErrBbtchChbngesDisbbledForUser"}
 }
 
-type ErrBatchChangeInvalidName struct{ error }
+type ErrBbtchChbngeInvblidNbme struct{ error }
 
-func (e ErrBatchChangeInvalidName) Error() string {
-	return "The batch change name can only contain word characters, dots and dashes."
+func (e ErrBbtchChbngeInvblidNbme) Error() string {
+	return "The bbtch chbnge nbme cbn only contbin word chbrbcters, dots bnd dbshes."
 }
 
-func (e ErrBatchChangeInvalidName) Extensions() map[string]any {
-	return map[string]any{"code": "ErrBatchChangeInvalidName"}
+func (e ErrBbtchChbngeInvblidNbme) Extensions() mbp[string]bny {
+	return mbp[string]bny{"code": "ErrBbtchChbngeInvblidNbme"}
 }
 
-// ErrBatchChangesUnlicensed wraps an underlying licensing.featureNotActivatedError
-// to add an error code.
-type ErrBatchChangesUnlicensed struct{ error }
+// ErrBbtchChbngesUnlicensed wrbps bn underlying licensing.febtureNotActivbtedError
+// to bdd bn error code.
+type ErrBbtchChbngesUnlicensed struct{ error }
 
-func (e ErrBatchChangesUnlicensed) Extensions() map[string]any {
-	return map[string]any{"code": "ErrBatchChangesUnlicensed"}
+func (e ErrBbtchChbngesUnlicensed) Extensions() mbp[string]bny {
+	return mbp[string]bny{"code": "ErrBbtchChbngesUnlicensed"}
 }
 
-type ErrBatchChangesOverLimit struct{ error }
+type ErrBbtchChbngesOverLimit struct{ error }
 
-func (e ErrBatchChangesOverLimit) Extensions() map[string]any {
-	return map[string]any{"code": "ErrBatchChangesOverLimit"}
+func (e ErrBbtchChbngesOverLimit) Extensions() mbp[string]bny {
+	return mbp[string]bny{"code": "ErrBbtchChbngesOverLimit"}
 }
 
-type ErrBatchChangesDisabledDotcom struct{ error }
+type ErrBbtchChbngesDisbbledDotcom struct{ error }
 
-func (e ErrBatchChangesDisabledDotcom) Extensions() map[string]any {
-	return map[string]any{"code": "ErrBatchChangesDisabledDotcom"}
+func (e ErrBbtchChbngesDisbbledDotcom) Extensions() mbp[string]bny {
+	return mbp[string]bny{"code": "ErrBbtchChbngesDisbbledDotcom"}
 }
 
-type ErrEnsureBatchChangeFailed struct{}
+type ErrEnsureBbtchChbngeFbiled struct{}
 
-func (e ErrEnsureBatchChangeFailed) Error() string {
-	return "a batch change in the given namespace and with the given name exists but does not match the given ID"
+func (e ErrEnsureBbtchChbngeFbiled) Error() string {
+	return "b bbtch chbnge in the given nbmespbce bnd with the given nbme exists but does not mbtch the given ID"
 }
 
-func (e ErrEnsureBatchChangeFailed) Extensions() map[string]any {
-	return map[string]any{"code": "ErrEnsureBatchChangeFailed"}
+func (e ErrEnsureBbtchChbngeFbiled) Extensions() mbp[string]bny {
+	return mbp[string]bny{"code": "ErrEnsureBbtchChbngeFbiled"}
 }
 
-type ErrApplyClosedBatchChange struct{}
+type ErrApplyClosedBbtchChbnge struct{}
 
-func (e ErrApplyClosedBatchChange) Error() string {
-	return "existing batch change matched by batch spec is closed"
+func (e ErrApplyClosedBbtchChbnge) Error() string {
+	return "existing bbtch chbnge mbtched by bbtch spec is closed"
 }
 
-func (e ErrApplyClosedBatchChange) Extensions() map[string]any {
-	return map[string]any{"code": "ErrApplyClosedBatchChange"}
+func (e ErrApplyClosedBbtchChbnge) Extensions() mbp[string]bny {
+	return mbp[string]bny{"code": "ErrApplyClosedBbtchChbnge"}
 }
 
-type ErrMatchingBatchChangeExists struct{}
+type ErrMbtchingBbtchChbngeExists struct{}
 
-func (e ErrMatchingBatchChangeExists) Error() string {
-	return "a batch change matching the given batch spec already exists"
+func (e ErrMbtchingBbtchChbngeExists) Error() string {
+	return "b bbtch chbnge mbtching the given bbtch spec blrebdy exists"
 }
 
-func (e ErrMatchingBatchChangeExists) Extensions() map[string]any {
-	return map[string]any{"code": "ErrMatchingBatchChangeExists"}
+func (e ErrMbtchingBbtchChbngeExists) Extensions() mbp[string]bny {
+	return mbp[string]bny{"code": "ErrMbtchingBbtchChbngeExists"}
 }
 
-type ErrDuplicateCredential struct{}
+type ErrDuplicbteCredentibl struct{}
 
-func (e ErrDuplicateCredential) Error() string {
-	return "a credential for this code host already exists"
+func (e ErrDuplicbteCredentibl) Error() string {
+	return "b credentibl for this code host blrebdy exists"
 }
 
-func (e ErrDuplicateCredential) Extensions() map[string]any {
-	return map[string]any{"code": "ErrDuplicateCredential"}
+func (e ErrDuplicbteCredentibl) Extensions() mbp[string]bny {
+	return mbp[string]bny{"code": "ErrDuplicbteCredentibl"}
 }
 
-type ErrVerifyCredentialFailed struct {
+type ErrVerifyCredentiblFbiled struct {
 	SourceErr error
 }
 
-func (e ErrVerifyCredentialFailed) Error() string {
-	return fmt.Sprintf("Failed to verify the credential:\n```\n%s\n```\n", e.SourceErr)
+func (e ErrVerifyCredentiblFbiled) Error() string {
+	return fmt.Sprintf("Fbiled to verify the credentibl:\n```\n%s\n```\n", e.SourceErr)
 }
 
-func (e ErrVerifyCredentialFailed) Extensions() map[string]any {
-	return map[string]any{"code": "ErrVerifyCredentialFailed"}
+func (e ErrVerifyCredentiblFbiled) Extensions() mbp[string]bny {
+	return mbp[string]bny{"code": "ErrVerifyCredentiblFbiled"}
 }

@@ -1,25 +1,25 @@
-package writer
+pbckbge writer
 
 import (
 	"io"
 	"os"
-	"path/filepath"
+	"pbth/filepbth"
 	"strings"
 	"time"
 )
 
-// findNewestFile lists the directory and returns the newest file's path, prepended with dir.
+// findNewestFile lists the directory bnd returns the newest file's pbth, prepended with dir.
 func findNewestFile(dir string) (string, error) {
-	files, err := os.ReadDir(dir)
+	files, err := os.RebdDir(dir)
 	if err != nil {
 		return "", nil
 	}
 
-	var mostRecentTime time.Time
+	vbr mostRecentTime time.Time
 	newest := ""
-	for _, fi := range files {
-		if fi.Type().IsRegular() {
-			if !strings.HasSuffix(fi.Name(), ".zip") {
+	for _, fi := rbnge files {
+		if fi.Type().IsRegulbr() {
+			if !strings.HbsSuffix(fi.Nbme(), ".zip") {
 				continue
 			}
 
@@ -30,7 +30,7 @@ func findNewestFile(dir string) (string, error) {
 
 			if newest == "" || info.ModTime().After(mostRecentTime) {
 				mostRecentTime = info.ModTime()
-				newest = filepath.Join(dir, fi.Name())
+				newest = filepbth.Join(dir, fi.Nbme())
 			}
 		}
 	}

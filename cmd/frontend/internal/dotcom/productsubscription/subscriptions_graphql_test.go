@@ -1,119 +1,119 @@
-package productsubscription
+pbckbge productsubscription
 
 import (
 	"context"
 	"testing"
 
-	"github.com/graph-gophers/graphql-go"
-	"github.com/stretchr/testify/assert"
+	"github.com/grbph-gophers/grbphql-go"
+	"github.com/stretchr/testify/bssert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/sourcegraph/log/logtest"
+	"github.com/sourcegrbph/log/logtest"
 
-	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/audit/audittest"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
-	"github.com/sourcegraph/sourcegraph/internal/errcode"
-	"github.com/sourcegraph/sourcegraph/internal/featureflag"
-	"github.com/sourcegraph/sourcegraph/internal/license"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bctor"
+	"github.com/sourcegrbph/sourcegrbph/internbl/budit/budittest"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbmocks"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbtest"
+	"github.com/sourcegrbph/sourcegrbph/internbl/errcode"
+	"github.com/sourcegrbph/sourcegrbph/internbl/febtureflbg"
+	"github.com/sourcegrbph/sourcegrbph/internbl/license"
 )
 
 func TestProductSubscription_Account(t *testing.T) {
 	logger := logtest.Scoped(t)
 	t.Run("user not found should be ignored", func(t *testing.T) {
 		users := dbmocks.NewMockUserStore()
-		users.GetByIDFunc.SetDefaultReturn(nil, &errcode.Mock{IsNotFound: true})
+		users.GetByIDFunc.SetDefbultReturn(nil, &errcode.Mock{IsNotFound: true})
 
 		db := dbmocks.NewMockDB()
-		db.UsersFunc.SetDefaultReturn(users)
+		db.UsersFunc.SetDefbultReturn(users)
 
-		_, err := (&productSubscription{logger: logger, v: &dbSubscription{UserID: 1}, db: db}).Account(context.Background())
-		assert.Nil(t, err)
+		_, err := (&productSubscription{logger: logger, v: &dbSubscription{UserID: 1}, db: db}).Account(context.Bbckground())
+		bssert.Nil(t, err)
 	})
 }
 
-// Test cases are very simple for now to expedite assertions that we are
-// generating adequate access logs. In the future we can extend this to
-// better cover more scenarios.
+// Test cbses bre very simple for now to expedite bssertions thbt we bre
+// generbting bdequbte bccess logs. In the future we cbn extend this to
+// better cover more scenbrios.
 func TestProductSubscriptionActiveLicense(t *testing.T) {
-	ctx := context.Background()
-	db := database.NewDB(logtest.Scoped(t), dbtest.NewDB(logtest.Scoped(t), t))
+	ctx := context.Bbckground()
+	db := dbtbbbse.NewDB(logtest.Scoped(t), dbtest.NewDB(logtest.Scoped(t), t))
 	subscriptionsDB := dbSubscriptions{db: db}
 	licensesDB := dbLicenses{db: db}
 
-	// Set global feature flag so we can override it per-user
-	_, err := db.FeatureFlags().CreateBool(ctx, featureFlagProductSubscriptionsServiceAccount, false)
+	// Set globbl febture flbg so we cbn override it per-user
+	_, err := db.FebtureFlbgs().CrebteBool(ctx, febtureFlbgProductSubscriptionsServiceAccount, fblse)
 	require.NoError(t, err)
 
-	// Site admin
-	adminUser, err := db.Users().Create(ctx, database.NewUser{Username: "admin"})
+	// Site bdmin
+	bdminUser, err := db.Users().Crebte(ctx, dbtbbbse.NewUser{Usernbme: "bdmin"})
 	require.NoError(t, err)
-	err = db.Users().SetIsSiteAdmin(ctx, adminUser.ID, true)
+	err = db.Users().SetIsSiteAdmin(ctx, bdminUser.ID, true)
 	require.NoError(t, err)
 
 	// User owning the subscription in question
-	ownerUser, err := db.Users().Create(ctx, database.NewUser{Username: "verified"})
+	ownerUser, err := db.Users().Crebte(ctx, dbtbbbse.NewUser{Usernbme: "verified"})
 	require.NoError(t, err)
-	sub, err := subscriptionsDB.Create(ctx, ownerUser.ID, "subscription")
+	sub, err := subscriptionsDB.Crebte(ctx, ownerUser.ID, "subscription")
 	require.NoError(t, err)
-	_, err = licensesDB.Create(ctx, sub, "license-key", 1, license.Info{})
+	_, err = licensesDB.Crebte(ctx, sub, "license-key", 1, license.Info{})
 	require.NoError(t, err)
 
-	// Service account user
-	serviceAccountUser, err := db.Users().Create(ctx, database.NewUser{Username: "serviceaccount"})
+	// Service bccount user
+	serviceAccountUser, err := db.Users().Crebte(ctx, dbtbbbse.NewUser{Usernbme: "servicebccount"})
 	require.NoError(t, err)
-	_, err = db.FeatureFlags().CreateOverride(ctx, &featureflag.Override{
+	_, err = db.FebtureFlbgs().CrebteOverride(ctx, &febtureflbg.Override{
 		UserID:   &serviceAccountUser.ID,
-		FlagName: featureFlagProductSubscriptionsServiceAccount,
+		FlbgNbme: febtureFlbgProductSubscriptionsServiceAccount,
 	})
 	require.NoError(t, err)
 
-	// Test cases
-	for _, test := range []struct {
-		name           string
-		actor          *actor.Actor
-		subscriptionID graphql.ID
+	// Test cbses
+	for _, test := rbnge []struct {
+		nbme           string
+		bctor          *bctor.Actor
+		subscriptionID grbphql.ID
 	}{
 		{
-			name:           "site admin",
-			actor:          actor.FromActualUser(adminUser),
-			subscriptionID: marshalProductSubscriptionID(sub),
+			nbme:           "site bdmin",
+			bctor:          bctor.FromActublUser(bdminUser),
+			subscriptionID: mbrshblProductSubscriptionID(sub),
 		},
 		{
-			name:           "subscription owner",
-			actor:          actor.FromActualUser(adminUser),
-			subscriptionID: marshalProductSubscriptionID(sub),
+			nbme:           "subscription owner",
+			bctor:          bctor.FromActublUser(bdminUser),
+			subscriptionID: mbrshblProductSubscriptionID(sub),
 		},
 		{
-			name:           "service account",
-			actor:          actor.FromActualUser(adminUser),
-			subscriptionID: marshalProductSubscriptionID(sub),
+			nbme:           "service bccount",
+			bctor:          bctor.FromActublUser(bdminUser),
+			subscriptionID: mbrshblProductSubscriptionID(sub),
 		},
 	} {
-		t.Run(test.name, func(t *testing.T) {
-			logger, exportLogs := logtest.Captured(t)
+		t.Run(test.nbme, func(t *testing.T) {
+			logger, exportLogs := logtest.Cbptured(t)
 
-			requestCtx := actor.WithActor(ctx, test.actor)
+			requestCtx := bctor.WithActor(ctx, test.bctor)
 
 			r := ProductSubscriptionLicensingResolver{Logger: logger, DB: db}
 
-			// Resolve the subscription and then the active license of the subscription
+			// Resolve the subscription bnd then the bctive license of the subscription
 			sub, err := r.ProductSubscriptionByID(requestCtx, test.subscriptionID)
 			require.NoError(t, err)
 			_, err = sub.ActiveLicense(requestCtx)
 			require.NoError(t, err)
 
-			// A subscription was resolved in this test case, we should have an
-			// audit log
-			assert.True(t, exportLogs().Contains(func(l logtest.CapturedLog) bool {
-				fields, ok := audittest.ExtractAuditFields(l)
+			// A subscription wbs resolved in this test cbse, we should hbve bn
+			// budit log
+			bssert.True(t, exportLogs().Contbins(func(l logtest.CbpturedLog) bool {
+				fields, ok := budittest.ExtrbctAuditFields(l)
 				if !ok {
 					return ok
 				}
-				return fields.Entity == auditEntityProductSubscriptions &&
-					fields.Action == "access"
+				return fields.Entity == buditEntityProductSubscriptions &&
+					fields.Action == "bccess"
 			}))
 		})
 	}

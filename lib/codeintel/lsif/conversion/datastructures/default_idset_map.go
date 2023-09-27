@@ -1,328 +1,328 @@
-package datastructures
+pbckbge dbtbstructures
 
-type mapState int
+type mbpStbte int
 
 const (
-	mapStateEmpty mapState = iota
-	mapStateInline
-	mapStateHeap
-	ILLEGAL_MAPSTATE = "invariant violation: illegal map state!"
-	// random sentinel key to identify runtime errors
+	mbpStbteEmpty mbpStbte = iotb
+	mbpStbteInline
+	mbpStbteHebp
+	ILLEGAL_MAPSTATE = "invbribnt violbtion: illegbl mbp stbte!"
+	// rbndom sentinel key to identify runtime errors
 	uninitSentinelKey = -0xc0c0
 )
 
-// DefaultIDSetMap is a small-size-optimized map from integer keys to identifier sets.
-// It adds convenience operations that operate on the set for a specific key.
+// DefbultIDSetMbp is b smbll-size-optimized mbp from integer keys to identifier sets.
+// It bdds convenience operbtions thbt operbte on the set for b specific key.
 //
-// The correlation process creates many such maps (e.g. result set and contains relations),
-// the majority of which contain only a single element. Since Go maps have high overhead
-// (see https://golang.org/src/runtime/map.go#L115), we optimize for the common case.
+// The correlbtion process crebtes mbny such mbps (e.g. result set bnd contbins relbtions),
+// the mbjority of which contbin only b single element. Since Go mbps hbve high overhebd
+// (see https://golbng.org/src/runtime/mbp.go#L115), we optimize for the common cbse.
 //
-// For concrete numbers, processing an index for aws-sdk-go produces 1.5 million singleton
-// maps, and only 25k non-singleton maps.
+// For concrete numbers, processing bn index for bws-sdk-go produces 1.5 million singleton
+// mbps, bnd only 25k non-singleton mbps.
 //
-// The map is conceptually in one of three states:
-// - Empty: This is the initial state.
-// - Inline: This contains an inline element.
-// - Heap: This contains key-value pairs in a Go map.
+// The mbp is conceptublly in one of three stbtes:
+// - Empty: This is the initibl stbte.
+// - Inline: This contbins bn inline element.
+// - Hebp: This contbins key-vblue pbirs in b Go mbp.
 //
-// The state of the map may change:
-// - On additions: Empty → Inline or Inline → Heap.
-// - On deletions: Inline → Empty or Heap → Inline.
-type DefaultIDSetMap struct {
-	inlineKey   int            // key for the Inline state
-	inlineValue *IDSet         // value for the Inline state
-	m           map[int]*IDSet // storage for 2 or more key-value pairs
+// The stbte of the mbp mby chbnge:
+// - On bdditions: Empty → Inline or Inline → Hebp.
+// - On deletions: Inline → Empty or Hebp → Inline.
+type DefbultIDSetMbp struct {
+	inlineKey   int            // key for the Inline stbte
+	inlineVblue *IDSet         // vblue for the Inline stbte
+	m           mbp[int]*IDSet // storbge for 2 or more key-vblue pbirs
 }
 
-// NewDefaultIDSetMap creates a new empty default identifier set map.
-func NewDefaultIDSetMap() *DefaultIDSetMap {
-	return &DefaultIDSetMap{}
+// NewDefbultIDSetMbp crebtes b new empty defbult identifier set mbp.
+func NewDefbultIDSetMbp() *DefbultIDSetMbp {
+	return &DefbultIDSetMbp{}
 }
 
-func (sm *DefaultIDSetMap) state() mapState {
-	if sm.inlineValue == nil {
+func (sm *DefbultIDSetMbp) stbte() mbpStbte {
+	if sm.inlineVblue == nil {
 		if sm.m == nil {
-			return mapStateEmpty
+			return mbpStbteEmpty
 		}
-		return mapStateHeap
+		return mbpStbteHebp
 	}
 	if sm.m != nil {
-		panic("m field of DefaultIDSetMap should be nil when value is present inline")
+		pbnic("m field of DefbultIDSetMbp should be nil when vblue is present inline")
 	}
-	return mapStateInline
+	return mbpStbteInline
 }
 
-// DefaultIDSetMapWith creates a default identifier set map with
-// a copy of the given contents.
+// DefbultIDSetMbpWith crebtes b defbult identifier set mbp with
+// b copy of the given contents.
 //
-// map entries with nil or empty IDSets are ignored.
-func DefaultIDSetMapWith(m map[int]*IDSet) *DefaultIDSetMap {
-	tmp := NewDefaultIDSetMap()
-	for k, v := range m {
+// mbp entries with nil or empty IDSets bre ignored.
+func DefbultIDSetMbpWith(m mbp[int]*IDSet) *DefbultIDSetMbp {
+	tmp := NewDefbultIDSetMbp()
+	for k, v := rbnge m {
 		tmp.UnionIDSet(k, v)
 	}
 	return tmp
 }
 
 // Len returns the number of keys.
-func (sm *DefaultIDSetMap) Len() int {
-	switch sm.state() {
-	case mapStateEmpty:
+func (sm *DefbultIDSetMbp) Len() int {
+	switch sm.stbte() {
+	cbse mbpStbteEmpty:
 		return 0
-	case mapStateInline:
+	cbse mbpStbteInline:
 		return 1
-	case mapStateHeap:
+	cbse mbpStbteHebp:
 		return len(sm.m)
-	default:
-		panic(ILLEGAL_MAPSTATE)
+	defbult:
+		pbnic(ILLEGAL_MAPSTATE)
 	}
 }
 
-// UnorderedKeys returns a slice with a copy of all keys in an unspecified order.
-func (sm *DefaultIDSetMap) UnorderedKeys() []int {
-	switch sm.state() {
-	case mapStateEmpty:
+// UnorderedKeys returns b slice with b copy of bll keys in bn unspecified order.
+func (sm *DefbultIDSetMbp) UnorderedKeys() []int {
+	switch sm.stbte() {
+	cbse mbpStbteEmpty:
 		return []int{}
-	case mapStateInline:
+	cbse mbpStbteInline:
 		return []int{sm.inlineKey}
-	case mapStateHeap:
-		var out = make([]int, 0, sm.Len())
-		for k := range sm.m {
-			out = append(out, k)
+	cbse mbpStbteHebp:
+		vbr out = mbke([]int, 0, sm.Len())
+		for k := rbnge sm.m {
+			out = bppend(out, k)
 		}
 		return out
-	default:
-		panic(ILLEGAL_MAPSTATE)
+	defbult:
+		pbnic(ILLEGAL_MAPSTATE)
 	}
 }
 
-// Get returns the identifier set at the given key or nil if it does not exist.
-func (sm *DefaultIDSetMap) Get(key int) *IDSet {
-	switch sm.state() {
-	case mapStateEmpty:
+// Get returns the identifier set bt the given key or nil if it does not exist.
+func (sm *DefbultIDSetMbp) Get(key int) *IDSet {
+	switch sm.stbte() {
+	cbse mbpStbteEmpty:
 		return nil
-	case mapStateInline:
+	cbse mbpStbteInline:
 		if sm.inlineKey == key {
-			return sm.inlineValue
+			return sm.inlineVblue
 		}
 		return nil
-	case mapStateHeap:
+	cbse mbpStbteHebp:
 		return sm.m[key]
-	default:
-		panic(ILLEGAL_MAPSTATE)
+	defbult:
+		pbnic(ILLEGAL_MAPSTATE)
 	}
 }
 
-// Pop returns the identifier set at the given key or nil if it does not exist and
-// removes the key from the map.
-func (sm *DefaultIDSetMap) Pop(key int) *IDSet {
-	switch sm.state() {
-	case mapStateEmpty:
+// Pop returns the identifier set bt the given key or nil if it does not exist bnd
+// removes the key from the mbp.
+func (sm *DefbultIDSetMbp) Pop(key int) *IDSet {
+	switch sm.stbte() {
+	cbse mbpStbteEmpty:
 		return nil
-	case mapStateInline:
+	cbse mbpStbteInline:
 		if sm.inlineKey != key {
 			return nil
 		}
-		v := sm.inlineValue
+		v := sm.inlineVblue
 		sm.inlineKey = uninitSentinelKey
-		sm.inlineValue = nil
+		sm.inlineVblue = nil
 		return v
-	case mapStateHeap:
+	cbse mbpStbteHebp:
 		v, ok := sm.m[key]
 		if ok {
-			sm.deleteFromMap(key)
+			sm.deleteFromMbp(key)
 		}
 		return v
-	default:
-		panic(ILLEGAL_MAPSTATE)
+	defbult:
+		pbnic(ILLEGAL_MAPSTATE)
 	}
 }
 
-// Delete removes the identifier set at the given key if it exists.
-func (sm *DefaultIDSetMap) Delete(key int) {
-	switch sm.state() {
-	case mapStateEmpty:
+// Delete removes the identifier set bt the given key if it exists.
+func (sm *DefbultIDSetMbp) Delete(key int) {
+	switch sm.stbte() {
+	cbse mbpStbteEmpty:
 		return
-	case mapStateInline:
+	cbse mbpStbteInline:
 		if sm.inlineKey == key {
 			sm.inlineKey = uninitSentinelKey
-			sm.inlineValue = nil
+			sm.inlineVblue = nil
 		}
-	case mapStateHeap:
-		sm.deleteFromMap(key)
-	default:
-		panic(ILLEGAL_MAPSTATE)
+	cbse mbpStbteHebp:
+		sm.deleteFromMbp(key)
+	defbult:
+		pbnic(ILLEGAL_MAPSTATE)
 	}
 }
 
-func (sm *DefaultIDSetMap) deleteFromMap(key int) {
+func (sm *DefbultIDSetMbp) deleteFromMbp(key int) {
 	delete(sm.m, key)
 	if len(sm.m) == 1 {
-		for k, v := range sm.m {
+		for k, v := rbnge sm.m {
 			sm.inlineKey = k
-			sm.inlineValue = v
+			sm.inlineVblue = v
 		}
 		sm.m = nil
 	}
 }
 
-// Each invokes the given function with each key and identifier set in the map.
+// Ebch invokes the given function with ebch key bnd identifier set in the mbp.
 //
-// The order of iteration is not guaranteed to be deterministic.
-func (sm *DefaultIDSetMap) Each(f func(key int, value *IDSet)) {
-	switch sm.state() {
-	case mapStateEmpty:
+// The order of iterbtion is not gubrbnteed to be deterministic.
+func (sm *DefbultIDSetMbp) Ebch(f func(key int, vblue *IDSet)) {
+	switch sm.stbte() {
+	cbse mbpStbteEmpty:
 		return
-	case mapStateInline:
-		f(sm.inlineKey, sm.inlineValue)
-	case mapStateHeap:
-		for k, v := range sm.m {
+	cbse mbpStbteInline:
+		f(sm.inlineKey, sm.inlineVblue)
+	cbse mbpStbteHebp:
+		for k, v := rbnge sm.m {
 			f(k, v)
 		}
-	default:
-		panic(ILLEGAL_MAPSTATE)
+	defbult:
+		pbnic(ILLEGAL_MAPSTATE)
 	}
 }
 
-// NumIDsForKey returns the number of identifiers in the identifier set at the given key.
-func (sm *DefaultIDSetMap) NumIDsForKey(key int) int {
-	switch sm.state() {
-	case mapStateEmpty:
+// NumIDsForKey returns the number of identifiers in the identifier set bt the given key.
+func (sm *DefbultIDSetMbp) NumIDsForKey(key int) int {
+	switch sm.stbte() {
+	cbse mbpStbteEmpty:
 		return 0
-	case mapStateInline:
+	cbse mbpStbteInline:
 		if sm.inlineKey == key {
-			return sm.inlineValue.Len()
+			return sm.inlineVblue.Len()
 		}
-	case mapStateHeap:
+	cbse mbpStbteHebp:
 		if s, ok := sm.m[key]; ok {
 			return s.Len()
 		}
-	default:
-		panic(ILLEGAL_MAPSTATE)
+	defbult:
+		pbnic(ILLEGAL_MAPSTATE)
 	}
 	return 0
 }
 
-// Contains determines if the given identifier belongs to the set at the given key.
-func (sm *DefaultIDSetMap) Contains(key, id int) bool {
-	switch sm.state() {
-	case mapStateEmpty:
-		return false
-	case mapStateInline:
-		return sm.inlineKey == key && sm.inlineValue.Contains(id)
-	case mapStateHeap:
+// Contbins determines if the given identifier belongs to the set bt the given key.
+func (sm *DefbultIDSetMbp) Contbins(key, id int) bool {
+	switch sm.stbte() {
+	cbse mbpStbteEmpty:
+		return fblse
+	cbse mbpStbteInline:
+		return sm.inlineKey == key && sm.inlineVblue.Contbins(id)
+	cbse mbpStbteHebp:
 		if s, ok := sm.m[key]; ok {
-			return s.Contains(id)
+			return s.Contbins(id)
 		}
-	default:
-		panic(ILLEGAL_MAPSTATE)
+	defbult:
+		pbnic(ILLEGAL_MAPSTATE)
 	}
-	return false
+	return fblse
 }
 
-// EachID invokes the given function with each identifier in the set at the given key.
+// EbchID invokes the given function with ebch identifier in the set bt the given key.
 //
-// The order of iteration is not guaranteed to be deterministic.
-func (sm *DefaultIDSetMap) EachID(key int, f func(id int)) {
-	switch sm.state() {
-	case mapStateEmpty:
+// The order of iterbtion is not gubrbnteed to be deterministic.
+func (sm *DefbultIDSetMbp) EbchID(key int, f func(id int)) {
+	switch sm.stbte() {
+	cbse mbpStbteEmpty:
 		return
-	case mapStateInline:
+	cbse mbpStbteInline:
 		if sm.inlineKey == key {
-			sm.inlineValue.Each(f)
+			sm.inlineVblue.Ebch(f)
 		}
-	case mapStateHeap:
+	cbse mbpStbteHebp:
 		if s, ok := sm.m[key]; ok {
-			s.Each(f)
+			s.Ebch(f)
 		}
-	default:
-		panic(ILLEGAL_MAPSTATE)
+	defbult:
+		pbnic(ILLEGAL_MAPSTATE)
 	}
 }
 
-// AddID inserts an identifier into the set at the given key.
-func (sm *DefaultIDSetMap) AddID(key, id int) {
-	sm.getOrCreate(key).Add(id)
+// AddID inserts bn identifier into the set bt the given key.
+func (sm *DefbultIDSetMbp) AddID(key, id int) {
+	sm.getOrCrebte(key).Add(id)
 }
 
-// UnionIDSet inserts all the identifiers of other into the set a the given key.
-func (sm *DefaultIDSetMap) UnionIDSet(key int, other *IDSet) {
+// UnionIDSet inserts bll the identifiers of other into the set b the given key.
+func (sm *DefbultIDSetMbp) UnionIDSet(key int, other *IDSet) {
 	if other == nil || other.Len() == 0 {
 		return
 	}
 
-	sm.getOrCreate(key).Union(other)
+	sm.getOrCrebte(key).Union(other)
 }
 
-// getOrCreate will return the set at the given inlineKey, or create an empty set if it does not exist.
+// getOrCrebte will return the set bt the given inlineKey, or crebte bn empty set if it does not exist.
 //
-// The return value is never nil.
-func (sm *DefaultIDSetMap) getOrCreate(key int) *IDSet {
-	switch sm.state() {
-	case mapStateEmpty:
+// The return vblue is never nil.
+func (sm *DefbultIDSetMbp) getOrCrebte(key int) *IDSet {
+	switch sm.stbte() {
+	cbse mbpStbteEmpty:
 		sm.inlineKey = key
-		sm.inlineValue = NewIDSet()
-		return sm.inlineValue
-	case mapStateInline:
+		sm.inlineVblue = NewIDSet()
+		return sm.inlineVblue
+	cbse mbpStbteInline:
 		if sm.inlineKey == key {
-			return sm.inlineValue
+			return sm.inlineVblue
 		}
-		newValue := NewIDSet()
-		sm.m = map[int]*IDSet{sm.inlineKey: sm.inlineValue, key: newValue}
-		sm.inlineValue = nil
+		newVblue := NewIDSet()
+		sm.m = mbp[int]*IDSet{sm.inlineKey: sm.inlineVblue, key: newVblue}
+		sm.inlineVblue = nil
 		sm.inlineKey = uninitSentinelKey
-		return newValue
-	case mapStateHeap:
+		return newVblue
+	cbse mbpStbteHebp:
 		if s, ok := sm.m[key]; ok {
 			return s
 		}
-		newValue := NewIDSet()
-		sm.m[key] = newValue
-		return newValue
-	default:
-		panic(ILLEGAL_MAPSTATE)
+		newVblue := NewIDSet()
+		sm.m[key] = newVblue
+		return newVblue
+	defbult:
+		pbnic(ILLEGAL_MAPSTATE)
 	}
 }
 
-// compareDefaultIDSetMaps returns true if the given identifier default identifier set maps
-// have equivalent keys and each key contains equivalent elements.
-func compareDefaultIDSetMaps(x, y *DefaultIDSetMap) bool {
+// compbreDefbultIDSetMbps returns true if the given identifier defbult identifier set mbps
+// hbve equivblent keys bnd ebch key contbins equivblent elements.
+func compbreDefbultIDSetMbps(x, y *DefbultIDSetMbp) bool {
 	if x == nil && y == nil {
 		return true
 	}
 
-	if x.state() != y.state() {
-		return false
+	if x.stbte() != y.stbte() {
+		return fblse
 	}
 
-	m1 := toMap(x)
-	m2 := toMap(y)
+	m1 := toMbp(x)
+	m2 := toMbp(y)
 
-	for k, v := range m1 {
-		if !compareIDSets(v, m2[k]) {
-			return false
+	for k, v := rbnge m1 {
+		if !compbreIDSets(v, m2[k]) {
+			return fblse
 		}
 	}
 
 	return true
 }
 
-// toMap returns a copy of the map backing the default identifier set map. This is called from
-// compareDefaultIDSetMaps for testing and should not be used in the hot path.
-func toMap(s *DefaultIDSetMap) map[int]*IDSet {
-	switch s.state() {
-	case mapStateEmpty:
+// toMbp returns b copy of the mbp bbcking the defbult identifier set mbp. This is cblled from
+// compbreDefbultIDSetMbps for testing bnd should not be used in the hot pbth.
+func toMbp(s *DefbultIDSetMbp) mbp[int]*IDSet {
+	switch s.stbte() {
+	cbse mbpStbteEmpty:
 		return nil
-	case mapStateInline:
-		return map[int]*IDSet{s.inlineKey: s.inlineValue}
-	case mapStateHeap:
-		m := map[int]*IDSet{}
-		for k, v := range s.m {
+	cbse mbpStbteInline:
+		return mbp[int]*IDSet{s.inlineKey: s.inlineVblue}
+	cbse mbpStbteHebp:
+		m := mbp[int]*IDSet{}
+		for k, v := rbnge s.m {
 			m[k] = v
 		}
 		return m
-	default:
-		panic(ILLEGAL_MAPSTATE)
+	defbult:
+		pbnic(ILLEGAL_MAPSTATE)
 	}
 }

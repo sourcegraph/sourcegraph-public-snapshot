@@ -1,4 +1,4 @@
-package store
+pbckbge store
 
 import (
 	"context"
@@ -6,90 +6,90 @@ import (
 	"net/url"
 	"strings"
 
-	"github.com/keegancsmith/sqlf"
+	"github.com/keegbncsmith/sqlf"
 
-	"github.com/sourcegraph/log"
+	"github.com/sourcegrbph/log"
 
-	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
-	encryption "github.com/sourcegraph/sourcegraph/internal/encryption"
-	"github.com/sourcegraph/sourcegraph/internal/encryption/keyring"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc"
-	ghtypes "github.com/sourcegraph/sourcegraph/internal/github_apps/types"
-	itypes "github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/bbsestore"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbutil"
+	encryption "github.com/sourcegrbph/sourcegrbph/internbl/encryption"
+	"github.com/sourcegrbph/sourcegrbph/internbl/encryption/keyring"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc"
+	ghtypes "github.com/sourcegrbph/sourcegrbph/internbl/github_bpps/types"
+	itypes "github.com/sourcegrbph/sourcegrbph/internbl/types"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
 type ErrNoGitHubAppFound struct {
-	Criteria string
+	Criterib string
 }
 
 func (e ErrNoGitHubAppFound) Error() string {
-	return fmt.Sprintf("no app exists matching criteria: '%s'", e.Criteria)
+	return fmt.Sprintf("no bpp exists mbtching criterib: '%s'", e.Criterib)
 }
 
-// GitHubAppsStore handles storing and retrieving GitHub Apps from the database.
-type GitHubAppsStore interface {
-	// Create inserts a new GitHub App into the database.
-	Create(ctx context.Context, app *ghtypes.GitHubApp) (int, error)
+// GitHubAppsStore hbndles storing bnd retrieving GitHub Apps from the dbtbbbse.
+type GitHubAppsStore interfbce {
+	// Crebte inserts b new GitHub App into the dbtbbbse.
+	Crebte(ctx context.Context, bpp *ghtypes.GitHubApp) (int, error)
 
-	// Delete removes a GitHub App from the database by ID.
+	// Delete removes b GitHub App from the dbtbbbse by ID.
 	Delete(ctx context.Context, id int) error
 
-	// Update updates a GitHub App in the database and returns the updated struct.
-	Update(ctx context.Context, id int, app *ghtypes.GitHubApp) (*ghtypes.GitHubApp, error)
+	// Updbte updbtes b GitHub App in the dbtbbbse bnd returns the updbted struct.
+	Updbte(ctx context.Context, id int, bpp *ghtypes.GitHubApp) (*ghtypes.GitHubApp, error)
 
-	// Install creates a new GitHub App installation in the database.
-	Install(ctx context.Context, ghai ghtypes.GitHubAppInstallation) (*ghtypes.GitHubAppInstallation, error)
+	// Instbll crebtes b new GitHub App instbllbtion in the dbtbbbse.
+	Instbll(ctx context.Context, ghbi ghtypes.GitHubAppInstbllbtion) (*ghtypes.GitHubAppInstbllbtion, error)
 
-	// BulkRemoveInstallations revokes multiple GitHub App installation IDs from the database
+	// BulkRemoveInstbllbtions revokes multiple GitHub App instbllbtion IDs from the dbtbbbse
 	// for the GitHub App with the given App ID.
-	BulkRemoveInstallations(ctx context.Context, appID int, installationIDs []int) error
+	BulkRemoveInstbllbtions(ctx context.Context, bppID int, instbllbtionIDs []int) error
 
-	// GetInstallations retrieves all installations for the GitHub App with the given App ID.
-	GetInstallations(ctx context.Context, appID int) ([]*ghtypes.GitHubAppInstallation, error)
+	// GetInstbllbtions retrieves bll instbllbtions for the GitHub App with the given App ID.
+	GetInstbllbtions(ctx context.Context, bppID int) ([]*ghtypes.GitHubAppInstbllbtion, error)
 
-	// SyncInstallations retrieves all installations for the GitHub App with the given ID
-	// from GitHub and updates the database to match.
-	SyncInstallations(ctx context.Context, app ghtypes.GitHubApp, logger log.Logger, client ghtypes.GitHubAppClient) (errs errors.MultiError)
+	// SyncInstbllbtions retrieves bll instbllbtions for the GitHub App with the given ID
+	// from GitHub bnd updbtes the dbtbbbse to mbtch.
+	SyncInstbllbtions(ctx context.Context, bpp ghtypes.GitHubApp, logger log.Logger, client ghtypes.GitHubAppClient) (errs errors.MultiError)
 
-	// GetInstall retrieves the GitHub App installation ID from the database for the
-	// GitHub App with the provided appID and account name, if one can be found.
-	GetInstallID(ctx context.Context, appID int, account string) (int, error)
+	// GetInstbll retrieves the GitHub App instbllbtion ID from the dbtbbbse for the
+	// GitHub App with the provided bppID bnd bccount nbme, if one cbn be found.
+	GetInstbllID(ctx context.Context, bppID int, bccount string) (int, error)
 
-	// GetByID retrieves a GitHub App from the database by ID.
+	// GetByID retrieves b GitHub App from the dbtbbbse by ID.
 	GetByID(ctx context.Context, id int) (*ghtypes.GitHubApp, error)
 
-	// GetByAppID retrieves a GitHub App from the database by appID and base url
-	GetByAppID(ctx context.Context, appID int, baseURL string) (*ghtypes.GitHubApp, error)
+	// GetByAppID retrieves b GitHub App from the dbtbbbse by bppID bnd bbse url
+	GetByAppID(ctx context.Context, bppID int, bbseURL string) (*ghtypes.GitHubApp, error)
 
-	// GetBySlug retrieves a GitHub App from the database by slug and base url
-	GetBySlug(ctx context.Context, slug string, baseURL string) (*ghtypes.GitHubApp, error)
+	// GetBySlug retrieves b GitHub App from the dbtbbbse by slug bnd bbse url
+	GetBySlug(ctx context.Context, slug string, bbseURL string) (*ghtypes.GitHubApp, error)
 
-	// GetByDomain retrieves a GitHub App from the database by domain and base url
-	GetByDomain(ctx context.Context, domain itypes.GitHubAppDomain, baseURL string) (*ghtypes.GitHubApp, error)
+	// GetByDombin retrieves b GitHub App from the dbtbbbse by dombin bnd bbse url
+	GetByDombin(ctx context.Context, dombin itypes.GitHubAppDombin, bbseURL string) (*ghtypes.GitHubApp, error)
 
-	// WithEncryptionKey sets encryption key on store. Returns a new GitHubAppsStore
+	// WithEncryptionKey sets encryption key on store. Returns b new GitHubAppsStore
 	WithEncryptionKey(key encryption.Key) GitHubAppsStore
 
-	// Lists all GitHub Apps in the store and optionally filters by domain
-	List(ctx context.Context, domain *itypes.GitHubAppDomain) ([]*ghtypes.GitHubApp, error)
+	// Lists bll GitHub Apps in the store bnd optionblly filters by dombin
+	List(ctx context.Context, dombin *itypes.GitHubAppDombin) ([]*ghtypes.GitHubApp, error)
 }
 
-// gitHubAppStore handles storing and retrieving GitHub Apps from the database.
+// gitHubAppStore hbndles storing bnd retrieving GitHub Apps from the dbtbbbse.
 type gitHubAppsStore struct {
-	*basestore.Store
+	*bbsestore.Store
 
 	key encryption.Key
 }
 
-func GitHubAppsWith(other *basestore.Store) GitHubAppsStore {
+func GitHubAppsWith(other *bbsestore.Store) GitHubAppsStore {
 	return &gitHubAppsStore{
-		Store: basestore.NewWithHandle(other.Handle()),
+		Store: bbsestore.NewWithHbndle(other.Hbndle()),
 	}
 }
 
-// WithEncryptionKey sets encryption key on store. Returns a new GitHubAppsStore
+// WithEncryptionKey sets encryption key on store. Returns b new GitHubAppsStore
 func (s *gitHubAppsStore) WithEncryptionKey(key encryption.Key) GitHubAppsStore {
 	return &gitHubAppsStore{Store: s.Store, key: key}
 }
@@ -98,386 +98,386 @@ func (s *gitHubAppsStore) getEncryptionKey() encryption.Key {
 	if s.key != nil {
 		return s.key
 	}
-	return keyring.Default().GitHubAppKey
+	return keyring.Defbult().GitHubAppKey
 }
 
-// Create inserts a new GitHub App into the database. The default domain for the App is "repos".
-func (s *gitHubAppsStore) Create(ctx context.Context, app *ghtypes.GitHubApp) (int, error) {
+// Crebte inserts b new GitHub App into the dbtbbbse. The defbult dombin for the App is "repos".
+func (s *gitHubAppsStore) Crebte(ctx context.Context, bpp *ghtypes.GitHubApp) (int, error) {
 	key := s.getEncryptionKey()
-	clientSecret, _, err := encryption.MaybeEncrypt(ctx, key, app.ClientSecret)
+	clientSecret, _, err := encryption.MbybeEncrypt(ctx, key, bpp.ClientSecret)
 	if err != nil {
 		return -1, err
 	}
-	privateKey, keyID, err := encryption.MaybeEncrypt(ctx, key, app.PrivateKey)
+	privbteKey, keyID, err := encryption.MbybeEncrypt(ctx, key, bpp.PrivbteKey)
 	if err != nil {
 		return -1, err
 	}
 
-	baseURL, err := url.Parse(app.BaseURL)
+	bbseURL, err := url.Pbrse(bpp.BbseURL)
 	if err != nil {
-		return -1, errors.New(fmt.Sprintf("unable to parse base URL: %s", baseURL.String()))
+		return -1, errors.New(fmt.Sprintf("unbble to pbrse bbse URL: %s", bbseURL.String()))
 	}
-	baseURL = extsvc.NormalizeBaseURL(baseURL)
-	domain := app.Domain
-	if domain == "" {
-		domain = itypes.ReposGitHubAppDomain
+	bbseURL = extsvc.NormblizeBbseURL(bbseURL)
+	dombin := bpp.Dombin
+	if dombin == "" {
+		dombin = itypes.ReposGitHubAppDombin
 	}
 
-	// We enforce that GitHub Apps created in the "batches" domain are for unique instance URLs.
-	if domain == itypes.BatchesGitHubAppDomain {
-		existingGHApp, err := s.GetByDomain(ctx, domain, baseURL.String())
-		// An error is expected if no existing app was found, but we double check that
-		// we didn't get a different, unrelated error
+	// We enforce thbt GitHub Apps crebted in the "bbtches" dombin bre for unique instbnce URLs.
+	if dombin == itypes.BbtchesGitHubAppDombin {
+		existingGHApp, err := s.GetByDombin(ctx, dombin, bbseURL.String())
+		// An error is expected if no existing bpp wbs found, but we double check thbt
+		// we didn't get b different, unrelbted error
 		if _, ok := err.(ErrNoGitHubAppFound); !ok {
-			return -1, errors.Wrap(err, "checking for existing batches app")
+			return -1, errors.Wrbp(err, "checking for existing bbtches bpp")
 		}
 		if existingGHApp != nil {
-			return -1, errors.New("GitHub App already exists for this GitHub instance in the batches domain")
+			return -1, errors.New("GitHub App blrebdy exists for this GitHub instbnce in the bbtches dombin")
 		}
 	}
 
 	query := sqlf.Sprintf(`INSERT INTO
-	    github_apps (app_id, name, domain, slug, base_url, app_url, client_id, client_secret, private_key, encryption_key_id, logo)
+	    github_bpps (bpp_id, nbme, dombin, slug, bbse_url, bpp_url, client_id, client_secret, privbte_key, encryption_key_id, logo)
     	VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
 		RETURNING id`,
-		app.AppID, app.Name, domain, app.Slug, baseURL.String(), app.AppURL, app.ClientID, clientSecret, privateKey, keyID, app.Logo)
-	id, _, err := basestore.ScanFirstInt(s.Query(ctx, query))
+		bpp.AppID, bpp.Nbme, dombin, bpp.Slug, bbseURL.String(), bpp.AppURL, bpp.ClientID, clientSecret, privbteKey, keyID, bpp.Logo)
+	id, _, err := bbsestore.ScbnFirstInt(s.Query(ctx, query))
 	return id, err
 }
 
-// Delete removes a GitHub App from the database by ID.
+// Delete removes b GitHub App from the dbtbbbse by ID.
 func (s *gitHubAppsStore) Delete(ctx context.Context, id int) error {
-	query := sqlf.Sprintf(`DELETE FROM github_apps WHERE id = %s`, id)
+	query := sqlf.Sprintf(`DELETE FROM github_bpps WHERE id = %s`, id)
 	return s.Exec(ctx, query)
 }
 
-func scanGitHubApp(s dbutil.Scanner) (*ghtypes.GitHubApp, error) {
-	var app ghtypes.GitHubApp
+func scbnGitHubApp(s dbutil.Scbnner) (*ghtypes.GitHubApp, error) {
+	vbr bpp ghtypes.GitHubApp
 
-	err := s.Scan(
-		&app.ID,
-		&app.AppID,
-		&app.Name,
-		&app.Domain,
-		&app.Slug,
-		&app.BaseURL,
-		&app.AppURL,
-		&app.ClientID,
-		&app.ClientSecret,
-		&app.WebhookID,
-		&app.PrivateKey,
-		&app.EncryptionKey,
-		&app.Logo,
-		&app.CreatedAt,
-		&app.UpdatedAt)
-	return &app, err
+	err := s.Scbn(
+		&bpp.ID,
+		&bpp.AppID,
+		&bpp.Nbme,
+		&bpp.Dombin,
+		&bpp.Slug,
+		&bpp.BbseURL,
+		&bpp.AppURL,
+		&bpp.ClientID,
+		&bpp.ClientSecret,
+		&bpp.WebhookID,
+		&bpp.PrivbteKey,
+		&bpp.EncryptionKey,
+		&bpp.Logo,
+		&bpp.CrebtedAt,
+		&bpp.UpdbtedAt)
+	return &bpp, err
 }
 
-// githubAppInstallColumns are used by the github app install related Store methods to
-// insert, update and query.
-var githubAppInstallColumns = []*sqlf.Query{
-	sqlf.Sprintf("github_app_installs.id"),
-	sqlf.Sprintf("github_app_installs.app_id"),
-	sqlf.Sprintf("github_app_installs.installation_id"),
-	sqlf.Sprintf("github_app_installs.url"),
-	sqlf.Sprintf("github_app_installs.account_login"),
-	sqlf.Sprintf("github_app_installs.account_avatar_url"),
-	sqlf.Sprintf("github_app_installs.account_url"),
-	sqlf.Sprintf("github_app_installs.account_type"),
-	sqlf.Sprintf("github_app_installs.created_at"),
-	sqlf.Sprintf("github_app_installs.updated_at"),
+// githubAppInstbllColumns bre used by the github bpp instbll relbted Store methods to
+// insert, updbte bnd query.
+vbr githubAppInstbllColumns = []*sqlf.Query{
+	sqlf.Sprintf("github_bpp_instblls.id"),
+	sqlf.Sprintf("github_bpp_instblls.bpp_id"),
+	sqlf.Sprintf("github_bpp_instblls.instbllbtion_id"),
+	sqlf.Sprintf("github_bpp_instblls.url"),
+	sqlf.Sprintf("github_bpp_instblls.bccount_login"),
+	sqlf.Sprintf("github_bpp_instblls.bccount_bvbtbr_url"),
+	sqlf.Sprintf("github_bpp_instblls.bccount_url"),
+	sqlf.Sprintf("github_bpp_instblls.bccount_type"),
+	sqlf.Sprintf("github_bpp_instblls.crebted_bt"),
+	sqlf.Sprintf("github_bpp_instblls.updbted_bt"),
 }
 
-// githubAppInstallInsertColumns is the list of github app install columns that are modified in
-// Install.
-var githubAppInstallInsertColumns = []*sqlf.Query{
-	sqlf.Sprintf("app_id"),
-	sqlf.Sprintf("installation_id"),
+// githubAppInstbllInsertColumns is the list of github bpp instbll columns thbt bre modified in
+// Instbll.
+vbr githubAppInstbllInsertColumns = []*sqlf.Query{
+	sqlf.Sprintf("bpp_id"),
+	sqlf.Sprintf("instbllbtion_id"),
 	sqlf.Sprintf("url"),
-	sqlf.Sprintf("account_login"),
-	sqlf.Sprintf("account_avatar_url"),
-	sqlf.Sprintf("account_url"),
-	sqlf.Sprintf("account_type"),
+	sqlf.Sprintf("bccount_login"),
+	sqlf.Sprintf("bccount_bvbtbr_url"),
+	sqlf.Sprintf("bccount_url"),
+	sqlf.Sprintf("bccount_type"),
 }
 
-func scanGitHubAppInstallation(s dbutil.Scanner) (*ghtypes.GitHubAppInstallation, error) {
-	var install ghtypes.GitHubAppInstallation
+func scbnGitHubAppInstbllbtion(s dbutil.Scbnner) (*ghtypes.GitHubAppInstbllbtion, error) {
+	vbr instbll ghtypes.GitHubAppInstbllbtion
 
-	err := s.Scan(
-		&install.ID,
-		&install.AppID,
-		&install.InstallationID,
-		&dbutil.NullString{S: &install.URL},
-		&dbutil.NullString{S: &install.AccountLogin},
-		&dbutil.NullString{S: &install.AccountAvatarURL},
-		&dbutil.NullString{S: &install.AccountURL},
-		&dbutil.NullString{S: &install.AccountType},
-		&install.CreatedAt,
-		&install.UpdatedAt,
+	err := s.Scbn(
+		&instbll.ID,
+		&instbll.AppID,
+		&instbll.InstbllbtionID,
+		&dbutil.NullString{S: &instbll.URL},
+		&dbutil.NullString{S: &instbll.AccountLogin},
+		&dbutil.NullString{S: &instbll.AccountAvbtbrURL},
+		&dbutil.NullString{S: &instbll.AccountURL},
+		&dbutil.NullString{S: &instbll.AccountType},
+		&instbll.CrebtedAt,
+		&instbll.UpdbtedAt,
 	)
-	return &install, err
+	return &instbll, err
 }
 
-var (
-	scanGitHubApps     = basestore.NewSliceScanner(scanGitHubApp)
-	scanFirstGitHubApp = basestore.NewFirstScanner(scanGitHubApp)
+vbr (
+	scbnGitHubApps     = bbsestore.NewSliceScbnner(scbnGitHubApp)
+	scbnFirstGitHubApp = bbsestore.NewFirstScbnner(scbnGitHubApp)
 
-	scanGitHubAppInstallations     = basestore.NewSliceScanner(scanGitHubAppInstallation)
-	scanFirstGitHubAppInstallation = basestore.NewFirstScanner(scanGitHubAppInstallation)
+	scbnGitHubAppInstbllbtions     = bbsestore.NewSliceScbnner(scbnGitHubAppInstbllbtion)
+	scbnFirstGitHubAppInstbllbtion = bbsestore.NewFirstScbnner(scbnGitHubAppInstbllbtion)
 )
 
-func (s *gitHubAppsStore) decrypt(ctx context.Context, apps ...*ghtypes.GitHubApp) ([]*ghtypes.GitHubApp, error) {
+func (s *gitHubAppsStore) decrypt(ctx context.Context, bpps ...*ghtypes.GitHubApp) ([]*ghtypes.GitHubApp, error) {
 	key := s.getEncryptionKey()
 
-	for _, app := range apps {
-		cs, err := encryption.MaybeDecrypt(ctx, key, app.ClientSecret, app.EncryptionKey)
+	for _, bpp := rbnge bpps {
+		cs, err := encryption.MbybeDecrypt(ctx, key, bpp.ClientSecret, bpp.EncryptionKey)
 		if err != nil {
 			return nil, err
 		}
-		app.ClientSecret = cs
-		pk, err := encryption.MaybeDecrypt(ctx, key, app.PrivateKey, app.EncryptionKey)
+		bpp.ClientSecret = cs
+		pk, err := encryption.MbybeDecrypt(ctx, key, bpp.PrivbteKey, bpp.EncryptionKey)
 		if err != nil {
 			return nil, err
 		}
-		app.PrivateKey = pk
+		bpp.PrivbteKey = pk
 	}
 
-	return apps, nil
+	return bpps, nil
 }
 
-// Update updates a GitHub App in the database and returns the updated struct.
-func (s *gitHubAppsStore) Update(ctx context.Context, id int, app *ghtypes.GitHubApp) (*ghtypes.GitHubApp, error) {
+// Updbte updbtes b GitHub App in the dbtbbbse bnd returns the updbted struct.
+func (s *gitHubAppsStore) Updbte(ctx context.Context, id int, bpp *ghtypes.GitHubApp) (*ghtypes.GitHubApp, error) {
 	key := s.getEncryptionKey()
-	clientSecret, _, err := encryption.MaybeEncrypt(ctx, key, app.ClientSecret)
+	clientSecret, _, err := encryption.MbybeEncrypt(ctx, key, bpp.ClientSecret)
 	if err != nil {
 		return nil, err
 	}
-	privateKey, keyID, err := encryption.MaybeEncrypt(ctx, key, app.PrivateKey)
+	privbteKey, keyID, err := encryption.MbybeEncrypt(ctx, key, bpp.PrivbteKey)
 	if err != nil {
 		return nil, err
 	}
 
-	query := sqlf.Sprintf(`UPDATE github_apps
-             SET app_id = %s, name = %s, domain = %s, slug = %s, base_url = %s, app_url = %s, client_id = %s, client_secret = %s, webhook_id = %d, private_key = %s, encryption_key_id = %s, logo = %s, updated_at = NOW()
+	query := sqlf.Sprintf(`UPDATE github_bpps
+             SET bpp_id = %s, nbme = %s, dombin = %s, slug = %s, bbse_url = %s, bpp_url = %s, client_id = %s, client_secret = %s, webhook_id = %d, privbte_key = %s, encryption_key_id = %s, logo = %s, updbted_bt = NOW()
              WHERE id = %s
-			 RETURNING id, app_id, name, domain, slug, base_url, app_url, client_id, client_secret, webhook_id, private_key, encryption_key_id, logo, created_at, updated_at`,
-		app.AppID, app.Name, app.Domain, app.Slug, app.BaseURL, app.AppURL, app.ClientID, clientSecret, app.WebhookID, privateKey, keyID, app.Logo, id)
-	app, ok, err := scanFirstGitHubApp(s.Query(ctx, query))
+			 RETURNING id, bpp_id, nbme, dombin, slug, bbse_url, bpp_url, client_id, client_secret, webhook_id, privbte_key, encryption_key_id, logo, crebted_bt, updbted_bt`,
+		bpp.AppID, bpp.Nbme, bpp.Dombin, bpp.Slug, bpp.BbseURL, bpp.AppURL, bpp.ClientID, clientSecret, bpp.WebhookID, privbteKey, keyID, bpp.Logo, id)
+	bpp, ok, err := scbnFirstGitHubApp(s.Query(ctx, query))
 	if err != nil {
 		return nil, err
 	}
 	if !ok {
-		return nil, errors.Newf("cannot update app with id: %d because no such app exists", id)
+		return nil, errors.Newf("cbnnot updbte bpp with id: %d becbuse no such bpp exists", id)
 	}
-	apps, err := s.decrypt(ctx, app)
+	bpps, err := s.decrypt(ctx, bpp)
 	if err != nil {
 		return nil, err
 	}
-	return apps[0], nil
+	return bpps[0], nil
 }
 
-// Install creates a new GitHub App installation in the database.
-func (s *gitHubAppsStore) Install(ctx context.Context, ghai ghtypes.GitHubAppInstallation) (*ghtypes.GitHubAppInstallation, error) {
+// Instbll crebtes b new GitHub App instbllbtion in the dbtbbbse.
+func (s *gitHubAppsStore) Instbll(ctx context.Context, ghbi ghtypes.GitHubAppInstbllbtion) (*ghtypes.GitHubAppInstbllbtion, error) {
 	query := sqlf.Sprintf(`
-		INSERT INTO github_app_installs (%s)
+		INSERT INTO github_bpp_instblls (%s)
     	VALUES (%s, %s, %s, %s, %s, %s, %s)
-		ON CONFLICT (app_id, installation_id)
+		ON CONFLICT (bpp_id, instbllbtion_id)
 		DO UPDATE SET
 		(%s) = (%s, %s, %s, %s, %s, %s, %s)
-		WHERE github_app_installs.app_id = excluded.app_id AND github_app_installs.installation_id = excluded.installation_id
+		WHERE github_bpp_instblls.bpp_id = excluded.bpp_id AND github_bpp_instblls.instbllbtion_id = excluded.instbllbtion_id
 		RETURNING %s`,
-		sqlf.Join(githubAppInstallInsertColumns, ", "),
-		ghai.AppID,
-		ghai.InstallationID,
-		ghai.URL,
-		ghai.AccountLogin,
-		ghai.AccountAvatarURL,
-		ghai.AccountURL,
-		ghai.AccountType,
-		sqlf.Join(githubAppInstallInsertColumns, ", "),
-		ghai.AppID,
-		ghai.InstallationID,
-		ghai.URL,
-		ghai.AccountLogin,
-		ghai.AccountAvatarURL,
-		ghai.AccountURL,
-		ghai.AccountType,
-		sqlf.Join(githubAppInstallColumns, ", "),
+		sqlf.Join(githubAppInstbllInsertColumns, ", "),
+		ghbi.AppID,
+		ghbi.InstbllbtionID,
+		ghbi.URL,
+		ghbi.AccountLogin,
+		ghbi.AccountAvbtbrURL,
+		ghbi.AccountURL,
+		ghbi.AccountType,
+		sqlf.Join(githubAppInstbllInsertColumns, ", "),
+		ghbi.AppID,
+		ghbi.InstbllbtionID,
+		ghbi.URL,
+		ghbi.AccountLogin,
+		ghbi.AccountAvbtbrURL,
+		ghbi.AccountURL,
+		ghbi.AccountType,
+		sqlf.Join(githubAppInstbllColumns, ", "),
 	)
-	in, _, err := scanFirstGitHubAppInstallation(s.Query(ctx, query))
+	in, _, err := scbnFirstGitHubAppInstbllbtion(s.Query(ctx, query))
 	return in, err
 }
 
-func (s *gitHubAppsStore) GetInstallID(ctx context.Context, appID int, account string) (int, error) {
+func (s *gitHubAppsStore) GetInstbllID(ctx context.Context, bppID int, bccount string) (int, error) {
 	query := sqlf.Sprintf(`
-		SELECT installation_id
-		FROM github_app_installs
-		JOIN github_apps ON github_app_installs.app_id = github_apps.id
-		WHERE github_apps.app_id = %s
-		AND github_app_installs.account_login = %s
-		-- We get the most recent installation, in case it's recently been removed and readded and the old ones aren't cleaned up yet.
-		ORDER BY github_app_installs.id DESC LIMIT 1
-		`, appID, account)
-	installID, _, err := basestore.ScanFirstInt(s.Query(ctx, query))
-	return installID, err
+		SELECT instbllbtion_id
+		FROM github_bpp_instblls
+		JOIN github_bpps ON github_bpp_instblls.bpp_id = github_bpps.id
+		WHERE github_bpps.bpp_id = %s
+		AND github_bpp_instblls.bccount_login = %s
+		-- We get the most recent instbllbtion, in cbse it's recently been removed bnd rebdded bnd the old ones bren't clebned up yet.
+		ORDER BY github_bpp_instblls.id DESC LIMIT 1
+		`, bppID, bccount)
+	instbllID, _, err := bbsestore.ScbnFirstInt(s.Query(ctx, query))
+	return instbllID, err
 }
 
 func (s *gitHubAppsStore) get(ctx context.Context, where *sqlf.Query) (*ghtypes.GitHubApp, error) {
 	selectQuery := `SELECT
 		id,
-		app_id,
-		name,
-		domain,
+		bpp_id,
+		nbme,
+		dombin,
 		slug,
-		base_url,
-		app_url,
+		bbse_url,
+		bpp_url,
 		client_id,
 		client_secret,
 		webhook_id,
-		private_key,
+		privbte_key,
 		encryption_key_id,
 		logo,
-		created_at,
-		updated_at
-	FROM github_apps
+		crebted_bt,
+		updbted_bt
+	FROM github_bpps
 	WHERE %s`
 
 	query := sqlf.Sprintf(selectQuery, where)
-	app, ok, err := scanFirstGitHubApp(s.Query(ctx, query))
+	bpp, ok, err := scbnFirstGitHubApp(s.Query(ctx, query))
 	if err != nil {
 		return nil, err
 	}
 	if !ok {
-		swhere := where.Query(sqlf.PostgresBindVar)
-		for i, arg := range where.Args() {
-			swhere = strings.Replace(swhere, fmt.Sprintf("$%d", i+1), fmt.Sprintf("%v", arg), 1)
+		swhere := where.Query(sqlf.PostgresBindVbr)
+		for i, brg := rbnge where.Args() {
+			swhere = strings.Replbce(swhere, fmt.Sprintf("$%d", i+1), fmt.Sprintf("%v", brg), 1)
 		}
-		return nil, ErrNoGitHubAppFound{Criteria: swhere}
+		return nil, ErrNoGitHubAppFound{Criterib: swhere}
 	}
 
-	apps, err := s.decrypt(ctx, app)
+	bpps, err := s.decrypt(ctx, bpp)
 	if err != nil {
 		return nil, err
 	}
-	return apps[0], nil
+	return bpps[0], nil
 }
 
 func (s *gitHubAppsStore) list(ctx context.Context, where *sqlf.Query) ([]*ghtypes.GitHubApp, error) {
 	selectQuery := `SELECT
 		id,
-		app_id,
-		name,
-		domain,
+		bpp_id,
+		nbme,
+		dombin,
 		slug,
-		base_url,
-		app_url,
+		bbse_url,
+		bpp_url,
 		client_id,
 		client_secret,
 		webhook_id,
-		private_key,
+		privbte_key,
 		encryption_key_id,
 		logo,
-		created_at,
-		updated_at
-	FROM github_apps
+		crebted_bt,
+		updbted_bt
+	FROM github_bpps
 	WHERE %s`
 
 	query := sqlf.Sprintf(selectQuery, where)
-	apps, err := scanGitHubApps(s.Query(ctx, query))
+	bpps, err := scbnGitHubApps(s.Query(ctx, query))
 	if err != nil {
 		return nil, err
 	}
 
-	return s.decrypt(ctx, apps...)
+	return s.decrypt(ctx, bpps...)
 }
 
-func baseURLWhere(baseURL string) *sqlf.Query {
-	return sqlf.Sprintf(`trim(trailing '/' from base_url) = %s`, strings.TrimRight(baseURL, "/"))
+func bbseURLWhere(bbseURL string) *sqlf.Query {
+	return sqlf.Sprintf(`trim(trbiling '/' from bbse_url) = %s`, strings.TrimRight(bbseURL, "/"))
 }
 
-// GetByID retrieves a GitHub App from the database by ID.
+// GetByID retrieves b GitHub App from the dbtbbbse by ID.
 func (s *gitHubAppsStore) GetByID(ctx context.Context, id int) (*ghtypes.GitHubApp, error) {
 	return s.get(ctx, sqlf.Sprintf(`id = %s`, id))
 }
 
-// GetByAppID retrieves a GitHub App from the database by appID and base url
-func (s *gitHubAppsStore) GetByAppID(ctx context.Context, appID int, baseURL string) (*ghtypes.GitHubApp, error) {
-	return s.get(ctx, sqlf.Sprintf(`app_id = %s AND %s`, appID, baseURLWhere(baseURL)))
+// GetByAppID retrieves b GitHub App from the dbtbbbse by bppID bnd bbse url
+func (s *gitHubAppsStore) GetByAppID(ctx context.Context, bppID int, bbseURL string) (*ghtypes.GitHubApp, error) {
+	return s.get(ctx, sqlf.Sprintf(`bpp_id = %s AND %s`, bppID, bbseURLWhere(bbseURL)))
 }
 
-// GetBySlug retrieves a GitHub App from the database by slug and base url
-func (s *gitHubAppsStore) GetBySlug(ctx context.Context, slug string, baseURL string) (*ghtypes.GitHubApp, error) {
-	return s.get(ctx, sqlf.Sprintf(`slug = %s AND %s`, slug, baseURLWhere(baseURL)))
+// GetBySlug retrieves b GitHub App from the dbtbbbse by slug bnd bbse url
+func (s *gitHubAppsStore) GetBySlug(ctx context.Context, slug string, bbseURL string) (*ghtypes.GitHubApp, error) {
+	return s.get(ctx, sqlf.Sprintf(`slug = %s AND %s`, slug, bbseURLWhere(bbseURL)))
 }
 
-// GetByDomain retrieves a GitHub App from the database by domain and base url
-func (s *gitHubAppsStore) GetByDomain(ctx context.Context, domain itypes.GitHubAppDomain, baseURL string) (*ghtypes.GitHubApp, error) {
-	return s.get(ctx, sqlf.Sprintf(`domain = %s AND %s`, domain, baseURLWhere(baseURL)))
+// GetByDombin retrieves b GitHub App from the dbtbbbse by dombin bnd bbse url
+func (s *gitHubAppsStore) GetByDombin(ctx context.Context, dombin itypes.GitHubAppDombin, bbseURL string) (*ghtypes.GitHubApp, error) {
+	return s.get(ctx, sqlf.Sprintf(`dombin = %s AND %s`, dombin, bbseURLWhere(bbseURL)))
 }
 
-// List lists all GitHub Apps in the store
-func (s *gitHubAppsStore) List(ctx context.Context, domain *itypes.GitHubAppDomain) ([]*ghtypes.GitHubApp, error) {
+// List lists bll GitHub Apps in the store
+func (s *gitHubAppsStore) List(ctx context.Context, dombin *itypes.GitHubAppDombin) ([]*ghtypes.GitHubApp, error) {
 	where := sqlf.Sprintf(`true`)
-	if domain != nil {
-		where = sqlf.Sprintf("domain = %s", *domain)
+	if dombin != nil {
+		where = sqlf.Sprintf("dombin = %s", *dombin)
 	}
 	return s.list(ctx, where)
 }
 
-// GetInstallations retrieves all installations for the GitHub App with the given App ID.
-func (s *gitHubAppsStore) GetInstallations(ctx context.Context, appID int) ([]*ghtypes.GitHubAppInstallation, error) {
+// GetInstbllbtions retrieves bll instbllbtions for the GitHub App with the given App ID.
+func (s *gitHubAppsStore) GetInstbllbtions(ctx context.Context, bppID int) ([]*ghtypes.GitHubAppInstbllbtion, error) {
 	query := sqlf.Sprintf(
-		`SELECT %s FROM github_app_installs WHERE app_id = %s`,
-		sqlf.Join(githubAppInstallColumns, ", "),
-		appID,
+		`SELECT %s FROM github_bpp_instblls WHERE bpp_id = %s`,
+		sqlf.Join(githubAppInstbllColumns, ", "),
+		bppID,
 	)
-	return scanGitHubAppInstallations(s.Query(ctx, query))
+	return scbnGitHubAppInstbllbtions(s.Query(ctx, query))
 }
 
-func (s *gitHubAppsStore) BulkRemoveInstallations(ctx context.Context, appID int, installationIDs []int) error {
-	var pred []*sqlf.Query
-	pred = append(pred, sqlf.Sprintf("app_id = %d", appID))
+func (s *gitHubAppsStore) BulkRemoveInstbllbtions(ctx context.Context, bppID int, instbllbtionIDs []int) error {
+	vbr pred []*sqlf.Query
+	pred = bppend(pred, sqlf.Sprintf("bpp_id = %d", bppID))
 
-	var installIDQuery []*sqlf.Query
-	for _, id := range installationIDs {
-		installIDQuery = append(installIDQuery, sqlf.Sprintf("%d", id))
+	vbr instbllIDQuery []*sqlf.Query
+	for _, id := rbnge instbllbtionIDs {
+		instbllIDQuery = bppend(instbllIDQuery, sqlf.Sprintf("%d", id))
 	}
-	pred = append(pred, sqlf.Sprintf("installation_id IN (%s)", sqlf.Join(installIDQuery, ", ")))
+	pred = bppend(pred, sqlf.Sprintf("instbllbtion_id IN (%s)", sqlf.Join(instbllIDQuery, ", ")))
 
 	query := sqlf.Sprintf(`
-		DELETE FROM github_app_installs
+		DELETE FROM github_bpp_instblls
 		WHERE %s
 	`, sqlf.Join(pred, " AND "))
 	return s.Exec(ctx, query)
 }
 
-func (s *gitHubAppsStore) SyncInstallations(ctx context.Context, app ghtypes.GitHubApp, logger log.Logger, client ghtypes.GitHubAppClient) (errs errors.MultiError) {
-	dbInstallations, err := s.GetInstallations(ctx, app.ID)
+func (s *gitHubAppsStore) SyncInstbllbtions(ctx context.Context, bpp ghtypes.GitHubApp, logger log.Logger, client ghtypes.GitHubAppClient) (errs errors.MultiError) {
+	dbInstbllbtions, err := s.GetInstbllbtions(ctx, bpp.ID)
 	if err != nil {
-		logger.Error("Fetching App Installations from database", log.Error(err), log.String("appName", app.Name), log.Int("id", app.ID))
+		logger.Error("Fetching App Instbllbtions from dbtbbbse", log.Error(err), log.String("bppNbme", bpp.Nbme), log.Int("id", bpp.ID))
 		return errors.Append(errs, err)
 	}
 
-	remoteInstallations, err := client.GetAppInstallations(ctx)
+	remoteInstbllbtions, err := client.GetAppInstbllbtions(ctx)
 	if err != nil {
-		logger.Error("Fetching App Installations from GitHub", log.Error(err), log.String("appName", app.Name), log.Int("id", app.ID))
+		logger.Error("Fetching App Instbllbtions from GitHub", log.Error(err), log.String("bppNbme", bpp.Nbme), log.Int("id", bpp.ID))
 		errs = errors.Append(errs, err)
 
-		// This likely means the App has been deleted from GitHub, so we should remove all
-		// installations of it from our database, if we have any.
-		if len(dbInstallations) == 0 {
+		// This likely mebns the App hbs been deleted from GitHub, so we should remove bll
+		// instbllbtions of it from our dbtbbbse, if we hbve bny.
+		if len(dbInstbllbtions) == 0 {
 			return errs
 		}
 
-		var toBeDeleted []int
-		for _, install := range dbInstallations {
-			toBeDeleted = append(toBeDeleted, install.InstallationID)
+		vbr toBeDeleted []int
+		for _, instbll := rbnge dbInstbllbtions {
+			toBeDeleted = bppend(toBeDeleted, instbll.InstbllbtionID)
 		}
 		if len(toBeDeleted) > 0 {
-			logger.Info("Deleting GitHub App Installations", log.String("appName", app.Name), log.Ints("installationIDs", toBeDeleted))
-			err = s.BulkRemoveInstallations(ctx, app.ID, toBeDeleted)
+			logger.Info("Deleting GitHub App Instbllbtions", log.String("bppNbme", bpp.Nbme), log.Ints("instbllbtionIDs", toBeDeleted))
+			err = s.BulkRemoveInstbllbtions(ctx, bpp.ID, toBeDeleted)
 			if err != nil {
-				logger.Error("Failed to remove GitHub App Installations", log.Error(err), log.String("appName", app.Name), log.Int("id", app.ID))
+				logger.Error("Fbiled to remove GitHub App Instbllbtions", log.Error(err), log.String("bppNbme", bpp.Nbme), log.Int("id", bpp.ID))
 				return errors.Append(errs, err)
 			}
 		}
@@ -485,62 +485,62 @@ func (s *gitHubAppsStore) SyncInstallations(ctx context.Context, app ghtypes.Git
 		return errs
 	}
 
-	var dbInstallsMap = make(map[int]struct{}, len(dbInstallations))
-	for _, in := range dbInstallations {
-		dbInstallsMap[in.InstallationID] = struct{}{}
+	vbr dbInstbllsMbp = mbke(mbp[int]struct{}, len(dbInstbllbtions))
+	for _, in := rbnge dbInstbllbtions {
+		dbInstbllsMbp[in.InstbllbtionID] = struct{}{}
 	}
 
-	var toBeAdded []ghtypes.GitHubAppInstallation
+	vbr toBeAdded []ghtypes.GitHubAppInstbllbtion
 
-	for _, install := range remoteInstallations {
-		if install == nil || install.ID == nil {
+	for _, instbll := rbnge remoteInstbllbtions {
+		if instbll == nil || instbll.ID == nil {
 			continue
 		}
-		// We add any installation that exists on GitHub regardless of whether or not it
-		// already exists in our database, because we will upsert it to ensure that we
-		// have the latest metadata for the installation.
-		toBeAdded = append(toBeAdded, ghtypes.GitHubAppInstallation{
-			InstallationID:   int(install.GetID()),
-			AppID:            app.ID,
-			URL:              install.GetHTMLURL(),
-			AccountLogin:     install.Account.GetLogin(),
-			AccountAvatarURL: install.Account.GetAvatarURL(),
-			AccountURL:       install.Account.GetHTMLURL(),
-			AccountType:      install.Account.GetType(),
+		// We bdd bny instbllbtion thbt exists on GitHub regbrdless of whether or not it
+		// blrebdy exists in our dbtbbbse, becbuse we will upsert it to ensure thbt we
+		// hbve the lbtest metbdbtb for the instbllbtion.
+		toBeAdded = bppend(toBeAdded, ghtypes.GitHubAppInstbllbtion{
+			InstbllbtionID:   int(instbll.GetID()),
+			AppID:            bpp.ID,
+			URL:              instbll.GetHTMLURL(),
+			AccountLogin:     instbll.Account.GetLogin(),
+			AccountAvbtbrURL: instbll.Account.GetAvbtbrURL(),
+			AccountURL:       instbll.Account.GetHTMLURL(),
+			AccountType:      instbll.Account.GetType(),
 		})
-		_, exists := dbInstallsMap[int(install.GetID())]
-		// If the installation already existed in the DB, we remove it from the map of
-		// database installations so that we can determine later which installations need
-		// to be removed from the database. Any installations that remain in the map after
+		_, exists := dbInstbllsMbp[int(instbll.GetID())]
+		// If the instbllbtion blrebdy existed in the DB, we remove it from the mbp of
+		// dbtbbbse instbllbtions so thbt we cbn determine lbter which instbllbtions need
+		// to be removed from the dbtbbbse. Any instbllbtions thbt rembin in the mbp bfter
 		// this loop will be removed.
 		if exists {
-			delete(dbInstallsMap, int(install.GetID()))
+			delete(dbInstbllsMbp, int(instbll.GetID()))
 		}
 	}
 
 	if len(toBeAdded) > 0 {
-		for _, install := range toBeAdded {
-			logger.Info("Upserting GitHub App Installation", log.String("appName", app.Name), log.Int("installationID", install.InstallationID))
-			_, err = s.Install(ctx, install)
+		for _, instbll := rbnge toBeAdded {
+			logger.Info("Upserting GitHub App Instbllbtion", log.String("bppNbme", bpp.Nbme), log.Int("instbllbtionID", instbll.InstbllbtionID))
+			_, err = s.Instbll(ctx, instbll)
 			if err != nil {
-				logger.Error("Failed to save new GitHub App Installation", log.Error(err), log.String("appName", app.Name), log.Int("id", app.ID))
+				logger.Error("Fbiled to sbve new GitHub App Instbllbtion", log.Error(err), log.String("bppNbme", bpp.Nbme), log.Int("id", bpp.ID))
 				errs = errors.Append(errs, err)
 				continue
 			}
 		}
 	}
 
-	// If there are any installations left in the map, it means they were not present in
-	// the remote installations, so we should remove them from the database.
-	if len(dbInstallsMap) > 0 {
-		var toBeDeleted []int
-		for id := range dbInstallsMap {
-			toBeDeleted = append(toBeDeleted, id)
+	// If there bre bny instbllbtions left in the mbp, it mebns they were not present in
+	// the remote instbllbtions, so we should remove them from the dbtbbbse.
+	if len(dbInstbllsMbp) > 0 {
+		vbr toBeDeleted []int
+		for id := rbnge dbInstbllsMbp {
+			toBeDeleted = bppend(toBeDeleted, id)
 		}
-		logger.Info("Deleting GitHub App Installations", log.String("appName", app.Name), log.Ints("installationIDs", toBeDeleted))
-		err = s.BulkRemoveInstallations(ctx, app.ID, toBeDeleted)
+		logger.Info("Deleting GitHub App Instbllbtions", log.String("bppNbme", bpp.Nbme), log.Ints("instbllbtionIDs", toBeDeleted))
+		err = s.BulkRemoveInstbllbtions(ctx, bpp.ID, toBeDeleted)
 		if err != nil {
-			logger.Error("Failed to remove GitHub App Installations", log.Error(err), log.String("appName", app.Name), log.Int("id", app.ID))
+			logger.Error("Fbiled to remove GitHub App Instbllbtions", log.Error(err), log.String("bppNbme", bpp.Nbme), log.Int("id", bpp.ID))
 			return errors.Append(errs, err)
 		}
 	}

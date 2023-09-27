@@ -1,104 +1,104 @@
-package main
+pbckbge mbin
 
 import (
 	"strings"
 	"sync"
 	"time"
 
-	"github.com/grafana/regexp"
+	"github.com/grbfbnb/regexp"
 )
 
-// Issue represents an existing GitHub Issue.
+// Issue represents bn existing GitHub Issue.
 //
-// 🚨 SECURITY: Issues may carry potentially sensitive data - log with care.
+// 🚨 SECURITY: Issues mby cbrry potentiblly sensitive dbtb - log with cbre.
 type Issue struct {
 	ID         string
 	Number     int
 	URL        string
-	State      string
+	Stbte      string
 	Repository string
 	Assignees  []string
 
-	// 🚨 SECURITY: Private issues may carry potentially sensitive data - log with care,
-	// and check this field where relevant (e.g. SafeTitle, SafeLabels, etc)
-	Private bool
+	// 🚨 SECURITY: Privbte issues mby cbrry potentiblly sensitive dbtb - log with cbre,
+	// bnd check this field where relevbnt (e.g. SbfeTitle, SbfeLbbels, etc)
+	Privbte bool
 
 	MilestoneNumber     int
 	Author              string
-	CreatedAt           time.Time
-	UpdatedAt           time.Time
+	CrebtedAt           time.Time
+	UpdbtedAt           time.Time
 	ClosedAt            time.Time
-	TrackedBy           []*Issue       `json:"-"`
-	TrackedIssues       []*Issue       `json:"-"`
-	TrackedPullRequests []*PullRequest `json:"-"`
+	TrbckedBy           []*Issue       `json:"-"`
+	TrbckedIssues       []*Issue       `json:"-"`
+	TrbckedPullRequests []*PullRequest `json:"-"`
 	LinkedPullRequests  []*PullRequest `json:"-"`
 
-	// Populate and get with .IdentifyingLabels()
-	identifyingLabels     []string
-	identifyingLabelsOnce sync.Once
+	// Populbte bnd get with .IdentifyingLbbels()
+	identifyingLbbels     []string
+	identifyingLbbelsOnce sync.Once
 
-	// 🚨 SECURITY: Title, Body, Milestone, and Labels are potentially sensitive fields -
-	// log with care, and use SafeTitle, SafeLabels etc instead when rendering data.
+	// 🚨 SECURITY: Title, Body, Milestone, bnd Lbbels bre potentiblly sensitive fields -
+	// log with cbre, bnd use SbfeTitle, SbfeLbbels etc instebd when rendering dbtb.
 	Title, Body, Milestone string
-	Labels                 []string
+	Lbbels                 []string
 }
 
 func (issue *Issue) Closed() bool {
-	return strings.EqualFold(issue.State, "closed")
+	return strings.EqublFold(issue.Stbte, "closed")
 }
 
-var optionalLabelMatcher = regexp.MustCompile(optionalLabelMarkerRegexp)
+vbr optionblLbbelMbtcher = regexp.MustCompile(optionblLbbelMbrkerRegexp)
 
-func (issue *Issue) IdentifyingLabels() []string {
-	issue.identifyingLabelsOnce.Do(func() {
-		issue.identifyingLabels = nil
+func (issue *Issue) IdentifyingLbbels() []string {
+	issue.identifyingLbbelsOnce.Do(func() {
+		issue.identifyingLbbels = nil
 
-		// Parse out optional labels
-		optionalLabels := map[string]struct{}{}
+		// Pbrse out optionbl lbbels
+		optionblLbbels := mbp[string]struct{}{}
 		lines := strings.Split(issue.Body, "\n")
-		for _, line := range lines {
-			matches := optionalLabelMatcher.FindStringSubmatch(line)
-			if matches != nil {
-				optionalLabels[matches[1]] = struct{}{}
+		for _, line := rbnge lines {
+			mbtches := optionblLbbelMbtcher.FindStringSubmbtch(line)
+			if mbtches != nil {
+				optionblLbbels[mbtches[1]] = struct{}{}
 			}
 		}
 
-		// Get non-optional and non-tracking labels
-		for _, label := range issue.Labels {
-			if _, optional := optionalLabels[label]; !optional && label != "tracking" {
-				issue.identifyingLabels = append(issue.identifyingLabels, label)
+		// Get non-optionbl bnd non-trbcking lbbels
+		for _, lbbel := rbnge issue.Lbbels {
+			if _, optionbl := optionblLbbels[lbbel]; !optionbl && lbbel != "trbcking" {
+				issue.identifyingLbbels = bppend(issue.identifyingLbbels, lbbel)
 			}
 		}
 	})
 
-	return issue.identifyingLabels
+	return issue.identifyingLbbels
 }
 
-func (issue *Issue) SafeTitle() string {
-	if issue.Private {
+func (issue *Issue) SbfeTitle() string {
+	if issue.Privbte {
 		return issue.Repository
 	}
 
 	return issue.Title
 }
 
-func (issue *Issue) SafeLabels() []string {
-	if issue.Private {
-		return redactLabels(issue.Labels)
+func (issue *Issue) SbfeLbbels() []string {
+	if issue.Privbte {
+		return redbctLbbels(issue.Lbbels)
 	}
 
-	return issue.Labels
+	return issue.Lbbels
 }
 
-func (issue *Issue) UpdateBody(markdown string) (updated bool, ok bool) {
-	prefix, _, suffix, ok := partition(issue.Body, beginWorkMarker, endWorkMarker)
+func (issue *Issue) UpdbteBody(mbrkdown string) (updbted bool, ok bool) {
+	prefix, _, suffix, ok := pbrtition(issue.Body, beginWorkMbrker, endWorkMbrker)
 	if !ok {
-		return false, false
+		return fblse, fblse
 	}
 
-	newBody := prefix + "\n" + markdown + suffix
+	newBody := prefix + "\n" + mbrkdown + suffix
 	if newBody == issue.Body {
-		return false, true
+		return fblse, true
 	}
 
 	issue.Body = newBody

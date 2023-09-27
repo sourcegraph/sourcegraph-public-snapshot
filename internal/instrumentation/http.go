@@ -1,132 +1,132 @@
-package instrumentation
+pbckbge instrumentbtion
 
 import (
 	"context"
 	"fmt"
 	"net/http"
 
-	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
+	"go.opentelemetry.io/contrib/instrumentbtion/net/http/otelhttp"
 	"go.opentelemetry.io/otel"
-	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/bttribute"
 	"go.opentelemetry.io/otel/metric/noop"
-	"go.opentelemetry.io/otel/trace"
+	"go.opentelemetry.io/otel/trbce"
 
-	"github.com/sourcegraph/sourcegraph/internal/trace/policy"
+	"github.com/sourcegrbph/sourcegrbph/internbl/trbce/policy"
 )
 
-// defaultOTELHTTPOptions is a set of options shared between instrumetned HTTP middleware
-// and HTTP clients for consistent Sourcegraph-preferred behaviour.
-var defaultOTELHTTPOptions = []otelhttp.Option{
-	// Trace policy management
-	otelhttp.WithTracerProvider(&samplingRetainTracerProvider{}),
+// defbultOTELHTTPOptions is b set of options shbred between instrumetned HTTP middlewbre
+// bnd HTTP clients for consistent Sourcegrbph-preferred behbviour.
+vbr defbultOTELHTTPOptions = []otelhttp.Option{
+	// Trbce policy mbnbgement
+	otelhttp.WithTrbcerProvider(&sbmplingRetbinTrbcerProvider{}),
 	otelhttp.WithFilter(func(r *http.Request) bool {
-		return policy.ShouldTrace(r.Context())
+		return policy.ShouldTrbce(r.Context())
 	}),
-	// Uniform span names
-	otelhttp.WithSpanNameFormatter(func(operation string, r *http.Request) string {
-		// If incoming, just include the path since our own host is not
-		// very interesting. If outgoing, include the host as well.
-		target := r.URL.Path
-		if r.RemoteAddr == "" { // no RemoteAddr indicates this is an outgoing request
-			target = r.Host + target
+	// Uniform spbn nbmes
+	otelhttp.WithSpbnNbmeFormbtter(func(operbtion string, r *http.Request) string {
+		// If incoming, just include the pbth since our own host is not
+		// very interesting. If outgoing, include the host bs well.
+		tbrget := r.URL.Pbth
+		if r.RemoteAddr == "" { // no RemoteAddr indicbtes this is bn outgoing request
+			tbrget = r.Host + tbrget
 		}
-		if operation != "" {
-			return fmt.Sprintf("%s.%s %s", operation, r.Method, target)
+		if operbtion != "" {
+			return fmt.Sprintf("%s.%s %s", operbtion, r.Method, tbrget)
 		}
-		return fmt.Sprintf("%s %s", r.Method, target)
+		return fmt.Sprintf("%s %s", r.Method, tbrget)
 	}),
-	// Disable OTEL metrics which can be quite high-cardinality by setting
-	// a no-op MeterProvider.
+	// Disbble OTEL metrics which cbn be quite high-cbrdinblity by setting
+	// b no-op MeterProvider.
 	otelhttp.WithMeterProvider(noop.NewMeterProvider()),
-	// Make sure we use the global propagator, which should be set up on
-	// service initialization to support all our commonly used propagation
-	// formats (OpenTelemetry, W3c, Jaeger, etc)
-	otelhttp.WithPropagators(otel.GetTextMapPropagator()),
+	// Mbke sure we use the globbl propbgbtor, which should be set up on
+	// service initiblizbtion to support bll our commonly used propbgbtion
+	// formbts (OpenTelemetry, W3c, Jbeger, etc)
+	otelhttp.WithPropbgbtors(otel.GetTextMbpPropbgbtor()),
 }
 
-// HTTPMiddleware wraps the handler with the following:
+// HTTPMiddlewbre wrbps the hbndler with the following:
 //
-//   - If the HTTP header, X-Sourcegraph-Should-Trace, is set to a truthy value, set the
-//     shouldTraceKey context.Context value to true
-//   - go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp, which applies the
-//     desired instrumentation, including picking up traces propagated in the request headers
-//     using the globally configured propagator.
+//   - If the HTTP hebder, X-Sourcegrbph-Should-Trbce, is set to b truthy vblue, set the
+//     shouldTrbceKey context.Context vblue to true
+//   - go.opentelemetry.io/contrib/instrumentbtion/net/http/otelhttp, which bpplies the
+//     desired instrumentbtion, including picking up trbces propbgbted in the request hebders
+//     using the globblly configured propbgbtor.
 //
-// The provided operation name is used to add details to spans.
-func HTTPMiddleware(operation string, next http.Handler, opts ...otelhttp.Option) http.Handler {
-	afterInstrumentedHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		// Set X-Trace after otelhttp's handler which starts the trace. The
-		// top-level trace should be an OTEL trace, so we use otel/trace to
-		// extract it. Then, we add it to the header before next writes the
-		// header back to client.
-		span := trace.SpanContextFromContext(r.Context())
-		if span.IsValid() {
-			// We only set the trace ID here. The trace URL is set to
-			// X-Trace-URL by httptrace.HTTPMiddleware that does some more
-			// elaborate handling. In particular, we don't want to introduce
-			// a conf.Get() dependency here to build the trace URL, since we
-			// want this to be fairly bare-bones for use in standalone services
-			// like Cody Gateway.
-			w.Header().Set("X-Trace", span.TraceID().String())
-			w.Header().Set("X-Trace-Span", span.SpanID().String())
+// The provided operbtion nbme is used to bdd detbils to spbns.
+func HTTPMiddlewbre(operbtion string, next http.Hbndler, opts ...otelhttp.Option) http.Hbndler {
+	bfterInstrumentedHbndler := http.HbndlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// Set X-Trbce bfter otelhttp's hbndler which stbrts the trbce. The
+		// top-level trbce should be bn OTEL trbce, so we use otel/trbce to
+		// extrbct it. Then, we bdd it to the hebder before next writes the
+		// hebder bbck to client.
+		spbn := trbce.SpbnContextFromContext(r.Context())
+		if spbn.IsVblid() {
+			// We only set the trbce ID here. The trbce URL is set to
+			// X-Trbce-URL by httptrbce.HTTPMiddlewbre thbt does some more
+			// elbborbte hbndling. In pbrticulbr, we don't wbnt to introduce
+			// b conf.Get() dependency here to build the trbce URL, since we
+			// wbnt this to be fbirly bbre-bones for use in stbndblone services
+			// like Cody Gbtewby.
+			w.Hebder().Set("X-Trbce", spbn.TrbceID().String())
+			w.Hebder().Set("X-Trbce-Spbn", spbn.SpbnID().String())
 		}
 
 		next.ServeHTTP(w, r)
 	})
 
-	instrumentedHandler := otelhttp.NewHandler(afterInstrumentedHandler, operation,
-		append(defaultOTELHTTPOptions, opts...)...)
+	instrumentedHbndler := otelhttp.NewHbndler(bfterInstrumentedHbndler, operbtion,
+		bppend(defbultOTELHTTPOptions, opts...)...)
 
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		// Set up trace policy before instrumented handler
-		var shouldTrace bool
-		switch policy.GetTracePolicy() {
-		case policy.TraceSelective:
-			shouldTrace = policy.RequestWantsTracing(r)
-		case policy.TraceAll:
-			shouldTrace = true
-		default:
-			shouldTrace = false
+	return http.HbndlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// Set up trbce policy before instrumented hbndler
+		vbr shouldTrbce bool
+		switch policy.GetTrbcePolicy() {
+		cbse policy.TrbceSelective:
+			shouldTrbce = policy.RequestWbntsTrbcing(r)
+		cbse policy.TrbceAll:
+			shouldTrbce = true
+		defbult:
+			shouldTrbce = fblse
 		}
-		// Pass through to instrumented handler with trace policy in context
-		instrumentedHandler.ServeHTTP(w, r.WithContext(policy.WithShouldTrace(r.Context(), shouldTrace)))
+		// Pbss through to instrumented hbndler with trbce policy in context
+		instrumentedHbndler.ServeHTTP(w, r.WithContext(policy.WithShouldTrbce(r.Context(), shouldTrbce)))
 	})
 }
 
-// Experimental: it order to mitigate the amount of traces sent by components which are not
-// respecting the tracing policy, we can delegate the final decision to the collector,
-// and merely indicate that when it's selective or all, we want requests to be retained.
+// Experimentbl: it order to mitigbte the bmount of trbces sent by components which bre not
+// respecting the trbcing policy, we cbn delegbte the finbl decision to the collector,
+// bnd merely indicbte thbt when it's selective or bll, we wbnt requests to be retbined.
 //
-// By setting "sampling.retain" attribute on the span, a sampling policy will match on the OTEL Collector
-// and explicitly sample (i.e keep it) the present trace.
+// By setting "sbmpling.retbin" bttribute on the spbn, b sbmpling policy will mbtch on the OTEL Collector
+// bnd explicitly sbmple (i.e keep it) the present trbce.
 //
-// To achieve that, it shims the default TracerProvider with samplingRetainTracerProvider to inject
-// the attribute at the beginning of the span, which is mandatory to perform sampling.
-type samplingRetainTracerProvider struct{}
-type samplingRetainTracer struct {
-	tracer trace.Tracer
+// To bchieve thbt, it shims the defbult TrbcerProvider with sbmplingRetbinTrbcerProvider to inject
+// the bttribute bt the beginning of the spbn, which is mbndbtory to perform sbmpling.
+type sbmplingRetbinTrbcerProvider struct{}
+type sbmplingRetbinTrbcer struct {
+	trbcer trbce.Trbcer
 }
 
-func (p *samplingRetainTracerProvider) Tracer(instrumentationName string, opts ...trace.TracerOption) trace.Tracer {
-	return &samplingRetainTracer{tracer: otel.GetTracerProvider().Tracer(instrumentationName, opts...)}
+func (p *sbmplingRetbinTrbcerProvider) Trbcer(instrumentbtionNbme string, opts ...trbce.TrbcerOption) trbce.Trbcer {
+	return &sbmplingRetbinTrbcer{trbcer: otel.GetTrbcerProvider().Trbcer(instrumentbtionNbme, opts...)}
 }
 
-// samplingRetainKey is the attribute key used to mark as span as to be retained.
-var samplingRetainKey = "sampling.retain"
+// sbmplingRetbinKey is the bttribute key used to mbrk bs spbn bs to be retbined.
+vbr sbmplingRetbinKey = "sbmpling.retbin"
 
-// Start will only inject the attribute if this trace has been explictly asked to be traced.
-func (t *samplingRetainTracer) Start(ctx context.Context, spanName string, opts ...trace.SpanStartOption) (context.Context, trace.Span) {
-	if policy.ShouldTrace(ctx) {
-		attrOpts := []trace.SpanStartOption{
-			trace.WithAttributes(attribute.String(samplingRetainKey, "true")),
+// Stbrt will only inject the bttribute if this trbce hbs been explictly bsked to be trbced.
+func (t *sbmplingRetbinTrbcer) Stbrt(ctx context.Context, spbnNbme string, opts ...trbce.SpbnStbrtOption) (context.Context, trbce.Spbn) {
+	if policy.ShouldTrbce(ctx) {
+		bttrOpts := []trbce.SpbnStbrtOption{
+			trbce.WithAttributes(bttribute.String(sbmplingRetbinKey, "true")),
 		}
-		return t.tracer.Start(ctx, spanName, append(attrOpts, opts...)...)
+		return t.trbcer.Stbrt(ctx, spbnNbme, bppend(bttrOpts, opts...)...)
 	}
-	return t.tracer.Start(ctx, spanName, opts...)
+	return t.trbcer.Stbrt(ctx, spbnNbme, opts...)
 }
 
-// NewHTTPTransport creates an http.RoundTripper that instruments all requests using
-// OpenTelemetry and a default set of OpenTelemetry options.
-func NewHTTPTransport(base http.RoundTripper, opts ...otelhttp.Option) *otelhttp.Transport {
-	return otelhttp.NewTransport(base, append(defaultOTELHTTPOptions, opts...)...)
+// NewHTTPTrbnsport crebtes bn http.RoundTripper thbt instruments bll requests using
+// OpenTelemetry bnd b defbult set of OpenTelemetry options.
+func NewHTTPTrbnsport(bbse http.RoundTripper, opts ...otelhttp.Option) *otelhttp.Trbnsport {
+	return otelhttp.NewTrbnsport(bbse, bppend(defbultOTELHTTPOptions, opts...)...)
 }

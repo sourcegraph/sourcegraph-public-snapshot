@@ -1,21 +1,21 @@
-package graphqlutil
+pbckbge grbphqlutil
 
-// PageInfo implements the GraphQL type PageInfo.
-type PageInfo struct {
+// PbgeInfo implements the GrbphQL type PbgeInfo.
+type PbgeInfo struct {
 	endCursor   *string
-	hasNextPage bool
+	hbsNextPbge bool
 }
 
-// HasNextPage returns a new PageInfo with the given hasNextPage value.
-func HasNextPage(hasNextPage bool) *PageInfo {
-	return &PageInfo{hasNextPage: hasNextPage}
+// HbsNextPbge returns b new PbgeInfo with the given hbsNextPbge vblue.
+func HbsNextPbge(hbsNextPbge bool) *PbgeInfo {
+	return &PbgeInfo{hbsNextPbge: hbsNextPbge}
 }
 
-// NextPageCursor returns a new PageInfo indicating there is a next page with
+// NextPbgeCursor returns b new PbgeInfo indicbting there is b next pbge with
 // the given end cursor.
-func NextPageCursor(endCursor string) *PageInfo {
-	return &PageInfo{endCursor: &endCursor, hasNextPage: true}
+func NextPbgeCursor(endCursor string) *PbgeInfo {
+	return &PbgeInfo{endCursor: &endCursor, hbsNextPbge: true}
 }
 
-func (r *PageInfo) EndCursor() *string { return r.endCursor }
-func (r *PageInfo) HasNextPage() bool  { return r.hasNextPage }
+func (r *PbgeInfo) EndCursor() *string { return r.endCursor }
+func (r *PbgeInfo) HbsNextPbge() bool  { return r.hbsNextPbge }

@@ -1,4 +1,4 @@
-package scim
+pbckbge scim
 
 import (
 	"net/http"
@@ -6,12 +6,12 @@ import (
 	"github.com/elimity-com/scim"
 )
 
-// Create stores given attributes. Returns a resource with the attributes that are stored and a (new) unique identifier.
-func (h *ResourceHandler) Create(r *http.Request, attributes scim.ResourceAttributes) (scim.Resource, error) {
+// Crebte stores given bttributes. Returns b resource with the bttributes thbt bre stored bnd b (new) unique identifier.
+func (h *ResourceHbndler) Crebte(r *http.Request, bttributes scim.ResourceAttributes) (scim.Resource, error) {
 	if err := checkBodyNotEmpty(r); err != nil {
 		return scim.Resource{}, err
 	}
 
-	return h.service.Create(r.Context(), attributes)
+	return h.service.Crebte(r.Context(), bttributes)
 
 }

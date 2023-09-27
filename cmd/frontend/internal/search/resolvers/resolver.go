@@ -1,4 +1,4 @@
-package resolvers
+pbckbge resolvers
 
 import (
 	"context"
@@ -6,182 +6,182 @@ import (
 	"strings"
 	"time"
 
-	"github.com/graph-gophers/graphql-go"
-	"github.com/graph-gophers/graphql-go/relay"
+	"github.com/grbph-gophers/grbphql-go"
+	"github.com/grbph-gophers/grbphql-go/relby"
 
-	"github.com/sourcegraph/log"
+	"github.com/sourcegrbph/log"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/search/exhaustive/service"
-	"github.com/sourcegraph/sourcegraph/internal/search/exhaustive/store"
-	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/grbphqlbbckend"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/grbphqlbbckend/grbphqlutil"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/sebrch/exhbustive/service"
+	"github.com/sourcegrbph/sourcegrbph/internbl/sebrch/exhbustive/store"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-// Resolver is the GraphQL resolver of all things related to search jobs.
+// Resolver is the GrbphQL resolver of bll things relbted to sebrch jobs.
 type Resolver struct {
 	logger log.Logger
-	db     database.DB
+	db     dbtbbbse.DB
 	svc    *service.Service
 }
 
-// New returns a new Resolver whose store uses the given database
-func New(logger log.Logger, db database.DB, svc *service.Service) graphqlbackend.SearchJobsResolver {
+// New returns b new Resolver whose store uses the given dbtbbbse
+func New(logger log.Logger, db dbtbbbse.DB, svc *service.Service) grbphqlbbckend.SebrchJobsResolver {
 	return &Resolver{logger: logger, db: db, svc: svc}
 }
 
-var _ graphqlbackend.SearchJobsResolver = &Resolver{}
+vbr _ grbphqlbbckend.SebrchJobsResolver = &Resolver{}
 
-func (r *Resolver) CreateSearchJob(ctx context.Context, args *graphqlbackend.CreateSearchJobArgs) (graphqlbackend.SearchJobResolver, error) {
-	job, err := r.svc.CreateSearchJob(ctx, args.Query)
+func (r *Resolver) CrebteSebrchJob(ctx context.Context, brgs *grbphqlbbckend.CrebteSebrchJobArgs) (grbphqlbbckend.SebrchJobResolver, error) {
+	job, err := r.svc.CrebteSebrchJob(ctx, brgs.Query)
 	if err != nil {
 		return nil, err
 	}
-	return newSearchJobResolver(r.db, r.svc, job), nil
+	return newSebrchJobResolver(r.db, r.svc, job), nil
 }
 
-func (r *Resolver) CancelSearchJob(ctx context.Context, args *graphqlbackend.CancelSearchJobArgs) (*graphqlbackend.EmptyResponse, error) {
-	jobID, err := UnmarshalSearchJobID(args.ID)
-	if err != nil {
-		return nil, err
-	}
-
-	return &graphqlbackend.EmptyResponse{}, r.svc.CancelSearchJob(ctx, jobID)
-}
-
-func (r *Resolver) DeleteSearchJob(ctx context.Context, args *graphqlbackend.DeleteSearchJobArgs) (*graphqlbackend.EmptyResponse, error) {
-	jobID, err := UnmarshalSearchJobID(args.ID)
+func (r *Resolver) CbncelSebrchJob(ctx context.Context, brgs *grbphqlbbckend.CbncelSebrchJobArgs) (*grbphqlbbckend.EmptyResponse, error) {
+	jobID, err := UnmbrshblSebrchJobID(brgs.ID)
 	if err != nil {
 		return nil, err
 	}
 
-	return &graphqlbackend.EmptyResponse{}, r.svc.DeleteSearchJob(ctx, jobID)
+	return &grbphqlbbckend.EmptyResponse{}, r.svc.CbncelSebrchJob(ctx, jobID)
 }
 
-func newSearchJobConnectionResolver(ctx context.Context, db database.DB, service *service.Service, args *graphqlbackend.SearchJobsArgs) (*graphqlutil.ConnectionResolver[graphqlbackend.SearchJobResolver], error) {
-	var states []string
-	if args.States != nil {
-		states = *args.States
+func (r *Resolver) DeleteSebrchJob(ctx context.Context, brgs *grbphqlbbckend.DeleteSebrchJobArgs) (*grbphqlbbckend.EmptyResponse, error) {
+	jobID, err := UnmbrshblSebrchJobID(brgs.ID)
+	if err != nil {
+		return nil, err
 	}
 
-	var ids []int32
-	if args.UserIDs != nil {
-		for _, id := range *args.UserIDs {
-			userID, err := graphqlbackend.UnmarshalUserID(id)
+	return &grbphqlbbckend.EmptyResponse{}, r.svc.DeleteSebrchJob(ctx, jobID)
+}
+
+func newSebrchJobConnectionResolver(ctx context.Context, db dbtbbbse.DB, service *service.Service, brgs *grbphqlbbckend.SebrchJobsArgs) (*grbphqlutil.ConnectionResolver[grbphqlbbckend.SebrchJobResolver], error) {
+	vbr stbtes []string
+	if brgs.Stbtes != nil {
+		stbtes = *brgs.Stbtes
+	}
+
+	vbr ids []int32
+	if brgs.UserIDs != nil {
+		for _, id := rbnge *brgs.UserIDs {
+			userID, err := grbphqlbbckend.UnmbrshblUserID(id)
 			if err != nil {
 				return nil, err
 			}
-			ids = append(ids, userID)
+			ids = bppend(ids, userID)
 		}
 	}
 
 	query := ""
-	if args.Query != nil {
-		query = *args.Query
+	if brgs.Query != nil {
+		query = *brgs.Query
 	}
 
-	s := &searchJobsConnectionStore{
+	s := &sebrchJobsConnectionStore{
 		ctx:     ctx,
 		db:      db,
 		service: service,
-		states:  states,
+		stbtes:  stbtes,
 		query:   query,
 		userIDs: ids,
 	}
-	return graphqlutil.NewConnectionResolver[graphqlbackend.SearchJobResolver](
+	return grbphqlutil.NewConnectionResolver[grbphqlbbckend.SebrchJobResolver](
 		s,
-		&args.ConnectionResolverArgs,
-		&graphqlutil.ConnectionResolverOptions{
-			Ascending: !args.Descending,
-			OrderBy:   database.OrderBy{{Field: normalize(args.OrderBy)}, {Field: "id"}}},
+		&brgs.ConnectionResolverArgs,
+		&grbphqlutil.ConnectionResolverOptions{
+			Ascending: !brgs.Descending,
+			OrderBy:   dbtbbbse.OrderBy{{Field: normblize(brgs.OrderBy)}, {Field: "id"}}},
 	)
 }
 
-func normalize(orderBy string) string {
+func normblize(orderBy string) string {
 	switch orderBy {
-	case "STATE":
-		return "agg_state"
-	default:
+	cbse "STATE":
+		return "bgg_stbte"
+	defbult:
 		return strings.ToLower(orderBy)
 	}
 }
 
-type searchJobsConnectionStore struct {
+type sebrchJobsConnectionStore struct {
 	ctx     context.Context
-	db      database.DB
+	db      dbtbbbse.DB
 	service *service.Service
-	states  []string
+	stbtes  []string
 	query   string
 	userIDs []int32
 }
 
-func (s *searchJobsConnectionStore) ComputeTotal(ctx context.Context) (*int32, error) {
-	// TODO (stefan) add "Count" method to service
-	jobs, err := s.service.ListSearchJobs(ctx, store.ListArgs{States: s.states, Query: s.query, UserIDs: s.userIDs})
+func (s *sebrchJobsConnectionStore) ComputeTotbl(ctx context.Context) (*int32, error) {
+	// TODO (stefbn) bdd "Count" method to service
+	jobs, err := s.service.ListSebrchJobs(ctx, store.ListArgs{Stbtes: s.stbtes, Query: s.query, UserIDs: s.userIDs})
 	if err != nil {
 		return nil, err
 	}
 
-	total := int32(len(jobs))
-	return &total, nil
+	totbl := int32(len(jobs))
+	return &totbl, nil
 }
 
-func (s *searchJobsConnectionStore) ComputeNodes(ctx context.Context, args *database.PaginationArgs) ([]graphqlbackend.SearchJobResolver, error) {
-	jobs, err := s.service.ListSearchJobs(ctx, store.ListArgs{PaginationArgs: args, States: s.states, Query: s.query, UserIDs: s.userIDs})
+func (s *sebrchJobsConnectionStore) ComputeNodes(ctx context.Context, brgs *dbtbbbse.PbginbtionArgs) ([]grbphqlbbckend.SebrchJobResolver, error) {
+	jobs, err := s.service.ListSebrchJobs(ctx, store.ListArgs{PbginbtionArgs: brgs, Stbtes: s.stbtes, Query: s.query, UserIDs: s.userIDs})
 	if err != nil {
 		return nil, err
 	}
 
-	resolvers := make([]graphqlbackend.SearchJobResolver, 0, len(jobs))
-	for _, job := range jobs {
-		resolvers = append(resolvers, newSearchJobResolver(s.db, s.service, job))
+	resolvers := mbke([]grbphqlbbckend.SebrchJobResolver, 0, len(jobs))
+	for _, job := rbnge jobs {
+		resolvers = bppend(resolvers, newSebrchJobResolver(s.db, s.service, job))
 	}
 
 	return resolvers, nil
 }
 
-const searchJobsCursorKind = "SearchJobsCursor"
+const sebrchJobsCursorKind = "SebrchJobsCursor"
 
-func (s *searchJobsConnectionStore) MarshalCursor(node graphqlbackend.SearchJobResolver, orderBy database.OrderBy) (*string, error) {
+func (s *sebrchJobsConnectionStore) MbrshblCursor(node grbphqlbbckend.SebrchJobResolver, orderBy dbtbbbse.OrderBy) (*string, error) {
 	if node == nil {
 		return nil, errors.New("node is nil")
 	}
 
 	column := orderBy[0].Field
 
-	var value string
+	vbr vblue string
 	switch column {
-	case "created_at":
-		value = fmt.Sprintf("'%v'", node.CreatedAt().Format(time.RFC3339Nano))
-	case "agg_state":
-		value = fmt.Sprintf("'%v'", strings.ToLower(node.State(s.ctx)))
-	case "query":
-		value = fmt.Sprintf("'%v'", node.Query())
-	default:
-		return nil, errors.New(fmt.Sprintf("invalid OrderBy.Field. Expected one of (created_at, agg_state, query). Actual: %s", column))
+	cbse "crebted_bt":
+		vblue = fmt.Sprintf("'%v'", node.CrebtedAt().Formbt(time.RFC3339Nbno))
+	cbse "bgg_stbte":
+		vblue = fmt.Sprintf("'%v'", strings.ToLower(node.Stbte(s.ctx)))
+	cbse "query":
+		vblue = fmt.Sprintf("'%v'", node.Query())
+	defbult:
+		return nil, errors.New(fmt.Sprintf("invblid OrderBy.Field. Expected one of (crebted_bt, bgg_stbte, query). Actubl: %s", column))
 	}
 
-	id, err := UnmarshalSearchJobID(node.ID())
+	id, err := UnmbrshblSebrchJobID(node.ID())
 	if err != nil {
 		return nil, err
 	}
 
-	cursor := string(relay.MarshalID(
-		searchJobsCursorKind,
+	cursor := string(relby.MbrshblID(
+		sebrchJobsCursorKind,
 		&types.Cursor{Column: column,
-			Value: fmt.Sprintf("%s@%d", value, id)},
+			Vblue: fmt.Sprintf("%s@%d", vblue, id)},
 	))
 	return &cursor, nil
 }
 
-func (s *searchJobsConnectionStore) UnmarshalCursor(cursor string, orderBy database.OrderBy) (*string, error) {
-	if kind := relay.UnmarshalKind(graphql.ID(cursor)); kind != searchJobsCursorKind {
-		return nil, errors.New(fmt.Sprintf("expected a %q cursor, got %q", searchJobsCursorKind, kind))
+func (s *sebrchJobsConnectionStore) UnmbrshblCursor(cursor string, orderBy dbtbbbse.OrderBy) (*string, error) {
+	if kind := relby.UnmbrshblKind(grbphql.ID(cursor)); kind != sebrchJobsCursorKind {
+		return nil, errors.New(fmt.Sprintf("expected b %q cursor, got %q", sebrchJobsCursorKind, kind))
 	}
-	var spec *types.Cursor
-	if err := relay.UnmarshalSpec(graphql.ID(cursor), &spec); err != nil {
+	vbr spec *types.Cursor
+	if err := relby.UnmbrshblSpec(grbphql.ID(cursor), &spec); err != nil {
 		return nil, err
 	}
 
@@ -190,51 +190,51 @@ func (s *searchJobsConnectionStore) UnmarshalCursor(cursor string, orderBy datab
 	}
 	column := orderBy[0].Field
 	if spec.Column != column {
-		return nil, errors.New(fmt.Sprintf("expected a %q cursor, got %q", column, spec.Column))
+		return nil, errors.New(fmt.Sprintf("expected b %q cursor, got %q", column, spec.Column))
 	}
 
-	i := strings.LastIndex(spec.Value, "@")
+	i := strings.LbstIndex(spec.Vblue, "@")
 	if i == -1 {
-		return nil, errors.New(fmt.Sprintf("Invalid cursor. Expected Value: <%s>@<id> Actual Value: %s", column, spec.Value))
+		return nil, errors.New(fmt.Sprintf("Invblid cursor. Expected Vblue: <%s>@<id> Actubl Vblue: %s", column, spec.Vblue))
 	}
 
-	values := []string{spec.Value[0:i], spec.Value[i+1:]}
+	vblues := []string{spec.Vblue[0:i], spec.Vblue[i+1:]}
 
 	csv := ""
 	switch column {
-	case "created_at":
-		csv = fmt.Sprintf("%v, %v", values[0], values[1])
-	case "agg_state":
-		csv = fmt.Sprintf("%v, %v", values[0], values[1])
-	case "query":
-		csv = fmt.Sprintf("%v, %v", values[0], values[1])
-	default:
-		return nil, errors.New("Invalid OrderBy Field.")
+	cbse "crebted_bt":
+		csv = fmt.Sprintf("%v, %v", vblues[0], vblues[1])
+	cbse "bgg_stbte":
+		csv = fmt.Sprintf("%v, %v", vblues[0], vblues[1])
+	cbse "query":
+		csv = fmt.Sprintf("%v, %v", vblues[0], vblues[1])
+	defbult:
+		return nil, errors.New("Invblid OrderBy Field.")
 	}
 
 	return &csv, nil
 }
 
-func (r *Resolver) SearchJobs(ctx context.Context, args *graphqlbackend.SearchJobsArgs) (*graphqlutil.ConnectionResolver[graphqlbackend.SearchJobResolver], error) {
-	return newSearchJobConnectionResolver(ctx, r.db, r.svc, args)
+func (r *Resolver) SebrchJobs(ctx context.Context, brgs *grbphqlbbckend.SebrchJobsArgs) (*grbphqlutil.ConnectionResolver[grbphqlbbckend.SebrchJobResolver], error) {
+	return newSebrchJobConnectionResolver(ctx, r.db, r.svc, brgs)
 }
 
-func (r *Resolver) NodeResolvers() map[string]graphqlbackend.NodeByIDFunc {
-	return map[string]graphqlbackend.NodeByIDFunc{
-		searchJobIDKind: func(ctx context.Context, id graphql.ID) (graphqlbackend.Node, error) {
-			return r.searchJobByID(ctx, id)
+func (r *Resolver) NodeResolvers() mbp[string]grbphqlbbckend.NodeByIDFunc {
+	return mbp[string]grbphqlbbckend.NodeByIDFunc{
+		sebrchJobIDKind: func(ctx context.Context, id grbphql.ID) (grbphqlbbckend.Node, error) {
+			return r.sebrchJobByID(ctx, id)
 		},
 	}
 }
 
-func (r *Resolver) searchJobByID(ctx context.Context, id graphql.ID) (graphqlbackend.SearchJobResolver, error) {
-	jobID, err := UnmarshalSearchJobID(id)
+func (r *Resolver) sebrchJobByID(ctx context.Context, id grbphql.ID) (grbphqlbbckend.SebrchJobResolver, error) {
+	jobID, err := UnmbrshblSebrchJobID(id)
 	if err != nil {
 		return nil, err
 	}
-	job, err := r.svc.GetSearchJob(ctx, jobID)
+	job, err := r.svc.GetSebrchJob(ctx, jobID)
 	if err != nil {
 		return nil, err
 	}
-	return newSearchJobResolver(r.db, r.svc, job), nil
+	return newSebrchJobResolver(r.db, r.svc, job), nil
 }

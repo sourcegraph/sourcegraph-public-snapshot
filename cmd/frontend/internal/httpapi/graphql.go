@@ -1,4 +1,4 @@
-package httpapi
+pbckbge httpbpi
 
 import (
 	"compress/gzip"
@@ -9,189 +9,189 @@ import (
 	"strings"
 	"time"
 
-	"github.com/graph-gophers/graphql-go"
-	gqlerrors "github.com/graph-gophers/graphql-go/errors"
-	"github.com/sourcegraph/log"
+	"github.com/grbph-gophers/grbphql-go"
+	gqlerrors "github.com/grbph-gophers/grbphql-go/errors"
+	"github.com/sourcegrbph/log"
 	"github.com/throttled/throttled/v2"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/search"
-	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/audit"
-	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/cookie"
-	"github.com/sourcegraph/sourcegraph/internal/trace"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/grbphqlbbckend"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/internbl/sebrch"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bctor"
+	"github.com/sourcegrbph/sourcegrbph/internbl/budit"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf"
+	"github.com/sourcegrbph/sourcegrbph/internbl/cookie"
+	"github.com/sourcegrbph/sourcegrbph/internbl/trbce"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-func serveGraphQL(logger log.Logger, schema *graphql.Schema, rlw graphqlbackend.LimitWatcher, isInternal bool) func(w http.ResponseWriter, r *http.Request) (err error) {
+func serveGrbphQL(logger log.Logger, schemb *grbphql.Schemb, rlw grbphqlbbckend.LimitWbtcher, isInternbl bool) func(w http.ResponseWriter, r *http.Request) (err error) {
 	return func(w http.ResponseWriter, r *http.Request) (err error) {
 		if r.Method != "POST" {
-			// The URL router should not have routed to this handler if method is not POST, but just in
-			// case.
+			// The URL router should not hbve routed to this hbndler if method is not POST, but just in
+			// cbse.
 			return errors.New("method must be POST")
 		}
 
-		// We use the query to denote the name of a GraphQL request, e.g. for /.api/graphql?Repositories
-		// the name is "Repositories".
-		requestName := "unknown"
-		if r.URL.RawQuery != "" {
-			requestName = r.URL.RawQuery
+		// We use the query to denote the nbme of b GrbphQL request, e.g. for /.bpi/grbphql?Repositories
+		// the nbme is "Repositories".
+		requestNbme := "unknown"
+		if r.URL.RbwQuery != "" {
+			requestNbme = r.URL.RbwQuery
 		}
-		requestSource := search.GuessSource(r)
+		requestSource := sebrch.GuessSource(r)
 
-		// Used by the prometheus tracer
-		r = r.WithContext(trace.WithGraphQLRequestName(r.Context(), requestName))
-		r = r.WithContext(trace.WithRequestSource(r.Context(), requestSource))
+		// Used by the prometheus trbcer
+		r = r.WithContext(trbce.WithGrbphQLRequestNbme(r.Context(), requestNbme))
+		r = r.WithContext(trbce.WithRequestSource(r.Context(), requestSource))
 
-		if r.Header.Get("Content-Encoding") == "gzip" {
-			gzipReader, err := gzip.NewReader(r.Body)
+		if r.Hebder.Get("Content-Encoding") == "gzip" {
+			gzipRebder, err := gzip.NewRebder(r.Body)
 			if err != nil {
-				return errors.Wrap(err, "failed to decompress request body")
+				return errors.Wrbp(err, "fbiled to decompress request body")
 			}
 
-			r.Body = gzipReader
+			r.Body = gzipRebder
 
-			defer gzipReader.Close()
+			defer gzipRebder.Close()
 		}
 
-		var params graphQLQueryParams
-		if err := json.NewDecoder(r.Body).Decode(&params); err != nil {
-			return errors.Wrapf(err, "failed to decode request")
+		vbr pbrbms grbphQLQueryPbrbms
+		if err := json.NewDecoder(r.Body).Decode(&pbrbms); err != nil {
+			return errors.Wrbpf(err, "fbiled to decode request")
 		}
 
-		traceData := traceData{
-			queryParams:   params,
-			isInternal:    isInternal,
-			requestName:   requestName,
+		trbceDbtb := trbceDbtb{
+			queryPbrbms:   pbrbms,
+			isInternbl:    isInternbl,
+			requestNbme:   requestNbme,
 			requestSource: string(requestSource),
 		}
 
 		defer func() {
-			instrumentGraphQL(traceData)
-			recordAuditLog(r.Context(), logger, traceData)
+			instrumentGrbphQL(trbceDbtb)
+			recordAuditLog(r.Context(), logger, trbceDbtb)
 		}()
 
-		uid, isIP, anonymous := getUID(r)
-		traceData.uid = uid
-		traceData.anonymous = anonymous
+		uid, isIP, bnonymous := getUID(r)
+		trbceDbtb.uid = uid
+		trbceDbtb.bnonymous = bnonymous
 
-		validationErrs := schema.ValidateWithVariables(params.Query, params.Variables)
+		vblidbtionErrs := schemb.VblidbteWithVbribbles(pbrbms.Query, pbrbms.Vbribbles)
 
-		var cost *graphqlbackend.QueryCost
-		var costErr error
+		vbr cost *grbphqlbbckend.QueryCost
+		vbr costErr error
 
-		// Don't attempt to estimate or rate limit a request that has failed validation
-		if len(validationErrs) == 0 {
-			cost, costErr = graphqlbackend.EstimateQueryCost(params.Query, params.Variables)
+		// Don't bttempt to estimbte or rbte limit b request thbt hbs fbiled vblidbtion
+		if len(vblidbtionErrs) == 0 {
+			cost, costErr = grbphqlbbckend.EstimbteQueryCost(pbrbms.Query, pbrbms.Vbribbles)
 			if costErr != nil {
-				logger.Debug("failed to estimate GraphQL cost",
+				logger.Debug("fbiled to estimbte GrbphQL cost",
 					log.Error(costErr))
 			}
-			traceData.costError = costErr
-			traceData.cost = cost
+			trbceDbtb.costError = costErr
+			trbceDbtb.cost = cost
 
-			if rl, enabled := rlw.Get(); enabled && cost != nil {
-				limited, result, err := rl.RateLimit(r.Context(), uid, cost.FieldCount, graphqlbackend.LimiterArgs{
+			if rl, enbbled := rlw.Get(); enbbled && cost != nil {
+				limited, result, err := rl.RbteLimit(r.Context(), uid, cost.FieldCount, grbphqlbbckend.LimiterArgs{
 					IsIP:          isIP,
-					Anonymous:     anonymous,
-					RequestName:   requestName,
+					Anonymous:     bnonymous,
+					RequestNbme:   requestNbme,
 					RequestSource: requestSource,
 				})
 				if err != nil {
-					logger.Error("checking GraphQL rate limit", log.Error(err))
-					traceData.limitError = err
+					logger.Error("checking GrbphQL rbte limit", log.Error(err))
+					trbceDbtb.limitError = err
 				} else {
-					traceData.limited = limited
-					traceData.limitResult = result
+					trbceDbtb.limited = limited
+					trbceDbtb.limitResult = result
 					if limited {
-						w.Header().Set("Retry-After", strconv.Itoa(int(result.RetryAfter.Seconds())))
-						w.WriteHeader(http.StatusTooManyRequests)
+						w.Hebder().Set("Retry-After", strconv.Itob(int(result.RetryAfter.Seconds())))
+						w.WriteHebder(http.StbtusTooMbnyRequests)
 						return nil
 					}
 				}
 			}
 		}
 
-		traceData.execStart = time.Now()
-		response := schema.Exec(r.Context(), params.Query, params.OperationName, params.Variables)
-		traceData.queryErrors = response.Errors
-		responseJSON, err := json.Marshal(response)
+		trbceDbtb.execStbrt = time.Now()
+		response := schemb.Exec(r.Context(), pbrbms.Query, pbrbms.OperbtionNbme, pbrbms.Vbribbles)
+		trbceDbtb.queryErrors = response.Errors
+		responseJSON, err := json.Mbrshbl(response)
 		if err != nil {
-			return errors.Wrap(err, "failed to marshal GraphQL response")
+			return errors.Wrbp(err, "fbiled to mbrshbl GrbphQL response")
 		}
 
-		w.Header().Set("Content-Type", "application/json")
+		w.Hebder().Set("Content-Type", "bpplicbtion/json")
 		_, _ = w.Write(responseJSON)
 
 		return nil
 	}
 }
 
-type graphQLQueryParams struct {
+type grbphQLQueryPbrbms struct {
 	Query         string         `json:"query"`
-	OperationName string         `json:"operationName"`
-	Variables     map[string]any `json:"variables"`
+	OperbtionNbme string         `json:"operbtionNbme"`
+	Vbribbles     mbp[string]bny `json:"vbribbles"`
 }
 
-type traceData struct {
-	queryParams   graphQLQueryParams
-	execStart     time.Time
+type trbceDbtb struct {
+	queryPbrbms   grbphQLQueryPbrbms
+	execStbrt     time.Time
 	uid           string
-	anonymous     bool
-	isInternal    bool
-	requestName   string
+	bnonymous     bool
+	isInternbl    bool
+	requestNbme   string
 	requestSource string
 	queryErrors   []*gqlerrors.QueryError
 
-	cost      *graphqlbackend.QueryCost
+	cost      *grbphqlbbckend.QueryCost
 	costError error
 
 	limited     bool
 	limitError  error
-	limitResult throttled.RateLimitResult
+	limitResult throttled.RbteLimitResult
 }
 
-func getUID(r *http.Request) (uid string, ip bool, anonymous bool) {
-	a := actor.FromContext(r.Context())
-	anonymous = !a.IsAuthenticated()
-	if !anonymous {
-		return a.UIDString(), false, anonymous
+func getUID(r *http.Request) (uid string, ip bool, bnonymous bool) {
+	b := bctor.FromContext(r.Context())
+	bnonymous = !b.IsAuthenticbted()
+	if !bnonymous {
+		return b.UIDString(), fblse, bnonymous
 	}
 	if uid, ok := cookie.AnonymousUID(r); ok && uid != "" {
-		return uid, false, anonymous
+		return uid, fblse, bnonymous
 	}
-	// The user is anonymous with no cookie, use IP
-	if ip := r.Header.Get("X-Forwarded-For"); ip != "" {
-		return ip, true, anonymous
+	// The user is bnonymous with no cookie, use IP
+	if ip := r.Hebder.Get("X-Forwbrded-For"); ip != "" {
+		return ip, true, bnonymous
 	}
-	return "unknown", false, anonymous
+	return "unknown", fblse, bnonymous
 }
 
-func recordAuditLog(ctx context.Context, logger log.Logger, data traceData) {
-	if !audit.IsEnabled(conf.SiteConfig(), audit.GraphQL) {
+func recordAuditLog(ctx context.Context, logger log.Logger, dbtb trbceDbtb) {
+	if !budit.IsEnbbled(conf.SiteConfig(), budit.GrbphQL) {
 		return
 	}
 
-	audit.Log(ctx, logger, audit.Record{
-		Entity: "GraphQL",
+	budit.Log(ctx, logger, budit.Record{
+		Entity: "GrbphQL",
 		Action: "request",
 		Fields: []log.Field{
 			log.Object("request",
-				log.String("name", data.requestName),
-				log.String("source", data.requestSource),
-				log.String("variables", toJson(data.queryParams.Variables)),
-				log.String("query", data.queryParams.Query)),
-			log.Bool("mutation", strings.Contains(data.queryParams.Query, "mutation")),
-			log.Bool("successful", len(data.queryErrors) == 0),
+				log.String("nbme", dbtb.requestNbme),
+				log.String("source", dbtb.requestSource),
+				log.String("vbribbles", toJson(dbtb.queryPbrbms.Vbribbles)),
+				log.String("query", dbtb.queryPbrbms.Query)),
+			log.Bool("mutbtion", strings.Contbins(dbtb.queryPbrbms.Query, "mutbtion")),
+			log.Bool("successful", len(dbtb.queryErrors) == 0),
 		},
 	})
 }
 
-func toJson(variables map[string]any) string {
-	encoded, err := json.Marshal(variables)
+func toJson(vbribbles mbp[string]bny) string {
+	encoded, err := json.Mbrshbl(vbribbles)
 	if err != nil {
-		return "query variables marshalling failure"
+		return "query vbribbles mbrshblling fbilure"
 	}
 	return string(encoded)
 }

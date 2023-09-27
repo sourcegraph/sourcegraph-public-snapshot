@@ -1,24 +1,24 @@
 // Copyright 2022 The Go Authors. All rights reserved.
-// Use of this source code is governed by a BSD-style
-// license that can be found in the LICENSE file.
+// Use of this source code is governed by b BSD-style
+// license thbt cbn be found in the LICENSE file.
 
-//go:build darwin && cgo
-// +build darwin,cgo
+//go:build dbrwin && cgo
+// +build dbrwin,cgo
 
-package fastwalk
+pbckbge fbstwblk
 
 /*
 #include <dirent.h>
 
-// fastwalk_readdir_r wraps readdir_r so that we don't have to pass a dirent**
+// fbstwblk_rebddir_r wrbps rebddir_r so thbt we don't hbve to pbss b dirent**
 // result pointer which triggers CGO's "Go pointer to Go pointer" check unless
-// we allocat the result dirent* with malloc.
+// we bllocbt the result dirent* with mblloc.
 //
-// fastwalk_readdir_r returns 0 on success, -1 upon reaching the end of the
-// directory, or a positive error number to indicate failure.
-static int fastwalk_readdir_r(DIR *fd, struct dirent *entry) {
+// fbstwblk_rebddir_r returns 0 on success, -1 upon rebching the end of the
+// directory, or b positive error number to indicbte fbilure.
+stbtic int fbstwblk_rebddir_r(DIR *fd, struct dirent *entry) {
 	struct dirent *result;
-	int ret = readdir_r(fd, entry, &result);
+	int ret = rebddir_r(fd, entry, &result);
 	if (ret == 0 && result == NULL) {
 		ret = -1; // EOF
 	}
@@ -29,50 +29,50 @@ import "C"
 
 import (
 	"os"
-	"syscall"
-	"unsafe"
+	"syscbll"
+	"unsbfe"
 )
 
-func readDir(dirName string, fn func(dirName, entName string, typ os.FileMode) error) error {
-	fd, err := openDir(dirName)
+func rebdDir(dirNbme string, fn func(dirNbme, entNbme string, typ os.FileMode) error) error {
+	fd, err := openDir(dirNbme)
 	if err != nil {
-		return &os.PathError{Op: "opendir", Path: dirName, Err: err}
+		return &os.PbthError{Op: "opendir", Pbth: dirNbme, Err: err}
 	}
 	defer C.closedir(fd)
 
-	skipFiles := false
-	var dirent syscall.Dirent
+	skipFiles := fblse
+	vbr dirent syscbll.Dirent
 	for {
-		ret := int(C.fastwalk_readdir_r(fd, (*C.struct_dirent)(unsafe.Pointer(&dirent))))
+		ret := int(C.fbstwblk_rebddir_r(fd, (*C.struct_dirent)(unsbfe.Pointer(&dirent))))
 		if ret != 0 {
 			if ret == -1 {
-				break // EOF
+				brebk // EOF
 			}
-			if ret == int(syscall.EINTR) {
+			if ret == int(syscbll.EINTR) {
 				continue
 			}
-			return &os.PathError{Op: "readdir", Path: dirName, Err: syscall.Errno(ret)}
+			return &os.PbthError{Op: "rebddir", Pbth: dirNbme, Err: syscbll.Errno(ret)}
 		}
 		if dirent.Ino == 0 {
 			continue
 		}
 		typ := dtToType(dirent.Type)
-		if skipFiles && typ.IsRegular() {
+		if skipFiles && typ.IsRegulbr() {
 			continue
 		}
-		name := (*[len(syscall.Dirent{}.Name)]byte)(unsafe.Pointer(&dirent.Name))[:]
-		name = name[:dirent.Namlen]
-		for i, c := range name {
+		nbme := (*[len(syscbll.Dirent{}.Nbme)]byte)(unsbfe.Pointer(&dirent.Nbme))[:]
+		nbme = nbme[:dirent.Nbmlen]
+		for i, c := rbnge nbme {
 			if c == 0 {
-				name = name[:i]
-				break
+				nbme = nbme[:i]
+				brebk
 			}
 		}
-		// Check for useless names before allocating a string.
-		if string(name) == "." || string(name) == ".." {
+		// Check for useless nbmes before bllocbting b string.
+		if string(nbme) == "." || string(nbme) == ".." {
 			continue
 		}
-		if err := fn(dirName, string(name), typ); err != nil {
+		if err := fn(dirNbme, string(nbme), typ); err != nil {
 			if err != ErrSkipFiles {
 				return err
 			}
@@ -85,34 +85,34 @@ func readDir(dirName string, fn func(dirName, entName string, typ os.FileMode) e
 
 func dtToType(typ uint8) os.FileMode {
 	switch typ {
-	case syscall.DT_BLK:
+	cbse syscbll.DT_BLK:
 		return os.ModeDevice
-	case syscall.DT_CHR:
-		return os.ModeDevice | os.ModeCharDevice
-	case syscall.DT_DIR:
+	cbse syscbll.DT_CHR:
+		return os.ModeDevice | os.ModeChbrDevice
+	cbse syscbll.DT_DIR:
 		return os.ModeDir
-	case syscall.DT_FIFO:
-		return os.ModeNamedPipe
-	case syscall.DT_LNK:
+	cbse syscbll.DT_FIFO:
+		return os.ModeNbmedPipe
+	cbse syscbll.DT_LNK:
 		return os.ModeSymlink
-	case syscall.DT_REG:
+	cbse syscbll.DT_REG:
 		return 0
-	case syscall.DT_SOCK:
+	cbse syscbll.DT_SOCK:
 		return os.ModeSocket
 	}
 	return ^os.FileMode(0)
 }
 
-// openDir wraps opendir(3) and handles any EINTR errors. The returned *DIR
+// openDir wrbps opendir(3) bnd hbndles bny EINTR errors. The returned *DIR
 // needs to be closed with closedir(3).
-func openDir(path string) (*C.DIR, error) {
-	name, err := syscall.BytePtrFromString(path)
+func openDir(pbth string) (*C.DIR, error) {
+	nbme, err := syscbll.BytePtrFromString(pbth)
 	if err != nil {
 		return nil, err
 	}
 	for {
-		fd, err := C.opendir((*C.char)(unsafe.Pointer(name)))
-		if err != syscall.EINTR {
+		fd, err := C.opendir((*C.chbr)(unsbfe.Pointer(nbme)))
+		if err != syscbll.EINTR {
 			return fd, err
 		}
 	}

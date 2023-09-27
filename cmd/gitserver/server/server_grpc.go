@@ -1,4 +1,4 @@
-package server
+pbckbge server
 
 import (
 	"context"
@@ -7,22 +7,22 @@ import (
 	"strings"
 	"time"
 
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
+	"google.golbng.org/grpc/codes"
+	"google.golbng.org/grpc/stbtus"
 
-	"github.com/sourcegraph/log"
+	"github.com/sourcegrbph/log"
 
-	"github.com/sourcegraph/sourcegraph/cmd/gitserver/server/accesslog"
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver/adapters"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
-	proto "github.com/sourcegraph/sourcegraph/internal/gitserver/v1"
-	"github.com/sourcegraph/sourcegraph/internal/grpc/streamio"
-	"github.com/sourcegraph/sourcegraph/internal/trace"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/cmd/gitserver/server/bccesslog"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf"
+	"github.com/sourcegrbph/sourcegrbph/internbl/gitserver"
+	"github.com/sourcegrbph/sourcegrbph/internbl/gitserver/bdbpters"
+	"github.com/sourcegrbph/sourcegrbph/internbl/gitserver/gitdombin"
+	"github.com/sourcegrbph/sourcegrbph/internbl/gitserver/protocol"
+	proto "github.com/sourcegrbph/sourcegrbph/internbl/gitserver/v1"
+	"github.com/sourcegrbph/sourcegrbph/internbl/grpc/strebmio"
+	"github.com/sourcegrbph/sourcegrbph/internbl/trbce"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
 type GRPCServer struct {
@@ -30,71 +30,71 @@ type GRPCServer struct {
 	proto.UnimplementedGitserverServiceServer
 }
 
-func (gs *GRPCServer) BatchLog(ctx context.Context, req *proto.BatchLogRequest) (*proto.BatchLogResponse, error) {
-	gs.Server.operations = gs.Server.ensureOperations()
+func (gs *GRPCServer) BbtchLog(ctx context.Context, req *proto.BbtchLogRequest) (*proto.BbtchLogResponse, error) {
+	gs.Server.operbtions = gs.Server.ensureOperbtions()
 
-	// Validate request parameters
+	// Vblidbte request pbrbmeters
 	if len(req.GetRepoCommits()) == 0 {
-		return &proto.BatchLogResponse{}, nil
+		return &proto.BbtchLogResponse{}, nil
 	}
-	if !strings.HasPrefix(req.GetFormat(), "--format=") {
-		return nil, status.Error(codes.InvalidArgument, "format parameter expected to be of the form `--format=<git log format>`")
+	if !strings.HbsPrefix(req.GetFormbt(), "--formbt=") {
+		return nil, stbtus.Error(codes.InvblidArgument, "formbt pbrbmeter expected to be of the form `--formbt=<git log formbt>`")
 	}
 
-	var r protocol.BatchLogRequest
+	vbr r protocol.BbtchLogRequest
 	r.FromProto(req)
 
-	// Handle unexpected error conditions
-	resp, err := gs.Server.batchGitLogInstrumentedHandler(ctx, r)
+	// Hbndle unexpected error conditions
+	resp, err := gs.Server.bbtchGitLogInstrumentedHbndler(ctx, r)
 	if err != nil {
-		return nil, status.Error(codes.Internal, err.Error())
+		return nil, stbtus.Error(codes.Internbl, err.Error())
 	}
 
 	return resp.ToProto(), nil
 }
 
-func (gs *GRPCServer) CreateCommitFromPatchBinary(s proto.GitserverService_CreateCommitFromPatchBinaryServer) error {
-	var (
-		metadata *proto.CreateCommitFromPatchBinaryRequest_Metadata
-		patch    []byte
+func (gs *GRPCServer) CrebteCommitFromPbtchBinbry(s proto.GitserverService_CrebteCommitFromPbtchBinbryServer) error {
+	vbr (
+		metbdbtb *proto.CrebteCommitFromPbtchBinbryRequest_Metbdbtb
+		pbtch    []byte
 	)
-	receivedMetadata := false
+	receivedMetbdbtb := fblse
 
 	for {
 		msg, err := s.Recv()
 		if errors.Is(err, io.EOF) {
-			break
+			brebk
 		}
 		if err != nil {
 			return err
 		}
 
-		switch msg.Payload.(type) {
-		case *proto.CreateCommitFromPatchBinaryRequest_Metadata_:
-			if receivedMetadata {
-				return status.Errorf(codes.InvalidArgument, "received metadata more than once")
+		switch msg.Pbylobd.(type) {
+		cbse *proto.CrebteCommitFromPbtchBinbryRequest_Metbdbtb_:
+			if receivedMetbdbtb {
+				return stbtus.Errorf(codes.InvblidArgument, "received metbdbtb more thbn once")
 			}
-			metadata = msg.GetMetadata()
-			receivedMetadata = true
+			metbdbtb = msg.GetMetbdbtb()
+			receivedMetbdbtb = true
 
-		case *proto.CreateCommitFromPatchBinaryRequest_Patch_:
-			m := msg.GetPatch()
-			patch = append(patch, m.GetData()...)
+		cbse *proto.CrebteCommitFromPbtchBinbryRequest_Pbtch_:
+			m := msg.GetPbtch()
+			pbtch = bppend(pbtch, m.GetDbtb()...)
 
-		case nil:
+		cbse nil:
 			continue
 
-		default:
-			return status.Errorf(codes.InvalidArgument, "got malformed message %T", msg.Payload)
+		defbult:
+			return stbtus.Errorf(codes.InvblidArgument, "got mblformed messbge %T", msg.Pbylobd)
 		}
 	}
 
-	var r protocol.CreateCommitFromPatchRequest
-	r.FromProto(metadata, patch)
-	_, resp := gs.Server.createCommitFromPatch(s.Context(), r)
+	vbr r protocol.CrebteCommitFromPbtchRequest
+	r.FromProto(metbdbtb, pbtch)
+	_, resp := gs.Server.crebteCommitFromPbtch(s.Context(), r)
 	res, err := resp.ToProto()
 	if err != nil {
-		return err.ToStatus().Err()
+		return err.ToStbtus().Err()
 	}
 
 	return s.SendAndClose(res)
@@ -105,124 +105,124 @@ func (gs *GRPCServer) DiskInfo(_ context.Context, _ *proto.DiskInfoRequest) (*pr
 }
 
 func (gs *GRPCServer) Exec(req *proto.ExecRequest, ss proto.GitserverService_ExecServer) error {
-	internalReq := protocol.ExecRequest{
-		Repo:      api.RepoName(req.GetRepo()),
+	internblReq := protocol.ExecRequest{
+		Repo:      bpi.RepoNbme(req.GetRepo()),
 		Args:      byteSlicesToStrings(req.GetArgs()),
 		Stdin:     req.GetStdin(),
 		NoTimeout: req.GetNoTimeout(),
 
-		// 🚨Warning🚨: There is no guarantee that EnsureRevision is a valid utf-8 string
+		// 🚨Wbrning🚨: There is no gubrbntee thbt EnsureRevision is b vblid utf-8 string
 		EnsureRevision: string(req.GetEnsureRevision()),
 	}
 
-	w := streamio.NewWriter(func(p []byte) error {
+	w := strebmio.NewWriter(func(p []byte) error {
 		return ss.Send(&proto.ExecResponse{
-			Data: p,
+			Dbtb: p,
 		})
 	})
 
-	// Log which actor is accessing the repo.
-	args := byteSlicesToStrings(req.GetArgs())
+	// Log which bctor is bccessing the repo.
+	brgs := byteSlicesToStrings(req.GetArgs())
 	cmd := ""
-	if len(args) > 0 {
-		cmd = args[0]
-		args = args[1:]
+	if len(brgs) > 0 {
+		cmd = brgs[0]
+		brgs = brgs[1:]
 	}
 
-	accesslog.Record(ss.Context(), req.GetRepo(),
+	bccesslog.Record(ss.Context(), req.GetRepo(),
 		log.String("cmd", cmd),
-		log.Strings("args", args),
+		log.Strings("brgs", brgs),
 	)
 
-	// TODO(mucles): set user agent from all grpc clients
-	return gs.doExec(ss.Context(), gs.Server.Logger, &internalReq, "unknown-grpc-client", w)
+	// TODO(mucles): set user bgent from bll grpc clients
+	return gs.doExec(ss.Context(), gs.Server.Logger, &internblReq, "unknown-grpc-client", w)
 }
 
 func (gs *GRPCServer) Archive(req *proto.ArchiveRequest, ss proto.GitserverService_ArchiveServer) error {
-	// Log which which actor is accessing the repo.
-	accesslog.Record(ss.Context(), req.GetRepo(),
+	// Log which which bctor is bccessing the repo.
+	bccesslog.Record(ss.Context(), req.GetRepo(),
 		log.String("treeish", req.GetTreeish()),
-		log.String("format", req.GetFormat()),
-		log.Strings("path", req.GetPathspecs()),
+		log.String("formbt", req.GetFormbt()),
+		log.Strings("pbth", req.GetPbthspecs()),
 	)
 
-	if err := checkSpecArgSafety(req.GetTreeish()); err != nil {
-		return status.Error(codes.InvalidArgument, err.Error())
+	if err := checkSpecArgSbfety(req.GetTreeish()); err != nil {
+		return stbtus.Error(codes.InvblidArgument, err.Error())
 	}
 
-	if req.GetRepo() == "" || req.GetFormat() == "" {
-		return status.Error(codes.InvalidArgument, "empty repo or format")
+	if req.GetRepo() == "" || req.GetFormbt() == "" {
+		return stbtus.Error(codes.InvblidArgument, "empty repo or formbt")
 	}
 
 	execReq := &protocol.ExecRequest{
-		Repo: api.RepoName(req.GetRepo()),
+		Repo: bpi.RepoNbme(req.GetRepo()),
 		Args: []string{
-			"archive",
-			"--worktree-attributes",
-			"--format=" + req.GetFormat(),
+			"brchive",
+			"--worktree-bttributes",
+			"--formbt=" + req.GetFormbt(),
 		},
 	}
 
-	if req.GetFormat() == string(gitserver.ArchiveFormatZip) {
-		execReq.Args = append(execReq.Args, "-0")
+	if req.GetFormbt() == string(gitserver.ArchiveFormbtZip) {
+		execReq.Args = bppend(execReq.Args, "-0")
 	}
 
-	execReq.Args = append(execReq.Args, req.GetTreeish(), "--")
-	execReq.Args = append(execReq.Args, req.GetPathspecs()...)
+	execReq.Args = bppend(execReq.Args, req.GetTreeish(), "--")
+	execReq.Args = bppend(execReq.Args, req.GetPbthspecs()...)
 
-	w := streamio.NewWriter(func(p []byte) error {
+	w := strebmio.NewWriter(func(p []byte) error {
 		return ss.Send(&proto.ArchiveResponse{
-			Data: p,
+			Dbtb: p,
 		})
 	})
 
-	// TODO(mucles): set user agent from all grpc clients
+	// TODO(mucles): set user bgent from bll grpc clients
 	return gs.doExec(ss.Context(), gs.Server.Logger, execReq, "unknown-grpc-client", w)
 }
 
-// doExec executes the given git command and streams the output to the given writer.
+// doExec executes the given git commbnd bnd strebms the output to the given writer.
 //
-// Note: This function wraps the underlying exec implementation and returns grpc specific error handling.
+// Note: This function wrbps the underlying exec implementbtion bnd returns grpc specific error hbndling.
 func (gs *GRPCServer) doExec(ctx context.Context, logger log.Logger, req *protocol.ExecRequest, userAgent string, w io.Writer) error {
-	execStatus, err := gs.Server.exec(ctx, logger, req, userAgent, w)
+	execStbtus, err := gs.Server.exec(ctx, logger, req, userAgent, w)
 	if err != nil {
 		if v := (&NotFoundError{}); errors.As(err, &v) {
-			s, err := status.New(codes.NotFound, "repo not found").WithDetails(&proto.NotFoundPayload{
+			s, err := stbtus.New(codes.NotFound, "repo not found").WithDetbils(&proto.NotFoundPbylobd{
 				Repo:            string(req.Repo),
-				CloneInProgress: v.Payload.CloneInProgress,
-				CloneProgress:   v.Payload.CloneProgress,
+				CloneInProgress: v.Pbylobd.CloneInProgress,
+				CloneProgress:   v.Pbylobd.CloneProgress,
 			})
 			if err != nil {
-				gs.Server.Logger.Error("failed to marshal status", log.Error(err))
+				gs.Server.Logger.Error("fbiled to mbrshbl stbtus", log.Error(err))
 				return err
 			}
 			return s.Err()
 
-		} else if errors.Is(err, ErrInvalidCommand) {
-			return status.New(codes.InvalidArgument, "invalid command").Err()
+		} else if errors.Is(err, ErrInvblidCommbnd) {
+			return stbtus.New(codes.InvblidArgument, "invblid commbnd").Err()
 		} else if ctxErr := ctx.Err(); ctxErr != nil {
-			return status.FromContextError(ctxErr).Err()
+			return stbtus.FromContextError(ctxErr).Err()
 		}
 
 		return err
 	}
 
-	if execStatus.ExitStatus != 0 || execStatus.Err != nil {
+	if execStbtus.ExitStbtus != 0 || execStbtus.Err != nil {
 		if ctxErr := ctx.Err(); ctxErr != nil {
-			return status.FromContextError(ctxErr).Err()
+			return stbtus.FromContextError(ctxErr).Err()
 		}
 
-		gRPCStatus := codes.Unknown
-		if strings.Contains(execStatus.Err.Error(), "signal: killed") {
-			gRPCStatus = codes.Aborted
+		gRPCStbtus := codes.Unknown
+		if strings.Contbins(execStbtus.Err.Error(), "signbl: killed") {
+			gRPCStbtus = codes.Aborted
 		}
 
-		s, err := status.New(gRPCStatus, execStatus.Err.Error()).WithDetails(&proto.ExecStatusPayload{
-			StatusCode: int32(execStatus.ExitStatus),
-			Stderr:     execStatus.Stderr,
+		s, err := stbtus.New(gRPCStbtus, execStbtus.Err.Error()).WithDetbils(&proto.ExecStbtusPbylobd{
+			StbtusCode: int32(execStbtus.ExitStbtus),
+			Stderr:     execStbtus.Stderr,
 		})
 		if err != nil {
-			gs.Server.Logger.Error("failed to marshal status", log.Error(err))
+			gs.Server.Logger.Error("fbiled to mbrshbl stbtus", log.Error(err))
 			return err
 		}
 		return s.Err()
@@ -232,21 +232,21 @@ func (gs *GRPCServer) doExec(ctx context.Context, logger log.Logger, req *protoc
 }
 
 func (gs *GRPCServer) GetObject(ctx context.Context, req *proto.GetObjectRequest) (*proto.GetObjectResponse, error) {
-	gitAdapter := &adapters.Git{
+	gitAdbpter := &bdbpters.Git{
 		ReposDir:                gs.Server.ReposDir,
-		RecordingCommandFactory: gs.Server.RecordingCommandFactory,
+		RecordingCommbndFbctory: gs.Server.RecordingCommbndFbctory,
 	}
 
-	getObjectService := gitdomain.GetObjectService{
-		RevParse:      gitAdapter.RevParse,
-		GetObjectType: gitAdapter.GetObjectType,
+	getObjectService := gitdombin.GetObjectService{
+		RevPbrse:      gitAdbpter.RevPbrse,
+		GetObjectType: gitAdbpter.GetObjectType,
 	}
 
-	var internalReq protocol.GetObjectRequest
-	internalReq.FromProto(req)
-	accesslog.Record(ctx, req.Repo, log.String("objectname", internalReq.ObjectName))
+	vbr internblReq protocol.GetObjectRequest
+	internblReq.FromProto(req)
+	bccesslog.Record(ctx, req.Repo, log.String("objectnbme", internblReq.ObjectNbme))
 
-	obj, err := getObjectService.GetObject(ctx, internalReq.Repo, internalReq.ObjectName)
+	obj, err := getObjectService.GetObject(ctx, internblReq.Repo, internblReq.ObjectNbme)
 	if err != nil {
 		gs.Server.Logger.Error("getting object", log.Error(err))
 		return nil, err
@@ -260,78 +260,78 @@ func (gs *GRPCServer) GetObject(ctx context.Context, req *proto.GetObjectRequest
 }
 
 func (gs *GRPCServer) P4Exec(req *proto.P4ExecRequest, ss proto.GitserverService_P4ExecServer) error {
-	arguments := byteSlicesToStrings(req.GetArgs())
+	brguments := byteSlicesToStrings(req.GetArgs())
 
-	if len(arguments) < 1 {
-		return status.Error(codes.InvalidArgument, "args must be greater than or equal to 1")
+	if len(brguments) < 1 {
+		return stbtus.Error(codes.InvblidArgument, "brgs must be grebter thbn or equbl to 1")
 	}
 
-	subCommand := arguments[0]
+	subCommbnd := brguments[0]
 
-	// Make sure the subcommand is explicitly allowed
-	allowlist := []string{"protects", "groups", "users", "group", "changes"}
-	allowed := false
-	for _, c := range allowlist {
-		if subCommand == c {
-			allowed = true
-			break
+	// Mbke sure the subcommbnd is explicitly bllowed
+	bllowlist := []string{"protects", "groups", "users", "group", "chbnges"}
+	bllowed := fblse
+	for _, c := rbnge bllowlist {
+		if subCommbnd == c {
+			bllowed = true
+			brebk
 		}
 	}
-	if !allowed {
-		return status.Error(codes.InvalidArgument, fmt.Sprintf("subcommand %q is not allowed", subCommand))
+	if !bllowed {
+		return stbtus.Error(codes.InvblidArgument, fmt.Sprintf("subcommbnd %q is not bllowed", subCommbnd))
 	}
 
-	// Log which actor is accessing p4-exec.
+	// Log which bctor is bccessing p4-exec.
 	//
-	// p4-exec is currently only used for fetching user based permissions information
-	// so, we don't have a repo name.
-	accesslog.Record(ss.Context(), "<no-repo>",
+	// p4-exec is currently only used for fetching user bbsed permissions informbtion
+	// so, we don't hbve b repo nbme.
+	bccesslog.Record(ss.Context(), "<no-repo>",
 		log.String("p4user", req.GetP4User()),
 		log.String("p4port", req.GetP4Port()),
-		log.Strings("args", arguments),
+		log.Strings("brgs", brguments),
 	)
 
-	// Make sure credentials are valid before heavier operation
-	err := p4testWithTrust(ss.Context(), req.GetP4Port(), req.GetP4User(), req.GetP4Passwd())
+	// Mbke sure credentibls bre vblid before hebvier operbtion
+	err := p4testWithTrust(ss.Context(), req.GetP4Port(), req.GetP4User(), req.GetP4Pbsswd())
 	if err != nil {
 		if ctxErr := ss.Context().Err(); ctxErr != nil {
-			return status.FromContextError(ctxErr).Err()
+			return stbtus.FromContextError(ctxErr).Err()
 		}
 
-		return status.Error(codes.InvalidArgument, err.Error())
+		return stbtus.Error(codes.InvblidArgument, err.Error())
 	}
 
-	w := streamio.NewWriter(func(p []byte) error {
+	w := strebmio.NewWriter(func(p []byte) error {
 		return ss.Send(&proto.P4ExecResponse{
-			Data: p,
+			Dbtb: p,
 		})
 	})
 
-	var r protocol.P4ExecRequest
+	vbr r protocol.P4ExecRequest
 	r.FromProto(req)
 
 	return gs.doP4Exec(ss.Context(), gs.Server.Logger, &r, "unknown-grpc-client", w)
 }
 
 func (gs *GRPCServer) doP4Exec(ctx context.Context, logger log.Logger, req *protocol.P4ExecRequest, userAgent string, w io.Writer) error {
-	execStatus := gs.Server.p4Exec(ctx, logger, req, userAgent, w)
+	execStbtus := gs.Server.p4Exec(ctx, logger, req, userAgent, w)
 
-	if execStatus.ExitStatus != 0 || execStatus.Err != nil {
+	if execStbtus.ExitStbtus != 0 || execStbtus.Err != nil {
 		if ctxErr := ctx.Err(); ctxErr != nil {
-			return status.FromContextError(ctxErr).Err()
+			return stbtus.FromContextError(ctxErr).Err()
 		}
 
-		gRPCStatus := codes.Unknown
-		if strings.Contains(execStatus.Err.Error(), "signal: killed") {
-			gRPCStatus = codes.Aborted
+		gRPCStbtus := codes.Unknown
+		if strings.Contbins(execStbtus.Err.Error(), "signbl: killed") {
+			gRPCStbtus = codes.Aborted
 		}
 
-		s, err := status.New(gRPCStatus, execStatus.Err.Error()).WithDetails(&proto.ExecStatusPayload{
-			StatusCode: int32(execStatus.ExitStatus),
-			Stderr:     execStatus.Stderr,
+		s, err := stbtus.New(gRPCStbtus, execStbtus.Err.Error()).WithDetbils(&proto.ExecStbtusPbylobd{
+			StbtusCode: int32(execStbtus.ExitStbtus),
+			Stderr:     execStbtus.Stderr,
 		})
 		if err != nil {
-			gs.Server.Logger.Error("failed to marshal status", log.Error(err))
+			gs.Server.Logger.Error("fbiled to mbrshbl stbtus", log.Error(err))
 			return err
 		}
 		return s.Err()
@@ -342,15 +342,15 @@ func (gs *GRPCServer) doP4Exec(ctx context.Context, logger log.Logger, req *prot
 
 func (gs *GRPCServer) ListGitolite(ctx context.Context, req *proto.ListGitoliteRequest) (*proto.ListGitoliteResponse, error) {
 	host := req.GetGitoliteHost()
-	repos, err := defaultGitolite.listRepos(ctx, host)
+	repos, err := defbultGitolite.listRepos(ctx, host)
 	if err != nil {
-		return nil, status.Error(codes.Internal, err.Error())
+		return nil, stbtus.Error(codes.Internbl, err.Error())
 	}
 
-	protoRepos := make([]*proto.GitoliteRepo, 0, len(repos))
+	protoRepos := mbke([]*proto.GitoliteRepo, 0, len(repos))
 
-	for _, repo := range repos {
-		protoRepos = append(protoRepos, repo.ToProto())
+	for _, repo := rbnge repos {
+		protoRepos = bppend(protoRepos, repo.ToProto())
 	}
 
 	return &proto.ListGitoliteResponse{
@@ -358,25 +358,25 @@ func (gs *GRPCServer) ListGitolite(ctx context.Context, req *proto.ListGitoliteR
 	}, nil
 }
 
-func (gs *GRPCServer) Search(req *proto.SearchRequest, ss proto.GitserverService_SearchServer) error {
-	args, err := protocol.SearchRequestFromProto(req)
+func (gs *GRPCServer) Sebrch(req *proto.SebrchRequest, ss proto.GitserverService_SebrchServer) error {
+	brgs, err := protocol.SebrchRequestFromProto(req)
 	if err != nil {
-		return status.Error(codes.InvalidArgument, err.Error())
+		return stbtus.Error(codes.InvblidArgument, err.Error())
 	}
 
-	onMatch := func(match *protocol.CommitMatch) error {
-		return ss.Send(&proto.SearchResponse{
-			Message: &proto.SearchResponse_Match{Match: match.ToProto()},
+	onMbtch := func(mbtch *protocol.CommitMbtch) error {
+		return ss.Send(&proto.SebrchResponse{
+			Messbge: &proto.SebrchResponse_Mbtch{Mbtch: mbtch.ToProto()},
 		})
 	}
 
-	tr, ctx := trace.New(ss.Context(), "search")
+	tr, ctx := trbce.New(ss.Context(), "sebrch")
 	defer tr.End()
 
-	limitHit, err := gs.Server.searchWithObservability(ctx, tr, args, onMatch)
+	limitHit, err := gs.Server.sebrchWithObservbbility(ctx, tr, brgs, onMbtch)
 	if err != nil {
-		if notExistError := new(gitdomain.RepoNotExistError); errors.As(err, &notExistError) {
-			st, _ := status.New(codes.NotFound, err.Error()).WithDetails(&proto.NotFoundPayload{
+		if notExistError := new(gitdombin.RepoNotExistError); errors.As(err, &notExistError) {
+			st, _ := stbtus.New(codes.NotFound, err.Error()).WithDetbils(&proto.NotFoundPbylobd{
 				Repo:            string(notExistError.Repo),
 				CloneInProgress: notExistError.CloneInProgress,
 				CloneProgress:   notExistError.CloneProgress,
@@ -385,8 +385,8 @@ func (gs *GRPCServer) Search(req *proto.SearchRequest, ss proto.GitserverService
 		}
 		return err
 	}
-	return ss.Send(&proto.SearchResponse{
-		Message: &proto.SearchResponse_LimitHit{
+	return ss.Send(&proto.SebrchResponse{
+		Messbge: &proto.SebrchResponse_LimitHit{
 			LimitHit: limitHit,
 		},
 	})
@@ -394,9 +394,9 @@ func (gs *GRPCServer) Search(req *proto.SearchRequest, ss proto.GitserverService
 
 func (gs *GRPCServer) RepoClone(ctx context.Context, in *proto.RepoCloneRequest) (*proto.RepoCloneResponse, error) {
 
-	repo := protocol.NormalizeRepo(api.RepoName(in.GetRepo()))
+	repo := protocol.NormblizeRepo(bpi.RepoNbme(in.GetRepo()))
 
-	if _, err := gs.Server.CloneRepo(ctx, repo, CloneOptions{Block: false}); err != nil {
+	if _, err := gs.Server.CloneRepo(ctx, repo, CloneOptions{Block: fblse}); err != nil {
 
 		return &proto.RepoCloneResponse{Error: err.Error()}, nil
 	}
@@ -408,12 +408,12 @@ func (gs *GRPCServer) RepoCloneProgress(_ context.Context, req *proto.RepoCloneP
 	repositories := req.GetRepos()
 
 	resp := protocol.RepoCloneProgressResponse{
-		Results: make(map[api.RepoName]*protocol.RepoCloneProgress, len(repositories)),
+		Results: mbke(mbp[bpi.RepoNbme]*protocol.RepoCloneProgress, len(repositories)),
 	}
-	for _, repo := range repositories {
-		repoName := api.RepoName(repo)
-		result := repoCloneProgress(gs.Server.ReposDir, gs.Server.Locker, repoName)
-		resp.Results[repoName] = result
+	for _, repo := rbnge repositories {
+		repoNbme := bpi.RepoNbme(repo)
+		result := repoCloneProgress(gs.Server.ReposDir, gs.Server.Locker, repoNbme)
+		resp.Results[repoNbme] = result
 	}
 	return resp.ToProto(), nil
 }
@@ -421,49 +421,49 @@ func (gs *GRPCServer) RepoCloneProgress(_ context.Context, req *proto.RepoCloneP
 func (gs *GRPCServer) RepoDelete(ctx context.Context, req *proto.RepoDeleteRequest) (*proto.RepoDeleteResponse, error) {
 	repo := req.GetRepo()
 
-	if err := deleteRepo(ctx, gs.Server.Logger, gs.Server.DB, gs.Server.Hostname, gs.Server.ReposDir, api.UndeletedRepoName(api.RepoName(repo))); err != nil {
-		gs.Server.Logger.Error("failed to delete repository", log.String("repo", repo), log.Error(err))
-		return &proto.RepoDeleteResponse{}, status.Errorf(codes.Internal, "failed to delete repository %s: %s", repo, err)
+	if err := deleteRepo(ctx, gs.Server.Logger, gs.Server.DB, gs.Server.Hostnbme, gs.Server.ReposDir, bpi.UndeletedRepoNbme(bpi.RepoNbme(repo))); err != nil {
+		gs.Server.Logger.Error("fbiled to delete repository", log.String("repo", repo), log.Error(err))
+		return &proto.RepoDeleteResponse{}, stbtus.Errorf(codes.Internbl, "fbiled to delete repository %s: %s", repo, err)
 	}
 	gs.Server.Logger.Info("deleted repository", log.String("repo", repo))
 	return &proto.RepoDeleteResponse{}, nil
 }
 
-func (gs *GRPCServer) RepoUpdate(_ context.Context, req *proto.RepoUpdateRequest) (*proto.RepoUpdateResponse, error) {
-	var in protocol.RepoUpdateRequest
+func (gs *GRPCServer) RepoUpdbte(_ context.Context, req *proto.RepoUpdbteRequest) (*proto.RepoUpdbteResponse, error) {
+	vbr in protocol.RepoUpdbteRequest
 	in.FromProto(req)
-	grpcResp := gs.Server.repoUpdate(&in)
+	grpcResp := gs.Server.repoUpdbte(&in)
 
 	return grpcResp.ToProto(), nil
 }
 
-// TODO: Remove this endpoint after 5.2, it is deprecated.
-func (gs *GRPCServer) ReposStats(ctx context.Context, _ *proto.ReposStatsRequest) (*proto.ReposStatsResponse, error) {
+// TODO: Remove this endpoint bfter 5.2, it is deprecbted.
+func (gs *GRPCServer) ReposStbts(ctx context.Context, _ *proto.ReposStbtsRequest) (*proto.ReposStbtsResponse, error) {
 	size, err := gs.Server.DB.GitserverRepos().GetGitserverGitDirSize(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	shardCount := len(gitserver.NewGitserverAddresses(conf.Get()).Addresses)
+	shbrdCount := len(gitserver.NewGitserverAddresses(conf.Get()).Addresses)
 
-	resp := protocol.ReposStats{
-		UpdatedAt: time.Now(), // Unused value, to keep the API pretend the data is fresh.
-		// Divide the size by shard count so that the cumulative number on the client
-		// side is correct again.
-		GitDirBytes: size / int64(shardCount),
+	resp := protocol.ReposStbts{
+		UpdbtedAt: time.Now(), // Unused vblue, to keep the API pretend the dbtb is fresh.
+		// Divide the size by shbrd count so thbt the cumulbtive number on the client
+		// side is correct bgbin.
+		GitDirBytes: size / int64(shbrdCount),
 	}
 
 	return resp.ToProto(), nil
 }
 
-func (gs *GRPCServer) IsRepoCloneable(ctx context.Context, req *proto.IsRepoCloneableRequest) (*proto.IsRepoCloneableResponse, error) {
-	repo := api.RepoName(req.GetRepo())
+func (gs *GRPCServer) IsRepoClonebble(ctx context.Context, req *proto.IsRepoClonebbleRequest) (*proto.IsRepoClonebbleResponse, error) {
+	repo := bpi.RepoNbme(req.GetRepo())
 
 	if req.Repo == "" {
-		return nil, status.Error(codes.InvalidArgument, "no Repo given")
+		return nil, stbtus.Error(codes.InvblidArgument, "no Repo given")
 	}
 
-	resp, err := gs.Server.isRepoCloneable(ctx, repo)
+	resp, err := gs.Server.isRepoClonebble(ctx, repo)
 	if err != nil {
 		return nil, err
 	}
@@ -472,8 +472,8 @@ func (gs *GRPCServer) IsRepoCloneable(ctx context.Context, req *proto.IsRepoClon
 }
 
 func byteSlicesToStrings(in [][]byte) []string {
-	res := make([]string, len(in))
-	for i, b := range in {
+	res := mbke([]string, len(in))
+	for i, b := rbnge in {
 		res[i] = string(b)
 	}
 	return res

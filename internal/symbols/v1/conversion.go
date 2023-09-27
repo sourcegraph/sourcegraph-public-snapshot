@@ -1,273 +1,273 @@
-package v1
+pbckbge v1
 
 import (
-	"google.golang.org/protobuf/types/known/durationpb"
+	"google.golbng.org/protobuf/types/known/durbtionpb"
 
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/search"
-	"github.com/sourcegraph/sourcegraph/internal/search/result"
-	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi"
+	"github.com/sourcegrbph/sourcegrbph/internbl/sebrch"
+	"github.com/sourcegrbph/sourcegrbph/internbl/sebrch/result"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
 )
 
-func (x *SearchRequest) FromInternal(p *search.SymbolsParameters) {
-	*x = SearchRequest{
+func (x *SebrchRequest) FromInternbl(p *sebrch.SymbolsPbrbmeters) {
+	*x = SebrchRequest{
 		Repo:     string(p.Repo),
 		CommitId: string(p.CommitID),
 
 		Query:           p.Query,
 		IsRegExp:        p.IsRegExp,
-		IsCaseSensitive: p.IsCaseSensitive,
-		IncludePatterns: p.IncludePatterns,
-		ExcludePattern:  p.ExcludePattern,
+		IsCbseSensitive: p.IsCbseSensitive,
+		IncludePbtterns: p.IncludePbtterns,
+		ExcludePbttern:  p.ExcludePbttern,
 
 		First:   int32(p.First),
-		Timeout: durationpb.New(p.Timeout),
+		Timeout: durbtionpb.New(p.Timeout),
 	}
 }
 
-func (x *SearchRequest) ToInternal() search.SymbolsParameters {
-	return search.SymbolsParameters{
-		Repo:            api.RepoName(x.GetRepo()),
-		CommitID:        api.CommitID(x.GetCommitId()),
+func (x *SebrchRequest) ToInternbl() sebrch.SymbolsPbrbmeters {
+	return sebrch.SymbolsPbrbmeters{
+		Repo:            bpi.RepoNbme(x.GetRepo()),
+		CommitID:        bpi.CommitID(x.GetCommitId()),
 		Query:           x.GetQuery(),
 		IsRegExp:        x.GetIsRegExp(),
-		IsCaseSensitive: x.GetIsCaseSensitive(),
-		IncludePatterns: x.GetIncludePatterns(),
-		ExcludePattern:  x.GetExcludePattern(),
+		IsCbseSensitive: x.GetIsCbseSensitive(),
+		IncludePbtterns: x.GetIncludePbtterns(),
+		ExcludePbttern:  x.GetExcludePbttern(),
 		First:           int(x.GetFirst()),
-		Timeout:         x.GetTimeout().AsDuration(),
+		Timeout:         x.GetTimeout().AsDurbtion(),
 	}
 }
 
-func (x *SearchResponse) FromInternal(r *search.SymbolsResponse) {
-	symbols := make([]*SearchResponse_Symbol, 0, len(r.Symbols))
+func (x *SebrchResponse) FromInternbl(r *sebrch.SymbolsResponse) {
+	symbols := mbke([]*SebrchResponse_Symbol, 0, len(r.Symbols))
 
-	for _, s := range r.Symbols {
-		var ps SearchResponse_Symbol
-		ps.FromInternal(&s)
+	for _, s := rbnge r.Symbols {
+		vbr ps SebrchResponse_Symbol
+		ps.FromInternbl(&s)
 
-		symbols = append(symbols, &ps)
+		symbols = bppend(symbols, &ps)
 	}
 
-	var err *string
+	vbr err *string
 	if r.Err != "" {
 		err = &r.Err
 	}
 
-	*x = SearchResponse{
+	*x = SebrchResponse{
 		Symbols: symbols,
 		Error:   err,
 	}
 }
 
-func (x *SearchResponse) ToInternal() search.SymbolsResponse {
-	symbols := make([]result.Symbol, 0, len(x.GetSymbols()))
+func (x *SebrchResponse) ToInternbl() sebrch.SymbolsResponse {
+	symbols := mbke([]result.Symbol, 0, len(x.GetSymbols()))
 
-	for _, s := range x.GetSymbols() {
-		symbols = append(symbols, s.ToInternal())
+	for _, s := rbnge x.GetSymbols() {
+		symbols = bppend(symbols, s.ToInternbl())
 	}
 
-	return search.SymbolsResponse{
+	return sebrch.SymbolsResponse{
 		Symbols: symbols,
 		Err:     x.GetError(),
 	}
 }
 
-func (x *SearchResponse_Symbol) FromInternal(s *result.Symbol) {
-	*x = SearchResponse_Symbol{
-		Name: s.Name,
-		Path: s.Path,
+func (x *SebrchResponse_Symbol) FromInternbl(s *result.Symbol) {
+	*x = SebrchResponse_Symbol{
+		Nbme: s.Nbme,
+		Pbth: s.Pbth,
 
 		Line:      int32(s.Line),
-		Character: int32(s.Character),
+		Chbrbcter: int32(s.Chbrbcter),
 
 		Kind:     s.Kind,
-		Language: s.Language,
+		Lbngubge: s.Lbngubge,
 
-		Parent:     s.Parent,
-		ParentKind: s.ParentKind,
+		Pbrent:     s.Pbrent,
+		PbrentKind: s.PbrentKind,
 
-		Signature:   s.Signature,
+		Signbture:   s.Signbture,
 		FileLimited: s.FileLimited,
 	}
 }
 
-func (x *SearchResponse_Symbol) ToInternal() result.Symbol {
+func (x *SebrchResponse_Symbol) ToInternbl() result.Symbol {
 	return result.Symbol{
-		Name: x.GetName(),
-		Path: x.GetPath(),
+		Nbme: x.GetNbme(),
+		Pbth: x.GetPbth(),
 
 		Line:      int(x.GetLine()),
-		Character: int(x.GetCharacter()),
+		Chbrbcter: int(x.GetChbrbcter()),
 
 		Kind:     x.GetKind(),
-		Language: x.GetLanguage(),
+		Lbngubge: x.GetLbngubge(),
 
-		Parent:     x.GetParent(),
-		ParentKind: x.GetParentKind(),
+		Pbrent:     x.GetPbrent(),
+		PbrentKind: x.GetPbrentKind(),
 
-		Signature:   x.GetSignature(),
+		Signbture:   x.GetSignbture(),
 		FileLimited: x.GetFileLimited(),
 	}
 }
 
-func (x *SymbolInfoResponse) FromInternal(s *types.SymbolInfo) {
+func (x *SymbolInfoResponse) FromInternbl(s *types.SymbolInfo) {
 	if s == nil {
 		*x = SymbolInfoResponse{}
 		return
 	}
 
-	var rcp RepoCommitPath
-	rcp.FromInternal(&s.Definition.RepoCommitPath)
+	vbr rcp RepoCommitPbth
+	rcp.FromInternbl(&s.Definition.RepoCommitPbth)
 
-	var maybeRange *Range
-	if s.Definition.Range != nil {
-		maybeRange = &Range{}
-		maybeRange.FromInternal(s.Definition.Range)
+	vbr mbybeRbnge *Rbnge
+	if s.Definition.Rbnge != nil {
+		mbybeRbnge = &Rbnge{}
+		mbybeRbnge.FromInternbl(s.Definition.Rbnge)
 	}
 
 	*x = SymbolInfoResponse{
 		Result: &SymbolInfoResponse_DefinitionResult{
 			Definition: &SymbolInfoResponse_Definition{
-				RepoCommitPath: &rcp,
-				Range:          maybeRange,
+				RepoCommitPbth: &rcp,
+				Rbnge:          mbybeRbnge,
 			},
 			Hover: s.Hover,
 		},
 	}
 }
 
-func (x *SymbolInfoResponse) ToInternal() *types.SymbolInfo {
-	maybeResult := x.GetResult()
-	if maybeResult == nil {
+func (x *SymbolInfoResponse) ToInternbl() *types.SymbolInfo {
+	mbybeResult := x.GetResult()
+	if mbybeResult == nil {
 		return nil
 	}
 
-	var definition types.RepoCommitPathMaybeRange
+	vbr definition types.RepoCommitPbthMbybeRbnge
 
-	protoDefinition := maybeResult.GetDefinition()
+	protoDefinition := mbybeResult.GetDefinition()
 
-	definition.RepoCommitPath = protoDefinition.GetRepoCommitPath().ToInternal()
-	if protoDefinition.GetRange() != nil {
-		defRange := protoDefinition.GetRange().ToInternal()
-		definition.Range = &defRange
+	definition.RepoCommitPbth = protoDefinition.GetRepoCommitPbth().ToInternbl()
+	if protoDefinition.GetRbnge() != nil {
+		defRbnge := protoDefinition.GetRbnge().ToInternbl()
+		definition.Rbnge = &defRbnge
 	}
 
 	return &types.SymbolInfo{
 		Definition: definition,
-		Hover:      maybeResult.Hover, // don't use GetHover() because it returns a string, not a pointer to a string
+		Hover:      mbybeResult.Hover, // don't use GetHover() becbuse it returns b string, not b pointer to b string
 	}
 }
 
-func (x *LocalCodeIntelResponse) FromInternal(p *types.LocalCodeIntelPayload) {
-	symbols := make([]*LocalCodeIntelResponse_Symbol, 0, len(p.Symbols))
+func (x *LocblCodeIntelResponse) FromInternbl(p *types.LocblCodeIntelPbylobd) {
+	symbols := mbke([]*LocblCodeIntelResponse_Symbol, 0, len(p.Symbols))
 
-	for _, s := range p.Symbols {
-		var symbol LocalCodeIntelResponse_Symbol
-		symbol.FromInternal(&s)
+	for _, s := rbnge p.Symbols {
+		vbr symbol LocblCodeIntelResponse_Symbol
+		symbol.FromInternbl(&s)
 
-		symbols = append(symbols, &symbol)
+		symbols = bppend(symbols, &symbol)
 	}
 
-	*x = LocalCodeIntelResponse{
+	*x = LocblCodeIntelResponse{
 		Symbols: symbols,
 	}
 }
 
-func (x *LocalCodeIntelResponse) ToInternal() *types.LocalCodeIntelPayload {
+func (x *LocblCodeIntelResponse) ToInternbl() *types.LocblCodeIntelPbylobd {
 	if x == nil {
 		return nil
 	}
 
-	symbols := make([]types.Symbol, 0, len(x.GetSymbols()))
+	symbols := mbke([]types.Symbol, 0, len(x.GetSymbols()))
 
-	for _, s := range x.GetSymbols() {
-		symbols = append(symbols, s.ToInternal())
+	for _, s := rbnge x.GetSymbols() {
+		symbols = bppend(symbols, s.ToInternbl())
 	}
 
-	return &types.LocalCodeIntelPayload{
+	return &types.LocblCodeIntelPbylobd{
 		Symbols: symbols,
 	}
 }
 
-func (x *LocalCodeIntelResponse_Symbol) FromInternal(s *types.Symbol) {
-	refs := make([]*Range, 0, len(s.Refs))
+func (x *LocblCodeIntelResponse_Symbol) FromInternbl(s *types.Symbol) {
+	refs := mbke([]*Rbnge, 0, len(s.Refs))
 
-	for _, r := range s.Refs {
-		protoRef := &Range{}
-		protoRef.FromInternal(&r)
+	for _, r := rbnge s.Refs {
+		protoRef := &Rbnge{}
+		protoRef.FromInternbl(&r)
 
-		refs = append(refs, protoRef)
+		refs = bppend(refs, protoRef)
 	}
 
-	var def Range
-	def.FromInternal(&s.Def)
+	vbr def Rbnge
+	def.FromInternbl(&s.Def)
 
-	*x = LocalCodeIntelResponse_Symbol{
-		Name:  s.Name,
+	*x = LocblCodeIntelResponse_Symbol{
+		Nbme:  s.Nbme,
 		Hover: s.Hover,
 		Def:   &def,
 		Refs:  refs,
 	}
 }
 
-func (x *LocalCodeIntelResponse_Symbol) ToInternal() types.Symbol {
-	def := x.GetDef().ToInternal()
+func (x *LocblCodeIntelResponse_Symbol) ToInternbl() types.Symbol {
+	def := x.GetDef().ToInternbl()
 
-	refs := make([]types.Range, 0, len(x.GetRefs()))
+	refs := mbke([]types.Rbnge, 0, len(x.GetRefs()))
 
-	for _, ref := range x.GetRefs() {
-		refs = append(refs, ref.ToInternal())
+	for _, ref := rbnge x.GetRefs() {
+		refs = bppend(refs, ref.ToInternbl())
 	}
 
 	return types.Symbol{
-		Name:  x.GetName(),
+		Nbme:  x.GetNbme(),
 		Hover: x.GetHover(),
 		Def:   def,
 		Refs:  refs,
 	}
 }
 
-func (x *RepoCommitPath) FromInternal(r *types.RepoCommitPath) {
-	*x = RepoCommitPath{
+func (x *RepoCommitPbth) FromInternbl(r *types.RepoCommitPbth) {
+	*x = RepoCommitPbth{
 		Repo:   r.Repo,
 		Commit: r.Commit,
-		Path:   r.Path,
+		Pbth:   r.Pbth,
 	}
 }
 
-func (x *RepoCommitPath) ToInternal() types.RepoCommitPath {
-	return types.RepoCommitPath{
+func (x *RepoCommitPbth) ToInternbl() types.RepoCommitPbth {
+	return types.RepoCommitPbth{
 		Repo:   x.GetRepo(),
 		Commit: x.GetCommit(),
-		Path:   x.GetPath(),
+		Pbth:   x.GetPbth(),
 	}
 }
 
-func (x *Range) FromInternal(r *types.Range) {
-	*x = Range{
+func (x *Rbnge) FromInternbl(r *types.Rbnge) {
+	*x = Rbnge{
 		Row:    int32(r.Row),
 		Column: int32(r.Column),
 		Length: int32(r.Length),
 	}
 }
 
-func (x *Range) ToInternal() types.Range {
-	return types.Range{
+func (x *Rbnge) ToInternbl() types.Rbnge {
+	return types.Rbnge{
 		Row:    int(x.GetRow()),
 		Column: int(x.GetColumn()),
 		Length: int(x.GetLength()),
 	}
 }
 
-func (x *Point) FromInternal(p *types.Point) {
+func (x *Point) FromInternbl(p *types.Point) {
 	*x = Point{
 		Row:    int32(p.Row),
 		Column: int32(p.Column),
 	}
 }
 
-func (x *Point) ToInternal() types.Point {
+func (x *Point) ToInternbl() types.Point {
 	return types.Point{
 		Row:    int(x.GetRow()),
 		Column: int(x.GetColumn()),

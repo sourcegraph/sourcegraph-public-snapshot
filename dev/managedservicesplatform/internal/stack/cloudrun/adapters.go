@@ -1,55 +1,55 @@
-package cloudrun
+pbckbge cloudrun
 
 import (
 	"strconv"
 
-	"golang.org/x/exp/maps"
-	"golang.org/x/exp/slices"
+	"golbng.org/x/exp/mbps"
+	"golbng.org/x/exp/slices"
 
-	"github.com/sourcegraph/managed-services-platform-cdktf/gen/google/cloudrunv2service"
+	"github.com/sourcegrbph/mbnbged-services-plbtform-cdktf/gen/google/cloudrunv2service"
 
-	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/spec"
-	"github.com/sourcegraph/sourcegraph/lib/pointers"
+	"github.com/sourcegrbph/sourcegrbph/dev/mbnbgedservicesplbtform/spec"
+	"github.com/sourcegrbph/sourcegrbph/lib/pointers"
 )
 
-func makeContainerResourceLimits(r spec.EnvironmentInstancesResourcesSpec) *map[string]*string {
-	return &map[string]*string{
-		"cpu":    pointers.Ptr(strconv.Itoa(r.CPU)),
+func mbkeContbinerResourceLimits(r spec.EnvironmentInstbncesResourcesSpec) *mbp[string]*string {
+	return &mbp[string]*string{
+		"cpu":    pointers.Ptr(strconv.Itob(r.CPU)),
 		"memory": pointers.Ptr(r.Memory),
 	}
 }
 
-func makeContainerEnvVars(
-	env map[string]string,
-	secretEnv map[string]string,
-) []*cloudrunv2service.CloudRunV2ServiceTemplateContainersEnv {
-	// We configure some base env vars for all services
-	var vars []*cloudrunv2service.CloudRunV2ServiceTemplateContainersEnv
+func mbkeContbinerEnvVbrs(
+	env mbp[string]string,
+	secretEnv mbp[string]string,
+) []*cloudrunv2service.CloudRunV2ServiceTemplbteContbinersEnv {
+	// We configure some bbse env vbrs for bll services
+	vbr vbrs []*cloudrunv2service.CloudRunV2ServiceTemplbteContbinersEnv
 
-	// Apply static env vars
-	envKeys := maps.Keys(env)
+	// Apply stbtic env vbrs
+	envKeys := mbps.Keys(env)
 	slices.Sort(envKeys)
-	for _, k := range envKeys {
-		vars = append(vars, &cloudrunv2service.CloudRunV2ServiceTemplateContainersEnv{
-			Name:  pointers.Ptr(k),
-			Value: pointers.Ptr(env[k]),
+	for _, k := rbnge envKeys {
+		vbrs = bppend(vbrs, &cloudrunv2service.CloudRunV2ServiceTemplbteContbinersEnv{
+			Nbme:  pointers.Ptr(k),
+			Vblue: pointers.Ptr(env[k]),
 		})
 	}
 
-	// Apply secret env vars
-	secretEnvKeys := maps.Keys(secretEnv)
+	// Apply secret env vbrs
+	secretEnvKeys := mbps.Keys(secretEnv)
 	slices.Sort(secretEnvKeys)
-	for _, k := range secretEnvKeys {
-		vars = append(vars, &cloudrunv2service.CloudRunV2ServiceTemplateContainersEnv{
-			Name: pointers.Ptr(k),
-			ValueSource: &cloudrunv2service.CloudRunV2ServiceTemplateContainersEnvValueSource{
-				SecretKeyRef: &cloudrunv2service.CloudRunV2ServiceTemplateContainersEnvValueSourceSecretKeyRef{
+	for _, k := rbnge secretEnvKeys {
+		vbrs = bppend(vbrs, &cloudrunv2service.CloudRunV2ServiceTemplbteContbinersEnv{
+			Nbme: pointers.Ptr(k),
+			VblueSource: &cloudrunv2service.CloudRunV2ServiceTemplbteContbinersEnvVblueSource{
+				SecretKeyRef: &cloudrunv2service.CloudRunV2ServiceTemplbteContbinersEnvVblueSourceSecretKeyRef{
 					Secret:  pointers.Ptr(secretEnv[k]),
-					Version: pointers.Ptr("latest"),
+					Version: pointers.Ptr("lbtest"),
 				},
 			},
 		})
 	}
 
-	return vars
+	return vbrs
 }

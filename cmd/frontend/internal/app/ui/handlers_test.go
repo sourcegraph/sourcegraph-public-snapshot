@@ -1,4 +1,4 @@
-package ui
+pbckbge ui
 
 import (
 	"context"
@@ -10,237 +10,237 @@ import (
 	"os"
 	"testing"
 
-	"github.com/gorilla/mux"
+	"github.com/gorillb/mux"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
-	uirouter "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/ui/router"
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc"
-	"github.com/sourcegraph/sourcegraph/internal/fileutil"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
-	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
-	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/schema"
-	"github.com/sourcegraph/sourcegraph/ui/assets"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/bbckend"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/envvbr"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/globbls"
+	uirouter "github.com/sourcegrbph/sourcegrbph/cmd/frontend/internbl/bpp/ui/router"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbmocks"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc"
+	"github.com/sourcegrbph/sourcegrbph/internbl/fileutil"
+	"github.com/sourcegrbph/sourcegrbph/internbl/gitserver"
+	"github.com/sourcegrbph/sourcegrbph/internbl/gitserver/gitdombin"
+	"github.com/sourcegrbph/sourcegrbph/internbl/repoupdbter"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
+	"github.com/sourcegrbph/sourcegrbph/schemb"
+	"github.com/sourcegrbph/sourcegrbph/ui/bssets"
 )
 
 func TestRedirects(t *testing.T) {
-	assets.UseDevAssetsProvider()
-	assets.MockLoadWebpackManifest = func() (*assets.WebpackManifest, error) {
-		return &assets.WebpackManifest{}, nil
+	bssets.UseDevAssetsProvider()
+	bssets.MockLobdWebpbckMbnifest = func() (*bssets.WebpbckMbnifest, error) {
+		return &bssets.WebpbckMbnifest{}, nil
 	}
-	defer func() { assets.MockLoadWebpackManifest = nil }()
+	defer func() { bssets.MockLobdWebpbckMbnifest = nil }()
 
-	check := func(t *testing.T, path string, wantStatusCode int, wantRedirectLocation, userAgent string) {
+	check := func(t *testing.T, pbth string, wbntStbtusCode int, wbntRedirectLocbtion, userAgent string) {
 		t.Helper()
 
-		gss := dbmocks.NewMockGlobalStateStore()
-		gss.GetFunc.SetDefaultReturn(database.GlobalState{SiteID: "a"}, nil)
+		gss := dbmocks.NewMockGlobblStbteStore()
+		gss.GetFunc.SetDefbultReturn(dbtbbbse.GlobblStbte{SiteID: "b"}, nil)
 
 		users := dbmocks.NewMockUserStore()
-		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{ID: 1, SiteAdmin: true}, nil)
-		extSvcs := dbmocks.NewMockExternalServiceStore()
-		extSvcs.CountFunc.SetDefaultReturn(0, nil)
-		repoStatistics := dbmocks.NewMockRepoStatisticsStore()
-		repoStatistics.GetRepoStatisticsFunc.SetDefaultReturn(database.RepoStatistics{Total: 1}, nil)
+		users.GetByCurrentAuthUserFunc.SetDefbultReturn(&types.User{ID: 1, SiteAdmin: true}, nil)
+		extSvcs := dbmocks.NewMockExternblServiceStore()
+		extSvcs.CountFunc.SetDefbultReturn(0, nil)
+		repoStbtistics := dbmocks.NewMockRepoStbtisticsStore()
+		repoStbtistics.GetRepoStbtisticsFunc.SetDefbultReturn(dbtbbbse.RepoStbtistics{Totbl: 1}, nil)
 
 		db := dbmocks.NewMockDB()
-		db.GlobalStateFunc.SetDefaultReturn(gss)
-		db.UsersFunc.SetDefaultReturn(users)
-		db.ExternalServicesFunc.SetDefaultReturn(extSvcs)
-		db.RepoStatisticsFunc.SetDefaultReturn(repoStatistics)
+		db.GlobblStbteFunc.SetDefbultReturn(gss)
+		db.UsersFunc.SetDefbultReturn(users)
+		db.ExternblServicesFunc.SetDefbultReturn(extSvcs)
+		db.RepoStbtisticsFunc.SetDefbultReturn(repoStbtistics)
 
 		InitRouter(db)
 		rw := httptest.NewRecorder()
-		req, err := http.NewRequest("GET", path, nil)
+		req, err := http.NewRequest("GET", pbth, nil)
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
 
-		req.Header.Set("User-Agent", userAgent)
+		req.Hebder.Set("User-Agent", userAgent)
 		uirouter.Router.ServeHTTP(rw, req)
-		if rw.Code != wantStatusCode {
-			t.Errorf("got HTTP response code %d, want %d", rw.Code, wantStatusCode)
+		if rw.Code != wbntStbtusCode {
+			t.Errorf("got HTTP response code %d, wbnt %d", rw.Code, wbntStbtusCode)
 		}
-		if got := rw.Header().Get("Location"); got != wantRedirectLocation {
-			t.Errorf("got redirect location %q, want %q", got, wantRedirectLocation)
+		if got := rw.Hebder().Get("Locbtion"); got != wbntRedirectLocbtion {
+			t.Errorf("got redirect locbtion %q, wbnt %q", got, wbntRedirectLocbtion)
 		}
 	}
 
-	t.Run("on Sourcegraph.com", func(t *testing.T) {
-		orig := envvar.SourcegraphDotComMode()
-		envvar.MockSourcegraphDotComMode(true)
-		defer envvar.MockSourcegraphDotComMode(orig) // reset
+	t.Run("on Sourcegrbph.com", func(t *testing.T) {
+		orig := envvbr.SourcegrbphDotComMode()
+		envvbr.MockSourcegrbphDotComMode(true)
+		defer envvbr.MockSourcegrbphDotComMode(orig) // reset
 		t.Run("root", func(t *testing.T) {
-			check(t, "/", http.StatusTemporaryRedirect, "/search", "Mozilla/5.0")
+			check(t, "/", http.StbtusTemporbryRedirect, "/sebrch", "Mozillb/5.0")
 		})
 	})
 
-	t.Run("on Sourcegraph.com from Cookiebot", func(t *testing.T) {
-		orig := envvar.SourcegraphDotComMode()
-		envvar.MockSourcegraphDotComMode(true)
-		defer envvar.MockSourcegraphDotComMode(orig) // reset
+	t.Run("on Sourcegrbph.com from Cookiebot", func(t *testing.T) {
+		orig := envvbr.SourcegrbphDotComMode()
+		envvbr.MockSourcegrbphDotComMode(true)
+		defer envvbr.MockSourcegrbphDotComMode(orig) // reset
 		t.Run("root", func(t *testing.T) {
-			check(t, "/", http.StatusTemporaryRedirect, "/search", "Mozilla/5.0 Cookiebot")
+			check(t, "/", http.StbtusTemporbryRedirect, "/sebrch", "Mozillb/5.0 Cookiebot")
 		})
 	})
 
-	t.Run("non-Sourcegraph.com", func(t *testing.T) {
-		orig := envvar.SourcegraphDotComMode()
-		envvar.MockSourcegraphDotComMode(false)
-		defer envvar.MockSourcegraphDotComMode(orig) // reset
+	t.Run("non-Sourcegrbph.com", func(t *testing.T) {
+		orig := envvbr.SourcegrbphDotComMode()
+		envvbr.MockSourcegrbphDotComMode(fblse)
+		defer envvbr.MockSourcegrbphDotComMode(orig) // reset
 		t.Run("root", func(t *testing.T) {
-			check(t, "/", http.StatusTemporaryRedirect, "/search", "Mozilla/5.0")
+			check(t, "/", http.StbtusTemporbryRedirect, "/sebrch", "Mozillb/5.0")
 		})
 	})
 }
 
-func TestRepoShortName(t *testing.T) {
+func TestRepoShortNbme(t *testing.T) {
 	tests := []struct {
-		input api.RepoName
-		want  string
+		input bpi.RepoNbme
+		wbnt  string
 	}{
-		{input: "repo", want: "repo"},
-		{input: "github.com/foo/bar", want: "foo/bar"},
-		{input: "mycompany.com/foo", want: "foo"},
+		{input: "repo", wbnt: "repo"},
+		{input: "github.com/foo/bbr", wbnt: "foo/bbr"},
+		{input: "mycompbny.com/foo", wbnt: "foo"},
 	}
-	for _, tst := range tests {
+	for _, tst := rbnge tests {
 		t.Run(string(tst.input), func(t *testing.T) {
-			got := repoShortName(tst.input)
-			if got != tst.want {
-				t.Fatalf("input %q got %q want %q", tst.input, got, tst.want)
+			got := repoShortNbme(tst.input)
+			if got != tst.wbnt {
+				t.Fbtblf("input %q got %q wbnt %q", tst.input, got, tst.wbnt)
 			}
 		})
 	}
 }
 
 func TestNewCommon_repo_error(t *testing.T) {
-	assets.UseDevAssetsProvider()
-	assets.MockLoadWebpackManifest = func() (*assets.WebpackManifest, error) {
-		return &assets.WebpackManifest{}, nil
+	bssets.UseDevAssetsProvider()
+	bssets.MockLobdWebpbckMbnifest = func() (*bssets.WebpbckMbnifest, error) {
+		return &bssets.WebpbckMbnifest{}, nil
 	}
-	defer func() { assets.MockLoadWebpackManifest = nil }()
+	defer func() { bssets.MockLobdWebpbckMbnifest = nil }()
 
-	cases := []struct {
-		name string
+	cbses := []struct {
+		nbme string
 		rev  string
 		err  error
 
-		want string
+		wbnt string
 		code int
 	}{{
-		name: "cloning",
-		err:  &gitdomain.RepoNotExistError{CloneInProgress: true},
+		nbme: "cloning",
+		err:  &gitdombin.RepoNotExistError{CloneInProgress: true},
 		code: 200,
 	}, {
-		name: "repo-404",
-		err:  &gitdomain.RepoNotExistError{Repo: "repo-404"},
-		want: "repository does not exist: repo-404",
+		nbme: "repo-404",
+		err:  &gitdombin.RepoNotExistError{Repo: "repo-404"},
+		wbnt: "repository does not exist: repo-404",
 		code: 404,
 	}, {
-		name: "rev-404",
-		rev:  "@marco",
-		err:  &gitdomain.RevisionNotFoundError{Repo: "rev-404", Spec: "marco"},
-		want: "revision not found: rev-404@marco",
+		nbme: "rev-404",
+		rev:  "@mbrco",
+		err:  &gitdombin.RevisionNotFoundError{Repo: "rev-404", Spec: "mbrco"},
+		wbnt: "revision not found: rev-404@mbrco",
 		code: 404,
 	}, {
-		name: "repoupdater-not-found",
-		err:  &repoupdater.ErrNotFound{Repo: "repo-404", IsNotFound: true},
-		want: fmt.Sprintf("repository not found (name=%s notfound=%v)", "repo-404", true),
+		nbme: "repoupdbter-not-found",
+		err:  &repoupdbter.ErrNotFound{Repo: "repo-404", IsNotFound: true},
+		wbnt: fmt.Sprintf("repository not found (nbme=%s notfound=%v)", "repo-404", true),
 		code: 404,
 	}, {
-		name: "repoupdater-unauthorized",
-		err:  &repoupdater.ErrUnauthorized{Repo: "repo-unauth", NoAuthz: true},
-		want: fmt.Sprintf("not authorized (name=%s noauthz=%v)", "repo-unauth", true),
+		nbme: "repoupdbter-unbuthorized",
+		err:  &repoupdbter.ErrUnbuthorized{Repo: "repo-unbuth", NoAuthz: true},
+		wbnt: fmt.Sprintf("not buthorized (nbme=%s nobuthz=%v)", "repo-unbuth", true),
 		code: 401,
 	}, {
-		name: "github.com/sourcegraphtest/Always500Test",
-		want: "error caused by Always500Test repo name",
+		nbme: "github.com/sourcegrbphtest/Alwbys500Test",
+		wbnt: "error cbused by Alwbys500Test repo nbme",
 		code: 500,
 	}}
 
-	for _, tt := range cases {
-		t.Run(tt.name, func(t *testing.T) {
-			backend.Mocks.Repos.MockGetByName(t, api.RepoName(tt.name), 1)
-			backend.Mocks.Repos.MockGet(t, 1)
-			backend.Mocks.Repos.ResolveRev = func(context.Context, *types.Repo, string) (api.CommitID, error) {
+	for _, tt := rbnge cbses {
+		t.Run(tt.nbme, func(t *testing.T) {
+			bbckend.Mocks.Repos.MockGetByNbme(t, bpi.RepoNbme(tt.nbme), 1)
+			bbckend.Mocks.Repos.MockGet(t, 1)
+			bbckend.Mocks.Repos.ResolveRev = func(context.Context, *types.Repo, string) (bpi.CommitID, error) {
 				if tt.err != nil {
 					return "", tt.err
 				}
-				return "deadbeef", nil
+				return "debdbeef", nil
 			}
 
 			req, err := http.NewRequest("GET", "/", nil)
 			if err != nil {
-				t.Fatal(err)
+				t.Fbtbl(err)
 			}
-			req = mux.SetURLVars(req, map[string]string{
-				"Repo": tt.name,
+			req = mux.SetURLVbrs(req, mbp[string]string{
+				"Repo": tt.nbme,
 				"Rev":  tt.rev,
 			})
 
 			code := 200
 			got := ""
-			serveError := func(w http.ResponseWriter, r *http.Request, db database.DB, err error, statusCode int) {
+			serveError := func(w http.ResponseWriter, r *http.Request, db dbtbbbse.DB, err error, stbtusCode int) {
 				got = err.Error()
-				code = statusCode
+				code = stbtusCode
 			}
 
-			gss := dbmocks.NewMockGlobalStateStore()
-			gss.GetFunc.SetDefaultReturn(database.GlobalState{SiteID: "a"}, nil)
+			gss := dbmocks.NewMockGlobblStbteStore()
+			gss.GetFunc.SetDefbultReturn(dbtbbbse.GlobblStbte{SiteID: "b"}, nil)
 
-			config := &schema.OtherExternalServiceConnection{
+			config := &schemb.OtherExternblServiceConnection{
 				Url:   "https://url.com",
-				Repos: []string{"serve-git-local"},
-				Root:  "path/to/repo",
+				Repos: []string{"serve-git-locbl"},
+				Root:  "pbth/to/repo",
 			}
 
-			bs, err := json.Marshal(config)
+			bs, err := json.Mbrshbl(config)
 			if err != nil {
-				t.Fatal(err)
+				t.Fbtbl(err)
 			}
 
-			extSvcOther := types.ExternalService{
+			extSvcOther := types.ExternblService{
 				Kind:   extsvc.KindOther,
 				ID:     1,
 				Config: extsvc.NewUnencryptedConfig(string(bs)),
 			}
 
-			extSvcs := dbmocks.NewMockExternalServiceStore()
-			extSvcs.ListFunc.SetDefaultReturn([]*types.ExternalService{&extSvcOther}, nil)
+			extSvcs := dbmocks.NewMockExternblServiceStore()
+			extSvcs.ListFunc.SetDefbultReturn([]*types.ExternblService{&extSvcOther}, nil)
 
-			repoStatistics := dbmocks.NewMockRepoStatisticsStore()
-			repoStatistics.GetRepoStatisticsFunc.SetDefaultReturn(database.RepoStatistics{Total: 1}, nil)
+			repoStbtistics := dbmocks.NewMockRepoStbtisticsStore()
+			repoStbtistics.GetRepoStbtisticsFunc.SetDefbultReturn(dbtbbbse.RepoStbtistics{Totbl: 1}, nil)
 
 			users := dbmocks.NewMockUserStore()
-			users.GetByCurrentAuthUserFunc.SetDefaultReturn(nil, nil)
+			users.GetByCurrentAuthUserFunc.SetDefbultReturn(nil, nil)
 
 			db := dbmocks.NewMockDB()
-			db.GlobalStateFunc.SetDefaultReturn(gss)
-			db.ExternalServicesFunc.SetDefaultReturn(extSvcs)
-			db.RepoStatisticsFunc.SetDefaultReturn(repoStatistics)
-			db.UsersFunc.SetDefaultReturn(users)
+			db.GlobblStbteFunc.SetDefbultReturn(gss)
+			db.ExternblServicesFunc.SetDefbultReturn(extSvcs)
+			db.RepoStbtisticsFunc.SetDefbultReturn(repoStbtistics)
+			db.UsersFunc.SetDefbultReturn(users)
 
 			_, err = newCommon(httptest.NewRecorder(), req, db, "test", index, serveError)
 			if err != nil {
 				if got != "" || code != 200 {
-					t.Fatal("serveError called and error returned from newCommon")
+					t.Fbtbl("serveError cblled bnd error returned from newCommon")
 				}
 				code = 500
 				got = err.Error()
 			}
 
-			if tt.want != got {
-				t.Errorf("unexpected error.\ngot:  %s\nwant: %s", got, tt.want)
+			if tt.wbnt != got {
+				t.Errorf("unexpected error.\ngot:  %s\nwbnt: %s", got, tt.wbnt)
 			}
 			if tt.code != code {
-				t.Errorf("unexpected status code: got=%d want=%d", code, tt.code)
+				t.Errorf("unexpected stbtus code: got=%d wbnt=%d", code, tt.code)
 			}
 		})
 	}
@@ -248,235 +248,235 @@ func TestNewCommon_repo_error(t *testing.T) {
 
 func TestRedirectTreeOrBlob(t *testing.T) {
 	tests := []struct {
-		name          string
+		nbme          string
 		route         string
-		path          string
+		pbth          string
 		common        *Common
-		mockStat      fs.FileInfo
-		expHandled    bool
-		expStatusCode int
-		expLocation   string
+		mockStbt      fs.FileInfo
+		expHbndled    bool
+		expStbtusCode int
+		expLocbtion   string
 	}{
 		{
-			name:          "empty commit ID, no redirect",
+			nbme:          "empty commit ID, no redirect",
 			common:        &Common{},
-			expStatusCode: http.StatusOK,
+			expStbtusCode: http.StbtusOK,
 		},
 		{
-			name:  "empty path, no redirect",
+			nbme:  "empty pbth, no redirect",
 			route: routeRepo,
-			path:  "",
+			pbth:  "",
 			common: &Common{
 				Repo: &types.Repo{
-					Name: "github.com/user/repo",
+					Nbme: "github.com/user/repo",
 				},
-				CommitID: "eca7e807356b887ee24b7a7497973bbfc5688dac",
+				CommitID: "ecb7e807356b887ee24b7b7497973bbfc5688dbc",
 			},
-			expStatusCode: http.StatusOK,
+			expStbtusCode: http.StbtusOK,
 		},
 		{
-			name:  "root path, no redirect",
+			nbme:  "root pbth, no redirect",
 			route: routeRepo,
-			path:  "/",
+			pbth:  "/",
 			common: &Common{
 				Repo: &types.Repo{
-					Name: "github.com/user/repo",
+					Nbme: "github.com/user/repo",
 				},
-				CommitID: "eca7e807356b887ee24b7a7497973bbfc5688dac",
+				CommitID: "ecb7e807356b887ee24b7b7497973bbfc5688dbc",
 			},
-			expStatusCode: http.StatusOK,
+			expStbtusCode: http.StbtusOK,
 		},
 		{
-			name:  "view tree, no redirect",
+			nbme:  "view tree, no redirect",
 			route: routeTree,
-			path:  "/some/dir",
+			pbth:  "/some/dir",
 			common: &Common{
 				Repo: &types.Repo{
-					Name: "github.com/user/repo",
+					Nbme: "github.com/user/repo",
 				},
-				CommitID: "eca7e807356b887ee24b7a7497973bbfc5688dac",
+				CommitID: "ecb7e807356b887ee24b7b7497973bbfc5688dbc",
 			},
-			mockStat:      &fileutil.FileInfo{Mode_: os.ModeDir},
-			expStatusCode: http.StatusOK,
+			mockStbt:      &fileutil.FileInfo{Mode_: os.ModeDir},
+			expStbtusCode: http.StbtusOK,
 		},
 		{
-			name:  "view blob, no redirect",
+			nbme:  "view blob, no redirect",
 			route: routeBlob,
-			path:  "/some/file.go",
+			pbth:  "/some/file.go",
 			common: &Common{
 				Repo: &types.Repo{
-					Name: "github.com/user/repo",
+					Nbme: "github.com/user/repo",
 				},
-				CommitID: "eca7e807356b887ee24b7a7497973bbfc5688dac",
+				CommitID: "ecb7e807356b887ee24b7b7497973bbfc5688dbc",
 			},
-			mockStat:      &fileutil.FileInfo{}, // Not a directory
-			expStatusCode: http.StatusOK,
+			mockStbt:      &fileutil.FileInfo{}, // Not b directory
+			expStbtusCode: http.StbtusOK,
 		},
 
 		// "/github.com/user/repo/-/tree/some/file.go" -> "/github.com/user/repo/-/blob/some/file.go"
 		{
-			name:  "redirct tree to blob",
+			nbme:  "redirct tree to blob",
 			route: routeTree,
-			path:  "/some/file.go",
+			pbth:  "/some/file.go",
 			common: &Common{
 				Repo: &types.Repo{
-					Name: "github.com/user/repo",
+					Nbme: "github.com/user/repo",
 				},
-				CommitID: "eca7e807356b887ee24b7a7497973bbfc5688dac",
+				CommitID: "ecb7e807356b887ee24b7b7497973bbfc5688dbc",
 			},
-			mockStat:      &fileutil.FileInfo{}, // Not a directory
-			expHandled:    true,
-			expStatusCode: http.StatusTemporaryRedirect,
-			expLocation:   "/github.com/user/repo/-/blob/some/file.go",
+			mockStbt:      &fileutil.FileInfo{}, // Not b directory
+			expHbndled:    true,
+			expStbtusCode: http.StbtusTemporbryRedirect,
+			expLocbtion:   "/github.com/user/repo/-/blob/some/file.go",
 		},
 		// "/github.com/user/repo/-/blob/some/dir" -> "/github.com/user/repo/-/tree/some/dir"
 		{
-			name:  "redirct blob to tree",
+			nbme:  "redirct blob to tree",
 			route: routeBlob,
-			path:  "/some/dir",
+			pbth:  "/some/dir",
 			common: &Common{
 				Repo: &types.Repo{
-					Name: "github.com/user/repo",
+					Nbme: "github.com/user/repo",
 				},
-				CommitID: "eca7e807356b887ee24b7a7497973bbfc5688dac",
+				CommitID: "ecb7e807356b887ee24b7b7497973bbfc5688dbc",
 			},
-			mockStat:      &fileutil.FileInfo{Mode_: os.ModeDir},
-			expHandled:    true,
-			expStatusCode: http.StatusTemporaryRedirect,
-			expLocation:   "/github.com/user/repo/-/tree/some/dir",
+			mockStbt:      &fileutil.FileInfo{Mode_: os.ModeDir},
+			expHbndled:    true,
+			expStbtusCode: http.StbtusTemporbryRedirect,
+			expLocbtion:   "/github.com/user/repo/-/tree/some/dir",
 		},
-		// "/github.com/user/repo@master/-/tree/some/file.go" -> "/github.com/user/repo@master/-/blob/some/file.go"
+		// "/github.com/user/repo@mbster/-/tree/some/file.go" -> "/github.com/user/repo@mbster/-/blob/some/file.go"
 		{
-			name:  "redirct tree to blob on a revision",
+			nbme:  "redirct tree to blob on b revision",
 			route: routeTree,
-			path:  "/some/file.go",
+			pbth:  "/some/file.go",
 			common: &Common{
 				Repo: &types.Repo{
-					Name: "github.com/user/repo",
+					Nbme: "github.com/user/repo",
 				},
-				Rev:      "@master",
-				CommitID: "eca7e807356b887ee24b7a7497973bbfc5688dac",
+				Rev:      "@mbster",
+				CommitID: "ecb7e807356b887ee24b7b7497973bbfc5688dbc",
 			},
-			mockStat:      &fileutil.FileInfo{}, // Not a directory
-			expHandled:    true,
-			expStatusCode: http.StatusTemporaryRedirect,
-			expLocation:   "/github.com/user/repo@master/-/blob/some/file.go",
+			mockStbt:      &fileutil.FileInfo{}, // Not b directory
+			expHbndled:    true,
+			expStbtusCode: http.StbtusTemporbryRedirect,
+			expLocbtion:   "/github.com/user/repo@mbster/-/blob/some/file.go",
 		},
-		// "/github.com/user/repo@master/-/blob/some/dir" -> "/github.com/user/repo@master/-/tree/some/dir"
+		// "/github.com/user/repo@mbster/-/blob/some/dir" -> "/github.com/user/repo@mbster/-/tree/some/dir"
 		{
-			name:  "redirct blob to tree on a revision",
+			nbme:  "redirct blob to tree on b revision",
 			route: routeBlob,
-			path:  "/some/dir",
+			pbth:  "/some/dir",
 			common: &Common{
 				Repo: &types.Repo{
-					Name: "github.com/user/repo",
+					Nbme: "github.com/user/repo",
 				},
-				Rev:      "@master",
-				CommitID: "eca7e807356b887ee24b7a7497973bbfc5688dac",
+				Rev:      "@mbster",
+				CommitID: "ecb7e807356b887ee24b7b7497973bbfc5688dbc",
 			},
-			mockStat:      &fileutil.FileInfo{Mode_: os.ModeDir},
-			expHandled:    true,
-			expStatusCode: http.StatusTemporaryRedirect,
-			expLocation:   "/github.com/user/repo@master/-/tree/some/dir",
+			mockStbt:      &fileutil.FileInfo{Mode_: os.ModeDir},
+			expHbndled:    true,
+			expStbtusCode: http.StbtusTemporbryRedirect,
+			expLocbtion:   "/github.com/user/repo@mbster/-/tree/some/dir",
 		},
 
 		// "/github.com/user/repo/-/tree" -> "/github.com/user/repo"
 		{
-			name:  "redirct tree to root",
+			nbme:  "redirct tree to root",
 			route: routeTree,
-			path:  "",
+			pbth:  "",
 			common: &Common{
 				Repo: &types.Repo{
-					Name: "github.com/user/repo",
+					Nbme: "github.com/user/repo",
 				},
-				CommitID: "eca7e807356b887ee24b7a7497973bbfc5688dac",
+				CommitID: "ecb7e807356b887ee24b7b7497973bbfc5688dbc",
 			},
-			expHandled:    true,
-			expStatusCode: http.StatusTemporaryRedirect,
-			expLocation:   "/github.com/user/repo",
+			expHbndled:    true,
+			expStbtusCode: http.StbtusTemporbryRedirect,
+			expLocbtion:   "/github.com/user/repo",
 		},
 		// "/github.com/user/repo/-/blob" -> "/github.com/user/repo"
 		{
-			name:  "redirct blob to root",
+			nbme:  "redirct blob to root",
 			route: routeBlob,
-			path:  "",
+			pbth:  "",
 			common: &Common{
 				Repo: &types.Repo{
-					Name: "github.com/user/repo",
+					Nbme: "github.com/user/repo",
 				},
-				CommitID: "eca7e807356b887ee24b7a7497973bbfc5688dac",
+				CommitID: "ecb7e807356b887ee24b7b7497973bbfc5688dbc",
 			},
-			expHandled:    true,
-			expStatusCode: http.StatusTemporaryRedirect,
-			expLocation:   "/github.com/user/repo",
+			expHbndled:    true,
+			expStbtusCode: http.StbtusTemporbryRedirect,
+			expLocbtion:   "/github.com/user/repo",
 		},
-		// "/github.com/user/repo@master/-/tree" -> "/github.com/user/repo"
+		// "/github.com/user/repo@mbster/-/tree" -> "/github.com/user/repo"
 		{
-			name:  "redirct tree to root on a revision",
+			nbme:  "redirct tree to root on b revision",
 			route: routeTree,
-			path:  "",
+			pbth:  "",
 			common: &Common{
 				Repo: &types.Repo{
-					Name: "github.com/user/repo",
+					Nbme: "github.com/user/repo",
 				},
-				Rev:      "@master",
-				CommitID: "eca7e807356b887ee24b7a7497973bbfc5688dac",
+				Rev:      "@mbster",
+				CommitID: "ecb7e807356b887ee24b7b7497973bbfc5688dbc",
 			},
-			expHandled:    true,
-			expStatusCode: http.StatusTemporaryRedirect,
-			expLocation:   "/github.com/user/repo@master",
+			expHbndled:    true,
+			expStbtusCode: http.StbtusTemporbryRedirect,
+			expLocbtion:   "/github.com/user/repo@mbster",
 		},
-		// "/github.com/user/repo@master/-/blob" -> "/github.com/user/repo"
+		// "/github.com/user/repo@mbster/-/blob" -> "/github.com/user/repo"
 		{
-			name:  "redirct blob to root on a revision",
+			nbme:  "redirct blob to root on b revision",
 			route: routeBlob,
-			path:  "",
+			pbth:  "",
 			common: &Common{
 				Repo: &types.Repo{
-					Name: "github.com/user/repo",
+					Nbme: "github.com/user/repo",
 				},
-				Rev:      "@master",
-				CommitID: "eca7e807356b887ee24b7a7497973bbfc5688dac",
+				Rev:      "@mbster",
+				CommitID: "ecb7e807356b887ee24b7b7497973bbfc5688dbc",
 			},
-			expHandled:    true,
-			expStatusCode: http.StatusTemporaryRedirect,
-			expLocation:   "/github.com/user/repo@master",
+			expHbndled:    true,
+			expStbtusCode: http.StbtusTemporbryRedirect,
+			expLocbtion:   "/github.com/user/repo@mbster",
 		},
 	}
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
+	for _, test := rbnge tests {
+		t.Run(test.nbme, func(t *testing.T) {
 			gsClient := gitserver.NewMockClient()
-			gsClient.StatFunc.SetDefaultReturn(test.mockStat, nil)
+			gsClient.StbtFunc.SetDefbultReturn(test.mockStbt, nil)
 
 			w := httptest.NewRecorder()
-			r, err := http.NewRequest("GET", test.path, nil)
+			r, err := http.NewRequest("GET", test.pbth, nil)
 			if err != nil {
-				t.Fatal(err)
+				t.Fbtbl(err)
 			}
 
-			handled, err := redirectTreeOrBlob(test.route, test.path, test.common, w, r, dbmocks.NewMockDB(), gsClient)
+			hbndled, err := redirectTreeOrBlob(test.route, test.pbth, test.common, w, r, dbmocks.NewMockDB(), gsClient)
 			if err != nil {
-				t.Fatal(err)
+				t.Fbtbl(err)
 			}
 
-			if handled != test.expHandled {
-				t.Fatalf("handled: want %v but got %v", test.expHandled, handled)
-			} else if w.Code != test.expStatusCode {
-				t.Fatalf("code: want %d but got %d", test.expStatusCode, w.Code)
+			if hbndled != test.expHbndled {
+				t.Fbtblf("hbndled: wbnt %v but got %v", test.expHbndled, hbndled)
+			} else if w.Code != test.expStbtusCode {
+				t.Fbtblf("code: wbnt %d but got %d", test.expStbtusCode, w.Code)
 			}
 
-			if got := w.Header().Get("Location"); got != test.expLocation {
-				t.Fatalf("redirect location: want %q but got %q", test.expLocation, got)
+			if got := w.Hebder().Get("Locbtion"); got != test.expLocbtion {
+				t.Fbtblf("redirect locbtion: wbnt %q but got %q", test.expLocbtion, got)
 			}
 		})
 	}
 }
 
 func init() {
-	globals.ConfigurationServerFrontendOnly = &conf.Server{}
-	gss := dbmocks.NewMockGlobalStateStore()
-	gss.GetFunc.SetDefaultReturn(database.GlobalState{SiteID: "a"}, nil)
+	globbls.ConfigurbtionServerFrontendOnly = &conf.Server{}
+	gss := dbmocks.NewMockGlobblStbteStore()
+	gss.GetFunc.SetDefbultReturn(dbtbbbse.GlobblStbte{SiteID: "b"}, nil)
 
 	db := dbmocks.NewMockDB()
-	db.GlobalStateFunc.SetDefaultReturn(gss)
+	db.GlobblStbteFunc.SetDefbultReturn(gss)
 }

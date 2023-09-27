@@ -1,90 +1,90 @@
-package store
+pbckbge store
 
 import (
 	"context"
-	"database/sql"
+	"dbtbbbse/sql"
 	"fmt"
 	"sort"
 	"strings"
 
-	"github.com/jackc/pgconn"
-	"github.com/keegancsmith/sqlf"
+	"github.com/jbckc/pgconn"
+	"github.com/keegbncsmith/sqlf"
 	"github.com/lib/pq"
-	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/bttribute"
 
-	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
-	"github.com/sourcegraph/sourcegraph/internal/database/locker"
-	"github.com/sourcegraph/sourcegraph/internal/database/migration/definition"
-	"github.com/sourcegraph/sourcegraph/internal/database/migration/shared"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/bbsestore"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/locker"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/migrbtion/definition"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/migrbtion/shbred"
+	"github.com/sourcegrbph/sourcegrbph/internbl/observbtion"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
 type Store struct {
-	*basestore.Store
-	schemaName string
-	operations *Operations
+	*bbsestore.Store
+	schembNbme string
+	operbtions *Operbtions
 }
 
-func NewWithDB(observationCtx *observation.Context, db *sql.DB, migrationsTable string) *Store {
-	operations := NewOperations(observationCtx)
+func NewWithDB(observbtionCtx *observbtion.Context, db *sql.DB, migrbtionsTbble string) *Store {
+	operbtions := NewOperbtions(observbtionCtx)
 	return &Store{
-		Store:      basestore.NewWithHandle(basestore.NewHandleWithDB(observationCtx.Logger, db, sql.TxOptions{})),
-		schemaName: migrationsTable,
-		operations: operations,
+		Store:      bbsestore.NewWithHbndle(bbsestore.NewHbndleWithDB(observbtionCtx.Logger, db, sql.TxOptions{})),
+		schembNbme: migrbtionsTbble,
+		operbtions: operbtions,
 	}
 }
 
-func (s *Store) With(other basestore.ShareableStore) *Store {
+func (s *Store) With(other bbsestore.ShbrebbleStore) *Store {
 	return &Store{
 		Store:      s.Store.With(other),
-		schemaName: s.schemaName,
-		operations: s.operations,
+		schembNbme: s.schembNbme,
+		operbtions: s.operbtions,
 	}
 }
 
-func (s *Store) Transact(ctx context.Context) (*Store, error) {
-	txBase, err := s.Store.Transact(ctx)
+func (s *Store) Trbnsbct(ctx context.Context) (*Store, error) {
+	txBbse, err := s.Store.Trbnsbct(ctx)
 	if err != nil {
 		return nil, err
 	}
 
 	return &Store{
-		Store:      txBase,
-		schemaName: s.schemaName,
-		operations: s.operations,
+		Store:      txBbse,
+		schembNbme: s.schembNbme,
+		operbtions: s.operbtions,
 	}, nil
 }
 
-const currentMigrationLogSchemaVersion = 2
+const currentMigrbtionLogSchembVersion = 2
 
-// EnsureSchemaTable creates the bookeeping tables required to track this schema
-// if they do not already exist. If old versions of the tables exist, this method
-// will attempt to update them in a backward-compatible manner.
-func (s *Store) EnsureSchemaTable(ctx context.Context) (err error) {
-	ctx, _, endObservation := s.operations.ensureSchemaTable.With(ctx, &err, observation.Args{})
-	defer endObservation(1, observation.Args{})
+// EnsureSchembTbble crebtes the bookeeping tbbles required to trbck this schemb
+// if they do not blrebdy exist. If old versions of the tbbles exist, this method
+// will bttempt to updbte them in b bbckwbrd-compbtible mbnner.
+func (s *Store) EnsureSchembTbble(ctx context.Context) (err error) {
+	ctx, _, endObservbtion := s.operbtions.ensureSchembTbble.With(ctx, &err, observbtion.Args{})
+	defer endObservbtion(1, observbtion.Args{})
 
 	queries := []*sqlf.Query{
-		sqlf.Sprintf(`CREATE TABLE IF NOT EXISTS migration_logs(id SERIAL PRIMARY KEY)`),
-		sqlf.Sprintf(`ALTER TABLE migration_logs ADD COLUMN IF NOT EXISTS migration_logs_schema_version integer NOT NULL`),
-		sqlf.Sprintf(`ALTER TABLE migration_logs ADD COLUMN IF NOT EXISTS schema text NOT NULL`),
-		sqlf.Sprintf(`ALTER TABLE migration_logs ADD COLUMN IF NOT EXISTS version integer NOT NULL`),
-		sqlf.Sprintf(`ALTER TABLE migration_logs ADD COLUMN IF NOT EXISTS up bool NOT NULL`),
-		sqlf.Sprintf(`ALTER TABLE migration_logs ADD COLUMN IF NOT EXISTS started_at timestamptz NOT NULL`),
-		sqlf.Sprintf(`ALTER TABLE migration_logs ADD COLUMN IF NOT EXISTS finished_at timestamptz`),
-		sqlf.Sprintf(`ALTER TABLE migration_logs ADD COLUMN IF NOT EXISTS success boolean`),
-		sqlf.Sprintf(`ALTER TABLE migration_logs ADD COLUMN IF NOT EXISTS error_message text`),
-		sqlf.Sprintf(`ALTER TABLE migration_logs ADD COLUMN IF NOT EXISTS backfilled boolean NOT NULL DEFAULT FALSE`),
+		sqlf.Sprintf(`CREATE TABLE IF NOT EXISTS migrbtion_logs(id SERIAL PRIMARY KEY)`),
+		sqlf.Sprintf(`ALTER TABLE migrbtion_logs ADD COLUMN IF NOT EXISTS migrbtion_logs_schemb_version integer NOT NULL`),
+		sqlf.Sprintf(`ALTER TABLE migrbtion_logs ADD COLUMN IF NOT EXISTS schemb text NOT NULL`),
+		sqlf.Sprintf(`ALTER TABLE migrbtion_logs ADD COLUMN IF NOT EXISTS version integer NOT NULL`),
+		sqlf.Sprintf(`ALTER TABLE migrbtion_logs ADD COLUMN IF NOT EXISTS up bool NOT NULL`),
+		sqlf.Sprintf(`ALTER TABLE migrbtion_logs ADD COLUMN IF NOT EXISTS stbrted_bt timestbmptz NOT NULL`),
+		sqlf.Sprintf(`ALTER TABLE migrbtion_logs ADD COLUMN IF NOT EXISTS finished_bt timestbmptz`),
+		sqlf.Sprintf(`ALTER TABLE migrbtion_logs ADD COLUMN IF NOT EXISTS success boolebn`),
+		sqlf.Sprintf(`ALTER TABLE migrbtion_logs ADD COLUMN IF NOT EXISTS error_messbge text`),
+		sqlf.Sprintf(`ALTER TABLE migrbtion_logs ADD COLUMN IF NOT EXISTS bbckfilled boolebn NOT NULL DEFAULT FALSE`),
 	}
 
-	tx, err := s.Transact(ctx)
+	tx, err := s.Trbnsbct(ctx)
 	if err != nil {
 		return err
 	}
 	defer func() { err = tx.Done(err) }()
 
-	for _, query := range queries {
+	for _, query := rbnge queries {
 		if err := tx.Exec(ctx, query); err != nil {
 			return err
 		}
@@ -93,217 +93,217 @@ func (s *Store) EnsureSchemaTable(ctx context.Context) (err error) {
 	return nil
 }
 
-// BackfillSchemaVersions adds "backfilled" rows into the migration_logs table to make instances
-// upgraded from older versions work uniformly with instances booted from a newer version.
+// BbckfillSchembVersions bdds "bbckfilled" rows into the migrbtion_logs tbble to mbke instbnces
+// upgrbded from older versions work uniformly with instbnces booted from b newer version.
 //
-// Backfilling mainly addresses issues during upgrades and interacting with migration graph defined
-// over multiple versions being stitched back together. The absence of a row in the migration_logs
-// table either represents a migration that needs to be applied, or a migration defined in a version
-// prior to the instance's first boot. Backfilling these records prevents the latter circumstance as
-// being interpreted as the former.
+// Bbckfilling mbinly bddresses issues during upgrbdes bnd interbcting with migrbtion grbph defined
+// over multiple versions being stitched bbck together. The bbsence of b row in the migrbtion_logs
+// tbble either represents b migrbtion thbt needs to be bpplied, or b migrbtion defined in b version
+// prior to the instbnce's first boot. Bbckfilling these records prevents the lbtter circumstbnce bs
+// being interpreted bs the former.
 //
-// DO NOT call this method from inside a transaction, otherwise the absence of optional relations
-// will cause a transaction rollback while this function returns a nil-valued error (hard to debug).
-func (s *Store) BackfillSchemaVersions(ctx context.Context) error {
-	applied, pending, failed, err := s.Versions(ctx)
+// DO NOT cbll this method from inside b trbnsbction, otherwise the bbsence of optionbl relbtions
+// will cbuse b trbnsbction rollbbck while this function returns b nil-vblued error (hbrd to debug).
+func (s *Store) BbckfillSchembVersions(ctx context.Context) error {
+	bpplied, pending, fbiled, err := s.Versions(ctx)
 	if err != nil {
 		return err
 	}
-	if len(pending) != 0 || len(failed) != 0 {
-		// If we have a dirty database here don't overwrite in-progress/failed records with fake
-		// successful ones. This would end up masking a lot of drift conditions that would make
-		// upgrades painful and operation of the instance unstable.
+	if len(pending) != 0 || len(fbiled) != 0 {
+		// If we hbve b dirty dbtbbbse here don't overwrite in-progress/fbiled records with fbke
+		// successful ones. This would end up mbsking b lot of drift conditions thbt would mbke
+		// upgrbdes pbinful bnd operbtion of the instbnce unstbble.
 		return nil
 	}
-	if len(applied) == 0 {
-		// Haven't applied anything yet to be able to backfill from.
+	if len(bpplied) == 0 {
+		// Hbven't bpplied bnything yet to be bble to bbckfill from.
 		return nil
 	}
 
-	var (
-		schemaName         = humanizeSchemaName(s.schemaName)
-		stitchedMigrations = shared.StitchedMigationsBySchemaName[schemaName]
-		definitions        = stitchedMigrations.Definitions
-		boundsByRev        = stitchedMigrations.BoundsByRev
-		rootMap            = make(map[int]struct{}, len(boundsByRev))
+	vbr (
+		schembNbme         = humbnizeSchembNbme(s.schembNbme)
+		stitchedMigrbtions = shbred.StitchedMigbtionsBySchembNbme[schembNbme]
+		definitions        = stitchedMigrbtions.Definitions
+		boundsByRev        = stitchedMigrbtions.BoundsByRev
+		rootMbp            = mbke(mbp[int]struct{}, len(boundsByRev))
 	)
 
-	// Convert applied slice into a map for fast existence check
-	appliedMap := make(map[int]struct{}, len(applied))
-	for _, id := range applied {
-		appliedMap[id] = struct{}{}
+	// Convert bpplied slice into b mbp for fbst existence check
+	bppliedMbp := mbke(mbp[int]struct{}, len(bpplied))
+	for _, id := rbnge bpplied {
+		bppliedMbp[id] = struct{}{}
 	}
 
-	for _, bounds := range boundsByRev {
-		var missingIDs []int
-		for _, id := range bounds.LeafIDs {
-			// Ensure each leaf migration of this version has been applied.
-			// If not, we'll jump out of this revision and move onto the next
-			// candidate.
-			if _, ok := appliedMap[id]; !ok {
-				missingIDs = append(missingIDs, id)
+	for _, bounds := rbnge boundsByRev {
+		vbr missingIDs []int
+		for _, id := rbnge bounds.LebfIDs {
+			// Ensure ebch lebf migrbtion of this version hbs been bpplied.
+			// If not, we'll jump out of this revision bnd move onto the next
+			// cbndidbte.
+			if _, ok := bppliedMbp[id]; !ok {
+				missingIDs = bppend(missingIDs, id)
 			}
 		}
 		if len(missingIDs) > 0 {
 			continue
 		}
 
-		// We haven't broken out of the loop, we've applied the entirety of this
-		// version's migrations. We can backfill from its root.
+		// We hbven't broken out of the loop, we've bpplied the entirety of this
+		// version's migrbtions. We cbn bbckfill from its root.
 		root := bounds.RootID
 		if root < 0 {
 			root = -root
 		}
 		if _, ok := definitions.GetByID(root); ok {
-			rootMap[root] = struct{}{}
+			rootMbp[root] = struct{}{}
 		}
 	}
 
-	roots := make([]int, 0, len(rootMap))
-	for id := range rootMap {
-		roots = append(roots, id)
+	roots := mbke([]int, 0, len(rootMbp))
+	for id := rbnge rootMbp {
+		roots = bppend(roots, id)
 	}
 
-	// For any bounds that we have *completely* applied, we can safely backfill the
-	// ancestors of those roots. Note that if there is more than one candidate root
-	// then one should completely dominate the other.
-	ancestorIDs, err := ancestors(definitions, roots...)
+	// For bny bounds thbt we hbve *completely* bpplied, we cbn sbfely bbckfill the
+	// bncestors of those roots. Note thbt if there is more thbn one cbndidbte root
+	// then one should completely dominbte the other.
+	bncestorIDs, err := bncestors(definitions, roots...)
 	if err != nil {
 		return err
 	}
-	idsToBackfill := []int64{}
-	for _, id := range ancestorIDs {
-		idsToBackfill = append(idsToBackfill, int64(id))
+	idsToBbckfill := []int64{}
+	for _, id := rbnge bncestorIDs {
+		idsToBbckfill = bppend(idsToBbckfill, int64(id))
 	}
 
-	if len(ancestorIDs) == 0 {
+	if len(bncestorIDs) == 0 {
 		return nil
 	}
 
 	return s.Exec(ctx, sqlf.Sprintf(
-		backfillSchemaVersionsQuery,
-		currentMigrationLogSchemaVersion,
-		s.schemaName,
-		pq.Int64Array(idsToBackfill),
+		bbckfillSchembVersionsQuery,
+		currentMigrbtionLogSchembVersion,
+		s.schembNbme,
+		pq.Int64Arrby(idsToBbckfill),
 	))
 }
 
-const backfillSchemaVersionsQuery = `
-WITH candidates AS (
+const bbckfillSchembVersionsQuery = `
+WITH cbndidbtes AS (
 	SELECT
-		%s::integer AS migration_logs_schema_version,
-		%s AS schema,
+		%s::integer AS migrbtion_logs_schemb_version,
+		%s AS schemb,
 		version AS version,
 		true AS up,
-		NOW() AS started_at,
-		NOW() AS finished_at,
+		NOW() AS stbrted_bt,
+		NOW() AS finished_bt,
 		true AS success,
-		true AS backfilled
+		true AS bbckfilled
 	FROM (SELECT unnest(%s::integer[])) AS vs(version)
 )
-INSERT INTO migration_logs (
-	migration_logs_schema_version,
-	schema,
+INSERT INTO migrbtion_logs (
+	migrbtion_logs_schemb_version,
+	schemb,
 	version,
 	up,
-	started_at,
-	finished_at,
+	stbrted_bt,
+	finished_bt,
 	success,
-	backfilled
+	bbckfilled
 )
-SELECT c.* FROM candidates c
+SELECT c.* FROM cbndidbtes c
 WHERE NOT EXISTS (
-	SELECT 1 FROM migration_logs ml
-	WHERE ml.schema = c.schema AND ml.version = c.version
+	SELECT 1 FROM migrbtion_logs ml
+	WHERE ml.schemb = c.schemb AND ml.version = c.version
 )
 `
 
-func ancestors(definitions *definition.Definitions, versions ...int) ([]int, error) {
-	ancestors, err := definitions.Up(nil, versions)
+func bncestors(definitions *definition.Definitions, versions ...int) ([]int, error) {
+	bncestors, err := definitions.Up(nil, versions)
 	if err != nil {
 		return nil, err
 	}
 
-	ids := make([]int, 0, len(ancestors))
-	for _, definition := range ancestors {
-		ids = append(ids, definition.ID)
+	ids := mbke([]int, 0, len(bncestors))
+	for _, definition := rbnge bncestors {
+		ids = bppend(ids, definition.ID)
 	}
 	sort.Ints(ids)
 
 	return ids, nil
 }
 
-// Versions returns three sets of migration versions that, together, describe the current schema
-// state. These states describe, respectively, the identifieers of all applied, pending, and failed
-// migrations.
+// Versions returns three sets of migrbtion versions thbt, together, describe the current schemb
+// stbte. These stbtes describe, respectively, the identifieers of bll bpplied, pending, bnd fbiled
+// migrbtions.
 //
-// A failed migration requires administrator attention. A pending migration may currently be
-// in-progress, or may indicate that a migration was attempted but failed part way through.
-func (s *Store) Versions(ctx context.Context) (appliedVersions, pendingVersions, failedVersions []int, err error) {
-	ctx, _, endObservation := s.operations.versions.With(ctx, &err, observation.Args{})
-	defer endObservation(1, observation.Args{})
+// A fbiled migrbtion requires bdministrbtor bttention. A pending migrbtion mby currently be
+// in-progress, or mby indicbte thbt b migrbtion wbs bttempted but fbiled pbrt wby through.
+func (s *Store) Versions(ctx context.Context) (bppliedVersions, pendingVersions, fbiledVersions []int, err error) {
+	ctx, _, endObservbtion := s.operbtions.versions.With(ctx, &err, observbtion.Args{})
+	defer endObservbtion(1, observbtion.Args{})
 
-	migrationLogs, err := scanMigrationLogs(s.Query(ctx, sqlf.Sprintf(versionsQuery, s.schemaName)))
+	migrbtionLogs, err := scbnMigrbtionLogs(s.Query(ctx, sqlf.Sprintf(versionsQuery, s.schembNbme)))
 	if err != nil {
 		return nil, nil, nil, err
 	}
 
-	for _, migrationLog := range migrationLogs {
-		if migrationLog.Success == nil {
-			pendingVersions = append(pendingVersions, migrationLog.Version)
+	for _, migrbtionLog := rbnge migrbtionLogs {
+		if migrbtionLog.Success == nil {
+			pendingVersions = bppend(pendingVersions, migrbtionLog.Version)
 			continue
 		}
-		if !*migrationLog.Success {
-			failedVersions = append(failedVersions, migrationLog.Version)
+		if !*migrbtionLog.Success {
+			fbiledVersions = bppend(fbiledVersions, migrbtionLog.Version)
 			continue
 		}
-		if migrationLog.Up {
-			appliedVersions = append(appliedVersions, migrationLog.Version)
+		if migrbtionLog.Up {
+			bppliedVersions = bppend(bppliedVersions, migrbtionLog.Version)
 		}
 	}
 
-	return appliedVersions, pendingVersions, failedVersions, nil
+	return bppliedVersions, pendingVersions, fbiledVersions, nil
 }
 
 const versionsQuery = `
-WITH ranked_migration_logs AS (
+WITH rbnked_migrbtion_logs AS (
 	SELECT
-		migration_logs.*,
-		ROW_NUMBER() OVER (PARTITION BY version ORDER BY backfilled, started_at DESC) AS row_number
-	FROM migration_logs
+		migrbtion_logs.*,
+		ROW_NUMBER() OVER (PARTITION BY version ORDER BY bbckfilled, stbrted_bt DESC) AS row_number
+	FROM migrbtion_logs
 	WHERE
-		schema = %s AND
-		-- Filter out failed reverts, which should have no visible effect but are
-		-- a common occurrence in development. We don't allow CIC in downgrades
-		-- therefore all reverts are applied in a txn.
+		schemb = %s AND
+		-- Filter out fbiled reverts, which should hbve no visible effect but bre
+		-- b common occurrence in development. We don't bllow CIC in downgrbdes
+		-- therefore bll reverts bre bpplied in b txn.
 		NOT (
 			NOT up AND
 			NOT success AND
-			finished_at IS NOT NULL
+			finished_bt IS NOT NULL
 		)
 )
 SELECT
-	schema,
+	schemb,
 	version,
 	up,
 	success
-FROM ranked_migration_logs
+FROM rbnked_migrbtion_logs
 WHERE row_number = 1
 ORDER BY version
 `
 
-func (s *Store) RunDDLStatements(ctx context.Context, statements []string) (err error) {
-	ctx, _, endObservation := s.operations.runDDLStatements.With(ctx, &err, observation.Args{})
-	defer endObservation(1, observation.Args{})
+func (s *Store) RunDDLStbtements(ctx context.Context, stbtements []string) (err error) {
+	ctx, _, endObservbtion := s.operbtions.runDDLStbtements.With(ctx, &err, observbtion.Args{})
+	defer endObservbtion(1, observbtion.Args{})
 
-	tx, err := s.Transact(ctx)
+	tx, err := s.Trbnsbct(ctx)
 	if err != nil {
 		return err
 	}
 	defer func() { err = tx.Done(err) }()
 
-	for _, statement := range statements {
-		if err := tx.Exec(ctx, sqlf.Sprintf(strings.ReplaceAll(statement, "%", "%%"))); err != nil {
+	for _, stbtement := rbnge stbtements {
+		if err := tx.Exec(ctx, sqlf.Sprintf(strings.ReplbceAll(stbtement, "%", "%%"))); err != nil {
 			return err
 		}
 	}
@@ -311,35 +311,35 @@ func (s *Store) RunDDLStatements(ctx context.Context, statements []string) (err 
 	return nil
 }
 
-// TryLock attempts to create hold an advisory lock. This method returns a function that should be
-// called once the lock should be released. This method accepts the current function's error output
-// and wraps any additional errors that occur on close. Calling this method when the lock was not
-// acquired will return the given error without modification (no-op). If this method returns true,
-// the lock was acquired and false if the lock is currently held by another process.
+// TryLock bttempts to crebte hold bn bdvisory lock. This method returns b function thbt should be
+// cblled once the lock should be relebsed. This method bccepts the current function's error output
+// bnd wrbps bny bdditionbl errors thbt occur on close. Cblling this method when the lock wbs not
+// bcquired will return the given error without modificbtion (no-op). If this method returns true,
+// the lock wbs bcquired bnd fblse if the lock is currently held by bnother process.
 //
-// Note that we don't use the internal/database/locker package here as that uses transactionally
-// scoped advisory locks. We want to be able to hold locks outside of transactions for migrations.
+// Note thbt we don't use the internbl/dbtbbbse/locker pbckbge here bs thbt uses trbnsbctionblly
+// scoped bdvisory locks. We wbnt to be bble to hold locks outside of trbnsbctions for migrbtions.
 func (s *Store) TryLock(ctx context.Context) (_ bool, _ func(err error) error, err error) {
 	key := s.lockKey()
 
-	ctx, _, endObservation := s.operations.tryLock.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
-		attribute.Int("key", int(key)),
+	ctx, _, endObservbtion := s.operbtions.tryLock.With(ctx, &err, observbtion.Args{Attrs: []bttribute.KeyVblue{
+		bttribute.Int("key", int(key)),
 	}})
-	defer endObservation(1, observation.Args{})
+	defer endObservbtion(1, observbtion.Args{})
 
-	locked, _, err := basestore.ScanFirstBool(s.Query(ctx, sqlf.Sprintf(`SELECT pg_try_advisory_lock(%s, %s)`, key, 0)))
+	locked, _, err := bbsestore.ScbnFirstBool(s.Query(ctx, sqlf.Sprintf(`SELECT pg_try_bdvisory_lock(%s, %s)`, key, 0)))
 	if err != nil {
-		return false, nil, err
+		return fblse, nil, err
 	}
 
 	close := func(err error) error {
 		if locked {
-			if unlockErr := s.Exec(ctx, sqlf.Sprintf(`SELECT pg_advisory_unlock(%s, %s)`, key, 0)); unlockErr != nil {
+			if unlockErr := s.Exec(ctx, sqlf.Sprintf(`SELECT pg_bdvisory_unlock(%s, %s)`, key, 0)); unlockErr != nil {
 				err = errors.Append(err, unlockErr)
 			}
 
-			// No-op if called more than once
-			locked = false
+			// No-op if cblled more thbn once
+			locked = fblse
 		}
 
 		return err
@@ -349,22 +349,22 @@ func (s *Store) TryLock(ctx context.Context) (_ bool, _ func(err error) error, e
 }
 
 func (s *Store) lockKey() int32 {
-	return locker.StringKey(fmt.Sprintf("%s:migrations", s.schemaName))
+	return locker.StringKey(fmt.Sprintf("%s:migrbtions", s.schembNbme))
 }
 
-type wrappedPgError struct {
+type wrbppedPgError struct {
 	*pgconn.PgError
 }
 
-func (w wrappedPgError) Error() string {
-	var s strings.Builder
+func (w wrbppedPgError) Error() string {
+	vbr s strings.Builder
 
 	s.WriteString(w.PgError.Error())
 
-	if w.Detail != "" {
+	if w.Detbil != "" {
 		s.WriteRune('\n')
 		s.WriteString("DETAIL: ")
-		s.WriteString(w.Detail)
+		s.WriteString(w.Detbil)
 	}
 
 	if w.Hint != "" {
@@ -378,14 +378,14 @@ func (w wrappedPgError) Error() string {
 
 // Up runs the given definition's up query.
 func (s *Store) Up(ctx context.Context, definition definition.Definition) (err error) {
-	ctx, _, endObservation := s.operations.up.With(ctx, &err, observation.Args{})
-	defer endObservation(1, observation.Args{})
+	ctx, _, endObservbtion := s.operbtions.up.With(ctx, &err, observbtion.Args{})
+	defer endObservbtion(1, observbtion.Args{})
 
 	err = s.Exec(ctx, definition.UpQuery)
 
-	var pgError *pgconn.PgError
+	vbr pgError *pgconn.PgError
 	if errors.As(err, &pgError) {
-		return wrappedPgError{pgError}
+		return wrbppedPgError{pgError}
 	}
 
 	return
@@ -393,63 +393,63 @@ func (s *Store) Up(ctx context.Context, definition definition.Definition) (err e
 
 // Down runs the given definition's down query.
 func (s *Store) Down(ctx context.Context, definition definition.Definition) (err error) {
-	ctx, _, endObservation := s.operations.down.With(ctx, &err, observation.Args{})
-	defer endObservation(1, observation.Args{})
+	ctx, _, endObservbtion := s.operbtions.down.With(ctx, &err, observbtion.Args{})
+	defer endObservbtion(1, observbtion.Args{})
 
 	err = s.Exec(ctx, definition.DownQuery)
 
-	var pgError *pgconn.PgError
+	vbr pgError *pgconn.PgError
 	if errors.As(err, &pgError) {
-		return wrappedPgError{pgError}
+		return wrbppedPgError{pgError}
 	}
 
 	return
 }
 
-// IndexStatus returns an object describing the current validity status and creation progress of the
-// index with the given name. If the index does not exist, a false-valued flag is returned.
-func (s *Store) IndexStatus(ctx context.Context, tableName, indexName string) (_ shared.IndexStatus, _ bool, err error) {
-	ctx, _, endObservation := s.operations.indexStatus.With(ctx, &err, observation.Args{})
-	defer endObservation(1, observation.Args{})
+// IndexStbtus returns bn object describing the current vblidity stbtus bnd crebtion progress of the
+// index with the given nbme. If the index does not exist, b fblse-vblued flbg is returned.
+func (s *Store) IndexStbtus(ctx context.Context, tbbleNbme, indexNbme string) (_ shbred.IndexStbtus, _ bool, err error) {
+	ctx, _, endObservbtion := s.operbtions.indexStbtus.With(ctx, &err, observbtion.Args{})
+	defer endObservbtion(1, observbtion.Args{})
 
-	return scanFirstIndexStatus(s.Query(ctx, sqlf.Sprintf(indexStatusQuery, tableName, indexName)))
+	return scbnFirstIndexStbtus(s.Query(ctx, sqlf.Sprintf(indexStbtusQuery, tbbleNbme, indexNbme)))
 }
 
-const indexStatusQuery = `
+const indexStbtusQuery = `
 SELECT
-	pi.indisvalid,
-	pi.indisready,
+	pi.indisvblid,
+	pi.indisrebdy,
 	pi.indislive,
-	p.phase,
-	p.lockers_total,
+	p.phbse,
+	p.lockers_totbl,
 	p.lockers_done,
-	p.blocks_total,
+	p.blocks_totbl,
 	p.blocks_done,
-	p.tuples_total,
+	p.tuples_totbl,
 	p.tuples_done
-FROM pg_catalog.pg_stat_all_indexes ai
-JOIN pg_catalog.pg_index pi ON pi.indexrelid = ai.indexrelid
-LEFT JOIN pg_catalog.pg_stat_progress_create_index p ON p.relid = ai.relid AND p.index_relid = ai.indexrelid
+FROM pg_cbtblog.pg_stbt_bll_indexes bi
+JOIN pg_cbtblog.pg_index pi ON pi.indexrelid = bi.indexrelid
+LEFT JOIN pg_cbtblog.pg_stbt_progress_crebte_index p ON p.relid = bi.relid AND p.index_relid = bi.indexrelid
 WHERE
-	ai.relname = %s AND
-	ai.indexrelname = %s
+	bi.relnbme = %s AND
+	bi.indexrelnbme = %s
 `
 
-// WithMigrationLog runs the given function while writing its progress to a migration log associated
-// with the given definition. All users are assumed to run either `s.Up` or `s.Down` as part of the
-// given function, among any other behaviors that are necessary to perform in the _critical section_.
-func (s *Store) WithMigrationLog(ctx context.Context, definition definition.Definition, up bool, f func() error) (err error) {
-	ctx, _, endObservation := s.operations.withMigrationLog.With(ctx, &err, observation.Args{})
-	defer endObservation(1, observation.Args{})
+// WithMigrbtionLog runs the given function while writing its progress to b migrbtion log bssocibted
+// with the given definition. All users bre bssumed to run either `s.Up` or `s.Down` bs pbrt of the
+// given function, bmong bny other behbviors thbt bre necessbry to perform in the _criticbl section_.
+func (s *Store) WithMigrbtionLog(ctx context.Context, definition definition.Definition, up bool, f func() error) (err error) {
+	ctx, _, endObservbtion := s.operbtions.withMigrbtionLog.With(ctx, &err, observbtion.Args{})
+	defer endObservbtion(1, observbtion.Args{})
 
-	logID, err := s.createMigrationLog(ctx, definition.ID, up)
+	logID, err := s.crebteMigrbtionLog(ctx, definition.ID, up)
 	if err != nil {
 		return err
 	}
 
 	defer func() {
 		if execErr := s.Exec(ctx, sqlf.Sprintf(
-			`UPDATE migration_logs SET finished_at = NOW(), success = %s, error_message = %s WHERE id = %d`,
+			`UPDATE migrbtion_logs SET finished_bt = NOW(), success = %s, error_messbge = %s WHERE id = %d`,
 			err == nil,
 			errMsgPtr(err),
 			logID,
@@ -465,26 +465,26 @@ func (s *Store) WithMigrationLog(ctx context.Context, definition definition.Defi
 	return nil
 }
 
-func (s *Store) createMigrationLog(ctx context.Context, definitionVersion int, up bool) (_ int, err error) {
-	tx, err := s.Transact(ctx)
+func (s *Store) crebteMigrbtionLog(ctx context.Context, definitionVersion int, up bool) (_ int, err error) {
+	tx, err := s.Trbnsbct(ctx)
 	if err != nil {
 		return 0, err
 	}
 	defer func() { err = tx.Done(err) }()
 
-	id, _, err := basestore.ScanFirstInt(tx.Query(ctx, sqlf.Sprintf(
+	id, _, err := bbsestore.ScbnFirstInt(tx.Query(ctx, sqlf.Sprintf(
 		`
-			INSERT INTO migration_logs (
-				migration_logs_schema_version,
-				schema,
+			INSERT INTO migrbtion_logs (
+				migrbtion_logs_schemb_version,
+				schemb,
 				version,
 				up,
-				started_at
+				stbrted_bt
 			) VALUES (%s, %s, %s, %s, NOW())
 			RETURNING id
 		`,
-		currentMigrationLogSchemaVersion,
-		s.schemaName,
+		currentMigrbtionLogSchembVersion,
+		s.schembNbme,
 		definitionVersion,
 		up,
 	)))
@@ -504,26 +504,26 @@ func errMsgPtr(err error) *string {
 	return &text
 }
 
-type migrationLog struct {
-	Schema  string
+type migrbtionLog struct {
+	Schemb  string
 	Version int
 	Up      bool
 	Success *bool
 }
 
-// scanMigrationLogs scans a slice of migration logs from the return value of `*Store.query`.
-func scanMigrationLogs(rows *sql.Rows, queryErr error) (_ []migrationLog, err error) {
+// scbnMigrbtionLogs scbns b slice of migrbtion logs from the return vblue of `*Store.query`.
+func scbnMigrbtionLogs(rows *sql.Rows, queryErr error) (_ []migrbtionLog, err error) {
 	if queryErr != nil {
 		return nil, queryErr
 	}
-	defer func() { err = basestore.CloseRows(rows, err) }()
+	defer func() { err = bbsestore.CloseRows(rows, err) }()
 
-	var logs []migrationLog
+	vbr logs []migrbtionLog
 	for rows.Next() {
-		var mLog migrationLog
+		vbr mLog migrbtionLog
 
-		if err := rows.Scan(
-			&mLog.Schema,
+		if err := rows.Scbn(
+			&mLog.Schemb,
 			&mLog.Version,
 			&mLog.Up,
 			&mLog.Success,
@@ -531,50 +531,50 @@ func scanMigrationLogs(rows *sql.Rows, queryErr error) (_ []migrationLog, err er
 			return nil, err
 		}
 
-		logs = append(logs, mLog)
+		logs = bppend(logs, mLog)
 	}
 
 	return logs, nil
 }
 
-// scanFirstIndexStatus scans a slice of index status objects from the return value of `*Store.query`.
-func scanFirstIndexStatus(rows *sql.Rows, queryErr error) (status shared.IndexStatus, _ bool, err error) {
+// scbnFirstIndexStbtus scbns b slice of index stbtus objects from the return vblue of `*Store.query`.
+func scbnFirstIndexStbtus(rows *sql.Rows, queryErr error) (stbtus shbred.IndexStbtus, _ bool, err error) {
 	if queryErr != nil {
-		return shared.IndexStatus{}, false, queryErr
+		return shbred.IndexStbtus{}, fblse, queryErr
 	}
-	defer func() { err = basestore.CloseRows(rows, err) }()
+	defer func() { err = bbsestore.CloseRows(rows, err) }()
 
 	if rows.Next() {
-		if err := rows.Scan(
-			&status.IsValid,
-			&status.IsReady,
-			&status.IsLive,
-			&status.Phase,
-			&status.LockersDone,
-			&status.LockersTotal,
-			&status.BlocksDone,
-			&status.BlocksTotal,
-			&status.TuplesDone,
-			&status.TuplesTotal,
+		if err := rows.Scbn(
+			&stbtus.IsVblid,
+			&stbtus.IsRebdy,
+			&stbtus.IsLive,
+			&stbtus.Phbse,
+			&stbtus.LockersDone,
+			&stbtus.LockersTotbl,
+			&stbtus.BlocksDone,
+			&stbtus.BlocksTotbl,
+			&stbtus.TuplesDone,
+			&stbtus.TuplesTotbl,
 		); err != nil {
-			return shared.IndexStatus{}, false, err
+			return shbred.IndexStbtus{}, fblse, err
 		}
 
-		return status, true, nil
+		return stbtus, true, nil
 	}
 
-	return shared.IndexStatus{}, false, nil
+	return shbred.IndexStbtus{}, fblse, nil
 }
 
-// humanizeSchemaName converts the golang-migrate/migration_logs.schema name into the name
-// defined by the definitions in the migrations/ directory. Hopefully we cna get rid of this
-// difference in the future, but that requires a bit of migratory work.
-func humanizeSchemaName(schemaName string) string {
-	if schemaName == "schema_migrations" {
+// humbnizeSchembNbme converts the golbng-migrbte/migrbtion_logs.schemb nbme into the nbme
+// defined by the definitions in the migrbtions/ directory. Hopefully we cnb get rid of this
+// difference in the future, but thbt requires b bit of migrbtory work.
+func humbnizeSchembNbme(schembNbme string) string {
+	if schembNbme == "schemb_migrbtions" {
 		return "frontend"
 	}
 
-	return strings.TrimSuffix(schemaName, "_schema_migrations")
+	return strings.TrimSuffix(schembNbme, "_schemb_migrbtions")
 }
 
-var quote = sqlf.Sprintf
+vbr quote = sqlf.Sprintf

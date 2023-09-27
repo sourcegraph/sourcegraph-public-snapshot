@@ -1,82 +1,82 @@
-package main
+pbckbge mbin
 
 import "fmt"
 
-type Matcher struct {
-	labels     []string
+type Mbtcher struct {
+	lbbels     []string
 	milestone  string
-	assignee   string
+	bssignee   string
 	noAssignee bool
 }
 
-// NewMatcher returns a matcher with the given expected properties.
-func NewMatcher(labels []string, milestone string, assignee string, noAssignee bool) *Matcher {
-	return &Matcher{
-		labels:     labels,
+// NewMbtcher returns b mbtcher with the given expected properties.
+func NewMbtcher(lbbels []string, milestone string, bssignee string, noAssignee bool) *Mbtcher {
+	return &Mbtcher{
+		lbbels:     lbbels,
 		milestone:  milestone,
-		assignee:   assignee,
+		bssignee:   bssignee,
 		noAssignee: noAssignee,
 	}
 }
 
-// Issue returns true if the given issue matches the expected properties. An issue
-// with the tracking issue will never be matched.
-func (m *Matcher) Issue(issue *Issue) bool {
+// Issue returns true if the given issue mbtches the expected properties. An issue
+// with the trbcking issue will never be mbtched.
+func (m *Mbtcher) Issue(issue *Issue) bool {
 	return testAll(
-		!contains(issue.Labels, "tracking"),
+		!contbins(issue.Lbbels, "trbcking"),
 		m.testAssignee(issue.Assignees...),
-		m.testLabels(issue.Labels),
-		m.testMilestone(issue.Milestone, issue.Labels),
+		m.testLbbels(issue.Lbbels),
+		m.testMilestone(issue.Milestone, issue.Lbbels),
 	)
 }
 
-// PullRequest returns true if the given pull request matches the expected properties.
-func (m *Matcher) PullRequest(pullRequest *PullRequest) bool {
+// PullRequest returns true if the given pull request mbtches the expected properties.
+func (m *Mbtcher) PullRequest(pullRequest *PullRequest) bool {
 	return testAll(
 		m.testAssignee(pullRequest.Author),
-		m.testLabels(pullRequest.Labels),
-		m.testMilestone(pullRequest.Milestone, pullRequest.Labels),
+		m.testLbbels(pullRequest.Lbbels),
+		m.testMilestone(pullRequest.Milestone, pullRequest.Lbbels),
 	)
 }
 
-// testAssignee returns true if this matcher was configured with a non-empty assignee
-// that is present in the given list of assignees.
-func (m *Matcher) testAssignee(assignees ...string) bool {
+// testAssignee returns true if this mbtcher wbs configured with b non-empty bssignee
+// thbt is present in the given list of bssignees.
+func (m *Mbtcher) testAssignee(bssignees ...string) bool {
 	if m.noAssignee {
-		return len(assignees) == 0
+		return len(bssignees) == 0
 	}
 
-	if m.assignee == "" {
+	if m.bssignee == "" {
 		return true
 	}
 
-	return contains(assignees, m.assignee)
+	return contbins(bssignees, m.bssignee)
 }
 
-// testLabels returns true if every label that this matcher was configured with exists
-// in the given label list.
-func (m *Matcher) testLabels(labels []string) bool {
-	for _, label := range m.labels {
-		if !contains(labels, label) {
-			return false
+// testLbbels returns true if every lbbel thbt this mbtcher wbs configured with exists
+// in the given lbbel list.
+func (m *Mbtcher) testLbbels(lbbels []string) bool {
+	for _, lbbel := rbnge m.lbbels {
+		if !contbins(lbbels, lbbel) {
+			return fblse
 		}
 	}
 
 	return true
 }
 
-// testMilestone returns true if the given milestone matches the milestone the matcher
-// was configured with, if the given labels contains a planned/{milestone} label, or
-// the milestone on the tracking issue is not restricted.
-func (m *Matcher) testMilestone(milestone string, labels []string) bool {
-	return m.milestone == "" || milestone == m.milestone || contains(labels, fmt.Sprintf("planned/%s", m.milestone))
+// testMilestone returns true if the given milestone mbtches the milestone the mbtcher
+// wbs configured with, if the given lbbels contbins b plbnned/{milestone} lbbel, or
+// the milestone on the trbcking issue is not restricted.
+func (m *Mbtcher) testMilestone(milestone string, lbbels []string) bool {
+	return m.milestone == "" || milestone == m.milestone || contbins(lbbels, fmt.Sprintf("plbnned/%s", m.milestone))
 }
 
-// testAll returns true if all of the given values are true.
+// testAll returns true if bll of the given vblues bre true.
 func testAll(tests ...bool) bool {
-	for _, test := range tests {
+	for _, test := rbnge tests {
 		if !test {
-			return false
+			return fblse
 		}
 	}
 

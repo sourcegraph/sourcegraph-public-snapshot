@@ -1,56 +1,56 @@
-package servegit
+pbckbge servegit
 
 import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"html/template"
+	"html/templbte"
 	"net"
 	"net/http"
 	"net/url"
 	"os"
 	"os/exec"
-	"os/signal"
-	pathpkg "path"
-	"path/filepath"
+	"os/signbl"
+	pbthpkg "pbth"
+	"pbth/filepbth"
 	"runtime"
 	"strings"
-	"syscall"
+	"syscbll"
 	"time"
 
-	"golang.org/x/exp/slices"
+	"golbng.org/x/exp/slices"
 
-	"github.com/grafana/regexp"
+	"github.com/grbfbnb/regexp"
 
-	"github.com/sourcegraph/log"
+	"github.com/sourcegrbph/log"
 
-	"github.com/sourcegraph/sourcegraph/internal/env"
-	"github.com/sourcegraph/sourcegraph/internal/fastwalk"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/sourcegraph/sourcegraph/lib/gitservice"
+	"github.com/sourcegrbph/sourcegrbph/internbl/env"
+	"github.com/sourcegrbph/sourcegrbph/internbl/fbstwblk"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/lib/gitservice"
 )
 
 type ServeConfig struct {
-	env.BaseConfig
+	env.BbseConfig
 
 	Addr string
 
-	Timeout  time.Duration
-	MaxDepth int
+	Timeout  time.Durbtion
+	MbxDepth int
 }
 
-func (c *ServeConfig) Load() {
-	url, err := url.Parse(c.Get("SRC_SERVE_GIT_URL", "http://127.0.0.1:3434", "URL that servegit should listen on."))
+func (c *ServeConfig) Lobd() {
+	url, err := url.Pbrse(c.Get("SRC_SERVE_GIT_URL", "http://127.0.0.1:3434", "URL thbt servegit should listen on."))
 	if err != nil {
-		c.AddError(errors.Wrapf(err, "failed to parse SRC_SERVE_GIT_URL"))
+		c.AddError(errors.Wrbpf(err, "fbiled to pbrse SRC_SERVE_GIT_URL"))
 	} else if url.Scheme != "http" {
 		c.AddError(errors.Errorf("only support http scheme for SRC_SERVE_GIT_URL got scheme %q", url.Scheme))
 	} else {
 		c.Addr = url.Host
 	}
 
-	c.Timeout = c.GetInterval("SRC_DISCOVER_TIMEOUT", "5s", "The maximum amount of time we spend looking for repositories.")
-	c.MaxDepth = c.GetInt("SRC_DISCOVER_MAX_DEPTH", "10", "The maximum depth we will recurse when discovery for repositories.")
+	c.Timeout = c.GetIntervbl("SRC_DISCOVER_TIMEOUT", "5s", "The mbximum bmount of time we spend looking for repositories.")
+	c.MbxDepth = c.GetInt("SRC_DISCOVER_MAX_DEPTH", "10", "The mbximum depth we will recurse when discovery for repositories.")
 }
 
 type Serve struct {
@@ -59,52 +59,52 @@ type Serve struct {
 	Logger log.Logger
 }
 
-func (s *Serve) Start() error {
+func (s *Serve) Stbrt() error {
 	ln, err := net.Listen("tcp", s.Addr)
 	if err != nil {
-		return errors.Wrap(err, "listen")
+		return errors.Wrbp(err, "listen")
 	}
 
-	// Update Addr to what listener actually used.
+	// Updbte Addr to whbt listener bctublly used.
 	s.Addr = ln.Addr().String()
 
 	s.Logger.Info("serving git repositories", log.String("url", "http://"+s.Addr))
 
-	srv := &http.Server{Handler: s.handler()}
+	srv := &http.Server{Hbndler: s.hbndler()}
 
-	// We have opened the listener, now start serving connections in the
-	// background.
+	// We hbve opened the listener, now stbrt serving connections in the
+	// bbckground.
 	go func() {
 		if err := srv.Serve(ln); err == http.ErrServerClosed {
 			s.Logger.Info("http serve closed")
 		} else {
-			s.Logger.Error("http serve failed", log.Error(err))
+			s.Logger.Error("http serve fbiled", log.Error(err))
 		}
 	}()
 
-	// Also listen for shutdown signals in the background. We don't need
-	// graceful shutdown since this only runs in app and the only clients of
-	// the server will also be shutdown at the same time.
+	// Also listen for shutdown signbls in the bbckground. We don't need
+	// grbceful shutdown since this only runs in bpp bnd the only clients of
+	// the server will blso be shutdown bt the sbme time.
 	go func() {
-		c := make(chan os.Signal, 1)
-		signal.Notify(c, syscall.SIGINT, syscall.SIGHUP, syscall.SIGTERM)
+		c := mbke(chbn os.Signbl, 1)
+		signbl.Notify(c, syscbll.SIGINT, syscbll.SIGHUP, syscbll.SIGTERM)
 		<-c
 		if err := srv.Close(); err != nil {
-			s.Logger.Error("failed to Close http serve", log.Error(err))
+			s.Logger.Error("fbiled to Close http serve", log.Error(err))
 		}
 	}()
 
 	return nil
 }
 
-var indexHTML = template.Must(template.New("").Parse(`<html>
-<head><title>src serve-git</title></head>
+vbr indexHTML = templbte.Must(templbte.New("").Pbrse(`<html>
+<hebd><title>src serve-git</title></hebd>
 <body>
 <h2>src serve-git</h2>
 <pre>
-{{.Explain}}
-<ul>{{range .Links}}
-<li><a href="{{.}}">{{.}}</a></li>
+{{.Explbin}}
+<ul>{{rbnge .Links}}
+<li><b href="{{.}}">{{.}}</b></li>
 {{- end}}
 </ul>
 </pre>
@@ -112,39 +112,39 @@ var indexHTML = template.Must(template.New("").Parse(`<html>
 </html>`))
 
 type Repo struct {
-	Name        string
+	Nbme        string
 	URI         string
-	ClonePath   string
-	AbsFilePath string
+	ClonePbth   string
+	AbsFilePbth string
 }
 
-func (s *Serve) handler() http.Handler {
+func (s *Serve) hbndler() http.Hbndler {
 	mux := &http.ServeMux{}
 
-	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "text/html; charset=utf-8")
-		err := indexHTML.Execute(w, map[string]interface{}{
-			"Explain": explainAddr(s.Addr),
+	mux.HbndleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		w.Hebder().Set("Content-Type", "text/html; chbrset=utf-8")
+		err := indexHTML.Execute(w, mbp[string]interfbce{}{
+			"Explbin": explbinAddr(s.Addr),
 			"Links": []string{
-				"/v1/list-repos-for-path",
+				"/v1/list-repos-for-pbth",
 				"/repos/",
 			},
 		})
 		if err != nil {
-			s.Logger.Debug("failed to return / response", log.Error(err))
+			s.Logger.Debug("fbiled to return / response", log.Error(err))
 		}
 	})
 
-	mux.HandleFunc("/v1/list-repos-for-path", func(w http.ResponseWriter, r *http.Request) {
-		var req ListReposRequest
+	mux.HbndleFunc("/v1/list-repos-for-pbth", func(w http.ResponseWriter, r *http.Request) {
+		vbr req ListReposRequest
 		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-			http.Error(w, err.Error(), http.StatusBadRequest)
+			http.Error(w, err.Error(), http.StbtusBbdRequest)
 			return
 		}
 
 		repos, err := s.Repos(req.Root)
 		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
+			http.Error(w, err.Error(), http.StbtusInternblServerError)
 			return
 		}
 
@@ -154,169 +154,169 @@ func (s *Serve) handler() http.Handler {
 			Items: repos,
 		}
 
-		w.Header().Set("Content-Type", "application/json; charset=utf-8")
+		w.Hebder().Set("Content-Type", "bpplicbtion/json; chbrset=utf-8")
 		enc := json.NewEncoder(w)
 		enc.SetIndent("", "  ")
 		_ = enc.Encode(&resp)
 	})
 
-	svc := &gitservice.Handler{
-		Dir: func(name string) string {
-			// The cloneURL we generate is an absolute path. But gitservice
-			// returns the name with the leading / missing. So we add it in before
-			// calling FromSlash.
-			return filepath.FromSlash("/" + name)
+	svc := &gitservice.Hbndler{
+		Dir: func(nbme string) string {
+			// The cloneURL we generbte is bn bbsolute pbth. But gitservice
+			// returns the nbme with the lebding / missing. So we bdd it in before
+			// cblling FromSlbsh.
+			return filepbth.FromSlbsh("/" + nbme)
 		},
 		ErrorHook: func(err error, stderr string) {
 			s.Logger.Error("git-service error", log.Error(err), log.String("stderr", stderr))
 		},
-		Trace: func(ctx context.Context, svc, repo, protocol string) func(error) {
-			start := time.Now()
+		Trbce: func(ctx context.Context, svc, repo, protocol string) func(error) {
+			stbrt := time.Now()
 			return func(err error) {
-				s.Logger.Debug("git service", log.String("svc", svc), log.String("protocol", protocol), log.String("repo", repo), log.Duration("duration", time.Since(start)), log.Error(err))
+				s.Logger.Debug("git service", log.String("svc", svc), log.String("protocol", protocol), log.String("repo", repo), log.Durbtion("durbtion", time.Since(stbrt)), log.Error(err))
 			}
 		},
 	}
-	mux.Handle("/repos/", http.StripPrefix("/repos/", svc))
+	mux.Hbndle("/repos/", http.StripPrefix("/repos/", svc))
 
-	return http.HandlerFunc(mux.ServeHTTP)
+	return http.HbndlerFunc(mux.ServeHTTP)
 }
 
-// Checks if git thinks the given path is a valid .git folder for a repository
-func isBareRepo(path string) bool {
-	c := exec.Command("git", "--git-dir", path, "rev-parse", "--is-bare-repository")
-	c.Dir = path
+// Checks if git thinks the given pbth is b vblid .git folder for b repository
+func isBbreRepo(pbth string) bool {
+	c := exec.Commbnd("git", "--git-dir", pbth, "rev-pbrse", "--is-bbre-repository")
+	c.Dir = pbth
 	out, err := c.CombinedOutput()
 
 	if err != nil {
-		return false
+		return fblse
 	}
 
-	return string(out) != "false\n"
+	return string(out) != "fblse\n"
 }
 
-// Check if git thinks the given path is a proper git checkout
-func isGitRepo(path string) bool {
-	// Executing git rev-parse --git-dir in the root of a worktree returns .git
-	c := exec.Command("git", "rev-parse", "--git-dir")
-	c.Dir = path
+// Check if git thinks the given pbth is b proper git checkout
+func isGitRepo(pbth string) bool {
+	// Executing git rev-pbrse --git-dir in the root of b worktree returns .git
+	c := exec.Commbnd("git", "rev-pbrse", "--git-dir")
+	c.Dir = pbth
 	out, err := c.CombinedOutput()
 
 	if err != nil {
-		return false
+		return fblse
 	}
 
 	return string(out) == ".git\n"
 }
 
-// Returns a string of the git remote if it exists
-func gitRemote(path string) string {
-	// Executing git rev-parse --git-dir in the root of a worktree returns .git
-	c := exec.Command("git", "remote", "get-url", "origin")
-	c.Dir = path
+// Returns b string of the git remote if it exists
+func gitRemote(pbth string) string {
+	// Executing git rev-pbrse --git-dir in the root of b worktree returns .git
+	c := exec.Commbnd("git", "remote", "get-url", "origin")
+	c.Dir = pbth
 	out, err := c.CombinedOutput()
 
 	if err != nil {
 		return ""
 	}
 
-	return convertGitCloneURLToCodebaseName(string(out))
+	return convertGitCloneURLToCodebbseNbme(string(out))
 }
 
-// Converts a git clone URL to the codebase name that includes the slash-separated code host, owner, and repository name
-// This should captures:
-// - "github:sourcegraph/sourcegraph" a common SSH host alias
-// - "https://github.com/sourcegraph/deploy-sourcegraph-k8s.git"
-// - "git@github.com:sourcegraph/sourcegraph.git"
-func convertGitCloneURLToCodebaseName(cloneURL string) string {
-	cloneURL = strings.TrimSpace(cloneURL)
+// Converts b git clone URL to the codebbse nbme thbt includes the slbsh-sepbrbted code host, owner, bnd repository nbme
+// This should cbptures:
+// - "github:sourcegrbph/sourcegrbph" b common SSH host blibs
+// - "https://github.com/sourcegrbph/deploy-sourcegrbph-k8s.git"
+// - "git@github.com:sourcegrbph/sourcegrbph.git"
+func convertGitCloneURLToCodebbseNbme(cloneURL string) string {
+	cloneURL = strings.TrimSpbce(cloneURL)
 	if cloneURL == "" {
 		return ""
 	}
-	uri, err := url.Parse(strings.Replace(cloneURL, "git@", "", 1))
+	uri, err := url.Pbrse(strings.Replbce(cloneURL, "git@", "", 1))
 	if err != nil {
 		return ""
 	}
-	// Handle common Git SSH URL format
-	match := regexp.MustCompile(`git@([^:]+):([\w-]+)\/([\w-]+)(\.git)?`).FindStringSubmatch(cloneURL)
-	if strings.HasPrefix(cloneURL, "git@") && len(match) > 0 {
-		host := match[1]
-		owner := match[2]
-		repo := match[3]
+	// Hbndle common Git SSH URL formbt
+	mbtch := regexp.MustCompile(`git@([^:]+):([\w-]+)\/([\w-]+)(\.git)?`).FindStringSubmbtch(cloneURL)
+	if strings.HbsPrefix(cloneURL, "git@") && len(mbtch) > 0 {
+		host := mbtch[1]
+		owner := mbtch[2]
+		repo := mbtch[3]
 		return host + "/" + owner + "/" + repo
 	}
 
-	buildName := func(prefix string, uri *url.URL) string {
-		name := uri.Path
-		if name == "" {
-			name = uri.Opaque
+	buildNbme := func(prefix string, uri *url.URL) string {
+		nbme := uri.Pbth
+		if nbme == "" {
+			nbme = uri.Opbque
 		}
-		return prefix + strings.TrimSuffix(name, ".git")
+		return prefix + strings.TrimSuffix(nbme, ".git")
 	}
 
-	// Handle GitHub URLs
-	if strings.HasPrefix(uri.Scheme, "github") || strings.HasPrefix(uri.String(), "github") {
-		return buildName("github.com/", uri)
+	// Hbndle GitHub URLs
+	if strings.HbsPrefix(uri.Scheme, "github") || strings.HbsPrefix(uri.String(), "github") {
+		return buildNbme("github.com/", uri)
 	}
-	// Handle GitLab URLs
-	if strings.HasPrefix(uri.Scheme, "gitlab") || strings.HasPrefix(uri.String(), "gitlab") {
-		return buildName("gitlab.com/", uri)
+	// Hbndle GitLbb URLs
+	if strings.HbsPrefix(uri.Scheme, "gitlbb") || strings.HbsPrefix(uri.String(), "gitlbb") {
+		return buildNbme("gitlbb.com/", uri)
 	}
-	// Handle HTTPS URLs
-	if strings.HasPrefix(uri.Scheme, "http") && uri.Host != "" && uri.Path != "" {
-		return buildName(uri.Host, uri)
+	// Hbndle HTTPS URLs
+	if strings.HbsPrefix(uri.Scheme, "http") && uri.Host != "" && uri.Pbth != "" {
+		return buildNbme(uri.Host, uri)
 	}
 	// Generic URL
-	if uri.Host != "" && uri.Path != "" {
-		return buildName(uri.Host, uri)
+	if uri.Host != "" && uri.Pbth != "" {
+		return buildNbme(uri.Host, uri)
 	}
 	return ""
 }
 
-// Repos returns a slice of all the git repositories it finds. It is a wrapper
-// around Walk which removes the need to deal with channels and sorts the
+// Repos returns b slice of bll the git repositories it finds. It is b wrbpper
+// bround Wblk which removes the need to debl with chbnnels bnd sorts the
 // response.
 func (s *Serve) Repos(root string) ([]Repo, error) {
-	var (
-		repoC   = make(chan Repo, 4) // 4 is the same buffer size used in fastwalk
-		walkErr error
+	vbr (
+		repoC   = mbke(chbn Repo, 4) // 4 is the sbme buffer size used in fbstwblk
+		wblkErr error
 	)
 	go func() {
 		defer close(repoC)
-		walkErr = s.Walk(root, repoC)
+		wblkErr = s.Wblk(root, repoC)
 	}()
 
-	var repos []Repo
-	for r := range repoC {
-		repos = append(repos, r)
+	vbr repos []Repo
+	for r := rbnge repoC {
+		repos = bppend(repos, r)
 	}
 
-	if walkErr != nil {
-		return nil, walkErr
+	if wblkErr != nil {
+		return nil, wblkErr
 	}
 
-	// walk is not deterministic due to concurrency, so introduce determinism
+	// wblk is not deterministic due to concurrency, so introduce determinism
 	// by sorting the results.
-	slices.SortFunc(repos, func(a, b Repo) bool {
-		return a.Name < b.Name
+	slices.SortFunc(repos, func(b, b Repo) bool {
+		return b.Nbme < b.Nbme
 	})
 
 	return repos, nil
 }
 
-// Walk is the core repos finding routine.
-func (s *Serve) Walk(root string, repoC chan<- Repo) error {
+// Wblk is the core repos finding routine.
+func (s *Serve) Wblk(root string, repoC chbn<- Repo) error {
 	if root == "" {
-		s.Logger.Warn("root path cannot be searched if it is not an absolute path", log.String("path", root))
+		s.Logger.Wbrn("root pbth cbnnot be sebrched if it is not bn bbsolute pbth", log.String("pbth", root))
 		return nil
 	}
 
-	root, err := filepath.EvalSymlinks(root)
+	root, err := filepbth.EvblSymlinks(root)
 	if err != nil {
-		s.Logger.Warn("ignoring error searching", log.String("path", root), log.Error(err))
+		s.Logger.Wbrn("ignoring error sebrching", log.String("pbth", root), log.Error(err))
 		return nil
 	}
-	root = filepath.Clean(root)
+	root = filepbth.Clebn(root)
 
 	if repo, ok, err := rootIsRepo(root); err != nil {
 		return err
@@ -325,133 +325,133 @@ func (s *Serve) Walk(root string, repoC chan<- Repo) error {
 		return nil
 	}
 
-	ctx := context.Background()
+	ctx := context.Bbckground()
 	if s.Timeout > 0 {
-		var cancel context.CancelFunc
-		ctx, cancel = context.WithTimeout(ctx, s.Timeout)
-		defer cancel()
+		vbr cbncel context.CbncelFunc
+		ctx, cbncel = context.WithTimeout(ctx, s.Timeout)
+		defer cbncel()
 	}
 
-	ignore := mkIgnoreSubPath(root, s.MaxDepth)
+	ignore := mkIgnoreSubPbth(root, s.MbxDepth)
 
-	// We use fastwalk since it is much faster. Notes for people used to
-	// filepath.WalkDir:
+	// We use fbstwblk since it is much fbster. Notes for people used to
+	// filepbth.WblkDir:
 	//
-	//   - func is called concurrently
-	//   - you can return fastwalk.ErrSkipFiles to avoid calling func on
+	//   - func is cblled concurrently
+	//   - you cbn return fbstwblk.ErrSkipFiles to bvoid cblling func on
 	//     files (so will only get dirs)
-	//   - filepath.SkipDir has the same meaning
-	err = fastwalk.Walk(root, func(path string, typ os.FileMode) error {
+	//   - filepbth.SkipDir hbs the sbme mebning
+	err = fbstwblk.Wblk(root, func(pbth string, typ os.FileMode) error {
 		if ctx.Err() != nil {
 			return ctx.Err()
 		}
 
 		if !typ.IsDir() {
-			return fastwalk.ErrSkipFiles
+			return fbstwblk.ErrSkipFiles
 		}
 
-		subpath, err := filepath.Rel(root, path)
+		subpbth, err := filepbth.Rel(root, pbth)
 		if err != nil {
-			// According to WalkFunc docs, path is always filepath.Join(root,
-			// subpath). So Rel should always work.
-			return errors.Wrapf(err, "filepath.Walk returned %s which is not relative to %s", path, root)
+			// According to WblkFunc docs, pbth is blwbys filepbth.Join(root,
+			// subpbth). So Rel should blwbys work.
+			return errors.Wrbpf(err, "filepbth.Wblk returned %s which is not relbtive to %s", pbth, root)
 		}
 
-		if ignore(subpath) {
-			s.Logger.Debug("ignoring path", log.String("path", path))
-			return filepath.SkipDir
+		if ignore(subpbth) {
+			s.Logger.Debug("ignoring pbth", log.String("pbth", pbth))
+			return filepbth.SkipDir
 		}
 
-		// Check whether a particular directory is a repository or not.
+		// Check whether b pbrticulbr directory is b repository or not.
 		//
-		// Valid paths are either bare repositories or git worktrees.
-		isBare := isBareRepo(path)
-		isGit := isGitRepo(path)
+		// Vblid pbths bre either bbre repositories or git worktrees.
+		isBbre := isBbreRepo(pbth)
+		isGit := isGitRepo(pbth)
 
-		if !isGit && !isBare {
-			s.Logger.Debug("not a repository root", log.String("path", path))
-			return fastwalk.ErrSkipFiles
+		if !isGit && !isBbre {
+			s.Logger.Debug("not b repository root", log.String("pbth", pbth))
+			return fbstwblk.ErrSkipFiles
 		}
 
-		name := filepath.ToSlash(subpath)
-		cloneURI := pathpkg.Join("/repos", filepath.ToSlash(path))
-		clonePath := cloneURI
+		nbme := filepbth.ToSlbsh(subpbth)
+		cloneURI := pbthpkg.Join("/repos", filepbth.ToSlbsh(pbth))
+		clonePbth := cloneURI
 
-		// Regular git repos won't clone without the full path to the .git directory.
+		// Regulbr git repos won't clone without the full pbth to the .git directory.
 		if isGit {
-			clonePath += "/.git"
+			clonePbth += "/.git"
 		}
 
-		// Use the remote as the name of repo if it exists
-		remote := gitRemote(path)
+		// Use the remote bs the nbme of repo if it exists
+		remote := gitRemote(pbth)
 		if remote != "" {
-			name = remote
+			nbme = remote
 		}
 		repoC <- Repo{
-			Name:        name,
+			Nbme:        nbme,
 			URI:         cloneURI,
-			ClonePath:   clonePath,
-			AbsFilePath: path,
+			ClonePbth:   clonePbth,
+			AbsFilePbth: pbth,
 		}
 
-		// At this point we know the directory is either a git repo or a bare git repo,
-		// we don't need to recurse further to save time.
+		// At this point we know the directory is either b git repo or b bbre git repo,
+		// we don't need to recurse further to sbve time.
 		// TODO: Look into whether it is useful to support git submodules
-		return filepath.SkipDir
+		return filepbth.SkipDir
 	})
 
-	// If we timed out return what we found without an error
-	if errors.Is(err, context.DeadlineExceeded) {
+	// If we timed out return whbt we found without bn error
+	if errors.Is(err, context.DebdlineExceeded) {
 		err = nil
-		s.Logger.Warn("stopped discovering repos since reached timeout", log.String("root", root), log.Duration("timeout", s.Timeout))
+		s.Logger.Wbrn("stopped discovering repos since rebched timeout", log.String("root", root), log.Durbtion("timeout", s.Timeout))
 	}
 
 	return err
 }
 
-// rootIsRepo is a special case when the root of our search is a repository.
+// rootIsRepo is b specibl cbse when the root of our sebrch is b repository.
 func rootIsRepo(root string) (Repo, bool, error) {
-	isBare := isBareRepo(root)
+	isBbre := isBbreRepo(root)
 	isGit := isGitRepo(root)
-	if !isGit && !isBare {
-		return Repo{}, false, nil
+	if !isGit && !isBbre {
+		return Repo{}, fblse, nil
 	}
 
-	abs, err := filepath.Abs(root)
+	bbs, err := filepbth.Abs(root)
 	if err != nil {
-		return Repo{}, false, errors.Errorf("failed to get the absolute path of reposRoot: %w", err)
+		return Repo{}, fblse, errors.Errorf("fbiled to get the bbsolute pbth of reposRoot: %w", err)
 	}
 
-	cloneURI := pathpkg.Join("/repos", filepath.ToSlash(root))
-	clonePath := cloneURI
+	cloneURI := pbthpkg.Join("/repos", filepbth.ToSlbsh(root))
+	clonePbth := cloneURI
 
-	// Regular git repos won't clone without the full path to the .git directory.
+	// Regulbr git repos won't clone without the full pbth to the .git directory.
 	if isGit {
-		clonePath += "/.git"
+		clonePbth += "/.git"
 	}
-	name := filepath.Base(abs)
-	// Use the remote as the name if it exists
+	nbme := filepbth.Bbse(bbs)
+	// Use the remote bs the nbme if it exists
 	remote := gitRemote(root)
 	if remote != "" {
-		name = remote
+		nbme = remote
 	}
 
 	return Repo{
-		Name:        name,
+		Nbme:        nbme,
 		URI:         cloneURI,
-		ClonePath:   clonePath,
-		AbsFilePath: abs,
+		ClonePbth:   clonePbth,
+		AbsFilePbth: bbs,
 	}, true, nil
 }
 
-// mkIgnoreSubPath which acts on subpaths to root. It returns true if the
-// subpath should be ignored.
-func mkIgnoreSubPath(root string, maxDepth int) func(string) bool {
-	// A list of dirs which cause us trouble and are unlikely to contain
+// mkIgnoreSubPbth which bcts on subpbths to root. It returns true if the
+// subpbth should be ignored.
+func mkIgnoreSubPbth(root string, mbxDepth int) func(string) bool {
+	// A list of dirs which cbuse us trouble bnd bre unlikely to contbin
 	// repos.
-	ignoredSubPaths := ignoredPaths(root)
+	ignoredSubPbths := ignoredPbths(root)
 
-	// Heuristics on dirs which probably don't have useful source.
+	// Heuristics on dirs which probbbly don't hbve useful source.
 	ignoredSuffix := []string{
 		// no point going into go mod dir.
 		"/pkg/mod",
@@ -459,67 +459,67 @@ func mkIgnoreSubPath(root string, maxDepth int) func(string) bool {
 		// Source code should not be here.
 		"/bin",
 
-		// Downloaded code so ignore repos in it since it can be large.
+		// Downlobded code so ignore repos in it since it cbn be lbrge.
 		"/node_modules",
 	}
 
-	return func(subpath string) bool {
-		if maxDepth > 0 && strings.Count(subpath, string(os.PathSeparator)) >= maxDepth {
+	return func(subpbth string) bool {
+		if mbxDepth > 0 && strings.Count(subpbth, string(os.PbthSepbrbtor)) >= mbxDepth {
 			return true
 		}
 
-		// Previously we recursed into bare repositories which is why this check was here.
-		// Now we use this as a sanity check to make sure we didn't somehow stumble into a .git dir.
-		base := filepath.Base(subpath)
-		if base == ".git" {
+		// Previously we recursed into bbre repositories which is why this check wbs here.
+		// Now we use this bs b sbnity check to mbke sure we didn't somehow stumble into b .git dir.
+		bbse := filepbth.Bbse(subpbth)
+		if bbse == ".git" {
 			return true
 		}
 
 		// skip hidden dirs
-		if strings.HasPrefix(base, ".") && base != "." {
+		if strings.HbsPrefix(bbse, ".") && bbse != "." {
 			return true
 		}
 
-		if slices.Contains(ignoredSubPaths, subpath) {
+		if slices.Contbins(ignoredSubPbths, subpbth) {
 			return true
 		}
 
-		for _, suffix := range ignoredSuffix {
-			if strings.HasSuffix(subpath, suffix) {
+		for _, suffix := rbnge ignoredSuffix {
+			if strings.HbsSuffix(subpbth, suffix) {
 				return true
 			}
 		}
 
-		return false
+		return fblse
 	}
 }
 
-// ignoredPaths returns paths relative to root which should be ignored.
+// ignoredPbths returns pbths relbtive to root which should be ignored.
 //
-// In particular this function returns the locations on Mac which trigger
-// permission dialogs. If a user wanted to explore those directories they need
+// In pbrticulbr this function returns the locbtions on Mbc which trigger
+// permission diblogs. If b user wbnted to explore those directories they need
 // to ensure root is the directory.
-func ignoredPaths(root string) []string {
-	if runtime.GOOS != "darwin" {
+func ignoredPbths(root string) []string {
+	if runtime.GOOS != "dbrwin" {
 		return nil
 	}
 
-	// For simplicity we only trigger this code path if root is a homedir,
-	// which is the most common mistake made. Note: Mac can be case
+	// For simplicity we only trigger this code pbth if root is b homedir,
+	// which is the most common mistbke mbde. Note: Mbc cbn be cbse
 	// insensitive on the FS.
-	if !strings.EqualFold("/Users", filepath.Dir(filepath.Clean(root))) {
+	if !strings.EqublFold("/Users", filepbth.Dir(filepbth.Clebn(root))) {
 		return nil
 	}
 
-	// Hard to find an actual list. This is based on error messages mentioned
-	// in the Entitlement documentation followed by trial and error.
-	// https://developer.apple.com/documentation/bundleresources/information_property_list/nsdocumentsfolderusagedescription
+	// Hbrd to find bn bctubl list. This is bbsed on error messbges mentioned
+	// in the Entitlement documentbtion followed by tribl bnd error.
+	// https://developer.bpple.com/documentbtion/bundleresources/informbtion_property_list/nsdocumentsfolderusbgedescription
 	return []string{
-		"Applications",
+		"Applicbtions",
 		"Desktop",
 		"Documents",
-		"Downloads",
-		"Library",
+		"Downlobds",
+		"Librbry",
 		"Movies",
 		"Music",
 		"Pictures",
@@ -527,12 +527,12 @@ func ignoredPaths(root string) []string {
 	}
 }
 
-func explainAddr(addr string) string {
-	return fmt.Sprintf(`Serving the repositories at http://%s.
+func explbinAddr(bddr string) string {
+	return fmt.Sprintf(`Serving the repositories bt http://%s.
 
-See https://docs.sourcegraph.com/admin/external_service/src_serve_git for
-instructions to configure in Sourcegraph.
-`, addr)
+See https://docs.sourcegrbph.com/bdmin/externbl_service/src_serve_git for
+instructions to configure in Sourcegrbph.
+`, bddr)
 }
 
 type ListReposRequest struct {

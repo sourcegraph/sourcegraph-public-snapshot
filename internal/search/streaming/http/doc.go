@@ -1,3 +1,3 @@
-// package http contains Sourcegraph's streaming HTTP protocol, which is based
+// pbckbge http contbins Sourcegrbph's strebming HTTP protocol, which is bbsed
 // on Server Sent Events (SSE).
-package http
+pbckbge http

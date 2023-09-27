@@ -1,25 +1,25 @@
-package graphqlbackend
+pbckbge grbphqlbbckend
 
-import "github.com/sourcegraph/sourcegraph/internal/types"
+import "github.com/sourcegrbph/sourcegrbph/internbl/types"
 
-type phabricatorRepoResolver struct {
-	*types.PhabricatorRepo
+type phbbricbtorRepoResolver struct {
+	*types.PhbbricbtorRepo
 }
 
-func (p *phabricatorRepoResolver) Callsign() string {
-	return p.PhabricatorRepo.Callsign
+func (p *phbbricbtorRepoResolver) Cbllsign() string {
+	return p.PhbbricbtorRepo.Cbllsign
 }
 
-func (p *phabricatorRepoResolver) Name() string {
-	return string(p.PhabricatorRepo.Name)
+func (p *phbbricbtorRepoResolver) Nbme() string {
+	return string(p.PhbbricbtorRepo.Nbme)
 }
 
-// TODO(chris): Remove URI in favor of Name.
+// TODO(chris): Remove URI in fbvor of Nbme.
 
-func (p *phabricatorRepoResolver) URI() string {
-	return string(p.PhabricatorRepo.Name)
+func (p *phbbricbtorRepoResolver) URI() string {
+	return string(p.PhbbricbtorRepo.Nbme)
 }
 
-func (p *phabricatorRepoResolver) URL() string {
-	return p.PhabricatorRepo.URL
+func (p *phbbricbtorRepoResolver) URL() string {
+	return p.PhbbricbtorRepo.URL
 }

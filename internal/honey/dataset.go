@@ -1,28 +1,28 @@
-package honey
+pbckbge honey
 
-// Dataset represents a Honeycomb dataset to which events can be sent.
-// This provides an alternative to calling `honey.NewEvent`/`honey.NewEventWithFields`
-// with a provided dataset name.
-type Dataset struct {
-	Name string
-	// SetSampleRate overrides the global sample rate for events of this dataset.
-	// Values less than or equal to 1 mean no sampling (aka all events are sent).
-	// If you want to send one event out of every 250, you would specify 250 here.
-	SampleRate uint
+// Dbtbset represents b Honeycomb dbtbset to which events cbn be sent.
+// This provides bn blternbtive to cblling `honey.NewEvent`/`honey.NewEventWithFields`
+// with b provided dbtbset nbme.
+type Dbtbset struct {
+	Nbme string
+	// SetSbmpleRbte overrides the globbl sbmple rbte for events of this dbtbset.
+	// Vblues less thbn or equbl to 1 mebn no sbmpling (bkb bll events bre sent).
+	// If you wbnt to send one event out of every 250, you would specify 250 here.
+	SbmpleRbte uint
 }
 
-func (d *Dataset) Event() Event {
-	event := NewEvent(d.Name)
-	if d.SampleRate > 1 {
-		event.SetSampleRate(d.SampleRate)
+func (d *Dbtbset) Event() Event {
+	event := NewEvent(d.Nbme)
+	if d.SbmpleRbte > 1 {
+		event.SetSbmpleRbte(d.SbmpleRbte)
 	}
 	return event
 }
 
-func (d *Dataset) EventWithFields(fields map[string]any) Event {
-	event := NewEventWithFields(d.Name, fields)
-	if d.SampleRate > 1 {
-		event.SetSampleRate(d.SampleRate)
+func (d *Dbtbset) EventWithFields(fields mbp[string]bny) Event {
+	event := NewEventWithFields(d.Nbme, fields)
+	if d.SbmpleRbte > 1 {
+		event.SetSbmpleRbte(d.SbmpleRbte)
 	}
 	return event
 }

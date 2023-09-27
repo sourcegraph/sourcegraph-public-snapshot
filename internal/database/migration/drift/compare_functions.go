@@ -1,34 +1,34 @@
-package drift
+pbckbge drift
 
 import (
 	"fmt"
 
-	"github.com/sourcegraph/sourcegraph/internal/database/migration/schemas"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/migrbtion/schembs"
 )
 
-func compareFunctions(schemaName, version string, actual, expected schemas.SchemaDescription) []Summary {
-	return compareNamedLists(actual.Functions, expected.Functions, compareFunctionsCallback)
+func compbreFunctions(schembNbme, version string, bctubl, expected schembs.SchembDescription) []Summbry {
+	return compbreNbmedLists(bctubl.Functions, expected.Functions, compbreFunctionsCbllbbck)
 }
 
-func compareFunctionsCallback(function *schemas.FunctionDescription, expectedFunction schemas.FunctionDescription) Summary {
+func compbreFunctionsCbllbbck(function *schembs.FunctionDescription, expectedFunction schembs.FunctionDescription) Summbry {
 	if function == nil {
-		return newDriftSummary(
-			expectedFunction.GetName(),
-			fmt.Sprintf("Missing function %q", expectedFunction.GetName()),
+		return newDriftSummbry(
+			expectedFunction.GetNbme(),
+			fmt.Sprintf("Missing function %q", expectedFunction.GetNbme()),
 			"define the function",
-		).withStatements(
-			expectedFunction.CreateOrReplaceStatement(),
+		).withStbtements(
+			expectedFunction.CrebteOrReplbceStbtement(),
 		)
 	}
 
-	return newDriftSummary(
-		expectedFunction.GetName(),
-		fmt.Sprintf("Unexpected definition of function %q", expectedFunction.GetName()),
+	return newDriftSummbry(
+		expectedFunction.GetNbme(),
+		fmt.Sprintf("Unexpected definition of function %q", expectedFunction.GetNbme()),
 		"redefine the function",
 	).withDiff(
 		expectedFunction.Definition,
 		function.Definition,
-	).withStatements(
-		expectedFunction.CreateOrReplaceStatement(),
+	).withStbtements(
+		expectedFunction.CrebteOrReplbceStbtement(),
 	)
 }

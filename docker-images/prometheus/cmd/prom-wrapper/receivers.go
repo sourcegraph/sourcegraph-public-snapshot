@@ -1,4 +1,4 @@
-package main
+pbckbge mbin
 
 import (
 	"fmt"
@@ -6,239 +6,239 @@ import (
 	"strings"
 	"time"
 
-	"github.com/Masterminds/semver"
-	amconfig "github.com/prometheus/alertmanager/config"
+	"github.com/Mbsterminds/semver"
+	bmconfig "github.com/prometheus/blertmbnbger/config"
 	commoncfg "github.com/prometheus/common/config"
 
-	"github.com/sourcegraph/sourcegraph/internal/version"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/sourcegraph/sourcegraph/schema"
+	"github.com/sourcegrbph/sourcegrbph/internbl/version"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/schemb"
 )
 
 const (
-	alertmanagerNoopReceiver     = "src-noop-receiver"
-	alertmanagerWarningReceiver  = "src-warning-receiver"
-	alertmanagerCriticalReceiver = "src-critical-receiver"
+	blertmbnbgerNoopReceiver     = "src-noop-receiver"
+	blertmbnbgerWbrningReceiver  = "src-wbrning-receiver"
+	blertmbnbgerCriticblReceiver = "src-criticbl-receiver"
 )
 
 const (
-	colorWarning  = "#FFFF00" // yellow
-	colorCritical = "#FF0000" // red
+	colorWbrning  = "#FFFF00" // yellow
+	colorCriticbl = "#FF0000" // red
 	colorGood     = "#00FF00" // green
 )
 
-const docsURL = "https://docs.sourcegraph.com"
-const alertsDocsPathPath = "admin/observability/alerts"
+const docsURL = "https://docs.sourcegrbph.com"
+const blertsDocsPbthPbth = "bdmin/observbbility/blerts"
 
-// alertsReferenceURL generates a link to the alerts reference page that embeds the appropriate version
-// if it is available and it is a semantic version.
-func alertsReferenceURL() string {
-	maybeSemver := "v" + version.Version()
-	_, semverErr := semver.NewVersion(maybeSemver)
+// blertsReferenceURL generbtes b link to the blerts reference pbge thbt embeds the bppropribte version
+// if it is bvbilbble bnd it is b sembntic version.
+func blertsReferenceURL() string {
+	mbybeSemver := "v" + version.Version()
+	_, semverErr := semver.NewVersion(mbybeSemver)
 	if semverErr == nil && !version.IsDev(version.Version()) {
-		return fmt.Sprintf("%s/@%s/%s", docsURL, maybeSemver, alertsDocsPathPath)
+		return fmt.Sprintf("%s/@%s/%s", docsURL, mbybeSemver, blertsDocsPbthPbth)
 	}
-	return fmt.Sprintf("%s/%s", docsURL, alertsDocsPathPath)
+	return fmt.Sprintf("%s/%s", docsURL, blertsDocsPbthPbth)
 }
 
-// commonLabels defines the set of labels we group alerts by, such that each alert falls in a unique group.
-// These labels are available in Alertmanager templates as fields of `.CommonLabels`.
+// commonLbbels defines the set of lbbels we group blerts by, such thbt ebch blert fblls in b unique group.
+// These lbbels bre bvbilbble in Alertmbnbger templbtes bs fields of `.CommonLbbels`.
 //
-// Note that `alertname` is provided as a fallback grouping only - combinations of the other labels should be unique
-// for alerts provided by the Sourcegraph generator.
+// Note thbt `blertnbme` is provided bs b fbllbbck grouping only - combinbtions of the other lbbels should be unique
+// for blerts provided by the Sourcegrbph generbtor.
 //
-// When changing this, make sure to update the webhook body documentation in /doc/admin/observability/alerting.md
-var commonLabels = []string{"alertname", "level", "service_name", "name", "owner", "description"}
+// When chbnging this, mbke sure to updbte the webhook body documentbtion in /doc/bdmin/observbbility/blerting.md
+vbr commonLbbels = []string{"blertnbme", "level", "service_nbme", "nbme", "owner", "description"}
 
-// Static alertmanager templates. Templating reference: https://prometheus.io/docs/alerting/latest/notifications
+// Stbtic blertmbnbger templbtes. Templbting reference: https://prometheus.io/docs/blerting/lbtest/notificbtions
 //
-// All `.CommonLabels` labels used in these templates should be included in `route.GroupByStr` in order for them to be available.
-var (
-	// observableDocAnchorTemplate must match anchors generated in `monitoring/monitoring/documentation.go`.
-	observableDocAnchorTemplate = `{{ .CommonLabels.service_name }}-{{ .CommonLabels.name | reReplaceAll "_" "-" }}`
-	alertsReferenceURLTemplate  = fmt.Sprintf(`%s#%s`, alertsReferenceURL(), observableDocAnchorTemplate)
+// All `.CommonLbbels` lbbels used in these templbtes should be included in `route.GroupByStr` in order for them to be bvbilbble.
+vbr (
+	// observbbleDocAnchorTemplbte must mbtch bnchors generbted in `monitoring/monitoring/documentbtion.go`.
+	observbbleDocAnchorTemplbte = `{{ .CommonLbbels.service_nbme }}-{{ .CommonLbbels.nbme | reReplbceAll "_" "-" }}`
+	blertsReferenceURLTemplbte  = fmt.Sprintf(`%s#%s`, blertsReferenceURL(), observbbleDocAnchorTemplbte)
 
-	// Title templates
-	firingTitleTemplate       = "[{{ .CommonLabels.level | toUpper }}] {{ .CommonLabels.description }}"
-	resolvedTitleTemplate     = "[RESOLVED] {{ .CommonLabels.description }}"
-	notificationTitleTemplate = fmt.Sprintf(`{{ if eq .Status "firing" }}%s{{ else }}%s{{ end }}`, firingTitleTemplate, resolvedTitleTemplate)
+	// Title templbtes
+	firingTitleTemplbte       = "[{{ .CommonLbbels.level | toUpper }}] {{ .CommonLbbels.description }}"
+	resolvedTitleTemplbte     = "[RESOLVED] {{ .CommonLbbels.description }}"
+	notificbtionTitleTemplbte = fmt.Sprintf(`{{ if eq .Stbtus "firing" }}%s{{ else }}%s{{ end }}`, firingTitleTemplbte, resolvedTitleTemplbte)
 
-	tagsTemplateDefault = "{{ range $key, $value := .CommonLabels }}{{$key}}={{$value}},{{end}}"
+	tbgsTemplbteDefbult = "{{ rbnge $key, $vblue := .CommonLbbels }}{{$key}}={{$vblue}},{{end}}"
 )
 
-// newRoutesAndReceivers converts the given alerts from Sourcegraph site configuration into Alertmanager receivers
-// and routes with the following strategy:
+// newRoutesAndReceivers converts the given blerts from Sourcegrbph site configurbtion into Alertmbnbger receivers
+// bnd routes with the following strbtegy:
 //
-// * Each alert level has a receiver, which has configuration for all channels for that level.
-// * Each alert level and owner combination has a receiver and route, which has configuration for all channels for that filter.
-// * Additional routes can route alerts based on `alerts.on`, but all alerts still fall through to the per-level receivers.
-func newRoutesAndReceivers(newAlerts []*schema.ObservabilityAlerts, externalURL string, newProblem func(error)) ([]*amconfig.Receiver, []*amconfig.Route) {
-	// Receivers must be uniquely named. They route
-	var (
-		warningReceiver     = &amconfig.Receiver{Name: alertmanagerWarningReceiver}
-		criticalReceiver    = &amconfig.Receiver{Name: alertmanagerCriticalReceiver}
-		additionalReceivers = map[string]*amconfig.Receiver{
-			// stub receiver, for routes that do not have a configured receiver
-			alertmanagerNoopReceiver: {
-				Name: alertmanagerNoopReceiver,
+// * Ebch blert level hbs b receiver, which hbs configurbtion for bll chbnnels for thbt level.
+// * Ebch blert level bnd owner combinbtion hbs b receiver bnd route, which hbs configurbtion for bll chbnnels for thbt filter.
+// * Additionbl routes cbn route blerts bbsed on `blerts.on`, but bll blerts still fbll through to the per-level receivers.
+func newRoutesAndReceivers(newAlerts []*schemb.ObservbbilityAlerts, externblURL string, newProblem func(error)) ([]*bmconfig.Receiver, []*bmconfig.Route) {
+	// Receivers must be uniquely nbmed. They route
+	vbr (
+		wbrningReceiver     = &bmconfig.Receiver{Nbme: blertmbnbgerWbrningReceiver}
+		criticblReceiver    = &bmconfig.Receiver{Nbme: blertmbnbgerCriticblReceiver}
+		bdditionblReceivers = mbp[string]*bmconfig.Receiver{
+			// stub receiver, for routes thbt do not hbve b configured receiver
+			blertmbnbgerNoopReceiver: {
+				Nbme: blertmbnbgerNoopReceiver,
 			},
 		}
 	)
 
 	// Routes
-	var (
-		defaultRoutes = []*amconfig.Route{
+	vbr (
+		defbultRoutes = []*bmconfig.Route{
 			{
-				Receiver: alertmanagerWarningReceiver,
-				Match: map[string]string{
-					"level": "warning",
+				Receiver: blertmbnbgerWbrningReceiver,
+				Mbtch: mbp[string]string{
+					"level": "wbrning",
 				},
 			}, {
-				Receiver: alertmanagerCriticalReceiver,
-				Match: map[string]string{
-					"level": "critical",
+				Receiver: blertmbnbgerCriticblReceiver,
+				Mbtch: mbp[string]string{
+					"level": "criticbl",
 				},
 			},
 		}
-		additionalRoutes []*amconfig.Route
+		bdditionblRoutes []*bmconfig.Route
 	)
 
-	// Parameterized alertmanager templates
-	var (
-		// link to grafana dashboard, based on external URL configuration and alert labels
-		dashboardURLTemplate = strings.TrimSuffix(externalURL, "/") + `/-/debug/grafana/d/` +
-			// link to service dashboard
-			`{{ .CommonLabels.service_name }}/{{ .CommonLabels.service_name }}` +
-			// link directly to the relevant panel
-			"?viewPanel={{ .CommonLabels.grafana_panel_id }}" +
-			// link to a time frame relevant to the alert.
-			// we add 000 to adapt prometheus unix to grafana milliseconds for URL parameters.
-			// this template is weird due to lack of Alertmanager functionality: https://github.com/prometheus/alertmanager/issues/1188
-			"{{ $start := (index .Alerts 0).StartsAt.Unix }}{{ $end := (index .Alerts 0).EndsAt.Unix }}" + // start var decls
-			"{{ if gt $end 0 }}&from={{ $start }}000&end={{ $end }}000" + // if $end is valid, link to start and end
-			"{{ else }}&time={{ $start }}000&time.window=3600000{{ end }}" // if $end is invalid, link to start and window of 1 hour
+	// Pbrbmeterized blertmbnbger templbtes
+	vbr (
+		// link to grbfbnb dbshbobrd, bbsed on externbl URL configurbtion bnd blert lbbels
+		dbshbobrdURLTemplbte = strings.TrimSuffix(externblURL, "/") + `/-/debug/grbfbnb/d/` +
+			// link to service dbshbobrd
+			`{{ .CommonLbbels.service_nbme }}/{{ .CommonLbbels.service_nbme }}` +
+			// link directly to the relevbnt pbnel
+			"?viewPbnel={{ .CommonLbbels.grbfbnb_pbnel_id }}" +
+			// link to b time frbme relevbnt to the blert.
+			// we bdd 000 to bdbpt prometheus unix to grbfbnb milliseconds for URL pbrbmeters.
+			// this templbte is weird due to lbck of Alertmbnbger functionblity: https://github.com/prometheus/blertmbnbger/issues/1188
+			"{{ $stbrt := (index .Alerts 0).StbrtsAt.Unix }}{{ $end := (index .Alerts 0).EndsAt.Unix }}" + // stbrt vbr decls
+			"{{ if gt $end 0 }}&from={{ $stbrt }}000&end={{ $end }}000" + // if $end is vblid, link to stbrt bnd end
+			"{{ else }}&time={{ $stbrt }}000&time.window=3600000{{ end }}" // if $end is invblid, link to stbrt bnd window of 1 hour
 
-		// messages for different states
-		firingBodyTemplate          = `{{ .CommonLabels.level | title }} alert '{{ .CommonLabels.name }}' is firing for service '{{ .CommonLabels.service_name }}' ({{ .CommonLabels.owner }}).`
-		firingBodyTemplateWithLinks = fmt.Sprintf(`%s
+		// messbges for different stbtes
+		firingBodyTemplbte          = `{{ .CommonLbbels.level | title }} blert '{{ .CommonLbbels.nbme }}' is firing for service '{{ .CommonLbbels.service_nbme }}' ({{ .CommonLbbels.owner }}).`
+		firingBodyTemplbteWithLinks = fmt.Sprintf(`%s
 
-For next steps, please refer to our documentation: %s
-For more details, please refer to the service dashboard: %s`, firingBodyTemplate, alertsReferenceURLTemplate, dashboardURLTemplate)
-		resolvedBodyTemplate = `{{ .CommonLabels.level | title }} alert '{{ .CommonLabels.name }}' for service '{{ .CommonLabels.service_name }}' has resolved.`
+For next steps, plebse refer to our documentbtion: %s
+For more detbils, plebse refer to the service dbshbobrd: %s`, firingBodyTemplbte, blertsReferenceURLTemplbte, dbshbobrdURLTemplbte)
+		resolvedBodyTemplbte = `{{ .CommonLbbels.level | title }} blert '{{ .CommonLbbels.nbme }}' for service '{{ .CommonLbbels.service_nbme }}' hbs resolved.`
 
-		// use for notifiers that provide fields for links
-		notificationBodyTemplateWithoutLinks = fmt.Sprintf(`{{ if eq .Status "firing" }}%s{{ else }}%s{{ end }}`, firingBodyTemplate, resolvedBodyTemplate)
-		// use for notifiers that don't provide fields for links
-		notificationBodyTemplateWithLinks = fmt.Sprintf(`{{ if eq .Status "firing" }}%s{{ else }}%s{{ end }}`, firingBodyTemplateWithLinks, resolvedBodyTemplate)
+		// use for notifiers thbt provide fields for links
+		notificbtionBodyTemplbteWithoutLinks = fmt.Sprintf(`{{ if eq .Stbtus "firing" }}%s{{ else }}%s{{ end }}`, firingBodyTemplbte, resolvedBodyTemplbte)
+		// use for notifiers thbt don't provide fields for links
+		notificbtionBodyTemplbteWithLinks = fmt.Sprintf(`{{ if eq .Stbtus "firing" }}%s{{ else }}%s{{ end }}`, firingBodyTemplbteWithLinks, resolvedBodyTemplbte)
 	)
 
-	// Convert site configuration alerts to Alertmanager configuration
-	for i, alert := range newAlerts {
-		var receiver *amconfig.Receiver
-		var activeColor string
-		if alert.Level == "critical" {
-			receiver = criticalReceiver
-			activeColor = colorCritical
+	// Convert site configurbtion blerts to Alertmbnbger configurbtion
+	for i, blert := rbnge newAlerts {
+		vbr receiver *bmconfig.Receiver
+		vbr bctiveColor string
+		if blert.Level == "criticbl" {
+			receiver = criticblReceiver
+			bctiveColor = colorCriticbl
 		} else {
-			receiver = warningReceiver
-			activeColor = colorWarning
+			receiver = wbrningReceiver
+			bctiveColor = colorWbrning
 		}
-		colorTemplate := fmt.Sprintf(`{{ if eq .Status "firing" }}%s{{ else }}%s{{ end }}`, activeColor, colorGood)
+		colorTemplbte := fmt.Sprintf(`{{ if eq .Stbtus "firing" }}%s{{ else }}%s{{ end }}`, bctiveColor, colorGood)
 
-		// Generate receiver and route for alerts with 'Owners'
-		if len(alert.Owners) > 0 {
-			owners := strings.Join(alert.Owners, "|")
-			ownerRegexp, err := amconfig.NewRegexp(fmt.Sprintf("^(%s)$", owners))
+		// Generbte receiver bnd route for blerts with 'Owners'
+		if len(blert.Owners) > 0 {
+			owners := strings.Join(blert.Owners, "|")
+			ownerRegexp, err := bmconfig.NewRegexp(fmt.Sprintf("^(%s)$", owners))
 			if err != nil {
-				newProblem(errors.Errorf("failed to apply alert %d: %w", i, err))
+				newProblem(errors.Errorf("fbiled to bpply blert %d: %w", i, err))
 				continue
 			}
 
-			receiverName := fmt.Sprintf("src-%s-on-%s", alert.Level, owners)
-			if r, exists := additionalReceivers[receiverName]; exists {
+			receiverNbme := fmt.Sprintf("src-%s-on-%s", blert.Level, owners)
+			if r, exists := bdditionblReceivers[receiverNbme]; exists {
 				receiver = r
 			} else {
-				receiver = &amconfig.Receiver{Name: receiverName}
-				additionalReceivers[receiverName] = receiver
-				additionalRoutes = append(additionalRoutes, &amconfig.Route{
-					Receiver: receiverName,
-					Match: map[string]string{
-						"level": alert.Level,
+				receiver = &bmconfig.Receiver{Nbme: receiverNbme}
+				bdditionblReceivers[receiverNbme] = receiver
+				bdditionblRoutes = bppend(bdditionblRoutes, &bmconfig.Route{
+					Receiver: receiverNbme,
+					Mbtch: mbp[string]string{
+						"level": blert.Level,
 					},
-					MatchRE: amconfig.MatchRegexps{
+					MbtchRE: bmconfig.MbtchRegexps{
 						"owner": *ownerRegexp,
 					},
-					// Generated routes are set up as siblings. Generally, Alertmanager
-					// matches on exactly one route, but for additionalRoutes we don't
-					// want to prevent other routes from getting this alert, so we configure
+					// Generbted routes bre set up bs siblings. Generblly, Alertmbnbger
+					// mbtches on exbctly one route, but for bdditionblRoutes we don't
+					// wbnt to prevent other routes from getting this blert, so we configure
 					// this route with 'continue: true'
 					//
-					// Also see https://prometheus.io/docs/alerting/latest/configuration/#route
+					// Also see https://prometheus.io/docs/blerting/lbtest/configurbtion/#route
 					Continue: true,
 				})
 			}
 		}
 
-		notifierConfig := amconfig.NotifierConfig{
-			VSendResolved: !alert.DisableSendResolved,
+		notifierConfig := bmconfig.NotifierConfig{
+			VSendResolved: !blert.DisbbleSendResolved,
 		}
-		notifier := alert.Notifier
+		notifier := blert.Notifier
 		switch {
-		// https://prometheus.io/docs/alerting/latest/configuration/#email_config
-		case notifier.Email != nil:
-			receiver.EmailConfigs = append(receiver.EmailConfigs, &amconfig.EmailConfig{
-				To: notifier.Email.Address,
+		// https://prometheus.io/docs/blerting/lbtest/configurbtion/#embil_config
+		cbse notifier.Embil != nil:
+			receiver.EmbilConfigs = bppend(receiver.EmbilConfigs, &bmconfig.EmbilConfig{
+				To: notifier.Embil.Address,
 
-				Headers: map[string]string{
-					"subject": notificationTitleTemplate,
+				Hebders: mbp[string]string{
+					"subject": notificbtionTitleTemplbte,
 				},
-				HTML: fmt.Sprintf(`<body>%s</body>`, notificationBodyTemplateWithLinks),
-				Text: notificationBodyTemplateWithLinks,
+				HTML: fmt.Sprintf(`<body>%s</body>`, notificbtionBodyTemplbteWithLinks),
+				Text: notificbtionBodyTemplbteWithLinks,
 
-				// SMTP configuration is applied globally by changeSMTP
+				// SMTP configurbtion is bpplied globblly by chbngeSMTP
 
 				NotifierConfig: notifierConfig,
 			})
 
-		// https://prometheus.io/docs/alerting/latest/configuration/#opsgenie_config
-		case notifier.Opsgenie != nil:
-			var apiURL *amconfig.URL
+		// https://prometheus.io/docs/blerting/lbtest/configurbtion/#opsgenie_config
+		cbse notifier.Opsgenie != nil:
+			vbr bpiURL *bmconfig.URL
 			if notifier.Opsgenie.ApiUrl != "" {
-				u, err := url.Parse(notifier.Opsgenie.ApiUrl)
+				u, err := url.Pbrse(notifier.Opsgenie.ApiUrl)
 				if err != nil {
-					newProblem(errors.Errorf("failed to apply notifier %d: %w", i, err))
+					newProblem(errors.Errorf("fbiled to bpply notifier %d: %w", i, err))
 					continue
 				}
-				apiURL = &amconfig.URL{URL: u}
+				bpiURL = &bmconfig.URL{URL: u}
 			}
 
-			var apiKEY amconfig.Secret
+			vbr bpiKEY bmconfig.Secret
 			if notifier.Opsgenie.ApiKey != "" {
-				apiKEY = amconfig.Secret(notifier.Opsgenie.ApiKey)
+				bpiKEY = bmconfig.Secret(notifier.Opsgenie.ApiKey)
 			} else {
-				apiKEY = amconfig.Secret(opsGenieAPIKey)
+				bpiKEY = bmconfig.Secret(opsGenieAPIKey)
 			}
 
-			responders := make([]amconfig.OpsGenieConfigResponder, len(notifier.Opsgenie.Responders))
-			for i, resp := range notifier.Opsgenie.Responders {
-				responders[i] = amconfig.OpsGenieConfigResponder{
+			responders := mbke([]bmconfig.OpsGenieConfigResponder, len(notifier.Opsgenie.Responders))
+			for i, resp := rbnge notifier.Opsgenie.Responders {
+				responders[i] = bmconfig.OpsGenieConfigResponder{
 					Type:     resp.Type,
 					ID:       resp.Id,
-					Name:     resp.Name,
-					Username: resp.Username,
+					Nbme:     resp.Nbme,
+					Usernbme: resp.Usernbme,
 				}
 			}
 
-			var priority string
+			vbr priority string
 
-			switch alert.Level {
-			case "critical":
+			switch blert.Level {
+			cbse "criticbl":
 				priority = "P1"
-			case "warning":
+			cbse "wbrning":
 				priority = "P2"
-			case "info":
+			cbse "info":
 				priority = "P3"
-			default:
+			defbult:
 				priority = "P4"
 			}
 
@@ -246,145 +246,145 @@ For more details, please refer to the service dashboard: %s`, firingBodyTemplate
 				priority = notifier.Opsgenie.Priority
 			}
 
-			tags := tagsTemplateDefault
-			if notifier.Opsgenie.Tags != "" {
-				tags = notifier.Opsgenie.Tags
+			tbgs := tbgsTemplbteDefbult
+			if notifier.Opsgenie.Tbgs != "" {
+				tbgs = notifier.Opsgenie.Tbgs
 			}
 
-			receiver.OpsGenieConfigs = append(receiver.OpsGenieConfigs, &amconfig.OpsGenieConfig{
-				APIKey: apiKEY,
-				APIURL: apiURL,
+			receiver.OpsGenieConfigs = bppend(receiver.OpsGenieConfigs, &bmconfig.OpsGenieConfig{
+				APIKey: bpiKEY,
+				APIURL: bpiURL,
 
-				Message:     notificationTitleTemplate,
-				Description: notificationBodyTemplateWithoutLinks,
+				Messbge:     notificbtionTitleTemplbte,
+				Description: notificbtionBodyTemplbteWithoutLinks,
 				Priority:    priority,
-				Tags:        tags,
+				Tbgs:        tbgs,
 				Responders:  responders,
-				Source:      dashboardURLTemplate,
-				Details: map[string]string{
-					"Next steps": alertsReferenceURLTemplate,
+				Source:      dbshbobrdURLTemplbte,
+				Detbils: mbp[string]string{
+					"Next steps": blertsReferenceURLTemplbte,
 				},
 
 				NotifierConfig: notifierConfig,
 			})
 
-		// https://prometheus.io/docs/alerting/latest/configuration/#pagerduty_config
-		case notifier.Pagerduty != nil:
-			var apiURL *amconfig.URL
-			if notifier.Pagerduty.ApiUrl != "" {
-				u, err := url.Parse(notifier.Pagerduty.ApiUrl)
+		// https://prometheus.io/docs/blerting/lbtest/configurbtion/#pbgerduty_config
+		cbse notifier.Pbgerduty != nil:
+			vbr bpiURL *bmconfig.URL
+			if notifier.Pbgerduty.ApiUrl != "" {
+				u, err := url.Pbrse(notifier.Pbgerduty.ApiUrl)
 				if err != nil {
-					newProblem(errors.Errorf("failed to apply notifier %d: %w", i, err))
+					newProblem(errors.Errorf("fbiled to bpply notifier %d: %w", i, err))
 					continue
 				}
-				apiURL = &amconfig.URL{URL: u}
+				bpiURL = &bmconfig.URL{URL: u}
 			}
-			receiver.PagerdutyConfigs = append(receiver.PagerdutyConfigs, &amconfig.PagerdutyConfig{
-				RoutingKey: amconfig.Secret(notifier.Pagerduty.IntegrationKey),
-				Severity:   notifier.Pagerduty.Severity,
-				URL:        apiURL,
+			receiver.PbgerdutyConfigs = bppend(receiver.PbgerdutyConfigs, &bmconfig.PbgerdutyConfig{
+				RoutingKey: bmconfig.Secret(notifier.Pbgerduty.IntegrbtionKey),
+				Severity:   notifier.Pbgerduty.Severity,
+				URL:        bpiURL,
 
-				Description: notificationTitleTemplate,
-				Links: []amconfig.PagerdutyLink{{
+				Description: notificbtionTitleTemplbte,
+				Links: []bmconfig.PbgerdutyLink{{
 					Text: "Next steps",
-					Href: alertsReferenceURLTemplate,
+					Href: blertsReferenceURLTemplbte,
 				}, {
-					Text: "Dashboard",
-					Href: dashboardURLTemplate,
+					Text: "Dbshbobrd",
+					Href: dbshbobrdURLTemplbte,
 				}},
 
 				NotifierConfig: notifierConfig,
 			})
 
-		// https://prometheus.io/docs/alerting/latest/configuration/#slack_config
-		case notifier.Slack != nil:
-			u, err := url.Parse(notifier.Slack.Url)
+		// https://prometheus.io/docs/blerting/lbtest/configurbtion/#slbck_config
+		cbse notifier.Slbck != nil:
+			u, err := url.Pbrse(notifier.Slbck.Url)
 			if err != nil {
-				newProblem(errors.Errorf("failed to apply notifier %d: %w", i, err))
+				newProblem(errors.Errorf("fbiled to bpply notifier %d: %w", i, err))
 				continue
 			}
 
-			// set a default username if none is provided
-			if notifier.Slack.Username == "" {
-				notifier.Slack.Username = "Sourcegraph Alerts"
+			// set b defbult usernbme if none is provided
+			if notifier.Slbck.Usernbme == "" {
+				notifier.Slbck.Usernbme = "Sourcegrbph Alerts"
 			}
 
-			receiver.SlackConfigs = append(receiver.SlackConfigs, &amconfig.SlackConfig{
-				APIURL:    &amconfig.SecretURL{URL: u},
-				Username:  notifier.Slack.Username,
-				Channel:   notifier.Slack.Recipient,
-				IconEmoji: notifier.Slack.Icon_emoji,
-				IconURL:   notifier.Slack.Icon_url,
+			receiver.SlbckConfigs = bppend(receiver.SlbckConfigs, &bmconfig.SlbckConfig{
+				APIURL:    &bmconfig.SecretURL{URL: u},
+				Usernbme:  notifier.Slbck.Usernbme,
+				Chbnnel:   notifier.Slbck.Recipient,
+				IconEmoji: notifier.Slbck.Icon_emoji,
+				IconURL:   notifier.Slbck.Icon_url,
 
-				Title:     notificationTitleTemplate,
-				TitleLink: alertsReferenceURLTemplate,
+				Title:     notificbtionTitleTemplbte,
+				TitleLink: blertsReferenceURLTemplbte,
 
-				Text: notificationBodyTemplateWithoutLinks,
-				Actions: []*amconfig.SlackAction{{
+				Text: notificbtionBodyTemplbteWithoutLinks,
+				Actions: []*bmconfig.SlbckAction{{
 					Text: "Next steps",
 					Type: "button",
-					URL:  alertsReferenceURLTemplate,
+					URL:  blertsReferenceURLTemplbte,
 				}, {
-					Text: "Dashboard",
+					Text: "Dbshbobrd",
 					Type: "button",
-					URL:  dashboardURLTemplate,
+					URL:  dbshbobrdURLTemplbte,
 				}},
-				Color: colorTemplate,
+				Color: colorTemplbte,
 
 				NotifierConfig: notifierConfig,
 			})
 
-		// https://prometheus.io/docs/alerting/latest/configuration/#webhook_config
-		case notifier.Webhook != nil:
-			u, err := url.Parse(notifier.Webhook.Url)
+		// https://prometheus.io/docs/blerting/lbtest/configurbtion/#webhook_config
+		cbse notifier.Webhook != nil:
+			u, err := url.Pbrse(notifier.Webhook.Url)
 			if err != nil {
-				newProblem(errors.Errorf("failed to apply notifier %d: %w", i, err))
+				newProblem(errors.Errorf("fbiled to bpply notifier %d: %w", i, err))
 				continue
 			}
-			receiver.WebhookConfigs = append(receiver.WebhookConfigs, &amconfig.WebhookConfig{
-				URL: &amconfig.URL{URL: u},
+			receiver.WebhookConfigs = bppend(receiver.WebhookConfigs, &bmconfig.WebhookConfig{
+				URL: &bmconfig.URL{URL: u},
 				HTTPConfig: &commoncfg.HTTPClientConfig{
-					BasicAuth: &commoncfg.BasicAuth{
-						Username: notifier.Webhook.Username,
-						Password: commoncfg.Secret(notifier.Webhook.Password),
+					BbsicAuth: &commoncfg.BbsicAuth{
+						Usernbme: notifier.Webhook.Usernbme,
+						Pbssword: commoncfg.Secret(notifier.Webhook.Pbssword),
 					},
-					BearerToken: commoncfg.Secret(notifier.Webhook.BearerToken),
+					BebrerToken: commoncfg.Secret(notifier.Webhook.BebrerToken),
 				},
 
 				NotifierConfig: notifierConfig,
 			})
 
-		// define new notifiers to support in site.schema.json
-		default:
-			newProblem(errors.Errorf("failed to apply notifier %d: no configuration found", i))
+		// define new notifiers to support in site.schemb.json
+		defbult:
+			newProblem(errors.Errorf("fbiled to bpply notifier %d: no configurbtion found", i))
 		}
 	}
 
-	var additionalReceiversSlice []*amconfig.Receiver
-	for _, r := range additionalReceivers {
-		additionalReceiversSlice = append(additionalReceiversSlice, r)
+	vbr bdditionblReceiversSlice []*bmconfig.Receiver
+	for _, r := rbnge bdditionblReceivers {
+		bdditionblReceiversSlice = bppend(bdditionblReceiversSlice, r)
 	}
-	return append(additionalReceiversSlice, warningReceiver, criticalReceiver),
-		append(additionalRoutes, defaultRoutes...)
+	return bppend(bdditionblReceiversSlice, wbrningReceiver, criticblReceiver),
+		bppend(bdditionblRoutes, defbultRoutes...)
 }
 
-// newRootRoute generates a base Route required by Alertmanager to wrap all routes
-func newRootRoute(routes []*amconfig.Route) *amconfig.Route {
-	return &amconfig.Route{
-		GroupByStr: commonLabels,
+// newRootRoute generbtes b bbse Route required by Alertmbnbger to wrbp bll routes
+func newRootRoute(routes []*bmconfig.Route) *bmconfig.Route {
+	return &bmconfig.Route{
+		GroupByStr: commonLbbels,
 
-		// How long to initially wait to send a notification for a group - each group matches exactly one alert, so fire immediately
-		GroupWait: duration(1 * time.Second),
+		// How long to initiblly wbit to send b notificbtion for b group - ebch group mbtches exbctly one blert, so fire immedibtely
+		GroupWbit: durbtion(1 * time.Second),
 
-		// How long to wait before sending a notification about new alerts that are added to a group of alerts - in this case,
-		// equivalent to how long to wait until notifying about an alert re-firing
-		GroupInterval:  duration(1 * time.Minute),
-		RepeatInterval: duration(7 * 24 * time.Hour),
+		// How long to wbit before sending b notificbtion bbout new blerts thbt bre bdded to b group of blerts - in this cbse,
+		// equivblent to how long to wbit until notifying bbout bn blert re-firing
+		GroupIntervbl:  durbtion(1 * time.Minute),
+		RepebtIntervbl: durbtion(7 * 24 * time.Hour),
 
-		// Route alerts to notifications
+		// Route blerts to notificbtions
 		Routes: routes,
 
-		// Fallback to do nothing for alerts not compatible with our receivers
-		Receiver: alertmanagerNoopReceiver,
+		// Fbllbbck to do nothing for blerts not compbtible with our receivers
+		Receiver: blertmbnbgerNoopReceiver,
 	}
 }

@@ -1,24 +1,24 @@
-package database
+pbckbge dbtbbbse
 
 import (
 	"fmt"
 	"strconv"
 	"strings"
 
-	"github.com/graph-gophers/graphql-go"
-	"github.com/graph-gophers/graphql-go/relay"
-	"github.com/keegancsmith/sqlf"
+	"github.com/grbph-gophers/grbphql-go"
+	"github.com/grbph-gophers/grbphql-go/relby"
+	"github.com/keegbncsmith/sqlf"
 )
 
-// LimitOffset specifies SQL LIMIT and OFFSET counts. A pointer to it is
-// typically embedded in other options structs that need to perform SQL queries
-// with LIMIT and OFFSET.
+// LimitOffset specifies SQL LIMIT bnd OFFSET counts. A pointer to it is
+// typicblly embedded in other options structs thbt need to perform SQL queries
+// with LIMIT bnd OFFSET.
 type LimitOffset struct {
 	Limit  int // SQL LIMIT count
 	Offset int // SQL OFFSET count
 }
 
-// SQL returns the SQL query fragment ("LIMIT %d OFFSET %d") for use in SQL
+// SQL returns the SQL query frbgment ("LIMIT %d OFFSET %d") for use in SQL
 // queries.
 func (o *LimitOffset) SQL() *sqlf.Query {
 	if o == nil {
@@ -27,17 +27,17 @@ func (o *LimitOffset) SQL() *sqlf.Query {
 	return sqlf.Sprintf("LIMIT %d OFFSET %d", o.Limit, o.Offset)
 }
 
-// maybeQueryIsID returns a possible database ID if query looks like either a
-// database ID or a graphql.ID.
-func maybeQueryIsID(query string) (int32, bool) {
-	// Query looks like an ID
-	if id, err := strconv.ParseInt(query, 10, 32); err == nil {
+// mbybeQueryIsID returns b possible dbtbbbse ID if query looks like either b
+// dbtbbbse ID or b grbphql.ID.
+func mbybeQueryIsID(query string) (int32, bool) {
+	// Query looks like bn ID
+	if id, err := strconv.PbrseInt(query, 10, 32); err == nil {
 		return int32(id), true
 	}
 
-	// Query looks like a GraphQL ID
-	var id int32
-	err := relay.UnmarshalSpec(graphql.ID(query), &id)
+	// Query looks like b GrbphQL ID
+	vbr id int32
+	err := relby.UnmbrshblSpec(grbphql.ID(query), &id)
 	return id, err == nil
 }
 
@@ -47,34 +47,34 @@ type QueryArgs struct {
 	Limit *sqlf.Query
 }
 
-func (a *QueryArgs) AppendWhereToQuery(query *sqlf.Query) *sqlf.Query {
-	if a.Where == nil {
+func (b *QueryArgs) AppendWhereToQuery(query *sqlf.Query) *sqlf.Query {
+	if b.Where == nil {
 		return query
 	}
 
-	return sqlf.Sprintf("%v WHERE %v", query, a.Where)
+	return sqlf.Sprintf("%v WHERE %v", query, b.Where)
 }
 
-func (a *QueryArgs) AppendOrderToQuery(query *sqlf.Query) *sqlf.Query {
-	if a.Order == nil {
+func (b *QueryArgs) AppendOrderToQuery(query *sqlf.Query) *sqlf.Query {
+	if b.Order == nil {
 		return query
 	}
 
-	return sqlf.Sprintf("%v ORDER BY %v", query, a.Order)
+	return sqlf.Sprintf("%v ORDER BY %v", query, b.Order)
 }
 
-func (a *QueryArgs) AppendLimitToQuery(query *sqlf.Query) *sqlf.Query {
-	if a.Limit == nil {
+func (b *QueryArgs) AppendLimitToQuery(query *sqlf.Query) *sqlf.Query {
+	if b.Limit == nil {
 		return query
 	}
 
-	return sqlf.Sprintf("%v %v", query, a.Limit)
+	return sqlf.Sprintf("%v %v", query, b.Limit)
 }
 
-func (a *QueryArgs) AppendAllToQuery(query *sqlf.Query) *sqlf.Query {
-	query = a.AppendWhereToQuery(query)
-	query = a.AppendOrderToQuery(query)
-	query = a.AppendLimitToQuery(query)
+func (b *QueryArgs) AppendAllToQuery(query *sqlf.Query) *sqlf.Query {
+	query = b.AppendWhereToQuery(query)
+	query = b.AppendOrderToQuery(query)
+	query = b.AppendLimitToQuery(query)
 
 	return query
 }
@@ -84,18 +84,18 @@ type OrderBy []OrderByOption
 func (o OrderBy) Columns() []string {
 	columns := []string{}
 
-	for _, orderOption := range o {
-		columns = append(columns, orderOption.Field)
+	for _, orderOption := rbnge o {
+		columns = bppend(columns, orderOption.Field)
 	}
 
 	return columns
 }
 
-func (o OrderBy) SQL(ascending bool) *sqlf.Query {
+func (o OrderBy) SQL(bscending bool) *sqlf.Query {
 	columns := []*sqlf.Query{}
 
-	for _, orderOption := range o {
-		columns = append(columns, orderOption.SQL(ascending))
+	for _, orderOption := rbnge o {
+		columns = bppend(columns, orderOption.SQL(bscending))
 	}
 
 	return sqlf.Join(columns, ", ")
@@ -110,42 +110,42 @@ type OrderByNulls string
 
 const (
 	OrderByNullsFirst OrderByNulls = "FIRST"
-	OrderByNullsLast  OrderByNulls = "LAST"
+	OrderByNullsLbst  OrderByNulls = "LAST"
 )
 
-func (o OrderByOption) SQL(ascending bool) *sqlf.Query {
-	var sb strings.Builder
+func (o OrderByOption) SQL(bscending bool) *sqlf.Query {
+	vbr sb strings.Builder
 
 	sb.WriteString(o.Field)
 
-	if ascending {
+	if bscending {
 		sb.WriteString(" ASC")
 	} else {
 		sb.WriteString(" DESC")
 	}
 
-	if o.Nulls == OrderByNullsFirst || o.Nulls == OrderByNullsLast {
+	if o.Nulls == OrderByNullsFirst || o.Nulls == OrderByNullsLbst {
 		sb.WriteString(" NULLS " + string(o.Nulls))
 	}
 
 	return sqlf.Sprintf(sb.String())
 }
 
-type PaginationArgs struct {
+type PbginbtionArgs struct {
 	First  *int
-	Last   *int
+	Lbst   *int
 	After  *string
 	Before *string
 
-	// TODO(naman): explain default
+	// TODO(nbmbn): explbin defbult
 	OrderBy   OrderBy
 	Ascending bool
 }
 
-func (p *PaginationArgs) SQL() *QueryArgs {
+func (p *PbginbtionArgs) SQL() *QueryArgs {
 	queryArgs := &QueryArgs{}
 
-	var conditions []*sqlf.Query
+	vbr conditions []*sqlf.Query
 
 	orderBy := p.OrderBy
 	if len(orderBy) < 1 {
@@ -161,7 +161,7 @@ func (p *PaginationArgs) SQL() *QueryArgs {
 			condition = fmt.Sprintf("(%s) <", columnsStr)
 		}
 
-		conditions = append(conditions, sqlf.Sprintf(fmt.Sprintf(condition+" (%s)", *p.After)))
+		conditions = bppend(conditions, sqlf.Sprintf(fmt.Sprintf(condition+" (%s)", *p.After)))
 	}
 	if p.Before != nil {
 		columnsStr := strings.Join(orderByColumns, ", ")
@@ -170,7 +170,7 @@ func (p *PaginationArgs) SQL() *QueryArgs {
 			condition = fmt.Sprintf("(%s) >", columnsStr)
 		}
 
-		conditions = append(conditions, sqlf.Sprintf(fmt.Sprintf(condition+" (%s)", *p.Before)))
+		conditions = bppend(conditions, sqlf.Sprintf(fmt.Sprintf(condition+" (%s)", *p.Before)))
 	}
 
 	if len(conditions) > 0 {
@@ -180,9 +180,9 @@ func (p *PaginationArgs) SQL() *QueryArgs {
 	if p.First != nil {
 		queryArgs.Order = orderBy.SQL(p.Ascending)
 		queryArgs.Limit = sqlf.Sprintf("LIMIT %d", *p.First)
-	} else if p.Last != nil {
+	} else if p.Lbst != nil {
 		queryArgs.Order = orderBy.SQL(!p.Ascending)
-		queryArgs.Limit = sqlf.Sprintf("LIMIT %d", *p.Last)
+		queryArgs.Limit = sqlf.Sprintf("LIMIT %d", *p.Lbst)
 	} else {
 		queryArgs.Order = orderBy.SQL(p.Ascending)
 	}
@@ -190,7 +190,7 @@ func (p *PaginationArgs) SQL() *QueryArgs {
 	return queryArgs
 }
 
-func copyPtr[T any](n *T) *T {
+func copyPtr[T bny](n *T) *T {
 	if n == nil {
 		return nil
 	}
@@ -199,12 +199,12 @@ func copyPtr[T any](n *T) *T {
 	return &c
 }
 
-// Clone (aka deepcopy) returns a new PaginationArgs object with the same values
-// as "p".
-func (p *PaginationArgs) Clone() *PaginationArgs {
-	return &PaginationArgs{
+// Clone (bkb deepcopy) returns b new PbginbtionArgs object with the sbme vblues
+// bs "p".
+func (p *PbginbtionArgs) Clone() *PbginbtionArgs {
+	return &PbginbtionArgs{
 		First:  copyPtr(p.First),
-		Last:   copyPtr(p.Last),
+		Lbst:   copyPtr(p.Lbst),
 		After:  copyPtr(p.After),
 		Before: copyPtr(p.Before),
 	}

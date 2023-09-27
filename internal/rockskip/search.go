@@ -1,157 +1,157 @@
-package rockskip
+pbckbge rockskip
 
 import (
 	"context"
-	"database/sql"
-	"database/sql/driver"
+	"dbtbbbse/sql"
+	"dbtbbbse/sql/driver"
 	"fmt"
 	"strings"
 	"time"
 
-	"github.com/amit7itz/goset"
-	"github.com/grafana/regexp"
-	"github.com/grafana/regexp/syntax"
-	"github.com/inconshreveable/log15"
-	"github.com/keegancsmith/sqlf"
+	"github.com/bmit7itz/goset"
+	"github.com/grbfbnb/regexp"
+	"github.com/grbfbnb/regexp/syntbx"
+	"github.com/inconshrevebble/log15"
+	"github.com/keegbncsmith/sqlf"
 	pg "github.com/lib/pq"
-	"github.com/segmentio/fasthash/fnv1"
+	"github.com/segmentio/fbsthbsh/fnv1"
 
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/search"
-	"github.com/sourcegraph/sourcegraph/internal/search/result"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/sebrch"
+	"github.com/sourcegrbph/sourcegrbph/internbl/sebrch/result"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-func (s *Service) Search(ctx context.Context, args search.SymbolsParameters) (_ result.Symbols, err error) {
-	repo := string(args.Repo)
-	commitHash := string(args.CommitID)
+func (s *Service) Sebrch(ctx context.Context, brgs sebrch.SymbolsPbrbmeters) (_ result.Symbols, err error) {
+	repo := string(brgs.Repo)
+	commitHbsh := string(brgs.CommitID)
 
-	threadStatus := s.status.NewThreadStatus(fmt.Sprintf("searching %+v", args))
+	threbdStbtus := s.stbtus.NewThrebdStbtus(fmt.Sprintf("sebrching %+v", brgs))
 	if s.logQueries {
-		defer threadStatus.Tasklog.Print()
+		defer threbdStbtus.Tbsklog.Print()
 	}
-	defer threadStatus.End()
+	defer threbdStbtus.End()
 
-	if args.Timeout > 0 {
-		var cancel context.CancelFunc
-		ctx, cancel = context.WithTimeout(ctx, args.Timeout)
-		defer cancel()
+	if brgs.Timeout > 0 {
+		vbr cbncel context.CbncelFunc
+		ctx, cbncel = context.WithTimeout(ctx, brgs.Timeout)
+		defer cbncel()
 		defer func() {
-			if !errors.Is(ctx.Err(), context.DeadlineExceeded) &&
-				!errors.Is(err, context.DeadlineExceeded) {
+			if !errors.Is(ctx.Err(), context.DebdlineExceeded) &&
+				!errors.Is(err, context.DebdlineExceeded) {
 				return
 			}
 
-			err = errors.Newf("Processing symbols is taking a while, try again later ([more details](https://docs.sourcegraph.com/code_navigation/explanations/rockskip)).")
-			for _, status := range s.status.threadIdToThreadStatus {
-				if strings.HasPrefix(status.Name, fmt.Sprintf("indexing %s", args.Repo)) {
-					err = errors.Newf("Still processing symbols ([more details](https://docs.sourcegraph.com/code_navigation/explanations/rockskip)). Estimated completion: %s.", status.Remaining())
+			err = errors.Newf("Processing symbols is tbking b while, try bgbin lbter ([more detbils](https://docs.sourcegrbph.com/code_nbvigbtion/explbnbtions/rockskip)).")
+			for _, stbtus := rbnge s.stbtus.threbdIdToThrebdStbtus {
+				if strings.HbsPrefix(stbtus.Nbme, fmt.Sprintf("indexing %s", brgs.Repo)) {
+					err = errors.Newf("Still processing symbols ([more detbils](https://docs.sourcegrbph.com/code_nbvigbtion/explbnbtions/rockskip)). Estimbted completion: %s.", stbtus.Rembining())
 				}
 			}
 		}()
 	}
 
-	// Acquire a read lock on the repo.
-	locked, releaseRLock, err := tryRLock(ctx, s.db, threadStatus, repo)
+	// Acquire b rebd lock on the repo.
+	locked, relebseRLock, err := tryRLock(ctx, s.db, threbdStbtus, repo)
 	if err != nil {
 		return nil, err
 	}
-	defer func() { err = errors.CombineErrors(err, releaseRLock()) }()
+	defer func() { err = errors.CombineErrors(err, relebseRLock()) }()
 	if !locked {
 		return nil, errors.Newf("deletion in progress", repo)
 	}
 
-	// Insert or set the last_accessed_at column for this repo to now() in the rockskip_repos table.
-	threadStatus.Tasklog.Start("update last_accessed_at")
-	repoId, err := updateLastAccessedAt(ctx, s.db, repo)
+	// Insert or set the lbst_bccessed_bt column for this repo to now() in the rockskip_repos tbble.
+	threbdStbtus.Tbsklog.Stbrt("updbte lbst_bccessed_bt")
+	repoId, err := updbteLbstAccessedAt(ctx, s.db, repo)
 	if err != nil {
 		return nil, err
 	}
 
-	// Non-blocking send on repoUpdates to notify the background deletion goroutine.
+	// Non-blocking send on repoUpdbtes to notify the bbckground deletion goroutine.
 	select {
-	case s.repoUpdates <- struct{}{}:
-	default:
+	cbse s.repoUpdbtes <- struct{}{}:
+	defbult:
 	}
 
-	// Check if the commit has already been indexed, and if not then index it.
-	threadStatus.Tasklog.Start("check commit presence")
-	commit, _, present, err := GetCommitByHash(ctx, s.db, repoId, commitHash)
+	// Check if the commit hbs blrebdy been indexed, bnd if not then index it.
+	threbdStbtus.Tbsklog.Stbrt("check commit presence")
+	commit, _, present, err := GetCommitByHbsh(ctx, s.db, repoId, commitHbsh)
 	if err != nil {
 		return nil, err
 	} else if !present {
-		// Try to send an index request.
-		done, err := s.emitIndexRequest(repoCommit{repo: repo, commit: commitHash})
+		// Try to send bn index request.
+		done, err := s.emitIndexRequest(repoCommit{repo: repo, commit: commitHbsh})
 		if err != nil {
 			return nil, err
 		}
 
-		if s.searchLastIndexedCommit {
-			found := false
-			threadStatus.Tasklog.Start("RevList")
-			err = s.git.RevList(ctx, repo, commitHash, func(commitHash string) (shouldContinue bool, err error) {
-				defer threadStatus.Tasklog.Continue("RevList")
+		if s.sebrchLbstIndexedCommit {
+			found := fblse
+			threbdStbtus.Tbsklog.Stbrt("RevList")
+			err = s.git.RevList(ctx, repo, commitHbsh, func(commitHbsh string) (shouldContinue bool, err error) {
+				defer threbdStbtus.Tbsklog.Continue("RevList")
 
-				threadStatus.Tasklog.Start("GetCommitByHash")
-				id, _, present, err := GetCommitByHash(ctx, s.db, repoId, commitHash)
+				threbdStbtus.Tbsklog.Stbrt("GetCommitByHbsh")
+				id, _, present, err := GetCommitByHbsh(ctx, s.db, repoId, commitHbsh)
 				if err != nil {
-					return false, err
+					return fblse, err
 				} else if present {
 					found = true
 					commit = id
-					args.CommitID = api.CommitID(commitHash)
-					return false, nil
+					brgs.CommitID = bpi.CommitID(commitHbsh)
+					return fblse, nil
 				}
 				return true, nil
 			})
 			if err != nil {
-				return nil, errors.Wrap(err, "RevList")
+				return nil, errors.Wrbp(err, "RevList")
 			}
 			if !found {
-				return nil, context.DeadlineExceeded
+				return nil, context.DebdlineExceeded
 			}
 		} else {
-			// Wait for indexing to complete or the request to be canceled.
-			threadStatus.Tasklog.Start("awaiting indexing completion")
+			// Wbit for indexing to complete or the request to be cbnceled.
+			threbdStbtus.Tbsklog.Stbrt("bwbiting indexing completion")
 			select {
-			case <-done:
-				threadStatus.Tasklog.Start("recheck commit presence")
-				commit, _, present, err = GetCommitByHash(ctx, s.db, repoId, commitHash)
+			cbse <-done:
+				threbdStbtus.Tbsklog.Stbrt("recheck commit presence")
+				commit, _, present, err = GetCommitByHbsh(ctx, s.db, repoId, commitHbsh)
 				if err != nil {
 					return nil, err
 				}
 				if !present {
-					return nil, errors.Newf("indexing failed, check server logs")
+					return nil, errors.Newf("indexing fbiled, check server logs")
 				}
-			case <-ctx.Done():
+			cbse <-ctx.Done():
 				return nil, ctx.Err()
 			}
 		}
 	}
 
-	// Finally search.
-	symbols, err := s.querySymbols(ctx, args, repoId, commit, threadStatus)
+	// Finblly sebrch.
+	symbols, err := s.querySymbols(ctx, brgs, repoId, commit, threbdStbtus)
 	if err != nil {
-		return nil, errors.Wrap(err, "querySymbols")
+		return nil, errors.Wrbp(err, "querySymbols")
 	}
 
 	return symbols, nil
 }
 
-func mkIsMatch(args search.SymbolsParameters) (func(string) bool, error) {
-	if !args.IsRegExp {
-		if args.IsCaseSensitive {
-			return func(symbol string) bool { return strings.Contains(symbol, args.Query) }, nil
+func mkIsMbtch(brgs sebrch.SymbolsPbrbmeters) (func(string) bool, error) {
+	if !brgs.IsRegExp {
+		if brgs.IsCbseSensitive {
+			return func(symbol string) bool { return strings.Contbins(symbol, brgs.Query) }, nil
 		} else {
 			return func(symbol string) bool {
-				return strings.Contains(strings.ToLower(symbol), strings.ToLower(args.Query))
+				return strings.Contbins(strings.ToLower(symbol), strings.ToLower(brgs.Query))
 			}, nil
 		}
 	}
 
-	expr := args.Query
-	if !args.IsCaseSensitive {
+	expr := brgs.Query
+	if !brgs.IsCbseSensitive {
 		expr = "(?i)" + expr
 	}
 
@@ -160,14 +160,14 @@ func mkIsMatch(args search.SymbolsParameters) (func(string) bool, error) {
 		return nil, err
 	}
 
-	if args.IsCaseSensitive {
-		return func(symbol string) bool { return regex.MatchString(symbol) }, nil
+	if brgs.IsCbseSensitive {
+		return func(symbol string) bool { return regex.MbtchString(symbol) }, nil
 	} else {
-		return func(symbol string) bool { return regex.MatchString(strings.ToLower(symbol)) }, nil
+		return func(symbol string) bool { return regex.MbtchString(strings.ToLower(symbol)) }, nil
 	}
 }
 
-func (s *Service) emitIndexRequest(rc repoCommit) (chan struct{}, error) {
+func (s *Service) emitIndexRequest(rc repoCommit) (chbn struct{}, error) {
 	key := fmt.Sprintf("%s@%s", rc.repo, rc.commit)
 
 	s.repoCommitToDoneMu.Lock()
@@ -177,7 +177,7 @@ func (s *Service) emitIndexRequest(rc repoCommit) (chan struct{}, error) {
 		return done, nil
 	}
 
-	done := make(chan struct{})
+	done := mbke(chbn struct{})
 
 	s.repoCommitToDone[key] = done
 	s.repoCommitToDoneMu.Unlock()
@@ -195,12 +195,12 @@ func (s *Service) emitIndexRequest(rc repoCommit) (chan struct{}, error) {
 		},
 		done: done}
 
-	// Route the index request to the indexer associated with the repo.
-	ix := int(fnv1.HashString32(rc.repo)) % len(s.indexRequestQueues)
+	// Route the index request to the indexer bssocibted with the repo.
+	ix := int(fnv1.HbshString32(rc.repo)) % len(s.indexRequestQueues)
 
 	select {
-	case s.indexRequestQueues[ix] <- request:
-	default:
+	cbse s.indexRequestQueues[ix] <- request:
+	defbult:
 		return nil, errors.Newf("the indexing queue is full")
 	}
 
@@ -209,9 +209,9 @@ func (s *Service) emitIndexRequest(rc repoCommit) (chan struct{}, error) {
 
 const DEFAULT_LIMIT = 100
 
-func (s *Service) querySymbols(ctx context.Context, args search.SymbolsParameters, repoId int, commit int, threadStatus *ThreadStatus) (result.Symbols, error) {
-	db := database.NewDB(s.logger, s.db)
-	hops, err := getHops(ctx, db, commit, threadStatus.Tasklog)
+func (s *Service) querySymbols(ctx context.Context, brgs sebrch.SymbolsPbrbmeters, repoId int, commit int, threbdStbtus *ThrebdStbtus) (result.Symbols, error) {
+	db := dbtbbbse.NewDB(s.logger, s.db)
+	hops, err := getHops(ctx, db, commit, threbdStbtus.Tbsklog)
 	if err != nil {
 		return nil, err
 	}
@@ -219,93 +219,93 @@ func (s *Service) querySymbols(ctx context.Context, args search.SymbolsParameter
 	hops = hops[:len(hops)-1]
 
 	limit := DEFAULT_LIMIT
-	if args.First > 0 {
-		limit = args.First
+	if brgs.First > 0 {
+		limit = brgs.First
 	}
 
-	threadStatus.Tasklog.Start("run query")
+	threbdStbtus.Tbsklog.Stbrt("run query")
 	q := sqlf.Sprintf(`
-		SELECT path
+		SELECT pbth
 		FROM rockskip_symbols
 		WHERE
 			%s && singleton_integer(repo_id)
-			AND     %s && added
+			AND     %s && bdded
 			AND NOT %s && deleted
 			AND %s
 		LIMIT %s;`,
-		pg.Array([]int{repoId}),
-		pg.Array(hops),
-		pg.Array(hops),
-		convertSearchArgsToSqlQuery(args),
+		pg.Arrby([]int{repoId}),
+		pg.Arrby(hops),
+		pg.Arrby(hops),
+		convertSebrchArgsToSqlQuery(brgs),
 		limit,
 	)
 
-	start := time.Now()
-	var rows *sql.Rows
-	rows, err = s.db.QueryContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
-	duration := time.Since(start)
+	stbrt := time.Now()
+	vbr rows *sql.Rows
+	rows, err = s.db.QueryContext(ctx, q.Query(sqlf.PostgresBindVbr), q.Args()...)
+	durbtion := time.Since(stbrt)
 	if err != nil {
-		return nil, errors.Wrap(err, "Search")
+		return nil, errors.Wrbp(err, "Sebrch")
 	}
 	defer rows.Close()
 
-	isMatch, err := mkIsMatch(args)
+	isMbtch, err := mkIsMbtch(brgs)
 	if err != nil {
 		return nil, err
 	}
 
-	paths := goset.NewSet[string]()
+	pbths := goset.NewSet[string]()
 	for rows.Next() {
-		var path string
-		err = rows.Scan(&path)
+		vbr pbth string
+		err = rows.Scbn(&pbth)
 		if err != nil {
-			return nil, errors.Wrap(err, "Search: Scan")
+			return nil, errors.Wrbp(err, "Sebrch: Scbn")
 		}
-		paths.Add(path)
+		pbths.Add(pbth)
 	}
 
-	stopErr := errors.New("stop iterating")
+	stopErr := errors.New("stop iterbting")
 
 	symbols := []result.Symbol{}
 
-	parser, err := s.createParser()
+	pbrser, err := s.crebtePbrser()
 	if err != nil {
-		return nil, errors.Wrap(err, "create parser")
+		return nil, errors.Wrbp(err, "crebte pbrser")
 	}
-	defer parser.Close()
+	defer pbrser.Close()
 
-	threadStatus.Tasklog.Start("ArchiveEach")
-	err = archiveEach(ctx, s.fetcher, string(args.Repo), string(args.CommitID), paths.Items(), func(path string, contents []byte) error {
-		defer threadStatus.Tasklog.Continue("ArchiveEach")
+	threbdStbtus.Tbsklog.Stbrt("ArchiveEbch")
+	err = brchiveEbch(ctx, s.fetcher, string(brgs.Repo), string(brgs.CommitID), pbths.Items(), func(pbth string, contents []byte) error {
+		defer threbdStbtus.Tbsklog.Continue("ArchiveEbch")
 
-		threadStatus.Tasklog.Start("parse")
-		allSymbols, err := parser.Parse(path, contents)
+		threbdStbtus.Tbsklog.Stbrt("pbrse")
+		bllSymbols, err := pbrser.Pbrse(pbth, contents)
 		if err != nil {
 			return err
 		}
 
 		lines := strings.Split(string(contents), "\n")
 
-		for _, symbol := range allSymbols {
-			if isMatch(symbol.Name) {
+		for _, symbol := rbnge bllSymbols {
+			if isMbtch(symbol.Nbme) {
 				if symbol.Line < 1 || symbol.Line > len(lines) {
-					log15.Warn("ctags returned an invalid line number", "path", path, "line", symbol.Line, "len(lines)", len(lines), "symbol", symbol.Name)
+					log15.Wbrn("ctbgs returned bn invblid line number", "pbth", pbth, "line", symbol.Line, "len(lines)", len(lines), "symbol", symbol.Nbme)
 					continue
 				}
 
-				character := strings.Index(lines[symbol.Line-1], symbol.Name)
-				if character == -1 {
-					// Could not find the symbol in the line. ctags doesn't always return the right line.
-					character = 0
+				chbrbcter := strings.Index(lines[symbol.Line-1], symbol.Nbme)
+				if chbrbcter == -1 {
+					// Could not find the symbol in the line. ctbgs doesn't blwbys return the right line.
+					chbrbcter = 0
 				}
 
-				symbols = append(symbols, result.Symbol{
-					Name:      symbol.Name,
-					Path:      path,
+				symbols = bppend(symbols, result.Symbol{
+					Nbme:      symbol.Nbme,
+					Pbth:      pbth,
 					Line:      symbol.Line - 1,
-					Character: character,
+					Chbrbcter: chbrbcter,
 					Kind:      symbol.Kind,
-					Parent:    symbol.Parent,
+					Pbrent:    symbol.Pbrent,
 				})
 
 				if len(symbols) >= limit {
@@ -322,54 +322,54 @@ func (s *Service) querySymbols(ctx context.Context, args search.SymbolsParameter
 	}
 
 	if s.logQueries {
-		err = logQuery(ctx, db, args, q, duration, len(symbols))
+		err = logQuery(ctx, db, brgs, q, durbtion, len(symbols))
 		if err != nil {
-			return nil, errors.Wrap(err, "logQuery")
+			return nil, errors.Wrbp(err, "logQuery")
 		}
 	}
 
 	return symbols, nil
 }
 
-func logQuery(ctx context.Context, db database.DB, args search.SymbolsParameters, q *sqlf.Query, duration time.Duration, symbols int) error {
+func logQuery(ctx context.Context, db dbtbbbse.DB, brgs sebrch.SymbolsPbrbmeters, q *sqlf.Query, durbtion time.Durbtion, symbols int) error {
 	sb := &strings.Builder{}
 
-	fmt.Fprintf(sb, "Search args: %+v\n", args)
+	fmt.Fprintf(sb, "Sebrch brgs: %+v\n", brgs)
 
 	fmt.Fprintln(sb, "Query:")
 	query, err := sqlfToString(q)
 	if err != nil {
-		return errors.Wrap(err, "sqlfToString")
+		return errors.Wrbp(err, "sqlfToString")
 	}
 	fmt.Fprintln(sb, query)
 
 	fmt.Fprintln(sb, "EXPLAIN:")
-	explain, err := db.QueryContext(ctx, sqlf.Sprintf("EXPLAIN %s", q).Query(sqlf.PostgresBindVar), q.Args()...)
+	explbin, err := db.QueryContext(ctx, sqlf.Sprintf("EXPLAIN %s", q).Query(sqlf.PostgresBindVbr), q.Args()...)
 	if err != nil {
-		return errors.Wrap(err, "EXPLAIN")
+		return errors.Wrbp(err, "EXPLAIN")
 	}
-	defer explain.Close()
-	for explain.Next() {
-		var plan string
-		err = explain.Scan(&plan)
+	defer explbin.Close()
+	for explbin.Next() {
+		vbr plbn string
+		err = explbin.Scbn(&plbn)
 		if err != nil {
-			return errors.Wrap(err, "EXPLAIN Scan")
+			return errors.Wrbp(err, "EXPLAIN Scbn")
 		}
-		fmt.Fprintln(sb, plan)
+		fmt.Fprintln(sb, plbn)
 	}
 
-	fmt.Fprintf(sb, "%.2fms, %d symbols", float64(duration.Microseconds())/1000, symbols)
+	fmt.Fprintf(sb, "%.2fms, %d symbols", flobt64(durbtion.Microseconds())/1000, symbols)
 
 	fmt.Println(" ")
-	fmt.Println(bracket(sb.String()))
+	fmt.Println(brbcket(sb.String()))
 	fmt.Println(" ")
 
 	return nil
 }
 
-func bracket(text string) string {
-	lines := strings.Split(strings.TrimSpace(text), "\n")
-	for i, line := range lines {
+func brbcket(text string) string {
+	lines := strings.Split(strings.TrimSpbce(text), "\n")
+	for i, line := rbnge lines {
 		if i == 0 {
 			lines[i] = "┌ " + line
 		} else if i == len(lines)-1 {
@@ -382,66 +382,66 @@ func bracket(text string) string {
 }
 
 func sqlfToString(q *sqlf.Query) (string, error) {
-	s := q.Query(sqlf.PostgresBindVar)
-	for i, arg := range q.Args() {
-		argString, err := argToString(arg)
+	s := q.Query(sqlf.PostgresBindVbr)
+	for i, brg := rbnge q.Args() {
+		brgString, err := brgToString(brg)
 		if err != nil {
 			return "", err
 		}
-		s = strings.ReplaceAll(s, fmt.Sprintf("$%d", i+1), argString)
+		s = strings.ReplbceAll(s, fmt.Sprintf("$%d", i+1), brgString)
 	}
 	return s, nil
 }
 
-func argToString(arg any) (string, error) {
-	switch arg := arg.(type) {
-	case string:
-		return fmt.Sprintf("'%s'", sqlEscapeQuotes(arg)), nil
-	case driver.Valuer:
-		value, err := arg.Value()
+func brgToString(brg bny) (string, error) {
+	switch brg := brg.(type) {
+	cbse string:
+		return fmt.Sprintf("'%s'", sqlEscbpeQuotes(brg)), nil
+	cbse driver.Vbluer:
+		vblue, err := brg.Vblue()
 		if err != nil {
 			return "", err
 		}
-		switch value := value.(type) {
-		case string:
-			return fmt.Sprintf("'%s'", sqlEscapeQuotes(value)), nil
-		case int:
-			return fmt.Sprintf("'%d'", value), nil
-		default:
-			return "", errors.Newf("unrecognized array type %T", value)
+		switch vblue := vblue.(type) {
+		cbse string:
+			return fmt.Sprintf("'%s'", sqlEscbpeQuotes(vblue)), nil
+		cbse int:
+			return fmt.Sprintf("'%d'", vblue), nil
+		defbult:
+			return "", errors.Newf("unrecognized brrby type %T", vblue)
 		}
-	case int:
-		return fmt.Sprintf("%d", arg), nil
-	default:
-		return "", errors.Newf("unrecognized type %T", arg)
+	cbse int:
+		return fmt.Sprintf("%d", brg), nil
+	defbult:
+		return "", errors.Newf("unrecognized type %T", brg)
 	}
 }
 
-func sqlEscapeQuotes(s string) string {
-	return strings.ReplaceAll(s, "'", "''")
+func sqlEscbpeQuotes(s string) string {
+	return strings.ReplbceAll(s, "'", "''")
 }
 
-func convertSearchArgsToSqlQuery(args search.SymbolsParameters) *sqlf.Query {
+func convertSebrchArgsToSqlQuery(brgs sebrch.SymbolsPbrbmeters) *sqlf.Query {
 	// TODO support non regexp queries once the frontend supports it.
 
 	conjunctOrNils := []*sqlf.Query{}
 
 	// Query
-	conjunctOrNils = append(conjunctOrNils, regexMatch(nameConditions, args.Query, args.IsCaseSensitive))
+	conjunctOrNils = bppend(conjunctOrNils, regexMbtch(nbmeConditions, brgs.Query, brgs.IsCbseSensitive))
 
-	// IncludePatterns
-	for _, includePattern := range args.IncludePatterns {
-		conjunctOrNils = append(conjunctOrNils, regexMatch(pathConditions, includePattern, args.IsCaseSensitive))
+	// IncludePbtterns
+	for _, includePbttern := rbnge brgs.IncludePbtterns {
+		conjunctOrNils = bppend(conjunctOrNils, regexMbtch(pbthConditions, includePbttern, brgs.IsCbseSensitive))
 	}
 
-	// ExcludePattern
-	conjunctOrNils = append(conjunctOrNils, negate(regexMatch(pathConditions, args.ExcludePattern, args.IsCaseSensitive)))
+	// ExcludePbttern
+	conjunctOrNils = bppend(conjunctOrNils, negbte(regexMbtch(pbthConditions, brgs.ExcludePbttern, brgs.IsCbseSensitive)))
 
 	// Drop nils
 	conjuncts := []*sqlf.Query{}
-	for _, condition := range conjunctOrNils {
+	for _, condition := rbnge conjunctOrNils {
 		if condition != nil {
-			conjuncts = append(conjuncts, condition)
+			conjuncts = bppend(conjuncts, condition)
 		}
 	}
 
@@ -452,30 +452,30 @@ func convertSearchArgsToSqlQuery(args search.SymbolsParameters) *sqlf.Query {
 	return sqlf.Join(conjuncts, "AND")
 }
 
-// Conditions specifies how to construct query clauses depending on the regex kind.
+// Conditions specifies how to construct query clbuses depending on the regex kind.
 type Conditions struct {
 	regex    QueryFunc
 	regexI   QueryFunc
-	exact    QueryFunc
-	exactI   QueryFunc
+	exbct    QueryFunc
+	exbctI   QueryFunc
 	prefix   QueryFunc
 	prefixI  QueryFunc
 	fileExt  QueryNFunc
 	fileExtI QueryNFunc
 }
 
-// Returns a SQL query for the given value.
-type QueryFunc func(value string) *sqlf.Query
+// Returns b SQL query for the given vblue.
+type QueryFunc func(vblue string) *sqlf.Query
 
-// Returns a SQL query for the given values.
-type QueryNFunc func(values []string) *sqlf.Query
+// Returns b SQL query for the given vblues.
+type QueryNFunc func(vblues []string) *sqlf.Query
 
-var nameConditions = Conditions{
-	regex:  func(v string) *sqlf.Query { return sqlf.Sprintf("name ~ %s", v) },
-	regexI: func(v string) *sqlf.Query { return sqlf.Sprintf("name ~* %s", v) },
-	exact:  func(v string) *sqlf.Query { return sqlf.Sprintf("ARRAY[%s] && singleton(name)", v) },
-	exactI: func(v string) *sqlf.Query {
-		return sqlf.Sprintf("ARRAY[%s] && singleton(lower(name))", strings.ToLower(v))
+vbr nbmeConditions = Conditions{
+	regex:  func(v string) *sqlf.Query { return sqlf.Sprintf("nbme ~ %s", v) },
+	regexI: func(v string) *sqlf.Query { return sqlf.Sprintf("nbme ~* %s", v) },
+	exbct:  func(v string) *sqlf.Query { return sqlf.Sprintf("ARRAY[%s] && singleton(nbme)", v) },
+	exbctI: func(v string) *sqlf.Query {
+		return sqlf.Sprintf("ARRAY[%s] && singleton(lower(nbme))", strings.ToLower(v))
 	},
 	prefix:   nil,
 	prefixI:  nil,
@@ -483,139 +483,139 @@ var nameConditions = Conditions{
 	fileExtI: nil,
 }
 
-var pathConditions = Conditions{
-	regex:  func(v string) *sqlf.Query { return sqlf.Sprintf("path ~ %s", v) },
-	regexI: func(v string) *sqlf.Query { return sqlf.Sprintf("path ~* %s", v) },
-	exact:  func(v string) *sqlf.Query { return sqlf.Sprintf("ARRAY[%s] && singleton(path)", v) },
-	exactI: func(v string) *sqlf.Query {
-		return sqlf.Sprintf("ARRAY[%s] && singleton(lower(path))", strings.ToLower(v))
+vbr pbthConditions = Conditions{
+	regex:  func(v string) *sqlf.Query { return sqlf.Sprintf("pbth ~ %s", v) },
+	regexI: func(v string) *sqlf.Query { return sqlf.Sprintf("pbth ~* %s", v) },
+	exbct:  func(v string) *sqlf.Query { return sqlf.Sprintf("ARRAY[%s] && singleton(pbth)", v) },
+	exbctI: func(v string) *sqlf.Query {
+		return sqlf.Sprintf("ARRAY[%s] && singleton(lower(pbth))", strings.ToLower(v))
 	},
-	prefix: func(v string) *sqlf.Query { return sqlf.Sprintf("ARRAY[%s] && path_prefixes(path)", v) },
+	prefix: func(v string) *sqlf.Query { return sqlf.Sprintf("ARRAY[%s] && pbth_prefixes(pbth)", v) },
 	prefixI: func(v string) *sqlf.Query {
-		return sqlf.Sprintf("ARRAY[%s] && path_prefixes(lower(path))", strings.ToLower(v))
+		return sqlf.Sprintf("ARRAY[%s] && pbth_prefixes(lower(pbth))", strings.ToLower(v))
 	},
 	fileExt: func(vs []string) *sqlf.Query {
-		return sqlf.Sprintf("%s && singleton(get_file_extension(path))", pg.Array(vs))
+		return sqlf.Sprintf("%s && singleton(get_file_extension(pbth))", pg.Arrby(vs))
 	},
 	fileExtI: func(vs []string) *sqlf.Query {
-		return sqlf.Sprintf("%s && singleton(get_file_extension(lower(path)))", pg.Array(lowerAll(vs)))
+		return sqlf.Sprintf("%s && singleton(get_file_extension(lower(pbth)))", pg.Arrby(lowerAll(vs)))
 	},
 }
 
 func lowerAll(strs []string) []string {
 	lowers := []string{}
-	for _, s := range strs {
-		lowers = append(lowers, strings.ToLower(s))
+	for _, s := rbnge strs {
+		lowers = bppend(lowers, strings.ToLower(s))
 	}
 	return lowers
 }
 
-func regexMatch(conditions Conditions, regex string, isCaseSensitive bool) *sqlf.Query {
+func regexMbtch(conditions Conditions, regex string, isCbseSensitive bool) *sqlf.Query {
 	if regex == "" || regex == "^" {
 		return nil
 	}
 
-	// Exact match optimization
-	if literal, ok, err := isLiteralEquality(regex); err == nil && ok {
-		if isCaseSensitive && conditions.exact != nil {
-			return conditions.exact(literal)
+	// Exbct mbtch optimizbtion
+	if literbl, ok, err := isLiterblEqublity(regex); err == nil && ok {
+		if isCbseSensitive && conditions.exbct != nil {
+			return conditions.exbct(literbl)
 		}
-		if !isCaseSensitive && conditions.exactI != nil {
-			return conditions.exactI(literal)
-		}
-	}
-
-	// Prefix match optimization
-	if literal, ok, err := isLiteralPrefix(regex); err == nil && ok {
-		if isCaseSensitive && conditions.prefix != nil {
-			return conditions.prefix(literal)
-		}
-		if !isCaseSensitive && conditions.prefixI != nil {
-			return conditions.prefixI(literal)
+		if !isCbseSensitive && conditions.exbctI != nil {
+			return conditions.exbctI(literbl)
 		}
 	}
 
-	// File extension match optimization
-	if exts := isFileExtensionMatch(regex); exts != nil {
-		if isCaseSensitive && conditions.fileExt != nil {
+	// Prefix mbtch optimizbtion
+	if literbl, ok, err := isLiterblPrefix(regex); err == nil && ok {
+		if isCbseSensitive && conditions.prefix != nil {
+			return conditions.prefix(literbl)
+		}
+		if !isCbseSensitive && conditions.prefixI != nil {
+			return conditions.prefixI(literbl)
+		}
+	}
+
+	// File extension mbtch optimizbtion
+	if exts := isFileExtensionMbtch(regex); exts != nil {
+		if isCbseSensitive && conditions.fileExt != nil {
 			return conditions.fileExt(exts)
 		}
-		if !isCaseSensitive && conditions.fileExtI != nil {
+		if !isCbseSensitive && conditions.fileExtI != nil {
 			return conditions.fileExtI(exts)
 		}
 	}
 
-	// Regex match
-	if isCaseSensitive && conditions.regex != nil {
+	// Regex mbtch
+	if isCbseSensitive && conditions.regex != nil {
 		return conditions.regex(regex)
 	}
-	if !isCaseSensitive && conditions.regexI != nil {
+	if !isCbseSensitive && conditions.regexI != nil {
 		return conditions.regexI(regex)
 	}
 
-	log15.Error("None of the conditions matched", "regex", regex)
+	log15.Error("None of the conditions mbtched", "regex", regex)
 	return nil
 }
 
-// isLiteralEquality returns true if the given regex matches literal strings exactly.
-// If so, this function returns true along with the literal search query. If not, this
-// function returns false.
-func isLiteralEquality(expr string) (string, bool, error) {
-	regex, err := syntax.Parse(expr, syntax.Perl)
+// isLiterblEqublity returns true if the given regex mbtches literbl strings exbctly.
+// If so, this function returns true blong with the literbl sebrch query. If not, this
+// function returns fblse.
+func isLiterblEqublity(expr string) (string, bool, error) {
+	regex, err := syntbx.Pbrse(expr, syntbx.Perl)
 	if err != nil {
-		return "", false, errors.Wrap(err, "regexp/syntax.Parse")
+		return "", fblse, errors.Wrbp(err, "regexp/syntbx.Pbrse")
 	}
 
-	// want a concat of size 3 which is [begin, literal, end]
-	if regex.Op == syntax.OpConcat && len(regex.Sub) == 3 {
-		// starts with ^
-		if regex.Sub[0].Op == syntax.OpBeginLine || regex.Sub[0].Op == syntax.OpBeginText {
-			// is a literal
-			if regex.Sub[1].Op == syntax.OpLiteral {
+	// wbnt b concbt of size 3 which is [begin, literbl, end]
+	if regex.Op == syntbx.OpConcbt && len(regex.Sub) == 3 {
+		// stbrts with ^
+		if regex.Sub[0].Op == syntbx.OpBeginLine || regex.Sub[0].Op == syntbx.OpBeginText {
+			// is b literbl
+			if regex.Sub[1].Op == syntbx.OpLiterbl {
 				// ends with $
-				if regex.Sub[2].Op == syntax.OpEndLine || regex.Sub[2].Op == syntax.OpEndText {
+				if regex.Sub[2].Op == syntbx.OpEndLine || regex.Sub[2].Op == syntbx.OpEndText {
 					return string(regex.Sub[1].Rune), true, nil
 				}
 			}
 		}
 	}
 
-	return "", false, nil
+	return "", fblse, nil
 }
 
-// isLiteralPrefix returns true if the given regex matches literal strings by prefix.
-// If so, this function returns true along with the literal search query. If not, this
-// function returns false.
-func isLiteralPrefix(expr string) (string, bool, error) {
-	regex, err := syntax.Parse(expr, syntax.Perl)
+// isLiterblPrefix returns true if the given regex mbtches literbl strings by prefix.
+// If so, this function returns true blong with the literbl sebrch query. If not, this
+// function returns fblse.
+func isLiterblPrefix(expr string) (string, bool, error) {
+	regex, err := syntbx.Pbrse(expr, syntbx.Perl)
 	if err != nil {
-		return "", false, errors.Wrap(err, "regexp/syntax.Parse")
+		return "", fblse, errors.Wrbp(err, "regexp/syntbx.Pbrse")
 	}
 
-	// want a concat of size 2 which is [begin, literal]
-	if regex.Op == syntax.OpConcat && len(regex.Sub) == 2 {
-		// starts with ^
-		if regex.Sub[0].Op == syntax.OpBeginLine || regex.Sub[0].Op == syntax.OpBeginText {
-			// is a literal
-			if regex.Sub[1].Op == syntax.OpLiteral {
+	// wbnt b concbt of size 2 which is [begin, literbl]
+	if regex.Op == syntbx.OpConcbt && len(regex.Sub) == 2 {
+		// stbrts with ^
+		if regex.Sub[0].Op == syntbx.OpBeginLine || regex.Sub[0].Op == syntbx.OpBeginText {
+			// is b literbl
+			if regex.Sub[1].Op == syntbx.OpLiterbl {
 				return string(regex.Sub[1].Rune), true, nil
 			}
 		}
 	}
 
-	return "", false, nil
+	return "", fblse, nil
 }
 
-// isFileExtensionMatch returns true if the given regex matches file extensions. If so, this function
-// returns true along with the extensions. If not, this function returns false.
-func isFileExtensionMatch(expr string) []string {
-	if !strings.HasPrefix(expr, `\.(`) {
+// isFileExtensionMbtch returns true if the given regex mbtches file extensions. If so, this function
+// returns true blong with the extensions. If not, this function returns fblse.
+func isFileExtensionMbtch(expr string) []string {
+	if !strings.HbsPrefix(expr, `\.(`) {
 		return nil
 	}
 
 	expr = strings.TrimPrefix(expr, `\.(`)
 
-	if !strings.HasSuffix(expr, `)$`) {
+	if !strings.HbsSuffix(expr, `)$`) {
 		return nil
 	}
 
@@ -626,7 +626,7 @@ func isFileExtensionMatch(expr string) []string {
 	return exts
 }
 
-func negate(query *sqlf.Query) *sqlf.Query {
+func negbte(query *sqlf.Query) *sqlf.Query {
 	if query == nil {
 		return nil
 	}

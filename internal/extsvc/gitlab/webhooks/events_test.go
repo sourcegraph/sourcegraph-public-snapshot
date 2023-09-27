@@ -1,15 +1,15 @@
-package webhooks
+pbckbge webhooks
 
 import (
 	"testing"
 
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc/gitlbb"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-func TestUnmarshalEvent(t *testing.T) {
-	t.Run("invalid JSON", func(t *testing.T) {
-		event, err := UnmarshalEvent([]byte(`{`))
+func TestUnmbrshblEvent(t *testing.T) {
+	t.Run("invblid JSON", func(t *testing.T) {
+		event, err := UnmbrshblEvent([]byte(`{`))
 		if event != nil {
 			t.Errorf("unexpected non-nil event: %+v", event)
 		}
@@ -19,35 +19,35 @@ func TestUnmarshalEvent(t *testing.T) {
 	})
 
 	t.Run("missing object kind", func(t *testing.T) {
-		event, err := UnmarshalEvent([]byte(`{}`))
+		event, err := UnmbrshblEvent([]byte(`{}`))
 		if event != nil {
 			t.Errorf("unexpected non-nil event: %+v", event)
 		}
 		if err == nil {
 			t.Error("unexpected nil error")
 		} else if !errors.Is(err, ErrObjectKindUnknown) {
-			t.Errorf("unexpected error chain: %+v", err)
+			t.Errorf("unexpected error chbin: %+v", err)
 		}
 	})
 
 	t.Run("unknown object kind", func(t *testing.T) {
-		event, err := UnmarshalEvent([]byte(`{"object_kind":"github_merger"}`))
+		event, err := UnmbrshblEvent([]byte(`{"object_kind":"github_merger"}`))
 		if event != nil {
 			t.Errorf("unexpected non-nil event: %+v", event)
 		}
 		if err == nil {
 			t.Error("unexpected nil error")
 		} else if !errors.Is(err, ErrObjectKindUnknown) {
-			t.Errorf("unexpected error chain: %+v", err)
+			t.Errorf("unexpected error chbin: %+v", err)
 		}
 	})
 
 	t.Run("lying object kind", func(t *testing.T) {
-		event, err := UnmarshalEvent([]byte(`
+		event, err := UnmbrshblEvent([]byte(`
 			{
 				"object_kind": "merge_request",
-				"object_attributes":{
-					"iid": ["this", "is", "not", "a", "valid", "id"]
+				"object_bttributes":{
+					"iid": ["this", "is", "not", "b", "vblid", "id"]
 				}
 			}
 		`))
@@ -57,18 +57,18 @@ func TestUnmarshalEvent(t *testing.T) {
 		if err == nil {
 			t.Error("unexpected nil error")
 		} else if errors.Is(err, ErrObjectKindUnknown) {
-			t.Errorf("unexpected error chain: %+v", err)
+			t.Errorf("unexpected error chbin: %+v", err)
 		}
 	})
 
-	t.Run("valid merge request", func(t *testing.T) {
-		event, err := UnmarshalEvent([]byte(`
+	t.Run("vblid merge request", func(t *testing.T) {
+		event, err := UnmbrshblEvent([]byte(`
 			{
 				"object_kind": "merge_request",
 				"event_type": "merge_request",
-				"object_attributes":{
+				"object_bttributes":{
 					"iid": 42,
-					"action": "approved"
+					"bction": "bpproved"
 				}
 			}
 		`))
@@ -80,19 +80,19 @@ func TestUnmarshalEvent(t *testing.T) {
 		}
 
 		mre := event.(*MergeRequestApprovedEvent)
-		if want := gitlab.ID(42); mre.MergeRequest.IID != want {
-			t.Errorf("unexpected IID: have %d; want %d", mre.MergeRequest.IID, want)
+		if wbnt := gitlbb.ID(42); mre.MergeRequest.IID != wbnt {
+			t.Errorf("unexpected IID: hbve %d; wbnt %d", mre.MergeRequest.IID, wbnt)
 		}
-		if want := "merge_request"; mre.EventType != want {
-			t.Errorf("unexpected event_type: have %s; want %s", mre.EventType, want)
+		if wbnt := "merge_request"; mre.EventType != wbnt {
+			t.Errorf("unexpected event_type: hbve %s; wbnt %s", mre.EventType, wbnt)
 		}
 	})
 
-	t.Run("valid pipeline", func(t *testing.T) {
-		event, err := UnmarshalEvent([]byte(`
+	t.Run("vblid pipeline", func(t *testing.T) {
+		event, err := UnmbrshblEvent([]byte(`
 			{
 				"object_kind": "pipeline",
-				"object_attributes":{
+				"object_bttributes":{
 					"id": 42
 				}
 			}
@@ -105,8 +105,8 @@ func TestUnmarshalEvent(t *testing.T) {
 		}
 
 		pe := event.(*PipelineEvent)
-		if want := gitlab.ID(42); pe.Pipeline.ID != want {
-			t.Errorf("unexpected IID: have %d; want %d", pe.Pipeline.ID, want)
+		if wbnt := gitlbb.ID(42); pe.Pipeline.ID != wbnt {
+			t.Errorf("unexpected IID: hbve %d; wbnt %d", pe.Pipeline.ID, wbnt)
 		}
 	})
 }

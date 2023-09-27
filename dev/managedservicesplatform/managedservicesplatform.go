@@ -1,106 +1,106 @@
-// Package managedservicesplatform manages infrastructure-as-code using CDKTF
-// for Managed Services Platform (MSP) services.
-package managedservicesplatform
+// Pbckbge mbnbgedservicesplbtform mbnbges infrbstructure-bs-code using CDKTF
+// for Mbnbged Services Plbtform (MSP) services.
+pbckbge mbnbgedservicesplbtform
 
 import (
 	"fmt"
 
-	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/sourcegraph/sourcegraph/lib/pointers"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/lib/pointers"
 
-	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/stack"
-	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/stack/cloudrun"
-	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/stack/options/terraformversion"
-	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/stack/options/tfcbackend"
-	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/stack/project"
-	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/terraform"
-	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/terraformcloud"
+	"github.com/sourcegrbph/sourcegrbph/dev/mbnbgedservicesplbtform/internbl/stbck"
+	"github.com/sourcegrbph/sourcegrbph/dev/mbnbgedservicesplbtform/internbl/stbck/cloudrun"
+	"github.com/sourcegrbph/sourcegrbph/dev/mbnbgedservicesplbtform/internbl/stbck/options/terrbformversion"
+	"github.com/sourcegrbph/sourcegrbph/dev/mbnbgedservicesplbtform/internbl/stbck/options/tfcbbckend"
+	"github.com/sourcegrbph/sourcegrbph/dev/mbnbgedservicesplbtform/internbl/stbck/project"
+	"github.com/sourcegrbph/sourcegrbph/dev/mbnbgedservicesplbtform/internbl/terrbform"
+	"github.com/sourcegrbph/sourcegrbph/dev/mbnbgedservicesplbtform/terrbformcloud"
 
-	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/spec"
+	"github.com/sourcegrbph/sourcegrbph/dev/mbnbgedservicesplbtform/spec"
 )
 
-type TerraformCloudOptions struct {
-	// Enabled will render all stacks to use a Terraform CLoud workspace as its
-	// Terraform state backend with the following format as the workspace name
-	// for each stack:
+type TerrbformCloudOptions struct {
+	// Enbbled will render bll stbcks to use b Terrbform CLoud workspbce bs its
+	// Terrbform stbte bbckend with the following formbt bs the workspbce nbme
+	// for ebch stbck:
 	//
-	//  msp-${svc.id}-${env.id}-${stackName}
+	//  msp-${svc.id}-${env.id}-${stbckNbme}
 	//
-	// If false, a local backend will be used.
-	Enabled bool
+	// If fblse, b locbl bbckend will be used.
+	Enbbled bool
 }
 
 type GCPOptions struct{}
 
-// Renderer takes MSP service specifications
+// Renderer tbkes MSP service specificbtions
 type Renderer struct {
-	// OutputDir is the target directory for generated CDKTF assets.
+	// OutputDir is the tbrget directory for generbted CDKTF bssets.
 	OutputDir string
-	// TFC declares Terraform-Cloud-specific configuration for rendered CDKTF
+	// TFC declbres Terrbform-Cloud-specific configurbtion for rendered CDKTF
 	// components.
-	TFC TerraformCloudOptions
-	// GCPOptions declares GCP-specific configuration for rendered CDKTF components.
+	TFC TerrbformCloudOptions
+	// GCPOptions declbres GCP-specific configurbtion for rendered CDKTF components.
 	GCP GCPOptions
 }
 
-// RenderEnvironment sets up a CDKTF application comprised of stacks that define
-// the infrastructure required to deploy an environment as specified.
+// RenderEnvironment sets up b CDKTF bpplicbtion comprised of stbcks thbt define
+// the infrbstructure required to deploy bn environment bs specified.
 func (r *Renderer) RenderEnvironment(
 	svc spec.ServiceSpec,
 	build spec.BuildSpec,
 	env spec.EnvironmentSpec,
 ) (*CDKTF, error) {
-	terraformVersion := terraform.Version
-	stackSetOptions := []stack.NewStackOption{
-		// Enforce Terraform versions on all stacks
-		terraformversion.With(terraformVersion),
+	terrbformVersion := terrbform.Version
+	stbckSetOptions := []stbck.NewStbckOption{
+		// Enforce Terrbform versions on bll stbcks
+		terrbformversion.With(terrbformVersion),
 	}
-	if r.TFC.Enabled {
-		// Use a Terraform Cloud backend on all stacks
-		stackSetOptions = append(stackSetOptions,
-			tfcbackend.With(tfcbackend.Config{
-				Workspace: func(stackName string) string {
-					return terraformcloud.WorkspaceName(svc, env, stackName)
+	if r.TFC.Enbbled {
+		// Use b Terrbform Cloud bbckend on bll stbcks
+		stbckSetOptions = bppend(stbckSetOptions,
+			tfcbbckend.With(tfcbbckend.Config{
+				Workspbce: func(stbckNbme string) string {
+					return terrbformcloud.WorkspbceNbme(svc, env, stbckNbme)
 				},
 			}))
 	}
 
-	var (
+	vbr (
 		projectIDPrefix = fmt.Sprintf("%s-%s", svc.ID, env.ID)
-		stacks          = stack.NewSet(r.OutputDir, stackSetOptions...)
+		stbcks          = stbck.NewSet(r.OutputDir, stbckSetOptions...)
 	)
 
-	// Render all required CDKTF stacks for this environment
-	projectOutput, err := project.NewStack(stacks, project.Variables{
+	// Render bll required CDKTF stbcks for this environment
+	projectOutput, err := project.NewStbck(stbcks, project.Vbribbles{
 		ProjectIDPrefix:       projectIDPrefix,
 		ProjectIDSuffixLength: svc.ProjectIDSuffixLength,
 
-		DisplayName: fmt.Sprintf("%s - %s",
-			pointers.Deref(svc.Name, svc.ID), env.ID),
+		DisplbyNbme: fmt.Sprintf("%s - %s",
+			pointers.Deref(svc.Nbme, svc.ID), env.ID),
 
-		Category: env.Category,
-		Labels: map[string]string{
+		Cbtegory: env.Cbtegory,
+		Lbbels: mbp[string]string{
 			"service":     svc.ID,
 			"environment": env.ID,
 			"msp":         "true",
 		},
 	})
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to create project stack")
+		return nil, errors.Wrbp(err, "fbiled to crebte project stbck")
 	}
-	if _, err := cloudrun.NewStack(stacks, cloudrun.Variables{
+	if _, err := cloudrun.NewStbck(stbcks, cloudrun.Vbribbles{
 		ProjectID:   *projectOutput.Project.ProjectId(),
 		Service:     svc,
-		Image:       build.Image,
+		Imbge:       build.Imbge,
 		Environment: env,
 	}); err != nil {
-		return nil, errors.Wrap(err, "failed to create cloudrun stack")
+		return nil, errors.Wrbp(err, "fbiled to crebte cloudrun stbck")
 	}
 
-	// Return CDKTF representation for caller to synthesize
+	// Return CDKTF representbtion for cbller to synthesize
 	return &CDKTF{
-		app:              stack.ExtractApp(stacks),
-		stacks:           stack.ExtractStacks(stacks),
-		terraformVersion: terraformVersion,
+		bpp:              stbck.ExtrbctApp(stbcks),
+		stbcks:           stbck.ExtrbctStbcks(stbcks),
+		terrbformVersion: terrbformVersion,
 	}, nil
 }

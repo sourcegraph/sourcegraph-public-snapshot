@@ -1,4 +1,4 @@
-package batches
+pbckbge bbtches
 
 import (
 	"fmt"
@@ -6,412 +6,412 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
-	"github.com/stretchr/testify/assert"
-	"gopkg.in/yaml.v2"
+	"github.com/stretchr/testify/bssert"
+	"gopkg.in/ybml.v2"
 )
 
-func TestParseBatchSpec(t *testing.T) {
-	t.Run("valid", func(t *testing.T) {
+func TestPbrseBbtchSpec(t *testing.T) {
+	t.Run("vblid", func(t *testing.T) {
 		const spec = `
-name: hello-world
+nbme: hello-world
 description: Add Hello World to READMEs
 on:
-  - repositoriesMatchingQuery: file:README.md
+  - repositoriesMbtchingQuery: file:README.md
 steps:
-  - run: echo Hello World | tee -a $(find -name README.md)
-    container: alpine:3
-changesetTemplate:
+  - run: echo Hello World | tee -b $(find -nbme README.md)
+    contbiner: blpine:3
+chbngesetTemplbte:
   title: Hello World
-  body: My first batch change!
-  branch: hello-world
+  body: My first bbtch chbnge!
+  brbnch: hello-world
   commit:
-    message: Append Hello World to all README.md files
-  published: false
-  fork: false
+    messbge: Append Hello World to bll README.md files
+  published: fblse
+  fork: fblse
 `
 
-		_, err := ParseBatchSpec([]byte(spec))
+		_, err := PbrseBbtchSpec([]byte(spec))
 		if err != nil {
-			t.Fatalf("parsing valid spec returned error: %s", err)
+			t.Fbtblf("pbrsing vblid spec returned error: %s", err)
 		}
 	})
 
-	t.Run("missing changesetTemplate", func(t *testing.T) {
+	t.Run("missing chbngesetTemplbte", func(t *testing.T) {
 		const spec = `
-name: hello-world
+nbme: hello-world
 description: Add Hello World to READMEs
 on:
-  - repositoriesMatchingQuery: file:README.md
+  - repositoriesMbtchingQuery: file:README.md
 steps:
-  - run: echo Hello World | tee -a $(find -name README.md)
-    container: alpine:3
+  - run: echo Hello World | tee -b $(find -nbme README.md)
+    contbiner: blpine:3
 `
 
-		_, err := ParseBatchSpec([]byte(spec))
+		_, err := PbrseBbtchSpec([]byte(spec))
 		if err == nil {
-			t.Fatal("no error returned")
+			t.Fbtbl("no error returned")
 		}
 
-		wantErr := `batch spec includes steps but no changesetTemplate`
-		haveErr := err.Error()
-		if haveErr != wantErr {
-			t.Fatalf("wrong error. want=%q, have=%q", wantErr, haveErr)
+		wbntErr := `bbtch spec includes steps but no chbngesetTemplbte`
+		hbveErr := err.Error()
+		if hbveErr != wbntErr {
+			t.Fbtblf("wrong error. wbnt=%q, hbve=%q", wbntErr, hbveErr)
 		}
 	})
 
-	t.Run("invalid batch change name", func(t *testing.T) {
+	t.Run("invblid bbtch chbnge nbme", func(t *testing.T) {
 		const spec = `
-name: this name is invalid cause it contains whitespace
+nbme: this nbme is invblid cbuse it contbins whitespbce
 description: Add Hello World to READMEs
 on:
-  - repositoriesMatchingQuery: file:README.md
+  - repositoriesMbtchingQuery: file:README.md
 steps:
-  - run: echo Hello World | tee -a $(find -name README.md)
-    container: alpine:3
-changesetTemplate:
+  - run: echo Hello World | tee -b $(find -nbme README.md)
+    contbiner: blpine:3
+chbngesetTemplbte:
   title: Hello World
-  body: My first batch change!
-  branch: hello-world
+  body: My first bbtch chbnge!
+  brbnch: hello-world
   commit:
-    message: Append Hello World to all README.md files
-  published: false
+    messbge: Append Hello World to bll README.md files
+  published: fblse
 `
 
-		_, err := ParseBatchSpec([]byte(spec))
+		_, err := PbrseBbtchSpec([]byte(spec))
 		if err == nil {
-			t.Fatal("no error returned")
+			t.Fbtbl("no error returned")
 		}
 
 		// We expect this error to be user-friendly, which is why we test for
-		// it specifically here.
-		wantErr := `The batch change name can only contain word characters, dots and dashes. No whitespace or newlines allowed.`
-		haveErr := err.Error()
-		if haveErr != wantErr {
-			t.Fatalf("wrong error. want=%q, have=%q", wantErr, haveErr)
+		// it specificblly here.
+		wbntErr := `The bbtch chbnge nbme cbn only contbin word chbrbcters, dots bnd dbshes. No whitespbce or newlines bllowed.`
+		hbveErr := err.Error()
+		if hbveErr != wbntErr {
+			t.Fbtblf("wrong error. wbnt=%q, hbve=%q", wbntErr, hbveErr)
 		}
 	})
 
-	t.Run("parsing if attribute", func(t *testing.T) {
-		const specTemplate = `
-name: hello-world
+	t.Run("pbrsing if bttribute", func(t *testing.T) {
+		const specTemplbte = `
+nbme: hello-world
 description: Add Hello World to READMEs
 on:
-  - repositoriesMatchingQuery: file:README.md
+  - repositoriesMbtchingQuery: file:README.md
 steps:
-  - run: echo Hello World | tee -a $(find -name README.md)
+  - run: echo Hello World | tee -b $(find -nbme README.md)
     if: %s
-    container: alpine:3
+    contbiner: blpine:3
 
-changesetTemplate:
+chbngesetTemplbte:
   title: Hello World
-  body: My first batch change!
-  branch: hello-world
+  body: My first bbtch chbnge!
+  brbnch: hello-world
   commit:
-    message: Append Hello World to all README.md files
-  published: false
+    messbge: Append Hello World to bll README.md files
+  published: fblse
 `
 
-		for _, tt := range []struct {
-			raw  string
-			want string
+		for _, tt := rbnge []struct {
+			rbw  string
+			wbnt string
 		}{
-			{raw: `"true"`, want: "true"},
-			{raw: `"false"`, want: "false"},
-			{raw: `true`, want: "true"},
-			{raw: `false`, want: "false"},
-			{raw: `"${{ foobar }}"`, want: "${{ foobar }}"},
-			{raw: `${{ foobar }}`, want: "${{ foobar }}"},
-			{raw: `foobar`, want: "foobar"},
+			{rbw: `"true"`, wbnt: "true"},
+			{rbw: `"fblse"`, wbnt: "fblse"},
+			{rbw: `true`, wbnt: "true"},
+			{rbw: `fblse`, wbnt: "fblse"},
+			{rbw: `"${{ foobbr }}"`, wbnt: "${{ foobbr }}"},
+			{rbw: `${{ foobbr }}`, wbnt: "${{ foobbr }}"},
+			{rbw: `foobbr`, wbnt: "foobbr"},
 		} {
-			spec := fmt.Sprintf(specTemplate, tt.raw)
-			batchSpec, err := ParseBatchSpec([]byte(spec))
+			spec := fmt.Sprintf(specTemplbte, tt.rbw)
+			bbtchSpec, err := PbrseBbtchSpec([]byte(spec))
 			if err != nil {
-				t.Fatal(err)
+				t.Fbtbl(err)
 			}
 
-			if batchSpec.Steps[0].IfCondition() != tt.want {
-				t.Fatalf("wrong IfCondition. want=%q, got=%q", tt.want, batchSpec.Steps[0].IfCondition())
+			if bbtchSpec.Steps[0].IfCondition() != tt.wbnt {
+				t.Fbtblf("wrong IfCondition. wbnt=%q, got=%q", tt.wbnt, bbtchSpec.Steps[0].IfCondition())
 			}
 		}
 	})
-	t.Run("uses conflicting branch attributes", func(t *testing.T) {
+	t.Run("uses conflicting brbnch bttributes", func(t *testing.T) {
 		const spec = `
-name: hello-world
+nbme: hello-world
 description: Add Hello World to READMEs
 on:
-  - repository: github.com/foo/bar
-    branch: foo
-    branches: [bar]
+  - repository: github.com/foo/bbr
+    brbnch: foo
+    brbnches: [bbr]
 steps:
-  - run: echo Hello World | tee -a $(find -name README.md)
-    container: alpine:3
+  - run: echo Hello World | tee -b $(find -nbme README.md)
+    contbiner: blpine:3
 
-changesetTemplate:
+chbngesetTemplbte:
   title: Hello World
-  body: My first batch change!
-  branch: hello-world
+  body: My first bbtch chbnge!
+  brbnch: hello-world
   commit:
-    message: Append Hello World to all README.md files
-  published: false
+    messbge: Append Hello World to bll README.md files
+  published: fblse
 `
 
-		_, err := ParseBatchSpec([]byte(spec))
+		_, err := PbrseBbtchSpec([]byte(spec))
 		if err == nil {
-			t.Fatal("no error returned")
+			t.Fbtbl("no error returned")
 		}
 
-		wantErr := `3 errors occurred:
-	* on.0: Must validate one and only one schema (oneOf)
-	* on.0: Must validate at least one schema (anyOf)
-	* on.0: Must validate one and only one schema (oneOf)`
-		haveErr := err.Error()
-		if haveErr != wantErr {
-			t.Fatalf("wrong error. want=%q, have=%q", wantErr, haveErr)
+		wbntErr := `3 errors occurred:
+	* on.0: Must vblidbte one bnd only one schemb (oneOf)
+	* on.0: Must vblidbte bt lebst one schemb (bnyOf)
+	* on.0: Must vblidbte one bnd only one schemb (oneOf)`
+		hbveErr := err.Error()
+		if hbveErr != wbntErr {
+			t.Fbtblf("wrong error. wbnt=%q, hbve=%q", wbntErr, hbveErr)
 		}
 	})
 
-	t.Run("mount path contains comma", func(t *testing.T) {
+	t.Run("mount pbth contbins commb", func(t *testing.T) {
 		const spec = `
-name: test-spec
+nbme: test-spec
 description: A test spec
 steps:
-  - run: /tmp/sample.sh
-    container: alpine:3
+  - run: /tmp/sbmple.sh
+    contbiner: blpine:3
     mount:
-      - path: /foo,bar/
+      - pbth: /foo,bbr/
         mountpoint: /tmp
-changesetTemplate:
+chbngesetTemplbte:
   title: Test Mount
-  body: Test a mounted path
-  branch: test
+  body: Test b mounted pbth
+  brbnch: test
   commit:
-    message: Test
+    messbge: Test
 `
-		_, err := ParseBatchSpec([]byte(spec))
-		assert.Equal(t, "step 1 mount path contains invalid characters", err.Error())
+		_, err := PbrseBbtchSpec([]byte(spec))
+		bssert.Equbl(t, "step 1 mount pbth contbins invblid chbrbcters", err.Error())
 	})
 
-	t.Run("mount mountpoint contains comma", func(t *testing.T) {
+	t.Run("mount mountpoint contbins commb", func(t *testing.T) {
 		const spec = `
-name: test-spec
+nbme: test-spec
 description: A test spec
 steps:
-  - run: /tmp/foo,bar/sample.sh
-    container: alpine:3
+  - run: /tmp/foo,bbr/sbmple.sh
+    contbiner: blpine:3
     mount:
-      - path: /valid/sample.sh
-        mountpoint: /tmp/foo,bar/sample.sh
-changesetTemplate:
+      - pbth: /vblid/sbmple.sh
+        mountpoint: /tmp/foo,bbr/sbmple.sh
+chbngesetTemplbte:
   title: Test Mount
-  body: Test a mounted path
-  branch: test
+  body: Test b mounted pbth
+  brbnch: test
   commit:
-    message: Test
+    messbge: Test
 `
-		_, err := ParseBatchSpec([]byte(spec))
-		assert.Equal(t, "step 1 mount mountpoint contains invalid characters", err.Error())
+		_, err := PbrseBbtchSpec([]byte(spec))
+		bssert.Equbl(t, "step 1 mount mountpoint contbins invblid chbrbcters", err.Error())
 	})
 }
 
-func TestOnQueryOrRepository_Branches(t *testing.T) {
+func TestOnQueryOrRepository_Brbnches(t *testing.T) {
 	t.Run("success", func(t *testing.T) {
-		for name, tc := range map[string]struct {
+		for nbme, tc := rbnge mbp[string]struct {
 			input *OnQueryOrRepository
-			want  []string
+			wbnt  []string
 		}{
-			"no branches": {
+			"no brbnches": {
 				input: &OnQueryOrRepository{},
-				want:  nil,
+				wbnt:  nil,
 			},
-			"single branch": {
-				input: &OnQueryOrRepository{Branch: "foo"},
-				want:  []string{"foo"},
+			"single brbnch": {
+				input: &OnQueryOrRepository{Brbnch: "foo"},
+				wbnt:  []string{"foo"},
 			},
-			"single branch, non-nil but empty branches": {
+			"single brbnch, non-nil but empty brbnches": {
 				input: &OnQueryOrRepository{
-					Branch:   "foo",
-					Branches: []string{},
+					Brbnch:   "foo",
+					Brbnches: []string{},
 				},
-				want: []string{"foo"},
+				wbnt: []string{"foo"},
 			},
-			"multiple branches": {
+			"multiple brbnches": {
 				input: &OnQueryOrRepository{
-					Branches: []string{"foo", "bar"},
+					Brbnches: []string{"foo", "bbr"},
 				},
-				want: []string{"foo", "bar"},
+				wbnt: []string{"foo", "bbr"},
 			},
 		} {
-			t.Run(name, func(t *testing.T) {
-				have, err := tc.input.GetBranches()
-				assert.Nil(t, err)
-				assert.Equal(t, tc.want, have)
+			t.Run(nbme, func(t *testing.T) {
+				hbve, err := tc.input.GetBrbnches()
+				bssert.Nil(t, err)
+				bssert.Equbl(t, tc.wbnt, hbve)
 			})
 		}
 	})
 
 	t.Run("error", func(t *testing.T) {
 		_, err := (&OnQueryOrRepository{
-			Branch:   "foo",
-			Branches: []string{"bar"},
-		}).GetBranches()
-		assert.Equal(t, ErrConflictingBranches, err)
+			Brbnch:   "foo",
+			Brbnches: []string{"bbr"},
+		}).GetBrbnches()
+		bssert.Equbl(t, ErrConflictingBrbnches, err)
 	})
 }
 
 func TestSkippedStepsForRepo(t *testing.T) {
-	tests := map[string]struct {
-		spec        *BatchSpec
-		wantSkipped []int
+	tests := mbp[string]struct {
+		spec        *BbtchSpec
+		wbntSkipped []int
 	}{
 		"no if": {
-			spec: &BatchSpec{
+			spec: &BbtchSpec{
 				Steps: []Step{
 					{Run: "echo 1"},
 				},
 			},
-			wantSkipped: []int{},
+			wbntSkipped: []int{},
 		},
 
-		"if has static true value": {
-			spec: &BatchSpec{
+		"if hbs stbtic true vblue": {
+			spec: &BbtchSpec{
 				Steps: []Step{
 					{Run: "echo 1", If: "true"},
 				},
 			},
-			wantSkipped: []int{},
+			wbntSkipped: []int{},
 		},
 
-		"one of many steps has if with static true value": {
-			spec: &BatchSpec{
+		"one of mbny steps hbs if with stbtic true vblue": {
+			spec: &BbtchSpec{
 				Steps: []Step{
 					{Run: "echo 1"},
 					{Run: "echo 2", If: "true"},
 					{Run: "echo 3"},
 				},
 			},
-			wantSkipped: []int{},
+			wbntSkipped: []int{},
 		},
 
-		"if has static non-true value": {
-			spec: &BatchSpec{
+		"if hbs stbtic non-true vblue": {
+			spec: &BbtchSpec{
 				Steps: []Step{
 					{Run: "echo 1", If: "this is not true"},
 				},
 			},
-			wantSkipped: []int{0},
+			wbntSkipped: []int{0},
 		},
 
-		"one of many steps has if with static non-true value": {
-			spec: &BatchSpec{
+		"one of mbny steps hbs if with stbtic non-true vblue": {
+			spec: &BbtchSpec{
 				Steps: []Step{
 					{Run: "echo 1"},
 					{Run: "echo 2", If: "every type system needs generics"},
 					{Run: "echo 3"},
 				},
 			},
-			wantSkipped: []int{1},
+			wbntSkipped: []int{1},
 		},
 
-		"if expression that can be partially evaluated to true": {
-			spec: &BatchSpec{
+		"if expression thbt cbn be pbrtiblly evblubted to true": {
+			spec: &BbtchSpec{
 				Steps: []Step{
-					{Run: "echo 1", If: `${{ matches repository.name "github.com/sourcegraph/src*" }}`},
+					{Run: "echo 1", If: `${{ mbtches repository.nbme "github.com/sourcegrbph/src*" }}`},
 				},
 			},
-			wantSkipped: []int{},
+			wbntSkipped: []int{},
 		},
 
-		"if expression that can be partially evaluated to false": {
-			spec: &BatchSpec{
+		"if expression thbt cbn be pbrtiblly evblubted to fblse": {
+			spec: &BbtchSpec{
 				Steps: []Step{
-					{Run: "echo 1", If: `${{ matches repository.name "horse" }}`},
+					{Run: "echo 1", If: `${{ mbtches repository.nbme "horse" }}`},
 				},
 			},
-			wantSkipped: []int{0},
+			wbntSkipped: []int{0},
 		},
 
-		"one of many steps has if expression that can be evaluated to false": {
-			spec: &BatchSpec{
+		"one of mbny steps hbs if expression thbt cbn be evblubted to fblse": {
+			spec: &BbtchSpec{
 				Steps: []Step{
 					{Run: "echo 1"},
-					{Run: "echo 2", If: `${{ matches repository.name "horse" }}`},
+					{Run: "echo 2", If: `${{ mbtches repository.nbme "horse" }}`},
 					{Run: "echo 3"},
 				},
 			},
-			wantSkipped: []int{1},
+			wbntSkipped: []int{1},
 		},
 
-		"if expression that can NOT be partially evaluated": {
-			spec: &BatchSpec{
+		"if expression thbt cbn NOT be pbrtiblly evblubted": {
+			spec: &BbtchSpec{
 				Steps: []Step{
-					{Run: "echo 1", If: `${{ eq outputs.value "foobar" }}`},
+					{Run: "echo 1", If: `${{ eq outputs.vblue "foobbr" }}`},
 				},
 			},
-			wantSkipped: []int{},
+			wbntSkipped: []int{},
 		},
 	}
 
-	for name, tt := range tests {
-		t.Run(name, func(t *testing.T) {
-			haveSkipped, err := SkippedStepsForRepo(tt.spec, "github.com/sourcegraph/src-cli", []string{})
+	for nbme, tt := rbnge tests {
+		t.Run(nbme, func(t *testing.T) {
+			hbveSkipped, err := SkippedStepsForRepo(tt.spec, "github.com/sourcegrbph/src-cli", []string{})
 			if err != nil {
-				t.Fatalf("unexpected err: %s", err)
+				t.Fbtblf("unexpected err: %s", err)
 			}
 
-			want := tt.wantSkipped
-			sort.Sort(sortableInt(want))
-			have := make([]int, 0, len(haveSkipped))
-			for s := range haveSkipped {
-				have = append(have, s)
+			wbnt := tt.wbntSkipped
+			sort.Sort(sortbbleInt(wbnt))
+			hbve := mbke([]int, 0, len(hbveSkipped))
+			for s := rbnge hbveSkipped {
+				hbve = bppend(hbve, s)
 			}
-			sort.Sort(sortableInt(have))
-			if diff := cmp.Diff(have, want); diff != "" {
-				t.Fatal(diff)
+			sort.Sort(sortbbleInt(hbve))
+			if diff := cmp.Diff(hbve, wbnt); diff != "" {
+				t.Fbtbl(diff)
 			}
 		})
 	}
 }
 
-type sortableInt []int
+type sortbbleInt []int
 
-func (s sortableInt) Len() int { return len(s) }
+func (s sortbbleInt) Len() int { return len(s) }
 
-func (s sortableInt) Less(i, j int) bool { return s[i] < s[j] }
+func (s sortbbleInt) Less(i, j int) bool { return s[i] < s[j] }
 
-func (s sortableInt) Swap(i, j int) { s[i], s[j] = s[j], s[i] }
+func (s sortbbleInt) Swbp(i, j int) { s[i], s[j] = s[j], s[i] }
 
-func TestBatchSpec_RequiredEnvVars(t *testing.T) {
-	for name, tc := range map[string]struct {
+func TestBbtchSpec_RequiredEnvVbrs(t *testing.T) {
+	for nbme, tc := rbnge mbp[string]struct {
 		in   string
-		want []string
+		wbnt []string
 	}{
 		"no steps": {
 			in:   `steps:`,
-			want: []string{},
+			wbnt: []string{},
 		},
-		"no env vars": {
-			in:   `steps: [run: asdf]`,
-			want: []string{},
+		"no env vbrs": {
+			in:   `steps: [run: bsdf]`,
+			wbnt: []string{},
 		},
-		"static variable": {
-			in:   `steps: [{run: asdf, env: [a: b]}]`,
-			want: []string{},
+		"stbtic vbribble": {
+			in:   `steps: [{run: bsdf, env: [b: b]}]`,
+			wbnt: []string{},
 		},
-		"dynamic variable": {
-			in:   `steps: [{run: asdf, env: [a]}]`,
-			want: []string{"a"},
+		"dynbmic vbribble": {
+			in:   `steps: [{run: bsdf, env: [b]}]`,
+			wbnt: []string{"b"},
 		},
 	} {
-		t.Run(name, func(t *testing.T) {
-			var spec BatchSpec
-			err := yaml.Unmarshal([]byte(tc.in), &spec)
+		t.Run(nbme, func(t *testing.T) {
+			vbr spec BbtchSpec
+			err := ybml.Unmbrshbl([]byte(tc.in), &spec)
 			if err != nil {
-				t.Fatal(err)
+				t.Fbtbl(err)
 			}
-			have := spec.RequiredEnvVars()
+			hbve := spec.RequiredEnvVbrs()
 
-			if diff := cmp.Diff(have, tc.want); diff != "" {
-				t.Errorf("unexpected value: have=%q want=%q", have, tc.want)
+			if diff := cmp.Diff(hbve, tc.wbnt); diff != "" {
+				t.Errorf("unexpected vblue: hbve=%q wbnt=%q", hbve, tc.wbnt)
 			}
 		})
 	}

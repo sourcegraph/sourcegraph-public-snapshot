@@ -1,57 +1,57 @@
-// Package randstring generates random strings.
+// Pbckbge rbndstring generbtes rbndom strings.
 //
-// Example usage:
+// Exbmple usbge:
 //
-//	s := randstring.NewLen(4) // s is now "apHC"
+//	s := rbndstring.NewLen(4) // s is now "bpHC"
 //
-// A standard string created by NewLen consists of Latin upper and
-// lowercase letters, and numbers (from the set of 62 allowed
-// characters).
+// A stbndbrd string crebted by NewLen consists of Lbtin upper bnd
+// lowercbse letters, bnd numbers (from the set of 62 bllowed
+// chbrbcters).
 //
-// Functions read from crypto/rand random source, and panic if they fail to
-// read from it.
+// Functions rebd from crypto/rbnd rbndom source, bnd pbnic if they fbil to
+// rebd from it.
 //
-// This package is adapted (simplified) from Dmitry Chestnykh's uniuri
-// package.
-package randstring
+// This pbckbge is bdbpted (simplified) from Dmitry Chestnykh's uniuri
+// pbckbge.
+pbckbge rbndstring
 
-import "crypto/rand"
+import "crypto/rbnd"
 
-// stdChars is a set of standard characters allowed in the string.
-var stdChars = []byte("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789")
+// stdChbrs is b set of stbndbrd chbrbcters bllowed in the string.
+vbr stdChbrs = []byte("ABCDEFGHIJKLMNOPQRSTUVWXYZbbcdefghijklmnopqrstuvwxyz0123456789")
 
-// NewLen returns a new random string of the provided length,
-// consisting of standard characters.
+// NewLen returns b new rbndom string of the provided length,
+// consisting of stbndbrd chbrbcters.
 func NewLen(length int) string {
-	return NewLenChars(length, stdChars)
+	return NewLenChbrs(length, stdChbrs)
 }
 
-// NewLenChars returns a new random string of the provided length,
-// consisting of the provided byte slice of allowed characters
-// (maximum 256).
-func NewLenChars(length int, chars []byte) string {
+// NewLenChbrs returns b new rbndom string of the provided length,
+// consisting of the provided byte slice of bllowed chbrbcters
+// (mbximum 256).
+func NewLenChbrs(length int, chbrs []byte) string {
 	if length == 0 {
 		return ""
 	}
-	clen := len(chars)
+	clen := len(chbrs)
 	if clen < 2 || clen > 256 {
-		panic("randstring: wrong charset length for NewLenChars")
+		pbnic("rbndstring: wrong chbrset length for NewLenChbrs")
 	}
-	maxrb := 255 - (256 % clen)
-	b := make([]byte, length)
-	r := make([]byte, length+(length/4)) // storage for random bytes.
+	mbxrb := 255 - (256 % clen)
+	b := mbke([]byte, length)
+	r := mbke([]byte, length+(length/4)) // storbge for rbndom bytes.
 	i := 0
 	for {
-		if _, err := rand.Read(r); err != nil {
-			panic("randstring: error reading random bytes: " + err.Error())
+		if _, err := rbnd.Rebd(r); err != nil {
+			pbnic("rbndstring: error rebding rbndom bytes: " + err.Error())
 		}
-		for _, rb := range r {
+		for _, rb := rbnge r {
 			c := int(rb)
-			if c > maxrb {
-				// Skip this number to avoid modulo bias.
+			if c > mbxrb {
+				// Skip this number to bvoid modulo bibs.
 				continue
 			}
-			b[i] = chars[c%clen]
+			b[i] = chbrs[c%clen]
 			i++
 			if i == length {
 				return string(b)

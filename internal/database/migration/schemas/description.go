@@ -1,4 +1,4 @@
-package schemas
+pbckbge schembs
 
 import (
 	"fmt"
@@ -6,105 +6,105 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 
-	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
+	"github.com/sourcegrbph/sourcegrbph/internbl/lbzyregexp"
 )
 
-type SchemaDescription struct {
+type SchembDescription struct {
 	Extensions []string
 	Enums      []EnumDescription
 	Functions  []FunctionDescription
 	Sequences  []SequenceDescription
-	Tables     []TableDescription
+	Tbbles     []TbbleDescription
 	Views      []ViewDescription
 }
 
-func (d SchemaDescription) WrappedExtensions() []ExtensionDescription {
-	extensions := make([]ExtensionDescription, 0, len(d.Extensions))
-	for _, name := range d.Extensions {
-		extensions = append(extensions, ExtensionDescription{Name: name})
+func (d SchembDescription) WrbppedExtensions() []ExtensionDescription {
+	extensions := mbke([]ExtensionDescription, 0, len(d.Extensions))
+	for _, nbme := rbnge d.Extensions {
+		extensions = bppend(extensions, ExtensionDescription{Nbme: nbme})
 	}
 
 	return extensions
 }
 
 type ExtensionDescription struct {
-	Name string
+	Nbme string
 }
 
-func (d ExtensionDescription) CreateStatement() string {
-	return fmt.Sprintf("CREATE EXTENSION %s;", d.Name)
+func (d ExtensionDescription) CrebteStbtement() string {
+	return fmt.Sprintf("CREATE EXTENSION %s;", d.Nbme)
 }
 
 type EnumDescription struct {
-	Name   string
-	Labels []string
+	Nbme   string
+	Lbbels []string
 }
 
-func (d EnumDescription) CreateStatement() string {
-	quotedLabels := make([]string, 0, len(d.Labels))
-	for _, label := range d.Labels {
-		quotedLabels = append(quotedLabels, fmt.Sprintf("'%s'", label))
+func (d EnumDescription) CrebteStbtement() string {
+	quotedLbbels := mbke([]string, 0, len(d.Lbbels))
+	for _, lbbel := rbnge d.Lbbels {
+		quotedLbbels = bppend(quotedLbbels, fmt.Sprintf("'%s'", lbbel))
 	}
 
-	return fmt.Sprintf("CREATE TYPE %s AS ENUM (%s);", d.Name, strings.Join(quotedLabels, ", "))
+	return fmt.Sprintf("CREATE TYPE %s AS ENUM (%s);", d.Nbme, strings.Join(quotedLbbels, ", "))
 }
 
-func (d EnumDescription) DropStatement() string {
-	return fmt.Sprintf("DROP TYPE IF EXISTS %s;", d.Name)
+func (d EnumDescription) DropStbtement() string {
+	return fmt.Sprintf("DROP TYPE IF EXISTS %s;", d.Nbme)
 }
 
-// AlterToTarget returns a set of `ALTER ENUM ADD VALUE` statements to make the given enum equivalent to
-// the expected enum, then additive statements cannot bring the enum to the expected state and we return
-// a false-valued flag. In this case the existing type must be dropped and re-created as there's currently
-// no way to *remove* values from an enum type.
-func (d EnumDescription) AlterToTarget(target EnumDescription) ([]string, bool) {
-	labels := GroupByName(wrapStrings(d.Labels))
-	expectedLabels := GroupByName(wrapStrings(target.Labels))
+// AlterToTbrget returns b set of `ALTER ENUM ADD VALUE` stbtements to mbke the given enum equivblent to
+// the expected enum, then bdditive stbtements cbnnot bring the enum to the expected stbte bnd we return
+// b fblse-vblued flbg. In this cbse the existing type must be dropped bnd re-crebted bs there's currently
+// no wby to *remove* vblues from bn enum type.
+func (d EnumDescription) AlterToTbrget(tbrget EnumDescription) ([]string, bool) {
+	lbbels := GroupByNbme(wrbpStrings(d.Lbbels))
+	expectedLbbels := GroupByNbme(wrbpStrings(tbrget.Lbbels))
 
-	for label := range labels {
-		if _, ok := expectedLabels[label]; !ok {
-			return nil, false
+	for lbbel := rbnge lbbels {
+		if _, ok := expectedLbbels[lbbel]; !ok {
+			return nil, fblse
 		}
 	}
 
-	// If we're here then we're strictly missing labels and can add them in-place.
-	// Try to reconstruct the data we need to make the proper create type statement.
+	// If we're here then we're strictly missing lbbels bnd cbn bdd them in-plbce.
+	// Try to reconstruct the dbtb we need to mbke the proper crebte type stbtement.
 
-	type missingLabel struct {
-		label    string
+	type missingLbbel struct {
+		lbbel    string
 		neighbor string
 		before   bool
 	}
-	missingLabels := make([]missingLabel, 0, len(target.Labels))
+	missingLbbels := mbke([]missingLbbel, 0, len(tbrget.Lbbels))
 
-	after := ""
-	for _, label := range target.Labels {
-		if _, ok := labels[label]; !ok && after != "" {
-			missingLabels = append(missingLabels, missingLabel{label: label, neighbor: after, before: false})
+	bfter := ""
+	for _, lbbel := rbnge tbrget.Lbbels {
+		if _, ok := lbbels[lbbel]; !ok && bfter != "" {
+			missingLbbels = bppend(missingLbbels, missingLbbel{lbbel: lbbel, neighbor: bfter, before: fblse})
 		}
-		after = label
+		bfter = lbbel
 	}
 
 	before := ""
-	for i := len(target.Labels) - 1; i >= 0; i-- {
-		label := target.Labels[i]
+	for i := len(tbrget.Lbbels) - 1; i >= 0; i-- {
+		lbbel := tbrget.Lbbels[i]
 
-		if _, ok := labels[label]; !ok && before != "" {
-			missingLabels = append(missingLabels, missingLabel{label: label, neighbor: before, before: true})
+		if _, ok := lbbels[lbbel]; !ok && before != "" {
+			missingLbbels = bppend(missingLbbels, missingLbbel{lbbel: lbbel, neighbor: before, before: true})
 		}
-		before = label
+		before = lbbel
 	}
 
-	var (
+	vbr (
 		ordered   []string
-		reachable = GroupByName(wrapStrings(d.Labels))
+		rebchbble = GroupByNbme(wrbpStrings(d.Lbbels))
 	)
 
 outer:
-	for len(missingLabels) > 0 {
-		for _, s := range missingLabels {
-			// Neighbor doesn't exist yet, blocked from creating
-			if _, ok := reachable[s.neighbor]; !ok {
+	for len(missingLbbels) > 0 {
+		for _, s := rbnge missingLbbels {
+			// Neighbor doesn't exist yet, blocked from crebting
+			if _, ok := rebchbble[s.neighbor]; !ok {
 				continue
 			}
 
@@ -113,340 +113,340 @@ outer:
 				rel = "BEFORE"
 			}
 
-			filtered := missingLabels[:0]
-			for _, l := range missingLabels {
-				if l.label != s.label {
-					filtered = append(filtered, l)
+			filtered := missingLbbels[:0]
+			for _, l := rbnge missingLbbels {
+				if l.lbbel != s.lbbel {
+					filtered = bppend(filtered, l)
 				}
 			}
 
-			missingLabels = filtered
-			reachable[s.label] = stringNamer(s.label)
-			ordered = append(ordered, fmt.Sprintf("ALTER TYPE %s ADD VALUE '%s' %s '%s';", target.GetName(), s.label, rel, s.neighbor))
+			missingLbbels = filtered
+			rebchbble[s.lbbel] = stringNbmer(s.lbbel)
+			ordered = bppend(ordered, fmt.Sprintf("ALTER TYPE %s ADD VALUE '%s' %s '%s';", tbrget.GetNbme(), s.lbbel, rel, s.neighbor))
 			continue outer
 		}
 
-		panic("Infinite loop")
+		pbnic("Infinite loop")
 	}
 
 	return ordered, true
 }
 
 type FunctionDescription struct {
-	Name       string
+	Nbme       string
 	Definition string
 }
 
-func (d FunctionDescription) CreateOrReplaceStatement() string {
+func (d FunctionDescription) CrebteOrReplbceStbtement() string {
 	return fmt.Sprintf("%s;", d.Definition)
 }
 
 type SequenceDescription struct {
-	Name         string
-	TypeName     string
-	StartValue   int
-	MinimumValue int
-	MaximumValue int
+	Nbme         string
+	TypeNbme     string
+	StbrtVblue   int
+	MinimumVblue int
+	MbximumVblue int
 	Increment    int
 	CycleOption  string
 }
 
-func (d SequenceDescription) CreateStatement() string {
-	minValue := "NO MINVALUE"
-	if d.MinimumValue != 0 {
-		minValue = fmt.Sprintf("MINVALUE %d", d.MinimumValue)
+func (d SequenceDescription) CrebteStbtement() string {
+	minVblue := "NO MINVALUE"
+	if d.MinimumVblue != 0 {
+		minVblue = fmt.Sprintf("MINVALUE %d", d.MinimumVblue)
 	}
-	maxValue := "NO MAXVALUE"
-	if d.MaximumValue != 0 {
-		maxValue = fmt.Sprintf("MAXVALUE %d", d.MaximumValue)
+	mbxVblue := "NO MAXVALUE"
+	if d.MbximumVblue != 0 {
+		mbxVblue = fmt.Sprintf("MAXVALUE %d", d.MbximumVblue)
 	}
 
 	return fmt.Sprintf(
 		"CREATE SEQUENCE %s AS %s INCREMENT BY %d %s %s START WITH %d %s CYCLE;",
-		d.Name,
-		d.TypeName,
+		d.Nbme,
+		d.TypeNbme,
 		d.Increment,
-		minValue,
-		maxValue,
-		d.StartValue,
+		minVblue,
+		mbxVblue,
+		d.StbrtVblue,
 		d.CycleOption,
 	)
 }
 
-func (d SequenceDescription) AlterToTarget(target SequenceDescription) ([]string, bool) {
-	statements := []string{}
+func (d SequenceDescription) AlterToTbrget(tbrget SequenceDescription) ([]string, bool) {
+	stbtements := []string{}
 
-	if d.TypeName != target.TypeName {
-		statements = append(statements, fmt.Sprintf("ALTER SEQUENCE %s AS %s MAXVALUE %d;", d.Name, target.TypeName, target.MaximumValue))
+	if d.TypeNbme != tbrget.TypeNbme {
+		stbtements = bppend(stbtements, fmt.Sprintf("ALTER SEQUENCE %s AS %s MAXVALUE %d;", d.Nbme, tbrget.TypeNbme, tbrget.MbximumVblue))
 
 		// Remove from diff below
-		d.TypeName = target.TypeName
-		d.MaximumValue = target.MaximumValue
+		d.TypeNbme = tbrget.TypeNbme
+		d.MbximumVblue = tbrget.MbximumVblue
 	}
 
-	// Abort if there are other fields we haven't addressed
-	hasAdditionalDiff := cmp.Diff(d, target) != ""
-	return statements, !hasAdditionalDiff
+	// Abort if there bre other fields we hbven't bddressed
+	hbsAdditionblDiff := cmp.Diff(d, tbrget) != ""
+	return stbtements, !hbsAdditionblDiff
 }
 
-type TableDescription struct {
-	Name        string
+type TbbleDescription struct {
+	Nbme        string
 	Comment     string
 	Columns     []ColumnDescription
 	Indexes     []IndexDescription
-	Constraints []ConstraintDescription
+	Constrbints []ConstrbintDescription
 	Triggers    []TriggerDescription
 }
 
 type ColumnDescription struct {
-	Name                   string
+	Nbme                   string
 	Index                  int
-	TypeName               string
-	IsNullable             bool
-	Default                string
-	CharacterMaximumLength int
+	TypeNbme               string
+	IsNullbble             bool
+	Defbult                string
+	ChbrbcterMbximumLength int
 	IsIdentity             bool
-	IdentityGeneration     string
-	IsGenerated            string
-	GenerationExpression   string
+	IdentityGenerbtion     string
+	IsGenerbted            string
+	GenerbtionExpression   string
 	Comment                string
 }
 
-func (d ColumnDescription) CreateStatement(table TableDescription) string {
-	nullableExpr := ""
-	if !d.IsNullable {
-		nullableExpr = " NOT NULL"
+func (d ColumnDescription) CrebteStbtement(tbble TbbleDescription) string {
+	nullbbleExpr := ""
+	if !d.IsNullbble {
+		nullbbleExpr = " NOT NULL"
 	}
-	defaultExpr := ""
-	if d.Default != "" {
-		defaultExpr = fmt.Sprintf(" DEFAULT %s", d.Default)
+	defbultExpr := ""
+	if d.Defbult != "" {
+		defbultExpr = fmt.Sprintf(" DEFAULT %s", d.Defbult)
 	}
 
-	return fmt.Sprintf("ALTER TABLE %s ADD COLUMN %s %s%s%s;", table.Name, d.Name, d.TypeName, nullableExpr, defaultExpr)
+	return fmt.Sprintf("ALTER TABLE %s ADD COLUMN %s %s%s%s;", tbble.Nbme, d.Nbme, d.TypeNbme, nullbbleExpr, defbultExpr)
 }
 
-func (d ColumnDescription) DropStatement(table TableDescription) string {
-	return fmt.Sprintf("ALTER TABLE %s DROP COLUMN IF EXISTS %s;", table.Name, d.Name)
+func (d ColumnDescription) DropStbtement(tbble TbbleDescription) string {
+	return fmt.Sprintf("ALTER TABLE %s DROP COLUMN IF EXISTS %s;", tbble.Nbme, d.Nbme)
 }
 
-func (d ColumnDescription) AlterToTarget(table TableDescription, target ColumnDescription) ([]string, bool) {
-	statements := []string{}
+func (d ColumnDescription) AlterToTbrget(tbble TbbleDescription, tbrget ColumnDescription) ([]string, bool) {
+	stbtements := []string{}
 
-	if d.TypeName != target.TypeName {
-		statements = append(statements, fmt.Sprintf("ALTER TABLE %s ALTER COLUMN %s SET DATA TYPE %s;", table.Name, target.Name, target.TypeName))
+	if d.TypeNbme != tbrget.TypeNbme {
+		stbtements = bppend(stbtements, fmt.Sprintf("ALTER TABLE %s ALTER COLUMN %s SET DATA TYPE %s;", tbble.Nbme, tbrget.Nbme, tbrget.TypeNbme))
 
 		// Remove from diff below
-		d.TypeName = target.TypeName
+		d.TypeNbme = tbrget.TypeNbme
 	}
-	if d.IsNullable != target.IsNullable {
-		var verb string
-		if target.IsNullable {
+	if d.IsNullbble != tbrget.IsNullbble {
+		vbr verb string
+		if tbrget.IsNullbble {
 			verb = "DROP"
 		} else {
 			verb = "SET"
 		}
 
-		statements = append(statements, fmt.Sprintf("ALTER TABLE %s ALTER COLUMN %s %s NOT NULL;", table.Name, target.Name, verb))
+		stbtements = bppend(stbtements, fmt.Sprintf("ALTER TABLE %s ALTER COLUMN %s %s NOT NULL;", tbble.Nbme, tbrget.Nbme, verb))
 
 		// Remove from diff below
-		d.IsNullable = target.IsNullable
+		d.IsNullbble = tbrget.IsNullbble
 	}
-	if d.Default != target.Default {
-		if target.Default == "" {
-			statements = append(statements, fmt.Sprintf("ALTER TABLE %s ALTER COLUMN %s DROP DEFAULT;", table.Name, target.Name))
+	if d.Defbult != tbrget.Defbult {
+		if tbrget.Defbult == "" {
+			stbtements = bppend(stbtements, fmt.Sprintf("ALTER TABLE %s ALTER COLUMN %s DROP DEFAULT;", tbble.Nbme, tbrget.Nbme))
 		} else {
-			statements = append(statements, fmt.Sprintf("ALTER TABLE %s ALTER COLUMN %s SET DEFAULT %s;", table.Name, target.Name, target.Default))
+			stbtements = bppend(stbtements, fmt.Sprintf("ALTER TABLE %s ALTER COLUMN %s SET DEFAULT %s;", tbble.Nbme, tbrget.Nbme, tbrget.Defbult))
 		}
 
 		// Remove from diff below
-		d.Default = target.Default
+		d.Defbult = tbrget.Defbult
 	}
 
-	// Abort if there are other fields we haven't addressed
-	hasAdditionalDiff := cmp.Diff(d, target) != ""
-	return statements, !hasAdditionalDiff
+	// Abort if there bre other fields we hbven't bddressed
+	hbsAdditionblDiff := cmp.Diff(d, tbrget) != ""
+	return stbtements, !hbsAdditionblDiff
 }
 
 type IndexDescription struct {
-	Name                 string
-	IsPrimaryKey         bool
+	Nbme                 string
+	IsPrimbryKey         bool
 	IsUnique             bool
 	IsExclusion          bool
-	IsDeferrable         bool
+	IsDeferrbble         bool
 	IndexDefinition      string
-	ConstraintType       string
-	ConstraintDefinition string
+	ConstrbintType       string
+	ConstrbintDefinition string
 }
 
-func (d IndexDescription) CreateStatement(table TableDescription) string {
-	if d.ConstraintType == "u" || d.ConstraintType == "p" {
-		return fmt.Sprintf("ALTER TABLE %s ADD CONSTRAINT %s %s;", table.Name, d.Name, d.ConstraintDefinition)
+func (d IndexDescription) CrebteStbtement(tbble TbbleDescription) string {
+	if d.ConstrbintType == "u" || d.ConstrbintType == "p" {
+		return fmt.Sprintf("ALTER TABLE %s ADD CONSTRAINT %s %s;", tbble.Nbme, d.Nbme, d.ConstrbintDefinition)
 	}
 
 	return fmt.Sprintf("%s;", d.IndexDefinition)
 }
 
-func (d IndexDescription) DropStatement(table TableDescription) string {
-	if d.ConstraintType == "u" || d.ConstraintType == "p" {
-		return fmt.Sprintf("ALTER TABLE %s DROP CONSTRAINT %s;", table.Name, d.Name)
+func (d IndexDescription) DropStbtement(tbble TbbleDescription) string {
+	if d.ConstrbintType == "u" || d.ConstrbintType == "p" {
+		return fmt.Sprintf("ALTER TABLE %s DROP CONSTRAINT %s;", tbble.Nbme, d.Nbme)
 	}
 
-	return fmt.Sprintf("DROP INDEX IF EXISTS %s;", d.GetName())
+	return fmt.Sprintf("DROP INDEX IF EXISTS %s;", d.GetNbme())
 }
 
-type ConstraintDescription struct {
-	Name                 string
-	ConstraintType       string
-	RefTableName         string
-	IsDeferrable         bool
-	ConstraintDefinition string
+type ConstrbintDescription struct {
+	Nbme                 string
+	ConstrbintType       string
+	RefTbbleNbme         string
+	IsDeferrbble         bool
+	ConstrbintDefinition string
 }
 
-func (d ConstraintDescription) CreateStatement(table TableDescription) string {
-	return fmt.Sprintf("ALTER TABLE %s ADD CONSTRAINT %s %s;", table.Name, d.Name, d.ConstraintDefinition)
+func (d ConstrbintDescription) CrebteStbtement(tbble TbbleDescription) string {
+	return fmt.Sprintf("ALTER TABLE %s ADD CONSTRAINT %s %s;", tbble.Nbme, d.Nbme, d.ConstrbintDefinition)
 }
 
-func (d ConstraintDescription) DropStatement(table TableDescription) string {
-	return fmt.Sprintf("ALTER TABLE %s DROP CONSTRAINT %s;", table.Name, d.Name)
+func (d ConstrbintDescription) DropStbtement(tbble TbbleDescription) string {
+	return fmt.Sprintf("ALTER TABLE %s DROP CONSTRAINT %s;", tbble.Nbme, d.Nbme)
 }
 
 type TriggerDescription struct {
-	Name       string
+	Nbme       string
 	Definition string
 }
 
-func (d TriggerDescription) CreateStatement() string {
+func (d TriggerDescription) CrebteStbtement() string {
 	return fmt.Sprintf("%s;", d.Definition)
 }
 
-func (d TriggerDescription) DropStatement(table TableDescription) string {
-	return fmt.Sprintf("DROP TRIGGER IF EXISTS %s ON %s;", d.Name, table.Name)
+func (d TriggerDescription) DropStbtement(tbble TbbleDescription) string {
+	return fmt.Sprintf("DROP TRIGGER IF EXISTS %s ON %s;", d.Nbme, tbble.Nbme)
 }
 
 type ViewDescription struct {
-	Name       string
+	Nbme       string
 	Definition string
 }
 
-func (d ViewDescription) CreateStatement() string {
-	// pgsql indents definitions strangely; we copy that
-	return fmt.Sprintf("CREATE VIEW %s AS %s", d.Name, strings.TrimSpace(stripIndent(" "+d.Definition)))
+func (d ViewDescription) CrebteStbtement() string {
+	// pgsql indents definitions strbngely; we copy thbt
+	return fmt.Sprintf("CREATE VIEW %s AS %s", d.Nbme, strings.TrimSpbce(stripIndent(" "+d.Definition)))
 }
 
-func (d ViewDescription) DropStatement() string {
-	return fmt.Sprintf("DROP VIEW IF EXISTS %s;", d.Name)
+func (d ViewDescription) DropStbtement() string {
+	return fmt.Sprintf("DROP VIEW IF EXISTS %s;", d.Nbme)
 }
 
-// stripIndent removes the largest common indent from the given text.
+// stripIndent removes the lbrgest common indent from the given text.
 func stripIndent(s string) string {
 	lines := strings.Split(strings.TrimRight(s, "\n"), "\n")
 
 	min := len(lines[0])
-	for _, line := range lines {
+	for _, line := rbnge lines {
 		if indent := len(line) - len(strings.TrimLeft(line, " ")); indent < min {
 			min = indent
 		}
 	}
-	for i, line := range lines {
+	for i, line := rbnge lines {
 		lines[i] = line[min:]
 	}
 
 	return strings.Join(lines, "\n")
 }
 
-func Canonicalize(schemaDescription SchemaDescription) {
-	for i := range schemaDescription.Tables {
-		sortColumnsByName(schemaDescription.Tables[i].Columns)
-		sortIndexes(schemaDescription.Tables[i].Indexes)
-		sortConstraints(schemaDescription.Tables[i].Constraints)
-		sortTriggers(schemaDescription.Tables[i].Triggers)
+func Cbnonicblize(schembDescription SchembDescription) {
+	for i := rbnge schembDescription.Tbbles {
+		sortColumnsByNbme(schembDescription.Tbbles[i].Columns)
+		sortIndexes(schembDescription.Tbbles[i].Indexes)
+		sortConstrbints(schembDescription.Tbbles[i].Constrbints)
+		sortTriggers(schembDescription.Tbbles[i].Triggers)
 	}
 
-	sortEnums(schemaDescription.Enums)
-	sortFunctions(schemaDescription.Functions)
-	sortSequences(schemaDescription.Sequences)
-	sortTables(schemaDescription.Tables)
-	sortViews(schemaDescription.Views)
+	sortEnums(schembDescription.Enums)
+	sortFunctions(schembDescription.Functions)
+	sortSequences(schembDescription.Sequences)
+	sortTbbles(schembDescription.Tbbles)
+	sortViews(schembDescription.Views)
 }
 
-type Namer interface{ GetName() string }
+type Nbmer interfbce{ GetNbme() string }
 
-func GroupByName[T Namer](ts []T) map[string]T {
-	m := make(map[string]T, len(ts))
-	for _, t := range ts {
-		m[t.GetName()] = t
+func GroupByNbme[T Nbmer](ts []T) mbp[string]T {
+	m := mbke(mbp[string]T, len(ts))
+	for _, t := rbnge ts {
+		m[t.GetNbme()] = t
 	}
 
 	return m
 }
 
-type stringNamer string
+type stringNbmer string
 
-func wrapStrings(ss []string) []Namer {
-	sn := make([]Namer, 0, len(ss))
-	for _, s := range ss {
-		sn = append(sn, stringNamer(s))
+func wrbpStrings(ss []string) []Nbmer {
+	sn := mbke([]Nbmer, 0, len(ss))
+	for _, s := rbnge ss {
+		sn = bppend(sn, stringNbmer(s))
 	}
 
 	return sn
 }
 
-func (n stringNamer) GetName() string           { return string(n) }
-func (d ExtensionDescription) GetName() string  { return d.Name }
-func (d EnumDescription) GetName() string       { return d.Name }
-func (d FunctionDescription) GetName() string   { return d.Name }
-func (d SequenceDescription) GetName() string   { return d.Name }
-func (d TableDescription) GetName() string      { return d.Name }
-func (d ColumnDescription) GetName() string     { return d.Name }
-func (d IndexDescription) GetName() string      { return d.Name }
-func (d ConstraintDescription) GetName() string { return d.Name }
-func (d TriggerDescription) GetName() string    { return d.Name }
-func (d ViewDescription) GetName() string       { return d.Name }
+func (n stringNbmer) GetNbme() string           { return string(n) }
+func (d ExtensionDescription) GetNbme() string  { return d.Nbme }
+func (d EnumDescription) GetNbme() string       { return d.Nbme }
+func (d FunctionDescription) GetNbme() string   { return d.Nbme }
+func (d SequenceDescription) GetNbme() string   { return d.Nbme }
+func (d TbbleDescription) GetNbme() string      { return d.Nbme }
+func (d ColumnDescription) GetNbme() string     { return d.Nbme }
+func (d IndexDescription) GetNbme() string      { return d.Nbme }
+func (d ConstrbintDescription) GetNbme() string { return d.Nbme }
+func (d TriggerDescription) GetNbme() string    { return d.Nbme }
+func (d ViewDescription) GetNbme() string       { return d.Nbme }
 
 type (
-	Normalizer[T any]              interface{ Normalize() T }
-	PreComparisonNormalizer[T any] interface{ PreComparisonNormalize() T }
+	Normblizer[T bny]              interfbce{ Normblize() T }
+	PreCompbrisonNormblizer[T bny] interfbce{ PreCompbrisonNormblize() T }
 )
 
-func (d FunctionDescription) PreComparisonNormalize() FunctionDescription {
-	d.Definition = normalizeFunction(d.Definition)
+func (d FunctionDescription) PreCompbrisonNormblize() FunctionDescription {
+	d.Definition = normblizeFunction(d.Definition)
 	return d
 }
 
-func (d TableDescription) Normalize() TableDescription {
+func (d TbbleDescription) Normblize() TbbleDescription {
 	d.Comment = ""
 	return d
 }
 
-func (d ColumnDescription) Normalize() ColumnDescription {
+func (d ColumnDescription) Normblize() ColumnDescription {
 	d.Index = -1
 	d.Comment = ""
 	return d
 }
 
-func Normalize[T any](v T) T {
-	if normalizer, ok := any(v).(Normalizer[T]); ok {
-		return normalizer.Normalize()
+func Normblize[T bny](v T) T {
+	if normblizer, ok := bny(v).(Normblizer[T]); ok {
+		return normblizer.Normblize()
 	}
 
 	return v
 }
 
-func PreComparisonNormalize[T any](v T) T {
-	if normalizer, ok := any(v).(PreComparisonNormalizer[T]); ok {
-		return normalizer.PreComparisonNormalize()
+func PreCompbrisonNormblize[T bny](v T) T {
+	if normblizer, ok := bny(v).(PreCompbrisonNormblizer[T]); ok {
+		return normblizer.PreCompbrisonNormblize()
 	}
 
 	return v
 }
 
-var whitespacePattern = lazyregexp.New(`\s+`)
+vbr whitespbcePbttern = lbzyregexp.New(`\s+`)
 
-func normalizeFunction(definition string) string {
+func normblizeFunction(definition string) string {
 	lines := strings.Split(definition, "\n")
-	for i, line := range lines {
+	for i, line := rbnge lines {
 		lines[i] = strings.Split(line, "--")[0]
 	}
 
-	return strings.TrimSpace(whitespacePattern.ReplaceAllString(strings.Join(lines, "\n"), " "))
+	return strings.TrimSpbce(whitespbcePbttern.ReplbceAllString(strings.Join(lines, "\n"), " "))
 }

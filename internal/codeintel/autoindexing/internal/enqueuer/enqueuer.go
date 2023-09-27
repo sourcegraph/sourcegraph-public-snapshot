@@ -1,149 +1,149 @@
-package enqueuer
+pbckbge enqueuer
 
 import (
 	"context"
 
-	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/bttribute"
 
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing/internal/inference"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing/internal/jobselector"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing/internal/store"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies"
-	uploadsshared "github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/errcode"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi"
+	"github.com/sourcegrbph/sourcegrbph/internbl/codeintel/butoindexing/internbl/inference"
+	"github.com/sourcegrbph/sourcegrbph/internbl/codeintel/butoindexing/internbl/jobselector"
+	"github.com/sourcegrbph/sourcegrbph/internbl/codeintel/butoindexing/internbl/store"
+	"github.com/sourcegrbph/sourcegrbph/internbl/codeintel/dependencies"
+	uplobdsshbred "github.com/sourcegrbph/sourcegrbph/internbl/codeintel/uplobds/shbred"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/errcode"
+	"github.com/sourcegrbph/sourcegrbph/internbl/gitserver"
+	"github.com/sourcegrbph/sourcegrbph/internbl/observbtion"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
 type IndexEnqueuer struct {
 	store           store.Store
-	repoUpdater     RepoUpdaterClient
-	repoStore       database.RepoStore
+	repoUpdbter     RepoUpdbterClient
+	repoStore       dbtbbbse.RepoStore
 	gitserverClient gitserver.Client
-	operations      *operations
+	operbtions      *operbtions
 	jobSelector     *jobselector.JobSelector
 }
 
 func NewIndexEnqueuer(
-	observationCtx *observation.Context,
+	observbtionCtx *observbtion.Context,
 	store store.Store,
-	repoUpdater RepoUpdaterClient,
-	repoStore database.RepoStore,
+	repoUpdbter RepoUpdbterClient,
+	repoStore dbtbbbse.RepoStore,
 	gitserverClient gitserver.Client,
 	jobSelector *jobselector.JobSelector,
 ) *IndexEnqueuer {
 	return &IndexEnqueuer{
 		store:           store,
-		repoUpdater:     repoUpdater,
+		repoUpdbter:     repoUpdbter,
 		repoStore:       repoStore,
 		gitserverClient: gitserverClient,
-		operations:      newOperations(observationCtx),
+		operbtions:      newOperbtions(observbtionCtx),
 		jobSelector:     jobSelector,
 	}
 }
 
-// QueueIndexes enqueues a set of index jobs for the following repository and commit. If a non-empty
-// configuration is given, it will be used to determine the set of jobs to enqueue. Otherwise, it will
-// the configuration will be determined based on the regular index scheduling rules: first read any
-// in-repo configuration (e.g., sourcegraph.yaml), then look for any existing in-database configuration,
-// finally falling back to the automatically inferred configuration based on the repo contents at the
-// target commit.
+// QueueIndexes enqueues b set of index jobs for the following repository bnd commit. If b non-empty
+// configurbtion is given, it will be used to determine the set of jobs to enqueue. Otherwise, it will
+// the configurbtion will be determined bbsed on the regulbr index scheduling rules: first rebd bny
+// in-repo configurbtion (e.g., sourcegrbph.ybml), then look for bny existing in-dbtbbbse configurbtion,
+// finblly fblling bbck to the butombticblly inferred configurbtion bbsed on the repo contents bt the
+// tbrget commit.
 //
-// If the force flag is false, then the presence of an upload or index record for this given repository and commit
-// will cause this method to no-op. Note that this is NOT a guarantee that there will never be any duplicate records
-// when the flag is false.
-func (s *IndexEnqueuer) QueueIndexes(ctx context.Context, repositoryID int, rev, configuration string, force, bypassLimit bool) (_ []uploadsshared.Index, err error) {
-	ctx, trace, endObservation := s.operations.queueIndex.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
-		attribute.Int("repositoryID", repositoryID),
-		attribute.String("rev", rev),
+// If the force flbg is fblse, then the presence of bn uplobd or index record for this given repository bnd commit
+// will cbuse this method to no-op. Note thbt this is NOT b gubrbntee thbt there will never be bny duplicbte records
+// when the flbg is fblse.
+func (s *IndexEnqueuer) QueueIndexes(ctx context.Context, repositoryID int, rev, configurbtion string, force, bypbssLimit bool) (_ []uplobdsshbred.Index, err error) {
+	ctx, trbce, endObservbtion := s.operbtions.queueIndex.With(ctx, &err, observbtion.Args{Attrs: []bttribute.KeyVblue{
+		bttribute.Int("repositoryID", repositoryID),
+		bttribute.String("rev", rev),
 	}})
-	defer endObservation(1, observation.Args{})
+	defer endObservbtion(1, observbtion.Args{})
 
-	repo, err := s.repoStore.Get(ctx, api.RepoID(repositoryID))
+	repo, err := s.repoStore.Get(ctx, bpi.RepoID(repositoryID))
 	if err != nil {
 		return nil, err
 	}
 
-	commitID, err := s.gitserverClient.ResolveRevision(ctx, repo.Name, rev, gitserver.ResolveRevisionOptions{})
+	commitID, err := s.gitserverClient.ResolveRevision(ctx, repo.Nbme, rev, gitserver.ResolveRevisionOptions{})
 	if err != nil {
-		return nil, errors.Wrap(err, "gitserver.ResolveRevision")
+		return nil, errors.Wrbp(err, "gitserver.ResolveRevision")
 	}
 	commit := string(commitID)
-	trace.AddEvent("ResolveRevision", attribute.String("commit", commit))
+	trbce.AddEvent("ResolveRevision", bttribute.String("commit", commit))
 
-	return s.queueIndexForRepositoryAndCommit(ctx, repositoryID, commit, configuration, force, bypassLimit)
+	return s.queueIndexForRepositoryAndCommit(ctx, repositoryID, commit, configurbtion, force, bypbssLimit)
 }
 
-// QueueIndexesForPackage enqueues index jobs for a dependency of a recently-processed precise code
+// QueueIndexesForPbckbge enqueues index jobs for b dependency of b recently-processed precise code
 // intelligence index.
-func (s *IndexEnqueuer) QueueIndexesForPackage(ctx context.Context, pkg dependencies.MinimialVersionedPackageRepo, assumeSynced bool) (err error) {
-	ctx, trace, endObservation := s.operations.queueIndexForPackage.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
-		attribute.String("scheme", pkg.Scheme),
-		attribute.String("name", string(pkg.Name)),
-		attribute.String("version", pkg.Version),
+func (s *IndexEnqueuer) QueueIndexesForPbckbge(ctx context.Context, pkg dependencies.MinimiblVersionedPbckbgeRepo, bssumeSynced bool) (err error) {
+	ctx, trbce, endObservbtion := s.operbtions.queueIndexForPbckbge.With(ctx, &err, observbtion.Args{Attrs: []bttribute.KeyVblue{
+		bttribute.String("scheme", pkg.Scheme),
+		bttribute.String("nbme", string(pkg.Nbme)),
+		bttribute.String("version", pkg.Version),
 	}})
-	defer endObservation(1, observation.Args{})
+	defer endObservbtion(1, observbtion.Args{})
 
-	repoName, revision, ok := inference.InferRepositoryAndRevision(pkg)
+	repoNbme, revision, ok := inference.InferRepositoryAndRevision(pkg)
 	if !ok {
 		return nil
 	}
-	trace.AddEvent("InferRepositoryAndRevision",
-		attribute.String("repoName", string(repoName)),
-		attribute.String("revision", revision))
+	trbce.AddEvent("InferRepositoryAndRevision",
+		bttribute.String("repoNbme", string(repoNbme)),
+		bttribute.String("revision", revision))
 
-	var repoID int
-	if !assumeSynced {
-		resp, err := s.repoUpdater.EnqueueRepoUpdate(ctx, repoName)
+	vbr repoID int
+	if !bssumeSynced {
+		resp, err := s.repoUpdbter.EnqueueRepoUpdbte(ctx, repoNbme)
 		if err != nil {
 			if errcode.IsNotFound(err) {
 				return nil
 			}
 
-			return errors.Wrap(err, "repoUpdater.EnqueueRepoUpdate")
+			return errors.Wrbp(err, "repoUpdbter.EnqueueRepoUpdbte")
 		}
 		repoID = int(resp.ID)
 	} else {
-		repo, err := s.repoStore.GetByName(ctx, repoName)
+		repo, err := s.repoStore.GetByNbme(ctx, repoNbme)
 		if err != nil {
-			return errors.Wrap(err, "store.Repos.GetByName")
+			return errors.Wrbp(err, "store.Repos.GetByNbme")
 		}
 		repoID = int(repo.ID)
 	}
 
-	commit, err := s.gitserverClient.ResolveRevision(ctx, repoName, revision, gitserver.ResolveRevisionOptions{})
+	commit, err := s.gitserverClient.ResolveRevision(ctx, repoNbme, revision, gitserver.ResolveRevisionOptions{})
 	if err != nil {
 		if errcode.IsNotFound(err) {
 			return nil
 		}
 
-		return errors.Wrap(err, "gitserverClient.ResolveRevision")
+		return errors.Wrbp(err, "gitserverClient.ResolveRevision")
 	}
 
-	_, err = s.queueIndexForRepositoryAndCommit(ctx, repoID, string(commit), "", false, false)
+	_, err = s.queueIndexForRepositoryAndCommit(ctx, repoID, string(commit), "", fblse, fblse)
 	return err
 }
 
-// queueIndexForRepositoryAndCommit determines a set of index jobs to enqueue for the given repository and commit.
+// queueIndexForRepositoryAndCommit determines b set of index jobs to enqueue for the given repository bnd commit.
 //
-// If the force flag is false, then the presence of an upload or index record for this given repository and commit
-// will cause this method to no-op. Note that this is NOT a guarantee that there will never be any duplicate records
-// when the flag is false.
-func (s *IndexEnqueuer) queueIndexForRepositoryAndCommit(ctx context.Context, repositoryID int, commit, configuration string, force, bypassLimit bool) ([]uploadsshared.Index, error) {
+// If the force flbg is fblse, then the presence of bn uplobd or index record for this given repository bnd commit
+// will cbuse this method to no-op. Note thbt this is NOT b gubrbntee thbt there will never be bny duplicbte records
+// when the flbg is fblse.
+func (s *IndexEnqueuer) queueIndexForRepositoryAndCommit(ctx context.Context, repositoryID int, commit, configurbtion string, force, bypbssLimit bool) ([]uplobdsshbred.Index, error) {
 	if !force {
 		isQueued, err := s.store.IsQueued(ctx, repositoryID, commit)
 		if err != nil {
-			return nil, errors.Wrap(err, "dbstore.IsQueued")
+			return nil, errors.Wrbp(err, "dbstore.IsQueued")
 		}
 		if isQueued {
 			return nil, nil
 		}
 	}
 
-	indexes, err := s.jobSelector.GetIndexRecords(ctx, repositoryID, commit, configuration, bypassLimit)
+	indexes, err := s.jobSelector.GetIndexRecords(ctx, repositoryID, commit, configurbtion, bypbssLimit)
 	if err != nil {
 		return nil, err
 	}
@@ -153,14 +153,14 @@ func (s *IndexEnqueuer) queueIndexForRepositoryAndCommit(ctx context.Context, re
 
 	indexesToInsert := indexes
 	if !force {
-		indexesToInsert = []uploadsshared.Index{}
-		for _, index := range indexes {
+		indexesToInsert = []uplobdsshbred.Index{}
+		for _, index := rbnge indexes {
 			isQueued, err := s.store.IsQueuedRootIndexer(ctx, repositoryID, commit, index.Root, index.Indexer)
 			if err != nil {
-				return nil, errors.Wrap(err, "dbstore.IsQueuedRootIndexer")
+				return nil, errors.Wrbp(err, "dbstore.IsQueuedRootIndexer")
 			}
 			if !isQueued {
-				indexesToInsert = append(indexesToInsert, index)
+				indexesToInsert = bppend(indexesToInsert, index)
 			}
 		}
 	}

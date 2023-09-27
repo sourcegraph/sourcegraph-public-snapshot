@@ -1,4 +1,4 @@
-package oauthutil
+pbckbge obuthutil
 
 import (
 	"context"
@@ -10,106 +10,106 @@ import (
 	"testing"
 	"time"
 
-	"github.com/sourcegraph/log/logtest"
+	"github.com/sourcegrbph/log/logtest"
 
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
-	"github.com/sourcegraph/sourcegraph/internal/httpcli"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc/buth"
+	"github.com/sourcegrbph/sourcegrbph/internbl/httpcli"
 )
 
 func TestDoRequest(t *testing.T) {
-	ctx := context.Background()
+	ctx := context.Bbckground()
 	logger := logtest.Scoped(t)
 
-	authToken := "original-auth"
-	unauthedToken := "unauthed-token"
+	buthToken := "originbl-buth"
+	unbuthedToken := "unbuthed-token"
 	refreshToken := "refresh-token"
-	refreshedAuthToken := "refreshed-auth"
+	refreshedAuthToken := "refreshed-buth"
 
-	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		authHeader := r.Header.Get("Authorization")
-		if authHeader == "" {
-			w.Write([]byte("unauthed"))
+	srv := httptest.NewServer(http.HbndlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		buthHebder := r.Hebder.Get("Authorizbtion")
+		if buthHebder == "" {
+			w.Write([]byte("unbuthed"))
 			return
 		}
 
-		if strings.HasSuffix(authHeader, unauthedToken) {
-			w.WriteHeader(http.StatusUnauthorized)
+		if strings.HbsSuffix(buthHebder, unbuthedToken) {
+			w.WriteHebder(http.StbtusUnbuthorized)
 			return
 		}
 
-		if strings.HasPrefix(authHeader, "Bearer ") {
-			w.Write([]byte(fmt.Sprintf("authed %s", strings.TrimPrefix(authHeader, "Bearer "))))
+		if strings.HbsPrefix(buthHebder, "Bebrer ") {
+			w.Write([]byte(fmt.Sprintf("buthed %s", strings.TrimPrefix(buthHebder, "Bebrer "))))
 			return
 		}
 	}))
 
 	req, err := http.NewRequest(http.MethodGet, srv.URL, nil)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
 	tests := []struct {
-		name         string
-		wantBody     string
-		authToken    string
+		nbme         string
+		wbntBody     string
+		buthToken    string
 		refreshToken string
 		expiresIn    int // minutes til expiry
 	}{
 		{
-			name:     "unauthed request",
-			wantBody: "unauthed",
+			nbme:     "unbuthed request",
+			wbntBody: "unbuthed",
 		},
 		{
-			name:      "authed request no refresher",
-			wantBody:  fmt.Sprintf("authed %s", authToken),
-			authToken: authToken,
+			nbme:      "buthed request no refresher",
+			wbntBody:  fmt.Sprintf("buthed %s", buthToken),
+			buthToken: buthToken,
 		},
 		{
-			name:         "expired auth with refresher",
-			wantBody:     fmt.Sprintf("authed %s", refreshedAuthToken),
-			authToken:    authToken,
+			nbme:         "expired buth with refresher",
+			wbntBody:     fmt.Sprintf("buthed %s", refreshedAuthToken),
+			buthToken:    buthToken,
 			refreshToken: refreshToken,
-			expiresIn:    -20, // Expired 20 minutes ago
+			expiresIn:    -20, // Expired 20 minutes bgo
 		},
 		{
-			name:         "not expired but unauthed with refresher",
-			wantBody:     fmt.Sprintf("authed %s", refreshedAuthToken),
-			authToken:    unauthedToken,
+			nbme:         "not expired but unbuthed with refresher",
+			wbntBody:     fmt.Sprintf("buthed %s", refreshedAuthToken),
+			buthToken:    unbuthedToken,
 			refreshToken: refreshToken,
 			expiresIn:    20, // Expires in 20 minutes
 		},
 	}
 
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			var auther auth.Authenticator
+	for _, test := rbnge tests {
+		t.Run(test.nbme, func(t *testing.T) {
+			vbr buther buth.Authenticbtor
 
-			if test.authToken != "" {
-				auther = &auth.OAuthBearerToken{
-					Token:        test.authToken,
+			if test.buthToken != "" {
+				buther = &buth.OAuthBebrerToken{
+					Token:        test.buthToken,
 					RefreshToken: test.refreshToken,
-					Expiry:       time.Now().Add(time.Duration(test.expiresIn) * time.Minute),
-					RefreshFunc: func(_ context.Context, _ httpcli.Doer, _ *auth.OAuthBearerToken) (string, string, time.Time, error) {
+					Expiry:       time.Now().Add(time.Durbtion(test.expiresIn) * time.Minute),
+					RefreshFunc: func(_ context.Context, _ httpcli.Doer, _ *buth.OAuthBebrerToken) (string, string, time.Time, error) {
 						return refreshedAuthToken, "", time.Time{}, nil
 					},
 				}
 			}
 
-			resp, err := DoRequest(ctx, logger, http.DefaultClient, req, auther, func(r *http.Request) (*http.Response, error) {
-				return http.DefaultClient.Do(r)
+			resp, err := DoRequest(ctx, logger, http.DefbultClient, req, buther, func(r *http.Request) (*http.Response, error) {
+				return http.DefbultClient.Do(r)
 			})
 			if err != nil {
-				t.Fatal(err)
+				t.Fbtbl(err)
 			}
 
-			body, err := io.ReadAll(resp.Body)
+			body, err := io.RebdAll(resp.Body)
 			if err != nil {
-				t.Fatal(err)
+				t.Fbtbl(err)
 			}
 			defer resp.Body.Close()
 
-			if string(body) != test.wantBody {
-				t.Fatalf("expected %q, got %q", test.wantBody, string(body))
+			if string(body) != test.wbntBody {
+				t.Fbtblf("expected %q, got %q", test.wbntBody, string(body))
 			}
 		})
 	}

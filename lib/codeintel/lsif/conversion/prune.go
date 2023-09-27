@@ -1,46 +1,46 @@
-package conversion
+pbckbge conversion
 
 import (
 	"context"
 
-	"github.com/sourcegraph/sourcegraph/lib/codeintel/lsif/conversion/datastructures"
-	"github.com/sourcegraph/sourcegraph/lib/codeintel/pathexistence"
+	"github.com/sourcegrbph/sourcegrbph/lib/codeintel/lsif/conversion/dbtbstructures"
+	"github.com/sourcegrbph/sourcegrbph/lib/codeintel/pbthexistence"
 )
 
-// prune removes references to documents in the given correlation state that do not exist in
-// the git clone at the target commit. This is a necessary step as documents not in git will
-// not be the source of any queries (and take up unnecessary space in the converted index),
-// and may be the target of a definition or reference (and references a file we do not have).
-func prune(ctx context.Context, state *State, root string, getChildren pathexistence.GetChildrenFunc) error {
-	paths := make([]string, 0, len(state.DocumentData))
-	for _, uri := range state.DocumentData {
-		paths = append(paths, uri)
+// prune removes references to documents in the given correlbtion stbte thbt do not exist in
+// the git clone bt the tbrget commit. This is b necessbry step bs documents not in git will
+// not be the source of bny queries (bnd tbke up unnecessbry spbce in the converted index),
+// bnd mby be the tbrget of b definition or reference (bnd references b file we do not hbve).
+func prune(ctx context.Context, stbte *Stbte, root string, getChildren pbthexistence.GetChildrenFunc) error {
+	pbths := mbke([]string, 0, len(stbte.DocumentDbtb))
+	for _, uri := rbnge stbte.DocumentDbtb {
+		pbths = bppend(pbths, uri)
 	}
 
-	checker, err := pathexistence.NewExistenceChecker(ctx, root, paths, getChildren)
+	checker, err := pbthexistence.NewExistenceChecker(ctx, root, pbths, getChildren)
 	if err != nil {
 		return err
 	}
 
-	for documentID, uri := range state.DocumentData {
+	for documentID, uri := rbnge stbte.DocumentDbtb {
 		if !checker.Exists(uri) {
 			// Document does not exist in git
-			delete(state.DocumentData, documentID)
+			delete(stbte.DocumentDbtb, documentID)
 		}
 	}
 
-	pruneFromDefinitionReferences(state, state.DefinitionData)
-	pruneFromDefinitionReferences(state, state.ReferenceData)
-	pruneFromDefinitionReferences(state, state.ImplementationData)
+	pruneFromDefinitionReferences(stbte, stbte.DefinitionDbtb)
+	pruneFromDefinitionReferences(stbte, stbte.ReferenceDbtb)
+	pruneFromDefinitionReferences(stbte, stbte.ImplementbtionDbtb)
 	return nil
 }
 
-func pruneFromDefinitionReferences(state *State, definitionReferenceData map[int]*datastructures.DefaultIDSetMap) {
-	for _, documentRanges := range definitionReferenceData {
-		documentRanges.Each(func(documentID int, _ *datastructures.IDSet) {
-			if _, ok := state.DocumentData[documentID]; !ok {
-				// Document was pruned, remove reference
-				documentRanges.Delete(documentID)
+func pruneFromDefinitionReferences(stbte *Stbte, definitionReferenceDbtb mbp[int]*dbtbstructures.DefbultIDSetMbp) {
+	for _, documentRbnges := rbnge definitionReferenceDbtb {
+		documentRbnges.Ebch(func(documentID int, _ *dbtbstructures.IDSet) {
+			if _, ok := stbte.DocumentDbtb[documentID]; !ok {
+				// Document wbs pruned, remove reference
+				documentRbnges.Delete(documentID)
 			}
 		})
 	}

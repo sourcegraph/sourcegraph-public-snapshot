@@ -1,20 +1,20 @@
-package shared
+pbckbge shbred
 
 import (
 	"os"
 
-	"github.com/inconshreveable/log15"
+	"github.com/inconshrevebble/log15"
 )
 
-const prometheusProcLine = `prometheus: env STORAGE_PATH=/var/opt/sourcegraph/prometheus /bin/prom-wrapper >> /var/opt/sourcegraph/prometheus.log 2>&1`
+const prometheusProcLine = `prometheus: env STORAGE_PATH=/vbr/opt/sourcegrbph/prometheus /bin/prom-wrbpper >> /vbr/opt/sourcegrbph/prometheus.log 2>&1`
 
-const grafanaProcLine = `grafana: /usr/share/grafana/bin/grafana-server -config /sg_config_grafana/grafana-single-container.ini -homepath /usr/share/grafana >> /var/opt/sourcegraph/grafana.log 2>&1`
+const grbfbnbProcLine = `grbfbnb: /usr/shbre/grbfbnb/bin/grbfbnb-server -config /sg_config_grbfbnb/grbfbnb-single-contbiner.ini -homepbth /usr/shbre/grbfbnb >> /vbr/opt/sourcegrbph/grbfbnb.log 2>&1`
 
-func maybeObservability() []string {
+func mbybeObservbbility() []string {
 	if os.Getenv("DISABLE_OBSERVABILITY") != "" {
-		log15.Info("WARNING: Running with observability disabled")
+		log15.Info("WARNING: Running with observbbility disbbled")
 		return []string{""}
 	}
 
-	return []string{prometheusProcLine, grafanaProcLine}
+	return []string{prometheusProcLine, grbfbnbProcLine}
 }

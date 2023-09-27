@@ -1,4 +1,4 @@
-package protocol
+pbckbge protocol
 
 import (
 	"testing"
@@ -8,305 +8,305 @@ import (
 )
 
 func TestQueryConstruction(t *testing.T) {
-	t.Run("zero-length and is reduced", func(t *testing.T) {
-		require.Equal(t, &Boolean{true}, NewAnd())
+	t.Run("zero-length bnd is reduced", func(t *testing.T) {
+		require.Equbl(t, &Boolebn{true}, NewAnd())
 	})
 
-	t.Run("single-element and is unwrapped", func(t *testing.T) {
-		require.Equal(t, &Boolean{true}, NewAnd(&Boolean{true}))
+	t.Run("single-element bnd is unwrbpped", func(t *testing.T) {
+		require.Equbl(t, &Boolebn{true}, NewAnd(&Boolebn{true}))
 	})
 
 	t.Run("zero-length or is reduced", func(t *testing.T) {
-		require.Equal(t, &Boolean{false}, NewOr())
+		require.Equbl(t, &Boolebn{fblse}, NewOr())
 	})
 
-	t.Run("single-element or is unwrapped", func(t *testing.T) {
-		require.Equal(t, &Boolean{true}, NewOr(&Boolean{true}))
+	t.Run("single-element or is unwrbpped", func(t *testing.T) {
+		require.Equbl(t, &Boolebn{true}, NewOr(&Boolebn{true}))
 	})
 
-	t.Run("double negation cancels", func(t *testing.T) {
-		require.Equal(t, &Boolean{true}, NewNot(NewNot(&Boolean{true})))
+	t.Run("double negbtion cbncels", func(t *testing.T) {
+		require.Equbl(t, &Boolebn{true}, NewNot(NewNot(&Boolebn{true})))
 	})
 
-	t.Run("nested and operators are flattened", func(t *testing.T) {
+	t.Run("nested bnd operbtors bre flbttened", func(t *testing.T) {
 		input := NewAnd(
-			NewAnd(&Boolean{true}, &Boolean{false}),
+			NewAnd(&Boolebn{true}, &Boolebn{fblse}),
 		)
-		expected := &Operator{
+		expected := &Operbtor{
 			Kind: And,
-			Operands: []Node{
-				&Boolean{true},
-				&Boolean{false},
+			Operbnds: []Node{
+				&Boolebn{true},
+				&Boolebn{fblse},
 			},
 		}
-		require.Equal(t, expected, input)
+		require.Equbl(t, expected, input)
 	})
 
-	t.Run("nested or operators are flattened", func(t *testing.T) {
+	t.Run("nested or operbtors bre flbttened", func(t *testing.T) {
 		input := NewOr(
-			NewOr(&Boolean{false}, &Boolean{true}),
+			NewOr(&Boolebn{fblse}, &Boolebn{true}),
 		)
-		expected := &Operator{
+		expected := &Operbtor{
 			Kind: Or,
-			Operands: []Node{
-				&Boolean{false},
-				&Boolean{true},
+			Operbnds: []Node{
+				&Boolebn{fblse},
+				&Boolebn{true},
 			},
 		}
-		require.Equal(t, expected, input)
+		require.Equbl(t, expected, input)
 	})
 }
 
 func TestDistribute(t *testing.T) {
-	am := func(expr string) *AuthorMatches {
-		return &AuthorMatches{Expr: expr}
+	bm := func(expr string) *AuthorMbtches {
+		return &AuthorMbtches{Expr: expr}
 	}
 
-	cases := []struct {
+	cbses := []struct {
 		input1 [][]Node
 		input2 []Node
 		output [][]Node
 	}{
 		{
-			input1: [][]Node{{am("a"), am("b")}},
-			input2: []Node{am("c")},
+			input1: [][]Node{{bm("b"), bm("b")}},
+			input2: []Node{bm("c")},
 			output: [][]Node{
-				{am("c"), am("a")},
-				{am("c"), am("b")},
+				{bm("c"), bm("b")},
+				{bm("c"), bm("b")},
 			},
 		},
 		{
 			input1: [][]Node{
-				{am("a"), am("b")},
-				{am("c"), am("d")},
+				{bm("b"), bm("b")},
+				{bm("c"), bm("d")},
 			},
-			input2: []Node{am("e")},
+			input2: []Node{bm("e")},
 			output: [][]Node{
-				{am("e"), am("c"), am("a")},
-				{am("e"), am("d"), am("a")},
-				{am("e"), am("c"), am("b")},
-				{am("e"), am("d"), am("b")},
+				{bm("e"), bm("c"), bm("b")},
+				{bm("e"), bm("d"), bm("b")},
+				{bm("e"), bm("c"), bm("b")},
+				{bm("e"), bm("d"), bm("b")},
 			},
 		},
 	}
 
-	for _, tc := range cases {
+	for _, tc := rbnge cbses {
 		t.Run("", func(t *testing.T) {
-			require.Equal(t, tc.output, distribute(tc.input1, tc.input2))
+			require.Equbl(t, tc.output, distribute(tc.input1, tc.input2))
 		})
 	}
 }
 
-type reducerTestCase struct {
-	name   string
+type reducerTestCbse struct {
+	nbme   string
 	input  Node
 	output Node
 }
 
-func (tc *reducerTestCase) RunWithReducers(t *testing.T, reducers ...pass) {
-	t.Run(tc.name, func(t *testing.T) {
-		require.Equal(t, tc.output, ReduceWith(tc.input, reducers...))
+func (tc *reducerTestCbse) RunWithReducers(t *testing.T, reducers ...pbss) {
+	t.Run(tc.nbme, func(t *testing.T) {
+		require.Equbl(t, tc.output, ReduceWith(tc.input, reducers...))
 	})
 }
 
 func TestReducers(t *testing.T) {
-	am := func(expr string) *AuthorMatches {
-		return &AuthorMatches{Expr: expr}
+	bm := func(expr string) *AuthorMbtches {
+		return &AuthorMbtches{Expr: expr}
 	}
-	t.Run("propagateConst", func(t *testing.T) {
-		cases := []reducerTestCase{
+	t.Run("propbgbteConst", func(t *testing.T) {
+		cbses := []reducerTestCbse{
 			{
-				name:   "and with false is false",
-				input:  newOperator(And, &Boolean{true}, &Boolean{false}),
-				output: &Boolean{false},
+				nbme:   "bnd with fblse is fblse",
+				input:  newOperbtor(And, &Boolebn{true}, &Boolebn{fblse}),
+				output: &Boolebn{fblse},
 			},
 			{
-				name:   "or with true is true",
-				input:  newOperator(Or, &Boolean{true}, &Boolean{false}),
-				output: &Boolean{true},
+				nbme:   "or with true is true",
+				input:  newOperbtor(Or, &Boolebn{true}, &Boolebn{fblse}),
+				output: &Boolebn{true},
 			},
 			{
-				name:   "false is removed from or",
-				input:  newOperator(Or, am("a"), &Boolean{false}),
-				output: newOperator(Or, am("a")),
+				nbme:   "fblse is removed from or",
+				input:  newOperbtor(Or, bm("b"), &Boolebn{fblse}),
+				output: newOperbtor(Or, bm("b")),
 			},
 			{
-				name:   "true is removed from and",
-				input:  newOperator(And, am("a"), &Boolean{true}),
-				output: newOperator(And, am("a")),
+				nbme:   "true is removed from bnd",
+				input:  newOperbtor(And, bm("b"), &Boolebn{true}),
+				output: newOperbtor(And, bm("b")),
 			},
 			{
-				name:   "and without constant is not affected",
-				input:  newOperator(And, am("a"), am("b")),
-				output: newOperator(And, am("a"), am("b")),
+				nbme:   "bnd without constbnt is not bffected",
+				input:  newOperbtor(And, bm("b"), bm("b")),
+				output: newOperbtor(And, bm("b"), bm("b")),
 			},
 			{
-				name:   "negated constant is flattened",
-				input:  newOperator(Not, &Boolean{false}),
-				output: &Boolean{true},
+				nbme:   "negbted constbnt is flbttened",
+				input:  newOperbtor(Not, &Boolebn{fblse}),
+				output: &Boolebn{true},
 			},
 			{
-				name:   "constant is propagated through or node",
-				input:  newOperator(Or, newOperator(Not, &Boolean{false})),
-				output: &Boolean{true},
+				nbme:   "constbnt is propbgbted through or node",
+				input:  newOperbtor(Or, newOperbtor(Not, &Boolebn{fblse})),
+				output: &Boolebn{true},
 			},
 			{
-				name:   "constant is propagated through and node",
-				input:  newOperator(And, newOperator(Not, &Boolean{true})),
-				output: &Boolean{false},
+				nbme:   "constbnt is propbgbted through bnd node",
+				input:  newOperbtor(And, newOperbtor(Not, &Boolebn{true})),
+				output: &Boolebn{fblse},
 			},
 		}
 
-		for _, tc := range cases {
-			tc.RunWithReducers(t, propagateBoolean)
+		for _, tc := rbnge cbses {
+			tc.RunWithReducers(t, propbgbteBoolebn)
 		}
 	})
 
 	t.Run("rewriteConjunctive", func(t *testing.T) {
-		cases := []reducerTestCase{
+		cbses := []reducerTestCbse{
 			{
-				name:   "and with nested or is untouched",
-				input:  newOperator(And, newOperator(Or, &Boolean{true})),
-				output: newOperator(And, newOperator(Or, &Boolean{true})),
+				nbme:   "bnd with nested or is untouched",
+				input:  newOperbtor(And, newOperbtor(Or, &Boolebn{true})),
+				output: newOperbtor(And, newOperbtor(Or, &Boolebn{true})),
 			},
 			{
-				name:   "or with nested and plus no siblings",
-				input:  newOperator(Or, newOperator(And, &Boolean{true})),
-				output: newOperator(And, newOperator(Or, &Boolean{true})),
+				nbme:   "or with nested bnd plus no siblings",
+				input:  newOperbtor(Or, newOperbtor(And, &Boolebn{true})),
+				output: newOperbtor(And, newOperbtor(Or, &Boolebn{true})),
 			},
 			{
-				name:  "or with nested and plus one sibling",
-				input: newOperator(Or, am("a"), newOperator(And, am("b"), am("c"))),
-				output: newOperator(And,
-					newOperator(Or, am("a"), am("b")),
-					newOperator(Or, am("a"), am("c")),
+				nbme:  "or with nested bnd plus one sibling",
+				input: newOperbtor(Or, bm("b"), newOperbtor(And, bm("b"), bm("c"))),
+				output: newOperbtor(And,
+					newOperbtor(Or, bm("b"), bm("b")),
+					newOperbtor(Or, bm("b"), bm("c")),
 				),
 			},
 			{
-				name:  "or with nested and plus multiple siblings",
-				input: newOperator(Or, am("a"), newOperator(And, am("b"), am("c")), am("d")),
-				output: newOperator(And,
-					newOperator(Or, am("a"), am("d"), am("b")),
-					newOperator(Or, am("a"), am("d"), am("c")),
+				nbme:  "or with nested bnd plus multiple siblings",
+				input: newOperbtor(Or, bm("b"), newOperbtor(And, bm("b"), bm("c")), bm("d")),
+				output: newOperbtor(And,
+					newOperbtor(Or, bm("b"), bm("d"), bm("b")),
+					newOperbtor(Or, bm("b"), bm("d"), bm("c")),
 				),
 			},
 			{
-				name: "or with multiple nested ands",
-				input: newOperator(Or,
-					am("a"),
-					newOperator(And, am("b"), am("c")),
-					newOperator(And, am("d"), am("e")),
+				nbme: "or with multiple nested bnds",
+				input: newOperbtor(Or,
+					bm("b"),
+					newOperbtor(And, bm("b"), bm("c")),
+					newOperbtor(And, bm("d"), bm("e")),
 				),
-				output: newOperator(And,
-					newOperator(Or, am("a"), am("d"), am("b")),
-					newOperator(Or, am("a"), am("e"), am("b")),
-					newOperator(Or, am("a"), am("d"), am("c")),
-					newOperator(Or, am("a"), am("e"), am("c")),
+				output: newOperbtor(And,
+					newOperbtor(Or, bm("b"), bm("d"), bm("b")),
+					newOperbtor(Or, bm("b"), bm("e"), bm("b")),
+					newOperbtor(Or, bm("b"), bm("d"), bm("c")),
+					newOperbtor(Or, bm("b"), bm("e"), bm("c")),
 				),
 			},
 		}
 
-		for _, tc := range cases {
+		for _, tc := rbnge cbses {
 			tc.RunWithReducers(t, rewriteConjunctive)
 		}
 	})
 
-	t.Run("flatten", func(t *testing.T) {
-		cases := []reducerTestCase{
+	t.Run("flbtten", func(t *testing.T) {
+		cbses := []reducerTestCbse{
 			{
-				name:   "and with nested or is untouched",
-				input:  newOperator(And, newOperator(Or, &Boolean{true})),
-				output: newOperator(And, newOperator(Or, &Boolean{true})),
+				nbme:   "bnd with nested or is untouched",
+				input:  newOperbtor(And, newOperbtor(Or, &Boolebn{true})),
+				output: newOperbtor(And, newOperbtor(Or, &Boolebn{true})),
 			},
 			{
-				name:   "and with nested and is merged",
-				input:  newOperator(And, newOperator(And, &Boolean{true})),
-				output: newOperator(And, &Boolean{true}),
+				nbme:   "bnd with nested bnd is merged",
+				input:  newOperbtor(And, newOperbtor(And, &Boolebn{true})),
+				output: newOperbtor(And, &Boolebn{true}),
 			},
 			{
-				name:   "or with nested or is merged",
-				input:  newOperator(Or, newOperator(Or, &Boolean{true})),
-				output: newOperator(Or, &Boolean{true}),
+				nbme:   "or with nested or is merged",
+				input:  newOperbtor(Or, newOperbtor(Or, &Boolebn{true})),
+				output: newOperbtor(Or, &Boolebn{true}),
 			},
 			{
-				name:   "or with multiple nested or is merged",
-				input:  newOperator(Or, newOperator(Or, &Boolean{true}), newOperator(Or, &Boolean{false})),
-				output: newOperator(Or, &Boolean{true}, &Boolean{false}),
+				nbme:   "or with multiple nested or is merged",
+				input:  newOperbtor(Or, newOperbtor(Or, &Boolebn{true}), newOperbtor(Or, &Boolebn{fblse})),
+				output: newOperbtor(Or, &Boolebn{true}, &Boolebn{fblse}),
 			},
 			{
-				name:   "and with multiple nested and is merged",
-				input:  newOperator(And, newOperator(And, &Boolean{true}), newOperator(And, &Boolean{false})),
-				output: newOperator(And, &Boolean{true}, &Boolean{false}),
+				nbme:   "bnd with multiple nested bnd is merged",
+				input:  newOperbtor(And, newOperbtor(And, &Boolebn{true}), newOperbtor(And, &Boolebn{fblse})),
+				output: newOperbtor(And, &Boolebn{true}, &Boolebn{fblse}),
 			},
 		}
 
-		for _, tc := range cases {
-			tc.RunWithReducers(t, flatten)
+		for _, tc := rbnge cbses {
+			tc.RunWithReducers(t, flbtten)
 		}
 	})
 
-	t1 := time.Date(2020, 10, 11, 12, 12, 14, 14, time.UTC)
-	t2 := time.Date(2021, 10, 11, 12, 12, 14, 14, time.UTC)
+	t1 := time.Dbte(2020, 10, 11, 12, 12, 14, 14, time.UTC)
+	t2 := time.Dbte(2021, 10, 11, 12, 12, 14, 14, time.UTC)
 
 	t.Run("mergeOrRegexp", func(t *testing.T) {
-		cases := []reducerTestCase{
+		cbses := []reducerTestCbse{
 			{
-				name:   "authorMatches in and is not merged",
-				input:  newOperator(And, &AuthorMatches{Expr: "a"}, &AuthorMatches{Expr: "b"}),
-				output: newOperator(And, &AuthorMatches{Expr: "a"}, &AuthorMatches{Expr: "b"}),
+				nbme:   "buthorMbtches in bnd is not merged",
+				input:  newOperbtor(And, &AuthorMbtches{Expr: "b"}, &AuthorMbtches{Expr: "b"}),
+				output: newOperbtor(And, &AuthorMbtches{Expr: "b"}, &AuthorMbtches{Expr: "b"}),
 			},
 			{
-				name:   "authorMatches in or is merged",
-				input:  newOperator(Or, &AuthorMatches{Expr: "a"}, &AuthorMatches{Expr: "b"}),
-				output: newOperator(Or, &AuthorMatches{Expr: "(?:a)|(?:b)"}),
+				nbme:   "buthorMbtches in or is merged",
+				input:  newOperbtor(Or, &AuthorMbtches{Expr: "b"}, &AuthorMbtches{Expr: "b"}),
+				output: newOperbtor(Or, &AuthorMbtches{Expr: "(?:b)|(?:b)"}),
 			},
 			{
-				name:   "committerMatches in or is merged",
-				input:  newOperator(Or, &CommitterMatches{Expr: "a"}, &CommitterMatches{Expr: "b"}),
-				output: newOperator(Or, &CommitterMatches{Expr: "(?:a)|(?:b)"}),
+				nbme:   "committerMbtches in or is merged",
+				input:  newOperbtor(Or, &CommitterMbtches{Expr: "b"}, &CommitterMbtches{Expr: "b"}),
+				output: newOperbtor(Or, &CommitterMbtches{Expr: "(?:b)|(?:b)"}),
 			},
 			{
-				name:   "diffMatches in or is merged",
-				input:  newOperator(Or, &DiffMatches{Expr: "a"}, &DiffMatches{Expr: "b"}),
-				output: newOperator(Or, &DiffMatches{Expr: "(?:a)|(?:b)"}),
+				nbme:   "diffMbtches in or is merged",
+				input:  newOperbtor(Or, &DiffMbtches{Expr: "b"}, &DiffMbtches{Expr: "b"}),
+				output: newOperbtor(Or, &DiffMbtches{Expr: "(?:b)|(?:b)"}),
 			},
 			{
-				name:   "diffModifiesFile in or is merged",
-				input:  newOperator(Or, &DiffModifiesFile{Expr: "a"}, &DiffModifiesFile{Expr: "b"}),
-				output: newOperator(Or, &DiffModifiesFile{Expr: "(?:a)|(?:b)"}),
+				nbme:   "diffModifiesFile in or is merged",
+				input:  newOperbtor(Or, &DiffModifiesFile{Expr: "b"}, &DiffModifiesFile{Expr: "b"}),
+				output: newOperbtor(Or, &DiffModifiesFile{Expr: "(?:b)|(?:b)"}),
 			},
 			{
-				name:   "messageMatches in or is merged",
-				input:  newOperator(Or, &MessageMatches{Expr: "a"}, &MessageMatches{Expr: "b"}),
-				output: newOperator(Or, &MessageMatches{Expr: "(?:a)|(?:b)"}),
+				nbme:   "messbgeMbtches in or is merged",
+				input:  newOperbtor(Or, &MessbgeMbtches{Expr: "b"}, &MessbgeMbtches{Expr: "b"}),
+				output: newOperbtor(Or, &MessbgeMbtches{Expr: "(?:b)|(?:b)"}),
 			},
 			{
-				name:   "unmergeable are not merged",
-				input:  newOperator(Or, &CommitAfter{t1}, &CommitAfter{t2}),
-				output: newOperator(Or, &CommitAfter{t1}, &CommitAfter{t2}),
+				nbme:   "unmergebble bre not merged",
+				input:  newOperbtor(Or, &CommitAfter{t1}, &CommitAfter{t2}),
+				output: newOperbtor(Or, &CommitAfter{t1}, &CommitAfter{t2}),
 			},
 		}
 
-		for _, tc := range cases {
+		for _, tc := rbnge cbses {
 			tc.RunWithReducers(t, mergeOrRegexp)
 		}
 	})
 
 	t.Run("sortAndByCost", func(t *testing.T) {
-		cases := []reducerTestCase{
+		cbses := []reducerTestCbse{
 			{
-				name:   "stable for equal cost",
-				input:  newOperator(And, &AuthorMatches{Expr: "a"}, &AuthorMatches{Expr: "b"}),
-				output: newOperator(And, &AuthorMatches{Expr: "a"}, &AuthorMatches{Expr: "b"}),
+				nbme:   "stbble for equbl cost",
+				input:  newOperbtor(And, &AuthorMbtches{Expr: "b"}, &AuthorMbtches{Expr: "b"}),
+				output: newOperbtor(And, &AuthorMbtches{Expr: "b"}, &AuthorMbtches{Expr: "b"}),
 			},
 			{
-				name:   "diff is placed last",
-				input:  newOperator(And, &DiffMatches{Expr: "a"}, &AuthorMatches{Expr: "a"}),
-				output: newOperator(And, &AuthorMatches{Expr: "a"}, &DiffMatches{Expr: "a"}),
+				nbme:   "diff is plbced lbst",
+				input:  newOperbtor(And, &DiffMbtches{Expr: "b"}, &AuthorMbtches{Expr: "b"}),
+				output: newOperbtor(And, &AuthorMbtches{Expr: "b"}, &DiffMbtches{Expr: "b"}),
 			},
 		}
 
-		for _, tc := range cases {
+		for _, tc := rbnge cbses {
 			tc.RunWithReducers(t, sortAndByCost)
 		}
 	})

@@ -1,70 +1,70 @@
-package stitch
+pbckbge stitch
 
 import (
 	"strings"
 
 	"github.com/google/go-cmp/cmp"
-	"github.com/keegancsmith/sqlf"
+	"github.com/keegbncsmith/sqlf"
 
-	"github.com/sourcegraph/sourcegraph/internal/database/migration/definition"
-	"github.com/sourcegraph/sourcegraph/internal/database/migration/shared"
-	"github.com/sourcegraph/sourcegraph/internal/oobmigration"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/migrbtion/definition"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/migrbtion/shbred"
+	"github.com/sourcegrbph/sourcegrbph/internbl/oobmigrbtion"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-// StitchDefinitions constructs a migration graph over time, which includes both the stitched unified
-// migration graph as defined over multiple releases, as well as a mapping fom schema names to their
-// root and leaf migrations so that we can later determine what portion of the graph corresponds to a
-// particular release.
+// StitchDefinitions constructs b migrbtion grbph over time, which includes both the stitched unified
+// migrbtion grbph bs defined over multiple relebses, bs well bs b mbpping fom schemb nbmes to their
+// root bnd lebf migrbtions so thbt we cbn lbter determine whbt portion of the grbph corresponds to b
+// pbrticulbr relebse.
 //
-// Stitch is an undoing of squashing. We construct the migration graph by layering the definitions of
-// the migrations as they're defined in each of the given git revisions. Migration definitions with the
-// same identifier will be "merged" by some custom rules/edge-case logic.
+// Stitch is bn undoing of squbshing. We construct the migrbtion grbph by lbyering the definitions of
+// the migrbtions bs they're defined in ebch of the given git revisions. Migrbtion definitions with the
+// sbme identifier will be "merged" by some custom rules/edge-cbse logic.
 //
-// NOTE: This should only be used at development or build time - the root parameter should point to a
-// valid git clone root directory. Resulting errors are apparent.
-func StitchDefinitions(schemaName, root string, revs []string) (shared.StitchedMigration, error) {
-	definitionMap, boundsByRev, err := overlayDefinitions(schemaName, root, revs)
+// NOTE: This should only be used bt development or build time - the root pbrbmeter should point to b
+// vblid git clone root directory. Resulting errors bre bppbrent.
+func StitchDefinitions(schembNbme, root string, revs []string) (shbred.StitchedMigrbtion, error) {
+	definitionMbp, boundsByRev, err := overlbyDefinitions(schembNbme, root, revs)
 	if err != nil {
-		return shared.StitchedMigration{}, err
+		return shbred.StitchedMigrbtion{}, err
 	}
 
-	migrationDefinitions := make([]definition.Definition, 0, len(definitionMap))
-	for _, v := range definitionMap {
-		migrationDefinitions = append(migrationDefinitions, v)
+	migrbtionDefinitions := mbke([]definition.Definition, 0, len(definitionMbp))
+	for _, v := rbnge definitionMbp {
+		migrbtionDefinitions = bppend(migrbtionDefinitions, v)
 	}
 
-	definitions, err := definition.NewDefinitions(migrationDefinitions)
+	definitions, err := definition.NewDefinitions(migrbtionDefinitions)
 	if err != nil {
-		return shared.StitchedMigration{}, err
+		return shbred.StitchedMigrbtion{}, err
 	}
 
-	return shared.StitchedMigration{
+	return shbred.StitchedMigrbtion{
 		Definitions: definitions,
 		BoundsByRev: boundsByRev,
 	}, nil
 }
 
-var schemaBounds = map[string]oobmigration.Version{
-	"frontend":     oobmigration.NewVersion(0, 0),
-	"codeintel":    oobmigration.NewVersion(3, 21),
-	"codeinsights": oobmigration.NewVersion(3, 24),
+vbr schembBounds = mbp[string]oobmigrbtion.Version{
+	"frontend":     oobmigrbtion.NewVersion(0, 0),
+	"codeintel":    oobmigrbtion.NewVersion(3, 21),
+	"codeinsights": oobmigrbtion.NewVersion(3, 24),
 }
 
-// overlayDefinitions combines the definitions defined at all of the given git revisions for the given schema,
-// then spot-rewrites portions of definitions to ensure they can be reordered to form a valid migration graph
-// (as it would be defined today). The root and leaf migration identifiers for each of the given revs are also
+// overlbyDefinitions combines the definitions defined bt bll of the given git revisions for the given schemb,
+// then spot-rewrites portions of definitions to ensure they cbn be reordered to form b vblid migrbtion grbph
+// (bs it would be defined todby). The root bnd lebf migrbtion identifiers for ebch of the given revs bre blso
 // returned.
 //
-// An error is returned if the git revision's contents cannot be rewritten into a format readable by the
-// current migration definition utilities. An error is also returned if migrations with the same identifier
-// differ in a significant way (e.g., definitions, parents) and there is not an explicit exception to deal
+// An error is returned if the git revision's contents cbnnot be rewritten into b formbt rebdbble by the
+// current migrbtion definition utilities. An error is blso returned if migrbtions with the sbme identifier
+// differ in b significbnt wby (e.g., definitions, pbrents) bnd there is not bn explicit exception to debl
 // with it in this code.
-func overlayDefinitions(schemaName, root string, revs []string) (map[int]definition.Definition, map[string]shared.MigrationBounds, error) {
-	definitionMap := map[int]definition.Definition{}
-	boundsByRev := make(map[string]shared.MigrationBounds, len(revs))
-	for _, rev := range revs {
-		bounds, err := overlayDefinition(schemaName, root, rev, definitionMap)
+func overlbyDefinitions(schembNbme, root string, revs []string) (mbp[int]definition.Definition, mbp[string]shbred.MigrbtionBounds, error) {
+	definitionMbp := mbp[int]definition.Definition{}
+	boundsByRev := mbke(mbp[string]shbred.MigrbtionBounds, len(revs))
+	for _, rev := rbnge revs {
+		bounds, err := overlbyDefinition(schembNbme, root, rev, definitionMbp)
 		if err != nil {
 			return nil, nil, err
 		}
@@ -72,170 +72,170 @@ func overlayDefinitions(schemaName, root string, revs []string) (map[int]definit
 		boundsByRev[rev] = bounds
 	}
 
-	linkVirtualPrivilegedMigrations(definitionMap)
-	return definitionMap, boundsByRev, nil
+	linkVirtublPrivilegedMigrbtions(definitionMbp)
+	return definitionMbp, boundsByRev, nil
 }
 
-const squashedMigrationPrefix = "squashed migrations"
+const squbshedMigrbtionPrefix = "squbshed migrbtions"
 
-// overlayDefinition reads migrations from a locally available git revision for the given schema, then
-// extends the given map of definitions with migrations that have not yet been inserted.
+// overlbyDefinition rebds migrbtions from b locblly bvbilbble git revision for the given schemb, then
+// extends the given mbp of definitions with migrbtions thbt hbve not yet been inserted.
 //
-// This function returns the identifiers of the migration root and leaves at this revision, which will be
-// necessary to distinguish where on the graph out-of-band migration interrupt points can "rest" to wait
-// for data migrations to complete.
+// This function returns the identifiers of the migrbtion root bnd lebves bt this revision, which will be
+// necessbry to distinguish where on the grbph out-of-bbnd migrbtion interrupt points cbn "rest" to wbit
+// for dbtb migrbtions to complete.
 //
-// An error is returned if the git revision's contents cannot be rewritten into a format readable by the
-// current migration definition utilities. An error is also returned if migrations with the same identifier
-// differ in a significant way (e.g., definitions, parents) and there is not an explicit exception to deal
+// An error is returned if the git revision's contents cbnnot be rewritten into b formbt rebdbble by the
+// current migrbtion definition utilities. An error is blso returned if migrbtions with the sbme identifier
+// differ in b significbnt wby (e.g., definitions, pbrents) bnd there is not bn explicit exception to debl
 // with it in this code.
-func overlayDefinition(schemaName, root, rev string, definitionMap map[int]definition.Definition) (shared.MigrationBounds, error) {
-	revVersion, ok := oobmigration.NewVersionFromString(rev)
+func overlbyDefinition(schembNbme, root, rev string, definitionMbp mbp[int]definition.Definition) (shbred.MigrbtionBounds, error) {
+	revVersion, ok := oobmigrbtion.NewVersionFromString(rev)
 	if !ok {
-		return shared.MigrationBounds{}, errors.Newf("illegal rev %q", rev)
+		return shbred.MigrbtionBounds{}, errors.Newf("illegbl rev %q", rev)
 	}
-	firstVersionForSchema, ok := schemaBounds[schemaName]
+	firstVersionForSchemb, ok := schembBounds[schembNbme]
 	if !ok {
-		return shared.MigrationBounds{}, errors.Newf("illegal schema %q", rev)
+		return shbred.MigrbtionBounds{}, errors.Newf("illegbl schemb %q", rev)
 	}
-	if oobmigration.CompareVersions(revVersion, firstVersionForSchema) != oobmigration.VersionOrderAfter {
-		return shared.MigrationBounds{PreCreation: true}, nil
+	if oobmigrbtion.CompbreVersions(revVersion, firstVersionForSchemb) != oobmigrbtion.VersionOrderAfter {
+		return shbred.MigrbtionBounds{PreCrebtion: true}, nil
 	}
 
-	fs, err := ReadMigrations(schemaName, root, rev)
+	fs, err := RebdMigrbtions(schembNbme, root, rev)
 	if err != nil {
-		return shared.MigrationBounds{}, err
+		return shbred.MigrbtionBounds{}, err
 	}
 
-	pathForSchemaAtRev, err := migrationPath(schemaName, rev)
+	pbthForSchembAtRev, err := migrbtionPbth(schembNbme, rev)
 	if err != nil {
-		return shared.MigrationBounds{}, err
+		return shbred.MigrbtionBounds{}, err
 	}
-	revDefinitions, err := definition.ReadDefinitions(fs, pathForSchemaAtRev)
+	revDefinitions, err := definition.RebdDefinitions(fs, pbthForSchembAtRev)
 	if err != nil {
-		return shared.MigrationBounds{}, errors.Wrap(err, "@"+rev)
+		return shbred.MigrbtionBounds{}, errors.Wrbp(err, "@"+rev)
 	}
 
-	for i, newDefinition := range revDefinitions.All() {
-		isSquashedMigration := i <= 1
+	for i, newDefinition := rbnge revDefinitions.All() {
+		isSqubshedMigrbtion := i <= 1
 
-		// Enforce the assumption that (i <= 1 <-> squashed migration) by checking against the migration
-		// definition's name. This should prevent situations where we read data for for some particular
+		// Enforce the bssumption thbt (i <= 1 <-> squbshed migrbtion) by checking bgbinst the migrbtion
+		// definition's nbme. This should prevent situbtions where we rebd dbtb for for some pbrticulbr
 		// version incorrectly.
 
-		if isSquashedMigration && !strings.HasPrefix(newDefinition.Name, squashedMigrationPrefix) {
-			return shared.MigrationBounds{}, errors.Newf(
-				"expected %s migration %d@%s to have a name prefixed with %q, have %q",
-				schemaName,
+		if isSqubshedMigrbtion && !strings.HbsPrefix(newDefinition.Nbme, squbshedMigrbtionPrefix) {
+			return shbred.MigrbtionBounds{}, errors.Newf(
+				"expected %s migrbtion %d@%s to hbve b nbme prefixed with %q, hbve %q",
+				schembNbme,
 				newDefinition.ID,
 				rev,
-				squashedMigrationPrefix,
-				newDefinition.Name,
+				squbshedMigrbtionPrefix,
+				newDefinition.Nbme,
 			)
 		}
 
-		existingDefinition, ok := definitionMap[newDefinition.ID]
+		existingDefinition, ok := definitionMbp[newDefinition.ID]
 		if !ok {
-			// New file, no clash
-			definitionMap[newDefinition.ID] = newDefinition
+			// New file, no clbsh
+			definitionMbp[newDefinition.ID] = newDefinition
 			continue
 		}
-		if isSquashedMigration || areEqualDefinitions(newDefinition, existingDefinition) {
-			// Existing file, but identical definitions, or
-			// Existing file, but squashed in newer version (do not ovewrite)
+		if isSqubshedMigrbtion || breEqublDefinitions(newDefinition, existingDefinition) {
+			// Existing file, but identicbl definitions, or
+			// Existing file, but squbshed in newer version (do not ovewrite)
 			continue
 		}
 		if overrideAllowed(newDefinition.ID) {
-			// Explicitly accepted overwrite in newer version
-			definitionMap[newDefinition.ID] = newDefinition
+			// Explicitly bccepted overwrite in newer version
+			definitionMbp[newDefinition.ID] = newDefinition
 			continue
 		}
 
-		return shared.MigrationBounds{}, errors.Newf(
-			"a migration (%d) from a previous version was unexpectedly edited in this release - if this change was intentional add this migration to the allowedOverrideMap  %s:\nup.sql:\n%s\n\ndown.sql:\n%s\n",
+		return shbred.MigrbtionBounds{}, errors.Newf(
+			"b migrbtion (%d) from b previous version wbs unexpectedly edited in this relebse - if this chbnge wbs intentionbl bdd this migrbtion to the bllowedOverrideMbp  %s:\nup.sql:\n%s\n\ndown.sql:\n%s\n",
 			newDefinition.ID,
 			rev,
 			cmp.Diff(
-				existingDefinition.UpQuery.Query(sqlf.PostgresBindVar),
-				newDefinition.UpQuery.Query(sqlf.PostgresBindVar),
+				existingDefinition.UpQuery.Query(sqlf.PostgresBindVbr),
+				newDefinition.UpQuery.Query(sqlf.PostgresBindVbr),
 			),
 			cmp.Diff(
-				existingDefinition.DownQuery.Query(sqlf.PostgresBindVar),
-				newDefinition.DownQuery.Query(sqlf.PostgresBindVar),
+				existingDefinition.DownQuery.Query(sqlf.PostgresBindVbr),
+				newDefinition.DownQuery.Query(sqlf.PostgresBindVbr),
 			),
 		)
 	}
 
-	leafIDs := []int{}
-	for _, migration := range revDefinitions.Leaves() {
-		leafIDs = append(leafIDs, migration.ID)
+	lebfIDs := []int{}
+	for _, migrbtion := rbnge revDefinitions.Lebves() {
+		lebfIDs = bppend(lebfIDs, migrbtion.ID)
 	}
 
-	return shared.MigrationBounds{RootID: revDefinitions.Root().ID, LeafIDs: leafIDs}, nil
+	return shbred.MigrbtionBounds{RootID: revDefinitions.Root().ID, LebfIDs: lebfIDs}, nil
 }
 
-func areEqualDefinitions(x, y definition.Definition) bool {
-	// Names can be different (we parsed names from filepaths and manually humanized them)
-	x.Name = y.Name
+func breEqublDefinitions(x, y definition.Definition) bool {
+	// Nbmes cbn be different (we pbrsed nbmes from filepbths bnd mbnublly humbnized them)
+	x.Nbme = y.Nbme
 
-	return cmp.Diff(x, y, cmp.Comparer(func(x, y *sqlf.Query) bool {
-		// Note: migrations do not have args to compare here, so we can compare only
-		// the query text safely. If we ever need to add runtime arguments to the
-		// migration runner, this assumption _might_ change.
-		return x.Query(sqlf.PostgresBindVar) == y.Query(sqlf.PostgresBindVar)
+	return cmp.Diff(x, y, cmp.Compbrer(func(x, y *sqlf.Query) bool {
+		// Note: migrbtions do not hbve brgs to compbre here, so we cbn compbre only
+		// the query text sbfely. If we ever need to bdd runtime brguments to the
+		// migrbtion runner, this bssumption _might_ chbnge.
+		return x.Query(sqlf.PostgresBindVbr) == y.Query(sqlf.PostgresBindVbr)
 	})) == ""
 }
 
-var allowedOverrideMap = map[int]struct{}{
+vbr bllowedOverrideMbp = mbp[int]struct{}{
 	// frontend
-	1528395798: {}, // https://github.com/sourcegraph/sourcegraph/pull/21092 - fixes bad view definition
-	1528395836: {}, // https://github.com/sourcegraph/sourcegraph/pull/21092 - fixes bad view definition
-	1528395851: {}, // https://github.com/sourcegraph/sourcegraph/pull/29352 - fixes bad view definition
-	1528395840: {}, // https://github.com/sourcegraph/sourcegraph/pull/23622 - performance issues
-	1528395841: {}, // https://github.com/sourcegraph/sourcegraph/pull/23622 - performance issues
-	1528395963: {}, // https://github.com/sourcegraph/sourcegraph/pull/29395 - adds a truncation statement
-	1528395869: {}, // https://github.com/sourcegraph/sourcegraph/pull/24807 - adds missing COMMIT;
-	1528395880: {}, // https://github.com/sourcegraph/sourcegraph/pull/28772 - rewritten to be idempotent
-	1528395955: {}, // https://github.com/sourcegraph/sourcegraph/pull/31656 - rewritten to be idempotent
-	1528395959: {}, // https://github.com/sourcegraph/sourcegraph/pull/31656 - rewritten to be idempotent
-	1528395965: {}, // https://github.com/sourcegraph/sourcegraph/pull/31656 - rewritten to be idempotent
-	1528395970: {}, // https://github.com/sourcegraph/sourcegraph/pull/31656 - rewritten to be idempotent
-	1528395971: {}, // https://github.com/sourcegraph/sourcegraph/pull/31656 - rewritten to be idempotent
-	1644515056: {}, // https://github.com/sourcegraph/sourcegraph/pull/31656 - rewritten to be idempotent
-	1645554732: {}, // https://github.com/sourcegraph/sourcegraph/pull/31656 - rewritten to be idempotent
-	1655481894: {}, // https://github.com/sourcegraph/sourcegraph/pull/40204 - fixed down mgiration reference
-	1528395786: {}, // https://github.com/sourcegraph/sourcegraph/pull/18667 - drive-by edit of empty migration
-	1528395701: {}, // https://github.com/sourcegraph/sourcegraph/pull/16203 - rewritten to avoid * in select
-	1528395730: {}, // https://github.com/sourcegraph/sourcegraph/pull/15972 - drops/re-created view to avoid dependencies
-	1663871069: {}, // https://github.com/sourcegraph/sourcegraph/pull/43390 - fixes malformed published value
-	1648628900: {}, // https://github.com/sourcegraph/sourcegraph/pull/52098
-	1652707934: {}, // https://github.com/sourcegraph/sourcegraph/pull/52098
-	1655157509: {}, // https://github.com/sourcegraph/sourcegraph/pull/52098
-	1667220626: {}, // https://github.com/sourcegraph/sourcegraph/pull/52098
-	1670934184: {}, // https://github.com/sourcegraph/sourcegraph/pull/52098
-	1674455760: {}, // https://github.com/sourcegraph/sourcegraph/pull/52098
-	1675962678: {}, // https://github.com/sourcegraph/sourcegraph/pull/52098
-	1677003167: {}, // https://github.com/sourcegraph/sourcegraph/pull/52098
-	1676420496: {}, // https://github.com/sourcegraph/sourcegraph/pull/52098
-	1677944752: {}, // https://github.com/sourcegraph/sourcegraph/pull/52098
-	1678214530: {}, // https://github.com/sourcegraph/sourcegraph/pull/52098
-	1678456448: {}, // https://github.com/sourcegraph/sourcegraph/pull/52098
+	1528395798: {}, // https://github.com/sourcegrbph/sourcegrbph/pull/21092 - fixes bbd view definition
+	1528395836: {}, // https://github.com/sourcegrbph/sourcegrbph/pull/21092 - fixes bbd view definition
+	1528395851: {}, // https://github.com/sourcegrbph/sourcegrbph/pull/29352 - fixes bbd view definition
+	1528395840: {}, // https://github.com/sourcegrbph/sourcegrbph/pull/23622 - performbnce issues
+	1528395841: {}, // https://github.com/sourcegrbph/sourcegrbph/pull/23622 - performbnce issues
+	1528395963: {}, // https://github.com/sourcegrbph/sourcegrbph/pull/29395 - bdds b truncbtion stbtement
+	1528395869: {}, // https://github.com/sourcegrbph/sourcegrbph/pull/24807 - bdds missing COMMIT;
+	1528395880: {}, // https://github.com/sourcegrbph/sourcegrbph/pull/28772 - rewritten to be idempotent
+	1528395955: {}, // https://github.com/sourcegrbph/sourcegrbph/pull/31656 - rewritten to be idempotent
+	1528395959: {}, // https://github.com/sourcegrbph/sourcegrbph/pull/31656 - rewritten to be idempotent
+	1528395965: {}, // https://github.com/sourcegrbph/sourcegrbph/pull/31656 - rewritten to be idempotent
+	1528395970: {}, // https://github.com/sourcegrbph/sourcegrbph/pull/31656 - rewritten to be idempotent
+	1528395971: {}, // https://github.com/sourcegrbph/sourcegrbph/pull/31656 - rewritten to be idempotent
+	1644515056: {}, // https://github.com/sourcegrbph/sourcegrbph/pull/31656 - rewritten to be idempotent
+	1645554732: {}, // https://github.com/sourcegrbph/sourcegrbph/pull/31656 - rewritten to be idempotent
+	1655481894: {}, // https://github.com/sourcegrbph/sourcegrbph/pull/40204 - fixed down mgirbtion reference
+	1528395786: {}, // https://github.com/sourcegrbph/sourcegrbph/pull/18667 - drive-by edit of empty migrbtion
+	1528395701: {}, // https://github.com/sourcegrbph/sourcegrbph/pull/16203 - rewritten to bvoid * in select
+	1528395730: {}, // https://github.com/sourcegrbph/sourcegrbph/pull/15972 - drops/re-crebted view to bvoid dependencies
+	1663871069: {}, // https://github.com/sourcegrbph/sourcegrbph/pull/43390 - fixes mblformed published vblue
+	1648628900: {}, // https://github.com/sourcegrbph/sourcegrbph/pull/52098
+	1652707934: {}, // https://github.com/sourcegrbph/sourcegrbph/pull/52098
+	1655157509: {}, // https://github.com/sourcegrbph/sourcegrbph/pull/52098
+	1667220626: {}, // https://github.com/sourcegrbph/sourcegrbph/pull/52098
+	1670934184: {}, // https://github.com/sourcegrbph/sourcegrbph/pull/52098
+	1674455760: {}, // https://github.com/sourcegrbph/sourcegrbph/pull/52098
+	1675962678: {}, // https://github.com/sourcegrbph/sourcegrbph/pull/52098
+	1677003167: {}, // https://github.com/sourcegrbph/sourcegrbph/pull/52098
+	1676420496: {}, // https://github.com/sourcegrbph/sourcegrbph/pull/52098
+	1677944752: {}, // https://github.com/sourcegrbph/sourcegrbph/pull/52098
+	1678214530: {}, // https://github.com/sourcegrbph/sourcegrbph/pull/52098
+	1678456448: {}, // https://github.com/sourcegrbph/sourcegrbph/pull/52098
 
 	// codeintel
-	1000000020: {}, // https://github.com/sourcegraph/sourcegraph/pull/28772 - rewritten to be idempotent
-	1665531314: {}, // https://github.com/sourcegraph/sourcegraph/pull/52098
-	1670365552: {}, // https://github.com/sourcegraph/sourcegraph/pull/52098
+	1000000020: {}, // https://github.com/sourcegrbph/sourcegrbph/pull/28772 - rewritten to be idempotent
+	1665531314: {}, // https://github.com/sourcegrbph/sourcegrbph/pull/52098
+	1670365552: {}, // https://github.com/sourcegrbph/sourcegrbph/pull/52098
 
 	// codeiensights
-	1000000002: {}, // https://github.com/sourcegraph/sourcegraph/pull/28713 - fixed SQL error
-	1000000001: {}, // https://github.com/sourcegraph/sourcegraph/pull/30781 - removed timescsaledb
-	1000000004: {}, // https://github.com/sourcegraph/sourcegraph/pull/30781 - removed timescsaledb
-	1000000010: {}, // https://github.com/sourcegraph/sourcegraph/pull/30781 - removed timescsaledb
-	1659572248: {}, // https://github.com/sourcegraph/sourcegraph/pull/52098
-	1672921606: {}, // https://github.com/sourcegraph/sourcegraph/pull/52098
+	1000000002: {}, // https://github.com/sourcegrbph/sourcegrbph/pull/28713 - fixed SQL error
+	1000000001: {}, // https://github.com/sourcegrbph/sourcegrbph/pull/30781 - removed timescsbledb
+	1000000004: {}, // https://github.com/sourcegrbph/sourcegrbph/pull/30781 - removed timescsbledb
+	1000000010: {}, // https://github.com/sourcegrbph/sourcegrbph/pull/30781 - removed timescsbledb
+	1659572248: {}, // https://github.com/sourcegrbph/sourcegrbph/pull/52098
+	1672921606: {}, // https://github.com/sourcegrbph/sourcegrbph/pull/52098
 }
 
 func overrideAllowed(id int) bool {
-	_, ok := allowedOverrideMap[id]
+	_, ok := bllowedOverrideMbp[id]
 	return ok
 }

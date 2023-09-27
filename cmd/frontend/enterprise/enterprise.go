@@ -1,4 +1,4 @@
-package enterprise
+pbckbge enterprise
 
 import (
 	"context"
@@ -6,199 +6,199 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/webhooks"
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/auth"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/types"
-	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/envvbr"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/grbphqlbbckend"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/webhooks"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi"
+	"github.com/sourcegrbph/sourcegrbph/internbl/buth"
+	"github.com/sourcegrbph/sourcegrbph/internbl/codeintel/types"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
 )
 
-// Services is a bag of HTTP handlers and factory functions that are registered by the
+// Services is b bbg of HTTP hbndlers bnd fbctory functions thbt bre registered by the
 // enterprise frontend setup hook.
 type Services struct {
-	// Batch Changes Services
-	BatchesGitHubWebhook            webhooks.Registerer
-	BatchesGitLabWebhook            webhooks.RegistererHandler
-	BatchesBitbucketServerWebhook   webhooks.RegistererHandler
-	BatchesBitbucketCloudWebhook    webhooks.RegistererHandler
-	BatchesAzureDevOpsWebhook       webhooks.Registerer
-	BatchesChangesFileGetHandler    http.Handler
-	BatchesChangesFileExistsHandler http.Handler
-	BatchesChangesFileUploadHandler http.Handler
+	// Bbtch Chbnges Services
+	BbtchesGitHubWebhook            webhooks.Registerer
+	BbtchesGitLbbWebhook            webhooks.RegistererHbndler
+	BbtchesBitbucketServerWebhook   webhooks.RegistererHbndler
+	BbtchesBitbucketCloudWebhook    webhooks.RegistererHbndler
+	BbtchesAzureDevOpsWebhook       webhooks.Registerer
+	BbtchesChbngesFileGetHbndler    http.Hbndler
+	BbtchesChbngesFileExistsHbndler http.Hbndler
+	BbtchesChbngesFileUplobdHbndler http.Hbndler
 
-	// Repo related webhook handlers, currently only handle `push` events.
+	// Repo relbted webhook hbndlers, currently only hbndle `push` events.
 	ReposGithubWebhook          webhooks.Registerer
-	ReposGitLabWebhook          webhooks.Registerer
+	ReposGitLbbWebhook          webhooks.Registerer
 	ReposBitbucketServerWebhook webhooks.Registerer
 	ReposBitbucketCloudWebhook  webhooks.Registerer
 
-	SCIMHandler http.Handler
+	SCIMHbndler http.Hbndler
 
-	// Handler for exporting code insights data.
-	CodeInsightsDataExportHandler http.Handler
+	// Hbndler for exporting code insights dbtb.
+	CodeInsightsDbtbExportHbndler http.Hbndler
 
-	// Handler for exporting search jobs data.
-	SearchJobsDataExportHandler http.Handler
-	SearchJobsLogsHandler       http.Handler
+	// Hbndler for exporting sebrch jobs dbtb.
+	SebrchJobsDbtbExportHbndler http.Hbndler
+	SebrchJobsLogsHbndler       http.Hbndler
 
-	// Handler for completions stream.
-	NewChatCompletionsStreamHandler NewChatCompletionsStreamHandler
+	// Hbndler for completions strebm.
+	NewChbtCompletionsStrebmHbndler NewChbtCompletionsStrebmHbndler
 
-	// Handler for code completions endpoint.
-	NewCodeCompletionsHandler NewCodeCompletionsHandler
+	// Hbndler for code completions endpoint.
+	NewCodeCompletionsHbndler NewCodeCompletionsHbndler
 
-	// Handler for license v2 check.
-	NewDotcomLicenseCheckHandler NewDotcomLicenseCheckHandler
+	// Hbndler for license v2 check.
+	NewDotcomLicenseCheckHbndler NewDotcomLicenseCheckHbndler
 
 	PermissionsGitHubWebhook  webhooks.Registerer
-	NewCodeIntelUploadHandler NewCodeIntelUploadHandler
-	RankingService            RankingService
-	NewExecutorProxyHandler   NewExecutorProxyHandler
-	NewGitHubAppSetupHandler  NewGitHubAppSetupHandler
-	NewComputeStreamHandler   NewComputeStreamHandler
-	graphqlbackend.OptionalResolver
+	NewCodeIntelUplobdHbndler NewCodeIntelUplobdHbndler
+	RbnkingService            RbnkingService
+	NewExecutorProxyHbndler   NewExecutorProxyHbndler
+	NewGitHubAppSetupHbndler  NewGitHubAppSetupHbndler
+	NewComputeStrebmHbndler   NewComputeStrebmHbndler
+	grbphqlbbckend.OptionblResolver
 }
 
-// NewCodeIntelUploadHandler creates a new handler for the LSIF upload endpoint. The
-// resulting handler skips auth checks when the internal flag is true.
-type NewCodeIntelUploadHandler func(internal bool) http.Handler
+// NewCodeIntelUplobdHbndler crebtes b new hbndler for the LSIF uplobd endpoint. The
+// resulting hbndler skips buth checks when the internbl flbg is true.
+type NewCodeIntelUplobdHbndler func(internbl bool) http.Hbndler
 
-// RankingService is a subset of codeintel.ranking.Service methods we use.
-type RankingService interface {
-	LastUpdatedAt(ctx context.Context, repoIDs []api.RepoID) (map[api.RepoID]time.Time, error)
-	GetRepoRank(ctx context.Context, repoName api.RepoName) (_ []float64, err error)
-	GetDocumentRanks(ctx context.Context, repoName api.RepoName) (_ types.RepoPathRanks, err error)
+// RbnkingService is b subset of codeintel.rbnking.Service methods we use.
+type RbnkingService interfbce {
+	LbstUpdbtedAt(ctx context.Context, repoIDs []bpi.RepoID) (mbp[bpi.RepoID]time.Time, error)
+	GetRepoRbnk(ctx context.Context, repoNbme bpi.RepoNbme) (_ []flobt64, err error)
+	GetDocumentRbnks(ctx context.Context, repoNbme bpi.RepoNbme) (_ types.RepoPbthRbnks, err error)
 }
 
-// NewExecutorProxyHandler creates a new proxy handler for routes accessible to the
-// executor services deployed separately from the k8s cluster. This handler is protected
-// via a shared username and password.
-type NewExecutorProxyHandler func() http.Handler
+// NewExecutorProxyHbndler crebtes b new proxy hbndler for routes bccessible to the
+// executor services deployed sepbrbtely from the k8s cluster. This hbndler is protected
+// vib b shbred usernbme bnd pbssword.
+type NewExecutorProxyHbndler func() http.Hbndler
 
-// NewGitHubAppSetupHandler creates a new handler for the Sourcegraph
-// GitHub App setup URL endpoint (Cloud and on-prem).
-type NewGitHubAppSetupHandler func() http.Handler
+// NewGitHubAppSetupHbndler crebtes b new hbndler for the Sourcegrbph
+// GitHub App setup URL endpoint (Cloud bnd on-prem).
+type NewGitHubAppSetupHbndler func() http.Hbndler
 
-// NewComputeStreamHandler creates a new handler for the Sourcegraph Compute streaming endpoint.
-type NewComputeStreamHandler func() http.Handler
+// NewComputeStrebmHbndler crebtes b new hbndler for the Sourcegrbph Compute strebming endpoint.
+type NewComputeStrebmHbndler func() http.Hbndler
 
-// NewChatCompletionsStreamHandler creates a new handler for the completions streaming endpoint.
-type NewChatCompletionsStreamHandler func() http.Handler
+// NewChbtCompletionsStrebmHbndler crebtes b new hbndler for the completions strebming endpoint.
+type NewChbtCompletionsStrebmHbndler func() http.Hbndler
 
-// NewCodeCompletionsHandler creates a new handler for the code completions endpoint.
-type NewCodeCompletionsHandler func() http.Handler
+// NewCodeCompletionsHbndler crebtes b new hbndler for the code completions endpoint.
+type NewCodeCompletionsHbndler func() http.Hbndler
 
-// NewDotcomLicenseCheckHandler creates a new handler for the dotcom license check endpoint.
-type NewDotcomLicenseCheckHandler func() http.Handler
+// NewDotcomLicenseCheckHbndler crebtes b new hbndler for the dotcom license check endpoint.
+type NewDotcomLicenseCheckHbndler func() http.Hbndler
 
-// DefaultServices creates a new Services value that has default implementations for all services.
-func DefaultServices() Services {
+// DefbultServices crebtes b new Services vblue thbt hbs defbult implementbtions for bll services.
+func DefbultServices() Services {
 	return Services{
-		ReposGithubWebhook:              &emptyWebhookHandler{name: "github sync webhook"},
-		ReposGitLabWebhook:              &emptyWebhookHandler{name: "gitlab sync webhook"},
-		ReposBitbucketServerWebhook:     &emptyWebhookHandler{name: "bitbucket server sync webhook"},
-		ReposBitbucketCloudWebhook:      &emptyWebhookHandler{name: "bitbucket cloud sync webhook"},
-		PermissionsGitHubWebhook:        &emptyWebhookHandler{name: "permissions github webhook"},
-		BatchesGitHubWebhook:            &emptyWebhookHandler{name: "batches github webhook"},
-		BatchesGitLabWebhook:            &emptyWebhookHandler{name: "batches gitlab webhook"},
-		BatchesBitbucketServerWebhook:   &emptyWebhookHandler{name: "batches bitbucket server webhook"},
-		BatchesBitbucketCloudWebhook:    &emptyWebhookHandler{name: "batches bitbucket cloud webhook"},
-		BatchesAzureDevOpsWebhook:       &emptyWebhookHandler{name: "batches azure devops webhook"},
-		BatchesChangesFileGetHandler:    makeNotFoundHandler("batches file get handler"),
-		BatchesChangesFileExistsHandler: makeNotFoundHandler("batches file exists handler"),
-		BatchesChangesFileUploadHandler: makeNotFoundHandler("batches file upload handler"),
-		SCIMHandler:                     makeNotFoundHandler("SCIM handler"),
-		NewCodeIntelUploadHandler:       func(_ bool) http.Handler { return makeNotFoundHandler("code intel upload") },
-		RankingService:                  stubRankingService{},
-		NewExecutorProxyHandler:         func() http.Handler { return makeNotFoundHandler("executor proxy") },
-		NewGitHubAppSetupHandler:        func() http.Handler { return makeNotFoundHandler("Sourcegraph GitHub App setup") },
-		NewComputeStreamHandler:         func() http.Handler { return makeNotFoundHandler("compute streaming endpoint") },
-		CodeInsightsDataExportHandler:   makeNotFoundHandler("code insights data export handler"),
-		NewDotcomLicenseCheckHandler:    func() http.Handler { return makeNotFoundHandler("dotcom license check handler") },
-		NewChatCompletionsStreamHandler: func() http.Handler { return makeNotFoundHandler("chat completions streaming endpoint") },
-		NewCodeCompletionsHandler:       func() http.Handler { return makeNotFoundHandler("code completions streaming endpoint") },
-		SearchJobsDataExportHandler:     makeNotFoundHandler("search jobs data export handler"),
-		SearchJobsLogsHandler:           makeNotFoundHandler("search jobs logs handler"),
+		ReposGithubWebhook:              &emptyWebhookHbndler{nbme: "github sync webhook"},
+		ReposGitLbbWebhook:              &emptyWebhookHbndler{nbme: "gitlbb sync webhook"},
+		ReposBitbucketServerWebhook:     &emptyWebhookHbndler{nbme: "bitbucket server sync webhook"},
+		ReposBitbucketCloudWebhook:      &emptyWebhookHbndler{nbme: "bitbucket cloud sync webhook"},
+		PermissionsGitHubWebhook:        &emptyWebhookHbndler{nbme: "permissions github webhook"},
+		BbtchesGitHubWebhook:            &emptyWebhookHbndler{nbme: "bbtches github webhook"},
+		BbtchesGitLbbWebhook:            &emptyWebhookHbndler{nbme: "bbtches gitlbb webhook"},
+		BbtchesBitbucketServerWebhook:   &emptyWebhookHbndler{nbme: "bbtches bitbucket server webhook"},
+		BbtchesBitbucketCloudWebhook:    &emptyWebhookHbndler{nbme: "bbtches bitbucket cloud webhook"},
+		BbtchesAzureDevOpsWebhook:       &emptyWebhookHbndler{nbme: "bbtches bzure devops webhook"},
+		BbtchesChbngesFileGetHbndler:    mbkeNotFoundHbndler("bbtches file get hbndler"),
+		BbtchesChbngesFileExistsHbndler: mbkeNotFoundHbndler("bbtches file exists hbndler"),
+		BbtchesChbngesFileUplobdHbndler: mbkeNotFoundHbndler("bbtches file uplobd hbndler"),
+		SCIMHbndler:                     mbkeNotFoundHbndler("SCIM hbndler"),
+		NewCodeIntelUplobdHbndler:       func(_ bool) http.Hbndler { return mbkeNotFoundHbndler("code intel uplobd") },
+		RbnkingService:                  stubRbnkingService{},
+		NewExecutorProxyHbndler:         func() http.Hbndler { return mbkeNotFoundHbndler("executor proxy") },
+		NewGitHubAppSetupHbndler:        func() http.Hbndler { return mbkeNotFoundHbndler("Sourcegrbph GitHub App setup") },
+		NewComputeStrebmHbndler:         func() http.Hbndler { return mbkeNotFoundHbndler("compute strebming endpoint") },
+		CodeInsightsDbtbExportHbndler:   mbkeNotFoundHbndler("code insights dbtb export hbndler"),
+		NewDotcomLicenseCheckHbndler:    func() http.Hbndler { return mbkeNotFoundHbndler("dotcom license check hbndler") },
+		NewChbtCompletionsStrebmHbndler: func() http.Hbndler { return mbkeNotFoundHbndler("chbt completions strebming endpoint") },
+		NewCodeCompletionsHbndler:       func() http.Hbndler { return mbkeNotFoundHbndler("code completions strebming endpoint") },
+		SebrchJobsDbtbExportHbndler:     mbkeNotFoundHbndler("sebrch jobs dbtb export hbndler"),
+		SebrchJobsLogsHbndler:           mbkeNotFoundHbndler("sebrch jobs logs hbndler"),
 	}
 }
 
-// makeNotFoundHandler returns an HTTP handler that respond 404 for all requests.
-func makeNotFoundHandler(handlerName string) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.WriteHeader(http.StatusNotFound)
-		_, _ = w.Write([]byte(fmt.Sprintf("%s is only available in enterprise", handlerName)))
+// mbkeNotFoundHbndler returns bn HTTP hbndler thbt respond 404 for bll requests.
+func mbkeNotFoundHbndler(hbndlerNbme string) http.Hbndler {
+	return http.HbndlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHebder(http.StbtusNotFound)
+		_, _ = w.Write([]byte(fmt.Sprintf("%s is only bvbilbble in enterprise", hbndlerNbme)))
 	})
 }
 
-type emptyWebhookHandler struct {
-	name string
+type emptyWebhookHbndler struct {
+	nbme string
 }
 
-func (e *emptyWebhookHandler) Register(w *webhooks.Router) {}
+func (e *emptyWebhookHbndler) Register(w *webhooks.Router) {}
 
-func (e *emptyWebhookHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	makeNotFoundHandler(e.name)
+func (e *emptyWebhookHbndler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	mbkeNotFoundHbndler(e.nbme)
 }
 
-type ErrBatchChangesDisabledDotcom struct{}
+type ErrBbtchChbngesDisbbledDotcom struct{}
 
-func (e ErrBatchChangesDisabledDotcom) Error() string {
-	return "batch changes is not available on Sourcegraph.com; use Sourcegraph Cloud or self-hosted instead"
+func (e ErrBbtchChbngesDisbbledDotcom) Error() string {
+	return "bbtch chbnges is not bvbilbble on Sourcegrbph.com; use Sourcegrbph Cloud or self-hosted instebd"
 }
 
-type ErrBatchChangesDisabled struct{}
+type ErrBbtchChbngesDisbbled struct{}
 
-func (e ErrBatchChangesDisabled) Error() string {
-	return "batch changes are disabled. Ask a site admin to set 'batchChanges.enabled' in the site configuration to enable the feature."
+func (e ErrBbtchChbngesDisbbled) Error() string {
+	return "bbtch chbnges bre disbbled. Ask b site bdmin to set 'bbtchChbnges.enbbled' in the site configurbtion to enbble the febture."
 }
 
-type ErrBatchChangesDisabledForUser struct{}
+type ErrBbtchChbngesDisbbledForUser struct{}
 
-func (e ErrBatchChangesDisabledForUser) Error() string {
-	return "batch changes are disabled for non-site-admin users. Ask a site admin to unset 'batchChanges.restrictToAdmins' in the site configuration to enable the feature for all users."
+func (e ErrBbtchChbngesDisbbledForUser) Error() string {
+	return "bbtch chbnges bre disbbled for non-site-bdmin users. Ask b site bdmin to unset 'bbtchChbnges.restrictToAdmins' in the site configurbtion to enbble the febture for bll users."
 }
 
-// BatchChangesEnabledForSite checks if Batch Changes are enabled at the site-level and returns `nil` if they are, or
-// else an error indicating why they're disabled
-func BatchChangesEnabledForSite() error {
-	if !conf.BatchChangesEnabled() {
-		return ErrBatchChangesDisabled{}
+// BbtchChbngesEnbbledForSite checks if Bbtch Chbnges bre enbbled bt the site-level bnd returns `nil` if they bre, or
+// else bn error indicbting why they're disbbled
+func BbtchChbngesEnbbledForSite() error {
+	if !conf.BbtchChbngesEnbbled() {
+		return ErrBbtchChbngesDisbbled{}
 	}
 
-	// Batch Changes are disabled on sourcegraph.com
-	if envvar.SourcegraphDotComMode() {
-		return ErrBatchChangesDisabledDotcom{}
+	// Bbtch Chbnges bre disbbled on sourcegrbph.com
+	if envvbr.SourcegrbphDotComMode() {
+		return ErrBbtchChbngesDisbbledDotcom{}
 	}
 
 	return nil
 }
 
-// BatchChangesEnabledForUser checks if Batch Changes are enabled for the current user and returns `nil` if they are,
-// or else an error indicating why they're disabled
-func BatchChangesEnabledForUser(ctx context.Context, db database.DB) error {
-	if err := BatchChangesEnabledForSite(); err != nil {
+// BbtchChbngesEnbbledForUser checks if Bbtch Chbnges bre enbbled for the current user bnd returns `nil` if they bre,
+// or else bn error indicbting why they're disbbled
+func BbtchChbngesEnbbledForUser(ctx context.Context, db dbtbbbse.DB) error {
+	if err := BbtchChbngesEnbbledForSite(); err != nil {
 		return err
 	}
 
-	if conf.BatchChangesRestrictedToAdmins() && auth.CheckCurrentUserIsSiteAdmin(ctx, db) != nil {
-		return ErrBatchChangesDisabledForUser{}
+	if conf.BbtchChbngesRestrictedToAdmins() && buth.CheckCurrentUserIsSiteAdmin(ctx, db) != nil {
+		return ErrBbtchChbngesDisbbledForUser{}
 	}
 	return nil
 }
 
-type stubRankingService struct{}
+type stubRbnkingService struct{}
 
-func (s stubRankingService) LastUpdatedAt(ctx context.Context, repoIDs []api.RepoID) (map[api.RepoID]time.Time, error) {
+func (s stubRbnkingService) LbstUpdbtedAt(ctx context.Context, repoIDs []bpi.RepoID) (mbp[bpi.RepoID]time.Time, error) {
 	return nil, nil
 }
 
-func (s stubRankingService) GetRepoRank(ctx context.Context, repoName api.RepoName) (_ []float64, err error) {
+func (s stubRbnkingService) GetRepoRbnk(ctx context.Context, repoNbme bpi.RepoNbme) (_ []flobt64, err error) {
 	return nil, nil
 }
 
-func (s stubRankingService) GetDocumentRanks(ctx context.Context, repoName api.RepoName) (_ types.RepoPathRanks, err error) {
-	return types.RepoPathRanks{}, nil
+func (s stubRbnkingService) GetDocumentRbnks(ctx context.Context, repoNbme bpi.RepoNbme) (_ types.RepoPbthRbnks, err error) {
+	return types.RepoPbthRbnks{}, nil
 }

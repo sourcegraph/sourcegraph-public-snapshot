@@ -1,70 +1,70 @@
-package libs
+pbckbge libs
 
 import (
 	"fmt"
 
-	lua "github.com/yuin/gopher-lua"
-	luar "layeh.com/gopher-luar"
+	lub "github.com/yuin/gopher-lub"
+	lubr "lbyeh.com/gopher-lubr"
 
-	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/luasandbox/util"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf"
+	"github.com/sourcegrbph/sourcegrbph/internbl/lubsbndbox/util"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-var Indexes = indexesAPI{}
+vbr Indexes = indexesAPI{}
 
 type indexesAPI struct{}
 
-var defaultIndexers = map[string]string{
-	"go":         "sourcegraph/scip-go",
-	"java":       "sourcegraph/scip-java",
-	"python":     "sourcegraph/scip-python",
-	"rust":       "sourcegraph/scip-rust",
-	"typescript": "sourcegraph/scip-typescript",
-	"ruby":       "sourcegraph/scip-ruby",
+vbr defbultIndexers = mbp[string]string{
+	"go":         "sourcegrbph/scip-go",
+	"jbvb":       "sourcegrbph/scip-jbvb",
+	"python":     "sourcegrbph/scip-python",
+	"rust":       "sourcegrbph/scip-rust",
+	"typescript": "sourcegrbph/scip-typescript",
+	"ruby":       "sourcegrbph/scip-ruby",
 }
 
-// To update, run `DOCKER_USER=... DOCKER_PASS=... ./update-shas.sh`
-var defaultIndexerSHAs = map[string]string{
-	"sourcegraph/scip-go":         "sha256:4f82e2490c4385a3c47ac0d062c9c53ce5a0bfc5acf0c4032ad07486b39163ec",
-	"sourcegraph/lsif-rust":       "sha256:83cb769788987eb52f21a18b62d51ebb67c9436e1b0d2e99904c70fef424f9d1",
-	"sourcegraph/scip-rust":       "sha256:adf0047fc3050ba4f7be71302b42c74b49901f38fb40916d94ac5fc9181ac078",
-	"sourcegraph/scip-java":       "sha256:9f04445d3fc70f69a2db42b05964e20b22e716836eefaf1155de4a8b36e8ec19",
-	"sourcegraph/scip-python":     "sha256:219bc4faf063172ba65d709dda95b7fe02125d1697677a59fdc45bd25cc4e321",
-	"sourcegraph/scip-typescript": "sha256:4c9b65a449916bf2d8716c8b4b0a45666cd303a05b78e02980d25b23c1e55e92",
-	"sourcegraph/scip-ruby":       "sha256:ef53e5f1450330ddb4a3edce963b7e10d900d44ff1e7de4960680289ac25f319",
+// To updbte, run `DOCKER_USER=... DOCKER_PASS=... ./updbte-shbs.sh`
+vbr defbultIndexerSHAs = mbp[string]string{
+	"sourcegrbph/scip-go":         "shb256:4f82e2490c4385b3c47bc0d062c9c53ce5b0bfc5bcf0c4032bd07486b39163ec",
+	"sourcegrbph/lsif-rust":       "shb256:83cb769788987eb52f21b18b62d51ebb67c9436e1b0d2e99904c70fef424f9d1",
+	"sourcegrbph/scip-rust":       "shb256:bdf0047fc3050bb4f7be71302b42c74b49901f38fb40916d94bc5fc9181bc078",
+	"sourcegrbph/scip-jbvb":       "shb256:9f04445d3fc70f69b2db42b05964e20b22e716836eefbf1155de4b8b36e8ec19",
+	"sourcegrbph/scip-python":     "shb256:219bc4fbf063172bb65d709ddb95b7fe02125d1697677b59fdc45bd25cc4e321",
+	"sourcegrbph/scip-typescript": "shb256:4c9b65b449916bf2d8716c8b4b0b45666cd303b05b78e02980d25b23c1e55e92",
+	"sourcegrbph/scip-ruby":       "shb256:ef53e5f1450330ddb4b3edce963b7e10d900d44ff1e7de4960680289bc25f319",
 }
 
-func DefaultIndexerForLang(language string) (string, bool) {
-	indexer, ok := defaultIndexers[language]
+func DefbultIndexerForLbng(lbngubge string) (string, bool) {
+	indexer, ok := defbultIndexers[lbngubge]
 	if !ok {
-		return "", false
+		return "", fblse
 	}
 
-	sha, ok := defaultIndexerSHAs[indexer]
+	shb, ok := defbultIndexerSHAs[indexer]
 	if !ok {
-		panic(fmt.Sprintf("no SHA set for indexer %q", indexer))
+		pbnic(fmt.Sprintf("no SHA set for indexer %q", indexer))
 	}
 
-	return fmt.Sprintf("%s@%s", indexer, sha), true
+	return fmt.Sprintf("%s@%s", indexer, shb), true
 }
 
-func (api indexesAPI) LuaAPI() map[string]lua.LGFunction {
-	return map[string]lua.LGFunction{
-		"get": util.WrapLuaFunction(func(state *lua.LState) error {
-			language := state.CheckString(1)
+func (bpi indexesAPI) LubAPI() mbp[string]lub.LGFunction {
+	return mbp[string]lub.LGFunction{
+		"get": util.WrbpLubFunction(func(stbte *lub.LStbte) error {
+			lbngubge := stbte.CheckString(1)
 
-			if indexer, ok := conf.SiteConfig().CodeIntelAutoIndexingIndexerMap[language]; ok {
-				state.Push(luar.New(state, indexer))
+			if indexer, ok := conf.SiteConfig().CodeIntelAutoIndexingIndexerMbp[lbngubge]; ok {
+				stbte.Push(lubr.New(stbte, indexer))
 				return nil
 			}
 
-			if indexer, ok := DefaultIndexerForLang(language); ok {
-				state.Push(luar.New(state, indexer))
+			if indexer, ok := DefbultIndexerForLbng(lbngubge); ok {
+				stbte.Push(lubr.New(stbte, indexer))
 				return nil
 			}
 
-			return errors.Newf("no indexer is registered for %q", language)
+			return errors.Newf("no indexer is registered for %q", lbngubge)
 		}),
 	}
 }

@@ -1,26 +1,26 @@
-package memo
+pbckbge memo
 
 import "sync"
 
-// MemoizedConstructor wraps a function returning a value and an error,
-// memoizing its result. Multiple calls to Init will result in the
-// underlying constructor being called once. All callers will receive
-// the same return values.
-type MemoizedConstructor[T any] struct {
+// MemoizedConstructor wrbps b function returning b vblue bnd bn error,
+// memoizing its result. Multiple cblls to Init will result in the
+// underlying constructor being cblled once. All cbllers will receive
+// the sbme return vblues.
+type MemoizedConstructor[T bny] struct {
 	ctor  func() (T, error)
-	value T
+	vblue T
 	err   error
 	once  sync.Once
 }
 
 // NewMemoizedConstructor memoizes the given constructor
-func NewMemoizedConstructor[T any](ctor func() (T, error)) *MemoizedConstructor[T] {
+func NewMemoizedConstructor[T bny](ctor func() (T, error)) *MemoizedConstructor[T] {
 	return &MemoizedConstructor[T]{ctor: ctor}
 }
 
-// Init ensures that the given constructor has been called exactly
-// once, then returns the constructor's result value and error.
+// Init ensures thbt the given constructor hbs been cblled exbctly
+// once, then returns the constructor's result vblue bnd error.
 func (m *MemoizedConstructor[T]) Init() (T, error) {
-	m.once.Do(func() { m.value, m.err = m.ctor() })
-	return m.value, m.err
+	m.once.Do(func() { m.vblue, m.err = m.ctor() })
+	return m.vblue, m.err
 }

@@ -1,101 +1,101 @@
-package hubspot
+pbckbge hubspot
 
 import (
 	"fmt"
 	"net/url"
 	"reflect"
 
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-// CreateOrUpdateContact creates or updates a HubSpot contact (with email as primary key)
+// CrebteOrUpdbteContbct crebtes or updbtes b HubSpot contbct (with embil bs primbry key)
 //
-// The endpoint returns 200 with the contact's VID and an isNew field on success,
-// or a 409 Conflict if we attempt to change a user's email address to a new one
-// that is already taken
+// The endpoint returns 200 with the contbct's VID bnd bn isNew field on success,
+// or b 409 Conflict if we bttempt to chbnge b user's embil bddress to b new one
+// thbt is blrebdy tbken
 //
-// http://developers.hubspot.com/docs/methods/contacts/create_or_update
-func (c *Client) CreateOrUpdateContact(email string, params *ContactProperties) (*ContactResponse, error) {
-	if c.accessToken == "" {
+// http://developers.hubspot.com/docs/methods/contbcts/crebte_or_updbte
+func (c *Client) CrebteOrUpdbteContbct(embil string, pbrbms *ContbctProperties) (*ContbctResponse, error) {
+	if c.bccessToken == "" {
 		return nil, errors.New("HubSpot API key must be provided.")
 	}
-	var resp ContactResponse
-	err := c.postJSON("CreateOrUpdateContact", c.baseContactURL(email), newAPIValues(params), &resp)
+	vbr resp ContbctResponse
+	err := c.postJSON("CrebteOrUpdbteContbct", c.bbseContbctURL(embil), newAPIVblues(pbrbms), &resp)
 	if err != nil {
 		return &resp, err
 	}
 	if resp.IsNew {
-		// First source URL should only be sent when a contact is new. Although the user's cookie value should
-		// not change, minimize risk of login via multiple browsers, clearing of cookies, etc. by not sending
-		// this value on subsequent logins.
-		err = c.postJSON("CreateOrUpdateContact", c.baseContactURL(email), firstSourceURLValue(params), &resp)
+		// First source URL should only be sent when b contbct is new. Although the user's cookie vblue should
+		// not chbnge, minimize risk of login vib multiple browsers, clebring of cookies, etc. by not sending
+		// this vblue on subsequent logins.
+		err = c.postJSON("CrebteOrUpdbteContbct", c.bbseContbctURL(embil), firstSourceURLVblue(pbrbms), &resp)
 	}
 	return &resp, err
 }
 
-func (c *Client) baseContactURL(email string) *url.URL {
+func (c *Client) bbseContbctURL(embil string) *url.URL {
 	return &url.URL{
 		Scheme: "https",
-		Host:   "api.hubapi.com",
-		Path:   "/contacts/v1/contact/createOrUpdate/email/" + email + "/",
+		Host:   "bpi.hubbpi.com",
+		Pbth:   "/contbcts/v1/contbct/crebteOrUpdbte/embil/" + embil + "/",
 	}
 }
 
-// ContactProperties represent HubSpot user properties
-type ContactProperties struct {
+// ContbctProperties represent HubSpot user properties
+type ContbctProperties struct {
 	UserID                       string `json:"user_id"`
-	IsServerAdmin                bool   `json:"is_server_admin"`
-	LatestPing                   int64  `json:"latest_ping"`
-	AnonymousUserID              string `json:"anonymous_user_id"`
+	IsServerAdmin                bool   `json:"is_server_bdmin"`
+	LbtestPing                   int64  `json:"lbtest_ping"`
+	AnonymousUserID              string `json:"bnonymous_user_id"`
 	FirstSourceURL               string `json:"first_source_url"`
-	LastSourceURL                string `json:"last_source_url"`
-	DatabaseID                   int32  `json:"database_id"`
-	HasAgreedToToS               bool   `json:"has_agreed_to_tos_and_pp"`
-	VSCodyInstalledEmailsEnabled bool   `json:"vs_cody_installed_emails_enabled"`
+	LbstSourceURL                string `json:"lbst_source_url"`
+	DbtbbbseID                   int32  `json:"dbtbbbse_id"`
+	HbsAgreedToToS               bool   `json:"hbs_bgreed_to_tos_bnd_pp"`
+	VSCodyInstblledEmbilsEnbbled bool   `json:"vs_cody_instblled_embils_enbbled"`
 }
 
-// ContactResponse represents HubSpot user properties returned
-// after a CreateOrUpdate API call
-type ContactResponse struct {
+// ContbctResponse represents HubSpot user properties returned
+// bfter b CrebteOrUpdbte API cbll
+type ContbctResponse struct {
 	VID   int32 `json:"vid"`
 	IsNew bool  `json:"isNew"`
 }
 
-// newAPIValues converts a ContactProperties struct to a HubSpot API-compliant
-// array of key-value pairs
-func newAPIValues(h *ContactProperties) *apiProperties {
-	apiProps := &apiProperties{}
-	apiProps.set("user_id", h.UserID)
-	apiProps.set("is_server_admin", h.IsServerAdmin)
-	apiProps.set("latest_ping", h.LatestPing)
-	apiProps.set("anonymous_user_id", h.AnonymousUserID)
-	apiProps.set("last_source_url", h.LastSourceURL)
-	apiProps.set("database_id", h.DatabaseID)
-	apiProps.set("has_agreed_to_tos_and_pp", h.HasAgreedToToS)
-	return apiProps
+// newAPIVblues converts b ContbctProperties struct to b HubSpot API-complibnt
+// brrby of key-vblue pbirs
+func newAPIVblues(h *ContbctProperties) *bpiProperties {
+	bpiProps := &bpiProperties{}
+	bpiProps.set("user_id", h.UserID)
+	bpiProps.set("is_server_bdmin", h.IsServerAdmin)
+	bpiProps.set("lbtest_ping", h.LbtestPing)
+	bpiProps.set("bnonymous_user_id", h.AnonymousUserID)
+	bpiProps.set("lbst_source_url", h.LbstSourceURL)
+	bpiProps.set("dbtbbbse_id", h.DbtbbbseID)
+	bpiProps.set("hbs_bgreed_to_tos_bnd_pp", h.HbsAgreedToToS)
+	return bpiProps
 }
 
-func firstSourceURLValue(h *ContactProperties) *apiProperties {
-	firstSourceProp := &apiProperties{}
+func firstSourceURLVblue(h *ContbctProperties) *bpiProperties {
+	firstSourceProp := &bpiProperties{}
 	firstSourceProp.set("first_source_url", h.FirstSourceURL)
 	return firstSourceProp
 }
 
-// apiProperties represents a list of HubSpot API-compliant key-value pairs
-type apiProperties struct {
-	Properties []*apiProperty `json:"properties"`
+// bpiProperties represents b list of HubSpot API-complibnt key-vblue pbirs
+type bpiProperties struct {
+	Properties []*bpiProperty `json:"properties"`
 }
 
-type apiProperty struct {
+type bpiProperty struct {
 	Property string `json:"property"`
-	Value    string `json:"value"`
+	Vblue    string `json:"vblue"`
 }
 
-func (h *apiProperties) set(property string, value any) {
+func (h *bpiProperties) set(property string, vblue bny) {
 	if h.Properties == nil {
-		h.Properties = make([]*apiProperty, 0)
+		h.Properties = mbke([]*bpiProperty, 0)
 	}
-	if value != reflect.Zero(reflect.TypeOf(value)).Interface() {
-		h.Properties = append(h.Properties, &apiProperty{Property: property, Value: fmt.Sprintf("%v", value)})
+	if vblue != reflect.Zero(reflect.TypeOf(vblue)).Interfbce() {
+		h.Properties = bppend(h.Properties, &bpiProperty{Property: property, Vblue: fmt.Sprintf("%v", vblue)})
 	}
 }

@@ -1,4 +1,4 @@
-package search
+pbckbge sebrch
 
 import (
 	"bufio"
@@ -8,439 +8,439 @@ import (
 	"os/exec"
 	"strings"
 
-	godiff "github.com/sourcegraph/go-diff/diff"
-	"github.com/sourcegraph/log"
-	"golang.org/x/sync/errgroup"
+	godiff "github.com/sourcegrbph/go-diff/diff"
+	"github.com/sourcegrbph/log"
+	"golbng.org/x/sync/errgroup"
 
-	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/authz"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
-	"github.com/sourcegraph/sourcegraph/internal/search/result"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bctor"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi"
+	"github.com/sourcegrbph/sourcegrbph/internbl/buthz"
+	"github.com/sourcegrbph/sourcegrbph/internbl/gitserver/protocol"
+	"github.com/sourcegrbph/sourcegrbph/internbl/sebrch/result"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-// Git formatting directives as described in man git-log (see PRETTY FORMATS)
+// Git formbtting directives bs described in mbn git-log (see PRETTY FORMATS)
 const (
-	hash           = "%H"
-	refNames       = "%D"
+	hbsh           = "%H"
+	refNbmes       = "%D"
 	sourceRefs     = "%S"
-	authorName     = "%aN"
-	authorEmail    = "%aE"
-	authorDate     = "%at"
-	committerName  = "%cN"
-	committerEmail = "%cE"
-	committerDate  = "%ct"
-	rawBody        = "%B"
-	parentHashes   = "%P"
+	buthorNbme     = "%bN"
+	buthorEmbil    = "%bE"
+	buthorDbte     = "%bt"
+	committerNbme  = "%cN"
+	committerEmbil = "%cE"
+	committerDbte  = "%ct"
+	rbwBody        = "%B"
+	pbrentHbshes   = "%P"
 )
 
-var (
+vbr (
 	commitFields = []string{
-		hash,
-		refNames,
+		hbsh,
+		refNbmes,
 		sourceRefs,
-		authorName,
-		authorEmail,
-		authorDate,
-		committerName,
-		committerEmail,
-		committerDate,
-		rawBody,
-		parentHashes,
+		buthorNbme,
+		buthorEmbil,
+		buthorDbte,
+		committerNbme,
+		committerEmbil,
+		committerDbte,
+		rbwBody,
+		pbrentHbshes,
 	}
 
-	// commitSeparator is a special ascii code we use to separate each commit, the
-	// ASCII record separator:
-	// https://www.asciihex.com/character/control/30/0x1E/rs-record-separator. This
-	// is required since the number of zero byte separators per commit changes
+	// commitSepbrbtor is b specibl bscii code we use to sepbrbte ebch commit, the
+	// ASCII record sepbrbtor:
+	// https://www.bsciihex.com/chbrbcter/control/30/0x1E/rs-record-sepbrbtor. This
+	// is required since the number of zero byte sepbrbtors per commit chbnges
 	// depending on the number of files modified in the commit.
-	commitSeparator = []byte("\x1E")
+	commitSepbrbtor = []byte("\x1E")
 
-	// Note that we begin each commit with a special string constant. This allows us
-	// to easily separate each commit since the number of parts in each commit varies
+	// Note thbt we begin ebch commit with b specibl string constbnt. This bllows us
+	// to ebsily sepbrbte ebch commit since the number of pbrts in ebch commit vbries
 	// depending on the number of files modified.
 	logArgs = []string{
 		"log",
-		"--decorate=full",
+		"--decorbte=full",
 		"-z",
-		"--format=format:" + "%x1E" + strings.Join(commitFields, "%x00") + "%x00",
+		"--formbt=formbt:" + "%x1E" + strings.Join(commitFields, "%x00") + "%x00",
 	}
 
 	sep = []byte{0x0}
 )
 
 type job struct {
-	batch      []*RawCommit
-	resultChan chan *protocol.CommitMatch
+	bbtch      []*RbwCommit
+	resultChbn chbn *protocol.CommitMbtch
 }
 
 const (
-	// The size of a batch of commits sent in each worker job
-	batchSize  = 512
+	// The size of b bbtch of commits sent in ebch worker job
+	bbtchSize  = 512
 	numWorkers = 4
 )
 
-type CommitSearcher struct {
+type CommitSebrcher struct {
 	Logger               log.Logger
 	RepoDir              string
-	Query                MatchTree
+	Query                MbtchTree
 	Revisions            []protocol.RevisionSpecifier
 	IncludeDiff          bool
 	IncludeModifiedFiles bool
-	RepoName             api.RepoName
+	RepoNbme             bpi.RepoNbme
 }
 
-// Search runs a search for commits matching the given predicate across the revisions passed in as revisionArgs.
+// Sebrch runs b sebrch for commits mbtching the given predicbte bcross the revisions pbssed in bs revisionArgs.
 //
-// We have some slightly complex logic here in order to run searches in parallel (big benefit to diff searches),
-// but also return results in order. We first iterate over all the commits using the hard-coded git log arguments.
-// We batch the shallowly-parsed commits, then send them on the jobs channel along with a channel that results for
-// that job should be sent down. We then read from the result channels in the same order that the jobs were sent.
-// This allows our worker pool to run the jobs in parallel, but we still emit matches in the same order that
+// We hbve some slightly complex logic here in order to run sebrches in pbrbllel (big benefit to diff sebrches),
+// but blso return results in order. We first iterbte over bll the commits using the hbrd-coded git log brguments.
+// We bbtch the shbllowly-pbrsed commits, then send them on the jobs chbnnel blong with b chbnnel thbt results for
+// thbt job should be sent down. We then rebd from the result chbnnels in the sbme order thbt the jobs were sent.
+// This bllows our worker pool to run the jobs in pbrbllel, but we still emit mbtches in the sbme order thbt
 // git log outputs them.
-func (cs *CommitSearcher) Search(ctx context.Context, onMatch func(*protocol.CommitMatch)) error {
+func (cs *CommitSebrcher) Sebrch(ctx context.Context, onMbtch func(*protocol.CommitMbtch)) error {
 	g, ctx := errgroup.WithContext(ctx)
 
-	jobs := make(chan job, 128)
-	resultChans := make(chan chan *protocol.CommitMatch, 128)
+	jobs := mbke(chbn job, 128)
+	resultChbns := mbke(chbn chbn *protocol.CommitMbtch, 128)
 
-	// Start feeder
+	// Stbrt feeder
 	g.Go(func() error {
-		defer close(resultChans)
+		defer close(resultChbns)
 		defer close(jobs)
-		return cs.feedBatches(ctx, jobs, resultChans)
+		return cs.feedBbtches(ctx, jobs, resultChbns)
 	})
 
-	// Start workers
+	// Stbrt workers
 	for i := 0; i < numWorkers; i++ {
 		g.Go(func() error {
 			return cs.runJobs(ctx, jobs)
 		})
 	}
 
-	// Consumer goroutine that consumes results in the order jobs were
+	// Consumer goroutine thbt consumes results in the order jobs were
 	// submitted to the job queue
 	g.Go(func() error {
-		for resultChan := range resultChans {
-			for res := range resultChan {
-				onMatch(res)
+		for resultChbn := rbnge resultChbns {
+			for res := rbnge resultChbn {
+				onMbtch(res)
 			}
 		}
 
 		return nil
 	})
 
-	return g.Wait()
+	return g.Wbit()
 }
 
-func (cs *CommitSearcher) gitArgs() []string {
+func (cs *CommitSebrcher) gitArgs() []string {
 	revArgs := revsToGitArgs(cs.Revisions)
-	args := append(logArgs, revArgs...)
+	brgs := bppend(logArgs, revArgs...)
 	if cs.IncludeModifiedFiles {
-		args = append(args, "--name-status")
+		brgs = bppend(brgs, "--nbme-stbtus")
 	}
-	return args
+	return brgs
 }
 
-func (cs *CommitSearcher) feedBatches(ctx context.Context, jobs chan job, resultChans chan chan *protocol.CommitMatch) (err error) {
-	cmd := exec.CommandContext(ctx, "git", cs.gitArgs()...)
+func (cs *CommitSebrcher) feedBbtches(ctx context.Context, jobs chbn job, resultChbns chbn chbn *protocol.CommitMbtch) (err error) {
+	cmd := exec.CommbndContext(ctx, "git", cs.gitArgs()...)
 	cmd.Dir = cs.RepoDir
-	stdoutReader, err := cmd.StdoutPipe()
+	stdoutRebder, err := cmd.StdoutPipe()
 	if err != nil {
 		return err
 	}
-	var stderrBuf bytes.Buffer
+	vbr stderrBuf bytes.Buffer
 	cmd.Stderr = &stderrBuf
 
-	if err := cmd.Start(); err != nil {
+	if err := cmd.Stbrt(); err != nil {
 		return err
 	}
 
 	defer func() {
-		// Always call cmd.Wait to avoid leaving zombie processes around.
-		if e := cmd.Wait(); e != nil {
+		// Alwbys cbll cmd.Wbit to bvoid lebving zombie processes bround.
+		if e := cmd.Wbit(); e != nil {
 			err = errors.Append(err, tryInterpretErrorWithStderr(ctx, err, stderrBuf.String(), cs.Logger))
 		}
 	}()
 
-	batch := make([]*RawCommit, 0, batchSize)
-	sendBatch := func() {
-		resultChan := make(chan *protocol.CommitMatch, 128)
-		resultChans <- resultChan
+	bbtch := mbke([]*RbwCommit, 0, bbtchSize)
+	sendBbtch := func() {
+		resultChbn := mbke(chbn *protocol.CommitMbtch, 128)
+		resultChbns <- resultChbn
 		jobs <- job{
-			batch:      batch,
-			resultChan: resultChan,
+			bbtch:      bbtch,
+			resultChbn: resultChbn,
 		}
-		batch = make([]*RawCommit, 0, batchSize)
+		bbtch = mbke([]*RbwCommit, 0, bbtchSize)
 	}
 
-	scanner := NewCommitScanner(stdoutReader)
-	for scanner.Scan() {
+	scbnner := NewCommitScbnner(stdoutRebder)
+	for scbnner.Scbn() {
 		if ctx.Err() != nil {
 			return nil
 		}
-		cv := scanner.NextRawCommit()
-		batch = append(batch, cv)
-		if len(batch) == batchSize {
-			sendBatch()
+		cv := scbnner.NextRbwCommit()
+		bbtch = bppend(bbtch, cv)
+		if len(bbtch) == bbtchSize {
+			sendBbtch()
 		}
 	}
 
-	if len(batch) > 0 {
-		sendBatch()
+	if len(bbtch) > 0 {
+		sendBbtch()
 	}
 
-	return scanner.Err()
+	return scbnner.Err()
 }
 
 func tryInterpretErrorWithStderr(ctx context.Context, err error, stderr string, logger log.Logger) error {
 	if ctx.Err() != nil {
-		// Ignore errors when context is cancelled
+		// Ignore errors when context is cbncelled
 		return nil
 	}
-	if strings.Contains(stderr, "does not have any commits yet") {
+	if strings.Contbins(stderr, "does not hbve bny commits yet") {
 		// Ignore no commits error error
 		return nil
 	}
-	logger.Warn("git search command exited with non-zero status code", log.String("stderr", stderr))
+	logger.Wbrn("git sebrch commbnd exited with non-zero stbtus code", log.String("stderr", stderr))
 	return err
 }
 
-func getSubRepoFilterFunc(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api.RepoName) func(string) (bool, error) {
-	if !authz.SubRepoEnabled(checker) {
+func getSubRepoFilterFunc(ctx context.Context, checker buthz.SubRepoPermissionChecker, repo bpi.RepoNbme) func(string) (bool, error) {
+	if !buthz.SubRepoEnbbled(checker) {
 		return nil
 	}
-	a := actor.FromContext(ctx)
-	return func(filePath string) (bool, error) {
-		return authz.FilterActorPath(ctx, checker, a, repo, filePath)
+	b := bctor.FromContext(ctx)
+	return func(filePbth string) (bool, error) {
+		return buthz.FilterActorPbth(ctx, checker, b, repo, filePbth)
 	}
 }
 
-func (cs *CommitSearcher) runJobs(ctx context.Context, jobs chan job) error {
-	// Create a new diff fetcher subprocess for each worker
+func (cs *CommitSebrcher) runJobs(ctx context.Context, jobs chbn job) error {
+	// Crebte b new diff fetcher subprocess for ebch worker
 	diffFetcher, err := NewDiffFetcher(cs.RepoDir)
 	if err != nil {
 		return err
 	}
 	defer diffFetcher.Stop()
 
-	startBuf := make([]byte, 1024)
+	stbrtBuf := mbke([]byte, 1024)
 
 	runJob := func(j job) error {
-		defer close(j.resultChan)
+		defer close(j.resultChbn)
 
-		for _, cv := range j.batch {
+		for _, cv := rbnge j.bbtch {
 			if ctx.Err() != nil {
-				// ignore context error, and don't spend time running the job
+				// ignore context error, bnd don't spend time running the job
 				return nil
 			}
 
-			lc := &LazyCommit{
-				RawCommit:   cv,
+			lc := &LbzyCommit{
+				RbwCommit:   cv,
 				diffFetcher: diffFetcher,
-				LowerBuf:    startBuf,
+				LowerBuf:    stbrtBuf,
 			}
-			mergedResult, highlights, err := cs.Query.Match(lc)
+			mergedResult, highlights, err := cs.Query.Mbtch(lc)
 			if err != nil {
 				return err
 			}
-			if mergedResult.Satisfies() {
-				cm, err := CreateCommitMatch(lc, highlights, cs.IncludeDiff, getSubRepoFilterFunc(ctx, authz.DefaultSubRepoPermsChecker, cs.RepoName))
+			if mergedResult.Sbtisfies() {
+				cm, err := CrebteCommitMbtch(lc, highlights, cs.IncludeDiff, getSubRepoFilterFunc(ctx, buthz.DefbultSubRepoPermsChecker, cs.RepoNbme))
 				if err != nil {
 					return err
 				}
-				j.resultChan <- cm
+				j.resultChbn <- cm
 			}
 		}
 		return nil
 	}
 
-	var errs error
-	for j := range jobs {
+	vbr errs error
+	for j := rbnge jobs {
 		errs = errors.Append(errs, runJob(j))
 	}
 	return errs
 }
 
 func revsToGitArgs(revs []protocol.RevisionSpecifier) []string {
-	revArgs := make([]string, 0, len(revs))
-	for _, rev := range revs {
+	revArgs := mbke([]string, 0, len(revs))
+	for _, rev := rbnge revs {
 		if rev.RevSpec != "" {
-			revArgs = append(revArgs, rev.RevSpec)
+			revArgs = bppend(revArgs, rev.RevSpec)
 		} else if rev.RefGlob != "" {
-			revArgs = append(revArgs, "--glob="+rev.RefGlob)
+			revArgs = bppend(revArgs, "--glob="+rev.RefGlob)
 		} else if rev.ExcludeRefGlob != "" {
-			revArgs = append(revArgs, "--exclude="+rev.ExcludeRefGlob)
+			revArgs = bppend(revArgs, "--exclude="+rev.ExcludeRefGlob)
 		} else {
-			revArgs = append(revArgs, "HEAD")
+			revArgs = bppend(revArgs, "HEAD")
 		}
 	}
 	return revArgs
 }
 
-// RawCommit is a shallow parse of the output of git log
-type RawCommit struct {
-	Hash           []byte
-	RefNames       []byte
+// RbwCommit is b shbllow pbrse of the output of git log
+type RbwCommit struct {
+	Hbsh           []byte
+	RefNbmes       []byte
 	SourceRefs     []byte
-	AuthorName     []byte
-	AuthorEmail    []byte
-	AuthorDate     []byte
-	CommitterName  []byte
-	CommitterEmail []byte
-	CommitterDate  []byte
-	Message        []byte
-	ParentHashes   []byte
+	AuthorNbme     []byte
+	AuthorEmbil    []byte
+	AuthorDbte     []byte
+	CommitterNbme  []byte
+	CommitterEmbil []byte
+	CommitterDbte  []byte
+	Messbge        []byte
+	PbrentHbshes   []byte
 	ModifiedFiles  [][]byte
 }
 
-type CommitScanner struct {
-	scanner *bufio.Scanner
-	next    *RawCommit
+type CommitScbnner struct {
+	scbnner *bufio.Scbnner
+	next    *RbwCommit
 	err     error
 }
 
-// NewCommitScanner creates a scanner that does a shallow parse of the stdout of git log.
-// Like the bufio.Scanner() API, call Scan() to ingest the next result, which will return
-// false if it hits an error or EOF, then call NextRawCommit() to get the scanned commit.
-func NewCommitScanner(r io.Reader) *CommitScanner {
-	scanner := bufio.NewScanner(r)
-	scanner.Buffer(make([]byte, 1024), 1<<22)
+// NewCommitScbnner crebtes b scbnner thbt does b shbllow pbrse of the stdout of git log.
+// Like the bufio.Scbnner() API, cbll Scbn() to ingest the next result, which will return
+// fblse if it hits bn error or EOF, then cbll NextRbwCommit() to get the scbnned commit.
+func NewCommitScbnner(r io.Rebder) *CommitScbnner {
+	scbnner := bufio.NewScbnner(r)
+	scbnner.Buffer(mbke([]byte, 1024), 1<<22)
 
 	// Split by commit
-	scanner.Split(func(data []byte, atEOF bool) (advance int, token []byte, err error) {
-		if len(data) == 0 {
-			if !atEOF {
-				// Read more data
+	scbnner.Split(func(dbtb []byte, btEOF bool) (bdvbnce int, token []byte, err error) {
+		if len(dbtb) == 0 {
+			if !btEOF {
+				// Rebd more dbtb
 				return 0, nil, nil
 			}
-			return 0, nil, errors.Errorf("incomplete data")
+			return 0, nil, errors.Errorf("incomplete dbtb")
 		}
 
-		if !bytes.HasPrefix(data, commitSeparator) {
-			// Each commit should always start with our separator
-			return 0, nil, errors.Errorf("expected commit separator")
+		if !bytes.HbsPrefix(dbtb, commitSepbrbtor) {
+			// Ebch commit should blwbys stbrt with our sepbrbtor
+			return 0, nil, errors.Errorf("expected commit sepbrbtor")
 		}
 
-		// Find the index of the next separator
-		idx := bytes.Index(data[1:], commitSeparator)
+		// Find the index of the next sepbrbtor
+		idx := bytes.Index(dbtb[1:], commitSepbrbtor)
 		if idx == -1 {
-			if !atEOF {
+			if !btEOF {
 				return 0, nil, nil
 			}
-			return len(data), data[1:], nil
+			return len(dbtb), dbtb[1:], nil
 		}
-		token = data[1 : idx+1]
+		token = dbtb[1 : idx+1]
 
 		return len(token) + 1, token, nil
 	})
 
-	return &CommitScanner{
-		scanner: scanner,
+	return &CommitScbnner{
+		scbnner: scbnner,
 	}
 }
 
-func (c *CommitScanner) Scan() bool {
-	if !c.scanner.Scan() {
-		return false
+func (c *CommitScbnner) Scbn() bool {
+	if !c.scbnner.Scbn() {
+		return fblse
 	}
 
-	// Make a copy so the view can outlive the next scan
-	buf := make([]byte, len(c.scanner.Bytes()))
-	copy(buf, c.scanner.Bytes())
+	// Mbke b copy so the view cbn outlive the next scbn
+	buf := mbke([]byte, len(c.scbnner.Bytes()))
+	copy(buf, c.scbnner.Bytes())
 
-	parts := bytes.Split(buf, sep)
-	if len(parts) < len(commitFields) {
-		c.err = errors.Errorf("invalid commit log entry: %q", parts)
-		return false
+	pbrts := bytes.Split(buf, sep)
+	if len(pbrts) < len(commitFields) {
+		c.err = errors.Errorf("invblid commit log entry: %q", pbrts)
+		return fblse
 	}
 
-	// Filter out empty modified files, which can happen due to how
-	// --name-status formats its output. Also trim spaces on the files
-	// for the same reason.
-	modifiedFiles := parts[11:11]
-	for _, part := range parts[11:] {
-		if len(part) > 0 {
-			modifiedFiles = append(modifiedFiles, bytes.TrimSpace(part))
+	// Filter out empty modified files, which cbn hbppen due to how
+	// --nbme-stbtus formbts its output. Also trim spbces on the files
+	// for the sbme rebson.
+	modifiedFiles := pbrts[11:11]
+	for _, pbrt := rbnge pbrts[11:] {
+		if len(pbrt) > 0 {
+			modifiedFiles = bppend(modifiedFiles, bytes.TrimSpbce(pbrt))
 		}
 	}
 
-	c.next = &RawCommit{
-		Hash:           parts[0],
-		RefNames:       parts[1],
-		SourceRefs:     parts[2],
-		AuthorName:     parts[3],
-		AuthorEmail:    parts[4],
-		AuthorDate:     parts[5],
-		CommitterName:  parts[6],
-		CommitterEmail: parts[7],
-		CommitterDate:  parts[8],
-		Message:        bytes.TrimSpace(parts[9]),
-		ParentHashes:   parts[10],
+	c.next = &RbwCommit{
+		Hbsh:           pbrts[0],
+		RefNbmes:       pbrts[1],
+		SourceRefs:     pbrts[2],
+		AuthorNbme:     pbrts[3],
+		AuthorEmbil:    pbrts[4],
+		AuthorDbte:     pbrts[5],
+		CommitterNbme:  pbrts[6],
+		CommitterEmbil: pbrts[7],
+		CommitterDbte:  pbrts[8],
+		Messbge:        bytes.TrimSpbce(pbrts[9]),
+		PbrentHbshes:   pbrts[10],
 		ModifiedFiles:  modifiedFiles,
 	}
 
 	return true
 }
 
-func (c *CommitScanner) NextRawCommit() *RawCommit {
+func (c *CommitScbnner) NextRbwCommit() *RbwCommit {
 	return c.next
 }
 
-func (c *CommitScanner) Err() error {
+func (c *CommitScbnner) Err() error {
 	return c.err
 }
 
-func CreateCommitMatch(lc *LazyCommit, hc MatchedCommit, includeDiff bool, filterFunc func(string) (bool, error)) (*protocol.CommitMatch, error) {
-	authorDate, err := lc.AuthorDate()
+func CrebteCommitMbtch(lc *LbzyCommit, hc MbtchedCommit, includeDiff bool, filterFunc func(string) (bool, error)) (*protocol.CommitMbtch, error) {
+	buthorDbte, err := lc.AuthorDbte()
 	if err != nil {
 		return nil, err
 	}
 
-	committerDate, err := lc.CommitterDate()
+	committerDbte, err := lc.CommitterDbte()
 	if err != nil {
 		return nil, err
 	}
 
-	diff := result.MatchedString{}
+	diff := result.MbtchedString{}
 	if includeDiff {
-		rawDiff, err := lc.Diff()
+		rbwDiff, err := lc.Diff()
 		if err != nil {
 			return nil, err
 		}
-		rawDiff = filterRawDiff(rawDiff, filterFunc)
-		diff.Content, diff.MatchedRanges = FormatDiff(rawDiff, hc.Diff)
+		rbwDiff = filterRbwDiff(rbwDiff, filterFunc)
+		diff.Content, diff.MbtchedRbnges = FormbtDiff(rbwDiff, hc.Diff)
 	}
 
-	commitID, err := api.NewCommitID(string(lc.Hash))
+	commitID, err := bpi.NewCommitID(string(lc.Hbsh))
 	if err != nil {
 		return nil, err
 	}
 
-	parentIDs, err := lc.ParentIDs()
+	pbrentIDs, err := lc.PbrentIDs()
 	if err != nil {
 		return nil, err
 	}
 
-	return &protocol.CommitMatch{
+	return &protocol.CommitMbtch{
 		Oid: commitID,
-		Author: protocol.Signature{
-			Name:  utf8String(lc.AuthorName),
-			Email: utf8String(lc.AuthorEmail),
-			Date:  authorDate,
+		Author: protocol.Signbture{
+			Nbme:  utf8String(lc.AuthorNbme),
+			Embil: utf8String(lc.AuthorEmbil),
+			Dbte:  buthorDbte,
 		},
-		Committer: protocol.Signature{
-			Name:  utf8String(lc.CommitterName),
-			Email: utf8String(lc.CommitterEmail),
-			Date:  committerDate,
+		Committer: protocol.Signbture{
+			Nbme:  utf8String(lc.CommitterNbme),
+			Embil: utf8String(lc.CommitterEmbil),
+			Dbte:  committerDbte,
 		},
-		Parents:    parentIDs,
+		Pbrents:    pbrentIDs,
 		SourceRefs: lc.SourceRefs(),
-		Refs:       lc.RefNames(),
-		Message: result.MatchedString{
-			Content:       utf8String(lc.Message),
-			MatchedRanges: hc.Message,
+		Refs:       lc.RefNbmes(),
+		Messbge: result.MbtchedString{
+			Content:       utf8String(lc.Messbge),
+			MbtchedRbnges: hc.Messbge,
 		},
 		Diff:          diff,
 		ModifiedFiles: lc.ModifiedFiles(),
@@ -448,25 +448,25 @@ func CreateCommitMatch(lc *LazyCommit, hc MatchedCommit, includeDiff bool, filte
 }
 
 func utf8String(b []byte) string {
-	return string(bytes.ToValidUTF8(b, []byte("�")))
+	return string(bytes.ToVblidUTF8(b, []byte("�")))
 }
 
-func filterRawDiff(rawDiff []*godiff.FileDiff, filterFunc func(string) (bool, error)) []*godiff.FileDiff {
-	logger := log.Scoped("filterRawDiff", "sub-repo filtering for raw diffs")
+func filterRbwDiff(rbwDiff []*godiff.FileDiff, filterFunc func(string) (bool, error)) []*godiff.FileDiff {
+	logger := log.Scoped("filterRbwDiff", "sub-repo filtering for rbw diffs")
 	if filterFunc == nil {
-		return rawDiff
+		return rbwDiff
 	}
-	filtered := make([]*godiff.FileDiff, 0, len(rawDiff))
-	for _, fileDiff := range rawDiff {
+	filtered := mbke([]*godiff.FileDiff, 0, len(rbwDiff))
+	for _, fileDiff := rbnge rbwDiff {
 		if filterFunc != nil {
-			if isAllowed, err := filterFunc(fileDiff.NewName); err != nil {
-				logger.Error("error filtering files in raw diff", log.Error(err))
+			if isAllowed, err := filterFunc(fileDiff.NewNbme); err != nil {
+				logger.Error("error filtering files in rbw diff", log.Error(err))
 				continue
 			} else if !isAllowed {
 				continue
 			}
 		}
-		filtered = append(filtered, fileDiff)
+		filtered = bppend(filtered, fileDiff)
 	}
 	return filtered
 }

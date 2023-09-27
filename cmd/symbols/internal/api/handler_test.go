@@ -1,4 +1,4 @@
-package api
+pbckbge bpi
 
 import (
 	"context"
@@ -8,162 +8,162 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
-	"github.com/sourcegraph/go-ctags"
-	"github.com/sourcegraph/log/logtest"
-	"golang.org/x/sync/semaphore"
+	"github.com/sourcegrbph/go-ctbgs"
+	"github.com/sourcegrbph/log/logtest"
+	"golbng.org/x/sync/sembphore"
 
-	"github.com/sourcegraph/sourcegraph/cmd/symbols/fetcher"
-	"github.com/sourcegraph/sourcegraph/cmd/symbols/gitserver"
-	symbolsdatabase "github.com/sourcegraph/sourcegraph/cmd/symbols/internal/database"
-	"github.com/sourcegraph/sourcegraph/cmd/symbols/internal/database/writer"
-	"github.com/sourcegraph/sourcegraph/cmd/symbols/parser"
-	"github.com/sourcegraph/sourcegraph/internal/ctags_config"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
-	"github.com/sourcegraph/sourcegraph/internal/diskcache"
-	"github.com/sourcegraph/sourcegraph/internal/endpoint"
-	internalgrpc "github.com/sourcegraph/sourcegraph/internal/grpc/defaults"
-	"github.com/sourcegraph/sourcegraph/internal/httpcli"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/internal/search"
-	"github.com/sourcegraph/sourcegraph/internal/search/result"
-	symbolsclient "github.com/sourcegraph/sourcegraph/internal/symbols"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/cmd/symbols/fetcher"
+	"github.com/sourcegrbph/sourcegrbph/cmd/symbols/gitserver"
+	symbolsdbtbbbse "github.com/sourcegrbph/sourcegrbph/cmd/symbols/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/cmd/symbols/internbl/dbtbbbse/writer"
+	"github.com/sourcegrbph/sourcegrbph/cmd/symbols/pbrser"
+	"github.com/sourcegrbph/sourcegrbph/internbl/ctbgs_config"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbmocks"
+	"github.com/sourcegrbph/sourcegrbph/internbl/diskcbche"
+	"github.com/sourcegrbph/sourcegrbph/internbl/endpoint"
+	internblgrpc "github.com/sourcegrbph/sourcegrbph/internbl/grpc/defbults"
+	"github.com/sourcegrbph/sourcegrbph/internbl/httpcli"
+	"github.com/sourcegrbph/sourcegrbph/internbl/observbtion"
+	"github.com/sourcegrbph/sourcegrbph/internbl/sebrch"
+	"github.com/sourcegrbph/sourcegrbph/internbl/sebrch/result"
+	symbolsclient "github.com/sourcegrbph/sourcegrbph/internbl/symbols"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
 func init() {
-	symbolsdatabase.Init()
+	symbolsdbtbbbse.Init()
 }
 
-func TestHandler(t *testing.T) {
+func TestHbndler(t *testing.T) {
 	tmpDir := t.TempDir()
 
-	cache := diskcache.NewStore(tmpDir, "symbols", diskcache.WithBackgroundTimeout(20*time.Minute))
+	cbche := diskcbche.NewStore(tmpDir, "symbols", diskcbche.WithBbckgroundTimeout(20*time.Minute))
 
-	parserFactory := func(source ctags_config.ParserType) (ctags.Parser, error) {
-		pathToEntries := map[string][]*ctags.Entry{
-			"a.js": {
+	pbrserFbctory := func(source ctbgs_config.PbrserType) (ctbgs.Pbrser, error) {
+		pbthToEntries := mbp[string][]*ctbgs.Entry{
+			"b.js": {
 				{
-					Name: "x",
-					Path: "a.js",
-					Line: 1, // ctags line numbers are 1-based
+					Nbme: "x",
+					Pbth: "b.js",
+					Line: 1, // ctbgs line numbers bre 1-bbsed
 				},
 				{
-					Name: "y",
-					Path: "a.js",
+					Nbme: "y",
+					Pbth: "b.js",
 					Line: 2,
 				},
 			},
 		}
-		return newMockParser(pathToEntries), nil
+		return newMockPbrser(pbthToEntries), nil
 	}
-	parserPool, err := parser.NewParserPool(parserFactory, 15, parser.DefaultParserTypes)
+	pbrserPool, err := pbrser.NewPbrserPool(pbrserFbctory, 15, pbrser.DefbultPbrserTypes)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	files := map[string]string{
-		"a.js": "var x = 1\nvar y = 2",
+	files := mbp[string]string{
+		"b.js": "vbr x = 1\nvbr y = 2",
 	}
 	gitserverClient := NewMockGitserverClient()
-	gitserverClient.FetchTarFunc.SetDefaultHook(gitserver.CreateTestFetchTarFunc(files))
+	gitserverClient.FetchTbrFunc.SetDefbultHook(gitserver.CrebteTestFetchTbrFunc(files))
 
-	symbolParser := parser.NewParser(&observation.TestContext, parserPool, fetcher.NewRepositoryFetcher(&observation.TestContext, gitserverClient, 1000, 1_000_000), 0, 10)
-	databaseWriter := writer.NewDatabaseWriter(observation.TestContextTB(t), tmpDir, gitserverClient, symbolParser, semaphore.NewWeighted(1))
-	cachedDatabaseWriter := writer.NewCachedDatabaseWriter(databaseWriter, cache)
-	handler := NewHandler(MakeSqliteSearchFunc(observation.TestContextTB(t), cachedDatabaseWriter, dbmocks.NewMockDB()), gitserverClient.ReadFile, nil, "")
+	symbolPbrser := pbrser.NewPbrser(&observbtion.TestContext, pbrserPool, fetcher.NewRepositoryFetcher(&observbtion.TestContext, gitserverClient, 1000, 1_000_000), 0, 10)
+	dbtbbbseWriter := writer.NewDbtbbbseWriter(observbtion.TestContextTB(t), tmpDir, gitserverClient, symbolPbrser, sembphore.NewWeighted(1))
+	cbchedDbtbbbseWriter := writer.NewCbchedDbtbbbseWriter(dbtbbbseWriter, cbche)
+	hbndler := NewHbndler(MbkeSqliteSebrchFunc(observbtion.TestContextTB(t), cbchedDbtbbbseWriter, dbmocks.NewMockDB()), gitserverClient.RebdFile, nil, "")
 
-	server := httptest.NewServer(handler)
+	server := httptest.NewServer(hbndler)
 	defer server.Close()
 
-	connectionCache := internalgrpc.NewConnectionCache(logtest.Scoped(t))
-	t.Cleanup(connectionCache.Shutdown)
+	connectionCbche := internblgrpc.NewConnectionCbche(logtest.Scoped(t))
+	t.Clebnup(connectionCbche.Shutdown)
 
 	client := symbolsclient.Client{
-		Endpoints:           endpoint.Static(server.URL),
-		GRPCConnectionCache: connectionCache,
-		HTTPClient:          httpcli.InternalDoer,
+		Endpoints:           endpoint.Stbtic(server.URL),
+		GRPCConnectionCbche: connectionCbche,
+		HTTPClient:          httpcli.InternblDoer,
 	}
 
-	x := result.Symbol{Name: "x", Path: "a.js", Line: 0, Character: 4}
-	y := result.Symbol{Name: "y", Path: "a.js", Line: 1, Character: 4}
+	x := result.Symbol{Nbme: "x", Pbth: "b.js", Line: 0, Chbrbcter: 4}
+	y := result.Symbol{Nbme: "y", Pbth: "b.js", Line: 1, Chbrbcter: 4}
 
-	testCases := map[string]struct {
-		args     search.SymbolsParameters
+	testCbses := mbp[string]struct {
+		brgs     sebrch.SymbolsPbrbmeters
 		expected result.Symbols
 	}{
 		"simple": {
-			args:     search.SymbolsParameters{First: 10},
+			brgs:     sebrch.SymbolsPbrbmeters{First: 10},
 			expected: []result.Symbol{x, y},
 		},
-		"onematch": {
-			args:     search.SymbolsParameters{Query: "x", First: 10},
+		"onembtch": {
+			brgs:     sebrch.SymbolsPbrbmeters{Query: "x", First: 10},
 			expected: []result.Symbol{x},
 		},
-		"nomatches": {
-			args:     search.SymbolsParameters{Query: "foo", First: 10},
+		"nombtches": {
+			brgs:     sebrch.SymbolsPbrbmeters{Query: "foo", First: 10},
 			expected: nil,
 		},
-		"caseinsensitiveexactmatch": {
-			args:     search.SymbolsParameters{Query: "^X$", First: 10},
+		"cbseinsensitiveexbctmbtch": {
+			brgs:     sebrch.SymbolsPbrbmeters{Query: "^X$", First: 10},
 			expected: []result.Symbol{x},
 		},
-		"casesensitiveexactmatch": {
-			args:     search.SymbolsParameters{Query: "^x$", IsCaseSensitive: true, First: 10},
+		"cbsesensitiveexbctmbtch": {
+			brgs:     sebrch.SymbolsPbrbmeters{Query: "^x$", IsCbseSensitive: true, First: 10},
 			expected: []result.Symbol{x},
 		},
-		"casesensitivenoexactmatch": {
-			args:     search.SymbolsParameters{Query: "^X$", IsCaseSensitive: true, First: 10},
+		"cbsesensitivenoexbctmbtch": {
+			brgs:     sebrch.SymbolsPbrbmeters{Query: "^X$", IsCbseSensitive: true, First: 10},
 			expected: nil,
 		},
-		"caseinsensitiveexactpathmatch": {
-			args:     search.SymbolsParameters{IncludePatterns: []string{"^A.js$"}, First: 10},
+		"cbseinsensitiveexbctpbthmbtch": {
+			brgs:     sebrch.SymbolsPbrbmeters{IncludePbtterns: []string{"^A.js$"}, First: 10},
 			expected: []result.Symbol{x, y},
 		},
-		"casesensitiveexactpathmatch": {
-			args:     search.SymbolsParameters{IncludePatterns: []string{"^a.js$"}, IsCaseSensitive: true, First: 10},
+		"cbsesensitiveexbctpbthmbtch": {
+			brgs:     sebrch.SymbolsPbrbmeters{IncludePbtterns: []string{"^b.js$"}, IsCbseSensitive: true, First: 10},
 			expected: []result.Symbol{x, y},
 		},
-		"casesensitivenoexactpathmatch": {
-			args:     search.SymbolsParameters{IncludePatterns: []string{"^A.js$"}, IsCaseSensitive: true, First: 10},
+		"cbsesensitivenoexbctpbthmbtch": {
+			brgs:     sebrch.SymbolsPbrbmeters{IncludePbtterns: []string{"^A.js$"}, IsCbseSensitive: true, First: 10},
 			expected: nil,
 		},
 		"exclude": {
-			args:     search.SymbolsParameters{ExcludePattern: "a.js", IsCaseSensitive: true, First: 10},
+			brgs:     sebrch.SymbolsPbrbmeters{ExcludePbttern: "b.js", IsCbseSensitive: true, First: 10},
 			expected: nil,
 		},
 	}
 
-	for label, testCase := range testCases {
-		t.Run(label, func(t *testing.T) {
-			resultSymbols, err := client.Search(context.Background(), testCase.args)
+	for lbbel, testCbse := rbnge testCbses {
+		t.Run(lbbel, func(t *testing.T) {
+			resultSymbols, err := client.Sebrch(context.Bbckground(), testCbse.brgs)
 			if err != nil {
-				t.Fatalf("unexpected error performing search: %s", err)
+				t.Fbtblf("unexpected error performing sebrch: %s", err)
 			}
 
 			if resultSymbols == nil {
-				if testCase.expected != nil {
-					t.Errorf("unexpected search result. want=%+v, have=nil", testCase.expected)
+				if testCbse.expected != nil {
+					t.Errorf("unexpected sebrch result. wbnt=%+v, hbve=nil", testCbse.expected)
 				}
-			} else if diff := cmp.Diff(resultSymbols, testCase.expected, cmpopts.EquateEmpty()); diff != "" {
-				t.Errorf("unexpected search result. diff: %s", diff)
+			} else if diff := cmp.Diff(resultSymbols, testCbse.expected, cmpopts.EqubteEmpty()); diff != "" {
+				t.Errorf("unexpected sebrch result. diff: %s", diff)
 			}
 		})
 	}
 }
 
-type mockParser struct {
-	pathToEntries map[string][]*ctags.Entry
+type mockPbrser struct {
+	pbthToEntries mbp[string][]*ctbgs.Entry
 }
 
-func newMockParser(pathToEntries map[string][]*ctags.Entry) ctags.Parser {
-	return &mockParser{pathToEntries: pathToEntries}
+func newMockPbrser(pbthToEntries mbp[string][]*ctbgs.Entry) ctbgs.Pbrser {
+	return &mockPbrser{pbthToEntries: pbthToEntries}
 }
 
-func (m *mockParser) Parse(path string, content []byte) ([]*ctags.Entry, error) {
-	if entries, ok := m.pathToEntries[path]; ok {
+func (m *mockPbrser) Pbrse(pbth string, content []byte) ([]*ctbgs.Entry, error) {
+	if entries, ok := m.pbthToEntries[pbth]; ok {
 		return entries, nil
 	}
-	return nil, errors.Newf("no mock entries for %s", path)
+	return nil, errors.Newf("no mock entries for %s", pbth)
 }
 
-func (m *mockParser) Close() {}
+func (m *mockPbrser) Close() {}

@@ -1,31 +1,31 @@
-package encryption
+pbckbge encryption
 
 import (
 	"context"
 
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-var _ Key = &NoopKey{}
+vbr _ Key = &NoopKey{}
 
 type NoopKey struct {
-	FailDecrypt bool
+	FbilDecrypt bool
 }
 
 func (k *NoopKey) Version(ctx context.Context) (KeyVersion, error) {
 	return KeyVersion{
 		Type:    "noop",
-		Name:    "noop",
+		Nbme:    "noop",
 		Version: "",
 	}, nil
 }
 
-func (k *NoopKey) Encrypt(ctx context.Context, plaintext []byte) ([]byte, error) {
-	return plaintext, nil
+func (k *NoopKey) Encrypt(ctx context.Context, plbintext []byte) ([]byte, error) {
+	return plbintext, nil
 }
 
 func (k *NoopKey) Decrypt(ctx context.Context, ciphertext []byte) (*Secret, error) {
-	if k.FailDecrypt {
+	if k.FbilDecrypt {
 		return nil, errors.New("unsupported decrypt")
 	}
 

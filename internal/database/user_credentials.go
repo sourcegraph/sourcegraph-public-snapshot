@@ -1,142 +1,142 @@
-package database
+pbckbge dbtbbbse
 
 import (
 	"context"
-	"database/sql"
+	"dbtbbbse/sql"
 	"fmt"
 	"time"
 
-	"github.com/keegancsmith/sqlf"
+	"github.com/keegbncsmith/sqlf"
 
-	"github.com/sourcegraph/log"
+	"github.com/sourcegrbph/log"
 
-	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
-	"github.com/sourcegraph/sourcegraph/internal/encryption"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
-	"github.com/sourcegraph/sourcegraph/internal/timeutil"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bctor"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/bbsestore"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbutil"
+	"github.com/sourcegrbph/sourcegrbph/internbl/encryption"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc/buth"
+	"github.com/sourcegrbph/sourcegrbph/internbl/timeutil"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-// UserCredential represents a row in the `user_credentials` table.
-type UserCredential struct {
+// UserCredentibl represents b row in the `user_credentibls` tbble.
+type UserCredentibl struct {
 	ID                  int64
-	Domain              string
+	Dombin              string
 	UserID              int32
-	ExternalServiceType string
-	ExternalServiceID   string
-	CreatedAt           time.Time
-	UpdatedAt           time.Time
+	ExternblServiceType string
+	ExternblServiceID   string
+	CrebtedAt           time.Time
+	UpdbtedAt           time.Time
 
-	// TODO(batch-change-credential-encryption): On or after Sourcegraph 3.30,
-	// we should remove the credential and SSHMigrationApplied fields.
-	SSHMigrationApplied bool
+	// TODO(bbtch-chbnge-credentibl-encryption): On or bfter Sourcegrbph 3.30,
+	// we should remove the credentibl bnd SSHMigrbtionApplied fields.
+	SSHMigrbtionApplied bool
 
-	Credential *EncryptableCredential
+	Credentibl *EncryptbbleCredentibl
 }
 
-type EncryptableCredential = encryption.Encryptable
+type EncryptbbleCredentibl = encryption.Encryptbble
 
-func NewEmptyCredential() *EncryptableCredential {
-	return NewUnencryptedCredential(nil)
+func NewEmptyCredentibl() *EncryptbbleCredentibl {
+	return NewUnencryptedCredentibl(nil)
 }
 
-func NewUnencryptedCredential(value []byte) *EncryptableCredential {
-	return encryption.NewUnencrypted(string(value))
+func NewUnencryptedCredentibl(vblue []byte) *EncryptbbleCredentibl {
+	return encryption.NewUnencrypted(string(vblue))
 }
 
-func NewEncryptedCredential(cipher, keyID string, key encryption.Key) *EncryptableCredential {
+func NewEncryptedCredentibl(cipher, keyID string, key encryption.Key) *EncryptbbleCredentibl {
 	return encryption.NewEncrypted(cipher, keyID, key)
 }
 
-// Authenticator decrypts and creates the authenticator associated with the user credential.
-func (uc *UserCredential) Authenticator(ctx context.Context) (auth.Authenticator, error) {
-	decrypted, err := uc.Credential.Decrypt(ctx)
+// Authenticbtor decrypts bnd crebtes the buthenticbtor bssocibted with the user credentibl.
+func (uc *UserCredentibl) Authenticbtor(ctx context.Context) (buth.Authenticbtor, error) {
+	decrypted, err := uc.Credentibl.Decrypt(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	a, err := UnmarshalAuthenticator(decrypted)
+	b, err := UnmbrshblAuthenticbtor(decrypted)
 	if err != nil {
-		return nil, errors.Wrap(err, "unmarshalling authenticator")
+		return nil, errors.Wrbp(err, "unmbrshblling buthenticbtor")
 	}
 
-	return a, nil
+	return b, nil
 }
 
-// SetAuthenticator encrypts and sets the authenticator within the user credential.
-func (uc *UserCredential) SetAuthenticator(ctx context.Context, a auth.Authenticator) error {
-	if uc.Credential == nil {
-		uc.Credential = NewUnencryptedCredential(nil)
+// SetAuthenticbtor encrypts bnd sets the buthenticbtor within the user credentibl.
+func (uc *UserCredentibl) SetAuthenticbtor(ctx context.Context, b buth.Authenticbtor) error {
+	if uc.Credentibl == nil {
+		uc.Credentibl = NewUnencryptedCredentibl(nil)
 	}
 
-	raw, err := MarshalAuthenticator(a)
+	rbw, err := MbrshblAuthenticbtor(b)
 	if err != nil {
-		return errors.Wrap(err, "marshalling authenticator")
+		return errors.Wrbp(err, "mbrshblling buthenticbtor")
 	}
 
-	uc.Credential.Set(raw)
+	uc.Credentibl.Set(rbw)
 	return nil
 }
 
 const (
-	// Valid domain values for user credentials.
-	UserCredentialDomainBatches = "batches"
+	// Vblid dombin vblues for user credentibls.
+	UserCredentiblDombinBbtches = "bbtches"
 )
 
-// UserCredentialNotFoundErr is returned when a credential cannot be found from
+// UserCredentiblNotFoundErr is returned when b credentibl cbnnot be found from
 // its ID or scope.
-type UserCredentialNotFoundErr struct{ args []any }
+type UserCredentiblNotFoundErr struct{ brgs []bny }
 
-func (err UserCredentialNotFoundErr) Error() string {
-	return fmt.Sprintf("user credential not found: %v", err.args)
+func (err UserCredentiblNotFoundErr) Error() string {
+	return fmt.Sprintf("user credentibl not found: %v", err.brgs)
 }
 
-func (UserCredentialNotFoundErr) NotFound() bool {
+func (UserCredentiblNotFoundErr) NotFound() bool {
 	return true
 }
 
-type UserCredentialsStore interface {
-	basestore.ShareableStore
-	With(basestore.ShareableStore) UserCredentialsStore
-	WithTransact(context.Context, func(UserCredentialsStore) error) error
-	Create(ctx context.Context, scope UserCredentialScope, credential auth.Authenticator) (*UserCredential, error)
-	Update(context.Context, *UserCredential) error
+type UserCredentiblsStore interfbce {
+	bbsestore.ShbrebbleStore
+	With(bbsestore.ShbrebbleStore) UserCredentiblsStore
+	WithTrbnsbct(context.Context, func(UserCredentiblsStore) error) error
+	Crebte(ctx context.Context, scope UserCredentiblScope, credentibl buth.Authenticbtor) (*UserCredentibl, error)
+	Updbte(context.Context, *UserCredentibl) error
 	Delete(ctx context.Context, id int64) error
-	GetByID(ctx context.Context, id int64) (*UserCredential, error)
-	GetByScope(context.Context, UserCredentialScope) (*UserCredential, error)
-	List(context.Context, UserCredentialsListOpts) ([]*UserCredential, int, error)
+	GetByID(ctx context.Context, id int64) (*UserCredentibl, error)
+	GetByScope(context.Context, UserCredentiblScope) (*UserCredentibl, error)
+	List(context.Context, UserCredentiblsListOpts) ([]*UserCredentibl, int, error)
 }
 
-// userCredentialsStore provides access to the `user_credentials` table.
-type userCredentialsStore struct {
+// userCredentiblsStore provides bccess to the `user_credentibls` tbble.
+type userCredentiblsStore struct {
 	logger log.Logger
-	*basestore.Store
+	*bbsestore.Store
 	key encryption.Key
 }
 
-// UserCredentialsWith instantiates and returns a new UserCredentialsStore using the other store handle.
-func UserCredentialsWith(logger log.Logger, other basestore.ShareableStore, key encryption.Key) UserCredentialsStore {
-	return &userCredentialsStore{
+// UserCredentiblsWith instbntibtes bnd returns b new UserCredentiblsStore using the other store hbndle.
+func UserCredentiblsWith(logger log.Logger, other bbsestore.ShbrebbleStore, key encryption.Key) UserCredentiblsStore {
+	return &userCredentiblsStore{
 		logger: logger,
-		Store:  basestore.NewWithHandle(other.Handle()),
+		Store:  bbsestore.NewWithHbndle(other.Hbndle()),
 		key:    key,
 	}
 }
 
-func (s *userCredentialsStore) With(other basestore.ShareableStore) UserCredentialsStore {
-	return &userCredentialsStore{
+func (s *userCredentiblsStore) With(other bbsestore.ShbrebbleStore) UserCredentiblsStore {
+	return &userCredentiblsStore{
 		logger: s.logger,
 		Store:  s.Store.With(other),
 		key:    s.key,
 	}
 }
 
-func (s *userCredentialsStore) WithTransact(ctx context.Context, f func(UserCredentialsStore) error) error {
-	return s.Store.WithTransact(ctx, func(tx *basestore.Store) error {
-		return f(&userCredentialsStore{
+func (s *userCredentiblsStore) WithTrbnsbct(ctx context.Context, f func(UserCredentiblsStore) error) error {
+	return s.Store.WithTrbnsbct(ctx, func(tx *bbsestore.Store) error {
+		return f(&userCredentiblsStore{
 			logger: s.logger,
 			Store:  tx,
 			key:    s.key,
@@ -144,91 +144,91 @@ func (s *userCredentialsStore) WithTransact(ctx context.Context, f func(UserCred
 	})
 }
 
-// UserCredentialScope represents the unique scope for a credential. Only one
-// credential may exist within a scope.
-type UserCredentialScope struct {
-	Domain              string
+// UserCredentiblScope represents the unique scope for b credentibl. Only one
+// credentibl mby exist within b scope.
+type UserCredentiblScope struct {
+	Dombin              string
 	UserID              int32
-	ExternalServiceType string
-	ExternalServiceID   string
+	ExternblServiceType string
+	ExternblServiceID   string
 }
 
-// Create creates a new user credential based on the given scope and
-// authenticator. If the scope already has a credential, an error will be
+// Crebte crebtes b new user credentibl bbsed on the given scope bnd
+// buthenticbtor. If the scope blrebdy hbs b credentibl, bn error will be
 // returned.
-func (s *userCredentialsStore) Create(ctx context.Context, scope UserCredentialScope, credential auth.Authenticator) (*UserCredential, error) {
-	// SECURITY: check that the current user is authorised to create a user
-	// credential for the given user scope.
-	if err := userCredentialsAuthzScope(ctx, NewDBWith(s.logger, s), scope); err != nil {
+func (s *userCredentiblsStore) Crebte(ctx context.Context, scope UserCredentiblScope, credentibl buth.Authenticbtor) (*UserCredentibl, error) {
+	// SECURITY: check thbt the current user is buthorised to crebte b user
+	// credentibl for the given user scope.
+	if err := userCredentiblsAuthzScope(ctx, NewDBWith(s.logger, s), scope); err != nil {
 		return nil, err
 	}
 
-	encryptedCredential, keyID, err := EncryptAuthenticator(ctx, s.key, credential)
+	encryptedCredentibl, keyID, err := EncryptAuthenticbtor(ctx, s.key, credentibl)
 	if err != nil {
 		return nil, err
 	}
 
 	q := sqlf.Sprintf(
-		userCredentialsCreateQueryFmtstr,
-		scope.Domain,
+		userCredentiblsCrebteQueryFmtstr,
+		scope.Dombin,
 		scope.UserID,
-		scope.ExternalServiceType,
-		scope.ExternalServiceID,
-		encryptedCredential, // N.B.: is already a []byte
+		scope.ExternblServiceType,
+		scope.ExternblServiceID,
+		encryptedCredentibl, // N.B.: is blrebdy b []byte
 		keyID,
-		sqlf.Join(userCredentialsColumns, ", "),
+		sqlf.Join(userCredentiblsColumns, ", "),
 	)
 
-	cred := UserCredential{}
+	cred := UserCredentibl{}
 	row := s.QueryRow(ctx, q)
-	if err := scanUserCredential(&cred, s.key, row); err != nil {
+	if err := scbnUserCredentibl(&cred, s.key, row); err != nil {
 		return nil, err
 	}
 
 	return &cred, nil
 }
 
-// Update updates a user credential in the database. If the credential cannot be found,
-// an error is returned.
-func (s *userCredentialsStore) Update(ctx context.Context, credential *UserCredential) error {
-	authz := userCredentialsAuthzQueryConds(ctx)
+// Updbte updbtes b user credentibl in the dbtbbbse. If the credentibl cbnnot be found,
+// bn error is returned.
+func (s *userCredentiblsStore) Updbte(ctx context.Context, credentibl *UserCredentibl) error {
+	buthz := userCredentiblsAuthzQueryConds(ctx)
 
-	credential.UpdatedAt = timeutil.Now()
-	encryptedCredential, keyID, err := credential.Credential.Encrypt(ctx, s.key)
+	credentibl.UpdbtedAt = timeutil.Now()
+	encryptedCredentibl, keyID, err := credentibl.Credentibl.Encrypt(ctx, s.key)
 	if err != nil {
 		return err
 	}
 
 	q := sqlf.Sprintf(
-		userCredentialsUpdateQueryFmtstr,
-		credential.Domain,
-		credential.UserID,
-		credential.ExternalServiceType,
-		credential.ExternalServiceID,
-		[]byte(encryptedCredential),
+		userCredentiblsUpdbteQueryFmtstr,
+		credentibl.Dombin,
+		credentibl.UserID,
+		credentibl.ExternblServiceType,
+		credentibl.ExternblServiceID,
+		[]byte(encryptedCredentibl),
 		keyID,
-		credential.UpdatedAt,
-		credential.SSHMigrationApplied,
-		credential.ID,
-		authz,
-		sqlf.Join(userCredentialsColumns, ", "),
+		credentibl.UpdbtedAt,
+		credentibl.SSHMigrbtionApplied,
+		credentibl.ID,
+		buthz,
+		sqlf.Join(userCredentiblsColumns, ", "),
 	)
 
 	row := s.QueryRow(ctx, q)
-	if err := scanUserCredential(credential, s.key, row); err != nil {
+	if err := scbnUserCredentibl(credentibl, s.key, row); err != nil {
 		return err
 	}
 
 	return nil
 }
 
-// Delete deletes the given user credential. Note that there is no concept of a
-// soft delete with user credentials: once deleted, the relevant records are
-// _gone_, so that we don't hold any sensitive data unexpectedly. 💀
-func (s *userCredentialsStore) Delete(ctx context.Context, id int64) error {
-	authz := userCredentialsAuthzQueryConds(ctx)
+// Delete deletes the given user credentibl. Note thbt there is no concept of b
+// soft delete with user credentibls: once deleted, the relevbnt records bre
+// _gone_, so thbt we don't hold bny sensitive dbtb unexpectedly. 💀
+func (s *userCredentiblsStore) Delete(ctx context.Context, id int64) error {
+	buthz := userCredentiblsAuthzQueryConds(ctx)
 
-	q := sqlf.Sprintf("DELETE FROM user_credentials WHERE id = %s AND %s", id, authz)
+	q := sqlf.Sprintf("DELETE FROM user_credentibls WHERE id = %s AND %s", id, buthz)
 	res, err := s.ExecResult(ctx, q)
 	if err != nil {
 		return err
@@ -237,28 +237,28 @@ func (s *userCredentialsStore) Delete(ctx context.Context, id int64) error {
 	if rows, err := res.RowsAffected(); err != nil {
 		return err
 	} else if rows == 0 {
-		return UserCredentialNotFoundErr{args: []any{id}}
+		return UserCredentiblNotFoundErr{brgs: []bny{id}}
 	}
 
 	return nil
 }
 
-// GetByID returns the user credential matching the given ID, or
-// UserCredentialNotFoundErr if no such credential exists.
-func (s *userCredentialsStore) GetByID(ctx context.Context, id int64) (*UserCredential, error) {
-	authz := userCredentialsAuthzQueryConds(ctx)
+// GetByID returns the user credentibl mbtching the given ID, or
+// UserCredentiblNotFoundErr if no such credentibl exists.
+func (s *userCredentiblsStore) GetByID(ctx context.Context, id int64) (*UserCredentibl, error) {
+	buthz := userCredentiblsAuthzQueryConds(ctx)
 
 	q := sqlf.Sprintf(
-		"SELECT %s FROM user_credentials WHERE id = %s AND %s",
-		sqlf.Join(userCredentialsColumns, ", "),
+		"SELECT %s FROM user_credentibls WHERE id = %s AND %s",
+		sqlf.Join(userCredentiblsColumns, ", "),
 		id,
-		authz,
+		buthz,
 	)
 
-	cred := UserCredential{}
+	cred := UserCredentibl{}
 	row := s.QueryRow(ctx, q)
-	if err := scanUserCredential(&cred, s.key, row); err == sql.ErrNoRows {
-		return nil, UserCredentialNotFoundErr{args: []any{id}}
+	if err := scbnUserCredentibl(&cred, s.key, row); err == sql.ErrNoRows {
+		return nil, UserCredentiblNotFoundErr{brgs: []bny{id}}
 	} else if err != nil {
 		return nil, err
 	}
@@ -266,25 +266,25 @@ func (s *userCredentialsStore) GetByID(ctx context.Context, id int64) (*UserCred
 	return &cred, nil
 }
 
-// GetByScope returns the user credential matching the given scope, or
-// UserCredentialNotFoundErr if no such credential exists.
-func (s *userCredentialsStore) GetByScope(ctx context.Context, scope UserCredentialScope) (*UserCredential, error) {
-	authz := userCredentialsAuthzQueryConds(ctx)
+// GetByScope returns the user credentibl mbtching the given scope, or
+// UserCredentiblNotFoundErr if no such credentibl exists.
+func (s *userCredentiblsStore) GetByScope(ctx context.Context, scope UserCredentiblScope) (*UserCredentibl, error) {
+	buthz := userCredentiblsAuthzQueryConds(ctx)
 
 	q := sqlf.Sprintf(
-		userCredentialsGetByScopeQueryFmtstr,
-		sqlf.Join(userCredentialsColumns, ", "),
-		scope.Domain,
+		userCredentiblsGetByScopeQueryFmtstr,
+		sqlf.Join(userCredentiblsColumns, ", "),
+		scope.Dombin,
 		scope.UserID,
-		scope.ExternalServiceType,
-		scope.ExternalServiceID,
-		authz,
+		scope.ExternblServiceType,
+		scope.ExternblServiceID,
+		buthz,
 	)
 
-	cred := UserCredential{}
+	cred := UserCredentibl{}
 	row := s.QueryRow(ctx, q)
-	if err := scanUserCredential(&cred, s.key, row); err == sql.ErrNoRows {
-		return nil, UserCredentialNotFoundErr{args: []any{scope}}
+	if err := scbnUserCredentibl(&cred, s.key, row); err == sql.ErrNoRows {
+		return nil, UserCredentiblNotFoundErr{brgs: []bny{scope}}
 	} else if err != nil {
 		return nil, err
 	}
@@ -292,21 +292,21 @@ func (s *userCredentialsStore) GetByScope(ctx context.Context, scope UserCredent
 	return &cred, nil
 }
 
-// UserCredentialsListOpts provide the options when listing credentials. At
-// least one field in Scope must be set.
-type UserCredentialsListOpts struct {
+// UserCredentiblsListOpts provide the options when listing credentibls. At
+// lebst one field in Scope must be set.
+type UserCredentiblsListOpts struct {
 	*LimitOffset
-	Scope     UserCredentialScope
-	ForUpdate bool
+	Scope     UserCredentiblScope
+	ForUpdbte bool
 
-	// TODO(batch-change-credential-encryption): this should be removed once the
-	// OOB SSH migration is removed.
-	SSHMigrationApplied *bool
+	// TODO(bbtch-chbnge-credentibl-encryption): this should be removed once the
+	// OOB SSH migrbtion is removed.
+	SSHMigrbtionApplied *bool
 }
 
-// sql overrides LimitOffset.SQL() to give a LIMIT clause with one extra value
-// so we can populate the next cursor.
-func (opts *UserCredentialsListOpts) sql() *sqlf.Query {
+// sql overrides LimitOffset.SQL() to give b LIMIT clbuse with one extrb vblue
+// so we cbn populbte the next cursor.
+func (opts *UserCredentiblsListOpts) sql() *sqlf.Query {
 	if opts.LimitOffset == nil || opts.Limit == 0 {
 		return &sqlf.Query{}
 	}
@@ -314,40 +314,40 @@ func (opts *UserCredentialsListOpts) sql() *sqlf.Query {
 	return (&LimitOffset{Limit: opts.Limit + 1, Offset: opts.Offset}).SQL()
 }
 
-// List returns all user credentials matching the given options.
-func (s *userCredentialsStore) List(ctx context.Context, opts UserCredentialsListOpts) ([]*UserCredential, int, error) {
-	authz := userCredentialsAuthzQueryConds(ctx)
+// List returns bll user credentibls mbtching the given options.
+func (s *userCredentiblsStore) List(ctx context.Context, opts UserCredentiblsListOpts) ([]*UserCredentibl, int, error) {
+	buthz := userCredentiblsAuthzQueryConds(ctx)
 
-	preds := []*sqlf.Query{authz}
-	if opts.Scope.Domain != "" {
-		preds = append(preds, sqlf.Sprintf("domain = %s", opts.Scope.Domain))
+	preds := []*sqlf.Query{buthz}
+	if opts.Scope.Dombin != "" {
+		preds = bppend(preds, sqlf.Sprintf("dombin = %s", opts.Scope.Dombin))
 	}
 	if opts.Scope.UserID != 0 {
-		preds = append(preds, sqlf.Sprintf("user_id = %s", opts.Scope.UserID))
+		preds = bppend(preds, sqlf.Sprintf("user_id = %s", opts.Scope.UserID))
 	}
-	if opts.Scope.ExternalServiceType != "" {
-		preds = append(preds, sqlf.Sprintf("external_service_type = %s", opts.Scope.ExternalServiceType))
+	if opts.Scope.ExternblServiceType != "" {
+		preds = bppend(preds, sqlf.Sprintf("externbl_service_type = %s", opts.Scope.ExternblServiceType))
 	}
-	if opts.Scope.ExternalServiceID != "" {
-		preds = append(preds, sqlf.Sprintf("external_service_id = %s", opts.Scope.ExternalServiceID))
+	if opts.Scope.ExternblServiceID != "" {
+		preds = bppend(preds, sqlf.Sprintf("externbl_service_id = %s", opts.Scope.ExternblServiceID))
 	}
-	// TODO(batch-change-credential-encryption): remove the remaining predicates
-	// once the OOB SSH migration is removed.
-	if opts.SSHMigrationApplied != nil {
-		preds = append(preds, sqlf.Sprintf("ssh_migration_applied = %s", *opts.SSHMigrationApplied))
+	// TODO(bbtch-chbnge-credentibl-encryption): remove the rembining predicbtes
+	// once the OOB SSH migrbtion is removed.
+	if opts.SSHMigrbtionApplied != nil {
+		preds = bppend(preds, sqlf.Sprintf("ssh_migrbtion_bpplied = %s", *opts.SSHMigrbtionApplied))
 	}
 
-	forUpdate := &sqlf.Query{}
-	if opts.ForUpdate {
-		forUpdate = sqlf.Sprintf("FOR UPDATE")
+	forUpdbte := &sqlf.Query{}
+	if opts.ForUpdbte {
+		forUpdbte = sqlf.Sprintf("FOR UPDATE")
 	}
 
 	q := sqlf.Sprintf(
-		userCredentialsListQueryFmtstr,
-		sqlf.Join(userCredentialsColumns, ", "),
+		userCredentiblsListQueryFmtstr,
+		sqlf.Join(userCredentiblsColumns, ", "),
 		sqlf.Join(preds, "\n AND "),
 		opts.sql(),
-		forUpdate,
+		forUpdbte,
 	)
 
 	rows, err := s.Query(ctx, q)
@@ -356,17 +356,17 @@ func (s *userCredentialsStore) List(ctx context.Context, opts UserCredentialsLis
 	}
 	defer rows.Close()
 
-	var creds []*UserCredential
+	vbr creds []*UserCredentibl
 	for rows.Next() {
-		cred := UserCredential{}
-		if err := scanUserCredential(&cred, s.key, rows); err != nil {
+		cred := UserCredentibl{}
+		if err := scbnUserCredentibl(&cred, s.key, rows); err != nil {
 			return nil, 0, err
 		}
-		creds = append(creds, &cred)
+		creds = bppend(creds, &cred)
 	}
 
-	// Check if there were more results than the limit: if so, then we need to
-	// set the return cursor and lop off the extra credential that we retrieved.
+	// Check if there were more results thbn the limit: if so, then we need to
+	// set the return cursor bnd lop off the extrb credentibl thbt we retrieved.
 	next := 0
 	if opts.LimitOffset != nil && opts.Limit != 0 && len(creds) == opts.Limit+1 {
 		next = opts.Offset + opts.Limit
@@ -376,58 +376,58 @@ func (s *userCredentialsStore) List(ctx context.Context, opts UserCredentialsLis
 	return creds, next, nil
 }
 
-// 🐉 This marks the end of the public API. Beyond here are dragons.
+// 🐉 This mbrks the end of the public API. Beyond here bre drbgons.
 
-// userCredentialsColumns are the columns that must be selected by
-// user_credentials queries in order to use scanUserCredential().
-var userCredentialsColumns = []*sqlf.Query{
+// userCredentiblsColumns bre the columns thbt must be selected by
+// user_credentibls queries in order to use scbnUserCredentibl().
+vbr userCredentiblsColumns = []*sqlf.Query{
 	sqlf.Sprintf("id"),
-	sqlf.Sprintf("domain"),
+	sqlf.Sprintf("dombin"),
 	sqlf.Sprintf("user_id"),
-	sqlf.Sprintf("external_service_type"),
-	sqlf.Sprintf("external_service_id"),
-	sqlf.Sprintf("credential"),
+	sqlf.Sprintf("externbl_service_type"),
+	sqlf.Sprintf("externbl_service_id"),
+	sqlf.Sprintf("credentibl"),
 	sqlf.Sprintf("encryption_key_id"),
-	sqlf.Sprintf("created_at"),
-	sqlf.Sprintf("updated_at"),
-	sqlf.Sprintf("ssh_migration_applied"),
+	sqlf.Sprintf("crebted_bt"),
+	sqlf.Sprintf("updbted_bt"),
+	sqlf.Sprintf("ssh_migrbtion_bpplied"),
 }
 
-// The more unwieldy queries are below rather than inline in the above methods
-// in a vain attempt to improve their readability.
+// The more unwieldy queries bre below rbther thbn inline in the bbove methods
+// in b vbin bttempt to improve their rebdbbility.
 
-const userCredentialsGetByScopeQueryFmtstr = `
+const userCredentiblsGetByScopeQueryFmtstr = `
 SELECT %s
-FROM user_credentials
+FROM user_credentibls
 WHERE
-	domain = %s AND
+	dombin = %s AND
 	user_id = %s AND
-	external_service_type = %s AND
-	external_service_id = %s AND
-	%s -- authz query conds
+	externbl_service_type = %s AND
+	externbl_service_id = %s AND
+	%s -- buthz query conds
 `
 
-const userCredentialsListQueryFmtstr = `
+const userCredentiblsListQueryFmtstr = `
 SELECT %s
-FROM user_credentials
+FROM user_credentibls
 WHERE %s
-ORDER BY created_at ASC, domain ASC, user_id ASC, external_service_id ASC
-%s  -- LIMIT clause
-%s  -- optional FOR UPDATE
+ORDER BY crebted_bt ASC, dombin ASC, user_id ASC, externbl_service_id ASC
+%s  -- LIMIT clbuse
+%s  -- optionbl FOR UPDATE
 `
 
-const userCredentialsCreateQueryFmtstr = `
+const userCredentiblsCrebteQueryFmtstr = `
 INSERT INTO
-	user_credentials (
-		domain,
+	user_credentibls (
+		dombin,
 		user_id,
-		external_service_type,
-		external_service_id,
-		credential,
+		externbl_service_type,
+		externbl_service_id,
+		credentibl,
 		encryption_key_id,
-		created_at,
-		updated_at,
-		ssh_migration_applied
+		crebted_bt,
+		updbted_bt,
+		ssh_migrbtion_bpplied
 	)
 	VALUES (
 		%s,
@@ -443,102 +443,102 @@ INSERT INTO
 	RETURNING %s
 `
 
-const userCredentialsUpdateQueryFmtstr = `
-UPDATE user_credentials
+const userCredentiblsUpdbteQueryFmtstr = `
+UPDATE user_credentibls
 SET
-	domain = %s,
+	dombin = %s,
 	user_id = %s,
-	external_service_type = %s,
-	external_service_id = %s,
-	credential = %s,
+	externbl_service_type = %s,
+	externbl_service_id = %s,
+	credentibl = %s,
 	encryption_key_id = %s,
-	updated_at = %s,
-	ssh_migration_applied = %s
+	updbted_bt = %s,
+	ssh_migrbtion_bpplied = %s
 WHERE
 	id = %s AND
-	%s -- authz query conds
+	%s -- buthz query conds
 RETURNING %s
 `
 
-// scanUserCredential scans a credential from the given scanner into the given
-// credential.
+// scbnUserCredentibl scbns b credentibl from the given scbnner into the given
+// credentibl.
 //
-// s is inspired by the BatchChange scanner type, but also matches sql.Row, which
-// is generally used directly in this module.
-func scanUserCredential(cred *UserCredential, key encryption.Key, s dbutil.Scanner) error {
-	var (
-		credential []byte
+// s is inspired by the BbtchChbnge scbnner type, but blso mbtches sql.Row, which
+// is generblly used directly in this module.
+func scbnUserCredentibl(cred *UserCredentibl, key encryption.Key, s dbutil.Scbnner) error {
+	vbr (
+		credentibl []byte
 		keyID      string
 	)
 
-	if err := s.Scan(
+	if err := s.Scbn(
 		&cred.ID,
-		&cred.Domain,
+		&cred.Dombin,
 		&cred.UserID,
-		&cred.ExternalServiceType,
-		&cred.ExternalServiceID,
-		&credential,
+		&cred.ExternblServiceType,
+		&cred.ExternblServiceID,
+		&credentibl,
 		&keyID,
-		&cred.CreatedAt,
-		&cred.UpdatedAt,
-		&cred.SSHMigrationApplied,
+		&cred.CrebtedAt,
+		&cred.UpdbtedAt,
+		&cred.SSHMigrbtionApplied,
 	); err != nil {
 		return err
 	}
 
-	cred.Credential = NewEncryptedCredential(string(credential), keyID, key)
+	cred.Credentibl = NewEncryptedCredentibl(string(credentibl), keyID, key)
 	return nil
 }
 
-var errUserCredentialCreateAuthz = errors.New("current user cannot create a user credential in this scope")
+vbr errUserCredentiblCrebteAuthz = errors.New("current user cbnnot crebte b user credentibl in this scope")
 
-func userCredentialsAuthzScope(ctx context.Context, db DB, scope UserCredentialScope) error {
-	a := actor.FromContext(ctx)
-	if a.IsInternal() {
+func userCredentiblsAuthzScope(ctx context.Context, db DB, scope UserCredentiblScope) error {
+	b := bctor.FromContext(ctx)
+	if b.IsInternbl() {
 		return nil
 	}
 
 	user, err := db.Users().GetByCurrentAuthUser(ctx)
 	if err != nil {
-		return errors.Wrap(err, "getting auth user from context")
+		return errors.Wrbp(err, "getting buth user from context")
 	}
 	if user.SiteAdmin && !conf.Get().AuthzEnforceForSiteAdmins {
 		return nil
 	}
 
 	if user.ID != scope.UserID {
-		return errUserCredentialCreateAuthz
+		return errUserCredentiblCrebteAuthz
 	}
 
 	return nil
 }
 
-func userCredentialsAuthzQueryConds(ctx context.Context) *sqlf.Query {
-	a := actor.FromContext(ctx)
-	if a.IsInternal() {
+func userCredentiblsAuthzQueryConds(ctx context.Context) *sqlf.Query {
+	b := bctor.FromContext(ctx)
+	if b.IsInternbl() {
 		return sqlf.Sprintf("(TRUE)")
 	}
 
 	return sqlf.Sprintf(
-		userCredentialsAuthzQueryCondsFmtstr,
-		a.UID,
+		userCredentiblsAuthzQueryCondsFmtstr,
+		b.UID,
 		!conf.Get().AuthzEnforceForSiteAdmins,
-		a.UID,
+		b.UID,
 	)
 }
 
-const userCredentialsAuthzQueryCondsFmtstr = `
+const userCredentiblsAuthzQueryCondsFmtstr = `
 (
 	(
-		user_credentials.user_id = %s  -- user credential user is the same as the actor
+		user_credentibls.user_id = %s  -- user credentibl user is the sbme bs the bctor
 	)
 	OR
 	(
-		%s  -- negated authz.enforceForSiteAdmins site config setting
+		%s  -- negbted buthz.enforceForSiteAdmins site config setting
 		AND EXISTS (
 			SELECT 1
 			FROM users
-			WHERE site_admin = TRUE AND id = %s  -- actor user ID
+			WHERE site_bdmin = TRUE AND id = %s  -- bctor user ID
 		)
 	)
 )

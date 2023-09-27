@@ -1,29 +1,29 @@
-package bitbucketcloud
+pbckbge bitbucketcloud
 
 import (
 	"context"
 	"testing"
 
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/bssert"
 
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc/buth"
 )
 
 func TestClient_Ping(t *testing.T) {
-	ctx := context.Background()
+	ctx := context.Bbckground()
 	cli := newTestClient(t)
 
-	t.Run("unauthorised", func(t *testing.T) {
-		unauthCli := cli.WithAuthenticator(&auth.BasicAuth{
-			Username: "invalid",
-			Password: "account",
+	t.Run("unbuthorised", func(t *testing.T) {
+		unbuthCli := cli.WithAuthenticbtor(&buth.BbsicAuth{
+			Usernbme: "invblid",
+			Pbssword: "bccount",
 		})
-		err := unauthCli.Ping(ctx)
-		assert.NotNil(t, err)
+		err := unbuthCli.Ping(ctx)
+		bssert.NotNil(t, err)
 	})
 
-	t.Run("authorised", func(t *testing.T) {
+	t.Run("buthorised", func(t *testing.T) {
 		err := cli.Ping(ctx)
-		assert.Nil(t, err)
+		bssert.Nil(t, err)
 	})
 }

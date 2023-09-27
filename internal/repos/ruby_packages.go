@@ -1,28 +1,28 @@
-package repos
+pbckbge repos
 
 import (
 	"context"
 
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies"
-	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/rubygems"
-	"github.com/sourcegraph/sourcegraph/internal/httpcli"
-	"github.com/sourcegraph/sourcegraph/internal/jsonc"
-	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/sourcegraph/sourcegraph/schema"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi"
+	"github.com/sourcegrbph/sourcegrbph/internbl/codeintel/dependencies"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf/reposource"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc/rubygems"
+	"github.com/sourcegrbph/sourcegrbph/internbl/httpcli"
+	"github.com/sourcegrbph/sourcegrbph/internbl/jsonc"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/schemb"
 )
 
-// NewRubyPackagesSource returns a new rubyPackagesSource from the given external service.
-func NewRubyPackagesSource(ctx context.Context, svc *types.ExternalService, cf *httpcli.Factory) (*PackagesSource, error) {
-	rawConfig, err := svc.Config.Decrypt(ctx)
+// NewRubyPbckbgesSource returns b new rubyPbckbgesSource from the given externbl service.
+func NewRubyPbckbgesSource(ctx context.Context, svc *types.ExternblService, cf *httpcli.Fbctory) (*PbckbgesSource, error) {
+	rbwConfig, err := svc.Config.Decrypt(ctx)
 	if err != nil {
-		return nil, errors.Errorf("external service id=%d config error: %s", svc.ID, err)
+		return nil, errors.Errorf("externbl service id=%d config error: %s", svc.ID, err)
 	}
-	var c schema.RubyPackagesConnection
-	if err := jsonc.Unmarshal(rawConfig, &c); err != nil {
-		return nil, errors.Errorf("external service id=%d config error: %s", svc.ID, err)
+	vbr c schemb.RubyPbckbgesConnection
+	if err := jsonc.Unmbrshbl(rbwConfig, &c); err != nil {
+		return nil, errors.Errorf("externbl service id=%d config error: %s", svc.ID, err)
 	}
 
 	client, err := rubygems.NewClient(svc.URN(), c.Repository, cf)
@@ -30,28 +30,28 @@ func NewRubyPackagesSource(ctx context.Context, svc *types.ExternalService, cf *
 		return nil, err
 	}
 
-	return &PackagesSource{
+	return &PbckbgesSource{
 		svc:        svc,
 		configDeps: c.Dependencies,
-		scheme:     dependencies.RubyPackagesScheme,
-		src:        &rubyPackagesSource{client},
+		scheme:     dependencies.RubyPbckbgesScheme,
+		src:        &rubyPbckbgesSource{client},
 	}, nil
 }
 
-type rubyPackagesSource struct {
+type rubyPbckbgesSource struct {
 	client *rubygems.Client
 }
 
-var _ packagesSource = &rubyPackagesSource{}
+vbr _ pbckbgesSource = &rubyPbckbgesSource{}
 
-func (rubyPackagesSource) ParseVersionedPackageFromConfiguration(dep string) (reposource.VersionedPackage, error) {
-	return reposource.ParseRubyVersionedPackage(dep), nil
+func (rubyPbckbgesSource) PbrseVersionedPbckbgeFromConfigurbtion(dep string) (reposource.VersionedPbckbge, error) {
+	return reposource.PbrseRubyVersionedPbckbge(dep), nil
 }
 
-func (rubyPackagesSource) ParsePackageFromName(name reposource.PackageName) (reposource.Package, error) {
-	return reposource.ParseRubyPackageFromName(name), nil
+func (rubyPbckbgesSource) PbrsePbckbgeFromNbme(nbme reposource.PbckbgeNbme) (reposource.Pbckbge, error) {
+	return reposource.PbrseRubyPbckbgeFromNbme(nbme), nil
 }
 
-func (rubyPackagesSource) ParsePackageFromRepoName(repoName api.RepoName) (reposource.Package, error) {
-	return reposource.ParseRubyPackageFromRepoName(repoName)
+func (rubyPbckbgesSource) PbrsePbckbgeFromRepoNbme(repoNbme bpi.RepoNbme) (reposource.Pbckbge, error) {
+	return reposource.PbrseRubyPbckbgeFromRepoNbme(repoNbme)
 }

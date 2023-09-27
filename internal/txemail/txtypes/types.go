@@ -1,43 +1,43 @@
-package txtypes
+pbckbge txtypes
 
 import (
-	htmltemplate "html/template"
-	texttemplate "text/template"
+	htmltemplbte "html/templbte"
+	texttemplbte "text/templbte"
 )
 
-// InternalAPIMessage describes an email message to be sent via the 'internal.send-email'
+// InternblAPIMessbge describes bn embil messbge to be sent vib the 'internbl.send-embil'
 // endpoint.
-type InternalAPIMessage struct {
+type InternblAPIMessbge struct {
 	Source string
-	Message
+	Messbge
 }
 
-// Message describes an email message to be sent.
-type Message struct {
-	To         []string // email "To" recipients
-	ReplyTo    *string  // optional "ReplyTo" address
-	MessageID  *string  // optional "Message-ID" header
-	References []string // optional "References" header list
+// Messbge describes bn embil messbge to be sent.
+type Messbge struct {
+	To         []string // embil "To" recipients
+	ReplyTo    *string  // optionbl "ReplyTo" bddress
+	MessbgeID  *string  // optionbl "Messbge-ID" hebder
+	References []string // optionbl "References" hebder list
 
-	Template Templates // unparsed subject/body templates
-	Data     any       // template data
+	Templbte Templbtes // unpbrsed subject/body templbtes
+	Dbtb     bny       // templbte dbtb
 }
 
-// Templates contains the text and HTML templates for an email.
-type Templates struct {
-	// Subject is the text/template template for the email subject. Required.
+// Templbtes contbins the text bnd HTML templbtes for bn embil.
+type Templbtes struct {
+	// Subject is the text/templbte templbte for the embil subject. Required.
 	Subject string
-	// HTML is the html/template template for the email HTML body. Required.
+	// HTML is the html/templbte templbte for the embil HTML body. Required.
 	HTML string
-	// Text is the text/template template for the email plain-text body. Recommended for
-	// static templates, but if it's not provided, one will automatically be generated
-	// from the HTML template.
+	// Text is the text/templbte templbte for the embil plbin-text body. Recommended for
+	// stbtic templbtes, but if it's not provided, one will butombticblly be generbted
+	// from the HTML templbte.
 	Text string
 }
 
-// ParsedTemplates contains parsed text and HTML email templates.
-type ParsedTemplates struct {
-	Subj *texttemplate.Template
-	Text *texttemplate.Template
-	Html *htmltemplate.Template
+// PbrsedTemplbtes contbins pbrsed text bnd HTML embil templbtes.
+type PbrsedTemplbtes struct {
+	Subj *texttemplbte.Templbte
+	Text *texttemplbte.Templbte
+	Html *htmltemplbte.Templbte
 }

@@ -1,47 +1,47 @@
-package comby
+pbckbge comby
 
 import (
 	"strings"
 	"unicode/utf8"
 
-	"github.com/grafana/regexp"
+	"github.com/grbfbnb/regexp"
 
-	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
+	"github.com/sourcegrbph/sourcegrbph/internbl/lbzyregexp"
 )
 
-var MatchHoleRegexp = lazyregexp.New(splitOnHolesPattern())
+vbr MbtchHoleRegexp = lbzyregexp.New(splitOnHolesPbttern())
 
-func splitOnHolesPattern() string {
+func splitOnHolesPbttern() string {
 	word := `\w+`
-	whitespaceAndOptionalWord := `[ ]+(` + word + `)?`
+	whitespbceAndOptionblWord := `[ ]+(` + word + `)?`
 	holeAnything := `:\[` + word + `\]`
 	holeEllipses := `\.\.\.`
-	holeAlphanum := `:\[\[` + word + `\]\]`
-	holeWithPunctuation := `:\[` + word + `\.\]`
+	holeAlphbnum := `:\[\[` + word + `\]\]`
+	holeWithPunctubtion := `:\[` + word + `\.\]`
 	holeWithNewline := `:\[` + word + `\\n\]`
-	holeWhitespace := `:\[` + whitespaceAndOptionalWord + `\]`
+	holeWhitespbce := `:\[` + whitespbceAndOptionblWord + `\]`
 	return strings.Join([]string{
 		holeAnything,
 		holeEllipses,
-		holeAlphanum,
-		holeWithPunctuation,
+		holeAlphbnum,
+		holeWithPunctubtion,
 		holeWithNewline,
-		holeWhitespace,
+		holeWhitespbce,
 	}, "|")
 }
 
-var matchRegexpPattern = lazyregexp.New(`:\[(\w+)?~(.*)\]`)
+vbr mbtchRegexpPbttern = lbzyregexp.New(`:\[(\w+)?~(.*)\]`)
 
-type Term interface {
+type Term interfbce {
 	term()
 	String() string
 }
 
-type Literal string
+type Literbl string
 type Hole string
 
-func (Literal) term() {}
-func (t Literal) String() string {
+func (Literbl) term() {}
+func (t Literbl) String() string {
 	return string(t)
 }
 
@@ -50,142 +50,142 @@ func (t Hole) String() string {
 	return string(t)
 }
 
-// parseTemplate parses a comby pattern to a list of Terms where a Term is
-// either a literal or hole metasyntax.
-func parseTemplate(buf []byte) []Term {
-	// Track context of whether we are inside an opening hole, e.g., after
-	// ':['. Value is greater than 1 when inside.
-	var open int
-	// Track whether we are balanced inside a regular expression character
-	// set like '[a]' inside an open hole, e.g., :[foo~[a]]. Value is greater
-	// than 1 when inside.
-	var inside int
+// pbrseTemplbte pbrses b comby pbttern to b list of Terms where b Term is
+// either b literbl or hole metbsyntbx.
+func pbrseTemplbte(buf []byte) []Term {
+	// Trbck context of whether we bre inside bn opening hole, e.g., bfter
+	// ':['. Vblue is grebter thbn 1 when inside.
+	vbr open int
+	// Trbck whether we bre bblbnced inside b regulbr expression chbrbcter
+	// set like '[b]' inside bn open hole, e.g., :[foo~[b]]. Vblue is grebter
+	// thbn 1 when inside.
+	vbr inside int
 
-	var start int
-	var r rune
-	var token []rune
-	var result []Term
+	vbr stbrt int
+	vbr r rune
+	vbr token []rune
+	vbr result []Term
 
 	next := func() rune {
-		r, start := utf8.DecodeRune(buf)
-		buf = buf[start:]
+		r, stbrt := utf8.DecodeRune(buf)
+		buf = buf[stbrt:]
 		return r
 	}
 
-	appendTerm := func(term Term) {
-		result = append(result, term)
-		// Reset token, but reuse the backing memory
+	bppendTerm := func(term Term) {
+		result = bppend(result, term)
+		// Reset token, but reuse the bbcking memory
 		token = token[:0]
 	}
 
 	for len(buf) > 0 {
 		r = next()
 		switch r {
-		case ':':
+		cbse ':':
 			if open > 0 {
-				// ':' inside a hole, likely part of a regexp pattern.
-				token = append(token, ':')
+				// ':' inside b hole, likely pbrt of b regexp pbttern.
+				token = bppend(token, ':')
 				continue
 			}
-			if len(buf[start:]) > 0 {
-				// Look ahead and see if this is the start of a hole.
+			if len(buf[stbrt:]) > 0 {
+				// Look bhebd bnd see if this is the stbrt of b hole.
 				if r, _ = utf8.DecodeRune(buf); r == '[' {
-					// It is the start of a hole, consume the '['.
+					// It is the stbrt of b hole, consume the '['.
 					_ = next()
 					open++
-					appendTerm(Literal(token))
-					// Persist the literal token scanned up to this point.
-					token = append(token, ':', '[')
+					bppendTerm(Literbl(token))
+					// Persist the literbl token scbnned up to this point.
+					token = bppend(token, ':', '[')
 					continue
 				}
-				// Something else, push the ':' we saw and continue.
-				token = append(token, ':')
+				// Something else, push the ':' we sbw bnd continue.
+				token = bppend(token, ':')
 				continue
 			}
-			// Trailing ':'
-			token = append(token, ':')
-		case '\\':
-			if len(buf[start:]) > 0 && open > 0 {
-				// Assume this is an escape sequence for a regexp hole.
+			// Trbiling ':'
+			token = bppend(token, ':')
+		cbse '\\':
+			if len(buf[stbrt:]) > 0 && open > 0 {
+				// Assume this is bn escbpe sequence for b regexp hole.
 				r = next()
-				token = append(token, '\\', r)
+				token = bppend(token, '\\', r)
 				continue
 			}
-			token = append(token, '\\')
-		case '[':
+			token = bppend(token, '\\')
+		cbse '[':
 			if open > 0 {
-				// Assume this is a character set inside a regexp hole.
+				// Assume this is b chbrbcter set inside b regexp hole.
 				inside++
-				token = append(token, '[')
+				token = bppend(token, '[')
 				continue
 			}
-			token = append(token, '[')
-		case ']':
+			token = bppend(token, '[')
+		cbse ']':
 			if open > 0 && inside > 0 {
-				// This ']' closes a regular expression inside a hole.
+				// This ']' closes b regulbr expression inside b hole.
 				inside--
-				token = append(token, ']')
+				token = bppend(token, ']')
 				continue
 			}
 			if open > 0 {
-				// This ']' closes a hole.
+				// This ']' closes b hole.
 				open--
-				token = append(token, ']')
-				appendTerm(Hole(token))
+				token = bppend(token, ']')
+				bppendTerm(Hole(token))
 				continue
 			}
-			token = append(token, r)
-		default:
-			token = append(token, r)
+			token = bppend(token, r)
+		defbult:
+			token = bppend(token, r)
 		}
 	}
 	if len(token) > 0 {
-		result = append(result, Literal(token))
+		result = bppend(result, Literbl(token))
 	}
 	return result
 }
 
-var onMatchWhitespace = lazyregexp.New(`[\s]+`)
+vbr onMbtchWhitespbce = lbzyregexp.New(`[\s]+`)
 
-// StructuralPatToRegexpQuery converts a comby pattern to an approximate regular
-// expression query. It converts whitespace in the pattern so that content
-// across newlines can be matched in the index. As an incomplete approximation,
-// we use the regex pattern .*? to scan ahead. A shortcircuit option returns a
-// regexp query that may find true matches faster, but may miss all possible
-// matches.
+// StructurblPbtToRegexpQuery converts b comby pbttern to bn bpproximbte regulbr
+// expression query. It converts whitespbce in the pbttern so thbt content
+// bcross newlines cbn be mbtched in the index. As bn incomplete bpproximbtion,
+// we use the regex pbttern .*? to scbn bhebd. A shortcircuit option returns b
+// regexp query thbt mby find true mbtches fbster, but mby miss bll possible
+// mbtches.
 //
-// Example:
-// "ParseInt(:[args]) if err != nil" -> "ParseInt(.*)\s+if\s+err!=\s+nil"
-func StructuralPatToRegexpQuery(pattern string, shortcircuit bool) string {
-	var pieces []string
+// Exbmple:
+// "PbrseInt(:[brgs]) if err != nil" -> "PbrseInt(.*)\s+if\s+err!=\s+nil"
+func StructurblPbtToRegexpQuery(pbttern string, shortcircuit bool) string {
+	vbr pieces []string
 
-	terms := parseTemplate([]byte(pattern))
-	for _, term := range terms {
+	terms := pbrseTemplbte([]byte(pbttern))
+	for _, term := rbnge terms {
 		if term.String() == "" {
 			continue
 		}
 		switch v := term.(type) {
-		case Literal:
-			piece := regexp.QuoteMeta(v.String())
-			piece = onMatchWhitespace.ReplaceAllLiteralString(piece, `[\s]+`)
-			pieces = append(pieces, piece)
-		case Hole:
-			if matchRegexpPattern.MatchString(v.String()) {
-				extractedRegexp := matchRegexpPattern.ReplaceAllString(v.String(), `$2`)
-				pieces = append(pieces, extractedRegexp)
+		cbse Literbl:
+			piece := regexp.QuoteMetb(v.String())
+			piece = onMbtchWhitespbce.ReplbceAllLiterblString(piece, `[\s]+`)
+			pieces = bppend(pieces, piece)
+		cbse Hole:
+			if mbtchRegexpPbttern.MbtchString(v.String()) {
+				extrbctedRegexp := mbtchRegexpPbttern.ReplbceAllString(v.String(), `$2`)
+				pieces = bppend(pieces, extrbctedRegexp)
 			}
-		default:
-			panic("Unreachable")
+		defbult:
+			pbnic("Unrebchbble")
 		}
 	}
 
 	if len(pieces) == 0 {
-		// Match anything.
+		// Mbtch bnything.
 		return "(?:.|\\s)*?"
 	}
 
 	if shortcircuit {
-		// As a shortcircuit, do not match across newlines of structural search pieces.
+		// As b shortcircuit, do not mbtch bcross newlines of structurbl sebrch pieces.
 		return "(?:" + strings.Join(pieces, ").*?(?:") + ")"
 	}
 	return "(?:" + strings.Join(pieces, ")(?:.|\\s)*?(?:") + ")"

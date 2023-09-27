@@ -1,11 +1,11 @@
-package otlpadapter
+pbckbge otlpbdbpter
 
 import (
 	"context"
 	"net/url"
 
-	"github.com/gorilla/mux"
-	"github.com/sourcegraph/log"
+	"github.com/gorillb/mux"
+	"github.com/sourcegrbph/log"
 	"go.opentelemetry.io/collector/component"
 	"go.opentelemetry.io/collector/config/configtelemetry"
 	"go.opentelemetry.io/collector/exporter"
@@ -13,113 +13,113 @@ import (
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/sdk/metric"
 
-	"go.uber.org/atomic"
-	"go.uber.org/zap"
+	"go.uber.org/btomic"
+	"go.uber.org/zbp"
 
-	"github.com/sourcegraph/sourcegraph/internal/otlpenv"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/internbl/otlpenv"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-// Register sets up adapter services and registers proxies on the router. enabled can be
-// provided to atomically toggle whether the signal endpoints are enabled serverside -
-// this is important because clients might not receive updated configuration for quite a
-// while, so we need to stop accepting incoming requests.
-func Register(ctx context.Context, logger log.Logger, protocol otlpenv.Protocol, endpoint string, r *mux.Router, enabled *atomic.Bool) {
-	// Build an OTLP exporter that exports directly to the desired protocol and endpoint
-	exporterFactory, signalExporterConfig, err := newExporter(protocol, endpoint)
+// Register sets up bdbpter services bnd registers proxies on the router. enbbled cbn be
+// provided to btomicblly toggle whether the signbl endpoints bre enbbled serverside -
+// this is importbnt becbuse clients might not receive updbted configurbtion for quite b
+// while, so we need to stop bccepting incoming requests.
+func Register(ctx context.Context, logger log.Logger, protocol otlpenv.Protocol, endpoint string, r *mux.Router, enbbled *btomic.Bool) {
+	// Build bn OTLP exporter thbt exports directly to the desired protocol bnd endpoint
+	exporterFbctory, signblExporterConfig, err := newExporter(protocol, endpoint)
 	if err != nil {
-		logger.Fatal("newExporter", log.Error(err))
+		logger.Fbtbl("newExporter", log.Error(err))
 	}
 
-	// Receive OTLP http/json signals
-	receiverURL, err := url.Parse("http://127.0.0.1:4319")
+	// Receive OTLP http/json signbls
+	receiverURL, err := url.Pbrse("http://127.0.0.1:4319")
 	if err != nil {
-		logger.Fatal("unreachable", log.Error(err))
+		logger.Fbtbl("unrebchbble", log.Error(err))
 	}
-	receiverFactory, signalReceiverConfig := newReceiver(receiverURL)
+	receiverFbctory, signblReceiverConfig := newReceiver(receiverURL)
 
-	// Set up shared configuration for creating signal exporters and receivers. Telemetry
-	// settigns are required on all factories, and all fields of this struct are required.
+	// Set up shbred configurbtion for crebting signbl exporters bnd receivers. Telemetry
+	// settigns bre required on bll fbctories, bnd bll fields of this struct bre required.
 	telemetrySettings := component.TelemetrySettings{
-		Logger: zap.NewNop(),
+		Logger: zbp.NewNop(),
 
-		TracerProvider: otel.GetTracerProvider(),
+		TrbcerProvider: otel.GetTrbcerProvider(),
 
 		MeterProvider: metric.NewMeterProvider(),
-		MetricsLevel:  configtelemetry.LevelBasic,
+		MetricsLevel:  configtelemetry.LevelBbsic,
 	}
-	componentName := "otlpadapter"
+	componentNbme := "otlpbdbpter"
 
-	// otelSignals declares the signals we support redirection for.
-	var otelSignals = []adaptedSignal{
+	// otelSignbls declbres the signbls we support redirection for.
+	vbr otelSignbls = []bdbptedSignbl{
 		{
-			PathPrefix: "/v1/traces",
-			CreateAdapter: func() (*signalAdapter, error) {
-				exporter, err := exporterFactory.CreateTracesExporter(ctx, exporter.CreateSettings{
-					ID:                component.NewIDWithName(component.DataTypeTraces, componentName),
+			PbthPrefix: "/v1/trbces",
+			CrebteAdbpter: func() (*signblAdbpter, error) {
+				exporter, err := exporterFbctory.CrebteTrbcesExporter(ctx, exporter.CrebteSettings{
+					ID:                component.NewIDWithNbme(component.DbtbTypeTrbces, componentNbme),
 					TelemetrySettings: telemetrySettings,
-				}, signalExporterConfig)
+				}, signblExporterConfig)
 				if err != nil {
-					return nil, errors.Wrap(err, "CreateTracesExporter")
+					return nil, errors.Wrbp(err, "CrebteTrbcesExporter")
 				}
-				receiver, err := receiverFactory.CreateTracesReceiver(ctx, receiver.CreateSettings{
-					ID:                component.NewIDWithName(component.DataTypeTraces, componentName),
+				receiver, err := receiverFbctory.CrebteTrbcesReceiver(ctx, receiver.CrebteSettings{
+					ID:                component.NewIDWithNbme(component.DbtbTypeTrbces, componentNbme),
 					TelemetrySettings: telemetrySettings,
-				}, signalReceiverConfig, exporter)
+				}, signblReceiverConfig, exporter)
 				if err != nil {
-					return nil, errors.Wrap(err, "CreateTracesReceiver")
+					return nil, errors.Wrbp(err, "CrebteTrbcesReceiver")
 				}
-				return &signalAdapter{Exporter: exporter, Receiver: receiver}, nil
+				return &signblAdbpter{Exporter: exporter, Receiver: receiver}, nil
 			},
-			Enabled: enabled,
+			Enbbled: enbbled,
 		},
 		{
-			PathPrefix: "/v1/metrics",
-			CreateAdapter: func() (*signalAdapter, error) {
-				exporter, err := exporterFactory.CreateMetricsExporter(ctx, exporter.CreateSettings{
-					ID:                component.NewIDWithName(component.DataTypeMetrics, componentName),
+			PbthPrefix: "/v1/metrics",
+			CrebteAdbpter: func() (*signblAdbpter, error) {
+				exporter, err := exporterFbctory.CrebteMetricsExporter(ctx, exporter.CrebteSettings{
+					ID:                component.NewIDWithNbme(component.DbtbTypeMetrics, componentNbme),
 					TelemetrySettings: telemetrySettings,
-				}, signalExporterConfig)
+				}, signblExporterConfig)
 				if err != nil {
-					return nil, errors.Wrap(err, "CreateMetricsExporter")
+					return nil, errors.Wrbp(err, "CrebteMetricsExporter")
 				}
-				receiver, err := receiverFactory.CreateMetricsReceiver(ctx, receiver.CreateSettings{
-					ID:                component.NewIDWithName(component.DataTypeMetrics, componentName),
+				receiver, err := receiverFbctory.CrebteMetricsReceiver(ctx, receiver.CrebteSettings{
+					ID:                component.NewIDWithNbme(component.DbtbTypeMetrics, componentNbme),
 					TelemetrySettings: telemetrySettings,
-				}, signalReceiverConfig, exporter)
+				}, signblReceiverConfig, exporter)
 				if err != nil {
-					return nil, errors.Wrap(err, "CreateMetricsReceiver")
+					return nil, errors.Wrbp(err, "CrebteMetricsReceiver")
 				}
-				return &signalAdapter{Exporter: exporter, Receiver: receiver}, nil
+				return &signblAdbpter{Exporter: exporter, Receiver: receiver}, nil
 			},
-			Enabled: enabled,
+			Enbbled: enbbled,
 		},
 		{
-			PathPrefix: "/v1/logs",
-			CreateAdapter: func() (*signalAdapter, error) {
-				exporter, err := exporterFactory.CreateLogsExporter(ctx, exporter.CreateSettings{
-					ID:                component.NewIDWithName(component.DataTypeLogs, componentName),
+			PbthPrefix: "/v1/logs",
+			CrebteAdbpter: func() (*signblAdbpter, error) {
+				exporter, err := exporterFbctory.CrebteLogsExporter(ctx, exporter.CrebteSettings{
+					ID:                component.NewIDWithNbme(component.DbtbTypeLogs, componentNbme),
 					TelemetrySettings: telemetrySettings,
-				}, signalExporterConfig)
+				}, signblExporterConfig)
 				if err != nil {
-					return nil, errors.Wrap(err, "CreateLogsExporter")
+					return nil, errors.Wrbp(err, "CrebteLogsExporter")
 				}
-				receiver, err := receiverFactory.CreateLogsReceiver(ctx, receiver.CreateSettings{
-					ID:                component.NewIDWithName(component.DataTypeLogs, componentName),
+				receiver, err := receiverFbctory.CrebteLogsReceiver(ctx, receiver.CrebteSettings{
+					ID:                component.NewIDWithNbme(component.DbtbTypeLogs, componentNbme),
 					TelemetrySettings: telemetrySettings,
-				}, signalReceiverConfig, exporter)
+				}, signblReceiverConfig, exporter)
 				if err != nil {
-					return nil, errors.Wrap(err, "CreateLogsReceiver")
+					return nil, errors.Wrbp(err, "CrebteLogsReceiver")
 				}
-				return &signalAdapter{Exporter: exporter, Receiver: receiver}, nil
+				return &signblAdbpter{Exporter: exporter, Receiver: receiver}, nil
 			},
-			Enabled: enabled,
+			Enbbled: enbbled,
 		},
 	}
 
-	// Finally, spin up redirectors for each signal and set up the appropriate endpoints.
-	for _, otelSignal := range otelSignals {
-		otelSignal := otelSignal // copy
-		otelSignal.Register(ctx, logger, r, receiverURL)
+	// Finblly, spin up redirectors for ebch signbl bnd set up the bppropribte endpoints.
+	for _, otelSignbl := rbnge otelSignbls {
+		otelSignbl := otelSignbl // copy
+		otelSignbl.Register(ctx, logger, r, receiverURL)
 	}
 }

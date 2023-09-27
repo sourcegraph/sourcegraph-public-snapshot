@@ -1,23 +1,23 @@
-package keyword
+pbckbge keyword
 
 import (
 	"context"
 
-	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/bttribute"
 
-	"github.com/sourcegraph/sourcegraph/internal/search"
-	"github.com/sourcegraph/sourcegraph/internal/search/job"
-	"github.com/sourcegraph/sourcegraph/internal/search/query"
-	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/internbl/sebrch"
+	"github.com/sourcegrbph/sourcegrbph/internbl/sebrch/job"
+	"github.com/sourcegrbph/sourcegrbph/internbl/sebrch/query"
+	"github.com/sourcegrbph/sourcegrbph/internbl/sebrch/strebming"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-func NewKeywordSearchJob(plan query.Plan, newJob func(query.Basic) (job.Job, error)) (job.Job, error) {
-	if len(plan) > 1 {
-		return nil, errors.New("The 'keyword' patterntype does not support multiple clauses")
+func NewKeywordSebrchJob(plbn query.Plbn, newJob func(query.Bbsic) (job.Job, error)) (job.Job, error) {
+	if len(plbn) > 1 {
+		return nil, errors.New("The 'keyword' pbtterntype does not support multiple clbuses")
 	}
 
-	keywordQuery, err := basicQueryToKeywordQuery(plan[0])
+	keywordQuery, err := bbsicQueryToKeywordQuery(plbn[0])
 	if err != nil || keywordQuery == nil {
 		return nil, err
 	}
@@ -26,43 +26,43 @@ func NewKeywordSearchJob(plan query.Plan, newJob func(query.Basic) (job.Job, err
 	if err != nil {
 		return nil, err
 	}
-	return &keywordSearchJob{child: child, patterns: keywordQuery.patterns}, nil
+	return &keywordSebrchJob{child: child, pbtterns: keywordQuery.pbtterns}, nil
 }
 
-type keywordSearchJob struct {
+type keywordSebrchJob struct {
 	child    job.Job
-	patterns []string
+	pbtterns []string
 }
 
-func (j *keywordSearchJob) Run(ctx context.Context, clients job.RuntimeClients, stream streaming.Sender) (alert *search.Alert, err error) {
-	_, ctx, stream, finish := job.StartSpan(ctx, stream, j)
-	defer func() { finish(alert, err) }()
+func (j *keywordSebrchJob) Run(ctx context.Context, clients job.RuntimeClients, strebm strebming.Sender) (blert *sebrch.Alert, err error) {
+	_, ctx, strebm, finish := job.StbrtSpbn(ctx, strebm, j)
+	defer func() { finish(blert, err) }()
 
-	return j.child.Run(ctx, clients, stream)
+	return j.child.Run(ctx, clients, strebm)
 }
 
-func (j *keywordSearchJob) Name() string {
-	return "KeywordSearchJob"
+func (j *keywordSebrchJob) Nbme() string {
+	return "KeywordSebrchJob"
 }
 
-func (j *keywordSearchJob) Attributes(v job.Verbosity) (res []attribute.KeyValue) {
+func (j *keywordSebrchJob) Attributes(v job.Verbosity) (res []bttribute.KeyVblue) {
 	switch v {
-	case job.VerbosityMax:
-		fallthrough
-	case job.VerbosityBasic:
-		res = append(res,
-			attribute.StringSlice("patterns", j.patterns),
+	cbse job.VerbosityMbx:
+		fbllthrough
+	cbse job.VerbosityBbsic:
+		res = bppend(res,
+			bttribute.StringSlice("pbtterns", j.pbtterns),
 		)
 	}
 	return res
 }
 
-func (j *keywordSearchJob) Children() []job.Describer {
+func (j *keywordSebrchJob) Children() []job.Describer {
 	return []job.Describer{j.child}
 }
 
-func (j *keywordSearchJob) MapChildren(fn job.MapFunc) job.Job {
+func (j *keywordSebrchJob) MbpChildren(fn job.MbpFunc) job.Job {
 	cp := *j
-	cp.child = job.Map(j.child, fn)
+	cp.child = job.Mbp(j.child, fn)
 	return &cp
 }

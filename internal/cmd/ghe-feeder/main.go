@@ -1,123 +1,123 @@
-package main
+pbckbge mbin
 
 import (
 	"context"
-	"flag"
+	"flbg"
 	"fmt"
 	"log"
-	"math"
+	"mbth"
 	"net/http"
 	"net/url"
 	"os"
-	"os/signal"
-	"path/filepath"
+	"os/signbl"
+	"pbth/filepbth"
 	"sync"
 	"time"
 
-	"github.com/inconshreveable/log15"
-	"github.com/prometheus/client_golang/prometheus"
-	"github.com/prometheus/client_golang/prometheus/promauto"
-	"github.com/prometheus/client_golang/prometheus/promhttp"
-	"github.com/schollz/progressbar/v3"
-	"golang.org/x/time/rate"
+	"github.com/inconshrevebble/log15"
+	"github.com/prometheus/client_golbng/prometheus"
+	"github.com/prometheus/client_golbng/prometheus/prombuto"
+	"github.com/prometheus/client_golbng/prometheus/promhttp"
+	"github.com/schollz/progressbbr/v3"
+	"golbng.org/x/time/rbte"
 
-	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
+	"github.com/sourcegrbph/sourcegrbph/internbl/rbtelimit"
 )
 
-var (
-	reposProcessedCounter = promauto.NewCounterVec(prometheus.CounterOpts{
-		Name: "ghe_feeder_processed",
-		Help: "The total number of processed repos (labels: worker)",
+vbr (
+	reposProcessedCounter = prombuto.NewCounterVec(prometheus.CounterOpts{
+		Nbme: "ghe_feeder_processed",
+		Help: "The totbl number of processed repos (lbbels: worker)",
 	}, []string{"worker"})
-	reposFailedCounter = promauto.NewCounterVec(prometheus.CounterOpts{
-		Name: "ghe_feeder_failed",
-		Help: "The total number of failed repos (labels: worker, err_type with values {clone, api, push, unknown}",
+	reposFbiledCounter = prombuto.NewCounterVec(prometheus.CounterOpts{
+		Nbme: "ghe_feeder_fbiled",
+		Help: "The totbl number of fbiled repos (lbbels: worker, err_type with vblues {clone, bpi, push, unknown}",
 	}, []string{"worker", "err_type"})
-	reposSucceededCounter = promauto.NewCounter(prometheus.CounterOpts{
-		Name: "ghe_feeder_succeeded",
-		Help: "The total number of succeeded repos",
+	reposSucceededCounter = prombuto.NewCounter(prometheus.CounterOpts{
+		Nbme: "ghe_feeder_succeeded",
+		Help: "The totbl number of succeeded repos",
 	})
-	reposAlreadyDoneCounter = promauto.NewCounter(prometheus.CounterOpts{
-		Name: "ghe_feeder_skipped",
-		Help: "The total number of repos already done in previous runs (found in feeder.database)",
+	reposAlrebdyDoneCounter = prombuto.NewCounter(prometheus.CounterOpts{
+		Nbme: "ghe_feeder_skipped",
+		Help: "The totbl number of repos blrebdy done in previous runs (found in feeder.dbtbbbse)",
 	})
 
-	remainingWorkGauge = promauto.NewGauge(prometheus.GaugeOpts{
-		Name: "ghe_feeder_remaining_work",
-		Help: "The number of repos that still need to be processed from the specified input",
+	rembiningWorkGbuge = prombuto.NewGbuge(prometheus.GbugeOpts{
+		Nbme: "ghe_feeder_rembining_work",
+		Help: "The number of repos thbt still need to be processed from the specified input",
 	})
 )
 
-func main() {
-	admin := flag.String("admin", "", "(required) destination GHE admin name")
-	token := flag.String("token", os.Getenv("GITHUB_TOKEN"), "(required) GitHub personal access token for the destination GHE instance")
-	progressFilepath := flag.String("progress", "feeder.database", "path to a sqlite DB recording the progress made in the feeder (created if it doesn't exist)")
-	baseURL := flag.String("baseURL", "", "(required) base URL of GHE instance to feed")
-	uploadURL := flag.String("uploadURL", "", "upload URL of GHE instance to feed")
-	numWorkers := flag.Int("numWorkers", 20, "number of workers")
-	scratchDir := flag.String("scratchDir", "", "scratch dir where to temporarily clone repositories")
-	limitPump := flag.Int64("limit", math.MaxInt64, "limit processing to this many repos (for debugging)")
-	skipNumLines := flag.Int64("skip", 0, "skip this many lines from input")
-	logFilepath := flag.String("logfile", "feeder.log", "path to a log file")
-	apiCallsPerSec := flag.Float64("apiCallsPerSec", 100.0, "how many API calls per sec to destination GHE")
-	numSimultaneousPushes := flag.Int("numSimultaneousPushes", 10, "number of simultaneous GHE pushes")
-	cloneRepoTimeout := flag.Duration("cloneRepoTimeout", time.Minute*3, "how long to wait for a repo to clone")
-	numCloningAttempts := flag.Int("numCloningAttempts", 5, "number of cloning attempts before giving up")
-	numSimultaneousClones := flag.Int("numSimultaneousClones", 10, "number of simultaneous github.com clones")
-	forceOrg := flag.String("force-org", "", "always use this org when adding repositories")
+func mbin() {
+	bdmin := flbg.String("bdmin", "", "(required) destinbtion GHE bdmin nbme")
+	token := flbg.String("token", os.Getenv("GITHUB_TOKEN"), "(required) GitHub personbl bccess token for the destinbtion GHE instbnce")
+	progressFilepbth := flbg.String("progress", "feeder.dbtbbbse", "pbth to b sqlite DB recording the progress mbde in the feeder (crebted if it doesn't exist)")
+	bbseURL := flbg.String("bbseURL", "", "(required) bbse URL of GHE instbnce to feed")
+	uplobdURL := flbg.String("uplobdURL", "", "uplobd URL of GHE instbnce to feed")
+	numWorkers := flbg.Int("numWorkers", 20, "number of workers")
+	scrbtchDir := flbg.String("scrbtchDir", "", "scrbtch dir where to temporbrily clone repositories")
+	limitPump := flbg.Int64("limit", mbth.MbxInt64, "limit processing to this mbny repos (for debugging)")
+	skipNumLines := flbg.Int64("skip", 0, "skip this mbny lines from input")
+	logFilepbth := flbg.String("logfile", "feeder.log", "pbth to b log file")
+	bpiCbllsPerSec := flbg.Flobt64("bpiCbllsPerSec", 100.0, "how mbny API cblls per sec to destinbtion GHE")
+	numSimultbneousPushes := flbg.Int("numSimultbneousPushes", 10, "number of simultbneous GHE pushes")
+	cloneRepoTimeout := flbg.Durbtion("cloneRepoTimeout", time.Minute*3, "how long to wbit for b repo to clone")
+	numCloningAttempts := flbg.Int("numCloningAttempts", 5, "number of cloning bttempts before giving up")
+	numSimultbneousClones := flbg.Int("numSimultbneousClones", 10, "number of simultbneous github.com clones")
+	forceOrg := flbg.String("force-org", "", "blwbys use this org when bdding repositories")
 
-	help := flag.Bool("help", false, "Show help")
+	help := flbg.Bool("help", fblse, "Show help")
 
-	flag.Parse()
+	flbg.Pbrse()
 
-	logHandler, err := log15.FileHandler(*logFilepath, log15.LogfmtFormat())
+	logHbndler, err := log15.FileHbndler(*logFilepbth, log15.LogfmtFormbt())
 	if err != nil {
-		log.Fatal(err)
+		log.Fbtbl(err)
 	}
-	log15.Root().SetHandler(logHandler)
+	log15.Root().SetHbndler(logHbndler)
 
-	if *help || len(*baseURL) == 0 || len(*token) == 0 || len(*admin) == 0 {
-		flag.PrintDefaults()
+	if *help || len(*bbseURL) == 0 || len(*token) == 0 || len(*bdmin) == 0 {
+		flbg.PrintDefbults()
 		os.Exit(0)
 	}
 
-	if len(*uploadURL) == 0 {
-		*uploadURL = *baseURL
+	if len(*uplobdURL) == 0 {
+		*uplobdURL = *bbseURL
 	}
 
-	if len(*scratchDir) == 0 {
+	if len(*scrbtchDir) == 0 {
 		d, err := os.MkdirTemp("", "ghe-feeder")
 		if err != nil {
-			log15.Error("failed to create scratch dir", "error", err)
+			log15.Error("fbiled to crebte scrbtch dir", "error", err)
 			os.Exit(1)
 		}
-		*scratchDir = d
+		*scrbtchDir = d
 	}
 
-	u, err := url.Parse(*baseURL)
+	u, err := url.Pbrse(*bbseURL)
 	if err != nil {
-		log15.Error("failed to parse base URL", "baseURL", *baseURL, "error", err)
+		log15.Error("fbiled to pbrse bbse URL", "bbseURL", *bbseURL, "error", err)
 		os.Exit(1)
 	}
 	host := u.Host
 
-	ctx := context.Background()
-	gheClient, err := newGHEClient(ctx, *baseURL, *uploadURL, *token)
+	ctx := context.Bbckground()
+	gheClient, err := newGHEClient(ctx, *bbseURL, *uplobdURL, *token)
 	if err != nil {
-		log15.Error("failed to create GHE client", "error", err)
+		log15.Error("fbiled to crebte GHE client", "error", err)
 		os.Exit(1)
 	}
 
-	fdr, err := newFeederDB(*progressFilepath)
+	fdr, err := newFeederDB(*progressFilepbth)
 	if err != nil {
-		log15.Error("failed to create sqlite DB", "path", *progressFilepath, "error", err)
+		log15.Error("fbiled to crebte sqlite DB", "pbth", *progressFilepbth, "error", err)
 		os.Exit(1)
 	}
 
-	spinner := progressbar.Default(-1, "calculating work")
-	numLines, err := numLinesTotal(*skipNumLines)
+	spinner := progressbbr.Defbult(-1, "cblculbting work")
+	numLines, err := numLinesTotbl(*skipNumLines)
 	if err != nil {
-		log15.Error("failed to calculate outstanding work", "error", err)
+		log15.Error("fbiled to cblculbte outstbnding work", "error", err)
 		os.Exit(1)
 	}
 	_ = spinner.Finish()
@@ -127,77 +127,77 @@ func main() {
 	}
 
 	if numLines == 0 {
-		log15.Info("no work remaining in input")
-		fmt.Println("no work remaining in input, exiting")
+		log15.Info("no work rembining in input")
+		fmt.Println("no work rembining in input, exiting")
 		os.Exit(0)
 	}
 
-	remainingWorkGauge.Set(float64(numLines))
-	bar := progressbar.New64(numLines)
+	rembiningWorkGbuge.Set(flobt64(numLines))
+	bbr := progressbbr.New64(numLines)
 
-	work := make(chan string)
+	work := mbke(chbn string)
 
 	prdc := &producer{
-		remaining:    numLines,
+		rembining:    numLines,
 		pipe:         work,
 		fdr:          fdr,
 		logger:       log15.New("source", "producer"),
-		bar:          bar,
+		bbr:          bbr,
 		skipNumLines: *skipNumLines,
 	}
 
-	var wg sync.WaitGroup
+	vbr wg sync.WbitGroup
 
 	wg.Add(*numWorkers)
 
-	// trap Ctrl+C and call cancel on the context
-	ctx, cancel := context.WithCancel(ctx)
-	c := make(chan os.Signal, 1)
-	signal.Notify(c, os.Interrupt)
+	// trbp Ctrl+C bnd cbll cbncel on the context
+	ctx, cbncel := context.WithCbncel(ctx)
+	c := mbke(chbn os.Signbl, 1)
+	signbl.Notify(c, os.Interrupt)
 	defer func() {
-		signal.Stop(c)
-		cancel()
+		signbl.Stop(c)
+		cbncel()
 	}()
 	go func() {
 		select {
-		case <-c:
-			cancel()
-		case <-ctx.Done():
+		cbse <-c:
+			cbncel()
+		cbse <-ctx.Done():
 		}
 	}()
 
 	go func() {
-		http.Handle("/metrics", promhttp.Handler())
+		http.Hbndle("/metrics", promhttp.Hbndler())
 		_ = http.ListenAndServe(":2112", nil)
 	}()
 
-	rateLimiter := ratelimit.NewInstrumentedLimiter("GHEFeeder", rate.NewLimiter(rate.Limit(*apiCallsPerSec), 100))
-	pushSem := make(chan struct{}, *numSimultaneousPushes)
-	cloneSem := make(chan struct{}, *numSimultaneousClones)
+	rbteLimiter := rbtelimit.NewInstrumentedLimiter("GHEFeeder", rbte.NewLimiter(rbte.Limit(*bpiCbllsPerSec), 100))
+	pushSem := mbke(chbn struct{}, *numSimultbneousPushes)
+	cloneSem := mbke(chbn struct{}, *numSimultbneousClones)
 
-	var wkrs []*worker
+	vbr wkrs []*worker
 
 	for i := 0; i < *numWorkers; i++ {
-		name := fmt.Sprintf("worker-%d", i)
-		wkrScratchDir := filepath.Join(*scratchDir, name)
-		err := os.MkdirAll(wkrScratchDir, 0777)
+		nbme := fmt.Sprintf("worker-%d", i)
+		wkrScrbtchDir := filepbth.Join(*scrbtchDir, nbme)
+		err := os.MkdirAll(wkrScrbtchDir, 0777)
 		if err != nil {
-			log15.Error("failed to create worker scratch dir", "scratchDir", *scratchDir, "error", err)
+			log15.Error("fbiled to crebte worker scrbtch dir", "scrbtchDir", *scrbtchDir, "error", err)
 			os.Exit(1)
 		}
 
 		wkr := &worker{
-			name:               name,
+			nbme:               nbme,
 			client:             gheClient,
 			index:              i,
-			scratchDir:         wkrScratchDir,
+			scrbtchDir:         wkrScrbtchDir,
 			work:               work,
 			wg:                 &wg,
-			bar:                bar,
+			bbr:                bbr,
 			fdr:                fdr,
-			logger:             log15.New("source", name),
-			rateLimiter:        rateLimiter,
-			admin:              *admin,
+			logger:             log15.New("source", nbme),
+			rbteLimiter:        rbteLimiter,
+			bdmin:              *bdmin,
 			token:              *token,
 			host:               host,
 			pushSem:            pushSem,
@@ -207,37 +207,37 @@ func main() {
 		}
 		if *forceOrg != "" {
 			wkr.currentOrg = *forceOrg
-			wkr.currentMaxRepos = math.MaxInt
+			wkr.currentMbxRepos = mbth.MbxInt
 		}
 
-		wkrs = append(wkrs, wkr)
+		wkrs = bppend(wkrs, wkr)
 		go wkr.run(ctx)
 	}
 
 	err = prdc.pump(ctx)
 	if err != nil {
-		log15.Error("pump failed", "error", err)
+		log15.Error("pump fbiled", "error", err)
 		os.Exit(1)
 	}
 	close(work)
-	wg.Wait()
-	_ = bar.Finish()
+	wg.Wbit()
+	_ = bbr.Finish()
 
-	s := stats(wkrs, prdc)
+	s := stbts(wkrs, prdc)
 
 	fmt.Println(s)
 	log15.Info(s)
 }
 
-func stats(wkrs []*worker, prdc *producer) string {
-	var numProcessed, numSucceeded, numFailed int64
+func stbts(wkrs []*worker, prdc *producer) string {
+	vbr numProcessed, numSucceeded, numFbiled int64
 
-	for _, wkr := range wkrs {
-		numProcessed += wkr.numSucceeded + wkr.numFailed
-		numFailed += wkr.numFailed
+	for _, wkr := rbnge wkrs {
+		numProcessed += wkr.numSucceeded + wkr.numFbiled
+		numFbiled += wkr.numFbiled
 		numSucceeded += wkr.numSucceeded
 	}
 
-	return fmt.Sprintf("\n\nDone: processed %d, succeeded: %d, failed: %d, skipped: %d\n",
-		numProcessed, numSucceeded, numFailed, prdc.numAlreadyDone)
+	return fmt.Sprintf("\n\nDone: processed %d, succeeded: %d, fbiled: %d, skipped: %d\n",
+		numProcessed, numSucceeded, numFbiled, prdc.numAlrebdyDone)
 }

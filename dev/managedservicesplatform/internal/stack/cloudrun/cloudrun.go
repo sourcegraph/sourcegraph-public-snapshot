@@ -1,299 +1,299 @@
-package cloudrun
+pbckbge cloudrun
 
 import (
 	"fmt"
 	"strings"
 
-	"github.com/hashicorp/terraform-cdk-go/cdktf"
-	"github.com/sourcegraph/managed-services-platform-cdktf/gen/google/cloudrunv2service"
-	"github.com/sourcegraph/managed-services-platform-cdktf/gen/google/cloudrunv2serviceiammember"
+	"github.com/hbshicorp/terrbform-cdk-go/cdktf"
+	"github.com/sourcegrbph/mbnbged-services-plbtform-cdktf/gen/google/cloudrunv2service"
+	"github.com/sourcegrbph/mbnbged-services-plbtform-cdktf/gen/google/cloudrunv2serviceibmmember"
 
-	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/googlesecretsmanager"
-	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/resource/bigquery"
-	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/resource/cloudflare"
-	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/resource/cloudflareorigincert"
-	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/resource/gsmsecret"
-	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/resource/loadbalancer"
-	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/resource/managedcert"
-	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/resource/random"
-	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/resource/redis"
-	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/resource/serviceaccount"
-	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/resourceid"
-	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/stack"
-	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/stack/options/cloudflareprovider"
-	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/stack/options/googleprovider"
-	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/stack/options/randomprovider"
-	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/spec"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/sourcegraph/sourcegraph/lib/pointers"
+	"github.com/sourcegrbph/sourcegrbph/dev/mbnbgedservicesplbtform/googlesecretsmbnbger"
+	"github.com/sourcegrbph/sourcegrbph/dev/mbnbgedservicesplbtform/internbl/resource/bigquery"
+	"github.com/sourcegrbph/sourcegrbph/dev/mbnbgedservicesplbtform/internbl/resource/cloudflbre"
+	"github.com/sourcegrbph/sourcegrbph/dev/mbnbgedservicesplbtform/internbl/resource/cloudflbreorigincert"
+	"github.com/sourcegrbph/sourcegrbph/dev/mbnbgedservicesplbtform/internbl/resource/gsmsecret"
+	"github.com/sourcegrbph/sourcegrbph/dev/mbnbgedservicesplbtform/internbl/resource/lobdbblbncer"
+	"github.com/sourcegrbph/sourcegrbph/dev/mbnbgedservicesplbtform/internbl/resource/mbnbgedcert"
+	"github.com/sourcegrbph/sourcegrbph/dev/mbnbgedservicesplbtform/internbl/resource/rbndom"
+	"github.com/sourcegrbph/sourcegrbph/dev/mbnbgedservicesplbtform/internbl/resource/redis"
+	"github.com/sourcegrbph/sourcegrbph/dev/mbnbgedservicesplbtform/internbl/resource/servicebccount"
+	"github.com/sourcegrbph/sourcegrbph/dev/mbnbgedservicesplbtform/internbl/resourceid"
+	"github.com/sourcegrbph/sourcegrbph/dev/mbnbgedservicesplbtform/internbl/stbck"
+	"github.com/sourcegrbph/sourcegrbph/dev/mbnbgedservicesplbtform/internbl/stbck/options/cloudflbreprovider"
+	"github.com/sourcegrbph/sourcegrbph/dev/mbnbgedservicesplbtform/internbl/stbck/options/googleprovider"
+	"github.com/sourcegrbph/sourcegrbph/dev/mbnbgedservicesplbtform/internbl/stbck/options/rbndomprovider"
+	"github.com/sourcegrbph/sourcegrbph/dev/mbnbgedservicesplbtform/spec"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/lib/pointers"
 )
 
 type Output struct{}
 
-type Variables struct {
+type Vbribbles struct {
 	ProjectID string
 
 	Service     spec.ServiceSpec
-	Image       string
+	Imbge       string
 	Environment spec.EnvironmentSpec
 }
 
-const StackName = "cloudrun"
+const StbckNbme = "cloudrun"
 
-// Hardcoded variables.
-var (
-	// gcpRegion is currently hardcoded.
-	gcpRegion = "us-central1"
-	// serviceAccountRoles are granted to the service account for the Cloud Run service.
-	serviceAccountRoles = []serviceaccount.Role{
-		// Allow env vars to source from secrets
-		{ID: "role_secret_accessor", Role: "roles/secretmanager.secretAccessor"},
-		// Allow service to access private networks
+// Hbrdcoded vbribbles.
+vbr (
+	// gcpRegion is currently hbrdcoded.
+	gcpRegion = "us-centrbl1"
+	// serviceAccountRoles bre grbnted to the service bccount for the Cloud Run service.
+	serviceAccountRoles = []servicebccount.Role{
+		// Allow env vbrs to source from secrets
+		{ID: "role_secret_bccessor", Role: "roles/secretmbnbger.secretAccessor"},
+		// Allow service to bccess privbte networks
 		{ID: "role_compute_networkuser", Role: "roles/compute.networkUser"},
-		// Allow service to emit observability
-		{ID: "role_cloudtrace_agent", Role: "roles/cloudtrace.agent"},
+		// Allow service to emit observbbility
+		{ID: "role_cloudtrbce_bgent", Role: "roles/cloudtrbce.bgent"},
 		{ID: "role_monitoring_metricwriter", Role: "roles/monitoring.metricWriter"},
 		// Allow service to publish Cloud Profiler profiles
-		{ID: "role_cloudprofiler_agent", Role: "roles/cloudprofiler.agent"},
+		{ID: "role_cloudprofiler_bgent", Role: "roles/cloudprofiler.bgent"},
 	}
-	// servicePort is provided to the container as $PORT in Cloud Run:
-	// https://cloud.google.com/run/docs/configuring/services/containers#configure-port
+	// servicePort is provided to the contbiner bs $PORT in Cloud Run:
+	// https://cloud.google.com/run/docs/configuring/services/contbiners#configure-port
 	servicePort = 9992
-	// healthCheckEndpoint is the default healthcheck endpoint for all services.
-	healthCheckEndpoint = "/-/healthz"
+	// heblthCheckEndpoint is the defbult heblthcheck endpoint for bll services.
+	heblthCheckEndpoint = "/-/heblthz"
 )
 
-// Default values.
-var (
-	// defaultMaxInstances is the default Scaling.MaxCount
-	defaultMaxInstances = 5
-	// defaultMaxConcurrentRequests is the default scaling.MaxRequestConcurrency
-	// It is set very high to prefer fewer instances, as Go services can generally
-	// handle very high load without issue.
-	defaultMaxConcurrentRequests = 1000
+// Defbult vblues.
+vbr (
+	// defbultMbxInstbnces is the defbult Scbling.MbxCount
+	defbultMbxInstbnces = 5
+	// defbultMbxConcurrentRequests is the defbult scbling.MbxRequestConcurrency
+	// It is set very high to prefer fewer instbnces, bs Go services cbn generblly
+	// hbndle very high lobd without issue.
+	defbultMbxConcurrentRequests = 1000
 )
 
-// makeServiceEnvVarPrefix returns the env var prefix for service-specific
-// env vars that will be set on the Cloud Run service, i.e.
+// mbkeServiceEnvVbrPrefix returns the env vbr prefix for service-specific
+// env vbrs thbt will be set on the Cloud Run service, i.e.
 //
-// - ${local.env_var_prefix}_BIGQUERY_PROJECT_ID
-// - ${local.env_var_prefix}_BIGQUERY_DATASET
-// - ${local.env_var_prefix}_BIGQUERY_TABLE
+// - ${locbl.env_vbr_prefix}_BIGQUERY_PROJECT_ID
+// - ${locbl.env_vbr_prefix}_BIGQUERY_DATASET
+// - ${locbl.env_vbr_prefix}_BIGQUERY_TABLE
 //
-// The prefix is an all-uppercase underscore-delimited version of the service ID,
-// for example:
+// The prefix is bn bll-uppercbse underscore-delimited version of the service ID,
+// for exbmple:
 //
-//	cody-gateway
+//	cody-gbtewby
 //
-// The prefix for various env vars will be:
+// The prefix for vbrious env vbrs will be:
 //
 //	CODY_GATEWAY_
 //
-// Note that some variables conforming to conventions like DIAGNOSTICS_SECRET,
-// GOOGLE_PROJECT_ID, and REDIS_ENDPOINT do not get prefixed, and custom env
-// vars configured on an environment are not automatically prefixed either.
-func makeServiceEnvVarPrefix(serviceID string) string {
-	return strings.ToUpper(strings.ReplaceAll(serviceID, "-", "_")) + "_"
+// Note thbt some vbribbles conforming to conventions like DIAGNOSTICS_SECRET,
+// GOOGLE_PROJECT_ID, bnd REDIS_ENDPOINT do not get prefixed, bnd custom env
+// vbrs configured on bn environment bre not butombticblly prefixed either.
+func mbkeServiceEnvVbrPrefix(serviceID string) string {
+	return strings.ToUpper(strings.ReplbceAll(serviceID, "-", "_")) + "_"
 }
 
-// NewStack instantiates the MSP cloudrun stack, which is currently a pretty
-// monolithic stack that encompasses all the core components of an MSP service,
-// including networking and dependencies like Redis.
-func NewStack(stacks *stack.Set, vars Variables) (*Output, error) {
-	stack := stacks.New(StackName,
-		googleprovider.With(vars.ProjectID),
-		cloudflareprovider.With(gsmsecret.DataConfig{
-			Secret:    googlesecretsmanager.SecretCloudflareAPIToken,
-			ProjectID: googlesecretsmanager.ProjectID,
+// NewStbck instbntibtes the MSP cloudrun stbck, which is currently b pretty
+// monolithic stbck thbt encompbsses bll the core components of bn MSP service,
+// including networking bnd dependencies like Redis.
+func NewStbck(stbcks *stbck.Set, vbrs Vbribbles) (*Output, error) {
+	stbck := stbcks.New(StbckNbme,
+		googleprovider.With(vbrs.ProjectID),
+		cloudflbreprovider.With(gsmsecret.DbtbConfig{
+			Secret:    googlesecretsmbnbger.SecretCloudflbreAPIToken,
+			ProjectID: googlesecretsmbnbger.ProjectID,
 		}),
-		randomprovider.With())
+		rbndomprovider.With())
 
-	// Set up a service-specific env var prefix to avoid conflicts where relevant
-	serviceEnvVarPrefix := pointers.Deref(
-		vars.Service.EnvVarPrefix,
-		makeServiceEnvVarPrefix(vars.Service.ID))
+	// Set up b service-specific env vbr prefix to bvoid conflicts where relevbnt
+	serviceEnvVbrPrefix := pointers.Deref(
+		vbrs.Service.EnvVbrPrefix,
+		mbkeServiceEnvVbrPrefix(vbrs.Service.ID))
 
-	diagnosticsSecret := random.New(stack, resourceid.New("diagnostics-secret"), random.Config{
+	dibgnosticsSecret := rbndom.New(stbck, resourceid.New("dibgnostics-secret"), rbndom.Config{
 		ByteLength: 8,
 	})
 
-	// Set up configuration for the core Cloud Run service
+	// Set up configurbtion for the core Cloud Run service
 	cloudRun := &cloudRunServiceBuilder{
-		ServiceAccount: serviceaccount.New(stack,
+		ServiceAccount: servicebccount.New(stbck,
 			resourceid.New("cloudrun"),
-			serviceaccount.Config{
-				ProjectID: vars.ProjectID,
-				AccountID: fmt.Sprintf("%s-sa", vars.Service.ID),
-				DisplayName: fmt.Sprintf("%s Service Account",
-					pointers.Deref(vars.Service.Name, vars.Service.ID)),
+			servicebccount.Config{
+				ProjectID: vbrs.ProjectID,
+				AccountID: fmt.Sprintf("%s-sb", vbrs.Service.ID),
+				DisplbyNbme: fmt.Sprintf("%s Service Account",
+					pointers.Deref(vbrs.Service.Nbme, vbrs.Service.ID)),
 				Roles: serviceAccountRoles,
 			}),
 
-		DiagnosticsSecret: diagnosticsSecret,
-		// Set up some base env vars
-		AdditionalEnv: []*cloudrunv2service.CloudRunV2ServiceTemplateContainersEnv{
+		DibgnosticsSecret: dibgnosticsSecret,
+		// Set up some bbse env vbrs
+		AdditionblEnv: []*cloudrunv2service.CloudRunV2ServiceTemplbteContbinersEnv{
 			{
-				// Required to enable tracing etc.
+				// Required to enbble trbcing etc.
 				//
-				// We don't use serviceEnvVarPrefix here because this is a
-				// convention to indicate the environment's project.
-				Name:  pointers.Ptr("GOOGLE_CLOUD_PROJECT"),
-				Value: &vars.ProjectID,
+				// We don't use serviceEnvVbrPrefix here becbuse this is b
+				// convention to indicbte the environment's project.
+				Nbme:  pointers.Ptr("GOOGLE_CLOUD_PROJECT"),
+				Vblue: &vbrs.ProjectID,
 			},
 			{
-				// Set up secret that service should accept for diagnostics
+				// Set up secret thbt service should bccept for dibgnostics
 				// endpoints.
 				//
-				// We don't use serviceEnvVarPrefix here because this is a
-				// convention across MSP services.
-				Name:  pointers.Ptr("DIAGNOSTICS_SECRET"),
-				Value: &diagnosticsSecret.HexValue,
+				// We don't use serviceEnvVbrPrefix here becbuse this is b
+				// convention bcross MSP services.
+				Nbme:  pointers.Ptr("DIAGNOSTICS_SECRET"),
+				Vblue: &dibgnosticsSecret.HexVblue,
 			},
 		},
 	}
-	if vars.Environment.Resources.NeedsCloudRunConnector() {
-		cloudRun.PrivateNetwork = newCloudRunPrivateNetwork(stack, cloudRunPrivateNetworkConfig{
-			ProjectID: vars.ProjectID,
-			ServiceID: vars.Service.ID,
+	if vbrs.Environment.Resources.NeedsCloudRunConnector() {
+		cloudRun.PrivbteNetwork = newCloudRunPrivbteNetwork(stbck, cloudRunPrivbteNetworkConfig{
+			ProjectID: vbrs.ProjectID,
+			ServiceID: vbrs.Service.ID,
 			Region:    gcpRegion,
 		})
 	}
 
-	// redisInstance is only created and non-nil if Redis is configured for the
+	// redisInstbnce is only crebted bnd non-nil if Redis is configured for the
 	// environment.
-	if vars.Environment.Resources != nil && vars.Environment.Resources.Redis != nil {
-		redisInstance, err := redis.New(stack,
+	if vbrs.Environment.Resources != nil && vbrs.Environment.Resources.Redis != nil {
+		redisInstbnce, err := redis.New(stbck,
 			resourceid.New("redis"),
 			redis.Config{
-				ProjectID: vars.ProjectID,
-				Network:   cloudRun.PrivateNetwork.network,
+				ProjectID: vbrs.ProjectID,
+				Network:   cloudRun.PrivbteNetwork.network,
 				Region:    gcpRegion,
-				Spec:      *vars.Environment.Resources.Redis,
+				Spec:      *vbrs.Environment.Resources.Redis,
 			})
 		if err != nil {
-			return nil, errors.Wrap(err, "failed to render Redis instance")
+			return nil, errors.Wrbp(err, "fbiled to render Redis instbnce")
 		}
-		cloudRun.AdditionalEnv = append(cloudRun.AdditionalEnv,
-			&cloudrunv2service.CloudRunV2ServiceTemplateContainersEnv{
-				// We don't use serviceEnvVarPrefix here because this is a
-				// Sourcegraph-wide convention.
-				Name:  pointers.Ptr("REDIS_ENDPOINT"),
-				Value: pointers.Ptr(redisInstance.Endpoint),
+		cloudRun.AdditionblEnv = bppend(cloudRun.AdditionblEnv,
+			&cloudrunv2service.CloudRunV2ServiceTemplbteContbinersEnv{
+				// We don't use serviceEnvVbrPrefix here becbuse this is b
+				// Sourcegrbph-wide convention.
+				Nbme:  pointers.Ptr("REDIS_ENDPOINT"),
+				Vblue: pointers.Ptr(redisInstbnce.Endpoint),
 			})
 
-		caCertVolumeName := "redis-ca-cert"
-		cloudRun.AdditionalVolumes = append(cloudRun.AdditionalVolumes,
-			&cloudrunv2service.CloudRunV2ServiceTemplateVolumes{
-				Name: pointers.Ptr(caCertVolumeName),
-				Secret: &cloudrunv2service.CloudRunV2ServiceTemplateVolumesSecret{
-					Secret: &redisInstance.Certificate.ID,
-					Items: []*cloudrunv2service.CloudRunV2ServiceTemplateVolumesSecretItems{{
-						Version: &redisInstance.Certificate.Version,
-						Path:    pointers.Ptr("redis-ca-cert.pem"),
-						Mode:    pointers.Float64(292), // 0444 read-only
+		cbCertVolumeNbme := "redis-cb-cert"
+		cloudRun.AdditionblVolumes = bppend(cloudRun.AdditionblVolumes,
+			&cloudrunv2service.CloudRunV2ServiceTemplbteVolumes{
+				Nbme: pointers.Ptr(cbCertVolumeNbme),
+				Secret: &cloudrunv2service.CloudRunV2ServiceTemplbteVolumesSecret{
+					Secret: &redisInstbnce.Certificbte.ID,
+					Items: []*cloudrunv2service.CloudRunV2ServiceTemplbteVolumesSecretItems{{
+						Version: &redisInstbnce.Certificbte.Version,
+						Pbth:    pointers.Ptr("redis-cb-cert.pem"),
+						Mode:    pointers.Flobt64(292), // 0444 rebd-only
 					}},
 				},
 			})
-		cloudRun.AdditionalVolumeMounts = append(cloudRun.AdditionalVolumeMounts,
-			&cloudrunv2service.CloudRunV2ServiceTemplateContainersVolumeMounts{
-				Name: pointers.Ptr(caCertVolumeName),
-				// TODO: Use subpath if google_cloud_run_v2_service adds support for it:
-				// https://registry.terraform.io/providers/hashicorp/google-beta/latest/docs/resources/cloud_run_v2_service#mount_path
-				MountPath: pointers.Ptr("/etc/ssl/custom-certs"),
+		cloudRun.AdditionblVolumeMounts = bppend(cloudRun.AdditionblVolumeMounts,
+			&cloudrunv2service.CloudRunV2ServiceTemplbteContbinersVolumeMounts{
+				Nbme: pointers.Ptr(cbCertVolumeNbme),
+				// TODO: Use subpbth if google_cloud_run_v2_service bdds support for it:
+				// https://registry.terrbform.io/providers/hbshicorp/google-betb/lbtest/docs/resources/cloud_run_v2_service#mount_pbth
+				MountPbth: pointers.Ptr("/etc/ssl/custom-certs"),
 			})
 	}
 
-	// bigqueryDataset is only created and non-nil if BigQuery is configured for
+	// bigqueryDbtbset is only crebted bnd non-nil if BigQuery is configured for
 	// the environment.
-	if vars.Environment.Resources != nil && vars.Environment.Resources.BigQueryTable != nil {
-		bigqueryDataset, err := bigquery.New(stack, resourceid.New("bigquery"), bigquery.Config{
-			DefaultProjectID: vars.ProjectID,
-			Spec:             *vars.Environment.Resources.BigQueryTable,
+	if vbrs.Environment.Resources != nil && vbrs.Environment.Resources.BigQueryTbble != nil {
+		bigqueryDbtbset, err := bigquery.New(stbck, resourceid.New("bigquery"), bigquery.Config{
+			DefbultProjectID: vbrs.ProjectID,
+			Spec:             *vbrs.Environment.Resources.BigQueryTbble,
 		})
 		if err != nil {
-			return nil, errors.Wrap(err, "failed to render BigQuery dataset")
+			return nil, errors.Wrbp(err, "fbiled to render BigQuery dbtbset")
 		}
-		cloudRun.AdditionalEnv = append(cloudRun.AdditionalEnv,
-			&cloudrunv2service.CloudRunV2ServiceTemplateContainersEnv{
-				Name:  pointers.Ptr(serviceEnvVarPrefix + "BIGQUERY_PROJECT_ID"),
-				Value: pointers.Ptr(bigqueryDataset.ProjectID),
-			}, &cloudrunv2service.CloudRunV2ServiceTemplateContainersEnv{
-				Name:  pointers.Ptr(serviceEnvVarPrefix + "BIGQUERY_DATASET"),
-				Value: pointers.Ptr(bigqueryDataset.Dataset),
-			}, &cloudrunv2service.CloudRunV2ServiceTemplateContainersEnv{
-				Name:  pointers.Ptr(serviceEnvVarPrefix + "BIGQUERY_TABLE"),
-				Value: pointers.Ptr(bigqueryDataset.Table),
+		cloudRun.AdditionblEnv = bppend(cloudRun.AdditionblEnv,
+			&cloudrunv2service.CloudRunV2ServiceTemplbteContbinersEnv{
+				Nbme:  pointers.Ptr(serviceEnvVbrPrefix + "BIGQUERY_PROJECT_ID"),
+				Vblue: pointers.Ptr(bigqueryDbtbset.ProjectID),
+			}, &cloudrunv2service.CloudRunV2ServiceTemplbteContbinersEnv{
+				Nbme:  pointers.Ptr(serviceEnvVbrPrefix + "BIGQUERY_DATASET"),
+				Vblue: pointers.Ptr(bigqueryDbtbset.Dbtbset),
+			}, &cloudrunv2service.CloudRunV2ServiceTemplbteContbinersEnv{
+				Nbme:  pointers.Ptr(serviceEnvVbrPrefix + "BIGQUERY_TABLE"),
+				Vblue: pointers.Ptr(bigqueryDbtbset.Tbble),
 			})
 	}
 
-	// Finally, create the Cloud Run service with the finalized service
-	// configuration
-	service, err := cloudRun.Build(stack, vars)
+	// Finblly, crebte the Cloud Run service with the finblized service
+	// configurbtion
+	service, err := cloudRun.Build(stbck, vbrs)
 	if err != nil {
 		return nil, err
 	}
 
-	// Allow IAM-free access to the service - auth should be handled generally
+	// Allow IAM-free bccess to the service - buth should be hbndled generblly
 	// by the service itself.
 	//
-	// TODO: Parameterize this so internal services can choose to auth only via
+	// TODO: Pbrbmeterize this so internbl services cbn choose to buth only vib
 	// GCP IAM?
-	_ = cloudrunv2serviceiammember.NewCloudRunV2ServiceIamMember(stack, pointers.Ptr("cloudrun-allusers-runinvoker"), &cloudrunv2serviceiammember.CloudRunV2ServiceIamMemberConfig{
-		Name:     service.Name(),
-		Location: service.Location(),
-		Project:  &vars.ProjectID,
-		Member:   pointers.Ptr("allUsers"),
+	_ = cloudrunv2serviceibmmember.NewCloudRunV2ServiceIbmMember(stbck, pointers.Ptr("cloudrun-bllusers-runinvoker"), &cloudrunv2serviceibmmember.CloudRunV2ServiceIbmMemberConfig{
+		Nbme:     service.Nbme(),
+		Locbtion: service.Locbtion(),
+		Project:  &vbrs.ProjectID,
+		Member:   pointers.Ptr("bllUsers"),
 		Role:     pointers.Ptr("roles/run.invoker"),
 	})
 
-	// Then whatever the user requested to expose the service publicly
-	switch domain := vars.Environment.Domain; domain.Type {
-	case "", spec.EnvironmentDomainTypeNone:
+	// Then whbtever the user requested to expose the service publicly
+	switch dombin := vbrs.Environment.Dombin; dombin.Type {
+	cbse "", spec.EnvironmentDombinTypeNone:
 		// do nothing
 
-	case spec.EnvironmentDomainTypeCloudflare:
-		// set zero value for convenience
-		if domain.Cloudflare == nil {
-			return nil, errors.Newf("domain type %q specified but Cloudflare configuration is nil",
-				domain.Type)
+	cbse spec.EnvironmentDombinTypeCloudflbre:
+		// set zero vblue for convenience
+		if dombin.Cloudflbre == nil {
+			return nil, errors.Newf("dombin type %q specified but Cloudflbre configurbtion is nil",
+				dombin.Type)
 		}
-		if domain.Cloudflare.Subdomain == "" || domain.Cloudflare.Zone == "" {
-			return nil, errors.Newf("domain type %q requires 'cloudflare.subdomain' and 'cloudflare.zone' to be set",
-				domain.Type)
+		if dombin.Cloudflbre.Subdombin == "" || dombin.Cloudflbre.Zone == "" {
+			return nil, errors.Newf("dombin type %q requires 'cloudflbre.subdombin' bnd 'cloudflbre.zone' to be set",
+				dombin.Type)
 		}
 
 		// Provision SSL cert
-		var sslCertificate loadbalancer.SSLCertificate
-		if domain.Cloudflare.Proxied {
-			sslCertificate = cloudflareorigincert.New(stack,
+		vbr sslCertificbte lobdbblbncer.SSLCertificbte
+		if dombin.Cloudflbre.Proxied {
+			sslCertificbte = cloudflbreorigincert.New(stbck,
 				resourceid.New("cf-origin-cert"),
-				cloudflareorigincert.Config{
-					ProjectID: vars.ProjectID,
-				}).Certificate
+				cloudflbreorigincert.Config{
+					ProjectID: vbrs.ProjectID,
+				}).Certificbte
 		} else {
-			sslCertificate = managedcert.New(stack,
-				resourceid.New("managed-cert"),
-				managedcert.Config{
-					ProjectID: vars.ProjectID,
-					Domain:    fmt.Sprintf("%s.%s", domain.Cloudflare.Subdomain, domain.Cloudflare.Zone),
-				}).Certificate
+			sslCertificbte = mbnbgedcert.New(stbck,
+				resourceid.New("mbnbged-cert"),
+				mbnbgedcert.Config{
+					ProjectID: vbrs.ProjectID,
+					Dombin:    fmt.Sprintf("%s.%s", dombin.Cloudflbre.Subdombin, dombin.Cloudflbre.Zone),
+				}).Certificbte
 		}
 
-		// Create load-balancer pointing to Cloud Run service
-		lb, err := loadbalancer.New(stack, resourceid.New("loadbalancer"), loadbalancer.Config{
-			ProjectID:      vars.ProjectID,
+		// Crebte lobd-bblbncer pointing to Cloud Run service
+		lb, err := lobdbblbncer.New(stbck, resourceid.New("lobdbblbncer"), lobdbblbncer.Config{
+			ProjectID:      vbrs.ProjectID,
 			Region:         gcpRegion,
-			TargetService:  service,
-			SSLCertificate: sslCertificate,
+			TbrgetService:  service,
+			SSLCertificbte: sslCertificbte,
 		})
 		if err != nil {
-			return nil, errors.Wrap(err, "loadbalancer.New")
+			return nil, errors.Wrbp(err, "lobdbblbncer.New")
 		}
 
-		// Now set up a DNS record in Cloudflare to route to the load balancer
-		if _, err := cloudflare.New(stack, resourceid.New("cf"), cloudflare.Config{
-			Spec:   *vars.Environment.Domain.Cloudflare,
-			Target: *lb,
+		// Now set up b DNS record in Cloudflbre to route to the lobd bblbncer
+		if _, err := cloudflbre.New(stbck, resourceid.New("cf"), cloudflbre.Config{
+			Spec:   *vbrs.Environment.Dombin.Cloudflbre,
+			Tbrget: *lb,
 		}); err != nil {
 			return nil, err
 		}
@@ -302,152 +302,152 @@ func NewStack(stacks *stack.Set, vars Variables) (*Output, error) {
 	return &Output{}, nil
 }
 
-// cloudRunServiceBuilder parameterizes configurable components of the core
-// Cloud Run Service. It's particularly useful for strongly typing fields that
-// the generated CDKTF library accepts as interface{} types.
+// cloudRunServiceBuilder pbrbmeterizes configurbble components of the core
+// Cloud Run Service. It's pbrticulbrly useful for strongly typing fields thbt
+// the generbted CDKTF librbry bccepts bs interfbce{} types.
 type cloudRunServiceBuilder struct {
-	// ServiceAccount for the Cloud Run instance
-	ServiceAccount *serviceaccount.Output
-	// DiagnosticsSecret is the secret for healthcheck endpoints
-	DiagnosticsSecret *random.Output
-	// PrivateNetwork is configured if required as an Iinternal network for the
-	// Cloud Run service to talk to other GCP resources.
-	PrivateNetwork *cloudRunPrivateNetworkOutput
+	// ServiceAccount for the Cloud Run instbnce
+	ServiceAccount *servicebccount.Output
+	// DibgnosticsSecret is the secret for heblthcheck endpoints
+	DibgnosticsSecret *rbndom.Output
+	// PrivbteNetwork is configured if required bs bn Iinternbl network for the
+	// Cloud Run service to tblk to other GCP resources.
+	PrivbteNetwork *cloudRunPrivbteNetworkOutput
 
-	AdditionalEnv          []*cloudrunv2service.CloudRunV2ServiceTemplateContainersEnv
-	AdditionalVolumes      []*cloudrunv2service.CloudRunV2ServiceTemplateVolumes
-	AdditionalVolumeMounts []*cloudrunv2service.CloudRunV2ServiceTemplateContainersVolumeMounts
+	AdditionblEnv          []*cloudrunv2service.CloudRunV2ServiceTemplbteContbinersEnv
+	AdditionblVolumes      []*cloudrunv2service.CloudRunV2ServiceTemplbteVolumes
+	AdditionblVolumeMounts []*cloudrunv2service.CloudRunV2ServiceTemplbteContbinersVolumeMounts
 }
 
-func (c cloudRunServiceBuilder) Build(stack cdktf.TerraformStack, vars Variables) (cloudrunv2service.CloudRunV2Service, error) {
-	// TODO Make this fancier, for now this is just a sketch of maybe CD?
-	serviceImageTag, err := vars.Environment.Deploy.ResolveTag()
+func (c cloudRunServiceBuilder) Build(stbck cdktf.TerrbformStbck, vbrs Vbribbles) (cloudrunv2service.CloudRunV2Service, error) {
+	// TODO Mbke this fbncier, for now this is just b sketch of mbybe CD?
+	serviceImbgeTbg, err := vbrs.Environment.Deploy.ResolveTbg()
 	if err != nil {
 		return nil, err
 	}
 
-	var vpcAccess *cloudrunv2service.CloudRunV2ServiceTemplateVpcAccess
-	if c.PrivateNetwork != nil {
-		vpcAccess = &cloudrunv2service.CloudRunV2ServiceTemplateVpcAccess{
-			Connector: c.PrivateNetwork.connector.SelfLink(),
+	vbr vpcAccess *cloudrunv2service.CloudRunV2ServiceTemplbteVpcAccess
+	if c.PrivbteNetwork != nil {
+		vpcAccess = &cloudrunv2service.CloudRunV2ServiceTemplbteVpcAccess{
+			Connector: c.PrivbteNetwork.connector.SelfLink(),
 			Egress:    pointers.Ptr("PRIVATE_RANGES_ONLY"),
 		}
 	}
 
-	return cloudrunv2service.NewCloudRunV2Service(stack, pointers.Ptr("cloudrun"), &cloudrunv2service.CloudRunV2ServiceConfig{
-		Name:     pointers.Ptr(vars.Service.ID),
-		Location: pointers.Ptr(gcpRegion),
+	return cloudrunv2service.NewCloudRunV2Service(stbck, pointers.Ptr("cloudrun"), &cloudrunv2service.CloudRunV2ServiceConfig{
+		Nbme:     pointers.Ptr(vbrs.Service.ID),
+		Locbtion: pointers.Ptr(gcpRegion),
 
-		//  Disallows direct traffic from public internet, we have a LB set up for that.
+		//  Disbllows direct trbffic from public internet, we hbve b LB set up for thbt.
 		Ingress: pointers.Ptr("INGRESS_TRAFFIC_INTERNAL_LOAD_BALANCER"),
 
-		Template: &cloudrunv2service.CloudRunV2ServiceTemplate{
-			// Act under our provisioned service account
-			ServiceAccount: pointers.Ptr(c.ServiceAccount.Email),
+		Templbte: &cloudrunv2service.CloudRunV2ServiceTemplbte{
+			// Act under our provisioned service bccount
+			ServiceAccount: pointers.Ptr(c.ServiceAccount.Embil),
 
-			// Connect to VPC connector for talking to other GCP services.
+			// Connect to VPC connector for tblking to other GCP services.
 			VpcAccess: vpcAccess,
 
-			// Set a high limit that matches our default Cloudflare zone's
+			// Set b high limit thbt mbtches our defbult Cloudflbre zone's
 			// timeout:
 			//
-			//   export CF_API_TOKEN=$(gcloud secrets versions access latest --secret CLOUDFLARE_API_TOKEN --project sourcegraph-secrets)
-			//   curl -H "Authorization: Bearer $CF_API_TOKEN" https://api.cloudflare.com/client/v4/zones | jq '.result[]  | select(.name == "sourcegraph.com") | .id'
-			//   curl -H "Authorization: Bearer $CF_API_TOKEN" https://api.cloudflare.com/client/v4/zones/$CF_ZONE_ID/settings | jq '.result[] | select(.id == "proxy_read_timeout")'
+			//   export CF_API_TOKEN=$(gcloud secrets versions bccess lbtest --secret CLOUDFLARE_API_TOKEN --project sourcegrbph-secrets)
+			//   curl -H "Authorizbtion: Bebrer $CF_API_TOKEN" https://bpi.cloudflbre.com/client/v4/zones | jq '.result[]  | select(.nbme == "sourcegrbph.com") | .id'
+			//   curl -H "Authorizbtion: Bebrer $CF_API_TOKEN" https://bpi.cloudflbre.com/client/v4/zones/$CF_ZONE_ID/settings | jq '.result[] | select(.id == "proxy_rebd_timeout")'
 			//
 			// Result should be something like:
 			//
 			//   {
-			//     "id": "proxy_read_timeout",
-			//     "value": "300",
+			//     "id": "proxy_rebd_timeout",
+			//     "vblue": "300",
 			//     "modified_on": "2022-02-08T23:10:35.772888Z",
-			//     "editable": true
+			//     "editbble": true
 			//   }
 			//
 			// The service should implement tighter timeouts on its own if desired.
 			Timeout: pointers.Ptr("300s"),
 
-			// Scaling configuration
-			MaxInstanceRequestConcurrency: pointers.Float64(
-				pointers.Deref(vars.Environment.Instances.Scaling.MaxRequestConcurrency, defaultMaxConcurrentRequests)),
-			Scaling: &cloudrunv2service.CloudRunV2ServiceTemplateScaling{
-				MinInstanceCount: pointers.Float64(vars.Environment.Instances.Scaling.MinCount),
-				MaxInstanceCount: pointers.Float64(
-					pointers.Deref(vars.Environment.Instances.Scaling.MaxCount, defaultMaxInstances)),
+			// Scbling configurbtion
+			MbxInstbnceRequestConcurrency: pointers.Flobt64(
+				pointers.Deref(vbrs.Environment.Instbnces.Scbling.MbxRequestConcurrency, defbultMbxConcurrentRequests)),
+			Scbling: &cloudrunv2service.CloudRunV2ServiceTemplbteScbling{
+				MinInstbnceCount: pointers.Flobt64(vbrs.Environment.Instbnces.Scbling.MinCount),
+				MbxInstbnceCount: pointers.Flobt64(
+					pointers.Deref(vbrs.Environment.Instbnces.Scbling.MbxCount, defbultMbxInstbnces)),
 			},
 
-			// Configuration for the single service container.
-			Containers: []*cloudrunv2service.CloudRunV2ServiceTemplateContainers{{
-				Name:  pointers.Ptr(vars.Service.ID),
-				Image: pointers.Ptr(fmt.Sprintf("%s:%s", vars.Image, serviceImageTag)),
+			// Configurbtion for the single service contbiner.
+			Contbiners: []*cloudrunv2service.CloudRunV2ServiceTemplbteContbiners{{
+				Nbme:  pointers.Ptr(vbrs.Service.ID),
+				Imbge: pointers.Ptr(fmt.Sprintf("%s:%s", vbrs.Imbge, serviceImbgeTbg)),
 
-				Resources: &cloudrunv2service.CloudRunV2ServiceTemplateContainersResources{
-					Limits: makeContainerResourceLimits(vars.Environment.Instances.Resources),
+				Resources: &cloudrunv2service.CloudRunV2ServiceTemplbteContbinersResources{
+					Limits: mbkeContbinerResourceLimits(vbrs.Environment.Instbnces.Resources),
 				},
 
-				Ports: []*cloudrunv2service.CloudRunV2ServiceTemplateContainersPorts{{
-					// ContainerPort is provided to the container as $PORT in Cloud Run
-					ContainerPort: pointers.Float64(servicePort),
-					// Name is protocol, supporting 'h2c', 'http1', or nil (http1)
-					Name: (*string)(vars.Service.Protocol),
+				Ports: []*cloudrunv2service.CloudRunV2ServiceTemplbteContbinersPorts{{
+					// ContbinerPort is provided to the contbiner bs $PORT in Cloud Run
+					ContbinerPort: pointers.Flobt64(servicePort),
+					// Nbme is protocol, supporting 'h2c', 'http1', or nil (http1)
+					Nbme: (*string)(vbrs.Service.Protocol),
 				}},
 
-				Env: append(
-					makeContainerEnvVars(
-						vars.Environment.Env,
-						vars.Environment.SecretEnv,
+				Env: bppend(
+					mbkeContbinerEnvVbrs(
+						vbrs.Environment.Env,
+						vbrs.Environment.SecretEnv,
 					),
-					c.AdditionalEnv...),
+					c.AdditionblEnv...),
 
-				// Do healthchecks with authorization based on MSP convention.
-				StartupProbe: func() *cloudrunv2service.CloudRunV2ServiceTemplateContainersStartupProbe {
-					// Default: enabled
-					if vars.Environment.StatupProbe != nil &&
-						pointers.Deref(vars.Environment.StatupProbe.Disabled, false) {
+				// Do heblthchecks with buthorizbtion bbsed on MSP convention.
+				StbrtupProbe: func() *cloudrunv2service.CloudRunV2ServiceTemplbteContbinersStbrtupProbe {
+					// Defbult: enbbled
+					if vbrs.Environment.StbtupProbe != nil &&
+						pointers.Deref(vbrs.Environment.StbtupProbe.Disbbled, fblse) {
 						return nil
 					}
 
-					// Set zero value for ease of reference
-					if vars.Environment.StatupProbe == nil {
-						vars.Environment.StatupProbe = &spec.EnvironmentStartupProbeSpec{}
+					// Set zero vblue for ebse of reference
+					if vbrs.Environment.StbtupProbe == nil {
+						vbrs.Environment.StbtupProbe = &spec.EnvironmentStbrtupProbeSpec{}
 					}
 
-					return &cloudrunv2service.CloudRunV2ServiceTemplateContainersStartupProbe{
-						HttpGet: &cloudrunv2service.CloudRunV2ServiceTemplateContainersStartupProbeHttpGet{
-							Path: pointers.Ptr(healthCheckEndpoint),
-							HttpHeaders: []*cloudrunv2service.CloudRunV2ServiceTemplateContainersStartupProbeHttpGetHttpHeaders{{
-								Name:  pointers.Ptr("Authorization"),
-								Value: pointers.Ptr(fmt.Sprintf("Bearer %s", c.DiagnosticsSecret.HexValue)),
+					return &cloudrunv2service.CloudRunV2ServiceTemplbteContbinersStbrtupProbe{
+						HttpGet: &cloudrunv2service.CloudRunV2ServiceTemplbteContbinersStbrtupProbeHttpGet{
+							Pbth: pointers.Ptr(heblthCheckEndpoint),
+							HttpHebders: []*cloudrunv2service.CloudRunV2ServiceTemplbteContbinersStbrtupProbeHttpGetHttpHebders{{
+								Nbme:  pointers.Ptr("Authorizbtion"),
+								Vblue: pointers.Ptr(fmt.Sprintf("Bebrer %s", c.DibgnosticsSecret.HexVblue)),
 							}},
 						},
-						InitialDelaySeconds: pointers.Float64(0),
-						TimeoutSeconds:      pointers.Float64(pointers.Deref(vars.Environment.StatupProbe.Timeout, 1)),
-						PeriodSeconds:       pointers.Float64(pointers.Deref(vars.Environment.StatupProbe.Interval, 1)),
-						FailureThreshold:    pointers.Float64(3),
+						InitiblDelbySeconds: pointers.Flobt64(0),
+						TimeoutSeconds:      pointers.Flobt64(pointers.Deref(vbrs.Environment.StbtupProbe.Timeout, 1)),
+						PeriodSeconds:       pointers.Flobt64(pointers.Deref(vbrs.Environment.StbtupProbe.Intervbl, 1)),
+						FbilureThreshold:    pointers.Flobt64(3),
 					}
 				}(),
-				LivenessProbe: func() *cloudrunv2service.CloudRunV2ServiceTemplateContainersLivenessProbe {
-					// Default: disabled
-					if vars.Environment.LivenessProbe == nil {
+				LivenessProbe: func() *cloudrunv2service.CloudRunV2ServiceTemplbteContbinersLivenessProbe {
+					// Defbult: disbbled
+					if vbrs.Environment.LivenessProbe == nil {
 						return nil
 					}
-					return &cloudrunv2service.CloudRunV2ServiceTemplateContainersLivenessProbe{
-						HttpGet: &cloudrunv2service.CloudRunV2ServiceTemplateContainersLivenessProbeHttpGet{
-							Path: pointers.Ptr(healthCheckEndpoint),
-							HttpHeaders: []*cloudrunv2service.CloudRunV2ServiceTemplateContainersLivenessProbeHttpGetHttpHeaders{{
-								Name:  pointers.Ptr("Authorization"),
-								Value: pointers.Ptr(fmt.Sprintf("Bearer %s", c.DiagnosticsSecret.HexValue)),
+					return &cloudrunv2service.CloudRunV2ServiceTemplbteContbinersLivenessProbe{
+						HttpGet: &cloudrunv2service.CloudRunV2ServiceTemplbteContbinersLivenessProbeHttpGet{
+							Pbth: pointers.Ptr(heblthCheckEndpoint),
+							HttpHebders: []*cloudrunv2service.CloudRunV2ServiceTemplbteContbinersLivenessProbeHttpGetHttpHebders{{
+								Nbme:  pointers.Ptr("Authorizbtion"),
+								Vblue: pointers.Ptr(fmt.Sprintf("Bebrer %s", c.DibgnosticsSecret.HexVblue)),
 							}},
 						},
-						TimeoutSeconds:   pointers.Float64(pointers.Deref(vars.Environment.LivenessProbe.Timeout, 1)),
-						PeriodSeconds:    pointers.Float64(pointers.Deref(vars.Environment.LivenessProbe.Interval, 1)),
-						FailureThreshold: pointers.Float64(2),
+						TimeoutSeconds:   pointers.Flobt64(pointers.Deref(vbrs.Environment.LivenessProbe.Timeout, 1)),
+						PeriodSeconds:    pointers.Flobt64(pointers.Deref(vbrs.Environment.LivenessProbe.Intervbl, 1)),
+						FbilureThreshold: pointers.Flobt64(2),
 					}
 				}(),
 
-				VolumeMounts: c.AdditionalVolumeMounts,
+				VolumeMounts: c.AdditionblVolumeMounts,
 			}},
 
-			Volumes: c.AdditionalVolumes,
+			Volumes: c.AdditionblVolumes,
 		}}), nil
 }

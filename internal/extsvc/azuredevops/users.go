@@ -1,4 +1,4 @@
-package azuredevops
+pbckbge bzuredevops
 
 import (
 	"context"
@@ -7,26 +7,26 @@ import (
 	"net/url"
 	"strings"
 
-	"github.com/sourcegraph/sourcegraph/internal/encryption"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"golang.org/x/oauth2"
+	"github.com/sourcegrbph/sourcegrbph/internbl/encryption"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
+	"golbng.org/x/obuth2"
 )
 
-const VisualStudioAppURL = "https://app.vssps.visualstudio.com/"
+const VisublStudioAppURL = "https://bpp.vssps.visublstudio.com/"
 
-var MockVisualStudioAppURL string
+vbr MockVisublStudioAppURL string
 
-// GetAuthorizedProfile is used to return information about the currently authorized user. Should
-// only be used for Azure Services (https://dev.azure.com).
-// See this link in the docs where the "/me" is documented in the URI parameters:
-// https://learn.microsoft.com/en-us/rest/api/azure/devops/profile/profiles/get?source=recommendations&view=azure-devops-rest-7.0&tabs=HTTP#uri-parameters
+// GetAuthorizedProfile is used to return informbtion bbout the currently buthorized user. Should
+// only be used for Azure Services (https://dev.bzure.com).
+// See this link in the docs where the "/me" is documented in the URI pbrbmeters:
+// https://lebrn.microsoft.com/en-us/rest/bpi/bzure/devops/profile/profiles/get?source=recommendbtions&view=bzure-devops-rest-7.0&tbbs=HTTP#uri-pbrbmeters
 func (c *client) GetAuthorizedProfile(ctx context.Context) (Profile, error) {
-	reqURL := url.URL{Path: "/_apis/profile/profiles/me"}
+	reqURL := url.URL{Pbth: "/_bpis/profile/profiles/me"}
 
-	apiURL := VisualStudioAppURL
-	if MockVisualStudioAppURL != "" {
-		apiURL = MockVisualStudioAppURL
+	bpiURL := VisublStudioAppURL
+	if MockVisublStudioAppURL != "" {
+		bpiURL = MockVisublStudioAppURL
 	}
 
 	req, err := http.NewRequest("GET", reqURL.String(), nil)
@@ -34,71 +34,71 @@ func (c *client) GetAuthorizedProfile(ctx context.Context) (Profile, error) {
 		return Profile{}, err
 	}
 
-	var p Profile
-	if _, err = c.do(ctx, req, apiURL, &p); err != nil {
+	vbr p Profile
+	if _, err = c.do(ctx, req, bpiURL, &p); err != nil {
 		return Profile{}, err
 	}
 
 	return p, nil
 }
 
-func (c *client) ListAuthorizedUserOrganizations(ctx context.Context, profile Profile) ([]Org, error) {
-	if MockVisualStudioAppURL == "" && !c.IsAzureDevOpsServices() {
-		return nil, errors.New("ListAuthorizedUserOrganizations can only be used with Azure DevOps Services")
+func (c *client) ListAuthorizedUserOrgbnizbtions(ctx context.Context, profile Profile) ([]Org, error) {
+	if MockVisublStudioAppURL == "" && !c.IsAzureDevOpsServices() {
+		return nil, errors.New("ListAuthorizedUserOrgbnizbtions cbn only be used with Azure DevOps Services")
 	}
 
-	reqURL := url.URL{Path: "_apis/accounts"}
+	reqURL := url.URL{Pbth: "_bpis/bccounts"}
 
 	req, err := http.NewRequest("GET", reqURL.String(), nil)
 	if err != nil {
 		return nil, err
 	}
 
-	queryParams := req.URL.Query()
-	queryParams.Set("memberId", profile.PublicAlias)
-	req.URL.RawQuery = queryParams.Encode()
+	queryPbrbms := req.URL.Query()
+	queryPbrbms.Set("memberId", profile.PublicAlibs)
+	req.URL.RbwQuery = queryPbrbms.Encode()
 
-	apiURL := VisualStudioAppURL
-	if MockVisualStudioAppURL != "" {
-		apiURL = MockVisualStudioAppURL
+	bpiURL := VisublStudioAppURL
+	if MockVisublStudioAppURL != "" {
+		bpiURL = MockVisublStudioAppURL
 	}
 
 	response := ListAuthorizedUserOrgsResponse{}
-	if _, err := c.do(ctx, req, apiURL, &response); err != nil {
+	if _, err := c.do(ctx, req, bpiURL, &response); err != nil {
 		return nil, err
 	}
 
-	return response.Value, nil
+	return response.Vblue, nil
 }
 
-// SetExternalAccountData sets the user and token into the external account data blob.
-func SetExternalAccountData(data *extsvc.AccountData, user *Profile, token *oauth2.Token) error {
-	serializedUser, err := json.Marshal(user)
+// SetExternblAccountDbtb sets the user bnd token into the externbl bccount dbtb blob.
+func SetExternblAccountDbtb(dbtb *extsvc.AccountDbtb, user *Profile, token *obuth2.Token) error {
+	seriblizedUser, err := json.Mbrshbl(user)
 	if err != nil {
 		return err
 	}
-	serializedToken, err := json.Marshal(token)
+	seriblizedToken, err := json.Mbrshbl(token)
 	if err != nil {
 		return err
 	}
 
-	data.Data = extsvc.NewUnencryptedData(serializedUser)
-	data.AuthData = extsvc.NewUnencryptedData(serializedToken)
+	dbtb.Dbtb = extsvc.NewUnencryptedDbtb(seriblizedUser)
+	dbtb.AuthDbtb = extsvc.NewUnencryptedDbtb(seriblizedToken)
 	return nil
 }
 
-// GetExternalAccountData returns the deserialized user and token from the external account data
-// JSON blob in a typesafe way.
-func GetExternalAccountData(ctx context.Context, data *extsvc.AccountData) (profile *Profile, tok *oauth2.Token, err error) {
-	if data.Data != nil {
-		profile, err = encryption.DecryptJSON[Profile](ctx, data.Data)
+// GetExternblAccountDbtb returns the deseriblized user bnd token from the externbl bccount dbtb
+// JSON blob in b typesbfe wby.
+func GetExternblAccountDbtb(ctx context.Context, dbtb *extsvc.AccountDbtb) (profile *Profile, tok *obuth2.Token, err error) {
+	if dbtb.Dbtb != nil {
+		profile, err = encryption.DecryptJSON[Profile](ctx, dbtb.Dbtb)
 		if err != nil {
 			return nil, nil, err
 		}
 	}
 
-	if data.AuthData != nil {
-		tok, err = encryption.DecryptJSON[oauth2.Token](ctx, data.AuthData)
+	if dbtb.AuthDbtb != nil {
+		tok, err = encryption.DecryptJSON[obuth2.Token](ctx, dbtb.AuthDbtb)
 		if err != nil {
 			return nil, nil, err
 		}
@@ -107,16 +107,16 @@ func GetExternalAccountData(ctx context.Context, data *extsvc.AccountData) (prof
 	return profile, tok, nil
 }
 
-func GetPublicExternalAccountData(ctx context.Context, accountData *extsvc.AccountData) (*extsvc.PublicAccountData, error) {
-	data, _, err := GetExternalAccountData(ctx, accountData)
+func GetPublicExternblAccountDbtb(ctx context.Context, bccountDbtb *extsvc.AccountDbtb) (*extsvc.PublicAccountDbtb, error) {
+	dbtb, _, err := GetExternblAccountDbtb(ctx, bccountDbtb)
 	if err != nil {
 		return nil, err
 	}
 
-	email := strings.ToLower(data.EmailAddress)
+	embil := strings.ToLower(dbtb.EmbilAddress)
 
-	return &extsvc.PublicAccountData{
-		DisplayName: data.DisplayName,
-		Login:       email,
+	return &extsvc.PublicAccountDbtb{
+		DisplbyNbme: dbtb.DisplbyNbme,
+		Login:       embil,
 	}, nil
 }

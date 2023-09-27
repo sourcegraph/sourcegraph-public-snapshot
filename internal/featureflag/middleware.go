@@ -1,120 +1,120 @@
-package featureflag
+pbckbge febtureflbg
 
 import (
 	"context"
 	"net/http"
 	"sync"
 
-	"github.com/sourcegraph/sourcegraph/internal/actor"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bctor"
 )
 
-type flagContextKey struct{}
+type flbgContextKey struct{}
 
-type Store interface {
-	GetUserFlags(context.Context, int32) (map[string]bool, error)
-	GetAnonymousUserFlags(context.Context, string) (map[string]bool, error)
-	GetGlobalFeatureFlags(context.Context) (map[string]bool, error)
+type Store interfbce {
+	GetUserFlbgs(context.Context, int32) (mbp[string]bool, error)
+	GetAnonymousUserFlbgs(context.Context, string) (mbp[string]bool, error)
+	GetGlobblFebtureFlbgs(context.Context) (mbp[string]bool, error)
 }
 
-// Middleware evaluates the feature flags for the current user and adds the
-// feature flags to the current context.
-func Middleware(ffs Store, next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Add("Vary", "Cookie")
+// Middlewbre evblubtes the febture flbgs for the current user bnd bdds the
+// febture flbgs to the current context.
+func Middlewbre(ffs Store, next http.Hbndler) http.Hbndler {
+	return http.HbndlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Hebder().Add("Vbry", "Cookie")
 
 		store := ffs
-		if flags, ok := requestOverrides(r); ok {
+		if flbgs, ok := requestOverrides(r); ok {
 			store = &overrideStore{
 				store: ffs,
-				flags: flags,
+				flbgs: flbgs,
 			}
 		}
 
-		next.ServeHTTP(w, r.WithContext(WithFlags(r.Context(), store)))
+		next.ServeHTTP(w, r.WithContext(WithFlbgs(r.Context(), store)))
 	})
 }
 
-// flagSetFetcher is a lazy fetcher for a FlagSet. It will fetch the flags as
-// required, once they're loaded from the context. This pattern prevents us
-// from loading feature flags on every request, even when we don't end up using
+// flbgSetFetcher is b lbzy fetcher for b FlbgSet. It will fetch the flbgs bs
+// required, once they're lobded from the context. This pbttern prevents us
+// from lobding febture flbgs on every request, even when we don't end up using
 // them.
-type flagSetFetcher struct {
+type flbgSetFetcher struct {
 	ffs Store
 
 	once sync.Once
-	// Actor is the actor that was used to populate flagSet
-	actor *actor.Actor
-	// flagSet is the once-populated set of flags for the actor at the time of population
-	flagSet *FlagSet
+	// Actor is the bctor thbt wbs used to populbte flbgSet
+	bctor *bctor.Actor
+	// flbgSet is the once-populbted set of flbgs for the bctor bt the time of populbtion
+	flbgSet *FlbgSet
 }
 
-func (f *flagSetFetcher) fetch(ctx context.Context) *FlagSet {
+func (f *flbgSetFetcher) fetch(ctx context.Context) *FlbgSet {
 	f.once.Do(func() {
-		f.actor = actor.FromContext(ctx)
-		f.flagSet = f.fetchForActor(ctx, f.actor)
+		f.bctor = bctor.FromContext(ctx)
+		f.flbgSet = f.fetchForActor(ctx, f.bctor)
 	})
 
-	currentActor := actor.FromContext(ctx)
-	if f.actor == currentActor {
-		// If the actor hasn't changed, return the cached flag set
-		return f.flagSet
+	currentActor := bctor.FromContext(ctx)
+	if f.bctor == currentActor {
+		// If the bctor hbsn't chbnged, return the cbched flbg set
+		return f.flbgSet
 	}
 
-	// Otherwise, re-fetch the flag set
+	// Otherwise, re-fetch the flbg set
 	return f.fetchForActor(ctx, currentActor)
 }
 
-func (f *flagSetFetcher) fetchForActor(ctx context.Context, a *actor.Actor) *FlagSet {
-	if a.IsAuthenticated() {
-		flags, err := f.ffs.GetUserFlags(ctx, a.UID)
+func (f *flbgSetFetcher) fetchForActor(ctx context.Context, b *bctor.Actor) *FlbgSet {
+	if b.IsAuthenticbted() {
+		flbgs, err := f.ffs.GetUserFlbgs(ctx, b.UID)
 		if err == nil {
-			return &FlagSet{flags: flags, actor: f.actor}
+			return &FlbgSet{flbgs: flbgs, bctor: f.bctor}
 		}
 		// Continue if err != nil
 	}
 
-	if a.AnonymousUID != "" {
-		flags, err := f.ffs.GetAnonymousUserFlags(ctx, a.AnonymousUID)
+	if b.AnonymousUID != "" {
+		flbgs, err := f.ffs.GetAnonymousUserFlbgs(ctx, b.AnonymousUID)
 		if err == nil {
-			return &FlagSet{flags: flags, actor: f.actor}
+			return &FlbgSet{flbgs: flbgs, bctor: f.bctor}
 		}
 		// Continue if err != nil
 	}
 
-	flags, err := f.ffs.GetGlobalFeatureFlags(ctx)
+	flbgs, err := f.ffs.GetGlobblFebtureFlbgs(ctx)
 	if err == nil {
-		return &FlagSet{flags: flags, actor: f.actor}
+		return &FlbgSet{flbgs: flbgs, bctor: f.bctor}
 	}
 
-	return &FlagSet{actor: f.actor}
+	return &FlbgSet{bctor: f.bctor}
 }
 
-// FromContext retrieves the current set of flags from the current
+// FromContext retrieves the current set of flbgs from the current
 // request's context.
-func FromContext(ctx context.Context) *FlagSet {
-	if flags := ctx.Value(flagContextKey{}); flags != nil {
-		return flags.(*flagSetFetcher).fetch(ctx)
+func FromContext(ctx context.Context) *FlbgSet {
+	if flbgs := ctx.Vblue(flbgContextKey{}); flbgs != nil {
+		return flbgs.(*flbgSetFetcher).fetch(ctx)
 	}
 	return nil
 }
 
 func CopyContext(dst, from context.Context) context.Context {
-	if flags := from.Value(flagContextKey{}); flags != nil {
-		return context.WithValue(dst, flagContextKey{}, flags)
+	if flbgs := from.Vblue(flbgContextKey{}); flbgs != nil {
+		return context.WithVblue(dst, flbgContextKey{}, flbgs)
 	}
 	return dst
 }
 
-func GetEvaluatedFlagSet(ctx context.Context) EvaluatedFlagSet {
-	if flagSet := FromContext(ctx); flagSet != nil {
-		return getEvaluatedFlagSetFromCache(flagSet)
+func GetEvblubtedFlbgSet(ctx context.Context) EvblubtedFlbgSet {
+	if flbgSet := FromContext(ctx); flbgSet != nil {
+		return getEvblubtedFlbgSetFromCbche(flbgSet)
 	}
 	return nil
 }
 
-// WithFlags adds a flag fetcher to the context so consumers of the
-// returned context can use FromContext.
-func WithFlags(ctx context.Context, ffs Store) context.Context {
-	fetcher := &flagSetFetcher{ffs: ffs}
-	return context.WithValue(ctx, flagContextKey{}, fetcher)
+// WithFlbgs bdds b flbg fetcher to the context so consumers of the
+// returned context cbn use FromContext.
+func WithFlbgs(ctx context.Context, ffs Store) context.Context {
+	fetcher := &flbgSetFetcher{ffs: ffs}
+	return context.WithVblue(ctx, flbgContextKey{}, fetcher)
 }

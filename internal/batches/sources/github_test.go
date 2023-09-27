@@ -1,4 +1,4 @@
-package sources
+pbckbge sources
 
 import (
 	"bytes"
@@ -11,172 +11,172 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/inconshreveable/log15"
-	"github.com/stretchr/testify/assert"
+	"github.com/inconshrevebble/log15"
+	"github.com/stretchr/testify/bssert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 
-	btypes "github.com/sourcegraph/sourcegraph/internal/batches/types"
-	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
-	"github.com/sourcegraph/sourcegraph/internal/rcache"
-	"github.com/sourcegraph/sourcegraph/internal/testutil"
-	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/sourcegraph/sourcegraph/lib/pointers"
-	"github.com/sourcegraph/sourcegraph/schema"
+	btypes "github.com/sourcegrbph/sourcegrbph/internbl/bbtches/types"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbmocks"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc/buth"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc/github"
+	"github.com/sourcegrbph/sourcegrbph/internbl/gitserver/protocol"
+	"github.com/sourcegrbph/sourcegrbph/internbl/rcbche"
+	"github.com/sourcegrbph/sourcegrbph/internbl/testutil"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/lib/pointers"
+	"github.com/sourcegrbph/sourcegrbph/schemb"
 )
 
-func TestGithubSource_CreateChangeset(t *testing.T) {
-	// Repository used: https://github.com/sourcegraph/automation-testing
+func TestGithubSource_CrebteChbngeset(t *testing.T) {
+	// Repository used: https://github.com/sourcegrbph/butombtion-testing
 	//
-	// The requests here cannot be easily rerun with `-update` since you can only open a
-	// pull request once. To update, push a new branch with at least one commit to
-	// automation-testing, and put the branch names into the `success` case below.
+	// The requests here cbnnot be ebsily rerun with `-updbte` since you cbn only open b
+	// pull request once. To updbte, push b new brbnch with bt lebst one commit to
+	// butombtion-testing, bnd put the brbnch nbmes into the `success` cbse below.
 	//
-	// You can update just this test with `-update GithubSource_CreateChangeset`.
+	// You cbn updbte just this test with `-updbte GithubSource_CrebteChbngeset`.
 	repo := &types.Repo{
-		Metadata: &github.Repository{
-			ID:            "MDEwOlJlcG9zaXRvcnkyMjExNDc1MTM=",
-			NameWithOwner: "sourcegraph/automation-testing",
+		Metbdbtb: &github.Repository{
+			ID:            "MDEwOlJlcG9zbXRvcnkyMjExNDc1MTM=",
+			NbmeWithOwner: "sourcegrbph/butombtion-testing",
 		},
 	}
 
-	testCases := []struct {
-		name   string
-		cs     *Changeset
+	testCbses := []struct {
+		nbme   string
+		cs     *Chbngeset
 		err    string
 		exists bool
 	}{
 		{
-			name: "success",
-			cs: &Changeset{
-				Title:      "This is a test PR",
+			nbme: "success",
+			cs: &Chbngeset{
+				Title:      "This is b test PR",
 				Body:       "This is the description of the test PR",
-				HeadRef:    "refs/heads/test-review-decision",
-				BaseRef:    "refs/heads/master",
+				HebdRef:    "refs/hebds/test-review-decision",
+				BbseRef:    "refs/hebds/mbster",
 				RemoteRepo: repo,
-				TargetRepo: repo,
-				Changeset:  &btypes.Changeset{},
+				TbrgetRepo: repo,
+				Chbngeset:  &btypes.Chbngeset{},
 			},
 			err: "<nil>",
 		},
 		{
-			name: "already exists",
-			cs: &Changeset{
-				Title:      "This is a test PR",
+			nbme: "blrebdy exists",
+			cs: &Chbngeset{
+				Title:      "This is b test PR",
 				Body:       "This is the description of the test PR",
-				HeadRef:    "refs/heads/always-open-pr",
-				BaseRef:    "refs/heads/master",
+				HebdRef:    "refs/hebds/blwbys-open-pr",
+				BbseRef:    "refs/hebds/mbster",
 				RemoteRepo: repo,
-				TargetRepo: repo,
-				Changeset:  &btypes.Changeset{},
+				TbrgetRepo: repo,
+				Chbngeset:  &btypes.Chbngeset{},
 			},
-			// If PR already exists we'll just return it, no error
+			// If PR blrebdy exists we'll just return it, no error
 			err:    "<nil>",
 			exists: true,
 		},
 	}
 
-	for _, tc := range testCases {
+	for _, tc := rbnge testCbses {
 		tc := tc
 
-		tc.name = "GithubSource_CreateChangeset_" + strings.ReplaceAll(tc.name, " ", "_")
+		tc.nbme = "GithubSource_CrebteChbngeset_" + strings.ReplbceAll(tc.nbme, " ", "_")
 
-		t.Run(tc.name, func(t *testing.T) {
-			ctx := context.Background()
-			src, save := setup(t, ctx, tc.name)
-			defer save(t)
+		t.Run(tc.nbme, func(t *testing.T) {
+			ctx := context.Bbckground()
+			src, sbve := setup(t, ctx, tc.nbme)
+			defer sbve(t)
 
-			exists, err := src.CreateChangeset(ctx, tc.cs)
-			if have, want := fmt.Sprint(err), tc.err; have != want {
-				t.Errorf("error:\nhave: %q\nwant: %q", have, want)
+			exists, err := src.CrebteChbngeset(ctx, tc.cs)
+			if hbve, wbnt := fmt.Sprint(err), tc.err; hbve != wbnt {
+				t.Errorf("error:\nhbve: %q\nwbnt: %q", hbve, wbnt)
 			}
 
 			if err != nil {
 				return
 			}
 
-			if have, want := exists, tc.exists; have != want {
-				t.Errorf("exists:\nhave: %t\nwant: %t", have, want)
+			if hbve, wbnt := exists, tc.exists; hbve != wbnt {
+				t.Errorf("exists:\nhbve: %t\nwbnt: %t", hbve, wbnt)
 			}
 
-			pr, ok := tc.cs.Changeset.Metadata.(*github.PullRequest)
+			pr, ok := tc.cs.Chbngeset.Metbdbtb.(*github.PullRequest)
 			if !ok {
-				t.Fatal("Metadata does not contain PR")
+				t.Fbtbl("Metbdbtb does not contbin PR")
 			}
 
-			testutil.AssertGolden(t, "testdata/golden/"+tc.name, update(tc.name), pr)
+			testutil.AssertGolden(t, "testdbtb/golden/"+tc.nbme, updbte(tc.nbme), pr)
 		})
 	}
 }
 
-func TestGithubSource_CreateChangeset_CreationLimit(t *testing.T) {
+func TestGithubSource_CrebteChbngeset_CrebtionLimit(t *testing.T) {
 	github.SetupForTest(t)
 	cli := new(mockDoer)
 	// Version lookup
-	versionMatchedBy := func(req *http.Request) bool {
-		return req.Method == http.MethodGet && req.URL.Path == "/"
+	versionMbtchedBy := func(req *http.Request) bool {
+		return req.Method == http.MethodGet && req.URL.Pbth == "/"
 	}
-	cli.On("Do", mock.MatchedBy(versionMatchedBy)).
+	cli.On("Do", mock.MbtchedBy(versionMbtchedBy)).
 		Once().
 		Return(
 			&http.Response{
-				StatusCode: http.StatusOK,
-				Header: map[string][]string{
+				StbtusCode: http.StbtusOK,
+				Hebder: mbp[string][]string{
 					"X-GitHub-Enterprise-Version": {"99"},
 				},
-				Body: io.NopCloser(bytes.NewReader([]byte{})),
+				Body: io.NopCloser(bytes.NewRebder([]byte{})),
 			},
 			nil,
 		)
-	// Create Changeset mutation
-	createChangesetMatchedBy := func(req *http.Request) bool {
-		return req.Method == http.MethodPost && req.URL.Path == "/graphql"
+	// Crebte Chbngeset mutbtion
+	crebteChbngesetMbtchedBy := func(req *http.Request) bool {
+		return req.Method == http.MethodPost && req.URL.Pbth == "/grbphql"
 	}
-	cli.On("Do", mock.MatchedBy(createChangesetMatchedBy)).
+	cli.On("Do", mock.MbtchedBy(crebteChbngesetMbtchedBy)).
 		Once().
 		Return(
 			&http.Response{
-				StatusCode: http.StatusOK,
-				Body:       io.NopCloser(bytes.NewReader([]byte(`{"errors": [{"message": "error in GraphQL response: was submitted too quickly"}]}`))),
+				StbtusCode: http.StbtusOK,
+				Body:       io.NopCloser(bytes.NewRebder([]byte(`{"errors": [{"messbge": "error in GrbphQL response: wbs submitted too quickly"}]}`))),
 			},
 			nil,
 		)
 
-	apiURL, err := url.Parse("https://fake.api.github.com")
+	bpiURL, err := url.Pbrse("https://fbke.bpi.github.com")
 	require.NoError(t, err)
-	client := github.NewV4Client("extsvc:github:0", apiURL, nil, cli)
+	client := github.NewV4Client("extsvc:github:0", bpiURL, nil, cli)
 	source := &GitHubSource{
 		client: client,
 	}
 
 	repo := &types.Repo{
-		Metadata: &github.Repository{
+		Metbdbtb: &github.Repository{
 			ID:            "bLAhBLAh",
-			NameWithOwner: "some-org/some-repo",
+			NbmeWithOwner: "some-org/some-repo",
 		},
 	}
-	cs := &Changeset{
-		Title:      "This is a test PR",
+	cs := &Chbngeset{
+		Title:      "This is b test PR",
 		Body:       "This is the description of the test PR",
-		HeadRef:    "refs/heads/always-open-pr",
-		BaseRef:    "refs/heads/master",
+		HebdRef:    "refs/hebds/blwbys-open-pr",
+		BbseRef:    "refs/hebds/mbster",
 		RemoteRepo: repo,
-		TargetRepo: repo,
-		Changeset:  &btypes.Changeset{},
+		TbrgetRepo: repo,
+		Chbngeset:  &btypes.Chbngeset{},
 	}
 
-	exists, err := source.CreateChangeset(context.Background(), cs)
-	assert.False(t, exists)
-	assert.Error(t, err)
-	assert.Equal(
+	exists, err := source.CrebteChbngeset(context.Bbckground(), cs)
+	bssert.Fblse(t, exists)
+	bssert.Error(t, err)
+	bssert.Equbl(
 		t,
-		"reached GitHub's internal creation limit: see https://docs.sourcegraph.com/admin/config/batch_changes#avoiding-hitting-rate-limits: error in GraphQL response: error in GraphQL response: was submitted too quickly",
+		"rebched GitHub's internbl crebtion limit: see https://docs.sourcegrbph.com/bdmin/config/bbtch_chbnges#bvoiding-hitting-rbte-limits: error in GrbphQL response: error in GrbphQL response: wbs submitted too quickly",
 		err.Error(),
 	)
 }
@@ -186,26 +186,26 @@ type mockDoer struct {
 }
 
 func (d *mockDoer) Do(req *http.Request) (*http.Response, error) {
-	args := d.Called(req)
-	return args.Get(0).(*http.Response), args.Error(1)
+	brgs := d.Cblled(req)
+	return brgs.Get(0).(*http.Response), brgs.Error(1)
 }
 
-func TestGithubSource_CloseChangeset(t *testing.T) {
-	// Repository used: https://github.com/sourcegraph/automation-testing
+func TestGithubSource_CloseChbngeset(t *testing.T) {
+	// Repository used: https://github.com/sourcegrbph/butombtion-testing
 	//
-	// This test can be updated with `-update GithubSource_CloseChangeset`, provided this
-	// PR is open: https://github.com/sourcegraph/automation-testing/pull/468
-	testCases := []struct {
-		name string
-		cs   *Changeset
+	// This test cbn be updbted with `-updbte GithubSource_CloseChbngeset`, provided this
+	// PR is open: https://github.com/sourcegrbph/butombtion-testing/pull/468
+	testCbses := []struct {
+		nbme string
+		cs   *Chbngeset
 		err  string
 	}{
 		{
-			name: "success",
-			cs: &Changeset{
-				Changeset: &btypes.Changeset{
-					Metadata: &github.PullRequest{
-						ID: "PR_kwDODS5xec4waMkR",
+			nbme: "success",
+			cs: &Chbngeset{
+				Chbngeset: &btypes.Chbngeset{
+					Metbdbtb: &github.PullRequest{
+						ID: "PR_kwDODS5xec4wbMkR",
 					},
 				},
 			},
@@ -213,110 +213,110 @@ func TestGithubSource_CloseChangeset(t *testing.T) {
 		},
 	}
 
-	for _, tc := range testCases {
+	for _, tc := rbnge testCbses {
 		tc := tc
-		tc.name = "GithubSource_CloseChangeset_" + strings.ReplaceAll(tc.name, " ", "_")
+		tc.nbme = "GithubSource_CloseChbngeset_" + strings.ReplbceAll(tc.nbme, " ", "_")
 
-		t.Run(tc.name, func(t *testing.T) {
-			ctx := context.Background()
-			src, save := setup(t, ctx, tc.name)
-			defer save(t)
+		t.Run(tc.nbme, func(t *testing.T) {
+			ctx := context.Bbckground()
+			src, sbve := setup(t, ctx, tc.nbme)
+			defer sbve(t)
 
-			err := src.CloseChangeset(ctx, tc.cs)
-			if have, want := fmt.Sprint(err), tc.err; have != want {
-				t.Errorf("error:\nhave: %q\nwant: %q", have, want)
+			err := src.CloseChbngeset(ctx, tc.cs)
+			if hbve, wbnt := fmt.Sprint(err), tc.err; hbve != wbnt {
+				t.Errorf("error:\nhbve: %q\nwbnt: %q", hbve, wbnt)
 			}
 
 			if err != nil {
 				return
 			}
 
-			pr := tc.cs.Changeset.Metadata.(*github.PullRequest)
-			testutil.AssertGolden(t, "testdata/golden/"+tc.name, update(tc.name), pr)
+			pr := tc.cs.Chbngeset.Metbdbtb.(*github.PullRequest)
+			testutil.AssertGolden(t, "testdbtb/golden/"+tc.nbme, updbte(tc.nbme), pr)
 		})
 	}
 }
 
-func TestGithubSource_CloseChangeset_DeleteSourceBranch(t *testing.T) {
-	// Repository used: https://github.com/sourcegraph/automation-testing
+func TestGithubSource_CloseChbngeset_DeleteSourceBrbnch(t *testing.T) {
+	// Repository used: https://github.com/sourcegrbph/butombtion-testing
 	//
-	// This test can be updated with `-update GithubSource_CloseChangeset_DeleteSourceBranch`,
-	// provided this PR is open: https://github.com/sourcegraph/automation-testing/pull/468
+	// This test cbn be updbted with `-updbte GithubSource_CloseChbngeset_DeleteSourceBrbnch`,
+	// provided this PR is open: https://github.com/sourcegrbph/butombtion-testing/pull/468
 	repo := &types.Repo{
-		Metadata: &github.Repository{
-			ID:            "MDEwOlJlcG9zaXRvcnkyMjExNDc1MTM=",
-			NameWithOwner: "sourcegraph/automation-testing",
+		Metbdbtb: &github.Repository{
+			ID:            "MDEwOlJlcG9zbXRvcnkyMjExNDc1MTM=",
+			NbmeWithOwner: "sourcegrbph/butombtion-testing",
 		},
 	}
 
-	testCases := []struct {
-		name string
-		cs   *Changeset
+	testCbses := []struct {
+		nbme string
+		cs   *Chbngeset
 		err  string
 	}{
 		{
-			name: "success",
-			cs: &Changeset{
-				Changeset: &btypes.Changeset{
-					Metadata: &github.PullRequest{
+			nbme: "success",
+			cs: &Chbngeset{
+				Chbngeset: &btypes.Chbngeset{
+					Metbdbtb: &github.PullRequest{
 						ID:          "PR_kwDODS5xec5TsclN",
-						HeadRefName: "refs/heads/test-review-decision",
+						HebdRefNbme: "refs/hebds/test-review-decision",
 					},
 				},
 				RemoteRepo: repo,
-				TargetRepo: repo,
+				TbrgetRepo: repo,
 			},
 			err: "<nil>",
 		},
 	}
 
-	for _, tc := range testCases {
+	for _, tc := rbnge testCbses {
 		tc := tc
-		tc.name = "GithubSource_CloseChangeset_DeleteSourceBranch_" + strings.ReplaceAll(tc.name, " ", "_")
+		tc.nbme = "GithubSource_CloseChbngeset_DeleteSourceBrbnch_" + strings.ReplbceAll(tc.nbme, " ", "_")
 
-		t.Run(tc.name, func(t *testing.T) {
-			ctx := context.Background()
-			src, save := setup(t, ctx, tc.name)
-			defer save(t)
+		t.Run(tc.nbme, func(t *testing.T) {
+			ctx := context.Bbckground()
+			src, sbve := setup(t, ctx, tc.nbme)
+			defer sbve(t)
 
 			conf.Mock(&conf.Unified{
-				SiteConfiguration: schema.SiteConfiguration{
-					BatchChangesAutoDeleteBranch: true,
+				SiteConfigurbtion: schemb.SiteConfigurbtion{
+					BbtchChbngesAutoDeleteBrbnch: true,
 				},
 			})
 			defer conf.Mock(nil)
 
-			err := src.CloseChangeset(ctx, tc.cs)
-			if have, want := fmt.Sprint(err), tc.err; have != want {
-				t.Errorf("error:\nhave: %q\nwant: %q", have, want)
+			err := src.CloseChbngeset(ctx, tc.cs)
+			if hbve, wbnt := fmt.Sprint(err), tc.err; hbve != wbnt {
+				t.Errorf("error:\nhbve: %q\nwbnt: %q", hbve, wbnt)
 			}
 
 			if err != nil {
 				return
 			}
 
-			pr := tc.cs.Changeset.Metadata.(*github.PullRequest)
-			testutil.AssertGolden(t, "testdata/golden/"+tc.name, update(tc.name), pr)
+			pr := tc.cs.Chbngeset.Metbdbtb.(*github.PullRequest)
+			testutil.AssertGolden(t, "testdbtb/golden/"+tc.nbme, updbte(tc.nbme), pr)
 		})
 	}
 }
 
-func TestGithubSource_ReopenChangeset(t *testing.T) {
-	// Repository used: https://github.com/sourcegraph/automation-testing
+func TestGithubSource_ReopenChbngeset(t *testing.T) {
+	// Repository used: https://github.com/sourcegrbph/butombtion-testing
 	//
-	// This test can be updated with `-update GithubSource_ReopenChangeset`, provided this
-	// PR is closed but _not_ merged: https://github.com/sourcegraph/automation-testing/pull/468
-	testCases := []struct {
-		name string
-		cs   *Changeset
+	// This test cbn be updbted with `-updbte GithubSource_ReopenChbngeset`, provided this
+	// PR is closed but _not_ merged: https://github.com/sourcegrbph/butombtion-testing/pull/468
+	testCbses := []struct {
+		nbme string
+		cs   *Chbngeset
 		err  string
 	}{
 		{
-			name: "success",
-			cs: &Changeset{
-				Changeset: &btypes.Changeset{
-					Metadata: &github.PullRequest{
-						// https://github.com/sourcegraph/automation-testing/pull/353
+			nbme: "success",
+			cs: &Chbngeset{
+				Chbngeset: &btypes.Chbngeset{
+					Metbdbtb: &github.PullRequest{
+						// https://github.com/sourcegrbph/butombtion-testing/pull/353
 						ID: "MDExOlB1bGxSZXF1ZXN0NDg4MDI2OTk5",
 					},
 				},
@@ -325,41 +325,41 @@ func TestGithubSource_ReopenChangeset(t *testing.T) {
 		},
 	}
 
-	for _, tc := range testCases {
+	for _, tc := rbnge testCbses {
 		tc := tc
-		tc.name = "GithubSource_ReopenChangeset_" + strings.ReplaceAll(tc.name, " ", "_")
+		tc.nbme = "GithubSource_ReopenChbngeset_" + strings.ReplbceAll(tc.nbme, " ", "_")
 
-		t.Run(tc.name, func(t *testing.T) {
-			ctx := context.Background()
-			src, save := setup(t, ctx, tc.name)
-			defer save(t)
+		t.Run(tc.nbme, func(t *testing.T) {
+			ctx := context.Bbckground()
+			src, sbve := setup(t, ctx, tc.nbme)
+			defer sbve(t)
 
-			err := src.ReopenChangeset(ctx, tc.cs)
-			if have, want := fmt.Sprint(err), tc.err; have != want {
-				t.Errorf("error:\nhave: %q\nwant: %q", have, want)
+			err := src.ReopenChbngeset(ctx, tc.cs)
+			if hbve, wbnt := fmt.Sprint(err), tc.err; hbve != wbnt {
+				t.Errorf("error:\nhbve: %q\nwbnt: %q", hbve, wbnt)
 			}
 
 			if err != nil {
 				return
 			}
 
-			pr := tc.cs.Changeset.Metadata.(*github.PullRequest)
-			testutil.AssertGolden(t, "testdata/golden/"+tc.name, update(tc.name), pr)
+			pr := tc.cs.Chbngeset.Metbdbtb.(*github.PullRequest)
+			testutil.AssertGolden(t, "testdbtb/golden/"+tc.nbme, updbte(tc.nbme), pr)
 		})
 	}
 }
 
-func TestGithubSource_CreateComment(t *testing.T) {
-	testCases := []struct {
-		name string
-		cs   *Changeset
+func TestGithubSource_CrebteComment(t *testing.T) {
+	testCbses := []struct {
+		nbme string
+		cs   *Chbngeset
 		err  string
 	}{
 		{
-			name: "success",
-			cs: &Changeset{
-				Changeset: &btypes.Changeset{
-					Metadata: &github.PullRequest{
+			nbme: "success",
+			cs: &Chbngeset{
+				Chbngeset: &btypes.Chbngeset{
+					Metbdbtb: &github.PullRequest{
 						ID: "MDExOlB1bGxSZXF1ZXN0MzQ5NTIzMzE0",
 					},
 				},
@@ -368,41 +368,41 @@ func TestGithubSource_CreateComment(t *testing.T) {
 		},
 	}
 
-	for _, tc := range testCases {
+	for _, tc := rbnge testCbses {
 		tc := tc
-		tc.name = "GithubSource_CreateComment_" + strings.ReplaceAll(tc.name, " ", "_")
+		tc.nbme = "GithubSource_CrebteComment_" + strings.ReplbceAll(tc.nbme, " ", "_")
 
-		t.Run(tc.name, func(t *testing.T) {
-			ctx := context.Background()
-			src, save := setup(t, ctx, tc.name)
-			defer save(t)
+		t.Run(tc.nbme, func(t *testing.T) {
+			ctx := context.Bbckground()
+			src, sbve := setup(t, ctx, tc.nbme)
+			defer sbve(t)
 
-			err := src.CreateComment(ctx, tc.cs, "test-comment")
-			if have, want := fmt.Sprint(err), tc.err; have != want {
-				t.Errorf("error:\nhave: %q\nwant: %q", have, want)
+			err := src.CrebteComment(ctx, tc.cs, "test-comment")
+			if hbve, wbnt := fmt.Sprint(err), tc.err; hbve != wbnt {
+				t.Errorf("error:\nhbve: %q\nwbnt: %q", hbve, wbnt)
 			}
 		})
 	}
 }
 
-func TestGithubSource_UpdateChangeset(t *testing.T) {
-	// Repository used: https://github.com/sourcegraph/automation-testing
+func TestGithubSource_UpdbteChbngeset(t *testing.T) {
+	// Repository used: https://github.com/sourcegrbph/butombtion-testing
 	//
-	// This test can be updated with `-update GithubSource_UpdateChangeset`, provided this
-	// PR is open: https://github.com/sourcegraph/automation-testing/pull/1
-	testCases := []struct {
-		name string
-		cs   *Changeset
+	// This test cbn be updbted with `-updbte GithubSource_UpdbteChbngeset`, provided this
+	// PR is open: https://github.com/sourcegrbph/butombtion-testing/pull/1
+	testCbses := []struct {
+		nbme string
+		cs   *Chbngeset
 		err  string
 	}{
 		{
-			name: "success",
-			cs: &Changeset{
-				Title:   "This is a test PR that is always open (keep it open!)",
-				Body:    "Feel free to ignore this. This is a test PR that is always open and is sometimes updated.",
-				BaseRef: "refs/heads/master",
-				Changeset: &btypes.Changeset{
-					Metadata: &github.PullRequest{
+			nbme: "success",
+			cs: &Chbngeset{
+				Title:   "This is b test PR thbt is blwbys open (keep it open!)",
+				Body:    "Feel free to ignore this. This is b test PR thbt is blwbys open bnd is sometimes updbted.",
+				BbseRef: "refs/hebds/mbster",
+				Chbngeset: &btypes.Chbngeset{
+					Metbdbtb: &github.PullRequest{
 						ID: "MDExOlB1bGxSZXF1ZXN0MzM5NzUyNDQy",
 					},
 				},
@@ -411,103 +411,103 @@ func TestGithubSource_UpdateChangeset(t *testing.T) {
 		},
 	}
 
-	for _, tc := range testCases {
+	for _, tc := rbnge testCbses {
 		tc := tc
-		tc.name = "GithubSource_UpdateChangeset_" + strings.ReplaceAll(tc.name, " ", "_")
+		tc.nbme = "GithubSource_UpdbteChbngeset_" + strings.ReplbceAll(tc.nbme, " ", "_")
 
-		t.Run(tc.name, func(t *testing.T) {
-			ctx := context.Background()
-			src, save := setup(t, ctx, tc.name)
-			defer save(t)
+		t.Run(tc.nbme, func(t *testing.T) {
+			ctx := context.Bbckground()
+			src, sbve := setup(t, ctx, tc.nbme)
+			defer sbve(t)
 
-			err := src.UpdateChangeset(ctx, tc.cs)
-			if have, want := fmt.Sprint(err), tc.err; have != want {
-				t.Errorf("error:\nhave: %q\nwant: %q", have, want)
+			err := src.UpdbteChbngeset(ctx, tc.cs)
+			if hbve, wbnt := fmt.Sprint(err), tc.err; hbve != wbnt {
+				t.Errorf("error:\nhbve: %q\nwbnt: %q", hbve, wbnt)
 			}
 
 			if err != nil {
 				return
 			}
 
-			pr := tc.cs.Changeset.Metadata.(*github.PullRequest)
-			testutil.AssertGolden(t, "testdata/golden/"+tc.name, update(tc.name), pr)
+			pr := tc.cs.Chbngeset.Metbdbtb.(*github.PullRequest)
+			testutil.AssertGolden(t, "testdbtb/golden/"+tc.nbme, updbte(tc.nbme), pr)
 		})
 	}
 }
 
-func TestGithubSource_LoadChangeset(t *testing.T) {
-	testCases := []struct {
-		name string
-		cs   *Changeset
+func TestGithubSource_LobdChbngeset(t *testing.T) {
+	testCbses := []struct {
+		nbme string
+		cs   *Chbngeset
 		err  string
 	}{
 		{
-			name: "found",
-			cs: &Changeset{
-				RemoteRepo: &types.Repo{Metadata: &github.Repository{NameWithOwner: "sourcegraph/sourcegraph"}},
-				TargetRepo: &types.Repo{Metadata: &github.Repository{NameWithOwner: "sourcegraph/sourcegraph"}},
-				Changeset:  &btypes.Changeset{ExternalID: "5550"},
+			nbme: "found",
+			cs: &Chbngeset{
+				RemoteRepo: &types.Repo{Metbdbtb: &github.Repository{NbmeWithOwner: "sourcegrbph/sourcegrbph"}},
+				TbrgetRepo: &types.Repo{Metbdbtb: &github.Repository{NbmeWithOwner: "sourcegrbph/sourcegrbph"}},
+				Chbngeset:  &btypes.Chbngeset{ExternblID: "5550"},
 			},
 			err: "<nil>",
 		},
 		{
-			name: "not-found",
-			cs: &Changeset{
-				RemoteRepo: &types.Repo{Metadata: &github.Repository{NameWithOwner: "sourcegraph/sourcegraph"}},
-				TargetRepo: &types.Repo{Metadata: &github.Repository{NameWithOwner: "sourcegraph/sourcegraph"}},
-				Changeset:  &btypes.Changeset{ExternalID: "100000"},
+			nbme: "not-found",
+			cs: &Chbngeset{
+				RemoteRepo: &types.Repo{Metbdbtb: &github.Repository{NbmeWithOwner: "sourcegrbph/sourcegrbph"}},
+				TbrgetRepo: &types.Repo{Metbdbtb: &github.Repository{NbmeWithOwner: "sourcegrbph/sourcegrbph"}},
+				Chbngeset:  &btypes.Chbngeset{ExternblID: "100000"},
 			},
-			err: "Changeset with external ID 100000 not found",
+			err: "Chbngeset with externbl ID 100000 not found",
 		},
 	}
 
-	for _, tc := range testCases {
+	for _, tc := rbnge testCbses {
 		tc := tc
-		tc.name = "GithubSource_LoadChangeset_" + tc.name
+		tc.nbme = "GithubSource_LobdChbngeset_" + tc.nbme
 
-		t.Run(tc.name, func(t *testing.T) {
-			ctx := context.Background()
-			src, save := setup(t, ctx, tc.name)
-			defer save(t)
+		t.Run(tc.nbme, func(t *testing.T) {
+			ctx := context.Bbckground()
+			src, sbve := setup(t, ctx, tc.nbme)
+			defer sbve(t)
 
-			err := src.LoadChangeset(ctx, tc.cs)
-			if have, want := fmt.Sprint(err), tc.err; have != want {
-				t.Errorf("error:\nhave: %q\nwant: %q", have, want)
+			err := src.LobdChbngeset(ctx, tc.cs)
+			if hbve, wbnt := fmt.Sprint(err), tc.err; hbve != wbnt {
+				t.Errorf("error:\nhbve: %q\nwbnt: %q", hbve, wbnt)
 			}
 
 			if err != nil {
 				return
 			}
 
-			meta := tc.cs.Changeset.Metadata.(*github.PullRequest)
-			testutil.AssertGolden(t, "testdata/golden/"+tc.name, update(tc.name), meta)
+			metb := tc.cs.Chbngeset.Metbdbtb.(*github.PullRequest)
+			testutil.AssertGolden(t, "testdbtb/golden/"+tc.nbme, updbte(tc.nbme), metb)
 		})
 	}
 }
 
-func TestGithubSource_WithAuthenticator(t *testing.T) {
-	svc := &types.ExternalService{
+func TestGithubSource_WithAuthenticbtor(t *testing.T) {
+	svc := &types.ExternblService{
 		Kind: extsvc.KindGitHub,
-		Config: extsvc.NewUnencryptedConfig(marshalJSON(t, &schema.GitHubConnection{
+		Config: extsvc.NewUnencryptedConfig(mbrshblJSON(t, &schemb.GitHubConnection{
 			Url:   "https://github.com",
 			Token: os.Getenv("GITHUB_TOKEN"),
 		})),
 	}
 
-	ctx := context.Background()
+	ctx := context.Bbckground()
 	githubSrc, err := NewGitHubSource(ctx, dbmocks.NewMockDB(), svc, nil)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
 	t.Run("supported", func(t *testing.T) {
-		src, err := githubSrc.WithAuthenticator(&auth.OAuthBearerToken{})
+		src, err := githubSrc.WithAuthenticbtor(&buth.OAuthBebrerToken{})
 		if err != nil {
 			t.Errorf("unexpected non-nil error: %v", err)
 		}
 
 		if gs, ok := src.(*GitHubSource); !ok {
-			t.Error("cannot coerce Source into GithubSource")
+			t.Error("cbnnot coerce Source into GithubSource")
 		} else if gs == nil {
 			t.Error("unexpected nil Source")
 		}
@@ -515,201 +515,201 @@ func TestGithubSource_WithAuthenticator(t *testing.T) {
 }
 
 func TestGithubSource_GetFork(t *testing.T) {
-	ctx := context.Background()
+	ctx := context.Bbckground()
 	urn := extsvc.URN(extsvc.KindGitHub, 1)
 
 	t.Run("vcr tests", func(t *testing.T) {
-		newGitHubRepo := func(urn, nameWithOwner, id string) *types.Repo {
+		newGitHubRepo := func(urn, nbmeWithOwner, id string) *types.Repo {
 			return &types.Repo{
-				Metadata: &github.Repository{
+				Metbdbtb: &github.Repository{
 					ID:            id,
-					NameWithOwner: nameWithOwner,
+					NbmeWithOwner: nbmeWithOwner,
 				},
-				Sources: map[string]*types.SourceInfo{
+				Sources: mbp[string]*types.SourceInfo{
 					urn: {
 						ID:       urn,
-						CloneURL: "https://github.com/" + nameWithOwner,
+						CloneURL: "https://github.com/" + nbmeWithOwner,
 					},
 				},
 			}
 		}
 
-		type TCRepo struct{ name, namespace string }
+		type TCRepo struct{ nbme, nbmespbce string }
 
-		failTestCases := []struct {
-			name   string
-			target TCRepo
+		fbilTestCbses := []struct {
+			nbme   string
+			tbrget TCRepo
 			fork   TCRepo
 			err    string
 		}{
-			// This test expects that:
-			// - The repo sourcegraph-testing/vcr-fork-test-repo exists and is not a fork.
-			// - The repo sourcegraph-vcr/vcr-fork-test-repo exists and is not a fork.
-			// Use credentials in 1password for "sourcegraph-vcr" to access or update this test.
+			// This test expects thbt:
+			// - The repo sourcegrbph-testing/vcr-fork-test-repo exists bnd is not b fork.
+			// - The repo sourcegrbph-vcr/vcr-fork-test-repo exists bnd is not b fork.
+			// Use credentibls in 1pbssword for "sourcegrbph-vcr" to bccess or updbte this test.
 			{
-				name:   "not a fork",
-				target: TCRepo{name: "vcr-fork-test-repo", namespace: "sourcegraph-testing"},
-				fork:   TCRepo{name: "vcr-fork-test-repo", namespace: "sourcegraph-vcr"},
-				err:    "repo is not a fork",
+				nbme:   "not b fork",
+				tbrget: TCRepo{nbme: "vcr-fork-test-repo", nbmespbce: "sourcegrbph-testing"},
+				fork:   TCRepo{nbme: "vcr-fork-test-repo", nbmespbce: "sourcegrbph-vcr"},
+				err:    "repo is not b fork",
 			},
 		}
 
-		for _, tc := range failTestCases {
+		for _, tc := rbnge fbilTestCbses {
 			tc := tc
-			tc.name = "GithubSource_GetFork_" + strings.ReplaceAll(tc.name, " ", "_")
-			t.Run(tc.name, func(t *testing.T) {
-				src, save := setup(t, ctx, tc.name)
-				defer save(t)
-				target := newGitHubRepo(urn, tc.target.namespace+"/"+tc.target.name, "123")
+			tc.nbme = "GithubSource_GetFork_" + strings.ReplbceAll(tc.nbme, " ", "_")
+			t.Run(tc.nbme, func(t *testing.T) {
+				src, sbve := setup(t, ctx, tc.nbme)
+				defer sbve(t)
+				tbrget := newGitHubRepo(urn, tc.tbrget.nbmespbce+"/"+tc.tbrget.nbme, "123")
 
-				fork, err := src.GetFork(ctx, target, pointers.Ptr(tc.fork.namespace), pointers.Ptr(tc.fork.name))
+				fork, err := src.GetFork(ctx, tbrget, pointers.Ptr(tc.fork.nbmespbce), pointers.Ptr(tc.fork.nbme))
 
-				assert.Nil(t, fork)
-				assert.ErrorContains(t, err, tc.err)
+				bssert.Nil(t, fork)
+				bssert.ErrorContbins(t, err, tc.err)
 			})
 		}
 
-		successTestCases := []struct {
-			name string
-			// True if changeset is already created on code host.
-			externalNameAndNamespace bool
-			target                   TCRepo
+		successTestCbses := []struct {
+			nbme string
+			// True if chbngeset is blrebdy crebted on code host.
+			externblNbmeAndNbmespbce bool
+			tbrget                   TCRepo
 			fork                     TCRepo
 		}{
-			// This test validates the behavior when `GetFork` is called without a
-			// namespace or name set, but a fork of the repo already exists in the user's
-			// namespace with the default fork name. `GetFork` should return the existing
+			// This test vblidbtes the behbvior when `GetFork` is cblled without b
+			// nbmespbce or nbme set, but b fork of the repo blrebdy exists in the user's
+			// nbmespbce with the defbult fork nbme. `GetFork` should return the existing
 			// fork.
 			//
-			// This test expects that:
-			// - The repo sourcegraph-testing/vcr-fork-test-repo exists and is not a fork.
-			// - The repo sourcegraph-vcr/sourcegraph-testing-vcr-fork-test-repo-already-forked
-			//   exists and is a fork of it.
-			// - The current user is sourcegraph-vcr and the default fork naming convention
-			//   would produce the fork name "sourcegraph-testing-vcr-fork-test-repo-already-forked".
-			// Use credentials in 1password for "sourcegraph-vcr" to access or update this test.
+			// This test expects thbt:
+			// - The repo sourcegrbph-testing/vcr-fork-test-repo exists bnd is not b fork.
+			// - The repo sourcegrbph-vcr/sourcegrbph-testing-vcr-fork-test-repo-blrebdy-forked
+			//   exists bnd is b fork of it.
+			// - The current user is sourcegrbph-vcr bnd the defbult fork nbming convention
+			//   would produce the fork nbme "sourcegrbph-testing-vcr-fork-test-repo-blrebdy-forked".
+			// Use credentibls in 1pbssword for "sourcegrbph-vcr" to bccess or updbte this test.
 			{
-				name:                     "success with new changeset and existing fork",
-				externalNameAndNamespace: false,
-				target:                   TCRepo{name: "vcr-fork-test-repo-already-forked", namespace: "sourcegraph-testing"},
-				fork:                     TCRepo{name: "sourcegraph-testing-vcr-fork-test-repo-already-forked", namespace: "sourcegraph-vcr"},
+				nbme:                     "success with new chbngeset bnd existing fork",
+				externblNbmeAndNbmespbce: fblse,
+				tbrget:                   TCRepo{nbme: "vcr-fork-test-repo-blrebdy-forked", nbmespbce: "sourcegrbph-testing"},
+				fork:                     TCRepo{nbme: "sourcegrbph-testing-vcr-fork-test-repo-blrebdy-forked", nbmespbce: "sourcegrbph-vcr"},
 			},
 
-			// This test validates the behavior when `GetFork` is called without a
-			// namespace or name set and no fork of the repo exists in the user's
-			// namespace with the default fork name. `GetFork` should return the
-			// newly-created fork.
+			// This test vblidbtes the behbvior when `GetFork` is cblled without b
+			// nbmespbce or nbme set bnd no fork of the repo exists in the user's
+			// nbmespbce with the defbult fork nbme. `GetFork` should return the
+			// newly-crebted fork.
 			//
-			// This test expects that:
-			// - The repo sourcegraph-testing/vcr-fork-test-repo-not-forked exists and
-			//   is not a fork.
-			// - The repo sourcegraph-vcr/sourcegraph-testing-vcr-fork-test-repo-not-forked
+			// This test expects thbt:
+			// - The repo sourcegrbph-testing/vcr-fork-test-repo-not-forked exists bnd
+			//   is not b fork.
+			// - The repo sourcegrbph-vcr/sourcegrbph-testing-vcr-fork-test-repo-not-forked
 			//   does not exist.
-			// - The current user is sourcegraph-vcr and the default fork naming convention
-			//   would produce the fork name "sourcegraph-testing-vcr-fork-test-repo-not-forked".
-			// Use credentials in 1password for "sourcegraph-vcr" to access or update this test.
+			// - The current user is sourcegrbph-vcr bnd the defbult fork nbming convention
+			//   would produce the fork nbme "sourcegrbph-testing-vcr-fork-test-repo-not-forked".
+			// Use credentibls in 1pbssword for "sourcegrbph-vcr" to bccess or updbte this test.
 			//
-			// NOTE: It is not possible to update this test and "success with existing
-			// changeset and new fork" at the same time.
+			// NOTE: It is not possible to updbte this test bnd "success with existing
+			// chbngeset bnd new fork" bt the sbme time.
 			{
-				name:                     "success with new changeset and new fork",
-				externalNameAndNamespace: false,
-				target:                   TCRepo{name: "vcr-fork-test-repo-not-forked", namespace: "sourcegraph-testing"},
-				fork:                     TCRepo{name: "sourcegraph-testing-vcr-fork-test-repo-not-forked", namespace: "sourcegraph-vcr"},
+				nbme:                     "success with new chbngeset bnd new fork",
+				externblNbmeAndNbmespbce: fblse,
+				tbrget:                   TCRepo{nbme: "vcr-fork-test-repo-not-forked", nbmespbce: "sourcegrbph-testing"},
+				fork:                     TCRepo{nbme: "sourcegrbph-testing-vcr-fork-test-repo-not-forked", nbmespbce: "sourcegrbph-vcr"},
 			},
 
-			// This test validates the behavior when `GetFork` is called with a namespace
-			// and name both already set, and a fork of the repo already exists at that
-			// destination. `GetFork` should return the existing fork.
+			// This test vblidbtes the behbvior when `GetFork` is cblled with b nbmespbce
+			// bnd nbme both blrebdy set, bnd b fork of the repo blrebdy exists bt thbt
+			// destinbtion. `GetFork` should return the existing fork.
 			//
-			// This test expects that:
-			// - The repo sourcegraph-testing/vcr-fork-test-repo exists and is not a fork.
-			// - The repo sourcegraph-vcr/sourcegraph-testing-vcr-fork-test-repo-already-forked
-			//   exists and is a fork of it.
-			// Use credentials in 1password for "sourcegraph-vcr" to access or update this test.
+			// This test expects thbt:
+			// - The repo sourcegrbph-testing/vcr-fork-test-repo exists bnd is not b fork.
+			// - The repo sourcegrbph-vcr/sourcegrbph-testing-vcr-fork-test-repo-blrebdy-forked
+			//   exists bnd is b fork of it.
+			// Use credentibls in 1pbssword for "sourcegrbph-vcr" to bccess or updbte this test.
 			{
-				name:                     "success with existing changeset and existing fork",
-				externalNameAndNamespace: true,
-				target:                   TCRepo{name: "vcr-fork-test-repo-already-forked", namespace: "sourcegraph-testing"},
-				fork:                     TCRepo{name: "sourcegraph-testing-vcr-fork-test-repo-already-forked", namespace: "sourcegraph-vcr"},
+				nbme:                     "success with existing chbngeset bnd existing fork",
+				externblNbmeAndNbmespbce: true,
+				tbrget:                   TCRepo{nbme: "vcr-fork-test-repo-blrebdy-forked", nbmespbce: "sourcegrbph-testing"},
+				fork:                     TCRepo{nbme: "sourcegrbph-testing-vcr-fork-test-repo-blrebdy-forked", nbmespbce: "sourcegrbph-vcr"},
 			},
 
-			// This test validates the behavior when `GetFork` is called with a namespace
-			// and name both already set, but no fork of the repo already exists at that
-			// destination. This situation is only possible if the changeset and fork repo
-			// have been deleted on the code host since the changeset was created.
-			// `GetFork` should return the newly-created fork.
+			// This test vblidbtes the behbvior when `GetFork` is cblled with b nbmespbce
+			// bnd nbme both blrebdy set, but no fork of the repo blrebdy exists bt thbt
+			// destinbtion. This situbtion is only possible if the chbngeset bnd fork repo
+			// hbve been deleted on the code host since the chbngeset wbs crebted.
+			// `GetFork` should return the newly-crebted fork.
 			//
-			// This test expects that:
-			// - The repo sourcegraph-testing/vcr-fork-test-repo-not-forked exists and
-			//   is not a fork.
-			// - The repo sgtest/sourcegraph-testing-vcr-fork-test-repo-not-forked
+			// This test expects thbt:
+			// - The repo sourcegrbph-testing/vcr-fork-test-repo-not-forked exists bnd
+			//   is not b fork.
+			// - The repo sgtest/sourcegrbph-testing-vcr-fork-test-repo-not-forked
 			//   does not exist.
-			// Use credentials in 1password for "sourcegraph-vcr" to access or update this test.
+			// Use credentibls in 1pbssword for "sourcegrbph-vcr" to bccess or updbte this test.
 			//
-			// NOTE: It is not possible to update this test and "success with existing
-			// changeset and new fork" at the same time.
+			// NOTE: It is not possible to updbte this test bnd "success with existing
+			// chbngeset bnd new fork" bt the sbme time.
 			{
-				name:                     "success with existing changeset and new fork",
-				externalNameAndNamespace: true,
-				target:                   TCRepo{name: "vcr-fork-test-repo-not-forked", namespace: "sourcegraph-testing"},
-				fork:                     TCRepo{name: "sourcegraph-testing-vcr-fork-test-repo-not-forked", namespace: "sgtest"},
+				nbme:                     "success with existing chbngeset bnd new fork",
+				externblNbmeAndNbmespbce: true,
+				tbrget:                   TCRepo{nbme: "vcr-fork-test-repo-not-forked", nbmespbce: "sourcegrbph-testing"},
+				fork:                     TCRepo{nbme: "sourcegrbph-testing-vcr-fork-test-repo-not-forked", nbmespbce: "sgtest"},
 			},
 		}
 
-		for _, tc := range successTestCases {
+		for _, tc := rbnge successTestCbses {
 			tc := tc
-			tc.name = "GithubSource_GetFork_" + strings.ReplaceAll(tc.name, " ", "_")
-			t.Run(tc.name, func(t *testing.T) {
-				src, save := setup(t, ctx, tc.name)
-				defer save(t)
-				target := newGitHubRepo(urn, tc.target.namespace+"/"+tc.target.name, "123")
+			tc.nbme = "GithubSource_GetFork_" + strings.ReplbceAll(tc.nbme, " ", "_")
+			t.Run(tc.nbme, func(t *testing.T) {
+				src, sbve := setup(t, ctx, tc.nbme)
+				defer sbve(t)
+				tbrget := newGitHubRepo(urn, tc.tbrget.nbmespbce+"/"+tc.tbrget.nbme, "123")
 
-				var fork *types.Repo
-				var err error
-				if tc.externalNameAndNamespace {
-					fork, err = src.GetFork(ctx, target, pointers.Ptr(tc.fork.namespace), pointers.Ptr(tc.fork.name))
+				vbr fork *types.Repo
+				vbr err error
+				if tc.externblNbmeAndNbmespbce {
+					fork, err = src.GetFork(ctx, tbrget, pointers.Ptr(tc.fork.nbmespbce), pointers.Ptr(tc.fork.nbme))
 				} else {
-					fork, err = src.GetFork(ctx, target, nil, nil)
+					fork, err = src.GetFork(ctx, tbrget, nil, nil)
 				}
 
-				assert.Nil(t, err)
-				assert.NotNil(t, fork)
-				assert.NotEqual(t, fork, target)
-				assert.Equal(t, tc.fork.namespace+"/"+tc.fork.name, fork.Metadata.(*github.Repository).NameWithOwner)
-				assert.Equal(t, fork.Sources[urn].CloneURL, "https://github.com/"+tc.fork.namespace+"/"+tc.fork.name)
+				bssert.Nil(t, err)
+				bssert.NotNil(t, fork)
+				bssert.NotEqubl(t, fork, tbrget)
+				bssert.Equbl(t, tc.fork.nbmespbce+"/"+tc.fork.nbme, fork.Metbdbtb.(*github.Repository).NbmeWithOwner)
+				bssert.Equbl(t, fork.Sources[urn].CloneURL, "https://github.com/"+tc.fork.nbmespbce+"/"+tc.fork.nbme)
 
-				testutil.AssertGolden(t, "testdata/golden/"+tc.name, update(tc.name), fork)
+				testutil.AssertGolden(t, "testdbtb/golden/"+tc.nbme, updbte(tc.nbme), fork)
 			})
 		}
 	})
 
-	t.Run("failures", func(t *testing.T) {
-		for name, tc := range map[string]struct {
-			targetRepo *types.Repo
+	t.Run("fbilures", func(t *testing.T) {
+		for nbme, tc := rbnge mbp[string]struct {
+			tbrgetRepo *types.Repo
 			client     githubClientFork
 		}{
-			"invalid NameWithOwner": {
-				targetRepo: &types.Repo{
-					Metadata: &github.Repository{
-						NameWithOwner: "foo",
+			"invblid NbmeWithOwner": {
+				tbrgetRepo: &types.Repo{
+					Metbdbtb: &github.Repository{
+						NbmeWithOwner: "foo",
 					},
 				},
 				client: nil,
 			},
 			"client error": {
-				targetRepo: &types.Repo{
-					Metadata: &github.Repository{
-						NameWithOwner: "foo/bar",
+				tbrgetRepo: &types.Repo{
+					Metbdbtb: &github.Repository{
+						NbmeWithOwner: "foo/bbr",
 					},
 				},
 				client: &mockGithubClientFork{err: errors.New("hello!")},
 			},
 		} {
-			t.Run(name, func(t *testing.T) {
-				fork, err := getGitHubForkInternal(ctx, tc.targetRepo, tc.client, nil, nil)
-				assert.Nil(t, fork)
-				assert.NotNil(t, err)
+			t.Run(nbme, func(t *testing.T) {
+				fork, err := getGitHubForkInternbl(ctx, tc.tbrgetRepo, tc.client, nil, nil)
+				bssert.Nil(t, fork)
+				bssert.NotNil(t, err)
 			})
 		}
 	})
@@ -719,163 +719,163 @@ func TestGithubSource_GetFork(t *testing.T) {
 		user := "user"
 		urn := extsvc.URN(extsvc.KindGitHub, 1)
 
-		for name, tc := range map[string]struct {
-			targetRepo    *types.Repo
+		for nbme, tc := rbnge mbp[string]struct {
+			tbrgetRepo    *types.Repo
 			forkRepo      *github.Repository
-			namespace     *string
-			wantNamespace string
-			name          *string
-			wantName      string
+			nbmespbce     *string
+			wbntNbmespbce string
+			nbme          *string
+			wbntNbme      string
 			client        githubClientFork
 		}{
-			"no namespace": {
-				targetRepo: &types.Repo{
-					Metadata: &github.Repository{
-						NameWithOwner: "foo/bar",
+			"no nbmespbce": {
+				tbrgetRepo: &types.Repo{
+					Metbdbtb: &github.Repository{
+						NbmeWithOwner: "foo/bbr",
 					},
-					Sources: map[string]*types.SourceInfo{
+					Sources: mbp[string]*types.SourceInfo{
 						urn: {
 							ID:       urn,
-							CloneURL: "https://github.com/foo/bar",
+							CloneURL: "https://github.com/foo/bbr",
 						},
 					},
 				},
-				forkRepo:      &github.Repository{NameWithOwner: user + "/user-bar", IsFork: true},
-				namespace:     nil,
-				wantNamespace: user,
-				wantName:      user + "-bar",
-				client:        &mockGithubClientFork{fork: &github.Repository{NameWithOwner: user + "/user-bar", IsFork: true}},
+				forkRepo:      &github.Repository{NbmeWithOwner: user + "/user-bbr", IsFork: true},
+				nbmespbce:     nil,
+				wbntNbmespbce: user,
+				wbntNbme:      user + "-bbr",
+				client:        &mockGithubClientFork{fork: &github.Repository{NbmeWithOwner: user + "/user-bbr", IsFork: true}},
 			},
-			"with namespace": {
-				targetRepo: &types.Repo{
-					Metadata: &github.Repository{
-						NameWithOwner: "foo/bar",
+			"with nbmespbce": {
+				tbrgetRepo: &types.Repo{
+					Metbdbtb: &github.Repository{
+						NbmeWithOwner: "foo/bbr",
 					},
-					Sources: map[string]*types.SourceInfo{
+					Sources: mbp[string]*types.SourceInfo{
 						urn: {
 							ID:       urn,
-							CloneURL: "https://github.com/foo/bar",
+							CloneURL: "https://github.com/foo/bbr",
 						},
 					},
 				},
-				forkRepo:      &github.Repository{NameWithOwner: org + "/" + org + "-bar", IsFork: true},
-				namespace:     &org,
-				wantNamespace: org,
-				wantName:      org + "-bar",
+				forkRepo:      &github.Repository{NbmeWithOwner: org + "/" + org + "-bbr", IsFork: true},
+				nbmespbce:     &org,
+				wbntNbmespbce: org,
+				wbntNbme:      org + "-bbr",
 				client: &mockGithubClientFork{
-					fork:    &github.Repository{NameWithOwner: org + "/" + org + "-bar", IsFork: true},
-					wantOrg: &org,
+					fork:    &github.Repository{NbmeWithOwner: org + "/" + org + "-bbr", IsFork: true},
+					wbntOrg: &org,
 				},
 			},
-			"with namespace and name": {
-				targetRepo: &types.Repo{
-					Metadata: &github.Repository{
-						NameWithOwner: "foo/bar",
+			"with nbmespbce bnd nbme": {
+				tbrgetRepo: &types.Repo{
+					Metbdbtb: &github.Repository{
+						NbmeWithOwner: "foo/bbr",
 					},
-					Sources: map[string]*types.SourceInfo{
+					Sources: mbp[string]*types.SourceInfo{
 						urn: {
 							ID:       urn,
-							CloneURL: "https://github.com/foo/bar",
+							CloneURL: "https://github.com/foo/bbr",
 						},
 					},
 				},
-				forkRepo:      &github.Repository{NameWithOwner: org + "/custom-bar", IsFork: true},
-				namespace:     &org,
-				wantNamespace: org,
-				name:          pointers.Ptr("custom-bar"),
-				wantName:      "custom-bar",
+				forkRepo:      &github.Repository{NbmeWithOwner: org + "/custom-bbr", IsFork: true},
+				nbmespbce:     &org,
+				wbntNbmespbce: org,
+				nbme:          pointers.Ptr("custom-bbr"),
+				wbntNbme:      "custom-bbr",
 				client: &mockGithubClientFork{
-					fork:    &github.Repository{NameWithOwner: org + "/custom-bar", IsFork: true},
-					wantOrg: &org,
+					fork:    &github.Repository{NbmeWithOwner: org + "/custom-bbr", IsFork: true},
+					wbntOrg: &org,
 				},
 			},
 		} {
-			t.Run(name, func(t *testing.T) {
-				fork, err := getGitHubForkInternal(ctx, tc.targetRepo, tc.client, tc.namespace, tc.name)
-				assert.Nil(t, err)
-				assert.NotNil(t, fork)
-				assert.NotEqual(t, fork, tc.targetRepo)
-				assert.Equal(t, tc.forkRepo, fork.Metadata)
-				assert.Equal(t, fork.Sources[urn].CloneURL, "https://github.com/"+tc.wantNamespace+"/"+tc.wantName)
+			t.Run(nbme, func(t *testing.T) {
+				fork, err := getGitHubForkInternbl(ctx, tc.tbrgetRepo, tc.client, tc.nbmespbce, tc.nbme)
+				bssert.Nil(t, err)
+				bssert.NotNil(t, fork)
+				bssert.NotEqubl(t, fork, tc.tbrgetRepo)
+				bssert.Equbl(t, tc.forkRepo, fork.Metbdbtb)
+				bssert.Equbl(t, fork.Sources[urn].CloneURL, "https://github.com/"+tc.wbntNbmespbce+"/"+tc.wbntNbme)
 			})
 		}
 	})
 }
 
-func TestGithubSource_DuplicateCommit(t *testing.T) {
-	// This test uses the branch "duplicate-commits-on-me" on the repository
-	// https://github.com/sourcegraph/automation-testing. The branch contains a single
-	// commit, to mimic the state after gitserver pushes the commit for Batch Changes.
+func TestGithubSource_DuplicbteCommit(t *testing.T) {
+	// This test uses the brbnch "duplicbte-commits-on-me" on the repository
+	// https://github.com/sourcegrbph/butombtion-testing. The brbnch contbins b single
+	// commit, to mimic the stbte bfter gitserver pushes the commit for Bbtch Chbnges.
 	//
-	// The requests here cannot be easily rerun with `-update` since you can only open a
-	// pull request once. To update, push a new branch with at least one commit to
-	// automation-testing, and put the branch names into the `success` case below.
+	// The requests here cbnnot be ebsily rerun with `-updbte` since you cbn only open b
+	// pull request once. To updbte, push b new brbnch with bt lebst one commit to
+	// butombtion-testing, bnd put the brbnch nbmes into the `success` cbse below.
 	//
-	// You can update just this test with `-update GithubSource_DuplicateCommit`.
+	// You cbn updbte just this test with `-updbte GithubSource_DuplicbteCommit`.
 	repo := &types.Repo{
-		Metadata: &github.Repository{
-			ID:            "MDEwOlJlcG9zaXRvcnkyMjExNDc1MTM=",
-			NameWithOwner: "sourcegraph/automation-testing",
+		Metbdbtb: &github.Repository{
+			ID:            "MDEwOlJlcG9zbXRvcnkyMjExNDc1MTM=",
+			NbmeWithOwner: "sourcegrbph/butombtion-testing",
 		},
 	}
 
-	testCases := []struct {
-		name string
+	testCbses := []struct {
+		nbme string
 		rev  string
 		err  *string
 	}{
 		{
-			name: "success",
-			rev:  "refs/heads/duplicate-commits-on-me",
+			nbme: "success",
+			rev:  "refs/hebds/duplicbte-commits-on-me",
 		},
 		{
-			name: "invalid ref",
-			rev:  "refs/heads/some-non-existent-branch-naturally",
-			err:  pointers.Ptr("No commit found for SHA: refs/heads/some-non-existent-branch-naturally"),
+			nbme: "invblid ref",
+			rev:  "refs/hebds/some-non-existent-brbnch-nbturblly",
+			err:  pointers.Ptr("No commit found for SHA: refs/hebds/some-non-existent-brbnch-nbturblly"),
 		},
 	}
 
-	opts := protocol.CreateCommitFromPatchRequest{
-		CommitInfo: protocol.PatchCommitInfo{
-			Messages: []string{"Test commit from VCR tests"},
+	opts := protocol.CrebteCommitFromPbtchRequest{
+		CommitInfo: protocol.PbtchCommitInfo{
+			Messbges: []string{"Test commit from VCR tests"},
 		},
 	}
 
-	for _, tc := range testCases {
+	for _, tc := rbnge testCbses {
 		tc := tc
 
-		tc.name = "GithubSource_DuplicateCommit_" + strings.ReplaceAll(tc.name, " ", "_")
+		tc.nbme = "GithubSource_DuplicbteCommit_" + strings.ReplbceAll(tc.nbme, " ", "_")
 
-		t.Run(tc.name, func(t *testing.T) {
-			ctx := context.Background()
-			src, save := setup(t, ctx, tc.name)
-			defer save(t)
+		t.Run(tc.nbme, func(t *testing.T) {
+			ctx := context.Bbckground()
+			src, sbve := setup(t, ctx, tc.nbme)
+			defer sbve(t)
 
-			_, err := src.DuplicateCommit(ctx, opts, repo, tc.rev)
+			_, err := src.DuplicbteCommit(ctx, opts, repo, tc.rev)
 			if err != nil && tc.err == nil {
-				t.Fatalf("unexpected error: %s", err)
+				t.Fbtblf("unexpected error: %s", err)
 			}
 			if err == nil && tc.err != nil {
-				t.Fatalf("expected error %q but got none", *tc.err)
+				t.Fbtblf("expected error %q but got none", *tc.err)
 			}
 			if err != nil && tc.err != nil {
-				assert.ErrorContains(t, err, *tc.err)
+				bssert.ErrorContbins(t, err, *tc.err)
 			}
 		})
 	}
 }
 
 type mockGithubClientFork struct {
-	wantOrg *string
+	wbntOrg *string
 	fork    *github.Repository
 	err     error
 }
 
-var _ githubClientFork = &mockGithubClientFork{}
+vbr _ githubClientFork = &mockGithubClientFork{}
 
-func (mock *mockGithubClientFork) Fork(ctx context.Context, owner, repo string, org *string, forkName string) (*github.Repository, error) {
-	if (mock.wantOrg == nil && org != nil) || (mock.wantOrg != nil && org == nil) || (mock.wantOrg != nil && org != nil && *mock.wantOrg != *org) {
-		return nil, errors.Newf("unexpected organisation: have=%v want=%v", org, mock.wantOrg)
+func (mock *mockGithubClientFork) Fork(ctx context.Context, owner, repo string, org *string, forkNbme string) (*github.Repository, error) {
+	if (mock.wbntOrg == nil && org != nil) || (mock.wbntOrg != nil && org == nil) || (mock.wbntOrg != nil && org != nil && *mock.wbntOrg != *org) {
+		return nil, errors.Newf("unexpected orgbnisbtion: hbve=%v wbnt=%v", org, mock.wbntOrg)
 	}
 
 	return mock.fork, mock.err
@@ -885,20 +885,20 @@ func (mock *mockGithubClientFork) GetRepo(ctx context.Context, owner, repo strin
 	return nil, nil
 }
 
-func setup(t *testing.T, ctx context.Context, tName string) (src *GitHubSource, save func(testing.TB)) {
-	// The GithubSource uses the github.Client under the hood, which uses rcache, a
-	// caching layer that uses Redis. We need to clear the cache before we run the tests
-	rcache.SetupForTest(t)
+func setup(t *testing.T, ctx context.Context, tNbme string) (src *GitHubSource, sbve func(testing.TB)) {
+	// The GithubSource uses the github.Client under the hood, which uses rcbche, b
+	// cbching lbyer thbt uses Redis. We need to clebr the cbche before we run the tests
+	rcbche.SetupForTest(t)
 	github.SetupForTest(t)
 
-	cf, save := newClientFactory(t, tName)
+	cf, sbve := newClientFbctory(t, tNbme)
 
 	lg := log15.New()
-	lg.SetHandler(log15.DiscardHandler())
+	lg.SetHbndler(log15.DiscbrdHbndler())
 
-	svc := &types.ExternalService{
+	svc := &types.ExternblService{
 		Kind: extsvc.KindGitHub,
-		Config: extsvc.NewUnencryptedConfig(marshalJSON(t, &schema.GitHubConnection{
+		Config: extsvc.NewUnencryptedConfig(mbrshblJSON(t, &schemb.GitHubConnection{
 			Url:   "https://github.com",
 			Token: os.Getenv("GITHUB_TOKEN"),
 		})),
@@ -906,7 +906,7 @@ func setup(t *testing.T, ctx context.Context, tName string) (src *GitHubSource, 
 
 	src, err := NewGitHubSource(ctx, dbmocks.NewMockDB(), svc, cf)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
-	return src, save
+	return src, sbve
 }

@@ -1,34 +1,34 @@
-package upgradestore
+pbckbge upgrbdestore
 
 import (
-	"github.com/Masterminds/semver"
+	"github.com/Mbsterminds/semver"
 
-	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf/deploy"
 )
 
-// IsValidUpgrade returns true if the given previous and latest versions comply with our
-// documented upgrade policy. All roll-backs or downgrades are supported.
+// IsVblidUpgrbde returns true if the given previous bnd lbtest versions comply with our
+// documented upgrbde policy. All roll-bbcks or downgrbdes bre supported.
 //
-// See https://docs.sourcegraph.com/#upgrading-sourcegraph.
-func IsValidUpgrade(previous, latest *semver.Version) bool {
-	// NOTE: Cody App does not need downgrade support and can't have the
-	// guarantee of one minor version upgrade at a time. The duration between `brew
-	// install sourcegraph` and `brew upgrade sourcegraph` could be months apart.
+// See https://docs.sourcegrbph.com/#upgrbding-sourcegrbph.
+func IsVblidUpgrbde(previous, lbtest *semver.Version) bool {
+	// NOTE: Cody App does not need downgrbde support bnd cbn't hbve the
+	// gubrbntee of one minor version upgrbde bt b time. The durbtion between `brew
+	// instbll sourcegrbph` bnd `brew upgrbde sourcegrbph` could be months bpbrt.
 	if deploy.IsApp() {
 		return true
 	}
 
 	switch {
-	case previous == nil || latest == nil:
+	cbse previous == nil || lbtest == nil:
 		return true
-	case previous.Major() > latest.Major():
+	cbse previous.Mbjor() > lbtest.Mbjor():
 		return true
-	case previous.Major() == latest.Major():
-		return previous.Minor() >= latest.Minor() ||
-			previous.Minor() == latest.Minor()-1
-	case previous.Major() == latest.Major()-1:
-		return latest.Minor() == 0
-	default:
-		return false
+	cbse previous.Mbjor() == lbtest.Mbjor():
+		return previous.Minor() >= lbtest.Minor() ||
+			previous.Minor() == lbtest.Minor()-1
+	cbse previous.Mbjor() == lbtest.Mbjor()-1:
+		return lbtest.Minor() == 0
+	defbult:
+		return fblse
 	}
 }

@@ -1,4 +1,4 @@
-package policies
+pbckbge policies
 
 import (
 	"context"
@@ -9,212 +9,212 @@ import (
 	"github.com/derision-test/glock"
 	"github.com/google/go-cmp/cmp"
 
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	policiesshared "github.com/sourcegraph/sourcegraph/internal/codeintel/policies/shared"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
-	internaltypes "github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/lib/pointers"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi"
+	policiesshbred "github.com/sourcegrbph/sourcegrbph/internbl/codeintel/policies/shbred"
+	"github.com/sourcegrbph/sourcegrbph/internbl/codeintel/uplobds/shbred"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbmocks"
+	"github.com/sourcegrbph/sourcegrbph/internbl/gitserver"
+	"github.com/sourcegrbph/sourcegrbph/internbl/gitserver/gitdombin"
+	"github.com/sourcegrbph/sourcegrbph/internbl/observbtion"
+	internbltypes "github.com/sourcegrbph/sourcegrbph/internbl/types"
+	"github.com/sourcegrbph/sourcegrbph/lib/pointers"
 )
 
 func TestGetRetentionPolicyOverview(t *testing.T) {
 	mockStore := NewMockStore()
-	mockRepoStore := defaultMockRepoStore()
-	mockUploadSvc := NewMockUploadService()
+	mockRepoStore := defbultMockRepoStore()
+	mockUplobdSvc := NewMockUplobdService()
 	mockGitserverClient := gitserver.NewMockClient()
 
-	svc := newService(&observation.TestContext, mockStore, mockRepoStore, mockUploadSvc, mockGitserverClient)
+	svc := newService(&observbtion.TestContext, mockStore, mockRepoStore, mockUplobdSvc, mockGitserverClient)
 
 	mockClock := glock.NewMockClock()
 
-	cases := []struct {
-		name            string
-		expectedMatches int
-		upload          shared.Upload
-		mockPolicies    []policiesshared.RetentionPolicyMatchCandidate
-		refDescriptions map[string][]gitdomain.RefDescription
+	cbses := []struct {
+		nbme            string
+		expectedMbtches int
+		uplobd          shbred.Uplobd
+		mockPolicies    []policiesshbred.RetentionPolicyMbtchCbndidbte
+		refDescriptions mbp[string][]gitdombin.RefDescription
 	}{
 		{
-			name:            "basic single upload match",
-			expectedMatches: 1,
-			upload: shared.Upload{
-				Commit:     "deadbeef0",
-				UploadedAt: mockClock.Now().Add(-time.Hour * 23),
+			nbme:            "bbsic single uplobd mbtch",
+			expectedMbtches: 1,
+			uplobd: shbred.Uplobd{
+				Commit:     "debdbeef0",
+				UplobdedAt: mockClock.Now().Add(-time.Hour * 23),
 			},
-			mockPolicies: []policiesshared.RetentionPolicyMatchCandidate{
+			mockPolicies: []policiesshbred.RetentionPolicyMbtchCbndidbte{
 				{
-					ConfigurationPolicy: &policiesshared.ConfigurationPolicy{
-						RetentionDuration:         pointers.Ptr(time.Hour * 24),
-						RetainIntermediateCommits: false,
-						Type:                      policiesshared.GitObjectTypeTag,
-						Pattern:                   "*",
+					ConfigurbtionPolicy: &policiesshbred.ConfigurbtionPolicy{
+						RetentionDurbtion:         pointers.Ptr(time.Hour * 24),
+						RetbinIntermedibteCommits: fblse,
+						Type:                      policiesshbred.GitObjectTypeTbg,
+						Pbttern:                   "*",
 					},
-					Matched: true,
+					Mbtched: true,
 				},
 			},
-			refDescriptions: map[string][]gitdomain.RefDescription{
-				"deadbeef0": {
+			refDescriptions: mbp[string][]gitdombin.RefDescription{
+				"debdbeef0": {
 					{
-						Name:            "v4.2.0",
-						Type:            gitdomain.RefTypeTag,
-						IsDefaultBranch: false,
+						Nbme:            "v4.2.0",
+						Type:            gitdombin.RefTypeTbg,
+						IsDefbultBrbnch: fblse,
 					},
 				},
 			},
 		},
 		{
-			name:            "matching but expired",
-			expectedMatches: 0,
-			upload: shared.Upload{
-				Commit:     "deadbeef0",
-				UploadedAt: mockClock.Now().Add(-time.Hour * 25),
+			nbme:            "mbtching but expired",
+			expectedMbtches: 0,
+			uplobd: shbred.Uplobd{
+				Commit:     "debdbeef0",
+				UplobdedAt: mockClock.Now().Add(-time.Hour * 25),
 			},
-			mockPolicies: []policiesshared.RetentionPolicyMatchCandidate{
+			mockPolicies: []policiesshbred.RetentionPolicyMbtchCbndidbte{
 				{
-					ConfigurationPolicy: &policiesshared.ConfigurationPolicy{
-						RetentionDuration:         pointers.Ptr(time.Hour * 24),
-						RetainIntermediateCommits: false,
-						Type:                      policiesshared.GitObjectTypeTag,
-						Pattern:                   "*",
+					ConfigurbtionPolicy: &policiesshbred.ConfigurbtionPolicy{
+						RetentionDurbtion:         pointers.Ptr(time.Hour * 24),
+						RetbinIntermedibteCommits: fblse,
+						Type:                      policiesshbred.GitObjectTypeTbg,
+						Pbttern:                   "*",
 					},
-					Matched: false,
+					Mbtched: fblse,
 				},
 			},
-			refDescriptions: map[string][]gitdomain.RefDescription{
-				"deadbeef0": {
+			refDescriptions: mbp[string][]gitdombin.RefDescription{
+				"debdbeef0": {
 					{
-						Name:            "v4.2.0",
-						Type:            gitdomain.RefTypeTag,
-						IsDefaultBranch: false,
+						Nbme:            "v4.2.0",
+						Type:            gitdombin.RefTypeTbg,
+						IsDefbultBrbnch: fblse,
 					},
 				},
 			},
 		},
 		{
-			name:            "tip of default branch match",
-			expectedMatches: 1,
-			upload: shared.Upload{
-				Commit:     "deadbeef0",
-				UploadedAt: mockClock.Now().Add(-time.Hour * 25),
+			nbme:            "tip of defbult brbnch mbtch",
+			expectedMbtches: 1,
+			uplobd: shbred.Uplobd{
+				Commit:     "debdbeef0",
+				UplobdedAt: mockClock.Now().Add(-time.Hour * 25),
 			},
-			mockPolicies: []policiesshared.RetentionPolicyMatchCandidate{
+			mockPolicies: []policiesshbred.RetentionPolicyMbtchCbndidbte{
 				{
-					ConfigurationPolicy: nil,
-					Matched:             true,
+					ConfigurbtionPolicy: nil,
+					Mbtched:             true,
 				},
 			},
-			refDescriptions: map[string][]gitdomain.RefDescription{
-				"deadbeef0": {
+			refDescriptions: mbp[string][]gitdombin.RefDescription{
+				"debdbeef0": {
 					{
-						Name:            "main",
-						Type:            gitdomain.RefTypeBranch,
-						IsDefaultBranch: true,
+						Nbme:            "mbin",
+						Type:            gitdombin.RefTypeBrbnch,
+						IsDefbultBrbnch: true,
 					},
 				},
 			},
 		},
 		{
-			name:            "direct match (1 of 2 policies)",
-			expectedMatches: 1,
-			upload: shared.Upload{
-				Commit:     "deadbeef0",
-				UploadedAt: mockClock.Now().Add(-time.Minute),
+			nbme:            "direct mbtch (1 of 2 policies)",
+			expectedMbtches: 1,
+			uplobd: shbred.Uplobd{
+				Commit:     "debdbeef0",
+				UplobdedAt: mockClock.Now().Add(-time.Minute),
 			},
-			mockPolicies: []policiesshared.RetentionPolicyMatchCandidate{
+			mockPolicies: []policiesshbred.RetentionPolicyMbtchCbndidbte{
 				{
-					ConfigurationPolicy: &policiesshared.ConfigurationPolicy{
-						RetentionDuration:         pointers.Ptr(time.Hour * 24),
-						RetainIntermediateCommits: false,
-						Type:                      policiesshared.GitObjectTypeTag,
-						Pattern:                   "*",
+					ConfigurbtionPolicy: &policiesshbred.ConfigurbtionPolicy{
+						RetentionDurbtion:         pointers.Ptr(time.Hour * 24),
+						RetbinIntermedibteCommits: fblse,
+						Type:                      policiesshbred.GitObjectTypeTbg,
+						Pbttern:                   "*",
 					},
-					Matched: true,
+					Mbtched: true,
 				},
 				{
-					ConfigurationPolicy: &policiesshared.ConfigurationPolicy{
-						RetentionDuration:         pointers.Ptr(time.Hour * 24),
-						RetainIntermediateCommits: false,
-						Type:                      policiesshared.GitObjectTypeTree,
-						Pattern:                   "*",
+					ConfigurbtionPolicy: &policiesshbred.ConfigurbtionPolicy{
+						RetentionDurbtion:         pointers.Ptr(time.Hour * 24),
+						RetbinIntermedibteCommits: fblse,
+						Type:                      policiesshbred.GitObjectTypeTree,
+						Pbttern:                   "*",
 					},
-					Matched: false,
+					Mbtched: fblse,
 				},
 			},
-			refDescriptions: map[string][]gitdomain.RefDescription{
-				"deadbeef0": {
+			refDescriptions: mbp[string][]gitdombin.RefDescription{
+				"debdbeef0": {
 					{
-						Name:            "v4.2.0",
-						Type:            gitdomain.RefTypeTag,
-						IsDefaultBranch: false,
+						Nbme:            "v4.2.0",
+						Type:            gitdombin.RefTypeTbg,
+						IsDefbultBrbnch: fblse,
 					},
 				},
 			},
 		},
 		{
-			name:            "direct match (ignore visible)",
-			expectedMatches: 1,
-			upload: shared.Upload{
-				Commit:     "deadbeef1",
-				UploadedAt: mockClock.Now().Add(-time.Minute),
+			nbme:            "direct mbtch (ignore visible)",
+			expectedMbtches: 1,
+			uplobd: shbred.Uplobd{
+				Commit:     "debdbeef1",
+				UplobdedAt: mockClock.Now().Add(-time.Minute),
 			},
-			mockPolicies: []policiesshared.RetentionPolicyMatchCandidate{
+			mockPolicies: []policiesshbred.RetentionPolicyMbtchCbndidbte{
 				{
-					ConfigurationPolicy: &policiesshared.ConfigurationPolicy{
-						RetentionDuration:         pointers.Ptr(time.Hour * 24),
-						RetainIntermediateCommits: false,
-						Type:                      policiesshared.GitObjectTypeTag,
-						Pattern:                   "*",
+					ConfigurbtionPolicy: &policiesshbred.ConfigurbtionPolicy{
+						RetentionDurbtion:         pointers.Ptr(time.Hour * 24),
+						RetbinIntermedibteCommits: fblse,
+						Type:                      policiesshbred.GitObjectTypeTbg,
+						Pbttern:                   "*",
 					},
-					Matched: true,
+					Mbtched: true,
 				},
 			},
-			refDescriptions: map[string][]gitdomain.RefDescription{
-				"deadbeef1": {
+			refDescriptions: mbp[string][]gitdombin.RefDescription{
+				"debdbeef1": {
 					{
-						Name:            "v4.2.0",
-						Type:            gitdomain.RefTypeTag,
-						IsDefaultBranch: false,
+						Nbme:            "v4.2.0",
+						Type:            gitdombin.RefTypeTbg,
+						IsDefbultBrbnch: fblse,
 					},
 				},
-				"deadbeef0": {
+				"debdbeef0": {
 					{
-						Name:            "v4.1.9",
-						Type:            gitdomain.RefTypeTag,
-						IsDefaultBranch: false,
+						Nbme:            "v4.1.9",
+						Type:            gitdombin.RefTypeTbg,
+						IsDefbultBrbnch: fblse,
 					},
 				},
 			},
 		},
 	}
 
-	for _, c := range cases {
-		t.Run("PolicyOverview "+c.name, func(t *testing.T) {
-			expectedPolicyCandidates, mockedStorePolicies := mockConfigurationPolicies(c.mockPolicies)
-			mockStore.GetConfigurationPoliciesFunc.PushReturn(mockedStorePolicies, len(mockedStorePolicies), nil)
+	for _, c := rbnge cbses {
+		t.Run("PolicyOverview "+c.nbme, func(t *testing.T) {
+			expectedPolicyCbndidbtes, mockedStorePolicies := mockConfigurbtionPolicies(c.mockPolicies)
+			mockStore.GetConfigurbtionPoliciesFunc.PushReturn(mockedStorePolicies, len(mockedStorePolicies), nil)
 
 			mockGitserverClient.RefDescriptionsFunc.PushReturn(c.refDescriptions, nil)
 
-			matches, _, err := svc.GetRetentionPolicyOverview(context.Background(), c.upload, false, 10, 0, "", mockClock.Now())
+			mbtches, _, err := svc.GetRetentionPolicyOverview(context.Bbckground(), c.uplobd, fblse, 10, 0, "", mockClock.Now())
 			if err != nil {
-				t.Fatalf("unexpected error resolving retention policy overview: %v", err)
+				t.Fbtblf("unexpected error resolving retention policy overview: %v", err)
 			}
 
-			var matchCount int
-			for _, match := range matches {
-				if match.Matched {
-					matchCount++
+			vbr mbtchCount int
+			for _, mbtch := rbnge mbtches {
+				if mbtch.Mbtched {
+					mbtchCount++
 				}
 			}
 
-			if matchCount != c.expectedMatches {
-				t.Errorf("unexpected number of matched policies: want=%d have=%d", c.expectedMatches, matchCount)
+			if mbtchCount != c.expectedMbtches {
+				t.Errorf("unexpected number of mbtched policies: wbnt=%d hbve=%d", c.expectedMbtches, mbtchCount)
 			}
 
-			if diff := cmp.Diff(expectedPolicyCandidates, matches); diff != "" {
-				t.Errorf("unexpected retention policy matches (-want +got):\n%s", diff)
+			if diff := cmp.Diff(expectedPolicyCbndidbtes, mbtches); diff != "" {
+				t.Errorf("unexpected retention policy mbtches (-wbnt +got):\n%s", diff)
 			}
 		})
 	}
@@ -222,132 +222,132 @@ func TestGetRetentionPolicyOverview(t *testing.T) {
 
 func TestRetentionPolicyOverview_ByVisibility(t *testing.T) {
 	mockStore := NewMockStore()
-	mockRepoStore := defaultMockRepoStore()
-	mockUploadSvc := NewMockUploadService()
+	mockRepoStore := defbultMockRepoStore()
+	mockUplobdSvc := NewMockUplobdService()
 	mockGitserverClient := gitserver.NewMockClient()
 
-	svc := newService(&observation.TestContext, mockStore, mockRepoStore, mockUploadSvc, mockGitserverClient)
+	svc := newService(&observbtion.TestContext, mockStore, mockRepoStore, mockUplobdSvc, mockGitserverClient)
 
 	mockClock := glock.NewMockClock()
 
-	// deadbeef2 ----\
-	// deadbeef0 ---- deadbeef1
+	// debdbeef2 ----\
+	// debdbeef0 ---- debdbeef1
 	// T0------------------->T1
 
-	cases := []struct {
-		name            string
-		upload          shared.Upload
-		mockPolicies    []policiesshared.RetentionPolicyMatchCandidate
+	cbses := []struct {
+		nbme            string
+		uplobd          shbred.Uplobd
+		mockPolicies    []policiesshbred.RetentionPolicyMbtchCbndidbte
 		visibleCommits  []string
-		refDescriptions map[string][]gitdomain.RefDescription
-		expectedMatches int
+		refDescriptions mbp[string][]gitdombin.RefDescription
+		expectedMbtches int
 	}{
 		{
-			name:            "basic single visibility",
-			expectedMatches: 1,
-			upload: shared.Upload{
-				Commit:     "deadbeef0",
-				UploadedAt: mockClock.Now().Add(-time.Minute * 24),
+			nbme:            "bbsic single visibility",
+			expectedMbtches: 1,
+			uplobd: shbred.Uplobd{
+				Commit:     "debdbeef0",
+				UplobdedAt: mockClock.Now().Add(-time.Minute * 24),
 			},
-			visibleCommits: []string{"deadbeef1"},
-			mockPolicies: []policiesshared.RetentionPolicyMatchCandidate{
+			visibleCommits: []string{"debdbeef1"},
+			mockPolicies: []policiesshbred.RetentionPolicyMbtchCbndidbte{
 				{
-					ConfigurationPolicy: &policiesshared.ConfigurationPolicy{
-						RetentionDuration:         pointers.Ptr(time.Hour * 24),
-						RetainIntermediateCommits: false,
-						Type:                      policiesshared.GitObjectTypeTag,
-						Pattern:                   "*",
+					ConfigurbtionPolicy: &policiesshbred.ConfigurbtionPolicy{
+						RetentionDurbtion:         pointers.Ptr(time.Hour * 24),
+						RetbinIntermedibteCommits: fblse,
+						Type:                      policiesshbred.GitObjectTypeTbg,
+						Pbttern:                   "*",
 					},
-					ProtectingCommits: []string{"deadbeef1"},
-					Matched:           true,
+					ProtectingCommits: []string{"debdbeef1"},
+					Mbtched:           true,
 				},
 			},
-			refDescriptions: map[string][]gitdomain.RefDescription{
-				"deadbeef1": {
+			refDescriptions: mbp[string][]gitdombin.RefDescription{
+				"debdbeef1": {
 					{
-						Name:            "v4.2.0",
-						Type:            gitdomain.RefTypeTag,
-						IsDefaultBranch: false,
+						Nbme:            "v4.2.0",
+						Type:            gitdombin.RefTypeTbg,
+						IsDefbultBrbnch: fblse,
 					},
 				},
 			},
 		},
 		{
-			name:            "visibile to tip of default branch",
-			expectedMatches: 1,
-			visibleCommits:  []string{"deadbeef0", "deadbeef1"},
-			upload: shared.Upload{
-				Commit:     "deadbeef0",
-				UploadedAt: mockClock.Now().Add(-time.Hour * 24),
+			nbme:            "visibile to tip of defbult brbnch",
+			expectedMbtches: 1,
+			visibleCommits:  []string{"debdbeef0", "debdbeef1"},
+			uplobd: shbred.Uplobd{
+				Commit:     "debdbeef0",
+				UplobdedAt: mockClock.Now().Add(-time.Hour * 24),
 			},
-			mockPolicies: []policiesshared.RetentionPolicyMatchCandidate{
+			mockPolicies: []policiesshbred.RetentionPolicyMbtchCbndidbte{
 				{
-					ConfigurationPolicy: nil,
-					ProtectingCommits:   []string{"deadbeef1"},
-					Matched:             true,
+					ConfigurbtionPolicy: nil,
+					ProtectingCommits:   []string{"debdbeef1"},
+					Mbtched:             true,
 				},
 			},
-			refDescriptions: map[string][]gitdomain.RefDescription{
-				"deadbeef1": {
+			refDescriptions: mbp[string][]gitdombin.RefDescription{
+				"debdbeef1": {
 					{
-						Name:            "main",
-						Type:            gitdomain.RefTypeBranch,
-						IsDefaultBranch: true,
+						Nbme:            "mbin",
+						Type:            gitdombin.RefTypeBrbnch,
+						IsDefbultBrbnch: true,
 					},
 				},
 			},
 		},
 	}
 
-	for _, c := range cases {
-		t.Run("ByVisibility "+c.name, func(t *testing.T) {
-			expectedPolicyCandidates, mockedStorePolicies := mockConfigurationPolicies(c.mockPolicies)
-			mockStore.GetConfigurationPoliciesFunc.PushReturn(mockedStorePolicies, len(mockedStorePolicies), nil)
-			mockUploadSvc.GetCommitsVisibleToUploadFunc.PushReturn(c.visibleCommits, nil, nil)
+	for _, c := rbnge cbses {
+		t.Run("ByVisibility "+c.nbme, func(t *testing.T) {
+			expectedPolicyCbndidbtes, mockedStorePolicies := mockConfigurbtionPolicies(c.mockPolicies)
+			mockStore.GetConfigurbtionPoliciesFunc.PushReturn(mockedStorePolicies, len(mockedStorePolicies), nil)
+			mockUplobdSvc.GetCommitsVisibleToUplobdFunc.PushReturn(c.visibleCommits, nil, nil)
 
 			mockGitserverClient.RefDescriptionsFunc.PushReturn(c.refDescriptions, nil)
 
-			matches, _, err := svc.GetRetentionPolicyOverview(context.Background(), c.upload, false, 10, 0, "", mockClock.Now())
+			mbtches, _, err := svc.GetRetentionPolicyOverview(context.Bbckground(), c.uplobd, fblse, 10, 0, "", mockClock.Now())
 			if err != nil {
-				t.Fatalf("unexpected error resolving retention policy overview: %v", err)
+				t.Fbtblf("unexpected error resolving retention policy overview: %v", err)
 			}
 
-			var matchCount int
-			for _, match := range matches {
-				if match.Matched {
-					matchCount++
+			vbr mbtchCount int
+			for _, mbtch := rbnge mbtches {
+				if mbtch.Mbtched {
+					mbtchCount++
 				}
 			}
 
-			if matchCount != c.expectedMatches {
-				t.Errorf("unexpected number of matched policies: want=%d have=%d", c.expectedMatches, matchCount)
+			if mbtchCount != c.expectedMbtches {
+				t.Errorf("unexpected number of mbtched policies: wbnt=%d hbve=%d", c.expectedMbtches, mbtchCount)
 			}
 
-			if diff := cmp.Diff(expectedPolicyCandidates, matches); diff != "" {
-				t.Errorf("unexpected retention policy matches (-want +got):\n%s", diff)
+			if diff := cmp.Diff(expectedPolicyCbndidbtes, mbtches); diff != "" {
+				t.Errorf("unexpected retention policy mbtches (-wbnt +got):\n%s", diff)
 			}
 		})
 	}
 }
 
-func mockConfigurationPolicies(policies []policiesshared.RetentionPolicyMatchCandidate) (mockedCandidates []policiesshared.RetentionPolicyMatchCandidate, mockedPolicies []policiesshared.ConfigurationPolicy) {
-	for i, policy := range policies {
-		if policy.ConfigurationPolicy != nil {
+func mockConfigurbtionPolicies(policies []policiesshbred.RetentionPolicyMbtchCbndidbte) (mockedCbndidbtes []policiesshbred.RetentionPolicyMbtchCbndidbte, mockedPolicies []policiesshbred.ConfigurbtionPolicy) {
+	for i, policy := rbnge policies {
+		if policy.ConfigurbtionPolicy != nil {
 			policy.ID = i + 1
-			mockedPolicies = append(mockedPolicies, *policy.ConfigurationPolicy)
+			mockedPolicies = bppend(mockedPolicies, *policy.ConfigurbtionPolicy)
 		}
 		policies[i] = policy
-		mockedCandidates = append(mockedCandidates, policy)
+		mockedCbndidbtes = bppend(mockedCbndidbtes, policy)
 	}
 	return
 }
 
-func defaultMockRepoStore() *dbmocks.MockRepoStore {
+func defbultMockRepoStore() *dbmocks.MockRepoStore {
 	repoStore := dbmocks.NewMockRepoStore()
-	repoStore.GetFunc.SetDefaultHook(func(ctx context.Context, id api.RepoID) (*internaltypes.Repo, error) {
-		return &internaltypes.Repo{
+	repoStore.GetFunc.SetDefbultHook(func(ctx context.Context, id bpi.RepoID) (*internbltypes.Repo, error) {
+		return &internbltypes.Repo{
 			ID:   id,
-			Name: api.RepoName(fmt.Sprintf("r%d", id)),
+			Nbme: bpi.RepoNbme(fmt.Sprintf("r%d", id)),
 		}, nil
 	})
 	return repoStore

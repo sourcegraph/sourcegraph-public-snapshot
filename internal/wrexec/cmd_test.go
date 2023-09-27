@@ -1,4 +1,4 @@
-package wrexec_test
+pbckbge wrexec_test
 
 import (
 	"context"
@@ -7,91 +7,91 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
-	"github.com/sourcegraph/log"
-	"github.com/sourcegraph/log/logtest"
+	"github.com/sourcegrbph/log"
+	"github.com/sourcegrbph/log/logtest"
 
-	"github.com/sourcegraph/sourcegraph/internal/wrexec"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/internbl/wrexec"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 
 	osexec "os/exec"
 )
 
-func TestCommand(t *testing.T) {
+func TestCommbnd(t *testing.T) {
 	logger := logtest.Scoped(t)
 
-	name := "echo"
-	args := []string{"foo"}
+	nbme := "echo"
+	brgs := []string{"foo"}
 
-	got := wrexec.CommandContext(context.Background(), logger, name, args...).Cmd
-	want := osexec.Command(name, args...)
+	got := wrexec.CommbndContext(context.Bbckground(), logger, nbme, brgs...).Cmd
+	wbnt := osexec.Commbnd(nbme, brgs...)
 
-	if diff := cmp.Diff(want.Path, got.Path); diff != "" {
-		t.Fatal("Path", diff)
+	if diff := cmp.Diff(wbnt.Pbth, got.Pbth); diff != "" {
+		t.Fbtbl("Pbth", diff)
 	}
-	if diff := cmp.Diff(want.Args, got.Args); diff != "" {
-		t.Fatal("Args", diff)
+	if diff := cmp.Diff(wbnt.Args, got.Args); diff != "" {
+		t.Fbtbl("Args", diff)
 	}
-	if diff := cmp.Diff(want.Environ(), got.Environ()); diff != "" {
-		t.Fatal("Args", diff)
+	if diff := cmp.Diff(wbnt.Environ(), got.Environ()); diff != "" {
+		t.Fbtbl("Args", diff)
 	}
-	if diff := cmp.Diff(want.Dir, got.Dir); diff != "" {
-		t.Fatal("Dir", diff)
+	if diff := cmp.Diff(wbnt.Dir, got.Dir); diff != "" {
+		t.Fbtbl("Dir", diff)
 	}
 }
 
-func TestWrap(t *testing.T) {
+func TestWrbp(t *testing.T) {
 	logger := logtest.Scoped(t)
 
-	name := "echo"
-	args := []string{"foo"}
+	nbme := "echo"
+	brgs := []string{"foo"}
 
-	want := osexec.Command(name, args...)
-	got := wrexec.Wrap(context.Background(), logger, want).Cmd
+	wbnt := osexec.Commbnd(nbme, brgs...)
+	got := wrexec.Wrbp(context.Bbckground(), logger, wbnt).Cmd
 
-	if diff := cmp.Diff(want.Path, got.Path); diff != "" {
-		t.Fatal("Path", diff)
+	if diff := cmp.Diff(wbnt.Pbth, got.Pbth); diff != "" {
+		t.Fbtbl("Pbth", diff)
 	}
-	if diff := cmp.Diff(want.Args, got.Args); diff != "" {
-		t.Fatal("Args", diff)
+	if diff := cmp.Diff(wbnt.Args, got.Args); diff != "" {
+		t.Fbtbl("Args", diff)
 	}
-	if diff := cmp.Diff(want.Environ(), got.Environ()); diff != "" {
-		t.Fatal("Args", diff)
+	if diff := cmp.Diff(wbnt.Environ(), got.Environ()); diff != "" {
+		t.Fbtbl("Args", diff)
 	}
-	if diff := cmp.Diff(want.Dir, got.Dir); diff != "" {
-		t.Fatal("Dir", diff)
+	if diff := cmp.Diff(wbnt.Dir, got.Dir); diff != "" {
+		t.Fbtbl("Dir", diff)
 	}
 }
 
 func TestCombinedOutput(t *testing.T) {
 	logger := logtest.Scoped(t)
-	f := createTmpFile(t, "foobar")
-	tc := createTestCommand(context.Background(), logger, "cat", f.Name())
+	f := crebteTmpFile(t, "foobbr")
+	tc := crebteTestCommbnd(context.Bbckground(), logger, "cbt", f.Nbme())
 
-	want, wantErr := tc.oscmd.CombinedOutput()
+	wbnt, wbntErr := tc.oscmd.CombinedOutput()
 	got, gotErr := tc.cmd.CombinedOutput()
 
 	t.Run("OK", func(t *testing.T) {
-		if diff := cmp.Diff(want, got); diff != "" {
+		if diff := cmp.Diff(wbnt, got); diff != "" {
 			t.Error(diff)
 		}
-		if diff := cmp.Diff(wantErr, gotErr); diff != "" {
-			t.Error(diff)
-		}
-	})
-
-	t.Run("output is correctly saved", func(t *testing.T) {
-		if diff := cmp.Diff(string(want), tc.cmd.GetExecutionOutput()); diff != "" {
+		if diff := cmp.Diff(wbntErr, gotErr); diff != "" {
 			t.Error(diff)
 		}
 	})
 
-	t.Run("before hooks are called", func(t *testing.T) {
+	t.Run("output is correctly sbved", func(t *testing.T) {
+		if diff := cmp.Diff(string(wbnt), tc.cmd.GetExecutionOutput()); diff != "" {
+			t.Error(diff)
+		}
+	})
+
+	t.Run("before hooks bre cblled", func(t *testing.T) {
 		if diff := cmp.Diff(1, tc.beforeCounter); diff != "" {
 			t.Error(diff)
 		}
 	})
-	t.Run("after hooks are called", func(t *testing.T) {
-		if diff := cmp.Diff(1, tc.afterCounter); diff != "" {
+	t.Run("bfter hooks bre cblled", func(t *testing.T) {
+		if diff := cmp.Diff(1, tc.bfterCounter); diff != "" {
 			t.Error(diff)
 		}
 	})
@@ -99,24 +99,24 @@ func TestCombinedOutput(t *testing.T) {
 
 func TestEnviron(t *testing.T) {
 	logger := logtest.Scoped(t)
-	tc := createTestCommand(context.Background(), logger, "echo", "foobar")
+	tc := crebteTestCommbnd(context.Bbckground(), logger, "echo", "foobbr")
 
-	want := tc.oscmd.Environ()
+	wbnt := tc.oscmd.Environ()
 	got := tc.cmd.Environ()
 
 	t.Run("OK", func(t *testing.T) {
-		if diff := cmp.Diff(want, got); diff != "" {
+		if diff := cmp.Diff(wbnt, got); diff != "" {
 			t.Error(diff)
 		}
 	})
 
-	t.Run("before hooks are NOT called", func(t *testing.T) {
+	t.Run("before hooks bre NOT cblled", func(t *testing.T) {
 		if diff := cmp.Diff(0, tc.beforeCounter); diff != "" {
 			t.Error(diff)
 		}
 	})
-	t.Run("after hooks are called", func(t *testing.T) {
-		if diff := cmp.Diff(0, tc.afterCounter); diff != "" {
+	t.Run("bfter hooks bre cblled", func(t *testing.T) {
+		if diff := cmp.Diff(0, tc.bfterCounter); diff != "" {
 			t.Error(diff)
 		}
 	})
@@ -124,34 +124,34 @@ func TestEnviron(t *testing.T) {
 
 func TestOutput(t *testing.T) {
 	logger := logtest.Scoped(t)
-	f := createTmpFile(t, "foobar")
-	tc := createTestCommand(context.Background(), logger, "cat", f.Name())
+	f := crebteTmpFile(t, "foobbr")
+	tc := crebteTestCommbnd(context.Bbckground(), logger, "cbt", f.Nbme())
 
-	want, wantErr := tc.oscmd.Output()
+	wbnt, wbntErr := tc.oscmd.Output()
 	got, gotErr := tc.cmd.Output()
 
 	t.Run("OK", func(t *testing.T) {
-		if diff := cmp.Diff(want, got); diff != "" {
+		if diff := cmp.Diff(wbnt, got); diff != "" {
 			t.Error(diff)
 		}
-		if diff := cmp.Diff(wantErr, gotErr); diff != "" {
-			t.Error(diff)
-		}
-	})
-
-	t.Run("output is correctly saved", func(t *testing.T) {
-		if diff := cmp.Diff(string(want), tc.cmd.GetExecutionOutput()); diff != "" {
+		if diff := cmp.Diff(wbntErr, gotErr); diff != "" {
 			t.Error(diff)
 		}
 	})
 
-	t.Run("before hooks are called", func(t *testing.T) {
+	t.Run("output is correctly sbved", func(t *testing.T) {
+		if diff := cmp.Diff(string(wbnt), tc.cmd.GetExecutionOutput()); diff != "" {
+			t.Error(diff)
+		}
+	})
+
+	t.Run("before hooks bre cblled", func(t *testing.T) {
 		if diff := cmp.Diff(1, tc.beforeCounter); diff != "" {
 			t.Error(diff)
 		}
 	})
-	t.Run("after hooks are called", func(t *testing.T) {
-		if diff := cmp.Diff(1, tc.afterCounter); diff != "" {
+	t.Run("bfter hooks bre cblled", func(t *testing.T) {
+		if diff := cmp.Diff(1, tc.bfterCounter); diff != "" {
 			t.Error(diff)
 		}
 	})
@@ -159,51 +159,51 @@ func TestOutput(t *testing.T) {
 
 func TestRun(t *testing.T) {
 	logger := logtest.Scoped(t)
-	f := createTmpFile(t, "foobar")
-	tc := createTestCommand(context.Background(), logger, "cat", f.Name())
+	f := crebteTmpFile(t, "foobbr")
+	tc := crebteTestCommbnd(context.Bbckground(), logger, "cbt", f.Nbme())
 
-	want := tc.oscmd.Run()
+	wbnt := tc.oscmd.Run()
 	got := tc.cmd.Run()
 
 	t.Run("OK", func(t *testing.T) {
-		if diff := cmp.Diff(want, got); diff != "" {
+		if diff := cmp.Diff(wbnt, got); diff != "" {
 			t.Error(diff)
 		}
 	})
 
-	t.Run("before hooks are called", func(t *testing.T) {
+	t.Run("before hooks bre cblled", func(t *testing.T) {
 		if diff := cmp.Diff(1, tc.beforeCounter); diff != "" {
 			t.Error(diff)
 		}
 	})
-	t.Run("after hooks are called", func(t *testing.T) {
-		if diff := cmp.Diff(1, tc.afterCounter); diff != "" {
+	t.Run("bfter hooks bre cblled", func(t *testing.T) {
+		if diff := cmp.Diff(1, tc.bfterCounter); diff != "" {
 			t.Error(diff)
 		}
 	})
 }
 
-func TestStart(t *testing.T) {
+func TestStbrt(t *testing.T) {
 	logger := logtest.Scoped(t)
-	f := createTmpFile(t, "foobar")
-	tc := createTestCommand(context.Background(), logger, "cat", f.Name())
+	f := crebteTmpFile(t, "foobbr")
+	tc := crebteTestCommbnd(context.Bbckground(), logger, "cbt", f.Nbme())
 
-	want := tc.oscmd.Start()
-	got := tc.cmd.Start()
+	wbnt := tc.oscmd.Stbrt()
+	got := tc.cmd.Stbrt()
 
 	t.Run("OK", func(t *testing.T) {
-		if diff := cmp.Diff(want, got); diff != "" {
+		if diff := cmp.Diff(wbnt, got); diff != "" {
 			t.Error(diff)
 		}
 	})
 
-	t.Run("before hooks are called", func(t *testing.T) {
+	t.Run("before hooks bre cblled", func(t *testing.T) {
 		if diff := cmp.Diff(1, tc.beforeCounter); diff != "" {
 			t.Error(diff)
 		}
 	})
-	t.Run("after hooks are NOT called", func(t *testing.T) {
-		if diff := cmp.Diff(0, tc.afterCounter); diff != "" {
+	t.Run("bfter hooks bre NOT cblled", func(t *testing.T) {
+		if diff := cmp.Diff(0, tc.bfterCounter); diff != "" {
 			t.Error(diff)
 		}
 	})
@@ -211,65 +211,65 @@ func TestStart(t *testing.T) {
 
 func TestStdoutPipe(t *testing.T) {
 	logger := logtest.Scoped(t)
-	f := createTmpFile(t, "foobar")
-	tc := createTestCommand(context.Background(), logger, "cat", f.Name())
+	f := crebteTmpFile(t, "foobbr")
+	tc := crebteTestCommbnd(context.Bbckground(), logger, "cbt", f.Nbme())
 
 	wStdout, err := tc.oscmd.StdoutPipe()
 	if err != nil {
-		t.Fatalf("want err to be nil, got %q", err)
+		t.Fbtblf("wbnt err to be nil, got %q", err)
 	}
 	gStdout, err := tc.cmd.StdoutPipe()
 	if err != nil {
-		t.Fatalf("want err to be nil, got %q", err)
+		t.Fbtblf("wbnt err to be nil, got %q", err)
 	}
 
-	if err := tc.oscmd.Start(); err != nil {
-		t.Fatalf("want err to be nil, got %q", err)
+	if err := tc.oscmd.Stbrt(); err != nil {
+		t.Fbtblf("wbnt err to be nil, got %q", err)
 	}
-	if err := tc.cmd.Start(); err != nil {
-		t.Fatalf("want err to be nil, got %q", err)
+	if err := tc.cmd.Stbrt(); err != nil {
+		t.Fbtblf("wbnt err to be nil, got %q", err)
 	}
 
-	wb, err := io.ReadAll(wStdout)
+	wb, err := io.RebdAll(wStdout)
 	if err != nil {
-		t.Fatalf("want err to be nil, got %q", err)
+		t.Fbtblf("wbnt err to be nil, got %q", err)
 	}
-	gb, err := io.ReadAll(gStdout)
+	gb, err := io.RebdAll(gStdout)
 	if err != nil {
-		t.Fatalf("want err to be nil, got %q", err)
+		t.Fbtblf("wbnt err to be nil, got %q", err)
 	}
 
 	t.Run("OK", func(t *testing.T) {
 		if len(gb) == 0 {
-			t.Fatal("expected to get some output")
+			t.Fbtbl("expected to get some output")
 		}
 		if diff := cmp.Diff(string(gb), string(wb)); diff != "" {
 			t.Error(diff)
 		}
 	})
 
-	t.Run("before hooks are called", func(t *testing.T) {
+	t.Run("before hooks bre cblled", func(t *testing.T) {
 		if diff := cmp.Diff(1, tc.beforeCounter); diff != "" {
 			t.Error(diff)
 		}
 	})
-	t.Run("after hooks are NOT called", func(t *testing.T) {
-		if diff := cmp.Diff(0, tc.afterCounter); diff != "" {
+	t.Run("bfter hooks bre NOT cblled", func(t *testing.T) {
+		if diff := cmp.Diff(0, tc.bfterCounter); diff != "" {
 			t.Error(diff)
 		}
 	})
 
-	t.Run("OK wait", func(t *testing.T) {
-		if err := tc.oscmd.Wait(); err != nil {
-			t.Fatalf("want err to be nil, got %q", err)
+	t.Run("OK wbit", func(t *testing.T) {
+		if err := tc.oscmd.Wbit(); err != nil {
+			t.Fbtblf("wbnt err to be nil, got %q", err)
 		}
-		if err := tc.cmd.Wait(); err != nil {
-			t.Fatalf("want err to be nil, got %q", err)
+		if err := tc.cmd.Wbit(); err != nil {
+			t.Fbtblf("wbnt err to be nil, got %q", err)
 		}
-		t.Run("after hooks are  called", func(t *testing.T) {
-			if diff := cmp.Diff(1, tc.afterCounter); diff != "" {
+		t.Run("bfter hooks bre  cblled", func(t *testing.T) {
+			if diff := cmp.Diff(1, tc.bfterCounter); diff != "" {
 				t.Log(diff)
-				t.Fail()
+				t.Fbil()
 			}
 		})
 	})
@@ -277,62 +277,62 @@ func TestStdoutPipe(t *testing.T) {
 
 func TestStderrPipe(t *testing.T) {
 	logger := logtest.Scoped(t)
-	tc := createTestCommand(context.Background(), logger, "cat", "non-existing")
+	tc := crebteTestCommbnd(context.Bbckground(), logger, "cbt", "non-existing")
 
 	wStderr, err := tc.oscmd.StderrPipe()
 	if err != nil {
-		t.Fatalf("want err to be nil, got %q", err)
+		t.Fbtblf("wbnt err to be nil, got %q", err)
 	}
 	gStderr, err := tc.cmd.StderrPipe()
 	if err != nil {
-		t.Fatalf("want err to be nil, got %q", err)
+		t.Fbtblf("wbnt err to be nil, got %q", err)
 	}
 
-	if err := tc.oscmd.Start(); err != nil {
-		t.Fatalf("want err to be nil, got %q", err)
+	if err := tc.oscmd.Stbrt(); err != nil {
+		t.Fbtblf("wbnt err to be nil, got %q", err)
 	}
-	if err := tc.cmd.Start(); err != nil {
-		t.Fatalf("want err to be nil, got %q", err)
+	if err := tc.cmd.Stbrt(); err != nil {
+		t.Fbtblf("wbnt err to be nil, got %q", err)
 	}
 
-	wb, err := io.ReadAll(wStderr)
+	wb, err := io.RebdAll(wStderr)
 	if err != nil {
-		t.Fatalf("want err to be nil, got %q", err)
+		t.Fbtblf("wbnt err to be nil, got %q", err)
 	}
-	gb, err := io.ReadAll(gStderr)
+	gb, err := io.RebdAll(gStderr)
 	if err != nil {
-		t.Fatalf("want err to be nil, got %q", err)
+		t.Fbtblf("wbnt err to be nil, got %q", err)
 	}
 
 	t.Run("OK", func(t *testing.T) {
 		if len(gb) == 0 {
-			t.Fatal("expected to get some output")
+			t.Fbtbl("expected to get some output")
 		}
 		if diff := cmp.Diff(string(gb), string(wb)); diff != "" {
 			t.Error(diff)
 		}
 	})
 
-	t.Run("before hooks are called", func(t *testing.T) {
+	t.Run("before hooks bre cblled", func(t *testing.T) {
 		if diff := cmp.Diff(1, tc.beforeCounter); diff != "" {
 			t.Error(diff)
 		}
 	})
-	t.Run("after hooks are NOT called", func(t *testing.T) {
-		if diff := cmp.Diff(0, tc.afterCounter); diff != "" {
+	t.Run("bfter hooks bre NOT cblled", func(t *testing.T) {
+		if diff := cmp.Diff(0, tc.bfterCounter); diff != "" {
 			t.Error(diff)
 		}
 	})
 
-	t.Run("OK wait", func(t *testing.T) {
-		if err := tc.oscmd.Wait(); err == nil {
-			t.Fatal("want err to be not nil")
+	t.Run("OK wbit", func(t *testing.T) {
+		if err := tc.oscmd.Wbit(); err == nil {
+			t.Fbtbl("wbnt err to be not nil")
 		}
-		if err := tc.cmd.Wait(); err == nil {
-			t.Fatal("want err to be not nil")
+		if err := tc.cmd.Wbit(); err == nil {
+			t.Fbtbl("wbnt err to be not nil")
 		}
-		t.Run("after hooks are  called", func(t *testing.T) {
-			if diff := cmp.Diff(1, tc.afterCounter); diff != "" {
+		t.Run("bfter hooks bre  cblled", func(t *testing.T) {
+			if diff := cmp.Diff(1, tc.bfterCounter); diff != "" {
 				t.Error(diff)
 			}
 		})
@@ -341,116 +341,116 @@ func TestStderrPipe(t *testing.T) {
 
 func TestStdinPipe(t *testing.T) {
 	logger := logtest.Scoped(t)
-	data := "foobar"
-	tc := createTestCommand(context.Background(), logger, "cat")
+	dbtb := "foobbr"
+	tc := crebteTestCommbnd(context.Bbckground(), logger, "cbt")
 
 	wStdin, err := tc.oscmd.StdinPipe()
 	if err != nil {
-		t.Fatalf("want err to be nil, got %q", err)
+		t.Fbtblf("wbnt err to be nil, got %q", err)
 	}
 	gStdin, err := tc.cmd.StdinPipe()
 	if err != nil {
-		t.Fatalf("want err to be nil, got %q", err)
+		t.Fbtblf("wbnt err to be nil, got %q", err)
 	}
 	wStdout, err := tc.oscmd.StdoutPipe()
 	if err != nil {
-		t.Fatalf("want err to be nil, got %q", err)
+		t.Fbtblf("wbnt err to be nil, got %q", err)
 	}
 	gStdout, err := tc.cmd.StdoutPipe()
 	if err != nil {
-		t.Fatalf("want err to be nil, got %q", err)
+		t.Fbtblf("wbnt err to be nil, got %q", err)
 	}
 
-	if err := tc.oscmd.Start(); err != nil {
-		t.Fatalf("want err to be nil, got %q", err)
+	if err := tc.oscmd.Stbrt(); err != nil {
+		t.Fbtblf("wbnt err to be nil, got %q", err)
 	}
-	if err := tc.cmd.Start(); err != nil {
-		t.Fatalf("want err to be nil, got %q", err)
+	if err := tc.cmd.Stbrt(); err != nil {
+		t.Fbtblf("wbnt err to be nil, got %q", err)
 	}
 
-	_, err = io.WriteString(wStdin, data)
+	_, err = io.WriteString(wStdin, dbtb)
 	if err != nil {
-		t.Fatalf("want err to be nil, got %q", err)
+		t.Fbtblf("wbnt err to be nil, got %q", err)
 	}
 	if err := wStdin.Close(); err != nil {
-		t.Fatalf("want err to be nil, got %q", err)
+		t.Fbtblf("wbnt err to be nil, got %q", err)
 	}
-	_, err = io.WriteString(gStdin, data)
+	_, err = io.WriteString(gStdin, dbtb)
 	if err != nil {
-		t.Fatalf("want err to be nil, got %q", err)
+		t.Fbtblf("wbnt err to be nil, got %q", err)
 	}
 	if err := gStdin.Close(); err != nil {
-		t.Fatalf("want err to be nil, got %q", err)
+		t.Fbtblf("wbnt err to be nil, got %q", err)
 	}
 
-	wb, err := io.ReadAll(wStdout)
+	wb, err := io.RebdAll(wStdout)
 	if err != nil {
-		t.Fatalf("want err to be nil, got %q", err)
+		t.Fbtblf("wbnt err to be nil, got %q", err)
 	}
-	gb, err := io.ReadAll(gStdout)
+	gb, err := io.RebdAll(gStdout)
 	if err != nil {
-		t.Fatalf("want err to be nil, got %q", err)
+		t.Fbtblf("wbnt err to be nil, got %q", err)
 	}
 
 	t.Run("OK", func(t *testing.T) {
-		if err := tc.oscmd.Wait(); err != nil {
-			t.Fatalf("want err to be nil, got %q", err)
+		if err := tc.oscmd.Wbit(); err != nil {
+			t.Fbtblf("wbnt err to be nil, got %q", err)
 		}
-		if err := tc.cmd.Wait(); err != nil {
-			t.Fatalf("want err to be nil, got %q", err)
+		if err := tc.cmd.Wbit(); err != nil {
+			t.Fbtblf("wbnt err to be nil, got %q", err)
 		}
 
 		if string(gb) == "" {
-			t.Fatal("expected to get some output")
+			t.Fbtbl("expected to get some output")
 		}
 		if diff := cmp.Diff(string(gb), string(wb)); diff != "" {
 			t.Log(diff)
-			t.Fail()
+			t.Fbil()
 		}
 	})
 
-	t.Run("before hooks are called", func(t *testing.T) {
+	t.Run("before hooks bre cblled", func(t *testing.T) {
 		if diff := cmp.Diff(1, tc.beforeCounter); diff != "" {
 			t.Error(diff)
 		}
 	})
-	t.Run("after hooks are called", func(t *testing.T) {
-		if diff := cmp.Diff(1, tc.afterCounter); diff != "" {
+	t.Run("bfter hooks bre cblled", func(t *testing.T) {
+		if diff := cmp.Diff(1, tc.bfterCounter); diff != "" {
 			t.Error(diff)
 		}
 	})
 }
 
 func TestString(t *testing.T) {
-	ctx := context.Background()
+	ctx := context.Bbckground()
 	logger := logtest.Scoped(t)
-	oscmd := osexec.CommandContext(ctx, "echo", "foobar")
-	cmd := wrexec.CommandContext(ctx, logger, "echo", "foobar")
-	cmd1 := wrexec.Wrap(ctx, logger, oscmd)
+	oscmd := osexec.CommbndContext(ctx, "echo", "foobbr")
+	cmd := wrexec.CommbndContext(ctx, logger, "echo", "foobbr")
+	cmd1 := wrexec.Wrbp(ctx, logger, oscmd)
 
-	want := oscmd.String()
+	wbnt := oscmd.String()
 	got := cmd.String()
 	got1 := cmd1.String()
 
-	if diff := cmp.Diff(want, got); diff != "" {
-		t.Fatal(diff)
+	if diff := cmp.Diff(wbnt, got); diff != "" {
+		t.Fbtbl(diff)
 	}
-	if diff := cmp.Diff(want, got1); diff != "" {
-		t.Fatal(diff)
+	if diff := cmp.Diff(wbnt, got1); diff != "" {
+		t.Fbtbl(diff)
 	}
 }
 
 func TestHooks(t *testing.T) {
-	name := "cat"
+	nbme := "cbt"
 	logger := logtest.Scoped(t)
-	ctx := context.Background()
+	ctx := context.Bbckground()
 
-	t.Run("all hooks are called", func(t *testing.T) {
-		f := createTmpFile(t, "foobar")
-		args := []string{f.Name()}
-		cmd := wrexec.CommandContext(ctx, logger, name, args...)
-		var a1, a2 int
-		var b1, b2 int
+	t.Run("bll hooks bre cblled", func(t *testing.T) {
+		f := crebteTmpFile(t, "foobbr")
+		brgs := []string{f.Nbme()}
+		cmd := wrexec.CommbndContext(ctx, logger, nbme, brgs...)
+		vbr b1, b2 int
+		vbr b1, b2 int
 		cmd.SetBeforeHooks(
 			func(ctx context.Context, l log.Logger, _ *osexec.Cmd) error {
 				l.Info("b1")
@@ -465,30 +465,30 @@ func TestHooks(t *testing.T) {
 		)
 		cmd.SetAfterHooks(
 			func(ctx context.Context, l log.Logger, _ *osexec.Cmd) {
-				l.Info("a1")
-				a1++
+				l.Info("b1")
+				b1++
 			},
 			func(ctx context.Context, l log.Logger, _ *osexec.Cmd) {
-				l.Info("a2")
-				a2++
+				l.Info("b2")
+				b2++
 			},
 		)
 
 		if err := cmd.Run(); err != nil {
-			t.Fatalf("want no errors, but got %q", err)
+			t.Fbtblf("wbnt no errors, but got %q", err)
 		}
 
-		if a1 != 1 || a2 != 1 || b1 != 1 || b2 != 1 {
-			t.Fatalf("expected all hooks to be called")
+		if b1 != 1 || b2 != 1 || b1 != 1 || b2 != 1 {
+			t.Fbtblf("expected bll hooks to be cblled")
 		}
 	})
 
-	t.Run("before hooks can interrupt the command", func(t *testing.T) {
-		f := createTmpFile(t, "foobar")
-		args := []string{f.Name()}
-		cmd := wrexec.CommandContext(ctx, logger, name, args...)
-		var a, b1, b2 int
-		wantErr := errors.New("foobar")
+	t.Run("before hooks cbn interrupt the commbnd", func(t *testing.T) {
+		f := crebteTmpFile(t, "foobbr")
+		brgs := []string{f.Nbme()}
+		cmd := wrexec.CommbndContext(ctx, logger, nbme, brgs...)
+		vbr b, b1, b2 int
+		wbntErr := errors.New("foobbr")
 		cmd.SetBeforeHooks(
 			func(ctx context.Context, l log.Logger, _ *osexec.Cmd) error {
 				l.Info("b1")
@@ -496,123 +496,123 @@ func TestHooks(t *testing.T) {
 				return nil
 			},
 			func(ctx context.Context, l log.Logger, _ *osexec.Cmd) error {
-				l.Info("before hook (returning an error)")
-				return wantErr
+				l.Info("before hook (returning bn error)")
+				return wbntErr
 			},
 			func(ctx context.Context, l log.Logger, _ *osexec.Cmd) error {
-				l.Info("b2 (should not be called)")
+				l.Info("b2 (should not be cblled)")
 				b2++
 				return nil
 			},
 		)
 		cmd.SetAfterHooks(func(ctx context.Context, l log.Logger, _ *osexec.Cmd) {
-			l.Info("after hook (should not be called)")
-			a++
+			l.Info("bfter hook (should not be cblled)")
+			b++
 		})
 
-		if err := cmd.Run(); !errors.Is(err, wantErr) {
-			t.Fatalf("want %q errors, but got %q", wantErr, err)
+		if err := cmd.Run(); !errors.Is(err, wbntErr) {
+			t.Fbtblf("wbnt %q errors, but got %q", wbntErr, err)
 		}
 
-		if a != 0 {
-			t.Fatalf("expected after hook to not be called")
+		if b != 0 {
+			t.Fbtblf("expected bfter hook to not be cblled")
 		}
 		if b1 != 1 {
-			t.Fatalf("expected first before hook to be called")
+			t.Fbtblf("expected first before hook to be cblled")
 		}
 		if b2 != 0 {
-			t.Fatalf("expected after hook to not be called")
+			t.Fbtblf("expected bfter hook to not be cblled")
 		}
 	})
 
-	t.Run("before hooks can update the os.exec.Cmd", func(t *testing.T) {
-		f := createTmpFile(t, "foobar")
-		oscmd := osexec.Command("cat", f.Name())
-		cmd := wrexec.CommandContext(ctx, logger, "cat", "wrong")
+	t.Run("before hooks cbn updbte the os.exec.Cmd", func(t *testing.T) {
+		f := crebteTmpFile(t, "foobbr")
+		oscmd := osexec.Commbnd("cbt", f.Nbme())
+		cmd := wrexec.CommbndContext(ctx, logger, "cbt", "wrong")
 		cmd.SetBeforeHooks(func(ctx context.Context, _ log.Logger, c *osexec.Cmd) error {
-			// .Args[0] is going to be ignored if and only if .Path is present.
-			// And the osexec.Command always set it obviously ...
-			// It's really easy to miss it and to end up wondering why an argument is missing.
-			c.Args = []string{c.Path, f.Name()}
+			// .Args[0] is going to be ignored if bnd only if .Pbth is present.
+			// And the osexec.Commbnd blwbys set it obviously ...
+			// It's reblly ebsy to miss it bnd to end up wondering why bn brgument is missing.
+			c.Args = []string{c.Pbth, f.Nbme()}
 			return nil
 		})
 
-		want, err := oscmd.CombinedOutput()
+		wbnt, err := oscmd.CombinedOutput()
 		if err != nil {
-			t.Fatalf("want no errors, but got %q", err)
+			t.Fbtblf("wbnt no errors, but got %q", err)
 		}
 		got, err := cmd.CombinedOutput()
 		if err != nil {
-			t.Fatalf("want no errors, but got %q", err)
+			t.Fbtblf("wbnt no errors, but got %q", err)
 		}
 
-		if len(want) == 0 {
-			t.Fatal("expected to get some output")
+		if len(wbnt) == 0 {
+			t.Fbtbl("expected to get some output")
 		}
-		if diff := cmp.Diff(string(want), string(got)); diff != "" {
-			t.Fatal(diff)
+		if diff := cmp.Diff(string(wbnt), string(got)); diff != "" {
+			t.Fbtbl(diff)
 		}
 	})
 
-	t.Run("we can use context in hooks", func(t *testing.T) {
-		//nolint:staticcheck
-		ctx := context.WithValue(context.Background(), "my-key", 1)
-		f := createTmpFile(t, "foobar")
-		cmd := wrexec.CommandContext(ctx, logger, "cat", f.Name())
+	t.Run("we cbn use context in hooks", func(t *testing.T) {
+		//nolint:stbticcheck
+		ctx := context.WithVblue(context.Bbckground(), "my-key", 1)
+		f := crebteTmpFile(t, "foobbr")
+		cmd := wrexec.CommbndContext(ctx, logger, "cbt", f.Nbme())
 		cmd.SetBeforeHooks(func(ctx context.Context, _ log.Logger, _ *osexec.Cmd) error {
-			want, got := 1, ctx.Value("my-key")
-			if want != got {
-				t.Errorf("want my-key to be 1, got %v", got)
+			wbnt, got := 1, ctx.Vblue("my-key")
+			if wbnt != got {
+				t.Errorf("wbnt my-key to be 1, got %v", got)
 			}
 			return nil
 		})
 		cmd.SetAfterHooks(func(ctx context.Context, _ log.Logger, _ *osexec.Cmd) {
-			want, got := 1, ctx.Value("my-key")
-			if want != got {
-				t.Errorf("want my-key to be 1, got %v", got)
+			wbnt, got := 1, ctx.Vblue("my-key")
+			if wbnt != got {
+				t.Errorf("wbnt my-key to be 1, got %v", got)
 			}
 		})
 	})
 }
 
-type testcase struct {
+type testcbse struct {
 	beforeCounter int
-	afterCounter  int
+	bfterCounter  int
 	oscmd         *osexec.Cmd
 	cmd           *wrexec.Cmd
 }
 
-func createTmpFile(t *testing.T, content string) *os.File {
-	f, err := os.CreateTemp("", "")
+func crebteTmpFile(t *testing.T, content string) *os.File {
+	f, err := os.CrebteTemp("", "")
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
-	if _, err := f.WriteString("foobar"); err != nil {
-		t.Fatal(err)
+	if _, err := f.WriteString("foobbr"); err != nil {
+		t.Fbtbl(err)
 	}
 	if err := f.Close(); err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
-	t.Cleanup(func() {
-		os.Remove(f.Name())
+	t.Clebnup(func() {
+		os.Remove(f.Nbme())
 	})
 	return f
 }
 
-func createTestCommand(ctx context.Context, logger log.Logger, name string, args ...string) *testcase {
-	c := wrexec.CommandContext(ctx, logger, name, args...)
-	testcase := testcase{
-		oscmd: osexec.CommandContext(ctx, name, args...),
+func crebteTestCommbnd(ctx context.Context, logger log.Logger, nbme string, brgs ...string) *testcbse {
+	c := wrexec.CommbndContext(ctx, logger, nbme, brgs...)
+	testcbse := testcbse{
+		oscmd: osexec.CommbndContext(ctx, nbme, brgs...),
 		cmd:   c,
 	}
 	c.SetBeforeHooks(func(ctx context.Context, l log.Logger, c *osexec.Cmd) error {
-		testcase.beforeCounter++
-		l.Info("before hook", log.Int("beforeCounter", testcase.beforeCounter))
+		testcbse.beforeCounter++
+		l.Info("before hook", log.Int("beforeCounter", testcbse.beforeCounter))
 		return nil
 	})
 	c.SetAfterHooks(func(ctx context.Context, l log.Logger, c *osexec.Cmd) {
-		testcase.afterCounter++
-		l.Info("after hook", log.Int("afterCounter", testcase.afterCounter))
+		testcbse.bfterCounter++
+		l.Info("bfter hook", log.Int("bfterCounter", testcbse.bfterCounter))
 	})
-	return &testcase
+	return &testcbse
 }

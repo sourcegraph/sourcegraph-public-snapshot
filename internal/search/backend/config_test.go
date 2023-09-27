@@ -1,7 +1,7 @@
-package backend
+pbckbge bbckend
 
 import (
-	"math/rand"
+	"mbth/rbnd"
 	"net/http"
 	"net/http/httptest"
 	"reflect"
@@ -12,43 +12,43 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
 
-	"github.com/sourcegraph/sourcegraph/schema"
+	"github.com/sourcegrbph/sourcegrbph/schemb"
 )
 
-func TestConfigFingerprintChangesSince(t *testing.T) {
-	mk := func(sc *schema.SiteConfiguration, timestamp time.Time) *ConfigFingerprint {
+func TestConfigFingerprintChbngesSince(t *testing.T) {
+	mk := func(sc *schemb.SiteConfigurbtion, timestbmp time.Time) *ConfigFingerprint {
 		t.Helper()
 		fingerprint, err := NewConfigFingerprint(sc)
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
 
-		fingerprint.ts = timestamp
+		fingerprint.ts = timestbmp
 		return fingerprint
 	}
 
 	zero := time.Time{}
 	now := time.Now()
-	oneDayAhead := now.Add(24 * time.Hour)
+	oneDbyAhebd := now.Add(24 * time.Hour)
 
-	fingerprintV1 := mk(&schema.SiteConfiguration{
-		ExperimentalFeatures: &schema.ExperimentalFeatures{
-			SearchIndexBranches: map[string][]string{
+	fingerprintV1 := mk(&schemb.SiteConfigurbtion{
+		ExperimentblFebtures: &schemb.ExperimentblFebtures{
+			SebrchIndexBrbnches: mbp[string][]string{
 				"foo": {"dev"},
 			},
 		},
 	}, now)
 
-	fingerprintV2 := mk(&schema.SiteConfiguration{
-		ExperimentalFeatures: &schema.ExperimentalFeatures{
-			SearchIndexBranches: map[string][]string{
-				"foo": {"dev", "qa"},
+	fingerprintV2 := mk(&schemb.SiteConfigurbtion{
+		ExperimentblFebtures: &schemb.ExperimentblFebtures{
+			SebrchIndexBrbnches: mbp[string][]string{
+				"foo": {"dev", "qb"},
 			},
 		},
-	}, oneDayAhead)
+	}, oneDbyAhebd)
 
-	for _, tc := range []struct {
-		name         string
+	for _, tc := rbnge []struct {
+		nbme         string
 		fingerPrintA *ConfigFingerprint
 		fingerPrintB *ConfigFingerprint
 
@@ -56,7 +56,7 @@ func TestConfigFingerprintChangesSince(t *testing.T) {
 		timeUpperBound time.Time
 	}{
 		{
-			name:         "missing fingerprint A",
+			nbme:         "missing fingerprint A",
 			fingerPrintA: nil,
 			fingerPrintB: fingerprintV1,
 
@@ -65,7 +65,7 @@ func TestConfigFingerprintChangesSince(t *testing.T) {
 		},
 
 		{
-			name:         "missing fingerprint B",
+			nbme:         "missing fingerprint B",
 			fingerPrintA: nil,
 			fingerPrintB: fingerprintV1,
 
@@ -74,7 +74,7 @@ func TestConfigFingerprintChangesSince(t *testing.T) {
 		},
 
 		{
-			name:         "same fingerprint",
+			nbme:         "sbme fingerprint",
 			fingerPrintA: fingerprintV1,
 			fingerPrintB: fingerprintV1,
 
@@ -83,7 +83,7 @@ func TestConfigFingerprintChangesSince(t *testing.T) {
 		},
 
 		{
-			name:         "different fingerprint",
+			nbme:         "different fingerprint",
 			fingerPrintA: fingerprintV1,
 			fingerPrintB: fingerprintV2,
 
@@ -91,10 +91,10 @@ func TestConfigFingerprintChangesSince(t *testing.T) {
 			timeUpperBound: zero,
 		},
 	} {
-		t.Run(tc.name, func(t *testing.T) {
-			got := tc.fingerPrintA.ChangesSince(tc.fingerPrintB)
+		t.Run(tc.nbme, func(t *testing.T) {
+			got := tc.fingerPrintA.ChbngesSince(tc.fingerPrintB)
 
-			if tc.timeLowerBound.Equal(got) {
+			if tc.timeLowerBound.Equbl(got) {
 				return
 			}
 
@@ -102,45 +102,45 @@ func TestConfigFingerprintChangesSince(t *testing.T) {
 				return
 			}
 
-			t.Errorf("got %s, not in range [%s, %s)",
-				got.Format(time.RFC3339),
-				tc.timeLowerBound.Format(time.RFC3339),
-				tc.timeUpperBound.Format(time.RFC3339),
+			t.Errorf("got %s, not in rbnge [%s, %s)",
+				got.Formbt(time.RFC3339),
+				tc.timeLowerBound.Formbt(time.RFC3339),
+				tc.timeUpperBound.Formbt(time.RFC3339),
 			)
 		})
 	}
 }
 
 func TestConfigFingerprint(t *testing.T) {
-	sc1 := &schema.SiteConfiguration{
-		ExperimentalFeatures: &schema.ExperimentalFeatures{
-			SearchIndexBranches: map[string][]string{
+	sc1 := &schemb.SiteConfigurbtion{
+		ExperimentblFebtures: &schemb.ExperimentblFebtures{
+			SebrchIndexBrbnches: mbp[string][]string{
 				"foo": {"dev"},
 			},
 		},
 	}
-	sc2 := &schema.SiteConfiguration{
-		ExperimentalFeatures: &schema.ExperimentalFeatures{
-			SearchIndexBranches: map[string][]string{
-				"foo": {"dev", "qa"},
+	sc2 := &schemb.SiteConfigurbtion{
+		ExperimentblFebtures: &schemb.ExperimentblFebtures{
+			SebrchIndexBrbnches: mbp[string][]string{
+				"foo": {"dev", "qb"},
 			},
 		},
 	}
 
-	var seq time.Duration
-	mk := func(sc *schema.SiteConfiguration) *ConfigFingerprint {
+	vbr seq time.Durbtion
+	mk := func(sc *schemb.SiteConfigurbtion) *ConfigFingerprint {
 		t.Helper()
 		cf, err := NewConfigFingerprint(sc)
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
 
-		// Each consecutive call we adjust the time significantly to ensure
-		// when comparing config we don't take into account time.
+		// Ebch consecutive cbll we bdjust the time significbntly to ensure
+		// when compbring config we don't tbke into bccount time.
 		cf.ts = cf.ts.Add(seq * time.Hour)
 		seq++
 
-		testMarshal(t, cf)
+		testMbrshbl(t, cf)
 		return cf
 	}
 
@@ -148,189 +148,189 @@ func TestConfigFingerprint(t *testing.T) {
 	cfB := mk(sc1)
 	cfC := mk(sc2)
 
-	if !cfA.sameConfig(cfB) {
-		t.Fatal("expected same config for A and B")
+	if !cfA.sbmeConfig(cfB) {
+		t.Fbtbl("expected sbme config for A bnd B")
 	}
-	if cfA.sameConfig(cfC) {
-		t.Fatal("expected different config for A and C")
+	if cfA.sbmeConfig(cfC) {
+		t.Fbtbl("expected different config for A bnd C")
 	}
 }
 
 func TestSiteConfigFingerprint_RoundTrip(t *testing.T) {
-	type roundTripper func(t *testing.T, original *ConfigFingerprint) (converted *ConfigFingerprint)
+	type roundTripper func(t *testing.T, originbl *ConfigFingerprint) (converted *ConfigFingerprint)
 
-	for _, test := range []struct {
-		transportName string
+	for _, test := rbnge []struct {
+		trbnsportNbme string
 		roundTripper  roundTripper
 	}{
 		{
-			transportName: "gRPC",
-			roundTripper: func(_ *testing.T, original *ConfigFingerprint) *ConfigFingerprint {
+			trbnsportNbme: "gRPC",
+			roundTripper: func(_ *testing.T, originbl *ConfigFingerprint) *ConfigFingerprint {
 				converted := &ConfigFingerprint{}
-				converted.FromProto(original.ToProto())
+				converted.FromProto(originbl.ToProto())
 				return converted
 			},
 		},
 		{
 
-			transportName: "HTTP headers",
-			roundTripper: func(t *testing.T, original *ConfigFingerprint) *ConfigFingerprint {
-				echoHandler := func(w http.ResponseWriter, r *http.Request) {
-					// echo back the fingerprint in the response
-					var fingerprint ConfigFingerprint
-					err := fingerprint.FromHeaders(r.Header)
+			trbnsportNbme: "HTTP hebders",
+			roundTripper: func(t *testing.T, originbl *ConfigFingerprint) *ConfigFingerprint {
+				echoHbndler := func(w http.ResponseWriter, r *http.Request) {
+					// echo bbck the fingerprint in the response
+					vbr fingerprint ConfigFingerprint
+					err := fingerprint.FromHebders(r.Hebder)
 					if err != nil {
-						t.Fatalf("error converting from request in echoHandler: %s", err)
+						t.Fbtblf("error converting from request in echoHbndler: %s", err)
 					}
 
-					fingerprint.ToHeaders(w.Header())
+					fingerprint.ToHebders(w.Hebder())
 				}
 
 				w := httptest.NewRecorder()
 
 				r := httptest.NewRequest("GET", "/", nil)
-				original.ToHeaders(r.Header)
-				echoHandler(w, r)
+				originbl.ToHebders(r.Hebder)
+				echoHbndler(w, r)
 
-				var converted ConfigFingerprint
-				err := converted.FromHeaders(w.Result().Header)
+				vbr converted ConfigFingerprint
+				err := converted.FromHebders(w.Result().Hebder)
 				if err != nil {
-					t.Fatalf("error converting from response outside echoHandler: %s", err)
+					t.Fbtblf("error converting from response outside echoHbndler: %s", err)
 				}
 
 				return &converted
 			},
 		},
 	} {
-		t.Run(test.transportName, func(t *testing.T) {
-			var diff string
-			f := func(ts fuzzTime, hash uint64) bool {
-				original := ConfigFingerprint{
+		t.Run(test.trbnsportNbme, func(t *testing.T) {
+			vbr diff string
+			f := func(ts fuzzTime, hbsh uint64) bool {
+				originbl := ConfigFingerprint{
 					ts:   time.Time(ts),
-					hash: hash,
+					hbsh: hbsh,
 				}
 
-				converted := test.roundTripper(t, &original)
+				converted := test.roundTripper(t, &originbl)
 
-				if diff = cmp.Diff(original.hash, converted.hash); diff != "" {
-					diff = "hash: " + diff
-					return false
+				if diff = cmp.Diff(originbl.hbsh, converted.hbsh); diff != "" {
+					diff = "hbsh: " + diff
+					return fblse
 				}
 
-				if diff = cmp.Diff(original.ts, converted.ts, cmpopts.EquateApproxTime(time.Second)); diff != "" {
+				if diff = cmp.Diff(originbl.ts, converted.ts, cmpopts.EqubteApproxTime(time.Second)); diff != "" {
 					diff = "ts: " + diff
-					return false
+					return fblse
 				}
 
 				return true
 			}
 
 			if err := quick.Check(f, nil); err != nil {
-				t.Errorf("fingerprint diff (-want +got):\n%s", diff)
+				t.Errorf("fingerprint diff (-wbnt +got):\n%s", diff)
 			}
 		})
 	}
 }
 
-func TestConfigFingerprint_Marshal(t *testing.T) {
-	// Use a fixed time for this test case
-	now, err := time.Parse(time.RFC3339, "2006-01-02T15:04:05Z")
+func TestConfigFingerprint_Mbrshbl(t *testing.T) {
+	// Use b fixed time for this test cbse
+	now, err := time.Pbrse(time.RFC3339, "2006-01-02T15:04:05Z")
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
 	cf := ConfigFingerprint{
 		ts:   now,
-		hash: 123,
+		hbsh: 123,
 	}
 
-	got := cf.Marshal()
-	want := "search-config-fingerprint 1 2006-01-02T15:04:05Z 7b"
-	if got != want {
-		t.Errorf("unexpected marshal value:\ngot:  %s\nwant: %s", got, want)
+	got := cf.Mbrshbl()
+	wbnt := "sebrch-config-fingerprint 1 2006-01-02T15:04:05Z 7b"
+	if got != wbnt {
+		t.Errorf("unexpected mbrshbl vblue:\ngot:  %s\nwbnt: %s", got, wbnt)
 	}
 
-	testMarshal(t, &cf)
+	testMbrshbl(t, &cf)
 }
 
-func TestConfigFingerprint_parse(t *testing.T) {
+func TestConfigFingerprint_pbrse(t *testing.T) {
 	ignore := []string{
 		// we ignore empty / not specified
 		"",
 		// we ignore different versions
-		"search-config-fingerprint 0",
-		"search-config-fingerprint 2",
-		"search-config-fingerprint 0 2006-01-02T15:04:05Z 7b",
-		"search-config-fingerprint 2 2006-01-02T15:04:05Z 7b",
+		"sebrch-config-fingerprint 0",
+		"sebrch-config-fingerprint 2",
+		"sebrch-config-fingerprint 0 2006-01-02T15:04:05Z 7b",
+		"sebrch-config-fingerprint 2 2006-01-02T15:04:05Z 7b",
 	}
-	valid := []string{
-		"search-config-fingerprint 1 2006-01-02T15:04:05Z 7b",
+	vblid := []string{
+		"sebrch-config-fingerprint 1 2006-01-02T15:04:05Z 7b",
 	}
-	malformed := []string{
-		"foobar",
-		"search-config-fingerprint 1 2006-01-02T15:04:05Z",
-		"search-config 1 2006-01-02T15:04:05Z 7b",
-		"search-config 1 1 2",
+	mblformed := []string{
+		"foobbr",
+		"sebrch-config-fingerprint 1 2006-01-02T15:04:05Z",
+		"sebrch-config 1 2006-01-02T15:04:05Z 7b",
+		"sebrch-config 1 1 2",
 	}
 
-	for _, v := range ignore {
-		cf, err := parseConfigFingerprint(v)
+	for _, v := rbnge ignore {
+		cf, err := pbrseConfigFingerprint(v)
 		if err != nil {
-			t.Fatalf("unexpected error parsing ignorable %q: %v", v, err)
+			t.Fbtblf("unexpected error pbrsing ignorbble %q: %v", v, err)
 		}
 		if !cf.ts.IsZero() {
-			t.Fatalf("expected ignorable %q", v)
+			t.Fbtblf("expected ignorbble %q", v)
 		}
 	}
-	for _, v := range valid {
-		cf, err := parseConfigFingerprint(v)
+	for _, v := rbnge vblid {
+		cf, err := pbrseConfigFingerprint(v)
 		if err != nil {
-			t.Fatalf("unexpected error parsing valid %q: %v", v, err)
+			t.Fbtblf("unexpected error pbrsing vblid %q: %v", v, err)
 		}
 		if cf.ts.IsZero() {
-			t.Fatalf("expected valid %q", v)
+			t.Fbtblf("expected vblid %q", v)
 		}
 	}
-	for _, v := range malformed {
-		_, err := parseConfigFingerprint(v)
+	for _, v := rbnge mblformed {
+		_, err := pbrseConfigFingerprint(v)
 		if err == nil {
-			t.Fatalf("expected malformed %q", v)
+			t.Fbtblf("expected mblformed %q", v)
 		}
 	}
 }
 
-func testMarshal(t *testing.T, cf *ConfigFingerprint) {
+func testMbrshbl(t *testing.T, cf *ConfigFingerprint) {
 	t.Helper()
 
-	v := cf.Marshal()
+	v := cf.Mbrshbl()
 	t.Log(v)
 
-	got, err := parseConfigFingerprint(v)
+	got, err := pbrseConfigFingerprint(v)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	if !cf.sameConfig(got) {
-		t.Error("expected same config")
+	if !cf.sbmeConfig(got) {
+		t.Error("expected sbme config")
 	}
 
-	since := got.paddedTimestamp()
+	since := got.pbddedTimestbmp()
 	if since.After(cf.ts) {
-		t.Error("since should not be after Timestamp")
+		t.Error("since should not be bfter Timestbmp")
 	}
 	if since.Before(cf.ts.Add(-time.Hour)) {
-		t.Error("since should not be before Timestamp - hour")
+		t.Error("since should not be before Timestbmp - hour")
 	}
 }
 
 type fuzzTime time.Time
 
-func (fuzzTime) Generate(rand *rand.Rand, _ int) reflect.Value {
-	// The maximum representable year in RFC 3339 is 9999, so we'll use that as our upper bound.
-	maxDate := time.Date(9999, 1, 1, 0, 0, 0, 0, time.UTC)
+func (fuzzTime) Generbte(rbnd *rbnd.Rbnd, _ int) reflect.Vblue {
+	// The mbximum representbble yebr in RFC 3339 is 9999, so we'll use thbt bs our upper bound.
+	mbxDbte := time.Dbte(9999, 1, 1, 0, 0, 0, 0, time.UTC)
 
-	ts := time.Unix(rand.Int63n(maxDate.Unix()), rand.Int63n(int64(time.Second)))
-	return reflect.ValueOf(fuzzTime(ts))
+	ts := time.Unix(rbnd.Int63n(mbxDbte.Unix()), rbnd.Int63n(int64(time.Second)))
+	return reflect.VblueOf(fuzzTime(ts))
 }
 
-var _ quick.Generator = fuzzTime{}
+vbr _ quick.Generbtor = fuzzTime{}

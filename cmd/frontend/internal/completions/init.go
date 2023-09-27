@@ -1,49 +1,49 @@
-package completions
+pbckbge completions
 
 import (
 	"context"
 	"net/http"
 
-	"github.com/sourcegraph/log"
+	"github.com/sourcegrbph/log"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/enterprise"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/completions/resolvers"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel"
-	"github.com/sourcegraph/sourcegraph/internal/cody"
-	"github.com/sourcegraph/sourcegraph/internal/completions/httpapi"
-	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/enterprise"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/internbl/completions/resolvers"
+	"github.com/sourcegrbph/sourcegrbph/internbl/codeintel"
+	"github.com/sourcegrbph/sourcegrbph/internbl/cody"
+	"github.com/sourcegrbph/sourcegrbph/internbl/completions/httpbpi"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf/conftypes"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/observbtion"
 )
 
 func Init(
 	_ context.Context,
-	observationCtx *observation.Context,
-	db database.DB,
+	observbtionCtx *observbtion.Context,
+	db dbtbbbse.DB,
 	_ codeintel.Services,
-	_ conftypes.UnifiedWatchable,
+	_ conftypes.UnifiedWbtchbble,
 	enterpriseServices *enterprise.Services,
 ) error {
 	logger := log.Scoped("completions", "Cody completions")
 
-	enterpriseServices.NewChatCompletionsStreamHandler = func() http.Handler {
-		completionsHandler := httpapi.NewChatCompletionsStreamHandler(logger, db)
-		return requireVerifiedEmailMiddleware(db, observationCtx.Logger, completionsHandler)
+	enterpriseServices.NewChbtCompletionsStrebmHbndler = func() http.Hbndler {
+		completionsHbndler := httpbpi.NewChbtCompletionsStrebmHbndler(logger, db)
+		return requireVerifiedEmbilMiddlewbre(db, observbtionCtx.Logger, completionsHbndler)
 	}
-	enterpriseServices.NewCodeCompletionsHandler = func() http.Handler {
-		codeCompletionsHandler := httpapi.NewCodeCompletionsHandler(logger, db)
-		return requireVerifiedEmailMiddleware(db, observationCtx.Logger, codeCompletionsHandler)
+	enterpriseServices.NewCodeCompletionsHbndler = func() http.Hbndler {
+		codeCompletionsHbndler := httpbpi.NewCodeCompletionsHbndler(logger, db)
+		return requireVerifiedEmbilMiddlewbre(db, observbtionCtx.Logger, codeCompletionsHbndler)
 	}
-	enterpriseServices.CompletionsResolver = resolvers.NewCompletionsResolver(db, observationCtx.Logger)
+	enterpriseServices.CompletionsResolver = resolvers.NewCompletionsResolver(db, observbtionCtx.Logger)
 
 	return nil
 }
 
-func requireVerifiedEmailMiddleware(db database.DB, logger log.Logger, next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if err := cody.CheckVerifiedEmailRequirement(r.Context(), db, logger); err != nil {
-			// Report HTTP 403 Forbidden if user has no verified email address.
-			http.Error(w, err.Error(), http.StatusForbidden)
+func requireVerifiedEmbilMiddlewbre(db dbtbbbse.DB, logger log.Logger, next http.Hbndler) http.Hbndler {
+	return http.HbndlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if err := cody.CheckVerifiedEmbilRequirement(r.Context(), db, logger); err != nil {
+			// Report HTTP 403 Forbidden if user hbs no verified embil bddress.
+			http.Error(w, err.Error(), http.StbtusForbidden)
 			return
 		}
 

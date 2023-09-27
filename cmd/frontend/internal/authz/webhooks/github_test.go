@@ -1,4 +1,4 @@
-package webhooks
+pbckbge webhooks
 
 import (
 	"bytes"
@@ -12,96 +12,96 @@ import (
 	"time"
 
 	"github.com/google/go-github/v47/github"
-	"github.com/sourcegraph/log"
-	"github.com/sourcegraph/log/logtest"
+	"github.com/sourcegrbph/log"
+	"github.com/sourcegrbph/log/logtest"
 	"github.com/stretchr/testify/require"
 
-	fewebhooks "github.com/sourcegraph/sourcegraph/cmd/frontend/webhooks"
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/authz/permssync"
-	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
-	"github.com/sourcegraph/sourcegraph/internal/encryption/keyring"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc"
-	"github.com/sourcegraph/sourcegraph/internal/repos"
-	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
-	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/schema"
+	fewebhooks "github.com/sourcegrbph/sourcegrbph/cmd/frontend/webhooks"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi"
+	"github.com/sourcegrbph/sourcegrbph/internbl/buthz/permssync"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbtest"
+	"github.com/sourcegrbph/sourcegrbph/internbl/encryption/keyring"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc"
+	"github.com/sourcegrbph/sourcegrbph/internbl/repos"
+	"github.com/sourcegrbph/sourcegrbph/internbl/repoupdbter/protocol"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
+	"github.com/sourcegrbph/sourcegrbph/schemb"
 )
 
-func marshalJSON(t testing.TB, v any) string {
+func mbrshblJSON(t testing.TB, v bny) string {
 	t.Helper()
 
-	bs, err := json.Marshal(v)
+	bs, err := json.Mbrshbl(v)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
 	return string(bs)
 }
 
-func waitUntil(t *testing.T, condition chan bool) {
+func wbitUntil(t *testing.T, condition chbn bool) {
 	t.Helper()
 	select {
-	case ret := <-condition:
+	cbse ret := <-condition:
 		if !ret {
-			t.Fatal("Expected condition to be true")
+			t.Fbtbl("Expected condition to be true")
 		}
-	case <-time.After(3 * time.Second):
-		t.Fatal("Timed out while waiting for condition")
+	cbse <-time.After(3 * time.Second):
+		t.Fbtbl("Timed out while wbiting for condition")
 	}
 }
 
 func TestGitHubWebhooks(t *testing.T) {
-	TestSetGitHubHandlerSleepTime(t, 0)
+	TestSetGitHubHbndlerSleepTime(t, 0)
 
-	ctx := context.Background()
+	ctx := context.Bbckground()
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
-	whStore := db.Webhooks(keyring.Default().WebhookKey)
-	esStore := db.ExternalServices()
+	db := dbtbbbse.NewDB(logger, dbtest.NewDB(logger, t))
+	whStore := db.Webhooks(keyring.Defbult().WebhookKey)
+	esStore := db.ExternblServices()
 
-	u, err := db.Users().Create(context.Background(), database.NewUser{
-		Username:        "testuser",
-		EmailIsVerified: true,
+	u, err := db.Users().Crebte(context.Bbckground(), dbtbbbse.NewUser{
+		Usernbme:        "testuser",
+		EmbilIsVerified: true,
 	})
 	require.NoError(t, err)
 
-	accountID := int64(123)
-	err = db.UserExternalAccounts().Insert(ctx, u.ID, extsvc.AccountSpec{
+	bccountID := int64(123)
+	err = db.UserExternblAccounts().Insert(ctx, u.ID, extsvc.AccountSpec{
 		ServiceType: extsvc.TypeGitHub,
 		ServiceID:   "https://github.com/",
-		AccountID:   strconv.Itoa(int(accountID)),
-	}, extsvc.AccountData{})
+		AccountID:   strconv.Itob(int(bccountID)),
+	}, extsvc.AccountDbtb{})
 	require.NoError(t, err)
 
-	es := &types.ExternalService{
+	es := &types.ExternblService{
 		Kind:        extsvc.KindGitHub,
-		DisplayName: "GitHub",
-		Config: extsvc.NewUnencryptedConfig(marshalJSON(t, &schema.GitHubConnection{
-			Authorization: &schema.GitHubAuthorization{},
+		DisplbyNbme: "GitHub",
+		Config: extsvc.NewUnencryptedConfig(mbrshblJSON(t, &schemb.GitHubConnection{
+			Authorizbtion: &schemb.GitHubAuthorizbtion{},
 			Url:           "https://github.com/",
-			Token:         "fake",
-			Repos:         []string{"sourcegraph/sourcegraph"},
+			Token:         "fbke",
+			Repos:         []string{"sourcegrbph/sourcegrbph"},
 		})),
 	}
 
 	confGet := func() *conf.Unified { return &conf.Unified{} }
 
-	err = esStore.Create(ctx, confGet, es)
+	err = esStore.Crebte(ctx, confGet, es)
 	require.NoError(t, err)
 
 	repo := &types.Repo{
-		Name: "github.com/sourcegraph/sourcegraph",
-		ExternalRepo: api.ExternalRepoSpec{
+		Nbme: "github.com/sourcegrbph/sourcegrbph",
+		ExternblRepo: bpi.ExternblRepoSpec{
 			ServiceType: extsvc.TypeGitHub,
 			ServiceID:   "https://github.com/",
 		},
-		Metadata: map[string]any{"ID": "R_kgDOIOwtPQ"},
-		Sources: map[string]*types.SourceInfo{
+		Metbdbtb: mbp[string]bny{"ID": "R_kgDOIOwtPQ"},
+		Sources: mbp[string]*types.SourceInfo{
 			es.URN(): {
-				CloneURL: "https://github.com/sourcegraph/sourcegraph",
+				CloneURL: "https://github.com/sourcegrbph/sourcegrbph",
 			},
 		},
 	}
@@ -109,169 +109,169 @@ func TestGitHubWebhooks(t *testing.T) {
 	ghWebhook := NewGitHubWebhook(logger)
 
 	reposStore := repos.NewStore(logger, db)
-	reposStore.CreateExternalServiceRepo(ctx, es, repo)
+	reposStore.CrebteExternblServiceRepo(ctx, es, repo)
 
-	wh, err := whStore.Create(ctx, "test-webhook", extsvc.KindGitHub, "https://github.com", u.ID, nil)
+	wh, err := whStore.Crebte(ctx, "test-webhook", extsvc.KindGitHub, "https://github.com", u.ID, nil)
 	require.NoError(t, err)
 
 	hook := fewebhooks.GitHubWebhook{Router: &fewebhooks.Router{DB: db}}
 	ghWebhook.Register(hook.Router)
 
-	newReq := func(t *testing.T, eventType string, event any) *http.Request {
+	newReq := func(t *testing.T, eventType string, event bny) *http.Request {
 		t.Helper()
 
-		jsonPayload, err := json.Marshal(event)
+		jsonPbylobd, err := json.Mbrshbl(event)
 		require.NoError(t, err)
 
-		req, err := http.NewRequest("POST", fmt.Sprintf("/.api/webhooks/%v", wh.UUID), bytes.NewBuffer(jsonPayload))
+		req, err := http.NewRequest("POST", fmt.Sprintf("/.bpi/webhooks/%v", wh.UUID), bytes.NewBuffer(jsonPbylobd))
 		require.NoError(t, err)
-		req.Header.Add("X-Github-Event", eventType)
-		req.Header.Set("Content-Type", "application/json")
+		req.Hebder.Add("X-Github-Event", eventType)
+		req.Hebder.Set("Content-Type", "bpplicbtion/json")
 		return req
 	}
 
-	ghCloneURL := github.String("https://github.com/sourcegraph/sourcegraph.git")
+	ghCloneURL := github.String("https://github.com/sourcegrbph/sourcegrbph.git")
 
 	webhookTests := []struct {
-		name      string
+		nbme      string
 		eventType string
-		event     any
-		wantRepo  bool
-		wantUser  bool
+		event     bny
+		wbntRepo  bool
+		wbntUser  bool
 	}{
 		{
-			name:      "repository event",
+			nbme:      "repository event",
 			eventType: "repository",
 			event: github.RepositoryEvent{
-				Action: github.String("privatized"),
+				Action: github.String("privbtized"),
 				Repo: &github.Repository{
 					CloneURL: ghCloneURL,
 				},
 			},
-			wantRepo: true,
+			wbntRepo: true,
 		},
 		{
-			name:      "member event added",
+			nbme:      "member event bdded",
 			eventType: "member",
 			event: github.MemberEvent{
-				Action: github.String("added"),
+				Action: github.String("bdded"),
 				Member: &github.User{
-					ID: github.Int64(accountID),
+					ID: github.Int64(bccountID),
 				},
 				Repo: &github.Repository{
 					CloneURL: ghCloneURL,
 				},
 			},
-			wantUser: true,
+			wbntUser: true,
 		},
 		{
-			name:      "member event removed",
+			nbme:      "member event removed",
 			eventType: "member",
 			event: github.MemberEvent{
 				Action: github.String("removed"),
 				Member: &github.User{
-					ID: github.Int64(accountID),
+					ID: github.Int64(bccountID),
 				},
 				Repo: &github.Repository{
 					CloneURL: ghCloneURL,
 				},
 			},
-			wantUser: true,
+			wbntUser: true,
 		},
 		{
-			name:      "organization event member added",
-			eventType: "organization",
-			event: github.OrganizationEvent{
-				Action: github.String("member_added"),
+			nbme:      "orgbnizbtion event member bdded",
+			eventType: "orgbnizbtion",
+			event: github.OrgbnizbtionEvent{
+				Action: github.String("member_bdded"),
 				Membership: &github.Membership{
 					User: &github.User{
-						ID: github.Int64(accountID),
+						ID: github.Int64(bccountID),
 					},
 				},
 			},
-			wantUser: true,
+			wbntUser: true,
 		},
 		{
-			name:      "organization event member removed",
-			eventType: "organization",
-			event: github.OrganizationEvent{
+			nbme:      "orgbnizbtion event member removed",
+			eventType: "orgbnizbtion",
+			event: github.OrgbnizbtionEvent{
 				Action: github.String("member_removed"),
 				Membership: &github.Membership{
 					User: &github.User{
-						ID: github.Int64(accountID),
+						ID: github.Int64(bccountID),
 					},
 				},
 			},
-			wantUser: true,
+			wbntUser: true,
 		},
 		{
-			name:      "membership event added",
+			nbme:      "membership event bdded",
 			eventType: "membership",
 			event: github.MembershipEvent{
-				Action: github.String("added"),
+				Action: github.String("bdded"),
 				Member: &github.User{
-					ID: github.Int64(accountID),
+					ID: github.Int64(bccountID),
 				},
 			},
-			wantUser: true,
+			wbntUser: true,
 		},
 		{
-			name:      "membership event removed",
+			nbme:      "membership event removed",
 			eventType: "membership",
 			event: github.MembershipEvent{
 				Action: github.String("removed"),
 				Member: &github.User{
-					ID: github.Int64(accountID),
+					ID: github.Int64(bccountID),
 				},
 			},
-			wantUser: true,
+			wbntUser: true,
 		},
 		{
-			name:      "team event added to repository",
-			eventType: "team",
-			event: github.TeamEvent{
-				Action: github.String("added_to_repository"),
+			nbme:      "tebm event bdded to repository",
+			eventType: "tebm",
+			event: github.TebmEvent{
+				Action: github.String("bdded_to_repository"),
 				Repo: &github.Repository{
 					CloneURL: ghCloneURL,
 				},
 			},
-			wantRepo: true,
+			wbntRepo: true,
 		},
 		{
-			name:      "team event removed from repository",
-			eventType: "team",
-			event: github.TeamEvent{
+			nbme:      "tebm event removed from repository",
+			eventType: "tebm",
+			event: github.TebmEvent{
 				Action: github.String("removed_from_repository"),
 				Repo: &github.Repository{
 					CloneURL: ghCloneURL,
 				},
 			},
-			wantRepo: true,
+			wbntRepo: true,
 		},
 	}
 
-	for _, webhookTest := range webhookTests {
-		t.Run(webhookTest.name, func(t *testing.T) {
-			webhookCalled := make(chan bool)
-			// Need to have variables scoped here to avoid race condition
+	for _, webhookTest := rbnge webhookTests {
+		t.Run(webhookTest.nbme, func(t *testing.T) {
+			webhookCblled := mbke(chbn bool)
+			// Need to hbve vbribbles scoped here to bvoid rbce condition
 			// detection by test runner
-			wantRepo := webhookTest.wantRepo
-			wantUser := webhookTest.wantUser
-			permssync.MockSchedulePermsSync = func(_ context.Context, _ log.Logger, _ database.DB, req protocol.PermsSyncRequest) {
-				if wantRepo {
-					webhookCalled <- req.RepoIDs[0] == repo.ID
+			wbntRepo := webhookTest.wbntRepo
+			wbntUser := webhookTest.wbntUser
+			permssync.MockSchedulePermsSync = func(_ context.Context, _ log.Logger, _ dbtbbbse.DB, req protocol.PermsSyncRequest) {
+				if wbntRepo {
+					webhookCblled <- req.RepoIDs[0] == repo.ID
 				}
-				if wantUser {
-					webhookCalled <- req.UserIDs[0] == u.ID
+				if wbntUser {
+					webhookCblled <- req.UserIDs[0] == u.ID
 				}
 			}
-			t.Cleanup(func() { permssync.MockSchedulePermsSync = nil })
+			t.Clebnup(func() { permssync.MockSchedulePermsSync = nil })
 
 			req := newReq(t, webhookTest.eventType, webhookTest.event)
 
 			responseRecorder := httptest.NewRecorder()
 			hook.ServeHTTP(responseRecorder, req)
-			waitUntil(t, webhookCalled)
+			wbitUntil(t, webhookCblled)
 		})
 	}
 }

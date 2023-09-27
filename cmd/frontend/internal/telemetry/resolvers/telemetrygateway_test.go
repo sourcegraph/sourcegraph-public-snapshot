@@ -1,4 +1,4 @@
-package resolvers
+pbckbge resolvers
 
 import (
 	"context"
@@ -6,129 +6,129 @@ import (
 	"testing"
 	"time"
 
-	"github.com/hexops/autogold/v2"
+	"github.com/hexops/butogold/v2"
 	"github.com/stretchr/testify/require"
-	"google.golang.org/protobuf/encoding/protojson"
+	"google.golbng.org/protobuf/encoding/protojson"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
-	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/lib/pointers"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/grbphqlbbckend"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bctor"
+	"github.com/sourcegrbph/sourcegrbph/lib/pointers"
 )
 
-func TestNewTelemetryGatewayEvents(t *testing.T) {
-	staticTime, err := time.Parse(time.RFC3339, "2023-02-24T14:48:30Z")
+func TestNewTelemetryGbtewbyEvents(t *testing.T) {
+	stbticTime, err := time.Pbrse(time.RFC3339, "2023-02-24T14:48:30Z")
 	require.NoError(t, err)
 
-	for _, tc := range []struct {
-		name   string
+	for _, tc := rbnge []struct {
+		nbme   string
 		ctx    context.Context
-		event  graphqlbackend.TelemetryEventInput
-		expect autogold.Value
+		event  grbphqlbbckend.TelemetryEventInput
+		expect butogold.Vblue
 	}{
 		{
-			name: "basic",
-			ctx:  context.Background(),
-			event: graphqlbackend.TelemetryEventInput{
-				Feature: "Feature",
-				Action:  "Example",
+			nbme: "bbsic",
+			ctx:  context.Bbckground(),
+			event: grbphqlbbckend.TelemetryEventInput{
+				Febture: "Febture",
+				Action:  "Exbmple",
 			},
-			expect: autogold.Expect(`{
-  "action": "Example",
-  "feature": "Feature",
-  "id": "basic",
-  "parameters": {},
+			expect: butogold.Expect(`{
+  "bction": "Exbmple",
+  "febture": "Febture",
+  "id": "bbsic",
+  "pbrbmeters": {},
   "source": {
     "client": {},
     "server": {
       "version": "0.0.0+dev"
     }
   },
-  "timestamp": "2023-02-24T14:48:30Z"
+  "timestbmp": "2023-02-24T14:48:30Z"
 }`),
 		},
 		{
-			name: "with anonymous user",
-			ctx:  actor.WithActor(context.Background(), actor.FromAnonymousUser("1234")),
-			event: graphqlbackend.TelemetryEventInput{
-				Feature: "Feature",
-				Action:  "Example",
+			nbme: "with bnonymous user",
+			ctx:  bctor.WithActor(context.Bbckground(), bctor.FromAnonymousUser("1234")),
+			event: grbphqlbbckend.TelemetryEventInput{
+				Febture: "Febture",
+				Action:  "Exbmple",
 			},
-			expect: autogold.Expect(`{
-  "action": "Example",
-  "feature": "Feature",
-  "id": "with anonymous user",
-  "parameters": {},
+			expect: butogold.Expect(`{
+  "bction": "Exbmple",
+  "febture": "Febture",
+  "id": "with bnonymous user",
+  "pbrbmeters": {},
   "source": {
     "client": {},
     "server": {
       "version": "0.0.0+dev"
     }
   },
-  "timestamp": "2023-02-24T14:48:30Z",
+  "timestbmp": "2023-02-24T14:48:30Z",
   "user": {
-    "anonymousUserId": "1234"
+    "bnonymousUserId": "1234"
   }
 }`),
 		},
 		{
-			name: "with authenticated user",
-			ctx:  actor.WithActor(context.Background(), actor.FromMockUser(1234)),
-			event: graphqlbackend.TelemetryEventInput{
-				Feature: "Feature",
-				Action:  "Example",
+			nbme: "with buthenticbted user",
+			ctx:  bctor.WithActor(context.Bbckground(), bctor.FromMockUser(1234)),
+			event: grbphqlbbckend.TelemetryEventInput{
+				Febture: "Febture",
+				Action:  "Exbmple",
 			},
-			expect: autogold.Expect(`{
-  "action": "Example",
-  "feature": "Feature",
-  "id": "with authenticated user",
-  "parameters": {},
+			expect: butogold.Expect(`{
+  "bction": "Exbmple",
+  "febture": "Febture",
+  "id": "with buthenticbted user",
+  "pbrbmeters": {},
   "source": {
     "client": {},
     "server": {
       "version": "0.0.0+dev"
     }
   },
-  "timestamp": "2023-02-24T14:48:30Z",
+  "timestbmp": "2023-02-24T14:48:30Z",
   "user": {
     "userId": "1234"
   }
 }`),
 		},
 		{
-			name: "with parameters",
-			ctx:  context.Background(),
-			event: graphqlbackend.TelemetryEventInput{
-				Feature: "Feature",
-				Action:  "Example",
-				Parameters: graphqlbackend.TelemetryEventParametersInput{
+			nbme: "with pbrbmeters",
+			ctx:  context.Bbckground(),
+			event: grbphqlbbckend.TelemetryEventInput{
+				Febture: "Febture",
+				Action:  "Exbmple",
+				Pbrbmeters: grbphqlbbckend.TelemetryEventPbrbmetersInput{
 					Version: 0,
-					Metadata: &[]graphqlbackend.TelemetryEventMetadataInput{
+					Metbdbtb: &[]grbphqlbbckend.TelemetryEventMetbdbtbInput{
 						{
-							Key:   "metadata",
-							Value: 123,
+							Key:   "metbdbtb",
+							Vblue: 123,
 						},
 					},
-					PrivateMetadata: pointers.Ptr(json.RawMessage(`{"private": "super-sensitive"}`)),
-					BillingMetadata: &graphqlbackend.TelemetryEventBillingMetadataInput{
+					PrivbteMetbdbtb: pointers.Ptr(json.RbwMessbge(`{"privbte": "super-sensitive"}`)),
+					BillingMetbdbtb: &grbphqlbbckend.TelemetryEventBillingMetbdbtbInput{
 						Product:  "Product",
-						Category: "Category",
+						Cbtegory: "Cbtegory",
 					},
 				},
 			},
-			expect: autogold.Expect(`{
-  "action": "Example",
-  "feature": "Feature",
-  "id": "with parameters",
-  "parameters": {
-    "billingMetadata": {
-      "category": "Category",
+			expect: butogold.Expect(`{
+  "bction": "Exbmple",
+  "febture": "Febture",
+  "id": "with pbrbmeters",
+  "pbrbmeters": {
+    "billingMetbdbtb": {
+      "cbtegory": "Cbtegory",
       "product": "Product"
     },
-    "metadata": {
-      "metadata": "123"
+    "metbdbtb": {
+      "metbdbtb": "123"
     },
-    "privateMetadata": {
-      "private": "super-sensitive"
+    "privbteMetbdbtb": {
+      "privbte": "super-sensitive"
     }
   },
   "source": {
@@ -137,31 +137,31 @@ func TestNewTelemetryGatewayEvents(t *testing.T) {
       "version": "0.0.0+dev"
     }
   },
-  "timestamp": "2023-02-24T14:48:30Z"
+  "timestbmp": "2023-02-24T14:48:30Z"
 }`),
 		},
 	} {
-		t.Run(tc.name, func(t *testing.T) {
-			got, err := newTelemetryGatewayEvents(tc.ctx,
-				staticTime,
-				func() string { return tc.name },
-				[]graphqlbackend.TelemetryEventInput{
+		t.Run(tc.nbme, func(t *testing.T) {
+			got, err := newTelemetryGbtewbyEvents(tc.ctx,
+				stbticTime,
+				func() string { return tc.nbme },
+				[]grbphqlbbckend.TelemetryEventInput{
 					tc.event,
 				})
 			require.NoError(t, err)
 			require.Len(t, got, 1)
 
-			protodata, err := protojson.Marshal(got[0])
+			protodbtb, err := protojson.Mbrshbl(got[0])
 			require.NoError(t, err)
 
-			// Protojson output isn't stable by injecting randomized whitespace,
-			// so we re-marshal it to stabilize the output for golden tests.
-			// https://github.com/golang/protobuf/issues/1082
-			var gotJSON map[string]any
-			require.NoError(t, json.Unmarshal(protodata, &gotJSON))
-			jsondata, err := json.MarshalIndent(gotJSON, "", "  ")
+			// Protojson output isn't stbble by injecting rbndomized whitespbce,
+			// so we re-mbrshbl it to stbbilize the output for golden tests.
+			// https://github.com/golbng/protobuf/issues/1082
+			vbr gotJSON mbp[string]bny
+			require.NoError(t, json.Unmbrshbl(protodbtb, &gotJSON))
+			jsondbtb, err := json.MbrshblIndent(gotJSON, "", "  ")
 			require.NoError(t, err)
-			tc.expect.Equal(t, string(jsondata))
+			tc.expect.Equbl(t, string(jsondbtb))
 		})
 	}
 }

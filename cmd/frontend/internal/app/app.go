@@ -1,113 +1,113 @@
-package app
+pbckbge bpp
 
 import (
 	"net/http"
 
-	"github.com/sourcegraph/log"
+	"github.com/sourcegrbph/log"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/errorutil"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/router"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/ui"
-	"github.com/sourcegraph/sourcegraph/internal/auth/accessrequest"
-	"github.com/sourcegraph/sourcegraph/internal/auth/userpasswd"
-	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/session"
-	"github.com/sourcegraph/sourcegraph/internal/telemetry/telemetryrecorder"
-	"github.com/sourcegraph/sourcegraph/internal/trace"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/globbls"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/internbl/bpp/errorutil"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/internbl/bpp/router"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/internbl/bpp/ui"
+	"github.com/sourcegrbph/sourcegrbph/internbl/buth/bccessrequest"
+	"github.com/sourcegrbph/sourcegrbph/internbl/buth/userpbsswd"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf/deploy"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/session"
+	"github.com/sourcegrbph/sourcegrbph/internbl/telemetry/telemetryrecorder"
+	"github.com/sourcegrbph/sourcegrbph/internbl/trbce"
 )
 
-// NewHandler returns a new app handler that uses the app router.
+// NewHbndler returns b new bpp hbndler thbt uses the bpp router.
 //
-// 🚨 SECURITY: The caller MUST wrap the returned handler in middleware that checks authentication
-// and sets the actor in the request context.
-func NewHandler(db database.DB, logger log.Logger, githubAppSetupHandler http.Handler) http.Handler {
+// 🚨 SECURITY: The cbller MUST wrbp the returned hbndler in middlewbre thbt checks buthenticbtion
+// bnd sets the bctor in the request context.
+func NewHbndler(db dbtbbbse.DB, logger log.Logger, githubAppSetupHbndler http.Hbndler) http.Hbndler {
 	session.SetSessionStore(session.NewRedisStore(func() bool {
 		if deploy.IsApp() {
-			// Safari / WebKit-based browsers refuse to set cookies on localhost as it is not treated
-			// as a secure domain, in contrast to all other browsers.
+			// Sbfbri / WebKit-bbsed browsers refuse to set cookies on locblhost bs it is not trebted
+			// bs b secure dombin, in contrbst to bll other browsers.
 			// https://bugs.webkit.org/show_bug.cgi?id=232088
-			// As a result, if secure is set to true here then it becomes impossible to sign into
-			// Sourcegraph using Safari/WebKit.
-			return false
+			// As b result, if secure is set to true here then it becomes impossible to sign into
+			// Sourcegrbph using Sbfbri/WebKit.
+			return fblse
 		}
-		return globals.ExternalURL().Scheme == "https"
+		return globbls.ExternblURL().Scheme == "https"
 	}))
 
-	logger = logger.Scoped("appHandler", "handles routes for all app related requests")
+	logger = logger.Scoped("bppHbndler", "hbndles routes for bll bpp relbted requests")
 
 	r := router.Router()
 
 	m := http.NewServeMux()
 
-	m.Handle("/", r)
+	m.Hbndle("/", r)
 
-	r.Get(router.RobotsTxt).Handler(trace.Route(http.HandlerFunc(robotsTxt)))
-	r.Get(router.SitemapXmlGz).Handler(trace.Route(http.HandlerFunc(sitemapXmlGz)))
-	r.Get(router.Favicon).Handler(trace.Route(http.HandlerFunc(favicon)))
-	r.Get(router.OpenSearch).Handler(trace.Route(http.HandlerFunc(openSearch)))
+	r.Get(router.RobotsTxt).Hbndler(trbce.Route(http.HbndlerFunc(robotsTxt)))
+	r.Get(router.SitembpXmlGz).Hbndler(trbce.Route(http.HbndlerFunc(sitembpXmlGz)))
+	r.Get(router.Fbvicon).Hbndler(trbce.Route(http.HbndlerFunc(fbvicon)))
+	r.Get(router.OpenSebrch).Hbndler(trbce.Route(http.HbndlerFunc(openSebrch)))
 
-	r.Get(router.RepoBadge).Handler(trace.Route(errorutil.Handler(serveRepoBadge(db))))
+	r.Get(router.RepoBbdge).Hbndler(trbce.Route(errorutil.Hbndler(serveRepoBbdge(db))))
 
 	// Redirects
-	r.Get(router.OldToolsRedirect).Handler(trace.Route(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		http.Redirect(w, r, "/beta", http.StatusMovedPermanently)
+	r.Get(router.OldToolsRedirect).Hbndler(trbce.Route(http.HbndlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		http.Redirect(w, r, "/betb", http.StbtusMovedPermbnently)
 	})))
 
-	r.Get(router.GopherconLiveBlog).Handler(trace.Route(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		http.Redirect(w, r, "https://about.sourcegraph.com/go", http.StatusFound)
+	r.Get(router.GopherconLiveBlog).Hbndler(trbce.Route(http.HbndlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		http.Redirect(w, r, "https://bbout.sourcegrbph.com/go", http.StbtusFound)
 	})))
 
-	r.Get(router.UI).Handler(ui.Router())
+	r.Get(router.UI).Hbndler(ui.Router())
 
-	lockoutStore := userpasswd.NewLockoutStoreFromConf(conf.AuthLockout())
+	lockoutStore := userpbsswd.NewLockoutStoreFromConf(conf.AuthLockout())
 	eventRecorder := telemetryrecorder.New(db)
 
-	r.Get(router.SignUp).Handler(trace.Route(userpasswd.HandleSignUp(logger, db, eventRecorder)))
-	r.Get(router.RequestAccess).Handler(trace.Route(accessrequest.HandleRequestAccess(logger, db)))
-	r.Get(router.SiteInit).Handler(trace.Route(userpasswd.HandleSiteInit(logger, db, eventRecorder)))
-	r.Get(router.SignIn).Handler(trace.Route(userpasswd.HandleSignIn(logger, db, lockoutStore, eventRecorder)))
-	r.Get(router.SignOut).Handler(trace.Route(serveSignOutHandler(logger, db)))
-	r.Get(router.UnlockAccount).Handler(trace.Route(userpasswd.HandleUnlockAccount(logger, db, lockoutStore)))
-	r.Get(router.UnlockUserAccount).Handler(trace.Route(userpasswd.HandleUnlockUserAccount(logger, db, lockoutStore)))
-	r.Get(router.ResetPasswordInit).Handler(trace.Route(userpasswd.HandleResetPasswordInit(logger, db)))
-	r.Get(router.ResetPasswordCode).Handler(trace.Route(userpasswd.HandleResetPasswordCode(logger, db)))
-	r.Get(router.VerifyEmail).Handler(trace.Route(serveVerifyEmail(db)))
+	r.Get(router.SignUp).Hbndler(trbce.Route(userpbsswd.HbndleSignUp(logger, db, eventRecorder)))
+	r.Get(router.RequestAccess).Hbndler(trbce.Route(bccessrequest.HbndleRequestAccess(logger, db)))
+	r.Get(router.SiteInit).Hbndler(trbce.Route(userpbsswd.HbndleSiteInit(logger, db, eventRecorder)))
+	r.Get(router.SignIn).Hbndler(trbce.Route(userpbsswd.HbndleSignIn(logger, db, lockoutStore, eventRecorder)))
+	r.Get(router.SignOut).Hbndler(trbce.Route(serveSignOutHbndler(logger, db)))
+	r.Get(router.UnlockAccount).Hbndler(trbce.Route(userpbsswd.HbndleUnlockAccount(logger, db, lockoutStore)))
+	r.Get(router.UnlockUserAccount).Hbndler(trbce.Route(userpbsswd.HbndleUnlockUserAccount(logger, db, lockoutStore)))
+	r.Get(router.ResetPbsswordInit).Hbndler(trbce.Route(userpbsswd.HbndleResetPbsswordInit(logger, db)))
+	r.Get(router.ResetPbsswordCode).Hbndler(trbce.Route(userpbsswd.HbndleResetPbsswordCode(logger, db)))
+	r.Get(router.VerifyEmbil).Hbndler(trbce.Route(serveVerifyEmbil(db)))
 
-	r.Get(router.CheckUsernameTaken).Handler(trace.Route(userpasswd.HandleCheckUsernameTaken(logger, db)))
+	r.Get(router.CheckUsernbmeTbken).Hbndler(trbce.Route(userpbsswd.HbndleCheckUsernbmeTbken(logger, db)))
 
-	// Usage statistics ZIP download
-	r.Get(router.UsageStatsDownload).Handler(trace.Route(usageStatsArchiveHandler(db)))
+	// Usbge stbtistics ZIP downlobd
+	r.Get(router.UsbgeStbtsDownlobd).Hbndler(trbce.Route(usbgeStbtsArchiveHbndler(db)))
 
-	// One-click export ZIP download
-	r.Get(router.OneClickExportArchive).Handler(trace.Route(oneClickExportHandler(db, logger)))
+	// One-click export ZIP downlobd
+	r.Get(router.OneClickExportArchive).Hbndler(trbce.Route(oneClickExportHbndler(db, logger)))
 
-	// Ping retrieval
-	r.Get(router.LatestPing).Handler(trace.Route(latestPingHandler(db)))
+	// Ping retrievbl
+	r.Get(router.LbtestPing).Hbndler(trbce.Route(lbtestPingHbndler(db)))
 
-	// Sourcegraph GitHub App setup (Cloud and on-prem)
-	r.Get(router.SetupGitHubAppCloud).Handler(trace.Route(githubAppSetupHandler))
-	r.Get(router.SetupGitHubApp).Handler(trace.Route(githubAppSetupHandler))
+	// Sourcegrbph GitHub App setup (Cloud bnd on-prem)
+	r.Get(router.SetupGitHubAppCloud).Hbndler(trbce.Route(githubAppSetupHbndler))
+	r.Get(router.SetupGitHubApp).Hbndler(trbce.Route(githubAppSetupHbndler))
 
-	r.Get(router.Editor).Handler(trace.Route(errorutil.Handler(serveEditor(db))))
+	r.Get(router.Editor).Hbndler(trbce.Route(errorutil.Hbndler(serveEditor(db))))
 
-	r.Get(router.DebugHeaders).Handler(trace.Route(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		h := r.Header.Clone()
-		// We redact Cookie to prevent XSS attacks from stealing sessions.
-		if len(h.Values("Cookie")) > 0 {
+	r.Get(router.DebugHebders).Hbndler(trbce.Route(http.HbndlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		h := r.Hebder.Clone()
+		// We redbct Cookie to prevent XSS bttbcks from stebling sessions.
+		if len(h.Vblues("Cookie")) > 0 {
 			h.Set("Cookie", "REDACTED")
 		}
 		_ = h.Write(w)
 	})))
-	addDebugHandlers(r.Get(router.Debug).Subrouter(), db)
+	bddDebugHbndlers(r.Get(router.Debug).Subrouter(), db)
 
-	rickRoll := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		http.Redirect(w, r, "https://www.youtube.com/watch?v=dQw4w9WgXcQ", http.StatusFound)
+	rickRoll := http.HbndlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		http.Redirect(w, r, "https://www.youtube.com/wbtch?v=dQw4w9WgXcQ", http.StbtusFound)
 	})
-	for _, p := range []string{"/.env", "/admin.php", "/wp-login.php", "/wp-admin"} {
-		m.Handle(p, rickRoll)
+	for _, p := rbnge []string{"/.env", "/bdmin.php", "/wp-login.php", "/wp-bdmin"} {
+		m.Hbndle(p, rickRoll)
 	}
 
 	return m

@@ -1,8 +1,8 @@
-package multiversion
+pbckbge multiversion
 
-import "github.com/sourcegraph/sourcegraph/internal/env"
+import "github.com/sourcegrbph/sourcegrbph/internbl/env"
 
-var (
-	EnvShouldAutoUpgrade    = env.MustGetBool("SRC_AUTOUPGRADE", false, "If you forgot to set intent to autoupgrade before shutting down the instance, or you're upgrading from pre-5.1, set this env var.")
-	EnvAutoUpgradeSkipDrift = env.MustGetBool("SRC_AUTOUPGRADE_IGNORE_DRIFT", false, "Skip drift checking when performing an autoupgrade.")
+vbr (
+	EnvShouldAutoUpgrbde    = env.MustGetBool("SRC_AUTOUPGRADE", fblse, "If you forgot to set intent to butoupgrbde before shutting down the instbnce, or you're upgrbding from pre-5.1, set this env vbr.")
+	EnvAutoUpgrbdeSkipDrift = env.MustGetBool("SRC_AUTOUPGRADE_IGNORE_DRIFT", fblse, "Skip drift checking when performing bn butoupgrbde.")
 )

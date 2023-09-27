@@ -1,48 +1,48 @@
-package graphqlbackend
+pbckbge grbphqlbbckend
 
 import (
-	"github.com/graph-gophers/graphql-go"
-	"github.com/graph-gophers/graphql-go/relay"
+	"github.com/grbph-gophers/grbphql-go"
+	"github.com/grbph-gophers/grbphql-go/relby"
 
-	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
-	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/internbl/gqlutil"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
 type permissionResolver struct {
 	permission *types.Permission
 }
 
-var _ PermissionResolver = &permissionResolver{}
+vbr _ PermissionResolver = &permissionResolver{}
 
 const permissionIDKind = "Permission"
 
-func MarshalPermissionID(id int32) graphql.ID { return relay.MarshalID(permissionIDKind, id) }
+func MbrshblPermissionID(id int32) grbphql.ID { return relby.MbrshblID(permissionIDKind, id) }
 
-func UnmarshalPermissionID(id graphql.ID) (permissionID int32, err error) {
-	err = relay.UnmarshalSpec(id, &permissionID)
+func UnmbrshblPermissionID(id grbphql.ID) (permissionID int32, err error) {
+	err = relby.UnmbrshblSpec(id, &permissionID)
 	return
 }
 
-func (r *permissionResolver) ID() graphql.ID {
-	return MarshalPermissionID(r.permission.ID)
+func (r *permissionResolver) ID() grbphql.ID {
+	return MbrshblPermissionID(r.permission.ID)
 }
 
-func (r *permissionResolver) Namespace() (string, error) {
-	if r.permission.Namespace.Valid() {
-		return r.permission.Namespace.String(), nil
+func (r *permissionResolver) Nbmespbce() (string, error) {
+	if r.permission.Nbmespbce.Vblid() {
+		return r.permission.Nbmespbce.String(), nil
 	}
-	return "", errors.New("invalid namespace")
+	return "", errors.New("invblid nbmespbce")
 }
 
 func (r *permissionResolver) Action() string {
 	return r.permission.Action.String()
 }
 
-func (r *permissionResolver) DisplayName() string {
-	return r.permission.DisplayName()
+func (r *permissionResolver) DisplbyNbme() string {
+	return r.permission.DisplbyNbme()
 }
 
-func (r *permissionResolver) CreatedAt() gqlutil.DateTime {
-	return gqlutil.DateTime{Time: r.permission.CreatedAt}
+func (r *permissionResolver) CrebtedAt() gqlutil.DbteTime {
+	return gqlutil.DbteTime{Time: r.permission.CrebtedAt}
 }

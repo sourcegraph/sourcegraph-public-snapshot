@@ -1,4 +1,4 @@
-package usagestats
+pbckbge usbgestbts
 
 import (
 	"context"
@@ -7,74 +7,74 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 
-	"github.com/sourcegraph/log/logtest"
+	"github.com/sourcegrbph/log/logtest"
 
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
-	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbtest"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
 )
 
-func TestExtensionsUsageStatistics(t *testing.T) {
-	ctx := context.Background()
+func TestExtensionsUsbgeStbtistics(t *testing.T) {
+	ctx := context.Bbckground()
 
 	defer func() {
 		timeNow = time.Now
 	}()
 
-	weekStart := time.Date(2021, 1, 25, 0, 0, 0, 0, time.UTC)
-	now := time.Date(2021, 1, 28, 0, 0, 0, 0, time.UTC)
+	weekStbrt := time.Dbte(2021, 1, 25, 0, 0, 0, 0, time.UTC)
+	now := time.Dbte(2021, 1, 28, 0, 0, 0, 0, time.UTC)
 	mockTimeNow(now)
 
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := dbtbbbse.NewDB(logger, dbtest.NewDB(logger, t))
 
-	_, err := db.ExecContext(context.Background(), `
+	_, err := db.ExecContext(context.Bbckground(), `
 		INSERT INTO event_logs
-			(id, name, argument, url, user_id, anonymous_user_id, source, version, timestamp)
+			(id, nbme, brgument, url, user_id, bnonymous_user_id, source, version, timestbmp)
 		VALUES
-			(1, 'ExtensionActivation', '{"extension_id": "sourcegraph/codecov"}', 'https://sourcegraph.test:3443/search', 1, '420657f0-d443-4d16-ac7d-003d8cdc91ef', 'WEB', '3.23.0', $1::timestamp - interval '1 day'),
-			(2, 'ExtensionActivation', '{"extension_id": "sourcegraph/link-preview-expander"}', 'https://sourcegraph.test:3443/search', 1, '420657f0-d443-4d16-ac7d-003d8cdc91ef', 'WEB', '3.23.0', $1::timestamp - interval '1 day'),
-			(3, 'ExtensionActivation', '{"extension_id": "sourcegraph/link-preview-expander"}', 'https://sourcegraph.test:3443/search', 2, '420657f0-d443-4d16-ac7d-003d8cdc19ac', 'WEB', '3.23.0', $1::timestamp - interval '1 day'),
-			(4, 'ExtensionActivation', '{"extension_id": "sourcegraph/link-preview-expander"}', 'https://sourcegraph.test:3443/search', 2, '420657f0-d443-4d16-ac7d-003d8cdc19ac', 'WEB', '3.23.0', $1::timestamp - interval '1 day'),
-			(5, 'ExtensionActivation', '{"extension_id": "sourcegraph/link-preview-expander"}', 'https://sourcegraph.test:3443/search', 2, '420657f0-d443-4d16-ac7d-003d8cdc19ac', 'WEB', '3.23.0', $1::timestamp - interval '8 days')
+			(1, 'ExtensionActivbtion', '{"extension_id": "sourcegrbph/codecov"}', 'https://sourcegrbph.test:3443/sebrch', 1, '420657f0-d443-4d16-bc7d-003d8cdc91ef', 'WEB', '3.23.0', $1::timestbmp - intervbl '1 dby'),
+			(2, 'ExtensionActivbtion', '{"extension_id": "sourcegrbph/link-preview-expbnder"}', 'https://sourcegrbph.test:3443/sebrch', 1, '420657f0-d443-4d16-bc7d-003d8cdc91ef', 'WEB', '3.23.0', $1::timestbmp - intervbl '1 dby'),
+			(3, 'ExtensionActivbtion', '{"extension_id": "sourcegrbph/link-preview-expbnder"}', 'https://sourcegrbph.test:3443/sebrch', 2, '420657f0-d443-4d16-bc7d-003d8cdc19bc', 'WEB', '3.23.0', $1::timestbmp - intervbl '1 dby'),
+			(4, 'ExtensionActivbtion', '{"extension_id": "sourcegrbph/link-preview-expbnder"}', 'https://sourcegrbph.test:3443/sebrch', 2, '420657f0-d443-4d16-bc7d-003d8cdc19bc', 'WEB', '3.23.0', $1::timestbmp - intervbl '1 dby'),
+			(5, 'ExtensionActivbtion', '{"extension_id": "sourcegrbph/link-preview-expbnder"}', 'https://sourcegrbph.test:3443/sebrch', 2, '420657f0-d443-4d16-bc7d-003d8cdc19bc', 'WEB', '3.23.0', $1::timestbmp - intervbl '8 dbys')
 	`, now)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	have, err := GetExtensionsUsageStatistics(ctx, db)
+	hbve, err := GetExtensionsUsbgeStbtistics(ctx, db)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	oneFloat := float64(1)
-	oneAndAHalfFloat := 1.5
+	oneFlobt := flobt64(1)
+	oneAndAHblfFlobt := 1.5
 	oneInt := int32(1)
 	twoInt := int32(2)
 
-	codecovID := "sourcegraph/codecov"
-	lpeID := "sourcegraph/link-preview-expander"
+	codecovID := "sourcegrbph/codecov"
+	lpeID := "sourcegrbph/link-preview-expbnder"
 
-	usageStatisticsByExtension := []*types.ExtensionUsageStatistics{
+	usbgeStbtisticsByExtension := []*types.ExtensionUsbgeStbtistics{
 		{
 			UserCount:          &oneInt,
-			AverageActivations: &oneFloat,
+			AverbgeActivbtions: &oneFlobt,
 			ExtensionID:        &codecovID,
 		},
 		{
 			UserCount:          &twoInt,
-			AverageActivations: &oneAndAHalfFloat,
+			AverbgeActivbtions: &oneAndAHblfFlobt,
 			ExtensionID:        &lpeID,
 		},
 	}
 
-	want := &types.ExtensionsUsageStatistics{
-		WeekStart:                   weekStart,
-		UsageStatisticsByExtension:  usageStatisticsByExtension,
-		AverageNonDefaultExtensions: &oneAndAHalfFloat,
-		NonDefaultExtensionUsers:    &twoInt,
+	wbnt := &types.ExtensionsUsbgeStbtistics{
+		WeekStbrt:                   weekStbrt,
+		UsbgeStbtisticsByExtension:  usbgeStbtisticsByExtension,
+		AverbgeNonDefbultExtensions: &oneAndAHblfFlobt,
+		NonDefbultExtensionUsers:    &twoInt,
 	}
-	if diff := cmp.Diff(want, have); diff != "" {
-		t.Fatal(diff)
+	if diff := cmp.Diff(wbnt, hbve); diff != "" {
+		t.Fbtbl(diff)
 	}
 }

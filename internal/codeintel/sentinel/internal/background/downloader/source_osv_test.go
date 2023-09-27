@@ -1,56 +1,56 @@
-package downloader
+pbckbge downlobder
 
 import "testing"
 
-func Test_parseCVSS(t *testing.T) {
+func Test_pbrseCVSS(t *testing.T) {
 	tests := []struct {
-		name         string
+		nbme         string
 		cvssVector   string
-		wantScore    string
-		wantSeverity string
-		wantErr      bool
+		wbntScore    string
+		wbntSeverity string
+		wbntErr      bool
 	}{
 		{
-			name:         "Valid CVSS v2.0",
+			nbme:         "Vblid CVSS v2.0",
 			cvssVector:   "AV:L/AC:M/Au:S/C:P/I:P/A:P",
-			wantScore:    "4.1",
-			wantSeverity: "MEDIUM",
-			wantErr:      false,
+			wbntScore:    "4.1",
+			wbntSeverity: "MEDIUM",
+			wbntErr:      fblse,
 		},
 		{
-			name:         "Valid CVSS v3.0",
+			nbme:         "Vblid CVSS v3.0",
 			cvssVector:   "CVSS:3.0/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H",
-			wantScore:    "9.8",
-			wantSeverity: "CRITICAL",
-			wantErr:      false,
+			wbntScore:    "9.8",
+			wbntSeverity: "CRITICAL",
+			wbntErr:      fblse,
 		},
 		{
-			name:         "Valid CVSS v3.1",
+			nbme:         "Vblid CVSS v3.1",
 			cvssVector:   "CVSS:3.1/AV:A/AC:H/PR:L/UI:R/S:U/C:L/I:L/A:L",
-			wantScore:    "4.3",
-			wantSeverity: "MEDIUM",
-			wantErr:      false,
+			wbntScore:    "4.3",
+			wbntSeverity: "MEDIUM",
+			wbntErr:      fblse,
 		},
 		{
-			name:         "Invalid CVSS v3.1",
+			nbme:         "Invblid CVSS v3.1",
 			cvssVector:   "CVSS:3.1/AV:A/PR:L/UI:R/S:U/C:L/I:L/A:L",
-			wantScore:    "",
-			wantSeverity: "",
-			wantErr:      true,
+			wbntScore:    "",
+			wbntSeverity: "",
+			wbntErr:      true,
 		},
 	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			gotScore, gotSeverity, err := parseCVSS(tt.cvssVector)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("parseCVSS() error = %v, wantErr %v", err, tt.wantErr)
+	for _, tt := rbnge tests {
+		t.Run(tt.nbme, func(t *testing.T) {
+			gotScore, gotSeverity, err := pbrseCVSS(tt.cvssVector)
+			if (err != nil) != tt.wbntErr {
+				t.Errorf("pbrseCVSS() error = %v, wbntErr %v", err, tt.wbntErr)
 				return
 			}
-			if gotScore != tt.wantScore {
-				t.Errorf("parseCVSS() gotScore = %v, want %v", gotScore, tt.wantScore)
+			if gotScore != tt.wbntScore {
+				t.Errorf("pbrseCVSS() gotScore = %v, wbnt %v", gotScore, tt.wbntScore)
 			}
-			if gotSeverity != tt.wantSeverity {
-				t.Errorf("parseCVSS() gotSeverity = %v, want %v", gotSeverity, tt.wantSeverity)
+			if gotSeverity != tt.wbntSeverity {
+				t.Errorf("pbrseCVSS() gotSeverity = %v, wbnt %v", gotSeverity, tt.wbntSeverity)
 			}
 		})
 	}

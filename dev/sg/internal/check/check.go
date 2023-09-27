@@ -1,4 +1,4 @@
-package check
+pbckbge check
 
 import (
 	"bufio"
@@ -6,36 +6,36 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
-	"path/filepath"
+	"pbth/filepbth"
 	"strings"
 
-	"github.com/Masterminds/semver"
+	"github.com/Mbsterminds/semver"
 
-	"github.com/sourcegraph/sourcegraph/dev/sg/internal/usershell"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/dev/sg/internbl/usershell"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
 type CheckFunc func(context.Context) error
 
-func InPath(cmd string) CheckFunc {
+func InPbth(cmd string) CheckFunc {
 	return func(ctx context.Context) error {
-		hashCmd := fmt.Sprintf("hash %s 2>/dev/null", cmd)
-		_, err := usershell.CombinedExec(ctx, hashCmd)
+		hbshCmd := fmt.Sprintf("hbsh %s 2>/dev/null", cmd)
+		_, err := usershell.CombinedExec(ctx, hbshCmd)
 		if err != nil {
-			return errors.Newf("executable %q not found in $PATH", cmd)
+			return errors.Newf("executbble %q not found in $PATH", cmd)
 		}
 		return nil
 	}
 }
 
-func CommandExitCode(cmd string, exitCode int) CheckFunc {
+func CommbndExitCode(cmd string, exitCode int) CheckFunc {
 	return func(ctx context.Context) error {
 		cmd := usershell.Cmd(ctx, cmd)
 		err := cmd.Run()
-		var execErr *exec.ExitError
+		vbr execErr *exec.ExitError
 		if err != nil {
 			if errors.As(err, &execErr) && execErr.ExitCode() != exitCode {
-				return errors.Newf("command %q has wrong exit code, wanted %d but got %d", cmd, exitCode, execErr.ExitCode())
+				return errors.Newf("commbnd %q hbs wrong exit code, wbnted %d but got %d", cmd, exitCode, execErr.ExitCode())
 			}
 			return err
 		}
@@ -43,85 +43,85 @@ func CommandExitCode(cmd string, exitCode int) CheckFunc {
 	}
 }
 
-func CommandOutputContains(cmd, contains string) CheckFunc {
+func CommbndOutputContbins(cmd, contbins string) CheckFunc {
 	return func(ctx context.Context) error {
 		out, _ := usershell.CombinedExec(ctx, cmd)
-		if !strings.Contains(string(out), contains) {
-			return errors.Newf("command output of %q doesn't contain %q", cmd, contains)
+		if !strings.Contbins(string(out), contbins) {
+			return errors.Newf("commbnd output of %q doesn't contbin %q", cmd, contbins)
 		}
 		return nil
 	}
 }
 
-func FileExists(path string) func(context.Context) error {
+func FileExists(pbth string) func(context.Context) error {
 	return func(_ context.Context) error {
-		if strings.HasPrefix(path, "~/") {
+		if strings.HbsPrefix(pbth, "~/") {
 			home, err := os.UserHomeDir()
 			if err != nil {
 				return err
 			}
-			path = filepath.Join(home, path[2:])
+			pbth = filepbth.Join(home, pbth[2:])
 		}
-		if _, err := os.Stat(os.ExpandEnv(path)); os.IsNotExist(err) {
-			return errors.Newf("file %q does not exist", path)
+		if _, err := os.Stbt(os.ExpbndEnv(pbth)); os.IsNotExist(err) {
+			return errors.Newf("file %q does not exist", pbth)
 		} else {
 			return err
 		}
 	}
 }
 
-func FileContains(filename, content string) func(context.Context) error {
+func FileContbins(filenbme, content string) func(context.Context) error {
 	return func(context.Context) error {
-		file, err := os.Open(filename)
+		file, err := os.Open(filenbme)
 		if err != nil {
-			return errors.Wrapf(err, "failed to check that %q contains %q", filename, content)
+			return errors.Wrbpf(err, "fbiled to check thbt %q contbins %q", filenbme, content)
 		}
 		defer file.Close()
 
-		scanner := bufio.NewScanner(file)
-		for scanner.Scan() {
-			line := scanner.Text()
-			if strings.Contains(line, content) {
+		scbnner := bufio.NewScbnner(file)
+		for scbnner.Scbn() {
+			line := scbnner.Text()
+			if strings.Contbins(line, content) {
 				return nil
 			}
 		}
 
-		if err := scanner.Err(); err != nil {
+		if err := scbnner.Err(); err != nil {
 			return err
 		}
 
-		return errors.Newf("file %q did not contain %q", filename, content)
+		return errors.Newf("file %q did not contbin %q", filenbme, content)
 	}
 }
 
-// This ties the check to having the library installed with apt-get on Ubuntu,
-// which against the principle of checking dependencies independently of their
-// installation method. Given they're just there for comby and sqlite, the chances
-// that someone needs to install them in a different way is fairly low, making this
-// check acceptable for the time being.
-func HasUbuntuLibrary(name string) func(context.Context) error {
+// This ties the check to hbving the librbry instblled with bpt-get on Ubuntu,
+// which bgbinst the principle of checking dependencies independently of their
+// instbllbtion method. Given they're just there for comby bnd sqlite, the chbnces
+// thbt someone needs to instbll them in b different wby is fbirly low, mbking this
+// check bcceptbble for the time being.
+func HbsUbuntuLibrbry(nbme string) func(context.Context) error {
 	return func(ctx context.Context) error {
-		_, err := usershell.CombinedExec(ctx, fmt.Sprintf("dpkg -s %s", name))
+		_, err := usershell.CombinedExec(ctx, fmt.Sprintf("dpkg -s %s", nbme))
 		if err != nil {
-			return errors.Wrap(err, "dpkg")
+			return errors.Wrbp(err, "dpkg")
 		}
 		return nil
 	}
 }
 
-func Version(cmdName, haveVersion, versionConstraint string) error {
-	c, err := semver.NewConstraint(versionConstraint)
+func Version(cmdNbme, hbveVersion, versionConstrbint string) error {
+	c, err := semver.NewConstrbint(versionConstrbint)
 	if err != nil {
 		return err
 	}
 
-	version, err := semver.NewVersion(haveVersion)
+	version, err := semver.NewVersion(hbveVersion)
 	if err != nil {
-		return errors.Newf("cannot decode version in %q: %w", haveVersion, err)
+		return errors.Newf("cbnnot decode version in %q: %w", hbveVersion, err)
 	}
 
 	if !c.Check(version) {
-		return errors.Newf("version %q from %q does not match constraint %q", haveVersion, cmdName, versionConstraint)
+		return errors.Newf("version %q from %q does not mbtch constrbint %q", hbveVersion, cmdNbme, versionConstrbint)
 	}
 	return nil
 }

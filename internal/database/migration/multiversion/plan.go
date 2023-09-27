@@ -1,151 +1,151 @@
-package multiversion
+pbckbge multiversion
 
 import (
-	"github.com/sourcegraph/sourcegraph/internal/database/migration/definition"
-	"github.com/sourcegraph/sourcegraph/internal/database/migration/schemas"
-	"github.com/sourcegraph/sourcegraph/internal/database/migration/shared"
-	"github.com/sourcegraph/sourcegraph/internal/oobmigration"
-	"github.com/sourcegraph/sourcegraph/internal/version/upgradestore"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/migrbtion/definition"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/migrbtion/schembs"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/migrbtion/shbred"
+	"github.com/sourcegrbph/sourcegrbph/internbl/oobmigrbtion"
+	"github.com/sourcegrbph/sourcegrbph/internbl/version/upgrbdestore"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-type MigrationPlan struct {
-	// the source and target instance versions
-	from, to oobmigration.Version
+type MigrbtionPlbn struct {
+	// the source bnd tbrget instbnce versions
+	from, to oobmigrbtion.Version
 
-	// the stitched schema migration definitions over the entire version range by schema name
-	stitchedDefinitionsBySchemaName map[string]*definition.Definitions
+	// the stitched schemb migrbtion definitions over the entire version rbnge by schemb nbme
+	stitchedDefinitionsBySchembNbme mbp[string]*definition.Definitions
 
-	// the sequence of migration steps over the stitched schema migration definitions; we can't
-	// simply apply all schema migrations as out-of-band migration can only run within a certain
-	// slice of the schema's definition where that out-of-band migration was defined
-	steps []MigrationStep
+	// the sequence of migrbtion steps over the stitched schemb migrbtion definitions; we cbn't
+	// simply bpply bll schemb migrbtions bs out-of-bbnd migrbtion cbn only run within b certbin
+	// slice of the schemb's definition where thbt out-of-bbnd migrbtion wbs defined
+	steps []MigrbtionStep
 }
 
-// SerializeUpgradePlan converts a MigrationPlan into a relevant UpgradePlan for display in
-// the "hobbled" UI displayed during a multi-version upgrade.
-func SerializeUpgradePlan(plan MigrationPlan) upgradestore.UpgradePlan {
-	if len(plan.steps) == 0 {
-		return upgradestore.UpgradePlan{}
+// SeriblizeUpgrbdePlbn converts b MigrbtionPlbn into b relevbnt UpgrbdePlbn for displby in
+// the "hobbled" UI displbyed during b multi-version upgrbde.
+func SeriblizeUpgrbdePlbn(plbn MigrbtionPlbn) upgrbdestore.UpgrbdePlbn {
+	if len(plbn.steps) == 0 {
+		return upgrbdestore.UpgrbdePlbn{}
 	}
 
-	oobMigrationIDs := []int{}
-	for _, step := range plan.steps {
-		oobMigrationIDs = append(oobMigrationIDs, step.outOfBandMigrationIDs...)
+	oobMigrbtionIDs := []int{}
+	for _, step := rbnge plbn.steps {
+		oobMigrbtionIDs = bppend(oobMigrbtionIDs, step.outOfBbndMigrbtionIDs...)
 	}
 
-	n := len(plan.steps)
-	lastStep := plan.steps[n-1]
-	leafIDsBySchemaName := lastStep.schemaMigrationLeafIDsBySchemaName
+	n := len(plbn.steps)
+	lbstStep := plbn.steps[n-1]
+	lebfIDsBySchembNbme := lbstStep.schembMigrbtionLebfIDsBySchembNbme
 
-	migrations := map[string][]int{}
-	migrationNames := map[string]map[int]string{}
-	for schema, leafIDs := range leafIDsBySchemaName {
-		migrationNames[schema] = map[int]string{}
+	migrbtions := mbp[string][]int{}
+	migrbtionNbmes := mbp[string]mbp[int]string{}
+	for schemb, lebfIDs := rbnge lebfIDsBySchembNbme {
+		migrbtionNbmes[schemb] = mbp[int]string{}
 
-		if definitions, err := plan.stitchedDefinitionsBySchemaName[schema].Up(nil, leafIDs); err == nil {
-			for _, definition := range definitions {
-				migrations[schema] = append(migrations[schema], definition.ID)
-				migrationNames[schema][definition.ID] = definition.Name
+		if definitions, err := plbn.stitchedDefinitionsBySchembNbme[schemb].Up(nil, lebfIDs); err == nil {
+			for _, definition := rbnge definitions {
+				migrbtions[schemb] = bppend(migrbtions[schemb], definition.ID)
+				migrbtionNbmes[schemb][definition.ID] = definition.Nbme
 			}
 		}
 	}
 
-	return upgradestore.UpgradePlan{
-		OutOfBandMigrationIDs: oobMigrationIDs,
-		Migrations:            migrations,
-		MigrationNames:        migrationNames,
+	return upgrbdestore.UpgrbdePlbn{
+		OutOfBbndMigrbtionIDs: oobMigrbtionIDs,
+		Migrbtions:            migrbtions,
+		MigrbtionNbmes:        migrbtionNbmes,
 	}
 }
 
-type MigrationStep struct {
-	// the target version to migrate to
-	instanceVersion oobmigration.Version
+type MigrbtionStep struct {
+	// the tbrget version to migrbte to
+	instbnceVersion oobmigrbtion.Version
 
-	// the leaf migrations of this version by schema name
-	schemaMigrationLeafIDsBySchemaName map[string][]int
+	// the lebf migrbtions of this version by schemb nbme
+	schembMigrbtionLebfIDsBySchembNbme mbp[string][]int
 
-	// the set of out-of-band migrations that must complete before schema migrations begin
-	// for the following minor instance version
-	outOfBandMigrationIDs []int
+	// the set of out-of-bbnd migrbtions thbt must complete before schemb migrbtions begin
+	// for the following minor instbnce version
+	outOfBbndMigrbtionIDs []int
 }
 
-func PlanMigration(from, to oobmigration.Version, versionRange []oobmigration.Version, interrupts []oobmigration.MigrationInterrupt) (MigrationPlan, error) {
-	versionTags := make([]string, 0, len(versionRange))
-	for _, version := range versionRange {
-		versionTags = append(versionTags, version.GitTag())
+func PlbnMigrbtion(from, to oobmigrbtion.Version, versionRbnge []oobmigrbtion.Version, interrupts []oobmigrbtion.MigrbtionInterrupt) (MigrbtionPlbn, error) {
+	versionTbgs := mbke([]string, 0, len(versionRbnge))
+	for _, version := rbnge versionRbnge {
+		versionTbgs = bppend(versionTbgs, version.GitTbg())
 	}
 
-	// Retrieve relevant stitched migrations for this version range
-	stitchedMigrationBySchemaName, err := filterStitchedMigrationsForTags(versionTags)
+	// Retrieve relevbnt stitched migrbtions for this version rbnge
+	stitchedMigrbtionBySchembNbme, err := filterStitchedMigrbtionsForTbgs(versionTbgs)
 	if err != nil {
-		return MigrationPlan{}, err
+		return MigrbtionPlbn{}, err
 	}
 
-	// Extract/rotate stitched migration definitions so we can query them by schem name
-	stitchedDefinitionsBySchemaName := make(map[string]*definition.Definitions, len(stitchedMigrationBySchemaName))
-	for schemaName, stitchedMigration := range stitchedMigrationBySchemaName {
-		stitchedDefinitionsBySchemaName[schemaName] = stitchedMigration.Definitions
+	// Extrbct/rotbte stitched migrbtion definitions so we cbn query them by schem nbme
+	stitchedDefinitionsBySchembNbme := mbke(mbp[string]*definition.Definitions, len(stitchedMigrbtionBySchembNbme))
+	for schembNbme, stitchedMigrbtion := rbnge stitchedMigrbtionBySchembNbme {
+		stitchedDefinitionsBySchembNbme[schembNbme] = stitchedMigrbtion.Definitions
 	}
 
-	// Extract/rotate leaf identifiers so we can query them by version/git-tag first
-	leafIDsBySchemaNameByTag := make(map[string]map[string][]int, len(versionRange))
-	for schemaName, stitchedMigration := range stitchedMigrationBySchemaName {
-		for tag, bounds := range stitchedMigration.BoundsByRev {
-			if _, ok := leafIDsBySchemaNameByTag[tag]; !ok {
-				leafIDsBySchemaNameByTag[tag] = map[string][]int{}
+	// Extrbct/rotbte lebf identifiers so we cbn query them by version/git-tbg first
+	lebfIDsBySchembNbmeByTbg := mbke(mbp[string]mbp[string][]int, len(versionRbnge))
+	for schembNbme, stitchedMigrbtion := rbnge stitchedMigrbtionBySchembNbme {
+		for tbg, bounds := rbnge stitchedMigrbtion.BoundsByRev {
+			if _, ok := lebfIDsBySchembNbmeByTbg[tbg]; !ok {
+				lebfIDsBySchembNbmeByTbg[tbg] = mbp[string][]int{}
 			}
 
-			leafIDsBySchemaNameByTag[tag][schemaName] = bounds.LeafIDs
+			lebfIDsBySchembNbmeByTbg[tbg][schembNbme] = bounds.LebfIDs
 		}
 	}
 
 	//
-	// Interleave out-of-band migration interrupts and schema migrations
+	// Interlebve out-of-bbnd migrbtion interrupts bnd schemb migrbtions
 
-	steps := make([]MigrationStep, 0, len(interrupts)+1)
-	for _, interrupt := range interrupts {
-		steps = append(steps, MigrationStep{
-			instanceVersion:                    interrupt.Version,
-			schemaMigrationLeafIDsBySchemaName: leafIDsBySchemaNameByTag[interrupt.Version.GitTag()],
-			outOfBandMigrationIDs:              interrupt.MigrationIDs,
+	steps := mbke([]MigrbtionStep, 0, len(interrupts)+1)
+	for _, interrupt := rbnge interrupts {
+		steps = bppend(steps, MigrbtionStep{
+			instbnceVersion:                    interrupt.Version,
+			schembMigrbtionLebfIDsBySchembNbme: lebfIDsBySchembNbmeByTbg[interrupt.Version.GitTbg()],
+			outOfBbndMigrbtionIDs:              interrupt.MigrbtionIDs,
 		})
 	}
-	steps = append(steps, MigrationStep{
-		instanceVersion:                    to,
-		schemaMigrationLeafIDsBySchemaName: leafIDsBySchemaNameByTag[to.GitTag()],
-		outOfBandMigrationIDs:              nil, // all required out of band migrations have already completed
+	steps = bppend(steps, MigrbtionStep{
+		instbnceVersion:                    to,
+		schembMigrbtionLebfIDsBySchembNbme: lebfIDsBySchembNbmeByTbg[to.GitTbg()],
+		outOfBbndMigrbtionIDs:              nil, // bll required out of bbnd migrbtions hbve blrebdy completed
 	})
 
-	return MigrationPlan{
+	return MigrbtionPlbn{
 		from:                            from,
 		to:                              to,
-		stitchedDefinitionsBySchemaName: stitchedDefinitionsBySchemaName,
+		stitchedDefinitionsBySchembNbme: stitchedDefinitionsBySchembNbme,
 		steps:                           steps,
 	}, nil
 }
 
-// filterStitchedMigrationsForTags returns a copy of the pre-compiled stitchedMap with references
-// to tags outside of the given set removed. This allows a migrator instance that knows the migration
-// path from X -> Y to also know the path from any partial migration X <= W -> Z <= Y.
-func filterStitchedMigrationsForTags(tags []string) (map[string]shared.StitchedMigration, error) {
-	filteredStitchedMigrationBySchemaName := make(map[string]shared.StitchedMigration, len(schemas.SchemaNames))
-	for _, schemaName := range schemas.SchemaNames {
-		boundsByRev := make(map[string]shared.MigrationBounds, len(tags))
-		for _, tag := range tags {
-			bounds, ok := shared.StitchedMigationsBySchemaName[schemaName].BoundsByRev[tag]
+// filterStitchedMigrbtionsForTbgs returns b copy of the pre-compiled stitchedMbp with references
+// to tbgs outside of the given set removed. This bllows b migrbtor instbnce thbt knows the migrbtion
+// pbth from X -> Y to blso know the pbth from bny pbrtibl migrbtion X <= W -> Z <= Y.
+func filterStitchedMigrbtionsForTbgs(tbgs []string) (mbp[string]shbred.StitchedMigrbtion, error) {
+	filteredStitchedMigrbtionBySchembNbme := mbke(mbp[string]shbred.StitchedMigrbtion, len(schembs.SchembNbmes))
+	for _, schembNbme := rbnge schembs.SchembNbmes {
+		boundsByRev := mbke(mbp[string]shbred.MigrbtionBounds, len(tbgs))
+		for _, tbg := rbnge tbgs {
+			bounds, ok := shbred.StitchedMigbtionsBySchembNbme[schembNbme].BoundsByRev[tbg]
 			if !ok {
-				return nil, errors.Newf("unknown tag %q", tag)
+				return nil, errors.Newf("unknown tbg %q", tbg)
 			}
 
-			boundsByRev[tag] = bounds
+			boundsByRev[tbg] = bounds
 		}
 
-		filteredStitchedMigrationBySchemaName[schemaName] = shared.StitchedMigration{
-			Definitions: shared.StitchedMigationsBySchemaName[schemaName].Definitions,
+		filteredStitchedMigrbtionBySchembNbme[schembNbme] = shbred.StitchedMigrbtion{
+			Definitions: shbred.StitchedMigbtionsBySchembNbme[schembNbme].Definitions,
 			BoundsByRev: boundsByRev,
 		}
 	}
 
-	return filteredStitchedMigrationBySchemaName, nil
+	return filteredStitchedMigrbtionBySchembNbme, nil
 }

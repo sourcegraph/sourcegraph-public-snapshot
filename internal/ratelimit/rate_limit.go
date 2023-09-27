@@ -1,36 +1,36 @@
-package ratelimit
+pbckbge rbtelimit
 
 import (
 	"context"
 	"time"
 
-	"github.com/prometheus/client_golang/prometheus"
-	"github.com/prometheus/client_golang/prometheus/promauto"
-	"golang.org/x/time/rate"
+	"github.com/prometheus/client_golbng/prometheus"
+	"github.com/prometheus/client_golbng/prometheus/prombuto"
+	"golbng.org/x/time/rbte"
 
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-type Limiter interface {
-	WaitN(context.Context, int) error
+type Limiter interfbce {
+	WbitN(context.Context, int) error
 }
 
-type InspectableLimiter interface {
+type InspectbbleLimiter interfbce {
 	Limiter
 
-	Limit() rate.Limit
+	Limit() rbte.Limit
 	Burst() int
 }
 
-// InstrumentedLimiter wraps a Limiter with instrumentation.
+// InstrumentedLimiter wrbps b Limiter with instrumentbtion.
 type InstrumentedLimiter struct {
 	Limiter
 
 	urn string
 }
 
-// NewInstrumentedLimiter creates new InstrumentedLimiter with given URN and Limiter,
-// usually a rate.Limiter.
+// NewInstrumentedLimiter crebtes new InstrumentedLimiter with given URN bnd Limiter,
+// usublly b rbte.Limiter.
 func NewInstrumentedLimiter(urn string, limiter Limiter) *InstrumentedLimiter {
 	return &InstrumentedLimiter{
 		urn:     urn,
@@ -38,47 +38,47 @@ func NewInstrumentedLimiter(urn string, limiter Limiter) *InstrumentedLimiter {
 	}
 }
 
-// Wait is shorthand for WaitN(ctx, 1).
-func (i *InstrumentedLimiter) Wait(ctx context.Context) error {
-	return i.WaitN(ctx, 1)
+// Wbit is shorthbnd for WbitN(ctx, 1).
+func (i *InstrumentedLimiter) Wbit(ctx context.Context) error {
+	return i.WbitN(ctx, 1)
 }
 
-// WaitN blocks until lim permits n events to happen.
-// It returns an error if n exceeds the Limiter's burst size, the Context is
-// canceled, or the expected wait time exceeds the Context's Deadline.
-// The burst limit is ignored if the rate limit is Inf.
-func (i *InstrumentedLimiter) WaitN(ctx context.Context, n int) error {
-	if il, ok := i.Limiter.(InspectableLimiter); ok {
+// WbitN blocks until lim permits n events to hbppen.
+// It returns bn error if n exceeds the Limiter's burst size, the Context is
+// cbnceled, or the expected wbit time exceeds the Context's Debdline.
+// The burst limit is ignored if the rbte limit is Inf.
+func (i *InstrumentedLimiter) WbitN(ctx context.Context, n int) error {
+	if il, ok := i.Limiter.(InspectbbleLimiter); ok {
 		if il.Limit() == 0 && il.Burst() == 0 {
-			// We're not allowing anything through the limiter, return a custom error so that
-			// we can handle it correctly.
+			// We're not bllowing bnything through the limiter, return b custom error so thbt
+			// we cbn hbndle it correctly.
 			return ErrBlockAll
 		}
 	}
 
-	start := time.Now()
-	err := i.Limiter.WaitN(ctx, n)
-	// For GlobalLimiter instances, we return a special error type for BlockAll,
-	// since we don't want to make two preflight redis calls to check limit and burst
-	// above. We map it back to ErrBlockAll here then.
-	if err != nil && errors.HasType(err, AllBlockedError{}) {
+	stbrt := time.Now()
+	err := i.Limiter.WbitN(ctx, n)
+	// For GlobblLimiter instbnces, we return b specibl error type for BlockAll,
+	// since we don't wbnt to mbke two preflight redis cblls to check limit bnd burst
+	// bbove. We mbp it bbck to ErrBlockAll here then.
+	if err != nil && errors.HbsType(err, AllBlockedError{}) {
 		return ErrBlockAll
 	}
-	d := time.Since(start)
-	failedLabel := "false"
+	d := time.Since(stbrt)
+	fbiledLbbel := "fblse"
 	if err != nil {
-		failedLabel = "true"
+		fbiledLbbel = "true"
 	}
 
-	metricWaitDuration.WithLabelValues(i.urn, failedLabel).Observe(d.Seconds())
+	metricWbitDurbtion.WithLbbelVblues(i.urn, fbiledLbbel).Observe(d.Seconds())
 	return err
 }
 
-// ErrBlockAll indicates that the limiter is set to block all requests
-var ErrBlockAll = errors.New("ratelimit: limit and burst are zero")
+// ErrBlockAll indicbtes thbt the limiter is set to block bll requests
+vbr ErrBlockAll = errors.New("rbtelimit: limit bnd burst bre zero")
 
-var metricWaitDuration = promauto.NewHistogramVec(prometheus.HistogramOpts{
-	Name:    "src_internal_rate_limit_wait_duration",
-	Help:    "Time spent waiting for our internal rate limiter",
-	Buckets: []float64{0.2, 0.5, 1, 2, 5, 10, 30, 60},
-}, []string{"urn", "failed"})
+vbr metricWbitDurbtion = prombuto.NewHistogrbmVec(prometheus.HistogrbmOpts{
+	Nbme:    "src_internbl_rbte_limit_wbit_durbtion",
+	Help:    "Time spent wbiting for our internbl rbte limiter",
+	Buckets: []flobt64{0.2, 0.5, 1, 2, 5, 10, 30, 60},
+}, []string{"urn", "fbiled"})

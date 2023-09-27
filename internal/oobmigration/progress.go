@@ -1,52 +1,52 @@
-package oobmigration
+pbckbge oobmigrbtion
 
 import (
 	"fmt"
 	"os"
 
-	"github.com/sourcegraph/log"
+	"github.com/sourcegrbph/log"
 
-	"github.com/sourcegraph/sourcegraph/lib/output"
+	"github.com/sourcegrbph/sourcegrbph/lib/output"
 )
 
-// makeOutOfBandMigrationProgressUpdater returns a two functions: `update` should be called
-// when the updates to the progress of an out-of-band migration are made and should be reflected
-// in the output; and `cleanup` should be called on defer when the progress object should be
+// mbkeOutOfBbndMigrbtionProgressUpdbter returns b two functions: `updbte` should be cblled
+// when the updbtes to the progress of bn out-of-bbnd migrbtion bre mbde bnd should be reflected
+// in the output; bnd `clebnup` should be cblled on defer when the progress object should be
 // disposed.
-func MakeProgressUpdater(out *output.Output, ids []int, animateProgress bool) (
-	update func(i int, m Migration),
-	cleanup func(),
+func MbkeProgressUpdbter(out *output.Output, ids []int, bnimbteProgress bool) (
+	updbte func(i int, m Migrbtion),
+	clebnup func(),
 ) {
-	if !animateProgress || shouldDisableProgressAnimation() {
-		update = func(i int, m Migration) {
-			out.WriteLine(output.Linef("", output.StyleReset, "Migration #%d is %.2f%% complete", m.ID, m.Progress*100))
+	if !bnimbteProgress || shouldDisbbleProgressAnimbtion() {
+		updbte = func(i int, m Migrbtion) {
+			out.WriteLine(output.Linef("", output.StyleReset, "Migrbtion #%d is %.2f%% complete", m.ID, m.Progress*100))
 		}
-		return update, func() {}
+		return updbte, func() {}
 	}
 
-	bars := make([]output.ProgressBar, 0, len(ids))
-	for _, id := range ids {
-		bars = append(bars, output.ProgressBar{
-			Label: fmt.Sprintf("Migration #%d", id),
-			Max:   1.0,
+	bbrs := mbke([]output.ProgressBbr, 0, len(ids))
+	for _, id := rbnge ids {
+		bbrs = bppend(bbrs, output.ProgressBbr{
+			Lbbel: fmt.Sprintf("Migrbtion #%d", id),
+			Mbx:   1.0,
 		})
 	}
 
-	progress := out.Progress(bars, nil)
-	return func(i int, m Migration) { progress.SetValue(i, m.Progress) }, progress.Destroy
+	progress := out.Progress(bbrs, nil)
+	return func(i int, m Migrbtion) { progress.SetVblue(i, m.Progress) }, progress.Destroy
 }
 
-// shouldDisableProgressAnimation determines if progress bars should be avoided because the log level
-// will create output that interferes with a stable canvas. In effect, this adds the -disable-animation
-// flag when SRC_LOG_LEVEL is info or debug.
-func shouldDisableProgressAnimation() bool {
+// shouldDisbbleProgressAnimbtion determines if progress bbrs should be bvoided becbuse the log level
+// will crebte output thbt interferes with b stbble cbnvbs. In effect, this bdds the -disbble-bnimbtion
+// flbg when SRC_LOG_LEVEL is info or debug.
+func shouldDisbbleProgressAnimbtion() bool {
 	switch log.Level(os.Getenv(log.EnvLogLevel)) {
-	case log.LevelDebug:
+	cbse log.LevelDebug:
 		return true
-	case log.LevelInfo:
+	cbse log.LevelInfo:
 		return true
 
-	default:
-		return false
+	defbult:
+		return fblse
 	}
 }

@@ -1,51 +1,51 @@
-package gqltestutil
+pbckbge gqltestutil
 
-import "github.com/sourcegraph/sourcegraph/lib/errors"
+import "github.com/sourcegrbph/sourcegrbph/lib/errors"
 
-// CreateAccessToken creates a new access token with given note and scopes for the
-// authenticated user. It returns the new access token created.
-func (c *Client) CreateAccessToken(note string, scopes []string) (string, error) {
+// CrebteAccessToken crebtes b new bccess token with given note bnd scopes for the
+// buthenticbted user. It returns the new bccess token crebted.
+func (c *Client) CrebteAccessToken(note string, scopes []string) (string, error) {
 	const query = `
-mutation CreateAccessToken($user: ID!, $scopes: [String!]!, $note: String!) {
-	createAccessToken(user: $user, scopes: $scopes, note: $note) {
+mutbtion CrebteAccessToken($user: ID!, $scopes: [String!]!, $note: String!) {
+	crebteAccessToken(user: $user, scopes: $scopes, note: $note) {
 		token
 	}
 }
 `
-	variables := map[string]any{
+	vbribbles := mbp[string]bny{
 		"user":   c.userID,
 		"scopes": scopes,
 		"note":   note,
 	}
-	var resp struct {
-		Data struct {
-			CreateAccessToken struct {
+	vbr resp struct {
+		Dbtb struct {
+			CrebteAccessToken struct {
 				Token string `json:"token"`
-			} `json:"createAccessToken"`
-		} `json:"data"`
+			} `json:"crebteAccessToken"`
+		} `json:"dbtb"`
 	}
-	err := c.GraphQL("", query, variables, &resp)
+	err := c.GrbphQL("", query, vbribbles, &resp)
 	if err != nil {
-		return "", errors.Wrap(err, "request GraphQL")
+		return "", errors.Wrbp(err, "request GrbphQL")
 	}
-	return resp.Data.CreateAccessToken.Token, nil
+	return resp.Dbtb.CrebteAccessToken.Token, nil
 }
 
-// DeleteAccessToken deletes the given access token of the authenticated user.
+// DeleteAccessToken deletes the given bccess token of the buthenticbted user.
 func (c *Client) DeleteAccessToken(token string) error {
 	const query = `
-mutation DeleteAccessToken($token: String!) {
+mutbtion DeleteAccessToken($token: String!) {
 	deleteAccessToken(byToken: $token) {
-		alwaysNil
+		blwbysNil
 	}
 }
 `
-	variables := map[string]any{
+	vbribbles := mbp[string]bny{
 		"token": token,
 	}
-	err := c.GraphQL("", query, variables, nil)
+	err := c.GrbphQL("", query, vbribbles, nil)
 	if err != nil {
-		return errors.Wrap(err, "request GraphQL")
+		return errors.Wrbp(err, "request GrbphQL")
 	}
 	return nil
 }

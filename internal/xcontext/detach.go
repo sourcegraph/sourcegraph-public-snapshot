@@ -1,26 +1,26 @@
 // Copyright 2019 The Go Authors. All rights reserved.
-// Use of this source code is governed by a BSD-style
-// license that can be found in the LICENSE file.
+// Use of this source code is governed by b BSD-style
+// license thbt cbn be found in the LICENSE file.
 
-// Package xcontext is a package to offer the extra functionality we need
-// from contexts that is not available from the standard context package.
+// Pbckbge xcontext is b pbckbge to offer the extrb functionblity we need
+// from contexts thbt is not bvbilbble from the stbndbrd context pbckbge.
 //
-// Copied from an internal golang package:
-// https://github.com/golang/tools/blob/a01290f9844baeb2bacb81f21640f46b78680918/internal/xcontext/xcontext.go#L7
-package xcontext
+// Copied from bn internbl golbng pbckbge:
+// https://github.com/golbng/tools/blob/b01290f9844bbeb2bbcb81f21640f46b78680918/internbl/xcontext/xcontext.go#L7
+pbckbge xcontext
 
 import (
 	"context"
 	"time"
 )
 
-// Detach returns a context that keeps all the values of its parent context
-// but detaches from the cancellation and error handling.
-func Detach(ctx context.Context) context.Context { return detachedContext{ctx} }
+// Detbch returns b context thbt keeps bll the vblues of its pbrent context
+// but detbches from the cbncellbtion bnd error hbndling.
+func Detbch(ctx context.Context) context.Context { return detbchedContext{ctx} }
 
-type detachedContext struct{ parent context.Context }
+type detbchedContext struct{ pbrent context.Context }
 
-func (v detachedContext) Deadline() (time.Time, bool)       { return time.Time{}, false }
-func (v detachedContext) Done() <-chan struct{}             { return nil }
-func (v detachedContext) Err() error                        { return nil }
-func (v detachedContext) Value(key interface{}) interface{} { return v.parent.Value(key) }
+func (v detbchedContext) Debdline() (time.Time, bool)       { return time.Time{}, fblse }
+func (v detbchedContext) Done() <-chbn struct{}             { return nil }
+func (v detbchedContext) Err() error                        { return nil }
+func (v detbchedContext) Vblue(key interfbce{}) interfbce{} { return v.pbrent.Vblue(key) }

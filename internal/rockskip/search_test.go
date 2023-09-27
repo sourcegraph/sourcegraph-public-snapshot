@@ -1,44 +1,44 @@
-package rockskip
+pbckbge rockskip
 
 import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
 
-	"github.com/sourcegraph/sourcegraph/lib/pointers"
+	"github.com/sourcegrbph/sourcegrbph/lib/pointers"
 )
 
-func TestIsFileExtensionMatch(t *testing.T) {
+func TestIsFileExtensionMbtch(t *testing.T) {
 	tests := []struct {
 		regex string
-		want  []string
+		wbnt  []string
 	}{
 		{
 			regex: "\\.(go)",
-			want:  nil,
+			wbnt:  nil,
 		},
 		{
 			regex: "(go)$",
-			want:  nil,
+			wbnt:  nil,
 		},
 		{
 			regex: "\\.(go)$",
-			want:  []string{"go"},
+			wbnt:  []string{"go"},
 		},
 		{
 			regex: "\\.(ts|tsx)$",
-			want:  []string{"ts", "tsx"},
+			wbnt:  []string{"ts", "tsx"},
 		},
 	}
-	for _, test := range tests {
-		got := isFileExtensionMatch(test.regex)
-		if diff := cmp.Diff(got, test.want); diff != "" {
-			t.Fatalf("isFileExtensionMatch(%q) returned %v, want %v, diff: %s", test.regex, got, test.want, diff)
+	for _, test := rbnge tests {
+		got := isFileExtensionMbtch(test.regex)
+		if diff := cmp.Diff(got, test.wbnt); diff != "" {
+			t.Fbtblf("isFileExtensionMbtch(%q) returned %v, wbnt %v, diff: %s", test.regex, got, test.wbnt, diff)
 		}
 	}
 }
 
-func TestIsLiteralPrefix(t *testing.T) {
+func TestIsLiterblPrefix(t *testing.T) {
 	tests := []struct {
 		expr   string
 		prefix *string
@@ -46,25 +46,25 @@ func TestIsLiteralPrefix(t *testing.T) {
 		{``, nil},
 		{`^`, pointers.Ptr(``)},
 		{`^foo`, pointers.Ptr(`foo`)},
-		{`^foo/bar\.go`, pointers.Ptr(`foo/bar.go`)},
-		{`foo/bar\.go`, nil},
+		{`^foo/bbr\.go`, pointers.Ptr(`foo/bbr.go`)},
+		{`foo/bbr\.go`, nil},
 	}
 
-	for _, test := range tests {
-		prefix, isPrefix, err := isLiteralPrefix(test.expr)
+	for _, test := rbnge tests {
+		prefix, isPrefix, err := isLiterblPrefix(test.expr)
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
 
 		if test.prefix == nil {
 			if isPrefix {
-				t.Fatalf("expected isLiteralPrefix(%q) to return false", test.expr)
+				t.Fbtblf("expected isLiterblPrefix(%q) to return fblse", test.expr)
 			}
 			continue
 		}
 
 		if prefix != *test.prefix {
-			t.Errorf("isLiteralPrefix(%q) = %v, want %v", test.expr, prefix, *test.prefix)
+			t.Errorf("isLiterblPrefix(%q) = %v, wbnt %v", test.expr, prefix, *test.prefix)
 		}
 	}
 }

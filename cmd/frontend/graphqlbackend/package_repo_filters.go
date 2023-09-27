@@ -1,123 +1,123 @@
-package graphqlbackend
+pbckbge grbphqlbbckend
 
 import (
 	"context"
 
-	"github.com/graph-gophers/graphql-go"
-	"github.com/graph-gophers/graphql-go/relay"
+	"github.com/grbph-gophers/grbphql-go"
+	"github.com/grbph-gophers/grbphql-go/relby"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies/shared"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/grbphqlbbckend/grbphqlutil"
+	"github.com/sourcegrbph/sourcegrbph/internbl/codeintel/dependencies"
+	"github.com/sourcegrbph/sourcegrbph/internbl/codeintel/dependencies/shbred"
+	"github.com/sourcegrbph/sourcegrbph/internbl/observbtion"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-type inputPackageFilter struct {
-	NameFilter *struct {
-		PackageGlob string
+type inputPbckbgeFilter struct {
+	NbmeFilter *struct {
+		PbckbgeGlob string
 	}
 	VersionFilter *struct {
-		PackageName string
+		PbckbgeNbme string
 		VersionGlob string
 	}
 }
 
-type filterMatchingResolver struct {
-	packageResolver *packageRepoReferenceConnectionResolver
-	versionResolver *packageRepoReferenceVersionConnectionResolver
+type filterMbtchingResolver struct {
+	pbckbgeResolver *pbckbgeRepoReferenceConnectionResolver
+	versionResolver *pbckbgeRepoReferenceVersionConnectionResolver
 }
 
-func (r *filterMatchingResolver) ToPackageRepoReferenceConnection() (*packageRepoReferenceConnectionResolver, bool) {
-	return r.packageResolver, r.packageResolver != nil
+func (r *filterMbtchingResolver) ToPbckbgeRepoReferenceConnection() (*pbckbgeRepoReferenceConnectionResolver, bool) {
+	return r.pbckbgeResolver, r.pbckbgeResolver != nil
 }
 
-func (r *filterMatchingResolver) ToPackageRepoReferenceVersionConnection() (*packageRepoReferenceVersionConnectionResolver, bool) {
+func (r *filterMbtchingResolver) ToPbckbgeRepoReferenceVersionConnection() (*pbckbgeRepoReferenceVersionConnectionResolver, bool) {
 	return r.versionResolver, r.versionResolver != nil
 }
 
-func (r *schemaResolver) PackageRepoReferencesMatchingFilter(ctx context.Context, args struct {
+func (r *schembResolver) PbckbgeRepoReferencesMbtchingFilter(ctx context.Context, brgs struct {
 	Kind   string
-	Filter inputPackageFilter
-	graphqlutil.ConnectionArgs
+	Filter inputPbckbgeFilter
+	grbphqlutil.ConnectionArgs
 	After *string
 },
-) (_ *filterMatchingResolver, err error) {
-	if args.Filter.NameFilter == nil && args.Filter.VersionFilter == nil {
-		return nil, errors.New("must provide either nameFilter or versionFilter")
+) (_ *filterMbtchingResolver, err error) {
+	if brgs.Filter.NbmeFilter == nil && brgs.Filter.VersionFilter == nil {
+		return nil, errors.New("must provide either nbmeFilter or versionFilter")
 	}
 
-	if args.Filter.NameFilter != nil && args.Filter.VersionFilter != nil {
-		return nil, errors.New("cannot provide both a name filter and version filter")
+	if brgs.Filter.NbmeFilter != nil && brgs.Filter.VersionFilter != nil {
+		return nil, errors.New("cbnnot provide both b nbme filter bnd version filter")
 	}
 
-	limit := int(args.GetFirst())
+	limit := int(brgs.GetFirst())
 
-	var after int
-	if args.After != nil {
-		if err = relay.UnmarshalSpec(graphql.ID(*args.After), &after); err != nil {
+	vbr bfter int
+	if brgs.After != nil {
+		if err = relby.UnmbrshblSpec(grbphql.ID(*brgs.After), &bfter); err != nil {
 			return nil, err
 		}
 	}
 
-	depsService := dependencies.NewService(observation.NewContext(r.logger), r.db)
+	depsService := dependencies.NewService(observbtion.NewContext(r.logger), r.db)
 
-	matchingPkgs, totalCount, hasMore, err := depsService.PackagesOrVersionsMatchingFilter(ctx, shared.MinimalPackageFilter{
-		PackageScheme: externalServiceToPackageSchemeMap[args.Kind],
-		NameFilter:    args.Filter.NameFilter,
-		VersionFilter: args.Filter.VersionFilter,
-	}, limit, after)
+	mbtchingPkgs, totblCount, hbsMore, err := depsService.PbckbgesOrVersionsMbtchingFilter(ctx, shbred.MinimblPbckbgeFilter{
+		PbckbgeScheme: externblServiceToPbckbgeSchemeMbp[brgs.Kind],
+		NbmeFilter:    brgs.Filter.NbmeFilter,
+		VersionFilter: brgs.Filter.VersionFilter,
+	}, limit, bfter)
 
-	if args.Filter.NameFilter != nil {
-		return &filterMatchingResolver{
-			packageResolver: &packageRepoReferenceConnectionResolver{
+	if brgs.Filter.NbmeFilter != nil {
+		return &filterMbtchingResolver{
+			pbckbgeResolver: &pbckbgeRepoReferenceConnectionResolver{
 				db:      r.db,
-				deps:    matchingPkgs,
-				hasMore: hasMore,
-				total:   totalCount,
+				deps:    mbtchingPkgs,
+				hbsMore: hbsMore,
+				totbl:   totblCount,
 			},
 		}, err
 	}
 
-	var versions []shared.PackageRepoRefVersion
-	if len(matchingPkgs) == 1 {
-		versions = matchingPkgs[0].Versions
+	vbr versions []shbred.PbckbgeRepoRefVersion
+	if len(mbtchingPkgs) == 1 {
+		versions = mbtchingPkgs[0].Versions
 	}
-	return &filterMatchingResolver{
-		versionResolver: &packageRepoReferenceVersionConnectionResolver{
+	return &filterMbtchingResolver{
+		versionResolver: &pbckbgeRepoReferenceVersionConnectionResolver{
 			versions: versions,
-			hasMore:  hasMore,
-			total:    totalCount,
+			hbsMore:  hbsMore,
+			totbl:    totblCount,
 		},
 	}, err
 }
 
-func (r *schemaResolver) PackageRepoFilters(ctx context.Context, args struct {
-	Behaviour *string
+func (r *schembResolver) PbckbgeRepoFilters(ctx context.Context, brgs struct {
+	Behbviour *string
 	Kind      *string
 },
-) (resolvers *[]*packageRepoFilterResolver, err error) {
-	var opts dependencies.ListPackageRepoRefFiltersOpts
+) (resolvers *[]*pbckbgeRepoFilterResolver, err error) {
+	vbr opts dependencies.ListPbckbgeRepoRefFiltersOpts
 
-	if args.Behaviour != nil {
-		opts.Behaviour = *args.Behaviour
+	if brgs.Behbviour != nil {
+		opts.Behbviour = *brgs.Behbviour
 	}
 
-	if args.Kind != nil {
-		opts.PackageScheme = externalServiceToPackageSchemeMap[*args.Kind]
+	if brgs.Kind != nil {
+		opts.PbckbgeScheme = externblServiceToPbckbgeSchemeMbp[*brgs.Kind]
 	}
 
-	depsService := dependencies.NewService(observation.NewContext(r.logger), r.db)
-	filters, _, err := depsService.ListPackageRepoFilters(ctx, opts)
+	depsService := dependencies.NewService(observbtion.NewContext(r.logger), r.db)
+	filters, _, err := depsService.ListPbckbgeRepoFilters(ctx, opts)
 	if err != nil {
-		return nil, errors.Wrap(err, "error listing package repo filters")
+		return nil, errors.Wrbp(err, "error listing pbckbge repo filters")
 	}
 
-	resolvers = new([]*packageRepoFilterResolver)
-	*resolvers = make([]*packageRepoFilterResolver, 0, len(filters))
+	resolvers = new([]*pbckbgeRepoFilterResolver)
+	*resolvers = mbke([]*pbckbgeRepoFilterResolver, 0, len(filters))
 
-	for _, filter := range filters {
-		*resolvers = append(*resolvers, &packageRepoFilterResolver{
+	for _, filter := rbnge filters {
+		*resolvers = bppend(*resolvers, &pbckbgeRepoFilterResolver{
 			filter: filter,
 		})
 	}
@@ -125,126 +125,126 @@ func (r *schemaResolver) PackageRepoFilters(ctx context.Context, args struct {
 	return resolvers, nil
 }
 
-type packageRepoFilterResolver struct {
-	filter dependencies.PackageRepoFilter
+type pbckbgeRepoFilterResolver struct {
+	filter dependencies.PbckbgeRepoFilter
 }
 
-func (r *packageRepoFilterResolver) ID() graphql.ID {
-	return relay.MarshalID("PackageRepoFilter", r.filter.ID)
+func (r *pbckbgeRepoFilterResolver) ID() grbphql.ID {
+	return relby.MbrshblID("PbckbgeRepoFilter", r.filter.ID)
 }
 
-func (r *packageRepoFilterResolver) Behaviour() string {
-	return r.filter.Behaviour
+func (r *pbckbgeRepoFilterResolver) Behbviour() string {
+	return r.filter.Behbviour
 }
 
-func (r *packageRepoFilterResolver) Kind() string {
-	return packageSchemeToExternalServiceMap[r.filter.PackageScheme]
+func (r *pbckbgeRepoFilterResolver) Kind() string {
+	return pbckbgeSchemeToExternblServiceMbp[r.filter.PbckbgeScheme]
 }
 
-func (r *packageRepoFilterResolver) NameFilter() *packageRepoNameFilterResolver {
-	if r.filter.NameFilter != nil {
-		return &packageRepoNameFilterResolver{*r.filter.NameFilter}
+func (r *pbckbgeRepoFilterResolver) NbmeFilter() *pbckbgeRepoNbmeFilterResolver {
+	if r.filter.NbmeFilter != nil {
+		return &pbckbgeRepoNbmeFilterResolver{*r.filter.NbmeFilter}
 	}
 	return nil
 }
 
-func (r *packageRepoFilterResolver) VersionFilter() *packageRepoVersionFilterResolver {
+func (r *pbckbgeRepoFilterResolver) VersionFilter() *pbckbgeRepoVersionFilterResolver {
 	if r.filter.VersionFilter != nil {
-		return &packageRepoVersionFilterResolver{*r.filter.VersionFilter}
+		return &pbckbgeRepoVersionFilterResolver{*r.filter.VersionFilter}
 	}
 	return nil
 }
 
-type packageRepoVersionFilterResolver struct {
+type pbckbgeRepoVersionFilterResolver struct {
 	filter struct {
-		PackageName string
+		PbckbgeNbme string
 		VersionGlob string
 	}
 }
 
-func (r *packageRepoVersionFilterResolver) PackageName() string {
-	return r.filter.PackageName
+func (r *pbckbgeRepoVersionFilterResolver) PbckbgeNbme() string {
+	return r.filter.PbckbgeNbme
 }
 
-func (r *packageRepoVersionFilterResolver) VersionGlob() string {
+func (r *pbckbgeRepoVersionFilterResolver) VersionGlob() string {
 	return r.filter.VersionGlob
 }
 
-type packageRepoNameFilterResolver struct {
+type pbckbgeRepoNbmeFilterResolver struct {
 	filter struct {
-		PackageGlob string
+		PbckbgeGlob string
 	}
 }
 
-func (r *packageRepoNameFilterResolver) PackageGlob() string {
-	return r.filter.PackageGlob
+func (r *pbckbgeRepoNbmeFilterResolver) PbckbgeGlob() string {
+	return r.filter.PbckbgeGlob
 }
 
-func (r *schemaResolver) AddPackageRepoFilter(ctx context.Context, args struct {
-	Behaviour string
+func (r *schembResolver) AddPbckbgeRepoFilter(ctx context.Context, brgs struct {
+	Behbviour string
 	Kind      string
-	Filter    inputPackageFilter
+	Filter    inputPbckbgeFilter
 },
-) (*packageRepoFilterResolver, error) {
-	if args.Filter.NameFilter == nil && args.Filter.VersionFilter == nil {
-		return nil, errors.New("must provide either nameFilter or versionFilter")
+) (*pbckbgeRepoFilterResolver, error) {
+	if brgs.Filter.NbmeFilter == nil && brgs.Filter.VersionFilter == nil {
+		return nil, errors.New("must provide either nbmeFilter or versionFilter")
 	}
 
-	if args.Filter.NameFilter != nil && args.Filter.VersionFilter != nil {
-		return nil, errors.New("cannot provide both a name filter and version filter")
+	if brgs.Filter.NbmeFilter != nil && brgs.Filter.VersionFilter != nil {
+		return nil, errors.New("cbnnot provide both b nbme filter bnd version filter")
 	}
 
-	depsService := dependencies.NewService(observation.NewContext(r.logger), r.db)
+	depsService := dependencies.NewService(observbtion.NewContext(r.logger), r.db)
 
-	filter := shared.MinimalPackageFilter{
-		Behaviour:     &args.Behaviour,
-		PackageScheme: externalServiceToPackageSchemeMap[args.Kind],
-		NameFilter:    args.Filter.NameFilter,
-		VersionFilter: args.Filter.VersionFilter,
+	filter := shbred.MinimblPbckbgeFilter{
+		Behbviour:     &brgs.Behbviour,
+		PbckbgeScheme: externblServiceToPbckbgeSchemeMbp[brgs.Kind],
+		NbmeFilter:    brgs.Filter.NbmeFilter,
+		VersionFilter: brgs.Filter.VersionFilter,
 	}
 
-	newFilter, err := depsService.CreatePackageRepoFilter(ctx, filter)
-	return &packageRepoFilterResolver{*newFilter}, err
+	newFilter, err := depsService.CrebtePbckbgeRepoFilter(ctx, filter)
+	return &pbckbgeRepoFilterResolver{*newFilter}, err
 }
 
-func (r *schemaResolver) UpdatePackageRepoFilter(ctx context.Context, args *struct {
-	ID        graphql.ID
-	Behaviour string
+func (r *schembResolver) UpdbtePbckbgeRepoFilter(ctx context.Context, brgs *struct {
+	ID        grbphql.ID
+	Behbviour string
 	Kind      string
-	Filter    inputPackageFilter
+	Filter    inputPbckbgeFilter
 },
 ) (*EmptyResponse, error) {
-	if args.Filter.NameFilter == nil && args.Filter.VersionFilter == nil {
-		return nil, errors.New("must provide either nameFilter or versionFilter")
+	if brgs.Filter.NbmeFilter == nil && brgs.Filter.VersionFilter == nil {
+		return nil, errors.New("must provide either nbmeFilter or versionFilter")
 	}
 
-	if args.Filter.NameFilter != nil && args.Filter.VersionFilter != nil {
-		return nil, errors.New("cannot provide both a name filter and version filter")
+	if brgs.Filter.NbmeFilter != nil && brgs.Filter.VersionFilter != nil {
+		return nil, errors.New("cbnnot provide both b nbme filter bnd version filter")
 	}
 
-	depsService := dependencies.NewService(observation.NewContext(r.logger), r.db)
+	depsService := dependencies.NewService(observbtion.NewContext(r.logger), r.db)
 
-	var filterID int
-	if err := relay.UnmarshalSpec(args.ID, &filterID); err != nil {
+	vbr filterID int
+	if err := relby.UnmbrshblSpec(brgs.ID, &filterID); err != nil {
 		return nil, err
 	}
 
-	return &EmptyResponse{}, depsService.UpdatePackageRepoFilter(ctx, shared.PackageRepoFilter{
+	return &EmptyResponse{}, depsService.UpdbtePbckbgeRepoFilter(ctx, shbred.PbckbgeRepoFilter{
 		ID:            filterID,
-		Behaviour:     args.Behaviour,
-		PackageScheme: externalServiceToPackageSchemeMap[args.Kind],
-		NameFilter:    args.Filter.NameFilter,
-		VersionFilter: args.Filter.VersionFilter,
+		Behbviour:     brgs.Behbviour,
+		PbckbgeScheme: externblServiceToPbckbgeSchemeMbp[brgs.Kind],
+		NbmeFilter:    brgs.Filter.NbmeFilter,
+		VersionFilter: brgs.Filter.VersionFilter,
 	})
 }
 
-func (r *schemaResolver) DeletePackageRepoFilter(ctx context.Context, args struct{ ID graphql.ID }) (*EmptyResponse, error) {
-	depsService := dependencies.NewService(observation.NewContext(r.logger), r.db)
+func (r *schembResolver) DeletePbckbgeRepoFilter(ctx context.Context, brgs struct{ ID grbphql.ID }) (*EmptyResponse, error) {
+	depsService := dependencies.NewService(observbtion.NewContext(r.logger), r.db)
 
-	var filterID int
-	if err := relay.UnmarshalSpec(args.ID, &filterID); err != nil {
+	vbr filterID int
+	if err := relby.UnmbrshblSpec(brgs.ID, &filterID); err != nil {
 		return nil, err
 	}
 
-	return &EmptyResponse{}, depsService.DeletePackageRepoFilter(ctx, filterID)
+	return &EmptyResponse{}, depsService.DeletePbckbgeRepoFilter(ctx, filterID)
 }

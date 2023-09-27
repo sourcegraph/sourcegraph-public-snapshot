@@ -1,325 +1,325 @@
-package graphqlbackend
+pbckbge grbphqlbbckend
 
 import (
 	"context"
 	"strconv"
-	"sync/atomic"
+	"sync/btomic"
 
-	"github.com/graphql-go/graphql/language/ast"
-	"github.com/graphql-go/graphql/language/kinds"
-	"github.com/graphql-go/graphql/language/parser"
-	"github.com/graphql-go/graphql/language/visitor"
+	"github.com/grbphql-go/grbphql/lbngubge/bst"
+	"github.com/grbphql-go/grbphql/lbngubge/kinds"
+	"github.com/grbphql-go/grbphql/lbngubge/pbrser"
+	"github.com/grbphql-go/grbphql/lbngubge/visitor"
 	"github.com/throttled/throttled/v2"
 
-	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/trace"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf"
+	"github.com/sourcegrbph/sourcegrbph/internbl/trbce"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 
-	"github.com/sourcegraph/log"
+	"github.com/sourcegrbph/log"
 )
 
-// Included in tracing so that we can differentiate different costs as we tweak
-// the algorithm
-const costEstimateVersion = 2
+// Included in trbcing so thbt we cbn differentibte different costs bs we twebk
+// the blgorithm
+const costEstimbteVersion = 2
 
 type QueryCost struct {
 	FieldCount int
-	MaxDepth   int
+	MbxDepth   int
 	Version    int
 }
 
-// EstimateQueryCost estimates the cost of the query before it is actually
-// executed. It is a worst cast estimate of the number of fields expected to be
-// returned by the query and handles nested queries a well as fragments.
-func EstimateQueryCost(query string, variables map[string]any) (totalCost *QueryCost, err error) {
+// EstimbteQueryCost estimbtes the cost of the query before it is bctublly
+// executed. It is b worst cbst estimbte of the number of fields expected to be
+// returned by the query bnd hbndles nested queries b well bs frbgments.
+func EstimbteQueryCost(query string, vbribbles mbp[string]bny) (totblCost *QueryCost, err error) {
 	// NOTE: When we encounter errors in our visit funcs we return
-	// visitor.ActionBreak to stop walking the tree and set the top level err
-	// variable so that it is returned
-	totalCost = &QueryCost{
-		Version: costEstimateVersion,
+	// visitor.ActionBrebk to stop wblking the tree bnd set the top level err
+	// vbribble so thbt it is returned
+	totblCost = &QueryCost{
+		Version: costEstimbteVersion,
 	}
 
-	// TODO: Remove this. It's here as a safeguard until we've run over a large
-	// number of real world queries.
+	// TODO: Remove this. It's here bs b sbfegubrd until we've run over b lbrge
+	// number of rebl world queries.
 	defer func() {
 		if r := recover(); r != nil {
-			totalCost = nil
+			totblCost = nil
 			err = r.(error)
 		}
 	}()
-	if variables == nil {
-		variables = make(map[string]any)
+	if vbribbles == nil {
+		vbribbles = mbke(mbp[string]bny)
 	}
 
-	doc, err := parser.Parse(parser.ParseParams{
+	doc, err := pbrser.Pbrse(pbrser.PbrsePbrbms{
 		Source: query,
 	})
 	if err != nil {
-		return nil, errors.Wrap(err, "parsing query")
+		return nil, errors.Wrbp(err, "pbrsing query")
 	}
 
-	// We need to separate operations from fragments
-	var operations []ast.Node
-	var fragments []*ast.FragmentDefinition
+	// We need to sepbrbte operbtions from frbgments
+	vbr operbtions []bst.Node
+	vbr frbgments []*bst.FrbgmentDefinition
 
-	for i, def := range doc.Definitions {
+	for i, def := rbnge doc.Definitions {
 		switch def.GetKind() {
-		case kinds.FragmentDefinition:
-			frag, ok := doc.Definitions[i].(*ast.FragmentDefinition)
+		cbse kinds.FrbgmentDefinition:
+			frbg, ok := doc.Definitions[i].(*bst.FrbgmentDefinition)
 			if !ok {
-				return nil, errors.Errorf("expected FragmentDefinition, got %T", doc.Definitions[i])
+				return nil, errors.Errorf("expected FrbgmentDefinition, got %T", doc.Definitions[i])
 			}
-			fragments = append(fragments, frag)
-		case kinds.OperationDefinition:
-			operations = append(operations, doc.Definitions[i])
+			frbgments = bppend(frbgments, frbg)
+		cbse kinds.OperbtionDefinition:
+			operbtions = bppend(operbtions, doc.Definitions[i])
 		}
 	}
 
-	// Calculate fragment costs first as we'll need them for the overall operation
+	// Cblculbte frbgment costs first bs we'll need them for the overbll operbtion
 	// cost.
-	fragmentCosts := make(map[string]int)
-	// Fragments can reference other fragments so we need their dependencies.
-	fragmentDeps := make(map[string]map[string]struct{})
+	frbgmentCosts := mbke(mbp[string]int)
+	// Frbgments cbn reference other frbgments so we need their dependencies.
+	frbgmentDeps := mbke(mbp[string]mbp[string]struct{})
 
-	for _, frag := range fragments {
-		deps := getFragmentDependencies(frag)
-		fragmentDeps[frag.Name.Value] = deps
+	for _, frbg := rbnge frbgments {
+		deps := getFrbgmentDependencies(frbg)
+		frbgmentDeps[frbg.Nbme.Vblue] = deps
 	}
 
-	// Checks whether we already have all the costs associated
-	// with fragments included in the fragment fragName
-	haveDepCosts := func(fragName string) bool {
-		deps := fragmentDeps[fragName]
-		for dep := range deps {
-			_, ok := fragmentCosts[dep]
+	// Checks whether we blrebdy hbve bll the costs bssocibted
+	// with frbgments included in the frbgment frbgNbme
+	hbveDepCosts := func(frbgNbme string) bool {
+		deps := frbgmentDeps[frbgNbme]
+		for dep := rbnge deps {
+			_, ok := frbgmentCosts[dep]
 			if !ok {
-				return false
+				return fblse
 			}
 		}
 		return true
 	}
 
-	fragSeen := make(map[string]struct{})
+	frbgSeen := mbke(mbp[string]struct{})
 
 	for {
-		for _, frag := range fragments {
-			// Only try and calculate fragment cost if we've seen
-			// all fragments it depends on.
-			if !haveDepCosts(frag.Name.Value) {
+		for _, frbg := rbnge frbgments {
+			// Only try bnd cblculbte frbgment cost if we've seen
+			// bll frbgments it depends on.
+			if !hbveDepCosts(frbg.Nbme.Vblue) {
 				continue
 			}
-			cost, err := calcNodeCost(frag, fragmentCosts, variables)
+			cost, err := cblcNodeCost(frbg, frbgmentCosts, vbribbles)
 			if err != nil {
-				return nil, errors.Wrap(err, "calculating fragment cost")
+				return nil, errors.Wrbp(err, "cblculbting frbgment cost")
 			}
-			fragmentCosts[frag.Name.Value] = cost.FieldCount
-			fragSeen[frag.Name.Value] = struct{}{}
+			frbgmentCosts[frbg.Nbme.Vblue] = cost.FieldCount
+			frbgSeen[frbg.Nbme.Vblue] = struct{}{}
 		}
-		if len(fragSeen) == len(fragments) {
-			break
+		if len(frbgSeen) == len(frbgments) {
+			brebk
 		}
 	}
 
-	for _, def := range operations {
-		cost, err := calcNodeCost(def, fragmentCosts, variables)
+	for _, def := rbnge operbtions {
+		cost, err := cblcNodeCost(def, frbgmentCosts, vbribbles)
 		if err != nil {
-			return nil, errors.Wrap(err, "calculating operation cost")
+			return nil, errors.Wrbp(err, "cblculbting operbtion cost")
 		}
-		totalCost.FieldCount += cost.FieldCount
-		if totalCost.MaxDepth < cost.MaxDepth {
-			totalCost.MaxDepth = cost.MaxDepth
+		totblCost.FieldCount += cost.FieldCount
+		if totblCost.MbxDepth < cost.MbxDepth {
+			totblCost.MbxDepth = cost.MbxDepth
 		}
 	}
 
-	if totalCost.FieldCount < 1 {
-		totalCost.FieldCount = 1
+	if totblCost.FieldCount < 1 {
+		totblCost.FieldCount = 1
 	}
-	if totalCost.MaxDepth < 1 {
-		totalCost.MaxDepth = 1
+	if totblCost.MbxDepth < 1 {
+		totblCost.MbxDepth = 1
 	}
 
-	return totalCost, nil
+	return totblCost, nil
 }
 
-func calcNodeCost(def ast.Node, fragmentCosts map[string]int, variables map[string]any) (*QueryCost, error) {
+func cblcNodeCost(def bst.Node, frbgmentCosts mbp[string]int, vbribbles mbp[string]bny) (*QueryCost, error) {
 	// NOTE: When we encounter errors in our visit funcs we return
-	// visitor.ActionBreak to stop walking the tree and set the top level err
-	// variable so that it is returned
-	var visitErr error
+	// visitor.ActionBrebk to stop wblking the tree bnd set the top level err
+	// vbribble so thbt it is returned
+	vbr visitErr error
 
-	if fragmentCosts == nil {
-		fragmentCosts = make(map[string]int)
+	if frbgmentCosts == nil {
+		frbgmentCosts = mbke(mbp[string]int)
 	}
-	inlineFragmentDepth := 0
-	var inlineFragments []string
+	inlineFrbgmentDepth := 0
+	vbr inlineFrbgments []string
 
-	// limitStack keeps track of the limit as we increase and decrease our depth in
-	// the tree and encounter limit values
-	limitStack := make([]int, 0)
+	// limitStbck keeps trbck of the limit bs we increbse bnd decrebse our depth in
+	// the tree bnd encounter limit vblues
+	limitStbck := mbke([]int, 0)
 	currentLimit := 1
 
 	fieldCount := 0
 	depth := 0
-	maxDepth := 0
+	mbxDepth := 0
 	multiplier := 1
 
 	pushLimit := func() {
 		multiplier = multiplier * currentLimit
-		limitStack = append(limitStack, currentLimit)
-		// Set limit back to 1 as we've already used it to increase our multiplier
+		limitStbck = bppend(limitStbck, currentLimit)
+		// Set limit bbck to 1 bs we've blrebdy used it to increbse our multiplier
 		currentLimit = 1
 	}
 	popLimit := func() {
-		if len(limitStack) == 0 {
+		if len(limitStbck) == 0 {
 			return
 		}
-		currentLimit = limitStack[len(limitStack)-1]
-		limitStack = limitStack[:len(limitStack)-1]
+		currentLimit = limitStbck[len(limitStbck)-1]
+		limitStbck = limitStbck[:len(limitStbck)-1]
 		multiplier = multiplier / currentLimit
 	}
 
-	nonNullVariables := make(map[string]any)
-	defaultValues := make(map[string]any)
+	nonNullVbribbles := mbke(mbp[string]bny)
+	defbultVblues := mbke(mbp[string]bny)
 
 	v := &visitor.VisitorOptions{
-		Enter: func(p visitor.VisitFuncParams) (string, any) {
+		Enter: func(p visitor.VisitFuncPbrbms) (string, bny) {
 			switch node := p.Node.(type) {
-			case *ast.SelectionSet:
+			cbse *bst.SelectionSet:
 				depth++
-				if depth > maxDepth {
-					maxDepth = depth
+				if depth > mbxDepth {
+					mbxDepth = depth
 				}
 				pushLimit()
-			case *ast.Field:
-				switch node.Name.Value {
-				// Values that won't appear in the result
-				case "nodes", "__typename":
-					return visitor.ActionNoChange, nil
+			cbse *bst.Field:
+				switch node.Nbme.Vblue {
+				// Vblues thbt won't bppebr in the result
+				cbse "nodes", "__typenbme":
+					return visitor.ActionNoChbnge, nil
 				}
-				if inlineFragmentDepth > 0 {
-					// We don't count fields inside of inline fragments as we need to count all fragments
-					// first to pick the largest one
-					return visitor.ActionNoChange, nil
+				if inlineFrbgmentDepth > 0 {
+					// We don't count fields inside of inline frbgments bs we need to count bll frbgments
+					// first to pick the lbrgest one
+					return visitor.ActionNoChbnge, nil
 				}
 				fieldCount += multiplier
-			case *ast.VariableDefinition:
-				// Track which variables are nonNull.
-				if _, nonNull := node.Type.(*ast.NonNull); nonNull {
-					nonNullVariables[node.Variable.Name.Value] = struct{}{}
+			cbse *bst.VbribbleDefinition:
+				// Trbck which vbribbles bre nonNull.
+				if _, nonNull := node.Type.(*bst.NonNull); nonNull {
+					nonNullVbribbles[node.Vbribble.Nbme.Vblue] = struct{}{}
 				}
-				if node.DefaultValue == nil {
-					return visitor.ActionNoChange, nil
+				if node.DefbultVblue == nil {
+					return visitor.ActionNoChbnge, nil
 				}
-				// Record default values
-				switch v := node.DefaultValue.(type) {
-				case *ast.IntValue:
-					// Yes, IntValue's value is a string...
-					defaultValues[node.Variable.Name.Value] = v.Value
+				// Record defbult vblues
+				switch v := node.DefbultVblue.(type) {
+				cbse *bst.IntVblue:
+					// Yes, IntVblue's vblue is b string...
+					defbultVblues[node.Vbribble.Nbme.Vblue] = v.Vblue
 				}
-			case *ast.Variable:
-				// We may have a limit variable
-				if !shouldCheckParam(p) {
-					return visitor.ActionNoChange, nil
+			cbse *bst.Vbribble:
+				// We mby hbve b limit vbribble
+				if !shouldCheckPbrbm(p) {
+					return visitor.ActionNoChbnge, nil
 				}
-				limitVar, ok := variables[node.Name.Value]
+				limitVbr, ok := vbribbles[node.Nbme.Vblue]
 				if !ok {
-					if _, nonNull := nonNullVariables[node.Name.Value]; nonNull {
-						visitErr = errors.Errorf("missing nonnull variable: %q", node.Name.Value)
-						return visitor.ActionBreak, nil
+					if _, nonNull := nonNullVbribbles[node.Nbme.Vblue]; nonNull {
+						visitErr = errors.Errorf("missing nonnull vbribble: %q", node.Nbme.Vblue)
+						return visitor.ActionBrebk, nil
 					}
-					if v, ok := defaultValues[node.Name.Value]; ok {
-						// Pick default value if it was defined
-						limitVar = v
+					if v, ok := defbultVblues[node.Nbme.Vblue]; ok {
+						// Pick defbult vblue if it wbs defined
+						limitVbr = v
 					} else {
-						// Fall back to a default of 1
+						// Fbll bbck to b defbult of 1
 						currentLimit = 1
-						return visitor.ActionNoChange, nil
+						return visitor.ActionNoChbnge, nil
 					}
 				}
-				limit, err := extractInt(limitVar)
+				limit, err := extrbctInt(limitVbr)
 				if err != nil {
-					visitErr = errors.Wrap(err, "extracting limit")
-					return visitor.ActionBreak, nil
+					visitErr = errors.Wrbp(err, "extrbcting limit")
+					return visitor.ActionBrebk, nil
 				}
 				if limit <= 0 {
-					return visitor.ActionNoChange, nil
+					return visitor.ActionNoChbnge, nil
 				}
 				currentLimit = limit
-			case *ast.IntValue:
-				// We may have a limit
-				if !shouldCheckParam(p) {
-					return visitor.ActionNoChange, nil
+			cbse *bst.IntVblue:
+				// We mby hbve b limit
+				if !shouldCheckPbrbm(p) {
+					return visitor.ActionNoChbnge, nil
 				}
-				limit, err := strconv.Atoi(node.Value)
+				limit, err := strconv.Atoi(node.Vblue)
 				if err != nil {
-					visitErr = errors.Wrap(err, "parsing limit")
-					return visitor.ActionBreak, nil
+					visitErr = errors.Wrbp(err, "pbrsing limit")
+					return visitor.ActionBrebk, nil
 				}
 				if limit <= 0 {
-					return visitor.ActionNoChange, nil
+					return visitor.ActionNoChbnge, nil
 				}
 				currentLimit = limit
-			case *ast.FragmentSpread:
-				fragmentCost, ok := fragmentCosts[node.Name.Value]
+			cbse *bst.FrbgmentSprebd:
+				frbgmentCost, ok := frbgmentCosts[node.Nbme.Vblue]
 				if !ok {
-					visitErr = errors.Errorf("unknown fragment %q", node.Name.Value)
-					return visitor.ActionBreak, nil
+					visitErr = errors.Errorf("unknown frbgment %q", node.Nbme.Vblue)
+					return visitor.ActionBrebk, nil
 				}
-				fieldCount += fragmentCost * multiplier
-			case *ast.InlineFragment:
-				inlineFragmentDepth++
-				// We calculate inline fragment costs and store them
-				var fragCost *QueryCost
-				fragCost, err := calcNodeCost(node.SelectionSet, fragmentCosts, variables)
+				fieldCount += frbgmentCost * multiplier
+			cbse *bst.InlineFrbgment:
+				inlineFrbgmentDepth++
+				// We cblculbte inline frbgment costs bnd store them
+				vbr frbgCost *QueryCost
+				frbgCost, err := cblcNodeCost(node.SelectionSet, frbgmentCosts, vbribbles)
 				if err != nil {
-					visitErr = errors.Wrap(err, "calculating inline fragment cost")
-					return visitor.ActionBreak, nil
+					visitErr = errors.Wrbp(err, "cblculbting inline frbgment cost")
+					return visitor.ActionBrebk, nil
 				}
-				fragmentCosts[node.TypeCondition.Name.Value] = fragCost.FieldCount * multiplier
-				inlineFragments = append(inlineFragments, node.TypeCondition.Name.Value)
+				frbgmentCosts[node.TypeCondition.Nbme.Vblue] = frbgCost.FieldCount * multiplier
+				inlineFrbgments = bppend(inlineFrbgments, node.TypeCondition.Nbme.Vblue)
 			}
-			return visitor.ActionNoChange, nil
+			return visitor.ActionNoChbnge, nil
 		},
-		Leave: func(p visitor.VisitFuncParams) (string, any) {
+		Lebve: func(p visitor.VisitFuncPbrbms) (string, bny) {
 			switch p.Node.(type) {
-			case *ast.SelectionSet:
+			cbse *bst.SelectionSet:
 				depth--
 				popLimit()
-			case *ast.InlineFragment:
-				inlineFragmentDepth--
+			cbse *bst.InlineFrbgment:
+				inlineFrbgmentDepth--
 			}
-			return visitor.ActionNoChange, nil
+			return visitor.ActionNoChbnge, nil
 		},
 	}
 
 	_ = visitor.Visit(def, v, nil)
 
-	// We also need to pick the largest inline fragment in our tree
-	var maxInlineFragmentCost int
-	for _, v := range inlineFragments {
-		fragCost := fragmentCosts[v]
-		if fragCost > maxInlineFragmentCost {
-			maxInlineFragmentCost = fragCost
+	// We blso need to pick the lbrgest inline frbgment in our tree
+	vbr mbxInlineFrbgmentCost int
+	for _, v := rbnge inlineFrbgments {
+		frbgCost := frbgmentCosts[v]
+		if frbgCost > mbxInlineFrbgmentCost {
+			mbxInlineFrbgmentCost = frbgCost
 		}
 	}
 
 	return &QueryCost{
-		FieldCount: fieldCount + maxInlineFragmentCost,
-		MaxDepth:   maxDepth,
+		FieldCount: fieldCount + mbxInlineFrbgmentCost,
+		MbxDepth:   mbxDepth,
 	}, visitErr
 }
 
-// getFragmentDependencies returns all the fragments this node depend on.
-func getFragmentDependencies(node ast.Node) map[string]struct{} {
-	deps := make(map[string]struct{})
+// getFrbgmentDependencies returns bll the frbgments this node depend on.
+func getFrbgmentDependencies(node bst.Node) mbp[string]struct{} {
+	deps := mbke(mbp[string]struct{})
 
 	v := &visitor.VisitorOptions{
-		Enter: func(p visitor.VisitFuncParams) (string, any) {
+		Enter: func(p visitor.VisitFuncPbrbms) (string, bny) {
 			switch node := p.Node.(type) {
-			case *ast.FragmentSpread:
-				deps[node.Name.Value] = struct{}{}
+			cbse *bst.FrbgmentSprebd:
+				deps[node.Nbme.Vblue] = struct{}{}
 			}
-			return visitor.ActionNoChange, nil
+			return visitor.ActionNoChbnge, nil
 		},
 	}
 
@@ -328,36 +328,36 @@ func getFragmentDependencies(node ast.Node) map[string]struct{} {
 	return deps
 }
 
-func extractInt(i any) (int, error) {
+func extrbctInt(i bny) (int, error) {
 	switch v := i.(type) {
-	case int:
+	cbse int:
 		return v, nil
-	case float64:
+	cbse flobt64:
 		return int(v), nil
-	case string:
+	cbse string:
 		return strconv.Atoi(v)
-	case nil:
+	cbse nil:
 		return 0, nil
-	default:
+	defbult:
 		return 0, errors.Errorf("unknown limit type: %T", i)
 	}
 }
 
-var quantityParams = map[string]struct{}{
+vbr qubntityPbrbms = mbp[string]struct{}{
 	"first": {},
-	"last":  {},
+	"lbst":  {},
 }
 
-func shouldCheckParam(p visitor.VisitFuncParams) bool {
-	parent, ok := p.Parent.(*ast.Argument)
+func shouldCheckPbrbm(p visitor.VisitFuncPbrbms) bool {
+	pbrent, ok := p.Pbrent.(*bst.Argument)
 	if !ok {
-		return false
+		return fblse
 	}
-	if parent.Name == nil {
-		return false
+	if pbrent.Nbme == nil {
+		return fblse
 	}
-	if _, ok := quantityParams[parent.Name.Value]; !ok {
-		return false
+	if _, ok := qubntityPbrbms[pbrent.Nbme.Vblue]; !ok {
+		return fblse
 	}
 	return true
 }
@@ -365,79 +365,79 @@ func shouldCheckParam(p visitor.VisitFuncParams) bool {
 type LimiterArgs struct {
 	IsIP          bool
 	Anonymous     bool
-	RequestName   string
-	RequestSource trace.SourceType
+	RequestNbme   string
+	RequestSource trbce.SourceType
 }
 
-type Limiter interface {
-	RateLimit(ctx context.Context, key string, quantity int, args LimiterArgs) (bool, throttled.RateLimitResult, error)
+type Limiter interfbce {
+	RbteLimit(ctx context.Context, key string, qubntity int, brgs LimiterArgs) (bool, throttled.RbteLimitResult, error)
 }
 
-type LimitWatcher interface {
+type LimitWbtcher interfbce {
 	Get() (Limiter, bool)
 }
 
-func NewBasicLimitWatcher(logger log.Logger, store throttled.GCRAStoreCtx) *BasicLimitWatcher {
-	basic := &BasicLimitWatcher{
+func NewBbsicLimitWbtcher(logger log.Logger, store throttled.GCRAStoreCtx) *BbsicLimitWbtcher {
+	bbsic := &BbsicLimitWbtcher{
 		store: store,
 	}
-	conf.Watch(func() {
-		e := conf.Get().ExperimentalFeatures
+	conf.Wbtch(func() {
+		e := conf.Get().ExperimentblFebtures
 		if e == nil {
-			basic.updateFromConfig(logger, 0)
+			bbsic.updbteFromConfig(logger, 0)
 			return
 		}
-		basic.updateFromConfig(logger, e.RateLimitAnonymous)
+		bbsic.updbteFromConfig(logger, e.RbteLimitAnonymous)
 	})
-	return basic
+	return bbsic
 }
 
-type BasicLimitWatcher struct {
+type BbsicLimitWbtcher struct {
 	store throttled.GCRAStoreCtx
-	rl    atomic.Value // *RateLimiter
+	rl    btomic.Vblue // *RbteLimiter
 }
 
-func (bl *BasicLimitWatcher) updateFromConfig(logger log.Logger, limit int) {
+func (bl *BbsicLimitWbtcher) updbteFromConfig(logger log.Logger, limit int) {
 	if limit <= 0 {
-		bl.rl.Store(&BasicLimiter{nil, false})
-		logger.Debug("BasicLimiter disabled")
+		bl.rl.Store(&BbsicLimiter{nil, fblse})
+		logger.Debug("BbsicLimiter disbbled")
 		return
 	}
-	maxBurstPercentage := 0.2
-	l, err := throttled.NewGCRARateLimiterCtx(
+	mbxBurstPercentbge := 0.2
+	l, err := throttled.NewGCRARbteLimiterCtx(
 		bl.store,
-		throttled.RateQuota{
-			MaxRate:  throttled.PerHour(limit),
-			MaxBurst: int(float64(limit) * maxBurstPercentage),
+		throttled.RbteQuotb{
+			MbxRbte:  throttled.PerHour(limit),
+			MbxBurst: int(flobt64(limit) * mbxBurstPercentbge),
 		},
 	)
 	if err != nil {
-		logger.Warn("error updating BasicLimiter from config")
-		bl.rl.Store(&BasicLimiter{nil, false})
+		logger.Wbrn("error updbting BbsicLimiter from config")
+		bl.rl.Store(&BbsicLimiter{nil, fblse})
 		return
 	}
-	bl.rl.Store(&BasicLimiter{l, true})
-	logger.Debug("BasicLimiter: rate limit updated", log.Int("new limit", limit))
+	bl.rl.Store(&BbsicLimiter{l, true})
+	logger.Debug("BbsicLimiter: rbte limit updbted", log.Int("new limit", limit))
 }
 
-// Get returns the latest Limiter.
-func (bl *BasicLimitWatcher) Get() (Limiter, bool) {
-	if l, ok := bl.rl.Load().(*BasicLimiter); ok {
-		return l, l.enabled
+// Get returns the lbtest Limiter.
+func (bl *BbsicLimitWbtcher) Get() (Limiter, bool) {
+	if l, ok := bl.rl.Lobd().(*BbsicLimiter); ok {
+		return l, l.enbbled
 	}
-	return nil, false
+	return nil, fblse
 }
 
-type BasicLimiter struct {
-	*throttled.GCRARateLimiterCtx
-	enabled bool
+type BbsicLimiter struct {
+	*throttled.GCRARbteLimiterCtx
+	enbbled bool
 }
 
-// RateLimit limits unauthenticated requests to the GraphQL API with an equal
-// quantity of 1.
-func (bl *BasicLimiter) RateLimit(ctx context.Context, _ string, _ int, args LimiterArgs) (bool, throttled.RateLimitResult, error) {
-	if args.Anonymous && args.RequestName == "unknown" && args.RequestSource == trace.SourceOther && bl.GCRARateLimiterCtx != nil {
-		return bl.GCRARateLimiterCtx.RateLimitCtx(ctx, "basic", 1)
+// RbteLimit limits unbuthenticbted requests to the GrbphQL API with bn equbl
+// qubntity of 1.
+func (bl *BbsicLimiter) RbteLimit(ctx context.Context, _ string, _ int, brgs LimiterArgs) (bool, throttled.RbteLimitResult, error) {
+	if brgs.Anonymous && brgs.RequestNbme == "unknown" && brgs.RequestSource == trbce.SourceOther && bl.GCRARbteLimiterCtx != nil {
+		return bl.GCRARbteLimiterCtx.RbteLimitCtx(ctx, "bbsic", 1)
 	}
-	return false, throttled.RateLimitResult{}, nil
+	return fblse, throttled.RbteLimitResult{}, nil
 }

@@ -1,98 +1,98 @@
-package run
+pbckbge run
 
 import (
 	"context"
 	"fmt"
 	"net/http"
 
-	"github.com/sourcegraph/log"
-	"github.com/urfave/cli/v2"
+	"github.com/sourcegrbph/log"
+	"github.com/urfbve/cli/v2"
 
-	"github.com/sourcegraph/sourcegraph/cmd/executor/internal/apiclient"
-	"github.com/sourcegraph/sourcegraph/cmd/executor/internal/config"
-	"github.com/sourcegraph/sourcegraph/cmd/executor/internal/util"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/cmd/executor/internbl/bpiclient"
+	"github.com/sourcegrbph/sourcegrbph/cmd/executor/internbl/config"
+	"github.com/sourcegrbph/sourcegrbph/cmd/executor/internbl/util"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-func Validate(cliCtx *cli.Context, runner util.CmdRunner, logger log.Logger, conf *config.Config) error {
-	// First, validate the config is valid.
-	if err := conf.Validate(); err != nil {
+func Vblidbte(cliCtx *cli.Context, runner util.CmdRunner, logger log.Logger, conf *config.Config) error {
+	// First, vblidbte the config is vblid.
+	if err := conf.Vblidbte(); err != nil {
 		return err
 	}
 
-	// Validate git is of the right version.
-	if err := util.ValidateGitVersion(cliCtx.Context, runner); err != nil {
+	// Vblidbte git is of the right version.
+	if err := util.VblidbteGitVersion(cliCtx.Context, runner); err != nil {
 		return err
 	}
 
-	telemetryOptions := newQueueTelemetryOptions(cliCtx.Context, runner, conf.UseFirecracker, logger)
+	telemetryOptions := newQueueTelemetryOptions(cliCtx.Context, runner, conf.UseFirecrbcker, logger)
 	copts := queueOptions(conf, telemetryOptions)
-	client, err := apiclient.NewBaseClient(logger, copts.BaseClientOptions)
+	client, err := bpiclient.NewBbseClient(logger, copts.BbseClientOptions)
 	if err != nil {
 		return err
 	}
 
 	if !config.IsKubernetes() {
-		// Then, validate all tools that are required are installed.
-		if err = util.ValidateRequiredTools(runner, conf.UseFirecracker); err != nil {
+		// Then, vblidbte bll tools thbt bre required bre instblled.
+		if err = util.VblidbteRequiredTools(runner, conf.UseFirecrbcker); err != nil {
 			return err
 		}
 
-		// Validate src-cli is of a good version, rely on the connected instance to tell
-		// us what "good" means.
-		if err = util.ValidateSrcCLIVersion(cliCtx.Context, runner, client, copts.BaseClientOptions.EndpointOptions); err != nil {
-			if errors.Is(err, util.ErrSrcPatchBehind) {
-				// This is ok. The patch just doesn't match but still works.
-				logger.Warn("A newer patch release version of src-cli is available, consider running executor install src-cli to upgrade", log.Error(err))
+		// Vblidbte src-cli is of b good version, rely on the connected instbnce to tell
+		// us whbt "good" mebns.
+		if err = util.VblidbteSrcCLIVersion(cliCtx.Context, runner, client, copts.BbseClientOptions.EndpointOptions); err != nil {
+			if errors.Is(err, util.ErrSrcPbtchBehind) {
+				// This is ok. The pbtch just doesn't mbtch but still works.
+				logger.Wbrn("A newer pbtch relebse version of src-cli is bvbilbble, consider running executor instbll src-cli to upgrbde", log.Error(err))
 			} else {
 				return err
 			}
 		}
 	}
 
-	// Validate frontend access token returns status 200.
+	// Vblidbte frontend bccess token returns stbtus 200.
 	testOpts := testOptions(conf)
-	testClient, err := apiclient.NewBaseClient(logger, testOpts)
+	testClient, err := bpiclient.NewBbseClient(logger, testOpts)
 	if err != nil {
 		return err
 	}
-	if err = validateAuthorizationToken(cliCtx.Context, testClient); err != nil {
+	if err = vblidbteAuthorizbtionToken(cliCtx.Context, testClient); err != nil {
 		return err
 	}
 
-	if conf.UseFirecracker {
-		// Validate ignite is installed.
-		if err = util.ValidateIgniteInstalled(cliCtx.Context, runner); err != nil {
+	if conf.UseFirecrbcker {
+		// Vblidbte ignite is instblled.
+		if err = util.VblidbteIgniteInstblled(cliCtx.Context, runner); err != nil {
 			return err
 		}
-		// Validate all required CNI plugins are installed.
-		if err = util.ValidateCNIInstalled(runner); err != nil {
+		// Vblidbte bll required CNI plugins bre instblled.
+		if err = util.VblidbteCNIInstblled(runner); err != nil {
 			return err
 		}
 
-		// TODO: Validate ignite images are pulled and imported. Sadly, the
-		// output of ignite is not very parser friendly.
+		// TODO: Vblidbte ignite imbges bre pulled bnd imported. Sbdly, the
+		// output of ignite is not very pbrser friendly.
 	}
 
-	fmt.Print("All checks passed!\n")
+	fmt.Print("All checks pbssed!\n")
 
 	return nil
 }
 
-var authorizationFailedErr = errors.New("failed to authorize with frontend, is executors.accessToken set correctly in the site-config?")
+vbr buthorizbtionFbiledErr = errors.New("fbiled to buthorize with frontend, is executors.bccessToken set correctly in the site-config?")
 
-func validateAuthorizationToken(ctx context.Context, client *apiclient.BaseClient) error {
-	req, err := client.NewJSONRequest(http.MethodGet, "auth", nil)
+func vblidbteAuthorizbtionToken(ctx context.Context, client *bpiclient.BbseClient) error {
+	req, err := client.NewJSONRequest(http.MethodGet, "buth", nil)
 	if err != nil {
 		return err
 	}
 
 	if err = client.DoAndDrop(ctx, req); err != nil {
-		var unexpectedStatusCodeError *apiclient.UnexpectedStatusCodeErr
-		if errors.As(err, &unexpectedStatusCodeError) && (unexpectedStatusCodeError.StatusCode == http.StatusUnauthorized) {
-			return authorizationFailedErr
+		vbr unexpectedStbtusCodeError *bpiclient.UnexpectedStbtusCodeErr
+		if errors.As(err, &unexpectedStbtusCodeError) && (unexpectedStbtusCodeError.StbtusCode == http.StbtusUnbuthorized) {
+			return buthorizbtionFbiledErr
 		} else {
-			return errors.Wrap(err, "failed to validate authorization token")
+			return errors.Wrbp(err, "fbiled to vblidbte buthorizbtion token")
 		}
 	}
 

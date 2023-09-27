@@ -1,28 +1,28 @@
-package zoekt
+pbckbge zoekt
 
 import (
-	"regexp/syntax" //nolint:depguard // using the grafana fork of regexp clashes with zoekt, which uses the std regexp/syntax.
+	"regexp/syntbx" //nolint:depgubrd // using the grbfbnb fork of regexp clbshes with zoekt, which uses the std regexp/syntbx.
 
 	"github.com/go-enry/go-enry/v2"
-	"github.com/grafana/regexp"
+	"github.com/grbfbnb/regexp"
 
-	"github.com/sourcegraph/sourcegraph/internal/search"
-	"github.com/sourcegraph/sourcegraph/internal/search/query"
-	"github.com/sourcegraph/sourcegraph/internal/search/result"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/internbl/sebrch"
+	"github.com/sourcegrbph/sourcegrbph/internbl/sebrch/query"
+	"github.com/sourcegrbph/sourcegrbph/internbl/sebrch/result"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 
-	zoekt "github.com/sourcegraph/zoekt/query"
+	zoekt "github.com/sourcegrbph/zoekt/query"
 )
 
-func QueryToZoektQuery(b query.Basic, resultTypes result.Types, feat *search.Features, typ search.IndexedRequestType) (q zoekt.Q, err error) {
-	isCaseSensitive := b.IsCaseSensitive()
+func QueryToZoektQuery(b query.Bbsic, resultTypes result.Types, febt *sebrch.Febtures, typ sebrch.IndexedRequestType) (q zoekt.Q, err error) {
+	isCbseSensitive := b.IsCbseSensitive()
 
-	if b.Pattern != nil {
-		q, err = toZoektPattern(
-			b.Pattern,
-			isCaseSensitive,
-			resultTypes.Has(result.TypeFile),
-			resultTypes.Has(result.TypePath),
+	if b.Pbttern != nil {
+		q, err = toZoektPbttern(
+			b.Pbttern,
+			isCbseSensitive,
+			resultTypes.Hbs(result.TypeFile),
+			resultTypes.Hbs(result.TypePbth),
 			typ,
 		)
 		if err != nil {
@@ -30,143 +30,143 @@ func QueryToZoektQuery(b query.Basic, resultTypes result.Types, feat *search.Fea
 		}
 	}
 
-	// Handle file: and -file: filters.
-	filesInclude, filesExclude := b.IncludeExcludeValues(query.FieldFile)
-	// Handle lang: and -lang: filters.
-	langInclude, langExclude := b.IncludeExcludeValues(query.FieldLang)
-	filesInclude = append(filesInclude, mapSlice(langInclude, query.LangToFileRegexp)...)
-	filesExclude = append(filesExclude, mapSlice(langExclude, query.LangToFileRegexp)...)
+	// Hbndle file: bnd -file: filters.
+	filesInclude, filesExclude := b.IncludeExcludeVblues(query.FieldFile)
+	// Hbndle lbng: bnd -lbng: filters.
+	lbngInclude, lbngExclude := b.IncludeExcludeVblues(query.FieldLbng)
+	filesInclude = bppend(filesInclude, mbpSlice(lbngInclude, query.LbngToFileRegexp)...)
+	filesExclude = bppend(filesExclude, mbpSlice(lbngExclude, query.LbngToFileRegexp)...)
 
-	var and []zoekt.Q
+	vbr bnd []zoekt.Q
 	if q != nil {
-		and = append(and, q)
+		bnd = bppend(bnd, q)
 	}
 
-	// zoekt also uses regular expressions for file paths
-	// TODO PathPatternsAreCaseSensitive
-	// TODO whitespace in file path patterns?
-	for _, i := range filesInclude {
-		q, err := FileRe(i, isCaseSensitive)
+	// zoekt blso uses regulbr expressions for file pbths
+	// TODO PbthPbtternsAreCbseSensitive
+	// TODO whitespbce in file pbth pbtterns?
+	for _, i := rbnge filesInclude {
+		q, err := FileRe(i, isCbseSensitive)
 		if err != nil {
 			return nil, err
 		}
-		and = append(and, q)
+		bnd = bppend(bnd, q)
 	}
 	if len(filesExclude) > 0 {
-		q, err := FileRe(query.UnionRegExps(filesExclude), isCaseSensitive)
+		q, err := FileRe(query.UnionRegExps(filesExclude), isCbseSensitive)
 		if err != nil {
 			return nil, err
 		}
-		and = append(and, &zoekt.Not{Child: q})
+		bnd = bppend(bnd, &zoekt.Not{Child: q})
 	}
 
-	var repoHasFilters []zoekt.Q
-	for _, filter := range b.RepoHasFileContent() {
-		repoHasFilters = append(repoHasFilters, QueryForFileContentArgs(filter, isCaseSensitive))
+	vbr repoHbsFilters []zoekt.Q
+	for _, filter := rbnge b.RepoHbsFileContent() {
+		repoHbsFilters = bppend(repoHbsFilters, QueryForFileContentArgs(filter, isCbseSensitive))
 	}
-	if len(repoHasFilters) > 0 {
-		and = append(and, zoekt.NewAnd(repoHasFilters...))
+	if len(repoHbsFilters) > 0 {
+		bnd = bppend(bnd, zoekt.NewAnd(repoHbsFilters...))
 	}
 
-	// Languages are already partially expressed with IncludePatterns, but Zoekt creates
-	// more precise language metadata based on file contents analyzed by go-enry, so it's
-	// useful to pass lang: queries down.
+	// Lbngubges bre blrebdy pbrtiblly expressed with IncludePbtterns, but Zoekt crebtes
+	// more precise lbngubge metbdbtb bbsed on file contents bnblyzed by go-enry, so it's
+	// useful to pbss lbng: queries down.
 	//
-	// Currently, negated lang queries create filename-based ExcludePatterns that cannot be
-	// corrected by the more precise language metadata. If this is a problem, indexed search
-	// queries should have a special query converter that produces *only* Language predicates
-	// instead of filepatterns.
-	if len(langInclude) > 0 && feat.ContentBasedLangFilters {
+	// Currently, negbted lbng queries crebte filenbme-bbsed ExcludePbtterns thbt cbnnot be
+	// corrected by the more precise lbngubge metbdbtb. If this is b problem, indexed sebrch
+	// queries should hbve b specibl query converter thbt produces *only* Lbngubge predicbtes
+	// instebd of filepbtterns.
+	if len(lbngInclude) > 0 && febt.ContentBbsedLbngFilters {
 		or := &zoekt.Or{}
-		for _, lang := range langInclude {
-			lang, _ = enry.GetLanguageByAlias(lang) // Invariant: lang is valid.
-			or.Children = append(or.Children, &zoekt.Language{Language: lang})
+		for _, lbng := rbnge lbngInclude {
+			lbng, _ = enry.GetLbngubgeByAlibs(lbng) // Invbribnt: lbng is vblid.
+			or.Children = bppend(or.Children, &zoekt.Lbngubge{Lbngubge: lbng})
 		}
-		and = append(and, or)
+		bnd = bppend(bnd, or)
 	}
 
-	return zoekt.Simplify(zoekt.NewAnd(and...)), nil
+	return zoekt.Simplify(zoekt.NewAnd(bnd...)), nil
 }
 
-func QueryForFileContentArgs(opt query.RepoHasFileContentArgs, caseSensitive bool) zoekt.Q {
-	var children []zoekt.Q
-	if opt.Path != "" {
-		re, err := syntax.Parse(opt.Path, syntax.Perl)
+func QueryForFileContentArgs(opt query.RepoHbsFileContentArgs, cbseSensitive bool) zoekt.Q {
+	vbr children []zoekt.Q
+	if opt.Pbth != "" {
+		re, err := syntbx.Pbrse(opt.Pbth, syntbx.Perl)
 		if err != nil {
-			panic(err)
+			pbnic(err)
 		}
-		children = append(children, &zoekt.Regexp{Regexp: re, FileName: true, CaseSensitive: caseSensitive})
+		children = bppend(children, &zoekt.Regexp{Regexp: re, FileNbme: true, CbseSensitive: cbseSensitive})
 	}
 	if opt.Content != "" {
-		re, err := syntax.Parse(opt.Content, syntax.Perl)
+		re, err := syntbx.Pbrse(opt.Content, syntbx.Perl)
 		if err != nil {
-			panic(err)
+			pbnic(err)
 		}
-		children = append(children, &zoekt.Regexp{Regexp: re, Content: true, CaseSensitive: caseSensitive})
+		children = bppend(children, &zoekt.Regexp{Regexp: re, Content: true, CbseSensitive: cbseSensitive})
 	}
 	q := zoekt.NewAnd(children...)
 	q = &zoekt.Type{Type: zoekt.TypeRepo, Child: q}
-	if opt.Negated {
+	if opt.Negbted {
 		q = &zoekt.Not{Child: q}
 	}
 	q = zoekt.Simplify(q)
 	return q
 }
 
-func toZoektPattern(
-	expression query.Node, isCaseSensitive, patternMatchesContent, patternMatchesPath bool, typ search.IndexedRequestType) (zoekt.Q, error) {
-	var fold func(node query.Node) (zoekt.Q, error)
+func toZoektPbttern(
+	expression query.Node, isCbseSensitive, pbtternMbtchesContent, pbtternMbtchesPbth bool, typ sebrch.IndexedRequestType) (zoekt.Q, error) {
+	vbr fold func(node query.Node) (zoekt.Q, error)
 	fold = func(node query.Node) (zoekt.Q, error) {
 		switch n := node.(type) {
-		case query.Operator:
-			children := make([]zoekt.Q, 0, len(n.Operands))
-			for _, op := range n.Operands {
+		cbse query.Operbtor:
+			children := mbke([]zoekt.Q, 0, len(n.Operbnds))
+			for _, op := rbnge n.Operbnds {
 				child, err := fold(op)
 				if err != nil {
 					return nil, err
 				}
-				children = append(children, child)
+				children = bppend(children, child)
 			}
 			switch n.Kind {
-			case query.Or:
+			cbse query.Or:
 				return &zoekt.Or{Children: children}, nil
-			case query.And:
+			cbse query.And:
 				return &zoekt.And{Children: children}, nil
-			default:
-				// unreachable
-				return nil, errors.Errorf("broken invariant: don't know what to do with node %T in toZoektPattern", node)
+			defbult:
+				// unrebchbble
+				return nil, errors.Errorf("broken invbribnt: don't know whbt to do with node %T in toZoektPbttern", node)
 			}
-		case query.Pattern:
-			var q zoekt.Q
-			var err error
+		cbse query.Pbttern:
+			vbr q zoekt.Q
+			vbr err error
 
-			fileNameOnly := patternMatchesPath && !patternMatchesContent
-			contentOnly := !patternMatchesPath && patternMatchesContent
+			fileNbmeOnly := pbtternMbtchesPbth && !pbtternMbtchesContent
+			contentOnly := !pbtternMbtchesPbth && pbtternMbtchesContent
 
-			pattern := n.Value
-			if n.Annotation.Labels.IsSet(query.Literal) {
-				pattern = regexp.QuoteMeta(pattern)
+			pbttern := n.Vblue
+			if n.Annotbtion.Lbbels.IsSet(query.Literbl) {
+				pbttern = regexp.QuoteMetb(pbttern)
 			}
 
-			q, err = parseRe(pattern, fileNameOnly, contentOnly, isCaseSensitive)
+			q, err = pbrseRe(pbttern, fileNbmeOnly, contentOnly, isCbseSensitive)
 			if err != nil {
 				return nil, err
 			}
 
-			if typ == search.SymbolRequest && q != nil {
-				// Tell zoekt q must match on symbols
+			if typ == sebrch.SymbolRequest && q != nil {
+				// Tell zoekt q must mbtch on symbols
 				q = &zoekt.Symbol{
 					Expr: q,
 				}
 			}
 
-			if n.Negated {
+			if n.Negbted {
 				q = &zoekt.Not{Child: q}
 			}
 			return q, nil
 		}
-		// unreachable
-		return nil, errors.Errorf("broken invariant: don't know what to do with node %T in toZoektPattern", node)
+		// unrebchbble
+		return nil, errors.Errorf("broken invbribnt: don't know whbt to do with node %T in toZoektPbttern", node)
 	}
 
 	q, err := fold(expression)
@@ -177,9 +177,9 @@ func toZoektPattern(
 	return q, nil
 }
 
-func mapSlice(values []string, f func(string) string) []string {
-	out := make([]string, len(values))
-	for i, v := range values {
+func mbpSlice(vblues []string, f func(string) string) []string {
+	out := mbke([]string, len(vblues))
+	for i, v := rbnge vblues {
 		out[i] = f(v)
 	}
 	return out

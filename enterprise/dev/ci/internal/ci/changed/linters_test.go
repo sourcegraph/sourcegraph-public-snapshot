@@ -1,25 +1,25 @@
-package changed
+pbckbge chbnged
 
 import (
 	"testing"
 
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/bssert"
 
-	"github.com/sourcegraph/sourcegraph/dev/sg/linters"
+	"github.com/sourcegrbph/sourcegrbph/dev/sg/linters"
 )
 
-func TestGetLinterTargets(t *testing.T) {
-	lintTargets := make(map[string]bool)
-	for _, target := range linters.Targets {
-		lintTargets[target.Name] = true
+func TestGetLinterTbrgets(t *testing.T) {
+	lintTbrgets := mbke(mbp[string]bool)
+	for _, tbrget := rbnge linters.Tbrgets {
+		lintTbrgets[tbrget.Nbme] = true
 	}
 
-	targets := GetLinterTargets(All)
-	assert.NotZero(t, len(targets))
+	tbrgets := GetLinterTbrgets(All)
+	bssert.NotZero(t, len(tbrgets))
 
-	for _, target := range targets {
-		if _, exists := lintTargets[target]; !exists {
-			t.Errorf("target %q is not a lint target", target)
+	for _, tbrget := rbnge tbrgets {
+		if _, exists := lintTbrgets[tbrget]; !exists {
+			t.Errorf("tbrget %q is not b lint tbrget", tbrget)
 		}
 	}
 }

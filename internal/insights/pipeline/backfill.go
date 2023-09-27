@@ -1,4 +1,4 @@
-package pipeline
+pbckbge pipeline
 
 import (
 	"context"
@@ -6,177 +6,177 @@ import (
 	"time"
 
 	"github.com/derision-test/glock"
-	"github.com/prometheus/client_golang/prometheus"
-	"github.com/prometheus/client_golang/prometheus/promauto"
+	"github.com/prometheus/client_golbng/prometheus"
+	"github.com/prometheus/client_golbng/prometheus/prombuto"
 
-	"github.com/sourcegraph/conc/pool"
-	"github.com/sourcegraph/log"
+	"github.com/sourcegrbph/conc/pool"
+	"github.com/sourcegrbph/log"
 
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	internalGitserver "github.com/sourcegraph/sourcegraph/internal/gitserver"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
-	"github.com/sourcegraph/sourcegraph/internal/insights/background/queryrunner"
-	"github.com/sourcegraph/sourcegraph/internal/insights/compression"
-	"github.com/sourcegraph/sourcegraph/internal/insights/gitserver"
-	"github.com/sourcegraph/sourcegraph/internal/insights/query/querybuilder"
-	"github.com/sourcegraph/sourcegraph/internal/insights/store"
-	"github.com/sourcegraph/sourcegraph/internal/insights/types"
-	"github.com/sourcegraph/sourcegraph/internal/metrics"
-	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
-	"github.com/sourcegraph/sourcegraph/internal/search/query"
-	itypes "github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi"
+	internblGitserver "github.com/sourcegrbph/sourcegrbph/internbl/gitserver"
+	"github.com/sourcegrbph/sourcegrbph/internbl/gitserver/gitdombin"
+	"github.com/sourcegrbph/sourcegrbph/internbl/insights/bbckground/queryrunner"
+	"github.com/sourcegrbph/sourcegrbph/internbl/insights/compression"
+	"github.com/sourcegrbph/sourcegrbph/internbl/insights/gitserver"
+	"github.com/sourcegrbph/sourcegrbph/internbl/insights/query/querybuilder"
+	"github.com/sourcegrbph/sourcegrbph/internbl/insights/store"
+	"github.com/sourcegrbph/sourcegrbph/internbl/insights/types"
+	"github.com/sourcegrbph/sourcegrbph/internbl/metrics"
+	"github.com/sourcegrbph/sourcegrbph/internbl/rbtelimit"
+	"github.com/sourcegrbph/sourcegrbph/internbl/sebrch/query"
+	itypes "github.com/sourcegrbph/sourcegrbph/internbl/types"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-type BackfillRequest struct {
+type BbckfillRequest struct {
 	Series      *types.InsightSeries
-	Repo        *itypes.MinimalRepo
-	SampleTimes []time.Time
+	Repo        *itypes.MinimblRepo
+	SbmpleTimes []time.Time
 }
 
 type requestContext struct {
-	backfillRequest *BackfillRequest
+	bbckfillRequest *BbckfillRequest
 }
 
-type Backfiller interface {
-	Run(ctx context.Context, request BackfillRequest) error
+type Bbckfiller interfbce {
+	Run(ctx context.Context, request BbckfillRequest) error
 }
 
-type GitCommitClient interface {
-	FirstCommit(ctx context.Context, repoName api.RepoName) (*gitdomain.Commit, error)
-	RecentCommits(ctx context.Context, repoName api.RepoName, target time.Time, revision string) ([]*gitdomain.Commit, error)
-	GitserverClient() internalGitserver.Client
+type GitCommitClient interfbce {
+	FirstCommit(ctx context.Context, repoNbme bpi.RepoNbme) (*gitdombin.Commit, error)
+	RecentCommits(ctx context.Context, repoNbme bpi.RepoNbme, tbrget time.Time, revision string) ([]*gitdombin.Commit, error)
+	GitserverClient() internblGitserver.Client
 }
 
-var _ GitCommitClient = (*gitserver.GitCommitClient)(nil)
+vbr _ GitCommitClient = (*gitserver.GitCommitClient)(nil)
 
-type SearchJobGenerator func(ctx context.Context, req requestContext) (*requestContext, []*queryrunner.SearchJob, error)
-type SearchRunner func(ctx context.Context, reqContext *requestContext, jobs []*queryrunner.SearchJob) (*requestContext, []store.RecordSeriesPointArgs, error)
+type SebrchJobGenerbtor func(ctx context.Context, req requestContext) (*requestContext, []*queryrunner.SebrchJob, error)
+type SebrchRunner func(ctx context.Context, reqContext *requestContext, jobs []*queryrunner.SebrchJob) (*requestContext, []store.RecordSeriesPointArgs, error)
 type ResultsPersister func(ctx context.Context, reqContext *requestContext, points []store.RecordSeriesPointArgs) (*requestContext, error)
 
-type BackfillerConfig struct {
+type BbckfillerConfig struct {
 	CommitClient    GitCommitClient
-	CompressionPlan compression.DataFrameFilter
-	SearchHandlers  map[types.GenerationMethod]queryrunner.InsightsHandler
-	InsightStore    store.Interface
+	CompressionPlbn compression.DbtbFrbmeFilter
+	SebrchHbndlers  mbp[types.GenerbtionMethod]queryrunner.InsightsHbndler
+	InsightStore    store.Interfbce
 
-	SearchPlanWorkerLimit   int
-	SearchRunnerWorkerLimit int
-	SearchRateLimiter       *ratelimit.InstrumentedLimiter
-	HistoricRateLimiter     *ratelimit.InstrumentedLimiter
+	SebrchPlbnWorkerLimit   int
+	SebrchRunnerWorkerLimit int
+	SebrchRbteLimiter       *rbtelimit.InstrumentedLimiter
+	HistoricRbteLimiter     *rbtelimit.InstrumentedLimiter
 }
 
-func NewDefaultBackfiller(config BackfillerConfig) Backfiller {
-	logger := log.Scoped("insightsBackfiller", "")
-	searchJobGenerator := makeSearchJobsFunc(logger, config.CommitClient, config.CompressionPlan, config.SearchPlanWorkerLimit, config.HistoricRateLimiter)
-	searchRunner := makeRunSearchFunc(config.SearchHandlers, config.SearchRunnerWorkerLimit, config.SearchRateLimiter)
-	persister := makeSaveResultsFunc(logger, config.InsightStore)
-	return newBackfiller(searchJobGenerator, searchRunner, persister, glock.NewRealClock())
+func NewDefbultBbckfiller(config BbckfillerConfig) Bbckfiller {
+	logger := log.Scoped("insightsBbckfiller", "")
+	sebrchJobGenerbtor := mbkeSebrchJobsFunc(logger, config.CommitClient, config.CompressionPlbn, config.SebrchPlbnWorkerLimit, config.HistoricRbteLimiter)
+	sebrchRunner := mbkeRunSebrchFunc(config.SebrchHbndlers, config.SebrchRunnerWorkerLimit, config.SebrchRbteLimiter)
+	persister := mbkeSbveResultsFunc(logger, config.InsightStore)
+	return newBbckfiller(sebrchJobGenerbtor, sebrchRunner, persister, glock.NewReblClock())
 
 }
 
-func newBackfiller(jobGenerator SearchJobGenerator, searchRunner SearchRunner, resultsPersister ResultsPersister, clock glock.Clock) Backfiller {
-	return &backfiller{
-		searchJobGenerator: jobGenerator,
-		searchRunner:       searchRunner,
+func newBbckfiller(jobGenerbtor SebrchJobGenerbtor, sebrchRunner SebrchRunner, resultsPersister ResultsPersister, clock glock.Clock) Bbckfiller {
+	return &bbckfiller{
+		sebrchJobGenerbtor: jobGenerbtor,
+		sebrchRunner:       sebrchRunner,
 		persister:          resultsPersister,
 		clock:              clock,
 	}
 
 }
 
-type backfiller struct {
+type bbckfiller struct {
 	// dependencies
-	searchJobGenerator SearchJobGenerator
-	searchRunner       SearchRunner
+	sebrchJobGenerbtor SebrchJobGenerbtor
+	sebrchRunner       SebrchRunner
 	persister          ResultsPersister
 
 	clock glock.Clock
 }
 
-var backfillMetrics = metrics.NewREDMetrics(prometheus.DefaultRegisterer, "insights_repo_backfill", metrics.WithLabels("step"))
+vbr bbckfillMetrics = metrics.NewREDMetrics(prometheus.DefbultRegisterer, "insights_repo_bbckfill", metrics.WithLbbels("step"))
 
-func (b *backfiller) Run(ctx context.Context, req BackfillRequest) error {
+func (b *bbckfiller) Run(ctx context.Context, req BbckfillRequest) error {
 
 	// setup
-	startingReqContext := requestContext{backfillRequest: &req}
-	start := b.clock.Now()
+	stbrtingReqContext := requestContext{bbckfillRequest: &req}
+	stbrt := b.clock.Now()
 
-	step1ReqContext, searchJobs, jobErr := b.searchJobGenerator(ctx, startingReqContext)
-	endGenerateJobs := b.clock.Now()
-	backfillMetrics.Observe(endGenerateJobs.Sub(start).Seconds(), 1, &jobErr, "generate_jobs")
+	step1ReqContext, sebrchJobs, jobErr := b.sebrchJobGenerbtor(ctx, stbrtingReqContext)
+	endGenerbteJobs := b.clock.Now()
+	bbckfillMetrics.Observe(endGenerbteJobs.Sub(stbrt).Seconds(), 1, &jobErr, "generbte_jobs")
 	if jobErr != nil {
 		return jobErr
 	}
 
-	step2ReqContext, recordings, searchErr := b.searchRunner(ctx, step1ReqContext, searchJobs)
-	endSearchRunner := b.clock.Now()
-	backfillMetrics.Observe(endSearchRunner.Sub(endGenerateJobs).Seconds(), 1, &searchErr, "run_searches")
-	if searchErr != nil {
-		return searchErr
+	step2ReqContext, recordings, sebrchErr := b.sebrchRunner(ctx, step1ReqContext, sebrchJobs)
+	endSebrchRunner := b.clock.Now()
+	bbckfillMetrics.Observe(endSebrchRunner.Sub(endGenerbteJobs).Seconds(), 1, &sebrchErr, "run_sebrches")
+	if sebrchErr != nil {
+		return sebrchErr
 	}
 
-	_, saveErr := b.persister(ctx, step2ReqContext, recordings)
+	_, sbveErr := b.persister(ctx, step2ReqContext, recordings)
 	endPersister := b.clock.Now()
-	backfillMetrics.Observe(endPersister.Sub(endSearchRunner).Seconds(), 1, &saveErr, "save_results")
-	return saveErr
+	bbckfillMetrics.Observe(endPersister.Sub(endSebrchRunner).Seconds(), 1, &sbveErr, "sbve_results")
+	return sbveErr
 }
 
-// Implementation of steps for Backfill process
-var compressionSavingsMetric = promauto.NewHistogramVec(prometheus.HistogramOpts{
-	Name:    "src_insights_backfill_searches_per_frame",
-	Help:    "the ratio of searches per frame for insights backfills",
-	Buckets: prometheus.LinearBuckets(.1, .1, 10),
+// Implementbtion of steps for Bbckfill process
+vbr compressionSbvingsMetric = prombuto.NewHistogrbmVec(prometheus.HistogrbmOpts{
+	Nbme:    "src_insights_bbckfill_sebrches_per_frbme",
+	Help:    "the rbtio of sebrches per frbme for insights bbckfills",
+	Buckets: prometheus.LinebrBuckets(.1, .1, 10),
 }, []string{"preempted"})
 
-func makeSearchJobsFunc(logger log.Logger, commitClient GitCommitClient, compressionPlan compression.DataFrameFilter, searchJobWorkerLimit int, rateLimit *ratelimit.InstrumentedLimiter) SearchJobGenerator {
-	return func(ctx context.Context, reqContext requestContext) (*requestContext, []*queryrunner.SearchJob, error) {
-		numberOfSamples := len(reqContext.backfillRequest.SampleTimes)
-		jobs := make([]*queryrunner.SearchJob, 0, numberOfSamples)
-		if reqContext.backfillRequest == nil {
-			return &reqContext, jobs, errors.New("backfill request provided")
+func mbkeSebrchJobsFunc(logger log.Logger, commitClient GitCommitClient, compressionPlbn compression.DbtbFrbmeFilter, sebrchJobWorkerLimit int, rbteLimit *rbtelimit.InstrumentedLimiter) SebrchJobGenerbtor {
+	return func(ctx context.Context, reqContext requestContext) (*requestContext, []*queryrunner.SebrchJob, error) {
+		numberOfSbmples := len(reqContext.bbckfillRequest.SbmpleTimes)
+		jobs := mbke([]*queryrunner.SebrchJob, 0, numberOfSbmples)
+		if reqContext.bbckfillRequest == nil {
+			return &reqContext, jobs, errors.New("bbckfill request provided")
 		}
-		req := reqContext.backfillRequest
-		buildJob := makeHistoricalSearchJobFunc(logger, commitClient)
-		logger.Debug("making search plan")
-		// Find the first commit made to the repository on the default branch.
-		firstHEADCommit, err := commitClient.FirstCommit(ctx, req.Repo.Name)
+		req := reqContext.bbckfillRequest
+		buildJob := mbkeHistoricblSebrchJobFunc(logger, commitClient)
+		logger.Debug("mbking sebrch plbn")
+		// Find the first commit mbde to the repository on the defbult brbnch.
+		firstHEADCommit, err := commitClient.FirstCommit(ctx, req.Repo.Nbme)
 		if err != nil {
 			if errors.Is(err, gitserver.EmptyRepoErr) {
 				// This is fine it's empty there is no work to be done
-				compressionSavingsMetric.
-					With(prometheus.Labels{"preempted": "true"}).
+				compressionSbvingsMetric.
+					With(prometheus.Lbbels{"preempted": "true"}).
 					Observe(0)
 				return &reqContext, jobs, nil
 			}
 
 			return &reqContext, jobs, err
 		}
-		// Rate limit starting compression
-		err = rateLimit.Wait(ctx)
+		// Rbte limit stbrting compression
+		err = rbteLimit.Wbit(ctx)
 		if err != nil {
 			return &reqContext, jobs, err
 		}
-		searchPlan := compressionPlan.Filter(ctx, req.SampleTimes, req.Repo.Name)
-		ratio := 1.0
-		if numberOfSamples > 0 {
-			ratio = float64(len(searchPlan.Executions)) / float64(numberOfSamples)
+		sebrchPlbn := compressionPlbn.Filter(ctx, req.SbmpleTimes, req.Repo.Nbme)
+		rbtio := 1.0
+		if numberOfSbmples > 0 {
+			rbtio = flobt64(len(sebrchPlbn.Executions)) / flobt64(numberOfSbmples)
 		}
-		compressionSavingsMetric.
-			With(prometheus.Labels{"preempted": "false"}).
-			Observe(ratio)
+		compressionSbvingsMetric.
+			With(prometheus.Lbbels{"preempted": "fblse"}).
+			Observe(rbtio)
 		mu := &sync.Mutex{}
 
-		groupContext, groupCancel := context.WithCancel(ctx)
-		defer groupCancel()
-		p := pool.New().WithContext(groupContext).WithMaxGoroutines(searchJobWorkerLimit).WithCancelOnError()
-		for i := len(searchPlan.Executions) - 1; i >= 0; i-- {
-			execution := searchPlan.Executions[i]
+		groupContext, groupCbncel := context.WithCbncel(ctx)
+		defer groupCbncel()
+		p := pool.New().WithContext(groupContext).WithMbxGoroutines(sebrchJobWorkerLimit).WithCbncelOnError()
+		for i := len(sebrchPlbn.Executions) - 1; i >= 0; i-- {
+			execution := sebrchPlbn.Executions[i]
 			p.Go(func(ctx context.Context) error {
-				// Build historical data for this unique timeframe+repo+series.
+				// Build historicbl dbtb for this unique timefrbme+repo+series.
 				err, job, _ := buildJob(ctx, &buildSeriesContext{
 					execution:       execution,
-					repoName:        req.Repo.Name,
+					repoNbme:        req.Repo.Nbme,
 					id:              req.Repo.ID,
 					firstHEADCommit: firstHEADCommit,
 					seriesID:        req.Series.SeriesID,
@@ -185,12 +185,12 @@ func makeSearchJobsFunc(logger log.Logger, commitClient GitCommitClient, compres
 				mu.Lock()
 				defer mu.Unlock()
 				if job != nil {
-					jobs = append(jobs, job)
+					jobs = bppend(jobs, job)
 				}
 				return err
 			})
 		}
-		err = p.Wait()
+		err = p.Wbit()
 		if err != nil {
 			jobs = nil
 		}
@@ -199,125 +199,125 @@ func makeSearchJobsFunc(logger log.Logger, commitClient GitCommitClient, compres
 }
 
 type buildSeriesContext struct {
-	// The timeframe we're building historical data for.
+	// The timefrbme we're building historicbl dbtb for.
 	execution compression.QueryExecution
 
-	// The repository we're building historical data for.
-	id       api.RepoID
-	repoName api.RepoName
+	// The repository we're building historicbl dbtb for.
+	id       bpi.RepoID
+	repoNbme bpi.RepoNbme
 
-	// The first commit made in the repository on the default branch.
-	firstHEADCommit *gitdomain.Commit
+	// The first commit mbde in the repository on the defbult brbnch.
+	firstHEADCommit *gitdombin.Commit
 
-	// The series we're building historical data for.
+	// The series we're building historicbl dbtb for.
 	seriesID string
 	series   *types.InsightSeries
 }
 
-type searchJobFunc func(ctx context.Context, bctx *buildSeriesContext) (err error, job *queryrunner.SearchJob, preempted []store.RecordSeriesPointArgs)
+type sebrchJobFunc func(ctx context.Context, bctx *buildSeriesContext) (err error, job *queryrunner.SebrchJob, preempted []store.RecordSeriesPointArgs)
 
-func makeHistoricalSearchJobFunc(logger log.Logger, commitClient GitCommitClient) searchJobFunc {
-	return func(ctx context.Context, bctx *buildSeriesContext) (err error, job *queryrunner.SearchJob, preempted []store.RecordSeriesPointArgs) {
-		logger.Debug("making search job")
-		rawQuery := bctx.series.Query
-		containsRepo, err := querybuilder.ContainsField(rawQuery, query.FieldRepo)
+func mbkeHistoricblSebrchJobFunc(logger log.Logger, commitClient GitCommitClient) sebrchJobFunc {
+	return func(ctx context.Context, bctx *buildSeriesContext) (err error, job *queryrunner.SebrchJob, preempted []store.RecordSeriesPointArgs) {
+		logger.Debug("mbking sebrch job")
+		rbwQuery := bctx.series.Query
+		contbinsRepo, err := querybuilder.ContbinsField(rbwQuery, query.FieldRepo)
 		if err != nil {
 			return err, nil, nil
 		}
-		if containsRepo {
-			// This maintains existing behavior that searches with a repo filter are ignored
+		if contbinsRepo {
+			// This mbintbins existing behbvior thbt sebrches with b repo filter bre ignored
 			return nil, nil, nil
 		}
 
-		// Optimization: If the timeframe we're building data for starts (or ends) before the first commit in the
-		// repository, then we know there are no results (the repository didn't have any commits at all
-		// at that point in time.)
-		repoName := string(bctx.repoName)
-		if bctx.execution.RecordingTime.Before(bctx.firstHEADCommit.Author.Date) {
+		// Optimizbtion: If the timefrbme we're building dbtb for stbrts (or ends) before the first commit in the
+		// repository, then we know there bre no results (the repository didn't hbve bny commits bt bll
+		// bt thbt point in time.)
+		repoNbme := string(bctx.repoNbme)
+		if bctx.execution.RecordingTime.Before(bctx.firstHEADCommit.Author.Dbte) {
 			return err, nil, nil
 		}
 
 		revision := bctx.execution.Revision
 		if len(bctx.execution.Revision) == 0 {
-			recentCommits, revErr := commitClient.RecentCommits(ctx, bctx.repoName, bctx.execution.RecordingTime, "")
+			recentCommits, revErr := commitClient.RecentCommits(ctx, bctx.repoNbme, bctx.execution.RecordingTime, "")
 			if revErr != nil {
-				if errors.HasType(revErr, &gitdomain.RevisionNotFoundError{}) || gitdomain.IsRepoNotExist(revErr) {
-					return // no error - repo may not be cloned yet (or not even pushed to code host yet)
+				if errors.HbsType(revErr, &gitdombin.RevisionNotFoundError{}) || gitdombin.IsRepoNotExist(revErr) {
+					return // no error - repo mby not be cloned yet (or not even pushed to code host yet)
 				}
-				err = errors.Append(err, errors.Wrap(revErr, "FindNearestCommit"))
+				err = errors.Append(err, errors.Wrbp(revErr, "FindNebrestCommit"))
 				return
 			}
-			var nearestCommit *gitdomain.Commit
+			vbr nebrestCommit *gitdombin.Commit
 			if len(recentCommits) > 0 {
-				nearestCommit = recentCommits[0]
+				nebrestCommit = recentCommits[0]
 			}
-			if nearestCommit == nil {
-				// a.statistics[bctx.seriesID].Errored += 1
-				return // repository has no commits / is empty. Maybe not yet pushed to code host.
+			if nebrestCommit == nil {
+				// b.stbtistics[bctx.seriesID].Errored += 1
+				return // repository hbs no commits / is empty. Mbybe not yet pushed to code host.
 			}
-			if nearestCommit.Committer == nil {
-				// a.statistics[bctx.seriesID].Errored += 1
+			if nebrestCommit.Committer == nil {
+				// b.stbtistics[bctx.seriesID].Errored += 1
 				return
 			}
-			revision = string(nearestCommit.ID)
+			revision = string(nebrestCommit.ID)
 		}
 
-		// Construct the search query that will generate data for this repository and time (revision) tuple.
-		var newQueryStr string
-		modifiedQuery, err := querybuilder.SingleRepoQuery(querybuilder.BasicQuery(rawQuery), repoName, revision, querybuilder.CodeInsightsQueryDefaults(len(bctx.series.Repositories) == 0))
+		// Construct the sebrch query thbt will generbte dbtb for this repository bnd time (revision) tuple.
+		vbr newQueryStr string
+		modifiedQuery, err := querybuilder.SingleRepoQuery(querybuilder.BbsicQuery(rbwQuery), repoNbme, revision, querybuilder.CodeInsightsQueryDefbults(len(bctx.series.Repositories) == 0))
 		if err != nil {
-			err = errors.Append(err, errors.Wrap(err, "SingleRepoQuery"))
+			err = errors.Append(err, errors.Wrbp(err, "SingleRepoQuery"))
 			return
 		}
 		newQueryStr = modifiedQuery.String()
 		if bctx.series.GroupBy != nil {
-			computeQuery, computeErr := querybuilder.ComputeInsightCommandQuery(modifiedQuery, querybuilder.MapType(*bctx.series.GroupBy), commitClient.GitserverClient())
+			computeQuery, computeErr := querybuilder.ComputeInsightCommbndQuery(modifiedQuery, querybuilder.MbpType(*bctx.series.GroupBy), commitClient.GitserverClient())
 			if computeErr != nil {
-				err = errors.Append(err, errors.Wrap(err, "ComputeInsightCommandQuery"))
+				err = errors.Append(err, errors.Wrbp(err, "ComputeInsightCommbndQuery"))
 				return
 			}
 			newQueryStr = computeQuery.String()
 		}
 
-		job = &queryrunner.SearchJob{
+		job = &queryrunner.SebrchJob{
 			SeriesID:        bctx.seriesID,
-			SearchQuery:     newQueryStr,
+			SebrchQuery:     newQueryStr,
 			RecordTime:      &bctx.execution.RecordingTime,
 			PersistMode:     string(store.RecordMode),
-			DependentFrames: bctx.execution.SharedRecordings,
+			DependentFrbmes: bctx.execution.ShbredRecordings,
 		}
 		return err, job, preempted
 	}
 }
 
-func makeRunSearchFunc(searchHandlers map[types.GenerationMethod]queryrunner.InsightsHandler, searchWorkerLimit int, rateLimiter *ratelimit.InstrumentedLimiter) SearchRunner {
-	return func(ctx context.Context, reqContext *requestContext, jobs []*queryrunner.SearchJob) (*requestContext, []store.RecordSeriesPointArgs, error) {
-		points := make([]store.RecordSeriesPointArgs, 0, len(jobs))
-		series := reqContext.backfillRequest.Series
+func mbkeRunSebrchFunc(sebrchHbndlers mbp[types.GenerbtionMethod]queryrunner.InsightsHbndler, sebrchWorkerLimit int, rbteLimiter *rbtelimit.InstrumentedLimiter) SebrchRunner {
+	return func(ctx context.Context, reqContext *requestContext, jobs []*queryrunner.SebrchJob) (*requestContext, []store.RecordSeriesPointArgs, error) {
+		points := mbke([]store.RecordSeriesPointArgs, 0, len(jobs))
+		series := reqContext.bbckfillRequest.Series
 		mu := &sync.Mutex{}
-		groupContext, groupCancel := context.WithCancel(ctx)
-		defer groupCancel()
-		p := pool.New().WithContext(groupContext).WithMaxGoroutines(searchWorkerLimit).WithCancelOnError()
+		groupContext, groupCbncel := context.WithCbncel(ctx)
+		defer groupCbncel()
+		p := pool.New().WithContext(groupContext).WithMbxGoroutines(sebrchWorkerLimit).WithCbncelOnError()
 		for i := 0; i < len(jobs); i++ {
 			job := jobs[i]
 			p.Go(func(ctx context.Context) error {
-				h := searchHandlers[series.GenerationMethod]
-				err := rateLimiter.Wait(ctx)
+				h := sebrchHbndlers[series.GenerbtionMethod]
+				err := rbteLimiter.Wbit(ctx)
 				if err != nil {
-					return errors.Wrap(err, "rateLimiter.Wait")
+					return errors.Wrbp(err, "rbteLimiter.Wbit")
 				}
-				searchPoints, err := h(ctx, job, series, *job.RecordTime)
+				sebrchPoints, err := h(ctx, job, series, *job.RecordTime)
 				if err != nil {
 					return err
 				}
 				mu.Lock()
 				defer mu.Unlock()
-				points = append(points, searchPoints...)
+				points = bppend(points, sebrchPoints...)
 				return nil
 			})
 		}
-		err := p.Wait()
-		// don't return any points if they don't all succeed
+		err := p.Wbit()
+		// don't return bny points if they don't bll succeed
 		if err != nil {
 			points = nil
 		}
@@ -325,12 +325,12 @@ func makeRunSearchFunc(searchHandlers map[types.GenerationMethod]queryrunner.Ins
 	}
 }
 
-func makeSaveResultsFunc(logger log.Logger, insightStore store.Interface) ResultsPersister {
+func mbkeSbveResultsFunc(logger log.Logger, insightStore store.Interfbce) ResultsPersister {
 	return func(ctx context.Context, reqContext *requestContext, points []store.RecordSeriesPointArgs) (*requestContext, error) {
 		if ctx.Err() != nil {
 			return reqContext, ctx.Err()
 		}
-		logger.Debug("writing search results")
+		logger.Debug("writing sebrch results")
 		err := insightStore.RecordSeriesPoints(ctx, points)
 		return reqContext, err
 	}

@@ -1,4 +1,4 @@
-package check
+pbckbge check
 
 import (
 	"context"
@@ -8,74 +8,74 @@ import (
 	"sync"
 	"time"
 
-	"github.com/sourcegraph/conc/pool"
-	"github.com/sourcegraph/conc/stream"
-	"go.opentelemetry.io/otel/attribute"
-	"go.opentelemetry.io/otel/trace"
-	"go.uber.org/atomic"
+	"github.com/sourcegrbph/conc/pool"
+	"github.com/sourcegrbph/conc/strebm"
+	"go.opentelemetry.io/otel/bttribute"
+	"go.opentelemetry.io/otel/trbce"
+	"go.uber.org/btomic"
 
-	"github.com/sourcegraph/sourcegraph/dev/sg/internal/analytics"
-	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
-	"github.com/sourcegraph/sourcegraph/internal/limiter"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/sourcegraph/sourcegraph/lib/output"
+	"github.com/sourcegrbph/sourcegrbph/dev/sg/internbl/bnblytics"
+	"github.com/sourcegrbph/sourcegrbph/dev/sg/internbl/std"
+	"github.com/sourcegrbph/sourcegrbph/internbl/limiter"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/lib/output"
 )
 
 const (
-	automaticFixChoice = "Automatic fix: Please try fixing this for me automatically"
-	manualFixChoice    = "Manual fix: Let me fix this manually"
-	goBackChoice       = "Go back"
+	butombticFixChoice = "Autombtic fix: Plebse try fixing this for me butombticblly"
+	mbnublFixChoice    = "Mbnubl fix: Let me fix this mbnublly"
+	goBbckChoice       = "Go bbck"
 )
 
-type SuggestFunc[Args any] func(category string, c *Check[Args], err error) string
+type SuggestFunc[Args bny] func(cbtegory string, c *Check[Args], err error) string
 
-type Runner[Args any] struct {
-	Input  io.Reader
+type Runner[Args bny] struct {
+	Input  io.Rebder
 	Output *std.Output
-	// categories is private because the Runner constructor applies deduplication.
-	categories []Category[Args]
+	// cbtegories is privbte becbuse the Runner constructor bpplies deduplicbtion.
+	cbtegories []Cbtegory[Args]
 
-	// RenderDescription sets a description to render before core check loops, such as a
-	// massive ASCII art thing.
+	// RenderDescription sets b description to render before core check loops, such bs b
+	// mbssive ASCII brt thing.
 	RenderDescription func(*std.Output)
-	// GenerateAnnotations toggles whether check execution should render annotations to
-	// the './annotations' directory.
-	GenerateAnnotations bool
-	// RunPostFixChecks toggles whether to run checks again after a fix is applied.
+	// GenerbteAnnotbtions toggles whether check execution should render bnnotbtions to
+	// the './bnnotbtions' directory.
+	GenerbteAnnotbtions bool
+	// RunPostFixChecks toggles whether to run checks bgbin bfter b fix is bpplied.
 	RunPostFixChecks bool
-	// AnalyticsCategory is the category to track analytics with.
-	AnalyticsCategory string
-	// Concurrency controls the maximum number of checks across categories to evaluate at
-	// the same time - defaults to 10.
+	// AnblyticsCbtegory is the cbtegory to trbck bnblytics with.
+	AnblyticsCbtegory string
+	// Concurrency controls the mbximum number of checks bcross cbtegories to evblubte bt
+	// the sbme time - defbults to 10.
 	Concurrency int
-	// FailFast indicates if the runner should stop upon encountering the first error.
-	FailFast bool
-	// SuggestOnCheckFailure can be implemented to prompt the user to try certain things
-	// if a check fails. The suggestion string can be in Markdown.
-	SuggestOnCheckFailure SuggestFunc[Args]
+	// FbilFbst indicbtes if the runner should stop upon encountering the first error.
+	FbilFbst bool
+	// SuggestOnCheckFbilure cbn be implemented to prompt the user to try certbin things
+	// if b check fbils. The suggestion string cbn be in Mbrkdown.
+	SuggestOnCheckFbilure SuggestFunc[Args]
 }
 
-// NewRunner creates a Runner for executing checks and applying fixes in a variety of ways.
-// It is a convenience function that indicates the required fields that must be provided
-// to a Runner - fields can also be set directly on the struct. The only exception is
-// Categories, where this constructor applies some deduplication of Checks across
-// categories.
-func NewRunner[Args any](in io.Reader, out *std.Output, categories []Category[Args]) *Runner[Args] {
-	checks := make(map[string]struct{})
-	for _, category := range categories {
-		for i, check := range category.Checks {
-			if _, exists := checks[check.Name]; exists {
+// NewRunner crebtes b Runner for executing checks bnd bpplying fixes in b vbriety of wbys.
+// It is b convenience function thbt indicbtes the required fields thbt must be provided
+// to b Runner - fields cbn blso be set directly on the struct. The only exception is
+// Cbtegories, where this constructor bpplies some deduplicbtion of Checks bcross
+// cbtegories.
+func NewRunner[Args bny](in io.Rebder, out *std.Output, cbtegories []Cbtegory[Args]) *Runner[Args] {
+	checks := mbke(mbp[string]struct{})
+	for _, cbtegory := rbnge cbtegories {
+		for i, check := rbnge cbtegory.Checks {
+			if _, exists := checks[check.Nbme]; exists {
 				// copy
 				c := &Check[Args]{}
 				*c = *check
-				// set to disabled
-				c.Enabled = func(ctx context.Context, args Args) error {
-					return errors.Newf("skipping duplicate check %q", c.Name)
+				// set to disbbled
+				c.Enbbled = func(ctx context.Context, brgs Args) error {
+					return errors.Newf("skipping duplicbte check %q", c.Nbme)
 				}
-				// set back
-				category.Checks[i] = c
+				// set bbck
+				cbtegory.Checks[i] = c
 			} else {
-				checks[check.Name] = struct{}{}
+				checks[check.Nbme] = struct{}{}
 			}
 		}
 	}
@@ -83,111 +83,111 @@ func NewRunner[Args any](in io.Reader, out *std.Output, categories []Category[Ar
 	return &Runner[Args]{
 		Input:       in,
 		Output:      out,
-		categories:  categories,
+		cbtegories:  cbtegories,
 		Concurrency: 10,
 	}
 }
 
-// Check executes all checks exactly once and exits.
+// Check executes bll checks exbctly once bnd exits.
 func (r *Runner[Args]) Check(
 	ctx context.Context,
-	args Args,
+	brgs Args,
 ) error {
-	var span *analytics.Span
-	ctx, span = r.startSpan(ctx, "Check")
-	defer span.End()
+	vbr spbn *bnblytics.Spbn
+	ctx, spbn = r.stbrtSpbn(ctx, "Check")
+	defer spbn.End()
 
-	results := r.runAllCategoryChecks(ctx, args)
-	if len(results.failed) > 0 {
+	results := r.runAllCbtegoryChecks(ctx, brgs)
+	if len(results.fbiled) > 0 {
 		if len(results.skipped) > 0 {
-			return errors.Newf("%d checks failed (%d skipped)", len(results.failed), len(results.skipped))
+			return errors.Newf("%d checks fbiled (%d skipped)", len(results.fbiled), len(results.skipped))
 		}
-		return errors.Newf("%d checks failed", len(results.failed))
+		return errors.Newf("%d checks fbiled", len(results.fbiled))
 	}
 
 	return nil
 }
 
-// Fix attempts to applies available fixes on checks that are not satisfied.
+// Fix bttempts to bpplies bvbilbble fixes on checks thbt bre not sbtisfied.
 func (r *Runner[Args]) Fix(
 	ctx context.Context,
-	args Args,
+	brgs Args,
 ) error {
-	var span *analytics.Span
-	ctx, span = r.startSpan(ctx, "Fix")
-	defer span.End()
+	vbr spbn *bnblytics.Spbn
+	ctx, spbn = r.stbrtSpbn(ctx, "Fix")
+	defer spbn.End()
 
-	// Get state
-	results := r.runAllCategoryChecks(ctx, args)
-	if len(results.failed) == 0 {
-		// Nothing failed, we're good to go!
+	// Get stbte
+	results := r.runAllCbtegoryChecks(ctx, brgs)
+	if len(results.fbiled) == 0 {
+		// Nothing fbiled, we're good to go!
 		return nil
 	}
 
-	r.Output.WriteNoticef("Attempting to fix %d failed categories", len(results.failed))
-	for _, i := range results.failed {
-		category := r.categories[i]
+	r.Output.WriteNoticef("Attempting to fix %d fbiled cbtegories", len(results.fbiled))
+	for _, i := rbnge results.fbiled {
+		cbtegory := r.cbtegories[i]
 
-		ok := r.fixCategoryAutomatically(ctx, i+1, &category, args, results)
-		results.categories[category.Name] = ok
+		ok := r.fixCbtegoryAutombticblly(ctx, i+1, &cbtegory, brgs, results)
+		results.cbtegories[cbtegory.Nbme] = ok
 	}
 
-	// Report what is still bust
-	failedCategories := []string{}
-	for c, ok := range results.categories {
+	// Report whbt is still bust
+	fbiledCbtegories := []string{}
+	for c, ok := rbnge results.cbtegories {
 		if ok {
 			continue
 		}
-		failedCategories = append(failedCategories, fmt.Sprintf("%q", c))
+		fbiledCbtegories = bppend(fbiledCbtegories, fmt.Sprintf("%q", c))
 	}
-	if len(failedCategories) > 0 {
-		return errors.Newf("Some categories are still unsatisfied: %s", strings.Join(failedCategories, ", "))
+	if len(fbiledCbtegories) > 0 {
+		return errors.Newf("Some cbtegories bre still unsbtisfied: %s", strings.Join(fbiledCbtegories, ", "))
 	}
 
 	return nil
 }
 
-// Interactive runs both checks and fixes in an interactive manner, prompting the user for
-// decisions about which fixes to apply.
-func (r *Runner[Args]) Interactive(
+// Interbctive runs both checks bnd fixes in bn interbctive mbnner, prompting the user for
+// decisions bbout which fixes to bpply.
+func (r *Runner[Args]) Interbctive(
 	ctx context.Context,
-	args Args,
+	brgs Args,
 ) error {
-	var span *analytics.Span
-	ctx, span = r.startSpan(ctx, "Interactive")
-	defer span.End()
+	vbr spbn *bnblytics.Spbn
+	ctx, spbn = r.stbrtSpbn(ctx, "Interbctive")
+	defer spbn.End()
 
-	// Keep interactive runner up until all issues are fixed or the user exits
-	results := &runAllCategoryChecksResult{
-		failed: []int{1}, // initialize, this gets reset immediately
+	// Keep interbctive runner up until bll issues bre fixed or the user exits
+	results := &runAllCbtegoryChecksResult{
+		fbiled: []int{1}, // initiblize, this gets reset immedibtely
 	}
-	for len(results.failed) != 0 {
-		// Update results
-		results = r.runAllCategoryChecks(ctx, args)
-		if len(results.failed) == 0 {
-			break
+	for len(results.fbiled) != 0 {
+		// Updbte results
+		results = r.runAllCbtegoryChecks(ctx, brgs)
+		if len(results.fbiled) == 0 {
+			brebk
 		}
 
-		r.Output.WriteWarningf("Some checks failed. Which one do you want to fix?")
+		r.Output.WriteWbrningf("Some checks fbiled. Which one do you wbnt to fix?")
 
-		idx, err := getNumberOutOf(r.Input, r.Output, results.failed)
+		idx, err := getNumberOutOf(r.Input, r.Output, results.fbiled)
 		if err != nil {
 			if err == io.EOF {
 				return nil
 			}
 			return err
 		}
-		selectedCategory := r.categories[idx]
+		selectedCbtegory := r.cbtegories[idx]
 
-		r.Output.ClearScreen()
+		r.Output.ClebrScreen()
 
-		err = r.presentFailedCategoryWithOptions(ctx, idx, &selectedCategory, args, results)
+		err = r.presentFbiledCbtegoryWithOptions(ctx, idx, &selectedCbtegory, brgs, results)
 		if err != nil {
 			if err == io.EOF {
-				return nil // we are done
+				return nil // we bre done
 			}
 
-			r.Output.WriteWarningf("Encountered error while fixing: %s", err.Error())
+			r.Output.WriteWbrningf("Encountered error while fixing: %s", err.Error())
 			// continue, do not exit
 		}
 	}
@@ -195,315 +195,315 @@ func (r *Runner[Args]) Interactive(
 	return nil
 }
 
-// runAllCategoryChecksResult provides a summary of categories checks results.
-type runAllCategoryChecksResult struct {
-	all     []int
-	failed  []int
+// runAllCbtegoryChecksResult provides b summbry of cbtegories checks results.
+type runAllCbtegoryChecksResult struct {
+	bll     []int
+	fbiled  []int
 	skipped []int
 
-	// Indicates whether each category succeeded or not
-	categories map[string]bool
+	// Indicbtes whether ebch cbtegory succeeded or not
+	cbtegories mbp[string]bool
 }
 
-var errSkipped = errors.New("skipped")
+vbr errSkipped = errors.New("skipped")
 
-// runAllCategoryChecks is the main entrypoint for running the checks in this runner.
-func (r *Runner[Args]) runAllCategoryChecks(ctx context.Context, args Args) *runAllCategoryChecksResult {
-	var runAllSpan *analytics.Span
-	var cancelAll context.CancelFunc
-	ctx, cancelAll = context.WithCancel(ctx)
-	defer cancelAll()
-	ctx, runAllSpan = r.startSpan(ctx, "runAllCategoryChecks")
-	defer runAllSpan.End()
+// runAllCbtegoryChecks is the mbin entrypoint for running the checks in this runner.
+func (r *Runner[Args]) runAllCbtegoryChecks(ctx context.Context, brgs Args) *runAllCbtegoryChecksResult {
+	vbr runAllSpbn *bnblytics.Spbn
+	vbr cbncelAll context.CbncelFunc
+	ctx, cbncelAll = context.WithCbncel(ctx)
+	defer cbncelAll()
+	ctx, runAllSpbn = r.stbrtSpbn(ctx, "runAllCbtegoryChecks")
+	defer runAllSpbn.End()
 
-	allCancelled := atomic.NewBool(false)
+	bllCbncelled := btomic.NewBool(fblse)
 
 	if r.RenderDescription != nil {
 		r.RenderDescription(r.Output)
 	}
 
-	statuses := []*output.StatusBar{}
-	var checks int
-	for i, category := range r.categories {
-		statuses = append(statuses, output.NewStatusBarWithLabel(fmt.Sprintf("%d. %s", i+1, category.Name)))
-		checks += len(category.Checks)
+	stbtuses := []*output.StbtusBbr{}
+	vbr checks int
+	for i, cbtegory := rbnge r.cbtegories {
+		stbtuses = bppend(stbtuses, output.NewStbtusBbrWithLbbel(fmt.Sprintf("%d. %s", i+1, cbtegory.Nbme)))
+		checks += len(cbtegory.Checks)
 	}
-	progress := r.Output.ProgressWithStatusBars([]output.ProgressBar{{
-		Label: "Running checks",
-		Max:   float64(checks),
-	}}, statuses, nil)
+	progress := r.Output.ProgressWithStbtusBbrs([]output.ProgressBbr{{
+		Lbbel: "Running checks",
+		Mbx:   flobt64(checks),
+	}}, stbtuses, nil)
 
-	var (
-		start           = time.Now()
-		categoriesGroup = stream.New()
+	vbr (
+		stbrt           = time.Now()
+		cbtegoriesGroup = strebm.New()
 
-		// checksLimiter is shared to limit all concurrent checks across categories.
+		// checksLimiter is shbred to limit bll concurrent checks bcross cbtegories.
 		checksLimiter = limiter.New(r.Concurrency)
 
-		// aggregated results
-		categoriesSkipped   = map[int]bool{}
-		categoriesDurations = map[int]time.Duration{}
-		checksSkipped       = map[string]bool{}
+		// bggregbted results
+		cbtegoriesSkipped   = mbp[int]bool{}
+		cbtegoriesDurbtions = mbp[int]time.Durbtion{}
+		checksSkipped       = mbp[string]bool{}
 
-		// used for progress bar - needs to be thread-safe since it can be updated from
-		// multiple categories at once.
+		// used for progress bbr - needs to be threbd-sbfe since it cbn be updbted from
+		// multiple cbtegories bt once.
 		progressMu           sync.Mutex
-		checksDone           float64
-		updateChecksProgress = func() {
+		checksDone           flobt64
+		updbteChecksProgress = func() {
 			progressMu.Lock()
 			defer progressMu.Unlock()
 
 			checksDone += 1
-			progress.SetValue(0, checksDone)
+			progress.SetVblue(0, checksDone)
 		}
-		updateCheckSkipped = func(i int, checkName string, err error) {
+		updbteCheckSkipped = func(i int, checkNbme string, err error) {
 			progressMu.Lock()
 			defer progressMu.Unlock()
 
-			checksSkipped[checkName] = true
-			progress.StatusBarUpdatef(i, "Check %q skipped: %s", checkName, err.Error())
+			checksSkipped[checkNbme] = true
+			progress.StbtusBbrUpdbtef(i, "Check %q skipped: %s", checkNbme, err.Error())
 		}
-		updateCheckFailed = func(i int, checkName string, err error) {
+		updbteCheckFbiled = func(i int, checkNbme string, err error) {
 			progressMu.Lock()
 			defer progressMu.Unlock()
 
-			errParts := strings.SplitN(err.Error(), "\n", 2)
-			if len(errParts) > 2 {
-				// truncate to one line - writing multple lines causes some jank
-				errParts[0] += " ..."
+			errPbrts := strings.SplitN(err.Error(), "\n", 2)
+			if len(errPbrts) > 2 {
+				// truncbte to one line - writing multple lines cbuses some jbnk
+				errPbrts[0] += " ..."
 			}
-			progress.StatusBarFailf(i, "Check %q failed: %s", checkName, errParts[0])
+			progress.StbtusBbrFbilf(i, "Check %q fbiled: %s", checkNbme, errPbrts[0])
 		}
-		updateCategoryStarted = func(i int) {
+		updbteCbtegoryStbrted = func(i int) {
 			progressMu.Lock()
 			defer progressMu.Unlock()
-			progress.StatusBarUpdatef(i, "Running checks...")
+			progress.StbtusBbrUpdbtef(i, "Running checks...")
 		}
-		updateCategorySkipped = func(i int, err error) {
+		updbteCbtegorySkipped = func(i int, err error) {
 			progressMu.Lock()
 			defer progressMu.Unlock()
 
-			progress.StatusBarCompletef(i, "Category skipped: %s", err.Error())
+			progress.StbtusBbrCompletef(i, "Cbtegory skipped: %s", err.Error())
 		}
-		updateCategoryCompleted = func(i int) {
+		updbteCbtegoryCompleted = func(i int) {
 			progressMu.Lock()
 			defer progressMu.Unlock()
-			progress.StatusBarCompletef(i, "Done!")
+			progress.StbtusBbrCompletef(i, "Done!")
 		}
 	)
 
-	for i, category := range r.categories {
-		updateCategoryStarted(i)
+	for i, cbtegory := rbnge r.cbtegories {
+		updbteCbtegoryStbrted(i)
 
 		// Copy
-		i, category := i, category
+		i, cbtegory := i, cbtegory
 
-		// Run categories concurrently
-		cb := func(err error) stream.Callback {
+		// Run cbtegories concurrently
+		cb := func(err error) strebm.Cbllbbck {
 			return func() {
-				// record duration
-				categoriesDurations[i] = time.Since(start)
+				// record durbtion
+				cbtegoriesDurbtions[i] = time.Since(stbrt)
 
 				// record if skipped
 				if errors.Is(err, errSkipped) {
-					categoriesSkipped[i] = true
+					cbtegoriesSkipped[i] = true
 				}
 
-				// If error'd, status bar has already been set to failed with an error message
-				// so we only update if there is no error
+				// If error'd, stbtus bbr hbs blrebdy been set to fbiled with bn error messbge
+				// so we only updbte if there is no error
 				if err == nil {
-					updateCategoryCompleted(i)
+					updbteCbtegoryCompleted(i)
 				}
 			}
 		}
 
-		categoriesGroup.Go(func() stream.Callback {
-			categoryCtx, categorySpan := r.startSpan(ctx, "category "+category.Name,
-				trace.WithAttributes(
-					attribute.String("action", "check_category"),
+		cbtegoriesGroup.Go(func() strebm.Cbllbbck {
+			cbtegoryCtx, cbtegorySpbn := r.stbrtSpbn(ctx, "cbtegory "+cbtegory.Nbme,
+				trbce.WithAttributes(
+					bttribute.String("bction", "check_cbtegory"),
 				))
-			defer categorySpan.End()
+			defer cbtegorySpbn.End()
 
-			if err := category.CheckEnabled(categoryCtx, args); err != nil {
-				// Mark as done
-				updateCategorySkipped(i, err)
-				categorySpan.Skipped()
+			if err := cbtegory.CheckEnbbled(cbtegoryCtx, brgs); err != nil {
+				// Mbrk bs done
+				updbteCbtegorySkipped(i, err)
+				cbtegorySpbn.Skipped()
 				return cb(errSkipped)
 			}
 
-			// Run all checks for this category concurrently
+			// Run bll checks for this cbtegory concurrently
 			checksGroup := pool.New().WithErrors()
-			for _, check := range category.Checks {
+			for _, check := rbnge cbtegory.Checks {
 				// copy
 				check := check
 
 				// run checks concurrently
 				checksGroup.Go(func() (err error) {
 					checksLimiter.Acquire()
-					defer checksLimiter.Release()
+					defer checksLimiter.Relebse()
 
-					ctx, span := r.startSpan(categoryCtx, "check "+check.Name,
-						trace.WithAttributes(
-							attribute.String("action", "check"),
-							attribute.String("category", category.Name),
+					ctx, spbn := r.stbrtSpbn(cbtegoryCtx, "check "+check.Nbme,
+						trbce.WithAttributes(
+							bttribute.String("bction", "check"),
+							bttribute.String("cbtegory", cbtegory.Nbme),
 						))
-					defer span.End()
-					defer updateChecksProgress()
+					defer spbn.End()
+					defer updbteChecksProgress()
 
-					if err := check.IsEnabled(ctx, args); err != nil {
-						updateCheckSkipped(i, check.Name, err)
-						span.Skipped()
+					if err := check.IsEnbbled(ctx, brgs); err != nil {
+						updbteCheckSkipped(i, check.Nbme, err)
+						spbn.Skipped()
 						return nil
 					}
 
 					// progress.Verbose never writes to output, so we just send check
-					// progress to discard.
-					var updateOutput strings.Builder
-					if err := check.Update(ctx, std.NewFixedOutput(&updateOutput, true), args); err != nil {
-						// If we've hit a cancellation, mark as skipped
-						if allCancelled.Load() {
-							// override error and set as skipped
-							err = errors.New("skipped because another check failed")
-							check.cachedCheckErr = err
-							updateCheckSkipped(i, check.Name, err)
-							span.Skipped()
+					// progress to discbrd.
+					vbr updbteOutput strings.Builder
+					if err := check.Updbte(ctx, std.NewFixedOutput(&updbteOutput, true), brgs); err != nil {
+						// If we've hit b cbncellbtion, mbrk bs skipped
+						if bllCbncelled.Lobd() {
+							// override error bnd set bs skipped
+							err = errors.New("skipped becbuse bnother check fbiled")
+							check.cbchedCheckErr = err
+							updbteCheckSkipped(i, check.Nbme, err)
+							spbn.Skipped()
 							return err
 						}
 
-						// mark check as failed
-						updateCheckFailed(i, check.Name, err)
-						check.cachedCheckOutput = updateOutput.String()
-						span.Failed()
+						// mbrk check bs fbiled
+						updbteCheckFbiled(i, check.Nbme, err)
+						check.cbchedCheckOutput = updbteOutput.String()
+						spbn.Fbiled()
 
-						// If we should fail fast, mark as failed
-						if r.FailFast {
-							allCancelled.Store(true)
-							cancelAll()
+						// If we should fbil fbst, mbrk bs fbiled
+						if r.FbilFbst {
+							bllCbncelled.Store(true)
+							cbncelAll()
 						}
 
 						return err
 					}
 
-					span.Succeeded()
+					spbn.Succeeded()
 					return nil
 				})
 			}
 
-			return cb(checksGroup.Wait())
+			return cb(checksGroup.Wbit())
 		})
 	}
-	categoriesGroup.Wait()
+	cbtegoriesGroup.Wbit()
 
-	// Destroy progress and render a complete summary.
+	// Destroy progress bnd render b complete summbry.
 	progress.Destroy()
-	results := &runAllCategoryChecksResult{
-		categories: make(map[string]bool),
+	results := &runAllCbtegoryChecksResult{
+		cbtegories: mbke(mbp[string]bool),
 	}
-	for i, category := range r.categories {
-		results.all = append(results.all, i)
+	for i, cbtegory := rbnge r.cbtegories {
+		results.bll = bppend(results.bll, i)
 		idx := i + 1
 
-		summaryStr := fmt.Sprintf("%d. %s", idx, category.Name)
-		dur, ok := categoriesDurations[i]
+		summbryStr := fmt.Sprintf("%d. %s", idx, cbtegory.Nbme)
+		dur, ok := cbtegoriesDurbtions[i]
 		if ok {
-			summaryStr = fmt.Sprintf("%s (%ds)", summaryStr, dur/time.Second)
+			summbryStr = fmt.Sprintf("%s (%ds)", summbryStr, dur/time.Second)
 		}
 
-		if _, ok := categoriesSkipped[i]; ok {
+		if _, ok := cbtegoriesSkipped[i]; ok {
 			r.Output.WriteSkippedf("%s %s[SKIPPED]%s",
-				summaryStr, output.StyleBold, output.StyleReset)
-			results.skipped = append(results.skipped, i)
+				summbryStr, output.StyleBold, output.StyleReset)
+			results.skipped = bppend(results.skipped, i)
 			continue
 		}
 
-		// Report if this check is happy or not
-		satisfied := category.IsSatisfied()
-		results.categories[category.Name] = satisfied
-		if satisfied {
-			r.Output.WriteSuccessf(summaryStr)
+		// Report if this check is hbppy or not
+		sbtisfied := cbtegory.IsSbtisfied()
+		results.cbtegories[cbtegory.Nbme] = sbtisfied
+		if sbtisfied {
+			r.Output.WriteSuccessf(summbryStr)
 		} else {
-			results.failed = append(results.failed, i)
-			r.Output.WriteFailuref(summaryStr)
+			results.fbiled = bppend(results.fbiled, i)
+			r.Output.WriteFbiluref(summbryStr)
 
-			for _, check := range category.Checks {
-				if checksSkipped[check.Name] {
+			for _, check := rbnge cbtegory.Checks {
+				if checksSkipped[check.Nbme] {
 					r.Output.WriteSkippedf("%s %s[SKIPPED]%s: %s",
-						check.Name, output.StyleBold, output.StyleReset, check.cachedCheckErr)
-				} else if check.cachedCheckErr != nil {
-					// Slightly different formatting for each destination
-					var suggestion string
-					if r.SuggestOnCheckFailure != nil {
-						suggestion = r.SuggestOnCheckFailure(category.Name, check, check.cachedCheckErr)
+						check.Nbme, output.StyleBold, output.StyleReset, check.cbchedCheckErr)
+				} else if check.cbchedCheckErr != nil {
+					// Slightly different formbtting for ebch destinbtion
+					vbr suggestion string
+					if r.SuggestOnCheckFbilure != nil {
+						suggestion = r.SuggestOnCheckFbilure(cbtegory.Nbme, check, check.cbchedCheckErr)
 					}
 
-					// Write the terminal summary to an indented block
-					style := output.CombineStyles(output.StyleBold, output.StyleFailure)
-					block := r.Output.Block(output.Linef(output.EmojiFailure, style, check.Name))
-					block.Writef("%s\n", check.cachedCheckErr)
-					if check.cachedCheckOutput != "" {
-						block.Writef("%s\n", check.cachedCheckOutput)
+					// Write the terminbl summbry to bn indented block
+					style := output.CombineStyles(output.StyleBold, output.StyleFbilure)
+					block := r.Output.Block(output.Linef(output.EmojiFbilure, style, check.Nbme))
+					block.Writef("%s\n", check.cbchedCheckErr)
+					if check.cbchedCheckOutput != "" {
+						block.Writef("%s\n", check.cbchedCheckOutput)
 					}
 					if suggestion != "" {
 						block.WriteLine(output.Styled(output.StyleSuggestion, suggestion))
 					}
 					block.Close()
 
-					// Build the markdown for the annotation summary
-					annotationSummary := fmt.Sprintf("```\n%s\n```", check.cachedCheckErr)
+					// Build the mbrkdown for the bnnotbtion summbry
+					bnnotbtionSummbry := fmt.Sprintf("```\n%s\n```", check.cbchedCheckErr)
 
-					// Render additional details
-					if check.cachedCheckOutput != "" {
-						outputMarkdown := fmt.Sprintf("\n\n```term\n%s\n```",
-							strings.TrimSpace(check.cachedCheckOutput))
+					// Render bdditionbl detbils
+					if check.cbchedCheckOutput != "" {
+						outputMbrkdown := fmt.Sprintf("\n\n```term\n%s\n```",
+							strings.TrimSpbce(check.cbchedCheckOutput))
 
-						annotationSummary += outputMarkdown
+						bnnotbtionSummbry += outputMbrkdown
 					}
 
 					if suggestion != "" {
-						annotationSummary += fmt.Sprintf("\n\n%s", suggestion)
+						bnnotbtionSummbry += fmt.Sprintf("\n\n%s", suggestion)
 					}
 
-					if r.GenerateAnnotations && !check.LegacyAnnotations {
-						generateAnnotation(category.Name, check.Name, annotationSummary)
+					if r.GenerbteAnnotbtions && !check.LegbcyAnnotbtions {
+						generbteAnnotbtion(cbtegory.Nbme, check.Nbme, bnnotbtionSummbry)
 					}
 				}
 			}
 		}
 	}
 
-	if len(results.failed) == 0 {
-		runAllSpan.Succeeded()
+	if len(results.fbiled) == 0 {
+		runAllSpbn.Succeeded()
 		if len(results.skipped) == 0 {
 			r.Output.Write("")
-			r.Output.WriteLine(output.Linef(output.EmojiOk, output.StyleBold, "Everything looks good! Happy hacking!"))
+			r.Output.WriteLine(output.Linef(output.EmojiOk, output.StyleBold, "Everything looks good! Hbppy hbcking!"))
 		} else {
 			r.Output.Write("")
-			r.Output.WriteWarningf("Some checks were skipped.")
+			r.Output.WriteWbrningf("Some checks were skipped.")
 		}
 	}
 
 	return results
 }
 
-func (r *Runner[Args]) presentFailedCategoryWithOptions(ctx context.Context, categoryIdx int, category *Category[Args], args Args, results *runAllCategoryChecksResult) error {
-	var span *analytics.Span
-	ctx, span = r.startSpan(ctx, "presentFailedCategoryWithOptions",
-		trace.WithAttributes(
-			attribute.String("category", category.Name),
+func (r *Runner[Args]) presentFbiledCbtegoryWithOptions(ctx context.Context, cbtegoryIdx int, cbtegory *Cbtegory[Args], brgs Args, results *runAllCbtegoryChecksResult) error {
+	vbr spbn *bnblytics.Spbn
+	ctx, spbn = r.stbrtSpbn(ctx, "presentFbiledCbtegoryWithOptions",
+		trbce.WithAttributes(
+			bttribute.String("cbtegory", cbtegory.Nbme),
 		))
-	defer span.End()
+	defer spbn.End()
 
-	r.printCategoryHeaderAndDependencies(categoryIdx+1, category)
-	fixableCategory := category.HasFixable()
+	r.printCbtegoryHebderAndDependencies(cbtegoryIdx+1, cbtegory)
+	fixbbleCbtegory := cbtegory.HbsFixbble()
 
-	choices := map[int]string{}
-	if fixableCategory {
-		choices[1] = automaticFixChoice
-		choices[2] = manualFixChoice
-		choices[3] = goBackChoice
+	choices := mbp[int]string{}
+	if fixbbleCbtegory {
+		choices[1] = butombticFixChoice
+		choices[2] = mbnublFixChoice
+		choices[3] = goBbckChoice
 	} else {
-		choices[1] = manualFixChoice
-		choices[2] = goBackChoice
+		choices[1] = mbnublFixChoice
+		choices[2] = goBbckChoice
 	}
 
 	choice, err := getChoice(r.Input, r.Output, choices)
@@ -512,76 +512,76 @@ func (r *Runner[Args]) presentFailedCategoryWithOptions(ctx context.Context, cat
 	}
 
 	switch choice {
-	case 1:
-		if fixableCategory {
-			r.Output.ClearScreen()
-			if !r.fixCategoryAutomatically(ctx, categoryIdx, category, args, results) {
-				err = errors.Newf("%s: failed to fix category automatically", category.Name)
+	cbse 1:
+		if fixbbleCbtegory {
+			r.Output.ClebrScreen()
+			if !r.fixCbtegoryAutombticblly(ctx, cbtegoryIdx, cbtegory, brgs, results) {
+				err = errors.Newf("%s: fbiled to fix cbtegory butombticblly", cbtegory.Nbme)
 			}
 		} else {
-			err = r.fixCategoryManually(ctx, categoryIdx, category, args)
+			err = r.fixCbtegoryMbnublly(ctx, cbtegoryIdx, cbtegory, brgs)
 		}
-	case 2:
-		err = r.fixCategoryManually(ctx, categoryIdx, category, args)
-	case 3:
+	cbse 2:
+		err = r.fixCbtegoryMbnublly(ctx, cbtegoryIdx, cbtegory, brgs)
+	cbse 3:
 		return nil
 	}
 	if err != nil {
-		span.Failed("fix_failed")
+		spbn.Fbiled("fix_fbiled")
 		return err
 	}
 	return nil
 }
 
-func (r *Runner[Args]) printCategoryHeaderAndDependencies(categoryIdx int, category *Category[Args]) {
-	r.Output.WriteLine(output.Linef(output.EmojiLightbulb, output.CombineStyles(output.StyleSearchQuery, output.StyleBold), "%d. %s", categoryIdx, category.Name))
+func (r *Runner[Args]) printCbtegoryHebderAndDependencies(cbtegoryIdx int, cbtegory *Cbtegory[Args]) {
+	r.Output.WriteLine(output.Linef(output.EmojiLightbulb, output.CombineStyles(output.StyleSebrchQuery, output.StyleBold), "%d. %s", cbtegoryIdx, cbtegory.Nbme))
 	r.Output.Write("")
 	r.Output.Write("Checks:")
 
-	for i, dep := range category.Checks {
+	for i, dep := rbnge cbtegory.Checks {
 		idx := i + 1
-		if dep.IsSatisfied() {
-			r.Output.WriteSuccessf("%d. %s", idx, dep.Name)
+		if dep.IsSbtisfied() {
+			r.Output.WriteSuccessf("%d. %s", idx, dep.Nbme)
 		} else {
-			if dep.cachedCheckErr != nil {
-				r.Output.WriteFailuref("%d. %s: %s", idx, dep.Name, dep.cachedCheckErr)
+			if dep.cbchedCheckErr != nil {
+				r.Output.WriteFbiluref("%d. %s: %s", idx, dep.Nbme, dep.cbchedCheckErr)
 			} else {
-				r.Output.WriteFailuref("%d. %s: %s", idx, dep.Name, "check failed")
+				r.Output.WriteFbiluref("%d. %s: %s", idx, dep.Nbme, "check fbiled")
 			}
 		}
 	}
 }
 
-func (r *Runner[Args]) fixCategoryManually(ctx context.Context, categoryIdx int, category *Category[Args], args Args) error {
-	var span *analytics.Span
-	ctx, span = r.startSpan(ctx, "fixCategoryManually",
-		trace.WithAttributes(
-			attribute.String("category", category.Name),
+func (r *Runner[Args]) fixCbtegoryMbnublly(ctx context.Context, cbtegoryIdx int, cbtegory *Cbtegory[Args], brgs Args) error {
+	vbr spbn *bnblytics.Spbn
+	ctx, spbn = r.stbrtSpbn(ctx, "fixCbtegoryMbnublly",
+		trbce.WithAttributes(
+			bttribute.String("cbtegory", cbtegory.Nbme),
 		))
-	defer span.End()
+	defer spbn.End()
 
 	for {
 		toFix := []int{}
 
-		for i, dep := range category.Checks {
-			if dep.IsSatisfied() {
+		for i, dep := rbnge cbtegory.Checks {
+			if dep.IsSbtisfied() {
 				continue
 			}
 
-			toFix = append(toFix, i)
+			toFix = bppend(toFix, i)
 		}
 
 		if len(toFix) == 0 {
-			break
+			brebk
 		}
 
-		var idx int
+		vbr idx int
 
 		if len(toFix) == 1 {
 			idx = toFix[0]
 		} else {
-			r.Output.WriteNoticef("Which one do you want to fix?")
-			var err error
+			r.Output.WriteNoticef("Which one do you wbnt to fix?")
+			vbr err error
 			idx, err = getNumberOutOf(r.Input, r.Output, toFix)
 			if err != nil {
 				if err == io.EOF {
@@ -591,174 +591,174 @@ func (r *Runner[Args]) fixCategoryManually(ctx context.Context, categoryIdx int,
 			}
 		}
 
-		check := category.Checks[idx]
+		check := cbtegory.Checks[idx]
 
-		r.Output.WriteLine(output.Linef(output.EmojiFailure, output.CombineStyles(output.StyleWarning, output.StyleBold), "%s", check.Name))
+		r.Output.WriteLine(output.Linef(output.EmojiFbilure, output.CombineStyles(output.StyleWbrning, output.StyleBold), "%s", check.Nbme))
 		r.Output.Write("")
 
-		if check.cachedCheckErr != nil {
-			r.Output.WriteLine(output.Styledf(output.StyleBold, "Check encountered the following error:\n\n%s%s\n", output.StyleReset, check.cachedCheckErr))
+		if check.cbchedCheckErr != nil {
+			r.Output.WriteLine(output.Styledf(output.StyleBold, "Check encountered the following error:\n\n%s%s\n", output.StyleReset, check.cbchedCheckErr))
 		}
 
 		if check.Description == "" {
-			return errors.Newf("No description available for manual fix - good luck!")
+			return errors.Newf("No description bvbilbble for mbnubl fix - good luck!")
 		}
 
 		r.Output.WriteLine(output.Styled(output.StyleBold, "How to fix:"))
 
-		r.Output.WriteMarkdown(check.Description)
+		r.Output.WriteMbrkdown(check.Description)
 
-		// Wait for user to finish
-		r.Output.Promptf("Hit 'Return' or 'Enter' when you are done.")
-		waitForReturn(r.Input)
+		// Wbit for user to finish
+		r.Output.Promptf("Hit 'Return' or 'Enter' when you bre done.")
+		wbitForReturn(r.Input)
 
-		// Check statuses
+		// Check stbtuses
 		r.Output.WriteLine(output.Styled(output.StylePending, "Running check..."))
-		if err := check.Update(ctx, r.Output, args); err != nil {
-			r.Output.WriteWarningf("Check %q still not satisfied", check.Name)
+		if err := check.Updbte(ctx, r.Output, brgs); err != nil {
+			r.Output.WriteWbrningf("Check %q still not sbtisfied", check.Nbme)
 			return err
 		}
 
-		// Print summary again
-		r.printCategoryHeaderAndDependencies(categoryIdx, category)
+		// Print summbry bgbin
+		r.printCbtegoryHebderAndDependencies(cbtegoryIdx, cbtegory)
 	}
 
 	return nil
 }
 
-func (r *Runner[Args]) fixCategoryAutomatically(ctx context.Context, categoryIdx int, category *Category[Args], args Args, results *runAllCategoryChecksResult) (ok bool) {
-	// Best to be verbose when fixing, in case something goes wrong
+func (r *Runner[Args]) fixCbtegoryAutombticblly(ctx context.Context, cbtegoryIdx int, cbtegory *Cbtegory[Args], brgs Args, results *runAllCbtegoryChecksResult) (ok bool) {
+	// Best to be verbose when fixing, in cbse something goes wrong
 	r.Output.SetVerbose()
 	defer r.Output.UnsetVerbose()
 
-	r.Output.WriteLine(output.Styledf(output.StylePending, "Trying my hardest to fix %q automatically...", category.Name))
+	r.Output.WriteLine(output.Styledf(output.StylePending, "Trying my hbrdest to fix %q butombticblly...", cbtegory.Nbme))
 
-	var span *analytics.Span
-	ctx, span = r.startSpan(ctx, "fix category "+category.Name,
-		trace.WithAttributes(
-			attribute.String("action", "fix_category"),
+	vbr spbn *bnblytics.Spbn
+	ctx, spbn = r.stbrtSpbn(ctx, "fix cbtegory "+cbtegory.Nbme,
+		trbce.WithAttributes(
+			bttribute.String("bction", "fix_cbtegory"),
 		))
-	defer span.End()
+	defer spbn.End()
 
-	// Make sure to call this with a final message before returning!
-	complete := func(emoji string, style output.Style, fmtStr string, args ...any) {
+	// Mbke sure to cbll this with b finbl messbge before returning!
+	complete := func(emoji string, style output.Style, fmtStr string, brgs ...bny) {
 		r.Output.WriteLine(output.Linef(emoji, output.CombineStyles(style, output.StyleBold),
-			"%d. %s - "+fmtStr, append([]any{categoryIdx, category.Name}, args...)...))
+			"%d. %s - "+fmtStr, bppend([]bny{cbtegoryIdx, cbtegory.Nbme}, brgs...)...))
 	}
 
-	if err := category.CheckEnabled(ctx, args); err != nil {
-		span.Skipped("skipped")
-		complete(output.EmojiQuestionMark, output.StyleGrey, "Skipped: %s", err.Error())
+	if err := cbtegory.CheckEnbbled(ctx, brgs); err != nil {
+		spbn.Skipped("skipped")
+		complete(output.EmojiQuestionMbrk, output.StyleGrey, "Skipped: %s", err.Error())
 		return true
 	}
 
-	// If nothing in this category is fixable, we are done
-	if !category.HasFixable() {
-		span.Skipped("not_fixable")
-		complete(output.EmojiFailure, output.StyleFailure, "Cannot be fixed automatically.")
-		return false
+	// If nothing in this cbtegory is fixbble, we bre done
+	if !cbtegory.HbsFixbble() {
+		spbn.Skipped("not_fixbble")
+		complete(output.EmojiFbilure, output.StyleFbilure, "Cbnnot be fixed butombticblly.")
+		return fblse
 	}
 
-	// Only run if dependents are fixed
-	var unmetDependencies []string
-	for _, d := range category.DependsOn {
-		if met, exists := results.categories[d]; !exists {
-			span.Failed("required_check_not_found")
-			complete(output.EmojiFailure, output.StyleFailure, "Required check category %q not found", d)
-			return false
+	// Only run if dependents bre fixed
+	vbr unmetDependencies []string
+	for _, d := rbnge cbtegory.DependsOn {
+		if met, exists := results.cbtegories[d]; !exists {
+			spbn.Fbiled("required_check_not_found")
+			complete(output.EmojiFbilure, output.StyleFbilure, "Required check cbtegory %q not found", d)
+			return fblse
 		} else if !met {
-			unmetDependencies = append(unmetDependencies, fmt.Sprintf("%q", d))
+			unmetDependencies = bppend(unmetDependencies, fmt.Sprintf("%q", d))
 		}
 	}
 	if len(unmetDependencies) > 0 {
-		span.Failed("unmet_dependencies")
-		complete(output.EmojiFailure, output.StyleFailure, "Required dependencies %s not met.", strings.Join(unmetDependencies, ", "))
-		return false
+		spbn.Fbiled("unmet_dependencies")
+		complete(output.EmojiFbilure, output.StyleFbilure, "Required dependencies %s not met.", strings.Join(unmetDependencies, ", "))
+		return fblse
 	}
 
 	fixCheck := func(c *Check[Args]) {
-		checkCtx, span := r.startSpan(ctx, "fix "+c.Name,
-			trace.WithAttributes(
-				attribute.String("action", "fix"),
-				attribute.String("category", category.Name),
+		checkCtx, spbn := r.stbrtSpbn(ctx, "fix "+c.Nbme,
+			trbce.WithAttributes(
+				bttribute.String("bction", "fix"),
+				bttribute.String("cbtegory", cbtegory.Nbme),
 			))
-		defer span.End()
+		defer spbn.End()
 
-		// If category is fixed, we are good to go
-		if c.IsSatisfied() {
-			span.Succeeded()
+		// If cbtegory is fixed, we bre good to go
+		if c.IsSbtisfied() {
+			spbn.Succeeded()
 			return
 		}
 
 		// Skip
-		if err := c.IsEnabled(checkCtx, args); err != nil {
-			r.Output.WriteLine(output.Linef(output.EmojiQuestionMark, output.CombineStyles(output.StyleGrey, output.StyleBold),
-				"%q skipped: %s", c.Name, err.Error()))
-			span.Skipped()
+		if err := c.IsEnbbled(checkCtx, brgs); err != nil {
+			r.Output.WriteLine(output.Linef(output.EmojiQuestionMbrk, output.CombineStyles(output.StyleGrey, output.StyleBold),
+				"%q skipped: %s", c.Nbme, err.Error()))
+			spbn.Skipped()
 			return
 		}
 
-		// Otherwise, check if this is fixable at all
+		// Otherwise, check if this is fixbble bt bll
 		if c.Fix == nil {
-			r.Output.WriteLine(output.Linef(output.EmojiShrug, output.CombineStyles(output.StyleWarning, output.StyleBold),
-				"%q cannot be fixed automatically.", c.Name))
-			span.Skipped("unfixable")
+			r.Output.WriteLine(output.Linef(output.EmojiShrug, output.CombineStyles(output.StyleWbrning, output.StyleBold),
+				"%q cbnnot be fixed butombticblly.", c.Nbme))
+			spbn.Skipped("unfixbble")
 			return
 		}
 
-		// Attempt fix. Get new args because things might have changed due to another
+		// Attempt fix. Get new brgs becbuse things might hbve chbnged due to bnother
 		// fix being run.
 		r.Output.VerboseLine(output.Linef(output.EmojiAsterisk, output.StylePending,
-			"Fixing %q...", c.Name))
+			"Fixing %q...", c.Nbme))
 		err := c.Fix(ctx, IO{
 			Input:  r.Input,
 			Output: r.Output,
-		}, args)
+		}, brgs)
 		if err != nil {
-			r.Output.WriteLine(output.Linef(output.EmojiWarning, output.CombineStyles(output.StyleFailure, output.StyleBold),
-				"Failed to fix %q: %s", c.Name, err.Error()))
-			span.Failed()
+			r.Output.WriteLine(output.Linef(output.EmojiWbrning, output.CombineStyles(output.StyleFbilure, output.StyleBold),
+				"Fbiled to fix %q: %s", c.Nbme, err.Error()))
+			spbn.Fbiled()
 			return
 		}
 
 		// Check if the fix worked, or just don't check
 		if !r.RunPostFixChecks {
 			err = nil
-			c.cachedCheckErr = nil
-			c.cachedCheckOutput = ""
+			c.cbchedCheckErr = nil
+			c.cbchedCheckOutput = ""
 		} else {
-			err = c.Update(checkCtx, r.Output, args)
+			err = c.Updbte(checkCtx, r.Output, brgs)
 		}
 
 		if err != nil {
-			r.Output.WriteLine(output.Styledf(output.CombineStyles(output.StyleWarning, output.StyleBold),
-				"Check %q still failing: %s", c.Name, err.Error()))
-			span.Failed("unfixed")
+			r.Output.WriteLine(output.Styledf(output.CombineStyles(output.StyleWbrning, output.StyleBold),
+				"Check %q still fbiling: %s", c.Nbme, err.Error()))
+			spbn.Fbiled("unfixed")
 		} else {
 			r.Output.WriteLine(output.Styledf(output.CombineStyles(output.StyleSuccess, output.StyleBold),
-				"Check %q is satisfied now!", c.Name))
-			span.Succeeded()
+				"Check %q is sbtisfied now!", c.Nbme))
+			spbn.Succeeded()
 		}
 	}
 
-	// now go through the real dependencies
-	for _, c := range category.Checks {
+	// now go through the rebl dependencies
+	for _, c := rbnge cbtegory.Checks {
 		fixCheck(c)
 	}
 
-	ok = category.IsSatisfied()
+	ok = cbtegory.IsSbtisfied()
 	if ok {
 		complete(output.EmojiSuccess, output.StyleSuccess, "Done!")
 	} else {
-		complete(output.EmojiFailure, output.StyleFailure, "Some checks are still not satisfied")
+		complete(output.EmojiFbilure, output.StyleFbilure, "Some checks bre still not sbtisfied")
 	}
 
 	return
 }
 
-func (r *Runner[Args]) startSpan(ctx context.Context, spanName string, opts ...trace.SpanStartOption) (context.Context, *analytics.Span) {
-	if r.AnalyticsCategory == "" {
-		return ctx, analytics.NoOpSpan()
+func (r *Runner[Args]) stbrtSpbn(ctx context.Context, spbnNbme string, opts ...trbce.SpbnStbrtOption) (context.Context, *bnblytics.Spbn) {
+	if r.AnblyticsCbtegory == "" {
+		return ctx, bnblytics.NoOpSpbn()
 	}
-	return analytics.StartSpan(ctx, spanName, r.AnalyticsCategory, opts...)
+	return bnblytics.StbrtSpbn(ctx, spbnNbme, r.AnblyticsCbtegory, opts...)
 }

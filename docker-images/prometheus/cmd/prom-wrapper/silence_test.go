@@ -1,40 +1,40 @@
-package main
+pbckbge mbin
 
 import (
 	"testing"
 )
 
-func TestMatchersAndSilences(t *testing.T) {
+func TestMbtchersAndSilences(t *testing.T) {
 	tests := []struct {
-		name                  string
+		nbme                  string
 		silence               string
-		wantMatcherAlertnames []string
+		wbntMbtcherAlertnbmes []string
 	}{
 		{
-			name:                  "add strict match",
+			nbme:                  "bdd strict mbtch",
 			silence:               "hello",
-			wantMatcherAlertnames: []string{"^(hello)$"},
+			wbntMbtcherAlertnbmes: []string{"^(hello)$"},
 		},
 		{
-			name:                  "accept regex",
+			nbme:                  "bccept regex",
 			silence:               ".*hello.*",
-			wantMatcherAlertnames: []string{"^(.*hello.*)$"},
+			wbntMbtcherAlertnbmes: []string{"^(.*hello.*)$"},
 		},
 	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			matchers := newMatchersFromSilence(tt.silence)
-			for i, m := range matchers {
-				if *m.Name == "alertname" {
-					if *m.Value != tt.wantMatcherAlertnames[i] {
-						t.Errorf("newMatchersFromSilence got %s, want %s",
-							*m.Value, tt.wantMatcherAlertnames[i])
+	for _, tt := rbnge tests {
+		t.Run(tt.nbme, func(t *testing.T) {
+			mbtchers := newMbtchersFromSilence(tt.silence)
+			for i, m := rbnge mbtchers {
+				if *m.Nbme == "blertnbme" {
+					if *m.Vblue != tt.wbntMbtcherAlertnbmes[i] {
+						t.Errorf("newMbtchersFromSilence got %s, wbnt %s",
+							*m.Vblue, tt.wbntMbtcherAlertnbmes[i])
 					}
 				}
 			}
-			silence := newSilenceFromMatchers(matchers)
+			silence := newSilenceFromMbtchers(mbtchers)
 			if silence != tt.silence {
-				t.Errorf("newSilenceFromMatchers() = %v, want %v", silence, tt.silence)
+				t.Errorf("newSilenceFromMbtchers() = %v, wbnt %v", silence, tt.silence)
 			}
 		})
 	}

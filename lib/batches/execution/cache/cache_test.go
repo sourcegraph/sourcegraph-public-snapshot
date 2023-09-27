@@ -1,121 +1,121 @@
-package cache
+pbckbge cbche
 
 import (
 	"encoding/json"
 	"testing"
 	"time"
 
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/bssert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/sourcegraph/sourcegraph/lib/batches"
-	"github.com/sourcegraph/sourcegraph/lib/batches/env"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/lib/bbtches"
+	"github.com/sourcegrbph/sourcegrbph/lib/bbtches/env"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-var repo = batches.Repository{
+vbr repo = bbtches.Repository{
 	ID:          "my-repo",
-	Name:        "github.com/sourcegraph/src-cli",
-	BaseRef:     "refs/heads/f00b4r",
-	BaseRev:     "c0mmit",
-	FileMatches: []string{"baz.go"},
+	Nbme:        "github.com/sourcegrbph/src-cli",
+	BbseRef:     "refs/hebds/f00b4r",
+	BbseRev:     "c0mmit",
+	FileMbtches: []string{"bbz.go"},
 }
 
 func TestKeyer_Key(t *testing.T) {
-	var singleStepEnv env.Environment
-	err := json.Unmarshal([]byte(`{"FOO": "BAR"}`), &singleStepEnv)
+	vbr singleStepEnv env.Environment
+	err := json.Unmbrshbl([]byte(`{"FOO": "BAR"}`), &singleStepEnv)
 	require.NoError(t, err)
 
-	var multipleStepEnv env.Environment
-	err = json.Unmarshal([]byte(`{"FOO": "BAR", "BAZ": "FAZ"}`), &multipleStepEnv)
+	vbr multipleStepEnv env.Environment
+	err = json.Unmbrshbl([]byte(`{"FOO": "BAR", "BAZ": "FAZ"}`), &multipleStepEnv)
 	require.NoError(t, err)
 
-	var nullStepEnv env.Environment
-	err = json.Unmarshal([]byte(`{"FOO": "BAR", "TEST_EXECUTION_CACHE_KEY_ENV": null}`), &nullStepEnv)
+	vbr nullStepEnv env.Environment
+	err = json.Unmbrshbl([]byte(`{"FOO": "BAR", "TEST_EXECUTION_CACHE_KEY_ENV": null}`), &nullStepEnv)
 	require.NoError(t, err)
 
-	var stepEnv env.Environment
-	// use an array to get the key to have a nil value
-	err = json.Unmarshal([]byte(`["SOME_ENV"]`), &stepEnv)
+	vbr stepEnv env.Environment
+	// use bn brrby to get the key to hbve b nil vblue
+	err = json.Unmbrshbl([]byte(`["SOME_ENV"]`), &stepEnv)
 	require.NoError(t, err)
 
-	modDate := time.Date(2022, 1, 2, 3, 5, 6, 7, time.UTC)
+	modDbte := time.Dbte(2022, 1, 2, 3, 5, 6, 7, time.UTC)
 
 	tests := []struct {
-		name          string
+		nbme          string
 		keyer         Keyer
 		expectedKey   string
 		expectedError error
 	}{
 		{
-			name: "simple",
-			keyer: &CacheKey{
+			nbme: "simple",
+			keyer: &CbcheKey{
 				Repository: repo,
-				Steps:      []batches.Step{{Run: "foo"}},
+				Steps:      []bbtches.Step{{Run: "foo"}},
 				StepIndex:  0,
 			},
-			expectedKey: "NxWM6tGwnsIG5EoaivFOsg-step-0",
+			expectedKey: "NxWM6tGwnsIG5EobivFOsg-step-0",
 		},
 		{
-			name: "multiple steps",
-			keyer: &CacheKey{
+			nbme: "multiple steps",
+			keyer: &CbcheKey{
 				Repository: repo,
-				Steps: []batches.Step{
+				Steps: []bbtches.Step{
 					{Run: "foo"},
-					{Run: "bar"},
+					{Run: "bbr"},
 				},
 				StepIndex: 1,
 			},
-			expectedKey: "_zR95x8sdhauCYxjtOHCbA-step-1",
+			expectedKey: "_zR95x8sdhbuCYxjtOHCbA-step-1",
 		},
 		{
-			name: "step env",
-			keyer: &CacheKey{
+			nbme: "step env",
+			keyer: &CbcheKey{
 				Repository: repo,
-				Steps:      []batches.Step{{Run: "foo", Env: singleStepEnv}},
+				Steps:      []bbtches.Step{{Run: "foo", Env: singleStepEnv}},
 				StepIndex:  0,
 			},
 			expectedKey: "wKBVeg3u99TBq2U0qxx6cA-step-0",
 		},
 		{
-			name: "multiple step envs",
-			keyer: &CacheKey{
+			nbme: "multiple step envs",
+			keyer: &CbcheKey{
 				Repository: repo,
-				Steps:      []batches.Step{{Run: "foo", Env: multipleStepEnv}},
+				Steps:      []bbtches.Step{{Run: "foo", Env: multipleStepEnv}},
 				StepIndex:  0,
 			},
-			expectedKey: "YO88Tvj7bzCjP5pRag-9bQ-step-0",
+			expectedKey: "YO88Tvj7bzCjP5pRbg-9bQ-step-0",
 		},
 		{
-			name: "null step env",
-			keyer: &CacheKey{
+			nbme: "null step env",
+			keyer: &CbcheKey{
 				Repository: repo,
-				Steps:      []batches.Step{{Run: "foo", Env: nullStepEnv}},
+				Steps:      []bbtches.Step{{Run: "foo", Env: nullStepEnv}},
 				StepIndex:  0,
 			},
 			expectedKey: "wFqInfgY7mpK9F4qpW2iew-step-0",
 		},
 		{
-			name: "mount metadata",
-			keyer: &CacheKey{
+			nbme: "mount metbdbtb",
+			keyer: &CbcheKey{
 				Repository: repo,
-				Steps:      []batches.Step{{Run: "foo"}},
-				MetadataRetriever: testM{
-					m: []MountMetadata{{Path: "/foo/bar", Size: 100, Modified: modDate}},
+				Steps:      []bbtches.Step{{Run: "foo"}},
+				MetbdbtbRetriever: testM{
+					m: []MountMetbdbtb{{Pbth: "/foo/bbr", Size: 100, Modified: modDbte}},
 				},
 				StepIndex: 0,
 			},
 			expectedKey: "cpXzPMXfSM2ZmXYW_gAEyw-step-0",
 		},
 		{
-			name: "multiple mount metadata",
-			keyer: &CacheKey{
+			nbme: "multiple mount metbdbtb",
+			keyer: &CbcheKey{
 				Repository: repo,
-				Steps:      []batches.Step{{Run: "foo"}},
-				MetadataRetriever: testM{
-					m: []MountMetadata{
-						{Path: "/foo/bar", Size: 100, Modified: modDate},
-						{Path: "/faz/baz", Size: 100, Modified: modDate},
+				Steps:      []bbtches.Step{{Run: "foo"}},
+				MetbdbtbRetriever: testM{
+					m: []MountMetbdbtb{
+						{Pbth: "/foo/bbr", Size: 100, Modified: modDbte},
+						{Pbth: "/fbz/bbz", Size: 100, Modified: modDbte},
 					},
 				},
 				StepIndex: 0,
@@ -123,75 +123,75 @@ func TestKeyer_Key(t *testing.T) {
 			expectedKey: "ZSeYkHFJFD0TYsbKsgVjqQ-step-0",
 		},
 		{
-			name: "mount metadata error",
-			keyer: &CacheKey{
+			nbme: "mount metbdbtb error",
+			keyer: &CbcheKey{
 				Repository: repo,
-				Steps:      []batches.Step{{Run: "foo"}},
-				MetadataRetriever: testM{
-					err: errors.New("failed to get mount metadata"),
+				Steps:      []bbtches.Step{{Run: "foo"}},
+				MetbdbtbRetriever: testM{
+					err: errors.New("fbiled to get mount metbdbtb"),
 				},
 				StepIndex: 0,
 			},
-			expectedError: errors.New("failed to get mount metadata"),
+			expectedError: errors.New("fbiled to get mount metbdbtb"),
 		},
 		{
-			name: "with global env",
-			keyer: &CacheKey{
+			nbme: "with globbl env",
+			keyer: &CbcheKey{
 				Repository: repo,
-				Steps:      []batches.Step{{Run: "foo", Env: stepEnv}},
-				GlobalEnv:  []string{"SOME_ENV=FOO", "FAZ=BAZ"},
+				Steps:      []bbtches.Step{{Run: "foo", Env: stepEnv}},
+				GlobblEnv:  []string{"SOME_ENV=FOO", "FAZ=BAZ"},
 				StepIndex:  0,
 			},
-			expectedKey: "sBrPdQ_SaeTHL5cNRtl0uA-step-0",
+			expectedKey: "sBrPdQ_SbeTHL5cNRtl0uA-step-0",
 		},
 		{
-			name: "env var not in global env",
-			keyer: &CacheKey{
+			nbme: "env vbr not in globbl env",
+			keyer: &CbcheKey{
 				Repository: repo,
-				Steps:      []batches.Step{{Run: "foo", Env: stepEnv}},
-				GlobalEnv:  []string{"FAZ=BAZ"},
-				StepIndex:  0,
-			},
-			expectedKey: "cs52Db_-N1MfDw2_0FFulw-step-0",
-		},
-		{
-			name: "no global env but forwarded",
-			keyer: &CacheKey{
-				Repository: repo,
-				Steps:      []batches.Step{{Run: "foo", Env: stepEnv}},
+				Steps:      []bbtches.Step{{Run: "foo", Env: stepEnv}},
+				GlobblEnv:  []string{"FAZ=BAZ"},
 				StepIndex:  0,
 			},
 			expectedKey: "cs52Db_-N1MfDw2_0FFulw-step-0",
 		},
 		{
-			name: "malformed global env",
-			keyer: &CacheKey{
+			nbme: "no globbl env but forwbrded",
+			keyer: &CbcheKey{
 				Repository: repo,
-				Steps:      []batches.Step{{Run: "foo", Env: stepEnv}},
-				GlobalEnv:  []string{"SOME_ENV"},
+				Steps:      []bbtches.Step{{Run: "foo", Env: stepEnv}},
 				StepIndex:  0,
 			},
-			expectedError: errors.New("resolving environment for step 0: unable to parse environment variable \"SOME_ENV\""),
+			expectedKey: "cs52Db_-N1MfDw2_0FFulw-step-0",
+		},
+		{
+			nbme: "mblformed globbl env",
+			keyer: &CbcheKey{
+				Repository: repo,
+				Steps:      []bbtches.Step{{Run: "foo", Env: stepEnv}},
+				GlobblEnv:  []string{"SOME_ENV"},
+				StepIndex:  0,
+			},
+			expectedError: errors.New("resolving environment for step 0: unbble to pbrse environment vbribble \"SOME_ENV\""),
 		},
 	}
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
+	for _, test := rbnge tests {
+		t.Run(test.nbme, func(t *testing.T) {
 			key, err := test.keyer.Key()
 			if test.expectedError != nil {
-				assert.Equal(t, test.expectedError.Error(), err.Error())
+				bssert.Equbl(t, test.expectedError.Error(), err.Error())
 			} else {
-				assert.NoError(t, err)
-				assert.Equal(t, test.expectedKey, key)
+				bssert.NoError(t, err)
+				bssert.Equbl(t, test.expectedKey, key)
 			}
 		})
 	}
 }
 
 type testM struct {
-	m   []MountMetadata
+	m   []MountMetbdbtb
 	err error
 }
 
-func (t testM) Get(steps []batches.Step) ([]MountMetadata, error) {
+func (t testM) Get(steps []bbtches.Step) ([]MountMetbdbtb, error) {
 	return t.m, t.err
 }

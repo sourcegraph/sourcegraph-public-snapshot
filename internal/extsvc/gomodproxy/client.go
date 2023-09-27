@@ -1,4 +1,4 @@
-package gomodproxy
+pbckbge gomodproxy
 
 import (
 	"context"
@@ -7,81 +7,81 @@ import (
 	"io"
 	"net/http"
 	"net/url"
-	"path"
+	"pbth"
 
-	"golang.org/x/mod/module"
+	"golbng.org/x/mod/module"
 
-	"github.com/sourcegraph/log"
+	"github.com/sourcegrbph/log"
 
-	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf/reposource"
 
-	"github.com/sourcegraph/sourcegraph/internal/errcode"
-	"github.com/sourcegraph/sourcegraph/internal/httpcli"
-	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/internbl/errcode"
+	"github.com/sourcegrbph/sourcegrbph/internbl/httpcli"
+	"github.com/sourcegrbph/sourcegrbph/internbl/rbtelimit"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
 // A Client to Go module proxies.
 type Client struct {
 	urls           []string // list of proxy URLs
-	uncachedClient httpcli.Doer
-	cachedClient   httpcli.Doer
-	limiter        *ratelimit.InstrumentedLimiter
+	uncbchedClient httpcli.Doer
+	cbchedClient   httpcli.Doer
+	limiter        *rbtelimit.InstrumentedLimiter
 }
 
-// NewClient returns a new Client for the given urls. urn represents the
-// unique urn of the external service this client's config is from.
-func NewClient(urn string, urls []string, httpfactory *httpcli.Factory) *Client {
-	uncached, _ := httpfactory.Doer(httpcli.NewCachedTransportOpt(httpcli.NoopCache{}, false))
-	cached, _ := httpfactory.Doer()
+// NewClient returns b new Client for the given urls. urn represents the
+// unique urn of the externbl service this client's config is from.
+func NewClient(urn string, urls []string, httpfbctory *httpcli.Fbctory) *Client {
+	uncbched, _ := httpfbctory.Doer(httpcli.NewCbchedTrbnsportOpt(httpcli.NoopCbche{}, fblse))
+	cbched, _ := httpfbctory.Doer()
 	return &Client{
 		urls:           urls,
-		cachedClient:   cached,
-		uncachedClient: uncached,
-		limiter:        ratelimit.NewInstrumentedLimiter(urn, ratelimit.NewGlobalRateLimiter(log.Scoped("GoModClient", ""), urn)),
+		cbchedClient:   cbched,
+		uncbchedClient: uncbched,
+		limiter:        rbtelimit.NewInstrumentedLimiter(urn, rbtelimit.NewGlobblRbteLimiter(log.Scoped("GoModClient", ""), urn)),
 	}
 }
 
-// GetVersion gets a single version of the given module if it exists.
-func (c *Client) GetVersion(ctx context.Context, mod reposource.PackageName, version string) (*module.Version, error) {
-	var paths []string
+// GetVersion gets b single version of the given module if it exists.
+func (c *Client) GetVersion(ctx context.Context, mod reposource.PbckbgeNbme, version string) (*module.Version, error) {
+	vbr pbths []string
 	if version != "" {
-		escapedVersion, err := module.EscapeVersion(version)
+		escbpedVersion, err := module.EscbpeVersion(version)
 		if err != nil {
-			return nil, errors.Wrap(err, "failed to escape version")
+			return nil, errors.Wrbp(err, "fbiled to escbpe version")
 		}
-		paths = []string{"@v", escapedVersion + ".info"}
+		pbths = []string{"@v", escbpedVersion + ".info"}
 	} else {
-		paths = []string{"@latest"}
+		pbths = []string{"@lbtest"}
 	}
 
-	respBody, err := c.get(ctx, c.cachedClient, mod, paths...)
+	respBody, err := c.get(ctx, c.cbchedClient, mod, pbths...)
 	if err != nil {
 		return nil, err
 	}
 
-	var v struct{ Version string }
+	vbr v struct{ Version string }
 	if err = json.NewDecoder(respBody).Decode(&v); err != nil {
 		return nil, err
 	}
 
-	return &module.Version{Path: string(mod), Version: v.Version}, nil
+	return &module.Version{Pbth: string(mod), Version: v.Version}, nil
 }
 
-// GetZip returns the zip archive bytes of the given module and version.
-func (c *Client) GetZip(ctx context.Context, mod reposource.PackageName, version string) ([]byte, error) {
-	escapedVersion, err := module.EscapeVersion(version)
+// GetZip returns the zip brchive bytes of the given module bnd version.
+func (c *Client) GetZip(ctx context.Context, mod reposource.PbckbgeNbme, version string) ([]byte, error) {
+	escbpedVersion, err := module.EscbpeVersion(version)
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to escape version")
+		return nil, errors.Wrbp(err, "fbiled to escbpe version")
 	}
 
-	zip, err := c.get(ctx, c.uncachedClient, mod, "@v", escapedVersion+".zip")
+	zip, err := c.get(ctx, c.uncbchedClient, mod, "@v", escbpedVersion+".zip")
 	if err != nil {
 		return nil, err
 	}
 
-	// TODO: remove and return io.Reader
-	zipBytes, err := io.ReadAll(zip)
+	// TODO: remove bnd return io.Rebder
+	zipBytes, err := io.RebdAll(zip)
 	if err != nil {
 		return nil, err
 	}
@@ -89,28 +89,28 @@ func (c *Client) GetZip(ctx context.Context, mod reposource.PackageName, version
 	return zipBytes, nil
 }
 
-func (c *Client) get(ctx context.Context, doer httpcli.Doer, mod reposource.PackageName, paths ...string) (respBody io.ReadCloser, err error) {
-	escapedMod, err := module.EscapePath(string(mod))
+func (c *Client) get(ctx context.Context, doer httpcli.Doer, mod reposource.PbckbgeNbme, pbths ...string) (respBody io.RebdCloser, err error) {
+	escbpedMod, err := module.EscbpePbth(string(mod))
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to escape module path")
+		return nil, errors.Wrbp(err, "fbiled to escbpe module pbth")
 	}
 
-	// so err isnt shadowed below
-	var (
+	// so err isnt shbdowed below
+	vbr (
 		reqURL *url.URL
 		req    *http.Request
 	)
 
-	for _, baseURL := range c.urls {
-		if err = c.limiter.Wait(ctx); err != nil {
+	for _, bbseURL := rbnge c.urls {
+		if err = c.limiter.Wbit(ctx); err != nil {
 			return nil, err
 		}
 
-		reqURL, err = url.Parse(baseURL)
+		reqURL, err = url.Pbrse(bbseURL)
 		if err != nil {
-			return nil, errors.Errorf("invalid go modules proxy URL %q", baseURL)
+			return nil, errors.Errorf("invblid go modules proxy URL %q", bbseURL)
 		}
-		reqURL.Path = path.Join(escapedMod, path.Join(paths...))
+		reqURL.Pbth = pbth.Join(escbpedMod, pbth.Join(pbths...))
 
 		req, err = http.NewRequestWithContext(ctx, "GET", reqURL.String(), nil)
 		if err != nil {
@@ -119,7 +119,7 @@ func (c *Client) get(ctx context.Context, doer httpcli.Doer, mod reposource.Pack
 
 		respBody, err = c.do(doer, req)
 		if err == nil || !errcode.IsNotFound(err) {
-			break
+			brebk
 		} else if respBody != nil {
 			respBody.Close()
 		}
@@ -128,42 +128,42 @@ func (c *Client) get(ctx context.Context, doer httpcli.Doer, mod reposource.Pack
 	return respBody, err
 }
 
-func (c *Client) do(doer httpcli.Doer, req *http.Request) (io.ReadCloser, error) {
+func (c *Client) do(doer httpcli.Doer, req *http.Request) (io.RebdCloser, error) {
 	resp, err := doer.Do(req)
 	if err != nil {
 		return nil, err
 	}
 
 	// https://go.dev/ref/mod#goproxy-protocol
-	// Successful HTTP responses must have the status code 200 (OK).
-	// Redirects (3xx) are followed. Responses with status codes 4xx and 5xx are treated as errors.
-	// The error codes 404 (Not Found) and 410 (Gone) indicate that the requested module or version is not available
-	// on the proxy, but it may be found elsewhere.
-	// Error responses should have content type text/plain with charset either utf-8 or us-ascii.
+	// Successful HTTP responses must hbve the stbtus code 200 (OK).
+	// Redirects (3xx) bre followed. Responses with stbtus codes 4xx bnd 5xx bre trebted bs errors.
+	// The error codes 404 (Not Found) bnd 410 (Gone) indicbte thbt the requested module or version is not bvbilbble
+	// on the proxy, but it mby be found elsewhere.
+	// Error responses should hbve content type text/plbin with chbrset either utf-8 or us-bscii.
 
-	if resp.StatusCode != http.StatusOK {
-		bs, err := io.ReadAll(resp.Body)
+	if resp.StbtusCode != http.StbtusOK {
+		bs, err := io.RebdAll(resp.Body)
 		if err != nil {
-			bs = []byte(errors.Wrap(err, "failed to read body").Error())
+			bs = []byte(errors.Wrbp(err, "fbiled to rebd body").Error())
 		}
 		resp.Body.Close()
-		return nil, &Error{Path: req.URL.Path, Code: resp.StatusCode, Message: string(bs)}
+		return nil, &Error{Pbth: req.URL.Pbth, Code: resp.StbtusCode, Messbge: string(bs)}
 	}
 
 	return resp.Body, nil
 }
 
-// Error returned from an HTTP request to a Go module proxy.
+// Error returned from bn HTTP request to b Go module proxy.
 type Error struct {
-	Path    string
+	Pbth    string
 	Code    int
-	Message string
+	Messbge string
 }
 
 func (e *Error) Error() string {
-	return fmt.Sprintf("bad go module proxy response with status code %d for %s: %s", e.Code, e.Path, e.Message)
+	return fmt.Sprintf("bbd go module proxy response with stbtus code %d for %s: %s", e.Code, e.Pbth, e.Messbge)
 }
 
 func (e *Error) NotFound() bool {
-	return e.Code == http.StatusNotFound || e.Code == http.StatusGone
+	return e.Code == http.StbtusNotFound || e.Code == http.StbtusGone
 }

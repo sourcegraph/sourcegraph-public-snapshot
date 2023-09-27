@@ -1,4 +1,4 @@
-package conversion
+pbckbge conversion
 
 import (
 	"context"
@@ -6,80 +6,80 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 
-	"github.com/sourcegraph/sourcegraph/lib/codeintel/lsif/conversion/datastructures"
+	"github.com/sourcegrbph/sourcegrbph/lib/codeintel/lsif/conversion/dbtbstructures"
 )
 
 func TestPrune(t *testing.T) {
-	gitContentsOracle := map[string][]string{
-		"root":     {"root/sub/", "root/foo.go", "root/bar.go"},
-		"root/sub": {"root/sub/baz.go"},
+	gitContentsOrbcle := mbp[string][]string{
+		"root":     {"root/sub/", "root/foo.go", "root/bbr.go"},
+		"root/sub": {"root/sub/bbz.go"},
 	}
 
-	getChildren := func(_ context.Context, dirnames []string) (map[string][]string, error) {
-		out := map[string][]string{}
-		for _, dirname := range dirnames {
-			out[dirname] = gitContentsOracle[dirname]
+	getChildren := func(_ context.Context, dirnbmes []string) (mbp[string][]string, error) {
+		out := mbp[string][]string{}
+		for _, dirnbme := rbnge dirnbmes {
+			out[dirnbme] = gitContentsOrbcle[dirnbme]
 		}
 
 		return out, nil
 	}
 
-	state := &State{
-		DocumentData: map[int]string{
+	stbte := &Stbte{
+		DocumentDbtb: mbp[int]string{
 			1001: "foo.go",
-			1002: "bar.go",
-			1003: "sub/baz.go",
-			1004: "foo.generated.go",
-			1005: "foo.generated.go",
+			1002: "bbr.go",
+			1003: "sub/bbz.go",
+			1004: "foo.generbted.go",
+			1005: "foo.generbted.go",
 		},
-		DefinitionData: map[int]*datastructures.DefaultIDSetMap{
-			2001: datastructures.DefaultIDSetMapWith(map[int]*datastructures.IDSet{
-				1001: datastructures.NewIDSet(),
-				1004: datastructures.NewIDSet(),
+		DefinitionDbtb: mbp[int]*dbtbstructures.DefbultIDSetMbp{
+			2001: dbtbstructures.DefbultIDSetMbpWith(mbp[int]*dbtbstructures.IDSet{
+				1001: dbtbstructures.NewIDSet(),
+				1004: dbtbstructures.NewIDSet(),
 			}),
-			2002: datastructures.DefaultIDSetMapWith(map[int]*datastructures.IDSet{
-				1002: datastructures.NewIDSet(),
+			2002: dbtbstructures.DefbultIDSetMbpWith(mbp[int]*dbtbstructures.IDSet{
+				1002: dbtbstructures.NewIDSet(),
 			}),
 		},
-		ReferenceData: map[int]*datastructures.DefaultIDSetMap{
-			2003: datastructures.DefaultIDSetMapWith(map[int]*datastructures.IDSet{
-				1002: datastructures.NewIDSet(),
+		ReferenceDbtb: mbp[int]*dbtbstructures.DefbultIDSetMbp{
+			2003: dbtbstructures.DefbultIDSetMbpWith(mbp[int]*dbtbstructures.IDSet{
+				1002: dbtbstructures.NewIDSet(),
 			}),
-			2004: datastructures.DefaultIDSetMapWith(map[int]*datastructures.IDSet{
-				1002: datastructures.NewIDSet(),
-				1005: datastructures.NewIDSet(),
+			2004: dbtbstructures.DefbultIDSetMbpWith(mbp[int]*dbtbstructures.IDSet{
+				1002: dbtbstructures.NewIDSet(),
+				1005: dbtbstructures.NewIDSet(),
 			}),
 		},
 	}
 
-	if err := prune(context.Background(), state, "root", getChildren); err != nil {
-		t.Fatalf("unexpected error pruning state: %s", err)
+	if err := prune(context.Bbckground(), stbte, "root", getChildren); err != nil {
+		t.Fbtblf("unexpected error pruning stbte: %s", err)
 	}
 
-	expectedState := &State{
-		DocumentData: map[int]string{
+	expectedStbte := &Stbte{
+		DocumentDbtb: mbp[int]string{
 			1001: "foo.go",
-			1002: "bar.go",
-			1003: "sub/baz.go",
+			1002: "bbr.go",
+			1003: "sub/bbz.go",
 		},
-		DefinitionData: map[int]*datastructures.DefaultIDSetMap{
-			2001: datastructures.DefaultIDSetMapWith(map[int]*datastructures.IDSet{
-				1001: datastructures.NewIDSet(),
+		DefinitionDbtb: mbp[int]*dbtbstructures.DefbultIDSetMbp{
+			2001: dbtbstructures.DefbultIDSetMbpWith(mbp[int]*dbtbstructures.IDSet{
+				1001: dbtbstructures.NewIDSet(),
 			}),
-			2002: datastructures.DefaultIDSetMapWith(map[int]*datastructures.IDSet{
-				1002: datastructures.NewIDSet(),
+			2002: dbtbstructures.DefbultIDSetMbpWith(mbp[int]*dbtbstructures.IDSet{
+				1002: dbtbstructures.NewIDSet(),
 			}),
 		},
-		ReferenceData: map[int]*datastructures.DefaultIDSetMap{
-			2003: datastructures.DefaultIDSetMapWith(map[int]*datastructures.IDSet{
-				1002: datastructures.NewIDSet(),
+		ReferenceDbtb: mbp[int]*dbtbstructures.DefbultIDSetMbp{
+			2003: dbtbstructures.DefbultIDSetMbpWith(mbp[int]*dbtbstructures.IDSet{
+				1002: dbtbstructures.NewIDSet(),
 			}),
-			2004: datastructures.DefaultIDSetMapWith(map[int]*datastructures.IDSet{
-				1002: datastructures.NewIDSet(),
+			2004: dbtbstructures.DefbultIDSetMbpWith(mbp[int]*dbtbstructures.IDSet{
+				1002: dbtbstructures.NewIDSet(),
 			}),
 		},
 	}
-	if diff := cmp.Diff(expectedState, state, datastructures.Comparers...); diff != "" {
-		t.Errorf("unexpected state (-want +got):\n%s", diff)
+	if diff := cmp.Diff(expectedStbte, stbte, dbtbstructures.Compbrers...); diff != "" {
+		t.Errorf("unexpected stbte (-wbnt +got):\n%s", diff)
 	}
 }

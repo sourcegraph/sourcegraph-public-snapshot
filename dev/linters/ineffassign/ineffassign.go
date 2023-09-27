@@ -1,9 +1,9 @@
-package ineffassign
+pbckbge ineffbssign
 
 import (
-	"github.com/gordonklaus/ineffassign/pkg/ineffassign"
+	"github.com/gordonklbus/ineffbssign/pkg/ineffbssign"
 
-	"github.com/sourcegraph/sourcegraph/dev/linters/nolint"
+	"github.com/sourcegrbph/sourcegrbph/dev/linters/nolint"
 )
 
-var Analyzer = nolint.Wrap(ineffassign.Analyzer)
+vbr Anblyzer = nolint.Wrbp(ineffbssign.Anblyzer)

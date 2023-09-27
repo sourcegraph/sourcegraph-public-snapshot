@@ -1,4 +1,4 @@
-package registry
+pbckbge registry
 
 import (
 	"bytes"
@@ -7,24 +7,24 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/envvbr"
 )
 
-func TestHandleRegistry(t *testing.T) {
-	defer envvar.MockSourcegraphDotComMode(envvar.SourcegraphDotComMode())
-	envvar.MockSourcegraphDotComMode(true)
+func TestHbndleRegistry(t *testing.T) {
+	defer envvbr.MockSourcegrbphDotComMode(envvbr.SourcegrbphDotComMode())
+	envvbr.MockSourcegrbphDotComMode(true)
 
 	t.Run("list", func(t *testing.T) {
 		rr := httptest.NewRecorder()
 		rr.Body = new(bytes.Buffer)
-		req, _ := http.NewRequest("GET", "/.api/registry/extensions", nil)
-		req.Header.Set("Accept", "application/vnd.sourcegraph.api+json;version=20180621")
-		handleRegistry(rr, req)
-		if want := 200; rr.Result().StatusCode != want {
-			t.Errorf("got HTTP status %d, want %d", rr.Result().StatusCode, want)
+		req, _ := http.NewRequest("GET", "/.bpi/registry/extensions", nil)
+		req.Hebder.Set("Accept", "bpplicbtion/vnd.sourcegrbph.bpi+json;version=20180621")
+		hbndleRegistry(rr, req)
+		if wbnt := 200; rr.Result().StbtusCode != wbnt {
+			t.Errorf("got HTTP stbtus %d, wbnt %d", rr.Result().StbtusCode, wbnt)
 		}
-		body, _ := io.ReadAll(rr.Result().Body)
-		if want := []byte("sourcegraph/go"); !bytes.Contains(body, want) {
+		body, _ := io.RebdAll(rr.Result().Body)
+		if wbnt := []byte("sourcegrbph/go"); !bytes.Contbins(body, wbnt) {
 			t.Error("unexpected result")
 		}
 	})
@@ -32,14 +32,14 @@ func TestHandleRegistry(t *testing.T) {
 	t.Run("get", func(t *testing.T) {
 		rr := httptest.NewRecorder()
 		rr.Body = new(bytes.Buffer)
-		req, _ := http.NewRequest("GET", "/.api/registry/extensions/extension-id/sourcegraph/go", nil)
-		req.Header.Set("Accept", "application/vnd.sourcegraph.api+json;version=20180621")
-		handleRegistry(rr, req)
-		if want := 200; rr.Result().StatusCode != want {
-			t.Errorf("got HTTP status %d, want %d", rr.Result().StatusCode, want)
+		req, _ := http.NewRequest("GET", "/.bpi/registry/extensions/extension-id/sourcegrbph/go", nil)
+		req.Hebder.Set("Accept", "bpplicbtion/vnd.sourcegrbph.bpi+json;version=20180621")
+		hbndleRegistry(rr, req)
+		if wbnt := 200; rr.Result().StbtusCode != wbnt {
+			t.Errorf("got HTTP stbtus %d, wbnt %d", rr.Result().StbtusCode, wbnt)
 		}
-		body, _ := io.ReadAll(rr.Result().Body)
-		if want := []byte("contributes"); !bytes.Contains(body, want) {
+		body, _ := io.RebdAll(rr.Result().Body)
+		if wbnt := []byte("contributes"); !bytes.Contbins(body, wbnt) {
 			t.Error("unexpected result")
 		}
 	})

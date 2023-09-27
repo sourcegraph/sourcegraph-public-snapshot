@@ -1,4 +1,4 @@
-package store
+pbckbge store
 
 import (
 	"context"
@@ -8,764 +8,764 @@ import (
 	"time"
 
 	"github.com/google/go-cmp/cmp"
-	"github.com/keegancsmith/sqlf"
-	"github.com/stretchr/testify/assert"
+	"github.com/keegbncsmith/sqlf"
+	"github.com/stretchr/testify/bssert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/sourcegraph/log/logtest"
+	"github.com/sourcegrbph/log/logtest"
 
-	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/batches/search"
-	bt "github.com/sourcegraph/sourcegraph/internal/batches/testing"
-	btypes "github.com/sourcegraph/sourcegraph/internal/batches/types"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc"
-	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/internal/types/typestest"
-	batcheslib "github.com/sourcegraph/sourcegraph/lib/batches"
-	"github.com/sourcegraph/sourcegraph/lib/pointers"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bctor"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bbtches/sebrch"
+	bt "github.com/sourcegrbph/sourcegrbph/internbl/bbtches/testing"
+	btypes "github.com/sourcegrbph/sourcegrbph/internbl/bbtches/types"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/bbsestore"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types/typestest"
+	bbtcheslib "github.com/sourcegrbph/sourcegrbph/lib/bbtches"
+	"github.com/sourcegrbph/sourcegrbph/lib/pointers"
 )
 
-// Comparing the IDs is good enough, no need to bloat the tests here.
-var cmtRewirerMappingsOpts = cmp.FilterPath(func(p cmp.Path) bool {
+// Compbring the IDs is good enough, no need to blobt the tests here.
+vbr cmtRewirerMbppingsOpts = cmp.FilterPbth(func(p cmp.Pbth) bool {
 	switch p.String() {
-	case "Changeset", "ChangesetSpec", "Repo":
+	cbse "Chbngeset", "ChbngesetSpec", "Repo":
 		return true
-	default:
-		return false
+	defbult:
+		return fblse
 	}
 }, cmp.Ignore())
 
-func testStoreChangesetSpecs(t *testing.T, ctx context.Context, s *Store, clock bt.Clock) {
+func testStoreChbngesetSpecs(t *testing.T, ctx context.Context, s *Store, clock bt.Clock) {
 	logger := logtest.Scoped(t)
-	repoStore := database.ReposWith(logger, s)
-	esStore := database.ExternalServicesWith(logger, s)
+	repoStore := dbtbbbse.ReposWith(logger, s)
+	esStore := dbtbbbse.ExternblServicesWith(logger, s)
 
 	repo := bt.TestRepo(t, esStore, extsvc.KindGitHub)
 	deletedRepo := bt.TestRepo(t, esStore, extsvc.KindGitHub).With(typestest.Opt.RepoDeletedAt(clock.Now()))
 
-	if err := repoStore.Create(ctx, repo); err != nil {
-		t.Fatal(err)
+	if err := repoStore.Crebte(ctx, repo); err != nil {
+		t.Fbtbl(err)
 	}
 	if err := repoStore.Delete(ctx, deletedRepo.ID); err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	// The diff may contain non ascii, cover for this.
+	// The diff mby contbin non bscii, cover for this.
 	testDiff := []byte("git diff here\\x20")
 
-	changesetSpecs := make(btypes.ChangesetSpecs, 0, 3)
-	for i := 0; i < cap(changesetSpecs); i++ {
-		c := &btypes.ChangesetSpec{
+	chbngesetSpecs := mbke(btypes.ChbngesetSpecs, 0, 3)
+	for i := 0; i < cbp(chbngesetSpecs); i++ {
+		c := &btypes.ChbngesetSpec{
 			UserID:      int32(i + 1234),
-			BatchSpecID: int64(i + 910),
-			BaseRepoID:  repo.ID,
+			BbtchSpecID: int64(i + 910),
+			BbseRepoID:  repo.ID,
 
-			DiffStatAdded:   579,
-			DiffStatDeleted: 1245,
+			DiffStbtAdded:   579,
+			DiffStbtDeleted: 1245,
 		}
 		if i == 0 {
-			c.BaseRef = "refs/heads/main"
-			c.BaseRev = "deadbeef"
-			c.HeadRef = "refs/heads/branch"
+			c.BbseRef = "refs/hebds/mbin"
+			c.BbseRev = "debdbeef"
+			c.HebdRef = "refs/hebds/brbnch"
 			c.Title = "The title"
 			c.Body = "The body"
-			c.Published = batcheslib.PublishedValue{Val: false}
-			c.CommitMessage = "Test message"
+			c.Published = bbtcheslib.PublishedVblue{Vbl: fblse}
+			c.CommitMessbge = "Test messbge"
 			c.Diff = testDiff
-			c.CommitAuthorName = "name"
-			c.CommitAuthorEmail = "email"
-			c.Type = btypes.ChangesetSpecTypeBranch
+			c.CommitAuthorNbme = "nbme"
+			c.CommitAuthorEmbil = "embil"
+			c.Type = btypes.ChbngesetSpecTypeBrbnch
 		} else {
-			c.ExternalID = "123456"
-			c.Type = btypes.ChangesetSpecTypeExisting
+			c.ExternblID = "123456"
+			c.Type = btypes.ChbngesetSpecTypeExisting
 		}
 
-		if i == cap(changesetSpecs)-1 {
-			c.BatchSpecID = 0
-			forkNamespace := "fork"
-			c.ForkNamespace = &forkNamespace
+		if i == cbp(chbngesetSpecs)-1 {
+			c.BbtchSpecID = 0
+			forkNbmespbce := "fork"
+			c.ForkNbmespbce = &forkNbmespbce
 		}
-		changesetSpecs = append(changesetSpecs, c)
+		chbngesetSpecs = bppend(chbngesetSpecs, c)
 	}
 
-	// We create this ChangesetSpec to make sure that it's not returned when
-	// listing or getting ChangesetSpecs, since we don't want to load
-	// ChangesetSpecs whose repository has been (soft-)deleted.
-	changesetSpecDeletedRepo := &btypes.ChangesetSpec{
+	// We crebte this ChbngesetSpec to mbke sure thbt it's not returned when
+	// listing or getting ChbngesetSpecs, since we don't wbnt to lobd
+	// ChbngesetSpecs whose repository hbs been (soft-)deleted.
+	chbngesetSpecDeletedRepo := &btypes.ChbngesetSpec{
 		UserID:      int32(424242),
-		BatchSpecID: int64(424242),
-		BaseRepoID:  deletedRepo.ID,
+		BbtchSpecID: int64(424242),
+		BbseRepoID:  deletedRepo.ID,
 
-		ExternalID: "123",
-		Type:       btypes.ChangesetSpecTypeExisting,
+		ExternblID: "123",
+		Type:       btypes.ChbngesetSpecTypeExisting,
 	}
 
-	t.Run("Create", func(t *testing.T) {
-		toCreate := make(btypes.ChangesetSpecs, 0, len(changesetSpecs)+1)
-		toCreate = append(toCreate, changesetSpecs...)
-		toCreate = append(toCreate, changesetSpecDeletedRepo)
+	t.Run("Crebte", func(t *testing.T) {
+		toCrebte := mbke(btypes.ChbngesetSpecs, 0, len(chbngesetSpecs)+1)
+		toCrebte = bppend(toCrebte, chbngesetSpecs...)
+		toCrebte = bppend(toCrebte, chbngesetSpecDeletedRepo)
 
-		for i, c := range toCreate {
-			want := c.Clone()
-			have := c
+		for i, c := rbnge toCrebte {
+			wbnt := c.Clone()
+			hbve := c
 
-			err := s.CreateChangesetSpec(ctx, have)
+			err := s.CrebteChbngesetSpec(ctx, hbve)
 			if err != nil {
-				t.Fatal(err)
+				t.Fbtbl(err)
 			}
 
-			if have.ID == 0 {
-				t.Fatal("ID should not be zero")
+			if hbve.ID == 0 {
+				t.Fbtbl("ID should not be zero")
 			}
 
-			if have.RandID == "" {
-				t.Fatal("RandID should not be empty")
+			if hbve.RbndID == "" {
+				t.Fbtbl("RbndID should not be empty")
 			}
 
-			want.ID = have.ID
-			want.RandID = have.RandID
-			want.CreatedAt = clock.Now()
-			want.UpdatedAt = clock.Now()
+			wbnt.ID = hbve.ID
+			wbnt.RbndID = hbve.RbndID
+			wbnt.CrebtedAt = clock.Now()
+			wbnt.UpdbtedAt = clock.Now()
 
-			if diff := cmp.Diff(have, want); diff != "" {
-				t.Fatal(diff)
+			if diff := cmp.Diff(hbve, wbnt); diff != "" {
+				t.Fbtbl(diff)
 			}
 
-			if typ, _, err := basestore.ScanFirstString(s.Query(ctx, sqlf.Sprintf("SELECT type FROM changeset_specs WHERE id = %d", have.ID))); err != nil {
-				t.Fatal(err)
-			} else if i == 0 && typ != string(btypes.ChangesetSpecTypeBranch) {
-				t.Fatalf("got incorrect changeset spec type %s", typ)
-			} else if i != 0 && typ != string(btypes.ChangesetSpecTypeExisting) {
-				t.Fatalf("got incorrect changeset spec type %s", typ)
+			if typ, _, err := bbsestore.ScbnFirstString(s.Query(ctx, sqlf.Sprintf("SELECT type FROM chbngeset_specs WHERE id = %d", hbve.ID))); err != nil {
+				t.Fbtbl(err)
+			} else if i == 0 && typ != string(btypes.ChbngesetSpecTypeBrbnch) {
+				t.Fbtblf("got incorrect chbngeset spec type %s", typ)
+			} else if i != 0 && typ != string(btypes.ChbngesetSpecTypeExisting) {
+				t.Fbtblf("got incorrect chbngeset spec type %s", typ)
 			}
 		}
 	})
 
 	t.Run("Count", func(t *testing.T) {
-		count, err := s.CountChangesetSpecs(ctx, CountChangesetSpecsOpts{})
+		count, err := s.CountChbngesetSpecs(ctx, CountChbngesetSpecsOpts{})
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
 
-		if have, want := count, len(changesetSpecs); have != want {
-			t.Fatalf("have count: %d, want: %d", have, want)
+		if hbve, wbnt := count, len(chbngesetSpecs); hbve != wbnt {
+			t.Fbtblf("hbve count: %d, wbnt: %d", hbve, wbnt)
 		}
 
-		t.Run("WithBatchSpecID", func(t *testing.T) {
-			testsRan := false
-			for _, c := range changesetSpecs {
-				if c.BatchSpecID == 0 {
+		t.Run("WithBbtchSpecID", func(t *testing.T) {
+			testsRbn := fblse
+			for _, c := rbnge chbngesetSpecs {
+				if c.BbtchSpecID == 0 {
 					continue
 				}
 
-				opts := CountChangesetSpecsOpts{BatchSpecID: c.BatchSpecID}
-				subCount, err := s.CountChangesetSpecs(ctx, opts)
+				opts := CountChbngesetSpecsOpts{BbtchSpecID: c.BbtchSpecID}
+				subCount, err := s.CountChbngesetSpecs(ctx, opts)
 				if err != nil {
-					t.Fatal(err)
+					t.Fbtbl(err)
 				}
 
-				if have, want := subCount, 1; have != want {
-					t.Fatalf("have count: %d, want: %d", have, want)
+				if hbve, wbnt := subCount, 1; hbve != wbnt {
+					t.Fbtblf("hbve count: %d, wbnt: %d", hbve, wbnt)
 				}
-				testsRan = true
+				testsRbn = true
 			}
 
-			if !testsRan {
-				t.Fatal("no changesetSpec has a non-zero BatchSpecID")
+			if !testsRbn {
+				t.Fbtbl("no chbngesetSpec hbs b non-zero BbtchSpecID")
 			}
 		})
 	})
 
 	t.Run("List", func(t *testing.T) {
 		t.Run("NoLimit", func(t *testing.T) {
-			// Empty limit should return all entries.
-			opts := ListChangesetSpecsOpts{}
-			ts, next, err := s.ListChangesetSpecs(ctx, opts)
+			// Empty limit should return bll entries.
+			opts := ListChbngesetSpecsOpts{}
+			ts, next, err := s.ListChbngesetSpecs(ctx, opts)
 			if err != nil {
-				t.Fatal(err)
+				t.Fbtbl(err)
 			}
 
-			if have, want := next, int64(0); have != want {
-				t.Fatalf("opts: %+v: have next %v, want %v", opts, have, want)
+			if hbve, wbnt := next, int64(0); hbve != wbnt {
+				t.Fbtblf("opts: %+v: hbve next %v, wbnt %v", opts, hbve, wbnt)
 			}
 
-			have, want := ts, changesetSpecs
-			if len(have) != len(want) {
-				t.Fatalf("listed %d changesetSpecs, want: %d", len(have), len(want))
+			hbve, wbnt := ts, chbngesetSpecs
+			if len(hbve) != len(wbnt) {
+				t.Fbtblf("listed %d chbngesetSpecs, wbnt: %d", len(hbve), len(wbnt))
 			}
 
-			if diff := cmp.Diff(have, want); diff != "" {
-				t.Fatalf("opts: %+v, diff: %s", opts, diff)
+			if diff := cmp.Diff(hbve, wbnt); diff != "" {
+				t.Fbtblf("opts: %+v, diff: %s", opts, diff)
 			}
 		})
 
 		t.Run("WithLimit", func(t *testing.T) {
-			for i := 1; i <= len(changesetSpecs); i++ {
-				cs, next, err := s.ListChangesetSpecs(ctx, ListChangesetSpecsOpts{LimitOpts: LimitOpts{Limit: i}})
+			for i := 1; i <= len(chbngesetSpecs); i++ {
+				cs, next, err := s.ListChbngesetSpecs(ctx, ListChbngesetSpecsOpts{LimitOpts: LimitOpts{Limit: i}})
 				if err != nil {
-					t.Fatal(err)
+					t.Fbtbl(err)
 				}
 
 				{
-					have, want := next, int64(0)
-					if i < len(changesetSpecs) {
-						want = changesetSpecs[i].ID
+					hbve, wbnt := next, int64(0)
+					if i < len(chbngesetSpecs) {
+						wbnt = chbngesetSpecs[i].ID
 					}
 
-					if have != want {
-						t.Fatalf("limit: %v: have next %v, want %v", i, have, want)
+					if hbve != wbnt {
+						t.Fbtblf("limit: %v: hbve next %v, wbnt %v", i, hbve, wbnt)
 					}
 				}
 
 				{
-					have, want := cs, changesetSpecs[:i]
-					if len(have) != len(want) {
-						t.Fatalf("listed %d changesetSpecs, want: %d", len(have), len(want))
+					hbve, wbnt := cs, chbngesetSpecs[:i]
+					if len(hbve) != len(wbnt) {
+						t.Fbtblf("listed %d chbngesetSpecs, wbnt: %d", len(hbve), len(wbnt))
 					}
 
-					if diff := cmp.Diff(have, want); diff != "" {
-						t.Fatal(diff)
+					if diff := cmp.Diff(hbve, wbnt); diff != "" {
+						t.Fbtbl(diff)
 					}
 				}
 			}
 		})
 
 		t.Run("WithLimitAndCursor", func(t *testing.T) {
-			var cursor int64
-			for i := 1; i <= len(changesetSpecs); i++ {
-				opts := ListChangesetSpecsOpts{Cursor: cursor, LimitOpts: LimitOpts{Limit: 1}}
-				have, next, err := s.ListChangesetSpecs(ctx, opts)
+			vbr cursor int64
+			for i := 1; i <= len(chbngesetSpecs); i++ {
+				opts := ListChbngesetSpecsOpts{Cursor: cursor, LimitOpts: LimitOpts{Limit: 1}}
+				hbve, next, err := s.ListChbngesetSpecs(ctx, opts)
 				if err != nil {
-					t.Fatal(err)
+					t.Fbtbl(err)
 				}
 
-				want := changesetSpecs[i-1 : i]
-				if diff := cmp.Diff(have, want); diff != "" {
-					t.Fatalf("opts: %+v, diff: %s", opts, diff)
+				wbnt := chbngesetSpecs[i-1 : i]
+				if diff := cmp.Diff(hbve, wbnt); diff != "" {
+					t.Fbtblf("opts: %+v, diff: %s", opts, diff)
 				}
 
 				cursor = next
 			}
 		})
 
-		t.Run("WithBatchSpecID", func(t *testing.T) {
-			for _, c := range changesetSpecs {
-				if c.BatchSpecID == 0 {
+		t.Run("WithBbtchSpecID", func(t *testing.T) {
+			for _, c := rbnge chbngesetSpecs {
+				if c.BbtchSpecID == 0 {
 					continue
 				}
-				opts := ListChangesetSpecsOpts{BatchSpecID: c.BatchSpecID}
-				have, _, err := s.ListChangesetSpecs(ctx, opts)
+				opts := ListChbngesetSpecsOpts{BbtchSpecID: c.BbtchSpecID}
+				hbve, _, err := s.ListChbngesetSpecs(ctx, opts)
 				if err != nil {
-					t.Fatal(err)
+					t.Fbtbl(err)
 				}
 
-				want := btypes.ChangesetSpecs{c}
-				if diff := cmp.Diff(have, want); diff != "" {
-					t.Fatalf("opts: %+v, diff: %s", opts, diff)
+				wbnt := btypes.ChbngesetSpecs{c}
+				if diff := cmp.Diff(hbve, wbnt); diff != "" {
+					t.Fbtblf("opts: %+v, diff: %s", opts, diff)
 				}
 			}
 		})
 
-		t.Run("WithRandIDs", func(t *testing.T) {
-			for _, c := range changesetSpecs {
-				opts := ListChangesetSpecsOpts{RandIDs: []string{c.RandID}}
-				have, _, err := s.ListChangesetSpecs(ctx, opts)
+		t.Run("WithRbndIDs", func(t *testing.T) {
+			for _, c := rbnge chbngesetSpecs {
+				opts := ListChbngesetSpecsOpts{RbndIDs: []string{c.RbndID}}
+				hbve, _, err := s.ListChbngesetSpecs(ctx, opts)
 				if err != nil {
-					t.Fatal(err)
+					t.Fbtbl(err)
 				}
 
-				want := btypes.ChangesetSpecs{c}
-				if diff := cmp.Diff(have, want); diff != "" {
-					t.Fatalf("opts: %+v, diff: %s", opts, diff)
+				wbnt := btypes.ChbngesetSpecs{c}
+				if diff := cmp.Diff(hbve, wbnt); diff != "" {
+					t.Fbtblf("opts: %+v, diff: %s", opts, diff)
 				}
 			}
 
-			opts := ListChangesetSpecsOpts{}
-			for _, c := range changesetSpecs {
-				opts.RandIDs = append(opts.RandIDs, c.RandID)
+			opts := ListChbngesetSpecsOpts{}
+			for _, c := rbnge chbngesetSpecs {
+				opts.RbndIDs = bppend(opts.RbndIDs, c.RbndID)
 			}
 
-			have, _, err := s.ListChangesetSpecs(ctx, opts)
+			hbve, _, err := s.ListChbngesetSpecs(ctx, opts)
 			if err != nil {
-				t.Fatal(err)
+				t.Fbtbl(err)
 			}
 
-			// ListChangesetSpecs should not return ChangesetSpecs whose
-			// repository was (soft-)deleted.
-			if diff := cmp.Diff(have, changesetSpecs); diff != "" {
-				t.Fatalf("opts: %+v, diff: %s", opts, diff)
+			// ListChbngesetSpecs should not return ChbngesetSpecs whose
+			// repository wbs (soft-)deleted.
+			if diff := cmp.Diff(hbve, chbngesetSpecs); diff != "" {
+				t.Fbtblf("opts: %+v, diff: %s", opts, diff)
 			}
 		})
 
 		t.Run("WithIDs", func(t *testing.T) {
-			for _, c := range changesetSpecs {
-				opts := ListChangesetSpecsOpts{IDs: []int64{c.ID}}
-				have, _, err := s.ListChangesetSpecs(ctx, opts)
+			for _, c := rbnge chbngesetSpecs {
+				opts := ListChbngesetSpecsOpts{IDs: []int64{c.ID}}
+				hbve, _, err := s.ListChbngesetSpecs(ctx, opts)
 				if err != nil {
-					t.Fatal(err)
+					t.Fbtbl(err)
 				}
 
-				want := btypes.ChangesetSpecs{c}
-				if diff := cmp.Diff(have, want); diff != "" {
-					t.Fatalf("opts: %+v, diff: %s", opts, diff)
+				wbnt := btypes.ChbngesetSpecs{c}
+				if diff := cmp.Diff(hbve, wbnt); diff != "" {
+					t.Fbtblf("opts: %+v, diff: %s", opts, diff)
 				}
 			}
 
-			opts := ListChangesetSpecsOpts{}
-			for _, c := range changesetSpecs {
-				opts.IDs = append(opts.IDs, c.ID)
+			opts := ListChbngesetSpecsOpts{}
+			for _, c := rbnge chbngesetSpecs {
+				opts.IDs = bppend(opts.IDs, c.ID)
 			}
 
-			have, _, err := s.ListChangesetSpecs(ctx, opts)
+			hbve, _, err := s.ListChbngesetSpecs(ctx, opts)
 			if err != nil {
-				t.Fatal(err)
+				t.Fbtbl(err)
 			}
 
-			// ListChangesetSpecs should not return ChangesetSpecs whose
-			// repository was (soft-)deleted.
-			if diff := cmp.Diff(have, changesetSpecs); diff != "" {
-				t.Fatalf("opts: %+v, diff: %s", opts, diff)
+			// ListChbngesetSpecs should not return ChbngesetSpecs whose
+			// repository wbs (soft-)deleted.
+			if diff := cmp.Diff(hbve, chbngesetSpecs); diff != "" {
+				t.Fbtblf("opts: %+v, diff: %s", opts, diff)
 			}
 		})
 	})
 
-	t.Run("UpdateChangesetSpecBatchSpecID", func(t *testing.T) {
-		for _, c := range changesetSpecs {
-			c.BatchSpecID = 10001
-			want := c.Clone()
-			if err := s.UpdateChangesetSpecBatchSpecID(ctx, []int64{c.ID}, 10001); err != nil {
-				t.Fatal(err)
+	t.Run("UpdbteChbngesetSpecBbtchSpecID", func(t *testing.T) {
+		for _, c := rbnge chbngesetSpecs {
+			c.BbtchSpecID = 10001
+			wbnt := c.Clone()
+			if err := s.UpdbteChbngesetSpecBbtchSpecID(ctx, []int64{c.ID}, 10001); err != nil {
+				t.Fbtbl(err)
 			}
-			have, err := s.GetChangesetSpecByID(ctx, c.ID)
+			hbve, err := s.GetChbngesetSpecByID(ctx, c.ID)
 			if err != nil {
-				t.Fatal(err)
+				t.Fbtbl(err)
 			}
-			if diff := cmp.Diff(have, want); diff != "" {
-				t.Fatal(diff)
+			if diff := cmp.Diff(hbve, wbnt); diff != "" {
+				t.Fbtbl(diff)
 			}
 		}
 	})
 
 	t.Run("Get", func(t *testing.T) {
-		want := changesetSpecs[1]
-		tests := map[string]GetChangesetSpecOpts{
-			"ByID":          {ID: want.ID},
-			"ByRandID":      {RandID: want.RandID},
-			"ByIDAndRandID": {ID: want.ID, RandID: want.RandID},
+		wbnt := chbngesetSpecs[1]
+		tests := mbp[string]GetChbngesetSpecOpts{
+			"ByID":          {ID: wbnt.ID},
+			"ByRbndID":      {RbndID: wbnt.RbndID},
+			"ByIDAndRbndID": {ID: wbnt.ID, RbndID: wbnt.RbndID},
 		}
 
-		for name, opts := range tests {
-			t.Run(name, func(t *testing.T) {
-				have, err := s.GetChangesetSpec(ctx, opts)
+		for nbme, opts := rbnge tests {
+			t.Run(nbme, func(t *testing.T) {
+				hbve, err := s.GetChbngesetSpec(ctx, opts)
 				if err != nil {
-					t.Fatal(err)
+					t.Fbtbl(err)
 				}
 
-				if diff := cmp.Diff(have, want); diff != "" {
-					t.Fatal(diff)
+				if diff := cmp.Diff(hbve, wbnt); diff != "" {
+					t.Fbtbl(diff)
 				}
 			})
 		}
 
 		t.Run("NoResults", func(t *testing.T) {
-			opts := GetChangesetSpecOpts{ID: 0xdeadbeef}
+			opts := GetChbngesetSpecOpts{ID: 0xdebdbeef}
 
-			_, have := s.GetChangesetSpec(ctx, opts)
-			want := ErrNoResults
+			_, hbve := s.GetChbngesetSpec(ctx, opts)
+			wbnt := ErrNoResults
 
-			if have != want {
-				t.Fatalf("have err %v, want %v", have, want)
+			if hbve != wbnt {
+				t.Fbtblf("hbve err %v, wbnt %v", hbve, wbnt)
 			}
 		})
 	})
 
-	t.Run("DeleteChangesetSpec", func(t *testing.T) {
-		for i := range changesetSpecs {
-			err := s.DeleteChangesetSpec(ctx, changesetSpecs[i].ID)
+	t.Run("DeleteChbngesetSpec", func(t *testing.T) {
+		for i := rbnge chbngesetSpecs {
+			err := s.DeleteChbngesetSpec(ctx, chbngesetSpecs[i].ID)
 			if err != nil {
-				t.Fatal(err)
+				t.Fbtbl(err)
 			}
 
-			count, err := s.CountChangesetSpecs(ctx, CountChangesetSpecsOpts{})
+			count, err := s.CountChbngesetSpecs(ctx, CountChbngesetSpecsOpts{})
 			if err != nil {
-				t.Fatal(err)
+				t.Fbtbl(err)
 			}
 
-			if have, want := count, len(changesetSpecs)-(i+1); have != want {
-				t.Fatalf("have count: %d, want: %d", have, want)
+			if hbve, wbnt := count, len(chbngesetSpecs)-(i+1); hbve != wbnt {
+				t.Fbtblf("hbve count: %d, wbnt: %d", hbve, wbnt)
 			}
 		}
 	})
 
-	t.Run("DeleteChangesetSpecs", func(t *testing.T) {
-		t.Run("ByBatchSpecID", func(t *testing.T) {
+	t.Run("DeleteChbngesetSpecs", func(t *testing.T) {
+		t.Run("ByBbtchSpecID", func(t *testing.T) {
 
 			for i := 0; i < 3; i++ {
-				spec := &btypes.ChangesetSpec{
-					BatchSpecID: int64(i + 1),
-					BaseRepoID:  repo.ID,
-					ExternalID:  "123",
-					Type:        btypes.ChangesetSpecTypeExisting,
+				spec := &btypes.ChbngesetSpec{
+					BbtchSpecID: int64(i + 1),
+					BbseRepoID:  repo.ID,
+					ExternblID:  "123",
+					Type:        btypes.ChbngesetSpecTypeExisting,
 				}
-				err := s.CreateChangesetSpec(ctx, spec)
+				err := s.CrebteChbngesetSpec(ctx, spec)
 				if err != nil {
-					t.Fatal(err)
+					t.Fbtbl(err)
 				}
 
-				if err := s.DeleteChangesetSpecs(ctx, DeleteChangesetSpecsOpts{
-					BatchSpecID: spec.BatchSpecID,
+				if err := s.DeleteChbngesetSpecs(ctx, DeleteChbngesetSpecsOpts{
+					BbtchSpecID: spec.BbtchSpecID,
 				}); err != nil {
-					t.Fatal(err)
+					t.Fbtbl(err)
 				}
 
-				count, err := s.CountChangesetSpecs(ctx, CountChangesetSpecsOpts{BatchSpecID: spec.ID})
+				count, err := s.CountChbngesetSpecs(ctx, CountChbngesetSpecsOpts{BbtchSpecID: spec.ID})
 				if err != nil {
-					t.Fatal(err)
+					t.Fbtbl(err)
 				}
 
-				if have, want := count, 0; have != want {
-					t.Fatalf("have count: %d, want: %d", have, want)
+				if hbve, wbnt := count, 0; hbve != wbnt {
+					t.Fbtblf("hbve count: %d, wbnt: %d", hbve, wbnt)
 				}
 			}
 		})
 
 		t.Run("ByID", func(t *testing.T) {
 			for i := 0; i < 3; i++ {
-				spec := &btypes.ChangesetSpec{
-					BatchSpecID: int64(i + 1),
-					BaseRepoID:  repo.ID,
-					ExternalID:  "123",
-					Type:        btypes.ChangesetSpecTypeExisting,
+				spec := &btypes.ChbngesetSpec{
+					BbtchSpecID: int64(i + 1),
+					BbseRepoID:  repo.ID,
+					ExternblID:  "123",
+					Type:        btypes.ChbngesetSpecTypeExisting,
 				}
-				err := s.CreateChangesetSpec(ctx, spec)
+				err := s.CrebteChbngesetSpec(ctx, spec)
 				if err != nil {
-					t.Fatal(err)
+					t.Fbtbl(err)
 				}
 
-				if err := s.DeleteChangesetSpecs(ctx, DeleteChangesetSpecsOpts{
+				if err := s.DeleteChbngesetSpecs(ctx, DeleteChbngesetSpecsOpts{
 					IDs: []int64{spec.ID},
 				}); err != nil {
-					t.Fatal(err)
+					t.Fbtbl(err)
 				}
 
-				_, err = s.GetChangesetSpec(ctx, GetChangesetSpecOpts{ID: spec.ID})
+				_, err = s.GetChbngesetSpec(ctx, GetChbngesetSpecOpts{ID: spec.ID})
 				if err != ErrNoResults {
-					t.Fatal("changeset spec not deleted")
+					t.Fbtbl("chbngeset spec not deleted")
 				}
 			}
 		})
 	})
 
-	t.Run("DeleteUnattachedExpiredChangesetSpecs", func(t *testing.T) {
-		underTTL := clock.Now().Add(-btypes.ChangesetSpecTTL + 24*time.Hour)
-		overTTL := clock.Now().Add(-btypes.ChangesetSpecTTL - 24*time.Hour)
+	t.Run("DeleteUnbttbchedExpiredChbngesetSpecs", func(t *testing.T) {
+		underTTL := clock.Now().Add(-btypes.ChbngesetSpecTTL + 24*time.Hour)
+		overTTL := clock.Now().Add(-btypes.ChbngesetSpecTTL - 24*time.Hour)
 
-		type testCase struct {
-			createdAt   time.Time
-			wantDeleted bool
+		type testCbse struct {
+			crebtedAt   time.Time
+			wbntDeleted bool
 		}
 
-		printTestCase := func(tc testCase) string {
-			var tooOld bool
-			if tc.createdAt.Equal(overTTL) {
+		printTestCbse := func(tc testCbse) string {
+			vbr tooOld bool
+			if tc.crebtedAt.Equbl(overTTL) {
 				tooOld = true
 			}
 
 			return fmt.Sprintf("[tooOld=%t]", tooOld)
 		}
 
-		tests := []testCase{
-			// ChangesetSpec was created but never attached to a BatchSpec
-			{createdAt: underTTL, wantDeleted: false},
-			{createdAt: overTTL, wantDeleted: true},
+		tests := []testCbse{
+			// ChbngesetSpec wbs crebted but never bttbched to b BbtchSpec
+			{crebtedAt: underTTL, wbntDeleted: fblse},
+			{crebtedAt: overTTL, wbntDeleted: true},
 		}
 
-		for _, tc := range tests {
+		for _, tc := rbnge tests {
 
-			changesetSpec := &btypes.ChangesetSpec{
-				// Need to set a RepoID otherwise GetChangesetSpec filters it out.
-				BaseRepoID: repo.ID,
-				ExternalID: "123",
-				Type:       btypes.ChangesetSpecTypeExisting,
-				CreatedAt:  tc.createdAt,
+			chbngesetSpec := &btypes.ChbngesetSpec{
+				// Need to set b RepoID otherwise GetChbngesetSpec filters it out.
+				BbseRepoID: repo.ID,
+				ExternblID: "123",
+				Type:       btypes.ChbngesetSpecTypeExisting,
+				CrebtedAt:  tc.crebtedAt,
 			}
 
-			if err := s.CreateChangesetSpec(ctx, changesetSpec); err != nil {
-				t.Fatal(err)
+			if err := s.CrebteChbngesetSpec(ctx, chbngesetSpec); err != nil {
+				t.Fbtbl(err)
 			}
 
-			if err := s.DeleteUnattachedExpiredChangesetSpecs(ctx); err != nil {
-				t.Fatal(err)
+			if err := s.DeleteUnbttbchedExpiredChbngesetSpecs(ctx); err != nil {
+				t.Fbtbl(err)
 			}
 
-			_, err := s.GetChangesetSpec(ctx, GetChangesetSpecOpts{ID: changesetSpec.ID})
+			_, err := s.GetChbngesetSpec(ctx, GetChbngesetSpecOpts{ID: chbngesetSpec.ID})
 			if err != nil && err != ErrNoResults {
-				t.Fatal(err)
+				t.Fbtbl(err)
 			}
 
-			if tc.wantDeleted && err == nil {
-				t.Fatalf("tc=%s\n\t want changeset spec to be deleted, but was NOT", printTestCase(tc))
+			if tc.wbntDeleted && err == nil {
+				t.Fbtblf("tc=%s\n\t wbnt chbngeset spec to be deleted, but wbs NOT", printTestCbse(tc))
 			}
 
-			if !tc.wantDeleted && err == ErrNoResults {
-				t.Fatalf("tc=%s\n\t want changeset spec NOT to be deleted, but got deleted", printTestCase(tc))
+			if !tc.wbntDeleted && err == ErrNoResults {
+				t.Fbtblf("tc=%s\n\t wbnt chbngeset spec NOT to be deleted, but got deleted", printTestCbse(tc))
 			}
 		}
 	})
 
-	t.Run("DeleteExpiredChangesetSpecs", func(t *testing.T) {
-		underTTL := clock.Now().Add(-btypes.ChangesetSpecTTL + 24*time.Hour)
-		overTTL := clock.Now().Add(-btypes.ChangesetSpecTTL - 24*time.Hour)
-		overBatchSpecTTL := clock.Now().Add(-btypes.BatchSpecTTL - 24*time.Hour)
+	t.Run("DeleteExpiredChbngesetSpecs", func(t *testing.T) {
+		underTTL := clock.Now().Add(-btypes.ChbngesetSpecTTL + 24*time.Hour)
+		overTTL := clock.Now().Add(-btypes.ChbngesetSpecTTL - 24*time.Hour)
+		overBbtchSpecTTL := clock.Now().Add(-btypes.BbtchSpecTTL - 24*time.Hour)
 
-		type testCase struct {
-			createdAt time.Time
+		type testCbse struct {
+			crebtedAt time.Time
 
-			batchSpecApplied bool
+			bbtchSpecApplied bool
 
 			isCurrentSpec  bool
 			isPreviousSpec bool
 
-			wantDeleted bool
+			wbntDeleted bool
 		}
 
-		printTestCase := func(tc testCase) string {
-			var tooOld bool
-			if tc.createdAt.Equal(overTTL) || tc.createdAt.Equal(overBatchSpecTTL) {
+		printTestCbse := func(tc testCbse) string {
+			vbr tooOld bool
+			if tc.crebtedAt.Equbl(overTTL) || tc.crebtedAt.Equbl(overBbtchSpecTTL) {
 				tooOld = true
 			}
 
 			return fmt.Sprintf(
-				"[tooOld=%t, batchSpecApplied=%t, isCurrentSpec=%t, isPreviousSpec=%t]",
-				tooOld, tc.batchSpecApplied, tc.isCurrentSpec, tc.isPreviousSpec,
+				"[tooOld=%t, bbtchSpecApplied=%t, isCurrentSpec=%t, isPreviousSpec=%t]",
+				tooOld, tc.bbtchSpecApplied, tc.isCurrentSpec, tc.isPreviousSpec,
 			)
 		}
 
-		tests := []testCase{
-			// Attached to BatchSpec that's applied to a BatchChange
-			{batchSpecApplied: true, isCurrentSpec: true, createdAt: underTTL, wantDeleted: false},
-			{batchSpecApplied: true, isCurrentSpec: true, createdAt: overTTL, wantDeleted: false},
+		tests := []testCbse{
+			// Attbched to BbtchSpec thbt's bpplied to b BbtchChbnge
+			{bbtchSpecApplied: true, isCurrentSpec: true, crebtedAt: underTTL, wbntDeleted: fblse},
+			{bbtchSpecApplied: true, isCurrentSpec: true, crebtedAt: overTTL, wbntDeleted: fblse},
 
-			// BatchSpec is not applied to a BatchChange anymore and the
-			// ChangesetSpecs are now the PreviousSpec.
-			{isPreviousSpec: true, createdAt: underTTL, wantDeleted: false},
-			{isPreviousSpec: true, createdAt: overTTL, wantDeleted: false},
+			// BbtchSpec is not bpplied to b BbtchChbnge bnymore bnd the
+			// ChbngesetSpecs bre now the PreviousSpec.
+			{isPreviousSpec: true, crebtedAt: underTTL, wbntDeleted: fblse},
+			{isPreviousSpec: true, crebtedAt: overTTL, wbntDeleted: fblse},
 
-			// Has a BatchSpec, but that BatchSpec is not applied
-			// anymore, and the ChangesetSpec is neither the current, nor the
+			// Hbs b BbtchSpec, but thbt BbtchSpec is not bpplied
+			// bnymore, bnd the ChbngesetSpec is neither the current, nor the
 			// previous spec.
-			{createdAt: underTTL, wantDeleted: false},
-			{createdAt: overTTL, wantDeleted: false},
-			{createdAt: overBatchSpecTTL, wantDeleted: true},
+			{crebtedAt: underTTL, wbntDeleted: fblse},
+			{crebtedAt: overTTL, wbntDeleted: fblse},
+			{crebtedAt: overBbtchSpecTTL, wbntDeleted: true},
 		}
 
-		for _, tc := range tests {
-			batchSpec := &btypes.BatchSpec{UserID: 4567, NamespaceUserID: 4567}
+		for _, tc := rbnge tests {
+			bbtchSpec := &btypes.BbtchSpec{UserID: 4567, NbmespbceUserID: 4567}
 
-			if err := s.CreateBatchSpec(ctx, batchSpec); err != nil {
-				t.Fatal(err)
+			if err := s.CrebteBbtchSpec(ctx, bbtchSpec); err != nil {
+				t.Fbtbl(err)
 			}
 
-			if tc.batchSpecApplied {
-				batchChange := &btypes.BatchChange{
-					Name:            fmt.Sprintf("batch-change-for-spec-%d", batchSpec.ID),
-					BatchSpecID:     batchSpec.ID,
-					CreatorID:       batchSpec.UserID,
-					NamespaceUserID: batchSpec.NamespaceUserID,
-					LastApplierID:   batchSpec.UserID,
-					LastAppliedAt:   time.Now(),
+			if tc.bbtchSpecApplied {
+				bbtchChbnge := &btypes.BbtchChbnge{
+					Nbme:            fmt.Sprintf("bbtch-chbnge-for-spec-%d", bbtchSpec.ID),
+					BbtchSpecID:     bbtchSpec.ID,
+					CrebtorID:       bbtchSpec.UserID,
+					NbmespbceUserID: bbtchSpec.NbmespbceUserID,
+					LbstApplierID:   bbtchSpec.UserID,
+					LbstAppliedAt:   time.Now(),
 				}
-				if err := s.CreateBatchChange(ctx, batchChange); err != nil {
-					t.Fatal(err)
+				if err := s.CrebteBbtchChbnge(ctx, bbtchChbnge); err != nil {
+					t.Fbtbl(err)
 				}
 			}
 
-			changesetSpec := &btypes.ChangesetSpec{
-				BatchSpecID: batchSpec.ID,
-				// Need to set a RepoID otherwise GetChangesetSpec filters it out.
-				BaseRepoID: repo.ID,
-				ExternalID: "123",
-				Type:       btypes.ChangesetSpecTypeExisting,
-				CreatedAt:  tc.createdAt,
+			chbngesetSpec := &btypes.ChbngesetSpec{
+				BbtchSpecID: bbtchSpec.ID,
+				// Need to set b RepoID otherwise GetChbngesetSpec filters it out.
+				BbseRepoID: repo.ID,
+				ExternblID: "123",
+				Type:       btypes.ChbngesetSpecTypeExisting,
+				CrebtedAt:  tc.crebtedAt,
 			}
 
-			if err := s.CreateChangesetSpec(ctx, changesetSpec); err != nil {
-				t.Fatal(err)
+			if err := s.CrebteChbngesetSpec(ctx, chbngesetSpec); err != nil {
+				t.Fbtbl(err)
 			}
 
 			if tc.isCurrentSpec {
-				changeset := &btypes.Changeset{
-					ExternalServiceType: "github",
+				chbngeset := &btypes.Chbngeset{
+					ExternblServiceType: "github",
 					RepoID:              1,
-					CurrentSpecID:       changesetSpec.ID,
+					CurrentSpecID:       chbngesetSpec.ID,
 				}
-				if err := s.CreateChangeset(ctx, changeset); err != nil {
-					t.Fatal(err)
+				if err := s.CrebteChbngeset(ctx, chbngeset); err != nil {
+					t.Fbtbl(err)
 				}
 			}
 
 			if tc.isPreviousSpec {
-				changeset := &btypes.Changeset{
-					ExternalServiceType: "github",
+				chbngeset := &btypes.Chbngeset{
+					ExternblServiceType: "github",
 					RepoID:              1,
-					PreviousSpecID:      changesetSpec.ID,
+					PreviousSpecID:      chbngesetSpec.ID,
 				}
-				if err := s.CreateChangeset(ctx, changeset); err != nil {
-					t.Fatal(err)
+				if err := s.CrebteChbngeset(ctx, chbngeset); err != nil {
+					t.Fbtbl(err)
 				}
 			}
 
-			if err := s.DeleteExpiredChangesetSpecs(ctx); err != nil {
-				t.Fatal(err)
+			if err := s.DeleteExpiredChbngesetSpecs(ctx); err != nil {
+				t.Fbtbl(err)
 			}
 
-			_, err := s.GetChangesetSpec(ctx, GetChangesetSpecOpts{ID: changesetSpec.ID})
+			_, err := s.GetChbngesetSpec(ctx, GetChbngesetSpecOpts{ID: chbngesetSpec.ID})
 			if err != nil && err != ErrNoResults {
-				t.Fatal(err)
+				t.Fbtbl(err)
 			}
 
-			if tc.wantDeleted && err == nil {
-				t.Fatalf("tc=%s\n\t want changeset spec to be deleted, but was NOT", printTestCase(tc))
+			if tc.wbntDeleted && err == nil {
+				t.Fbtblf("tc=%s\n\t wbnt chbngeset spec to be deleted, but wbs NOT", printTestCbse(tc))
 			}
 
-			if !tc.wantDeleted && err == ErrNoResults {
-				t.Fatalf("tc=%s\n\t want changeset spec NOT to be deleted, but got deleted", printTestCase(tc))
+			if !tc.wbntDeleted && err == ErrNoResults {
+				t.Fbtblf("tc=%s\n\t wbnt chbngeset spec NOT to be deleted, but got deleted", printTestCbse(tc))
 			}
 		}
 	})
 
-	t.Run("GetRewirerMappings", func(t *testing.T) {
-		// Create some test data
-		user := bt.CreateTestUser(t, s.DatabaseDB(), true)
-		ctx = actor.WithInternalActor(ctx)
-		batchSpec := bt.CreateBatchSpec(t, ctx, s, "get-rewirer-mappings", user.ID, 0)
-		var mappings = make(btypes.RewirerMappings, 3)
-		changesetSpecIDs := make([]int64, 0, cap(mappings))
-		for i := 0; i < cap(mappings); i++ {
-			spec := bt.CreateChangesetSpec(t, ctx, s, bt.TestSpecOpts{
-				HeadRef:   fmt.Sprintf("refs/heads/test-get-rewirer-mappings-%d", i),
-				Typ:       btypes.ChangesetSpecTypeBranch,
+	t.Run("GetRewirerMbppings", func(t *testing.T) {
+		// Crebte some test dbtb
+		user := bt.CrebteTestUser(t, s.DbtbbbseDB(), true)
+		ctx = bctor.WithInternblActor(ctx)
+		bbtchSpec := bt.CrebteBbtchSpec(t, ctx, s, "get-rewirer-mbppings", user.ID, 0)
+		vbr mbppings = mbke(btypes.RewirerMbppings, 3)
+		chbngesetSpecIDs := mbke([]int64, 0, cbp(mbppings))
+		for i := 0; i < cbp(mbppings); i++ {
+			spec := bt.CrebteChbngesetSpec(t, ctx, s, bt.TestSpecOpts{
+				HebdRef:   fmt.Sprintf("refs/hebds/test-get-rewirer-mbppings-%d", i),
+				Typ:       btypes.ChbngesetSpecTypeBrbnch,
 				Repo:      repo.ID,
-				BatchSpec: batchSpec.ID,
+				BbtchSpec: bbtchSpec.ID,
 			})
-			changesetSpecIDs = append(changesetSpecIDs, spec.ID)
-			mappings[i] = &btypes.RewirerMapping{
-				ChangesetSpecID: spec.ID,
+			chbngesetSpecIDs = bppend(chbngesetSpecIDs, spec.ID)
+			mbppings[i] = &btypes.RewirerMbpping{
+				ChbngesetSpecID: spec.ID,
 				RepoID:          repo.ID,
 			}
 		}
 
 		t.Run("NoLimit", func(t *testing.T) {
-			// Empty limit should return all entries.
-			opts := GetRewirerMappingsOpts{
-				BatchSpecID: batchSpec.ID,
+			// Empty limit should return bll entries.
+			opts := GetRewirerMbppingsOpts{
+				BbtchSpecID: bbtchSpec.ID,
 			}
-			ts, err := s.GetRewirerMappings(ctx, opts)
+			ts, err := s.GetRewirerMbppings(ctx, opts)
 			if err != nil {
-				t.Fatal(err)
+				t.Fbtbl(err)
 			}
 
 			{
-				have, want := ts.RepoIDs(), []api.RepoID{repo.ID}
-				if len(have) != len(want) {
-					t.Fatalf("listed %d repo ids, want: %d", len(have), len(want))
+				hbve, wbnt := ts.RepoIDs(), []bpi.RepoID{repo.ID}
+				if len(hbve) != len(wbnt) {
+					t.Fbtblf("listed %d repo ids, wbnt: %d", len(hbve), len(wbnt))
 				}
 
-				if diff := cmp.Diff(have, want, cmtRewirerMappingsOpts); diff != "" {
-					t.Fatalf("opts: %+v, diff: %s", opts, diff)
-				}
-			}
-
-			{
-				have, want := ts.ChangesetIDs(), []int64{}
-				if len(have) != len(want) {
-					t.Fatalf("listed %d changeset ids, want: %d", len(have), len(want))
-				}
-
-				if diff := cmp.Diff(have, want, cmtRewirerMappingsOpts); diff != "" {
-					t.Fatalf("opts: %+v, diff: %s", opts, diff)
+				if diff := cmp.Diff(hbve, wbnt, cmtRewirerMbppingsOpts); diff != "" {
+					t.Fbtblf("opts: %+v, diff: %s", opts, diff)
 				}
 			}
 
 			{
-				have, want := ts.ChangesetSpecIDs(), changesetSpecIDs
-				if len(have) != len(want) {
-					t.Fatalf("listed %d changeset spec ids, want: %d", len(have), len(want))
+				hbve, wbnt := ts.ChbngesetIDs(), []int64{}
+				if len(hbve) != len(wbnt) {
+					t.Fbtblf("listed %d chbngeset ids, wbnt: %d", len(hbve), len(wbnt))
 				}
 
-				if diff := cmp.Diff(have, want, cmtRewirerMappingsOpts); diff != "" {
-					t.Fatalf("opts: %+v, diff: %s", opts, diff)
+				if diff := cmp.Diff(hbve, wbnt, cmtRewirerMbppingsOpts); diff != "" {
+					t.Fbtblf("opts: %+v, diff: %s", opts, diff)
 				}
 			}
 
 			{
-				have, want := ts, mappings
-				if len(have) != len(want) {
-					t.Fatalf("listed %d mappings, want: %d", len(have), len(want))
+				hbve, wbnt := ts.ChbngesetSpecIDs(), chbngesetSpecIDs
+				if len(hbve) != len(wbnt) {
+					t.Fbtblf("listed %d chbngeset spec ids, wbnt: %d", len(hbve), len(wbnt))
 				}
 
-				if diff := cmp.Diff(have, want, cmtRewirerMappingsOpts); diff != "" {
-					t.Fatalf("opts: %+v, diff: %s", opts, diff)
+				if diff := cmp.Diff(hbve, wbnt, cmtRewirerMbppingsOpts); diff != "" {
+					t.Fbtblf("opts: %+v, diff: %s", opts, diff)
+				}
+			}
+
+			{
+				hbve, wbnt := ts, mbppings
+				if len(hbve) != len(wbnt) {
+					t.Fbtblf("listed %d mbppings, wbnt: %d", len(hbve), len(wbnt))
+				}
+
+				if diff := cmp.Diff(hbve, wbnt, cmtRewirerMbppingsOpts); diff != "" {
+					t.Fbtblf("opts: %+v, diff: %s", opts, diff)
 				}
 			}
 		})
 
 		t.Run("WithLimit", func(t *testing.T) {
-			for i := 1; i <= len(mappings); i++ {
-				t.Run(strconv.Itoa(i), func(t *testing.T) {
-					opts := GetRewirerMappingsOpts{
-						BatchSpecID: batchSpec.ID,
-						LimitOffset: &database.LimitOffset{Limit: i},
+			for i := 1; i <= len(mbppings); i++ {
+				t.Run(strconv.Itob(i), func(t *testing.T) {
+					opts := GetRewirerMbppingsOpts{
+						BbtchSpecID: bbtchSpec.ID,
+						LimitOffset: &dbtbbbse.LimitOffset{Limit: i},
 					}
-					ts, err := s.GetRewirerMappings(ctx, opts)
+					ts, err := s.GetRewirerMbppings(ctx, opts)
 					if err != nil {
-						t.Fatal(err)
+						t.Fbtbl(err)
 					}
 
 					{
-						have, want := ts.RepoIDs(), []api.RepoID{repo.ID}
-						if len(have) != len(want) {
-							t.Fatalf("listed %d repo ids, want: %d", len(have), len(want))
+						hbve, wbnt := ts.RepoIDs(), []bpi.RepoID{repo.ID}
+						if len(hbve) != len(wbnt) {
+							t.Fbtblf("listed %d repo ids, wbnt: %d", len(hbve), len(wbnt))
 						}
 
-						if diff := cmp.Diff(have, want, cmtRewirerMappingsOpts); diff != "" {
-							t.Fatalf("opts: %+v, diff: %s", opts, diff)
-						}
-					}
-
-					{
-						have, want := ts.ChangesetIDs(), []int64{}
-						if len(have) != len(want) {
-							t.Fatalf("listed %d changeset ids, want: %d", len(have), len(want))
-						}
-
-						if diff := cmp.Diff(have, want, cmtRewirerMappingsOpts); diff != "" {
-							t.Fatalf("opts: %+v, diff: %s", opts, diff)
+						if diff := cmp.Diff(hbve, wbnt, cmtRewirerMbppingsOpts); diff != "" {
+							t.Fbtblf("opts: %+v, diff: %s", opts, diff)
 						}
 					}
 
 					{
-						have, want := ts.ChangesetSpecIDs(), changesetSpecIDs[:i]
-						if len(have) != len(want) {
-							t.Fatalf("listed %d changeset spec ids, want: %d", len(have), len(want))
+						hbve, wbnt := ts.ChbngesetIDs(), []int64{}
+						if len(hbve) != len(wbnt) {
+							t.Fbtblf("listed %d chbngeset ids, wbnt: %d", len(hbve), len(wbnt))
 						}
 
-						if diff := cmp.Diff(have, want, cmtRewirerMappingsOpts); diff != "" {
-							t.Fatalf("opts: %+v, diff: %s", opts, diff)
+						if diff := cmp.Diff(hbve, wbnt, cmtRewirerMbppingsOpts); diff != "" {
+							t.Fbtblf("opts: %+v, diff: %s", opts, diff)
 						}
 					}
 
 					{
-						have, want := ts, mappings[:i]
-						if len(have) != len(want) {
-							t.Fatalf("listed %d mappings, want: %d", len(have), len(want))
+						hbve, wbnt := ts.ChbngesetSpecIDs(), chbngesetSpecIDs[:i]
+						if len(hbve) != len(wbnt) {
+							t.Fbtblf("listed %d chbngeset spec ids, wbnt: %d", len(hbve), len(wbnt))
 						}
 
-						if diff := cmp.Diff(have, want, cmtRewirerMappingsOpts); diff != "" {
-							t.Fatal(diff)
+						if diff := cmp.Diff(hbve, wbnt, cmtRewirerMbppingsOpts); diff != "" {
+							t.Fbtblf("opts: %+v, diff: %s", opts, diff)
+						}
+					}
+
+					{
+						hbve, wbnt := ts, mbppings[:i]
+						if len(hbve) != len(wbnt) {
+							t.Fbtblf("listed %d mbppings, wbnt: %d", len(hbve), len(wbnt))
+						}
+
+						if diff := cmp.Diff(hbve, wbnt, cmtRewirerMbppingsOpts); diff != "" {
+							t.Fbtbl(diff)
 						}
 					}
 				})
@@ -774,54 +774,54 @@ func testStoreChangesetSpecs(t *testing.T, ctx context.Context, s *Store, clock 
 
 		t.Run("WithLimitAndOffset", func(t *testing.T) {
 			offset := 0
-			for i := 1; i <= len(mappings); i++ {
-				t.Run(strconv.Itoa(i), func(t *testing.T) {
-					opts := GetRewirerMappingsOpts{
-						BatchSpecID: batchSpec.ID,
-						LimitOffset: &database.LimitOffset{Limit: 1, Offset: offset},
+			for i := 1; i <= len(mbppings); i++ {
+				t.Run(strconv.Itob(i), func(t *testing.T) {
+					opts := GetRewirerMbppingsOpts{
+						BbtchSpecID: bbtchSpec.ID,
+						LimitOffset: &dbtbbbse.LimitOffset{Limit: 1, Offset: offset},
 					}
-					ts, err := s.GetRewirerMappings(ctx, opts)
+					ts, err := s.GetRewirerMbppings(ctx, opts)
 					if err != nil {
-						t.Fatal(err)
+						t.Fbtbl(err)
 					}
 
 					{
-						have, want := ts.RepoIDs(), []api.RepoID{repo.ID}
-						if len(have) != len(want) {
-							t.Fatalf("listed %d repo ids, want: %d", len(have), len(want))
+						hbve, wbnt := ts.RepoIDs(), []bpi.RepoID{repo.ID}
+						if len(hbve) != len(wbnt) {
+							t.Fbtblf("listed %d repo ids, wbnt: %d", len(hbve), len(wbnt))
 						}
 
-						if diff := cmp.Diff(have, want, cmtRewirerMappingsOpts); diff != "" {
-							t.Fatalf("opts: %+v, diff: %s", opts, diff)
-						}
-					}
-
-					{
-						have, want := ts.ChangesetIDs(), []int64{}
-						if len(have) != len(want) {
-							t.Fatalf("listed %d changeset ids, want: %d", len(have), len(want))
-						}
-
-						if diff := cmp.Diff(have, want, cmtRewirerMappingsOpts); diff != "" {
-							t.Fatalf("opts: %+v, diff: %s", opts, diff)
+						if diff := cmp.Diff(hbve, wbnt, cmtRewirerMbppingsOpts); diff != "" {
+							t.Fbtblf("opts: %+v, diff: %s", opts, diff)
 						}
 					}
 
 					{
-						have, want := ts.ChangesetSpecIDs(), changesetSpecIDs[i-1:i]
-						if len(have) != len(want) {
-							t.Fatalf("listed %d changeset spec ids, want: %d", len(have), len(want))
+						hbve, wbnt := ts.ChbngesetIDs(), []int64{}
+						if len(hbve) != len(wbnt) {
+							t.Fbtblf("listed %d chbngeset ids, wbnt: %d", len(hbve), len(wbnt))
 						}
 
-						if diff := cmp.Diff(have, want, cmtRewirerMappingsOpts); diff != "" {
-							t.Fatalf("opts: %+v, diff: %s", opts, diff)
+						if diff := cmp.Diff(hbve, wbnt, cmtRewirerMbppingsOpts); diff != "" {
+							t.Fbtblf("opts: %+v, diff: %s", opts, diff)
 						}
 					}
 
 					{
-						have, want := ts, mappings[i-1:i]
-						if diff := cmp.Diff(have, want, cmtRewirerMappingsOpts); diff != "" {
-							t.Fatalf("opts: %+v, diff: %s", opts, diff)
+						hbve, wbnt := ts.ChbngesetSpecIDs(), chbngesetSpecIDs[i-1:i]
+						if len(hbve) != len(wbnt) {
+							t.Fbtblf("listed %d chbngeset spec ids, wbnt: %d", len(hbve), len(wbnt))
+						}
+
+						if diff := cmp.Diff(hbve, wbnt, cmtRewirerMbppingsOpts); diff != "" {
+							t.Fbtblf("opts: %+v, diff: %s", opts, diff)
+						}
+					}
+
+					{
+						hbve, wbnt := ts, mbppings[i-1:i]
+						if diff := cmp.Diff(hbve, wbnt, cmtRewirerMbppingsOpts); diff != "" {
+							t.Fbtblf("opts: %+v, diff: %s", opts, diff)
 						}
 					}
 
@@ -831,799 +831,799 @@ func testStoreChangesetSpecs(t *testing.T, ctx context.Context, s *Store, clock 
 		})
 	})
 
-	t.Run("ListChangesetSpecsWithConflictingHeadRef", func(t *testing.T) {
-		user := bt.CreateTestUser(t, s.DatabaseDB(), true)
+	t.Run("ListChbngesetSpecsWithConflictingHebdRef", func(t *testing.T) {
+		user := bt.CrebteTestUser(t, s.DbtbbbseDB(), true)
 
 		repo2 := bt.TestRepo(t, esStore, extsvc.KindGitHub)
-		if err := repoStore.Create(ctx, repo2); err != nil {
-			t.Fatal(err)
+		if err := repoStore.Crebte(ctx, repo2); err != nil {
+			t.Fbtbl(err)
 		}
 		repo3 := bt.TestRepo(t, esStore, extsvc.KindGitHub)
-		if err := repoStore.Create(ctx, repo3); err != nil {
-			t.Fatal(err)
+		if err := repoStore.Crebte(ctx, repo3); err != nil {
+			t.Fbtbl(err)
 		}
 
-		conflictingBatchSpec := bt.CreateBatchSpec(t, ctx, s, "no-conflicts", user.ID, 0)
-		conflictingRef := "refs/heads/conflicting-head-ref"
-		for _, opts := range []bt.TestSpecOpts{
-			{ExternalID: "4321", Typ: btypes.ChangesetSpecTypeExisting, Repo: repo.ID, BatchSpec: conflictingBatchSpec.ID},
-			{HeadRef: conflictingRef, Typ: btypes.ChangesetSpecTypeBranch, Repo: repo.ID, BatchSpec: conflictingBatchSpec.ID},
-			{HeadRef: conflictingRef, Typ: btypes.ChangesetSpecTypeBranch, Repo: repo.ID, BatchSpec: conflictingBatchSpec.ID},
-			{HeadRef: conflictingRef, Typ: btypes.ChangesetSpecTypeBranch, Repo: repo2.ID, BatchSpec: conflictingBatchSpec.ID},
-			{HeadRef: conflictingRef, Typ: btypes.ChangesetSpecTypeBranch, Repo: repo2.ID, BatchSpec: conflictingBatchSpec.ID},
-			{HeadRef: conflictingRef, Typ: btypes.ChangesetSpecTypeBranch, Repo: repo3.ID, BatchSpec: conflictingBatchSpec.ID},
+		conflictingBbtchSpec := bt.CrebteBbtchSpec(t, ctx, s, "no-conflicts", user.ID, 0)
+		conflictingRef := "refs/hebds/conflicting-hebd-ref"
+		for _, opts := rbnge []bt.TestSpecOpts{
+			{ExternblID: "4321", Typ: btypes.ChbngesetSpecTypeExisting, Repo: repo.ID, BbtchSpec: conflictingBbtchSpec.ID},
+			{HebdRef: conflictingRef, Typ: btypes.ChbngesetSpecTypeBrbnch, Repo: repo.ID, BbtchSpec: conflictingBbtchSpec.ID},
+			{HebdRef: conflictingRef, Typ: btypes.ChbngesetSpecTypeBrbnch, Repo: repo.ID, BbtchSpec: conflictingBbtchSpec.ID},
+			{HebdRef: conflictingRef, Typ: btypes.ChbngesetSpecTypeBrbnch, Repo: repo2.ID, BbtchSpec: conflictingBbtchSpec.ID},
+			{HebdRef: conflictingRef, Typ: btypes.ChbngesetSpecTypeBrbnch, Repo: repo2.ID, BbtchSpec: conflictingBbtchSpec.ID},
+			{HebdRef: conflictingRef, Typ: btypes.ChbngesetSpecTypeBrbnch, Repo: repo3.ID, BbtchSpec: conflictingBbtchSpec.ID},
 		} {
-			bt.CreateChangesetSpec(t, ctx, s, opts)
+			bt.CrebteChbngesetSpec(t, ctx, s, opts)
 		}
 
-		conflicts, err := s.ListChangesetSpecsWithConflictingHeadRef(ctx, conflictingBatchSpec.ID)
+		conflicts, err := s.ListChbngesetSpecsWithConflictingHebdRef(ctx, conflictingBbtchSpec.ID)
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
-		if have, want := len(conflicts), 2; have != want {
-			t.Fatalf("wrong number of conflicts. want=%d, have=%d", want, have)
+		if hbve, wbnt := len(conflicts), 2; hbve != wbnt {
+			t.Fbtblf("wrong number of conflicts. wbnt=%d, hbve=%d", wbnt, hbve)
 		}
-		for _, c := range conflicts {
+		for _, c := rbnge conflicts {
 			if c.RepoID != repo.ID && c.RepoID != repo2.ID {
-				t.Fatalf("conflict has wrong RepoID: %d", c.RepoID)
+				t.Fbtblf("conflict hbs wrong RepoID: %d", c.RepoID)
 			}
 		}
 
-		nonConflictingBatchSpec := bt.CreateBatchSpec(t, ctx, s, "no-conflicts", user.ID, 0)
-		for _, opts := range []bt.TestSpecOpts{
-			{ExternalID: "1234", Typ: btypes.ChangesetSpecTypeExisting, Repo: repo.ID, BatchSpec: nonConflictingBatchSpec.ID},
-			{HeadRef: "refs/heads/branch-1", Typ: btypes.ChangesetSpecTypeBranch, Repo: repo.ID, BatchSpec: nonConflictingBatchSpec.ID},
-			{HeadRef: "refs/heads/branch-2", Typ: btypes.ChangesetSpecTypeBranch, Repo: repo.ID, BatchSpec: nonConflictingBatchSpec.ID},
-			{HeadRef: "refs/heads/branch-1", Typ: btypes.ChangesetSpecTypeBranch, Repo: repo2.ID, BatchSpec: nonConflictingBatchSpec.ID},
-			{HeadRef: "refs/heads/branch-2", Typ: btypes.ChangesetSpecTypeBranch, Repo: repo2.ID, BatchSpec: nonConflictingBatchSpec.ID},
-			{HeadRef: "refs/heads/branch-1", Typ: btypes.ChangesetSpecTypeBranch, Repo: repo3.ID, BatchSpec: nonConflictingBatchSpec.ID},
+		nonConflictingBbtchSpec := bt.CrebteBbtchSpec(t, ctx, s, "no-conflicts", user.ID, 0)
+		for _, opts := rbnge []bt.TestSpecOpts{
+			{ExternblID: "1234", Typ: btypes.ChbngesetSpecTypeExisting, Repo: repo.ID, BbtchSpec: nonConflictingBbtchSpec.ID},
+			{HebdRef: "refs/hebds/brbnch-1", Typ: btypes.ChbngesetSpecTypeBrbnch, Repo: repo.ID, BbtchSpec: nonConflictingBbtchSpec.ID},
+			{HebdRef: "refs/hebds/brbnch-2", Typ: btypes.ChbngesetSpecTypeBrbnch, Repo: repo.ID, BbtchSpec: nonConflictingBbtchSpec.ID},
+			{HebdRef: "refs/hebds/brbnch-1", Typ: btypes.ChbngesetSpecTypeBrbnch, Repo: repo2.ID, BbtchSpec: nonConflictingBbtchSpec.ID},
+			{HebdRef: "refs/hebds/brbnch-2", Typ: btypes.ChbngesetSpecTypeBrbnch, Repo: repo2.ID, BbtchSpec: nonConflictingBbtchSpec.ID},
+			{HebdRef: "refs/hebds/brbnch-1", Typ: btypes.ChbngesetSpecTypeBrbnch, Repo: repo3.ID, BbtchSpec: nonConflictingBbtchSpec.ID},
 		} {
-			bt.CreateChangesetSpec(t, ctx, s, opts)
+			bt.CrebteChbngesetSpec(t, ctx, s, opts)
 		}
 
-		conflicts, err = s.ListChangesetSpecsWithConflictingHeadRef(ctx, nonConflictingBatchSpec.ID)
+		conflicts, err = s.ListChbngesetSpecsWithConflictingHebdRef(ctx, nonConflictingBbtchSpec.ID)
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
-		if have, want := len(conflicts), 0; have != want {
-			t.Fatalf("wrong number of conflicts. want=%d, have=%d", want, have)
+		if hbve, wbnt := len(conflicts), 0; hbve != wbnt {
+			t.Fbtblf("wrong number of conflicts. wbnt=%d, hbve=%d", wbnt, hbve)
 		}
 	})
 }
 
-func testStoreGetRewirerMappingWithArchivedChangesets(t *testing.T, ctx context.Context, s *Store, clock bt.Clock) {
+func testStoreGetRewirerMbppingWithArchivedChbngesets(t *testing.T, ctx context.Context, s *Store, clock bt.Clock) {
 	logger := logtest.Scoped(t)
-	repoStore := database.ReposWith(logger, s)
-	esStore := database.ExternalServicesWith(logger, s)
+	repoStore := dbtbbbse.ReposWith(logger, s)
+	esStore := dbtbbbse.ExternblServicesWith(logger, s)
 
 	repo := bt.TestRepo(t, esStore, extsvc.KindGitHub)
-	if err := repoStore.Create(ctx, repo); err != nil {
-		t.Fatal(err)
+	if err := repoStore.Crebte(ctx, repo); err != nil {
+		t.Fbtbl(err)
 	}
 
-	user := bt.CreateTestUser(t, s.DatabaseDB(), false)
+	user := bt.CrebteTestUser(t, s.DbtbbbseDB(), fblse)
 
-	// Create old batch spec and batch change
-	oldBatchSpec := bt.CreateBatchSpec(t, ctx, s, "old", user.ID, 0)
-	batchChange := bt.CreateBatchChange(t, ctx, s, "text", user.ID, oldBatchSpec.ID)
+	// Crebte old bbtch spec bnd bbtch chbnge
+	oldBbtchSpec := bt.CrebteBbtchSpec(t, ctx, s, "old", user.ID, 0)
+	bbtchChbnge := bt.CrebteBbtchChbnge(t, ctx, s, "text", user.ID, oldBbtchSpec.ID)
 
-	// Create an archived changeset with a changeset spec
-	oldSpec := bt.CreateChangesetSpec(t, ctx, s, bt.TestSpecOpts{
+	// Crebte bn brchived chbngeset with b chbngeset spec
+	oldSpec := bt.CrebteChbngesetSpec(t, ctx, s, bt.TestSpecOpts{
 		User:      user.ID,
 		Repo:      repo.ID,
-		BatchSpec: oldBatchSpec.ID,
-		Title:     "foobar",
+		BbtchSpec: oldBbtchSpec.ID,
+		Title:     "foobbr",
 		Published: true,
-		HeadRef:   "refs/heads/foobar",
-		Typ:       btypes.ChangesetSpecTypeBranch,
+		HebdRef:   "refs/hebds/foobbr",
+		Typ:       btypes.ChbngesetSpecTypeBrbnch,
 	})
 
-	opts := bt.TestChangesetOpts{}
-	opts.ExternalState = btypes.ChangesetExternalStateOpen
-	opts.ExternalID = "1223"
-	opts.ExternalServiceType = repo.ExternalRepo.ServiceType
+	opts := bt.TestChbngesetOpts{}
+	opts.ExternblStbte = btypes.ChbngesetExternblStbteOpen
+	opts.ExternblID = "1223"
+	opts.ExternblServiceType = repo.ExternblRepo.ServiceType
 	opts.Repo = repo.ID
-	opts.BatchChange = batchChange.ID
+	opts.BbtchChbnge = bbtchChbnge.ID
 	opts.PreviousSpec = oldSpec.ID
 	opts.CurrentSpec = oldSpec.ID
-	opts.OwnedByBatchChange = batchChange.ID
+	opts.OwnedByBbtchChbnge = bbtchChbnge.ID
 	opts.IsArchived = true
 
-	bt.CreateChangeset(t, ctx, s, opts)
+	bt.CrebteChbngeset(t, ctx, s, opts)
 
-	// Get preview for new batch spec without any changeset specs
-	newBatchSpec := bt.CreateBatchSpec(t, ctx, s, "new", user.ID, 0)
-	mappings, err := s.GetRewirerMappings(ctx, GetRewirerMappingsOpts{
-		BatchSpecID:   newBatchSpec.ID,
-		BatchChangeID: batchChange.ID,
+	// Get preview for new bbtch spec without bny chbngeset specs
+	newBbtchSpec := bt.CrebteBbtchSpec(t, ctx, s, "new", user.ID, 0)
+	mbppings, err := s.GetRewirerMbppings(ctx, GetRewirerMbppingsOpts{
+		BbtchSpecID:   newBbtchSpec.ID,
+		BbtchChbngeID: bbtchChbnge.ID,
 	})
 	if err != nil {
 		t.Errorf("unexpected error: %+v", err)
 	}
 
-	if len(mappings) != 0 {
-		t.Errorf("mappings returned, but none were expected")
+	if len(mbppings) != 0 {
+		t.Errorf("mbppings returned, but none were expected")
 	}
 }
 
-func testStoreChangesetSpecsCurrentState(t *testing.T, ctx context.Context, s *Store, clock bt.Clock) {
+func testStoreChbngesetSpecsCurrentStbte(t *testing.T, ctx context.Context, s *Store, clock bt.Clock) {
 	logger := logtest.Scoped(t)
-	repoStore := database.ReposWith(logger, s)
-	esStore := database.ExternalServicesWith(logger, s)
+	repoStore := dbtbbbse.ReposWith(logger, s)
+	esStore := dbtbbbse.ExternblServicesWith(logger, s)
 
-	// Let's set up a batch change with one of every changeset state.
+	// Let's set up b bbtch chbnge with one of every chbngeset stbte.
 
-	// First up, let's create a repo.
+	// First up, let's crebte b repo.
 	repo := bt.TestRepo(t, esStore, extsvc.KindGitHub)
-	if err := repoStore.Create(ctx, repo); err != nil {
-		t.Fatal(err)
+	if err := repoStore.Crebte(ctx, repo); err != nil {
+		t.Fbtbl(err)
 	}
 
-	// Create a user.
-	user := bt.CreateTestUser(t, s.DatabaseDB(), false)
-	ctx = actor.WithInternalActor(ctx)
+	// Crebte b user.
+	user := bt.CrebteTestUser(t, s.DbtbbbseDB(), fblse)
+	ctx = bctor.WithInternblActor(ctx)
 
-	// Next, we need old and new batch specs.
-	oldBatchSpec := bt.CreateBatchSpec(t, ctx, s, "old", user.ID, 0)
-	newBatchSpec := bt.CreateBatchSpec(t, ctx, s, "new", user.ID, 0)
+	// Next, we need old bnd new bbtch specs.
+	oldBbtchSpec := bt.CrebteBbtchSpec(t, ctx, s, "old", user.ID, 0)
+	newBbtchSpec := bt.CrebteBbtchSpec(t, ctx, s, "new", user.ID, 0)
 
-	// That's enough to create a batch change, so let's do that.
-	batchChange := bt.CreateBatchChange(t, ctx, s, "text", user.ID, oldBatchSpec.ID)
+	// Thbt's enough to crebte b bbtch chbnge, so let's do thbt.
+	bbtchChbnge := bt.CrebteBbtchChbnge(t, ctx, s, "text", user.ID, oldBbtchSpec.ID)
 
-	// Now for some changeset specs.
-	var (
-		changesets = map[btypes.ChangesetState]*btypes.Changeset{}
-		oldSpecs   = map[btypes.ChangesetState]*btypes.ChangesetSpec{}
-		newSpecs   = map[btypes.ChangesetState]*btypes.ChangesetSpec{}
+	// Now for some chbngeset specs.
+	vbr (
+		chbngesets = mbp[btypes.ChbngesetStbte]*btypes.Chbngeset{}
+		oldSpecs   = mbp[btypes.ChbngesetStbte]*btypes.ChbngesetSpec{}
+		newSpecs   = mbp[btypes.ChbngesetStbte]*btypes.ChbngesetSpec{}
 
-		// The keys are the desired current state that we'll search for; the
-		// values the changeset options we need to set on the changeset.
-		states = map[btypes.ChangesetState]*bt.TestChangesetOpts{
-			btypes.ChangesetStateRetrying:    {ReconcilerState: btypes.ReconcilerStateErrored},
-			btypes.ChangesetStateFailed:      {ReconcilerState: btypes.ReconcilerStateFailed},
-			btypes.ChangesetStateScheduled:   {ReconcilerState: btypes.ReconcilerStateScheduled},
-			btypes.ChangesetStateProcessing:  {ReconcilerState: btypes.ReconcilerStateQueued, PublicationState: btypes.ChangesetPublicationStateUnpublished},
-			btypes.ChangesetStateUnpublished: {ReconcilerState: btypes.ReconcilerStateCompleted, PublicationState: btypes.ChangesetPublicationStateUnpublished},
-			btypes.ChangesetStateDraft:       {ReconcilerState: btypes.ReconcilerStateCompleted, PublicationState: btypes.ChangesetPublicationStatePublished, ExternalState: btypes.ChangesetExternalStateDraft},
-			btypes.ChangesetStateOpen:        {ReconcilerState: btypes.ReconcilerStateCompleted, PublicationState: btypes.ChangesetPublicationStatePublished, ExternalState: btypes.ChangesetExternalStateOpen},
-			btypes.ChangesetStateClosed:      {ReconcilerState: btypes.ReconcilerStateCompleted, PublicationState: btypes.ChangesetPublicationStatePublished, ExternalState: btypes.ChangesetExternalStateClosed},
-			btypes.ChangesetStateMerged:      {ReconcilerState: btypes.ReconcilerStateCompleted, PublicationState: btypes.ChangesetPublicationStatePublished, ExternalState: btypes.ChangesetExternalStateMerged},
-			btypes.ChangesetStateDeleted:     {ReconcilerState: btypes.ReconcilerStateCompleted, PublicationState: btypes.ChangesetPublicationStatePublished, ExternalState: btypes.ChangesetExternalStateDeleted},
-			btypes.ChangesetStateReadOnly:    {ReconcilerState: btypes.ReconcilerStateCompleted, PublicationState: btypes.ChangesetPublicationStatePublished, ExternalState: btypes.ChangesetExternalStateReadOnly},
+		// The keys bre the desired current stbte thbt we'll sebrch for; the
+		// vblues the chbngeset options we need to set on the chbngeset.
+		stbtes = mbp[btypes.ChbngesetStbte]*bt.TestChbngesetOpts{
+			btypes.ChbngesetStbteRetrying:    {ReconcilerStbte: btypes.ReconcilerStbteErrored},
+			btypes.ChbngesetStbteFbiled:      {ReconcilerStbte: btypes.ReconcilerStbteFbiled},
+			btypes.ChbngesetStbteScheduled:   {ReconcilerStbte: btypes.ReconcilerStbteScheduled},
+			btypes.ChbngesetStbteProcessing:  {ReconcilerStbte: btypes.ReconcilerStbteQueued, PublicbtionStbte: btypes.ChbngesetPublicbtionStbteUnpublished},
+			btypes.ChbngesetStbteUnpublished: {ReconcilerStbte: btypes.ReconcilerStbteCompleted, PublicbtionStbte: btypes.ChbngesetPublicbtionStbteUnpublished},
+			btypes.ChbngesetStbteDrbft:       {ReconcilerStbte: btypes.ReconcilerStbteCompleted, PublicbtionStbte: btypes.ChbngesetPublicbtionStbtePublished, ExternblStbte: btypes.ChbngesetExternblStbteDrbft},
+			btypes.ChbngesetStbteOpen:        {ReconcilerStbte: btypes.ReconcilerStbteCompleted, PublicbtionStbte: btypes.ChbngesetPublicbtionStbtePublished, ExternblStbte: btypes.ChbngesetExternblStbteOpen},
+			btypes.ChbngesetStbteClosed:      {ReconcilerStbte: btypes.ReconcilerStbteCompleted, PublicbtionStbte: btypes.ChbngesetPublicbtionStbtePublished, ExternblStbte: btypes.ChbngesetExternblStbteClosed},
+			btypes.ChbngesetStbteMerged:      {ReconcilerStbte: btypes.ReconcilerStbteCompleted, PublicbtionStbte: btypes.ChbngesetPublicbtionStbtePublished, ExternblStbte: btypes.ChbngesetExternblStbteMerged},
+			btypes.ChbngesetStbteDeleted:     {ReconcilerStbte: btypes.ReconcilerStbteCompleted, PublicbtionStbte: btypes.ChbngesetPublicbtionStbtePublished, ExternblStbte: btypes.ChbngesetExternblStbteDeleted},
+			btypes.ChbngesetStbteRebdOnly:    {ReconcilerStbte: btypes.ReconcilerStbteCompleted, PublicbtionStbte: btypes.ChbngesetPublicbtionStbtePublished, ExternblStbte: btypes.ChbngesetExternblStbteRebdOnly},
 		}
 	)
-	for state, opts := range states {
+	for stbte, opts := rbnge stbtes {
 		specOpts := bt.TestSpecOpts{
 			User:      user.ID,
 			Repo:      repo.ID,
-			BatchSpec: oldBatchSpec.ID,
-			Title:     string(state),
+			BbtchSpec: oldBbtchSpec.ID,
+			Title:     string(stbte),
 			Published: true,
-			HeadRef:   string(state),
-			Typ:       btypes.ChangesetSpecTypeBranch,
+			HebdRef:   string(stbte),
+			Typ:       btypes.ChbngesetSpecTypeBrbnch,
 		}
-		oldSpecs[state] = bt.CreateChangesetSpec(t, ctx, s, specOpts)
+		oldSpecs[stbte] = bt.CrebteChbngesetSpec(t, ctx, s, specOpts)
 
-		specOpts.BatchSpec = newBatchSpec.ID
-		newSpecs[state] = bt.CreateChangesetSpec(t, ctx, s, specOpts)
+		specOpts.BbtchSpec = newBbtchSpec.ID
+		newSpecs[stbte] = bt.CrebteChbngesetSpec(t, ctx, s, specOpts)
 
-		if opts.ExternalState != "" {
-			opts.ExternalID = string(state)
+		if opts.ExternblStbte != "" {
+			opts.ExternblID = string(stbte)
 		}
-		opts.ExternalServiceType = repo.ExternalRepo.ServiceType
+		opts.ExternblServiceType = repo.ExternblRepo.ServiceType
 		opts.Repo = repo.ID
-		opts.BatchChange = batchChange.ID
-		opts.CurrentSpec = oldSpecs[state].ID
-		opts.OwnedByBatchChange = batchChange.ID
-		opts.Metadata = map[string]any{"Title": string(state)}
-		changesets[state] = bt.CreateChangeset(t, ctx, s, *opts)
+		opts.BbtchChbnge = bbtchChbnge.ID
+		opts.CurrentSpec = oldSpecs[stbte].ID
+		opts.OwnedByBbtchChbnge = bbtchChbnge.ID
+		opts.Metbdbtb = mbp[string]bny{"Title": string(stbte)}
+		chbngesets[stbte] = bt.CrebteChbngeset(t, ctx, s, *opts)
 	}
 
-	// OK, there's lots of good stuff here. Let's work our way through the
-	// rewirer options and see what we get.
-	for state := range states {
-		t.Run(string(state), func(t *testing.T) {
-			mappings, err := s.GetRewirerMappings(ctx, GetRewirerMappingsOpts{
-				BatchSpecID:   newBatchSpec.ID,
-				BatchChangeID: batchChange.ID,
-				CurrentState:  &state,
+	// OK, there's lots of good stuff here. Let's work our wby through the
+	// rewirer options bnd see whbt we get.
+	for stbte := rbnge stbtes {
+		t.Run(string(stbte), func(t *testing.T) {
+			mbppings, err := s.GetRewirerMbppings(ctx, GetRewirerMbppingsOpts{
+				BbtchSpecID:   newBbtchSpec.ID,
+				BbtchChbngeID: bbtchChbnge.ID,
+				CurrentStbte:  &stbte,
 			})
 			if err != nil {
 				t.Errorf("unexpected error: %+v", err)
 			}
 
-			have := []int64{}
-			for _, mapping := range mappings {
-				have = append(have, mapping.ChangesetID)
+			hbve := []int64{}
+			for _, mbpping := rbnge mbppings {
+				hbve = bppend(hbve, mbpping.ChbngesetID)
 			}
 
-			want := []int64{changesets[state].ID}
-			if diff := cmp.Diff(have, want, cmtRewirerMappingsOpts); diff != "" {
-				t.Errorf("unexpected changesets (-have +want):\n%s", diff)
+			wbnt := []int64{chbngesets[stbte].ID}
+			if diff := cmp.Diff(hbve, wbnt, cmtRewirerMbppingsOpts); diff != "" {
+				t.Errorf("unexpected chbngesets (-hbve +wbnt):\n%s", diff)
 			}
 		})
 	}
 }
 
-func testStoreChangesetSpecsCurrentStateAndTextSearch(t *testing.T, ctx context.Context, s *Store, _ bt.Clock) {
+func testStoreChbngesetSpecsCurrentStbteAndTextSebrch(t *testing.T, ctx context.Context, s *Store, _ bt.Clock) {
 	logger := logtest.Scoped(t)
-	repoStore := database.ReposWith(logger, s)
-	esStore := database.ExternalServicesWith(logger, s)
+	repoStore := dbtbbbse.ReposWith(logger, s)
+	esStore := dbtbbbse.ExternblServicesWith(logger, s)
 
-	// Let's set up a batch change with one of every changeset state.
+	// Let's set up b bbtch chbnge with one of every chbngeset stbte.
 
-	// First up, let's create a repo.
+	// First up, let's crebte b repo.
 	repo := bt.TestRepo(t, esStore, extsvc.KindGitHub)
-	if err := repoStore.Create(ctx, repo); err != nil {
-		t.Fatal(err)
+	if err := repoStore.Crebte(ctx, repo); err != nil {
+		t.Fbtbl(err)
 	}
 
-	// Create a user.
-	user := bt.CreateTestUser(t, s.DatabaseDB(), false)
-	ctx = actor.WithInternalActor(ctx)
+	// Crebte b user.
+	user := bt.CrebteTestUser(t, s.DbtbbbseDB(), fblse)
+	ctx = bctor.WithInternblActor(ctx)
 
-	// Next, we need old and new batch specs.
-	oldBatchSpec := bt.CreateBatchSpec(t, ctx, s, "old", user.ID, 0)
-	newBatchSpec := bt.CreateBatchSpec(t, ctx, s, "new", user.ID, 0)
+	// Next, we need old bnd new bbtch specs.
+	oldBbtchSpec := bt.CrebteBbtchSpec(t, ctx, s, "old", user.ID, 0)
+	newBbtchSpec := bt.CrebteBbtchSpec(t, ctx, s, "new", user.ID, 0)
 
-	// That's enough to create a batch change, so let's do that.
-	batchChange := bt.CreateBatchChange(t, ctx, s, "text", user.ID, oldBatchSpec.ID)
+	// Thbt's enough to crebte b bbtch chbnge, so let's do thbt.
+	bbtchChbnge := bt.CrebteBbtchChbnge(t, ctx, s, "text", user.ID, oldBbtchSpec.ID)
 
-	// Now we'll add three old and new pairs of changeset specs. Two will have
-	// matching statuses, and a different two will have matching names.
-	createChangesetSpecPair := func(t *testing.T, ctx context.Context, s *Store, oldBatchSpec, newBatchSpec *btypes.BatchSpec, opts bt.TestSpecOpts) (old *btypes.ChangesetSpec) {
-		opts.BatchSpec = oldBatchSpec.ID
-		old = bt.CreateChangesetSpec(t, ctx, s, opts)
+	// Now we'll bdd three old bnd new pbirs of chbngeset specs. Two will hbve
+	// mbtching stbtuses, bnd b different two will hbve mbtching nbmes.
+	crebteChbngesetSpecPbir := func(t *testing.T, ctx context.Context, s *Store, oldBbtchSpec, newBbtchSpec *btypes.BbtchSpec, opts bt.TestSpecOpts) (old *btypes.ChbngesetSpec) {
+		opts.BbtchSpec = oldBbtchSpec.ID
+		old = bt.CrebteChbngesetSpec(t, ctx, s, opts)
 
-		opts.BatchSpec = newBatchSpec.ID
-		_ = bt.CreateChangesetSpec(t, ctx, s, opts)
+		opts.BbtchSpec = newBbtchSpec.ID
+		_ = bt.CrebteChbngesetSpec(t, ctx, s, opts)
 
 		return old
 	}
-	oldOpenFoo := createChangesetSpecPair(t, ctx, s, oldBatchSpec, newBatchSpec, bt.TestSpecOpts{
+	oldOpenFoo := crebteChbngesetSpecPbir(t, ctx, s, oldBbtchSpec, newBbtchSpec, bt.TestSpecOpts{
 		User:      user.ID,
 		Repo:      repo.ID,
-		BatchSpec: oldBatchSpec.ID,
+		BbtchSpec: oldBbtchSpec.ID,
 		Title:     "foo",
 		Published: true,
-		HeadRef:   "open-foo",
-		Typ:       btypes.ChangesetSpecTypeBranch,
+		HebdRef:   "open-foo",
+		Typ:       btypes.ChbngesetSpecTypeBrbnch,
 	})
-	oldOpenBar := createChangesetSpecPair(t, ctx, s, oldBatchSpec, newBatchSpec, bt.TestSpecOpts{
+	oldOpenBbr := crebteChbngesetSpecPbir(t, ctx, s, oldBbtchSpec, newBbtchSpec, bt.TestSpecOpts{
 		User:      user.ID,
 		Repo:      repo.ID,
-		BatchSpec: oldBatchSpec.ID,
-		Title:     "bar",
+		BbtchSpec: oldBbtchSpec.ID,
+		Title:     "bbr",
 		Published: true,
-		HeadRef:   "open-bar",
-		Typ:       btypes.ChangesetSpecTypeBranch,
+		HebdRef:   "open-bbr",
+		Typ:       btypes.ChbngesetSpecTypeBrbnch,
 	})
-	oldClosedFoo := createChangesetSpecPair(t, ctx, s, oldBatchSpec, newBatchSpec, bt.TestSpecOpts{
+	oldClosedFoo := crebteChbngesetSpecPbir(t, ctx, s, oldBbtchSpec, newBbtchSpec, bt.TestSpecOpts{
 		User:      user.ID,
 		Repo:      repo.ID,
-		BatchSpec: oldBatchSpec.ID,
+		BbtchSpec: oldBbtchSpec.ID,
 		Title:     "foo",
 		Published: true,
-		HeadRef:   "closed-foo",
-		Typ:       btypes.ChangesetSpecTypeBranch,
+		HebdRef:   "closed-foo",
+		Typ:       btypes.ChbngesetSpecTypeBrbnch,
 	})
 
-	// Finally, the changesets.
-	openFoo := bt.CreateChangeset(t, ctx, s, bt.TestChangesetOpts{
+	// Finblly, the chbngesets.
+	openFoo := bt.CrebteChbngeset(t, ctx, s, bt.TestChbngesetOpts{
 		Repo:                repo.ID,
-		BatchChange:         batchChange.ID,
+		BbtchChbnge:         bbtchChbnge.ID,
 		CurrentSpec:         oldOpenFoo.ID,
-		ExternalServiceType: repo.ExternalRepo.ServiceType,
-		ExternalID:          "5678",
-		ExternalState:       btypes.ChangesetExternalStateOpen,
-		ReconcilerState:     btypes.ReconcilerStateCompleted,
-		PublicationState:    btypes.ChangesetPublicationStatePublished,
-		OwnedByBatchChange:  batchChange.ID,
-		Metadata: map[string]any{
+		ExternblServiceType: repo.ExternblRepo.ServiceType,
+		ExternblID:          "5678",
+		ExternblStbte:       btypes.ChbngesetExternblStbteOpen,
+		ReconcilerStbte:     btypes.ReconcilerStbteCompleted,
+		PublicbtionStbte:    btypes.ChbngesetPublicbtionStbtePublished,
+		OwnedByBbtchChbnge:  bbtchChbnge.ID,
+		Metbdbtb: mbp[string]bny{
 			"Title": "foo",
 		},
 	})
-	openBar := bt.CreateChangeset(t, ctx, s, bt.TestChangesetOpts{
+	openBbr := bt.CrebteChbngeset(t, ctx, s, bt.TestChbngesetOpts{
 		Repo:                repo.ID,
-		BatchChange:         batchChange.ID,
-		CurrentSpec:         oldOpenBar.ID,
-		ExternalServiceType: repo.ExternalRepo.ServiceType,
-		ExternalID:          "5679",
-		ExternalState:       btypes.ChangesetExternalStateOpen,
-		ReconcilerState:     btypes.ReconcilerStateCompleted,
-		PublicationState:    btypes.ChangesetPublicationStatePublished,
-		OwnedByBatchChange:  batchChange.ID,
-		Metadata: map[string]any{
-			"Title": "bar",
+		BbtchChbnge:         bbtchChbnge.ID,
+		CurrentSpec:         oldOpenBbr.ID,
+		ExternblServiceType: repo.ExternblRepo.ServiceType,
+		ExternblID:          "5679",
+		ExternblStbte:       btypes.ChbngesetExternblStbteOpen,
+		ReconcilerStbte:     btypes.ReconcilerStbteCompleted,
+		PublicbtionStbte:    btypes.ChbngesetPublicbtionStbtePublished,
+		OwnedByBbtchChbnge:  bbtchChbnge.ID,
+		Metbdbtb: mbp[string]bny{
+			"Title": "bbr",
 		},
 	})
-	_ = bt.CreateChangeset(t, ctx, s, bt.TestChangesetOpts{
+	_ = bt.CrebteChbngeset(t, ctx, s, bt.TestChbngesetOpts{
 		Repo:                repo.ID,
-		BatchChange:         batchChange.ID,
+		BbtchChbnge:         bbtchChbnge.ID,
 		CurrentSpec:         oldClosedFoo.ID,
-		ExternalServiceType: repo.ExternalRepo.ServiceType,
-		ExternalID:          "5680",
-		ExternalState:       btypes.ChangesetExternalStateClosed,
-		ReconcilerState:     btypes.ReconcilerStateCompleted,
-		PublicationState:    btypes.ChangesetPublicationStatePublished,
-		OwnedByBatchChange:  batchChange.ID,
-		Metadata: map[string]any{
+		ExternblServiceType: repo.ExternblRepo.ServiceType,
+		ExternblID:          "5680",
+		ExternblStbte:       btypes.ChbngesetExternblStbteClosed,
+		ReconcilerStbte:     btypes.ReconcilerStbteCompleted,
+		PublicbtionStbte:    btypes.ChbngesetPublicbtionStbtePublished,
+		OwnedByBbtchChbnge:  bbtchChbnge.ID,
+		Metbdbtb: mbp[string]bny{
 			"Title": "foo",
 		},
 	})
 
-	for name, tc := range map[string]struct {
-		opts GetRewirerMappingsOpts
-		want []*btypes.Changeset
+	for nbme, tc := rbnge mbp[string]struct {
+		opts GetRewirerMbppingsOpts
+		wbnt []*btypes.Chbngeset
 	}{
-		"state and text": {
-			opts: GetRewirerMappingsOpts{
-				TextSearch:   []search.TextSearchTerm{{Term: "foo"}},
-				CurrentState: pointers.Ptr(btypes.ChangesetStateOpen),
+		"stbte bnd text": {
+			opts: GetRewirerMbppingsOpts{
+				TextSebrch:   []sebrch.TextSebrchTerm{{Term: "foo"}},
+				CurrentStbte: pointers.Ptr(btypes.ChbngesetStbteOpen),
 			},
-			want: []*btypes.Changeset{openFoo},
+			wbnt: []*btypes.Chbngeset{openFoo},
 		},
-		"state and not text": {
-			opts: GetRewirerMappingsOpts{
-				TextSearch:   []search.TextSearchTerm{{Term: "foo", Not: true}},
-				CurrentState: pointers.Ptr(btypes.ChangesetStateOpen),
+		"stbte bnd not text": {
+			opts: GetRewirerMbppingsOpts{
+				TextSebrch:   []sebrch.TextSebrchTerm{{Term: "foo", Not: true}},
+				CurrentStbte: pointers.Ptr(btypes.ChbngesetStbteOpen),
 			},
-			want: []*btypes.Changeset{openBar},
+			wbnt: []*btypes.Chbngeset{openBbr},
 		},
-		"state match only": {
-			opts: GetRewirerMappingsOpts{
-				TextSearch:   []search.TextSearchTerm{{Term: "bar"}},
-				CurrentState: pointers.Ptr(btypes.ChangesetStateClosed),
+		"stbte mbtch only": {
+			opts: GetRewirerMbppingsOpts{
+				TextSebrch:   []sebrch.TextSebrchTerm{{Term: "bbr"}},
+				CurrentStbte: pointers.Ptr(btypes.ChbngesetStbteClosed),
 			},
-			want: []*btypes.Changeset{},
+			wbnt: []*btypes.Chbngeset{},
 		},
-		"text match only": {
-			opts: GetRewirerMappingsOpts{
-				TextSearch:   []search.TextSearchTerm{{Term: "foo"}},
-				CurrentState: pointers.Ptr(btypes.ChangesetStateMerged),
+		"text mbtch only": {
+			opts: GetRewirerMbppingsOpts{
+				TextSebrch:   []sebrch.TextSebrchTerm{{Term: "foo"}},
+				CurrentStbte: pointers.Ptr(btypes.ChbngesetStbteMerged),
 			},
-			want: []*btypes.Changeset{},
+			wbnt: []*btypes.Chbngeset{},
 		},
 	} {
-		t.Run(name, func(t *testing.T) {
-			tc.opts.BatchSpecID = newBatchSpec.ID
-			tc.opts.BatchChangeID = batchChange.ID
-			mappings, err := s.GetRewirerMappings(ctx, tc.opts)
+		t.Run(nbme, func(t *testing.T) {
+			tc.opts.BbtchSpecID = newBbtchSpec.ID
+			tc.opts.BbtchChbngeID = bbtchChbnge.ID
+			mbppings, err := s.GetRewirerMbppings(ctx, tc.opts)
 			if err != nil {
 				t.Errorf("unexpected error: %+v", err)
 			}
 
-			have := []int64{}
-			for _, mapping := range mappings {
-				have = append(have, mapping.ChangesetID)
+			hbve := []int64{}
+			for _, mbpping := rbnge mbppings {
+				hbve = bppend(hbve, mbpping.ChbngesetID)
 			}
 
-			want := []int64{}
-			for _, changeset := range tc.want {
-				want = append(want, changeset.ID)
+			wbnt := []int64{}
+			for _, chbngeset := rbnge tc.wbnt {
+				wbnt = bppend(wbnt, chbngeset.ID)
 			}
 
-			if diff := cmp.Diff(have, want, cmtRewirerMappingsOpts); diff != "" {
-				t.Errorf("unexpected changesets (-have +want):\n%s", diff)
+			if diff := cmp.Diff(hbve, wbnt, cmtRewirerMbppingsOpts); diff != "" {
+				t.Errorf("unexpected chbngesets (-hbve +wbnt):\n%s", diff)
 			}
 		})
 	}
 }
 
-func testStoreChangesetSpecsTextSearch(t *testing.T, ctx context.Context, s *Store, clock bt.Clock) {
+func testStoreChbngesetSpecsTextSebrch(t *testing.T, ctx context.Context, s *Store, clock bt.Clock) {
 	logger := logtest.Scoped(t)
-	repoStore := database.ReposWith(logger, s)
-	esStore := database.ExternalServicesWith(logger, s)
+	repoStore := dbtbbbse.ReposWith(logger, s)
+	esStore := dbtbbbse.ExternblServicesWith(logger, s)
 
-	// OK, let's set up an interesting scenario. We're going to set up a
-	// batch change that tracks two changesets in different repositories, and
-	// creates two changesets in those same repositories with different names.
+	// OK, let's set up bn interesting scenbrio. We're going to set up b
+	// bbtch chbnge thbt trbcks two chbngesets in different repositories, bnd
+	// crebtes two chbngesets in those sbme repositories with different nbmes.
 
-	// First up, let's create the repos.
+	// First up, let's crebte the repos.
 	repos := []*types.Repo{
 		bt.TestRepo(t, esStore, extsvc.KindGitHub),
-		bt.TestRepo(t, esStore, extsvc.KindGitLab),
+		bt.TestRepo(t, esStore, extsvc.KindGitLbb),
 	}
-	for _, repo := range repos {
-		if err := repoStore.Create(ctx, repo); err != nil {
-			t.Fatal(err)
+	for _, repo := rbnge repos {
+		if err := repoStore.Crebte(ctx, repo); err != nil {
+			t.Fbtbl(err)
 		}
 	}
 
-	// Create a user.
-	user := bt.CreateTestUser(t, s.DatabaseDB(), false)
-	ctx = actor.WithInternalActor(ctx)
+	// Crebte b user.
+	user := bt.CrebteTestUser(t, s.DbtbbbseDB(), fblse)
+	ctx = bctor.WithInternblActor(ctx)
 
-	// Next, we need a batch spec.
-	oldBatchSpec := bt.CreateBatchSpec(t, ctx, s, "text", user.ID, 0)
+	// Next, we need b bbtch spec.
+	oldBbtchSpec := bt.CrebteBbtchSpec(t, ctx, s, "text", user.ID, 0)
 
-	// That's enough to create a batch change, so let's do that.
-	batchChange := bt.CreateBatchChange(t, ctx, s, "text", user.ID, oldBatchSpec.ID)
+	// Thbt's enough to crebte b bbtch chbnge, so let's do thbt.
+	bbtchChbnge := bt.CrebteBbtchChbnge(t, ctx, s, "text", user.ID, oldBbtchSpec.ID)
 
-	// Now we can create the changeset specs.
-	oldTrackedGitHubSpec := bt.CreateChangesetSpec(t, ctx, s, bt.TestSpecOpts{
+	// Now we cbn crebte the chbngeset specs.
+	oldTrbckedGitHubSpec := bt.CrebteChbngesetSpec(t, ctx, s, bt.TestSpecOpts{
 		User:       user.ID,
 		Repo:       repos[0].ID,
-		BatchSpec:  oldBatchSpec.ID,
-		ExternalID: "1234",
-		Typ:        btypes.ChangesetSpecTypeExisting,
+		BbtchSpec:  oldBbtchSpec.ID,
+		ExternblID: "1234",
+		Typ:        btypes.ChbngesetSpecTypeExisting,
 	})
-	oldTrackedGitLabSpec := bt.CreateChangesetSpec(t, ctx, s, bt.TestSpecOpts{
+	oldTrbckedGitLbbSpec := bt.CrebteChbngesetSpec(t, ctx, s, bt.TestSpecOpts{
 		User:       user.ID,
 		Repo:       repos[1].ID,
-		BatchSpec:  oldBatchSpec.ID,
-		ExternalID: "1234",
-		Typ:        btypes.ChangesetSpecTypeExisting,
+		BbtchSpec:  oldBbtchSpec.ID,
+		ExternblID: "1234",
+		Typ:        btypes.ChbngesetSpecTypeExisting,
 	})
-	oldBranchGitHubSpec := bt.CreateChangesetSpec(t, ctx, s, bt.TestSpecOpts{
+	oldBrbnchGitHubSpec := bt.CrebteChbngesetSpec(t, ctx, s, bt.TestSpecOpts{
 		User:      user.ID,
 		Repo:      repos[0].ID,
-		BatchSpec: oldBatchSpec.ID,
-		HeadRef:   "main",
+		BbtchSpec: oldBbtchSpec.ID,
+		HebdRef:   "mbin",
 		Published: true,
-		Title:     "GitHub branch",
-		Typ:       btypes.ChangesetSpecTypeBranch,
+		Title:     "GitHub brbnch",
+		Typ:       btypes.ChbngesetSpecTypeBrbnch,
 	})
-	oldBranchGitLabSpec := bt.CreateChangesetSpec(t, ctx, s, bt.TestSpecOpts{
+	oldBrbnchGitLbbSpec := bt.CrebteChbngesetSpec(t, ctx, s, bt.TestSpecOpts{
 		User:      user.ID,
 		Repo:      repos[1].ID,
-		BatchSpec: oldBatchSpec.ID,
-		HeadRef:   "main",
+		BbtchSpec: oldBbtchSpec.ID,
+		HebdRef:   "mbin",
 		Published: true,
-		Title:     "GitLab branch",
-		Typ:       btypes.ChangesetSpecTypeBranch,
+		Title:     "GitLbb brbnch",
+		Typ:       btypes.ChbngesetSpecTypeBrbnch,
 	})
 
-	// We also need actual changesets.
-	oldTrackedGitHub := bt.CreateChangeset(t, ctx, s, bt.TestChangesetOpts{
+	// We blso need bctubl chbngesets.
+	oldTrbckedGitHub := bt.CrebteChbngeset(t, ctx, s, bt.TestChbngesetOpts{
 		Repo:                repos[0].ID,
-		BatchChange:         batchChange.ID,
-		CurrentSpec:         oldTrackedGitHubSpec.ID,
-		ExternalServiceType: repos[0].ExternalRepo.ServiceType,
-		ExternalID:          "1234",
-		OwnedByBatchChange:  batchChange.ID,
-		Metadata: map[string]any{
-			"Title": "Tracked GitHub",
+		BbtchChbnge:         bbtchChbnge.ID,
+		CurrentSpec:         oldTrbckedGitHubSpec.ID,
+		ExternblServiceType: repos[0].ExternblRepo.ServiceType,
+		ExternblID:          "1234",
+		OwnedByBbtchChbnge:  bbtchChbnge.ID,
+		Metbdbtb: mbp[string]bny{
+			"Title": "Trbcked GitHub",
 		},
 	})
-	oldTrackedGitLab := bt.CreateChangeset(t, ctx, s, bt.TestChangesetOpts{
+	oldTrbckedGitLbb := bt.CrebteChbngeset(t, ctx, s, bt.TestChbngesetOpts{
 		Repo:                repos[1].ID,
-		BatchChange:         batchChange.ID,
-		CurrentSpec:         oldTrackedGitLabSpec.ID,
-		ExternalServiceType: repos[1].ExternalRepo.ServiceType,
-		ExternalID:          "1234",
-		OwnedByBatchChange:  batchChange.ID,
-		Metadata: map[string]any{
-			"title": "Tracked GitLab",
+		BbtchChbnge:         bbtchChbnge.ID,
+		CurrentSpec:         oldTrbckedGitLbbSpec.ID,
+		ExternblServiceType: repos[1].ExternblRepo.ServiceType,
+		ExternblID:          "1234",
+		OwnedByBbtchChbnge:  bbtchChbnge.ID,
+		Metbdbtb: mbp[string]bny{
+			"title": "Trbcked GitLbb",
 		},
 	})
-	oldBranchGitHub := bt.CreateChangeset(t, ctx, s, bt.TestChangesetOpts{
+	oldBrbnchGitHub := bt.CrebteChbngeset(t, ctx, s, bt.TestChbngesetOpts{
 		Repo:                repos[0].ID,
-		BatchChange:         batchChange.ID,
-		CurrentSpec:         oldBranchGitHubSpec.ID,
-		ExternalServiceType: repos[0].ExternalRepo.ServiceType,
-		ExternalID:          "5678",
-		OwnedByBatchChange:  batchChange.ID,
-		Metadata: map[string]any{
-			"Title": "GitHub branch",
+		BbtchChbnge:         bbtchChbnge.ID,
+		CurrentSpec:         oldBrbnchGitHubSpec.ID,
+		ExternblServiceType: repos[0].ExternblRepo.ServiceType,
+		ExternblID:          "5678",
+		OwnedByBbtchChbnge:  bbtchChbnge.ID,
+		Metbdbtb: mbp[string]bny{
+			"Title": "GitHub brbnch",
 		},
 	})
-	oldBranchGitLab := bt.CreateChangeset(t, ctx, s, bt.TestChangesetOpts{
+	oldBrbnchGitLbb := bt.CrebteChbngeset(t, ctx, s, bt.TestChbngesetOpts{
 		Repo:                repos[1].ID,
-		BatchChange:         batchChange.ID,
-		CurrentSpec:         oldBranchGitLabSpec.ID,
-		ExternalServiceType: repos[1].ExternalRepo.ServiceType,
-		ExternalID:          "5678",
-		OwnedByBatchChange:  batchChange.ID,
-		Metadata: map[string]any{
-			"title": "GitLab branch",
+		BbtchChbnge:         bbtchChbnge.ID,
+		CurrentSpec:         oldBrbnchGitLbbSpec.ID,
+		ExternblServiceType: repos[1].ExternblRepo.ServiceType,
+		ExternblID:          "5678",
+		OwnedByBbtchChbnge:  bbtchChbnge.ID,
+		Metbdbtb: mbp[string]bny{
+			"title": "GitLbb brbnch",
 		},
 	})
-	// Cool. Now let's set up a new batch spec.
-	newBatchSpec := bt.CreateBatchSpec(t, ctx, s, "text", user.ID, 0)
+	// Cool. Now let's set up b new bbtch spec.
+	newBbtchSpec := bt.CrebteBbtchSpec(t, ctx, s, "text", user.ID, 0)
 
-	// And we need all new changeset specs to go into that spec.
-	newTrackedGitHub := bt.CreateChangesetSpec(t, ctx, s, bt.TestSpecOpts{
+	// And we need bll new chbngeset specs to go into thbt spec.
+	newTrbckedGitHub := bt.CrebteChbngesetSpec(t, ctx, s, bt.TestSpecOpts{
 		User:       user.ID,
 		Repo:       repos[0].ID,
-		BatchSpec:  newBatchSpec.ID,
-		ExternalID: "1234",
-		Typ:        btypes.ChangesetSpecTypeExisting,
+		BbtchSpec:  newBbtchSpec.ID,
+		ExternblID: "1234",
+		Typ:        btypes.ChbngesetSpecTypeExisting,
 	})
-	newTrackedGitLab := bt.CreateChangesetSpec(t, ctx, s, bt.TestSpecOpts{
+	newTrbckedGitLbb := bt.CrebteChbngesetSpec(t, ctx, s, bt.TestSpecOpts{
 		User:       user.ID,
 		Repo:       repos[1].ID,
-		BatchSpec:  newBatchSpec.ID,
-		ExternalID: "1234",
-		Typ:        btypes.ChangesetSpecTypeExisting,
+		BbtchSpec:  newBbtchSpec.ID,
+		ExternblID: "1234",
+		Typ:        btypes.ChbngesetSpecTypeExisting,
 	})
-	newBranchGitHub := bt.CreateChangesetSpec(t, ctx, s, bt.TestSpecOpts{
+	newBrbnchGitHub := bt.CrebteChbngesetSpec(t, ctx, s, bt.TestSpecOpts{
 		User:      user.ID,
 		Repo:      repos[0].ID,
-		BatchSpec: newBatchSpec.ID,
-		HeadRef:   "main",
+		BbtchSpec: newBbtchSpec.ID,
+		HebdRef:   "mbin",
 		Published: true,
-		Title:     "New GitHub branch",
-		Typ:       btypes.ChangesetSpecTypeBranch,
+		Title:     "New GitHub brbnch",
+		Typ:       btypes.ChbngesetSpecTypeBrbnch,
 	})
-	newBranchGitLab := bt.CreateChangesetSpec(t, ctx, s, bt.TestSpecOpts{
+	newBrbnchGitLbb := bt.CrebteChbngesetSpec(t, ctx, s, bt.TestSpecOpts{
 		User:      user.ID,
 		Repo:      repos[1].ID,
-		BatchSpec: newBatchSpec.ID,
-		HeadRef:   "main",
+		BbtchSpec: newBbtchSpec.ID,
+		HebdRef:   "mbin",
 		Published: true,
-		Title:     "New GitLab branch",
-		Typ:       btypes.ChangesetSpecTypeBranch,
+		Title:     "New GitLbb brbnch",
+		Typ:       btypes.ChbngesetSpecTypeBrbnch,
 	})
 
-	// A couple of hundred lines of boilerplate later, we have a scenario! Let's
+	// A couple of hundred lines of boilerplbte lbter, we hbve b scenbrio! Let's
 	// use it.
 
-	// Well, OK, I lied: we're not _quite_ done with the boilerplate. To keep
-	// the test cases somewhat readable, we'll define the four possible mappings
-	// we can get before we get to defining the test cases.
-	trackedGitHub := &btypes.RewirerMapping{
-		ChangesetSpecID: newTrackedGitHub.ID,
-		ChangesetID:     oldTrackedGitHub.ID,
+	// Well, OK, I lied: we're not _quite_ done with the boilerplbte. To keep
+	// the test cbses somewhbt rebdbble, we'll define the four possible mbppings
+	// we cbn get before we get to defining the test cbses.
+	trbckedGitHub := &btypes.RewirerMbpping{
+		ChbngesetSpecID: newTrbckedGitHub.ID,
+		ChbngesetID:     oldTrbckedGitHub.ID,
 		RepoID:          repos[0].ID,
 	}
-	trackedGitLab := &btypes.RewirerMapping{
-		ChangesetSpecID: newTrackedGitLab.ID,
-		ChangesetID:     oldTrackedGitLab.ID,
+	trbckedGitLbb := &btypes.RewirerMbpping{
+		ChbngesetSpecID: newTrbckedGitLbb.ID,
+		ChbngesetID:     oldTrbckedGitLbb.ID,
 		RepoID:          repos[1].ID,
 	}
-	branchGitHub := &btypes.RewirerMapping{
-		ChangesetSpecID: newBranchGitHub.ID,
-		ChangesetID:     oldBranchGitHub.ID,
+	brbnchGitHub := &btypes.RewirerMbpping{
+		ChbngesetSpecID: newBrbnchGitHub.ID,
+		ChbngesetID:     oldBrbnchGitHub.ID,
 		RepoID:          repos[0].ID,
 	}
-	branchGitLab := &btypes.RewirerMapping{
-		ChangesetSpecID: newBranchGitLab.ID,
-		ChangesetID:     oldBranchGitLab.ID,
+	brbnchGitLbb := &btypes.RewirerMbpping{
+		ChbngesetSpecID: newBrbnchGitLbb.ID,
+		ChbngesetID:     oldBrbnchGitLbb.ID,
 		RepoID:          repos[1].ID,
 	}
 
-	for name, tc := range map[string]struct {
-		search []search.TextSearchTerm
-		want   btypes.RewirerMappings
+	for nbme, tc := rbnge mbp[string]struct {
+		sebrch []sebrch.TextSebrchTerm
+		wbnt   btypes.RewirerMbppings
 	}{
-		"nil search": {
-			want: btypes.RewirerMappings{trackedGitHub, trackedGitLab, branchGitHub, branchGitLab},
+		"nil sebrch": {
+			wbnt: btypes.RewirerMbppings{trbckedGitHub, trbckedGitLbb, brbnchGitHub, brbnchGitLbb},
 		},
-		"empty search": {
-			search: []search.TextSearchTerm{},
-			want:   btypes.RewirerMappings{trackedGitHub, trackedGitLab, branchGitHub, branchGitLab},
+		"empty sebrch": {
+			sebrch: []sebrch.TextSebrchTerm{},
+			wbnt:   btypes.RewirerMbppings{trbckedGitHub, trbckedGitLbb, brbnchGitHub, brbnchGitLbb},
 		},
-		"no matches": {
-			search: []search.TextSearchTerm{{Term: "this is not a thing"}},
-			want:   nil,
+		"no mbtches": {
+			sebrch: []sebrch.TextSebrchTerm{{Term: "this is not b thing"}},
+			wbnt:   nil,
 		},
-		"no matches due to conflicting requirements": {
-			search: []search.TextSearchTerm{
+		"no mbtches due to conflicting requirements": {
+			sebrch: []sebrch.TextSebrchTerm{
 				{Term: "GitHub"},
-				{Term: "GitLab"},
+				{Term: "GitLbb"},
 			},
-			want: nil,
+			wbnt: nil,
 		},
-		"no matches due to even more conflicting requirements": {
-			search: []search.TextSearchTerm{
+		"no mbtches due to even more conflicting requirements": {
+			sebrch: []sebrch.TextSebrchTerm{
 				{Term: "GitHub"},
 				{Term: "GitHub", Not: true},
 			},
-			want: nil,
+			wbnt: nil,
 		},
-		"one term, matched on title": {
-			search: []search.TextSearchTerm{{Term: "New GitHub branch"}},
-			want:   btypes.RewirerMappings{branchGitHub},
+		"one term, mbtched on title": {
+			sebrch: []sebrch.TextSebrchTerm{{Term: "New GitHub brbnch"}},
+			wbnt:   btypes.RewirerMbppings{brbnchGitHub},
 		},
-		"two terms, matched on title AND title": {
-			search: []search.TextSearchTerm{
+		"two terms, mbtched on title AND title": {
+			sebrch: []sebrch.TextSebrchTerm{
 				{Term: "New GitHub"},
-				{Term: "branch"},
+				{Term: "brbnch"},
 			},
-			want: btypes.RewirerMappings{branchGitHub},
+			wbnt: btypes.RewirerMbppings{brbnchGitHub},
 		},
-		"two terms, matched on title AND repo": {
-			search: []search.TextSearchTerm{
+		"two terms, mbtched on title AND repo": {
+			sebrch: []sebrch.TextSebrchTerm{
 				{Term: "New"},
-				{Term: string(repos[0].Name)},
+				{Term: string(repos[0].Nbme)},
 			},
-			want: btypes.RewirerMappings{branchGitHub},
+			wbnt: btypes.RewirerMbppings{brbnchGitHub},
 		},
-		"one term, matched on repo": {
-			search: []search.TextSearchTerm{{Term: string(repos[0].Name)}},
-			want:   btypes.RewirerMappings{trackedGitHub, branchGitHub},
+		"one term, mbtched on repo": {
+			sebrch: []sebrch.TextSebrchTerm{{Term: string(repos[0].Nbme)}},
+			wbnt:   btypes.RewirerMbppings{trbckedGitHub, brbnchGitHub},
 		},
-		"one negated term, three title matches": {
-			search: []search.TextSearchTerm{{Term: "New GitHub branch", Not: true}},
-			want:   btypes.RewirerMappings{trackedGitHub, trackedGitLab, branchGitLab},
+		"one negbted term, three title mbtches": {
+			sebrch: []sebrch.TextSebrchTerm{{Term: "New GitHub brbnch", Not: true}},
+			wbnt:   btypes.RewirerMbppings{trbckedGitHub, trbckedGitLbb, brbnchGitLbb},
 		},
-		"two negated terms, one title AND repo match": {
-			search: []search.TextSearchTerm{
+		"two negbted terms, one title AND repo mbtch": {
+			sebrch: []sebrch.TextSebrchTerm{
 				{Term: "New", Not: true},
-				{Term: string(repos[0].Name), Not: true},
+				{Term: string(repos[0].Nbme), Not: true},
 			},
-			want: btypes.RewirerMappings{trackedGitLab},
+			wbnt: btypes.RewirerMbppings{trbckedGitLbb},
 		},
-		"mixed positive and negative terms": {
-			search: []search.TextSearchTerm{
+		"mixed positive bnd negbtive terms": {
+			sebrch: []sebrch.TextSebrchTerm{
 				{Term: "New", Not: true},
-				{Term: string(repos[0].Name)},
+				{Term: string(repos[0].Nbme)},
 			},
-			want: btypes.RewirerMappings{trackedGitHub},
+			wbnt: btypes.RewirerMbppings{trbckedGitHub},
 		},
 	} {
-		t.Run(name, func(t *testing.T) {
+		t.Run(nbme, func(t *testing.T) {
 			t.Run("no limits", func(t *testing.T) {
-				have, err := s.GetRewirerMappings(ctx, GetRewirerMappingsOpts{
-					BatchSpecID:   newBatchSpec.ID,
-					BatchChangeID: batchChange.ID,
-					TextSearch:    tc.search,
+				hbve, err := s.GetRewirerMbppings(ctx, GetRewirerMbppingsOpts{
+					BbtchSpecID:   newBbtchSpec.ID,
+					BbtchChbngeID: bbtchChbnge.ID,
+					TextSebrch:    tc.sebrch,
 				})
 				if err != nil {
 					t.Errorf("unexpected error: %+v", err)
 				}
 
-				if diff := cmp.Diff(have, tc.want, cmtRewirerMappingsOpts); diff != "" {
-					t.Errorf("unexpected mappings (-have +want):\n%s", diff)
+				if diff := cmp.Diff(hbve, tc.wbnt, cmtRewirerMbppingsOpts); diff != "" {
+					t.Errorf("unexpected mbppings (-hbve +wbnt):\n%s", diff)
 				}
 			})
 
 			t.Run("with limit", func(t *testing.T) {
-				have, err := s.GetRewirerMappings(ctx, GetRewirerMappingsOpts{
-					BatchSpecID:   newBatchSpec.ID,
-					BatchChangeID: batchChange.ID,
-					LimitOffset:   &database.LimitOffset{Limit: 1},
-					TextSearch:    tc.search,
+				hbve, err := s.GetRewirerMbppings(ctx, GetRewirerMbppingsOpts{
+					BbtchSpecID:   newBbtchSpec.ID,
+					BbtchChbngeID: bbtchChbnge.ID,
+					LimitOffset:   &dbtbbbse.LimitOffset{Limit: 1},
+					TextSebrch:    tc.sebrch,
 				})
 				if err != nil {
 					t.Errorf("unexpected error: %+v", err)
 				}
 
-				var want btypes.RewirerMappings
-				if len(tc.want) > 0 {
-					want = tc.want[0:1]
+				vbr wbnt btypes.RewirerMbppings
+				if len(tc.wbnt) > 0 {
+					wbnt = tc.wbnt[0:1]
 				}
-				if diff := cmp.Diff(have, want, cmtRewirerMappingsOpts); diff != "" {
-					t.Errorf("unexpected mappings (-have +want):\n%s", diff)
+				if diff := cmp.Diff(hbve, wbnt, cmtRewirerMbppingsOpts); diff != "" {
+					t.Errorf("unexpected mbppings (-hbve +wbnt):\n%s", diff)
 				}
 			})
 
-			t.Run("with offset and limit", func(t *testing.T) {
-				have, err := s.GetRewirerMappings(ctx, GetRewirerMappingsOpts{
-					BatchSpecID:   newBatchSpec.ID,
-					BatchChangeID: batchChange.ID,
-					LimitOffset:   &database.LimitOffset{Offset: 1, Limit: 1},
-					TextSearch:    tc.search,
+			t.Run("with offset bnd limit", func(t *testing.T) {
+				hbve, err := s.GetRewirerMbppings(ctx, GetRewirerMbppingsOpts{
+					BbtchSpecID:   newBbtchSpec.ID,
+					BbtchChbngeID: bbtchChbnge.ID,
+					LimitOffset:   &dbtbbbse.LimitOffset{Offset: 1, Limit: 1},
+					TextSebrch:    tc.sebrch,
 				})
 				if err != nil {
 					t.Errorf("unexpected error: %+v", err)
 				}
 
-				var want btypes.RewirerMappings
-				if len(tc.want) > 1 {
-					want = tc.want[1:2]
+				vbr wbnt btypes.RewirerMbppings
+				if len(tc.wbnt) > 1 {
+					wbnt = tc.wbnt[1:2]
 				}
-				if diff := cmp.Diff(have, want, cmtRewirerMappingsOpts); diff != "" {
-					t.Errorf("unexpected mappings (-have +want):\n%s", diff)
+				if diff := cmp.Diff(hbve, wbnt, cmtRewirerMbppingsOpts); diff != "" {
+					t.Errorf("unexpected mbppings (-hbve +wbnt):\n%s", diff)
 				}
 			})
 		})
 	}
 }
 
-func testStoreChangesetSpecsPublishedValues(t *testing.T, ctx context.Context, s *Store, clock bt.Clock) {
+func testStoreChbngesetSpecsPublishedVblues(t *testing.T, ctx context.Context, s *Store, clock bt.Clock) {
 	logger := logtest.Scoped(t)
-	repoStore := database.ReposWith(logger, s)
-	esStore := database.ExternalServicesWith(logger, s)
+	repoStore := dbtbbbse.ReposWith(logger, s)
+	esStore := dbtbbbse.ExternblServicesWith(logger, s)
 
 	repo := bt.TestRepo(t, esStore, extsvc.KindGitHub)
 
-	err := repoStore.Create(ctx, repo)
+	err := repoStore.Crebte(ctx, repo)
 	require.NoError(t, err)
 
 	t.Run("NULL", func(t *testing.T) {
-		c := &btypes.ChangesetSpec{
+		c := &btypes.ChbngesetSpec{
 			UserID:      int32(1234),
-			BatchSpecID: int64(910),
-			BaseRepoID:  repo.ID,
-			Published:   batcheslib.PublishedValue{},
+			BbtchSpecID: int64(910),
+			BbseRepoID:  repo.ID,
+			Published:   bbtcheslib.PublishedVblue{},
 		}
 
-		err := s.CreateChangesetSpec(ctx, c)
+		err := s.CrebteChbngesetSpec(ctx, c)
 		require.NoError(t, err)
-		t.Cleanup(func() {
-			s.DeleteChangesetSpec(ctx, c.ID)
+		t.Clebnup(func() {
+			s.DeleteChbngesetSpec(ctx, c.ID)
 		})
 
-		val, _, err := basestore.ScanFirstNullString(s.Query(ctx, sqlf.Sprintf("SELECT published FROM changeset_specs WHERE id = %d", c.ID)))
+		vbl, _, err := bbsestore.ScbnFirstNullString(s.Query(ctx, sqlf.Sprintf("SELECT published FROM chbngeset_specs WHERE id = %d", c.ID)))
 		require.NoError(t, err)
-		assert.Empty(t, val)
+		bssert.Empty(t, vbl)
 
-		actual, err := s.GetChangesetSpec(ctx, GetChangesetSpecOpts{ID: c.ID})
+		bctubl, err := s.GetChbngesetSpec(ctx, GetChbngesetSpecOpts{ID: c.ID})
 		require.NoError(t, err)
-		assert.True(t, actual.Published.Nil())
+		bssert.True(t, bctubl.Published.Nil())
 	})
 
 	t.Run("True", func(t *testing.T) {
-		c := &btypes.ChangesetSpec{
+		c := &btypes.ChbngesetSpec{
 			UserID:      int32(1234),
-			BatchSpecID: int64(910),
-			BaseRepoID:  repo.ID,
-			Published:   batcheslib.PublishedValue{Val: true},
+			BbtchSpecID: int64(910),
+			BbseRepoID:  repo.ID,
+			Published:   bbtcheslib.PublishedVblue{Vbl: true},
 		}
 
-		err := s.CreateChangesetSpec(ctx, c)
+		err := s.CrebteChbngesetSpec(ctx, c)
 		require.NoError(t, err)
-		t.Cleanup(func() {
-			s.DeleteChangesetSpec(ctx, c.ID)
+		t.Clebnup(func() {
+			s.DeleteChbngesetSpec(ctx, c.ID)
 		})
 
-		val, _, err := basestore.ScanFirstBool(s.Query(ctx, sqlf.Sprintf("SELECT published FROM changeset_specs WHERE id = %d", c.ID)))
+		vbl, _, err := bbsestore.ScbnFirstBool(s.Query(ctx, sqlf.Sprintf("SELECT published FROM chbngeset_specs WHERE id = %d", c.ID)))
 		require.NoError(t, err)
-		assert.True(t, val)
+		bssert.True(t, vbl)
 
-		actual, err := s.GetChangesetSpec(ctx, GetChangesetSpecOpts{ID: c.ID})
+		bctubl, err := s.GetChbngesetSpec(ctx, GetChbngesetSpecOpts{ID: c.ID})
 		require.NoError(t, err)
-		assert.True(t, actual.Published.True())
+		bssert.True(t, bctubl.Published.True())
 	})
 
-	t.Run("False", func(t *testing.T) {
-		c := &btypes.ChangesetSpec{
+	t.Run("Fblse", func(t *testing.T) {
+		c := &btypes.ChbngesetSpec{
 			UserID:      int32(1234),
-			BatchSpecID: int64(910),
-			BaseRepoID:  repo.ID,
-			Published:   batcheslib.PublishedValue{Val: false},
+			BbtchSpecID: int64(910),
+			BbseRepoID:  repo.ID,
+			Published:   bbtcheslib.PublishedVblue{Vbl: fblse},
 		}
 
-		err := s.CreateChangesetSpec(ctx, c)
+		err := s.CrebteChbngesetSpec(ctx, c)
 		require.NoError(t, err)
-		t.Cleanup(func() {
-			s.DeleteChangesetSpec(ctx, c.ID)
+		t.Clebnup(func() {
+			s.DeleteChbngesetSpec(ctx, c.ID)
 		})
 
-		val, _, err := basestore.ScanFirstBool(s.Query(ctx, sqlf.Sprintf("SELECT published FROM changeset_specs WHERE id = %d", c.ID)))
+		vbl, _, err := bbsestore.ScbnFirstBool(s.Query(ctx, sqlf.Sprintf("SELECT published FROM chbngeset_specs WHERE id = %d", c.ID)))
 		require.NoError(t, err)
-		assert.False(t, val)
+		bssert.Fblse(t, vbl)
 
-		actual, err := s.GetChangesetSpec(ctx, GetChangesetSpecOpts{ID: c.ID})
+		bctubl, err := s.GetChbngesetSpec(ctx, GetChbngesetSpecOpts{ID: c.ID})
 		require.NoError(t, err)
-		assert.True(t, actual.Published.False())
+		bssert.True(t, bctubl.Published.Fblse())
 	})
 
-	t.Run("Draft", func(t *testing.T) {
-		c := &btypes.ChangesetSpec{
+	t.Run("Drbft", func(t *testing.T) {
+		c := &btypes.ChbngesetSpec{
 			UserID:      int32(1234),
-			BatchSpecID: int64(910),
-			BaseRepoID:  repo.ID,
-			Published:   batcheslib.PublishedValue{Val: "draft"},
+			BbtchSpecID: int64(910),
+			BbseRepoID:  repo.ID,
+			Published:   bbtcheslib.PublishedVblue{Vbl: "drbft"},
 		}
 
-		err := s.CreateChangesetSpec(ctx, c)
+		err := s.CrebteChbngesetSpec(ctx, c)
 		require.NoError(t, err)
-		t.Cleanup(func() {
-			s.DeleteChangesetSpec(ctx, c.ID)
+		t.Clebnup(func() {
+			s.DeleteChbngesetSpec(ctx, c.ID)
 		})
 
-		val, _, err := basestore.ScanFirstNullString(s.Query(ctx, sqlf.Sprintf("SELECT published FROM changeset_specs WHERE id = %d", c.ID)))
+		vbl, _, err := bbsestore.ScbnFirstNullString(s.Query(ctx, sqlf.Sprintf("SELECT published FROM chbngeset_specs WHERE id = %d", c.ID)))
 		require.NoError(t, err)
-		assert.Equal(t, `"draft"`, val)
+		bssert.Equbl(t, `"drbft"`, vbl)
 
-		actual, err := s.GetChangesetSpec(ctx, GetChangesetSpecOpts{ID: c.ID})
+		bctubl, err := s.GetChbngesetSpec(ctx, GetChbngesetSpecOpts{ID: c.ID})
 		require.NoError(t, err)
-		assert.True(t, actual.Published.Draft())
+		bssert.True(t, bctubl.Published.Drbft())
 	})
 
-	t.Run("Invalid", func(t *testing.T) {
-		c := &btypes.ChangesetSpec{
+	t.Run("Invblid", func(t *testing.T) {
+		c := &btypes.ChbngesetSpec{
 			UserID:      int32(1234),
-			BatchSpecID: int64(910),
-			BaseRepoID:  repo.ID,
-			Published:   batcheslib.PublishedValue{Val: "foo-bar"},
+			BbtchSpecID: int64(910),
+			BbseRepoID:  repo.ID,
+			Published:   bbtcheslib.PublishedVblue{Vbl: "foo-bbr"},
 		}
 
-		err := s.CreateChangesetSpec(ctx, c)
-		assert.Error(t, err)
-		assert.Equal(t, "json: error calling MarshalJSON for type batches.PublishedValue: invalid PublishedValue: foo-bar (string)", err.Error())
+		err := s.CrebteChbngesetSpec(ctx, c)
+		bssert.Error(t, err)
+		bssert.Equbl(t, "json: error cblling MbrshblJSON for type bbtches.PublishedVblue: invblid PublishedVblue: foo-bbr (string)", err.Error())
 	})
 }

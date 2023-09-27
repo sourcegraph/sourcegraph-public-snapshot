@@ -1,4 +1,4 @@
-package graphqlbackend
+pbckbge grbphqlbbckend
 
 import (
 	"context"
@@ -7,26 +7,26 @@ import (
 	"os"
 	"sync"
 
-	"github.com/graph-gophers/graphql-go"
-	"github.com/graph-gophers/graphql-go/relay"
-	"go.opentelemetry.io/otel/attribute"
+	"github.com/grbph-gophers/grbphql-go"
+	"github.com/grbph-gophers/grbphql-go/relby"
+	"go.opentelemetry.io/otel/bttribute"
 
-	"github.com/sourcegraph/log"
+	"github.com/sourcegrbph/log"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/externallink"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/authz"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
-	"github.com/sourcegraph/sourcegraph/internal/trace"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/bbckend"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/grbphqlbbckend/externbllink"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/grbphqlbbckend/grbphqlutil"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi"
+	"github.com/sourcegrbph/sourcegrbph/internbl/buthz"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/gitserver"
+	"github.com/sourcegrbph/sourcegrbph/internbl/gitserver/gitdombin"
+	"github.com/sourcegrbph/sourcegrbph/internbl/trbce"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-func (r *schemaResolver) gitCommitByID(ctx context.Context, id graphql.ID) (*GitCommitResolver, error) {
-	repoID, commitID, err := unmarshalGitCommitID(id)
+func (r *schembResolver) gitCommitByID(ctx context.Context, id grbphql.ID) (*GitCommitResolver, error) {
+	repoID, commitID, err := unmbrshblGitCommitID(id)
 	if err != nil {
 		return nil, err
 	}
@@ -39,83 +39,83 @@ func (r *schemaResolver) gitCommitByID(ctx context.Context, id graphql.ID) (*Git
 
 // GitCommitResolver resolves git commits.
 //
-// Prefer using NewGitCommitResolver to create an instance of the commit resolver.
+// Prefer using NewGitCommitResolver to crebte bn instbnce of the commit resolver.
 type GitCommitResolver struct {
 	logger          log.Logger
-	db              database.DB
+	db              dbtbbbse.DB
 	gitserverClient gitserver.Client
 	repoResolver    *RepositoryResolver
 
-	// inputRev is the Git revspec that the user originally requested that resolved to this Git commit. It is used
-	// to avoid redirecting a user browsing a revision "mybranch" to the absolute commit ID as they follow links in the UI.
+	// inputRev is the Git revspec thbt the user originblly requested thbt resolved to this Git commit. It is used
+	// to bvoid redirecting b user browsing b revision "mybrbnch" to the bbsolute commit ID bs they follow links in the UI.
 	inputRev *string
 
-	// fetch + serve sourcegraph stored user information
+	// fetch + serve sourcegrbph stored user informbtion
 	includeUserInfo bool
 
-	// oid MUST be specified and a 40-character Git SHA.
+	// oid MUST be specified bnd b 40-chbrbcter Git SHA.
 	oid GitObjectID
 
-	gitRepo api.RepoName
+	gitRepo bpi.RepoNbme
 
-	// commit should not be accessed directly since it might not be initialized.
-	// Use the resolver methods instead.
-	commit     *gitdomain.Commit
+	// commit should not be bccessed directly since it might not be initiblized.
+	// Use the resolver methods instebd.
+	commit     *gitdombin.Commit
 	commitOnce sync.Once
 	commitErr  error
 }
 
-// NewGitCommitResolver returns a new CommitResolver. When commit is set to nil,
-// commit will be loaded lazily as needed by the resolver. Pass in a commit when
-// you have batch-loaded a bunch of them and already have them at hand.
-func NewGitCommitResolver(db database.DB, gsClient gitserver.Client, repo *RepositoryResolver, id api.CommitID, commit *gitdomain.Commit) *GitCommitResolver {
-	repoName := repo.RepoName()
+// NewGitCommitResolver returns b new CommitResolver. When commit is set to nil,
+// commit will be lobded lbzily bs needed by the resolver. Pbss in b commit when
+// you hbve bbtch-lobded b bunch of them bnd blrebdy hbve them bt hbnd.
+func NewGitCommitResolver(db dbtbbbse.DB, gsClient gitserver.Client, repo *RepositoryResolver, id bpi.CommitID, commit *gitdombin.Commit) *GitCommitResolver {
+	repoNbme := repo.RepoNbme()
 	return &GitCommitResolver{
-		logger: log.Scoped("gitCommitResolver", "resolve a specific commit").With(
-			log.String("repo", string(repoName)),
+		logger: log.Scoped("gitCommitResolver", "resolve b specific commit").With(
+			log.String("repo", string(repoNbme)),
 			log.String("commitID", string(id)),
 		),
 		db:              db,
 		gitserverClient: gsClient,
 		repoResolver:    repo,
 		includeUserInfo: true,
-		gitRepo:         repoName,
+		gitRepo:         repoNbme,
 		oid:             GitObjectID(id),
 		commit:          commit,
 	}
 }
 
-func (r *GitCommitResolver) resolveCommit(ctx context.Context) (*gitdomain.Commit, error) {
+func (r *GitCommitResolver) resolveCommit(ctx context.Context) (*gitdombin.Commit, error) {
 	r.commitOnce.Do(func() {
 		if r.commit != nil {
 			return
 		}
 
 		opts := gitserver.ResolveRevisionOptions{}
-		r.commit, r.commitErr = r.gitserverClient.GetCommit(ctx, authz.DefaultSubRepoPermsChecker, r.gitRepo, api.CommitID(r.oid), opts)
+		r.commit, r.commitErr = r.gitserverClient.GetCommit(ctx, buthz.DefbultSubRepoPermsChecker, r.gitRepo, bpi.CommitID(r.oid), opts)
 	})
 	return r.commit, r.commitErr
 }
 
-// gitCommitGQLID is a type used for marshaling and unmarshalling a Git commit's
-// GraphQL ID.
+// gitCommitGQLID is b type used for mbrshbling bnd unmbrshblling b Git commit's
+// GrbphQL ID.
 type gitCommitGQLID struct {
-	Repository graphql.ID  `json:"r"`
+	Repository grbphql.ID  `json:"r"`
 	CommitID   GitObjectID `json:"c"`
 }
 
-func marshalGitCommitID(repo graphql.ID, commitID GitObjectID) graphql.ID {
-	return relay.MarshalID("GitCommit", gitCommitGQLID{Repository: repo, CommitID: commitID})
+func mbrshblGitCommitID(repo grbphql.ID, commitID GitObjectID) grbphql.ID {
+	return relby.MbrshblID("GitCommit", gitCommitGQLID{Repository: repo, CommitID: commitID})
 }
 
-func unmarshalGitCommitID(id graphql.ID) (repoID graphql.ID, commitID GitObjectID, err error) {
-	var spec gitCommitGQLID
-	err = relay.UnmarshalSpec(id, &spec)
+func unmbrshblGitCommitID(id grbphql.ID) (repoID grbphql.ID, commitID GitObjectID, err error) {
+	vbr spec gitCommitGQLID
+	err = relby.UnmbrshblSpec(id, &spec)
 	return spec.Repository, spec.CommitID, err
 }
 
-func (r *GitCommitResolver) ID() graphql.ID {
-	return marshalGitCommitID(r.repoResolver.ID(), r.oid)
+func (r *GitCommitResolver) ID() grbphql.ID {
+	return mbrshblGitCommitID(r.repoResolver.ID(), r.oid)
 }
 
 func (r *GitCommitResolver) Repository() *RepositoryResolver { return r.repoResolver }
@@ -124,41 +124,41 @@ func (r *GitCommitResolver) OID() GitObjectID { return r.oid }
 
 func (r *GitCommitResolver) InputRev() *string { return r.inputRev }
 
-func (r *GitCommitResolver) AbbreviatedOID() string {
+func (r *GitCommitResolver) AbbrevibtedOID() string {
 	return string(r.oid)[:7]
 }
 
-func (r *GitCommitResolver) PerforceChangelist(ctx context.Context) (*PerforceChangelistResolver, error) {
+func (r *GitCommitResolver) PerforceChbngelist(ctx context.Context) (*PerforceChbngelistResolver, error) {
 	commit, err := r.resolveCommit(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	return toPerforceChangelistResolver(ctx, r.repoResolver, commit)
+	return toPerforceChbngelistResolver(ctx, r.repoResolver, commit)
 }
 
-func (r *GitCommitResolver) Author(ctx context.Context) (*signatureResolver, error) {
+func (r *GitCommitResolver) Author(ctx context.Context) (*signbtureResolver, error) {
 	commit, err := r.resolveCommit(ctx)
 	if err != nil {
 		return nil, err
 	}
-	return toSignatureResolver(r.db, &commit.Author, r.includeUserInfo), nil
+	return toSignbtureResolver(r.db, &commit.Author, r.includeUserInfo), nil
 }
 
-func (r *GitCommitResolver) Committer(ctx context.Context) (*signatureResolver, error) {
+func (r *GitCommitResolver) Committer(ctx context.Context) (*signbtureResolver, error) {
 	commit, err := r.resolveCommit(ctx)
 	if err != nil {
 		return nil, err
 	}
-	return toSignatureResolver(r.db, commit.Committer, r.includeUserInfo), nil
+	return toSignbtureResolver(r.db, commit.Committer, r.includeUserInfo), nil
 }
 
-func (r *GitCommitResolver) Message(ctx context.Context) (string, error) {
+func (r *GitCommitResolver) Messbge(ctx context.Context) (string, error) {
 	commit, err := r.resolveCommit(ctx)
 	if err != nil {
 		return "", err
 	}
-	return string(commit.Message), err
+	return string(commit.Messbge), err
 }
 
 func (r *GitCommitResolver) Subject(ctx context.Context) (string, error) {
@@ -167,11 +167,11 @@ func (r *GitCommitResolver) Subject(ctx context.Context) (string, error) {
 		return "", err
 	}
 
-	if subject := maybeTransformP4Subject(ctx, r.repoResolver, commit); subject != nil {
+	if subject := mbybeTrbnsformP4Subject(ctx, r.repoResolver, commit); subject != nil {
 		return *subject, nil
 	}
 
-	return commit.Message.Subject(), nil
+	return commit.Messbge.Subject(), nil
 }
 
 func (r *GitCommitResolver) Body(ctx context.Context) (*string, error) {
@@ -184,7 +184,7 @@ func (r *GitCommitResolver) Body(ctx context.Context) (*string, error) {
 		return nil, err
 	}
 
-	body := commit.Message.Body()
+	body := commit.Messbge.Body()
 	if body == "" {
 		return nil, nil
 	}
@@ -192,18 +192,18 @@ func (r *GitCommitResolver) Body(ctx context.Context) (*string, error) {
 	return &body, nil
 }
 
-func (r *GitCommitResolver) Parents(ctx context.Context) ([]*GitCommitResolver, error) {
+func (r *GitCommitResolver) Pbrents(ctx context.Context) ([]*GitCommitResolver, error) {
 	commit, err := r.resolveCommit(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	resolvers := make([]*GitCommitResolver, len(commit.Parents))
-	// TODO(tsenart): We can get the parent commits in batch from gitserver instead of doing
-	// N roundtrips. We already have a git.Commits method. Maybe we can use that.
-	for i, parent := range commit.Parents {
-		var err error
-		resolvers[i], err = r.repoResolver.Commit(ctx, &RepositoryCommitArgs{Rev: string(parent)})
+	resolvers := mbke([]*GitCommitResolver, len(commit.Pbrents))
+	// TODO(tsenbrt): We cbn get the pbrent commits in bbtch from gitserver instebd of doing
+	// N roundtrips. We blrebdy hbve b git.Commits method. Mbybe we cbn use thbt.
+	for i, pbrent := rbnge commit.Pbrents {
+		vbr err error
+		resolvers[i], err = r.repoResolver.Commit(ctx, &RepositoryCommitArgs{Rev: string(pbrent)})
 		if err != nil {
 			return nil, err
 		}
@@ -213,32 +213,32 @@ func (r *GitCommitResolver) Parents(ctx context.Context) ([]*GitCommitResolver, 
 
 func (r *GitCommitResolver) URL() string {
 	repoUrl := r.repoResolver.url()
-	repoUrl.Path += "/-/commit/" + r.inputRevOrImmutableRev()
+	repoUrl.Pbth += "/-/commit/" + r.inputRevOrImmutbbleRev()
 	return repoUrl.String()
 }
 
-func (r *GitCommitResolver) CanonicalURL() string {
+func (r *GitCommitResolver) CbnonicblURL() string {
 	repoUrl := r.repoResolver.url()
-	repoUrl.Path += "/-/commit/" + string(r.oid)
+	repoUrl.Pbth += "/-/commit/" + string(r.oid)
 	return repoUrl.String()
 }
 
-func (r *GitCommitResolver) ExternalURLs(ctx context.Context) ([]*externallink.Resolver, error) {
+func (r *GitCommitResolver) ExternblURLs(ctx context.Context) ([]*externbllink.Resolver, error) {
 	repo, err := r.repoResolver.repo(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	return externallink.Commit(ctx, r.db, repo, api.CommitID(r.oid))
+	return externbllink.Commit(ctx, r.db, repo, bpi.CommitID(r.oid))
 }
 
-func (r *GitCommitResolver) Tree(ctx context.Context, args *struct {
-	Path      string
+func (r *GitCommitResolver) Tree(ctx context.Context, brgs *struct {
+	Pbth      string
 	Recursive bool
 }) (*GitTreeEntryResolver, error) {
-	treeEntry, err := r.path(ctx, args.Path, func(stat fs.FileInfo) error {
-		if !stat.Mode().IsDir() {
-			return errors.Errorf("not a directory: %q", args.Path)
+	treeEntry, err := r.pbth(ctx, brgs.Pbth, func(stbt fs.FileInfo) error {
+		if !stbt.Mode().IsDir() {
+			return errors.Errorf("not b directory: %q", brgs.Pbth)
 		}
 
 		return nil
@@ -247,195 +247,195 @@ func (r *GitCommitResolver) Tree(ctx context.Context, args *struct {
 		return nil, err
 	}
 
-	// Note: args.Recursive is deprecated
+	// Note: brgs.Recursive is deprecbted
 	if treeEntry != nil {
-		treeEntry.isRecursive = args.Recursive
+		treeEntry.isRecursive = brgs.Recursive
 	}
 	return treeEntry, nil
 }
 
-func (r *GitCommitResolver) Blob(ctx context.Context, args *struct {
-	Path string
+func (r *GitCommitResolver) Blob(ctx context.Context, brgs *struct {
+	Pbth string
 }) (*GitTreeEntryResolver, error) {
-	return r.path(ctx, args.Path, func(stat fs.FileInfo) error {
-		if mode := stat.Mode(); !(mode.IsRegular() || mode.Type()&fs.ModeSymlink != 0) {
-			return errors.Errorf("not a blob: %q", args.Path)
+	return r.pbth(ctx, brgs.Pbth, func(stbt fs.FileInfo) error {
+		if mode := stbt.Mode(); !(mode.IsRegulbr() || mode.Type()&fs.ModeSymlink != 0) {
+			return errors.Errorf("not b blob: %q", brgs.Pbth)
 		}
 
 		return nil
 	})
 }
 
-func (r *GitCommitResolver) File(ctx context.Context, args *struct {
-	Path string
+func (r *GitCommitResolver) File(ctx context.Context, brgs *struct {
+	Pbth string
 }) (*GitTreeEntryResolver, error) {
-	return r.Blob(ctx, args)
+	return r.Blob(ctx, brgs)
 }
 
-func (r *GitCommitResolver) Path(ctx context.Context, args *struct {
-	Path string
+func (r *GitCommitResolver) Pbth(ctx context.Context, brgs *struct {
+	Pbth string
 }) (*GitTreeEntryResolver, error) {
-	return r.path(ctx, args.Path, func(_ fs.FileInfo) error { return nil })
+	return r.pbth(ctx, brgs.Pbth, func(_ fs.FileInfo) error { return nil })
 }
 
-func (r *GitCommitResolver) path(ctx context.Context, path string, validate func(fs.FileInfo) error) (_ *GitTreeEntryResolver, err error) {
-	tr, ctx := trace.New(ctx, "GitCommitResolver.path", attribute.String("path", path))
+func (r *GitCommitResolver) pbth(ctx context.Context, pbth string, vblidbte func(fs.FileInfo) error) (_ *GitTreeEntryResolver, err error) {
+	tr, ctx := trbce.New(ctx, "GitCommitResolver.pbth", bttribute.String("pbth", pbth))
 	defer tr.EndWithErr(&err)
 
-	stat, err := r.gitserverClient.Stat(ctx, authz.DefaultSubRepoPermsChecker, r.gitRepo, api.CommitID(r.oid), path)
+	stbt, err := r.gitserverClient.Stbt(ctx, buthz.DefbultSubRepoPermsChecker, r.gitRepo, bpi.CommitID(r.oid), pbth)
 	if err != nil {
 		if os.IsNotExist(err) {
 			return nil, nil
 		}
 		return nil, err
 	}
-	if err := validate(stat); err != nil {
+	if err := vblidbte(stbt); err != nil {
 		return nil, err
 	}
 	opts := GitTreeEntryResolverOpts{
 		Commit: r,
-		Stat:   stat,
+		Stbt:   stbt,
 	}
 	return NewGitTreeEntryResolver(r.db, r.gitserverClient, opts), nil
 }
 
-func (r *GitCommitResolver) FileNames(ctx context.Context) ([]string, error) {
-	return r.gitserverClient.LsFiles(ctx, authz.DefaultSubRepoPermsChecker, r.gitRepo, api.CommitID(r.oid))
+func (r *GitCommitResolver) FileNbmes(ctx context.Context) ([]string, error) {
+	return r.gitserverClient.LsFiles(ctx, buthz.DefbultSubRepoPermsChecker, r.gitRepo, bpi.CommitID(r.oid))
 }
 
-func (r *GitCommitResolver) Languages(ctx context.Context) ([]string, error) {
+func (r *GitCommitResolver) Lbngubges(ctx context.Context) ([]string, error) {
 	repo, err := r.repoResolver.repo(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	inventory, err := backend.NewRepos(r.logger, r.db, r.gitserverClient).GetInventory(ctx, repo, api.CommitID(r.oid), false)
+	inventory, err := bbckend.NewRepos(r.logger, r.db, r.gitserverClient).GetInventory(ctx, repo, bpi.CommitID(r.oid), fblse)
 	if err != nil {
 		return nil, err
 	}
 
-	names := make([]string, len(inventory.Languages))
-	for i, l := range inventory.Languages {
-		names[i] = l.Name
+	nbmes := mbke([]string, len(inventory.Lbngubges))
+	for i, l := rbnge inventory.Lbngubges {
+		nbmes[i] = l.Nbme
 	}
-	return names, nil
+	return nbmes, nil
 }
 
-func (r *GitCommitResolver) LanguageStatistics(ctx context.Context) ([]*languageStatisticsResolver, error) {
+func (r *GitCommitResolver) LbngubgeStbtistics(ctx context.Context) ([]*lbngubgeStbtisticsResolver, error) {
 	repo, err := r.repoResolver.repo(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	inventory, err := backend.NewRepos(r.logger, r.db, r.gitserverClient).GetInventory(ctx, repo, api.CommitID(r.oid), false)
+	inventory, err := bbckend.NewRepos(r.logger, r.db, r.gitserverClient).GetInventory(ctx, repo, bpi.CommitID(r.oid), fblse)
 	if err != nil {
 		return nil, err
 	}
-	stats := make([]*languageStatisticsResolver, 0, len(inventory.Languages))
-	for _, lang := range inventory.Languages {
-		stats = append(stats, &languageStatisticsResolver{
-			l: lang,
+	stbts := mbke([]*lbngubgeStbtisticsResolver, 0, len(inventory.Lbngubges))
+	for _, lbng := rbnge inventory.Lbngubges {
+		stbts = bppend(stbts, &lbngubgeStbtisticsResolver{
+			l: lbng,
 		})
 	}
-	return stats, nil
+	return stbts, nil
 }
 
 type AncestorsArgs struct {
-	graphqlutil.ConnectionArgs
+	grbphqlutil.ConnectionArgs
 	Query       *string
-	Path        *string
+	Pbth        *string
 	Follow      bool
 	After       *string
 	AfterCursor *string
 	Before      *string
 }
 
-func (r *GitCommitResolver) Ancestors(ctx context.Context, args *AncestorsArgs) (*gitCommitConnectionResolver, error) {
+func (r *GitCommitResolver) Ancestors(ctx context.Context, brgs *AncestorsArgs) (*gitCommitConnectionResolver, error) {
 	return &gitCommitConnectionResolver{
 		db:              r.db,
 		gitserverClient: r.gitserverClient,
-		revisionRange:   string(r.oid),
-		first:           args.ConnectionArgs.First,
-		query:           args.Query,
-		path:            args.Path,
-		follow:          args.Follow,
-		after:           args.After,
-		afterCursor:     args.AfterCursor,
-		before:          args.Before,
+		revisionRbnge:   string(r.oid),
+		first:           brgs.ConnectionArgs.First,
+		query:           brgs.Query,
+		pbth:            brgs.Pbth,
+		follow:          brgs.Follow,
+		bfter:           brgs.After,
+		bfterCursor:     brgs.AfterCursor,
+		before:          brgs.Before,
 		repo:            r.repoResolver,
 	}, nil
 }
 
-func (r *GitCommitResolver) Diff(ctx context.Context, args *struct {
-	Base *string
-}) (*RepositoryComparisonResolver, error) {
+func (r *GitCommitResolver) Diff(ctx context.Context, brgs *struct {
+	Bbse *string
+}) (*RepositoryCompbrisonResolver, error) {
 	oidString := string(r.oid)
-	base := oidString + "~"
-	if args.Base != nil {
-		base = *args.Base
+	bbse := oidString + "~"
+	if brgs.Bbse != nil {
+		bbse = *brgs.Bbse
 	}
-	return NewRepositoryComparison(ctx, r.db, r.gitserverClient, r.repoResolver, &RepositoryComparisonInput{
-		Base:         &base,
-		Head:         &oidString,
-		FetchMissing: false,
+	return NewRepositoryCompbrison(ctx, r.db, r.gitserverClient, r.repoResolver, &RepositoryCompbrisonInput{
+		Bbse:         &bbse,
+		Hebd:         &oidString,
+		FetchMissing: fblse,
 	})
 }
 
-func (r *GitCommitResolver) BehindAhead(ctx context.Context, args *struct {
+func (r *GitCommitResolver) BehindAhebd(ctx context.Context, brgs *struct {
 	Revspec string
-}) (*behindAheadCountsResolver, error) {
-	counts, err := r.gitserverClient.GetBehindAhead(ctx, r.gitRepo, args.Revspec, string(r.oid))
+}) (*behindAhebdCountsResolver, error) {
+	counts, err := r.gitserverClient.GetBehindAhebd(ctx, r.gitRepo, brgs.Revspec, string(r.oid))
 	if err != nil {
 		return nil, err
 	}
 
-	return &behindAheadCountsResolver{
+	return &behindAhebdCountsResolver{
 		behind: int32(counts.Behind),
-		ahead:  int32(counts.Ahead),
+		bhebd:  int32(counts.Ahebd),
 	}, nil
 }
 
-type behindAheadCountsResolver struct{ behind, ahead int32 }
+type behindAhebdCountsResolver struct{ behind, bhebd int32 }
 
-func (r *behindAheadCountsResolver) Behind() int32 { return r.behind }
-func (r *behindAheadCountsResolver) Ahead() int32  { return r.ahead }
+func (r *behindAhebdCountsResolver) Behind() int32 { return r.behind }
+func (r *behindAhebdCountsResolver) Ahebd() int32  { return r.bhebd }
 
-// inputRevOrImmutableRev returns the input revspec, if it is provided and nonempty. Otherwise it returns the
-// canonical OID for the revision.
-func (r *GitCommitResolver) inputRevOrImmutableRev() string {
+// inputRevOrImmutbbleRev returns the input revspec, if it is provided bnd nonempty. Otherwise it returns the
+// cbnonicbl OID for the revision.
+func (r *GitCommitResolver) inputRevOrImmutbbleRev() string {
 	if r.inputRev != nil && *r.inputRev != "" {
 		return *r.inputRev
 	}
 	return string(r.oid)
 }
 
-// repoRevURL returns the URL path prefix to use when constructing URLs to resources at this
-// revision. Unlike inputRevOrImmutableRev, it does NOT use the OID if no input revspec is
-// given. This is because the convention in the frontend is for repo-rev URLs to omit the "@rev"
-// portion (unlike for commit page URLs, which must include some revspec in
+// repoRevURL returns the URL pbth prefix to use when constructing URLs to resources bt this
+// revision. Unlike inputRevOrImmutbbleRev, it does NOT use the OID if no input revspec is
+// given. This is becbuse the convention in the frontend is for repo-rev URLs to omit the "@rev"
+// portion (unlike for commit pbge URLs, which must include some revspec in
 // "/REPO/-/commit/REVSPEC").
 func (r *GitCommitResolver) repoRevURL() *url.URL {
-	// Dereference to copy to avoid mutation
-	repoUrl := *r.repoResolver.RepoMatch.URL()
-	var rev string
+	// Dereference to copy to bvoid mutbtion
+	repoUrl := *r.repoResolver.RepoMbtch.URL()
+	vbr rev string
 	if r.inputRev != nil {
-		rev = *r.inputRev // use the original input rev from the user
+		rev = *r.inputRev // use the originbl input rev from the user
 	} else {
 		rev = string(r.oid)
 	}
 	if rev != "" {
-		repoUrl.Path += "@" + rev
+		repoUrl.Pbth += "@" + rev
 	}
 	return &repoUrl
 }
 
-func (r *GitCommitResolver) canonicalRepoRevURL() *url.URL {
-	// Dereference to copy the URL to avoid mutation
-	repoUrl := *r.repoResolver.RepoMatch.URL()
-	repoUrl.Path += "@" + string(r.oid)
+func (r *GitCommitResolver) cbnonicblRepoRevURL() *url.URL {
+	// Dereference to copy the URL to bvoid mutbtion
+	repoUrl := *r.repoResolver.RepoMbtch.URL()
+	repoUrl.Pbth += "@" + string(r.oid)
 	return &repoUrl
 }
 
-func (r *GitCommitResolver) Ownership(ctx context.Context, args ListOwnershipArgs) (OwnershipConnectionResolver, error) {
-	return EnterpriseResolvers.ownResolver.GitCommitOwnership(ctx, r, args)
+func (r *GitCommitResolver) Ownership(ctx context.Context, brgs ListOwnershipArgs) (OwnershipConnectionResolver, error) {
+	return EnterpriseResolvers.ownResolver.GitCommitOwnership(ctx, r, brgs)
 }

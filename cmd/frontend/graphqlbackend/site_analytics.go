@@ -1,113 +1,113 @@
-package graphqlbackend
+pbckbge grbphqlbbckend
 
 import (
 	"context"
 
-	"github.com/sourcegraph/sourcegraph/internal/adminanalytics"
-	"github.com/sourcegraph/sourcegraph/internal/auth"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/featureflag"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bdminbnblytics"
+	"github.com/sourcegrbph/sourcegrbph/internbl/buth"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/febtureflbg"
 )
 
-type siteAnalyticsResolver struct {
-	db    database.DB
-	cache bool
+type siteAnblyticsResolver struct {
+	db    dbtbbbse.DB
+	cbche bool
 }
 
-/* Analytics root resolver */
-func (r *siteResolver) Analytics(ctx context.Context) (*siteAnalyticsResolver, error) {
-	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+/* Anblytics root resolver */
+func (r *siteResolver) Anblytics(ctx context.Context) (*siteAnblyticsResolver, error) {
+	if err := buth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 		return nil, err
 	}
 
-	cache := !featureflag.FromContext(ctx).GetBoolOr("admin-analytics-cache-disabled", false)
+	cbche := !febtureflbg.FromContext(ctx).GetBoolOr("bdmin-bnblytics-cbche-disbbled", fblse)
 
-	return &siteAnalyticsResolver{r.db, cache}, nil
+	return &siteAnblyticsResolver{r.db, cbche}, nil
 }
 
-/* Search */
+/* Sebrch */
 
-func (r *siteAnalyticsResolver) Search(ctx context.Context, args *struct {
-	DateRange *string
+func (r *siteAnblyticsResolver) Sebrch(ctx context.Context, brgs *struct {
+	DbteRbnge *string
 	Grouping  *string
-}) *adminanalytics.Search {
-	return &adminanalytics.Search{Ctx: ctx, DateRange: *args.DateRange, Grouping: *args.Grouping, DB: r.db, Cache: r.cache}
+}) *bdminbnblytics.Sebrch {
+	return &bdminbnblytics.Sebrch{Ctx: ctx, DbteRbnge: *brgs.DbteRbnge, Grouping: *brgs.Grouping, DB: r.db, Cbche: r.cbche}
 }
 
 /* Notebooks */
 
-func (r *siteAnalyticsResolver) Notebooks(ctx context.Context, args *struct {
-	DateRange *string
+func (r *siteAnblyticsResolver) Notebooks(ctx context.Context, brgs *struct {
+	DbteRbnge *string
 	Grouping  *string
-}) *adminanalytics.Notebooks {
-	return &adminanalytics.Notebooks{Ctx: ctx, DateRange: *args.DateRange, Grouping: *args.Grouping, DB: r.db, Cache: r.cache}
+}) *bdminbnblytics.Notebooks {
+	return &bdminbnblytics.Notebooks{Ctx: ctx, DbteRbnge: *brgs.DbteRbnge, Grouping: *brgs.Grouping, DB: r.db, Cbche: r.cbche}
 }
 
 /* Users */
 
-func (r *siteAnalyticsResolver) Users(ctx context.Context, args *struct {
-	DateRange *string
+func (r *siteAnblyticsResolver) Users(ctx context.Context, brgs *struct {
+	DbteRbnge *string
 	Grouping  *string
-}) (*adminanalytics.Users, error) {
-	return &adminanalytics.Users{Ctx: ctx, DateRange: *args.DateRange, Grouping: *args.Grouping, DB: r.db, Cache: r.cache}, nil
+}) (*bdminbnblytics.Users, error) {
+	return &bdminbnblytics.Users{Ctx: ctx, DbteRbnge: *brgs.DbteRbnge, Grouping: *brgs.Grouping, DB: r.db, Cbche: r.cbche}, nil
 }
 
 /* Code-intel */
 
-func (r *siteAnalyticsResolver) CodeIntel(ctx context.Context, args *struct {
-	DateRange *string
+func (r *siteAnblyticsResolver) CodeIntel(ctx context.Context, brgs *struct {
+	DbteRbnge *string
 	Grouping  *string
-}) *adminanalytics.CodeIntel {
-	return &adminanalytics.CodeIntel{Ctx: ctx, DateRange: *args.DateRange, Grouping: *args.Grouping, DB: r.db, Cache: r.cache}
+}) *bdminbnblytics.CodeIntel {
+	return &bdminbnblytics.CodeIntel{Ctx: ctx, DbteRbnge: *brgs.DbteRbnge, Grouping: *brgs.Grouping, DB: r.db, Cbche: r.cbche}
 }
 
-/* Code-intel by language */
+/* Code-intel by lbngubge */
 
-func (r *siteAnalyticsResolver) CodeIntelByLanguage(ctx context.Context, args *struct {
-	DateRange *string
-}) ([]*adminanalytics.CodeIntelByLanguage, error) {
-	return adminanalytics.GetCodeIntelByLanguage(ctx, r.db, r.cache, *args.DateRange)
+func (r *siteAnblyticsResolver) CodeIntelByLbngubge(ctx context.Context, brgs *struct {
+	DbteRbnge *string
+}) ([]*bdminbnblytics.CodeIntelByLbngubge, error) {
+	return bdminbnblytics.GetCodeIntelByLbngubge(ctx, r.db, r.cbche, *brgs.DbteRbnge)
 }
 
-/* Code-intel by language */
+/* Code-intel by lbngubge */
 
-func (r *siteAnalyticsResolver) CodeIntelTopRepositories(ctx context.Context, args *struct {
-	DateRange *string
-}) ([]*adminanalytics.CodeIntelTopRepositories, error) {
-	return adminanalytics.GetCodeIntelTopRepositories(ctx, r.db, r.cache, *args.DateRange)
+func (r *siteAnblyticsResolver) CodeIntelTopRepositories(ctx context.Context, brgs *struct {
+	DbteRbnge *string
+}) ([]*bdminbnblytics.CodeIntelTopRepositories, error) {
+	return bdminbnblytics.GetCodeIntelTopRepositories(ctx, r.db, r.cbche, *brgs.DbteRbnge)
 }
 
 /* Repos */
 
-func (r *siteAnalyticsResolver) Repos(ctx context.Context) (*adminanalytics.ReposSummary, error) {
-	repos := adminanalytics.Repos{DB: r.db, Cache: r.cache}
+func (r *siteAnblyticsResolver) Repos(ctx context.Context) (*bdminbnblytics.ReposSummbry, error) {
+	repos := bdminbnblytics.Repos{DB: r.db, Cbche: r.cbche}
 
-	return repos.Summary(ctx)
+	return repos.Summbry(ctx)
 }
 
-/* Batch changes */
+/* Bbtch chbnges */
 
-func (r *siteAnalyticsResolver) BatchChanges(ctx context.Context, args *struct {
-	DateRange *string
+func (r *siteAnblyticsResolver) BbtchChbnges(ctx context.Context, brgs *struct {
+	DbteRbnge *string
 	Grouping  *string
-}) *adminanalytics.BatchChanges {
-	return &adminanalytics.BatchChanges{Ctx: ctx, DateRange: *args.DateRange, Grouping: *args.Grouping, DB: r.db, Cache: r.cache}
+}) *bdminbnblytics.BbtchChbnges {
+	return &bdminbnblytics.BbtchChbnges{Ctx: ctx, DbteRbnge: *brgs.DbteRbnge, Grouping: *brgs.Grouping, DB: r.db, Cbche: r.cbche}
 }
 
 /* Extensions */
 
-func (r *siteAnalyticsResolver) Extensions(ctx context.Context, args *struct {
-	DateRange *string
+func (r *siteAnblyticsResolver) Extensions(ctx context.Context, brgs *struct {
+	DbteRbnge *string
 	Grouping  *string
-}) *adminanalytics.Extensions {
-	return &adminanalytics.Extensions{Ctx: ctx, DateRange: *args.DateRange, Grouping: *args.Grouping, DB: r.db, Cache: r.cache}
+}) *bdminbnblytics.Extensions {
+	return &bdminbnblytics.Extensions{Ctx: ctx, DbteRbnge: *brgs.DbteRbnge, Grouping: *brgs.Grouping, DB: r.db, Cbche: r.cbche}
 }
 
 /* Insights */
 
-func (r *siteAnalyticsResolver) CodeInsights(ctx context.Context, args *struct {
-	DateRange *string
+func (r *siteAnblyticsResolver) CodeInsights(ctx context.Context, brgs *struct {
+	DbteRbnge *string
 	Grouping  *string
-}) *adminanalytics.CodeInsights {
-	return &adminanalytics.CodeInsights{Ctx: ctx, DateRange: *args.DateRange, Grouping: *args.Grouping, DB: r.db, Cache: r.cache}
+}) *bdminbnblytics.CodeInsights {
+	return &bdminbnblytics.CodeInsights{Ctx: ctx, DbteRbnge: *brgs.DbteRbnge, Grouping: *brgs.Grouping, DB: r.db, Cbche: r.cbche}
 }

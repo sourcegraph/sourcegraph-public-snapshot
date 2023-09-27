@@ -1,4 +1,4 @@
-package productsubscription
+pbckbge productsubscription
 
 import (
 	"bytes"
@@ -13,49 +13,49 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
-	"github.com/sourcegraph/sourcegraph/internal/license"
-	"github.com/sourcegraph/sourcegraph/internal/licensing"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/sourcegraph/sourcegraph/lib/pointers"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbmocks"
+	"github.com/sourcegrbph/sourcegrbph/internbl/license"
+	"github.com/sourcegrbph/sourcegrbph/internbl/licensing"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/lib/pointers"
 )
 
-func TestNewLicenseCheckHandler(t *testing.T) {
-	makeToken := func(licenseKey string) []byte {
-		token := license.GenerateLicenseKeyBasedAccessToken(licenseKey)
+func TestNewLicenseCheckHbndler(t *testing.T) {
+	mbkeToken := func(licenseKey string) []byte {
+		token := license.GenerbteLicenseKeyBbsedAccessToken(licenseKey)
 		return []byte(token)
 	}
 	now := time.Now()
 	hourAgo := now.Add(-1 * time.Hour)
 
-	validLicense := dbLicense{
-		LicenseKey:        "valid-license-key",
-		LicenseCheckToken: makeToken("valid-token"),
+	vblidLicense := dbLicense{
+		LicenseKey:        "vblid-license-key",
+		LicenseCheckToken: mbkeToken("vblid-token"),
 	}
 	expiredLicense := dbLicense{
 		LicenseKey:        "expired-license-key",
-		LicenseCheckToken: makeToken("expired-site-id-token"),
+		LicenseCheckToken: mbkeToken("expired-site-id-token"),
 		LicenseExpiresAt:  &hourAgo,
 	}
 	revokedLicense := dbLicense{
 		LicenseKey:        "revoked-license-key",
-		LicenseCheckToken: makeToken("revoked-site-id-token"),
+		LicenseCheckToken: mbkeToken("revoked-site-id-token"),
 		RevokedAt:         &hourAgo,
 	}
-	assignedLicense := dbLicense{
-		LicenseKey:        "assigned-license-key",
-		LicenseCheckToken: makeToken("assigned-site-id-token"),
-		SiteID:            pointers.Ptr("C2582A60-573C-4EBC-BDD4-BC57A73CF010"), // uppercase to test case sensitivity
+	bssignedLicense := dbLicense{
+		LicenseKey:        "bssigned-license-key",
+		LicenseCheckToken: mbkeToken("bssigned-site-id-token"),
+		SiteID:            pointers.Ptr("C2582A60-573C-4EBC-BDD4-BC57A73CF010"), // uppercbse to test cbse sensitivity
 	}
 	licenses := []dbLicense{
-		validLicense,
+		vblidLicense,
 		expiredLicense,
 		revokedLicense,
-		assignedLicense,
+		bssignedLicense,
 	}
 
 	getBody := func(siteID string) string {
-		s := "a43d50fa-23b6-41e9-86c9-558dd1f7ad54"
+		s := "b43d50fb-23b6-41e9-86c9-558dd1f7bd54"
 		if siteID != "" {
 			s = siteID
 		}
@@ -65,16 +65,16 @@ func TestNewLicenseCheckHandler(t *testing.T) {
 	db := dbmocks.NewMockDB()
 
 	mockedEventLogs := dbmocks.NewStrictMockEventLogStore()
-	mockedEventLogs.InsertFunc.SetDefaultReturn(nil)
-	db.EventLogsFunc.SetDefaultReturn(mockedEventLogs)
+	mockedEventLogs.InsertFunc.SetDefbultReturn(nil)
+	db.EventLogsFunc.SetDefbultReturn(mockedEventLogs)
 
 	mocks.licenses.GetByToken = func(tokenHexEncoded string) (*dbLicense, error) {
 		token, err := hex.DecodeString(tokenHexEncoded)
 		if err != nil {
 			return nil, err
 		}
-		for _, license := range licenses {
-			if license.LicenseCheckToken != nil && bytes.Equal(license.LicenseCheckToken, token) {
+		for _, license := rbnge licenses {
+			if license.LicenseCheckToken != nil && bytes.Equbl(license.LicenseCheckToken, token) {
 				return &license, nil
 			}
 		}
@@ -82,111 +82,111 @@ func TestNewLicenseCheckHandler(t *testing.T) {
 	}
 
 	tests := []struct {
-		name       string
+		nbme       string
 		body       string
-		headers    http.Header
-		want       licensing.LicenseCheckResponse
-		wantStatus int
+		hebders    http.Hebder
+		wbnt       licensing.LicenseCheckResponse
+		wbntStbtus int
 	}{
 		{
-			name:       "no access token",
+			nbme:       "no bccess token",
 			body:       getBody(""),
-			headers:    nil,
-			want:       licensing.LicenseCheckResponse{Error: ErrInvalidAccessTokenMsg},
-			wantStatus: http.StatusUnauthorized,
+			hebders:    nil,
+			wbnt:       licensing.LicenseCheckResponse{Error: ErrInvblidAccessTokenMsg},
+			wbntStbtus: http.StbtusUnbuthorized,
 		},
 		{
-			name: "invalid access token",
+			nbme: "invblid bccess token",
 			body: getBody(""),
-			headers: http.Header{
-				"Authorization": {"Bearer invalid-token"},
+			hebders: http.Hebder{
+				"Authorizbtion": {"Bebrer invblid-token"},
 			},
-			want:       licensing.LicenseCheckResponse{Error: ErrInvalidAccessTokenMsg},
-			wantStatus: http.StatusUnauthorized,
+			wbnt:       licensing.LicenseCheckResponse{Error: ErrInvblidAccessTokenMsg},
+			wbntStbtus: http.StbtusUnbuthorized,
 		},
 		{
-			name: "expired license access token",
+			nbme: "expired license bccess token",
 			body: getBody(""),
-			headers: http.Header{
-				"Authorization": {"Bearer " + hex.EncodeToString(expiredLicense.LicenseCheckToken)},
+			hebders: http.Hebder{
+				"Authorizbtion": {"Bebrer " + hex.EncodeToString(expiredLicense.LicenseCheckToken)},
 			},
-			want:       licensing.LicenseCheckResponse{Data: &licensing.LicenseCheckResponseData{IsValid: false, Reason: ReasonLicenseExpired}},
-			wantStatus: http.StatusForbidden,
+			wbnt:       licensing.LicenseCheckResponse{Dbtb: &licensing.LicenseCheckResponseDbtb{IsVblid: fblse, Rebson: RebsonLicenseExpired}},
+			wbntStbtus: http.StbtusForbidden,
 		},
 		{
-			name: "revoked license access token",
+			nbme: "revoked license bccess token",
 			body: getBody(""),
-			headers: http.Header{
-				"Authorization": {"Bearer " + hex.EncodeToString(revokedLicense.LicenseCheckToken)},
+			hebders: http.Hebder{
+				"Authorizbtion": {"Bebrer " + hex.EncodeToString(revokedLicense.LicenseCheckToken)},
 			},
-			want:       licensing.LicenseCheckResponse{Data: &licensing.LicenseCheckResponseData{IsValid: false, Reason: ReasonLicenseRevokedMsg}},
-			wantStatus: http.StatusForbidden,
+			wbnt:       licensing.LicenseCheckResponse{Dbtb: &licensing.LicenseCheckResponseDbtb{IsVblid: fblse, Rebson: RebsonLicenseRevokedMsg}},
+			wbntStbtus: http.StbtusForbidden,
 		},
 		{
-			name: "valid access token, invalid request body",
-			body: "invalid body",
-			headers: http.Header{
-				"Authorization": {"Bearer " + hex.EncodeToString(validLicense.LicenseCheckToken)},
+			nbme: "vblid bccess token, invblid request body",
+			body: "invblid body",
+			hebders: http.Hebder{
+				"Authorizbtion": {"Bebrer " + hex.EncodeToString(vblidLicense.LicenseCheckToken)},
 			},
-			want:       licensing.LicenseCheckResponse{Error: ErrInvalidRequestBodyMsg},
-			wantStatus: http.StatusBadRequest,
+			wbnt:       licensing.LicenseCheckResponse{Error: ErrInvblidRequestBodyMsg},
+			wbntStbtus: http.StbtusBbdRequest,
 		},
 		{
-			name: "valid access token, invalid site id (same license key used in multiple instances)",
-			headers: http.Header{
-				"Authorization": {"Bearer " + hex.EncodeToString(assignedLicense.LicenseCheckToken)},
+			nbme: "vblid bccess token, invblid site id (sbme license key used in multiple instbnces)",
+			hebders: http.Hebder{
+				"Authorizbtion": {"Bebrer " + hex.EncodeToString(bssignedLicense.LicenseCheckToken)},
 			},
 			body:       getBody(""),
-			want:       licensing.LicenseCheckResponse{Data: &licensing.LicenseCheckResponseData{IsValid: true, Reason: ReasonLicenseIsAlreadyInUseMsg}},
-			wantStatus: http.StatusOK,
+			wbnt:       licensing.LicenseCheckResponse{Dbtb: &licensing.LicenseCheckResponseDbtb{IsVblid: true, Rebson: RebsonLicenseIsAlrebdyInUseMsg}},
+			wbntStbtus: http.StbtusOK,
 		},
 		{
-			name: "valid access token, valid site id",
-			body: getBody(strings.ToLower(*assignedLicense.SiteID)),
-			headers: http.Header{
-				"Authorization": {"Bearer " + hex.EncodeToString(assignedLicense.LicenseCheckToken)},
+			nbme: "vblid bccess token, vblid site id",
+			body: getBody(strings.ToLower(*bssignedLicense.SiteID)),
+			hebders: http.Hebder{
+				"Authorizbtion": {"Bebrer " + hex.EncodeToString(bssignedLicense.LicenseCheckToken)},
 			},
-			want:       licensing.LicenseCheckResponse{Data: &licensing.LicenseCheckResponseData{IsValid: true}},
-			wantStatus: http.StatusOK,
+			wbnt:       licensing.LicenseCheckResponse{Dbtb: &licensing.LicenseCheckResponseDbtb{IsVblid: true}},
+			wbntStbtus: http.StbtusOK,
 		},
 		{
-			name: "valid access token, invalid uuid",
+			nbme: "vblid bccess token, invblid uuid",
 			body: getBody("some-non-uuid-string"),
-			headers: http.Header{
-				"Authorization": {"Bearer " + hex.EncodeToString(validLicense.LicenseCheckToken)},
+			hebders: http.Hebder{
+				"Authorizbtion": {"Bebrer " + hex.EncodeToString(vblidLicense.LicenseCheckToken)},
 			},
-			want:       licensing.LicenseCheckResponse{Error: ErrInvalidSiteIDMsg},
-			wantStatus: http.StatusBadRequest,
+			wbnt:       licensing.LicenseCheckResponse{Error: ErrInvblidSiteIDMsg},
+			wbntStbtus: http.StbtusBbdRequest,
 		},
 		{
-			name: "valid access token, new site ID",
-			body: getBody("85d3d2ed-d2d0-4a88-a49a-79af730f5ed0"),
-			headers: http.Header{
-				"Authorization": {"Bearer " + hex.EncodeToString(validLicense.LicenseCheckToken)},
+			nbme: "vblid bccess token, new site ID",
+			body: getBody("85d3d2ed-d2d0-4b88-b49b-79bf730f5ed0"),
+			hebders: http.Hebder{
+				"Authorizbtion": {"Bebrer " + hex.EncodeToString(vblidLicense.LicenseCheckToken)},
 			},
-			want:       licensing.LicenseCheckResponse{Data: &licensing.LicenseCheckResponseData{IsValid: true}},
-			wantStatus: http.StatusOK,
+			wbnt:       licensing.LicenseCheckResponse{Dbtb: &licensing.LicenseCheckResponseDbtb{IsVblid: true}},
+			wbntStbtus: http.StbtusOK,
 		},
 	}
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
+	for _, test := rbnge tests {
+		t.Run(test.nbme, func(t *testing.T) {
 			res := httptest.NewRecorder()
-			req, err := http.NewRequest(http.MethodPost, "/", strings.NewReader(test.body))
+			req, err := http.NewRequest(http.MethodPost, "/", strings.NewRebder(test.body))
 			require.NoError(t, err)
 
-			for k, v := range test.headers {
-				req.Header[k] = v
+			for k, v := rbnge test.hebders {
+				req.Hebder[k] = v
 			}
 
-			handler := NewLicenseCheckHandler(db)
-			handler.ServeHTTP(res, req)
+			hbndler := NewLicenseCheckHbndler(db)
+			hbndler.ServeHTTP(res, req)
 
-			require.Equal(t, test.wantStatus, res.Code)
-			require.Equal(t, "application/json", res.Header().Get("Content-Type"))
+			require.Equbl(t, test.wbntStbtus, res.Code)
+			require.Equbl(t, "bpplicbtion/json", res.Hebder().Get("Content-Type"))
 
-			var got licensing.LicenseCheckResponse
-			_ = json.Unmarshal(res.Body.Bytes(), &got)
-			require.Equal(t, test.want, got)
+			vbr got licensing.LicenseCheckResponse
+			_ = json.Unmbrshbl(res.Body.Bytes(), &got)
+			require.Equbl(t, test.wbnt, got)
 		})
 	}
 }

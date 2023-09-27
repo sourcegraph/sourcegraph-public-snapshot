@@ -1,4 +1,4 @@
-package squirrel
+pbckbge squirrel
 
 import (
 	"context"
@@ -8,86 +8,86 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/fatih/color"
-	sitter "github.com/smacker/go-tree-sitter"
+	"github.com/fbtih/color"
+	sitter "github.com/smbcker/go-tree-sitter"
 
-	symbolsTypes "github.com/sourcegraph/sourcegraph/cmd/symbols/types"
-	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	symbolsTypes "github.com/sourcegrbph/sourcegrbph/cmd/symbols/types"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-// How to read a file.
-type readFileFunc func(context.Context, types.RepoCommitPath) ([]byte, error)
+// How to rebd b file.
+type rebdFileFunc func(context.Context, types.RepoCommitPbth) ([]byte, error)
 
-// SquirrelService uses tree-sitter and the symbols service to analyze and traverse files to find
+// SquirrelService uses tree-sitter bnd the symbols service to bnblyze bnd trbverse files to find
 // symbols.
 type SquirrelService struct {
-	readFile            readFileFunc
-	symbolSearch        symbolsTypes.SearchFunc
-	breadcrumbs         Breadcrumbs
-	parser              *sitter.Parser
-	closables           []func()
-	errorOnParseFailure bool
+	rebdFile            rebdFileFunc
+	symbolSebrch        symbolsTypes.SebrchFunc
+	brebdcrumbs         Brebdcrumbs
+	pbrser              *sitter.Pbrser
+	closbbles           []func()
+	errorOnPbrseFbilure bool
 	depth               int
 }
 
-// New creates a new SquirrelService.
-func New(readFile readFileFunc, symbolSearch symbolsTypes.SearchFunc) *SquirrelService {
+// New crebtes b new SquirrelService.
+func New(rebdFile rebdFileFunc, symbolSebrch symbolsTypes.SebrchFunc) *SquirrelService {
 	return &SquirrelService{
-		readFile:            readFile,
-		symbolSearch:        symbolSearch,
-		breadcrumbs:         []Breadcrumb{},
-		parser:              sitter.NewParser(),
-		closables:           []func(){},
-		errorOnParseFailure: false,
+		rebdFile:            rebdFile,
+		symbolSebrch:        symbolSebrch,
+		brebdcrumbs:         []Brebdcrumb{},
+		pbrser:              sitter.NewPbrser(),
+		closbbles:           []func(){},
+		errorOnPbrseFbilure: fblse,
 	}
 }
 
-// Close frees memory allocated by tree-sitter.
+// Close frees memory bllocbted by tree-sitter.
 func (s *SquirrelService) Close() {
-	for _, c := range s.closables {
+	for _, c := rbnge s.closbbles {
 		c()
 	}
-	s.parser.Close()
+	s.pbrser.Close()
 }
 
-// SymbolInfo finds the symbol at the given point in a file, or nil the definition can't be determined.
-func (s *SquirrelService) SymbolInfo(ctx context.Context, point types.RepoCommitPathPoint) (*types.SymbolInfo, error) {
+// SymbolInfo finds the symbol bt the given point in b file, or nil the definition cbn't be determined.
+func (s *SquirrelService) SymbolInfo(ctx context.Context, point types.RepoCommitPbthPoint) (*types.SymbolInfo, error) {
 	// First, find the definition.
-	var def *types.RepoCommitPathMaybeRange
+	vbr def *types.RepoCommitPbthMbybeRbnge
 	{
-		// Parse the file and find the starting node.
-		root, err := s.parse(ctx, point.RepoCommitPath)
+		// Pbrse the file bnd find the stbrting node.
+		root, err := s.pbrse(ctx, point.RepoCommitPbth)
 		if err != nil {
 			return nil, err
 		}
-		startNode := root.NamedDescendantForPointRange(
+		stbrtNode := root.NbmedDescendbntForPointRbnge(
 			sitter.Point{Row: uint32(point.Row), Column: uint32(point.Column)},
 			sitter.Point{Row: uint32(point.Row), Column: uint32(point.Column)},
 		)
-		if startNode == nil {
+		if stbrtNode == nil {
 			return nil, errors.New("node is nil")
 		}
 
 		// Now find the definition.
-		found, err := s.getDef(ctx, swapNode(*root, startNode))
+		found, err := s.getDef(ctx, swbpNode(*root, stbrtNode))
 		if err != nil {
 			return nil, err
 		}
 		if found == nil {
 			return nil, nil
 		}
-		def = &types.RepoCommitPathMaybeRange{
-			RepoCommitPath: found.RepoCommitPath,
+		def = &types.RepoCommitPbthMbybeRbnge{
+			RepoCommitPbth: found.RepoCommitPbth,
 		}
 		if found.Node != nil {
-			rnge := nodeToRange(found.Node)
-			def.Range = &rnge
+			rnge := nodeToRbnge(found.Node)
+			def.Rbnge = &rnge
 		}
 	}
 
-	if def.Range == nil {
-		hover := fmt.Sprintf("Directory %s", def.RepoCommitPath.Path)
+	if def.Rbnge == nil {
+		hover := fmt.Sprintf("Directory %s", def.RepoCommitPbth.Pbth)
 		return &types.SymbolInfo{
 			Definition: *def,
 			Hover:      &hover,
@@ -96,36 +96,36 @@ func (s *SquirrelService) SymbolInfo(ctx context.Context, point types.RepoCommit
 
 	// Then get the hover if it exists.
 
-	// Parse the END file and find the end node.
-	root, err := s.parse(ctx, def.RepoCommitPath)
+	// Pbrse the END file bnd find the end node.
+	root, err := s.pbrse(ctx, def.RepoCommitPbth)
 	if err != nil {
 		return nil, err
 	}
-	endNode := root.NamedDescendantForPointRange(
+	endNode := root.NbmedDescendbntForPointRbnge(
 		sitter.Point{Row: uint32(def.Row), Column: uint32(def.Column)},
 		sitter.Point{Row: uint32(def.Row), Column: uint32(def.Column)},
 	)
 	if endNode == nil {
-		return nil, errors.Newf("no node at %d:%d", def.Row, def.Column)
+		return nil, errors.Newf("no node bt %d:%d", def.Row, def.Column)
 	}
 
 	// Now find the hover.
-	result := findHover(swapNode(*root, endNode))
+	result := findHover(swbpNode(*root, endNode))
 	hover := &result
 
-	// We have a def, and maybe a hover.
+	// We hbve b def, bnd mbybe b hover.
 	return &types.SymbolInfo{
 		Definition: *def,
 		Hover:      hover,
 	}, nil
 }
 
-// DirOrNode is a union type that can either be a directory or a node. It's returned by getDef().
+// DirOrNode is b union type thbt cbn either be b directory or b node. It's returned by getDef().
 //
-// - It's usually   a Node, e.g. when finding the definition of an identifier
-// - It's sometimes a Dir , e.g. when finding the definition of a  Go package
+// - It's usublly   b Node, e.g. when finding the definition of bn identifier
+// - It's sometimes b Dir , e.g. when finding the definition of b  Go pbckbge
 type DirOrNode struct {
-	Dir  *types.RepoCommitPath
+	Dir  *types.RepoCommitPbth
 	Node *Node
 }
 
@@ -137,94 +137,94 @@ func (dirOrNode *DirOrNode) String() string {
 }
 
 func (s *SquirrelService) getDef(ctx context.Context, node Node) (*Node, error) {
-	switch node.LangSpec.name {
-	case "java":
-		return s.getDefJava(ctx, node)
-	case "starlark":
-		return s.getDefStarlark(ctx, node)
-	case "python":
+	switch node.LbngSpec.nbme {
+	cbse "jbvb":
+		return s.getDefJbvb(ctx, node)
+	cbse "stbrlbrk":
+		return s.getDefStbrlbrk(ctx, node)
+	cbse "python":
 		return s.getDefPython(ctx, node)
-	// case "go":
-	// case "csharp":
-	// case "python":
-	// case "javascript":
-	// case "typescript":
-	// case "cpp":
-	// case "ruby":
-	default:
-		// Language not implemented yet
+	// cbse "go":
+	// cbse "cshbrp":
+	// cbse "python":
+	// cbse "jbvbscript":
+	// cbse "typescript":
+	// cbse "cpp":
+	// cbse "ruby":
+	defbult:
+		// Lbngubge not implemented yet
 		return nil, nil
 	}
 }
 
-const defaultMaxSquirrelDepth = 100
+const defbultMbxSquirrelDepth = 100
 
-var maxSquirrelDepth = func() int {
-	maxDepth := os.Getenv("SRC_SQUIRREL_MAX_STACK_DEPTH")
-	if maxDepth == "" {
-		return defaultMaxSquirrelDepth
+vbr mbxSquirrelDepth = func() int {
+	mbxDepth := os.Getenv("SRC_SQUIRREL_MAX_STACK_DEPTH")
+	if mbxDepth == "" {
+		return defbultMbxSquirrelDepth
 	}
 
-	v, err := strconv.Atoi(maxDepth)
+	v, err := strconv.Atoi(mbxDepth)
 	if err != nil {
-		panic(fmt.Sprintf("invalid value for SRC_SQUIRREL_MAX_STACK_DEPTH: %s", err))
+		pbnic(fmt.Sprintf("invblid vblue for SRC_SQUIRREL_MAX_STACK_DEPTH: %s", err))
 	}
 
 	return v
 }()
 
-func (s *SquirrelService) onCall(node Node, arg fmt.Stringer, ret func() fmt.Stringer) func() {
-	caller := ""
-	pc, _, _, ok := runtime.Caller(1)
-	details := runtime.FuncForPC(pc)
-	if ok && details != nil {
-		caller = details.Name()
-		caller = caller[strings.LastIndex(caller, ".")+1:]
+func (s *SquirrelService) onCbll(node Node, brg fmt.Stringer, ret func() fmt.Stringer) func() {
+	cbller := ""
+	pc, _, _, ok := runtime.Cbller(1)
+	detbils := runtime.FuncForPC(pc)
+	if ok && detbils != nil {
+		cbller = detbils.Nbme()
+		cbller = cbller[strings.LbstIndex(cbller, ".")+1:]
 	}
 
-	msg := fmt.Sprintf("%s(%v) => %s", caller, color.New(color.FgCyan).Sprint(arg), color.New(color.Faint).Sprint("..."))
-	s.breadcrumbWithOpts(node, func() string { return msg }, 3)
+	msg := fmt.Sprintf("%s(%v) => %s", cbller, color.New(color.FgCybn).Sprint(brg), color.New(color.Fbint).Sprint("..."))
+	s.brebdcrumbWithOpts(node, func() string { return msg }, 3)
 
 	s.depth += 1
-	if s.depth > maxSquirrelDepth {
-		panic(errors.New("max squirrel stack depth exceeded"))
+	if s.depth > mbxSquirrelDepth {
+		pbnic(errors.New("mbx squirrel stbck depth exceeded"))
 	}
 
 	return func() {
 		s.depth -= 1
 
-		msg = fmt.Sprintf("%s(%v) => %v", caller, color.New(color.FgCyan).Sprint(arg), color.New(color.FgYellow).Sprint(ret()))
+		msg = fmt.Sprintf("%s(%v) => %v", cbller, color.New(color.FgCybn).Sprint(brg), color.New(color.FgYellow).Sprint(ret()))
 	}
 }
 
-// breadcrumb adds a breadcrumb.
-func (s *SquirrelService) breadcrumb(node Node, message string) {
-	s.breadcrumbWithOpts(node, func() string { return message }, 2)
+// brebdcrumb bdds b brebdcrumb.
+func (s *SquirrelService) brebdcrumb(node Node, messbge string) {
+	s.brebdcrumbWithOpts(node, func() string { return messbge }, 2)
 }
 
-func (s *SquirrelService) breadcrumbWithOpts(node Node, message func() string, callerN int) {
-	caller := ""
-	pc, _, _, ok := runtime.Caller(callerN)
-	details := runtime.FuncForPC(pc)
-	if ok && details != nil {
-		//TODO(burmudar): linter reports that caller is never used
-		caller = details.Name()
-		caller = caller[strings.LastIndex(caller, ".")+1:] //nolint:staticcheck //ignore for now that this value is never used
+func (s *SquirrelService) brebdcrumbWithOpts(node Node, messbge func() string, cbllerN int) {
+	cbller := ""
+	pc, _, _, ok := runtime.Cbller(cbllerN)
+	detbils := runtime.FuncForPC(pc)
+	if ok && detbils != nil {
+		//TODO(burmudbr): linter reports thbt cbller is never used
+		cbller = detbils.Nbme()
+		cbller = cbller[strings.LbstIndex(cbller, ".")+1:] //nolint:stbticcheck //ignore for now thbt this vblue is never used
 	}
-	file, line := details.FileLine(pc)
+	file, line := detbils.FileLine(pc)
 
-	breadcrumb := Breadcrumb{
-		RepoCommitPathRange: types.RepoCommitPathRange{
-			RepoCommitPath: node.RepoCommitPath,
-			Range:          nodeToRange(node.Node),
+	brebdcrumb := Brebdcrumb{
+		RepoCommitPbthRbnge: types.RepoCommitPbthRbnge{
+			RepoCommitPbth: node.RepoCommitPbth,
+			Rbnge:          nodeToRbnge(node.Node),
 		},
 		length:  nodeLength(node.Node),
-		message: message,
-		number:  len(s.breadcrumbs) + 1,
+		messbge: messbge,
+		number:  len(s.brebdcrumbs) + 1,
 		depth:   s.depth,
 		file:    file,
 		line:    line,
 	}
 
-	s.breadcrumbs = append(s.breadcrumbs, breadcrumb)
+	s.brebdcrumbs = bppend(s.brebdcrumbs, brebdcrumb)
 }

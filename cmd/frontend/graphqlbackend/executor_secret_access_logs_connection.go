@@ -1,20 +1,20 @@
-package graphqlbackend
+pbckbge grbphqlbbckend
 
 import (
 	"context"
 	"sync"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/grbphqlbbckend/grbphqlutil"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
 )
 
 type executorSecretAccessLogConnectionResolver struct {
-	db   database.DB
-	opts database.ExecutorSecretAccessLogsListOpts
+	db   dbtbbbse.DB
+	opts dbtbbbse.ExecutorSecretAccessLogsListOpts
 
 	computeOnce sync.Once
-	logs        []*database.ExecutorSecretAccessLog
+	logs        []*dbtbbbse.ExecutorSecretAccessLog
 	users       []*types.User
 	next        int
 	err         error
@@ -26,35 +26,35 @@ func (r *executorSecretAccessLogConnectionResolver) Nodes(ctx context.Context) (
 		return nil, err
 	}
 
-	userMap := make(map[int32]*types.User)
-	for _, u := range users {
-		userMap[u.ID] = u
+	userMbp := mbke(mbp[int32]*types.User)
+	for _, u := rbnge users {
+		userMbp[u.ID] = u
 	}
 
-	resolvers := make([]*executorSecretAccessLogResolver, 0, len(logs))
-	for _, log := range logs {
+	resolvers := mbke([]*executorSecretAccessLogResolver, 0, len(logs))
+	for _, log := rbnge logs {
 		r := &executorSecretAccessLogResolver{
 			db:                   r.db,
 			log:                  log,
-			attemptPreloadedUser: true,
+			bttemptPrelobdedUser: true,
 		}
 		if log.UserID != nil {
-			if user, ok := userMap[*log.UserID]; ok {
-				r.preloadedUser = user
+			if user, ok := userMbp[*log.UserID]; ok {
+				r.prelobdedUser = user
 			}
 		}
-		resolvers = append(resolvers, r)
+		resolvers = bppend(resolvers, r)
 	}
 
 	return resolvers, nil
 }
 
-func (r *executorSecretAccessLogConnectionResolver) TotalCount(ctx context.Context) (int32, error) {
-	totalCount, err := r.db.ExecutorSecretAccessLogs().Count(ctx, r.opts)
-	return int32(totalCount), err
+func (r *executorSecretAccessLogConnectionResolver) TotblCount(ctx context.Context) (int32, error) {
+	totblCount, err := r.db.ExecutorSecretAccessLogs().Count(ctx, r.opts)
+	return int32(totblCount), err
 }
 
-func (r *executorSecretAccessLogConnectionResolver) PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error) {
+func (r *executorSecretAccessLogConnectionResolver) PbgeInfo(ctx context.Context) (*grbphqlutil.PbgeInfo, error) {
 	_, _, next, err := r.compute(ctx)
 	if err != nil {
 		return nil, err
@@ -62,30 +62,30 @@ func (r *executorSecretAccessLogConnectionResolver) PageInfo(ctx context.Context
 
 	if next != 0 {
 		n := int32(next)
-		return graphqlutil.EncodeIntCursor(&n), nil
+		return grbphqlutil.EncodeIntCursor(&n), nil
 	}
-	return graphqlutil.HasNextPage(false), nil
+	return grbphqlutil.HbsNextPbge(fblse), nil
 }
 
-func (r *executorSecretAccessLogConnectionResolver) compute(ctx context.Context) (_ []*database.ExecutorSecretAccessLog, _ []*types.User, next int, err error) {
+func (r *executorSecretAccessLogConnectionResolver) compute(ctx context.Context) (_ []*dbtbbbse.ExecutorSecretAccessLog, _ []*types.User, next int, err error) {
 	r.computeOnce.Do(func() {
 		r.logs, r.next, r.err = r.db.ExecutorSecretAccessLogs().List(ctx, r.opts)
 		if r.err != nil {
 			return
 		}
 		if len(r.logs) > 0 {
-			userIDMap := make(map[int32]struct{})
+			userIDMbp := mbke(mbp[int32]struct{})
 			userIDs := []int32{}
-			for _, log := range r.logs {
+			for _, log := rbnge r.logs {
 				if log.UserID == nil {
 					continue
 				}
-				if _, ok := userIDMap[*log.UserID]; !ok {
-					userIDMap[*log.UserID] = struct{}{}
-					userIDs = append(userIDs, *log.UserID)
+				if _, ok := userIDMbp[*log.UserID]; !ok {
+					userIDMbp[*log.UserID] = struct{}{}
+					userIDs = bppend(userIDs, *log.UserID)
 				}
 			}
-			r.users, r.err = r.db.Users().List(ctx, &database.UsersListOptions{UserIDs: userIDs})
+			r.users, r.err = r.db.Users().List(ctx, &dbtbbbse.UsersListOptions{UserIDs: userIDs})
 		}
 	})
 	return r.logs, r.users, r.next, r.err

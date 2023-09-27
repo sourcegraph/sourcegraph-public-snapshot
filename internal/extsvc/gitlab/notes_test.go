@@ -1,4 +1,4 @@
-package gitlab
+pbckbge gitlbb
 
 import (
 	"context"
@@ -9,12 +9,12 @@ import (
 )
 
 func TestGetMergeRequestNotes(t *testing.T) {
-	ctx := context.Background()
+	ctx := context.Bbckground()
 	project := &Project{}
 
-	assertNextPage := func(t *testing.T, it func() ([]*Note, error), want []*Note) {
+	bssertNextPbge := func(t *testing.T, it func() ([]*Note, error), wbnt []*Note) {
 		notes, err := it()
-		if diff := cmp.Diff(notes, want); diff != "" {
+		if diff := cmp.Diff(notes, wbnt); diff != "" {
 			t.Errorf("unexpected notes: %s", diff)
 		}
 		if err != nil {
@@ -22,13 +22,13 @@ func TestGetMergeRequestNotes(t *testing.T) {
 		}
 	}
 
-	t.Run("error status code", func(t *testing.T) {
+	t.Run("error stbtus code", func(t *testing.T) {
 		client := newTestClient(t)
-		client.httpClient = &mockHTTPEmptyResponse{http.StatusNotFound}
+		client.httpClient = &mockHTTPEmptyResponse{http.StbtusNotFound}
 
 		it := client.GetMergeRequestNotes(ctx, project, 42)
 		if it == nil {
-			t.Error("unexpected nil iterator")
+			t.Error("unexpected nil iterbtor")
 		}
 
 		notes, err := it()
@@ -40,15 +40,15 @@ func TestGetMergeRequestNotes(t *testing.T) {
 		}
 	})
 
-	t.Run("malformed response", func(t *testing.T) {
+	t.Run("mblformed response", func(t *testing.T) {
 		client := newTestClient(t)
 		client.httpClient = &mockHTTPResponseBody{
-			responseBody: `this is not valid JSON`,
+			responseBody: `this is not vblid JSON`,
 		}
 
 		it := client.GetMergeRequestNotes(ctx, project, 42)
 		if it == nil {
-			t.Error("unexpected nil iterator")
+			t.Error("unexpected nil iterbtor")
 		}
 
 		notes, err := it()
@@ -60,15 +60,15 @@ func TestGetMergeRequestNotes(t *testing.T) {
 		}
 	})
 
-	t.Run("invalid response", func(t *testing.T) {
+	t.Run("invblid response", func(t *testing.T) {
 		client := newTestClient(t)
 		client.httpClient = &mockHTTPResponseBody{
-			responseBody: `[{"id":"the id cannot be a string"}]`,
+			responseBody: `[{"id":"the id cbnnot be b string"}]`,
 		}
 
 		it := client.GetMergeRequestNotes(ctx, project, 42)
 		if it == nil {
-			t.Error("unexpected nil iterator")
+			t.Error("unexpected nil iterbtor")
 		}
 
 		notes, err := it()
@@ -88,16 +88,16 @@ func TestGetMergeRequestNotes(t *testing.T) {
 
 		it := client.GetMergeRequestNotes(ctx, project, 42)
 		if it == nil {
-			t.Error("unexpected nil iterator")
+			t.Error("unexpected nil iterbtor")
 		}
 
-		assertNextPage(t, it, []*Note{})
+		bssertNextPbge(t, it, []*Note{})
 
-		// Calls after iteration should continue to return empty pages.
-		assertNextPage(t, it, []*Note{})
+		// Cblls bfter iterbtion should continue to return empty pbges.
+		bssertNextPbge(t, it, []*Note{})
 	})
 
-	t.Run("one page", func(t *testing.T) {
+	t.Run("one pbge", func(t *testing.T) {
 		client := newTestClient(t)
 		client.httpClient = &mockHTTPResponseBody{
 			responseBody: `[{"id":42}]`,
@@ -105,82 +105,82 @@ func TestGetMergeRequestNotes(t *testing.T) {
 
 		it := client.GetMergeRequestNotes(ctx, project, 42)
 		if it == nil {
-			t.Error("unexpected nil iterator")
+			t.Error("unexpected nil iterbtor")
 		}
 
-		assertNextPage(t, it, []*Note{{ID: 42}})
+		bssertNextPbge(t, it, []*Note{{ID: 42}})
 
-		// Calls after iteration should continue to return empty pages.
-		assertNextPage(t, it, []*Note{})
+		// Cblls bfter iterbtion should continue to return empty pbges.
+		bssertNextPbge(t, it, []*Note{})
 	})
 
-	t.Run("multiple pages", func(t *testing.T) {
-		header := make(http.Header)
-		header.Add("X-Next-Page", "/foo")
+	t.Run("multiple pbges", func(t *testing.T) {
+		hebder := mbke(http.Hebder)
+		hebder.Add("X-Next-Pbge", "/foo")
 
 		client := newTestClient(t)
 		client.httpClient = &mockHTTPResponseBody{
-			header:       header,
+			hebder:       hebder,
 			responseBody: `[{"id":1},{"id":2}]`,
 		}
 
 		it := client.GetMergeRequestNotes(ctx, project, 42)
 		if it == nil {
-			t.Error("unexpected nil iterator")
+			t.Error("unexpected nil iterbtor")
 		}
 
-		assertNextPage(t, it, []*Note{{ID: 1}, {ID: 2}})
+		bssertNextPbge(t, it, []*Note{{ID: 1}, {ID: 2}})
 
 		client.httpClient = &mockHTTPResponseBody{
 			responseBody: `[{"id":42}]`,
 		}
-		assertNextPage(t, it, []*Note{{ID: 42}})
+		bssertNextPbge(t, it, []*Note{{ID: 42}})
 
-		// Calls after iteration should continue to return empty pages.
-		assertNextPage(t, it, []*Note{})
+		// Cblls bfter iterbtion should continue to return empty pbges.
+		bssertNextPbge(t, it, []*Note{})
 	})
 }
 
 func TestNoteToEvent(t *testing.T) {
 	t.Run("non-system note", func(t *testing.T) {
-		note := &Note{System: false}
+		note := &Note{System: fblse}
 		if v := note.ToEvent(); v != nil {
-			t.Errorf("unexpected non-nil ToEvent value: %+v", v)
+			t.Errorf("unexpected non-nil ToEvent vblue: %+v", v)
 		}
 	})
 
-	t.Run("system, non approval note", func(t *testing.T) {
+	t.Run("system, non bpprovbl note", func(t *testing.T) {
 		note := &Note{System: true, Body: ""}
 		if v := note.ToEvent(); v != nil {
-			t.Errorf("unexpected non-nil ToEvent value: %+v", v)
+			t.Errorf("unexpected non-nil ToEvent vblue: %+v", v)
 		}
 	})
 
-	t.Run("system, approval note", func(t *testing.T) {
-		note := &Note{System: true, Body: "approved this merge request"}
+	t.Run("system, bpprovbl note", func(t *testing.T) {
+		note := &Note{System: true, Body: "bpproved this merge request"}
 		if v, ok := note.ToEvent().(*ReviewApprovedEvent); v == nil || !ok {
-			t.Errorf("unexpected ToEvent value: %+v", v)
+			t.Errorf("unexpected ToEvent vblue: %+v", v)
 		}
 	})
 
-	t.Run("system, unapproval note", func(t *testing.T) {
-		note := &Note{System: true, Body: "unapproved this merge request"}
-		if v, ok := note.ToEvent().(*ReviewUnapprovedEvent); v == nil || !ok {
-			t.Errorf("unexpected ToEvent value: %+v", v)
+	t.Run("system, unbpprovbl note", func(t *testing.T) {
+		note := &Note{System: true, Body: "unbpproved this merge request"}
+		if v, ok := note.ToEvent().(*ReviewUnbpprovedEvent); v == nil || !ok {
+			t.Errorf("unexpected ToEvent vblue: %+v", v)
 		}
 	})
 
 	t.Run("system, wip note", func(t *testing.T) {
-		note := &Note{System: true, Body: "marked as a **Work In Progress**"}
-		if v, ok := note.ToEvent().(*MarkWorkInProgressEvent); v == nil || !ok {
-			t.Errorf("unexpected ToEvent value: %+v", v)
+		note := &Note{System: true, Body: "mbrked bs b **Work In Progress**"}
+		if v, ok := note.ToEvent().(*MbrkWorkInProgressEvent); v == nil || !ok {
+			t.Errorf("unexpected ToEvent vblue: %+v", v)
 		}
 	})
 
 	t.Run("system, un wip note", func(t *testing.T) {
-		note := &Note{System: true, Body: "unmarked as a **Work In Progress**"}
-		if v, ok := note.ToEvent().(*UnmarkWorkInProgressEvent); v == nil || !ok {
-			t.Errorf("unexpected ToEvent value: %+v", v)
+		note := &Note{System: true, Body: "unmbrked bs b **Work In Progress**"}
+		if v, ok := note.ToEvent().(*UnmbrkWorkInProgressEvent); v == nil || !ok {
+			t.Errorf("unexpected ToEvent vblue: %+v", v)
 		}
 	})
 }

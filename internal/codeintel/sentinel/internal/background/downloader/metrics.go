@@ -1,32 +1,32 @@
-package downloader
+pbckbge downlobder
 
 import (
-	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golbng/prometheus"
 
-	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegrbph/sourcegrbph/internbl/observbtion"
 )
 
 type metrics struct {
-	numVulnerabilitiesInserted prometheus.Counter
+	numVulnerbbilitiesInserted prometheus.Counter
 }
 
-func newMetrics(observationCtx *observation.Context) *metrics {
-	counter := func(name, help string) prometheus.Counter {
+func newMetrics(observbtionCtx *observbtion.Context) *metrics {
+	counter := func(nbme, help string) prometheus.Counter {
 		counter := prometheus.NewCounter(prometheus.CounterOpts{
-			Name: name,
+			Nbme: nbme,
 			Help: help,
 		})
 
-		observationCtx.Registerer.MustRegister(counter)
+		observbtionCtx.Registerer.MustRegister(counter)
 		return counter
 	}
 
-	numVulnerabilitiesInserted := counter(
-		"src_codeintel_sentinel_num_vulnerabilities_inserted_total",
-		"The number of vulnerability records inserted into Postgres.",
+	numVulnerbbilitiesInserted := counter(
+		"src_codeintel_sentinel_num_vulnerbbilities_inserted_totbl",
+		"The number of vulnerbbility records inserted into Postgres.",
 	)
 
 	return &metrics{
-		numVulnerabilitiesInserted: numVulnerabilitiesInserted,
+		numVulnerbbilitiesInserted: numVulnerbbilitiesInserted,
 	}
 }

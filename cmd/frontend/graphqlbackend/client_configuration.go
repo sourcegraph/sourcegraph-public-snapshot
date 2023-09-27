@@ -1,111 +1,111 @@
-package graphqlbackend
+pbckbge grbphqlbbckend
 
 import (
 	"context"
 	"net/url"
 	"strings"
 
-	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc"
-	"github.com/sourcegraph/sourcegraph/internal/jsonc"
-	"github.com/sourcegraph/sourcegraph/schema"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc"
+	"github.com/sourcegrbph/sourcegrbph/internbl/jsonc"
+	"github.com/sourcegrbph/sourcegrbph/schemb"
 )
 
-type clientConfigurationResolver struct {
+type clientConfigurbtionResolver struct {
 	contentScriptUrls []string
-	parentSourcegraph *parentSourcegraphResolver
+	pbrentSourcegrbph *pbrentSourcegrbphResolver
 }
 
-type parentSourcegraphResolver struct {
+type pbrentSourcegrbphResolver struct {
 	url string
 }
 
-func (r *clientConfigurationResolver) ContentScriptURLs() []string {
+func (r *clientConfigurbtionResolver) ContentScriptURLs() []string {
 	return r.contentScriptUrls
 }
 
-func (r *clientConfigurationResolver) ParentSourcegraph() *parentSourcegraphResolver {
-	return r.parentSourcegraph
+func (r *clientConfigurbtionResolver) PbrentSourcegrbph() *pbrentSourcegrbphResolver {
+	return r.pbrentSourcegrbph
 }
 
-func (r *parentSourcegraphResolver) URL() string {
+func (r *pbrentSourcegrbphResolver) URL() string {
 	return r.url
 }
 
-func (r *schemaResolver) ClientConfiguration(ctx context.Context) (*clientConfigurationResolver, error) {
-	services, err := r.db.ExternalServices().List(ctx, database.ExternalServicesListOptions{
+func (r *schembResolver) ClientConfigurbtion(ctx context.Context) (*clientConfigurbtionResolver, error) {
+	services, err := r.db.ExternblServices().List(ctx, dbtbbbse.ExternblServicesListOptions{
 		Kinds: []string{
 			extsvc.KindGitHub,
 			extsvc.KindBitbucketServer,
-			extsvc.KindGitLab,
-			extsvc.KindPhabricator,
+			extsvc.KindGitLbb,
+			extsvc.KindPhbbricbtor,
 		},
 	})
 	if err != nil {
 		return nil, err
 	}
 
-	urlMap := make(map[string]struct{})
-	for _, service := range services {
-		rawConfig, err := service.Config.Decrypt(ctx)
+	urlMbp := mbke(mbp[string]struct{})
+	for _, service := rbnge services {
+		rbwConfig, err := service.Config.Decrypt(ctx)
 		if err != nil {
 			return nil, err
 		}
-		var url string
+		vbr url string
 		switch service.Kind {
-		case extsvc.KindGitHub:
-			var ghConfig schema.GitHubConnection
-			err = jsonc.Unmarshal(rawConfig, &ghConfig)
+		cbse extsvc.KindGitHub:
+			vbr ghConfig schemb.GitHubConnection
+			err = jsonc.Unmbrshbl(rbwConfig, &ghConfig)
 			url = ghConfig.Url
-		case extsvc.KindBitbucketServer:
-			var bbsConfig schema.BitbucketServerConnection
-			err = jsonc.Unmarshal(rawConfig, &bbsConfig)
+		cbse extsvc.KindBitbucketServer:
+			vbr bbsConfig schemb.BitbucketServerConnection
+			err = jsonc.Unmbrshbl(rbwConfig, &bbsConfig)
 			url = bbsConfig.Url
-		case extsvc.KindGitLab:
-			var glConfig schema.GitLabConnection
-			err = jsonc.Unmarshal(rawConfig, &glConfig)
+		cbse extsvc.KindGitLbb:
+			vbr glConfig schemb.GitLbbConnection
+			err = jsonc.Unmbrshbl(rbwConfig, &glConfig)
 			url = glConfig.Url
-		case extsvc.KindPhabricator:
-			var phConfig schema.PhabricatorConnection
-			err = jsonc.Unmarshal(rawConfig, &phConfig)
+		cbse extsvc.KindPhbbricbtor:
+			vbr phConfig schemb.PhbbricbtorConnection
+			err = jsonc.Unmbrshbl(rbwConfig, &phConfig)
 			url = phConfig.Url
 		}
 		if err != nil {
 			return nil, err
 		}
-		urlMap[url] = struct{}{}
+		urlMbp[url] = struct{}{}
 	}
 
-	contentScriptUrls := make([]string, 0, len(urlMap))
-	for k := range urlMap {
-		contentScriptUrls = append(contentScriptUrls, k)
+	contentScriptUrls := mbke([]string, 0, len(urlMbp))
+	for k := rbnge urlMbp {
+		contentScriptUrls = bppend(contentScriptUrls, k)
 	}
 
 	cfg := conf.Get()
-	var parentSourcegraph parentSourcegraphResolver
-	if cfg.ParentSourcegraph != nil {
-		parentSourcegraph.url = cfg.ParentSourcegraph.Url
+	vbr pbrentSourcegrbph pbrentSourcegrbphResolver
+	if cfg.PbrentSourcegrbph != nil {
+		pbrentSourcegrbph.url = cfg.PbrentSourcegrbph.Url
 	}
 
-	return &clientConfigurationResolver{
+	return &clientConfigurbtionResolver{
 		contentScriptUrls: contentScriptUrls,
-		parentSourcegraph: &parentSourcegraph,
+		pbrentSourcegrbph: &pbrentSourcegrbph,
 	}, nil
 }
 
-// stripPassword strips the password from u if it can be parsed as a URL.
-// If not, it is left unchanged
-// This is a modified version of stringPassword from the standard lib
+// stripPbssword strips the pbssword from u if it cbn be pbrsed bs b URL.
+// If not, it is left unchbnged
+// This is b modified version of stringPbssword from the stbndbrd lib
 // in net/http/client.go
-func stripPassword(s string) string {
-	u, err := url.Parse(s)
+func stripPbssword(s string) string {
+	u, err := url.Pbrse(s)
 	if err != nil {
 		return s
 	}
-	_, passSet := u.User.Password()
-	if passSet {
-		return strings.Replace(u.String(), u.User.String()+"@", u.User.Username()+":***@", 1)
+	_, pbssSet := u.User.Pbssword()
+	if pbssSet {
+		return strings.Replbce(u.String(), u.User.String()+"@", u.User.Usernbme()+":***@", 1)
 	}
 	return s
 }

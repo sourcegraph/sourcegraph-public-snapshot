@@ -1,4 +1,4 @@
-package dependencies
+pbckbge dependencies
 
 import (
 	"context"
@@ -7,367 +7,367 @@ import (
 	"time"
 
 	"github.com/google/go-cmp/cmp"
-	"github.com/sourcegraph/log/logtest"
+	"github.com/sourcegrbph/log/logtest"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc"
-	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/envvbr"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi"
+	"github.com/sourcegrbph/sourcegrbph/internbl/codeintel/dependencies"
+	"github.com/sourcegrbph/sourcegrbph/internbl/codeintel/uplobds/shbred"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
 )
 
-func TestDependencyIndexingSchedulerHandler(t *testing.T) {
-	mockUploadsSvc := NewMockUploadService()
+func TestDependencyIndexingSchedulerHbndler(t *testing.T) {
+	mockUplobdsSvc := NewMockUplobdService()
 	mockRepoStore := NewMockReposStore()
-	mockExtSvcStore := NewMockExternalServiceStore()
-	mockRepoUpdater := NewMockRepoUpdaterClient()
-	mockScanner := NewMockPackageReferenceScanner()
+	mockExtSvcStore := NewMockExternblServiceStore()
+	mockRepoUpdbter := NewMockRepoUpdbterClient()
+	mockScbnner := NewMockPbckbgeReferenceScbnner()
 	mockWorkerStore := NewMockWorkerStore[dependencyIndexingJob]()
 
-	mockRepoStore.ListMinimalReposFunc.PushReturn([]types.MinimalRepo{
+	mockRepoStore.ListMinimblReposFunc.PushReturn([]types.MinimblRepo{
 		{
 			ID:    0,
-			Name:  "",
-			Stars: 0,
+			Nbme:  "",
+			Stbrs: 0,
 		},
 	}, nil)
 
-	mockUploadsSvc.GetUploadByIDFunc.SetDefaultReturn(shared.Upload{ID: 42, RepositoryID: 50, Indexer: "lsif-go"}, true, nil)
-	mockUploadsSvc.ReferencesForUploadFunc.SetDefaultReturn(mockScanner, nil)
+	mockUplobdsSvc.GetUplobdByIDFunc.SetDefbultReturn(shbred.Uplobd{ID: 42, RepositoryID: 50, Indexer: "lsif-go"}, true, nil)
+	mockUplobdsSvc.ReferencesForUplobdFunc.SetDefbultReturn(mockScbnner, nil)
 
-	mockScanner.NextFunc.PushReturn(shared.PackageReference{Package: shared.Package{DumpID: 42, Scheme: "gomod", Name: "https://github.com/sample/text", Version: "v2.2.0"}}, true, nil)
-	mockScanner.NextFunc.PushReturn(shared.PackageReference{Package: shared.Package{DumpID: 42, Scheme: "gomod", Name: "https://github.com/sample/text", Version: "v3.2.0"}}, true, nil)
-	mockScanner.NextFunc.PushReturn(shared.PackageReference{Package: shared.Package{DumpID: 42, Scheme: "gomod", Name: "https://github.com/cheese/burger", Version: "v3.2.2"}}, true, nil)
-	mockScanner.NextFunc.PushReturn(shared.PackageReference{Package: shared.Package{DumpID: 42, Scheme: "gomod", Name: "https://github.com/cheese/burger", Version: "v2.2.1"}}, true, nil)
-	mockScanner.NextFunc.PushReturn(shared.PackageReference{Package: shared.Package{DumpID: 42, Scheme: "gomod", Name: "https://github.com/cheese/burger", Version: "v4.2.3"}}, true, nil)
-	mockScanner.NextFunc.PushReturn(shared.PackageReference{Package: shared.Package{DumpID: 42, Scheme: "gomod", Name: "https://github.com/sample/text", Version: "v1.2.0"}}, true, nil)
-	mockScanner.NextFunc.PushReturn(shared.PackageReference{Package: shared.Package{DumpID: 42, Scheme: "gomod", Name: "https://github.com/banana/world", Version: "v0.0.1"}}, true, nil)
-	mockScanner.NextFunc.SetDefaultReturn(shared.PackageReference{}, false, nil)
+	mockScbnner.NextFunc.PushReturn(shbred.PbckbgeReference{Pbckbge: shbred.Pbckbge{DumpID: 42, Scheme: "gomod", Nbme: "https://github.com/sbmple/text", Version: "v2.2.0"}}, true, nil)
+	mockScbnner.NextFunc.PushReturn(shbred.PbckbgeReference{Pbckbge: shbred.Pbckbge{DumpID: 42, Scheme: "gomod", Nbme: "https://github.com/sbmple/text", Version: "v3.2.0"}}, true, nil)
+	mockScbnner.NextFunc.PushReturn(shbred.PbckbgeReference{Pbckbge: shbred.Pbckbge{DumpID: 42, Scheme: "gomod", Nbme: "https://github.com/cheese/burger", Version: "v3.2.2"}}, true, nil)
+	mockScbnner.NextFunc.PushReturn(shbred.PbckbgeReference{Pbckbge: shbred.Pbckbge{DumpID: 42, Scheme: "gomod", Nbme: "https://github.com/cheese/burger", Version: "v2.2.1"}}, true, nil)
+	mockScbnner.NextFunc.PushReturn(shbred.PbckbgeReference{Pbckbge: shbred.Pbckbge{DumpID: 42, Scheme: "gomod", Nbme: "https://github.com/cheese/burger", Version: "v4.2.3"}}, true, nil)
+	mockScbnner.NextFunc.PushReturn(shbred.PbckbgeReference{Pbckbge: shbred.Pbckbge{DumpID: 42, Scheme: "gomod", Nbme: "https://github.com/sbmple/text", Version: "v1.2.0"}}, true, nil)
+	mockScbnner.NextFunc.PushReturn(shbred.PbckbgeReference{Pbckbge: shbred.Pbckbge{DumpID: 42, Scheme: "gomod", Nbme: "https://github.com/bbnbnb/world", Version: "v0.0.1"}}, true, nil)
+	mockScbnner.NextFunc.SetDefbultReturn(shbred.PbckbgeReference{}, fblse, nil)
 
 	mockGitserverReposStore := NewMockGitserverRepoStore()
-	mockGitserverReposStore.GetByNamesFunc.PushReturn(map[api.RepoName]*types.GitserverRepo{
-		"github.com/sample/text": {
-			CloneStatus: types.CloneStatusCloned,
+	mockGitserverReposStore.GetByNbmesFunc.PushReturn(mbp[bpi.RepoNbme]*types.GitserverRepo{
+		"github.com/sbmple/text": {
+			CloneStbtus: types.CloneStbtusCloned,
 		},
 		"github.com/cheese/burger": {
-			CloneStatus: types.CloneStatusCloned,
+			CloneStbtus: types.CloneStbtusCloned,
 		},
-		"github.com/banana/world": {
-			CloneStatus: types.CloneStatusCloned,
+		"github.com/bbnbnb/world": {
+			CloneStbtus: types.CloneStbtusCloned,
 		},
 	}, nil)
 
 	indexEnqueuer := NewMockIndexEnqueuer()
 
-	envvar.MockSourcegraphDotComMode(true)
+	envvbr.MockSourcegrbphDotComMode(true)
 
-	handler := &dependencyIndexingSchedulerHandler{
-		uploadsSvc:         mockUploadsSvc,
+	hbndler := &dependencyIndexingSchedulerHbndler{
+		uplobdsSvc:         mockUplobdsSvc,
 		repoStore:          mockRepoStore,
 		indexEnqueuer:      indexEnqueuer,
 		extsvcStore:        mockExtSvcStore,
 		workerStore:        mockWorkerStore,
 		gitserverRepoStore: mockGitserverReposStore,
-		repoUpdater:        mockRepoUpdater,
+		repoUpdbter:        mockRepoUpdbter,
 	}
 
 	logger := logtest.Scoped(t)
 	job := dependencyIndexingJob{
-		UploadID:            42,
-		ExternalServiceKind: "",
-		ExternalServiceSync: time.Time{},
+		UplobdID:            42,
+		ExternblServiceKind: "",
+		ExternblServiceSync: time.Time{},
 	}
-	if err := handler.Handle(context.Background(), logger, job); err != nil {
-		t.Fatalf("unexpected error performing update: %s", err)
+	if err := hbndler.Hbndle(context.Bbckground(), logger, job); err != nil {
+		t.Fbtblf("unexpected error performing updbte: %s", err)
 	}
 
 	if len(mockExtSvcStore.ListFunc.History()) != 0 {
-		t.Errorf("unexpected number of calls to extsvcStore.List. want=%d have=%d", 0, len(mockExtSvcStore.ListFunc.History()))
+		t.Errorf("unexpected number of cblls to extsvcStore.List. wbnt=%d hbve=%d", 0, len(mockExtSvcStore.ListFunc.History()))
 	}
 
-	if len(indexEnqueuer.QueueIndexesForPackageFunc.History()) != 7 {
-		t.Errorf("unexpected number of calls to QueueIndexesForPackage. want=%d have=%d", 6, len(indexEnqueuer.QueueIndexesForPackageFunc.History()))
+	if len(indexEnqueuer.QueueIndexesForPbckbgeFunc.History()) != 7 {
+		t.Errorf("unexpected number of cblls to QueueIndexesForPbckbge. wbnt=%d hbve=%d", 6, len(indexEnqueuer.QueueIndexesForPbckbgeFunc.History()))
 	} else {
-		var packages []dependencies.MinimialVersionedPackageRepo
-		for _, call := range indexEnqueuer.QueueIndexesForPackageFunc.History() {
-			packages = append(packages, call.Arg1)
+		vbr pbckbges []dependencies.MinimiblVersionedPbckbgeRepo
+		for _, cbll := rbnge indexEnqueuer.QueueIndexesForPbckbgeFunc.History() {
+			pbckbges = bppend(pbckbges, cbll.Arg1)
 		}
-		sort.Slice(packages, func(i, j int) bool {
-			for _, pair := range [][2]string{
-				{packages[i].Scheme, packages[j].Scheme},
-				{string(packages[i].Name), string(packages[j].Name)},
-				{packages[i].Version, packages[j].Version},
+		sort.Slice(pbckbges, func(i, j int) bool {
+			for _, pbir := rbnge [][2]string{
+				{pbckbges[i].Scheme, pbckbges[j].Scheme},
+				{string(pbckbges[i].Nbme), string(pbckbges[j].Nbme)},
+				{pbckbges[i].Version, pbckbges[j].Version},
 			} {
-				if pair[0] < pair[1] {
+				if pbir[0] < pbir[1] {
 					return true
 				}
-				if pair[1] < pair[0] {
-					break
+				if pbir[1] < pbir[0] {
+					brebk
 				}
 			}
 
-			return false
+			return fblse
 		})
 
-		expectedPackages := []dependencies.MinimialVersionedPackageRepo{
-			{Scheme: "gomod", Name: "https://github.com/banana/world", Version: "v0.0.1"},
-			{Scheme: "gomod", Name: "https://github.com/cheese/burger", Version: "v2.2.1"},
-			{Scheme: "gomod", Name: "https://github.com/cheese/burger", Version: "v3.2.2"},
-			{Scheme: "gomod", Name: "https://github.com/cheese/burger", Version: "v4.2.3"},
-			{Scheme: "gomod", Name: "https://github.com/sample/text", Version: "v1.2.0"},
-			{Scheme: "gomod", Name: "https://github.com/sample/text", Version: "v2.2.0"},
-			{Scheme: "gomod", Name: "https://github.com/sample/text", Version: "v3.2.0"},
+		expectedPbckbges := []dependencies.MinimiblVersionedPbckbgeRepo{
+			{Scheme: "gomod", Nbme: "https://github.com/bbnbnb/world", Version: "v0.0.1"},
+			{Scheme: "gomod", Nbme: "https://github.com/cheese/burger", Version: "v2.2.1"},
+			{Scheme: "gomod", Nbme: "https://github.com/cheese/burger", Version: "v3.2.2"},
+			{Scheme: "gomod", Nbme: "https://github.com/cheese/burger", Version: "v4.2.3"},
+			{Scheme: "gomod", Nbme: "https://github.com/sbmple/text", Version: "v1.2.0"},
+			{Scheme: "gomod", Nbme: "https://github.com/sbmple/text", Version: "v2.2.0"},
+			{Scheme: "gomod", Nbme: "https://github.com/sbmple/text", Version: "v3.2.0"},
 		}
-		if diff := cmp.Diff(expectedPackages, packages); diff != "" {
-			t.Errorf("unexpected packages (-want +got):\n%s", diff)
+		if diff := cmp.Diff(expectedPbckbges, pbckbges); diff != "" {
+			t.Errorf("unexpected pbckbges (-wbnt +got):\n%s", diff)
 		}
 	}
 }
 
-func TestDependencyIndexingSchedulerHandlerCustomer(t *testing.T) {
-	mockUploadsSvc := NewMockUploadService()
+func TestDependencyIndexingSchedulerHbndlerCustomer(t *testing.T) {
+	mockUplobdsSvc := NewMockUplobdService()
 	mockRepoStore := NewMockReposStore()
-	mockExtSvcStore := NewMockExternalServiceStore()
-	mockRepoUpdater := NewMockRepoUpdaterClient()
-	mockScanner := NewMockPackageReferenceScanner()
+	mockExtSvcStore := NewMockExternblServiceStore()
+	mockRepoUpdbter := NewMockRepoUpdbterClient()
+	mockScbnner := NewMockPbckbgeReferenceScbnner()
 	mockWorkerStore := NewMockWorkerStore[dependencyIndexingJob]()
-	mockUploadsSvc.GetUploadByIDFunc.SetDefaultReturn(shared.Upload{ID: 42, RepositoryID: 50, Indexer: "lsif-go"}, true, nil)
-	mockUploadsSvc.ReferencesForUploadFunc.SetDefaultReturn(mockScanner, nil)
+	mockUplobdsSvc.GetUplobdByIDFunc.SetDefbultReturn(shbred.Uplobd{ID: 42, RepositoryID: 50, Indexer: "lsif-go"}, true, nil)
+	mockUplobdsSvc.ReferencesForUplobdFunc.SetDefbultReturn(mockScbnner, nil)
 
-	mockScanner.NextFunc.PushReturn(shared.PackageReference{Package: shared.Package{DumpID: 42, Scheme: "gomod", Name: "https://github.com/sample/text", Version: "v2.2.0"}}, true, nil)
-	mockScanner.NextFunc.PushReturn(shared.PackageReference{Package: shared.Package{DumpID: 42, Scheme: "gomod", Name: "https://github.com/sample/text", Version: "v3.2.0"}}, true, nil)
-	mockScanner.NextFunc.PushReturn(shared.PackageReference{Package: shared.Package{DumpID: 42, Scheme: "gomod", Name: "https://github.com/cheese/burger", Version: "v3.2.2"}}, true, nil)
-	mockScanner.NextFunc.PushReturn(shared.PackageReference{Package: shared.Package{DumpID: 42, Scheme: "gomod", Name: "https://github.com/cheese/burger", Version: "v2.2.1"}}, true, nil)
-	mockScanner.NextFunc.PushReturn(shared.PackageReference{Package: shared.Package{DumpID: 42, Scheme: "gomod", Name: "https://github.com/cheese/burger", Version: "v4.2.3"}}, true, nil)
-	mockScanner.NextFunc.PushReturn(shared.PackageReference{Package: shared.Package{DumpID: 42, Scheme: "gomod", Name: "https://github.com/sample/text", Version: "v1.2.0"}}, true, nil)
-	mockScanner.NextFunc.PushReturn(shared.PackageReference{Package: shared.Package{DumpID: 42, Scheme: "gomod", Name: "https://github.com/banana/world", Version: "v1.2.0"}}, true, nil)
-	mockScanner.NextFunc.SetDefaultReturn(shared.PackageReference{}, false, nil)
+	mockScbnner.NextFunc.PushReturn(shbred.PbckbgeReference{Pbckbge: shbred.Pbckbge{DumpID: 42, Scheme: "gomod", Nbme: "https://github.com/sbmple/text", Version: "v2.2.0"}}, true, nil)
+	mockScbnner.NextFunc.PushReturn(shbred.PbckbgeReference{Pbckbge: shbred.Pbckbge{DumpID: 42, Scheme: "gomod", Nbme: "https://github.com/sbmple/text", Version: "v3.2.0"}}, true, nil)
+	mockScbnner.NextFunc.PushReturn(shbred.PbckbgeReference{Pbckbge: shbred.Pbckbge{DumpID: 42, Scheme: "gomod", Nbme: "https://github.com/cheese/burger", Version: "v3.2.2"}}, true, nil)
+	mockScbnner.NextFunc.PushReturn(shbred.PbckbgeReference{Pbckbge: shbred.Pbckbge{DumpID: 42, Scheme: "gomod", Nbme: "https://github.com/cheese/burger", Version: "v2.2.1"}}, true, nil)
+	mockScbnner.NextFunc.PushReturn(shbred.PbckbgeReference{Pbckbge: shbred.Pbckbge{DumpID: 42, Scheme: "gomod", Nbme: "https://github.com/cheese/burger", Version: "v4.2.3"}}, true, nil)
+	mockScbnner.NextFunc.PushReturn(shbred.PbckbgeReference{Pbckbge: shbred.Pbckbge{DumpID: 42, Scheme: "gomod", Nbme: "https://github.com/sbmple/text", Version: "v1.2.0"}}, true, nil)
+	mockScbnner.NextFunc.PushReturn(shbred.PbckbgeReference{Pbckbge: shbred.Pbckbge{DumpID: 42, Scheme: "gomod", Nbme: "https://github.com/bbnbnb/world", Version: "v1.2.0"}}, true, nil)
+	mockScbnner.NextFunc.SetDefbultReturn(shbred.PbckbgeReference{}, fblse, nil)
 
-	// simulate github.com/banana/world not being known to the instance
-	mockRepoStore.ListMinimalReposFunc.PushReturn([]types.MinimalRepo{
-		{Name: "github.com/cheese/burger"}, {Name: "github.com/sample/text"},
+	// simulbte github.com/bbnbnb/world not being known to the instbnce
+	mockRepoStore.ListMinimblReposFunc.PushReturn([]types.MinimblRepo{
+		{Nbme: "github.com/cheese/burger"}, {Nbme: "github.com/sbmple/text"},
 	}, nil)
 
 	mockGitserverReposStore := NewMockGitserverRepoStore()
-	mockGitserverReposStore.GetByNamesFunc.PushReturn(map[api.RepoName]*types.GitserverRepo{
-		"github.com/sample/text": {
-			CloneStatus: types.CloneStatusCloned,
+	mockGitserverReposStore.GetByNbmesFunc.PushReturn(mbp[bpi.RepoNbme]*types.GitserverRepo{
+		"github.com/sbmple/text": {
+			CloneStbtus: types.CloneStbtusCloned,
 		},
 		"github.com/cheese/burger": {
-			CloneStatus: types.CloneStatusCloned,
+			CloneStbtus: types.CloneStbtusCloned,
 		},
 	}, nil)
 
 	indexEnqueuer := NewMockIndexEnqueuer()
 
-	envvar.MockSourcegraphDotComMode(false)
+	envvbr.MockSourcegrbphDotComMode(fblse)
 
-	handler := &dependencyIndexingSchedulerHandler{
-		uploadsSvc:         mockUploadsSvc,
+	hbndler := &dependencyIndexingSchedulerHbndler{
+		uplobdsSvc:         mockUplobdsSvc,
 		repoStore:          mockRepoStore,
 		indexEnqueuer:      indexEnqueuer,
 		extsvcStore:        mockExtSvcStore,
 		workerStore:        mockWorkerStore,
 		gitserverRepoStore: mockGitserverReposStore,
-		repoUpdater:        mockRepoUpdater,
+		repoUpdbter:        mockRepoUpdbter,
 	}
 
 	logger := logtest.Scoped(t)
 	job := dependencyIndexingJob{
-		UploadID:            42,
-		ExternalServiceKind: "",
-		ExternalServiceSync: time.Time{},
+		UplobdID:            42,
+		ExternblServiceKind: "",
+		ExternblServiceSync: time.Time{},
 	}
-	if err := handler.Handle(context.Background(), logger, job); err != nil {
-		t.Fatalf("unexpected error performing update: %s", err)
+	if err := hbndler.Hbndle(context.Bbckground(), logger, job); err != nil {
+		t.Fbtblf("unexpected error performing updbte: %s", err)
 	}
 
-	if len(mockRepoUpdater.RepoLookupFunc.History()) != 0 {
-		t.Errorf("unexpected number of calls to repoUpdater.RepoLookup. want=%d have=%d", 0, len(mockRepoUpdater.RepoLookupFunc.History()))
+	if len(mockRepoUpdbter.RepoLookupFunc.History()) != 0 {
+		t.Errorf("unexpected number of cblls to repoUpdbter.RepoLookup. wbnt=%d hbve=%d", 0, len(mockRepoUpdbter.RepoLookupFunc.History()))
 	}
 
 	if len(mockExtSvcStore.ListFunc.History()) != 0 {
-		t.Errorf("unexpected number of calls to extsvcStore.List. want=%d have=%d", 0, len(mockExtSvcStore.ListFunc.History()))
+		t.Errorf("unexpected number of cblls to extsvcStore.List. wbnt=%d hbve=%d", 0, len(mockExtSvcStore.ListFunc.History()))
 	}
 
-	if len(indexEnqueuer.QueueIndexesForPackageFunc.History()) != 6 {
-		t.Errorf("unexpected number of calls to QueueIndexesForPackage. want=%d have=%d", 6, len(indexEnqueuer.QueueIndexesForPackageFunc.History()))
+	if len(indexEnqueuer.QueueIndexesForPbckbgeFunc.History()) != 6 {
+		t.Errorf("unexpected number of cblls to QueueIndexesForPbckbge. wbnt=%d hbve=%d", 6, len(indexEnqueuer.QueueIndexesForPbckbgeFunc.History()))
 	} else {
-		var packages []dependencies.MinimialVersionedPackageRepo
-		for _, call := range indexEnqueuer.QueueIndexesForPackageFunc.History() {
-			packages = append(packages, call.Arg1)
+		vbr pbckbges []dependencies.MinimiblVersionedPbckbgeRepo
+		for _, cbll := rbnge indexEnqueuer.QueueIndexesForPbckbgeFunc.History() {
+			pbckbges = bppend(pbckbges, cbll.Arg1)
 		}
-		sort.Slice(packages, func(i, j int) bool {
-			for _, pair := range [][2]string{
-				{packages[i].Scheme, packages[j].Scheme},
-				{string(packages[i].Name), string(packages[j].Name)},
-				{packages[i].Version, packages[j].Version},
+		sort.Slice(pbckbges, func(i, j int) bool {
+			for _, pbir := rbnge [][2]string{
+				{pbckbges[i].Scheme, pbckbges[j].Scheme},
+				{string(pbckbges[i].Nbme), string(pbckbges[j].Nbme)},
+				{pbckbges[i].Version, pbckbges[j].Version},
 			} {
-				if pair[0] < pair[1] {
+				if pbir[0] < pbir[1] {
 					return true
 				}
-				if pair[1] < pair[0] {
-					break
+				if pbir[1] < pbir[0] {
+					brebk
 				}
 			}
 
-			return false
+			return fblse
 		})
 
-		expectedPackages := []dependencies.MinimialVersionedPackageRepo{
-			{Scheme: "gomod", Name: "https://github.com/cheese/burger", Version: "v2.2.1"},
-			{Scheme: "gomod", Name: "https://github.com/cheese/burger", Version: "v3.2.2"},
-			{Scheme: "gomod", Name: "https://github.com/cheese/burger", Version: "v4.2.3"},
-			{Scheme: "gomod", Name: "https://github.com/sample/text", Version: "v1.2.0"},
-			{Scheme: "gomod", Name: "https://github.com/sample/text", Version: "v2.2.0"},
-			{Scheme: "gomod", Name: "https://github.com/sample/text", Version: "v3.2.0"},
+		expectedPbckbges := []dependencies.MinimiblVersionedPbckbgeRepo{
+			{Scheme: "gomod", Nbme: "https://github.com/cheese/burger", Version: "v2.2.1"},
+			{Scheme: "gomod", Nbme: "https://github.com/cheese/burger", Version: "v3.2.2"},
+			{Scheme: "gomod", Nbme: "https://github.com/cheese/burger", Version: "v4.2.3"},
+			{Scheme: "gomod", Nbme: "https://github.com/sbmple/text", Version: "v1.2.0"},
+			{Scheme: "gomod", Nbme: "https://github.com/sbmple/text", Version: "v2.2.0"},
+			{Scheme: "gomod", Nbme: "https://github.com/sbmple/text", Version: "v3.2.0"},
 		}
-		if diff := cmp.Diff(expectedPackages, packages); diff != "" {
-			t.Errorf("unexpected packages (-want +got):\n%s", diff)
+		if diff := cmp.Diff(expectedPbckbges, pbckbges); diff != "" {
+			t.Errorf("unexpected pbckbges (-wbnt +got):\n%s", diff)
 		}
 	}
 }
 
-func TestDependencyIndexingSchedulerHandlerRequeueNotCloned(t *testing.T) {
-	mockUploadsSvc := NewMockUploadService()
+func TestDependencyIndexingSchedulerHbndlerRequeueNotCloned(t *testing.T) {
+	mockUplobdsSvc := NewMockUplobdService()
 	mockRepoStore := NewMockReposStore()
-	mockExtSvcStore := NewMockExternalServiceStore()
-	mockRepoUpdater := NewMockRepoUpdaterClient()
-	mockScanner := NewMockPackageReferenceScanner()
+	mockExtSvcStore := NewMockExternblServiceStore()
+	mockRepoUpdbter := NewMockRepoUpdbterClient()
+	mockScbnner := NewMockPbckbgeReferenceScbnner()
 	mockWorkerStore := NewMockWorkerStore[dependencyIndexingJob]()
-	mockUploadsSvc.GetUploadByIDFunc.SetDefaultReturn(shared.Upload{ID: 42, RepositoryID: 50, Indexer: "lsif-go"}, true, nil)
-	mockUploadsSvc.ReferencesForUploadFunc.SetDefaultReturn(mockScanner, nil)
+	mockUplobdsSvc.GetUplobdByIDFunc.SetDefbultReturn(shbred.Uplobd{ID: 42, RepositoryID: 50, Indexer: "lsif-go"}, true, nil)
+	mockUplobdsSvc.ReferencesForUplobdFunc.SetDefbultReturn(mockScbnner, nil)
 
-	mockScanner.NextFunc.PushReturn(shared.PackageReference{Package: shared.Package{DumpID: 42, Scheme: "gomod", Name: "https://github.com/sample/text", Version: "v3.2.0"}}, true, nil)
-	mockScanner.NextFunc.PushReturn(shared.PackageReference{Package: shared.Package{DumpID: 42, Scheme: "gomod", Name: "https://github.com/cheese/burger", Version: "v4.2.3"}}, true, nil)
-	mockScanner.NextFunc.SetDefaultReturn(shared.PackageReference{}, false, nil)
+	mockScbnner.NextFunc.PushReturn(shbred.PbckbgeReference{Pbckbge: shbred.Pbckbge{DumpID: 42, Scheme: "gomod", Nbme: "https://github.com/sbmple/text", Version: "v3.2.0"}}, true, nil)
+	mockScbnner.NextFunc.PushReturn(shbred.PbckbgeReference{Pbckbge: shbred.Pbckbge{DumpID: 42, Scheme: "gomod", Nbme: "https://github.com/cheese/burger", Version: "v4.2.3"}}, true, nil)
+	mockScbnner.NextFunc.SetDefbultReturn(shbred.PbckbgeReference{}, fblse, nil)
 
 	mockGitserverReposStore := NewMockGitserverRepoStore()
-	mockGitserverReposStore.GetByNamesFunc.PushReturn(map[api.RepoName]*types.GitserverRepo{
-		"github.com/sample/text": {
-			CloneStatus: types.CloneStatusCloned,
+	mockGitserverReposStore.GetByNbmesFunc.PushReturn(mbp[bpi.RepoNbme]*types.GitserverRepo{
+		"github.com/sbmple/text": {
+			CloneStbtus: types.CloneStbtusCloned,
 		},
 		"github.com/cheese/burger": {
-			CloneStatus: types.CloneStatusCloning,
+			CloneStbtus: types.CloneStbtusCloning,
 		},
 	}, nil)
 
 	indexEnqueuer := NewMockIndexEnqueuer()
 
-	envvar.MockSourcegraphDotComMode(true)
+	envvbr.MockSourcegrbphDotComMode(true)
 
-	handler := &dependencyIndexingSchedulerHandler{
-		uploadsSvc:         mockUploadsSvc,
+	hbndler := &dependencyIndexingSchedulerHbndler{
+		uplobdsSvc:         mockUplobdsSvc,
 		repoStore:          mockRepoStore,
 		indexEnqueuer:      indexEnqueuer,
 		extsvcStore:        mockExtSvcStore,
 		gitserverRepoStore: mockGitserverReposStore,
 		workerStore:        mockWorkerStore,
-		repoUpdater:        mockRepoUpdater,
+		repoUpdbter:        mockRepoUpdbter,
 	}
 
 	job := dependencyIndexingJob{
-		UploadID:            42,
-		ExternalServiceKind: "",
-		ExternalServiceSync: time.Time{},
+		UplobdID:            42,
+		ExternblServiceKind: "",
+		ExternblServiceSync: time.Time{},
 	}
 	logger := logtest.Scoped(t)
-	if err := handler.Handle(context.Background(), logger, job); err != nil {
-		t.Fatalf("unexpected error performing update: %s", err)
+	if err := hbndler.Hbndle(context.Bbckground(), logger, job); err != nil {
+		t.Fbtblf("unexpected error performing updbte: %s", err)
 	}
 
 	if len(mockWorkerStore.RequeueFunc.History()) != 1 {
-		t.Errorf("unexpected number of calls to Requeue. want=%d have=%d", 1, len(mockWorkerStore.RequeueFunc.History()))
+		t.Errorf("unexpected number of cblls to Requeue. wbnt=%d hbve=%d", 1, len(mockWorkerStore.RequeueFunc.History()))
 	}
 
 	if len(mockExtSvcStore.ListFunc.History()) != 0 {
-		t.Errorf("unexpected number of calls to extsvcStore.List. want=%d have=%d", 0, len(mockExtSvcStore.ListFunc.History()))
+		t.Errorf("unexpected number of cblls to extsvcStore.List. wbnt=%d hbve=%d", 0, len(mockExtSvcStore.ListFunc.History()))
 	}
 
-	if len(indexEnqueuer.QueueIndexesForPackageFunc.History()) != 0 {
-		t.Errorf("unexpected number of calls to QueueIndexesForPackage. want=%d have=%d", 0, len(indexEnqueuer.QueueIndexesForPackageFunc.History()))
+	if len(indexEnqueuer.QueueIndexesForPbckbgeFunc.History()) != 0 {
+		t.Errorf("unexpected number of cblls to QueueIndexesForPbckbge. wbnt=%d hbve=%d", 0, len(indexEnqueuer.QueueIndexesForPbckbgeFunc.History()))
 	}
 }
 
-func TestDependencyIndexingSchedulerHandlerSkipNonExistant(t *testing.T) {
-	mockUploadsSvc := NewMockUploadService()
-	mockExtSvcStore := NewMockExternalServiceStore()
-	mockRepoUpdater := NewMockRepoUpdaterClient()
-	mockScanner := NewMockPackageReferenceScanner()
+func TestDependencyIndexingSchedulerHbndlerSkipNonExistbnt(t *testing.T) {
+	mockUplobdsSvc := NewMockUplobdService()
+	mockExtSvcStore := NewMockExternblServiceStore()
+	mockRepoUpdbter := NewMockRepoUpdbterClient()
+	mockScbnner := NewMockPbckbgeReferenceScbnner()
 	mockWorkerStore := NewMockWorkerStore[dependencyIndexingJob]()
 	mockRepoStore := NewMockReposStore()
 
-	mockUploadsSvc.GetUploadByIDFunc.SetDefaultReturn(shared.Upload{ID: 42, RepositoryID: 50, Indexer: "lsif-go"}, true, nil)
-	mockUploadsSvc.ReferencesForUploadFunc.SetDefaultReturn(mockScanner, nil)
+	mockUplobdsSvc.GetUplobdByIDFunc.SetDefbultReturn(shbred.Uplobd{ID: 42, RepositoryID: 50, Indexer: "lsif-go"}, true, nil)
+	mockUplobdsSvc.ReferencesForUplobdFunc.SetDefbultReturn(mockScbnner, nil)
 
-	mockScanner.NextFunc.PushReturn(shared.PackageReference{Package: shared.Package{DumpID: 42, Scheme: "gomod", Name: "https://github.com/sample/text", Version: "v3.2.0"}}, true, nil)
-	mockScanner.NextFunc.PushReturn(shared.PackageReference{Package: shared.Package{DumpID: 42, Scheme: "gomod", Name: "https://github.com/cheese/burger", Version: "v4.2.3"}}, true, nil)
-	mockScanner.NextFunc.SetDefaultReturn(shared.PackageReference{}, false, nil)
+	mockScbnner.NextFunc.PushReturn(shbred.PbckbgeReference{Pbckbge: shbred.Pbckbge{DumpID: 42, Scheme: "gomod", Nbme: "https://github.com/sbmple/text", Version: "v3.2.0"}}, true, nil)
+	mockScbnner.NextFunc.PushReturn(shbred.PbckbgeReference{Pbckbge: shbred.Pbckbge{DumpID: 42, Scheme: "gomod", Nbme: "https://github.com/cheese/burger", Version: "v4.2.3"}}, true, nil)
+	mockScbnner.NextFunc.SetDefbultReturn(shbred.PbckbgeReference{}, fblse, nil)
 
 	mockGitserverReposStore := NewMockGitserverRepoStore()
-	mockGitserverReposStore.GetByNamesFunc.PushReturn(map[api.RepoName]*types.GitserverRepo{
-		"github.com/sample/text": {
-			CloneStatus: types.CloneStatusCloned,
+	mockGitserverReposStore.GetByNbmesFunc.PushReturn(mbp[bpi.RepoNbme]*types.GitserverRepo{
+		"github.com/sbmple/text": {
+			CloneStbtus: types.CloneStbtusCloned,
 		},
 		"github.com/cheese/burger": {
-			CloneStatus: types.CloneStatusNotCloned,
+			CloneStbtus: types.CloneStbtusNotCloned,
 		},
 	}, nil)
 
 	indexEnqueuer := NewMockIndexEnqueuer()
 
-	envvar.MockSourcegraphDotComMode(true)
+	envvbr.MockSourcegrbphDotComMode(true)
 
-	handler := &dependencyIndexingSchedulerHandler{
-		uploadsSvc:         mockUploadsSvc,
+	hbndler := &dependencyIndexingSchedulerHbndler{
+		uplobdsSvc:         mockUplobdsSvc,
 		indexEnqueuer:      indexEnqueuer,
 		extsvcStore:        mockExtSvcStore,
 		gitserverRepoStore: mockGitserverReposStore,
 		workerStore:        mockWorkerStore,
-		repoUpdater:        mockRepoUpdater,
+		repoUpdbter:        mockRepoUpdbter,
 		repoStore:          mockRepoStore,
 	}
 
 	job := dependencyIndexingJob{
-		UploadID:            42,
-		ExternalServiceKind: "",
-		ExternalServiceSync: time.Time{},
+		UplobdID:            42,
+		ExternblServiceKind: "",
+		ExternblServiceSync: time.Time{},
 	}
 	logger := logtest.Scoped(t)
-	if err := handler.Handle(context.Background(), logger, job); err != nil {
-		t.Fatalf("unexpected error performing update: %s", err)
+	if err := hbndler.Hbndle(context.Bbckground(), logger, job); err != nil {
+		t.Fbtblf("unexpected error performing updbte: %s", err)
 	}
 
 	if len(mockWorkerStore.RequeueFunc.History()) != 0 {
-		t.Errorf("unexpected number of calls to Requeue. want=%d have=%d", 0, len(mockWorkerStore.RequeueFunc.History()))
+		t.Errorf("unexpected number of cblls to Requeue. wbnt=%d hbve=%d", 0, len(mockWorkerStore.RequeueFunc.History()))
 	}
 
 	if len(mockExtSvcStore.ListFunc.History()) != 0 {
-		t.Errorf("unexpected number of calls to extsvcStore.List. want=%d have=%d", 0, len(mockExtSvcStore.ListFunc.History()))
+		t.Errorf("unexpected number of cblls to extsvcStore.List. wbnt=%d hbve=%d", 0, len(mockExtSvcStore.ListFunc.History()))
 	}
 
-	if len(indexEnqueuer.QueueIndexesForPackageFunc.History()) != 1 {
-		t.Errorf("unexpected number of calls to QueueIndexesForPackage. want=%d have=%d", 1, len(indexEnqueuer.QueueIndexesForPackageFunc.History()))
+	if len(indexEnqueuer.QueueIndexesForPbckbgeFunc.History()) != 1 {
+		t.Errorf("unexpected number of cblls to QueueIndexesForPbckbge. wbnt=%d hbve=%d", 1, len(indexEnqueuer.QueueIndexesForPbckbgeFunc.History()))
 	}
 }
 
-func TestDependencyIndexingSchedulerHandlerShouldSkipRepository(t *testing.T) {
-	mockUploadsSvc := NewMockUploadService()
-	mockExtSvcStore := NewMockExternalServiceStore()
+func TestDependencyIndexingSchedulerHbndlerShouldSkipRepository(t *testing.T) {
+	mockUplobdsSvc := NewMockUplobdService()
+	mockExtSvcStore := NewMockExternblServiceStore()
 	mockGitserverReposStore := NewMockGitserverRepoStore()
-	mockScanner := NewMockPackageReferenceScanner()
+	mockScbnner := NewMockPbckbgeReferenceScbnner()
 	mockRepoStore := NewMockReposStore()
 
-	mockUploadsSvc.GetUploadByIDFunc.SetDefaultReturn(shared.Upload{ID: 42, RepositoryID: 51, Indexer: "scip-typescript"}, true, nil)
-	mockUploadsSvc.ReferencesForUploadFunc.SetDefaultReturn(mockScanner, nil)
+	mockUplobdsSvc.GetUplobdByIDFunc.SetDefbultReturn(shbred.Uplobd{ID: 42, RepositoryID: 51, Indexer: "scip-typescript"}, true, nil)
+	mockUplobdsSvc.ReferencesForUplobdFunc.SetDefbultReturn(mockScbnner, nil)
 
 	indexEnqueuer := NewMockIndexEnqueuer()
 
-	envvar.MockSourcegraphDotComMode(true)
+	envvbr.MockSourcegrbphDotComMode(true)
 
-	handler := &dependencyIndexingSchedulerHandler{
-		uploadsSvc:         mockUploadsSvc,
+	hbndler := &dependencyIndexingSchedulerHbndler{
+		uplobdsSvc:         mockUplobdsSvc,
 		indexEnqueuer:      indexEnqueuer,
 		extsvcStore:        mockExtSvcStore,
 		gitserverRepoStore: mockGitserverReposStore,
@@ -375,47 +375,47 @@ func TestDependencyIndexingSchedulerHandlerShouldSkipRepository(t *testing.T) {
 	}
 
 	job := dependencyIndexingJob{
-		ExternalServiceKind: "",
-		ExternalServiceSync: time.Time{},
-		UploadID:            42,
+		ExternblServiceKind: "",
+		ExternblServiceSync: time.Time{},
+		UplobdID:            42,
 	}
 	logger := logtest.Scoped(t)
-	if err := handler.Handle(context.Background(), logger, job); err != nil {
-		t.Fatalf("unexpected error performing update: %s", err)
+	if err := hbndler.Hbndle(context.Bbckground(), logger, job); err != nil {
+		t.Fbtblf("unexpected error performing updbte: %s", err)
 	}
 
-	if len(indexEnqueuer.QueueIndexesForPackageFunc.History()) != 0 {
-		t.Errorf("unexpected number of calls to QueueIndexesForPackage. want=%d have=%d", 0, len(indexEnqueuer.QueueIndexesForPackageFunc.History()))
+	if len(indexEnqueuer.QueueIndexesForPbckbgeFunc.History()) != 0 {
+		t.Errorf("unexpected number of cblls to QueueIndexesForPbckbge. wbnt=%d hbve=%d", 0, len(indexEnqueuer.QueueIndexesForPbckbgeFunc.History()))
 	}
 }
 
-func TestDependencyIndexingSchedulerHandlerNoExtsvc(t *testing.T) {
-	mockUploadsSvc := NewMockUploadService()
-	mockExtSvcStore := NewMockExternalServiceStore()
+func TestDependencyIndexingSchedulerHbndlerNoExtsvc(t *testing.T) {
+	mockUplobdsSvc := NewMockUplobdService()
+	mockExtSvcStore := NewMockExternblServiceStore()
 	mockGitserverReposStore := NewMockGitserverRepoStore()
-	mockScanner := NewMockPackageReferenceScanner()
+	mockScbnner := NewMockPbckbgeReferenceScbnner()
 	mockRepoStore := NewMockReposStore()
 
-	mockUploadsSvc.GetUploadByIDFunc.SetDefaultReturn(shared.Upload{ID: 42, RepositoryID: 51, Indexer: "scip-java"}, true, nil)
-	mockUploadsSvc.ReferencesForUploadFunc.SetDefaultReturn(mockScanner, nil)
-	mockScanner.NextFunc.PushReturn(shared.PackageReference{
-		Package: shared.Package{
+	mockUplobdsSvc.GetUplobdByIDFunc.SetDefbultReturn(shbred.Uplobd{ID: 42, RepositoryID: 51, Indexer: "scip-jbvb"}, true, nil)
+	mockUplobdsSvc.ReferencesForUplobdFunc.SetDefbultReturn(mockScbnner, nil)
+	mockScbnner.NextFunc.PushReturn(shbred.PbckbgeReference{
+		Pbckbge: shbred.Pbckbge{
 			DumpID:  42,
-			Scheme:  dependencies.JVMPackagesScheme,
-			Name:    "banana",
+			Scheme:  dependencies.JVMPbckbgesScheme,
+			Nbme:    "bbnbnb",
 			Version: "v1.2.3",
 		},
 	}, true, nil)
-	mockGitserverReposStore.GetByNamesFunc.PushReturn(map[api.RepoName]*types.GitserverRepo{
-		"banana": {CloneStatus: types.CloneStatusCloned},
+	mockGitserverReposStore.GetByNbmesFunc.PushReturn(mbp[bpi.RepoNbme]*types.GitserverRepo{
+		"bbnbnb": {CloneStbtus: types.CloneStbtusCloned},
 	}, nil)
 
 	indexEnqueuer := NewMockIndexEnqueuer()
 
-	envvar.MockSourcegraphDotComMode(true)
+	envvbr.MockSourcegrbphDotComMode(true)
 
-	handler := &dependencyIndexingSchedulerHandler{
-		uploadsSvc:         mockUploadsSvc,
+	hbndler := &dependencyIndexingSchedulerHbndler{
+		uplobdsSvc:         mockUplobdsSvc,
 		indexEnqueuer:      indexEnqueuer,
 		extsvcStore:        mockExtSvcStore,
 		gitserverRepoStore: mockGitserverReposStore,
@@ -423,16 +423,16 @@ func TestDependencyIndexingSchedulerHandlerNoExtsvc(t *testing.T) {
 	}
 
 	job := dependencyIndexingJob{
-		ExternalServiceKind: extsvc.KindJVMPackages,
-		ExternalServiceSync: time.Time{},
-		UploadID:            42,
+		ExternblServiceKind: extsvc.KindJVMPbckbges,
+		ExternblServiceSync: time.Time{},
+		UplobdID:            42,
 	}
 	logger := logtest.Scoped(t)
-	if err := handler.Handle(context.Background(), logger, job); err != nil {
-		t.Fatalf("unexpected error performing update: %s", err)
+	if err := hbndler.Hbndle(context.Bbckground(), logger, job); err != nil {
+		t.Fbtblf("unexpected error performing updbte: %s", err)
 	}
 
-	if len(indexEnqueuer.QueueIndexesForPackageFunc.History()) != 0 {
-		t.Errorf("unexpected number of calls to QueueIndexesForPackage. want=%d have=%d", 0, len(indexEnqueuer.QueueIndexesForPackageFunc.History()))
+	if len(indexEnqueuer.QueueIndexesForPbckbgeFunc.History()) != 0 {
+		t.Errorf("unexpected number of cblls to QueueIndexesForPbckbge. wbnt=%d hbve=%d", 0, len(indexEnqueuer.QueueIndexesForPbckbgeFunc.History()))
 	}
 }

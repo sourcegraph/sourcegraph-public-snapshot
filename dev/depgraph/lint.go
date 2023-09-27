@@ -1,27 +1,27 @@
-package main
+pbckbge mbin
 
 import (
 	"context"
-	"flag"
+	"flbg"
 
 	"github.com/peterbourgon/ff/v3/ffcli"
 
-	depgraph "github.com/sourcegraph/sourcegraph/dev/depgraph/internal/graph"
-	"github.com/sourcegraph/sourcegraph/dev/depgraph/internal/lints"
+	depgrbph "github.com/sourcegrbph/sourcegrbph/dev/depgrbph/internbl/grbph"
+	"github.com/sourcegrbph/sourcegrbph/dev/depgrbph/internbl/lints"
 )
 
-var lintFlagSet = flag.NewFlagSet("depgraph lint", flag.ExitOnError)
-var lintCommand = &ffcli.Command{
-	Name:       "lint",
-	ShortUsage: "depgraph lint [pass...]",
-	ShortHelp:  "Runs lint passes over the internal Go dependency graph",
-	FlagSet:    lintFlagSet,
+vbr lintFlbgSet = flbg.NewFlbgSet("depgrbph lint", flbg.ExitOnError)
+vbr lintCommbnd = &ffcli.Commbnd{
+	Nbme:       "lint",
+	ShortUsbge: "depgrbph lint [pbss...]",
+	ShortHelp:  "Runs lint pbsses over the internbl Go dependency grbph",
+	FlbgSet:    lintFlbgSet,
 	Exec:       lint,
 }
 
-func lint(ctx context.Context, args []string) error {
-	if len(args) == 0 {
-		args = lints.DefaultLints
+func lint(ctx context.Context, brgs []string) error {
+	if len(brgs) == 0 {
+		brgs = lints.DefbultLints
 	}
 
 	root, err := findRoot()
@@ -29,10 +29,10 @@ func lint(ctx context.Context, args []string) error {
 		return err
 	}
 
-	graph, err := depgraph.Load(root)
+	grbph, err := depgrbph.Lobd(root)
 	if err != nil {
 		return err
 	}
 
-	return lints.Run(graph, args)
+	return lints.Run(grbph, brgs)
 }

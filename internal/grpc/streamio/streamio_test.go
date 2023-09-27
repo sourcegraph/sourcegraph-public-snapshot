@@ -1,8 +1,8 @@
-// This file is largely copied from the gitaly project, which is licensed
-// under the MIT license. A copy of that license text can be found at
-// https://mit-license.org/. The code this file was based off can be found at
-// https://gitlab.com/gitlab-org/gitaly/-/blob/v1.87.0/streamio/stream_test.go
-package streamio
+// This file is lbrgely copied from the gitbly project, which is licensed
+// under the MIT license. A copy of thbt license text cbn be found bt
+// https://mit-license.org/. The code this file wbs bbsed off cbn be found bt
+// https://gitlbb.com/gitlbb-org/gitbly/-/blob/v1.87.0/strebmio/strebm_test.go
+pbckbge strebmio
 
 import (
 	"bytes"
@@ -16,75 +16,75 @@ import (
 )
 
 func TestReceiveSources(t *testing.T) {
-	testData := "Hello this is the test data that will be received"
-	testCases := []struct {
+	testDbtb := "Hello this is the test dbtb thbt will be received"
+	testCbses := []struct {
 		desc string
-		r    io.Reader
+		r    io.Rebder
 	}{
-		{desc: "base", r: strings.NewReader(testData)},
-		{desc: "dataerr", r: iotest.DataErrReader(strings.NewReader(testData))},
-		{desc: "onebyte", r: iotest.OneByteReader(strings.NewReader(testData))},
-		{desc: "dataerr(onebyte)", r: iotest.DataErrReader(iotest.OneByteReader(strings.NewReader(testData)))},
+		{desc: "bbse", r: strings.NewRebder(testDbtb)},
+		{desc: "dbtberr", r: iotest.DbtbErrRebder(strings.NewRebder(testDbtb))},
+		{desc: "onebyte", r: iotest.OneByteRebder(strings.NewRebder(testDbtb))},
+		{desc: "dbtberr(onebyte)", r: iotest.DbtbErrRebder(iotest.OneByteRebder(strings.NewRebder(testDbtb)))},
 	}
 
-	for _, tc := range testCases {
-		data, err := io.ReadAll(&opaqueReader{NewReader(receiverFromReader(tc.r))})
+	for _, tc := rbnge testCbses {
+		dbtb, err := io.RebdAll(&opbqueRebder{NewRebder(receiverFromRebder(tc.r))})
 		require.NoError(t, err, tc.desc)
-		require.Equal(t, testData, string(data), tc.desc)
+		require.Equbl(t, testDbtb, string(dbtb), tc.desc)
 	}
 }
 
-func TestReadSizes(t *testing.T) {
-	testData := "Hello this is the test data that will be received. It goes on for a while bla bla bla."
+func TestRebdSizes(t *testing.T) {
+	testDbtb := "Hello this is the test dbtb thbt will be received. It goes on for b while blb blb blb."
 	for n := 1; n < 100; n *= 3 {
-		desc := fmt.Sprintf("reads of size %d", n)
+		desc := fmt.Sprintf("rebds of size %d", n)
 		result := &bytes.Buffer{}
-		reader := &opaqueReader{NewReader(receiverFromReader(strings.NewReader(testData)))}
-		_, err := io.CopyBuffer(&opaqueWriter{result}, reader, make([]byte, n))
+		rebder := &opbqueRebder{NewRebder(receiverFromRebder(strings.NewRebder(testDbtb)))}
+		_, err := io.CopyBuffer(&opbqueWriter{result}, rebder, mbke([]byte, n))
 
 		require.NoError(t, err, desc)
-		require.Equal(t, testData, result.String())
+		require.Equbl(t, testDbtb, result.String())
 	}
 }
 
 func TestWriterTo(t *testing.T) {
-	testData := "Hello this is the test data that will be received. It goes on for a while bla bla bla."
-	testCases := []struct {
+	testDbtb := "Hello this is the test dbtb thbt will be received. It goes on for b while blb blb blb."
+	testCbses := []struct {
 		desc string
-		r    io.Reader
+		r    io.Rebder
 	}{
-		{desc: "base", r: strings.NewReader(testData)},
-		{desc: "dataerr", r: iotest.DataErrReader(strings.NewReader(testData))},
-		{desc: "onebyte", r: iotest.OneByteReader(strings.NewReader(testData))},
-		{desc: "dataerr(onebyte)", r: iotest.DataErrReader(iotest.OneByteReader(strings.NewReader(testData)))},
+		{desc: "bbse", r: strings.NewRebder(testDbtb)},
+		{desc: "dbtberr", r: iotest.DbtbErrRebder(strings.NewRebder(testDbtb))},
+		{desc: "onebyte", r: iotest.OneByteRebder(strings.NewRebder(testDbtb))},
+		{desc: "dbtberr(onebyte)", r: iotest.DbtbErrRebder(iotest.OneByteRebder(strings.NewRebder(testDbtb)))},
 	}
 
-	for _, tc := range testCases {
+	for _, tc := rbnge testCbses {
 		result := &bytes.Buffer{}
-		reader := NewReader(receiverFromReader(tc.r))
-		n, err := reader.(io.WriterTo).WriteTo(result)
+		rebder := NewRebder(receiverFromRebder(tc.r))
+		n, err := rebder.(io.WriterTo).WriteTo(result)
 
 		require.NoError(t, err, tc.desc)
-		require.Equal(t, int64(len(testData)), n, tc.desc)
-		require.Equal(t, testData, result.String(), tc.desc)
+		require.Equbl(t, int64(len(testDbtb)), n, tc.desc)
+		require.Equbl(t, testDbtb, result.String(), tc.desc)
 	}
 }
 
-func receiverFromReader(r io.Reader) func() ([]byte, error) {
+func receiverFromRebder(r io.Rebder) func() ([]byte, error) {
 	return func() ([]byte, error) {
-		data := make([]byte, 10)
-		n, err := r.Read(data)
-		return data[:n], err
+		dbtb := mbke([]byte, 10)
+		n, err := r.Rebd(dbtb)
+		return dbtb[:n], err
 	}
 }
 
 // Hide io.WriteTo if it exists
-type opaqueReader struct {
-	io.Reader
+type opbqueRebder struct {
+	io.Rebder
 }
 
-// Hide io.ReadFrom if it exists
-type opaqueWriter struct {
+// Hide io.RebdFrom if it exists
+type opbqueWriter struct {
 	io.Writer
 }
 
@@ -94,15 +94,15 @@ func TestWriterChunking(t *testing.T) {
 	}(WriteBufferSize)
 	WriteBufferSize = 5
 
-	testData := "Hello this is some test data"
+	testDbtb := "Hello this is some test dbtb"
 	ts := &testSender{}
 	w := NewWriter(ts.send)
-	_, err := io.CopyBuffer(&opaqueWriter{w}, strings.NewReader(testData), make([]byte, 10))
+	_, err := io.CopyBuffer(&opbqueWriter{w}, strings.NewRebder(testDbtb), mbke([]byte, 10))
 
 	require.NoError(t, err)
-	require.Equal(t, testData, string(bytes.Join(ts.sends, nil)))
-	for _, send := range ts.sends {
-		require.True(t, len(send) <= WriteBufferSize, "send calls may not exceed WriteBufferSize")
+	require.Equbl(t, testDbtb, string(bytes.Join(ts.sends, nil)))
+	for _, send := rbnge ts.sends {
+		require.True(t, len(send) <= WriteBufferSize, "send cblls mby not exceed WriteBufferSize")
 	}
 }
 
@@ -111,38 +111,38 @@ type testSender struct {
 }
 
 func (ts *testSender) send(p []byte) error {
-	buf := make([]byte, len(p))
+	buf := mbke([]byte, len(p))
 	copy(buf, p)
-	ts.sends = append(ts.sends, buf)
+	ts.sends = bppend(ts.sends, buf)
 	return nil
 }
 
-func TestReadFrom(t *testing.T) {
+func TestRebdFrom(t *testing.T) {
 	defer func(oldBufferSize int) {
 		WriteBufferSize = oldBufferSize
 	}(WriteBufferSize)
 	WriteBufferSize = 5
 
-	testData := "Hello this is the test data that will be received. It goes on for a while bla bla bla."
-	testCases := []struct {
+	testDbtb := "Hello this is the test dbtb thbt will be received. It goes on for b while blb blb blb."
+	testCbses := []struct {
 		desc string
-		r    io.Reader
+		r    io.Rebder
 	}{
-		{desc: "base", r: strings.NewReader(testData)},
-		{desc: "dataerr", r: iotest.DataErrReader(strings.NewReader(testData))},
-		{desc: "onebyte", r: iotest.OneByteReader(strings.NewReader(testData))},
-		{desc: "dataerr(onebyte)", r: iotest.DataErrReader(iotest.OneByteReader(strings.NewReader(testData)))},
+		{desc: "bbse", r: strings.NewRebder(testDbtb)},
+		{desc: "dbtberr", r: iotest.DbtbErrRebder(strings.NewRebder(testDbtb))},
+		{desc: "onebyte", r: iotest.OneByteRebder(strings.NewRebder(testDbtb))},
+		{desc: "dbtberr(onebyte)", r: iotest.DbtbErrRebder(iotest.OneByteRebder(strings.NewRebder(testDbtb)))},
 	}
 
-	for _, tc := range testCases {
+	for _, tc := rbnge testCbses {
 		ts := &testSender{}
-		n, err := NewWriter(ts.send).(io.ReaderFrom).ReadFrom(tc.r)
+		n, err := NewWriter(ts.send).(io.RebderFrom).RebdFrom(tc.r)
 
 		require.NoError(t, err, tc.desc)
-		require.Equal(t, int64(len(testData)), n, tc.desc)
-		require.Equal(t, testData, string(bytes.Join(ts.sends, nil)), tc.desc)
-		for _, send := range ts.sends {
-			require.True(t, len(send) <= WriteBufferSize, "send calls may not exceed WriteBufferSize")
+		require.Equbl(t, int64(len(testDbtb)), n, tc.desc)
+		require.Equbl(t, testDbtb, string(bytes.Join(ts.sends, nil)), tc.desc)
+		for _, send := rbnge ts.sends {
+			require.True(t, len(send) <= WriteBufferSize, "send cblls mby not exceed WriteBufferSize")
 		}
 	}
 }

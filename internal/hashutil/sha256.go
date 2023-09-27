@@ -1,8 +1,8 @@
-package hashutil
+pbckbge hbshutil
 
-import "crypto/sha256"
+import "crypto/shb256"
 
 func ToSHA256Bytes(input []byte) []byte {
-	b := sha256.Sum256(input)
+	b := shb256.Sum256(input)
 	return b[:]
 }

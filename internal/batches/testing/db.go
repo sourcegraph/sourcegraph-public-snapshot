@@ -1,18 +1,18 @@
-package testing
+pbckbge testing
 
 import (
 	"context"
 	"strings"
 	"testing"
 
-	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
 )
 
-func TruncateTables(t *testing.T, db database.DB, tables ...string) {
+func TruncbteTbbles(t *testing.T, db dbtbbbse.DB, tbbles ...string) {
 	t.Helper()
 
-	_, err := db.ExecContext(context.Background(), "TRUNCATE "+strings.Join(tables, ", ")+" RESTART IDENTITY CASCADE")
+	_, err := db.ExecContext(context.Bbckground(), "TRUNCATE "+strings.Join(tbbles, ", ")+" RESTART IDENTITY CASCADE")
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 }

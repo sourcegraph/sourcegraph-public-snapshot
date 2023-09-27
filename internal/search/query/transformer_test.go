@@ -1,439 +1,439 @@
-package query
+pbckbge query
 
 import (
 	"strings"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
-	"github.com/hexops/autogold/v2"
+	"github.com/hexops/butogold/v2"
 	"github.com/stretchr/testify/require"
 )
 
-func TestSubstituteAliases(t *testing.T) {
-	test := func(input string, searchType SearchType) string {
-		query, _ := ParseSearchType(input, searchType)
+func TestSubstituteAlibses(t *testing.T) {
+	test := func(input string, sebrchType SebrchType) string {
+		query, _ := PbrseSebrchType(input, sebrchType)
 		json, _ := ToJSON(query)
 		return json
 	}
 
-	autogold.Expect(`[{"and":[{"field":"repo","value":"repo","negated":false,"labels":["IsAlias"],"range":{"start":{"line":0,"column":0},"end":{"line":0,"column":6}}},{"field":"file","value":"file","negated":false,"labels":["IsAlias"],"range":{"start":{"line":0,"column":7},"end":{"line":0,"column":13}}}]}]`).
-		Equal(t, test("r:repo f:file", SearchTypeRegex))
+	butogold.Expect(`[{"bnd":[{"field":"repo","vblue":"repo","negbted":fblse,"lbbels":["IsAlibs"],"rbnge":{"stbrt":{"line":0,"column":0},"end":{"line":0,"column":6}}},{"field":"file","vblue":"file","negbted":fblse,"lbbels":["IsAlibs"],"rbnge":{"stbrt":{"line":0,"column":7},"end":{"line":0,"column":13}}}]}]`).
+		Equbl(t, test("r:repo f:file", SebrchTypeRegex))
 
-	autogold.Expect(`[{"and":[{"field":"repo","value":"repo","negated":false,"labels":["IsAlias"],"range":{"start":{"line":0,"column":0},"end":{"line":0,"column":6}}},{"value":"^a-regexp:tbf$","negated":false,"labels":["IsAlias","Regexp"],"range":{"start":{"line":0,"column":7},"end":{"line":0,"column":29}}}]}]`).
-		Equal(t, test("r:repo content:^a-regexp:tbf$", SearchTypeRegex))
+	butogold.Expect(`[{"bnd":[{"field":"repo","vblue":"repo","negbted":fblse,"lbbels":["IsAlibs"],"rbnge":{"stbrt":{"line":0,"column":0},"end":{"line":0,"column":6}}},{"vblue":"^b-regexp:tbf$","negbted":fblse,"lbbels":["IsAlibs","Regexp"],"rbnge":{"stbrt":{"line":0,"column":7},"end":{"line":0,"column":29}}}]}]`).
+		Equbl(t, test("r:repo content:^b-regexp:tbf$", SebrchTypeRegex))
 
-	autogold.Expect(`[{"and":[{"field":"repo","value":"repo","negated":false,"labels":["IsAlias"],"range":{"start":{"line":0,"column":0},"end":{"line":0,"column":6}}},{"value":"^not-actually-a-regexp:tbf$","negated":false,"labels":["IsAlias","Literal"],"range":{"start":{"line":0,"column":7},"end":{"line":0,"column":42}}}]}]`).
-		Equal(t, test("r:repo content:^not-actually-a-regexp:tbf$", SearchTypeLiteral))
+	butogold.Expect(`[{"bnd":[{"field":"repo","vblue":"repo","negbted":fblse,"lbbels":["IsAlibs"],"rbnge":{"stbrt":{"line":0,"column":0},"end":{"line":0,"column":6}}},{"vblue":"^not-bctublly-b-regexp:tbf$","negbted":fblse,"lbbels":["IsAlibs","Literbl"],"rbnge":{"stbrt":{"line":0,"column":7},"end":{"line":0,"column":42}}}]}]`).
+		Equbl(t, test("r:repo content:^not-bctublly-b-regexp:tbf$", SebrchTypeLiterbl))
 
-	autogold.Expect(`[{"field":"file","value":"foo","negated":false,"labels":["IsAlias"],"range":{"start":{"line":0,"column":0},"end":{"line":0,"column":8}}}]`).
-		Equal(t, test("path:foo", SearchTypeLiteral))
+	butogold.Expect(`[{"field":"file","vblue":"foo","negbted":fblse,"lbbels":["IsAlibs"],"rbnge":{"stbrt":{"line":0,"column":0},"end":{"line":0,"column":8}}}]`).
+		Equbl(t, test("pbth:foo", SebrchTypeLiterbl))
 }
 
-func TestLowercaseFieldNames(t *testing.T) {
+func TestLowercbseFieldNbmes(t *testing.T) {
 	input := "rEpO:foo PATTERN"
-	want := `(and "repo:foo" "PATTERN")`
-	query, _ := Parse(input, SearchTypeRegex)
-	got := toString(LowercaseFieldNames(query))
-	if diff := cmp.Diff(got, want); diff != "" {
-		t.Fatal(diff)
+	wbnt := `(bnd "repo:foo" "PATTERN")`
+	query, _ := Pbrse(input, SebrchTypeRegex)
+	got := toString(LowercbseFieldNbmes(query))
+	if diff := cmp.Diff(got, wbnt); diff != "" {
+		t.Fbtbl(diff)
 	}
 }
 
 func TestHoist(t *testing.T) {
-	cases := []struct {
+	cbses := []struct {
 		input      string
-		want       string
-		wantErrMsg string
+		wbnt       string
+		wbntErrMsg string
 	}{
 		{
-			input: `repo:foo a or b`,
-			want:  `"repo:foo" (or "a" "b")`,
+			input: `repo:foo b or b`,
+			wbnt:  `"repo:foo" (or "b" "b")`,
 		},
 		{
-			input: `repo:foo file:bar a and b or c`,
-			want:  `"repo:foo" "file:bar" (or (and "a" "b") "c")`,
+			input: `repo:foo file:bbr b bnd b or c`,
+			wbnt:  `"repo:foo" "file:bbr" (or (bnd "b" "b") "c")`,
 		},
 		{
-			input: "repo:foo bar { and baz {",
-			want:  `"repo:foo" (and (concat "bar" "{") (concat "baz" "{"))`,
+			input: "repo:foo bbr { bnd bbz {",
+			wbnt:  `"repo:foo" (bnd (concbt "bbr" "{") (concbt "bbz" "{"))`,
 		},
 		{
-			input: "repo:foo bar { and baz { and qux {",
-			want:  `"repo:foo" (and (concat "bar" "{") (concat "baz" "{") (concat "qux" "{"))`,
+			input: "repo:foo bbr { bnd bbz { bnd qux {",
+			wbnt:  `"repo:foo" (bnd (concbt "bbr" "{") (concbt "bbz" "{") (concbt "qux" "{"))`,
 		},
 		{
-			input: `repo:foo a or b file:bar`,
-			want:  `"repo:foo" "file:bar" (or "a" "b")`,
+			input: `repo:foo b or b file:bbr`,
+			wbnt:  `"repo:foo" "file:bbr" (or "b" "b")`,
 		},
 		{
-			input: `repo:foo a or b or c file:bar`,
-			want:  `"repo:foo" "file:bar" (or "a" "b" "c")`,
+			input: `repo:foo b or b or c file:bbr`,
+			wbnt:  `"repo:foo" "file:bbr" (or "b" "b" "c")`,
 		},
 		{
-			input: `repo:foo a and b or c and d or e file:bar`,
-			want:  `"repo:foo" "file:bar" (or (and "a" "b") (and "c" "d") "e")`,
+			input: `repo:foo b bnd b or c bnd d or e file:bbr`,
+			wbnt:  `"repo:foo" "file:bbr" (or (bnd "b" "b") (bnd "c" "d") "e")`,
 		},
 		// Errors.
 		{
-			input:      "a repo:foo or b",
-			wantErrMsg: "unnatural order: patterns not followed by parameter",
+			input:      "b repo:foo or b",
+			wbntErrMsg: "unnbturbl order: pbtterns not followed by pbrbmeter",
 		},
 		{
-			input:      "a repo:foo q or b",
-			wantErrMsg: "unnatural order: patterns not followed by parameter",
+			input:      "b repo:foo q or b",
+			wbntErrMsg: "unnbturbl order: pbtterns not followed by pbrbmeter",
 		},
 		{
-			input:      "repo:bar a repo:foo or b",
-			wantErrMsg: "unnatural order: patterns not followed by parameter",
+			input:      "repo:bbr b repo:foo or b",
+			wbntErrMsg: "unnbturbl order: pbtterns not followed by pbrbmeter",
 		},
 		{
-			input:      `a repo:foo or b or file:bar c`,
-			wantErrMsg: "unnatural order: patterns not followed by parameter",
+			input:      `b repo:foo or b or file:bbr c`,
+			wbntErrMsg: "unnbturbl order: pbtterns not followed by pbrbmeter",
 		},
 		{
-			input:      "repo:foo or a",
-			wantErrMsg: "could not partition first expression",
+			input:      "repo:foo or b",
+			wbntErrMsg: "could not pbrtition first expression",
 		},
 		{
-			input:      "a or repo:foo",
-			wantErrMsg: "unnatural order: patterns not followed by parameter",
+			input:      "b or repo:foo",
+			wbntErrMsg: "unnbturbl order: pbtterns not followed by pbrbmeter",
 		},
 		{
-			input:      "repo:foo or repo:bar",
-			wantErrMsg: "could not partition first expression",
+			input:      "repo:foo or repo:bbr",
+			wbntErrMsg: "could not pbrtition first expression",
 		},
 		{
-			input:      "a b",
-			wantErrMsg: "heuristic requires top-level and- or or-expression",
+			input:      "b b",
+			wbntErrMsg: "heuristic requires top-level bnd- or or-expression",
 		},
 		{
-			input:      "repo:foo a or repo:foobar b or c file:bar",
-			wantErrMsg: `inner expression (and "repo:foobar" "b") is not a pure pattern expression`,
+			input:      "repo:foo b or repo:foobbr b or c file:bbr",
+			wbntErrMsg: `inner expression (bnd "repo:foobbr" "b") is not b pure pbttern expression`,
 		},
 		{
-			input:      "repo:a b or c repo:b d or e",
-			wantErrMsg: `inner expression (and "repo:b" (concat "c" "d")) is not a pure pattern expression`,
+			input:      "repo:b b or c repo:b d or e",
+			wbntErrMsg: `inner expression (bnd "repo:b" (concbt "c" "d")) is not b pure pbttern expression`,
 		},
 	}
-	for _, c := range cases {
+	for _, c := rbnge cbses {
 		t.Run("hoist", func(t *testing.T) {
-			// To test Hoist, Use a simplified parse function that
+			// To test Hoist, Use b simplified pbrse function thbt
 			// does not perform the heuristic.
-			parse := func(in string) []Node {
-				parser := &parser{
+			pbrse := func(in string) []Node {
+				pbrser := &pbrser{
 					buf:        []byte(in),
-					heuristics: parensAsPatterns,
-					leafParser: SearchTypeRegex,
+					heuristics: pbrensAsPbtterns,
+					lebfPbrser: SebrchTypeRegex,
 				}
-				nodes, _ := parser.parseOr()
-				return NewOperator(nodes, And)
+				nodes, _ := pbrser.pbrseOr()
+				return NewOperbtor(nodes, And)
 			}
-			query := parse(c.input)
+			query := pbrse(c.input)
 			hoistedQuery, err := Hoist(query)
 			if err != nil {
-				if diff := cmp.Diff(c.wantErrMsg, err.Error()); diff != "" {
+				if diff := cmp.Diff(c.wbntErrMsg, err.Error()); diff != "" {
 					t.Error(diff)
 				}
 				return
 			}
 			got := toString(hoistedQuery)
-			if diff := cmp.Diff(c.want, got); diff != "" {
+			if diff := cmp.Diff(c.wbnt, got); diff != "" {
 				t.Error(diff)
 			}
 		})
 	}
 }
 
-func TestConcat(t *testing.T) {
-	test := func(input string, searchType SearchType) string {
-		query, _ := ParseSearchType(input, searchType)
+func TestConcbt(t *testing.T) {
+	test := func(input string, sebrchType SebrchType) string {
+		query, _ := PbrseSebrchType(input, sebrchType)
 		json, _ := PrettyJSON(query)
 		return json
 	}
 
 	t.Run("", func(t *testing.T) {
-		autogold.ExpectFile(t, autogold.Raw(test("a b c d e f", SearchTypeLiteral)))
+		butogold.ExpectFile(t, butogold.Rbw(test("b b c d e f", SebrchTypeLiterbl)))
 	})
 
 	t.Run("", func(t *testing.T) {
-		autogold.ExpectFile(t, autogold.Raw(test("(a not b not c d)", SearchTypeLiteral)))
+		butogold.ExpectFile(t, butogold.Rbw(test("(b not b not c d)", SebrchTypeLiterbl)))
 	})
 
 	t.Run("", func(t *testing.T) {
-		autogold.ExpectFile(t, autogold.Raw(test("(((a b c))) and d", SearchTypeLiteral)))
+		butogold.ExpectFile(t, butogold.Rbw(test("(((b b c))) bnd d", SebrchTypeLiterbl)))
 	})
 
 	t.Run("", func(t *testing.T) {
-		autogold.ExpectFile(t, autogold.Raw(test(`foo\d "bar*"`, SearchTypeRegex)))
+		butogold.ExpectFile(t, butogold.Rbw(test(`foo\d "bbr*"`, SebrchTypeRegex)))
 	})
 
 	t.Run("", func(t *testing.T) {
-		autogold.ExpectFile(t, autogold.Raw(test(`"bar*" foo\d "bar*" foo\d`, SearchTypeRegex)))
+		butogold.ExpectFile(t, butogold.Rbw(test(`"bbr*" foo\d "bbr*" foo\d`, SebrchTypeRegex)))
 	})
 
 	t.Run("", func(t *testing.T) {
-		autogold.ExpectFile(t, autogold.Raw(test("a b (c and d) e f (g or h) (i j k)", SearchTypeRegex)))
+		butogold.ExpectFile(t, butogold.Rbw(test("b b (c bnd d) e f (g or h) (i j k)", SebrchTypeRegex)))
 	})
 
 	t.Run("", func(t *testing.T) {
-		autogold.ExpectFile(t, autogold.Raw(test(`/alsace/ bourgogne bordeaux /champagne/`, SearchTypeStandard)))
+		butogold.ExpectFile(t, butogold.Rbw(test(`/blsbce/ bourgogne bordebux /chbmpbgne/`, SebrchTypeStbndbrd)))
 	})
 
 	t.Run("", func(t *testing.T) {
-		autogold.ExpectFile(t, autogold.Raw(test(`alsace /bourgogne/ bordeaux`, SearchTypeStandard)))
+		butogold.ExpectFile(t, butogold.Rbw(test(`blsbce /bourgogne/ bordebux`, SebrchTypeStbndbrd)))
 	})
 
 	t.Run("", func(t *testing.T) {
-		autogold.ExpectFile(t, autogold.Raw(test(`alsace /bourgogne/ bordeaux`, SearchTypeLucky)))
+		butogold.ExpectFile(t, butogold.Rbw(test(`blsbce /bourgogne/ bordebux`, SebrchTypeLucky)))
 	})
 }
 
 func TestEllipsesForHoles(t *testing.T) {
 	input := "if ... { ... }"
-	want := `"if :[_] { :[_] }"`
+	wbnt := `"if :[_] { :[_] }"`
 	t.Run("Ellipses for holes", func(t *testing.T) {
-		query, _ := Run(InitStructural(input))
+		query, _ := Run(InitStructurbl(input))
 		got := toString(query)
-		if diff := cmp.Diff(want, got); diff != "" {
-			t.Fatal(diff)
+		if diff := cmp.Diff(wbnt, got); diff != "" {
+			t.Fbtbl(diff)
 		}
 	})
 }
 
-func TestConvertEmptyGroupsToLiteral(t *testing.T) {
-	cases := []struct {
+func TestConvertEmptyGroupsToLiterbl(t *testing.T) {
+	cbses := []struct {
 		input      string
-		want       string
-		wantLabels labels
+		wbnt       string
+		wbntLbbels lbbels
 	}{
 		{
 			input:      "func()",
-			want:       `"func\\(\\)"`,
-			wantLabels: Regexp,
+			wbnt:       `"func\\(\\)"`,
+			wbntLbbels: Regexp,
 		},
 		{
 			input:      "func(.*)",
-			want:       `"func(.*)"`,
-			wantLabels: Regexp,
+			wbnt:       `"func(.*)"`,
+			wbntLbbels: Regexp,
 		},
 		{
-			input:      `(search\()`,
-			want:       `"(search\\()"`,
-			wantLabels: Regexp,
+			input:      `(sebrch\()`,
+			wbnt:       `"(sebrch\\()"`,
+			wbntLbbels: Regexp,
 		},
 		{
-			input:      `()search\(()`,
-			want:       `"\\(\\)search\\(\\(\\)"`,
-			wantLabels: Regexp,
+			input:      `()sebrch\(()`,
+			wbnt:       `"\\(\\)sebrch\\(\\(\\)"`,
+			wbntLbbels: Regexp,
 		},
 		{
-			input:      `search\(`,
-			want:       `"search\\("`,
-			wantLabels: Regexp,
+			input:      `sebrch\(`,
+			wbnt:       `"sebrch\\("`,
+			wbntLbbels: Regexp,
 		},
 		{
 			input:      `\`,
-			want:       `"\\"`,
-			wantLabels: Regexp,
+			wbnt:       `"\\"`,
+			wbntLbbels: Regexp,
 		},
 		{
-			input:      `search(`,
-			want:       `"search\\("`,
-			wantLabels: Regexp | HeuristicDanglingParens,
+			input:      `sebrch(`,
+			wbnt:       `"sebrch\\("`,
+			wbntLbbels: Regexp | HeuristicDbnglingPbrens,
 		},
 		{
-			input:      `"search("`,
-			want:       `"search("`,
-			wantLabels: Quoted | Literal,
+			input:      `"sebrch("`,
+			wbnt:       `"sebrch("`,
+			wbntLbbels: Quoted | Literbl,
 		},
 		{
-			input:      `"search()"`,
-			want:       `"search()"`,
-			wantLabels: Quoted | Literal,
+			input:      `"sebrch()"`,
+			wbnt:       `"sebrch()"`,
+			wbntLbbels: Quoted | Literbl,
 		},
 	}
-	for _, c := range cases {
-		t.Run("Map query", func(t *testing.T) {
-			query, _ := Parse(c.input, SearchTypeRegex)
-			got := escapeParensHeuristic(query)[0].(Pattern)
-			if diff := cmp.Diff(c.want, toString([]Node{got})); diff != "" {
+	for _, c := rbnge cbses {
+		t.Run("Mbp query", func(t *testing.T) {
+			query, _ := Pbrse(c.input, SebrchTypeRegex)
+			got := escbpePbrensHeuristic(query)[0].(Pbttern)
+			if diff := cmp.Diff(c.wbnt, toString([]Node{got})); diff != "" {
 				t.Error(diff)
 			}
-			if diff := cmp.Diff(c.wantLabels, got.Annotation.Labels); diff != "" {
-				t.Fatal(diff)
+			if diff := cmp.Diff(c.wbntLbbels, got.Annotbtion.Lbbels); diff != "" {
+				t.Fbtbl(diff)
 			}
 		})
 	}
 }
 
 func TestPipeline(t *testing.T) {
-	cases := []struct {
+	cbses := []struct {
 		input string
-		want  string
+		wbnt  string
 	}{{
-		input: `a or b`,
-		want:  `(or "a" "b")`,
+		input: `b or b`,
+		wbnt:  `(or "b" "b")`,
 	}, {
-		input: `a and b AND c OR d`,
-		want:  `(or (and "a" "b" "c") "d")`,
+		input: `b bnd b AND c OR d`,
+		wbnt:  `(or (bnd "b" "b" "c") "d")`,
 	}, {
-		input: `(repo:a (file:b or file:c))`,
-		want:  `(or (and "repo:a" "file:b") (and "repo:a" "file:c"))`,
+		input: `(repo:b (file:b or file:c))`,
+		wbnt:  `(or (bnd "repo:b" "file:b") (bnd "repo:b" "file:c"))`,
 	}, {
-		input: `(repo:a (file:b or file:c) (file:d or file:e))`,
-		want:  `(or (and "repo:a" "file:b" "file:d") (and "repo:a" "file:c" "file:d") (and "repo:a" "file:b" "file:e") (and "repo:a" "file:c" "file:e"))`,
+		input: `(repo:b (file:b or file:c) (file:d or file:e))`,
+		wbnt:  `(or (bnd "repo:b" "file:b" "file:d") (bnd "repo:b" "file:c" "file:d") (bnd "repo:b" "file:b" "file:e") (bnd "repo:b" "file:c" "file:e"))`,
 	}, {
-		input: `(repo:a (file:b or file:c) (a b) (x z))`,
-		want:  `(or (and "repo:a" "file:b" "(a b) (x z)") (and "repo:a" "file:c" "(a b) (x z)"))`,
+		input: `(repo:b (file:b or file:c) (b b) (x z))`,
+		wbnt:  `(or (bnd "repo:b" "file:b" "(b b) (x z)") (bnd "repo:b" "file:c" "(b b) (x z)"))`,
 	}, {
-		input: `a and b AND c or d and (e OR f) and g h i or j`,
-		want:  `(or (and "a" "b" "c") (and "d" (or "e" "f") "g h i") "j")`,
+		input: `b bnd b AND c or d bnd (e OR f) bnd g h i or j`,
+		wbnt:  `(or (bnd "b" "b" "c") (bnd "d" (or "e" "f") "g h i") "j")`,
 	}, {
-		input: `(a or b) and c`,
-		want:  `(and (or "a" "b") "c")`,
+		input: `(b or b) bnd c`,
+		wbnt:  `(bnd (or "b" "b") "c")`,
 	}, {
-		input: `(repo:a (file:b (file:c or file:d) (file:e or file:f)))`,
-		want:  `(or (and "repo:a" "file:b" "file:c" "file:e") (and "repo:a" "file:b" "file:d" "file:e") (and "repo:a" "file:b" "file:c" "file:f") (and "repo:a" "file:b" "file:d" "file:f"))`,
+		input: `(repo:b (file:b (file:c or file:d) (file:e or file:f)))`,
+		wbnt:  `(or (bnd "repo:b" "file:b" "file:c" "file:e") (bnd "repo:b" "file:b" "file:d" "file:e") (bnd "repo:b" "file:b" "file:c" "file:f") (bnd "repo:b" "file:b" "file:d" "file:f"))`,
 	}, {
-		input: `(repo:a (file:b (file:c or file:d) file:q (file:e or file:f)))`,
-		want:  `(or (and "repo:a" "file:b" "file:c" "file:q" "file:e") (and "repo:a" "file:b" "file:d" "file:q" "file:e") (and "repo:a" "file:b" "file:c" "file:q" "file:f") (and "repo:a" "file:b" "file:d" "file:q" "file:f"))`,
+		input: `(repo:b (file:b (file:c or file:d) file:q (file:e or file:f)))`,
+		wbnt:  `(or (bnd "repo:b" "file:b" "file:c" "file:q" "file:e") (bnd "repo:b" "file:b" "file:d" "file:q" "file:e") (bnd "repo:b" "file:b" "file:c" "file:q" "file:f") (bnd "repo:b" "file:b" "file:d" "file:q" "file:f"))`,
 	}, {
-		input: `(repo:a b) or (repo:c d)`,
-		want:  `(or (and "repo:a" "b") (and "repo:c" "d"))`,
-		// Bug. See: https://github.com/sourcegraph/sourcegraph/issues/34018
+		input: `(repo:b b) or (repo:c d)`,
+		wbnt:  `(or (bnd "repo:b" "b") (bnd "repo:c" "d"))`,
+		// Bug. See: https://github.com/sourcegrbph/sourcegrbph/issues/34018
 		// }, {
-		// 	input: `repo:a b or repo:c d`,
-		// 	want:  `(or (and "repo:a" "b") (and "repo:c" "d"))`,
+		// 	input: `repo:b b or repo:c d`,
+		// 	wbnt:  `(or (bnd "repo:b" "b") (bnd "repo:c" "d"))`,
 	}, {
-		input: `(repo:a b) and (repo:c d)`,
-		want:  `(and "repo:a" "repo:c" "b" "d")`,
+		input: `(repo:b b) bnd (repo:c d)`,
+		wbnt:  `(bnd "repo:b" "repo:c" "b" "d")`,
 	}, {
-		input: `(repo:a or repo:b) (c or d)`,
-		want:  `(or (and "repo:a" (or "c" "d")) (and "repo:b" (or "c" "d")))`,
+		input: `(repo:b or repo:b) (c or d)`,
+		wbnt:  `(or (bnd "repo:b" (or "c" "d")) (bnd "repo:b" (or "c" "d")))`,
 	}, {
-		input: `(repo:a (b or c)) or (repo:d e f)`,
-		want:  `(or (and "repo:a" (or "b" "c")) (and "repo:d" "e f"))`,
+		input: `(repo:b (b or c)) or (repo:d e f)`,
+		wbnt:  `(or (bnd "repo:b" (or "b" "c")) (bnd "repo:d" "e f"))`,
 	}, {
-		input: `((repo:a b) or c) or (repo:d e f)`,
-		want:  `(or (and "repo:a" "b") "c" (and "repo:d" "e f"))`,
+		input: `((repo:b b) or c) or (repo:d e f)`,
+		wbnt:  `(or (bnd "repo:b" "b") "c" (bnd "repo:d" "e f"))`,
 	}, {
-		input: `(repo:a or repo:b) (c and (d or e))`,
-		want:  `(or (and "repo:a" "c" (or "d" "e")) (and "repo:b" "c" (or "d" "e")))`,
+		input: `(repo:b or repo:b) (c bnd (d or e))`,
+		wbnt:  `(or (bnd "repo:b" "c" (or "d" "e")) (bnd "repo:b" "c" (or "d" "e")))`,
 	}}
-	for _, c := range cases {
-		t.Run("Map query", func(t *testing.T) {
-			plan, err := Pipeline(Init(c.input, SearchTypeLiteral))
+	for _, c := rbnge cbses {
+		t.Run("Mbp query", func(t *testing.T) {
+			plbn, err := Pipeline(Init(c.input, SebrchTypeLiterbl))
 			require.NoError(t, err)
-			got := plan.ToQ().String()
-			if diff := cmp.Diff(c.want, got); diff != "" {
-				t.Fatal(diff)
+			got := plbn.ToQ().String()
+			if diff := cmp.Diff(c.wbnt, got); diff != "" {
+				t.Fbtbl(diff)
 			}
 		})
 	}
 }
 
-func TestMap(t *testing.T) {
-	cases := []struct {
+func TestMbp(t *testing.T) {
+	cbses := []struct {
 		input string
 		fns   []func(_ []Node) []Node
-		want  string
+		wbnt  string
 	}{
 		{
 			input: "RePo:foo",
-			fns:   []func(_ []Node) []Node{LowercaseFieldNames},
-			want:  `"repo:foo"`,
+			fns:   []func(_ []Node) []Node{LowercbseFieldNbmes},
+			wbnt:  `"repo:foo"`,
 		},
 		{
-			input: "RePo:foo r:bar",
-			fns:   []func(_ []Node) []Node{LowercaseFieldNames, SubstituteAliases(SearchTypeRegex)},
-			want:  `(and "repo:foo" "repo:bar")`,
+			input: "RePo:foo r:bbr",
+			fns:   []func(_ []Node) []Node{LowercbseFieldNbmes, SubstituteAlibses(SebrchTypeRegex)},
+			wbnt:  `(bnd "repo:foo" "repo:bbr")`,
 		},
 	}
-	for _, c := range cases {
-		t.Run("Map query", func(t *testing.T) {
-			query, _ := Parse(c.input, SearchTypeRegex)
-			got := toString(Map(query, c.fns...))
-			if diff := cmp.Diff(c.want, got); diff != "" {
-				t.Fatal(diff)
+	for _, c := rbnge cbses {
+		t.Run("Mbp query", func(t *testing.T) {
+			query, _ := Pbrse(c.input, SebrchTypeRegex)
+			got := toString(Mbp(query, c.fns...))
+			if diff := cmp.Diff(c.wbnt, got); diff != "" {
+				t.Fbtbl(diff)
 			}
 		})
 	}
 }
 
-func TestConcatRevFilters(t *testing.T) {
-	cases := []struct {
+func TestConcbtRevFilters(t *testing.T) {
+	cbses := []struct {
 		input string
-		want  string
+		wbnt  string
 	}{
 		{
 			input: "repo:foo",
-			want:  `("repo:foo")`,
+			wbnt:  `("repo:foo")`,
 		},
 		{
-			input: "repo:foo rev:a",
-			want:  `("repo:foo@a")`,
+			input: "repo:foo rev:b",
+			wbnt:  `("repo:foo@b")`,
 		},
 		{
-			input: "repo:foo repo:bar rev:a",
-			want:  `("repo:foo@a" "repo:bar@a")`,
+			input: "repo:foo repo:bbr rev:b",
+			wbnt:  `("repo:foo@b" "repo:bbr@b")`,
 		},
 		{
-			input: "repo:foo bar and bas rev:a",
-			want:  `("repo:foo@a" (and "bar" "bas"))`,
+			input: "repo:foo bbr bnd bbs rev:b",
+			wbnt:  `("repo:foo@b" (bnd "bbr" "bbs"))`,
 		},
 		{
-			input: "(repo:foo rev:a) or (repo:foo rev:b)",
-			want:  `("repo:foo@a") OR ("repo:foo@b")`,
+			input: "(repo:foo rev:b) or (repo:foo rev:b)",
+			wbnt:  `("repo:foo@b") OR ("repo:foo@b")`,
 		},
 		{
-			input: "repo:foo file:bas qux AND (rev:a or rev:b)",
-			want:  `("repo:foo@a" "file:bas" "qux") OR ("repo:foo@b" "file:bas" "qux")`,
+			input: "repo:foo file:bbs qux AND (rev:b or rev:b)",
+			wbnt:  `("repo:foo@b" "file:bbs" "qux") OR ("repo:foo@b" "file:bbs" "qux")`,
 		},
 		{
-			input: "repo:foo rev:4.2.1 repo:has.file(content:fix)",
-			want:  `("repo:foo@4.2.1" "repo:has.file(content:fix)")`,
+			input: "repo:foo rev:4.2.1 repo:hbs.file(content:fix)",
+			wbnt:  `("repo:foo@4.2.1" "repo:hbs.file(content:fix)")`,
 		},
 	}
-	for _, c := range cases {
+	for _, c := rbnge cbses {
 		t.Run(c.input, func(t *testing.T) {
-			plan, _ := Pipeline(InitRegexp(c.input))
+			plbn, _ := Pipeline(InitRegexp(c.input))
 
-			var queriesStr []string
-			for _, basic := range plan {
-				p := ConcatRevFilters(basic)
-				queriesStr = append(queriesStr, toString(p.ToParseTree()))
+			vbr queriesStr []string
+			for _, bbsic := rbnge plbn {
+				p := ConcbtRevFilters(bbsic)
+				queriesStr = bppend(queriesStr, toString(p.ToPbrseTree()))
 			}
 			got := "(" + strings.Join(queriesStr, ") OR (") + ")"
-			if diff := cmp.Diff(c.want, got); diff != "" {
+			if diff := cmp.Diff(c.wbnt, got); diff != "" {
 				t.Error(diff)
 			}
 		})
 	}
 }
 
-func TestConcatRevFiltersTopLevelAnd(t *testing.T) {
-	cases := []struct {
+func TestConcbtRevFiltersTopLevelAnd(t *testing.T) {
+	cbses := []struct {
 		input string
-		want  string
+		wbnt  string
 	}{
 		{
-			input: "repo:sourcegraph",
-			want:  `"repo:sourcegraph"`,
+			input: "repo:sourcegrbph",
+			wbnt:  `"repo:sourcegrbph"`,
 		},
 		{
-			input: "repo:sourcegraph rev:b",
-			want:  `"repo:sourcegraph@b"`,
+			input: "repo:sourcegrbph rev:b",
+			wbnt:  `"repo:sourcegrbph@b"`,
 		},
 		{
-			input: "repo:sourcegraph foo and bar rev:b",
-			want:  `(and "repo:sourcegraph@b" "foo" "bar")`,
+			input: "repo:sourcegrbph foo bnd bbr rev:b",
+			wbnt:  `(bnd "repo:sourcegrbph@b" "foo" "bbr")`,
 		},
 	}
-	for _, c := range cases {
+	for _, c := rbnge cbses {
 		t.Run(c.input, func(t *testing.T) {
-			plan, _ := Pipeline(InitRegexp(c.input))
-			p := MapPlan(plan, ConcatRevFilters)
-			if diff := cmp.Diff(c.want, toString(p.ToQ())); diff != "" {
+			plbn, _ := Pipeline(InitRegexp(c.input))
+			p := MbpPlbn(plbn, ConcbtRevFilters)
+			if diff := cmp.Diff(c.wbnt, toString(p.ToQ())); diff != "" {
 				t.Error(diff)
 			}
 		})
@@ -442,23 +442,23 @@ func TestConcatRevFiltersTopLevelAnd(t *testing.T) {
 
 func TestQueryField(t *testing.T) {
 	test := func(input, field string) string {
-		q, _ := ParseLiteral(input)
+		q, _ := PbrseLiterbl(input)
 		return OmitField(q, field)
 	}
 
-	autogold.Expect("pattern").Equal(t, test("repo:stuff pattern", "repo"))
-	autogold.Expect("alias-pattern").Equal(t, test("r:stuff alias-pattern", "repo"))
+	butogold.Expect("pbttern").Equbl(t, test("repo:stuff pbttern", "repo"))
+	butogold.Expect("blibs-pbttern").Equbl(t, test("r:stuff blibs-pbttern", "repo"))
 }
 
 func TestSubstituteCountAll(t *testing.T) {
 	test := func(input string) string {
-		query, _ := Parse(input, SearchTypeLiteral)
+		query, _ := Pbrse(input, SebrchTypeLiterbl)
 		q := SubstituteCountAll(query)
 		return toString(q)
 	}
 
-	autogold.Expect(`(and "count:99999999" "foo")`).Equal(t, test("foo count:all"))
-	autogold.Expect(`(and "count:99999999" "foo")`).Equal(t, test("foo count:ALL"))
-	autogold.Expect(`(and "count:3" "foo")`).Equal(t, test("foo count:3"))
-	autogold.Expect(`(or (and "count:3" "foo") (and "count:99999999" "bar"))`).Equal(t, test("(foo count:3) or (bar count:all)"))
+	butogold.Expect(`(bnd "count:99999999" "foo")`).Equbl(t, test("foo count:bll"))
+	butogold.Expect(`(bnd "count:99999999" "foo")`).Equbl(t, test("foo count:ALL"))
+	butogold.Expect(`(bnd "count:3" "foo")`).Equbl(t, test("foo count:3"))
+	butogold.Expect(`(or (bnd "count:3" "foo") (bnd "count:99999999" "bbr"))`).Equbl(t, test("(foo count:3) or (bbr count:bll)"))
 }

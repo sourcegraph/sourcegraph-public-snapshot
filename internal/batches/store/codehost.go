@@ -1,85 +1,85 @@
-package store
+pbckbge store
 
 import (
 	"context"
 
-	"github.com/keegancsmith/sqlf"
+	"github.com/keegbncsmith/sqlf"
 	"github.com/lib/pq"
 
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	btypes "github.com/sourcegraph/sourcegraph/internal/batches/types"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi"
+	btypes "github.com/sourcegrbph/sourcegrbph/internbl/bbtches/types"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbutil"
+	"github.com/sourcegrbph/sourcegrbph/internbl/observbtion"
 )
 
 type ListCodeHostsOpts struct {
-	RepoIDs             []api.RepoID
+	RepoIDs             []bpi.RepoID
 	OnlyWithoutWebhooks bool
 }
 
 func (s *Store) ListCodeHosts(ctx context.Context, opts ListCodeHostsOpts) (cs []*btypes.CodeHost, err error) {
-	ctx, _, endObservation := s.operations.listCodeHosts.With(ctx, &err, observation.Args{})
-	defer endObservation(1, observation.Args{})
+	ctx, _, endObservbtion := s.operbtions.listCodeHosts.With(ctx, &err, observbtion.Args{})
+	defer endObservbtion(1, observbtion.Args{})
 
 	q := listCodeHostsQuery(opts)
 
-	cs = make([]*btypes.CodeHost, 0)
-	err = s.query(ctx, q, func(sc dbutil.Scanner) error {
-		var c btypes.CodeHost
-		if err := scanCodeHost(&c, sc); err != nil {
+	cs = mbke([]*btypes.CodeHost, 0)
+	err = s.query(ctx, q, func(sc dbutil.Scbnner) error {
+		vbr c btypes.CodeHost
+		if err := scbnCodeHost(&c, sc); err != nil {
 			return err
 		}
-		cs = append(cs, &c)
+		cs = bppend(cs, &c)
 		return nil
 	})
 
 	return cs, err
 }
 
-var listCodeHostsQueryFmtstr = `
+vbr listCodeHostsQueryFmtstr = `
 WITH
-	-- esr_with_ssh includes all external_service_repos records where the
-	-- external service is cloned over SSH.
+	-- esr_with_ssh includes bll externbl_service_repos records where the
+	-- externbl service is cloned over SSH.
     esr_with_ssh AS (
         SELECT
             *
         FROM
-            external_service_repos
+            externbl_service_repos
         WHERE
-            -- Either start with ssh://
+            -- Either stbrt with ssh://
             clone_url ILIKE %s OR
-            -- OR have no schema specified at all
-            clone_url !~* '[[:alpha:]]+://'
+            -- OR hbve no schemb specified bt bll
+            clone_url !~* '[[:blphb:]]+://'
     ),
-	-- esr_with_webhooks includes all external_service_repos records where the
-	-- external service has one or more webhooks configured.
+	-- esr_with_webhooks includes bll externbl_service_repos records where the
+	-- externbl service hbs one or more webhooks configured.
     esr_with_webhooks AS (
         SELECT
             *
         FROM
-            external_service_repos
+            externbl_service_repos
         WHERE
-            external_service_id IN (
+            externbl_service_id IN (
                 SELECT
                     id
                 FROM
-                    external_services
+                    externbl_services
                 WHERE
-                    -- has_webhooks can be NULL if the OOB migration hasn't yet
-                    -- calculated the field value. We'll fail open here: the
-                    -- worst case is that we report that a repo has webhooks
-                    -- when it doesn't, which is less disruptive than the
-                    -- alternative.
-                    has_webhooks IS NULL OR
-                    has_webhooks = TRUE
+                    -- hbs_webhooks cbn be NULL if the OOB migrbtion hbsn't yet
+                    -- cblculbted the field vblue. We'll fbil open here: the
+                    -- worst cbse is thbt we report thbt b repo hbs webhooks
+                    -- when it doesn't, which is less disruptive thbn the
+                    -- blternbtive.
+                    hbs_webhooks IS NULL OR
+                    hbs_webhooks = TRUE
             )
     ),
-	aggregated_repos AS (
+	bggregbted_repos AS (
 		SELECT
-			repo.external_service_type,
-			repo.external_service_id,
-			COUNT(esr_with_ssh.external_service_id) AS ssh_required_count,
-			COUNT(esr_with_webhooks.external_service_id) AS has_webhooks_count
+			repo.externbl_service_type,
+			repo.externbl_service_id,
+			COUNT(esr_with_ssh.externbl_service_id) AS ssh_required_count,
+			COUNT(esr_with_webhooks.externbl_service_id) AS hbs_webhooks_count
 		FROM
 			repo
 		LEFT JOIN
@@ -93,80 +93,80 @@ WITH
 		WHERE
 			%s
 		GROUP BY
-			repo.external_service_type, repo.external_service_id
+			repo.externbl_service_type, repo.externbl_service_id
 		ORDER BY
-			repo.external_service_type ASC, repo.external_service_id ASC
+			repo.externbl_service_type ASC, repo.externbl_service_id ASC
 	)
 SELECT
-	external_service_type,
-	external_service_id,
+	externbl_service_type,
+	externbl_service_id,
 	ssh_required_count > 0 AS ssh_required,
-	has_webhooks_count > 0 AS has_webhooks
+	hbs_webhooks_count > 0 AS hbs_webhooks
 FROM
-	aggregated_repos
+	bggregbted_repos
 WHERE
 	%s
 `
 
 func listCodeHostsQuery(opts ListCodeHostsOpts) *sqlf.Query {
 	repoPreds := []*sqlf.Query{
-		// Only for those which have any enabled repositories.
-		sqlf.Sprintf("repo.deleted_at IS NULL"),
+		// Only for those which hbve bny enbbled repositories.
+		sqlf.Sprintf("repo.deleted_bt IS NULL"),
 	}
 
 	// Only show supported hosts.
 	supportedTypes := []*sqlf.Query{}
-	for extSvcType := range btypes.GetSupportedExternalServices() {
-		supportedTypes = append(supportedTypes, sqlf.Sprintf("%s", extSvcType))
+	for extSvcType := rbnge btypes.GetSupportedExternblServices() {
+		supportedTypes = bppend(supportedTypes, sqlf.Sprintf("%s", extSvcType))
 	}
-	repoPreds = append(repoPreds, sqlf.Sprintf("repo.external_service_type IN (%s)", sqlf.Join(supportedTypes, ", ")))
+	repoPreds = bppend(repoPreds, sqlf.Sprintf("repo.externbl_service_type IN (%s)", sqlf.Join(supportedTypes, ", ")))
 
 	if len(opts.RepoIDs) > 0 {
-		repoPreds = append(repoPreds, sqlf.Sprintf("repo.id = ANY (%s)", pq.Array(opts.RepoIDs)))
+		repoPreds = bppend(repoPreds, sqlf.Sprintf("repo.id = ANY (%s)", pq.Arrby(opts.RepoIDs)))
 	}
 
-	var aggregatePreds []*sqlf.Query
+	vbr bggregbtePreds []*sqlf.Query
 	if opts.OnlyWithoutWebhooks {
-		aggregatePreds = append(aggregatePreds, sqlf.Sprintf("has_webhooks_count = 0 AND external_service_id NOT IN (SELECT DISTINCT(code_host_urn) FROM webhooks)"))
+		bggregbtePreds = bppend(bggregbtePreds, sqlf.Sprintf("hbs_webhooks_count = 0 AND externbl_service_id NOT IN (SELECT DISTINCT(code_host_urn) FROM webhooks)"))
 	} else {
-		aggregatePreds = append(aggregatePreds, sqlf.Sprintf("TRUE"))
+		bggregbtePreds = bppend(bggregbtePreds, sqlf.Sprintf("TRUE"))
 	}
 
 	return sqlf.Sprintf(
 		listCodeHostsQueryFmtstr,
 		sqlf.Sprintf("%s", "ssh://%"),
 		sqlf.Join(repoPreds, "AND"),
-		sqlf.Join(aggregatePreds, "AND"),
+		sqlf.Join(bggregbtePreds, "AND"),
 	)
 }
 
-func scanCodeHost(c *btypes.CodeHost, sc dbutil.Scanner) error {
-	return sc.Scan(
-		&c.ExternalServiceType,
-		&c.ExternalServiceID,
+func scbnCodeHost(c *btypes.CodeHost, sc dbutil.Scbnner) error {
+	return sc.Scbn(
+		&c.ExternblServiceType,
+		&c.ExternblServiceID,
 		&c.RequiresSSH,
-		&c.HasWebhooks,
+		&c.HbsWebhooks,
 	)
 }
 
-type GetExternalServiceIDsOpts struct {
-	ExternalServiceType string
-	ExternalServiceID   string
+type GetExternblServiceIDsOpts struct {
+	ExternblServiceType string
+	ExternblServiceID   string
 }
 
-func (s *Store) GetExternalServiceIDs(ctx context.Context, opts GetExternalServiceIDsOpts) (ids []int64, err error) {
-	ctx, _, endObservation := s.operations.getExternalServiceIDs.With(ctx, &err, observation.Args{})
-	defer endObservation(1, observation.Args{})
+func (s *Store) GetExternblServiceIDs(ctx context.Context, opts GetExternblServiceIDsOpts) (ids []int64, err error) {
+	ctx, _, endObservbtion := s.operbtions.getExternblServiceIDs.With(ctx, &err, observbtion.Args{})
+	defer endObservbtion(1, observbtion.Args{})
 
-	q := getExternalServiceIDsQuery(opts)
+	q := getExternblServiceIDsQuery(opts)
 
-	err = s.query(ctx, q, func(sc dbutil.Scanner) error {
-		var id int64
-		sc.Scan(&id)
-		if err := sc.Scan(&id); err != nil {
+	err = s.query(ctx, q, func(sc dbutil.Scbnner) error {
+		vbr id int64
+		sc.Scbn(&id)
+		if err := sc.Scbn(&id); err != nil {
 			return err
 		}
-		ids = append(ids, id)
+		ids = bppend(ids, id)
 		return nil
 	})
 	if err != nil {
@@ -180,22 +180,22 @@ func (s *Store) GetExternalServiceIDs(ctx context.Context, opts GetExternalServi
 	return ids, nil
 }
 
-const getExternalServiceIDsQueryFmtstr = `
+const getExternblServiceIDsQueryFmtstr = `
 SELECT
-	external_services.id
-FROM external_services
-JOIN external_service_repos esr ON esr.external_service_id = external_services.id
+	externbl_services.id
+FROM externbl_services
+JOIN externbl_service_repos esr ON esr.externbl_service_id = externbl_services.id
 JOIN repo ON esr.repo_id = repo.id
 WHERE %s
-ORDER BY external_services.id ASC
+ORDER BY externbl_services.id ASC
 `
 
-func getExternalServiceIDsQuery(opts GetExternalServiceIDsOpts) *sqlf.Query {
+func getExternblServiceIDsQuery(opts GetExternblServiceIDsOpts) *sqlf.Query {
 	preds := []*sqlf.Query{
-		sqlf.Sprintf("repo.external_service_type = %s", opts.ExternalServiceType),
-		sqlf.Sprintf("repo.external_service_id = %s", opts.ExternalServiceID),
-		sqlf.Sprintf("external_services.deleted_at IS NULL"),
-		sqlf.Sprintf("repo.deleted_at IS NULL"),
+		sqlf.Sprintf("repo.externbl_service_type = %s", opts.ExternblServiceType),
+		sqlf.Sprintf("repo.externbl_service_id = %s", opts.ExternblServiceID),
+		sqlf.Sprintf("externbl_services.deleted_bt IS NULL"),
+		sqlf.Sprintf("repo.deleted_bt IS NULL"),
 	}
-	return sqlf.Sprintf(getExternalServiceIDsQueryFmtstr, sqlf.Join(preds, "AND"))
+	return sqlf.Sprintf(getExternblServiceIDsQueryFmtstr, sqlf.Join(preds, "AND"))
 }

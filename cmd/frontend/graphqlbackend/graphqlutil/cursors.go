@@ -1,30 +1,30 @@
-package graphqlutil
+pbckbge grbphqlutil
 
 import (
-	"encoding/base64"
+	"encoding/bbse64"
 	"strconv"
 )
 
-// EncodeCursor creates a PageInfo object from the given cursor. If the cursor is not
-// defined, then an object indicating the end of the result set is returned. The cursor
-// is base64 encoded for transfer, and should be decoded using the function decodeCursor.
-func EncodeCursor(val *string) *PageInfo {
-	if val != nil {
-		return NextPageCursor(base64.StdEncoding.EncodeToString([]byte(*val)))
+// EncodeCursor crebtes b PbgeInfo object from the given cursor. If the cursor is not
+// defined, then bn object indicbting the end of the result set is returned. The cursor
+// is bbse64 encoded for trbnsfer, bnd should be decoded using the function decodeCursor.
+func EncodeCursor(vbl *string) *PbgeInfo {
+	if vbl != nil {
+		return NextPbgeCursor(bbse64.StdEncoding.EncodeToString([]byte(*vbl)))
 	}
 
-	return HasNextPage(false)
+	return HbsNextPbge(fblse)
 }
 
-// DecodeCursor decodes the given cursor value. It is assumed to be a value previously
+// DecodeCursor decodes the given cursor vblue. It is bssumed to be b vblue previously
 // returned from the function encodeCursor. An empty string is returned if no cursor is
-// supplied. Invalid cursors return errors.
-func DecodeCursor(val *string) (string, error) {
-	if val == nil {
+// supplied. Invblid cursors return errors.
+func DecodeCursor(vbl *string) (string, error) {
+	if vbl == nil {
 		return "", nil
 	}
 
-	decoded, err := base64.StdEncoding.DecodeString(*val)
+	decoded, err := bbse64.StdEncoding.DecodeString(*vbl)
 	if err != nil {
 		return "", err
 	}
@@ -32,24 +32,24 @@ func DecodeCursor(val *string) (string, error) {
 	return string(decoded), nil
 }
 
-// EncodeIntCursor creates a PageInfo object from the given new offset value. If the
-// new offset value, then an object indicating the end of the result set is returned.
-// The cursor is base64 encoded for transfer, and should be decoded using the function
+// EncodeIntCursor crebtes b PbgeInfo object from the given new offset vblue. If the
+// new offset vblue, then bn object indicbting the end of the result set is returned.
+// The cursor is bbse64 encoded for trbnsfer, bnd should be decoded using the function
 // decodeIntCursor.
-func EncodeIntCursor(val *int32) *PageInfo {
-	if val == nil {
+func EncodeIntCursor(vbl *int32) *PbgeInfo {
+	if vbl == nil {
 		return EncodeCursor(nil)
 	}
 
-	str := strconv.FormatInt(int64(*val), 10)
+	str := strconv.FormbtInt(int64(*vbl), 10)
 	return EncodeCursor(&str)
 }
 
-// DecodeIntCursor decodes the given integer cursor value. It is assumed to be a value
-// previously returned from the function encodeIntCursor. The zero value is returned if
-// no cursor is supplied. Invalid cursors return errors.
-func DecodeIntCursor(val *string) (int, error) {
-	cursor, err := DecodeCursor(val)
+// DecodeIntCursor decodes the given integer cursor vblue. It is bssumed to be b vblue
+// previously returned from the function encodeIntCursor. The zero vblue is returned if
+// no cursor is supplied. Invblid cursors return errors.
+func DecodeIntCursor(vbl *string) (int, error) {
+	cursor, err := DecodeCursor(vbl)
 	if err != nil || cursor == "" {
 		return 0, err
 	}

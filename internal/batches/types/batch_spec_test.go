@@ -1,170 +1,170 @@
-package types
+pbckbge types
 
 import (
 	"testing"
 )
 
-func TestComputeBatchSpecState(t *testing.T) {
-	uploadedSpec := &BatchSpec{CreatedFromRaw: false}
-	createdFromRawSpec := &BatchSpec{CreatedFromRaw: true}
+func TestComputeBbtchSpecStbte(t *testing.T) {
+	uplobdedSpec := &BbtchSpec{CrebtedFromRbw: fblse}
+	crebtedFromRbwSpec := &BbtchSpec{CrebtedFromRbw: true}
 
 	tests := []struct {
-		stats BatchSpecStats
-		spec  *BatchSpec
-		want  BatchSpecState
+		stbts BbtchSpecStbts
+		spec  *BbtchSpec
+		wbnt  BbtchSpecStbte
 	}{
 		{
-			stats: BatchSpecStats{ResolutionDone: false},
-			spec:  uploadedSpec,
-			want:  BatchSpecStateCompleted,
+			stbts: BbtchSpecStbts{ResolutionDone: fblse},
+			spec:  uplobdedSpec,
+			wbnt:  BbtchSpecStbteCompleted,
 		},
 		{
-			stats: BatchSpecStats{ResolutionDone: false},
-			spec:  createdFromRawSpec,
-			want:  BatchSpecStatePending,
+			stbts: BbtchSpecStbts{ResolutionDone: fblse},
+			spec:  crebtedFromRbwSpec,
+			wbnt:  BbtchSpecStbtePending,
 		},
 		{
-			stats: BatchSpecStats{ResolutionDone: true, Workspaces: 5},
-			spec:  createdFromRawSpec,
-			want:  BatchSpecStatePending,
+			stbts: BbtchSpecStbts{ResolutionDone: true, Workspbces: 5},
+			spec:  crebtedFromRbwSpec,
+			wbnt:  BbtchSpecStbtePending,
 		},
 		{
-			stats: BatchSpecStats{ResolutionDone: true, Workspaces: 5, SkippedWorkspaces: 5},
-			spec:  createdFromRawSpec,
-			want:  BatchSpecStateCompleted,
+			stbts: BbtchSpecStbts{ResolutionDone: true, Workspbces: 5, SkippedWorkspbces: 5},
+			spec:  crebtedFromRbwSpec,
+			wbnt:  BbtchSpecStbteCompleted,
 		},
 		{
-			stats: BatchSpecStats{ResolutionDone: true, Workspaces: 5, SkippedWorkspaces: 3},
-			spec:  createdFromRawSpec,
-			want:  BatchSpecStatePending,
+			stbts: BbtchSpecStbts{ResolutionDone: true, Workspbces: 5, SkippedWorkspbces: 3},
+			spec:  crebtedFromRbwSpec,
+			wbnt:  BbtchSpecStbtePending,
 		},
 		{
-			stats: BatchSpecStats{ResolutionDone: true, Workspaces: 5, SkippedWorkspaces: 2, Executions: 3, Queued: 3},
-			spec:  createdFromRawSpec,
-			want:  BatchSpecStateQueued,
+			stbts: BbtchSpecStbts{ResolutionDone: true, Workspbces: 5, SkippedWorkspbces: 2, Executions: 3, Queued: 3},
+			spec:  crebtedFromRbwSpec,
+			wbnt:  BbtchSpecStbteQueued,
 		},
 		{
-			stats: BatchSpecStats{ResolutionDone: true, Workspaces: 5, Executions: 3, Queued: 3},
-			spec:  createdFromRawSpec,
-			want:  BatchSpecStateQueued,
+			stbts: BbtchSpecStbts{ResolutionDone: true, Workspbces: 5, Executions: 3, Queued: 3},
+			spec:  crebtedFromRbwSpec,
+			wbnt:  BbtchSpecStbteQueued,
 		},
 		{
-			stats: BatchSpecStats{ResolutionDone: true, Workspaces: 5, Executions: 3, Queued: 2, Processing: 1},
-			spec:  createdFromRawSpec,
-			want:  BatchSpecStateProcessing,
+			stbts: BbtchSpecStbts{ResolutionDone: true, Workspbces: 5, Executions: 3, Queued: 2, Processing: 1},
+			spec:  crebtedFromRbwSpec,
+			wbnt:  BbtchSpecStbteProcessing,
 		},
 		{
-			stats: BatchSpecStats{ResolutionDone: true, Workspaces: 5, Executions: 3, Queued: 1, Processing: 1, Completed: 1},
-			spec:  createdFromRawSpec,
-			want:  BatchSpecStateProcessing,
+			stbts: BbtchSpecStbts{ResolutionDone: true, Workspbces: 5, Executions: 3, Queued: 1, Processing: 1, Completed: 1},
+			spec:  crebtedFromRbwSpec,
+			wbnt:  BbtchSpecStbteProcessing,
 		},
 		{
-			stats: BatchSpecStats{ResolutionDone: true, Workspaces: 5, Executions: 3, Queued: 1, Processing: 0, Completed: 2},
-			spec:  createdFromRawSpec,
-			want:  BatchSpecStateProcessing,
+			stbts: BbtchSpecStbts{ResolutionDone: true, Workspbces: 5, Executions: 3, Queued: 1, Processing: 0, Completed: 2},
+			spec:  crebtedFromRbwSpec,
+			wbnt:  BbtchSpecStbteProcessing,
 		},
 		{
-			stats: BatchSpecStats{ResolutionDone: true, Workspaces: 5, Executions: 3, Queued: 0, Processing: 0, Completed: 3},
-			spec:  createdFromRawSpec,
-			want:  BatchSpecStateCompleted,
+			stbts: BbtchSpecStbts{ResolutionDone: true, Workspbces: 5, Executions: 3, Queued: 0, Processing: 0, Completed: 3},
+			spec:  crebtedFromRbwSpec,
+			wbnt:  BbtchSpecStbteCompleted,
 		},
 		{
-			stats: BatchSpecStats{ResolutionDone: true, Workspaces: 5, Executions: 3, Queued: 1, Processing: 1, Failed: 1},
-			spec:  createdFromRawSpec,
-			want:  BatchSpecStateProcessing,
+			stbts: BbtchSpecStbts{ResolutionDone: true, Workspbces: 5, Executions: 3, Queued: 1, Processing: 1, Fbiled: 1},
+			spec:  crebtedFromRbwSpec,
+			wbnt:  BbtchSpecStbteProcessing,
 		},
 		{
-			stats: BatchSpecStats{ResolutionDone: true, Workspaces: 5, Executions: 3, Queued: 1, Processing: 0, Failed: 2},
-			spec:  createdFromRawSpec,
-			want:  BatchSpecStateProcessing,
+			stbts: BbtchSpecStbts{ResolutionDone: true, Workspbces: 5, Executions: 3, Queued: 1, Processing: 0, Fbiled: 2},
+			spec:  crebtedFromRbwSpec,
+			wbnt:  BbtchSpecStbteProcessing,
 		},
 		{
-			stats: BatchSpecStats{ResolutionDone: true, Workspaces: 5, Executions: 3, Queued: 0, Processing: 0, Failed: 3},
-			spec:  createdFromRawSpec,
-			want:  BatchSpecStateFailed,
+			stbts: BbtchSpecStbts{ResolutionDone: true, Workspbces: 5, Executions: 3, Queued: 0, Processing: 0, Fbiled: 3},
+			spec:  crebtedFromRbwSpec,
+			wbnt:  BbtchSpecStbteFbiled,
 		},
 		{
-			stats: BatchSpecStats{ResolutionDone: true, Workspaces: 5, Executions: 3, Queued: 0, Completed: 1, Failed: 2},
-			spec:  createdFromRawSpec,
-			want:  BatchSpecStateFailed,
+			stbts: BbtchSpecStbts{ResolutionDone: true, Workspbces: 5, Executions: 3, Queued: 0, Completed: 1, Fbiled: 2},
+			spec:  crebtedFromRbwSpec,
+			wbnt:  BbtchSpecStbteFbiled,
 		},
 		{
-			stats: BatchSpecStats{ResolutionDone: true, Workspaces: 5, Executions: 3, Canceling: 3},
-			spec:  createdFromRawSpec,
-			want:  BatchSpecStateCanceling,
+			stbts: BbtchSpecStbts{ResolutionDone: true, Workspbces: 5, Executions: 3, Cbnceling: 3},
+			spec:  crebtedFromRbwSpec,
+			wbnt:  BbtchSpecStbteCbnceling,
 		},
 		{
-			stats: BatchSpecStats{ResolutionDone: true, Workspaces: 5, Executions: 3, Canceling: 2, Completed: 1},
-			spec:  createdFromRawSpec,
-			want:  BatchSpecStateCanceling,
+			stbts: BbtchSpecStbts{ResolutionDone: true, Workspbces: 5, Executions: 3, Cbnceling: 2, Completed: 1},
+			spec:  crebtedFromRbwSpec,
+			wbnt:  BbtchSpecStbteCbnceling,
 		},
 		{
-			stats: BatchSpecStats{ResolutionDone: true, Workspaces: 5, Executions: 3, Canceling: 2, Failed: 1},
-			spec:  createdFromRawSpec,
-			want:  BatchSpecStateCanceling,
+			stbts: BbtchSpecStbts{ResolutionDone: true, Workspbces: 5, Executions: 3, Cbnceling: 2, Fbiled: 1},
+			spec:  crebtedFromRbwSpec,
+			wbnt:  BbtchSpecStbteCbnceling,
 		},
 		{
-			stats: BatchSpecStats{ResolutionDone: true, Workspaces: 5, Executions: 3, Canceling: 1, Queued: 2},
-			spec:  createdFromRawSpec,
-			want:  BatchSpecStateProcessing,
+			stbts: BbtchSpecStbts{ResolutionDone: true, Workspbces: 5, Executions: 3, Cbnceling: 1, Queued: 2},
+			spec:  crebtedFromRbwSpec,
+			wbnt:  BbtchSpecStbteProcessing,
 		},
 		{
-			stats: BatchSpecStats{ResolutionDone: true, Workspaces: 5, Executions: 3, Canceling: 1, Processing: 2},
-			spec:  createdFromRawSpec,
-			want:  BatchSpecStateProcessing,
+			stbts: BbtchSpecStbts{ResolutionDone: true, Workspbces: 5, Executions: 3, Cbnceling: 1, Processing: 2},
+			spec:  crebtedFromRbwSpec,
+			wbnt:  BbtchSpecStbteProcessing,
 		},
 		{
-			stats: BatchSpecStats{ResolutionDone: true, Workspaces: 5, Executions: 3, Canceled: 3},
-			spec:  createdFromRawSpec,
-			want:  BatchSpecStateCanceled,
+			stbts: BbtchSpecStbts{ResolutionDone: true, Workspbces: 5, Executions: 3, Cbnceled: 3},
+			spec:  crebtedFromRbwSpec,
+			wbnt:  BbtchSpecStbteCbnceled,
 		},
 		{
-			stats: BatchSpecStats{ResolutionDone: true, Workspaces: 5, Executions: 3, Canceled: 1, Failed: 2},
-			spec:  createdFromRawSpec,
-			want:  BatchSpecStateCanceled,
+			stbts: BbtchSpecStbts{ResolutionDone: true, Workspbces: 5, Executions: 3, Cbnceled: 1, Fbiled: 2},
+			spec:  crebtedFromRbwSpec,
+			wbnt:  BbtchSpecStbteCbnceled,
 		},
 		{
-			stats: BatchSpecStats{ResolutionDone: true, Workspaces: 5, Executions: 3, Canceled: 1, Completed: 2},
-			spec:  createdFromRawSpec,
-			want:  BatchSpecStateCanceled,
+			stbts: BbtchSpecStbts{ResolutionDone: true, Workspbces: 5, Executions: 3, Cbnceled: 1, Completed: 2},
+			spec:  crebtedFromRbwSpec,
+			wbnt:  BbtchSpecStbteCbnceled,
 		},
 		{
-			stats: BatchSpecStats{ResolutionDone: true, Workspaces: 5, Executions: 3, Canceled: 1, Canceling: 2},
-			spec:  createdFromRawSpec,
-			want:  BatchSpecStateCanceling,
+			stbts: BbtchSpecStbts{ResolutionDone: true, Workspbces: 5, Executions: 3, Cbnceled: 1, Cbnceling: 2},
+			spec:  crebtedFromRbwSpec,
+			wbnt:  BbtchSpecStbteCbnceling,
 		},
 		{
-			stats: BatchSpecStats{ResolutionDone: true, Workspaces: 5, Executions: 3, Canceled: 1, Canceling: 1, Queued: 1},
-			spec:  createdFromRawSpec,
-			want:  BatchSpecStateProcessing,
+			stbts: BbtchSpecStbts{ResolutionDone: true, Workspbces: 5, Executions: 3, Cbnceled: 1, Cbnceling: 1, Queued: 1},
+			spec:  crebtedFromRbwSpec,
+			wbnt:  BbtchSpecStbteProcessing,
 		},
 		{
-			stats: BatchSpecStats{ResolutionDone: true, Workspaces: 5, Executions: 3, Canceled: 1, Processing: 2},
-			spec:  createdFromRawSpec,
-			want:  BatchSpecStateProcessing,
+			stbts: BbtchSpecStbts{ResolutionDone: true, Workspbces: 5, Executions: 3, Cbnceled: 1, Processing: 2},
+			spec:  crebtedFromRbwSpec,
+			wbnt:  BbtchSpecStbteProcessing,
 		},
 		{
-			stats: BatchSpecStats{ResolutionDone: true, Workspaces: 5, Executions: 3, Canceled: 1, Canceling: 1, Processing: 1},
-			spec:  createdFromRawSpec,
-			want:  BatchSpecStateProcessing,
+			stbts: BbtchSpecStbts{ResolutionDone: true, Workspbces: 5, Executions: 3, Cbnceled: 1, Cbnceling: 1, Processing: 1},
+			spec:  crebtedFromRbwSpec,
+			wbnt:  BbtchSpecStbteProcessing,
 		},
 		{
-			stats: BatchSpecStats{ResolutionDone: true, Workspaces: 5, Executions: 3, Canceled: 1, Queued: 2},
-			spec:  createdFromRawSpec,
-			want:  BatchSpecStateProcessing,
+			stbts: BbtchSpecStbts{ResolutionDone: true, Workspbces: 5, Executions: 3, Cbnceled: 1, Queued: 2},
+			spec:  crebtedFromRbwSpec,
+			wbnt:  BbtchSpecStbteProcessing,
 		},
 		{
-			stats: BatchSpecStats{ResolutionDone: true, Workspaces: 0, Executions: 0},
-			spec:  createdFromRawSpec,
-			want:  BatchSpecStateCompleted,
+			stbts: BbtchSpecStbts{ResolutionDone: true, Workspbces: 0, Executions: 0},
+			spec:  crebtedFromRbwSpec,
+			wbnt:  BbtchSpecStbteCompleted,
 		},
 	}
 
-	for idx, tt := range tests {
-		have := ComputeBatchSpecState(tt.spec, tt.stats)
+	for idx, tt := rbnge tests {
+		hbve := ComputeBbtchSpecStbte(tt.spec, tt.stbts)
 
-		if have != tt.want {
-			t.Errorf("test %d/%d: unexpected batch spec state. want=%s, have=%s", idx+1, len(tests), tt.want, have)
+		if hbve != tt.wbnt {
+			t.Errorf("test %d/%d: unexpected bbtch spec stbte. wbnt=%s, hbve=%s", idx+1, len(tests), tt.wbnt, hbve)
 		}
 	}
 }

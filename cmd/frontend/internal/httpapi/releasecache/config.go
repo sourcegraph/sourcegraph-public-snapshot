@@ -1,26 +1,26 @@
-package releasecache
+pbckbge relebsecbche
 
 import (
 	"net/url"
 	"time"
 
-	"github.com/sourcegraph/log"
+	"github.com/sourcegrbph/log"
 
-	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc/buth"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc/github"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-// config represents an easier to work with version of the generated site config
-// structs related to the version cache.
+// config represents bn ebsier to work with version of the generbted site config
+// structs relbted to the version cbche.
 type config struct {
-	enabled  bool
-	interval time.Duration
+	enbbled  bool
+	intervbl time.Durbtion
 
-	api   *url.URL
+	bpi   *url.URL
 	owner string
-	name  string
+	nbme  string
 	uri   string
 	urn   string
 
@@ -28,28 +28,28 @@ type config struct {
 	webhookSecret string
 }
 
-func parseSiteConfig(conf *conf.Unified) (*config, error) {
-	// Set up our defaults, which should match the defaults in the site config
-	// schema.
+func pbrseSiteConfig(conf *conf.Unified) (*config, error) {
+	// Set up our defbults, which should mbtch the defbults in the site config
+	// schemb.
 	config := &config{
-		enabled:  false,
-		interval: 1 * time.Hour,
-		owner:    "sourcegraph",
-		name:     "src-cli",
+		enbbled:  fblse,
+		intervbl: 1 * time.Hour,
+		owner:    "sourcegrbph",
+		nbme:     "src-cli",
 		uri:      "https://github.com",
-		urn:      "releasecache:github.com",
+		urn:      "relebsecbche:github.com",
 	}
 
-	// There's a _lot_ of pointer indirection boilerplate required to build up
-	// the config, so feel free to have your eyes glaze over for the next 20
+	// There's b _lot_ of pointer indirection boilerplbte required to build up
+	// the config, so feel free to hbve your eyes glbze over for the next 20
 	// lines or so.
 	dotCom := conf.Dotcom
 	if dotCom == nil {
 		return config, nil
 	}
 
-	c := dotCom.SrcCliVersionCache
-	if c == nil || !c.Enabled {
+	c := dotCom.SrcCliVersionCbche
+	if c == nil || !c.Enbbled {
 		return config, nil
 	}
 	if c.Github.Token == "" {
@@ -59,41 +59,41 @@ func parseSiteConfig(conf *conf.Unified) (*config, error) {
 		return nil, errors.New("no webhook secret provided")
 	}
 
-	config.enabled = true
+	config.enbbled = true
 	config.token = c.Github.Token
 	config.webhookSecret = c.Github.WebhookSecret
 
-	if c.Interval != "" {
-		var err error
-		if config.interval, err = time.ParseDuration(c.Interval); err != nil {
-			return nil, errors.Wrapf(err, "parsing interval %s", c.Interval)
+	if c.Intervbl != "" {
+		vbr err error
+		if config.intervbl, err = time.PbrseDurbtion(c.Intervbl); err != nil {
+			return nil, errors.Wrbpf(err, "pbrsing intervbl %s", c.Intervbl)
 		}
 	}
 
 	if c.Github.Uri != "" {
 		config.uri = c.Github.Uri
 	}
-	configUrl, err := url.Parse(config.uri)
+	configUrl, err := url.Pbrse(config.uri)
 	if err != nil {
-		return nil, errors.Wrap(err, "parsing GitHub URL from configuration")
+		return nil, errors.Wrbp(err, "pbrsing GitHub URL from configurbtion")
 	}
-	config.api, _ = github.APIRoot(configUrl)
+	config.bpi, _ = github.APIRoot(configUrl)
 
 	if c.Github.Repository != nil {
 		if c.Github.Repository.Owner != "" {
 			config.owner = c.Github.Repository.Owner
 		}
-		if c.Github.Repository.Name != "" {
-			config.name = c.Github.Repository.Name
+		if c.Github.Repository.Nbme != "" {
+			config.nbme = c.Github.Repository.Nbme
 		}
 	}
 
 	return config, nil
 }
 
-// NewReleaseCache builds a new VersionCache based on the current site config.
-func (c *config) NewReleaseCache(logger log.Logger) ReleaseCache {
-	client := github.NewV4Client(c.urn, c.api, &auth.OAuthBearerToken{Token: c.token}, nil)
+// NewRelebseCbche builds b new VersionCbche bbsed on the current site config.
+func (c *config) NewRelebseCbche(logger log.Logger) RelebseCbche {
+	client := github.NewV4Client(c.urn, c.bpi, &buth.OAuthBebrerToken{Token: c.token}, nil)
 
-	return newReleaseCache(logger, client, c.owner, c.name)
+	return newRelebseCbche(logger, client, c.owner, c.nbme)
 }

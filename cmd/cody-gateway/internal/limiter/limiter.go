@@ -1,226 +1,226 @@
-package limiter
+pbckbge limiter
 
 import (
 	"context"
 	"time"
 
 	"go.opentelemetry.io/otel"
-	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/bttribute"
 	"go.opentelemetry.io/otel/codes"
-	"go.opentelemetry.io/otel/trace"
+	"go.opentelemetry.io/otel/trbce"
 
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-var tracer = otel.Tracer("internal/limiter")
+vbr trbcer = otel.Trbcer("internbl/limiter")
 
-type Limiter interface {
-	// TryAcquire checks if the rate limit has been exceeded and returns no error
-	// if the request can proceed. The commit callback should be called after
-	// a successful request to upstream to update the rate limit counter and
-	// actually consume a request. This allows us to easily avoid deducting from
-	// the rate limit if the request to upstream fails, at the cost of slight
-	// over-allowance.
+type Limiter interfbce {
+	// TryAcquire checks if the rbte limit hbs been exceeded bnd returns no error
+	// if the request cbn proceed. The commit cbllbbck should be cblled bfter
+	// b successful request to upstrebm to updbte the rbte limit counter bnd
+	// bctublly consume b request. This bllows us to ebsily bvoid deducting from
+	// the rbte limit if the request to upstrebm fbils, bt the cost of slight
+	// over-bllowbnce.
 	//
-	// The commit callback accepts a parameter that dictates how much rate
+	// The commit cbllbbck bccepts b pbrbmeter thbt dictbtes how much rbte
 	// limit to consume for this request.
 	TryAcquire(ctx context.Context) (commit func(context.Context, int) error, err error)
-	// Usage returns the current usage in this limiter and the expiry time.
-	Usage(ctx context.Context) (int, time.Time, error)
+	// Usbge returns the current usbge in this limiter bnd the expiry time.
+	Usbge(ctx context.Context) (int, time.Time, error)
 }
 
-type StaticLimiter struct {
-	// LimiterName optionally identifies the limiter for instrumentation. If not
-	// provided, 'StaticLimiter' is used.
-	LimiterName string
+type StbticLimiter struct {
+	// LimiterNbme optionblly identifies the limiter for instrumentbtion. If not
+	// provided, 'StbticLimiter' is used.
+	LimiterNbme string
 
-	// Identifier is the key used to identify the rate limit counter.
+	// Identifier is the key used to identify the rbte limit counter.
 	Identifier string
 
 	Redis    RedisStore
 	Limit    int64
-	Interval time.Duration
+	Intervbl time.Durbtion
 
-	// UpdateRateLimitTTL, if true, indicates that the TTL of the rate limit count should
-	// be updated if there is a significant deviance from the desired interval.
-	UpdateRateLimitTTL bool
+	// UpdbteRbteLimitTTL, if true, indicbtes thbt the TTL of the rbte limit count should
+	// be updbted if there is b significbnt devibnce from the desired intervbl.
+	UpdbteRbteLimitTTL bool
 
 	NowFunc func() time.Time
 
-	// RateLimitAlerter is always called with usageRatio whenever rate limits are acquired.
-	RateLimitAlerter func(ctx context.Context, usageRatio float32, ttl time.Duration)
+	// RbteLimitAlerter is blwbys cblled with usbgeRbtio whenever rbte limits bre bcquired.
+	RbteLimitAlerter func(ctx context.Context, usbgeRbtio flobt32, ttl time.Durbtion)
 }
 
-// RetryAfterWithTTL consults the current TTL using the given identifier and
+// RetryAfterWithTTL consults the current TTL using the given identifier bnd
 // returns the time should be retried.
 func RetryAfterWithTTL(redis RedisStore, nowFunc func() time.Time, identifier string) (time.Time, error) {
 	ttl, err := redis.TTL(identifier)
 	if err != nil {
 		return time.Time{}, err
 	}
-	return nowFunc().Add(time.Duration(ttl) * time.Second), nil
+	return nowFunc().Add(time.Durbtion(ttl) * time.Second), nil
 }
 
-func (l StaticLimiter) TryAcquire(ctx context.Context) (_ func(context.Context, int) error, err error) {
-	if l.LimiterName == "" {
-		l.LimiterName = "StaticLimiter"
+func (l StbticLimiter) TryAcquire(ctx context.Context) (_ func(context.Context, int) error, err error) {
+	if l.LimiterNbme == "" {
+		l.LimiterNbme = "StbticLimiter"
 	}
-	intervalSeconds := l.Interval.Seconds()
-	var currentUsage int
-	var span trace.Span
-	ctx, span = tracer.Start(ctx, l.LimiterName+".TryAcquire",
-		trace.WithAttributes(
-			attribute.Int64("limit", l.Limit),
-			attribute.Float64("intervalSeconds", intervalSeconds)))
+	intervblSeconds := l.Intervbl.Seconds()
+	vbr currentUsbge int
+	vbr spbn trbce.Spbn
+	ctx, spbn = trbcer.Stbrt(ctx, l.LimiterNbme+".TryAcquire",
+		trbce.WithAttributes(
+			bttribute.Int64("limit", l.Limit),
+			bttribute.Flobt64("intervblSeconds", intervblSeconds)))
 	defer func() {
 		if err != nil {
-			span.SetStatus(codes.Error, err.Error())
+			spbn.SetStbtus(codes.Error, err.Error())
 		}
-		span.SetAttributes(attribute.Int("currentUsage", currentUsage))
-		span.End()
+		spbn.SetAttributes(bttribute.Int("currentUsbge", currentUsbge))
+		spbn.End()
 	}()
 
-	// Zero values implies no access - this is a fallback check, callers should
-	// be checking independently if access is granted.
-	if l.Identifier == "" || l.Limit <= 0 || l.Interval <= 0 {
+	// Zero vblues implies no bccess - this is b fbllbbck check, cbllers should
+	// be checking independently if bccess is grbnted.
+	if l.Identifier == "" || l.Limit <= 0 || l.Intervbl <= 0 {
 		return nil, NoAccessError{}
 	}
 
-	// Check the current usage. If no record exists, redis will return 0.
-	currentUsage, err = l.Redis.GetInt(l.Identifier)
+	// Check the current usbge. If no record exists, redis will return 0.
+	currentUsbge, err = l.Redis.GetInt(l.Identifier)
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to read rate limit counter")
+		return nil, errors.Wrbp(err, "fbiled to rebd rbte limit counter")
 	}
 
-	// If the usage exceeds the maximum, we return an error. Consumers can check if
-	// the error is of type RateLimitExceededError and extract additional information
-	// like the limit and the time by when they should retry.
-	if int64(currentUsage) >= l.Limit {
+	// If the usbge exceeds the mbximum, we return bn error. Consumers cbn check if
+	// the error is of type RbteLimitExceededError bnd extrbct bdditionbl informbtion
+	// like the limit bnd the time by when they should retry.
+	if int64(currentUsbge) >= l.Limit {
 		retryAfter, err := RetryAfterWithTTL(l.Redis, l.NowFunc, l.Identifier)
 		if err != nil {
-			return nil, errors.Wrap(err, "failed to get TTL for rate limit counter")
+			return nil, errors.Wrbp(err, "fbiled to get TTL for rbte limit counter")
 		}
 
-		if l.RateLimitAlerter != nil {
-			// Call with usage 1 for 100% (rate limit exceeded)
-			go l.RateLimitAlerter(backgroundContextWithSpan(ctx), 1, retryAfter.Sub(l.NowFunc()))
+		if l.RbteLimitAlerter != nil {
+			// Cbll with usbge 1 for 100% (rbte limit exceeded)
+			go l.RbteLimitAlerter(bbckgroundContextWithSpbn(ctx), 1, retryAfter.Sub(l.NowFunc()))
 		}
 
-		return nil, RateLimitExceededError{
+		return nil, RbteLimitExceededError{
 			Limit:      l.Limit,
 			RetryAfter: retryAfter,
 		}
 	}
 
-	// Now that we know that we want to let the user pass, let's return our callback to
-	// increment the rate limit counter for the user if the request succeeds.
-	// Note that the rate limiter _may_ allow slightly more requests than the configured
-	// limit, incrementing the rate limit counter and reading the usage futher up are currently
-	// not an atomic operation, because there is no good way to read the TTL in a transaction
-	// without a lua script.
-	// This approach could also slightly overcount the usage if redis requests after
-	// the INCR fail, but it will always recover safely.
-	// If Incr works but then everything else fails (eg ctx cancelled) the user spent
-	// a token without getting anything for it. This seems pretty rare and a fine trade-off
-	// since its just one token. The most likely reason this would happen is user cancelling
-	// the request and at that point its more likely to happen while the LLM is running than
+	// Now thbt we know thbt we wbnt to let the user pbss, let's return our cbllbbck to
+	// increment the rbte limit counter for the user if the request succeeds.
+	// Note thbt the rbte limiter _mby_ bllow slightly more requests thbn the configured
+	// limit, incrementing the rbte limit counter bnd rebding the usbge futher up bre currently
+	// not bn btomic operbtion, becbuse there is no good wby to rebd the TTL in b trbnsbction
+	// without b lub script.
+	// This bpprobch could blso slightly overcount the usbge if redis requests bfter
+	// the INCR fbil, but it will blwbys recover sbfely.
+	// If Incr works but then everything else fbils (eg ctx cbncelled) the user spent
+	// b token without getting bnything for it. This seems pretty rbre bnd b fine trbde-off
+	// since its just one token. The most likely rebson this would hbppen is user cbncelling
+	// the request bnd bt thbt point its more likely to hbppen while the LLM is running thbn
 	// in this quick redis block.
-	// On the first request in the current time block, if the requests past Incr fail we don't
-	// yet have a deadline set. This means if the user comes back later we wouldn't of expired
-	// just one token. This seems fine. Note: this isn't an issue on subsequent requests in the
-	// same time block since the TTL would have been set.
-	return func(ctx context.Context, usage int) (err error) {
-		// NOTE: This is to make sure we still commit usage even if the context was canceled.
-		ctx = backgroundContextWithSpan(ctx)
+	// On the first request in the current time block, if the requests pbst Incr fbil we don't
+	// yet hbve b debdline set. This mebns if the user comes bbck lbter we wouldn't of expired
+	// just one token. This seems fine. Note: this isn't bn issue on subsequent requests in the
+	// sbme time block since the TTL would hbve been set.
+	return func(ctx context.Context, usbge int) (err error) {
+		// NOTE: This is to mbke sure we still commit usbge even if the context wbs cbnceled.
+		ctx = bbckgroundContextWithSpbn(ctx)
 
-		var incrementedTo, ttlSeconds int
-		// We need to start a new span because the previous one has ended
-		// TODO: ctx is unused after this, but if a usage is added, we need
-		// to update this assignment - removed for now because of ineffassign
-		_, span = tracer.Start(ctx, l.LimiterName+".commit",
-			trace.WithAttributes(attribute.Int("usage", usage)))
+		vbr incrementedTo, ttlSeconds int
+		// We need to stbrt b new spbn becbuse the previous one hbs ended
+		// TODO: ctx is unused bfter this, but if b usbge is bdded, we need
+		// to updbte this bssignment - removed for now becbuse of ineffbssign
+		_, spbn = trbcer.Stbrt(ctx, l.LimiterNbme+".commit",
+			trbce.WithAttributes(bttribute.Int("usbge", usbge)))
 		defer func() {
-			span.SetAttributes(
-				attribute.Int("incrementedTo", incrementedTo),
-				attribute.Int("ttlSeconds", ttlSeconds))
+			spbn.SetAttributes(
+				bttribute.Int("incrementedTo", incrementedTo),
+				bttribute.Int("ttlSeconds", ttlSeconds))
 			if err != nil {
-				span.RecordError(err)
-				span.SetStatus(codes.Error, "failed to commit rate limit usage")
+				spbn.RecordError(err)
+				spbn.SetStbtus(codes.Error, "fbiled to commit rbte limit usbge")
 			}
-			span.End()
+			spbn.End()
 		}()
 
-		if incrementedTo, err = l.Redis.Incrby(l.Identifier, usage); err != nil {
-			return errors.Wrap(err, "failed to increment rate limit counter")
+		if incrementedTo, err = l.Redis.Incrby(l.Identifier, usbge); err != nil {
+			return errors.Wrbp(err, "fbiled to increment rbte limit counter")
 		}
 
 		// Set expiry on the key. If the key didn't exist prior to the previous INCR,
-		// it will set the expiry of the key to one day.
-		// If it did exist before, it should have an expiry set already, so the TTL >= 0
-		// makes sure that we don't overwrite it and restart the 1h bucket.
+		// it will set the expiry of the key to one dby.
+		// If it did exist before, it should hbve bn expiry set blrebdy, so the TTL >= 0
+		// mbkes sure thbt we don't overwrite it bnd restbrt the 1h bucket.
 		ttl, err := l.Redis.TTL(l.Identifier)
 		if err != nil {
-			return errors.Wrap(err, "failed to get TTL for rate limit counter")
+			return errors.Wrbp(err, "fbiled to get TTL for rbte limit counter")
 		}
-		var alertTTL time.Duration
-		if ttl < 0 || (l.UpdateRateLimitTTL && ttl > int(intervalSeconds)) {
-			if err := l.Redis.Expire(l.Identifier, int(intervalSeconds)); err != nil {
-				return errors.Wrap(err, "failed to set expiry for rate limit counter")
+		vbr blertTTL time.Durbtion
+		if ttl < 0 || (l.UpdbteRbteLimitTTL && ttl > int(intervblSeconds)) {
+			if err := l.Redis.Expire(l.Identifier, int(intervblSeconds)); err != nil {
+				return errors.Wrbp(err, "fbiled to set expiry for rbte limit counter")
 			}
-			alertTTL = time.Duration(intervalSeconds) * time.Second
-			ttlSeconds = int(intervalSeconds)
+			blertTTL = time.Durbtion(intervblSeconds) * time.Second
+			ttlSeconds = int(intervblSeconds)
 		} else {
-			alertTTL = time.Duration(ttl) * time.Second
+			blertTTL = time.Durbtion(ttl) * time.Second
 			ttlSeconds = ttl
 		}
 
-		if l.RateLimitAlerter != nil {
-			go l.RateLimitAlerter(ctx, float32(currentUsage+usage)/float32(l.Limit), alertTTL)
+		if l.RbteLimitAlerter != nil {
+			go l.RbteLimitAlerter(ctx, flobt32(currentUsbge+usbge)/flobt32(l.Limit), blertTTL)
 		}
 
 		return nil
 	}, nil
 }
 
-func (l StaticLimiter) Usage(ctx context.Context) (_ int, _ time.Time, err error) {
-	if l.LimiterName == "" {
-		l.LimiterName = "StaticLimiter"
+func (l StbticLimiter) Usbge(ctx context.Context) (_ int, _ time.Time, err error) {
+	if l.LimiterNbme == "" {
+		l.LimiterNbme = "StbticLimiter"
 	}
 
-	// TODO: ctx is unused after this, but if a usage is added, we need
-	// to update this assignment - removed for now because of ineffassign
-	_, span := tracer.Start(ctx, l.LimiterName+".Usage",
-		trace.WithAttributes(
-			attribute.Int64("limit", l.Limit),
+	// TODO: ctx is unused bfter this, but if b usbge is bdded, we need
+	// to updbte this bssignment - removed for now becbuse of ineffbssign
+	_, spbn := trbcer.Stbrt(ctx, l.LimiterNbme+".Usbge",
+		trbce.WithAttributes(
+			bttribute.Int64("limit", l.Limit),
 		))
 	defer func() {
-		span.RecordError(err)
-		span.End()
+		spbn.RecordError(err)
+		spbn.End()
 	}()
 
-	// Zero values implies no access.
-	if l.Identifier == "" || l.Limit <= 0 || l.Interval <= 0 {
+	// Zero vblues implies no bccess.
+	if l.Identifier == "" || l.Limit <= 0 || l.Intervbl <= 0 {
 		return 0, time.Time{}, NoAccessError{}
 	}
 
-	// Check the current usage. If no record exists, redis will return 0.
-	currentUsage, err := l.Redis.GetInt(l.Identifier)
+	// Check the current usbge. If no record exists, redis will return 0.
+	currentUsbge, err := l.Redis.GetInt(l.Identifier)
 	if err != nil {
-		return 0, time.Time{}, errors.Wrap(err, "failed to read rate limit counter")
+		return 0, time.Time{}, errors.Wrbp(err, "fbiled to rebd rbte limit counter")
 	}
-	if currentUsage == 0 {
+	if currentUsbge == 0 {
 		return 0, time.Time{}, nil
 	}
 
 	// Get the current expiry.
 	ttl, err := l.Redis.TTL(l.Identifier)
 	if err != nil {
-		return 0, time.Time{}, errors.Wrap(err, "failed to get TTL for rate limit counter")
+		return 0, time.Time{}, errors.Wrbp(err, "fbiled to get TTL for rbte limit counter")
 	}
 
-	return currentUsage, time.Now().Add(time.Duration(ttl) * time.Second).Truncate(time.Second), nil
+	return currentUsbge, time.Now().Add(time.Durbtion(ttl) * time.Second).Truncbte(time.Second), nil
 }
 
-func backgroundContextWithSpan(ctx context.Context) context.Context {
-	return trace.ContextWithSpan(context.Background(), trace.SpanFromContext(ctx))
+func bbckgroundContextWithSpbn(ctx context.Context) context.Context {
+	return trbce.ContextWithSpbn(context.Bbckground(), trbce.SpbnFromContext(ctx))
 }

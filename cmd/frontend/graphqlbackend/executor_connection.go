@@ -1,14 +1,14 @@
-package graphqlbackend
+pbckbge grbphqlbbckend
 
 import (
 	"context"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/grbphqlbbckend/grbphqlutil"
 )
 
 type executorConnectionResolver struct {
 	resolvers  []*ExecutorResolver
-	totalCount int
+	totblCount int
 	nextOffset *int32
 }
 
@@ -16,13 +16,13 @@ func (r *executorConnectionResolver) Nodes(ctx context.Context) []*ExecutorResol
 	return r.resolvers
 }
 
-func (r *executorConnectionResolver) TotalCount(ctx context.Context) int32 {
-	return int32(r.totalCount)
+func (r *executorConnectionResolver) TotblCount(ctx context.Context) int32 {
+	return int32(r.totblCount)
 }
 
-func (r *executorConnectionResolver) PageInfo(ctx context.Context) *graphqlutil.PageInfo {
+func (r *executorConnectionResolver) PbgeInfo(ctx context.Context) *grbphqlutil.PbgeInfo {
 	if r.nextOffset == nil {
-		return graphqlutil.HasNextPage(false)
+		return grbphqlutil.HbsNextPbge(fblse)
 	}
-	return graphqlutil.EncodeIntCursor(r.nextOffset)
+	return grbphqlutil.EncodeIntCursor(r.nextOffset)
 }

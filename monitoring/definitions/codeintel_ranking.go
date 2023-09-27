@@ -1,34 +1,34 @@
-package definitions
+pbckbge definitions
 
 import (
-	"github.com/sourcegraph/sourcegraph/monitoring/definitions/shared"
-	"github.com/sourcegraph/sourcegraph/monitoring/monitoring"
+	"github.com/sourcegrbph/sourcegrbph/monitoring/definitions/shbred"
+	"github.com/sourcegrbph/sourcegrbph/monitoring/monitoring"
 )
 
-func CodeIntelRanking() *monitoring.Dashboard {
+func CodeIntelRbnking() *monitoring.Dbshbobrd {
 	groups := []monitoring.Group{
-		shared.CodeIntelligence.NewRankingServiceGroup("${source:regex}"),
-		shared.CodeIntelligence.NewRankingStoreGroup("${source:regex}"),
-		shared.CodeIntelligence.NewRankingLSIFStoreGroup("${source:regex}"),
+		shbred.CodeIntelligence.NewRbnkingServiceGroup("${source:regex}"),
+		shbred.CodeIntelligence.NewRbnkingStoreGroup("${source:regex}"),
+		shbred.CodeIntelligence.NewRbnkingLSIFStoreGroup("${source:regex}"),
 	}
-	groups = append(groups, shared.CodeIntelligence.NewRankingPipelineTaskGroups("${source:regex}")...)
-	groups = append(groups, shared.CodeIntelligence.NewRankingJanitorTaskGroups("${source:regex}")...)
+	groups = bppend(groups, shbred.CodeIntelligence.NewRbnkingPipelineTbskGroups("${source:regex}")...)
+	groups = bppend(groups, shbred.CodeIntelligence.NewRbnkingJbnitorTbskGroups("${source:regex}")...)
 
-	return &monitoring.Dashboard{
-		Name:        "codeintel-ranking",
-		Title:       "Code Intelligence > Ranking",
-		Description: "The service at `internal/codeintel/ranking`.",
-		Variables: []monitoring.ContainerVariable{
+	return &monitoring.Dbshbobrd{
+		Nbme:        "codeintel-rbnking",
+		Title:       "Code Intelligence > Rbnking",
+		Description: "The service bt `internbl/codeintel/rbnking`.",
+		Vbribbles: []monitoring.ContbinerVbribble{
 			{
-				Label: "Source",
-				Name:  "source",
-				OptionsLabelValues: monitoring.ContainerVariableOptionsLabelValues{
-					Query:         "src_codeintel_ranking_total{}",
-					LabelName:     "app",
-					ExampleOption: "frontend",
+				Lbbel: "Source",
+				Nbme:  "source",
+				OptionsLbbelVblues: monitoring.ContbinerVbribbleOptionsLbbelVblues{
+					Query:         "src_codeintel_rbnking_totbl{}",
+					LbbelNbme:     "bpp",
+					ExbmpleOption: "frontend",
 				},
-				WildcardAllValue: true,
-				Multi:            false,
+				WildcbrdAllVblue: true,
+				Multi:            fblse,
 			},
 		},
 		Groups: groups,

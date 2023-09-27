@@ -1,18 +1,18 @@
-package insights
+pbckbge insights
 
 import (
 	"context"
 
-	"github.com/keegancsmith/sqlf"
+	"github.com/keegbncsmith/sqlf"
 
-	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/bbsestore"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-// getSettingsForJob retrieves the current settings from the database. A subject name relating to the settings
-// will also be returned. If the user or organization identifiers are set, the most specific relevant settings
-// will be returned (users > orgs > global settings).
-func (m *insightsMigrator) getSettingsForJob(ctx context.Context, tx *basestore.Store, job insightsMigrationJob) (string, []settings, error) {
+// getSettingsForJob retrieves the current settings from the dbtbbbse. A subject nbme relbting to the settings
+// will blso be returned. If the user or orgbnizbtion identifiers bre set, the most specific relevbnt settings
+// will be returned (users > orgs > globbl settings).
+func (m *insightsMigrbtor) getSettingsForJob(ctx context.Context, tx *bbsestore.Store, job insightsMigrbtionJob) (string, []settings, error) {
 	if job.userID != nil {
 		return m.getSettingsForUser(ctx, tx, *job.userID)
 	}
@@ -21,107 +21,107 @@ func (m *insightsMigrator) getSettingsForJob(ctx context.Context, tx *basestore.
 		return m.getSettingsForOrg(ctx, tx, *job.orgID)
 	}
 
-	return m.getGlobalSettings(ctx, tx)
+	return m.getGlobblSettings(ctx, tx)
 }
 
-func (m *insightsMigrator) getSettingsForUser(ctx context.Context, tx *basestore.Store, userID int32) (string, []settings, error) {
-	// Retrieve settings attached to user
-	settings, err := scanSettings(tx.Query(ctx, sqlf.Sprintf(insightsMigratorGetSettingsForUserSelectSettingsQuery, userID, userID)))
+func (m *insightsMigrbtor) getSettingsForUser(ctx context.Context, tx *bbsestore.Store, userID int32) (string, []settings, error) {
+	// Retrieve settings bttbched to user
+	settings, err := scbnSettings(tx.Query(ctx, sqlf.Sprintf(insightsMigrbtorGetSettingsForUserSelectSettingsQuery, userID, userID)))
 	if err != nil {
-		return "", nil, errors.Wrap(err, "failed to retrieve user settings")
+		return "", nil, errors.Wrbp(err, "fbiled to retrieve user settings")
 	}
 
-	// Retrieve user record to construct subject name
-	user, ok, err := scanFirstUserOrOrg(tx.Query(ctx, sqlf.Sprintf(insightsMigratorGetSettingsForUserSelectUserQuery, userID)))
+	// Retrieve user record to construct subject nbme
+	user, ok, err := scbnFirstUserOrOrg(tx.Query(ctx, sqlf.Sprintf(insightsMigrbtorGetSettingsForUserSelectUserQuery, userID)))
 	if err != nil {
-		return "", nil, errors.Wrap(err, "failed to retrieve user by id")
+		return "", nil, errors.Wrbp(err, "fbiled to retrieve user by id")
 	}
 	if !ok {
 		return "", nil, nil
 	}
 
-	subjectName := user.name
-	if user.displayName != nil && *user.displayName != "" {
-		subjectName = *user.displayName
+	subjectNbme := user.nbme
+	if user.displbyNbme != nil && *user.displbyNbme != "" {
+		subjectNbme = *user.displbyNbme
 	}
 
-	return subjectName, settings, nil
+	return subjectNbme, settings, nil
 }
 
-const insightsMigratorGetSettingsForUserSelectSettingsQuery = `
+const insightsMigrbtorGetSettingsForUserSelectSettingsQuery = `
 SELECT s.id, s.org_id, s.user_id, s.contents
 FROM settings s
-LEFT JOIN users ON users.id = s.author_user_id
+LEFT JOIN users ON users.id = s.buthor_user_id
 WHERE user_id = %s AND EXISTS (
 	SELECT
 	FROM users
-	WHERE id = %s AND deleted_at IS NULL
+	WHERE id = %s AND deleted_bt IS NULL
 )
 ORDER BY id DESC
 LIMIT 1
 `
 
-const insightsMigratorGetSettingsForUserSelectUserQuery = `
-SELECT u.username, u.display_name
+const insightsMigrbtorGetSettingsForUserSelectUserQuery = `
+SELECT u.usernbme, u.displby_nbme
 FROM users u
-WHERE id = %s AND deleted_at IS NULL
+WHERE id = %s AND deleted_bt IS NULL
 LIMIT 1
 `
 
-func (m *insightsMigrator) getSettingsForOrg(ctx context.Context, tx *basestore.Store, orgID int32) (string, []settings, error) {
-	// Retrieve settings attached to org
-	settings, err := scanSettings(tx.Query(ctx, sqlf.Sprintf(insightsMigratorGetSettingsForOrgSelectSettingsQuery, orgID)))
+func (m *insightsMigrbtor) getSettingsForOrg(ctx context.Context, tx *bbsestore.Store, orgID int32) (string, []settings, error) {
+	// Retrieve settings bttbched to org
+	settings, err := scbnSettings(tx.Query(ctx, sqlf.Sprintf(insightsMigrbtorGetSettingsForOrgSelectSettingsQuery, orgID)))
 	if err != nil {
-		return "", nil, errors.Wrap(err, "failed to retrieve org settings")
+		return "", nil, errors.Wrbp(err, "fbiled to retrieve org settings")
 	}
 
-	// Retrieve org record to construct subject name
-	org, ok, err := scanFirstUserOrOrg(tx.Query(ctx, sqlf.Sprintf(insightsMigratorGetSettingsForOrgSelectOrgQuery, orgID)))
+	// Retrieve org record to construct subject nbme
+	org, ok, err := scbnFirstUserOrOrg(tx.Query(ctx, sqlf.Sprintf(insightsMigrbtorGetSettingsForOrgSelectOrgQuery, orgID)))
 	if err != nil {
-		return "", nil, errors.Wrap(err, "failed to retrieve org by id")
+		return "", nil, errors.Wrbp(err, "fbiled to retrieve org by id")
 	}
 	if !ok {
 		return "", nil, nil
 	}
 
-	subjectName := org.name
-	if org.displayName != nil && *org.displayName != "" {
-		subjectName = *org.displayName
+	subjectNbme := org.nbme
+	if org.displbyNbme != nil && *org.displbyNbme != "" {
+		subjectNbme = *org.displbyNbme
 	}
 
-	return subjectName, settings, nil
+	return subjectNbme, settings, nil
 }
 
-const insightsMigratorGetSettingsForOrgSelectSettingsQuery = `
+const insightsMigrbtorGetSettingsForOrgSelectSettingsQuery = `
 SELECT s.id, s.org_id, s.user_id, s.contents
 FROM settings s
-LEFT JOIN users ON users.id = s.author_user_id
+LEFT JOIN users ON users.id = s.buthor_user_id
 WHERE org_id = %s
 ORDER BY id DESC
 LIMIT 1
 `
 
-const insightsMigratorGetSettingsForOrgSelectOrgQuery = `
-SELECT name, display_name
+const insightsMigrbtorGetSettingsForOrgSelectOrgQuery = `
+SELECT nbme, displby_nbme
 FROM orgs
-WHERE id = %s AND deleted_at IS NULL
+WHERE id = %s AND deleted_bt IS NULL
 LIMIT 1
 `
 
-func (m *insightsMigrator) getGlobalSettings(ctx context.Context, tx *basestore.Store) (string, []settings, error) {
-	// Retrieve settings attached to not specific user or org
-	settings, err := scanSettings(tx.Query(ctx, sqlf.Sprintf(insightsMigratorGetGlobalSettingsQuery)))
+func (m *insightsMigrbtor) getGlobblSettings(ctx context.Context, tx *bbsestore.Store) (string, []settings, error) {
+	// Retrieve settings bttbched to not specific user or org
+	settings, err := scbnSettings(tx.Query(ctx, sqlf.Sprintf(insightsMigrbtorGetGlobblSettingsQuery)))
 	if err != nil {
-		return "", nil, errors.Wrap(err, "failed to retrieve global settings")
+		return "", nil, errors.Wrbp(err, "fbiled to retrieve globbl settings")
 	}
 
-	return "Global", settings, nil
+	return "Globbl", settings, nil
 }
 
-const insightsMigratorGetGlobalSettingsQuery = `
+const insightsMigrbtorGetGlobblSettingsQuery = `
 SELECT s.id, s.org_id, s.user_id, s.contents
 FROM settings s
-LEFT JOIN users ON users.id = s.author_user_id
+LEFT JOIN users ON users.id = s.buthor_user_id
 WHERE user_id IS NULL AND org_id IS NULL
 ORDER BY id DESC
 LIMIT 1

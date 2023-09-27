@@ -1,4 +1,4 @@
-package reconciler
+pbckbge reconciler
 
 import (
 	"bytes"
@@ -11,54 +11,54 @@ import (
 	"time"
 
 	"github.com/google/go-cmp/cmp"
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/bssert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
-	"github.com/sourcegraph/sourcegraph/internal/httpcli"
+	"github.com/sourcegrbph/sourcegrbph/internbl/gitserver"
+	"github.com/sourcegrbph/sourcegrbph/internbl/httpcli"
 
-	"github.com/sourcegraph/log/logtest"
+	"github.com/sourcegrbph/log/logtest"
 
-	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/batches/sources"
-	stesting "github.com/sourcegraph/sourcegraph/internal/batches/sources/testing"
-	"github.com/sourcegraph/sourcegraph/internal/batches/store"
-	bt "github.com/sourcegraph/sourcegraph/internal/batches/testing"
-	btypes "github.com/sourcegraph/sourcegraph/internal/batches/types"
-	"github.com/sourcegraph/sourcegraph/internal/batches/webhooks"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
-	et "github.com/sourcegraph/sourcegraph/internal/encryption/testing"
-	"github.com/sourcegraph/sourcegraph/internal/errcode"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
-	gitprotocol "github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/internal/repos"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bctor"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bbtches/sources"
+	stesting "github.com/sourcegrbph/sourcegrbph/internbl/bbtches/sources/testing"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bbtches/store"
+	bt "github.com/sourcegrbph/sourcegrbph/internbl/bbtches/testing"
+	btypes "github.com/sourcegrbph/sourcegrbph/internbl/bbtches/types"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bbtches/webhooks"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbmocks"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbtest"
+	et "github.com/sourcegrbph/sourcegrbph/internbl/encryption/testing"
+	"github.com/sourcegrbph/sourcegrbph/internbl/errcode"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc/buth"
+	"github.com/sourcegrbph/sourcegrbph/internbl/gitserver/gitdombin"
+	gitprotocol "github.com/sourcegrbph/sourcegrbph/internbl/gitserver/protocol"
+	"github.com/sourcegrbph/sourcegrbph/internbl/observbtion"
+	"github.com/sourcegrbph/sourcegrbph/internbl/repos"
 
-	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
-	"github.com/sourcegraph/sourcegraph/internal/timeutil"
-	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/lib/batches/git"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/internbl/repoupdbter/protocol"
+	"github.com/sourcegrbph/sourcegrbph/internbl/timeutil"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
+	"github.com/sourcegrbph/sourcegrbph/lib/bbtches/git"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
 func mockDoer(req *http.Request) (*http.Response, error) {
 	return &http.Response{
-		StatusCode: http.StatusOK,
-		Body: io.NopCloser(bytes.NewReader([]byte(fmt.Sprintf(
-			// The actual changeset returned by the mock client is not important,
-			// as long as it satisfies the type for webhooks.gqlChangesetResponse
-			`{"data": {"node": {"id": "%s","externalID": "%s","batchChanges": {"nodes": [{"id": "%s"}]},"repository": {"id": "%s","name": "github.com/test/test"},"createdAt": "2023-02-25T00:53:50Z","updatedAt": "2023-02-25T00:53:50Z","title": "%s","body": "%s","author": {"name": "%s", "email": "%s"},"state": "%s","labels": [],"externalURL": {"url": "%s"},"forkNamespace": null,"reviewState": "%s","checkState": null,"error": null,"syncerError": null,"forkName": null,"ownedByBatchChange": null}}}`,
+		StbtusCode: http.StbtusOK,
+		Body: io.NopCloser(bytes.NewRebder([]byte(fmt.Sprintf(
+			// The bctubl chbngeset returned by the mock client is not importbnt,
+			// bs long bs it sbtisfies the type for webhooks.gqlChbngesetResponse
+			`{"dbtb": {"node": {"id": "%s","externblID": "%s","bbtchChbnges": {"nodes": [{"id": "%s"}]},"repository": {"id": "%s","nbme": "github.com/test/test"},"crebtedAt": "2023-02-25T00:53:50Z","updbtedAt": "2023-02-25T00:53:50Z","title": "%s","body": "%s","buthor": {"nbme": "%s", "embil": "%s"},"stbte": "%s","lbbels": [],"externblURL": {"url": "%s"},"forkNbmespbce": null,"reviewStbte": "%s","checkStbte": null,"error": null,"syncerError": null,"forkNbme": null,"ownedByBbtchChbnge": null}}}`,
 			"123",
 			"123",
 			"123",
 			"123",
 			"title",
 			"body",
-			"author",
-			"email",
+			"buthor",
+			"embil",
 			"OPEN",
 			"some-url",
 			"PENDING",
@@ -66,1232 +66,1232 @@ func mockDoer(req *http.Request) (*http.Response, error) {
 	}, nil
 }
 
-func TestExecutor_ExecutePlan(t *testing.T) {
+func TestExecutor_ExecutePlbn(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
 
-	orig := httpcli.InternalDoer
-	httpcli.InternalDoer = httpcli.DoerFunc(mockDoer)
-	t.Cleanup(func() { httpcli.InternalDoer = orig })
+	orig := httpcli.InternblDoer
+	httpcli.InternblDoer = httpcli.DoerFunc(mockDoer)
+	t.Clebnup(func() { httpcli.InternblDoer = orig })
 
 	logger := logtest.Scoped(t)
-	ctx := context.Background()
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	ctx := context.Bbckground()
+	db := dbtbbbse.NewDB(logger, dbtest.NewDB(logger, t))
 
 	now := timeutil.Now()
 	clock := func() time.Time { return now }
-	bstore := store.NewWithClock(db, &observation.TestContext, et.TestKey{}, clock)
-	wstore := database.OutboundWebhookJobsWith(bstore, nil)
+	bstore := store.NewWithClock(db, &observbtion.TestContext, et.TestKey{}, clock)
+	wstore := dbtbbbse.OutboundWebhookJobsWith(bstore, nil)
 
-	admin := bt.CreateTestUser(t, db, true)
-	ctx = actor.WithActor(ctx, actor.FromUser(admin.ID))
+	bdmin := bt.CrebteTestUser(t, db, true)
+	ctx = bctor.WithActor(ctx, bctor.FromUser(bdmin.ID))
 
-	repo, extSvc := bt.CreateTestRepo(t, ctx, db)
-	bt.CreateTestSiteCredential(t, bstore, repo)
+	repo, extSvc := bt.CrebteTestRepo(t, ctx, db)
+	bt.CrebteTestSiteCredentibl(t, bstore, repo)
 
-	state := bt.MockChangesetSyncState(&protocol.RepoInfo{
-		Name: repo.Name,
+	stbte := bt.MockChbngesetSyncStbte(&protocol.RepoInfo{
+		Nbme: repo.Nbme,
 		VCS:  protocol.VCSInfo{URL: repo.URI},
 	})
-	defer state.Unmock()
+	defer stbte.Unmock()
 
-	mockExternalURL(t, "https://sourcegraph.test")
+	mockExternblURL(t, "https://sourcegrbph.test")
 
-	githubPR := buildGithubPR(clock(), btypes.ChangesetExternalStateOpen)
-	githubHeadRef := gitdomain.EnsureRefPrefix(githubPR.HeadRefName)
-	draftGithubPR := buildGithubPR(clock(), btypes.ChangesetExternalStateDraft)
-	closedGitHubPR := buildGithubPR(clock(), btypes.ChangesetExternalStateClosed)
+	githubPR := buildGithubPR(clock(), btypes.ChbngesetExternblStbteOpen)
+	githubHebdRef := gitdombin.EnsureRefPrefix(githubPR.HebdRefNbme)
+	drbftGithubPR := buildGithubPR(clock(), btypes.ChbngesetExternblStbteDrbft)
+	closedGitHubPR := buildGithubPR(clock(), btypes.ChbngesetExternblStbteClosed)
 
-	notFoundErr := sources.ChangesetNotFoundError{
-		Changeset: &sources.Changeset{
-			Changeset: &btypes.Changeset{ExternalID: "100000"},
+	notFoundErr := sources.ChbngesetNotFoundError{
+		Chbngeset: &sources.Chbngeset{
+			Chbngeset: &btypes.Chbngeset{ExternblID: "100000"},
 		},
 	}
 
 	repoArchivedErr := mockRepoArchivedError{}
 
-	type testCase struct {
-		changeset      bt.TestChangesetOpts
-		hasCurrentSpec bool
-		plan           *Plan
+	type testCbse struct {
+		chbngeset      bt.TestChbngesetOpts
+		hbsCurrentSpec bool
+		plbn           *Plbn
 
-		sourcerMetadata any
+		sourcerMetbdbtb bny
 		sourcerErr      error
-		// Whether or not the source responds to CreateChangeset with "already exists"
-		alreadyExists bool
+		// Whether or not the source responds to CrebteChbngeset with "blrebdy exists"
+		blrebdyExists bool
 		// Whether or not the source responds to IsArchivedPushError with true
 		isRepoArchived bool
 
 		gitClientErr error
 
-		wantCreateOnCodeHost      bool
-		wantCreateDraftOnCodeHost bool
-		wantUndraftOnCodeHost     bool
-		wantUpdateOnCodeHost      bool
-		wantCloseOnCodeHost       bool
-		wantLoadFromCodeHost      bool
-		wantReopenOnCodeHost      bool
+		wbntCrebteOnCodeHost      bool
+		wbntCrebteDrbftOnCodeHost bool
+		wbntUndrbftOnCodeHost     bool
+		wbntUpdbteOnCodeHost      bool
+		wbntCloseOnCodeHost       bool
+		wbntLobdFromCodeHost      bool
+		wbntReopenOnCodeHost      bool
 
-		wantGitserverCommit bool
+		wbntGitserverCommit bool
 
-		wantChangeset       bt.ChangesetAssertions
-		wantNonRetryableErr bool
+		wbntChbngeset       bt.ChbngesetAssertions
+		wbntNonRetrybbleErr bool
 
-		wantWebhookType string
+		wbntWebhookType string
 
-		wantErr error
+		wbntErr error
 	}
 
-	tests := map[string]testCase{
+	tests := mbp[string]testCbse{
 		"noop": {
-			hasCurrentSpec: true,
-			changeset:      bt.TestChangesetOpts{},
-			plan:           &Plan{Ops: Operations{}},
+			hbsCurrentSpec: true,
+			chbngeset:      bt.TestChbngesetOpts{},
+			plbn:           &Plbn{Ops: Operbtions{}},
 
-			wantChangeset: bt.ChangesetAssertions{},
+			wbntChbngeset: bt.ChbngesetAssertions{},
 		},
 		"import": {
-			changeset: bt.TestChangesetOpts{
-				PublicationState: btypes.ChangesetPublicationStateUnpublished,
-				ExternalID:       githubPR.ID,
+			chbngeset: bt.TestChbngesetOpts{
+				PublicbtionStbte: btypes.ChbngesetPublicbtionStbteUnpublished,
+				ExternblID:       githubPR.ID,
 			},
-			plan: &Plan{
-				Ops: Operations{btypes.ReconcilerOperationImport},
+			plbn: &Plbn{
+				Ops: Operbtions{btypes.ReconcilerOperbtionImport},
 			},
 
-			wantLoadFromCodeHost: true,
+			wbntLobdFromCodeHost: true,
 
-			wantChangeset: bt.ChangesetAssertions{
-				PublicationState: btypes.ChangesetPublicationStatePublished,
-				ExternalID:       githubPR.ID,
-				ExternalBranch:   githubHeadRef,
-				ExternalState:    btypes.ChangesetExternalStateOpen,
+			wbntChbngeset: bt.ChbngesetAssertions{
+				PublicbtionStbte: btypes.ChbngesetPublicbtionStbtePublished,
+				ExternblID:       githubPR.ID,
+				ExternblBrbnch:   githubHebdRef,
+				ExternblStbte:    btypes.ChbngesetExternblStbteOpen,
 				Title:            githubPR.Title,
 				Body:             githubPR.Body,
-				DiffStat:         state.DiffStat,
+				DiffStbt:         stbte.DiffStbt,
 			},
 		},
-		"import and not-found error": {
-			changeset: bt.TestChangesetOpts{
-				PublicationState: btypes.ChangesetPublicationStateUnpublished,
-				ExternalID:       githubPR.ID,
+		"import bnd not-found error": {
+			chbngeset: bt.TestChbngesetOpts{
+				PublicbtionStbte: btypes.ChbngesetPublicbtionStbteUnpublished,
+				ExternblID:       githubPR.ID,
 			},
-			plan: &Plan{
-				Ops: Operations{btypes.ReconcilerOperationImport},
+			plbn: &Plbn{
+				Ops: Operbtions{btypes.ReconcilerOperbtionImport},
 			},
 			sourcerErr: notFoundErr,
 
-			wantLoadFromCodeHost: true,
+			wbntLobdFromCodeHost: true,
 
-			wantNonRetryableErr: true,
+			wbntNonRetrybbleErr: true,
 		},
-		"push and publish": {
-			hasCurrentSpec: true,
-			changeset: bt.TestChangesetOpts{
-				PublicationState: btypes.ChangesetPublicationStateUnpublished,
+		"push bnd publish": {
+			hbsCurrentSpec: true,
+			chbngeset: bt.TestChbngesetOpts{
+				PublicbtionStbte: btypes.ChbngesetPublicbtionStbteUnpublished,
 			},
-			plan: &Plan{
-				Ops: Operations{
-					btypes.ReconcilerOperationPush,
-					btypes.ReconcilerOperationPublish,
+			plbn: &Plbn{
+				Ops: Operbtions{
+					btypes.ReconcilerOperbtionPush,
+					btypes.ReconcilerOperbtionPublish,
 				},
 			},
 
-			wantCreateOnCodeHost: true,
-			wantGitserverCommit:  true,
+			wbntCrebteOnCodeHost: true,
+			wbntGitserverCommit:  true,
 
-			wantChangeset: bt.ChangesetAssertions{
-				PublicationState: btypes.ChangesetPublicationStatePublished,
-				ExternalID:       githubPR.ID,
-				ExternalBranch:   githubHeadRef,
-				ExternalState:    btypes.ChangesetExternalStateOpen,
+			wbntChbngeset: bt.ChbngesetAssertions{
+				PublicbtionStbte: btypes.ChbngesetPublicbtionStbtePublished,
+				ExternblID:       githubPR.ID,
+				ExternblBrbnch:   githubHebdRef,
+				ExternblStbte:    btypes.ChbngesetExternblStbteOpen,
 				Title:            githubPR.Title,
 				Body:             githubPR.Body,
-				DiffStat:         state.DiffStat,
+				DiffStbt:         stbte.DiffStbt,
 			},
 
-			wantWebhookType: webhooks.ChangesetPublish,
+			wbntWebhookType: webhooks.ChbngesetPublish,
 		},
-		"retry push and publish": {
-			// This test case makes sure that everything works when the code host says
-			// that the changeset already exists.
-			alreadyExists:  true,
-			hasCurrentSpec: true,
-			changeset: bt.TestChangesetOpts{
-				// The reconciler resets the failure message before passing the
-				// changeset to the executor.
-				// We simulate that here by not setting FailureMessage.
-				PublicationState: btypes.ChangesetPublicationStateUnpublished,
+		"retry push bnd publish": {
+			// This test cbse mbkes sure thbt everything works when the code host sbys
+			// thbt the chbngeset blrebdy exists.
+			blrebdyExists:  true,
+			hbsCurrentSpec: true,
+			chbngeset: bt.TestChbngesetOpts{
+				// The reconciler resets the fbilure messbge before pbssing the
+				// chbngeset to the executor.
+				// We simulbte thbt here by not setting FbilureMessbge.
+				PublicbtionStbte: btypes.ChbngesetPublicbtionStbteUnpublished,
 			},
-			plan: &Plan{
-				Ops: Operations{
-					btypes.ReconcilerOperationPush,
-					btypes.ReconcilerOperationPublish,
+			plbn: &Plbn{
+				Ops: Operbtions{
+					btypes.ReconcilerOperbtionPush,
+					btypes.ReconcilerOperbtionPublish,
 				},
 			},
 
-			// We first do a create and since that fails with "already exists"
-			// we update.
-			wantCreateOnCodeHost: true,
-			wantUpdateOnCodeHost: true,
-			wantGitserverCommit:  true,
+			// We first do b crebte bnd since thbt fbils with "blrebdy exists"
+			// we updbte.
+			wbntCrebteOnCodeHost: true,
+			wbntUpdbteOnCodeHost: true,
+			wbntGitserverCommit:  true,
 
-			wantChangeset: bt.ChangesetAssertions{
-				PublicationState: btypes.ChangesetPublicationStatePublished,
-				ExternalID:       githubPR.ID,
-				ExternalBranch:   githubHeadRef,
-				ExternalState:    btypes.ChangesetExternalStateOpen,
+			wbntChbngeset: bt.ChbngesetAssertions{
+				PublicbtionStbte: btypes.ChbngesetPublicbtionStbtePublished,
+				ExternblID:       githubPR.ID,
+				ExternblBrbnch:   githubHebdRef,
+				ExternblStbte:    btypes.ChbngesetExternblStbteOpen,
 				Title:            githubPR.Title,
 				Body:             githubPR.Body,
-				DiffStat:         state.DiffStat,
+				DiffStbt:         stbte.DiffStbt,
 			},
 
-			wantWebhookType: webhooks.ChangesetUpdate,
+			wbntWebhookType: webhooks.ChbngesetUpdbte,
 		},
-		"push and publish to archived repo, detected at push": {
-			hasCurrentSpec: true,
-			changeset: bt.TestChangesetOpts{
-				PublicationState: btypes.ChangesetPublicationStateUnpublished,
+		"push bnd publish to brchived repo, detected bt push": {
+			hbsCurrentSpec: true,
+			chbngeset: bt.TestChbngesetOpts{
+				PublicbtionStbte: btypes.ChbngesetPublicbtionStbteUnpublished,
 			},
-			plan: &Plan{
-				Ops: Operations{
-					btypes.ReconcilerOperationPush,
-					btypes.ReconcilerOperationPublish,
+			plbn: &Plbn{
+				Ops: Operbtions{
+					btypes.ReconcilerOperbtionPush,
+					btypes.ReconcilerOperbtionPublish,
 				},
 			},
-			gitClientErr: &gitprotocol.CreateCommitFromPatchError{
-				CombinedOutput: "archived",
+			gitClientErr: &gitprotocol.CrebteCommitFromPbtchError{
+				CombinedOutput: "brchived",
 			},
 			isRepoArchived: true,
 			sourcerErr:     repoArchivedErr,
 
-			wantGitserverCommit: true,
-			wantNonRetryableErr: true,
+			wbntGitserverCommit: true,
+			wbntNonRetrybbleErr: true,
 
-			wantChangeset: bt.ChangesetAssertions{
-				PublicationState: btypes.ChangesetPublicationStateUnpublished,
+			wbntChbngeset: bt.ChbngesetAssertions{
+				PublicbtionStbte: btypes.ChbngesetPublicbtionStbteUnpublished,
 			},
 		},
-		"push error and not archived repo": {
-			hasCurrentSpec: true,
-			changeset: bt.TestChangesetOpts{
-				PublicationState: btypes.ChangesetPublicationStateUnpublished,
+		"push error bnd not brchived repo": {
+			hbsCurrentSpec: true,
+			chbngeset: bt.TestChbngesetOpts{
+				PublicbtionStbte: btypes.ChbngesetPublicbtionStbteUnpublished,
 			},
-			plan: &Plan{
-				Ops: Operations{
-					btypes.ReconcilerOperationPush,
-					btypes.ReconcilerOperationPublish,
+			plbn: &Plbn{
+				Ops: Operbtions{
+					btypes.ReconcilerOperbtionPush,
+					btypes.ReconcilerOperbtionPublish,
 				},
 			},
-			gitClientErr: &gitprotocol.CreateCommitFromPatchError{
-				CombinedOutput: "archived",
+			gitClientErr: &gitprotocol.CrebteCommitFromPbtchError{
+				CombinedOutput: "brchived",
 			},
-			isRepoArchived: false,
+			isRepoArchived: fblse,
 			sourcerErr:     repoArchivedErr,
 
-			wantGitserverCommit: true,
+			wbntGitserverCommit: true,
 
-			wantChangeset: bt.ChangesetAssertions{
-				PublicationState: btypes.ChangesetPublicationStateUnpublished,
+			wbntChbngeset: bt.ChbngesetAssertions{
+				PublicbtionStbte: btypes.ChbngesetPublicbtionStbteUnpublished,
 			},
-			wantErr: errors.New("creating commit from patch for repository \"\": \n```\n$ \narchived\n```"),
+			wbntErr: errors.New("crebting commit from pbtch for repository \"\": \n```\n$ \nbrchived\n```"),
 		},
-		"general push error": {
-			hasCurrentSpec: true,
-			changeset: bt.TestChangesetOpts{
-				PublicationState: btypes.ChangesetPublicationStateUnpublished,
+		"generbl push error": {
+			hbsCurrentSpec: true,
+			chbngeset: bt.TestChbngesetOpts{
+				PublicbtionStbte: btypes.ChbngesetPublicbtionStbteUnpublished,
 			},
-			plan: &Plan{
-				Ops: Operations{
-					btypes.ReconcilerOperationPush,
-					btypes.ReconcilerOperationPublish,
+			plbn: &Plbn{
+				Ops: Operbtions{
+					btypes.ReconcilerOperbtionPush,
+					btypes.ReconcilerOperbtionPublish,
 				},
 			},
-			gitClientErr:   errors.New("failed to push"),
+			gitClientErr:   errors.New("fbiled to push"),
 			isRepoArchived: true,
 			sourcerErr:     repoArchivedErr,
 
-			wantGitserverCommit: true,
+			wbntGitserverCommit: true,
 
-			wantChangeset: bt.ChangesetAssertions{
-				PublicationState: btypes.ChangesetPublicationStateUnpublished,
+			wbntChbngeset: bt.ChbngesetAssertions{
+				PublicbtionStbte: btypes.ChbngesetPublicbtionStbteUnpublished,
 			},
-			wantErr: errors.New("pushing commit: failed to push"),
+			wbntErr: errors.New("pushing commit: fbiled to push"),
 		},
-		"push and publish to archived repo, detected at publish": {
-			hasCurrentSpec: true,
-			changeset: bt.TestChangesetOpts{
-				PublicationState: btypes.ChangesetPublicationStateUnpublished,
+		"push bnd publish to brchived repo, detected bt publish": {
+			hbsCurrentSpec: true,
+			chbngeset: bt.TestChbngesetOpts{
+				PublicbtionStbte: btypes.ChbngesetPublicbtionStbteUnpublished,
 			},
-			plan: &Plan{
-				Ops: Operations{
-					btypes.ReconcilerOperationPush,
-					btypes.ReconcilerOperationPublish,
+			plbn: &Plbn{
+				Ops: Operbtions{
+					btypes.ReconcilerOperbtionPush,
+					btypes.ReconcilerOperbtionPublish,
 				},
 			},
 			sourcerErr: repoArchivedErr,
 
-			wantCreateOnCodeHost: true,
-			wantGitserverCommit:  true,
-			wantNonRetryableErr:  true,
+			wbntCrebteOnCodeHost: true,
+			wbntGitserverCommit:  true,
+			wbntNonRetrybbleErr:  true,
 
-			wantChangeset: bt.ChangesetAssertions{
-				PublicationState: btypes.ChangesetPublicationStateUnpublished,
+			wbntChbngeset: bt.ChbngesetAssertions{
+				PublicbtionStbte: btypes.ChbngesetPublicbtionStbteUnpublished,
 			},
 		},
-		"update": {
-			hasCurrentSpec: true,
-			changeset: bt.TestChangesetOpts{
-				PublicationState: btypes.ChangesetPublicationStatePublished,
-				ExternalID:       "12345",
-				ExternalBranch:   "head-ref-on-github",
+		"updbte": {
+			hbsCurrentSpec: true,
+			chbngeset: bt.TestChbngesetOpts{
+				PublicbtionStbte: btypes.ChbngesetPublicbtionStbtePublished,
+				ExternblID:       "12345",
+				ExternblBrbnch:   "hebd-ref-on-github",
 			},
 
-			plan: &Plan{
-				Ops: Operations{
-					btypes.ReconcilerOperationUpdate,
+			plbn: &Plbn{
+				Ops: Operbtions{
+					btypes.ReconcilerOperbtionUpdbte,
 				},
 			},
 
-			// We don't want a new commit, only an update on the code host.
-			wantUpdateOnCodeHost: true,
+			// We don't wbnt b new commit, only bn updbte on the code host.
+			wbntUpdbteOnCodeHost: true,
 
-			wantChangeset: bt.ChangesetAssertions{
-				PublicationState: btypes.ChangesetPublicationStatePublished,
-				ExternalID:       githubPR.ID,
-				ExternalBranch:   githubHeadRef,
-				ExternalState:    btypes.ChangesetExternalStateOpen,
-				DiffStat:         state.DiffStat,
-				// We update the title/body but want the title/body returned by the code host.
+			wbntChbngeset: bt.ChbngesetAssertions{
+				PublicbtionStbte: btypes.ChbngesetPublicbtionStbtePublished,
+				ExternblID:       githubPR.ID,
+				ExternblBrbnch:   githubHebdRef,
+				ExternblStbte:    btypes.ChbngesetExternblStbteOpen,
+				DiffStbt:         stbte.DiffStbt,
+				// We updbte the title/body but wbnt the title/body returned by the code host.
 				Title: githubPR.Title,
 				Body:  githubPR.Body,
 			},
 
-			wantWebhookType: webhooks.ChangesetUpdate,
+			wbntWebhookType: webhooks.ChbngesetUpdbte,
 		},
-		"update to archived repo": {
-			hasCurrentSpec: true,
-			changeset: bt.TestChangesetOpts{
-				PublicationState: btypes.ChangesetPublicationStatePublished,
-				ExternalID:       "12345",
-				ExternalBranch:   "head-ref-on-github",
+		"updbte to brchived repo": {
+			hbsCurrentSpec: true,
+			chbngeset: bt.TestChbngesetOpts{
+				PublicbtionStbte: btypes.ChbngesetPublicbtionStbtePublished,
+				ExternblID:       "12345",
+				ExternblBrbnch:   "hebd-ref-on-github",
 			},
 
-			plan: &Plan{
-				Ops: Operations{
-					btypes.ReconcilerOperationUpdate,
+			plbn: &Plbn{
+				Ops: Operbtions{
+					btypes.ReconcilerOperbtionUpdbte,
 				},
 			},
 			sourcerErr: repoArchivedErr,
 
-			// We don't want a new commit, only an update on the code host.
-			wantUpdateOnCodeHost: true,
-			wantNonRetryableErr:  true,
+			// We don't wbnt b new commit, only bn updbte on the code host.
+			wbntUpdbteOnCodeHost: true,
+			wbntNonRetrybbleErr:  true,
 
-			wantChangeset: bt.ChangesetAssertions{
-				PublicationState: btypes.ChangesetPublicationStatePublished,
-				ExternalID:       githubPR.ID,
-				ExternalBranch:   githubHeadRef,
-				ExternalState:    btypes.ChangesetExternalStateReadOnly,
-				DiffStat:         state.DiffStat,
-				// We update the title/body but want the title/body returned by the code host.
+			wbntChbngeset: bt.ChbngesetAssertions{
+				PublicbtionStbte: btypes.ChbngesetPublicbtionStbtePublished,
+				ExternblID:       githubPR.ID,
+				ExternblBrbnch:   githubHebdRef,
+				ExternblStbte:    btypes.ChbngesetExternblStbteRebdOnly,
+				DiffStbt:         stbte.DiffStbt,
+				// We updbte the title/body but wbnt the title/body returned by the code host.
 				Title: githubPR.Title,
 				Body:  githubPR.Body,
 			},
 
-			wantWebhookType: webhooks.ChangesetUpdate,
+			wbntWebhookType: webhooks.ChbngesetUpdbte,
 		},
 		"push sleep sync": {
-			hasCurrentSpec: true,
-			changeset: bt.TestChangesetOpts{
-				PublicationState: btypes.ChangesetPublicationStatePublished,
-				ExternalID:       "12345",
-				ExternalBranch:   gitdomain.EnsureRefPrefix("head-ref-on-github"),
-				ExternalState:    btypes.ChangesetExternalStateOpen,
+			hbsCurrentSpec: true,
+			chbngeset: bt.TestChbngesetOpts{
+				PublicbtionStbte: btypes.ChbngesetPublicbtionStbtePublished,
+				ExternblID:       "12345",
+				ExternblBrbnch:   gitdombin.EnsureRefPrefix("hebd-ref-on-github"),
+				ExternblStbte:    btypes.ChbngesetExternblStbteOpen,
 			},
 
-			plan: &Plan{
-				Ops: Operations{
-					btypes.ReconcilerOperationPush,
-					btypes.ReconcilerOperationSleep,
-					btypes.ReconcilerOperationSync,
+			plbn: &Plbn{
+				Ops: Operbtions{
+					btypes.ReconcilerOperbtionPush,
+					btypes.ReconcilerOperbtionSleep,
+					btypes.ReconcilerOperbtionSync,
 				},
 			},
 
-			wantGitserverCommit:  true,
-			wantLoadFromCodeHost: true,
+			wbntGitserverCommit:  true,
+			wbntLobdFromCodeHost: true,
 
-			wantChangeset: bt.ChangesetAssertions{
-				PublicationState: btypes.ChangesetPublicationStatePublished,
-				ExternalState:    btypes.ChangesetExternalStateOpen,
-				ExternalID:       githubPR.ID,
-				ExternalBranch:   githubHeadRef,
-				DiffStat:         state.DiffStat,
+			wbntChbngeset: bt.ChbngesetAssertions{
+				PublicbtionStbte: btypes.ChbngesetPublicbtionStbtePublished,
+				ExternblStbte:    btypes.ChbngesetExternblStbteOpen,
+				ExternblID:       githubPR.ID,
+				ExternblBrbnch:   githubHebdRef,
+				DiffStbt:         stbte.DiffStbt,
 			},
 
-			wantWebhookType: webhooks.ChangesetUpdate,
+			wbntWebhookType: webhooks.ChbngesetUpdbte,
 		},
-		"close open changeset": {
-			hasCurrentSpec: true,
-			changeset: bt.TestChangesetOpts{
-				PublicationState: btypes.ChangesetPublicationStatePublished,
-				ExternalID:       githubPR.ID,
-				ExternalBranch:   githubHeadRef,
-				ExternalState:    btypes.ChangesetExternalStateOpen,
+		"close open chbngeset": {
+			hbsCurrentSpec: true,
+			chbngeset: bt.TestChbngesetOpts{
+				PublicbtionStbte: btypes.ChbngesetPublicbtionStbtePublished,
+				ExternblID:       githubPR.ID,
+				ExternblBrbnch:   githubHebdRef,
+				ExternblStbte:    btypes.ChbngesetExternblStbteOpen,
 				Closing:          true,
 			},
-			plan: &Plan{
-				Ops: Operations{
-					btypes.ReconcilerOperationClose,
+			plbn: &Plbn{
+				Ops: Operbtions{
+					btypes.ReconcilerOperbtionClose,
 				},
 			},
-			// We return a closed GitHub PR here
-			sourcerMetadata: closedGitHubPR,
+			// We return b closed GitHub PR here
+			sourcerMetbdbtb: closedGitHubPR,
 
-			wantCloseOnCodeHost: true,
+			wbntCloseOnCodeHost: true,
 
-			wantChangeset: bt.ChangesetAssertions{
-				PublicationState: btypes.ChangesetPublicationStatePublished,
-				Closing:          false,
+			wbntChbngeset: bt.ChbngesetAssertions{
+				PublicbtionStbte: btypes.ChbngesetPublicbtionStbtePublished,
+				Closing:          fblse,
 
-				ExternalID:     closedGitHubPR.ID,
-				ExternalBranch: gitdomain.EnsureRefPrefix(closedGitHubPR.HeadRefName),
-				ExternalState:  btypes.ChangesetExternalStateClosed,
+				ExternblID:     closedGitHubPR.ID,
+				ExternblBrbnch: gitdombin.EnsureRefPrefix(closedGitHubPR.HebdRefNbme),
+				ExternblStbte:  btypes.ChbngesetExternblStbteClosed,
 
 				Title:    closedGitHubPR.Title,
 				Body:     closedGitHubPR.Body,
-				DiffStat: state.DiffStat,
+				DiffStbt: stbte.DiffStbt,
 			},
 
-			wantWebhookType: webhooks.ChangesetClose,
+			wbntWebhookType: webhooks.ChbngesetClose,
 		},
-		"close closed changeset": {
-			hasCurrentSpec: true,
-			changeset: bt.TestChangesetOpts{
-				PublicationState: btypes.ChangesetPublicationStatePublished,
-				ExternalID:       githubPR.ID,
-				ExternalBranch:   githubHeadRef,
-				ExternalState:    btypes.ChangesetExternalStateClosed,
+		"close closed chbngeset": {
+			hbsCurrentSpec: true,
+			chbngeset: bt.TestChbngesetOpts{
+				PublicbtionStbte: btypes.ChbngesetPublicbtionStbtePublished,
+				ExternblID:       githubPR.ID,
+				ExternblBrbnch:   githubHebdRef,
+				ExternblStbte:    btypes.ChbngesetExternblStbteClosed,
 				Closing:          true,
 			},
-			plan: &Plan{
-				Ops: Operations{
-					btypes.ReconcilerOperationClose,
+			plbn: &Plbn{
+				Ops: Operbtions{
+					btypes.ReconcilerOperbtionClose,
 				},
 			},
 
-			// We return a closed GitHub PR here, but since it's a noop, we
-			// don't sync and thus don't set its attributes on the changeset.
-			sourcerMetadata: closedGitHubPR,
+			// We return b closed GitHub PR here, but since it's b noop, we
+			// don't sync bnd thus don't set its bttributes on the chbngeset.
+			sourcerMetbdbtb: closedGitHubPR,
 
-			// Should be a noop
-			wantCloseOnCodeHost: false,
+			// Should be b noop
+			wbntCloseOnCodeHost: fblse,
 
-			wantChangeset: bt.ChangesetAssertions{
-				PublicationState: btypes.ChangesetPublicationStatePublished,
-				Closing:          false,
+			wbntChbngeset: bt.ChbngesetAssertions{
+				PublicbtionStbte: btypes.ChbngesetPublicbtionStbtePublished,
+				Closing:          fblse,
 
-				ExternalID:     closedGitHubPR.ID,
-				ExternalBranch: gitdomain.EnsureRefPrefix(closedGitHubPR.HeadRefName),
-				ExternalState:  btypes.ChangesetExternalStateClosed,
+				ExternblID:     closedGitHubPR.ID,
+				ExternblBrbnch: gitdombin.EnsureRefPrefix(closedGitHubPR.HebdRefNbme),
+				ExternblStbte:  btypes.ChbngesetExternblStbteClosed,
 			},
 		},
-		"reopening closed changeset without updates": {
-			hasCurrentSpec: true,
-			changeset: bt.TestChangesetOpts{
-				PublicationState: btypes.ChangesetPublicationStatePublished,
-				ExternalID:       githubPR.ID,
-				ExternalBranch:   githubHeadRef,
-				ExternalState:    btypes.ChangesetExternalStateClosed,
+		"reopening closed chbngeset without updbtes": {
+			hbsCurrentSpec: true,
+			chbngeset: bt.TestChbngesetOpts{
+				PublicbtionStbte: btypes.ChbngesetPublicbtionStbtePublished,
+				ExternblID:       githubPR.ID,
+				ExternblBrbnch:   githubHebdRef,
+				ExternblStbte:    btypes.ChbngesetExternblStbteClosed,
 			},
-			plan: &Plan{
-				Ops: Operations{
-					btypes.ReconcilerOperationReopen,
+			plbn: &Plbn{
+				Ops: Operbtions{
+					btypes.ReconcilerOperbtionReopen,
 				},
 			},
 
-			wantReopenOnCodeHost: true,
+			wbntReopenOnCodeHost: true,
 
-			wantChangeset: bt.ChangesetAssertions{
-				PublicationState: btypes.ChangesetPublicationStatePublished,
+			wbntChbngeset: bt.ChbngesetAssertions{
+				PublicbtionStbte: btypes.ChbngesetPublicbtionStbtePublished,
 
-				ExternalID:     githubPR.ID,
-				ExternalBranch: githubHeadRef,
-				ExternalState:  btypes.ChangesetExternalStateOpen,
+				ExternblID:     githubPR.ID,
+				ExternblBrbnch: githubHebdRef,
+				ExternblStbte:  btypes.ChbngesetExternblStbteOpen,
 
 				Title:    githubPR.Title,
 				Body:     githubPR.Body,
-				DiffStat: state.DiffStat,
+				DiffStbt: stbte.DiffStbt,
 			},
 
-			wantWebhookType: webhooks.ChangesetUpdate,
+			wbntWebhookType: webhooks.ChbngesetUpdbte,
 		},
-		"push and publishdraft": {
-			hasCurrentSpec: true,
-			changeset: bt.TestChangesetOpts{
-				PublicationState: btypes.ChangesetPublicationStateUnpublished,
+		"push bnd publishdrbft": {
+			hbsCurrentSpec: true,
+			chbngeset: bt.TestChbngesetOpts{
+				PublicbtionStbte: btypes.ChbngesetPublicbtionStbteUnpublished,
 			},
 
-			plan: &Plan{
-				Ops: Operations{
-					btypes.ReconcilerOperationPush,
-					btypes.ReconcilerOperationPublishDraft,
+			plbn: &Plbn{
+				Ops: Operbtions{
+					btypes.ReconcilerOperbtionPush,
+					btypes.ReconcilerOperbtionPublishDrbft,
 				},
 			},
 
-			sourcerMetadata: draftGithubPR,
+			sourcerMetbdbtb: drbftGithubPR,
 
-			wantCreateDraftOnCodeHost: true,
-			wantGitserverCommit:       true,
+			wbntCrebteDrbftOnCodeHost: true,
+			wbntGitserverCommit:       true,
 
-			wantChangeset: bt.ChangesetAssertions{
-				PublicationState: btypes.ChangesetPublicationStatePublished,
+			wbntChbngeset: bt.ChbngesetAssertions{
+				PublicbtionStbte: btypes.ChbngesetPublicbtionStbtePublished,
 
-				ExternalID:     draftGithubPR.ID,
-				ExternalBranch: gitdomain.EnsureRefPrefix(draftGithubPR.HeadRefName),
-				ExternalState:  btypes.ChangesetExternalStateDraft,
+				ExternblID:     drbftGithubPR.ID,
+				ExternblBrbnch: gitdombin.EnsureRefPrefix(drbftGithubPR.HebdRefNbme),
+				ExternblStbte:  btypes.ChbngesetExternblStbteDrbft,
 
-				Title:    draftGithubPR.Title,
-				Body:     draftGithubPR.Body,
-				DiffStat: state.DiffStat,
+				Title:    drbftGithubPR.Title,
+				Body:     drbftGithubPR.Body,
+				DiffStbt: stbte.DiffStbt,
 			},
 
-			wantWebhookType: webhooks.ChangesetPublish,
+			wbntWebhookType: webhooks.ChbngesetPublish,
 		},
-		"undraft": {
-			hasCurrentSpec: true,
-			changeset: bt.TestChangesetOpts{
-				PublicationState: btypes.ChangesetPublicationStatePublished,
-				ExternalState:    btypes.ChangesetExternalStateDraft,
+		"undrbft": {
+			hbsCurrentSpec: true,
+			chbngeset: bt.TestChbngesetOpts{
+				PublicbtionStbte: btypes.ChbngesetPublicbtionStbtePublished,
+				ExternblStbte:    btypes.ChbngesetExternblStbteDrbft,
 			},
 
-			plan: &Plan{
-				Ops: Operations{
-					btypes.ReconcilerOperationUndraft,
+			plbn: &Plbn{
+				Ops: Operbtions{
+					btypes.ReconcilerOperbtionUndrbft,
 				},
 			},
 
-			wantUndraftOnCodeHost: true,
+			wbntUndrbftOnCodeHost: true,
 
-			wantChangeset: bt.ChangesetAssertions{
-				PublicationState: btypes.ChangesetPublicationStatePublished,
+			wbntChbngeset: bt.ChbngesetAssertions{
+				PublicbtionStbte: btypes.ChbngesetPublicbtionStbtePublished,
 
-				ExternalID:     githubPR.ID,
-				ExternalBranch: githubHeadRef,
-				ExternalState:  btypes.ChangesetExternalStateOpen,
+				ExternblID:     githubPR.ID,
+				ExternblBrbnch: githubHebdRef,
+				ExternblStbte:  btypes.ChbngesetExternblStbteOpen,
 
 				Title:    githubPR.Title,
 				Body:     githubPR.Body,
-				DiffStat: state.DiffStat,
+				DiffStbt: stbte.DiffStbt,
 			},
 
-			wantWebhookType: webhooks.ChangesetUpdate,
+			wbntWebhookType: webhooks.ChbngesetUpdbte,
 		},
-		"archive open changeset": {
-			hasCurrentSpec: false,
-			changeset: bt.TestChangesetOpts{
-				PublicationState: btypes.ChangesetPublicationStatePublished,
-				ExternalID:       githubPR.ID,
-				ExternalBranch:   githubHeadRef,
-				ExternalState:    btypes.ChangesetExternalStateOpen,
+		"brchive open chbngeset": {
+			hbsCurrentSpec: fblse,
+			chbngeset: bt.TestChbngesetOpts{
+				PublicbtionStbte: btypes.ChbngesetPublicbtionStbtePublished,
+				ExternblID:       githubPR.ID,
+				ExternblBrbnch:   githubHebdRef,
+				ExternblStbte:    btypes.ChbngesetExternblStbteOpen,
 				Closing:          true,
-				BatchChanges: []btypes.BatchChangeAssoc{{
-					BatchChangeID: 1234, Archive: true, IsArchived: false,
+				BbtchChbnges: []btypes.BbtchChbngeAssoc{{
+					BbtchChbngeID: 1234, Archive: true, IsArchived: fblse,
 				}},
 			},
-			plan: &Plan{
-				Ops: Operations{
-					btypes.ReconcilerOperationClose,
-					btypes.ReconcilerOperationArchive,
+			plbn: &Plbn{
+				Ops: Operbtions{
+					btypes.ReconcilerOperbtionClose,
+					btypes.ReconcilerOperbtionArchive,
 				},
 			},
-			// We return a closed GitHub PR here
-			sourcerMetadata: closedGitHubPR,
+			// We return b closed GitHub PR here
+			sourcerMetbdbtb: closedGitHubPR,
 
-			wantCloseOnCodeHost: true,
+			wbntCloseOnCodeHost: true,
 
-			wantChangeset: bt.ChangesetAssertions{
-				PublicationState: btypes.ChangesetPublicationStatePublished,
-				Closing:          false,
+			wbntChbngeset: bt.ChbngesetAssertions{
+				PublicbtionStbte: btypes.ChbngesetPublicbtionStbtePublished,
+				Closing:          fblse,
 
-				ExternalID:     closedGitHubPR.ID,
-				ExternalBranch: gitdomain.EnsureRefPrefix(closedGitHubPR.HeadRefName),
-				ExternalState:  btypes.ChangesetExternalStateClosed,
+				ExternblID:     closedGitHubPR.ID,
+				ExternblBrbnch: gitdombin.EnsureRefPrefix(closedGitHubPR.HebdRefNbme),
+				ExternblStbte:  btypes.ChbngesetExternblStbteClosed,
 
 				Title:    closedGitHubPR.Title,
 				Body:     closedGitHubPR.Body,
-				DiffStat: state.DiffStat,
+				DiffStbt: stbte.DiffStbt,
 
-				ArchivedInOwnerBatchChange: true,
+				ArchivedInOwnerBbtchChbnge: true,
 			},
 
-			wantWebhookType: webhooks.ChangesetClose,
+			wbntWebhookType: webhooks.ChbngesetClose,
 		},
-		"detach changeset": {
-			hasCurrentSpec: false,
-			changeset: bt.TestChangesetOpts{
-				PublicationState: btypes.ChangesetPublicationStatePublished,
-				ExternalID:       githubPR.ID,
-				ExternalBranch:   githubHeadRef,
-				ExternalState:    btypes.ChangesetExternalStateClosed,
-				Closing:          false,
-				BatchChanges: []btypes.BatchChangeAssoc{{
-					BatchChangeID: 1234, Detach: true,
+		"detbch chbngeset": {
+			hbsCurrentSpec: fblse,
+			chbngeset: bt.TestChbngesetOpts{
+				PublicbtionStbte: btypes.ChbngesetPublicbtionStbtePublished,
+				ExternblID:       githubPR.ID,
+				ExternblBrbnch:   githubHebdRef,
+				ExternblStbte:    btypes.ChbngesetExternblStbteClosed,
+				Closing:          fblse,
+				BbtchChbnges: []btypes.BbtchChbngeAssoc{{
+					BbtchChbngeID: 1234, Detbch: true,
 				}},
 			},
-			plan: &Plan{
-				Ops: Operations{
-					btypes.ReconcilerOperationDetach,
+			plbn: &Plbn{
+				Ops: Operbtions{
+					btypes.ReconcilerOperbtionDetbch,
 				},
 			},
 
-			wantCloseOnCodeHost: false,
+			wbntCloseOnCodeHost: fblse,
 
-			wantChangeset: bt.ChangesetAssertions{
-				PublicationState: btypes.ChangesetPublicationStatePublished,
-				Closing:          false,
+			wbntChbngeset: bt.ChbngesetAssertions{
+				PublicbtionStbte: btypes.ChbngesetPublicbtionStbtePublished,
+				Closing:          fblse,
 
-				ExternalID:     closedGitHubPR.ID,
-				ExternalBranch: git.EnsureRefPrefix(closedGitHubPR.HeadRefName),
-				ExternalState:  btypes.ChangesetExternalStateClosed,
+				ExternblID:     closedGitHubPR.ID,
+				ExternblBrbnch: git.EnsureRefPrefix(closedGitHubPR.HebdRefNbme),
+				ExternblStbte:  btypes.ChbngesetExternblStbteClosed,
 
-				ArchivedInOwnerBatchChange: false,
+				ArchivedInOwnerBbtchChbnge: fblse,
 			},
 		},
 	}
 
-	for name, tc := range tests {
-		t.Run(name, func(t *testing.T) {
-			// Create necessary associations.
-			batchSpec := bt.CreateBatchSpec(t, ctx, bstore, "executor-test-batch-change", admin.ID, 0)
-			batchChange := bt.CreateBatchChange(t, ctx, bstore, "executor-test-batch-change", admin.ID, batchSpec.ID)
+	for nbme, tc := rbnge tests {
+		t.Run(nbme, func(t *testing.T) {
+			// Crebte necessbry bssocibtions.
+			bbtchSpec := bt.CrebteBbtchSpec(t, ctx, bstore, "executor-test-bbtch-chbnge", bdmin.ID, 0)
+			bbtchChbnge := bt.CrebteBbtchChbnge(t, ctx, bstore, "executor-test-bbtch-chbnge", bdmin.ID, bbtchSpec.ID)
 
-			// Create the changesetSpec with associations wired up correctly.
-			var changesetSpec *btypes.ChangesetSpec
-			if tc.hasCurrentSpec {
-				// The attributes of the spec don't really matter, but the
-				// associations do.
+			// Crebte the chbngesetSpec with bssocibtions wired up correctly.
+			vbr chbngesetSpec *btypes.ChbngesetSpec
+			if tc.hbsCurrentSpec {
+				// The bttributes of the spec don't reblly mbtter, but the
+				// bssocibtions do.
 				specOpts := bt.TestSpecOpts{
-					User:      admin.ID,
+					User:      bdmin.ID,
 					Repo:      repo.ID,
-					BatchSpec: batchSpec.ID,
-					Typ:       btypes.ChangesetSpecTypeBranch,
+					BbtchSpec: bbtchSpec.ID,
+					Typ:       btypes.ChbngesetSpecTypeBrbnch,
 				}
-				changesetSpec = bt.CreateChangesetSpec(t, ctx, bstore, specOpts)
+				chbngesetSpec = bt.CrebteChbngesetSpec(t, ctx, bstore, specOpts)
 			}
 
-			// Create the changeset with correct associations.
-			changesetOpts := tc.changeset
-			changesetOpts.Repo = repo.ID
-			if len(changesetOpts.BatchChanges) != 0 {
-				for i := range changesetOpts.BatchChanges {
-					changesetOpts.BatchChanges[i].BatchChangeID = batchChange.ID
+			// Crebte the chbngeset with correct bssocibtions.
+			chbngesetOpts := tc.chbngeset
+			chbngesetOpts.Repo = repo.ID
+			if len(chbngesetOpts.BbtchChbnges) != 0 {
+				for i := rbnge chbngesetOpts.BbtchChbnges {
+					chbngesetOpts.BbtchChbnges[i].BbtchChbngeID = bbtchChbnge.ID
 				}
 			} else {
-				changesetOpts.BatchChanges = []btypes.BatchChangeAssoc{{BatchChangeID: batchChange.ID}}
+				chbngesetOpts.BbtchChbnges = []btypes.BbtchChbngeAssoc{{BbtchChbngeID: bbtchChbnge.ID}}
 			}
-			changesetOpts.OwnedByBatchChange = batchChange.ID
-			if changesetSpec != nil {
-				changesetOpts.CurrentSpec = changesetSpec.ID
+			chbngesetOpts.OwnedByBbtchChbnge = bbtchChbnge.ID
+			if chbngesetSpec != nil {
+				chbngesetOpts.CurrentSpec = chbngesetSpec.ID
 			}
-			changeset := bt.CreateChangeset(t, ctx, bstore, changesetOpts)
+			chbngeset := bt.CrebteChbngeset(t, ctx, bstore, chbngesetOpts)
 
-			var response *gitprotocol.CreateCommitFromPatchResponse
-			var createCommitFromPatchCalled bool
-			state.MockClient.CreateCommitFromPatchFunc.SetDefaultHook(func(_ context.Context, req gitprotocol.CreateCommitFromPatchRequest) (*gitprotocol.CreateCommitFromPatchResponse, error) {
-				createCommitFromPatchCalled = true
-				if changesetSpec != nil {
-					response = new(gitprotocol.CreateCommitFromPatchResponse)
-					response.Rev = changesetSpec.HeadRef
+			vbr response *gitprotocol.CrebteCommitFromPbtchResponse
+			vbr crebteCommitFromPbtchCblled bool
+			stbte.MockClient.CrebteCommitFromPbtchFunc.SetDefbultHook(func(_ context.Context, req gitprotocol.CrebteCommitFromPbtchRequest) (*gitprotocol.CrebteCommitFromPbtchResponse, error) {
+				crebteCommitFromPbtchCblled = true
+				if chbngesetSpec != nil {
+					response = new(gitprotocol.CrebteCommitFromPbtchResponse)
+					response.Rev = chbngesetSpec.HebdRef
 				}
 				return response, tc.gitClientErr
 			})
 
-			// Setup the sourcer that's used to create a Source with which
-			// to create/update a changeset.
-			fakeSource := &stesting.FakeChangesetSource{
+			// Setup the sourcer thbt's used to crebte b Source with which
+			// to crebte/updbte b chbngeset.
+			fbkeSource := &stesting.FbkeChbngesetSource{
 				Svc:                     extSvc,
 				Err:                     tc.sourcerErr,
-				ChangesetExists:         tc.alreadyExists,
+				ChbngesetExists:         tc.blrebdyExists,
 				IsArchivedPushErrorTrue: tc.isRepoArchived,
-				CurrentAuthenticator:    &auth.OAuthBearerTokenWithSSH{OAuthBearerToken: auth.OAuthBearerToken{Token: "token"}},
+				CurrentAuthenticbtor:    &buth.OAuthBebrerTokenWithSSH{OAuthBebrerToken: buth.OAuthBebrerToken{Token: "token"}},
 			}
 
-			if tc.sourcerMetadata != nil {
-				fakeSource.FakeMetadata = tc.sourcerMetadata
+			if tc.sourcerMetbdbtb != nil {
+				fbkeSource.FbkeMetbdbtb = tc.sourcerMetbdbtb
 			} else {
-				fakeSource.FakeMetadata = githubPR
+				fbkeSource.FbkeMetbdbtb = githubPR
 			}
-			if changesetSpec != nil {
-				fakeSource.WantHeadRef = changesetSpec.HeadRef
-				fakeSource.WantBaseRef = changesetSpec.BaseRef
+			if chbngesetSpec != nil {
+				fbkeSource.WbntHebdRef = chbngesetSpec.HebdRef
+				fbkeSource.WbntBbseRef = chbngesetSpec.BbseRef
 			}
 
-			sourcer := stesting.NewFakeSourcer(nil, fakeSource)
+			sourcer := stesting.NewFbkeSourcer(nil, fbkeSource)
 
-			tc.plan.Changeset = changeset
-			tc.plan.ChangesetSpec = changesetSpec
+			tc.plbn.Chbngeset = chbngeset
+			tc.plbn.ChbngesetSpec = chbngesetSpec
 
-			// Ensure we reset the state of the repo after executing the plan.
-			t.Cleanup(func() {
-				repo.Archived = false
-				_, err := repos.NewStore(logtest.Scoped(t), bstore.DatabaseDB()).UpdateRepo(ctx, repo)
+			// Ensure we reset the stbte of the repo bfter executing the plbn.
+			t.Clebnup(func() {
+				repo.Archived = fblse
+				_, err := repos.NewStore(logtest.Scoped(t), bstore.DbtbbbseDB()).UpdbteRepo(ctx, repo)
 				require.NoError(t, err)
 			})
 
-			// Execute the plan
-			afterDone, err := executePlan(
+			// Execute the plbn
+			bfterDone, err := executePlbn(
 				ctx,
 				logtest.Scoped(t),
-				state.MockClient,
+				stbte.MockClient,
 				sourcer,
-				// Don't actually sleep for the sake of testing.
+				// Don't bctublly sleep for the sbke of testing.
 				true,
 				bstore,
-				tc.plan,
+				tc.plbn,
 			)
 			if err != nil {
-				if tc.wantErr != nil {
-					assert.EqualError(t, err, tc.wantErr.Error())
-				} else if tc.wantNonRetryableErr && errcode.IsNonRetryable(err) {
-					// all good
+				if tc.wbntErr != nil {
+					bssert.EqublError(t, err, tc.wbntErr.Error())
+				} else if tc.wbntNonRetrybbleErr && errcode.IsNonRetrybble(err) {
+					// bll good
 				} else {
-					t.Fatalf("ExecutePlan failed: %s", err)
+					t.Fbtblf("ExecutePlbn fbiled: %s", err)
 				}
 			}
 
-			// Assert that all the calls happened
-			if have, want := createCommitFromPatchCalled, tc.wantGitserverCommit; have != want {
-				t.Fatalf("wrong CreateCommitFromPatch call. wantCalled=%t, wasCalled=%t", want, have)
+			// Assert thbt bll the cblls hbppened
+			if hbve, wbnt := crebteCommitFromPbtchCblled, tc.wbntGitserverCommit; hbve != wbnt {
+				t.Fbtblf("wrong CrebteCommitFromPbtch cbll. wbntCblled=%t, wbsCblled=%t", wbnt, hbve)
 			}
 
-			if have, want := fakeSource.CreateDraftChangesetCalled, tc.wantCreateDraftOnCodeHost; have != want {
-				t.Fatalf("wrong CreateDraftChangeset call. wantCalled=%t, wasCalled=%t", want, have)
+			if hbve, wbnt := fbkeSource.CrebteDrbftChbngesetCblled, tc.wbntCrebteDrbftOnCodeHost; hbve != wbnt {
+				t.Fbtblf("wrong CrebteDrbftChbngeset cbll. wbntCblled=%t, wbsCblled=%t", wbnt, hbve)
 			}
 
-			if have, want := fakeSource.UndraftedChangesetsCalled, tc.wantUndraftOnCodeHost; have != want {
-				t.Fatalf("wrong UndraftChangeset call. wantCalled=%t, wasCalled=%t", want, have)
+			if hbve, wbnt := fbkeSource.UndrbftedChbngesetsCblled, tc.wbntUndrbftOnCodeHost; hbve != wbnt {
+				t.Fbtblf("wrong UndrbftChbngeset cbll. wbntCblled=%t, wbsCblled=%t", wbnt, hbve)
 			}
 
-			if have, want := fakeSource.CreateChangesetCalled, tc.wantCreateOnCodeHost; have != want {
-				t.Fatalf("wrong CreateChangeset call. wantCalled=%t, wasCalled=%t", want, have)
+			if hbve, wbnt := fbkeSource.CrebteChbngesetCblled, tc.wbntCrebteOnCodeHost; hbve != wbnt {
+				t.Fbtblf("wrong CrebteChbngeset cbll. wbntCblled=%t, wbsCblled=%t", wbnt, hbve)
 			}
 
-			if have, want := fakeSource.UpdateChangesetCalled, tc.wantUpdateOnCodeHost; have != want {
-				t.Fatalf("wrong UpdateChangeset call. wantCalled=%t, wasCalled=%t", want, have)
+			if hbve, wbnt := fbkeSource.UpdbteChbngesetCblled, tc.wbntUpdbteOnCodeHost; hbve != wbnt {
+				t.Fbtblf("wrong UpdbteChbngeset cbll. wbntCblled=%t, wbsCblled=%t", wbnt, hbve)
 			}
 
-			if have, want := fakeSource.ReopenChangesetCalled, tc.wantReopenOnCodeHost; have != want {
-				t.Fatalf("wrong ReopenChangeset call. wantCalled=%t, wasCalled=%t", want, have)
+			if hbve, wbnt := fbkeSource.ReopenChbngesetCblled, tc.wbntReopenOnCodeHost; hbve != wbnt {
+				t.Fbtblf("wrong ReopenChbngeset cbll. wbntCblled=%t, wbsCblled=%t", wbnt, hbve)
 			}
 
-			if have, want := fakeSource.LoadChangesetCalled, tc.wantLoadFromCodeHost; have != want {
-				t.Fatalf("wrong LoadChangeset call. wantCalled=%t, wasCalled=%t", want, have)
+			if hbve, wbnt := fbkeSource.LobdChbngesetCblled, tc.wbntLobdFromCodeHost; hbve != wbnt {
+				t.Fbtblf("wrong LobdChbngeset cbll. wbntCblled=%t, wbsCblled=%t", wbnt, hbve)
 			}
 
-			if have, want := fakeSource.CloseChangesetCalled, tc.wantCloseOnCodeHost; have != want {
-				t.Fatalf("wrong CloseChangeset call. wantCalled=%t, wasCalled=%t", want, have)
+			if hbve, wbnt := fbkeSource.CloseChbngesetCblled, tc.wbntCloseOnCodeHost; hbve != wbnt {
+				t.Fbtblf("wrong CloseChbngeset cbll. wbntCblled=%t, wbsCblled=%t", wbnt, hbve)
 			}
 
-			if tc.wantNonRetryableErr {
+			if tc.wbntNonRetrybbleErr {
 				return
 			}
 
-			// Determine if a detach operation is being done
-			hasDetachOperation := false
-			for _, op := range tc.plan.Ops {
-				if op == btypes.ReconcilerOperationDetach {
-					hasDetachOperation = true
-					break
+			// Determine if b detbch operbtion is being done
+			hbsDetbchOperbtion := fblse
+			for _, op := rbnge tc.plbn.Ops {
+				if op == btypes.ReconcilerOperbtionDetbch {
+					hbsDetbchOperbtion = true
+					brebk
 				}
 			}
 
-			// Assert that the changeset in the database looks like we want
-			assertions := tc.wantChangeset
-			assertions.Repo = repo.ID
-			assertions.OwnedByBatchChange = changesetOpts.OwnedByBatchChange
-			// There are no AttachedTo for detach operations
-			if !hasDetachOperation {
-				assertions.AttachedTo = []int64{batchChange.ID}
+			// Assert thbt the chbngeset in the dbtbbbse looks like we wbnt
+			bssertions := tc.wbntChbngeset
+			bssertions.Repo = repo.ID
+			bssertions.OwnedByBbtchChbnge = chbngesetOpts.OwnedByBbtchChbnge
+			// There bre no AttbchedTo for detbch operbtions
+			if !hbsDetbchOperbtion {
+				bssertions.AttbchedTo = []int64{bbtchChbnge.ID}
 			}
-			if changesetSpec != nil {
-				assertions.CurrentSpec = changesetSpec.ID
+			if chbngesetSpec != nil {
+				bssertions.CurrentSpec = chbngesetSpec.ID
 			}
-			bt.ReloadAndAssertChangeset(t, ctx, bstore, changeset, assertions)
+			bt.RelobdAndAssertChbngeset(t, ctx, bstore, chbngeset, bssertions)
 
-			// Assert that the body included a backlink if needed. We'll do
-			// more detailed unit tests of decorateChangesetBody elsewhere;
-			// we're just looking for a basic marker here that _something_
-			// happened.
-			var rcs *sources.Changeset
-			if tc.wantCreateOnCodeHost && fakeSource.CreateChangesetCalled {
-				rcs = fakeSource.CreatedChangesets[0]
-			} else if tc.wantUpdateOnCodeHost && fakeSource.UpdateChangesetCalled {
-				rcs = fakeSource.UpdatedChangesets[0]
+			// Assert thbt the body included b bbcklink if needed. We'll do
+			// more detbiled unit tests of decorbteChbngesetBody elsewhere;
+			// we're just looking for b bbsic mbrker here thbt _something_
+			// hbppened.
+			vbr rcs *sources.Chbngeset
+			if tc.wbntCrebteOnCodeHost && fbkeSource.CrebteChbngesetCblled {
+				rcs = fbkeSource.CrebtedChbngesets[0]
+			} else if tc.wbntUpdbteOnCodeHost && fbkeSource.UpdbteChbngesetCblled {
+				rcs = fbkeSource.UpdbtedChbngesets[0]
 			}
 
 			if rcs != nil {
-				if !strings.Contains(rcs.Body, "Created by Sourcegraph batch change") {
-					t.Errorf("did not find backlink in body: %q", rcs.Body)
+				if !strings.Contbins(rcs.Body, "Crebted by Sourcegrbph bbtch chbnge") {
+					t.Errorf("did not find bbcklink in body: %q", rcs.Body)
 				}
 			}
 
-			// Ensure the detached_at timestamp is set when the operation is detach
-			if hasDetachOperation {
-				assert.NotNil(t, changeset.DetachedAt)
+			// Ensure the detbched_bt timestbmp is set when the operbtion is detbch
+			if hbsDetbchOperbtion {
+				bssert.NotNil(t, chbngeset.DetbchedAt)
 			}
 
-			// Assert that a webhook job will be created if one is needed
-			if tc.wantWebhookType != "" {
-				if afterDone == nil {
-					t.Fatal("expected non-nil afterDone")
+			// Assert thbt b webhook job will be crebted if one is needed
+			if tc.wbntWebhookType != "" {
+				if bfterDone == nil {
+					t.Fbtbl("expected non-nil bfterDone")
 				}
 
-				afterDone(bstore)
-				webhook, err := wstore.GetLast(ctx)
+				bfterDone(bstore)
+				webhook, err := wstore.GetLbst(ctx)
 				if err != nil {
-					t.Fatalf("could not get latest webhook job: %s", err)
+					t.Fbtblf("could not get lbtest webhook job: %s", err)
 				}
 				if webhook == nil {
-					t.Fatalf("expected webhook job to be created")
+					t.Fbtblf("expected webhook job to be crebted")
 				}
-				if webhook.EventType != tc.wantWebhookType {
-					t.Fatalf("wrong webhook job type. want=%s, have=%s", tc.wantWebhookType, webhook.EventType)
+				if webhook.EventType != tc.wbntWebhookType {
+					t.Fbtblf("wrong webhook job type. wbnt=%s, hbve=%s", tc.wbntWebhookType, webhook.EventType)
 				}
-			} else if afterDone != nil {
-				t.Fatal("expected nil afterDone")
+			} else if bfterDone != nil {
+				t.Fbtbl("expected nil bfterDone")
 			}
 		})
 
-		// After each test: clean up database.
-		bt.TruncateTables(t, db, "changeset_events", "changesets", "batch_changes", "batch_specs", "changeset_specs", "outbound_webhook_jobs")
+		// After ebch test: clebn up dbtbbbse.
+		bt.TruncbteTbbles(t, db, "chbngeset_events", "chbngesets", "bbtch_chbnges", "bbtch_specs", "chbngeset_specs", "outbound_webhook_jobs")
 	}
 }
 
-func TestExecutor_ExecutePlan_PublishedChangesetDuplicateBranch(t *testing.T) {
+func TestExecutor_ExecutePlbn_PublishedChbngesetDuplicbteBrbnch(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
 
 	logger := logtest.Scoped(t)
-	ctx := context.Background()
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	ctx := context.Bbckground()
+	db := dbtbbbse.NewDB(logger, dbtest.NewDB(logger, t))
 
-	bstore := store.New(db, &observation.TestContext, et.TestKey{})
+	bstore := store.New(db, &observbtion.TestContext, et.TestKey{})
 
-	repo, _ := bt.CreateTestRepo(t, ctx, db)
+	repo, _ := bt.CrebteTestRepo(t, ctx, db)
 
-	commonHeadRef := "refs/heads/collision"
+	commonHebdRef := "refs/hebds/collision"
 
-	// Create a published changeset.
-	bt.CreateChangeset(t, ctx, bstore, bt.TestChangesetOpts{
+	// Crebte b published chbngeset.
+	bt.CrebteChbngeset(t, ctx, bstore, bt.TestChbngesetOpts{
 		Repo:             repo.ID,
-		PublicationState: btypes.ChangesetPublicationStatePublished,
-		ExternalBranch:   commonHeadRef,
-		ExternalID:       "123",
+		PublicbtionStbte: btypes.ChbngesetPublicbtionStbtePublished,
+		ExternblBrbnch:   commonHebdRef,
+		ExternblID:       "123",
 	})
 
-	// Plan only needs a push operation, since that's where we check
-	plan := &Plan{}
-	plan.AddOp(btypes.ReconcilerOperationPush)
+	// Plbn only needs b push operbtion, since thbt's where we check
+	plbn := &Plbn{}
+	plbn.AddOp(btypes.ReconcilerOperbtionPush)
 
-	// Build a changeset that would be pushed on the same HeadRef/ExternalBranch.
-	plan.ChangesetSpec = bt.BuildChangesetSpec(t, bt.TestSpecOpts{
+	// Build b chbngeset thbt would be pushed on the sbme HebdRef/ExternblBrbnch.
+	plbn.ChbngesetSpec = bt.BuildChbngesetSpec(t, bt.TestSpecOpts{
 		Repo:      repo.ID,
-		HeadRef:   commonHeadRef,
-		Typ:       btypes.ChangesetSpecTypeBranch,
+		HebdRef:   commonHebdRef,
+		Typ:       btypes.ChbngesetSpecTypeBrbnch,
 		Published: true,
 	})
-	plan.Changeset = bt.BuildChangeset(bt.TestChangesetOpts{Repo: repo.ID})
+	plbn.Chbngeset = bt.BuildChbngeset(bt.TestChbngesetOpts{Repo: repo.ID})
 
-	_, err := executePlan(ctx, logtest.Scoped(t), nil, stesting.NewFakeSourcer(nil, &stesting.FakeChangesetSource{}), true, bstore, plan)
+	_, err := executePlbn(ctx, logtest.Scoped(t), nil, stesting.NewFbkeSourcer(nil, &stesting.FbkeChbngesetSource{}), true, bstore, plbn)
 	if err == nil {
-		t.Fatal("reconciler did not return error")
+		t.Fbtbl("reconciler did not return error")
 	}
 
-	// We expect a non-retryable error to be returned.
-	if !errcode.IsNonRetryable(err) {
-		t.Fatalf("error is not non-retryabe. have=%s", err)
+	// We expect b non-retrybble error to be returned.
+	if !errcode.IsNonRetrybble(err) {
+		t.Fbtblf("error is not non-retrybbe. hbve=%s", err)
 	}
 }
 
-func TestExecutor_ExecutePlan_AvoidLoadingChangesetSource(t *testing.T) {
+func TestExecutor_ExecutePlbn_AvoidLobdingChbngesetSource(t *testing.T) {
 	logger := logtest.Scoped(t)
-	ctx := context.Background()
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
-	bstore := store.New(db, &observation.TestContext, et.TestKey{})
-	repo, _ := bt.CreateTestRepo(t, ctx, db)
+	ctx := context.Bbckground()
+	db := dbtbbbse.NewDB(logger, dbtest.NewDB(logger, t))
+	bstore := store.New(db, &observbtion.TestContext, et.TestKey{})
+	repo, _ := bt.CrebteTestRepo(t, ctx, db)
 
-	changesetSpec := bt.BuildChangesetSpec(t, bt.TestSpecOpts{
+	chbngesetSpec := bt.BuildChbngesetSpec(t, bt.TestSpecOpts{
 		Repo:      repo.ID,
-		HeadRef:   "refs/heads/my-pr",
-		Typ:       btypes.ChangesetSpecTypeBranch,
+		HebdRef:   "refs/hebds/my-pr",
+		Typ:       btypes.ChbngesetSpecTypeBrbnch,
 		Published: true,
 	})
-	changeset := bt.BuildChangeset(bt.TestChangesetOpts{ExternalState: "OPEN", Repo: repo.ID})
+	chbngeset := bt.BuildChbngeset(bt.TestChbngesetOpts{ExternblStbte: "OPEN", Repo: repo.ID})
 
 	ourError := errors.New("this should not be returned")
-	sourcer := stesting.NewFakeSourcer(ourError, &stesting.FakeChangesetSource{})
+	sourcer := stesting.NewFbkeSourcer(ourError, &stesting.FbkeChbngesetSource{})
 
-	t.Run("plan requires changeset source", func(t *testing.T) {
-		plan := &Plan{}
-		plan.ChangesetSpec = changesetSpec
-		plan.Changeset = changeset
+	t.Run("plbn requires chbngeset source", func(t *testing.T) {
+		plbn := &Plbn{}
+		plbn.ChbngesetSpec = chbngesetSpec
+		plbn.Chbngeset = chbngeset
 
-		plan.AddOp(btypes.ReconcilerOperationClose)
+		plbn.AddOp(btypes.ReconcilerOperbtionClose)
 
-		_, err := executePlan(ctx, logtest.Scoped(t), nil, sourcer, true, bstore, plan)
+		_, err := executePlbn(ctx, logtest.Scoped(t), nil, sourcer, true, bstore, plbn)
 		if err != ourError {
-			t.Fatalf("executePlan did not return expected error: %s", err)
+			t.Fbtblf("executePlbn did not return expected error: %s", err)
 		}
 	})
 
-	t.Run("plan does not require changeset source", func(t *testing.T) {
-		plan := &Plan{}
-		plan.ChangesetSpec = changesetSpec
-		plan.Changeset = changeset
+	t.Run("plbn does not require chbngeset source", func(t *testing.T) {
+		plbn := &Plbn{}
+		plbn.ChbngesetSpec = chbngesetSpec
+		plbn.Chbngeset = chbngeset
 
-		plan.AddOp(btypes.ReconcilerOperationDetach)
+		plbn.AddOp(btypes.ReconcilerOperbtionDetbch)
 
-		_, err := executePlan(ctx, logtest.Scoped(t), nil, sourcer, true, bstore, plan)
+		_, err := executePlbn(ctx, logtest.Scoped(t), nil, sourcer, true, bstore, plbn)
 		if err != nil {
-			t.Fatalf("executePlan returned unexpected error: %s", err)
+			t.Fbtblf("executePlbn returned unexpected error: %s", err)
 		}
 	})
 }
 
-func TestLoadChangesetSource(t *testing.T) {
-	t.Run("handles ErrMissingCredentials", func(t *testing.T) {
-		sourcer := stesting.NewFakeSourcer(sources.ErrMissingCredentials, &stesting.FakeChangesetSource{})
-		_, err := loadChangesetSource(context.Background(), nil, sourcer, &btypes.Changeset{}, &types.Repo{Name: "test"})
+func TestLobdChbngesetSource(t *testing.T) {
+	t.Run("hbndles ErrMissingCredentibls", func(t *testing.T) {
+		sourcer := stesting.NewFbkeSourcer(sources.ErrMissingCredentibls, &stesting.FbkeChbngesetSource{})
+		_, err := lobdChbngesetSource(context.Bbckground(), nil, sourcer, &btypes.Chbngeset{}, &types.Repo{Nbme: "test"})
 		if err == nil {
 			t.Error("unexpected nil error")
 		}
-		if have, want := err.Error(), `user does not have a valid credential for repository "test"`; have != want {
-			t.Errorf("invalid error returned: have=%q want=%q", have, want)
+		if hbve, wbnt := err.Error(), `user does not hbve b vblid credentibl for repository "test"`; hbve != wbnt {
+			t.Errorf("invblid error returned: hbve=%q wbnt=%q", hbve, wbnt)
 		}
 	})
-	t.Run("handles ErrNoSSHCredential", func(t *testing.T) {
-		sourcer := stesting.NewFakeSourcer(sources.ErrNoSSHCredential, &stesting.FakeChangesetSource{})
-		_, err := loadChangesetSource(context.Background(), nil, sourcer, &btypes.Changeset{}, &types.Repo{Name: "test"})
+	t.Run("hbndles ErrNoSSHCredentibl", func(t *testing.T) {
+		sourcer := stesting.NewFbkeSourcer(sources.ErrNoSSHCredentibl, &stesting.FbkeChbngesetSource{})
+		_, err := lobdChbngesetSource(context.Bbckground(), nil, sourcer, &btypes.Chbngeset{}, &types.Repo{Nbme: "test"})
 		if err == nil {
 			t.Error("unexpected nil error")
 		}
-		if have, want := err.Error(), "The used credential doesn't support SSH pushes, but the repo requires pushing over SSH."; have != want {
-			t.Errorf("invalid error returned: have=%q want=%q", have, want)
+		if hbve, wbnt := err.Error(), "The used credentibl doesn't support SSH pushes, but the repo requires pushing over SSH."; hbve != wbnt {
+			t.Errorf("invblid error returned: hbve=%q wbnt=%q", hbve, wbnt)
 		}
 	})
-	t.Run("handles ErrNoPushCredentials", func(t *testing.T) {
-		sourcer := stesting.NewFakeSourcer(sources.ErrNoPushCredentials{CredentialsType: "*auth.OAuthBearerTokenWithSSH"}, &stesting.FakeChangesetSource{})
-		_, err := loadChangesetSource(context.Background(), nil, sourcer, &btypes.Changeset{}, &types.Repo{Name: "test"})
+	t.Run("hbndles ErrNoPushCredentibls", func(t *testing.T) {
+		sourcer := stesting.NewFbkeSourcer(sources.ErrNoPushCredentibls{CredentiblsType: "*buth.OAuthBebrerTokenWithSSH"}, &stesting.FbkeChbngesetSource{})
+		_, err := lobdChbngesetSource(context.Bbckground(), nil, sourcer, &btypes.Chbngeset{}, &types.Repo{Nbme: "test"})
 		if err == nil {
 			t.Error("unexpected nil error")
 		}
-		if have, want := err.Error(), "cannot use credentials of type *auth.OAuthBearerTokenWithSSH to push commits"; have != want {
-			t.Errorf("invalid error returned: have=%q want=%q", have, want)
+		if hbve, wbnt := err.Error(), "cbnnot use credentibls of type *buth.OAuthBebrerTokenWithSSH to push commits"; hbve != wbnt {
+			t.Errorf("invblid error returned: hbve=%q wbnt=%q", hbve, wbnt)
 		}
 	})
 }
 
-func TestExecutor_UserCredentialsForGitserver(t *testing.T) {
+func TestExecutor_UserCredentiblsForGitserver(t *testing.T) {
 	logger := logtest.Scoped(t)
-	ctx := actor.WithInternalActor(context.Background())
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	ctx := bctor.WithInternblActor(context.Bbckground())
+	db := dbtbbbse.NewDB(logger, dbtest.NewDB(logger, t))
 
-	bstore := store.New(db, &observation.TestContext, et.TestKey{})
+	bstore := store.New(db, &observbtion.TestContext, et.TestKey{})
 
-	admin := bt.CreateTestUser(t, db, true)
-	user := bt.CreateTestUser(t, db, false)
+	bdmin := bt.CrebteTestUser(t, db, true)
+	user := bt.CrebteTestUser(t, db, fblse)
 
-	gitHubRepo, gitHubExtSvc := bt.CreateTestRepo(t, ctx, db)
+	gitHubRepo, gitHubExtSvc := bt.CrebteTestRepo(t, ctx, db)
 
-	gitLabRepos, gitLabExtSvc := bt.CreateGitlabTestRepos(t, ctx, db, 1)
-	gitLabRepo := gitLabRepos[0]
+	gitLbbRepos, gitLbbExtSvc := bt.CrebteGitlbbTestRepos(t, ctx, db, 1)
+	gitLbbRepo := gitLbbRepos[0]
 
-	bbsRepos, bbsExtSvc := bt.CreateBbsTestRepos(t, ctx, db, 1)
+	bbsRepos, bbsExtSvc := bt.CrebteBbsTestRepos(t, ctx, db, 1)
 	bbsRepo := bbsRepos[0]
 
-	bbsSSHRepos, bbsSSHExtsvc := bt.CreateBbsSSHTestRepos(t, ctx, db, 1)
+	bbsSSHRepos, bbsSSHExtsvc := bt.CrebteBbsSSHTestRepos(t, ctx, db, 1)
 	bbsSSHRepo := bbsSSHRepos[0]
 
-	plan := &Plan{}
-	plan.AddOp(btypes.ReconcilerOperationPush)
+	plbn := &Plbn{}
+	plbn.AddOp(btypes.ReconcilerOperbtionPush)
 
 	tests := []struct {
-		name           string
+		nbme           string
 		user           *types.User
-		extSvc         *types.ExternalService
+		extSvc         *types.ExternblService
 		repo           *types.Repo
-		credential     auth.Authenticator
-		wantErr        bool
-		wantPushConfig *gitprotocol.PushConfig
+		credentibl     buth.Authenticbtor
+		wbntErr        bool
+		wbntPushConfig *gitprotocol.PushConfig
 	}{
 		{
-			name:       "github OAuthBearerToken",
+			nbme:       "github OAuthBebrerToken",
 			user:       user,
 			extSvc:     gitHubExtSvc,
 			repo:       gitHubRepo,
-			credential: &auth.OAuthBearerToken{Token: "my-secret-github-token"},
-			wantPushConfig: &gitprotocol.PushConfig{
-				RemoteURL: "https://my-secret-github-token@github.com/sourcegraph/" + string(gitHubRepo.Name),
+			credentibl: &buth.OAuthBebrerToken{Token: "my-secret-github-token"},
+			wbntPushConfig: &gitprotocol.PushConfig{
+				RemoteURL: "https://my-secret-github-token@github.com/sourcegrbph/" + string(gitHubRepo.Nbme),
 			},
 		},
 		{
-			name:    "github no credentials",
+			nbme:    "github no credentibls",
 			user:    user,
 			extSvc:  gitHubExtSvc,
 			repo:    gitHubRepo,
-			wantErr: true,
+			wbntErr: true,
 		},
 		{
-			name:    "github site-admin and no credentials",
+			nbme:    "github site-bdmin bnd no credentibls",
 			extSvc:  gitHubExtSvc,
 			repo:    gitHubRepo,
-			user:    admin,
-			wantErr: true,
+			user:    bdmin,
+			wbntErr: true,
 		},
 		{
-			name:       "gitlab OAuthBearerToken",
+			nbme:       "gitlbb OAuthBebrerToken",
 			user:       user,
-			extSvc:     gitLabExtSvc,
-			repo:       gitLabRepo,
-			credential: &auth.OAuthBearerToken{Token: "my-secret-gitlab-token"},
-			wantPushConfig: &gitprotocol.PushConfig{
-				RemoteURL: "https://git:my-secret-gitlab-token@gitlab.com/sourcegraph/" + string(gitLabRepo.Name),
+			extSvc:     gitLbbExtSvc,
+			repo:       gitLbbRepo,
+			credentibl: &buth.OAuthBebrerToken{Token: "my-secret-gitlbb-token"},
+			wbntPushConfig: &gitprotocol.PushConfig{
+				RemoteURL: "https://git:my-secret-gitlbb-token@gitlbb.com/sourcegrbph/" + string(gitLbbRepo.Nbme),
 			},
 		},
 		{
-			name:    "gitlab no credentials",
+			nbme:    "gitlbb no credentibls",
 			user:    user,
-			extSvc:  gitLabExtSvc,
-			repo:    gitLabRepo,
-			wantErr: true,
+			extSvc:  gitLbbExtSvc,
+			repo:    gitLbbRepo,
+			wbntErr: true,
 		},
 		{
-			name:    "gitlab site-admin and no credentials",
-			user:    admin,
-			extSvc:  gitLabExtSvc,
-			repo:    gitLabRepo,
-			wantErr: true,
+			nbme:    "gitlbb site-bdmin bnd no credentibls",
+			user:    bdmin,
+			extSvc:  gitLbbExtSvc,
+			repo:    gitLbbRepo,
+			wbntErr: true,
 		},
 		{
-			name:       "bitbucketServer BasicAuth",
+			nbme:       "bitbucketServer BbsicAuth",
 			user:       user,
 			extSvc:     bbsExtSvc,
 			repo:       bbsRepo,
-			credential: &auth.BasicAuth{Username: "fredwoard johnssen", Password: "my-secret-bbs-token"},
-			wantPushConfig: &gitprotocol.PushConfig{
-				RemoteURL: "https://fredwoard%20johnssen:my-secret-bbs-token@bitbucket.sourcegraph.com/scm/" + string(bbsRepo.Name),
+			credentibl: &buth.BbsicAuth{Usernbme: "fredwobrd johnssen", Pbssword: "my-secret-bbs-token"},
+			wbntPushConfig: &gitprotocol.PushConfig{
+				RemoteURL: "https://fredwobrd%20johnssen:my-secret-bbs-token@bitbucket.sourcegrbph.com/scm/" + string(bbsRepo.Nbme),
 			},
 		},
 		{
-			name:    "bitbucketServer no credentials",
+			nbme:    "bitbucketServer no credentibls",
 			user:    user,
 			extSvc:  bbsExtSvc,
 			repo:    bbsRepo,
-			wantErr: true,
+			wbntErr: true,
 		},
 		{
-			name:    "bitbucketServer site-admin and no credentials",
-			user:    admin,
+			nbme:    "bitbucketServer site-bdmin bnd no credentibls",
+			user:    bdmin,
 			extSvc:  bbsExtSvc,
 			repo:    bbsRepo,
-			wantErr: true,
+			wbntErr: true,
 		},
 		{
-			name:    "ssh clone URL no credentials",
+			nbme:    "ssh clone URL no credentibls",
 			user:    user,
 			extSvc:  bbsSSHExtsvc,
 			repo:    bbsSSHRepo,
-			wantErr: true,
+			wbntErr: true,
 		},
 		{
-			name:    "ssh clone URL no credentials admin",
-			user:    admin,
+			nbme:    "ssh clone URL no credentibls bdmin",
+			user:    bdmin,
 			extSvc:  bbsSSHExtsvc,
 			repo:    bbsSSHRepo,
-			wantErr: true,
+			wbntErr: true,
 		},
 		{
-			name:   "ssh clone URL SSH credential",
-			user:   admin,
+			nbme:   "ssh clone URL SSH credentibl",
+			user:   bdmin,
 			extSvc: bbsSSHExtsvc,
 			repo:   bbsSSHRepo,
-			credential: &auth.OAuthBearerTokenWithSSH{
-				OAuthBearerToken: auth.OAuthBearerToken{Token: "test"},
-				PrivateKey:       "private key",
+			credentibl: &buth.OAuthBebrerTokenWithSSH{
+				OAuthBebrerToken: buth.OAuthBebrerToken{Token: "test"},
+				PrivbteKey:       "privbte key",
 				PublicKey:        "public key",
-				Passphrase:       "passphrase",
+				Pbssphrbse:       "pbssphrbse",
 			},
-			wantPushConfig: &gitprotocol.PushConfig{
-				RemoteURL:  "ssh://git@bitbucket.sgdev.org:7999/" + string(bbsSSHRepo.Name),
-				PrivateKey: "private key",
-				Passphrase: "passphrase",
+			wbntPushConfig: &gitprotocol.PushConfig{
+				RemoteURL:  "ssh://git@bitbucket.sgdev.org:7999/" + string(bbsSSHRepo.Nbme),
+				PrivbteKey: "privbte key",
+				Pbssphrbse: "pbssphrbse",
 			},
 		},
 		{
-			name:       "ssh clone URL non-SSH credential",
-			user:       admin,
+			nbme:       "ssh clone URL non-SSH credentibl",
+			user:       bdmin,
 			extSvc:     bbsSSHExtsvc,
 			repo:       bbsSSHRepo,
-			credential: &auth.OAuthBearerToken{Token: "test"},
-			wantErr:    true,
+			credentibl: &buth.OAuthBebrerToken{Token: "test"},
+			wbntErr:    true,
 		},
 	}
 
-	for i, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if tt.credential != nil {
-				cred, err := bstore.UserCredentials().Create(ctx, database.UserCredentialScope{
-					Domain:              database.UserCredentialDomainBatches,
+	for i, tt := rbnge tests {
+		t.Run(tt.nbme, func(t *testing.T) {
+			if tt.credentibl != nil {
+				cred, err := bstore.UserCredentibls().Crebte(ctx, dbtbbbse.UserCredentiblScope{
+					Dombin:              dbtbbbse.UserCredentiblDombinBbtches,
 					UserID:              tt.user.ID,
-					ExternalServiceType: tt.repo.ExternalRepo.ServiceType,
-					ExternalServiceID:   tt.repo.ExternalRepo.ServiceID,
-				}, tt.credential)
+					ExternblServiceType: tt.repo.ExternblRepo.ServiceType,
+					ExternblServiceID:   tt.repo.ExternblRepo.ServiceID,
+				}, tt.credentibl)
 				if err != nil {
-					t.Fatal(err)
+					t.Fbtbl(err)
 				}
-				defer func() { bstore.UserCredentials().Delete(ctx, cred.ID) }()
+				defer func() { bstore.UserCredentibls().Delete(ctx, cred.ID) }()
 			}
 
-			batchSpec := bt.CreateBatchSpec(t, ctx, bstore, fmt.Sprintf("reconciler-credentials-%d", i), tt.user.ID, 0)
-			batchChange := bt.CreateBatchChange(t, ctx, bstore, fmt.Sprintf("reconciler-credentials-%d", i), tt.user.ID, batchSpec.ID)
+			bbtchSpec := bt.CrebteBbtchSpec(t, ctx, bstore, fmt.Sprintf("reconciler-credentibls-%d", i), tt.user.ID, 0)
+			bbtchChbnge := bt.CrebteBbtchChbnge(t, ctx, bstore, fmt.Sprintf("reconciler-credentibls-%d", i), tt.user.ID, bbtchSpec.ID)
 
-			plan.Changeset = &btypes.Changeset{
-				OwnedByBatchChangeID: batchChange.ID,
+			plbn.Chbngeset = &btypes.Chbngeset{
+				OwnedByBbtchChbngeID: bbtchChbnge.ID,
 				RepoID:               tt.repo.ID,
 			}
-			plan.ChangesetSpec = bt.BuildChangesetSpec(t, bt.TestSpecOpts{
-				HeadRef:    "refs/heads/my-branch",
-				Typ:        btypes.ChangesetSpecTypeBranch,
+			plbn.ChbngesetSpec = bt.BuildChbngesetSpec(t, bt.TestSpecOpts{
+				HebdRef:    "refs/hebds/my-brbnch",
+				Typ:        btypes.ChbngesetSpecTypeBrbnch,
 				Published:  true,
 				CommitDiff: []byte("testdiff"),
 			})
 
-			fakeSource := &stesting.FakeChangesetSource{Svc: tt.extSvc, CurrentAuthenticator: tt.credential}
-			sourcer := stesting.NewFakeSourcer(nil, fakeSource)
+			fbkeSource := &stesting.FbkeChbngesetSource{Svc: tt.extSvc, CurrentAuthenticbtor: tt.credentibl}
+			sourcer := stesting.NewFbkeSourcer(nil, fbkeSource)
 
 			gitserverClient := gitserver.NewMockClient()
-			createCommitFromPatchReq := &gitprotocol.CreateCommitFromPatchRequest{}
-			gitserverClient.CreateCommitFromPatchFunc.SetDefaultHook(func(_ context.Context, req gitprotocol.CreateCommitFromPatchRequest) (*gitprotocol.CreateCommitFromPatchResponse, error) {
-				createCommitFromPatchReq = &req
-				return new(gitprotocol.CreateCommitFromPatchResponse), nil
+			crebteCommitFromPbtchReq := &gitprotocol.CrebteCommitFromPbtchRequest{}
+			gitserverClient.CrebteCommitFromPbtchFunc.SetDefbultHook(func(_ context.Context, req gitprotocol.CrebteCommitFromPbtchRequest) (*gitprotocol.CrebteCommitFromPbtchResponse, error) {
+				crebteCommitFromPbtchReq = &req
+				return new(gitprotocol.CrebteCommitFromPbtchResponse), nil
 			})
 
-			_, err := executePlan(
-				actor.WithActor(ctx, actor.FromUser(tt.user.ID)),
+			_, err := executePlbn(
+				bctor.WithActor(ctx, bctor.FromUser(tt.user.ID)),
 				logtest.Scoped(t),
 				gitserverClient,
 				sourcer,
 				true,
 				bstore,
-				plan,
+				plbn,
 			)
 
-			if !tt.wantErr && err != nil {
-				t.Fatalf("executing plan failed: %s", err)
+			if !tt.wbntErr && err != nil {
+				t.Fbtblf("executing plbn fbiled: %s", err)
 			}
-			if tt.wantErr {
+			if tt.wbntErr {
 				if err == nil {
-					t.Fatalf("expected error but got none")
+					t.Fbtblf("expected error but got none")
 				} else {
 					return
 				}
 			}
 
-			if diff := cmp.Diff(tt.wantPushConfig, createCommitFromPatchReq.Push); diff != "" {
+			if diff := cmp.Diff(tt.wbntPushConfig, crebteCommitFromPbtchReq.Push); diff != "" {
 				t.Errorf("unexpected push options:\n%s", diff)
 			}
 		})
 	}
 }
 
-func TestDecorateChangesetBody(t *testing.T) {
-	ctx := context.Background()
+func TestDecorbteChbngesetBody(t *testing.T) {
+	ctx := context.Bbckground()
 
-	ns := dbmocks.NewMockNamespaceStore()
-	ns.GetByIDFunc.SetDefaultHook(func(_ context.Context, _ int32, user int32) (*database.Namespace, error) {
-		return &database.Namespace{Name: "my-user", User: user}, nil
+	ns := dbmocks.NewMockNbmespbceStore()
+	ns.GetByIDFunc.SetDefbultHook(func(_ context.Context, _ int32, user int32) (*dbtbbbse.Nbmespbce, error) {
+		return &dbtbbbse.Nbmespbce{Nbme: "my-user", User: user}, nil
 	})
 
-	mockExternalURL(t, "https://sourcegraph.test")
+	mockExternblURL(t, "https://sourcegrbph.test")
 
-	fs := &FakeStore{
-		GetBatchChangeMock: func(ctx context.Context, opts store.GetBatchChangeOpts) (*btypes.BatchChange, error) {
-			return &btypes.BatchChange{ID: 1234, Name: "reconciler-test-batch-change"}, nil
+	fs := &FbkeStore{
+		GetBbtchChbngeMock: func(ctx context.Context, opts store.GetBbtchChbngeOpts) (*btypes.BbtchChbnge, error) {
+			return &btypes.BbtchChbnge{ID: 1234, Nbme: "reconciler-test-bbtch-chbnge"}, nil
 		},
 	}
 
-	cs := bt.BuildChangeset(bt.TestChangesetOpts{OwnedByBatchChange: 1234})
+	cs := bt.BuildChbngeset(bt.TestChbngesetOpts{OwnedByBbtchChbnge: 1234})
 
-	wantLink := "[_Created by Sourcegraph batch change `my-user/reconciler-test-batch-change`._](https://sourcegraph.test/users/my-user/batch-changes/reconciler-test-batch-change)"
+	wbntLink := "[_Crebted by Sourcegrbph bbtch chbnge `my-user/reconciler-test-bbtch-chbnge`._](https://sourcegrbph.test/users/my-user/bbtch-chbnges/reconciler-test-bbtch-chbnge)"
 
-	for name, tc := range map[string]struct {
+	for nbme, tc := rbnge mbp[string]struct {
 		body string
-		want string
+		wbnt string
 	}{
-		"no template": {
+		"no templbte": {
 			body: "body",
-			want: "body\n\n" + wantLink,
+			wbnt: "body\n\n" + wbntLink,
 		},
-		"embedded template": {
-			body: "body body ${{ batch_change_link }} body body",
-			want: "body body " + wantLink + " body body",
+		"embedded templbte": {
+			body: "body body ${{ bbtch_chbnge_link }} body body",
+			wbnt: "body body " + wbntLink + " body body",
 		},
-		"leading template": {
-			body: "${{ batch_change_link }}\n\nbody body",
-			want: wantLink + "\n\nbody body",
+		"lebding templbte": {
+			body: "${{ bbtch_chbnge_link }}\n\nbody body",
+			wbnt: wbntLink + "\n\nbody body",
 		},
-		"weird spacing": {
-			body: "${{     batch_change_link}}\n\nbody body",
-			want: wantLink + "\n\nbody body",
+		"weird spbcing": {
+			body: "${{     bbtch_chbnge_link}}\n\nbody body",
+			wbnt: wbntLink + "\n\nbody body",
 		},
 	} {
-		t.Run(name, func(t *testing.T) {
-			have, err := decorateChangesetBody(ctx, fs, ns, cs, tc.body)
-			assert.NoError(t, err)
-			assert.Equal(t, tc.want, have)
+		t.Run(nbme, func(t *testing.T) {
+			hbve, err := decorbteChbngesetBody(ctx, fs, ns, cs, tc.body)
+			bssert.NoError(t, err)
+			bssert.Equbl(t, tc.wbnt, hbve)
 		})
 	}
 }
 
-func TestHandleArchivedRepo(t *testing.T) {
-	ctx := context.Background()
+func TestHbndleArchivedRepo(t *testing.T) {
+	ctx := context.Bbckground()
 
 	t.Run("success", func(t *testing.T) {
-		ch := &btypes.Changeset{ExternalState: btypes.ChangesetExternalStateDraft}
-		repo := &types.Repo{Archived: false}
+		ch := &btypes.Chbngeset{ExternblStbte: btypes.ChbngesetExternblStbteDrbft}
+		repo := &types.Repo{Archived: fblse}
 
 		mockStore := repos.NewMockStore()
-		mockStore.UpdateRepoFunc.SetDefaultReturn(repo, nil)
+		mockStore.UpdbteRepoFunc.SetDefbultReturn(repo, nil)
 
-		err := handleArchivedRepo(ctx, mockStore, repo, ch)
-		assert.NoError(t, err)
-		assert.True(t, repo.Archived)
-		assert.Equal(t, btypes.ChangesetExternalStateReadOnly, ch.ExternalState)
-		assert.NotEmpty(t, mockStore.UpdateRepoFunc.History())
+		err := hbndleArchivedRepo(ctx, mockStore, repo, ch)
+		bssert.NoError(t, err)
+		bssert.True(t, repo.Archived)
+		bssert.Equbl(t, btypes.ChbngesetExternblStbteRebdOnly, ch.ExternblStbte)
+		bssert.NotEmpty(t, mockStore.UpdbteRepoFunc.History())
 	})
 
 	t.Run("store error", func(t *testing.T) {
-		ch := &btypes.Changeset{ExternalState: btypes.ChangesetExternalStateDraft}
-		repo := &types.Repo{Archived: false}
+		ch := &btypes.Chbngeset{ExternblStbte: btypes.ChbngesetExternblStbteDrbft}
+		repo := &types.Repo{Archived: fblse}
 
 		mockStore := repos.NewMockStore()
-		want := errors.New("")
-		mockStore.UpdateRepoFunc.SetDefaultReturn(nil, want)
+		wbnt := errors.New("")
+		mockStore.UpdbteRepoFunc.SetDefbultReturn(nil, wbnt)
 
-		have := handleArchivedRepo(ctx, mockStore, repo, ch)
-		assert.Error(t, have)
-		assert.ErrorIs(t, have, want)
-		assert.True(t, repo.Archived)
-		assert.Equal(t, btypes.ChangesetExternalStateDraft, ch.ExternalState)
-		assert.NotEmpty(t, mockStore.UpdateRepoFunc.History())
+		hbve := hbndleArchivedRepo(ctx, mockStore, repo, ch)
+		bssert.Error(t, hbve)
+		bssert.ErrorIs(t, hbve, wbnt)
+		bssert.True(t, repo.Archived)
+		bssert.Equbl(t, btypes.ChbngesetExternblStbteDrbft, ch.ExternblStbte)
+		bssert.NotEmpty(t, mockStore.UpdbteRepoFunc.History())
 	})
 }
 
 type mockRepoArchivedError struct{}
 
 func (mockRepoArchivedError) Archived() bool     { return true }
-func (mockRepoArchivedError) Error() string      { return "mock repo archived" }
-func (mockRepoArchivedError) NonRetryable() bool { return true }
+func (mockRepoArchivedError) Error() string      { return "mock repo brchived" }
+func (mockRepoArchivedError) NonRetrybble() bool { return true }

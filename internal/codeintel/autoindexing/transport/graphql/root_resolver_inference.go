@@ -1,60 +1,60 @@
-package graphql
+pbckbge grbphql
 
 import (
 	"context"
-	"crypto/sha256"
-	"encoding/base64"
+	"crypto/shb256"
+	"encoding/bbse64"
 	"strings"
 
-	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/bttribute"
 
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	resolverstubs "github.com/sourcegraph/sourcegraph/internal/codeintel/resolvers"
-	sharedresolvers "github.com/sourcegraph/sourcegraph/internal/codeintel/shared/resolvers"
-	uploadsshared "github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared"
-	uploadsgraphql "github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/transport/graphql"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/lib/codeintel/autoindex/config"
-	"github.com/sourcegraph/sourcegraph/lib/pointers"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi"
+	resolverstubs "github.com/sourcegrbph/sourcegrbph/internbl/codeintel/resolvers"
+	shbredresolvers "github.com/sourcegrbph/sourcegrbph/internbl/codeintel/shbred/resolvers"
+	uplobdsshbred "github.com/sourcegrbph/sourcegrbph/internbl/codeintel/uplobds/shbred"
+	uplobdsgrbphql "github.com/sourcegrbph/sourcegrbph/internbl/codeintel/uplobds/trbnsport/grbphql"
+	"github.com/sourcegrbph/sourcegrbph/internbl/observbtion"
+	"github.com/sourcegrbph/sourcegrbph/lib/codeintel/butoindex/config"
+	"github.com/sourcegrbph/sourcegrbph/lib/pointers"
 )
 
-// 🚨 SECURITY: Only site admins may infer auto-index jobs
-func (r *rootResolver) InferAutoIndexJobsForRepo(ctx context.Context, args *resolverstubs.InferAutoIndexJobsForRepoArgs) (_ resolverstubs.InferAutoIndexJobsResultResolver, err error) {
-	ctx, _, endObservation := r.operations.inferAutoIndexJobsForRepo.WithErrors(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
-		attribute.String("repository", string(args.Repository)),
-		attribute.String("rev", pointers.Deref(args.Rev, "")),
-		attribute.String("script", pointers.Deref(args.Script, "")),
+// 🚨 SECURITY: Only site bdmins mby infer buto-index jobs
+func (r *rootResolver) InferAutoIndexJobsForRepo(ctx context.Context, brgs *resolverstubs.InferAutoIndexJobsForRepoArgs) (_ resolverstubs.InferAutoIndexJobsResultResolver, err error) {
+	ctx, _, endObservbtion := r.operbtions.inferAutoIndexJobsForRepo.WithErrors(ctx, &err, observbtion.Args{Attrs: []bttribute.KeyVblue{
+		bttribute.String("repository", string(brgs.Repository)),
+		bttribute.String("rev", pointers.Deref(brgs.Rev, "")),
+		bttribute.String("script", pointers.Deref(brgs.Script, "")),
 	}})
-	endObservation.OnCancel(ctx, 1, observation.Args{})
+	endObservbtion.OnCbncel(ctx, 1, observbtion.Args{})
 
 	if err := r.siteAdminChecker.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
 		return nil, err
 	}
-	if !autoIndexingEnabled() {
-		return nil, errAutoIndexingNotEnabled
+	if !butoIndexingEnbbled() {
+		return nil, errAutoIndexingNotEnbbled
 	}
 
-	repositoryID, err := resolverstubs.UnmarshalID[int](args.Repository)
+	repositoryID, err := resolverstubs.UnmbrshblID[int](brgs.Repository)
 	if err != nil {
 		return nil, err
 	}
 
 	rev := "HEAD"
-	if args.Rev != nil {
-		rev = *args.Rev
+	if brgs.Rev != nil {
+		rev = *brgs.Rev
 	}
 
-	localOverrideScript := ""
-	if args.Script != nil {
-		localOverrideScript = *args.Script
+	locblOverrideScript := ""
+	if brgs.Script != nil {
+		locblOverrideScript = *brgs.Script
 	}
 
-	result, err := r.autoindexSvc.InferIndexConfiguration(ctx, repositoryID, rev, localOverrideScript, false)
+	result, err := r.butoindexSvc.InferIndexConfigurbtion(ctx, repositoryID, rev, locblOverrideScript, fblse)
 	if err != nil {
 		return nil, err
 	}
 
-	jobResolvers, err := newDescriptionResolvers(r.siteAdminChecker, &config.IndexConfiguration{IndexJobs: result.IndexJobs})
+	jobResolvers, err := newDescriptionResolvers(r.siteAdminChecker, &config.IndexConfigurbtion{IndexJobs: result.IndexJobs})
 	if err != nil {
 		return nil, err
 	}
@@ -65,61 +65,61 @@ func (r *rootResolver) InferAutoIndexJobsForRepo(ctx context.Context, args *reso
 	}, nil
 }
 
-// 🚨 SECURITY: Only site admins may queue auto-index jobs
-func (r *rootResolver) QueueAutoIndexJobsForRepo(ctx context.Context, args *resolverstubs.QueueAutoIndexJobsForRepoArgs) (_ []resolverstubs.PreciseIndexResolver, err error) {
-	ctx, traceErrs, endObservation := r.operations.queueAutoIndexJobsForRepo.WithErrors(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
-		attribute.String("repository", string(args.Repository)),
-		attribute.String("rev", pointers.Deref(args.Rev, "")),
-		attribute.String("configuration", pointers.Deref(args.Configuration, "")),
+// 🚨 SECURITY: Only site bdmins mby queue buto-index jobs
+func (r *rootResolver) QueueAutoIndexJobsForRepo(ctx context.Context, brgs *resolverstubs.QueueAutoIndexJobsForRepoArgs) (_ []resolverstubs.PreciseIndexResolver, err error) {
+	ctx, trbceErrs, endObservbtion := r.operbtions.queueAutoIndexJobsForRepo.WithErrors(ctx, &err, observbtion.Args{Attrs: []bttribute.KeyVblue{
+		bttribute.String("repository", string(brgs.Repository)),
+		bttribute.String("rev", pointers.Deref(brgs.Rev, "")),
+		bttribute.String("configurbtion", pointers.Deref(brgs.Configurbtion, "")),
 	}})
-	endObservation.OnCancel(ctx, 1, observation.Args{})
+	endObservbtion.OnCbncel(ctx, 1, observbtion.Args{})
 
 	if err := r.siteAdminChecker.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
 		return nil, err
 	}
-	if !autoIndexingEnabled() {
-		return nil, errAutoIndexingNotEnabled
+	if !butoIndexingEnbbled() {
+		return nil, errAutoIndexingNotEnbbled
 	}
 
-	repositoryID, err := resolverstubs.UnmarshalID[api.RepoID](args.Repository)
+	repositoryID, err := resolverstubs.UnmbrshblID[bpi.RepoID](brgs.Repository)
 	if err != nil {
 		return nil, err
 	}
 
 	rev := "HEAD"
-	if args.Rev != nil {
-		rev = *args.Rev
+	if brgs.Rev != nil {
+		rev = *brgs.Rev
 	}
 
-	configuration := ""
-	if args.Configuration != nil {
-		configuration = *args.Configuration
+	configurbtion := ""
+	if brgs.Configurbtion != nil {
+		configurbtion = *brgs.Configurbtion
 	}
 
-	indexes, err := r.autoindexSvc.QueueIndexes(ctx, int(repositoryID), rev, configuration, true, true)
+	indexes, err := r.butoindexSvc.QueueIndexes(ctx, int(repositoryID), rev, configurbtion, true, true)
 	if err != nil {
 		return nil, err
 	}
 
-	// Create index loader with data we already have
-	indexLoader := r.indexLoaderFactory.CreateWithInitialData(indexes)
+	// Crebte index lobder with dbtb we blrebdy hbve
+	indexLobder := r.indexLobderFbctory.CrebteWithInitiblDbtb(indexes)
 
-	// Pre-submit associated upload ids for subsequent loading
-	uploadLoader := r.uploadLoaderFactory.Create()
-	uploadsgraphql.PresubmitAssociatedUploads(uploadLoader, indexes...)
+	// Pre-submit bssocibted uplobd ids for subsequent lobding
+	uplobdLobder := r.uplobdLobderFbctory.Crebte()
+	uplobdsgrbphql.PresubmitAssocibtedUplobds(uplobdLobder, indexes...)
 
-	// No data to load for git data (yet)
-	locationResolver := r.locationResolverFactory.Create()
+	// No dbtb to lobd for git dbtb (yet)
+	locbtionResolver := r.locbtionResolverFbctory.Crebte()
 
-	resolvers := make([]resolverstubs.PreciseIndexResolver, 0, len(indexes))
-	for _, index := range indexes {
+	resolvers := mbke([]resolverstubs.PreciseIndexResolver, 0, len(indexes))
+	for _, index := rbnge indexes {
 		index := index
-		resolver, err := r.preciseIndexResolverFactory.Create(ctx, uploadLoader, indexLoader, locationResolver, traceErrs, nil, &index)
+		resolver, err := r.preciseIndexResolverFbctory.Crebte(ctx, uplobdLobder, indexLobder, locbtionResolver, trbceErrs, nil, &index)
 		if err != nil {
 			return nil, err
 		}
 
-		resolvers = append(resolvers, resolver)
+		resolvers = bppend(resolvers, resolver)
 	}
 
 	return resolvers, nil
@@ -144,25 +144,25 @@ func (r *inferAutoIndexJobsResultResolver) InferenceOutput() string {
 //
 //
 
-type autoIndexJobDescriptionResolver struct {
-	siteAdminChecker sharedresolvers.SiteAdminChecker
+type butoIndexJobDescriptionResolver struct {
+	siteAdminChecker shbredresolvers.SiteAdminChecker
 	indexJob         config.IndexJob
-	steps            []uploadsshared.DockerStep
+	steps            []uplobdsshbred.DockerStep
 }
 
-func newDescriptionResolvers(siteAdminChecker sharedresolvers.SiteAdminChecker, indexConfiguration *config.IndexConfiguration) ([]resolverstubs.AutoIndexJobDescriptionResolver, error) {
-	var resolvers []resolverstubs.AutoIndexJobDescriptionResolver
-	for _, indexJob := range indexConfiguration.IndexJobs {
-		var steps []uploadsshared.DockerStep
-		for _, step := range indexJob.Steps {
-			steps = append(steps, uploadsshared.DockerStep{
+func newDescriptionResolvers(siteAdminChecker shbredresolvers.SiteAdminChecker, indexConfigurbtion *config.IndexConfigurbtion) ([]resolverstubs.AutoIndexJobDescriptionResolver, error) {
+	vbr resolvers []resolverstubs.AutoIndexJobDescriptionResolver
+	for _, indexJob := rbnge indexConfigurbtion.IndexJobs {
+		vbr steps []uplobdsshbred.DockerStep
+		for _, step := rbnge indexJob.Steps {
+			steps = bppend(steps, uplobdsshbred.DockerStep{
 				Root:     step.Root,
-				Image:    step.Image,
-				Commands: step.Commands,
+				Imbge:    step.Imbge,
+				Commbnds: step.Commbnds,
 			})
 		}
 
-		resolvers = append(resolvers, &autoIndexJobDescriptionResolver{
+		resolvers = bppend(resolvers, &butoIndexJobDescriptionResolver{
 			siteAdminChecker: siteAdminChecker,
 			indexJob:         indexJob,
 			steps:            steps,
@@ -172,32 +172,32 @@ func newDescriptionResolvers(siteAdminChecker sharedresolvers.SiteAdminChecker, 
 	return resolvers, nil
 }
 
-func (r *autoIndexJobDescriptionResolver) Root() string {
+func (r *butoIndexJobDescriptionResolver) Root() string {
 	return r.indexJob.Root
 }
 
-func (r *autoIndexJobDescriptionResolver) Indexer() resolverstubs.CodeIntelIndexerResolver {
-	return uploadsgraphql.NewCodeIntelIndexerResolver(r.indexJob.Indexer, r.indexJob.Indexer)
+func (r *butoIndexJobDescriptionResolver) Indexer() resolverstubs.CodeIntelIndexerResolver {
+	return uplobdsgrbphql.NewCodeIntelIndexerResolver(r.indexJob.Indexer, r.indexJob.Indexer)
 }
 
-func (r *autoIndexJobDescriptionResolver) ComparisonKey() string {
-	return comparisonKey(r.indexJob.Root, r.Indexer().Name())
+func (r *butoIndexJobDescriptionResolver) CompbrisonKey() string {
+	return compbrisonKey(r.indexJob.Root, r.Indexer().Nbme())
 }
 
-func (r *autoIndexJobDescriptionResolver) Steps() resolverstubs.IndexStepsResolver {
-	return uploadsgraphql.NewIndexStepsResolver(r.siteAdminChecker, uploadsshared.Index{
+func (r *butoIndexJobDescriptionResolver) Steps() resolverstubs.IndexStepsResolver {
+	return uplobdsgrbphql.NewIndexStepsResolver(r.siteAdminChecker, uplobdsshbred.Index{
 		DockerSteps:      r.steps,
-		LocalSteps:       r.indexJob.LocalSteps,
+		LocblSteps:       r.indexJob.LocblSteps,
 		Root:             r.indexJob.Root,
 		Indexer:          r.indexJob.Indexer,
 		IndexerArgs:      r.indexJob.IndexerArgs,
 		Outfile:          r.indexJob.Outfile,
-		RequestedEnvVars: r.indexJob.RequestedEnvVars,
+		RequestedEnvVbrs: r.indexJob.RequestedEnvVbrs,
 	})
 }
 
-func comparisonKey(root, indexer string) string {
-	hash := sha256.New()
-	_, _ = hash.Write([]byte(strings.Join([]string{root, indexer}, "\x00")))
-	return base64.URLEncoding.EncodeToString(hash.Sum(nil))
+func compbrisonKey(root, indexer string) string {
+	hbsh := shb256.New()
+	_, _ = hbsh.Write([]byte(strings.Join([]string{root, indexer}, "\x00")))
+	return bbse64.URLEncoding.EncodeToString(hbsh.Sum(nil))
 }

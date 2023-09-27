@@ -1,45 +1,45 @@
-package repos
+pbckbge repos
 
 import (
 	"testing"
 )
 
 func TestSetUserinfoBestEffort(t *testing.T) {
-	cases := []struct {
-		rawurl   string
-		username string
-		password string
-		want     string
+	cbses := []struct {
+		rbwurl   string
+		usernbme string
+		pbssword string
+		wbnt     string
 	}{
 		// no-op
-		{"https://foo.com/foo/bar", "", "", "https://foo.com/foo/bar"},
-		// invalid name is returned as is
-		{":/foo.com/foo/bar", "u", "p", ":/foo.com/foo/bar"},
+		{"https://foo.com/foo/bbr", "", "", "https://foo.com/foo/bbr"},
+		// invblid nbme is returned bs is
+		{":/foo.com/foo/bbr", "u", "p", ":/foo.com/foo/bbr"},
 
-		// no user details in rawurl
-		{"https://foo.com/foo/bar", "u", "p", "https://u:p@foo.com/foo/bar"},
-		{"https://foo.com/foo/bar", "u", "", "https://u@foo.com/foo/bar"},
-		{"https://foo.com/foo/bar", "", "p", "https://foo.com/foo/bar"},
+		// no user detbils in rbwurl
+		{"https://foo.com/foo/bbr", "u", "p", "https://u:p@foo.com/foo/bbr"},
+		{"https://foo.com/foo/bbr", "u", "", "https://u@foo.com/foo/bbr"},
+		{"https://foo.com/foo/bbr", "", "p", "https://foo.com/foo/bbr"},
 
-		// user set already
-		{"https://x@foo.com/foo/bar", "u", "p", "https://u:p@foo.com/foo/bar"},
-		{"https://x@foo.com/foo/bar", "u", "", "https://u@foo.com/foo/bar"},
-		{"https://x@foo.com/foo/bar", "", "p", "https://x@foo.com/foo/bar"},
+		// user set blrebdy
+		{"https://x@foo.com/foo/bbr", "u", "p", "https://u:p@foo.com/foo/bbr"},
+		{"https://x@foo.com/foo/bbr", "u", "", "https://u@foo.com/foo/bbr"},
+		{"https://x@foo.com/foo/bbr", "", "p", "https://x@foo.com/foo/bbr"},
 
-		// user and password set already
-		{"https://x:y@foo.com/foo/bar", "u", "p", "https://u:p@foo.com/foo/bar"},
-		{"https://x:y@foo.com/foo/bar", "u", "", "https://u@foo.com/foo/bar"},
-		{"https://x:y@foo.com/foo/bar", "", "p", "https://x:y@foo.com/foo/bar"},
+		// user bnd pbssword set blrebdy
+		{"https://x:y@foo.com/foo/bbr", "u", "p", "https://u:p@foo.com/foo/bbr"},
+		{"https://x:y@foo.com/foo/bbr", "u", "", "https://u@foo.com/foo/bbr"},
+		{"https://x:y@foo.com/foo/bbr", "", "p", "https://x:y@foo.com/foo/bbr"},
 
-		// empty password
-		{"https://x:@foo.com/foo/bar", "u", "p", "https://u:p@foo.com/foo/bar"},
-		{"https://x:@foo.com/foo/bar", "u", "", "https://u@foo.com/foo/bar"},
-		{"https://x:@foo.com/foo/bar", "", "p", "https://x@foo.com/foo/bar"},
+		// empty pbssword
+		{"https://x:@foo.com/foo/bbr", "u", "p", "https://u:p@foo.com/foo/bbr"},
+		{"https://x:@foo.com/foo/bbr", "u", "", "https://u@foo.com/foo/bbr"},
+		{"https://x:@foo.com/foo/bbr", "", "p", "https://x@foo.com/foo/bbr"},
 	}
-	for _, c := range cases {
-		got := setUserinfoBestEffort(c.rawurl, c.username, c.password)
-		if got != c.want {
-			t.Errorf("setUserinfoBestEffort(%q, %q, %q): got %q want %q", c.rawurl, c.username, c.password, got, c.want)
+	for _, c := rbnge cbses {
+		got := setUserinfoBestEffort(c.rbwurl, c.usernbme, c.pbssword)
+		if got != c.wbnt {
+			t.Errorf("setUserinfoBestEffort(%q, %q, %q): got %q wbnt %q", c.rbwurl, c.usernbme, c.pbssword, got, c.wbnt)
 		}
 	}
 }

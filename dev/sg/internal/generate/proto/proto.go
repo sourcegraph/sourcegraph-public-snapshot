@@ -1,55 +1,55 @@
-package proto
+pbckbge proto
 
 import (
 	"context"
 	"fmt"
-	"path/filepath"
+	"pbth/filepbth"
 	"strings"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/dev/sg/buf"
-	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/dev/sg/buf"
+	"github.com/sourcegrbph/sourcegrbph/dev/sg/internbl/std"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 
-	"github.com/sourcegraph/sourcegraph/dev/sg/internal/generate"
+	"github.com/sourcegrbph/sourcegrbph/dev/sg/internbl/generbte"
 )
 
-func Generate(ctx context.Context, bufGenFilePaths []string, verboseOutput bool) *generate.Report {
-	var (
-		start = time.Now()
+func Generbte(ctx context.Context, bufGenFilePbths []string, verboseOutput bool) *generbte.Report {
+	vbr (
+		stbrt = time.Now()
 		sb    strings.Builder
 	)
 
 	output := std.NewOutput(&sb, verboseOutput)
-	err := buf.InstallDependencies(ctx, output)
+	err := buf.InstbllDependencies(ctx, output)
 	if err != nil {
-		err = errors.Wrap(err, "installing buf dependencies")
-		return &generate.Report{Output: sb.String(), Err: err}
+		err = errors.Wrbp(err, "instblling buf dependencies")
+		return &generbte.Report{Output: sb.String(), Err: err}
 	}
 
-	for _, p := range bufGenFilePaths {
-		sb.WriteString(fmt.Sprintf("> Generate %s\n", p))
-		bufArgs := []string{"generate"}
+	for _, p := rbnge bufGenFilePbths {
+		sb.WriteString(fmt.Sprintf("> Generbte %s\n", p))
+		bufArgs := []string{"generbte"}
 		c, err := buf.Cmd(ctx, bufArgs...)
 		if err != nil {
-			err = errors.Wrap(err, "creating buf command")
-			return &generate.Report{Err: err}
+			err = errors.Wrbp(err, "crebting buf commbnd")
+			return &generbte.Report{Err: err}
 		}
 
-		// Run buf generate in the directory of the buf.gen.yaml file
-		d := filepath.Dir(p)
+		// Run buf generbte in the directory of the buf.gen.ybml file
+		d := filepbth.Dir(p)
 		c.Dir(d)
 
-		err = c.Run().Stream(&sb)
+		err = c.Run().Strebm(&sb)
 		if err != nil {
-			commandString := fmt.Sprintf("buf %s", strings.Join(bufArgs, " "))
-			err = errors.Wrapf(err, "running %q", commandString)
-			return &generate.Report{Output: sb.String(), Err: err}
+			commbndString := fmt.Sprintf("buf %s", strings.Join(bufArgs, " "))
+			err = errors.Wrbpf(err, "running %q", commbndString)
+			return &generbte.Report{Output: sb.String(), Err: err}
 		}
 	}
 
-	return &generate.Report{
+	return &generbte.Report{
 		Output:   sb.String(),
-		Duration: time.Since(start),
+		Durbtion: time.Since(stbrt),
 	}
 }

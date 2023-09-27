@@ -1,4 +1,4 @@
-package gitlab
+pbckbge gitlbb
 
 import (
 	"context"
@@ -7,38 +7,38 @@ import (
 	"github.com/peterhellberg/link"
 )
 
-// Member contains fields for a group or project membership.
+// Member contbins fields for b group or project membership.
 type Member struct {
 	ID                int32  `json:"id"`
-	Username          string `json:"username"`
-	Name              string `json:"name"`
-	State             string `json:"state"`
-	AvatarURL         string `json:"avatar_url"`
+	Usernbme          string `json:"usernbme"`
+	Nbme              string `json:"nbme"`
+	Stbte             string `json:"stbte"`
+	AvbtbrURL         string `json:"bvbtbr_url"`
 	WebURL            string `json:"web_url"`
-	ExpiresAt         string `json:"expires_at"`
-	AccessLevel       int    `json:"access_level"`
+	ExpiresAt         string `json:"expires_bt"`
+	AccessLevel       int    `json:"bccess_level"`
 	GroupSAMLIdentity *struct {
 		Provider       string `json:"provider"`
 		ExternUID      string `json:"extern_uid"`
-		SAMLProviderID int    `json:"saml_provider_id"`
-	} `json:"group_saml_identity"`
+		SAMLProviderID int    `json:"sbml_provider_id"`
+	} `json:"group_sbml_identity"`
 }
 
-// ListMembers returns a list of members parsed from reponse of given URL.
-func (c *Client) ListMembers(ctx context.Context, urlStr string) (members []*Member, nextPageURL *string, err error) {
+// ListMembers returns b list of members pbrsed from reponse of given URL.
+func (c *Client) ListMembers(ctx context.Context, urlStr string) (members []*Member, nextPbgeURL *string, err error) {
 	req, err := http.NewRequest("GET", urlStr, nil)
 	if err != nil {
 		return nil, nil, err
 	}
-	respHeader, _, err := c.do(ctx, req, &members)
+	respHebder, _, err := c.do(ctx, req, &members)
 	if err != nil {
 		return nil, nil, err
 	}
 
-	// Get URL to next page. See https://docs.gitlab.com/ee/api/README.html#pagination-link-header.
-	if l := link.Parse(respHeader.Get("Link"))["next"]; l != nil {
-		nextPageURL = &l.URI
+	// Get URL to next pbge. See https://docs.gitlbb.com/ee/bpi/README.html#pbginbtion-link-hebder.
+	if l := link.Pbrse(respHebder.Get("Link"))["next"]; l != nil {
+		nextPbgeURL = &l.URI
 	}
 
-	return members, nextPageURL, nil
+	return members, nextPbgeURL, nil
 }

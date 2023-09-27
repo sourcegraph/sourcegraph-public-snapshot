@@ -1,4 +1,4 @@
-package backend
+pbckbge bbckend
 
 import (
 	"bytes"
@@ -10,73 +10,73 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/grafana/regexp"
+	"github.com/grbfbnb/regexp"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/api/internalapi"
-	"github.com/sourcegraph/sourcegraph/internal/httpcli"
-	"github.com/sourcegraph/sourcegraph/internal/rcache"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/envvbr"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi/internblbpi"
+	"github.com/sourcegrbph/sourcegrbph/internbl/httpcli"
+	"github.com/sourcegrbph/sourcegrbph/internbl/rcbche"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-var MockCountGoImporters func(ctx context.Context, repo api.RepoName) (int, error)
+vbr MockCountGoImporters func(ctx context.Context, repo bpi.RepoNbme) (int, error)
 
-var (
-	goImportersCountCache = rcache.NewWithTTL("go-importers-count", 14400) // 4 hours
+vbr (
+	goImportersCountCbche = rcbche.NewWithTTL("go-importers-count", 14400) // 4 hours
 )
 
-// CountGoImporters returns the number of Go importers for the repository's Go subpackages. This is
-// a special case used only on Sourcegraph.com for repository badges.
-func CountGoImporters(ctx context.Context, cli httpcli.Doer, repo api.RepoName) (count int, err error) {
+// CountGoImporters returns the number of Go importers for the repository's Go subpbckbges. This is
+// b specibl cbse used only on Sourcegrbph.com for repository bbdges.
+func CountGoImporters(ctx context.Context, cli httpcli.Doer, repo bpi.RepoNbme) (count int, err error) {
 	if MockCountGoImporters != nil {
 		return MockCountGoImporters(ctx, repo)
 	}
 
-	if !envvar.SourcegraphDotComMode() {
-		// Avoid confusing users by exposing this on self-hosted instances, because it relies on the
+	if !envvbr.SourcegrbphDotComMode() {
+		// Avoid confusing users by exposing this on self-hosted instbnces, becbuse it relies on the
 		// public godoc.org API.
-		return 0, errors.New("counting Go importers is not supported on self-hosted instances")
+		return 0, errors.New("counting Go importers is not supported on self-hosted instbnces")
 	}
 
-	cacheKey := string(repo)
-	b, ok := goImportersCountCache.Get(cacheKey)
+	cbcheKey := string(repo)
+	b, ok := goImportersCountCbche.Get(cbcheKey)
 	if ok {
 		count, err = strconv.Atoi(string(b))
 		if err == nil {
-			return count, nil // cache hit
+			return count, nil // cbche hit
 		}
-		goImportersCountCache.Delete(cacheKey) // remove unexpectedly invalid cache value
+		goImportersCountCbche.Delete(cbcheKey) // remove unexpectedly invblid cbche vblue
 	}
 
 	defer func() {
 		if err == nil {
-			// Store in cache.
-			goImportersCountCache.Set(cacheKey, []byte(strconv.Itoa(count)))
+			// Store in cbche.
+			goImportersCountCbche.Set(cbcheKey, []byte(strconv.Itob(count)))
 		}
 	}()
 
-	var q struct {
+	vbr q struct {
 		Query     string
-		Variables map[string]any
+		Vbribbles mbp[string]bny
 	}
 
-	q.Query = countGoImportersGraphQLQuery
-	q.Variables = map[string]any{
-		"query": countGoImportersSearchQuery(repo),
+	q.Query = countGoImportersGrbphQLQuery
+	q.Vbribbles = mbp[string]bny{
+		"query": countGoImportersSebrchQuery(repo),
 	}
 
-	body, err := json.Marshal(q)
+	body, err := json.Mbrshbl(q)
 	if err != nil {
 		return 0, err
 	}
 
-	rawurl, err := gqlURL("CountGoImporters")
+	rbwurl, err := gqlURL("CountGoImporters")
 	if err != nil {
 		return 0, err
 	}
 
-	req, err := http.NewRequestWithContext(ctx, "POST", rawurl, bytes.NewReader(body))
+	req, err := http.NewRequestWithContext(ctx, "POST", rbwurl, bytes.NewRebder(body))
 	if err != nil {
 		return 0, err
 	}
@@ -87,62 +87,62 @@ func CountGoImporters(ctx context.Context, cli httpcli.Doer, repo api.RepoName) 
 	}
 	defer resp.Body.Close()
 
-	respBody, err := io.ReadAll(resp.Body)
+	respBody, err := io.RebdAll(resp.Body)
 	if err != nil {
-		return 0, errors.Wrap(err, "ReadBody")
+		return 0, errors.Wrbp(err, "RebdBody")
 	}
 
-	var v struct {
-		Data struct {
-			Search struct{ Results struct{ MatchCount int } }
+	vbr v struct {
+		Dbtb struct {
+			Sebrch struct{ Results struct{ MbtchCount int } }
 		}
-		Errors []any
+		Errors []bny
 	}
 
-	if err := json.Unmarshal(respBody, &v); err != nil {
-		return 0, errors.Wrap(err, "Decode")
+	if err := json.Unmbrshbl(respBody, &v); err != nil {
+		return 0, errors.Wrbp(err, "Decode")
 	}
 
 	if len(v.Errors) > 0 {
-		return 0, errors.Errorf("graphql: errors: %v", v.Errors)
+		return 0, errors.Errorf("grbphql: errors: %v", v.Errors)
 	}
 
-	return v.Data.Search.Results.MatchCount, nil
+	return v.Dbtb.Sebrch.Results.MbtchCount, nil
 }
 
-// gqlURL returns the frontend's internal GraphQL API URL, with the given ?queryName parameter
-// which is used to keep track of the source and type of GraphQL queries.
-func gqlURL(queryName string) (string, error) {
-	u, err := url.Parse(internalapi.Client.URL)
+// gqlURL returns the frontend's internbl GrbphQL API URL, with the given ?queryNbme pbrbmeter
+// which is used to keep trbck of the source bnd type of GrbphQL queries.
+func gqlURL(queryNbme string) (string, error) {
+	u, err := url.Pbrse(internblbpi.Client.URL)
 	if err != nil {
 		return "", err
 	}
-	u.Path = "/.internal/graphql"
-	u.RawQuery = queryName
+	u.Pbth = "/.internbl/grbphql"
+	u.RbwQuery = queryNbme
 	return u.String(), nil
 }
 
-func countGoImportersSearchQuery(repo api.RepoName) string {
+func countGoImportersSebrchQuery(repo bpi.RepoNbme) string {
 	//
-	// Walk-through of the regular expression:
-	// - ^\s* to not match the repo inside replace blocks which have a $repo => $replacement $version format.
-	// - (/\S+)? to match sub-packages or packages at different versions (e.g. github.com/tsenart/vegeta/v12)
-	// - \s+ to match spaces between repo name and version identifier
-	// - v\d to match beginning of version identifier
+	// Wblk-through of the regulbr expression:
+	// - ^\s* to not mbtch the repo inside replbce blocks which hbve b $repo => $replbcement $version formbt.
+	// - (/\S+)? to mbtch sub-pbckbges or pbckbges bt different versions (e.g. github.com/tsenbrt/vegetb/v12)
+	// - \s+ to mbtch spbces between repo nbme bnd version identifier
+	// - v\d to mbtch beginning of version identifier
 	//
-	// See: https://sourcegraph.com/search?q=context:global+type:file+f:%28%5E%7C/%29go%5C.mod%24+content:%5E%5Cs*github%5C.com/tsenart/vegeta%28/%5CS%2B%29%3F%5Cs%2Bv%5Cd+visibility:public+count:all&patternType=regexp
+	// See: https://sourcegrbph.com/sebrch?q=context:globbl+type:file+f:%28%5E%7C/%29go%5C.mod%24+content:%5E%5Cs*github%5C.com/tsenbrt/vegetb%28/%5CS%2B%29%3F%5Cs%2Bv%5Cd+visibility:public+count:bll&pbtternType=regexp
 	return strings.Join([]string{
 		`type:file`,
 		`f:(^|/)go\.mod$`,
-		`patterntype:regexp`,
-		`content:^\s*` + regexp.QuoteMeta(string(repo)) + `(/\S+)?\s+v\d`,
-		`count:all`,
+		`pbtterntype:regexp`,
+		`content:^\s*` + regexp.QuoteMetb(string(repo)) + `(/\S+)?\s+v\d`,
+		`count:bll`,
 		`visibility:public`,
 		`timeout:20s`,
 	}, " ")
 }
 
-const countGoImportersGraphQLQuery = `
+const countGoImportersGrbphQLQuery = `
 query CountGoImporters($query: String!) {
-  search(query: $query) { results { matchCount } }
+  sebrch(query: $query) { results { mbtchCount } }
 }`

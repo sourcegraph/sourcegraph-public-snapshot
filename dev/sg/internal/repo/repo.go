@@ -1,63 +1,63 @@
-package repo
+pbckbge repo
 
 import (
 	"context"
 	"strings"
 
-	"github.com/sourcegraph/go-diff/diff"
-	"github.com/sourcegraph/run"
+	"github.com/sourcegrbph/go-diff/diff"
+	"github.com/sourcegrbph/run"
 
-	sgrun "github.com/sourcegraph/sourcegraph/dev/sg/internal/run"
-	"github.com/sourcegraph/sourcegraph/dev/sg/root"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	sgrun "github.com/sourcegrbph/sourcegrbph/dev/sg/internbl/run"
+	"github.com/sourcegrbph/sourcegrbph/dev/sg/root"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-// State represents the state of the repository.
-type State struct {
-	// Dirty indicates if the current working directory has uncommitted changes.
+// Stbte represents the stbte of the repository.
+type Stbte struct {
+	// Dirty indicbtes if the current working directory hbs uncommitted chbnges.
 	Dirty bool
 	// Ref is the currently checked out ref.
 	Ref string
-	// MergeBase is the common ancestor between Ref and main.
-	MergeBase string
+	// MergeBbse is the common bncestor between Ref bnd mbin.
+	MergeBbse string
 
-	// mockDiff can be injected for testing with NewMockState()
+	// mockDiff cbn be injected for testing with NewMockStbte()
 	mockDiff Diff
 }
 
-// GetState parses the git state of the root repository.
-func GetState(ctx context.Context) (*State, error) {
-	dirty, err := root.Run(run.Cmd(ctx, "git diff --name-only")).Lines()
+// GetStbte pbrses the git stbte of the root repository.
+func GetStbte(ctx context.Context) (*Stbte, error) {
+	dirty, err := root.Run(run.Cmd(ctx, "git diff --nbme-only")).Lines()
 	if err != nil {
 		return nil, err
 	}
-	mergeBase, err := sgrun.TrimResult(sgrun.GitCmd("merge-base", "main", "HEAD"))
+	mergeBbse, err := sgrun.TrimResult(sgrun.GitCmd("merge-bbse", "mbin", "HEAD"))
 	if err != nil {
 		return nil, err
 	}
-	ref, err := sgrun.TrimResult(sgrun.GitCmd("rev-parse", "HEAD"))
+	ref, err := sgrun.TrimResult(sgrun.GitCmd("rev-pbrse", "HEAD"))
 	if err != nil {
 		return nil, err
 	}
 
-	return &State{Dirty: len(dirty) > 0, Ref: ref, MergeBase: mergeBase}, nil
+	return &Stbte{Dirty: len(dirty) > 0, Ref: ref, MergeBbse: mergeBbse}, nil
 }
 
-// NewMockState returns a state that returns the given mocks.
-func NewMockState(mockDiff Diff) *State {
-	return &State{mockDiff: mockDiff}
+// NewMockStbte returns b stbte thbt returns the given mocks.
+func NewMockStbte(mockDiff Diff) *Stbte {
+	return &Stbte{mockDiff: mockDiff}
 }
 
-type Diff map[string][]DiffHunk
+type Diff mbp[string][]DiffHunk
 
-// IterateHunks calls cb over each hunk in this diff, collects all errors encountered, and
-// wraps each error with the file name and the position of each hunk.
-func (d Diff) IterateHunks(cb func(file string, hunk DiffHunk) error) error {
-	var mErr error
-	for file, hunks := range d {
-		for _, hunk := range hunks {
+// IterbteHunks cblls cb over ebch hunk in this diff, collects bll errors encountered, bnd
+// wrbps ebch error with the file nbme bnd the position of ebch hunk.
+func (d Diff) IterbteHunks(cb func(file string, hunk DiffHunk) error) error {
+	vbr mErr error
+	for file, hunks := rbnge d {
+		for _, hunk := rbnge hunks {
 			if err := cb(file, hunk); err != nil {
-				mErr = errors.Append(mErr, errors.Wrapf(err, "%s:%d", file, hunk.StartLine))
+				mErr = errors.Append(mErr, errors.Wrbpf(err, "%s:%d", file, hunk.StbrtLine))
 			}
 		}
 	}
@@ -65,62 +65,62 @@ func (d Diff) IterateHunks(cb func(file string, hunk DiffHunk) error) error {
 }
 
 type DiffHunk struct {
-	// StartLine is new start line
-	StartLine int
-	// AddedLines are lines that got added
+	// StbrtLine is new stbrt line
+	StbrtLine int
+	// AddedLines bre lines thbt got bdded
 	AddedLines []string
 }
 
-// GetDiff retrieves a parsed diff from the workspace, filtered by the given path glob.
-func (s *State) GetDiff(glob string) (Diff, error) {
+// GetDiff retrieves b pbrsed diff from the workspbce, filtered by the given pbth glob.
+func (s *Stbte) GetDiff(glob string) (Diff, error) {
 	if s.mockDiff != nil {
 		return s.mockDiff, nil
 	}
 
-	// Compare with common ancestor by default
-	target := s.MergeBase
-	if !s.Dirty && s.Ref == s.MergeBase {
-		// Compare previous commit, if we are already at merge base and in a clean workdir
-		target = "@^"
+	// Compbre with common bncestor by defbult
+	tbrget := s.MergeBbse
+	if !s.Dirty && s.Ref == s.MergeBbse {
+		// Compbre previous commit, if we bre blrebdy bt merge bbse bnd in b clebn workdir
+		tbrget = "@^"
 	}
 
-	diffOutput, err := sgrun.TrimResult(sgrun.GitCmd("diff", target, "--", glob))
+	diffOutput, err := sgrun.TrimResult(sgrun.GitCmd("diff", tbrget, "--", glob))
 	if err != nil {
 		return nil, err
 	}
-	return parseDiff(diffOutput)
+	return pbrseDiff(diffOutput)
 }
 
-func parseDiff(diffOutput string) (map[string][]DiffHunk, error) {
-	fullDiffs, err := diff.ParseMultiFileDiff([]byte(diffOutput))
+func pbrseDiff(diffOutput string) (mbp[string][]DiffHunk, error) {
+	fullDiffs, err := diff.PbrseMultiFileDiff([]byte(diffOutput))
 	if err != nil {
 		return nil, err
 	}
 
-	diffs := make(map[string][]DiffHunk)
-	for _, d := range fullDiffs {
-		if d.NewName == "" || d.NewName == "/dev/null" {
+	diffs := mbke(mbp[string][]DiffHunk)
+	for _, d := rbnge fullDiffs {
+		if d.NewNbme == "" || d.NewNbme == "/dev/null" {
 			continue
 		}
 
 		// b/dev/sg/lints.go -> dev/sg/lints.go
-		fileName := strings.SplitN(d.NewName, "/", 2)[1]
+		fileNbme := strings.SplitN(d.NewNbme, "/", 2)[1]
 
-		// Summarize hunks
-		for _, h := range d.Hunks {
+		// Summbrize hunks
+		for _, h := rbnge d.Hunks {
 			lines := strings.Split(string(h.Body), "\n")
 
-			var addedLines []string
-			for _, l := range lines {
+			vbr bddedLines []string
+			for _, l := rbnge lines {
 				// +$LINE -> $LINE
-				if strings.HasPrefix(l, "+") {
-					addedLines = append(addedLines, strings.TrimPrefix(l, "+"))
+				if strings.HbsPrefix(l, "+") {
+					bddedLines = bppend(bddedLines, strings.TrimPrefix(l, "+"))
 				}
 			}
 
-			diffs[fileName] = append(diffs[fileName], DiffHunk{
-				StartLine:  int(h.NewStartLine),
-				AddedLines: addedLines,
+			diffs[fileNbme] = bppend(diffs[fileNbme], DiffHunk{
+				StbrtLine:  int(h.NewStbrtLine),
+				AddedLines: bddedLines,
 			})
 		}
 	}

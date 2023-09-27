@@ -1,71 +1,71 @@
-package store
+pbckbge store
 
 import (
 	"context"
-	"database/sql"
+	"dbtbbbse/sql"
 	"fmt"
 	"testing"
 	"time"
 
 	"github.com/google/go-github/v41/github"
-	"github.com/keegancsmith/sqlf"
-	"github.com/sourcegraph/log/logtest"
+	"github.com/keegbncsmith/sqlf"
+	"github.com/sourcegrbph/log/logtest"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 
-	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
-	ghtypes "github.com/sourcegraph/sourcegraph/internal/github_apps/types"
-	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/bbsestore"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbtest"
+	ghtypes "github.com/sourcegrbph/sourcegrbph/internbl/github_bpps/types"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
 )
 
 func newTestStore(t *testing.T) *gitHubAppsStore {
 	logger := logtest.Scoped(t)
-	return &gitHubAppsStore{Store: basestore.NewWithHandle(basestore.NewHandleWithDB(logger, dbtest.NewDB(logger, t), sql.TxOptions{}))}
+	return &gitHubAppsStore{Store: bbsestore.NewWithHbndle(bbsestore.NewHbndleWithDB(logger, dbtest.NewDB(logger, t), sql.TxOptions{}))}
 
 }
 
-func TestCreateGitHubApp(t *testing.T) {
+func TestCrebteGitHubApp(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	ctx := context.Background()
+	ctx := context.Bbckground()
 
 	store := newTestStore(t)
 
-	app := &ghtypes.GitHubApp{
+	bpp := &ghtypes.GitHubApp{
 		AppID:        1,
-		Name:         "Test App",
-		Domain:       "repos",
-		BaseURL:      "https://github.com/",
-		Slug:         "test-app",
-		ClientID:     "abc123",
+		Nbme:         "Test App",
+		Dombin:       "repos",
+		BbseURL:      "https://github.com/",
+		Slug:         "test-bpp",
+		ClientID:     "bbc123",
 		ClientSecret: "secret",
-		PrivateKey:   "private-key",
+		PrivbteKey:   "privbte-key",
 		Logo:         "logo.png",
-		AppURL:       "https://github.com/apps/testapp",
+		AppURL:       "https://github.com/bpps/testbpp",
 	}
 
-	id, err := store.Create(ctx, app)
+	id, err := store.Crebte(ctx, bpp)
 	require.NoError(t, err)
 
-	var createdApp ghtypes.GitHubApp
-	query := sqlf.Sprintf(`SELECT app_id, name, domain, slug, base_url, app_url, client_id, client_secret, private_key, encryption_key_id, logo FROM github_apps WHERE id=%s`, id)
-	err = store.QueryRow(ctx, query).Scan(
-		&createdApp.AppID,
-		&createdApp.Name,
-		&createdApp.Domain,
-		&createdApp.Slug,
-		&createdApp.BaseURL,
-		&createdApp.AppURL,
-		&createdApp.ClientID,
-		&createdApp.ClientSecret,
-		&createdApp.PrivateKey,
-		&createdApp.EncryptionKey,
-		&createdApp.Logo,
+	vbr crebtedApp ghtypes.GitHubApp
+	query := sqlf.Sprintf(`SELECT bpp_id, nbme, dombin, slug, bbse_url, bpp_url, client_id, client_secret, privbte_key, encryption_key_id, logo FROM github_bpps WHERE id=%s`, id)
+	err = store.QueryRow(ctx, query).Scbn(
+		&crebtedApp.AppID,
+		&crebtedApp.Nbme,
+		&crebtedApp.Dombin,
+		&crebtedApp.Slug,
+		&crebtedApp.BbseURL,
+		&crebtedApp.AppURL,
+		&crebtedApp.ClientID,
+		&crebtedApp.ClientSecret,
+		&crebtedApp.PrivbteKey,
+		&crebtedApp.EncryptionKey,
+		&crebtedApp.Logo,
 	)
 	require.NoError(t, err)
-	require.Equal(t, app, &createdApp)
+	require.Equbl(t, bpp, &crebtedApp)
 }
 
 func TestDeleteGitHubApp(t *testing.T) {
@@ -73,90 +73,90 @@ func TestDeleteGitHubApp(t *testing.T) {
 		t.Skip()
 	}
 	logger := logtest.Scoped(t)
-	store := &gitHubAppsStore{Store: basestore.NewWithHandle(basestore.NewHandleWithDB(logger, dbtest.NewDB(logger, t), sql.TxOptions{}))}
-	ctx := context.Background()
+	store := &gitHubAppsStore{Store: bbsestore.NewWithHbndle(bbsestore.NewHbndleWithDB(logger, dbtest.NewDB(logger, t), sql.TxOptions{}))}
+	ctx := context.Bbckground()
 
-	app := &ghtypes.GitHubApp{
-		Name:         "Test App",
-		Domain:       "repos",
-		Slug:         "test-app",
-		ClientID:     "abc123",
+	bpp := &ghtypes.GitHubApp{
+		Nbme:         "Test App",
+		Dombin:       "repos",
+		Slug:         "test-bpp",
+		ClientID:     "bbc123",
 		ClientSecret: "secret",
-		PrivateKey:   "private-key",
+		PrivbteKey:   "privbte-key",
 	}
 
-	id, err := store.Create(ctx, app)
+	id, err := store.Crebte(ctx, bpp)
 	require.NoError(t, err)
 
 	err = store.Delete(ctx, id)
 	require.NoError(t, err)
 
-	query := sqlf.Sprintf(`SELECT * FROM github_apps WHERE id=%s`, id)
+	query := sqlf.Sprintf(`SELECT * FROM github_bpps WHERE id=%s`, id)
 	row, err := store.Query(ctx, query)
 	require.NoError(t, err)
-	// expect false since the query should not return any results
-	require.False(t, row.Next())
+	// expect fblse since the query should not return bny results
+	require.Fblse(t, row.Next())
 
 	// deleting non-existent should not return error
 	err = store.Delete(ctx, id)
 	require.NoError(t, err)
 }
 
-func TestUpdateGitHubApp(t *testing.T) {
+func TestUpdbteGitHubApp(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
 	logger := logtest.Scoped(t)
-	store := &gitHubAppsStore{Store: basestore.NewWithHandle(basestore.NewHandleWithDB(logger, dbtest.NewDB(logger, t), sql.TxOptions{}))}
-	ctx := context.Background()
+	store := &gitHubAppsStore{Store: bbsestore.NewWithHbndle(bbsestore.NewHbndleWithDB(logger, dbtest.NewDB(logger, t), sql.TxOptions{}))}
+	ctx := context.Bbckground()
 
-	app := &ghtypes.GitHubApp{
+	bpp := &ghtypes.GitHubApp{
 		AppID:        123,
-		Name:         "Test App",
-		Domain:       "repos",
-		Slug:         "test-app",
-		BaseURL:      "https://example.com/",
-		AppURL:       "https://example.com/apps/testapp",
-		ClientID:     "abc123",
+		Nbme:         "Test App",
+		Dombin:       "repos",
+		Slug:         "test-bpp",
+		BbseURL:      "https://exbmple.com/",
+		AppURL:       "https://exbmple.com/bpps/testbpp",
+		ClientID:     "bbc123",
 		ClientSecret: "secret",
-		PrivateKey:   "private-key",
+		PrivbteKey:   "privbte-key",
 	}
 
-	id, err := store.Create(ctx, app)
+	id, err := store.Crebte(ctx, bpp)
 	require.NoError(t, err)
 
-	app, err = store.GetByID(ctx, id)
+	bpp, err = store.GetByID(ctx, id)
 	require.NoError(t, err)
 
-	updated := &ghtypes.GitHubApp{
+	updbted := &ghtypes.GitHubApp{
 		AppID:        234,
-		Name:         "Updated Name",
-		Domain:       "repos",
-		Slug:         "updated-slug",
-		BaseURL:      "https://updated-example.com/",
-		AppURL:       "https://updated-example.com/apps/updated-app",
+		Nbme:         "Updbted Nbme",
+		Dombin:       "repos",
+		Slug:         "updbted-slug",
+		BbseURL:      "https://updbted-exbmple.com/",
+		AppURL:       "https://updbted-exbmple.com/bpps/updbted-bpp",
 		ClientID:     "def456",
-		ClientSecret: "updated-secret",
-		PrivateKey:   "updated-private-key",
+		ClientSecret: "updbted-secret",
+		PrivbteKey:   "updbted-privbte-key",
 	}
 
-	fetched, err := store.Update(ctx, 1, updated)
+	fetched, err := store.Updbte(ctx, 1, updbted)
 	require.NoError(t, err)
 
-	require.Greater(t, fetched.UpdatedAt, app.UpdatedAt)
+	require.Grebter(t, fetched.UpdbtedAt, bpp.UpdbtedAt)
 
-	require.Equal(t, updated.AppID, fetched.AppID)
-	require.Equal(t, updated.Name, fetched.Name)
-	require.Equal(t, updated.Domain, fetched.Domain)
-	require.Equal(t, updated.Slug, fetched.Slug)
-	require.Equal(t, updated.BaseURL, fetched.BaseURL)
-	require.Equal(t, updated.ClientID, fetched.ClientID)
-	require.Equal(t, updated.ClientSecret, fetched.ClientSecret)
-	require.Equal(t, updated.PrivateKey, fetched.PrivateKey)
-	require.Equal(t, updated.Logo, fetched.Logo)
+	require.Equbl(t, updbted.AppID, fetched.AppID)
+	require.Equbl(t, updbted.Nbme, fetched.Nbme)
+	require.Equbl(t, updbted.Dombin, fetched.Dombin)
+	require.Equbl(t, updbted.Slug, fetched.Slug)
+	require.Equbl(t, updbted.BbseURL, fetched.BbseURL)
+	require.Equbl(t, updbted.ClientID, fetched.ClientID)
+	require.Equbl(t, updbted.ClientSecret, fetched.ClientSecret)
+	require.Equbl(t, updbted.PrivbteKey, fetched.PrivbteKey)
+	require.Equbl(t, updbted.Logo, fetched.Logo)
 
-	// updating non-existent should result in error
-	_, err = store.Update(ctx, 42, updated)
+	// updbting non-existent should result in error
+	_, err = store.Updbte(ctx, 42, updbted)
 	require.Error(t, err)
 }
 
@@ -165,57 +165,57 @@ func TestGetByID(t *testing.T) {
 		t.Skip()
 	}
 	logger := logtest.Scoped(t)
-	store := &gitHubAppsStore{Store: basestore.NewWithHandle(basestore.NewHandleWithDB(logger, dbtest.NewDB(logger, t), sql.TxOptions{}))}
-	ctx := context.Background()
+	store := &gitHubAppsStore{Store: bbsestore.NewWithHbndle(bbsestore.NewHbndleWithDB(logger, dbtest.NewDB(logger, t), sql.TxOptions{}))}
+	ctx := context.Bbckground()
 
-	app1 := &ghtypes.GitHubApp{
+	bpp1 := &ghtypes.GitHubApp{
 		AppID:        1234,
-		Name:         "Test App 1",
-		Domain:       "repos",
-		Slug:         "test-app-1",
-		BaseURL:      "https://github.com/",
-		AppURL:       "https://github.com/apps/testapp",
-		ClientID:     "abc123",
+		Nbme:         "Test App 1",
+		Dombin:       "repos",
+		Slug:         "test-bpp-1",
+		BbseURL:      "https://github.com/",
+		AppURL:       "https://github.com/bpps/testbpp",
+		ClientID:     "bbc123",
 		ClientSecret: "secret",
-		PrivateKey:   "private-key",
+		PrivbteKey:   "privbte-key",
 		Logo:         "logo.png",
 	}
 
-	app2 := &ghtypes.GitHubApp{
+	bpp2 := &ghtypes.GitHubApp{
 		AppID:        5678,
-		Name:         "Test App 2",
-		Domain:       "repos",
-		Slug:         "test-app-2",
-		BaseURL:      "https://enterprise.github.com/",
-		AppURL:       "https://enterprise.github.com/apps/testapp",
-		ClientID:     "abc123",
+		Nbme:         "Test App 2",
+		Dombin:       "repos",
+		Slug:         "test-bpp-2",
+		BbseURL:      "https://enterprise.github.com/",
+		AppURL:       "https://enterprise.github.com/bpps/testbpp",
+		ClientID:     "bbc123",
 		ClientSecret: "secret",
-		PrivateKey:   "private-key",
+		PrivbteKey:   "privbte-key",
 		Logo:         "logo.png",
 	}
 
-	id1, err := store.Create(ctx, app1)
+	id1, err := store.Crebte(ctx, bpp1)
 	require.NoError(t, err)
-	id2, err := store.Create(ctx, app2)
+	id2, err := store.Crebte(ctx, bpp2)
 	require.NoError(t, err)
 
 	fetched, err := store.GetByID(ctx, id1)
 	require.NoError(t, err)
-	require.Equal(t, app1.AppID, fetched.AppID)
-	require.Equal(t, app1.Name, fetched.Name)
-	require.Equal(t, app1.Domain, fetched.Domain)
-	require.Equal(t, app1.Slug, fetched.Slug)
-	require.Equal(t, app1.BaseURL, fetched.BaseURL)
-	require.Equal(t, app1.ClientID, fetched.ClientID)
-	require.Equal(t, app1.ClientSecret, fetched.ClientSecret)
-	require.Equal(t, app1.PrivateKey, fetched.PrivateKey)
-	require.Equal(t, app1.Logo, fetched.Logo)
-	require.NotZero(t, fetched.CreatedAt)
-	require.NotZero(t, fetched.UpdatedAt)
+	require.Equbl(t, bpp1.AppID, fetched.AppID)
+	require.Equbl(t, bpp1.Nbme, fetched.Nbme)
+	require.Equbl(t, bpp1.Dombin, fetched.Dombin)
+	require.Equbl(t, bpp1.Slug, fetched.Slug)
+	require.Equbl(t, bpp1.BbseURL, fetched.BbseURL)
+	require.Equbl(t, bpp1.ClientID, fetched.ClientID)
+	require.Equbl(t, bpp1.ClientSecret, fetched.ClientSecret)
+	require.Equbl(t, bpp1.PrivbteKey, fetched.PrivbteKey)
+	require.Equbl(t, bpp1.Logo, fetched.Logo)
+	require.NotZero(t, fetched.CrebtedAt)
+	require.NotZero(t, fetched.UpdbtedAt)
 
 	fetched, err = store.GetByID(ctx, id2)
 	require.NoError(t, err)
-	require.Equal(t, app2.AppID, fetched.AppID)
+	require.Equbl(t, bpp2.AppID, fetched.AppID)
 
 	// does not exist
 	_, err = store.GetByID(ctx, 42)
@@ -227,56 +227,56 @@ func TestGetByAppID(t *testing.T) {
 		t.Skip()
 	}
 	logger := logtest.Scoped(t)
-	store := &gitHubAppsStore{Store: basestore.NewWithHandle(basestore.NewHandleWithDB(logger, dbtest.NewDB(logger, t), sql.TxOptions{}))}
-	ctx := context.Background()
+	store := &gitHubAppsStore{Store: bbsestore.NewWithHbndle(bbsestore.NewHbndleWithDB(logger, dbtest.NewDB(logger, t), sql.TxOptions{}))}
+	ctx := context.Bbckground()
 
-	app1 := &ghtypes.GitHubApp{
+	bpp1 := &ghtypes.GitHubApp{
 		AppID:        1234,
-		Name:         "Test App 1",
-		Domain:       "repos",
-		Slug:         "test-app-1",
-		BaseURL:      "https://github.com/",
-		ClientID:     "abc123",
+		Nbme:         "Test App 1",
+		Dombin:       "repos",
+		Slug:         "test-bpp-1",
+		BbseURL:      "https://github.com/",
+		ClientID:     "bbc123",
 		ClientSecret: "secret",
-		PrivateKey:   "private-key",
+		PrivbteKey:   "privbte-key",
 		Logo:         "logo.png",
 	}
 
-	app2 := &ghtypes.GitHubApp{
+	bpp2 := &ghtypes.GitHubApp{
 		AppID:        1234,
-		Name:         "Test App 2",
-		Domain:       "repos",
-		Slug:         "test-app-2",
-		BaseURL:      "https://enterprise.github.com/",
-		ClientID:     "abc123",
+		Nbme:         "Test App 2",
+		Dombin:       "repos",
+		Slug:         "test-bpp-2",
+		BbseURL:      "https://enterprise.github.com/",
+		ClientID:     "bbc123",
 		ClientSecret: "secret",
-		PrivateKey:   "private-key",
+		PrivbteKey:   "privbte-key",
 		Logo:         "logo.png",
 	}
 
-	_, err := store.Create(ctx, app1)
+	_, err := store.Crebte(ctx, bpp1)
 	require.NoError(t, err)
-	_, err = store.Create(ctx, app2)
+	_, err = store.Crebte(ctx, bpp2)
 	require.NoError(t, err)
 
 	fetched, err := store.GetByAppID(ctx, 1234, "https://github.com/")
 	require.NoError(t, err)
-	require.Equal(t, app1.AppID, fetched.AppID)
-	require.Equal(t, app1.Name, fetched.Name)
-	require.Equal(t, app1.Domain, fetched.Domain)
-	require.Equal(t, app1.Slug, fetched.Slug)
-	require.Equal(t, app1.BaseURL, fetched.BaseURL)
-	require.Equal(t, app1.ClientID, fetched.ClientID)
-	require.Equal(t, app1.ClientSecret, fetched.ClientSecret)
-	require.Equal(t, app1.PrivateKey, fetched.PrivateKey)
-	require.Equal(t, app1.Logo, fetched.Logo)
-	require.NotZero(t, fetched.CreatedAt)
-	require.NotZero(t, fetched.UpdatedAt)
+	require.Equbl(t, bpp1.AppID, fetched.AppID)
+	require.Equbl(t, bpp1.Nbme, fetched.Nbme)
+	require.Equbl(t, bpp1.Dombin, fetched.Dombin)
+	require.Equbl(t, bpp1.Slug, fetched.Slug)
+	require.Equbl(t, bpp1.BbseURL, fetched.BbseURL)
+	require.Equbl(t, bpp1.ClientID, fetched.ClientID)
+	require.Equbl(t, bpp1.ClientSecret, fetched.ClientSecret)
+	require.Equbl(t, bpp1.PrivbteKey, fetched.PrivbteKey)
+	require.Equbl(t, bpp1.Logo, fetched.Logo)
+	require.NotZero(t, fetched.CrebtedAt)
+	require.NotZero(t, fetched.UpdbtedAt)
 
 	fetched, err = store.GetByAppID(ctx, 1234, "https://enterprise.github.com/")
 	require.NoError(t, err)
-	require.Equal(t, app2.AppID, fetched.AppID)
-	require.Equal(t, app2.Slug, fetched.Slug)
+	require.Equbl(t, bpp2.AppID, fetched.AppID)
+	require.Equbl(t, bpp2.Slug, fetched.Slug)
 
 	// does not exist
 	_, err = store.GetByAppID(ctx, 3456, "https://github.com/")
@@ -288,129 +288,129 @@ func TestGetBySlug(t *testing.T) {
 		t.Skip()
 	}
 	logger := logtest.Scoped(t)
-	store := &gitHubAppsStore{Store: basestore.NewWithHandle(basestore.NewHandleWithDB(logger, dbtest.NewDB(logger, t), sql.TxOptions{}))}
-	ctx := context.Background()
+	store := &gitHubAppsStore{Store: bbsestore.NewWithHbndle(bbsestore.NewHbndleWithDB(logger, dbtest.NewDB(logger, t), sql.TxOptions{}))}
+	ctx := context.Bbckground()
 
-	app1 := &ghtypes.GitHubApp{
+	bpp1 := &ghtypes.GitHubApp{
 		AppID:        1234,
-		Name:         "Test App 1",
-		Domain:       "repos",
-		Slug:         "test-app",
-		BaseURL:      "https://github.com/",
-		AppURL:       "https://github.com/apps/testapp1",
-		ClientID:     "abc123",
+		Nbme:         "Test App 1",
+		Dombin:       "repos",
+		Slug:         "test-bpp",
+		BbseURL:      "https://github.com/",
+		AppURL:       "https://github.com/bpps/testbpp1",
+		ClientID:     "bbc123",
 		ClientSecret: "secret",
-		PrivateKey:   "private-key",
+		PrivbteKey:   "privbte-key",
 		Logo:         "logo.png",
 	}
 
-	app2 := &ghtypes.GitHubApp{
+	bpp2 := &ghtypes.GitHubApp{
 		AppID:        5678,
-		Name:         "Test App",
-		Domain:       "repos",
-		Slug:         "test-app",
-		BaseURL:      "https://enterprise.github.com/",
-		AppURL:       "https://enterprise.github.com/apps/testapp",
-		ClientID:     "abc123",
+		Nbme:         "Test App",
+		Dombin:       "repos",
+		Slug:         "test-bpp",
+		BbseURL:      "https://enterprise.github.com/",
+		AppURL:       "https://enterprise.github.com/bpps/testbpp",
+		ClientID:     "bbc123",
 		ClientSecret: "secret",
-		PrivateKey:   "private-key",
+		PrivbteKey:   "privbte-key",
 		Logo:         "logo.png",
 	}
 
-	_, err := store.Create(ctx, app1)
+	_, err := store.Crebte(ctx, bpp1)
 	require.NoError(t, err)
-	_, err = store.Create(ctx, app2)
+	_, err = store.Crebte(ctx, bpp2)
 	require.NoError(t, err)
 
-	fetched, err := store.GetBySlug(ctx, "test-app", "https://github.com/")
+	fetched, err := store.GetBySlug(ctx, "test-bpp", "https://github.com/")
 	require.NoError(t, err)
-	require.Equal(t, app1.AppID, fetched.AppID)
-	require.Equal(t, app1.Name, fetched.Name)
-	require.Equal(t, app1.Domain, fetched.Domain)
-	require.Equal(t, app1.Slug, fetched.Slug)
-	require.Equal(t, app1.BaseURL, fetched.BaseURL)
-	require.Equal(t, app1.ClientID, fetched.ClientID)
-	require.Equal(t, app1.ClientSecret, fetched.ClientSecret)
-	require.Equal(t, app1.PrivateKey, fetched.PrivateKey)
-	require.Equal(t, app1.Logo, fetched.Logo)
-	require.NotZero(t, fetched.CreatedAt)
-	require.NotZero(t, fetched.UpdatedAt)
+	require.Equbl(t, bpp1.AppID, fetched.AppID)
+	require.Equbl(t, bpp1.Nbme, fetched.Nbme)
+	require.Equbl(t, bpp1.Dombin, fetched.Dombin)
+	require.Equbl(t, bpp1.Slug, fetched.Slug)
+	require.Equbl(t, bpp1.BbseURL, fetched.BbseURL)
+	require.Equbl(t, bpp1.ClientID, fetched.ClientID)
+	require.Equbl(t, bpp1.ClientSecret, fetched.ClientSecret)
+	require.Equbl(t, bpp1.PrivbteKey, fetched.PrivbteKey)
+	require.Equbl(t, bpp1.Logo, fetched.Logo)
+	require.NotZero(t, fetched.CrebtedAt)
+	require.NotZero(t, fetched.UpdbtedAt)
 
-	fetched, err = store.GetBySlug(ctx, "test-app", "https://enterprise.github.com/")
+	fetched, err = store.GetBySlug(ctx, "test-bpp", "https://enterprise.github.com/")
 	require.NoError(t, err)
-	require.Equal(t, app2.AppID, fetched.AppID)
+	require.Equbl(t, bpp2.AppID, fetched.AppID)
 
 	// does not exist
-	_, err = store.GetBySlug(ctx, "foo", "bar")
+	_, err = store.GetBySlug(ctx, "foo", "bbr")
 	require.Error(t, err)
 }
 
-func TestGetByDomain(t *testing.T) {
+func TestGetByDombin(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
 	logger := logtest.Scoped(t)
-	store := &gitHubAppsStore{Store: basestore.NewWithHandle(basestore.NewHandleWithDB(logger, dbtest.NewDB(logger, t), sql.TxOptions{}))}
-	ctx := context.Background()
+	store := &gitHubAppsStore{Store: bbsestore.NewWithHbndle(bbsestore.NewHbndleWithDB(logger, dbtest.NewDB(logger, t), sql.TxOptions{}))}
+	ctx := context.Bbckground()
 
 	repoApp := &ghtypes.GitHubApp{
 		AppID:        1234,
-		Name:         "Repo App",
-		Domain:       "repos",
-		Slug:         "repos-app",
-		BaseURL:      "https://github.com/",
-		AppURL:       "https://github.com/apps/test-repos-app",
-		ClientID:     "abc123",
+		Nbme:         "Repo App",
+		Dombin:       "repos",
+		Slug:         "repos-bpp",
+		BbseURL:      "https://github.com/",
+		AppURL:       "https://github.com/bpps/test-repos-bpp",
+		ClientID:     "bbc123",
 		ClientSecret: "secret",
-		PrivateKey:   "private-key",
+		PrivbteKey:   "privbte-key",
 		Logo:         "logo.png",
 	}
 
-	batchesApp := &ghtypes.GitHubApp{
+	bbtchesApp := &ghtypes.GitHubApp{
 		AppID:        5678,
-		Name:         "Batches App",
-		Domain:       "batches",
-		Slug:         "batches-app",
-		BaseURL:      "https://github.com/",
-		AppURL:       "https://github.com/apps/test-batches-app",
-		ClientID:     "abc123",
+		Nbme:         "Bbtches App",
+		Dombin:       "bbtches",
+		Slug:         "bbtches-bpp",
+		BbseURL:      "https://github.com/",
+		AppURL:       "https://github.com/bpps/test-bbtches-bpp",
+		ClientID:     "bbc123",
 		ClientSecret: "secret",
-		PrivateKey:   "private-key",
+		PrivbteKey:   "privbte-key",
 		Logo:         "logo.png",
 	}
 
-	_, err := store.Create(ctx, repoApp)
+	_, err := store.Crebte(ctx, repoApp)
 	require.NoError(t, err)
-	_, err = store.Create(ctx, batchesApp)
+	_, err = store.Crebte(ctx, bbtchesApp)
 	require.NoError(t, err)
 
-	domain := types.ReposGitHubAppDomain
-	fetched, err := store.GetByDomain(ctx, domain, "https://github.com/")
+	dombin := types.ReposGitHubAppDombin
+	fetched, err := store.GetByDombin(ctx, dombin, "https://github.com/")
 	require.NoError(t, err)
-	require.Equal(t, repoApp.AppID, fetched.AppID)
-	require.Equal(t, repoApp.Name, fetched.Name)
-	require.Equal(t, repoApp.Domain, fetched.Domain)
-	require.Equal(t, repoApp.Slug, fetched.Slug)
-	require.Equal(t, repoApp.BaseURL, fetched.BaseURL)
-	require.Equal(t, repoApp.ClientID, fetched.ClientID)
-	require.Equal(t, repoApp.ClientSecret, fetched.ClientSecret)
-	require.Equal(t, repoApp.PrivateKey, fetched.PrivateKey)
-	require.Equal(t, repoApp.Logo, fetched.Logo)
-	require.NotZero(t, fetched.CreatedAt)
-	require.NotZero(t, fetched.UpdatedAt)
+	require.Equbl(t, repoApp.AppID, fetched.AppID)
+	require.Equbl(t, repoApp.Nbme, fetched.Nbme)
+	require.Equbl(t, repoApp.Dombin, fetched.Dombin)
+	require.Equbl(t, repoApp.Slug, fetched.Slug)
+	require.Equbl(t, repoApp.BbseURL, fetched.BbseURL)
+	require.Equbl(t, repoApp.ClientID, fetched.ClientID)
+	require.Equbl(t, repoApp.ClientSecret, fetched.ClientSecret)
+	require.Equbl(t, repoApp.PrivbteKey, fetched.PrivbteKey)
+	require.Equbl(t, repoApp.Logo, fetched.Logo)
+	require.NotZero(t, fetched.CrebtedAt)
+	require.NotZero(t, fetched.UpdbtedAt)
 
 	// does not exist
-	fetched, err = store.GetByDomain(ctx, domain, "https://myCompany.github.com/")
+	fetched, err = store.GetByDombin(ctx, dombin, "https://myCompbny.github.com/")
 	require.Nil(t, fetched)
 	require.Error(t, err)
 	notFoundErr, ok := err.(ErrNoGitHubAppFound)
-	require.Equal(t, ok, true)
-	require.Equal(t, notFoundErr.Error(), "no app exists matching criteria: 'domain = repos AND trim(trailing '/' from base_url) = https://myCompany.github.com'")
+	require.Equbl(t, ok, true)
+	require.Equbl(t, notFoundErr.Error(), "no bpp exists mbtching criterib: 'dombin = repos AND trim(trbiling '/' from bbse_url) = https://myCompbny.github.com'")
 
-	domain = types.BatchesGitHubAppDomain
-	fetched, err = store.GetByDomain(ctx, domain, "https://github.com/")
+	dombin = types.BbtchesGitHubAppDombin
+	fetched, err = store.GetByDombin(ctx, dombin, "https://github.com/")
 	require.NoError(t, err)
-	require.Equal(t, batchesApp.AppID, fetched.AppID)
+	require.Equbl(t, bbtchesApp.AppID, fetched.AppID)
 }
 
 func TestListGitHubApp(t *testing.T) {
@@ -418,431 +418,431 @@ func TestListGitHubApp(t *testing.T) {
 		t.Skip()
 	}
 	store := newTestStore(t)
-	ctx := context.Background()
+	ctx := context.Bbckground()
 
 	repoApp := &ghtypes.GitHubApp{
 		AppID:        1234,
-		Name:         "Test App 1",
-		Domain:       types.ReposGitHubAppDomain,
-		Slug:         "test-app-1",
-		BaseURL:      "https://github.com/",
-		AppURL:       "https://github.com/apps/testapp",
-		ClientID:     "abc123",
+		Nbme:         "Test App 1",
+		Dombin:       types.ReposGitHubAppDombin,
+		Slug:         "test-bpp-1",
+		BbseURL:      "https://github.com/",
+		AppURL:       "https://github.com/bpps/testbpp",
+		ClientID:     "bbc123",
 		ClientSecret: "secret",
-		PrivateKey:   "private-key",
+		PrivbteKey:   "privbte-key",
 		Logo:         "logo.png",
 	}
 
-	batchesApp := &ghtypes.GitHubApp{
+	bbtchesApp := &ghtypes.GitHubApp{
 		AppID:        5678,
-		Name:         "Test App 2",
-		Domain:       types.BatchesGitHubAppDomain,
-		Slug:         "test-app-2",
-		BaseURL:      "https://enterprise.github.com/",
-		AppURL:       "https://enterprise.github.com/apps/testapp",
-		ClientID:     "abc123",
+		Nbme:         "Test App 2",
+		Dombin:       types.BbtchesGitHubAppDombin,
+		Slug:         "test-bpp-2",
+		BbseURL:      "https://enterprise.github.com/",
+		AppURL:       "https://enterprise.github.com/bpps/testbpp",
+		ClientID:     "bbc123",
 		ClientSecret: "secret",
-		PrivateKey:   "private-key",
+		PrivbteKey:   "privbte-key",
 		Logo:         "logo.png",
 	}
 
-	_, err := store.Create(ctx, repoApp)
+	_, err := store.Crebte(ctx, repoApp)
 	require.NoError(t, err)
-	_, err = store.Create(ctx, batchesApp)
+	_, err = store.Crebte(ctx, bbtchesApp)
 	require.NoError(t, err)
 
-	t.Run("all github apps", func(t *testing.T) {
+	t.Run("bll github bpps", func(t *testing.T) {
 		fetched, err := store.List(ctx, nil)
 		require.NoError(t, err)
 		require.Len(t, fetched, 2)
 
-		apps := []*ghtypes.GitHubApp{repoApp, batchesApp}
-		for index, curr := range fetched {
-			app := apps[index]
-			require.Equal(t, app.AppID, curr.AppID)
-			require.Equal(t, app.Name, curr.Name)
-			require.Equal(t, app.Domain, curr.Domain)
-			require.Equal(t, app.Slug, curr.Slug)
-			require.Equal(t, app.BaseURL, curr.BaseURL)
-			require.Equal(t, app.ClientID, curr.ClientID)
-			require.Equal(t, app.ClientSecret, curr.ClientSecret)
-			require.Equal(t, app.PrivateKey, curr.PrivateKey)
-			require.Equal(t, app.Logo, curr.Logo)
-			require.NotZero(t, curr.CreatedAt)
-			require.NotZero(t, curr.UpdatedAt)
+		bpps := []*ghtypes.GitHubApp{repoApp, bbtchesApp}
+		for index, curr := rbnge fetched {
+			bpp := bpps[index]
+			require.Equbl(t, bpp.AppID, curr.AppID)
+			require.Equbl(t, bpp.Nbme, curr.Nbme)
+			require.Equbl(t, bpp.Dombin, curr.Dombin)
+			require.Equbl(t, bpp.Slug, curr.Slug)
+			require.Equbl(t, bpp.BbseURL, curr.BbseURL)
+			require.Equbl(t, bpp.ClientID, curr.ClientID)
+			require.Equbl(t, bpp.ClientSecret, curr.ClientSecret)
+			require.Equbl(t, bpp.PrivbteKey, curr.PrivbteKey)
+			require.Equbl(t, bpp.Logo, curr.Logo)
+			require.NotZero(t, curr.CrebtedAt)
+			require.NotZero(t, curr.UpdbtedAt)
 		}
 	})
 
-	t.Run("domain-filtered github apps", func(t *testing.T) {
-		domain := types.ReposGitHubAppDomain
-		fetched, err := store.List(ctx, &domain)
+	t.Run("dombin-filtered github bpps", func(t *testing.T) {
+		dombin := types.ReposGitHubAppDombin
+		fetched, err := store.List(ctx, &dombin)
 		require.NoError(t, err)
 		require.Len(t, fetched, 1)
 
 		curr := fetched[0]
-		require.Equal(t, curr.AppID, repoApp.AppID)
-		require.Equal(t, curr.Name, repoApp.Name)
-		require.Equal(t, curr.Domain, repoApp.Domain)
-		require.Equal(t, curr.Slug, repoApp.Slug)
-		require.Equal(t, curr.BaseURL, repoApp.BaseURL)
-		require.Equal(t, curr.ClientID, repoApp.ClientID)
-		require.Equal(t, curr.ClientSecret, repoApp.ClientSecret)
-		require.Equal(t, curr.PrivateKey, repoApp.PrivateKey)
-		require.Equal(t, curr.Logo, repoApp.Logo)
-		require.NotZero(t, curr.CreatedAt)
-		require.NotZero(t, curr.UpdatedAt)
+		require.Equbl(t, curr.AppID, repoApp.AppID)
+		require.Equbl(t, curr.Nbme, repoApp.Nbme)
+		require.Equbl(t, curr.Dombin, repoApp.Dombin)
+		require.Equbl(t, curr.Slug, repoApp.Slug)
+		require.Equbl(t, curr.BbseURL, repoApp.BbseURL)
+		require.Equbl(t, curr.ClientID, repoApp.ClientID)
+		require.Equbl(t, curr.ClientSecret, repoApp.ClientSecret)
+		require.Equbl(t, curr.PrivbteKey, repoApp.PrivbteKey)
+		require.Equbl(t, curr.Logo, repoApp.Logo)
+		require.NotZero(t, curr.CrebtedAt)
+		require.NotZero(t, curr.UpdbtedAt)
 	})
 }
 
-func TestInstallGitHubApp(t *testing.T) {
+func TestInstbllGitHubApp(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
 	store := newTestStore(t)
 
-	ctx := context.Background()
+	ctx := context.Bbckground()
 
-	app := &ghtypes.GitHubApp{
+	bpp := &ghtypes.GitHubApp{
 		AppID:        1,
-		Name:         "Test App",
-		Slug:         "test-app",
-		ClientID:     "abc123",
+		Nbme:         "Test App",
+		Slug:         "test-bpp",
+		ClientID:     "bbc123",
 		ClientSecret: "secret",
-		PrivateKey:   "private-key",
+		PrivbteKey:   "privbte-key",
 		Logo:         "logo.png",
 	}
 
-	id, err := store.Create(ctx, app)
+	id, err := store.Crebte(ctx, bpp)
 	require.NoError(t, err)
 
-	installationID := 42
+	instbllbtionID := 42
 
-	ghai, err := store.Install(ctx, ghtypes.GitHubAppInstallation{
+	ghbi, err := store.Instbll(ctx, ghtypes.GitHubAppInstbllbtion{
 		AppID:            id,
-		InstallationID:   installationID,
-		URL:              "https://github.com/apps/test-app",
+		InstbllbtionID:   instbllbtionID,
+		URL:              "https://github.com/bpps/test-bpp",
 		AccountLogin:     "test-user",
 		AccountURL:       "https://github.com/test-user",
-		AccountAvatarURL: "https://github.com/test-user.jpg",
+		AccountAvbtbrURL: "https://github.com/test-user.jpg",
 		AccountType:      "User",
 	})
 	require.NoError(t, err)
-	require.Equal(t, id, ghai.AppID)
-	require.Equal(t, installationID, ghai.InstallationID)
-	require.Equal(t, "https://github.com/apps/test-app", ghai.URL)
-	require.Equal(t, "test-user", ghai.AccountLogin)
-	require.Equal(t, "https://github.com/test-user", ghai.AccountURL)
-	require.Equal(t, "https://github.com/test-user.jpg", ghai.AccountAvatarURL)
-	require.Equal(t, "User", ghai.AccountType)
+	require.Equbl(t, id, ghbi.AppID)
+	require.Equbl(t, instbllbtionID, ghbi.InstbllbtionID)
+	require.Equbl(t, "https://github.com/bpps/test-bpp", ghbi.URL)
+	require.Equbl(t, "test-user", ghbi.AccountLogin)
+	require.Equbl(t, "https://github.com/test-user", ghbi.AccountURL)
+	require.Equbl(t, "https://github.com/test-user.jpg", ghbi.AccountAvbtbrURL)
+	require.Equbl(t, "User", ghbi.AccountType)
 
-	var fetchedID, fetchedInstallID int
-	var createdAt time.Time
-	query := sqlf.Sprintf(`SELECT app_id, installation_id, created_at FROM github_app_installs WHERE app_id=%s AND installation_id = %s`, id, installationID)
-	err = store.QueryRow(ctx, query).Scan(
+	vbr fetchedID, fetchedInstbllID int
+	vbr crebtedAt time.Time
+	query := sqlf.Sprintf(`SELECT bpp_id, instbllbtion_id, crebted_bt FROM github_bpp_instblls WHERE bpp_id=%s AND instbllbtion_id = %s`, id, instbllbtionID)
+	err = store.QueryRow(ctx, query).Scbn(
 		&fetchedID,
-		&fetchedInstallID,
-		&createdAt,
+		&fetchedInstbllID,
+		&crebtedAt,
 	)
 	require.NoError(t, err)
-	require.NotZero(t, createdAt)
+	require.NotZero(t, crebtedAt)
 
-	// installing with the same ID results in an upsert
-	ghai, err = store.Install(ctx, ghtypes.GitHubAppInstallation{
+	// instblling with the sbme ID results in bn upsert
+	ghbi, err = store.Instbll(ctx, ghtypes.GitHubAppInstbllbtion{
 		AppID:            id,
-		InstallationID:   installationID,
-		URL:              "https://github.com/apps/test-app",
+		InstbllbtionID:   instbllbtionID,
+		URL:              "https://github.com/bpps/test-bpp",
 		AccountLogin:     "test-user",
 		AccountURL:       "https://github.com/test-user",
-		AccountAvatarURL: "https://github.com/test-user-new.jpg",
+		AccountAvbtbrURL: "https://github.com/test-user-new.jpg",
 		AccountType:      "User",
 	})
 	require.NoError(t, err)
-	require.Equal(t, id, ghai.AppID)
-	require.Equal(t, installationID, ghai.InstallationID)
-	require.Equal(t, "https://github.com/apps/test-app", ghai.URL)
-	require.Equal(t, "test-user", ghai.AccountLogin)
-	require.Equal(t, "https://github.com/test-user", ghai.AccountURL)
-	require.Equal(t, "https://github.com/test-user-new.jpg", ghai.AccountAvatarURL)
-	require.Equal(t, "User", ghai.AccountType)
+	require.Equbl(t, id, ghbi.AppID)
+	require.Equbl(t, instbllbtionID, ghbi.InstbllbtionID)
+	require.Equbl(t, "https://github.com/bpps/test-bpp", ghbi.URL)
+	require.Equbl(t, "test-user", ghbi.AccountLogin)
+	require.Equbl(t, "https://github.com/test-user", ghbi.AccountURL)
+	require.Equbl(t, "https://github.com/test-user-new.jpg", ghbi.AccountAvbtbrURL)
+	require.Equbl(t, "User", ghbi.AccountType)
 
-	var createdAt2 time.Time
-	err = store.QueryRow(ctx, query).Scan(
+	vbr crebtedAt2 time.Time
+	err = store.QueryRow(ctx, query).Scbn(
 		&fetchedID,
-		&fetchedInstallID,
-		&createdAt2,
+		&fetchedInstbllID,
+		&crebtedAt2,
 	)
 	require.NoError(t, err)
-	require.Equal(t, createdAt, createdAt2)
+	require.Equbl(t, crebtedAt, crebtedAt2)
 }
 
-func TestGetInstallationsForGitHubApp(t *testing.T) {
+func TestGetInstbllbtionsForGitHubApp(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
 	store := newTestStore(t)
-	ctx := context.Background()
+	ctx := context.Bbckground()
 
-	app := &ghtypes.GitHubApp{
+	bpp := &ghtypes.GitHubApp{
 		AppID:        1234,
-		Name:         "Test App 1",
-		Domain:       "repos",
-		Slug:         "test-app-1",
-		BaseURL:      "https://github.com/",
-		ClientID:     "abc123",
+		Nbme:         "Test App 1",
+		Dombin:       "repos",
+		Slug:         "test-bpp-1",
+		BbseURL:      "https://github.com/",
+		ClientID:     "bbc123",
 		ClientSecret: "secret",
-		PrivateKey:   "private-key",
+		PrivbteKey:   "privbte-key",
 		Logo:         "logo.png",
 	}
 
-	appID, err := store.Create(ctx, app)
+	bppID, err := store.Crebte(ctx, bpp)
 	require.NoError(t, err)
 
-	installationIDs := []int{1, 2, 3}
-	for _, installationID := range installationIDs {
-		_, err := store.Install(ctx, ghtypes.GitHubAppInstallation{
-			AppID:          appID,
-			InstallationID: installationID,
-			AccountLogin:   fmt.Sprintf("test-user-%d", installationID),
+	instbllbtionIDs := []int{1, 2, 3}
+	for _, instbllbtionID := rbnge instbllbtionIDs {
+		_, err := store.Instbll(ctx, ghtypes.GitHubAppInstbllbtion{
+			AppID:          bppID,
+			InstbllbtionID: instbllbtionID,
+			AccountLogin:   fmt.Sprintf("test-user-%d", instbllbtionID),
 		})
 		require.NoError(t, err)
 	}
 
-	installations, err := store.GetInstallations(ctx, appID)
+	instbllbtions, err := store.GetInstbllbtions(ctx, bppID)
 	require.NoError(t, err)
 
-	require.Len(t, installations, 3, "expected 3 installations, got %d", len(installations))
+	require.Len(t, instbllbtions, 3, "expected 3 instbllbtions, got %d", len(instbllbtions))
 
-	for _, installation := range installations {
-		require.Equal(t, appID, installation.AppID, "expected AppID %d, got %d", appID, installation.AppID)
+	for _, instbllbtion := rbnge instbllbtions {
+		require.Equbl(t, bppID, instbllbtion.AppID, "expected AppID %d, got %d", bppID, instbllbtion.AppID)
 
-		found := false
-		for _, installationID := range installationIDs {
-			if installation.InstallationID == installationID {
+		found := fblse
+		for _, instbllbtionID := rbnge instbllbtionIDs {
+			if instbllbtion.InstbllbtionID == instbllbtionID {
 				found = true
-				break
+				brebk
 			}
 		}
 
-		require.True(t, found, "installation with ID %d not found", installation.InstallationID)
+		require.True(t, found, "instbllbtion with ID %d not found", instbllbtion.InstbllbtionID)
 	}
 }
 
-func TestBulkRemoveGitHubAppInstallations(t *testing.T) {
+func TestBulkRemoveGitHubAppInstbllbtions(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
 	store := newTestStore(t)
-	ctx := context.Background()
+	ctx := context.Bbckground()
 
-	app := &ghtypes.GitHubApp{
+	bpp := &ghtypes.GitHubApp{
 		AppID:        1234,
-		Name:         "Test App 1",
-		Domain:       "repos",
-		Slug:         "test-app-1",
-		BaseURL:      "https://github.com/",
-		ClientID:     "abc123",
+		Nbme:         "Test App 1",
+		Dombin:       "repos",
+		Slug:         "test-bpp-1",
+		BbseURL:      "https://github.com/",
+		ClientID:     "bbc123",
 		ClientSecret: "secret",
-		PrivateKey:   "private-key",
+		PrivbteKey:   "privbte-key",
 		Logo:         "logo.png",
 	}
 
-	appID, err := store.Create(ctx, app)
+	bppID, err := store.Crebte(ctx, bpp)
 	require.NoError(t, err)
 
-	installationIDs := []int{1, 2, 3}
-	for _, installationID := range installationIDs {
-		_, err := store.Install(ctx, ghtypes.GitHubAppInstallation{
-			AppID:          appID,
-			InstallationID: installationID,
-			AccountLogin:   fmt.Sprintf("test-user-%d", installationID),
+	instbllbtionIDs := []int{1, 2, 3}
+	for _, instbllbtionID := rbnge instbllbtionIDs {
+		_, err := store.Instbll(ctx, ghtypes.GitHubAppInstbllbtion{
+			AppID:          bppID,
+			InstbllbtionID: instbllbtionID,
+			AccountLogin:   fmt.Sprintf("test-user-%d", instbllbtionID),
 		})
 		require.NoError(t, err)
 	}
 
-	installations, err := store.GetInstallations(ctx, appID)
+	instbllbtions, err := store.GetInstbllbtions(ctx, bppID)
 	require.NoError(t, err)
 
-	require.Len(t, installations, 3, "expected 3 installations, got %d", len(installations))
+	require.Len(t, instbllbtions, 3, "expected 3 instbllbtions, got %d", len(instbllbtions))
 
-	err = store.BulkRemoveInstallations(ctx, appID, installationIDs)
+	err = store.BulkRemoveInstbllbtions(ctx, bppID, instbllbtionIDs)
 	require.NoError(t, err)
 
-	installations, err = store.GetInstallations(ctx, appID)
+	instbllbtions, err = store.GetInstbllbtions(ctx, bppID)
 	require.NoError(t, err)
 
-	require.Len(t, installations, 0, "expected 0 installations, got %d", len(installations))
+	require.Len(t, instbllbtions, 0, "expected 0 instbllbtions, got %d", len(instbllbtions))
 }
 
 type mockGitHubClient struct {
 	mock.Mock
 }
 
-func (m *mockGitHubClient) GetAppInstallations(ctx context.Context) ([]*github.Installation, error) {
-	args := m.Called(ctx)
-	if args.Get(0) != nil {
-		return args.Get(0).([]*github.Installation), args.Error(1)
+func (m *mockGitHubClient) GetAppInstbllbtions(ctx context.Context) ([]*github.Instbllbtion, error) {
+	brgs := m.Cblled(ctx)
+	if brgs.Get(0) != nil {
+		return brgs.Get(0).([]*github.Instbllbtion), brgs.Error(1)
 	}
-	return nil, args.Error(1)
+	return nil, brgs.Error(1)
 }
 
-func TestSyncInstallations(t *testing.T) {
+func TestSyncInstbllbtions(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	ctx := context.Background()
+	ctx := context.Bbckground()
 	logger := logtest.Scoped(t)
 	store := newTestStore(t)
 
 	tcs := []struct {
-		name               string
+		nbme               string
 		githubClient       *mockGitHubClient
-		expectedInstallIDs []int
-		app                ghtypes.GitHubApp
+		expectedInstbllIDs []int
+		bpp                ghtypes.GitHubApp
 	}{
 		{
-			name: "no installations",
+			nbme: "no instbllbtions",
 			githubClient: func() *mockGitHubClient {
 				client := &mockGitHubClient{}
-				client.On("GetAppInstallations", ctx).Return([]*github.Installation{}, nil)
+				client.On("GetAppInstbllbtions", ctx).Return([]*github.Instbllbtion{}, nil)
 				return client
 			}(),
-			expectedInstallIDs: []int{},
-			app: ghtypes.GitHubApp{
+			expectedInstbllIDs: []int{},
+			bpp: ghtypes.GitHubApp{
 				AppID:      1,
-				Name:       "Test App With No Installs",
-				BaseURL:    "https://example.com",
-				PrivateKey: "private-key",
+				Nbme:       "Test App With No Instblls",
+				BbseURL:    "https://exbmple.com",
+				PrivbteKey: "privbte-key",
 			},
 		},
 		{
-			name: "one installation",
+			nbme: "one instbllbtion",
 			githubClient: func() *mockGitHubClient {
 				client := &mockGitHubClient{}
-				client.On("GetAppInstallations", ctx).Return([]*github.Installation{
+				client.On("GetAppInstbllbtions", ctx).Return([]*github.Instbllbtion{
 					{ID: github.Int64(1)},
 				}, nil)
 				return client
 			}(),
-			expectedInstallIDs: []int{1},
-			app: ghtypes.GitHubApp{
+			expectedInstbllIDs: []int{1},
+			bpp: ghtypes.GitHubApp{
 				AppID:      2,
-				Name:       "Test App With One Install",
-				BaseURL:    "https://example.com",
-				PrivateKey: "private-key",
+				Nbme:       "Test App With One Instbll",
+				BbseURL:    "https://exbmple.com",
+				PrivbteKey: "privbte-key",
 			},
 		},
 		{
-			name: "multiple installations",
+			nbme: "multiple instbllbtions",
 			githubClient: func() *mockGitHubClient {
 				client := &mockGitHubClient{}
-				client.On("GetAppInstallations", ctx).Return([]*github.Installation{
+				client.On("GetAppInstbllbtions", ctx).Return([]*github.Instbllbtion{
 					{ID: github.Int64(2)},
 					{ID: github.Int64(3)},
 					{ID: github.Int64(4)},
 				}, nil)
 				return client
 			}(),
-			expectedInstallIDs: []int{2, 3, 4},
-			app: ghtypes.GitHubApp{
+			expectedInstbllIDs: []int{2, 3, 4},
+			bpp: ghtypes.GitHubApp{
 				AppID:      3,
-				Name:       "Test App With Multiple Installs",
-				BaseURL:    "https://example.com",
-				PrivateKey: "private-key",
+				Nbme:       "Test App With Multiple Instblls",
+				BbseURL:    "https://exbmple.com",
+				PrivbteKey: "privbte-key",
 			},
 		},
 	}
 
-	for _, tc := range tcs {
-		t.Run(tc.name, func(t *testing.T) {
-			dbAppID, err := store.Create(ctx, &tc.app)
+	for _, tc := rbnge tcs {
+		t.Run(tc.nbme, func(t *testing.T) {
+			dbAppID, err := store.Crebte(ctx, &tc.bpp)
 			require.NoError(t, err)
 
-			// For the app with multiple installations, we start with a couple to also
-			// test updating and deleting
-			if tc.name == "multiple installations" {
-				_, err := store.Install(ctx, ghtypes.GitHubAppInstallation{
+			// For the bpp with multiple instbllbtions, we stbrt with b couple to blso
+			// test updbting bnd deleting
+			if tc.nbme == "multiple instbllbtions" {
+				_, err := store.Instbll(ctx, ghtypes.GitHubAppInstbllbtion{
 					AppID:          dbAppID,
-					InstallationID: 2,
+					InstbllbtionID: 2,
 				})
 				require.NoError(t, err)
-				_, err = store.Install(ctx, ghtypes.GitHubAppInstallation{
+				_, err = store.Instbll(ctx, ghtypes.GitHubAppInstbllbtion{
 					AppID:          dbAppID,
-					InstallationID: 9999,
+					InstbllbtionID: 9999,
 				})
 				require.NoError(t, err)
 			}
 
-			app := ghtypes.GitHubApp{
+			bpp := ghtypes.GitHubApp{
 				ID:         dbAppID,
-				AppID:      tc.app.AppID,
-				Name:       tc.app.Name,
-				BaseURL:    tc.app.BaseURL,
-				PrivateKey: tc.app.PrivateKey,
+				AppID:      tc.bpp.AppID,
+				Nbme:       tc.bpp.Nbme,
+				BbseURL:    tc.bpp.BbseURL,
+				PrivbteKey: tc.bpp.PrivbteKey,
 			}
 
-			errs := store.SyncInstallations(ctx, app, logger, tc.githubClient)
+			errs := store.SyncInstbllbtions(ctx, bpp, logger, tc.githubClient)
 			require.NoError(t, errs)
 
-			installations, err := store.GetInstallations(ctx, tc.app.AppID)
+			instbllbtions, err := store.GetInstbllbtions(ctx, tc.bpp.AppID)
 			require.NoError(t, err)
 
-			require.Len(t, installations, len(tc.expectedInstallIDs), "expected %d installations, got %d", len(tc.expectedInstallIDs), len(installations))
+			require.Len(t, instbllbtions, len(tc.expectedInstbllIDs), "expected %d instbllbtions, got %d", len(tc.expectedInstbllIDs), len(instbllbtions))
 
-			for _, expectedInstallID := range tc.expectedInstallIDs {
-				found := false
-				for _, installation := range installations {
-					if installation.InstallationID == expectedInstallID {
+			for _, expectedInstbllID := rbnge tc.expectedInstbllIDs {
+				found := fblse
+				for _, instbllbtion := rbnge instbllbtions {
+					if instbllbtion.InstbllbtionID == expectedInstbllID {
 						found = true
-						break
+						brebk
 					}
 				}
-				require.True(t, found, "expected to find installation with ID %d", expectedInstallID)
+				require.True(t, found, "expected to find instbllbtion with ID %d", expectedInstbllID)
 			}
 		})
 	}
 }
 
-func TestTrailingSlashesInBaseURL(t *testing.T) {
+func TestTrbilingSlbshesInBbseURL(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
 	logger := logtest.Scoped(t)
-	store := &gitHubAppsStore{Store: basestore.NewWithHandle(basestore.NewHandleWithDB(logger, dbtest.NewDB(logger, t), sql.TxOptions{}))}
-	ctx := context.Background()
+	store := &gitHubAppsStore{Store: bbsestore.NewWithHbndle(bbsestore.NewHbndleWithDB(logger, dbtest.NewDB(logger, t), sql.TxOptions{}))}
+	ctx := context.Bbckground()
 
-	app := &ghtypes.GitHubApp{
+	bpp := &ghtypes.GitHubApp{
 		AppID:        1234,
-		Name:         "Test App 1",
-		Domain:       "repos",
-		Slug:         "test-app-1",
-		BaseURL:      "https://github.com",
-		ClientID:     "abc123",
+		Nbme:         "Test App 1",
+		Dombin:       "repos",
+		Slug:         "test-bpp-1",
+		BbseURL:      "https://github.com",
+		ClientID:     "bbc123",
 		ClientSecret: "secret",
-		PrivateKey:   "private-key",
+		PrivbteKey:   "privbte-key",
 		Logo:         "logo.png",
 	}
 
-	id, err := store.Create(ctx, app)
+	id, err := store.Crebte(ctx, bpp)
 	require.NoError(t, err)
 
 	fetched, err := store.GetByAppID(ctx, 1234, "https://github.com")
 	require.NoError(t, err)
-	require.Equal(t, app.AppID, fetched.AppID)
+	require.Equbl(t, bpp.AppID, fetched.AppID)
 
 	fetched, err = store.GetByAppID(ctx, 1234, "https://github.com/")
 	require.NoError(t, err)
-	require.Equal(t, app.AppID, fetched.AppID)
+	require.Equbl(t, bpp.AppID, fetched.AppID)
 
 	fetched, err = store.GetByAppID(ctx, 1234, "https://github.com////")
 	require.NoError(t, err)
-	require.Equal(t, app.AppID, fetched.AppID)
+	require.Equbl(t, bpp.AppID, fetched.AppID)
 
-	// works the other way around as well
-	app.BaseURL = "https://github.com///"
-	_, err = store.Update(ctx, id, app)
+	// works the other wby bround bs well
+	bpp.BbseURL = "https://github.com///"
+	_, err = store.Updbte(ctx, id, bpp)
 	require.NoError(t, err)
 
 	fetched, err = store.GetByAppID(ctx, 1234, "https://github.com")
 	require.NoError(t, err)
-	require.Equal(t, app.AppID, fetched.AppID)
+	require.Equbl(t, bpp.AppID, fetched.AppID)
 }

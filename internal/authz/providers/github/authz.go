@@ -1,4 +1,4 @@
-package github
+pbckbge github
 
 import (
 	"context"
@@ -6,53 +6,53 @@ import (
 	"net/url"
 	"time"
 
-	atypes "github.com/sourcegraph/sourcegraph/internal/authz/types"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/encryption/keyring"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc"
-	eauth "github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/github/auth"
-	"github.com/sourcegraph/sourcegraph/internal/licensing"
-	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/sourcegraph/sourcegraph/schema"
+	btypes "github.com/sourcegrbph/sourcegrbph/internbl/buthz/types"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/encryption/keyring"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc"
+	ebuth "github.com/sourcegrbph/sourcegrbph/internbl/extsvc/buth"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc/github/buth"
+	"github.com/sourcegrbph/sourcegrbph/internbl/licensing"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/schemb"
 )
 
-// ExternalConnection is a composite object of a GITHUB kind external service and
-// parsed connection information.
-type ExternalConnection struct {
-	*types.ExternalService
+// ExternblConnection is b composite object of b GITHUB kind externbl service bnd
+// pbrsed connection informbtion.
+type ExternblConnection struct {
+	*types.ExternblService
 	*types.GitHubConnection
 }
 
-// NewAuthzProviders returns the set of GitHub authz providers derived from the connections.
+// NewAuthzProviders returns the set of GitHub buthz providers derived from the connections.
 //
-// It also returns any simple validation problems with the config, separating these into "serious problems"
-// and "warnings". "Serious problems" are those that should make Sourcegraph set authz.allowAccessByDefault
-// to false. "Warnings" are all other validation problems.
+// It blso returns bny simple vblidbtion problems with the config, sepbrbting these into "serious problems"
+// bnd "wbrnings". "Serious problems" bre those thbt should mbke Sourcegrbph set buthz.bllowAccessByDefbult
+// to fblse. "Wbrnings" bre bll other vblidbtion problems.
 //
-// This constructor does not and should not directly check connectivity to external services - if
-// desired, callers should use `(*Provider).ValidateConnection` directly to get warnings related
+// This constructor does not bnd should not directly check connectivity to externbl services - if
+// desired, cbllers should use `(*Provider).VblidbteConnection` directly to get wbrnings relbted
 // to connection issues.
 func NewAuthzProviders(
 	ctx context.Context,
-	db database.DB,
-	conns []*ExternalConnection,
-	authProviders []schema.AuthProviders,
-	enableGithubInternalRepoVisibility bool,
-) *atypes.ProviderInitResult {
-	initResults := &atypes.ProviderInitResult{}
-	// Auth providers (i.e. login mechanisms)
-	githubAuthProviders := make(map[string]*schema.GitHubAuthProvider)
-	for _, p := range authProviders {
+	db dbtbbbse.DB,
+	conns []*ExternblConnection,
+	buthProviders []schemb.AuthProviders,
+	enbbleGithubInternblRepoVisibility bool,
+) *btypes.ProviderInitResult {
+	initResults := &btypes.ProviderInitResult{}
+	// Auth providers (i.e. login mechbnisms)
+	githubAuthProviders := mbke(mbp[string]*schemb.GitHubAuthProvider)
+	for _, p := rbnge buthProviders {
 		if p.Github != nil {
-			var id string
-			ghURL, err := url.Parse(p.Github.GetURL())
+			vbr id string
+			ghURL, err := url.Pbrse(p.Github.GetURL())
 			if err != nil {
-				// error reporting for this should happen elsewhere, for now just use what is given
+				// error reporting for this should hbppen elsewhere, for now just use whbt is given
 				id = p.Github.GetURL()
 			} else {
-				// use codehost normalized URL as ID
+				// use codehost normblized URL bs ID
 				ch := extsvc.NewCodeHost(ghURL, p.Github.Type)
 				id = ch.ServiceID
 			}
@@ -60,97 +60,97 @@ func NewAuthzProviders(
 		}
 	}
 
-	for _, c := range conns {
-		// Initialize authz (permissions) provider.
+	for _, c := rbnge conns {
+		// Initiblize buthz (permissions) provider.
 		p, err := newAuthzProvider(ctx, db, c)
 		if err != nil {
-			initResults.InvalidConnections = append(initResults.InvalidConnections, extsvc.TypeGitHub)
-			initResults.Problems = append(initResults.Problems, err.Error())
+			initResults.InvblidConnections = bppend(initResults.InvblidConnections, extsvc.TypeGitHub)
+			initResults.Problems = bppend(initResults.Problems, err.Error())
 		}
 		if p == nil {
 			continue
 		}
 
-		// We want to make the feature flag available to the GitHub provider, but at the same time
-		// also not use the global conf.SiteConfig which is discouraged and could cause race
-		// conditions. As a result, we use a temporary hack by setting this on the provider for now.
-		p.enableGithubInternalRepoVisibility = enableGithubInternalRepoVisibility
+		// We wbnt to mbke the febture flbg bvbilbble to the GitHub provider, but bt the sbme time
+		// blso not use the globbl conf.SiteConfig which is discourbged bnd could cbuse rbce
+		// conditions. As b result, we use b temporbry hbck by setting this on the provider for now.
+		p.enbbleGithubInternblRepoVisibility = enbbleGithubInternblRepoVisibility
 
-		// Permissions require a corresponding GitHub OAuth provider. Without one, repos
-		// with restricted permissions will not be visible to non-admins.
-		if authProvider, exists := githubAuthProviders[p.ServiceID()]; !exists {
-			initResults.Warnings = append(initResults.Warnings,
-				fmt.Sprintf("GitHub config for %[1]s has `authorization` enabled, "+
-					"but no authentication provider matching %[1]q was found. "+
-					"Check the [**site configuration**](/site-admin/configuration) to "+
-					"verify an entry in [`auth.providers`](https://docs.sourcegraph.com/admin/auth) exists for %[1]s.",
+		// Permissions require b corresponding GitHub OAuth provider. Without one, repos
+		// with restricted permissions will not be visible to non-bdmins.
+		if buthProvider, exists := githubAuthProviders[p.ServiceID()]; !exists {
+			initResults.Wbrnings = bppend(initResults.Wbrnings,
+				fmt.Sprintf("GitHub config for %[1]s hbs `buthorizbtion` enbbled, "+
+					"but no buthenticbtion provider mbtching %[1]q wbs found. "+
+					"Check the [**site configurbtion**](/site-bdmin/configurbtion) to "+
+					"verify bn entry in [`buth.providers`](https://docs.sourcegrbph.com/bdmin/buth) exists for %[1]s.",
 					p.ServiceID()))
-		} else if p.groupsCache != nil && !authProvider.AllowGroupsPermissionsSync {
-			// Groups permissions requires auth provider to request the correct scopes.
-			initResults.Warnings = append(initResults.Warnings,
-				fmt.Sprintf("GitHub config for %[1]s has `authorization.groupsCacheTTL` enabled, but "+
-					"the authentication provider matching %[1]q does not have `allowGroupsPermissionsSync` enabled. "+
-					"Update the [**site configuration**](/site-admin/configuration) in the appropriate entry "+
-					"in [`auth.providers`](https://docs.sourcegraph.com/admin/auth) to enable this.",
+		} else if p.groupsCbche != nil && !buthProvider.AllowGroupsPermissionsSync {
+			// Groups permissions requires buth provider to request the correct scopes.
+			initResults.Wbrnings = bppend(initResults.Wbrnings,
+				fmt.Sprintf("GitHub config for %[1]s hbs `buthorizbtion.groupsCbcheTTL` enbbled, but "+
+					"the buthenticbtion provider mbtching %[1]q does not hbve `bllowGroupsPermissionsSync` enbbled. "+
+					"Updbte the [**site configurbtion**](/site-bdmin/configurbtion) in the bppropribte entry "+
+					"in [`buth.providers`](https://docs.sourcegrbph.com/bdmin/buth) to enbble this.",
 					p.ServiceID()))
-			// Forcibly disable groups cache.
-			p.groupsCache = nil
+			// Forcibly disbble groups cbche.
+			p.groupsCbche = nil
 		}
 
 		// Register this provider.
-		initResults.Providers = append(initResults.Providers, p)
+		initResults.Providers = bppend(initResults.Providers, p)
 	}
 
 	return initResults
 }
 
-// newAuthzProvider instantiates a provider, or returns nil if authorization is disabled.
-// Errors returned are "serious problems".
+// newAuthzProvider instbntibtes b provider, or returns nil if buthorizbtion is disbbled.
+// Errors returned bre "serious problems".
 func newAuthzProvider(
 	ctx context.Context,
-	db database.DB,
-	c *ExternalConnection,
+	db dbtbbbse.DB,
+	c *ExternblConnection,
 ) (*Provider, error) {
-	if c.Authorization == nil {
+	if c.Authorizbtion == nil {
 		return nil, nil
 	}
 
-	if errLicense := licensing.Check(licensing.FeatureACLs); errLicense != nil {
+	if errLicense := licensing.Check(licensing.FebtureACLs); errLicense != nil {
 		return nil, errLicense
 	}
 
-	baseURL, err := url.Parse(c.Url)
+	bbseURL, err := url.Pbrse(c.Url)
 	if err != nil {
-		return nil, errors.Errorf("could not parse URL for GitHub instance %q: %s", c.Url, err)
+		return nil, errors.Errorf("could not pbrse URL for GitHub instbnce %q: %s", c.Url, err)
 	}
 
-	// Disable by default for now
-	if c.Authorization.GroupsCacheTTL <= 0 {
-		c.Authorization.GroupsCacheTTL = -1
+	// Disbble by defbult for now
+	if c.Authorizbtion.GroupsCbcheTTL <= 0 {
+		c.Authorizbtion.GroupsCbcheTTL = -1
 	}
 
-	var auther eauth.Authenticator
-	if ghaDetails := c.GitHubConnection.GitHubAppDetails; ghaDetails != nil {
-		auther, err = auth.FromConnection(ctx, c.GitHubConnection.GitHubConnection, db.GitHubApps(), keyring.Default().GitHubAppKey)
+	vbr buther ebuth.Authenticbtor
+	if ghbDetbils := c.GitHubConnection.GitHubAppDetbils; ghbDetbils != nil {
+		buther, err = buth.FromConnection(ctx, c.GitHubConnection.GitHubConnection, db.GitHubApps(), keyring.Defbult().GitHubAppKey)
 		if err != nil {
 			return nil, err
 		}
 	} else {
-		auther = &eauth.OAuthBearerToken{Token: c.Token}
+		buther = &ebuth.OAuthBebrerToken{Token: c.Token}
 	}
 
-	ttl := time.Duration(c.Authorization.GroupsCacheTTL) * time.Hour
+	ttl := time.Durbtion(c.Authorizbtion.GroupsCbcheTTL) * time.Hour
 	return NewProvider(c.GitHubConnection.URN, ProviderOptions{
-		GitHubURL:      baseURL,
-		BaseAuther:     auther,
-		GroupsCacheTTL: ttl,
+		GitHubURL:      bbseURL,
+		BbseAuther:     buther,
+		GroupsCbcheTTL: ttl,
 		DB:             db,
 	}), nil
 }
 
-// ValidateAuthz validates the authorization fields of the given GitHub external
+// VblidbteAuthz vblidbtes the buthorizbtion fields of the given GitHub externbl
 // service config.
-func ValidateAuthz(db database.DB, c *types.GitHubConnection) error {
-	_, err := newAuthzProvider(context.Background(), db, &ExternalConnection{GitHubConnection: c})
+func VblidbteAuthz(db dbtbbbse.DB, c *types.GitHubConnection) error {
+	_, err := newAuthzProvider(context.Bbckground(), db, &ExternblConnection{GitHubConnection: c})
 	return err
 }

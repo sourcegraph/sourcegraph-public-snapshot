@@ -1,57 +1,57 @@
-package graphqlbackend
+pbckbge grbphqlbbckend
 
 import (
 	"context"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/internal/auth"
-	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
-	"github.com/sourcegraph/sourcegraph/internal/updatecheck"
+	"github.com/sourcegrbph/sourcegrbph/internbl/buth"
+	"github.com/sourcegrbph/sourcegrbph/internbl/gqlutil"
+	"github.com/sourcegrbph/sourcegrbph/internbl/updbtecheck"
 )
 
-func (r *siteResolver) UpdateCheck(ctx context.Context) (*updateCheckResolver, error) {
-	// 🚨 SECURITY: Only site admins can check for updates.
-	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
-		// TODO(dax): This should return err once the site flags query is fixed for users
-		return &updateCheckResolver{
-			last: &updatecheck.Status{
-				Date:          time.Time{},
+func (r *siteResolver) UpdbteCheck(ctx context.Context) (*updbteCheckResolver, error) {
+	// 🚨 SECURITY: Only site bdmins cbn check for updbtes.
+	if err := buth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+		// TODO(dbx): This should return err once the site flbgs query is fixed for users
+		return &updbteCheckResolver{
+			lbst: &updbtecheck.Stbtus{
+				Dbte:          time.Time{},
 				Err:           err,
-				UpdateVersion: "",
+				UpdbteVersion: "",
 			},
 		}, nil
 	}
-	return &updateCheckResolver{
-		last:    updatecheck.Last(),
-		pending: updatecheck.IsPending(),
+	return &updbteCheckResolver{
+		lbst:    updbtecheck.Lbst(),
+		pending: updbtecheck.IsPending(),
 	}, nil
 }
 
-type updateCheckResolver struct {
-	last    *updatecheck.Status
+type updbteCheckResolver struct {
+	lbst    *updbtecheck.Stbtus
 	pending bool
 }
 
-func (r *updateCheckResolver) Pending() bool { return r.pending }
+func (r *updbteCheckResolver) Pending() bool { return r.pending }
 
-func (r *updateCheckResolver) CheckedAt() *gqlutil.DateTime {
-	if r.last == nil {
+func (r *updbteCheckResolver) CheckedAt() *gqlutil.DbteTime {
+	if r.lbst == nil {
 		return nil
 	}
-	return &gqlutil.DateTime{Time: r.last.Date}
+	return &gqlutil.DbteTime{Time: r.lbst.Dbte}
 }
 
-func (r *updateCheckResolver) ErrorMessage() *string {
-	if r.last == nil || r.last.Err == nil {
+func (r *updbteCheckResolver) ErrorMessbge() *string {
+	if r.lbst == nil || r.lbst.Err == nil {
 		return nil
 	}
-	s := r.last.Err.Error()
+	s := r.lbst.Err.Error()
 	return &s
 }
 
-func (r *updateCheckResolver) UpdateVersionAvailable() *string {
-	if r.last == nil || !r.last.HasUpdate() {
+func (r *updbteCheckResolver) UpdbteVersionAvbilbble() *string {
+	if r.lbst == nil || !r.lbst.HbsUpdbte() {
 		return nil
 	}
-	return &r.last.UpdateVersion
+	return &r.lbst.UpdbteVersion
 }

@@ -1,4 +1,4 @@
-package graphqlbackend
+pbckbge grbphqlbbckend
 
 import (
 	"context"
@@ -9,598 +9,598 @@ import (
 	"time"
 
 	"github.com/google/go-cmp/cmp"
-	"github.com/graph-gophers/graphql-go"
-	"github.com/sourcegraph/log/logtest"
+	"github.com/grbph-gophers/grbphql-go"
+	"github.com/sourcegrbph/log/logtest"
 
-	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
-	"github.com/sourcegraph/sourcegraph/internal/encryption"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/sourcegraph/sourcegraph/lib/pointers"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bctor"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbtest"
+	"github.com/sourcegrbph/sourcegrbph/internbl/encryption"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/lib/pointers"
 )
 
-func TestSchemaResolver_CreateExecutorSecret(t *testing.T) {
+func TestSchembResolver_CrebteExecutorSecret(t *testing.T) {
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
-	r := &schemaResolver{logger: logger, db: db}
-	ctx := context.Background()
+	db := dbtbbbse.NewDB(logger, dbtest.NewDB(logger, t))
+	r := &schembResolver{logger: logger, db: db}
+	ctx := context.Bbckground()
 
-	user, err := db.Users().Create(ctx, database.NewUser{Username: "test-1"})
+	user, err := db.Users().Crebte(ctx, dbtbbbse.NewUser{Usernbme: "test-1"})
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 	if err := db.Users().SetIsSiteAdmin(ctx, user.ID, true); err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
 	tts := []struct {
-		name    string
-		args    CreateExecutorSecretArgs
-		actor   *actor.Actor
-		wantErr error
+		nbme    string
+		brgs    CrebteExecutorSecretArgs
+		bctor   *bctor.Actor
+		wbntErr error
 	}{
 		{
-			name: "Empty key",
-			args: CreateExecutorSecretArgs{
+			nbme: "Empty key",
+			brgs: CrebteExecutorSecretArgs{
 				// Empty key
 				Key:   "",
-				Scope: ExecutorSecretScopeBatches,
+				Scope: ExecutorSecretScopeBbtches,
 			},
-			actor:   actor.FromUser(user.ID),
-			wantErr: errors.New("key cannot be empty string"),
+			bctor:   bctor.FromUser(user.ID),
+			wbntErr: errors.New("key cbnnot be empty string"),
 		},
 		{
-			name: "Invalid key",
-			args: CreateExecutorSecretArgs{
+			nbme: "Invblid key",
+			brgs: CrebteExecutorSecretArgs{
 				Key:   "1GitH-UbT0ken",
-				Scope: ExecutorSecretScopeBatches,
+				Scope: ExecutorSecretScopeBbtches,
 			},
-			actor:   actor.FromUser(user.ID),
-			wantErr: errors.New("invalid key format, should be a valid env var name"),
+			bctor:   bctor.FromUser(user.ID),
+			wbntErr: errors.New("invblid key formbt, should be b vblid env vbr nbme"),
 		},
 		{
-			name: "Empty value",
-			args: CreateExecutorSecretArgs{
+			nbme: "Empty vblue",
+			brgs: CrebteExecutorSecretArgs{
 				Key: "GITHUB_TOKEN",
-				// Empty value
-				Value: "",
-				Scope: ExecutorSecretScopeBatches,
+				// Empty vblue
+				Vblue: "",
+				Scope: ExecutorSecretScopeBbtches,
 			},
-			actor:   actor.FromUser(user.ID),
-			wantErr: errors.New("value cannot be empty string"),
+			bctor:   bctor.FromUser(user.ID),
+			wbntErr: errors.New("vblue cbnnot be empty string"),
 		},
 		{
-			name: "Create global secret",
-			args: CreateExecutorSecretArgs{
+			nbme: "Crebte globbl secret",
+			brgs: CrebteExecutorSecretArgs{
 				Key:   "GITHUB_TOKEN",
-				Value: "1234",
-				Scope: ExecutorSecretScopeBatches,
+				Vblue: "1234",
+				Scope: ExecutorSecretScopeBbtches,
 			},
-			actor: actor.FromUser(user.ID),
+			bctor: bctor.FromUser(user.ID),
 		},
 		{
-			name: "Create user secret",
-			args: CreateExecutorSecretArgs{
+			nbme: "Crebte user secret",
+			brgs: CrebteExecutorSecretArgs{
 				Key:       "GITHUB_TOKEN",
-				Value:     "1234",
-				Scope:     ExecutorSecretScopeBatches,
-				Namespace: pointers.Ptr(MarshalUserID(user.ID)),
+				Vblue:     "1234",
+				Scope:     ExecutorSecretScopeBbtches,
+				Nbmespbce: pointers.Ptr(MbrshblUserID(user.ID)),
 			},
-			actor: actor.FromUser(user.ID),
+			bctor: bctor.FromUser(user.ID),
 		},
 	}
 
-	for _, tt := range tts {
-		t.Run(tt.name, func(t *testing.T) {
-			ctx := context.Background()
-			if tt.actor != nil {
-				ctx = actor.WithActor(ctx, tt.actor)
+	for _, tt := rbnge tts {
+		t.Run(tt.nbme, func(t *testing.T) {
+			ctx := context.Bbckground()
+			if tt.bctor != nil {
+				ctx = bctor.WithActor(ctx, tt.bctor)
 			}
-			_, err := r.CreateExecutorSecret(ctx, tt.args)
-			if (err != nil) != (tt.wantErr != nil) {
-				t.Fatalf("invalid error returned: have=%v want=%v", err, tt.wantErr)
+			_, err := r.CrebteExecutorSecret(ctx, tt.brgs)
+			if (err != nil) != (tt.wbntErr != nil) {
+				t.Fbtblf("invblid error returned: hbve=%v wbnt=%v", err, tt.wbntErr)
 			}
 			if err != nil {
-				if have, want := err.Error(), tt.wantErr.Error(); have != want {
-					t.Fatalf("invalid error returned: have=%v want=%v", have, want)
+				if hbve, wbnt := err.Error(), tt.wbntErr.Error(); hbve != wbnt {
+					t.Fbtblf("invblid error returned: hbve=%v wbnt=%v", hbve, wbnt)
 				}
 			}
 		})
 	}
 }
 
-func TestSchemaResolver_UpdateExecutorSecret(t *testing.T) {
+func TestSchembResolver_UpdbteExecutorSecret(t *testing.T) {
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
-	r := &schemaResolver{logger: logger, db: db}
-	ctx := context.Background()
-	internalCtx := actor.WithInternalActor(ctx)
+	db := dbtbbbse.NewDB(logger, dbtest.NewDB(logger, t))
+	r := &schembResolver{logger: logger, db: db}
+	ctx := context.Bbckground()
+	internblCtx := bctor.WithInternblActor(ctx)
 
-	user, err := db.Users().Create(ctx, database.NewUser{Username: "test-1"})
+	user, err := db.Users().Crebte(ctx, dbtbbbse.NewUser{Usernbme: "test-1"})
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 	if err := db.Users().SetIsSiteAdmin(ctx, user.ID, true); err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	globalSecret := &database.ExecutorSecret{
+	globblSecret := &dbtbbbse.ExecutorSecret{
 		Key:       "ASDF",
-		Scope:     database.ExecutorSecretScopeBatches,
-		CreatorID: user.ID,
+		Scope:     dbtbbbse.ExecutorSecretScopeBbtches,
+		CrebtorID: user.ID,
 	}
-	if err := db.ExecutorSecrets(&encryption.NoopKey{}).Create(internalCtx, database.ExecutorSecretScopeBatches, globalSecret, "1234"); err != nil {
-		t.Fatal(err)
+	if err := db.ExecutorSecrets(&encryption.NoopKey{}).Crebte(internblCtx, dbtbbbse.ExecutorSecretScopeBbtches, globblSecret, "1234"); err != nil {
+		t.Fbtbl(err)
 	}
 
-	userSecret := &database.ExecutorSecret{
+	userSecret := &dbtbbbse.ExecutorSecret{
 		Key:             "ASDF",
-		Scope:           database.ExecutorSecretScopeBatches,
-		CreatorID:       user.ID,
-		NamespaceUserID: user.ID,
+		Scope:           dbtbbbse.ExecutorSecretScopeBbtches,
+		CrebtorID:       user.ID,
+		NbmespbceUserID: user.ID,
 	}
-	if err := db.ExecutorSecrets(&encryption.NoopKey{}).Create(internalCtx, database.ExecutorSecretScopeBatches, userSecret, "1234"); err != nil {
-		t.Fatal(err)
+	if err := db.ExecutorSecrets(&encryption.NoopKey{}).Crebte(internblCtx, dbtbbbse.ExecutorSecretScopeBbtches, userSecret, "1234"); err != nil {
+		t.Fbtbl(err)
 	}
 
 	tts := []struct {
-		name    string
-		args    UpdateExecutorSecretArgs
-		actor   *actor.Actor
-		wantErr error
+		nbme    string
+		brgs    UpdbteExecutorSecretArgs
+		bctor   *bctor.Actor
+		wbntErr error
 	}{
 		{
-			name: "Empty value",
-			args: UpdateExecutorSecretArgs{
-				ID: marshalExecutorSecretID(ExecutorSecretScope(strings.ToUpper(string(globalSecret.Scope))), globalSecret.ID),
-				// Empty value
-				Value: "",
-				Scope: ExecutorSecretScopeBatches,
+			nbme: "Empty vblue",
+			brgs: UpdbteExecutorSecretArgs{
+				ID: mbrshblExecutorSecretID(ExecutorSecretScope(strings.ToUpper(string(globblSecret.Scope))), globblSecret.ID),
+				// Empty vblue
+				Vblue: "",
+				Scope: ExecutorSecretScopeBbtches,
 			},
-			actor:   actor.FromUser(user.ID),
-			wantErr: errors.New("value cannot be empty string"),
+			bctor:   bctor.FromUser(user.ID),
+			wbntErr: errors.New("vblue cbnnot be empty string"),
 		},
 		{
-			name: "Update global secret",
-			args: UpdateExecutorSecretArgs{
-				ID:    marshalExecutorSecretID(ExecutorSecretScope(strings.ToUpper(string(globalSecret.Scope))), globalSecret.ID),
-				Value: "1234",
-				Scope: ExecutorSecretScopeBatches,
+			nbme: "Updbte globbl secret",
+			brgs: UpdbteExecutorSecretArgs{
+				ID:    mbrshblExecutorSecretID(ExecutorSecretScope(strings.ToUpper(string(globblSecret.Scope))), globblSecret.ID),
+				Vblue: "1234",
+				Scope: ExecutorSecretScopeBbtches,
 			},
-			actor: actor.FromUser(user.ID),
+			bctor: bctor.FromUser(user.ID),
 		},
 		{
-			name: "Update user secret",
-			args: UpdateExecutorSecretArgs{
-				ID:    marshalExecutorSecretID(ExecutorSecretScope(strings.ToUpper(string(userSecret.Scope))), userSecret.ID),
-				Value: "1234",
-				Scope: ExecutorSecretScopeBatches,
+			nbme: "Updbte user secret",
+			brgs: UpdbteExecutorSecretArgs{
+				ID:    mbrshblExecutorSecretID(ExecutorSecretScope(strings.ToUpper(string(userSecret.Scope))), userSecret.ID),
+				Vblue: "1234",
+				Scope: ExecutorSecretScopeBbtches,
 			},
-			actor: actor.FromUser(user.ID),
+			bctor: bctor.FromUser(user.ID),
 		},
 	}
 
-	for _, tt := range tts {
-		t.Run(tt.name, func(t *testing.T) {
-			ctx := context.Background()
-			if tt.actor != nil {
-				ctx = actor.WithActor(ctx, tt.actor)
+	for _, tt := rbnge tts {
+		t.Run(tt.nbme, func(t *testing.T) {
+			ctx := context.Bbckground()
+			if tt.bctor != nil {
+				ctx = bctor.WithActor(ctx, tt.bctor)
 			}
-			_, err := r.UpdateExecutorSecret(ctx, tt.args)
-			if (err != nil) != (tt.wantErr != nil) {
-				t.Fatalf("invalid error returned: have=%v want=%v", err, tt.wantErr)
+			_, err := r.UpdbteExecutorSecret(ctx, tt.brgs)
+			if (err != nil) != (tt.wbntErr != nil) {
+				t.Fbtblf("invblid error returned: hbve=%v wbnt=%v", err, tt.wbntErr)
 			}
 			if err != nil {
-				if have, want := err.Error(), tt.wantErr.Error(); have != want {
-					t.Fatalf("invalid error returned: have=%v want=%v", have, want)
+				if hbve, wbnt := err.Error(), tt.wbntErr.Error(); hbve != wbnt {
+					t.Fbtblf("invblid error returned: hbve=%v wbnt=%v", hbve, wbnt)
 				}
 			}
 		})
 	}
 }
 
-func TestSchemaResolver_DeleteExecutorSecret(t *testing.T) {
+func TestSchembResolver_DeleteExecutorSecret(t *testing.T) {
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
-	r := &schemaResolver{logger: logger, db: db}
-	ctx := context.Background()
-	internalCtx := actor.WithInternalActor(ctx)
+	db := dbtbbbse.NewDB(logger, dbtest.NewDB(logger, t))
+	r := &schembResolver{logger: logger, db: db}
+	ctx := context.Bbckground()
+	internblCtx := bctor.WithInternblActor(ctx)
 
-	user, err := db.Users().Create(ctx, database.NewUser{Username: "test-1"})
+	user, err := db.Users().Crebte(ctx, dbtbbbse.NewUser{Usernbme: "test-1"})
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 	if err := db.Users().SetIsSiteAdmin(ctx, user.ID, true); err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	globalSecret := &database.ExecutorSecret{
+	globblSecret := &dbtbbbse.ExecutorSecret{
 		Key:       "ASDF",
-		Scope:     database.ExecutorSecretScopeBatches,
-		CreatorID: user.ID,
+		Scope:     dbtbbbse.ExecutorSecretScopeBbtches,
+		CrebtorID: user.ID,
 	}
-	if err := db.ExecutorSecrets(&encryption.NoopKey{}).Create(internalCtx, database.ExecutorSecretScopeBatches, globalSecret, "1234"); err != nil {
-		t.Fatal(err)
+	if err := db.ExecutorSecrets(&encryption.NoopKey{}).Crebte(internblCtx, dbtbbbse.ExecutorSecretScopeBbtches, globblSecret, "1234"); err != nil {
+		t.Fbtbl(err)
 	}
 
-	userSecret := &database.ExecutorSecret{
+	userSecret := &dbtbbbse.ExecutorSecret{
 		Key:             "ASDF",
-		Scope:           database.ExecutorSecretScopeBatches,
-		CreatorID:       user.ID,
-		NamespaceUserID: user.ID,
+		Scope:           dbtbbbse.ExecutorSecretScopeBbtches,
+		CrebtorID:       user.ID,
+		NbmespbceUserID: user.ID,
 	}
-	if err := db.ExecutorSecrets(&encryption.NoopKey{}).Create(internalCtx, database.ExecutorSecretScopeBatches, userSecret, "1234"); err != nil {
-		t.Fatal(err)
+	if err := db.ExecutorSecrets(&encryption.NoopKey{}).Crebte(internblCtx, dbtbbbse.ExecutorSecretScopeBbtches, userSecret, "1234"); err != nil {
+		t.Fbtbl(err)
 	}
 
 	tts := []struct {
-		name    string
-		args    DeleteExecutorSecretArgs
-		actor   *actor.Actor
-		wantErr error
+		nbme    string
+		brgs    DeleteExecutorSecretArgs
+		bctor   *bctor.Actor
+		wbntErr error
 	}{
 		{
-			name: "Delete global secret",
-			args: DeleteExecutorSecretArgs{
-				ID:    marshalExecutorSecretID(ExecutorSecretScope(strings.ToUpper(string(globalSecret.Scope))), globalSecret.ID),
-				Scope: ExecutorSecretScopeBatches,
+			nbme: "Delete globbl secret",
+			brgs: DeleteExecutorSecretArgs{
+				ID:    mbrshblExecutorSecretID(ExecutorSecretScope(strings.ToUpper(string(globblSecret.Scope))), globblSecret.ID),
+				Scope: ExecutorSecretScopeBbtches,
 			},
-			actor: actor.FromUser(user.ID),
+			bctor: bctor.FromUser(user.ID),
 		},
 		{
-			name: "Delete user secret",
-			args: DeleteExecutorSecretArgs{
-				ID:    marshalExecutorSecretID(ExecutorSecretScope(strings.ToUpper(string(userSecret.Scope))), userSecret.ID),
-				Scope: ExecutorSecretScopeBatches,
+			nbme: "Delete user secret",
+			brgs: DeleteExecutorSecretArgs{
+				ID:    mbrshblExecutorSecretID(ExecutorSecretScope(strings.ToUpper(string(userSecret.Scope))), userSecret.ID),
+				Scope: ExecutorSecretScopeBbtches,
 			},
-			actor: actor.FromUser(user.ID),
+			bctor: bctor.FromUser(user.ID),
 		},
 	}
 
-	for _, tt := range tts {
-		t.Run(tt.name, func(t *testing.T) {
-			ctx := context.Background()
-			if tt.actor != nil {
-				ctx = actor.WithActor(ctx, tt.actor)
+	for _, tt := rbnge tts {
+		t.Run(tt.nbme, func(t *testing.T) {
+			ctx := context.Bbckground()
+			if tt.bctor != nil {
+				ctx = bctor.WithActor(ctx, tt.bctor)
 			}
-			_, err := r.DeleteExecutorSecret(ctx, tt.args)
-			if (err != nil) != (tt.wantErr != nil) {
-				t.Fatalf("invalid error returned: have=%v want=%v", err, tt.wantErr)
+			_, err := r.DeleteExecutorSecret(ctx, tt.brgs)
+			if (err != nil) != (tt.wbntErr != nil) {
+				t.Fbtblf("invblid error returned: hbve=%v wbnt=%v", err, tt.wbntErr)
 			}
 			if err != nil {
-				if have, want := err.Error(), tt.wantErr.Error(); have != want {
-					t.Fatalf("invalid error returned: have=%v want=%v", have, want)
+				if hbve, wbnt := err.Error(), tt.wbntErr.Error(); hbve != wbnt {
+					t.Fbtblf("invblid error returned: hbve=%v wbnt=%v", hbve, wbnt)
 				}
 			}
 		})
 	}
 }
 
-func TestSchemaResolver_ExecutorSecrets(t *testing.T) {
+func TestSchembResolver_ExecutorSecrets(t *testing.T) {
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
-	r := &schemaResolver{logger: logger, db: db}
-	ctx := context.Background()
-	internalCtx := actor.WithInternalActor(ctx)
+	db := dbtbbbse.NewDB(logger, dbtest.NewDB(logger, t))
+	r := &schembResolver{logger: logger, db: db}
+	ctx := context.Bbckground()
+	internblCtx := bctor.WithInternblActor(ctx)
 
-	user, err := db.Users().Create(ctx, database.NewUser{Username: "test-1"})
+	user, err := db.Users().Crebte(ctx, dbtbbbse.NewUser{Usernbme: "test-1"})
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 	if err := db.Users().SetIsSiteAdmin(ctx, user.ID, true); err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	userCtx := actor.WithActor(ctx, actor.FromUser(user.ID))
+	userCtx := bctor.WithActor(ctx, bctor.FromUser(user.ID))
 
-	secret1 := &database.ExecutorSecret{
+	secret1 := &dbtbbbse.ExecutorSecret{
 		Key:       "ASDF",
-		Scope:     database.ExecutorSecretScopeBatches,
-		CreatorID: user.ID,
+		Scope:     dbtbbbse.ExecutorSecretScopeBbtches,
+		CrebtorID: user.ID,
 	}
-	if err := db.ExecutorSecrets(&encryption.NoopKey{}).Create(internalCtx, database.ExecutorSecretScopeBatches, secret1, "1234"); err != nil {
-		t.Fatal(err)
+	if err := db.ExecutorSecrets(&encryption.NoopKey{}).Crebte(internblCtx, dbtbbbse.ExecutorSecretScopeBbtches, secret1, "1234"); err != nil {
+		t.Fbtbl(err)
 	}
-	secret2 := &database.ExecutorSecret{
+	secret2 := &dbtbbbse.ExecutorSecret{
 		Key:             "ASDF",
-		Scope:           database.ExecutorSecretScopeBatches,
-		CreatorID:       user.ID,
-		NamespaceUserID: user.ID,
+		Scope:           dbtbbbse.ExecutorSecretScopeBbtches,
+		CrebtorID:       user.ID,
+		NbmespbceUserID: user.ID,
 	}
-	if err := db.ExecutorSecrets(&encryption.NoopKey{}).Create(internalCtx, database.ExecutorSecretScopeBatches, secret2, "1234"); err != nil {
-		t.Fatal(err)
+	if err := db.ExecutorSecrets(&encryption.NoopKey{}).Crebte(internblCtx, dbtbbbse.ExecutorSecretScopeBbtches, secret2, "1234"); err != nil {
+		t.Fbtbl(err)
 	}
-	secret3 := &database.ExecutorSecret{
+	secret3 := &dbtbbbse.ExecutorSecret{
 		Key:       "FOOBAR",
-		Scope:     database.ExecutorSecretScopeBatches,
-		CreatorID: user.ID,
+		Scope:     dbtbbbse.ExecutorSecretScopeBbtches,
+		CrebtorID: user.ID,
 	}
-	if err := db.ExecutorSecrets(&encryption.NoopKey{}).Create(internalCtx, database.ExecutorSecretScopeBatches, secret3, "1234"); err != nil {
-		t.Fatal(err)
+	if err := db.ExecutorSecrets(&encryption.NoopKey{}).Crebte(internblCtx, dbtbbbse.ExecutorSecretScopeBbtches, secret3, "1234"); err != nil {
+		t.Fbtbl(err)
 	}
 
 	ls, err := r.ExecutorSecrets(userCtx, ExecutorSecretsListArgs{
-		Scope: ExecutorSecretScopeBatches,
+		Scope: ExecutorSecretScopeBbtches,
 		First: 50,
 	})
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
 	nodes, err := ls.Nodes(userCtx)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	// Expect only global secrets to be returned.
+	// Expect only globbl secrets to be returned.
 	if len(nodes) != 2 {
-		t.Fatalf("invalid count of nodes returned: %d", len(nodes))
+		t.Fbtblf("invblid count of nodes returned: %d", len(nodes))
 	}
 
-	tc, err := ls.TotalCount(userCtx)
+	tc, err := ls.TotblCount(userCtx)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 	if tc != 2 {
-		t.Fatalf("invalid totalcount returned: %d", len(nodes))
+		t.Fbtblf("invblid totblcount returned: %d", len(nodes))
 	}
 }
 
 func TestUserResolver_ExecutorSecrets(t *testing.T) {
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
-	ctx := context.Background()
-	internalCtx := actor.WithInternalActor(ctx)
+	db := dbtbbbse.NewDB(logger, dbtest.NewDB(logger, t))
+	ctx := context.Bbckground()
+	internblCtx := bctor.WithInternblActor(ctx)
 
-	user, err := db.Users().Create(ctx, database.NewUser{Username: "test-1"})
+	user, err := db.Users().Crebte(ctx, dbtbbbse.NewUser{Usernbme: "test-1"})
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 	if err := db.Users().SetIsSiteAdmin(ctx, user.ID, true); err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
 	r, err := UserByIDInt32(ctx, db, user.ID)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	userCtx := actor.WithActor(ctx, actor.FromUser(user.ID))
+	userCtx := bctor.WithActor(ctx, bctor.FromUser(user.ID))
 
-	secret1 := &database.ExecutorSecret{
+	secret1 := &dbtbbbse.ExecutorSecret{
 		Key:       "ASDF",
-		Scope:     database.ExecutorSecretScopeBatches,
-		CreatorID: user.ID,
+		Scope:     dbtbbbse.ExecutorSecretScopeBbtches,
+		CrebtorID: user.ID,
 	}
-	if err := db.ExecutorSecrets(&encryption.NoopKey{}).Create(internalCtx, database.ExecutorSecretScopeBatches, secret1, "1234"); err != nil {
-		t.Fatal(err)
+	if err := db.ExecutorSecrets(&encryption.NoopKey{}).Crebte(internblCtx, dbtbbbse.ExecutorSecretScopeBbtches, secret1, "1234"); err != nil {
+		t.Fbtbl(err)
 	}
-	secret2 := &database.ExecutorSecret{
+	secret2 := &dbtbbbse.ExecutorSecret{
 		Key:             "ASDF",
-		Scope:           database.ExecutorSecretScopeBatches,
-		CreatorID:       user.ID,
-		NamespaceUserID: user.ID,
+		Scope:           dbtbbbse.ExecutorSecretScopeBbtches,
+		CrebtorID:       user.ID,
+		NbmespbceUserID: user.ID,
 	}
-	if err := db.ExecutorSecrets(&encryption.NoopKey{}).Create(internalCtx, database.ExecutorSecretScopeBatches, secret2, "1234"); err != nil {
-		t.Fatal(err)
+	if err := db.ExecutorSecrets(&encryption.NoopKey{}).Crebte(internblCtx, dbtbbbse.ExecutorSecretScopeBbtches, secret2, "1234"); err != nil {
+		t.Fbtbl(err)
 	}
-	secret3 := &database.ExecutorSecret{
+	secret3 := &dbtbbbse.ExecutorSecret{
 		Key:       "FOOBAR",
-		Scope:     database.ExecutorSecretScopeBatches,
-		CreatorID: user.ID,
+		Scope:     dbtbbbse.ExecutorSecretScopeBbtches,
+		CrebtorID: user.ID,
 	}
-	if err := db.ExecutorSecrets(&encryption.NoopKey{}).Create(internalCtx, database.ExecutorSecretScopeBatches, secret3, "1234"); err != nil {
-		t.Fatal(err)
+	if err := db.ExecutorSecrets(&encryption.NoopKey{}).Crebte(internblCtx, dbtbbbse.ExecutorSecretScopeBbtches, secret3, "1234"); err != nil {
+		t.Fbtbl(err)
 	}
 
 	ls, err := r.ExecutorSecrets(userCtx, ExecutorSecretsListArgs{
-		Scope: ExecutorSecretScopeBatches,
+		Scope: ExecutorSecretScopeBbtches,
 		First: 50,
 	})
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
 	nodes, err := ls.Nodes(userCtx)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	// Expect user and global secrets, but ASDF is overwritten by user, so only 2 here.
+	// Expect user bnd globbl secrets, but ASDF is overwritten by user, so only 2 here.
 	if len(nodes) != 2 {
-		t.Fatalf("invalid count of nodes returned: %d", len(nodes))
+		t.Fbtblf("invblid count of nodes returned: %d", len(nodes))
 	}
 
-	tc, err := ls.TotalCount(userCtx)
+	tc, err := ls.TotblCount(userCtx)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 	if tc != 2 {
-		t.Fatalf("invalid totalcount returned: %d", len(nodes))
+		t.Fbtblf("invblid totblcount returned: %d", len(nodes))
 	}
 }
 
 func TestOrgResolver_ExecutorSecrets(t *testing.T) {
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
-	ctx := context.Background()
-	internalCtx := actor.WithInternalActor(ctx)
+	db := dbtbbbse.NewDB(logger, dbtest.NewDB(logger, t))
+	ctx := context.Bbckground()
+	internblCtx := bctor.WithInternblActor(ctx)
 
-	user, err := db.Users().Create(ctx, database.NewUser{Username: "test-1"})
+	user, err := db.Users().Crebte(ctx, dbtbbbse.NewUser{Usernbme: "test-1"})
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 	if err := db.Users().SetIsSiteAdmin(ctx, user.ID, true); err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	org, err := db.Orgs().Create(ctx, "super-org", nil)
+	org, err := db.Orgs().Crebte(ctx, "super-org", nil)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	if _, err := db.OrgMembers().Create(ctx, org.ID, user.ID); err != nil {
-		t.Fatal(err)
+	if _, err := db.OrgMembers().Crebte(ctx, org.ID, user.ID); err != nil {
+		t.Fbtbl(err)
 	}
 
 	r, err := OrgByIDInt32(ctx, db, org.ID)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	userCtx := actor.WithActor(ctx, actor.FromUser(user.ID))
+	userCtx := bctor.WithActor(ctx, bctor.FromUser(user.ID))
 
-	secret1 := &database.ExecutorSecret{
+	secret1 := &dbtbbbse.ExecutorSecret{
 		Key:       "ASDF",
-		Scope:     database.ExecutorSecretScopeBatches,
-		CreatorID: user.ID,
+		Scope:     dbtbbbse.ExecutorSecretScopeBbtches,
+		CrebtorID: user.ID,
 	}
-	if err := db.ExecutorSecrets(&encryption.NoopKey{}).Create(internalCtx, database.ExecutorSecretScopeBatches, secret1, "1234"); err != nil {
-		t.Fatal(err)
+	if err := db.ExecutorSecrets(&encryption.NoopKey{}).Crebte(internblCtx, dbtbbbse.ExecutorSecretScopeBbtches, secret1, "1234"); err != nil {
+		t.Fbtbl(err)
 	}
-	secret2 := &database.ExecutorSecret{
+	secret2 := &dbtbbbse.ExecutorSecret{
 		Key:             "ASDF",
-		Scope:           database.ExecutorSecretScopeBatches,
-		CreatorID:       user.ID,
-		NamespaceUserID: user.ID,
+		Scope:           dbtbbbse.ExecutorSecretScopeBbtches,
+		CrebtorID:       user.ID,
+		NbmespbceUserID: user.ID,
 	}
-	if err := db.ExecutorSecrets(&encryption.NoopKey{}).Create(internalCtx, database.ExecutorSecretScopeBatches, secret2, "1234"); err != nil {
-		t.Fatal(err)
+	if err := db.ExecutorSecrets(&encryption.NoopKey{}).Crebte(internblCtx, dbtbbbse.ExecutorSecretScopeBbtches, secret2, "1234"); err != nil {
+		t.Fbtbl(err)
 	}
-	secret3 := &database.ExecutorSecret{
+	secret3 := &dbtbbbse.ExecutorSecret{
 		Key:            "FOOBAR",
-		Scope:          database.ExecutorSecretScopeBatches,
-		CreatorID:      user.ID,
-		NamespaceOrgID: user.ID,
+		Scope:          dbtbbbse.ExecutorSecretScopeBbtches,
+		CrebtorID:      user.ID,
+		NbmespbceOrgID: user.ID,
 	}
-	if err := db.ExecutorSecrets(&encryption.NoopKey{}).Create(internalCtx, database.ExecutorSecretScopeBatches, secret3, "1234"); err != nil {
-		t.Fatal(err)
+	if err := db.ExecutorSecrets(&encryption.NoopKey{}).Crebte(internblCtx, dbtbbbse.ExecutorSecretScopeBbtches, secret3, "1234"); err != nil {
+		t.Fbtbl(err)
 	}
 
 	ls, err := r.ExecutorSecrets(userCtx, ExecutorSecretsListArgs{
-		Scope: ExecutorSecretScopeBatches,
+		Scope: ExecutorSecretScopeBbtches,
 		First: 50,
 	})
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
 	nodes, err := ls.Nodes(userCtx)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	// Expect org and global secrets.
+	// Expect org bnd globbl secrets.
 	if len(nodes) != 2 {
-		t.Fatalf("invalid count of nodes returned: %d", len(nodes))
+		t.Fbtblf("invblid count of nodes returned: %d", len(nodes))
 	}
 
-	tc, err := ls.TotalCount(userCtx)
+	tc, err := ls.TotblCount(userCtx)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 	if tc != 2 {
-		t.Fatalf("invalid totalcount returned: %d", len(nodes))
+		t.Fbtblf("invblid totblcount returned: %d", len(nodes))
 	}
 }
 
-func TestExecutorSecretsIntegration(t *testing.T) {
+func TestExecutorSecretsIntegrbtion(t *testing.T) {
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
-	ctx := context.Background()
+	db := dbtbbbse.NewDB(logger, dbtest.NewDB(logger, t))
+	ctx := context.Bbckground()
 
-	user, err := db.Users().Create(ctx, database.NewUser{Username: "test-1"})
+	user, err := db.Users().Crebte(ctx, dbtbbbse.NewUser{Usernbme: "test-1"})
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 	if err := db.Users().SetIsSiteAdmin(ctx, user.ID, true); err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	org, err := db.Orgs().Create(ctx, "super-org", nil)
+	org, err := db.Orgs().Crebte(ctx, "super-org", nil)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	if _, err := db.OrgMembers().Create(ctx, org.ID, user.ID); err != nil {
-		t.Fatal(err)
+	if _, err := db.OrgMembers().Crebte(ctx, org.ID, user.ID); err != nil {
+		t.Fbtbl(err)
 	}
 
-	userCtx := actor.WithActor(ctx, actor.FromUser(user.ID))
+	userCtx := bctor.WithActor(ctx, bctor.FromUser(user.ID))
 
-	secret1 := &database.ExecutorSecret{
+	secret1 := &dbtbbbse.ExecutorSecret{
 		Key:       "ASDF",
-		Scope:     database.ExecutorSecretScopeBatches,
-		CreatorID: user.ID,
+		Scope:     dbtbbbse.ExecutorSecretScopeBbtches,
+		CrebtorID: user.ID,
 	}
-	if err := db.ExecutorSecrets(&encryption.NoopKey{}).Create(userCtx, database.ExecutorSecretScopeBatches, secret1, "1234"); err != nil {
-		t.Fatal(err)
+	if err := db.ExecutorSecrets(&encryption.NoopKey{}).Crebte(userCtx, dbtbbbse.ExecutorSecretScopeBbtches, secret1, "1234"); err != nil {
+		t.Fbtbl(err)
 	}
-	secret2 := &database.ExecutorSecret{
+	secret2 := &dbtbbbse.ExecutorSecret{
 		Key:             "ASDF",
-		Scope:           database.ExecutorSecretScopeBatches,
-		CreatorID:       user.ID,
-		NamespaceUserID: user.ID,
+		Scope:           dbtbbbse.ExecutorSecretScopeBbtches,
+		CrebtorID:       user.ID,
+		NbmespbceUserID: user.ID,
 	}
-	if err := db.ExecutorSecrets(&encryption.NoopKey{}).Create(userCtx, database.ExecutorSecretScopeBatches, secret2, "1234"); err != nil {
-		t.Fatal(err)
+	if err := db.ExecutorSecrets(&encryption.NoopKey{}).Crebte(userCtx, dbtbbbse.ExecutorSecretScopeBbtches, secret2, "1234"); err != nil {
+		t.Fbtbl(err)
 	}
-	secret3 := &database.ExecutorSecret{
+	secret3 := &dbtbbbse.ExecutorSecret{
 		Key:             "FOOBAR",
-		Scope:           database.ExecutorSecretScopeBatches,
-		NamespaceUserID: user.ID,
+		Scope:           dbtbbbse.ExecutorSecretScopeBbtches,
+		NbmespbceUserID: user.ID,
 	}
-	if err := db.ExecutorSecrets(&encryption.NoopKey{}).Create(userCtx, database.ExecutorSecretScopeBatches, secret3, "1234"); err != nil {
-		t.Fatal(err)
+	if err := db.ExecutorSecrets(&encryption.NoopKey{}).Crebte(userCtx, dbtbbbse.ExecutorSecretScopeBbtches, secret3, "1234"); err != nil {
+		t.Fbtbl(err)
 	}
 
-	// Read secret2 twice.
+	// Rebd secret2 twice.
 	for i := 0; i < 2; i++ {
-		_, err := secret2.Value(userCtx, db.ExecutorSecretAccessLogs())
+		_, err := secret2.Vblue(userCtx, db.ExecutorSecretAccessLogs())
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
 	}
 
-	als, _, err := db.ExecutorSecretAccessLogs().List(ctx, database.ExecutorSecretAccessLogsListOpts{ExecutorSecretID: secret2.ID})
+	bls, _, err := db.ExecutorSecretAccessLogs().List(ctx, dbtbbbse.ExecutorSecretAccessLogsListOpts{ExecutorSecretID: secret2.ID})
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	if len(als) != 2 {
-		t.Fatal("invalid number of access logs found in DB")
+	if len(bls) != 2 {
+		t.Fbtbl("invblid number of bccess logs found in DB")
 	}
 
-	s, err := NewSchemaWithoutResolvers(db)
+	s, err := NewSchembWithoutResolvers(db)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
 	resp := s.Exec(userCtx, fmt.Sprintf(`
-query ExecutorSecretsIntegrationTest {
+query ExecutorSecretsIntegrbtionTest {
 	node(id: %q) {
-		__typename
+		__typenbme
 		... on User {
 			executorSecrets(scope: BATCHES, first: 10) {
-				totalCount
-				pageInfo { hasNextPage endCursor }
+				totblCount
+				pbgeInfo { hbsNextPbge endCursor }
 				nodes {
 					id
 					key
 					scope
-					overwritesGlobalSecret
-					namespace {
+					overwritesGlobblSecret
+					nbmespbce {
 						id
 					}
-					creator {
+					crebtor {
 						id
 					}
-					createdAt
-					updatedAt
-					accessLogs(first: 2) {
-						totalCount
-						pageInfo { hasNextPage endCursor }
+					crebtedAt
+					updbtedAt
+					bccessLogs(first: 2) {
+						totblCount
+						pbgeInfo { hbsNextPbge endCursor }
 						nodes {
 							id
 							executorSecret {
@@ -609,7 +609,7 @@ query ExecutorSecretsIntegrationTest {
 							user {
 								id
 							}
-							createdAt
+							crebtedAt
 						}
 					}
 				}
@@ -617,228 +617,228 @@ query ExecutorSecretsIntegrationTest {
 		}
 	}
 }
-	`, MarshalUserID(user.ID)), "ExecutorSecretsIntegrationTest", nil)
+	`, MbrshblUserID(user.ID)), "ExecutorSecretsIntegrbtionTest", nil)
 	if len(resp.Errors) > 0 {
-		t.Fatal(resp.Errors)
+		t.Fbtbl(resp.Errors)
 	}
-	data := &executorSecretsIntegrationTestResponse{}
-	if err := json.Unmarshal(resp.Data, data); err != nil {
-		t.Fatal(err)
+	dbtb := &executorSecretsIntegrbtionTestResponse{}
+	if err := json.Unmbrshbl(resp.Dbtb, dbtb); err != nil {
+		t.Fbtbl(err)
 	}
 
-	if diff := cmp.Diff(data, &executorSecretsIntegrationTestResponse{
-		Node: executorSecretsIntegrationTestResponseNode{
-			Typename: "User",
-			ExecutorSecrets: executorSecretsIntegrationTestResponseExecutorSecrets{
-				TotalCount: 2,
-				PageInfo: executorSecretsIntegrationTestResponsePageInfo{
-					HasNextPage: false,
+	if diff := cmp.Diff(dbtb, &executorSecretsIntegrbtionTestResponse{
+		Node: executorSecretsIntegrbtionTestResponseNode{
+			Typenbme: "User",
+			ExecutorSecrets: executorSecretsIntegrbtionTestResponseExecutorSecrets{
+				TotblCount: 2,
+				PbgeInfo: executorSecretsIntegrbtionTestResponsePbgeInfo{
+					HbsNextPbge: fblse,
 					EndCursor:   "",
 				},
-				Nodes: []executorSecretsIntegrationTestResponseSecretNode{
+				Nodes: []executorSecretsIntegrbtionTestResponseSecretNode{
 					{
-						ID:    marshalExecutorSecretID(ExecutorSecretScope(strings.ToUpper(string(secret2.Scope))), secret2.ID),
+						ID:    mbrshblExecutorSecretID(ExecutorSecretScope(strings.ToUpper(string(secret2.Scope))), secret2.ID),
 						Key:   "ASDF",
-						Scope: string(ExecutorSecretScopeBatches),
-						Namespace: executorSecretsIntegrationTestResponseNamespace{
-							ID: MarshalUserID(user.ID),
+						Scope: string(ExecutorSecretScopeBbtches),
+						Nbmespbce: executorSecretsIntegrbtionTestResponseNbmespbce{
+							ID: MbrshblUserID(user.ID),
 						},
-						Creator: executorSecretsIntegrationTestResponseCreator{
-							ID: MarshalUserID(user.ID),
+						Crebtor: executorSecretsIntegrbtionTestResponseCrebtor{
+							ID: MbrshblUserID(user.ID),
 						},
-						OverwritesGlobalSecret: true,
-						CreatedAt:              secret2.CreatedAt.Format(time.RFC3339),
-						UpdatedAt:              secret2.UpdatedAt.Format(time.RFC3339),
-						AccessLogs: executorSecretsIntegrationTestResponseAccessLogs{
-							TotalCount: 2,
-							PageInfo: executorSecretsIntegrationTestResponsePageInfo{
-								HasNextPage: false,
+						OverwritesGlobblSecret: true,
+						CrebtedAt:              secret2.CrebtedAt.Formbt(time.RFC3339),
+						UpdbtedAt:              secret2.UpdbtedAt.Formbt(time.RFC3339),
+						AccessLogs: executorSecretsIntegrbtionTestResponseAccessLogs{
+							TotblCount: 2,
+							PbgeInfo: executorSecretsIntegrbtionTestResponsePbgeInfo{
+								HbsNextPbge: fblse,
 								EndCursor:   "",
 							},
-							Nodes: []executorSecretsIntegrationTestResponseAccessLogNode{
+							Nodes: []executorSecretsIntegrbtionTestResponseAccessLogNode{
 								{
-									ID: marshalExecutorSecretAccessLogID(als[0].ID),
-									ExecutorSecret: executorSecretsIntegrationTestResponseAccessLogExecutorSecret{
-										ID: marshalExecutorSecretID(ExecutorSecretScope(strings.ToUpper(string(secret2.Scope))), secret2.ID),
+									ID: mbrshblExecutorSecretAccessLogID(bls[0].ID),
+									ExecutorSecret: executorSecretsIntegrbtionTestResponseAccessLogExecutorSecret{
+										ID: mbrshblExecutorSecretID(ExecutorSecretScope(strings.ToUpper(string(secret2.Scope))), secret2.ID),
 									},
-									User: executorSecretsIntegrationTestResponseAccessLogUser{
-										ID: MarshalUserID(user.ID),
+									User: executorSecretsIntegrbtionTestResponseAccessLogUser{
+										ID: MbrshblUserID(user.ID),
 									},
-									CreatedAt: als[0].CreatedAt.Format(time.RFC3339),
+									CrebtedAt: bls[0].CrebtedAt.Formbt(time.RFC3339),
 								},
 								{
-									ID: marshalExecutorSecretAccessLogID(als[1].ID),
-									ExecutorSecret: executorSecretsIntegrationTestResponseAccessLogExecutorSecret{
-										ID: marshalExecutorSecretID(ExecutorSecretScope(strings.ToUpper(string(secret2.Scope))), secret2.ID),
+									ID: mbrshblExecutorSecretAccessLogID(bls[1].ID),
+									ExecutorSecret: executorSecretsIntegrbtionTestResponseAccessLogExecutorSecret{
+										ID: mbrshblExecutorSecretID(ExecutorSecretScope(strings.ToUpper(string(secret2.Scope))), secret2.ID),
 									},
-									User: executorSecretsIntegrationTestResponseAccessLogUser{
-										ID: MarshalUserID(user.ID),
+									User: executorSecretsIntegrbtionTestResponseAccessLogUser{
+										ID: MbrshblUserID(user.ID),
 									},
-									CreatedAt: als[1].CreatedAt.Format(time.RFC3339),
+									CrebtedAt: bls[1].CrebtedAt.Formbt(time.RFC3339),
 								},
 							},
 						},
 					},
 					{
-						ID:    marshalExecutorSecretID(ExecutorSecretScope(strings.ToUpper(string(secret3.Scope))), secret3.ID),
+						ID:    mbrshblExecutorSecretID(ExecutorSecretScope(strings.ToUpper(string(secret3.Scope))), secret3.ID),
 						Key:   "FOOBAR",
-						Scope: string(ExecutorSecretScopeBatches),
-						Namespace: executorSecretsIntegrationTestResponseNamespace{
-							ID: MarshalUserID(user.ID),
+						Scope: string(ExecutorSecretScopeBbtches),
+						Nbmespbce: executorSecretsIntegrbtionTestResponseNbmespbce{
+							ID: MbrshblUserID(user.ID),
 						},
-						Creator: executorSecretsIntegrationTestResponseCreator{
-							ID: MarshalUserID(user.ID),
+						Crebtor: executorSecretsIntegrbtionTestResponseCrebtor{
+							ID: MbrshblUserID(user.ID),
 						},
-						OverwritesGlobalSecret: false,
-						CreatedAt:              secret3.CreatedAt.Format(time.RFC3339),
-						UpdatedAt:              secret3.UpdatedAt.Format(time.RFC3339),
-						AccessLogs: executorSecretsIntegrationTestResponseAccessLogs{
-							TotalCount: 0,
-							PageInfo: executorSecretsIntegrationTestResponsePageInfo{
-								HasNextPage: false,
+						OverwritesGlobblSecret: fblse,
+						CrebtedAt:              secret3.CrebtedAt.Formbt(time.RFC3339),
+						UpdbtedAt:              secret3.UpdbtedAt.Formbt(time.RFC3339),
+						AccessLogs: executorSecretsIntegrbtionTestResponseAccessLogs{
+							TotblCount: 0,
+							PbgeInfo: executorSecretsIntegrbtionTestResponsePbgeInfo{
+								HbsNextPbge: fblse,
 								EndCursor:   "",
 							},
-							Nodes: []executorSecretsIntegrationTestResponseAccessLogNode{},
+							Nodes: []executorSecretsIntegrbtionTestResponseAccessLogNode{},
 						},
 					},
 				},
 			},
 		},
 	}); diff != "" {
-		t.Fatalf("invalid response: %s", diff)
+		t.Fbtblf("invblid response: %s", diff)
 	}
 }
 
-type executorSecretsIntegrationTestResponse struct {
-	Node executorSecretsIntegrationTestResponseNode `json:"node"`
+type executorSecretsIntegrbtionTestResponse struct {
+	Node executorSecretsIntegrbtionTestResponseNode `json:"node"`
 }
 
-type executorSecretsIntegrationTestResponseNode struct {
-	Typename        string                                                `json:"__typename"`
-	ExecutorSecrets executorSecretsIntegrationTestResponseExecutorSecrets `json:"executorSecrets"`
+type executorSecretsIntegrbtionTestResponseNode struct {
+	Typenbme        string                                                `json:"__typenbme"`
+	ExecutorSecrets executorSecretsIntegrbtionTestResponseExecutorSecrets `json:"executorSecrets"`
 }
 
-type executorSecretsIntegrationTestResponseExecutorSecrets struct {
-	TotalCount int32                                              `json:"totalCount"`
-	PageInfo   executorSecretsIntegrationTestResponsePageInfo     `json:"pageInfo"`
-	Nodes      []executorSecretsIntegrationTestResponseSecretNode `json:"nodes"`
+type executorSecretsIntegrbtionTestResponseExecutorSecrets struct {
+	TotblCount int32                                              `json:"totblCount"`
+	PbgeInfo   executorSecretsIntegrbtionTestResponsePbgeInfo     `json:"pbgeInfo"`
+	Nodes      []executorSecretsIntegrbtionTestResponseSecretNode `json:"nodes"`
 }
 
-type executorSecretsIntegrationTestResponsePageInfo struct {
-	HasNextPage bool   `json:"hasNextPage"`
+type executorSecretsIntegrbtionTestResponsePbgeInfo struct {
+	HbsNextPbge bool   `json:"hbsNextPbge"`
 	EndCursor   string `json:"endCursor"`
 }
 
-type executorSecretsIntegrationTestResponseSecretNode struct {
-	ID                     graphql.ID                                       `json:"id"`
+type executorSecretsIntegrbtionTestResponseSecretNode struct {
+	ID                     grbphql.ID                                       `json:"id"`
 	Key                    string                                           `json:"key"`
 	Scope                  string                                           `json:"scope"`
-	OverwritesGlobalSecret bool                                             `json:"overwritesGlobalSecret"`
-	Namespace              executorSecretsIntegrationTestResponseNamespace  `json:"namespace"`
-	Creator                executorSecretsIntegrationTestResponseCreator    `json:"creator"`
-	CreatedAt              string                                           `json:"createdAt"`
-	UpdatedAt              string                                           `json:"updatedAt"`
-	AccessLogs             executorSecretsIntegrationTestResponseAccessLogs `json:"accessLogs"`
+	OverwritesGlobblSecret bool                                             `json:"overwritesGlobblSecret"`
+	Nbmespbce              executorSecretsIntegrbtionTestResponseNbmespbce  `json:"nbmespbce"`
+	Crebtor                executorSecretsIntegrbtionTestResponseCrebtor    `json:"crebtor"`
+	CrebtedAt              string                                           `json:"crebtedAt"`
+	UpdbtedAt              string                                           `json:"updbtedAt"`
+	AccessLogs             executorSecretsIntegrbtionTestResponseAccessLogs `json:"bccessLogs"`
 }
 
-type executorSecretsIntegrationTestResponseNamespace struct {
-	ID graphql.ID `json:"id"`
+type executorSecretsIntegrbtionTestResponseNbmespbce struct {
+	ID grbphql.ID `json:"id"`
 }
 
-type executorSecretsIntegrationTestResponseCreator struct {
-	ID graphql.ID `json:"id"`
+type executorSecretsIntegrbtionTestResponseCrebtor struct {
+	ID grbphql.ID `json:"id"`
 }
 
-type executorSecretsIntegrationTestResponseAccessLogs struct {
-	TotalCount int32                                                 `json:"totalCount"`
-	PageInfo   executorSecretsIntegrationTestResponsePageInfo        `json:"pageInfo"`
-	Nodes      []executorSecretsIntegrationTestResponseAccessLogNode `json:"nodes"`
+type executorSecretsIntegrbtionTestResponseAccessLogs struct {
+	TotblCount int32                                                 `json:"totblCount"`
+	PbgeInfo   executorSecretsIntegrbtionTestResponsePbgeInfo        `json:"pbgeInfo"`
+	Nodes      []executorSecretsIntegrbtionTestResponseAccessLogNode `json:"nodes"`
 }
 
-type executorSecretsIntegrationTestResponseAccessLogNode struct {
-	ID             graphql.ID                                                    `json:"id"`
-	ExecutorSecret executorSecretsIntegrationTestResponseAccessLogExecutorSecret `json:"executorSecret"`
-	User           executorSecretsIntegrationTestResponseAccessLogUser           `json:"user"`
-	CreatedAt      string                                                        `json:"createdAt"`
+type executorSecretsIntegrbtionTestResponseAccessLogNode struct {
+	ID             grbphql.ID                                                    `json:"id"`
+	ExecutorSecret executorSecretsIntegrbtionTestResponseAccessLogExecutorSecret `json:"executorSecret"`
+	User           executorSecretsIntegrbtionTestResponseAccessLogUser           `json:"user"`
+	CrebtedAt      string                                                        `json:"crebtedAt"`
 }
 
-type executorSecretsIntegrationTestResponseAccessLogExecutorSecret struct {
-	ID graphql.ID `json:"id"`
+type executorSecretsIntegrbtionTestResponseAccessLogExecutorSecret struct {
+	ID grbphql.ID `json:"id"`
 }
 
-type executorSecretsIntegrationTestResponseAccessLogUser struct {
-	ID graphql.ID `json:"id"`
+type executorSecretsIntegrbtionTestResponseAccessLogUser struct {
+	ID grbphql.ID `json:"id"`
 }
 
-func TestValidateExecutorSecret(t *testing.T) {
+func TestVblidbteExecutorSecret(t *testing.T) {
 	tts := []struct {
-		name    string
+		nbme    string
 		key     string
-		value   string
-		wantErr string
+		vblue   string
+		wbntErr string
 	}{
 		{
-			name:    "empty value",
-			value:   "",
-			wantErr: "value cannot be empty string",
+			nbme:    "empty vblue",
+			vblue:   "",
+			wbntErr: "vblue cbnnot be empty string",
 		},
 		{
-			name:    "valid secret",
-			value:   "set",
+			nbme:    "vblid secret",
+			vblue:   "set",
 			key:     "ANY",
-			wantErr: "",
+			wbntErr: "",
 		},
 		{
-			name:    "unparseable docker auth config",
+			nbme:    "unpbrsebble docker buth config",
 			key:     "DOCKER_AUTH_CONFIG",
-			value:   "notjson",
-			wantErr: "failed to unmarshal docker auth config for validation: invalid character 'o' in literal null (expecting 'u')",
+			vblue:   "notjson",
+			wbntErr: "fbiled to unmbrshbl docker buth config for vblidbtion: invblid chbrbcter 'o' in literbl null (expecting 'u')",
 		},
 		{
-			name:    "docker auth config with cred helper",
+			nbme:    "docker buth config with cred helper",
 			key:     "DOCKER_AUTH_CONFIG",
-			value:   `{"credHelpers": { "hub.docker.com": "sg-login" }}`,
-			wantErr: "cannot use credential helpers in docker auth config set via secrets",
+			vblue:   `{"credHelpers": { "hub.docker.com": "sg-login" }}`,
+			wbntErr: "cbnnot use credentibl helpers in docker buth config set vib secrets",
 		},
 		{
-			name:    "docker auth config with cred helper",
+			nbme:    "docker buth config with cred helper",
 			key:     "DOCKER_AUTH_CONFIG",
-			value:   `{"credsStore": "desktop"}`,
-			wantErr: "cannot use credential stores in docker auth config set via secrets",
+			vblue:   `{"credsStore": "desktop"}`,
+			wbntErr: "cbnnot use credentibl stores in docker buth config set vib secrets",
 		},
 		{
-			name:    "docker auth config with additional property",
+			nbme:    "docker buth config with bdditionbl property",
 			key:     "DOCKER_AUTH_CONFIG",
-			value:   `{"additionalProperty": true}`,
-			wantErr: "failed to unmarshal docker auth config for validation: json: unknown field \"additionalProperty\"",
+			vblue:   `{"bdditionblProperty": true}`,
+			wbntErr: "fbiled to unmbrshbl docker buth config for vblidbtion: json: unknown field \"bdditionblProperty\"",
 		},
 		{
-			name:    "docker auth config with invalid auth value",
+			nbme:    "docker buth config with invblid buth vblue",
 			key:     "DOCKER_AUTH_CONFIG",
-			value:   `{"auths": { "hub.docker.com": { "auth": "bm90d2l0aGNvbG9u" }}}`, // content: base64(notwithcolon)
-			wantErr: "invalid credential in auths section for \"hub.docker.com\" format has to be base64(username:password)",
+			vblue:   `{"buths": { "hub.docker.com": { "buth": "bm90d2l0bGNvbG9u" }}}`, // content: bbse64(notwithcolon)
+			wbntErr: "invblid credentibl in buths section for \"hub.docker.com\" formbt hbs to be bbse64(usernbme:pbssword)",
 		},
 		{
-			name:    "docker auth config with valid auth value",
+			nbme:    "docker buth config with vblid buth vblue",
 			key:     "DOCKER_AUTH_CONFIG",
-			value:   `{"auths": { "hub.docker.com": { "auth": "dXNlcm5hbWU6cGFzc3dvcmQ=" }}}`, // content: base64(username:password)
-			wantErr: "",
+			vblue:   `{"buths": { "hub.docker.com": { "buth": "dXNlcm5hbWU6cGFzc3dvcmQ=" }}}`, // content: bbse64(usernbme:pbssword)
+			wbntErr: "",
 		},
 	}
-	for _, tt := range tts {
-		t.Run(tt.name, func(t *testing.T) {
-			have := validateExecutorSecret(&database.ExecutorSecret{Key: tt.key}, tt.value)
-			if have == nil && tt.wantErr == "" {
+	for _, tt := rbnge tts {
+		t.Run(tt.nbme, func(t *testing.T) {
+			hbve := vblidbteExecutorSecret(&dbtbbbse.ExecutorSecret{Key: tt.key}, tt.vblue)
+			if hbve == nil && tt.wbntErr == "" {
 				return
 			}
-			if have != nil && tt.wantErr == "" {
-				t.Fatalf("invalid non-nil error returned %s", have)
+			if hbve != nil && tt.wbntErr == "" {
+				t.Fbtblf("invblid non-nil error returned %s", hbve)
 			}
-			if have == nil && tt.wantErr != "" {
-				t.Fatalf("invalid nil error returned")
+			if hbve == nil && tt.wbntErr != "" {
+				t.Fbtblf("invblid nil error returned")
 			}
-			if have.Error() != tt.wantErr {
-				t.Fatalf("invalid error, want=%q have =%q", tt.wantErr, have.Error())
+			if hbve.Error() != tt.wbntErr {
+				t.Fbtblf("invblid error, wbnt=%q hbve =%q", tt.wbntErr, hbve.Error())
 			}
 		})
 	}

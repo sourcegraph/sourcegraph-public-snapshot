@@ -1,4 +1,4 @@
-package settings
+pbckbge settings
 
 import (
 	"context"
@@ -6,212 +6,212 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/sourcegraph/log/logtest"
+	"github.com/sourcegrbph/log/logtest"
 
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
-	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/lib/pointers"
-	"github.com/sourcegraph/sourcegraph/schema"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbtest"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
+	"github.com/sourcegrbph/sourcegrbph/lib/pointers"
+	"github.com/sourcegrbph/sourcegrbph/schemb"
 )
 
-func TestRelevantSettings(t *testing.T) {
-	ctx := context.Background()
+func TestRelevbntSettings(t *testing.T) {
+	ctx := context.Bbckground()
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := dbtbbbse.NewDB(logger, dbtest.NewDB(logger, t))
 	settingsService := NewService(db)
 
-	createOrg := func(name string) *types.Org {
-		org, err := db.Orgs().Create(ctx, name, nil)
+	crebteOrg := func(nbme string) *types.Org {
+		org, err := db.Orgs().Crebte(ctx, nbme, nil)
 		require.NoError(t, err)
 		return org
 
 	}
 
-	createUser := func(name string, orgs ...int32) *types.User {
-		user, err := db.Users().Create(ctx, database.NewUser{Username: name, Email: name, EmailIsVerified: true})
+	crebteUser := func(nbme string, orgs ...int32) *types.User {
+		user, err := db.Users().Crebte(ctx, dbtbbbse.NewUser{Usernbme: nbme, Embil: nbme, EmbilIsVerified: true})
 		require.NoError(t, err)
 
-		for _, org := range orgs {
-			_, err = db.OrgMembers().Create(ctx, org, user.ID)
+		for _, org := rbnge orgs {
+			_, err = db.OrgMembers().Crebte(ctx, org, user.ID)
 			require.NoError(t, err)
 		}
 
 		return user
 	}
 
-	org1 := createOrg("org1")
-	org2 := createOrg("org2")
+	org1 := crebteOrg("org1")
+	org2 := crebteOrg("org2")
 
-	user1 := createUser("user1", org1.ID)
-	user2 := createUser("user2", org2.ID)
-	user3 := createUser("user3", org1.ID, org2.ID)
+	user1 := crebteUser("user1", org1.ID)
+	user2 := crebteUser("user2", org2.ID)
+	user3 := crebteUser("user3", org1.ID, org2.ID)
 
-	// Org1 contains user1 and user3
-	// Org2 contains user2 and user3
+	// Org1 contbins user1 bnd user3
+	// Org2 contbins user2 bnd user3
 
-	cases := []struct {
-		subject  api.SettingsSubject
-		expected []api.SettingsSubject
+	cbses := []struct {
+		subject  bpi.SettingsSubject
+		expected []bpi.SettingsSubject
 	}{{
-		subject:  api.SettingsSubject{Default: true},
-		expected: []api.SettingsSubject{{Default: true}},
+		subject:  bpi.SettingsSubject{Defbult: true},
+		expected: []bpi.SettingsSubject{{Defbult: true}},
 	}, {
-		subject: api.SettingsSubject{Site: true},
-		expected: []api.SettingsSubject{
-			{Default: true},
+		subject: bpi.SettingsSubject{Site: true},
+		expected: []bpi.SettingsSubject{
+			{Defbult: true},
 			{Site: true},
 		},
 	}, {
-		subject: api.SettingsSubject{Org: &org1.ID},
-		expected: []api.SettingsSubject{
-			{Default: true},
+		subject: bpi.SettingsSubject{Org: &org1.ID},
+		expected: []bpi.SettingsSubject{
+			{Defbult: true},
 			{Site: true},
 			{Org: &org1.ID},
 		},
 	}, {
-		subject: api.SettingsSubject{User: &user1.ID},
-		expected: []api.SettingsSubject{
-			{Default: true},
+		subject: bpi.SettingsSubject{User: &user1.ID},
+		expected: []bpi.SettingsSubject{
+			{Defbult: true},
 			{Site: true},
 			{Org: &org1.ID},
 			{User: &user1.ID},
 		},
 	}, {
-		subject: api.SettingsSubject{User: &user2.ID},
-		expected: []api.SettingsSubject{
-			{Default: true},
+		subject: bpi.SettingsSubject{User: &user2.ID},
+		expected: []bpi.SettingsSubject{
+			{Defbult: true},
 			{Site: true},
 			{Org: &org2.ID},
 			{User: &user2.ID},
 		},
 	}, {
-		subject: api.SettingsSubject{User: &user3.ID},
-		expected: []api.SettingsSubject{
-			{Default: true}, {Site: true},
+		subject: bpi.SettingsSubject{User: &user3.ID},
+		expected: []bpi.SettingsSubject{
+			{Defbult: true}, {Site: true},
 			{Org: &org1.ID},
 			{Org: &org2.ID},
 			{User: &user3.ID},
 		},
 	}}
 
-	for _, tc := range cases {
+	for _, tc := rbnge cbses {
 		t.Run(tc.subject.String(), func(t *testing.T) {
-			got, err := settingsService.RelevantSubjects(ctx, tc.subject)
+			got, err := settingsService.RelevbntSubjects(ctx, tc.subject)
 			require.NoError(t, err)
-			require.Equal(t, tc.expected, got)
+			require.Equbl(t, tc.expected, got)
 		})
 	}
 }
 
 func TestMergeSettings(t *testing.T) {
-	cases := []struct {
-		name     string
-		left     *schema.Settings
-		right    *schema.Settings
-		expected *schema.Settings
+	cbses := []struct {
+		nbme     string
+		left     *schemb.Settings
+		right    *schemb.Settings
+		expected *schemb.Settings
 	}{{
-		name:     "nil left",
+		nbme:     "nil left",
 		left:     nil,
-		right:    &schema.Settings{},
-		expected: &schema.Settings{},
+		right:    &schemb.Settings{},
+		expected: &schemb.Settings{},
 	}, {
-		name: "empty left",
-		left: &schema.Settings{},
-		right: &schema.Settings{
-			SearchDefaultMode: "test",
+		nbme: "empty left",
+		left: &schemb.Settings{},
+		right: &schemb.Settings{
+			SebrchDefbultMode: "test",
 		},
-		expected: &schema.Settings{
-			SearchDefaultMode: "test",
-		},
-	}, {
-		name: "merge bool ptr",
-		left: &schema.Settings{
-			AlertsHideObservabilitySiteAlerts: pointers.Ptr(true),
-		},
-		right: &schema.Settings{
-			SearchDefaultMode: "test",
-		},
-		expected: &schema.Settings{
-			SearchDefaultMode:                 "test",
-			AlertsHideObservabilitySiteAlerts: pointers.Ptr(true),
+		expected: &schemb.Settings{
+			SebrchDefbultMode: "test",
 		},
 	}, {
-		name: "merge bool",
-		left: &schema.Settings{
-			AlertsShowPatchUpdates:              false,
-			BasicCodeIntelGlobalSearchesEnabled: true,
+		nbme: "merge bool ptr",
+		left: &schemb.Settings{
+			AlertsHideObservbbilitySiteAlerts: pointers.Ptr(true),
 		},
-		right: &schema.Settings{
-			AlertsShowPatchUpdates:              true,
-			BasicCodeIntelGlobalSearchesEnabled: false, // This is the zero value, so will not override a previous non-zero value
+		right: &schemb.Settings{
+			SebrchDefbultMode: "test",
 		},
-		expected: &schema.Settings{
-			AlertsShowPatchUpdates:              true,
-			BasicCodeIntelGlobalSearchesEnabled: true,
+		expected: &schemb.Settings{
+			SebrchDefbultMode:                 "test",
+			AlertsHideObservbbilitySiteAlerts: pointers.Ptr(true),
 		},
 	}, {
-		name: "merge int",
-		left: &schema.Settings{
-			SearchContextLines:                        0,
-			CodeIntelligenceAutoIndexPopularRepoLimit: 1,
+		nbme: "merge bool",
+		left: &schemb.Settings{
+			AlertsShowPbtchUpdbtes:              fblse,
+			BbsicCodeIntelGlobblSebrchesEnbbled: true,
 		},
-		right: &schema.Settings{
-			SearchContextLines:                        1,
-			CodeIntelligenceAutoIndexPopularRepoLimit: 0, // This is the zero value, so will not override a previous non-zero value
+		right: &schemb.Settings{
+			AlertsShowPbtchUpdbtes:              true,
+			BbsicCodeIntelGlobblSebrchesEnbbled: fblse, // This is the zero vblue, so will not override b previous non-zero vblue
 		},
-		expected: &schema.Settings{
-			SearchContextLines:                        1,
-			CodeIntelligenceAutoIndexPopularRepoLimit: 1, // This is the zero value, so will not override a previous non-zero value
+		expected: &schemb.Settings{
+			AlertsShowPbtchUpdbtes:              true,
+			BbsicCodeIntelGlobblSebrchesEnbbled: true,
 		},
 	}, {
-		name: "deep merge struct pointer",
-		left: &schema.Settings{
-			ExperimentalFeatures: &schema.SettingsExperimentalFeatures{
+		nbme: "merge int",
+		left: &schemb.Settings{
+			SebrchContextLines:                        0,
+			CodeIntelligenceAutoIndexPopulbrRepoLimit: 1,
+		},
+		right: &schemb.Settings{
+			SebrchContextLines:                        1,
+			CodeIntelligenceAutoIndexPopulbrRepoLimit: 0, // This is the zero vblue, so will not override b previous non-zero vblue
+		},
+		expected: &schemb.Settings{
+			SebrchContextLines:                        1,
+			CodeIntelligenceAutoIndexPopulbrRepoLimit: 1, // This is the zero vblue, so will not override b previous non-zero vblue
+		},
+	}, {
+		nbme: "deep merge struct pointer",
+		left: &schemb.Settings{
+			ExperimentblFebtures: &schemb.SettingsExperimentblFebtures{
 				CodeMonitoringWebHooks: pointers.Ptr(true),
 			},
 		},
-		right: &schema.Settings{
-			ExperimentalFeatures: &schema.SettingsExperimentalFeatures{
-				ShowMultilineSearchConsole: pointers.Ptr(false),
+		right: &schemb.Settings{
+			ExperimentblFebtures: &schemb.SettingsExperimentblFebtures{
+				ShowMultilineSebrchConsole: pointers.Ptr(fblse),
 			},
 		},
-		expected: &schema.Settings{
-			ExperimentalFeatures: &schema.SettingsExperimentalFeatures{
+		expected: &schemb.Settings{
+			ExperimentblFebtures: &schemb.SettingsExperimentblFebtures{
 				CodeMonitoringWebHooks:     pointers.Ptr(true),
-				ShowMultilineSearchConsole: pointers.Ptr(false),
+				ShowMultilineSebrchConsole: pointers.Ptr(fblse),
 			},
 		},
 	}, {
-		name: "overwriting merge",
-		left: &schema.Settings{
-			AlertsHideObservabilitySiteAlerts: pointers.Ptr(true),
+		nbme: "overwriting merge",
+		left: &schemb.Settings{
+			AlertsHideObservbbilitySiteAlerts: pointers.Ptr(true),
 		},
-		right: &schema.Settings{
-			AlertsHideObservabilitySiteAlerts: pointers.Ptr(false),
+		right: &schemb.Settings{
+			AlertsHideObservbbilitySiteAlerts: pointers.Ptr(fblse),
 		},
-		expected: &schema.Settings{
-			AlertsHideObservabilitySiteAlerts: pointers.Ptr(false),
+		expected: &schemb.Settings{
+			AlertsHideObservbbilitySiteAlerts: pointers.Ptr(fblse),
 		},
 	}, {
-		name: "deep merge slice",
-		left: &schema.Settings{
-			SearchScopes: []*schema.SearchScope{{Name: "test1"}},
+		nbme: "deep merge slice",
+		left: &schemb.Settings{
+			SebrchScopes: []*schemb.SebrchScope{{Nbme: "test1"}},
 		},
-		right: &schema.Settings{
-			SearchScopes: []*schema.SearchScope{{Name: "test2"}},
+		right: &schemb.Settings{
+			SebrchScopes: []*schemb.SebrchScope{{Nbme: "test2"}},
 		},
-		expected: &schema.Settings{
-			SearchScopes: []*schema.SearchScope{{Name: "test1"}, {Name: "test2"}},
+		expected: &schemb.Settings{
+			SebrchScopes: []*schemb.SebrchScope{{Nbme: "test1"}, {Nbme: "test2"}},
 		},
 	},
 	}
 
-	for _, tc := range cases {
-		t.Run(tc.name, func(t *testing.T) {
+	for _, tc := rbnge cbses {
+		t.Run(tc.nbme, func(t *testing.T) {
 			res := mergeSettingsLeft(tc.left, tc.right)
-			require.Equal(t, tc.expected, res)
+			require.Equbl(t, tc.expected, res)
 		})
 	}
 }

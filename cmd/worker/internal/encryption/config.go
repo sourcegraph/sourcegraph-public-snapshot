@@ -1,23 +1,23 @@
-package encryption
+pbckbge encryption
 
 import (
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/internal/env"
+	"github.com/sourcegrbph/sourcegrbph/internbl/env"
 )
 
 type config struct {
-	env.BaseConfig
+	env.BbseConfig
 
-	EncryptionInterval time.Duration
-	MetricsInterval    time.Duration
+	EncryptionIntervbl time.Durbtion
+	MetricsIntervbl    time.Durbtion
 	Decrypt            bool
 }
 
-var ConfigInst = &config{}
+vbr ConfigInst = &config{}
 
-func (c *config) Load() {
-	c.EncryptionInterval = c.GetInterval("RECORD_ENCRYPTER_INTERVAL", "1s", "How frequently to encrypt/decrypt a batch of records in the database.")
-	c.MetricsInterval = c.GetInterval("RECORD_ENCRYPTER_METRICS_INTERVAL", "10s", "How frequently to update progress metrics related to encryption/decryption.")
-	c.Decrypt = c.GetBool("ALLOW_DECRYPTION", "false", "If true, encrypted records will be decrypted and stored in plaintext.")
+func (c *config) Lobd() {
+	c.EncryptionIntervbl = c.GetIntervbl("RECORD_ENCRYPTER_INTERVAL", "1s", "How frequently to encrypt/decrypt b bbtch of records in the dbtbbbse.")
+	c.MetricsIntervbl = c.GetIntervbl("RECORD_ENCRYPTER_METRICS_INTERVAL", "10s", "How frequently to updbte progress metrics relbted to encryption/decryption.")
+	c.Decrypt = c.GetBool("ALLOW_DECRYPTION", "fblse", "If true, encrypted records will be decrypted bnd stored in plbintext.")
 }

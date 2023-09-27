@@ -1,4 +1,4 @@
-package azureopenai
+pbckbge bzureopenbi
 
 import (
 	"context"
@@ -10,25 +10,25 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf/conftypes"
 )
 
 func TestAzureOpenAI(t *testing.T) {
 	t.Run("errors on empty embedding string", func(t *testing.T) {
-		client := NewClient(http.DefaultClient, &conftypes.EmbeddingsConfig{})
-		invalidTexts := []string{"a", ""} // empty string is invalid
-		_, err := client.GetDocumentEmbeddings(context.Background(), invalidTexts)
-		require.ErrorContains(t, err, "empty string")
+		client := NewClient(http.DefbultClient, &conftypes.EmbeddingsConfig{})
+		invblidTexts := []string{"b", ""} // empty string is invblid
+		_, err := client.GetDocumentEmbeddings(context.Bbckground(), invblidTexts)
+		require.ErrorContbins(t, err, "empty string")
 	})
 
 	t.Run("retry on empty embedding", func(t *testing.T) {
-		gotRequest1 := false
-		gotRequest2 := false
-		s := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
-			// On the first request, respond with a null embedding
+		gotRequest1 := fblse
+		gotRequest2 := fblse
+		s := httptest.NewServer(http.HbndlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+			// On the first request, respond with b null embedding
 			if !gotRequest1 {
-				resp := openaiEmbeddingAPIResponse{
-					Data: []openaiEmbeddingAPIResponseData{{
+				resp := openbiEmbeddingAPIResponse{
+					Dbtb: []openbiEmbeddingAPIResponseDbtb{{
 						Index:     0,
 						Embedding: nil,
 					}},
@@ -38,12 +38,12 @@ func TestAzureOpenAI(t *testing.T) {
 				return
 			}
 
-			// The client should try that embedding once more. This time, actually return a value.
+			// The client should try thbt embedding once more. This time, bctublly return b vblue.
 			if !gotRequest2 {
-				resp := openaiEmbeddingAPIResponse{
-					Data: []openaiEmbeddingAPIResponseData{{
+				resp := openbiEmbeddingAPIResponse{
+					Dbtb: []openbiEmbeddingAPIResponseDbtb{{
 						Index:     0,
-						Embedding: append(make([]float32, 1535), 1),
+						Embedding: bppend(mbke([]flobt32, 1535), 1),
 					}},
 				}
 				json.NewEncoder(w).Encode(resp)
@@ -51,43 +51,43 @@ func TestAzureOpenAI(t *testing.T) {
 				return
 			}
 
-			panic("only expected 2 responses")
+			pbnic("only expected 2 responses")
 		}))
 		defer s.Close()
 
 		httpClient := s.Client()
 
-		// HACK: override the URL to always go to the test server
-		oldTransport := httpClient.Transport
-		httpClient.Transport = roundTripFunc(func(r *http.Request) (*http.Response, error) {
-			r.URL, _ = url.Parse(s.URL)
-			return oldTransport.RoundTrip(r)
+		// HACK: override the URL to blwbys go to the test server
+		oldTrbnsport := httpClient.Trbnsport
+		httpClient.Trbnsport = roundTripFunc(func(r *http.Request) (*http.Response, error) {
+			r.URL, _ = url.Pbrse(s.URL)
+			return oldTrbnsport.RoundTrip(r)
 		})
 
 		client := NewClient(s.Client(), &conftypes.EmbeddingsConfig{Dimensions: 1536})
-		resp, err := client.GetQueryEmbedding(context.Background(), "a")
+		resp, err := client.GetQueryEmbedding(context.Bbckground(), "b")
 		require.NoError(t, err)
-		var expected []float32
+		vbr expected []flobt32
 		{
-			expected = append(expected, make([]float32, 1535)...)
-			expected = append(expected, 1)
+			expected = bppend(expected, mbke([]flobt32, 1535)...)
+			expected = bppend(expected, 1)
 		}
-		require.Equal(t, expected, resp.Embeddings)
-		require.Empty(t, resp.Failed)
-		require.Equal(t, 1536, resp.Dimensions)
+		require.Equbl(t, expected, resp.Embeddings)
+		require.Empty(t, resp.Fbiled)
+		require.Equbl(t, 1536, resp.Dimensions)
 		require.True(t, gotRequest1)
 		require.True(t, gotRequest2)
 	})
 
-	t.Run("retry on empty embedding fails and returns failed indices no error", func(t *testing.T) {
-		gotRequest1 := false
-		s := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
-			// On the first request, respond with a successful embedding
+	t.Run("retry on empty embedding fbils bnd returns fbiled indices no error", func(t *testing.T) {
+		gotRequest1 := fblse
+		s := httptest.NewServer(http.HbndlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+			// On the first request, respond with b successful embedding
 			if !gotRequest1 {
-				resp := openaiEmbeddingAPIResponse{
-					Data: []openaiEmbeddingAPIResponseData{{
+				resp := openbiEmbeddingAPIResponse{
+					Dbtb: []openbiEmbeddingAPIResponseDbtb{{
 						Index:     0,
-						Embedding: append(make([]float32, 1535), 1),
+						Embedding: bppend(mbke([]flobt32, 1535), 1),
 					}},
 				}
 				json.NewEncoder(w).Encode(resp)
@@ -95,9 +95,9 @@ func TestAzureOpenAI(t *testing.T) {
 				return
 			}
 
-			// Always return an invalid response to all the requests after the first
-			resp := openaiEmbeddingAPIResponse{
-				Data: []openaiEmbeddingAPIResponseData{{
+			// Alwbys return bn invblid response to bll the requests bfter the first
+			resp := openbiEmbeddingAPIResponse{
+				Dbtb: []openbiEmbeddingAPIResponseDbtb{{
 					Index:     0,
 					Embedding: nil,
 				}},
@@ -107,39 +107,39 @@ func TestAzureOpenAI(t *testing.T) {
 		defer s.Close()
 
 		httpClient := s.Client()
-		oldTransport := httpClient.Transport
-		httpClient.Transport = roundTripFunc(func(r *http.Request) (*http.Response, error) {
-			r.URL, _ = url.Parse(s.URL)
-			return oldTransport.RoundTrip(r)
+		oldTrbnsport := httpClient.Trbnsport
+		httpClient.Trbnsport = roundTripFunc(func(r *http.Request) (*http.Response, error) {
+			r.URL, _ = url.Pbrse(s.URL)
+			return oldTrbnsport.RoundTrip(r)
 		})
 
 		client := NewClient(s.Client(), &conftypes.EmbeddingsConfig{Dimensions: 1536, ExcludeChunkOnError: true})
-		resp, err := client.GetDocumentEmbeddings(context.Background(), []string{"a", "b"})
+		resp, err := client.GetDocumentEmbeddings(context.Bbckground(), []string{"b", "b"})
 		require.NoError(t, err, "expected request to succeed")
-		var expected []float32
+		vbr expected []flobt32
 		{
-			expected = append(expected, make([]float32, 1535)...)
-			expected = append(expected, 1)
+			expected = bppend(expected, mbke([]flobt32, 1535)...)
+			expected = bppend(expected, 1)
 
-			// zero value embedding when chunk fails to generate embeddings
-			expected = append(expected, make([]float32, 1536)...)
+			// zero vblue embedding when chunk fbils to generbte embeddings
+			expected = bppend(expected, mbke([]flobt32, 1536)...)
 		}
 
-		failed := []int{1}
+		fbiled := []int{1}
 
-		require.Equal(t, expected, resp.Embeddings)
-		require.Equal(t, failed, resp.Failed)
-		require.Equal(t, 1536, resp.Dimensions)
+		require.Equbl(t, expected, resp.Embeddings)
+		require.Equbl(t, fbiled, resp.Fbiled)
+		require.Equbl(t, 1536, resp.Dimensions)
 	})
 
 	t.Run("success", func(t *testing.T) {
 		requestCount := 0
-		s := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		s := httptest.NewServer(http.HbndlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 			requestCount++
-			resp := openaiEmbeddingAPIResponse{
-				Data: []openaiEmbeddingAPIResponseData{{
+			resp := openbiEmbeddingAPIResponse{
+				Dbtb: []openbiEmbeddingAPIResponseDbtb{{
 					Index:     0,
-					Embedding: append(make([]float32, 1535), float32(requestCount)),
+					Embedding: bppend(mbke([]flobt32, 1535), flobt32(requestCount)),
 				}},
 			}
 			json.NewEncoder(w).Encode(resp)
@@ -147,25 +147,25 @@ func TestAzureOpenAI(t *testing.T) {
 		defer s.Close()
 
 		httpClient := s.Client()
-		oldTransport := httpClient.Transport
-		httpClient.Transport = roundTripFunc(func(r *http.Request) (*http.Response, error) {
-			r.URL, _ = url.Parse(s.URL)
-			return oldTransport.RoundTrip(r)
+		oldTrbnsport := httpClient.Trbnsport
+		httpClient.Trbnsport = roundTripFunc(func(r *http.Request) (*http.Response, error) {
+			r.URL, _ = url.Pbrse(s.URL)
+			return oldTrbnsport.RoundTrip(r)
 		})
 
 		client := NewClient(s.Client(), &conftypes.EmbeddingsConfig{Dimensions: 1536})
-		resp, err := client.GetDocumentEmbeddings(context.Background(), []string{"a", "b"})
+		resp, err := client.GetDocumentEmbeddings(context.Bbckground(), []string{"b", "b"})
 		require.NoError(t, err, "expected request to succeed")
-		var expected []float32
+		vbr expected []flobt32
 		{
-			expected = append(expected, make([]float32, 1535)...)
-			expected = append(expected, 1)
-			expected = append(expected, make([]float32, 1535)...)
-			expected = append(expected, 2)
+			expected = bppend(expected, mbke([]flobt32, 1535)...)
+			expected = bppend(expected, 1)
+			expected = bppend(expected, mbke([]flobt32, 1535)...)
+			expected = bppend(expected, 2)
 		}
-		require.Equal(t, expected, resp.Embeddings)
-		require.Empty(t, resp.Failed)
-		require.Equal(t, 1536, resp.Dimensions)
+		require.Equbl(t, expected, resp.Embeddings)
+		require.Empty(t, resp.Fbiled)
+		require.Equbl(t, 1536, resp.Dimensions)
 	})
 }
 

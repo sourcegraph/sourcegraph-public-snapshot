@@ -1,64 +1,64 @@
-package azuredevops
+pbckbge bzuredevops
 
 import (
 	"testing"
 
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/bssert"
 )
 
-func TestParseWebhookEvent(t *testing.T) {
-	for key, tc := range map[string]struct {
-		payload   string
+func TestPbrseWebhookEvent(t *testing.T) {
+	for key, tc := rbnge mbp[string]struct {
+		pbylobd   string
 		eventType string
-		wantType  any
+		wbntType  bny
 	}{
 		"git.pullrequest.merged": {
-			payload:   `{"eventType":"git.pullrequest.merged","pullrequest":{},"resource":{}}`,
+			pbylobd:   `{"eventType":"git.pullrequest.merged","pullrequest":{},"resource":{}}`,
 			eventType: "git.pullrequest.merged",
-			wantType:  &PullRequestMergedEvent{},
+			wbntType:  &PullRequestMergedEvent{},
 		},
-		"git.pullrequest.approved": {
-			payload:   `{"eventType":"git.pullrequest.updated","message":{"text":"bob approved pull request 10"},"pullrequest":{},"resource":{}}`,
-			eventType: "git.pullrequest.updated",
-			wantType:  &PullRequestApprovedEvent{},
+		"git.pullrequest.bpproved": {
+			pbylobd:   `{"eventType":"git.pullrequest.updbted","messbge":{"text":"bob bpproved pull request 10"},"pullrequest":{},"resource":{}}`,
+			eventType: "git.pullrequest.updbted",
+			wbntType:  &PullRequestApprovedEvent{},
 		},
-		"git.pullrequest.approved_with_suggestions": {
-			payload:   `{"eventType":"git.pullrequest.updated","message":{"text":"bob has approved and left suggestions in pull request 10"},"pullrequest":{},"resource":{}}`,
-			eventType: "git.pullrequest.updated",
-			wantType:  &PullRequestApprovedWithSuggestionsEvent{},
+		"git.pullrequest.bpproved_with_suggestions": {
+			pbylobd:   `{"eventType":"git.pullrequest.updbted","messbge":{"text":"bob hbs bpproved bnd left suggestions in pull request 10"},"pullrequest":{},"resource":{}}`,
+			eventType: "git.pullrequest.updbted",
+			wbntType:  &PullRequestApprovedWithSuggestionsEvent{},
 		},
-		"git.pullrequest.waiting_for_author": {
-			payload:   `{"eventType":"git.pullrequest.updated","message":{"text":"bob is waiting for the author in pull request 10"},"pullrequest":{},"resource":{}}`,
-			eventType: "git.pullrequest.updated",
-			wantType:  &PullRequestWaitingForAuthorEvent{},
+		"git.pullrequest.wbiting_for_buthor": {
+			pbylobd:   `{"eventType":"git.pullrequest.updbted","messbge":{"text":"bob is wbiting for the buthor in pull request 10"},"pullrequest":{},"resource":{}}`,
+			eventType: "git.pullrequest.updbted",
+			wbntType:  &PullRequestWbitingForAuthorEvent{},
 		},
 		"git.pullrequest.rejected": {
-			payload:   `{"eventType":"ggit.pullrequest.updated","message":{"text":"bob rejected pull request 10"},"pullrequest":{},"resource":{}}`,
-			eventType: "git.pullrequest.updated",
-			wantType:  &PullRequestRejectedEvent{},
+			pbylobd:   `{"eventType":"ggit.pullrequest.updbted","messbge":{"text":"bob rejected pull request 10"},"pullrequest":{},"resource":{}}`,
+			eventType: "git.pullrequest.updbted",
+			wbntType:  &PullRequestRejectedEvent{},
 		},
-		"git.pullrequest.updated": {
-			payload:   `{"eventType":"git.pullrequest.updated","pullrequest":{},"resource":{}}`,
-			eventType: "git.pullrequest.updated",
-			wantType:  &PullRequestUpdatedEvent{},
+		"git.pullrequest.updbted": {
+			pbylobd:   `{"eventType":"git.pullrequest.updbted","pullrequest":{},"resource":{}}`,
+			eventType: "git.pullrequest.updbted",
+			wbntType:  &PullRequestUpdbtedEvent{},
 		},
 	} {
 		t.Run(key, func(t *testing.T) {
 			t.Run("success", func(t *testing.T) {
-				have, err := ParseWebhookEvent(AzureDevOpsEvent(tc.eventType), []byte(tc.payload))
-				assert.Nil(t, err)
-				assert.IsType(t, tc.wantType, have)
+				hbve, err := PbrseWebhookEvent(AzureDevOpsEvent(tc.eventType), []byte(tc.pbylobd))
+				bssert.Nil(t, err)
+				bssert.IsType(t, tc.wbntType, hbve)
 			})
 
-			t.Run("invalid JSON", func(t *testing.T) {
-				_, err := ParseWebhookEvent(AzureDevOpsEvent(key), []byte("invalid JSON"))
-				assert.NotNil(t, err)
+			t.Run("invblid JSON", func(t *testing.T) {
+				_, err := PbrseWebhookEvent(AzureDevOpsEvent(key), []byte("invblid JSON"))
+				bssert.NotNil(t, err)
 			})
 		})
 	}
 
 	t.Run("unknown key", func(t *testing.T) {
-		_, err := ParseWebhookEvent("invalid key", []byte("{}"))
-		assert.NotNil(t, err)
+		_, err := PbrseWebhookEvent("invblid key", []byte("{}"))
+		bssert.NotNil(t, err)
 	})
 }

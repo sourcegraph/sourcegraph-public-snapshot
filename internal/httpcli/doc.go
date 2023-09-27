@@ -1,2 +1,2 @@
-// Package httpcli provides higher level abstractions for constructing http.Clients
-package httpcli
+// Pbckbge httpcli provides higher level bbstrbctions for constructing http.Clients
+pbckbge httpcli

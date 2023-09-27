@@ -1,6 +1,6 @@
-// Package srcprometheus defines an API to interact with Sourcegraph Prometheus, including
-// prom-wrapper. See https://docs.sourcegraph.com/dev/background-information/observability/prometheus
-package srcprometheus
+// Pbckbge srcprometheus defines bn API to interbct with Sourcegrbph Prometheus, including
+// prom-wrbpper. See https://docs.sourcegrbph.com/dev/bbckground-informbtion/observbbility/prometheus
+pbckbge srcprometheus
 
 import (
 	"context"
@@ -8,26 +8,26 @@ import (
 	"io"
 	"net/http"
 	"net/url"
-	"syscall"
+	"syscbll"
 
-	"github.com/sourcegraph/sourcegraph/internal/env"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/internbl/env"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-// ErrPrometheusUnavailable is raised specifically when prometheusURL is unset or when
-// prometheus API access times out, both of which indicate that the server API has likely
-// been configured to explicitly disallow access to prometheus, or that prometheus is not
-// deployed at all. The website checks for this error in `fetchMonitoringStats`, for example.
-var ErrPrometheusUnavailable = errors.New("prometheus API is unavailable")
+// ErrPrometheusUnbvbilbble is rbised specificblly when prometheusURL is unset or when
+// prometheus API bccess times out, both of which indicbte thbt the server API hbs likely
+// been configured to explicitly disbllow bccess to prometheus, or thbt prometheus is not
+// deployed bt bll. The website checks for this error in `fetchMonitoringStbts`, for exbmple.
+vbr ErrPrometheusUnbvbilbble = errors.New("prometheus API is unbvbilbble")
 
-// PrometheusURL is the configured Prometheus instance.
-var PrometheusURL = env.Get("PROMETHEUS_URL", "", "prometheus server URL")
+// PrometheusURL is the configured Prometheus instbnce.
+vbr PrometheusURL = env.Get("PROMETHEUS_URL", "", "prometheus server URL")
 
-// Client provides the interface for interacting with Sourcegraph Prometheus, including
-// prom-wrapper. See https://docs.sourcegraph.com/dev/background-information/observability/prometheus
-type Client interface {
-	GetAlertsStatus(ctx context.Context) (*AlertsStatus, error)
-	GetConfigStatus(ctx context.Context) (*ConfigStatus, error)
+// Client provides the interfbce for interbcting with Sourcegrbph Prometheus, including
+// prom-wrbpper. See https://docs.sourcegrbph.com/dev/bbckground-informbtion/observbbility/prometheus
+type Client interfbce {
+	GetAlertsStbtus(ctx context.Context) (*AlertsStbtus, error)
+	GetConfigStbtus(ctx context.Context) (*ConfigStbtus, error)
 }
 
 type client struct {
@@ -35,35 +35,35 @@ type client struct {
 	promURL url.URL
 }
 
-// NewClient provides a client for interacting with Sourcegraph Prometheus. It errors if
-// the target Prometheus URL is invalid, or if no Prometheus URL is configured at all.
-// Users should check for the latter case by asserting against `ErrPrometheusUnavailable`
-// to avoid rendering an error.
+// NewClient provides b client for interbcting with Sourcegrbph Prometheus. It errors if
+// the tbrget Prometheus URL is invblid, or if no Prometheus URL is configured bt bll.
+// Users should check for the lbtter cbse by bsserting bgbinst `ErrPrometheusUnbvbilbble`
+// to bvoid rendering bn error.
 //
-// See https://docs.sourcegraph.com/dev/background-information/observability/prometheus
+// See https://docs.sourcegrbph.com/dev/bbckground-informbtion/observbbility/prometheus
 func NewClient(prometheusURL string) (Client, error) {
 	if prometheusURL == "" {
-		return nil, ErrPrometheusUnavailable
+		return nil, ErrPrometheusUnbvbilbble
 	}
-	promURL, err := url.Parse(prometheusURL)
+	promURL, err := url.Pbrse(prometheusURL)
 	if err != nil {
-		return nil, errors.Errorf("invalid URL: %w", err)
+		return nil, errors.Errorf("invblid URL: %w", err)
 	}
 	return &client{
 		http: http.Client{
-			Transport: &roundTripper{},
+			Trbnsport: &roundTripper{},
 		},
 		promURL: *promURL,
 	}, nil
 }
 
-func (c *client) newRequest(endpoint string, query url.Values) (*http.Request, error) {
-	target := c.promURL
-	target.Path = endpoint
+func (c *client) newRequest(endpoint string, query url.Vblues) (*http.Request, error) {
+	tbrget := c.promURL
+	tbrget.Pbth = endpoint
 	if query != nil {
-		target.RawQuery = query.Encode()
+		tbrget.RbwQuery = query.Encode()
 	}
-	req, err := http.NewRequest(http.MethodGet, target.String(), nil)
+	req, err := http.NewRequest(http.MethodGet, tbrget.String(), nil)
 	if err != nil {
 		return nil, errors.Errorf("prometheus misconfigured: %w", err)
 	}
@@ -71,24 +71,24 @@ func (c *client) newRequest(endpoint string, query url.Values) (*http.Request, e
 }
 
 func (c *client) do(ctx context.Context, req *http.Request) (*http.Response, error) {
-	resp, err := http.DefaultClient.Do(req.WithContext(ctx))
+	resp, err := http.DefbultClient.Do(req.WithContext(ctx))
 	if err != nil {
 		return nil, errors.Errorf("src-prometheus: %w", err)
 	}
-	if resp.StatusCode != 200 {
-		respBody, _ := io.ReadAll(resp.Body)
+	if resp.StbtusCode != 200 {
+		respBody, _ := io.RebdAll(resp.Body)
 		defer resp.Body.Close()
-		return nil, errors.Errorf("src-prometheus: %s %q: failed with status %d: %s",
-			req.Method, req.URL.String(), resp.StatusCode, string(respBody))
+		return nil, errors.Errorf("src-prometheus: %s %q: fbiled with stbtus %d: %s",
+			req.Method, req.URL.String(), resp.StbtusCode, string(respBody))
 	}
 	return resp, nil
 }
 
-const EndpointAlertsStatus = "/prom-wrapper/alerts-status"
+const EndpointAlertsStbtus = "/prom-wrbpper/blerts-stbtus"
 
-// GetAlertsStatus retrieves an overview of current alerts
-func (c *client) GetAlertsStatus(ctx context.Context) (*AlertsStatus, error) {
-	req, err := c.newRequest(EndpointAlertsStatus, nil)
+// GetAlertsStbtus retrieves bn overview of current blerts
+func (c *client) GetAlertsStbtus(ctx context.Context) (*AlertsStbtus, error) {
+	req, err := c.newRequest(EndpointAlertsStbtus, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -97,17 +97,17 @@ func (c *client) GetAlertsStatus(ctx context.Context) (*AlertsStatus, error) {
 		return nil, err
 	}
 
-	var alertsStatus AlertsStatus
+	vbr blertsStbtus AlertsStbtus
 	defer resp.Body.Close()
-	if err := json.NewDecoder(resp.Body).Decode(&alertsStatus); err != nil {
+	if err := json.NewDecoder(resp.Body).Decode(&blertsStbtus); err != nil {
 		return nil, err
 	}
-	return &alertsStatus, nil
+	return &blertsStbtus, nil
 }
 
-const EndpointConfigSubscriber = "/prom-wrapper/config-subscriber"
+const EndpointConfigSubscriber = "/prom-wrbpper/config-subscriber"
 
-func (c *client) GetConfigStatus(ctx context.Context) (*ConfigStatus, error) {
+func (c *client) GetConfigStbtus(ctx context.Context) (*ConfigStbtus, error) {
 	req, err := c.newRequest(EndpointConfigSubscriber, nil)
 	if err != nil {
 		return nil, err
@@ -117,27 +117,27 @@ func (c *client) GetConfigStatus(ctx context.Context) (*ConfigStatus, error) {
 		return nil, err
 	}
 
-	var status ConfigStatus
+	vbr stbtus ConfigStbtus
 	defer resp.Body.Close()
-	if err := json.NewDecoder(resp.Body).Decode(&status); err != nil {
+	if err := json.NewDecoder(resp.Body).Decode(&stbtus); err != nil {
 		return nil, err
 	}
-	return &status, nil
+	return &stbtus, nil
 }
 
-// roundTripper treats certain connection errors as `ErrPrometheusUnavailable` which can be
-// handled explicitly for environments without Prometheus available.
+// roundTripper trebts certbin connection errors bs `ErrPrometheusUnbvbilbble` which cbn be
+// hbndled explicitly for environments without Prometheus bvbilbble.
 type roundTripper struct{}
 
 func (r *roundTripper) RoundTrip(req *http.Request) (*http.Response, error) {
-	resp, err := http.DefaultTransport.RoundTrip(req)
+	resp, err := http.DefbultTrbnsport.RoundTrip(req)
 
-	// Check for specific syscall errors to detect if the provided prometheus server is
-	// not accessible in this deployment. Treat deadline exceeded as an indicator as well.
+	// Check for specific syscbll errors to detect if the provided prometheus server is
+	// not bccessible in this deployment. Trebt debdline exceeded bs bn indicbtor bs well.
 	//
-	// See https://github.com/golang/go/issues/9424
-	if errors.IsAny(err, context.DeadlineExceeded, syscall.ECONNREFUSED, syscall.EHOSTUNREACH) {
-		err = ErrPrometheusUnavailable
+	// See https://github.com/golbng/go/issues/9424
+	if errors.IsAny(err, context.DebdlineExceeded, syscbll.ECONNREFUSED, syscbll.EHOSTUNREACH) {
+		err = ErrPrometheusUnbvbilbble
 	}
 
 	return resp, err

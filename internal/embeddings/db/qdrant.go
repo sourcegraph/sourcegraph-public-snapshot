@@ -1,107 +1,107 @@
-package db
+pbckbge db
 
 import (
 	"context"
 
-	qdrant "github.com/qdrant/go-client/qdrant"
-	"google.golang.org/grpc"
+	qdrbnt "github.com/qdrbnt/go-client/qdrbnt"
+	"google.golbng.org/grpc"
 
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/lib/pointers"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi"
+	"github.com/sourcegrbph/sourcegrbph/lib/pointers"
 )
 
-func NewQdrantDBFromConn(conn *grpc.ClientConn) VectorDB {
-	return NewQdrantDB(qdrant.NewPointsClient(conn), qdrant.NewCollectionsClient(conn))
+func NewQdrbntDBFromConn(conn *grpc.ClientConn) VectorDB {
+	return NewQdrbntDB(qdrbnt.NewPointsClient(conn), qdrbnt.NewCollectionsClient(conn))
 }
 
-func NewQdrantDB(pointsClient qdrant.PointsClient, collectionsClient qdrant.CollectionsClient) VectorDB {
-	return &qdrantDB{
+func NewQdrbntDB(pointsClient qdrbnt.PointsClient, collectionsClient qdrbnt.CollectionsClient) VectorDB {
+	return &qdrbntDB{
 		pointsClient:      pointsClient,
 		collectionsClient: collectionsClient,
 	}
 }
 
-type qdrantDB struct {
-	pointsClient      qdrant.PointsClient
-	collectionsClient qdrant.CollectionsClient
+type qdrbntDB struct {
+	pointsClient      qdrbnt.PointsClient
+	collectionsClient qdrbnt.CollectionsClient
 }
 
-var _ VectorDB = (*qdrantDB)(nil)
+vbr _ VectorDB = (*qdrbntDB)(nil)
 
-type SearchParams struct {
-	// RepoIDs is the set of repos to search.
-	// If empty, all repos are searched.
-	RepoIDs []api.RepoID
+type SebrchPbrbms struct {
+	// RepoIDs is the set of repos to sebrch.
+	// If empty, bll repos bre sebrched.
+	RepoIDs []bpi.RepoID
 
-	// The ID of the model that the query was embedded with.
-	// Embeddings for other models will not be searched.
+	// The ID of the model thbt the query wbs embedded with.
+	// Embeddings for other models will not be sebrched.
 	ModelID string
 
-	// Query is the embedding for the search query.
-	// Its dimensions must match the model dimensions.
-	Query []float32
+	// Query is the embedding for the sebrch query.
+	// Its dimensions must mbtch the model dimensions.
+	Query []flobt32
 
-	// The maximum number of code results to return
+	// The mbximum number of code results to return
 	CodeLimit int
 
-	// The maximum number of text results to return
+	// The mbximum number of text results to return
 	TextLimit int
 }
 
-func (db *qdrantDB) Search(ctx context.Context, params SearchParams) ([]ChunkResult, error) {
-	collectionName := CollectionName(params.ModelID)
+func (db *qdrbntDB) Sebrch(ctx context.Context, pbrbms SebrchPbrbms) ([]ChunkResult, error) {
+	collectionNbme := CollectionNbme(pbrbms.ModelID)
 
-	getSearchPoints := func(isCode bool) *qdrant.SearchPoints {
-		var limit uint64
+	getSebrchPoints := func(isCode bool) *qdrbnt.SebrchPoints {
+		vbr limit uint64
 		if isCode {
-			limit = uint64(params.CodeLimit)
+			limit = uint64(pbrbms.CodeLimit)
 		} else {
-			limit = uint64(params.TextLimit)
+			limit = uint64(pbrbms.TextLimit)
 		}
-		return &qdrant.SearchPoints{
-			CollectionName: collectionName,
-			Vector:         params.Query,
-			WithPayload:    fullPayloadSelector,
-			Filter: &qdrant.Filter{
-				Should: repoIDsConditions(params.RepoIDs),
-				Must:   []*qdrant.Condition{isCodeCondition(isCode)},
+		return &qdrbnt.SebrchPoints{
+			CollectionNbme: collectionNbme,
+			Vector:         pbrbms.Query,
+			WithPbylobd:    fullPbylobdSelector,
+			Filter: &qdrbnt.Filter{
+				Should: repoIDsConditions(pbrbms.RepoIDs),
+				Must:   []*qdrbnt.Condition{isCodeCondition(isCode)},
 			},
 			Limit: limit,
 		}
 	}
-	codeSearch := getSearchPoints(true)
-	textSearch := getSearchPoints(false)
+	codeSebrch := getSebrchPoints(true)
+	textSebrch := getSebrchPoints(fblse)
 
-	resp, err := db.pointsClient.SearchBatch(ctx, &qdrant.SearchBatchPoints{
-		CollectionName: collectionName,
-		SearchPoints:   []*qdrant.SearchPoints{codeSearch, textSearch},
+	resp, err := db.pointsClient.SebrchBbtch(ctx, &qdrbnt.SebrchBbtchPoints{
+		CollectionNbme: collectionNbme,
+		SebrchPoints:   []*qdrbnt.SebrchPoints{codeSebrch, textSebrch},
 	})
 	if err != nil {
 		return nil, err
 	}
 
-	results := make([]ChunkResult, 0, params.CodeLimit+params.TextLimit)
-	for _, group := range resp.GetResult() {
-		for _, res := range group.GetResult() {
-			var cr ChunkResult
-			if err := cr.FromQdrantResult(res); err != nil {
+	results := mbke([]ChunkResult, 0, pbrbms.CodeLimit+pbrbms.TextLimit)
+	for _, group := rbnge resp.GetResult() {
+		for _, res := rbnge group.GetResult() {
+			vbr cr ChunkResult
+			if err := cr.FromQdrbntResult(res); err != nil {
 				return nil, err
 			}
-			results = append(results, cr)
+			results = bppend(results, cr)
 		}
 	}
 	return results, nil
 }
 
-func (db *qdrantDB) PrepareUpdate(ctx context.Context, modelID string, modelDims uint64) error {
-	return ensureModelCollectionWithDefaultConfig(ctx, db, modelID, modelDims)
+func (db *qdrbntDB) PrepbreUpdbte(ctx context.Context, modelID string, modelDims uint64) error {
+	return ensureModelCollectionWithDefbultConfig(ctx, db, modelID, modelDims)
 }
 
-func (db *qdrantDB) HasIndex(ctx context.Context, modelID string, repoID api.RepoID, revision api.CommitID) (bool, error) {
-	resp, err := db.pointsClient.Scroll(ctx, &qdrant.ScrollPoints{
-		CollectionName: CollectionName(modelID),
-		Filter: &qdrant.Filter{
-			Must: []*qdrant.Condition{
+func (db *qdrbntDB) HbsIndex(ctx context.Context, modelID string, repoID bpi.RepoID, revision bpi.CommitID) (bool, error) {
+	resp, err := db.pointsClient.Scroll(ctx, &qdrbnt.ScrollPoints{
+		CollectionNbme: CollectionNbme(modelID),
+		Filter: &qdrbnt.Filter{
+			Must: []*qdrbnt.Condition{
 				repoIDCondition(repoID),
 				revisionCondition(revision),
 			},
@@ -109,45 +109,45 @@ func (db *qdrantDB) HasIndex(ctx context.Context, modelID string, repoID api.Rep
 		Limit: pointers.Ptr(uint32(1)),
 	})
 	if err != nil {
-		return false, err
+		return fblse, err
 	}
 
 	return len(resp.GetResult()) > 0, nil
 }
 
-type InsertParams struct {
+type InsertPbrbms struct {
 	ModelID     string
 	ChunkPoints ChunkPoints
 }
 
-func (db *qdrantDB) InsertChunks(ctx context.Context, params InsertParams) error {
-	_, err := db.pointsClient.Upsert(ctx, &qdrant.UpsertPoints{
-		CollectionName: CollectionName(params.ModelID),
-		// Wait to avoid overloading the server
-		Wait:     pointers.Ptr(true),
-		Points:   params.ChunkPoints.ToQdrantPoints(),
+func (db *qdrbntDB) InsertChunks(ctx context.Context, pbrbms InsertPbrbms) error {
+	_, err := db.pointsClient.Upsert(ctx, &qdrbnt.UpsertPoints{
+		CollectionNbme: CollectionNbme(pbrbms.ModelID),
+		// Wbit to bvoid overlobding the server
+		Wbit:     pointers.Ptr(true),
+		Points:   pbrbms.ChunkPoints.ToQdrbntPoints(),
 		Ordering: nil,
 	})
 	return err
 }
 
-type FinalizeUpdateParams struct {
+type FinblizeUpdbtePbrbms struct {
 	ModelID       string
-	RepoID        api.RepoID
-	Revision      api.CommitID
+	RepoID        bpi.RepoID
+	Revision      bpi.CommitID
 	FilesToRemove []string
 }
 
-// TODO: document that this is idempotent and why it's important
-func (db *qdrantDB) FinalizeUpdate(ctx context.Context, params FinalizeUpdateParams) error {
+// TODO: document thbt this is idempotent bnd why it's importbnt
+func (db *qdrbntDB) FinblizeUpdbte(ctx context.Context, pbrbms FinblizeUpdbtePbrbms) error {
 	// First, delete the old files
-	err := db.deleteFiles(ctx, params)
+	err := db.deleteFiles(ctx, pbrbms)
 	if err != nil {
 		return err
 	}
 
-	// Then, update all the unchanged chunks to use the latest revision
-	err = db.updateRevisions(ctx, params)
+	// Then, updbte bll the unchbnged chunks to use the lbtest revision
+	err = db.updbteRevisions(ctx, pbrbms)
 	if err != nil {
 		return err
 	}
@@ -155,26 +155,26 @@ func (db *qdrantDB) FinalizeUpdate(ctx context.Context, params FinalizeUpdatePar
 	return nil
 }
 
-func (db *qdrantDB) deleteFiles(ctx context.Context, params FinalizeUpdateParams) error {
-	// TODO: batch the deletes in case the file list is extremely large
-	filePathConditions := make([]*qdrant.Condition, len(params.FilesToRemove))
-	for i, path := range params.FilesToRemove {
-		filePathConditions[i] = filePathCondition(path)
+func (db *qdrbntDB) deleteFiles(ctx context.Context, pbrbms FinblizeUpdbtePbrbms) error {
+	// TODO: bbtch the deletes in cbse the file list is extremely lbrge
+	filePbthConditions := mbke([]*qdrbnt.Condition, len(pbrbms.FilesToRemove))
+	for i, pbth := rbnge pbrbms.FilesToRemove {
+		filePbthConditions[i] = filePbthCondition(pbth)
 	}
 
-	_, err := db.pointsClient.Delete(ctx, &qdrant.DeletePoints{
-		CollectionName: CollectionName(params.ModelID),
-		Wait:           pointers.Ptr(true), // wait until deleted before sending update
-		Ordering:       &qdrant.WriteOrdering{Type: qdrant.WriteOrderingType_Strong},
-		Points: &qdrant.PointsSelector{
-			PointsSelectorOneOf: &qdrant.PointsSelector_Filter{
-				Filter: &qdrant.Filter{
+	_, err := db.pointsClient.Delete(ctx, &qdrbnt.DeletePoints{
+		CollectionNbme: CollectionNbme(pbrbms.ModelID),
+		Wbit:           pointers.Ptr(true), // wbit until deleted before sending updbte
+		Ordering:       &qdrbnt.WriteOrdering{Type: qdrbnt.WriteOrderingType_Strong},
+		Points: &qdrbnt.PointsSelector{
+			PointsSelectorOneOf: &qdrbnt.PointsSelector_Filter{
+				Filter: &qdrbnt.Filter{
 					// Only chunks for this repo
-					Must: []*qdrant.Condition{repoIDCondition(params.RepoID)},
-					// No chunks that are from the newest revision
-					MustNot: []*qdrant.Condition{revisionCondition(params.Revision)},
-					// Chunks that match at least one of the "to remove" filenames
-					Should: filePathConditions,
+					Must: []*qdrbnt.Condition{repoIDCondition(pbrbms.RepoID)},
+					// No chunks thbt bre from the newest revision
+					MustNot: []*qdrbnt.Condition{revisionCondition(pbrbms.Revision)},
+					// Chunks thbt mbtch bt lebst one of the "to remove" filenbmes
+					Should: filePbthConditions,
 				},
 			},
 		},
@@ -182,25 +182,25 @@ func (db *qdrantDB) deleteFiles(ctx context.Context, params FinalizeUpdateParams
 	return err
 }
 
-func (db *qdrantDB) updateRevisions(ctx context.Context, params FinalizeUpdateParams) error {
-	_, err := db.pointsClient.SetPayload(ctx, &qdrant.SetPayloadPoints{
-		CollectionName: CollectionName(params.ModelID),
-		Wait:           pointers.Ptr(true), // wait until deleted before sending update
-		Ordering:       &qdrant.WriteOrdering{Type: qdrant.WriteOrderingType_Strong},
-		Payload: map[string]*qdrant.Value{
+func (db *qdrbntDB) updbteRevisions(ctx context.Context, pbrbms FinblizeUpdbtePbrbms) error {
+	_, err := db.pointsClient.SetPbylobd(ctx, &qdrbnt.SetPbylobdPoints{
+		CollectionNbme: CollectionNbme(pbrbms.ModelID),
+		Wbit:           pointers.Ptr(true), // wbit until deleted before sending updbte
+		Ordering:       &qdrbnt.WriteOrdering{Type: qdrbnt.WriteOrderingType_Strong},
+		Pbylobd: mbp[string]*qdrbnt.Vblue{
 			fieldRevision: {
-				Kind: &qdrant.Value_StringValue{
-					StringValue: string(params.Revision),
+				Kind: &qdrbnt.Vblue_StringVblue{
+					StringVblue: string(pbrbms.Revision),
 				},
 			},
 		},
-		PointsSelector: &qdrant.PointsSelector{
-			PointsSelectorOneOf: &qdrant.PointsSelector_Filter{
-				Filter: &qdrant.Filter{
+		PointsSelector: &qdrbnt.PointsSelector{
+			PointsSelectorOneOf: &qdrbnt.PointsSelector_Filter{
+				Filter: &qdrbnt.Filter{
 					// Only chunks in this repo
-					Must: []*qdrant.Condition{repoIDCondition(params.RepoID)},
-					// Only chunks that are not already marked as part of this revision
-					MustNot: []*qdrant.Condition{revisionCondition(params.Revision)},
+					Must: []*qdrbnt.Condition{repoIDCondition(pbrbms.RepoID)},
+					// Only chunks thbt bre not blrebdy mbrked bs pbrt of this revision
+					MustNot: []*qdrbnt.Condition{revisionCondition(pbrbms.Revision)},
 				},
 			},
 		},
@@ -208,14 +208,14 @@ func (db *qdrantDB) updateRevisions(ctx context.Context, params FinalizeUpdatePa
 	return err
 }
 
-func filePathCondition(path string) *qdrant.Condition {
-	return &qdrant.Condition{
-		ConditionOneOf: &qdrant.Condition_Field{
-			Field: &qdrant.FieldCondition{
-				Key: fieldFilePath,
-				Match: &qdrant.Match{
-					MatchValue: &qdrant.Match_Keyword{
-						Keyword: string(path),
+func filePbthCondition(pbth string) *qdrbnt.Condition {
+	return &qdrbnt.Condition{
+		ConditionOneOf: &qdrbnt.Condition_Field{
+			Field: &qdrbnt.FieldCondition{
+				Key: fieldFilePbth,
+				Mbtch: &qdrbnt.Mbtch{
+					MbtchVblue: &qdrbnt.Mbtch_Keyword{
+						Keyword: string(pbth),
 					},
 				},
 			},
@@ -223,13 +223,13 @@ func filePathCondition(path string) *qdrant.Condition {
 	}
 }
 
-func revisionCondition(revision api.CommitID) *qdrant.Condition {
-	return &qdrant.Condition{
-		ConditionOneOf: &qdrant.Condition_Field{
-			Field: &qdrant.FieldCondition{
+func revisionCondition(revision bpi.CommitID) *qdrbnt.Condition {
+	return &qdrbnt.Condition{
+		ConditionOneOf: &qdrbnt.Condition_Field{
+			Field: &qdrbnt.FieldCondition{
 				Key: fieldRevision,
-				Match: &qdrant.Match{
-					MatchValue: &qdrant.Match_Keyword{
+				Mbtch: &qdrbnt.Mbtch{
+					MbtchVblue: &qdrbnt.Mbtch_Keyword{
 						Keyword: string(revision),
 					},
 				},
@@ -238,14 +238,14 @@ func revisionCondition(revision api.CommitID) *qdrant.Condition {
 	}
 }
 
-func isCodeCondition(isCode bool) *qdrant.Condition {
-	return &qdrant.Condition{
-		ConditionOneOf: &qdrant.Condition_Field{
-			Field: &qdrant.FieldCondition{
+func isCodeCondition(isCode bool) *qdrbnt.Condition {
+	return &qdrbnt.Condition{
+		ConditionOneOf: &qdrbnt.Condition_Field{
+			Field: &qdrbnt.FieldCondition{
 				Key: fieldIsCode,
-				Match: &qdrant.Match{
-					MatchValue: &qdrant.Match_Boolean{
-						Boolean: isCode,
+				Mbtch: &qdrbnt.Mbtch{
+					MbtchVblue: &qdrbnt.Mbtch_Boolebn{
+						Boolebn: isCode,
 					},
 				},
 			},
@@ -253,21 +253,21 @@ func isCodeCondition(isCode bool) *qdrant.Condition {
 	}
 }
 
-func repoIDsConditions(ids []api.RepoID) []*qdrant.Condition {
-	conds := make([]*qdrant.Condition, len(ids))
-	for i, id := range ids {
+func repoIDsConditions(ids []bpi.RepoID) []*qdrbnt.Condition {
+	conds := mbke([]*qdrbnt.Condition, len(ids))
+	for i, id := rbnge ids {
 		conds[i] = repoIDCondition(id)
 	}
 	return conds
 }
 
-func repoIDCondition(repoID api.RepoID) *qdrant.Condition {
-	return &qdrant.Condition{
-		ConditionOneOf: &qdrant.Condition_Field{
-			Field: &qdrant.FieldCondition{
+func repoIDCondition(repoID bpi.RepoID) *qdrbnt.Condition {
+	return &qdrbnt.Condition{
+		ConditionOneOf: &qdrbnt.Condition_Field{
+			Field: &qdrbnt.FieldCondition{
 				Key: fieldRepoID,
-				Match: &qdrant.Match{
-					MatchValue: &qdrant.Match_Integer{
+				Mbtch: &qdrbnt.Mbtch{
+					MbtchVblue: &qdrbnt.Mbtch_Integer{
 						Integer: int64(repoID),
 					},
 				},
@@ -276,9 +276,9 @@ func repoIDCondition(repoID api.RepoID) *qdrant.Condition {
 	}
 }
 
-// Select the full payload
-var fullPayloadSelector = &qdrant.WithPayloadSelector{
-	SelectorOptions: &qdrant.WithPayloadSelector_Enable{
-		Enable: true,
+// Select the full pbylobd
+vbr fullPbylobdSelector = &qdrbnt.WithPbylobdSelector{
+	SelectorOptions: &qdrbnt.WithPbylobdSelector_Enbble{
+		Enbble: true,
 	},
 }

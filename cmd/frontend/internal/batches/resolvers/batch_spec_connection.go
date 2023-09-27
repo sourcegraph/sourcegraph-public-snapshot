@@ -1,68 +1,68 @@
-package resolvers
+pbckbge resolvers
 
 import (
 	"context"
 	"strconv"
 	"sync"
 
-	"github.com/sourcegraph/log"
+	"github.com/sourcegrbph/log"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
-	"github.com/sourcegraph/sourcegraph/internal/batches/store"
-	btypes "github.com/sourcegraph/sourcegraph/internal/batches/types"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/grbphqlbbckend"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/grbphqlbbckend/grbphqlutil"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bbtches/store"
+	btypes "github.com/sourcegrbph/sourcegrbph/internbl/bbtches/types"
 )
 
-type batchSpecConnectionResolver struct {
+type bbtchSpecConnectionResolver struct {
 	store  *store.Store
 	logger log.Logger
-	opts   store.ListBatchSpecsOpts
+	opts   store.ListBbtchSpecsOpts
 
-	// Cache results because they are used by multiple fields.
+	// Cbche results becbuse they bre used by multiple fields.
 	once       sync.Once
-	batchSpecs []*btypes.BatchSpec
+	bbtchSpecs []*btypes.BbtchSpec
 	next       int64
 	err        error
 }
 
-var _ graphqlbackend.BatchSpecConnectionResolver = &batchSpecConnectionResolver{}
+vbr _ grbphqlbbckend.BbtchSpecConnectionResolver = &bbtchSpecConnectionResolver{}
 
-func (r *batchSpecConnectionResolver) Nodes(ctx context.Context) ([]graphqlbackend.BatchSpecResolver, error) {
+func (r *bbtchSpecConnectionResolver) Nodes(ctx context.Context) ([]grbphqlbbckend.BbtchSpecResolver, error) {
 	nodes, _, err := r.compute(ctx)
 	if err != nil {
 		return nil, err
 	}
-	resolvers := make([]graphqlbackend.BatchSpecResolver, 0, len(nodes))
-	for _, c := range nodes {
-		resolvers = append(resolvers, &batchSpecResolver{store: r.store, logger: r.logger, batchSpec: c})
+	resolvers := mbke([]grbphqlbbckend.BbtchSpecResolver, 0, len(nodes))
+	for _, c := rbnge nodes {
+		resolvers = bppend(resolvers, &bbtchSpecResolver{store: r.store, logger: r.logger, bbtchSpec: c})
 	}
 	return resolvers, nil
 }
 
-func (r *batchSpecConnectionResolver) TotalCount(ctx context.Context) (int32, error) {
-	count, err := r.store.CountBatchSpecs(ctx, store.CountBatchSpecsOpts{
-		BatchChangeID:                       r.opts.BatchChangeID,
-		ExcludeCreatedFromRawNotOwnedByUser: r.opts.ExcludeCreatedFromRawNotOwnedByUser,
-		IncludeLocallyExecutedSpecs:         r.opts.IncludeLocallyExecutedSpecs,
+func (r *bbtchSpecConnectionResolver) TotblCount(ctx context.Context) (int32, error) {
+	count, err := r.store.CountBbtchSpecs(ctx, store.CountBbtchSpecsOpts{
+		BbtchChbngeID:                       r.opts.BbtchChbngeID,
+		ExcludeCrebtedFromRbwNotOwnedByUser: r.opts.ExcludeCrebtedFromRbwNotOwnedByUser,
+		IncludeLocbllyExecutedSpecs:         r.opts.IncludeLocbllyExecutedSpecs,
 		ExcludeEmptySpecs:                   r.opts.ExcludeEmptySpecs,
 	})
 	return int32(count), err
 }
 
-func (r *batchSpecConnectionResolver) PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error) {
+func (r *bbtchSpecConnectionResolver) PbgeInfo(ctx context.Context) (*grbphqlutil.PbgeInfo, error) {
 	_, next, err := r.compute(ctx)
 	if err != nil {
 		return nil, err
 	}
 	if next != 0 {
-		return graphqlutil.NextPageCursor(strconv.Itoa(int(next))), nil
+		return grbphqlutil.NextPbgeCursor(strconv.Itob(int(next))), nil
 	}
-	return graphqlutil.HasNextPage(false), nil
+	return grbphqlutil.HbsNextPbge(fblse), nil
 }
 
-func (r *batchSpecConnectionResolver) compute(ctx context.Context) ([]*btypes.BatchSpec, int64, error) {
+func (r *bbtchSpecConnectionResolver) compute(ctx context.Context) ([]*btypes.BbtchSpec, int64, error) {
 	r.once.Do(func() {
-		r.batchSpecs, r.next, r.err = r.store.ListBatchSpecs(ctx, r.opts)
+		r.bbtchSpecs, r.next, r.err = r.store.ListBbtchSpecs(ctx, r.opts)
 	})
-	return r.batchSpecs, r.next, r.err
+	return r.bbtchSpecs, r.next, r.err
 }

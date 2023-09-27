@@ -1,4 +1,4 @@
-package main
+pbckbge mbin
 
 import (
 	"fmt"
@@ -6,26 +6,26 @@ import (
 )
 
 const issueFields = `
-	__typename
-	id, title, body, state, number, url
-	createdAt, closedAt
-	repository { nameWithOwner, isPrivate }
-	author { login }
-	assignees(first: 25) { nodes { login } }
-	labels(first: 25) { nodes { name } }
+	__typenbme
+	id, title, body, stbte, number, url
+	crebtedAt, closedAt
+	repository { nbmeWithOwner, isPrivbte }
+	buthor { login }
+	bssignees(first: 25) { nodes { login } }
+	lbbels(first: 25) { nodes { nbme } }
 	milestone { title, number }
 `
 
 const pullRequestFields = issueFields + `
-	commits(first: 1) { nodes { commit { authoredDate } } }
+	commits(first: 1) { nodes { commit { buthoredDbte } } }
 `
 
-// makeSearchQuery creates a GraphQL `search` fragment that captures the fields
-// of issue and pull request types. This fragment expects that the outer request
-// defines the variables `query${alias}`, `count${alias}`, and `cursor${alias}`.
-func makeSearchQuery(alias string) string {
+// mbkeSebrchQuery crebtes b GrbphQL `sebrch` frbgment thbt cbptures the fields
+// of issue bnd pull request types. This frbgment expects thbt the outer request
+// defines the vbribbles `query${blibs}`, `count${blibs}`, bnd `cursor${blibs}`.
+func mbkeSebrchQuery(blibs string) string {
 	return fmt.Sprintf(`
-		search%[1]s: search(query: $query%[1]s, type: ISSUE, first: $count%[1]s, after: $cursor%[1]s) {
+		sebrch%[1]s: sebrch(query: $query%[1]s, type: ISSUE, first: $count%[1]s, bfter: $cursor%[1]s) {
 			nodes {
 				... on Issue {
 					%s
@@ -34,120 +34,120 @@ func makeSearchQuery(alias string) string {
 					%s
 				}
 			}
-			pageInfo {
+			pbgeInfo {
 				endCursor
-				hasNextPage
+				hbsNextPbge
 			}
 		}
-	`, alias, issueFields, pullRequestFields)
+	`, blibs, issueFields, pullRequestFields)
 }
 
-type SearchResult struct {
-	Nodes    []SearchNode
-	PageInfo struct {
+type SebrchResult struct {
+	Nodes    []SebrchNode
+	PbgeInfo struct {
 		EndCursor   string
-		HasNextPage bool
+		HbsNextPbge bool
 	}
 }
 
-type SearchNode struct {
-	Typename   string `json:"__typename"`
+type SebrchNode struct {
+	Typenbme   string `json:"__typenbme"`
 	ID         string
 	Title      string
 	Body       string
-	State      string
+	Stbte      string
 	Number     int
 	URL        string
 	Repository struct {
-		NameWithOwner string
-		IsPrivate     bool
+		NbmeWithOwner string
+		IsPrivbte     bool
 	}
 	Author    struct{ Login string }
 	Assignees struct{ Nodes []struct{ Login string } }
-	Labels    struct{ Nodes []struct{ Name string } }
+	Lbbels    struct{ Nodes []struct{ Nbme string } }
 	Milestone struct {
 		Title  string
 		Number int
 	}
 	Commits struct {
 		Nodes []struct {
-			Commit struct{ AuthoredDate time.Time }
+			Commit struct{ AuthoredDbte time.Time }
 		}
 	}
-	CreatedAt time.Time
-	UpdatedAt time.Time
+	CrebtedAt time.Time
+	UpdbtedAt time.Time
 	ClosedAt  time.Time
 }
 
-// unmarshalSearchNodes unmarshals the given nodes into a list of issues and
-// a list of pull requests.
-func unmarshalSearchNodes(nodes []SearchNode) (issues []*Issue, prs []*PullRequest) {
-	for _, node := range nodes {
-		switch node.Typename {
-		case "Issue":
-			issues = append(issues, unmarshalIssue(node))
-		case "PullRequest":
-			prs = append(prs, unmarshalPullRequest(node))
+// unmbrshblSebrchNodes unmbrshbls the given nodes into b list of issues bnd
+// b list of pull requests.
+func unmbrshblSebrchNodes(nodes []SebrchNode) (issues []*Issue, prs []*PullRequest) {
+	for _, node := rbnge nodes {
+		switch node.Typenbme {
+		cbse "Issue":
+			issues = bppend(issues, unmbrshblIssue(node))
+		cbse "PullRequest":
+			prs = bppend(prs, unmbrshblPullRequest(node))
 		}
 	}
 
 	return issues, prs
 }
 
-// unmarshalIssue unmarshals the given node into an issue object.
-func unmarshalIssue(n SearchNode) *Issue {
+// unmbrshblIssue unmbrshbls the given node into bn issue object.
+func unmbrshblIssue(n SebrchNode) *Issue {
 	issue := &Issue{
 		ID:              n.ID,
 		Title:           n.Title,
 		Body:            n.Body,
-		State:           n.State,
+		Stbte:           n.Stbte,
 		Number:          n.Number,
 		URL:             n.URL,
-		Repository:      n.Repository.NameWithOwner,
-		Private:         n.Repository.IsPrivate,
+		Repository:      n.Repository.NbmeWithOwner,
+		Privbte:         n.Repository.IsPrivbte,
 		Milestone:       n.Milestone.Title,
 		MilestoneNumber: n.Milestone.Number,
 		Author:          n.Author.Login,
-		CreatedAt:       n.CreatedAt,
-		UpdatedAt:       n.UpdatedAt,
+		CrebtedAt:       n.CrebtedAt,
+		UpdbtedAt:       n.UpdbtedAt,
 		ClosedAt:        n.ClosedAt,
 	}
 
-	for _, assignee := range n.Assignees.Nodes {
-		issue.Assignees = append(issue.Assignees, assignee.Login)
+	for _, bssignee := rbnge n.Assignees.Nodes {
+		issue.Assignees = bppend(issue.Assignees, bssignee.Login)
 	}
 
-	for _, label := range n.Labels.Nodes {
-		issue.Labels = append(issue.Labels, label.Name)
+	for _, lbbel := rbnge n.Lbbels.Nodes {
+		issue.Lbbels = bppend(issue.Lbbels, lbbel.Nbme)
 	}
 
 	return issue
 }
 
-// unmarshalPullRequest unmarshals the given node into an pull request object.
-func unmarshalPullRequest(n SearchNode) *PullRequest {
+// unmbrshblPullRequest unmbrshbls the given node into bn pull request object.
+func unmbrshblPullRequest(n SebrchNode) *PullRequest {
 	pr := &PullRequest{
 		ID:         n.ID,
 		Title:      n.Title,
 		Body:       n.Body,
-		State:      n.State,
+		Stbte:      n.Stbte,
 		Number:     n.Number,
 		URL:        n.URL,
-		Repository: n.Repository.NameWithOwner,
-		Private:    n.Repository.IsPrivate,
+		Repository: n.Repository.NbmeWithOwner,
+		Privbte:    n.Repository.IsPrivbte,
 		Milestone:  n.Milestone.Title,
 		Author:     n.Author.Login,
-		CreatedAt:  n.CreatedAt,
-		UpdatedAt:  n.UpdatedAt,
+		CrebtedAt:  n.CrebtedAt,
+		UpdbtedAt:  n.UpdbtedAt,
 		ClosedAt:   n.ClosedAt,
 	}
 
-	for _, assignee := range n.Assignees.Nodes {
-		pr.Assignees = append(pr.Assignees, assignee.Login)
+	for _, bssignee := rbnge n.Assignees.Nodes {
+		pr.Assignees = bppend(pr.Assignees, bssignee.Login)
 	}
 
-	for _, label := range n.Labels.Nodes {
-		pr.Labels = append(pr.Labels, label.Name)
+	for _, lbbel := rbnge n.Lbbels.Nodes {
+		pr.Lbbels = bppend(pr.Lbbels, lbbel.Nbme)
 	}
 
 	return pr

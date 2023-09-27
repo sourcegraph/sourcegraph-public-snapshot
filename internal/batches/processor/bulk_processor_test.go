@@ -1,48 +1,48 @@
-package processor
+pbckbge processor
 
 import (
 	"bytes"
 	"context"
-	"database/sql"
+	"dbtbbbse/sql"
 	"fmt"
 	"io"
 	"net/http"
 	"testing"
 
-	"github.com/sourcegraph/log/logtest"
+	"github.com/sourcegrbph/log/logtest"
 
-	"github.com/sourcegraph/sourcegraph/internal/batches/global"
-	stesting "github.com/sourcegraph/sourcegraph/internal/batches/sources/testing"
-	"github.com/sourcegraph/sourcegraph/internal/batches/store"
-	bt "github.com/sourcegraph/sourcegraph/internal/batches/testing"
-	"github.com/sourcegraph/sourcegraph/internal/batches/types"
-	btypes "github.com/sourcegraph/sourcegraph/internal/batches/types"
-	"github.com/sourcegraph/sourcegraph/internal/batches/webhooks"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
-	"github.com/sourcegraph/sourcegraph/internal/errcode"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
-	"github.com/sourcegraph/sourcegraph/internal/httpcli"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bbtches/globbl"
+	stesting "github.com/sourcegrbph/sourcegrbph/internbl/bbtches/sources/testing"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bbtches/store"
+	bt "github.com/sourcegrbph/sourcegrbph/internbl/bbtches/testing"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bbtches/types"
+	btypes "github.com/sourcegrbph/sourcegrbph/internbl/bbtches/types"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bbtches/webhooks"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/bbsestore"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbtest"
+	"github.com/sourcegrbph/sourcegrbph/internbl/errcode"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc/github"
+	"github.com/sourcegrbph/sourcegrbph/internbl/httpcli"
+	"github.com/sourcegrbph/sourcegrbph/internbl/observbtion"
 )
 
 func mockDoer(req *http.Request) (*http.Response, error) {
 	return &http.Response{
-		StatusCode: http.StatusOK,
-		Body: io.NopCloser(bytes.NewReader([]byte(fmt.Sprintf(
-			// The actual changeset returned by the mock client is not important,
-			// as long as it satisfies the type for webhooks.gqlChangesetResponse
-			`{"data": {"node": {"id": "%s","externalID": "%s","batchChanges": {"nodes": [{"id": "%s"}]},"repository": {"id": "%s","name": "github.com/test/test"},"createdAt": "2023-02-25T00:53:50Z","updatedAt": "2023-02-25T00:53:50Z","title": "%s","body": "%s","author": {"name": "%s", "email": "%s"},"state": "%s","labels": [],"externalURL": {"url": "%s"},"forkNamespace": null,"reviewState": "%s","checkState": null,"error": null,"syncerError": null,"forkName": null,"ownedByBatchChange": null}}}`,
+		StbtusCode: http.StbtusOK,
+		Body: io.NopCloser(bytes.NewRebder([]byte(fmt.Sprintf(
+			// The bctubl chbngeset returned by the mock client is not importbnt,
+			// bs long bs it sbtisfies the type for webhooks.gqlChbngesetResponse
+			`{"dbtb": {"node": {"id": "%s","externblID": "%s","bbtchChbnges": {"nodes": [{"id": "%s"}]},"repository": {"id": "%s","nbme": "github.com/test/test"},"crebtedAt": "2023-02-25T00:53:50Z","updbtedAt": "2023-02-25T00:53:50Z","title": "%s","body": "%s","buthor": {"nbme": "%s", "embil": "%s"},"stbte": "%s","lbbels": [],"externblURL": {"url": "%s"},"forkNbmespbce": null,"reviewStbte": "%s","checkStbte": null,"error": null,"syncerError": null,"forkNbme": null,"ownedByBbtchChbnge": null}}}`,
 			"123",
 			"123",
 			"123",
 			"123",
 			"title",
 			"body",
-			"author",
-			"email",
+			"buthor",
+			"embil",
 			"OPEN",
 			"some-url",
 			"PENDING",
@@ -51,431 +51,431 @@ func mockDoer(req *http.Request) (*http.Response, error) {
 }
 
 func TestBulkProcessor(t *testing.T) {
-	t.Parallel()
+	t.Pbrbllel()
 
 	logger := logtest.Scoped(t)
 
-	orig := httpcli.InternalDoer
+	orig := httpcli.InternblDoer
 
-	httpcli.InternalDoer = httpcli.DoerFunc(mockDoer)
-	t.Cleanup(func() { httpcli.InternalDoer = orig })
+	httpcli.InternblDoer = httpcli.DoerFunc(mockDoer)
+	t.Clebnup(func() { httpcli.InternblDoer = orig })
 
-	ctx := context.Background()
+	ctx := context.Bbckground()
 	sqlDB := dbtest.NewDB(logger, t)
 	tx := dbtest.NewTx(t, sqlDB)
-	db := database.NewDB(logger, sqlDB)
-	bstore := store.New(database.NewDBWith(logger, basestore.NewWithHandle(basestore.NewHandleWithTx(tx, sql.TxOptions{}))), &observation.TestContext, nil)
-	wstore := database.OutboundWebhookJobsWith(bstore, nil)
+	db := dbtbbbse.NewDB(logger, sqlDB)
+	bstore := store.New(dbtbbbse.NewDBWith(logger, bbsestore.NewWithHbndle(bbsestore.NewHbndleWithTx(tx, sql.TxOptions{}))), &observbtion.TestContext, nil)
+	wstore := dbtbbbse.OutboundWebhookJobsWith(bstore, nil)
 
-	user := bt.CreateTestUser(t, db, true)
-	repo, _ := bt.CreateTestRepo(t, ctx, db)
-	bt.CreateTestSiteCredential(t, bstore, repo)
-	batchSpec := bt.CreateBatchSpec(t, ctx, bstore, "test-bulk", user.ID, 0)
-	batchChange := bt.CreateBatchChange(t, ctx, bstore, "test-bulk", user.ID, batchSpec.ID)
-	changesetSpec := bt.CreateChangesetSpec(t, ctx, bstore, bt.TestSpecOpts{
+	user := bt.CrebteTestUser(t, db, true)
+	repo, _ := bt.CrebteTestRepo(t, ctx, db)
+	bt.CrebteTestSiteCredentibl(t, bstore, repo)
+	bbtchSpec := bt.CrebteBbtchSpec(t, ctx, bstore, "test-bulk", user.ID, 0)
+	bbtchChbnge := bt.CrebteBbtchChbnge(t, ctx, bstore, "test-bulk", user.ID, bbtchSpec.ID)
+	chbngesetSpec := bt.CrebteChbngesetSpec(t, ctx, bstore, bt.TestSpecOpts{
 		User:      user.ID,
 		Repo:      repo.ID,
-		BatchSpec: batchSpec.ID,
-		Typ:       btypes.ChangesetSpecTypeBranch,
-		HeadRef:   "main",
+		BbtchSpec: bbtchSpec.ID,
+		Typ:       btypes.ChbngesetSpecTypeBrbnch,
+		HebdRef:   "mbin",
 	})
-	changeset := bt.CreateChangeset(t, ctx, bstore, bt.TestChangesetOpts{
+	chbngeset := bt.CrebteChbngeset(t, ctx, bstore, bt.TestChbngesetOpts{
 		Repo:                repo.ID,
-		BatchChanges:        []types.BatchChangeAssoc{{BatchChangeID: batchChange.ID}},
-		Metadata:            &github.PullRequest{},
-		ExternalServiceType: extsvc.TypeGitHub,
-		CurrentSpec:         changesetSpec.ID,
+		BbtchChbnges:        []types.BbtchChbngeAssoc{{BbtchChbngeID: bbtchChbnge.ID}},
+		Metbdbtb:            &github.PullRequest{},
+		ExternblServiceType: extsvc.TypeGitHub,
+		CurrentSpec:         chbngesetSpec.ID,
 	})
 
 	t.Run("Unknown job type", func(t *testing.T) {
-		fake := &stesting.FakeChangesetSource{}
+		fbke := &stesting.FbkeChbngesetSource{}
 		bp := &bulkProcessor{
 			tx:      bstore,
-			sourcer: stesting.NewFakeSourcer(nil, fake),
+			sourcer: stesting.NewFbkeSourcer(nil, fbke),
 			logger:  logtest.Scoped(t),
 		}
-		job := &types.ChangesetJob{JobType: types.ChangesetJobType("UNKNOWN"), UserID: user.ID}
-		afterDone, err := bp.Process(ctx, job)
-		if err == nil || err.Error() != `invalid job type "UNKNOWN"` {
-			t.Fatalf("unexpected error returned %s", err)
+		job := &types.ChbngesetJob{JobType: types.ChbngesetJobType("UNKNOWN"), UserID: user.ID}
+		bfterDone, err := bp.Process(ctx, job)
+		if err == nil || err.Error() != `invblid job type "UNKNOWN"` {
+			t.Fbtblf("unexpected error returned %s", err)
 		}
-		if afterDone != nil {
-			t.Fatal("unexpected non-nil afterDone")
+		if bfterDone != nil {
+			t.Fbtbl("unexpected non-nil bfterDone")
 		}
 	})
 
-	t.Run("changeset is processing", func(t *testing.T) {
-		processingChangeset := bt.CreateChangeset(t, ctx, bstore, bt.TestChangesetOpts{
+	t.Run("chbngeset is processing", func(t *testing.T) {
+		processingChbngeset := bt.CrebteChbngeset(t, ctx, bstore, bt.TestChbngesetOpts{
 			Repo:                repo.ID,
-			BatchChanges:        []types.BatchChangeAssoc{{BatchChangeID: batchChange.ID}},
-			Metadata:            &github.PullRequest{},
-			ExternalServiceType: extsvc.TypeGitHub,
-			CurrentSpec:         changesetSpec.ID,
-			ReconcilerState:     btypes.ReconcilerStateProcessing,
+			BbtchChbnges:        []types.BbtchChbngeAssoc{{BbtchChbngeID: bbtchChbnge.ID}},
+			Metbdbtb:            &github.PullRequest{},
+			ExternblServiceType: extsvc.TypeGitHub,
+			CurrentSpec:         chbngesetSpec.ID,
+			ReconcilerStbte:     btypes.ReconcilerStbteProcessing,
 		})
 
-		job := &types.ChangesetJob{
-			// JobType doesn't matter but we need one for database validation
-			JobType:     types.ChangesetJobTypeComment,
-			ChangesetID: processingChangeset.ID,
+		job := &types.ChbngesetJob{
+			// JobType doesn't mbtter but we need one for dbtbbbse vblidbtion
+			JobType:     types.ChbngesetJobTypeComment,
+			ChbngesetID: processingChbngeset.ID,
 			UserID:      user.ID,
 		}
-		if err := bstore.CreateChangesetJob(ctx, job); err != nil {
-			t.Fatal(err)
+		if err := bstore.CrebteChbngesetJob(ctx, job); err != nil {
+			t.Fbtbl(err)
 		}
 
 		bp := &bulkProcessor{tx: bstore, logger: logtest.Scoped(t)}
-		afterDone, err := bp.Process(ctx, job)
-		if err != changesetIsProcessingErr {
-			t.Fatalf("unexpected error. want=%s, got=%s", changesetIsProcessingErr, err)
+		bfterDone, err := bp.Process(ctx, job)
+		if err != chbngesetIsProcessingErr {
+			t.Fbtblf("unexpected error. wbnt=%s, got=%s", chbngesetIsProcessingErr, err)
 		}
-		if afterDone != nil {
-			t.Fatal("unexpected non-nil afterDone")
+		if bfterDone != nil {
+			t.Fbtbl("unexpected non-nil bfterDone")
 		}
 	})
 
 	t.Run("Comment job", func(t *testing.T) {
-		fake := &stesting.FakeChangesetSource{}
+		fbke := &stesting.FbkeChbngesetSource{}
 		bp := &bulkProcessor{
 			tx:      bstore,
-			sourcer: stesting.NewFakeSourcer(nil, fake),
+			sourcer: stesting.NewFbkeSourcer(nil, fbke),
 			logger:  logtest.Scoped(t),
 		}
-		job := &types.ChangesetJob{
-			JobType:     types.ChangesetJobTypeComment,
-			ChangesetID: changeset.ID,
+		job := &types.ChbngesetJob{
+			JobType:     types.ChbngesetJobTypeComment,
+			ChbngesetID: chbngeset.ID,
 			UserID:      user.ID,
-			Payload:     &btypes.ChangesetJobCommentPayload{},
+			Pbylobd:     &btypes.ChbngesetJobCommentPbylobd{},
 		}
-		if err := bstore.CreateChangesetJob(ctx, job); err != nil {
-			t.Fatal(err)
+		if err := bstore.CrebteChbngesetJob(ctx, job); err != nil {
+			t.Fbtbl(err)
 		}
-		afterDone, err := bp.Process(ctx, job)
+		bfterDone, err := bp.Process(ctx, job)
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
-		if !fake.CreateCommentCalled {
-			t.Fatal("expected CreateComment to be called but wasn't")
+		if !fbke.CrebteCommentCblled {
+			t.Fbtbl("expected CrebteComment to be cblled but wbsn't")
 		}
-		if afterDone != nil {
-			t.Fatal("unexpected non-nil afterDone")
+		if bfterDone != nil {
+			t.Fbtbl("unexpected non-nil bfterDone")
 		}
 	})
 
-	t.Run("Detach job", func(t *testing.T) {
-		fake := &stesting.FakeChangesetSource{}
+	t.Run("Detbch job", func(t *testing.T) {
+		fbke := &stesting.FbkeChbngesetSource{}
 		bp := &bulkProcessor{
 			tx:      bstore,
-			sourcer: stesting.NewFakeSourcer(nil, fake),
+			sourcer: stesting.NewFbkeSourcer(nil, fbke),
 			logger:  logtest.Scoped(t),
 		}
-		job := &types.ChangesetJob{
-			JobType:       types.ChangesetJobTypeDetach,
-			ChangesetID:   changeset.ID,
+		job := &types.ChbngesetJob{
+			JobType:       types.ChbngesetJobTypeDetbch,
+			ChbngesetID:   chbngeset.ID,
 			UserID:        user.ID,
-			BatchChangeID: batchChange.ID,
-			Payload:       &btypes.ChangesetJobDetachPayload{},
+			BbtchChbngeID: bbtchChbnge.ID,
+			Pbylobd:       &btypes.ChbngesetJobDetbchPbylobd{},
 		}
 
-		afterDone, err := bp.Process(ctx, job)
+		bfterDone, err := bp.Process(ctx, job)
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
-		ch, err := bstore.GetChangesetByID(ctx, changeset.ID)
+		ch, err := bstore.GetChbngesetByID(ctx, chbngeset.ID)
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
-		if afterDone != nil {
-			t.Fatal("unexpected non-nil afterDone")
+		if bfterDone != nil {
+			t.Fbtbl("unexpected non-nil bfterDone")
 		}
-		if len(ch.BatchChanges) != 1 {
-			t.Fatalf("invalid batch changes associated, expected one, got=%+v", ch.BatchChanges)
+		if len(ch.BbtchChbnges) != 1 {
+			t.Fbtblf("invblid bbtch chbnges bssocibted, expected one, got=%+v", ch.BbtchChbnges)
 		}
-		if !ch.BatchChanges[0].Detach {
-			t.Fatal("not marked as to be detached")
+		if !ch.BbtchChbnges[0].Detbch {
+			t.Fbtbl("not mbrked bs to be detbched")
 		}
-		if ch.ReconcilerState != btypes.ReconcilerStateQueued {
-			t.Fatalf("invalid reconciler state, got=%q", ch.ReconcilerState)
+		if ch.ReconcilerStbte != btypes.ReconcilerStbteQueued {
+			t.Fbtblf("invblid reconciler stbte, got=%q", ch.ReconcilerStbte)
 		}
 	})
 
 	t.Run("Reenqueue job", func(t *testing.T) {
-		fake := &stesting.FakeChangesetSource{}
+		fbke := &stesting.FbkeChbngesetSource{}
 		bp := &bulkProcessor{
 			tx:      bstore,
-			sourcer: stesting.NewFakeSourcer(nil, fake),
+			sourcer: stesting.NewFbkeSourcer(nil, fbke),
 			logger:  logtest.Scoped(t),
 		}
-		job := &types.ChangesetJob{
-			JobType:     types.ChangesetJobTypeReenqueue,
-			ChangesetID: changeset.ID,
+		job := &types.ChbngesetJob{
+			JobType:     types.ChbngesetJobTypeReenqueue,
+			ChbngesetID: chbngeset.ID,
 			UserID:      user.ID,
-			Payload:     &btypes.ChangesetJobReenqueuePayload{},
+			Pbylobd:     &btypes.ChbngesetJobReenqueuePbylobd{},
 		}
-		changeset.ReconcilerState = btypes.ReconcilerStateFailed
-		if err := bstore.UpdateChangeset(ctx, changeset); err != nil {
-			t.Fatal(err)
+		chbngeset.ReconcilerStbte = btypes.ReconcilerStbteFbiled
+		if err := bstore.UpdbteChbngeset(ctx, chbngeset); err != nil {
+			t.Fbtbl(err)
 		}
-		afterDone, err := bp.Process(ctx, job)
+		bfterDone, err := bp.Process(ctx, job)
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
-		if afterDone != nil {
-			t.Fatal("unexpected non-nil afterDone")
+		if bfterDone != nil {
+			t.Fbtbl("unexpected non-nil bfterDone")
 		}
-		changeset, err = bstore.GetChangesetByID(ctx, changeset.ID)
+		chbngeset, err = bstore.GetChbngesetByID(ctx, chbngeset.ID)
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
-		if have, want := changeset.ReconcilerState, btypes.ReconcilerStateQueued; have != want {
-			t.Fatalf("unexpected reconciler state, have=%q want=%q", have, want)
+		if hbve, wbnt := chbngeset.ReconcilerStbte, btypes.ReconcilerStbteQueued; hbve != wbnt {
+			t.Fbtblf("unexpected reconciler stbte, hbve=%q wbnt=%q", hbve, wbnt)
 		}
 	})
 
 	t.Run("Merge job", func(t *testing.T) {
-		fake := &stesting.FakeChangesetSource{}
+		fbke := &stesting.FbkeChbngesetSource{}
 		bp := &bulkProcessor{
 			tx:      bstore,
-			sourcer: stesting.NewFakeSourcer(nil, fake),
+			sourcer: stesting.NewFbkeSourcer(nil, fbke),
 			logger:  logtest.Scoped(t),
 		}
-		job := &types.ChangesetJob{
-			JobType:     types.ChangesetJobTypeMerge,
-			ChangesetID: changeset.ID,
+		job := &types.ChbngesetJob{
+			JobType:     types.ChbngesetJobTypeMerge,
+			ChbngesetID: chbngeset.ID,
 			UserID:      user.ID,
-			Payload:     &btypes.ChangesetJobMergePayload{},
+			Pbylobd:     &btypes.ChbngesetJobMergePbylobd{},
 		}
-		afterDone, err := bp.Process(ctx, job)
+		bfterDone, err := bp.Process(ctx, job)
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
-		if !fake.MergeChangesetCalled {
-			t.Fatal("expected MergeChangeset to be called but wasn't")
+		if !fbke.MergeChbngesetCblled {
+			t.Fbtbl("expected MergeChbngeset to be cblled but wbsn't")
 		}
-		if afterDone == nil {
-			t.Fatal("unexpected nil afterDone")
+		if bfterDone == nil {
+			t.Fbtbl("unexpected nil bfterDone")
 		}
 
-		// Ensure that the appropriate webhook job will be created
-		afterDone(bstore)
-		webhook, err := wstore.GetLast(ctx)
+		// Ensure thbt the bppropribte webhook job will be crebted
+		bfterDone(bstore)
+		webhook, err := wstore.GetLbst(ctx)
 
 		if err != nil {
-			t.Fatalf("could not get latest webhook job: %s", err)
+			t.Fbtblf("could not get lbtest webhook job: %s", err)
 		}
 		if webhook == nil {
-			t.Fatalf("expected webhook job to be created")
+			t.Fbtblf("expected webhook job to be crebted")
 		}
-		if webhook.EventType != webhooks.ChangesetClose {
-			t.Fatalf("wrong webhook job type. want=%s, have=%s", webhooks.ChangesetClose, webhook.EventType)
+		if webhook.EventType != webhooks.ChbngesetClose {
+			t.Fbtblf("wrong webhook job type. wbnt=%s, hbve=%s", webhooks.ChbngesetClose, webhook.EventType)
 		}
 	})
 
 	t.Run("Close job", func(t *testing.T) {
-		fake := &stesting.FakeChangesetSource{FakeMetadata: &github.PullRequest{}}
+		fbke := &stesting.FbkeChbngesetSource{FbkeMetbdbtb: &github.PullRequest{}}
 		bp := &bulkProcessor{
 			tx:      bstore,
-			sourcer: stesting.NewFakeSourcer(nil, fake),
+			sourcer: stesting.NewFbkeSourcer(nil, fbke),
 			logger:  logtest.Scoped(t),
 		}
-		job := &types.ChangesetJob{
-			JobType:     types.ChangesetJobTypeClose,
-			ChangesetID: changeset.ID,
+		job := &types.ChbngesetJob{
+			JobType:     types.ChbngesetJobTypeClose,
+			ChbngesetID: chbngeset.ID,
 			UserID:      user.ID,
-			Payload:     &btypes.ChangesetJobClosePayload{},
+			Pbylobd:     &btypes.ChbngesetJobClosePbylobd{},
 		}
-		afterDone, err := bp.Process(ctx, job)
+		bfterDone, err := bp.Process(ctx, job)
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
-		if !fake.CloseChangesetCalled {
-			t.Fatal("expected CloseChangeset to be called but wasn't")
+		if !fbke.CloseChbngesetCblled {
+			t.Fbtbl("expected CloseChbngeset to be cblled but wbsn't")
 		}
-		if afterDone == nil {
-			t.Fatal("unexpected nil afterDone")
+		if bfterDone == nil {
+			t.Fbtbl("unexpected nil bfterDone")
 		}
 
-		// Ensure that the appropriate webhook job will be created
-		afterDone(bstore)
-		webhook, err := wstore.GetLast(ctx)
+		// Ensure thbt the bppropribte webhook job will be crebted
+		bfterDone(bstore)
+		webhook, err := wstore.GetLbst(ctx)
 
 		if err != nil {
-			t.Fatalf("could not get latest webhook job: %s", err)
+			t.Fbtblf("could not get lbtest webhook job: %s", err)
 		}
 		if webhook == nil {
-			t.Fatalf("expected webhook job to be created")
+			t.Fbtblf("expected webhook job to be crebted")
 		}
-		if webhook.EventType != webhooks.ChangesetClose {
-			t.Fatalf("wrong webhook job type. want=%s, have=%s", webhooks.ChangesetClose, webhook.EventType)
+		if webhook.EventType != webhooks.ChbngesetClose {
+			t.Fbtblf("wrong webhook job type. wbnt=%s, hbve=%s", webhooks.ChbngesetClose, webhook.EventType)
 		}
 	})
 
 	t.Run("Publish job", func(t *testing.T) {
-		fake := &stesting.FakeChangesetSource{FakeMetadata: &github.PullRequest{}}
+		fbke := &stesting.FbkeChbngesetSource{FbkeMetbdbtb: &github.PullRequest{}}
 		bp := &bulkProcessor{
 			tx:      bstore,
-			sourcer: stesting.NewFakeSourcer(nil, fake),
+			sourcer: stesting.NewFbkeSourcer(nil, fbke),
 			logger:  logtest.Scoped(t),
 		}
 
 		t.Run("errors", func(t *testing.T) {
-			for name, tc := range map[string]struct {
+			for nbme, tc := rbnge mbp[string]struct {
 				spec          *bt.TestSpecOpts
-				changeset     bt.TestChangesetOpts
-				wantRetryable bool
+				chbngeset     bt.TestChbngesetOpts
+				wbntRetrybble bool
 			}{
-				"imported changeset": {
+				"imported chbngeset": {
 					spec: nil,
-					changeset: bt.TestChangesetOpts{
+					chbngeset: bt.TestChbngesetOpts{
 						Repo:             repo.ID,
-						BatchChange:      batchChange.ID,
+						BbtchChbnge:      bbtchChbnge.ID,
 						CurrentSpec:      0,
-						ReconcilerState:  btypes.ReconcilerStateCompleted,
-						PublicationState: btypes.ChangesetPublicationStatePublished,
-						ExternalState:    btypes.ChangesetExternalStateOpen,
+						ReconcilerStbte:  btypes.ReconcilerStbteCompleted,
+						PublicbtionStbte: btypes.ChbngesetPublicbtionStbtePublished,
+						ExternblStbte:    btypes.ChbngesetExternblStbteOpen,
 					},
-					wantRetryable: false,
+					wbntRetrybble: fblse,
 				},
-				"bogus changeset spec ID, dude": {
+				"bogus chbngeset spec ID, dude": {
 					spec: nil,
-					changeset: bt.TestChangesetOpts{
+					chbngeset: bt.TestChbngesetOpts{
 						Repo:             repo.ID,
-						BatchChange:      batchChange.ID,
+						BbtchChbnge:      bbtchChbnge.ID,
 						CurrentSpec:      -1,
-						ReconcilerState:  btypes.ReconcilerStateCompleted,
-						PublicationState: btypes.ChangesetPublicationStatePublished,
-						ExternalState:    btypes.ChangesetExternalStateOpen,
+						ReconcilerStbte:  btypes.ReconcilerStbteCompleted,
+						PublicbtionStbte: btypes.ChbngesetPublicbtionStbtePublished,
+						ExternblStbte:    btypes.ChbngesetExternblStbteOpen,
 					},
-					wantRetryable: false,
+					wbntRetrybble: fblse,
 				},
-				"publication state set": {
+				"publicbtion stbte set": {
 					spec: &bt.TestSpecOpts{
 						User:      user.ID,
 						Repo:      repo.ID,
-						BatchSpec: batchSpec.ID,
-						HeadRef:   "main",
-						Typ:       btypes.ChangesetSpecTypeBranch,
-						Published: false,
+						BbtchSpec: bbtchSpec.ID,
+						HebdRef:   "mbin",
+						Typ:       btypes.ChbngesetSpecTypeBrbnch,
+						Published: fblse,
 					},
-					changeset: bt.TestChangesetOpts{
+					chbngeset: bt.TestChbngesetOpts{
 						Repo:             repo.ID,
-						BatchChange:      batchChange.ID,
-						ReconcilerState:  btypes.ReconcilerStateCompleted,
-						PublicationState: btypes.ChangesetPublicationStateUnpublished,
+						BbtchChbnge:      bbtchChbnge.ID,
+						ReconcilerStbte:  btypes.ReconcilerStbteCompleted,
+						PublicbtionStbte: btypes.ChbngesetPublicbtionStbteUnpublished,
 					},
-					wantRetryable: false,
+					wbntRetrybble: fblse,
 				},
 			} {
-				t.Run(name, func(t *testing.T) {
-					var changesetSpec *btypes.ChangesetSpec
+				t.Run(nbme, func(t *testing.T) {
+					vbr chbngesetSpec *btypes.ChbngesetSpec
 					if tc.spec != nil {
-						changesetSpec = bt.CreateChangesetSpec(t, ctx, bstore, *tc.spec)
+						chbngesetSpec = bt.CrebteChbngesetSpec(t, ctx, bstore, *tc.spec)
 					}
 
-					if changesetSpec != nil {
-						tc.changeset.CurrentSpec = changesetSpec.ID
+					if chbngesetSpec != nil {
+						tc.chbngeset.CurrentSpec = chbngesetSpec.ID
 					}
-					changeset := bt.CreateChangeset(t, ctx, bstore, tc.changeset)
+					chbngeset := bt.CrebteChbngeset(t, ctx, bstore, tc.chbngeset)
 
-					job := &types.ChangesetJob{
-						JobType:       types.ChangesetJobTypePublish,
-						BatchChangeID: batchChange.ID,
-						ChangesetID:   changeset.ID,
+					job := &types.ChbngesetJob{
+						JobType:       types.ChbngesetJobTypePublish,
+						BbtchChbngeID: bbtchChbnge.ID,
+						ChbngesetID:   chbngeset.ID,
 						UserID:        user.ID,
-						Payload: &types.ChangesetJobPublishPayload{
-							Draft: false,
+						Pbylobd: &types.ChbngesetJobPublishPbylobd{
+							Drbft: fblse,
 						},
 					}
 
-					afterDone, err := bp.Process(ctx, job)
+					bfterDone, err := bp.Process(ctx, job)
 					if err == nil {
 						t.Errorf("unexpected nil error")
 					}
-					if tc.wantRetryable && errcode.IsNonRetryable(err) {
-						t.Errorf("error is not retryable: %v", err)
+					if tc.wbntRetrybble && errcode.IsNonRetrybble(err) {
+						t.Errorf("error is not retrybble: %v", err)
 					}
-					if !tc.wantRetryable && !errcode.IsNonRetryable(err) {
-						t.Errorf("error is retryable: %v", err)
+					if !tc.wbntRetrybble && !errcode.IsNonRetrybble(err) {
+						t.Errorf("error is retrybble: %v", err)
 					}
-					// We don't expect any afterDone function to be returned
-					// because the bulk operation just enqueues the changesets for
-					// publishing via the reconciler and does not actually perform
+					// We don't expect bny bfterDone function to be returned
+					// becbuse the bulk operbtion just enqueues the chbngesets for
+					// publishing vib the reconciler bnd does not bctublly perform
 					// the publishing itself.
-					if afterDone != nil {
-						t.Fatal("unexpected non-nil afterDone")
+					if bfterDone != nil {
+						t.Fbtbl("unexpected non-nil bfterDone")
 					}
 				})
 			}
 		})
 
 		t.Run("success", func(t *testing.T) {
-			for _, reconcilerState := range []btypes.ReconcilerState{
-				btypes.ReconcilerStateCompleted,
-				btypes.ReconcilerStateErrored,
-				btypes.ReconcilerStateFailed,
-				btypes.ReconcilerStateQueued,
-				btypes.ReconcilerStateScheduled,
+			for _, reconcilerStbte := rbnge []btypes.ReconcilerStbte{
+				btypes.ReconcilerStbteCompleted,
+				btypes.ReconcilerStbteErrored,
+				btypes.ReconcilerStbteFbiled,
+				btypes.ReconcilerStbteQueued,
+				btypes.ReconcilerStbteScheduled,
 			} {
-				t.Run(string(reconcilerState), func(t *testing.T) {
-					for name, draft := range map[string]bool{
-						"draft":     true,
-						"published": false,
+				t.Run(string(reconcilerStbte), func(t *testing.T) {
+					for nbme, drbft := rbnge mbp[string]bool{
+						"drbft":     true,
+						"published": fblse,
 					} {
-						t.Run(name, func(t *testing.T) {
-							changesetSpec := bt.CreateChangesetSpec(t, ctx, bstore, bt.TestSpecOpts{
+						t.Run(nbme, func(t *testing.T) {
+							chbngesetSpec := bt.CrebteChbngesetSpec(t, ctx, bstore, bt.TestSpecOpts{
 								User:      user.ID,
 								Repo:      repo.ID,
-								BatchSpec: batchSpec.ID,
-								HeadRef:   "main",
-								Typ:       btypes.ChangesetSpecTypeBranch,
+								BbtchSpec: bbtchSpec.ID,
+								HebdRef:   "mbin",
+								Typ:       btypes.ChbngesetSpecTypeBrbnch,
 							})
-							changeset := bt.CreateChangeset(t, ctx, bstore, bt.TestChangesetOpts{
+							chbngeset := bt.CrebteChbngeset(t, ctx, bstore, bt.TestChbngesetOpts{
 								Repo:             repo.ID,
-								BatchChange:      batchChange.ID,
-								CurrentSpec:      changesetSpec.ID,
-								ReconcilerState:  reconcilerState,
-								PublicationState: btypes.ChangesetPublicationStateUnpublished,
+								BbtchChbnge:      bbtchChbnge.ID,
+								CurrentSpec:      chbngesetSpec.ID,
+								ReconcilerStbte:  reconcilerStbte,
+								PublicbtionStbte: btypes.ChbngesetPublicbtionStbteUnpublished,
 							})
 
-							job := &types.ChangesetJob{
-								JobType:       types.ChangesetJobTypePublish,
-								BatchChangeID: batchChange.ID,
-								ChangesetID:   changeset.ID,
+							job := &types.ChbngesetJob{
+								JobType:       types.ChbngesetJobTypePublish,
+								BbtchChbngeID: bbtchChbnge.ID,
+								ChbngesetID:   chbngeset.ID,
 								UserID:        user.ID,
-								Payload: &types.ChangesetJobPublishPayload{
-									Draft: draft,
+								Pbylobd: &types.ChbngesetJobPublishPbylobd{
+									Drbft: drbft,
 								},
 							}
 
-							afterDone, err := bp.Process(ctx, job)
+							bfterDone, err := bp.Process(ctx, job)
 							if err != nil {
 								t.Errorf("unexpected error: %v", err)
 							}
-							// We don't expect any afterDone function to be returned
-							// because the bulk operation just enqueues the changesets for
-							// publishing via the reconciler and does not actually perform
+							// We don't expect bny bfterDone function to be returned
+							// becbuse the bulk operbtion just enqueues the chbngesets for
+							// publishing vib the reconciler bnd does not bctublly perform
 							// the publishing itself.
-							if afterDone != nil {
-								t.Fatal("unexpected non-nil afterDone")
+							if bfterDone != nil {
+								t.Fbtbl("unexpected non-nil bfterDone")
 							}
 
-							changeset, err = bstore.GetChangesetByID(ctx, changeset.ID)
+							chbngeset, err = bstore.GetChbngesetByID(ctx, chbngeset.ID)
 							if err != nil {
-								t.Fatal(err)
+								t.Fbtbl(err)
 							}
 
-							var want btypes.ChangesetUiPublicationState
-							if draft {
-								want = btypes.ChangesetUiPublicationStateDraft
+							vbr wbnt btypes.ChbngesetUiPublicbtionStbte
+							if drbft {
+								wbnt = btypes.ChbngesetUiPublicbtionStbteDrbft
 							} else {
-								want = btypes.ChangesetUiPublicationStatePublished
+								wbnt = btypes.ChbngesetUiPublicbtionStbtePublished
 							}
-							if have := changeset.UiPublicationState; have == nil || *have != want {
-								t.Fatalf("unexpected UI publication state: have=%v want=%q", have, want)
+							if hbve := chbngeset.UiPublicbtionStbte; hbve == nil || *hbve != wbnt {
+								t.Fbtblf("unexpected UI publicbtion stbte: hbve=%v wbnt=%q", hbve, wbnt)
 							}
 
-							if have, want := changeset.ReconcilerState, global.DefaultReconcilerEnqueueState(); have != want {
-								t.Fatalf("unexpected reconciler state, have=%q want=%q", have, want)
+							if hbve, wbnt := chbngeset.ReconcilerStbte, globbl.DefbultReconcilerEnqueueStbte(); hbve != wbnt {
+								t.Fbtblf("unexpected reconciler stbte, hbve=%q wbnt=%q", hbve, wbnt)
 							}
 						})
 					}

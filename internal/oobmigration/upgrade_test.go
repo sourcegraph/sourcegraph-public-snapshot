@@ -1,4 +1,4 @@
-package oobmigration
+pbckbge oobmigrbtion
 
 import (
 	"testing"
@@ -6,25 +6,25 @@ import (
 	"github.com/google/go-cmp/cmp"
 )
 
-func TestScheduleMigrationInterruptsUp(t *testing.T) {
-	for _, testCase := range []struct {
-		name       string
+func TestScheduleMigrbtionInterruptsUp(t *testing.T) {
+	for _, testCbse := rbnge []struct {
+		nbme       string
 		from, to   Version
-		migrations []yamlMigration
-		interrupts []MigrationInterrupt
+		migrbtions []ybmlMigrbtion
+		interrupts []MigrbtionInterrupt
 	}{
 		{
-			name:       "empty",
+			nbme:       "empty",
 			from:       NewVersion(3, 32),
 			to:         NewVersion(3, 44),
-			migrations: []yamlMigration{},
-			interrupts: []MigrationInterrupt{},
+			migrbtions: []ybmlMigrbtion{},
+			interrupts: []MigrbtionInterrupt{},
 		},
 		{
-			name: "non-overlapping",
+			nbme: "non-overlbpping",
 			from: NewVersion(3, 32),
 			to:   NewVersion(3, 44),
-			migrations: []yamlMigration{
+			migrbtions: []ybmlMigrbtion{
 				// 1: [------)
 				// 2: .      . [------)
 				// 3: .      . .      . [------)
@@ -32,23 +32,23 @@ func TestScheduleMigrationInterruptsUp(t *testing.T) {
 				//    32 33 34 35 36 37 38 39 40 41 42 43
 				//       **       **       **       **
 
-				testMigration(1 /* introduced = */, 3, 32 /* deprecated = */, 3, 34),
-				testMigration(2 /* introduced = */, 3, 35 /* deprecated = */, 3, 37),
-				testMigration(3 /* introduced = */, 3, 38 /* deprecated = */, 3, 40),
-				testMigration(4 /* introduced = */, 3, 41 /* deprecated = */, 3, 43),
+				testMigrbtion(1 /* introduced = */, 3, 32 /* deprecbted = */, 3, 34),
+				testMigrbtion(2 /* introduced = */, 3, 35 /* deprecbted = */, 3, 37),
+				testMigrbtion(3 /* introduced = */, 3, 38 /* deprecbted = */, 3, 40),
+				testMigrbtion(4 /* introduced = */, 3, 41 /* deprecbted = */, 3, 43),
 			},
-			interrupts: []MigrationInterrupt{
-				{Version: Version{Major: 3, Minor: 33}, MigrationIDs: []int{1}},
-				{Version: Version{Major: 3, Minor: 36}, MigrationIDs: []int{2}},
-				{Version: Version{Major: 3, Minor: 39}, MigrationIDs: []int{3}},
-				{Version: Version{Major: 3, Minor: 42}, MigrationIDs: []int{4}},
+			interrupts: []MigrbtionInterrupt{
+				{Version: Version{Mbjor: 3, Minor: 33}, MigrbtionIDs: []int{1}},
+				{Version: Version{Mbjor: 3, Minor: 36}, MigrbtionIDs: []int{2}},
+				{Version: Version{Mbjor: 3, Minor: 39}, MigrbtionIDs: []int{3}},
+				{Version: Version{Mbjor: 3, Minor: 42}, MigrbtionIDs: []int{4}},
 			},
 		},
 		{
-			name: "overlapping",
+			nbme: "overlbpping",
 			from: NewVersion(3, 32),
 			to:   NewVersion(3, 44),
-			migrations: []yamlMigration{
+			migrbtions: []ybmlMigrbtion{
 				// 1: [------)
 				// 2: .  [------)
 				// 3: .  .   .  . [---------------)
@@ -59,25 +59,25 @@ func TestScheduleMigrationInterruptsUp(t *testing.T) {
 				//    32 33 34 35 36 37 38 39 40 41 42 43
 				//       **          **    **       **
 
-				testMigration(1 /* introduced = */, 3, 32 /* deprecated = */, 3, 34),
-				testMigration(2 /* introduced = */, 3, 33 /* deprecated = */, 3, 35),
-				testMigration(3 /* introduced = */, 3, 36 /* deprecated = */, 3, 41),
-				testMigration(4 /* introduced = */, 3, 37 /* deprecated = */, 3, 38),
-				testMigration(5 /* introduced = */, 3, 39 /* deprecated = */, 3, 40),
-				testMigration(6 /* introduced = */, 3, 42 /* deprecated = */, 3, 43),
+				testMigrbtion(1 /* introduced = */, 3, 32 /* deprecbted = */, 3, 34),
+				testMigrbtion(2 /* introduced = */, 3, 33 /* deprecbted = */, 3, 35),
+				testMigrbtion(3 /* introduced = */, 3, 36 /* deprecbted = */, 3, 41),
+				testMigrbtion(4 /* introduced = */, 3, 37 /* deprecbted = */, 3, 38),
+				testMigrbtion(5 /* introduced = */, 3, 39 /* deprecbted = */, 3, 40),
+				testMigrbtion(6 /* introduced = */, 3, 42 /* deprecbted = */, 3, 43),
 			},
-			interrupts: []MigrationInterrupt{
-				{Version: Version{Major: 3, Minor: 33}, MigrationIDs: []int{1, 2}},
-				{Version: Version{Major: 3, Minor: 37}, MigrationIDs: []int{4}},
-				{Version: Version{Major: 3, Minor: 39}, MigrationIDs: []int{3, 5}},
-				{Version: Version{Major: 3, Minor: 42}, MigrationIDs: []int{6}},
+			interrupts: []MigrbtionInterrupt{
+				{Version: Version{Mbjor: 3, Minor: 33}, MigrbtionIDs: []int{1, 2}},
+				{Version: Version{Mbjor: 3, Minor: 37}, MigrbtionIDs: []int{4}},
+				{Version: Version{Mbjor: 3, Minor: 39}, MigrbtionIDs: []int{3, 5}},
+				{Version: Version{Mbjor: 3, Minor: 42}, MigrbtionIDs: []int{6}},
 			},
 		},
 		{
-			name: "partial upgrade (overlapping case)",
+			nbme: "pbrtibl upgrbde (overlbpping cbse)",
 			from: NewVersion(3, 34),
 			to:   NewVersion(3, 41),
-			migrations: []yamlMigration{
+			migrbtions: []ybmlMigrbtion{
 				// 1: [------)
 				// 2: .  [------)
 				// 3: .  .   .  . [---------------)
@@ -87,35 +87,35 @@ func TestScheduleMigrationInterruptsUp(t *testing.T) {
 				//    32 33 34 35 36 37 38 39 40 41
 				//          **       **    **
 
-				testMigration(1 /* introduced = */, 3, 32 /* deprecated = */, 3, 34),
-				testMigration(2 /* introduced = */, 3, 33 /* deprecated = */, 3, 35),
-				testMigration(3 /* introduced = */, 3, 36 /* deprecated = */, 3, 41),
-				testMigration(4 /* introduced = */, 3, 37 /* deprecated = */, 3, 38),
-				testMigration(5 /* introduced = */, 3, 39 /* deprecated = */, 3, 40),
+				testMigrbtion(1 /* introduced = */, 3, 32 /* deprecbted = */, 3, 34),
+				testMigrbtion(2 /* introduced = */, 3, 33 /* deprecbted = */, 3, 35),
+				testMigrbtion(3 /* introduced = */, 3, 36 /* deprecbted = */, 3, 41),
+				testMigrbtion(4 /* introduced = */, 3, 37 /* deprecbted = */, 3, 38),
+				testMigrbtion(5 /* introduced = */, 3, 39 /* deprecbted = */, 3, 40),
 			},
-			interrupts: []MigrationInterrupt{
-				{Version: Version{Major: 3, Minor: 34}, MigrationIDs: []int{2}},
-				{Version: Version{Major: 3, Minor: 37}, MigrationIDs: []int{4}},
-				{Version: Version{Major: 3, Minor: 39}, MigrationIDs: []int{3, 5}},
+			interrupts: []MigrbtionInterrupt{
+				{Version: Version{Mbjor: 3, Minor: 34}, MigrbtionIDs: []int{2}},
+				{Version: Version{Mbjor: 3, Minor: 37}, MigrbtionIDs: []int{4}},
+				{Version: Version{Mbjor: 3, Minor: 39}, MigrbtionIDs: []int{3, 5}},
 			},
 		},
 	} {
-		t.Run(testCase.name, func(t *testing.T) {
-			interrupts, err := scheduleMigrationInterrupts(testCase.from, testCase.to, testCase.migrations)
+		t.Run(testCbse.nbme, func(t *testing.T) {
+			interrupts, err := scheduleMigrbtionInterrupts(testCbse.from, testCbse.to, testCbse.migrbtions)
 			if err != nil {
-				t.Fatalf("falied to schedule upgrade: %s", err)
+				t.Fbtblf("fblied to schedule upgrbde: %s", err)
 			}
-			if diff := cmp.Diff(testCase.interrupts, interrupts); diff != "" {
-				t.Fatalf("unexpected interrupts (-want +got):\n%s", diff)
+			if diff := cmp.Diff(testCbse.interrupts, interrupts); diff != "" {
+				t.Fbtblf("unexpected interrupts (-wbnt +got):\n%s", diff)
 			}
 		})
 	}
 }
 
-func testMigration(id, iMajor, iMinor, jMajor, jMinor int) yamlMigration {
-	return yamlMigration{
+func testMigrbtion(id, iMbjor, iMinor, jMbjor, jMinor int) ybmlMigrbtion {
+	return ybmlMigrbtion{
 		ID:                     id,
-		IntroducedVersionMajor: iMajor, IntroducedVersionMinor: iMinor,
-		DeprecatedVersionMajor: &jMajor, DeprecatedVersionMinor: &jMinor,
+		IntroducedVersionMbjor: iMbjor, IntroducedVersionMinor: iMinor,
+		DeprecbtedVersionMbjor: &jMbjor, DeprecbtedVersionMinor: &jMinor,
 	}
 }

@@ -1,4 +1,4 @@
-package store
+pbckbge store
 
 import (
 	"context"
@@ -8,86 +8,86 @@ import (
 	"time"
 
 	"github.com/google/go-cmp/cmp"
-	"github.com/keegancsmith/sqlf"
+	"github.com/keegbncsmith/sqlf"
 	"github.com/lib/pq"
-	"github.com/sourcegraph/log/logtest"
+	"github.com/sourcegrbph/log/logtest"
 
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/sentinel/shared"
-	uploadsshared "github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegrbph/sourcegrbph/internbl/codeintel/sentinel/shbred"
+	uplobdsshbred "github.com/sourcegrbph/sourcegrbph/internbl/codeintel/uplobds/shbred"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/bbsestore"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbtest"
+	"github.com/sourcegrbph/sourcegrbph/internbl/observbtion"
 )
 
-func TestVulnerabilityMatchByID(t *testing.T) {
-	ctx := context.Background()
+func TestVulnerbbilityMbtchByID(t *testing.T) {
+	ctx := context.Bbckground()
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
-	store := New(&observation.TestContext, db)
+	db := dbtbbbse.NewDB(logger, dbtest.NewDB(logger, t))
+	store := New(&observbtion.TestContext, db)
 
 	setupReferences(t, db)
 
-	if _, err := store.InsertVulnerabilities(ctx, testVulnerabilities); err != nil {
-		t.Fatalf("unexpected error inserting vulnerabilities: %s", err)
+	if _, err := store.InsertVulnerbbilities(ctx, testVulnerbbilities); err != nil {
+		t.Fbtblf("unexpected error inserting vulnerbbilities: %s", err)
 	}
 
-	if _, _, err := store.ScanMatches(ctx, 100); err != nil {
-		t.Fatalf("unexpected error inserting vulnerabilities: %s", err)
+	if _, _, err := store.ScbnMbtches(ctx, 100); err != nil {
+		t.Fbtblf("unexpected error inserting vulnerbbilities: %s", err)
 	}
 
-	match, ok, err := store.VulnerabilityMatchByID(ctx, 3)
+	mbtch, ok, err := store.VulnerbbilityMbtchByID(ctx, 3)
 	if err != nil {
-		t.Fatalf("unexpected error getting vulnerability match: %s", err)
+		t.Fbtblf("unexpected error getting vulnerbbility mbtch: %s", err)
 	}
 	if !ok {
-		t.Fatalf("expected match to exist")
+		t.Fbtblf("expected mbtch to exist")
 	}
 
-	expectedMatch := shared.VulnerabilityMatch{
+	expectedMbtch := shbred.VulnerbbilityMbtch{
 		ID:              3,
-		UploadID:        52,
-		VulnerabilityID: 1,
-		AffectedPackage: badConfig,
+		UplobdID:        52,
+		VulnerbbilityID: 1,
+		AffectedPbckbge: bbdConfig,
 	}
-	if diff := cmp.Diff(expectedMatch, match); diff != "" {
-		t.Errorf("unexpected vulnerability match (-want +got):\n%s", diff)
+	if diff := cmp.Diff(expectedMbtch, mbtch); diff != "" {
+		t.Errorf("unexpected vulnerbbility mbtch (-wbnt +got):\n%s", diff)
 	}
 }
 
-func TestGetVulnerabilityMatches(t *testing.T) {
-	ctx := context.Background()
+func TestGetVulnerbbilityMbtches(t *testing.T) {
+	ctx := context.Bbckground()
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
-	store := New(&observation.TestContext, db)
+	db := dbtbbbse.NewDB(logger, dbtest.NewDB(logger, t))
+	store := New(&observbtion.TestContext, db)
 
 	/*
-	 * Setup references is inserting seven (7) total references.
-	 * Five (5) of them are vulnerable versions
-	 * (three (3) for go-nacelle/config and two (2) for go-mockgen/xtools)
-	 * the remaining two (2) of the references is of the fixed version.
+	 * Setup references is inserting seven (7) totbl references.
+	 * Five (5) of them bre vulnerbble versions
+	 * (three (3) for go-nbcelle/config bnd two (2) for go-mockgen/xtools)
+	 * the rembining two (2) of the references is of the fixed version.
 	 */
 	setupReferences(t, db)
-	highVulnerabilityCount := 3
-	mediumVulnerabilityCount := 2
-	totalVulnerableVersionsInserted := highVulnerabilityCount + mediumVulnerabilityCount // 5
+	highVulnerbbilityCount := 3
+	mediumVulnerbbilityCount := 2
+	totblVulnerbbleVersionsInserted := highVulnerbbilityCount + mediumVulnerbbilityCount // 5
 
-	highAffectedPackage := shared.AffectedPackage{
-		Language:          "go",
-		PackageName:       "go-nacelle/config",
-		VersionConstraint: []string{"<= v1.2.5"},
+	highAffectedPbckbge := shbred.AffectedPbckbge{
+		Lbngubge:          "go",
+		PbckbgeNbme:       "go-nbcelle/config",
+		VersionConstrbint: []string{"<= v1.2.5"},
 	}
-	mediumAffectedPackage := shared.AffectedPackage{
-		Language:          "go",
-		PackageName:       "go-mockgen/xtools",
-		VersionConstraint: []string{"<= v1.3.5"},
+	mediumAffectedPbckbge := shbred.AffectedPbckbge{
+		Lbngubge:          "go",
+		PbckbgeNbme:       "go-mockgen/xtools",
+		VersionConstrbint: []string{"<= v1.3.5"},
 	}
 
-	mockVulnerabilities := []shared.Vulnerability{
-		{ID: 1, SourceID: "CVE-ABC", Severity: "HIGH", AffectedPackages: []shared.AffectedPackage{highAffectedPackage}},
+	mockVulnerbbilities := []shbred.Vulnerbbility{
+		{ID: 1, SourceID: "CVE-ABC", Severity: "HIGH", AffectedPbckbges: []shbred.AffectedPbckbge{highAffectedPbckbge}},
 		{ID: 2, SourceID: "CVE-DEF", Severity: "HIGH"},
 		{ID: 3, SourceID: "CVE-GHI", Severity: "HIGH"},
-		{ID: 4, SourceID: "CVE-JKL", Severity: "MEDIUM", AffectedPackages: []shared.AffectedPackage{mediumAffectedPackage}},
+		{ID: 4, SourceID: "CVE-JKL", Severity: "MEDIUM", AffectedPbckbges: []shbred.AffectedPbckbge{mediumAffectedPbckbge}},
 		{ID: 5, SourceID: "CVE-MNO", Severity: "MEDIUM"},
 		{ID: 6, SourceID: "CVE-PQR", Severity: "MEDIUM"},
 		{ID: 7, SourceID: "CVE-STU", Severity: "LOW"},
@@ -95,26 +95,26 @@ func TestGetVulnerabilityMatches(t *testing.T) {
 		{ID: 9, SourceID: "CVE-Y&Z", Severity: "CRITICAL"},
 	}
 
-	if _, err := store.InsertVulnerabilities(ctx, mockVulnerabilities); err != nil {
-		t.Fatalf("unexpected error inserting vulnerabilities: %s", err)
+	if _, err := store.InsertVulnerbbilities(ctx, mockVulnerbbilities); err != nil {
+		t.Fbtblf("unexpected error inserting vulnerbbilities: %s", err)
 	}
 
-	if _, _, err := store.ScanMatches(ctx, 1000); err != nil {
-		t.Fatalf("unexpected error inserting vulnerabilities: %s", err)
+	if _, _, err := store.ScbnMbtches(ctx, 1000); err != nil {
+		t.Fbtblf("unexpected error inserting vulnerbbilities: %s", err)
 	}
 
 	/*
 	 * Test
 	 */
 
-	args := shared.GetVulnerabilityMatchesArgs{Limit: 10, Offset: 0}
-	matches, totalCount, err := store.GetVulnerabilityMatches(ctx, args)
+	brgs := shbred.GetVulnerbbilityMbtchesArgs{Limit: 10, Offset: 0}
+	mbtches, totblCount, err := store.GetVulnerbbilityMbtches(ctx, brgs)
 	if err != nil {
-		t.Fatalf("unexpected error inserting vulnerabilities: %s", err)
+		t.Fbtblf("unexpected error inserting vulnerbbilities: %s", err)
 	}
 
-	if len(matches) != totalVulnerableVersionsInserted {
-		t.Errorf("unexpected total count. want=%d have=%d", len(matches), totalCount)
+	if len(mbtches) != totblVulnerbbleVersionsInserted {
+		t.Errorf("unexpected totbl count. wbnt=%d hbve=%d", len(mbtches), totblCount)
 	}
 
 	/*
@@ -122,50 +122,50 @@ func TestGetVulnerabilityMatches(t *testing.T) {
 	 */
 
 	t.Run("Test severity filter", func(t *testing.T) {
-		args.Severity = "HIGH"
-		high, totalCount, err := store.GetVulnerabilityMatches(ctx, args)
+		brgs.Severity = "HIGH"
+		high, totblCount, err := store.GetVulnerbbilityMbtches(ctx, brgs)
 		if err != nil {
-			t.Fatalf("unexpected error inserting vulnerabilities: %s", err)
+			t.Fbtblf("unexpected error inserting vulnerbbilities: %s", err)
 		}
 
-		if len(high) != highVulnerabilityCount {
-			t.Errorf("unexpected total count. want=%d have=%d", 3, totalCount)
+		if len(high) != highVulnerbbilityCount {
+			t.Errorf("unexpected totbl count. wbnt=%d hbve=%d", 3, totblCount)
 		}
 
-		args.Severity = "MEDIUM"
-		medium, totalCount, err := store.GetVulnerabilityMatches(ctx, args)
+		brgs.Severity = "MEDIUM"
+		medium, totblCount, err := store.GetVulnerbbilityMbtches(ctx, brgs)
 		if err != nil {
-			t.Fatalf("unexpected error inserting vulnerabilities: %s", err)
+			t.Fbtblf("unexpected error inserting vulnerbbilities: %s", err)
 		}
 
-		if len(medium) != mediumVulnerabilityCount {
-			t.Errorf("unexpected total count. want=%d have=%d", 2, totalCount)
+		if len(medium) != mediumVulnerbbilityCount {
+			t.Errorf("unexpected totbl count. wbnt=%d hbve=%d", 2, totblCount)
 		}
 	})
 
 	/*
-	 * Test Language filter
+	 * Test Lbngubge filter
 	 */
 
-	t.Run("Test language filter", func(t *testing.T) {
-		args = shared.GetVulnerabilityMatchesArgs{Limit: 10, Offset: 0, Language: "go", Severity: ""}
-		goMatches, totalCount, err := store.GetVulnerabilityMatches(ctx, args)
+	t.Run("Test lbngubge filter", func(t *testing.T) {
+		brgs = shbred.GetVulnerbbilityMbtchesArgs{Limit: 10, Offset: 0, Lbngubge: "go", Severity: ""}
+		goMbtches, totblCount, err := store.GetVulnerbbilityMbtches(ctx, brgs)
 		if err != nil {
-			t.Fatalf("unexpected error inserting vulnerabilities: %s", err)
+			t.Fbtblf("unexpected error inserting vulnerbbilities: %s", err)
 		}
 
-		if len(goMatches) != totalVulnerableVersionsInserted {
-			t.Errorf("unexpected total count. want=%d have=%d", 2, totalCount)
+		if len(goMbtches) != totblVulnerbbleVersionsInserted {
+			t.Errorf("unexpected totbl count. wbnt=%d hbve=%d", 2, totblCount)
 		}
 
-		args = shared.GetVulnerabilityMatchesArgs{Limit: 10, Offset: 0, Language: "typescript", Severity: ""}
-		typescriptMatches, totalCount, err := store.GetVulnerabilityMatches(ctx, args)
+		brgs = shbred.GetVulnerbbilityMbtchesArgs{Limit: 10, Offset: 0, Lbngubge: "typescript", Severity: ""}
+		typescriptMbtches, totblCount, err := store.GetVulnerbbilityMbtches(ctx, brgs)
 		if err != nil {
-			t.Fatalf("unexpected error inserting vulnerabilities: %s", err)
+			t.Fbtblf("unexpected error inserting vulnerbbilities: %s", err)
 		}
 
-		if len(typescriptMatches) != 0 {
-			t.Errorf("unexpected total count. want=%d have=%d", 2, totalCount)
+		if len(typescriptMbtches) != 0 {
+			t.Errorf("unexpected totbl count. wbnt=%d hbve=%d", 2, totblCount)
 		}
 	})
 
@@ -174,363 +174,363 @@ func TestGetVulnerabilityMatches(t *testing.T) {
 	 */
 
 	t.Run("Test repository filter", func(t *testing.T) {
-		args = shared.GetVulnerabilityMatchesArgs{Limit: 10, Offset: 0, RepositoryName: "github.com/go-nacelle/config"}
-		nacelleMatches, totalCount, err := store.GetVulnerabilityMatches(ctx, args)
+		brgs = shbred.GetVulnerbbilityMbtchesArgs{Limit: 10, Offset: 0, RepositoryNbme: "github.com/go-nbcelle/config"}
+		nbcelleMbtches, totblCount, err := store.GetVulnerbbilityMbtches(ctx, brgs)
 		if err != nil {
-			t.Fatalf("unexpected error inserting vulnerabilities: %s", err)
+			t.Fbtblf("unexpected error inserting vulnerbbilities: %s", err)
 		}
 
-		if len(nacelleMatches) != highVulnerabilityCount {
-			t.Errorf("unexpected total count. want=%d have=%d", 2, totalCount)
+		if len(nbcelleMbtches) != highVulnerbbilityCount {
+			t.Errorf("unexpected totbl count. wbnt=%d hbve=%d", 2, totblCount)
 		}
 
-		args = shared.GetVulnerabilityMatchesArgs{Limit: 10, Offset: 0, RepositoryName: "github.com/go-mockgen/xtools"}
-		xToolsMatches, totalCount, err := store.GetVulnerabilityMatches(ctx, args)
+		brgs = shbred.GetVulnerbbilityMbtchesArgs{Limit: 10, Offset: 0, RepositoryNbme: "github.com/go-mockgen/xtools"}
+		xToolsMbtches, totblCount, err := store.GetVulnerbbilityMbtches(ctx, brgs)
 		if err != nil {
-			t.Fatalf("unexpected error inserting vulnerabilities: %s", err)
+			t.Fbtblf("unexpected error inserting vulnerbbilities: %s", err)
 		}
 
-		if len(xToolsMatches) != mediumVulnerabilityCount {
-			t.Errorf("unexpected total count. want=%d have=%d", 2, totalCount)
+		if len(xToolsMbtches) != mediumVulnerbbilityCount {
+			t.Errorf("unexpected totbl count. wbnt=%d hbve=%d", 2, totblCount)
 		}
 	})
 }
 
-func TestGetVulberabilityMatchesCountByRepository(t *testing.T) {
-	ctx := context.Background()
+func TestGetVulberbbilityMbtchesCountByRepository(t *testing.T) {
+	ctx := context.Bbckground()
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
-	store := New(&observation.TestContext, db)
+	db := dbtbbbse.NewDB(logger, dbtest.NewDB(logger, t))
+	store := New(&observbtion.TestContext, db)
 
 	/*
-	 * Setup references is inserting seven (7) total references.
-	 * Five (5) of them are vulnerable versions
-	 * (three (3) for go-nacelle/config and two (2) for go-mockgen/xtools)
-	 * the remaining two (2) of the references is of the fixed version.
+	 * Setup references is inserting seven (7) totbl references.
+	 * Five (5) of them bre vulnerbble versions
+	 * (three (3) for go-nbcelle/config bnd two (2) for go-mockgen/xtools)
+	 * the rembining two (2) of the references is of the fixed version.
 	 */
 	setupReferences(t, db)
-	var highVulnerabilityCount int32 = 3
-	var mediumVulnerabilityCount int32 = 2
+	vbr highVulnerbbilityCount int32 = 3
+	vbr mediumVulnerbbilityCount int32 = 2
 
-	highAffectedPackage := shared.AffectedPackage{
-		Language:          "go",
-		PackageName:       "go-nacelle/config",
-		VersionConstraint: []string{"<= v1.2.5"},
+	highAffectedPbckbge := shbred.AffectedPbckbge{
+		Lbngubge:          "go",
+		PbckbgeNbme:       "go-nbcelle/config",
+		VersionConstrbint: []string{"<= v1.2.5"},
 	}
-	mediumAffectedPackage := shared.AffectedPackage{
-		Language:          "go",
-		PackageName:       "go-mockgen/xtools",
-		VersionConstraint: []string{"<= v1.3.5"},
+	mediumAffectedPbckbge := shbred.AffectedPbckbge{
+		Lbngubge:          "go",
+		PbckbgeNbme:       "go-mockgen/xtools",
+		VersionConstrbint: []string{"<= v1.3.5"},
 	}
-	mockVulnerabilities := []shared.Vulnerability{
-		{ID: 1, SourceID: "CVE-ABC", Severity: "HIGH", AffectedPackages: []shared.AffectedPackage{highAffectedPackage}},
+	mockVulnerbbilities := []shbred.Vulnerbbility{
+		{ID: 1, SourceID: "CVE-ABC", Severity: "HIGH", AffectedPbckbges: []shbred.AffectedPbckbge{highAffectedPbckbge}},
 		{ID: 2, SourceID: "CVE-DEF", Severity: "HIGH"},
 		{ID: 3, SourceID: "CVE-GHI", Severity: "HIGH"},
-		{ID: 4, SourceID: "CVE-JKL", Severity: "MEDIUM", AffectedPackages: []shared.AffectedPackage{mediumAffectedPackage}},
+		{ID: 4, SourceID: "CVE-JKL", Severity: "MEDIUM", AffectedPbckbges: []shbred.AffectedPbckbge{mediumAffectedPbckbge}},
 		{ID: 5, SourceID: "CVE-MNO", Severity: "MEDIUM"},
 		{ID: 6, SourceID: "CVE-PQR", Severity: "MEDIUM"},
 	}
 
-	if _, err := store.InsertVulnerabilities(ctx, mockVulnerabilities); err != nil {
-		t.Fatalf("unexpected error inserting vulnerabilities: %s", err)
+	if _, err := store.InsertVulnerbbilities(ctx, mockVulnerbbilities); err != nil {
+		t.Fbtblf("unexpected error inserting vulnerbbilities: %s", err)
 	}
 
-	if _, _, err := store.ScanMatches(ctx, 1000); err != nil {
-		t.Fatalf("unexpected error inserting vulnerabilities: %s", err)
+	if _, _, err := store.ScbnMbtches(ctx, 1000); err != nil {
+		t.Fbtblf("unexpected error inserting vulnerbbilities: %s", err)
 	}
 
 	// Test
-	args := shared.GetVulnerabilityMatchesCountByRepositoryArgs{Limit: 10}
-	grouping, totalCount, err := store.GetVulnerabilityMatchesCountByRepository(ctx, args)
+	brgs := shbred.GetVulnerbbilityMbtchesCountByRepositoryArgs{Limit: 10}
+	grouping, totblCount, err := store.GetVulnerbbilityMbtchesCountByRepository(ctx, brgs)
 	if err != nil {
-		t.Fatalf("unexpected error getting vulnerability matches: %s", err)
+		t.Fbtblf("unexpected error getting vulnerbbility mbtches: %s", err)
 	}
 
-	expectedMatches := []shared.VulnerabilityMatchesByRepository{
+	expectedMbtches := []shbred.VulnerbbilityMbtchesByRepository{
 		{
 			ID:             2,
-			RepositoryName: "github.com/go-nacelle/config",
-			MatchCount:     highVulnerabilityCount,
+			RepositoryNbme: "github.com/go-nbcelle/config",
+			MbtchCount:     highVulnerbbilityCount,
 		},
 		{
 			ID:             75,
-			RepositoryName: "github.com/go-mockgen/xtools",
-			MatchCount:     mediumVulnerabilityCount,
+			RepositoryNbme: "github.com/go-mockgen/xtools",
+			MbtchCount:     mediumVulnerbbilityCount,
 		},
 	}
 
-	if diff := cmp.Diff(expectedMatches, grouping); diff != "" {
-		t.Errorf("unexpected vulnerability matches (-want +got):\n%s", diff)
+	if diff := cmp.Diff(expectedMbtches, grouping); diff != "" {
+		t.Errorf("unexpected vulnerbbility mbtches (-wbnt +got):\n%s", diff)
 	}
 
-	if totalCount != len(expectedMatches) {
-		t.Errorf("unexpected total count. want=%d have=%d", len(expectedMatches), totalCount)
+	if totblCount != len(expectedMbtches) {
+		t.Errorf("unexpected totbl count. wbnt=%d hbve=%d", len(expectedMbtches), totblCount)
 	}
 }
 
-func TestGetVulnerabilityMatchesSummaryCount(t *testing.T) {
-	ctx := context.Background()
+func TestGetVulnerbbilityMbtchesSummbryCount(t *testing.T) {
+	ctx := context.Bbckground()
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
-	store := New(&observation.TestContext, db)
-	handle := basestore.NewWithHandle(db.Handle())
+	db := dbtbbbse.NewDB(logger, dbtest.NewDB(logger, t))
+	store := New(&observbtion.TestContext, db)
+	hbndle := bbsestore.NewWithHbndle(db.Hbndle())
 
-	/* Insert uploads for four (4) repositories */
-	insertUploads(t, db,
-		uploadsshared.Upload{ID: 50, RepositoryID: 2, RepositoryName: "github.com/go-nacelle/config"},
-		uploadsshared.Upload{ID: 51, RepositoryID: 2, RepositoryName: "github.com/go-nacelle/config"},
-		uploadsshared.Upload{ID: 52, RepositoryID: 2, RepositoryName: "github.com/go-nacelle/config"},
-		uploadsshared.Upload{ID: 53, RepositoryID: 2, RepositoryName: "github.com/go-nacelle/config"},
-		uploadsshared.Upload{ID: 54, RepositoryID: 75, RepositoryName: "github.com/go-mockgen/xtools"},
-		uploadsshared.Upload{ID: 55, RepositoryID: 75, RepositoryName: "github.com/go-mockgen/xtools"},
-		uploadsshared.Upload{ID: 56, RepositoryID: 75, RepositoryName: "github.com/go-mockgen/xtools"},
-		uploadsshared.Upload{ID: 57, RepositoryID: 90, RepositoryName: "github.com/testify/config"},
-		uploadsshared.Upload{ID: 58, RepositoryID: 90, RepositoryName: "github.com/testify/config"},
-		uploadsshared.Upload{ID: 59, RepositoryID: 90, RepositoryName: "github.com/testify/config"},
-		uploadsshared.Upload{ID: 60, RepositoryID: 90, RepositoryName: "github.com/testify/config"},
-		uploadsshared.Upload{ID: 61, RepositoryID: 90, RepositoryName: "github.com/testify/config"},
-		uploadsshared.Upload{ID: 62, RepositoryID: 200, RepositoryName: "github.com/go-sentinel/config"},
-		uploadsshared.Upload{ID: 63, RepositoryID: 200, RepositoryName: "github.com/go-sentinel/config"},
+	/* Insert uplobds for four (4) repositories */
+	insertUplobds(t, db,
+		uplobdsshbred.Uplobd{ID: 50, RepositoryID: 2, RepositoryNbme: "github.com/go-nbcelle/config"},
+		uplobdsshbred.Uplobd{ID: 51, RepositoryID: 2, RepositoryNbme: "github.com/go-nbcelle/config"},
+		uplobdsshbred.Uplobd{ID: 52, RepositoryID: 2, RepositoryNbme: "github.com/go-nbcelle/config"},
+		uplobdsshbred.Uplobd{ID: 53, RepositoryID: 2, RepositoryNbme: "github.com/go-nbcelle/config"},
+		uplobdsshbred.Uplobd{ID: 54, RepositoryID: 75, RepositoryNbme: "github.com/go-mockgen/xtools"},
+		uplobdsshbred.Uplobd{ID: 55, RepositoryID: 75, RepositoryNbme: "github.com/go-mockgen/xtools"},
+		uplobdsshbred.Uplobd{ID: 56, RepositoryID: 75, RepositoryNbme: "github.com/go-mockgen/xtools"},
+		uplobdsshbred.Uplobd{ID: 57, RepositoryID: 90, RepositoryNbme: "github.com/testify/config"},
+		uplobdsshbred.Uplobd{ID: 58, RepositoryID: 90, RepositoryNbme: "github.com/testify/config"},
+		uplobdsshbred.Uplobd{ID: 59, RepositoryID: 90, RepositoryNbme: "github.com/testify/config"},
+		uplobdsshbred.Uplobd{ID: 60, RepositoryID: 90, RepositoryNbme: "github.com/testify/config"},
+		uplobdsshbred.Uplobd{ID: 61, RepositoryID: 90, RepositoryNbme: "github.com/testify/config"},
+		uplobdsshbred.Uplobd{ID: 62, RepositoryID: 200, RepositoryNbme: "github.com/go-sentinel/config"},
+		uplobdsshbred.Uplobd{ID: 63, RepositoryID: 200, RepositoryNbme: "github.com/go-sentinel/config"},
 	)
 
 	/*
-	 * Insert ten (10) total vulnerable package reference.
-	 *  - Three (3) are high severity
-	 *  - Two (2) are medium severity
-	 *  - Four (4) are critical severity
+	 * Insert ten (10) totbl vulnerbble pbckbge reference.
+	 *  - Three (3) bre high severity
+	 *  - Two (2) bre medium severity
+	 *  - Four (4) bre criticbl severity
 	 *  - Low (1) is low severity
 	 */
-	if err := handle.Exec(context.Background(), sqlf.Sprintf(`
-		INSERT INTO lsif_references (scheme, name, version, dump_id)
+	if err := hbndle.Exec(context.Bbckground(), sqlf.Sprintf(`
+		INSERT INTO lsif_references (scheme, nbme, version, dump_id)
 		VALUES
-			('gomod', 'github.com/go-nacelle/config', 'v1.2.3', 50), -- high vulnerability
-			('gomod', 'github.com/go-nacelle/config', 'v1.2.4', 51), -- high vulnerability
-			('gomod', 'github.com/go-nacelle/config', 'v1.2.5', 52), -- high vulnerability
-			('gomod', 'github.com/go-nacelle/config', 'v1.2.6', 53),
-			('gomod', 'github.com/go-mockgen/xtools', 'v1.3.2', 54), -- medium vulnerability
-			('gomod', 'github.com/go-mockgen/xtools', 'v1.3.3', 55), -- medium vulnerability
+			('gomod', 'github.com/go-nbcelle/config', 'v1.2.3', 50), -- high vulnerbbility
+			('gomod', 'github.com/go-nbcelle/config', 'v1.2.4', 51), -- high vulnerbbility
+			('gomod', 'github.com/go-nbcelle/config', 'v1.2.5', 52), -- high vulnerbbility
+			('gomod', 'github.com/go-nbcelle/config', 'v1.2.6', 53),
+			('gomod', 'github.com/go-mockgen/xtools', 'v1.3.2', 54), -- medium vulnerbbility
+			('gomod', 'github.com/go-mockgen/xtools', 'v1.3.3', 55), -- medium vulnerbbility
 			('gomod', 'github.com/go-mockgen/xtools', 'v1.3.6', 56),
-			('gomod', 'github.com/testify/config', 'v1.0.1', 57), -- critical vulnerability
-			('gomod', 'github.com/testify/config', 'v1.0.2', 58), -- critical vulnerability
-			('gomod', 'github.com/testify/config', 'v1.0.3', 59), -- critical vulnerability
-			('gomod', 'github.com/testify/config', 'v1.0.5', 60), -- critical vulnerability
+			('gomod', 'github.com/testify/config', 'v1.0.1', 57), -- criticbl vulnerbbility
+			('gomod', 'github.com/testify/config', 'v1.0.2', 58), -- criticbl vulnerbbility
+			('gomod', 'github.com/testify/config', 'v1.0.3', 59), -- criticbl vulnerbbility
+			('gomod', 'github.com/testify/config', 'v1.0.5', 60), -- criticbl vulnerbbility
 			('gomod', 'github.com/testify/config', 'v1.0.6', 61),
-			('gomod', 'github.com/go-sentinel/config', 'v2.3.0', 62), -- low vulnerability
+			('gomod', 'github.com/go-sentinel/config', 'v2.3.0', 62), -- low vulnerbbility
 			('gomod', 'github.com/go-sentinel/config', 'v2.3.6', 63)
 	`)); err != nil {
-		t.Fatalf("failed to insert references: %s", err)
+		t.Fbtblf("fbiled to insert references: %s", err)
 	}
 
-	var critical int32 = 4
-	var high int32 = 3
-	var medium int32 = 2
-	var low int32 = 1
-	var totalRepos int32 = 4
+	vbr criticbl int32 = 4
+	vbr high int32 = 3
+	vbr medium int32 = 2
+	vbr low int32 = 1
+	vbr totblRepos int32 = 4
 
-	criticalAffectedPackage := shared.AffectedPackage{
-		Language:          "go",
-		PackageName:       "testify/config",
-		VersionConstraint: []string{"<= v1.0.5"},
+	criticblAffectedPbckbge := shbred.AffectedPbckbge{
+		Lbngubge:          "go",
+		PbckbgeNbme:       "testify/config",
+		VersionConstrbint: []string{"<= v1.0.5"},
 	}
-	highAffectedPackage := shared.AffectedPackage{
-		Language:          "go",
-		PackageName:       "go-nacelle/config",
-		VersionConstraint: []string{"<= v1.2.5"},
+	highAffectedPbckbge := shbred.AffectedPbckbge{
+		Lbngubge:          "go",
+		PbckbgeNbme:       "go-nbcelle/config",
+		VersionConstrbint: []string{"<= v1.2.5"},
 	}
-	mediumAffectedPackage := shared.AffectedPackage{
-		Language:          "go",
-		PackageName:       "go-mockgen/xtools",
-		VersionConstraint: []string{"<= v1.3.5"},
+	mediumAffectedPbckbge := shbred.AffectedPbckbge{
+		Lbngubge:          "go",
+		PbckbgeNbme:       "go-mockgen/xtools",
+		VersionConstrbint: []string{"<= v1.3.5"},
 	}
-	lowAffectedPackage := shared.AffectedPackage{
-		Language:          "go",
-		PackageName:       "go-sentinel/config",
-		VersionConstraint: []string{"<= v2.3.5"},
+	lowAffectedPbckbge := shbred.AffectedPbckbge{
+		Lbngubge:          "go",
+		PbckbgeNbme:       "go-sentinel/config",
+		VersionConstrbint: []string{"<= v2.3.5"},
 	}
-	mockVulnerabilities := []shared.Vulnerability{
-		{ID: 1, SourceID: "CVE-ABC", Severity: "HIGH", AffectedPackages: []shared.AffectedPackage{highAffectedPackage}},
+	mockVulnerbbilities := []shbred.Vulnerbbility{
+		{ID: 1, SourceID: "CVE-ABC", Severity: "HIGH", AffectedPbckbges: []shbred.AffectedPbckbge{highAffectedPbckbge}},
 		{ID: 2, SourceID: "CVE-DEF", Severity: "HIGH"},
 		{ID: 3, SourceID: "CVE-GHI", Severity: "HIGH"},
-		{ID: 4, SourceID: "CVE-JKL", Severity: "MEDIUM", AffectedPackages: []shared.AffectedPackage{mediumAffectedPackage}},
+		{ID: 4, SourceID: "CVE-JKL", Severity: "MEDIUM", AffectedPbckbges: []shbred.AffectedPbckbge{mediumAffectedPbckbge}},
 		{ID: 5, SourceID: "CVE-MNO", Severity: "MEDIUM"},
 		{ID: 6, SourceID: "CVE-PQR", Severity: "MEDIUM"},
-		{ID: 7, SourceID: "CVE-STU", Severity: "LOW", AffectedPackages: []shared.AffectedPackage{lowAffectedPackage}},
+		{ID: 7, SourceID: "CVE-STU", Severity: "LOW", AffectedPbckbges: []shbred.AffectedPbckbge{lowAffectedPbckbge}},
 		{ID: 8, SourceID: "CVE-VWX", Severity: "LOW"},
-		{ID: 9, SourceID: "CVE-Y&Z", Severity: "CRITICAL", AffectedPackages: []shared.AffectedPackage{criticalAffectedPackage}},
+		{ID: 9, SourceID: "CVE-Y&Z", Severity: "CRITICAL", AffectedPbckbges: []shbred.AffectedPbckbge{criticblAffectedPbckbge}},
 	}
 
-	if _, err := store.InsertVulnerabilities(ctx, mockVulnerabilities); err != nil {
-		t.Fatalf("unexpected error inserting vulnerabilities: %s", err)
+	if _, err := store.InsertVulnerbbilities(ctx, mockVulnerbbilities); err != nil {
+		t.Fbtblf("unexpected error inserting vulnerbbilities: %s", err)
 	}
 
-	if _, _, err := store.ScanMatches(ctx, 1000); err != nil {
-		t.Fatalf("unexpected error inserting vulnerabilities: %s", err)
+	if _, _, err := store.ScbnMbtches(ctx, 1000); err != nil {
+		t.Fbtblf("unexpected error inserting vulnerbbilities: %s", err)
 	}
 
 	/*
 	 * Test
 	 */
 
-	summaryCount, err := store.GetVulnerabilityMatchesSummaryCount(ctx)
+	summbryCount, err := store.GetVulnerbbilityMbtchesSummbryCount(ctx)
 	if err != nil {
-		t.Fatalf("unexpected error getting vulnerability matches summary counts: %s", err)
+		t.Fbtblf("unexpected error getting vulnerbbility mbtches summbry counts: %s", err)
 	}
 
-	expectedSummaryCount := shared.GetVulnerabilityMatchesSummaryCounts{
-		Critical:     critical,
+	expectedSummbryCount := shbred.GetVulnerbbilityMbtchesSummbryCounts{
+		Criticbl:     criticbl,
 		High:         high,
 		Medium:       medium,
 		Low:          low,
-		Repositories: totalRepos,
+		Repositories: totblRepos,
 	}
 
-	if diff := cmp.Diff(expectedSummaryCount, summaryCount); diff != "" {
-		t.Errorf("unexpected vulnerability matches summary counts (-want +got):\n%s", diff)
+	if diff := cmp.Diff(expectedSummbryCount, summbryCount); diff != "" {
+		t.Errorf("unexpected vulnerbbility mbtches summbry counts (-wbnt +got):\n%s", diff)
 	}
 }
 
-func setupReferences(t *testing.T, db database.DB) {
-	store := basestore.NewWithHandle(db.Handle())
+func setupReferences(t *testing.T, db dbtbbbse.DB) {
+	store := bbsestore.NewWithHbndle(db.Hbndle())
 
-	insertUploads(t, db,
-		uploadsshared.Upload{ID: 50, RepositoryID: 2, RepositoryName: "github.com/go-nacelle/config"},
-		uploadsshared.Upload{ID: 51, RepositoryID: 2, RepositoryName: "github.com/go-nacelle/config"},
-		uploadsshared.Upload{ID: 52, RepositoryID: 2, RepositoryName: "github.com/go-nacelle/config"},
-		uploadsshared.Upload{ID: 53, RepositoryID: 2, RepositoryName: "github.com/go-nacelle/config"},
-		uploadsshared.Upload{ID: 54, RepositoryID: 75, RepositoryName: "github.com/go-mockgen/xtools"},
-		uploadsshared.Upload{ID: 55, RepositoryID: 75, RepositoryName: "github.com/go-mockgen/xtools"},
-		uploadsshared.Upload{ID: 56, RepositoryID: 75, RepositoryName: "github.com/go-mockgen/xtools"},
+	insertUplobds(t, db,
+		uplobdsshbred.Uplobd{ID: 50, RepositoryID: 2, RepositoryNbme: "github.com/go-nbcelle/config"},
+		uplobdsshbred.Uplobd{ID: 51, RepositoryID: 2, RepositoryNbme: "github.com/go-nbcelle/config"},
+		uplobdsshbred.Uplobd{ID: 52, RepositoryID: 2, RepositoryNbme: "github.com/go-nbcelle/config"},
+		uplobdsshbred.Uplobd{ID: 53, RepositoryID: 2, RepositoryNbme: "github.com/go-nbcelle/config"},
+		uplobdsshbred.Uplobd{ID: 54, RepositoryID: 75, RepositoryNbme: "github.com/go-mockgen/xtools"},
+		uplobdsshbred.Uplobd{ID: 55, RepositoryID: 75, RepositoryNbme: "github.com/go-mockgen/xtools"},
+		uplobdsshbred.Uplobd{ID: 56, RepositoryID: 75, RepositoryNbme: "github.com/go-mockgen/xtools"},
 	)
 
-	if err := store.Exec(context.Background(), sqlf.Sprintf(`
-		-- Insert five (5) total vulnerable package reference.
-		INSERT INTO lsif_references (scheme, name, version, dump_id)
+	if err := store.Exec(context.Bbckground(), sqlf.Sprintf(`
+		-- Insert five (5) totbl vulnerbble pbckbge reference.
+		INSERT INTO lsif_references (scheme, nbme, version, dump_id)
 		VALUES
-			('gomod', 'github.com/go-nacelle/config', 'v1.2.3', 50), -- vulnerability
-			('gomod', 'github.com/go-nacelle/config', 'v1.2.4', 51), -- vulnerability
-			('gomod', 'github.com/go-nacelle/config', 'v1.2.5', 52), -- vulnerability
-			('gomod', 'github.com/go-nacelle/config', 'v1.2.6', 53),
-			('gomod', 'github.com/go-mockgen/xtools', 'v1.3.2', 54), -- vulnerability
-			('gomod', 'github.com/go-mockgen/xtools', 'v1.3.3', 55), -- vulnerability
+			('gomod', 'github.com/go-nbcelle/config', 'v1.2.3', 50), -- vulnerbbility
+			('gomod', 'github.com/go-nbcelle/config', 'v1.2.4', 51), -- vulnerbbility
+			('gomod', 'github.com/go-nbcelle/config', 'v1.2.5', 52), -- vulnerbbility
+			('gomod', 'github.com/go-nbcelle/config', 'v1.2.6', 53),
+			('gomod', 'github.com/go-mockgen/xtools', 'v1.3.2', 54), -- vulnerbbility
+			('gomod', 'github.com/go-mockgen/xtools', 'v1.3.3', 55), -- vulnerbbility
 			('gomod', 'github.com/go-mockgen/xtools', 'v1.3.6', 56)
 	`)); err != nil {
-		t.Fatalf("failed to insert references: %s", err)
+		t.Fbtblf("fbiled to insert references: %s", err)
 	}
 }
 
-// insertUploads populates the lsif_uploads table with the given upload models.
-func insertUploads(t testing.TB, db database.DB, uploads ...uploadsshared.Upload) {
-	for _, upload := range uploads {
-		if upload.Commit == "" {
-			upload.Commit = makeCommit(upload.ID)
+// insertUplobds populbtes the lsif_uplobds tbble with the given uplobd models.
+func insertUplobds(t testing.TB, db dbtbbbse.DB, uplobds ...uplobdsshbred.Uplobd) {
+	for _, uplobd := rbnge uplobds {
+		if uplobd.Commit == "" {
+			uplobd.Commit = mbkeCommit(uplobd.ID)
 		}
-		if upload.State == "" {
-			upload.State = "completed"
+		if uplobd.Stbte == "" {
+			uplobd.Stbte = "completed"
 		}
-		if upload.RepositoryID == 0 {
-			upload.RepositoryID = 50
+		if uplobd.RepositoryID == 0 {
+			uplobd.RepositoryID = 50
 		}
-		if upload.Indexer == "" {
-			upload.Indexer = "lsif-go"
+		if uplobd.Indexer == "" {
+			uplobd.Indexer = "lsif-go"
 		}
-		if upload.IndexerVersion == "" {
-			upload.IndexerVersion = "latest"
+		if uplobd.IndexerVersion == "" {
+			uplobd.IndexerVersion = "lbtest"
 		}
-		if upload.UploadedParts == nil {
-			upload.UploadedParts = []int{}
+		if uplobd.UplobdedPbrts == nil {
+			uplobd.UplobdedPbrts = []int{}
 		}
 
-		// Ensure we have a repo for the inner join in select queries
-		insertRepo(t, db, upload.RepositoryID, upload.RepositoryName)
+		// Ensure we hbve b repo for the inner join in select queries
+		insertRepo(t, db, uplobd.RepositoryID, uplobd.RepositoryNbme)
 
 		query := sqlf.Sprintf(`
-			INSERT INTO lsif_uploads (
+			INSERT INTO lsif_uplobds (
 				id,
 				commit,
 				root,
-				uploaded_at,
-				state,
-				failure_message,
-				started_at,
-				finished_at,
-				process_after,
+				uplobded_bt,
+				stbte,
+				fbilure_messbge,
+				stbrted_bt,
+				finished_bt,
+				process_bfter,
 				num_resets,
-				num_failures,
+				num_fbilures,
 				repository_id,
 				indexer,
 				indexer_version,
-				num_parts,
-				uploaded_parts,
-				upload_size,
-				associated_index_id,
+				num_pbrts,
+				uplobded_pbrts,
+				uplobd_size,
+				bssocibted_index_id,
 				content_type,
 				should_reindex
 			) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
 		`,
-			upload.ID,
-			upload.Commit,
-			upload.Root,
-			upload.UploadedAt,
-			upload.State,
-			upload.FailureMessage,
-			upload.StartedAt,
-			upload.FinishedAt,
-			upload.ProcessAfter,
-			upload.NumResets,
-			upload.NumFailures,
-			upload.RepositoryID,
-			upload.Indexer,
-			upload.IndexerVersion,
-			upload.NumParts,
-			pq.Array(upload.UploadedParts),
-			upload.UploadSize,
-			upload.AssociatedIndexID,
-			upload.ContentType,
-			upload.ShouldReindex,
+			uplobd.ID,
+			uplobd.Commit,
+			uplobd.Root,
+			uplobd.UplobdedAt,
+			uplobd.Stbte,
+			uplobd.FbilureMessbge,
+			uplobd.StbrtedAt,
+			uplobd.FinishedAt,
+			uplobd.ProcessAfter,
+			uplobd.NumResets,
+			uplobd.NumFbilures,
+			uplobd.RepositoryID,
+			uplobd.Indexer,
+			uplobd.IndexerVersion,
+			uplobd.NumPbrts,
+			pq.Arrby(uplobd.UplobdedPbrts),
+			uplobd.UplobdSize,
+			uplobd.AssocibtedIndexID,
+			uplobd.ContentType,
+			uplobd.ShouldReindex,
 		)
 
-		if _, err := db.ExecContext(context.Background(), query.Query(sqlf.PostgresBindVar), query.Args()...); err != nil {
-			t.Fatalf("unexpected error while inserting upload: %s", err)
+		if _, err := db.ExecContext(context.Bbckground(), query.Query(sqlf.PostgresBindVbr), query.Args()...); err != nil {
+			t.Fbtblf("unexpected error while inserting uplobd: %s", err)
 		}
 	}
 }
 
-// makeCommit formats an integer as a 40-character git commit hash.
-func makeCommit(i int) string {
+// mbkeCommit formbts bn integer bs b 40-chbrbcter git commit hbsh.
+func mbkeCommit(i int) string {
 	return fmt.Sprintf("%040d", i)
 }
 
-// insertRepo creates a repository record with the given id and name. If there is already a repository
-// with the given identifier, nothing happens
-func insertRepo(t testing.TB, db database.DB, id int, name string) {
-	if name == "" {
-		name = fmt.Sprintf("n-%d", id)
+// insertRepo crebtes b repository record with the given id bnd nbme. If there is blrebdy b repository
+// with the given identifier, nothing hbppens
+func insertRepo(t testing.TB, db dbtbbbse.DB, id int, nbme string) {
+	if nbme == "" {
+		nbme = fmt.Sprintf("n-%d", id)
 	}
 
 	deletedAt := sqlf.Sprintf("NULL")
-	if strings.HasPrefix(name, "DELETED-") {
+	if strings.HbsPrefix(nbme, "DELETED-") {
 		deletedAt = sqlf.Sprintf("%s", time.Unix(1587396557, 0).UTC())
 	}
 	insertRepoQuery := sqlf.Sprintf(
-		`INSERT INTO repo (id, name, deleted_at) VALUES (%s, %s, %s) ON CONFLICT (id) DO NOTHING`,
+		`INSERT INTO repo (id, nbme, deleted_bt) VALUES (%s, %s, %s) ON CONFLICT (id) DO NOTHING`,
 		id,
-		name,
+		nbme,
 		deletedAt,
 	)
-	if _, err := db.ExecContext(context.Background(), insertRepoQuery.Query(sqlf.PostgresBindVar), insertRepoQuery.Args()...); err != nil {
-		t.Fatalf("unexpected error while upserting repository: %s", err)
+	if _, err := db.ExecContext(context.Bbckground(), insertRepoQuery.Query(sqlf.PostgresBindVbr), insertRepoQuery.Args()...); err != nil {
+		t.Fbtblf("unexpected error while upserting repository: %s", err)
 	}
 
-	status := "cloned"
-	if strings.HasPrefix(name, "DELETED-") {
-		status = "not_cloned"
+	stbtus := "cloned"
+	if strings.HbsPrefix(nbme, "DELETED-") {
+		stbtus = "not_cloned"
 	}
-	updateGitserverRepoQuery := sqlf.Sprintf(
-		`UPDATE gitserver_repos SET clone_status = %s WHERE repo_id = %s`,
-		status,
+	updbteGitserverRepoQuery := sqlf.Sprintf(
+		`UPDATE gitserver_repos SET clone_stbtus = %s WHERE repo_id = %s`,
+		stbtus,
 		id,
 	)
-	if _, err := db.ExecContext(context.Background(), updateGitserverRepoQuery.Query(sqlf.PostgresBindVar), updateGitserverRepoQuery.Args()...); err != nil {
-		t.Fatalf("unexpected error while upserting gitserver repository: %s", err)
+	if _, err := db.ExecContext(context.Bbckground(), updbteGitserverRepoQuery.Query(sqlf.PostgresBindVbr), updbteGitserverRepoQuery.Args()...); err != nil {
+		t.Fbtblf("unexpected error while upserting gitserver repository: %s", err)
 	}
 }

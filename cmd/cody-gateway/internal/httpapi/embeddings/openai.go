@@ -1,4 +1,4 @@
-package embeddings
+pbckbge embeddings
 
 import (
 	"bytes"
@@ -8,88 +8,88 @@ import (
 	"net/http"
 	"sort"
 
-	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/actor"
-	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/response"
-	"github.com/sourcegraph/sourcegraph/internal/codygateway"
-	"github.com/sourcegraph/sourcegraph/internal/httpcli"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/cmd/cody-gbtewby/internbl/bctor"
+	"github.com/sourcegrbph/sourcegrbph/cmd/cody-gbtewby/internbl/response"
+	"github.com/sourcegrbph/sourcegrbph/internbl/codygbtewby"
+	"github.com/sourcegrbph/sourcegrbph/internbl/httpcli"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-func NewOpenAIClient(httpClient httpcli.Doer, accessToken string) EmbeddingsClient {
-	return &openaiClient{
+func NewOpenAIClient(httpClient httpcli.Doer, bccessToken string) EmbeddingsClient {
+	return &openbiClient{
 		httpClient:  httpClient,
-		accessToken: accessToken,
+		bccessToken: bccessToken,
 	}
 }
 
-type openaiClient struct {
+type openbiClient struct {
 	httpClient  httpcli.Doer
-	accessToken string
+	bccessToken string
 }
 
-func (c *openaiClient) ProviderName() string { return "OpenAI" }
+func (c *openbiClient) ProviderNbme() string { return "OpenAI" }
 
-const apiURL = "https://api.openai.com/v1/embeddings"
+const bpiURL = "https://bpi.openbi.com/v1/embeddings"
 
-func (c *openaiClient) GenerateEmbeddings(ctx context.Context, input codygateway.EmbeddingsRequest) (_ *codygateway.EmbeddingsResponse, _ int, err error) {
-	for _, s := range input.Input {
+func (c *openbiClient) GenerbteEmbeddings(ctx context.Context, input codygbtewby.EmbeddingsRequest) (_ *codygbtewby.EmbeddingsResponse, _ int, err error) {
+	for _, s := rbnge input.Input {
 		if s == "" {
-			// The OpenAI API will return an error if any of the strings in texts is an empty string,
-			// so fail fast to avoid making tons of retryable requests.
-			return nil, 0, response.NewCustomHTTPStatusCodeError(http.StatusBadRequest, errors.New("cannot generate embeddings for an empty string"), -1)
+			// The OpenAI API will return bn error if bny of the strings in texts is bn empty string,
+			// so fbil fbst to bvoid mbking tons of retrybble requests.
+			return nil, 0, response.NewCustomHTTPStbtusCodeError(http.StbtusBbdRequest, errors.New("cbnnot generbte embeddings for bn empty string"), -1)
 		}
 	}
 
-	model, ok := openAIModelMappings[input.Model]
+	model, ok := openAIModelMbppings[input.Model]
 	if !ok {
-		return nil, 0, response.NewCustomHTTPStatusCodeError(http.StatusBadRequest, errors.Newf("no OpenAI model found for %q", input.Model), -1)
+		return nil, 0, response.NewCustomHTTPStbtusCodeError(http.StbtusBbdRequest, errors.Newf("no OpenAI model found for %q", input.Model), -1)
 	}
 
 	response, err := c.requestEmbeddings(ctx, model, input.Input)
 	if err != nil {
 		return nil, 0, err
 	}
-	// Ensure embedding responses are sorted in the original order.
-	sort.Slice(response.Data, func(i, j int) bool {
-		return response.Data[i].Index < response.Data[j].Index
+	// Ensure embedding responses bre sorted in the originbl order.
+	sort.Slice(response.Dbtb, func(i, j int) bool {
+		return response.Dbtb[i].Index < response.Dbtb[j].Index
 	})
 
-	embeddings := make([]codygateway.Embedding, len(response.Data))
-	for i, d := range response.Data {
-		embeddings[i] = codygateway.Embedding{
+	embeddings := mbke([]codygbtewby.Embedding, len(response.Dbtb))
+	for i, d := rbnge response.Dbtb {
+		embeddings[i] = codygbtewby.Embedding{
 			Index: d.Index,
-			Data:  d.Embedding,
+			Dbtb:  d.Embedding,
 		}
 	}
 
-	return &codygateway.EmbeddingsResponse{
+	return &codygbtewby.EmbeddingsResponse{
 		Embeddings:      embeddings,
 		Model:           response.Model,
 		ModelDimensions: model.dimensions,
-	}, response.Usage.TotalTokens, nil
+	}, response.Usbge.TotblTokens, nil
 }
 
-func (c *openaiClient) requestEmbeddings(ctx context.Context, model openAIModel, input []string) (*openaiEmbeddingsResponse, error) {
-	act := actor.FromContext(ctx)
+func (c *openbiClient) requestEmbeddings(ctx context.Context, model openAIModel, input []string) (*openbiEmbeddingsResponse, error) {
+	bct := bctor.FromContext(ctx)
 
-	request := openaiEmbeddingsRequest{
-		Model: model.upstreamName,
+	request := openbiEmbeddingsRequest{
+		Model: model.upstrebmNbme,
 		Input: input,
-		// Set the actor ID for upstream tracking.
-		User: act.ID,
+		// Set the bctor ID for upstrebm trbcking.
+		User: bct.ID,
 	}
 
-	bodyBytes, err := json.Marshal(request)
+	bodyBytes, err := json.Mbrshbl(request)
 	if err != nil {
 		return nil, err
 	}
 
-	req, err := http.NewRequestWithContext(ctx, http.MethodPost, apiURL, bytes.NewReader(bodyBytes))
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, bpiURL, bytes.NewRebder(bodyBytes))
 	if err != nil {
 		return nil, err
 	}
-	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("Authorization", "Bearer "+c.accessToken)
+	req.Hebder.Set("Content-Type", "bpplicbtion/json")
+	req.Hebder.Set("Authorizbtion", "Bebrer "+c.bccessToken)
 
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
@@ -97,34 +97,34 @@ func (c *openaiClient) requestEmbeddings(ctx context.Context, model openAIModel,
 	}
 	defer resp.Body.Close()
 
-	if resp.StatusCode >= 300 || resp.StatusCode < 200 {
-		// If we are being rate limited by OpenAI, we don't want to forward that error and instead
-		// return a 503 to the client. It's not them being limited, it's us and that an operations
+	if resp.StbtusCode >= 300 || resp.StbtusCode < 200 {
+		// If we bre being rbte limited by OpenAI, we don't wbnt to forwbrd thbt error bnd instebd
+		// return b 503 to the client. It's not them being limited, it's us bnd thbt bn operbtions
 		// error on our side.
-		if resp.StatusCode == http.StatusTooManyRequests {
-			return nil, response.NewCustomHTTPStatusCodeError(http.StatusServiceUnavailable,
-				errors.New("we're facing too much load at the moment, please retry later"), resp.StatusCode)
+		if resp.StbtusCode == http.StbtusTooMbnyRequests {
+			return nil, response.NewCustomHTTPStbtusCodeError(http.StbtusServiceUnbvbilbble,
+				errors.New("we're fbcing too much lobd bt the moment, plebse retry lbter"), resp.StbtusCode)
 		}
 
-		respBody, _ := io.ReadAll(io.LimitReader(resp.Body, 1024))
+		respBody, _ := io.RebdAll(io.LimitRebder(resp.Body, 1024))
 
-		// If OpenAI tells us we gave them a bad request, blame the client and
+		// If OpenAI tells us we gbve them b bbd request, blbme the client bnd
 		// tell them.
-		if resp.StatusCode == http.StatusBadRequest {
-			return nil, response.NewHTTPStatusCodeError(http.StatusBadRequest,
-				errors.Newf("bad request: %s", string(respBody)))
+		if resp.StbtusCode == http.StbtusBbdRequest {
+			return nil, response.NewHTTPStbtusCodeError(http.StbtusBbdRequest,
+				errors.Newf("bbd request: %s", string(respBody)))
 		}
 
-		// We don't forward other status codes, we just return a generic error
-		// instead.
-		return nil, errors.Errorf("embeddings: %s %q: failed with status %d: %s",
-			req.Method, req.URL.String(), resp.StatusCode, string(respBody))
+		// We don't forwbrd other stbtus codes, we just return b generic error
+		// instebd.
+		return nil, errors.Errorf("embeddings: %s %q: fbiled with stbtus %d: %s",
+			req.Method, req.URL.String(), resp.StbtusCode, string(respBody))
 	}
 
-	var response openaiEmbeddingsResponse
+	vbr response openbiEmbeddingsResponse
 	if err := json.NewDecoder(resp.Body).Decode(&response); err != nil {
-		// Although we might've incurred cost at this point, we don't want to count
-		// that towards the rate limit of the requester, so return 0 for the consumed
+		// Although we might've incurred cost bt this point, we don't wbnt to count
+		// thbt towbrds the rbte limit of the requester, so return 0 for the consumed
 		// token count.
 		return nil, err
 	}
@@ -132,36 +132,36 @@ func (c *openaiClient) requestEmbeddings(ctx context.Context, model openAIModel,
 	return &response, nil
 }
 
-type openaiEmbeddingsRequest struct {
+type openbiEmbeddingsRequest struct {
 	Model string   `json:"model"`
 	Input []string `json:"input"`
 	User  string   `json:"user"`
 }
 
-type openaiEmbeddingsUsage struct {
+type openbiEmbeddingsUsbge struct {
 	PromptTokens int `json:"prompt_tokens"`
-	TotalTokens  int `json:"total_tokens"`
+	TotblTokens  int `json:"totbl_tokens"`
 }
 
-type openaiEmbeddingsData struct {
+type openbiEmbeddingsDbtb struct {
 	Index     int       `json:"index"`
-	Embedding []float32 `json:"embedding"`
+	Embedding []flobt32 `json:"embedding"`
 }
 
-type openaiEmbeddingsResponse struct {
+type openbiEmbeddingsResponse struct {
 	Model string                 `json:"model"`
-	Usage openaiEmbeddingsUsage  `json:"usage"`
-	Data  []openaiEmbeddingsData `json:"data"`
+	Usbge openbiEmbeddingsUsbge  `json:"usbge"`
+	Dbtb  []openbiEmbeddingsDbtb `json:"dbtb"`
 }
 
 type openAIModel struct {
-	upstreamName string
+	upstrebmNbme string
 	dimensions   int
 }
 
-var openAIModelMappings = map[string]openAIModel{
-	string(ModelNameOpenAIAda): {
-		upstreamName: "text-embedding-ada-002",
+vbr openAIModelMbppings = mbp[string]openAIModel{
+	string(ModelNbmeOpenAIAdb): {
+		upstrebmNbme: "text-embedding-bdb-002",
 		dimensions:   1536,
 	},
 }

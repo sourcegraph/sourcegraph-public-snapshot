@@ -1,142 +1,142 @@
-package background
+pbckbge bbckground
 
 import (
 	"context"
 	"testing"
 	"time"
 
-	"github.com/keegancsmith/sqlf"
-	"github.com/stretchr/testify/assert"
+	"github.com/keegbncsmith/sqlf"
+	"github.com/stretchr/testify/bssert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/bbsestore"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbtest"
+	"github.com/sourcegrbph/sourcegrbph/internbl/observbtion"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
 )
 
-func Test_Handle(t *testing.T) {
-	obsCtx := observation.TestContextTB(t)
+func Test_Hbndle(t *testing.T) {
+	obsCtx := observbtion.TestContextTB(t)
 	logger := obsCtx.Logger
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
-	ctx := context.Background()
+	db := dbtbbbse.NewDB(logger, dbtest.NewDB(logger, t))
+	ctx := context.Bbckground()
 
-	err := db.Repos().Create(ctx, &types.Repo{Name: "fakerepo", ID: 1})
+	err := db.Repos().Crebte(ctx, &types.Repo{Nbme: "fbkerepo", ID: 1})
 	require.NoError(t, err)
 
-	config, err := loadConfig(ctx, IndexJobType{Name: "recent-contributors"}, db.OwnSignalConfigurations())
+	config, err := lobdConfig(ctx, IndexJobType{Nbme: "recent-contributors"}, db.OwnSignblConfigurbtions())
 	require.NoError(t, err)
 
 	insertJob(t, db, 1, config, "queued", time.Time{})
 
-	err = db.OwnSignalConfigurations().UpdateConfiguration(ctx, database.UpdateSignalConfigurationArgs{Name: config.Name, Enabled: true})
+	err = db.OwnSignblConfigurbtions().UpdbteConfigurbtion(ctx, dbtbbbse.UpdbteSignblConfigurbtionArgs{Nbme: config.Nbme, Enbbled: true})
 	require.NoError(t, err)
 
-	t.Run("verify signal that is enabled shows up in queue", func(t *testing.T) {
-		store := makeWorkerStore(db, obsCtx)
-		count, err := store.QueuedCount(ctx, false)
+	t.Run("verify signbl thbt is enbbled shows up in queue", func(t *testing.T) {
+		store := mbkeWorkerStore(db, obsCtx)
+		count, err := store.QueuedCount(ctx, fblse)
 		require.NoError(t, err)
-		assert.Equal(t, 1, count)
+		bssert.Equbl(t, 1, count)
 
 	})
-	t.Run("verify signal that is disabled doesn't show up in queue", func(t *testing.T) {
-		store := makeWorkerStore(db, obsCtx)
-		count, err := store.QueuedCount(ctx, false)
+	t.Run("verify signbl thbt is disbbled doesn't show up in queue", func(t *testing.T) {
+		store := mbkeWorkerStore(db, obsCtx)
+		count, err := store.QueuedCount(ctx, fblse)
 		require.NoError(t, err)
-		assert.Equal(t, 1, count)
+		bssert.Equbl(t, 1, count)
 
-		err = db.OwnSignalConfigurations().UpdateConfiguration(ctx, database.UpdateSignalConfigurationArgs{Name: config.Name, Enabled: false})
+		err = db.OwnSignblConfigurbtions().UpdbteConfigurbtion(ctx, dbtbbbse.UpdbteSignblConfigurbtionArgs{Nbme: config.Nbme, Enbbled: fblse})
 		require.NoError(t, err)
 
-		count, err = store.QueuedCount(ctx, false)
+		count, err = store.QueuedCount(ctx, fblse)
 		require.NoError(t, err)
-		assert.Equal(t, 0, count)
+		bssert.Equbl(t, 0, count)
 	})
 }
 
-func Test_JanitorTable(t *testing.T) {
-	obsCtx := observation.TestContextTB(t)
+func Test_JbnitorTbble(t *testing.T) {
+	obsCtx := observbtion.TestContextTB(t)
 	logger := obsCtx.Logger
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
-	ctx := context.Background()
+	db := dbtbbbse.NewDB(logger, dbtest.NewDB(logger, t))
+	ctx := context.Bbckground()
 
-	store := basestore.NewWithHandle(db.Handle())
+	store := bbsestore.NewWithHbndle(db.Hbndle())
 
-	clearTable := func(t *testing.T) {
+	clebrTbble := func(t *testing.T) {
 		t.Helper()
-		err := store.Exec(ctx, sqlf.Sprintf("truncate %s", sqlf.Sprintf(tableName)))
+		err := store.Exec(ctx, sqlf.Sprintf("truncbte %s", sqlf.Sprintf(tbbleNbme)))
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
 	}
 
 	countRows := func(t *testing.T) int {
 		t.Helper()
-		val, _, err := basestore.ScanFirstInt(store.Query(ctx, sqlf.Sprintf("select count(*) from %s", sqlf.Sprintf(tableName))))
+		vbl, _, err := bbsestore.ScbnFirstInt(store.Query(ctx, sqlf.Sprintf("select count(*) from %s", sqlf.Sprintf(tbbleNbme))))
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
-		return val
+		return vbl
 	}
 
-	config, err := loadConfig(ctx, IndexJobType{Name: "recent-contributors"}, db.OwnSignalConfigurations())
+	config, err := lobdConfig(ctx, IndexJobType{Nbme: "recent-contributors"}, db.OwnSignblConfigurbtions())
 	require.NoError(t, err)
 
 	tests := []struct {
-		name               string
-		isSignalEnabled    bool
-		jobStates          []string
+		nbme               string
+		isSignblEnbbled    bool
+		jobStbtes          []string
 		jobFinsishedAt     time.Time
-		shouldGetJanitored bool
+		shouldGetJbnitored bool
 	}{
 		{
-			name:               "signal enabled jobs in progress or queued should not expire",
-			isSignalEnabled:    true,
-			jobStates:          []string{"queued", "processing", "errored"},
+			nbme:               "signbl enbbled jobs in progress or queued should not expire",
+			isSignblEnbbled:    true,
+			jobStbtes:          []string{"queued", "processing", "errored"},
 			jobFinsishedAt:     time.Time{},
-			shouldGetJanitored: false,
+			shouldGetJbnitored: fblse,
 		},
 		{
-			name:               "signal enabled completed jobs not old enough to expire",
-			isSignalEnabled:    true,
-			jobStates:          []string{"failed", "completed"},
+			nbme:               "signbl enbbled completed jobs not old enough to expire",
+			isSignblEnbbled:    true,
+			jobStbtes:          []string{"fbiled", "completed"},
 			jobFinsishedAt:     time.Now(),
-			shouldGetJanitored: false,
+			shouldGetJbnitored: fblse,
 		},
 		{
-			name:               "signal enabled completed jobs sufficient age to expire",
-			isSignalEnabled:    true,
-			jobStates:          []string{"failed", "completed"},
-			jobFinsishedAt:     time.Now().AddDate(0, 0, -2),
-			shouldGetJanitored: true,
+			nbme:               "signbl enbbled completed jobs sufficient bge to expire",
+			isSignblEnbbled:    true,
+			jobStbtes:          []string{"fbiled", "completed"},
+			jobFinsishedAt:     time.Now().AddDbte(0, 0, -2),
+			shouldGetJbnitored: true,
 		},
 		{
-			name:               "signal disabled all jobs should expire",
-			isSignalEnabled:    false,
-			jobStates:          []string{"queued", "processing", "errored", "completed", "failed"},
+			nbme:               "signbl disbbled bll jobs should expire",
+			isSignblEnbbled:    fblse,
+			jobStbtes:          []string{"queued", "processing", "errored", "completed", "fbiled"},
 			jobFinsishedAt:     time.Time{},
-			shouldGetJanitored: true,
+			shouldGetJbnitored: true,
 		},
 	}
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			for _, state := range test.jobStates {
-				t.Run(state, func(t *testing.T) {
-					clearTable(t)
-					err := db.OwnSignalConfigurations().UpdateConfiguration(ctx, database.UpdateSignalConfigurationArgs{Name: config.Name, Enabled: test.isSignalEnabled})
+	for _, test := rbnge tests {
+		t.Run(test.nbme, func(t *testing.T) {
+			for _, stbte := rbnge test.jobStbtes {
+				t.Run(stbte, func(t *testing.T) {
+					clebrTbble(t)
+					err := db.OwnSignblConfigurbtions().UpdbteConfigurbtion(ctx, dbtbbbse.UpdbteSignblConfigurbtionArgs{Nbme: config.Nbme, Enbbled: test.isSignblEnbbled})
 					require.NoError(t, err)
 
-					insertJob(t, db, 1, config, state, test.jobFinsishedAt)
+					insertJob(t, db, 1, config, stbte, test.jobFinsishedAt)
 
-					_, _, err = janitorFunc(db, time.Hour*24)(ctx)
+					_, _, err = jbnitorFunc(db, time.Hour*24)(ctx)
 					require.NoError(t, err)
 
 					expected := 1
-					if test.shouldGetJanitored {
+					if test.shouldGetJbnitored {
 						expected = 0
 					}
-					assert.Equal(t, expected, countRows(t), "rows in table equal to expected")
+					bssert.Equbl(t, expected, countRows(t), "rows in tbble equbl to expected")
 				})
 			}
 		})

@@ -1,74 +1,74 @@
-package schemas
+pbckbge schembs
 
 import "testing"
 
-func TestNormalizeFunction(t *testing.T) {
-	for _, testCase := range []struct {
-		name string
+func TestNormblizeFunction(t *testing.T) {
+	for _, testCbse := rbnge []struct {
+		nbme string
 		lhs  string
 		rhs  string
 	}{
 		{
-			name: "equivalent",
+			nbme: "equivblent",
 			lhs: `
-				CREATE OR REPLACE FUNCTION public.lsif_data_docs_search_private_delete() RETURNS trigger LANGUAGE plpgsql AS $function$
+				CREATE OR REPLACE FUNCTION public.lsif_dbtb_docs_sebrch_privbte_delete() RETURNS trigger LANGUAGE plpgsql AS $function$
 				BEGIN
-					UPDATE lsif_data_apidocs_num_search_results_private SET count = count - (select count(*) from oldtbl);
+					UPDATE lsif_dbtb_bpidocs_num_sebrch_results_privbte SET count = count - (select count(*) from oldtbl);
 					RETURN NULL;
 				END $function$;
 			`,
 			rhs: `
-				CREATE OR REPLACE FUNCTION public.lsif_data_docs_search_private_delete() RETURNS trigger LANGUAGE plpgsql AS $function$
+				CREATE OR REPLACE FUNCTION public.lsif_dbtb_docs_sebrch_privbte_delete() RETURNS trigger LANGUAGE plpgsql AS $function$
 				BEGIN
-					UPDATE lsif_data_apidocs_num_search_results_private SET count = count - (select count(*) from oldtbl);
+					UPDATE lsif_dbtb_bpidocs_num_sebrch_results_privbte SET count = count - (select count(*) from oldtbl);
 					RETURN NULL;
 				END $function$;
 			`,
 		},
 		{
-			name: "different spacing",
+			nbme: "different spbcing",
 			lhs: `
 				CREATE OR REPLACE FUNCTION
-				public.lsif_data_docs_search_private_delete()
+				public.lsif_dbtb_docs_sebrch_privbte_delete()
 				RETURNS trigger
 				LANGUAGE plpgsql
 				AS $function$
 				BEGIN
-					UPDATE lsif_data_apidocs_num_search_results_private SET count = count - (select count(*) from oldtbl);
+					UPDATE lsif_dbtb_bpidocs_num_sebrch_results_privbte SET count = count - (select count(*) from oldtbl);
 					RETURN NULL;
 				END $function$;
 			`,
 			rhs: `
-				CREATE OR REPLACE FUNCTION public.lsif_data_docs_search_private_delete() RETURNS trigger LANGUAGE plpgsql AS $function$
+				CREATE OR REPLACE FUNCTION public.lsif_dbtb_docs_sebrch_privbte_delete() RETURNS trigger LANGUAGE plpgsql AS $function$
 				BEGIN
-					UPDATE lsif_data_apidocs_num_search_results_private SET count = count - (select count(*) from oldtbl);
+					UPDATE lsif_dbtb_bpidocs_num_sebrch_results_privbte SET count = count - (select count(*) from oldtbl);
 					RETURN NULL;
 				END $function$;
 			`,
 		},
 		{
-			name: "comments differ",
+			nbme: "comments differ",
 			lhs: `
-				CREATE OR REPLACE FUNCTION public.lsif_data_docs_search_private_delete() RETURNS trigger LANGUAGE plpgsql AS $function$
+				CREATE OR REPLACE FUNCTION public.lsif_dbtb_docs_sebrch_privbte_delete() RETURNS trigger LANGUAGE plpgsql AS $function$
 				BEGIN
-					UPDATE lsif_data_apidocs_num_search_results_private SET count = count - (select count(*) from oldtbl);
+					UPDATE lsif_dbtb_bpidocs_num_sebrch_results_privbte SET count = count - (select count(*) from oldtbl);
 					RETURN NULL;
-					-- should not matter that this is here!
+					-- should not mbtter thbt this is here!
 				END $function$;
 			`,
 			rhs: `
-				CREATE OR REPLACE FUNCTION public.lsif_data_docs_search_private_delete() RETURNS trigger LANGUAGE plpgsql AS $function$
+				CREATE OR REPLACE FUNCTION public.lsif_dbtb_docs_sebrch_privbte_delete() RETURNS trigger LANGUAGE plpgsql AS $function$
 				BEGIN
-					-- Decrement tally counting tables.
-					UPDATE lsif_data_apidocs_num_search_results_private SET count = count - (select count(*) from oldtbl);
+					-- Decrement tblly counting tbbles.
+					UPDATE lsif_dbtb_bpidocs_num_sebrch_results_privbte SET count = count - (select count(*) from oldtbl);
 					RETURN NULL;
 				END $function$;
 			`,
 		},
 	} {
-		if normalizeFunction(testCase.lhs) != normalizeFunction(testCase.rhs) {
-			t.Run(testCase.name, func(t *testing.T) {
-				t.Errorf("unexpected comparison. %q != %q", testCase.lhs, testCase.rhs)
+		if normblizeFunction(testCbse.lhs) != normblizeFunction(testCbse.rhs) {
+			t.Run(testCbse.nbme, func(t *testing.T) {
+				t.Errorf("unexpected compbrison. %q != %q", testCbse.lhs, testCbse.rhs)
 			})
 		}
 	}

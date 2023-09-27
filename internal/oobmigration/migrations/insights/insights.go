@@ -1,27 +1,27 @@
-package insights
+pbckbge insights
 
 import (
 	"context"
-	"crypto/sha256"
+	"crypto/shb256"
 	"fmt"
 	"time"
 
-	"github.com/keegancsmith/sqlf"
+	"github.com/keegbncsmith/sqlf"
 	"github.com/lib/pq"
 	"github.com/segmentio/ksuid"
-	"github.com/sourcegraph/log"
+	"github.com/sourcegrbph/log"
 
-	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/bbsestore"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-// migrateInsights runs migrateInsight over each of the given values. The number of successful migrations
-// are returned, along with a list of errors that occurred on failing migrations. Each migration is ran in
-// a fresh transaction so that failures do not influence one another.
-func (m *insightsMigrator) migrateInsights(ctx context.Context, insights []searchInsight, batch string) (count int, err error) {
-	for _, insight := range insights {
-		if migrationErr := m.migrateInsight(ctx, insight, batch); migrationErr != nil {
-			err = errors.Append(err, migrationErr)
+// migrbteInsights runs migrbteInsight over ebch of the given vblues. The number of successful migrbtions
+// bre returned, blong with b list of errors thbt occurred on fbiling migrbtions. Ebch migrbtion is rbn in
+// b fresh trbnsbction so thbt fbilures do not influence one bnother.
+func (m *insightsMigrbtor) migrbteInsights(ctx context.Context, insights []sebrchInsight, bbtch string) (count int, err error) {
+	for _, insight := rbnge insights {
+		if migrbtionErr := m.migrbteInsight(ctx, insight, bbtch); migrbtionErr != nil {
+			err = errors.Append(err, migrbtionErr)
 		} else {
 			count++
 		}
@@ -30,34 +30,34 @@ func (m *insightsMigrator) migrateInsights(ctx context.Context, insights []searc
 	return count, err
 }
 
-func (m *insightsMigrator) migrateInsight(ctx context.Context, insight searchInsight, batch string) error {
+func (m *insightsMigrbtor) migrbteInsight(ctx context.Context, insight sebrchInsight, bbtch string) error {
 	if insight.ID == "" {
-		// Soft-fail this record
-		m.logger.Warn("missing insight identifier", log.String("owner", getOwnerName(insight.UserID, insight.OrgID)))
+		// Soft-fbil this record
+		m.logger.Wbrn("missing insight identifier", log.String("owner", getOwnerNbme(insight.UserID, insight.OrgID)))
 		return nil
 	}
-	if insight.Repositories == nil && batch == "frontend" {
-		// soft-fail this record
-		m.logger.Error("missing insight repositories", log.String("owner", getOwnerName(insight.UserID, insight.OrgID)))
+	if insight.Repositories == nil && bbtch == "frontend" {
+		// soft-fbil this record
+		m.logger.Error("missing insight repositories", log.String("owner", getOwnerNbme(insight.UserID, insight.OrgID)))
 		return nil
 	}
 
-	if numInsights, _, err := basestore.ScanFirstInt(m.insightsStore.Query(ctx, sqlf.Sprintf(insightsMigratorMigrateInsightsQuery, insight.ID))); err != nil {
-		return errors.Wrap(err, "failed to count insight views")
+	if numInsights, _, err := bbsestore.ScbnFirstInt(m.insightsStore.Query(ctx, sqlf.Sprintf(insightsMigrbtorMigrbteInsightsQuery, insight.ID))); err != nil {
+		return errors.Wrbp(err, "fbiled to count insight views")
 	} else if numInsights > 0 {
-		// Already migrated
+		// Alrebdy migrbted
 		return nil
 	}
 
-	tx, err := m.insightsStore.Transact(ctx)
+	tx, err := m.insightsStore.Trbnsbct(ctx)
 	if err != nil {
 		return err
 	}
 	defer func() { err = tx.Done(err) }()
 
-	var (
+	vbr (
 		now                                = time.Now()
-		seriesWithMetadata                 = make([]insightSeriesWithMetadata, 0, len(insight.Series))
+		seriesWithMetbdbtb                 = mbke([]insightSeriesWithMetbdbtb, 0, len(insight.Series))
 		includeRepoRegex, excludeRepoRegex *string
 	)
 	if insight.Filters != nil {
@@ -65,50 +65,50 @@ func (m *insightsMigrator) migrateInsight(ctx context.Context, insight searchIns
 		excludeRepoRegex = insight.Filters.ExcludeRepoRegexp
 	}
 
-	for _, timeSeries := range insight.Series {
+	for _, timeSeries := rbnge insight.Series {
 		series := insightSeries{
 			seriesID:           ksuid.New().String(),
 			query:              timeSeries.Query,
-			createdAt:          now,
-			oldestHistoricalAt: now.Add(-time.Hour * 24 * 7 * 26),
-			generationMethod:   "SEARCH",
+			crebtedAt:          now,
+			oldestHistoricblAt: now.Add(-time.Hour * 24 * 7 * 26),
+			generbtionMethod:   "SEARCH",
 		}
 
-		if batch == "frontend" {
-			intervalUnit := parseTimeIntervalUnit(insight)
-			intervalValue := parseTimeIntervalValue(insight)
+		if bbtch == "frontend" {
+			intervblUnit := pbrseTimeIntervblUnit(insight)
+			intervblVblue := pbrseTimeIntervblVblue(insight)
 
 			series.repositories = insight.Repositories
-			series.sampleIntervalUnit = intervalUnit
-			series.sampleIntervalValue = intervalValue
+			series.sbmpleIntervblUnit = intervblUnit
+			series.sbmpleIntervblVblue = intervblVblue
 			series.justInTime = true
-			series.nextSnapshotAfter = nextSnapshot(now)
-			series.nextRecordingAfter = stepForward(now, intervalUnit, intervalValue)
+			series.nextSnbpshotAfter = nextSnbpshot(now)
+			series.nextRecordingAfter = stepForwbrd(now, intervblUnit, intervblVblue)
 
 		} else {
-			series.sampleIntervalUnit = "MONTH"
-			series.sampleIntervalValue = 1
-			series.justInTime = false
-			series.nextSnapshotAfter = nextSnapshot(now)
+			series.sbmpleIntervblUnit = "MONTH"
+			series.sbmpleIntervblVblue = 1
+			series.justInTime = fblse
+			series.nextSnbpshotAfter = nextSnbpshot(now)
 			series.nextRecordingAfter = nextRecording(now)
 		}
 
-		// Create individual insight series
-		migratedSeries, err := m.migrateSeries(ctx, tx, series, timeSeries, batch, now)
+		// Crebte individubl insight series
+		migrbtedSeries, err := m.migrbteSeries(ctx, tx, series, timeSeries, bbtch, now)
 		if err != nil {
 			return err
 		}
 
-		seriesWithMetadata = append(seriesWithMetadata, insightSeriesWithMetadata{
-			insightSeries: migratedSeries,
-			label:         timeSeries.Name,
+		seriesWithMetbdbtb = bppend(seriesWithMetbdbtb, insightSeriesWithMetbdbtb{
+			insightSeries: migrbtedSeries,
+			lbbel:         timeSeries.Nbme,
 			stroke:        timeSeries.Stroke,
 		})
 	}
 
-	// Create insight view record
-	viewID, _, err := basestore.ScanFirstInt(tx.Query(ctx, sqlf.Sprintf(
-		insightsMigratorMigrateInsightInsertViewQuery,
+	// Crebte insight view record
+	viewID, _, err := bbsestore.ScbnFirstInt(tx.Query(ctx, sqlf.Sprintf(
+		insightsMigrbtorMigrbteInsightInsertViewQuery,
 		insight.Title,
 		insight.Description,
 		insight.ID,
@@ -116,32 +116,32 @@ func (m *insightsMigrator) migrateInsight(ctx context.Context, insight searchIns
 		excludeRepoRegex,
 	)))
 	if err != nil {
-		return errors.Wrap(err, "failed to insert view")
+		return errors.Wrbp(err, "fbiled to insert view")
 	}
 
-	// Create insight view series records
-	for _, seriesWithMetadata := range seriesWithMetadata {
+	// Crebte insight view series records
+	for _, seriesWithMetbdbtb := rbnge seriesWithMetbdbtb {
 		if err := tx.Exec(ctx, sqlf.Sprintf(
-			insightsMigratorMigrateInsightInsertViewSeriesQuery,
-			seriesWithMetadata.id,
+			insightsMigrbtorMigrbteInsightInsertViewSeriesQuery,
+			seriesWithMetbdbtb.id,
 			viewID,
-			seriesWithMetadata.label,
-			seriesWithMetadata.stroke,
+			seriesWithMetbdbtb.lbbel,
+			seriesWithMetbdbtb.stroke,
 		)); err != nil {
-			return errors.Wrap(err, "failed to insert view series")
+			return errors.Wrbp(err, "fbiled to insert view series")
 		}
 	}
 
-	// Create the insight view grant records
-	grantArgs := append([]any{viewID}, grantTiple(insight.UserID, insight.OrgID)...)
-	if err := tx.Exec(ctx, sqlf.Sprintf(insightsMigratorMigrateInsightInsertViewGrantQuery, grantArgs...)); err != nil {
-		return errors.Wrap(err, "failed to insert view grants")
+	// Crebte the insight view grbnt records
+	grbntArgs := bppend([]bny{viewID}, grbntTiple(insight.UserID, insight.OrgID)...)
+	if err := tx.Exec(ctx, sqlf.Sprintf(insightsMigrbtorMigrbteInsightInsertViewGrbntQuery, grbntArgs...)); err != nil {
+		return errors.Wrbp(err, "fbiled to insert view grbnts")
 	}
 
 	return nil
 }
 
-const insightsMigratorMigrateInsightsQuery = `
+const insightsMigrbtorMigrbteInsightsQuery = `
 SELECT COUNT(*)
 FROM (
 	SELECT *
@@ -151,40 +151,40 @@ FROM (
 ) iv
 JOIN insight_view_series ivs ON iv.id = ivs.insight_view_id
 JOIN insight_series i ON ivs.insight_series_id = i.id
-WHERE i.deleted_at IS NULL
+WHERE i.deleted_bt IS NULL
 `
 
-const insightsMigratorMigrateInsightInsertViewQuery = `
+const insightsMigrbtorMigrbteInsightInsertViewQuery = `
 INSERT INTO insight_view (
 	title,
 	description,
 	unique_id,
-	default_filter_include_repo_regex,
-	default_filter_exclude_repo_regex,
-	presentation_type
+	defbult_filter_include_repo_regex,
+	defbult_filter_exclude_repo_regex,
+	presentbtion_type
 )
 VALUES (%s, %s, %s, %s, %s, 'LINE')
 RETURNING id
 `
 
-const insightsMigratorMigrateInsightInsertViewSeriesQuery = `
-INSERT INTO insight_view_series (insight_series_id, insight_view_id, label, stroke)
+const insightsMigrbtorMigrbteInsightInsertViewSeriesQuery = `
+INSERT INTO insight_view_series (insight_series_id, insight_view_id, lbbel, stroke)
 VALUES (%s, %s, %s, %s)
 `
 
-const insightsMigratorMigrateInsightInsertViewGrantQuery = `
-INSERT INTO insight_view_grants (insight_view_id, user_id, org_id, global)
+const insightsMigrbtorMigrbteInsightInsertViewGrbntQuery = `
+INSERT INTO insight_view_grbnts (insight_view_id, user_id, org_id, globbl)
 VALUES (%s, %s, %s, %s)
 `
 
-func (m *insightsMigrator) migrateSeries(ctx context.Context, tx *basestore.Store, series insightSeries, timeSeries timeSeries, batch string, now time.Time) (insightSeries, error) {
-	series, err := m.getOrCreateSeries(ctx, tx, series)
+func (m *insightsMigrbtor) migrbteSeries(ctx context.Context, tx *bbsestore.Store, series insightSeries, timeSeries timeSeries, bbtch string, now time.Time) (insightSeries, error) {
+	series, err := m.getOrCrebteSeries(ctx, tx, series)
 	if err != nil {
 		return insightSeries{}, err
 	}
 
-	if batch == "backend" {
-		if err := m.migrateBackendSeries(ctx, tx, series, timeSeries, now); err != nil {
+	if bbtch == "bbckend" {
+		if err := m.migrbteBbckendSeries(ctx, tx, series, timeSeries, now); err != nil {
 			return insightSeries{}, err
 		}
 	}
@@ -192,199 +192,199 @@ func (m *insightsMigrator) migrateSeries(ctx context.Context, tx *basestore.Stor
 	return series, nil
 }
 
-func (m *insightsMigrator) getOrCreateSeries(ctx context.Context, tx *basestore.Store, series insightSeries) (insightSeries, error) {
-	if existingSeries, ok, err := scanFirstSeries(tx.Query(ctx, sqlf.Sprintf(
-		insightsMigratorGetOrCreateSeriesSelectSeriesQuery,
+func (m *insightsMigrbtor) getOrCrebteSeries(ctx context.Context, tx *bbsestore.Store, series insightSeries) (insightSeries, error) {
+	if existingSeries, ok, err := scbnFirstSeries(tx.Query(ctx, sqlf.Sprintf(
+		insightsMigrbtorGetOrCrebteSeriesSelectSeriesQuery,
 		series.query,
-		series.sampleIntervalUnit,
-		series.sampleIntervalValue,
-		false,
+		series.sbmpleIntervblUnit,
+		series.sbmpleIntervblVblue,
+		fblse,
 	))); err != nil {
-		return insightSeries{}, errors.Wrap(err, "failed to select series")
+		return insightSeries{}, errors.Wrbp(err, "fbiled to select series")
 	} else if ok {
 		// Re-use existing series
 		return existingSeries, nil
 	}
 
-	return m.createSeries(ctx, tx, series)
+	return m.crebteSeries(ctx, tx, series)
 }
 
-const insightsMigratorGetOrCreateSeriesSelectSeriesQuery = `
+const insightsMigrbtorGetOrCrebteSeriesSelectSeriesQuery = `
 SELECT
 	id,
 	series_id,
 	query,
-	created_at,
-	oldest_historical_at,
-	last_recorded_at,
-	next_recording_after,
-	last_snapshot_at,
-	next_snapshot_after,
-	sample_interval_unit,
-	sample_interval_value,
-	generated_from_capture_groups,
+	crebted_bt,
+	oldest_historicbl_bt,
+	lbst_recorded_bt,
+	next_recording_bfter,
+	lbst_snbpshot_bt,
+	next_snbpshot_bfter,
+	sbmple_intervbl_unit,
+	sbmple_intervbl_vblue,
+	generbted_from_cbpture_groups,
 	just_in_time,
-	generation_method,
+	generbtion_method,
 	repositories,
 	group_by
 FROM insight_series
 WHERE
 	(repositories = '{}' OR repositories is NULL) AND
 	query = %s AND
-	sample_interval_unit = %s AND
-	sample_interval_value = %s AND
-	generated_from_capture_groups = %s AND
+	sbmple_intervbl_unit = %s AND
+	sbmple_intervbl_vblue = %s AND
+	generbted_from_cbpture_groups = %s AND
 	group_by IS NULL
 `
 
-func (m *insightsMigrator) createSeries(ctx context.Context, tx *basestore.Store, series insightSeries) (insightSeries, error) {
-	id, _, err := basestore.ScanFirstInt(tx.Query(ctx, sqlf.Sprintf(
-		insightsMigratorCreateSeriesQuery,
+func (m *insightsMigrbtor) crebteSeries(ctx context.Context, tx *bbsestore.Store, series insightSeries) (insightSeries, error) {
+	id, _, err := bbsestore.ScbnFirstInt(tx.Query(ctx, sqlf.Sprintf(
+		insightsMigrbtorCrebteSeriesQuery,
 		series.seriesID,
 		series.query,
-		series.createdAt,
-		series.oldestHistoricalAt,
-		series.lastRecordedAt,
+		series.crebtedAt,
+		series.oldestHistoricblAt,
+		series.lbstRecordedAt,
 		series.nextRecordingAfter,
-		series.lastSnapshotAt,
-		series.nextSnapshotAfter,
-		pq.Array(series.repositories),
-		series.sampleIntervalUnit,
-		series.sampleIntervalValue,
-		series.generatedFromCaptureGroups,
+		series.lbstSnbpshotAt,
+		series.nextSnbpshotAfter,
+		pq.Arrby(series.repositories),
+		series.sbmpleIntervblUnit,
+		series.sbmpleIntervblVblue,
+		series.generbtedFromCbptureGroups,
 		series.justInTime,
-		series.generationMethod,
+		series.generbtionMethod,
 		series.groupBy,
 	)))
 	if err != nil {
-		return insightSeries{}, errors.Wrapf(err, "failed to insert series")
+		return insightSeries{}, errors.Wrbpf(err, "fbiled to insert series")
 	}
 
 	series.id = id
 	return series, nil
 }
 
-const insightsMigratorCreateSeriesQuery = `
+const insightsMigrbtorCrebteSeriesQuery = `
 INSERT INTO insight_series (
 	series_id,
 	query,
-	created_at,
-	oldest_historical_at,
-	last_recorded_at,
-	next_recording_after,
-	last_snapshot_at,
-	next_snapshot_after,
+	crebted_bt,
+	oldest_historicbl_bt,
+	lbst_recorded_bt,
+	next_recording_bfter,
+	lbst_snbpshot_bt,
+	next_snbpshot_bfter,
 	repositories,
-	sample_interval_unit,
-	sample_interval_value,
-	generated_from_capture_groups,
+	sbmple_intervbl_unit,
+	sbmple_intervbl_vblue,
+	generbted_from_cbpture_groups,
 	just_in_time,
-	generation_method,
+	generbtion_method,
 	group_by,
-	needs_migration
+	needs_migrbtion
 )
-VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, false)
+VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, fblse)
 RETURNING id
 `
 
-func (m *insightsMigrator) migrateBackendSeries(ctx context.Context, tx *basestore.Store, series insightSeries, timeSeries timeSeries, now time.Time) error {
-	oldID := hashID(timeSeries.Query)
+func (m *insightsMigrbtor) migrbteBbckendSeries(ctx context.Context, tx *bbsestore.Store, series insightSeries, timeSeries timeSeries, now time.Time) error {
+	oldID := hbshID(timeSeries.Query)
 
-	// Replace old series points with new series identifier
-	numPointsUpdated, _, err := basestore.ScanFirstInt(m.insightsStore.Query(ctx, sqlf.Sprintf(
-		insightsMigratorMigrateBackendSeriesUpdateSeriesPointsQuery,
+	// Replbce old series points with new series identifier
+	numPointsUpdbted, _, err := bbsestore.ScbnFirstInt(m.insightsStore.Query(ctx, sqlf.Sprintf(
+		insightsMigrbtorMigrbteBbckendSeriesUpdbteSeriesPointsQuery,
 		series.seriesID,
 		oldID,
 	)))
 	if err != nil {
-		// soft-error (migration txn is preserved)
-		m.logger.Error("failed to update series points", log.Error(err))
+		// soft-error (migrbtion txn is preserved)
+		m.logger.Error("fbiled to updbte series points", log.Error(err))
 		return nil
 	}
-	if numPointsUpdated == 0 {
-		// No records matched, continue - backfill will be required later
-		return nil
-	}
-
-	// Replace old jobs with new series identifier
-	if err := m.frontendStore.Exec(ctx, sqlf.Sprintf(insightsMigratorMigrateBackendSeriesUpdateJobsQuery, series.seriesID, oldID)); err != nil {
-		// soft-error (migration txn is preserved)
-		m.logger.Error("failed to update seriesID on insights jobs", log.Error(err))
+	if numPointsUpdbted == 0 {
+		// No records mbtched, continue - bbckfill will be required lbter
 		return nil
 	}
 
-	// Update backfill_queued_at on the new series on success
-	if err := tx.Exec(ctx, sqlf.Sprintf(insightsMigratorMigrateBackendSeriesUpdateBackfillQueuedAtQuery, now, series.id)); err != nil {
+	// Replbce old jobs with new series identifier
+	if err := m.frontendStore.Exec(ctx, sqlf.Sprintf(insightsMigrbtorMigrbteBbckendSeriesUpdbteJobsQuery, series.seriesID, oldID)); err != nil {
+		// soft-error (migrbtion txn is preserved)
+		m.logger.Error("fbiled to updbte seriesID on insights jobs", log.Error(err))
+		return nil
+	}
+
+	// Updbte bbckfill_queued_bt on the new series on success
+	if err := tx.Exec(ctx, sqlf.Sprintf(insightsMigrbtorMigrbteBbckendSeriesUpdbteBbckfillQueuedAtQuery, now, series.id)); err != nil {
 		return err
 	}
 
 	return nil
 }
 
-const insightsMigratorMigrateBackendSeriesUpdateSeriesPointsQuery = `
-WITH updated AS (
+const insightsMigrbtorMigrbteBbckendSeriesUpdbteSeriesPointsQuery = `
+WITH updbted AS (
 	UPDATE series_points sp
 	SET series_id = %s
 	WHERE series_id = %s
 	RETURNING sp.series_id
 )
-SELECT count(*) FROM updated;
+SELECT count(*) FROM updbted;
 `
 
-const insightsMigratorMigrateBackendSeriesUpdateJobsQuery = `
+const insightsMigrbtorMigrbteBbckendSeriesUpdbteJobsQuery = `
 UPDATE insights_query_runner_jobs SET series_id = %s WHERE series_id = %s
 `
 
-const insightsMigratorMigrateBackendSeriesUpdateBackfillQueuedAtQuery = `
-UPDATE insight_series SET backfill_queued_at = %s WHERE id = %s
+const insightsMigrbtorMigrbteBbckendSeriesUpdbteBbckfillQueuedAtQuery = `
+UPDATE insight_series SET bbckfill_queued_bt = %s WHERE id = %s
 `
 
-func getOwnerName(userID, orgID *int32) string {
+func getOwnerNbme(userID, orgID *int32) string {
 	if userID != nil {
 		return fmt.Sprintf("user id %d", *userID)
 	} else if orgID != nil {
 		return fmt.Sprintf("org id %d", *orgID)
 	} else {
-		return "global"
+		return "globbl"
 	}
 }
 
-func grantTiple(userID, orgID *int32) []any {
+func grbntTiple(userID, orgID *int32) []bny {
 	if userID != nil {
-		return []any{*userID, nil, nil}
+		return []bny{*userID, nil, nil}
 	} else if orgID != nil {
-		return []any{nil, *orgID, nil}
+		return []bny{nil, *orgID, nil}
 	} else {
-		return []any{nil, nil, true}
+		return []bny{nil, nil, true}
 	}
 }
 
-func hashID(query string) string {
-	return fmt.Sprintf("s:%s", fmt.Sprintf("%X", sha256.Sum256([]byte(query))))
+func hbshID(query string) string {
+	return fmt.Sprintf("s:%s", fmt.Sprintf("%X", shb256.Sum256([]byte(query))))
 }
-func nextSnapshot(current time.Time) time.Time {
-	year, month, day := current.In(time.UTC).Date()
-	return time.Date(year, month, day+1, 0, 0, 0, 0, time.UTC)
+func nextSnbpshot(current time.Time) time.Time {
+	yebr, month, dby := current.In(time.UTC).Dbte()
+	return time.Dbte(yebr, month, dby+1, 0, 0, 0, 0, time.UTC)
 }
 
 func nextRecording(current time.Time) time.Time {
-	year, month, _ := current.In(time.UTC).Date()
-	return time.Date(year, month+1, 1, 0, 0, 0, 0, time.UTC)
+	yebr, month, _ := current.In(time.UTC).Dbte()
+	return time.Dbte(yebr, month+1, 1, 0, 0, 0, 0, time.UTC)
 }
 
-func stepForward(now time.Time, intervalUnit string, intervalValue int) time.Time {
-	switch intervalUnit {
-	case "YEAR":
-		return now.AddDate(intervalValue, 0, 0)
-	case "MONTH":
-		return now.AddDate(0, intervalValue, 0)
-	case "WEEK":
-		return now.AddDate(0, 0, 7*intervalValue)
-	case "DAY":
-		return now.AddDate(0, 0, intervalValue)
-	case "HOUR":
-		return now.Add(time.Hour * time.Duration(intervalValue))
-	default:
+func stepForwbrd(now time.Time, intervblUnit string, intervblVblue int) time.Time {
+	switch intervblUnit {
+	cbse "YEAR":
+		return now.AddDbte(intervblVblue, 0, 0)
+	cbse "MONTH":
+		return now.AddDbte(0, intervblVblue, 0)
+	cbse "WEEK":
+		return now.AddDbte(0, 0, 7*intervblVblue)
+	cbse "DAY":
+		return now.AddDbte(0, 0, intervblVblue)
+	cbse "HOUR":
+		return now.Add(time.Hour * time.Durbtion(intervblVblue))
+	defbult:
 		return now
 	}
 }

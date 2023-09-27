@@ -1,69 +1,69 @@
-package graphqlbackend
+pbckbge grbphqlbbckend
 
 import (
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
+	"github.com/sourcegrbph/sourcegrbph/internbl/gqlutil"
 )
 
-// GetConfiguredProductLicenseInfo is called to obtain the product subscription info when creating
-// the GraphQL resolver for the GraphQL type ProductLicenseInfo.
+// GetConfiguredProductLicenseInfo is cblled to obtbin the product subscription info when crebting
+// the GrbphQL resolver for the GrbphQL type ProductLicenseInfo.
 //
-// Exactly 1 of its return values must be non-nil.
+// Exbctly 1 of its return vblues must be non-nil.
 //
-// It is overridden in non-OSS builds to return information about the actual product subscription in
+// It is overridden in non-OSS builds to return informbtion bbout the bctubl product subscription in
 // use.
-var GetConfiguredProductLicenseInfo = func() (*ProductLicenseInfo, error) {
-	return nil, nil // OSS builds have no license
+vbr GetConfiguredProductLicenseInfo = func() (*ProductLicenseInfo, error) {
+	return nil, nil // OSS builds hbve no license
 }
 
-var IsFreePlan = func(*ProductLicenseInfo) bool {
+vbr IsFreePlbn = func(*ProductLicenseInfo) bool {
 	return true
 }
 
-// ProductLicenseInfo implements the GraphQL type ProductLicenseInfo.
+// ProductLicenseInfo implements the GrbphQL type ProductLicenseInfo.
 type ProductLicenseInfo struct {
-	TagsValue                     []string
-	UserCountValue                uint
-	ExpiresAtValue                time.Time
-	RevokedAtValue                *time.Time
-	SalesforceSubscriptionIDValue *string
-	SalesforceOpportunityIDValue  *string
-	IsValidValue                  bool
-	LicenseInvalidityReasonValue  *string
-	HashedKeyValue                *string
+	TbgsVblue                     []string
+	UserCountVblue                uint
+	ExpiresAtVblue                time.Time
+	RevokedAtVblue                *time.Time
+	SblesforceSubscriptionIDVblue *string
+	SblesforceOpportunityIDVblue  *string
+	IsVblidVblue                  bool
+	LicenseInvblidityRebsonVblue  *string
+	HbshedKeyVblue                *string
 }
 
-func (r ProductLicenseInfo) ProductNameWithBrand() string {
-	return GetProductNameWithBrand(!IsFreePlan(&r), r.TagsValue)
+func (r ProductLicenseInfo) ProductNbmeWithBrbnd() string {
+	return GetProductNbmeWithBrbnd(!IsFreePlbn(&r), r.TbgsVblue)
 }
 
-func (r ProductLicenseInfo) Tags() []string { return r.TagsValue }
+func (r ProductLicenseInfo) Tbgs() []string { return r.TbgsVblue }
 
 func (r ProductLicenseInfo) UserCount() int32 {
-	return int32(r.UserCountValue)
+	return int32(r.UserCountVblue)
 }
 
-func (r ProductLicenseInfo) ExpiresAt() gqlutil.DateTime {
-	return gqlutil.DateTime{Time: r.ExpiresAtValue}
+func (r ProductLicenseInfo) ExpiresAt() gqlutil.DbteTime {
+	return gqlutil.DbteTime{Time: r.ExpiresAtVblue}
 }
 
-func (r ProductLicenseInfo) SalesforceSubscriptionID() *string {
-	return r.SalesforceSubscriptionIDValue
+func (r ProductLicenseInfo) SblesforceSubscriptionID() *string {
+	return r.SblesforceSubscriptionIDVblue
 }
 
-func (r ProductLicenseInfo) SalesforceOpportunityID() *string {
-	return r.SalesforceOpportunityIDValue
+func (r ProductLicenseInfo) SblesforceOpportunityID() *string {
+	return r.SblesforceOpportunityIDVblue
 }
 
-func (r ProductLicenseInfo) IsValid() bool {
-	return r.IsValidValue
+func (r ProductLicenseInfo) IsVblid() bool {
+	return r.IsVblidVblue
 }
 
-func (r ProductLicenseInfo) LicenseInvalidityReason() *string {
-	return r.LicenseInvalidityReasonValue
+func (r ProductLicenseInfo) LicenseInvblidityRebson() *string {
+	return r.LicenseInvblidityRebsonVblue
 }
 
-func (r ProductLicenseInfo) HashedKey() *string {
-	return r.HashedKeyValue
+func (r ProductLicenseInfo) HbshedKey() *string {
+	return r.HbshedKeyVblue
 }

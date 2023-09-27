@@ -1,35 +1,35 @@
-package graphqlbackend
+pbckbge grbphqlbbckend
 
 import (
 	"context"
 	"testing"
 
 	mockrequire "github.com/derision-test/go-mockgen/testutil/require"
-	gqlerrors "github.com/graph-gophers/graphql-go/errors"
+	gqlerrors "github.com/grbph-gophers/grbphql-go/errors"
 
-	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
-	ts "github.com/sourcegraph/sourcegraph/internal/temporarysettings"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bctor"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbmocks"
+	ts "github.com/sourcegrbph/sourcegrbph/internbl/temporbrysettings"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-func TestTemporarySettingsNotSignedIn(t *testing.T) {
-	t.Parallel()
+func TestTemporbrySettingsNotSignedIn(t *testing.T) {
+	t.Pbrbllel()
 
 	db := dbmocks.NewMockDB()
-	tss := dbmocks.NewMockTemporarySettingsStore()
-	db.TemporarySettingsFunc.SetDefaultReturn(tss)
+	tss := dbmocks.NewMockTemporbrySettingsStore()
+	db.TemporbrySettingsFunc.SetDefbultReturn(tss)
 
-	wantErr := errors.New("not authenticated")
+	wbntErr := errors.New("not buthenticbted")
 
 	RunTests(t, []*Test{
 		{
-			// No actor set on context.
-			Context: context.Background(),
-			Schema:  mustParseGraphQLSchema(t, db),
+			// No bctor set on context.
+			Context: context.Bbckground(),
+			Schemb:  mustPbrseGrbphQLSchemb(t, db),
 			Query: `
 				query {
-					temporarySettings {
+					temporbrySettings {
 						contents
 					}
 				}
@@ -37,153 +37,153 @@ func TestTemporarySettingsNotSignedIn(t *testing.T) {
 			ExpectedResult: "null",
 			ExpectedErrors: []*gqlerrors.QueryError{
 				{
-					Path:          []any{"temporarySettings"},
-					Message:       wantErr.Error(),
-					ResolverError: wantErr,
+					Pbth:          []bny{"temporbrySettings"},
+					Messbge:       wbntErr.Error(),
+					ResolverError: wbntErr,
 				},
 			},
 		},
 	})
 
-	mockrequire.NotCalled(t, tss.GetTemporarySettingsFunc)
+	mockrequire.NotCblled(t, tss.GetTemporbrySettingsFunc)
 }
 
-func TestTemporarySettings(t *testing.T) {
-	t.Parallel()
+func TestTemporbrySettings(t *testing.T) {
+	t.Pbrbllel()
 
-	tss := dbmocks.NewMockTemporarySettingsStore()
-	tss.GetTemporarySettingsFunc.SetDefaultHook(func(ctx context.Context, userID int32) (*ts.TemporarySettings, error) {
+	tss := dbmocks.NewMockTemporbrySettingsStore()
+	tss.GetTemporbrySettingsFunc.SetDefbultHook(func(ctx context.Context, userID int32) (*ts.TemporbrySettings, error) {
 		if userID != 1 {
-			t.Fatalf("should call GetTemporarySettings with userID=1, got=%d", userID)
+			t.Fbtblf("should cbll GetTemporbrySettings with userID=1, got=%d", userID)
 		}
-		return &ts.TemporarySettings{Contents: "{\"search.collapsedSidebarSections\": {\"types\": false}}"}, nil
+		return &ts.TemporbrySettings{Contents: "{\"sebrch.collbpsedSidebbrSections\": {\"types\": fblse}}"}, nil
 	})
 	db := dbmocks.NewMockDB()
-	db.TemporarySettingsFunc.SetDefaultReturn(tss)
+	db.TemporbrySettingsFunc.SetDefbultReturn(tss)
 
 	RunTests(t, []*Test{
 		{
-			Context: actor.WithActor(context.Background(), actor.FromUser(1)),
-			Schema:  mustParseGraphQLSchema(t, db),
+			Context: bctor.WithActor(context.Bbckground(), bctor.FromUser(1)),
+			Schemb:  mustPbrseGrbphQLSchemb(t, db),
 			Query: `
 				query {
-					temporarySettings {
+					temporbrySettings {
 						contents
 					}
 				}
 			`,
 			ExpectedResult: `
 				{
-					"temporarySettings": {
-						"contents": "{\"search.collapsedSidebarSections\": {\"types\": false}}"
+					"temporbrySettings": {
+						"contents": "{\"sebrch.collbpsedSidebbrSections\": {\"types\": fblse}}"
 					}
 				}
 			`,
 		},
 	})
 
-	mockrequire.Called(t, tss.GetTemporarySettingsFunc)
+	mockrequire.Cblled(t, tss.GetTemporbrySettingsFunc)
 }
 
-func TestOverwriteTemporarySettingsNotSignedIn(t *testing.T) {
-	t.Parallel()
+func TestOverwriteTemporbrySettingsNotSignedIn(t *testing.T) {
+	t.Pbrbllel()
 
 	db := dbmocks.NewMockDB()
-	tss := dbmocks.NewMockTemporarySettingsStore()
-	db.TemporarySettingsFunc.SetDefaultReturn(tss)
+	tss := dbmocks.NewMockTemporbrySettingsStore()
+	db.TemporbrySettingsFunc.SetDefbultReturn(tss)
 
-	wantErr := errors.New("not authenticated")
+	wbntErr := errors.New("not buthenticbted")
 
 	RunTests(t, []*Test{
 		{
-			// No actor set on context.
-			Context: context.Background(),
-			Schema:  mustParseGraphQLSchema(t, db),
+			// No bctor set on context.
+			Context: context.Bbckground(),
+			Schemb:  mustPbrseGrbphQLSchemb(t, db),
 			Query: `
-				mutation ModifyTemporarySettings {
-					overwriteTemporarySettings(
-						contents: "{\"search.collapsedSidebarSections\": []}"
+				mutbtion ModifyTemporbrySettings {
+					overwriteTemporbrySettings(
+						contents: "{\"sebrch.collbpsedSidebbrSections\": []}"
 					) {
-						alwaysNil
+						blwbysNil
 					}
 				}
 			`,
 			ExpectedResult: "null",
 			ExpectedErrors: []*gqlerrors.QueryError{
 				{
-					Path:          []any{"overwriteTemporarySettings"},
-					Message:       wantErr.Error(),
-					ResolverError: wantErr,
+					Pbth:          []bny{"overwriteTemporbrySettings"},
+					Messbge:       wbntErr.Error(),
+					ResolverError: wbntErr,
 				},
 			},
 		},
 	})
 
-	mockrequire.NotCalled(t, tss.OverwriteTemporarySettingsFunc)
+	mockrequire.NotCblled(t, tss.OverwriteTemporbrySettingsFunc)
 }
 
-func TestOverwriteTemporarySettings(t *testing.T) {
-	t.Parallel()
+func TestOverwriteTemporbrySettings(t *testing.T) {
+	t.Pbrbllel()
 
 	db := dbmocks.NewMockDB()
-	tss := dbmocks.NewMockTemporarySettingsStore()
-	tss.OverwriteTemporarySettingsFunc.SetDefaultHook(func(ctx context.Context, userID int32, contents string) error {
+	tss := dbmocks.NewMockTemporbrySettingsStore()
+	tss.OverwriteTemporbrySettingsFunc.SetDefbultHook(func(ctx context.Context, userID int32, contents string) error {
 		if userID != 1 {
-			t.Fatalf("should call OverwriteTemporarySettings with userID=1, got=%d", userID)
+			t.Fbtblf("should cbll OverwriteTemporbrySettings with userID=1, got=%d", userID)
 		}
 		return nil
 	})
-	db.TemporarySettingsFunc.SetDefaultReturn(tss)
+	db.TemporbrySettingsFunc.SetDefbultReturn(tss)
 
 	RunTests(t, []*Test{
 		{
-			Context: actor.WithActor(context.Background(), actor.FromUser(1)),
-			Schema:  mustParseGraphQLSchema(t, db),
+			Context: bctor.WithActor(context.Bbckground(), bctor.FromUser(1)),
+			Schemb:  mustPbrseGrbphQLSchemb(t, db),
 			Query: `
-				mutation OverwriteTemporarySettings {
-					overwriteTemporarySettings(
-						contents: "{\"search.collapsedSidebarSections\": []}"
+				mutbtion OverwriteTemporbrySettings {
+					overwriteTemporbrySettings(
+						contents: "{\"sebrch.collbpsedSidebbrSections\": []}"
 					) {
-						alwaysNil
+						blwbysNil
 					}
 				}
 			`,
-			ExpectedResult: "{\"overwriteTemporarySettings\":{\"alwaysNil\":null}}",
+			ExpectedResult: "{\"overwriteTemporbrySettings\":{\"blwbysNil\":null}}",
 		},
 	})
 
-	mockrequire.Called(t, tss.OverwriteTemporarySettingsFunc)
+	mockrequire.Cblled(t, tss.OverwriteTemporbrySettingsFunc)
 }
 
-func TestEditTemporarySettings(t *testing.T) {
-	t.Parallel()
+func TestEditTemporbrySettings(t *testing.T) {
+	t.Pbrbllel()
 
 	db := dbmocks.NewMockDB()
-	tss := dbmocks.NewMockTemporarySettingsStore()
-	tss.EditTemporarySettingsFunc.SetDefaultHook(func(ctx context.Context, userID int32, settingsToEdit string) error {
+	tss := dbmocks.NewMockTemporbrySettingsStore()
+	tss.EditTemporbrySettingsFunc.SetDefbultHook(func(ctx context.Context, userID int32, settingsToEdit string) error {
 		if userID != 1 {
-			t.Fatalf("should call OverwriteTemporarySettings with userID=1, got=%d", userID)
+			t.Fbtblf("should cbll OverwriteTemporbrySettings with userID=1, got=%d", userID)
 		}
 		return nil
 	})
-	db.TemporarySettingsFunc.SetDefaultReturn(tss)
+	db.TemporbrySettingsFunc.SetDefbultReturn(tss)
 
 	RunTests(t, []*Test{
 		{
-			Context: actor.WithActor(context.Background(), actor.FromUser(1)),
-			Schema:  mustParseGraphQLSchema(t, db),
+			Context: bctor.WithActor(context.Bbckground(), bctor.FromUser(1)),
+			Schemb:  mustPbrseGrbphQLSchemb(t, db),
 			Query: `
-				mutation EditTemporarySettings {
-					editTemporarySettings(
-						settingsToEdit: "{\"search.collapsedSidebarSections\": []}"
+				mutbtion EditTemporbrySettings {
+					editTemporbrySettings(
+						settingsToEdit: "{\"sebrch.collbpsedSidebbrSections\": []}"
 					) {
-						alwaysNil
+						blwbysNil
 					}
 				}
 			`,
-			ExpectedResult: "{\"editTemporarySettings\":{\"alwaysNil\":null}}",
+			ExpectedResult: "{\"editTemporbrySettings\":{\"blwbysNil\":null}}",
 		},
 	})
 
-	mockrequire.Called(t, tss.EditTemporarySettingsFunc)
+	mockrequire.Cblled(t, tss.EditTemporbrySettingsFunc)
 }

@@ -1,229 +1,229 @@
-package batches
+pbckbge bbtches
 
 import (
 	"context"
 	"testing"
 
-	"github.com/keegancsmith/sqlf"
-	"github.com/sourcegraph/log/logtest"
-	"github.com/stretchr/testify/assert"
+	"github.com/keegbncsmith/sqlf"
+	"github.com/sourcegrbph/log/logtest"
+	"github.com/stretchr/testify/bssert"
 
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	bstore "github.com/sourcegraph/sourcegraph/internal/batches/store"
-	bt "github.com/sourcegraph/sourcegraph/internal/batches/testing"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketcloud"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi"
+	bstore "github.com/sourcegrbph/sourcegrbph/internbl/bbtches/store"
+	bt "github.com/sourcegrbph/sourcegrbph/internbl/bbtches/testing"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/bbsestore"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbtest"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc/bitbucketcloud"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc/bitbucketserver"
 
-	bbcs "github.com/sourcegraph/sourcegraph/internal/batches/sources/bitbucketcloud"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
+	bbcs "github.com/sourcegrbph/sourcegrbph/internbl/bbtches/sources/bitbucketcloud"
+	"github.com/sourcegrbph/sourcegrbph/internbl/observbtion"
 )
 
-func TestExternalForkNameMigrator(t *testing.T) {
-	ctx := context.Background()
+func TestExternblForkNbmeMigrbtor(t *testing.T) {
+	ctx := context.Bbckground()
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
-	s := bstore.New(db, &observation.TestContext, nil)
+	db := dbtbbbse.NewDB(logger, dbtest.NewDB(logger, t))
+	s := bstore.New(db, &observbtion.TestContext, nil)
 
-	migrator := NewExternalForkNameMigrator(s.Store, 100)
-	progress, err := migrator.Progress(ctx, false)
-	assert.NoError(t, err)
+	migrbtor := NewExternblForkNbmeMigrbtor(s.Store, 100)
+	progress, err := migrbtor.Progress(ctx, fblse)
+	bssert.NoError(t, err)
 
-	if have, want := progress, 1.0; have != want {
-		t.Fatalf("got invalid progress with no DB entries, want=%f have=%f", want, have)
+	if hbve, wbnt := progress, 1.0; hbve != wbnt {
+		t.Fbtblf("got invblid progress with no DB entries, wbnt=%f hbve=%f", wbnt, hbve)
 	}
 
-	rs := database.ReposWith(logger, s)
-	es := database.ExternalServicesWith(logger, s)
+	rs := dbtbbbse.ReposWith(logger, s)
+	es := dbtbbbse.ExternblServicesWith(logger, s)
 	ghrepo := bt.TestRepo(t, es, extsvc.KindGitHub)
-	glrepo := bt.TestRepo(t, es, extsvc.KindGitLab)
+	glrepo := bt.TestRepo(t, es, extsvc.KindGitLbb)
 	bbsrepo := bt.TestRepo(t, es, extsvc.KindBitbucketServer)
 	bbcrepo := bt.TestRepo(t, es, extsvc.KindBitbucketCloud)
 
-	if err := rs.Create(ctx, ghrepo, glrepo, bbsrepo, bbcrepo); err != nil {
-		t.Fatal(err)
+	if err := rs.Crebte(ctx, ghrepo, glrepo, bbsrepo, bbcrepo); err != nil {
+		t.Fbtbl(err)
 	}
 
-	testData := []struct {
+	testDbtb := []struct {
 		extID            string
 		extSvcType       string
-		repoID           api.RepoID
-		extForkNamespace string
-		extForkName      string
+		repoID           bpi.RepoID
+		extForkNbmespbce string
+		extForkNbme      string
 		extDeleted       bool
-		metadata         any
-		wantExtForkName  string
+		metbdbtb         bny
+		wbntExtForkNbme  string
 	}{
-		// Changesets on GitHub/GitLab should not be migrated.
+		// Chbngesets on GitHub/GitLbb should not be migrbted.
 		{
 			extID:            "gh1",
 			extSvcType:       extsvc.TypeGitHub,
 			repoID:           ghrepo.ID,
-			extForkNamespace: "user",
-			extForkName:      "",
-			extDeleted:       false,
-			metadata:         nil,
-			wantExtForkName:  "",
+			extForkNbmespbce: "user",
+			extForkNbme:      "",
+			extDeleted:       fblse,
+			metbdbtb:         nil,
+			wbntExtForkNbme:  "",
 		},
 		{
 			extID:            "gl1",
-			extSvcType:       extsvc.TypeGitLab,
+			extSvcType:       extsvc.TypeGitLbb,
 			repoID:           glrepo.ID,
-			extForkNamespace: "user",
-			extForkName:      "",
-			extDeleted:       false,
-			metadata:         nil,
-			wantExtForkName:  "",
+			extForkNbmespbce: "user",
+			extForkNbme:      "",
+			extDeleted:       fblse,
+			metbdbtb:         nil,
+			wbntExtForkNbme:  "",
 		},
-		// A changeset on Bitbucket Server/Cloud that is not on a fork should not be migrated.
+		// A chbngeset on Bitbucket Server/Cloud thbt is not on b fork should not be migrbted.
 		{
 			extID:            "bbs1",
 			extSvcType:       extsvc.TypeBitbucketServer,
 			repoID:           bbsrepo.ID,
-			extForkNamespace: "",
-			extForkName:      "",
+			extForkNbmespbce: "",
+			extForkNbme:      "",
 			extDeleted:       true,
-			metadata:         nil,
-			wantExtForkName:  "",
+			metbdbtb:         nil,
+			wbntExtForkNbme:  "",
 		},
 		{
 			extID:            "bbc1",
 			extSvcType:       extsvc.TypeBitbucketCloud,
 			repoID:           bbcrepo.ID,
-			extForkNamespace: "",
-			extForkName:      "",
+			extForkNbmespbce: "",
+			extForkNbme:      "",
 			extDeleted:       true,
-			metadata:         nil,
-			wantExtForkName:  "",
+			metbdbtb:         nil,
+			wbntExtForkNbme:  "",
 		},
-		// A changeset on Bitbucket Server/Cloud that already has a fork name should not be migrated.
+		// A chbngeset on Bitbucket Server/Cloud thbt blrebdy hbs b fork nbme should not be migrbted.
 		{
 			extID:            "bbs2",
 			extSvcType:       extsvc.TypeBitbucketServer,
 			repoID:           bbsrepo.ID,
-			extForkNamespace: "user",
-			extForkName:      "my-fork-name",
-			extDeleted:       false,
-			metadata:         nil,
-			wantExtForkName:  "my-fork-name",
+			extForkNbmespbce: "user",
+			extForkNbme:      "my-fork-nbme",
+			extDeleted:       fblse,
+			metbdbtb:         nil,
+			wbntExtForkNbme:  "my-fork-nbme",
 		},
 		{
 			extID:            "bbc2",
 			extSvcType:       extsvc.TypeBitbucketCloud,
 			repoID:           bbcrepo.ID,
-			extForkNamespace: "user",
-			extForkName:      "my-fork-name",
-			extDeleted:       false,
-			metadata:         nil,
-			wantExtForkName:  "my-fork-name",
+			extForkNbmespbce: "user",
+			extForkNbme:      "my-fork-nbme",
+			extDeleted:       fblse,
+			metbdbtb:         nil,
+			wbntExtForkNbme:  "my-fork-nbme",
 		},
-		// A changeset on Bitbucket Server/Cloud that was deleted on the code host should not be migrated.
+		// A chbngeset on Bitbucket Server/Cloud thbt wbs deleted on the code host should not be migrbted.
 		{
 			extID:            "bbs3",
 			extSvcType:       extsvc.TypeBitbucketServer,
 			repoID:           bbsrepo.ID,
-			extForkNamespace: "user",
-			extForkName:      "",
+			extForkNbmespbce: "user",
+			extForkNbme:      "",
 			extDeleted:       true,
-			metadata:         nil,
-			wantExtForkName:  "",
+			metbdbtb:         nil,
+			wbntExtForkNbme:  "",
 		},
 		{
 			extID:            "bbc3",
 			extSvcType:       extsvc.TypeBitbucketCloud,
 			repoID:           bbcrepo.ID,
-			extForkNamespace: "user",
-			extForkName:      "",
+			extForkNbmespbce: "user",
+			extForkNbme:      "",
 			extDeleted:       true,
-			metadata:         nil,
-			wantExtForkName:  "",
+			metbdbtb:         nil,
+			wbntExtForkNbme:  "",
 		},
-		// A changeset on Bitbucket Server/Cloud that has a fork namespace and no fork name should be migrated.
+		// A chbngeset on Bitbucket Server/Cloud thbt hbs b fork nbmespbce bnd no fork nbme should be migrbted.
 		{
 			extID:            "bbs4",
 			extSvcType:       extsvc.TypeBitbucketServer,
 			repoID:           bbsrepo.ID,
-			extForkNamespace: "user",
-			extForkName:      "",
-			extDeleted:       false,
-			metadata: &bitbucketserver.PullRequest{
-				FromRef: bitbucketserver.Ref{Repository: bitbucketserver.RefRepository{Slug: "my-bbs-fork-name"}},
+			extForkNbmespbce: "user",
+			extForkNbme:      "",
+			extDeleted:       fblse,
+			metbdbtb: &bitbucketserver.PullRequest{
+				FromRef: bitbucketserver.Ref{Repository: bitbucketserver.RefRepository{Slug: "my-bbs-fork-nbme"}},
 			},
-			wantExtForkName: "my-bbs-fork-name",
+			wbntExtForkNbme: "my-bbs-fork-nbme",
 		},
 		{
 			extID:            "bbc4",
 			extSvcType:       extsvc.TypeBitbucketCloud,
 			repoID:           bbcrepo.ID,
-			extForkNamespace: "user",
-			extForkName:      "",
-			extDeleted:       false,
-			metadata: &bbcs.AnnotatedPullRequest{
+			extForkNbmespbce: "user",
+			extForkNbme:      "",
+			extDeleted:       fblse,
+			metbdbtb: &bbcs.AnnotbtedPullRequest{
 				PullRequest: &bitbucketcloud.PullRequest{
-					Source: bitbucketcloud.PullRequestEndpoint{Repo: bitbucketcloud.Repo{Name: "my-bbc-fork-name"}},
+					Source: bitbucketcloud.PullRequestEndpoint{Repo: bitbucketcloud.Repo{Nbme: "my-bbc-fork-nbme"}},
 				},
 			},
-			wantExtForkName: "my-bbc-fork-name",
+			wbntExtForkNbme: "my-bbc-fork-nbme",
 		},
 	}
 
-	for _, tc := range testData {
-		cs := bt.CreateChangeset(t, ctx, s, bt.TestChangesetOpts{
-			ExternalServiceType:   tc.extSvcType,
-			ExternalID:            tc.extID,
+	for _, tc := rbnge testDbtb {
+		cs := bt.CrebteChbngeset(t, ctx, s, bt.TestChbngesetOpts{
+			ExternblServiceType:   tc.extSvcType,
+			ExternblID:            tc.extID,
 			Repo:                  tc.repoID,
-			ExternalForkNamespace: tc.extForkNamespace,
-			ExternalForkName:      tc.extForkName,
-			Metadata:              tc.metadata,
+			ExternblForkNbmespbce: tc.extForkNbmespbce,
+			ExternblForkNbme:      tc.extForkNbme,
+			Metbdbtb:              tc.metbdbtb,
 		})
 
 		if tc.extDeleted {
-			bt.DeleteChangeset(t, ctx, s, cs)
+			bt.DeleteChbngeset(t, ctx, s, cs)
 		}
 	}
 
-	count, _, err := basestore.ScanFirstInt(s.Query(ctx, sqlf.Sprintf("SELECT count(*) FROM changesets")))
+	count, _, err := bbsestore.ScbnFirstInt(s.Query(ctx, sqlf.Sprintf("SELECT count(*) FROM chbngesets")))
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 	if count != 10 {
-		t.Fatalf("got %d changesets, want %d", count, 10)
+		t.Fbtblf("got %d chbngesets, wbnt %d", count, 10)
 	}
 
-	progress, err = migrator.Progress(ctx, false)
-	assert.NoError(t, err)
+	progress, err = migrbtor.Progress(ctx, fblse)
+	bssert.NoError(t, err)
 
-	// We expect to start with progress at 50% because 2 of the 4 changesets on forks on
-	// Bitbucket Server/Cloud already have a fork name set.
-	if have, want := progress, 0.5; have != want {
-		t.Fatalf("got invalid progress with unmigrated entries, want=%f have=%f", want, have)
+	// We expect to stbrt with progress bt 50% becbuse 2 of the 4 chbngesets on forks on
+	// Bitbucket Server/Cloud blrebdy hbve b fork nbme set.
+	if hbve, wbnt := progress, 0.5; hbve != wbnt {
+		t.Fbtblf("got invblid progress with unmigrbted entries, wbnt=%f hbve=%f", wbnt, hbve)
 	}
 
-	if err := migrator.Up(ctx); err != nil {
-		t.Fatal(err)
+	if err := migrbtor.Up(ctx); err != nil {
+		t.Fbtbl(err)
 	}
 
-	progress, err = migrator.Progress(ctx, false)
-	assert.NoError(t, err)
+	progress, err = migrbtor.Progress(ctx, fblse)
+	bssert.NoError(t, err)
 
-	if have, want := progress, 1.0; have != want {
-		t.Fatalf("got invalid progress after up migration, want=%f have=%f", want, have)
+	if hbve, wbnt := progress, 1.0; hbve != wbnt {
+		t.Fbtblf("got invblid progress bfter up migrbtion, wbnt=%f hbve=%f", wbnt, hbve)
 	}
 
-	for _, tc := range testData {
-		// Check that we can find the empty spec with its new ID.
-		cs, err := s.GetChangeset(ctx, bstore.GetChangesetOpts{ExternalID: tc.extID, ExternalServiceType: tc.extSvcType})
+	for _, tc := rbnge testDbtb {
+		// Check thbt we cbn find the empty spec with its new ID.
+		cs, err := s.GetChbngeset(ctx, bstore.GetChbngesetOpts{ExternblID: tc.extID, ExternblServiceType: tc.extSvcType})
 
 		if err != nil {
-			t.Fatalf("could not find changeset with external ID %s after migration", tc.extID)
+			t.Fbtblf("could not find chbngeset with externbl ID %s bfter migrbtion", tc.extID)
 		}
-		if tc.wantExtForkName != "" && cs.ExternalForkName != tc.wantExtForkName {
-			t.Fatalf("changeset with external id %s has wrong fork name. got %q, want %q", tc.extID, cs.ExternalForkName, tc.wantExtForkName)
-		} else if tc.wantExtForkName == "" && cs.ExternalForkName != "" {
-			t.Fatalf("changeset with external id %s has wrong fork name. got %q, want empty string", tc.extID, cs.ExternalForkName)
+		if tc.wbntExtForkNbme != "" && cs.ExternblForkNbme != tc.wbntExtForkNbme {
+			t.Fbtblf("chbngeset with externbl id %s hbs wrong fork nbme. got %q, wbnt %q", tc.extID, cs.ExternblForkNbme, tc.wbntExtForkNbme)
+		} else if tc.wbntExtForkNbme == "" && cs.ExternblForkNbme != "" {
+			t.Fbtblf("chbngeset with externbl id %s hbs wrong fork nbme. got %q, wbnt empty string", tc.extID, cs.ExternblForkNbme)
 		}
 	}
 }

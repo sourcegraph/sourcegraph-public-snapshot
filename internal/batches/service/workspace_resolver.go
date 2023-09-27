@@ -1,121 +1,121 @@
-package service
+pbckbge service
 
 import (
 	"context"
 	"fmt"
 	"os"
-	"path"
+	"pbth"
 	"sort"
 	"strings"
 	"sync"
 
-	"github.com/gobwas/glob"
-	"github.com/grafana/regexp"
-	"go.opentelemetry.io/otel/attribute"
+	"github.com/gobwbs/glob"
+	"github.com/grbfbnb/regexp"
+	"go.opentelemetry.io/otel/bttribute"
 
-	"github.com/sourcegraph/log"
+	"github.com/sourcegrbph/log"
 
-	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/api/internalapi"
-	"github.com/sourcegraph/sourcegraph/internal/authz"
-	"github.com/sourcegraph/sourcegraph/internal/batches/store"
-	btypes "github.com/sourcegraph/sourcegraph/internal/batches/types"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/errcode"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
-	"github.com/sourcegraph/sourcegraph/internal/httpcli"
-	streamapi "github.com/sourcegraph/sourcegraph/internal/search/streaming/api"
-	streamhttp "github.com/sourcegraph/sourcegraph/internal/search/streaming/http"
-	"github.com/sourcegraph/sourcegraph/internal/trace"
-	"github.com/sourcegraph/sourcegraph/internal/types"
-	batcheslib "github.com/sourcegraph/sourcegraph/lib/batches"
-	onlib "github.com/sourcegraph/sourcegraph/lib/batches/on"
-	"github.com/sourcegraph/sourcegraph/lib/batches/template"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bctor"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi/internblbpi"
+	"github.com/sourcegrbph/sourcegrbph/internbl/buthz"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bbtches/store"
+	btypes "github.com/sourcegrbph/sourcegrbph/internbl/bbtches/types"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/errcode"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc"
+	"github.com/sourcegrbph/sourcegrbph/internbl/gitserver"
+	"github.com/sourcegrbph/sourcegrbph/internbl/gitserver/gitdombin"
+	"github.com/sourcegrbph/sourcegrbph/internbl/httpcli"
+	strebmbpi "github.com/sourcegrbph/sourcegrbph/internbl/sebrch/strebming/bpi"
+	strebmhttp "github.com/sourcegrbph/sourcegrbph/internbl/sebrch/strebming/http"
+	"github.com/sourcegrbph/sourcegrbph/internbl/trbce"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
+	bbtcheslib "github.com/sourcegrbph/sourcegrbph/lib/bbtches"
+	onlib "github.com/sourcegrbph/sourcegrbph/lib/bbtches/on"
+	"github.com/sourcegrbph/sourcegrbph/lib/bbtches/templbte"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-const searchAPIVersion = "V3"
+const sebrchAPIVersion = "V3"
 
-// RepoRevision describes a repository on a branch at a fixed revision.
+// RepoRevision describes b repository on b brbnch bt b fixed revision.
 type RepoRevision struct {
 	Repo        *types.Repo
-	Branch      string
-	Commit      api.CommitID
-	FileMatches []string
+	Brbnch      string
+	Commit      bpi.CommitID
+	FileMbtches []string
 }
 
-func (r *RepoRevision) HasBranch() bool {
-	return r.Branch != ""
+func (r *RepoRevision) HbsBrbnch() bool {
+	return r.Brbnch != ""
 }
 
-type RepoWorkspace struct {
+type RepoWorkspbce struct {
 	*RepoRevision
-	Path string
+	Pbth string
 
-	OnlyFetchWorkspace bool
+	OnlyFetchWorkspbce bool
 
 	Ignored     bool
 	Unsupported bool
 }
 
-type WorkspaceResolver interface {
-	ResolveWorkspacesForBatchSpec(
+type WorkspbceResolver interfbce {
+	ResolveWorkspbcesForBbtchSpec(
 		ctx context.Context,
-		batchSpec *batcheslib.BatchSpec,
+		bbtchSpec *bbtcheslib.BbtchSpec,
 	) (
-		workspaces []*RepoWorkspace,
+		workspbces []*RepoWorkspbce,
 		err error,
 	)
 }
 
-type WorkspaceResolverBuilder func(tx *store.Store) WorkspaceResolver
+type WorkspbceResolverBuilder func(tx *store.Store) WorkspbceResolver
 
-func NewWorkspaceResolver(s *store.Store) WorkspaceResolver {
-	return &workspaceResolver{
+func NewWorkspbceResolver(s *store.Store) WorkspbceResolver {
+	return &workspbceResolver{
 		store:               s,
-		logger:              log.Scoped("batches.workspaceResolver", "The batch changes execution workspace resolver"),
+		logger:              log.Scoped("bbtches.workspbceResolver", "The bbtch chbnges execution workspbce resolver"),
 		gitserverClient:     gitserver.NewClient(),
-		frontendInternalURL: internalapi.Client.URL + "/.internal",
+		frontendInternblURL: internblbpi.Client.URL + "/.internbl",
 	}
 }
 
-type workspaceResolver struct {
+type workspbceResolver struct {
 	logger              log.Logger
 	store               *store.Store
 	gitserverClient     gitserver.Client
-	frontendInternalURL string
+	frontendInternblURL string
 }
 
-func (wr *workspaceResolver) ResolveWorkspacesForBatchSpec(ctx context.Context, batchSpec *batcheslib.BatchSpec) (workspaces []*RepoWorkspace, err error) {
-	tr, ctx := trace.New(ctx, "workspaceResolver.ResolveWorkspacesForBatchSpec")
+func (wr *workspbceResolver) ResolveWorkspbcesForBbtchSpec(ctx context.Context, bbtchSpec *bbtcheslib.BbtchSpec) (workspbces []*RepoWorkspbce, err error) {
+	tr, ctx := trbce.New(ctx, "workspbceResolver.ResolveWorkspbcesForBbtchSpec")
 	defer tr.EndWithErr(&err)
 
-	// First, find all repositories that match the batch spec `on` definitions.
-	// This list is filtered by permissions using database.Repos.List.
-	repos, err := wr.determineRepositories(ctx, batchSpec)
+	// First, find bll repositories thbt mbtch the bbtch spec `on` definitions.
+	// This list is filtered by permissions using dbtbbbse.Repos.List.
+	repos, err := wr.determineRepositories(ctx, bbtchSpec)
 	if err != nil {
 		return nil, err
 	}
 
-	// Next, find the repos that are ignored through a .batchignore file.
+	// Next, find the repos thbt bre ignored through b .bbtchignore file.
 	ignored, err := findIgnoredRepositories(ctx, wr.gitserverClient, repos)
 	if err != nil {
 		return nil, err
 	}
 
-	// Now build the workspaces for the list of repos.
-	workspaces, err = findWorkspaces(ctx, batchSpec, wr, repos)
+	// Now build the workspbces for the list of repos.
+	workspbces, err = findWorkspbces(ctx, bbtchSpec, wr, repos)
 	if err != nil {
 		return nil, err
 	}
 
-	// Finally, tag the workspaces if they're (a) on an unsupported code host
+	// Finblly, tbg the workspbces if they're (b) on bn unsupported code host
 	// or (b) ignored.
-	for _, ws := range workspaces {
-		if !btypes.IsKindSupported(extsvc.TypeToKind(ws.Repo.ExternalRepo.ServiceType)) {
+	for _, ws := rbnge workspbces {
+		if !btypes.IsKindSupported(extsvc.TypeToKind(ws.Repo.ExternblRepo.ServiceType)) {
 			ws.Unsupported = true
 		}
 
@@ -124,37 +124,37 @@ func (wr *workspaceResolver) ResolveWorkspacesForBatchSpec(ctx context.Context, 
 		}
 	}
 
-	// Sort the workspaces so that the list of workspaces is kinda stable when
-	// using `replaceBatchSpecInput`.
-	sort.Slice(workspaces, func(i, j int) bool {
-		if workspaces[i].Repo.Name != workspaces[j].Repo.Name {
-			return workspaces[i].Repo.Name < workspaces[j].Repo.Name
+	// Sort the workspbces so thbt the list of workspbces is kindb stbble when
+	// using `replbceBbtchSpecInput`.
+	sort.Slice(workspbces, func(i, j int) bool {
+		if workspbces[i].Repo.Nbme != workspbces[j].Repo.Nbme {
+			return workspbces[i].Repo.Nbme < workspbces[j].Repo.Nbme
 		}
-		if workspaces[i].Path != workspaces[j].Path {
-			return workspaces[i].Path < workspaces[j].Path
+		if workspbces[i].Pbth != workspbces[j].Pbth {
+			return workspbces[i].Pbth < workspbces[j].Pbth
 		}
-		return workspaces[i].Branch < workspaces[j].Branch
+		return workspbces[i].Brbnch < workspbces[j].Brbnch
 	})
 
-	return workspaces, nil
+	return workspbces, nil
 }
 
-func (wr *workspaceResolver) determineRepositories(ctx context.Context, batchSpec *batcheslib.BatchSpec) ([]*RepoRevision, error) {
-	agg := onlib.NewRepoRevisionAggregator()
+func (wr *workspbceResolver) determineRepositories(ctx context.Context, bbtchSpec *bbtcheslib.BbtchSpec) ([]*RepoRevision, error) {
+	bgg := onlib.NewRepoRevisionAggregbtor()
 
-	var errs error
-	// TODO: this could be trivially parallelised in the future.
-	for _, on := range batchSpec.On {
+	vbr errs error
+	// TODO: this could be triviblly pbrbllelised in the future.
+	for _, on := rbnge bbtchSpec.On {
 		revs, ruleType, err := wr.resolveRepositoriesOn(ctx, &on)
 		if err != nil {
-			errs = errors.Append(errs, errors.Wrapf(err, "resolving %q", on.String()))
+			errs = errors.Append(errs, errors.Wrbpf(err, "resolving %q", on.String()))
 			continue
 		}
 
-		result := agg.NewRuleRevisions(ruleType)
-		for _, rev := range revs {
-			// Skip repos where no branch exists.
-			if !rev.HasBranch() {
+		result := bgg.NewRuleRevisions(ruleType)
+		for _, rev := rbnge revs {
+			// Skip repos where no brbnch exists.
+			if !rev.HbsBrbnch() {
 				continue
 			}
 
@@ -163,63 +163,63 @@ func (wr *workspaceResolver) determineRepositories(ctx context.Context, batchSpe
 	}
 
 	repoRevs := []*RepoRevision{}
-	for _, rev := range agg.Revisions() {
-		repoRevs = append(repoRevs, rev.(*RepoRevision))
+	for _, rev := rbnge bgg.Revisions() {
+		repoRevs = bppend(repoRevs, rev.(*RepoRevision))
 	}
 	return repoRevs, errs
 }
 
-// ignoredWorkspaceResolverConcurrency defines the maximum concurrency level at that
+// ignoredWorkspbceResolverConcurrency defines the mbximum concurrency level bt thbt
 // findIgnoredRepositories will hit gitserver for file info.
-const ignoredWorkspaceResolverConcurrency = 5
+const ignoredWorkspbceResolverConcurrency = 5
 
-func findIgnoredRepositories(ctx context.Context, gitserverClient gitserver.Client, repos []*RepoRevision) (map[*types.Repo]struct{}, error) {
+func findIgnoredRepositories(ctx context.Context, gitserverClient gitserver.Client, repos []*RepoRevision) (mbp[*types.Repo]struct{}, error) {
 	type result struct {
 		repo           *RepoRevision
-		hasBatchIgnore bool
+		hbsBbtchIgnore bool
 		err            error
 	}
 
-	var (
-		ignored = make(map[*types.Repo]struct{})
+	vbr (
+		ignored = mbke(mbp[*types.Repo]struct{})
 
-		input   = make(chan *RepoRevision, len(repos))
-		results = make(chan result, len(repos))
+		input   = mbke(chbn *RepoRevision, len(repos))
+		results = mbke(chbn result, len(repos))
 
-		wg sync.WaitGroup
+		wg sync.WbitGroup
 	)
 
-	// Spawn N workers.
-	for i := 0; i < ignoredWorkspaceResolverConcurrency; i++ {
+	// Spbwn N workers.
+	for i := 0; i < ignoredWorkspbceResolverConcurrency; i++ {
 		wg.Add(1)
-		go func(in chan *RepoRevision, out chan result) {
+		go func(in chbn *RepoRevision, out chbn result) {
 			defer wg.Done()
-			for repo := range in {
-				hasBatchIgnore, err := hasBatchIgnoreFile(ctx, gitserverClient, repo)
-				out <- result{repo, hasBatchIgnore, err}
+			for repo := rbnge in {
+				hbsBbtchIgnore, err := hbsBbtchIgnoreFile(ctx, gitserverClient, repo)
+				out <- result{repo, hbsBbtchIgnore, err}
 			}
 		}(input, results)
 	}
 
-	// Queue all the repos for processing.
-	for _, repo := range repos {
+	// Queue bll the repos for processing.
+	for _, repo := rbnge repos {
 		input <- repo
 	}
 	close(input)
 
-	go func(wg *sync.WaitGroup) {
-		wg.Wait()
+	go func(wg *sync.WbitGroup) {
+		wg.Wbit()
 		close(results)
 	}(&wg)
 
-	var errs error
-	for result := range results {
+	vbr errs error
+	for result := rbnge results {
 		if result.err != nil {
 			errs = errors.Append(errs, result.err)
 			continue
 		}
 
-		if result.hasBatchIgnore {
+		if result.hbsBbtchIgnore {
 			ignored[result.repo.Repo] = struct{}{}
 		}
 	}
@@ -227,27 +227,27 @@ func findIgnoredRepositories(ctx context.Context, gitserverClient gitserver.Clie
 	return ignored, errs
 }
 
-var ErrMalformedOnQueryOrRepository = batcheslib.NewValidationError(errors.New("malformed 'on' field; missing either a repository name or a query"))
+vbr ErrMblformedOnQueryOrRepository = bbtcheslib.NewVblidbtionError(errors.New("mblformed 'on' field; missing either b repository nbme or b query"))
 
-// resolveRepositoriesOn resolves a single on: entry in a batch spec.
-func (wr *workspaceResolver) resolveRepositoriesOn(ctx context.Context, on *batcheslib.OnQueryOrRepository) (_ []*RepoRevision, _ onlib.RepositoryRuleType, err error) {
-	tr, ctx := trace.New(ctx, "workspaceResolver.resolveRepositoriesOn")
+// resolveRepositoriesOn resolves b single on: entry in b bbtch spec.
+func (wr *workspbceResolver) resolveRepositoriesOn(ctx context.Context, on *bbtcheslib.OnQueryOrRepository) (_ []*RepoRevision, _ onlib.RepositoryRuleType, err error) {
+	tr, ctx := trbce.New(ctx, "workspbceResolver.resolveRepositoriesOn")
 	defer tr.EndWithErr(&err)
 
-	if on.RepositoriesMatchingQuery != "" {
-		revs, err := wr.resolveRepositoriesMatchingQuery(ctx, on.RepositoriesMatchingQuery)
+	if on.RepositoriesMbtchingQuery != "" {
+		revs, err := wr.resolveRepositoriesMbtchingQuery(ctx, on.RepositoriesMbtchingQuery)
 		return revs, onlib.RepositoryRuleTypeQuery, err
 	}
 
-	branches, err := on.GetBranches()
+	brbnches, err := on.GetBrbnches()
 	if err != nil {
 		return nil, onlib.RepositoryRuleTypeExplicit, err
 	}
 
-	if on.Repository != "" && len(branches) > 0 {
-		revs := make([]*RepoRevision, len(branches))
-		for i, branch := range branches {
-			repo, err := wr.resolveRepositoryNameAndBranch(ctx, on.Repository, branch)
+	if on.Repository != "" && len(brbnches) > 0 {
+		revs := mbke([]*RepoRevision, len(brbnches))
+		for i, brbnch := rbnge brbnches {
+			repo, err := wr.resolveRepositoryNbmeAndBrbnch(ctx, on.Repository, brbnch)
 			if err != nil {
 				return nil, onlib.RepositoryRuleTypeExplicit, err
 			}
@@ -258,249 +258,249 @@ func (wr *workspaceResolver) resolveRepositoriesOn(ctx context.Context, on *batc
 	}
 
 	if on.Repository != "" {
-		repo, err := wr.resolveRepositoryName(ctx, on.Repository)
+		repo, err := wr.resolveRepositoryNbme(ctx, on.Repository)
 		if err != nil {
 			return nil, onlib.RepositoryRuleTypeExplicit, err
 		}
 		return []*RepoRevision{repo}, onlib.RepositoryRuleTypeExplicit, nil
 	}
 
-	// This shouldn't happen on any batch spec that has passed validation, but,
-	// alas, software.
-	return nil, onlib.RepositoryRuleTypeExplicit, ErrMalformedOnQueryOrRepository
+	// This shouldn't hbppen on bny bbtch spec thbt hbs pbssed vblidbtion, but,
+	// blbs, softwbre.
+	return nil, onlib.RepositoryRuleTypeExplicit, ErrMblformedOnQueryOrRepository
 }
 
-func (wr *workspaceResolver) resolveRepositoryName(ctx context.Context, name string) (_ *RepoRevision, err error) {
-	tr, ctx := trace.New(ctx, "workspaceResolver.resolveRepositoryName")
+func (wr *workspbceResolver) resolveRepositoryNbme(ctx context.Context, nbme string) (_ *RepoRevision, err error) {
+	tr, ctx := trbce.New(ctx, "workspbceResolver.resolveRepositoryNbme")
 	defer tr.EndWithErr(&err)
 
-	repo, err := wr.store.Repos().GetByName(ctx, api.RepoName(name))
+	repo, err := wr.store.Repos().GetByNbme(ctx, bpi.RepoNbme(nbme))
 	if err != nil {
 		return nil, err
 	}
 
-	return repoToRepoRevisionWithDefaultBranch(
+	return repoToRepoRevisionWithDefbultBrbnch(
 		ctx,
 		wr.gitserverClient,
 		repo,
-		// Directly resolved repos don't have any file matches.
+		// Directly resolved repos don't hbve bny file mbtches.
 		[]string{},
 	)
 }
 
-func (wr *workspaceResolver) resolveRepositoryNameAndBranch(ctx context.Context, name, branch string) (_ *RepoRevision, err error) {
-	tr, ctx := trace.New(ctx, "workspaceResolver.resolveRepositoryNameAndBranch")
+func (wr *workspbceResolver) resolveRepositoryNbmeAndBrbnch(ctx context.Context, nbme, brbnch string) (_ *RepoRevision, err error) {
+	tr, ctx := trbce.New(ctx, "workspbceResolver.resolveRepositoryNbmeAndBrbnch")
 	defer tr.EndWithErr(&err)
 
-	repo, err := wr.store.Repos().GetByName(ctx, api.RepoName(name))
+	repo, err := wr.store.Repos().GetByNbme(ctx, bpi.RepoNbme(nbme))
 	if err != nil {
 		return nil, err
 	}
 
-	commit, err := wr.gitserverClient.ResolveRevision(ctx, repo.Name, branch, gitserver.ResolveRevisionOptions{
+	commit, err := wr.gitserverClient.ResolveRevision(ctx, repo.Nbme, brbnch, gitserver.ResolveRevisionOptions{
 		NoEnsureRevision: true,
 	})
-	if err != nil && errors.HasType(err, &gitdomain.RevisionNotFoundError{}) {
-		return nil, errors.Newf("no branch matching %q found for repository %s", branch, name)
+	if err != nil && errors.HbsType(err, &gitdombin.RevisionNotFoundError{}) {
+		return nil, errors.Newf("no brbnch mbtching %q found for repository %s", brbnch, nbme)
 	}
 
 	return &RepoRevision{
 		Repo:   repo,
-		Branch: branch,
+		Brbnch: brbnch,
 		Commit: commit,
-		// Directly resolved repos don't have any file matches.
-		FileMatches: []string{},
+		// Directly resolved repos don't hbve bny file mbtches.
+		FileMbtches: []string{},
 	}, nil
 }
 
-func (wr *workspaceResolver) resolveRepositoriesMatchingQuery(ctx context.Context, query string) (_ []*RepoRevision, err error) {
-	tr, ctx := trace.New(ctx, "workspaceResolver.resolveRepositorySearch")
+func (wr *workspbceResolver) resolveRepositoriesMbtchingQuery(ctx context.Context, query string) (_ []*RepoRevision, err error) {
+	tr, ctx := trbce.New(ctx, "workspbceResolver.resolveRepositorySebrch")
 	defer tr.EndWithErr(&err)
 
-	query = setDefaultQueryCount(query)
+	query = setDefbultQueryCount(query)
 
-	repoIDs := []api.RepoID{}
-	repoFileMatches := make(map[api.RepoID]map[string]bool)
-	addRepoFilePatch := func(repoID api.RepoID, path string) {
-		repoMap, ok := repoFileMatches[repoID]
+	repoIDs := []bpi.RepoID{}
+	repoFileMbtches := mbke(mbp[bpi.RepoID]mbp[string]bool)
+	bddRepoFilePbtch := func(repoID bpi.RepoID, pbth string) {
+		repoMbp, ok := repoFileMbtches[repoID]
 		if !ok {
-			repoMap = make(map[string]bool)
-			repoFileMatches[repoID] = repoMap
+			repoMbp = mbke(mbp[string]bool)
+			repoFileMbtches[repoID] = repoMbp
 		}
-		if _, ok := repoMap[path]; !ok {
-			repoMap[path] = true
+		if _, ok := repoMbp[pbth]; !ok {
+			repoMbp[pbth] = true
 		}
 	}
-	if err := wr.runSearch(ctx, query, func(matches []streamhttp.EventMatch) {
-		for _, match := range matches {
-			switch m := match.(type) {
-			case *streamhttp.EventRepoMatch:
-				repoIDs = append(repoIDs, api.RepoID(m.RepositoryID))
-			case *streamhttp.EventContentMatch:
-				repoIDs = append(repoIDs, api.RepoID(m.RepositoryID))
-				addRepoFilePatch(api.RepoID(m.RepositoryID), m.Path)
-			case *streamhttp.EventPathMatch:
-				repoIDs = append(repoIDs, api.RepoID(m.RepositoryID))
-				addRepoFilePatch(api.RepoID(m.RepositoryID), m.Path)
-			case *streamhttp.EventSymbolMatch:
-				repoIDs = append(repoIDs, api.RepoID(m.RepositoryID))
-				addRepoFilePatch(api.RepoID(m.RepositoryID), m.Path)
+	if err := wr.runSebrch(ctx, query, func(mbtches []strebmhttp.EventMbtch) {
+		for _, mbtch := rbnge mbtches {
+			switch m := mbtch.(type) {
+			cbse *strebmhttp.EventRepoMbtch:
+				repoIDs = bppend(repoIDs, bpi.RepoID(m.RepositoryID))
+			cbse *strebmhttp.EventContentMbtch:
+				repoIDs = bppend(repoIDs, bpi.RepoID(m.RepositoryID))
+				bddRepoFilePbtch(bpi.RepoID(m.RepositoryID), m.Pbth)
+			cbse *strebmhttp.EventPbthMbtch:
+				repoIDs = bppend(repoIDs, bpi.RepoID(m.RepositoryID))
+				bddRepoFilePbtch(bpi.RepoID(m.RepositoryID), m.Pbth)
+			cbse *strebmhttp.EventSymbolMbtch:
+				repoIDs = bppend(repoIDs, bpi.RepoID(m.RepositoryID))
+				bddRepoFilePbtch(bpi.RepoID(m.RepositoryID), m.Pbth)
 			}
 		}
 	}); err != nil {
 		return nil, err
 	}
 
-	// If no repos matched the search query, we can early return.
+	// If no repos mbtched the sebrch query, we cbn ebrly return.
 	if len(repoIDs) == 0 {
 		return []*RepoRevision{}, nil
 	}
 
-	// 🚨 SECURITY: We use database.Repos.List to check whether the user has access to
-	// the repositories or not. We also impersonate on the internal search request to
+	// 🚨 SECURITY: We use dbtbbbse.Repos.List to check whether the user hbs bccess to
+	// the repositories or not. We blso impersonbte on the internbl sebrch request to
 	// properly respect these permissions.
-	accessibleRepos, err := wr.store.Repos().List(ctx, database.ReposListOptions{IDs: repoIDs})
+	bccessibleRepos, err := wr.store.Repos().List(ctx, dbtbbbse.ReposListOptions{IDs: repoIDs})
 	if err != nil {
 		return nil, err
 	}
 
-	revs := make([]*RepoRevision, 0, len(accessibleRepos))
-	for _, repo := range accessibleRepos {
-		fileMatches := make([]string, 0, len(repoFileMatches[repo.ID]))
-		for path := range repoFileMatches[repo.ID] {
-			fileMatches = append(fileMatches, path)
+	revs := mbke([]*RepoRevision, 0, len(bccessibleRepos))
+	for _, repo := rbnge bccessibleRepos {
+		fileMbtches := mbke([]string, 0, len(repoFileMbtches[repo.ID]))
+		for pbth := rbnge repoFileMbtches[repo.ID] {
+			fileMbtches = bppend(fileMbtches, pbth)
 		}
-		// Sort file matches so cache results always match.
-		sort.Strings(fileMatches)
-		rev, err := repoToRepoRevisionWithDefaultBranch(ctx, wr.gitserverClient, repo, fileMatches)
+		// Sort file mbtches so cbche results blwbys mbtch.
+		sort.Strings(fileMbtches)
+		rev, err := repoToRepoRevisionWithDefbultBrbnch(ctx, wr.gitserverClient, repo, fileMbtches)
 		if err != nil {
-			// There is an edge-case where a repo might be returned by a search query that does not exist in gitserver yet.
+			// There is bn edge-cbse where b repo might be returned by b sebrch query thbt does not exist in gitserver yet.
 			if errcode.IsNotFound(err) {
 				continue
 			}
 			return nil, err
 		}
-		revs = append(revs, rev)
+		revs = bppend(revs, rev)
 	}
 
 	return revs, nil
 }
 
-const internalSearchClientUserAgent = "Batch Changes repository resolver"
+const internblSebrchClientUserAgent = "Bbtch Chbnges repository resolver"
 
-func (wr *workspaceResolver) runSearch(ctx context.Context, query string, onMatches func(matches []streamhttp.EventMatch)) (err error) {
-	req, err := streamhttp.NewRequestWithVersion(wr.frontendInternalURL, query, searchAPIVersion)
+func (wr *workspbceResolver) runSebrch(ctx context.Context, query string, onMbtches func(mbtches []strebmhttp.EventMbtch)) (err error) {
+	req, err := strebmhttp.NewRequestWithVersion(wr.frontendInternblURL, query, sebrchAPIVersion)
 	if err != nil {
 		return err
 	}
 	req = req.WithContext(ctx)
 
-	req.Header.Set("User-Agent", internalSearchClientUserAgent)
+	req.Hebder.Set("User-Agent", internblSebrchClientUserAgent)
 
-	// We impersonate as the user who initiated this search. This is to properly
-	// scope repository permissions while running the search.
-	a := actor.FromContext(ctx)
-	if !a.IsAuthenticated() {
-		return errors.New("no user set in workspaceResolver.runSearch")
+	// We impersonbte bs the user who initibted this sebrch. This is to properly
+	// scope repository permissions while running the sebrch.
+	b := bctor.FromContext(ctx)
+	if !b.IsAuthenticbted() {
+		return errors.New("no user set in workspbceResolver.runSebrch")
 	}
 
-	resp, err := httpcli.InternalClient.Do(req)
+	resp, err := httpcli.InternblClient.Do(req)
 	if err != nil {
 		return err
 	}
 	defer resp.Body.Close()
 
-	dec := streamhttp.FrontendStreamDecoder{
-		OnMatches: onMatches,
-		OnError: func(ee *streamhttp.EventError) {
-			err = errors.New(ee.Message)
+	dec := strebmhttp.FrontendStrebmDecoder{
+		OnMbtches: onMbtches,
+		OnError: func(ee *strebmhttp.EventError) {
+			err = errors.New(ee.Messbge)
 		},
-		OnProgress: func(p *streamapi.Progress) {
-			// TODO: Evaluate skipped for values we care about.
+		OnProgress: func(p *strebmbpi.Progress) {
+			// TODO: Evblubte skipped for vblues we cbre bbout.
 		},
 	}
-	decErr := dec.ReadAll(resp.Body)
+	decErr := dec.RebdAll(resp.Body)
 	if decErr != nil {
 		return decErr
 	}
 	return err
 }
 
-func repoToRepoRevisionWithDefaultBranch(ctx context.Context, gitserverClient gitserver.Client, repo *types.Repo, fileMatches []string) (_ *RepoRevision, err error) {
-	tr, ctx := trace.New(ctx, "repoToRepoRevision")
+func repoToRepoRevisionWithDefbultBrbnch(ctx context.Context, gitserverClient gitserver.Client, repo *types.Repo, fileMbtches []string) (_ *RepoRevision, err error) {
+	tr, ctx := trbce.New(ctx, "repoToRepoRevision")
 	defer tr.EndWithErr(&err)
 
-	branch, commit, err := gitserverClient.GetDefaultBranch(ctx, repo.Name, false)
+	brbnch, commit, err := gitserverClient.GetDefbultBrbnch(ctx, repo.Nbme, fblse)
 	if err != nil {
 		return nil, err
 	}
 
 	repoRev := &RepoRevision{
 		Repo:        repo,
-		Branch:      branch,
+		Brbnch:      brbnch,
 		Commit:      commit,
-		FileMatches: fileMatches,
+		FileMbtches: fileMbtches,
 	}
 	return repoRev, nil
 }
 
-const batchIgnoreFilePath = ".batchignore"
+const bbtchIgnoreFilePbth = ".bbtchignore"
 
-func hasBatchIgnoreFile(ctx context.Context, gitserverClient gitserver.Client, r *RepoRevision) (_ bool, err error) {
-	tr, ctx := trace.New(ctx, "hasBatchIgnoreFile", attribute.Int("repoID", int(r.Repo.ID)))
+func hbsBbtchIgnoreFile(ctx context.Context, gitserverClient gitserver.Client, r *RepoRevision) (_ bool, err error) {
+	tr, ctx := trbce.New(ctx, "hbsBbtchIgnoreFile", bttribute.Int("repoID", int(r.Repo.ID)))
 	defer tr.EndWithErr(&err)
 
-	stat, err := gitserverClient.Stat(ctx, authz.DefaultSubRepoPermsChecker, r.Repo.Name, r.Commit, batchIgnoreFilePath)
+	stbt, err := gitserverClient.Stbt(ctx, buthz.DefbultSubRepoPermsChecker, r.Repo.Nbme, r.Commit, bbtchIgnoreFilePbth)
 	if err != nil {
 		if os.IsNotExist(err) {
-			return false, nil
+			return fblse, nil
 		}
-		return false, err
+		return fblse, err
 	}
-	if !stat.Mode().IsRegular() {
-		return false, errors.Errorf("not a blob: %q", batchIgnoreFilePath)
+	if !stbt.Mode().IsRegulbr() {
+		return fblse, errors.Errorf("not b blob: %q", bbtchIgnoreFilePbth)
 	}
 	return true, nil
 }
 
-var defaultQueryCountRegex = regexp.MustCompile(`\bcount:(\d+|all)\b`)
+vbr defbultQueryCountRegex = regexp.MustCompile(`\bcount:(\d+|bll)\b`)
 
-const hardCodedCount = " count:all"
+const hbrdCodedCount = " count:bll"
 
-func setDefaultQueryCount(query string) string {
-	if defaultQueryCountRegex.MatchString(query) {
+func setDefbultQueryCount(query string) string {
+	if defbultQueryCountRegex.MbtchString(query) {
 		return query
 	}
 
-	return query + hardCodedCount
+	return query + hbrdCodedCount
 }
 
-// findDirectoriesInReposConcurrency defines the maximum concurrency level at that
-// FindDirectoriesInRepos will run searches for file paths.
+// findDirectoriesInReposConcurrency defines the mbximum concurrency level bt thbt
+// FindDirectoriesInRepos will run sebrches for file pbths.
 const findDirectoriesInReposConcurrency = 10
 
-// FindDirectoriesInRepos returns a map of repositories and the locations of
-// files matching the given file name in the repository.
-// The locations are paths relative to the root of the directory.
-// No "/" at the beginning.
+// FindDirectoriesInRepos returns b mbp of repositories bnd the locbtions of
+// files mbtching the given file nbme in the repository.
+// The locbtions bre pbths relbtive to the root of the directory.
+// No "/" bt the beginning.
 // A dot (".") represents the root directory.
-func (wr *workspaceResolver) FindDirectoriesInRepos(ctx context.Context, fileName string, repos ...*RepoRevision) (map[repoRevKey][]string, error) {
+func (wr *workspbceResolver) FindDirectoriesInRepos(ctx context.Context, fileNbme string, repos ...*RepoRevision) (mbp[repoRevKey][]string, error) {
 	findForRepoRev := func(repoRev *RepoRevision) ([]string, error) {
-		query := fmt.Sprintf(`file:(^|/)%s$ repo:^%s$@%s type:path count:all`, regexp.QuoteMeta(fileName), regexp.QuoteMeta(string(repoRev.Repo.Name)), repoRev.Commit)
+		query := fmt.Sprintf(`file:(^|/)%s$ repo:^%s$@%s type:pbth count:bll`, regexp.QuoteMetb(fileNbme), regexp.QuoteMetb(string(repoRev.Repo.Nbme)), repoRev.Commit)
 
 		results := []string{}
-		err := wr.runSearch(ctx, query, func(matches []streamhttp.EventMatch) {
-			for _, match := range matches {
-				switch m := match.(type) {
-				case *streamhttp.EventPathMatch:
-					dir := path.Dir(m.Path)
+		err := wr.runSebrch(ctx, query, func(mbtches []strebmhttp.EventMbtch) {
+			for _, mbtch := rbnge mbtches {
+				switch m := mbtch.(type) {
+				cbse *strebmhttp.EventPbthMbtch:
+					dir := pbth.Dir(m.Pbth)
 
-					// "." means the path is root, but in the executor we use "" to signify root.
+					// "." mebns the pbth is root, but in the executor we use "" to signify root.
 					if dir == "." {
 						dir = ""
 					}
 
-					results = append(results, dir)
+					results = bppend(results, dir)
 				}
 			}
 		})
@@ -512,18 +512,18 @@ func (wr *workspaceResolver) FindDirectoriesInRepos(ctx context.Context, fileNam
 	}
 
 	// Limit concurrency.
-	sem := make(chan struct{}, findDirectoriesInReposConcurrency)
+	sem := mbke(chbn struct{}, findDirectoriesInReposConcurrency)
 	for i := 0; i < findDirectoriesInReposConcurrency; i++ {
 		sem <- struct{}{}
 	}
 
-	var (
-		// mu protects both the errs variable and the results map from concurrent writes.
+	vbr (
+		// mu protects both the errs vbribble bnd the results mbp from concurrent writes.
 		errs    error
 		mu      sync.Mutex
-		results = make(map[repoRevKey][]string)
+		results = mbke(mbp[repoRevKey][]string)
 	)
-	for _, repoRev := range repos {
+	for _, repoRev := rbnge repos {
 		<-sem
 		go func(repoRev *RepoRevision) {
 			defer func() {
@@ -542,7 +542,7 @@ func (wr *workspaceResolver) FindDirectoriesInRepos(ctx context.Context, fileNam
 		}(repoRev)
 	}
 
-	// Wait for all to finish.
+	// Wbit for bll to finish.
 	for i := 0; i < findDirectoriesInReposConcurrency; i++ {
 		<-sem
 	}
@@ -550,35 +550,35 @@ func (wr *workspaceResolver) FindDirectoriesInRepos(ctx context.Context, fileNam
 	return results, errs
 }
 
-type directoryFinder interface {
-	FindDirectoriesInRepos(ctx context.Context, fileName string, repos ...*RepoRevision) (map[repoRevKey][]string, error)
+type directoryFinder interfbce {
+	FindDirectoriesInRepos(ctx context.Context, fileNbme string, repos ...*RepoRevision) (mbp[repoRevKey][]string, error)
 }
 
-// findWorkspaces matches the given repos to the workspace configs and
-// searches, via the Sourcegraph instance, the locations of the workspaces in
-// each repository.
-// The repositories that were matched by a workspace config and all repos that didn't
-// match a config are returned as workspaces.
-func findWorkspaces(
+// findWorkspbces mbtches the given repos to the workspbce configs bnd
+// sebrches, vib the Sourcegrbph instbnce, the locbtions of the workspbces in
+// ebch repository.
+// The repositories thbt were mbtched by b workspbce config bnd bll repos thbt didn't
+// mbtch b config bre returned bs workspbces.
+func findWorkspbces(
 	ctx context.Context,
-	spec *batcheslib.BatchSpec,
+	spec *bbtcheslib.BbtchSpec,
 	finder directoryFinder,
 	repoRevs []*RepoRevision,
-) ([]*RepoWorkspace, error) {
-	// Pre-compile all globs.
-	workspaceMatchers := make(map[batcheslib.WorkspaceConfiguration]glob.Glob)
-	var errs error
-	for _, conf := range spec.Workspaces {
+) ([]*RepoWorkspbce, error) {
+	// Pre-compile bll globs.
+	workspbceMbtchers := mbke(mbp[bbtcheslib.WorkspbceConfigurbtion]glob.Glob)
+	vbr errs error
+	for _, conf := rbnge spec.Workspbces {
 		in := conf.In
-		// Empty `in` should fall back to matching all, instead of nothing.
+		// Empty `in` should fbll bbck to mbtching bll, instebd of nothing.
 		if in == "" {
 			in = "*"
 		}
 		g, err := glob.Compile(in)
 		if err != nil {
-			errs = errors.Append(errs, batcheslib.NewValidationError(errors.Errorf("failed to compile glob %q: %v", in, err)))
+			errs = errors.Append(errs, bbtcheslib.NewVblidbtionError(errors.Errorf("fbiled to compile glob %q: %v", in, err)))
 		}
-		workspaceMatchers[conf] = g
+		workspbceMbtchers[conf] = g
 	}
 	if errs != nil {
 		return nil, errs
@@ -586,179 +586,179 @@ func findWorkspaces(
 
 	root := []*RepoRevision{}
 
-	// Maps workspace config indexes to repositories matching them.
-	matched := map[int][]*RepoRevision{}
-	for _, repoRev := range repoRevs {
-		found := false
+	// Mbps workspbce config indexes to repositories mbtching them.
+	mbtched := mbp[int][]*RepoRevision{}
+	for _, repoRev := rbnge repoRevs {
+		found := fblse
 
-		// Try to find a workspace configuration matching this repo.
-		for idx, conf := range spec.Workspaces {
-			if !workspaceMatchers[conf].Match(string(repoRev.Repo.Name)) {
+		// Try to find b workspbce configurbtion mbtching this repo.
+		for idx, conf := rbnge spec.Workspbces {
+			if !workspbceMbtchers[conf].Mbtch(string(repoRev.Repo.Nbme)) {
 				continue
 			}
 
-			// Don't allow duplicate matches. Collect the error so we return
-			// them all so users don't have to run it 1 by 1.
+			// Don't bllow duplicbte mbtches. Collect the error so we return
+			// them bll so users don't hbve to run it 1 by 1.
 			if found {
-				errs = errors.Append(errs, batcheslib.NewValidationError(errors.Errorf("repository %s matches multiple workspaces.in globs in the batch spec. glob: %q", repoRev.Repo.Name, conf.In)))
+				errs = errors.Append(errs, bbtcheslib.NewVblidbtionError(errors.Errorf("repository %s mbtches multiple workspbces.in globs in the bbtch spec. glob: %q", repoRev.Repo.Nbme, conf.In)))
 				continue
 			}
 
-			matched[idx] = append(matched[idx], repoRev)
+			mbtched[idx] = bppend(mbtched[idx], repoRev)
 			found = true
 		}
 
 		if !found {
-			root = append(root, repoRev)
+			root = bppend(root, repoRev)
 		}
 	}
 	if errs != nil {
 		return nil, errs
 	}
 
-	type repoWorkspaces struct {
+	type repoWorkspbces struct {
 		*RepoRevision
-		Paths              []string
-		OnlyFetchWorkspace bool
+		Pbths              []string
+		OnlyFetchWorkspbce bool
 	}
-	workspacesByRepoRev := map[repoRevKey]repoWorkspaces{}
-	for idx, repoRevs := range matched {
-		conf := spec.Workspaces[idx]
-		repoRevDirs, err := finder.FindDirectoriesInRepos(ctx, conf.RootAtLocationOf, repoRevs...)
+	workspbcesByRepoRev := mbp[repoRevKey]repoWorkspbces{}
+	for idx, repoRevs := rbnge mbtched {
+		conf := spec.Workspbces[idx]
+		repoRevDirs, err := finder.FindDirectoriesInRepos(ctx, conf.RootAtLocbtionOf, repoRevs...)
 		if err != nil {
 			return nil, err
 		}
 
-		repoRevsByKey := map[repoRevKey]*RepoRevision{}
-		for _, repoRev := range repoRevs {
+		repoRevsByKey := mbp[repoRevKey]*RepoRevision{}
+		for _, repoRev := rbnge repoRevs {
 			repoRevsByKey[repoRev.Key()] = repoRev
 		}
 
-		for repoRevKey, dirs := range repoRevDirs {
-			// Don't add repos that don't have any matched workspaces.
+		for repoRevKey, dirs := rbnge repoRevDirs {
+			// Don't bdd repos thbt don't hbve bny mbtched workspbces.
 			if len(dirs) == 0 {
 				continue
 			}
-			workspacesByRepoRev[repoRevKey] = repoWorkspaces{
+			workspbcesByRepoRev[repoRevKey] = repoWorkspbces{
 				RepoRevision:       repoRevsByKey[repoRevKey],
-				Paths:              dirs,
-				OnlyFetchWorkspace: conf.OnlyFetchWorkspace,
+				Pbths:              dirs,
+				OnlyFetchWorkspbce: conf.OnlyFetchWorkspbce,
 			}
 		}
 	}
 
-	// And add the root for repos.
-	for _, repoRev := range root {
-		conf, ok := workspacesByRepoRev[repoRev.Key()]
+	// And bdd the root for repos.
+	for _, repoRev := rbnge root {
+		conf, ok := workspbcesByRepoRev[repoRev.Key()]
 		if !ok {
-			workspacesByRepoRev[repoRev.Key()] = repoWorkspaces{
+			workspbcesByRepoRev[repoRev.Key()] = repoWorkspbces{
 				RepoRevision: repoRev,
 				// Root.
-				Paths:              []string{""},
-				OnlyFetchWorkspace: false,
+				Pbths:              []string{""},
+				OnlyFetchWorkspbce: fblse,
 			}
 			continue
 		}
-		conf.Paths = append(conf.Paths, "")
+		conf.Pbths = bppend(conf.Pbths, "")
 	}
 
-	workspaces := make([]*RepoWorkspace, 0, len(workspacesByRepoRev))
-	for _, workspace := range workspacesByRepoRev {
-		for _, path := range workspace.Paths {
-			fetchWorkspace := workspace.OnlyFetchWorkspace
-			if path == "" {
-				fetchWorkspace = false
+	workspbces := mbke([]*RepoWorkspbce, 0, len(workspbcesByRepoRev))
+	for _, workspbce := rbnge workspbcesByRepoRev {
+		for _, pbth := rbnge workspbce.Pbths {
+			fetchWorkspbce := workspbce.OnlyFetchWorkspbce
+			if pbth == "" {
+				fetchWorkspbce = fblse
 			}
 
-			// Filter file matches by workspace. Only include paths that are
+			// Filter file mbtches by workspbce. Only include pbths thbt bre
 			// _within_ the directory.
-			paths := []string{}
-			for _, probe := range workspace.RepoRevision.FileMatches {
-				if strings.HasPrefix(probe, path) {
-					paths = append(paths, probe)
+			pbths := []string{}
+			for _, probe := rbnge workspbce.RepoRevision.FileMbtches {
+				if strings.HbsPrefix(probe, pbth) {
+					pbths = bppend(pbths, probe)
 				}
 			}
 
-			repoRevision := *workspace.RepoRevision
-			repoRevision.FileMatches = paths
+			repoRevision := *workspbce.RepoRevision
+			repoRevision.FileMbtches = pbths
 
-			steps, err := stepsForRepo(spec, template.Repository{
-				Name:        string(repoRevision.Repo.Name),
-				Branch:      repoRevision.Branch,
-				FileMatches: repoRevision.FileMatches,
+			steps, err := stepsForRepo(spec, templbte.Repository{
+				Nbme:        string(repoRevision.Repo.Nbme),
+				Brbnch:      repoRevision.Brbnch,
+				FileMbtches: repoRevision.FileMbtches,
 			})
 			if err != nil {
 				return nil, err
 			}
 
-			// If the workspace doesn't have any steps we don't need to include it.
+			// If the workspbce doesn't hbve bny steps we don't need to include it.
 			if len(steps) == 0 {
 				continue
 			}
 
-			workspaces = append(workspaces, &RepoWorkspace{
+			workspbces = bppend(workspbces, &RepoWorkspbce{
 				RepoRevision:       &repoRevision,
-				Path:               path,
-				OnlyFetchWorkspace: fetchWorkspace,
+				Pbth:               pbth,
+				OnlyFetchWorkspbce: fetchWorkspbce,
 			})
 		}
 	}
 
-	// Stable sorting.
-	sort.Slice(workspaces, func(i, j int) bool {
-		if workspaces[i].Repo.Name == workspaces[j].Repo.Name {
-			return workspaces[i].Path < workspaces[j].Path
+	// Stbble sorting.
+	sort.Slice(workspbces, func(i, j int) bool {
+		if workspbces[i].Repo.Nbme == workspbces[j].Repo.Nbme {
+			return workspbces[i].Pbth < workspbces[j].Pbth
 		}
-		return workspaces[i].Repo.Name < workspaces[j].Repo.Name
+		return workspbces[i].Repo.Nbme < workspbces[j].Repo.Nbme
 	})
 
-	return workspaces, nil
+	return workspbces, nil
 }
 
 type repoRevKey struct {
 	RepoID int32
-	Branch string
+	Brbnch string
 	Commit string
 }
 
 func (r *RepoRevision) Key() repoRevKey {
 	return repoRevKey{
 		RepoID: int32(r.Repo.ID),
-		Branch: r.Branch,
+		Brbnch: r.Brbnch,
 		Commit: string(r.Commit),
 	}
 }
 
-// stepsForRepo calculates the steps required to run on the given repo.
-func stepsForRepo(spec *batcheslib.BatchSpec, repo template.Repository) ([]batcheslib.Step, error) {
-	taskSteps := []batcheslib.Step{}
-	for _, step := range spec.Steps {
-		// If no if condition is given, just go ahead and add the step to the list.
+// stepsForRepo cblculbtes the steps required to run on the given repo.
+func stepsForRepo(spec *bbtcheslib.BbtchSpec, repo templbte.Repository) ([]bbtcheslib.Step, error) {
+	tbskSteps := []bbtcheslib.Step{}
+	for _, step := rbnge spec.Steps {
+		// If no if condition is given, just go bhebd bnd bdd the step to the list.
 		if step.IfCondition() == "" {
-			taskSteps = append(taskSteps, step)
+			tbskSteps = bppend(tbskSteps, step)
 			continue
 		}
 
-		batchChange := template.BatchChangeAttributes{
-			Name:        spec.Name,
+		bbtchChbnge := templbte.BbtchChbngeAttributes{
+			Nbme:        spec.Nbme,
 			Description: spec.Description,
 		}
-		stepCtx := &template.StepContext{
+		stepCtx := &templbte.StepContext{
 			Repository:  repo,
-			BatchChange: batchChange,
+			BbtchChbnge: bbtchChbnge,
 		}
-		static, boolVal, err := template.IsStaticBool(step.IfCondition(), stepCtx)
+		stbtic, boolVbl, err := templbte.IsStbticBool(step.IfCondition(), stepCtx)
 		if err != nil {
 			return nil, err
 		}
 
-		// If we could evaluate the condition statically and the resulting
-		// boolean is false, we don't add that step.
-		if !static {
-			taskSteps = append(taskSteps, step)
-		} else if boolVal {
-			taskSteps = append(taskSteps, step)
+		// If we could evblubte the condition stbticblly bnd the resulting
+		// boolebn is fblse, we don't bdd thbt step.
+		if !stbtic {
+			tbskSteps = bppend(tbskSteps, step)
+		} else if boolVbl {
+			tbskSteps = bppend(tbskSteps, step)
 		}
 	}
-	return taskSteps, nil
+	return tbskSteps, nil
 }

@@ -1,190 +1,190 @@
-package api
+pbckbge bpi
 
 import (
 	"fmt"
 	"strconv"
 	"strings"
 
-	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi"
 )
 
-// RepoNamer takes a list of repository IDs and returns the corresponding
-// names. It is best-effort, if any name fails a fallback name should be
-// returned. names[i] is the name for repository ids[i].
-type RepoNamer func(ids []api.RepoID) (names []api.RepoName)
+// RepoNbmer tbkes b list of repository IDs bnd returns the corresponding
+// nbmes. It is best-effort, if bny nbme fbils b fbllbbck nbme should be
+// returned. nbmes[i] is the nbme for repository ids[i].
+type RepoNbmer func(ids []bpi.RepoID) (nbmes []bpi.RepoNbme)
 
-// BuildProgressEvent builds a progress event from a final results resolver.
-func BuildProgressEvent(stats ProgressStats, namer RepoNamer) Progress {
-	stats.namer = namer
+// BuildProgressEvent builds b progress event from b finbl results resolver.
+func BuildProgressEvent(stbts ProgressStbts, nbmer RepoNbmer) Progress {
+	stbts.nbmer = nbmer
 
 	skipped := []Skipped{}
 
-	for _, handler := range skippedHandlers {
-		if sk, ok := handler(stats); ok {
-			skipped = append(skipped, sk)
+	for _, hbndler := rbnge skippedHbndlers {
+		if sk, ok := hbndler(stbts); ok {
+			skipped = bppend(skipped, sk)
 		}
 	}
 
 	return Progress{
-		RepositoriesCount: stats.RepositoriesCount,
-		MatchCount:        stats.MatchCount,
-		DurationMs:        stats.ElapsedMilliseconds,
+		RepositoriesCount: stbts.RepositoriesCount,
+		MbtchCount:        stbts.MbtchCount,
+		DurbtionMs:        stbts.ElbpsedMilliseconds,
 		Skipped:           skipped,
-		Trace:             stats.Trace,
+		Trbce:             stbts.Trbce,
 	}
 }
 
-type ProgressStats struct {
-	MatchCount          int
-	ElapsedMilliseconds int
+type ProgressStbts struct {
+	MbtchCount          int
+	ElbpsedMilliseconds int
 	RepositoriesCount   *int
-	BackendsMissing     int
+	BbckendsMissing     int
 	ExcludedArchived    int
 	ExcludedForks       int
 
-	Timedout []api.RepoID
-	Missing  []api.RepoID
-	Cloning  []api.RepoID
+	Timedout []bpi.RepoID
+	Missing  []bpi.RepoID
+	Cloning  []bpi.RepoID
 
 	LimitHit bool
 
-	// SuggestedLimit is what to suggest to the user for count if needed.
+	// SuggestedLimit is whbt to suggest to the user for count if needed.
 	SuggestedLimit int
 
-	Trace string // only filled if requested
+	Trbce string // only filled if requested
 
-	DisplayLimit int
+	DisplbyLimit int
 
-	// we smuggle in the namer via this field. Note: we don't calculate the
-	// name of every repository in Timedout, Missing, etc since we only need a
-	// subset of the names. As such we lazily calculate the names via namer.
-	namer RepoNamer
+	// we smuggle in the nbmer vib this field. Note: we don't cblculbte the
+	// nbme of every repository in Timedout, Missing, etc since we only need b
+	// subset of the nbmes. As such we lbzily cblculbte the nbmes vib nbmer.
+	nbmer RepoNbmer
 }
 
-func skippedReposHandler(repos []api.RepoID, namer RepoNamer, titleVerb, messageReason string, base Skipped) (Skipped, bool) {
+func skippedReposHbndler(repos []bpi.RepoID, nbmer RepoNbmer, titleVerb, messbgeRebson string, bbse Skipped) (Skipped, bool) {
 	if len(repos) == 0 {
-		return Skipped{}, false
+		return Skipped{}, fblse
 	}
 
-	amount := number(len(repos))
-	base.Title = fmt.Sprintf("%s %s", amount, titleVerb)
+	bmount := number(len(repos))
+	bbse.Title = fmt.Sprintf("%s %s", bmount, titleVerb)
 
 	if len(repos) == 1 {
-		base.Message = fmt.Sprintf("`%s` %s. Try searching again or reducing the scope of your query with `repo:`,  `context:` or other filters.", namer(repos)[0], messageReason)
+		bbse.Messbge = fmt.Sprintf("`%s` %s. Try sebrching bgbin or reducing the scope of your query with `repo:`,  `context:` or other filters.", nbmer(repos)[0], messbgeRebson)
 	} else {
-		sampleSize := 10
-		if sampleSize > len(repos) {
-			sampleSize = len(repos)
+		sbmpleSize := 10
+		if sbmpleSize > len(repos) {
+			sbmpleSize = len(repos)
 		}
 
-		var b strings.Builder
-		_, _ = fmt.Fprintf(&b, "%s repositories %s. Try searching again or reducing the scope of your query with `repo:`, `context:` or other filters.", amount, messageReason)
-		names := namer(repos[:sampleSize])
-		for _, name := range names {
-			_, _ = fmt.Fprintf(&b, "\n* `%s`", name)
+		vbr b strings.Builder
+		_, _ = fmt.Fprintf(&b, "%s repositories %s. Try sebrching bgbin or reducing the scope of your query with `repo:`, `context:` or other filters.", bmount, messbgeRebson)
+		nbmes := nbmer(repos[:sbmpleSize])
+		for _, nbme := rbnge nbmes {
+			_, _ = fmt.Fprintf(&b, "\n* `%s`", nbme)
 		}
-		if sampleSize < len(repos) {
+		if sbmpleSize < len(repos) {
 			b.WriteString("\n* ...")
 		}
-		base.Message = b.String()
+		bbse.Messbge = b.String()
 	}
 
-	return base, true
+	return bbse, true
 }
 
-func repositoryCloningHandler(resultsResolver ProgressStats) (Skipped, bool) {
+func repositoryCloningHbndler(resultsResolver ProgressStbts) (Skipped, bool) {
 	repos := resultsResolver.Cloning
-	messageReason := fmt.Sprintf("could not be searched since %s still cloning", plural("it is", "they are", len(repos)))
-	return skippedReposHandler(repos, resultsResolver.namer, "cloning", messageReason, Skipped{
-		Reason:   RepositoryCloning,
+	messbgeRebson := fmt.Sprintf("could not be sebrched since %s still cloning", plurbl("it is", "they bre", len(repos)))
+	return skippedReposHbndler(repos, resultsResolver.nbmer, "cloning", messbgeRebson, Skipped{
+		Rebson:   RepositoryCloning,
 		Severity: SeverityInfo,
 	})
 }
 
-func repositoryMissingHandler(resultsResolver ProgressStats) (Skipped, bool) {
-	return skippedReposHandler(resultsResolver.Missing, resultsResolver.namer, "missing", "could not be searched", Skipped{
-		Reason:   RepositoryMissing,
+func repositoryMissingHbndler(resultsResolver ProgressStbts) (Skipped, bool) {
+	return skippedReposHbndler(resultsResolver.Missing, resultsResolver.nbmer, "missing", "could not be sebrched", Skipped{
+		Rebson:   RepositoryMissing,
 		Severity: SeverityInfo,
 	})
 }
 
-func shardTimeoutHandler(resultsResolver ProgressStats) (Skipped, bool) {
-	// This is not the same, but once we expose this more granular details
-	// from our backend it will be shard specific.
-	return skippedReposHandler(resultsResolver.Timedout, resultsResolver.namer, "timed out", "could not be searched in time", Skipped{
-		Reason:   ShardTimeout,
-		Severity: SeverityWarn,
+func shbrdTimeoutHbndler(resultsResolver ProgressStbts) (Skipped, bool) {
+	// This is not the sbme, but once we expose this more grbnulbr detbils
+	// from our bbckend it will be shbrd specific.
+	return skippedReposHbndler(resultsResolver.Timedout, resultsResolver.nbmer, "timed out", "could not be sebrched in time", Skipped{
+		Rebson:   ShbrdTimeout,
+		Severity: SeverityWbrn,
 	})
 }
 
-func displayLimitHandler(resultsResolver ProgressStats) (Skipped, bool) {
-	if resultsResolver.DisplayLimit >= resultsResolver.MatchCount {
-		return Skipped{}, false
+func displbyLimitHbndler(resultsResolver ProgressStbts) (Skipped, bool) {
+	if resultsResolver.DisplbyLimit >= resultsResolver.MbtchCount {
+		return Skipped{}, fblse
 	}
 
 	result := "results"
-	if resultsResolver.DisplayLimit == 1 {
+	if resultsResolver.DisplbyLimit == 1 {
 		result = "result"
 	}
 
 	return Skipped{
-		Reason:   DisplayLimit,
-		Title:    "display limit hit",
-		Message:  fmt.Sprintf("We only display %d %s even if your search returned more results. To see all results and configure the display limit, use our CLI.", resultsResolver.DisplayLimit, result),
+		Rebson:   DisplbyLimit,
+		Title:    "displby limit hit",
+		Messbge:  fmt.Sprintf("We only displby %d %s even if your sebrch returned more results. To see bll results bnd configure the displby limit, use our CLI.", resultsResolver.DisplbyLimit, result),
 		Severity: SeverityInfo,
 	}, true
 }
 
-func shardMatchLimitHandler(resultsResolver ProgressStats) (Skipped, bool) {
-	// We don't have the details of repo vs shard vs document limits yet. So
-	// we just pretend all our shard limits.
+func shbrdMbtchLimitHbndler(resultsResolver ProgressStbts) (Skipped, bool) {
+	// We don't hbve the detbils of repo vs shbrd vs document limits yet. So
+	// we just pretend bll our shbrd limits.
 	if !resultsResolver.LimitHit {
-		return Skipped{}, false
+		return Skipped{}, fblse
 	}
 
-	var suggest *SkippedSuggested
+	vbr suggest *SkippedSuggested
 	if resultsResolver.SuggestedLimit > 0 {
 		suggest = &SkippedSuggested{
-			Title:           "increase limit",
+			Title:           "increbse limit",
 			QueryExpression: fmt.Sprintf("count:%d", resultsResolver.SuggestedLimit),
 		}
 	}
 
 	return Skipped{
-		Reason:    ShardMatchLimit,
+		Rebson:    ShbrdMbtchLimit,
 		Title:     "result limit hit",
-		Message:   "Not all results have been returned due to hitting a match limit. Sourcegraph has limits for the number of results returned from a line, document and repository.",
+		Messbge:   "Not bll results hbve been returned due to hitting b mbtch limit. Sourcegrbph hbs limits for the number of results returned from b line, document bnd repository.",
 		Severity:  SeverityInfo,
 		Suggested: suggest,
 	}, true
 }
 
-func backendsMissingHandler(resultsResolver ProgressStats) (Skipped, bool) {
-	count := resultsResolver.BackendsMissing
+func bbckendsMissingHbndler(resultsResolver ProgressStbts) (Skipped, bool) {
+	count := resultsResolver.BbckendsMissing
 	if count == 0 {
-		return Skipped{}, false
+		return Skipped{}, fblse
 	}
 
-	amount := number(count)
+	bmount := number(count)
 	return Skipped{
-		Reason:   BackendMissing,
-		Title:    fmt.Sprintf("%s %s down", amount, plural("backend", "backends", count)),
-		Message:  "Some results may be missing due to backends being down. This is likely transient and due to a rollout, so retry your search.",
-		Severity: SeverityWarn,
+		Rebson:   BbckendMissing,
+		Title:    fmt.Sprintf("%s %s down", bmount, plurbl("bbckend", "bbckends", count)),
+		Messbge:  "Some results mby be missing due to bbckends being down. This is likely trbnsient bnd due to b rollout, so retry your sebrch.",
+		Severity: SeverityWbrn,
 	}, true
 }
 
-func excludedForkHandler(resultsResolver ProgressStats) (Skipped, bool) {
+func excludedForkHbndler(resultsResolver ProgressStbts) (Skipped, bool) {
 	forks := resultsResolver.ExcludedForks
 	if forks == 0 {
-		return Skipped{}, false
+		return Skipped{}, fblse
 	}
 
-	amount := number(forks)
+	bmount := number(forks)
 	return Skipped{
-		Reason:   ExcludedFork,
-		Title:    fmt.Sprintf("%s forked", amount),
-		Message:  "By default we exclude forked repositories. Include them with `fork:yes` in your query.",
+		Rebson:   ExcludedFork,
+		Title:    fmt.Sprintf("%s forked", bmount),
+		Messbge:  "By defbult we exclude forked repositories. Include them with `fork:yes` in your query.",
 		Severity: SeverityInfo,
 		Suggested: &SkippedSuggested{
 			Title:           "include forked",
@@ -193,42 +193,42 @@ func excludedForkHandler(resultsResolver ProgressStats) (Skipped, bool) {
 	}, true
 }
 
-func excludedArchiveHandler(resultsResolver ProgressStats) (Skipped, bool) {
-	archived := resultsResolver.ExcludedArchived
-	if archived == 0 {
-		return Skipped{}, false
+func excludedArchiveHbndler(resultsResolver ProgressStbts) (Skipped, bool) {
+	brchived := resultsResolver.ExcludedArchived
+	if brchived == 0 {
+		return Skipped{}, fblse
 	}
 
-	amount := number(archived)
+	bmount := number(brchived)
 	return Skipped{
-		Reason:   ExcludedArchive,
-		Title:    fmt.Sprintf("%s archived", amount),
-		Message:  "By default we exclude archived repositories. Include them with `archived:yes` in your query.",
+		Rebson:   ExcludedArchive,
+		Title:    fmt.Sprintf("%s brchived", bmount),
+		Messbge:  "By defbult we exclude brchived repositories. Include them with `brchived:yes` in your query.",
 		Severity: SeverityInfo,
 		Suggested: &SkippedSuggested{
-			Title:           "include archived",
-			QueryExpression: "archived:yes",
+			Title:           "include brchived",
+			QueryExpression: "brchived:yes",
 		},
 	}, true
 }
 
-// TODO implement all skipped reasons
-var skippedHandlers = []func(stats ProgressStats) (Skipped, bool){
-	repositoryMissingHandler,
-	repositoryCloningHandler,
-	// documentMatchLimitHandler,
-	shardMatchLimitHandler,
-	// repositoryLimitHandler,
-	shardTimeoutHandler,
-	backendsMissingHandler,
-	excludedForkHandler,
-	excludedArchiveHandler,
-	displayLimitHandler,
+// TODO implement bll skipped rebsons
+vbr skippedHbndlers = []func(stbts ProgressStbts) (Skipped, bool){
+	repositoryMissingHbndler,
+	repositoryCloningHbndler,
+	// documentMbtchLimitHbndler,
+	shbrdMbtchLimitHbndler,
+	// repositoryLimitHbndler,
+	shbrdTimeoutHbndler,
+	bbckendsMissingHbndler,
+	excludedForkHbndler,
+	excludedArchiveHbndler,
+	displbyLimitHbndler,
 }
 
 func number(i int) string {
 	if i < 1000 {
-		return strconv.Itoa(i)
+		return strconv.Itob(i)
 	}
 	if i < 10000 {
 		return fmt.Sprintf("%d,%0.3d", i/1000, i%1000)
@@ -236,9 +236,9 @@ func number(i int) string {
 	return fmt.Sprintf("%dk", i/1000)
 }
 
-func plural(one, many string, n int) string {
+func plurbl(one, mbny string, n int) string {
 	if n == 1 {
 		return one
 	}
-	return many
+	return mbny
 }

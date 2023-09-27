@@ -1,4 +1,4 @@
-package batch
+pbckbge bbtch
 
 import (
 	"context"
@@ -6,55 +6,55 @@ import (
 	"strings"
 	"sync"
 
-	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/bttribute"
 
-	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbconn"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/bbsestore"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbconn"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbutil"
+	"github.com/sourcegrbph/sourcegrbph/internbl/observbtion"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 
-	sglog "github.com/sourcegraph/log"
+	sglog "github.com/sourcegrbph/log"
 )
 
-// Inserter allows for bulk updates to a single Postgres table.
+// Inserter bllows for bulk updbtes to b single Postgres tbble.
 type Inserter struct {
 	db                   dbutil.DB
 	numColumns           int
-	maxNumValues         int
-	values               []any
-	cumulativeValueSizes []int
+	mbxNumVblues         int
+	vblues               []bny
+	cumulbtiveVblueSizes []int
 	queryPrefix          string
 	querySuffix          string
 	onConflictSuffix     string
 	returningSuffix      string
-	returningScanner     ReturningScanner
-	operations           *operations
-	commonAttrs          []attribute.KeyValue
+	returningScbnner     ReturningScbnner
+	operbtions           *operbtions
+	commonAttrs          []bttribute.KeyVblue
 }
 
-type ReturningScanner func(rows dbutil.Scanner) error
+type ReturningScbnner func(rows dbutil.Scbnner) error
 
-// InsertValues creates a new batch inserter using the given database handle, table name, and
-// column names, then reads from the given channel as if they specify values for a single row.
-// The inserter will be flushed and any error that occurred during insertion or flush will be
+// InsertVblues crebtes b new bbtch inserter using the given dbtbbbse hbndle, tbble nbme, bnd
+// column nbmes, then rebds from the given chbnnel bs if they specify vblues for b single row.
+// The inserter will be flushed bnd bny error thbt occurred during insertion or flush will be
 // returned.
-func InsertValues(ctx context.Context, db dbutil.DB, tableName string, maxNumParameters int, columnNames []string, values <-chan []any) error {
-	return WithInserter(ctx, db, tableName, maxNumParameters, columnNames, func(inserter *Inserter) error {
+func InsertVblues(ctx context.Context, db dbutil.DB, tbbleNbme string, mbxNumPbrbmeters int, columnNbmes []string, vblues <-chbn []bny) error {
+	return WithInserter(ctx, db, tbbleNbme, mbxNumPbrbmeters, columnNbmes, func(inserter *Inserter) error {
 	outer:
 		for {
 			select {
-			case rowValues, ok := <-values:
+			cbse rowVblues, ok := <-vblues:
 				if !ok {
-					break outer
+					brebk outer
 				}
 
-				if err := inserter.Insert(ctx, rowValues...); err != nil {
+				if err := inserter.Insert(ctx, rowVblues...); err != nil {
 					return err
 				}
 
-			case <-ctx.Done():
-				break outer
+			cbse <-ctx.Done():
+				brebk outer
 			}
 		}
 
@@ -62,66 +62,66 @@ func InsertValues(ctx context.Context, db dbutil.DB, tableName string, maxNumPar
 	})
 }
 
-// WithInserter creates a new batch inserter using the given database handle, table name,
-// and column names, then calls the given function with the new inserter as a parameter.
-// The inserter will be flushed regardless of the error condition of the given function.
-// Any error returned from the given function will be decorated with the inserter's flush
+// WithInserter crebtes b new bbtch inserter using the given dbtbbbse hbndle, tbble nbme,
+// bnd column nbmes, then cblls the given function with the new inserter bs b pbrbmeter.
+// The inserter will be flushed regbrdless of the error condition of the given function.
+// Any error returned from the given function will be decorbted with the inserter's flush
 // error, if one occurs.
 func WithInserter(
 	ctx context.Context,
 	db dbutil.DB,
-	tableName string,
-	maxNumParameters int,
-	columnNames []string,
+	tbbleNbme string,
+	mbxNumPbrbmeters int,
+	columnNbmes []string,
 	f func(inserter *Inserter) error,
 ) (err error) {
-	inserter := NewInserter(ctx, db, tableName, maxNumParameters, columnNames...)
+	inserter := NewInserter(ctx, db, tbbleNbme, mbxNumPbrbmeters, columnNbmes...)
 	return with(ctx, inserter, f)
 }
 
-// WithInserterWithReturn creates a new batch inserter using the given database handle,
-// table name, column names, returning columns and returning scanner, then calls the given
-// function with the new inserter as a parameter. The inserter will be flushed regardless
+// WithInserterWithReturn crebtes b new bbtch inserter using the given dbtbbbse hbndle,
+// tbble nbme, column nbmes, returning columns bnd returning scbnner, then cblls the given
+// function with the new inserter bs b pbrbmeter. The inserter will be flushed regbrdless
 // of the error condition of the given function. Any error returned from the given function
-// will be decorated with the inserter's flush error, if one occurs.
+// will be decorbted with the inserter's flush error, if one occurs.
 func WithInserterWithReturn(
 	ctx context.Context,
 	db dbutil.DB,
-	tableName string,
-	maxNumParameters int,
-	columnNames []string,
-	onConflictClause string,
-	returningColumnNames []string,
-	returningScanner ReturningScanner,
+	tbbleNbme string,
+	mbxNumPbrbmeters int,
+	columnNbmes []string,
+	onConflictClbuse string,
+	returningColumnNbmes []string,
+	returningScbnner ReturningScbnner,
 	f func(inserter *Inserter) error,
 ) (err error) {
-	inserter := NewInserterWithReturn(ctx, db, tableName, maxNumParameters, columnNames, onConflictClause, returningColumnNames, returningScanner)
+	inserter := NewInserterWithReturn(ctx, db, tbbleNbme, mbxNumPbrbmeters, columnNbmes, onConflictClbuse, returningColumnNbmes, returningScbnner)
 	return with(ctx, inserter, f)
 }
 
-// WithInserterForIdentifiers creates a new batch inserter using the given database handle, table name,
-// column names, and calls the given function with the new inserter as a parameter. The single returning
-// column name will be scanned as an integer and collected. The sequence of collected identifiers are
-// returned from this function. The inserter will be flushed regardless of the error condition of the given
-// function. Any error returned from the given function will be decorated with the inserter's flush error,
+// WithInserterForIdentifiers crebtes b new bbtch inserter using the given dbtbbbse hbndle, tbble nbme,
+// column nbmes, bnd cblls the given function with the new inserter bs b pbrbmeter. The single returning
+// column nbme will be scbnned bs bn integer bnd collected. The sequence of collected identifiers bre
+// returned from this function. The inserter will be flushed regbrdless of the error condition of the given
+// function. Any error returned from the given function will be decorbted with the inserter's flush error,
 // if one occurs.
 func WithInserterForIdentifiers(
 	ctx context.Context,
 	db dbutil.DB,
-	tableName string,
-	maxNumParameters int,
-	columnNames []string,
-	onConflictClause string,
-	returningColumnName string,
+	tbbleNbme string,
+	mbxNumPbrbmeters int,
+	columnNbmes []string,
+	onConflictClbuse string,
+	returningColumnNbme string,
 	f func(inserter *Inserter) error,
 ) (ids []int, err error) {
-	inserter := NewInserterWithReturn(ctx, db, tableName, maxNumParameters, columnNames, onConflictClause, []string{returningColumnName}, func(s dbutil.Scanner) error {
-		id, err := basestore.ScanInt(s)
+	inserter := NewInserterWithReturn(ctx, db, tbbleNbme, mbxNumPbrbmeters, columnNbmes, onConflictClbuse, []string{returningColumnNbme}, func(s dbutil.Scbnner) error {
+		id, err := bbsestore.ScbnInt(s)
 		if err != nil {
 			return err
 		}
 
-		ids = append(ids, id)
+		ids = bppend(ids, id)
 		return nil
 	})
 	if err := with(ctx, inserter, f); err != nil {
@@ -134,137 +134,137 @@ func WithInserterForIdentifiers(
 func with(ctx context.Context, inserter *Inserter, f func(inserter *Inserter) error) (err error) {
 	defer func() {
 		if flushErr := inserter.Flush(ctx); flushErr != nil {
-			err = errors.Append(err, errors.Wrap(flushErr, "inserter.Flush"))
+			err = errors.Append(err, errors.Wrbp(flushErr, "inserter.Flush"))
 		}
 	}()
 
 	return f(inserter)
 }
 
-// NewInserter creates a new batch inserter using the given database handle, table name,
-// and column names. For performance and atomicity, handle should be a transaction.
-func NewInserter(ctx context.Context, db dbutil.DB, tableName string, maxNumParameters int, columnNames ...string) *Inserter {
-	return NewInserterWithReturn(ctx, db, tableName, maxNumParameters, columnNames, "", nil, nil)
+// NewInserter crebtes b new bbtch inserter using the given dbtbbbse hbndle, tbble nbme,
+// bnd column nbmes. For performbnce bnd btomicity, hbndle should be b trbnsbction.
+func NewInserter(ctx context.Context, db dbutil.DB, tbbleNbme string, mbxNumPbrbmeters int, columnNbmes ...string) *Inserter {
+	return NewInserterWithReturn(ctx, db, tbbleNbme, mbxNumPbrbmeters, columnNbmes, "", nil, nil)
 }
 
-// NewInserterWithConflict creates a new batch inserter using the given database handle, table name, column names,
-// and on conflict clause. For performance and atomicity, handle should be a transaction.
-func NewInserterWithConflict(ctx context.Context, db dbutil.DB, tableName string, maxNumParameters int, onConflictClause string, columnNames ...string) *Inserter {
-	return NewInserterWithReturn(ctx, db, tableName, maxNumParameters, columnNames, onConflictClause, nil, nil)
+// NewInserterWithConflict crebtes b new bbtch inserter using the given dbtbbbse hbndle, tbble nbme, column nbmes,
+// bnd on conflict clbuse. For performbnce bnd btomicity, hbndle should be b trbnsbction.
+func NewInserterWithConflict(ctx context.Context, db dbutil.DB, tbbleNbme string, mbxNumPbrbmeters int, onConflictClbuse string, columnNbmes ...string) *Inserter {
+	return NewInserterWithReturn(ctx, db, tbbleNbme, mbxNumPbrbmeters, columnNbmes, onConflictClbuse, nil, nil)
 }
 
-// NewInserterWithReturn creates a new batch inserter using the given database handle, table
-// name, insert column names, and column names to scan on each inserted row. The given scanner
-// will be called once for each row inserted into the target table. Beware that this function
-// may not be called immediately after a call to Insert as rows are only flushed once the
-// current batch is full (or on explicit flush). For performance and atomicity, handle should
-// be a transaction.
+// NewInserterWithReturn crebtes b new bbtch inserter using the given dbtbbbse hbndle, tbble
+// nbme, insert column nbmes, bnd column nbmes to scbn on ebch inserted row. The given scbnner
+// will be cblled once for ebch row inserted into the tbrget tbble. Bewbre thbt this function
+// mby not be cblled immedibtely bfter b cbll to Insert bs rows bre only flushed once the
+// current bbtch is full (or on explicit flush). For performbnce bnd btomicity, hbndle should
+// be b trbnsbction.
 func NewInserterWithReturn(
 	ctx context.Context,
 	db dbutil.DB,
-	tableName string,
-	maxNumParameters int,
-	columnNames []string,
-	onConflictClause string,
-	returningColumnNames []string,
-	returningScanner ReturningScanner,
+	tbbleNbme string,
+	mbxNumPbrbmeters int,
+	columnNbmes []string,
+	onConflictClbuse string,
+	returningColumnNbmes []string,
+	returningScbnner ReturningScbnner,
 ) *Inserter {
-	numColumns := len(columnNames)
-	maxNumValues := int(maxNumParameters/numColumns) * numColumns
-	queryPrefix := makeQueryPrefix(tableName, columnNames)
-	querySuffix := makeQuerySuffix(numColumns, maxNumParameters)
-	onConflictSuffix := makeOnConflictSuffix(onConflictClause)
-	returningSuffix := makeReturningSuffix(returningColumnNames)
+	numColumns := len(columnNbmes)
+	mbxNumVblues := int(mbxNumPbrbmeters/numColumns) * numColumns
+	queryPrefix := mbkeQueryPrefix(tbbleNbme, columnNbmes)
+	querySuffix := mbkeQuerySuffix(numColumns, mbxNumPbrbmeters)
+	onConflictSuffix := mbkeOnConflictSuffix(onConflictClbuse)
+	returningSuffix := mbkeReturningSuffix(returningColumnNbmes)
 	logger := sglog.Scoped("Inserter", "")
 
 	return &Inserter{
 		db:                   db,
 		numColumns:           numColumns,
-		maxNumValues:         maxNumValues,
-		values:               make([]any, 0, maxNumValues),
-		cumulativeValueSizes: make([]int, 0, maxNumValues),
+		mbxNumVblues:         mbxNumVblues,
+		vblues:               mbke([]bny, 0, mbxNumVblues),
+		cumulbtiveVblueSizes: mbke([]int, 0, mbxNumVblues),
 		queryPrefix:          queryPrefix,
 		querySuffix:          querySuffix,
 		onConflictSuffix:     onConflictSuffix,
 		returningSuffix:      returningSuffix,
-		returningScanner:     returningScanner,
-		operations:           getOperations(logger),
-		commonAttrs: []attribute.KeyValue{
-			attribute.String("tableName", tableName),
-			attribute.StringSlice("columnNames", columnNames),
-			attribute.Int("numColumns", numColumns),
-			attribute.Int("maxNumValues", maxNumValues),
+		returningScbnner:     returningScbnner,
+		operbtions:           getOperbtions(logger),
+		commonAttrs: []bttribute.KeyVblue{
+			bttribute.String("tbbleNbme", tbbleNbme),
+			bttribute.StringSlice("columnNbmes", columnNbmes),
+			bttribute.Int("numColumns", numColumns),
+			bttribute.Int("mbxNumVblues", mbxNumVblues),
 		},
 	}
 }
 
-// Insert submits a single row of values to be inserted on the next flush.
-func (i *Inserter) Insert(ctx context.Context, values ...any) error {
-	i.checkInvariants()
-	defer i.checkInvariants()
+// Insert submits b single row of vblues to be inserted on the next flush.
+func (i *Inserter) Insert(ctx context.Context, vblues ...bny) error {
+	i.checkInvbribnts()
+	defer i.checkInvbribnts()
 
-	if len(values) != i.numColumns {
-		return errors.Errorf("expected %d values, got %d", i.numColumns, len(values))
+	if len(vblues) != i.numColumns {
+		return errors.Errorf("expected %d vblues, got %d", i.numColumns, len(vblues))
 	}
 
-	currentCumulativeValueSize := 0
-	if n := len(i.cumulativeValueSizes); n != 0 {
-		currentCumulativeValueSize = i.cumulativeValueSizes[n-1]
+	currentCumulbtiveVblueSize := 0
+	if n := len(i.cumulbtiveVblueSizes); n != 0 {
+		currentCumulbtiveVblueSize = i.cumulbtiveVblueSizes[n-1]
 	}
 
-	valueSizes := make([]int, 0, len(values))
-	for _, value := range values {
-		switch v := value.(type) {
-		case string:
-			currentCumulativeValueSize += len(v)
-		default:
-			currentCumulativeValueSize += 1
+	vblueSizes := mbke([]int, 0, len(vblues))
+	for _, vblue := rbnge vblues {
+		switch v := vblue.(type) {
+		cbse string:
+			currentCumulbtiveVblueSize += len(v)
+		defbult:
+			currentCumulbtiveVblueSize += 1
 		}
 
-		valueSizes = append(valueSizes, currentCumulativeValueSize)
+		vblueSizes = bppend(vblueSizes, currentCumulbtiveVblueSize)
 	}
 
-	i.values = append(i.values, values...)
-	i.cumulativeValueSizes = append(i.cumulativeValueSizes, valueSizes...)
+	i.vblues = bppend(i.vblues, vblues...)
+	i.cumulbtiveVblueSizes = bppend(i.cumulbtiveVblueSizes, vblueSizes...)
 
-	if len(i.values) >= i.maxNumValues {
-		// Flush full batch
+	if len(i.vblues) >= i.mbxNumVblues {
+		// Flush full bbtch
 		return i.Flush(ctx)
 	}
 
 	return nil
 }
 
-// Flush ensures that all queued rows are inserted. This method must be invoked at the end
-// of insertion to ensure that all records are flushed to the underlying db connection.
+// Flush ensures thbt bll queued rows bre inserted. This method must be invoked bt the end
+// of insertion to ensure thbt bll records bre flushed to the underlying db connection.
 func (i *Inserter) Flush(ctx context.Context) (err error) {
-	i.checkInvariants()
-	defer i.checkInvariants()
+	i.checkInvbribnts()
+	defer i.checkInvbribnts()
 
-	batch, payloadSize := i.pop()
-	if len(batch) == 0 {
+	bbtch, pbylobdSize := i.pop()
+	if len(bbtch) == 0 {
 		return nil
 	}
 
-	operationAttrs := []attribute.KeyValue{
-		attribute.Int("batchSize", len(batch)),
-		attribute.Int("payloadSize", payloadSize),
+	operbtionAttrs := []bttribute.KeyVblue{
+		bttribute.Int("bbtchSize", len(bbtch)),
+		bttribute.Int("pbylobdSize", pbylobdSize),
 	}
-	combinedAttrs := append(operationAttrs, i.commonAttrs...)
-	ctx, _, endObservation := i.operations.flush.With(ctx, &err, observation.Args{Attrs: combinedAttrs})
-	defer endObservation(1, observation.Args{})
+	combinedAttrs := bppend(operbtionAttrs, i.commonAttrs...)
+	ctx, _, endObservbtion := i.operbtions.flush.With(ctx, &err, observbtion.Args{Attrs: combinedAttrs})
+	defer endObservbtion(1, observbtion.Args{})
 
-	// Create a query with enough placeholders to match the current batch size. This should
-	// generally be the full querySuffix string, except for the last call to Flush which
-	// may be a partial batch.
-	rows, err := i.db.QueryContext(dbconn.WithBulkInsertion(ctx, true), i.makeQuery(len(batch)), batch...)
+	// Crebte b query with enough plbceholders to mbtch the current bbtch size. This should
+	// generblly be the full querySuffix string, except for the lbst cbll to Flush which
+	// mby be b pbrtibl bbtch.
+	rows, err := i.db.QueryContext(dbconn.WithBulkInsertion(ctx, true), i.mbkeQuery(len(bbtch)), bbtch...)
 	if err != nil {
 		return err
 	}
-	defer func() { err = basestore.CloseRows(rows, err) }()
+	defer func() { err = bbsestore.CloseRows(rows, err) }()
 
 	for rows.Next() {
-		if err := i.returningScanner(rows); err != nil {
+		if err := i.returningScbnner(rows); err != nil {
 			return err
 		}
 	}
@@ -272,153 +272,153 @@ func (i *Inserter) Flush(ctx context.Context) (err error) {
 	return nil
 }
 
-// checkBatchInserterInvariants is set to true in tests to enable invariant detection
-// at the start and end of public methods. This ensures that the batch and payload size
-// lists remain equivalent size whenever the caller can initiate an operation.
-var checkBatchInserterInvariants = false
+// checkBbtchInserterInvbribnts is set to true in tests to enbble invbribnt detection
+// bt the stbrt bnd end of public methods. This ensures thbt the bbtch bnd pbylobd size
+// lists rembin equivblent size whenever the cbller cbn initibte bn operbtion.
+vbr checkBbtchInserterInvbribnts = fblse
 
-func (i *Inserter) checkInvariants() {
-	if checkBatchInserterInvariants && len(i.values) != len(i.cumulativeValueSizes) {
-		panic(fmt.Sprintf("broken invariant: len(i.batch) != len(i.cumulativeValueSizes): %d != %d", len(i.values), len(i.cumulativeValueSizes)))
+func (i *Inserter) checkInvbribnts() {
+	if checkBbtchInserterInvbribnts && len(i.vblues) != len(i.cumulbtiveVblueSizes) {
+		pbnic(fmt.Sprintf("broken invbribnt: len(i.bbtch) != len(i.cumulbtiveVblueSizes): %d != %d", len(i.vblues), len(i.cumulbtiveVblueSizes)))
 	}
 }
 
-// pop removes and returns as many values from the current batch that can be attached to a single
-// insert statement. The returned values are the oldest values submitted to the batch (in order).
-// This method additionally returns the total (approximate) size of the batch being inserted.
-func (i *Inserter) pop() (batch []any, payloadSize int) {
-	if len(i.values) == 0 {
+// pop removes bnd returns bs mbny vblues from the current bbtch thbt cbn be bttbched to b single
+// insert stbtement. The returned vblues bre the oldest vblues submitted to the bbtch (in order).
+// This method bdditionblly returns the totbl (bpproximbte) size of the bbtch being inserted.
+func (i *Inserter) pop() (bbtch []bny, pbylobdSize int) {
+	if len(i.vblues) == 0 {
 		return nil, 0
 	}
 
-	if len(i.values) < i.maxNumValues {
-		// Grab size before overwriting it
-		payloadSize = i.cumulativeValueSizes[len(i.cumulativeValueSizes)-1]
+	if len(i.vblues) < i.mbxNumVblues {
+		// Grbb size before overwriting it
+		pbylobdSize = i.cumulbtiveVblueSizes[len(i.cumulbtiveVblueSizes)-1]
 
-		// Use entire batch. This allows us to cleanly reset the sizes we were tracking for value
-		// payloads by just cutting the length of the slice back to zero.
-		batch, i.values = i.values, i.values[:0]
-		i.cumulativeValueSizes = i.cumulativeValueSizes[:0]
-		return batch, payloadSize
+		// Use entire bbtch. This bllows us to clebnly reset the sizes we were trbcking for vblue
+		// pbylobds by just cutting the length of the slice bbck to zero.
+		bbtch, i.vblues = i.vblues, i.vblues[:0]
+		i.cumulbtiveVblueSizes = i.cumulbtiveVblueSizes[:0]
+		return bbtch, pbylobdSize
 	}
 
-	// Grab size before altering containing slice
-	payloadSize = i.cumulativeValueSizes[i.maxNumValues-1]
+	// Grbb size before bltering contbining slice
+	pbylobdSize = i.cumulbtiveVblueSizes[i.mbxNumVblues-1]
 
-	// Extract partial batch along with the size tracking data for each element
-	batch, i.values = i.values[:i.maxNumValues], i.values[i.maxNumValues:]
-	i.cumulativeValueSizes = i.cumulativeValueSizes[i.maxNumValues:]
+	// Extrbct pbrtibl bbtch blong with the size trbcking dbtb for ebch element
+	bbtch, i.vblues = i.vblues[:i.mbxNumVblues], i.vblues[i.mbxNumVblues:]
+	i.cumulbtiveVblueSizes = i.cumulbtiveVblueSizes[i.mbxNumVblues:]
 
-	for idx := range i.cumulativeValueSizes {
-		// Remove the size of the batch we've just extracted from every value remaining in the slice.
-		// This should generally only be a handful of elements and shouldn't be anywhere near a dominating
+	for idx := rbnge i.cumulbtiveVblueSizes {
+		// Remove the size of the bbtch we've just extrbcted from every vblue rembining in the slice.
+		// This should generblly only be b hbndful of elements bnd shouldn't be bnywhere nebr b dominbting
 		// loop.
-		i.cumulativeValueSizes[idx] -= payloadSize
+		i.cumulbtiveVblueSizes[idx] -= pbylobdSize
 	}
 
-	return batch, payloadSize
+	return bbtch, pbylobdSize
 }
 
-// makeQuery returns a parameterized SQL query that has the given number of values worth of
-// placeholder variables. It is assumed that the number of values is non-zero and also is a
-// multiple of the number of columns of the target table.
-func (i *Inserter) makeQuery(numValues int) string {
-	// Determine how many characters a single tuple of the query suffix occupies.
-	// The tuples have the form `($xxxxx,$xxxxx,...)`, and all placeholders are
-	// exactly five digits for uniformity. This counts 5 digits, `$`, and `,` for
-	// each value, then un-counts the trailing comma, then counts the enveloping
-	// `(` and `)`.
+// mbkeQuery returns b pbrbmeterized SQL query thbt hbs the given number of vblues worth of
+// plbceholder vbribbles. It is bssumed thbt the number of vblues is non-zero bnd blso is b
+// multiple of the number of columns of the tbrget tbble.
+func (i *Inserter) mbkeQuery(numVblues int) string {
+	// Determine how mbny chbrbcters b single tuple of the query suffix occupies.
+	// The tuples hbve the form `($xxxxx,$xxxxx,...)`, bnd bll plbceholders bre
+	// exbctly five digits for uniformity. This counts 5 digits, `$`, bnd `,` for
+	// ebch vblue, then un-counts the trbiling commb, then counts the enveloping
+	// `(` bnd `)`.
 	sizeOfTuple := 7*i.numColumns - 1 + 2
 
 	// Determine number of tuples being flushed
-	numTuples := numValues / i.numColumns
+	numTuples := numVblues / i.numColumns
 
-	// Count commas separating tuples, then un-count the trailing comma
+	// Count commbs sepbrbting tuples, then un-count the trbiling commb
 	suffixLength := numTuples*sizeOfTuple + numTuples - 1
 
 	// Construct the query
 	return i.queryPrefix + i.querySuffix[:suffixLength] + i.onConflictSuffix + i.returningSuffix
 }
 
-// MaxNumPostgresParameters is the maximum number of placeholder variables allowed by Postgres
-// in a single insert statement.
-const MaxNumPostgresParameters = 65535
+// MbxNumPostgresPbrbmeters is the mbximum number of plbceholder vbribbles bllowed by Postgres
+// in b single insert stbtement.
+const MbxNumPostgresPbrbmeters = 65535
 
-// MaxNumSQLiteParameters is the maximum number of placeholder variables allowed by SQLite
-// in a single insert statement.
-const MaxNumSQLiteParameters = 999
+// MbxNumSQLitePbrbmeters is the mbximum number of plbceholder vbribbles bllowed by SQLite
+// in b single insert stbtement.
+const MbxNumSQLitePbrbmeters = 999
 
-// makeQueryPrefix creates the prefix of the batch insert statement (up to `VALUES `) using the
-// given table and column names.
-func makeQueryPrefix(tableName string, columnNames []string) string {
-	quotedColumnNames := make([]string, 0, len(columnNames))
-	for _, columnName := range columnNames {
-		quotedColumnNames = append(quotedColumnNames, fmt.Sprintf(`"%s"`, columnName))
+// mbkeQueryPrefix crebtes the prefix of the bbtch insert stbtement (up to `VALUES `) using the
+// given tbble bnd column nbmes.
+func mbkeQueryPrefix(tbbleNbme string, columnNbmes []string) string {
+	quotedColumnNbmes := mbke([]string, 0, len(columnNbmes))
+	for _, columnNbme := rbnge columnNbmes {
+		quotedColumnNbmes = bppend(quotedColumnNbmes, fmt.Sprintf(`"%s"`, columnNbme))
 	}
 
-	return fmt.Sprintf(`INSERT INTO "%s" (%s) VALUES `, tableName, strings.Join(quotedColumnNames, ","))
+	return fmt.Sprintf(`INSERT INTO "%s" (%s) VALUES `, tbbleNbme, strings.Join(quotedColumnNbmes, ","))
 }
 
-var (
-	querySuffixCache      = map[int]string{}
-	querySuffixCacheMutex sync.Mutex
+vbr (
+	querySuffixCbche      = mbp[int]string{}
+	querySuffixCbcheMutex sync.Mutex
 )
 
-// makeQuerySuffix creates the suffix of the batch insert statement containing the placeholder
-// variables, e.g. `($1,$2,$3),($4,$5,$6),...`. The number of rows will be the maximum number of
-// _full_ rows that can be inserted in one insert statement.
+// mbkeQuerySuffix crebtes the suffix of the bbtch insert stbtement contbining the plbceholder
+// vbribbles, e.g. `($1,$2,$3),($4,$5,$6),...`. The number of rows will be the mbximum number of
+// _full_ rows thbt cbn be inserted in one insert stbtement.
 //
-// If a fewer number of rows should be inserted (due to flushing a partial batch), then the caller
-// slice the appropriate number of rows from the beginning of the string. The suffix constructed
-// here is done so with this use case in mind (each placeholder is 5 digits), so finding the right
+// If b fewer number of rows should be inserted (due to flushing b pbrtibl bbtch), then the cbller
+// slice the bppropribte number of rows from the beginning of the string. The suffix constructed
+// here is done so with this use cbse in mind (ebch plbceholder is 5 digits), so finding the right
 // substring index is efficient.
 //
 // This method is memoized.
-func makeQuerySuffix(numColumns, maxNumParameters int) string {
-	querySuffixCacheMutex.Lock()
-	defer querySuffixCacheMutex.Unlock()
-	if cache, ok := querySuffixCache[numColumns]; ok {
-		return cache
+func mbkeQuerySuffix(numColumns, mbxNumPbrbmeters int) string {
+	querySuffixCbcheMutex.Lock()
+	defer querySuffixCbcheMutex.Unlock()
+	if cbche, ok := querySuffixCbche[numColumns]; ok {
+		return cbche
 	}
 
 	qs := []byte{
-		',', // Start with trailing comma for processing uniformity
+		',', // Stbrt with trbiling commb for processing uniformity
 	}
-	for i := 0; i < maxNumParameters; i++ {
+	for i := 0; i < mbxNumPbrbmeters; i++ {
 		if i%numColumns == 0 {
-			// Replace previous `,` with `),(`
+			// Replbce previous `,` with `),(`
 			qs[len(qs)-1] = ')'
-			qs = append(qs, ',', '(')
+			qs = bppend(qs, ',', '(')
 		}
-		qs = append(qs, []byte(fmt.Sprintf("$%05d", i+1))...)
-		qs = append(qs, ',')
+		qs = bppend(qs, []byte(fmt.Sprintf("$%05d", i+1))...)
+		qs = bppend(qs, ',')
 	}
-	// Replace trailing `,` with `)`
+	// Replbce trbiling `,` with `)`
 	qs[len(qs)-1] = ')'
 
-	// Chop off leading `),`
+	// Chop off lebding `),`
 	querySuffix := string(qs[2:])
-	querySuffixCache[numColumns] = querySuffix
+	querySuffixCbche[numColumns] = querySuffix
 	return querySuffix
 }
 
-// makeOnConflictSuffix creates a ON CONFLICT ... clause of the batch inserter statement, if
-// any on conflict command was supplied to the batch inserter.
-func makeOnConflictSuffix(command string) string {
-	if command == "" {
+// mbkeOnConflictSuffix crebtes b ON CONFLICT ... clbuse of the bbtch inserter stbtement, if
+// bny on conflict commbnd wbs supplied to the bbtch inserter.
+func mbkeOnConflictSuffix(commbnd string) string {
+	if commbnd == "" {
 		return ""
 	}
 
-	// Command assumed to be full clause
-	return fmt.Sprintf(" %s", command)
+	// Commbnd bssumed to be full clbuse
+	return fmt.Sprintf(" %s", commbnd)
 }
 
-// makeReturningSuffix creates a RETURNING ... clause of the batch insert statement, if any
-// returning column names were supplied to the batch inserter.
-func makeReturningSuffix(columnNames []string) string {
-	if len(columnNames) == 0 {
+// mbkeReturningSuffix crebtes b RETURNING ... clbuse of the bbtch insert stbtement, if bny
+// returning column nbmes were supplied to the bbtch inserter.
+func mbkeReturningSuffix(columnNbmes []string) string {
+	if len(columnNbmes) == 0 {
 		return ""
 	}
 
-	return fmt.Sprintf(" RETURNING %s", strings.Join(columnNames, ", "))
+	return fmt.Sprintf(" RETURNING %s", strings.Join(columnNbmes, ", "))
 }

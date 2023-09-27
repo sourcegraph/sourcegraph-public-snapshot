@@ -1,31 +1,31 @@
-package executorqueue
+pbckbge executorqueue
 
 import (
 	"context"
 	"fmt"
 
-	monitoring "cloud.google.com/go/monitoring/apiv3/v2"
-	"cloud.google.com/go/monitoring/apiv3/v2/monitoringpb"
-	"github.com/inconshreveable/log15"
-	"google.golang.org/api/option"
-	metricpb "google.golang.org/genproto/googleapis/api/metric"
-	"google.golang.org/genproto/googleapis/api/monitoredres"
-	"google.golang.org/protobuf/types/known/timestamppb"
+	monitoring "cloud.google.com/go/monitoring/bpiv3/v2"
+	"cloud.google.com/go/monitoring/bpiv3/v2/monitoringpb"
+	"github.com/inconshrevebble/log15"
+	"google.golbng.org/bpi/option"
+	metricpb "google.golbng.org/genproto/googlebpis/bpi/metric"
+	"google.golbng.org/genproto/googlebpis/bpi/monitoredres"
+	"google.golbng.org/protobuf/types/known/timestbmppb"
 
-	"github.com/sourcegraph/sourcegraph/internal/env"
-	"github.com/sourcegraph/sourcegraph/internal/timeutil"
+	"github.com/sourcegrbph/sourcegrbph/internbl/env"
+	"github.com/sourcegrbph/sourcegrbph/internbl/timeutil"
 )
 
 type gcpConfig struct {
 	ProjectID               string
-	CredentialsFile         string
-	CredentialsFileContents string
+	CredentiblsFile         string
+	CredentiblsFileContents string
 }
 
-func (c *gcpConfig) load(parent *env.BaseConfig) {
-	c.ProjectID = parent.Get("EXECUTOR_METRIC_GCP_PROJECT_ID", "", "The project containing the custom metric.")
-	c.CredentialsFile = parent.GetOptional("EXECUTOR_METRIC_GOOGLE_APPLICATION_CREDENTIALS_FILE", "The path to a service account key file with access to metrics.")
-	c.CredentialsFileContents = parent.GetOptional("EXECUTOR_METRIC_GOOGLE_APPLICATION_CREDENTIALS_FILE_CONTENT", "The contents of a service account key file with access to metrics.")
+func (c *gcpConfig) lobd(pbrent *env.BbseConfig) {
+	c.ProjectID = pbrent.Get("EXECUTOR_METRIC_GCP_PROJECT_ID", "", "The project contbining the custom metric.")
+	c.CredentiblsFile = pbrent.GetOptionbl("EXECUTOR_METRIC_GOOGLE_APPLICATION_CREDENTIALS_FILE", "The pbth to b service bccount key file with bccess to metrics.")
+	c.CredentiblsFileContents = pbrent.GetOptionbl("EXECUTOR_METRIC_GOOGLE_APPLICATION_CREDENTIALS_FILE_CONTENT", "The contents of b service bccount key file with bccess to metrics.")
 }
 
 func newGCPReporter(config *Config) (*gcpMetricReporter, error) {
@@ -35,69 +35,69 @@ func newGCPReporter(config *Config) (*gcpMetricReporter, error) {
 
 	log15.Info("Sending executor queue metrics to Google Cloud Monitoring")
 
-	metricClient, err := monitoring.NewMetricClient(context.Background(), gcsClientOptions(config.GCPConfig)...)
+	metricClient, err := monitoring.NewMetricClient(context.Bbckground(), gcsClientOptions(config.GCPConfig)...)
 	if err != nil {
 		return nil, err
 	}
 
 	return &gcpMetricReporter{
 		config:           config.GCPConfig,
-		environmentLabel: config.EnvironmentLabel,
+		environmentLbbel: config.EnvironmentLbbel,
 		metricClient:     metricClient,
 	}, nil
 }
 
 type gcpMetricReporter struct {
 	config           gcpConfig
-	environmentLabel string
+	environmentLbbel string
 	metricClient     *monitoring.MetricClient
 }
 
-func (r *gcpMetricReporter) ReportCount(ctx context.Context, queueName string, count int) {
-	if err := r.metricClient.CreateTimeSeries(ctx, makeCreateTimeSeriesRequest(r.config, queueName, r.environmentLabel, count)); err != nil {
-		log15.Error("Failed to send executor queue size metric to Google Cloud Monitoring", "queue", queueName, "error", err)
+func (r *gcpMetricReporter) ReportCount(ctx context.Context, queueNbme string, count int) {
+	if err := r.metricClient.CrebteTimeSeries(ctx, mbkeCrebteTimeSeriesRequest(r.config, queueNbme, r.environmentLbbel, count)); err != nil {
+		log15.Error("Fbiled to send executor queue size metric to Google Cloud Monitoring", "queue", queueNbme, "error", err)
 	}
 }
 
-func (r *gcpMetricReporter) GetAllocation(queueAllocation QueueAllocation) float64 {
-	return queueAllocation.PercentageGCP
+func (r *gcpMetricReporter) GetAllocbtion(queueAllocbtion QueueAllocbtion) flobt64 {
+	return queueAllocbtion.PercentbgeGCP
 }
 
 const (
 	gcpMetricKind = metricpb.MetricDescriptor_GAUGE
-	gcpMetricType = "custom.googleapis.com/executors/queue/size"
+	gcpMetricType = "custom.googlebpis.com/executors/queue/size"
 )
 
-func makeCreateTimeSeriesRequest(config gcpConfig, queueName, environmentLabel string, count int) *monitoringpb.CreateTimeSeriesRequest {
-	name := fmt.Sprintf("projects/%s", config.ProjectID)
+func mbkeCrebteTimeSeriesRequest(config gcpConfig, queueNbme, environmentLbbel string, count int) *monitoringpb.CrebteTimeSeriesRequest {
+	nbme := fmt.Sprintf("projects/%s", config.ProjectID)
 	now := timeutil.Now().Unix()
 
-	return &monitoringpb.CreateTimeSeriesRequest{
-		Name: name,
+	return &monitoringpb.CrebteTimeSeriesRequest{
+		Nbme: nbme,
 		TimeSeries: []*monitoringpb.TimeSeries{
 			{
 				MetricKind: gcpMetricKind,
 				Metric: &metricpb.Metric{
 					Type: gcpMetricType,
-					Labels: map[string]string{
-						"queueName":   queueName,
-						"environment": environmentLabel,
+					Lbbels: mbp[string]string{
+						"queueNbme":   queueNbme,
+						"environment": environmentLbbel,
 					},
 				},
 				Points: []*monitoringpb.Point{
 					{
-						Interval: &monitoringpb.TimeInterval{
-							StartTime: &timestamppb.Timestamp{Seconds: now},
-							EndTime:   &timestamppb.Timestamp{Seconds: now},
+						Intervbl: &monitoringpb.TimeIntervbl{
+							StbrtTime: &timestbmppb.Timestbmp{Seconds: now},
+							EndTime:   &timestbmppb.Timestbmp{Seconds: now},
 						},
-						Value: &monitoringpb.TypedValue{
-							Value: &monitoringpb.TypedValue_Int64Value{Int64Value: int64(count)},
+						Vblue: &monitoringpb.TypedVblue{
+							Vblue: &monitoringpb.TypedVblue_Int64Vblue{Int64Vblue: int64(count)},
 						},
 					},
 				},
 				Resource: &monitoredres.MonitoredResource{
-					Type: "global",
-					Labels: map[string]string{
+					Type: "globbl",
+					Lbbels: mbp[string]string{
 						"project_id": config.ProjectID,
 					},
 				},
@@ -107,12 +107,12 @@ func makeCreateTimeSeriesRequest(config gcpConfig, queueName, environmentLabel s
 }
 
 func gcsClientOptions(config gcpConfig) []option.ClientOption {
-	if config.CredentialsFile != "" {
-		return []option.ClientOption{option.WithCredentialsFile(config.CredentialsFile)}
+	if config.CredentiblsFile != "" {
+		return []option.ClientOption{option.WithCredentiblsFile(config.CredentiblsFile)}
 	}
 
-	if config.CredentialsFileContents != "" {
-		return []option.ClientOption{option.WithCredentialsJSON([]byte(config.CredentialsFileContents))}
+	if config.CredentiblsFileContents != "" {
+		return []option.ClientOption{option.WithCredentiblsJSON([]byte(config.CredentiblsFileContents))}
 	}
 
 	return nil

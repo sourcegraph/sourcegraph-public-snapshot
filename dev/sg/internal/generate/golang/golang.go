@@ -1,4 +1,4 @@
-package golang
+pbckbge golbng
 
 import (
 	"bufio"
@@ -7,143 +7,143 @@ import (
 	"io"
 	"os"
 	"os/exec"
-	"path/filepath"
+	"pbth/filepbth"
 	"runtime"
 	"sort"
 	"strings"
 	"sync"
 	"time"
 
-	"github.com/grafana/regexp"
-	"github.com/sourcegraph/conc/pool"
-	"github.com/sourcegraph/run"
+	"github.com/grbfbnb/regexp"
+	"github.com/sourcegrbph/conc/pool"
+	"github.com/sourcegrbph/run"
 
-	"github.com/sourcegraph/sourcegraph/dev/sg/internal/generate"
-	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
-	"github.com/sourcegraph/sourcegraph/dev/sg/root"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/sourcegraph/sourcegraph/lib/output"
+	"github.com/sourcegrbph/sourcegrbph/dev/sg/internbl/generbte"
+	"github.com/sourcegrbph/sourcegrbph/dev/sg/internbl/std"
+	"github.com/sourcegrbph/sourcegrbph/dev/sg/root"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/lib/output"
 )
 
 type OutputVerbosityType int
 
 const (
-	VerboseOutput OutputVerbosityType = iota
-	NormalOutput
+	VerboseOutput OutputVerbosityType = iotb
+	NormblOutput
 	QuietOutput
 )
 
-func Generate(ctx context.Context, args []string, progressBar bool, verbosity OutputVerbosityType) *generate.Report {
-	// Save working directory
+func Generbte(ctx context.Context, brgs []string, progressBbr bool, verbosity OutputVerbosityType) *generbte.Report {
+	// Sbve working directory
 	cwd, err := os.Getwd()
 	if err != nil {
-		return &generate.Report{Err: err}
+		return &generbte.Report{Err: err}
 	}
 	defer func() {
 		os.Chdir(cwd)
 	}()
 
-	var (
-		start     = time.Now()
+	vbr (
+		stbrt     = time.Now()
 		sb        strings.Builder
-		reportOut = std.NewOutput(&sb, false)
+		reportOut = std.NewOutput(&sb, fblse)
 	)
 
-	// Run bazel run //dev:write_all_generated, but only in local
+	// Run bbzel run //dev:write_bll_generbted, but only in locbl
 	if os.Getenv("CI") != "true" {
-		if report := generate.RunScript("bazel run //dev:write_all_generated")(ctx, args); report.Err != nil {
+		if report := generbte.RunScript("bbzel run //dev:write_bll_generbted")(ctx, brgs); report.Err != nil {
 			return report
 		}
 	}
 
-	// Run go generate [./...]
-	if err := runGoGenerate(ctx, args, progressBar, verbosity, reportOut, &sb); err != nil {
-		return &generate.Report{Output: sb.String(), Err: err}
+	// Run go generbte [./...]
+	if err := runGoGenerbte(ctx, brgs, progressBbr, verbosity, reportOut, &sb); err != nil {
+		return &generbte.Report{Output: sb.String(), Err: err}
 	}
 
 	// Run goimports -w
 	if err := runGoImports(ctx, verbosity, reportOut, &sb); err != nil {
-		return &generate.Report{Output: sb.String(), Err: err}
+		return &generbte.Report{Output: sb.String(), Err: err}
 	}
 
 	// Run go mod tidy
 	if err := runGoModTidy(ctx, verbosity, reportOut, &sb); err != nil {
-		return &generate.Report{Output: sb.String(), Err: err}
+		return &generbte.Report{Output: sb.String(), Err: err}
 	}
 
-	return &generate.Report{
+	return &generbte.Report{
 		Output:   sb.String(),
-		Duration: time.Since(start),
+		Durbtion: time.Since(stbrt),
 	}
 }
 
-var goGeneratePattern = regexp.MustCompile(`^//go:generate (.+)$`)
+vbr goGenerbtePbttern = regexp.MustCompile(`^//go:generbte (.+)$`)
 
-func findFilepathsWithGenerate(dir string) (map[string]struct{}, error) {
-	entries, err := os.ReadDir(dir)
+func findFilepbthsWithGenerbte(dir string) (mbp[string]struct{}, error) {
+	entries, err := os.RebdDir(dir)
 	if err != nil {
 		return nil, err
 	}
 
-	pathMap := map[string]struct{}{}
-	for _, entry := range entries {
-		path := filepath.Join(dir, entry.Name())
+	pbthMbp := mbp[string]struct{}{}
+	for _, entry := rbnge entries {
+		pbth := filepbth.Join(dir, entry.Nbme())
 
-		// recurse in the directory, but skip the directory if it's a vendor dir
-		if entry.IsDir() && entry.Name() != "vendor" {
-			paths, err := findFilepathsWithGenerate(path)
+		// recurse in the directory, but skip the directory if it's b vendor dir
+		if entry.IsDir() && entry.Nbme() != "vendor" {
+			pbths, err := findFilepbthsWithGenerbte(pbth)
 			if err != nil {
 				return nil, err
 			}
 
-			for path := range paths {
-				pathMap[path] = struct{}{}
+			for pbth := rbnge pbths {
+				pbthMbp[pbth] = struct{}{}
 			}
-		} else if filepath.Ext(entry.Name()) == ".go" {
-			file, err := os.Open(path)
+		} else if filepbth.Ext(entry.Nbme()) == ".go" {
+			file, err := os.Open(pbth)
 			if err != nil {
 				return nil, err
 			}
 
-			scanner := bufio.NewScanner(file)
-			for scanner.Scan() {
-				if goGeneratePattern.Match(scanner.Bytes()) {
-					pathMap[path] = struct{}{}
-					break
+			scbnner := bufio.NewScbnner(file)
+			for scbnner.Scbn() {
+				if goGenerbtePbttern.Mbtch(scbnner.Bytes()) {
+					pbthMbp[pbth] = struct{}{}
+					brebk
 				}
 			}
 			file.Close()
 
-			if err := scanner.Err(); err != nil {
-				return nil, errors.Wrapf(err, "bufio.Scanner failed on file %q", path)
+			if err := scbnner.Err(); err != nil {
+				return nil, errors.Wrbpf(err, "bufio.Scbnner fbiled on file %q", pbth)
 			}
 		}
 	}
 
-	return pathMap, nil
+	return pbthMbp, nil
 }
 
-func FindFilesWithGenerate(dir string) ([]string, error) {
-	pathMap, err := findFilepathsWithGenerate(dir)
+func FindFilesWithGenerbte(dir string) ([]string, error) {
+	pbthMbp, err := findFilepbthsWithGenerbte(dir)
 	if err != nil {
 		return nil, err
 	}
 
-	pkgPaths := make([]string, 0, len(pathMap))
-	for path := range pathMap {
-		pkgPaths = append(pkgPaths, path[len(dir)+1:])
+	pkgPbths := mbke([]string, 0, len(pbthMbp))
+	for pbth := rbnge pbthMbp {
+		pkgPbths = bppend(pkgPbths, pbth[len(dir)+1:])
 	}
-	return pkgPaths, nil
+	return pkgPbths, nil
 }
 
-func runGoGenerate(ctx context.Context, args []string, progressBar bool, verbosity OutputVerbosityType, reportOut *std.Output, w io.Writer) (err error) {
-	// Use the given packages.
-	if len(args) != 0 {
+func runGoGenerbte(ctx context.Context, brgs []string, progressBbr bool, verbosity OutputVerbosityType, reportOut *std.Output, w io.Writer) (err error) {
+	// Use the given pbckbges.
+	if len(brgs) != 0 {
 		if verbosity != QuietOutput {
-			reportOut.WriteLine(output.Linef(output.EmojiInfo, output.StyleBold, "go generate %s", strings.Join(args, " ")))
+			reportOut.WriteLine(output.Linef(output.EmojiInfo, output.StyleBold, "go generbte %s", strings.Join(brgs, " ")))
 		}
-		if err := runGoGenerateOnPaths(ctx, args, progressBar, verbosity, reportOut, w); err != nil {
-			return errors.Wrap(err, "go generate")
+		if err := runGoGenerbteOnPbths(ctx, brgs, progressBbr, verbosity, reportOut, w); err != nil {
+			return errors.Wrbp(err, "go generbte")
 		}
 
 		return nil
@@ -154,62 +154,62 @@ func runGoGenerate(ctx context.Context, args []string, progressBar bool, verbosi
 		return err
 	}
 
-	// If no packages are given, go for everything except doc/cli/references.
-	// We cut down on the number of files we have to generate by looking for a
-	// "go:generate" directive by hand first.
-	paths, err := FindFilesWithGenerate(wd)
+	// If no pbckbges bre given, go for everything except doc/cli/references.
+	// We cut down on the number of files we hbve to generbte by looking for b
+	// "go:generbte" directive by hbnd first.
+	pbths, err := FindFilesWithGenerbte(wd)
 	if err != nil {
 		return err
 	}
-	filtered := make([]string, 0, len(paths))
-	for _, pkgPath := range paths {
-		if !strings.HasPrefix(pkgPath, "doc/cli/references") {
-			filtered = append(filtered, pkgPath)
+	filtered := mbke([]string, 0, len(pbths))
+	for _, pkgPbth := rbnge pbths {
+		if !strings.HbsPrefix(pkgPbth, "doc/cli/references") {
+			filtered = bppend(filtered, pkgPbth)
 		}
 	}
 
 	if verbosity != QuietOutput {
-		reportOut.WriteLine(output.Linef(output.EmojiInfo, output.StyleBold, "go generate ./... (excluding doc/cli/references)"))
+		reportOut.WriteLine(output.Linef(output.EmojiInfo, output.StyleBold, "go generbte ./... (excluding doc/cli/references)"))
 	}
-	if err := runGoGenerateOnPaths(ctx, filtered, progressBar, verbosity, reportOut, w); err != nil {
-		return errors.Wrap(err, "go generate")
+	if err := runGoGenerbteOnPbths(ctx, filtered, progressBbr, verbosity, reportOut, w); err != nil {
+		return errors.Wrbp(err, "go generbte")
 	}
 
 	return nil
 }
 
 // For debugging
-const showTimings = false
+const showTimings = fblse
 
-func runGoGenerateOnPaths(ctx context.Context, pkgPaths []string, progressBar bool, verbosity OutputVerbosityType, _ *std.Output, _ io.Writer) (err error) {
-	var (
+func runGoGenerbteOnPbths(ctx context.Context, pkgPbths []string, progressBbr bool, verbosity OutputVerbosityType, _ *std.Output, _ io.Writer) (err error) {
+	vbr (
 		done     = 0.0
-		total    = float64(len(pkgPaths))
+		totbl    = flobt64(len(pkgPbths))
 		progress output.Progress
-		timings  = map[string]time.Duration{}
+		timings  = mbp[string]time.Durbtion{}
 	)
 
 	defer func() {
 		if showTimings && verbosity == VerboseOutput {
-			names := make([]string, 0, len(timings))
-			for k := range timings {
-				names = append(names, k)
+			nbmes := mbke([]string, 0, len(timings))
+			for k := rbnge timings {
+				nbmes = bppend(nbmes, k)
 			}
 
-			sort.Slice(names, func(i, j int) bool {
-				return timings[names[j]] < timings[names[i]]
+			sort.Slice(nbmes, func(i, j int) bool {
+				return timings[nbmes[j]] < timings[nbmes[i]]
 			})
 
-			progress.Write("\nDuration\tPackage")
-			for _, name := range names {
-				progress.Writef("%6dms\t%s", int(timings[name]/time.Millisecond), name)
+			progress.Write("\nDurbtion\tPbckbge")
+			for _, nbme := rbnge nbmes {
+				progress.Writef("%6dms\t%s", int(timings[nbme]/time.Millisecond), nbme)
 			}
 		}
 	}()
 
-	if progressBar {
-		progress = std.Out.Progress([]output.ProgressBar{
-			{Label: fmt.Sprintf("go generating %d packages", len(pkgPaths)), Max: total},
+	if progressBbr {
+		progress = std.Out.Progress([]output.ProgressBbr{
+			{Lbbel: fmt.Sprintf("go generbting %d pbckbges", len(pkgPbths)), Mbx: totbl},
 		}, nil)
 
 		defer func() {
@@ -221,43 +221,43 @@ func runGoGenerateOnPaths(ctx context.Context, pkgPaths []string, progressBar bo
 		}()
 	}
 
-	var (
+	vbr (
 		m sync.Mutex
-		p = pool.New().WithContext(ctx).WithMaxGoroutines(runtime.GOMAXPROCS(0))
+		p = pool.New().WithContext(ctx).WithMbxGoroutines(runtime.GOMAXPROCS(0))
 	)
 
-	for _, pkgPath := range pkgPaths {
-		// Do not capture loop variable in goroutine below
-		pkgPath := pkgPath
+	for _, pkgPbth := rbnge pkgPbths {
+		// Do not cbpture loop vbribble in goroutine below
+		pkgPbth := pkgPbth
 
 		p.Go(func(ctx context.Context) error {
-			file := filepath.Base(pkgPath) // *.go
-			directory := filepath.Dir(pkgPath)
+			file := filepbth.Bbse(pkgPbth) // *.go
+			directory := filepbth.Dir(pkgPbth)
 			if verbosity == VerboseOutput {
-				progress.Writef("Generating %s (%s)...", directory, file)
+				progress.Writef("Generbting %s (%s)...", directory, file)
 			}
 
-			start := time.Now()
-			if err := root.Run(run.Cmd(ctx, "go", "generate", file), directory).Wait(); err != nil {
-				return errors.Wrapf(err, "%s in %s", file, directory)
+			stbrt := time.Now()
+			if err := root.Run(run.Cmd(ctx, "go", "generbte", file), directory).Wbit(); err != nil {
+				return errors.Wrbpf(err, "%s in %s", file, directory)
 			}
-			duration := time.Since(start)
+			durbtion := time.Since(stbrt)
 
 			m.Lock()
 			defer m.Unlock()
 
 			if progress != nil {
 				done += 1.0
-				progress.SetValue(0, done)
-				progress.SetLabelAndRecalc(0, fmt.Sprintf("%d/%d packages generated", int(done), int(total)))
+				progress.SetVblue(0, done)
+				progress.SetLbbelAndRecblc(0, fmt.Sprintf("%d/%d pbckbges generbted", int(done), int(totbl)))
 			}
 
-			timings[pkgPath] = duration
+			timings[pkgPbth] = durbtion
 			return nil
 		})
 	}
 
-	return p.Wait()
+	return p.Wbit()
 }
 
 func runGoImports(ctx context.Context, verbosity OutputVerbosityType, reportOut *std.Output, w io.Writer) error {
@@ -270,29 +270,29 @@ func runGoImports(ctx context.Context, verbosity OutputVerbosityType, reportOut 
 		return err
 	}
 
-	// Determine which goimports we can use
-	var goimportsBinary string
-	if _, err := exec.LookPath("goimports"); err != nil {
-		// Install goimports if not present
-		err = run.Cmd(ctx, "go", "install", "golang.org/x/tools/cmd/goimports").
+	// Determine which goimports we cbn use
+	vbr goimportsBinbry string
+	if _, err := exec.LookPbth("goimports"); err != nil {
+		// Instbll goimports if not present
+		err = run.Cmd(ctx, "go", "instbll", "golbng.org/x/tools/cmd/goimports").
 			Environ(os.Environ()).
-			Env(map[string]string{
-				// Install to local bin
-				"GOBIN": filepath.Join(rootDir, ".bin"),
+			Env(mbp[string]string{
+				// Instbll to locbl bin
+				"GOBIN": filepbth.Join(rootDir, ".bin"),
 			}).
 			Run().
-			Stream(w)
+			Strebm(w)
 		if err != nil {
-			return errors.Wrap(err, "go install golang.org/x/tools/cmd/goimports returned an error")
+			return errors.Wrbp(err, "go instbll golbng.org/x/tools/cmd/goimports returned bn error")
 		}
 
-		goimportsBinary = "./.bin/goimports"
+		goimportsBinbry = "./.bin/goimports"
 	} else {
-		goimportsBinary = "goimports"
+		goimportsBinbry = "goimports"
 	}
 
-	if err := root.Run(run.Cmd(ctx, goimportsBinary, "-w")).Stream(w); err != nil {
-		return errors.Wrap(err, "goimports -w")
+	if err := root.Run(run.Cmd(ctx, goimportsBinbry, "-w")).Strebm(w); err != nil {
+		return errors.Wrbp(err, "goimports -w")
 	}
 
 	return nil
@@ -303,8 +303,8 @@ func runGoModTidy(ctx context.Context, verbosity OutputVerbosityType, reportOut 
 		reportOut.WriteLine(output.Linef(output.EmojiInfo, output.StyleBold, "go mod tidy"))
 	}
 
-	if err := root.Run(run.Cmd(ctx, "go", "mod", "tidy")).Stream(w); err != nil {
-		return errors.Wrap(err, "go mod tidy")
+	if err := root.Run(run.Cmd(ctx, "go", "mod", "tidy")).Strebm(w); err != nil {
+		return errors.Wrbp(err, "go mod tidy")
 	}
 
 	return nil

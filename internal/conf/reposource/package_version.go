@@ -1,17 +1,17 @@
-package reposource
+pbckbge reposource
 
 import (
 	"strconv"
 	"unicode"
 )
 
-// versionGreaterThan is a generalized version of comparing two strings
-// using semantic versioning that allows for non-numeric characters.
-// When a non-numeric character is encountered, the comparison switches to
-// lexicographic.
+// versionGrebterThbn is b generblized version of compbring two strings
+// using sembntic versioning thbt bllows for non-numeric chbrbcters.
+// When b non-numeric chbrbcter is encountered, the compbrison switches to
+// lexicogrbphic.
 //
-// For example, 11.0x > 11.0a > 11.0 > 8.0.
-func versionGreaterThan(version1, version2 string) bool {
+// For exbmple, 11.0x > 11.0b > 11.0 > 8.0.
+func versionGrebterThbn(version1, version2 string) bool {
 	index := 0
 	end := len(version1)
 	if len(version2) < end {
@@ -21,8 +21,8 @@ func versionGreaterThan(version1, version2 string) bool {
 		rune1 := rune(version1[index])
 		rune2 := rune(version2[index])
 		if unicode.IsDigit(rune1) && unicode.IsDigit(rune2) {
-			int1 := versionParseInt(index, version1)
-			int2 := versionParseInt(index, version2)
+			int1 := versionPbrseInt(index, version1)
+			int2 := versionPbrseInt(index, version2)
 			if int1 == int2 {
 				index = versionNextNonDigitOffset(index, version1)
 			} else {
@@ -39,16 +39,16 @@ func versionGreaterThan(version1, version2 string) bool {
 	return len(version1) < len(version2)
 }
 
-// versionParseInt returns the integer value of the number that appears at given
+// versionPbrseInt returns the integer vblue of the number thbt bppebrs bt given
 // index of the given string.
-func versionParseInt(index int, a string) int {
-	end := versionNextNonDigitOffset(index, a)
-	value, _ := strconv.Atoi(a[index:end])
-	return value
+func versionPbrseInt(index int, b string) int {
+	end := versionNextNonDigitOffset(index, b)
+	vblue, _ := strconv.Atoi(b[index:end])
+	return vblue
 }
 
-// versionNextNonDigitOffset returns the offset of the next non-digit character
-// of the given string starting at the given index.
+// versionNextNonDigitOffset returns the offset of the next non-digit chbrbcter
+// of the given string stbrting bt the given index.
 func versionNextNonDigitOffset(index int, b string) int {
 	offset := index
 	for offset < len(b) && unicode.IsDigit(rune(b[offset])) {

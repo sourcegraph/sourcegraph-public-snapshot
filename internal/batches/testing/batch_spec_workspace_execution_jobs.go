@@ -1,77 +1,77 @@
-package testing
+pbckbge testing
 
 import (
 	"context"
 	"testing"
 	"time"
 
-	"github.com/keegancsmith/sqlf"
+	"github.com/keegbncsmith/sqlf"
 
-	btypes "github.com/sourcegraph/sourcegraph/internal/batches/types"
-	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
-	"github.com/sourcegraph/sourcegraph/internal/database/batch"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
+	btypes "github.com/sourcegrbph/sourcegrbph/internbl/bbtches/types"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/bbsestore"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/bbtch"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbutil"
 )
 
-type execStore interface {
+type execStore interfbce {
 	Exec(ctx context.Context, query *sqlf.Query) error
 }
 
-func UpdateJobState(t *testing.T, ctx context.Context, s execStore, job *btypes.BatchSpecWorkspaceExecutionJob) {
+func UpdbteJobStbte(t *testing.T, ctx context.Context, s execStore, job *btypes.BbtchSpecWorkspbceExecutionJob) {
 	t.Helper()
 
 	const fmtStr = `
-UPDATE batch_spec_workspace_execution_jobs
+UPDATE bbtch_spec_workspbce_execution_jobs
 SET
-	state = %s,
-	started_at = %s,
-	finished_at = %s,
-	cancel = %s,
-	worker_hostname = %s,
-	failure_message = %s
+	stbte = %s,
+	stbrted_bt = %s,
+	finished_bt = %s,
+	cbncel = %s,
+	worker_hostnbme = %s,
+	fbilure_messbge = %s
 WHERE
 	id = %s
 `
 
 	q := sqlf.Sprintf(
 		fmtStr,
-		job.State,
-		dbutil.NullTimeColumn(job.StartedAt),
+		job.Stbte,
+		dbutil.NullTimeColumn(job.StbrtedAt),
 		dbutil.NullTimeColumn(job.FinishedAt),
-		job.Cancel,
-		job.WorkerHostname,
-		job.FailureMessage,
+		job.Cbncel,
+		job.WorkerHostnbme,
+		job.FbilureMessbge,
 		job.ID,
 	)
 	if err := s.Exec(ctx, q); err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 }
 
-type createBatchSpecWorkspaceExecutionJobStore interface {
-	basestore.ShareableStore
+type crebteBbtchSpecWorkspbceExecutionJobStore interfbce {
+	bbsestore.ShbrebbleStore
 	Clock() func() time.Time
 }
 
-type workspaceExecutionScanner = func(wj *btypes.BatchSpecWorkspaceExecutionJob, s dbutil.Scanner) error
+type workspbceExecutionScbnner = func(wj *btypes.BbtchSpecWorkspbceExecutionJob, s dbutil.Scbnner) error
 
-func CreateBatchSpecWorkspaceExecutionJob(ctx context.Context, s createBatchSpecWorkspaceExecutionJobStore, scanFn workspaceExecutionScanner, jobs ...*btypes.BatchSpecWorkspaceExecutionJob) (err error) {
-	inserter := func(inserter *batch.Inserter) error {
-		for _, job := range jobs {
-			if job.CreatedAt.IsZero() {
-				job.CreatedAt = s.Clock()()
+func CrebteBbtchSpecWorkspbceExecutionJob(ctx context.Context, s crebteBbtchSpecWorkspbceExecutionJobStore, scbnFn workspbceExecutionScbnner, jobs ...*btypes.BbtchSpecWorkspbceExecutionJob) (err error) {
+	inserter := func(inserter *bbtch.Inserter) error {
+		for _, job := rbnge jobs {
+			if job.CrebtedAt.IsZero() {
+				job.CrebtedAt = s.Clock()()
 			}
 
-			if job.UpdatedAt.IsZero() {
-				job.UpdatedAt = job.CreatedAt
+			if job.UpdbtedAt.IsZero() {
+				job.UpdbtedAt = job.CrebtedAt
 			}
 
 			if err := inserter.Insert(
 				ctx,
-				job.BatchSpecWorkspaceID,
+				job.BbtchSpecWorkspbceID,
 				job.UserID,
-				job.CreatedAt,
-				job.UpdatedAt,
+				job.CrebtedAt,
+				job.UpdbtedAt,
 			); err != nil {
 				return err
 			}
@@ -80,36 +80,36 @@ func CreateBatchSpecWorkspaceExecutionJob(ctx context.Context, s createBatchSpec
 		return nil
 	}
 	i := -1
-	return batch.WithInserterWithReturn(
+	return bbtch.WithInserterWithReturn(
 		ctx,
-		s.Handle(),
-		"batch_spec_workspace_execution_jobs",
-		batch.MaxNumPostgresParameters,
-		[]string{"batch_spec_workspace_id", "user_id", "created_at", "updated_at"},
+		s.Hbndle(),
+		"bbtch_spec_workspbce_execution_jobs",
+		bbtch.MbxNumPostgresPbrbmeters,
+		[]string{"bbtch_spec_workspbce_id", "user_id", "crebted_bt", "updbted_bt"},
 		"",
 		[]string{
-			"batch_spec_workspace_execution_jobs.id",
-			"batch_spec_workspace_execution_jobs.batch_spec_workspace_id",
-			"batch_spec_workspace_execution_jobs.user_id",
-			"batch_spec_workspace_execution_jobs.state",
-			"batch_spec_workspace_execution_jobs.failure_message",
-			"batch_spec_workspace_execution_jobs.started_at",
-			"batch_spec_workspace_execution_jobs.finished_at",
-			"batch_spec_workspace_execution_jobs.process_after",
-			"batch_spec_workspace_execution_jobs.num_resets",
-			"batch_spec_workspace_execution_jobs.num_failures",
-			"batch_spec_workspace_execution_jobs.execution_logs",
-			"batch_spec_workspace_execution_jobs.worker_hostname",
-			"batch_spec_workspace_execution_jobs.cancel",
-			"NULL as place_in_user_queue",
-			"NULL as place_in_global_queue",
-			"batch_spec_workspace_execution_jobs.created_at",
-			"batch_spec_workspace_execution_jobs.updated_at",
-			"batch_spec_workspace_execution_jobs.version",
+			"bbtch_spec_workspbce_execution_jobs.id",
+			"bbtch_spec_workspbce_execution_jobs.bbtch_spec_workspbce_id",
+			"bbtch_spec_workspbce_execution_jobs.user_id",
+			"bbtch_spec_workspbce_execution_jobs.stbte",
+			"bbtch_spec_workspbce_execution_jobs.fbilure_messbge",
+			"bbtch_spec_workspbce_execution_jobs.stbrted_bt",
+			"bbtch_spec_workspbce_execution_jobs.finished_bt",
+			"bbtch_spec_workspbce_execution_jobs.process_bfter",
+			"bbtch_spec_workspbce_execution_jobs.num_resets",
+			"bbtch_spec_workspbce_execution_jobs.num_fbilures",
+			"bbtch_spec_workspbce_execution_jobs.execution_logs",
+			"bbtch_spec_workspbce_execution_jobs.worker_hostnbme",
+			"bbtch_spec_workspbce_execution_jobs.cbncel",
+			"NULL bs plbce_in_user_queue",
+			"NULL bs plbce_in_globbl_queue",
+			"bbtch_spec_workspbce_execution_jobs.crebted_bt",
+			"bbtch_spec_workspbce_execution_jobs.updbted_bt",
+			"bbtch_spec_workspbce_execution_jobs.version",
 		},
-		func(rows dbutil.Scanner) error {
+		func(rows dbutil.Scbnner) error {
 			i++
-			return scanFn(jobs[i], rows)
+			return scbnFn(jobs[i], rows)
 		},
 		inserter,
 	)

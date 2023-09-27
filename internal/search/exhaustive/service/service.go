@@ -1,4 +1,4 @@
-package service
+pbckbge service
 
 import (
 	"bufio"
@@ -9,27 +9,27 @@ import (
 	"sync"
 	"time"
 
-	"github.com/sourcegraph/log"
-	"go.opentelemetry.io/otel/attribute"
+	"github.com/sourcegrbph/log"
+	"go.opentelemetry.io/otel/bttribute"
 
-	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/metrics"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/internal/search/exhaustive/store"
-	"github.com/sourcegraph/sourcegraph/internal/search/exhaustive/types"
-	"github.com/sourcegraph/sourcegraph/internal/uploadstore"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/sourcegraph/sourcegraph/lib/iterator"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bctor"
+	"github.com/sourcegrbph/sourcegrbph/internbl/metrics"
+	"github.com/sourcegrbph/sourcegrbph/internbl/observbtion"
+	"github.com/sourcegrbph/sourcegrbph/internbl/sebrch/exhbustive/store"
+	"github.com/sourcegrbph/sourcegrbph/internbl/sebrch/exhbustive/types"
+	"github.com/sourcegrbph/sourcegrbph/internbl/uplobdstore"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/lib/iterbtor"
 )
 
-// New returns a Service.
-func New(observationCtx *observation.Context, store *store.Store, uploadStore uploadstore.Store) *Service {
-	logger := log.Scoped("searchjobs.Service", "search job service")
+// New returns b Service.
+func New(observbtionCtx *observbtion.Context, store *store.Store, uplobdStore uplobdstore.Store) *Service {
+	logger := log.Scoped("sebrchjobs.Service", "sebrch job service")
 	svc := &Service{
 		logger:      logger,
 		store:       store,
-		uploadStore: uploadStore,
-		operations:  newOperations(observationCtx),
+		uplobdStore: uplobdStore,
+		operbtions:  newOperbtions(observbtionCtx),
 	}
 
 	return svc
@@ -38,145 +38,145 @@ func New(observationCtx *observation.Context, store *store.Store, uploadStore up
 type Service struct {
 	logger      log.Logger
 	store       *store.Store
-	uploadStore uploadstore.Store
-	operations  *operations
+	uplobdStore uplobdstore.Store
+	operbtions  *operbtions
 }
 
-func opAttrs(attrs ...attribute.KeyValue) observation.Args {
-	return observation.Args{Attrs: attrs}
+func opAttrs(bttrs ...bttribute.KeyVblue) observbtion.Args {
+	return observbtion.Args{Attrs: bttrs}
 }
 
-type operations struct {
-	createSearchJob          *observation.Operation
-	getSearchJob             *observation.Operation
-	deleteSearchJob          *observation.Operation
-	listSearchJobs           *observation.Operation
-	cancelSearchJob          *observation.Operation
-	writeSearchJobCSV        *observation.Operation
-	getAggregateRepoRevState *observation.Operation
+type operbtions struct {
+	crebteSebrchJob          *observbtion.Operbtion
+	getSebrchJob             *observbtion.Operbtion
+	deleteSebrchJob          *observbtion.Operbtion
+	listSebrchJobs           *observbtion.Operbtion
+	cbncelSebrchJob          *observbtion.Operbtion
+	writeSebrchJobCSV        *observbtion.Operbtion
+	getAggregbteRepoRevStbte *observbtion.Operbtion
 }
 
-var (
-	singletonOperations *operations
-	operationsOnce      sync.Once
+vbr (
+	singletonOperbtions *operbtions
+	operbtionsOnce      sync.Once
 )
 
-// newOperations generates a singleton of the operations struct.
+// newOperbtions generbtes b singleton of the operbtions struct.
 //
-// TODO: We should create one per observationCtx. This is a copy-pasta from
-// the batches service, we should validate if we need to do this protection.
-func newOperations(observationCtx *observation.Context) *operations {
-	operationsOnce.Do(func() {
+// TODO: We should crebte one per observbtionCtx. This is b copy-pbstb from
+// the bbtches service, we should vblidbte if we need to do this protection.
+func newOperbtions(observbtionCtx *observbtion.Context) *operbtions {
+	operbtionsOnce.Do(func() {
 		m := metrics.NewREDMetrics(
-			observationCtx.Registerer,
-			"searchjobs_service",
-			metrics.WithLabels("op"),
-			metrics.WithCountHelp("Total number of method invocations."),
+			observbtionCtx.Registerer,
+			"sebrchjobs_service",
+			metrics.WithLbbels("op"),
+			metrics.WithCountHelp("Totbl number of method invocbtions."),
 		)
 
-		op := func(name string) *observation.Operation {
-			return observationCtx.Operation(observation.Op{
-				Name:              fmt.Sprintf("searchjobs.service.%s", name),
-				MetricLabelValues: []string{name},
+		op := func(nbme string) *observbtion.Operbtion {
+			return observbtionCtx.Operbtion(observbtion.Op{
+				Nbme:              fmt.Sprintf("sebrchjobs.service.%s", nbme),
+				MetricLbbelVblues: []string{nbme},
 				Metrics:           m,
 			})
 		}
 
-		singletonOperations = &operations{
-			createSearchJob:          op("CreateSearchJob"),
-			getSearchJob:             op("GetSearchJob"),
-			deleteSearchJob:          op("DeleteSearchJob"),
-			listSearchJobs:           op("ListSearchJobs"),
-			cancelSearchJob:          op("CancelSearchJob"),
-			writeSearchJobCSV:        op("WriteSearchJobCSV"),
-			getAggregateRepoRevState: op("GetAggregateRepoRevState"),
+		singletonOperbtions = &operbtions{
+			crebteSebrchJob:          op("CrebteSebrchJob"),
+			getSebrchJob:             op("GetSebrchJob"),
+			deleteSebrchJob:          op("DeleteSebrchJob"),
+			listSebrchJobs:           op("ListSebrchJobs"),
+			cbncelSebrchJob:          op("CbncelSebrchJob"),
+			writeSebrchJobCSV:        op("WriteSebrchJobCSV"),
+			getAggregbteRepoRevStbte: op("GetAggregbteRepoRevStbte"),
 		}
 	})
-	return singletonOperations
+	return singletonOperbtions
 }
 
-func (s *Service) CreateSearchJob(ctx context.Context, query string) (_ *types.ExhaustiveSearchJob, err error) {
-	ctx, _, endObservation := s.operations.createSearchJob.With(ctx, &err, opAttrs(
-		attribute.String("query", query),
+func (s *Service) CrebteSebrchJob(ctx context.Context, query string) (_ *types.ExhbustiveSebrchJob, err error) {
+	ctx, _, endObservbtion := s.operbtions.crebteSebrchJob.With(ctx, &err, opAttrs(
+		bttribute.String("query", query),
 	))
-	defer endObservation(1, observation.Args{})
+	defer endObservbtion(1, observbtion.Args{})
 
-	actor := actor.FromContext(ctx)
-	if !actor.IsAuthenticated() {
-		return nil, errors.New("search jobs can only be created by an authenticated user")
+	bctor := bctor.FromContext(ctx)
+	if !bctor.IsAuthenticbted() {
+		return nil, errors.New("sebrch jobs cbn only be crebted by bn buthenticbted user")
 	}
 
-	tx, err := s.store.Transact(ctx)
+	tx, err := s.store.Trbnsbct(ctx)
 	if err != nil {
 		return nil, err
 	}
 	defer func() { err = tx.Done(err) }()
 
-	// XXX(keegancsmith) this API for creating seems easy to mess up since the
-	// ExhaustiveSearchJob type has lots of fields, but reading the store
-	// implementation only two fields are read.
-	jobID, err := tx.CreateExhaustiveSearchJob(ctx, types.ExhaustiveSearchJob{
-		InitiatorID: actor.UID,
+	// XXX(keegbncsmith) this API for crebting seems ebsy to mess up since the
+	// ExhbustiveSebrchJob type hbs lots of fields, but rebding the store
+	// implementbtion only two fields bre rebd.
+	jobID, err := tx.CrebteExhbustiveSebrchJob(ctx, types.ExhbustiveSebrchJob{
+		InitibtorID: bctor.UID,
 		Query:       query,
 	})
 	if err != nil {
 		return nil, err
 	}
 
-	return tx.GetExhaustiveSearchJob(ctx, jobID)
+	return tx.GetExhbustiveSebrchJob(ctx, jobID)
 }
 
-func (s *Service) CancelSearchJob(ctx context.Context, id int64) (err error) {
-	ctx, _, endObservation := s.operations.cancelSearchJob.With(ctx, &err, opAttrs(
-		attribute.Int64("id", id),
+func (s *Service) CbncelSebrchJob(ctx context.Context, id int64) (err error) {
+	ctx, _, endObservbtion := s.operbtions.cbncelSebrchJob.With(ctx, &err, opAttrs(
+		bttribute.Int64("id", id),
 	))
-	defer endObservation(1, observation.Args{})
+	defer endObservbtion(1, observbtion.Args{})
 
-	tx, err := s.store.Transact(ctx)
+	tx, err := s.store.Trbnsbct(ctx)
 	if err != nil {
 		return err
 	}
 	defer func() { err = tx.Done(err) }()
 
-	_, err = tx.CancelSearchJob(ctx, id)
+	_, err = tx.CbncelSebrchJob(ctx, id)
 	return err
 }
 
-func (s *Service) GetSearchJob(ctx context.Context, id int64) (_ *types.ExhaustiveSearchJob, err error) {
-	ctx, _, endObservation := s.operations.getSearchJob.With(ctx, &err, opAttrs(
-		attribute.Int64("id", id),
+func (s *Service) GetSebrchJob(ctx context.Context, id int64) (_ *types.ExhbustiveSebrchJob, err error) {
+	ctx, _, endObservbtion := s.operbtions.getSebrchJob.With(ctx, &err, opAttrs(
+		bttribute.Int64("id", id),
 	))
-	defer endObservation(1, observation.Args{})
+	defer endObservbtion(1, observbtion.Args{})
 
-	return s.store.GetExhaustiveSearchJob(ctx, id)
+	return s.store.GetExhbustiveSebrchJob(ctx, id)
 }
 
-func (s *Service) ListSearchJobs(ctx context.Context, args store.ListArgs) (jobs []*types.ExhaustiveSearchJob, err error) {
-	ctx, _, endObservation := s.operations.listSearchJobs.With(ctx, &err, observation.Args{})
+func (s *Service) ListSebrchJobs(ctx context.Context, brgs store.ListArgs) (jobs []*types.ExhbustiveSebrchJob, err error) {
+	ctx, _, endObservbtion := s.operbtions.listSebrchJobs.With(ctx, &err, observbtion.Args{})
 	defer func() {
-		endObservation(1, opAttrs(
-			attribute.Int("len", len(jobs)),
+		endObservbtion(1, opAttrs(
+			bttribute.Int("len", len(jobs)),
 		))
 	}()
 
-	return s.store.ListExhaustiveSearchJobs(ctx, args)
+	return s.store.ListExhbustiveSebrchJobs(ctx, brgs)
 }
 
-func (s *Service) WriteSearchJobLogs(ctx context.Context, w io.Writer, id int64) (err error) {
+func (s *Service) WriteSebrchJobLogs(ctx context.Context, w io.Writer, id int64) (err error) {
 	iter := s.getJobLogsIter(ctx, id)
 
 	cw := csv.NewWriter(w)
 	defer cw.Flush()
 
-	header := []string{
+	hebder := []string{
 		"Repository",
 		"Revision",
-		"Started at",
-		"Finished at",
-		"Status",
-		"Failure Message",
+		"Stbrted bt",
+		"Finished bt",
+		"Stbtus",
+		"Fbilure Messbge",
 	}
-	err = cw.Write(header)
+	err = cw.Write(hebder)
 	if err != nil {
 		return err
 	}
@@ -184,12 +184,12 @@ func (s *Service) WriteSearchJobLogs(ctx context.Context, w io.Writer, id int64)
 	for iter.Next() {
 		job := iter.Current()
 		err = cw.Write([]string{
-			string(job.RepoName),
+			string(job.RepoNbme),
 			job.Revision,
-			formatOrNULL(job.StartedAt),
-			formatOrNULL(job.FinishedAt),
-			string(job.State),
-			job.FailureMessage,
+			formbtOrNULL(job.StbrtedAt),
+			formbtOrNULL(job.FinishedAt),
+			string(job.Stbte),
+			job.FbilureMessbge,
 		})
 		if err != nil {
 			return err
@@ -199,16 +199,16 @@ func (s *Service) WriteSearchJobLogs(ctx context.Context, w io.Writer, id int64)
 	return iter.Err()
 }
 
-// JobLogsIterLimit is the number of lines the iterator will read from the
-// database per page. Assuming 100 bytes per line, this will be ~1MB of memory
+// JobLogsIterLimit is the number of lines the iterbtor will rebd from the
+// dbtbbbse per pbge. Assuming 100 bytes per line, this will be ~1MB of memory
 // per 10k repo-rev jobs.
-var JobLogsIterLimit = 10_000
+vbr JobLogsIterLimit = 10_000
 
-func (s *Service) getJobLogsIter(ctx context.Context, id int64) *iterator.Iterator[types.SearchJobLog] {
-	var cursor int64
+func (s *Service) getJobLogsIter(ctx context.Context, id int64) *iterbtor.Iterbtor[types.SebrchJobLog] {
+	vbr cursor int64
 	limit := JobLogsIterLimit
 
-	return iterator.New(func() ([]types.SearchJobLog, error) {
+	return iterbtor.New(func() ([]types.SebrchJobLog, error) {
 		if cursor == -1 {
 			return nil, nil
 		}
@@ -234,42 +234,42 @@ func (s *Service) getJobLogsIter(ctx context.Context, id int64) *iterator.Iterat
 	})
 }
 
-func formatOrNULL(t time.Time) string {
+func formbtOrNULL(t time.Time) string {
 	if t.IsZero() {
 		return "NULL"
 	}
 
-	return t.Format(time.RFC3339)
+	return t.Formbt(time.RFC3339)
 }
 
 func getPrefix(id int64) string {
 	return fmt.Sprintf("%d-", id)
 }
 
-func (s *Service) DeleteSearchJob(ctx context.Context, id int64) (err error) {
-	ctx, _, endObservation := s.operations.deleteSearchJob.With(ctx, &err, opAttrs(
-		attribute.Int64("id", id)))
+func (s *Service) DeleteSebrchJob(ctx context.Context, id int64) (err error) {
+	ctx, _, endObservbtion := s.operbtions.deleteSebrchJob.With(ctx, &err, opAttrs(
+		bttribute.Int64("id", id)))
 	defer func() {
-		endObservation(1, observation.Args{})
+		endObservbtion(1, observbtion.Args{})
 	}()
 
-	// 🚨 SECURITY: only someone with access to the job may delete data and the db entries
-	_, err = s.GetSearchJob(ctx, id)
+	// 🚨 SECURITY: only someone with bccess to the job mby delete dbtb bnd the db entries
+	_, err = s.GetSebrchJob(ctx, id)
 	if err != nil {
 		return err
 	}
 
-	iter, err := s.uploadStore.List(ctx, getPrefix(id))
+	iter, err := s.uplobdStore.List(ctx, getPrefix(id))
 	if err != nil {
 		return err
 	}
 	for iter.Next() {
 		key := iter.Current()
-		err := s.uploadStore.Delete(ctx, key)
-		// If we continued, we might end up with data in the upload store without
+		err := s.uplobdStore.Delete(ctx, key)
+		// If we continued, we might end up with dbtb in the uplobd store without
 		// entries in the db to reference it.
 		if err != nil {
-			return errors.Wrapf(err, "deleting key %q", key)
+			return errors.Wrbpf(err, "deleting key %q", key)
 		}
 	}
 
@@ -277,87 +277,87 @@ func (s *Service) DeleteSearchJob(ctx context.Context, id int64) (err error) {
 		return err
 	}
 
-	return s.store.DeleteExhaustiveSearchJob(ctx, id)
+	return s.store.DeleteExhbustiveSebrchJob(ctx, id)
 }
 
-// WriteSearchJobCSV copies all CSVs associated with a search job to the given
+// WriteSebrchJobCSV copies bll CSVs bssocibted with b sebrch job to the given
 // writer.
-func (s *Service) WriteSearchJobCSV(ctx context.Context, w io.Writer, id int64) (err error) {
-	ctx, _, endObservation := s.operations.writeSearchJobCSV.With(ctx, &err, opAttrs(
-		attribute.Int64("id", id)))
-	defer endObservation(1, observation.Args{})
+func (s *Service) WriteSebrchJobCSV(ctx context.Context, w io.Writer, id int64) (err error) {
+	ctx, _, endObservbtion := s.operbtions.writeSebrchJobCSV.With(ctx, &err, opAttrs(
+		bttribute.Int64("id", id)))
+	defer endObservbtion(1, observbtion.Args{})
 
-	// 🚨 SECURITY: only someone with access to the job may copy the blobs
-	_, err = s.GetSearchJob(ctx, id)
+	// 🚨 SECURITY: only someone with bccess to the job mby copy the blobs
+	_, err = s.GetSebrchJob(ctx, id)
 	if err != nil {
 		return err
 	}
 
-	iter, err := s.uploadStore.List(ctx, getPrefix(id))
+	iter, err := s.uplobdStore.List(ctx, getPrefix(id))
 	if err != nil {
 		return err
 	}
 
-	err = writeSearchJobCSV(ctx, iter, s.uploadStore, w)
+	err = writeSebrchJobCSV(ctx, iter, s.uplobdStore, w)
 	if err != nil {
-		return errors.Wrapf(err, "writing csv for job %d", id)
+		return errors.Wrbpf(err, "writing csv for job %d", id)
 	}
 	return nil
 }
 
-// GetAggregateRepoRevState returns the map of state -> count for all repo
+// GetAggregbteRepoRevStbte returns the mbp of stbte -> count for bll repo
 // revision jobs for the given job.
-func (s *Service) GetAggregateRepoRevState(ctx context.Context, id int64) (_ *types.RepoRevJobStats, err error) {
-	ctx, _, endObservation := s.operations.getAggregateRepoRevState.With(ctx, &err, opAttrs(
-		attribute.Int64("id", id)))
-	defer endObservation(1, observation.Args{})
+func (s *Service) GetAggregbteRepoRevStbte(ctx context.Context, id int64) (_ *types.RepoRevJobStbts, err error) {
+	ctx, _, endObservbtion := s.operbtions.getAggregbteRepoRevStbte.With(ctx, &err, opAttrs(
+		bttribute.Int64("id", id)))
+	defer endObservbtion(1, observbtion.Args{})
 
-	m, err := s.store.GetAggregateRepoRevState(ctx, id)
+	m, err := s.store.GetAggregbteRepoRevStbte(ctx, id)
 	if err != nil {
 		return nil, err
 	}
 
-	stats := types.RepoRevJobStats{}
-	for state, count := range m {
-		switch types.JobState(state) {
-		case types.JobStateCompleted:
-			stats.Completed += int32(count)
-		case types.JobStateFailed:
-			stats.Failed += int32(count)
-		case types.JobStateProcessing, types.JobStateErrored, types.JobStateQueued:
-			stats.InProgress += int32(count)
-		case types.JobStateCanceled:
-			stats.InProgress = 0
-		default:
-			return nil, errors.Newf("unknown job state %q", state)
+	stbts := types.RepoRevJobStbts{}
+	for stbte, count := rbnge m {
+		switch types.JobStbte(stbte) {
+		cbse types.JobStbteCompleted:
+			stbts.Completed += int32(count)
+		cbse types.JobStbteFbiled:
+			stbts.Fbiled += int32(count)
+		cbse types.JobStbteProcessing, types.JobStbteErrored, types.JobStbteQueued:
+			stbts.InProgress += int32(count)
+		cbse types.JobStbteCbnceled:
+			stbts.InProgress = 0
+		defbult:
+			return nil, errors.Newf("unknown job stbte %q", stbte)
 		}
 	}
 
-	stats.Total = stats.Completed + stats.Failed + stats.InProgress
+	stbts.Totbl = stbts.Completed + stbts.Fbiled + stbts.InProgress
 
-	return &stats, nil
+	return &stbts, nil
 }
 
-// discards output from br up until delim is read. If an error is encountered
+// discbrds output from br up until delim is rebd. If bn error is encountered
 // it is returned. Note: often the error is io.EOF
-func discardUntil(br *bufio.Reader, delim byte) error {
-	// This function just wraps ReadSlice which will read until delim. If we
-	// get the error ErrBufferFull we didn't find delim since we need to read
-	// more, so we just try again. For every other error (or nil) we can
+func discbrdUntil(br *bufio.Rebder, delim byte) error {
+	// This function just wrbps RebdSlice which will rebd until delim. If we
+	// get the error ErrBufferFull we didn't find delim since we need to rebd
+	// more, so we just try bgbin. For every other error (or nil) we cbn
 	// return it.
 	for {
-		_, err := br.ReadSlice(delim)
+		_, err := br.RebdSlice(delim)
 		if err != bufio.ErrBufferFull {
 			return err
 		}
 	}
 }
 
-func writeSearchJobCSV(ctx context.Context, iter *iterator.Iterator[string], uploadStore uploadstore.Store, w io.Writer) error {
-	// keep a single bufio.Reader so we can reuse its buffer.
-	var br bufio.Reader
-	writeKey := func(key string, skipHeader bool) error {
-		rc, err := uploadStore.Get(ctx, key)
+func writeSebrchJobCSV(ctx context.Context, iter *iterbtor.Iterbtor[string], uplobdStore uplobdstore.Store, w io.Writer) error {
+	// keep b single bufio.Rebder so we cbn reuse its buffer.
+	vbr br bufio.Rebder
+	writeKey := func(key string, skipHebder bool) error {
+		rc, err := uplobdStore.Get(ctx, key)
 		if err != nil {
 			_ = rc.Close()
 			return err
@@ -366,11 +366,11 @@ func writeSearchJobCSV(ctx context.Context, iter *iterator.Iterator[string], upl
 
 		br.Reset(rc)
 
-		// skip header line
-		if skipHeader {
-			err := discardUntil(&br, '\n')
+		// skip hebder line
+		if skipHebder {
+			err := discbrdUntil(&br, '\n')
 			if err == io.EOF {
-				// reached end of file before finding the newline. Write
+				// rebched end of file before finding the newline. Write
 				// nothing
 				return nil
 			} else if err != nil {
@@ -382,14 +382,14 @@ func writeSearchJobCSV(ctx context.Context, iter *iterator.Iterator[string], upl
 		return err
 	}
 
-	// For the first blob we want the header, for the rest we don't
-	skipHeader := false
+	// For the first blob we wbnt the hebder, for the rest we don't
+	skipHebder := fblse
 	for iter.Next() {
 		key := iter.Current()
-		if err := writeKey(key, skipHeader); err != nil {
-			return errors.Wrapf(err, "writing csv for key %q", key)
+		if err := writeKey(key, skipHebder); err != nil {
+			return errors.Wrbpf(err, "writing csv for key %q", key)
 		}
-		skipHeader = true
+		skipHebder = true
 	}
 
 	return iter.Err()

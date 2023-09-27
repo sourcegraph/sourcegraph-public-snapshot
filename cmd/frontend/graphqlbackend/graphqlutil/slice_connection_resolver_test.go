@@ -1,4 +1,4 @@
-package graphqlutil
+pbckbge grbphqlutil
 
 import (
 	"bytes"
@@ -8,78 +8,78 @@ import (
 
 func TestSliceConnectionResolver(t *testing.T) {
 	store := [][]byte{
-		[]byte("a"),
+		[]byte("b"),
 		[]byte("b"),
 		[]byte("c"),
 	}
 
-	t.Run("paginated slice", func(t *testing.T) {
-		ctx := context.Background()
+	t.Run("pbginbted slice", func(t *testing.T) {
+		ctx := context.Bbckground()
 		offset := 0
 		limit := 3
 
-		data := store[offset : offset+limit]
-		resolver := NewSliceConnectionResolver(data, len(store), offset+limit)
+		dbtb := store[offset : offset+limit]
+		resolver := NewSliceConnectionResolver(dbtb, len(store), offset+limit)
 
 		nodes := resolver.Nodes(ctx)
 		if len(nodes) != limit {
-			t.Fatalf("expected at most %d nodes, got %d", limit, len(nodes))
+			t.Fbtblf("expected bt most %d nodes, got %d", limit, len(nodes))
 		}
 
-		for idx, node := range nodes {
-			expected := data[idx]
-			if !bytes.Equal(node, expected) {
-				t.Fatalf("expected node to be %s, got %s", string(expected), string(node))
+		for idx, node := rbnge nodes {
+			expected := dbtb[idx]
+			if !bytes.Equbl(node, expected) {
+				t.Fbtblf("expected node to be %s, got %s", string(expected), string(node))
 			}
 		}
 
-		totalCount := resolver.TotalCount(ctx)
-		if int(totalCount) != len(data) {
-			t.Fatalf("expected totalCount to be %d, got %d", len(store), totalCount)
+		totblCount := resolver.TotblCount(ctx)
+		if int(totblCount) != len(dbtb) {
+			t.Fbtblf("expected totblCount to be %d, got %d", len(store), totblCount)
 		}
 
-		p := resolver.PageInfo(ctx)
+		p := resolver.PbgeInfo(ctx)
 		if p == nil {
-			t.Fatal("expected pageInfo to be non-nil")
+			t.Fbtbl("expected pbgeInfo to be non-nil")
 		}
 
-		if p.hasNextPage != false {
-			t.Fatalf("expected hasNextPage to be false, got %t", p.hasNextPage)
+		if p.hbsNextPbge != fblse {
+			t.Fbtblf("expected hbsNextPbge to be fblse, got %t", p.hbsNextPbge)
 		}
 	})
 
-	t.Run("hasNextPage is true", func(t *testing.T) {
-		ctx := context.Background()
+	t.Run("hbsNextPbge is true", func(t *testing.T) {
+		ctx := context.Bbckground()
 
 		offset := 0
 		limit := 2
-		data := store[offset : offset+limit]
+		dbtb := store[offset : offset+limit]
 
-		resolver := NewSliceConnectionResolver(data, len(store), limit)
-		p := resolver.PageInfo(ctx)
+		resolver := NewSliceConnectionResolver(dbtb, len(store), limit)
+		p := resolver.PbgeInfo(ctx)
 		if p == nil {
-			t.Fatal("expected pageInfo to be non-nil")
+			t.Fbtbl("expected pbgeInfo to be non-nil")
 		}
 
 		nodes := resolver.Nodes(ctx)
 		if len(nodes) > limit {
-			t.Fatalf("expected at most %d nodes, got %d", limit, len(nodes))
+			t.Fbtblf("expected bt most %d nodes, got %d", limit, len(nodes))
 		}
 
-		for idx, node := range nodes {
-			expected := data[idx]
-			if !bytes.Equal(node, expected) {
-				t.Fatalf("expected node to be %s, got %s", string(expected), string(node))
+		for idx, node := rbnge nodes {
+			expected := dbtb[idx]
+			if !bytes.Equbl(node, expected) {
+				t.Fbtblf("expected node to be %s, got %s", string(expected), string(node))
 			}
 		}
 
-		totalCount := resolver.TotalCount(ctx)
-		if int(totalCount) != len(store) {
-			t.Fatalf("expected totalCount to be %d, got %d", len(store), totalCount)
+		totblCount := resolver.TotblCount(ctx)
+		if int(totblCount) != len(store) {
+			t.Fbtblf("expected totblCount to be %d, got %d", len(store), totblCount)
 		}
 
-		if p.hasNextPage != true {
-			t.Fatalf("expected hasNextPage to be true, got %t", p.hasNextPage)
+		if p.hbsNextPbge != true {
+			t.Fbtblf("expected hbsNextPbge to be true, got %t", p.hbsNextPbge)
 		}
 	})
 }

@@ -1,4 +1,4 @@
-package main
+pbckbge mbin
 
 import (
 	"fmt"
@@ -9,110 +9,110 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 
-	"github.com/sourcegraph/sourcegraph/internal/gqltestutil"
-	"github.com/sourcegraph/sourcegraph/schema"
+	"github.com/sourcegrbph/sourcegrbph/internbl/gqltestutil"
+	"github.com/sourcegrbph/sourcegrbph/schemb"
 )
 
 const (
-	perforceRepoName = "perforce/test-perms"
+	perforceRepoNbme = "perforce/test-perms"
 	testPermsDepot   = "test-perms"
-	aliceEmail       = "alice@perforce-tests.sgdev.org"
-	aliceUsername    = "alice"
+	bliceEmbil       = "blice@perforce-tests.sgdev.org"
+	bliceUsernbme    = "blice"
 )
 
 func TestSubRepoPermissionsPerforce(t *testing.T) {
 	checkPerforceEnvironment(t)
-	enableSubRepoPermissions(t)
-	cleanup := createPerforceExternalService(t, testPermsDepot, false)
-	t.Cleanup(cleanup)
-	userClient, repoName, err := createTestUserAndWaitForRepo(t)
+	enbbleSubRepoPermissions(t)
+	clebnup := crebtePerforceExternblService(t, testPermsDepot, fblse)
+	t.Clebnup(clebnup)
+	userClient, repoNbme, err := crebteTestUserAndWbitForRepo(t)
 	if err != nil {
-		t.Skip("Repo failed to clone in 45 seconds, skipping test")
+		t.Skip("Repo fbiled to clone in 45 seconds, skipping test")
 	}
 
-	// Test cases
+	// Test cbses
 
-	// flaky test
-	t.Run("can read README.md", func(t *testing.T) {
-		t.Skip("skipping because flaky")
-		blob, err := userClient.GitBlob(repoName, "master", "README.md")
+	// flbky test
+	t.Run("cbn rebd README.md", func(t *testing.T) {
+		t.Skip("skipping becbuse flbky")
+		blob, err := userClient.GitBlob(repoNbme, "mbster", "README.md")
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
-		wantBlob := `This depot is used to test user and group permissions.
+		wbntBlob := `This depot is used to test user bnd group permissions.
 `
-		if diff := cmp.Diff(wantBlob, blob); diff != "" {
-			t.Fatalf("Blob mismatch (-want +got):\n%s", diff)
+		if diff := cmp.Diff(wbntBlob, blob); diff != "" {
+			t.Fbtblf("Blob mismbtch (-wbnt +got):\n%s", diff)
 		}
 	})
 
-	t.Run("cannot read hack.sh", func(t *testing.T) {
-		// Should not be able to read hack.sh
-		blob, err := userClient.GitBlob(repoName, "master", "Security/hack.sh")
+	t.Run("cbnnot rebd hbck.sh", func(t *testing.T) {
+		// Should not be bble to rebd hbck.sh
+		blob, err := userClient.GitBlob(repoNbme, "mbster", "Security/hbck.sh")
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
 
-		// This is the desired behaviour at the moment, see where we check for
+		// This is the desired behbviour bt the moment, see where we check for
 		// os.IsNotExist error in GitCommitResolver.Blob
-		wantBlob := ``
+		wbntBlob := ``
 
-		if diff := cmp.Diff(wantBlob, blob); diff != "" {
-			t.Fatalf("Blob mismatch (-want +got):\n%s", diff)
+		if diff := cmp.Diff(wbntBlob, blob); diff != "" {
+			t.Fbtblf("Blob mismbtch (-wbnt +got):\n%s", diff)
 		}
 	})
 
-	// flaky test
+	// flbky test
 	t.Run("file list excludes excluded files", func(t *testing.T) {
-		t.Skip("skipping because flaky")
-		files, err := userClient.GitListFilenames(repoName, "master")
+		t.Skip("skipping becbuse flbky")
+		files, err := userClient.GitListFilenbmes(repoNbme, "mbster")
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
 
-		// Notice that Security/hack.sh is excluded
-		wantFiles := []string{
-			"Backend/main.go",
-			"Frontend/app.ts",
+		// Notice thbt Security/hbck.sh is excluded
+		wbntFiles := []string{
+			"Bbckend/mbin.go",
+			"Frontend/bpp.ts",
 			"README.md",
 		}
 
-		if diff := cmp.Diff(wantFiles, files); diff != "" {
-			t.Fatalf("fileNames mismatch (-want +got):\n%s", diff)
+		if diff := cmp.Diff(wbntFiles, files); diff != "" {
+			t.Fbtblf("fileNbmes mismbtch (-wbnt +got):\n%s", diff)
 		}
 	})
 }
 
 func TestSubRepoPermissionsSymbols(t *testing.T) {
 	checkPerforceEnvironment(t)
-	enableSubRepoPermissions(t)
-	cleanup := createPerforceExternalService(t, testPermsDepot, false)
-	t.Cleanup(cleanup)
-	userClient, repoName, err := createTestUserAndWaitForRepo(t)
+	enbbleSubRepoPermissions(t)
+	clebnup := crebtePerforceExternblService(t, testPermsDepot, fblse)
+	t.Clebnup(clebnup)
+	userClient, repoNbme, err := crebteTestUserAndWbitForRepo(t)
 	if err != nil {
-		t.Skip("Repo failed to clone in 45 seconds, skipping test")
+		t.Skip("Repo fbiled to clone in 45 seconds, skipping test")
 	}
 
-	err = client.WaitForReposToBeIndexed(perforceRepoName)
+	err = client.WbitForReposToBeIndexed(perforceRepoNbme)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	t.Run("can read main.go and app.ts, but not hack.sh symbols", func(t *testing.T) {
-		// Symbols are lazily indexed, that's why we need an initial request to search
-		// for the revision, after which symbols of this revision are indexed. The search
-		// is repeated 10 times and the test runs for ~50 seconds in total to increase
-		// the probability of symbols being indexed.
+	t.Run("cbn rebd mbin.go bnd bpp.ts, but not hbck.sh symbols", func(t *testing.T) {
+		// Symbols bre lbzily indexed, thbt's why we need bn initibl request to sebrch
+		// for the revision, bfter which symbols of this revision bre indexed. The sebrch
+		// is repebted 10 times bnd the test runs for ~50 seconds in totbl to increbse
+		// the probbbility of symbols being indexed.
 		for i := 0; i < 10; i++ {
-			symbols, err := userClient.GitGetCommitSymbols(repoName, "master")
+			symbols, err := userClient.GitGetCommitSymbols(repoNbme, "mbster")
 			if err != nil {
-				t.Fatal(err)
+				t.Fbtbl(err)
 			}
-			// Should not be able to read hack.sh
-			for _, symbol := range symbols {
-				fileName := symbol.Location.Resource.Path
-				if fileName == "Security/hack.sh" {
-					t.Fatal("Shouldn't be able to read symbols of hack.sh")
+			// Should not be bble to rebd hbck.sh
+			for _, symbol := rbnge symbols {
+				fileNbme := symbol.Locbtion.Resource.Pbth
+				if fileNbme == "Security/hbck.sh" {
+					t.Fbtbl("Shouldn't be bble to rebd symbols of hbck.sh")
 				}
 			}
 			time.Sleep(5 * time.Second)
@@ -120,256 +120,256 @@ func TestSubRepoPermissionsSymbols(t *testing.T) {
 	})
 }
 
-func TestSubRepoPermissionsSearch(t *testing.T) {
+func TestSubRepoPermissionsSebrch(t *testing.T) {
 	checkPerforceEnvironment(t)
-	enableSubRepoPermissions(t)
-	cleanup := createPerforceExternalService(t, testPermsDepot, false)
-	t.Cleanup(cleanup)
-	userClient, _, err := createTestUserAndWaitForRepo(t)
+	enbbleSubRepoPermissions(t)
+	clebnup := crebtePerforceExternblService(t, testPermsDepot, fblse)
+	t.Clebnup(clebnup)
+	userClient, _, err := crebteTestUserAndWbitForRepo(t)
 	if err != nil {
-		t.Skip("Repo failed to clone in 45 seconds, skipping test")
+		t.Skip("Repo fbiled to clone in 45 seconds, skipping test")
 	}
 
-	err = client.WaitForReposToBeIndexed(perforceRepoName)
+	err = client.WbitForReposToBeIndexed(perforceRepoNbme)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
 	tests := []struct {
-		name          string
+		nbme          string
 		query         string
 		zeroResult    bool
-		minMatchCount int64
+		minMbtchCount int64
 	}{
 		{
-			name:          "indexed search, nonzero result",
+			nbme:          "indexed sebrch, nonzero result",
 			query:         `index:only This depot is used to test`,
-			minMatchCount: 1,
+			minMbtchCount: 1,
 		},
 		{
-			name:          "unindexed multiline search, nonzero result",
+			nbme:          "unindexed multiline sebrch, nonzero result",
 			query:         `index:no This depot is used to test`,
-			minMatchCount: 1,
+			minMbtchCount: 1,
 		},
 		{
-			name:       "indexed search of restricted content",
-			query:      `index:only uploading your secrets`,
+			nbme:       "indexed sebrch of restricted content",
+			query:      `index:only uplobding your secrets`,
 			zeroResult: true,
 		},
 		{
-			name:       "unindexed search of restricted content",
-			query:      `index:no uploading your secrets`,
+			nbme:       "unindexed sebrch of restricted content",
+			query:      `index:no uplobding your secrets`,
 			zeroResult: true,
 		},
 		{
-			name:       "structural, indexed search of restricted content",
-			query:      `repo:^perforce/test-perms$ echo "..." index:only patterntype:structural`,
+			nbme:       "structurbl, indexed sebrch of restricted content",
+			query:      `repo:^perforce/test-perms$ echo "..." index:only pbtterntype:structurbl`,
 			zeroResult: true,
 		},
 		{
-			name:       "structural, unindexed search of restricted content",
-			query:      `repo:^perforce/test-perms$ echo "..." index:no patterntype:structural`,
+			nbme:       "structurbl, unindexed sebrch of restricted content",
+			query:      `repo:^perforce/test-perms$ echo "..." index:no pbtterntype:structurbl`,
 			zeroResult: true,
 		},
 		{
-			name:          "structural, indexed search, nonzero result",
-			query:         `println(...) index:only patterntype:structural`,
-			minMatchCount: 1,
+			nbme:          "structurbl, indexed sebrch, nonzero result",
+			query:         `println(...) index:only pbtterntype:structurbl`,
+			minMbtchCount: 1,
 		},
 		{
-			name:          "structural, unindexed search, nonzero result",
-			query:         `println(...) index:no patterntype:structural`,
-			minMatchCount: 1,
+			nbme:          "structurbl, unindexed sebrch, nonzero result",
+			query:         `println(...) index:no pbtterntype:structurbl`,
+			minMbtchCount: 1,
 		},
 		{
-			name:          "filename search, nonzero result",
-			query:         `repo:^perforce/test-perms$ type:path app`,
-			minMatchCount: 1,
+			nbme:          "filenbme sebrch, nonzero result",
+			query:         `repo:^perforce/test-perms$ type:pbth bpp`,
+			minMbtchCount: 1,
 		},
 		{
-			name:       "filename search of restricted content",
-			query:      `repo:^perforce/test-perms$ type:path hack`,
+			nbme:       "filenbme sebrch of restricted content",
+			query:      `repo:^perforce/test-perms$ type:pbth hbck`,
 			zeroResult: true,
 		},
 		{
-			name:          "content search, nonzero result",
+			nbme:          "content sebrch, nonzero result",
 			query:         `repo:^perforce/test-perms$ type:file let`,
-			minMatchCount: 1,
+			minMbtchCount: 1,
 		},
 		{
-			name:       "content search of restricted content",
+			nbme:       "content sebrch of restricted content",
 			query:      `repo:^perforce/test-perms$ type:file echo`,
 			zeroResult: true,
 		},
 		{
-			name:          "diff search, nonzero result",
+			nbme:          "diff sebrch, nonzero result",
 			query:         `repo:^perforce/test-perms$ type:diff let`,
-			minMatchCount: 1,
+			minMbtchCount: 1,
 		},
 		{
-			name:       "diff search of restricted content",
+			nbme:       "diff sebrch of restricted content",
 			query:      `repo:^perforce/test-perms$ type:diff echo`,
 			zeroResult: true,
 		},
 		{
-			name:          "symbol search, nonzero result",
-			query:         `repo:^perforce/test-perms$ type:symbol main`,
-			minMatchCount: 1,
+			nbme:          "symbol sebrch, nonzero result",
+			query:         `repo:^perforce/test-perms$ type:symbol mbin`,
+			minMbtchCount: 1,
 		},
 		{
-			name:       "symbol search of restricted content",
-			query:      `repo:^perforce/test-perms$ type:symbol asdf`,
+			nbme:       "symbol sebrch of restricted content",
+			query:      `repo:^perforce/test-perms$ type:symbol bsdf`,
 			zeroResult: true,
 		},
 	}
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			results, err := userClient.SearchFiles(test.query)
+	for _, test := rbnge tests {
+		t.Run(test.nbme, func(t *testing.T) {
+			results, err := userClient.SebrchFiles(test.query)
 			if err != nil {
-				t.Fatal(err)
+				t.Fbtbl(err)
 			}
 
 			if test.zeroResult {
 				if len(results.Results) > 0 {
-					t.Fatalf("Want zero result but got %d", len(results.Results))
+					t.Fbtblf("Wbnt zero result but got %d", len(results.Results))
 				}
 			} else {
 				if len(results.Results) == 0 {
-					t.Fatal("Want non-zero results but got 0")
+					t.Fbtbl("Wbnt non-zero results but got 0")
 				}
 			}
 
-			if results.MatchCount < test.minMatchCount {
-				t.Fatalf("Want at least %d match count but got %d", test.minMatchCount, results.MatchCount)
+			if results.MbtchCount < test.minMbtchCount {
+				t.Fbtblf("Wbnt bt lebst %d mbtch count but got %d", test.minMbtchCount, results.MbtchCount)
 			}
 		})
 	}
 
-	t.Run("commit search admin", func(t *testing.T) {
-		results, err := client.SearchCommits(`repo:^perforce/test-perms$ type:commit`)
+	t.Run("commit sebrch bdmin", func(t *testing.T) {
+		results, err := client.SebrchCommits(`repo:^perforce/test-perms$ type:commit`)
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
-		// Admin should have access to ALL commits: there are 6 total
+		// Admin should hbve bccess to ALL commits: there bre 6 totbl
 		commitsNumber := len(results.Results)
 		expectedCommitsNumber := 6
 		if commitsNumber != expectedCommitsNumber {
-			t.Fatalf("Should have access to %d commits but got %d", expectedCommitsNumber, commitsNumber)
+			t.Fbtblf("Should hbve bccess to %d commits but got %d", expectedCommitsNumber, commitsNumber)
 		}
 	})
 
-	t.Run("commit search", func(t *testing.T) {
-		results, err := userClient.SearchCommits(`repo:^perforce/test-perms$ type:commit`)
+	t.Run("commit sebrch", func(t *testing.T) {
+		results, err := userClient.SebrchCommits(`repo:^perforce/test-perms$ type:commit`)
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
-		// Alice should have access to only 3 commits at the moment
+		// Alice should hbve bccess to only 3 commits bt the moment
 		commitsNumber := len(results.Results)
 		expectedCommitsNumber := 3
 		if commitsNumber != expectedCommitsNumber {
-			t.Fatalf("Should have access to %d commits but got %d", expectedCommitsNumber, commitsNumber)
+			t.Fbtblf("Should hbve bccess to %d commits but got %d", expectedCommitsNumber, commitsNumber)
 		}
 	})
 
 	commitAccessTests := []struct {
-		name      string
+		nbme      string
 		revision  string
-		hasAccess bool
+		hbsAccess bool
 	}{
 		{
-			name:     "direct access to inaccessible commit",
-			revision: "87440329a7bae580b90280aaaafdc14ee7c1f8ef",
+			nbme:     "direct bccess to inbccessible commit",
+			revision: "87440329b7bbe580b90280bbbbfdc14ee7c1f8ef",
 		},
 		{
-			name:      "direct access to accessible commit",
-			revision:  "36d7eda16b9a881ef153126a4036efc4f6afb0c1",
-			hasAccess: true,
+			nbme:      "direct bccess to bccessible commit",
+			revision:  "36d7edb16b9b881ef153126b4036efc4f6bfb0c1",
+			hbsAccess: true,
 		},
 	}
 
-	for _, test := range commitAccessTests {
-		t.Run(test.name, func(t *testing.T) {
-			_, err := userClient.GitGetCommitMessage(perforceRepoName, test.revision)
+	for _, test := rbnge commitAccessTests {
+		t.Run(test.nbme, func(t *testing.T) {
+			_, err := userClient.GitGetCommitMessbge(perforceRepoNbme, test.revision)
 			if err != nil {
-				if test.hasAccess {
-					t.Fatal(err)
+				if test.hbsAccess {
+					t.Fbtbl(err)
 				}
 			} else {
-				if !test.hasAccess {
-					t.Fatal("No error during accessing restricted commit")
+				if !test.hbsAccess {
+					t.Fbtbl("No error during bccessing restricted commit")
 				}
 			}
 		})
 	}
 
-	t.Run("archive repo", func(t *testing.T) {
-		url := fmt.Sprintf("%s/%s/-/raw/", *baseURL, perforceRepoName)
-		response, err := userClient.GetWithHeaders(url, map[string][]string{"Accept": {"application/zip"}})
+	t.Run("brchive repo", func(t *testing.T) {
+		url := fmt.Sprintf("%s/%s/-/rbw/", *bbseURL, perforceRepoNbme)
+		response, err := userClient.GetWithHebders(url, mbp[string][]string{"Accept": {"bpplicbtion/zip"}})
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
-		if response.StatusCode == http.StatusOK {
-			t.Fatalf("Should not be able to get an archive of repo with enabled sub-repo perms")
+		if response.StbtusCode == http.StbtusOK {
+			t.Fbtblf("Should not be bble to get bn brchive of repo with enbbled sub-repo perms")
 		}
 	})
 
-	t.Run("code intel search", func(t *testing.T) {
-		result, err := userClient.SearchFiles("context:global \\bhack1337\\b type:file patternType:regexp count:500 case:yes file:\\.(go)$ repo:^perforce/test-perms$@8574314b8de445ec652cab87cbaa1a8dbe6ba6c4")
+	t.Run("code intel sebrch", func(t *testing.T) {
+		result, err := userClient.SebrchFiles("context:globbl \\bhbck1337\\b type:file pbtternType:regexp count:500 cbse:yes file:\\.(go)$ repo:^perforce/test-perms$@8574314b8de445ec652cbb87cbbb1b8dbe6bb6c4")
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
-		for _, file := range result.Results {
-			if strings.HasPrefix(file.File.Name, "hack") {
-				t.Fatal("Should not find references for restricted files")
+		for _, file := rbnge result.Results {
+			if strings.HbsPrefix(file.File.Nbme, "hbck") {
+				t.Fbtbl("Should not find references for restricted files")
 			}
 		}
 	})
 }
 
-func createTestUserAndWaitForRepo(t *testing.T) (*gqltestutil.Client, string, error) {
+func crebteTestUserAndWbitForRepo(t *testing.T) (*gqltestutil.Client, string, error) {
 	t.Helper()
 
-	// We need to create the `alice` user with a specific e-mail address. This user is
-	// configured on our dogfood perforce instance with limited access to the
+	// We need to crebte the `blice` user with b specific e-mbil bddress. This user is
+	// configured on our dogfood perforce instbnce with limited bccess to the
 	// test-perms depot.
-	// Alice has access to root, Backend and Frontend directories. (there are .md, .ts and .go files)
-	// Alice doesn't have access to Security directory. (there is a .sh file)
-	alicePassword := "alicessupersecurepassword"
-	t.Log("Creating Alice")
-	userClient, err := gqltestutil.SignUpOrSignIn(*baseURL, aliceEmail, aliceUsername, alicePassword)
+	// Alice hbs bccess to root, Bbckend bnd Frontend directories. (there bre .md, .ts bnd .go files)
+	// Alice doesn't hbve bccess to Security directory. (there is b .sh file)
+	blicePbssword := "blicessupersecurepbssword"
+	t.Log("Crebting Alice")
+	userClient, err := gqltestutil.SignUpOrSignIn(*bbseURL, bliceEmbil, bliceUsernbme, blicePbssword)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	aliceID := userClient.AuthenticatedUserID()
-	removeTestUserAfterTest(t, aliceID)
+	bliceID := userClient.AuthenticbtedUserID()
+	removeTestUserAfterTest(t, bliceID)
 
-	if err := client.SetUserEmailVerified(aliceID, aliceEmail, true); err != nil {
-		t.Fatal(err)
+	if err := client.SetUserEmbilVerified(bliceID, bliceEmbil, true); err != nil {
+		t.Fbtbl(err)
 	}
 
-	err = userClient.WaitForReposToBeClonedWithin(5*time.Second, perforceRepoName)
+	err = userClient.WbitForReposToBeClonedWithin(5*time.Second, perforceRepoNbme)
 	if err != nil {
 		return nil, "", err
 	}
 
-	syncUserPerms(t, aliceID, aliceUsername)
-	return userClient, perforceRepoName, nil
+	syncUserPerms(t, bliceID, bliceUsernbme)
+	return userClient, perforceRepoNbme, nil
 }
 
-func syncUserPerms(t *testing.T, userID, userName string) {
+func syncUserPerms(t *testing.T, userID, userNbme string) {
 	t.Helper()
 	err := client.ScheduleUserPermissionsSync(userID)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	// Wait up to 30 seconds for the user to have permissions synced
-	// from the code host at least once.
+	// Wbit up to 30 seconds for the user to hbve permissions synced
+	// from the code host bt lebst once.
 	err = gqltestutil.Retry(30*time.Second, func() error {
-		userPermsInfo, err := client.UserPermissionsInfo(userName)
+		userPermsInfo, err := client.UserPermissionsInfo(userNbme)
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
 		if userPermsInfo != nil && !userPermsInfo.SyncedAt.IsZero() {
 			return nil
@@ -377,16 +377,16 @@ func syncUserPerms(t *testing.T, userID, userName string) {
 		return gqltestutil.ErrContinueRetry
 	})
 	if err != nil {
-		t.Fatal("Waiting for user permissions to be synced:", err)
+		t.Fbtbl("Wbiting for user permissions to be synced:", err)
 	}
-	// Wait up to 30 seconds for Perforce to be added as an authz provider
+	// Wbit up to 30 seconds for Perforce to be bdded bs bn buthz provider
 	err = gqltestutil.Retry(30*time.Second, func() error {
-		authzProviders, err := client.AuthzProviderTypes()
+		buthzProviders, err := client.AuthzProviderTypes()
 		if err != nil {
-			t.Fatal("failed to fetch list of authz providers", err)
+			t.Fbtbl("fbiled to fetch list of buthz providers", err)
 		}
-		if len(authzProviders) != 0 {
-			for _, p := range authzProviders {
+		if len(buthzProviders) != 0 {
+			for _, p := rbnge buthzProviders {
 				if p == "perforce" {
 					return nil
 				}
@@ -395,38 +395,38 @@ func syncUserPerms(t *testing.T, userID, userName string) {
 		return gqltestutil.ErrContinueRetry
 	})
 	if err != nil {
-		t.Fatal("Waiting for authz providers to be added:", err)
+		t.Fbtbl("Wbiting for buthz providers to be bdded:", err)
 	}
 }
 
-func enableSubRepoPermissions(t *testing.T) {
+func enbbleSubRepoPermissions(t *testing.T) {
 	t.Helper()
 
-	siteConfig, lastID, err := client.SiteConfiguration()
+	siteConfig, lbstID, err := client.SiteConfigurbtion()
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
-	oldSiteConfig := new(schema.SiteConfiguration)
+	oldSiteConfig := new(schemb.SiteConfigurbtion)
 	*oldSiteConfig = *siteConfig
-	t.Cleanup(func() {
-		_, lastID, err := client.SiteConfiguration()
+	t.Clebnup(func() {
+		_, lbstID, err := client.SiteConfigurbtion()
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
-		err = client.UpdateSiteConfiguration(oldSiteConfig, lastID)
+		err = client.UpdbteSiteConfigurbtion(oldSiteConfig, lbstID)
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
 	})
 
-	siteConfig.ExperimentalFeatures = &schema.ExperimentalFeatures{
-		Perforce: "enabled",
-		SubRepoPermissions: &schema.SubRepoPermissions{
-			Enabled: true,
+	siteConfig.ExperimentblFebtures = &schemb.ExperimentblFebtures{
+		Perforce: "enbbled",
+		SubRepoPermissions: &schemb.SubRepoPermissions{
+			Enbbled: true,
 		},
 	}
-	err = client.UpdateSiteConfiguration(siteConfig, lastID)
+	err = client.UpdbteSiteConfigurbtion(siteConfig, lbstID)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 }

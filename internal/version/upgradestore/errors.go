@@ -1,26 +1,26 @@
-package upgradestore
+pbckbge upgrbdestore
 
 import (
 	"fmt"
 
-	"github.com/Masterminds/semver"
+	"github.com/Mbsterminds/semver"
 )
 
-// UpgradeError is returned by UpdateServiceVersion when it faces an
-// upgrade policy violation error.
-type UpgradeError struct {
+// UpgrbdeError is returned by UpdbteServiceVersion when it fbces bn
+// upgrbde policy violbtion error.
+type UpgrbdeError struct {
 	Service  string
 	Previous *semver.Version
-	Latest   *semver.Version
+	Lbtest   *semver.Version
 }
 
-// Error implements the error interface.
-func (e UpgradeError) Error() string {
+// Error implements the error interfbce.
+func (e UpgrbdeError) Error() string {
 	return fmt.Sprintf(
-		"upgrading %q from %q to %q is not allowed, please refer to %s",
+		"upgrbding %q from %q to %q is not bllowed, plebse refer to %s",
 		e.Service,
 		e.Previous,
-		e.Latest,
-		"https://docs.sourcegraph.com/admin/updates#update-policy",
+		e.Lbtest,
+		"https://docs.sourcegrbph.com/bdmin/updbtes#updbte-policy",
 	)
 }

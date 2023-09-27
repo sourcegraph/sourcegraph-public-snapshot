@@ -1,57 +1,57 @@
-package libs
+pbckbge libs
 
 import (
-	lua "github.com/yuin/gopher-lua"
-	luar "layeh.com/gopher-luar"
+	lub "github.com/yuin/gopher-lub"
+	lubr "lbyeh.com/gopher-lubr"
 
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing/internal/inference/luatypes"
-	"github.com/sourcegraph/sourcegraph/internal/luasandbox/util"
+	"github.com/sourcegrbph/sourcegrbph/internbl/codeintel/butoindexing/internbl/inference/lubtypes"
+	"github.com/sourcegrbph/sourcegrbph/internbl/lubsbndbox/util"
 )
 
-var Patterns = patternAPI{}
+vbr Pbtterns = pbtternAPI{}
 
-type patternAPI struct{}
+type pbtternAPI struct{}
 
-func (api patternAPI) LuaAPI() map[string]lua.LGFunction {
-	newPathPatternCombineConstructor := func(combine func([]*luatypes.PathPattern) *luatypes.PathPattern) func(*lua.LState) error {
-		return func(state *lua.LState) error {
-			var patterns []*luatypes.PathPattern
-			for i := 1; i <= state.GetTop(); i++ {
-				additionalPatterns, err := luatypes.PathPatternsFromUserData(state.CheckAny(i))
+func (bpi pbtternAPI) LubAPI() mbp[string]lub.LGFunction {
+	newPbthPbtternCombineConstructor := func(combine func([]*lubtypes.PbthPbttern) *lubtypes.PbthPbttern) func(*lub.LStbte) error {
+		return func(stbte *lub.LStbte) error {
+			vbr pbtterns []*lubtypes.PbthPbttern
+			for i := 1; i <= stbte.GetTop(); i++ {
+				bdditionblPbtterns, err := lubtypes.PbthPbtternsFromUserDbtb(stbte.CheckAny(i))
 				if err != nil {
 					return err
 				}
 
-				patterns = append(patterns, additionalPatterns...)
+				pbtterns = bppend(pbtterns, bdditionblPbtterns...)
 			}
 
-			state.Push(luar.New(state, combine(patterns)))
+			stbte.Push(lubr.New(stbte, combine(pbtterns)))
 			return nil
 		}
 	}
 
-	return map[string]lua.LGFunction{
-		// type: (string, array[string]) -> pattern
-		"backdoor": util.WrapLuaFunction(func(state *lua.LState) error {
-			glob := state.CheckString(1)
-			pathspecTable := state.CheckTable(2)
+	return mbp[string]lub.LGFunction{
+		// type: (string, brrby[string]) -> pbttern
+		"bbckdoor": util.WrbpLubFunction(func(stbte *lub.LStbte) error {
+			glob := stbte.CheckString(1)
+			pbthspecTbble := stbte.CheckTbble(2)
 
-			pathspecs, err := util.MapSlice(pathspecTable, func(value lua.LValue) (string, error) {
-				if s, ok := value.(lua.LString); ok {
+			pbthspecs, err := util.MbpSlice(pbthspecTbble, func(vblue lub.LVblue) (string, error) {
+				if s, ok := vblue.(lub.LString); ok {
 					return string(s), nil
 				}
-				return "", util.NewTypeError("lua.LString", value)
+				return "", util.NewTypeError("lub.LString", vblue)
 			})
 			if err != nil {
 				return err
 			}
 
-			state.Push(luar.New(state, luatypes.NewPattern(glob, pathspecs)))
+			stbte.Push(lubr.New(stbte, lubtypes.NewPbttern(glob, pbthspecs)))
 			return nil
 		}),
-		// type: ((pattern | array[pattern])...) -> pattern
-		"path_combine": util.WrapLuaFunction(newPathPatternCombineConstructor(luatypes.NewCombinedPattern)),
-		// type: ((pattern | array[pattern])...) -> pattern
-		"path_exclude": util.WrapLuaFunction(newPathPatternCombineConstructor(luatypes.NewExcludePattern)),
+		// type: ((pbttern | brrby[pbttern])...) -> pbttern
+		"pbth_combine": util.WrbpLubFunction(newPbthPbtternCombineConstructor(lubtypes.NewCombinedPbttern)),
+		// type: ((pbttern | brrby[pbttern])...) -> pbttern
+		"pbth_exclude": util.WrbpLubFunction(newPbthPbtternCombineConstructor(lubtypes.NewExcludePbttern)),
 	}
 }

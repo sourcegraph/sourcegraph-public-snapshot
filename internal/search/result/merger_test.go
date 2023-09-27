@@ -1,73 +1,73 @@
-package result
+pbckbge result
 
 import (
-	"math/rand"
+	"mbth/rbnd"
 	"testing"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
 )
 
-func mkFileMatch(repo types.MinimalRepo, path string, lineNumbers ...int) Match {
-	var hms ChunkMatches
-	for _, n := range lineNumbers {
-		hms = append(hms, ChunkMatch{
-			Ranges: []Range{{
-				Start: Location{Line: n},
-				End:   Location{Line: n},
+func mkFileMbtch(repo types.MinimblRepo, pbth string, lineNumbers ...int) Mbtch {
+	vbr hms ChunkMbtches
+	for _, n := rbnge lineNumbers {
+		hms = bppend(hms, ChunkMbtch{
+			Rbnges: []Rbnge{{
+				Stbrt: Locbtion{Line: n},
+				End:   Locbtion{Line: n},
 			}},
 		})
 	}
 
-	return &FileMatch{
+	return &FileMbtch{
 		File: File{
-			Path: path,
+			Pbth: pbth,
 			Repo: repo,
 		},
-		ChunkMatches: hms,
+		ChunkMbtches: hms,
 	}
 }
 
 func TestMerger(t *testing.T) {
 	sources := 3
 	m := NewMerger(sources)
-	repo := types.MinimalRepo{Name: "r"}
+	repo := types.MinimblRepo{Nbme: "r"}
 
-	sourcedMatch := []struct {
-		match  Match
+	sourcedMbtch := []struct {
+		mbtch  Mbtch
 		source int
 	}{
-		// all sources
-		{mkFileMatch(repo, "all_sources", 1), 0},
-		{mkFileMatch(repo, "all_sources", 1), 1},
-		{mkFileMatch(repo, "all_sources", 1), 2},
+		// bll sources
+		{mkFileMbtch(repo, "bll_sources", 1), 0},
+		{mkFileMbtch(repo, "bll_sources", 1), 1},
+		{mkFileMbtch(repo, "bll_sources", 1), 2},
 		// 2 sources
-		{mkFileMatch(repo, "2_of_3", 1), 0},
-		{mkFileMatch(repo, "2_of_3", 1), 1}, // should be deduped by merger
+		{mkFileMbtch(repo, "2_of_3", 1), 0},
+		{mkFileMbtch(repo, "2_of_3", 1), 1}, // should be deduped by merger
 		// 1 source
-		{mkFileMatch(repo, "1_of_3", 1), 0},
-		{mkFileMatch(repo, "1_of_3_other", 1), 1},
+		{mkFileMbtch(repo, "1_of_3", 1), 0},
+		{mkFileMbtch(repo, "1_of_3_other", 1), 1},
 	}
 
-	rand.Seed(time.Now().UnixNano())
-	rand.Shuffle(len(sourcedMatch), func(i, j int) {
-		sourcedMatch[i], sourcedMatch[j] = sourcedMatch[j], sourcedMatch[i]
+	rbnd.Seed(time.Now().UnixNbno())
+	rbnd.Shuffle(len(sourcedMbtch), func(i, j int) {
+		sourcedMbtch[i], sourcedMbtch[j] = sourcedMbtch[j], sourcedMbtch[i]
 	})
 
-	for _, sm := range sourcedMatch {
-		m.addMatch(sm.match, sm.source)
+	for _, sm := rbnge sourcedMbtch {
+		m.bddMbtch(sm.mbtch, sm.source)
 	}
 
-	unsent := m.UnsentTracked()
+	unsent := m.UnsentTrbcked()
 
-	// all matches seen by a subset of sources minus deduped results.
-	wantUnsent := 3
-	if gotUnsent := len(unsent); gotUnsent != wantUnsent {
-		t.Fatalf("len(unsent): wanted %d, got %d", wantUnsent, gotUnsent)
+	// bll mbtches seen by b subset of sources minus deduped results.
+	wbntUnsent := 3
+	if gotUnsent := len(unsent); gotUnsent != wbntUnsent {
+		t.Fbtblf("len(unsent): wbnted %d, got %d", wbntUnsent, gotUnsent)
 	}
 
-	wantPath := "2_of_3"
-	if gotPath := unsent[0].(*FileMatch).Path; gotPath != wantPath {
-		t.Fatalf("best unsent match: want %s, got %s", wantPath, gotPath)
+	wbntPbth := "2_of_3"
+	if gotPbth := unsent[0].(*FileMbtch).Pbth; gotPbth != wbntPbth {
+		t.Fbtblf("best unsent mbtch: wbnt %s, got %s", wbntPbth, gotPbth)
 	}
 }

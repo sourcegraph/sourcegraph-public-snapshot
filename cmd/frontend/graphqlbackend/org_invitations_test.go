@@ -1,227 +1,227 @@
-package graphqlbackend
+pbckbge grbphqlbbckend
 
 import (
 	"context"
-	"encoding/base64"
+	"encoding/bbse64"
 	"fmt"
-	"math"
+	"mbth"
 	"strings"
 	"testing"
 	"time"
 
-	"github.com/golang-jwt/jwt/v4"
-	"github.com/graph-gophers/graphql-go/errors"
+	"github.com/golbng-jwt/jwt/v4"
+	"github.com/grbph-gophers/grbphql-go/errors"
 
-	"github.com/sourcegraph/log"
+	"github.com/sourcegrbph/log"
 
-	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/authz/permssync"
-	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
-	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
-	"github.com/sourcegraph/sourcegraph/internal/txemail"
-	"github.com/sourcegraph/sourcegraph/internal/types"
-	stderrors "github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/sourcegraph/sourcegraph/lib/pointers"
-	"github.com/sourcegraph/sourcegraph/schema"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bctor"
+	"github.com/sourcegrbph/sourcegrbph/internbl/buthz/permssync"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbmocks"
+	"github.com/sourcegrbph/sourcegrbph/internbl/repoupdbter/protocol"
+	"github.com/sourcegrbph/sourcegrbph/internbl/txembil"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
+	stderrors "github.com/sourcegrbph/sourcegrbph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/lib/pointers"
+	"github.com/sourcegrbph/sourcegrbph/schemb"
 )
 
 func mockTimeNow() {
-	now := time.Date(2021, 1, 28, 0, 0, 0, 0, time.UTC)
+	now := time.Dbte(2021, 1, 28, 0, 0, 0, 0, time.UTC)
 	timeNow = func() time.Time {
 		return now
 	}
 }
 
-func mockSiteConfigSigningKey(withEmails *bool) string {
+func mockSiteConfigSigningKey(withEmbils *bool) string {
 	signingKey := "Zm9v"
 
-	siteConfig := schema.SiteConfiguration{
-		OrganizationInvitations: &schema.OrganizationInvitations{
+	siteConfig := schemb.SiteConfigurbtion{
+		OrgbnizbtionInvitbtions: &schemb.OrgbnizbtionInvitbtions{
 			SigningKey: signingKey,
 		},
 	}
-	if withEmails != nil && *withEmails {
-		siteConfig.EmailSmtp = &schema.SMTPServerConfig{}
+	if withEmbils != nil && *withEmbils {
+		siteConfig.EmbilSmtp = &schemb.SMTPServerConfig{}
 	}
 
 	conf.Mock(&conf.Unified{
-		SiteConfiguration: siteConfig,
+		SiteConfigurbtion: siteConfig,
 	})
 
 	return signingKey
 }
 
-func mockDefaultSiteConfig() {
-	conf.Mock(&conf.Unified{SiteConfiguration: schema.SiteConfiguration{}})
+func mockDefbultSiteConfig() {
+	conf.Mock(&conf.Unified{SiteConfigurbtion: schemb.SiteConfigurbtion{}})
 }
 
-func TestCreateJWT(t *testing.T) {
-	expiryTime := timeNow().Add(DefaultExpiryDuration)
+func TestCrebteJWT(t *testing.T) {
+	expiryTime := timeNow().Add(DefbultExpiryDurbtion)
 
-	t.Run("Fails when signingKey is not configured in site config", func(t *testing.T) {
-		_, err := createInvitationJWT(1, 1, 1, expiryTime)
+	t.Run("Fbils when signingKey is not configured in site config", func(t *testing.T) {
+		_, err := crebteInvitbtionJWT(1, 1, 1, expiryTime)
 
-		expectedError := "signing key not provided, cannot create JWT for invitation URL. Please add organizationInvitations signingKey to site configuration."
+		expectedError := "signing key not provided, cbnnot crebte JWT for invitbtion URL. Plebse bdd orgbnizbtionInvitbtions signingKey to site configurbtion."
 		if err == nil || err.Error() != expectedError {
-			t.Fatalf("Expected error about signing key not provided, got %v", err)
+			t.Fbtblf("Expected error bbout signing key not provided, got %v", err)
 		}
 	})
-	t.Run("Returns JWT with encoded parameters", func(t *testing.T) {
+	t.Run("Returns JWT with encoded pbrbmeters", func(t *testing.T) {
 		signingKey := mockSiteConfigSigningKey(nil)
-		defer mockDefaultSiteConfig()
+		defer mockDefbultSiteConfig()
 
-		token, err := createInvitationJWT(1, 2, 3, expiryTime)
+		token, err := crebteInvitbtionJWT(1, 2, 3, expiryTime)
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
 
-		parsed, err := jwt.ParseWithClaims(token, &orgInvitationClaims{}, func(token *jwt.Token) (any, error) {
-			// Validate the alg is what we expect
+		pbrsed, err := jwt.PbrseWithClbims(token, &orgInvitbtionClbims{}, func(token *jwt.Token) (bny, error) {
+			// Vblidbte the blg is whbt we expect
 			if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 				return nil, stderrors.Newf("Not using HMAC for signing, found %v", token.Method)
 			}
 
-			return base64.StdEncoding.DecodeString(signingKey)
+			return bbse64.StdEncoding.DecodeString(signingKey)
 		})
 
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
-		if !parsed.Valid {
-			t.Fatalf("parsed JWT not valid")
+		if !pbrsed.Vblid {
+			t.Fbtblf("pbrsed JWT not vblid")
 		}
 
-		claims, ok := parsed.Claims.(*orgInvitationClaims)
+		clbims, ok := pbrsed.Clbims.(*orgInvitbtionClbims)
 		if !ok {
-			t.Fatalf("parsed JWT claims not ok")
+			t.Fbtblf("pbrsed JWT clbims not ok")
 		}
-		if claims.Subject != "1" || claims.InvitationID != 2 || claims.SenderID != 3 || claims.ExpiresAt == nil || *claims.ExpiresAt != *jwt.NewNumericDate(expiryTime) {
-			t.Fatalf("claims from JWT do not match expectations %v", claims)
+		if clbims.Subject != "1" || clbims.InvitbtionID != 2 || clbims.SenderID != 3 || clbims.ExpiresAt == nil || *clbims.ExpiresAt != *jwt.NewNumericDbte(expiryTime) {
+			t.Fbtblf("clbims from JWT do not mbtch expectbtions %v", clbims)
 		}
 	})
 }
 
-func TestOrgInvitationURL(t *testing.T) {
-	invitation := database.OrgInvitation{
+func TestOrgInvitbtionURL(t *testing.T) {
+	invitbtion := dbtbbbse.OrgInvitbtion{
 		OrgID:        1,
 		ID:           2,
 		SenderUserID: 3,
-		ExpiresAt:    pointers.Ptr(timeNow().Add(DefaultExpiryDuration)),
+		ExpiresAt:    pointers.Ptr(timeNow().Add(DefbultExpiryDurbtion)),
 	}
 
-	t.Run("Fails if site config is not defined", func(t *testing.T) {
-		_, err := orgInvitationURL(invitation, true)
+	t.Run("Fbils if site config is not defined", func(t *testing.T) {
+		_, err := orgInvitbtionURL(invitbtion, true)
 
-		expectedError := "signing key not provided, cannot create JWT for invitation URL. Please add organizationInvitations signingKey to site configuration."
+		expectedError := "signing key not provided, cbnnot crebte JWT for invitbtion URL. Plebse bdd orgbnizbtionInvitbtions signingKey to site configurbtion."
 		if err == nil || err.Error() != expectedError {
-			t.Fatalf("Expected error about signing key not provided, instead got %v", err)
+			t.Fbtblf("Expected error bbout signing key not provided, instebd got %v", err)
 		}
 	})
 
-	t.Run("Returns invitation URL with JWT", func(t *testing.T) {
+	t.Run("Returns invitbtion URL with JWT", func(t *testing.T) {
 		signingKey := mockSiteConfigSigningKey(nil)
-		defer mockDefaultSiteConfig()
+		defer mockDefbultSiteConfig()
 
-		url, err := orgInvitationURL(invitation, true)
+		url, err := orgInvitbtionURL(invitbtion, true)
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
-		if !strings.HasPrefix(url, "/organizations/invitation/") {
-			t.Fatalf("Url is malformed %s", url)
+		if !strings.HbsPrefix(url, "/orgbnizbtions/invitbtion/") {
+			t.Fbtblf("Url is mblformed %s", url)
 		}
 		items := strings.Split(url, "/")
 		token := items[len(items)-1]
 
-		parsed, err := jwt.ParseWithClaims(token, &orgInvitationClaims{}, func(token *jwt.Token) (any, error) {
-			// Validate the alg is what we expect
+		pbrsed, err := jwt.PbrseWithClbims(token, &orgInvitbtionClbims{}, func(token *jwt.Token) (bny, error) {
+			// Vblidbte the blg is whbt we expect
 			if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 				return nil, stderrors.Newf("Not using HMAC for signing, found %v", token.Method)
 			}
 
-			return base64.StdEncoding.DecodeString(signingKey)
+			return bbse64.StdEncoding.DecodeString(signingKey)
 		})
 
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
-		if !parsed.Valid {
-			t.Fatalf("parsed JWT not valid")
+		if !pbrsed.Vblid {
+			t.Fbtblf("pbrsed JWT not vblid")
 		}
 
-		claims, ok := parsed.Claims.(*orgInvitationClaims)
+		clbims, ok := pbrsed.Clbims.(*orgInvitbtionClbims)
 		if !ok {
-			t.Fatalf("parsed JWT claims not ok")
+			t.Fbtblf("pbrsed JWT clbims not ok")
 		}
-		if claims.Subject != "1" || claims.InvitationID != 2 || claims.SenderID != 3 {
-			t.Fatalf("claims from JWT do not match expectations %v", claims)
+		if clbims.Subject != "1" || clbims.InvitbtionID != 2 || clbims.SenderID != 3 {
+			t.Fbtblf("clbims from JWT do not mbtch expectbtions %v", clbims)
 		}
 	})
 }
 
-func TestInviteUserToOrganization(t *testing.T) {
+func TestInviteUserToOrgbnizbtion(t *testing.T) {
 	mockTimeNow()
 	defer func() {
 		timeNow = time.Now
 	}()
 	users := dbmocks.NewMockUserStore()
-	users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{ID: 1}, nil)
-	users.GetByUsernameFunc.SetDefaultReturn(&types.User{ID: 2, Username: "foo"}, nil)
+	users.GetByCurrentAuthUserFunc.SetDefbultReturn(&types.User{ID: 1}, nil)
+	users.GetByUsernbmeFunc.SetDefbultReturn(&types.User{ID: 2, Usernbme: "foo"}, nil)
 
-	userEmails := dbmocks.NewMockUserEmailsStore()
-	userEmails.GetPrimaryEmailFunc.SetDefaultReturn("foo@bar.baz", false, nil)
+	userEmbils := dbmocks.NewMockUserEmbilsStore()
+	userEmbils.GetPrimbryEmbilFunc.SetDefbultReturn("foo@bbr.bbz", fblse, nil)
 
 	orgMembers := dbmocks.NewMockOrgMemberStore()
-	orgMembers.GetByOrgIDAndUserIDFunc.SetDefaultHook(func(_ context.Context, orgID int32, userID int32) (*types.OrgMembership, error) {
+	orgMembers.GetByOrgIDAndUserIDFunc.SetDefbultHook(func(_ context.Context, orgID int32, userID int32) (*types.OrgMembership, error) {
 		if userID == 1 {
 			return &types.OrgMembership{}, nil
 		}
 
-		return nil, &database.ErrOrgMemberNotFound{}
+		return nil, &dbtbbbse.ErrOrgMemberNotFound{}
 	})
 
 	orgs := dbmocks.NewMockOrgStore()
-	orgName := "acme"
-	mockedOrg := types.Org{ID: 1, Name: orgName}
-	orgs.GetByNameFunc.SetDefaultReturn(&mockedOrg, nil)
-	orgs.GetByIDFunc.SetDefaultReturn(&mockedOrg, nil)
+	orgNbme := "bcme"
+	mockedOrg := types.Org{ID: 1, Nbme: orgNbme}
+	orgs.GetByNbmeFunc.SetDefbultReturn(&mockedOrg, nil)
+	orgs.GetByIDFunc.SetDefbultReturn(&mockedOrg, nil)
 
-	orgInvitations := dbmocks.NewMockOrgInvitationStore()
-	orgInvitations.CreateFunc.SetDefaultReturn(&database.OrgInvitation{ID: 1, ExpiresAt: pointers.Ptr(timeNow().Add(DefaultExpiryDuration))}, nil)
+	orgInvitbtions := dbmocks.NewMockOrgInvitbtionStore()
+	orgInvitbtions.CrebteFunc.SetDefbultReturn(&dbtbbbse.OrgInvitbtion{ID: 1, ExpiresAt: pointers.Ptr(timeNow().Add(DefbultExpiryDurbtion))}, nil)
 
-	featureFlags := dbmocks.NewMockFeatureFlagStore()
-	featureFlags.GetOrgFeatureFlagFunc.SetDefaultReturn(false, nil)
+	febtureFlbgs := dbmocks.NewMockFebtureFlbgStore()
+	febtureFlbgs.GetOrgFebtureFlbgFunc.SetDefbultReturn(fblse, nil)
 
 	db := dbmocks.NewMockDB()
-	db.OrgsFunc.SetDefaultReturn(orgs)
-	db.UsersFunc.SetDefaultReturn(users)
-	db.UserEmailsFunc.SetDefaultReturn(userEmails)
-	db.OrgMembersFunc.SetDefaultReturn(orgMembers)
-	db.OrgInvitationsFunc.SetDefaultReturn(orgInvitations)
-	db.FeatureFlagsFunc.SetDefaultReturn(featureFlags)
+	db.OrgsFunc.SetDefbultReturn(orgs)
+	db.UsersFunc.SetDefbultReturn(users)
+	db.UserEmbilsFunc.SetDefbultReturn(userEmbils)
+	db.OrgMembersFunc.SetDefbultReturn(orgMembers)
+	db.OrgInvitbtionsFunc.SetDefbultReturn(orgInvitbtions)
+	db.FebtureFlbgsFunc.SetDefbultReturn(febtureFlbgs)
 
-	t.Run("Falls back to legacy URL if site settings not provided", func(t *testing.T) {
+	t.Run("Fblls bbck to legbcy URL if site settings not provided", func(t *testing.T) {
 		RunTests(t, []*Test{
 			{
-				Schema: mustParseGraphQLSchema(t, db),
+				Schemb: mustPbrseGrbphQLSchemb(t, db),
 				Query: `
-				mutation InviteUserToOrganization($organization: ID!, $username: String!) {
-					inviteUserToOrganization(organization: $organization, username: $username) {
-						sentInvitationEmail
-						invitationURL
+				mutbtion InviteUserToOrgbnizbtion($orgbnizbtion: ID!, $usernbme: String!) {
+					inviteUserToOrgbnizbtion(orgbnizbtion: $orgbnizbtion, usernbme: $usernbme) {
+						sentInvitbtionEmbil
+						invitbtionURL
 					}
 				}
 				`,
-				Variables: map[string]any{
-					"organization": string(MarshalOrgID(1)),
-					"username":     "foo",
+				Vbribbles: mbp[string]bny{
+					"orgbnizbtion": string(MbrshblOrgID(1)),
+					"usernbme":     "foo",
 				},
 				ExpectedResult: `
 				{
-					"inviteUserToOrganization": {
-						"invitationURL": "http://example.com/organizations/acme/invitation",
-						"sentInvitationEmail": false
+					"inviteUserToOrgbnizbtion": {
+						"invitbtionURL": "http://exbmple.com/orgbnizbtions/bcme/invitbtion",
+						"sentInvitbtionEmbil": fblse
 					}
 				}
 				`,
@@ -229,62 +229,62 @@ func TestInviteUserToOrganization(t *testing.T) {
 		})
 	})
 
-	t.Run("Fails if username to invite does not have verified email address", func(t *testing.T) {
-		// enable send email functionality
-		conf.Mock(&conf.Unified{SiteConfiguration: schema.SiteConfiguration{
-			EmailSmtp: &schema.SMTPServerConfig{},
+	t.Run("Fbils if usernbme to invite does not hbve verified embil bddress", func(t *testing.T) {
+		// enbble send embil functionblity
+		conf.Mock(&conf.Unified{SiteConfigurbtion: schemb.SiteConfigurbtion{
+			EmbilSmtp: &schemb.SMTPServerConfig{},
 		}})
-		defer mockDefaultSiteConfig()
+		defer mockDefbultSiteConfig()
 
 		RunTests(t, []*Test{
 			{
-				Schema: mustParseGraphQLSchema(t, db),
+				Schemb: mustPbrseGrbphQLSchemb(t, db),
 				Query: `
-				mutation InviteUserToOrganization($organization: ID!, $username: String!) {
-					inviteUserToOrganization(organization: $organization, username: $username) {
-						sentInvitationEmail
-						invitationURL
+				mutbtion InviteUserToOrgbnizbtion($orgbnizbtion: ID!, $usernbme: String!) {
+					inviteUserToOrgbnizbtion(orgbnizbtion: $orgbnizbtion, usernbme: $usernbme) {
+						sentInvitbtionEmbil
+						invitbtionURL
 					}
 				}
 				`,
-				Variables: map[string]any{
-					"organization": string(MarshalOrgID(1)),
-					"username":     "foo",
+				Vbribbles: mbp[string]bny{
+					"orgbnizbtion": string(MbrshblOrgID(1)),
+					"usernbme":     "foo",
 				},
 				ExpectedResult: "null",
 				ExpectedErrors: []*errors.QueryError{
 					{
-						Message: "cannot invite user because their primary email address is not verified",
-						Path:    []any{"inviteUserToOrganization"},
+						Messbge: "cbnnot invite user becbuse their primbry embil bddress is not verified",
+						Pbth:    []bny{"inviteUserToOrgbnizbtion"},
 					},
 				},
 			},
 		})
 	})
 
-	t.Run("Returns invitation URL in the response for username invitation", func(t *testing.T) {
+	t.Run("Returns invitbtion URL in the response for usernbme invitbtion", func(t *testing.T) {
 		mockSiteConfigSigningKey(nil)
-		defer mockDefaultSiteConfig()
+		defer mockDefbultSiteConfig()
 		RunTests(t, []*Test{
 			{
-				Schema: mustParseGraphQLSchema(t, db),
+				Schemb: mustPbrseGrbphQLSchemb(t, db),
 				Query: `
-				mutation InviteUserToOrganization($organization: ID!, $username: String) {
-					inviteUserToOrganization(organization: $organization, username: $username) {
-						sentInvitationEmail
-						invitationURL
+				mutbtion InviteUserToOrgbnizbtion($orgbnizbtion: ID!, $usernbme: String) {
+					inviteUserToOrgbnizbtion(orgbnizbtion: $orgbnizbtion, usernbme: $usernbme) {
+						sentInvitbtionEmbil
+						invitbtionURL
 					}
 				}
 				`,
-				Variables: map[string]any{
-					"organization": string(MarshalOrgID(1)),
-					"username":     "foo",
+				Vbribbles: mbp[string]bny{
+					"orgbnizbtion": string(MbrshblOrgID(1)),
+					"usernbme":     "foo",
 				},
 				ExpectedResult: `
 				{
-					"inviteUserToOrganization": {
-						"invitationURL": "http://example.com/organizations/invitation/eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJpbnZpdGVfaWQiOjEsInNlbmRlcl9pZCI6MCwiaXNzIjoiaHR0cDovL2V4YW1wbGUuY29tIiwic3ViIjoiMCIsImV4cCI6MTYxMTk2NDgwMH0.26FeOWbKQJ0uZ6_aeCmbYoIb2mnP0e96hiSYrw1gd91CKyVvuZQRvbzDnUf4D2gOPnwBl4GLovBjByy6xgN1ow",
-						"sentInvitationEmail": false
+					"inviteUserToOrgbnizbtion": {
+						"invitbtionURL": "http://exbmple.com/orgbnizbtions/invitbtion/eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJpbnZpdGVfbWQiOjEsInNlbmRlcl9pZCI6MCwibXNzIjoibHR0cDovL2V4YW1wbGUuY29tIiwic3ViIjoiMCIsImV4cCI6MTYxMTk2NDgwMH0.26FeOWbKQJ0uZ6_beCmbYoIb2mnP0e96hiSYrw1gd91CKyVvuZQRvbzDnUf4D2gOPnwBl4GLovBjByy6xgN1ow",
+						"sentInvitbtionEmbil": fblse
 					}
 				}
 				`,
@@ -292,63 +292,63 @@ func TestInviteUserToOrganization(t *testing.T) {
 		})
 	})
 
-	t.Run("Fails for email invitation if feature flag is not enabled", func(t *testing.T) {
+	t.Run("Fbils for embil invitbtion if febture flbg is not enbbled", func(t *testing.T) {
 		mockSiteConfigSigningKey(nil)
-		defer mockDefaultSiteConfig()
+		defer mockDefbultSiteConfig()
 		RunTests(t, []*Test{
 			{
-				Schema: mustParseGraphQLSchema(t, db),
+				Schemb: mustPbrseGrbphQLSchemb(t, db),
 				Query: `
-				mutation InviteUserToOrganization($organization: ID!, $email: String) {
-					inviteUserToOrganization(organization: $organization, email: $email) {
-						sentInvitationEmail
-						invitationURL
+				mutbtion InviteUserToOrgbnizbtion($orgbnizbtion: ID!, $embil: String) {
+					inviteUserToOrgbnizbtion(orgbnizbtion: $orgbnizbtion, embil: $embil) {
+						sentInvitbtionEmbil
+						invitbtionURL
 					}
 				}
 				`,
-				Variables: map[string]any{
-					"organization": string(MarshalOrgID(1)),
-					"email":        "foo@bar.baz",
+				Vbribbles: mbp[string]bny{
+					"orgbnizbtion": string(MbrshblOrgID(1)),
+					"embil":        "foo@bbr.bbz",
 				},
 				ExpectedResult: "null",
 				ExpectedErrors: []*errors.QueryError{
 					{
-						Message: "inviting by email is not supported for this organization",
-						Path:    []any{"inviteUserToOrganization"},
+						Messbge: "inviting by embil is not supported for this orgbnizbtion",
+						Pbth:    []bny{"inviteUserToOrgbnizbtion"},
 					},
 				},
 			},
 		})
 	})
 
-	t.Run("Returns invitation URL in the response for email invitation", func(t *testing.T) {
+	t.Run("Returns invitbtion URL in the response for embil invitbtion", func(t *testing.T) {
 		mockSiteConfigSigningKey(nil)
-		defer mockDefaultSiteConfig()
+		defer mockDefbultSiteConfig()
 
-		featureFlags.GetOrgFeatureFlagFunc.SetDefaultReturn(true, nil)
+		febtureFlbgs.GetOrgFebtureFlbgFunc.SetDefbultReturn(true, nil)
 		defer func() {
-			featureFlags.GetOrgFeatureFlagFunc.SetDefaultReturn(false, nil)
+			febtureFlbgs.GetOrgFebtureFlbgFunc.SetDefbultReturn(fblse, nil)
 		}()
 		RunTests(t, []*Test{
 			{
-				Schema: mustParseGraphQLSchema(t, db),
+				Schemb: mustPbrseGrbphQLSchemb(t, db),
 				Query: `
-				mutation InviteUserToOrganization($organization: ID!, $email: String) {
-					inviteUserToOrganization(organization: $organization, email: $email) {
-						sentInvitationEmail
-						invitationURL
+				mutbtion InviteUserToOrgbnizbtion($orgbnizbtion: ID!, $embil: String) {
+					inviteUserToOrgbnizbtion(orgbnizbtion: $orgbnizbtion, embil: $embil) {
+						sentInvitbtionEmbil
+						invitbtionURL
 					}
 				}
 				`,
-				Variables: map[string]any{
-					"organization": string(MarshalOrgID(1)),
-					"email":        "foo@bar.baz",
+				Vbribbles: mbp[string]bny{
+					"orgbnizbtion": string(MbrshblOrgID(1)),
+					"embil":        "foo@bbr.bbz",
 				},
 				ExpectedResult: `
 				{
-					"inviteUserToOrganization": {
-						"invitationURL": "http://example.com/organizations/invitation/eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJpbnZpdGVfaWQiOjEsInNlbmRlcl9pZCI6MCwiaXNzIjoiaHR0cDovL2V4YW1wbGUuY29tIiwic3ViIjoiMCIsImV4cCI6MTYxMTk2NDgwMH0.26FeOWbKQJ0uZ6_aeCmbYoIb2mnP0e96hiSYrw1gd91CKyVvuZQRvbzDnUf4D2gOPnwBl4GLovBjByy6xgN1ow",
-						"sentInvitationEmail": false
+					"inviteUserToOrgbnizbtion": {
+						"invitbtionURL": "http://exbmple.com/orgbnizbtions/invitbtion/eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJpbnZpdGVfbWQiOjEsInNlbmRlcl9pZCI6MCwibXNzIjoibHR0cDovL2V4YW1wbGUuY29tIiwic3ViIjoiMCIsImV4cCI6MTYxMTk2NDgwMH0.26FeOWbKQJ0uZ6_beCmbYoIb2mnP0e96hiSYrw1gd91CKyVvuZQRvbzDnUf4D2gOPnwBl4GLovBjByy6xgN1ow",
+						"sentInvitbtionEmbil": fblse
 					}
 				}
 				`,
@@ -357,20 +357,20 @@ func TestInviteUserToOrganization(t *testing.T) {
 	})
 }
 
-func TestPendingInvitations(t *testing.T) {
+func TestPendingInvitbtions(t *testing.T) {
 	users := dbmocks.NewMockUserStore()
-	users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{ID: 1}, nil)
+	users.GetByCurrentAuthUserFunc.SetDefbultReturn(&types.User{ID: 1}, nil)
 
 	orgMembers := dbmocks.NewMockOrgMemberStore()
-	orgMembers.GetByOrgIDAndUserIDFunc.SetDefaultReturn(&types.OrgMembership{}, nil)
+	orgMembers.GetByOrgIDAndUserIDFunc.SetDefbultReturn(&types.OrgMembership{}, nil)
 
-	//orgs := database.NewMockOrgStore()
-	//orgName := "acme"
-	//mockedOrg := types.Org{ID: 1, Name: orgName}
-	//orgs.GetByNameFunc.SetDefaultReturn(&mockedOrg, nil)
-	//orgs.GetByIDFunc.SetDefaultReturn(&mockedOrg, nil)
+	//orgs := dbtbbbse.NewMockOrgStore()
+	//orgNbme := "bcme"
+	//mockedOrg := types.Org{ID: 1, Nbme: orgNbme}
+	//orgs.GetByNbmeFunc.SetDefbultReturn(&mockedOrg, nil)
+	//orgs.GetByIDFunc.SetDefbultReturn(&mockedOrg, nil)
 
-	invitations := []*database.OrgInvitation{
+	invitbtions := []*dbtbbbse.OrgInvitbtion{
 		{
 			ID: 1,
 		},
@@ -381,165 +381,165 @@ func TestPendingInvitations(t *testing.T) {
 			ID: 3,
 		},
 	}
-	orgInvitations := dbmocks.NewMockOrgInvitationStore()
-	orgInvitations.GetPendingByOrgIDFunc.SetDefaultReturn(invitations, nil)
+	orgInvitbtions := dbmocks.NewMockOrgInvitbtionStore()
+	orgInvitbtions.GetPendingByOrgIDFunc.SetDefbultReturn(invitbtions, nil)
 
 	db := dbmocks.NewMockDB()
-	//db.OrgsFunc.SetDefaultReturn(orgs)
-	db.UsersFunc.SetDefaultReturn(users)
-	db.OrgMembersFunc.SetDefaultReturn(orgMembers)
-	db.OrgInvitationsFunc.SetDefaultReturn(orgInvitations)
+	//db.OrgsFunc.SetDefbultReturn(orgs)
+	db.UsersFunc.SetDefbultReturn(users)
+	db.OrgMembersFunc.SetDefbultReturn(orgMembers)
+	db.OrgInvitbtionsFunc.SetDefbultReturn(orgInvitbtions)
 
-	ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
+	ctx := bctor.WithActor(context.Bbckground(), &bctor.Actor{UID: 1})
 
-	t.Run("Returns invitations in the response", func(t *testing.T) {
+	t.Run("Returns invitbtions in the response", func(t *testing.T) {
 		RunTests(t, []*Test{
 			{
-				Schema:  mustParseGraphQLSchema(t, db),
+				Schemb:  mustPbrseGrbphQLSchemb(t, db),
 				Context: ctx,
 				Query: `
-				query PendingInvitations($organization: ID!) {
-					pendingInvitations(organization: $organization) {
+				query PendingInvitbtions($orgbnizbtion: ID!) {
+					pendingInvitbtions(orgbnizbtion: $orgbnizbtion) {
 						id
 					}
 				}
 				`,
-				Variables: map[string]any{
-					"organization": string(MarshalOrgID(1)),
+				Vbribbles: mbp[string]bny{
+					"orgbnizbtion": string(MbrshblOrgID(1)),
 				},
 				ExpectedResult: fmt.Sprintf(`{
-					"pendingInvitations": [
+					"pendingInvitbtions": [
 						{ "id": "%s" },
 						{ "id": "%s" },
 						{ "id": "%s" }
 					]
 				}`,
-					string(MarshalOrgInvitationID(invitations[0].ID)),
-					string(MarshalOrgInvitationID(invitations[1].ID)),
-					string(MarshalOrgInvitationID(invitations[2].ID))),
+					string(MbrshblOrgInvitbtionID(invitbtions[0].ID)),
+					string(MbrshblOrgInvitbtionID(invitbtions[1].ID)),
+					string(MbrshblOrgInvitbtionID(invitbtions[2].ID))),
 			},
 		})
 	})
 
-	t.Run("Returns invitations in the response", func(t *testing.T) {
+	t.Run("Returns invitbtions in the response", func(t *testing.T) {
 		RunTests(t, []*Test{
 			{
-				Schema:  mustParseGraphQLSchema(t, db),
+				Schemb:  mustPbrseGrbphQLSchemb(t, db),
 				Context: ctx,
 				Query: `
-				query PendingInvitations($organization: ID!) {
-					pendingInvitations(organization: $organization) {
+				query PendingInvitbtions($orgbnizbtion: ID!) {
+					pendingInvitbtions(orgbnizbtion: $orgbnizbtion) {
 						id
 					}
 				}
 				`,
-				Variables: map[string]any{
-					"organization": string(MarshalOrgID(1)),
+				Vbribbles: mbp[string]bny{
+					"orgbnizbtion": string(MbrshblOrgID(1)),
 				},
 				ExpectedResult: fmt.Sprintf(`{
-					"pendingInvitations": [
+					"pendingInvitbtions": [
 						{ "id": "%s" },
 						{ "id": "%s" },
 						{ "id": "%s" }
 					]
 				}`,
-					string(MarshalOrgInvitationID(invitations[0].ID)),
-					string(MarshalOrgInvitationID(invitations[1].ID)),
-					string(MarshalOrgInvitationID(invitations[2].ID))),
+					string(MbrshblOrgInvitbtionID(invitbtions[0].ID)),
+					string(MbrshblOrgInvitbtionID(invitbtions[1].ID)),
+					string(MbrshblOrgInvitbtionID(invitbtions[2].ID))),
 			},
 		})
 	})
 }
 
-func TestInvitationByToken(t *testing.T) {
+func TestInvitbtionByToken(t *testing.T) {
 	users := dbmocks.NewMockUserStore()
-	users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{ID: 1}, nil)
-	users.GetByUsernameFunc.SetDefaultReturn(&types.User{ID: 2, Username: "foo"}, nil)
+	users.GetByCurrentAuthUserFunc.SetDefbultReturn(&types.User{ID: 1}, nil)
+	users.GetByUsernbmeFunc.SetDefbultReturn(&types.User{ID: 2, Usernbme: "foo"}, nil)
 
 	orgMembers := dbmocks.NewMockOrgMemberStore()
-	orgMembers.GetByOrgIDAndUserIDFunc.SetDefaultHook(func(_ context.Context, orgID int32, userID int32) (*types.OrgMembership, error) {
+	orgMembers.GetByOrgIDAndUserIDFunc.SetDefbultHook(func(_ context.Context, orgID int32, userID int32) (*types.OrgMembership, error) {
 		if userID == 1 {
 			return &types.OrgMembership{}, nil
 		}
 
-		return nil, &database.ErrOrgMemberNotFound{}
+		return nil, &dbtbbbse.ErrOrgMemberNotFound{}
 	})
 
 	orgs := dbmocks.NewMockOrgStore()
-	orgName := "acme"
-	mockedOrg := types.Org{ID: 1, Name: orgName}
-	orgs.GetByNameFunc.SetDefaultReturn(&mockedOrg, nil)
-	orgs.GetByIDFunc.SetDefaultReturn(&mockedOrg, nil)
+	orgNbme := "bcme"
+	mockedOrg := types.Org{ID: 1, Nbme: orgNbme}
+	orgs.GetByNbmeFunc.SetDefbultReturn(&mockedOrg, nil)
+	orgs.GetByIDFunc.SetDefbultReturn(&mockedOrg, nil)
 
-	orgInvitations := dbmocks.NewMockOrgInvitationStore()
-	orgInvitations.GetPendingByIDFunc.SetDefaultReturn(&database.OrgInvitation{ID: 1, OrgID: 1, RecipientUserID: 1}, nil)
+	orgInvitbtions := dbmocks.NewMockOrgInvitbtionStore()
+	orgInvitbtions.GetPendingByIDFunc.SetDefbultReturn(&dbtbbbse.OrgInvitbtion{ID: 1, OrgID: 1, RecipientUserID: 1}, nil)
 
 	db := dbmocks.NewMockDB()
-	db.OrgsFunc.SetDefaultReturn(orgs)
-	db.UsersFunc.SetDefaultReturn(users)
-	db.OrgMembersFunc.SetDefaultReturn(orgMembers)
-	db.OrgInvitationsFunc.SetDefaultReturn(orgInvitations)
+	db.OrgsFunc.SetDefbultReturn(orgs)
+	db.UsersFunc.SetDefbultReturn(users)
+	db.OrgMembersFunc.SetDefbultReturn(orgMembers)
+	db.OrgInvitbtionsFunc.SetDefbultReturn(orgInvitbtions)
 
-	ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
+	ctx := bctor.WithActor(context.Bbckground(), &bctor.Actor{UID: 1})
 
-	t.Run("Fails if site config is not provided", func(t *testing.T) {
-		token := "anything"
+	t.Run("Fbils if site config is not provided", func(t *testing.T) {
+		token := "bnything"
 		RunTests(t, []*Test{
 			{
-				Schema:  mustParseGraphQLSchema(t, db),
+				Schemb:  mustPbrseGrbphQLSchemb(t, db),
 				Context: ctx,
 				Query: `
-				query InvitationByToken($token: String!) {
-					invitationByToken(token: $token) {
-						organization {
-							name
+				query InvitbtionByToken($token: String!) {
+					invitbtionByToken(token: $token) {
+						orgbnizbtion {
+							nbme
 						}
 					}
 				}
 				`,
-				Variables: map[string]any{
+				Vbribbles: mbp[string]bny{
 					"token": token,
 				},
 				ExpectedResult: `null`,
 				ExpectedErrors: []*errors.QueryError{
 					{
-						Message: "signing key not provided, cannot validate JWT on invitation URL. Please add organizationInvitations signingKey to site configuration.",
-						Path:    []any{"invitationByToken"},
+						Messbge: "signing key not provided, cbnnot vblidbte JWT on invitbtion URL. Plebse bdd orgbnizbtionInvitbtions signingKey to site configurbtion.",
+						Pbth:    []bny{"invitbtionByToken"},
 					},
 				},
 			},
 		})
 	})
 
-	t.Run("Returns invitation URL in the response", func(t *testing.T) {
+	t.Run("Returns invitbtion URL in the response", func(t *testing.T) {
 		mockSiteConfigSigningKey(nil)
-		defer mockDefaultSiteConfig()
-		token, err := createInvitationJWT(1, 1, 1, timeNow().Add(DefaultExpiryDuration))
+		defer mockDefbultSiteConfig()
+		token, err := crebteInvitbtionJWT(1, 1, 1, timeNow().Add(DefbultExpiryDurbtion))
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
 		RunTests(t, []*Test{
 			{
-				Schema:  mustParseGraphQLSchema(t, db),
+				Schemb:  mustPbrseGrbphQLSchemb(t, db),
 				Context: ctx,
 				Query: `
-				query InvitationByToken($token: String!) {
-					invitationByToken(token: $token) {
+				query InvitbtionByToken($token: String!) {
+					invitbtionByToken(token: $token) {
 						id
-						organization {
-							name
+						orgbnizbtion {
+							nbme
 						}
 					}
 				}
 				`,
-				Variables: map[string]any{
+				Vbribbles: mbp[string]bny{
 					"token": token,
 				},
 				ExpectedResult: `{
-					"invitationByToken": {
-						"id": "T3JnSW52aXRhdGlvbjox",
-						"organization": {
-							"name": "acme"
+					"invitbtionByToken": {
+						"id": "T3JnSW52bXRhdGlvbjox",
+						"orgbnizbtion": {
+							"nbme": "bcme"
 						}
 					}
 				}`,
@@ -548,429 +548,429 @@ func TestInvitationByToken(t *testing.T) {
 	})
 }
 
-func TestRespondToOrganizationInvitation(t *testing.T) {
+func TestRespondToOrgbnizbtionInvitbtion(t *testing.T) {
 	users := dbmocks.NewMockUserStore()
-	users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{ID: 2}, nil)
-	users.GetByUsernameFunc.SetDefaultReturn(&types.User{ID: 2, Username: "foo"}, nil)
+	users.GetByCurrentAuthUserFunc.SetDefbultReturn(&types.User{ID: 2}, nil)
+	users.GetByUsernbmeFunc.SetDefbultReturn(&types.User{ID: 2, Usernbme: "foo"}, nil)
 
 	orgMembers := dbmocks.NewMockOrgMemberStore()
-	orgMembers.GetByOrgIDAndUserIDFunc.SetDefaultHook(func(_ context.Context, orgID int32, userID int32) (*types.OrgMembership, error) {
+	orgMembers.GetByOrgIDAndUserIDFunc.SetDefbultHook(func(_ context.Context, orgID int32, userID int32) (*types.OrgMembership, error) {
 		if userID == 1 {
 			return &types.OrgMembership{}, nil
 		}
 
-		return nil, &database.ErrOrgMemberNotFound{}
+		return nil, &dbtbbbse.ErrOrgMemberNotFound{}
 	})
 
 	orgs := dbmocks.NewMockOrgStore()
-	orgName := "acme"
-	mockedOrg := types.Org{ID: 1, Name: orgName}
-	orgs.GetByNameFunc.SetDefaultReturn(&mockedOrg, nil)
-	orgs.GetByIDFunc.SetDefaultReturn(&mockedOrg, nil)
+	orgNbme := "bcme"
+	mockedOrg := types.Org{ID: 1, Nbme: orgNbme}
+	orgs.GetByNbmeFunc.SetDefbultReturn(&mockedOrg, nil)
+	orgs.GetByIDFunc.SetDefbultReturn(&mockedOrg, nil)
 
-	orgInvitations := dbmocks.NewMockOrgInvitationStore()
-	orgInvitations.GetPendingByIDFunc.SetDefaultReturn(&database.OrgInvitation{ID: 1, OrgID: 1, RecipientUserID: 2}, nil)
-	orgInvitations.RespondFunc.SetDefaultHook(func(ctx context.Context, id int64, userID int32, accept bool) (int32, error) {
+	orgInvitbtions := dbmocks.NewMockOrgInvitbtionStore()
+	orgInvitbtions.GetPendingByIDFunc.SetDefbultReturn(&dbtbbbse.OrgInvitbtion{ID: 1, OrgID: 1, RecipientUserID: 2}, nil)
+	orgInvitbtions.RespondFunc.SetDefbultHook(func(ctx context.Context, id int64, userID int32, bccept bool) (int32, error) {
 		return int32(id), nil
 	})
 
 	db := dbmocks.NewMockDB()
-	db.OrgsFunc.SetDefaultReturn(orgs)
-	db.UsersFunc.SetDefaultReturn(users)
-	db.OrgMembersFunc.SetDefaultReturn(orgMembers)
-	db.OrgInvitationsFunc.SetDefaultReturn(orgInvitations)
+	db.OrgsFunc.SetDefbultReturn(orgs)
+	db.UsersFunc.SetDefbultReturn(users)
+	db.OrgMembersFunc.SetDefbultReturn(orgMembers)
+	db.OrgInvitbtionsFunc.SetDefbultReturn(orgInvitbtions)
 
-	ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 2})
+	ctx := bctor.WithActor(context.Bbckground(), &bctor.Actor{UID: 2})
 
-	t.Run("User is able to decline an invitation", func(t *testing.T) {
-		invitationID := int64(1)
+	t.Run("User is bble to decline bn invitbtion", func(t *testing.T) {
+		invitbtionID := int64(1)
 		orgID := int32(1)
-		orgInvitations.GetPendingByIDFunc.SetDefaultReturn(&database.OrgInvitation{ID: invitationID, OrgID: orgID, RecipientUserID: 2}, nil)
+		orgInvitbtions.GetPendingByIDFunc.SetDefbultReturn(&dbtbbbse.OrgInvitbtion{ID: invitbtionID, OrgID: orgID, RecipientUserID: 2}, nil)
 
-		called := false
-		permssync.MockSchedulePermsSync = func(_ context.Context, _ log.Logger, _ database.DB, _ protocol.PermsSyncRequest) {
-			called = true
+		cblled := fblse
+		permssync.MockSchedulePermsSync = func(_ context.Context, _ log.Logger, _ dbtbbbse.DB, _ protocol.PermsSyncRequest) {
+			cblled = true
 		}
-		t.Cleanup(func() { permssync.MockSchedulePermsSync = nil })
+		t.Clebnup(func() { permssync.MockSchedulePermsSync = nil })
 
 		RunTests(t, []*Test{
 			{
-				Schema:  mustParseGraphQLSchema(t, db),
+				Schemb:  mustPbrseGrbphQLSchemb(t, db),
 				Context: ctx,
 				Query: `
-				mutation RespondToOrganizationInvitation($id: ID!, $response: OrganizationInvitationResponseType!) {
-					respondToOrganizationInvitation(organizationInvitation:$id, responseType: $response) {
-						alwaysNil
+				mutbtion RespondToOrgbnizbtionInvitbtion($id: ID!, $response: OrgbnizbtionInvitbtionResponseType!) {
+					respondToOrgbnizbtionInvitbtion(orgbnizbtionInvitbtion:$id, responseType: $response) {
+						blwbysNil
 					}
 				}
 				`,
-				Variables: map[string]any{
-					"id":       string(MarshalOrgInvitationID(invitationID)),
+				Vbribbles: mbp[string]bny{
+					"id":       string(MbrshblOrgInvitbtionID(invitbtionID)),
 					"response": "REJECT",
 				},
 				ExpectedResult: `{
-					"respondToOrganizationInvitation": {
-						"alwaysNil": null
+					"respondToOrgbnizbtionInvitbtion": {
+						"blwbysNil": null
 					}
 				}`,
 			},
 		})
 
-		respondCalls := orgInvitations.RespondFunc.History()
-		lastRespondCall := respondCalls[len(respondCalls)-1]
-		if lastRespondCall.Arg1 != invitationID || lastRespondCall.Arg2 != 2 || lastRespondCall.Arg3 != false {
-			t.Fatalf("db.OrgInvitations.Respond was not called with right args: %v", lastRespondCall.Args())
+		respondCblls := orgInvitbtions.RespondFunc.History()
+		lbstRespondCbll := respondCblls[len(respondCblls)-1]
+		if lbstRespondCbll.Arg1 != invitbtionID || lbstRespondCbll.Arg2 != 2 || lbstRespondCbll.Arg3 != fblse {
+			t.Fbtblf("db.OrgInvitbtions.Respond wbs not cblled with right brgs: %v", lbstRespondCbll.Args())
 		}
-		memberCalls := orgMembers.CreateFunc.History()
-		if len(memberCalls) > 0 {
-			t.Fatalf("db.OrgMembers.Create should not have been called, but got %d calls", len(memberCalls))
+		memberCblls := orgMembers.CrebteFunc.History()
+		if len(memberCblls) > 0 {
+			t.Fbtblf("db.OrgMembers.Crebte should not hbve been cblled, but got %d cblls", len(memberCblls))
 		}
-		if called {
-			t.Fatal("permission sync scheduled, but should not have been")
+		if cblled {
+			t.Fbtbl("permission sync scheduled, but should not hbve been")
 		}
 	})
 
-	t.Run("User is able to accept a user invitation", func(t *testing.T) {
-		invitationID := int64(2)
+	t.Run("User is bble to bccept b user invitbtion", func(t *testing.T) {
+		invitbtionID := int64(2)
 		orgID := int32(2)
-		orgInvitations.GetPendingByIDFunc.SetDefaultReturn(&database.OrgInvitation{ID: invitationID, OrgID: orgID, RecipientUserID: 2}, nil)
+		orgInvitbtions.GetPendingByIDFunc.SetDefbultReturn(&dbtbbbse.OrgInvitbtion{ID: invitbtionID, OrgID: orgID, RecipientUserID: 2}, nil)
 
-		called := false
-		permssync.MockSchedulePermsSync = func(_ context.Context, _ log.Logger, _ database.DB, _ protocol.PermsSyncRequest) {
-			called = true
+		cblled := fblse
+		permssync.MockSchedulePermsSync = func(_ context.Context, _ log.Logger, _ dbtbbbse.DB, _ protocol.PermsSyncRequest) {
+			cblled = true
 		}
-		t.Cleanup(func() { permssync.MockSchedulePermsSync = nil })
+		t.Clebnup(func() { permssync.MockSchedulePermsSync = nil })
 
 		RunTests(t, []*Test{
 			{
-				Schema:  mustParseGraphQLSchema(t, db),
+				Schemb:  mustPbrseGrbphQLSchemb(t, db),
 				Context: ctx,
 				Query: `
-				mutation RespondToOrganizationInvitation($id: ID!, $response: OrganizationInvitationResponseType!) {
-					respondToOrganizationInvitation(organizationInvitation:$id, responseType: $response) {
-						alwaysNil
+				mutbtion RespondToOrgbnizbtionInvitbtion($id: ID!, $response: OrgbnizbtionInvitbtionResponseType!) {
+					respondToOrgbnizbtionInvitbtion(orgbnizbtionInvitbtion:$id, responseType: $response) {
+						blwbysNil
 					}
 				}
 				`,
-				Variables: map[string]any{
-					"id":       string(MarshalOrgInvitationID(invitationID)),
+				Vbribbles: mbp[string]bny{
+					"id":       string(MbrshblOrgInvitbtionID(invitbtionID)),
 					"response": "ACCEPT",
 				},
 				ExpectedResult: `{
-					"respondToOrganizationInvitation": {
-						"alwaysNil": null
+					"respondToOrgbnizbtionInvitbtion": {
+						"blwbysNil": null
 					}
 				}`,
 			},
 		})
 
-		respondCalls := orgInvitations.RespondFunc.History()
-		lastRespondCall := respondCalls[len(respondCalls)-1]
-		if lastRespondCall.Arg1 != invitationID || lastRespondCall.Arg2 != 2 || lastRespondCall.Arg3 != true {
-			t.Fatalf("db.OrgInvitations.Respond was not called with right args: %v", lastRespondCall.Args())
+		respondCblls := orgInvitbtions.RespondFunc.History()
+		lbstRespondCbll := respondCblls[len(respondCblls)-1]
+		if lbstRespondCbll.Arg1 != invitbtionID || lbstRespondCbll.Arg2 != 2 || lbstRespondCbll.Arg3 != true {
+			t.Fbtblf("db.OrgInvitbtions.Respond wbs not cblled with right brgs: %v", lbstRespondCbll.Args())
 		}
-		memberCalls := orgMembers.CreateFunc.History()
-		lastMemberCall := memberCalls[len(memberCalls)-1]
-		if lastMemberCall.Arg1 != orgID || lastMemberCall.Arg2 != 2 {
-			t.Fatalf("db.OrgMembers.Create was not called with right args: %v", lastMemberCall.Args())
+		memberCblls := orgMembers.CrebteFunc.History()
+		lbstMemberCbll := memberCblls[len(memberCblls)-1]
+		if lbstMemberCbll.Arg1 != orgID || lbstMemberCbll.Arg2 != 2 {
+			t.Fbtblf("db.OrgMembers.Crebte wbs not cblled with right brgs: %v", lbstMemberCbll.Args())
 		}
 
-		if !called {
-			t.Fatal("expected permission sync to be scheduled, but was not")
+		if !cblled {
+			t.Fbtbl("expected permission sync to be scheduled, but wbs not")
 		}
 	})
 
-	t.Run("User is able to accept an email invitation", func(t *testing.T) {
-		invitationID := int64(3)
+	t.Run("User is bble to bccept bn embil invitbtion", func(t *testing.T) {
+		invitbtionID := int64(3)
 		orgID := int32(3)
-		email := "foo@bar.baz"
-		orgInvitations.GetPendingByIDFunc.SetDefaultReturn(&database.OrgInvitation{ID: invitationID, OrgID: orgID, RecipientEmail: strings.ToUpper(email)}, nil)
+		embil := "foo@bbr.bbz"
+		orgInvitbtions.GetPendingByIDFunc.SetDefbultReturn(&dbtbbbse.OrgInvitbtion{ID: invitbtionID, OrgID: orgID, RecipientEmbil: strings.ToUpper(embil)}, nil)
 
-		userEmails := dbmocks.NewMockUserEmailsStore()
-		userEmails.ListByUserFunc.SetDefaultReturn([]*database.UserEmail{{Email: email, UserID: 2}}, nil)
-		db.UserEmailsFunc.SetDefaultReturn(userEmails)
+		userEmbils := dbmocks.NewMockUserEmbilsStore()
+		userEmbils.ListByUserFunc.SetDefbultReturn([]*dbtbbbse.UserEmbil{{Embil: embil, UserID: 2}}, nil)
+		db.UserEmbilsFunc.SetDefbultReturn(userEmbils)
 
-		called := false
-		permssync.MockSchedulePermsSync = func(_ context.Context, _ log.Logger, _ database.DB, _ protocol.PermsSyncRequest) {
-			called = true
+		cblled := fblse
+		permssync.MockSchedulePermsSync = func(_ context.Context, _ log.Logger, _ dbtbbbse.DB, _ protocol.PermsSyncRequest) {
+			cblled = true
 		}
-		t.Cleanup(func() { permssync.MockSchedulePermsSync = nil })
+		t.Clebnup(func() { permssync.MockSchedulePermsSync = nil })
 
 		RunTests(t, []*Test{
 			{
-				Schema:  mustParseGraphQLSchema(t, db),
+				Schemb:  mustPbrseGrbphQLSchemb(t, db),
 				Context: ctx,
 				Query: `
-				mutation RespondToOrganizationInvitation($id: ID!, $response: OrganizationInvitationResponseType!) {
-					respondToOrganizationInvitation(organizationInvitation:$id, responseType: $response) {
-						alwaysNil
+				mutbtion RespondToOrgbnizbtionInvitbtion($id: ID!, $response: OrgbnizbtionInvitbtionResponseType!) {
+					respondToOrgbnizbtionInvitbtion(orgbnizbtionInvitbtion:$id, responseType: $response) {
+						blwbysNil
 					}
 				}
 				`,
-				Variables: map[string]any{
-					"id":       string(MarshalOrgInvitationID(invitationID)),
+				Vbribbles: mbp[string]bny{
+					"id":       string(MbrshblOrgInvitbtionID(invitbtionID)),
 					"response": "ACCEPT",
 				},
 				ExpectedResult: `{
-					"respondToOrganizationInvitation": {
-						"alwaysNil": null
+					"respondToOrgbnizbtionInvitbtion": {
+						"blwbysNil": null
 					}
 				}`,
 			},
 		})
 
-		respondCalls := orgInvitations.RespondFunc.History()
-		lastRespondCall := respondCalls[len(respondCalls)-1]
-		if lastRespondCall.Arg1 != invitationID || lastRespondCall.Arg2 != 2 || lastRespondCall.Arg3 != true {
-			t.Fatalf("db.OrgInvitations.Respond was not called with right args: %v", lastRespondCall.Args())
+		respondCblls := orgInvitbtions.RespondFunc.History()
+		lbstRespondCbll := respondCblls[len(respondCblls)-1]
+		if lbstRespondCbll.Arg1 != invitbtionID || lbstRespondCbll.Arg2 != 2 || lbstRespondCbll.Arg3 != true {
+			t.Fbtblf("db.OrgInvitbtions.Respond wbs not cblled with right brgs: %v", lbstRespondCbll.Args())
 		}
-		memberCalls := orgMembers.CreateFunc.History()
-		lastMemberCall := memberCalls[len(memberCalls)-1]
-		if lastMemberCall.Arg1 != orgID || lastMemberCall.Arg2 != 2 {
-			t.Fatalf("db.OrgMembers.Create was not called with right args: %v", lastMemberCall.Args())
+		memberCblls := orgMembers.CrebteFunc.History()
+		lbstMemberCbll := memberCblls[len(memberCblls)-1]
+		if lbstMemberCbll.Arg1 != orgID || lbstMemberCbll.Arg2 != 2 {
+			t.Fbtblf("db.OrgMembers.Crebte wbs not cblled with right brgs: %v", lbstMemberCbll.Args())
 		}
 
-		if !called {
-			t.Fatal("expected permission sync to be scheduled, but was not")
+		if !cblled {
+			t.Fbtbl("expected permission sync to be scheduled, but wbs not")
 		}
 	})
 
-	t.Run("Fails if email on the invitation does not match user email", func(t *testing.T) {
-		invitationID := int64(3)
+	t.Run("Fbils if embil on the invitbtion does not mbtch user embil", func(t *testing.T) {
+		invitbtionID := int64(3)
 		orgID := int32(3)
-		email := "foo@bar.baz"
-		orgInvitations.GetPendingByIDFunc.SetDefaultReturn(&database.OrgInvitation{ID: invitationID, OrgID: orgID, RecipientEmail: email}, nil)
+		embil := "foo@bbr.bbz"
+		orgInvitbtions.GetPendingByIDFunc.SetDefbultReturn(&dbtbbbse.OrgInvitbtion{ID: invitbtionID, OrgID: orgID, RecipientEmbil: embil}, nil)
 
-		userEmails := dbmocks.NewMockUserEmailsStore()
-		userEmails.ListByUserFunc.SetDefaultReturn([]*database.UserEmail{{Email: "something@else.invalid", UserID: 2}}, nil)
-		db.UserEmailsFunc.SetDefaultReturn(userEmails)
+		userEmbils := dbmocks.NewMockUserEmbilsStore()
+		userEmbils.ListByUserFunc.SetDefbultReturn([]*dbtbbbse.UserEmbil{{Embil: "something@else.invblid", UserID: 2}}, nil)
+		db.UserEmbilsFunc.SetDefbultReturn(userEmbils)
 
-		called := false
-		permssync.MockSchedulePermsSync = func(_ context.Context, _ log.Logger, _ database.DB, _ protocol.PermsSyncRequest) {
-			called = true
+		cblled := fblse
+		permssync.MockSchedulePermsSync = func(_ context.Context, _ log.Logger, _ dbtbbbse.DB, _ protocol.PermsSyncRequest) {
+			cblled = true
 		}
-		t.Cleanup(func() { permssync.MockSchedulePermsSync = nil })
+		t.Clebnup(func() { permssync.MockSchedulePermsSync = nil })
 
 		RunTests(t, []*Test{
 			{
-				Schema:  mustParseGraphQLSchema(t, db),
+				Schemb:  mustPbrseGrbphQLSchemb(t, db),
 				Context: ctx,
 				Query: `
-				mutation RespondToOrganizationInvitation($id: ID!, $response: OrganizationInvitationResponseType!) {
-					respondToOrganizationInvitation(organizationInvitation:$id, responseType: $response) {
-						alwaysNil
+				mutbtion RespondToOrgbnizbtionInvitbtion($id: ID!, $response: OrgbnizbtionInvitbtionResponseType!) {
+					respondToOrgbnizbtionInvitbtion(orgbnizbtionInvitbtion:$id, responseType: $response) {
+						blwbysNil
 					}
 				}
 				`,
-				Variables: map[string]any{
-					"id":       string(MarshalOrgInvitationID(invitationID)),
+				Vbribbles: mbp[string]bny{
+					"id":       string(MbrshblOrgInvitbtionID(invitbtionID)),
 					"response": "ACCEPT",
 				},
 				ExpectedResult: "null",
 				ExpectedErrors: []*errors.QueryError{
 					{
-						Message: "your email addresses [something@else.invalid] do not match the email address on the invitation.",
-						Path:    []any{"respondToOrganizationInvitation"},
+						Messbge: "your embil bddresses [something@else.invblid] do not mbtch the embil bddress on the invitbtion.",
+						Pbth:    []bny{"respondToOrgbnizbtionInvitbtion"},
 					},
 				},
 			},
 		})
 
-		if called {
-			t.Fatal("permission sync scheduled, but should not have been")
+		if cblled {
+			t.Fbtbl("permission sync scheduled, but should not hbve been")
 		}
 	})
 }
 
-func TestResendOrganizationInvitationNotification(t *testing.T) {
+func TestResendOrgbnizbtionInvitbtionNotificbtion(t *testing.T) {
 	users := dbmocks.NewMockUserStore()
-	users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{ID: 1}, nil)
-	users.GetByUsernameFunc.SetDefaultReturn(&types.User{ID: 2, Username: "foo"}, nil)
+	users.GetByCurrentAuthUserFunc.SetDefbultReturn(&types.User{ID: 1}, nil)
+	users.GetByUsernbmeFunc.SetDefbultReturn(&types.User{ID: 2, Usernbme: "foo"}, nil)
 
-	userEmails := dbmocks.NewMockUserEmailsStore()
-	userEmails.GetPrimaryEmailFunc.SetDefaultReturn("foo@bar.baz", true, nil)
+	userEmbils := dbmocks.NewMockUserEmbilsStore()
+	userEmbils.GetPrimbryEmbilFunc.SetDefbultReturn("foo@bbr.bbz", true, nil)
 
 	orgMembers := dbmocks.NewMockOrgMemberStore()
-	orgMembers.GetByOrgIDAndUserIDFunc.SetDefaultHook(func(_ context.Context, orgID int32, userID int32) (*types.OrgMembership, error) {
+	orgMembers.GetByOrgIDAndUserIDFunc.SetDefbultHook(func(_ context.Context, orgID int32, userID int32) (*types.OrgMembership, error) {
 		if userID == 1 {
 			return &types.OrgMembership{}, nil
 		}
 
-		return nil, &database.ErrOrgMemberNotFound{}
+		return nil, &dbtbbbse.ErrOrgMemberNotFound{}
 	})
 
 	orgs := dbmocks.NewMockOrgStore()
-	orgName := "acme"
-	mockedOrg := types.Org{ID: 1, Name: orgName}
-	orgs.GetByNameFunc.SetDefaultReturn(&mockedOrg, nil)
-	orgs.GetByIDFunc.SetDefaultReturn(&mockedOrg, nil)
+	orgNbme := "bcme"
+	mockedOrg := types.Org{ID: 1, Nbme: orgNbme}
+	orgs.GetByNbmeFunc.SetDefbultReturn(&mockedOrg, nil)
+	orgs.GetByIDFunc.SetDefbultReturn(&mockedOrg, nil)
 
-	orgInvitations := dbmocks.NewMockOrgInvitationStore()
-	orgInvitations.GetPendingByIDFunc.SetDefaultReturn(&database.OrgInvitation{ID: 1, OrgID: 1, RecipientUserID: 2}, nil)
-	orgInvitations.RespondFunc.SetDefaultHook(func(ctx context.Context, id int64, userID int32, accept bool) (int32, error) {
+	orgInvitbtions := dbmocks.NewMockOrgInvitbtionStore()
+	orgInvitbtions.GetPendingByIDFunc.SetDefbultReturn(&dbtbbbse.OrgInvitbtion{ID: 1, OrgID: 1, RecipientUserID: 2}, nil)
+	orgInvitbtions.RespondFunc.SetDefbultHook(func(ctx context.Context, id int64, userID int32, bccept bool) (int32, error) {
 		return int32(id), nil
 	})
 
 	db := dbmocks.NewMockDB()
-	db.OrgsFunc.SetDefaultReturn(orgs)
-	db.UsersFunc.SetDefaultReturn(users)
-	db.UserEmailsFunc.SetDefaultReturn(userEmails)
-	db.OrgMembersFunc.SetDefaultReturn(orgMembers)
-	db.OrgInvitationsFunc.SetDefaultReturn(orgInvitations)
+	db.OrgsFunc.SetDefbultReturn(orgs)
+	db.UsersFunc.SetDefbultReturn(users)
+	db.UserEmbilsFunc.SetDefbultReturn(userEmbils)
+	db.OrgMembersFunc.SetDefbultReturn(orgMembers)
+	db.OrgInvitbtionsFunc.SetDefbultReturn(orgInvitbtions)
 
-	ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 2})
+	ctx := bctor.WithActor(context.Bbckground(), &bctor.Actor{UID: 2})
 
 	expiryTime := newExpiryTime()
 
-	trueVal := true
-	mockSiteConfigSigningKey(&trueVal)
+	trueVbl := true
+	mockSiteConfigSigningKey(&trueVbl)
 
-	t.Run("Can resend a user invitation", func(t *testing.T) {
-		invitationID := int64(2)
+	t.Run("Cbn resend b user invitbtion", func(t *testing.T) {
+		invitbtionID := int64(2)
 		orgID := int32(2)
-		orgInvitations.GetPendingByIDFunc.SetDefaultReturn(&database.OrgInvitation{ID: invitationID, OrgID: orgID, RecipientUserID: 2, ExpiresAt: &expiryTime}, nil)
-		emailSent := false
-		txemail.MockSend = func(ctx context.Context, msg txemail.Message) error {
-			emailSent = true
+		orgInvitbtions.GetPendingByIDFunc.SetDefbultReturn(&dbtbbbse.OrgInvitbtion{ID: invitbtionID, OrgID: orgID, RecipientUserID: 2, ExpiresAt: &expiryTime}, nil)
+		embilSent := fblse
+		txembil.MockSend = func(ctx context.Context, msg txembil.Messbge) error {
+			embilSent = true
 			return nil
 		}
 
 		RunTests(t, []*Test{
 			{
-				Schema:  mustParseGraphQLSchema(t, db),
+				Schemb:  mustPbrseGrbphQLSchemb(t, db),
 				Context: ctx,
 				Query: `
-				mutation ResendOrganizationInvitation($id: ID!) {
-					resendOrganizationInvitationNotification(organizationInvitation:$id) {
-						alwaysNil
+				mutbtion ResendOrgbnizbtionInvitbtion($id: ID!) {
+					resendOrgbnizbtionInvitbtionNotificbtion(orgbnizbtionInvitbtion:$id) {
+						blwbysNil
 					}
 				}
 				`,
-				Variables: map[string]any{
-					"id": string(MarshalOrgInvitationID(invitationID)),
+				Vbribbles: mbp[string]bny{
+					"id": string(MbrshblOrgInvitbtionID(invitbtionID)),
 				},
 				ExpectedResult: `{
-					"resendOrganizationInvitationNotification": {
-						"alwaysNil": null
+					"resendOrgbnizbtionInvitbtionNotificbtion": {
+						"blwbysNil": null
 					}
 				}`,
 			},
 		})
 
-		updateExpiryCalls := orgInvitations.UpdateExpiryTimeFunc.History()
-		lastUpdateExpiryCall := updateExpiryCalls[len(updateExpiryCalls)-1]
-		if lastUpdateExpiryCall.Arg1 != invitationID || math.Round(lastUpdateExpiryCall.Arg2.Sub(timeNow()).Hours()) != math.Round(DefaultExpiryDuration.Hours()) {
-			t.Fatalf("db.OrgInvitations.ResendOrganizationInvitationNotification was not called with right args: %v", lastUpdateExpiryCall.Args())
+		updbteExpiryCblls := orgInvitbtions.UpdbteExpiryTimeFunc.History()
+		lbstUpdbteExpiryCbll := updbteExpiryCblls[len(updbteExpiryCblls)-1]
+		if lbstUpdbteExpiryCbll.Arg1 != invitbtionID || mbth.Round(lbstUpdbteExpiryCbll.Arg2.Sub(timeNow()).Hours()) != mbth.Round(DefbultExpiryDurbtion.Hours()) {
+			t.Fbtblf("db.OrgInvitbtions.ResendOrgbnizbtionInvitbtionNotificbtion wbs not cblled with right brgs: %v", lbstUpdbteExpiryCbll.Args())
 		}
 
-		if !emailSent {
-			t.Fatalf("email not sent")
+		if !embilSent {
+			t.Fbtblf("embil not sent")
 		}
 	})
 
-	t.Run("Can resend an email invitation", func(t *testing.T) {
-		invitationID := int64(3)
+	t.Run("Cbn resend bn embil invitbtion", func(t *testing.T) {
+		invitbtionID := int64(3)
 		orgID := int32(3)
-		email := "foo@bar.baz"
-		orgInvitations.GetPendingByIDFunc.SetDefaultReturn(&database.OrgInvitation{ID: invitationID, OrgID: orgID, RecipientEmail: email, ExpiresAt: &expiryTime}, nil)
-		emailSent := false
-		txemail.MockSend = func(ctx context.Context, msg txemail.Message) error {
-			emailSent = true
+		embil := "foo@bbr.bbz"
+		orgInvitbtions.GetPendingByIDFunc.SetDefbultReturn(&dbtbbbse.OrgInvitbtion{ID: invitbtionID, OrgID: orgID, RecipientEmbil: embil, ExpiresAt: &expiryTime}, nil)
+		embilSent := fblse
+		txembil.MockSend = func(ctx context.Context, msg txembil.Messbge) error {
+			embilSent = true
 			return nil
 		}
 
 		RunTests(t, []*Test{
 			{
-				Schema:  mustParseGraphQLSchema(t, db),
+				Schemb:  mustPbrseGrbphQLSchemb(t, db),
 				Context: ctx,
 				Query: `
-				mutation ResendOrganizationInvitation($id: ID!) {
-					resendOrganizationInvitationNotification(organizationInvitation:$id) {
-						alwaysNil
+				mutbtion ResendOrgbnizbtionInvitbtion($id: ID!) {
+					resendOrgbnizbtionInvitbtionNotificbtion(orgbnizbtionInvitbtion:$id) {
+						blwbysNil
 					}
 				}
 				`,
-				Variables: map[string]any{
-					"id": string(MarshalOrgInvitationID(invitationID)),
+				Vbribbles: mbp[string]bny{
+					"id": string(MbrshblOrgInvitbtionID(invitbtionID)),
 				},
 				ExpectedResult: `{
-					"resendOrganizationInvitationNotification": {
-						"alwaysNil": null
+					"resendOrgbnizbtionInvitbtionNotificbtion": {
+						"blwbysNil": null
 					}
 				}`,
 			},
 		})
 
-		updateExpiryCalls := orgInvitations.UpdateExpiryTimeFunc.History()
-		lastUpdateExpiryCall := updateExpiryCalls[len(updateExpiryCalls)-1]
-		if lastUpdateExpiryCall.Arg1 != invitationID || math.Round(lastUpdateExpiryCall.Arg2.Sub(timeNow()).Hours()) != math.Round(DefaultExpiryDuration.Hours()) {
-			t.Fatalf("db.OrgInvitations.ResendOrganizationInvitationNotification was not called with right args: %v", lastUpdateExpiryCall.Args())
+		updbteExpiryCblls := orgInvitbtions.UpdbteExpiryTimeFunc.History()
+		lbstUpdbteExpiryCbll := updbteExpiryCblls[len(updbteExpiryCblls)-1]
+		if lbstUpdbteExpiryCbll.Arg1 != invitbtionID || mbth.Round(lbstUpdbteExpiryCbll.Arg2.Sub(timeNow()).Hours()) != mbth.Round(DefbultExpiryDurbtion.Hours()) {
+			t.Fbtblf("db.OrgInvitbtions.ResendOrgbnizbtionInvitbtionNotificbtion wbs not cblled with right brgs: %v", lbstUpdbteExpiryCbll.Args())
 		}
 
-		if !emailSent {
-			t.Fatalf("email not sent")
+		if !embilSent {
+			t.Fbtblf("embil not sent")
 		}
 	})
 
-	t.Run("Fails if invitation is expired", func(t *testing.T) {
-		invitationID := int64(3)
+	t.Run("Fbils if invitbtion is expired", func(t *testing.T) {
+		invitbtionID := int64(3)
 		orgID := int32(3)
-		email := "foo@bar.baz"
-		yesterday := timeNow().Add(-24 * time.Hour)
-		orgInvitations.GetPendingByIDFunc.SetDefaultReturn(&database.OrgInvitation{ID: invitationID, OrgID: orgID, RecipientEmail: email, ExpiresAt: &yesterday}, nil)
-		wantErr := database.NewOrgInvitationExpiredErr(invitationID)
+		embil := "foo@bbr.bbz"
+		yesterdby := timeNow().Add(-24 * time.Hour)
+		orgInvitbtions.GetPendingByIDFunc.SetDefbultReturn(&dbtbbbse.OrgInvitbtion{ID: invitbtionID, OrgID: orgID, RecipientEmbil: embil, ExpiresAt: &yesterdby}, nil)
+		wbntErr := dbtbbbse.NewOrgInvitbtionExpiredErr(invitbtionID)
 
 		RunTests(t, []*Test{
 			{
-				Schema:  mustParseGraphQLSchema(t, db),
+				Schemb:  mustPbrseGrbphQLSchemb(t, db),
 				Context: ctx,
 				Query: `
-				mutation ResendOrganizationInvitation($id: ID!) {
-					resendOrganizationInvitationNotification(organizationInvitation:$id) {
-						alwaysNil
+				mutbtion ResendOrgbnizbtionInvitbtion($id: ID!) {
+					resendOrgbnizbtionInvitbtionNotificbtion(orgbnizbtionInvitbtion:$id) {
+						blwbysNil
 					}
 				}
 				`,
-				Variables: map[string]any{
-					"id": string(MarshalOrgInvitationID(invitationID)),
+				Vbribbles: mbp[string]bny{
+					"id": string(MbrshblOrgInvitbtionID(invitbtionID)),
 				},
 				ExpectedResult: "null",
 				ExpectedErrors: []*errors.QueryError{
 					{
-						Message: wantErr.Error(),
-						Path:    []any{"resendOrganizationInvitationNotification"},
+						Messbge: wbntErr.Error(),
+						Pbth:    []bny{"resendOrgbnizbtionInvitbtionNotificbtion"},
 					},
 				},
 			},
 		})
 	})
 
-	t.Run("Fails if user invitation email is not verified", func(t *testing.T) {
-		invitationID := int64(4)
+	t.Run("Fbils if user invitbtion embil is not verified", func(t *testing.T) {
+		invitbtionID := int64(4)
 		orgID := int32(4)
-		email := "foo@bar.baz"
-		orgInvitations.GetPendingByIDFunc.SetDefaultReturn(&database.OrgInvitation{ID: invitationID, OrgID: orgID, RecipientUserID: 2, ExpiresAt: &expiryTime}, nil)
-		userEmails.GetPrimaryEmailFunc.SetDefaultReturn(email, false, nil)
+		embil := "foo@bbr.bbz"
+		orgInvitbtions.GetPendingByIDFunc.SetDefbultReturn(&dbtbbbse.OrgInvitbtion{ID: invitbtionID, OrgID: orgID, RecipientUserID: 2, ExpiresAt: &expiryTime}, nil)
+		userEmbils.GetPrimbryEmbilFunc.SetDefbultReturn(embil, fblse, nil)
 
 		RunTests(t, []*Test{
 			{
-				Schema:  mustParseGraphQLSchema(t, db),
+				Schemb:  mustPbrseGrbphQLSchemb(t, db),
 				Context: ctx,
 				Query: `
-				mutation ResendOrganizationInvitation($id: ID!) {
-					resendOrganizationInvitationNotification(organizationInvitation:$id) {
-						alwaysNil
+				mutbtion ResendOrgbnizbtionInvitbtion($id: ID!) {
+					resendOrgbnizbtionInvitbtionNotificbtion(orgbnizbtionInvitbtion:$id) {
+						blwbysNil
 					}
 				}
 				`,
-				Variables: map[string]any{
-					"id": string(MarshalOrgInvitationID(invitationID)),
+				Vbribbles: mbp[string]bny{
+					"id": string(MbrshblOrgInvitbtionID(invitbtionID)),
 				},
 				ExpectedResult: "null",
 				ExpectedErrors: []*errors.QueryError{
 					{
-						Message: "refusing to send notification because recipient has no verified email address",
-						Path:    []any{"resendOrganizationInvitationNotification"},
+						Messbge: "refusing to send notificbtion becbuse recipient hbs no verified embil bddress",
+						Pbth:    []bny{"resendOrgbnizbtionInvitbtionNotificbtion"},
 					},
 				},
 			},

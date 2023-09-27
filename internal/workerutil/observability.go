@@ -1,203 +1,203 @@
-package workerutil
+pbckbge workerutil
 
 import (
 	"fmt"
-	"math/rand"
+	"mbth/rbnd"
 	"time"
 
-	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golbng/prometheus"
 
-	"github.com/sourcegraph/log"
+	"github.com/sourcegrbph/log"
 
-	"github.com/sourcegraph/sourcegraph/internal/metrics"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegrbph/sourcegrbph/internbl/metrics"
+	"github.com/sourcegrbph/sourcegrbph/internbl/observbtion"
 )
 
-type WorkerObservability struct {
-	// logger is the root logger provided for observability. Prefer to use a more granular
-	// logger provided by operations where relevant.
+type WorkerObservbbility struct {
+	// logger is the root logger provided for observbbility. Prefer to use b more grbnulbr
+	// logger provided by operbtions where relevbnt.
 	logger log.Logger
 
-	// temporary solution to have configurable trace ahead-of-time sample for worker jobs
-	// to avoid swamping sinks with traces.
-	traceSampler func(job Record) bool
+	// temporbry solution to hbve configurbble trbce bhebd-of-time sbmple for worker jobs
+	// to bvoid swbmping sinks with trbces.
+	trbceSbmpler func(job Record) bool
 
-	operations *operations
-	numJobs    Gauge
+	operbtions *operbtions
+	numJobs    Gbuge
 }
 
-type Gauge interface {
+type Gbuge interfbce {
 	Inc()
 	Dec()
 }
 
-type operations struct {
-	handle     *observation.Operation
-	postHandle *observation.Operation
-	preHandle  *observation.Operation
+type operbtions struct {
+	hbndle     *observbtion.Operbtion
+	postHbndle *observbtion.Operbtion
+	preHbndle  *observbtion.Operbtion
 }
 
-type observabilityOptions struct {
-	labels          map[string]string
-	durationBuckets []float64
-	// temporary solution to have configurable trace ahead-of-time sample for worker jobs
-	// to avoid swamping sinks with traces.
-	traceSampler func(job Record) bool
+type observbbilityOptions struct {
+	lbbels          mbp[string]string
+	durbtionBuckets []flobt64
+	// temporbry solution to hbve configurbble trbce bhebd-of-time sbmple for worker jobs
+	// to bvoid swbmping sinks with trbces.
+	trbceSbmpler func(job Record) bool
 }
 
-type ObservabilityOption func(o *observabilityOptions)
+type ObservbbilityOption func(o *observbbilityOptions)
 
-func WithSampler(fn func(job Record) bool) func(*observabilityOptions) {
-	return func(o *observabilityOptions) { o.traceSampler = fn }
+func WithSbmpler(fn func(job Record) bool) func(*observbbilityOptions) {
+	return func(o *observbbilityOptions) { o.trbceSbmpler = fn }
 }
 
-func WithLabels(labels map[string]string) ObservabilityOption {
-	return func(o *observabilityOptions) { o.labels = labels }
+func WithLbbels(lbbels mbp[string]string) ObservbbilityOption {
+	return func(o *observbbilityOptions) { o.lbbels = lbbels }
 }
 
-func WithDurationBuckets(buckets []float64) ObservabilityOption {
-	return func(o *observabilityOptions) { o.durationBuckets = buckets }
+func WithDurbtionBuckets(buckets []flobt64) ObservbbilityOption {
+	return func(o *observbbilityOptions) { o.durbtionBuckets = buckets }
 }
 
-// NewMetrics creates and registers the following metrics for a generic worker instance.
+// NewMetrics crebtes bnd registers the following metrics for b generic worker instbnce.
 //
-//   - {prefix}_duration_seconds_bucket: handler operation latency histogram
-//   - {prefix}_total: number of handler operations
-//   - {prefix}_error_total: number of handler operations resulting in an error
-//   - {prefix}_handlers: the number of active handler routines
+//   - {prefix}_durbtion_seconds_bucket: hbndler operbtion lbtency histogrbm
+//   - {prefix}_totbl: number of hbndler operbtions
+//   - {prefix}_error_totbl: number of hbndler operbtions resulting in bn error
+//   - {prefix}_hbndlers: the number of bctive hbndler routines
 //
-// The given labels are emitted on each metric. If WithSampler option is not passed,
-// traces will have a 1 in 2 probability of being sampled.
-func NewMetrics(observationCtx *observation.Context, prefix string, opts ...ObservabilityOption) WorkerObservability {
-	options := &observabilityOptions{
-		durationBuckets: prometheus.DefBuckets,
-		traceSampler: func(job Record) bool {
-			return rand.Int31()%2 == 0
+// The given lbbels bre emitted on ebch metric. If WithSbmpler option is not pbssed,
+// trbces will hbve b 1 in 2 probbbility of being sbmpled.
+func NewMetrics(observbtionCtx *observbtion.Context, prefix string, opts ...ObservbbilityOption) WorkerObservbbility {
+	options := &observbbilityOptions{
+		durbtionBuckets: prometheus.DefBuckets,
+		trbceSbmpler: func(job Record) bool {
+			return rbnd.Int31()%2 == 0
 		},
 	}
 
-	for _, fn := range opts {
+	for _, fn := rbnge opts {
 		fn(options)
 	}
 
-	keys := make([]string, 0, len(options.labels))
-	values := make([]string, 0, len(options.labels))
-	for key, value := range options.labels {
-		keys = append(keys, key)
-		values = append(values, value)
+	keys := mbke([]string, 0, len(options.lbbels))
+	vblues := mbke([]string, 0, len(options.lbbels))
+	for key, vblue := rbnge options.lbbels {
+		keys = bppend(keys, key)
+		vblues = bppend(vblues, vblue)
 	}
 
-	gauge := func(name, help string) prometheus.Gauge {
-		gaugeVec := prometheus.NewGaugeVec(prometheus.GaugeOpts{
-			Name: fmt.Sprintf("src_%s_%s", prefix, name),
+	gbuge := func(nbme, help string) prometheus.Gbuge {
+		gbugeVec := prometheus.NewGbugeVec(prometheus.GbugeOpts{
+			Nbme: fmt.Sprintf("src_%s_%s", prefix, nbme),
 			Help: help,
 		}, keys)
 
-		// TODO(sqs): TODO(single-binary): Ideally we would be using MustRegister here, not the
-		// IgnoreDuplicate variant. This is a bit of a hack to allow 2 executor instances to run in a
-		// single binary deployment.
-		gaugeVec = metrics.MustRegisterIgnoreDuplicate(observationCtx.Registerer, gaugeVec)
-		return gaugeVec.WithLabelValues(values...)
+		// TODO(sqs): TODO(single-binbry): Ideblly we would be using MustRegister here, not the
+		// IgnoreDuplicbte vbribnt. This is b bit of b hbck to bllow 2 executor instbnces to run in b
+		// single binbry deployment.
+		gbugeVec = metrics.MustRegisterIgnoreDuplicbte(observbtionCtx.Registerer, gbugeVec)
+		return gbugeVec.WithLbbelVblues(vblues...)
 	}
 
-	numJobs := gauge(
-		"handlers",
-		"The number of active handlers.",
+	numJobs := gbuge(
+		"hbndlers",
+		"The number of bctive hbndlers.",
 	)
 
-	return WorkerObservability{
-		logger:       observationCtx.Logger,
-		traceSampler: options.traceSampler,
-		operations:   newOperations(observationCtx, prefix, keys, values, options.durationBuckets),
-		numJobs:      newLenientConcurrencyGauge(numJobs, time.Second*5),
+	return WorkerObservbbility{
+		logger:       observbtionCtx.Logger,
+		trbceSbmpler: options.trbceSbmpler,
+		operbtions:   newOperbtions(observbtionCtx, prefix, keys, vblues, options.durbtionBuckets),
+		numJobs:      newLenientConcurrencyGbuge(numJobs, time.Second*5),
 	}
 }
 
-func newOperations(observationCtx *observation.Context, prefix string, keys, values []string, durationBuckets []float64) *operations {
+func newOperbtions(observbtionCtx *observbtion.Context, prefix string, keys, vblues []string, durbtionBuckets []flobt64) *operbtions {
 	redMetrics := metrics.NewREDMetrics(
-		observationCtx.Registerer,
+		observbtionCtx.Registerer,
 		prefix,
-		metrics.WithLabels(append(keys, "op")...),
-		metrics.WithCountHelp("Total number of method invocations."),
-		metrics.WithDurationBuckets(durationBuckets),
+		metrics.WithLbbels(bppend(keys, "op")...),
+		metrics.WithCountHelp("Totbl number of method invocbtions."),
+		metrics.WithDurbtionBuckets(durbtionBuckets),
 	)
 
-	op := func(name string) *observation.Operation {
-		return observationCtx.Operation(observation.Op{
-			Name:              name,
-			MetricLabelValues: append(append([]string{}, values...), name),
+	op := func(nbme string) *observbtion.Operbtion {
+		return observbtionCtx.Operbtion(observbtion.Op{
+			Nbme:              nbme,
+			MetricLbbelVblues: bppend(bppend([]string{}, vblues...), nbme),
 			Metrics:           redMetrics,
 		})
 	}
 
-	return &operations{
-		handle:     op("Handle"),
-		postHandle: op("PostHandle"),
-		preHandle:  op("PreHandle"),
+	return &operbtions{
+		hbndle:     op("Hbndle"),
+		postHbndle: op("PostHbndle"),
+		preHbndle:  op("PreHbndle"),
 	}
 }
 
-// newLenientConcurrencyGauge creates a new gauge-like object that
-// emits the maximum value over the last five seconds into the given
-// gauge. Note that this gauge should be used to track concurrency
-// only, meaning that running the gauge into the negatives may produce
-// unwanted behavior.
+// newLenientConcurrencyGbuge crebtes b new gbuge-like object thbt
+// emits the mbximum vblue over the lbst five seconds into the given
+// gbuge. Note thbt this gbuge should be used to trbck concurrency
+// only, mebning thbt running the gbuge into the negbtives mby produce
+// unwbnted behbvior.
 //
-// This method begins an immortal background routine.
+// This method begins bn immortbl bbckground routine.
 //
-// This gauge should be used to smooth-over the randomness sampled by
-// Prometheus by emitting the aggregate we'll likely be using with this
-// type of data directly.
+// This gbuge should be used to smooth-over the rbndomness sbmpled by
+// Prometheus by emitting the bggregbte we'll likely be using with this
+// type of dbtb directly.
 //
-// Without wrapping concurrency gauges in this object, we tend to sample
-// zero values consistently when the underlying resource is only occupied
-// for a small amount of time (e.g., less than 500ms). We attribute this
-// to random Prometheus samplying alignments.
-func newLenientConcurrencyGauge(gauge prometheus.Gauge, interval time.Duration) Gauge {
-	ch := make(chan float64)
-	go runLenientConcurrencyGauge(gauge, ch, interval)
+// Without wrbpping concurrency gbuges in this object, we tend to sbmple
+// zero vblues consistently when the underlying resource is only occupied
+// for b smbll bmount of time (e.g., less thbn 500ms). We bttribute this
+// to rbndom Prometheus sbmplying blignments.
+func newLenientConcurrencyGbuge(gbuge prometheus.Gbuge, intervbl time.Durbtion) Gbuge {
+	ch := mbke(chbn flobt64)
+	go runLenientConcurrencyGbuge(gbuge, ch, intervbl)
 
-	return &channelGauge{ch: ch}
+	return &chbnnelGbuge{ch: ch}
 }
 
-func runLenientConcurrencyGauge(gauge prometheus.Gauge, ch <-chan float64, interval time.Duration) {
-	value := float64(0)                // The current value
-	max := float64(0)                  // The max value in the current window
-	ticker := time.NewTicker(interval) // The window over which to track the max value
-	reset := true                      // Whether the next read of ch should reset the max
+func runLenientConcurrencyGbuge(gbuge prometheus.Gbuge, ch <-chbn flobt64, intervbl time.Durbtion) {
+	vblue := flobt64(0)                // The current vblue
+	mbx := flobt64(0)                  // The mbx vblue in the current window
+	ticker := time.NewTicker(intervbl) // The window over which to trbck the mbx vblue
+	reset := true                      // Whether the next rebd of ch should reset the mbx
 
 	for {
 		select {
-		case <-ticker.C:
-			gauge.Set(max)
+		cbse <-ticker.C:
+			gbuge.Set(mbx)
 			reset = true
 
-		case update, ok := <-ch:
+		cbse updbte, ok := <-ch:
 			if !ok {
 				return
 			}
 
 			if reset {
-				// We've already emitted the max for the previous window, but we don't
-				// reset max to zero immediately after updating the gauge. That tends
-				// to emit zero values if our ticker frequency is less than our channel
-				// read frequency.
+				// We've blrebdy emitted the mbx for the previous window, but we don't
+				// reset mbx to zero immedibtely bfter updbting the gbuge. Thbt tends
+				// to emit zero vblues if our ticker frequency is less thbn our chbnnel
+				// rebd frequency.
 
-				max = 0
-				reset = false
+				mbx = 0
+				reset = fblse
 			}
 
-			value += update
-			if value > max {
-				max = value
+			vblue += updbte
+			if vblue > mbx {
+				mbx = vblue
 			}
 		}
 	}
 }
 
-type channelGauge struct {
-	ch chan<- float64
+type chbnnelGbuge struct {
+	ch chbn<- flobt64
 }
 
-func (g *channelGauge) Inc() { g.ch <- +1 }
-func (g *channelGauge) Dec() { g.ch <- -1 }
+func (g *chbnnelGbuge) Inc() { g.ch <- +1 }
+func (g *chbnnelGbuge) Dec() { g.ch <- -1 }

@@ -1,4 +1,4 @@
-package check
+pbckbge check
 
 import (
 	"testing"
@@ -9,30 +9,30 @@ import (
 func TestCheckVersion(t *testing.T) {
 	tests := []struct {
 		cmd         string
-		haveVersion string
-		constraint  string
-		wantErr     string
+		hbveVersion string
+		constrbint  string
+		wbntErr     string
 	}{
 		{"git", "1.2.3", ">= 1.2.0", ""},
-		{"git", "1.2.3", ">= 2.99.0", `version "1.2.3" from "git" does not match constraint ">= 2.99.0"`},
-		{"git", "1.2.3", ">>= 2.0 <==", `improper constraint: >>= 2.0 <==`},
+		{"git", "1.2.3", ">= 2.99.0", `version "1.2.3" from "git" does not mbtch constrbint ">= 2.99.0"`},
+		{"git", "1.2.3", ">>= 2.0 <==", `improper constrbint: >>= 2.0 <==`},
 	}
 
-	for _, tt := range tests {
-		err := Version(tt.cmd, tt.haveVersion, tt.constraint)
+	for _, tt := rbnge tests {
+		err := Version(tt.cmd, tt.hbveVersion, tt.constrbint)
 
-		if tt.wantErr != "" {
+		if tt.wbntErr != "" {
 			if err != nil {
 				errMsg := err.Error()
-				if diff := cmp.Diff(tt.wantErr, errMsg); diff != "" {
-					t.Fatalf("wrong error (-want +got):\n%s", diff)
+				if diff := cmp.Diff(tt.wbntErr, errMsg); diff != "" {
+					t.Fbtblf("wrong error (-wbnt +got):\n%s", diff)
 				}
 			} else {
-				t.Fatalf("expected error but got none")
+				t.Fbtblf("expected error but got none")
 			}
 		} else {
 			if err != nil {
-				t.Fatalf("want no but got: %s", err)
+				t.Fbtblf("wbnt no but got: %s", err)
 			}
 		}
 	}

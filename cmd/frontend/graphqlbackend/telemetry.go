@@ -1,30 +1,30 @@
-package graphqlbackend
+pbckbge grbphqlbbckend
 
 import (
 	"context"
 	"encoding/json"
 )
 
-// TelemetryRootResolver provides TelemetryResolver via field 'telemetry' as
-// defined in telemetry.graphql
+// TelemetryRootResolver provides TelemetryResolver vib field 'telemetry' bs
+// defined in telemetry.grbphql
 type TelemetryRootResolver struct{ Resolver TelemetryResolver }
 
 func (t *TelemetryRootResolver) Telemetry() TelemetryResolver { return t.Resolver }
 
-type TelemetryResolver interface {
-	// Mutations
-	RecordEvents(ctx context.Context, args *RecordEventsArgs) (*EmptyResponse, error)
+type TelemetryResolver interfbce {
+	// Mutbtions
+	RecordEvents(ctx context.Context, brgs *RecordEventsArgs) (*EmptyResponse, error)
 }
 
 type RecordEventArgs struct{ Event TelemetryEventInput }
 type RecordEventsArgs struct{ Events []TelemetryEventInput }
 
 type TelemetryEventInput struct {
-	Feature           string                                `json:"feature"`
-	Action            string                                `json:"action"`
+	Febture           string                                `json:"febture"`
+	Action            string                                `json:"bction"`
 	Source            TelemetryEventSourceInput             `json:"source"`
-	Parameters        TelemetryEventParametersInput         `json:"parameters"`
-	MarketingTracking *TelemetryEventMarketingTrackingInput `json:"marketingTracking,omitempty"`
+	Pbrbmeters        TelemetryEventPbrbmetersInput         `json:"pbrbmeters"`
+	MbrketingTrbcking *TelemetryEventMbrketingTrbckingInput `json:"mbrketingTrbcking,omitempty"`
 }
 
 type TelemetryEventSourceInput struct {
@@ -32,29 +32,29 @@ type TelemetryEventSourceInput struct {
 	ClientVersion *string `json:"clientVersion,omitempty"`
 }
 
-type TelemetryEventParametersInput struct {
+type TelemetryEventPbrbmetersInput struct {
 	Version         int32                               `json:"version"`
-	Metadata        *[]TelemetryEventMetadataInput      `json:"metadata,omitempty"`
-	PrivateMetadata *json.RawMessage                    `json:"privateMetadata,omitempty"`
-	BillingMetadata *TelemetryEventBillingMetadataInput `json:"billingMetadata,omitempty"`
+	Metbdbtb        *[]TelemetryEventMetbdbtbInput      `json:"metbdbtb,omitempty"`
+	PrivbteMetbdbtb *json.RbwMessbge                    `json:"privbteMetbdbtb,omitempty"`
+	BillingMetbdbtb *TelemetryEventBillingMetbdbtbInput `json:"billingMetbdbtb,omitempty"`
 }
 
-type TelemetryEventMetadataInput struct {
+type TelemetryEventMetbdbtbInput struct {
 	Key   string `json:"key"`
-	Value int32  `json:"value"`
+	Vblue int32  `json:"vblue"`
 }
 
-type TelemetryEventBillingMetadataInput struct {
+type TelemetryEventBillingMetbdbtbInput struct {
 	Product  string `json:"product"`
-	Category string `json:"category"`
+	Cbtegory string `json:"cbtegory"`
 }
 
-type TelemetryEventMarketingTrackingInput struct {
+type TelemetryEventMbrketingTrbckingInput struct {
 	Url             *string `json:"url,omitempty"`
 	FirstSourceURL  *string `json:"firstSourceURL,omitempty"`
 	CohortID        *string `json:"cohortID,omitempty"`
 	Referrer        *string `json:"referrer,omitempty"`
-	LastSourceURL   *string `json:"lastSourceURL,omitempty"`
+	LbstSourceURL   *string `json:"lbstSourceURL,omitempty"`
 	DeviceSessionID *string `json:"deviceSessionID,omitempty"`
 	SessionReferrer *string `json:"sessionReferrer,omitempty"`
 	SessionFirstURL *string `json:"sessionFirstURL,omitempty"`

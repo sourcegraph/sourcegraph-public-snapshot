@@ -1,17 +1,17 @@
-package batches
+pbckbge bbtches
 
 import (
 	"context"
 
-	"github.com/sourcegraph/sourcegraph/cmd/worker/job"
-	"github.com/sourcegraph/sourcegraph/enterprise/cmd/worker/internal/batches/workers"
-	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/batches/sources"
-	"github.com/sourcegraph/sourcegraph/internal/env"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
-	"github.com/sourcegraph/sourcegraph/internal/goroutine"
-	"github.com/sourcegraph/sourcegraph/internal/httpcli"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegrbph/sourcegrbph/cmd/worker/job"
+	"github.com/sourcegrbph/sourcegrbph/enterprise/cmd/worker/internbl/bbtches/workers"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bctor"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bbtches/sources"
+	"github.com/sourcegrbph/sourcegrbph/internbl/env"
+	"github.com/sourcegrbph/sourcegrbph/internbl/gitserver"
+	"github.com/sourcegrbph/sourcegrbph/internbl/goroutine"
+	"github.com/sourcegrbph/sourcegrbph/internbl/httpcli"
+	"github.com/sourcegrbph/sourcegrbph/internbl/observbtion"
 )
 
 type reconcilerJob struct{}
@@ -28,9 +28,9 @@ func (j *reconcilerJob) Config() []env.Config {
 	return []env.Config{}
 }
 
-func (j *reconcilerJob) Routines(_ context.Context, observationCtx *observation.Context) ([]goroutine.BackgroundRoutine, error) {
-	observationCtx = observation.NewContext(observationCtx.Logger.Scoped("routines", "reconciler job routines"))
-	workCtx := actor.WithInternalActor(context.Background())
+func (j *reconcilerJob) Routines(_ context.Context, observbtionCtx *observbtion.Context) ([]goroutine.BbckgroundRoutine, error) {
+	observbtionCtx = observbtion.NewContext(observbtionCtx.Logger.Scoped("routines", "reconciler job routines"))
+	workCtx := bctor.WithInternblActor(context.Bbckground())
 
 	bstore, err := InitStore()
 	if err != nil {
@@ -44,16 +44,16 @@ func (j *reconcilerJob) Routines(_ context.Context, observationCtx *observation.
 
 	reconcilerWorker := workers.NewReconcilerWorker(
 		workCtx,
-		observationCtx,
+		observbtionCtx,
 		bstore,
 		reconcilerStore,
 		gitserver.NewClient(),
-		sources.NewSourcer(httpcli.NewExternalClientFactory(
-			httpcli.NewLoggingMiddleware(observationCtx.Logger.Scoped("sourcer", "batches sourcer")),
+		sources.NewSourcer(httpcli.NewExternblClientFbctory(
+			httpcli.NewLoggingMiddlewbre(observbtionCtx.Logger.Scoped("sourcer", "bbtches sourcer")),
 		)),
 	)
 
-	routines := []goroutine.BackgroundRoutine{
+	routines := []goroutine.BbckgroundRoutine{
 		reconcilerWorker,
 	}
 

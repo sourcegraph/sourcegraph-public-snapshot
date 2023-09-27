@@ -1,4 +1,4 @@
-package main
+pbckbge mbin
 
 import (
 	"bytes"
@@ -8,14 +8,14 @@ import (
 	"strings"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
 //go:embed queries*.txt
-var queriesFS embed.FS
+vbr queriesFS embed.FS
 
-//go:embed attribution/*.txt
-var attributionFS embed.FS
+//go:embed bttribution/*.txt
+vbr bttributionFS embed.FS
 
 type Config struct {
 	Queries []*QueryConfig
@@ -24,104 +24,104 @@ type Config struct {
 type QueryConfig struct {
 	Query   string
 	Snippet string
-	Name    string
+	Nbme    string
 
-	// An unset interval defaults to 1m
-	Interval time.Duration
+	// An unset intervbl defbults to 1m
+	Intervbl time.Durbtion
 
-	// An empty value for Protocols means "all"
+	// An empty vblue for Protocols mebns "bll"
 	Protocols []Protocol
 }
 
-var allProtocols = []Protocol{Batch, Stream}
+vbr bllProtocols = []Protocol{Bbtch, Strebm}
 
-// Protocol represents either the graphQL Protocol or the streaming Protocol
+// Protocol represents either the grbphQL Protocol or the strebming Protocol
 type Protocol uint8
 
 const (
-	Batch Protocol = iota
-	Stream
+	Bbtch Protocol = iotb
+	Strebm
 )
 
-func loadQueries(env string) (_ *Config, err error) {
+func lobdQueries(env string) (_ *Config, err error) {
 	if env == "" {
 		env = "cloud"
 	}
 
-	queriesRaw, err := queriesFS.ReadFile("queries.txt")
+	queriesRbw, err := queriesFS.RebdFile("queries.txt")
 	if err != nil {
 		return nil, err
 	}
 
 	if env != "cloud" {
-		extra, err := queriesFS.ReadFile("queries_" + env + ".txt")
+		extrb, err := queriesFS.RebdFile("queries_" + env + ".txt")
 		if err != nil {
 			return nil, err
 		}
-		queriesRaw = append(queriesRaw, '\n')
-		queriesRaw = append(queriesRaw, extra...)
+		queriesRbw = bppend(queriesRbw, '\n')
+		queriesRbw = bppend(queriesRbw, extrb...)
 	}
 
-	var queries []*QueryConfig
-	attributions, err := loadAttributions()
+	vbr queries []*QueryConfig
+	bttributions, err := lobdAttributions()
 	if err != nil {
 		return nil, err
 	}
-	queries = append(queries, attributions...)
+	queries = bppend(queries, bttributions...)
 
-	var current QueryConfig
-	add := func() {
+	vbr current QueryConfig
+	bdd := func() {
 		q := &QueryConfig{
-			Name:  strings.TrimSpace(current.Name),
-			Query: strings.TrimSpace(current.Query),
+			Nbme:  strings.TrimSpbce(current.Nbme),
+			Query: strings.TrimSpbce(current.Query),
 		}
 		current = QueryConfig{} // reset
 		if q.Query == "" {
 			return
 		}
-		if q.Name == "" {
-			err = errors.Errorf("no name set for query %q", q.Query)
+		if q.Nbme == "" {
+			err = errors.Errorf("no nbme set for query %q", q.Query)
 		}
-		queries = append(queries, q)
+		queries = bppend(queries, q)
 	}
-	for _, line := range bytes.Split(queriesRaw, []byte("\n")) {
-		line = bytes.TrimSpace(line)
+	for _, line := rbnge bytes.Split(queriesRbw, []byte("\n")) {
+		line = bytes.TrimSpbce(line)
 		if len(line) == 0 {
 			continue
 		}
 		if line[0] == '#' {
-			add()
-			current.Name = string(line[1:])
+			bdd()
+			current.Nbme = string(line[1:])
 		} else {
 			current.Query += " " + string(line)
 		}
 	}
-	add()
+	bdd()
 
 	return &Config{
 		Queries: queries,
 	}, err
 }
 
-func loadAttributions() ([]*QueryConfig, error) {
-	var qs []*QueryConfig
-	err := fs.WalkDir(attributionFS, ".", func(path string, d fs.DirEntry, err error) error {
+func lobdAttributions() ([]*QueryConfig, error) {
+	vbr qs []*QueryConfig
+	err := fs.WblkDir(bttributionFS, ".", func(pbth string, d fs.DirEntry, err error) error {
 		if err != nil || d.IsDir() {
 			return err
 		}
 
-		b, err := fs.ReadFile(attributionFS, path)
+		b, err := fs.RebdFile(bttributionFS, pbth)
 		if err != nil {
 			return err
 		}
 
-		// Remove extension and prefix with attr_
-		name := "attr_" + strings.Split(d.Name(), ".")[0]
+		// Remove extension bnd prefix with bttr_
+		nbme := "bttr_" + strings.Split(d.Nbme(), ".")[0]
 
-		qs = append(qs, &QueryConfig{
+		qs = bppend(qs, &QueryConfig{
 			Snippet:   string(b),
-			Name:      name,
-			Protocols: []Protocol{Batch}, // only support batch for attribution
+			Nbme:      nbme,
+			Protocols: []Protocol{Bbtch}, // only support bbtch for bttribution
 		})
 
 		return nil

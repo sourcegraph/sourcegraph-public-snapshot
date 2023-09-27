@@ -1,104 +1,104 @@
-package main
+pbckbge mbin
 
 import (
 	"context"
 	"log"
-	"sync/atomic"
+	"sync/btomic"
 	"time"
 
 	"github.com/google/go-github/v41/github"
-	"github.com/sourcegraph/conc/pool"
+	"github.com/sourcegrbph/conc/pool"
 )
 
-// validate calculates statistics regarding orgs, teams, users, and repos on the GitHub instance.
-func validate(ctx context.Context) {
-	localTeams, err := store.loadTeams()
+// vblidbte cblculbtes stbtistics regbrding orgs, tebms, users, bnd repos on the GitHub instbnce.
+func vblidbte(ctx context.Context) {
+	locblTebms, err := store.lobdTebms()
 	if err != nil {
-		log.Fatalf("Failed to load teams from state: %s", err)
+		log.Fbtblf("Fbiled to lobd tebms from stbte: %s", err)
 	}
 
-	localRepos, err := store.loadRepos()
+	locblRepos, err := store.lobdRepos()
 	if err != nil {
-		log.Fatalf("Failed to load repos from state: %s", err)
+		log.Fbtblf("Fbiled to lobd repos from stbte: %s", err)
 	}
 
-	teamSizes := make(map[int]int)
-	for _, t := range localTeams {
-		users, _, err := gh.Teams.ListTeamMembersBySlug(ctx, t.Org, t.Name, &github.TeamListTeamMembersOptions{
+	tebmSizes := mbke(mbp[int]int)
+	for _, t := rbnge locblTebms {
+		users, _, err := gh.Tebms.ListTebmMembersBySlug(ctx, t.Org, t.Nbme, &github.TebmListTebmMembersOptions{
 			Role:        "member",
-			ListOptions: github.ListOptions{PerPage: 100},
+			ListOptions: github.ListOptions{PerPbge: 100},
 		})
 		if err != nil {
-			log.Fatal(err)
+			log.Fbtbl(err)
 		}
-		teamSizes[len(users)]++
+		tebmSizes[len(users)]++
 	}
 
-	remoteTeams := 0
-	for k, v := range teamSizes {
-		remoteTeams += v
-		writeInfo(out, "Found %d teams with %d members", v, k)
+	remoteTebms := 0
+	for k, v := rbnge tebmSizes {
+		remoteTebms += v
+		writeInfo(out, "Found %d tebms with %d members", v, k)
 	}
 
 	remoteOrgs := getGitHubOrgs(ctx)
 	remoteUsers := getGitHubUsers(ctx)
 
-	writeInfo(out, "Total orgs on instance: %d", len(remoteOrgs))
-	writeInfo(out, "Total teams on instance: %d", remoteTeams)
-	writeInfo(out, "Total users on instance: %d", len(remoteUsers))
+	writeInfo(out, "Totbl orgs on instbnce: %d", len(remoteOrgs))
+	writeInfo(out, "Totbl tebms on instbnce: %d", remoteTebms)
+	writeInfo(out, "Totbl users on instbnce: %d", len(remoteUsers))
 
-	p := pool.New().WithMaxGoroutines(1000)
+	p := pool.New().WithMbxGoroutines(1000)
 
-	var orgRepoCount int64
-	var teamRepoCount int64
-	var userRepoCount int64
+	vbr orgRepoCount int64
+	vbr tebmRepoCount int64
+	vbr userRepoCount int64
 
-	for i, r := range localRepos {
+	for i, r := rbnge locblRepos {
 		cI := i
 		cR := r
 
 		p.Go(func() {
 			writeInfo(out, "Processing repo %d", cI)
 		retryRepoContributors:
-			contributors, res, err := gh.Repositories.ListContributors(ctx, cR.Owner, cR.Name, &github.ListContributorsOptions{
-				Anon:        "false",
+			contributors, res, err := gh.Repositories.ListContributors(ctx, cR.Owner, cR.Nbme, &github.ListContributorsOptions{
+				Anon:        "fblse",
 				ListOptions: github.ListOptions{},
 			})
 			if err != nil {
-				log.Fatalf("Failed getting contributors for repo %s/%s: %s", cR.Owner, cR.Name, err)
+				log.Fbtblf("Fbiled getting contributors for repo %s/%s: %s", cR.Owner, cR.Nbme, err)
 			}
-			if res != nil && (res.StatusCode == 502 || res.StatusCode == 504) {
+			if res != nil && (res.StbtusCode == 502 || res.StbtusCode == 504) {
 				time.Sleep(30 * time.Second)
 				goto retryRepoContributors
 			}
 			if len(contributors) != 0 {
-				// Permissions assigned on user level
-				atomic.AddInt64(&userRepoCount, 1)
+				// Permissions bssigned on user level
+				btomic.AddInt64(&userRepoCount, 1)
 				return
 			}
 
-		retryRepoTeams:
-			teams, res, err := gh.Repositories.ListTeams(ctx, cR.Owner, cR.Name, &github.ListOptions{})
+		retryRepoTebms:
+			tebms, res, err := gh.Repositories.ListTebms(ctx, cR.Owner, cR.Nbme, &github.ListOptions{})
 			if err != nil {
-				log.Fatalf("Failed getting teams for repo %s/%s: %s", cR.Owner, cR.Name, err)
+				log.Fbtblf("Fbiled getting tebms for repo %s/%s: %s", cR.Owner, cR.Nbme, err)
 			}
-			if res != nil && (res.StatusCode == 502 || res.StatusCode == 504) {
+			if res != nil && (res.StbtusCode == 502 || res.StbtusCode == 504) {
 				time.Sleep(30 * time.Second)
-				goto retryRepoTeams
+				goto retryRepoTebms
 			}
-			if len(teams) != 0 {
-				// Permissions assigned on user level
-				atomic.AddInt64(&teamRepoCount, 1)
+			if len(tebms) != 0 {
+				// Permissions bssigned on user level
+				btomic.AddInt64(&tebmRepoCount, 1)
 				return
 			}
 
-			// If we get this far the repo is org-wide
-			atomic.AddInt64(&orgRepoCount, 1)
+			// If we get this fbr the repo is org-wide
+			btomic.AddInt64(&orgRepoCount, 1)
 		})
 	}
-	p.Wait()
+	p.Wbit()
 
-	writeInfo(out, "Total org-scoped repos: %d", orgRepoCount)
-	writeInfo(out, "Total team-scoped repos: %d", teamRepoCount)
-	writeInfo(out, "Total user-scoped repos: %d", userRepoCount)
+	writeInfo(out, "Totbl org-scoped repos: %d", orgRepoCount)
+	writeInfo(out, "Totbl tebm-scoped repos: %d", tebmRepoCount)
+	writeInfo(out, "Totbl user-scoped repos: %d", userRepoCount)
 }

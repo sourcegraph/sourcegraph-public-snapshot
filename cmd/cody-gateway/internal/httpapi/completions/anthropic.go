@@ -1,4 +1,4 @@
-package completions
+pbckbge completions
 
 import (
 	"bytes"
@@ -8,26 +8,26 @@ import (
 	"io"
 	"net/http"
 
-	"github.com/grafana/regexp"
+	"github.com/grbfbnb/regexp"
 
-	"github.com/sourcegraph/log"
+	"github.com/sourcegrbph/log"
 
-	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/actor"
-	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/events"
-	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/limiter"
-	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/notify"
-	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/tokenizer"
-	"github.com/sourcegraph/sourcegraph/internal/codygateway"
-	"github.com/sourcegraph/sourcegraph/internal/completions/client/anthropic"
-	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
-	"github.com/sourcegraph/sourcegraph/internal/httpcli"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/cmd/cody-gbtewby/internbl/bctor"
+	"github.com/sourcegrbph/sourcegrbph/cmd/cody-gbtewby/internbl/events"
+	"github.com/sourcegrbph/sourcegrbph/cmd/cody-gbtewby/internbl/limiter"
+	"github.com/sourcegrbph/sourcegrbph/cmd/cody-gbtewby/internbl/notify"
+	"github.com/sourcegrbph/sourcegrbph/cmd/cody-gbtewby/internbl/tokenizer"
+	"github.com/sourcegrbph/sourcegrbph/internbl/codygbtewby"
+	"github.com/sourcegrbph/sourcegrbph/internbl/completions/client/bnthropic"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf/conftypes"
+	"github.com/sourcegrbph/sourcegrbph/internbl/httpcli"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-const anthropicAPIURL = "https://api.anthropic.com/v1/complete"
+const bnthropicAPIURL = "https://bpi.bnthropic.com/v1/complete"
 
 const (
-	flaggedPromptLogMessage = "flagged prompt"
+	flbggedPromptLogMessbge = "flbgged prompt"
 
 	logPromptPrefixLength = 250
 
@@ -35,247 +35,247 @@ const (
 	responseTokenLimit = 1000
 )
 
-func isFlaggedAnthropicRequest(tk *tokenizer.Tokenizer, ar anthropicRequest, promptRegexps []*regexp.Regexp) (bool, string, error) {
-	// Only usage of chat models us currently flagged, so if the request
-	// is using another model, we skip other checks.
-	if ar.Model != "claude-2" && ar.Model != "claude-v1" {
-		return false, "", nil
+func isFlbggedAnthropicRequest(tk *tokenizer.Tokenizer, br bnthropicRequest, promptRegexps []*regexp.Regexp) (bool, string, error) {
+	// Only usbge of chbt models us currently flbgged, so if the request
+	// is using bnother model, we skip other checks.
+	if br.Model != "clbude-2" && br.Model != "clbude-v1" {
+		return fblse, "", nil
 	}
 
-	if len(promptRegexps) > 0 && !matchesAny(ar.Prompt, promptRegexps) {
+	if len(promptRegexps) > 0 && !mbtchesAny(br.Prompt, promptRegexps) {
 		return true, "unknown_prompt", nil
 	}
 
-	// If this request has a very high token count for responses, then flag it.
-	if ar.MaxTokensToSample > responseTokenLimit {
-		return true, fmt.Sprintf("high_max_tokens_to_sample_%d", ar.MaxTokensToSample), nil
+	// If this request hbs b very high token count for responses, then flbg it.
+	if br.MbxTokensToSbmple > responseTokenLimit {
+		return true, fmt.Sprintf("high_mbx_tokens_to_sbmple_%d", br.MbxTokensToSbmple), nil
 	}
 
-	// If this prompt consists of a very large number of tokens, then flag it.
-	tokenCount, err := ar.GetPromptTokenCount(tk)
+	// If this prompt consists of b very lbrge number of tokens, then flbg it.
+	tokenCount, err := br.GetPromptTokenCount(tk)
 	if err != nil {
-		return true, "", errors.Wrap(err, "tokenize prompt")
+		return true, "", errors.Wrbp(err, "tokenize prompt")
 	}
 	if tokenCount > promptTokenLimit {
 		return true, fmt.Sprintf("high_prompt_token_count_%d", tokenCount), nil
 	}
 
-	return false, "", nil
+	return fblse, "", nil
 }
 
-func matchesAny(prompt string, promptRegexps []*regexp.Regexp) bool {
-	for _, promptRegexp := range promptRegexps {
-		if promptRegexp.MatchString(prompt) {
+func mbtchesAny(prompt string, promptRegexps []*regexp.Regexp) bool {
+	for _, promptRegexp := rbnge promptRegexps {
+		if promptRegexp.MbtchString(prompt) {
 			return true
 		}
 	}
-	return false
+	return fblse
 }
 
-// PromptRecorder implementations should save select completions prompts for
-// a short amount of time for security review.
-type PromptRecorder interface {
+// PromptRecorder implementbtions should sbve select completions prompts for
+// b short bmount of time for security review.
+type PromptRecorder interfbce {
 	Record(ctx context.Context, prompt string) error
 }
 
-func NewAnthropicHandler(
-	baseLogger log.Logger,
+func NewAnthropicHbndler(
+	bbseLogger log.Logger,
 	eventLogger events.Logger,
 	rs limiter.RedisStore,
-	rateLimitNotifier notify.RateLimitNotifier,
+	rbteLimitNotifier notify.RbteLimitNotifier,
 	httpClient httpcli.Doer,
-	accessToken string,
-	allowedModels []string,
-	maxTokensToSample int,
+	bccessToken string,
+	bllowedModels []string,
+	mbxTokensToSbmple int,
 	promptRecorder PromptRecorder,
-	allowedPromptPatterns []string,
-) (http.Handler, error) {
-	// Tokenizer only needs to be initialized once, and can be shared globally.
-	anthropicTokenizer, err := tokenizer.NewAnthropicClaudeTokenizer()
+	bllowedPromptPbtterns []string,
+) (http.Hbndler, error) {
+	// Tokenizer only needs to be initiblized once, bnd cbn be shbred globblly.
+	bnthropicTokenizer, err := tokenizer.NewAnthropicClbudeTokenizer()
 	if err != nil {
 		return nil, err
 	}
 	promptRegexps := []*regexp.Regexp{}
-	for _, pattern := range allowedPromptPatterns {
-		promptRegexps = append(promptRegexps, regexp.MustCompile(pattern))
+	for _, pbttern := rbnge bllowedPromptPbtterns {
+		promptRegexps = bppend(promptRegexps, regexp.MustCompile(pbttern))
 	}
-	return makeUpstreamHandler(
-		baseLogger,
+	return mbkeUpstrebmHbndler(
+		bbseLogger,
 		eventLogger,
 		rs,
-		rateLimitNotifier,
+		rbteLimitNotifier,
 		httpClient,
-		string(conftypes.CompletionsProviderNameAnthropic),
-		anthropicAPIURL,
-		allowedModels,
-		upstreamHandlerMethods[anthropicRequest]{
-			validateRequest: func(ctx context.Context, logger log.Logger, _ codygateway.Feature, ar anthropicRequest) (int, bool, error) {
-				if ar.MaxTokensToSample > int32(maxTokensToSample) {
-					return http.StatusBadRequest, false, errors.Errorf("max_tokens_to_sample exceeds maximum allowed value of %d: %d", maxTokensToSample, ar.MaxTokensToSample)
+		string(conftypes.CompletionsProviderNbmeAnthropic),
+		bnthropicAPIURL,
+		bllowedModels,
+		upstrebmHbndlerMethods[bnthropicRequest]{
+			vblidbteRequest: func(ctx context.Context, logger log.Logger, _ codygbtewby.Febture, br bnthropicRequest) (int, bool, error) {
+				if br.MbxTokensToSbmple > int32(mbxTokensToSbmple) {
+					return http.StbtusBbdRequest, fblse, errors.Errorf("mbx_tokens_to_sbmple exceeds mbximum bllowed vblue of %d: %d", mbxTokensToSbmple, br.MbxTokensToSbmple)
 				}
 
-				if flagged, reason, err := isFlaggedAnthropicRequest(anthropicTokenizer, ar, promptRegexps); err != nil {
-					logger.Error("error checking anthropic request - treating as non-flagged",
+				if flbgged, rebson, err := isFlbggedAnthropicRequest(bnthropicTokenizer, br, promptRegexps); err != nil {
+					logger.Error("error checking bnthropic request - trebting bs non-flbgged",
 						log.Error(err))
-				} else if flagged {
+				} else if flbgged {
 					// For now, just log the error, don't modify the request / response
-					promptPrefix := ar.Prompt
+					promptPrefix := br.Prompt
 					if len(promptPrefix) > logPromptPrefixLength {
 						promptPrefix = promptPrefix[0:logPromptPrefixLength]
 					}
-					logger.Info(flaggedPromptLogMessage,
-						log.String("reason", reason),
-						log.Int("promptLength", len(ar.Prompt)),
+					logger.Info(flbggedPromptLogMessbge,
+						log.String("rebson", rebson),
+						log.Int("promptLength", len(br.Prompt)),
 						log.String("promptPrefix", promptPrefix),
-						log.String("model", ar.Model),
-						log.Int32("maxTokensToSample", ar.MaxTokensToSample),
-						log.Float32("temperature", ar.Temperature))
+						log.String("model", br.Model),
+						log.Int32("mbxTokensToSbmple", br.MbxTokensToSbmple),
+						log.Flobt32("temperbture", br.Temperbture))
 
-					// Record flagged prompts in hotpath - they usually take a long time on the backend side, so this isn't going to make things meaningfully worse
-					if err := promptRecorder.Record(ctx, ar.Prompt); err != nil {
-						logger.Warn("failed to record flagged prompt", log.Error(err))
+					// Record flbgged prompts in hotpbth - they usublly tbke b long time on the bbckend side, so this isn't going to mbke things mebningfully worse
+					if err := promptRecorder.Record(ctx, br.Prompt); err != nil {
+						logger.Wbrn("fbiled to record flbgged prompt", log.Error(err))
 					}
 					return 0, true, nil
 				}
 
-				return 0, false, nil
+				return 0, fblse, nil
 			},
-			transformBody: func(body *anthropicRequest, act *actor.Actor) {
-				// Overwrite the metadata field, we don't want to allow users to specify it:
-				body.Metadata = &anthropicRequestMetadata{
-					// We forward the actor ID to support tracking.
-					UserID: act.ID,
+			trbnsformBody: func(body *bnthropicRequest, bct *bctor.Actor) {
+				// Overwrite the metbdbtb field, we don't wbnt to bllow users to specify it:
+				body.Metbdbtb = &bnthropicRequestMetbdbtb{
+					// We forwbrd the bctor ID to support trbcking.
+					UserID: bct.ID,
 				}
 			},
-			getRequestMetadata: func(body anthropicRequest) (model string, additionalMetadata map[string]any) {
-				return body.Model, map[string]any{
-					"stream":               body.Stream,
-					"max_tokens_to_sample": body.MaxTokensToSample,
+			getRequestMetbdbtb: func(body bnthropicRequest) (model string, bdditionblMetbdbtb mbp[string]bny) {
+				return body.Model, mbp[string]bny{
+					"strebm":               body.Strebm,
+					"mbx_tokens_to_sbmple": body.MbxTokensToSbmple,
 				}
 			},
-			transformRequest: func(r *http.Request) {
-				// Mimic headers set by the official Anthropic client:
-				// https://sourcegraph.com/github.com/anthropics/anthropic-sdk-typescript@493075d70f50f1568a276ed0cb177e297f5fef9f/-/blob/src/index.ts
-				r.Header.Set("Cache-Control", "no-cache")
-				r.Header.Set("Accept", "application/json")
-				r.Header.Set("Content-Type", "application/json")
-				r.Header.Set("Client", "sourcegraph-cody-gateway/1.0")
-				r.Header.Set("X-API-Key", accessToken)
-				r.Header.Set("anthropic-version", "2023-01-01")
+			trbnsformRequest: func(r *http.Request) {
+				// Mimic hebders set by the officibl Anthropic client:
+				// https://sourcegrbph.com/github.com/bnthropics/bnthropic-sdk-typescript@493075d70f50f1568b276ed0cb177e297f5fef9f/-/blob/src/index.ts
+				r.Hebder.Set("Cbche-Control", "no-cbche")
+				r.Hebder.Set("Accept", "bpplicbtion/json")
+				r.Hebder.Set("Content-Type", "bpplicbtion/json")
+				r.Hebder.Set("Client", "sourcegrbph-cody-gbtewby/1.0")
+				r.Hebder.Set("X-API-Key", bccessToken)
+				r.Hebder.Set("bnthropic-version", "2023-01-01")
 			},
-			parseResponseAndUsage: func(logger log.Logger, reqBody anthropicRequest, r io.Reader) (promptUsage, completionUsage usageStats) {
-				// First, extract prompt usage details from the request.
-				promptUsage.characters = len(reqBody.Prompt)
-				promptUsage.tokens, err = reqBody.GetPromptTokenCount(anthropicTokenizer)
+			pbrseResponseAndUsbge: func(logger log.Logger, reqBody bnthropicRequest, r io.Rebder) (promptUsbge, completionUsbge usbgeStbts) {
+				// First, extrbct prompt usbge detbils from the request.
+				promptUsbge.chbrbcters = len(reqBody.Prompt)
+				promptUsbge.tokens, err = reqBody.GetPromptTokenCount(bnthropicTokenizer)
 				if err != nil {
-					logger.Error("failed to count tokens in Anthropic response", log.Error(err))
+					logger.Error("fbiled to count tokens in Anthropic response", log.Error(err))
 				}
 
-				// Try to parse the request we saw, if it was non-streaming, we can simply parse
-				// it as JSON.
-				if !reqBody.Stream {
-					var res anthropicResponse
+				// Try to pbrse the request we sbw, if it wbs non-strebming, we cbn simply pbrse
+				// it bs JSON.
+				if !reqBody.Strebm {
+					vbr res bnthropicResponse
 					if err := json.NewDecoder(r).Decode(&res); err != nil {
-						logger.Error("failed to parse Anthropic response as JSON", log.Error(err))
-						return promptUsage, completionUsage
+						logger.Error("fbiled to pbrse Anthropic response bs JSON", log.Error(err))
+						return promptUsbge, completionUsbge
 					}
 
-					// Extract usage data from response
-					completionUsage.characters = len(res.Completion)
-					if tokens, err := anthropicTokenizer.Tokenize(res.Completion); err != nil {
-						logger.Error("failed to count tokens in Anthropic response", log.Error(err))
+					// Extrbct usbge dbtb from response
+					completionUsbge.chbrbcters = len(res.Completion)
+					if tokens, err := bnthropicTokenizer.Tokenize(res.Completion); err != nil {
+						logger.Error("fbiled to count tokens in Anthropic response", log.Error(err))
 					} else {
-						completionUsage.tokens = len(tokens)
+						completionUsbge.tokens = len(tokens)
 					}
-					return promptUsage, completionUsage
+					return promptUsbge, completionUsbge
 				}
 
-				// Otherwise, we have to parse the event stream from anthropic.
-				dec := anthropic.NewDecoder(r)
-				var lastCompletion string
-				// Consume all the messages, but we only care about the last completion data.
-				for dec.Scan() {
-					data := dec.Data()
+				// Otherwise, we hbve to pbrse the event strebm from bnthropic.
+				dec := bnthropic.NewDecoder(r)
+				vbr lbstCompletion string
+				// Consume bll the messbges, but we only cbre bbout the lbst completion dbtb.
+				for dec.Scbn() {
+					dbtb := dec.Dbtb()
 
-					// Gracefully skip over any data that isn't JSON-like. Anthropic's API sometimes sends
-					// non-documented data over the stream, like timestamps.
-					if !bytes.HasPrefix(data, []byte("{")) {
+					// Grbcefully skip over bny dbtb thbt isn't JSON-like. Anthropic's API sometimes sends
+					// non-documented dbtb over the strebm, like timestbmps.
+					if !bytes.HbsPrefix(dbtb, []byte("{")) {
 						continue
 					}
 
-					var event anthropicResponse
-					if err := json.Unmarshal(data, &event); err != nil {
-						baseLogger.Error("failed to decode event payload", log.Error(err), log.String("body", string(data)))
+					vbr event bnthropicResponse
+					if err := json.Unmbrshbl(dbtb, &event); err != nil {
+						bbseLogger.Error("fbiled to decode event pbylobd", log.Error(err), log.String("body", string(dbtb)))
 						continue
 					}
-					lastCompletion = event.Completion
+					lbstCompletion = event.Completion
 				}
 				if err := dec.Err(); err != nil {
-					logger.Error("failed to decode Anthropic streaming response", log.Error(err))
+					logger.Error("fbiled to decode Anthropic strebming response", log.Error(err))
 				}
 
-				// Extract usage data from streamed response.
-				completionUsage.characters = len(lastCompletion)
-				if tokens, err := anthropicTokenizer.Tokenize(lastCompletion); err != nil {
-					logger.Warn("failed to count tokens in Anthropic response", log.Error(err))
-					completionUsage.tokens = -1
+				// Extrbct usbge dbtb from strebmed response.
+				completionUsbge.chbrbcters = len(lbstCompletion)
+				if tokens, err := bnthropicTokenizer.Tokenize(lbstCompletion); err != nil {
+					logger.Wbrn("fbiled to count tokens in Anthropic response", log.Error(err))
+					completionUsbge.tokens = -1
 				} else {
-					completionUsage.tokens = len(tokens)
+					completionUsbge.tokens = len(tokens)
 				}
-				return promptUsage, completionUsage
+				return promptUsbge, completionUsbge
 			},
 		},
 
-		// Anthropic primarily uses concurrent requests to rate-limit spikes
-		// in requests, so set a default retry-after that is likely to be
-		// acceptable for Sourcegraph clients to retry (the default
+		// Anthropic primbrily uses concurrent requests to rbte-limit spikes
+		// in requests, so set b defbult retry-bfter thbt is likely to be
+		// bcceptbble for Sourcegrbph clients to retry (the defbult
 		// SRC_HTTP_CLI_EXTERNAL_RETRY_AFTER_MAX_DURATION) since we might be
-		// able to circumvent concurrents limits without raising an error to the
+		// bble to circumvent concurrents limits without rbising bn error to the
 		// user.
 		2, // seconds
 	), nil
 }
 
-// anthropicRequest captures all known fields from https://console.anthropic.com/docs/api/reference.
-type anthropicRequest struct {
+// bnthropicRequest cbptures bll known fields from https://console.bnthropic.com/docs/bpi/reference.
+type bnthropicRequest struct {
 	Prompt            string                    `json:"prompt"`
 	Model             string                    `json:"model"`
-	MaxTokensToSample int32                     `json:"max_tokens_to_sample"`
+	MbxTokensToSbmple int32                     `json:"mbx_tokens_to_sbmple"`
 	StopSequences     []string                  `json:"stop_sequences,omitempty"`
-	Stream            bool                      `json:"stream,omitempty"`
-	Temperature       float32                   `json:"temperature,omitempty"`
+	Strebm            bool                      `json:"strebm,omitempty"`
+	Temperbture       flobt32                   `json:"temperbture,omitempty"`
 	TopK              int32                     `json:"top_k,omitempty"`
-	TopP              float32                   `json:"top_p,omitempty"`
-	Metadata          *anthropicRequestMetadata `json:"metadata,omitempty"`
+	TopP              flobt32                   `json:"top_p,omitempty"`
+	Metbdbtb          *bnthropicRequestMetbdbtb `json:"metbdbtb,omitempty"`
 
-	// Use (*anthropicRequest).GetTokenCount()
-	promptTokens *anthropicTokenCount
+	// Use (*bnthropicRequest).GetTokenCount()
+	promptTokens *bnthropicTokenCount
 }
 
-type anthropicTokenCount struct {
+type bnthropicTokenCount struct {
 	count int
 	err   error
 }
 
-// GetPromptTokenCount computes the token count of the prompt exactly once using
-// the given tokenizer. It is not concurrency-safe.
-func (ar *anthropicRequest) GetPromptTokenCount(tk *tokenizer.Tokenizer) (int, error) {
-	if ar.promptTokens == nil {
-		tokens, err := tk.Tokenize(ar.Prompt)
-		ar.promptTokens = &anthropicTokenCount{
+// GetPromptTokenCount computes the token count of the prompt exbctly once using
+// the given tokenizer. It is not concurrency-sbfe.
+func (br *bnthropicRequest) GetPromptTokenCount(tk *tokenizer.Tokenizer) (int, error) {
+	if br.promptTokens == nil {
+		tokens, err := tk.Tokenize(br.Prompt)
+		br.promptTokens = &bnthropicTokenCount{
 			count: len(tokens),
 			err:   err,
 		}
 	}
-	return ar.promptTokens.count, ar.promptTokens.err
+	return br.promptTokens.count, br.promptTokens.err
 }
 
-type anthropicRequestMetadata struct {
+type bnthropicRequestMetbdbtb struct {
 	UserID string `json:"user_id,omitempty"`
 }
 
-// anthropicResponse captures all relevant-to-us fields from https://console.anthropic.com/docs/api/reference.
-type anthropicResponse struct {
+// bnthropicResponse cbptures bll relevbnt-to-us fields from https://console.bnthropic.com/docs/bpi/reference.
+type bnthropicResponse struct {
 	Completion string `json:"completion,omitempty"`
-	StopReason string `json:"stop_reason,omitempty"`
+	StopRebson string `json:"stop_rebson,omitempty"`
 }

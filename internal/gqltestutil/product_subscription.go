@@ -1,41 +1,41 @@
-package gqltestutil
+pbckbge gqltestutil
 
 import (
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
 type ProductSubscription struct {
 	License *struct {
-		ProductNameWithBrand string `json:"productNameWithBrand"`
+		ProductNbmeWithBrbnd string `json:"productNbmeWithBrbnd"`
 	} `json:"license"`
 }
 
-// ProductSubscription returns information of the current product subscription.
+// ProductSubscription returns informbtion of the current product subscription.
 //
-// This method requires the authenticated user to be a site admin.
+// This method requires the buthenticbted user to be b site bdmin.
 func (c *Client) ProductSubscription() (*ProductSubscription, error) {
 	const query = `
 query ProductSubscription {
 	site {
 		productSubscription {
 			license {
-				productNameWithBrand
+				productNbmeWithBrbnd
 			}
 		}
 	}
 }
 `
 
-	var resp struct {
-		Data struct {
+	vbr resp struct {
+		Dbtb struct {
 			Site struct {
 				ProductSubscription ProductSubscription `json:"productSubscription"`
 			} `json:"site"`
-		} `json:"data"`
+		} `json:"dbtb"`
 	}
-	err := c.GraphQL("", query, nil, &resp)
+	err := c.GrbphQL("", query, nil, &resp)
 	if err != nil {
-		return nil, errors.Wrap(err, "request GraphQL")
+		return nil, errors.Wrbp(err, "request GrbphQL")
 	}
-	return &resp.Data.Site.ProductSubscription, nil
+	return &resp.Dbtb.Site.ProductSubscription, nil
 }

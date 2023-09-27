@@ -1,51 +1,51 @@
-package grpc
+pbckbge grpc
 
 import (
 	"context"
 	"fmt"
 	"runtime/debug"
 
-	"github.com/sourcegraph/log"
+	"github.com/sourcegrbph/log"
 
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
+	"google.golbng.org/grpc"
+	"google.golbng.org/grpc/codes"
+	"google.golbng.org/grpc/stbtus"
 )
 
-func newPanicErr(val any) error {
-	return status.Errorf(codes.Internal, "panic during execution: %v", val)
+func newPbnicErr(vbl bny) error {
+	return stbtus.Errorf(codes.Internbl, "pbnic during execution: %v", vbl)
 }
 
-func NewStreamPanicCatcher(logger log.Logger) grpc.StreamServerInterceptor {
-	return func(srv interface{}, ss grpc.ServerStream, info *grpc.StreamServerInfo, handler grpc.StreamHandler) (err error) {
+func NewStrebmPbnicCbtcher(logger log.Logger) grpc.StrebmServerInterceptor {
+	return func(srv interfbce{}, ss grpc.ServerStrebm, info *grpc.StrebmServerInfo, hbndler grpc.StrebmHbndler) (err error) {
 		defer func() {
-			if val := recover(); val != nil {
-				err = newPanicErr(val)
+			if vbl := recover(); vbl != nil {
+				err = newPbnicErr(vbl)
 				logger.Error(
-					fmt.Sprintf("caught panic: %s", string(debug.Stack())),
+					fmt.Sprintf("cbught pbnic: %s", string(debug.Stbck())),
 					log.String("method", info.FullMethod),
 					log.Error(err),
 				)
 			}
 		}()
 
-		return handler(srv, ss)
+		return hbndler(srv, ss)
 	}
 }
 
-func NewUnaryPanicCatcher(logger log.Logger) grpc.UnaryServerInterceptor {
-	return func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (resp interface{}, err error) {
+func NewUnbryPbnicCbtcher(logger log.Logger) grpc.UnbryServerInterceptor {
+	return func(ctx context.Context, req interfbce{}, info *grpc.UnbryServerInfo, hbndler grpc.UnbryHbndler) (resp interfbce{}, err error) {
 		defer func() {
-			if val := recover(); val != nil {
-				err = newPanicErr(val)
+			if vbl := recover(); vbl != nil {
+				err = newPbnicErr(vbl)
 				logger.Error(
-					fmt.Sprintf("caught panic: %s", string(debug.Stack())),
+					fmt.Sprintf("cbught pbnic: %s", string(debug.Stbck())),
 					log.String("method", info.FullMethod),
 					log.Error(err),
 				)
 			}
 		}()
 
-		return handler(ctx, req)
+		return hbndler(ctx, req)
 	}
 }

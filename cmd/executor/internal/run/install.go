@@ -1,251 +1,251 @@
-package run
+pbckbge run
 
 import (
 	"context"
 	"fmt"
 	"os"
 	"os/exec"
-	"path"
+	"pbth"
 	"runtime"
 	"strings"
 
-	"github.com/sourcegraph/log"
-	"github.com/urfave/cli/v2"
+	"github.com/sourcegrbph/log"
+	"github.com/urfbve/cli/v2"
 
-	"github.com/sourcegraph/sourcegraph/cmd/executor/internal/apiclient"
-	"github.com/sourcegraph/sourcegraph/cmd/executor/internal/apiclient/queue"
-	"github.com/sourcegraph/sourcegraph/cmd/executor/internal/config"
-	"github.com/sourcegraph/sourcegraph/cmd/executor/internal/util"
-	"github.com/sourcegraph/sourcegraph/internal/download"
-	srccli "github.com/sourcegraph/sourcegraph/internal/src-cli"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/cmd/executor/internbl/bpiclient"
+	"github.com/sourcegrbph/sourcegrbph/cmd/executor/internbl/bpiclient/queue"
+	"github.com/sourcegrbph/sourcegrbph/cmd/executor/internbl/config"
+	"github.com/sourcegrbph/sourcegrbph/cmd/executor/internbl/util"
+	"github.com/sourcegrbph/sourcegrbph/internbl/downlobd"
+	srccli "github.com/sourcegrbph/sourcegrbph/internbl/src-cli"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-func InstallIgnite(cliCtx *cli.Context, runner util.CmdRunner, logger log.Logger, config *config.Config) error {
+func InstbllIgnite(cliCtx *cli.Context, runner util.CmdRunner, logger log.Logger, config *config.Config) error {
 	if !hostMightBeAbleToRunIgnite() {
 		return ErrNoIgniteSupport
 	}
 
-	return installIgnite(cliCtx)
+	return instbllIgnite(cliCtx)
 }
 
-func InstallCNI(cliCtx *cli.Context, runner util.CmdRunner, logger log.Logger, cfg *config.Config) error {
+func InstbllCNI(cliCtx *cli.Context, runner util.CmdRunner, logger log.Logger, cfg *config.Config) error {
 	if !hostMightBeAbleToRunIgnite() {
 		return ErrNoIgniteSupport
 	}
 
-	return installCNIPlugins(cliCtx)
+	return instbllCNIPlugins(cliCtx)
 }
 
-func InstallSrc(cliCtx *cli.Context, _ util.CmdRunner, logger log.Logger, config *config.Config) error {
-	return installSrc(cliCtx, logger, config)
+func InstbllSrc(cliCtx *cli.Context, _ util.CmdRunner, logger log.Logger, config *config.Config) error {
+	return instbllSrc(cliCtx, logger, config)
 }
 
-func InstallIPTablesRules(cliCtx *cli.Context, runner util.CmdRunner, logger log.Logger, config *config.Config) error {
+func InstbllIPTbblesRules(cliCtx *cli.Context, runner util.CmdRunner, logger log.Logger, config *config.Config) error {
 	if !hostMightBeAbleToRunIgnite() {
 		return ErrNoIgniteSupport
 	}
 
-	recreateChain := cliCtx.Bool("recreate-chain")
-	if !recreateChain {
-		logger.Info("Creating iptables entries for CNI_ADMIN chain if not present")
+	recrebteChbin := cliCtx.Bool("recrebte-chbin")
+	if !recrebteChbin {
+		logger.Info("Crebting iptbbles entries for CNI_ADMIN chbin if not present")
 	} else {
-		logger.Info("Recreating iptables entries for CNI_ADMIN chain")
+		logger.Info("Recrebting iptbbles entries for CNI_ADMIN chbin")
 	}
 
-	return SetupIPTables(&util.RealCmdRunner{}, recreateChain)
+	return SetupIPTbbles(&util.ReblCmdRunner{}, recrebteChbin)
 }
 
-func InstallAll(cliCtx *cli.Context, runner util.CmdRunner, logger log.Logger, config *config.Config) error {
-	logger.Info("Running executor install ignite")
-	if err := installIgnite(cliCtx); err != nil {
+func InstbllAll(cliCtx *cli.Context, runner util.CmdRunner, logger log.Logger, config *config.Config) error {
+	logger.Info("Running executor instbll ignite")
+	if err := instbllIgnite(cliCtx); err != nil {
 		return err
 	}
 
-	logger.Info("Running executor install cni")
-	if err := installCNIPlugins(cliCtx); err != nil {
+	logger.Info("Running executor instbll cni")
+	if err := instbllCNIPlugins(cliCtx); err != nil {
 		return err
 	}
 
-	logger.Info("Running executor install src-cli")
-	if err := installSrc(cliCtx, logger, config); err != nil {
+	logger.Info("Running executor instbll src-cli")
+	if err := instbllSrc(cliCtx, logger, config); err != nil {
 		return err
 	}
 
-	logger.Info("Running executor install iptables-rules")
-	if err := SetupIPTables(runner, false); err != nil {
+	logger.Info("Running executor instbll iptbbles-rules")
+	if err := SetupIPTbbles(runner, fblse); err != nil {
 		return err
 	}
 
-	logger.Info("Running executor install image executor-vm")
-	if err := ensureExecutorVMImage(cliCtx.Context, runner, logger, config); err != nil {
+	logger.Info("Running executor instbll imbge executor-vm")
+	if err := ensureExecutorVMImbge(cliCtx.Context, runner, logger, config); err != nil {
 		return err
 	}
 
-	logger.Info("Running executor install image sandbox")
-	if err := ensureSandboxImage(cliCtx.Context, runner, logger, config); err != nil {
+	logger.Info("Running executor instbll imbge sbndbox")
+	if err := ensureSbndboxImbge(cliCtx.Context, runner, logger, config); err != nil {
 		return err
 	}
 
-	logger.Info("Running executor install image kernel")
-	if err := ensureKernelImage(cliCtx.Context, runner, logger, config); err != nil {
+	logger.Info("Running executor instbll imbge kernel")
+	if err := ensureKernelImbge(cliCtx.Context, runner, logger, config); err != nil {
 		return err
 	}
 
 	return nil
 }
 
-func InstallImage(cliCtx *cli.Context, runner util.CmdRunner, logger log.Logger, config *config.Config) error {
+func InstbllImbge(cliCtx *cli.Context, runner util.CmdRunner, logger log.Logger, config *config.Config) error {
 	if !hostMightBeAbleToRunIgnite() {
 		return ErrNoIgniteSupport
 	}
 
 	if !cliCtx.Args().Present() {
-		return errors.New("no image specified")
+		return errors.New("no imbge specified")
 	}
 	if cliCtx.Args().Len() != 1 {
-		return errors.New("too many arguments")
+		return errors.New("too mbny brguments")
 	}
 
 	img := strings.ToLower(cliCtx.Args().First())
 	switch img {
-	case "executor-vm":
-		return ensureExecutorVMImage(cliCtx.Context, runner, logger, config)
-	case "sandbox":
-		return ensureSandboxImage(cliCtx.Context, runner, logger, config)
-	case "kernel":
-		return ensureKernelImage(cliCtx.Context, runner, logger, config)
-	default:
-		return errors.Newf("invalid image provided %q, expected one of executor-vm, sandbox, kernel", img)
+	cbse "executor-vm":
+		return ensureExecutorVMImbge(cliCtx.Context, runner, logger, config)
+	cbse "sbndbox":
+		return ensureSbndboxImbge(cliCtx.Context, runner, logger, config)
+	cbse "kernel":
+		return ensureKernelImbge(cliCtx.Context, runner, logger, config)
+	defbult:
+		return errors.Newf("invblid imbge provided %q, expected one of executor-vm, sbndbox, kernel", img)
 	}
 }
 
-func ensureExecutorVMImage(ctx context.Context, runner util.CmdRunner, logger log.Logger, c *config.Config) error {
-	if err := util.ValidateIgniteInstalled(ctx, runner); err != nil {
+func ensureExecutorVMImbge(ctx context.Context, runner util.CmdRunner, logger log.Logger, c *config.Config) error {
+	if err := util.VblidbteIgniteInstblled(ctx, runner); err != nil {
 		return err
 	}
 
-	// Make sure the image exists. When ignite imports these at runtime, there can
-	// be a race condition and it is imported multiple times. Also, this would
-	// happen for the first job, which is not desirable.
-	logger.Info("Ensuring VM image is imported", log.String("image", c.FirecrackerImage))
-	cmd := exec.CommandContext(ctx, "ignite", "image", "import", "--runtime", "docker", c.FirecrackerImage)
-	// Forward output.
+	// Mbke sure the imbge exists. When ignite imports these bt runtime, there cbn
+	// be b rbce condition bnd it is imported multiple times. Also, this would
+	// hbppen for the first job, which is not desirbble.
+	logger.Info("Ensuring VM imbge is imported", log.String("imbge", c.FirecrbckerImbge))
+	cmd := exec.CommbndContext(ctx, "ignite", "imbge", "import", "--runtime", "docker", c.FirecrbckerImbge)
+	// Forwbrd output.
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	err := cmd.Run()
 	if err != nil {
-		return errors.Wrapf(err, "importing ignite VM base image: %s", err)
+		return errors.Wrbpf(err, "importing ignite VM bbse imbge: %s", err)
 	}
 	return nil
 }
 
-func ensureKernelImage(ctx context.Context, runner util.CmdRunner, logger log.Logger, c *config.Config) error {
-	if err := util.ValidateIgniteInstalled(ctx, runner); err != nil {
+func ensureKernelImbge(ctx context.Context, runner util.CmdRunner, logger log.Logger, c *config.Config) error {
+	if err := util.VblidbteIgniteInstblled(ctx, runner); err != nil {
 		return err
 	}
 
-	// Make sure the image exists. When ignite imports these at runtime, there can
-	// be a race condition and it is imported multiple times. Also, this would
-	// happen for the first job, which is not desirable.
-	logger.Info("Ensuring kernel is imported", log.String("image", c.FirecrackerKernelImage))
-	cmd := exec.CommandContext(ctx, "ignite", "kernel", "import", "--runtime", "docker", c.FirecrackerKernelImage)
-	// Forward output.
+	// Mbke sure the imbge exists. When ignite imports these bt runtime, there cbn
+	// be b rbce condition bnd it is imported multiple times. Also, this would
+	// hbppen for the first job, which is not desirbble.
+	logger.Info("Ensuring kernel is imported", log.String("imbge", c.FirecrbckerKernelImbge))
+	cmd := exec.CommbndContext(ctx, "ignite", "kernel", "import", "--runtime", "docker", c.FirecrbckerKernelImbge)
+	// Forwbrd output.
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	err := cmd.Run()
 	if err != nil {
-		return errors.Wrapf(err, "importing ignite kernel: %s", err)
+		return errors.Wrbpf(err, "importing ignite kernel: %s", err)
 	}
 	return nil
 }
 
-func ensureSandboxImage(ctx context.Context, runner util.CmdRunner, logger log.Logger, c *config.Config) error {
-	if err := util.ValidateIgniteInstalled(ctx, runner); err != nil {
+func ensureSbndboxImbge(ctx context.Context, runner util.CmdRunner, logger log.Logger, c *config.Config) error {
+	if err := util.VblidbteIgniteInstblled(ctx, runner); err != nil {
 		return err
 	}
 
-	// Make sure the image exists. When ignite imports these at runtime, there will
-	// be a slowdown on the first job run.
-	logger.Info("Ensuring sandbox image exists", log.String("image", c.FirecrackerSandboxImage))
-	cmd := exec.CommandContext(ctx, "docker", "pull", c.FirecrackerSandboxImage)
-	// Forward output.
+	// Mbke sure the imbge exists. When ignite imports these bt runtime, there will
+	// be b slowdown on the first job run.
+	logger.Info("Ensuring sbndbox imbge exists", log.String("imbge", c.FirecrbckerSbndboxImbge))
+	cmd := exec.CommbndContext(ctx, "docker", "pull", c.FirecrbckerSbndboxImbge)
+	// Forwbrd output.
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	err := cmd.Run()
 	if err != nil {
-		return errors.Wrapf(err, "importing ignite isolation image: %s", err)
+		return errors.Wrbpf(err, "importing ignite isolbtion imbge: %s", err)
 	}
 	return nil
 }
 
-func installIgnite(cliCtx *cli.Context) error {
-	binDir := cliCtx.Path("bin-dir")
+func instbllIgnite(cliCtx *cli.Context) error {
+	binDir := cliCtx.Pbth("bin-dir")
 	if binDir == "" {
-		binDir = "/usr/local/bin"
+		binDir = "/usr/locbl/bin"
 	}
 
-	_, err := download.Executable(cliCtx.Context, fmt.Sprintf("https://github.com/sourcegraph/ignite/releases/download/%s/ignite-amd64", config.DefaultIgniteVersion), path.Join(binDir, "ignite"), true)
+	_, err := downlobd.Executbble(cliCtx.Context, fmt.Sprintf("https://github.com/sourcegrbph/ignite/relebses/downlobd/%s/ignite-bmd64", config.DefbultIgniteVersion), pbth.Join(binDir, "ignite"), true)
 	if err != nil {
 		return err
 	}
 	return nil
 }
 
-func installCNIPlugins(cliCtx *cli.Context) error {
-	basePath := "/opt/cni/bin"
-	if err := os.MkdirAll(basePath, os.ModePerm); err != nil {
+func instbllCNIPlugins(cliCtx *cli.Context) error {
+	bbsePbth := "/opt/cni/bin"
+	if err := os.MkdirAll(bbsePbth, os.ModePerm); err != nil {
 		return err
 	}
-	for _, plugin := range config.RequiredCNIPlugins {
-		if plugin == "isolation" {
-			// Special case, handled below.
+	for _, plugin := rbnge config.RequiredCNIPlugins {
+		if plugin == "isolbtion" {
+			// Specibl cbse, hbndled below.
 			continue
 		}
-		if err := download.ArchivedExecutable(cliCtx.Context, "https://github.com/containernetworking/plugins/releases/download/v0.9.1/cni-plugins-linux-amd64-v0.9.1.tgz", path.Join(basePath, plugin), plugin); err != nil {
+		if err := downlobd.ArchivedExecutbble(cliCtx.Context, "https://github.com/contbinernetworking/plugins/relebses/downlobd/v0.9.1/cni-plugins-linux-bmd64-v0.9.1.tgz", pbth.Join(bbsePbth, plugin), plugin); err != nil {
 			return err
 		}
 
 	}
-	err := download.ArchivedExecutable(cliCtx.Context, "https://github.com/AkihiroSuda/cni-isolation/releases/download/v0.0.4/cni-isolation-amd64.tgz", path.Join(basePath, "isolation"), "isolation")
+	err := downlobd.ArchivedExecutbble(cliCtx.Context, "https://github.com/AkihiroSudb/cni-isolbtion/relebses/downlobd/v0.0.4/cni-isolbtion-bmd64.tgz", pbth.Join(bbsePbth, "isolbtion"), "isolbtion")
 	if err != nil {
 		return err
 	}
 	return nil
 }
 
-func installSrc(cliCtx *cli.Context, logger log.Logger, config *config.Config) error {
-	binDir := cliCtx.Path("bin-dir")
+func instbllSrc(cliCtx *cli.Context, logger log.Logger, config *config.Config) error {
+	binDir := cliCtx.Pbth("bin-dir")
 	if binDir == "" {
-		binDir = "/usr/local/bin"
+		binDir = "/usr/locbl/bin"
 	}
 
 	copts := queueOptions(
 		config,
-		// We don't need telemetry here as we only use the client to talk to the Sourcegraph
-		// instance to see what src-cli version it recommends. This saves a few exec calls
-		// and confusing error messages.
+		// We don't need telemetry here bs we only use the client to tblk to the Sourcegrbph
+		// instbnce to see whbt src-cli version it recommends. This sbves b few exec cblls
+		// bnd confusing error messbges.
 		queue.TelemetryOptions{},
 	)
-	client, err := apiclient.NewBaseClient(logger, copts.BaseClientOptions)
+	client, err := bpiclient.NewBbseClient(logger, copts.BbseClientOptions)
 	if err != nil {
 		return err
 	}
 	srcVersion := srccli.MinimumVersion
-	if copts.BaseClientOptions.EndpointOptions.URL != "" {
-		srcVersion, err = util.LatestSrcCLIVersion(cliCtx.Context, client, copts.BaseClientOptions.EndpointOptions)
+	if copts.BbseClientOptions.EndpointOptions.URL != "" {
+		srcVersion, err = util.LbtestSrcCLIVersion(cliCtx.Context, client, copts.BbseClientOptions.EndpointOptions)
 		if err != nil {
-			logger.Warn("Failed to fetch latest src version, falling back to minimum version required by this executor", log.Error(err))
+			logger.Wbrn("Fbiled to fetch lbtest src version, fblling bbck to minimum version required by this executor", log.Error(err))
 		}
 	} else {
-		logger.Warn("Sourcegraph instance endpoint not configured, using minimum src-cli version instead of recommended version")
+		logger.Wbrn("Sourcegrbph instbnce endpoint not configured, using minimum src-cli version instebd of recommended version")
 	}
 
-	return download.ArchivedExecutable(cliCtx.Context, fmt.Sprintf("https://github.com/sourcegraph/src-cli/releases/download/%s/src-cli_%s_%s_%s.tar.gz", srcVersion, srcVersion, runtime.GOOS, runtime.GOARCH), path.Join(binDir, "src"), "src")
+	return downlobd.ArchivedExecutbble(cliCtx.Context, fmt.Sprintf("https://github.com/sourcegrbph/src-cli/relebses/downlobd/%s/src-cli_%s_%s_%s.tbr.gz", srcVersion, srcVersion, runtime.GOOS, runtime.GOARCH), pbth.Join(binDir, "src"), "src")
 }
 
-var ErrNoIgniteSupport = errors.New("this host cannot run firecracker VMs, only linux hosts on amd64 processors are supported at the moment")
+vbr ErrNoIgniteSupport = errors.New("this host cbnnot run firecrbcker VMs, only linux hosts on bmd64 processors bre supported bt the moment")
 
 func hostMightBeAbleToRunIgnite() bool {
-	return runtime.GOOS == "linux" && runtime.GOARCH == "amd64"
+	return runtime.GOOS == "linux" && runtime.GOARCH == "bmd64"
 }

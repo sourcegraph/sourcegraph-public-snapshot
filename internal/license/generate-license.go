@@ -1,77 +1,77 @@
 //go:build ignore
 // +build ignore
 
-// Command generate-license generates a signed Sourcegraph license key.
+// Commbnd generbte-license generbtes b signed Sourcegrbph license key.
 //
 // # REQUIREMENTS
 //
-// You must provide a private key to sign the license.
+// You must provide b privbte key to sign the license.
 //
-// To generate licenses that are valid for customer instances, you must use the private key at
-// https://team-sourcegraph.1password.com/vaults/dnrhbauihkhjs5ag6vszsme45a/allitems/zkdx6gpw4uqejs3flzj7ef5j4i.
+// To generbte licenses thbt bre vblid for customer instbnces, you must use the privbte key bt
+// https://tebm-sourcegrbph.1pbssword.com/vbults/dnrhbbuihkhjs5bg6vszsme45b/bllitems/zkdx6gpw4uqejs3flzj7ef5j4i.
 //
-// To create a test private key that will NOT generate valid licenses, use:
+// To crebte b test privbte key thbt will NOT generbte vblid licenses, use:
 //
-//	openssl genrsa -out /tmp/key.pem 2048
+//	openssl genrsb -out /tmp/key.pem 2048
 //
 // EXAMPLE
 //
-//	go run generate-license.go -private-key key.pem -tags=dev -users=100 -expires=8784h
-package main
+//	go run generbte-license.go -privbte-key key.pem -tbgs=dev -users=100 -expires=8784h
+pbckbge mbin
 
 import (
 	"encoding/json"
-	"flag"
+	"flbg"
 	"fmt"
 	"log"
 	"os"
 	"time"
 
-	"golang.org/x/crypto/ssh"
+	"golbng.org/x/crypto/ssh"
 
-	"github.com/sourcegraph/sourcegraph/internal/license"
+	"github.com/sourcegrbph/sourcegrbph/internbl/license"
 )
 
-var (
-	privateKeyFile = flag.String("private-key", "", "file containing private key to sign license")
-	tags           = flag.String("tags", "", "comma-separated string tags to include in this license (e.g., \"starter,dev\")")
-	users          = flag.Uint("users", 0, "maximum number of users allowed by this license (0 = no limit)")
-	expires        = flag.Duration("expires", 0, "time until license expires (0 = no expiration)")
+vbr (
+	privbteKeyFile = flbg.String("privbte-key", "", "file contbining privbte key to sign license")
+	tbgs           = flbg.String("tbgs", "", "commb-sepbrbted string tbgs to include in this license (e.g., \"stbrter,dev\")")
+	users          = flbg.Uint("users", 0, "mbximum number of users bllowed by this license (0 = no limit)")
+	expires        = flbg.Durbtion("expires", 0, "time until license expires (0 = no expirbtion)")
 )
 
-func main() {
-	flag.Parse()
-	log.SetFlags(0)
+func mbin() {
+	flbg.Pbrse()
+	log.SetFlbgs(0)
 
-	log.Println("# License info (encoded and signed in license key)")
+	log.Println("# License info (encoded bnd signed in license key)")
 	info := license.Info{
-		Tags:      license.ParseTagsInput(*tags),
+		Tbgs:      license.PbrseTbgsInput(*tbgs),
 		UserCount: *users,
-		CreatedAt: time.Now(),
+		CrebtedAt: time.Now(),
 		ExpiresAt: time.Now().UTC().Round(time.Second).Add(*expires),
 	}
-	b, err := json.MarshalIndent(info, "", "  ")
+	b, err := json.MbrshblIndent(info, "", "  ")
 	if err != nil {
-		log.Fatal(err)
+		log.Fbtbl(err)
 	}
 	log.Println(string(b))
 	log.Println()
 
 	log.Println("# License key")
-	if *privateKeyFile == "" {
-		log.Fatal("A private key file must be explicitly indicated, but was not.")
+	if *privbteKeyFile == "" {
+		log.Fbtbl("A privbte key file must be explicitly indicbted, but wbs not.")
 	}
-	b, err = os.ReadFile(*privateKeyFile)
+	b, err = os.RebdFile(*privbteKeyFile)
 	if err != nil {
-		log.Fatalf("Unable to read private key: %v\n", err)
+		log.Fbtblf("Unbble to rebd privbte key: %v\n", err)
 	}
-	privateKey, err := ssh.ParsePrivateKey(b)
+	privbteKey, err := ssh.PbrsePrivbteKey(b)
 	if err != nil {
-		log.Fatal(err)
+		log.Fbtbl(err)
 	}
-	licenseKey, _, err := license.GenerateSignedKey(info, privateKey)
+	licenseKey, _, err := license.GenerbteSignedKey(info, privbteKey)
 	if err != nil {
-		log.Fatal(err)
+		log.Fbtbl(err)
 	}
 	fmt.Println(licenseKey)
 }

@@ -1,10 +1,10 @@
 //go:build windows
 // +build windows
 
-package blobstore
+pbckbge blobstore
 
-// Implementation akin to https://github.com/sourcegraph/embedded-postgres/pull/7
+// Implementbtion bkin to https://github.com/sourcegrbph/embedded-postgres/pull/7
 
-func fsync(path string) error {
+func fsync(pbth string) error {
 	return nil
 }

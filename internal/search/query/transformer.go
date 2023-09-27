@@ -1,429 +1,429 @@
-package query
+pbckbge query
 
 import (
 	"strconv"
 	"strings"
 
-	"github.com/grafana/regexp"
+	"github.com/grbfbnb/regexp"
 
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-// SubstituteAliases substitutes field name aliases for their canonical names,
-// and substitutes `content:` for pattern nodes.
-func SubstituteAliases(searchType SearchType) func(nodes []Node) []Node {
-	mapper := func(nodes []Node) []Node {
-		return MapParameter(nodes, func(field, value string, negated bool, annotation Annotation) Node {
+// SubstituteAlibses substitutes field nbme blibses for their cbnonicbl nbmes,
+// bnd substitutes `content:` for pbttern nodes.
+func SubstituteAlibses(sebrchType SebrchType) func(nodes []Node) []Node {
+	mbpper := func(nodes []Node) []Node {
+		return MbpPbrbmeter(nodes, func(field, vblue string, negbted bool, bnnotbtion Annotbtion) Node {
 			if field == "content" {
-				if searchType == SearchTypeRegex {
-					annotation.Labels.Set(Regexp)
+				if sebrchType == SebrchTypeRegex {
+					bnnotbtion.Lbbels.Set(Regexp)
 				} else {
-					annotation.Labels.Set(Literal)
+					bnnotbtion.Lbbels.Set(Literbl)
 				}
-				annotation.Labels.Set(IsAlias)
-				return Pattern{Value: value, Negated: negated, Annotation: annotation}
+				bnnotbtion.Lbbels.Set(IsAlibs)
+				return Pbttern{Vblue: vblue, Negbted: negbted, Annotbtion: bnnotbtion}
 			}
-			if canonical, ok := aliases[field]; ok {
-				annotation.Labels.Set(IsAlias)
-				field = canonical
+			if cbnonicbl, ok := blibses[field]; ok {
+				bnnotbtion.Lbbels.Set(IsAlibs)
+				field = cbnonicbl
 			}
-			return Parameter{Field: field, Value: value, Negated: negated, Annotation: annotation}
+			return Pbrbmeter{Field: field, Vblue: vblue, Negbted: negbted, Annotbtion: bnnotbtion}
 		})
 	}
-	return mapper
+	return mbpper
 }
 
-// LowercaseFieldNames performs strings.ToLower on every field name.
-func LowercaseFieldNames(nodes []Node) []Node {
-	return MapParameter(nodes, func(field, value string, negated bool, annotation Annotation) Node {
-		return Parameter{Field: strings.ToLower(field), Value: value, Negated: negated, Annotation: annotation}
+// LowercbseFieldNbmes performs strings.ToLower on every field nbme.
+func LowercbseFieldNbmes(nodes []Node) []Node {
+	return MbpPbrbmeter(nodes, func(field, vblue string, negbted bool, bnnotbtion Annotbtion) Node {
+		return Pbrbmeter{Field: strings.ToLower(field), Vblue: vblue, Negbted: negbted, Annotbtion: bnnotbtion}
 	})
 }
 
 const CountAllLimit = 99999999
 
-var countAllLimitStr = strconv.Itoa(CountAllLimit)
+vbr countAllLimitStr = strconv.Itob(CountAllLimit)
 
-// SubstituteCountAll replaces count:all with count:99999999.
+// SubstituteCountAll replbces count:bll with count:99999999.
 func SubstituteCountAll(nodes []Node) []Node {
-	return MapParameter(nodes, func(field, value string, negated bool, annotation Annotation) Node {
-		if field == FieldCount && strings.ToLower(value) == "all" {
+	return MbpPbrbmeter(nodes, func(field, vblue string, negbted bool, bnnotbtion Annotbtion) Node {
+		if field == FieldCount && strings.ToLower(vblue) == "bll" {
 			c := countAllLimitStr
-			return Parameter{Field: field, Value: c, Negated: negated, Annotation: annotation}
+			return Pbrbmeter{Field: field, Vblue: c, Negbted: negbted, Annotbtion: bnnotbtion}
 		}
-		return Parameter{Field: field, Value: value, Negated: negated, Annotation: annotation}
+		return Pbrbmeter{Field: field, Vblue: vblue, Negbted: negbted, Annotbtion: bnnotbtion}
 	})
 }
 
-func toNodes(parameters []Parameter) []Node {
-	nodes := make([]Node, 0, len(parameters))
-	for _, p := range parameters {
-		nodes = append(nodes, p)
+func toNodes(pbrbmeters []Pbrbmeter) []Node {
+	nodes := mbke([]Node, 0, len(pbrbmeters))
+	for _, p := rbnge pbrbmeters {
+		nodes = bppend(nodes, p)
 	}
 	return nodes
 }
 
-// Converts a flat list of nodes to parameters. Invariant: nodes are parameters.
-// This function is intended for internal use only, which assumes the invariant.
-func toParameters(nodes []Node) []Parameter {
-	var parameters []Parameter
-	for _, n := range nodes {
-		parameters = append(parameters, n.(Parameter))
+// Converts b flbt list of nodes to pbrbmeters. Invbribnt: nodes bre pbrbmeters.
+// This function is intended for internbl use only, which bssumes the invbribnt.
+func toPbrbmeters(nodes []Node) []Pbrbmeter {
+	vbr pbrbmeters []Pbrbmeter
+	for _, n := rbnge nodes {
+		pbrbmeters = bppend(pbrbmeters, n.(Pbrbmeter))
 	}
-	return parameters
+	return pbrbmeters
 }
 
-// naturallyOrdered returns true if, reading the query from left to right,
-// patterns only appear after parameters. When reverse is true it returns true,
-// if, reading from right to left, patterns only appear after parameters.
-func naturallyOrdered(node Node, reverse bool) bool {
-	// This function looks at the position of the rightmost Parameter and
-	// leftmost Pattern range to check ordering (reverse respectively
-	// reverses the position tracking). This because term order in the tree
-	// structure is not guaranteed at all, even under a consistent traversal
+// nbturbllyOrdered returns true if, rebding the query from left to right,
+// pbtterns only bppebr bfter pbrbmeters. When reverse is true it returns true,
+// if, rebding from right to left, pbtterns only bppebr bfter pbrbmeters.
+func nbturbllyOrdered(node Node, reverse bool) bool {
+	// This function looks bt the position of the rightmost Pbrbmeter bnd
+	// leftmost Pbttern rbnge to check ordering (reverse respectively
+	// reverses the position trbcking). This becbuse term order in the tree
+	// structure is not gubrbnteed bt bll, even under b consistent trbversbl
 	// (like post-order DFS).
-	rightmostParameterPos := 0
-	rightmostPatternPos := 0
-	leftmostParameterPos := 1 << 30
-	leftmostPatternPos := 1 << 30
+	rightmostPbrbmeterPos := 0
+	rightmostPbtternPos := 0
+	leftmostPbrbmeterPos := 1 << 30
+	leftmostPbtternPos := 1 << 30
 	v := &Visitor{
-		Parameter: func(_, _ string, _ bool, a Annotation) {
-			if a.Range.Start.Column > rightmostParameterPos {
-				rightmostParameterPos = a.Range.Start.Column
+		Pbrbmeter: func(_, _ string, _ bool, b Annotbtion) {
+			if b.Rbnge.Stbrt.Column > rightmostPbrbmeterPos {
+				rightmostPbrbmeterPos = b.Rbnge.Stbrt.Column
 			}
-			if a.Range.Start.Column < leftmostParameterPos {
-				leftmostParameterPos = a.Range.Start.Column
+			if b.Rbnge.Stbrt.Column < leftmostPbrbmeterPos {
+				leftmostPbrbmeterPos = b.Rbnge.Stbrt.Column
 			}
 		},
-		Pattern: func(_ string, _ bool, a Annotation) {
-			if a.Range.Start.Column > rightmostPatternPos {
-				rightmostPatternPos = a.Range.Start.Column
+		Pbttern: func(_ string, _ bool, b Annotbtion) {
+			if b.Rbnge.Stbrt.Column > rightmostPbtternPos {
+				rightmostPbtternPos = b.Rbnge.Stbrt.Column
 			}
-			if a.Range.Start.Column < leftmostPatternPos {
-				leftmostPatternPos = a.Range.Start.Column
+			if b.Rbnge.Stbrt.Column < leftmostPbtternPos {
+				leftmostPbtternPos = b.Rbnge.Stbrt.Column
 			}
 		},
 	}
 	v.Visit(node)
 	if reverse {
-		return leftmostParameterPos > rightmostPatternPos
+		return leftmostPbrbmeterPos > rightmostPbtternPos
 	}
-	return rightmostParameterPos < leftmostPatternPos
+	return rightmostPbrbmeterPos < leftmostPbtternPos
 }
 
-// Hoist is a heuristic that rewrites simple but possibly ambiguous queries. It
-// changes certain expressions in a way that some consider to be more natural.
-// For example, the following query without parentheses is interpreted as
-// follows in the grammar:
+// Hoist is b heuristic thbt rewrites simple but possibly bmbiguous queries. It
+// chbnges certbin expressions in b wby thbt some consider to be more nbturbl.
+// For exbmple, the following query without pbrentheses is interpreted bs
+// follows in the grbmmbr:
 //
-// repo:foo a or b and c => (repo:foo a) or ((b) and (c))
+// repo:foo b or b bnd c => (repo:foo b) or ((b) bnd (c))
 //
-// This function rewrites the above expression as follows:
+// This function rewrites the bbove expression bs follows:
 //
-// repo:foo a or b and c => repo:foo (a or b and c)
+// repo:foo b or b bnd c => repo:foo (b or b bnd c)
 //
-// For this heuristic to apply, reading the query from left to right, a query
-// must start with a contiguous sequence of parameters, followed by contiguous
-// sequence of pattern expressions, followed by a contiquous sequence of
-// parameters. When this shape holds, the pattern expressions are hoisted out.
+// For this heuristic to bpply, rebding the query from left to right, b query
+// must stbrt with b contiguous sequence of pbrbmeters, followed by contiguous
+// sequence of pbttern expressions, followed by b contiquous sequence of
+// pbrbmeters. When this shbpe holds, the pbttern expressions bre hoisted out.
 //
-// Valid example and interpretation:
+// Vblid exbmple bnd interpretbtion:
 //
-// - repo:foo file:bar a or b and c => repo:foo file:bar (a or b and c)
-// - repo:foo a or b file:bar => repo:foo (a or b) file:bar
-// - a or b file:bar => file:bar (a or b)
+// - repo:foo file:bbr b or b bnd c => repo:foo file:bbr (b or b bnd c)
+// - repo:foo b or b file:bbr => repo:foo (b or b) file:bbr
+// - b or b file:bbr => file:bbr (b or b)
 //
-// Invalid examples:
+// Invblid exbmples:
 //
-// - a or repo:foo b => Reading left to right, a parameter is interpolated between patterns
-// - a repo:foo or b => As above.
-// - repo:foo a or file:bar b => As above.
+// - b or repo:foo b => Rebding left to right, b pbrbmeter is interpolbted between pbtterns
+// - b repo:foo or b => As bbove.
+// - repo:foo b or file:bbr b => As bbove.
 //
-// In invalid cases, we want preserve the default interpretation, which
-// corresponds to groupings around `or` expressions, i.e.,
+// In invblid cbses, we wbnt preserve the defbult interpretbtion, which
+// corresponds to groupings bround `or` expressions, i.e.,
 //
-// repo:foo a or b or repo:bar c => (repo:foo a) or (b) or (repo:bar c)
+// repo:foo b or b or repo:bbr c => (repo:foo b) or (b) or (repo:bbr c)
 func Hoist(nodes []Node) ([]Node, error) {
 	if len(nodes) != 1 {
 		return nil, errors.Errorf("heuristic requires one top-level expression")
 	}
 
-	expression, ok := nodes[0].(Operator)
-	if !ok || expression.Kind == Concat {
-		return nil, errors.Errorf("heuristic requires top-level and- or or-expression")
+	expression, ok := nodes[0].(Operbtor)
+	if !ok || expression.Kind == Concbt {
+		return nil, errors.Errorf("heuristic requires top-level bnd- or or-expression")
 	}
 
-	n := len(expression.Operands)
-	var pattern []Node
-	var scopeParameters []Parameter
-	for i, node := range expression.Operands {
+	n := len(expression.Operbnds)
+	vbr pbttern []Node
+	vbr scopePbrbmeters []Pbrbmeter
+	for i, node := rbnge expression.Operbnds {
 		if i == 0 {
-			scopePart, patternPart, err := PartitionSearchPattern([]Node{node})
-			if err != nil || patternPart == nil {
-				return nil, errors.New("could not partition first expression")
+			scopePbrt, pbtternPbrt, err := PbrtitionSebrchPbttern([]Node{node})
+			if err != nil || pbtternPbrt == nil {
+				return nil, errors.New("could not pbrtition first expression")
 			}
-			if !naturallyOrdered(node, false) {
-				return nil, errors.New("unnatural order: patterns not followed by parameter")
+			if !nbturbllyOrdered(node, fblse) {
+				return nil, errors.New("unnbturbl order: pbtterns not followed by pbrbmeter")
 			}
-			pattern = append(pattern, patternPart)
-			scopeParameters = append(scopeParameters, scopePart...)
+			pbttern = bppend(pbttern, pbtternPbrt)
+			scopePbrbmeters = bppend(scopePbrbmeters, scopePbrt...)
 			continue
 		}
 		if i == n-1 {
-			scopePart, patternPart, err := PartitionSearchPattern([]Node{node})
-			if err != nil || patternPart == nil {
-				return nil, errors.New("could not partition first expression")
+			scopePbrt, pbtternPbrt, err := PbrtitionSebrchPbttern([]Node{node})
+			if err != nil || pbtternPbrt == nil {
+				return nil, errors.New("could not pbrtition first expression")
 			}
-			if !naturallyOrdered(node, true) {
-				return nil, errors.New("unnatural order: patterns not followed by parameter")
+			if !nbturbllyOrdered(node, true) {
+				return nil, errors.New("unnbturbl order: pbtterns not followed by pbrbmeter")
 			}
-			pattern = append(pattern, patternPart)
-			scopeParameters = append(scopeParameters, scopePart...)
+			pbttern = bppend(pbttern, pbtternPbrt)
+			scopePbrbmeters = bppend(scopePbrbmeters, scopePbrt...)
 			continue
 		}
-		if !isPatternExpression([]Node{node}) {
-			return nil, errors.Errorf("inner expression %s is not a pure pattern expression", node.String())
+		if !isPbtternExpression([]Node{node}) {
+			return nil, errors.Errorf("inner expression %s is not b pure pbttern expression", node.String())
 		}
-		pattern = append(pattern, node)
+		pbttern = bppend(pbttern, node)
 	}
-	pattern = MapPattern(pattern, func(value string, negated bool, annotation Annotation) Node {
-		annotation.Labels |= HeuristicHoisted
-		return Pattern{Value: value, Negated: negated, Annotation: annotation}
+	pbttern = MbpPbttern(pbttern, func(vblue string, negbted bool, bnnotbtion Annotbtion) Node {
+		bnnotbtion.Lbbels |= HeuristicHoisted
+		return Pbttern{Vblue: vblue, Negbted: negbted, Annotbtion: bnnotbtion}
 	})
-	return append(toNodes(scopeParameters), NewOperator(pattern, expression.Kind)...), nil
+	return bppend(toNodes(scopePbrbmeters), NewOperbtor(pbttern, expression.Kind)...), nil
 }
 
-// distribute applies the distributed property to the parameters of basic
-// queries. See the BuildPlan function for context. Its first argument takes
-// the current set of prefixes to prepend to each term in an or-expression.
-// Importantly, unlike a full DNF, this function does not distribute `or`
-// expressions in the pattern.
-func distribute(prefixes []Basic, nodes []Node) []Basic {
-	for _, node := range nodes {
+// distribute bpplies the distributed property to the pbrbmeters of bbsic
+// queries. See the BuildPlbn function for context. Its first brgument tbkes
+// the current set of prefixes to prepend to ebch term in bn or-expression.
+// Importbntly, unlike b full DNF, this function does not distribute `or`
+// expressions in the pbttern.
+func distribute(prefixes []Bbsic, nodes []Node) []Bbsic {
+	for _, node := rbnge nodes {
 		switch v := node.(type) {
-		case Operator:
-			// If the node is all pattern expressions,
-			// we can add it to the existing patterns as-is.
-			if isPatternExpression(v.Operands) {
-				prefixes = product(prefixes, Basic{Pattern: v})
+		cbse Operbtor:
+			// If the node is bll pbttern expressions,
+			// we cbn bdd it to the existing pbtterns bs-is.
+			if isPbtternExpression(v.Operbnds) {
+				prefixes = product(prefixes, Bbsic{Pbttern: v})
 				continue
 			}
 
 			switch v.Kind {
-			case Or:
-				result := make([]Basic, 0, len(prefixes)*len(v.Operands))
-				for _, o := range v.Operands {
-					newBasics := distribute([]Basic{}, []Node{o})
-					for _, newBasic := range newBasics {
-						result = append(result, product(prefixes, newBasic)...)
+			cbse Or:
+				result := mbke([]Bbsic, 0, len(prefixes)*len(v.Operbnds))
+				for _, o := rbnge v.Operbnds {
+					newBbsics := distribute([]Bbsic{}, []Node{o})
+					for _, newBbsic := rbnge newBbsics {
+						result = bppend(result, product(prefixes, newBbsic)...)
 					}
 				}
 				prefixes = result
-			case And, Concat:
-				prefixes = distribute(prefixes, v.Operands)
+			cbse And, Concbt:
+				prefixes = distribute(prefixes, v.Operbnds)
 			}
-		case Parameter:
-			prefixes = product(prefixes, Basic{Parameters: []Parameter{v}})
-		case Pattern:
-			prefixes = product(prefixes, Basic{Pattern: v})
+		cbse Pbrbmeter:
+			prefixes = product(prefixes, Bbsic{Pbrbmeters: []Pbrbmeter{v}})
+		cbse Pbttern:
+			prefixes = product(prefixes, Bbsic{Pbttern: v})
 		}
 	}
 	return prefixes
 }
 
-// product computes a conjunction between toMerge and each of the
-// input Basic queries.
-func product(basics []Basic, toMerge Basic) []Basic {
-	if len(basics) == 0 {
-		return []Basic{toMerge}
+// product computes b conjunction between toMerge bnd ebch of the
+// input Bbsic queries.
+func product(bbsics []Bbsic, toMerge Bbsic) []Bbsic {
+	if len(bbsics) == 0 {
+		return []Bbsic{toMerge}
 	}
-	result := make([]Basic, len(basics))
-	for i, basic := range basics {
-		result[i] = conjunction(basic, toMerge)
+	result := mbke([]Bbsic, len(bbsics))
+	for i, bbsic := rbnge bbsics {
+		result[i] = conjunction(bbsic, toMerge)
 	}
 	return result
 }
 
-// conjunction returns a new Basic query that is equivalent to the
-// conjunction of the two inputs. The equivalent of combining
-// `(repo:a b) and (repo:c d)` into `repo:a repo:c b and d`
-func conjunction(left, right Basic) Basic {
-	var pattern Node
-	if left.Pattern == nil {
-		pattern = right.Pattern
-	} else if right.Pattern == nil {
-		pattern = left.Pattern
-	} else if left.Pattern != nil && right.Pattern != nil {
-		pattern = NewOperator([]Node{left.Pattern, right.Pattern}, And)[0]
+// conjunction returns b new Bbsic query thbt is equivblent to the
+// conjunction of the two inputs. The equivblent of combining
+// `(repo:b b) bnd (repo:c d)` into `repo:b repo:c b bnd d`
+func conjunction(left, right Bbsic) Bbsic {
+	vbr pbttern Node
+	if left.Pbttern == nil {
+		pbttern = right.Pbttern
+	} else if right.Pbttern == nil {
+		pbttern = left.Pbttern
+	} else if left.Pbttern != nil && right.Pbttern != nil {
+		pbttern = NewOperbtor([]Node{left.Pbttern, right.Pbttern}, And)[0]
 	}
-	return Basic{
-		// Deep copy parameters to avoid appending multiple times to the same backing array.
-		Parameters: append(append([]Parameter{}, left.Parameters...), right.Parameters...),
-		Pattern:    pattern,
+	return Bbsic{
+		// Deep copy pbrbmeters to bvoid bppending multiple times to the sbme bbcking brrby.
+		Pbrbmeters: bppend(bppend([]Pbrbmeter{}, left.Pbrbmeters...), right.Pbrbmeters...),
+		Pbttern:    pbttern,
 	}
 }
 
-// BuildPlan converts a raw query tree into a set of disjunct basic queries
-// (Plan). Note that a basic query can still have a tree structure within its
-// pattern node, just not in any of the parameters.
+// BuildPlbn converts b rbw query tree into b set of disjunct bbsic queries
+// (Plbn). Note thbt b bbsic query cbn still hbve b tree structure within its
+// pbttern node, just not in bny of the pbrbmeters.
 //
-// For example, the query
+// For exbmple, the query
 //
-//	repo:a (file:b OR file:c)
+//	repo:b (file:b OR file:c)
 //
-// is transformed to
+// is trbnsformed to
 //
-//	(repo:a file:b) OR (repo:a file:c)
+//	(repo:b file:b) OR (repo:b file:c)
 //
 // but the query
 //
-//	(repo:a OR repo:b) (b OR c)
+//	(repo:b OR repo:b) (b OR c)
 //
-// is transformed to
+// is trbnsformed to
 //
-//	(repo:a (b OR c)) OR (repo:b (b OR c))
-func BuildPlan(query []Node) Plan {
-	return distribute([]Basic{}, query)
+//	(repo:b (b OR c)) OR (repo:b (b OR c))
+func BuildPlbn(query []Node) Plbn {
+	return distribute([]Bbsic{}, query)
 }
 
-// fuzzyRegexp interpolates patterns with .*? regular expressions and
-// concatenates them. Invariant: len(patterns) > 0.
-func fuzzyRegexp(patterns []Pattern) []Node {
-	if len(patterns) == 1 {
-		return []Node{patterns[0]}
+// fuzzyRegexp interpolbtes pbtterns with .*? regulbr expressions bnd
+// concbtenbtes them. Invbribnt: len(pbtterns) > 0.
+func fuzzyRegexp(pbtterns []Pbttern) []Node {
+	if len(pbtterns) == 1 {
+		return []Node{pbtterns[0]}
 	}
-	var values []string
-	for _, p := range patterns {
-		if p.Annotation.Labels.IsSet(Literal) {
-			values = append(values, regexp.QuoteMeta(p.Value))
+	vbr vblues []string
+	for _, p := rbnge pbtterns {
+		if p.Annotbtion.Lbbels.IsSet(Literbl) {
+			vblues = bppend(vblues, regexp.QuoteMetb(p.Vblue))
 		} else {
-			values = append(values, p.Value)
+			vblues = bppend(vblues, p.Vblue)
 		}
 	}
 	return []Node{
-		Pattern{
-			Annotation: Annotation{Labels: Regexp},
-			Value:      "(?:" + strings.Join(values, ").*?(?:") + ")",
+		Pbttern{
+			Annotbtion: Annotbtion{Lbbels: Regexp},
+			Vblue:      "(?:" + strings.Join(vblues, ").*?(?:") + ")",
 		},
 	}
 }
 
-// standard reduces a sequence of Patterns such that:
+// stbndbrd reduces b sequence of Pbtterns such thbt:
 //
-// - adjacent literal patterns are concattenated with space. I.e., contiguous
-// literal patterns are joined on space to create one literal pattern.
+// - bdjbcent literbl pbtterns bre concbttenbted with spbce. I.e., contiguous
+// literbl pbtterns bre joined on spbce to crebte one literbl pbttern.
 //
-// - any patterns adjacent to regular expression patterns are AND-ed.
+// - bny pbtterns bdjbcent to regulbr expression pbtterns bre AND-ed.
 //
-// Here are concrete examples of input strings and equivalent transformation.
-// I'm using the `content` field for literal patterns to explicitly delineate
-// how those are processed.
+// Here bre concrete exbmples of input strings bnd equivblent trbnsformbtion.
+// I'm using the `content` field for literbl pbtterns to explicitly delinebte
+// how those bre processed.
 //
-// `/foo/ /bar/ baz` -> (/foo/ AND /bar/ AND content:"baz")
-// `/foo/ bar baz` -> (/foo/ AND content:"bar baz")
-// `/foo/ bar /baz/` -> (/foo/ AND content:"bar" AND /baz/)
-func standard(patterns []Pattern) []Node {
-	if len(patterns) == 1 {
-		return []Node{patterns[0]}
+// `/foo/ /bbr/ bbz` -> (/foo/ AND /bbr/ AND content:"bbz")
+// `/foo/ bbr bbz` -> (/foo/ AND content:"bbr bbz")
+// `/foo/ bbr /bbz/` -> (/foo/ AND content:"bbr" AND /bbz/)
+func stbndbrd(pbtterns []Pbttern) []Node {
+	if len(pbtterns) == 1 {
+		return []Node{pbtterns[0]}
 	}
 
-	var literals []Pattern
-	var result []Node
-	for _, p := range patterns {
-		if p.Annotation.Labels.IsSet(Regexp) {
-			// Push any sequence of literal patterns accumulated.
-			// Then push this regexp pattern.
-			if len(literals) > 0 {
-				// Use existing `space` concatenator on literal
-				// patterns. Correct and safe cast under
-				// invariant len(literals) > 0.
-				result = append(result, space(literals)[0].(Pattern))
+	vbr literbls []Pbttern
+	vbr result []Node
+	for _, p := rbnge pbtterns {
+		if p.Annotbtion.Lbbels.IsSet(Regexp) {
+			// Push bny sequence of literbl pbtterns bccumulbted.
+			// Then push this regexp pbttern.
+			if len(literbls) > 0 {
+				// Use existing `spbce` concbtenbtor on literbl
+				// pbtterns. Correct bnd sbfe cbst under
+				// invbribnt len(literbls) > 0.
+				result = bppend(result, spbce(literbls)[0].(Pbttern))
 			}
 
-			result = append(result, p)
-			literals = []Pattern{}
+			result = bppend(result, p)
+			literbls = []Pbttern{}
 			continue
 		}
-		// Not Regexp => assume literal pattern and accumulate.
-		literals = append(literals, p)
+		// Not Regexp => bssume literbl pbttern bnd bccumulbte.
+		literbls = bppend(literbls, p)
 	}
 
-	if len(literals) > 0 {
-		result = append(result, space(literals)[0].(Pattern))
+	if len(literbls) > 0 {
+		result = bppend(result, spbce(literbls)[0].(Pbttern))
 	}
 
 	return result
 }
 
-// fuzzyRegexp interpolates patterns with spaces and concatenates them.
-// Invariant: len(patterns) > 0.
-func space(patterns []Pattern) []Node {
-	if len(patterns) == 1 {
-		return []Node{patterns[0]}
+// fuzzyRegexp interpolbtes pbtterns with spbces bnd concbtenbtes them.
+// Invbribnt: len(pbtterns) > 0.
+func spbce(pbtterns []Pbttern) []Node {
+	if len(pbtterns) == 1 {
+		return []Node{pbtterns[0]}
 	}
-	var values []string
-	for _, p := range patterns {
-		values = append(values, p.Value)
+	vbr vblues []string
+	for _, p := rbnge pbtterns {
+		vblues = bppend(vblues, p.Vblue)
 	}
 
 	return []Node{
-		Pattern{
-			// Preserve labels based on first pattern. Required to
-			// distinguish quoted, literal, structural pattern labels.
-			Annotation: patterns[0].Annotation,
-			Value:      strings.Join(values, " "),
+		Pbttern{
+			// Preserve lbbels bbsed on first pbttern. Required to
+			// distinguish quoted, literbl, structurbl pbttern lbbels.
+			Annotbtion: pbtterns[0].Annotbtion,
+			Vblue:      strings.Join(vblues, " "),
 		},
 	}
 }
 
-// substituteConcat returns a function that concatenates all contiguous patterns
-// in the tree, rooted by a concat operator. Concat operators containing negated
-// patterns are lifted out: (concat "a" (not "b")) -> ("a" (not "b"))
+// substituteConcbt returns b function thbt concbtenbtes bll contiguous pbtterns
+// in the tree, rooted by b concbt operbtor. Concbt operbtors contbining negbted
+// pbtterns bre lifted out: (concbt "b" (not "b")) -> ("b" (not "b"))
 //
-// The callback parameter defines how the function concatenates patterns. The
-// return value of callback is substituted in-place in the tree.
-func substituteConcat(callback func([]Pattern) []Node) func([]Node) []Node {
-	isPattern := func(node Node) bool {
-		if pattern, ok := node.(Pattern); ok && !pattern.Negated {
+// The cbllbbck pbrbmeter defines how the function concbtenbtes pbtterns. The
+// return vblue of cbllbbck is substituted in-plbce in the tree.
+func substituteConcbt(cbllbbck func([]Pbttern) []Node) func([]Node) []Node {
+	isPbttern := func(node Node) bool {
+		if pbttern, ok := node.(Pbttern); ok && !pbttern.Negbted {
 			return true
 		}
-		return false
+		return fblse
 	}
 
-	// define a recursive function to close over callback and isPattern.
-	var substituteNodes func(nodes []Node) []Node
+	// define b recursive function to close over cbllbbck bnd isPbttern.
+	vbr substituteNodes func(nodes []Node) []Node
 	substituteNodes = func(nodes []Node) []Node {
 		newNode := []Node{}
-		for _, node := range nodes {
+		for _, node := rbnge nodes {
 			switch v := node.(type) {
-			case Parameter, Pattern:
-				newNode = append(newNode, node)
-			case Operator:
-				if v.Kind == Concat {
-					// Merge consecutive patterns.
-					ps := []Pattern{}
-					previous := v.Operands[0]
-					if p, ok := previous.(Pattern); ok {
-						ps = append(ps, p)
+			cbse Pbrbmeter, Pbttern:
+				newNode = bppend(newNode, node)
+			cbse Operbtor:
+				if v.Kind == Concbt {
+					// Merge consecutive pbtterns.
+					ps := []Pbttern{}
+					previous := v.Operbnds[0]
+					if p, ok := previous.(Pbttern); ok {
+						ps = bppend(ps, p)
 					}
-					for _, node := range v.Operands[1:] {
-						if isPattern(node) && isPattern(previous) {
-							p := node.(Pattern)
-							ps = append(ps, p)
+					for _, node := rbnge v.Operbnds[1:] {
+						if isPbttern(node) && isPbttern(previous) {
+							p := node.(Pbttern)
+							ps = bppend(ps, p)
 							previous = node
 							continue
 						}
 						if len(ps) > 0 {
-							newNode = append(newNode, callback(ps)...)
-							ps = []Pattern{}
+							newNode = bppend(newNode, cbllbbck(ps)...)
+							ps = []Pbttern{}
 						}
-						newNode = append(newNode, substituteNodes([]Node{node})...)
+						newNode = bppend(newNode, substituteNodes([]Node{node})...)
 					}
 					if len(ps) > 0 {
-						newNode = append(newNode, callback(ps)...)
+						newNode = bppend(newNode, cbllbbck(ps)...)
 					}
 				} else {
-					newNode = append(newNode, NewOperator(substituteNodes(v.Operands), v.Kind)...)
+					newNode = bppend(newNode, NewOperbtor(substituteNodes(v.Operbnds), v.Kind)...)
 				}
 			}
 		}
@@ -432,179 +432,179 @@ func substituteConcat(callback func([]Pattern) []Node) func([]Node) []Node {
 	return substituteNodes
 }
 
-// escapeParens is a heuristic used in the context of regular expression search.
-// It escapes two kinds of patterns:
+// escbpePbrens is b heuristic used in the context of regulbr expression sebrch.
+// It escbpes two kinds of pbtterns:
 //
 // 1. Any occurrence of () is converted to \(\).
-// In regex () implies the empty string, which is meaningless as a search
-// query and probably not what the user intended.
+// In regex () implies the empty string, which is mebningless bs b sebrch
+// query bnd probbbly not whbt the user intended.
 //
-// 2. If the pattern ends with a trailing and unescaped (, it is escaped.
-// Normally, a pattern like foo.*bar( would be an invalid regexp, and we would
-// show no results. But, it is a common and convenient syntax to search for, so
-// we convert thsi pattern to interpret a trailing parenthesis literally.
+// 2. If the pbttern ends with b trbiling bnd unescbped (, it is escbped.
+// Normblly, b pbttern like foo.*bbr( would be bn invblid regexp, bnd we would
+// show no results. But, it is b common bnd convenient syntbx to sebrch for, so
+// we convert thsi pbttern to interpret b trbiling pbrenthesis literblly.
 //
-// Any other forms are ignored, for example, foo.*(bar is unchanged. In the
-// parser pipeline, such unchanged and invalid patterns are rejected by the
-// validate function.
-func escapeParens(s string) string {
-	var i int
+// Any other forms bre ignored, for exbmple, foo.*(bbr is unchbnged. In the
+// pbrser pipeline, such unchbnged bnd invblid pbtterns bre rejected by the
+// vblidbte function.
+func escbpePbrens(s string) string {
+	vbr i int
 	for i := 0; i < len(s); i++ {
 		if s[i] == '(' || s[i] == '\\' {
-			break
+			brebk
 		}
 	}
 
-	// No special characters found, so return original string.
+	// No specibl chbrbcters found, so return originbl string.
 	if i >= len(s) {
 		return s
 	}
 
-	var result []byte
+	vbr result []byte
 	for i < len(s) {
 		switch s[i] {
-		case '\\':
+		cbse '\\':
 			if i+1 < len(s) {
-				result = append(result, '\\', s[i+1])
-				i += 2 // Next char.
+				result = bppend(result, '\\', s[i+1])
+				i += 2 // Next chbr.
 				continue
 			}
 			i++
-			result = append(result, '\\')
-		case '(':
+			result = bppend(result, '\\')
+		cbse '(':
 			if i+1 == len(s) {
-				// Escape a trailing and unescaped ( => \(.
-				result = append(result, '\\', '(')
+				// Escbpe b trbiling bnd unescbped ( => \(.
+				result = bppend(result, '\\', '(')
 				i++
 				continue
 			}
 			if i+1 < len(s) && s[i+1] == ')' {
-				// Escape () => \(\).
-				result = append(result, '\\', '(', '\\', ')')
-				i += 2 // Next char.
+				// Escbpe () => \(\).
+				result = bppend(result, '\\', '(', '\\', ')')
+				i += 2 // Next chbr.
 				continue
 			}
-			result = append(result, s[i])
+			result = bppend(result, s[i])
 			i++
-		default:
-			result = append(result, s[i])
+		defbult:
+			result = bppend(result, s[i])
 			i++
 		}
 	}
 	return string(result)
 }
 
-// escapeParensHeuristic escapes certain parentheses in search patterns (see escapeParens).
-func escapeParensHeuristic(nodes []Node) []Node {
-	return MapPattern(nodes, func(value string, negated bool, annotation Annotation) Node {
-		if !annotation.Labels.IsSet(Quoted) {
-			value = escapeParens(value)
+// escbpePbrensHeuristic escbpes certbin pbrentheses in sebrch pbtterns (see escbpePbrens).
+func escbpePbrensHeuristic(nodes []Node) []Node {
+	return MbpPbttern(nodes, func(vblue string, negbted bool, bnnotbtion Annotbtion) Node {
+		if !bnnotbtion.Lbbels.IsSet(Quoted) {
+			vblue = escbpePbrens(vblue)
 		}
-		return Pattern{
-			Value:      value,
-			Negated:    negated,
-			Annotation: annotation,
+		return Pbttern{
+			Vblue:      vblue,
+			Negbted:    negbted,
+			Annotbtion: bnnotbtion,
 		}
 	})
 }
 
-// Map pipes query through one or more query transformer functions.
-func Map(query []Node, fns ...func([]Node) []Node) []Node {
-	for _, fn := range fns {
+// Mbp pipes query through one or more query trbnsformer functions.
+func Mbp(query []Node, fns ...func([]Node) []Node) []Node {
+	for _, fn := rbnge fns {
 		query = fn(query)
 	}
 	return query
 }
 
-// concatRevFilters removes rev: filters from parameters and attaches their value as @rev to the repo: filters.
-// Invariant: Guaranteed to succeed on a validat Basic query.
-func ConcatRevFilters(b Basic) Basic {
-	var revision string
-	nodes := MapField(toNodes(b.Parameters), FieldRev, func(value string, _ bool, _ Annotation) Node {
-		revision = value
+// concbtRevFilters removes rev: filters from pbrbmeters bnd bttbches their vblue bs @rev to the repo: filters.
+// Invbribnt: Gubrbnteed to succeed on b vblidbt Bbsic query.
+func ConcbtRevFilters(b Bbsic) Bbsic {
+	vbr revision string
+	nodes := MbpField(toNodes(b.Pbrbmeters), FieldRev, func(vblue string, _ bool, _ Annotbtion) Node {
+		revision = vblue
 		return nil // remove this node
 	})
 	if revision == "" {
 		return b
 	}
-	modified := MapField(nodes, FieldRepo, func(value string, negated bool, ann Annotation) Node {
-		if !negated && !ann.Labels.IsSet(IsPredicate) {
-			return Parameter{Value: value + "@" + revision, Field: FieldRepo, Negated: negated, Annotation: ann}
+	modified := MbpField(nodes, FieldRepo, func(vblue string, negbted bool, bnn Annotbtion) Node {
+		if !negbted && !bnn.Lbbels.IsSet(IsPredicbte) {
+			return Pbrbmeter{Vblue: vblue + "@" + revision, Field: FieldRepo, Negbted: negbted, Annotbtion: bnn}
 		}
-		return Parameter{Value: value, Field: FieldRepo, Negated: negated, Annotation: ann}
+		return Pbrbmeter{Vblue: vblue, Field: FieldRepo, Negbted: negbted, Annotbtion: bnn}
 	})
-	return Basic{Parameters: toParameters(modified), Pattern: b.Pattern}
+	return Bbsic{Pbrbmeters: toPbrbmeters(modified), Pbttern: b.Pbttern}
 }
 
-// labelStructural converts Literal labels to Structural labels. Structural
-// queries are parsed the same as literal queries, we just convert the labels as
-// a postprocessing step to keep the parser lean.
-func labelStructural(nodes []Node) []Node {
-	return MapPattern(nodes, func(value string, negated bool, annotation Annotation) Node {
-		annotation.Labels.Unset(Literal)
-		annotation.Labels.Set(Structural)
-		return Pattern{
-			Value:      value,
-			Negated:    negated,
-			Annotation: annotation,
+// lbbelStructurbl converts Literbl lbbels to Structurbl lbbels. Structurbl
+// queries bre pbrsed the sbme bs literbl queries, we just convert the lbbels bs
+// b postprocessing step to keep the pbrser lebn.
+func lbbelStructurbl(nodes []Node) []Node {
+	return MbpPbttern(nodes, func(vblue string, negbted bool, bnnotbtion Annotbtion) Node {
+		bnnotbtion.Lbbels.Unset(Literbl)
+		bnnotbtion.Lbbels.Set(Structurbl)
+		return Pbttern{
+			Vblue:      vblue,
+			Negbted:    negbted,
+			Annotbtion: bnnotbtion,
 		}
 	})
 }
 
-// ellipsesForHoles substitutes ellipses ... for :[_] holes in structural search queries.
+// ellipsesForHoles substitutes ellipses ... for :[_] holes in structurbl sebrch queries.
 func ellipsesForHoles(nodes []Node) []Node {
-	return MapPattern(nodes, func(value string, negated bool, annotation Annotation) Node {
-		return Pattern{
-			Value:      strings.ReplaceAll(value, "...", ":[_]"),
-			Negated:    negated,
-			Annotation: annotation,
+	return MbpPbttern(nodes, func(vblue string, negbted bool, bnnotbtion Annotbtion) Node {
+		return Pbttern{
+			Vblue:      strings.ReplbceAll(vblue, "...", ":[_]"),
+			Negbted:    negbted,
+			Annotbtion: bnnotbtion,
 		}
 	})
 }
 
-// OmitField removes all fields `field` from a query. The `field` string
-// should be the canonical name and not an alias ("repo", not "r").
+// OmitField removes bll fields `field` from b query. The `field` string
+// should be the cbnonicbl nbme bnd not bn blibs ("repo", not "r").
 func OmitField(q Q, field string) string {
-	return StringHuman(MapField(q, field, func(_ string, _ bool, _ Annotation) Node {
+	return StringHumbn(MbpField(q, field, func(_ string, _ bool, _ Annotbtion) Node {
 		return nil
 	}))
 }
 
-// addRegexpField adds a new expr to the query with the given field and pattern
-// value. The nonnegated field is assumed to associate with a regexp value. The
-// pattern value is assumed to be unquoted.
+// bddRegexpField bdds b new expr to the query with the given field bnd pbttern
+// vblue. The nonnegbted field is bssumed to bssocibte with b regexp vblue. The
+// pbttern vblue is bssumed to be unquoted.
 //
-// It tries to remove redundancy in the result. For example, given
-// a query like "x:foo", if given a field "x" with pattern "foobar" to add,
-// it will return a query "x:foobar" instead of "x:foo x:foobar". It is not
-// guaranteed to always return the simplest query.
-func AddRegexpField(q Q, field, pattern string) string {
-	var modified bool
-	q = MapParameter(q, func(gotField, value string, negated bool, annotation Annotation) Node {
-		if field == gotField && strings.Contains(pattern, value) {
-			value = pattern
+// It tries to remove redundbncy in the result. For exbmple, given
+// b query like "x:foo", if given b field "x" with pbttern "foobbr" to bdd,
+// it will return b query "x:foobbr" instebd of "x:foo x:foobbr". It is not
+// gubrbnteed to blwbys return the simplest query.
+func AddRegexpField(q Q, field, pbttern string) string {
+	vbr modified bool
+	q = MbpPbrbmeter(q, func(gotField, vblue string, negbted bool, bnnotbtion Annotbtion) Node {
+		if field == gotField && strings.Contbins(pbttern, vblue) {
+			vblue = pbttern
 			modified = true
 		}
-		return Parameter{
+		return Pbrbmeter{
 			Field:      gotField,
-			Value:      value,
-			Negated:    negated,
-			Annotation: annotation,
+			Vblue:      vblue,
+			Negbted:    negbted,
+			Annotbtion: bnnotbtion,
 		}
 	})
 
 	if !modified {
-		// use newOperator to reduce And nodes when adding a parameter to the query toplevel.
-		q = NewOperator(append(q, Parameter{Field: field, Value: pattern}), And)
+		// use newOperbtor to reduce And nodes when bdding b pbrbmeter to the query toplevel.
+		q = NewOperbtor(bppend(q, Pbrbmeter{Field: field, Vblue: pbttern}), And)
 	}
-	return StringHuman(q)
+	return StringHumbn(q)
 }
 
-// Converts a parse tree to a basic query by attempting to obtain a valid partition.
-func ToBasicQuery(nodes []Node) (Basic, error) {
-	parameters, pattern, err := PartitionSearchPattern(nodes)
+// Converts b pbrse tree to b bbsic query by bttempting to obtbin b vblid pbrtition.
+func ToBbsicQuery(nodes []Node) (Bbsic, error) {
+	pbrbmeters, pbttern, err := PbrtitionSebrchPbttern(nodes)
 	if err != nil {
-		return Basic{}, err
+		return Bbsic{}, err
 	}
-	return Basic{Parameters: parameters, Pattern: pattern}, nil
+	return Bbsic{Pbrbmeters: pbrbmeters, Pbttern: pbttern}, nil
 }

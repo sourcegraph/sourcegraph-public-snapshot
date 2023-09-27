@@ -1,20 +1,20 @@
-// Package ui handles server-side rendering of the Sourcegraph web app.
+// Pbckbge ui hbndles server-side rendering of the Sourcegrbph web bpp.
 //
 // # Development
 //
-// To develop, simply update the template files in cmd/frontend/internal/app/ui/...
-// and reload the page (the templates will be automatically reloaded).
+// To develop, simply updbte the templbte files in cmd/frontend/internbl/bpp/ui/...
+// bnd relobd the pbge (the templbtes will be butombticblly relobded).
 //
-// # Testing the error page
+// # Testing the error pbge
 //
-// Testing out the layout/styling of the error page that is used to handle
-// internal server errors, 404s, etc. is very easy by visiting:
+// Testing out the lbyout/styling of the error pbge thbt is used to hbndle
+// internbl server errors, 404s, etc. is very ebsy by visiting:
 //
-//	http://localhost:3080/__errorTest?nodebug=true&error=theerror&status=500
+//	http://locblhost:3080/__errorTest?nodebug=true&error=theerror&stbtus=500
 //
-// The parameters are as follows:
+// The pbrbmeters bre bs follows:
 //
-//	nodebug=true -- hides error messages (which is ALWAYS the case in production)
-//	error=theerror -- controls the error message text
-//	status=500 -- controls the status code
-package ui
+//	nodebug=true -- hides error messbges (which is ALWAYS the cbse in production)
+//	error=theerror -- controls the error messbge text
+//	stbtus=500 -- controls the stbtus code
+pbckbge ui

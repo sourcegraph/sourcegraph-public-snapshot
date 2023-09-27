@@ -1,41 +1,41 @@
-package resolvers
+pbckbge resolvers
 
 import (
 	"context"
 
-	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
+	"github.com/sourcegrbph/sourcegrbph/internbl/gqlutil"
 )
 
-type RankingServiceResolver interface {
-	RankingSummary(ctx context.Context) (GlobalRankingSummaryResolver, error)
-	BumpDerivativeGraphKey(ctx context.Context) (*EmptyResponse, error)
-	DeleteRankingProgress(ctx context.Context, args *DeleteRankingProgressArgs) (*EmptyResponse, error)
+type RbnkingServiceResolver interfbce {
+	RbnkingSummbry(ctx context.Context) (GlobblRbnkingSummbryResolver, error)
+	BumpDerivbtiveGrbphKey(ctx context.Context) (*EmptyResponse, error)
+	DeleteRbnkingProgress(ctx context.Context, brgs *DeleteRbnkingProgressArgs) (*EmptyResponse, error)
 }
 
-type DeleteRankingProgressArgs struct {
-	GraphKey string
+type DeleteRbnkingProgressArgs struct {
+	GrbphKey string
 }
 
-type GlobalRankingSummaryResolver interface {
-	DerivativeGraphKey() *string
-	RankingSummary() []RankingSummaryResolver
-	NextJobStartsAt() *gqlutil.DateTime
+type GlobblRbnkingSummbryResolver interfbce {
+	DerivbtiveGrbphKey() *string
+	RbnkingSummbry() []RbnkingSummbryResolver
+	NextJobStbrtsAt() *gqlutil.DbteTime
 	NumExportedIndexes() int32
-	NumTargetIndexes() int32
-	NumRepositoriesWithoutCurrentRanks() int32
+	NumTbrgetIndexes() int32
+	NumRepositoriesWithoutCurrentRbnks() int32
 }
 
-type RankingSummaryResolver interface {
-	GraphKey() string
+type RbnkingSummbryResolver interfbce {
+	GrbphKey() string
 	VisibleToZoekt() bool
-	PathMapperProgress() RankingSummaryProgressResolver
-	ReferenceMapperProgress() RankingSummaryProgressResolver
-	ReducerProgress() RankingSummaryProgressResolver
+	PbthMbpperProgress() RbnkingSummbryProgressResolver
+	ReferenceMbpperProgress() RbnkingSummbryProgressResolver
+	ReducerProgress() RbnkingSummbryProgressResolver
 }
 
-type RankingSummaryProgressResolver interface {
-	StartedAt() gqlutil.DateTime
-	CompletedAt() *gqlutil.DateTime
+type RbnkingSummbryProgressResolver interfbce {
+	StbrtedAt() gqlutil.DbteTime
+	CompletedAt() *gqlutil.DbteTime
 	Processed() int32
-	Total() int32
+	Totbl() int32
 }

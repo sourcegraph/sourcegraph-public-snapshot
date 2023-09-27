@@ -1,160 +1,160 @@
-package resolvers
+pbckbge resolvers
 
 import (
 	"context"
 
-	"github.com/graph-gophers/graphql-go"
-	"github.com/graph-gophers/graphql-go/relay"
+	"github.com/grbph-gophers/grbphql-go"
+	"github.com/grbph-gophers/grbphql-go/relby"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
-	"github.com/sourcegraph/sourcegraph/internal/notebooks"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/grbphqlbbckend"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/grbphqlbbckend/grbphqlutil"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/gqlutil"
+	"github.com/sourcegrbph/sourcegrbph/internbl/notebooks"
 )
 
-func marshalNotebookStarCursor(cursor int64) string {
-	return string(relay.MarshalID("NotebookStarCursor", cursor))
+func mbrshblNotebookStbrCursor(cursor int64) string {
+	return string(relby.MbrshblID("NotebookStbrCursor", cursor))
 }
 
-func unmarshalNotebookStarCursor(cursor *string) (int64, error) {
+func unmbrshblNotebookStbrCursor(cursor *string) (int64, error) {
 	if cursor == nil {
 		return 0, nil
 	}
-	var after int64
-	err := relay.UnmarshalSpec(graphql.ID(*cursor), &after)
+	vbr bfter int64
+	err := relby.UnmbrshblSpec(grbphql.ID(*cursor), &bfter)
 	if err != nil {
 		return -1, err
 	}
-	return after, nil
+	return bfter, nil
 }
 
-type notebookStarConnectionResolver struct {
-	afterCursor int64
-	stars       []graphqlbackend.NotebookStarResolver
-	totalCount  int32
-	hasNextPage bool
+type notebookStbrConnectionResolver struct {
+	bfterCursor int64
+	stbrs       []grbphqlbbckend.NotebookStbrResolver
+	totblCount  int32
+	hbsNextPbge bool
 }
 
-func (n *notebookStarConnectionResolver) Nodes() []graphqlbackend.NotebookStarResolver {
-	return n.stars
+func (n *notebookStbrConnectionResolver) Nodes() []grbphqlbbckend.NotebookStbrResolver {
+	return n.stbrs
 }
 
-func (n *notebookStarConnectionResolver) TotalCount() int32 {
-	return n.totalCount
+func (n *notebookStbrConnectionResolver) TotblCount() int32 {
+	return n.totblCount
 }
 
-func (n *notebookStarConnectionResolver) PageInfo() *graphqlutil.PageInfo {
-	if len(n.stars) == 0 || !n.hasNextPage {
-		return graphqlutil.HasNextPage(false)
+func (n *notebookStbrConnectionResolver) PbgeInfo() *grbphqlutil.PbgeInfo {
+	if len(n.stbrs) == 0 || !n.hbsNextPbge {
+		return grbphqlutil.HbsNextPbge(fblse)
 	}
-	// The after value (offset) for the next page is computed from the current after value + the number of retrieved notebook stars
-	return graphqlutil.NextPageCursor(marshalNotebookStarCursor(n.afterCursor + int64(len(n.stars))))
+	// The bfter vblue (offset) for the next pbge is computed from the current bfter vblue + the number of retrieved notebook stbrs
+	return grbphqlutil.NextPbgeCursor(mbrshblNotebookStbrCursor(n.bfterCursor + int64(len(n.stbrs))))
 }
 
-type notebookStarResolver struct {
-	star *notebooks.NotebookStar
-	db   database.DB
+type notebookStbrResolver struct {
+	stbr *notebooks.NotebookStbr
+	db   dbtbbbse.DB
 }
 
-func (r *notebookStarResolver) User(ctx context.Context) (*graphqlbackend.UserResolver, error) {
-	return graphqlbackend.UserByIDInt32(ctx, r.db, r.star.UserID)
+func (r *notebookStbrResolver) User(ctx context.Context) (*grbphqlbbckend.UserResolver, error) {
+	return grbphqlbbckend.UserByIDInt32(ctx, r.db, r.stbr.UserID)
 }
 
-func (r *notebookStarResolver) CreatedAt() gqlutil.DateTime {
-	return gqlutil.DateTime{Time: r.star.CreatedAt}
+func (r *notebookStbrResolver) CrebtedAt() gqlutil.DbteTime {
+	return gqlutil.DbteTime{Time: r.stbr.CrebtedAt}
 }
 
-func (r *notebookResolver) notebookStarsToResolvers(notebookStars []*notebooks.NotebookStar) []graphqlbackend.NotebookStarResolver {
-	notebookStarsResolvers := make([]graphqlbackend.NotebookStarResolver, len(notebookStars))
-	for idx, star := range notebookStars {
-		notebookStarsResolvers[idx] = &notebookStarResolver{star, r.db}
+func (r *notebookResolver) notebookStbrsToResolvers(notebookStbrs []*notebooks.NotebookStbr) []grbphqlbbckend.NotebookStbrResolver {
+	notebookStbrsResolvers := mbke([]grbphqlbbckend.NotebookStbrResolver, len(notebookStbrs))
+	for idx, stbr := rbnge notebookStbrs {
+		notebookStbrsResolvers[idx] = &notebookStbrResolver{stbr, r.db}
 	}
-	return notebookStarsResolvers
+	return notebookStbrsResolvers
 }
 
-func (r *notebookResolver) Stars(ctx context.Context, args graphqlbackend.ListNotebookStarsArgs) (graphqlbackend.NotebookStarConnectionResolver, error) {
-	// Request one extra to determine if there are more pages
-	newArgs := args
+func (r *notebookResolver) Stbrs(ctx context.Context, brgs grbphqlbbckend.ListNotebookStbrsArgs) (grbphqlbbckend.NotebookStbrConnectionResolver, error) {
+	// Request one extrb to determine if there bre more pbges
+	newArgs := brgs
 	newArgs.First += 1
 
-	afterCursor, err := unmarshalNotebookStarCursor(args.After)
+	bfterCursor, err := unmbrshblNotebookStbrCursor(brgs.After)
 	if err != nil {
 		return nil, err
 	}
 
-	pageOpts := notebooks.ListNotebookStarsPageOptions{First: newArgs.First, After: afterCursor}
+	pbgeOpts := notebooks.ListNotebookStbrsPbgeOptions{First: newArgs.First, After: bfterCursor}
 	store := notebooks.Notebooks(r.db)
-	stars, err := store.ListNotebookStars(ctx, pageOpts, r.notebook.ID)
+	stbrs, err := store.ListNotebookStbrs(ctx, pbgeOpts, r.notebook.ID)
 	if err != nil {
 		return nil, err
 	}
 
-	count, err := store.CountNotebookStars(ctx, r.notebook.ID)
+	count, err := store.CountNotebookStbrs(ctx, r.notebook.ID)
 	if err != nil {
 		return nil, err
 	}
 
-	hasNextPage := false
-	if len(stars) == int(args.First)+1 {
-		hasNextPage = true
-		stars = stars[:len(stars)-1]
+	hbsNextPbge := fblse
+	if len(stbrs) == int(brgs.First)+1 {
+		hbsNextPbge = true
+		stbrs = stbrs[:len(stbrs)-1]
 	}
 
-	return &notebookStarConnectionResolver{
-		afterCursor: afterCursor,
-		stars:       r.notebookStarsToResolvers(stars),
-		totalCount:  int32(count),
-		hasNextPage: hasNextPage,
+	return &notebookStbrConnectionResolver{
+		bfterCursor: bfterCursor,
+		stbrs:       r.notebookStbrsToResolvers(stbrs),
+		totblCount:  int32(count),
+		hbsNextPbge: hbsNextPbge,
 	}, nil
 }
 
-func (r *Resolver) CreateNotebookStar(ctx context.Context, args graphqlbackend.CreateNotebookStarInputArgs) (graphqlbackend.NotebookStarResolver, error) {
+func (r *Resolver) CrebteNotebookStbr(ctx context.Context, brgs grbphqlbbckend.CrebteNotebookStbrInputArgs) (grbphqlbbckend.NotebookStbrResolver, error) {
 	user, err := r.db.Users().GetByCurrentAuthUser(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	notebookID, err := unmarshalNotebookID(args.NotebookID)
+	notebookID, err := unmbrshblNotebookID(brgs.NotebookID)
 	if err != nil {
 		return nil, err
 	}
 
 	store := notebooks.Notebooks(r.db)
-	// Ensure user has access to the notebook.
+	// Ensure user hbs bccess to the notebook.
 	notebook, err := store.GetNotebook(ctx, notebookID)
 	if err != nil {
 		return nil, err
 	}
 
-	createdStar, err := store.CreateNotebookStar(ctx, notebook.ID, user.ID)
+	crebtedStbr, err := store.CrebteNotebookStbr(ctx, notebook.ID, user.ID)
 	if err != nil {
 		return nil, err
 	}
-	return &notebookStarResolver{createdStar, r.db}, nil
+	return &notebookStbrResolver{crebtedStbr, r.db}, nil
 }
 
-func (r *Resolver) DeleteNotebookStar(ctx context.Context, args graphqlbackend.DeleteNotebookStarInputArgs) (*graphqlbackend.EmptyResponse, error) {
+func (r *Resolver) DeleteNotebookStbr(ctx context.Context, brgs grbphqlbbckend.DeleteNotebookStbrInputArgs) (*grbphqlbbckend.EmptyResponse, error) {
 	user, err := r.db.Users().GetByCurrentAuthUser(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	notebookID, err := unmarshalNotebookID(args.NotebookID)
+	notebookID, err := unmbrshblNotebookID(brgs.NotebookID)
 	if err != nil {
 		return nil, err
 	}
 
 	store := notebooks.Notebooks(r.db)
-	// Ensure user has access to the notebook.
+	// Ensure user hbs bccess to the notebook.
 	notebook, err := store.GetNotebook(ctx, notebookID)
 	if err != nil {
 		return nil, err
 	}
 
-	err = store.DeleteNotebookStar(ctx, notebook.ID, user.ID)
+	err = store.DeleteNotebookStbr(ctx, notebook.ID, user.ID)
 	if err != nil {
 		return nil, err
 	}
-	return &graphqlbackend.EmptyResponse{}, nil
+	return &grbphqlbbckend.EmptyResponse{}, nil
 }

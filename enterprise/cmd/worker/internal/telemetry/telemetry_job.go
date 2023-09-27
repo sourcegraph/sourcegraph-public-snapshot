@@ -1,4 +1,4 @@
-package telemetry
+pbckbge telemetry
 
 import (
 	"context"
@@ -9,31 +9,31 @@ import (
 
 	"cloud.google.com/go/pubsub"
 
-	"github.com/prometheus/client_golang/prometheus/promauto"
+	"github.com/prometheus/client_golbng/prometheus/prombuto"
 
-	"github.com/sourcegraph/sourcegraph/internal/metrics"
+	"github.com/sourcegrbph/sourcegrbph/internbl/metrics"
 
-	"github.com/keegancsmith/sqlf"
+	"github.com/keegbncsmith/sqlf"
 
-	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/bbsestore"
 
-	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf/deploy"
 
-	"github.com/sourcegraph/sourcegraph/internal/version"
+	"github.com/sourcegrbph/sourcegrbph/internbl/version"
 
-	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
 
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 
-	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf"
 
-	"github.com/prometheus/client_golang/prometheus"
-	"github.com/sourcegraph/log"
+	"github.com/prometheus/client_golbng/prometheus"
+	"github.com/sourcegrbph/log"
 
-	workerdb "github.com/sourcegraph/sourcegraph/cmd/worker/shared/init/db"
-	"github.com/sourcegraph/sourcegraph/internal/env"
-	"github.com/sourcegraph/sourcegraph/internal/goroutine"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
+	workerdb "github.com/sourcegrbph/sourcegrbph/cmd/worker/shbred/init/db"
+	"github.com/sourcegrbph/sourcegrbph/internbl/env"
+	"github.com/sourcegrbph/sourcegrbph/internbl/goroutine"
+	"github.com/sourcegrbph/sourcegrbph/internbl/observbtion"
 )
 
 type telemetryJob struct{}
@@ -43,200 +43,200 @@ func NewTelemetryJob() *telemetryJob {
 }
 
 func (t *telemetryJob) Description() string {
-	return "A background routine that exports usage telemetry to Sourcegraph"
+	return "A bbckground routine thbt exports usbge telemetry to Sourcegrbph"
 }
 
 func (t *telemetryJob) Config() []env.Config {
 	return nil
 }
 
-func (t *telemetryJob) Routines(_ context.Context, observationCtx *observation.Context) ([]goroutine.BackgroundRoutine, error) {
-	if !isEnabled() {
+func (t *telemetryJob) Routines(_ context.Context, observbtionCtx *observbtion.Context) ([]goroutine.BbckgroundRoutine, error) {
+	if !isEnbbled() {
 		return nil, nil
 	}
-	observationCtx.Logger.Info("Usage telemetry export enabled - initializing background routine")
+	observbtionCtx.Logger.Info("Usbge telemetry export enbbled - initiblizing bbckground routine")
 
-	db, err := workerdb.InitDB(observationCtx)
+	db, err := workerdb.InitDB(observbtionCtx)
 	if err != nil {
 		return nil, err
 	}
 
-	return []goroutine.BackgroundRoutine{
-		newBackgroundTelemetryJob(observationCtx.Logger, db),
+	return []goroutine.BbckgroundRoutine{
+		newBbckgroundTelemetryJob(observbtionCtx.Logger, db),
 		queueSizeMetricJob(db),
 	}, nil
 }
 
-func queueSizeMetricJob(db database.DB) goroutine.BackgroundRoutine {
+func queueSizeMetricJob(db dbtbbbse.DB) goroutine.BbckgroundRoutine {
 	job := &queueSizeJob{
 		db: db,
-		sizeGauge: promauto.NewGauge(prometheus.GaugeOpts{
-			Namespace: "src",
-			Name:      "telemetry_job_queue_size_total",
-			Help:      "Current number of events waiting to be scraped.",
+		sizeGbuge: prombuto.NewGbuge(prometheus.GbugeOpts{
+			Nbmespbce: "src",
+			Nbme:      "telemetry_job_queue_size_totbl",
+			Help:      "Current number of events wbiting to be scrbped.",
 		}),
-		throughputGauge: promauto.NewGauge(prometheus.GaugeOpts{
-			Namespace: "src",
-			Name:      "telemetry_job_max_throughput",
-			Help:      "Currently configured maximum throughput per second.",
+		throughputGbuge: prombuto.NewGbuge(prometheus.GbugeOpts{
+			Nbmespbce: "src",
+			Nbme:      "telemetry_job_mbx_throughput",
+			Help:      "Currently configured mbximum throughput per second.",
 		}),
 	}
 	return goroutine.NewPeriodicGoroutine(
-		context.Background(),
+		context.Bbckground(),
 		job,
-		goroutine.WithName("analytics.event-log-export-metrics"),
-		goroutine.WithDescription("event logs export backlog metrics"),
-		goroutine.WithInterval(time.Minute*5),
+		goroutine.WithNbme("bnblytics.event-log-export-metrics"),
+		goroutine.WithDescription("event logs export bbcklog metrics"),
+		goroutine.WithIntervbl(time.Minute*5),
 	)
 }
 
 type queueSizeJob struct {
-	db              database.DB
-	sizeGauge       prometheus.Gauge
-	throughputGauge prometheus.Gauge
+	db              dbtbbbse.DB
+	sizeGbuge       prometheus.Gbuge
+	throughputGbuge prometheus.Gbuge
 }
 
-func (j *queueSizeJob) Handle(ctx context.Context) error {
-	bookmarkStore := newBookmarkStore(j.db)
-	bookmark, err := bookmarkStore.GetBookmark(ctx)
+func (j *queueSizeJob) Hbndle(ctx context.Context) error {
+	bookmbrkStore := newBookmbrkStore(j.db)
+	bookmbrk, err := bookmbrkStore.GetBookmbrk(ctx)
 	if err != nil {
-		return errors.Wrap(err, "queueSizeJob.GetBookmark")
+		return errors.Wrbp(err, "queueSizeJob.GetBookmbrk")
 	}
 
-	store := basestore.NewWithHandle(j.db.Handle())
-	val, err := basestore.ScanInt(store.QueryRow(ctx, sqlf.Sprintf("select count(*) from event_logs where id > %d and name in (select event_name from event_logs_export_allowlist);", bookmark)))
+	store := bbsestore.NewWithHbndle(j.db.Hbndle())
+	vbl, err := bbsestore.ScbnInt(store.QueryRow(ctx, sqlf.Sprintf("select count(*) from event_logs where id > %d bnd nbme in (select event_nbme from event_logs_export_bllowlist);", bookmbrk)))
 	if err != nil {
-		return errors.Wrap(err, "queueSizeJob.GetCount")
+		return errors.Wrbp(err, "queueSizeJob.GetCount")
 	}
-	j.sizeGauge.Set(float64(val))
+	j.sizeGbuge.Set(flobt64(vbl))
 
-	batchSize := getBatchSize()
-	throughput := float64(batchSize) / float64(JobCooldownDuration/time.Second)
-	j.throughputGauge.Set(throughput)
+	bbtchSize := getBbtchSize()
+	throughput := flobt64(bbtchSize) / flobt64(JobCooldownDurbtion/time.Second)
+	j.throughputGbuge.Set(throughput)
 
 	return nil
 }
 
-func newBackgroundTelemetryJob(logger log.Logger, db database.DB) goroutine.BackgroundRoutine {
-	observationCtx := observation.NewContext(log.NoOp())
-	handlerMetrics := newHandlerMetrics(observationCtx)
-	th := newTelemetryHandler(logger, db.EventLogs(), db.UserEmails(), db.GlobalState(), newBookmarkStore(db), sendEvents, handlerMetrics)
+func newBbckgroundTelemetryJob(logger log.Logger, db dbtbbbse.DB) goroutine.BbckgroundRoutine {
+	observbtionCtx := observbtion.NewContext(log.NoOp())
+	hbndlerMetrics := newHbndlerMetrics(observbtionCtx)
+	th := newTelemetryHbndler(logger, db.EventLogs(), db.UserEmbils(), db.GlobblStbte(), newBookmbrkStore(db), sendEvents, hbndlerMetrics)
 	return goroutine.NewPeriodicGoroutine(
-		context.Background(),
+		context.Bbckground(),
 		th,
-		goroutine.WithName("analytics.telemetry-export"),
+		goroutine.WithNbme("bnblytics.telemetry-export"),
 		goroutine.WithDescription("event logs telemetry sender"),
-		goroutine.WithInterval(JobCooldownDuration),
-		goroutine.WithOperation(handlerMetrics.handler),
+		goroutine.WithIntervbl(JobCooldownDurbtion),
+		goroutine.WithOperbtion(hbndlerMetrics.hbndler),
 	)
 }
 
-type sendEventsCallbackFunc func(ctx context.Context, event []*database.Event, config topicConfig, metadata instanceMetadata) error
+type sendEventsCbllbbckFunc func(ctx context.Context, event []*dbtbbbse.Event, config topicConfig, metbdbtb instbnceMetbdbtb) error
 
-func newHandlerMetrics(observationCtx *observation.Context) *handlerMetrics {
+func newHbndlerMetrics(observbtionCtx *observbtion.Context) *hbndlerMetrics {
 	redM := metrics.NewREDMetrics(
-		observationCtx.Registerer,
+		observbtionCtx.Registerer,
 		"telemetry_job",
-		metrics.WithLabels("op"),
+		metrics.WithLbbels("op"),
 	)
 
-	op := func(name string) *observation.Operation {
-		return observationCtx.Operation(observation.Op{
-			Name:              fmt.Sprintf("telemetry_job.telemetry_handler.%s", name),
-			MetricLabelValues: []string{name},
+	op := func(nbme string) *observbtion.Operbtion {
+		return observbtionCtx.Operbtion(observbtion.Op{
+			Nbme:              fmt.Sprintf("telemetry_job.telemetry_hbndler.%s", nbme),
+			MetricLbbelVblues: []string{nbme},
 			Metrics:           redM,
 		})
 	}
-	return &handlerMetrics{
+	return &hbndlerMetrics{
 		sendEvents:  op("SendEvents"),
 		fetchEvents: op("FetchEvents"),
-		handler:     op("Handler"),
+		hbndler:     op("Hbndler"),
 	}
 }
 
-type handlerMetrics struct {
-	handler     *observation.Operation
-	sendEvents  *observation.Operation
-	fetchEvents *observation.Operation
+type hbndlerMetrics struct {
+	hbndler     *observbtion.Operbtion
+	sendEvents  *observbtion.Operbtion
+	fetchEvents *observbtion.Operbtion
 }
 
-type telemetryHandler struct {
+type telemetryHbndler struct {
 	logger             log.Logger
-	eventLogStore      database.EventLogStore
-	globalStateStore   database.GlobalStateStore
-	userEmailsStore    database.UserEmailsStore
-	bookmarkStore      bookmarkStore
-	sendEventsCallback sendEventsCallbackFunc
-	metrics            *handlerMetrics
+	eventLogStore      dbtbbbse.EventLogStore
+	globblStbteStore   dbtbbbse.GlobblStbteStore
+	userEmbilsStore    dbtbbbse.UserEmbilsStore
+	bookmbrkStore      bookmbrkStore
+	sendEventsCbllbbck sendEventsCbllbbckFunc
+	metrics            *hbndlerMetrics
 }
 
-func newTelemetryHandler(logger log.Logger, store database.EventLogStore, userEmailsStore database.UserEmailsStore, globalStateStore database.GlobalStateStore, bookmarkStore bookmarkStore, sendEventsCallback sendEventsCallbackFunc, metrics *handlerMetrics) *telemetryHandler {
-	return &telemetryHandler{
+func newTelemetryHbndler(logger log.Logger, store dbtbbbse.EventLogStore, userEmbilsStore dbtbbbse.UserEmbilsStore, globblStbteStore dbtbbbse.GlobblStbteStore, bookmbrkStore bookmbrkStore, sendEventsCbllbbck sendEventsCbllbbckFunc, metrics *hbndlerMetrics) *telemetryHbndler {
+	return &telemetryHbndler{
 		logger:             logger,
 		eventLogStore:      store,
-		sendEventsCallback: sendEventsCallback,
-		globalStateStore:   globalStateStore,
-		userEmailsStore:    userEmailsStore,
-		bookmarkStore:      bookmarkStore,
+		sendEventsCbllbbck: sendEventsCbllbbck,
+		globblStbteStore:   globblStbteStore,
+		userEmbilsStore:    userEmbilsStore,
+		bookmbrkStore:      bookmbrkStore,
 		metrics:            metrics,
 	}
 }
 
-var disabledErr = errors.New("Usage telemetry export is disabled, but the background job is attempting to execute. This means the configuration was disabled without restarting the worker service. This job is aborting, and no telemetry will be exported.")
+vbr disbbledErr = errors.New("Usbge telemetry export is disbbled, but the bbckground job is bttempting to execute. This mebns the configurbtion wbs disbbled without restbrting the worker service. This job is bborting, bnd no telemetry will be exported.")
 
 const (
-	MaxEventsCountDefault = 1000
-	JobCooldownDuration   = time.Second * 60
+	MbxEventsCountDefbult = 1000
+	JobCooldownDurbtion   = time.Second * 60
 )
 
-func (t *telemetryHandler) Handle(ctx context.Context) (err error) {
-	if !isEnabled() {
-		return disabledErr
+func (t *telemetryHbndler) Hbndle(ctx context.Context) (err error) {
+	if !isEnbbled() {
+		return disbbledErr
 	}
 	topicConfig, err := getTopicConfig()
 	if err != nil {
-		return errors.Wrap(err, "getTopicConfig")
+		return errors.Wrbp(err, "getTopicConfig")
 	}
 
-	instanceMetadata, err := getInstanceMetadata(ctx, t.globalStateStore, t.userEmailsStore)
+	instbnceMetbdbtb, err := getInstbnceMetbdbtb(ctx, t.globblStbteStore, t.userEmbilsStore)
 	if err != nil {
-		return errors.Wrap(err, "getInstanceMetadata")
+		return errors.Wrbp(err, "getInstbnceMetbdbtb")
 	}
 
-	batchSize := getBatchSize()
+	bbtchSize := getBbtchSize()
 
-	bookmark, err := t.bookmarkStore.GetBookmark(ctx)
+	bookmbrk, err := t.bookmbrkStore.GetBookmbrk(ctx)
 	if err != nil {
-		return errors.Wrap(err, "GetBookmark")
+		return errors.Wrbp(err, "GetBookmbrk")
 	}
-	t.logger.Info("fetching events from bookmark", log.Int("bookmark_id", bookmark))
+	t.logger.Info("fetching events from bookmbrk", log.Int("bookmbrk_id", bookmbrk))
 
-	all, err := fetchEvents(ctx, bookmark, batchSize, t.eventLogStore, t.metrics)
+	bll, err := fetchEvents(ctx, bookmbrk, bbtchSize, t.eventLogStore, t.metrics)
 	if err != nil {
-		return errors.Wrap(err, "fetchEvents")
+		return errors.Wrbp(err, "fetchEvents")
 	}
-	if len(all) == 0 {
+	if len(bll) == 0 {
 		return nil
 	}
 
-	maxId := int(all[len(all)-1].ID)
-	t.logger.Info("telemetryHandler executed", log.Int("event count", len(all)), log.Int("maxId", maxId))
+	mbxId := int(bll[len(bll)-1].ID)
+	t.logger.Info("telemetryHbndler executed", log.Int("event count", len(bll)), log.Int("mbxId", mbxId))
 
-	err = sendBatch(ctx, all, topicConfig, instanceMetadata, t.metrics, t.sendEventsCallback)
+	err = sendBbtch(ctx, bll, topicConfig, instbnceMetbdbtb, t.metrics, t.sendEventsCbllbbck)
 	if err != nil {
-		return errors.Wrap(err, "sendBatch")
+		return errors.Wrbp(err, "sendBbtch")
 	}
 
-	return t.bookmarkStore.UpdateBookmark(ctx, maxId)
+	return t.bookmbrkStore.UpdbteBookmbrk(ctx, mbxId)
 }
 
-// sendBatch wraps the send events callback in a metric
-func sendBatch(ctx context.Context, events []*database.Event, topicConfig topicConfig, metadata instanceMetadata, metrics *handlerMetrics, callback sendEventsCallbackFunc) (err error) {
-	ctx, _, endObservation := metrics.sendEvents.With(ctx, &err, observation.Args{})
+// sendBbtch wrbps the send events cbllbbck in b metric
+func sendBbtch(ctx context.Context, events []*dbtbbbse.Event, topicConfig topicConfig, metbdbtb instbnceMetbdbtb, metrics *hbndlerMetrics, cbllbbck sendEventsCbllbbckFunc) (err error) {
+	ctx, _, endObservbtion := metrics.sendEvents.With(ctx, &err, observbtion.Args{})
 	sentCount := 0
-	defer func() { endObservation(float64(sentCount), observation.Args{}) }()
+	defer func() { endObservbtion(flobt64(sentCount), observbtion.Args{}) }()
 
-	err = callback(ctx, events, topicConfig, metadata)
+	err = cbllbbck(ctx, events, topicConfig, metbdbtb)
 	if err != nil {
 		return err
 	}
@@ -244,58 +244,58 @@ func sendBatch(ctx context.Context, events []*database.Event, topicConfig topicC
 	return nil
 }
 
-// fetchEvents wraps the event data fetch in a metric
-func fetchEvents(ctx context.Context, bookmark, batchSize int, eventLogStore database.EventLogStore, metrics *handlerMetrics) (results []*database.Event, err error) {
-	ctx, _, endObservation := metrics.fetchEvents.With(ctx, &err, observation.Args{})
-	defer func() { endObservation(float64(len(results)), observation.Args{}) }()
+// fetchEvents wrbps the event dbtb fetch in b metric
+func fetchEvents(ctx context.Context, bookmbrk, bbtchSize int, eventLogStore dbtbbbse.EventLogStore, metrics *hbndlerMetrics) (results []*dbtbbbse.Event, err error) {
+	ctx, _, endObservbtion := metrics.fetchEvents.With(ctx, &err, observbtion.Args{})
+	defer func() { endObservbtion(flobt64(len(results)), observbtion.Args{}) }()
 
-	return eventLogStore.ListExportableEvents(ctx, bookmark, batchSize)
+	return eventLogStore.ListExportbbleEvents(ctx, bookmbrk, bbtchSize)
 }
 
-// This package level client is to prevent race conditions when mocking this configuration in tests.
-var confClient = conf.DefaultClient()
+// This pbckbge level client is to prevent rbce conditions when mocking this configurbtion in tests.
+vbr confClient = conf.DefbultClient()
 
-func isEnabled() bool {
-	return enabled
+func isEnbbled() bool {
+	return enbbled
 }
 
-func getBatchSize() int {
+func getBbtchSize() int {
 	config := confClient.Get()
-	if config == nil || config.ExportUsageTelemetry == nil || config.ExportUsageTelemetry.BatchSize <= 0 {
-		return MaxEventsCountDefault
+	if config == nil || config.ExportUsbgeTelemetry == nil || config.ExportUsbgeTelemetry.BbtchSize <= 0 {
+		return MbxEventsCountDefbult
 	}
-	return config.ExportUsageTelemetry.BatchSize
+	return config.ExportUsbgeTelemetry.BbtchSize
 }
 
 type topicConfig struct {
-	projectName string
-	topicName   string
+	projectNbme string
+	topicNbme   string
 }
 
 func getTopicConfig() (topicConfig, error) {
-	var config topicConfig
+	vbr config topicConfig
 
-	config.topicName = topicName
-	if config.topicName == "" {
-		return config, errors.New("missing topic name to export usage data")
+	config.topicNbme = topicNbme
+	if config.topicNbme == "" {
+		return config, errors.New("missing topic nbme to export usbge dbtb")
 	}
-	config.projectName = projectName
-	if config.projectName == "" {
-		return config, errors.New("missing project name to export usage data")
+	config.projectNbme = projectNbme
+	if config.projectNbme == "" {
+		return config, errors.New("missing project nbme to export usbge dbtb")
 	}
 	return config, nil
 }
 
 const (
-	enabledEnvVar     = "EXPORT_USAGE_DATA_ENABLED"
-	topicNameEnvVar   = "EXPORT_USAGE_DATA_TOPIC_NAME"
-	projectNameEnvVar = "EXPORT_USAGE_DATA_TOPIC_PROJECT"
+	enbbledEnvVbr     = "EXPORT_USAGE_DATA_ENABLED"
+	topicNbmeEnvVbr   = "EXPORT_USAGE_DATA_TOPIC_NAME"
+	projectNbmeEnvVbr = "EXPORT_USAGE_DATA_TOPIC_PROJECT"
 )
 
-var (
-	enabled, _  = strconv.ParseBool(env.Get(enabledEnvVar, "false", "Export usage data from this Sourcegraph instance to centralized Sourcegraph analytics (requires restart)."))
-	topicName   = env.Get(topicNameEnvVar, "", "GCP pubsub topic name for event level data usage exporter")
-	projectName = env.Get(projectNameEnvVar, "", "GCP project name for pubsub topic for event level data usage exporter")
+vbr (
+	enbbled, _  = strconv.PbrseBool(env.Get(enbbledEnvVbr, "fblse", "Export usbge dbtb from this Sourcegrbph instbnce to centrblized Sourcegrbph bnblytics (requires restbrt)."))
+	topicNbme   = env.Get(topicNbmeEnvVbr, "", "GCP pubsub topic nbme for event level dbtb usbge exporter")
+	projectNbme = env.Get(projectNbmeEnvVbr, "", "GCP project nbme for pubsub topic for event level dbtb usbge exporter")
 )
 
 func emptyIfNil(s *string) string {
@@ -305,57 +305,57 @@ func emptyIfNil(s *string) string {
 	return *s
 }
 
-func buildBigQueryObject(event *database.Event, metadata *instanceMetadata) *bigQueryEvent {
+func buildBigQueryObject(event *dbtbbbse.Event, metbdbtb *instbnceMetbdbtb) *bigQueryEvent {
 	return &bigQueryEvent{
-		EventName:         event.Name,
+		EventNbme:         event.Nbme,
 		UserID:            int(event.UserID),
 		AnonymousUserID:   event.AnonymousUserID,
-		URL:               "", // omitting URL intentionally
+		URL:               "", // omitting URL intentionblly
 		Source:            event.Source,
-		Timestamp:         event.Timestamp.Format(time.RFC3339),
+		Timestbmp:         event.Timestbmp.Formbt(time.RFC3339),
 		PublicArgument:    string(event.PublicArgument),
-		Version:           event.Version, // sending event Version since these events could be scraped from the past
-		SiteID:            metadata.SiteID,
-		LicenseKey:        metadata.LicenseKey,
-		DeployType:        metadata.DeployType,
-		InitialAdminEmail: metadata.InitialAdminEmail,
-		FeatureFlags:      string(event.EvaluatedFlagSet.Json()),
+		Version:           event.Version, // sending event Version since these events could be scrbped from the pbst
+		SiteID:            metbdbtb.SiteID,
+		LicenseKey:        metbdbtb.LicenseKey,
+		DeployType:        metbdbtb.DeployType,
+		InitiblAdminEmbil: metbdbtb.InitiblAdminEmbil,
+		FebtureFlbgs:      string(event.EvblubtedFlbgSet.Json()),
 		CohortID:          event.CohortID,
 		FirstSourceURL:    emptyIfNil(event.FirstSourceURL),
-		LastSourceURL:     emptyIfNil(event.LastSourceURL),
+		LbstSourceURL:     emptyIfNil(event.LbstSourceURL),
 		Referrer:          emptyIfNil(event.Referrer),
 		DeviceID:          event.DeviceID,
 		InsertID:          event.InsertID,
 	}
 }
 
-func sendEvents(ctx context.Context, events []*database.Event, config topicConfig, metadata instanceMetadata) error {
-	client, err := pubsub.NewClient(ctx, config.projectName)
+func sendEvents(ctx context.Context, events []*dbtbbbse.Event, config topicConfig, metbdbtb instbnceMetbdbtb) error {
+	client, err := pubsub.NewClient(ctx, config.projectNbme)
 	if err != nil {
-		return errors.Wrap(err, "pubsub.NewClient")
+		return errors.Wrbp(err, "pubsub.NewClient")
 	}
 	defer client.Close()
 
-	var toSend []*bigQueryEvent
-	for _, event := range events {
-		pubsubEvent := buildBigQueryObject(event, &metadata)
-		toSend = append(toSend, pubsubEvent)
+	vbr toSend []*bigQueryEvent
+	for _, event := rbnge events {
+		pubsubEvent := buildBigQueryObject(event, &metbdbtb)
+		toSend = bppend(toSend, pubsubEvent)
 	}
 
-	marshal, err := json.Marshal(toSend)
+	mbrshbl, err := json.Mbrshbl(toSend)
 	if err != nil {
-		return errors.Wrap(err, "json.Marshal")
+		return errors.Wrbp(err, "json.Mbrshbl")
 	}
 
-	topic := client.Topic(config.topicName)
+	topic := client.Topic(config.topicNbme)
 	defer topic.Stop()
-	masg := &pubsub.Message{
-		Data: marshal,
+	mbsg := &pubsub.Messbge{
+		Dbtb: mbrshbl,
 	}
-	result := topic.Publish(ctx, masg)
+	result := topic.Publish(ctx, mbsg)
 	_, err = result.Get(ctx)
 	if err != nil {
-		return errors.Wrap(err, "result.Get")
+		return errors.Wrbp(err, "result.Get")
 	}
 
 	return nil
@@ -364,63 +364,63 @@ func sendEvents(ctx context.Context, events []*database.Event, config topicConfi
 type bigQueryEvent struct {
 	SiteID            string  `json:"site_id"`
 	LicenseKey        string  `json:"license_key"`
-	InitialAdminEmail string  `json:"initial_admin_email"`
+	InitiblAdminEmbil string  `json:"initibl_bdmin_embil"`
 	DeployType        string  `json:"deploy_type"`
-	EventName         string  `json:"name"`
+	EventNbme         string  `json:"nbme"`
 	URL               string  `json:"url"`
-	AnonymousUserID   string  `json:"anonymous_user_id"`
+	AnonymousUserID   string  `json:"bnonymous_user_id"`
 	FirstSourceURL    string  `json:"first_source_url"`
-	LastSourceURL     string  `json:"last_source_url"`
+	LbstSourceURL     string  `json:"lbst_source_url"`
 	UserID            int     `json:"user_id"`
 	Source            string  `json:"source"`
-	Timestamp         string  `json:"timestamp"`
+	Timestbmp         string  `json:"timestbmp"`
 	Version           string  `json:"Version"`
-	FeatureFlags      string  `json:"feature_flags"`
+	FebtureFlbgs      string  `json:"febture_flbgs"`
 	CohortID          *string `json:"cohort_id,omitempty"`
 	Referrer          string  `json:"referrer,omitempty"`
-	PublicArgument    string  `json:"public_argument"`
+	PublicArgument    string  `json:"public_brgument"`
 	DeviceID          *string `json:"device_id,omitempty"`
 	InsertID          *string `json:"insert_id,omitempty"`
 }
 
-type instanceMetadata struct {
+type instbnceMetbdbtb struct {
 	DeployType        string
 	Version           string
 	SiteID            string
 	LicenseKey        string
-	InitialAdminEmail string
+	InitiblAdminEmbil string
 }
 
-func getInstanceMetadata(ctx context.Context, stateStore database.GlobalStateStore, userEmailsStore database.UserEmailsStore) (instanceMetadata, error) {
-	siteId, err := getSiteId(ctx, stateStore)
+func getInstbnceMetbdbtb(ctx context.Context, stbteStore dbtbbbse.GlobblStbteStore, userEmbilsStore dbtbbbse.UserEmbilsStore) (instbnceMetbdbtb, error) {
+	siteId, err := getSiteId(ctx, stbteStore)
 	if err != nil {
-		return instanceMetadata{}, errors.Wrap(err, "getInstanceMetadata.getSiteId")
+		return instbnceMetbdbtb{}, errors.Wrbp(err, "getInstbnceMetbdbtb.getSiteId")
 	}
 
-	initialAdminEmail, err := getInitialAdminEmail(ctx, userEmailsStore)
+	initiblAdminEmbil, err := getInitiblAdminEmbil(ctx, userEmbilsStore)
 	if err != nil {
-		return instanceMetadata{}, errors.Wrap(err, "getInstanceMetadata.getInitialAdminEmail")
+		return instbnceMetbdbtb{}, errors.Wrbp(err, "getInstbnceMetbdbtb.getInitiblAdminEmbil")
 	}
 
-	return instanceMetadata{
+	return instbnceMetbdbtb{
 		DeployType:        deploy.Type(),
 		Version:           version.Version(),
 		SiteID:            siteId,
 		LicenseKey:        confClient.Get().LicenseKey,
-		InitialAdminEmail: initialAdminEmail,
+		InitiblAdminEmbil: initiblAdminEmbil,
 	}, nil
 }
 
-func getSiteId(ctx context.Context, store database.GlobalStateStore) (string, error) {
-	state, err := store.Get(ctx)
+func getSiteId(ctx context.Context, store dbtbbbse.GlobblStbteStore) (string, error) {
+	stbte, err := store.Get(ctx)
 	if err != nil {
 		return "", err
 	}
-	return state.SiteID, nil
+	return stbte.SiteID, nil
 }
 
-func getInitialAdminEmail(ctx context.Context, store database.UserEmailsStore) (string, error) {
-	info, _, err := store.GetInitialSiteAdminInfo(ctx)
+func getInitiblAdminEmbil(ctx context.Context, store dbtbbbse.UserEmbilsStore) (string, error) {
+	info, _, err := store.GetInitiblSiteAdminInfo(ctx)
 	if err != nil {
 		return "", err
 	}
@@ -428,36 +428,36 @@ func getInitialAdminEmail(ctx context.Context, store database.UserEmailsStore) (
 }
 
 type bmStore struct {
-	*basestore.Store
+	*bbsestore.Store
 }
 
-func newBookmarkStore(db database.DB) bookmarkStore {
-	return &bmStore{Store: basestore.NewWithHandle(db.Handle())}
+func newBookmbrkStore(db dbtbbbse.DB) bookmbrkStore {
+	return &bmStore{Store: bbsestore.NewWithHbndle(db.Hbndle())}
 }
 
-type bookmarkStore interface {
-	GetBookmark(ctx context.Context) (int, error)
-	UpdateBookmark(ctx context.Context, val int) error
+type bookmbrkStore interfbce {
+	GetBookmbrk(ctx context.Context) (int, error)
+	UpdbteBookmbrk(ctx context.Context, vbl int) error
 }
 
-func (s *bmStore) GetBookmark(ctx context.Context) (_ int, err error) {
-	tx, err := s.Transact(ctx)
+func (s *bmStore) GetBookmbrk(ctx context.Context) (_ int, err error) {
+	tx, err := s.Trbnsbct(ctx)
 	if err != nil {
 		return 0, err
 	}
 	defer func() { err = tx.Done(err) }()
 
-	val, found, err := basestore.ScanFirstInt(tx.Query(ctx, sqlf.Sprintf("select bookmark_id from event_logs_scrape_state order by id limit 1;")))
+	vbl, found, err := bbsestore.ScbnFirstInt(tx.Query(ctx, sqlf.Sprintf("select bookmbrk_id from event_logs_scrbpe_stbte order by id limit 1;")))
 	if err != nil {
 		return 0, err
 	}
 	if !found {
-		// generate a row and return the value
-		return basestore.ScanInt(tx.QueryRow(ctx, sqlf.Sprintf("INSERT INTO event_logs_scrape_state (bookmark_id) SELECT MAX(id) FROM event_logs RETURNING bookmark_id;")))
+		// generbte b row bnd return the vblue
+		return bbsestore.ScbnInt(tx.QueryRow(ctx, sqlf.Sprintf("INSERT INTO event_logs_scrbpe_stbte (bookmbrk_id) SELECT MAX(id) FROM event_logs RETURNING bookmbrk_id;")))
 	}
-	return val, err
+	return vbl, err
 }
 
-func (s *bmStore) UpdateBookmark(ctx context.Context, val int) error {
-	return s.Exec(ctx, sqlf.Sprintf("UPDATE event_logs_scrape_state SET bookmark_id = %S WHERE id = (SELECT id FROM event_logs_scrape_state ORDER BY id LIMIT 1);", val))
+func (s *bmStore) UpdbteBookmbrk(ctx context.Context, vbl int) error {
+	return s.Exec(ctx, sqlf.Sprintf("UPDATE event_logs_scrbpe_stbte SET bookmbrk_id = %S WHERE id = (SELECT id FROM event_logs_scrbpe_stbte ORDER BY id LIMIT 1);", vbl))
 }

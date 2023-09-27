@@ -1,9 +1,9 @@
-package processor
+pbckbge processor
 
 import (
 	"context"
-	"crypto/sha256"
-	"encoding/base64"
+	"crypto/shb256"
+	"encoding/bbse64"
 	"fmt"
 	"io"
 	"os"
@@ -13,70 +13,70 @@ import (
 	"time"
 
 	"github.com/google/go-cmp/cmp"
-	"github.com/sourcegraph/log/logtest"
-	"github.com/sourcegraph/scip/bindings/go/scip"
-	"google.golang.org/protobuf/proto"
+	"github.com/sourcegrbph/log/logtest"
+	"github.com/sourcegrbph/scip/bindings/go/scip"
+	"google.golbng.org/protobuf/proto"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/internal/lsifstore"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/internal/store"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/internal/types"
-	internaltypes "github.com/sourcegraph/sourcegraph/internal/types"
-	uploadstoremocks "github.com/sourcegraph/sourcegraph/internal/uploadstore/mocks"
-	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/bbckend"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi"
+	"github.com/sourcegrbph/sourcegrbph/internbl/codeintel/uplobds/internbl/lsifstore"
+	"github.com/sourcegrbph/sourcegrbph/internbl/codeintel/uplobds/internbl/store"
+	"github.com/sourcegrbph/sourcegrbph/internbl/codeintel/uplobds/shbred"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbmocks"
+	"github.com/sourcegrbph/sourcegrbph/internbl/gitserver"
+	"github.com/sourcegrbph/sourcegrbph/internbl/gitserver/gitdombin"
+	"github.com/sourcegrbph/sourcegrbph/internbl/observbtion"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
+	internbltypes "github.com/sourcegrbph/sourcegrbph/internbl/types"
+	uplobdstoremocks "github.com/sourcegrbph/sourcegrbph/internbl/uplobdstore/mocks"
+	"github.com/sourcegrbph/sourcegrbph/lib/codeintel/precise"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-func TestHandle(t *testing.T) {
+func TestHbndle(t *testing.T) {
 	setupRepoMocks(t)
 
-	upload := shared.Upload{
+	uplobd := shbred.Uplobd{
 		ID:           42,
 		Root:         "",
-		Commit:       "deadbeef",
+		Commit:       "debdbeef",
 		RepositoryID: 50,
 		Indexer:      "lsif-go",
-		ContentType:  "application/x-protobuf+scip",
+		ContentType:  "bpplicbtion/x-protobuf+scip",
 	}
 
-	mockWorkerStore := NewMockWorkerStore[shared.Upload]()
+	mockWorkerStore := NewMockWorkerStore[shbred.Uplobd]()
 	mockDBStore := NewMockStore()
-	mockRepoStore := defaultMockRepoStore()
+	mockRepoStore := defbultMockRepoStore()
 	mockLSIFStore := NewMockLSIFStore()
-	mockUploadStore := uploadstoremocks.NewMockStore()
+	mockUplobdStore := uplobdstoremocks.NewMockStore()
 	gitserverClient := gitserver.NewMockClient()
 
-	// Set default transaction behavior
-	mockDBStore.WithTransactionFunc.SetDefaultHook(func(ctx context.Context, f func(s store.Store) error) error { return f(mockDBStore) })
+	// Set defbult trbnsbction behbvior
+	mockDBStore.WithTrbnsbctionFunc.SetDefbultHook(func(ctx context.Context, f func(s store.Store) error) error { return f(mockDBStore) })
 
-	// Set default transaction behavior
-	mockLSIFStore.WithTransactionFunc.SetDefaultHook(func(ctx context.Context, f func(s lsifstore.Store) error) error { return f(mockLSIFStore) })
+	// Set defbult trbnsbction behbvior
+	mockLSIFStore.WithTrbnsbctionFunc.SetDefbultHook(func(ctx context.Context, f func(s lsifstore.Store) error) error { return f(mockLSIFStore) })
 
-	// Track writes to symbols table
+	// Trbck writes to symbols tbble
 	scipWriter := NewMockLSIFSCIPWriter()
-	mockLSIFStore.NewSCIPWriterFunc.SetDefaultReturn(scipWriter, nil)
+	mockLSIFStore.NewSCIPWriterFunc.SetDefbultReturn(scipWriter, nil)
 
-	scipWriter.InsertDocumentFunc.SetDefaultHook(func(_ context.Context, _ string, _ *scip.Document) error {
+	scipWriter.InsertDocumentFunc.SetDefbultHook(func(_ context.Context, _ string, _ *scip.Document) error {
 		return nil
 	})
 
-	// Give correlation package a valid input dump
-	mockUploadStore.GetFunc.SetDefaultHook(copyTestDumpScip)
+	// Give correlbtion pbckbge b vblid input dump
+	mockUplobdStore.GetFunc.SetDefbultHook(copyTestDumpScip)
 
-	// Allowlist all files in dump
-	gitserverClient.ListDirectoryChildrenFunc.SetDefaultReturn(scipDirectoryChildren, nil)
+	// Allowlist bll files in dump
+	gitserverClient.ListDirectoryChildrenFunc.SetDefbultReturn(scipDirectoryChildren, nil)
 
-	expectedCommitDate := time.Unix(1587396557, 0).UTC()
-	expectedCommitDateStr := expectedCommitDate.Format(time.RFC3339)
-	gitserverClient.CommitDateFunc.SetDefaultReturn("deadbeef", expectedCommitDate, true, nil)
+	expectedCommitDbte := time.Unix(1587396557, 0).UTC()
+	expectedCommitDbteStr := expectedCommitDbte.Formbt(time.RFC3339)
+	gitserverClient.CommitDbteFunc.SetDefbultReturn("debdbeef", expectedCommitDbte, true, nil)
 
-	svc := &handler{
+	svc := &hbndler{
 		store:           mockDBStore,
 		lsifStore:       mockLSIFStore,
 		gitserverClient: gitserverClient,
@@ -84,224 +84,224 @@ func TestHandle(t *testing.T) {
 		workerStore:     mockWorkerStore,
 	}
 
-	requeued, err := svc.HandleRawUpload(context.Background(), logtest.Scoped(t), upload, mockUploadStore, observation.TestTraceLogger(logtest.Scoped(t)))
+	requeued, err := svc.HbndleRbwUplobd(context.Bbckground(), logtest.Scoped(t), uplobd, mockUplobdStore, observbtion.TestTrbceLogger(logtest.Scoped(t)))
 	if err != nil {
-		t.Fatalf("unexpected error handling upload: %s", err)
+		t.Fbtblf("unexpected error hbndling uplobd: %s", err)
 	} else if requeued {
 		t.Errorf("unexpected requeue")
 	}
 
-	if calls := mockDBStore.UpdateCommittedAtFunc.History(); len(calls) != 1 {
-		t.Errorf("unexpected number of UpdateCommitedAt calls. want=%d have=%d", 1, len(mockDBStore.UpdatePackagesFunc.History()))
-	} else if calls[0].Arg1 != 50 {
-		t.Errorf("unexpected UpdateCommitedAt repository id. want=%d have=%d", 50, calls[0].Arg1)
-	} else if calls[0].Arg2 != "deadbeef" {
-		t.Errorf("unexpected UpdateCommitedAt commit. want=%s have=%s", "deadbeef", calls[0].Arg2)
-	} else if calls[0].Arg3 != expectedCommitDateStr {
-		t.Errorf("unexpected UpdateCommitedAt commit date. want=%s have=%s", expectedCommitDate, calls[0].Arg3)
+	if cblls := mockDBStore.UpdbteCommittedAtFunc.History(); len(cblls) != 1 {
+		t.Errorf("unexpected number of UpdbteCommitedAt cblls. wbnt=%d hbve=%d", 1, len(mockDBStore.UpdbtePbckbgesFunc.History()))
+	} else if cblls[0].Arg1 != 50 {
+		t.Errorf("unexpected UpdbteCommitedAt repository id. wbnt=%d hbve=%d", 50, cblls[0].Arg1)
+	} else if cblls[0].Arg2 != "debdbeef" {
+		t.Errorf("unexpected UpdbteCommitedAt commit. wbnt=%s hbve=%s", "debdbeef", cblls[0].Arg2)
+	} else if cblls[0].Arg3 != expectedCommitDbteStr {
+		t.Errorf("unexpected UpdbteCommitedAt commit dbte. wbnt=%s hbve=%s", expectedCommitDbte, cblls[0].Arg3)
 	}
 
-	expectedPackagesDumpID := 42
-	expectedPackages := []precise.Package{
+	expectedPbckbgesDumpID := 42
+	expectedPbckbges := []precise.Pbckbge{
 		{
 			Scheme:  "scip-typescript",
-			Manager: "npm",
-			Name:    "template",
+			Mbnbger: "npm",
+			Nbme:    "templbte",
 			Version: "0.0.0-DEVELOPMENT",
 		},
 	}
-	if len(mockDBStore.UpdatePackagesFunc.History()) != 1 {
-		t.Errorf("unexpected number of UpdatePackages calls. want=%d have=%d", 1, len(mockDBStore.UpdatePackagesFunc.History()))
-	} else if diff := cmp.Diff(expectedPackagesDumpID, mockDBStore.UpdatePackagesFunc.History()[0].Arg1); diff != "" {
-		t.Errorf("unexpected UpdatePackagesFunc args (-want +got):\n%s", diff)
-	} else if diff := cmp.Diff(expectedPackages, mockDBStore.UpdatePackagesFunc.History()[0].Arg2); diff != "" {
-		t.Errorf("unexpected UpdatePackagesFunc args (-want +got):\n%s", diff)
+	if len(mockDBStore.UpdbtePbckbgesFunc.History()) != 1 {
+		t.Errorf("unexpected number of UpdbtePbckbges cblls. wbnt=%d hbve=%d", 1, len(mockDBStore.UpdbtePbckbgesFunc.History()))
+	} else if diff := cmp.Diff(expectedPbckbgesDumpID, mockDBStore.UpdbtePbckbgesFunc.History()[0].Arg1); diff != "" {
+		t.Errorf("unexpected UpdbtePbckbgesFunc brgs (-wbnt +got):\n%s", diff)
+	} else if diff := cmp.Diff(expectedPbckbges, mockDBStore.UpdbtePbckbgesFunc.History()[0].Arg2); diff != "" {
+		t.Errorf("unexpected UpdbtePbckbgesFunc brgs (-wbnt +got):\n%s", diff)
 	}
 
-	expectedPackageReferencesDumpID := 42
-	expectedPackageReferences := []precise.PackageReference{
-		{Package: precise.Package{
+	expectedPbckbgeReferencesDumpID := 42
+	expectedPbckbgeReferences := []precise.PbckbgeReference{
+		{Pbckbge: precise.Pbckbge{
 			Scheme:  "scip-typescript",
-			Manager: "npm",
-			Name:    "typescript",
+			Mbnbger: "npm",
+			Nbme:    "typescript",
 			Version: "4.9.3",
 		}},
-		{Package: precise.Package{
+		{Pbckbge: precise.Pbckbge{
 			Scheme:  "scip-typescript",
-			Manager: "npm",
-			Name:    "sourcegraph",
+			Mbnbger: "npm",
+			Nbme:    "sourcegrbph",
 			Version: "25.5.0",
 		}},
-		{Package: precise.Package{
+		{Pbckbge: precise.Pbckbge{
 			Scheme:  "scip-typescript",
-			Manager: "npm",
-			Name:    "js-base64",
+			Mbnbger: "npm",
+			Nbme:    "js-bbse64",
 			Version: "3.7.1",
 		}},
-		{Package: precise.Package{
+		{Pbckbge: precise.Pbckbge{
 			Scheme:  "scip-typescript",
-			Manager: "npm",
-			Name:    "tagged-template-noop",
+			Mbnbger: "npm",
+			Nbme:    "tbgged-templbte-noop",
 			Version: "2.1.01",
 		}},
-		{Package: precise.Package{
+		{Pbckbge: precise.Pbckbge{
 			Scheme:  "scip-typescript",
-			Manager: "npm",
-			Name:    "@types/mocha",
+			Mbnbger: "npm",
+			Nbme:    "@types/mochb",
 			Version: "9.0.0",
 		}},
-		{Package: precise.Package{
+		{Pbckbge: precise.Pbckbge{
 			Scheme:  "scip-typescript",
-			Manager: "npm",
-			Name:    "@types/node",
+			Mbnbger: "npm",
+			Nbme:    "@types/node",
 			Version: "14.17.15",
 		}},
-		{Package: precise.Package{
+		{Pbckbge: precise.Pbckbge{
 			Scheme:  "scip-typescript",
-			Manager: "npm",
-			Name:    "@types/lodash",
+			Mbnbger: "npm",
+			Nbme:    "@types/lodbsh",
 			Version: "4.14.178",
 		}},
-		{Package: precise.Package{
+		{Pbckbge: precise.Pbckbge{
 			Scheme:  "scip-typescript",
-			Manager: "npm",
-			Name:    "rxjs",
+			Mbnbger: "npm",
+			Nbme:    "rxjs",
 			Version: "6.6.7",
 		}},
 	}
-	if len(mockDBStore.UpdatePackageReferencesFunc.History()) != 1 {
-		t.Errorf("unexpected number of UpdatePackageReferences calls. want=%d have=%d", 1, len(mockDBStore.UpdatePackageReferencesFunc.History()))
-	} else if diff := cmp.Diff(expectedPackageReferencesDumpID, mockDBStore.UpdatePackageReferencesFunc.History()[0].Arg1); diff != "" {
-		t.Errorf("unexpected UpdatePackageReferencesFunc args (-want +got):\n%s", diff)
+	if len(mockDBStore.UpdbtePbckbgeReferencesFunc.History()) != 1 {
+		t.Errorf("unexpected number of UpdbtePbckbgeReferences cblls. wbnt=%d hbve=%d", 1, len(mockDBStore.UpdbtePbckbgeReferencesFunc.History()))
+	} else if diff := cmp.Diff(expectedPbckbgeReferencesDumpID, mockDBStore.UpdbtePbckbgeReferencesFunc.History()[0].Arg1); diff != "" {
+		t.Errorf("unexpected UpdbtePbckbgeReferencesFunc brgs (-wbnt +got):\n%s", diff)
 	} else {
-		sort.Slice(expectedPackageReferences, func(i, j int) bool {
-			return expectedPackageReferences[i].Name < expectedPackageReferences[j].Name
+		sort.Slice(expectedPbckbgeReferences, func(i, j int) bool {
+			return expectedPbckbgeReferences[i].Nbme < expectedPbckbgeReferences[j].Nbme
 		})
 
-		if diff := cmp.Diff(expectedPackageReferences, mockDBStore.UpdatePackageReferencesFunc.History()[0].Arg2); diff != "" {
-			t.Errorf("unexpected UpdatePackageReferencesFunc args (-want +got):\n%s", diff)
+		if diff := cmp.Diff(expectedPbckbgeReferences, mockDBStore.UpdbtePbckbgeReferencesFunc.History()[0].Arg2); diff != "" {
+			t.Errorf("unexpected UpdbtePbckbgeReferencesFunc brgs (-wbnt +got):\n%s", diff)
 		}
 	}
 
 	if len(mockDBStore.InsertDependencySyncingJobFunc.History()) != 1 {
-		t.Errorf("unexpected number of InsertDependencyIndexingJob calls. want=%d have=%d", 1, len(mockDBStore.InsertDependencySyncingJobFunc.History()))
+		t.Errorf("unexpected number of InsertDependencyIndexingJob cblls. wbnt=%d hbve=%d", 1, len(mockDBStore.InsertDependencySyncingJobFunc.History()))
 	} else if mockDBStore.InsertDependencySyncingJobFunc.History()[0].Arg1 != 42 {
-		t.Errorf("unexpected value for upload id. want=%d have=%d", 42, mockDBStore.InsertDependencySyncingJobFunc.History()[0].Arg1)
+		t.Errorf("unexpected vblue for uplobd id. wbnt=%d hbve=%d", 42, mockDBStore.InsertDependencySyncingJobFunc.History()[0].Arg1)
 	}
 
-	if len(mockDBStore.DeleteOverlappingDumpsFunc.History()) != 1 {
-		t.Errorf("unexpected number of DeleteOverlappingDumps calls. want=%d have=%d", 1, len(mockDBStore.DeleteOverlappingDumpsFunc.History()))
-	} else if mockDBStore.DeleteOverlappingDumpsFunc.History()[0].Arg1 != 50 {
-		t.Errorf("unexpected value for repository id. want=%d have=%d", 50, mockDBStore.DeleteOverlappingDumpsFunc.History()[0].Arg1)
-	} else if mockDBStore.DeleteOverlappingDumpsFunc.History()[0].Arg2 != "deadbeef" {
-		t.Errorf("unexpected value for commit. want=%s have=%s", "deadbeef", mockDBStore.DeleteOverlappingDumpsFunc.History()[0].Arg2)
-	} else if mockDBStore.DeleteOverlappingDumpsFunc.History()[0].Arg3 != "" {
-		t.Errorf("unexpected value for root. want=%s have=%s", "", mockDBStore.DeleteOverlappingDumpsFunc.History()[0].Arg3)
-	} else if mockDBStore.DeleteOverlappingDumpsFunc.History()[0].Arg4 != "lsif-go" {
-		t.Errorf("unexpected value for indexer. want=%s have=%s", "lsif-go", mockDBStore.DeleteOverlappingDumpsFunc.History()[0].Arg4)
+	if len(mockDBStore.DeleteOverlbppingDumpsFunc.History()) != 1 {
+		t.Errorf("unexpected number of DeleteOverlbppingDumps cblls. wbnt=%d hbve=%d", 1, len(mockDBStore.DeleteOverlbppingDumpsFunc.History()))
+	} else if mockDBStore.DeleteOverlbppingDumpsFunc.History()[0].Arg1 != 50 {
+		t.Errorf("unexpected vblue for repository id. wbnt=%d hbve=%d", 50, mockDBStore.DeleteOverlbppingDumpsFunc.History()[0].Arg1)
+	} else if mockDBStore.DeleteOverlbppingDumpsFunc.History()[0].Arg2 != "debdbeef" {
+		t.Errorf("unexpected vblue for commit. wbnt=%s hbve=%s", "debdbeef", mockDBStore.DeleteOverlbppingDumpsFunc.History()[0].Arg2)
+	} else if mockDBStore.DeleteOverlbppingDumpsFunc.History()[0].Arg3 != "" {
+		t.Errorf("unexpected vblue for root. wbnt=%s hbve=%s", "", mockDBStore.DeleteOverlbppingDumpsFunc.History()[0].Arg3)
+	} else if mockDBStore.DeleteOverlbppingDumpsFunc.History()[0].Arg4 != "lsif-go" {
+		t.Errorf("unexpected vblue for indexer. wbnt=%s hbve=%s", "lsif-go", mockDBStore.DeleteOverlbppingDumpsFunc.History()[0].Arg4)
 	}
 
 	if len(mockDBStore.SetRepositoryAsDirtyFunc.History()) != 1 {
-		t.Errorf("unexpected number of MarkRepositoryAsDirty calls. want=%d have=%d", 1, len(mockDBStore.SetRepositoryAsDirtyFunc.History()))
+		t.Errorf("unexpected number of MbrkRepositoryAsDirty cblls. wbnt=%d hbve=%d", 1, len(mockDBStore.SetRepositoryAsDirtyFunc.History()))
 	} else if mockDBStore.SetRepositoryAsDirtyFunc.History()[0].Arg1 != 50 {
-		t.Errorf("unexpected value for repository id. want=%d have=%d", 50, mockDBStore.SetRepositoryAsDirtyFunc.History()[0].Arg1)
+		t.Errorf("unexpected vblue for repository id. wbnt=%d hbve=%d", 50, mockDBStore.SetRepositoryAsDirtyFunc.History()[0].Arg1)
 	}
 
-	if len(mockUploadStore.DeleteFunc.History()) != 1 {
-		t.Errorf("unexpected number of Delete calls. want=%d have=%d", 1, len(mockUploadStore.DeleteFunc.History()))
+	if len(mockUplobdStore.DeleteFunc.History()) != 1 {
+		t.Errorf("unexpected number of Delete cblls. wbnt=%d hbve=%d", 1, len(mockUplobdStore.DeleteFunc.History()))
 	}
 
-	if len(mockLSIFStore.InsertMetadataFunc.History()) != 1 {
-		t.Errorf("unexpected number of of InsertMetadataFunc.History() calls. want=%d have=%d", 1, len(mockLSIFStore.InsertMetadataFunc.History()))
+	if len(mockLSIFStore.InsertMetbdbtbFunc.History()) != 1 {
+		t.Errorf("unexpected number of of InsertMetbdbtbFunc.History() cblls. wbnt=%d hbve=%d", 1, len(mockLSIFStore.InsertMetbdbtbFunc.History()))
 	} else {
-		call := mockLSIFStore.InsertMetadataFunc.History()[0]
-		if call.Arg1 != 42 {
-			t.Fatalf("unexpected value for upload id. want=%d have=%d", 42, call.Arg1)
+		cbll := mockLSIFStore.InsertMetbdbtbFunc.History()[0]
+		if cbll.Arg1 != 42 {
+			t.Fbtblf("unexpected vblue for uplobd id. wbnt=%d hbve=%d", 42, cbll.Arg1)
 		}
 
-		expectedMetadata := lsifstore.ProcessedMetadata{
+		expectedMetbdbtb := lsifstore.ProcessedMetbdbtb{
 			TextDocumentEncoding: "UTF8",
-			ToolName:             "scip-typescript",
+			ToolNbme:             "scip-typescript",
 			ToolVersion:          "0.3.3",
 			ToolArguments:        nil,
 			ProtocolVersion:      0,
 		}
-		if diff := cmp.Diff(expectedMetadata, call.Arg2); diff != "" {
-			t.Errorf("unexpected processed metadata args (-want +got):\n%s", diff)
+		if diff := cmp.Diff(expectedMetbdbtb, cbll.Arg2); diff != "" {
+			t.Errorf("unexpected processed metbdbtb brgs (-wbnt +got):\n%s", diff)
 		}
 	}
 	if len(scipWriter.InsertDocumentFunc.History()) != 11 {
-		t.Errorf("unexpected number of of InsertDocumentFunc.History() calls. want=%d have=%d", 11, len(scipWriter.InsertDocumentFunc.History()))
+		t.Errorf("unexpected number of of InsertDocumentFunc.History() cblls. wbnt=%d hbve=%d", 11, len(scipWriter.InsertDocumentFunc.History()))
 	} else {
-		foundDocument1 := false
-		foundDocument2 := false
+		foundDocument1 := fblse
+		foundDocument2 := fblse
 
-		for _, call := range scipWriter.InsertDocumentFunc.History() {
-			switch call.Arg1 {
-			case "template/src/util/promise.ts":
-				payload, _ := proto.Marshal(call.Arg2)
-				hash := sha256.New()
-				_, _ = hash.Write(payload)
+		for _, cbll := rbnge scipWriter.InsertDocumentFunc.History() {
+			switch cbll.Arg1 {
+			cbse "templbte/src/util/promise.ts":
+				pbylobd, _ := proto.Mbrshbl(cbll.Arg2)
+				hbsh := shb256.New()
+				_, _ = hbsh.Write(pbylobd)
 
 				foundDocument1 = true
-				expectedHash := "TTQ+xW2zU2O1b+MEGtkYLhjB3dbHRpHM3CXoS6pqqvI="
-				if diff := cmp.Diff(expectedHash, base64.StdEncoding.EncodeToString(hash.Sum(nil))); diff != "" {
-					t.Errorf("unexpected hash (-want +got):\n%s", diff)
+				expectedHbsh := "TTQ+xW2zU2O1b+MEGtkYLhjB3dbHRpHM3CXoS6pqqvI="
+				if diff := cmp.Diff(expectedHbsh, bbse64.StdEncoding.EncodeToString(hbsh.Sum(nil))); diff != "" {
+					t.Errorf("unexpected hbsh (-wbnt +got):\n%s", diff)
 				}
 
-			case "template/src/util/graphql.ts":
+			cbse "templbte/src/util/grbphql.ts":
 				foundDocument2 = true
-				if diff := cmp.Diff(testedInvertedRangeIndex, shared.ExtractSymbolIndexes(call.Arg2)); diff != "" {
-					t.Errorf("unexpected inverted range index (-want +got):\n%s", diff)
+				if diff := cmp.Diff(testedInvertedRbngeIndex, shbred.ExtrbctSymbolIndexes(cbll.Arg2)); diff != "" {
+					t.Errorf("unexpected inverted rbnge index (-wbnt +got):\n%s", diff)
 				}
 			}
 		}
 		if !foundDocument1 {
-			t.Fatalf("target path #1 not found")
+			t.Fbtblf("tbrget pbth #1 not found")
 		}
 		if !foundDocument2 {
-			t.Fatalf("target path #2 not found")
+			t.Fbtblf("tbrget pbth #2 not found")
 		}
 	}
 }
 
-func TestHandleError(t *testing.T) {
+func TestHbndleError(t *testing.T) {
 	setupRepoMocks(t)
 
-	upload := shared.Upload{
+	uplobd := shbred.Uplobd{
 		ID:           42,
 		Root:         "root/",
-		Commit:       "deadbeef",
+		Commit:       "debdbeef",
 		RepositoryID: 50,
 		Indexer:      "lsif-go",
-		ContentType:  "application/x-protobuf+scip",
+		ContentType:  "bpplicbtion/x-protobuf+scip",
 	}
 
-	mockWorkerStore := NewMockWorkerStore[shared.Upload]()
+	mockWorkerStore := NewMockWorkerStore[shbred.Uplobd]()
 	mockDBStore := NewMockStore()
-	mockRepoStore := defaultMockRepoStore()
+	mockRepoStore := defbultMockRepoStore()
 	mockLSIFStore := NewMockLSIFStore()
-	mockUploadStore := uploadstoremocks.NewMockStore()
+	mockUplobdStore := uplobdstoremocks.NewMockStore()
 	gitserverClient := gitserver.NewMockClient()
 
-	// Set default transaction behavior
-	mockDBStore.WithTransactionFunc.SetDefaultHook(func(ctx context.Context, f func(s store.Store) error) error { return f(mockDBStore) })
-	mockLSIFStore.WithTransactionFunc.SetDefaultHook(func(ctx context.Context, f func(s lsifstore.Store) error) error { return f(mockLSIFStore) })
+	// Set defbult trbnsbction behbvior
+	mockDBStore.WithTrbnsbctionFunc.SetDefbultHook(func(ctx context.Context, f func(s store.Store) error) error { return f(mockDBStore) })
+	mockLSIFStore.WithTrbnsbctionFunc.SetDefbultHook(func(ctx context.Context, f func(s lsifstore.Store) error) error { return f(mockLSIFStore) })
 
-	// Track writes to symbols table
+	// Trbck writes to symbols tbble
 	scipWriter := NewMockLSIFSCIPWriter()
-	mockLSIFStore.NewSCIPWriterFunc.SetDefaultReturn(scipWriter, nil)
+	mockLSIFStore.NewSCIPWriterFunc.SetDefbultReturn(scipWriter, nil)
 
-	// Give correlation package a valid input dump
-	mockUploadStore.GetFunc.SetDefaultHook(copyTestDumpScip)
+	// Give correlbtion pbckbge b vblid input dump
+	mockUplobdStore.GetFunc.SetDefbultHook(copyTestDumpScip)
 
-	// Supply non-nil commit date
-	gitserverClient.CommitDateFunc.SetDefaultReturn("deadbeef", time.Now(), true, nil)
+	// Supply non-nil commit dbte
+	gitserverClient.CommitDbteFunc.SetDefbultReturn("debdbeef", time.Now(), true, nil)
 
-	// Set a different tip commit
-	mockDBStore.SetRepositoryAsDirtyFunc.SetDefaultReturn(errors.Errorf("uh-oh!"))
+	// Set b different tip commit
+	mockDBStore.SetRepositoryAsDirtyFunc.SetDefbultReturn(errors.Errorf("uh-oh!"))
 
-	svc := &handler{
+	svc := &hbndler{
 		store:     mockDBStore,
 		lsifStore: mockLSIFStore,
 		// lsifstore:       mockLSIFStore,
@@ -310,124 +310,124 @@ func TestHandleError(t *testing.T) {
 		workerStore:     mockWorkerStore,
 	}
 
-	requeued, err := svc.HandleRawUpload(context.Background(), logtest.Scoped(t), upload, mockUploadStore, observation.TestTraceLogger(logtest.Scoped(t)))
+	requeued, err := svc.HbndleRbwUplobd(context.Bbckground(), logtest.Scoped(t), uplobd, mockUplobdStore, observbtion.TestTrbceLogger(logtest.Scoped(t)))
 	if err == nil {
-		t.Fatalf("unexpected nil error handling upload")
-	} else if !strings.Contains(err.Error(), "uh-oh!") {
-		t.Fatalf("unexpected error: %s", err)
+		t.Fbtblf("unexpected nil error hbndling uplobd")
+	} else if !strings.Contbins(err.Error(), "uh-oh!") {
+		t.Fbtblf("unexpected error: %s", err)
 	} else if requeued {
 		t.Errorf("unexpected requeue")
 	}
 
-	if len(mockUploadStore.DeleteFunc.History()) != 0 {
-		t.Errorf("unexpected number of Delete calls. want=%d have=%d", 0, len(mockUploadStore.DeleteFunc.History()))
+	if len(mockUplobdStore.DeleteFunc.History()) != 0 {
+		t.Errorf("unexpected number of Delete cblls. wbnt=%d hbve=%d", 0, len(mockUplobdStore.DeleteFunc.History()))
 	}
 }
 
-func TestHandleCloneInProgress(t *testing.T) {
-	upload := shared.Upload{
+func TestHbndleCloneInProgress(t *testing.T) {
+	uplobd := shbred.Uplobd{
 		ID:           42,
 		Root:         "root/",
-		Commit:       "deadbeef",
+		Commit:       "debdbeef",
 		RepositoryID: 50,
 		Indexer:      "lsif-go",
-		ContentType:  "application/x-protobuf+scip",
+		ContentType:  "bpplicbtion/x-protobuf+scip",
 	}
 
-	mockWorkerStore := NewMockWorkerStore[shared.Upload]()
+	mockWorkerStore := NewMockWorkerStore[shbred.Uplobd]()
 	mockDBStore := NewMockStore()
-	mockRepoStore := defaultMockRepoStore()
-	mockUploadStore := uploadstoremocks.NewMockStore()
+	mockRepoStore := defbultMockRepoStore()
+	mockUplobdStore := uplobdstoremocks.NewMockStore()
 	gitserverClient := gitserver.NewMockClient()
 
-	mockRepoStore.GetFunc.SetDefaultHook(func(ctx context.Context, repoID api.RepoID) (*types.Repo, error) {
-		if repoID != api.RepoID(50) {
-			t.Errorf("unexpected repository name. want=%d have=%d", 50, repoID)
+	mockRepoStore.GetFunc.SetDefbultHook(func(ctx context.Context, repoID bpi.RepoID) (*types.Repo, error) {
+		if repoID != bpi.RepoID(50) {
+			t.Errorf("unexpected repository nbme. wbnt=%d hbve=%d", 50, repoID)
 		}
 		return &types.Repo{ID: repoID}, nil
 	})
-	gitserverClient.ResolveRevisionFunc.SetDefaultHook(func(ctx context.Context, repo api.RepoName, commit string, opts gitserver.ResolveRevisionOptions) (api.CommitID, error) {
-		return "", &gitdomain.RepoNotExistError{Repo: repo, CloneInProgress: true}
+	gitserverClient.ResolveRevisionFunc.SetDefbultHook(func(ctx context.Context, repo bpi.RepoNbme, commit string, opts gitserver.ResolveRevisionOptions) (bpi.CommitID, error) {
+		return "", &gitdombin.RepoNotExistError{Repo: repo, CloneInProgress: true}
 	})
 
-	svc := &handler{
+	svc := &hbndler{
 		store:           mockDBStore,
 		gitserverClient: gitserverClient,
 		repoStore:       mockRepoStore,
 		workerStore:     mockWorkerStore,
 	}
 
-	requeued, err := svc.HandleRawUpload(context.Background(), logtest.Scoped(t), upload, mockUploadStore, observation.TestTraceLogger(logtest.Scoped(t)))
+	requeued, err := svc.HbndleRbwUplobd(context.Bbckground(), logtest.Scoped(t), uplobd, mockUplobdStore, observbtion.TestTrbceLogger(logtest.Scoped(t)))
 	if err != nil {
-		t.Fatalf("unexpected error handling upload: %s", err)
+		t.Fbtblf("unexpected error hbndling uplobd: %s", err)
 	} else if !requeued {
-		t.Errorf("expected upload to be requeued")
+		t.Errorf("expected uplobd to be requeued")
 	}
 
 	if len(mockWorkerStore.RequeueFunc.History()) != 1 {
-		t.Errorf("unexpected number of Requeue calls. want=%d have=%d", 1, len(mockWorkerStore.RequeueFunc.History()))
+		t.Errorf("unexpected number of Requeue cblls. wbnt=%d hbve=%d", 1, len(mockWorkerStore.RequeueFunc.History()))
 	}
 }
 
 //
 //
 
-func copyTestDumpScip(ctx context.Context, key string) (io.ReadCloser, error) {
-	return os.Open("./testdata/index1.scip.gz")
+func copyTestDumpScip(ctx context.Context, key string) (io.RebdCloser, error) {
+	return os.Open("./testdbtb/index1.scip.gz")
 }
 
-var scipDirectoryChildren = map[string][]string{
+vbr scipDirectoryChildren = mbp[string][]string{
 	"": {
-		"template",
+		"templbte",
 	},
-	"template": {
-		"template/src",
+	"templbte": {
+		"templbte/src",
 	},
-	"template/src": {
-		"template/src/extension.ts",
-		"template/src/indicators.ts",
-		"template/src/language.ts",
-		"template/src/logging.ts",
-		"template/src/util",
+	"templbte/src": {
+		"templbte/src/extension.ts",
+		"templbte/src/indicbtors.ts",
+		"templbte/src/lbngubge.ts",
+		"templbte/src/logging.ts",
+		"templbte/src/util",
 	},
-	"template/src/util": {
-		"template/src/util/api.ts",
-		"template/src/util/graphql.ts",
-		"template/src/util/ix.test.ts",
-		"template/src/util/ix.ts",
-		"template/src/util/promise.ts",
-		"template/src/util/uri.test.ts",
-		"template/src/util/uri.ts",
+	"templbte/src/util": {
+		"templbte/src/util/bpi.ts",
+		"templbte/src/util/grbphql.ts",
+		"templbte/src/util/ix.test.ts",
+		"templbte/src/util/ix.ts",
+		"templbte/src/util/promise.ts",
+		"templbte/src/util/uri.test.ts",
+		"templbte/src/util/uri.ts",
 	},
 }
 
 func setupRepoMocks(t *testing.T) {
-	t.Cleanup(func() {
-		backend.Mocks.Repos.Get = nil
-		backend.Mocks.Repos.ResolveRev = nil
+	t.Clebnup(func() {
+		bbckend.Mocks.Repos.Get = nil
+		bbckend.Mocks.Repos.ResolveRev = nil
 	})
 
-	backend.Mocks.Repos.Get = func(ctx context.Context, repoID api.RepoID) (*types.Repo, error) {
-		if repoID != api.RepoID(50) {
-			t.Errorf("unexpected repository name. want=%d have=%d", 50, repoID)
+	bbckend.Mocks.Repos.Get = func(ctx context.Context, repoID bpi.RepoID) (*types.Repo, error) {
+		if repoID != bpi.RepoID(50) {
+			t.Errorf("unexpected repository nbme. wbnt=%d hbve=%d", 50, repoID)
 		}
 		return &types.Repo{ID: repoID}, nil
 	}
 
-	backend.Mocks.Repos.ResolveRev = func(ctx context.Context, repo *types.Repo, rev string) (api.CommitID, error) {
-		if rev != "deadbeef" {
-			t.Errorf("unexpected commit. want=%s have=%s", "deadbeef", rev)
+	bbckend.Mocks.Repos.ResolveRev = func(ctx context.Context, repo *types.Repo, rev string) (bpi.CommitID, error) {
+		if rev != "debdbeef" {
+			t.Errorf("unexpected commit. wbnt=%s hbve=%s", "debdbeef", rev)
 		}
 		return "", nil
 	}
 }
 
-func defaultMockRepoStore() *dbmocks.MockRepoStore {
+func defbultMockRepoStore() *dbmocks.MockRepoStore {
 	repoStore := dbmocks.NewMockRepoStore()
-	repoStore.GetFunc.SetDefaultHook(func(ctx context.Context, id api.RepoID) (*internaltypes.Repo, error) {
-		return &internaltypes.Repo{
+	repoStore.GetFunc.SetDefbultHook(func(ctx context.Context, id bpi.RepoID) (*internbltypes.Repo, error) {
+		return &internbltypes.Repo{
 			ID:   id,
-			Name: api.RepoName(fmt.Sprintf("r%d", id)),
+			Nbme: bpi.RepoNbme(fmt.Sprintf("r%d", id)),
 		}, nil
 	})
 	return repoStore

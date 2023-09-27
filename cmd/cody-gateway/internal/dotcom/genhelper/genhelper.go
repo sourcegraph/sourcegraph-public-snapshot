@@ -1,4 +1,4 @@
-package genhelper
+pbckbge genhelper
 
 import (
 	"strconv"
@@ -7,8 +7,8 @@ import (
 
 type BigInt int64
 
-func (v *BigInt) UnmarshalJSON(data []byte) error {
-	i, err := strconv.ParseInt(strings.Trim(string(data), `"`), 10, 64)
+func (v *BigInt) UnmbrshblJSON(dbtb []byte) error {
+	i, err := strconv.PbrseInt(strings.Trim(string(dbtb), `"`), 10, 64)
 	if err != nil {
 		return err
 	}

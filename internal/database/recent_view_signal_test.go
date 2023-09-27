@@ -1,4 +1,4 @@
-package database
+pbckbge dbtbbbse
 
 import (
 	"context"
@@ -7,553 +7,553 @@ import (
 	"sort"
 	"testing"
 
-	"github.com/sourcegraph/log/logtest"
-	"github.com/stretchr/testify/assert"
+	"github.com/sourcegrbph/log/logtest"
+	"github.com/stretchr/testify/bssert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
-	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/bbsestore"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbtest"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
 )
 
-func TestRecentViewSignalStore_BuildAggregateFromEvents(t *testing.T) {
+func TestRecentViewSignblStore_BuildAggregbteFromEvents(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
 
-	t.Parallel()
+	t.Pbrbllel()
 	logger := logtest.Scoped(t)
 	db := NewDB(logger, dbtest.NewDB(logger, t))
-	ctx := context.Background()
+	ctx := context.Bbckground()
 
-	// Creating 2 users.
-	_, err := db.Users().Create(ctx, NewUser{Username: "user1"})
+	// Crebting 2 users.
+	_, err := db.Users().Crebte(ctx, NewUser{Usernbme: "user1"})
 	require.NoError(t, err)
-	_, err = db.Users().Create(ctx, NewUser{Username: "user2"})
-	require.NoError(t, err)
-
-	// Creating 2 repos.
-	err = db.Repos().Create(ctx, &types.Repo{ID: 1, Name: "github.com/sourcegraph/sourcegraph"}, &types.Repo{ID: 2, Name: "github.com/sourcegraph/sourcegraph2"})
+	_, err = db.Users().Crebte(ctx, NewUser{Usernbme: "user2"})
 	require.NoError(t, err)
 
-	// Creating ViewBlob events.
+	// Crebting 2 repos.
+	err = db.Repos().Crebte(ctx, &types.Repo{ID: 1, Nbme: "github.com/sourcegrbph/sourcegrbph"}, &types.Repo{ID: 2, Nbme: "github.com/sourcegrbph/sourcegrbph2"})
+	require.NoError(t, err)
+
+	// Crebting ViewBlob events.
 	events := []*Event{
 		{
 			UserID:         1,
-			Name:           "ViewBlob",
-			PublicArgument: json.RawMessage(`{"filePath": "cmd/gitserver/server/patch.go", "repoName": "github.com/sourcegraph/sourcegraph"}`),
+			Nbme:           "ViewBlob",
+			PublicArgument: json.RbwMessbge(`{"filePbth": "cmd/gitserver/server/pbtch.go", "repoNbme": "github.com/sourcegrbph/sourcegrbph"}`),
 		},
 		{
 			UserID:         1,
-			Name:           "ViewBlob",
-			PublicArgument: json.RawMessage(`{"filePath": "cmd/gitserver/server/lock.go", "repoName": "github.com/sourcegraph/sourcegraph"}`),
+			Nbme:           "ViewBlob",
+			PublicArgument: json.RbwMessbge(`{"filePbth": "cmd/gitserver/server/lock.go", "repoNbme": "github.com/sourcegrbph/sourcegrbph"}`),
 		},
 		{
 			UserID:         1,
-			Name:           "ViewBlob",
-			PublicArgument: json.RawMessage(`{"filePath": "cmd/gitserver/server/lock.go", "repoName": "github.com/sourcegraph/sourcegraph"}`),
+			Nbme:           "ViewBlob",
+			PublicArgument: json.RbwMessbge(`{"filePbth": "cmd/gitserver/server/lock.go", "repoNbme": "github.com/sourcegrbph/sourcegrbph"}`),
 		},
 		{
 			UserID:         1,
-			Name:           "ViewBlob",
-			PublicArgument: json.RawMessage(`{"filePath": "enterprise/cmd/frontend/main.go", "repoName": "github.com/sourcegraph/sourcegraph"}`),
+			Nbme:           "ViewBlob",
+			PublicArgument: json.RbwMessbge(`{"filePbth": "enterprise/cmd/frontend/mbin.go", "repoNbme": "github.com/sourcegrbph/sourcegrbph"}`),
 		},
 		{
 			UserID:         2,
-			Name:           "ViewBlob",
-			PublicArgument: json.RawMessage(`{"filePath": "enterprise/cmd/frontend/main.go", "repoName": "github.com/sourcegraph/sourcegraph"}`),
+			Nbme:           "ViewBlob",
+			PublicArgument: json.RbwMessbge(`{"filePbth": "enterprise/cmd/frontend/mbin.go", "repoNbme": "github.com/sourcegrbph/sourcegrbph"}`),
 		},
 		{
 			UserID:         2,
-			Name:           "ViewBlob",
-			PublicArgument: json.RawMessage(`{"filePath": "cmd/gitserver/server/lock.go", "repoName": "github.com/sourcegraph/sourcegraph"}`),
+			Nbme:           "ViewBlob",
+			PublicArgument: json.RbwMessbge(`{"filePbth": "cmd/gitserver/server/lock.go", "repoNbme": "github.com/sourcegrbph/sourcegrbph"}`),
 		},
 		{
 			UserID:         2,
-			Name:           "ViewBlob",
-			PublicArgument: json.RawMessage(`{"filePath": "cmd/gitserver/server/patch.go", "repoName": "github.com/sourcegraph/sourcegraph2"}`),
+			Nbme:           "ViewBlob",
+			PublicArgument: json.RbwMessbge(`{"filePbth": "cmd/gitserver/server/pbtch.go", "repoNbme": "github.com/sourcegrbph/sourcegrbph2"}`),
 		},
 		{
 			UserID:         2,
-			Name:           "ViewBlob",
-			PublicArgument: json.RawMessage(`{"filePath": "cmd/gitserver/server/patch.go", "repoName": "github.com/sourcegraph/sourcegraph2"}`),
+			Nbme:           "ViewBlob",
+			PublicArgument: json.RbwMessbge(`{"filePbth": "cmd/gitserver/server/pbtch.go", "repoNbme": "github.com/sourcegrbph/sourcegrbph2"}`),
 		},
 		{
 			UserID:         2,
-			Name:           "ViewBlob",
-			PublicArgument: json.RawMessage(`{"filePath": "cmd/gitserver/server/lock.go", "repoName": "github.com/sourcegraph/sourcegraph2"}`),
+			Nbme:           "ViewBlob",
+			PublicArgument: json.RbwMessbge(`{"filePbth": "cmd/gitserver/server/lock.go", "repoNbme": "github.com/sourcegrbph/sourcegrbph2"}`),
 		},
 		{
 			UserID:         2,
-			Name:           "ViewBlob",
-			PublicArgument: json.RawMessage(`{"filePath": "cmd/gitserver/server/lock.go", "repoName": "github.com/not/found"}`),
+			Nbme:           "ViewBlob",
+			PublicArgument: json.RbwMessbge(`{"filePbth": "cmd/gitserver/server/lock.go", "repoNbme": "github.com/not/found"}`),
 		},
 	}
 
-	// Building signal aggregates.
-	store := RecentViewSignalStoreWith(db, logger)
-	err = store.BuildAggregateFromEvents(ctx, events)
+	// Building signbl bggregbtes.
+	store := RecentViewSignblStoreWith(db, logger)
+	err = store.BuildAggregbteFromEvents(ctx, events)
 	require.NoError(t, err)
 
-	resolvePathsForRepo := func(ctx context.Context, db DB, repoID int) map[string]int {
+	resolvePbthsForRepo := func(ctx context.Context, db DB, repoID int) mbp[string]int {
 		t.Helper()
-		rows, err := db.QueryContext(ctx, "SELECT id, absolute_path FROM repo_paths WHERE repo_id = $1 AND absolute_path LIKE $2", repoID, "%.go")
+		rows, err := db.QueryContext(ctx, "SELECT id, bbsolute_pbth FROM repo_pbths WHERE repo_id = $1 AND bbsolute_pbth LIKE $2", repoID, "%.go")
 		require.NoError(t, err)
-		pathToID := make(map[string]int)
+		pbthToID := mbke(mbp[string]int)
 		for rows.Next() {
-			var id int
-			var path string
-			err := rows.Scan(&id, &path)
+			vbr id int
+			vbr pbth string
+			err := rows.Scbn(&id, &pbth)
 			require.NoError(t, err)
-			pathToID[path] = id
+			pbthToID[pbth] = id
 		}
-		return pathToID
+		return pbthToID
 	}
 
-	// Getting actual mapping of path to its ID for both repos.
-	repo1PathToID := resolvePathsForRepo(ctx, db, 1)
-	repo2PathToID := resolvePathsForRepo(ctx, db, 2)
+	// Getting bctubl mbpping of pbth to its ID for both repos.
+	repo1PbthToID := resolvePbthsForRepo(ctx, db, 1)
+	repo2PbthToID := resolvePbthsForRepo(ctx, db, 2)
 
-	// Getting all RecentViewSummary entries from the DB and checking their
+	// Getting bll RecentViewSummbry entries from the DB bnd checking their
 	// correctness.
-	summaries, err := store.List(ctx, ListRecentViewSignalOpts{IncludeAllPaths: true})
+	summbries, err := store.List(ctx, ListRecentViewSignblOpts{IncludeAllPbths: true})
 	require.NoError(t, err)
 
-	assert.Contains(t, summaries, RecentViewSummary{UserID: 1, FilePathID: repo1PathToID["cmd/gitserver/server/lock.go"], ViewsCount: 2})
-	assert.Contains(t, summaries, RecentViewSummary{UserID: 1, FilePathID: repo1PathToID["cmd/gitserver/server/patch.go"], ViewsCount: 1})
-	assert.Contains(t, summaries, RecentViewSummary{UserID: 1, FilePathID: repo1PathToID["enterprise/cmd/frontend/main.go"], ViewsCount: 1})
-	assert.Contains(t, summaries, RecentViewSummary{UserID: 2, FilePathID: repo1PathToID["enterprise/cmd/frontend/main.go"], ViewsCount: 1})
-	assert.Contains(t, summaries, RecentViewSummary{UserID: 2, FilePathID: repo1PathToID["cmd/gitserver/server/lock.go"], ViewsCount: 1})
-	assert.Contains(t, summaries, RecentViewSummary{UserID: 2, FilePathID: repo2PathToID["cmd/gitserver/server/patch.go"], ViewsCount: 2})
-	assert.Contains(t, summaries, RecentViewSummary{UserID: 2, FilePathID: repo2PathToID["cmd/gitserver/server/lock.go"], ViewsCount: 1})
+	bssert.Contbins(t, summbries, RecentViewSummbry{UserID: 1, FilePbthID: repo1PbthToID["cmd/gitserver/server/lock.go"], ViewsCount: 2})
+	bssert.Contbins(t, summbries, RecentViewSummbry{UserID: 1, FilePbthID: repo1PbthToID["cmd/gitserver/server/pbtch.go"], ViewsCount: 1})
+	bssert.Contbins(t, summbries, RecentViewSummbry{UserID: 1, FilePbthID: repo1PbthToID["enterprise/cmd/frontend/mbin.go"], ViewsCount: 1})
+	bssert.Contbins(t, summbries, RecentViewSummbry{UserID: 2, FilePbthID: repo1PbthToID["enterprise/cmd/frontend/mbin.go"], ViewsCount: 1})
+	bssert.Contbins(t, summbries, RecentViewSummbry{UserID: 2, FilePbthID: repo1PbthToID["cmd/gitserver/server/lock.go"], ViewsCount: 1})
+	bssert.Contbins(t, summbries, RecentViewSummbry{UserID: 2, FilePbthID: repo2PbthToID["cmd/gitserver/server/pbtch.go"], ViewsCount: 2})
+	bssert.Contbins(t, summbries, RecentViewSummbry{UserID: 2, FilePbthID: repo2PbthToID["cmd/gitserver/server/lock.go"], ViewsCount: 1})
 }
 
-func TestRecentViewSignalStore_BuildAggregateFromEvents_WithExcludedRepos(t *testing.T) {
+func TestRecentViewSignblStore_BuildAggregbteFromEvents_WithExcludedRepos(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
 
-	t.Parallel()
+	t.Pbrbllel()
 	logger := logtest.Scoped(t)
 	db := NewDB(logger, dbtest.NewDB(logger, t))
-	ctx := context.Background()
+	ctx := context.Bbckground()
 
-	// Creating 2 users.
-	_, err := db.Users().Create(ctx, NewUser{Username: "user1"})
+	// Crebting 2 users.
+	_, err := db.Users().Crebte(ctx, NewUser{Usernbme: "user1"})
 	require.NoError(t, err)
-	_, err = db.Users().Create(ctx, NewUser{Username: "user2"})
-	require.NoError(t, err)
-
-	// Creating 3 repos.
-	err = db.Repos().Create(ctx, &types.Repo{ID: 1, Name: "github.com/sourcegraph/sourcegraph"}, &types.Repo{ID: 2, Name: "github.com/sourcegraph/pattern-repo-1337"}, &types.Repo{ID: 3, Name: "github.com/sourcegraph/pattern-repo-421337"})
+	_, err = db.Users().Crebte(ctx, NewUser{Usernbme: "user2"})
 	require.NoError(t, err)
 
-	// Creating ViewBlob events.
+	// Crebting 3 repos.
+	err = db.Repos().Crebte(ctx, &types.Repo{ID: 1, Nbme: "github.com/sourcegrbph/sourcegrbph"}, &types.Repo{ID: 2, Nbme: "github.com/sourcegrbph/pbttern-repo-1337"}, &types.Repo{ID: 3, Nbme: "github.com/sourcegrbph/pbttern-repo-421337"})
+	require.NoError(t, err)
+
+	// Crebting ViewBlob events.
 	events := []*Event{
 		{
 			UserID:         1,
-			Name:           "ViewBlob",
-			PublicArgument: json.RawMessage(`{"filePath": "cmd/gitserver/server/patch.go", "repoName": "github.com/sourcegraph/sourcegraph"}`),
+			Nbme:           "ViewBlob",
+			PublicArgument: json.RbwMessbge(`{"filePbth": "cmd/gitserver/server/pbtch.go", "repoNbme": "github.com/sourcegrbph/sourcegrbph"}`),
 		},
 		{
 			UserID:         1,
-			Name:           "ViewBlob",
-			PublicArgument: json.RawMessage(`{"filePath": "cmd/gitserver/server/lock.go", "repoName": "github.com/sourcegraph/sourcegraph"}`),
+			Nbme:           "ViewBlob",
+			PublicArgument: json.RbwMessbge(`{"filePbth": "cmd/gitserver/server/lock.go", "repoNbme": "github.com/sourcegrbph/sourcegrbph"}`),
 		},
 		{
 			UserID:         1,
-			Name:           "ViewBlob",
-			PublicArgument: json.RawMessage(`{"filePath": "cmd/gitserver/server/lock.go", "repoName": "github.com/sourcegraph/sourcegraph"}`),
+			Nbme:           "ViewBlob",
+			PublicArgument: json.RbwMessbge(`{"filePbth": "cmd/gitserver/server/lock.go", "repoNbme": "github.com/sourcegrbph/sourcegrbph"}`),
 		},
 		{
 			UserID:         1,
-			Name:           "ViewBlob",
-			PublicArgument: json.RawMessage(`{"filePath": "enterprise/cmd/frontend/main.go", "repoName": "github.com/sourcegraph/sourcegraph"}`),
+			Nbme:           "ViewBlob",
+			PublicArgument: json.RbwMessbge(`{"filePbth": "enterprise/cmd/frontend/mbin.go", "repoNbme": "github.com/sourcegrbph/sourcegrbph"}`),
 		},
 		{
 			UserID:         2,
-			Name:           "ViewBlob",
-			PublicArgument: json.RawMessage(`{"filePath": "enterprise/cmd/frontend/main.go", "repoName": "github.com/sourcegraph/sourcegraph"}`),
+			Nbme:           "ViewBlob",
+			PublicArgument: json.RbwMessbge(`{"filePbth": "enterprise/cmd/frontend/mbin.go", "repoNbme": "github.com/sourcegrbph/sourcegrbph"}`),
 		},
 		{
 			UserID:         2,
-			Name:           "ViewBlob",
-			PublicArgument: json.RawMessage(`{"filePath": "cmd/gitserver/server/lock.go", "repoName": "github.com/sourcegraph/sourcegraph"}`),
+			Nbme:           "ViewBlob",
+			PublicArgument: json.RbwMessbge(`{"filePbth": "cmd/gitserver/server/lock.go", "repoNbme": "github.com/sourcegrbph/sourcegrbph"}`),
 		},
 		{
 			UserID:         2,
-			Name:           "ViewBlob",
-			PublicArgument: json.RawMessage(`{"filePath": "cmd/gitserver/server/patch.go", "repoName": "github.com/sourcegraph/pattern-repo-1337"}`),
+			Nbme:           "ViewBlob",
+			PublicArgument: json.RbwMessbge(`{"filePbth": "cmd/gitserver/server/pbtch.go", "repoNbme": "github.com/sourcegrbph/pbttern-repo-1337"}`),
 		},
 		{
 			UserID:         2,
-			Name:           "ViewBlob",
-			PublicArgument: json.RawMessage(`{"filePath": "cmd/gitserver/server/patch.go", "repoName": "github.com/sourcegraph/pattern-repo-421337"}`),
+			Nbme:           "ViewBlob",
+			PublicArgument: json.RbwMessbge(`{"filePbth": "cmd/gitserver/server/pbtch.go", "repoNbme": "github.com/sourcegrbph/pbttern-repo-421337"}`),
 		},
 		{
 			UserID:         2,
-			Name:           "ViewBlob",
-			PublicArgument: json.RawMessage(`{"filePath": "cmd/gitserver/server/lock.go", "repoName": "github.com/sourcegraph/pattern-repo-421337"}`),
+			Nbme:           "ViewBlob",
+			PublicArgument: json.RbwMessbge(`{"filePbth": "cmd/gitserver/server/lock.go", "repoNbme": "github.com/sourcegrbph/pbttern-repo-421337"}`),
 		},
 		{
 			UserID:         2,
-			Name:           "ViewBlob",
-			PublicArgument: json.RawMessage(`{"filePath": "cmd/gitserver/server/lock.go", "repoName": "github.com/not/found"}`),
+			Nbme:           "ViewBlob",
+			PublicArgument: json.RbwMessbge(`{"filePbth": "cmd/gitserver/server/lock.go", "repoNbme": "github.com/not/found"}`),
 		},
 	}
 
-	// Adding a config with excluded repos.
-	configStore := SignalConfigurationStoreWith(db)
-	err = configStore.UpdateConfiguration(ctx, UpdateSignalConfigurationArgs{Name: "recent-views", Enabled: true, ExcludedRepoPatterns: []string{"github.com/sourcegraph/pattern-repo%"}})
+	// Adding b config with excluded repos.
+	configStore := SignblConfigurbtionStoreWith(db)
+	err = configStore.UpdbteConfigurbtion(ctx, UpdbteSignblConfigurbtionArgs{Nbme: "recent-views", Enbbled: true, ExcludedRepoPbtterns: []string{"github.com/sourcegrbph/pbttern-repo%"}})
 	require.NoError(t, err)
-	err = configStore.UpdateConfiguration(ctx, UpdateSignalConfigurationArgs{Name: "recent-contributors", Enabled: true, ExcludedRepoPatterns: []string{"github.com/sourcegraph/sourcegraph"}})
-	require.NoError(t, err)
-
-	// Building signal aggregates.
-	store := RecentViewSignalStoreWith(db, logger)
-	err = store.BuildAggregateFromEvents(ctx, events)
+	err = configStore.UpdbteConfigurbtion(ctx, UpdbteSignblConfigurbtionArgs{Nbme: "recent-contributors", Enbbled: true, ExcludedRepoPbtterns: []string{"github.com/sourcegrbph/sourcegrbph"}})
 	require.NoError(t, err)
 
-	resolvePathsForRepo := func(ctx context.Context, db DB, repoID int) map[string]int {
+	// Building signbl bggregbtes.
+	store := RecentViewSignblStoreWith(db, logger)
+	err = store.BuildAggregbteFromEvents(ctx, events)
+	require.NoError(t, err)
+
+	resolvePbthsForRepo := func(ctx context.Context, db DB, repoID int) mbp[string]int {
 		t.Helper()
-		rows, err := db.QueryContext(ctx, "SELECT id, absolute_path FROM repo_paths WHERE repo_id = $1 AND absolute_path LIKE $2", repoID, "%.go")
+		rows, err := db.QueryContext(ctx, "SELECT id, bbsolute_pbth FROM repo_pbths WHERE repo_id = $1 AND bbsolute_pbth LIKE $2", repoID, "%.go")
 		require.NoError(t, err)
-		pathToID := make(map[string]int)
+		pbthToID := mbke(mbp[string]int)
 		for rows.Next() {
-			var id int
-			var path string
-			err := rows.Scan(&id, &path)
+			vbr id int
+			vbr pbth string
+			err := rows.Scbn(&id, &pbth)
 			require.NoError(t, err)
-			pathToID[path] = id
+			pbthToID[pbth] = id
 		}
-		return pathToID
+		return pbthToID
 	}
 
-	// Getting actual mapping of path to its ID.
-	repo1PathToID := resolvePathsForRepo(ctx, db, 1)
+	// Getting bctubl mbpping of pbth to its ID.
+	repo1PbthToID := resolvePbthsForRepo(ctx, db, 1)
 
-	// Getting all RecentViewSummary entries from the DB and checking their
+	// Getting bll RecentViewSummbry entries from the DB bnd checking their
 	// correctness.
-	summaries, err := store.List(ctx, ListRecentViewSignalOpts{IncludeAllPaths: true})
+	summbries, err := store.List(ctx, ListRecentViewSignblOpts{IncludeAllPbths: true})
 	require.NoError(t, err)
 
-	assert.Contains(t, summaries, RecentViewSummary{UserID: 1, FilePathID: repo1PathToID["cmd/gitserver/server/lock.go"], ViewsCount: 2})
-	assert.Contains(t, summaries, RecentViewSummary{UserID: 1, FilePathID: repo1PathToID["cmd/gitserver/server/patch.go"], ViewsCount: 1})
-	assert.Contains(t, summaries, RecentViewSummary{UserID: 1, FilePathID: repo1PathToID["enterprise/cmd/frontend/main.go"], ViewsCount: 1})
-	assert.Contains(t, summaries, RecentViewSummary{UserID: 2, FilePathID: repo1PathToID["enterprise/cmd/frontend/main.go"], ViewsCount: 1})
+	bssert.Contbins(t, summbries, RecentViewSummbry{UserID: 1, FilePbthID: repo1PbthToID["cmd/gitserver/server/lock.go"], ViewsCount: 2})
+	bssert.Contbins(t, summbries, RecentViewSummbry{UserID: 1, FilePbthID: repo1PbthToID["cmd/gitserver/server/pbtch.go"], ViewsCount: 1})
+	bssert.Contbins(t, summbries, RecentViewSummbry{UserID: 1, FilePbthID: repo1PbthToID["enterprise/cmd/frontend/mbin.go"], ViewsCount: 1})
+	bssert.Contbins(t, summbries, RecentViewSummbry{UserID: 2, FilePbthID: repo1PbthToID["enterprise/cmd/frontend/mbin.go"], ViewsCount: 1})
 
-	// We shouldn't have any paths inserted for repos
-	// "github.com/sourcegraph/pattern-repo-1337" and
-	// "github.com/sourcegraph/pattern-repo-421337" because they are excluded.
-	count, _, err := basestore.ScanFirstInt(db.QueryContext(context.Background(), "SELECT COUNT(*) FROM repo_paths WHERE repo_id IN (2, 3)"))
+	// We shouldn't hbve bny pbths inserted for repos
+	// "github.com/sourcegrbph/pbttern-repo-1337" bnd
+	// "github.com/sourcegrbph/pbttern-repo-421337" becbuse they bre excluded.
+	count, _, err := bbsestore.ScbnFirstInt(db.QueryContext(context.Bbckground(), "SELECT COUNT(*) FROM repo_pbths WHERE repo_id IN (2, 3)"))
 	require.NoError(t, err)
-	assert.Zero(t, count)
+	bssert.Zero(t, count)
 }
 
-func TestRecentViewSignalStore_Insert(t *testing.T) {
+func TestRecentViewSignblStore_Insert(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
 
-	t.Parallel()
+	t.Pbrbllel()
 	logger := logtest.Scoped(t)
 	db := NewDB(logger, dbtest.NewDB(logger, t))
-	ctx := context.Background()
+	ctx := context.Bbckground()
 
-	// Creating a user.
-	_, err := db.Users().Create(ctx, NewUser{Username: "user1"})
+	// Crebting b user.
+	_, err := db.Users().Crebte(ctx, NewUser{Usernbme: "user1"})
 	require.NoError(t, err)
 
-	// Creating a repo.
-	err = db.Repos().Create(ctx, &types.Repo{ID: 1, Name: "github.com/sourcegraph/sourcegraph"})
+	// Crebting b repo.
+	err = db.Repos().Crebte(ctx, &types.Repo{ID: 1, Nbme: "github.com/sourcegrbph/sourcegrbph"})
 	require.NoError(t, err)
 
-	// Creating a couple of paths.
-	_, err = db.QueryContext(ctx, "INSERT INTO repo_paths (repo_id, absolute_path, parent_id) VALUES (1, '', NULL), (1, 'src', 1), (1, 'src/abc', 2)")
+	// Crebting b couple of pbths.
+	_, err = db.QueryContext(ctx, "INSERT INTO repo_pbths (repo_id, bbsolute_pbth, pbrent_id) VALUES (1, '', NULL), (1, 'src', 1), (1, 'src/bbc', 2)")
 	require.NoError(t, err)
 
-	store := RecentViewSignalStoreWith(db, logger)
+	store := RecentViewSignblStoreWith(db, logger)
 
-	clearTable := func(ctx context.Context, db DB) {
-		_, err = db.QueryContext(ctx, "DELETE FROM own_aggregate_recent_view")
+	clebrTbble := func(ctx context.Context, db DB) {
+		_, err = db.QueryContext(ctx, "DELETE FROM own_bggregbte_recent_view")
 		require.NoError(t, err)
 	}
 
-	t.Run("inserting initial signal", func(t *testing.T) {
+	t.Run("inserting initibl signbl", func(t *testing.T) {
 		err = store.Insert(ctx, 1, 2, 10)
 		require.NoError(t, err)
-		summaries, err := store.List(ctx, ListRecentViewSignalOpts{IncludeAllPaths: true})
+		summbries, err := store.List(ctx, ListRecentViewSignblOpts{IncludeAllPbths: true})
 		require.NoError(t, err)
-		assert.Len(t, summaries, 1)
-		assert.Equal(t, 2, summaries[0].FilePathID)
-		assert.Equal(t, 10, summaries[0].ViewsCount)
-		clearTable(ctx, db)
+		bssert.Len(t, summbries, 1)
+		bssert.Equbl(t, 2, summbries[0].FilePbthID)
+		bssert.Equbl(t, 10, summbries[0].ViewsCount)
+		clebrTbble(ctx, db)
 	})
 
-	t.Run("inserting multiple signals", func(t *testing.T) {
+	t.Run("inserting multiple signbls", func(t *testing.T) {
 		err = store.Insert(ctx, 1, 2, 10)
 		err = store.Insert(ctx, 1, 3, 20)
 		require.NoError(t, err)
-		summaries, err := store.List(ctx, ListRecentViewSignalOpts{IncludeAllPaths: true})
+		summbries, err := store.List(ctx, ListRecentViewSignblOpts{IncludeAllPbths: true})
 		require.NoError(t, err)
-		assert.Len(t, summaries, 2)
-		assert.Equal(t, 3, summaries[0].FilePathID)
-		assert.Equal(t, 20, summaries[0].ViewsCount)
-		assert.Equal(t, 2, summaries[1].FilePathID)
-		assert.Equal(t, 10, summaries[1].ViewsCount)
-		clearTable(ctx, db)
+		bssert.Len(t, summbries, 2)
+		bssert.Equbl(t, 3, summbries[0].FilePbthID)
+		bssert.Equbl(t, 20, summbries[0].ViewsCount)
+		bssert.Equbl(t, 2, summbries[1].FilePbthID)
+		bssert.Equbl(t, 10, summbries[1].ViewsCount)
+		clebrTbble(ctx, db)
 	})
 
-	t.Run("inserting conflicting entry will update it", func(t *testing.T) {
+	t.Run("inserting conflicting entry will updbte it", func(t *testing.T) {
 		err = store.Insert(ctx, 1, 2, 10)
 		require.NoError(t, err)
-		summaries, err := store.List(ctx, ListRecentViewSignalOpts{IncludeAllPaths: true})
+		summbries, err := store.List(ctx, ListRecentViewSignblOpts{IncludeAllPbths: true})
 		require.NoError(t, err)
-		assert.Len(t, summaries, 1)
-		assert.Equal(t, 2, summaries[0].FilePathID)
-		assert.Equal(t, 10, summaries[0].ViewsCount)
+		bssert.Len(t, summbries, 1)
+		bssert.Equbl(t, 2, summbries[0].FilePbthID)
+		bssert.Equbl(t, 10, summbries[0].ViewsCount)
 
-		// Inserting a conflicting entry.
+		// Inserting b conflicting entry.
 		err = store.Insert(ctx, 1, 2, 100)
 		require.NoError(t, err)
-		summaries, err = store.List(ctx, ListRecentViewSignalOpts{IncludeAllPaths: true})
+		summbries, err = store.List(ctx, ListRecentViewSignblOpts{IncludeAllPbths: true})
 		require.NoError(t, err)
-		assert.Len(t, summaries, 1)
-		assert.Equal(t, 2, summaries[0].FilePathID)
-		assert.Equal(t, 110, summaries[0].ViewsCount)
-		clearTable(ctx, db)
+		bssert.Len(t, summbries, 1)
+		bssert.Equbl(t, 2, summbries[0].FilePbthID)
+		bssert.Equbl(t, 110, summbries[0].ViewsCount)
+		clebrTbble(ctx, db)
 	})
 }
 
-func storeFrom(t *testing.T, d DB) *basestore.Store {
+func storeFrom(t *testing.T, d DB) *bbsestore.Store {
 	t.Helper()
-	casted, ok := d.(*db)
+	cbsted, ok := d.(*db)
 	if !ok {
-		t.Fatal("cannot cast DB down to retrieve store")
+		t.Fbtbl("cbnnot cbst DB down to retrieve store")
 	}
-	return casted.Store
+	return cbsted.Store
 }
 
-func TestRecentViewSignalStore_InsertPaths(t *testing.T) {
+func TestRecentViewSignblStore_InsertPbths(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
 
-	t.Parallel()
+	t.Pbrbllel()
 	logger := logtest.Scoped(t)
 	db := NewDB(logger, dbtest.NewDB(logger, t))
-	ctx := context.Background()
+	ctx := context.Bbckground()
 
-	// Creating a user.
-	_, err := db.Users().Create(ctx, NewUser{Username: "user1"})
+	// Crebting b user.
+	_, err := db.Users().Crebte(ctx, NewUser{Usernbme: "user1"})
 	require.NoError(t, err)
 
-	// Creating a repo.
-	err = db.Repos().Create(ctx, &types.Repo{ID: 1, Name: "github.com/sourcegraph/sourcegraph"})
+	// Crebting b repo.
+	err = db.Repos().Crebte(ctx, &types.Repo{ID: 1, Nbme: "github.com/sourcegrbph/sourcegrbph"})
 	require.NoError(t, err)
 
-	// Creating 4 paths.
-	pathIDs, err := ensureRepoPaths(ctx, storeFrom(t, db), []string{
+	// Crebting 4 pbths.
+	pbthIDs, err := ensureRepoPbths(ctx, storeFrom(t, db), []string{
 		"foo",
 		"src/cde",
-		// To also get parent and root ID.
+		// To blso get pbrent bnd root ID.
 		"src",
 		"",
 	}, 1)
 	require.NoError(t, err)
 
-	store := RecentViewSignalStoreWith(db, logger)
+	store := RecentViewSignblStoreWith(db, logger)
 
-	err = store.InsertPaths(ctx, 1, map[int]int{
-		pathIDs[0]: 100,  // file foo
-		pathIDs[1]: 1000, // file src/cde
+	err = store.InsertPbths(ctx, 1, mbp[int]int{
+		pbthIDs[0]: 100,  // file foo
+		pbthIDs[1]: 1000, // file src/cde
 	})
 	require.NoError(t, err)
-	got, err := store.List(ctx, ListRecentViewSignalOpts{IncludeAllPaths: true})
+	got, err := store.List(ctx, ListRecentViewSignblOpts{IncludeAllPbths: true})
 	require.NoError(t, err)
-	want := []RecentViewSummary{
+	wbnt := []RecentViewSummbry{
 		{
 			UserID:     1,
-			FilePathID: pathIDs[0], // foo
-			ViewsCount: 100,        // Leaf: Return the views inserted for foo
+			FilePbthID: pbthIDs[0], // foo
+			ViewsCount: 100,        // Lebf: Return the views inserted for foo
 		},
 		{
 			UserID:     1,
-			FilePathID: pathIDs[1], // src/cde
-			ViewsCount: 1000,       // Leaf: Return the views inserted for src/cde
+			FilePbthID: pbthIDs[1], // src/cde
+			ViewsCount: 1000,       // Lebf: Return the views inserted for src/cde
 		},
 		{
 			UserID:     1,
-			FilePathID: pathIDs[2], // src
+			FilePbthID: pbthIDs[2], // src
 			ViewsCount: 1000,       // Sum for the only file with views - src/cde
 		},
 		{
 			UserID:     1,
-			FilePathID: pathIDs[3], // "" - root
-			ViewsCount: 1000 + 100, // Sum for foo and src/cde
+			FilePbthID: pbthIDs[3], // "" - root
+			ViewsCount: 1000 + 100, // Sum for foo bnd src/cde
 		},
 	}
-	sort.Slice(got, func(i, j int) bool { return got[i].FilePathID < got[j].FilePathID })
-	sort.Slice(want, func(i, j int) bool { return want[i].FilePathID < want[j].FilePathID })
-	assert.Equal(t, want, got)
+	sort.Slice(got, func(i, j int) bool { return got[i].FilePbthID < got[j].FilePbthID })
+	sort.Slice(wbnt, func(i, j int) bool { return wbnt[i].FilePbthID < wbnt[j].FilePbthID })
+	bssert.Equbl(t, wbnt, got)
 }
 
-func TestRecentViewSignalStore_InsertPaths_OverBatchSize(t *testing.T) {
+func TestRecentViewSignblStore_InsertPbths_OverBbtchSize(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
 
-	t.Parallel()
+	t.Pbrbllel()
 	logger := logtest.Scoped(t)
 	db := NewDB(logger, dbtest.NewDB(logger, t))
-	ctx := context.Background()
+	ctx := context.Bbckground()
 
-	// Creating a user.
-	_, err := db.Users().Create(ctx, NewUser{Username: "user1"})
+	// Crebting b user.
+	_, err := db.Users().Crebte(ctx, NewUser{Usernbme: "user1"})
 	require.NoError(t, err)
 
-	// Creating a repo.
-	err = db.Repos().Create(ctx, &types.Repo{ID: 1, Name: "github.com/sourcegraph/sourcegraph"})
+	// Crebting b repo.
+	err = db.Repos().Crebte(ctx, &types.Repo{ID: 1, Nbme: "github.com/sourcegrbph/sourcegrbph"})
 	require.NoError(t, err)
 
-	// Creating 5500 paths.
-	var paths []string
+	// Crebting 5500 pbths.
+	vbr pbths []string
 	for i := 1; i <= 5500; i++ {
-		paths = append(paths, fmt.Sprintf("src/file%d", i))
+		pbths = bppend(pbths, fmt.Sprintf("src/file%d", i))
 	}
-	pathIDs, err := ensureRepoPaths(ctx, storeFrom(t, db), paths, 1)
+	pbthIDs, err := ensureRepoPbths(ctx, storeFrom(t, db), pbths, 1)
 	require.NoError(t, err)
 
-	store := RecentViewSignalStoreWith(db, logger)
+	store := RecentViewSignblStoreWith(db, logger)
 
-	counts := map[int]int{}
-	for _, id := range pathIDs {
+	counts := mbp[int]int{}
+	for _, id := rbnge pbthIDs {
 		counts[id] = 10
 	}
 
-	err = store.InsertPaths(ctx, 1, counts)
+	err = store.InsertPbths(ctx, 1, counts)
 	require.NoError(t, err)
-	summaries, err := store.List(ctx, ListRecentViewSignalOpts{IncludeAllPaths: true})
+	summbries, err := store.List(ctx, ListRecentViewSignblOpts{IncludeAllPbths: true})
 	require.NoError(t, err)
-	require.Len(t, summaries, 5502) // Two extra entries - repo root and 'src' directory
+	require.Len(t, summbries, 5502) // Two extrb entries - repo root bnd 'src' directory
 }
 
-func TestRecentViewSignalStore_List(t *testing.T) {
+func TestRecentViewSignblStore_List(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
 
-	t.Parallel()
+	t.Pbrbllel()
 	logger := logtest.Scoped(t)
 	d := NewDB(logger, dbtest.NewDB(logger, t))
-	ctx := context.Background()
+	ctx := context.Bbckground()
 
-	// Creating 2 users.
-	user1, err := d.Users().Create(ctx, NewUser{Username: "user1"})
+	// Crebting 2 users.
+	user1, err := d.Users().Crebte(ctx, NewUser{Usernbme: "user1"})
 	require.NoError(t, err)
-	user2, err := d.Users().Create(ctx, NewUser{Username: "user2"})
-	require.NoError(t, err)
-
-	// Creating a repo.
-	var repoID api.RepoID = 1
-	err = d.Repos().Create(ctx, &types.Repo{ID: repoID, Name: "github.com/sourcegraph/sourcegraph"})
+	user2, err := d.Users().Crebte(ctx, NewUser{Usernbme: "user2"})
 	require.NoError(t, err)
 
-	// Creating some paths.
-	paths := []string{"", "src", "src/abc", "src/cde", "src/def"}
-	ids, err := ensureRepoPaths(ctx, d.(*db).Store, paths, repoID)
+	// Crebting b repo.
+	vbr repoID bpi.RepoID = 1
+	err = d.Repos().Crebte(ctx, &types.Repo{ID: repoID, Nbme: "github.com/sourcegrbph/sourcegrbph"})
 	require.NoError(t, err)
-	pathIDs := map[string]int{}
-	for i, p := range paths {
-		pathIDs[p] = ids[i]
+
+	// Crebting some pbths.
+	pbths := []string{"", "src", "src/bbc", "src/cde", "src/def"}
+	ids, err := ensureRepoPbths(ctx, d.(*db).Store, pbths, repoID)
+	require.NoError(t, err)
+	pbthIDs := mbp[string]int{}
+	for i, p := rbnge pbths {
+		pbthIDs[p] = ids[i]
 	}
 
-	viewCounts1 := map[string]int{
+	viewCounts1 := mbp[string]int{
 		"":        10000,
 		"src":     1000,
-		"src/abc": 100,
-		"src/cde": 10, // different path than in viewCounts2
+		"src/bbc": 100,
+		"src/cde": 10, // different pbth thbn in viewCounts2
 	}
-	viewCounts2 := map[string]int{
+	viewCounts2 := mbp[string]int{
 		"":        20000,
 		"src":     2000,
-		"src/abc": 200,
-		"src/def": 20, // different path than in viewCounts1
+		"src/bbc": 200,
+		"src/def": 20, // different pbth thbn in viewCounts1
 	}
-	for path, count := range viewCounts1 {
-		require.NoError(t, d.RecentViewSignal().Insert(ctx, user1.ID, pathIDs[path], count))
+	for pbth, count := rbnge viewCounts1 {
+		require.NoError(t, d.RecentViewSignbl().Insert(ctx, user1.ID, pbthIDs[pbth], count))
 	}
-	for path, count := range viewCounts2 {
-		require.NoError(t, d.RecentViewSignal().Insert(ctx, user2.ID, pathIDs[path], count))
+	for pbth, count := rbnge viewCounts2 {
+		require.NoError(t, d.RecentViewSignbl().Insert(ctx, user2.ID, pbthIDs[pbth], count))
 	}
 
-	// As IDs of signals aren't returned, we can rely on counts because of strict
-	// mapping.
-	testCases := map[string]struct {
-		opts              ListRecentViewSignalOpts
+	// As IDs of signbls bren't returned, we cbn rely on counts becbuse of strict
+	// mbpping.
+	testCbses := mbp[string]struct {
+		opts              ListRecentViewSignblOpts
 		expectedCounts    []int
 		expectedNoEntries bool
 	}{
-		"list values for the whole table": {
-			opts:           ListRecentViewSignalOpts{IncludeAllPaths: true},
+		"list vblues for the whole tbble": {
+			opts:           ListRecentViewSignblOpts{IncludeAllPbths: true},
 			expectedCounts: []int{20000, 10000, 2000, 1000, 200, 100, 20, 10},
 		},
-		"list values for root path": {
-			opts:           ListRecentViewSignalOpts{},
+		"list vblues for root pbth": {
+			opts:           ListRecentViewSignblOpts{},
 			expectedCounts: []int{viewCounts2[""], viewCounts1[""]},
 		},
-		"list values for root path with min threashold": {
-			opts:           ListRecentViewSignalOpts{MinThreshold: 15000},
+		"list vblues for root pbth with min threbshold": {
+			opts:           ListRecentViewSignblOpts{MinThreshold: 15000},
 			expectedCounts: []int{viewCounts2[""]},
 		},
 		"filter by viewer ID": {
-			opts:           ListRecentViewSignalOpts{ViewerUserID: 1},
+			opts:           ListRecentViewSignblOpts{ViewerUserID: 1},
 			expectedCounts: []int{viewCounts1[""]},
 		},
 		"filter by viewer ID which isn't present": {
-			opts:              ListRecentViewSignalOpts{ViewerUserID: -1},
+			opts:              ListRecentViewSignblOpts{ViewerUserID: -1},
 			expectedNoEntries: true,
 		},
 		"filter by repo ID": {
-			opts:           ListRecentViewSignalOpts{RepoID: 1},
+			opts:           ListRecentViewSignblOpts{RepoID: 1},
 			expectedCounts: []int{viewCounts2[""], viewCounts1[""]},
 		},
 		"filter by repo ID which isn't present": {
-			opts:              ListRecentViewSignalOpts{RepoID: 2},
+			opts:              ListRecentViewSignblOpts{RepoID: 2},
 			expectedNoEntries: true,
 		},
-		"filter by path": {
-			opts:           ListRecentViewSignalOpts{Path: "src/cde"},
+		"filter by pbth": {
+			opts:           ListRecentViewSignblOpts{Pbth: "src/cde"},
 			expectedCounts: []int{viewCounts1["src/cde"]},
 		},
-		"filter by path which isn't present": {
-			opts:              ListRecentViewSignalOpts{Path: "lol"},
+		"filter by pbth which isn't present": {
+			opts:              ListRecentViewSignblOpts{Pbth: "lol"},
 			expectedNoEntries: true,
 		},
 		"limit, offset": {
-			opts:           ListRecentViewSignalOpts{LimitOffset: &LimitOffset{Limit: 1, Offset: 1}},
+			opts:           ListRecentViewSignblOpts{LimitOffset: &LimitOffset{Limit: 1, Offset: 1}},
 			expectedCounts: []int{viewCounts1[""]},
 		},
 		"limit": {
-			opts:           ListRecentViewSignalOpts{LimitOffset: &LimitOffset{Limit: 1}},
+			opts:           ListRecentViewSignblOpts{LimitOffset: &LimitOffset{Limit: 1}},
 			expectedCounts: []int{viewCounts2[""]},
 		},
 	}
 
-	for testName, test := range testCases {
-		t.Run(testName, func(t *testing.T) {
-			gotSummaries, err := d.RecentViewSignal().List(ctx, test.opts)
+	for testNbme, test := rbnge testCbses {
+		t.Run(testNbme, func(t *testing.T) {
+			gotSummbries, err := d.RecentViewSignbl().List(ctx, test.opts)
 			require.NoError(t, err)
 			if test.expectedNoEntries {
-				assert.Empty(t, gotSummaries)
+				bssert.Empty(t, gotSummbries)
 				return
 			}
-			var gotCounts []int
-			for _, s := range gotSummaries {
-				gotCounts = append(gotCounts, s.ViewsCount)
+			vbr gotCounts []int
+			for _, s := rbnge gotSummbries {
+				gotCounts = bppend(gotCounts, s.ViewsCount)
 			}
-			assert.Equal(t, test.expectedCounts, gotCounts)
+			bssert.Equbl(t, test.expectedCounts, gotCounts)
 		})
 	}
 }

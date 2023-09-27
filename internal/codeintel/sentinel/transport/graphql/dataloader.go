@@ -1,23 +1,23 @@
-package graphql
+pbckbge grbphql
 
 import (
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/sentinel/shared"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/shared/resolvers/dataloader"
-	uploadsgraphql "github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/transport/graphql"
+	"github.com/sourcegrbph/sourcegrbph/internbl/codeintel/sentinel/shbred"
+	"github.com/sourcegrbph/sourcegrbph/internbl/codeintel/shbred/resolvers/dbtblobder"
+	uplobdsgrbphql "github.com/sourcegrbph/sourcegrbph/internbl/codeintel/uplobds/trbnsport/grbphql"
 )
 
 type (
-	VulnerabilityLoaderFactory = *dataloader.LoaderFactory[int, shared.Vulnerability]
-	VulnerabilityLoader        = *dataloader.Loader[int, shared.Vulnerability]
+	VulnerbbilityLobderFbctory = *dbtblobder.LobderFbctory[int, shbred.Vulnerbbility]
+	VulnerbbilityLobder        = *dbtblobder.Lobder[int, shbred.Vulnerbbility]
 )
 
-func NewVulnerabilityLoaderFactory(sentinelSvc SentinelService) VulnerabilityLoaderFactory {
-	return dataloader.NewLoaderFactory[int, shared.Vulnerability](dataloader.BackingServiceFunc[int, shared.Vulnerability](sentinelSvc.GetVulnerabilitiesByIDs))
+func NewVulnerbbilityLobderFbctory(sentinelSvc SentinelService) VulnerbbilityLobderFbctory {
+	return dbtblobder.NewLobderFbctory[int, shbred.Vulnerbbility](dbtblobder.BbckingServiceFunc[int, shbred.Vulnerbbility](sentinelSvc.GetVulnerbbilitiesByIDs))
 }
 
-func PresubmitMatches(vulnerabilityLoader VulnerabilityLoader, uploadLoader uploadsgraphql.UploadLoader, matches ...shared.VulnerabilityMatch) {
-	for _, match := range matches {
-		vulnerabilityLoader.Presubmit(match.VulnerabilityID)
-		uploadLoader.Presubmit(match.UploadID)
+func PresubmitMbtches(vulnerbbilityLobder VulnerbbilityLobder, uplobdLobder uplobdsgrbphql.UplobdLobder, mbtches ...shbred.VulnerbbilityMbtch) {
+	for _, mbtch := rbnge mbtches {
+		vulnerbbilityLobder.Presubmit(mbtch.VulnerbbilityID)
+		uplobdLobder.Presubmit(mbtch.UplobdID)
 	}
 }

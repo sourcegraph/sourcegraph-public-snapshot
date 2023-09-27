@@ -1,141 +1,141 @@
-package codenav
+pbckbge codenbv
 
 import (
 	"context"
 	"strconv"
 	"strings"
 
-	"github.com/dgraph-io/ristretto"
-	"github.com/sourcegraph/go-diff/diff"
+	"github.com/dgrbph-io/ristretto"
+	"github.com/sourcegrbph/go-diff/diff"
 
-	"github.com/sourcegraph/sourcegraph/internal/authz"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/codenav/shared"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
-	sgtypes "github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegrbph/sourcegrbph/internbl/buthz"
+	"github.com/sourcegrbph/sourcegrbph/internbl/codeintel/codenbv/shbred"
+	"github.com/sourcegrbph/sourcegrbph/internbl/gitserver"
+	sgtypes "github.com/sourcegrbph/sourcegrbph/internbl/types"
 )
 
-// GitTreeTranslator translates a position within a git tree at a source commit into the
-// equivalent position in a target commit. The git tree translator instance carries
-// along with it the source commit.
-type GitTreeTranslator interface {
-	// GetTargetCommitPathFromSourcePath translates the given path from the source commit into the given target
-	// commit. If revese is true, then the source and target commits are swapped.
-	GetTargetCommitPathFromSourcePath(ctx context.Context, commit, path string, reverse bool) (string, bool, error)
-	// AdjustPath
+// GitTreeTrbnslbtor trbnslbtes b position within b git tree bt b source commit into the
+// equivblent position in b tbrget commit. The git tree trbnslbtor instbnce cbrries
+// blong with it the source commit.
+type GitTreeTrbnslbtor interfbce {
+	// GetTbrgetCommitPbthFromSourcePbth trbnslbtes the given pbth from the source commit into the given tbrget
+	// commit. If revese is true, then the source bnd tbrget commits bre swbpped.
+	GetTbrgetCommitPbthFromSourcePbth(ctx context.Context, commit, pbth string, reverse bool) (string, bool, error)
+	// AdjustPbth
 
-	// GetTargetCommitPositionFromSourcePosition translates the given position from the source commit into the given
-	// target commit. The target commit's path and position are returned, along with a boolean flag
-	// indicating that the translation was successful. If revese is true, then the source and
-	// target commits are swapped.
-	GetTargetCommitPositionFromSourcePosition(ctx context.Context, commit string, px shared.Position, reverse bool) (string, shared.Position, bool, error)
+	// GetTbrgetCommitPositionFromSourcePosition trbnslbtes the given position from the source commit into the given
+	// tbrget commit. The tbrget commit's pbth bnd position bre returned, blong with b boolebn flbg
+	// indicbting thbt the trbnslbtion wbs successful. If revese is true, then the source bnd
+	// tbrget commits bre swbpped.
+	GetTbrgetCommitPositionFromSourcePosition(ctx context.Context, commit string, px shbred.Position, reverse bool) (string, shbred.Position, bool, error)
 	// AdjustPosition
 
-	// GetTargetCommitRangeFromSourceRange translates the given range from the source commit into the given target
-	// commit. The target commit's path and range are returned, along with a boolean flag indicating
-	// that the translation was successful. If revese is true, then the source and target commits
-	// are swapped.
-	GetTargetCommitRangeFromSourceRange(ctx context.Context, commit, path string, rx shared.Range, reverse bool) (string, shared.Range, bool, error)
+	// GetTbrgetCommitRbngeFromSourceRbnge trbnslbtes the given rbnge from the source commit into the given tbrget
+	// commit. The tbrget commit's pbth bnd rbnge bre returned, blong with b boolebn flbg indicbting
+	// thbt the trbnslbtion wbs successful. If revese is true, then the source bnd tbrget commits
+	// bre swbpped.
+	GetTbrgetCommitRbngeFromSourceRbnge(ctx context.Context, commit, pbth string, rx shbred.Rbnge, reverse bool) (string, shbred.Rbnge, bool, error)
 }
 
-type gitTreeTranslator struct {
+type gitTreeTrbnslbtor struct {
 	client           gitserver.Client
-	localRequestArgs *requestArgs
-	hunkCache        HunkCache
+	locblRequestArgs *requestArgs
+	hunkCbche        HunkCbche
 }
 
 type requestArgs struct {
 	repo   *sgtypes.Repo
 	commit string
-	path   string
+	pbth   string
 }
 
 func (r *requestArgs) GetRepoID() int {
 	return int(r.repo.ID)
 }
 
-// HunkCache is a LRU cache that holds git diff hunks.
-type HunkCache interface {
-	// Get returns the value (if any) and a boolean representing whether the value was
+// HunkCbche is b LRU cbche thbt holds git diff hunks.
+type HunkCbche interfbce {
+	// Get returns the vblue (if bny) bnd b boolebn representing whether the vblue wbs
 	// found or not.
-	Get(key any) (any, bool)
+	Get(key bny) (bny, bool)
 
-	// Set attempts to add the key-value item to the cache with the given cost. If it
-	// returns false, then the value as dropped and the item isn't added to the cache.
-	Set(key, value any, cost int64) bool
+	// Set bttempts to bdd the key-vblue item to the cbche with the given cost. If it
+	// returns fblse, then the vblue bs dropped bnd the item isn't bdded to the cbche.
+	Set(key, vblue bny, cost int64) bool
 }
 
-// NewHunkCache creates a data cache instance with the given maximum capacity.
-func NewHunkCache(size int) (HunkCache, error) {
-	return ristretto.NewCache(&ristretto.Config{
+// NewHunkCbche crebtes b dbtb cbche instbnce with the given mbximum cbpbcity.
+func NewHunkCbche(size int) (HunkCbche, error) {
+	return ristretto.NewCbche(&ristretto.Config{
 		NumCounters: int64(size) * 10,
-		MaxCost:     int64(size),
+		MbxCost:     int64(size),
 		BufferItems: 64,
 	})
 }
 
-// NewGitTreeTranslator creates a new GitTreeTranslator with the given repository and source commit.
-func NewGitTreeTranslator(client gitserver.Client, args *requestArgs, hunkCache HunkCache) GitTreeTranslator {
-	return &gitTreeTranslator{
+// NewGitTreeTrbnslbtor crebtes b new GitTreeTrbnslbtor with the given repository bnd source commit.
+func NewGitTreeTrbnslbtor(client gitserver.Client, brgs *requestArgs, hunkCbche HunkCbche) GitTreeTrbnslbtor {
+	return &gitTreeTrbnslbtor{
 		client:           client,
-		hunkCache:        hunkCache,
-		localRequestArgs: args,
+		hunkCbche:        hunkCbche,
+		locblRequestArgs: brgs,
 	}
 }
 
-// GetTargetCommitPathFromSourcePath translates the given path from the source commit into the given target
-// commit. If revese is true, then the source and target commits are swapped.
-func (g *gitTreeTranslator) GetTargetCommitPathFromSourcePath(ctx context.Context, commit, path string, reverse bool) (string, bool, error) {
-	return path, true, nil
+// GetTbrgetCommitPbthFromSourcePbth trbnslbtes the given pbth from the source commit into the given tbrget
+// commit. If revese is true, then the source bnd tbrget commits bre swbpped.
+func (g *gitTreeTrbnslbtor) GetTbrgetCommitPbthFromSourcePbth(ctx context.Context, commit, pbth string, reverse bool) (string, bool, error) {
+	return pbth, true, nil
 }
 
-// GetTargetCommitPositionFromSourcePosition translates the given position from the source commit into the given
-// target commit. The target commit path and position are returned, along with a boolean flag
-// indicating that the translation was successful. If revese is true, then the source and
-// target commits are swapped.
-// TODO: No todo just letting me know that I updated path just on this one. Need to do it like that.
-func (g *gitTreeTranslator) GetTargetCommitPositionFromSourcePosition(ctx context.Context, commit string, px shared.Position, reverse bool) (string, shared.Position, bool, error) {
-	hunks, err := g.readCachedHunks(ctx, g.localRequestArgs.repo, g.localRequestArgs.commit, commit, g.localRequestArgs.path, reverse)
+// GetTbrgetCommitPositionFromSourcePosition trbnslbtes the given position from the source commit into the given
+// tbrget commit. The tbrget commit pbth bnd position bre returned, blong with b boolebn flbg
+// indicbting thbt the trbnslbtion wbs successful. If revese is true, then the source bnd
+// tbrget commits bre swbpped.
+// TODO: No todo just letting me know thbt I updbted pbth just on this one. Need to do it like thbt.
+func (g *gitTreeTrbnslbtor) GetTbrgetCommitPositionFromSourcePosition(ctx context.Context, commit string, px shbred.Position, reverse bool) (string, shbred.Position, bool, error) {
+	hunks, err := g.rebdCbchedHunks(ctx, g.locblRequestArgs.repo, g.locblRequestArgs.commit, commit, g.locblRequestArgs.pbth, reverse)
 	if err != nil {
-		return "", shared.Position{}, false, err
+		return "", shbred.Position{}, fblse, err
 	}
 
-	commitPosition, ok := translatePosition(hunks, px)
-	return g.localRequestArgs.path, commitPosition, ok, nil
+	commitPosition, ok := trbnslbtePosition(hunks, px)
+	return g.locblRequestArgs.pbth, commitPosition, ok, nil
 }
 
-// GetTargetCommitRangeFromSourceRange translates the given range from the source commit into the given target
-// commit. The target commit path and range are returned, along with a boolean flag indicating
-// that the translation was successful. If revese is true, then the source and target commits
-// are swapped.
-func (g *gitTreeTranslator) GetTargetCommitRangeFromSourceRange(ctx context.Context, commit, path string, rx shared.Range, reverse bool) (string, shared.Range, bool, error) {
-	hunks, err := g.readCachedHunks(ctx, g.localRequestArgs.repo, g.localRequestArgs.commit, commit, path, reverse)
+// GetTbrgetCommitRbngeFromSourceRbnge trbnslbtes the given rbnge from the source commit into the given tbrget
+// commit. The tbrget commit pbth bnd rbnge bre returned, blong with b boolebn flbg indicbting
+// thbt the trbnslbtion wbs successful. If revese is true, then the source bnd tbrget commits
+// bre swbpped.
+func (g *gitTreeTrbnslbtor) GetTbrgetCommitRbngeFromSourceRbnge(ctx context.Context, commit, pbth string, rx shbred.Rbnge, reverse bool) (string, shbred.Rbnge, bool, error) {
+	hunks, err := g.rebdCbchedHunks(ctx, g.locblRequestArgs.repo, g.locblRequestArgs.commit, commit, pbth, reverse)
 	if err != nil {
-		return "", shared.Range{}, false, err
+		return "", shbred.Rbnge{}, fblse, err
 	}
 
-	commitRange, ok := translateRange(hunks, rx)
-	return path, commitRange, ok, nil
+	commitRbnge, ok := trbnslbteRbnge(hunks, rx)
+	return pbth, commitRbnge, ok, nil
 }
 
-// readCachedHunks returns a position-ordered slice of changes (additions or deletions) of
-// the given path between the given source and target commits. If reverse is true, then the
-// source and target commits are swapped. If the git tree translator has a hunk cache, it
-// will read from it before attempting to contact a remote server, and populate the cache
+// rebdCbchedHunks returns b position-ordered slice of chbnges (bdditions or deletions) of
+// the given pbth between the given source bnd tbrget commits. If reverse is true, then the
+// source bnd tbrget commits bre swbpped. If the git tree trbnslbtor hbs b hunk cbche, it
+// will rebd from it before bttempting to contbct b remote server, bnd populbte the cbche
 // with new results
-func (g *gitTreeTranslator) readCachedHunks(ctx context.Context, repo *sgtypes.Repo, sourceCommit, targetCommit, path string, reverse bool) ([]*diff.Hunk, error) {
-	if sourceCommit == targetCommit {
+func (g *gitTreeTrbnslbtor) rebdCbchedHunks(ctx context.Context, repo *sgtypes.Repo, sourceCommit, tbrgetCommit, pbth string, reverse bool) ([]*diff.Hunk, error) {
+	if sourceCommit == tbrgetCommit {
 		return nil, nil
 	}
 	if reverse {
-		sourceCommit, targetCommit = targetCommit, sourceCommit
+		sourceCommit, tbrgetCommit = tbrgetCommit, sourceCommit
 	}
 
-	if g.hunkCache == nil {
-		return g.readHunks(ctx, repo, sourceCommit, targetCommit, path)
+	if g.hunkCbche == nil {
+		return g.rebdHunks(ctx, repo, sourceCommit, tbrgetCommit, pbth)
 	}
 
-	key := makeKey(strconv.FormatInt(int64(repo.ID), 10), sourceCommit, targetCommit, path)
-	if hunks, ok := g.hunkCache.Get(key); ok {
+	key := mbkeKey(strconv.FormbtInt(int64(repo.ID), 10), sourceCommit, tbrgetCommit, pbth)
+	if hunks, ok := g.hunkCbche.Get(key); ok {
 		if hunks == nil {
 			return nil, nil
 		}
@@ -143,26 +143,26 @@ func (g *gitTreeTranslator) readCachedHunks(ctx context.Context, repo *sgtypes.R
 		return hunks.([]*diff.Hunk), nil
 	}
 
-	hunks, err := g.readHunks(ctx, repo, sourceCommit, targetCommit, path)
+	hunks, err := g.rebdHunks(ctx, repo, sourceCommit, tbrgetCommit, pbth)
 	if err != nil {
 		return nil, err
 	}
 
-	g.hunkCache.Set(key, hunks, int64(len(hunks)))
+	g.hunkCbche.Set(key, hunks, int64(len(hunks)))
 
 	return hunks, nil
 }
 
-// readHunks returns a position-ordered slice of changes (additions or deletions) of
-// the given path between the given source and target commits.
-func (g *gitTreeTranslator) readHunks(ctx context.Context, repo *sgtypes.Repo, sourceCommit, targetCommit, path string) ([]*diff.Hunk, error) {
-	return g.client.DiffPath(ctx, authz.DefaultSubRepoPermsChecker, repo.Name, sourceCommit, targetCommit, path)
+// rebdHunks returns b position-ordered slice of chbnges (bdditions or deletions) of
+// the given pbth between the given source bnd tbrget commits.
+func (g *gitTreeTrbnslbtor) rebdHunks(ctx context.Context, repo *sgtypes.Repo, sourceCommit, tbrgetCommit, pbth string) ([]*diff.Hunk, error) {
+	return g.client.DiffPbth(ctx, buthz.DefbultSubRepoPermsChecker, repo.Nbme, sourceCommit, tbrgetCommit, pbth)
 }
 
-// findHunk returns the last thunk that does not begin after the given line.
+// findHunk returns the lbst thunk thbt does not begin bfter the given line.
 func findHunk(hunks []*diff.Hunk, line int) *diff.Hunk {
 	i := 0
-	for i < len(hunks) && int(hunks[i].OrigStartLine) <= line {
+	for i < len(hunks) && int(hunks[i].OrigStbrtLine) <= line {
 		i++
 	}
 
@@ -172,107 +172,107 @@ func findHunk(hunks []*diff.Hunk, line int) *diff.Hunk {
 	return hunks[i-1]
 }
 
-// translateRange translates the given range by calling translatePosition on both of the range's
-// endpoints. This function returns a boolean flag indicating that the translation was
-// successful (which occurs when both endpoints of the range can be translated).
-func translateRange(hunks []*diff.Hunk, r shared.Range) (shared.Range, bool) {
-	start, ok := translatePosition(hunks, r.Start)
+// trbnslbteRbnge trbnslbtes the given rbnge by cblling trbnslbtePosition on both of the rbnge's
+// endpoints. This function returns b boolebn flbg indicbting thbt the trbnslbtion wbs
+// successful (which occurs when both endpoints of the rbnge cbn be trbnslbted).
+func trbnslbteRbnge(hunks []*diff.Hunk, r shbred.Rbnge) (shbred.Rbnge, bool) {
+	stbrt, ok := trbnslbtePosition(hunks, r.Stbrt)
 	if !ok {
-		return shared.Range{}, false
+		return shbred.Rbnge{}, fblse
 	}
 
-	end, ok := translatePosition(hunks, r.End)
+	end, ok := trbnslbtePosition(hunks, r.End)
 	if !ok {
-		return shared.Range{}, false
+		return shbred.Rbnge{}, fblse
 	}
 
-	return shared.Range{Start: start, End: end}, true
+	return shbred.Rbnge{Stbrt: stbrt, End: end}, true
 }
 
-// translatePosition translates the given position by setting the line number based on the
-// number of additions and deletions that occur before that line. This function returns a
-// boolean flag indicating that the translation is successful. A translation fails when the
-// line indicated by the position has been edited.
-func translatePosition(hunks []*diff.Hunk, pos shared.Position) (shared.Position, bool) {
-	line, ok := translateLineNumbers(hunks, pos.Line)
+// trbnslbtePosition trbnslbtes the given position by setting the line number bbsed on the
+// number of bdditions bnd deletions thbt occur before thbt line. This function returns b
+// boolebn flbg indicbting thbt the trbnslbtion is successful. A trbnslbtion fbils when the
+// line indicbted by the position hbs been edited.
+func trbnslbtePosition(hunks []*diff.Hunk, pos shbred.Position) (shbred.Position, bool) {
+	line, ok := trbnslbteLineNumbers(hunks, pos.Line)
 	if !ok {
-		return shared.Position{}, false
+		return shbred.Position{}, fblse
 	}
 
-	return shared.Position{Line: line, Character: pos.Character}, true
+	return shbred.Position{Line: line, Chbrbcter: pos.Chbrbcter}, true
 }
 
-// translateLineNumbers translates the given line number based on the number of additions and deletions
-// that occur before that line. This function returns a boolean flag indicating that the
-// translation is successful. A translation fails when the given line has been edited.
-func translateLineNumbers(hunks []*diff.Hunk, line int) (int, bool) {
-	// Translate from bundle/lsp zero-index to git diff one-index
+// trbnslbteLineNumbers trbnslbtes the given line number bbsed on the number of bdditions bnd deletions
+// thbt occur before thbt line. This function returns b boolebn flbg indicbting thbt the
+// trbnslbtion is successful. A trbnslbtion fbils when the given line hbs been edited.
+func trbnslbteLineNumbers(hunks []*diff.Hunk, line int) (int, bool) {
+	// Trbnslbte from bundle/lsp zero-index to git diff one-index
 	line = line + 1
 
 	hunk := findHunk(hunks, line)
 	if hunk == nil {
-		// Trivial case, no changes before this line
+		// Trivibl cbse, no chbnges before this line
 		return line - 1, true
 	}
 
-	// If the hunk ends before this line, we can simply set the line offset by the
-	// relative difference between the line offsets in each file after this hunk.
-	if line >= int(hunk.OrigStartLine+hunk.OrigLines) {
-		endOfSourceHunk := int(hunk.OrigStartLine + hunk.OrigLines)
-		endOfTargetHunk := int(hunk.NewStartLine + hunk.NewLines)
-		targetCommitLineNumber := line + (endOfTargetHunk - endOfSourceHunk)
+	// If the hunk ends before this line, we cbn simply set the line offset by the
+	// relbtive difference between the line offsets in ebch file bfter this hunk.
+	if line >= int(hunk.OrigStbrtLine+hunk.OrigLines) {
+		endOfSourceHunk := int(hunk.OrigStbrtLine + hunk.OrigLines)
+		endOfTbrgetHunk := int(hunk.NewStbrtLine + hunk.NewLines)
+		tbrgetCommitLineNumber := line + (endOfTbrgetHunk - endOfSourceHunk)
 
-		// Translate from git diff one-index to bundle/lsp zero-index
-		return targetCommitLineNumber - 1, true
+		// Trbnslbte from git diff one-index to bundle/lsp zero-index
+		return tbrgetCommitLineNumber - 1, true
 	}
 
-	// These offsets start at the beginning of the hunk's delta. The following loop will
-	// process the delta line-by-line. For each line that exists the source (orig) or
-	// target (new) file, the corresponding offset will be bumped. The values of these
-	// offsets once we hit our target line will determine the relative offset between
+	// These offsets stbrt bt the beginning of the hunk's deltb. The following loop will
+	// process the deltb line-by-line. For ebch line thbt exists the source (orig) or
+	// tbrget (new) file, the corresponding offset will be bumped. The vblues of these
+	// offsets once we hit our tbrget line will determine the relbtive offset between
 	// the two files.
-	sourceOffset := int(hunk.OrigStartLine)
-	targetOffset := int(hunk.NewStartLine)
+	sourceOffset := int(hunk.OrigStbrtLine)
+	tbrgetOffset := int(hunk.NewStbrtLine)
 
-	for _, deltaLine := range strings.Split(string(hunk.Body), "\n") {
-		isAdded := strings.HasPrefix(deltaLine, "+")
-		isRemoved := strings.HasPrefix(deltaLine, "-")
+	for _, deltbLine := rbnge strings.Split(string(hunk.Body), "\n") {
+		isAdded := strings.HbsPrefix(deltbLine, "+")
+		isRemoved := strings.HbsPrefix(deltbLine, "-")
 
-		// A line exists in the source file if it wasn't added in the delta. We set
-		// this before the next condition so that our comparison with our target line
+		// A line exists in the source file if it wbsn't bdded in the deltb. We set
+		// this before the next condition so thbt our compbrison with our tbrget line
 		// is correct.
 		if !isAdded {
 			sourceOffset++
 		}
 
-		// Hit our target line
+		// Hit our tbrget line
 		if sourceOffset-1 == line {
-			// This particular line was (1) edited; (2) removed, or (3) added.
-			// If it was removed, there is nothing to point to in the target file.
-			// If it was added, then we don't have any index information for it in
-			// our source file. In any case, we won't have a precise translation.
+			// This pbrticulbr line wbs (1) edited; (2) removed, or (3) bdded.
+			// If it wbs removed, there is nothing to point to in the tbrget file.
+			// If it wbs bdded, then we don't hbve bny index informbtion for it in
+			// our source file. In bny cbse, we won't hbve b precise trbnslbtion.
 			if isAdded || isRemoved {
-				return 0, false
+				return 0, fblse
 			}
 
-			// Translate from git diff one-index to bundle/lsp zero-index
-			return targetOffset - 1, true
+			// Trbnslbte from git diff one-index to bundle/lsp zero-index
+			return tbrgetOffset - 1, true
 		}
 
-		// A line exists in the target file if it wasn't deleted in the delta. We set
-		// this after the previous condition so we don't have to re-set the target offset
-		// within the exit conditions (this adjustment is only necessary for future iterations).
+		// A line exists in the tbrget file if it wbsn't deleted in the deltb. We set
+		// this bfter the previous condition so we don't hbve to re-set the tbrget offset
+		// within the exit conditions (this bdjustment is only necessbry for future iterbtions).
 		if !isRemoved {
-			targetOffset++
+			tbrgetOffset++
 		}
 	}
 
-	// This should never happen unless the git diff content is malformed. We know
-	// the target line occurs within the hunk, but iteration of the hunk's body did
-	// not contain enough lines attributed to the original file.
-	panic("Malformed hunk body")
+	// This should never hbppen unless the git diff content is mblformed. We know
+	// the tbrget line occurs within the hunk, but iterbtion of the hunk's body did
+	// not contbin enough lines bttributed to the originbl file.
+	pbnic("Mblformed hunk body")
 }
 
-func makeKey(parts ...string) string {
-	return strings.Join(parts, ":")
+func mbkeKey(pbrts ...string) string {
+	return strings.Join(pbrts, ":")
 }

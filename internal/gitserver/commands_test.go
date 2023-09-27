@@ -1,4 +1,4 @@
-package gitserver
+pbckbge gitserver
 
 import (
 	"bytes"
@@ -7,7 +7,7 @@ import (
 	"io"
 	"io/fs"
 	"os"
-	"path/filepath"
+	"pbth/filepbth"
 	"reflect"
 	"runtime"
 	"sort"
@@ -15,197 +15,197 @@ import (
 	"testing"
 	"time"
 
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/bssert"
 
 	"github.com/google/go-cmp/cmp"
-	godiff "github.com/sourcegraph/go-diff/diff"
+	godiff "github.com/sourcegrbph/go-diff/diff"
 	"github.com/stretchr/testify/require"
 
-	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/authz"
-	"github.com/sourcegraph/sourcegraph/internal/errcode"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
-	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bctor"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi"
+	"github.com/sourcegrbph/sourcegrbph/internbl/buthz"
+	"github.com/sourcegrbph/sourcegrbph/internbl/errcode"
+	"github.com/sourcegrbph/sourcegrbph/internbl/gitserver/gitdombin"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-func TestParseShortLog(t *testing.T) {
+func TestPbrseShortLog(t *testing.T) {
 	tests := []struct {
-		name    string
-		input   string // in the format of `git shortlog -sne`
-		want    []*gitdomain.ContributorCount
-		wantErr error
+		nbme    string
+		input   string // in the formbt of `git shortlog -sne`
+		wbnt    []*gitdombin.ContributorCount
+		wbntErr error
 	}{
 		{
-			name: "basic",
+			nbme: "bbsic",
 			input: `
-  1125	Jane Doe <jane@sourcegraph.com>
+  1125	Jbne Doe <jbne@sourcegrbph.com>
    390	Bot Of Doom <bot@doombot.com>
 `,
-			want: []*gitdomain.ContributorCount{
+			wbnt: []*gitdombin.ContributorCount{
 				{
-					Name:  "Jane Doe",
-					Email: "jane@sourcegraph.com",
+					Nbme:  "Jbne Doe",
+					Embil: "jbne@sourcegrbph.com",
 					Count: 1125,
 				},
 				{
-					Name:  "Bot Of Doom",
-					Email: "bot@doombot.com",
+					Nbme:  "Bot Of Doom",
+					Embil: "bot@doombot.com",
 					Count: 390,
 				},
 			},
 		},
 		{
-			name: "commonly malformed (email address as name)",
-			input: `  1125	jane@sourcegraph.com <jane@sourcegraph.com>
+			nbme: "commonly mblformed (embil bddress bs nbme)",
+			input: `  1125	jbne@sourcegrbph.com <jbne@sourcegrbph.com>
    390	Bot Of Doom <bot@doombot.com>
 `,
-			want: []*gitdomain.ContributorCount{
+			wbnt: []*gitdombin.ContributorCount{
 				{
-					Name:  "jane@sourcegraph.com",
-					Email: "jane@sourcegraph.com",
+					Nbme:  "jbne@sourcegrbph.com",
+					Embil: "jbne@sourcegrbph.com",
 					Count: 1125,
 				},
 				{
-					Name:  "Bot Of Doom",
-					Email: "bot@doombot.com",
+					Nbme:  "Bot Of Doom",
+					Embil: "bot@doombot.com",
 					Count: 390,
 				},
 			},
 		},
 	}
-	for _, tst := range tests {
-		t.Run(tst.name, func(t *testing.T) {
-			got, gotErr := parseShortLog([]byte(tst.input))
-			if (gotErr == nil) != (tst.wantErr == nil) {
-				t.Fatalf("gotErr %+v wantErr %+v", gotErr, tst.wantErr)
+	for _, tst := rbnge tests {
+		t.Run(tst.nbme, func(t *testing.T) {
+			got, gotErr := pbrseShortLog([]byte(tst.input))
+			if (gotErr == nil) != (tst.wbntErr == nil) {
+				t.Fbtblf("gotErr %+v wbntErr %+v", gotErr, tst.wbntErr)
 			}
-			if !reflect.DeepEqual(got, tst.want) {
+			if !reflect.DeepEqubl(got, tst.wbnt) {
 				t.Logf("got %q", got)
-				t.Fatalf("want %q", tst.want)
+				t.Fbtblf("wbnt %q", tst.wbnt)
 			}
 		})
 	}
 }
 
 func TestDiffWithSubRepoFiltering(t *testing.T) {
-	ctx := context.Background()
-	ctx = actor.WithActor(ctx, &actor.Actor{
+	ctx := context.Bbckground()
+	ctx = bctor.WithActor(ctx, &bctor.Actor{
 		UID: 1,
 	})
 
-	ClientMocks.LocalGitserver = true
+	ClientMocks.LocblGitserver = true
 	defer ResetClientMocks()
 
-	cmds := getGitCommandsWithFileLists([]string{"file0"}, []string{"file1", "file1.1"}, []string{"file2"}, []string{"file3", "file3.3"})
+	cmds := getGitCommbndsWithFileLists([]string{"file0"}, []string{"file1", "file1.1"}, []string{"file2"}, []string{"file3", "file3.3"})
 	checker := getTestSubRepoPermsChecker("file1.1", "file2")
-	testCases := []struct {
-		label               string
-		extraGitCommands    []string
+	testCbses := []struct {
+		lbbel               string
+		extrbGitCommbnds    []string
 		expectedDiffFiles   []string
-		expectedFileStat    *godiff.Stat
-		rangeOverAllCommits bool
+		expectedFileStbt    *godiff.Stbt
+		rbngeOverAllCommits bool
 	}{
 		{
-			label:               "adding files",
+			lbbel:               "bdding files",
 			expectedDiffFiles:   []string{"file1", "file3", "file3.3"},
-			expectedFileStat:    &godiff.Stat{Added: 3},
-			rangeOverAllCommits: true,
+			expectedFileStbt:    &godiff.Stbt{Added: 3},
+			rbngeOverAllCommits: true,
 		},
 		{
-			label: "changing filename",
-			extraGitCommands: []string{
-				"mv file1.1 file_can_access",
-				"git add file_can_access",
-				makeGitCommit("rename", 7),
+			lbbel: "chbnging filenbme",
+			extrbGitCommbnds: []string{
+				"mv file1.1 file_cbn_bccess",
+				"git bdd file_cbn_bccess",
+				mbkeGitCommit("renbme", 7),
 			},
-			expectedDiffFiles: []string{"file_can_access"},
-			expectedFileStat:  &godiff.Stat{Added: 1},
+			expectedDiffFiles: []string{"file_cbn_bccess"},
+			expectedFileStbt:  &godiff.Stbt{Added: 1},
 		},
 		{
-			label: "file modified",
-			extraGitCommands: []string{
+			lbbel: "file modified",
+			extrbGitCommbnds: []string{
 				"echo new_file_content > file2",
 				"echo more_new_file_content > file1",
-				"git add file2",
-				"git add file1",
-				makeGitCommit("edit_files", 7),
+				"git bdd file2",
+				"git bdd file1",
+				mbkeGitCommit("edit_files", 7),
 			},
-			expectedDiffFiles: []string{"file1"}, // file2 is updated but user doesn't have access
-			expectedFileStat:  &godiff.Stat{Changed: 1},
+			expectedDiffFiles: []string{"file1"}, // file2 is updbted but user doesn't hbve bccess
+			expectedFileStbt:  &godiff.Stbt{Chbnged: 1},
 		},
 		{
-			label: "diff for commit w/ no access returns empty result",
-			extraGitCommands: []string{
+			lbbel: "diff for commit w/ no bccess returns empty result",
+			extrbGitCommbnds: []string{
 				"echo new_file_content > file2",
-				"git add file2",
-				makeGitCommit("no_access", 7),
+				"git bdd file2",
+				mbkeGitCommit("no_bccess", 7),
 			},
 			expectedDiffFiles: []string{},
-			expectedFileStat:  &godiff.Stat{},
+			expectedFileStbt:  &godiff.Stbt{},
 		},
 	}
-	for _, tc := range testCases {
-		t.Run(tc.label, func(t *testing.T) {
-			repo := MakeGitRepository(t, append(cmds, tc.extraGitCommands...)...)
+	for _, tc := rbnge testCbses {
+		t.Run(tc.lbbel, func(t *testing.T) {
+			repo := MbkeGitRepository(t, bppend(cmds, tc.extrbGitCommbnds...)...)
 			c := NewClient()
 			commits, err := c.Commits(ctx, nil, repo, CommitsOptions{})
 			if err != nil {
-				t.Fatalf("err fetching commits: %s", err)
+				t.Fbtblf("err fetching commits: %s", err)
 			}
-			baseCommit := commits[1]
-			headCommit := commits[0]
-			if tc.rangeOverAllCommits {
-				baseCommit = commits[len(commits)-1]
+			bbseCommit := commits[1]
+			hebdCommit := commits[0]
+			if tc.rbngeOverAllCommits {
+				bbseCommit = commits[len(commits)-1]
 			}
 
-			iter, err := c.Diff(ctx, checker, DiffOptions{Base: string(baseCommit.ID), Head: string(headCommit.ID), Repo: repo})
+			iter, err := c.Diff(ctx, checker, DiffOptions{Bbse: string(bbseCommit.ID), Hebd: string(hebdCommit.ID), Repo: repo})
 			if err != nil {
-				t.Fatalf("error fetching diff: %s", err)
+				t.Fbtblf("error fetching diff: %s", err)
 			}
 			defer iter.Close()
 
-			stat := &godiff.Stat{}
-			fileNames := make([]string, 0, 3)
+			stbt := &godiff.Stbt{}
+			fileNbmes := mbke([]string, 0, 3)
 			for {
 				file, err := iter.Next()
 				if err == io.EOF {
-					break
+					brebk
 				} else if err != nil {
 					t.Error(err)
 				}
 
-				fileNames = append(fileNames, file.NewName)
+				fileNbmes = bppend(fileNbmes, file.NewNbme)
 
-				fileStat := file.Stat()
-				stat.Added += fileStat.Added
-				stat.Changed += fileStat.Changed
-				stat.Deleted += fileStat.Deleted
+				fileStbt := file.Stbt()
+				stbt.Added += fileStbt.Added
+				stbt.Chbnged += fileStbt.Chbnged
+				stbt.Deleted += fileStbt.Deleted
 			}
-			if diff := cmp.Diff(fileNames, tc.expectedDiffFiles); diff != "" {
-				t.Fatal(diff)
+			if diff := cmp.Diff(fileNbmes, tc.expectedDiffFiles); diff != "" {
+				t.Fbtbl(diff)
 			}
-			if diff := cmp.Diff(stat, tc.expectedFileStat); diff != "" {
-				t.Fatal(diff)
+			if diff := cmp.Diff(stbt, tc.expectedFileStbt); diff != "" {
+				t.Fbtbl(diff)
 			}
 		})
 	}
 }
 
 func TestDiff(t *testing.T) {
-	ctx := context.Background()
+	ctx := context.Bbckground()
 
-	t.Run("invalid bases", func(t *testing.T) {
-		for _, input := range []string{
+	t.Run("invblid bbses", func(t *testing.T) {
+		for _, input := rbnge []string{
 			"",
 			"-foo",
 			".foo",
 		} {
-			t.Run("invalid base: "+input, func(t *testing.T) {
-				i, err := NewClient().Diff(ctx, nil, DiffOptions{Base: input})
+			t.Run("invblid bbse: "+input, func(t *testing.T) {
+				i, err := NewClient().Diff(ctx, nil, DiffOptions{Bbse: input})
 				if i != nil {
-					t.Errorf("unexpected non-nil iterator: %+v", i)
+					t.Errorf("unexpected non-nil iterbtor: %+v", i)
 				}
 				if err == nil {
 					t.Error("unexpected nil error")
@@ -214,18 +214,18 @@ func TestDiff(t *testing.T) {
 		}
 	})
 
-	t.Run("rangeSpec calculation", func(t *testing.T) {
-		for _, tc := range []struct {
+	t.Run("rbngeSpec cblculbtion", func(t *testing.T) {
+		for _, tc := rbnge []struct {
 			opts DiffOptions
-			want string
+			wbnt string
 		}{
-			{opts: DiffOptions{Base: "foo", Head: "bar"}, want: "foo...bar"},
+			{opts: DiffOptions{Bbse: "foo", Hebd: "bbr"}, wbnt: "foo...bbr"},
 		} {
-			t.Run("rangeSpec: "+tc.want, func(t *testing.T) {
-				c := NewMockClientWithExecReader(func(_ context.Context, _ api.RepoName, args []string) (io.ReadCloser, error) {
-					// The range spec is the sixth argument.
-					if args[5] != tc.want {
-						t.Errorf("unexpected rangeSpec: have: %s; want: %s", args[5], tc.want)
+			t.Run("rbngeSpec: "+tc.wbnt, func(t *testing.T) {
+				c := NewMockClientWithExecRebder(func(_ context.Context, _ bpi.RepoNbme, brgs []string) (io.RebdCloser, error) {
+					// The rbnge spec is the sixth brgument.
+					if brgs[5] != tc.wbnt {
+						t.Errorf("unexpected rbngeSpec: hbve: %s; wbnt: %s", brgs[5], tc.wbnt)
 					}
 					return nil, nil
 				})
@@ -234,13 +234,13 @@ func TestDiff(t *testing.T) {
 		}
 	})
 
-	t.Run("ExecReader error", func(t *testing.T) {
-		c := NewMockClientWithExecReader(func(_ context.Context, _ api.RepoName, args []string) (io.ReadCloser, error) {
-			return nil, errors.New("ExecReader error")
+	t.Run("ExecRebder error", func(t *testing.T) {
+		c := NewMockClientWithExecRebder(func(_ context.Context, _ bpi.RepoNbme, brgs []string) (io.RebdCloser, error) {
+			return nil, errors.New("ExecRebder error")
 		})
-		i, err := c.Diff(ctx, nil, DiffOptions{Base: "foo", Head: "bar"})
+		i, err := c.Diff(ctx, nil, DiffOptions{Bbse: "foo", Hebd: "bbr"})
 		if i != nil {
-			t.Errorf("unexpected non-nil iterator: %+v", i)
+			t.Errorf("unexpected non-nil iterbtor: %+v", i)
 		}
 		if err == nil {
 			t.Error("unexpected nil error")
@@ -250,7 +250,7 @@ func TestDiff(t *testing.T) {
 	t.Run("success", func(t *testing.T) {
 		const testDiffFiles = 3
 		const testDiff = `diff --git INSTALL.md INSTALL.md
-index e5af166..d44c3fc 100644
+index e5bf166..d44c3fc 100644
 --- INSTALL.md
 +++ INSTALL.md
 @@ -3,10 +3,10 @@
@@ -264,11 +264,11 @@ index e5af166..d44c3fc 100644
 -Line 7
 -Line 8
 +Another Line 7
-+Foobar Line 8
++Foobbr Line 8
  Line 9
  Line 10
 diff --git JOKES.md JOKES.md
-index ea80abf..1b86505 100644
+index eb80bbf..1b86505 100644
 --- JOKES.md
 +++ JOKES.md
 @@ -4,10 +4,10 @@ Joke #1
@@ -282,24 +282,24 @@ index ea80abf..1b86505 100644
 +This one is good: Joke #7
  Joke #8
 -Joke #9
-+Waffle: Joke #9
++Wbffle: Joke #9
  Joke #10
  Joke #11
 diff --git README.md README.md
-index 9bd8209..d2acfa9 100644
+index 9bd8209..d2bcfb9 100644
 --- README.md
 +++ README.md
 @@ -1,12 +1,13 @@
  # README
 
 -Line 1
-+Foobar Line 1
++Foobbr Line 1
  Line 2
  Line 3
  Line 4
  Line 5
 -Line 6
-+Barfoo Line 6
++Bbrfoo Line 6
  Line 7
  Line 8
  Line 9
@@ -307,19 +307,19 @@ index 9bd8209..d2acfa9 100644
 +Another line
 `
 
-		testDiffFileNames := []string{
+		testDiffFileNbmes := []string{
 			"INSTALL.md",
 			"JOKES.md",
 			"README.md",
 		}
 
-		c := NewMockClientWithExecReader(func(_ context.Context, _ api.RepoName, args []string) (io.ReadCloser, error) {
-			return io.NopCloser(strings.NewReader(testDiff)), nil
+		c := NewMockClientWithExecRebder(func(_ context.Context, _ bpi.RepoNbme, brgs []string) (io.RebdCloser, error) {
+			return io.NopCloser(strings.NewRebder(testDiff)), nil
 		})
 
-		i, err := c.Diff(ctx, nil, DiffOptions{Base: "foo", Head: "bar"})
+		i, err := c.Diff(ctx, nil, DiffOptions{Bbse: "foo", Hebd: "bbr"})
 		if i == nil {
-			t.Error("unexpected nil iterator")
+			t.Error("unexpected nil iterbtor")
 		}
 		if err != nil {
 			t.Errorf("unexpected non-nil error: %+v", err)
@@ -330,41 +330,41 @@ index 9bd8209..d2acfa9 100644
 		for {
 			diff, err := i.Next()
 			if err == io.EOF {
-				break
+				brebk
 			} else if err != nil {
-				t.Errorf("unexpected iteration error: %+v", err)
+				t.Errorf("unexpected iterbtion error: %+v", err)
 			}
 
-			if diff.OrigName != testDiffFileNames[count] {
-				t.Errorf("unexpected diff file name: have: %s; want: %s", diff.OrigName, testDiffFileNames[count])
+			if diff.OrigNbme != testDiffFileNbmes[count] {
+				t.Errorf("unexpected diff file nbme: hbve: %s; wbnt: %s", diff.OrigNbme, testDiffFileNbmes[count])
 			}
 			count++
 		}
 		if count != testDiffFiles {
-			t.Errorf("unexpected diff count: have %d; want %d", count, testDiffFiles)
+			t.Errorf("unexpected diff count: hbve %d; wbnt %d", count, testDiffFiles)
 		}
 	})
 }
 
-func TestDiffPath(t *testing.T) {
+func TestDiffPbth(t *testing.T) {
 	testDiff := `
-diff --git a/foo.md b/foo.md
-index 51a59ef1c..493090958 100644
---- a/foo.md
+diff --git b/foo.md b/foo.md
+index 51b59ef1c..493090958 100644
+--- b/foo.md
 +++ b/foo.md
 @@ -1 +1 @@
 -this is my file content
 +this is my file contnent
 `
-	t.Run("basic", func(t *testing.T) {
-		c := NewMockClientWithExecReader(func(_ context.Context, _ api.RepoName, args []string) (io.ReadCloser, error) {
-			return io.NopCloser(strings.NewReader(testDiff)), nil
+	t.Run("bbsic", func(t *testing.T) {
+		c := NewMockClientWithExecRebder(func(_ context.Context, _ bpi.RepoNbme, brgs []string) (io.RebdCloser, error) {
+			return io.NopCloser(strings.NewRebder(testDiff)), nil
 		})
-		checker := authz.NewMockSubRepoPermissionChecker()
-		ctx := actor.WithActor(context.Background(), &actor.Actor{
+		checker := buthz.NewMockSubRepoPermissionChecker()
+		ctx := bctor.WithActor(context.Bbckground(), &bctor.Actor{
 			UID: 1,
 		})
-		hunks, err := c.DiffPath(ctx, checker, "", "sourceCommit", "", "file")
+		hunks, err := c.DiffPbth(ctx, checker, "", "sourceCommit", "", "file")
 		if err != nil {
 			t.Errorf("unexpected error: %s", err)
 		}
@@ -372,358 +372,358 @@ index 51a59ef1c..493090958 100644
 			t.Errorf("unexpected hunks returned: %d", len(hunks))
 		}
 	})
-	t.Run("with sub-repo permissions enabled", func(t *testing.T) {
-		c := NewMockClientWithExecReader(func(_ context.Context, _ api.RepoName, args []string) (io.ReadCloser, error) {
-			return io.NopCloser(strings.NewReader(testDiff)), nil
+	t.Run("with sub-repo permissions enbbled", func(t *testing.T) {
+		c := NewMockClientWithExecRebder(func(_ context.Context, _ bpi.RepoNbme, brgs []string) (io.RebdCloser, error) {
+			return io.NopCloser(strings.NewRebder(testDiff)), nil
 		})
-		checker := authz.NewMockSubRepoPermissionChecker()
-		ctx := actor.WithActor(context.Background(), &actor.Actor{
+		checker := buthz.NewMockSubRepoPermissionChecker()
+		ctx := bctor.WithActor(context.Bbckground(), &bctor.Actor{
 			UID: 1,
 		})
-		fileName := "foo"
-		checker.EnabledFunc.SetDefaultHook(func() bool {
+		fileNbme := "foo"
+		checker.EnbbledFunc.SetDefbultHook(func() bool {
 			return true
 		})
-		// User doesn't have access to this file
-		checker.PermissionsFunc.SetDefaultHook(func(ctx context.Context, i int32, content authz.RepoContent) (authz.Perms, error) {
-			if content.Path == fileName {
-				return authz.None, nil
+		// User doesn't hbve bccess to this file
+		checker.PermissionsFunc.SetDefbultHook(func(ctx context.Context, i int32, content buthz.RepoContent) (buthz.Perms, error) {
+			if content.Pbth == fileNbme {
+				return buthz.None, nil
 			}
-			return authz.Read, nil
+			return buthz.Rebd, nil
 		})
 		usePermissionsForFilePermissionsFunc(checker)
-		hunks, err := c.DiffPath(ctx, checker, "", "sourceCommit", "", fileName)
-		if !reflect.DeepEqual(err, os.ErrNotExist) {
+		hunks, err := c.DiffPbth(ctx, checker, "", "sourceCommit", "", fileNbme)
+		if !reflect.DeepEqubl(err, os.ErrNotExist) {
 			t.Errorf("unexpected error: %s", err)
 		}
 		if hunks != nil {
-			t.Errorf("expected DiffPath to return no results, got %v", hunks)
+			t.Errorf("expected DiffPbth to return no results, got %v", hunks)
 		}
 	})
 }
 
-func TestRepository_BlameFile(t *testing.T) {
-	ClientMocks.LocalGitserver = true
+func TestRepository_BlbmeFile(t *testing.T) {
+	ClientMocks.LocblGitserver = true
 	defer ResetClientMocks()
 
-	ctx := context.Background()
+	ctx := context.Bbckground()
 
-	gitCommands := []string{
+	gitCommbnds := []string{
 		"echo line1 > f",
-		"git add f",
+		"git bdd f",
 		"git commit -m foo",
 		"echo line2 >> f",
-		"git add f",
+		"git bdd f",
 		"git commit -m foo",
 		"git mv f f2",
 		"echo line3 >> f2",
-		"git add f2",
+		"git bdd f2",
 		"git commit -m foo",
 	}
-	gitWantHunks := []*Hunk{
+	gitWbntHunks := []*Hunk{
 		{
-			StartLine: 1, EndLine: 2, StartByte: 0, EndByte: 6, CommitID: "e6093374dcf5725d8517db0dccbbf69df65dbde0",
-			Message: "foo", Author: gitdomain.Signature{Name: "a", Email: "a@a.com", Date: MustParseTime(time.RFC3339, "2006-01-02T15:04:05Z")},
-			Filename: "f",
+			StbrtLine: 1, EndLine: 2, StbrtByte: 0, EndByte: 6, CommitID: "e6093374dcf5725d8517db0dccbbf69df65dbde0",
+			Messbge: "foo", Author: gitdombin.Signbture{Nbme: "b", Embil: "b@b.com", Dbte: MustPbrseTime(time.RFC3339, "2006-01-02T15:04:05Z")},
+			Filenbme: "f",
 		},
 		{
-			StartLine: 2, EndLine: 3, StartByte: 6, EndByte: 12, CommitID: "fad406f4fe02c358a09df0d03ec7a36c2c8a20f1",
-			Message: "foo", Author: gitdomain.Signature{Name: "a", Email: "a@a.com", Date: MustParseTime(time.RFC3339, "2006-01-02T15:04:05Z")},
-			Filename: "f",
+			StbrtLine: 2, EndLine: 3, StbrtByte: 6, EndByte: 12, CommitID: "fbd406f4fe02c358b09df0d03ec7b36c2c8b20f1",
+			Messbge: "foo", Author: gitdombin.Signbture{Nbme: "b", Embil: "b@b.com", Dbte: MustPbrseTime(time.RFC3339, "2006-01-02T15:04:05Z")},
+			Filenbme: "f",
 		},
 		{
-			StartLine: 3, EndLine: 4, StartByte: 12, EndByte: 18, CommitID: "311d75a2b414a77f5158a0ed73ec476f5469b286",
-			Message: "foo", Author: gitdomain.Signature{Name: "a", Email: "a@a.com", Date: MustParseTime(time.RFC3339, "2006-01-02T15:04:05Z")},
-			Filename: "f2",
+			StbrtLine: 3, EndLine: 4, StbrtByte: 12, EndByte: 18, CommitID: "311d75b2b414b77f5158b0ed73ec476f5469b286",
+			Messbge: "foo", Author: gitdombin.Signbture{Nbme: "b", Embil: "b@b.com", Dbte: MustPbrseTime(time.RFC3339, "2006-01-02T15:04:05Z")},
+			Filenbme: "f2",
 		},
 	}
-	tests := map[string]struct {
-		repo api.RepoName
-		path string
-		opt  *BlameOptions
+	tests := mbp[string]struct {
+		repo bpi.RepoNbme
+		pbth string
+		opt  *BlbmeOptions
 
-		wantHunks []*Hunk
+		wbntHunks []*Hunk
 	}{
 		"git cmd": {
-			repo: MakeGitRepository(t, gitCommands...),
-			path: "f2",
-			opt: &BlameOptions{
-				NewestCommit: "master",
+			repo: MbkeGitRepository(t, gitCommbnds...),
+			pbth: "f2",
+			opt: &BlbmeOptions{
+				NewestCommit: "mbster",
 			},
-			wantHunks: gitWantHunks,
+			wbntHunks: gitWbntHunks,
 		},
 	}
 
 	client := NewClient()
-	for label, test := range tests {
+	for lbbel, test := rbnge tests {
 		newestCommitID, err := client.ResolveRevision(ctx, test.repo, string(test.opt.NewestCommit), ResolveRevisionOptions{})
 		if err != nil {
-			t.Errorf("%s: ResolveRevision(%q) on base: %s", label, test.opt.NewestCommit, err)
+			t.Errorf("%s: ResolveRevision(%q) on bbse: %s", lbbel, test.opt.NewestCommit, err)
 			continue
 		}
 
 		test.opt.NewestCommit = newestCommitID
-		runBlameFileTest(ctx, t, test.repo, test.path, test.opt, nil, label, test.wantHunks)
+		runBlbmeFileTest(ctx, t, test.repo, test.pbth, test.opt, nil, lbbel, test.wbntHunks)
 
-		checker := authz.NewMockSubRepoPermissionChecker()
-		ctx = actor.WithActor(ctx, &actor.Actor{
+		checker := buthz.NewMockSubRepoPermissionChecker()
+		ctx = bctor.WithActor(ctx, &bctor.Actor{
 			UID: 1,
 		})
 		// Sub-repo permissions
-		// Case: user has read access to file, doesn't filter anything
-		checker.EnabledFunc.SetDefaultHook(func() bool {
+		// Cbse: user hbs rebd bccess to file, doesn't filter bnything
+		checker.EnbbledFunc.SetDefbultHook(func() bool {
 			return true
 		})
-		checker.PermissionsFunc.SetDefaultHook(func(ctx context.Context, i int32, content authz.RepoContent) (authz.Perms, error) {
-			if content.Path == "f2" {
-				return authz.Read, nil
+		checker.PermissionsFunc.SetDefbultHook(func(ctx context.Context, i int32, content buthz.RepoContent) (buthz.Perms, error) {
+			if content.Pbth == "f2" {
+				return buthz.Rebd, nil
 			}
-			return authz.None, nil
+			return buthz.None, nil
 		})
 		usePermissionsForFilePermissionsFunc(checker)
-		runBlameFileTest(ctx, t, test.repo, test.path, test.opt, checker, label, test.wantHunks)
+		runBlbmeFileTest(ctx, t, test.repo, test.pbth, test.opt, checker, lbbel, test.wbntHunks)
 
 		// Sub-repo permissions
-		// Case: user doesn't have access to the file, nothing returned.
-		checker.PermissionsFunc.SetDefaultHook(func(ctx context.Context, i int32, content authz.RepoContent) (authz.Perms, error) {
-			return authz.None, nil
+		// Cbse: user doesn't hbve bccess to the file, nothing returned.
+		checker.PermissionsFunc.SetDefbultHook(func(ctx context.Context, i int32, content buthz.RepoContent) (buthz.Perms, error) {
+			return buthz.None, nil
 		})
-		runBlameFileTest(ctx, t, test.repo, test.path, test.opt, checker, label, nil)
+		runBlbmeFileTest(ctx, t, test.repo, test.pbth, test.opt, checker, lbbel, nil)
 	}
 }
 
-func runBlameFileTest(ctx context.Context, t *testing.T, repo api.RepoName, path string, opt *BlameOptions,
-	checker authz.SubRepoPermissionChecker, label string, wantHunks []*Hunk,
+func runBlbmeFileTest(ctx context.Context, t *testing.T, repo bpi.RepoNbme, pbth string, opt *BlbmeOptions,
+	checker buthz.SubRepoPermissionChecker, lbbel string, wbntHunks []*Hunk,
 ) {
 	t.Helper()
-	hunks, err := NewClient().BlameFile(ctx, checker, repo, path, opt)
+	hunks, err := NewClient().BlbmeFile(ctx, checker, repo, pbth, opt)
 	if err != nil {
-		t.Errorf("%s: BlameFile(%s, %+v): %s", label, path, opt, err)
+		t.Errorf("%s: BlbmeFile(%s, %+v): %s", lbbel, pbth, opt, err)
 		return
 	}
-	if !reflect.DeepEqual(hunks, wantHunks) {
-		t.Errorf("%s: hunks != wantHunks\n\nhunks ==========\n%s\n\nwantHunks ==========\n%s", label, AsJSON(hunks), AsJSON(wantHunks))
+	if !reflect.DeepEqubl(hunks, wbntHunks) {
+		t.Errorf("%s: hunks != wbntHunks\n\nhunks ==========\n%s\n\nwbntHunks ==========\n%s", lbbel, AsJSON(hunks), AsJSON(wbntHunks))
 	}
 }
 
 func TestIsAbsoluteRevision(t *testing.T) {
-	yes := []string{"8cb03d28ad1c6a875f357c5d862237577b06e57c", "20697a062454c29d84e3f006b22eb029d730cd00"}
-	no := []string{"ref: refs/heads/appsinfra/SHEP-20-review", "master", "HEAD", "refs/heads/master", "20697a062454c29d84e3f006b22eb029d730cd0", "20697a062454c29d84e3f006b22eb029d730cd000", "  20697a062454c29d84e3f006b22eb029d730cd00  ", "20697a062454c29d84e3f006b22eb029d730cd0 "}
-	for _, s := range yes {
+	yes := []string{"8cb03d28bd1c6b875f357c5d862237577b06e57c", "20697b062454c29d84e3f006b22eb029d730cd00"}
+	no := []string{"ref: refs/hebds/bppsinfrb/SHEP-20-review", "mbster", "HEAD", "refs/hebds/mbster", "20697b062454c29d84e3f006b22eb029d730cd0", "20697b062454c29d84e3f006b22eb029d730cd000", "  20697b062454c29d84e3f006b22eb029d730cd00  ", "20697b062454c29d84e3f006b22eb029d730cd0 "}
+	for _, s := rbnge yes {
 		if !IsAbsoluteRevision(s) {
-			t.Errorf("%q should be an absolute revision", s)
+			t.Errorf("%q should be bn bbsolute revision", s)
 		}
 	}
-	for _, s := range no {
+	for _, s := rbnge no {
 		if IsAbsoluteRevision(s) {
-			t.Errorf("%q should not be an absolute revision", s)
+			t.Errorf("%q should not be bn bbsolute revision", s)
 		}
 	}
 }
 
-func TestRepository_ResolveBranch(t *testing.T) {
-	ClientMocks.LocalGitserver = true
+func TestRepository_ResolveBrbnch(t *testing.T) {
+	ClientMocks.LocblGitserver = true
 	defer ResetClientMocks()
 
-	gitCommands := []string{
-		"git commit --allow-empty -m foo",
+	gitCommbnds := []string{
+		"git commit --bllow-empty -m foo",
 	}
-	tests := map[string]struct {
-		repo         api.RepoName
-		branch       string
-		wantCommitID api.CommitID
+	tests := mbp[string]struct {
+		repo         bpi.RepoNbme
+		brbnch       string
+		wbntCommitID bpi.CommitID
 	}{
 		"git cmd": {
-			repo:         MakeGitRepository(t, gitCommands...),
-			branch:       "master",
-			wantCommitID: "ea167fe3d76b1e5fd3ed8ca44cbd2fe3897684f8",
+			repo:         MbkeGitRepository(t, gitCommbnds...),
+			brbnch:       "mbster",
+			wbntCommitID: "eb167fe3d76b1e5fd3ed8cb44cbd2fe3897684f8",
 		},
 	}
 
-	for label, test := range tests {
-		commitID, err := NewClient().ResolveRevision(context.Background(), test.repo, test.branch, ResolveRevisionOptions{})
+	for lbbel, test := rbnge tests {
+		commitID, err := NewClient().ResolveRevision(context.Bbckground(), test.repo, test.brbnch, ResolveRevisionOptions{})
 		if err != nil {
-			t.Errorf("%s: ResolveRevision: %s", label, err)
+			t.Errorf("%s: ResolveRevision: %s", lbbel, err)
 			continue
 		}
 
-		if commitID != test.wantCommitID {
-			t.Errorf("%s: got commitID == %v, want %v", label, commitID, test.wantCommitID)
+		if commitID != test.wbntCommitID {
+			t.Errorf("%s: got commitID == %v, wbnt %v", lbbel, commitID, test.wbntCommitID)
 		}
 	}
 }
 
-func TestRepository_ResolveBranch_error(t *testing.T) {
-	ClientMocks.LocalGitserver = true
+func TestRepository_ResolveBrbnch_error(t *testing.T) {
+	ClientMocks.LocblGitserver = true
 	defer ResetClientMocks()
 
-	gitCommands := []string{
-		"git commit --allow-empty -m foo",
+	gitCommbnds := []string{
+		"git commit --bllow-empty -m foo",
 	}
-	tests := map[string]struct {
-		repo    api.RepoName
-		branch  string
-		wantErr func(error) bool
+	tests := mbp[string]struct {
+		repo    bpi.RepoNbme
+		brbnch  string
+		wbntErr func(error) bool
 	}{
 		"git cmd": {
-			repo:    MakeGitRepository(t, gitCommands...),
-			branch:  "doesntexist",
-			wantErr: func(err error) bool { return errors.HasType(err, &gitdomain.RevisionNotFoundError{}) },
+			repo:    MbkeGitRepository(t, gitCommbnds...),
+			brbnch:  "doesntexist",
+			wbntErr: func(err error) bool { return errors.HbsType(err, &gitdombin.RevisionNotFoundError{}) },
 		},
 	}
 
-	for label, test := range tests {
-		commitID, err := NewClient().ResolveRevision(context.Background(), test.repo, test.branch, ResolveRevisionOptions{})
-		if !test.wantErr(err) {
-			t.Errorf("%s: ResolveRevision: %s", label, err)
+	for lbbel, test := rbnge tests {
+		commitID, err := NewClient().ResolveRevision(context.Bbckground(), test.repo, test.brbnch, ResolveRevisionOptions{})
+		if !test.wbntErr(err) {
+			t.Errorf("%s: ResolveRevision: %s", lbbel, err)
 			continue
 		}
 
 		if commitID != "" {
-			t.Errorf("%s: got commitID == %v, want empty", label, commitID)
+			t.Errorf("%s: got commitID == %v, wbnt empty", lbbel, commitID)
 		}
 	}
 }
 
-func TestRepository_ResolveTag(t *testing.T) {
-	ClientMocks.LocalGitserver = true
+func TestRepository_ResolveTbg(t *testing.T) {
+	ClientMocks.LocblGitserver = true
 	defer ResetClientMocks()
 
-	gitCommands := []string{
-		"git commit --allow-empty -m foo",
-		"git tag t",
+	gitCommbnds := []string{
+		"git commit --bllow-empty -m foo",
+		"git tbg t",
 	}
-	tests := map[string]struct {
-		repo         api.RepoName
-		tag          string
-		wantCommitID api.CommitID
+	tests := mbp[string]struct {
+		repo         bpi.RepoNbme
+		tbg          string
+		wbntCommitID bpi.CommitID
 	}{
 		"git cmd": {
-			repo:         MakeGitRepository(t, gitCommands...),
-			tag:          "t",
-			wantCommitID: "ea167fe3d76b1e5fd3ed8ca44cbd2fe3897684f8",
+			repo:         MbkeGitRepository(t, gitCommbnds...),
+			tbg:          "t",
+			wbntCommitID: "eb167fe3d76b1e5fd3ed8cb44cbd2fe3897684f8",
 		},
 	}
 
-	for label, test := range tests {
-		commitID, err := NewClient().ResolveRevision(context.Background(), test.repo, test.tag, ResolveRevisionOptions{})
+	for lbbel, test := rbnge tests {
+		commitID, err := NewClient().ResolveRevision(context.Bbckground(), test.repo, test.tbg, ResolveRevisionOptions{})
 		if err != nil {
-			t.Errorf("%s: ResolveRevision: %s", label, err)
+			t.Errorf("%s: ResolveRevision: %s", lbbel, err)
 			continue
 		}
 
-		if commitID != test.wantCommitID {
-			t.Errorf("%s: got commitID == %v, want %v", label, commitID, test.wantCommitID)
+		if commitID != test.wbntCommitID {
+			t.Errorf("%s: got commitID == %v, wbnt %v", lbbel, commitID, test.wbntCommitID)
 		}
 	}
 }
 
-func TestRepository_ResolveTag_error(t *testing.T) {
-	ClientMocks.LocalGitserver = true
+func TestRepository_ResolveTbg_error(t *testing.T) {
+	ClientMocks.LocblGitserver = true
 	defer ResetClientMocks()
 
-	gitCommands := []string{
-		"git commit --allow-empty -m foo",
+	gitCommbnds := []string{
+		"git commit --bllow-empty -m foo",
 	}
-	tests := map[string]struct {
-		repo    api.RepoName
-		tag     string
-		wantErr func(error) bool
+	tests := mbp[string]struct {
+		repo    bpi.RepoNbme
+		tbg     string
+		wbntErr func(error) bool
 	}{
 		"git cmd": {
-			repo:    MakeGitRepository(t, gitCommands...),
-			tag:     "doesntexist",
-			wantErr: func(err error) bool { return errors.HasType(err, &gitdomain.RevisionNotFoundError{}) },
+			repo:    MbkeGitRepository(t, gitCommbnds...),
+			tbg:     "doesntexist",
+			wbntErr: func(err error) bool { return errors.HbsType(err, &gitdombin.RevisionNotFoundError{}) },
 		},
 	}
 
-	for label, test := range tests {
-		commitID, err := NewClient().ResolveRevision(context.Background(), test.repo, test.tag, ResolveRevisionOptions{})
-		if !test.wantErr(err) {
-			t.Errorf("%s: ResolveRevision: %s", label, err)
+	for lbbel, test := rbnge tests {
+		commitID, err := NewClient().ResolveRevision(context.Bbckground(), test.repo, test.tbg, ResolveRevisionOptions{})
+		if !test.wbntErr(err) {
+			t.Errorf("%s: ResolveRevision: %s", lbbel, err)
 			continue
 		}
 
 		if commitID != "" {
-			t.Errorf("%s: got commitID == %v, want empty", label, commitID)
+			t.Errorf("%s: got commitID == %v, wbnt empty", lbbel, commitID)
 		}
 	}
 }
 
 func TestLsFiles(t *testing.T) {
-	ClientMocks.LocalGitserver = true
+	ClientMocks.LocblGitserver = true
 	defer ResetClientMocks()
 	client := NewClient()
-	runFileListingTest(t, func(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api.RepoName, commit string) ([]string, error) {
-		return client.LsFiles(ctx, checker, repo, api.CommitID(commit))
+	runFileListingTest(t, func(ctx context.Context, checker buthz.SubRepoPermissionChecker, repo bpi.RepoNbme, commit string) ([]string, error) {
+		return client.LsFiles(ctx, checker, repo, bpi.CommitID(commit))
 	})
 }
 
-// runFileListingTest tests the specified function which must return a list of filenames and an error. The test first
-// tests the basic case (all paths returned), then the case with sub-repo permissions specified.
+// runFileListingTest tests the specified function which must return b list of filenbmes bnd bn error. The test first
+// tests the bbsic cbse (bll pbths returned), then the cbse with sub-repo permissions specified.
 func runFileListingTest(t *testing.T,
-	listingFunctionToTest func(context.Context, authz.SubRepoPermissionChecker, api.RepoName, string) ([]string, error),
+	listingFunctionToTest func(context.Context, buthz.SubRepoPermissionChecker, bpi.RepoNbme, string) ([]string, error),
 ) {
 	t.Helper()
-	gitCommands := []string{
+	gitCommbnds := []string{
 		"touch file1",
 		"mkdir dir",
 		"touch dir/file2",
 		"touch dir/file3",
-		"git add file1 dir/file2 dir/file3",
+		"git bdd file1 dir/file2 dir/file3",
 		"git commit -m commit1",
 	}
 
-	repo, dir := MakeGitRepositoryAndReturnDir(t, gitCommands...)
-	headCommit := GetHeadCommitFromGitDir(t, dir)
-	ctx := context.Background()
+	repo, dir := MbkeGitRepositoryAndReturnDir(t, gitCommbnds...)
+	hebdCommit := GetHebdCommitFromGitDir(t, dir)
+	ctx := context.Bbckground()
 
-	checker := authz.NewMockSubRepoPermissionChecker()
-	// Start disabled
-	checker.EnabledFunc.SetDefaultHook(func() bool {
-		return false
+	checker := buthz.NewMockSubRepoPermissionChecker()
+	// Stbrt disbbled
+	checker.EnbbledFunc.SetDefbultHook(func() bool {
+		return fblse
 	})
 
-	files, err := listingFunctionToTest(ctx, checker, repo, headCommit)
+	files, err := listingFunctionToTest(ctx, checker, repo, hebdCommit)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
-	want := []string{
+	wbnt := []string{
 		"dir/file2", "dir/file3", "file1",
 	}
-	if diff := cmp.Diff(want, files); diff != "" {
-		t.Fatal(diff)
+	if diff := cmp.Diff(wbnt, files); diff != "" {
+		t.Fbtbl(diff)
 	}
 
 	// With filtering
-	checker.EnabledFunc.SetDefaultHook(func() bool {
+	checker.EnbbledFunc.SetDefbultHook(func() bool {
 		return true
 	})
-	checker.PermissionsFunc.SetDefaultHook(func(ctx context.Context, i int32, content authz.RepoContent) (authz.Perms, error) {
-		if content.Path == "dir/file2" {
-			return authz.Read, nil
+	checker.PermissionsFunc.SetDefbultHook(func(ctx context.Context, i int32, content buthz.RepoContent) (buthz.Perms, error) {
+		if content.Pbth == "dir/file2" {
+			return buthz.Rebd, nil
 		}
-		return authz.None, nil
+		return buthz.None, nil
 	})
 	usePermissionsForFilePermissionsFunc(checker)
-	ctx = actor.WithActor(ctx, &actor.Actor{
+	ctx = bctor.WithActor(ctx, &bctor.Actor{
 		UID: 1,
 	})
-	files, err = listingFunctionToTest(ctx, checker, repo, headCommit)
+	files, err = listingFunctionToTest(ctx, checker, repo, hebdCommit)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
-	want = []string{
+	wbnt = []string{
 		"dir/file2",
 	}
-	if diff := cmp.Diff(want, files); diff != "" {
-		t.Fatal(diff)
+	if diff := cmp.Diff(wbnt, files); diff != "" {
+		t.Fbtbl(diff)
 	}
 }
 
-func TestParseDirectoryChildrenRoot(t *testing.T) {
-	dirnames := []string{""}
-	paths := []string{
+func TestPbrseDirectoryChildrenRoot(t *testing.T) {
+	dirnbmes := []string{""}
+	pbths := []string{
 		".github",
 		".gitignore",
 		"LICENSE",
@@ -731,73 +731,73 @@ func TestParseDirectoryChildrenRoot(t *testing.T) {
 		"cmd",
 		"go.mod",
 		"go.sum",
-		"internal",
+		"internbl",
 		"protocol",
 	}
 
-	expected := map[string][]string{
-		"": paths,
+	expected := mbp[string][]string{
+		"": pbths,
 	}
 
-	if diff := cmp.Diff(expected, parseDirectoryChildren(dirnames, paths)); diff != "" {
-		t.Errorf("unexpected directory children result (-want +got):\n%s", diff)
+	if diff := cmp.Diff(expected, pbrseDirectoryChildren(dirnbmes, pbths)); diff != "" {
+		t.Errorf("unexpected directory children result (-wbnt +got):\n%s", diff)
 	}
 }
 
-func TestParseDirectoryChildrenNonRoot(t *testing.T) {
-	dirnames := []string{"cmd/", "protocol/", "cmd/protocol/"}
-	paths := []string{
+func TestPbrseDirectoryChildrenNonRoot(t *testing.T) {
+	dirnbmes := []string{"cmd/", "protocol/", "cmd/protocol/"}
+	pbths := []string{
 		"cmd/lsif-go",
 		"protocol/protocol.go",
 		"protocol/writer.go",
 	}
 
-	expected := map[string][]string{
+	expected := mbp[string][]string{
 		"cmd/":          {"cmd/lsif-go"},
 		"protocol/":     {"protocol/protocol.go", "protocol/writer.go"},
 		"cmd/protocol/": nil,
 	}
 
-	if diff := cmp.Diff(expected, parseDirectoryChildren(dirnames, paths)); diff != "" {
-		t.Errorf("unexpected directory children result (-want +got):\n%s", diff)
+	if diff := cmp.Diff(expected, pbrseDirectoryChildren(dirnbmes, pbths)); diff != "" {
+		t.Errorf("unexpected directory children result (-wbnt +got):\n%s", diff)
 	}
 }
 
-func TestParseDirectoryChildrenDifferentDepths(t *testing.T) {
-	dirnames := []string{"cmd/", "protocol/", "cmd/protocol/"}
-	paths := []string{
+func TestPbrseDirectoryChildrenDifferentDepths(t *testing.T) {
+	dirnbmes := []string{"cmd/", "protocol/", "cmd/protocol/"}
+	pbths := []string{
 		"cmd/lsif-go",
 		"protocol/protocol.go",
 		"protocol/writer.go",
-		"cmd/protocol/main.go",
+		"cmd/protocol/mbin.go",
 	}
 
-	expected := map[string][]string{
+	expected := mbp[string][]string{
 		"cmd/":          {"cmd/lsif-go"},
 		"protocol/":     {"protocol/protocol.go", "protocol/writer.go"},
-		"cmd/protocol/": {"cmd/protocol/main.go"},
+		"cmd/protocol/": {"cmd/protocol/mbin.go"},
 	}
 
-	if diff := cmp.Diff(expected, parseDirectoryChildren(dirnames, paths)); diff != "" {
-		t.Errorf("unexpected directory children result (-want +got):\n%s", diff)
+	if diff := cmp.Diff(expected, pbrseDirectoryChildren(dirnbmes, pbths)); diff != "" {
+		t.Errorf("unexpected directory children result (-wbnt +got):\n%s", diff)
 	}
 }
 
-func TestCleanDirectoriesForLsTree(t *testing.T) {
-	args := []string{"", "foo", "bar/", "baz"}
-	actual := cleanDirectoriesForLsTree(args)
-	expected := []string{".", "foo/", "bar/", "baz/"}
+func TestClebnDirectoriesForLsTree(t *testing.T) {
+	brgs := []string{"", "foo", "bbr/", "bbz"}
+	bctubl := clebnDirectoriesForLsTree(brgs)
+	expected := []string{".", "foo/", "bbr/", "bbz/"}
 
-	if diff := cmp.Diff(expected, actual); diff != "" {
-		t.Errorf("unexpected ls-tree args (-want +got):\n%s", diff)
+	if diff := cmp.Diff(expected, bctubl); diff != "" {
+		t.Errorf("unexpected ls-tree brgs (-wbnt +got):\n%s", diff)
 	}
 }
 
 func TestListDirectoryChildren(t *testing.T) {
-	ClientMocks.LocalGitserver = true
+	ClientMocks.LocblGitserver = true
 	defer ResetClientMocks()
 	client := NewClient()
-	gitCommands := []string{
+	gitCommbnds := []string{
 		"mkdir -p dir{1..3}/sub{1..3}",
 		"touch dir1/sub1/file",
 		"touch dir1/sub2/file",
@@ -805,278 +805,278 @@ func TestListDirectoryChildren(t *testing.T) {
 		"touch dir2/sub2/file",
 		"touch dir3/sub1/file",
 		"touch dir3/sub3/file",
-		"git add .",
+		"git bdd .",
 		"git commit -m commit1",
 	}
 
-	repo := MakeGitRepository(t, gitCommands...)
+	repo := MbkeGitRepository(t, gitCommbnds...)
 
-	ctx := context.Background()
+	ctx := context.Bbckground()
 
-	checker := authz.NewMockSubRepoPermissionChecker()
-	// Start disabled
-	checker.EnabledFunc.SetDefaultHook(func() bool {
-		return false
+	checker := buthz.NewMockSubRepoPermissionChecker()
+	// Stbrt disbbled
+	checker.EnbbledFunc.SetDefbultHook(func() bool {
+		return fblse
 	})
 
-	dirnames := []string{"dir1/", "dir2/", "dir3/"}
-	children, err := client.ListDirectoryChildren(ctx, checker, repo, "HEAD", dirnames)
+	dirnbmes := []string{"dir1/", "dir2/", "dir3/"}
+	children, err := client.ListDirectoryChildren(ctx, checker, repo, "HEAD", dirnbmes)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
-	expected := map[string][]string{
+	expected := mbp[string][]string{
 		"dir1/": {"dir1/sub1", "dir1/sub2"},
 		"dir2/": {"dir2/sub1", "dir2/sub2"},
 		"dir3/": {"dir3/sub1", "dir3/sub3"},
 	}
 	if diff := cmp.Diff(expected, children); diff != "" {
-		t.Fatal(diff)
+		t.Fbtbl(diff)
 	}
 
 	// With filtering
-	checker.EnabledFunc.SetDefaultHook(func() bool {
+	checker.EnbbledFunc.SetDefbultHook(func() bool {
 		return true
 	})
-	checker.PermissionsFunc.SetDefaultHook(func(ctx context.Context, i int32, content authz.RepoContent) (authz.Perms, error) {
-		if strings.Contains(content.Path, "dir1/") {
-			return authz.Read, nil
+	checker.PermissionsFunc.SetDefbultHook(func(ctx context.Context, i int32, content buthz.RepoContent) (buthz.Perms, error) {
+		if strings.Contbins(content.Pbth, "dir1/") {
+			return buthz.Rebd, nil
 		}
-		return authz.None, nil
+		return buthz.None, nil
 	})
 	usePermissionsForFilePermissionsFunc(checker)
-	ctx = actor.WithActor(ctx, &actor.Actor{
+	ctx = bctor.WithActor(ctx, &bctor.Actor{
 		UID: 1,
 	})
-	children, err = client.ListDirectoryChildren(ctx, checker, repo, "HEAD", dirnames)
+	children, err = client.ListDirectoryChildren(ctx, checker, repo, "HEAD", dirnbmes)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
-	expected = map[string][]string{
+	expected = mbp[string][]string{
 		"dir1/": {"dir1/sub1", "dir1/sub2"},
 		"dir2/": nil,
 		"dir3/": nil,
 	}
 	if diff := cmp.Diff(expected, children); diff != "" {
-		t.Fatal(diff)
+		t.Fbtbl(diff)
 	}
 }
 
-func TestListTags(t *testing.T) {
-	ClientMocks.LocalGitserver = true
+func TestListTbgs(t *testing.T) {
+	ClientMocks.LocblGitserver = true
 	defer ResetClientMocks()
 
-	dateEnv := "GIT_COMMITTER_NAME=a GIT_COMMITTER_EMAIL=a@a.com GIT_COMMITTER_DATE=2006-01-02T15:04:05Z"
-	gitCommands := []string{
-		dateEnv + " git commit --allow-empty -m foo --author='a <a@a.com>' --date 2006-01-02T15:04:05Z",
-		"git tag t0",
-		"git tag t1",
-		dateEnv + " git tag --annotate -m foo t2",
-		dateEnv + " git commit --allow-empty -m foo --author='a <a@a.com>' --date 2006-01-02T15:04:05Z",
-		"git tag t3",
+	dbteEnv := "GIT_COMMITTER_NAME=b GIT_COMMITTER_EMAIL=b@b.com GIT_COMMITTER_DATE=2006-01-02T15:04:05Z"
+	gitCommbnds := []string{
+		dbteEnv + " git commit --bllow-empty -m foo --buthor='b <b@b.com>' --dbte 2006-01-02T15:04:05Z",
+		"git tbg t0",
+		"git tbg t1",
+		dbteEnv + " git tbg --bnnotbte -m foo t2",
+		dbteEnv + " git commit --bllow-empty -m foo --buthor='b <b@b.com>' --dbte 2006-01-02T15:04:05Z",
+		"git tbg t3",
 	}
 
-	repo := MakeGitRepository(t, gitCommands...)
-	wantTags := []*gitdomain.Tag{
-		{Name: "t0", CommitID: "ea167fe3d76b1e5fd3ed8ca44cbd2fe3897684f8", CreatorDate: MustParseTime(time.RFC3339, "2006-01-02T15:04:05Z")},
-		{Name: "t1", CommitID: "ea167fe3d76b1e5fd3ed8ca44cbd2fe3897684f8", CreatorDate: MustParseTime(time.RFC3339, "2006-01-02T15:04:05Z")},
-		{Name: "t2", CommitID: "ea167fe3d76b1e5fd3ed8ca44cbd2fe3897684f8", CreatorDate: MustParseTime(time.RFC3339, "2006-01-02T15:04:05Z")},
-		{Name: "t3", CommitID: "afeafc4a918c144329807df307e68899e6b65018", CreatorDate: MustParseTime(time.RFC3339, "2006-01-02T15:04:05Z")},
+	repo := MbkeGitRepository(t, gitCommbnds...)
+	wbntTbgs := []*gitdombin.Tbg{
+		{Nbme: "t0", CommitID: "eb167fe3d76b1e5fd3ed8cb44cbd2fe3897684f8", CrebtorDbte: MustPbrseTime(time.RFC3339, "2006-01-02T15:04:05Z")},
+		{Nbme: "t1", CommitID: "eb167fe3d76b1e5fd3ed8cb44cbd2fe3897684f8", CrebtorDbte: MustPbrseTime(time.RFC3339, "2006-01-02T15:04:05Z")},
+		{Nbme: "t2", CommitID: "eb167fe3d76b1e5fd3ed8cb44cbd2fe3897684f8", CrebtorDbte: MustPbrseTime(time.RFC3339, "2006-01-02T15:04:05Z")},
+		{Nbme: "t3", CommitID: "bfebfc4b918c144329807df307e68899e6b65018", CrebtorDbte: MustPbrseTime(time.RFC3339, "2006-01-02T15:04:05Z")},
 	}
 
 	client := NewClient()
-	tags, err := client.ListTags(context.Background(), repo)
+	tbgs, err := client.ListTbgs(context.Bbckground(), repo)
 	require.Nil(t, err)
 
-	sort.Sort(gitdomain.Tags(tags))
-	sort.Sort(gitdomain.Tags(wantTags))
+	sort.Sort(gitdombin.Tbgs(tbgs))
+	sort.Sort(gitdombin.Tbgs(wbntTbgs))
 
-	if diff := cmp.Diff(wantTags, tags); diff != "" {
-		t.Fatalf("tag mismatch (-want +got):\n%s", diff)
+	if diff := cmp.Diff(wbntTbgs, tbgs); diff != "" {
+		t.Fbtblf("tbg mismbtch (-wbnt +got):\n%s", diff)
 	}
 
-	tags, err = client.ListTags(context.Background(), repo, "ea167fe3d76b1e5fd3ed8ca44cbd2fe3897684f8")
+	tbgs, err = client.ListTbgs(context.Bbckground(), repo, "eb167fe3d76b1e5fd3ed8cb44cbd2fe3897684f8")
 	require.Nil(t, err)
-	if diff := cmp.Diff(wantTags[:3], tags); diff != "" {
-		t.Fatalf("tag mismatch (-want +got):\n%s", diff)
+	if diff := cmp.Diff(wbntTbgs[:3], tbgs); diff != "" {
+		t.Fbtblf("tbg mismbtch (-wbnt +got):\n%s", diff)
 	}
 
-	tags, err = client.ListTags(context.Background(), repo, "afeafc4a918c144329807df307e68899e6b65018")
+	tbgs, err = client.ListTbgs(context.Bbckground(), repo, "bfebfc4b918c144329807df307e68899e6b65018")
 	require.Nil(t, err)
-	if diff := cmp.Diff([]*gitdomain.Tag{wantTags[3]}, tags); diff != "" {
-		t.Fatalf("tag mismatch (-want +got):\n%s", diff)
+	if diff := cmp.Diff([]*gitdombin.Tbg{wbntTbgs[3]}, tbgs); diff != "" {
+		t.Fbtblf("tbg mismbtch (-wbnt +got):\n%s", diff)
 	}
 }
 
-// See https://github.com/sourcegraph/sourcegraph/issues/5453
-func TestParseTags_WithoutCreatorDate(t *testing.T) {
-	have, err := parseTags([]byte(
-		"9ee1c939d1cb936b1f98e8d81aeffab57bae46ab\x00v2.6.12\x001119037709\n" +
-			"c39ae07f393806ccf406ef966e9a15afc43cc36a\x00v2.6.11-tree\x00\n" +
-			"c39ae07f393806ccf406ef966e9a15afc43cc36a\x00v2.6.11\x00\n",
+// See https://github.com/sourcegrbph/sourcegrbph/issues/5453
+func TestPbrseTbgs_WithoutCrebtorDbte(t *testing.T) {
+	hbve, err := pbrseTbgs([]byte(
+		"9ee1c939d1cb936b1f98e8d81beffbb57bbe46bb\x00v2.6.12\x001119037709\n" +
+			"c39be07f393806ccf406ef966e9b15bfc43cc36b\x00v2.6.11-tree\x00\n" +
+			"c39be07f393806ccf406ef966e9b15bfc43cc36b\x00v2.6.11\x00\n",
 	))
 	if err != nil {
-		t.Fatalf("parseTags: have err %v, want nil", err)
+		t.Fbtblf("pbrseTbgs: hbve err %v, wbnt nil", err)
 	}
 
-	want := []*gitdomain.Tag{
+	wbnt := []*gitdombin.Tbg{
 		{
-			Name:        "v2.6.12",
-			CommitID:    "9ee1c939d1cb936b1f98e8d81aeffab57bae46ab",
-			CreatorDate: time.Unix(1119037709, 0).UTC(),
+			Nbme:        "v2.6.12",
+			CommitID:    "9ee1c939d1cb936b1f98e8d81beffbb57bbe46bb",
+			CrebtorDbte: time.Unix(1119037709, 0).UTC(),
 		},
 		{
-			Name:     "v2.6.11-tree",
-			CommitID: "c39ae07f393806ccf406ef966e9a15afc43cc36a",
+			Nbme:     "v2.6.11-tree",
+			CommitID: "c39be07f393806ccf406ef966e9b15bfc43cc36b",
 		},
 		{
-			Name:     "v2.6.11",
-			CommitID: "c39ae07f393806ccf406ef966e9a15afc43cc36a",
+			Nbme:     "v2.6.11",
+			CommitID: "c39be07f393806ccf406ef966e9b15bfc43cc36b",
 		},
 	}
 
-	if diff := cmp.Diff(have, want); diff != "" {
-		t.Fatal(diff)
+	if diff := cmp.Diff(hbve, wbnt); diff != "" {
+		t.Fbtbl(diff)
 	}
 }
 
-func TestMerger_MergeBase(t *testing.T) {
-	ClientMocks.LocalGitserver = true
+func TestMerger_MergeBbse(t *testing.T) {
+	ClientMocks.LocblGitserver = true
 	defer ResetClientMocks()
 
-	ctx := context.Background()
+	ctx := context.Bbckground()
 	client := NewClient()
 
 	// TODO(sqs): implement for hg
-	// TODO(sqs): make a more complex test case
+	// TODO(sqs): mbke b more complex test cbse
 
 	cmds := []string{
 		"echo line1 > f",
-		"git add f",
+		"git bdd f",
 		"git commit -m foo",
-		"git tag testbase",
+		"git tbg testbbse",
 		"git checkout -b b2",
 		"echo line2 >> f",
-		"git add f",
+		"git bdd f",
 		"git commit -m foo",
-		"git checkout master",
+		"git checkout mbster",
 		"echo line3 > h",
-		"git add h",
+		"git bdd h",
 		"git commit -m qux",
 	}
-	tests := map[string]struct {
-		repo api.RepoName
-		a, b string // can be any revspec; is resolved during the test
+	tests := mbp[string]struct {
+		repo bpi.RepoNbme
+		b, b string // cbn be bny revspec; is resolved during the test
 
-		wantMergeBase string // can be any revspec; is resolved during test
+		wbntMergeBbse string // cbn be bny revspec; is resolved during test
 	}{
 		"git cmd": {
-			repo: MakeGitRepository(t, cmds...),
-			a:    "master", b: "b2",
-			wantMergeBase: "testbase",
+			repo: MbkeGitRepository(t, cmds...),
+			b:    "mbster", b: "b2",
+			wbntMergeBbse: "testbbse",
 		},
 	}
 
-	for label, test := range tests {
-		a, err := client.ResolveRevision(ctx, test.repo, test.a, ResolveRevisionOptions{})
+	for lbbel, test := rbnge tests {
+		b, err := client.ResolveRevision(ctx, test.repo, test.b, ResolveRevisionOptions{})
 		if err != nil {
-			t.Errorf("%s: ResolveRevision(%q) on a: %s", label, test.a, err)
+			t.Errorf("%s: ResolveRevision(%q) on b: %s", lbbel, test.b, err)
 			continue
 		}
 
 		b, err := client.ResolveRevision(ctx, test.repo, test.b, ResolveRevisionOptions{})
 		if err != nil {
-			t.Errorf("%s: ResolveRevision(%q) on b: %s", label, test.b, err)
+			t.Errorf("%s: ResolveRevision(%q) on b: %s", lbbel, test.b, err)
 			continue
 		}
 
-		want, err := client.ResolveRevision(ctx, test.repo, test.wantMergeBase, ResolveRevisionOptions{})
+		wbnt, err := client.ResolveRevision(ctx, test.repo, test.wbntMergeBbse, ResolveRevisionOptions{})
 		if err != nil {
-			t.Errorf("%s: ResolveRevision(%q) on wantMergeBase: %s", label, test.wantMergeBase, err)
+			t.Errorf("%s: ResolveRevision(%q) on wbntMergeBbse: %s", lbbel, test.wbntMergeBbse, err)
 			continue
 		}
 
-		mb, err := client.MergeBase(ctx, test.repo, a, b)
+		mb, err := client.MergeBbse(ctx, test.repo, b, b)
 		if err != nil {
-			t.Errorf("%s: MergeBase(%s, %s): %s", label, a, b, err)
+			t.Errorf("%s: MergeBbse(%s, %s): %s", lbbel, b, b, err)
 			continue
 		}
 
-		if mb != want {
-			t.Errorf("%s: MergeBase(%s, %s): got %q, want %q", label, a, b, mb, want)
+		if mb != wbnt {
+			t.Errorf("%s: MergeBbse(%s, %s): got %q, wbnt %q", lbbel, b, b, mb, wbnt)
 			continue
 		}
 	}
 }
 
 func TestRepository_FileSystem_Symlinks(t *testing.T) {
-	ClientMocks.LocalGitserver = true
+	ClientMocks.LocblGitserver = true
 	defer ResetClientMocks()
 
-	gitCommands := []string{
+	gitCommbnds := []string{
 		"touch file1",
 		"mkdir dir1",
 		"ln -s file1 link1",
 		"ln -s ../file1 dir1/link2",
-		"touch --date=2006-01-02T15:04:05Z file1 link1 dir1/link2 || touch -t " + Times[0] + " file1 link1 dir1/link2",
-		"git add link1 file1 dir1/link2",
+		"touch --dbte=2006-01-02T15:04:05Z file1 link1 dir1/link2 || touch -t " + Times[0] + " file1 link1 dir1/link2",
+		"git bdd link1 file1 dir1/link2",
 		"git commit -m commit1",
 	}
 
-	// map of path to size of content
-	symlinks := map[string]int64{
+	// mbp of pbth to size of content
+	symlinks := mbp[string]int64{
 		"link1":      5, // file1
 		"dir1/link2": 8, // ../file1
 	}
 
-	dir := InitGitRepository(t, gitCommands...)
-	repo := api.RepoName(filepath.Base(dir))
+	dir := InitGitRepository(t, gitCommbnds...)
+	repo := bpi.RepoNbme(filepbth.Bbse(dir))
 
 	client := NewClient()
 
-	commitID := api.CommitID(ComputeCommitHash(dir, true))
+	commitID := bpi.CommitID(ComputeCommitHbsh(dir, true))
 
-	ctx := context.Background()
+	ctx := context.Bbckground()
 
-	// file1 should be a file.
-	file1Info, err := client.Stat(ctx, authz.DefaultSubRepoPermsChecker, repo, commitID, "file1")
+	// file1 should be b file.
+	file1Info, err := client.Stbt(ctx, buthz.DefbultSubRepoPermsChecker, repo, commitID, "file1")
 	if err != nil {
-		t.Fatalf("fs.Stat(file1): %s", err)
+		t.Fbtblf("fs.Stbt(file1): %s", err)
 	}
-	if !file1Info.Mode().IsRegular() {
-		t.Errorf("file1 Stat !IsRegular (mode: %o)", file1Info.Mode())
+	if !file1Info.Mode().IsRegulbr() {
+		t.Errorf("file1 Stbt !IsRegulbr (mode: %o)", file1Info.Mode())
 	}
 
-	checkSymlinkFileInfo := func(name string, link fs.FileInfo) {
+	checkSymlinkFileInfo := func(nbme string, link fs.FileInfo) {
 		t.Helper()
 		if link.Mode()&os.ModeSymlink == 0 {
 			t.Errorf("link mode is not symlink (mode: %o)", link.Mode())
 		}
-		if link.Name() != name {
-			t.Errorf("got link.Name() == %q, want %q", link.Name(), name)
+		if link.Nbme() != nbme {
+			t.Errorf("got link.Nbme() == %q, wbnt %q", link.Nbme(), nbme)
 		}
 	}
 
-	// Check symlinks are links
-	for symlink := range symlinks {
-		fi, err := client.Stat(ctx, authz.DefaultSubRepoPermsChecker, repo, commitID, symlink)
+	// Check symlinks bre links
+	for symlink := rbnge symlinks {
+		fi, err := client.Stbt(ctx, buthz.DefbultSubRepoPermsChecker, repo, commitID, symlink)
 		if err != nil {
-			t.Fatalf("fs.Stat(%s): %s", symlink, err)
+			t.Fbtblf("fs.Stbt(%s): %s", symlink, err)
 		}
 		if runtime.GOOS != "windows" {
-			// TODO(alexsaveliev) make it work on Windows too
+			// TODO(blexsbveliev) mbke it work on Windows too
 			checkSymlinkFileInfo(symlink, fi)
 		}
 	}
 
-	// Also check the FileInfo returned by ReadDir to ensure it's
-	// consistent with the FileInfo returned by lStat.
-	entries, err := client.ReadDir(ctx, authz.DefaultSubRepoPermsChecker, repo, commitID, ".", false)
+	// Also check the FileInfo returned by RebdDir to ensure it's
+	// consistent with the FileInfo returned by lStbt.
+	entries, err := client.RebdDir(ctx, buthz.DefbultSubRepoPermsChecker, repo, commitID, ".", fblse)
 	if err != nil {
-		t.Fatalf("fs.ReadDir(.): %s", err)
+		t.Fbtblf("fs.RebdDir(.): %s", err)
 	}
-	found := false
-	for _, entry := range entries {
-		if entry.Name() == "link1" {
+	found := fblse
+	for _, entry := rbnge entries {
+		if entry.Nbme() == "link1" {
 			found = true
 			if runtime.GOOS != "windows" {
 				checkSymlinkFileInfo("link1", entry)
@@ -1084,130 +1084,130 @@ func TestRepository_FileSystem_Symlinks(t *testing.T) {
 		}
 	}
 	if !found {
-		t.Fatal("readdir did not return link1")
+		t.Fbtbl("rebddir did not return link1")
 	}
 
-	for symlink, size := range symlinks {
-		fi, err := client.Stat(ctx, authz.DefaultSubRepoPermsChecker, repo, commitID, symlink)
+	for symlink, size := rbnge symlinks {
+		fi, err := client.Stbt(ctx, buthz.DefbultSubRepoPermsChecker, repo, commitID, symlink)
 		if err != nil {
-			t.Fatalf("fs.Stat(%s): %s", symlink, err)
+			t.Fbtblf("fs.Stbt(%s): %s", symlink, err)
 		}
 		if fi.Mode()&fs.ModeSymlink == 0 {
-			t.Errorf("%s Stat is not a symlink (mode: %o)", symlink, fi.Mode())
+			t.Errorf("%s Stbt is not b symlink (mode: %o)", symlink, fi.Mode())
 		}
-		if fi.Name() != symlink {
-			t.Errorf("got Name %q, want %q", fi.Name(), symlink)
+		if fi.Nbme() != symlink {
+			t.Errorf("got Nbme %q, wbnt %q", fi.Nbme(), symlink)
 		}
 		if fi.Size() != size {
-			t.Errorf("got %s Size %d, want %d", symlink, fi.Size(), size)
+			t.Errorf("got %s Size %d, wbnt %d", symlink, fi.Size(), size)
 		}
 	}
 }
 
-func TestStat(t *testing.T) {
-	ClientMocks.LocalGitserver = true
+func TestStbt(t *testing.T) {
+	ClientMocks.LocblGitserver = true
 	defer ResetClientMocks()
 
-	gitCommands := []string{
+	gitCommbnds := []string{
 		"mkdir dir1",
 		"touch dir1/file1",
-		"git add dir1/file1",
+		"git bdd dir1/file1",
 		"git commit -m commit1",
 	}
 
-	dir := InitGitRepository(t, gitCommands...)
-	repo := api.RepoName(filepath.Base(dir))
+	dir := InitGitRepository(t, gitCommbnds...)
+	repo := bpi.RepoNbme(filepbth.Bbse(dir))
 	client := NewClient()
 
-	commitID := api.CommitID(ComputeCommitHash(dir, true))
+	commitID := bpi.CommitID(ComputeCommitHbsh(dir, true))
 
-	ctx := context.Background()
+	ctx := context.Bbckground()
 
-	checker := authz.NewMockSubRepoPermissionChecker()
-	// Start disabled
-	checker.EnabledFunc.SetDefaultHook(func() bool {
-		return false
+	checker := buthz.NewMockSubRepoPermissionChecker()
+	// Stbrt disbbled
+	checker.EnbbledFunc.SetDefbultHook(func() bool {
+		return fblse
 	})
 
-	fileInfo, err := client.Stat(ctx, checker, repo, commitID, "dir1/file1")
+	fileInfo, err := client.Stbt(ctx, checker, repo, commitID, "dir1/file1")
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
-	want := "dir1/file1"
-	if diff := cmp.Diff(want, fileInfo.Name()); diff != "" {
-		t.Fatal(diff)
+	wbnt := "dir1/file1"
+	if diff := cmp.Diff(wbnt, fileInfo.Nbme()); diff != "" {
+		t.Fbtbl(diff)
 	}
 
 	// With filtering
-	checker.EnabledFunc.SetDefaultHook(func() bool {
+	checker.EnbbledFunc.SetDefbultHook(func() bool {
 		return true
 	})
-	checker.PermissionsFunc.SetDefaultHook(func(ctx context.Context, i int32, content authz.RepoContent) (authz.Perms, error) {
-		if strings.HasPrefix(content.Path, "dir2") {
-			return authz.Read, nil
+	checker.PermissionsFunc.SetDefbultHook(func(ctx context.Context, i int32, content buthz.RepoContent) (buthz.Perms, error) {
+		if strings.HbsPrefix(content.Pbth, "dir2") {
+			return buthz.Rebd, nil
 		}
-		return authz.None, nil
+		return buthz.None, nil
 	})
 	usePermissionsForFilePermissionsFunc(checker)
-	ctx = actor.WithActor(ctx, &actor.Actor{
+	ctx = bctor.WithActor(ctx, &bctor.Actor{
 		UID: 1,
 	})
 
-	_, err = client.Stat(ctx, checker, repo, commitID, "dir1/file1")
+	_, err = client.Stbt(ctx, checker, repo, commitID, "dir1/file1")
 	if err == nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
-	want = "ls-tree dir1/file1: file does not exist"
-	if diff := cmp.Diff(want, err.Error()); diff != "" {
-		t.Fatal(diff)
+	wbnt = "ls-tree dir1/file1: file does not exist"
+	if diff := cmp.Diff(wbnt, err.Error()); diff != "" {
+		t.Fbtbl(diff)
 	}
 }
 
-var (
-	fileWithAccess      = "file-with-access"
-	fileWithoutAccess   = "file-without-access"
-	NonExistentCommitID = api.CommitID(strings.Repeat("a", 40))
+vbr (
+	fileWithAccess      = "file-with-bccess"
+	fileWithoutAccess   = "file-without-bccess"
+	NonExistentCommitID = bpi.CommitID(strings.Repebt("b", 40))
 )
 
-func TestLogPartsPerCommitInSync(t *testing.T) {
-	require.Equal(t, 2*partsPerCommitBasic, strings.Count(logFormatWithoutRefs, "%"),
-		"Expected (2 * %0d) %% signs in log format string (%0d fields, %0d %%x00 separators)",
-		partsPerCommitBasic)
+func TestLogPbrtsPerCommitInSync(t *testing.T) {
+	require.Equbl(t, 2*pbrtsPerCommitBbsic, strings.Count(logFormbtWithoutRefs, "%"),
+		"Expected (2 * %0d) %% signs in log formbt string (%0d fields, %0d %%x00 sepbrbtors)",
+		pbrtsPerCommitBbsic)
 }
 
 func TestRepository_GetCommit(t *testing.T) {
-	ClientMocks.LocalGitserver = true
+	ClientMocks.LocblGitserver = true
 	defer ResetClientMocks()
-	ctx := actor.WithActor(context.Background(), &actor.Actor{
+	ctx := bctor.WithActor(context.Bbckground(), &bctor.Actor{
 		UID: 1,
 	})
-	gitCommands := []string{
-		"git commit --allow-empty -m foo",
-		"GIT_COMMITTER_NAME=c GIT_COMMITTER_EMAIL=c@c.com GIT_COMMITTER_DATE=2006-01-02T15:04:07Z git commit --allow-empty -m bar --author='a <a@a.com>' --date 2006-01-02T15:04:06Z",
+	gitCommbnds := []string{
+		"git commit --bllow-empty -m foo",
+		"GIT_COMMITTER_NAME=c GIT_COMMITTER_EMAIL=c@c.com GIT_COMMITTER_DATE=2006-01-02T15:04:07Z git commit --bllow-empty -m bbr --buthor='b <b@b.com>' --dbte 2006-01-02T15:04:06Z",
 	}
-	gitCommandsWithFiles := getGitCommandsWithFiles(fileWithAccess, fileWithoutAccess)
+	gitCommbndsWithFiles := getGitCommbndsWithFiles(fileWithAccess, fileWithoutAccess)
 
 	oldRunCommitLog := runCommitLog
 
-	type testCase struct {
+	type testCbse struct {
 		gitCmds               []string
-		id                    api.CommitID
-		wantCommit            *gitdomain.Commit
+		id                    bpi.CommitID
+		wbntCommit            *gitdombin.Commit
 		noEnsureRevision      bool
 		revisionNotFoundError bool
 	}
 
 	client := NewClient()
-	runGetCommitTests := func(checker authz.SubRepoPermissionChecker, tests map[string]testCase) {
-		for label, test := range tests {
-			t.Run(label, func(t *testing.T) {
-				testRepo := MakeGitRepository(t, test.gitCmds...)
-				var noEnsureRevision bool
-				t.Cleanup(func() {
+	runGetCommitTests := func(checker buthz.SubRepoPermissionChecker, tests mbp[string]testCbse) {
+		for lbbel, test := rbnge tests {
+			t.Run(lbbel, func(t *testing.T) {
+				testRepo := MbkeGitRepository(t, test.gitCmds...)
+				vbr noEnsureRevision bool
+				t.Clebnup(func() {
 					runCommitLog = oldRunCommitLog
 				})
-				runCommitLog = func(ctx context.Context, cmd GitCommand, opt CommitsOptions) ([]*wrappedCommit, error) {
-					// Track the value of NoEnsureRevision we pass to gitserver
+				runCommitLog = func(ctx context.Context, cmd GitCommbnd, opt CommitsOptions) ([]*wrbppedCommit, error) {
+					// Trbck the vblue of NoEnsureRevision we pbss to gitserver
 					noEnsureRevision = opt.NoEnsureRevision
 					return oldRunCommitLog(ctx, cmd, opt)
 				}
@@ -1218,71 +1218,71 @@ func TestRepository_GetCommit(t *testing.T) {
 				commit, err := client.GetCommit(ctx, checker, testRepo, test.id, resolveRevisionOptions)
 				if err != nil {
 					if test.revisionNotFoundError {
-						if !errors.HasType(err, &gitdomain.RevisionNotFoundError{}) {
-							t.Errorf("%s: GetCommit: expected a RevisionNotFoundError, got %s", label, err)
+						if !errors.HbsType(err, &gitdombin.RevisionNotFoundError{}) {
+							t.Errorf("%s: GetCommit: expected b RevisionNotFoundError, got %s", lbbel, err)
 						}
 						return
 					}
-					t.Errorf("%s: GetCommit: %s", label, err)
+					t.Errorf("%s: GetCommit: %s", lbbel, err)
 				}
 
-				if !CommitsEqual(commit, test.wantCommit) {
-					t.Errorf("%s: got commit == %+v, want %+v", label, commit, test.wantCommit)
+				if !CommitsEqubl(commit, test.wbntCommit) {
+					t.Errorf("%s: got commit == %+v, wbnt %+v", lbbel, commit, test.wbntCommit)
 					return
 				}
 
-				// Test that trying to get a nonexistent commit returns RevisionNotFoundError.
-				if _, err := client.GetCommit(ctx, checker, testRepo, NonExistentCommitID, resolveRevisionOptions); !errors.HasType(err, &gitdomain.RevisionNotFoundError{}) {
-					t.Errorf("%s: for nonexistent commit: got err %v, want RevisionNotFoundError", label, err)
+				// Test thbt trying to get b nonexistent commit returns RevisionNotFoundError.
+				if _, err := client.GetCommit(ctx, checker, testRepo, NonExistentCommitID, resolveRevisionOptions); !errors.HbsType(err, &gitdombin.RevisionNotFoundError{}) {
+					t.Errorf("%s: for nonexistent commit: got err %v, wbnt RevisionNotFoundError", lbbel, err)
 				}
 
 				if noEnsureRevision != test.noEnsureRevision {
-					t.Fatalf("Expected %t, got %t", test.noEnsureRevision, noEnsureRevision)
+					t.Fbtblf("Expected %t, got %t", test.noEnsureRevision, noEnsureRevision)
 				}
 			})
 		}
 	}
 
-	wantGitCommit := &gitdomain.Commit{
-		ID:        "b266c7e3ca00b1a17ad0b1449825d0854225c007",
-		Author:    gitdomain.Signature{Name: "a", Email: "a@a.com", Date: MustParseTime(time.RFC3339, "2006-01-02T15:04:06Z")},
-		Committer: &gitdomain.Signature{Name: "c", Email: "c@c.com", Date: MustParseTime(time.RFC3339, "2006-01-02T15:04:07Z")},
-		Message:   "bar",
-		Parents:   []api.CommitID{"ea167fe3d76b1e5fd3ed8ca44cbd2fe3897684f8"},
+	wbntGitCommit := &gitdombin.Commit{
+		ID:        "b266c7e3cb00b1b17bd0b1449825d0854225c007",
+		Author:    gitdombin.Signbture{Nbme: "b", Embil: "b@b.com", Dbte: MustPbrseTime(time.RFC3339, "2006-01-02T15:04:06Z")},
+		Committer: &gitdombin.Signbture{Nbme: "c", Embil: "c@c.com", Dbte: MustPbrseTime(time.RFC3339, "2006-01-02T15:04:07Z")},
+		Messbge:   "bbr",
+		Pbrents:   []bpi.CommitID{"eb167fe3d76b1e5fd3ed8cb44cbd2fe3897684f8"},
 	}
-	tests := map[string]testCase{
-		"git cmd with NoEnsureRevision false": {
-			gitCmds:          gitCommands,
-			id:               "b266c7e3ca00b1a17ad0b1449825d0854225c007",
-			wantCommit:       wantGitCommit,
-			noEnsureRevision: false,
+	tests := mbp[string]testCbse{
+		"git cmd with NoEnsureRevision fblse": {
+			gitCmds:          gitCommbnds,
+			id:               "b266c7e3cb00b1b17bd0b1449825d0854225c007",
+			wbntCommit:       wbntGitCommit,
+			noEnsureRevision: fblse,
 		},
 		"git cmd with NoEnsureRevision true": {
-			gitCmds:          gitCommands,
-			id:               "b266c7e3ca00b1a17ad0b1449825d0854225c007",
-			wantCommit:       wantGitCommit,
+			gitCmds:          gitCommbnds,
+			id:               "b266c7e3cb00b1b17bd0b1449825d0854225c007",
+			wbntCommit:       wbntGitCommit,
 			noEnsureRevision: true,
 		},
 	}
-	// Run basic tests w/o sub-repo permissions checker
+	// Run bbsic tests w/o sub-repo permissions checker
 	runGetCommitTests(nil, tests)
 	checker := getTestSubRepoPermsChecker(fileWithoutAccess)
-	// Add test cases with file names for sub-repo permissions testing
-	tests["with sub-repo permissions and access to file"] = testCase{
-		gitCmds: gitCommandsWithFiles,
-		id:      "da50eed82c8ff3c17bb642000d8aad9d434283c1",
-		wantCommit: &gitdomain.Commit{
-			ID:        "da50eed82c8ff3c17bb642000d8aad9d434283c1",
-			Author:    gitdomain.Signature{Name: "a", Email: "a@a.com", Date: MustParseTime(time.RFC3339, "2006-01-02T15:04:05Z")},
-			Committer: &gitdomain.Signature{Name: "a", Email: "a@a.com", Date: MustParseTime(time.RFC3339, "2006-01-02T15:04:05Z")},
-			Message:   "commit1",
+	// Add test cbses with file nbmes for sub-repo permissions testing
+	tests["with sub-repo permissions bnd bccess to file"] = testCbse{
+		gitCmds: gitCommbndsWithFiles,
+		id:      "db50eed82c8ff3c17bb642000d8bbd9d434283c1",
+		wbntCommit: &gitdombin.Commit{
+			ID:        "db50eed82c8ff3c17bb642000d8bbd9d434283c1",
+			Author:    gitdombin.Signbture{Nbme: "b", Embil: "b@b.com", Dbte: MustPbrseTime(time.RFC3339, "2006-01-02T15:04:05Z")},
+			Committer: &gitdombin.Signbture{Nbme: "b", Embil: "b@b.com", Dbte: MustPbrseTime(time.RFC3339, "2006-01-02T15:04:05Z")},
+			Messbge:   "commit1",
 		},
 		noEnsureRevision: true,
 	}
-	tests["with sub-repo permissions and NO access to file"] = testCase{
-		gitCmds:               gitCommandsWithFiles,
-		id:                    "ee7773505e98390e809cbf518b2a92e4748b0187",
-		wantCommit:            &gitdomain.Commit{},
+	tests["with sub-repo permissions bnd NO bccess to file"] = testCbse{
+		gitCmds:               gitCommbndsWithFiles,
+		id:                    "ee7773505e98390e809cbf518b2b92e4748b0187",
+		wbntCommit:            &gitdombin.Commit{},
 		noEnsureRevision:      true,
 		revisionNotFoundError: true,
 	}
@@ -1290,127 +1290,127 @@ func TestRepository_GetCommit(t *testing.T) {
 	runGetCommitTests(checker, tests)
 }
 
-func TestRepository_HasCommitAfter(t *testing.T) {
-	ClientMocks.LocalGitserver = true
+func TestRepository_HbsCommitAfter(t *testing.T) {
+	ClientMocks.LocblGitserver = true
 	defer ResetClientMocks()
-	ctx := actor.WithActor(context.Background(), &actor.Actor{
+	ctx := bctor.WithActor(context.Bbckground(), &bctor.Actor{
 		UID: 1,
 	})
 
-	testCases := []struct {
-		label                 string
-		commitDates           []string
-		after                 string
+	testCbses := []struct {
+		lbbel                 string
+		commitDbtes           []string
+		bfter                 string
 		revspec               string
-		want, wantSubRepoTest bool
+		wbnt, wbntSubRepoTest bool
 	}{
 		{
-			label: "after specific date",
-			commitDates: []string{
+			lbbel: "bfter specific dbte",
+			commitDbtes: []string{
 				"2006-01-02T15:04:05Z",
 				"2007-01-02T15:04:05Z",
 				"2008-01-02T15:04:05Z",
 			},
-			after:           "2006-01-02T15:04:05Z",
-			revspec:         "master",
-			want:            true,
-			wantSubRepoTest: true,
+			bfter:           "2006-01-02T15:04:05Z",
+			revspec:         "mbster",
+			wbnt:            true,
+			wbntSubRepoTest: true,
 		},
 		{
-			label: "after 1 year ago",
-			commitDates: []string{
+			lbbel: "bfter 1 yebr bgo",
+			commitDbtes: []string{
 				"2016-01-02T15:04:05Z",
 				"2017-01-02T15:04:05Z",
 				"2017-01-02T15:04:06Z",
 			},
-			after:           "1 year ago",
-			revspec:         "master",
-			want:            false,
-			wantSubRepoTest: false,
+			bfter:           "1 yebr bgo",
+			revspec:         "mbster",
+			wbnt:            fblse,
+			wbntSubRepoTest: fblse,
 		},
 		{
-			label: "after too recent date",
-			commitDates: []string{
+			lbbel: "bfter too recent dbte",
+			commitDbtes: []string{
 				"2006-01-02T15:04:05Z",
 				"2007-01-02T15:04:05Z",
 				"2008-01-02T15:04:05Z",
 			},
-			after:           "2010-01-02T15:04:05Z",
+			bfter:           "2010-01-02T15:04:05Z",
 			revspec:         "HEAD",
-			want:            false,
-			wantSubRepoTest: false,
+			wbnt:            fblse,
+			wbntSubRepoTest: fblse,
 		},
 		{
-			label: "commit 1 second after",
-			commitDates: []string{
+			lbbel: "commit 1 second bfter",
+			commitDbtes: []string{
 				"2006-01-02T15:04:05Z",
 				"2007-01-02T15:04:05Z",
 				"2007-01-02T15:04:06Z",
 			},
-			after:           "2007-01-02T15:04:05Z",
+			bfter:           "2007-01-02T15:04:05Z",
 			revspec:         "HEAD",
-			want:            true,
-			wantSubRepoTest: false,
+			wbnt:            true,
+			wbntSubRepoTest: fblse,
 		},
 		{
-			label: "after 10 years ago",
-			commitDates: []string{
+			lbbel: "bfter 10 yebrs bgo",
+			commitDbtes: []string{
 				"2016-01-02T15:04:05Z",
 				"2017-01-02T15:04:05Z",
 				"2017-01-02T15:04:06Z",
 			},
-			after:           "10 years ago",
+			bfter:           "10 yebrs bgo",
 			revspec:         "HEAD",
-			want:            true,
-			wantSubRepoTest: true,
+			wbnt:            true,
+			wbntSubRepoTest: true,
 		},
 	}
 
 	client := NewClient()
-	t.Run("basic", func(t *testing.T) {
-		for _, tc := range testCases {
-			t.Run(tc.label, func(t *testing.T) {
-				gitCommands := make([]string, len(tc.commitDates))
-				for i, date := range tc.commitDates {
-					gitCommands[i] = fmt.Sprintf("GIT_COMMITTER_NAME=a GIT_COMMITTER_EMAIL=a@a.com GIT_COMMITTER_DATE=%s git commit --allow-empty -m foo --author='a <a@a.com>'", date)
+	t.Run("bbsic", func(t *testing.T) {
+		for _, tc := rbnge testCbses {
+			t.Run(tc.lbbel, func(t *testing.T) {
+				gitCommbnds := mbke([]string, len(tc.commitDbtes))
+				for i, dbte := rbnge tc.commitDbtes {
+					gitCommbnds[i] = fmt.Sprintf("GIT_COMMITTER_NAME=b GIT_COMMITTER_EMAIL=b@b.com GIT_COMMITTER_DATE=%s git commit --bllow-empty -m foo --buthor='b <b@b.com>'", dbte)
 				}
-				repo := MakeGitRepository(t, gitCommands...)
-				got, err := client.HasCommitAfter(ctx, nil, repo, tc.after, tc.revspec)
-				if err != nil || got != tc.want {
-					t.Errorf("got %t hascommitafter, want %t", got, tc.want)
+				repo := MbkeGitRepository(t, gitCommbnds...)
+				got, err := client.HbsCommitAfter(ctx, nil, repo, tc.bfter, tc.revspec)
+				if err != nil || got != tc.wbnt {
+					t.Errorf("got %t hbscommitbfter, wbnt %t", got, tc.wbnt)
 				}
 			})
 		}
 	})
 
 	t.Run("with sub-repo permissions", func(t *testing.T) {
-		for _, tc := range testCases {
-			t.Run(tc.label, func(t *testing.T) {
-				gitCommands := make([]string, len(tc.commitDates))
-				for i, date := range tc.commitDates {
-					fileName := fmt.Sprintf("file%d", i)
-					gitCommands = append(gitCommands, fmt.Sprintf("touch %s", fileName), fmt.Sprintf("git add %s", fileName))
-					gitCommands = append(gitCommands, fmt.Sprintf("GIT_COMMITTER_NAME=a GIT_COMMITTER_EMAIL=a@a.com GIT_COMMITTER_DATE=%s git commit -m commit%d --author='a <a@a.com>'", date, i))
+		for _, tc := rbnge testCbses {
+			t.Run(tc.lbbel, func(t *testing.T) {
+				gitCommbnds := mbke([]string, len(tc.commitDbtes))
+				for i, dbte := rbnge tc.commitDbtes {
+					fileNbme := fmt.Sprintf("file%d", i)
+					gitCommbnds = bppend(gitCommbnds, fmt.Sprintf("touch %s", fileNbme), fmt.Sprintf("git bdd %s", fileNbme))
+					gitCommbnds = bppend(gitCommbnds, fmt.Sprintf("GIT_COMMITTER_NAME=b GIT_COMMITTER_EMAIL=b@b.com GIT_COMMITTER_DATE=%s git commit -m commit%d --buthor='b <b@b.com>'", dbte, i))
 				}
-				// Case where user can't view commit 2, but can view commits 0 and 1. In each test case the result should match the case where no sub-repo perms enabled
+				// Cbse where user cbn't view commit 2, but cbn view commits 0 bnd 1. In ebch test cbse the result should mbtch the cbse where no sub-repo perms enbbled
 				checker := getTestSubRepoPermsChecker("file2")
-				repo := MakeGitRepository(t, gitCommands...)
-				got, err := client.HasCommitAfter(ctx, checker, repo, tc.after, tc.revspec)
+				repo := MbkeGitRepository(t, gitCommbnds...)
+				got, err := client.HbsCommitAfter(ctx, checker, repo, tc.bfter, tc.revspec)
 				if err != nil {
 					t.Errorf("got error: %s", err)
 				}
-				if got != tc.want {
-					t.Errorf("got %t hascommitafter, want %t", got, tc.want)
+				if got != tc.wbnt {
+					t.Errorf("got %t hbscommitbfter, wbnt %t", got, tc.wbnt)
 				}
 
-				// Case where user can't view commit 1 or commit 2, which will mean in some cases since HasCommitAfter will be false due to those commits not being visible.
+				// Cbse where user cbn't view commit 1 or commit 2, which will mebn in some cbses since HbsCommitAfter will be fblse due to those commits not being visible.
 				checker = getTestSubRepoPermsChecker("file1", "file2")
-				got, err = client.HasCommitAfter(ctx, checker, repo, tc.after, tc.revspec)
+				got, err = client.HbsCommitAfter(ctx, checker, repo, tc.bfter, tc.revspec)
 				if err != nil {
 					t.Errorf("got error: %s", err)
 				}
-				if got != tc.wantSubRepoTest {
-					t.Errorf("got %t hascommitafter, want %t", got, tc.wantSubRepoTest)
+				if got != tc.wbntSubRepoTest {
+					t.Errorf("got %t hbscommitbfter, wbnt %t", got, tc.wbntSubRepoTest)
 				}
 			})
 		}
@@ -1418,199 +1418,199 @@ func TestRepository_HasCommitAfter(t *testing.T) {
 }
 
 func TestRepository_FirstEverCommit(t *testing.T) {
-	ClientMocks.LocalGitserver = true
+	ClientMocks.LocblGitserver = true
 	defer ResetClientMocks()
-	ctx := actor.WithActor(context.Background(), &actor.Actor{
+	ctx := bctor.WithActor(context.Bbckground(), &bctor.Actor{
 		UID: 1,
 	})
 
-	testCases := []struct {
-		commitDates []string
-		want        string
+	testCbses := []struct {
+		commitDbtes []string
+		wbnt        string
 	}{
 		{
-			commitDates: []string{
+			commitDbtes: []string{
 				"2006-01-02T15:04:05Z",
 				"2007-01-02T15:04:05Z",
 				"2008-01-02T15:04:05Z",
 			},
-			want: "2006-01-02T15:04:05Z",
+			wbnt: "2006-01-02T15:04:05Z",
 		},
 		{
-			commitDates: []string{
-				"2007-01-02T15:04:05Z", // Don't think this is possible, but if it is we still want the first commit (not strictly "oldest")
+			commitDbtes: []string{
+				"2007-01-02T15:04:05Z", // Don't think this is possible, but if it is we still wbnt the first commit (not strictly "oldest")
 				"2006-01-02T15:04:05Z",
 				"2007-01-02T15:04:06Z",
 			},
-			want: "2007-01-02T15:04:05Z",
+			wbnt: "2007-01-02T15:04:05Z",
 		},
 	}
 	client := NewClient()
-	t.Run("basic", func(t *testing.T) {
-		for _, tc := range testCases {
-			gitCommands := make([]string, len(tc.commitDates))
-			for i, date := range tc.commitDates {
-				gitCommands[i] = fmt.Sprintf("GIT_COMMITTER_NAME=a GIT_COMMITTER_EMAIL=a@a.com GIT_COMMITTER_DATE=%s git commit --allow-empty -m foo --author='a <a@a.com>'", date)
+	t.Run("bbsic", func(t *testing.T) {
+		for _, tc := rbnge testCbses {
+			gitCommbnds := mbke([]string, len(tc.commitDbtes))
+			for i, dbte := rbnge tc.commitDbtes {
+				gitCommbnds[i] = fmt.Sprintf("GIT_COMMITTER_NAME=b GIT_COMMITTER_EMAIL=b@b.com GIT_COMMITTER_DATE=%s git commit --bllow-empty -m foo --buthor='b <b@b.com>'", dbte)
 			}
 
-			repo := MakeGitRepository(t, gitCommands...)
+			repo := MbkeGitRepository(t, gitCommbnds...)
 			gotCommit, err := client.FirstEverCommit(ctx, nil, repo)
 			if err != nil {
-				t.Fatal(err)
+				t.Fbtbl(err)
 			}
-			got := gotCommit.Committer.Date.Format(time.RFC3339)
-			if got != tc.want {
-				t.Errorf("got %q, want %q", got, tc.want)
+			got := gotCommit.Committer.Dbte.Formbt(time.RFC3339)
+			if got != tc.wbnt {
+				t.Errorf("got %q, wbnt %q", got, tc.wbnt)
 			}
 		}
 	})
 
-	// Added for awareness if this error message changes. Insights skip over empty repos and check against error message
+	// Added for bwbreness if this error messbge chbnges. Insights skip over empty repos bnd check bgbinst error messbge
 	t.Run("empty repo", func(t *testing.T) {
-		repo := MakeGitRepository(t)
+		repo := MbkeGitRepository(t)
 		_, err := client.FirstEverCommit(ctx, nil, repo)
-		wantErr := `git command [rev-list --reverse --date-order --max-parents=0 HEAD] failed (output: ""): exit status 128`
-		if err.Error() != wantErr {
-			t.Errorf("expected :%s, got :%s", wantErr, err)
+		wbntErr := `git commbnd [rev-list --reverse --dbte-order --mbx-pbrents=0 HEAD] fbiled (output: ""): exit stbtus 128`
+		if err.Error() != wbntErr {
+			t.Errorf("expected :%s, got :%s", wbntErr, err)
 		}
 	})
 
 	t.Run("with sub-repo permissions", func(t *testing.T) {
 		checkerWithoutAccessFirstCommit := getTestSubRepoPermsChecker("file0")
 		checkerWithAccessFirstCommit := getTestSubRepoPermsChecker("file1")
-		for _, tc := range testCases {
-			gitCommands := make([]string, 0, len(tc.commitDates))
-			for i, date := range tc.commitDates {
-				fileName := fmt.Sprintf("file%d", i)
-				gitCommands = append(gitCommands, fmt.Sprintf("touch %s", fileName))
-				gitCommands = append(gitCommands, fmt.Sprintf("git add %s", fileName))
-				gitCommands = append(gitCommands, fmt.Sprintf("GIT_COMMITTER_NAME=a GIT_COMMITTER_EMAIL=a@a.com GIT_COMMITTER_DATE=%s git commit -m foo --author='a <a@a.com>'", date))
+		for _, tc := rbnge testCbses {
+			gitCommbnds := mbke([]string, 0, len(tc.commitDbtes))
+			for i, dbte := rbnge tc.commitDbtes {
+				fileNbme := fmt.Sprintf("file%d", i)
+				gitCommbnds = bppend(gitCommbnds, fmt.Sprintf("touch %s", fileNbme))
+				gitCommbnds = bppend(gitCommbnds, fmt.Sprintf("git bdd %s", fileNbme))
+				gitCommbnds = bppend(gitCommbnds, fmt.Sprintf("GIT_COMMITTER_NAME=b GIT_COMMITTER_EMAIL=b@b.com GIT_COMMITTER_DATE=%s git commit -m foo --buthor='b <b@b.com>'", dbte))
 			}
 
-			repo := MakeGitRepository(t, gitCommands...)
-			// Try to get first commit when user doesn't have permission to view
+			repo := MbkeGitRepository(t, gitCommbnds...)
+			// Try to get first commit when user doesn't hbve permission to view
 			_, err := client.FirstEverCommit(ctx, checkerWithoutAccessFirstCommit, repo)
-			if !errors.HasType(err, &gitdomain.RevisionNotFoundError{}) {
-				t.Errorf("expected a RevisionNotFoundError since the user does not have access to view this commit, got :%s", err)
+			if !errors.HbsType(err, &gitdombin.RevisionNotFoundError{}) {
+				t.Errorf("expected b RevisionNotFoundError since the user does not hbve bccess to view this commit, got :%s", err)
 			}
-			// Try to get first commit when user does have permission to view, should succeed
+			// Try to get first commit when user does hbve permission to view, should succeed
 			gotCommit, err := client.FirstEverCommit(ctx, checkerWithAccessFirstCommit, repo)
 			if err != nil {
-				t.Fatal(err)
+				t.Fbtbl(err)
 			}
-			got := gotCommit.Committer.Date.Format(time.RFC3339)
-			if got != tc.want {
-				t.Errorf("got %q, want %q", got, tc.want)
+			got := gotCommit.Committer.Dbte.Formbt(time.RFC3339)
+			if got != tc.wbnt {
+				t.Errorf("got %q, wbnt %q", got, tc.wbnt)
 			}
-			// Internal actor should always have access and ignore sub-repo permissions
-			newCtx := actor.WithActor(context.Background(), &actor.Actor{
+			// Internbl bctor should blwbys hbve bccess bnd ignore sub-repo permissions
+			newCtx := bctor.WithActor(context.Bbckground(), &bctor.Actor{
 				UID:      1,
-				Internal: true,
+				Internbl: true,
 			})
 			gotCommit, err = client.FirstEverCommit(newCtx, checkerWithoutAccessFirstCommit, repo)
 			if err != nil {
-				t.Fatal(err)
+				t.Fbtbl(err)
 			}
-			got = gotCommit.Committer.Date.Format(time.RFC3339)
-			if got != tc.want {
-				t.Errorf("got %q, want %q", got, tc.want)
+			got = gotCommit.Committer.Dbte.Formbt(time.RFC3339)
+			if got != tc.wbnt {
+				t.Errorf("got %q, wbnt %q", got, tc.wbnt)
 			}
 		}
 	})
 }
 
 func TestCommitExists(t *testing.T) {
-	ClientMocks.LocalGitserver = true
+	ClientMocks.LocblGitserver = true
 	defer ResetClientMocks()
-	ctx := actor.WithActor(context.Background(), &actor.Actor{
+	ctx := bctor.WithActor(context.Bbckground(), &bctor.Actor{
 		UID: 1,
 	})
 	client := NewClient()
-	testCommitExists := func(label string, gitCommands []string, commitID, nonExistentCommitID api.CommitID, checker authz.SubRepoPermissionChecker) {
-		t.Run(label, func(t *testing.T) {
-			repo := MakeGitRepository(t, gitCommands...)
+	testCommitExists := func(lbbel string, gitCommbnds []string, commitID, nonExistentCommitID bpi.CommitID, checker buthz.SubRepoPermissionChecker) {
+		t.Run(lbbel, func(t *testing.T) {
+			repo := MbkeGitRepository(t, gitCommbnds...)
 
 			exists, err := client.CommitExists(ctx, checker, repo, commitID)
 			if err != nil {
-				t.Fatal(err)
+				t.Fbtbl(err)
 			}
 			if !exists {
-				t.Fatal("Should exist")
+				t.Fbtbl("Should exist")
 			}
 
 			exists, err = client.CommitExists(ctx, checker, repo, nonExistentCommitID)
 			if err != nil {
-				t.Fatal(err)
+				t.Fbtbl(err)
 			}
 			if exists {
-				t.Fatal("Should not exist")
+				t.Fbtbl("Should not exist")
 			}
 		})
 	}
 
-	gitCommands := []string{
-		"git commit --allow-empty -m foo",
+	gitCommbnds := []string{
+		"git commit --bllow-empty -m foo",
 	}
-	testCommitExists("basic", gitCommands, "ea167fe3d76b1e5fd3ed8ca44cbd2fe3897684f8", NonExistentCommitID, nil)
-	gitCommandsWithFiles := getGitCommandsWithFiles(fileWithAccess, fileWithoutAccess)
-	commitIDWithAccess := api.CommitID("da50eed82c8ff3c17bb642000d8aad9d434283c1")
-	commitIDWithoutAccess := api.CommitID("ee7773505e98390e809cbf518b2a92e4748b0187")
-	// Test that the commit ID the user has access to exists, and CommitExists returns false for the commit ID the user
-	// doesn't have access to (since a file was modified in the commit that the user doesn't have permissions to view)
-	testCommitExists("with sub-repo permissions filtering", gitCommandsWithFiles, commitIDWithAccess, commitIDWithoutAccess, getTestSubRepoPermsChecker(fileWithoutAccess))
+	testCommitExists("bbsic", gitCommbnds, "eb167fe3d76b1e5fd3ed8cb44cbd2fe3897684f8", NonExistentCommitID, nil)
+	gitCommbndsWithFiles := getGitCommbndsWithFiles(fileWithAccess, fileWithoutAccess)
+	commitIDWithAccess := bpi.CommitID("db50eed82c8ff3c17bb642000d8bbd9d434283c1")
+	commitIDWithoutAccess := bpi.CommitID("ee7773505e98390e809cbf518b2b92e4748b0187")
+	// Test thbt the commit ID the user hbs bccess to exists, bnd CommitExists returns fblse for the commit ID the user
+	// doesn't hbve bccess to (since b file wbs modified in the commit thbt the user doesn't hbve permissions to view)
+	testCommitExists("with sub-repo permissions filtering", gitCommbndsWithFiles, commitIDWithAccess, commitIDWithoutAccess, getTestSubRepoPermsChecker(fileWithoutAccess))
 }
 
 func TestRepository_Commits(t *testing.T) {
-	ClientMocks.LocalGitserver = true
+	ClientMocks.LocblGitserver = true
 	defer ResetClientMocks()
-	ctx := actor.WithActor(context.Background(), &actor.Actor{
+	ctx := bctor.WithActor(context.Bbckground(), &bctor.Actor{
 		UID: 1,
 	})
 
-	// TODO(sqs): test CommitsOptions.Base
+	// TODO(sqs): test CommitsOptions.Bbse
 
-	gitCommands := []string{
-		"git commit --allow-empty -m foo",
-		"GIT_COMMITTER_NAME=c GIT_COMMITTER_EMAIL=c@c.com GIT_COMMITTER_DATE=2006-01-02T15:04:07Z git commit --allow-empty -m bar --author='a <a@a.com>' --date 2006-01-02T15:04:06Z",
+	gitCommbnds := []string{
+		"git commit --bllow-empty -m foo",
+		"GIT_COMMITTER_NAME=c GIT_COMMITTER_EMAIL=c@c.com GIT_COMMITTER_DATE=2006-01-02T15:04:07Z git commit --bllow-empty -m bbr --buthor='b <b@b.com>' --dbte 2006-01-02T15:04:06Z",
 	}
-	wantGitCommits := []*gitdomain.Commit{
+	wbntGitCommits := []*gitdombin.Commit{
 		{
-			ID:        "b266c7e3ca00b1a17ad0b1449825d0854225c007",
-			Author:    gitdomain.Signature{Name: "a", Email: "a@a.com", Date: MustParseTime(time.RFC3339, "2006-01-02T15:04:06Z")},
-			Committer: &gitdomain.Signature{Name: "c", Email: "c@c.com", Date: MustParseTime(time.RFC3339, "2006-01-02T15:04:07Z")},
-			Message:   "bar",
-			Parents:   []api.CommitID{"ea167fe3d76b1e5fd3ed8ca44cbd2fe3897684f8"},
+			ID:        "b266c7e3cb00b1b17bd0b1449825d0854225c007",
+			Author:    gitdombin.Signbture{Nbme: "b", Embil: "b@b.com", Dbte: MustPbrseTime(time.RFC3339, "2006-01-02T15:04:06Z")},
+			Committer: &gitdombin.Signbture{Nbme: "c", Embil: "c@c.com", Dbte: MustPbrseTime(time.RFC3339, "2006-01-02T15:04:07Z")},
+			Messbge:   "bbr",
+			Pbrents:   []bpi.CommitID{"eb167fe3d76b1e5fd3ed8cb44cbd2fe3897684f8"},
 		},
 		{
-			ID:        "ea167fe3d76b1e5fd3ed8ca44cbd2fe3897684f8",
-			Author:    gitdomain.Signature{Name: "a", Email: "a@a.com", Date: MustParseTime(time.RFC3339, "2006-01-02T15:04:05Z")},
-			Committer: &gitdomain.Signature{Name: "a", Email: "a@a.com", Date: MustParseTime(time.RFC3339, "2006-01-02T15:04:05Z")},
-			Message:   "foo",
-			Parents:   nil,
+			ID:        "eb167fe3d76b1e5fd3ed8cb44cbd2fe3897684f8",
+			Author:    gitdombin.Signbture{Nbme: "b", Embil: "b@b.com", Dbte: MustPbrseTime(time.RFC3339, "2006-01-02T15:04:05Z")},
+			Committer: &gitdombin.Signbture{Nbme: "b", Embil: "b@b.com", Dbte: MustPbrseTime(time.RFC3339, "2006-01-02T15:04:05Z")},
+			Messbge:   "foo",
+			Pbrents:   nil,
 		},
 	}
-	tests := map[string]struct {
-		repo        api.RepoName
-		id          api.CommitID
-		wantCommits []*gitdomain.Commit
-		wantTotal   uint
+	tests := mbp[string]struct {
+		repo        bpi.RepoNbme
+		id          bpi.CommitID
+		wbntCommits []*gitdombin.Commit
+		wbntTotbl   uint
 	}{
 		"git cmd": {
-			repo:        MakeGitRepository(t, gitCommands...),
-			id:          "b266c7e3ca00b1a17ad0b1449825d0854225c007",
-			wantCommits: wantGitCommits,
-			wantTotal:   2,
+			repo:        MbkeGitRepository(t, gitCommbnds...),
+			id:          "b266c7e3cb00b1b17bd0b1449825d0854225c007",
+			wbntCommits: wbntGitCommits,
+			wbntTotbl:   2,
 		},
 	}
 	client := NewClient()
-	runCommitsTests := func(checker authz.SubRepoPermissionChecker) {
-		for label, test := range tests {
-			t.Run(label, func(t *testing.T) {
-				testCommits(ctx, label, test.repo, CommitsOptions{Range: string(test.id)}, checker, test.wantCommits, t)
+	runCommitsTests := func(checker buthz.SubRepoPermissionChecker) {
+		for lbbel, test := rbnge tests {
+			t.Run(lbbel, func(t *testing.T) {
+				testCommits(ctx, lbbel, test.repo, CommitsOptions{Rbnge: string(test.id)}, checker, test.wbntCommits, t)
 
-				// Test that trying to get a nonexistent commit returns RevisionNotFoundError.
-				if _, err := client.Commits(ctx, nil, test.repo, CommitsOptions{Range: string(NonExistentCommitID)}); !errors.HasType(err, &gitdomain.RevisionNotFoundError{}) {
-					t.Errorf("%s: for nonexistent commit: got err %v, want RevisionNotFoundError", label, err)
+				// Test thbt trying to get b nonexistent commit returns RevisionNotFoundError.
+				if _, err := client.Commits(ctx, nil, test.repo, CommitsOptions{Rbnge: string(NonExistentCommitID)}); !errors.HbsType(err, &gitdombin.RevisionNotFoundError{}) {
+					t.Errorf("%s: for nonexistent commit: got err %v, wbnt RevisionNotFoundError", lbbel, err)
 				}
 			})
 		}
@@ -1621,279 +1621,279 @@ func TestRepository_Commits(t *testing.T) {
 }
 
 func TestCommits_SubRepoPerms(t *testing.T) {
-	ClientMocks.LocalGitserver = true
+	ClientMocks.LocblGitserver = true
 	defer ResetClientMocks()
-	ctx := actor.WithActor(context.Background(), &actor.Actor{
+	ctx := bctor.WithActor(context.Bbckground(), &bctor.Actor{
 		UID: 1,
 	})
-	gitCommands := []string{
+	gitCommbnds := []string{
 		"touch file1",
-		"git add file1",
+		"git bdd file1",
 		"git commit -m commit1",
 		"touch file2",
-		"git add file2",
+		"git bdd file2",
 		"touch file2.2",
-		"git add file2.2",
-		"GIT_COMMITTER_NAME=c GIT_COMMITTER_EMAIL=c@c.com GIT_COMMITTER_DATE=2006-01-02T15:04:07Z git commit -m commit2 --author='a <a@a.com>' --date 2006-01-02T15:04:06Z",
+		"git bdd file2.2",
+		"GIT_COMMITTER_NAME=c GIT_COMMITTER_EMAIL=c@c.com GIT_COMMITTER_DATE=2006-01-02T15:04:07Z git commit -m commit2 --buthor='b <b@b.com>' --dbte 2006-01-02T15:04:06Z",
 		"touch file3",
-		"git add file3",
-		"GIT_COMMITTER_NAME=c GIT_COMMITTER_EMAIL=c@c.com GIT_COMMITTER_DATE=2006-01-02T15:04:07Z git commit -m commit3 --author='a <a@a.com>' --date 2006-01-02T15:04:07Z",
+		"git bdd file3",
+		"GIT_COMMITTER_NAME=c GIT_COMMITTER_EMAIL=c@c.com GIT_COMMITTER_DATE=2006-01-02T15:04:07Z git commit -m commit3 --buthor='b <b@b.com>' --dbte 2006-01-02T15:04:07Z",
 	}
-	repo := MakeGitRepository(t, gitCommands...)
+	repo := MbkeGitRepository(t, gitCommbnds...)
 
-	tests := map[string]struct {
-		wantCommits   []*gitdomain.Commit
+	tests := mbp[string]struct {
+		wbntCommits   []*gitdombin.Commit
 		opt           CommitsOptions
-		wantTotal     uint
-		noAccessPaths []string
+		wbntTotbl     uint
+		noAccessPbths []string
 	}{
-		"if no read perms on at least one file in the commit should filter out commit": {
-			wantTotal: 2,
-			wantCommits: []*gitdomain.Commit{
+		"if no rebd perms on bt lebst one file in the commit should filter out commit": {
+			wbntTotbl: 2,
+			wbntCommits: []*gitdombin.Commit{
 				{
-					ID:        "b96d097108fa49e339ca88bc97ab07f833e62131",
-					Author:    gitdomain.Signature{Name: "a", Email: "a@a.com", Date: MustParseTime(time.RFC3339, "2006-01-02T15:04:06Z")},
-					Committer: &gitdomain.Signature{Name: "c", Email: "c@c.com", Date: MustParseTime(time.RFC3339, "2006-01-02T15:04:07Z")},
-					Message:   "commit2",
-					Parents:   []api.CommitID{"d38233a79e037d2ab8170b0d0bc0aa438473e6da"},
+					ID:        "b96d097108fb49e339cb88bc97bb07f833e62131",
+					Author:    gitdombin.Signbture{Nbme: "b", Embil: "b@b.com", Dbte: MustPbrseTime(time.RFC3339, "2006-01-02T15:04:06Z")},
+					Committer: &gitdombin.Signbture{Nbme: "c", Embil: "c@c.com", Dbte: MustPbrseTime(time.RFC3339, "2006-01-02T15:04:07Z")},
+					Messbge:   "commit2",
+					Pbrents:   []bpi.CommitID{"d38233b79e037d2bb8170b0d0bc0bb438473e6db"},
 				},
 				{
-					ID:        "d38233a79e037d2ab8170b0d0bc0aa438473e6da",
-					Author:    gitdomain.Signature{Name: "a", Email: "a@a.com", Date: MustParseTime(time.RFC3339, "2006-01-02T15:04:05Z")},
-					Committer: &gitdomain.Signature{Name: "a", Email: "a@a.com", Date: MustParseTime(time.RFC3339, "2006-01-02T15:04:05Z")},
-					Message:   "commit1",
+					ID:        "d38233b79e037d2bb8170b0d0bc0bb438473e6db",
+					Author:    gitdombin.Signbture{Nbme: "b", Embil: "b@b.com", Dbte: MustPbrseTime(time.RFC3339, "2006-01-02T15:04:05Z")},
+					Committer: &gitdombin.Signbture{Nbme: "b", Embil: "b@b.com", Dbte: MustPbrseTime(time.RFC3339, "2006-01-02T15:04:05Z")},
+					Messbge:   "commit1",
 				},
 			},
-			noAccessPaths: []string{"file2", "file3"},
+			noAccessPbths: []string{"file2", "file3"},
 		},
-		"sub-repo perms with path (w/ no access) specified should return no commits": {
-			wantTotal: 1,
+		"sub-repo perms with pbth (w/ no bccess) specified should return no commits": {
+			wbntTotbl: 1,
 			opt: CommitsOptions{
-				Path: "file2",
+				Pbth: "file2",
 			},
-			wantCommits:   []*gitdomain.Commit{},
-			noAccessPaths: []string{"file2", "file3"},
+			wbntCommits:   []*gitdombin.Commit{},
+			noAccessPbths: []string{"file2", "file3"},
 		},
-		"sub-repo perms with path (w/ access) specified should return that commit": {
-			wantTotal: 1,
+		"sub-repo perms with pbth (w/ bccess) specified should return thbt commit": {
+			wbntTotbl: 1,
 			opt: CommitsOptions{
-				Path: "file1",
+				Pbth: "file1",
 			},
-			wantCommits: []*gitdomain.Commit{
+			wbntCommits: []*gitdombin.Commit{
 				{
-					ID:        "d38233a79e037d2ab8170b0d0bc0aa438473e6da",
-					Author:    gitdomain.Signature{Name: "a", Email: "a@a.com", Date: MustParseTime(time.RFC3339, "2006-01-02T15:04:05Z")},
-					Committer: &gitdomain.Signature{Name: "a", Email: "a@a.com", Date: MustParseTime(time.RFC3339, "2006-01-02T15:04:05Z")},
-					Message:   "commit1",
+					ID:        "d38233b79e037d2bb8170b0d0bc0bb438473e6db",
+					Author:    gitdombin.Signbture{Nbme: "b", Embil: "b@b.com", Dbte: MustPbrseTime(time.RFC3339, "2006-01-02T15:04:05Z")},
+					Committer: &gitdombin.Signbture{Nbme: "b", Embil: "b@b.com", Dbte: MustPbrseTime(time.RFC3339, "2006-01-02T15:04:05Z")},
+					Messbge:   "commit1",
 				},
 			},
-			noAccessPaths: []string{"file2", "file3"},
+			noAccessPbths: []string{"file2", "file3"},
 		},
 	}
 
-	for label, test := range tests {
-		t.Run(label, func(t *testing.T) {
-			checker := getTestSubRepoPermsChecker(test.noAccessPaths...)
+	for lbbel, test := rbnge tests {
+		t.Run(lbbel, func(t *testing.T) {
+			checker := getTestSubRepoPermsChecker(test.noAccessPbths...)
 			commits, err := NewClient().Commits(ctx, checker, repo, test.opt)
 			if err != nil {
-				t.Errorf("%s: Commits(): %s", label, err)
+				t.Errorf("%s: Commits(): %s", lbbel, err)
 				return
 			}
 
-			if len(commits) != len(test.wantCommits) {
-				t.Errorf("%s: got %d commits, want %d", label, len(commits), len(test.wantCommits))
+			if len(commits) != len(test.wbntCommits) {
+				t.Errorf("%s: got %d commits, wbnt %d", lbbel, len(commits), len(test.wbntCommits))
 			}
 
-			checkCommits(t, commits, test.wantCommits)
+			checkCommits(t, commits, test.wbntCommits)
 		})
 	}
 }
 
 func TestCommits_SubRepoPerms_ReturnNCommits(t *testing.T) {
-	ClientMocks.LocalGitserver = true
+	ClientMocks.LocblGitserver = true
 	defer ResetClientMocks()
-	ctx := actor.WithActor(context.Background(), &actor.Actor{
+	ctx := bctor.WithActor(context.Bbckground(), &bctor.Actor{
 		UID: 1,
 	})
-	gitCommands := []string{
+	gitCommbnds := []string{
 		"touch file1",
-		"git add file1",
-		"GIT_COMMITTER_NAME=c GIT_COMMITTER_EMAIL=c@c.com GIT_COMMITTER_DATE=2006-01-02T15:04:01Z git commit -m commit1 --author='a <a@a.com>' --date 2006-01-02T15:04:01Z",
+		"git bdd file1",
+		"GIT_COMMITTER_NAME=c GIT_COMMITTER_EMAIL=c@c.com GIT_COMMITTER_DATE=2006-01-02T15:04:01Z git commit -m commit1 --buthor='b <b@b.com>' --dbte 2006-01-02T15:04:01Z",
 		"touch file2",
-		"git add file2",
-		"GIT_COMMITTER_NAME=c GIT_COMMITTER_EMAIL=c@c.com GIT_COMMITTER_DATE=2006-01-02T15:04:02Z git commit -m commit2 --author='a <a@a.com>' --date 2006-01-02T15:04:02Z",
+		"git bdd file2",
+		"GIT_COMMITTER_NAME=c GIT_COMMITTER_EMAIL=c@c.com GIT_COMMITTER_DATE=2006-01-02T15:04:02Z git commit -m commit2 --buthor='b <b@b.com>' --dbte 2006-01-02T15:04:02Z",
 		"echo foo > file1",
-		"git add file1",
-		"GIT_COMMITTER_NAME=c GIT_COMMITTER_EMAIL=c@c.com GIT_COMMITTER_DATE=2006-01-02T15:04:03Z git commit -m commit3 --author='a <a@a.com>' --date 2006-01-02T15:04:03Z",
-		"echo asdf > file1",
-		"git add file1",
-		"GIT_COMMITTER_NAME=c GIT_COMMITTER_EMAIL=c@c.com GIT_COMMITTER_DATE=2006-01-02T15:04:04Z git commit -m commit4 --author='a <a@a.com>' --date 2006-01-02T15:04:04Z",
-		"echo bar > file1",
-		"git add file1",
-		"GIT_COMMITTER_NAME=c GIT_COMMITTER_EMAIL=c@c.com GIT_COMMITTER_DATE=2006-01-02T15:04:05Z git commit -m commit5 --author='a <a@a.com>' --date 2006-01-02T15:04:05Z",
-		"echo asdf2 > file2",
-		"git add file2",
-		"GIT_COMMITTER_NAME=c GIT_COMMITTER_EMAIL=c@c.com GIT_COMMITTER_DATE=2006-01-02T15:04:06Z git commit -m commit6 --author='a <a@a.com>' --date 2006-01-02T15:04:06Z",
-		"echo bazz > file1",
-		"git add file1",
-		"GIT_COMMITTER_NAME=c GIT_COMMITTER_EMAIL=c@c.com GIT_COMMITTER_DATE=2006-01-02T15:04:07Z git commit -m commit7 --author='a <a@a.com>' --date 2006-01-02T15:04:07Z",
-		"echo bazz > file2",
-		"git add file2",
-		"GIT_COMMITTER_NAME=c GIT_COMMITTER_EMAIL=c@c.com GIT_COMMITTER_DATE=2006-01-02T15:04:08Z git commit -m commit8 --author='a <a@a.com>' --date 2006-01-02T15:04:08Z",
+		"git bdd file1",
+		"GIT_COMMITTER_NAME=c GIT_COMMITTER_EMAIL=c@c.com GIT_COMMITTER_DATE=2006-01-02T15:04:03Z git commit -m commit3 --buthor='b <b@b.com>' --dbte 2006-01-02T15:04:03Z",
+		"echo bsdf > file1",
+		"git bdd file1",
+		"GIT_COMMITTER_NAME=c GIT_COMMITTER_EMAIL=c@c.com GIT_COMMITTER_DATE=2006-01-02T15:04:04Z git commit -m commit4 --buthor='b <b@b.com>' --dbte 2006-01-02T15:04:04Z",
+		"echo bbr > file1",
+		"git bdd file1",
+		"GIT_COMMITTER_NAME=c GIT_COMMITTER_EMAIL=c@c.com GIT_COMMITTER_DATE=2006-01-02T15:04:05Z git commit -m commit5 --buthor='b <b@b.com>' --dbte 2006-01-02T15:04:05Z",
+		"echo bsdf2 > file2",
+		"git bdd file2",
+		"GIT_COMMITTER_NAME=c GIT_COMMITTER_EMAIL=c@c.com GIT_COMMITTER_DATE=2006-01-02T15:04:06Z git commit -m commit6 --buthor='b <b@b.com>' --dbte 2006-01-02T15:04:06Z",
+		"echo bbzz > file1",
+		"git bdd file1",
+		"GIT_COMMITTER_NAME=c GIT_COMMITTER_EMAIL=c@c.com GIT_COMMITTER_DATE=2006-01-02T15:04:07Z git commit -m commit7 --buthor='b <b@b.com>' --dbte 2006-01-02T15:04:07Z",
+		"echo bbzz > file2",
+		"git bdd file2",
+		"GIT_COMMITTER_NAME=c GIT_COMMITTER_EMAIL=c@c.com GIT_COMMITTER_DATE=2006-01-02T15:04:08Z git commit -m commit8 --buthor='b <b@b.com>' --dbte 2006-01-02T15:04:08Z",
 	}
 
-	tests := map[string]struct {
-		repo          api.RepoName
-		wantCommits   []*gitdomain.Commit
+	tests := mbp[string]struct {
+		repo          bpi.RepoNbme
+		wbntCommits   []*gitdombin.Commit
 		opt           CommitsOptions
-		wantTotal     uint
-		noAccessPaths []string
+		wbntTotbl     uint
+		noAccessPbths []string
 	}{
 		"return the requested number of commits": {
-			repo:      MakeGitRepository(t, gitCommands...),
-			wantTotal: 3,
+			repo:      MbkeGitRepository(t, gitCommbnds...),
+			wbntTotbl: 3,
 			opt: CommitsOptions{
 				N: 3,
 			},
-			wantCommits: []*gitdomain.Commit{
+			wbntCommits: []*gitdombin.Commit{
 				{
-					ID:        "61dbc35f719c53810904a2d359309d4e1e98a6be",
-					Author:    gitdomain.Signature{Name: "a", Email: "a@a.com", Date: MustParseTime(time.RFC3339, "2006-01-02T15:04:07Z")},
-					Committer: &gitdomain.Signature{Name: "c", Email: "c@c.com", Date: MustParseTime(time.RFC3339, "2006-01-02T15:04:07Z")},
-					Message:   "commit7",
-					Parents:   []api.CommitID{"66566c8aa223f3e1b94ebe09e6cdb14c3a5bfb36"},
+					ID:        "61dbc35f719c53810904b2d359309d4e1e98b6be",
+					Author:    gitdombin.Signbture{Nbme: "b", Embil: "b@b.com", Dbte: MustPbrseTime(time.RFC3339, "2006-01-02T15:04:07Z")},
+					Committer: &gitdombin.Signbture{Nbme: "c", Embil: "c@c.com", Dbte: MustPbrseTime(time.RFC3339, "2006-01-02T15:04:07Z")},
+					Messbge:   "commit7",
+					Pbrents:   []bpi.CommitID{"66566c8bb223f3e1b94ebe09e6cdb14c3b5bfb36"},
 				},
 				{
-					ID:        "2e6b2c94293e9e339f781b2a2f7172e15460f88c",
-					Author:    gitdomain.Signature{Name: "a", Email: "a@a.com", Date: MustParseTime(time.RFC3339, "2006-01-02T15:04:05Z")},
-					Committer: &gitdomain.Signature{Name: "c", Email: "c@c.com", Date: MustParseTime(time.RFC3339, "2006-01-02T15:04:05Z")},
-					Parents: []api.CommitID{
-						"9a7ec70986d657c4c86d6ac476f0c5181ece509a",
+					ID:        "2e6b2c94293e9e339f781b2b2f7172e15460f88c",
+					Author:    gitdombin.Signbture{Nbme: "b", Embil: "b@b.com", Dbte: MustPbrseTime(time.RFC3339, "2006-01-02T15:04:05Z")},
+					Committer: &gitdombin.Signbture{Nbme: "c", Embil: "c@c.com", Dbte: MustPbrseTime(time.RFC3339, "2006-01-02T15:04:05Z")},
+					Pbrents: []bpi.CommitID{
+						"9b7ec70986d657c4c86d6bc476f0c5181ece509b",
 					},
-					Message: "commit5",
+					Messbge: "commit5",
 				},
 				{
-					ID:        "9a7ec70986d657c4c86d6ac476f0c5181ece509a",
-					Author:    gitdomain.Signature{Name: "a", Email: "a@a.com", Date: MustParseTime(time.RFC3339, "2006-01-02T15:04:04Z")},
-					Committer: &gitdomain.Signature{Name: "c", Email: "c@c.com", Date: MustParseTime(time.RFC3339, "2006-01-02T15:04:04Z")},
-					Message:   "commit4",
-					Parents: []api.CommitID{
-						"f3fa8cf6ec56d0469402523385d6ca4b7cb222d8",
+					ID:        "9b7ec70986d657c4c86d6bc476f0c5181ece509b",
+					Author:    gitdombin.Signbture{Nbme: "b", Embil: "b@b.com", Dbte: MustPbrseTime(time.RFC3339, "2006-01-02T15:04:04Z")},
+					Committer: &gitdombin.Signbture{Nbme: "c", Embil: "c@c.com", Dbte: MustPbrseTime(time.RFC3339, "2006-01-02T15:04:04Z")},
+					Messbge:   "commit4",
+					Pbrents: []bpi.CommitID{
+						"f3fb8cf6ec56d0469402523385d6cb4b7cb222d8",
 					},
 				},
 			},
-			noAccessPaths: []string{"file2"},
+			noAccessPbths: []string{"file2"},
 		},
 	}
 
 	client := NewClient()
-	for label, test := range tests {
-		t.Run(label, func(t *testing.T) {
-			checker := getTestSubRepoPermsChecker(test.noAccessPaths...)
+	for lbbel, test := rbnge tests {
+		t.Run(lbbel, func(t *testing.T) {
+			checker := getTestSubRepoPermsChecker(test.noAccessPbths...)
 			commits, err := client.Commits(ctx, checker, test.repo, test.opt)
 			if err != nil {
-				t.Errorf("%s: Commits(): %s", label, err)
+				t.Errorf("%s: Commits(): %s", lbbel, err)
 				return
 			}
 
-			if diff := cmp.Diff(test.wantCommits, commits); diff != "" {
-				t.Fatal(diff)
+			if diff := cmp.Diff(test.wbntCommits, commits); diff != "" {
+				t.Fbtbl(diff)
 			}
 		})
 	}
 }
 
 func TestRepository_Commits_options(t *testing.T) {
-	ClientMocks.LocalGitserver = true
+	ClientMocks.LocblGitserver = true
 	defer ResetClientMocks()
-	ctx := context.Background()
+	ctx := context.Bbckground()
 
-	gitCommands := []string{
-		"git commit --allow-empty -m foo",
-		"GIT_COMMITTER_NAME=c GIT_COMMITTER_EMAIL=c@c.com GIT_COMMITTER_DATE=2006-01-02T15:04:07Z git commit --allow-empty -m bar --author='a <a@a.com>' --date 2006-01-02T15:04:06Z",
-		"GIT_COMMITTER_NAME=c GIT_COMMITTER_EMAIL=c@c.com GIT_COMMITTER_DATE=2006-01-02T15:04:08Z git commit --allow-empty -m qux --author='a <a@a.com>' --date 2006-01-02T15:04:08Z",
+	gitCommbnds := []string{
+		"git commit --bllow-empty -m foo",
+		"GIT_COMMITTER_NAME=c GIT_COMMITTER_EMAIL=c@c.com GIT_COMMITTER_DATE=2006-01-02T15:04:07Z git commit --bllow-empty -m bbr --buthor='b <b@b.com>' --dbte 2006-01-02T15:04:06Z",
+		"GIT_COMMITTER_NAME=c GIT_COMMITTER_EMAIL=c@c.com GIT_COMMITTER_DATE=2006-01-02T15:04:08Z git commit --bllow-empty -m qux --buthor='b <b@b.com>' --dbte 2006-01-02T15:04:08Z",
 	}
-	wantGitCommits := []*gitdomain.Commit{
+	wbntGitCommits := []*gitdombin.Commit{
 		{
-			ID:        "b266c7e3ca00b1a17ad0b1449825d0854225c007",
-			Author:    gitdomain.Signature{Name: "a", Email: "a@a.com", Date: MustParseTime(time.RFC3339, "2006-01-02T15:04:06Z")},
-			Committer: &gitdomain.Signature{Name: "c", Email: "c@c.com", Date: MustParseTime(time.RFC3339, "2006-01-02T15:04:07Z")},
-			Message:   "bar",
-			Parents:   []api.CommitID{"ea167fe3d76b1e5fd3ed8ca44cbd2fe3897684f8"},
+			ID:        "b266c7e3cb00b1b17bd0b1449825d0854225c007",
+			Author:    gitdombin.Signbture{Nbme: "b", Embil: "b@b.com", Dbte: MustPbrseTime(time.RFC3339, "2006-01-02T15:04:06Z")},
+			Committer: &gitdombin.Signbture{Nbme: "c", Embil: "c@c.com", Dbte: MustPbrseTime(time.RFC3339, "2006-01-02T15:04:07Z")},
+			Messbge:   "bbr",
+			Pbrents:   []bpi.CommitID{"eb167fe3d76b1e5fd3ed8cb44cbd2fe3897684f8"},
 		},
 	}
-	wantGitCommits2 := []*gitdomain.Commit{
+	wbntGitCommits2 := []*gitdombin.Commit{
 		{
-			ID:        "ade564eba4cf904492fb56dcd287ac633e6e082c",
-			Author:    gitdomain.Signature{Name: "a", Email: "a@a.com", Date: MustParseTime(time.RFC3339, "2006-01-02T15:04:08Z")},
-			Committer: &gitdomain.Signature{Name: "c", Email: "c@c.com", Date: MustParseTime(time.RFC3339, "2006-01-02T15:04:08Z")},
-			Message:   "qux",
-			Parents:   []api.CommitID{"b266c7e3ca00b1a17ad0b1449825d0854225c007"},
+			ID:        "bde564ebb4cf904492fb56dcd287bc633e6e082c",
+			Author:    gitdombin.Signbture{Nbme: "b", Embil: "b@b.com", Dbte: MustPbrseTime(time.RFC3339, "2006-01-02T15:04:08Z")},
+			Committer: &gitdombin.Signbture{Nbme: "c", Embil: "c@c.com", Dbte: MustPbrseTime(time.RFC3339, "2006-01-02T15:04:08Z")},
+			Messbge:   "qux",
+			Pbrents:   []bpi.CommitID{"b266c7e3cb00b1b17bd0b1449825d0854225c007"},
 		},
 	}
-	tests := map[string]struct {
+	tests := mbp[string]struct {
 		opt         CommitsOptions
-		wantCommits []*gitdomain.Commit
-		wantTotal   uint
+		wbntCommits []*gitdombin.Commit
+		wbntTotbl   uint
 	}{
 		"git cmd": {
-			opt:         CommitsOptions{Range: "ade564eba4cf904492fb56dcd287ac633e6e082c", N: 1, Skip: 1},
-			wantCommits: wantGitCommits,
-			wantTotal:   1,
+			opt:         CommitsOptions{Rbnge: "bde564ebb4cf904492fb56dcd287bc633e6e082c", N: 1, Skip: 1},
+			wbntCommits: wbntGitCommits,
+			wbntTotbl:   1,
 		},
-		"git cmd Head": {
+		"git cmd Hebd": {
 			opt: CommitsOptions{
-				Range: "b266c7e3ca00b1a17ad0b1449825d0854225c007...ade564eba4cf904492fb56dcd287ac633e6e082c",
+				Rbnge: "b266c7e3cb00b1b17bd0b1449825d0854225c007...bde564ebb4cf904492fb56dcd287bc633e6e082c",
 			},
-			wantCommits: wantGitCommits2,
-			wantTotal:   1,
+			wbntCommits: wbntGitCommits2,
+			wbntTotbl:   1,
 		},
 		"before": {
 			opt: CommitsOptions{
 				Before: "2006-01-02T15:04:07Z",
-				Range:  "HEAD",
+				Rbnge:  "HEAD",
 				N:      1,
 			},
-			wantCommits: []*gitdomain.Commit{
+			wbntCommits: []*gitdombin.Commit{
 				{
-					ID:        "b266c7e3ca00b1a17ad0b1449825d0854225c007",
-					Author:    gitdomain.Signature{Name: "a", Email: "a@a.com", Date: MustParseTime(time.RFC3339, "2006-01-02T15:04:06Z")},
-					Committer: &gitdomain.Signature{Name: "c", Email: "c@c.com", Date: MustParseTime(time.RFC3339, "2006-01-02T15:04:07Z")},
-					Message:   "bar",
-					Parents:   []api.CommitID{"ea167fe3d76b1e5fd3ed8ca44cbd2fe3897684f8"},
+					ID:        "b266c7e3cb00b1b17bd0b1449825d0854225c007",
+					Author:    gitdombin.Signbture{Nbme: "b", Embil: "b@b.com", Dbte: MustPbrseTime(time.RFC3339, "2006-01-02T15:04:06Z")},
+					Committer: &gitdombin.Signbture{Nbme: "c", Embil: "c@c.com", Dbte: MustPbrseTime(time.RFC3339, "2006-01-02T15:04:07Z")},
+					Messbge:   "bbr",
+					Pbrents:   []bpi.CommitID{"eb167fe3d76b1e5fd3ed8cb44cbd2fe3897684f8"},
 				},
 			},
-			wantTotal: 1,
+			wbntTotbl: 1,
 		},
 	}
-	runCommitsTests := func(checker authz.SubRepoPermissionChecker) {
-		for label, test := range tests {
-			t.Run(label, func(t *testing.T) {
-				repo := MakeGitRepository(t, gitCommands...)
-				testCommits(ctx, label, repo, test.opt, checker, test.wantCommits, t)
+	runCommitsTests := func(checker buthz.SubRepoPermissionChecker) {
+		for lbbel, test := rbnge tests {
+			t.Run(lbbel, func(t *testing.T) {
+				repo := MbkeGitRepository(t, gitCommbnds...)
+				testCommits(ctx, lbbel, repo, test.opt, checker, test.wbntCommits, t)
 			})
 		}
-		// Added for awareness if this error message changes. Insights record last repo indexing and consider empty
-		// repos a success case.
+		// Added for bwbreness if this error messbge chbnges. Insights record lbst repo indexing bnd consider empty
+		// repos b success cbse.
 		subRepo := ""
 		if checker != nil {
-			subRepo = " sub repo enabled"
+			subRepo = " sub repo enbbled"
 		}
 		t.Run("empty repo"+subRepo, func(t *testing.T) {
-			repo := MakeGitRepository(t)
+			repo := MbkeGitRepository(t)
 			before := ""
-			after := time.Date(2022, 11, 11, 12, 10, 0, 4, time.UTC).Format(time.RFC3339)
-			_, err := NewClient().Commits(ctx, checker, repo, CommitsOptions{N: 0, DateOrder: true, NoEnsureRevision: true, After: after, Before: before})
+			bfter := time.Dbte(2022, 11, 11, 12, 10, 0, 4, time.UTC).Formbt(time.RFC3339)
+			_, err := NewClient().Commits(ctx, checker, repo, CommitsOptions{N: 0, DbteOrder: true, NoEnsureRevision: true, After: bfter, Before: before})
 			if err == nil {
 				t.Error("expected error, got nil")
 			}
-			wantErr := `git command [git log --format=format:%H%x00%aN%x00%aE%x00%at%x00%cN%x00%cE%x00%ct%x00%B%x00%P%x00 --after=` + after + " --date-order"
+			wbntErr := `git commbnd [git log --formbt=formbt:%H%x00%bN%x00%bE%x00%bt%x00%cN%x00%cE%x00%ct%x00%B%x00%P%x00 --bfter=` + bfter + " --dbte-order"
 			if subRepo != "" {
-				wantErr += " --name-only"
+				wbntErr += " --nbme-only"
 			}
-			wantErr += `] failed (output: ""): exit status 128`
-			if err.Error() != wantErr {
-				t.Errorf("expected:%v got:%v", wantErr, err.Error())
+			wbntErr += `] fbiled (output: ""): exit stbtus 128`
+			if err.Error() != wbntErr {
+				t.Errorf("expected:%v got:%v", wbntErr, err.Error())
 			}
 		})
 	}
@@ -1902,62 +1902,62 @@ func TestRepository_Commits_options(t *testing.T) {
 	runCommitsTests(checker)
 }
 
-func TestRepository_Commits_options_path(t *testing.T) {
-	ClientMocks.LocalGitserver = true
+func TestRepository_Commits_options_pbth(t *testing.T) {
+	ClientMocks.LocblGitserver = true
 	defer ResetClientMocks()
-	ctx := actor.WithActor(context.Background(), &actor.Actor{
+	ctx := bctor.WithActor(context.Bbckground(), &bctor.Actor{
 		UID: 1,
 	})
 
-	gitCommands := []string{
-		"git commit --allow-empty -m commit1",
+	gitCommbnds := []string{
+		"git commit --bllow-empty -m commit1",
 		"touch file1",
-		"touch --date=2006-01-02T15:04:05Z file1 || touch -t " + Times[0] + " file1",
-		"git add file1",
+		"touch --dbte=2006-01-02T15:04:05Z file1 || touch -t " + Times[0] + " file1",
+		"git bdd file1",
 		"git commit -m commit2",
-		"GIT_COMMITTER_NAME=c GIT_COMMITTER_EMAIL=c@c.com GIT_COMMITTER_DATE=2006-01-02T15:04:07Z git commit --allow-empty -m commit3 --author='a <a@a.com>' --date 2006-01-02T15:04:06Z",
+		"GIT_COMMITTER_NAME=c GIT_COMMITTER_EMAIL=c@c.com GIT_COMMITTER_DATE=2006-01-02T15:04:07Z git commit --bllow-empty -m commit3 --buthor='b <b@b.com>' --dbte 2006-01-02T15:04:06Z",
 	}
-	wantGitCommits := []*gitdomain.Commit{
+	wbntGitCommits := []*gitdombin.Commit{
 		{
-			ID:        "546a3ef26e581624ef997cb8c0ba01ee475fc1dc",
-			Author:    gitdomain.Signature{Name: "a", Email: "a@a.com", Date: MustParseTime(time.RFC3339, "2006-01-02T15:04:05Z")},
-			Committer: &gitdomain.Signature{Name: "a", Email: "a@a.com", Date: MustParseTime(time.RFC3339, "2006-01-02T15:04:05Z")},
-			Message:   "commit2",
-			Parents:   []api.CommitID{"a04652fa1998a0a7d2f2f77ecb7021de943d3aab"},
+			ID:        "546b3ef26e581624ef997cb8c0bb01ee475fc1dc",
+			Author:    gitdombin.Signbture{Nbme: "b", Embil: "b@b.com", Dbte: MustPbrseTime(time.RFC3339, "2006-01-02T15:04:05Z")},
+			Committer: &gitdombin.Signbture{Nbme: "b", Embil: "b@b.com", Dbte: MustPbrseTime(time.RFC3339, "2006-01-02T15:04:05Z")},
+			Messbge:   "commit2",
+			Pbrents:   []bpi.CommitID{"b04652fb1998b0b7d2f2f77ecb7021de943d3bbb"},
 		},
 	}
-	tests := map[string]struct {
+	tests := mbp[string]struct {
 		opt         CommitsOptions
-		wantCommits []*gitdomain.Commit
+		wbntCommits []*gitdombin.Commit
 	}{
-		"git cmd Path 0": {
+		"git cmd Pbth 0": {
 			opt: CommitsOptions{
-				Range: "master",
-				Path:  "doesnt-exist",
+				Rbnge: "mbster",
+				Pbth:  "doesnt-exist",
 			},
-			wantCommits: nil,
+			wbntCommits: nil,
 		},
-		"git cmd Path 1": {
+		"git cmd Pbth 1": {
 			opt: CommitsOptions{
-				Range: "master",
-				Path:  "file1",
+				Rbnge: "mbster",
+				Pbth:  "file1",
 			},
-			wantCommits: wantGitCommits,
+			wbntCommits: wbntGitCommits,
 		},
 		"git cmd non utf8": {
 			opt: CommitsOptions{
-				Range:  "master",
-				Author: "a\xc0rn",
+				Rbnge:  "mbster",
+				Author: "b\xc0rn",
 			},
-			wantCommits: nil,
+			wbntCommits: nil,
 		},
 	}
 
-	runCommitsTest := func(checker authz.SubRepoPermissionChecker) {
-		for label, test := range tests {
-			t.Run(label, func(t *testing.T) {
-				repo := MakeGitRepository(t, gitCommands...)
-				testCommits(ctx, label, repo, test.opt, checker, test.wantCommits, t)
+	runCommitsTest := func(checker buthz.SubRepoPermissionChecker) {
+		for lbbel, test := rbnge tests {
+			t.Run(lbbel, func(t *testing.T) {
+				repo := MbkeGitRepository(t, gitCommbnds...)
+				testCommits(ctx, lbbel, repo, test.opt, checker, test.wbntCommits, t)
 			})
 		}
 	}
@@ -1966,9 +1966,9 @@ func TestRepository_Commits_options_path(t *testing.T) {
 	runCommitsTest(checker)
 }
 
-func TestMessage(t *testing.T) { // KEEP
+func TestMessbge(t *testing.T) { // KEEP
 	t.Run("Body", func(t *testing.T) {
-		tests := map[gitdomain.Message]string{
+		tests := mbp[gitdombin.Messbge]string{
 			"hello":                 "",
 			"hello\n":               "",
 			"hello\n\n":             "",
@@ -1977,86 +1977,86 @@ func TestMessage(t *testing.T) { // KEEP
 			"hello\n\nworld\nfoo":   "world\nfoo",
 			"hello\n\nworld\nfoo\n": "world\nfoo",
 		}
-		for input, want := range tests {
+		for input, wbnt := rbnge tests {
 			got := input.Body()
-			if got != want {
-				t.Errorf("got %q, want %q", got, want)
+			if got != wbnt {
+				t.Errorf("got %q, wbnt %q", got, wbnt)
 			}
 		}
 	})
 }
 
-func TestParseCommitsUniqueToBranch(t *testing.T) { // KEEP
-	commits, err := parseCommitsUniqueToBranch([]string{
-		"c165bfff52e9d4f87891bba497e3b70fea144d89:2020-08-04T08:23:30-05:00",
-		"f73ee8ed601efea74f3b734eeb073307e1615606:2020-04-16T16:06:21-04:00",
+func TestPbrseCommitsUniqueToBrbnch(t *testing.T) { // KEEP
+	commits, err := pbrseCommitsUniqueToBrbnch([]string{
+		"c165bfff52e9d4f87891bbb497e3b70feb144d89:2020-08-04T08:23:30-05:00",
+		"f73ee8ed601efeb74f3b734eeb073307e1615606:2020-04-16T16:06:21-04:00",
 		"6057f7ed8d331c82030c713b650fc8fd2c0c2347:2020-04-16T16:20:26-04:00",
-		"7886287b8758d1baf19cf7b8253856128369a2a7:2020-04-16T16:55:58-04:00",
-		"b69f89473bbcc04dc52cafaf6baa504e34791f5a:2020-04-20T12:10:49-04:00",
+		"7886287b8758d1bbf19cf7b8253856128369b2b7:2020-04-16T16:55:58-04:00",
+		"b69f89473bbcc04dc52cbfbf6bbb504e34791f5b:2020-04-20T12:10:49-04:00",
 		"172b7fcf8b8c49b37b231693433586c2bfd1619e:2020-04-20T12:37:36-04:00",
-		"5bc35c78fb5fb388891ca944cd12d85fd6dede95:2020-05-05T12:53:18-05:00",
+		"5bc35c78fb5fb388891cb944cd12d85fd6dede95:2020-05-05T12:53:18-05:00",
 	})
 	if err != nil {
-		t.Fatalf("unexpected error parsing commits: %s", err)
+		t.Fbtblf("unexpected error pbrsing commits: %s", err)
 	}
 
-	expectedCommits := map[string]time.Time{
-		"c165bfff52e9d4f87891bba497e3b70fea144d89": *mustParseDate("2020-08-04T08:23:30-05:00", t),
-		"f73ee8ed601efea74f3b734eeb073307e1615606": *mustParseDate("2020-04-16T16:06:21-04:00", t),
-		"6057f7ed8d331c82030c713b650fc8fd2c0c2347": *mustParseDate("2020-04-16T16:20:26-04:00", t),
-		"7886287b8758d1baf19cf7b8253856128369a2a7": *mustParseDate("2020-04-16T16:55:58-04:00", t),
-		"b69f89473bbcc04dc52cafaf6baa504e34791f5a": *mustParseDate("2020-04-20T12:10:49-04:00", t),
-		"172b7fcf8b8c49b37b231693433586c2bfd1619e": *mustParseDate("2020-04-20T12:37:36-04:00", t),
-		"5bc35c78fb5fb388891ca944cd12d85fd6dede95": *mustParseDate("2020-05-05T12:53:18-05:00", t),
+	expectedCommits := mbp[string]time.Time{
+		"c165bfff52e9d4f87891bbb497e3b70feb144d89": *mustPbrseDbte("2020-08-04T08:23:30-05:00", t),
+		"f73ee8ed601efeb74f3b734eeb073307e1615606": *mustPbrseDbte("2020-04-16T16:06:21-04:00", t),
+		"6057f7ed8d331c82030c713b650fc8fd2c0c2347": *mustPbrseDbte("2020-04-16T16:20:26-04:00", t),
+		"7886287b8758d1bbf19cf7b8253856128369b2b7": *mustPbrseDbte("2020-04-16T16:55:58-04:00", t),
+		"b69f89473bbcc04dc52cbfbf6bbb504e34791f5b": *mustPbrseDbte("2020-04-20T12:10:49-04:00", t),
+		"172b7fcf8b8c49b37b231693433586c2bfd1619e": *mustPbrseDbte("2020-04-20T12:37:36-04:00", t),
+		"5bc35c78fb5fb388891cb944cd12d85fd6dede95": *mustPbrseDbte("2020-05-05T12:53:18-05:00", t),
 	}
 	if diff := cmp.Diff(expectedCommits, commits); diff != "" {
-		t.Errorf("unexpected commits (-want +got):\n%s", diff)
+		t.Errorf("unexpected commits (-wbnt +got):\n%s", diff)
 	}
 }
 
-func TestParseBranchesContaining(t *testing.T) { // KEEP
-	names := parseBranchesContaining([]string{
-		"refs/tags/v0.7.0",
-		"refs/tags/v0.5.1",
-		"refs/tags/v1.1.4",
-		"refs/heads/symbols", "refs/heads/bl/symbols",
-		"refs/tags/v1.2.0",
-		"refs/tags/v1.1.0",
-		"refs/tags/v0.10.0",
-		"refs/tags/v1.0.0",
-		"refs/heads/garo/index-specific-files",
-		"refs/heads/bl/symbols-2",
-		"refs/tags/v1.3.1",
-		"refs/tags/v0.5.2",
-		"refs/tags/v1.1.2",
-		"refs/tags/v0.8.0",
-		"refs/heads/ef/wtf",
-		"refs/tags/v1.5.0",
-		"refs/tags/v0.9.0",
-		"refs/heads/garo/go-and-typescript-lsif-indexing",
-		"refs/heads/master",
-		"refs/heads/sg/document-symbols",
-		"refs/tags/v1.1.1",
-		"refs/tags/v1.4.0",
-		"refs/heads/nsc/bump-go-version",
-		"refs/heads/nsc/random",
-		"refs/heads/nsc/markupcontent",
-		"refs/tags/v0.6.0",
-		"refs/tags/v1.1.3",
-		"refs/tags/v0.5.3",
-		"refs/tags/v1.3.0",
+func TestPbrseBrbnchesContbining(t *testing.T) { // KEEP
+	nbmes := pbrseBrbnchesContbining([]string{
+		"refs/tbgs/v0.7.0",
+		"refs/tbgs/v0.5.1",
+		"refs/tbgs/v1.1.4",
+		"refs/hebds/symbols", "refs/hebds/bl/symbols",
+		"refs/tbgs/v1.2.0",
+		"refs/tbgs/v1.1.0",
+		"refs/tbgs/v0.10.0",
+		"refs/tbgs/v1.0.0",
+		"refs/hebds/gbro/index-specific-files",
+		"refs/hebds/bl/symbols-2",
+		"refs/tbgs/v1.3.1",
+		"refs/tbgs/v0.5.2",
+		"refs/tbgs/v1.1.2",
+		"refs/tbgs/v0.8.0",
+		"refs/hebds/ef/wtf",
+		"refs/tbgs/v1.5.0",
+		"refs/tbgs/v0.9.0",
+		"refs/hebds/gbro/go-bnd-typescript-lsif-indexing",
+		"refs/hebds/mbster",
+		"refs/hebds/sg/document-symbols",
+		"refs/tbgs/v1.1.1",
+		"refs/tbgs/v1.4.0",
+		"refs/hebds/nsc/bump-go-version",
+		"refs/hebds/nsc/rbndom",
+		"refs/hebds/nsc/mbrkupcontent",
+		"refs/tbgs/v0.6.0",
+		"refs/tbgs/v1.1.3",
+		"refs/tbgs/v0.5.3",
+		"refs/tbgs/v1.3.0",
 	})
 
-	expectedNames := []string{
+	expectedNbmes := []string{
 		"bl/symbols",
 		"bl/symbols-2",
 		"ef/wtf",
-		"garo/go-and-typescript-lsif-indexing",
-		"garo/index-specific-files",
-		"master",
+		"gbro/go-bnd-typescript-lsif-indexing",
+		"gbro/index-specific-files",
+		"mbster",
 		"nsc/bump-go-version",
-		"nsc/markupcontent",
-		"nsc/random",
+		"nsc/mbrkupcontent",
+		"nsc/rbndom",
 		"sg/document-symbols",
 		"symbols",
 		"v0.10.0",
@@ -2079,1243 +2079,1243 @@ func TestParseBranchesContaining(t *testing.T) { // KEEP
 		"v1.4.0",
 		"v1.5.0",
 	}
-	if diff := cmp.Diff(expectedNames, names); diff != "" {
-		t.Errorf("unexpected names (-want +got):\n%s", diff)
+	if diff := cmp.Diff(expectedNbmes, nbmes); diff != "" {
+		t.Errorf("unexpected nbmes (-wbnt +got):\n%s", diff)
 	}
 }
 
-func TestParseRefDescriptions(t *testing.T) { // KEEP
-	refDescriptions, err := parseRefDescriptions(bytes.Join([][]byte{
-		[]byte("66a7ac584740245fc523da443a3f540a52f8af72\x00refs/heads/bl/symbols\x00 \x002021-01-18T16:46:51-08:00"),
-		[]byte("58537c06cf7ba8a562a3f5208fb7a8efbc971d0e\x00refs/heads/bl/symbols-2\x00 \x002021-02-24T06:21:20-08:00"),
-		[]byte("a40716031ae97ee7c5cdf1dec913567a4a7c50c8\x00refs/heads/ef/wtf\x00 \x002021-02-10T10:50:08-06:00"),
-		[]byte("e2e283fdaf6ea4a419cdbad142bbfd4b730080f8\x00refs/heads/garo/go-and-typescript-lsif-indexing\x00 \x002020-04-29T16:45:46+00:00"),
-		[]byte("c485d92c3d2065041bf29b3fe0b55ffac7e66b2a\x00refs/heads/garo/index-specific-files\x00 \x002021-03-01T13:09:42-08:00"),
-		[]byte("ce30aee6cc56f39d0ac6fee03c4c151c08a8cd2e\x00refs/heads/master\x00*\x002021-06-16T11:51:09-07:00"),
-		[]byte("ec5cfc8ab33370c698273b1a097af73ea289c92b\x00refs/heads/nsc/bump-go-version\x00 \x002021-03-12T22:33:17+00:00"),
-		[]byte("22b2c4f734f62060cae69da856fe3854defdcc87\x00refs/heads/nsc/markupcontent\x00 \x002021-05-03T23:50:02+01:00"),
-		[]byte("9df3358a18792fa9dbd40d506f2e0ad23fc11ee8\x00refs/heads/nsc/random\x00 \x002021-02-10T16:29:06+00:00"),
-		[]byte("a02b85b63345a1406d7a19727f7a5472c976e053\x00refs/heads/sg/document-symbols\x00 \x002021-04-08T15:33:03-07:00"),
-		[]byte("234b0a484519129b251164ecb0674ec27d154d2f\x00refs/heads/symbols\x00 \x002021-01-01T22:51:55-08:00"),
-		[]byte("6b5ae2e0ce568a7641174072271d109d7d0977c7\x00refs/tags/v0.0.0\x00 \x00"),
-		[]byte("c165bfff52e9d4f87891bba497e3b70fea144d89\x00refs/tags/v0.10.0\x00 \x002020-08-04T08:23:30-05:00"),
-		[]byte("f73ee8ed601efea74f3b734eeb073307e1615606\x00refs/tags/v0.5.1\x00 \x002020-04-16T16:06:21-04:00"),
-		[]byte("6057f7ed8d331c82030c713b650fc8fd2c0c2347\x00refs/tags/v0.5.2\x00 \x002020-04-16T16:20:26-04:00"),
-		[]byte("7886287b8758d1baf19cf7b8253856128369a2a7\x00refs/tags/v0.5.3\x00 \x002020-04-16T16:55:58-04:00"),
-		[]byte("b69f89473bbcc04dc52cafaf6baa504e34791f5a\x00refs/tags/v0.6.0\x00 \x002020-04-20T12:10:49-04:00"),
-		[]byte("172b7fcf8b8c49b37b231693433586c2bfd1619e\x00refs/tags/v0.7.0\x00 \x002020-04-20T12:37:36-04:00"),
-		[]byte("5bc35c78fb5fb388891ca944cd12d85fd6dede95\x00refs/tags/v0.8.0\x00 \x002020-05-05T12:53:18-05:00"),
-		[]byte("14faa49ef098df9488536ca3c9b26d79e6bec4d6\x00refs/tags/v0.9.0\x00 \x002020-07-14T14:26:40-05:00"),
-		[]byte("0a82af8b6914d8c81326eee5f3a7e1d1106547f1\x00refs/tags/v1.0.0\x00 \x002020-08-19T19:33:39-05:00"),
-		[]byte("262defb72b96261a7d56b000d438c5c7ec6d0f3e\x00refs/tags/v1.1.0\x00 \x002020-08-21T14:15:44-05:00"),
-		[]byte("806b96eb544e7e632a617c26402eccee6d67faed\x00refs/tags/v1.1.1\x00 \x002020-08-21T16:02:35-05:00"),
-		[]byte("5d8865d6feacb4fce3313cade2c61dc29c6271e6\x00refs/tags/v1.1.2\x00 \x002020-08-22T13:45:26-05:00"),
-		[]byte("8c45a5635cf0a4968cc8c9dac2d61c388b53251e\x00refs/tags/v1.1.3\x00 \x002020-08-25T10:10:46-05:00"),
-		[]byte("fc212da31ce157ef0795e934381509c5a50654f6\x00refs/tags/v1.1.4\x00 \x002020-08-26T14:02:47-05:00"),
-		[]byte("4fd8b2c3522df32ffc8be983d42c3a504cc75fbc\x00refs/tags/v1.2.0\x00 \x002020-09-07T09:52:43-05:00"),
-		[]byte("9741f54aa0f14be1103b00c89406393ea4d8a08a\x00refs/tags/v1.3.0\x00 \x002021-02-10T23:21:31+00:00"),
-		[]byte("b358977103d2d66e2a3fc5f8081075c2834c4936\x00refs/tags/v1.3.1\x00 \x002021-02-24T20:16:45+00:00"),
-		[]byte("2882ad236da4b649b4c1259d815bf1a378e3b92f\x00refs/tags/v1.4.0\x00 \x002021-05-13T10:41:02-05:00"),
-		[]byte("340b84452286c18000afad9b140a32212a82840a\x00refs/tags/v1.5.0\x00 \x002021-05-20T18:41:41-05:00"),
+func TestPbrseRefDescriptions(t *testing.T) { // KEEP
+	refDescriptions, err := pbrseRefDescriptions(bytes.Join([][]byte{
+		[]byte("66b7bc584740245fc523db443b3f540b52f8bf72\x00refs/hebds/bl/symbols\x00 \x002021-01-18T16:46:51-08:00"),
+		[]byte("58537c06cf7bb8b562b3f5208fb7b8efbc971d0e\x00refs/hebds/bl/symbols-2\x00 \x002021-02-24T06:21:20-08:00"),
+		[]byte("b40716031be97ee7c5cdf1dec913567b4b7c50c8\x00refs/hebds/ef/wtf\x00 \x002021-02-10T10:50:08-06:00"),
+		[]byte("e2e283fdbf6eb4b419cdbbd142bbfd4b730080f8\x00refs/hebds/gbro/go-bnd-typescript-lsif-indexing\x00 \x002020-04-29T16:45:46+00:00"),
+		[]byte("c485d92c3d2065041bf29b3fe0b55ffbc7e66b2b\x00refs/hebds/gbro/index-specific-files\x00 \x002021-03-01T13:09:42-08:00"),
+		[]byte("ce30bee6cc56f39d0bc6fee03c4c151c08b8cd2e\x00refs/hebds/mbster\x00*\x002021-06-16T11:51:09-07:00"),
+		[]byte("ec5cfc8bb33370c698273b1b097bf73eb289c92b\x00refs/hebds/nsc/bump-go-version\x00 \x002021-03-12T22:33:17+00:00"),
+		[]byte("22b2c4f734f62060cbe69db856fe3854defdcc87\x00refs/hebds/nsc/mbrkupcontent\x00 \x002021-05-03T23:50:02+01:00"),
+		[]byte("9df3358b18792fb9dbd40d506f2e0bd23fc11ee8\x00refs/hebds/nsc/rbndom\x00 \x002021-02-10T16:29:06+00:00"),
+		[]byte("b02b85b63345b1406d7b19727f7b5472c976e053\x00refs/hebds/sg/document-symbols\x00 \x002021-04-08T15:33:03-07:00"),
+		[]byte("234b0b484519129b251164ecb0674ec27d154d2f\x00refs/hebds/symbols\x00 \x002021-01-01T22:51:55-08:00"),
+		[]byte("6b5be2e0ce568b7641174072271d109d7d0977c7\x00refs/tbgs/v0.0.0\x00 \x00"),
+		[]byte("c165bfff52e9d4f87891bbb497e3b70feb144d89\x00refs/tbgs/v0.10.0\x00 \x002020-08-04T08:23:30-05:00"),
+		[]byte("f73ee8ed601efeb74f3b734eeb073307e1615606\x00refs/tbgs/v0.5.1\x00 \x002020-04-16T16:06:21-04:00"),
+		[]byte("6057f7ed8d331c82030c713b650fc8fd2c0c2347\x00refs/tbgs/v0.5.2\x00 \x002020-04-16T16:20:26-04:00"),
+		[]byte("7886287b8758d1bbf19cf7b8253856128369b2b7\x00refs/tbgs/v0.5.3\x00 \x002020-04-16T16:55:58-04:00"),
+		[]byte("b69f89473bbcc04dc52cbfbf6bbb504e34791f5b\x00refs/tbgs/v0.6.0\x00 \x002020-04-20T12:10:49-04:00"),
+		[]byte("172b7fcf8b8c49b37b231693433586c2bfd1619e\x00refs/tbgs/v0.7.0\x00 \x002020-04-20T12:37:36-04:00"),
+		[]byte("5bc35c78fb5fb388891cb944cd12d85fd6dede95\x00refs/tbgs/v0.8.0\x00 \x002020-05-05T12:53:18-05:00"),
+		[]byte("14fbb49ef098df9488536cb3c9b26d79e6bec4d6\x00refs/tbgs/v0.9.0\x00 \x002020-07-14T14:26:40-05:00"),
+		[]byte("0b82bf8b6914d8c81326eee5f3b7e1d1106547f1\x00refs/tbgs/v1.0.0\x00 \x002020-08-19T19:33:39-05:00"),
+		[]byte("262defb72b96261b7d56b000d438c5c7ec6d0f3e\x00refs/tbgs/v1.1.0\x00 \x002020-08-21T14:15:44-05:00"),
+		[]byte("806b96eb544e7e632b617c26402eccee6d67fbed\x00refs/tbgs/v1.1.1\x00 \x002020-08-21T16:02:35-05:00"),
+		[]byte("5d8865d6febcb4fce3313cbde2c61dc29c6271e6\x00refs/tbgs/v1.1.2\x00 \x002020-08-22T13:45:26-05:00"),
+		[]byte("8c45b5635cf0b4968cc8c9dbc2d61c388b53251e\x00refs/tbgs/v1.1.3\x00 \x002020-08-25T10:10:46-05:00"),
+		[]byte("fc212db31ce157ef0795e934381509c5b50654f6\x00refs/tbgs/v1.1.4\x00 \x002020-08-26T14:02:47-05:00"),
+		[]byte("4fd8b2c3522df32ffc8be983d42c3b504cc75fbc\x00refs/tbgs/v1.2.0\x00 \x002020-09-07T09:52:43-05:00"),
+		[]byte("9741f54bb0f14be1103b00c89406393eb4d8b08b\x00refs/tbgs/v1.3.0\x00 \x002021-02-10T23:21:31+00:00"),
+		[]byte("b358977103d2d66e2b3fc5f8081075c2834c4936\x00refs/tbgs/v1.3.1\x00 \x002021-02-24T20:16:45+00:00"),
+		[]byte("2882bd236db4b649b4c1259d815bf1b378e3b92f\x00refs/tbgs/v1.4.0\x00 \x002021-05-13T10:41:02-05:00"),
+		[]byte("340b84452286c18000bfbd9b140b32212b82840b\x00refs/tbgs/v1.5.0\x00 \x002021-05-20T18:41:41-05:00"),
 	}, []byte("\n")))
 	if err != nil {
-		t.Fatalf("unexpected error parsing ref descriptions: %s", err)
+		t.Fbtblf("unexpected error pbrsing ref descriptions: %s", err)
 	}
 
-	makeBranch := func(name, createdDate string, isDefaultBranch bool) gitdomain.RefDescription {
-		return gitdomain.RefDescription{Name: name, Type: gitdomain.RefTypeBranch, IsDefaultBranch: isDefaultBranch, CreatedDate: mustParseDate(createdDate, t)}
+	mbkeBrbnch := func(nbme, crebtedDbte string, isDefbultBrbnch bool) gitdombin.RefDescription {
+		return gitdombin.RefDescription{Nbme: nbme, Type: gitdombin.RefTypeBrbnch, IsDefbultBrbnch: isDefbultBrbnch, CrebtedDbte: mustPbrseDbte(crebtedDbte, t)}
 	}
 
-	makeTag := func(name, createdDate string) gitdomain.RefDescription {
-		return gitdomain.RefDescription{Name: name, Type: gitdomain.RefTypeTag, IsDefaultBranch: false, CreatedDate: mustParseDate(createdDate, t)}
+	mbkeTbg := func(nbme, crebtedDbte string) gitdombin.RefDescription {
+		return gitdombin.RefDescription{Nbme: nbme, Type: gitdombin.RefTypeTbg, IsDefbultBrbnch: fblse, CrebtedDbte: mustPbrseDbte(crebtedDbte, t)}
 	}
 
-	expectedRefDescriptions := map[string][]gitdomain.RefDescription{
-		"66a7ac584740245fc523da443a3f540a52f8af72": {makeBranch("bl/symbols", "2021-01-18T16:46:51-08:00", false)},
-		"58537c06cf7ba8a562a3f5208fb7a8efbc971d0e": {makeBranch("bl/symbols-2", "2021-02-24T06:21:20-08:00", false)},
-		"a40716031ae97ee7c5cdf1dec913567a4a7c50c8": {makeBranch("ef/wtf", "2021-02-10T10:50:08-06:00", false)},
-		"e2e283fdaf6ea4a419cdbad142bbfd4b730080f8": {makeBranch("garo/go-and-typescript-lsif-indexing", "2020-04-29T16:45:46+00:00", false)},
-		"c485d92c3d2065041bf29b3fe0b55ffac7e66b2a": {makeBranch("garo/index-specific-files", "2021-03-01T13:09:42-08:00", false)},
-		"ce30aee6cc56f39d0ac6fee03c4c151c08a8cd2e": {makeBranch("master", "2021-06-16T11:51:09-07:00", true)},
-		"ec5cfc8ab33370c698273b1a097af73ea289c92b": {makeBranch("nsc/bump-go-version", "2021-03-12T22:33:17+00:00", false)},
-		"22b2c4f734f62060cae69da856fe3854defdcc87": {makeBranch("nsc/markupcontent", "2021-05-03T23:50:02+01:00", false)},
-		"9df3358a18792fa9dbd40d506f2e0ad23fc11ee8": {makeBranch("nsc/random", "2021-02-10T16:29:06+00:00", false)},
-		"a02b85b63345a1406d7a19727f7a5472c976e053": {makeBranch("sg/document-symbols", "2021-04-08T15:33:03-07:00", false)},
-		"234b0a484519129b251164ecb0674ec27d154d2f": {makeBranch("symbols", "2021-01-01T22:51:55-08:00", false)},
-		"6b5ae2e0ce568a7641174072271d109d7d0977c7": {gitdomain.RefDescription{Name: "v0.0.0", Type: gitdomain.RefTypeTag, IsDefaultBranch: false}},
-		"c165bfff52e9d4f87891bba497e3b70fea144d89": {makeTag("v0.10.0", "2020-08-04T08:23:30-05:00")},
-		"f73ee8ed601efea74f3b734eeb073307e1615606": {makeTag("v0.5.1", "2020-04-16T16:06:21-04:00")},
-		"6057f7ed8d331c82030c713b650fc8fd2c0c2347": {makeTag("v0.5.2", "2020-04-16T16:20:26-04:00")},
-		"7886287b8758d1baf19cf7b8253856128369a2a7": {makeTag("v0.5.3", "2020-04-16T16:55:58-04:00")},
-		"b69f89473bbcc04dc52cafaf6baa504e34791f5a": {makeTag("v0.6.0", "2020-04-20T12:10:49-04:00")},
-		"172b7fcf8b8c49b37b231693433586c2bfd1619e": {makeTag("v0.7.0", "2020-04-20T12:37:36-04:00")},
-		"5bc35c78fb5fb388891ca944cd12d85fd6dede95": {makeTag("v0.8.0", "2020-05-05T12:53:18-05:00")},
-		"14faa49ef098df9488536ca3c9b26d79e6bec4d6": {makeTag("v0.9.0", "2020-07-14T14:26:40-05:00")},
-		"0a82af8b6914d8c81326eee5f3a7e1d1106547f1": {makeTag("v1.0.0", "2020-08-19T19:33:39-05:00")},
-		"262defb72b96261a7d56b000d438c5c7ec6d0f3e": {makeTag("v1.1.0", "2020-08-21T14:15:44-05:00")},
-		"806b96eb544e7e632a617c26402eccee6d67faed": {makeTag("v1.1.1", "2020-08-21T16:02:35-05:00")},
-		"5d8865d6feacb4fce3313cade2c61dc29c6271e6": {makeTag("v1.1.2", "2020-08-22T13:45:26-05:00")},
-		"8c45a5635cf0a4968cc8c9dac2d61c388b53251e": {makeTag("v1.1.3", "2020-08-25T10:10:46-05:00")},
-		"fc212da31ce157ef0795e934381509c5a50654f6": {makeTag("v1.1.4", "2020-08-26T14:02:47-05:00")},
-		"4fd8b2c3522df32ffc8be983d42c3a504cc75fbc": {makeTag("v1.2.0", "2020-09-07T09:52:43-05:00")},
-		"9741f54aa0f14be1103b00c89406393ea4d8a08a": {makeTag("v1.3.0", "2021-02-10T23:21:31+00:00")},
-		"b358977103d2d66e2a3fc5f8081075c2834c4936": {makeTag("v1.3.1", "2021-02-24T20:16:45+00:00")},
-		"2882ad236da4b649b4c1259d815bf1a378e3b92f": {makeTag("v1.4.0", "2021-05-13T10:41:02-05:00")},
-		"340b84452286c18000afad9b140a32212a82840a": {makeTag("v1.5.0", "2021-05-20T18:41:41-05:00")},
+	expectedRefDescriptions := mbp[string][]gitdombin.RefDescription{
+		"66b7bc584740245fc523db443b3f540b52f8bf72": {mbkeBrbnch("bl/symbols", "2021-01-18T16:46:51-08:00", fblse)},
+		"58537c06cf7bb8b562b3f5208fb7b8efbc971d0e": {mbkeBrbnch("bl/symbols-2", "2021-02-24T06:21:20-08:00", fblse)},
+		"b40716031be97ee7c5cdf1dec913567b4b7c50c8": {mbkeBrbnch("ef/wtf", "2021-02-10T10:50:08-06:00", fblse)},
+		"e2e283fdbf6eb4b419cdbbd142bbfd4b730080f8": {mbkeBrbnch("gbro/go-bnd-typescript-lsif-indexing", "2020-04-29T16:45:46+00:00", fblse)},
+		"c485d92c3d2065041bf29b3fe0b55ffbc7e66b2b": {mbkeBrbnch("gbro/index-specific-files", "2021-03-01T13:09:42-08:00", fblse)},
+		"ce30bee6cc56f39d0bc6fee03c4c151c08b8cd2e": {mbkeBrbnch("mbster", "2021-06-16T11:51:09-07:00", true)},
+		"ec5cfc8bb33370c698273b1b097bf73eb289c92b": {mbkeBrbnch("nsc/bump-go-version", "2021-03-12T22:33:17+00:00", fblse)},
+		"22b2c4f734f62060cbe69db856fe3854defdcc87": {mbkeBrbnch("nsc/mbrkupcontent", "2021-05-03T23:50:02+01:00", fblse)},
+		"9df3358b18792fb9dbd40d506f2e0bd23fc11ee8": {mbkeBrbnch("nsc/rbndom", "2021-02-10T16:29:06+00:00", fblse)},
+		"b02b85b63345b1406d7b19727f7b5472c976e053": {mbkeBrbnch("sg/document-symbols", "2021-04-08T15:33:03-07:00", fblse)},
+		"234b0b484519129b251164ecb0674ec27d154d2f": {mbkeBrbnch("symbols", "2021-01-01T22:51:55-08:00", fblse)},
+		"6b5be2e0ce568b7641174072271d109d7d0977c7": {gitdombin.RefDescription{Nbme: "v0.0.0", Type: gitdombin.RefTypeTbg, IsDefbultBrbnch: fblse}},
+		"c165bfff52e9d4f87891bbb497e3b70feb144d89": {mbkeTbg("v0.10.0", "2020-08-04T08:23:30-05:00")},
+		"f73ee8ed601efeb74f3b734eeb073307e1615606": {mbkeTbg("v0.5.1", "2020-04-16T16:06:21-04:00")},
+		"6057f7ed8d331c82030c713b650fc8fd2c0c2347": {mbkeTbg("v0.5.2", "2020-04-16T16:20:26-04:00")},
+		"7886287b8758d1bbf19cf7b8253856128369b2b7": {mbkeTbg("v0.5.3", "2020-04-16T16:55:58-04:00")},
+		"b69f89473bbcc04dc52cbfbf6bbb504e34791f5b": {mbkeTbg("v0.6.0", "2020-04-20T12:10:49-04:00")},
+		"172b7fcf8b8c49b37b231693433586c2bfd1619e": {mbkeTbg("v0.7.0", "2020-04-20T12:37:36-04:00")},
+		"5bc35c78fb5fb388891cb944cd12d85fd6dede95": {mbkeTbg("v0.8.0", "2020-05-05T12:53:18-05:00")},
+		"14fbb49ef098df9488536cb3c9b26d79e6bec4d6": {mbkeTbg("v0.9.0", "2020-07-14T14:26:40-05:00")},
+		"0b82bf8b6914d8c81326eee5f3b7e1d1106547f1": {mbkeTbg("v1.0.0", "2020-08-19T19:33:39-05:00")},
+		"262defb72b96261b7d56b000d438c5c7ec6d0f3e": {mbkeTbg("v1.1.0", "2020-08-21T14:15:44-05:00")},
+		"806b96eb544e7e632b617c26402eccee6d67fbed": {mbkeTbg("v1.1.1", "2020-08-21T16:02:35-05:00")},
+		"5d8865d6febcb4fce3313cbde2c61dc29c6271e6": {mbkeTbg("v1.1.2", "2020-08-22T13:45:26-05:00")},
+		"8c45b5635cf0b4968cc8c9dbc2d61c388b53251e": {mbkeTbg("v1.1.3", "2020-08-25T10:10:46-05:00")},
+		"fc212db31ce157ef0795e934381509c5b50654f6": {mbkeTbg("v1.1.4", "2020-08-26T14:02:47-05:00")},
+		"4fd8b2c3522df32ffc8be983d42c3b504cc75fbc": {mbkeTbg("v1.2.0", "2020-09-07T09:52:43-05:00")},
+		"9741f54bb0f14be1103b00c89406393eb4d8b08b": {mbkeTbg("v1.3.0", "2021-02-10T23:21:31+00:00")},
+		"b358977103d2d66e2b3fc5f8081075c2834c4936": {mbkeTbg("v1.3.1", "2021-02-24T20:16:45+00:00")},
+		"2882bd236db4b649b4c1259d815bf1b378e3b92f": {mbkeTbg("v1.4.0", "2021-05-13T10:41:02-05:00")},
+		"340b84452286c18000bfbd9b140b32212b82840b": {mbkeTbg("v1.5.0", "2021-05-20T18:41:41-05:00")},
 	}
 	if diff := cmp.Diff(expectedRefDescriptions, refDescriptions); diff != "" {
-		t.Errorf("unexpected ref descriptions (-want +got):\n%s", diff)
+		t.Errorf("unexpected ref descriptions (-wbnt +got):\n%s", diff)
 	}
 }
 
 func TestFilterRefDescriptions(t *testing.T) { // KEEP
-	ctx := actor.WithActor(context.Background(), &actor.Actor{
+	ctx := bctor.WithActor(context.Bbckground(), &bctor.Actor{
 		UID: 1,
 	})
-	ClientMocks.LocalGitserver = true
+	ClientMocks.LocblGitserver = true
 	defer ResetClientMocks()
-	gitCommands := append(getGitCommandsWithFiles("file1", "file2"), getGitCommandsWithFiles("file3", "file4")...)
-	repo := MakeGitRepository(t, gitCommands...)
+	gitCommbnds := bppend(getGitCommbndsWithFiles("file1", "file2"), getGitCommbndsWithFiles("file3", "file4")...)
+	repo := MbkeGitRepository(t, gitCommbnds...)
 
-	refDescriptions := map[string][]gitdomain.RefDescription{
-		"d38233a79e037d2ab8170b0d0bc0aa438473e6da": {},
-		"2775e60f523d3151a2a34ffdc659f500d0e73022": {},
-		"2ba4dd2b9a27ec125fea7d72e12b9824ead18631": {},
-		"9019942b8b92d5a70a7f546d97c451621c5059a6": {},
+	refDescriptions := mbp[string][]gitdombin.RefDescription{
+		"d38233b79e037d2bb8170b0d0bc0bb438473e6db": {},
+		"2775e60f523d3151b2b34ffdc659f500d0e73022": {},
+		"2bb4dd2b9b27ec125feb7d72e12b9824ebd18631": {},
+		"9019942b8b92d5b70b7f546d97c451621c5059b6": {},
 	}
 
 	checker := getTestSubRepoPermsChecker("file3")
 	client := NewClient().(*clientImplementor)
 	filtered := client.filterRefDescriptions(ctx, repo, refDescriptions, checker)
-	expectedRefDescriptions := map[string][]gitdomain.RefDescription{
-		"d38233a79e037d2ab8170b0d0bc0aa438473e6da": {},
-		"2ba4dd2b9a27ec125fea7d72e12b9824ead18631": {},
-		"9019942b8b92d5a70a7f546d97c451621c5059a6": {},
+	expectedRefDescriptions := mbp[string][]gitdombin.RefDescription{
+		"d38233b79e037d2bb8170b0d0bc0bb438473e6db": {},
+		"2bb4dd2b9b27ec125feb7d72e12b9824ebd18631": {},
+		"9019942b8b92d5b70b7f546d97c451621c5059b6": {},
 	}
 	if diff := cmp.Diff(expectedRefDescriptions, filtered); diff != "" {
-		t.Errorf("unexpected ref descriptions (-want +got):\n%s", diff)
+		t.Errorf("unexpected ref descriptions (-wbnt +got):\n%s", diff)
 	}
 }
 
 func TestRefDescriptions(t *testing.T) { // KEEP
-	ClientMocks.LocalGitserver = true
+	ClientMocks.LocblGitserver = true
 	defer ResetClientMocks()
-	ctx := actor.WithActor(context.Background(), &actor.Actor{
+	ctx := bctor.WithActor(context.Bbckground(), &bctor.Actor{
 		UID: 1,
 	})
 	client := NewClient()
-	gitCommands := append(getGitCommandsWithFiles("file1", "file2"), "git checkout -b my-other-branch")
-	gitCommands = append(gitCommands, getGitCommandsWithFiles("file1-b2", "file2-b2")...)
-	gitCommands = append(gitCommands, "git checkout -b my-branch-no-access")
-	gitCommands = append(gitCommands, getGitCommandsWithFiles("file", "file-with-no-access")...)
-	repo := MakeGitRepository(t, gitCommands...)
+	gitCommbnds := bppend(getGitCommbndsWithFiles("file1", "file2"), "git checkout -b my-other-brbnch")
+	gitCommbnds = bppend(gitCommbnds, getGitCommbndsWithFiles("file1-b2", "file2-b2")...)
+	gitCommbnds = bppend(gitCommbnds, "git checkout -b my-brbnch-no-bccess")
+	gitCommbnds = bppend(gitCommbnds, getGitCommbndsWithFiles("file", "file-with-no-bccess")...)
+	repo := MbkeGitRepository(t, gitCommbnds...)
 
-	makeBranch := func(name, createdDate string, isDefaultBranch bool) gitdomain.RefDescription {
-		return gitdomain.RefDescription{Name: name, Type: gitdomain.RefTypeBranch, IsDefaultBranch: isDefaultBranch, CreatedDate: mustParseDate(createdDate, t)}
+	mbkeBrbnch := func(nbme, crebtedDbte string, isDefbultBrbnch bool) gitdombin.RefDescription {
+		return gitdombin.RefDescription{Nbme: nbme, Type: gitdombin.RefTypeBrbnch, IsDefbultBrbnch: isDefbultBrbnch, CrebtedDbte: mustPbrseDbte(crebtedDbte, t)}
 	}
 
-	t.Run("basic", func(t *testing.T) {
+	t.Run("bbsic", func(t *testing.T) {
 		refDescriptions, err := client.RefDescriptions(ctx, nil, repo)
 		if err != nil {
-			t.Errorf("err calling RefDescriptions: %s", err)
+			t.Errorf("err cblling RefDescriptions: %s", err)
 		}
-		expectedRefDescriptions := map[string][]gitdomain.RefDescription{
-			"2ba4dd2b9a27ec125fea7d72e12b9824ead18631": {makeBranch("master", "2006-01-02T15:04:05Z", false)},
-			"9d7a382983098eed6cf911bd933dfacb13116e42": {makeBranch("my-other-branch", "2006-01-02T15:04:05Z", false)},
-			"7cf006d0599531db799c08d3b00d7fd06da33015": {makeBranch("my-branch-no-access", "2006-01-02T15:04:05Z", true)},
+		expectedRefDescriptions := mbp[string][]gitdombin.RefDescription{
+			"2bb4dd2b9b27ec125feb7d72e12b9824ebd18631": {mbkeBrbnch("mbster", "2006-01-02T15:04:05Z", fblse)},
+			"9d7b382983098eed6cf911bd933dfbcb13116e42": {mbkeBrbnch("my-other-brbnch", "2006-01-02T15:04:05Z", fblse)},
+			"7cf006d0599531db799c08d3b00d7fd06db33015": {mbkeBrbnch("my-brbnch-no-bccess", "2006-01-02T15:04:05Z", true)},
 		}
 		if diff := cmp.Diff(expectedRefDescriptions, refDescriptions); diff != "" {
-			t.Errorf("unexpected ref descriptions (-want +got):\n%s", diff)
+			t.Errorf("unexpected ref descriptions (-wbnt +got):\n%s", diff)
 		}
 	})
 
-	t.Run("with sub-repo enabled", func(t *testing.T) {
-		checker := getTestSubRepoPermsChecker("file-with-no-access")
+	t.Run("with sub-repo enbbled", func(t *testing.T) {
+		checker := getTestSubRepoPermsChecker("file-with-no-bccess")
 		refDescriptions, err := client.RefDescriptions(ctx, checker, repo)
 		if err != nil {
-			t.Errorf("err calling RefDescriptions: %s", err)
+			t.Errorf("err cblling RefDescriptions: %s", err)
 		}
-		expectedRefDescriptions := map[string][]gitdomain.RefDescription{
-			"2ba4dd2b9a27ec125fea7d72e12b9824ead18631": {makeBranch("master", "2006-01-02T15:04:05Z", false)},
-			"9d7a382983098eed6cf911bd933dfacb13116e42": {makeBranch("my-other-branch", "2006-01-02T15:04:05Z", false)},
+		expectedRefDescriptions := mbp[string][]gitdombin.RefDescription{
+			"2bb4dd2b9b27ec125feb7d72e12b9824ebd18631": {mbkeBrbnch("mbster", "2006-01-02T15:04:05Z", fblse)},
+			"9d7b382983098eed6cf911bd933dfbcb13116e42": {mbkeBrbnch("my-other-brbnch", "2006-01-02T15:04:05Z", fblse)},
 		}
 		if diff := cmp.Diff(expectedRefDescriptions, refDescriptions); diff != "" {
-			t.Errorf("unexpected ref descriptions (-want +got):\n%s", diff)
+			t.Errorf("unexpected ref descriptions (-wbnt +got):\n%s", diff)
 		}
 	})
 }
 
-func TestCommitsUniqueToBranch(t *testing.T) {
-	ClientMocks.LocalGitserver = true
+func TestCommitsUniqueToBrbnch(t *testing.T) {
+	ClientMocks.LocblGitserver = true
 	defer ResetClientMocks()
-	ctx := actor.WithActor(context.Background(), &actor.Actor{
+	ctx := bctor.WithActor(context.Bbckground(), &bctor.Actor{
 		UID: 1,
 	})
 	client := NewClient()
-	gitCommands := append([]string{"git checkout -b my-branch"}, getGitCommandsWithFiles("file1", "file2")...)
-	gitCommands = append(gitCommands, getGitCommandsWithFiles("file3", "file-with-no-access")...)
-	repo := MakeGitRepository(t, gitCommands...)
+	gitCommbnds := bppend([]string{"git checkout -b my-brbnch"}, getGitCommbndsWithFiles("file1", "file2")...)
+	gitCommbnds = bppend(gitCommbnds, getGitCommbndsWithFiles("file3", "file-with-no-bccess")...)
+	repo := MbkeGitRepository(t, gitCommbnds...)
 
-	t.Run("basic", func(t *testing.T) {
-		commits, err := client.CommitsUniqueToBranch(ctx, nil, repo, "my-branch", true, &time.Time{})
+	t.Run("bbsic", func(t *testing.T) {
+		commits, err := client.CommitsUniqueToBrbnch(ctx, nil, repo, "my-brbnch", true, &time.Time{})
 		if err != nil {
-			t.Errorf("err calling RefDescriptions: %s", err)
+			t.Errorf("err cblling RefDescriptions: %s", err)
 		}
-		expectedCommits := map[string]time.Time{
-			"2775e60f523d3151a2a34ffdc659f500d0e73022": *mustParseDate("2006-01-02T15:04:05-00:00", t),
-			"2ba4dd2b9a27ec125fea7d72e12b9824ead18631": *mustParseDate("2006-01-02T15:04:05-00:00", t),
-			"791ce7cd8ca2d855e12f47f8692a62bc42477edc": *mustParseDate("2006-01-02T15:04:05-00:00", t),
-			"d38233a79e037d2ab8170b0d0bc0aa438473e6da": *mustParseDate("2006-01-02T15:04:05-00:00", t),
+		expectedCommits := mbp[string]time.Time{
+			"2775e60f523d3151b2b34ffdc659f500d0e73022": *mustPbrseDbte("2006-01-02T15:04:05-00:00", t),
+			"2bb4dd2b9b27ec125feb7d72e12b9824ebd18631": *mustPbrseDbte("2006-01-02T15:04:05-00:00", t),
+			"791ce7cd8cb2d855e12f47f8692b62bc42477edc": *mustPbrseDbte("2006-01-02T15:04:05-00:00", t),
+			"d38233b79e037d2bb8170b0d0bc0bb438473e6db": *mustPbrseDbte("2006-01-02T15:04:05-00:00", t),
 		}
 		if diff := cmp.Diff(expectedCommits, commits); diff != "" {
-			t.Errorf("unexpected ref descriptions (-want +got):\n%s", diff)
+			t.Errorf("unexpected ref descriptions (-wbnt +got):\n%s", diff)
 		}
 	})
 
-	t.Run("with sub-repo enabled", func(t *testing.T) {
-		checker := getTestSubRepoPermsChecker("file-with-no-access")
-		commits, err := client.CommitsUniqueToBranch(ctx, checker, repo, "my-branch", true, &time.Time{})
+	t.Run("with sub-repo enbbled", func(t *testing.T) {
+		checker := getTestSubRepoPermsChecker("file-with-no-bccess")
+		commits, err := client.CommitsUniqueToBrbnch(ctx, checker, repo, "my-brbnch", true, &time.Time{})
 		if err != nil {
-			t.Errorf("err calling RefDescriptions: %s", err)
+			t.Errorf("err cblling RefDescriptions: %s", err)
 		}
-		expectedCommits := map[string]time.Time{
-			"2775e60f523d3151a2a34ffdc659f500d0e73022": *mustParseDate("2006-01-02T15:04:05-00:00", t),
-			"2ba4dd2b9a27ec125fea7d72e12b9824ead18631": *mustParseDate("2006-01-02T15:04:05-00:00", t),
-			"d38233a79e037d2ab8170b0d0bc0aa438473e6da": *mustParseDate("2006-01-02T15:04:05-00:00", t),
+		expectedCommits := mbp[string]time.Time{
+			"2775e60f523d3151b2b34ffdc659f500d0e73022": *mustPbrseDbte("2006-01-02T15:04:05-00:00", t),
+			"2bb4dd2b9b27ec125feb7d72e12b9824ebd18631": *mustPbrseDbte("2006-01-02T15:04:05-00:00", t),
+			"d38233b79e037d2bb8170b0d0bc0bb438473e6db": *mustPbrseDbte("2006-01-02T15:04:05-00:00", t),
 		}
 		if diff := cmp.Diff(expectedCommits, commits); diff != "" {
-			t.Errorf("unexpected ref descriptions (-want +got):\n%s", diff)
+			t.Errorf("unexpected ref descriptions (-wbnt +got):\n%s", diff)
 		}
 	})
 }
 
-func TestCommitDate(t *testing.T) {
-	ClientMocks.LocalGitserver = true
+func TestCommitDbte(t *testing.T) {
+	ClientMocks.LocblGitserver = true
 	defer ResetClientMocks()
-	ctx := actor.WithActor(context.Background(), &actor.Actor{
+	ctx := bctor.WithActor(context.Bbckground(), &bctor.Actor{
 		UID: 1,
 	})
 	client := NewClient()
-	gitCommands := getGitCommandsWithFiles("file1", "file2")
-	repo := MakeGitRepository(t, gitCommands...)
+	gitCommbnds := getGitCommbndsWithFiles("file1", "file2")
+	repo := MbkeGitRepository(t, gitCommbnds...)
 
-	t.Run("basic", func(t *testing.T) {
-		_, date, commitExists, err := client.CommitDate(ctx, nil, repo, "d38233a79e037d2ab8170b0d0bc0aa438473e6da")
+	t.Run("bbsic", func(t *testing.T) {
+		_, dbte, commitExists, err := client.CommitDbte(ctx, nil, repo, "d38233b79e037d2bb8170b0d0bc0bb438473e6db")
 		if err != nil {
-			t.Errorf("error fetching CommitDate: %s", err)
+			t.Errorf("error fetching CommitDbte: %s", err)
 		}
 		if !commitExists {
 			t.Errorf("commit should exist")
 		}
-		if !date.Equal(time.Date(2006, 1, 2, 15, 4, 5, 0, time.UTC)) {
-			t.Errorf("unexpected date: %s", date)
+		if !dbte.Equbl(time.Dbte(2006, 1, 2, 15, 4, 5, 0, time.UTC)) {
+			t.Errorf("unexpected dbte: %s", dbte)
 		}
 	})
 
-	t.Run("with sub-repo permissions enabled", func(t *testing.T) {
+	t.Run("with sub-repo permissions enbbled", func(t *testing.T) {
 		checker := getTestSubRepoPermsChecker("file1")
-		_, date, commitExists, err := client.CommitDate(ctx, checker, repo, "d38233a79e037d2ab8170b0d0bc0aa438473e6da")
+		_, dbte, commitExists, err := client.CommitDbte(ctx, checker, repo, "d38233b79e037d2bb8170b0d0bc0bb438473e6db")
 		if err != nil {
-			t.Errorf("error fetching CommitDate: %s", err)
+			t.Errorf("error fetching CommitDbte: %s", err)
 		}
 		if commitExists {
-			t.Errorf("expect commit to not exist since the user doesn't have access")
+			t.Errorf("expect commit to not exist since the user doesn't hbve bccess")
 		}
-		if !date.IsZero() {
-			t.Errorf("expected date to be empty, got: %s", date)
+		if !dbte.IsZero() {
+			t.Errorf("expected dbte to be empty, got: %s", dbte)
 		}
 	})
 }
 
-func testCommits(ctx context.Context, label string, repo api.RepoName, opt CommitsOptions, checker authz.SubRepoPermissionChecker, wantCommits []*gitdomain.Commit, t *testing.T) {
+func testCommits(ctx context.Context, lbbel string, repo bpi.RepoNbme, opt CommitsOptions, checker buthz.SubRepoPermissionChecker, wbntCommits []*gitdombin.Commit, t *testing.T) {
 	t.Helper()
 	client := NewClient().(*clientImplementor)
 	commits, err := client.Commits(ctx, checker, repo, opt)
 	if err != nil {
-		t.Errorf("%s: Commits(): %s", label, err)
+		t.Errorf("%s: Commits(): %s", lbbel, err)
 		return
 	}
 
-	if len(commits) != len(wantCommits) {
-		t.Errorf("%s: got %d commits, want %d", label, len(commits), len(wantCommits))
+	if len(commits) != len(wbntCommits) {
+		t.Errorf("%s: got %d commits, wbnt %d", lbbel, len(commits), len(wbntCommits))
 	}
-	checkCommits(t, commits, wantCommits)
+	checkCommits(t, commits, wbntCommits)
 }
 
-func checkCommits(t *testing.T, commits, wantCommits []*gitdomain.Commit) {
+func checkCommits(t *testing.T, commits, wbntCommits []*gitdombin.Commit) {
 	t.Helper()
-	for i := 0; i < len(commits) || i < len(wantCommits); i++ {
-		var gotC, wantC *gitdomain.Commit
+	for i := 0; i < len(commits) || i < len(wbntCommits); i++ {
+		vbr gotC, wbntC *gitdombin.Commit
 		if i < len(commits) {
 			gotC = commits[i]
 		}
-		if i < len(wantCommits) {
-			wantC = wantCommits[i]
+		if i < len(wbntCommits) {
+			wbntC = wbntCommits[i]
 		}
-		if diff := cmp.Diff(gotC, wantC); diff != "" {
-			t.Fatal(diff)
+		if diff := cmp.Diff(gotC, wbntC); diff != "" {
+			t.Fbtbl(diff)
 		}
 	}
 }
 
-// get a test sub-repo permissions checker which allows access to all files (so should be a no-op)
-func getTestSubRepoPermsChecker(noAccessPaths ...string) authz.SubRepoPermissionChecker {
-	checker := authz.NewMockSubRepoPermissionChecker()
-	checker.EnabledFunc.SetDefaultHook(func() bool {
+// get b test sub-repo permissions checker which bllows bccess to bll files (so should be b no-op)
+func getTestSubRepoPermsChecker(noAccessPbths ...string) buthz.SubRepoPermissionChecker {
+	checker := buthz.NewMockSubRepoPermissionChecker()
+	checker.EnbbledFunc.SetDefbultHook(func() bool {
 		return true
 	})
-	checker.PermissionsFunc.SetDefaultHook(func(ctx context.Context, i int32, content authz.RepoContent) (authz.Perms, error) {
-		for _, noAccessPath := range noAccessPaths {
-			if content.Path == noAccessPath {
-				return authz.None, nil
+	checker.PermissionsFunc.SetDefbultHook(func(ctx context.Context, i int32, content buthz.RepoContent) (buthz.Perms, error) {
+		for _, noAccessPbth := rbnge noAccessPbths {
+			if content.Pbth == noAccessPbth {
+				return buthz.None, nil
 			}
 		}
-		return authz.Read, nil
+		return buthz.Rebd, nil
 	})
 	usePermissionsForFilePermissionsFunc(checker)
 	return checker
 }
 
-func getGitCommandsWithFileLists(filenamesPerCommit ...[]string) []string {
-	cmds := make([]string, 0, len(filenamesPerCommit)*3)
-	for i, filenames := range filenamesPerCommit {
-		for _, fn := range filenames {
-			cmds = append(cmds,
+func getGitCommbndsWithFileLists(filenbmesPerCommit ...[]string) []string {
+	cmds := mbke([]string, 0, len(filenbmesPerCommit)*3)
+	for i, filenbmes := rbnge filenbmesPerCommit {
+		for _, fn := rbnge filenbmes {
+			cmds = bppend(cmds,
 				fmt.Sprintf("touch %s", fn),
 				fmt.Sprintf("echo my_content_%d > %s", i, fn),
-				fmt.Sprintf("git add %s", fn))
+				fmt.Sprintf("git bdd %s", fn))
 		}
-		cmds = append(cmds,
-			fmt.Sprintf("GIT_COMMITTER_NAME=a GIT_COMMITTER_EMAIL=a@a.com GIT_COMMITTER_DATE=2006-01-02T15:04:05=%dZ git commit -m commit%d --author='a <a@a.com>' --date 2006-01-02T15:04:0%dZ", i, i, i))
+		cmds = bppend(cmds,
+			fmt.Sprintf("GIT_COMMITTER_NAME=b GIT_COMMITTER_EMAIL=b@b.com GIT_COMMITTER_DATE=2006-01-02T15:04:05=%dZ git commit -m commit%d --buthor='b <b@b.com>' --dbte 2006-01-02T15:04:0%dZ", i, i, i))
 	}
 	return cmds
 }
 
-func makeGitCommit(commitMessage string, seconds int) string {
-	return fmt.Sprintf("GIT_COMMITTER_NAME=a GIT_COMMITTER_EMAIL=a@a.com GIT_COMMITTER_DATE=2006-01-02T15:04:05=%dZ git commit -m %s --author='a <a@a.com>' --date 2006-01-02T15:04:0%dZ", seconds, commitMessage, seconds)
+func mbkeGitCommit(commitMessbge string, seconds int) string {
+	return fmt.Sprintf("GIT_COMMITTER_NAME=b GIT_COMMITTER_EMAIL=b@b.com GIT_COMMITTER_DATE=2006-01-02T15:04:05=%dZ git commit -m %s --buthor='b <b@b.com>' --dbte 2006-01-02T15:04:0%dZ", seconds, commitMessbge, seconds)
 }
 
-func getGitCommandsWithFiles(fileName1, fileName2 string) []string {
+func getGitCommbndsWithFiles(fileNbme1, fileNbme2 string) []string {
 	return []string{
-		fmt.Sprintf("touch %s", fileName1),
-		fmt.Sprintf("git add %s", fileName1),
+		fmt.Sprintf("touch %s", fileNbme1),
+		fmt.Sprintf("git bdd %s", fileNbme1),
 		"git commit -m commit1",
-		fmt.Sprintf("touch %s", fileName2),
-		fmt.Sprintf("git add %s", fileName2),
+		fmt.Sprintf("touch %s", fileNbme2),
+		fmt.Sprintf("git bdd %s", fileNbme2),
 		"git commit -m commit2",
 	}
 }
 
-func mustParseDate(s string, t *testing.T) *time.Time {
+func mustPbrseDbte(s string, t *testing.T) *time.Time {
 	t.Helper()
-	date, err := time.Parse(time.RFC3339, s)
+	dbte, err := time.Pbrse(time.RFC3339, s)
 	if err != nil {
-		t.Fatalf("unexpected error parsing date string: %s", err)
+		t.Fbtblf("unexpected error pbrsing dbte string: %s", err)
 	}
-	return &date
+	return &dbte
 }
 
-func CommitsEqual(a, b *gitdomain.Commit) bool {
-	if (a == nil) != (b == nil) {
-		return false
+func CommitsEqubl(b, b *gitdombin.Commit) bool {
+	if (b == nil) != (b == nil) {
+		return fblse
 	}
-	if a.Author.Date != b.Author.Date {
-		return false
+	if b.Author.Dbte != b.Author.Dbte {
+		return fblse
 	}
-	a.Author.Date = b.Author.Date
-	if ac, bc := a.Committer, b.Committer; ac != nil && bc != nil {
-		if ac.Date != bc.Date {
-			return false
+	b.Author.Dbte = b.Author.Dbte
+	if bc, bc := b.Committer, b.Committer; bc != nil && bc != nil {
+		if bc.Dbte != bc.Dbte {
+			return fblse
 		}
-		ac.Date = bc.Date
-	} else if !(ac == nil && bc == nil) {
-		return false
+		bc.Dbte = bc.Dbte
+	} else if !(bc == nil && bc == nil) {
+		return fblse
 	}
-	return reflect.DeepEqual(a, b)
+	return reflect.DeepEqubl(b, b)
 }
 
-func TestArchiveReaderForRepoWithSubRepoPermissions(t *testing.T) {
-	repoName := MakeGitRepository(t,
-		"echo abcd > file1",
-		"git add file1",
+func TestArchiveRebderForRepoWithSubRepoPermissions(t *testing.T) {
+	repoNbme := MbkeGitRepository(t,
+		"echo bbcd > file1",
+		"git bdd file1",
 		"git commit -m commit1",
 	)
 	const commitID = "3d689662de70f9e252d4f6f1d75284e23587d670"
 
-	checker := authz.NewMockSubRepoPermissionChecker()
-	checker.EnabledFunc.SetDefaultHook(func() bool {
+	checker := buthz.NewMockSubRepoPermissionChecker()
+	checker.EnbbledFunc.SetDefbultHook(func() bool {
 		return true
 	})
-	checker.EnabledForRepoFunc.SetDefaultHook(func(ctx context.Context, name api.RepoName) (bool, error) {
-		// sub-repo permissions are enabled only for repo with repoID = 1
-		return name == repoName, nil
+	checker.EnbbledForRepoFunc.SetDefbultHook(func(ctx context.Context, nbme bpi.RepoNbme) (bool, error) {
+		// sub-repo permissions bre enbbled only for repo with repoID = 1
+		return nbme == repoNbme, nil
 	})
-	ClientMocks.Archive = func(ctx context.Context, repo api.RepoName, opt ArchiveOptions) (io.ReadCloser, error) {
-		stringReader := strings.NewReader("1337")
-		return io.NopCloser(stringReader), nil
+	ClientMocks.Archive = func(ctx context.Context, repo bpi.RepoNbme, opt ArchiveOptions) (io.RebdCloser, error) {
+		stringRebder := strings.NewRebder("1337")
+		return io.NopCloser(stringRebder), nil
 	}
 	defer ResetClientMocks()
 
-	repo := &types.Repo{Name: repoName, ID: 1}
+	repo := &types.Repo{Nbme: repoNbme, ID: 1}
 
 	opts := ArchiveOptions{
-		Format:    ArchiveFormatZip,
+		Formbt:    ArchiveFormbtZip,
 		Treeish:   commitID,
-		Pathspecs: []gitdomain.Pathspec{"."},
+		Pbthspecs: []gitdombin.Pbthspec{"."},
 	}
 	client := NewClient()
-	if _, err := client.ArchiveReader(context.Background(), checker, repo.Name, opts); err == nil {
-		t.Error("Error should not be null because ArchiveReader is invoked for a repo with sub-repo permissions")
+	if _, err := client.ArchiveRebder(context.Bbckground(), checker, repo.Nbme, opts); err == nil {
+		t.Error("Error should not be null becbuse ArchiveRebder is invoked for b repo with sub-repo permissions")
 	}
 }
 
-func TestArchiveReaderForRepoWithoutSubRepoPermissions(t *testing.T) {
-	repoName := MakeGitRepository(t,
-		"echo abcd > file1",
-		"git add file1",
+func TestArchiveRebderForRepoWithoutSubRepoPermissions(t *testing.T) {
+	repoNbme := MbkeGitRepository(t,
+		"echo bbcd > file1",
+		"git bdd file1",
 		"git commit -m commit1",
 	)
 	const commitID = "3d689662de70f9e252d4f6f1d75284e23587d670"
 
-	checker := authz.NewMockSubRepoPermissionChecker()
-	checker.EnabledFunc.SetDefaultHook(func() bool {
+	checker := buthz.NewMockSubRepoPermissionChecker()
+	checker.EnbbledFunc.SetDefbultHook(func() bool {
 		return true
 	})
-	checker.EnabledForRepoFunc.SetDefaultHook(func(ctx context.Context, name api.RepoName) (bool, error) {
-		// sub-repo permissions are not present for repo with repoID = 1
-		return name != repoName, nil
+	checker.EnbbledForRepoFunc.SetDefbultHook(func(ctx context.Context, nbme bpi.RepoNbme) (bool, error) {
+		// sub-repo permissions bre not present for repo with repoID = 1
+		return nbme != repoNbme, nil
 	})
-	ClientMocks.Archive = func(ctx context.Context, repo api.RepoName, opt ArchiveOptions) (io.ReadCloser, error) {
-		stringReader := strings.NewReader("1337")
-		return io.NopCloser(stringReader), nil
+	ClientMocks.Archive = func(ctx context.Context, repo bpi.RepoNbme, opt ArchiveOptions) (io.RebdCloser, error) {
+		stringRebder := strings.NewRebder("1337")
+		return io.NopCloser(stringRebder), nil
 	}
 	defer ResetClientMocks()
 
-	repo := &types.Repo{Name: repoName, ID: 1}
+	repo := &types.Repo{Nbme: repoNbme, ID: 1}
 
 	opts := ArchiveOptions{
-		Format:    ArchiveFormatZip,
+		Formbt:    ArchiveFormbtZip,
 		Treeish:   commitID,
-		Pathspecs: []gitdomain.Pathspec{"."},
+		Pbthspecs: []gitdombin.Pbthspec{"."},
 	}
 	client := NewClient()
-	readCloser, err := client.ArchiveReader(context.Background(), checker, repo.Name, opts)
+	rebdCloser, err := client.ArchiveRebder(context.Bbckground(), checker, repo.Nbme, opts)
 	if err != nil {
-		t.Error("Error should not be thrown because ArchiveReader is invoked for a repo without sub-repo permissions")
+		t.Error("Error should not be thrown becbuse ArchiveRebder is invoked for b repo without sub-repo permissions")
 	}
-	err = readCloser.Close()
+	err = rebdCloser.Close()
 	if err != nil {
-		t.Error("Error during closing a reader")
+		t.Error("Error during closing b rebder")
 	}
 }
 
-func TestRead(t *testing.T) {
+func TestRebd(t *testing.T) {
 	const commitCmd = "git commit -m commit1"
-	repo, dir := MakeGitRepositoryAndReturnDir(t,
+	repo, dir := MbkeGitRepositoryAndReturnDir(t,
 		// simple file
-		"echo abcd > file1",
-		"git add file1",
+		"echo bbcd > file1",
+		"git bdd file1",
 		commitCmd,
 
-		// test we handle file names with .. (git show by default interprets
-		// this). Ensure past the .. exists as a branch. Then if we use git
-		// show it would return a diff instead of file contents.
+		// test we hbndle file nbmes with .. (git show by defbult interprets
+		// this). Ensure pbst the .. exists bs b brbnch. Then if we use git
+		// show it would return b diff instebd of file contents.
 		"mkdir subdir",
-		"echo old > subdir/name",
-		"echo old > subdir/name..dev",
-		"git add subdir",
+		"echo old > subdir/nbme",
+		"echo old > subdir/nbme..dev",
+		"git bdd subdir",
 		commitCmd,
-		"echo dotdot > subdir/name..dev",
-		"git add subdir",
+		"echo dotdot > subdir/nbme..dev",
+		"git bdd subdir",
 		commitCmd,
-		"git branch dev",
+		"git brbnch dev",
 	)
-	commitID := api.CommitID(GetHeadCommitFromGitDir(t, dir))
+	commitID := bpi.CommitID(GetHebdCommitFromGitDir(t, dir))
 
-	ctx := context.Background()
+	ctx := context.Bbckground()
 
-	tests := map[string]struct {
+	tests := mbp[string]struct {
 		file string
-		want string // if empty we treat as non-existant.
+		wbnt string // if empty we trebt bs non-existbnt.
 	}{
-		"all": {
+		"bll": {
 			file: "file1",
-			want: "abcd\n",
+			wbnt: "bbcd\n",
 		},
 
 		"nonexistent": {
 			file: "filexyz",
 		},
 
-		"dotdot-all": {
-			file: "subdir/name..dev",
-			want: "dotdot\n",
+		"dotdot-bll": {
+			file: "subdir/nbme..dev",
+			wbnt: "dotdot\n",
 		},
 
 		"dotdot-nonexistent": {
 			file: "subdir/404..dev",
 		},
 
-		// This test case ensures we do not return a log with diff for the
-		// specially crafted "git show HASH:..branch". IE a way to bypass
+		// This test cbse ensures we do not return b log with diff for the
+		// speciblly crbfted "git show HASH:..brbnch". IE b wby to bypbss
 		// sub-repo permissions.
 		"dotdot-diff": {
 			file: "..dev",
 		},
 
-		// 3 dots ... as a prefix when using git show will return an error like
-		// error: object b5462a7c880ce339ba3f93ac343706c0fa35babc is a tree, not a commit
-		// fatal: Invalid symmetric difference expression 269e2b9bda9a95ad4181a7a6eb2058645d9bad82:...dev
+		// 3 dots ... bs b prefix when using git show will return bn error like
+		// error: object b5462b7c880ce339bb3f93bc343706c0fb35bbbc is b tree, not b commit
+		// fbtbl: Invblid symmetric difference expression 269e2b9bdb9b95bd4181b7b6eb2058645d9bbd82:...dev
 		"dotdotdot": {
 			file: "...dev",
 		},
 	}
 
 	client := NewClient()
-	ClientMocks.LocalGitserver = true
-	t.Cleanup(func() {
+	ClientMocks.LocblGitserver = true
+	t.Clebnup(func() {
 		ResetClientMocks()
 	})
 
-	for name, test := range tests {
-		checker := authz.NewMockSubRepoPermissionChecker()
+	for nbme, test := rbnge tests {
+		checker := buthz.NewMockSubRepoPermissionChecker()
 		usePermissionsForFilePermissionsFunc(checker)
-		ctx = actor.WithActor(ctx, &actor.Actor{
+		ctx = bctor.WithActor(ctx, &bctor.Actor{
 			UID: 1,
 		})
-		checkFn := func(t *testing.T, err error, data []byte) {
-			if test.want == "" {
+		checkFn := func(t *testing.T, err error, dbtb []byte) {
+			if test.wbnt == "" {
 				if err == nil {
-					t.Fatal("err == nil")
+					t.Fbtbl("err == nil")
 				}
 				if !errors.Is(err, os.ErrNotExist) {
-					t.Fatalf("got err %v, want os.IsNotExist", err)
+					t.Fbtblf("got err %v, wbnt os.IsNotExist", err)
 				}
 			} else {
 				if err != nil {
-					t.Fatal(err)
+					t.Fbtbl(err)
 				}
-				if string(data) != test.want {
-					t.Errorf("got %q, want %q", data, test.want)
+				if string(dbtb) != test.wbnt {
+					t.Errorf("got %q, wbnt %q", dbtb, test.wbnt)
 				}
 			}
 		}
 
-		t.Run(name+"-ReadFile", func(t *testing.T) {
-			data, err := client.ReadFile(ctx, nil, repo, commitID, test.file)
-			checkFn(t, err, data)
+		t.Run(nbme+"-RebdFile", func(t *testing.T) {
+			dbtb, err := client.RebdFile(ctx, nil, repo, commitID, test.file)
+			checkFn(t, err, dbtb)
 		})
-		t.Run(name+"-ReadFile-with-sub-repo-permissions-no-op", func(t *testing.T) {
-			checker.EnabledFunc.SetDefaultHook(func() bool {
+		t.Run(nbme+"-RebdFile-with-sub-repo-permissions-no-op", func(t *testing.T) {
+			checker.EnbbledFunc.SetDefbultHook(func() bool {
 				return true
 			})
-			checker.PermissionsFunc.SetDefaultHook(func(ctx context.Context, i int32, content authz.RepoContent) (authz.Perms, error) {
-				if content.Path == test.file {
-					return authz.Read, nil
+			checker.PermissionsFunc.SetDefbultHook(func(ctx context.Context, i int32, content buthz.RepoContent) (buthz.Perms, error) {
+				if content.Pbth == test.file {
+					return buthz.Rebd, nil
 				}
-				return authz.None, nil
+				return buthz.None, nil
 			})
-			data, err := client.ReadFile(ctx, checker, repo, commitID, test.file)
-			checkFn(t, err, data)
+			dbtb, err := client.RebdFile(ctx, checker, repo, commitID, test.file)
+			checkFn(t, err, dbtb)
 		})
-		t.Run(name+"-ReadFile-with-sub-repo-permissions-filters-file", func(t *testing.T) {
-			checker.EnabledFunc.SetDefaultHook(func() bool {
+		t.Run(nbme+"-RebdFile-with-sub-repo-permissions-filters-file", func(t *testing.T) {
+			checker.EnbbledFunc.SetDefbultHook(func() bool {
 				return true
 			})
-			checker.PermissionsFunc.SetDefaultHook(func(ctx context.Context, i int32, content authz.RepoContent) (authz.Perms, error) {
-				return authz.None, nil
+			checker.PermissionsFunc.SetDefbultHook(func(ctx context.Context, i int32, content buthz.RepoContent) (buthz.Perms, error) {
+				return buthz.None, nil
 			})
-			data, err := client.ReadFile(ctx, checker, repo, commitID, test.file)
+			dbtb, err := client.RebdFile(ctx, checker, repo, commitID, test.file)
 			if err != os.ErrNotExist {
-				t.Errorf("unexpected error reading file: %s", err)
+				t.Errorf("unexpected error rebding file: %s", err)
 			}
-			if string(data) != "" {
-				t.Errorf("unexpected data: %s", data)
+			if string(dbtb) != "" {
+				t.Errorf("unexpected dbtb: %s", dbtb)
 			}
 		})
-		t.Run(name+"-GetFileReader", func(t *testing.T) {
-			runNewFileReaderTest(ctx, t, repo, commitID, test.file, nil, checkFn)
+		t.Run(nbme+"-GetFileRebder", func(t *testing.T) {
+			runNewFileRebderTest(ctx, t, repo, commitID, test.file, nil, checkFn)
 		})
-		t.Run(name+"-GetFileReader-with-sub-repo-permissions-noop", func(t *testing.T) {
-			checker.EnabledFunc.SetDefaultHook(func() bool {
+		t.Run(nbme+"-GetFileRebder-with-sub-repo-permissions-noop", func(t *testing.T) {
+			checker.EnbbledFunc.SetDefbultHook(func() bool {
 				return true
 			})
-			checker.PermissionsFunc.SetDefaultHook(func(ctx context.Context, i int32, content authz.RepoContent) (authz.Perms, error) {
-				if content.Path == test.file {
-					return authz.Read, nil
+			checker.PermissionsFunc.SetDefbultHook(func(ctx context.Context, i int32, content buthz.RepoContent) (buthz.Perms, error) {
+				if content.Pbth == test.file {
+					return buthz.Rebd, nil
 				}
-				return authz.None, nil
+				return buthz.None, nil
 			})
-			runNewFileReaderTest(ctx, t, repo, commitID, test.file, checker, checkFn)
+			runNewFileRebderTest(ctx, t, repo, commitID, test.file, checker, checkFn)
 		})
-		t.Run(name+"-GetFileReader-with-sub-repo-permissions-filters-file", func(t *testing.T) {
-			checker.EnabledFunc.SetDefaultHook(func() bool {
+		t.Run(nbme+"-GetFileRebder-with-sub-repo-permissions-filters-file", func(t *testing.T) {
+			checker.EnbbledFunc.SetDefbultHook(func() bool {
 				return true
 			})
-			checker.PermissionsFunc.SetDefaultHook(func(ctx context.Context, i int32, content authz.RepoContent) (authz.Perms, error) {
-				return authz.None, nil
+			checker.PermissionsFunc.SetDefbultHook(func(ctx context.Context, i int32, content buthz.RepoContent) (buthz.Perms, error) {
+				return buthz.None, nil
 			})
-			rc, err := client.NewFileReader(ctx, checker, repo, commitID, test.file)
+			rc, err := client.NewFileRebder(ctx, checker, repo, commitID, test.file)
 			if err != os.ErrNotExist {
-				t.Fatalf("unexpected error: %s", err)
+				t.Fbtblf("unexpected error: %s", err)
 			}
 			if rc != nil {
-				t.Fatal("expected reader to be nil")
+				t.Fbtbl("expected rebder to be nil")
 			}
 		})
 	}
 }
 
-func runNewFileReaderTest(ctx context.Context, t *testing.T, repo api.RepoName, commitID api.CommitID, file string,
-	checker authz.SubRepoPermissionChecker, checkFn func(*testing.T, error, []byte)) {
+func runNewFileRebderTest(ctx context.Context, t *testing.T, repo bpi.RepoNbme, commitID bpi.CommitID, file string,
+	checker buthz.SubRepoPermissionChecker, checkFn func(*testing.T, error, []byte)) {
 	t.Helper()
-	rc, err := NewClient().NewFileReader(ctx, checker, repo, commitID, file)
+	rc, err := NewClient().NewFileRebder(ctx, checker, repo, commitID, file)
 	if err != nil {
 		checkFn(t, err, nil)
 		return
 	}
 	defer func() {
 		if err := rc.Close(); err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
 	}()
-	data, err := io.ReadAll(rc)
-	checkFn(t, err, data)
+	dbtb, err := io.RebdAll(rc)
+	checkFn(t, err, dbtb)
 }
 
-func TestRepository_ListBranches(t *testing.T) {
-	ClientMocks.LocalGitserver = true
-	t.Cleanup(func() {
+func TestRepository_ListBrbnches(t *testing.T) {
+	ClientMocks.LocblGitserver = true
+	t.Clebnup(func() {
 		ResetClientMocks()
 	})
 
-	gitCommands := []string{
-		"git commit --allow-empty -m foo",
+	gitCommbnds := []string{
+		"git commit --bllow-empty -m foo",
 		"git checkout -b b0",
 		"git checkout -b b1",
 	}
 
-	wantBranches := []*gitdomain.Branch{{Name: "b0", Head: "ea167fe3d76b1e5fd3ed8ca44cbd2fe3897684f8"}, {Name: "b1", Head: "ea167fe3d76b1e5fd3ed8ca44cbd2fe3897684f8"}, {Name: "master", Head: "ea167fe3d76b1e5fd3ed8ca44cbd2fe3897684f8"}}
+	wbntBrbnches := []*gitdombin.Brbnch{{Nbme: "b0", Hebd: "eb167fe3d76b1e5fd3ed8cb44cbd2fe3897684f8"}, {Nbme: "b1", Hebd: "eb167fe3d76b1e5fd3ed8cb44cbd2fe3897684f8"}, {Nbme: "mbster", Hebd: "eb167fe3d76b1e5fd3ed8cb44cbd2fe3897684f8"}}
 
-	testBranches(t, gitCommands, wantBranches, BranchesOptions{})
+	testBrbnches(t, gitCommbnds, wbntBrbnches, BrbnchesOptions{})
 }
 
-func TestRepository_Branches_MergedInto(t *testing.T) {
-	ClientMocks.LocalGitserver = true
-	t.Cleanup(func() {
+func TestRepository_Brbnches_MergedInto(t *testing.T) {
+	ClientMocks.LocblGitserver = true
+	t.Clebnup(func() {
 		ResetClientMocks()
 	})
 
-	gitCommands := []string{
+	gitCommbnds := []string{
 		"git checkout -b b0",
 		"echo 123 > some_other_file",
-		"git add some_other_file",
-		"git commit --allow-empty -am foo",
-		"git commit --allow-empty -am foo",
+		"git bdd some_other_file",
+		"git commit --bllow-empty -bm foo",
+		"git commit --bllow-empty -bm foo",
 
 		"git checkout HEAD^ -b b1",
 		"git merge b0",
 
-		"git checkout --orphan b2",
+		"git checkout --orphbn b2",
 		"echo 234 > somefile",
-		"git add somefile",
-		"git commit --allow-empty -am foo",
+		"git bdd somefile",
+		"git commit --bllow-empty -bm foo",
 	}
 
-	gitBranches := map[string][]*gitdomain.Branch{
-		"6520a4539a4cb664537c712216a53d80dd79bbdc": { // b1
-			{Name: "b0", Head: "6520a4539a4cb664537c712216a53d80dd79bbdc"},
-			{Name: "b1", Head: "6520a4539a4cb664537c712216a53d80dd79bbdc"},
+	gitBrbnches := mbp[string][]*gitdombin.Brbnch{
+		"6520b4539b4cb664537c712216b53d80dd79bbdc": { // b1
+			{Nbme: "b0", Hebd: "6520b4539b4cb664537c712216b53d80dd79bbdc"},
+			{Nbme: "b1", Hebd: "6520b4539b4cb664537c712216b53d80dd79bbdc"},
 		},
-		"c3c691fc0fb1844a53b62b179e2fa9fdaf875718": { // b2
-			{Name: "b2", Head: "c3c691fc0fb1844a53b62b179e2fa9fdaf875718"},
+		"c3c691fc0fb1844b53b62b179e2fb9fdbf875718": { // b2
+			{Nbme: "b2", Hebd: "c3c691fc0fb1844b53b62b179e2fb9fdbf875718"},
 		},
 	}
 
-	repo := MakeGitRepository(t, gitCommands...)
-	wantBranches := gitBranches
-	for branch, mergedInto := range wantBranches {
-		branches, err := NewClient().ListBranches(context.Background(), repo, BranchesOptions{MergedInto: branch})
+	repo := MbkeGitRepository(t, gitCommbnds...)
+	wbntBrbnches := gitBrbnches
+	for brbnch, mergedInto := rbnge wbntBrbnches {
+		brbnches, err := NewClient().ListBrbnches(context.Bbckground(), repo, BrbnchesOptions{MergedInto: brbnch})
 		require.Nil(t, err)
-		if diff := cmp.Diff(mergedInto, branches); diff != "" {
-			t.Fatalf("branch mismatch (-want +got):\n%s", diff)
+		if diff := cmp.Diff(mergedInto, brbnches); diff != "" {
+			t.Fbtblf("brbnch mismbtch (-wbnt +got):\n%s", diff)
 		}
 	}
 }
 
-func TestRepository_Branches_ContainsCommit(t *testing.T) {
-	ClientMocks.LocalGitserver = true
-	t.Cleanup(func() {
+func TestRepository_Brbnches_ContbinsCommit(t *testing.T) {
+	ClientMocks.LocblGitserver = true
+	t.Clebnup(func() {
 		ResetClientMocks()
 	})
 
-	gitCommands := []string{
-		"git commit --allow-empty -m base",
-		"git commit --allow-empty -m master",
-		"git checkout HEAD^ -b branch2",
-		"git commit --allow-empty -m branch2",
+	gitCommbnds := []string{
+		"git commit --bllow-empty -m bbse",
+		"git commit --bllow-empty -m mbster",
+		"git checkout HEAD^ -b brbnch2",
+		"git commit --bllow-empty -m brbnch2",
 	}
 
-	// Pre-sorted branches
-	gitWantBranches := map[string][]*gitdomain.Branch{
-		"920c0e9d7b287b030ac9770fd7ba3ee9dc1760d9": {{Name: "branch2", Head: "920c0e9d7b287b030ac9770fd7ba3ee9dc1760d9"}},
-		"1224d334dfe08f4693968ea618ad63ae86ec16ca": {{Name: "master", Head: "1224d334dfe08f4693968ea618ad63ae86ec16ca"}},
-		"2816a72df28f699722156e545d038a5203b959de": {{Name: "branch2", Head: "920c0e9d7b287b030ac9770fd7ba3ee9dc1760d9"}, {Name: "master", Head: "1224d334dfe08f4693968ea618ad63ae86ec16ca"}},
+	// Pre-sorted brbnches
+	gitWbntBrbnches := mbp[string][]*gitdombin.Brbnch{
+		"920c0e9d7b287b030bc9770fd7bb3ee9dc1760d9": {{Nbme: "brbnch2", Hebd: "920c0e9d7b287b030bc9770fd7bb3ee9dc1760d9"}},
+		"1224d334dfe08f4693968eb618bd63be86ec16cb": {{Nbme: "mbster", Hebd: "1224d334dfe08f4693968eb618bd63be86ec16cb"}},
+		"2816b72df28f699722156e545d038b5203b959de": {{Nbme: "brbnch2", Hebd: "920c0e9d7b287b030bc9770fd7bb3ee9dc1760d9"}, {Nbme: "mbster", Hebd: "1224d334dfe08f4693968eb618bd63be86ec16cb"}},
 	}
 
-	repo := MakeGitRepository(t, gitCommands...)
-	commitToWantBranches := gitWantBranches
-	for commit, wantBranches := range commitToWantBranches {
-		branches, err := NewClient().ListBranches(context.Background(), repo, BranchesOptions{ContainsCommit: commit})
+	repo := MbkeGitRepository(t, gitCommbnds...)
+	commitToWbntBrbnches := gitWbntBrbnches
+	for commit, wbntBrbnches := rbnge commitToWbntBrbnches {
+		brbnches, err := NewClient().ListBrbnches(context.Bbckground(), repo, BrbnchesOptions{ContbinsCommit: commit})
 		require.Nil(t, err)
 
-		sort.Sort(gitdomain.Branches(branches))
+		sort.Sort(gitdombin.Brbnches(brbnches))
 
-		if diff := cmp.Diff(wantBranches, branches); diff != "" {
-			t.Fatalf("Branch mismatch (-want +got):\n%s", diff)
+		if diff := cmp.Diff(wbntBrbnches, brbnches); diff != "" {
+			t.Fbtblf("Brbnch mismbtch (-wbnt +got):\n%s", diff)
 		}
 	}
 }
 
-func TestRepository_Branches_BehindAheadCounts(t *testing.T) {
-	ClientMocks.LocalGitserver = true
-	t.Cleanup(func() {
+func TestRepository_Brbnches_BehindAhebdCounts(t *testing.T) {
+	ClientMocks.LocblGitserver = true
+	t.Clebnup(func() {
 		ResetClientMocks()
 	})
 
-	gitCommands := []string{
-		"git commit --allow-empty -m foo0",
-		"git branch old_work",
-		"git commit --allow-empty -m foo1",
-		"git commit --allow-empty -m foo2",
-		"git commit --allow-empty -m foo3",
-		"git commit --allow-empty -m foo4",
-		"git commit --allow-empty -m foo5",
+	gitCommbnds := []string{
+		"git commit --bllow-empty -m foo0",
+		"git brbnch old_work",
+		"git commit --bllow-empty -m foo1",
+		"git commit --bllow-empty -m foo2",
+		"git commit --bllow-empty -m foo3",
+		"git commit --bllow-empty -m foo4",
+		"git commit --bllow-empty -m foo5",
 		"git checkout -b dev",
-		"git commit --allow-empty -m foo6",
-		"git commit --allow-empty -m foo7",
-		"git commit --allow-empty -m foo8",
+		"git commit --bllow-empty -m foo6",
+		"git commit --bllow-empty -m foo7",
+		"git commit --bllow-empty -m foo8",
 		"git checkout old_work",
-		"git commit --allow-empty -m foo9",
+		"git commit --bllow-empty -m foo9",
 	}
-	wantBranches := []*gitdomain.Branch{
-		{Counts: &gitdomain.BehindAhead{Behind: 5, Ahead: 1}, Name: "old_work", Head: "26692c614c59ddaef4b57926810aac7d5f0e94f0"},
-		{Counts: &gitdomain.BehindAhead{Behind: 0, Ahead: 3}, Name: "dev", Head: "6724953367f0cd9a7755bac46ee57f4ab0c1aad8"},
-		{Counts: &gitdomain.BehindAhead{Behind: 0, Ahead: 0}, Name: "master", Head: "8ea26e077a8fb9aa502c3fe2cfa3ce4e052d1a76"},
+	wbntBrbnches := []*gitdombin.Brbnch{
+		{Counts: &gitdombin.BehindAhebd{Behind: 5, Ahebd: 1}, Nbme: "old_work", Hebd: "26692c614c59ddbef4b57926810bbc7d5f0e94f0"},
+		{Counts: &gitdombin.BehindAhebd{Behind: 0, Ahebd: 3}, Nbme: "dev", Hebd: "6724953367f0cd9b7755bbc46ee57f4bb0c1bbd8"},
+		{Counts: &gitdombin.BehindAhebd{Behind: 0, Ahebd: 0}, Nbme: "mbster", Hebd: "8eb26e077b8fb9bb502c3fe2cfb3ce4e052d1b76"},
 	}
 
-	testBranches(t, gitCommands, wantBranches, BranchesOptions{BehindAheadBranch: "master"})
+	testBrbnches(t, gitCommbnds, wbntBrbnches, BrbnchesOptions{BehindAhebdBrbnch: "mbster"})
 }
 
-func TestRepository_Branches_IncludeCommit(t *testing.T) {
-	ClientMocks.LocalGitserver = true
-	t.Cleanup(func() {
+func TestRepository_Brbnches_IncludeCommit(t *testing.T) {
+	ClientMocks.LocblGitserver = true
+	t.Clebnup(func() {
 		ResetClientMocks()
 	})
 
-	gitCommands := []string{
-		"git commit --allow-empty -m foo0",
+	gitCommbnds := []string{
+		"git commit --bllow-empty -m foo0",
 		"git checkout -b b0",
-		"GIT_COMMITTER_NAME=b GIT_COMMITTER_EMAIL=b@b.com GIT_COMMITTER_DATE=2006-01-02T15:04:06Z git commit --allow-empty -m foo1 --author='b <b@b.com>' --date 2006-01-02T15:04:06Z",
+		"GIT_COMMITTER_NAME=b GIT_COMMITTER_EMAIL=b@b.com GIT_COMMITTER_DATE=2006-01-02T15:04:06Z git commit --bllow-empty -m foo1 --buthor='b <b@b.com>' --dbte 2006-01-02T15:04:06Z",
 	}
-	wantBranches := []*gitdomain.Branch{
+	wbntBrbnches := []*gitdombin.Brbnch{
 		{
-			Name: "b0", Head: "c4a53701494d1d788b1ceeb8bf32e90224962473",
-			Commit: &gitdomain.Commit{
-				ID:        "c4a53701494d1d788b1ceeb8bf32e90224962473",
-				Author:    gitdomain.Signature{Name: "b", Email: "b@b.com", Date: MustParseTime(time.RFC3339, "2006-01-02T15:04:06Z")},
-				Committer: &gitdomain.Signature{Name: "b", Email: "b@b.com", Date: MustParseTime(time.RFC3339, "2006-01-02T15:04:06Z")},
-				Message:   "foo1",
-				Parents:   []api.CommitID{"a3c1537db9797215208eec56f8e7c9c37f8358ca"},
+			Nbme: "b0", Hebd: "c4b53701494d1d788b1ceeb8bf32e90224962473",
+			Commit: &gitdombin.Commit{
+				ID:        "c4b53701494d1d788b1ceeb8bf32e90224962473",
+				Author:    gitdombin.Signbture{Nbme: "b", Embil: "b@b.com", Dbte: MustPbrseTime(time.RFC3339, "2006-01-02T15:04:06Z")},
+				Committer: &gitdombin.Signbture{Nbme: "b", Embil: "b@b.com", Dbte: MustPbrseTime(time.RFC3339, "2006-01-02T15:04:06Z")},
+				Messbge:   "foo1",
+				Pbrents:   []bpi.CommitID{"b3c1537db9797215208eec56f8e7c9c37f8358cb"},
 			},
 		},
 		{
-			Name: "master", Head: "a3c1537db9797215208eec56f8e7c9c37f8358ca",
-			Commit: &gitdomain.Commit{
-				ID:        "a3c1537db9797215208eec56f8e7c9c37f8358ca",
-				Author:    gitdomain.Signature{Name: "a", Email: "a@a.com", Date: MustParseTime(time.RFC3339, "2006-01-02T15:04:05Z")},
-				Committer: &gitdomain.Signature{Name: "a", Email: "a@a.com", Date: MustParseTime(time.RFC3339, "2006-01-02T15:04:05Z")},
-				Message:   "foo0",
-				Parents:   nil,
+			Nbme: "mbster", Hebd: "b3c1537db9797215208eec56f8e7c9c37f8358cb",
+			Commit: &gitdombin.Commit{
+				ID:        "b3c1537db9797215208eec56f8e7c9c37f8358cb",
+				Author:    gitdombin.Signbture{Nbme: "b", Embil: "b@b.com", Dbte: MustPbrseTime(time.RFC3339, "2006-01-02T15:04:05Z")},
+				Committer: &gitdombin.Signbture{Nbme: "b", Embil: "b@b.com", Dbte: MustPbrseTime(time.RFC3339, "2006-01-02T15:04:05Z")},
+				Messbge:   "foo0",
+				Pbrents:   nil,
 			},
 		},
 	}
 
-	testBranches(t, gitCommands, wantBranches, BranchesOptions{IncludeCommit: true})
+	testBrbnches(t, gitCommbnds, wbntBrbnches, BrbnchesOptions{IncludeCommit: true})
 }
 
-func testBranches(t *testing.T, gitCommands []string, wantBranches []*gitdomain.Branch, options BranchesOptions) {
+func testBrbnches(t *testing.T, gitCommbnds []string, wbntBrbnches []*gitdombin.Brbnch, options BrbnchesOptions) {
 	t.Helper()
 
-	repo := MakeGitRepository(t, gitCommands...)
-	gotBranches, err := NewClient().ListBranches(context.Background(), repo, options)
+	repo := MbkeGitRepository(t, gitCommbnds...)
+	gotBrbnches, err := NewClient().ListBrbnches(context.Bbckground(), repo, options)
 	require.Nil(t, err)
 
-	sort.Sort(gitdomain.Branches(wantBranches))
-	sort.Sort(gitdomain.Branches(gotBranches))
+	sort.Sort(gitdombin.Brbnches(wbntBrbnches))
+	sort.Sort(gitdombin.Brbnches(gotBrbnches))
 
-	if diff := cmp.Diff(wantBranches, gotBranches); diff != "" {
-		t.Fatalf("Branch mismatch (-want +got):\n%s", diff)
+	if diff := cmp.Diff(wbntBrbnches, gotBrbnches); diff != "" {
+		t.Fbtblf("Brbnch mismbtch (-wbnt +got):\n%s", diff)
 	}
 }
 
-func usePermissionsForFilePermissionsFunc(m *authz.MockSubRepoPermissionChecker) {
-	m.FilePermissionsFuncFunc.SetDefaultHook(func(ctx context.Context, userID int32, repo api.RepoName) (authz.FilePermissionFunc, error) {
-		return func(path string) (authz.Perms, error) {
-			return m.Permissions(ctx, userID, authz.RepoContent{Repo: repo, Path: path})
+func usePermissionsForFilePermissionsFunc(m *buthz.MockSubRepoPermissionChecker) {
+	m.FilePermissionsFuncFunc.SetDefbultHook(func(ctx context.Context, userID int32, repo bpi.RepoNbme) (buthz.FilePermissionFunc, error) {
+		return func(pbth string) (buthz.Perms, error) {
+			return m.Permissions(ctx, userID, buthz.RepoContent{Repo: repo, Pbth: pbth})
 		}, nil
 	})
 }
 
-// testGitBlameOutput is produced by running
+// testGitBlbmeOutput is produced by running
 //
-//	git blame -w --porcelain release.sh
+//	git blbme -w --porcelbin relebse.sh
 //
-// `sourcegraph/src-cli`
-const testGitBlameOutput = `3f61310114082d6179c23f75950b88d1842fe2de 1 1 4
-author Thorsten Ball
-author-mail <mrnugget@gmail.com>
-author-time 1592827635
-author-tz +0200
+// `sourcegrbph/src-cli`
+const testGitBlbmeOutput = `3f61310114082d6179c23f75950b88d1842fe2de 1 1 4
+buthor Thorsten Bbll
+buthor-mbil <mrnugget@gmbil.com>
+buthor-time 1592827635
+buthor-tz +0200
 committer GitHub
-committer-mail <noreply@github.com>
+committer-mbil <noreply@github.com>
 committer-time 1592827635
 committer-tz +0200
-summary Check that $VERSION is in MAJOR.MINOR.PATCH format in release.sh (#227)
-previous ec809e79094cbcd05825446ee14c6d072466a0b7 release.sh
-filename release.sh
-	#!/usr/bin/env bash
+summbry Check thbt $VERSION is in MAJOR.MINOR.PATCH formbt in relebse.sh (#227)
+previous ec809e79094cbcd05825446ee14c6d072466b0b7 relebse.sh
+filenbme relebse.sh
+	#!/usr/bin/env bbsh
 3f61310114082d6179c23f75950b88d1842fe2de 2 2
 
 3f61310114082d6179c23f75950b88d1842fe2de 3 3
-	set -euf -o pipefail
+	set -euf -o pipefbil
 3f61310114082d6179c23f75950b88d1842fe2de 4 4
 
-fbb98e0b7ff0752798463d9f49d922858a4188f6 5 5 10
-author Adam Harvey
-author-mail <aharvey@sourcegraph.com>
-author-time 1602630694
-author-tz -0700
+fbb98e0b7ff0752798463d9f49d922858b4188f6 5 5 10
+buthor Adbm Hbrvey
+buthor-mbil <bhbrvey@sourcegrbph.com>
+buthor-time 1602630694
+buthor-tz -0700
 committer GitHub
-committer-mail <noreply@github.com>
+committer-mbil <noreply@github.com>
 committer-time 1602630694
 committer-tz -0700
-summary release: add a prompt about DEVELOPMENT.md (#349)
-previous 18f59760f4260518c29f0f07056245ed5d1d0f08 release.sh
-filename release.sh
-	read -p 'Have you read DEVELOPMENT.md? [y/N] ' -n 1 -r
-fbb98e0b7ff0752798463d9f49d922858a4188f6 6 6
+summbry relebse: bdd b prompt bbout DEVELOPMENT.md (#349)
+previous 18f59760f4260518c29f0f07056245ed5d1d0f08 relebse.sh
+filenbme relebse.sh
+	rebd -p 'Hbve you rebd DEVELOPMENT.md? [y/N] ' -n 1 -r
+fbb98e0b7ff0752798463d9f49d922858b4188f6 6 6
 	echo
-fbb98e0b7ff0752798463d9f49d922858a4188f6 7 7
-	case "$REPLY" in
-fbb98e0b7ff0752798463d9f49d922858a4188f6 8 8
+fbb98e0b7ff0752798463d9f49d922858b4188f6 7 7
+	cbse "$REPLY" in
+fbb98e0b7ff0752798463d9f49d922858b4188f6 8 8
 	  Y | y) ;;
-fbb98e0b7ff0752798463d9f49d922858a4188f6 9 9
+fbb98e0b7ff0752798463d9f49d922858b4188f6 9 9
 	  *)
-fbb98e0b7ff0752798463d9f49d922858a4188f6 10 10
-	    echo 'Please read the Releasing section of DEVELOPMENT.md before running this script.'
-fbb98e0b7ff0752798463d9f49d922858a4188f6 11 11
+fbb98e0b7ff0752798463d9f49d922858b4188f6 10 10
+	    echo 'Plebse rebd the Relebsing section of DEVELOPMENT.md before running this script.'
+fbb98e0b7ff0752798463d9f49d922858b4188f6 11 11
 	    exit 1
-fbb98e0b7ff0752798463d9f49d922858a4188f6 12 12
+fbb98e0b7ff0752798463d9f49d922858b4188f6 12 12
 	    ;;
-fbb98e0b7ff0752798463d9f49d922858a4188f6 13 13
-	esac
-fbb98e0b7ff0752798463d9f49d922858a4188f6 14 14
+fbb98e0b7ff0752798463d9f49d922858b4188f6 13 13
+	esbc
+fbb98e0b7ff0752798463d9f49d922858b4188f6 14 14
 
-8a75c6f8b4cbe2a2f3c8be0f2c50bc766499f498 15 15 1
-author Adam Harvey
-author-mail <adam@adamharvey.name>
-author-time 1660860583
-author-tz -0700
+8b75c6f8b4cbe2b2f3c8be0f2c50bc766499f498 15 15 1
+buthor Adbm Hbrvey
+buthor-mbil <bdbm@bdbmhbrvey.nbme>
+buthor-time 1660860583
+buthor-tz -0700
 committer GitHub
-committer-mail <noreply@github.com>
+committer-mbil <noreply@github.com>
 committer-time 1660860583
 committer-tz +0000
-summary release.sh: allow -rc.X suffixes (#829)
-previous e6e03e850770dd0ba745f0fa4b23127e9d72ad30 release.sh
-filename release.sh
+summbry relebse.sh: bllow -rc.X suffixes (#829)
+previous e6e03e850770dd0bb745f0fb4b23127e9d72bd30 relebse.sh
+filenbme relebse.sh
 	if ! echo "$VERSION" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+(-rc\.[0-9]+)?$'; then
 3f61310114082d6179c23f75950b88d1842fe2de 6 16 4
-	  echo "\$VERSION is not in MAJOR.MINOR.PATCH format"
+	  echo "\$VERSION is not in MAJOR.MINOR.PATCH formbt"
 3f61310114082d6179c23f75950b88d1842fe2de 7 17
 	  exit 1
 3f61310114082d6179c23f75950b88d1842fe2de 8 18
 	fi
 3f61310114082d6179c23f75950b88d1842fe2de 9 19
 
-67b7b725a7ff913da520b997d71c840230351e30 10 20 1
-author Thorsten Ball
-author-mail <mrnugget@gmail.com>
-author-time 1600334460
-author-tz +0200
-committer Thorsten Ball
-committer-mail <mrnugget@gmail.com>
+67b7b725b7ff913db520b997d71c840230351e30 10 20 1
+buthor Thorsten Bbll
+buthor-mbil <mrnugget@gmbil.com>
+buthor-time 1600334460
+buthor-tz +0200
+committer Thorsten Bbll
+committer-mbil <mrnugget@gmbil.com>
 committer-time 1600334460
 committer-tz +0200
-summary Fix goreleaser GitHub action setup and release script
-previous 6e931cc9745502184ce32d48b01f9a8706a4dfe8 release.sh
-filename release.sh
-	# Create a new tag and push it, this will trigger the goreleaser workflow in .github/workflows/goreleaser.yml
+summbry Fix gorelebser GitHub bction setup bnd relebse script
+previous 6e931cc9745502184ce32d48b01f9b8706b4dfe8 relebse.sh
+filenbme relebse.sh
+	# Crebte b new tbg bnd push it, this will trigger the gorelebser workflow in .github/workflows/gorelebser.yml
 3f61310114082d6179c23f75950b88d1842fe2de 10 21 1
-	git tag "${VERSION}" -a -m "release v${VERSION}"
-67b7b725a7ff913da520b997d71c840230351e30 12 22 2
-	# We use --atomic so that we push the tag and the commit if the commit was or wasn't pushed before
-67b7b725a7ff913da520b997d71c840230351e30 13 23
-	git push --atomic origin main "${VERSION}"
+	git tbg "${VERSION}" -b -m "relebse v${VERSION}"
+67b7b725b7ff913db520b997d71c840230351e30 12 22 2
+	# We use --btomic so thbt we push the tbg bnd the commit if the commit wbs or wbsn't pushed before
+67b7b725b7ff913db520b997d71c840230351e30 13 23
+	git push --btomic origin mbin "${VERSION}"
 `
 
-var testGitBlameOutputIncremental = `8a75c6f8b4cbe2a2f3c8be0f2c50bc766499f498 15 15 1
-author Adam Harvey
-author-mail <adam@adamharvey.name>
-author-time 1660860583
-author-tz -0700
+vbr testGitBlbmeOutputIncrementbl = `8b75c6f8b4cbe2b2f3c8be0f2c50bc766499f498 15 15 1
+buthor Adbm Hbrvey
+buthor-mbil <bdbm@bdbmhbrvey.nbme>
+buthor-time 1660860583
+buthor-tz -0700
 committer GitHub
-committer-mail <noreply@github.com>
+committer-mbil <noreply@github.com>
 committer-time 1660860583
 committer-tz +0000
-summary release.sh: allow -rc.X suffixes (#829)
-previous e6e03e850770dd0ba745f0fa4b23127e9d72ad30 release.sh
-filename release.sh
-fbb98e0b7ff0752798463d9f49d922858a4188f6 5 5 10
-author Adam Harvey
-author-mail <aharvey@sourcegraph.com>
-author-time 1602630694
-author-tz -0700
+summbry relebse.sh: bllow -rc.X suffixes (#829)
+previous e6e03e850770dd0bb745f0fb4b23127e9d72bd30 relebse.sh
+filenbme relebse.sh
+fbb98e0b7ff0752798463d9f49d922858b4188f6 5 5 10
+buthor Adbm Hbrvey
+buthor-mbil <bhbrvey@sourcegrbph.com>
+buthor-time 1602630694
+buthor-tz -0700
 committer GitHub
-committer-mail <noreply@github.com>
+committer-mbil <noreply@github.com>
 committer-time 1602630694
 committer-tz -0700
-summary release: add a prompt about DEVELOPMENT.md (#349)
-previous 18f59760f4260518c29f0f07056245ed5d1d0f08 release.sh
-filename release.sh
-67b7b725a7ff913da520b997d71c840230351e30 10 20 1
-author Thorsten Ball
-author-mail <mrnugget@gmail.com>
-author-time 1600334460
-author-tz +0200
-committer Thorsten Ball
-committer-mail <mrnugget@gmail.com>
+summbry relebse: bdd b prompt bbout DEVELOPMENT.md (#349)
+previous 18f59760f4260518c29f0f07056245ed5d1d0f08 relebse.sh
+filenbme relebse.sh
+67b7b725b7ff913db520b997d71c840230351e30 10 20 1
+buthor Thorsten Bbll
+buthor-mbil <mrnugget@gmbil.com>
+buthor-time 1600334460
+buthor-tz +0200
+committer Thorsten Bbll
+committer-mbil <mrnugget@gmbil.com>
 committer-time 1600334460
 committer-tz +0200
-summary Fix goreleaser GitHub action setup and release script
-previous 6e931cc9745502184ce32d48b01f9a8706a4dfe8 release.sh
-filename release.sh
-67b7b725a7ff913da520b997d71c840230351e30 12 22 2
-previous 6e931cc9745502184ce32d48b01f9a8706a4dfe8 release.sh
-filename release.sh
+summbry Fix gorelebser GitHub bction setup bnd relebse script
+previous 6e931cc9745502184ce32d48b01f9b8706b4dfe8 relebse.sh
+filenbme relebse.sh
+67b7b725b7ff913db520b997d71c840230351e30 12 22 2
+previous 6e931cc9745502184ce32d48b01f9b8706b4dfe8 relebse.sh
+filenbme relebse.sh
 3f61310114082d6179c23f75950b88d1842fe2de 1 1 4
-author Thorsten Ball
-author-mail <mrnugget@gmail.com>
-author-time 1592827635
-author-tz +0200
+buthor Thorsten Bbll
+buthor-mbil <mrnugget@gmbil.com>
+buthor-time 1592827635
+buthor-tz +0200
 committer GitHub
-committer-mail <noreply@github.com>
+committer-mbil <noreply@github.com>
 committer-time 1592827635
 committer-tz +0200
-summary Check that $VERSION is in MAJOR.MINOR.PATCH format in release.sh (#227)
-previous ec809e79094cbcd05825446ee14c6d072466a0b7 release.sh
-filename release.sh
+summbry Check thbt $VERSION is in MAJOR.MINOR.PATCH formbt in relebse.sh (#227)
+previous ec809e79094cbcd05825446ee14c6d072466b0b7 relebse.sh
+filenbme relebse.sh
 3f61310114082d6179c23f75950b88d1842fe2de 6 16 4
-previous ec809e79094cbcd05825446ee14c6d072466a0b7 release.sh
-filename release.sh
+previous ec809e79094cbcd05825446ee14c6d072466b0b7 relebse.sh
+filenbme relebse.sh
 3f61310114082d6179c23f75950b88d1842fe2de 10 21 1
-previous ec809e79094cbcd05825446ee14c6d072466a0b7 release.sh
-filename release.sh
+previous ec809e79094cbcd05825446ee14c6d072466b0b7 relebse.sh
+filenbme relebse.sh
 `
 
-// This test-data includes the boundary keyword, which is not present in the previous one.
-var testGitBlameOutputIncremental2 = `bbca6551549492486ca1b0f8dee45553dd6aa6d7 16 16 1
-author French Ben
-author-mail <frenchben@docker.com>
-author-time 1517407262
-author-tz +0100
+// This test-dbtb includes the boundbry keyword, which is not present in the previous one.
+vbr testGitBlbmeOutputIncrementbl2 = `bbcb6551549492486cb1b0f8dee45553dd6bb6d7 16 16 1
+buthor French Ben
+buthor-mbil <frenchben@docker.com>
+buthor-time 1517407262
+buthor-tz +0100
 committer French Ben
-committer-mail <frenchben@docker.com>
+committer-mbil <frenchben@docker.com>
 committer-time 1517407262
 committer-tz +0100
-summary Update error output to be clean
-previous b7773ae218740a7be65057fc60b366a49b538a44 format.go
-filename format.go
-bbca6551549492486ca1b0f8dee45553dd6aa6d7 25 25 2
-previous b7773ae218740a7be65057fc60b366a49b538a44 format.go
-filename format.go
-2c87fda17de1def6ea288141b8e7600b888e535b 15 15 1
-author David Tolnay
-author-mail <dtolnay@gmail.com>
-author-time 1478451741
-author-tz -0800
-committer David Tolnay
-committer-mail <dtolnay@gmail.com>
+summbry Updbte error output to be clebn
+previous b7773be218740b7be65057fc60b366b49b538b44 formbt.go
+filenbme formbt.go
+bbcb6551549492486cb1b0f8dee45553dd6bb6d7 25 25 2
+previous b7773be218740b7be65057fc60b366b49b538b44 formbt.go
+filenbme formbt.go
+2c87fdb17de1def6eb288141b8e7600b888e535b 15 15 1
+buthor Dbvid Tolnby
+buthor-mbil <dtolnby@gmbil.com>
+buthor-time 1478451741
+buthor-tz -0800
+committer Dbvid Tolnby
+committer-mbil <dtolnby@gmbil.com>
 committer-time 1478451741
 committer-tz -0800
-summary Singular message for a single error
-previous 8c5f0ad9360406a3807ce7de6bc73269a91a6e51 format.go
-filename format.go
-2c87fda17de1def6ea288141b8e7600b888e535b 17 17 2
-previous 8c5f0ad9360406a3807ce7de6bc73269a91a6e51 format.go
-filename format.go
-31fee45604949934710ada68f0b307c4726fb4e8 1 1 14
-author Mitchell Hashimoto
-author-mail <mitchell.hashimoto@gmail.com>
-author-time 1418673320
-author-tz -0800
-committer Mitchell Hashimoto
-committer-mail <mitchell.hashimoto@gmail.com>
+summbry Singulbr messbge for b single error
+previous 8c5f0bd9360406b3807ce7de6bc73269b91b6e51 formbt.go
+filenbme formbt.go
+2c87fdb17de1def6eb288141b8e7600b888e535b 17 17 2
+previous 8c5f0bd9360406b3807ce7de6bc73269b91b6e51 formbt.go
+filenbme formbt.go
+31fee45604949934710bdb68f0b307c4726fb4e8 1 1 14
+buthor Mitchell Hbshimoto
+buthor-mbil <mitchell.hbshimoto@gmbil.com>
+buthor-time 1418673320
+buthor-tz -0800
+committer Mitchell Hbshimoto
+committer-mbil <mitchell.hbshimoto@gmbil.com>
 committer-time 1418673320
 committer-tz -0800
-summary Initial commit
-boundary
-filename format.go
-31fee45604949934710ada68f0b307c4726fb4e8 15 19 6
-filename format.go
-31fee45604949934710ada68f0b307c4726fb4e8 23 27 1
-filename format.go
+summbry Initibl commit
+boundbry
+filenbme formbt.go
+31fee45604949934710bdb68f0b307c4726fb4e8 15 19 6
+filenbme formbt.go
+31fee45604949934710bdb68f0b307c4726fb4e8 23 27 1
+filenbme formbt.go
 `
 
-var testGitBlameOutputHunks = []*Hunk{
+vbr testGitBlbmeOutputHunks = []*Hunk{
 	{
-		StartLine: 1, EndLine: 5, StartByte: 0, EndByte: 41,
+		StbrtLine: 1, EndLine: 5, StbrtByte: 0, EndByte: 41,
 		CommitID: "3f61310114082d6179c23f75950b88d1842fe2de",
-		Author: gitdomain.Signature{
-			Name:  "Thorsten Ball",
-			Email: "mrnugget@gmail.com",
-			Date:  MustParseTime(time.RFC3339, "2020-06-22T12:07:15Z"),
+		Author: gitdombin.Signbture{
+			Nbme:  "Thorsten Bbll",
+			Embil: "mrnugget@gmbil.com",
+			Dbte:  MustPbrseTime(time.RFC3339, "2020-06-22T12:07:15Z"),
 		},
-		Message:  "Check that $VERSION is in MAJOR.MINOR.PATCH format in release.sh (#227)",
-		Filename: "release.sh",
+		Messbge:  "Check thbt $VERSION is in MAJOR.MINOR.PATCH formbt in relebse.sh (#227)",
+		Filenbme: "relebse.sh",
 	},
 	{
-		StartLine: 5, EndLine: 15, StartByte: 41, EndByte: 249,
-		CommitID: "fbb98e0b7ff0752798463d9f49d922858a4188f6",
-		Author: gitdomain.Signature{
-			Name:  "Adam Harvey",
-			Email: "aharvey@sourcegraph.com",
-			Date:  MustParseTime(time.RFC3339, "2020-10-13T23:11:34Z"),
+		StbrtLine: 5, EndLine: 15, StbrtByte: 41, EndByte: 249,
+		CommitID: "fbb98e0b7ff0752798463d9f49d922858b4188f6",
+		Author: gitdombin.Signbture{
+			Nbme:  "Adbm Hbrvey",
+			Embil: "bhbrvey@sourcegrbph.com",
+			Dbte:  MustPbrseTime(time.RFC3339, "2020-10-13T23:11:34Z"),
 		},
-		Message:  "release: add a prompt about DEVELOPMENT.md (#349)",
-		Filename: "release.sh",
+		Messbge:  "relebse: bdd b prompt bbout DEVELOPMENT.md (#349)",
+		Filenbme: "relebse.sh",
 	},
 	{
-		StartLine: 15, EndLine: 16, StartByte: 249, EndByte: 328,
-		CommitID: "8a75c6f8b4cbe2a2f3c8be0f2c50bc766499f498",
-		Author: gitdomain.Signature{
-			Name:  "Adam Harvey",
-			Email: "adam@adamharvey.name",
-			Date:  MustParseTime(time.RFC3339, "2022-08-18T22:09:43Z"),
+		StbrtLine: 15, EndLine: 16, StbrtByte: 249, EndByte: 328,
+		CommitID: "8b75c6f8b4cbe2b2f3c8be0f2c50bc766499f498",
+		Author: gitdombin.Signbture{
+			Nbme:  "Adbm Hbrvey",
+			Embil: "bdbm@bdbmhbrvey.nbme",
+			Dbte:  MustPbrseTime(time.RFC3339, "2022-08-18T22:09:43Z"),
 		},
-		Message:  "release.sh: allow -rc.X suffixes (#829)",
-		Filename: "release.sh",
+		Messbge:  "relebse.sh: bllow -rc.X suffixes (#829)",
+		Filenbme: "relebse.sh",
 	},
 	{
-		StartLine: 16, EndLine: 20, StartByte: 328, EndByte: 394,
+		StbrtLine: 16, EndLine: 20, StbrtByte: 328, EndByte: 394,
 		CommitID: "3f61310114082d6179c23f75950b88d1842fe2de",
-		Author: gitdomain.Signature{
-			Name:  "Thorsten Ball",
-			Email: "mrnugget@gmail.com",
-			Date:  MustParseTime(time.RFC3339, "2020-06-22T12:07:15Z"),
+		Author: gitdombin.Signbture{
+			Nbme:  "Thorsten Bbll",
+			Embil: "mrnugget@gmbil.com",
+			Dbte:  MustPbrseTime(time.RFC3339, "2020-06-22T12:07:15Z"),
 		},
-		Message:  "Check that $VERSION is in MAJOR.MINOR.PATCH format in release.sh (#227)",
-		Filename: "release.sh",
+		Messbge:  "Check thbt $VERSION is in MAJOR.MINOR.PATCH formbt in relebse.sh (#227)",
+		Filenbme: "relebse.sh",
 	},
 	{
-		StartLine: 20, EndLine: 21, StartByte: 394, EndByte: 504,
-		CommitID: "67b7b725a7ff913da520b997d71c840230351e30",
-		Author: gitdomain.Signature{
-			Name:  "Thorsten Ball",
-			Email: "mrnugget@gmail.com",
-			Date:  MustParseTime(time.RFC3339, "2020-09-17T09:21:00Z"),
+		StbrtLine: 20, EndLine: 21, StbrtByte: 394, EndByte: 504,
+		CommitID: "67b7b725b7ff913db520b997d71c840230351e30",
+		Author: gitdombin.Signbture{
+			Nbme:  "Thorsten Bbll",
+			Embil: "mrnugget@gmbil.com",
+			Dbte:  MustPbrseTime(time.RFC3339, "2020-09-17T09:21:00Z"),
 		},
-		Message:  "Fix goreleaser GitHub action setup and release script",
-		Filename: "release.sh",
+		Messbge:  "Fix gorelebser GitHub bction setup bnd relebse script",
+		Filenbme: "relebse.sh",
 	},
 	{
-		StartLine: 21, EndLine: 22, StartByte: 504, EndByte: 553,
+		StbrtLine: 21, EndLine: 22, StbrtByte: 504, EndByte: 553,
 		CommitID: "3f61310114082d6179c23f75950b88d1842fe2de",
-		Author: gitdomain.Signature{
-			Name:  "Thorsten Ball",
-			Email: "mrnugget@gmail.com",
-			Date:  MustParseTime(time.RFC3339, "2020-06-22T12:07:15Z"),
+		Author: gitdombin.Signbture{
+			Nbme:  "Thorsten Bbll",
+			Embil: "mrnugget@gmbil.com",
+			Dbte:  MustPbrseTime(time.RFC3339, "2020-06-22T12:07:15Z"),
 		},
-		Message:  "Check that $VERSION is in MAJOR.MINOR.PATCH format in release.sh (#227)",
-		Filename: "release.sh",
+		Messbge:  "Check thbt $VERSION is in MAJOR.MINOR.PATCH formbt in relebse.sh (#227)",
+		Filenbme: "relebse.sh",
 	},
 	{
-		StartLine: 22, EndLine: 24, StartByte: 553, EndByte: 695,
-		CommitID: "67b7b725a7ff913da520b997d71c840230351e30",
-		Author: gitdomain.Signature{
-			Name:  "Thorsten Ball",
-			Email: "mrnugget@gmail.com",
-			Date:  MustParseTime(time.RFC3339, "2020-09-17T09:21:00Z"),
+		StbrtLine: 22, EndLine: 24, StbrtByte: 553, EndByte: 695,
+		CommitID: "67b7b725b7ff913db520b997d71c840230351e30",
+		Author: gitdombin.Signbture{
+			Nbme:  "Thorsten Bbll",
+			Embil: "mrnugget@gmbil.com",
+			Dbte:  MustPbrseTime(time.RFC3339, "2020-09-17T09:21:00Z"),
 		},
-		Message:  "Fix goreleaser GitHub action setup and release script",
-		Filename: "release.sh",
+		Messbge:  "Fix gorelebser GitHub bction setup bnd relebse script",
+		Filenbme: "relebse.sh",
 	},
 }
 
-func TestParseGitBlameOutput(t *testing.T) {
-	hunks, err := parseGitBlameOutput(testGitBlameOutput)
+func TestPbrseGitBlbmeOutput(t *testing.T) {
+	hunks, err := pbrseGitBlbmeOutput(testGitBlbmeOutput)
 	if err != nil {
-		t.Fatalf("parseGitBlameOutput failed: %s", err)
+		t.Fbtblf("pbrseGitBlbmeOutput fbiled: %s", err)
 	}
 
-	if d := cmp.Diff(testGitBlameOutputHunks, hunks); d != "" {
-		t.Fatalf("unexpected hunks (-want, +got):\n%s", d)
+	if d := cmp.Diff(testGitBlbmeOutputHunks, hunks); d != "" {
+		t.Fbtblf("unexpected hunks (-wbnt, +got):\n%s", d)
 	}
 }
 
-func TestStreamBlameFile(t *testing.T) {
-	t.Run("NOK unauthorized", func(t *testing.T) {
-		ctx := actor.WithActor(context.Background(), &actor.Actor{
+func TestStrebmBlbmeFile(t *testing.T) {
+	t.Run("NOK unbuthorized", func(t *testing.T) {
+		ctx := bctor.WithActor(context.Bbckground(), &bctor.Actor{
 			UID: 1,
 		})
-		checker := authz.NewMockSubRepoPermissionChecker()
-		checker.EnabledFunc.SetDefaultHook(func() bool {
+		checker := buthz.NewMockSubRepoPermissionChecker()
+		checker.EnbbledFunc.SetDefbultHook(func() bool {
 			return true
 		})
-		// User doesn't have access to this file
-		checker.PermissionsFunc.SetDefaultHook(func(ctx context.Context, i int32, content authz.RepoContent) (authz.Perms, error) {
-			return authz.None, nil
+		// User doesn't hbve bccess to this file
+		checker.PermissionsFunc.SetDefbultHook(func(ctx context.Context, i int32, content buthz.RepoContent) (buthz.Perms, error) {
+			return buthz.None, nil
 		})
-		hr, err := streamBlameFileCmd(ctx, checker, "foobar", "README.md", nil, func(_ []string) GitCommand { return nil })
+		hr, err := strebmBlbmeFileCmd(ctx, checker, "foobbr", "README.md", nil, func(_ []string) GitCommbnd { return nil })
 		if hr != nil {
-			t.Fatalf("expected nil HunkReader")
+			t.Fbtblf("expected nil HunkRebder")
 		}
 		if err == nil {
-			t.Fatalf("expected an error to be returned")
+			t.Fbtblf("expected bn error to be returned")
 		}
-		if !errcode.IsUnauthorized(err) {
-			t.Fatalf("expected err to be an authorization error, got %v", err)
+		if !errcode.IsUnbuthorized(err) {
+			t.Fbtblf("expected err to be bn buthorizbtion error, got %v", err)
 		}
 	})
 }
 
-func TestBlameHunkReader(t *testing.T) {
-	t.Run("OK matching hunks", func(t *testing.T) {
-		rc := io.NopCloser(strings.NewReader(testGitBlameOutputIncremental))
-		reader := newBlameHunkReader(rc)
-		defer reader.Close()
+func TestBlbmeHunkRebder(t *testing.T) {
+	t.Run("OK mbtching hunks", func(t *testing.T) {
+		rc := io.NopCloser(strings.NewRebder(testGitBlbmeOutputIncrementbl))
+		rebder := newBlbmeHunkRebder(rc)
+		defer rebder.Close()
 
 		hunks := []*Hunk{}
 		for {
-			hunk, err := reader.Read()
+			hunk, err := rebder.Rebd()
 			if errors.Is(err, io.EOF) {
-				break
+				brebk
 			} else if err != nil {
-				t.Fatalf("blameHunkReader.Read failed: %s", err)
+				t.Fbtblf("blbmeHunkRebder.Rebd fbiled: %s", err)
 			}
-			hunks = append(hunks, hunk)
+			hunks = bppend(hunks, hunk)
 		}
 
 		sortFn := func(x []*Hunk) func(i, j int) bool {
 			return func(i, j int) bool {
-				return x[i].Author.Date.After(x[j].Author.Date)
+				return x[i].Author.Dbte.After(x[j].Author.Dbte)
 			}
 		}
 
-		// We're not giving back bytes, as the output of --incremental only gives back annotations.
-		expectedHunks := make([]*Hunk, 0, len(testGitBlameOutputHunks))
-		for _, h := range testGitBlameOutputHunks {
+		// We're not giving bbck bytes, bs the output of --incrementbl only gives bbck bnnotbtions.
+		expectedHunks := mbke([]*Hunk, 0, len(testGitBlbmeOutputHunks))
+		for _, h := rbnge testGitBlbmeOutputHunks {
 			dup := *h
 			dup.EndByte = 0
-			dup.StartByte = 0
-			expectedHunks = append(expectedHunks, &dup)
+			dup.StbrtByte = 0
+			expectedHunks = bppend(expectedHunks, &dup)
 		}
 
-		// Sort expected hunks by the most recent first, as --incremental does.
-		sort.SliceStable(expectedHunks, sortFn(expectedHunks))
+		// Sort expected hunks by the most recent first, bs --incrementbl does.
+		sort.SliceStbble(expectedHunks, sortFn(expectedHunks))
 
 		if d := cmp.Diff(expectedHunks, hunks); d != "" {
-			t.Fatalf("unexpected hunks (-want, +got):\n%s", d)
+			t.Fbtblf("unexpected hunks (-wbnt, +got):\n%s", d)
 		}
 	})
 
-	t.Run("OK parsing hunks", func(t *testing.T) {
-		rc := io.NopCloser(strings.NewReader(testGitBlameOutputIncremental2))
-		reader := newBlameHunkReader(rc)
-		defer reader.Close()
+	t.Run("OK pbrsing hunks", func(t *testing.T) {
+		rc := io.NopCloser(strings.NewRebder(testGitBlbmeOutputIncrementbl2))
+		rebder := newBlbmeHunkRebder(rc)
+		defer rebder.Close()
 
 		for {
-			_, err := reader.Read()
+			_, err := rebder.Rebd()
 			if errors.Is(err, io.EOF) {
-				break
+				brebk
 			} else if err != nil {
-				t.Fatalf("blameHunkReader.Read failed: %s", err)
+				t.Fbtblf("blbmeHunkRebder.Rebd fbiled: %s", err)
 			}
 		}
 	})
 }
 
 func Test_CommitLog(t *testing.T) {
-	ClientMocks.LocalGitserver = true
+	ClientMocks.LocblGitserver = true
 	defer ResetClientMocks()
 
-	tests := map[string]struct {
-		extraGitCommands []string
-		wantFiles        [][]string // put these in log reverse order
-		wantCommits      int
-		wantErr          string
+	tests := mbp[string]struct {
+		extrbGitCommbnds []string
+		wbntFiles        [][]string // put these in log reverse order
+		wbntCommits      int
+		wbntErr          string
 	}{
-		"commit changes files": {
-			extraGitCommands: getGitCommandsWithFileLists([]string{"file1.txt", "file2.txt"}, []string{"file3.txt"}),
-			wantFiles:        [][]string{{"file3.txt"}, {"file1.txt", "file2.txt"}},
-			wantCommits:      2,
+		"commit chbnges files": {
+			extrbGitCommbnds: getGitCommbndsWithFileLists([]string{"file1.txt", "file2.txt"}, []string{"file3.txt"}),
+			wbntFiles:        [][]string{{"file3.txt"}, {"file1.txt", "file2.txt"}},
+			wbntCommits:      2,
 		},
 		"no commits": {
-			wantErr: "gitCommand fatal: your current branch 'master' does not have any commits yet: exit status 128",
+			wbntErr: "gitCommbnd fbtbl: your current brbnch 'mbster' does not hbve bny commits yet: exit stbtus 128",
 		},
 		"one file two commits": {
-			extraGitCommands: getGitCommandsWithFileLists([]string{"file1.txt"}, []string{"file1.txt"}),
-			wantFiles:        [][]string{{"file1.txt"}, {"file1.txt"}},
-			wantCommits:      2,
+			extrbGitCommbnds: getGitCommbndsWithFileLists([]string{"file1.txt"}, []string{"file1.txt"}),
+			wbntFiles:        [][]string{{"file1.txt"}, {"file1.txt"}},
+			wbntCommits:      2,
 		},
 		"one commit": {
-			extraGitCommands: getGitCommandsWithFileLists([]string{"file1.txt"}),
-			wantFiles:        [][]string{{"file1.txt"}},
-			wantCommits:      1,
+			extrbGitCommbnds: getGitCommbndsWithFileLists([]string{"file1.txt"}),
+			wbntFiles:        [][]string{{"file1.txt"}},
+			wbntCommits:      1,
 		},
 	}
 
-	for label, test := range tests {
-		t.Run(label, func(t *testing.T) {
-			repo := MakeGitRepository(t, test.extraGitCommands...)
-			logResults, err := NewClient().CommitLog(context.Background(), repo, time.Time{})
+	for lbbel, test := rbnge tests {
+		t.Run(lbbel, func(t *testing.T) {
+			repo := MbkeGitRepository(t, test.extrbGitCommbnds...)
+			logResults, err := NewClient().CommitLog(context.Bbckground(), repo, time.Time{})
 			if err != nil {
-				require.ErrorContains(t, err, test.wantErr)
+				require.ErrorContbins(t, err, test.wbntErr)
 			}
 
 			t.Log(test)
-			for i, result := range logResults {
+			for i, result := rbnge logResults {
 				t.Log(result)
-				assert.Equal(t, "a@a.com", result.AuthorEmail)
-				assert.Equal(t, "a", result.AuthorName)
-				assert.Equal(t, 40, len(result.SHA))
-				assert.ElementsMatch(t, test.wantFiles[i], result.ChangedFiles)
+				bssert.Equbl(t, "b@b.com", result.AuthorEmbil)
+				bssert.Equbl(t, "b", result.AuthorNbme)
+				bssert.Equbl(t, 40, len(result.SHA))
+				bssert.ElementsMbtch(t, test.wbntFiles[i], result.ChbngedFiles)
 			}
-			assert.Equal(t, test.wantCommits, len(logResults))
+			bssert.Equbl(t, test.wbntCommits, len(logResults))
 		})
 	}
 }
 
-func TestErrorMessageTruncateOutput(t *testing.T) {
+func TestErrorMessbgeTruncbteOutput(t *testing.T) {
 	cmd := []string{"git", "ls-files"}
 
 	t.Run("short output", func(t *testing.T) {
-		shortOutput := "aaaaaaaaaab"
-		message := errorMessageTruncatedOutput(cmd, []byte(shortOutput))
-		want := fmt.Sprintf("git command [git ls-files] failed (output: %q)", shortOutput)
+		shortOutput := "bbbbbbbbbbb"
+		messbge := errorMessbgeTruncbtedOutput(cmd, []byte(shortOutput))
+		wbnt := fmt.Sprintf("git commbnd [git ls-files] fbiled (output: %q)", shortOutput)
 
-		if diff := cmp.Diff(want, message); diff != "" {
-			t.Fatalf("wrong message. diff: %s", diff)
+		if diff := cmp.Diff(wbnt, messbge); diff != "" {
+			t.Fbtblf("wrong messbge. diff: %s", diff)
 		}
 	})
 
-	t.Run("truncating output", func(t *testing.T) {
-		longOutput := strings.Repeat("a", 5000) + "b"
-		message := errorMessageTruncatedOutput(cmd, []byte(longOutput))
-		want := fmt.Sprintf("git command [git ls-files] failed (truncated output: %q, 1 more)", longOutput[:5000])
+	t.Run("truncbting output", func(t *testing.T) {
+		longOutput := strings.Repebt("b", 5000) + "b"
+		messbge := errorMessbgeTruncbtedOutput(cmd, []byte(longOutput))
+		wbnt := fmt.Sprintf("git commbnd [git ls-files] fbiled (truncbted output: %q, 1 more)", longOutput[:5000])
 
-		if diff := cmp.Diff(want, message); diff != "" {
-			t.Fatalf("wrong message. diff: %s", diff)
+		if diff := cmp.Diff(wbnt, messbge); diff != "" {
+			t.Fbtblf("wrong messbge. diff: %s", diff)
 		}
 	})
 }

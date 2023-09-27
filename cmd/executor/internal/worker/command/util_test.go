@@ -1,32 +1,32 @@
-package command_test
+pbckbge commbnd_test
 
 import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
 
-	"github.com/sourcegraph/sourcegraph/cmd/executor/internal/worker/command"
+	"github.com/sourcegrbph/sourcegrbph/cmd/executor/internbl/worker/commbnd"
 )
 
-func TestFlatten(t *testing.T) {
-	actual := command.Flatten(
+func TestFlbtten(t *testing.T) {
+	bctubl := commbnd.Flbtten(
 		"foo",
-		[]string{"bar", "baz"},
+		[]string{"bbr", "bbz"},
 		[]string{"bonk", "quux"},
 	)
 
 	expected := []string{
 		"foo",
-		"bar", "baz",
+		"bbr", "bbz",
 		"bonk", "quux",
 	}
-	if diff := cmp.Diff(expected, actual); diff != "" {
-		t.Errorf("unexpected slice (-want +got):\n%s", diff)
+	if diff := cmp.Diff(expected, bctubl); diff != "" {
+		t.Errorf("unexpected slice (-wbnt +got):\n%s", diff)
 	}
 }
 
 func TestIntersperse(t *testing.T) {
-	actual := command.Intersperse("-e", []string{
+	bctubl := commbnd.Intersperse("-e", []string{
 		"A=B",
 		"C=D",
 		"E=F",
@@ -37,7 +37,7 @@ func TestIntersperse(t *testing.T) {
 		"-e", "C=D",
 		"-e", "E=F",
 	}
-	if diff := cmp.Diff(expected, actual); diff != "" {
-		t.Errorf("unexpected slice (-want +got):\n%s", diff)
+	if diff := cmp.Diff(expected, bctubl); diff != "" {
+		t.Errorf("unexpected slice (-wbnt +got):\n%s", diff)
 	}
 }

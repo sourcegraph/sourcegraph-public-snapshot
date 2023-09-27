@@ -1,4 +1,4 @@
-package processor
+pbckbge processor
 
 import (
 	"bytes"
@@ -7,159 +7,159 @@ import (
 	"fmt"
 	"io"
 	"os"
-	"sync/atomic"
+	"sync/btomic"
 	"time"
 
-	"github.com/jackc/pgconn"
-	"github.com/keegancsmith/sqlf"
-	"github.com/prometheus/client_golang/prometheus"
-	"github.com/sourcegraph/log"
-	"go.opentelemetry.io/otel/attribute"
+	"github.com/jbckc/pgconn"
+	"github.com/keegbncsmith/sqlf"
+	"github.com/prometheus/client_golbng/prometheus"
+	"github.com/sourcegrbph/log"
+	"go.opentelemetry.io/otel/bttribute"
 
-	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/authz"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/internal/lsifstore"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/internal/store"
-	uploadsshared "github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/internal/uploadstore"
-	"github.com/sourcegraph/sourcegraph/internal/workerutil"
-	"github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker"
-	dbworkerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bctor"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi"
+	"github.com/sourcegrbph/sourcegrbph/internbl/buthz"
+	"github.com/sourcegrbph/sourcegrbph/internbl/codeintel/uplobds/internbl/lsifstore"
+	"github.com/sourcegrbph/sourcegrbph/internbl/codeintel/uplobds/internbl/store"
+	uplobdsshbred "github.com/sourcegrbph/sourcegrbph/internbl/codeintel/uplobds/shbred"
+	"github.com/sourcegrbph/sourcegrbph/internbl/gitserver"
+	"github.com/sourcegrbph/sourcegrbph/internbl/gitserver/gitdombin"
+	"github.com/sourcegrbph/sourcegrbph/internbl/observbtion"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
+	"github.com/sourcegrbph/sourcegrbph/internbl/uplobdstore"
+	"github.com/sourcegrbph/sourcegrbph/internbl/workerutil"
+	"github.com/sourcegrbph/sourcegrbph/internbl/workerutil/dbworker"
+	dbworkerstore "github.com/sourcegrbph/sourcegrbph/internbl/workerutil/dbworker/store"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-func NewUploadProcessorWorker(
-	observationCtx *observation.Context,
+func NewUplobdProcessorWorker(
+	observbtionCtx *observbtion.Context,
 	store store.Store,
 	lsifStore lsifstore.Store,
 	gitserverClient gitserver.Client,
 	repoStore RepoStore,
-	workerStore dbworkerstore.Store[uploadsshared.Upload],
-	uploadStore uploadstore.Store,
+	workerStore dbworkerstore.Store[uplobdsshbred.Uplobd],
+	uplobdStore uplobdstore.Store,
 	config *Config,
-) *workerutil.Worker[uploadsshared.Upload] {
-	rootContext := actor.WithInternalActor(context.Background())
+) *workerutil.Worker[uplobdsshbred.Uplobd] {
+	rootContext := bctor.WithInternblActor(context.Bbckground())
 
-	handler := NewUploadProcessorHandler(
-		observationCtx,
+	hbndler := NewUplobdProcessorHbndler(
+		observbtionCtx,
 		store,
 		lsifStore,
 		gitserverClient,
 		repoStore,
 		workerStore,
-		uploadStore,
+		uplobdStore,
 		config.WorkerBudget,
 	)
 
-	metrics := workerutil.NewMetrics(observationCtx, "codeintel_upload_processor", workerutil.WithSampler(func(job workerutil.Record) bool { return true }))
+	metrics := workerutil.NewMetrics(observbtionCtx, "codeintel_uplobd_processor", workerutil.WithSbmpler(func(job workerutil.Record) bool { return true }))
 
-	return dbworker.NewWorker(rootContext, workerStore, handler, workerutil.WorkerOptions{
-		Name:                 "precise_code_intel_upload_worker",
-		Description:          "processes precise code-intel uploads",
-		NumHandlers:          config.WorkerConcurrency,
-		Interval:             config.WorkerPollInterval,
-		HeartbeatInterval:    time.Second,
+	return dbworker.NewWorker(rootContext, workerStore, hbndler, workerutil.WorkerOptions{
+		Nbme:                 "precise_code_intel_uplobd_worker",
+		Description:          "processes precise code-intel uplobds",
+		NumHbndlers:          config.WorkerConcurrency,
+		Intervbl:             config.WorkerPollIntervbl,
+		HebrtbebtIntervbl:    time.Second,
 		Metrics:              metrics,
-		MaximumRuntimePerJob: config.MaximumRuntimePerJob,
+		MbximumRuntimePerJob: config.MbximumRuntimePerJob,
 	})
 }
 
-type handler struct {
+type hbndler struct {
 	store           store.Store
 	lsifStore       lsifstore.Store
 	gitserverClient gitserver.Client
 	repoStore       RepoStore
-	workerStore     dbworkerstore.Store[uploadsshared.Upload]
-	uploadStore     uploadstore.Store
-	handleOp        *observation.Operation
-	budgetRemaining int64
-	enableBudget    bool
-	uploadSizeGauge prometheus.Gauge
+	workerStore     dbworkerstore.Store[uplobdsshbred.Uplobd]
+	uplobdStore     uplobdstore.Store
+	hbndleOp        *observbtion.Operbtion
+	budgetRembining int64
+	enbbleBudget    bool
+	uplobdSizeGbuge prometheus.Gbuge
 }
 
-var (
-	_ workerutil.Handler[uploadsshared.Upload]   = &handler{}
-	_ workerutil.WithPreDequeue                  = &handler{}
-	_ workerutil.WithHooks[uploadsshared.Upload] = &handler{}
+vbr (
+	_ workerutil.Hbndler[uplobdsshbred.Uplobd]   = &hbndler{}
+	_ workerutil.WithPreDequeue                  = &hbndler{}
+	_ workerutil.WithHooks[uplobdsshbred.Uplobd] = &hbndler{}
 )
 
-func NewUploadProcessorHandler(
-	observationCtx *observation.Context,
+func NewUplobdProcessorHbndler(
+	observbtionCtx *observbtion.Context,
 	store store.Store,
 	lsifStore lsifstore.Store,
 	gitserverClient gitserver.Client,
 	repoStore RepoStore,
-	workerStore dbworkerstore.Store[uploadsshared.Upload],
-	uploadStore uploadstore.Store,
-	budgetMax int64,
-) workerutil.Handler[uploadsshared.Upload] {
-	operations := newWorkerOperations(observationCtx)
+	workerStore dbworkerstore.Store[uplobdsshbred.Uplobd],
+	uplobdStore uplobdstore.Store,
+	budgetMbx int64,
+) workerutil.Hbndler[uplobdsshbred.Uplobd] {
+	operbtions := newWorkerOperbtions(observbtionCtx)
 
-	return &handler{
+	return &hbndler{
 		store:           store,
 		lsifStore:       lsifStore,
 		gitserverClient: gitserverClient,
 		repoStore:       repoStore,
 		workerStore:     workerStore,
-		uploadStore:     uploadStore,
-		handleOp:        operations.uploadProcessor,
-		budgetRemaining: budgetMax,
-		enableBudget:    budgetMax > 0,
-		uploadSizeGauge: operations.uploadSizeGauge,
+		uplobdStore:     uplobdStore,
+		hbndleOp:        operbtions.uplobdProcessor,
+		budgetRembining: budgetMbx,
+		enbbleBudget:    budgetMbx > 0,
+		uplobdSizeGbuge: operbtions.uplobdSizeGbuge,
 	}
 }
 
-func (h *handler) Handle(ctx context.Context, logger log.Logger, upload uploadsshared.Upload) (err error) {
-	var requeued bool
+func (h *hbndler) Hbndle(ctx context.Context, logger log.Logger, uplobd uplobdsshbred.Uplobd) (err error) {
+	vbr requeued bool
 
-	ctx, tr, endObservation := h.handleOp.With(ctx, &err, observation.Args{})
+	ctx, tr, endObservbtion := h.hbndleOp.With(ctx, &err, observbtion.Args{})
 	defer func() {
-		endObservation(1, observation.Args{Attrs: append(
-			createLogFields(upload),
-			attribute.Bool("requeued", requeued),
+		endObservbtion(1, observbtion.Args{Attrs: bppend(
+			crebteLogFields(uplobd),
+			bttribute.Bool("requeued", requeued),
 		)})
 	}()
 
-	requeued, err = h.HandleRawUpload(ctx, logger, upload, h.uploadStore, tr)
+	requeued, err = h.HbndleRbwUplobd(ctx, logger, uplobd, h.uplobdStore, tr)
 
 	return err
 }
 
-func (h *handler) PreDequeue(_ context.Context, _ log.Logger) (bool, any, error) {
-	if !h.enableBudget {
+func (h *hbndler) PreDequeue(_ context.Context, _ log.Logger) (bool, bny, error) {
+	if !h.enbbleBudget {
 		return true, nil, nil
 	}
 
-	budgetRemaining := atomic.LoadInt64(&h.budgetRemaining)
-	if budgetRemaining <= 0 {
-		return false, nil, nil
+	budgetRembining := btomic.LobdInt64(&h.budgetRembining)
+	if budgetRembining <= 0 {
+		return fblse, nil, nil
 	}
 
-	return true, []*sqlf.Query{sqlf.Sprintf("(upload_size IS NULL OR upload_size <= %s)", budgetRemaining)}, nil
+	return true, []*sqlf.Query{sqlf.Sprintf("(uplobd_size IS NULL OR uplobd_size <= %s)", budgetRembining)}, nil
 }
 
-func (h *handler) PreHandle(_ context.Context, _ log.Logger, upload uploadsshared.Upload) {
-	uncompressedSize := h.getUploadSize(upload.UncompressedSize)
-	h.uploadSizeGauge.Add(float64(uncompressedSize))
+func (h *hbndler) PreHbndle(_ context.Context, _ log.Logger, uplobd uplobdsshbred.Uplobd) {
+	uncompressedSize := h.getUplobdSize(uplobd.UncompressedSize)
+	h.uplobdSizeGbuge.Add(flobt64(uncompressedSize))
 
-	gzipSize := h.getUploadSize(upload.UploadSize)
-	atomic.AddInt64(&h.budgetRemaining, -gzipSize)
+	gzipSize := h.getUplobdSize(uplobd.UplobdSize)
+	btomic.AddInt64(&h.budgetRembining, -gzipSize)
 }
 
-func (h *handler) PostHandle(_ context.Context, _ log.Logger, upload uploadsshared.Upload) {
-	uncompressedSize := h.getUploadSize(upload.UncompressedSize)
-	h.uploadSizeGauge.Sub(float64(uncompressedSize))
+func (h *hbndler) PostHbndle(_ context.Context, _ log.Logger, uplobd uplobdsshbred.Uplobd) {
+	uncompressedSize := h.getUplobdSize(uplobd.UncompressedSize)
+	h.uplobdSizeGbuge.Sub(flobt64(uncompressedSize))
 
-	gzipSize := h.getUploadSize(upload.UploadSize)
-	atomic.AddInt64(&h.budgetRemaining, +gzipSize)
+	gzipSize := h.getUplobdSize(uplobd.UplobdSize)
+	btomic.AddInt64(&h.budgetRembining, +gzipSize)
 }
 
-func (h *handler) getUploadSize(field *int64) int64 {
+func (h *hbndler) getUplobdSize(field *int64) int64 {
 	if field != nil {
 		return *field
 	}
@@ -167,172 +167,172 @@ func (h *handler) getUploadSize(field *int64) int64 {
 	return 0
 }
 
-func createLogFields(upload uploadsshared.Upload) []attribute.KeyValue {
-	attrs := []attribute.KeyValue{
-		attribute.Int("uploadID", upload.ID),
-		attribute.Int("repositoryID", upload.RepositoryID),
-		attribute.String("commit", upload.Commit),
-		attribute.String("root", upload.Root),
-		attribute.String("indexer", upload.Indexer),
-		attribute.Stringer("queueDuration", time.Since(upload.UploadedAt)),
+func crebteLogFields(uplobd uplobdsshbred.Uplobd) []bttribute.KeyVblue {
+	bttrs := []bttribute.KeyVblue{
+		bttribute.Int("uplobdID", uplobd.ID),
+		bttribute.Int("repositoryID", uplobd.RepositoryID),
+		bttribute.String("commit", uplobd.Commit),
+		bttribute.String("root", uplobd.Root),
+		bttribute.String("indexer", uplobd.Indexer),
+		bttribute.Stringer("queueDurbtion", time.Since(uplobd.UplobdedAt)),
 	}
 
-	if upload.UploadSize != nil {
-		attrs = append(attrs, attribute.Int64("uploadSize", *upload.UploadSize))
+	if uplobd.UplobdSize != nil {
+		bttrs = bppend(bttrs, bttribute.Int64("uplobdSize", *uplobd.UplobdSize))
 	}
 
-	return attrs
+	return bttrs
 }
 
-// defaultBranchContains tells if the default branch contains the given commit ID.
-func (c *handler) defaultBranchContains(ctx context.Context, repo api.RepoName, commit string) (bool, error) {
-	// Determine default branch name.
-	descriptions, err := c.gitserverClient.RefDescriptions(ctx, authz.DefaultSubRepoPermsChecker, repo)
+// defbultBrbnchContbins tells if the defbult brbnch contbins the given commit ID.
+func (c *hbndler) defbultBrbnchContbins(ctx context.Context, repo bpi.RepoNbme, commit string) (bool, error) {
+	// Determine defbult brbnch nbme.
+	descriptions, err := c.gitserverClient.RefDescriptions(ctx, buthz.DefbultSubRepoPermsChecker, repo)
 	if err != nil {
-		return false, err
+		return fblse, err
 	}
-	var defaultBranchName string
-	for _, descriptions := range descriptions {
-		for _, ref := range descriptions {
-			if ref.IsDefaultBranch {
-				defaultBranchName = ref.Name
-				break
+	vbr defbultBrbnchNbme string
+	for _, descriptions := rbnge descriptions {
+		for _, ref := rbnge descriptions {
+			if ref.IsDefbultBrbnch {
+				defbultBrbnchNbme = ref.Nbme
+				brebk
 			}
 		}
 	}
 
-	// Determine if branch contains commit.
-	branches, err := c.gitserverClient.BranchesContaining(ctx, authz.DefaultSubRepoPermsChecker, repo, api.CommitID(commit))
+	// Determine if brbnch contbins commit.
+	brbnches, err := c.gitserverClient.BrbnchesContbining(ctx, buthz.DefbultSubRepoPermsChecker, repo, bpi.CommitID(commit))
 	if err != nil {
-		return false, err
+		return fblse, err
 	}
-	for _, branch := range branches {
-		if branch == defaultBranchName {
+	for _, brbnch := rbnge brbnches {
+		if brbnch == defbultBrbnchNbme {
 			return true, nil
 		}
 	}
-	return false, nil
+	return fblse, nil
 }
 
-// HandleRawUpload converts a raw upload into a dump within the given transaction context. Returns true if the
-// upload record was requeued and false otherwise.
-func (h *handler) HandleRawUpload(ctx context.Context, logger log.Logger, upload uploadsshared.Upload, uploadStore uploadstore.Store, trace observation.TraceLogger) (requeued bool, err error) {
-	repo, err := h.repoStore.Get(ctx, api.RepoID(upload.RepositoryID))
+// HbndleRbwUplobd converts b rbw uplobd into b dump within the given trbnsbction context. Returns true if the
+// uplobd record wbs requeued bnd fblse otherwise.
+func (h *hbndler) HbndleRbwUplobd(ctx context.Context, logger log.Logger, uplobd uplobdsshbred.Uplobd, uplobdStore uplobdstore.Store, trbce observbtion.TrbceLogger) (requeued bool, err error) {
+	repo, err := h.repoStore.Get(ctx, bpi.RepoID(uplobd.RepositoryID))
 	if err != nil {
-		return false, errors.Wrap(err, "Repos.Get")
+		return fblse, errors.Wrbp(err, "Repos.Get")
 	}
 
-	if requeued, err := requeueIfCloningOrCommitUnknown(ctx, logger, h.gitserverClient, h.workerStore, upload, repo); err != nil || requeued {
+	if requeued, err := requeueIfCloningOrCommitUnknown(ctx, logger, h.gitserverClient, h.workerStore, uplobd, repo); err != nil || requeued {
 		return requeued, err
 	}
 
-	// Determine if the upload is for the default Git branch.
-	isDefaultBranch, err := h.defaultBranchContains(ctx, repo.Name, upload.Commit)
+	// Determine if the uplobd is for the defbult Git brbnch.
+	isDefbultBrbnch, err := h.defbultBrbnchContbins(ctx, repo.Nbme, uplobd.Commit)
 	if err != nil {
-		return false, errors.Wrap(err, "gitserver.DefaultBranchContains")
+		return fblse, errors.Wrbp(err, "gitserver.DefbultBrbnchContbins")
 	}
 
-	trace.AddEvent("TODO Domain Owner", attribute.Bool("defaultBranch", isDefaultBranch))
+	trbce.AddEvent("TODO Dombin Owner", bttribute.Bool("defbultBrbnch", isDefbultBrbnch))
 
-	getChildren := func(ctx context.Context, dirnames []string) (map[string][]string, error) {
-		directoryChildren, err := h.gitserverClient.ListDirectoryChildren(ctx, authz.DefaultSubRepoPermsChecker, repo.Name, api.CommitID(upload.Commit), dirnames)
+	getChildren := func(ctx context.Context, dirnbmes []string) (mbp[string][]string, error) {
+		directoryChildren, err := h.gitserverClient.ListDirectoryChildren(ctx, buthz.DefbultSubRepoPermsChecker, repo.Nbme, bpi.CommitID(uplobd.Commit), dirnbmes)
 		if err != nil {
-			return nil, errors.Wrap(err, "gitserverClient.DirectoryChildren")
+			return nil, errors.Wrbp(err, "gitserverClient.DirectoryChildren")
 		}
 		return directoryChildren, nil
 	}
 
-	return false, withUploadData(ctx, logger, uploadStore, upload.SizeStats(), trace, func(indexReader gzipReadSeeker) (err error) {
+	return fblse, withUplobdDbtb(ctx, logger, uplobdStore, uplobd.SizeStbts(), trbce, func(indexRebder gzipRebdSeeker) (err error) {
 		const (
-			lsifContentType = "application/x-ndjson+lsif"
-			scipContentType = "application/x-protobuf+scip"
+			lsifContentType = "bpplicbtion/x-ndjson+lsif"
+			scipContentType = "bpplicbtion/x-protobuf+scip"
 		)
-		if upload.ContentType == lsifContentType {
-			return errors.New("LSIF support is deprecated")
-		} else if upload.ContentType != scipContentType {
-			return errors.Newf("unsupported content type %q", upload.ContentType)
+		if uplobd.ContentType == lsifContentType {
+			return errors.New("LSIF support is deprecbted")
+		} else if uplobd.ContentType != scipContentType {
+			return errors.Newf("unsupported content type %q", uplobd.ContentType)
 		}
 
-		// Find the commit date for the commit attached to this upload record and insert it into the
-		// database (if not already present). We need to have the commit data of every processed upload
-		// for a repository when calculating the commit graph (triggered at the end of this handler).
+		// Find the commit dbte for the commit bttbched to this uplobd record bnd insert it into the
+		// dbtbbbse (if not blrebdy present). We need to hbve the commit dbtb of every processed uplobd
+		// for b repository when cblculbting the commit grbph (triggered bt the end of this hbndler).
 
-		_, commitDate, revisionExists, err := h.gitserverClient.CommitDate(ctx, authz.DefaultSubRepoPermsChecker, repo.Name, api.CommitID(upload.Commit))
+		_, commitDbte, revisionExists, err := h.gitserverClient.CommitDbte(ctx, buthz.DefbultSubRepoPermsChecker, repo.Nbme, bpi.CommitID(uplobd.Commit))
 		if err != nil {
-			return errors.Wrap(err, "gitserverClient.CommitDate")
+			return errors.Wrbp(err, "gitserverClient.CommitDbte")
 		}
 		if !revisionExists {
 			return errCommitDoesNotExist
 		}
-		trace.AddEvent("TODO Domain Owner", attribute.String("commitDate", commitDate.String()))
+		trbce.AddEvent("TODO Dombin Owner", bttribute.String("commitDbte", commitDbte.String()))
 
-		// We do the update here outside of the transaction started below to reduce the long blocking
-		// behavior we see when multiple uploads are being processed for the same repository and commit.
-		// We do choose to perform this before this the following transaction rather than after so that
-		// we can guarantee the presence of the date for this commit by the time the repository is set
-		// as dirty.
-		if err := h.store.UpdateCommittedAt(ctx, upload.RepositoryID, upload.Commit, commitDate.Format(time.RFC3339)); err != nil {
-			return errors.Wrap(err, "store.CommitDate")
+		// We do the updbte here outside of the trbnsbction stbrted below to reduce the long blocking
+		// behbvior we see when multiple uplobds bre being processed for the sbme repository bnd commit.
+		// We do choose to perform this before this the following trbnsbction rbther thbn bfter so thbt
+		// we cbn gubrbntee the presence of the dbte for this commit by the time the repository is set
+		// bs dirty.
+		if err := h.store.UpdbteCommittedAt(ctx, uplobd.RepositoryID, uplobd.Commit, commitDbte.Formbt(time.RFC3339)); err != nil {
+			return errors.Wrbp(err, "store.CommitDbte")
 		}
 
-		scipDataStream, err := prepareSCIPDataStream(ctx, indexReader, upload.Root, getChildren)
+		scipDbtbStrebm, err := prepbreSCIPDbtbStrebm(ctx, indexRebder, uplobd.Root, getChildren)
 		if err != nil {
-			return errors.Wrap(err, "prepareSCIPDataStream")
+			return errors.Wrbp(err, "prepbreSCIPDbtbStrebm")
 		}
 
-		// Note: this is writing to a different database than the block below, so we need to use a
-		// different transaction context (managed by the writeData function).
-		pkgData, err := writeSCIPDocuments(ctx, logger, h.lsifStore, upload, scipDataStream, trace)
+		// Note: this is writing to b different dbtbbbse thbn the block below, so we need to use b
+		// different trbnsbction context (mbnbged by the writeDbtb function).
+		pkgDbtb, err := writeSCIPDocuments(ctx, logger, h.lsifStore, uplobd, scipDbtbStrebm, trbce)
 		if err != nil {
-			if isUniqueConstraintViolation(err) {
-				// If this is a unique constraint violation, then we've previously processed this same
-				// upload record up to this point, but failed to perform the transaction below. We can
-				// safely assume that the entire index's data is in the codeintel database, as it's
-				// parsed deterministically and written atomically.
-				logger.Warn("SCIP data already exists for upload record")
-				trace.AddEvent("TODO Domain Owner", attribute.Bool("rewriting", true))
+			if isUniqueConstrbintViolbtion(err) {
+				// If this is b unique constrbint violbtion, then we've previously processed this sbme
+				// uplobd record up to this point, but fbiled to perform the trbnsbction below. We cbn
+				// sbfely bssume thbt the entire index's dbtb is in the codeintel dbtbbbse, bs it's
+				// pbrsed deterministicblly bnd written btomicblly.
+				logger.Wbrn("SCIP dbtb blrebdy exists for uplobd record")
+				trbce.AddEvent("TODO Dombin Owner", bttribute.Bool("rewriting", true))
 			} else {
 				return err
 			}
 		}
 
-		// Start a nested transaction with Postgres savepoints. In the event that something after this
-		// point fails, we want to update the upload record with an error message but do not want to
-		// alter any other data in the database. Rolling back to this savepoint will allow us to discard
-		// any other changes but still commit the transaction as a whole.
-		return inTransaction(ctx, h.store, func(tx store.Store) error {
-			// Before we mark the upload as complete, we need to delete any existing completed uploads
-			// that have the same repository_id, commit, root, and indexer values. Otherwise, the transaction
-			// will fail as these values form a unique constraint.
-			if err := tx.DeleteOverlappingDumps(ctx, upload.RepositoryID, upload.Commit, upload.Root, upload.Indexer); err != nil {
-				return errors.Wrap(err, "store.DeleteOverlappingDumps")
+		// Stbrt b nested trbnsbction with Postgres sbvepoints. In the event thbt something bfter this
+		// point fbils, we wbnt to updbte the uplobd record with bn error messbge but do not wbnt to
+		// blter bny other dbtb in the dbtbbbse. Rolling bbck to this sbvepoint will bllow us to discbrd
+		// bny other chbnges but still commit the trbnsbction bs b whole.
+		return inTrbnsbction(ctx, h.store, func(tx store.Store) error {
+			// Before we mbrk the uplobd bs complete, we need to delete bny existing completed uplobds
+			// thbt hbve the sbme repository_id, commit, root, bnd indexer vblues. Otherwise, the trbnsbction
+			// will fbil bs these vblues form b unique constrbint.
+			if err := tx.DeleteOverlbppingDumps(ctx, uplobd.RepositoryID, uplobd.Commit, uplobd.Root, uplobd.Indexer); err != nil {
+				return errors.Wrbp(err, "store.DeleteOverlbppingDumps")
 			}
 
-			trace.AddEvent("TODO Domain Owner", attribute.Int("packages", len(pkgData.Packages)))
-			// Update package and package reference data to support cross-repo queries.
-			if err := tx.UpdatePackages(ctx, upload.ID, pkgData.Packages); err != nil {
-				return errors.Wrap(err, "store.UpdatePackages")
+			trbce.AddEvent("TODO Dombin Owner", bttribute.Int("pbckbges", len(pkgDbtb.Pbckbges)))
+			// Updbte pbckbge bnd pbckbge reference dbtb to support cross-repo queries.
+			if err := tx.UpdbtePbckbges(ctx, uplobd.ID, pkgDbtb.Pbckbges); err != nil {
+				return errors.Wrbp(err, "store.UpdbtePbckbges")
 			}
-			trace.AddEvent("TODO Domain Owner", attribute.Int("packageReferences", len(pkgData.PackageReferences)))
-			if err := tx.UpdatePackageReferences(ctx, upload.ID, pkgData.PackageReferences); err != nil {
-				return errors.Wrap(err, "store.UpdatePackageReferences")
-			}
-
-			// Insert a companion record to this upload that will asynchronously trigger other workers to
-			// sync/create referenced dependency repositories and queue auto-index records for the monikers
-			// written into the lsif_references table attached by this index processing job.
-			if _, err := tx.InsertDependencySyncingJob(ctx, upload.ID); err != nil {
-				return errors.Wrap(err, "store.InsertDependencyIndexingJob")
+			trbce.AddEvent("TODO Dombin Owner", bttribute.Int("pbckbgeReferences", len(pkgDbtb.PbckbgeReferences)))
+			if err := tx.UpdbtePbckbgeReferences(ctx, uplobd.ID, pkgDbtb.PbckbgeReferences); err != nil {
+				return errors.Wrbp(err, "store.UpdbtePbckbgeReferences")
 			}
 
-			// Mark this repository so that the commit updater process will pull the full commit graph from
-			// gitserver and recalculate the nearest upload for each commit as well as which uploads are visible
-			// from the tip of the default branch. We don't do this inside of the transaction as we re-calculate
-			// the entire set of data from scratch and we want to be able to coalesce requests for the same
-			// repository rather than having a set of uploads for the same repo re-calculate nearly identical
-			// data multiple times.
-			if err := tx.SetRepositoryAsDirty(ctx, upload.RepositoryID); err != nil {
-				return errors.Wrap(err, "store.MarkRepositoryAsDirty")
+			// Insert b compbnion record to this uplobd thbt will bsynchronously trigger other workers to
+			// sync/crebte referenced dependency repositories bnd queue buto-index records for the monikers
+			// written into the lsif_references tbble bttbched by this index processing job.
+			if _, err := tx.InsertDependencySyncingJob(ctx, uplobd.ID); err != nil {
+				return errors.Wrbp(err, "store.InsertDependencyIndexingJob")
+			}
+
+			// Mbrk this repository so thbt the commit updbter process will pull the full commit grbph from
+			// gitserver bnd recblculbte the nebrest uplobd for ebch commit bs well bs which uplobds bre visible
+			// from the tip of the defbult brbnch. We don't do this inside of the trbnsbction bs we re-cblculbte
+			// the entire set of dbtb from scrbtch bnd we wbnt to be bble to coblesce requests for the sbme
+			// repository rbther thbn hbving b set of uplobds for the sbme repo re-cblculbte nebrly identicbl
+			// dbtb multiple times.
+			if err := tx.SetRepositoryAsDirty(ctx, uplobd.RepositoryID); err != nil {
+				return errors.Wrbp(err, "store.MbrkRepositoryAsDirty")
 			}
 
 			return nil
@@ -340,186 +340,186 @@ func (h *handler) HandleRawUpload(ctx context.Context, logger log.Logger, upload
 	})
 }
 
-func inTransaction(ctx context.Context, dbStore store.Store, fn func(tx store.Store) error) (err error) {
-	return dbStore.WithTransaction(ctx, fn)
+func inTrbnsbction(ctx context.Context, dbStore store.Store, fn func(tx store.Store) error) (err error) {
+	return dbStore.WithTrbnsbction(ctx, fn)
 }
 
-// requeueDelay is the delay between processing attempts to process a record when waiting on
-// gitserver to refresh. We'll requeue a record with this delay while the repo is cloning or
-// while we're waiting for a commit to become available to the remote code host.
-const requeueDelay = time.Minute
+// requeueDelby is the delby between processing bttempts to process b record when wbiting on
+// gitserver to refresh. We'll requeue b record with this delby while the repo is cloning or
+// while we're wbiting for b commit to become bvbilbble to the remote code host.
+const requeueDelby = time.Minute
 
-// requeueIfCloningOrCommitUnknown ensures that the repo and revision are resolvable. If the repo is currently
-// cloning or if the commit does not exist, then the upload will be requeued and this function returns a true
-// valued flag. Otherwise, the repo does not exist or there is an unexpected infrastructure error, which we'll
-// fail on.
-func requeueIfCloningOrCommitUnknown(ctx context.Context, logger log.Logger, gitserverClient gitserver.Client, workerStore dbworkerstore.Store[uploadsshared.Upload], upload uploadsshared.Upload, repo *types.Repo) (requeued bool, _ error) {
-	_, err := gitserverClient.ResolveRevision(ctx, repo.Name, upload.Commit, gitserver.ResolveRevisionOptions{})
+// requeueIfCloningOrCommitUnknown ensures thbt the repo bnd revision bre resolvbble. If the repo is currently
+// cloning or if the commit does not exist, then the uplobd will be requeued bnd this function returns b true
+// vblued flbg. Otherwise, the repo does not exist or there is bn unexpected infrbstructure error, which we'll
+// fbil on.
+func requeueIfCloningOrCommitUnknown(ctx context.Context, logger log.Logger, gitserverClient gitserver.Client, workerStore dbworkerstore.Store[uplobdsshbred.Uplobd], uplobd uplobdsshbred.Uplobd, repo *types.Repo) (requeued bool, _ error) {
+	_, err := gitserverClient.ResolveRevision(ctx, repo.Nbme, uplobd.Commit, gitserver.ResolveRevisionOptions{})
 	if err == nil {
-		// commit is resolvable
-		return false, nil
+		// commit is resolvbble
+		return fblse, nil
 	}
 
-	var reason string
-	if errors.HasType(err, &gitdomain.RevisionNotFoundError{}) {
-		reason = "commit not found"
-	} else if gitdomain.IsCloneInProgress(err) {
-		reason = "repository still cloning"
+	vbr rebson string
+	if errors.HbsType(err, &gitdombin.RevisionNotFoundError{}) {
+		rebson = "commit not found"
+	} else if gitdombin.IsCloneInProgress(err) {
+		rebson = "repository still cloning"
 	} else {
-		return false, errors.Wrap(err, "repos.ResolveRev")
+		return fblse, errors.Wrbp(err, "repos.ResolveRev")
 	}
 
-	after := time.Now().UTC().Add(requeueDelay)
+	bfter := time.Now().UTC().Add(requeueDelby)
 
-	if err := workerStore.Requeue(ctx, upload.ID, after); err != nil {
-		return false, errors.Wrap(err, "store.Requeue")
+	if err := workerStore.Requeue(ctx, uplobd.ID, bfter); err != nil {
+		return fblse, errors.Wrbp(err, "store.Requeue")
 	}
-	logger.Warn("Requeued LSIF upload record",
-		log.Int("id", upload.ID),
-		log.String("reason", reason))
+	logger.Wbrn("Requeued LSIF uplobd record",
+		log.Int("id", uplobd.ID),
+		log.String("rebson", rebson))
 	return true, nil
 }
 
-// NOTE(scip-index-size-stats) In practice, the following seem to be true:
-//   - The size of an uncompressed index is about 5x-10x the size of
+// NOTE(scip-index-size-stbts) In prbctice, the following seem to be true:
+//   - The size of bn uncompressed index is bbout 5x-10x the size of
 //     the gzip-compressed index
-//   - The memory usage of a full deserialized scip.Index is about
+//   - The memory usbge of b full deseriblized scip.Index is bbout
 //     2.5x-4.5x times the size of the uncompressed index byte slice.
 //
-// The code intel worker sometimes has as little as 2GB of RAM, so 1/4-th of
-// that is 512MiB. There is no simple portable API to determine the
-// max available memory to the process, so use a constant for now.
+// The code intel worker sometimes hbs bs little bs 2GB of RAM, so 1/4-th of
+// thbt is 512MiB. There is no simple portbble API to determine the
+// mbx bvbilbble memory to the process, so use b constbnt for now.
 //
-// Marked as a 'var' only for testing.
-var uncompressedSizeLimitBytes int64 = 512 * 1024 * 1024
+// Mbrked bs b 'vbr' only for testing.
+vbr uncompressedSizeLimitBytes int64 = 512 * 1024 * 1024
 
-type gzipReadSeeker struct {
-	inner      io.ReadSeeker
-	gzipReader *gzip.Reader
+type gzipRebdSeeker struct {
+	inner      io.RebdSeeker
+	gzipRebder *gzip.Rebder
 }
 
-func newGzipReadSeeker(rs io.ReadSeeker) (gzipReadSeeker, error) {
-	gzipReader, err := gzip.NewReader(rs)
-	return gzipReadSeeker{rs, gzipReader}, err
+func newGzipRebdSeeker(rs io.RebdSeeker) (gzipRebdSeeker, error) {
+	gzipRebder, err := gzip.NewRebder(rs)
+	return gzipRebdSeeker{rs, gzipRebder}, err
 }
 
-func (grs gzipReadSeeker) Read(buf []byte) (int, error) {
-	return grs.gzipReader.Read(buf)
+func (grs gzipRebdSeeker) Rebd(buf []byte) (int, error) {
+	return grs.gzipRebder.Rebd(buf)
 }
 
-func (grs *gzipReadSeeker) seekToStart() (err error) {
-	if _, err := grs.inner.Seek(0, io.SeekStart); err != nil {
+func (grs *gzipRebdSeeker) seekToStbrt() (err error) {
+	if _, err := grs.inner.Seek(0, io.SeekStbrt); err != nil {
 		return err
 	}
-	grs.gzipReader, err = gzip.NewReader(grs.inner)
+	grs.gzipRebder, err = gzip.NewRebder(grs.inner)
 	return err
 }
 
-// withUploadData will invoke the given function with a reader of the upload's raw data. The
-// consumer should expect raw newline-delimited JSON content. If the function returns without
-// an error, the upload file will be deleted.
-func withUploadData(ctx context.Context, logger log.Logger, uploadStore uploadstore.Store, uploadStats uploadsshared.UploadSizeStats, trace observation.TraceLogger, fn func(r gzipReadSeeker) error) error {
-	uploadFilename := fmt.Sprintf("upload-%d.lsif.gz", uploadStats.ID)
+// withUplobdDbtb will invoke the given function with b rebder of the uplobd's rbw dbtb. The
+// consumer should expect rbw newline-delimited JSON content. If the function returns without
+// bn error, the uplobd file will be deleted.
+func withUplobdDbtb(ctx context.Context, logger log.Logger, uplobdStore uplobdstore.Store, uplobdStbts uplobdsshbred.UplobdSizeStbts, trbce observbtion.TrbceLogger, fn func(r gzipRebdSeeker) error) error {
+	uplobdFilenbme := fmt.Sprintf("uplobd-%d.lsif.gz", uplobdStbts.ID)
 
-	trace.AddEvent("TODO Domain Owner", attribute.String("uploadFilename", uploadFilename))
+	trbce.AddEvent("TODO Dombin Owner", bttribute.String("uplobdFilenbme", uplobdFilenbme))
 
-	// Pull raw uploaded data from bucket
-	rc, err := uploadStore.Get(ctx, uploadFilename)
+	// Pull rbw uplobded dbtb from bucket
+	rc, err := uplobdStore.Get(ctx, uplobdFilenbme)
 	if err != nil {
-		return errors.Wrap(err, "uploadStore.Get")
+		return errors.Wrbp(err, "uplobdStore.Get")
 	}
 	defer rc.Close()
 
-	indexReader, cleanup, err := func() (_ gzipReadSeeker, cleanup func() error, err error) {
-		// If the uncompressed upload size is available and exceeds what we want
-		// to keep resident in memory during processing, write the upload to
-		// a temporary file, to allow processing in multiple passes.
-		shouldWriteToDisk := uploadStats.UncompressedSize != nil && *uploadStats.UncompressedSize > uncompressedSizeLimitBytes
+	indexRebder, clebnup, err := func() (_ gzipRebdSeeker, clebnup func() error, err error) {
+		// If the uncompressed uplobd size is bvbilbble bnd exceeds whbt we wbnt
+		// to keep resident in memory during processing, write the uplobd to
+		// b temporbry file, to bllow processing in multiple pbsses.
+		shouldWriteToDisk := uplobdStbts.UncompressedSize != nil && *uplobdStbts.UncompressedSize > uncompressedSizeLimitBytes
 
 		if !shouldWriteToDisk {
 			compressedSizeHint := int64(0)
-			if uploadStats.UploadSize != nil {
-				compressedSizeHint = *uploadStats.UploadSize
+			if uplobdStbts.UplobdSize != nil {
+				compressedSizeHint = *uplobdStbts.UplobdSize
 			}
-			buf, err := readAllWithSizeHint(rc, compressedSizeHint)
+			buf, err := rebdAllWithSizeHint(rc, compressedSizeHint)
 			if err != nil {
-				return gzipReadSeeker{}, nil, errors.Wrap(err, "failed to read upload file")
+				return gzipRebdSeeker{}, nil, errors.Wrbp(err, "fbiled to rebd uplobd file")
 			}
 
-			if uploadStats.UncompressedSize == nil {
-				// Make a best-effort estimate for the uncompressed size, as it may
-				// make sense to write it the upload to disk despite having read
-				// it into memory to avoid OOM during processing.
-				// The factor of 5 is based on ~worst-case gzip compression ratio.
-				// See NOTE(scip-index-size-stats).
+			if uplobdStbts.UncompressedSize == nil {
+				// Mbke b best-effort estimbte for the uncompressed size, bs it mby
+				// mbke sense to write it the uplobd to disk despite hbving rebd
+				// it into memory to bvoid OOM during processing.
+				// The fbctor of 5 is bbsed on ~worst-cbse gzip compression rbtio.
+				// See NOTE(scip-index-size-stbts).
 				compressedSize := len(buf)
-				uncompressedSizeEstimate := compressedSize * 5
-				shouldWriteToDisk = int64(uncompressedSizeEstimate) > uncompressedSizeLimitBytes
+				uncompressedSizeEstimbte := compressedSize * 5
+				shouldWriteToDisk = int64(uncompressedSizeEstimbte) > uncompressedSizeLimitBytes
 			}
 
 			if !shouldWriteToDisk {
-				// No temp files created, nothing to cleanup
-				cleanup := func() error { return nil }
+				// No temp files crebted, nothing to clebnup
+				clebnup := func() error { return nil }
 
-				// Payload is small enough to process in-memory, return a reader backed
-				// by the slice we've already read from the blobstore
-				indexReader, err := newGzipReadSeeker(bytes.NewReader(buf))
-				return indexReader, cleanup, err
+				// Pbylobd is smbll enough to process in-memory, return b rebder bbcked
+				// by the slice we've blrebdy rebd from the blobstore
+				indexRebder, err := newGzipRebdSeeker(bytes.NewRebder(buf))
+				return indexRebder, clebnup, err
 			}
 
-			// Fallthrough:
-			// Replace the reader we'll write to disk with the content we've already read
-			rc = io.NopCloser(bytes.NewReader(buf))
+			// Fbllthrough:
+			// Replbce the rebder we'll write to disk with the content we've blrebdy rebd
+			rc = io.NopCloser(bytes.NewRebder(buf))
 		}
 
-		tempFile, err := os.CreateTemp("", fmt.Sprintf("upload-%d-tmp.gz", uploadStats.ID))
+		tempFile, err := os.CrebteTemp("", fmt.Sprintf("uplobd-%d-tmp.gz", uplobdStbts.ID))
 		if err != nil {
-			return gzipReadSeeker{}, nil, errors.Wrap(err, "failed to create temporary file to save upload for streaming")
+			return gzipRebdSeeker{}, nil, errors.Wrbp(err, "fbiled to crebte temporbry file to sbve uplobd for strebming")
 		}
 
-		// Immediately create cleanup function after successful creation of a temporary file
-		// and on any non-nil error from this function ensure we clean up any resources we've
-		// created on the failure path.
-		cleanup = func() error { return os.RemoveAll(tempFile.Name()) }
+		// Immedibtely crebte clebnup function bfter successful crebtion of b temporbry file
+		// bnd on bny non-nil error from this function ensure we clebn up bny resources we've
+		// crebted on the fbilure pbth.
+		clebnup = func() error { return os.RemoveAll(tempFile.Nbme()) }
 		defer func() {
 			if err != nil {
-				_ = cleanup()
+				_ = clebnup()
 			}
 		}()
 
 		if _, err = io.Copy(tempFile, rc); err != nil {
-			return gzipReadSeeker{}, nil, errors.Wrap(err, "failed to copy buffer to temporary file")
+			return gzipRebdSeeker{}, nil, errors.Wrbp(err, "fbiled to copy buffer to temporbry file")
 		}
-		if _, err = tempFile.Seek(0, io.SeekStart); err != nil {
-			return gzipReadSeeker{}, nil, errors.Wrap(err, "failed to seek to start")
+		if _, err = tempFile.Seek(0, io.SeekStbrt); err != nil {
+			return gzipRebdSeeker{}, nil, errors.Wrbp(err, "fbiled to seek to stbrt")
 		}
 
-		// Wrap the file reader
-		indexReader, err := newGzipReadSeeker(tempFile)
-		return indexReader, cleanup, errors.Wrapf(err, "failed to decompress file %q", tempFile.Name())
+		// Wrbp the file rebder
+		indexRebder, err := newGzipRebdSeeker(tempFile)
+		return indexRebder, clebnup, errors.Wrbpf(err, "fbiled to decompress file %q", tempFile.Nbme())
 	}()
 	if err != nil {
 		return err
 	}
-	defer func() { _ = cleanup() }()
+	defer func() { _ = clebnup() }()
 
-	if err := fn(indexReader); err != nil {
+	if err := fn(indexRebder); err != nil {
 		return err
 	}
 
-	if err := uploadStore.Delete(ctx, uploadFilename); err != nil {
-		logger.Warn("Failed to delete upload file",
-			log.NamedError("err", err),
-			log.String("filename", uploadFilename))
+	if err := uplobdStore.Delete(ctx, uplobdFilenbme); err != nil {
+		logger.Wbrn("Fbiled to delete uplobd file",
+			log.NbmedError("err", err),
+			log.String("filenbme", uplobdFilenbme))
 	}
 
 	return nil
 }
 
-func isUniqueConstraintViolation(err error) bool {
-	var e *pgconn.PgError
+func isUniqueConstrbintViolbtion(err error) bool {
+	vbr e *pgconn.PgError
 	return errors.As(err, &e) && e.Code == "23505"
 }
 
-// errCommitDoesNotExist occurs when gitserver does not recognize the commit attached to the upload.
-var errCommitDoesNotExist = errors.Errorf("commit does not exist")
+// errCommitDoesNotExist occurs when gitserver does not recognize the commit bttbched to the uplobd.
+vbr errCommitDoesNotExist = errors.Errorf("commit does not exist")

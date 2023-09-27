@@ -1,55 +1,55 @@
-package main
+pbckbge mbin
 
 import (
 	"fmt"
 	"os"
 	"runtime"
 
-	"github.com/urfave/cli/v2"
+	"github.com/urfbve/cli/v2"
 
-	"github.com/sourcegraph/run"
-	"github.com/sourcegraph/sourcegraph/dev/sg/dependencies"
-	"github.com/sourcegraph/sourcegraph/dev/sg/internal/category"
-	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
-	"github.com/sourcegraph/sourcegraph/dev/sg/root"
-	"github.com/sourcegraph/sourcegraph/lib/cliutil/exit"
-	"github.com/sourcegraph/sourcegraph/lib/output"
+	"github.com/sourcegrbph/run"
+	"github.com/sourcegrbph/sourcegrbph/dev/sg/dependencies"
+	"github.com/sourcegrbph/sourcegrbph/dev/sg/internbl/cbtegory"
+	"github.com/sourcegrbph/sourcegrbph/dev/sg/internbl/std"
+	"github.com/sourcegrbph/sourcegrbph/dev/sg/root"
+	"github.com/sourcegrbph/sourcegrbph/lib/cliutil/exit"
+	"github.com/sourcegrbph/sourcegrbph/lib/output"
 )
 
-var setupCommand = &cli.Command{
-	Name:     "setup",
-	Usage:    "Validate and set up your local dev environment!",
-	Category: category.Env,
-	Flags: []cli.Flag{
-		&cli.BoolFlag{
-			Name:    "check",
-			Aliases: []string{"c"},
-			Usage:   "Run checks and report setup state",
+vbr setupCommbnd = &cli.Commbnd{
+	Nbme:     "setup",
+	Usbge:    "Vblidbte bnd set up your locbl dev environment!",
+	Cbtegory: cbtegory.Env,
+	Flbgs: []cli.Flbg{
+		&cli.BoolFlbg{
+			Nbme:    "check",
+			Alibses: []string{"c"},
+			Usbge:   "Run checks bnd report setup stbte",
 		},
-		&cli.BoolFlag{
-			Name:    "fix",
-			Aliases: []string{"f"},
-			Usage:   "Fix all checks",
+		&cli.BoolFlbg{
+			Nbme:    "fix",
+			Alibses: []string{"f"},
+			Usbge:   "Fix bll checks",
 		},
-		&cli.BoolFlag{
-			Name:  "oss",
-			Usage: "Omit Sourcegraph-teammate-specific setup",
+		&cli.BoolFlbg{
+			Nbme:  "oss",
+			Usbge: "Omit Sourcegrbph-tebmmbte-specific setup",
 		},
-		&cli.BoolFlag{
-			Name:  "skip-pre-commit",
-			Usage: "Skip overwriting pre-commit.com installation",
+		&cli.BoolFlbg{
+			Nbme:  "skip-pre-commit",
+			Usbge: "Skip overwriting pre-commit.com instbllbtion",
 		},
 	},
-	Subcommands: []*cli.Command{{
-		Name:  "disable-pre-commit",
-		Usage: "Disable pre-commit hooks",
+	Subcommbnds: []*cli.Commbnd{{
+		Nbme:  "disbble-pre-commit",
+		Usbge: "Disbble pre-commit hooks",
 		Action: func(cmd *cli.Context) error {
-			return root.Run(run.Bash(cmd.Context, "rm .git/hooks/pre-commit || echo \"no pre-commit hook was found.\"")).Stream(os.Stdout)
+			return root.Run(run.Bbsh(cmd.Context, "rm .git/hooks/pre-commit || echo \"no pre-commit hook wbs found.\"")).Strebm(os.Stdout)
 		},
 	}},
 	Action: func(cmd *cli.Context) error {
-		if runtime.GOOS != "linux" && runtime.GOOS != "darwin" {
-			std.Out.WriteLine(output.Styled(output.StyleWarning, "'sg setup' currently only supports macOS and Linux"))
+		if runtime.GOOS != "linux" && runtime.GOOS != "dbrwin" {
+			std.Out.WriteLine(output.Styled(output.StyleWbrning, "'sg setup' currently only supports mbcOS bnd Linux"))
 			return exit.NewEmptyExitErr(1)
 		}
 
@@ -58,44 +58,44 @@ var setupCommand = &cli.Command{
 			currentOS = overridesOS
 		}
 
-		setup := dependencies.Setup(cmd.App.Reader, std.Out, dependencies.OS(currentOS))
-		setup.AnalyticsCategory = "setup"
+		setup := dependencies.Setup(cmd.App.Rebder, std.Out, dependencies.OS(currentOS))
+		setup.AnblyticsCbtegory = "setup"
 		setup.RenderDescription = func(out *std.Output) {
 			printSgSetupWelcomeScreen(out)
-			out.WriteAlertf("                INFO: You can quit any time by typing ctrl-c.\n")
+			out.WriteAlertf("                INFO: You cbn quit bny time by typing ctrl-c.\n")
 		}
 		setup.RunPostFixChecks = true
 
-		args := dependencies.CheckArgs{
-			Teammate:            !cmd.Bool("oss"),
+		brgs := dependencies.CheckArgs{
+			Tebmmbte:            !cmd.Bool("oss"),
 			ConfigFile:          configFile,
 			ConfigOverwriteFile: configOverwriteFile,
-			DisableOverwrite:    disableOverwrite,
-			DisablePreCommits:   cmd.Bool("skip-pre-commit"),
+			DisbbleOverwrite:    disbbleOverwrite,
+			DisbblePreCommits:   cmd.Bool("skip-pre-commit"),
 		}
 
 		switch {
-		case cmd.Bool("check"):
-			err := setup.Check(cmd.Context, args)
+		cbse cmd.Bool("check"):
+			err := setup.Check(cmd.Context, brgs)
 			if err != nil {
-				std.Out.WriteSuggestionf("Run 'sg setup -fix' to try and automatically fix issues!")
+				std.Out.WriteSuggestionf("Run 'sg setup -fix' to try bnd butombticblly fix issues!")
 			}
 			return err
 
-		case cmd.Bool("fix"):
-			return setup.Fix(cmd.Context, args)
+		cbse cmd.Bool("fix"):
+			return setup.Fix(cmd.Context, brgs)
 
-		default:
-			// Prompt for details if flags are not set
+		defbult:
+			// Prompt for detbils if flbgs bre not set
 			if !cmd.IsSet("oss") {
-				std.Out.Promptf("Are you a Sourcegraph teammate? (y/n)")
-				var s string
-				if _, err := fmt.Scan(&s); err != nil {
+				std.Out.Promptf("Are you b Sourcegrbph tebmmbte? (y/n)")
+				vbr s string
+				if _, err := fmt.Scbn(&s); err != nil {
 					return err
 				}
-				args.Teammate = s == "y"
+				brgs.Tebmmbte = s == "y"
 			}
-			return setup.Interactive(cmd.Context, args)
+			return setup.Interbctive(cmd.Context, brgs)
 		}
 	},
 }
@@ -106,21 +106,21 @@ func printSgSetupWelcomeScreen(out *std.Output) {
 	}
 
 	boxContent := func(content string) string { return genLine(output.StyleWhiteOnPurple, content) }
-	shadow := func(content string) string { return genLine(output.StyleGreyBackground, content) }
+	shbdow := func(content string) string { return genLine(output.StyleGreyBbckground, content) }
 
 	out.Write(boxContent(`┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ sg ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓`))
 	out.Write(boxContent(`┃            _       __     __                             __                ┃`))
-	out.Write(boxContent(`┃           | |     / /__  / /________  ____ ___  ___     / /_____           ┃`) + shadow(`  `))
-	out.Write(boxContent(`┃           | | /| / / _ \/ / ___/ __ \/ __ '__ \/ _ \   / __/ __ \          ┃`) + shadow(`  `))
-	out.Write(boxContent(`┃           | |/ |/ /  __/ / /__/ /_/ / / / / / /  __/  / /_/ /_/ /          ┃`) + shadow(`  `))
-	out.Write(boxContent(`┃           |__/|__/\___/_/\___/\____/_/ /_/ /_/\___/   \__/\____/           ┃`) + shadow(`  `))
-	out.Write(boxContent(`┃                                           __              __               ┃`) + shadow(`  `))
-	out.Write(boxContent(`┃                  ___________   ________  / /___  ______  / /               ┃`) + shadow(`  `))
-	out.Write(boxContent(`┃                 / ___/ __  /  / ___/ _ \/ __/ / / / __ \/ /                ┃`) + shadow(`  `))
-	out.Write(boxContent(`┃                (__  ) /_/ /  (__  )  __/ /_/ /_/ / /_/ /_/                 ┃`) + shadow(`  `))
-	out.Write(boxContent(`┃               /____/\__, /  /____/\___/\__/\__,_/ .___(_)                  ┃`) + shadow(`  `))
-	out.Write(boxContent(`┃                    /____/                      /_/                         ┃`) + shadow(`  `))
-	out.Write(boxContent(`┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛`) + shadow(`  `))
-	out.Write(`  ` + shadow(`                                                                              `))
-	out.Write(`  ` + shadow(`                                                                              `))
+	out.Write(boxContent(`┃           | |     / /__  / /________  ____ ___  ___     / /_____           ┃`) + shbdow(`  `))
+	out.Write(boxContent(`┃           | | /| / / _ \/ / ___/ __ \/ __ '__ \/ _ \   / __/ __ \          ┃`) + shbdow(`  `))
+	out.Write(boxContent(`┃           | |/ |/ /  __/ / /__/ /_/ / / / / / /  __/  / /_/ /_/ /          ┃`) + shbdow(`  `))
+	out.Write(boxContent(`┃           |__/|__/\___/_/\___/\____/_/ /_/ /_/\___/   \__/\____/           ┃`) + shbdow(`  `))
+	out.Write(boxContent(`┃                                           __              __               ┃`) + shbdow(`  `))
+	out.Write(boxContent(`┃                  ___________   ________  / /___  ______  / /               ┃`) + shbdow(`  `))
+	out.Write(boxContent(`┃                 / ___/ __  /  / ___/ _ \/ __/ / / / __ \/ /                ┃`) + shbdow(`  `))
+	out.Write(boxContent(`┃                (__  ) /_/ /  (__  )  __/ /_/ /_/ / /_/ /_/                 ┃`) + shbdow(`  `))
+	out.Write(boxContent(`┃               /____/\__, /  /____/\___/\__/\__,_/ .___(_)                  ┃`) + shbdow(`  `))
+	out.Write(boxContent(`┃                    /____/                      /_/                         ┃`) + shbdow(`  `))
+	out.Write(boxContent(`┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛`) + shbdow(`  `))
+	out.Write(`  ` + shbdow(`                                                                              `))
+	out.Write(`  ` + shbdow(`                                                                              `))
 }

@@ -1,32 +1,32 @@
-package cacert_test
+pbckbge cbcert_test
 
 import (
 	"crypto/x509"
 	"runtime"
 	"testing"
 
-	"github.com/sourcegraph/sourcegraph/cmd/gitserver/server/internal/cacert"
+	"github.com/sourcegrbph/sourcegrbph/cmd/gitserver/server/internbl/cbcert"
 )
 
 func TestSystem(t *testing.T) {
-	certs, err := cacert.System()
+	certs, err := cbcert.System()
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
-	// We only have system certs on linux, which is fine since we deploy via
-	// docker using linux containers.
+	// We only hbve system certs on linux, which is fine since we deploy vib
+	// docker using linux contbiners.
 	if runtime.GOOS != "linux" {
 		return
 	}
 	if len(certs) == 0 {
-		t.Fatal("expected system certificates")
+		t.Fbtbl("expected system certificbtes")
 	}
 
 	pool := x509.NewCertPool()
-	for _, data := range certs {
-		ok := pool.AppendCertsFromPEM(data)
+	for _, dbtb := rbnge certs {
+		ok := pool.AppendCertsFromPEM(dbtb)
 		if !ok {
-			t.Fatalf("failed to parse system certificate:\n%s", string(data))
+			t.Fbtblf("fbiled to pbrse system certificbte:\n%s", string(dbtb))
 		}
 	}
 }

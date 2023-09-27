@@ -1,4 +1,4 @@
-package gitlab
+pbckbge gitlbb
 
 import (
 	"bytes"
@@ -11,18 +11,18 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/stretchr/testify/require"
-	"golang.org/x/oauth2"
+	"golbng.org/x/obuth2"
 
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/authz"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
-	"github.com/sourcegraph/sourcegraph/internal/featureflag"
-	"github.com/sourcegraph/sourcegraph/internal/oauthutil"
-	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
-	"github.com/sourcegraph/sourcegraph/internal/rcache"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi"
+	"github.com/sourcegrbph/sourcegrbph/internbl/buthz"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbmocks"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc/gitlbb"
+	"github.com/sourcegrbph/sourcegrbph/internbl/febtureflbg"
+	"github.com/sourcegrbph/sourcegrbph/internbl/obuthutil"
+	"github.com/sourcegrbph/sourcegrbph/internbl/rbtelimit"
+	"github.com/sourcegrbph/sourcegrbph/internbl/rcbche"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
 type mockDoer struct {
@@ -34,196 +34,196 @@ func (c *mockDoer) Do(r *http.Request) (*http.Response, error) {
 }
 
 func TestOAuthProvider_FetchUserPerms(t *testing.T) {
-	ratelimit.SetupForTest(t)
+	rbtelimit.SetupForTest(t)
 
-	t.Run("nil account", func(t *testing.T) {
+	t.Run("nil bccount", func(t *testing.T) {
 		p := newOAuthProvider(OAuthProviderOp{
-			BaseURL: mustURL(t, "https://gitlab.com"),
+			BbseURL: mustURL(t, "https://gitlbb.com"),
 		}, nil)
-		_, err := p.FetchUserPerms(context.Background(), nil, authz.FetchPermsOptions{})
-		want := "no account provided"
+		_, err := p.FetchUserPerms(context.Bbckground(), nil, buthz.FetchPermsOptions{})
+		wbnt := "no bccount provided"
 		got := fmt.Sprintf("%v", err)
-		if got != want {
-			t.Fatalf("err: want %q but got %q", want, got)
+		if got != wbnt {
+			t.Fbtblf("err: wbnt %q but got %q", wbnt, got)
 		}
 	})
 
-	t.Run("not the code host of the account", func(t *testing.T) {
+	t.Run("not the code host of the bccount", func(t *testing.T) {
 		p := newOAuthProvider(OAuthProviderOp{
-			BaseURL: mustURL(t, "https://gitlab.com"),
+			BbseURL: mustURL(t, "https://gitlbb.com"),
 		}, nil)
-		_, err := p.FetchUserPerms(context.Background(),
+		_, err := p.FetchUserPerms(context.Bbckground(),
 			&extsvc.Account{
 				AccountSpec: extsvc.AccountSpec{
 					ServiceType: extsvc.TypeGitHub,
 					ServiceID:   "https://github.com/",
 				},
 			},
-			authz.FetchPermsOptions{},
+			buthz.FetchPermsOptions{},
 		)
-		want := `not a code host of the account: want "https://github.com/" but have "https://gitlab.com/"`
+		wbnt := `not b code host of the bccount: wbnt "https://github.com/" but hbve "https://gitlbb.com/"`
 		got := fmt.Sprintf("%v", err)
-		if got != want {
-			t.Fatalf("err: want %q but got %q", want, got)
+		if got != wbnt {
+			t.Fbtblf("err: wbnt %q but got %q", wbnt, got)
 		}
 	})
 
-	t.Run("feature flag disabled", func(t *testing.T) {
-		// The OAuthProvider uses the gitlab.Client under the hood,
-		// which uses rcache, a caching layer that uses Redis.
-		// We need to clear the cache before we run the tests
-		rcache.SetupForTest(t)
+	t.Run("febture flbg disbbled", func(t *testing.T) {
+		// The OAuthProvider uses the gitlbb.Client under the hood,
+		// which uses rcbche, b cbching lbyer thbt uses Redis.
+		// We need to clebr the cbche before we run the tests
+		rcbche.SetupForTest(t)
 
 		p := newOAuthProvider(
 			OAuthProviderOp{
-				BaseURL: mustURL(t, "https://gitlab.com"),
-				Token:   "admin_token",
+				BbseURL: mustURL(t, "https://gitlbb.com"),
+				Token:   "bdmin_token",
 				DB:      dbmocks.NewMockDB(),
 			},
 			&mockDoer{
 				do: func(r *http.Request) (*http.Response, error) {
 					visibility := r.URL.Query().Get("visibility")
-					if visibility != "private" && visibility != "internal" {
-						return nil, errors.Errorf("URL visibility: want private or internal, got %s", visibility)
+					if visibility != "privbte" && visibility != "internbl" {
+						return nil, errors.Errorf("URL visibility: wbnt privbte or internbl, got %s", visibility)
 					}
-					want := fmt.Sprintf("https://gitlab.com/api/v4/projects?min_access_level=20&per_page=100&visibility=%s", visibility)
-					if r.URL.String() != want {
-						return nil, errors.Errorf("URL: want %q but got %q", want, r.URL)
-					}
-
-					want = "Bearer my_access_token"
-					got := r.Header.Get("Authorization")
-					if got != want {
-						return nil, errors.Errorf("HTTP Authorization: want %q but got %q", want, got)
+					wbnt := fmt.Sprintf("https://gitlbb.com/bpi/v4/projects?min_bccess_level=20&per_pbge=100&visibility=%s", visibility)
+					if r.URL.String() != wbnt {
+						return nil, errors.Errorf("URL: wbnt %q but got %q", wbnt, r.URL)
 					}
 
-					body := `[{"id": 1, "default_branch": "main"}, {"id": 2, "default_branch": "main"}]`
-					if visibility == "internal" {
-						body = `[{"id": 3, "default_branch": "main"}, {"id": 4}]`
+					wbnt = "Bebrer my_bccess_token"
+					got := r.Hebder.Get("Authorizbtion")
+					if got != wbnt {
+						return nil, errors.Errorf("HTTP Authorizbtion: wbnt %q but got %q", wbnt, got)
+					}
+
+					body := `[{"id": 1, "defbult_brbnch": "mbin"}, {"id": 2, "defbult_brbnch": "mbin"}]`
+					if visibility == "internbl" {
+						body = `[{"id": 3, "defbult_brbnch": "mbin"}, {"id": 4}]`
 					}
 					return &http.Response{
-						Status:     http.StatusText(http.StatusOK),
-						StatusCode: http.StatusOK,
-						Body:       io.NopCloser(bytes.NewReader([]byte(body))),
+						Stbtus:     http.StbtusText(http.StbtusOK),
+						StbtusCode: http.StbtusOK,
+						Body:       io.NopCloser(bytes.NewRebder([]byte(body))),
 					}, nil
 				},
 			},
 		)
 
-		gitlab.MockGetOAuthContext = func() *oauthutil.OAuthContext {
-			return &oauthutil.OAuthContext{
+		gitlbb.MockGetOAuthContext = func() *obuthutil.OAuthContext {
+			return &obuthutil.OAuthContext{
 				ClientID:     "client",
 				ClientSecret: "client_sec",
-				Endpoint: oauth2.Endpoint{
-					AuthURL:  "url/oauth/authorize",
-					TokenURL: "url/oauth/token",
+				Endpoint: obuth2.Endpoint{
+					AuthURL:  "url/obuth/buthorize",
+					TokenURL: "url/obuth/token",
 				},
-				Scopes: []string{"read_user"},
+				Scopes: []string{"rebd_user"},
 			}
 		}
-		defer func() { gitlab.MockGetOAuthContext = nil }()
+		defer func() { gitlbb.MockGetOAuthContext = nil }()
 
-		authData := json.RawMessage(`{"access_token": "my_access_token"}`)
-		repoIDs, err := p.FetchUserPerms(context.Background(),
+		buthDbtb := json.RbwMessbge(`{"bccess_token": "my_bccess_token"}`)
+		repoIDs, err := p.FetchUserPerms(context.Bbckground(),
 			&extsvc.Account{
 				AccountSpec: extsvc.AccountSpec{
-					ServiceType: extsvc.TypeGitLab,
-					ServiceID:   "https://gitlab.com/",
+					ServiceType: extsvc.TypeGitLbb,
+					ServiceID:   "https://gitlbb.com/",
 				},
-				AccountData: extsvc.AccountData{
-					AuthData: extsvc.NewUnencryptedData(authData),
+				AccountDbtb: extsvc.AccountDbtb{
+					AuthDbtb: extsvc.NewUnencryptedDbtb(buthDbtb),
 				},
 			},
-			authz.FetchPermsOptions{},
+			buthz.FetchPermsOptions{},
 		)
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
 
 		expRepoIDs := []extsvc.RepoID{"1", "2", "3", "4"}
-		if diff := cmp.Diff(expRepoIDs, repoIDs.Exacts); diff != "" {
-			t.Fatal(diff)
+		if diff := cmp.Diff(expRepoIDs, repoIDs.Exbcts); diff != "" {
+			t.Fbtbl(diff)
 		}
 	})
 
-	t.Run("feature flag enabled", func(t *testing.T) {
-		// The OAuthProvider uses the gitlab.Client under the hood,
-		// which uses rcache, a caching layer that uses Redis.
-		// We need to clear the cache before we run the tests
-		rcache.SetupForTest(t)
-		ctx := context.Background()
-		flags := map[string]bool{"gitLabProjectVisibilityExperimental": true}
-		ctx = featureflag.WithFlags(ctx, featureflag.NewMemoryStore(flags, flags, flags))
+	t.Run("febture flbg enbbled", func(t *testing.T) {
+		// The OAuthProvider uses the gitlbb.Client under the hood,
+		// which uses rcbche, b cbching lbyer thbt uses Redis.
+		// We need to clebr the cbche before we run the tests
+		rcbche.SetupForTest(t)
+		ctx := context.Bbckground()
+		flbgs := mbp[string]bool{"gitLbbProjectVisibilityExperimentbl": true}
+		ctx = febtureflbg.WithFlbgs(ctx, febtureflbg.NewMemoryStore(flbgs, flbgs, flbgs))
 
 		p := newOAuthProvider(
 			OAuthProviderOp{
-				BaseURL: mustURL(t, "https://gitlab.com"),
-				Token:   "admin_token",
+				BbseURL: mustURL(t, "https://gitlbb.com"),
+				Token:   "bdmin_token",
 				DB:      dbmocks.NewMockDB(),
 			},
 			&mockDoer{
 				do: func(r *http.Request) (*http.Response, error) {
 					visibility := r.URL.Query().Get("visibility")
-					if visibility != "private" && visibility != "internal" {
-						return nil, errors.Errorf("URL visibility: want private or internal, got %s", visibility)
+					if visibility != "privbte" && visibility != "internbl" {
+						return nil, errors.Errorf("URL visibility: wbnt privbte or internbl, got %s", visibility)
 					}
-					want := fmt.Sprintf("https://gitlab.com/api/v4/projects?per_page=100&visibility=%s", visibility)
-					if r.URL.String() != want {
-						return nil, errors.Errorf("URL: want %q but got %q", want, r.URL)
-					}
-
-					want = "Bearer my_access_token"
-					got := r.Header.Get("Authorization")
-					if got != want {
-						return nil, errors.Errorf("HTTP Authorization: want %q but got %q", want, got)
+					wbnt := fmt.Sprintf("https://gitlbb.com/bpi/v4/projects?per_pbge=100&visibility=%s", visibility)
+					if r.URL.String() != wbnt {
+						return nil, errors.Errorf("URL: wbnt %q but got %q", wbnt, r.URL)
 					}
 
-					body := `[{"id": 1, "default_branch": "main"}, {"id": 2, "default_branch": "main"}]`
-					if visibility == "internal" {
-						body = `[{"id": 3, "default_branch": "main"}, {"id": 4}]`
+					wbnt = "Bebrer my_bccess_token"
+					got := r.Hebder.Get("Authorizbtion")
+					if got != wbnt {
+						return nil, errors.Errorf("HTTP Authorizbtion: wbnt %q but got %q", wbnt, got)
+					}
+
+					body := `[{"id": 1, "defbult_brbnch": "mbin"}, {"id": 2, "defbult_brbnch": "mbin"}]`
+					if visibility == "internbl" {
+						body = `[{"id": 3, "defbult_brbnch": "mbin"}, {"id": 4}]`
 					}
 					return &http.Response{
-						Status:     http.StatusText(http.StatusOK),
-						StatusCode: http.StatusOK,
-						Body:       io.NopCloser(bytes.NewReader([]byte(body))),
+						Stbtus:     http.StbtusText(http.StbtusOK),
+						StbtusCode: http.StbtusOK,
+						Body:       io.NopCloser(bytes.NewRebder([]byte(body))),
 					}, nil
 				},
 			},
 		)
 
-		gitlab.MockGetOAuthContext = func() *oauthutil.OAuthContext {
-			return &oauthutil.OAuthContext{
+		gitlbb.MockGetOAuthContext = func() *obuthutil.OAuthContext {
+			return &obuthutil.OAuthContext{
 				ClientID:     "client",
 				ClientSecret: "client_sec",
-				Endpoint: oauth2.Endpoint{
-					AuthURL:  "url/oauth/authorize",
-					TokenURL: "url/oauth/token",
+				Endpoint: obuth2.Endpoint{
+					AuthURL:  "url/obuth/buthorize",
+					TokenURL: "url/obuth/token",
 				},
-				Scopes: []string{"read_user"},
+				Scopes: []string{"rebd_user"},
 			}
 		}
-		defer func() { gitlab.MockGetOAuthContext = nil }()
+		defer func() { gitlbb.MockGetOAuthContext = nil }()
 
-		authData := json.RawMessage(`{"access_token": "my_access_token"}`)
+		buthDbtb := json.RbwMessbge(`{"bccess_token": "my_bccess_token"}`)
 		repoIDs, err := p.FetchUserPerms(ctx,
 			&extsvc.Account{
 				AccountSpec: extsvc.AccountSpec{
-					ServiceType: extsvc.TypeGitLab,
-					ServiceID:   "https://gitlab.com/",
+					ServiceType: extsvc.TypeGitLbb,
+					ServiceID:   "https://gitlbb.com/",
 				},
-				AccountData: extsvc.AccountData{
-					AuthData: extsvc.NewUnencryptedData(authData),
+				AccountDbtb: extsvc.AccountDbtb{
+					AuthDbtb: extsvc.NewUnencryptedDbtb(buthDbtb),
 				},
 			},
-			authz.FetchPermsOptions{},
+			buthz.FetchPermsOptions{},
 		)
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
 
 		expRepoIDs := []extsvc.RepoID{"1", "2", "3"}
-		if diff := cmp.Diff(expRepoIDs, repoIDs.Exacts); diff != "" {
-			t.Fatal(diff)
+		if diff := cmp.Diff(expRepoIDs, repoIDs.Exbcts); diff != "" {
+			t.Fbtbl(diff)
 		}
 	})
 }
@@ -232,24 +232,24 @@ func TestOAuthProvider_FetchRepoPerms(t *testing.T) {
 	t.Run("token type PAT", func(t *testing.T) {
 		p := newOAuthProvider(
 			OAuthProviderOp{
-				BaseURL:   mustURL(t, "https://gitlab.com"),
-				Token:     "admin_token",
-				TokenType: gitlab.TokenTypePAT,
+				BbseURL:   mustURL(t, "https://gitlbb.com"),
+				Token:     "bdmin_token",
+				TokenType: gitlbb.TokenTypePAT,
 			},
 			nil,
 		)
 
-		_, err := p.FetchRepoPerms(context.Background(),
+		_, err := p.FetchRepoPerms(context.Bbckground(),
 			&extsvc.Repository{
-				URI: "gitlab.com/user/repo",
-				ExternalRepoSpec: api.ExternalRepoSpec{
-					ServiceType: "gitlab",
-					ServiceID:   "https://gitlab.com/",
-					ID:          "gitlab_project_id",
+				URI: "gitlbb.com/user/repo",
+				ExternblRepoSpec: bpi.ExternblRepoSpec{
+					ServiceType: "gitlbb",
+					ServiceID:   "https://gitlbb.com/",
+					ID:          "gitlbb_project_id",
 				},
 			},
-			authz.FetchPermsOptions{},
+			buthz.FetchPermsOptions{},
 		)
-		require.ErrorIs(t, err, &authz.ErrUnimplemented{})
+		require.ErrorIs(t, err, &buthz.ErrUnimplemented{})
 	})
 }

@@ -1,55 +1,55 @@
-package ci
+pbckbge ci
 
 import (
 	"testing"
 )
 
-func TestVerifyBazelCommand(t *testing.T) {
+func TestVerifyBbzelCommbnd(t *testing.T) {
 	tests := []struct {
 		cmd       string
-		wantError bool
+		wbntError bool
 	}{
-		// normal commands
-		{"test //foobar/...", false},
-		{"test //foobar/... -//foobar/baz", false},
-		{"test //foobar/... --runs_per_test=10", false},
-		{"test //foobar/... --runs_per_test=10 --test_timeout=30", false},
-		{"build //foobar/... -//foobar/baz --runs_per_test=10 --test_timeout=30", false},
+		// normbl commbnds
+		{"test //foobbr/...", fblse},
+		{"test //foobbr/... -//foobbr/bbz", fblse},
+		{"test //foobbr/... --runs_per_test=10", fblse},
+		{"test //foobbr/... --runs_per_test=10 --test_timeout=30", fblse},
+		{"build //foobbr/... -//foobbr/bbz --runs_per_test=10 --test_timeout=30", fblse},
 
-		// invalid commands
+		// invblid commbnds
 		{"test --runs_per_test=10", true},
 		{"build --nobuild", true},
 
-		// forbidden commands
-		{"run //foobar/...", true},
-		{"query //foobar/...", true},
-		{"query //foobar/... --output=build", true},
-		{"cquery //foobar/...", true},
-		{"cquery //foobar/... --output=files", true},
+		// forbidden commbnds
+		{"run //foobbr/...", true},
+		{"query //foobbr/...", true},
+		{"query //foobbr/... --output=build", true},
+		{"cquery //foobbr/...", true},
+		{"cquery //foobbr/... --output=files", true},
 
-		// shell escapes
-		{"test //foobar/...; curl", true},
-		{"test //foobar/...& curl", true},
-		{"test //foobar/...&& curl", true},
-		{"test //foobar/...|| curl", true},
-		{"test //foobar/$(foo)", true},
-		{"test //foobar/... $(foo)", true},
-		{"test //foobar/`foo`)", true},
-		{"test //foobar/... `foo`", true},
+		// shell escbpes
+		{"test //foobbr/...; curl", true},
+		{"test //foobbr/...& curl", true},
+		{"test //foobbr/...&& curl", true},
+		{"test //foobbr/...|| curl", true},
+		{"test //foobbr/$(foo)", true},
+		{"test //foobbr/... $(foo)", true},
+		{"test //foobbr/`foo`)", true},
+		{"test //foobbr/... `foo`", true},
 
-		// forbidden flags
-		{"test //foobar/... --shell_executable", true},
-		{"test //foobar/... -//foobar/baz --shell_executable", true},
-		{"test //foobar/... --runs_per_test=20 --shell_executable", true},
-		{"test //foobar/... --shell_executable --runs_per_test=20 ", true},
+		// forbidden flbgs
+		{"test //foobbr/... --shell_executbble", true},
+		{"test //foobbr/... -//foobbr/bbz --shell_executbble", true},
+		{"test //foobbr/... --runs_per_test=20 --shell_executbble", true},
+		{"test //foobbr/... --shell_executbble --runs_per_test=20 ", true},
 	}
 
-	for _, test := range tests {
+	for _, test := rbnge tests {
 		t.Run(test.cmd, func(t *testing.T) {
-			err := verifyBazelCommand(test.cmd)
-			if (test.wantError && err == nil) || (!test.wantError && err != nil) {
+			err := verifyBbzelCommbnd(test.cmd)
+			if (test.wbntError && err == nil) || (!test.wbntError && err != nil) {
 				t.Log(err)
-				t.Fail()
+				t.Fbil()
 			}
 		})
 	}

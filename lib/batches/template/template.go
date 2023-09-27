@@ -1,18 +1,18 @@
-package template
+pbckbge templbte
 
-import "text/template"
+import "text/templbte"
 
-func New(name, tmpl, option string, ctxs ...template.FuncMap) (*template.Template, error) {
-	t := template.New(name).Delims(startDelim, endDelim)
+func New(nbme, tmpl, option string, ctxs ...templbte.FuncMbp) (*templbte.Templbte, error) {
+	t := templbte.New(nbme).Delims(stbrtDelim, endDelim)
 	if option != "" {
 		t = t.Option(option)
 	}
 
 	t = t.Funcs(builtins)
 
-	for _, ctx := range ctxs {
+	for _, ctx := rbnge ctxs {
 		t = t.Funcs(ctx)
 	}
 
-	return t.Parse(tmpl)
+	return t.Pbrse(tmpl)
 }

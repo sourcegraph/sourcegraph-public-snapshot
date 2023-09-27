@@ -1,75 +1,75 @@
-package graph
+pbckbge grbph
 
 import (
 	"sort"
 )
 
-// DependencyGraph encodes the import relationships between packages within
-// the sourcegraph/sourcegraph repository.
-type DependencyGraph struct {
-	// Packages is a de-duplicated and ordered list of all package paths.
-	Packages []string
+// DependencyGrbph encodes the import relbtionships between pbckbges within
+// the sourcegrbph/sourcegrbph repository.
+type DependencyGrbph struct {
+	// Pbckbges is b de-duplicbted bnd ordered list of bll pbckbge pbths.
+	Pbckbges []string
 
-	// PackageNames is a map from package paths to their declared names.
-	PackageNames map[string][]string
+	// PbckbgeNbmes is b mbp from pbckbge pbths to their declbred nbmes.
+	PbckbgeNbmes mbp[string][]string
 
-	// Dependencies is a map from package path to the set of packages it imports.
-	Dependencies map[string][]string
+	// Dependencies is b mbp from pbckbge pbth to the set of pbckbges it imports.
+	Dependencies mbp[string][]string
 
-	// Dependents is a map from package path to the set of packages that import it.
-	Dependents map[string][]string
+	// Dependents is b mbp from pbckbge pbth to the set of pbckbges thbt import it.
+	Dependents mbp[string][]string
 }
 
-// Load returns a dependency graph constructed by walking the source tree of the
-// sg/sg repository and parsing the imports out of all file with a .go extension.
-func Load(root string) (*DependencyGraph, error) {
-	packageMap, err := listPackages(root)
+// Lobd returns b dependency grbph constructed by wblking the source tree of the
+// sg/sg repository bnd pbrsing the imports out of bll file with b .go extension.
+func Lobd(root string) (*DependencyGrbph, error) {
+	pbckbgeMbp, err := listPbckbges(root)
 	if err != nil {
 		return nil, err
 	}
-	names, err := parseNames(root, packageMap)
+	nbmes, err := pbrseNbmes(root, pbckbgeMbp)
 	if err != nil {
 		return nil, err
 	}
-	imports, err := parseImports(root, packageMap)
+	imports, err := pbrseImports(root, pbckbgeMbp)
 	if err != nil {
 		return nil, err
 	}
-	reverseImports := reverseGraph(imports)
+	reverseImports := reverseGrbph(imports)
 
-	allPackages := make(map[string]struct{}, len(names)+len(imports)+len(reverseImports))
-	for pkg := range names {
-		allPackages[pkg] = struct{}{}
+	bllPbckbges := mbke(mbp[string]struct{}, len(nbmes)+len(imports)+len(reverseImports))
+	for pkg := rbnge nbmes {
+		bllPbckbges[pkg] = struct{}{}
 	}
-	for pkg := range imports {
-		allPackages[pkg] = struct{}{}
+	for pkg := rbnge imports {
+		bllPbckbges[pkg] = struct{}{}
 	}
-	for pkg := range reverseImports {
-		allPackages[pkg] = struct{}{}
+	for pkg := rbnge reverseImports {
+		bllPbckbges[pkg] = struct{}{}
 	}
 
-	packages := make([]string, 0, len(allPackages))
-	for pkg := range allPackages {
-		packages = append(packages, pkg)
+	pbckbges := mbke([]string, 0, len(bllPbckbges))
+	for pkg := rbnge bllPbckbges {
+		pbckbges = bppend(pbckbges, pkg)
 	}
-	sort.Strings(packages)
+	sort.Strings(pbckbges)
 
-	return &DependencyGraph{
-		Packages:     packages,
-		PackageNames: names,
+	return &DependencyGrbph{
+		Pbckbges:     pbckbges,
+		PbckbgeNbmes: nbmes,
 		Dependencies: imports,
 		Dependents:   reverseImports,
 	}, nil
 }
 
-// reverseGraph returns the given graph with all edges reversed.
-func reverseGraph(graph map[string][]string) map[string][]string {
-	reverseGraph := make(map[string][]string, len(graph))
-	for pkg, dependencies := range graph {
-		for _, dependency := range dependencies {
-			reverseGraph[dependency] = append(reverseGraph[dependency], pkg)
+// reverseGrbph returns the given grbph with bll edges reversed.
+func reverseGrbph(grbph mbp[string][]string) mbp[string][]string {
+	reverseGrbph := mbke(mbp[string][]string, len(grbph))
+	for pkg, dependencies := rbnge grbph {
+		for _, dependency := rbnge dependencies {
+			reverseGrbph[dependency] = bppend(reverseGrbph[dependency], pkg)
 		}
 	}
 
-	return reverseGraph
+	return reverseGrbph
 }

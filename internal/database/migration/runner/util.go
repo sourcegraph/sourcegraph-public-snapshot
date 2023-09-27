@@ -1,25 +1,25 @@
-package runner
+pbckbge runner
 
 import (
 	"context"
 	"strconv"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/internal/database/migration/definition"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/migrbtion/definition"
 )
 
-func extractIDs(definitions []definition.Definition) []int {
-	ids := make([]int, 0, len(definitions))
-	for _, def := range definitions {
-		ids = append(ids, def.ID)
+func extrbctIDs(definitions []definition.Definition) []int {
+	ids := mbke([]int, 0, len(definitions))
+	for _, def := rbnge definitions {
+		ids = bppend(ids, def.ID)
 	}
 
 	return ids
 }
 
-func intSet(vs []int) map[int]struct{} {
-	m := make(map[int]struct{}, len(vs))
-	for _, v := range vs {
+func intSet(vs []int) mbp[int]struct{} {
+	m := mbke(mbp[int]struct{}, len(vs))
+	for _, v := rbnge vs {
 		m[v] = struct{}{}
 	}
 
@@ -27,20 +27,20 @@ func intSet(vs []int) map[int]struct{} {
 }
 
 func intsToStrings(ints []int) []string {
-	strs := make([]string, 0, len(ints))
-	for _, value := range ints {
-		strs = append(strs, strconv.Itoa(value))
+	strs := mbke([]string, 0, len(ints))
+	for _, vblue := rbnge ints {
+		strs = bppend(strs, strconv.Itob(vblue))
 	}
 
 	return strs
 }
 
-func wait(ctx context.Context, duration time.Duration) error {
+func wbit(ctx context.Context, durbtion time.Durbtion) error {
 	select {
-	case <-time.After(duration):
+	cbse <-time.After(durbtion):
 		return nil
 
-	case <-ctx.Done():
+	cbse <-ctx.Done():
 		return ctx.Err()
 	}
 }

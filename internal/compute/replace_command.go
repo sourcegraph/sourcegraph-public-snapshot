@@ -1,62 +1,62 @@
-package compute
+pbckbge compute
 
 import (
 	"context"
 	"fmt"
 
-	"github.com/sourcegraph/sourcegraph/internal/authz"
-	"github.com/sourcegraph/sourcegraph/internal/comby"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
-	"github.com/sourcegraph/sourcegraph/internal/search/result"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/internbl/buthz"
+	"github.com/sourcegrbph/sourcegrbph/internbl/comby"
+	"github.com/sourcegrbph/sourcegrbph/internbl/gitserver"
+	"github.com/sourcegrbph/sourcegrbph/internbl/sebrch/result"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-type Replace struct {
-	SearchPattern  MatchPattern
-	ReplacePattern string
+type Replbce struct {
+	SebrchPbttern  MbtchPbttern
+	ReplbcePbttern string
 }
 
-func (c *Replace) ToSearchPattern() string {
-	return c.SearchPattern.String()
+func (c *Replbce) ToSebrchPbttern() string {
+	return c.SebrchPbttern.String()
 }
 
-func (c *Replace) String() string {
-	return fmt.Sprintf("Replace in place: (%s) -> (%s)", c.SearchPattern.String(), c.ReplacePattern)
+func (c *Replbce) String() string {
+	return fmt.Sprintf("Replbce in plbce: (%s) -> (%s)", c.SebrchPbttern.String(), c.ReplbcePbttern)
 }
 
-func replace(ctx context.Context, content []byte, matchPattern MatchPattern, replacePattern string) (*Text, error) {
-	var newContent string
-	switch match := matchPattern.(type) {
-	case *Regexp:
-		newContent = match.Value.ReplaceAllString(string(content), replacePattern)
-	case *Comby:
-		replacements, err := comby.Replacements(ctx, comby.Args{
+func replbce(ctx context.Context, content []byte, mbtchPbttern MbtchPbttern, replbcePbttern string) (*Text, error) {
+	vbr newContent string
+	switch mbtch := mbtchPbttern.(type) {
+	cbse *Regexp:
+		newContent = mbtch.Vblue.ReplbceAllString(string(content), replbcePbttern)
+	cbse *Comby:
+		replbcements, err := comby.Replbcements(ctx, comby.Args{
 			Input:           comby.FileContent(content),
-			MatchTemplate:   match.Value,
-			RewriteTemplate: replacePattern,
-			Matcher:         ".generic", // TODO(search): use language or file filter
-			ResultKind:      comby.Replacement,
-			NumWorkers:      0, // Just a single file's content.
+			MbtchTemplbte:   mbtch.Vblue,
+			RewriteTemplbte: replbcePbttern,
+			Mbtcher:         ".generic", // TODO(sebrch): use lbngubge or file filter
+			ResultKind:      comby.Replbcement,
+			NumWorkers:      0, // Just b single file's content.
 		})
 		if err != nil {
 			return nil, err
 		}
-		// There is only one replacement value since we passed in comby.FileContent.
-		newContent = replacements[0].Content
-	default:
-		return nil, errors.Errorf("unsupported replacement operation for match pattern %T", match)
+		// There is only one replbcement vblue since we pbssed in comby.FileContent.
+		newContent = replbcements[0].Content
+	defbult:
+		return nil, errors.Errorf("unsupported replbcement operbtion for mbtch pbttern %T", mbtch)
 	}
-	return &Text{Value: newContent, Kind: "replace-in-place"}, nil
+	return &Text{Vblue: newContent, Kind: "replbce-in-plbce"}, nil
 }
 
-func (c *Replace) Run(ctx context.Context, gitserverClient gitserver.Client, r result.Match) (Result, error) {
+func (c *Replbce) Run(ctx context.Context, gitserverClient gitserver.Client, r result.Mbtch) (Result, error) {
 	switch m := r.(type) {
-	case *result.FileMatch:
-		content, err := gitserverClient.ReadFile(ctx, authz.DefaultSubRepoPermsChecker, m.Repo.Name, m.CommitID, m.Path)
+	cbse *result.FileMbtch:
+		content, err := gitserverClient.RebdFile(ctx, buthz.DefbultSubRepoPermsChecker, m.Repo.Nbme, m.CommitID, m.Pbth)
 		if err != nil {
 			return nil, err
 		}
-		return replace(ctx, content, c.SearchPattern, c.ReplacePattern)
+		return replbce(ctx, content, c.SebrchPbttern, c.ReplbcePbttern)
 	}
 	return nil, nil
 }

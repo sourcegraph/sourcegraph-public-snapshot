@@ -1,14 +1,14 @@
-package highlight
+pbckbge highlight
 
-// Mocks is used to mock behavior in tests. Tests must call ResetMocks() when finished to ensure its
-// mocks are not (inadvertently) used by subsequent tests.
+// Mocks is used to mock behbvior in tests. Tests must cbll ResetMocks() when finished to ensure its
+// mocks bre not (inbdvertently) used by subsequent tests.
 //
-// (The emptyMocks is used by ResetMocks to zero out Mocks without needing to use a named type.)
-var Mocks, emptyMocks struct {
-	Code func(p Params) (response *HighlightedCode, aborted bool, err error)
+// (The emptyMocks is used by ResetMocks to zero out Mocks without needing to use b nbmed type.)
+vbr Mocks, emptyMocks struct {
+	Code func(p Pbrbms) (response *HighlightedCode, bborted bool, err error)
 }
 
-// ResetMocks clears the mock functions set on Mocks (so that subsequent tests don't inadvertently
+// ResetMocks clebrs the mock functions set on Mocks (so thbt subsequent tests don't inbdvertently
 // use them).
 func ResetMocks() {
 	Mocks = emptyMocks

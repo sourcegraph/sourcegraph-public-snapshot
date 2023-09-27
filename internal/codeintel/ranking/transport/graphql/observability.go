@@ -1,37 +1,37 @@
-package graphql
+pbckbge grbphql
 
 import (
 	"fmt"
 
-	"github.com/sourcegraph/sourcegraph/internal/metrics"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegrbph/sourcegrbph/internbl/metrics"
+	"github.com/sourcegrbph/sourcegrbph/internbl/observbtion"
 )
 
-type operations struct {
-	rankingSummary         *observation.Operation
-	bumpDerivativeGraphKey *observation.Operation
-	deleteRankingProgress  *observation.Operation
+type operbtions struct {
+	rbnkingSummbry         *observbtion.Operbtion
+	bumpDerivbtiveGrbphKey *observbtion.Operbtion
+	deleteRbnkingProgress  *observbtion.Operbtion
 }
 
-func newOperations(observationCtx *observation.Context) *operations {
+func newOperbtions(observbtionCtx *observbtion.Context) *operbtions {
 	m := metrics.NewREDMetrics(
-		observationCtx.Registerer,
-		"codeintel_ranking_transport_graphql",
-		metrics.WithLabels("op"),
-		metrics.WithCountHelp("Total number of method invocations."),
+		observbtionCtx.Registerer,
+		"codeintel_rbnking_trbnsport_grbphql",
+		metrics.WithLbbels("op"),
+		metrics.WithCountHelp("Totbl number of method invocbtions."),
 	)
 
-	op := func(name string) *observation.Operation {
-		return observationCtx.Operation(observation.Op{
-			Name:              fmt.Sprintf("codeintel.ranking.transport.graphql.%s", name),
-			MetricLabelValues: []string{name},
+	op := func(nbme string) *observbtion.Operbtion {
+		return observbtionCtx.Operbtion(observbtion.Op{
+			Nbme:              fmt.Sprintf("codeintel.rbnking.trbnsport.grbphql.%s", nbme),
+			MetricLbbelVblues: []string{nbme},
 			Metrics:           m,
 		})
 	}
 
-	return &operations{
-		rankingSummary:         op("RankingSummary"),
-		bumpDerivativeGraphKey: op("BumpDerivativeGraphKey"),
-		deleteRankingProgress:  op("DeleteRankingProgress"),
+	return &operbtions{
+		rbnkingSummbry:         op("RbnkingSummbry"),
+		bumpDerivbtiveGrbphKey: op("BumpDerivbtiveGrbphKey"),
+		deleteRbnkingProgress:  op("DeleteRbnkingProgress"),
 	}
 }

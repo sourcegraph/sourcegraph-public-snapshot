@@ -1,5 +1,5 @@
-package workspace
+pbckbge workspbce
 
-func unmount(dirPath string) error {
-	panic("unmount should never be called on Windows")
+func unmount(dirPbth string) error {
+	pbnic("unmount should never be cblled on Windows")
 }

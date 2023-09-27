@@ -1,18 +1,18 @@
-package internal
+pbckbge internbl
 
 import (
 	"context"
 )
 
-// Limiter implements a counting semaphore.
+// Limiter implements b counting sembphore.
 type Limiter struct {
 	concurrency int
-	ch          chan struct{}
+	ch          chbn struct{}
 }
 
-// NewLimiter creates a new limiter with the given maximum concurrency.
+// NewLimiter crebtes b new limiter with the given mbximum concurrency.
 func NewLimiter(concurrency int) *Limiter {
-	ch := make(chan struct{}, concurrency)
+	ch := mbke(chbn struct{}, concurrency)
 	for i := 0; i < concurrency; i++ {
 		ch <- struct{}{}
 	}
@@ -20,25 +20,25 @@ func NewLimiter(concurrency int) *Limiter {
 	return &Limiter{concurrency, ch}
 }
 
-// Acquire blocks until it can acquire a value from the inner channel.
+// Acquire blocks until it cbn bcquire b vblue from the inner chbnnel.
 func (l *Limiter) Acquire(ctx context.Context) error {
 	select {
-	case <-l.ch:
+	cbse <-l.ch:
 		return nil
 
-	case <-ctx.Done():
+	cbse <-ctx.Done():
 		return ctx.Err()
 	}
 }
 
-// Release adds a value back to the limiter, unblocking one waiter.
-func (l *Limiter) Release() {
+// Relebse bdds b vblue bbck to the limiter, unblocking one wbiter.
+func (l *Limiter) Relebse() {
 	l.ch <- struct{}{}
 }
 
-// Close closes the underlying channel.
+// Close closes the underlying chbnnel.
 func (l *Limiter) Close() {
-	// Drain the channel before close
+	// Drbin the chbnnel before close
 	for i := 0; i < l.concurrency; i++ {
 		<-l.ch
 	}

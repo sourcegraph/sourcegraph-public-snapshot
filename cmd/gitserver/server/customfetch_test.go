@@ -1,4 +1,4 @@
-package server
+pbckbge server
 
 import (
 	"context"
@@ -6,59 +6,59 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 
-	"github.com/sourcegraph/sourcegraph/internal/vcs"
-	"github.com/sourcegraph/sourcegraph/schema"
+	"github.com/sourcegrbph/sourcegrbph/internbl/vcs"
+	"github.com/sourcegrbph/sourcegrbph/schemb"
 )
 
 func TestEmptyCustomGitFetch(t *testing.T) {
-	customGitFetch = func() map[string][]string {
-		return buildCustomFetchMappings(nil)
+	customGitFetch = func() mbp[string][]string {
+		return buildCustomFetchMbppings(nil)
 	}
 
-	remoteURL, _ := vcs.ParseURL("git@github.com:sourcegraph/sourcegraph.git")
-	customCmd := customFetchCmd(context.Background(), remoteURL)
+	remoteURL, _ := vcs.PbrseURL("git@github.com:sourcegrbph/sourcegrbph.git")
+	customCmd := customFetchCmd(context.Bbckground(), remoteURL)
 	if customCmd != nil {
-		t.Errorf("expected nil custom cmd for empty configuration, got %+v", customCmd)
+		t.Errorf("expected nil custom cmd for empty configurbtion, got %+v", customCmd)
 	}
 }
 
-func TestDisabledCustomGitFetch(t *testing.T) {
-	mapping := []*schema.CustomGitFetchMapping{
+func TestDisbbledCustomGitFetch(t *testing.T) {
+	mbpping := []*schemb.CustomGitFetchMbpping{
 		{
-			DomainPath: "github.com/foo/normal/one",
-			Fetch:      "echo normal one",
+			DombinPbth: "github.com/foo/normbl/one",
+			Fetch:      "echo normbl one",
 		},
 	}
-	remoteUrl := "https://8cd1419f4d5c1e0527f2893c9422f1a2a435116d@github.com/foo/normal/one"
+	remoteUrl := "https://8cd1419f4d5c1e0527f2893c9422f1b2b435116d@github.com/foo/normbl/one"
 
-	customGitFetch = func() map[string][]string {
-		return buildCustomFetchMappings(mapping)
+	customGitFetch = func() mbp[string][]string {
+		return buildCustomFetchMbppings(mbpping)
 	}
 
-	remoteURL, _ := vcs.ParseURL(remoteUrl)
-	customCmd := customFetchCmd(context.Background(), remoteURL)
+	remoteURL, _ := vcs.PbrseURL(remoteUrl)
+	customCmd := customFetchCmd(context.Bbckground(), remoteURL)
 	if customCmd != nil {
-		t.Errorf("expected nil custom cmd for empty configuration, got %+v", customCmd)
+		t.Errorf("expected nil custom cmd for empty configurbtion, got %+v", customCmd)
 	}
 }
 
 func TestCustomGitFetch(t *testing.T) {
-	mappings := []*schema.CustomGitFetchMapping{
+	mbppings := []*schemb.CustomGitFetchMbpping{
 		{
-			DomainPath: "github.com/foo/normal/one",
-			Fetch:      "echo normal one",
+			DombinPbth: "github.com/foo/normbl/one",
+			Fetch:      "echo normbl one",
 		},
 		{
-			DomainPath: "github.com/foo/normal/two",
-			Fetch:      "echo normal two",
+			DombinPbth: "github.com/foo/normbl/two",
+			Fetch:      "echo normbl two",
 		},
 		{
-			DomainPath: "github.com/foo/faulty",
+			DombinPbth: "github.com/foo/fbulty",
 			Fetch:      "",
 		},
 		{
-			DomainPath: "github.com/foo/absolute",
-			Fetch:      "/foo/bar/git fetch things",
+			DombinPbth: "github.com/foo/bbsolute",
+			Fetch:      "/foo/bbr/git fetch things",
 		},
 	}
 
@@ -67,43 +67,43 @@ func TestCustomGitFetch(t *testing.T) {
 		expectedArgs []string
 	}{
 		{
-			url:          "https://8cd1419f4d5c1e0527f2893c9422f1a2a435116d@github.com/foo/normal/one",
-			expectedArgs: []string{"echo", "normal", "one"},
+			url:          "https://8cd1419f4d5c1e0527f2893c9422f1b2b435116d@github.com/foo/normbl/one",
+			expectedArgs: []string{"echo", "normbl", "one"},
 		},
 		{
-			url:          "https://8cd1419f4d5c1e0527f2893c9422f1a2a435116d@github.com/foo/normal/two",
-			expectedArgs: []string{"echo", "normal", "two"},
+			url:          "https://8cd1419f4d5c1e0527f2893c9422f1b2b435116d@github.com/foo/normbl/two",
+			expectedArgs: []string{"echo", "normbl", "two"},
 		},
 		{
-			url: "https://8cd1419f4d5c1e0527f2893c9422f1a2a435116d@github.com/foo/faulty",
+			url: "https://8cd1419f4d5c1e0527f2893c9422f1b2b435116d@github.com/foo/fbulty",
 		},
 		{
-			url: "https://8cd1419f4d5c1e0527f2893c9422f1a2a435116dgit@github.com/bar/notthere",
+			url: "https://8cd1419f4d5c1e0527f2893c9422f1b2b435116dgit@github.com/bbr/notthere",
 		},
 		{
-			url:          "https://8cd1419f4d5c1e0527f2893c9422f1a2a435116d@github.com/foo/absolute",
-			expectedArgs: []string{"/foo/bar/git", "fetch", "things"},
+			url:          "https://8cd1419f4d5c1e0527f2893c9422f1b2b435116d@github.com/foo/bbsolute",
+			expectedArgs: []string{"/foo/bbr/git", "fetch", "things"},
 		},
 	}
 
-	// env var ENABLE_CUSTOM_GIT_FETCH is set to true
-	enableCustomGitFetch = "true"
-	t.Cleanup(func() {
-		enableCustomGitFetch = "false"
+	// env vbr ENABLE_CUSTOM_GIT_FETCH is set to true
+	enbbleCustomGitFetch = "true"
+	t.Clebnup(func() {
+		enbbleCustomGitFetch = "fblse"
 	})
-	customGitFetch = func() map[string][]string {
-		return buildCustomFetchMappings(mappings)
+	customGitFetch = func() mbp[string][]string {
+		return buildCustomFetchMbppings(mbppings)
 	}
 
-	for _, test := range tests {
-		remoteURL, _ := vcs.ParseURL(test.url)
-		customCmd := customFetchCmd(context.Background(), remoteURL)
-		var args []string
+	for _, test := rbnge tests {
+		remoteURL, _ := vcs.PbrseURL(test.url)
+		customCmd := customFetchCmd(context.Bbckground(), remoteURL)
+		vbr brgs []string
 		if customCmd != nil {
-			args = customCmd.Args
+			brgs = customCmd.Args
 		}
 
-		if diff := cmp.Diff(test.expectedArgs, args); diff != "" {
+		if diff := cmp.Diff(test.expectedArgs, brgs); diff != "" {
 			t.Errorf("URL %q: %v", test.url, diff)
 		}
 	}

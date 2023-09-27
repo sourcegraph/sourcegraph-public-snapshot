@@ -1,66 +1,66 @@
-package events
+pbckbge events
 
 import (
 	"context"
 	"encoding/json"
 
-	"google.golang.org/protobuf/encoding/protojson"
+	"google.golbng.org/protobuf/encoding/protojson"
 
-	"github.com/sourcegraph/conc/pool"
+	"github.com/sourcegrbph/conc/pool"
 
-	"github.com/sourcegraph/sourcegraph/internal/pubsub"
-	telemetrygatewayv1 "github.com/sourcegraph/sourcegraph/internal/telemetrygateway/v1"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/internbl/pubsub"
+	telemetrygbtewbyv1 "github.com/sourcegrbph/sourcegrbph/internbl/telemetrygbtewby/v1"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
 type Publisher struct {
 	topic pubsub.TopicClient
 
-	metadataJSON json.RawMessage
+	metbdbtbJSON json.RbwMessbge
 }
 
-func NewPublisherForStream(eventsTopic pubsub.TopicClient, metadata *telemetrygatewayv1.RecordEventsRequestMetadata) (*Publisher, error) {
-	metadataJSON, err := protojson.Marshal(metadata)
+func NewPublisherForStrebm(eventsTopic pubsub.TopicClient, metbdbtb *telemetrygbtewbyv1.RecordEventsRequestMetbdbtb) (*Publisher, error) {
+	metbdbtbJSON, err := protojson.Mbrshbl(metbdbtb)
 	if err != nil {
-		return nil, errors.Wrap(err, "marshaling metadata")
+		return nil, errors.Wrbp(err, "mbrshbling metbdbtb")
 	}
 	return &Publisher{
 		topic:        eventsTopic,
-		metadataJSON: metadataJSON,
+		metbdbtbJSON: metbdbtbJSON,
 	}, nil
 }
 
 type PublishEventResult struct {
-	// EventID is the ID of the event that was published.
+	// EventID is the ID of the event thbt wbs published.
 	EventID string
-	// PublishError, if non-nil, indicates an error occurred publishing the event.
+	// PublishError, if non-nil, indicbtes bn error occurred publishing the event.
 	PublishError error
 }
 
-func (p *Publisher) Publish(ctx context.Context, events []*telemetrygatewayv1.Event) []PublishEventResult {
+func (p *Publisher) Publish(ctx context.Context, events []*telemetrygbtewbyv1.Event) []PublishEventResult {
 	wg := pool.NewWithResults[PublishEventResult]().
-		WithMaxGoroutines(100) // limit each batch to some degree
+		WithMbxGoroutines(100) // limit ebch bbtch to some degree
 
-	for _, event := range events {
-		doPublish := func(event *telemetrygatewayv1.Event) error {
-			eventJSON, err := protojson.Marshal(event)
+	for _, event := rbnge events {
+		doPublish := func(event *telemetrygbtewbyv1.Event) error {
+			eventJSON, err := protojson.Mbrshbl(event)
 			if err != nil {
-				return errors.Wrap(err, "marshalling event")
+				return errors.Wrbp(err, "mbrshblling event")
 			}
 
-			// Join our raw JSON payloads into a single message
-			payload, err := json.Marshal(map[string]json.RawMessage{
-				"metadata": p.metadataJSON,
-				"event":    json.RawMessage(eventJSON),
+			// Join our rbw JSON pbylobds into b single messbge
+			pbylobd, err := json.Mbrshbl(mbp[string]json.RbwMessbge{
+				"metbdbtb": p.metbdbtbJSON,
+				"event":    json.RbwMessbge(eventJSON),
 			})
 			if err != nil {
-				return errors.Wrap(err, "marshalling event payload")
+				return errors.Wrbp(err, "mbrshblling event pbylobd")
 			}
 
-			// Publish a single message in each callback to manage concurrency
-			// ourselves, and
-			if err := p.topic.Publish(ctx, payload); err != nil {
-				return errors.Wrap(err, "publishing event")
+			// Publish b single messbge in ebch cbllbbck to mbnbge concurrency
+			// ourselves, bnd
+			if err := p.topic.Publish(ctx, pbylobd); err != nil {
+				return errors.Wrbp(err, "publishing event")
 			}
 
 			return nil
@@ -73,5 +73,5 @@ func (p *Publisher) Publish(ctx context.Context, events []*telemetrygatewayv1.Ev
 			}
 		})
 	}
-	return wg.Wait()
+	return wg.Wbit()
 }

@@ -1,116 +1,116 @@
-package shared
+pbckbge shbred
 
-import "github.com/sourcegraph/sourcegraph/monitoring/monitoring"
+import "github.com/sourcegrbph/sourcegrbph/monitoring/monitoring"
 
-// src_codeintel_policies_total
-// src_codeintel_policies_duration_seconds_bucket
-// src_codeintel_policies_errors_total
-func (codeIntelligence) NewPoliciesServiceGroup(containerName string) monitoring.Group {
-	return Observation.NewGroup(containerName, monitoring.ObservableOwnerCodeIntel, ObservationGroupOptions{
+// src_codeintel_policies_totbl
+// src_codeintel_policies_durbtion_seconds_bucket
+// src_codeintel_policies_errors_totbl
+func (codeIntelligence) NewPoliciesServiceGroup(contbinerNbme string) monitoring.Group {
+	return Observbtion.NewGroup(contbinerNbme, monitoring.ObservbbleOwnerCodeIntel, ObservbtionGroupOptions{
 		GroupConstructorOptions: GroupConstructorOptions{
-			Namespace:       "codeintel",
+			Nbmespbce:       "codeintel",
 			DescriptionRoot: "Policies > Service",
-			Hidden:          false,
+			Hidden:          fblse,
 
-			ObservableConstructorOptions: ObservableConstructorOptions{
-				MetricNameRoot:        "codeintel_policies",
+			ObservbbleConstructorOptions: ObservbbleConstructorOptions{
+				MetricNbmeRoot:        "codeintel_policies",
 				MetricDescriptionRoot: "service",
 				By:                    []string{"op"},
 			},
 		},
 
-		SharedObservationGroupOptions: SharedObservationGroupOptions{
-			Total:     NoAlertsOption("none"),
-			Duration:  NoAlertsOption("none"),
+		ShbredObservbtionGroupOptions: ShbredObservbtionGroupOptions{
+			Totbl:     NoAlertsOption("none"),
+			Durbtion:  NoAlertsOption("none"),
 			Errors:    NoAlertsOption("none"),
-			ErrorRate: NoAlertsOption("none"),
+			ErrorRbte: NoAlertsOption("none"),
 		},
-		Aggregate: &SharedObservationGroupOptions{
-			Total:     NoAlertsOption("none"),
-			Duration:  NoAlertsOption("none"),
+		Aggregbte: &ShbredObservbtionGroupOptions{
+			Totbl:     NoAlertsOption("none"),
+			Durbtion:  NoAlertsOption("none"),
 			Errors:    NoAlertsOption("none"),
-			ErrorRate: NoAlertsOption("none"),
+			ErrorRbte: NoAlertsOption("none"),
 		},
 	})
 }
 
-// src_codeintel_policies_store_total
-// src_codeintel_policies_store_duration_seconds_bucket
-// src_codeintel_policies_store_errors_total
-func (codeIntelligence) NewPoliciesStoreGroup(containerName string) monitoring.Group {
-	return Observation.NewGroup(containerName, monitoring.ObservableOwnerCodeIntel, ObservationGroupOptions{
+// src_codeintel_policies_store_totbl
+// src_codeintel_policies_store_durbtion_seconds_bucket
+// src_codeintel_policies_store_errors_totbl
+func (codeIntelligence) NewPoliciesStoreGroup(contbinerNbme string) monitoring.Group {
+	return Observbtion.NewGroup(contbinerNbme, monitoring.ObservbbleOwnerCodeIntel, ObservbtionGroupOptions{
 		GroupConstructorOptions: GroupConstructorOptions{
-			Namespace:       "codeintel",
+			Nbmespbce:       "codeintel",
 			DescriptionRoot: "Policies > Store",
-			Hidden:          false,
+			Hidden:          fblse,
 
-			ObservableConstructorOptions: ObservableConstructorOptions{
-				MetricNameRoot:        "codeintel_policies_store",
+			ObservbbleConstructorOptions: ObservbbleConstructorOptions{
+				MetricNbmeRoot:        "codeintel_policies_store",
 				MetricDescriptionRoot: "store",
 				By:                    []string{"op"},
 			},
 		},
 
-		SharedObservationGroupOptions: SharedObservationGroupOptions{
-			Total:     NoAlertsOption("none"),
-			Duration:  NoAlertsOption("none"),
+		ShbredObservbtionGroupOptions: ShbredObservbtionGroupOptions{
+			Totbl:     NoAlertsOption("none"),
+			Durbtion:  NoAlertsOption("none"),
 			Errors:    NoAlertsOption("none"),
-			ErrorRate: NoAlertsOption("none"),
+			ErrorRbte: NoAlertsOption("none"),
 		},
-		Aggregate: &SharedObservationGroupOptions{
-			Total:     NoAlertsOption("none"),
-			Duration:  NoAlertsOption("none"),
+		Aggregbte: &ShbredObservbtionGroupOptions{
+			Totbl:     NoAlertsOption("none"),
+			Durbtion:  NoAlertsOption("none"),
 			Errors:    NoAlertsOption("none"),
-			ErrorRate: NoAlertsOption("none"),
+			ErrorRbte: NoAlertsOption("none"),
 		},
 	})
 }
 
-// src_codeintel_policies_transport_graphql_total
-// src_codeintel_policies_transport_graphql_duration_seconds_bucket
-// src_codeintel_policies_transport_graphql_errors_total
-func (codeIntelligence) NewPoliciesGraphQLTransportGroup(containerName string) monitoring.Group {
-	return Observation.NewGroup(containerName, monitoring.ObservableOwnerCodeIntel, ObservationGroupOptions{
+// src_codeintel_policies_trbnsport_grbphql_totbl
+// src_codeintel_policies_trbnsport_grbphql_durbtion_seconds_bucket
+// src_codeintel_policies_trbnsport_grbphql_errors_totbl
+func (codeIntelligence) NewPoliciesGrbphQLTrbnsportGroup(contbinerNbme string) monitoring.Group {
+	return Observbtion.NewGroup(contbinerNbme, monitoring.ObservbbleOwnerCodeIntel, ObservbtionGroupOptions{
 		GroupConstructorOptions: GroupConstructorOptions{
-			Namespace:       "codeintel",
-			DescriptionRoot: "Policies > GQL Transport",
-			Hidden:          false,
+			Nbmespbce:       "codeintel",
+			DescriptionRoot: "Policies > GQL Trbnsport",
+			Hidden:          fblse,
 
-			ObservableConstructorOptions: ObservableConstructorOptions{
-				MetricNameRoot:        "codeintel_policies_transport_graphql",
+			ObservbbleConstructorOptions: ObservbbleConstructorOptions{
+				MetricNbmeRoot:        "codeintel_policies_trbnsport_grbphql",
 				MetricDescriptionRoot: "resolver",
 				By:                    []string{"op"},
 			},
 		},
 
-		SharedObservationGroupOptions: SharedObservationGroupOptions{
-			Total:     NoAlertsOption("none"),
-			Duration:  NoAlertsOption("none"),
+		ShbredObservbtionGroupOptions: ShbredObservbtionGroupOptions{
+			Totbl:     NoAlertsOption("none"),
+			Durbtion:  NoAlertsOption("none"),
 			Errors:    NoAlertsOption("none"),
-			ErrorRate: NoAlertsOption("none"),
+			ErrorRbte: NoAlertsOption("none"),
 		},
-		Aggregate: &SharedObservationGroupOptions{
-			Total:     NoAlertsOption("none"),
-			Duration:  NoAlertsOption("none"),
+		Aggregbte: &ShbredObservbtionGroupOptions{
+			Totbl:     NoAlertsOption("none"),
+			Durbtion:  NoAlertsOption("none"),
 			Errors:    NoAlertsOption("none"),
-			ErrorRate: NoAlertsOption("none"),
+			ErrorRbte: NoAlertsOption("none"),
 		},
 	})
 }
 
-// src_codeintel_background_policies_updated_total
-func (codeIntelligence) NewRepoMatcherTaskGroup(containerName string) monitoring.Group {
+// src_codeintel_bbckground_policies_updbted_totbl
+func (codeIntelligence) NewRepoMbtcherTbskGroup(contbinerNbme string) monitoring.Group {
 	return monitoring.Group{
-		Title:  "Codeintel: Policies > Repository Pattern Matcher task",
-		Hidden: false,
+		Title:  "Codeintel: Policies > Repository Pbttern Mbtcher tbsk",
+		Hidden: fblse,
 		Rows: []monitoring.Row{
 			{
-				Standard.Count("repositories pattern matcher")(ObservableConstructorOptions{
-					MetricNameRoot:        "codeintel_background_policies_updated_total",
-					MetricDescriptionRoot: "lsif repository pattern matcher",
-				})(containerName, monitoring.ObservableOwnerCodeIntel).WithNoAlerts(`
-					Number of configuration policies whose repository membership list was updated
-				`).Observable(),
+				Stbndbrd.Count("repositories pbttern mbtcher")(ObservbbleConstructorOptions{
+					MetricNbmeRoot:        "codeintel_bbckground_policies_updbted_totbl",
+					MetricDescriptionRoot: "lsif repository pbttern mbtcher",
+				})(contbinerNbme, monitoring.ObservbbleOwnerCodeIntel).WithNoAlerts(`
+					Number of configurbtion policies whose repository membership list wbs updbted
+				`).Observbble(),
 			},
 		},
 	}

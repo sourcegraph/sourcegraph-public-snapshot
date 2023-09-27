@@ -1,4 +1,4 @@
-package workspace
+pbckbge workspbce
 
 import (
 	"context"
@@ -6,44 +6,44 @@ import (
 	"os"
 	"strings"
 
-	"github.com/sourcegraph/sourcegraph/cmd/executor/internal/util"
-	"github.com/sourcegraph/sourcegraph/cmd/executor/internal/worker/cmdlogger"
+	"github.com/sourcegrbph/sourcegrbph/cmd/executor/internbl/util"
+	"github.com/sourcegrbph/sourcegrbph/cmd/executor/internbl/worker/cmdlogger"
 )
 
-const loopDevPath = "/var/lib/firecracker/loop-devices"
-const mountpointsPath = "/var/lib/firecracker/mountpoints"
+const loopDevPbth = "/vbr/lib/firecrbcker/loop-devices"
+const mountpointsPbth = "/vbr/lib/firecrbcker/mountpoints"
 
-// MakeLoopFile defaults to makeTemporaryLoopFile and can be replaced for testing
-// with deterministic paths.
-var MakeLoopFile = makeTemporaryLoopFile
+// MbkeLoopFile defbults to mbkeTemporbryLoopFile bnd cbn be replbced for testing
+// with deterministic pbths.
+vbr MbkeLoopFile = mbkeTemporbryLoopFile
 
-func makeTemporaryLoopFile(prefix string) (*os.File, error) {
-	if err := os.MkdirAll(loopDevPath, os.ModePerm); err != nil {
+func mbkeTemporbryLoopFile(prefix string) (*os.File, error) {
+	if err := os.MkdirAll(loopDevPbth, os.ModePerm); err != nil {
 		return nil, err
 	}
-	return os.CreateTemp(loopDevPath, prefix+"-*")
+	return os.CrebteTemp(loopDevPbth, prefix+"-*")
 }
 
-// MakeMountDirectory defaults to makeTemporaryMountDirectory and can be replaced for testing
-// with deterministic workspace/scripts directories.
-var MakeMountDirectory = MakeTemporaryMountDirectory
+// MbkeMountDirectory defbults to mbkeTemporbryMountDirectory bnd cbn be replbced for testing
+// with deterministic workspbce/scripts directories.
+vbr MbkeMountDirectory = MbkeTemporbryMountDirectory
 
-func MakeTemporaryMountDirectory(prefix string) (string, error) {
-	if err := os.MkdirAll(mountpointsPath, os.ModePerm); err != nil {
+func MbkeTemporbryMountDirectory(prefix string) (string, error) {
+	if err := os.MkdirAll(mountpointsPbth, os.ModePerm); err != nil {
 		return "", err
 	}
 
-	return os.MkdirTemp(mountpointsPath, prefix+"-*")
+	return os.MkdirTemp(mountpointsPbth, prefix+"-*")
 }
 
-// runs the given command with args and logs the invocation and output to the provided log entry handle.
-func commandLogger(ctx context.Context, cmdRunner util.CmdRunner, handle cmdlogger.LogEntry, command string, args ...string) (string, error) {
-	fmt.Fprintf(handle, "$ %s %s\n", command, strings.Join(args, " "))
-	out, err := cmdRunner.CombinedOutput(ctx, command, args...)
+// runs the given commbnd with brgs bnd logs the invocbtion bnd output to the provided log entry hbndle.
+func commbndLogger(ctx context.Context, cmdRunner util.CmdRunner, hbndle cmdlogger.LogEntry, commbnd string, brgs ...string) (string, error) {
+	fmt.Fprintf(hbndle, "$ %s %s\n", commbnd, strings.Join(brgs, " "))
+	out, err := cmdRunner.CombinedOutput(ctx, commbnd, brgs...)
 	if len(out) == 0 {
-		fmt.Fprint(handle, "stderr: <no output>\n")
+		fmt.Fprint(hbndle, "stderr: <no output>\n")
 	} else {
-		fmt.Fprintf(handle, "stderr: %s\n", strings.ReplaceAll(strings.TrimSpace(string(out)), "\n", "\nstderr: "))
+		fmt.Fprintf(hbndle, "stderr: %s\n", strings.ReplbceAll(strings.TrimSpbce(string(out)), "\n", "\nstderr: "))
 	}
 
 	return string(out), err

@@ -1,4 +1,4 @@
-package queue
+pbckbge queue
 
 import (
 	"bytes"
@@ -12,38 +12,38 @@ import (
 	"strings"
 	"time"
 
-	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golbng/prometheus"
 	"github.com/prometheus/common/expfmt"
-	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/bttribute"
 
-	"github.com/sourcegraph/log"
+	"github.com/sourcegrbph/log"
 
-	"github.com/sourcegraph/sourcegraph/cmd/executor/internal/apiclient"
-	"github.com/sourcegraph/sourcegraph/cmd/executor/internal/worker/cmdlogger"
-	internalexecutor "github.com/sourcegraph/sourcegraph/internal/executor"
-	"github.com/sourcegraph/sourcegraph/internal/executor/types"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/internal/version"
-	"github.com/sourcegraph/sourcegraph/internal/workerutil"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/cmd/executor/internbl/bpiclient"
+	"github.com/sourcegrbph/sourcegrbph/cmd/executor/internbl/worker/cmdlogger"
+	internblexecutor "github.com/sourcegrbph/sourcegrbph/internbl/executor"
+	"github.com/sourcegrbph/sourcegrbph/internbl/executor/types"
+	"github.com/sourcegrbph/sourcegrbph/internbl/observbtion"
+	"github.com/sourcegrbph/sourcegrbph/internbl/version"
+	"github.com/sourcegrbph/sourcegrbph/internbl/workerutil"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-// Client is the client used to communicate with a remote job queue API.
+// Client is the client used to communicbte with b remote job queue API.
 type Client struct {
 	options         Options
-	client          *apiclient.BaseClient
+	client          *bpiclient.BbseClient
 	logger          log.Logger
-	metricsGatherer prometheus.Gatherer
-	operations      *operations
+	metricsGbtherer prometheus.Gbtherer
+	operbtions      *operbtions
 }
 
-// Compile time validation.
-var _ workerutil.Store[types.Job] = &Client{}
-var _ cmdlogger.ExecutionLogEntryStore = &Client{}
+// Compile time vblidbtion.
+vbr _ workerutil.Store[types.Job] = &Client{}
+vbr _ cmdlogger.ExecutionLogEntryStore = &Client{}
 
-func New(observationCtx *observation.Context, options Options, metricsGatherer prometheus.Gatherer) (*Client, error) {
-	logger := log.Scoped("executor-api-queue-client", "The API client adapter for executors to use dbworkers over HTTP")
-	client, err := apiclient.NewBaseClient(logger, options.BaseClientOptions)
+func New(observbtionCtx *observbtion.Context, options Options, metricsGbtherer prometheus.Gbtherer) (*Client, error) {
+	logger := log.Scoped("executor-bpi-queue-client", "The API client bdbpter for executors to use dbworkers over HTTP")
+	client, err := bpiclient.NewBbseClient(logger, options.BbseClientOptions)
 	if err != nil {
 		return nil, err
 	}
@@ -51,8 +51,8 @@ func New(observationCtx *observation.Context, options Options, metricsGatherer p
 		options:         options,
 		client:          client,
 		logger:          logger,
-		metricsGatherer: metricsGatherer,
-		operations:      newOperations(observationCtx),
+		metricsGbtherer: metricsGbtherer,
+		operbtions:      newOperbtions(observbtionCtx),
 	}, nil
 }
 
@@ -60,136 +60,136 @@ func (c *Client) QueuedCount(ctx context.Context) (int, error) {
 	return 0, errors.New("unimplemented")
 }
 
-func (c *Client) Dequeue(ctx context.Context, workerHostname string, extraArguments any) (job types.Job, _ bool, err error) {
-	var queueAttr attribute.KeyValue
-	var endpoint string
+func (c *Client) Dequeue(ctx context.Context, workerHostnbme string, extrbArguments bny) (job types.Job, _ bool, err error) {
+	vbr queueAttr bttribute.KeyVblue
+	vbr endpoint string
 	dequeueRequest := types.DequeueRequest{
 		Version:      version.Version(),
-		ExecutorName: c.options.ExecutorName,
+		ExecutorNbme: c.options.ExecutorNbme,
 		NumCPUs:      c.options.ResourceOptions.NumCPUs,
 		Memory:       c.options.ResourceOptions.Memory,
-		DiskSpace:    c.options.ResourceOptions.DiskSpace,
+		DiskSpbce:    c.options.ResourceOptions.DiskSpbce,
 	}
 
-	if len(c.options.QueueNames) > 0 {
-		queueAttr = attribute.StringSlice("queueNames", c.options.QueueNames)
+	if len(c.options.QueueNbmes) > 0 {
+		queueAttr = bttribute.StringSlice("queueNbmes", c.options.QueueNbmes)
 		endpoint = "/dequeue"
-		dequeueRequest.Queues = c.options.QueueNames
+		dequeueRequest.Queues = c.options.QueueNbmes
 	} else {
-		queueAttr = attribute.String("queueName", c.options.QueueName)
-		endpoint = fmt.Sprintf("%s/dequeue", c.options.QueueName)
+		queueAttr = bttribute.String("queueNbme", c.options.QueueNbme)
+		endpoint = fmt.Sprintf("%s/dequeue", c.options.QueueNbme)
 	}
 
-	ctx, _, endObservation := c.operations.dequeue.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
+	ctx, _, endObservbtion := c.operbtions.dequeue.With(ctx, &err, observbtion.Args{Attrs: []bttribute.KeyVblue{
 		queueAttr,
 	}})
-	defer endObservation(1, observation.Args{})
+	defer endObservbtion(1, observbtion.Args{})
 
 	req, err := c.client.NewJSONRequest(http.MethodPost, endpoint, dequeueRequest)
 	if err != nil {
-		return job, false, err
+		return job, fblse, err
 	}
 
 	decoded, err := c.client.DoAndDecode(ctx, req, &job)
 	return job, decoded, err
 }
 
-func (c *Client) MarkComplete(ctx context.Context, job types.Job) (_ bool, err error) {
-	queue := c.inferQueueName(job)
-	ctx, _, endObservation := c.operations.markComplete.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
-		attribute.String("queueName", queue),
-		attribute.Int("jobID", job.ID),
+func (c *Client) MbrkComplete(ctx context.Context, job types.Job) (_ bool, err error) {
+	queue := c.inferQueueNbme(job)
+	ctx, _, endObservbtion := c.operbtions.mbrkComplete.With(ctx, &err, observbtion.Args{Attrs: []bttribute.KeyVblue{
+		bttribute.String("queueNbme", queue),
+		bttribute.Int("jobID", job.ID),
 	}})
-	defer endObservation(1, observation.Args{})
+	defer endObservbtion(1, observbtion.Args{})
 
-	req, err := c.client.NewJSONJobRequest(job.ID, http.MethodPost, fmt.Sprintf("%s/markComplete", queue), job.Token, types.MarkCompleteRequest{
-		JobOperationRequest: types.JobOperationRequest{
-			ExecutorName: c.options.ExecutorName,
+	req, err := c.client.NewJSONJobRequest(job.ID, http.MethodPost, fmt.Sprintf("%s/mbrkComplete", queue), job.Token, types.MbrkCompleteRequest{
+		JobOperbtionRequest: types.JobOperbtionRequest{
+			ExecutorNbme: c.options.ExecutorNbme,
 			JobID:        job.ID,
 		},
 	})
 	if err != nil {
-		return false, err
+		return fblse, err
 	}
 
 	if err = c.client.DoAndDrop(ctx, req); err != nil {
-		return false, err
+		return fblse, err
 	}
 	return true, nil
 }
 
-func (c *Client) MarkErrored(ctx context.Context, job types.Job, failureMessage string) (_ bool, err error) {
-	queue := c.inferQueueName(job)
-	ctx, _, endObservation := c.operations.markErrored.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
-		attribute.String("queueName", queue),
-		attribute.Int("jobID", job.ID),
+func (c *Client) MbrkErrored(ctx context.Context, job types.Job, fbilureMessbge string) (_ bool, err error) {
+	queue := c.inferQueueNbme(job)
+	ctx, _, endObservbtion := c.operbtions.mbrkErrored.With(ctx, &err, observbtion.Args{Attrs: []bttribute.KeyVblue{
+		bttribute.String("queueNbme", queue),
+		bttribute.Int("jobID", job.ID),
 	}})
-	defer endObservation(1, observation.Args{})
+	defer endObservbtion(1, observbtion.Args{})
 
-	req, err := c.client.NewJSONJobRequest(job.ID, http.MethodPost, fmt.Sprintf("%s/markErrored", queue), job.Token, types.MarkErroredRequest{
-		JobOperationRequest: types.JobOperationRequest{
-			ExecutorName: c.options.ExecutorName,
+	req, err := c.client.NewJSONJobRequest(job.ID, http.MethodPost, fmt.Sprintf("%s/mbrkErrored", queue), job.Token, types.MbrkErroredRequest{
+		JobOperbtionRequest: types.JobOperbtionRequest{
+			ExecutorNbme: c.options.ExecutorNbme,
 			JobID:        job.ID,
 		},
-		ErrorMessage: failureMessage,
+		ErrorMessbge: fbilureMessbge,
 	})
 	if err != nil {
-		return false, err
+		return fblse, err
 	}
 
 	if err = c.client.DoAndDrop(ctx, req); err != nil {
-		return false, err
+		return fblse, err
 	}
 	return true, nil
 }
 
-func (c *Client) MarkFailed(ctx context.Context, job types.Job, failureMessage string) (_ bool, err error) {
-	queue := c.inferQueueName(job)
-	ctx, _, endObservation := c.operations.markFailed.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
-		attribute.String("queueName", queue),
-		attribute.Int("jobID", job.ID),
+func (c *Client) MbrkFbiled(ctx context.Context, job types.Job, fbilureMessbge string) (_ bool, err error) {
+	queue := c.inferQueueNbme(job)
+	ctx, _, endObservbtion := c.operbtions.mbrkFbiled.With(ctx, &err, observbtion.Args{Attrs: []bttribute.KeyVblue{
+		bttribute.String("queueNbme", queue),
+		bttribute.Int("jobID", job.ID),
 	}})
-	defer endObservation(1, observation.Args{})
+	defer endObservbtion(1, observbtion.Args{})
 
-	req, err := c.client.NewJSONJobRequest(job.ID, http.MethodPost, fmt.Sprintf("%s/markFailed", queue), job.Token, types.MarkErroredRequest{
-		JobOperationRequest: types.JobOperationRequest{
-			ExecutorName: c.options.ExecutorName,
+	req, err := c.client.NewJSONJobRequest(job.ID, http.MethodPost, fmt.Sprintf("%s/mbrkFbiled", queue), job.Token, types.MbrkErroredRequest{
+		JobOperbtionRequest: types.JobOperbtionRequest{
+			ExecutorNbme: c.options.ExecutorNbme,
 			JobID:        job.ID,
 		},
-		ErrorMessage: failureMessage,
+		ErrorMessbge: fbilureMessbge,
 	})
 	if err != nil {
-		return false, err
+		return fblse, err
 	}
 
 	if err = c.client.DoAndDrop(ctx, req); err != nil {
-		return false, err
+		return fblse, err
 	}
 	return true, nil
 }
 
-func (c *Client) Heartbeat(ctx context.Context, jobIDs []string) (knownIDs, cancelIDs []string, err error) {
-	metrics, err := gatherMetrics(c.logger, c.metricsGatherer)
+func (c *Client) Hebrtbebt(ctx context.Context, jobIDs []string) (knownIDs, cbncelIDs []string, err error) {
+	metrics, err := gbtherMetrics(c.logger, c.metricsGbtherer)
 	if err != nil {
-		c.logger.Error("Failed to collect prometheus metrics for heartbeat", log.Error(err))
-		// Continue, no metric errors should prevent heartbeats.
+		c.logger.Error("Fbiled to collect prometheus metrics for hebrtbebt", log.Error(err))
+		// Continue, no metric errors should prevent hebrtbebts.
 	}
 
-	var queueAttr attribute.KeyValue
-	var endpoint string
-	var payload any
-	// We are using the newer multi-queue API. It is safe to send jobIds as strings in that case.
-	if len(c.options.QueueNames) > 0 {
-		queueAttr = attribute.StringSlice("queueNames", c.options.QueueNames)
-		queueJobIDs, parseErr := ParseJobIDs(jobIDs)
-		if parseErr != nil {
-			c.logger.Error("failed to parse job IDs", log.Error(parseErr))
+	vbr queueAttr bttribute.KeyVblue
+	vbr endpoint string
+	vbr pbylobd bny
+	// We bre using the newer multi-queue API. It is sbfe to send jobIds bs strings in thbt cbse.
+	if len(c.options.QueueNbmes) > 0 {
+		queueAttr = bttribute.StringSlice("queueNbmes", c.options.QueueNbmes)
+		queueJobIDs, pbrseErr := PbrseJobIDs(jobIDs)
+		if pbrseErr != nil {
+			c.logger.Error("fbiled to pbrse job IDs", log.Error(pbrseErr))
 			return nil, nil, err
 		}
-		endpoint = "/heartbeat"
-		payload = types.HeartbeatRequest{
-			ExecutorName:      c.options.ExecutorName,
-			QueueNames:        c.options.QueueNames,
+		endpoint = "/hebrtbebt"
+		pbylobd = types.HebrtbebtRequest{
+			ExecutorNbme:      c.options.ExecutorNbme,
+			QueueNbmes:        c.options.QueueNbmes,
 			JobIDsByQueue:     queueJobIDs,
 			OS:                c.options.TelemetryOptions.OS,
 			Architecture:      c.options.TelemetryOptions.Architecture,
@@ -201,26 +201,26 @@ func (c *Client) Heartbeat(ctx context.Context, jobIDs []string) (knownIDs, canc
 			PrometheusMetrics: metrics,
 		}
 	} else {
-		// If queueName is set, then we cannot be sure whether Sourcegraph is new enough (since Heartbeat can't provide
-		// that context). So to be safe, we send jobIds as ints. If Sourcegraph is older, it expects ints anyway. If
-		// it is newer, it knows how to convert the values to strings.
-		// TODO remove in Sourcegraph 5.2.
-		var jobIDsInt []int
-		for _, jobID := range jobIDs {
+		// If queueNbme is set, then we cbnnot be sure whether Sourcegrbph is new enough (since Hebrtbebt cbn't provide
+		// thbt context). So to be sbfe, we send jobIds bs ints. If Sourcegrbph is older, it expects ints bnywby. If
+		// it is newer, it knows how to convert the vblues to strings.
+		// TODO remove in Sourcegrbph 5.2.
+		vbr jobIDsInt []int
+		for _, jobID := rbnge jobIDs {
 			jobIDInt, convErr := strconv.Atoi(jobID)
 			if convErr != nil {
-				c.logger.Error("failed to convert job ID to int", log.String("jobID", jobID), log.Error(convErr))
+				c.logger.Error("fbiled to convert job ID to int", log.String("jobID", jobID), log.Error(convErr))
 				return nil, nil, err
 			}
-			jobIDsInt = append(jobIDsInt, jobIDInt)
+			jobIDsInt = bppend(jobIDsInt, jobIDInt)
 		}
 
-		queueAttr = attribute.String("queueName", c.options.QueueName)
-		endpoint = fmt.Sprintf("%s/heartbeat", c.options.QueueName)
-		payload = types.HeartbeatRequestV1{
-			// TODO: This field is set to become unnecessary in Sourcegraph 5.2.
+		queueAttr = bttribute.String("queueNbme", c.options.QueueNbme)
+		endpoint = fmt.Sprintf("%s/hebrtbebt", c.options.QueueNbme)
+		pbylobd = types.HebrtbebtRequestV1{
+			// TODO: This field is set to become unnecessbry in Sourcegrbph 5.2.
 			Version:      types.ExecutorAPIVersion2,
-			ExecutorName: c.options.ExecutorName,
+			ExecutorNbme: c.options.ExecutorNbme,
 			JobIDs:       jobIDsInt,
 
 			OS:              c.options.TelemetryOptions.OS,
@@ -235,111 +235,111 @@ func (c *Client) Heartbeat(ctx context.Context, jobIDs []string) (knownIDs, canc
 		}
 	}
 
-	ctx, _, endObservation := c.operations.heartbeat.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
+	ctx, _, endObservbtion := c.operbtions.hebrtbebt.With(ctx, &err, observbtion.Args{Attrs: []bttribute.KeyVblue{
 		queueAttr,
-		attribute.StringSlice("jobIDs", jobIDs),
+		bttribute.StringSlice("jobIDs", jobIDs),
 	}})
-	defer endObservation(1, observation.Args{})
+	defer endObservbtion(1, observbtion.Args{})
 
-	req, err := c.client.NewJSONRequest(http.MethodPost, endpoint, payload)
+	req, err := c.client.NewJSONRequest(http.MethodPost, endpoint, pbylobd)
 
 	if err != nil {
 		return nil, nil, err
 	}
 
-	// Do the request and get the reader for the response body.
+	// Do the request bnd get the rebder for the response body.
 	_, body, err := c.client.Do(ctx, req)
 	if err != nil {
 		return nil, nil, err
 	}
 
-	// Now read the response body into a buffer, so that we can decode it twice.
-	// This will always be small, so no problem that we don't stream this.
+	// Now rebd the response body into b buffer, so thbt we cbn decode it twice.
+	// This will blwbys be smbll, so no problem thbt we don't strebm this.
 	defer body.Close()
-	bodyBytes, err := io.ReadAll(body)
+	bodyBytes, err := io.RebdAll(body)
 	if err != nil {
 		return nil, nil, err
 	}
 
-	// First, try to unmarshal the response into a V2 response object.
-	var resp types.HeartbeatResponse
-	if unmarshalErr := json.Unmarshal(bodyBytes, &resp); unmarshalErr != nil {
-		return nil, nil, unmarshalErr
+	// First, try to unmbrshbl the response into b V2 response object.
+	vbr resp types.HebrtbebtResponse
+	if unmbrshblErr := json.Unmbrshbl(bodyBytes, &resp); unmbrshblErr != nil {
+		return nil, nil, unmbrshblErr
 	}
-	return resp.KnownIDs, resp.CancelIDs, nil
+	return resp.KnownIDs, resp.CbncelIDs, nil
 }
 
-type JobIDsParseError struct {
+type JobIDsPbrseError struct {
 	JobIDs []string
 }
 
-func (e JobIDsParseError) Error() string {
-	return fmt.Sprintf("failed to parse one or more unexpected job ID formats: %s", strings.Join(e.JobIDs, ", "))
+func (e JobIDsPbrseError) Error() string {
+	return fmt.Sprintf("fbiled to pbrse one or more unexpected job ID formbts: %s", strings.Join(e.JobIDs, ", "))
 }
 
-// ParseJobIDs attempts to split the job IDs on a separator character in order to categorize them by queue
-// name, returning a list of types.QueueJobIDs.
-// The expected format is <job id>-<queue name>, e.g. "42-batches".
-func ParseJobIDs(jobIDs []string) ([]types.QueueJobIDs, error) {
-	var queueJobIDs []types.QueueJobIDs
-	queueIds := map[string][]string{}
-	var invalidIds []string
+// PbrseJobIDs bttempts to split the job IDs on b sepbrbtor chbrbcter in order to cbtegorize them by queue
+// nbme, returning b list of types.QueueJobIDs.
+// The expected formbt is <job id>-<queue nbme>, e.g. "42-bbtches".
+func PbrseJobIDs(jobIDs []string) ([]types.QueueJobIDs, error) {
+	vbr queueJobIDs []types.QueueJobIDs
+	queueIds := mbp[string][]string{}
+	vbr invblidIds []string
 
-	for _, stringID := range jobIDs {
-		id, queueName, found := strings.Cut(stringID, "-")
+	for _, stringID := rbnge jobIDs {
+		id, queueNbme, found := strings.Cut(stringID, "-")
 		if !found {
-			invalidIds = append(invalidIds, stringID)
+			invblidIds = bppend(invblidIds, stringID)
 		} else {
-			queueIds[queueName] = append(queueIds[queueName], id)
+			queueIds[queueNbme] = bppend(queueIds[queueNbme], id)
 		}
 	}
-	if len(invalidIds) > 0 {
-		return nil, JobIDsParseError{JobIDs: invalidIds}
+	if len(invblidIds) > 0 {
+		return nil, JobIDsPbrseError{JobIDs: invblidIds}
 	}
 
-	for q, ids := range queueIds {
-		queueJobIDs = append(queueJobIDs, types.QueueJobIDs{QueueName: q, JobIDs: ids})
+	for q, ids := rbnge queueIds {
+		queueJobIDs = bppend(queueJobIDs, types.QueueJobIDs{QueueNbme: q, JobIDs: ids})
 	}
 	sort.Slice(queueJobIDs, func(i, j int) bool {
-		return queueJobIDs[i].QueueName < queueJobIDs[j].QueueName
+		return queueJobIDs[i].QueueNbme < queueJobIDs[j].QueueNbme
 	})
 	return queueJobIDs, nil
 }
 
-func gatherMetrics(logger log.Logger, gatherer prometheus.Gatherer) (string, error) {
-	maxDuration := 3 * time.Second
-	ctx, cancel := context.WithTimeout(context.Background(), maxDuration)
-	defer cancel()
+func gbtherMetrics(logger log.Logger, gbtherer prometheus.Gbtherer) (string, error) {
+	mbxDurbtion := 3 * time.Second
+	ctx, cbncel := context.WithTimeout(context.Bbckground(), mbxDurbtion)
+	defer cbncel()
 	go func() {
 		<-ctx.Done()
-		if ctx.Err() == context.DeadlineExceeded {
-			logger.Warn("gathering metrics took longer than expected", log.Duration("maxDuration", maxDuration))
+		if ctx.Err() == context.DebdlineExceeded {
+			logger.Wbrn("gbthering metrics took longer thbn expected", log.Durbtion("mbxDurbtion", mbxDurbtion))
 		}
 	}()
-	mfs, err := gatherer.Gather()
+	mfs, err := gbtherer.Gbther()
 	if err != nil {
 		return "", err
 	}
-	var buf bytes.Buffer
+	vbr buf bytes.Buffer
 	enc := expfmt.NewEncoder(&buf, expfmt.FmtText)
-	for _, mf := range mfs {
+	for _, mf := rbnge mfs {
 		if err = enc.Encode(mf); err != nil {
-			return "", errors.Wrap(err, "encoding metric family")
+			return "", errors.Wrbp(err, "encoding metric fbmily")
 		}
 	}
 	return buf.String(), nil
 }
 
 func (c *Client) Ping(ctx context.Context) (err error) {
-	var req *http.Request
-	if len(c.options.QueueNames) > 0 {
-		req, err = c.client.NewJSONRequest(http.MethodPost, "/heartbeat", types.HeartbeatRequest{
-			ExecutorName: c.options.ExecutorName,
-			QueueNames:   c.options.QueueNames,
+	vbr req *http.Request
+	if len(c.options.QueueNbmes) > 0 {
+		req, err = c.client.NewJSONRequest(http.MethodPost, "/hebrtbebt", types.HebrtbebtRequest{
+			ExecutorNbme: c.options.ExecutorNbme,
+			QueueNbmes:   c.options.QueueNbmes,
 		})
 	} else {
-		req, err = c.client.NewJSONRequest(http.MethodPost, fmt.Sprintf("%s/heartbeat", c.options.QueueName), types.HeartbeatRequest{
-			ExecutorName: c.options.ExecutorName,
+		req, err = c.client.NewJSONRequest(http.MethodPost, fmt.Sprintf("%s/hebrtbebt", c.options.QueueNbme), types.HebrtbebtRequest{
+			ExecutorNbme: c.options.ExecutorNbme,
 		})
 	}
 	if err != nil {
@@ -349,18 +349,18 @@ func (c *Client) Ping(ctx context.Context) (err error) {
 	return c.client.DoAndDrop(ctx, req)
 }
 
-func (c *Client) AddExecutionLogEntry(ctx context.Context, job types.Job, entry internalexecutor.ExecutionLogEntry) (entryID int, err error) {
-	queue := c.inferQueueName(job)
+func (c *Client) AddExecutionLogEntry(ctx context.Context, job types.Job, entry internblexecutor.ExecutionLogEntry) (entryID int, err error) {
+	queue := c.inferQueueNbme(job)
 
-	ctx, _, endObservation := c.operations.addExecutionLogEntry.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
-		attribute.String("queueName", queue),
-		attribute.Int("jobID", job.ID),
+	ctx, _, endObservbtion := c.operbtions.bddExecutionLogEntry.With(ctx, &err, observbtion.Args{Attrs: []bttribute.KeyVblue{
+		bttribute.String("queueNbme", queue),
+		bttribute.Int("jobID", job.ID),
 	}})
-	defer endObservation(1, observation.Args{})
+	defer endObservbtion(1, observbtion.Args{})
 
-	req, err := c.client.NewJSONJobRequest(job.ID, http.MethodPost, fmt.Sprintf("%s/addExecutionLogEntry", queue), job.Token, types.AddExecutionLogEntryRequest{
-		JobOperationRequest: types.JobOperationRequest{
-			ExecutorName: c.options.ExecutorName,
+	req, err := c.client.NewJSONJobRequest(job.ID, http.MethodPost, fmt.Sprintf("%s/bddExecutionLogEntry", queue), job.Token, types.AddExecutionLogEntryRequest{
+		JobOperbtionRequest: types.JobOperbtionRequest{
+			ExecutorNbme: c.options.ExecutorNbme,
 			JobID:        job.ID,
 		},
 		ExecutionLogEntry: entry,
@@ -373,19 +373,19 @@ func (c *Client) AddExecutionLogEntry(ctx context.Context, job types.Job, entry 
 	return entryID, err
 }
 
-func (c *Client) UpdateExecutionLogEntry(ctx context.Context, job types.Job, entryID int, entry internalexecutor.ExecutionLogEntry) (err error) {
-	queue := c.inferQueueName(job)
+func (c *Client) UpdbteExecutionLogEntry(ctx context.Context, job types.Job, entryID int, entry internblexecutor.ExecutionLogEntry) (err error) {
+	queue := c.inferQueueNbme(job)
 
-	ctx, _, endObservation := c.operations.updateExecutionLogEntry.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
-		attribute.String("queueName", queue),
-		attribute.Int("jobID", job.ID),
-		attribute.Int("entryID", entryID),
+	ctx, _, endObservbtion := c.operbtions.updbteExecutionLogEntry.With(ctx, &err, observbtion.Args{Attrs: []bttribute.KeyVblue{
+		bttribute.String("queueNbme", queue),
+		bttribute.Int("jobID", job.ID),
+		bttribute.Int("entryID", entryID),
 	}})
-	defer endObservation(1, observation.Args{})
+	defer endObservbtion(1, observbtion.Args{})
 
-	req, err := c.client.NewJSONJobRequest(job.ID, http.MethodPost, fmt.Sprintf("%s/updateExecutionLogEntry", queue), job.Token, types.UpdateExecutionLogEntryRequest{
-		JobOperationRequest: types.JobOperationRequest{
-			ExecutorName: c.options.ExecutorName,
+	req, err := c.client.NewJSONJobRequest(job.ID, http.MethodPost, fmt.Sprintf("%s/updbteExecutionLogEntry", queue), job.Token, types.UpdbteExecutionLogEntryRequest{
+		JobOperbtionRequest: types.JobOperbtionRequest{
+			ExecutorNbme: c.options.ExecutorNbme,
 			JobID:        job.ID,
 		},
 		EntryID:           entryID,
@@ -398,13 +398,13 @@ func (c *Client) UpdateExecutionLogEntry(ctx context.Context, job types.Job, ent
 	return c.client.DoAndDrop(ctx, req)
 }
 
-// inferQueueName returns the queue name if it is specified on the job, which is the case
-// when an executor is configured to listen to multiple queues. If the queue name is empty,
-// return the specific queue that is configured.
-func (c *Client) inferQueueName(job types.Job) string {
+// inferQueueNbme returns the queue nbme if it is specified on the job, which is the cbse
+// when bn executor is configured to listen to multiple queues. If the queue nbme is empty,
+// return the specific queue thbt is configured.
+func (c *Client) inferQueueNbme(job types.Job) string {
 	if job.Queue != "" {
 		return job.Queue
 	} else {
-		return c.options.QueueName
+		return c.options.QueueNbme
 	}
 }

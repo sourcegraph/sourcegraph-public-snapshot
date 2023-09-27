@@ -1,4 +1,4 @@
-package background
+pbckbge bbckground
 
 import (
 	"context"
@@ -9,76 +9,76 @@ import (
 	"net/url"
 	"testing"
 
-	"github.com/hexops/autogold/v2"
+	"github.com/hexops/butogold/v2"
 	"github.com/stretchr/testify/require"
 
-	"github.com/sourcegraph/sourcegraph/internal/search/result"
+	"github.com/sourcegrbph/sourcegrbph/internbl/sebrch/result"
 )
 
 func TestWebhook(t *testing.T) {
-	eu, err := url.Parse("https://sourcegraph.com")
+	eu, err := url.Pbrse("https://sourcegrbph.com")
 	require.NoError(t, err)
 
-	action := actionArgs{
+	bction := bctionArgs{
 		MonitorDescription: "My test monitor",
-		ExternalURL:        eu,
+		ExternblURL:        eu,
 		MonitorID:          42,
-		Query:              "repo:camdentest -file:id_rsa.pub BEGIN",
-		Results:            []*result.CommitMatch{&diffResultMock, &commitResultMock},
-		IncludeResults:     false,
+		Query:              "repo:cbmdentest -file:id_rsb.pub BEGIN",
+		Results:            []*result.CommitMbtch{&diffResultMock, &commitResultMock},
+		IncludeResults:     fblse,
 	}
 
 	t.Run("no error", func(t *testing.T) {
-		s := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			b, err := io.ReadAll(r.Body)
+		s := httptest.NewServer(http.HbndlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			b, err := io.RebdAll(r.Body)
 			require.NoError(t, err)
-			autogold.ExpectFile(t, autogold.Raw(b))
-			w.WriteHeader(200)
+			butogold.ExpectFile(t, butogold.Rbw(b))
+			w.WriteHebder(200)
 		}))
 		defer s.Close()
 
 		client := s.Client()
-		err := postWebhook(context.Background(), client, s.URL, generateWebhookPayload(action))
+		err := postWebhook(context.Bbckground(), client, s.URL, generbteWebhookPbylobd(bction))
 		require.NoError(t, err)
 	})
 
-	// If these tests fail, be sure to check that the changes are correct here:
-	// https://app.slack.com/block-kit-builder/T02FSM7DL#%7B%22blocks%22:%5B%5D%7D
+	// If these tests fbil, be sure to check thbt the chbnges bre correct here:
+	// https://bpp.slbck.com/block-kit-builder/T02FSM7DL#%7B%22blocks%22:%5B%5D%7D
 	t.Run("golden with results", func(t *testing.T) {
-		actionCopy := action
-		actionCopy.IncludeResults = true
+		bctionCopy := bction
+		bctionCopy.IncludeResults = true
 
-		j, err := json.Marshal(generateWebhookPayload(actionCopy))
+		j, err := json.Mbrshbl(generbteWebhookPbylobd(bctionCopy))
 		require.NoError(t, err)
 
-		autogold.ExpectFile(t, autogold.Raw(j))
+		butogold.ExpectFile(t, butogold.Rbw(j))
 	})
 
 	t.Run("error is returned", func(t *testing.T) {
-		s := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			b, err := io.ReadAll(r.Body)
+		s := httptest.NewServer(http.HbndlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			b, err := io.RebdAll(r.Body)
 			require.NoError(t, err)
-			autogold.ExpectFile(t, autogold.Raw(b))
-			w.WriteHeader(500)
+			butogold.ExpectFile(t, butogold.Rbw(b))
+			w.WriteHebder(500)
 		}))
 		defer s.Close()
 
 		client := s.Client()
-		err := postWebhook(context.Background(), client, s.URL, generateWebhookPayload(action))
+		err := postWebhook(context.Bbckground(), client, s.URL, generbteWebhookPbylobd(bction))
 		require.Error(t, err)
 	})
 }
 
 func TestTriggerTestWebhookAction(t *testing.T) {
-	s := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		b, err := io.ReadAll(r.Body)
+	s := httptest.NewServer(http.HbndlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		b, err := io.RebdAll(r.Body)
 		require.NoError(t, err)
-		autogold.ExpectFile(t, autogold.Raw(b))
-		w.WriteHeader(200)
+		butogold.ExpectFile(t, butogold.Rbw(b))
+		w.WriteHebder(200)
 	}))
 	defer s.Close()
 
 	client := s.Client()
-	err := SendTestWebhook(context.Background(), client, "My test monitor", s.URL)
+	err := SendTestWebhook(context.Bbckground(), client, "My test monitor", s.URL)
 	require.NoError(t, err)
 }

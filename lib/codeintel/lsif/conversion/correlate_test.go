@@ -1,4 +1,4 @@
-package conversion
+pbckbge conversion
 
 import (
 	"bytes"
@@ -9,87 +9,87 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 
-	"github.com/sourcegraph/sourcegraph/lib/codeintel/lsif/conversion/datastructures"
-	"github.com/sourcegraph/sourcegraph/lib/codeintel/lsif/protocol"
-	"github.com/sourcegraph/sourcegraph/lib/codeintel/lsif/protocol/reader"
+	"github.com/sourcegrbph/sourcegrbph/lib/codeintel/lsif/conversion/dbtbstructures"
+	"github.com/sourcegrbph/sourcegrbph/lib/codeintel/lsif/protocol"
+	"github.com/sourcegrbph/sourcegrbph/lib/codeintel/lsif/protocol/rebder"
 )
 
-func TestCorrelate(t *testing.T) {
-	input, err := os.ReadFile("../testdata/dump1.lsif")
+func TestCorrelbte(t *testing.T) {
+	input, err := os.RebdFile("../testdbtb/dump1.lsif")
 	if err != nil {
-		t.Fatalf("unexpected error reading test file: %s", err)
+		t.Fbtblf("unexpected error rebding test file: %s", err)
 	}
 
-	state, err := correlateFromReader(context.Background(), bytes.NewReader(input), "root")
+	stbte, err := correlbteFromRebder(context.Bbckground(), bytes.NewRebder(input), "root")
 	if err != nil {
-		t.Fatalf("unexpected error correlating input: %s", err)
+		t.Fbtblf("unexpected error correlbting input: %s", err)
 	}
 
-	expectedState := &State{
+	expectedStbte := &Stbte{
 		LSIFVersion: "0.4.3",
 		ProjectRoot: "file:///test/root",
-		DocumentData: map[int]string{
+		DocumentDbtb: mbp[int]string{
 			2: "foo.go",
-			3: "bar.go",
+			3: "bbr.go",
 		},
-		RangeData: map[int]Range{
+		RbngeDbtb: mbp[int]Rbnge{
 			4: {
-				Range: reader.Range{
-					RangeData: protocol.RangeData{
-						Start: protocol.Pos{Line: 1, Character: 2},
-						End:   protocol.Pos{Line: 3, Character: 4},
+				Rbnge: rebder.Rbnge{
+					RbngeDbtb: protocol.RbngeDbtb{
+						Stbrt: protocol.Pos{Line: 1, Chbrbcter: 2},
+						End:   protocol.Pos{Line: 3, Chbrbcter: 4},
 					},
 				},
 				DefinitionResultID: 13,
 			},
 			5: {
-				Range: reader.Range{
-					RangeData: protocol.RangeData{
-						Start: protocol.Pos{Line: 2, Character: 3},
-						End:   protocol.Pos{Line: 4, Character: 5},
+				Rbnge: rebder.Rbnge{
+					RbngeDbtb: protocol.RbngeDbtb{
+						Stbrt: protocol.Pos{Line: 2, Chbrbcter: 3},
+						End:   protocol.Pos{Line: 4, Chbrbcter: 5},
 					},
 				},
 				ReferenceResultID: 15,
 			},
 			6: {
-				Range: reader.Range{
-					RangeData: protocol.RangeData{
-						Start: protocol.Pos{Line: 3, Character: 4},
-						End:   protocol.Pos{Line: 5, Character: 6},
+				Rbnge: rebder.Rbnge{
+					RbngeDbtb: protocol.RbngeDbtb{
+						Stbrt: protocol.Pos{Line: 3, Chbrbcter: 4},
+						End:   protocol.Pos{Line: 5, Chbrbcter: 6},
 					},
 				},
 				DefinitionResultID: 13,
 				HoverResultID:      17,
 			},
 			7: {
-				Range: reader.Range{
-					RangeData: protocol.RangeData{
-						Start: protocol.Pos{Line: 4, Character: 5},
-						End:   protocol.Pos{Line: 6, Character: 7},
+				Rbnge: rebder.Rbnge{
+					RbngeDbtb: protocol.RbngeDbtb{
+						Stbrt: protocol.Pos{Line: 4, Chbrbcter: 5},
+						End:   protocol.Pos{Line: 6, Chbrbcter: 7},
 					},
 				},
 				ReferenceResultID:      15,
-				ImplementationResultID: 100,
+				ImplementbtionResultID: 100,
 			},
 			8: {
-				Range: reader.Range{
-					RangeData: protocol.RangeData{
-						Start: protocol.Pos{Line: 5, Character: 6},
-						End:   protocol.Pos{Line: 7, Character: 8},
+				Rbnge: rebder.Rbnge{
+					RbngeDbtb: protocol.RbngeDbtb{
+						Stbrt: protocol.Pos{Line: 5, Chbrbcter: 6},
+						End:   protocol.Pos{Line: 7, Chbrbcter: 8},
 					},
 				},
 				HoverResultID: 17,
 			},
 			9: {
-				Range: reader.Range{
-					RangeData: protocol.RangeData{
-						Start: protocol.Pos{Line: 6, Character: 7},
-						End:   protocol.Pos{Line: 8, Character: 9},
+				Rbnge: rebder.Rbnge{
+					RbngeDbtb: protocol.RbngeDbtb{
+						Stbrt: protocol.Pos{Line: 6, Chbrbcter: 7},
+						End:   protocol.Pos{Line: 8, Chbrbcter: 9},
 					},
 				},
 			},
 		},
-		ResultSetData: map[int]ResultSet{
+		ResultSetDbtb: mbp[int]ResultSet{
 			10: {
 				DefinitionResultID: 12,
 				ReferenceResultID:  14,
@@ -98,208 +98,208 @@ func TestCorrelate(t *testing.T) {
 				HoverResultID: 16,
 			},
 		},
-		DefinitionData: map[int]*datastructures.DefaultIDSetMap{
-			12: datastructures.DefaultIDSetMapWith(map[int]*datastructures.IDSet{3: datastructures.IDSetWith(7)}),
-			13: datastructures.DefaultIDSetMapWith(map[int]*datastructures.IDSet{3: datastructures.IDSetWith(8)}),
+		DefinitionDbtb: mbp[int]*dbtbstructures.DefbultIDSetMbp{
+			12: dbtbstructures.DefbultIDSetMbpWith(mbp[int]*dbtbstructures.IDSet{3: dbtbstructures.IDSetWith(7)}),
+			13: dbtbstructures.DefbultIDSetMbpWith(mbp[int]*dbtbstructures.IDSet{3: dbtbstructures.IDSetWith(8)}),
 		},
-		ReferenceData: map[int]*datastructures.DefaultIDSetMap{
-			14: datastructures.DefaultIDSetMapWith(map[int]*datastructures.IDSet{2: datastructures.IDSetWith(4, 5)}),
-			15: datastructures.DefaultIDSetMapWith(map[int]*datastructures.IDSet{}),
+		ReferenceDbtb: mbp[int]*dbtbstructures.DefbultIDSetMbp{
+			14: dbtbstructures.DefbultIDSetMbpWith(mbp[int]*dbtbstructures.IDSet{2: dbtbstructures.IDSetWith(4, 5)}),
+			15: dbtbstructures.DefbultIDSetMbpWith(mbp[int]*dbtbstructures.IDSet{}),
 		},
-		ImplementationData: map[int]*datastructures.DefaultIDSetMap{
-			100: datastructures.DefaultIDSetMapWith(map[int]*datastructures.IDSet{2: datastructures.IDSetWith(5)}),
+		ImplementbtionDbtb: mbp[int]*dbtbstructures.DefbultIDSetMbp{
+			100: dbtbstructures.DefbultIDSetMbpWith(mbp[int]*dbtbstructures.IDSet{2: dbtbstructures.IDSetWith(5)}),
 		},
-		HoverData: map[int]string{
+		HoverDbtb: mbp[int]string{
 			16: "```go\ntext A\n```",
 			17: "```go\ntext B\n```",
 		},
-		MonikerData: map[int]Moniker{
+		MonikerDbtb: mbp[int]Moniker{
 			18: {
-				Moniker: reader.Moniker{
+				Moniker: rebder.Moniker{
 					Kind:       "import",
 					Scheme:     "scheme A",
 					Identifier: "ident A",
 				},
-				PackageInformationID: 22,
+				PbckbgeInformbtionID: 22,
 			},
 			19: {
-				Moniker: reader.Moniker{
+				Moniker: rebder.Moniker{
 					Kind:       "export",
 					Scheme:     "scheme B",
 					Identifier: "ident B",
 				},
-				PackageInformationID: 23,
+				PbckbgeInformbtionID: 23,
 			},
 			20: {
-				Moniker: reader.Moniker{
+				Moniker: rebder.Moniker{
 					Kind:       "import",
 					Scheme:     "scheme C",
 					Identifier: "ident C",
 				},
-				PackageInformationID: 0,
+				PbckbgeInformbtionID: 0,
 			},
 			21: {
-				Moniker: reader.Moniker{
+				Moniker: rebder.Moniker{
 					Kind:       "export",
 					Scheme:     "scheme D",
 					Identifier: "ident D",
 				},
-				PackageInformationID: 0,
+				PbckbgeInformbtionID: 0,
 			},
 		},
-		PackageInformationData: map[int]PackageInformation{
-			22: {Name: "pkg A", Version: "v0.1.0"},
-			23: {Name: "pkg B", Version: "v1.2.3"},
+		PbckbgeInformbtionDbtb: mbp[int]PbckbgeInformbtion{
+			22: {Nbme: "pkg A", Version: "v0.1.0"},
+			23: {Nbme: "pkg B", Version: "v1.2.3"},
 		},
-		DiagnosticResults: map[int][]Diagnostic{
+		DibgnosticResults: mbp[int][]Dibgnostic{
 			49: {
 				{
 					Severity:       1,
 					Code:           "2322",
-					Message:        "Type '10' is not assignable to type 'string'.",
+					Messbge:        "Type '10' is not bssignbble to type 'string'.",
 					Source:         "eslint",
-					StartLine:      1,
-					StartCharacter: 5,
+					StbrtLine:      1,
+					StbrtChbrbcter: 5,
 					EndLine:        1,
-					EndCharacter:   6,
+					EndChbrbcter:   6,
 				},
 			},
 		},
-		NextData: map[int]int{
+		NextDbtb: mbp[int]int{
 			9:  10,
 			10: 11,
 		},
-		ImportedMonikers:       datastructures.IDSetWith(18),
-		ExportedMonikers:       datastructures.IDSetWith(19),
-		ImplementedMonikers:    datastructures.NewIDSet(),
-		LinkedMonikers:         datastructures.DisjointIDSetWith(19, 21),
-		LinkedReferenceResults: map[int][]int{14: {15}},
-		Contains: datastructures.DefaultIDSetMapWith(map[int]*datastructures.IDSet{
-			2: datastructures.IDSetWith(4, 5, 6),
-			3: datastructures.IDSetWith(7, 8, 9),
+		ImportedMonikers:       dbtbstructures.IDSetWith(18),
+		ExportedMonikers:       dbtbstructures.IDSetWith(19),
+		ImplementedMonikers:    dbtbstructures.NewIDSet(),
+		LinkedMonikers:         dbtbstructures.DisjointIDSetWith(19, 21),
+		LinkedReferenceResults: mbp[int][]int{14: {15}},
+		Contbins: dbtbstructures.DefbultIDSetMbpWith(mbp[int]*dbtbstructures.IDSet{
+			2: dbtbstructures.IDSetWith(4, 5, 6),
+			3: dbtbstructures.IDSetWith(7, 8, 9),
 		}),
-		Monikers: datastructures.DefaultIDSetMapWith(map[int]*datastructures.IDSet{
-			7:  datastructures.IDSetWith(18),
-			9:  datastructures.IDSetWith(19),
-			10: datastructures.IDSetWith(20),
-			11: datastructures.IDSetWith(21),
+		Monikers: dbtbstructures.DefbultIDSetMbpWith(mbp[int]*dbtbstructures.IDSet{
+			7:  dbtbstructures.IDSetWith(18),
+			9:  dbtbstructures.IDSetWith(19),
+			10: dbtbstructures.IDSetWith(20),
+			11: dbtbstructures.IDSetWith(21),
 		}),
-		Diagnostics: datastructures.DefaultIDSetMapWith(map[int]*datastructures.IDSet{
-			2: datastructures.IDSetWith(49),
+		Dibgnostics: dbtbstructures.DefbultIDSetMbpWith(mbp[int]*dbtbstructures.IDSet{
+			2: dbtbstructures.IDSetWith(49),
 		}),
 	}
 
-	if diff := cmp.Diff(expectedState, state, datastructures.Comparers...); diff != "" {
-		t.Errorf("unexpected state (-want +got):\n%s", diff)
+	if diff := cmp.Diff(expectedStbte, stbte, dbtbstructures.Compbrers...); diff != "" {
+		t.Errorf("unexpected stbte (-wbnt +got):\n%s", diff)
 	}
 }
 
-func TestCorrelateMetaDataRoot(t *testing.T) {
-	input, err := os.ReadFile("../testdata/dump2.lsif")
+func TestCorrelbteMetbDbtbRoot(t *testing.T) {
+	input, err := os.RebdFile("../testdbtb/dump2.lsif")
 	if err != nil {
-		t.Fatalf("unexpected error reading test file: %s", err)
+		t.Fbtblf("unexpected error rebding test file: %s", err)
 	}
 
-	state, err := correlateFromReader(context.Background(), bytes.NewReader(input), "root/")
+	stbte, err := correlbteFromRebder(context.Bbckground(), bytes.NewRebder(input), "root/")
 	if err != nil {
-		t.Fatalf("unexpected error correlating input: %s", err)
+		t.Fbtblf("unexpected error correlbting input: %s", err)
 	}
 
-	expectedState := &State{
+	expectedStbte := &Stbte{
 		LSIFVersion: "0.4.3",
 		ProjectRoot: "file:///test/root/",
-		DocumentData: map[int]string{
+		DocumentDbtb: mbp[int]string{
 			2: "foo.go",
 		},
-		RangeData:              map[int]Range{},
-		ResultSetData:          map[int]ResultSet{},
-		DefinitionData:         map[int]*datastructures.DefaultIDSetMap{},
-		ReferenceData:          map[int]*datastructures.DefaultIDSetMap{},
-		ImplementationData:     map[int]*datastructures.DefaultIDSetMap{},
-		HoverData:              map[int]string{},
-		MonikerData:            map[int]Moniker{},
-		PackageInformationData: map[int]PackageInformation{},
-		DiagnosticResults:      map[int][]Diagnostic{},
-		NextData:               map[int]int{},
-		ImportedMonikers:       datastructures.NewIDSet(),
-		ExportedMonikers:       datastructures.NewIDSet(),
-		ImplementedMonikers:    datastructures.NewIDSet(),
-		LinkedMonikers:         datastructures.NewDisjointIDSet(),
-		LinkedReferenceResults: map[int][]int{},
-		Contains:               datastructures.NewDefaultIDSetMap(),
-		Monikers:               datastructures.NewDefaultIDSetMap(),
-		Diagnostics:            datastructures.NewDefaultIDSetMap(),
+		RbngeDbtb:              mbp[int]Rbnge{},
+		ResultSetDbtb:          mbp[int]ResultSet{},
+		DefinitionDbtb:         mbp[int]*dbtbstructures.DefbultIDSetMbp{},
+		ReferenceDbtb:          mbp[int]*dbtbstructures.DefbultIDSetMbp{},
+		ImplementbtionDbtb:     mbp[int]*dbtbstructures.DefbultIDSetMbp{},
+		HoverDbtb:              mbp[int]string{},
+		MonikerDbtb:            mbp[int]Moniker{},
+		PbckbgeInformbtionDbtb: mbp[int]PbckbgeInformbtion{},
+		DibgnosticResults:      mbp[int][]Dibgnostic{},
+		NextDbtb:               mbp[int]int{},
+		ImportedMonikers:       dbtbstructures.NewIDSet(),
+		ExportedMonikers:       dbtbstructures.NewIDSet(),
+		ImplementedMonikers:    dbtbstructures.NewIDSet(),
+		LinkedMonikers:         dbtbstructures.NewDisjointIDSet(),
+		LinkedReferenceResults: mbp[int][]int{},
+		Contbins:               dbtbstructures.NewDefbultIDSetMbp(),
+		Monikers:               dbtbstructures.NewDefbultIDSetMbp(),
+		Dibgnostics:            dbtbstructures.NewDefbultIDSetMbp(),
 	}
 
-	if diff := cmp.Diff(expectedState, state, datastructures.Comparers...); diff != "" {
-		t.Errorf("unexpected state (-want +got):\n%s", diff)
+	if diff := cmp.Diff(expectedStbte, stbte, dbtbstructures.Compbrers...); diff != "" {
+		t.Errorf("unexpected stbte (-wbnt +got):\n%s", diff)
 	}
 }
 
-func TestCorrelateMetaDataRootX(t *testing.T) {
-	input, err := os.ReadFile("../testdata/dump3.lsif")
+func TestCorrelbteMetbDbtbRootX(t *testing.T) {
+	input, err := os.RebdFile("../testdbtb/dump3.lsif")
 	if err != nil {
-		t.Fatalf("unexpected error reading test file: %s", err)
+		t.Fbtblf("unexpected error rebding test file: %s", err)
 	}
 
-	state, err := correlateFromReader(context.Background(), bytes.NewReader(input), "")
+	stbte, err := correlbteFromRebder(context.Bbckground(), bytes.NewRebder(input), "")
 	if err != nil {
-		t.Fatalf("unexpected error correlating input: %s", err)
+		t.Fbtblf("unexpected error correlbting input: %s", err)
 	}
 
-	expectedState := &State{
+	expectedStbte := &Stbte{
 		LSIFVersion: "0.4.3",
-		ProjectRoot: "file:///__w/sourcegraph/sourcegraph/shared/",
-		DocumentData: map[int]string{
+		ProjectRoot: "file:///__w/sourcegrbph/sourcegrbph/shbred/",
+		DocumentDbtb: mbp[int]string{
 			2: "../node_modules/@types/history/index.d.ts",
 		},
-		RangeData:              map[int]Range{},
-		ResultSetData:          map[int]ResultSet{},
-		DefinitionData:         map[int]*datastructures.DefaultIDSetMap{},
-		ReferenceData:          map[int]*datastructures.DefaultIDSetMap{},
-		ImplementationData:     map[int]*datastructures.DefaultIDSetMap{},
-		HoverData:              map[int]string{},
-		MonikerData:            map[int]Moniker{},
-		PackageInformationData: map[int]PackageInformation{},
-		DiagnosticResults:      map[int][]Diagnostic{},
-		NextData:               map[int]int{},
-		ImportedMonikers:       datastructures.NewIDSet(),
-		ExportedMonikers:       datastructures.NewIDSet(),
-		ImplementedMonikers:    datastructures.NewIDSet(),
-		LinkedMonikers:         datastructures.NewDisjointIDSet(),
-		LinkedReferenceResults: map[int][]int{},
-		Contains:               datastructures.NewDefaultIDSetMap(),
-		Monikers:               datastructures.NewDefaultIDSetMap(),
-		Diagnostics:            datastructures.NewDefaultIDSetMap(),
+		RbngeDbtb:              mbp[int]Rbnge{},
+		ResultSetDbtb:          mbp[int]ResultSet{},
+		DefinitionDbtb:         mbp[int]*dbtbstructures.DefbultIDSetMbp{},
+		ReferenceDbtb:          mbp[int]*dbtbstructures.DefbultIDSetMbp{},
+		ImplementbtionDbtb:     mbp[int]*dbtbstructures.DefbultIDSetMbp{},
+		HoverDbtb:              mbp[int]string{},
+		MonikerDbtb:            mbp[int]Moniker{},
+		PbckbgeInformbtionDbtb: mbp[int]PbckbgeInformbtion{},
+		DibgnosticResults:      mbp[int][]Dibgnostic{},
+		NextDbtb:               mbp[int]int{},
+		ImportedMonikers:       dbtbstructures.NewIDSet(),
+		ExportedMonikers:       dbtbstructures.NewIDSet(),
+		ImplementedMonikers:    dbtbstructures.NewIDSet(),
+		LinkedMonikers:         dbtbstructures.NewDisjointIDSet(),
+		LinkedReferenceResults: mbp[int][]int{},
+		Contbins:               dbtbstructures.NewDefbultIDSetMbp(),
+		Monikers:               dbtbstructures.NewDefbultIDSetMbp(),
+		Dibgnostics:            dbtbstructures.NewDefbultIDSetMbp(),
 	}
 
-	if diff := cmp.Diff(expectedState, state, datastructures.Comparers...); diff != "" {
-		t.Errorf("unexpected state (-want +got):\n%s", diff)
+	if diff := cmp.Diff(expectedStbte, stbte, dbtbstructures.Compbrers...); diff != "" {
+		t.Errorf("unexpected stbte (-wbnt +got):\n%s", diff)
 	}
 }
 
-func TestCorrelateConflictingDocumentProperties(t *testing.T) {
-	dump, err := os.ReadFile("../testdata/dump1.lsif")
+func TestCorrelbteConflictingDocumentProperties(t *testing.T) {
+	dump, err := os.RebdFile("../testdbtb/dump1.lsif")
 	if err != nil {
-		t.Fatalf("unexpected error reading test file: %s", err)
+		t.Fbtblf("unexpected error rebding test file: %s", err)
 	}
 
-	// Change the document value of one of the item edges.
-	oldLine := `{"id": "38", "type": "edge", "label": "item", "outV": "14", "inVs": ["05"], "document": "02"}`
-	newLine := `{"id": "38", "type": "edge", "label": "item", "outV": "14", "inVs": ["05"], "document": "03"}`
-	badDump := []byte(strings.ReplaceAll(string(dump), oldLine, newLine))
+	// Chbnge the document vblue of one of the item edges.
+	oldLine := `{"id": "38", "type": "edge", "lbbel": "item", "outV": "14", "inVs": ["05"], "document": "02"}`
+	newLine := `{"id": "38", "type": "edge", "lbbel": "item", "outV": "14", "inVs": ["05"], "document": "03"}`
+	bbdDump := []byte(strings.ReplbceAll(string(dump), oldLine, newLine))
 
-	wantErr := "validate: range 5 is contained in document 2, but linked to a different document 3"
+	wbntErr := "vblidbte: rbnge 5 is contbined in document 2, but linked to b different document 3"
 
-	// Make sure correlation fails.
-	_, err = correlateFromReader(context.Background(), bytes.NewReader(badDump), "")
+	// Mbke sure correlbtion fbils.
+	_, err = correlbteFromRebder(context.Bbckground(), bytes.NewRebder(bbdDump), "")
 	if err == nil {
-		t.Fatalf("Expected an error")
+		t.Fbtblf("Expected bn error")
 
-	} else if !strings.Contains(err.Error(), wantErr) {
-		t.Errorf("Expected a different error.")
-		t.Errorf("wanted: %s", wantErr)
+	} else if !strings.Contbins(err.Error(), wbntErr) {
+		t.Errorf("Expected b different error.")
+		t.Errorf("wbnted: %s", wbntErr)
 		t.Errorf("got   : %s", err)
-		t.Fail()
+		t.Fbil()
 	}
 }

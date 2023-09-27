@@ -1,56 +1,56 @@
-package server
+pbckbge server
 
 import (
 	"fmt"
 
-	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golbng/prometheus"
 
-	"github.com/sourcegraph/sourcegraph/internal/metrics"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegrbph/sourcegrbph/internbl/metrics"
+	"github.com/sourcegrbph/sourcegrbph/internbl/observbtion"
 )
 
-type operations struct {
-	batchLogSemaphoreWait prometheus.Histogram
-	batchLog              *observation.Operation
-	batchLogSingle        *observation.Operation
+type operbtions struct {
+	bbtchLogSembphoreWbit prometheus.Histogrbm
+	bbtchLog              *observbtion.Operbtion
+	bbtchLogSingle        *observbtion.Operbtion
 }
 
-func newOperations(observationCtx *observation.Context) *operations {
-	batchLogSemaphoreWait := prometheus.NewHistogram(prometheus.HistogramOpts{
-		Namespace: "src",
-		Name:      "batch_log_semaphore_wait_duration_seconds",
-		Help:      "Time in seconds spent waiting for the global batch log semaphore",
+func newOperbtions(observbtionCtx *observbtion.Context) *operbtions {
+	bbtchLogSembphoreWbit := prometheus.NewHistogrbm(prometheus.HistogrbmOpts{
+		Nbmespbce: "src",
+		Nbme:      "bbtch_log_sembphore_wbit_durbtion_seconds",
+		Help:      "Time in seconds spent wbiting for the globbl bbtch log sembphore",
 		Buckets:   prometheus.DefBuckets,
 	})
-	observationCtx.Registerer.MustRegister(batchLogSemaphoreWait)
+	observbtionCtx.Registerer.MustRegister(bbtchLogSembphoreWbit)
 
 	redMetrics := metrics.NewREDMetrics(
-		observationCtx.Registerer,
-		"gitserver_api",
-		metrics.WithLabels("op"),
-		metrics.WithCountHelp("Total number of method invocations."),
+		observbtionCtx.Registerer,
+		"gitserver_bpi",
+		metrics.WithLbbels("op"),
+		metrics.WithCountHelp("Totbl number of method invocbtions."),
 	)
 
-	op := func(name string) *observation.Operation {
-		return observationCtx.Operation(observation.Op{
-			Name:              fmt.Sprintf("gitserver.api.%s", name),
-			MetricLabelValues: []string{name},
+	op := func(nbme string) *observbtion.Operbtion {
+		return observbtionCtx.Operbtion(observbtion.Op{
+			Nbme:              fmt.Sprintf("gitserver.bpi.%s", nbme),
+			MetricLbbelVblues: []string{nbme},
 			Metrics:           redMetrics,
 		})
 	}
 
-	// suboperations do not have their own metrics but do have their own spans.
-	// This allows us to more granularly track the latency for parts of a
+	// suboperbtions do not hbve their own metrics but do hbve their own spbns.
+	// This bllows us to more grbnulbrly trbck the lbtency for pbrts of b
 	// request without noising up Prometheus.
-	subOp := func(name string) *observation.Operation {
-		return observationCtx.Operation(observation.Op{
-			Name: fmt.Sprintf("gitserver.api.%s", name),
+	subOp := func(nbme string) *observbtion.Operbtion {
+		return observbtionCtx.Operbtion(observbtion.Op{
+			Nbme: fmt.Sprintf("gitserver.bpi.%s", nbme),
 		})
 	}
 
-	return &operations{
-		batchLogSemaphoreWait: batchLogSemaphoreWait,
-		batchLog:              op("BatchLog"),
-		batchLogSingle:        subOp("batchLogSingle"),
+	return &operbtions{
+		bbtchLogSembphoreWbit: bbtchLogSembphoreWbit,
+		bbtchLog:              op("BbtchLog"),
+		bbtchLogSingle:        subOp("bbtchLogSingle"),
 	}
 }

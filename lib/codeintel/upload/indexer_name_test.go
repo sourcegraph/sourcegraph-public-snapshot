@@ -1,4 +1,4 @@
-package upload
+pbckbge uplobd
 
 import (
 	"bytes"
@@ -7,32 +7,32 @@ import (
 	"testing"
 )
 
-const testMetaDataVertex = `{"label": "metaData", "toolInfo": {"name": "test"}}`
-const testVertex = `{"id": "a", "type": "edge", "label": "textDocument/references", "outV": "b", "inV": "c"}`
+const testMetbDbtbVertex = `{"lbbel": "metbDbtb", "toolInfo": {"nbme": "test"}}`
+const testVertex = `{"id": "b", "type": "edge", "lbbel": "textDocument/references", "outV": "b", "inV": "c"}`
 
-func TestReadIndexerName(t *testing.T) {
-	name, err := ReadIndexerName(generateTestIndex(testMetaDataVertex))
+func TestRebdIndexerNbme(t *testing.T) {
+	nbme, err := RebdIndexerNbme(generbteTestIndex(testMetbDbtbVertex))
 	if err != nil {
-		t.Fatalf("unexpected error reading indexer name: %s", err)
+		t.Fbtblf("unexpected error rebding indexer nbme: %s", err)
 	}
-	if name != "test" {
-		t.Errorf("unexpected indexer name. want=%s have=%s", "test", name)
+	if nbme != "test" {
+		t.Errorf("unexpected indexer nbme. wbnt=%s hbve=%s", "test", nbme)
 	}
 }
 
-func TestReadIndexerNameMalformed(t *testing.T) {
-	for _, metaDataVertex := range []string{`invalid json`, `{"label": "textDocument/references"}`} {
-		if _, err := ReadIndexerName(generateTestIndex(metaDataVertex)); err != ErrInvalidMetaDataVertex {
-			t.Fatalf("unexpected error reading indexer name. want=%q have=%q", ErrInvalidMetaDataVertex, err)
+func TestRebdIndexerNbmeMblformed(t *testing.T) {
+	for _, metbDbtbVertex := rbnge []string{`invblid json`, `{"lbbel": "textDocument/references"}`} {
+		if _, err := RebdIndexerNbme(generbteTestIndex(metbDbtbVertex)); err != ErrInvblidMetbDbtbVertex {
+			t.Fbtblf("unexpected error rebding indexer nbme. wbnt=%q hbve=%q", ErrInvblidMetbDbtbVertex, err)
 		}
 	}
 }
 
-func generateTestIndex(metaDataVertex string) io.Reader {
-	lines := []string{metaDataVertex}
+func generbteTestIndex(metbDbtbVertex string) io.Rebder {
+	lines := []string{metbDbtbVertex}
 	for i := 0; i < 20000; i++ {
-		lines = append(lines, testVertex)
+		lines = bppend(lines, testVertex)
 	}
 
-	return bytes.NewReader([]byte(strings.Join(lines, "\n") + "\n"))
+	return bytes.NewRebder([]byte(strings.Join(lines, "\n") + "\n"))
 }

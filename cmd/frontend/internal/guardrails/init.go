@@ -1,49 +1,49 @@
-package guardrails
+pbckbge gubrdrbils
 
 import (
 	"context"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/enterprise"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/guardrails/attribution"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/guardrails/dotcom"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/guardrails/resolvers"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel"
-	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/httpcli"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/internal/search/client"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/enterprise"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/envvbr"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/internbl/gubrdrbils/bttribution"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/internbl/gubrdrbils/dotcom"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/internbl/gubrdrbils/resolvers"
+	"github.com/sourcegrbph/sourcegrbph/internbl/codeintel"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf/conftypes"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/httpcli"
+	"github.com/sourcegrbph/sourcegrbph/internbl/observbtion"
+	"github.com/sourcegrbph/sourcegrbph/internbl/sebrch/client"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
 func Init(
 	_ context.Context,
-	observationCtx *observation.Context,
-	db database.DB,
+	observbtionCtx *observbtion.Context,
+	db dbtbbbse.DB,
 	_ codeintel.Services,
-	_ conftypes.UnifiedWatchable,
+	_ conftypes.UnifiedWbtchbble,
 	enterpriseServices *enterprise.Services,
 ) error {
-	opts := attribution.ServiceOpts{
-		SearchClient: client.New(observationCtx.Logger, db),
+	opts := bttribution.ServiceOpts{
+		SebrchClient: client.New(observbtionCtx.Logger, db),
 	}
 
-	// TODO(keegancsmith) configuration for access token and enabling.
-	if !envvar.SourcegraphDotComMode() {
-		httpClient, err := httpcli.UncachedExternalClientFactory.Doer()
+	// TODO(keegbncsmith) configurbtion for bccess token bnd enbbling.
+	if !envvbr.SourcegrbphDotComMode() {
+		httpClient, err := httpcli.UncbchedExternblClientFbctory.Doer()
 		if err != nil {
-			return errors.Wrap(err, "failed to initialize external http client for guardrails")
+			return errors.Wrbp(err, "fbiled to initiblize externbl http client for gubrdrbils")
 		}
-		endpoint := "https://sourcegraph.com/.api/graphql"
-		accessToken := ""
+		endpoint := "https://sourcegrbph.com/.bpi/grbphql"
+		bccessToken := ""
 
-		opts.SourcegraphDotComFederate = true
-		opts.SourcegraphDotComClient = dotcom.NewClient(httpClient, endpoint, accessToken)
+		opts.SourcegrbphDotComFederbte = true
+		opts.SourcegrbphDotComClient = dotcom.NewClient(httpClient, endpoint, bccessToken)
 	}
 
-	enterpriseServices.GuardrailsResolver = &resolvers.GuardrailsResolver{
-		AttributionService: attribution.NewService(observationCtx, opts),
+	enterpriseServices.GubrdrbilsResolver = &resolvers.GubrdrbilsResolver{
+		AttributionService: bttribution.NewService(observbtionCtx, opts),
 	}
 
 	return nil

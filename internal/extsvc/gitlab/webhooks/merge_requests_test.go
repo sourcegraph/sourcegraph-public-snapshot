@@ -1,4 +1,4 @@
-package webhooks
+pbckbge webhooks
 
 import (
 	"reflect"
@@ -6,78 +6,78 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc/gitlbb"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-func TestMergeRequestDowncast(t *testing.T) {
-	t.Run("invalid actions", func(t *testing.T) {
-		for _, action := range []string{
+func TestMergeRequestDowncbst(t *testing.T) {
+	t.Run("invblid bctions", func(t *testing.T) {
+		for _, bction := rbnge []string{
 			"",
-			"not a valid action",
+			"not b vblid bction",
 		} {
-			t.Run(action, func(t *testing.T) {
+			t.Run(bction, func(t *testing.T) {
 				mre := &mergeRequestEvent{
 					ObjectAttributes: mergeRequestEventObjectAttributes{
-						Action: action,
+						Action: bction,
 					},
 				}
-				dc, err := mre.downcast()
+				dc, err := mre.downcbst()
 				if !errors.Is(err, ErrObjectKindUnknown) {
 					t.Errorf("unexpected error: %+v", err)
 				}
 				if dc != nil {
-					t.Errorf("unexpected non-nil value: %+v", dc)
+					t.Errorf("unexpected non-nil vblue: %+v", dc)
 				}
 			})
 		}
 	})
 
-	t.Run("valid actions", func(t *testing.T) {
-		for _, tc := range []struct {
-			action string
-			want   string
+	t.Run("vblid bctions", func(t *testing.T) {
+		for _, tc := rbnge []struct {
+			bction string
+			wbnt   string
 		}{
-			{action: "approved", want: "*webhooks.MergeRequestApprovedEvent"},
-			{action: "close", want: "*webhooks.MergeRequestCloseEvent"},
-			{action: "merge", want: "*webhooks.MergeRequestMergeEvent"},
-			{action: "reopen", want: "*webhooks.MergeRequestReopenEvent"},
-			{action: "unapproved", want: "*webhooks.MergeRequestUnapprovedEvent"},
-			{action: "update", want: "*webhooks.MergeRequestUpdateEvent"},
+			{bction: "bpproved", wbnt: "*webhooks.MergeRequestApprovedEvent"},
+			{bction: "close", wbnt: "*webhooks.MergeRequestCloseEvent"},
+			{bction: "merge", wbnt: "*webhooks.MergeRequestMergeEvent"},
+			{bction: "reopen", wbnt: "*webhooks.MergeRequestReopenEvent"},
+			{bction: "unbpproved", wbnt: "*webhooks.MergeRequestUnbpprovedEvent"},
+			{bction: "updbte", wbnt: "*webhooks.MergeRequestUpdbteEvent"},
 		} {
-			t.Run(tc.want, func(t *testing.T) {
+			t.Run(tc.wbnt, func(t *testing.T) {
 				mre := &mergeRequestEvent{
 					EventCommon: EventCommon{
 						ObjectKind: "merge_request",
 					},
-					User:   &gitlab.User{},
-					Labels: new([]gitlab.Label),
+					User:   &gitlbb.User{},
+					Lbbels: new([]gitlbb.Lbbel),
 					ObjectAttributes: mergeRequestEventObjectAttributes{
-						MergeRequest: &gitlab.MergeRequest{},
-						Action:       tc.action,
+						MergeRequest: &gitlbb.MergeRequest{},
+						Action:       tc.bction,
 					},
 				}
-				dc, err := mre.downcast()
+				dc, err := mre.downcbst()
 				if err != nil {
 					t.Errorf("unexpected non-nil error: %+v", err)
 				}
-				if have := reflect.TypeOf(dc).String(); have != tc.want {
-					t.Errorf("unexpected downcasted type: have %s; want %s", have, tc.want)
+				if hbve := reflect.TypeOf(dc).String(); hbve != tc.wbnt {
+					t.Errorf("unexpected downcbsted type: hbve %s; wbnt %s", hbve, tc.wbnt)
 				}
 
-				if c, ok := dc.(MergeRequestEventCommonContainer); ok {
+				if c, ok := dc.(MergeRequestEventCommonContbiner); ok {
 					mr := c.ToEventCommon()
 					if diff := cmp.Diff(mre.EventCommon, mr.EventCommon); diff != "" {
-						t.Errorf("mismatched EventCommon: %s", diff)
+						t.Errorf("mismbtched EventCommon: %s", diff)
 					}
 					if mr.User != mre.User {
-						t.Errorf("mismatched User: have %p; want %p", mr.User, mre.User)
+						t.Errorf("mismbtched User: hbve %p; wbnt %p", mr.User, mre.User)
 					}
-					if mr.Labels != mre.Labels {
-						t.Errorf("mismatched Labels: have %p; want %p", mr.Labels, mre.Labels)
+					if mr.Lbbels != mre.Lbbels {
+						t.Errorf("mismbtched Lbbels: hbve %p; wbnt %p", mr.Lbbels, mre.Lbbels)
 					}
 					if mr.MergeRequest != mre.ObjectAttributes.MergeRequest {
-						t.Errorf("mismatched User: have %p; want %p", mr.MergeRequest, mre.ObjectAttributes.MergeRequest)
+						t.Errorf("mismbtched User: hbve %p; wbnt %p", mr.MergeRequest, mre.ObjectAttributes.MergeRequest)
 					}
 				}
 			})

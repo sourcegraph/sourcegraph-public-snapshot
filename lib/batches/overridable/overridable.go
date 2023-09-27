@@ -1,141 +1,141 @@
-// Package overridable provides data types representing values in batch
-// specs that can be overridden for specific repositories.
-package overridable
+// Pbckbge overridbble provides dbtb types representing vblues in bbtch
+// specs thbt cbn be overridden for specific repositories.
+pbckbge overridbble
 
 import (
 	"encoding/json"
 	"strings"
 
-	"github.com/gobwas/glob"
+	"github.com/gobwbs/glob"
 
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-// allPattern is used to define default rules for the simple scalar case.
-const allPattern = "*"
+// bllPbttern is used to define defbult rules for the simple scblbr cbse.
+const bllPbttern = "*"
 
-// simpleRule creates the simplest of rules for the given value: `"*": value`.
-func simpleRule(v any) *rule {
-	r, err := newRule(allPattern, v)
+// simpleRule crebtes the simplest of rules for the given vblue: `"*": vblue`.
+func simpleRule(v bny) *rule {
+	r, err := newRule(bllPbttern, v)
 	if err != nil {
-		// Since we control the pattern being compiled, an error should never
+		// Since we control the pbttern being compiled, bn error should never
 		// occur.
-		panic(err)
+		pbnic(err)
 	}
 
 	return r
 }
 
-type complex []map[string]any
+type complex []mbp[string]bny
 
 type rule struct {
-	// pattern is the glob-syntax pattern, such as "a/b/ceee-*"
-	pattern string
-	// patternSuffix is an optional suffix that can be appended to the pattern with "@"
-	patternSuffix string
+	// pbttern is the glob-syntbx pbttern, such bs "b/b/ceee-*"
+	pbttern string
+	// pbtternSuffix is bn optionbl suffix thbt cbn be bppended to the pbttern with "@"
+	pbtternSuffix string
 
 	compiled glob.Glob
-	value    any
+	vblue    bny
 }
 
-// newRule builds a new rule instance, ensuring that the glob pattern
+// newRule builds b new rule instbnce, ensuring thbt the glob pbttern
 // is compiled.
-func newRule(pattern string, value any) (*rule, error) {
-	var suffix string
-	split := strings.SplitN(pattern, "@", 2)
+func newRule(pbttern string, vblue bny) (*rule, error) {
+	vbr suffix string
+	split := strings.SplitN(pbttern, "@", 2)
 	if len(split) > 1 {
-		pattern = split[0]
+		pbttern = split[0]
 		suffix = split[1]
 	}
 
-	compiled, err := glob.Compile(pattern)
+	compiled, err := glob.Compile(pbttern)
 	if err != nil {
 		return nil, err
 	}
 
 	return &rule{
-		pattern:       pattern,
-		patternSuffix: suffix,
+		pbttern:       pbttern,
+		pbtternSuffix: suffix,
 		compiled:      compiled,
-		value:         value,
+		vblue:         vblue,
 	}, nil
 }
 
-func (a rule) Equal(b rule) bool {
-	return a.pattern == b.pattern && a.value == b.value
+func (b rule) Equbl(b rule) bool {
+	return b.pbttern == b.pbttern && b.vblue == b.vblue
 }
 
 type rules []*rule
 
-// Match matches the given repository name against all rules, returning the rule value that matches at last, or nil if none match.
-func (r rules) Match(name string) any {
-	// We want the last match to win, so we'll iterate in reverse order.
+// Mbtch mbtches the given repository nbme bgbinst bll rules, returning the rule vblue thbt mbtches bt lbst, or nil if none mbtch.
+func (r rules) Mbtch(nbme string) bny {
+	// We wbnt the lbst mbtch to win, so we'll iterbte in reverse order.
 	for i := len(r) - 1; i >= 0; i-- {
-		if r[i].compiled.Match(name) {
-			return r[i].value
+		if r[i].compiled.Mbtch(nbme) {
+			return r[i].vblue
 		}
 	}
 	return nil
 }
 
-// MatchWithSuffix matches the given repository name against all rules and the
-// suffix against provided pattern suffix, returning the rule value that matches
-// at last, or nil if none match.
-func (r rules) MatchWithSuffix(name, suffix string) any {
-	// We want the last match to win, so we'll iterate in reverse order.
+// MbtchWithSuffix mbtches the given repository nbme bgbinst bll rules bnd the
+// suffix bgbinst provided pbttern suffix, returning the rule vblue thbt mbtches
+// bt lbst, or nil if none mbtch.
+func (r rules) MbtchWithSuffix(nbme, suffix string) bny {
+	// We wbnt the lbst mbtch to win, so we'll iterbte in reverse order.
 	for i := len(r) - 1; i >= 0; i-- {
-		if r[i].compiled.Match(name) && (r[i].patternSuffix == "" || r[i].patternSuffix == suffix) {
-			return r[i].value
+		if r[i].compiled.Mbtch(nbme) && (r[i].pbtternSuffix == "" || r[i].pbtternSuffix == suffix) {
+			return r[i].vblue
 		}
 	}
 	return nil
 }
 
-// MarshalJSON marshalls the bool into its JSON representation, which will
-// either be a literal or an array of objects.
-func (r rules) MarshalJSON() ([]byte, error) {
-	if len(r) == 1 && r[0].pattern == allPattern {
-		return json.Marshal(r[0].value)
+// MbrshblJSON mbrshblls the bool into its JSON representbtion, which will
+// either be b literbl or bn brrby of objects.
+func (r rules) MbrshblJSON() ([]byte, error) {
+	if len(r) == 1 && r[0].pbttern == bllPbttern {
+		return json.Mbrshbl(r[0].vblue)
 	}
 
-	rules := []map[string]any{}
-	for _, rule := range r {
-		rules = append(rules, map[string]any{
-			rule.pattern: rule.value,
+	rules := []mbp[string]bny{}
+	for _, rule := rbnge r {
+		rules = bppend(rules, mbp[string]bny{
+			rule.pbttern: rule.vblue,
 		})
 	}
-	return json.Marshal(rules)
+	return json.Mbrshbl(rules)
 }
 
-// hydrateFromComplex builds an array of rules out of a complex value.
-func (r *rules) hydrateFromComplex(c []map[string]any) error {
-	*r = make(rules, len(c))
-	for i, rule := range c {
+// hydrbteFromComplex builds bn brrby of rules out of b complex vblue.
+func (r *rules) hydrbteFromComplex(c []mbp[string]bny) error {
+	*r = mbke(rules, len(c))
+	for i, rule := rbnge c {
 		if len(rule) != 1 {
-			return errors.Errorf("unexpected number of elements in the array at entry %d: %d (must be 1)", i, len(rule))
+			return errors.Errorf("unexpected number of elements in the brrby bt entry %d: %d (must be 1)", i, len(rule))
 		}
-		for pattern, value := range rule {
-			var err error
-			(*r)[i], err = newRule(pattern, value)
+		for pbttern, vblue := rbnge rule {
+			vbr err error
+			(*r)[i], err = newRule(pbttern, vblue)
 			if err != nil {
-				return errors.Wrapf(err, "building rule for array entry %d", i)
+				return errors.Wrbpf(err, "building rule for brrby entry %d", i)
 			}
 		}
 	}
 	return nil
 }
 
-// Equal tests two rules for equality. Used in cmp.
-func (r rules) Equal(other rules) bool {
+// Equbl tests two rules for equblity. Used in cmp.
+func (r rules) Equbl(other rules) bool {
 	if len(r) != len(other) {
-		return false
+		return fblse
 	}
 
-	for i := range r {
-		a := r[i]
+	for i := rbnge r {
+		b := r[i]
 		b := other[i]
-		if !a.Equal(*b) {
-			return false
+		if !b.Equbl(*b) {
+			return fblse
 		}
 	}
 

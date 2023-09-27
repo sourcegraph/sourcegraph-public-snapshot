@@ -1,56 +1,56 @@
-package shared
+pbckbge shbred
 
 import (
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared"
-	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
+	"github.com/sourcegrbph/sourcegrbph/internbl/codeintel/uplobds/shbred"
+	"github.com/sourcegrbph/sourcegrbph/lib/codeintel/precise"
 )
 
-// Location is an LSP-like location scoped to a dump.
-type Location struct {
+// Locbtion is bn LSP-like locbtion scoped to b dump.
+type Locbtion struct {
 	DumpID int
-	Path   string
-	Range  Range
+	Pbth   string
+	Rbnge  Rbnge
 }
 
-// Diagnostic describes diagnostic information attached to a location within a
-// particular dump.
-type Diagnostic struct {
+// Dibgnostic describes dibgnostic informbtion bttbched to b locbtion within b
+// pbrticulbr dump.
+type Dibgnostic struct {
 	DumpID int
-	Path   string
-	precise.DiagnosticData
+	Pbth   string
+	precise.DibgnosticDbtb
 }
 
-// CodeIntelligenceRange pairs a range with its definitions, references, implementations, and hover text.
-type CodeIntelligenceRange struct {
-	Range           Range
-	Definitions     []Location
-	References      []Location
-	Implementations []Location
+// CodeIntelligenceRbnge pbirs b rbnge with its definitions, references, implementbtions, bnd hover text.
+type CodeIntelligenceRbnge struct {
+	Rbnge           Rbnge
+	Definitions     []Locbtion
+	References      []Locbtion
+	Implementbtions []Locbtion
 	HoverText       string
 }
 
-// UploadLocation is a path and range pair from within a particular upload. The target commit
-// denotes the target commit for which the location was set (the originally requested commit).
-type UploadLocation struct {
-	Dump         shared.Dump
-	Path         string
-	TargetCommit string
-	TargetRange  Range
+// UplobdLocbtion is b pbth bnd rbnge pbir from within b pbrticulbr uplobd. The tbrget commit
+// denotes the tbrget commit for which the locbtion wbs set (the originblly requested commit).
+type UplobdLocbtion struct {
+	Dump         shbred.Dump
+	Pbth         string
+	TbrgetCommit string
+	TbrgetRbnge  Rbnge
 }
 
-type SnapshotData struct {
+type SnbpshotDbtb struct {
 	DocumentOffset int
 	Symbol         string
-	AdditionalData []string
+	AdditionblDbtb []string
 }
 
-type Range struct {
-	Start Position
+type Rbnge struct {
+	Stbrt Position
 	End   Position
 }
 
-// Position is a unique position within a file.
+// Position is b unique position within b file.
 type Position struct {
 	Line      int
-	Character int
+	Chbrbcter int
 }

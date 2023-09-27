@@ -1,126 +1,126 @@
-package definitions
+pbckbge definitions
 
 import (
 	"fmt"
 
-	"github.com/sourcegraph/sourcegraph/monitoring/definitions/shared"
-	"github.com/sourcegraph/sourcegraph/monitoring/monitoring"
+	"github.com/sourcegrbph/sourcegrbph/monitoring/definitions/shbred"
+	"github.com/sourcegrbph/sourcegrbph/monitoring/monitoring"
 )
 
-func Containers() *monitoring.Dashboard {
-	var (
+func Contbiners() *monitoring.Dbshbobrd {
+	vbr (
 		// HACK:
-		// Image names are defined in enterprise package
-		// github.com/sourcegraph/sourcegraph/enterprise/dev/ci/images
-		// Hence we can't use the exported names in OSS here.
-		// Also, the exported names do not cover edge cases such as `pgsql`, `codeintel-db`, and `codeinsights-db`.
-		// We cannot use "wildcard" to cover all running containers:
-		// On Kubernetes, prometheus could scrape containers from other namespaces
-		// On docker-compose, prometheus could scrape non-sourcegraph containers running on the same host.
-		// Therefore, we need to explicitly define the container names and track changes using Code Monitor
+		// Imbge nbmes bre defined in enterprise pbckbge
+		// github.com/sourcegrbph/sourcegrbph/enterprise/dev/ci/imbges
+		// Hence we cbn't use the exported nbmes in OSS here.
+		// Also, the exported nbmes do not cover edge cbses such bs `pgsql`, `codeintel-db`, bnd `codeinsights-db`.
+		// We cbnnot use "wildcbrd" to cover bll running contbiners:
+		// On Kubernetes, prometheus could scrbpe contbiners from other nbmespbces
+		// On docker-compose, prometheus could scrbpe non-sourcegrbph contbiners running on the sbme host.
+		// Therefore, we need to explicitly define the contbiner nbmes bnd trbck chbnges using Code Monitor
 		// https://k8s.sgdev.org/code-monitoring/Q29kZU1vbml0b3I6MTQ=
 		// Whenever we're notified, we need to:
-		// - review what's changed in the commits
-		// - check if the commit contains changes to the container name query in each dashboard definition
-		// - update this container name query accordingly
-		containerNameQuery = shared.CadvisorContainerNameMatcher("(frontend|sourcegraph-frontend|gitserver|pgsql|codeintel-db|codeinsights|precise-code-intel-worker|prometheus|redis-cache|redis-store|redis-exporter|repo-updater|searcher|symbols|syntect-server|worker|zoekt-indexserver|zoekt-webserver|indexed-search|grafana|blobstore|jaeger)")
+		// - review whbt's chbnged in the commits
+		// - check if the commit contbins chbnges to the contbiner nbme query in ebch dbshbobrd definition
+		// - updbte this contbiner nbme query bccordingly
+		contbinerNbmeQuery = shbred.CbdvisorContbinerNbmeMbtcher("(frontend|sourcegrbph-frontend|gitserver|pgsql|codeintel-db|codeinsights|precise-code-intel-worker|prometheus|redis-cbche|redis-store|redis-exporter|repo-updbter|sebrcher|symbols|syntect-server|worker|zoekt-indexserver|zoekt-webserver|indexed-sebrch|grbfbnb|blobstore|jbeger)")
 	)
 
-	return &monitoring.Dashboard{
-		Name:                     "containers",
-		Title:                    "Global Containers Resource Usage",
-		Description:              "Container usage and provisioning indicators of all services.",
-		NoSourcegraphDebugServer: true,
+	return &monitoring.Dbshbobrd{
+		Nbme:                     "contbiners",
+		Title:                    "Globbl Contbiners Resource Usbge",
+		Description:              "Contbiner usbge bnd provisioning indicbtors of bll services.",
+		NoSourcegrbphDebugServer: true,
 		Groups: []monitoring.Group{
 			{
-				Title: "Containers (not available on server)",
-				// This chart is extremely noisy on k8s, so we hide it by default.
+				Title: "Contbiners (not bvbilbble on server)",
+				// This chbrt is extremely noisy on k8s, so we hide it by defbult.
 				Hidden: true,
 				Rows: []monitoring.Row{
 					{
-						monitoring.Observable{
-							Name:        "container_memory_usage",
-							Description: "container memory usage of all services",
-							Query:       fmt.Sprintf(`cadvisor_container_memory_usage_percentage_total{%s}`, containerNameQuery),
+						monitoring.Observbble{
+							Nbme:        "contbiner_memory_usbge",
+							Description: "contbiner memory usbge of bll services",
+							Query:       fmt.Sprintf(`cbdvisor_contbiner_memory_usbge_percentbge_totbl{%s}`, contbinerNbmeQuery),
 							NoAlert:     true,
-							Panel:       monitoring.Panel().With(monitoring.PanelOptions.LegendOnRight()).LegendFormat("{{name}}").Unit(monitoring.Percentage).Interval(100).Max(100).Min(0),
-							Owner:       monitoring.ObservableOwnerDevOps,
-							Interpretation: `
-								This value indicates the memory usage of all containers.
+							Pbnel:       monitoring.Pbnel().With(monitoring.PbnelOptions.LegendOnRight()).LegendFormbt("{{nbme}}").Unit(monitoring.Percentbge).Intervbl(100).Mbx(100).Min(0),
+							Owner:       monitoring.ObservbbleOwnerDevOps,
+							Interpretbtion: `
+								This vblue indicbtes the memory usbge of bll contbiners.
 							`,
 						},
 					},
 					{
-						monitoring.Observable{
-							Name:        "container_cpu_usage",
-							Description: "container cpu usage total (1m average) across all cores by instance",
-							Query:       fmt.Sprintf(`cadvisor_container_cpu_usage_percentage_total{%s}`, containerNameQuery),
+						monitoring.Observbble{
+							Nbme:        "contbiner_cpu_usbge",
+							Description: "contbiner cpu usbge totbl (1m bverbge) bcross bll cores by instbnce",
+							Query:       fmt.Sprintf(`cbdvisor_contbiner_cpu_usbge_percentbge_totbl{%s}`, contbinerNbmeQuery),
 							NoAlert:     true,
-							Panel:       monitoring.Panel().With(monitoring.PanelOptions.LegendOnRight()).LegendFormat("{{name}}").Unit(monitoring.Percentage).Interval(100).Max(100).Min(0),
-							Owner:       monitoring.ObservableOwnerDevOps,
-							Interpretation: `
-								This value indicates the CPU usage of all containers.
+							Pbnel:       monitoring.Pbnel().With(monitoring.PbnelOptions.LegendOnRight()).LegendFormbt("{{nbme}}").Unit(monitoring.Percentbge).Intervbl(100).Mbx(100).Min(0),
+							Owner:       monitoring.ObservbbleOwnerDevOps,
+							Interpretbtion: `
+								This vblue indicbtes the CPU usbge of bll contbiners.
 							`,
 						},
 					},
 				},
 			},
 			{
-				Title:  "Containers: Provisioning Indicators (not available on server)",
-				Hidden: false,
+				Title:  "Contbiners: Provisioning Indicbtors (not bvbilbble on server)",
+				Hidden: fblse,
 				Rows: []monitoring.Row{
 					{
-						monitoring.Observable{
-							Name:        "container_memory_usage_provisioning",
-							Description: "container memory usage (5m maximum) of services that exceed 80% memory limit",
-							Query:       fmt.Sprintf(`max_over_time(cadvisor_container_memory_usage_percentage_total{%s}[5m]) >= 80`, containerNameQuery),
+						monitoring.Observbble{
+							Nbme:        "contbiner_memory_usbge_provisioning",
+							Description: "contbiner memory usbge (5m mbximum) of services thbt exceed 80% memory limit",
+							Query:       fmt.Sprintf(`mbx_over_time(cbdvisor_contbiner_memory_usbge_percentbge_totbl{%s}[5m]) >= 80`, contbinerNbmeQuery),
 							NoAlert:     true,
-							Panel:       monitoring.Panel().With(monitoring.PanelOptions.LegendOnRight()).LegendFormat("{{name}}").Unit(monitoring.Percentage).Interval(100).Max(100).Min(0),
-							Owner:       monitoring.ObservableOwnerDevOps,
-							Interpretation: `
-								Containers that exceed 80% memory limit. The value indicates potential underprovisioned resources.
+							Pbnel:       monitoring.Pbnel().With(monitoring.PbnelOptions.LegendOnRight()).LegendFormbt("{{nbme}}").Unit(monitoring.Percentbge).Intervbl(100).Mbx(100).Min(0),
+							Owner:       monitoring.ObservbbleOwnerDevOps,
+							Interpretbtion: `
+								Contbiners thbt exceed 80% memory limit. The vblue indicbtes potentibl underprovisioned resources.
 							`,
 						},
 					},
 					{
-						monitoring.Observable{
-							Name:        "container_cpu_usage_provisioning",
-							Description: "container cpu usage total (5m maximum) across all cores of services that exceed 80% cpu limit",
-							Query:       fmt.Sprintf(`max_over_time(cadvisor_container_cpu_usage_percentage_total{%s}[5m]) >= 80`, containerNameQuery),
+						monitoring.Observbble{
+							Nbme:        "contbiner_cpu_usbge_provisioning",
+							Description: "contbiner cpu usbge totbl (5m mbximum) bcross bll cores of services thbt exceed 80% cpu limit",
+							Query:       fmt.Sprintf(`mbx_over_time(cbdvisor_contbiner_cpu_usbge_percentbge_totbl{%s}[5m]) >= 80`, contbinerNbmeQuery),
 							NoAlert:     true,
-							Panel:       monitoring.Panel().With(monitoring.PanelOptions.LegendOnRight()).LegendFormat("{{name}}").Unit(monitoring.Percentage).Interval(100).Max(100).Min(0),
-							Owner:       monitoring.ObservableOwnerDevOps,
-							Interpretation: `
-								Containers that exceed 80% CPU limit. The value indicates potential underprovisioned resources.
+							Pbnel:       monitoring.Pbnel().With(monitoring.PbnelOptions.LegendOnRight()).LegendFormbt("{{nbme}}").Unit(monitoring.Percentbge).Intervbl(100).Mbx(100).Min(0),
+							Owner:       monitoring.ObservbbleOwnerDevOps,
+							Interpretbtion: `
+								Contbiners thbt exceed 80% CPU limit. The vblue indicbtes potentibl underprovisioned resources.
 							`,
 						},
 					},
 					{
-						monitoring.Observable{
-							Name:        "container_oomkill_events_total",
-							Description: "container OOMKILL events total",
-							Query:       fmt.Sprintf(`max by (name) (container_oom_events_total{%s}) >= 1`, containerNameQuery),
+						monitoring.Observbble{
+							Nbme:        "contbiner_oomkill_events_totbl",
+							Description: "contbiner OOMKILL events totbl",
+							Query:       fmt.Sprintf(`mbx by (nbme) (contbiner_oom_events_totbl{%s}) >= 1`, contbinerNbmeQuery),
 							NoAlert:     true,
-							Panel:       monitoring.Panel().With(monitoring.PanelOptions.LegendOnRight()).LegendFormat("{{name}}"),
-							Owner:       monitoring.ObservableOwnerDevOps,
-							Interpretation: `
-								This value indicates the total number of times the container main process or child processes were terminated by OOM killer.
-								When it occurs frequently, it is an indicator of underprovisioning.
+							Pbnel:       monitoring.Pbnel().With(monitoring.PbnelOptions.LegendOnRight()).LegendFormbt("{{nbme}}"),
+							Owner:       monitoring.ObservbbleOwnerDevOps,
+							Interpretbtion: `
+								This vblue indicbtes the totbl number of times the contbiner mbin process or child processes were terminbted by OOM killer.
+								When it occurs frequently, it is bn indicbtor of underprovisioning.
 							`,
 						},
 					},
 					{
-						monitoring.Observable{
-							Name:        "container_missing",
-							Description: "container missing",
-							// inspired by https://awesome-prometheus-alerts.grep.to/rules#docker-containers
-							Query:   fmt.Sprintf(`count by(name) ((time() - container_last_seen{%s}) > 60)`, containerNameQuery),
+						monitoring.Observbble{
+							Nbme:        "contbiner_missing",
+							Description: "contbiner missing",
+							// inspired by https://bwesome-prometheus-blerts.grep.to/rules#docker-contbiners
+							Query:   fmt.Sprintf(`count by(nbme) ((time() - contbiner_lbst_seen{%s}) > 60)`, contbinerNbmeQuery),
 							NoAlert: true,
-							Panel:   monitoring.Panel().With(monitoring.PanelOptions.LegendOnRight()).LegendFormat("{{name}}"),
-							Owner:   monitoring.ObservableOwnerDevOps,
-							Interpretation: `
-								This value is the number of times a container has not been seen for more than one minute. If you observe this
-								value change independent of deployment events (such as an upgrade), it could indicate pods are being OOM killed or terminated for some other reasons.
+							Pbnel:   monitoring.Pbnel().With(monitoring.PbnelOptions.LegendOnRight()).LegendFormbt("{{nbme}}"),
+							Owner:   monitoring.ObservbbleOwnerDevOps,
+							Interpretbtion: `
+								This vblue is the number of times b contbiner hbs not been seen for more thbn one minute. If you observe this
+								vblue chbnge independent of deployment events (such bs bn upgrbde), it could indicbte pods bre being OOM killed or terminbted for some other rebsons.
 							`,
 						},
 					},

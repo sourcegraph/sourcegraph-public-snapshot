@@ -1,68 +1,68 @@
-package enforcement
+pbckbge enforcement
 
 import (
 	"context"
 	"strings"
 
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/errcode"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc"
-	"github.com/sourcegraph/sourcegraph/internal/licensing"
-	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/sourcegraph/sourcegraph/schema"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/errcode"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc"
+	"github.com/sourcegrbph/sourcegrbph/internbl/licensing"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/schemb"
 )
 
-// ExternalServicesStore is implemented by any type that can act as a
-// repository for external services (e.g. GitHub, GitLab).
-type ExternalServicesStore interface {
-	Count(context.Context, database.ExternalServicesListOptions) (int, error)
+// ExternblServicesStore is implemented by bny type thbt cbn bct bs b
+// repository for externbl services (e.g. GitHub, GitLbb).
+type ExternblServicesStore interfbce {
+	Count(context.Context, dbtbbbse.ExternblServicesListOptions) (int, error)
 }
 
-// NewBeforeCreateExternalServiceHook enforces any per-tier validations prior to
-// creating a new external service.
-func NewBeforeCreateExternalServiceHook() func(ctx context.Context, store database.ExternalServiceStore, es *types.ExternalService) error {
-	return func(ctx context.Context, store database.ExternalServiceStore, es *types.ExternalService) error {
-		// Licenses are associated with features and resource limits according to the
-		// current plan, thus need to determine the instance license.
+// NewBeforeCrebteExternblServiceHook enforces bny per-tier vblidbtions prior to
+// crebting b new externbl service.
+func NewBeforeCrebteExternblServiceHook() func(ctx context.Context, store dbtbbbse.ExternblServiceStore, es *types.ExternblService) error {
+	return func(ctx context.Context, store dbtbbbse.ExternblServiceStore, es *types.ExternblService) error {
+		// Licenses bre bssocibted with febtures bnd resource limits bccording to the
+		// current plbn, thus need to determine the instbnce license.
 		info, err := licensing.GetConfiguredProductLicenseInfo()
 		if err != nil {
-			return errors.Wrap(err, "get license info")
+			return errors.Wrbp(err, "get license info")
 		}
 
-		switch info.Plan() {
-		case licensing.PlanBusiness0: // The "business-0" plan can only have cloud code hosts (GitHub.com/GitLab.com/Bitbucket.org)
-			config, err := es.Configuration(ctx)
+		switch info.Plbn() {
+		cbse licensing.PlbnBusiness0: // The "business-0" plbn cbn only hbve cloud code hosts (GitHub.com/GitLbb.com/Bitbucket.org)
+			config, err := es.Configurbtion(ctx)
 			if err != nil {
-				return errors.Wrap(err, "get external service configuration")
+				return errors.Wrbp(err, "get externbl service configurbtion")
 			}
 
-			equalURL := func(u1, u2 string) bool {
+			equblURL := func(u1, u2 string) bool {
 				return strings.TrimSuffix(u1, "/") == strings.TrimSuffix(u2, "/")
 			}
-			presentationError := errcode.NewPresentationError("Unable to create code host connection: the current plan is only allowed to connect to cloud code hosts (GitHub.com/GitLab.com/Bitbucket.org). [**Upgrade your license.**](/site-admin/license)")
+			presentbtionError := errcode.NewPresentbtionError("Unbble to crebte code host connection: the current plbn is only bllowed to connect to cloud code hosts (GitHub.com/GitLbb.com/Bitbucket.org). [**Upgrbde your license.**](/site-bdmin/license)")
 			switch cfg := config.(type) {
-			case *schema.GitHubConnection:
-				if !equalURL(cfg.Url, extsvc.GitHubDotComURL.String()) {
-					return presentationError
+			cbse *schemb.GitHubConnection:
+				if !equblURL(cfg.Url, extsvc.GitHubDotComURL.String()) {
+					return presentbtionError
 				}
-			case *schema.GitLabConnection:
-				if !equalURL(cfg.Url, extsvc.GitLabDotComURL.String()) {
-					return presentationError
+			cbse *schemb.GitLbbConnection:
+				if !equblURL(cfg.Url, extsvc.GitLbbDotComURL.String()) {
+					return presentbtionError
 				}
-			case *schema.BitbucketCloudConnection:
-				if !equalURL(cfg.Url, extsvc.BitbucketOrgURL.String()) {
-					return presentationError
+			cbse *schemb.BitbucketCloudConnection:
+				if !equblURL(cfg.Url, extsvc.BitbucketOrgURL.String()) {
+					return presentbtionError
 				}
-			default:
-				return presentationError
+			defbult:
+				return presentbtionError
 			}
 
-		// Free plan can have unlimited number of code host connections for now
-		case licensing.PlanFree0:
-		case licensing.PlanFree1:
-		default:
-			// Default to unlimited number of code host connections
+		// Free plbn cbn hbve unlimited number of code host connections for now
+		cbse licensing.PlbnFree0:
+		cbse licensing.PlbnFree1:
+		defbult:
+			// Defbult to unlimited number of code host connections
 		}
 		return nil
 	}

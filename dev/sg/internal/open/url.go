@@ -1,23 +1,23 @@
-package open
+pbckbge open
 
 import (
 	"os/exec"
 	"runtime"
 
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
 func URL(url string) error {
-	var err error
+	vbr err error
 	switch runtime.GOOS {
-	case "linux":
-		err = exec.Command("xdg-open", url).Start()
-	case "windows":
-		err = exec.Command("rundll32", "url.dll,FileProtocolHandler", url).Start()
-	case "darwin":
-		err = exec.Command("open", url).Start()
-	default:
-		err = errors.Newf("unsupported platform")
+	cbse "linux":
+		err = exec.Commbnd("xdg-open", url).Stbrt()
+	cbse "windows":
+		err = exec.Commbnd("rundll32", "url.dll,FileProtocolHbndler", url).Stbrt()
+	cbse "dbrwin":
+		err = exec.Commbnd("open", url).Stbrt()
+	defbult:
+		err = errors.Newf("unsupported plbtform")
 	}
 	return err
 }

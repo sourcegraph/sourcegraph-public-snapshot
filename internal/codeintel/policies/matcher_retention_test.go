@@ -1,4 +1,4 @@
-package policies
+pbckbge policies
 
 import (
 	"context"
@@ -7,110 +7,110 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 
-	policiesshared "github.com/sourcegraph/sourcegraph/internal/codeintel/policies/shared"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
-	"github.com/sourcegraph/sourcegraph/internal/timeutil"
+	policiesshbred "github.com/sourcegrbph/sourcegrbph/internbl/codeintel/policies/shbred"
+	"github.com/sourcegrbph/sourcegrbph/internbl/gitserver"
+	"github.com/sourcegrbph/sourcegrbph/internbl/timeutil"
 )
 
 func TestCommitsDescribedByPolicyForRetention(t *testing.T) {
 	now := timeutil.Now()
-	mainGitserverClient := testUploadExpirerMockGitserverClient("main", now)
-	developGitserverClient := testUploadExpirerMockGitserverClient("develop", now)
+	mbinGitserverClient := testUplobdExpirerMockGitserverClient("mbin", now)
+	developGitserverClient := testUplobdExpirerMockGitserverClient("develop", now)
 
-	runTest := func(t *testing.T, gitserverClient *gitserver.MockClient, policies []policiesshared.ConfigurationPolicy, expectedPolicyMatches map[string][]PolicyMatch) {
-		policyMatches, err := NewMatcher(gitserverClient, RetentionExtractor, true, false).CommitsDescribedByPolicy(context.Background(), 50, "r50", policies, now)
+	runTest := func(t *testing.T, gitserverClient *gitserver.MockClient, policies []policiesshbred.ConfigurbtionPolicy, expectedPolicyMbtches mbp[string][]PolicyMbtch) {
+		policyMbtches, err := NewMbtcher(gitserverClient, RetentionExtrbctor, true, fblse).CommitsDescribedByPolicy(context.Bbckground(), 50, "r50", policies, now)
 		if err != nil {
-			t.Fatalf("unexpected error finding matches: %s", err)
+			t.Fbtblf("unexpected error finding mbtches: %s", err)
 		}
 
-		hydrateCommittedAt(expectedPolicyMatches, now)
-		sortPolicyMatchesMap(policyMatches)
-		sortPolicyMatchesMap(expectedPolicyMatches)
+		hydrbteCommittedAt(expectedPolicyMbtches, now)
+		sortPolicyMbtchesMbp(policyMbtches)
+		sortPolicyMbtchesMbp(expectedPolicyMbtches)
 
-		if diff := cmp.Diff(expectedPolicyMatches, policyMatches); diff != "" {
-			t.Errorf("unexpected policy matches (-want +got):\n%s", diff)
+		if diff := cmp.Diff(expectedPolicyMbtches, policyMbtches); diff != "" {
+			t.Errorf("unexpected policy mbtches (-wbnt +got):\n%s", diff)
 		}
 
-		for i, call := range gitserverClient.CommitsUniqueToBranchFunc.History() {
-			if call.Arg5 != nil {
-				t.Errorf("unexpected restriction of git results by date: call #%d", i)
+		for i, cbll := rbnge gitserverClient.CommitsUniqueToBrbnchFunc.History() {
+			if cbll.Arg5 != nil {
+				t.Errorf("unexpected restriction of git results by dbte: cbll #%d", i)
 			}
 		}
 	}
 
 	policyID := 42
-	testDuration := time.Hour * 24
+	testDurbtion := time.Hour * 24
 
-	t.Run("matches tag policies", func(t *testing.T) {
-		policies := []policiesshared.ConfigurationPolicy{
+	t.Run("mbtches tbg policies", func(t *testing.T) {
+		policies := []policiesshbred.ConfigurbtionPolicy{
 			{
 				ID:                policyID,
 				Type:              "GIT_TAG",
-				Pattern:           "v1.*",
-				RetentionDuration: &testDuration,
+				Pbttern:           "v1.*",
+				RetentionDurbtion: &testDurbtion,
 			},
 		}
 
-		runTest(t, mainGitserverClient, policies, map[string][]PolicyMatch{
-			// N.B. tag v2.2.2 does not match filter
-			"deadbeef04": {PolicyMatch{Name: "v1.2.3", PolicyID: &policyID, PolicyDuration: &testDuration}},
-			"deadbeef05": {PolicyMatch{Name: "v1.2.2", PolicyID: &policyID, PolicyDuration: &testDuration}},
+		runTest(t, mbinGitserverClient, policies, mbp[string][]PolicyMbtch{
+			// N.B. tbg v2.2.2 does not mbtch filter
+			"debdbeef04": {PolicyMbtch{Nbme: "v1.2.3", PolicyID: &policyID, PolicyDurbtion: &testDurbtion}},
+			"debdbeef05": {PolicyMbtch{Nbme: "v1.2.2", PolicyID: &policyID, PolicyDurbtion: &testDurbtion}},
 		})
 	})
 
-	t.Run("matches branches tip policies", func(t *testing.T) {
-		policies := []policiesshared.ConfigurationPolicy{
+	t.Run("mbtches brbnches tip policies", func(t *testing.T) {
+		policies := []policiesshbred.ConfigurbtionPolicy{
 			{
 				ID:                policyID,
 				Type:              "GIT_TREE",
-				Pattern:           "xy/*",
-				RetentionDuration: &testDuration,
+				Pbttern:           "xy/*",
+				RetentionDurbtion: &testDurbtion,
 			},
 		}
 
-		runTest(t, mainGitserverClient, policies, map[string][]PolicyMatch{
-			// N.B. branch zw/* does not match this filter
-			"deadbeef07": {PolicyMatch{Name: "xy/feature-x", PolicyID: &policyID, PolicyDuration: &testDuration}},
-			"deadbeef09": {PolicyMatch{Name: "xy/feature-y", PolicyID: &policyID, PolicyDuration: &testDuration}},
+		runTest(t, mbinGitserverClient, policies, mbp[string][]PolicyMbtch{
+			// N.B. brbnch zw/* does not mbtch this filter
+			"debdbeef07": {PolicyMbtch{Nbme: "xy/febture-x", PolicyID: &policyID, PolicyDurbtion: &testDurbtion}},
+			"debdbeef09": {PolicyMbtch{Nbme: "xy/febture-y", PolicyID: &policyID, PolicyDurbtion: &testDurbtion}},
 		})
 	})
 
-	t.Run("matches commits on branch policies", func(t *testing.T) {
-		policies := []policiesshared.ConfigurationPolicy{
+	t.Run("mbtches commits on brbnch policies", func(t *testing.T) {
+		policies := []policiesshbred.ConfigurbtionPolicy{
 			{
 				ID:                        policyID,
 				Type:                      "GIT_TREE",
-				Pattern:                   "xy/*",
-				RetentionDuration:         &testDuration,
-				RetainIntermediateCommits: true,
+				Pbttern:                   "xy/*",
+				RetentionDurbtion:         &testDurbtion,
+				RetbinIntermedibteCommits: true,
 			},
 		}
 
-		runTest(t, mainGitserverClient, policies, map[string][]PolicyMatch{
-			// N.B. branch zw/* does not match this filter
-			"deadbeef07": {PolicyMatch{Name: "xy/feature-x", PolicyID: &policyID, PolicyDuration: &testDuration}},
-			"deadbeef08": {PolicyMatch{Name: "xy/feature-x", PolicyID: &policyID, PolicyDuration: &testDuration}},
-			"deadbeef09": {PolicyMatch{Name: "xy/feature-y", PolicyID: &policyID, PolicyDuration: &testDuration}},
+		runTest(t, mbinGitserverClient, policies, mbp[string][]PolicyMbtch{
+			// N.B. brbnch zw/* does not mbtch this filter
+			"debdbeef07": {PolicyMbtch{Nbme: "xy/febture-x", PolicyID: &policyID, PolicyDurbtion: &testDurbtion}},
+			"debdbeef08": {PolicyMbtch{Nbme: "xy/febture-x", PolicyID: &policyID, PolicyDurbtion: &testDurbtion}},
+			"debdbeef09": {PolicyMbtch{Nbme: "xy/febture-y", PolicyID: &policyID, PolicyDurbtion: &testDurbtion}},
 		})
 	})
 
-	t.Run("matches commit policies", func(t *testing.T) {
-		policies := []policiesshared.ConfigurationPolicy{
+	t.Run("mbtches commit policies", func(t *testing.T) {
+		policies := []policiesshbred.ConfigurbtionPolicy{
 			{
 				ID:                policyID,
 				Type:              "GIT_COMMIT",
-				Pattern:           "deadbeef04",
-				RetentionDuration: &testDuration,
+				Pbttern:           "debdbeef04",
+				RetentionDurbtion: &testDurbtion,
 			},
 		}
 
-		runTest(t, mainGitserverClient, policies, map[string][]PolicyMatch{
-			"deadbeef04": {PolicyMatch{Name: "deadbeef04", PolicyID: &policyID, PolicyDuration: &testDuration}},
+		runTest(t, mbinGitserverClient, policies, mbp[string][]PolicyMbtch{
+			"debdbeef04": {PolicyMbtch{Nbme: "debdbeef04", PolicyID: &policyID, PolicyDurbtion: &testDurbtion}},
 		})
 	})
-	t.Run("matches implicit tip of default branch policy", func(t *testing.T) {
-		runTest(t, developGitserverClient, nil, map[string][]PolicyMatch{
-			"deadbeef01": {{Name: "develop", PolicyID: nil, PolicyDuration: nil}},
+	t.Run("mbtches implicit tip of defbult brbnch policy", func(t *testing.T) {
+		runTest(t, developGitserverClient, nil, mbp[string][]PolicyMbtch{
+			"debdbeef01": {{Nbme: "develop", PolicyID: nil, PolicyDurbtion: nil}},
 		})
 	})
 }

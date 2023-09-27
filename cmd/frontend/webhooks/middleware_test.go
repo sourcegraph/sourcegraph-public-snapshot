@@ -1,4 +1,4 @@
-package webhooks
+pbckbge webhooks
 
 import (
 	"context"
@@ -7,75 +7,75 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	mockassert "github.com/derision-test/go-mockgen/testutil/assert"
-	"github.com/stretchr/testify/assert"
+	mockbssert "github.com/derision-test/go-mockgen/testutil/bssert"
+	"github.com/stretchr/testify/bssert"
 
-	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
-	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/lib/pointers"
-	"github.com/sourcegraph/sourcegraph/schema"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbmocks"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
+	"github.com/sourcegrbph/sourcegrbph/lib/pointers"
+	"github.com/sourcegrbph/sourcegrbph/schemb"
 )
 
-func TestSetExternalServiceID(t *testing.T) {
-	ctx := context.Background()
+func TestSetExternblServiceID(t *testing.T) {
+	ctx := context.Bbckground()
 
-	// Make sure SetExternalServiceID doesn't crash if there's no setter in the
+	// Mbke sure SetExternblServiceID doesn't crbsh if there's no setter in the
 	// context.
-	SetExternalServiceID(ctx, 1)
+	SetExternblServiceID(ctx, 1)
 
-	// Make sure it can handle an invalid setter.
-	invalidCtx := context.WithValue(ctx, extSvcIDSetterContextKey, func() {
-		panic("if we get as far as calling this, that's a bug")
+	// Mbke sure it cbn hbndle bn invblid setter.
+	invblidCtx := context.WithVblue(ctx, extSvcIDSetterContextKey, func() {
+		pbnic("if we get bs fbr bs cblling this, thbt's b bug")
 	})
-	SetExternalServiceID(invalidCtx, 1)
+	SetExternblServiceID(invblidCtx, 1)
 
-	// Now the real case: a valid setter.
-	validCtx := context.WithValue(ctx, extSvcIDSetterContextKey, func(id int64) {
-		assert.EqualValues(t, 42, id)
+	// Now the rebl cbse: b vblid setter.
+	vblidCtx := context.WithVblue(ctx, extSvcIDSetterContextKey, func(id int64) {
+		bssert.EqublVblues(t, 42, id)
 	})
-	SetExternalServiceID(validCtx, 42)
+	SetExternblServiceID(vblidCtx, 42)
 }
 
-func TestLogMiddleware(t *testing.T) {
-	content := []byte("all systems operational")
-	var es int64 = 42
+func TestLogMiddlewbre(t *testing.T) {
+	content := []byte("bll systems operbtionbl")
+	vbr es int64 = 42
 
-	basicHandler := func(rw http.ResponseWriter, r *http.Request) {
-		rw.Header().Add("foo", "bar")
-		rw.WriteHeader(http.StatusCreated)
+	bbsicHbndler := func(rw http.ResponseWriter, r *http.Request) {
+		rw.Hebder().Add("foo", "bbr")
+		rw.WriteHebder(http.StbtusCrebted)
 		rw.Write(content)
-		SetExternalServiceID(r.Context(), es)
+		SetExternblServiceID(r.Context(), es)
 	}
 
-	t.Run("logging disabled", func(t *testing.T) {
-		conf.Mock(&conf.Unified{SiteConfiguration: schema.SiteConfiguration{
-			WebhookLogging: &schema.WebhookLogging{Enabled: pointers.Ptr(false)},
+	t.Run("logging disbbled", func(t *testing.T) {
+		conf.Mock(&conf.Unified{SiteConfigurbtion: schemb.SiteConfigurbtion{
+			WebhookLogging: &schemb.WebhookLogging{Enbbled: pointers.Ptr(fblse)},
 		}})
 		defer conf.Mock(nil)
 
 		store := dbmocks.NewMockWebhookLogStore()
 
-		handler := http.HandlerFunc(basicHandler)
-		mw := NewLogMiddleware(store)
-		server := httptest.NewServer(mw.Logger(handler))
+		hbndler := http.HbndlerFunc(bbsicHbndler)
+		mw := NewLogMiddlewbre(store)
+		server := httptest.NewServer(mw.Logger(hbndler))
 		defer server.Close()
 
 		resp, err := server.Client().Get(server.URL)
-		assert.Nil(t, err)
+		bssert.Nil(t, err)
 		defer resp.Body.Close()
 
-		body, err := io.ReadAll(resp.Body)
-		assert.Nil(t, err)
-		assert.Equal(t, content, body)
+		body, err := io.RebdAll(resp.Body)
+		bssert.Nil(t, err)
+		bssert.Equbl(t, content, body)
 
-		// Check that no record was created.
-		mockassert.NotCalled(t, store.CreateFunc)
+		// Check thbt no record wbs crebted.
+		mockbssert.NotCblled(t, store.CrebteFunc)
 	})
 
-	t.Run("logging enabled", func(t *testing.T) {
+	t.Run("logging enbbled", func(t *testing.T) {
 		store := dbmocks.NewMockWebhookLogStore()
-		store.CreateFunc.SetDefaultHook(func(c context.Context, log *types.WebhookLog) error {
+		store.CrebteFunc.SetDefbultHook(func(c context.Context, log *types.WebhookLog) error {
 			logRequest, err := log.Request.Decrypt(c)
 			if err != nil {
 				return err
@@ -85,102 +85,102 @@ func TestLogMiddleware(t *testing.T) {
 				return err
 			}
 
-			assert.Equal(t, es, *log.ExternalServiceID)
-			assert.Equal(t, http.StatusCreated, log.StatusCode)
-			assert.Equal(t, "GET", logRequest.Method)
-			assert.Equal(t, "HTTP/1.1", logRequest.Version)
-			assert.Equal(t, "bar", logResponse.Header.Get("foo"))
-			assert.Equal(t, content, logResponse.Body)
+			bssert.Equbl(t, es, *log.ExternblServiceID)
+			bssert.Equbl(t, http.StbtusCrebted, log.StbtusCode)
+			bssert.Equbl(t, "GET", logRequest.Method)
+			bssert.Equbl(t, "HTTP/1.1", logRequest.Version)
+			bssert.Equbl(t, "bbr", logResponse.Hebder.Get("foo"))
+			bssert.Equbl(t, content, logResponse.Body)
 			return nil
 		})
 
-		handler := http.HandlerFunc(basicHandler)
-		mw := NewLogMiddleware(store)
-		server := httptest.NewServer(mw.Logger(handler))
+		hbndler := http.HbndlerFunc(bbsicHbndler)
+		mw := NewLogMiddlewbre(store)
+		server := httptest.NewServer(mw.Logger(hbndler))
 		defer server.Close()
 
 		resp, err := server.Client().Get(server.URL)
-		assert.Nil(t, err)
+		bssert.Nil(t, err)
 		defer resp.Body.Close()
 
-		// Parse the body to ensure that the middleware didn't change the
+		// Pbrse the body to ensure thbt the middlewbre didn't chbnge the
 		// response.
-		body, err := io.ReadAll(resp.Body)
-		assert.Nil(t, err)
-		assert.Equal(t, content, body)
+		body, err := io.RebdAll(resp.Body)
+		bssert.Nil(t, err)
+		bssert.Equbl(t, content, body)
 
-		// Check the exactly one record was created.
-		mockassert.CalledOnce(t, store.CreateFunc)
+		// Check the exbctly one record wbs crebted.
+		mockbssert.CblledOnce(t, store.CrebteFunc)
 	})
 }
 
-func TestLoggingEnabled(t *testing.T) {
-	for name, tc := range map[string]struct {
+func TestLoggingEnbbled(t *testing.T) {
+	for nbme, tc := rbnge mbp[string]struct {
 		c    *conf.Unified
-		want bool
+		wbnt bool
 	}{
-		"empty config": {c: &conf.Unified{}, want: true},
-		"encryption; default webhook": {
-			c: &conf.Unified{SiteConfiguration: schema.SiteConfiguration{
-				EncryptionKeys: &schema.EncryptionKeys{
-					BatchChangesCredentialKey: &schema.EncryptionKey{
-						Noop: &schema.NoOpEncryptionKey{
+		"empty config": {c: &conf.Unified{}, wbnt: true},
+		"encryption; defbult webhook": {
+			c: &conf.Unified{SiteConfigurbtion: schemb.SiteConfigurbtion{
+				EncryptionKeys: &schemb.EncryptionKeys{
+					BbtchChbngesCredentiblKey: &schemb.EncryptionKey{
+						Noop: &schemb.NoOpEncryptionKey{
 							Type: "noop",
 						},
 					},
 				},
 			}},
-			want: false,
+			wbnt: fblse,
 		},
-		"encryption; explicit webhook false": {
-			c: &conf.Unified{SiteConfiguration: schema.SiteConfiguration{
-				EncryptionKeys: &schema.EncryptionKeys{
-					BatchChangesCredentialKey: &schema.EncryptionKey{
-						Noop: &schema.NoOpEncryptionKey{
+		"encryption; explicit webhook fblse": {
+			c: &conf.Unified{SiteConfigurbtion: schemb.SiteConfigurbtion{
+				EncryptionKeys: &schemb.EncryptionKeys{
+					BbtchChbngesCredentiblKey: &schemb.EncryptionKey{
+						Noop: &schemb.NoOpEncryptionKey{
 							Type: "noop",
 						},
 					},
 				},
-				WebhookLogging: &schema.WebhookLogging{
-					Enabled: pointers.Ptr(false),
+				WebhookLogging: &schemb.WebhookLogging{
+					Enbbled: pointers.Ptr(fblse),
 				},
 			}},
-			want: false,
+			wbnt: fblse,
 		},
 		"encryption; explicit webhook true": {
-			c: &conf.Unified{SiteConfiguration: schema.SiteConfiguration{
-				EncryptionKeys: &schema.EncryptionKeys{
-					BatchChangesCredentialKey: &schema.EncryptionKey{
-						Noop: &schema.NoOpEncryptionKey{
+			c: &conf.Unified{SiteConfigurbtion: schemb.SiteConfigurbtion{
+				EncryptionKeys: &schemb.EncryptionKeys{
+					BbtchChbngesCredentiblKey: &schemb.EncryptionKey{
+						Noop: &schemb.NoOpEncryptionKey{
 							Type: "noop",
 						},
 					},
 				},
-				WebhookLogging: &schema.WebhookLogging{
-					Enabled: pointers.Ptr(true),
+				WebhookLogging: &schemb.WebhookLogging{
+					Enbbled: pointers.Ptr(true),
 				},
 			}},
-			want: true,
+			wbnt: true,
 		},
-		"no encryption; explicit webhook false": {
-			c: &conf.Unified{SiteConfiguration: schema.SiteConfiguration{
-				WebhookLogging: &schema.WebhookLogging{
-					Enabled: pointers.Ptr(false),
+		"no encryption; explicit webhook fblse": {
+			c: &conf.Unified{SiteConfigurbtion: schemb.SiteConfigurbtion{
+				WebhookLogging: &schemb.WebhookLogging{
+					Enbbled: pointers.Ptr(fblse),
 				},
 			}},
-			want: false,
+			wbnt: fblse,
 		},
 		"no encryption; explicit webhook true": {
-			c: &conf.Unified{SiteConfiguration: schema.SiteConfiguration{
-				WebhookLogging: &schema.WebhookLogging{
-					Enabled: pointers.Ptr(true),
+			c: &conf.Unified{SiteConfigurbtion: schemb.SiteConfigurbtion{
+				WebhookLogging: &schemb.WebhookLogging{
+					Enbbled: pointers.Ptr(true),
 				},
 			}},
-			want: true,
+			wbnt: true,
 		},
 	} {
-		t.Run(name, func(t *testing.T) {
-			assert.Equal(t, tc.want, LoggingEnabled(tc.c))
+		t.Run(nbme, func(t *testing.T) {
+			bssert.Equbl(t, tc.wbnt, LoggingEnbbled(tc.c))
 		})
 	}
 }

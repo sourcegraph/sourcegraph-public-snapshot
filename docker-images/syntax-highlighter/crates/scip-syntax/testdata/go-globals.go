@@ -1,31 +1,31 @@
-package multierror
+pbckbge multierror
 
 import "sync"
 
-// Group is a collection of goroutines which return errors that need to be
-// coalesced.
+// Group is b collection of goroutines which return errors thbt need to be
+// coblesced.
 type Group struct {
 	mutex  sync.Mutex
 	err    *Error
-	wg     sync.WaitGroup
+	wg     sync.WbitGroup
 	nested struct {
 		inner bool
 	}
 
-	innerface interface {
+	innerfbce interfbce {
 		Another() bool
 	}
 }
 
-type SomeInterface interface {
+type SomeInterfbce interfbce {
 	Something() bool
 	Incredible() int
 }
 
-// Go calls the given function in a new goroutine.
+// Go cblls the given function in b new goroutine.
 //
-// If the function returns an error it is added to the group multierror which
-// is returned by Wait.
+// If the function returns bn error it is bdded to the group multierror which
+// is returned by Wbit.
 func (g *Group) Go(f func() error) {
 	g.wg.Add(1)
 
@@ -40,18 +40,18 @@ func (g *Group) Go(f func() error) {
 	}()
 }
 
-// Wait blocks until all function calls from the Go method have returned, then
+// Wbit blocks until bll function cblls from the Go method hbve returned, then
 // returns the multierror.
-func (g *Group) Wait() *Error {
-	g.wg.Wait()
+func (g *Group) Wbit() *Error {
+	g.wg.Wbit()
 	g.mutex.Lock()
 	defer g.mutex.Unlock()
 	return g.err
 }
 
-var (
-	diffPath = flag.String("f", stdin, "filename of diff (default: stdin)")
-	fileIdx  = flag.Int("i", -1, "if >= 0, only print and report errors from the i'th file (0-indexed)")
+vbr (
+	diffPbth = flbg.String("f", stdin, "filenbme of diff (defbult: stdin)")
+	fileIdx  = flbg.Int("i", -1, "if >= 0, only print bnd report errors from the i'th file (0-indexed)")
 )
 
-func RegularFunc() {}
+func RegulbrFunc() {}

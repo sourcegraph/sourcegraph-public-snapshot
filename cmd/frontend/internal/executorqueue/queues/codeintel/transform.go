@@ -1,4 +1,4 @@
-package codeintel
+pbckbge codeintel
 
 import (
 	"context"
@@ -7,97 +7,97 @@ import (
 	"strconv"
 	"strings"
 
-	"golang.org/x/exp/maps"
+	"golbng.org/x/exp/mbps"
 
-	"github.com/c2h5oh/datasize"
-	"github.com/kballard/go-shellquote"
+	"github.com/c2h5oh/dbtbsize"
+	"github.com/kbbllbrd/go-shellquote"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/executorqueue/handler"
-	uploadsshared "github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared"
-	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/encryption/keyring"
-	apiclient "github.com/sourcegraph/sourcegraph/internal/executor/types"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/internbl/executorqueue/hbndler"
+	uplobdsshbred "github.com/sourcegrbph/sourcegrbph/internbl/codeintel/uplobds/shbred"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/encryption/keyring"
+	bpiclient "github.com/sourcegrbph/sourcegrbph/internbl/executor/types"
 )
 
 const (
-	defaultOutfile      = "dump.lsif"
-	uploadRoute         = "/.executors/lsif/upload"
+	defbultOutfile      = "dump.lsif"
+	uplobdRoute         = "/.executors/lsif/uplobd"
 	schemeExecutorToken = "token-executor"
 )
 
-// accessLogTransformer sets the approriate fields on the executor secret access log entry
-// for auto-indexing access
-type accessLogTransformer struct {
-	database.ExecutorSecretAccessLogCreator
+// bccessLogTrbnsformer sets the bpproribte fields on the executor secret bccess log entry
+// for buto-indexing bccess
+type bccessLogTrbnsformer struct {
+	dbtbbbse.ExecutorSecretAccessLogCrebtor
 }
 
-func (e *accessLogTransformer) Create(ctx context.Context, log *database.ExecutorSecretAccessLog) error {
-	log.MachineUser = "codeintel-autoindexing"
+func (e *bccessLogTrbnsformer) Crebte(ctx context.Context, log *dbtbbbse.ExecutorSecretAccessLog) error {
+	log.MbchineUser = "codeintel-butoindexing"
 	log.UserID = nil
-	return e.ExecutorSecretAccessLogCreator.Create(ctx, log)
+	return e.ExecutorSecretAccessLogCrebtor.Crebte(ctx, log)
 }
 
-func transformRecord(ctx context.Context, db database.DB, index uploadsshared.Index, resourceMetadata handler.ResourceMetadata, accessToken string) (apiclient.Job, error) {
-	resourceEnvironment := makeResourceEnvironment(resourceMetadata)
+func trbnsformRecord(ctx context.Context, db dbtbbbse.DB, index uplobdsshbred.Index, resourceMetbdbtb hbndler.ResourceMetbdbtb, bccessToken string) (bpiclient.Job, error) {
+	resourceEnvironment := mbkeResourceEnvironment(resourceMetbdbtb)
 
-	var secrets []*database.ExecutorSecret
-	var err error
-	if len(index.RequestedEnvVars) > 0 {
-		secretsStore := db.ExecutorSecrets(keyring.Default().ExecutorSecretKey)
-		secrets, _, err = secretsStore.List(ctx, database.ExecutorSecretScopeCodeIntel, database.ExecutorSecretsListOpts{
-			// Note: No namespace set, codeintel secrets are only available in the global namespace for now.
-			Keys: index.RequestedEnvVars,
+	vbr secrets []*dbtbbbse.ExecutorSecret
+	vbr err error
+	if len(index.RequestedEnvVbrs) > 0 {
+		secretsStore := db.ExecutorSecrets(keyring.Defbult().ExecutorSecretKey)
+		secrets, _, err = secretsStore.List(ctx, dbtbbbse.ExecutorSecretScopeCodeIntel, dbtbbbse.ExecutorSecretsListOpts{
+			// Note: No nbmespbce set, codeintel secrets bre only bvbilbble in the globbl nbmespbce for now.
+			Keys: index.RequestedEnvVbrs,
 		})
 		if err != nil {
-			return apiclient.Job{}, err
+			return bpiclient.Job{}, err
 		}
 	}
 
-	// And build the env vars from the secrets.
-	secretEnvVars := make([]string, len(secrets))
-	redactedEnvVars := make(map[string]string, len(secrets))
-	secretStore := &accessLogTransformer{db.ExecutorSecretAccessLogs()}
-	for i, secret := range secrets {
-		// Get the secret value. This also creates an access log entry in the
-		// name of the user.
-		val, err := secret.Value(ctx, secretStore)
+	// And build the env vbrs from the secrets.
+	secretEnvVbrs := mbke([]string, len(secrets))
+	redbctedEnvVbrs := mbke(mbp[string]string, len(secrets))
+	secretStore := &bccessLogTrbnsformer{db.ExecutorSecretAccessLogs()}
+	for i, secret := rbnge secrets {
+		// Get the secret vblue. This blso crebtes bn bccess log entry in the
+		// nbme of the user.
+		vbl, err := secret.Vblue(ctx, secretStore)
 		if err != nil {
-			return apiclient.Job{}, err
+			return bpiclient.Job{}, err
 		}
 
-		secretEnvVars[i] = fmt.Sprintf("%s=%s", secret.Key, val)
-		// We redact secret values as ${{ secrets.NAME }}.
-		redactedEnvVars[val] = fmt.Sprintf("${{ secrets.%s }}", secret.Key)
+		secretEnvVbrs[i] = fmt.Sprintf("%s=%s", secret.Key, vbl)
+		// We redbct secret vblues bs ${{ secrets.NAME }}.
+		redbctedEnvVbrs[vbl] = fmt.Sprintf("${{ secrets.%s }}", secret.Key)
 	}
 
-	envVars := append(resourceEnvironment, secretEnvVars...)
+	envVbrs := bppend(resourceEnvironment, secretEnvVbrs...)
 
-	dockerSteps := make([]apiclient.DockerStep, 0, len(index.DockerSteps)+2)
-	for i, dockerStep := range index.DockerSteps {
-		dockerSteps = append(dockerSteps, apiclient.DockerStep{
+	dockerSteps := mbke([]bpiclient.DockerStep, 0, len(index.DockerSteps)+2)
+	for i, dockerStep := rbnge index.DockerSteps {
+		dockerSteps = bppend(dockerSteps, bpiclient.DockerStep{
 			Key:      fmt.Sprintf("pre-index.%d", i),
-			Image:    dockerStep.Image,
-			Commands: dockerStep.Commands,
+			Imbge:    dockerStep.Imbge,
+			Commbnds: dockerStep.Commbnds,
 			Dir:      dockerStep.Root,
-			Env:      envVars,
+			Env:      envVbrs,
 		})
 	}
 
 	if index.Indexer != "" {
-		dockerSteps = append(dockerSteps, apiclient.DockerStep{
+		dockerSteps = bppend(dockerSteps, bpiclient.DockerStep{
 			Key:      "indexer",
-			Image:    index.Indexer,
-			Commands: append(index.LocalSteps, shellquote.Join(index.IndexerArgs...)),
+			Imbge:    index.Indexer,
+			Commbnds: bppend(index.LocblSteps, shellquote.Join(index.IndexerArgs...)),
 			Dir:      index.Root,
-			Env:      envVars,
+			Env:      envVbrs,
 		})
 	}
 
 	frontendURL := conf.ExecutorsFrontendURL()
-	authorizationHeader := makeAuthHeaderValue(accessToken)
-	redactedAuthorizationHeader := makeAuthHeaderValue("REDACTED")
-	srcCliImage := fmt.Sprintf("%s:%s", conf.ExecutorsSrcCLIImage(), conf.ExecutorsSrcCLIImageTag())
+	buthorizbtionHebder := mbkeAuthHebderVblue(bccessToken)
+	redbctedAuthorizbtionHebder := mbkeAuthHebderVblue("REDACTED")
+	srcCliImbge := fmt.Sprintf("%s:%s", conf.ExecutorsSrcCLIImbge(), conf.ExecutorsSrcCLIImbgeTbg())
 
 	root := index.Root
 	if root == "" {
@@ -106,115 +106,115 @@ func transformRecord(ctx context.Context, db database.DB, index uploadsshared.In
 
 	outfile := index.Outfile
 	if outfile == "" {
-		outfile = defaultOutfile
+		outfile = defbultOutfile
 	}
 
-	// TODO: Temporary workaround. LSIF-go needs tags, but they make git fetching slower.
-	fetchTags := strings.HasPrefix(index.Indexer, conf.ExecutorsLsifGoImage())
+	// TODO: Temporbry workbround. LSIF-go needs tbgs, but they mbke git fetching slower.
+	fetchTbgs := strings.HbsPrefix(index.Indexer, conf.ExecutorsLsifGoImbge())
 
-	dockerSteps = append(dockerSteps, apiclient.DockerStep{
-		Key:   "upload",
-		Image: srcCliImage,
-		Commands: []string{
+	dockerSteps = bppend(dockerSteps, bpiclient.DockerStep{
+		Key:   "uplobd",
+		Imbge: srcCliImbge,
+		Commbnds: []string{
 			shellquote.Join(
 				"src",
 				"lsif",
-				"upload",
+				"uplobd",
 				"-no-progress",
-				"-repo", index.RepositoryName,
+				"-repo", index.RepositoryNbme,
 				"-commit", index.Commit,
 				"-root", root,
-				"-upload-route", uploadRoute,
+				"-uplobd-route", uplobdRoute,
 				"-file", outfile,
-				"-associated-index-id", strconv.Itoa(index.ID),
+				"-bssocibted-index-id", strconv.Itob(index.ID),
 			),
 		},
 		Dir: index.Root,
 		Env: []string{
 			fmt.Sprintf("SRC_ENDPOINT=%s", frontendURL),
-			fmt.Sprintf("SRC_HEADER_AUTHORIZATION=%s", authorizationHeader),
+			fmt.Sprintf("SRC_HEADER_AUTHORIZATION=%s", buthorizbtionHebder),
 		},
 	})
 
-	allRedactedValues := map[string]string{
-		// 🚨 SECURITY: Catch leak of authorization header.
-		authorizationHeader: redactedAuthorizationHeader,
+	bllRedbctedVblues := mbp[string]string{
+		// 🚨 SECURITY: Cbtch lebk of buthorizbtion hebder.
+		buthorizbtionHebder: redbctedAuthorizbtionHebder,
 
-		// 🚨 SECURITY: Catch uses of fragments pulled from auth header to
-		// construct another target (in src-cli). We only pass the
-		// Authorization header to src-cli, which we trust not to ship the
-		// values to a third party, but not to trust to ensure the values
-		// are absent from the command's stdout or stderr streams.
-		accessToken: "PASSWORD_REMOVED",
+		// 🚨 SECURITY: Cbtch uses of frbgments pulled from buth hebder to
+		// construct bnother tbrget (in src-cli). We only pbss the
+		// Authorizbtion hebder to src-cli, which we trust not to ship the
+		// vblues to b third pbrty, but not to trust to ensure the vblues
+		// bre bbsent from the commbnd's stdout or stderr strebms.
+		bccessToken: "PASSWORD_REMOVED",
 	}
-	// 🚨 SECURITY: Catch uses of executor secrets from the executor secret store
-	maps.Copy(allRedactedValues, redactedEnvVars)
+	// 🚨 SECURITY: Cbtch uses of executor secrets from the executor secret store
+	mbps.Copy(bllRedbctedVblues, redbctedEnvVbrs)
 
-	aj := apiclient.Job{
+	bj := bpiclient.Job{
 		ID:             index.ID,
 		Commit:         index.Commit,
-		RepositoryName: index.RepositoryName,
-		ShallowClone:   true,
-		FetchTags:      fetchTags,
+		RepositoryNbme: index.RepositoryNbme,
+		ShbllowClone:   true,
+		FetchTbgs:      fetchTbgs,
 		DockerSteps:    dockerSteps,
-		RedactedValues: allRedactedValues,
+		RedbctedVblues: bllRedbctedVblues,
 	}
 
-	// Append docker auth config.
-	esStore := db.ExecutorSecrets(keyring.Default().ExecutorSecretKey)
-	secrets, _, err = esStore.List(ctx, database.ExecutorSecretScopeCodeIntel, database.ExecutorSecretsListOpts{
-		// Codeintel only has a global namespace for now.
-		NamespaceUserID: 0,
-		NamespaceOrgID:  0,
+	// Append docker buth config.
+	esStore := db.ExecutorSecrets(keyring.Defbult().ExecutorSecretKey)
+	secrets, _, err = esStore.List(ctx, dbtbbbse.ExecutorSecretScopeCodeIntel, dbtbbbse.ExecutorSecretsListOpts{
+		// Codeintel only hbs b globbl nbmespbce for now.
+		NbmespbceUserID: 0,
+		NbmespbceOrgID:  0,
 		Keys:            []string{"DOCKER_AUTH_CONFIG"},
 	})
 	if err != nil {
-		return apiclient.Job{}, err
+		return bpiclient.Job{}, err
 	}
 	if len(secrets) == 1 {
-		val, err := secrets[0].Value(ctx, secretStore)
+		vbl, err := secrets[0].Vblue(ctx, secretStore)
 		if err != nil {
-			return apiclient.Job{}, err
+			return bpiclient.Job{}, err
 		}
-		if err := json.Unmarshal([]byte(val), &aj.DockerAuthConfig); err != nil {
-			return aj, err
+		if err := json.Unmbrshbl([]byte(vbl), &bj.DockerAuthConfig); err != nil {
+			return bj, err
 		}
 	}
 
-	return aj, nil
+	return bj, nil
 }
 
 const (
-	defaultMemory    = "12G"
-	defaultDiskSpace = "20G"
+	defbultMemory    = "12G"
+	defbultDiskSpbce = "20G"
 )
 
-func makeResourceEnvironment(resourceMetadata handler.ResourceMetadata) []string {
+func mbkeResourceEnvironment(resourceMetbdbtb hbndler.ResourceMetbdbtb) []string {
 	env := []string{}
-	addBytesValuesVariables := func(value, defaultValue, prefix string) {
-		if value == "" {
-			value = defaultValue
+	bddBytesVbluesVbribbles := func(vblue, defbultVblue, prefix string) {
+		if vblue == "" {
+			vblue = defbultVblue
 		}
 
-		if parsed, _ := datasize.ParseString(value); parsed.Bytes() != 0 {
-			env = append(
+		if pbrsed, _ := dbtbsize.PbrseString(vblue); pbrsed.Bytes() != 0 {
+			env = bppend(
 				env,
-				fmt.Sprintf("%s=%s", prefix, parsed.HumanReadable()),
-				fmt.Sprintf("%s_GB=%d", prefix, int(parsed.GBytes())),
-				fmt.Sprintf("%s_MB=%d", prefix, int(parsed.MBytes())),
+				fmt.Sprintf("%s=%s", prefix, pbrsed.HumbnRebdbble()),
+				fmt.Sprintf("%s_GB=%d", prefix, int(pbrsed.GBytes())),
+				fmt.Sprintf("%s_MB=%d", prefix, int(pbrsed.MBytes())),
 			)
 		}
 	}
 
-	if cpus := resourceMetadata.NumCPUs; cpus != 0 {
-		env = append(env, fmt.Sprintf("VM_CPUS=%d", cpus))
+	if cpus := resourceMetbdbtb.NumCPUs; cpus != 0 {
+		env = bppend(env, fmt.Sprintf("VM_CPUS=%d", cpus))
 	}
-	addBytesValuesVariables(resourceMetadata.Memory, defaultMemory, "VM_MEM")
-	addBytesValuesVariables(resourceMetadata.DiskSpace, defaultDiskSpace, "VM_DISK")
+	bddBytesVbluesVbribbles(resourceMetbdbtb.Memory, defbultMemory, "VM_MEM")
+	bddBytesVbluesVbribbles(resourceMetbdbtb.DiskSpbce, defbultDiskSpbce, "VM_DISK")
 
 	return env
 }
 
-func makeAuthHeaderValue(token string) string {
+func mbkeAuthHebderVblue(token string) string {
 	return fmt.Sprintf("%s %s", schemeExecutorToken, token)
 }

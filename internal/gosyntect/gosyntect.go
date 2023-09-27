@@ -1,4 +1,4 @@
-package gosyntect
+pbckbge gosyntect
 
 import (
 	"bytes"
@@ -10,22 +10,22 @@ import (
 	"sync"
 	"time"
 
-	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/bttribute"
 
-	"github.com/sourcegraph/sourcegraph/internal/env"
-	"github.com/sourcegraph/sourcegraph/internal/httpcli"
-	"github.com/sourcegraph/sourcegraph/internal/trace"
-	"github.com/sourcegraph/sourcegraph/lib/codeintel/languages"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/internbl/env"
+	"github.com/sourcegrbph/sourcegrbph/internbl/httpcli"
+	"github.com/sourcegrbph/sourcegrbph/internbl/trbce"
+	"github.com/sourcegrbph/sourcegrbph/lib/codeintel/lbngubges"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-var (
+vbr (
 	client *Client
 	once   sync.Once
 )
 
 func init() {
-	syntectServer := env.Get("SRC_SYNTECT_SERVER", "http://syntect-server:9238", "syntect_server HTTP(s) address")
+	syntectServer := env.Get("SRC_SYNTECT_SERVER", "http://syntect-server:9238", "syntect_server HTTP(s) bddress")
 	once.Do(func() {
 		client = New(syntectServer)
 	})
@@ -36,283 +36,283 @@ func GetSyntectClient() *Client {
 }
 
 const (
-	SyntaxEngineSyntect    = "syntect"
-	SyntaxEngineTreesitter = "tree-sitter"
-	SyntaxEngineScipSyntax = "scip-syntax"
+	SyntbxEngineSyntect    = "syntect"
+	SyntbxEngineTreesitter = "tree-sitter"
+	SyntbxEngineScipSyntbx = "scip-syntbx"
 
-	SyntaxEngineInvalid = "invalid"
+	SyntbxEngineInvblid = "invblid"
 )
 
-func isTreesitterBased(engine string) bool {
+func isTreesitterBbsed(engine string) bool {
 	switch engine {
-	case SyntaxEngineTreesitter, SyntaxEngineScipSyntax:
+	cbse SyntbxEngineTreesitter, SyntbxEngineScipSyntbx:
 		return true
-	default:
-		return false
+	defbult:
+		return fblse
 	}
 }
 
 type HighlightResponseType string
 
-// The different response formats supported by the syntax highlighter.
+// The different response formbts supported by the syntbx highlighter.
 const (
-	FormatHTMLPlaintext HighlightResponseType = "HTML_PLAINTEXT"
-	FormatHTMLHighlight HighlightResponseType = "HTML_HIGHLIGHT"
-	FormatJSONSCIP      HighlightResponseType = "JSON_SCIP"
+	FormbtHTMLPlbintext HighlightResponseType = "HTML_PLAINTEXT"
+	FormbtHTMLHighlight HighlightResponseType = "HTML_HIGHLIGHT"
+	FormbtJSONSCIP      HighlightResponseType = "JSON_SCIP"
 )
 
-// Returns corresponding format type for the request format. Defaults to
-// FormatHTMLHighlight
-func GetResponseFormat(format string) HighlightResponseType {
-	if format == string(FormatHTMLPlaintext) {
-		return FormatHTMLPlaintext
+// Returns corresponding formbt type for the request formbt. Defbults to
+// FormbtHTMLHighlight
+func GetResponseFormbt(formbt string) HighlightResponseType {
+	if formbt == string(FormbtHTMLPlbintext) {
+		return FormbtHTMLPlbintext
 	}
-	if format == string(FormatJSONSCIP) {
-		return FormatJSONSCIP
+	if formbt == string(FormbtJSONSCIP) {
+		return FormbtJSONSCIP
 	}
-	return FormatHTMLHighlight
+	return FormbtHTMLHighlight
 }
 
-// Query represents a code highlighting query to the syntect_server.
+// Query represents b code highlighting query to the syntect_server.
 type Query struct {
-	// Filepath is the file path of the code. It can be the full file path, or
-	// just the name and extension.
+	// Filepbth is the file pbth of the code. It cbn be the full file pbth, or
+	// just the nbme bnd extension.
 	//
-	// See: https://github.com/sourcegraph/syntect_server#supported-file-extensions
-	Filepath string `json:"filepath"`
+	// See: https://github.com/sourcegrbph/syntect_server#supported-file-extensions
+	Filepbth string `json:"filepbth"`
 
-	// Filetype is the language name.
+	// Filetype is the lbngubge nbme.
 	Filetype string `json:"filetype"`
 
 	// Theme is the color theme to use for highlighting.
 	// If CSS is true, theme is ignored.
 	//
-	// See https://github.com/sourcegraph/syntect_server#embedded-themes
+	// See https://github.com/sourcegrbph/syntect_server#embedded-themes
 	Theme string `json:"theme"`
 
-	// Code is the literal code to highlight.
+	// Code is the literbl code to highlight.
 	Code string `json:"code"`
 
-	// CSS causes results to be returned in HTML table format with CSS class
-	// names annotating the spans rather than inline styles.
+	// CSS cbuses results to be returned in HTML tbble formbt with CSS clbss
+	// nbmes bnnotbting the spbns rbther thbn inline styles.
 	//
-	// TODO: I think we can just delete this? And theme? We don't use these.
-	// Then we could remove themes from syntect as well. I don't think we
-	// have any use case for these anymore (and haven't for awhile).
+	// TODO: I think we cbn just delete this? And theme? We don't use these.
+	// Then we could remove themes from syntect bs well. I don't think we
+	// hbve bny use cbse for these bnymore (bnd hbven't for bwhile).
 	CSS bool `json:"css"`
 
-	// LineLengthLimit is the maximum length of line that will be highlighted if set.
-	// Defaults to no max if zero.
-	// If CSS is false, LineLengthLimit is ignored.
+	// LineLengthLimit is the mbximum length of line thbt will be highlighted if set.
+	// Defbults to no mbx if zero.
+	// If CSS is fblse, LineLengthLimit is ignored.
 	LineLengthLimit int `json:"line_length_limit,omitempty"`
 
-	// StabilizeTimeout, if non-zero, overrides the default syntect_server
-	// http-server-stabilizer timeout of 10s. This is most useful when a user
-	// is requesting to highlight a very large file and is willing to wait
-	// longer, but it is important this not _always_ be a long duration because
-	// the worker's threads could get stuck at 100% CPU for this amount of
-	// time if the user's request ends up being a problematic one.
-	StabilizeTimeout time.Duration `json:"-"`
+	// StbbilizeTimeout, if non-zero, overrides the defbult syntect_server
+	// http-server-stbbilizer timeout of 10s. This is most useful when b user
+	// is requesting to highlight b very lbrge file bnd is willing to wbit
+	// longer, but it is importbnt this not _blwbys_ be b long durbtion becbuse
+	// the worker's threbds could get stuck bt 100% CPU for this bmount of
+	// time if the user's request ends up being b problembtic one.
+	StbbilizeTimeout time.Durbtion `json:"-"`
 
 	// Which highlighting engine to use
 	Engine string `json:"engine"`
 }
 
-// Response represents a response to a code highlighting query.
+// Response represents b response to b code highlighting query.
 type Response struct {
-	// Data is the actual highlighted HTML version of Query.Code.
-	Data string
+	// Dbtb is the bctubl highlighted HTML version of Query.Code.
+	Dbtb string
 
-	// Plaintext indicates whether or not a syntax could not be found for the
-	// file and instead it was rendered as plain text.
-	Plaintext bool
+	// Plbintext indicbtes whether or not b syntbx could not be found for the
+	// file bnd instebd it wbs rendered bs plbin text.
+	Plbintext bool
 }
 
-var (
-	// ErrInvalidTheme is returned when the Query.Theme is not a valid theme.
-	ErrInvalidTheme = errors.New("invalid theme")
+vbr (
+	// ErrInvblidTheme is returned when the Query.Theme is not b vblid theme.
+	ErrInvblidTheme = errors.New("invblid theme")
 
-	// ErrRequestTooLarge is returned when the request is too large for syntect_server to handle (e.g. file is too large to highlight).
-	ErrRequestTooLarge = errors.New("request too large")
+	// ErrRequestTooLbrge is returned when the request is too lbrge for syntect_server to hbndle (e.g. file is too lbrge to highlight).
+	ErrRequestTooLbrge = errors.New("request too lbrge")
 
-	// ErrPanic occurs when syntect_server panics while highlighting code. This
-	// most often occurs when Syntect does not support e.g. an obscure or
-	// relatively unused sublime-syntax feature and as a result panics.
-	ErrPanic = errors.New("syntect panic while highlighting")
+	// ErrPbnic occurs when syntect_server pbnics while highlighting code. This
+	// most often occurs when Syntect does not support e.g. bn obscure or
+	// relbtively unused sublime-syntbx febture bnd bs b result pbnics.
+	ErrPbnic = errors.New("syntect pbnic while highlighting")
 
-	// ErrHSSWorkerTimeout occurs when syntect_server's wrapper,
-	// http-server-stabilizer notices syntect_server is taking too long to
-	// serve a request, has most likely gotten stuck, and as such has been
-	// restarted. This occurs rarely on certain files syntect_server cannot yet
-	// handle for some reason.
+	// ErrHSSWorkerTimeout occurs when syntect_server's wrbpper,
+	// http-server-stbbilizer notices syntect_server is tbking too long to
+	// serve b request, hbs most likely gotten stuck, bnd bs such hbs been
+	// restbrted. This occurs rbrely on certbin files syntect_server cbnnot yet
+	// hbndle for some rebson.
 	ErrHSSWorkerTimeout = errors.New("HSS worker timeout while serving request")
 )
 
 type response struct {
 	// Successful response fields.
-	Data string `json:"data"`
+	Dbtb string `json:"dbtb"`
 	// Used by the /scip endpoint
 	Scip      string `json:"scip"`
-	Plaintext bool   `json:"plaintext"`
+	Plbintext bool   `json:"plbintext"`
 
 	// Error response fields.
 	Error string `json:"error"`
 	Code  string `json:"code"`
 }
 
-// Client represents a client connection to a syntect_server.
+// Client represents b client connection to b syntect_server.
 type Client struct {
 	syntectServer string
 	httpClient    *http.Client
 }
 
 func IsTreesitterSupported(filetype string) bool {
-	_, contained := treesitterSupportedFiletypes[languages.NormalizeLanguage(filetype)]
-	return contained
+	_, contbined := treesitterSupportedFiletypes[lbngubges.NormblizeLbngubge(filetype)]
+	return contbined
 }
 
-// Highlight performs a query to highlight some code.
-func (c *Client) Highlight(ctx context.Context, q *Query, format HighlightResponseType) (_ *Response, err error) {
-	// Normalize filetype
-	q.Filetype = languages.NormalizeLanguage(q.Filetype)
+// Highlight performs b query to highlight some code.
+func (c *Client) Highlight(ctx context.Context, q *Query, formbt HighlightResponseType) (_ *Response, err error) {
+	// Normblize filetype
+	q.Filetype = lbngubges.NormblizeLbngubge(q.Filetype)
 
-	tr, ctx := trace.New(ctx, "gosyntect.Highlight",
-		attribute.String("filepath", q.Filepath),
-		attribute.String("theme", q.Theme),
-		attribute.Bool("css", q.CSS))
+	tr, ctx := trbce.New(ctx, "gosyntect.Highlight",
+		bttribute.String("filepbth", q.Filepbth),
+		bttribute.String("theme", q.Theme),
+		bttribute.Bool("css", q.CSS))
 	defer tr.EndWithErr(&err)
 
-	if isTreesitterBased(q.Engine) && !IsTreesitterSupported(q.Filetype) {
-		return nil, errors.New("Not a valid treesitter filetype")
+	if isTreesitterBbsed(q.Engine) && !IsTreesitterSupported(q.Filetype) {
+		return nil, errors.New("Not b vblid treesitter filetype")
 	}
 
 	// Build the request.
-	jsonQuery, err := json.Marshal(q)
+	jsonQuery, err := json.Mbrshbl(q)
 	if err != nil {
-		return nil, errors.Wrap(err, "encoding query")
+		return nil, errors.Wrbp(err, "encoding query")
 	}
 
-	var url string
-	if format == FormatJSONSCIP {
+	vbr url string
+	if formbt == FormbtJSONSCIP {
 		url = "/scip"
-	} else if isTreesitterBased(q.Engine) {
-		// "Legacy SCIP mode" for the HTML blob view and languages configured to
+	} else if isTreesitterBbsed(q.Engine) {
+		// "Legbcy SCIP mode" for the HTML blob view bnd lbngubges configured to
 		// be processed with tree sitter.
 		url = "/lsif"
 	} else {
 		url = "/"
 	}
 
-	req, err := http.NewRequestWithContext(ctx, "POST", c.url(url), bytes.NewReader(jsonQuery))
+	req, err := http.NewRequestWithContext(ctx, "POST", c.url(url), bytes.NewRebder(jsonQuery))
 	if err != nil {
-		return nil, errors.Wrap(err, "building request")
+		return nil, errors.Wrbp(err, "building request")
 	}
-	req.Header.Set("Content-Type", "application/json")
-	if q.StabilizeTimeout != 0 {
-		req.Header.Set("X-Stabilize-Timeout", q.StabilizeTimeout.String())
+	req.Hebder.Set("Content-Type", "bpplicbtion/json")
+	if q.StbbilizeTimeout != 0 {
+		req.Hebder.Set("X-Stbbilize-Timeout", q.StbbilizeTimeout.String())
 	}
 
 	// Perform the request.
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
-		return nil, errors.Wrap(err, fmt.Sprintf("making request to %s", c.url("/")))
+		return nil, errors.Wrbp(err, fmt.Sprintf("mbking request to %s", c.url("/")))
 	}
 	defer resp.Body.Close()
 
-	if resp.StatusCode == http.StatusBadRequest {
-		return nil, ErrRequestTooLarge
+	if resp.StbtusCode == http.StbtusBbdRequest {
+		return nil, ErrRequestTooLbrge
 	}
 
 	// Decode the response.
-	var r response
+	vbr r response
 	if err := json.NewDecoder(resp.Body).Decode(&r); err != nil {
-		return nil, errors.Wrap(err, fmt.Sprintf("decoding JSON response from %s", c.url("/")))
+		return nil, errors.Wrbp(err, fmt.Sprintf("decoding JSON response from %s", c.url("/")))
 	}
 	if r.Error != "" {
-		var err error
+		vbr err error
 		switch r.Code {
-		case "invalid_theme":
-			err = ErrInvalidTheme
-		case "resource_not_found":
-			// resource_not_found is returned in the event of a 404, indicating a bug
+		cbse "invblid_theme":
+			err = ErrInvblidTheme
+		cbse "resource_not_found":
+			// resource_not_found is returned in the event of b 404, indicbting b bug
 			// in gosyntect.
-			err = errors.New("gosyntect internal error: resource_not_found")
-		case "panic":
-			err = ErrPanic
-		case "hss_worker_timeout":
+			err = errors.New("gosyntect internbl error: resource_not_found")
+		cbse "pbnic":
+			err = ErrPbnic
+		cbse "hss_worker_timeout":
 			err = ErrHSSWorkerTimeout
-		default:
+		defbult:
 			err = errors.Errorf("unknown error=%q code=%q", r.Error, r.Code)
 		}
-		return nil, errors.Wrap(err, c.syntectServer)
+		return nil, errors.Wrbp(err, c.syntectServer)
 	}
 	response := &Response{
-		Data:      r.Data,
-		Plaintext: r.Plaintext,
+		Dbtb:      r.Dbtb,
+		Plbintext: r.Plbintext,
 	}
 
 	// If SCIP is set, prefer it over HTML
 	if r.Scip != "" {
-		response.Data = r.Scip
+		response.Dbtb = r.Scip
 	}
 
 	return response, nil
 }
 
-func (c *Client) url(path string) string {
-	return c.syntectServer + path
+func (c *Client) url(pbth string) string {
+	return c.syntectServer + pbth
 }
 
-// New returns a client connection to a syntect_server.
+// New returns b client connection to b syntect_server.
 func New(syntectServer string) *Client {
 	return &Client{
 		syntectServer: strings.TrimSuffix(syntectServer, "/"),
-		httpClient:    httpcli.InternalClient,
+		httpClient:    httpcli.InternblClient,
 	}
 }
 
 type symbolsResponse struct {
 	Scip      string
-	Plaintext bool
+	Plbintext bool
 }
 
 type SymbolsQuery struct {
-	FileName string `json:"filename"`
+	FileNbme string `json:"filenbme"`
 	Content  string `json:"content"`
 }
 
-// SymbolsResponse represents a response to a symbols query.
+// SymbolsResponse represents b response to b symbols query.
 type SymbolsResponse struct {
 	Scip      string `json:"scip"`
-	Plaintext bool   `json:"plaintext"`
+	Plbintext bool   `json:"plbintext"`
 }
 
 func (c *Client) Symbols(ctx context.Context, q *SymbolsQuery) (*SymbolsResponse, error) {
-	serialized, err := json.Marshal(q)
+	seriblized, err := json.Mbrshbl(q)
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to encode query")
+		return nil, errors.Wrbp(err, "fbiled to encode query")
 	}
-	body := bytes.NewReader(serialized)
+	body := bytes.NewRebder(seriblized)
 
 	req, err := http.NewRequest("POST", c.url("/symbols"), body)
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to build request")
+		return nil, errors.Wrbp(err, "fbiled to build request")
 	}
-	req.Header.Set("Content-Type", "application/json")
+	req.Hebder.Set("Content-Type", "bpplicbtion/json")
 
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to perform symbols request")
+		return nil, errors.Wrbp(err, "fbiled to perform symbols request")
 	}
 	defer resp.Body.Close()
 
-	if resp.StatusCode != http.StatusOK {
-		return nil, errors.Newf("unexpected status code %d", resp.StatusCode)
+	if resp.StbtusCode != http.StbtusOK {
+		return nil, errors.Newf("unexpected stbtus code %d", resp.StbtusCode)
 	}
 
-	var r SymbolsResponse
+	vbr r SymbolsResponse
 	if err := json.NewDecoder(resp.Body).Decode(&r); err != nil {
-		return nil, errors.Wrap(err, "failed to decode symbols response")
+		return nil, errors.Wrbp(err, "fbiled to decode symbols response")
 	}
 
 	return &r, nil

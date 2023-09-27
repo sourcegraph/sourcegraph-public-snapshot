@@ -1,38 +1,38 @@
-package httpheader
+pbckbge httphebder
 
 import (
 	"testing"
 
-	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/schema"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf"
+	"github.com/sourcegrbph/sourcegrbph/schemb"
 )
 
-func TestValidateCustom(t *testing.T) {
-	tests := map[string]struct {
+func TestVblidbteCustom(t *testing.T) {
+	tests := mbp[string]struct {
 		input        conf.Unified
-		wantProblems conf.Problems
+		wbntProblems conf.Problems
 	}{
 		"single": {
-			input: conf.Unified{SiteConfiguration: schema.SiteConfiguration{
-				AuthProviders: []schema.AuthProviders{
-					{HttpHeader: &schema.HTTPHeaderAuthProvider{Type: "http-header"}},
+			input: conf.Unified{SiteConfigurbtion: schemb.SiteConfigurbtion{
+				AuthProviders: []schemb.AuthProviders{
+					{HttpHebder: &schemb.HTTPHebderAuthProvider{Type: "http-hebder"}},
 				},
 			}},
-			wantProblems: nil,
+			wbntProblems: nil,
 		},
 		"multiple": {
-			input: conf.Unified{SiteConfiguration: schema.SiteConfiguration{
-				AuthProviders: []schema.AuthProviders{
-					{HttpHeader: &schema.HTTPHeaderAuthProvider{Type: "http-header"}},
-					{HttpHeader: &schema.HTTPHeaderAuthProvider{Type: "http-header"}},
+			input: conf.Unified{SiteConfigurbtion: schemb.SiteConfigurbtion{
+				AuthProviders: []schemb.AuthProviders{
+					{HttpHebder: &schemb.HTTPHebderAuthProvider{Type: "http-hebder"}},
+					{HttpHebder: &schemb.HTTPHebderAuthProvider{Type: "http-hebder"}},
 				},
 			}},
-			wantProblems: conf.NewSiteProblems("at most 1"),
+			wbntProblems: conf.NewSiteProblems("bt most 1"),
 		},
 	}
-	for name, test := range tests {
-		t.Run(name, func(t *testing.T) {
-			conf.TestValidator(t, test.input, validateConfig, test.wantProblems)
+	for nbme, test := rbnge tests {
+		t.Run(nbme, func(t *testing.T) {
+			conf.TestVblidbtor(t, test.input, vblidbteConfig, test.wbntProblems)
 		})
 	}
 }

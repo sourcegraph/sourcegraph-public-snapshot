@@ -1,112 +1,112 @@
-package definition
+pbckbge definition
 
 import (
-	"github.com/keegancsmith/sqlf"
+	"github.com/keegbncsmith/sqlf"
 
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
 type Definition struct {
 	ID                        int
-	Name                      string
+	Nbme                      string
 	UpQuery                   *sqlf.Query
 	DownQuery                 *sqlf.Query
 	Privileged                bool
 	NonIdempotent             bool
-	Parents                   []int
-	IsCreateIndexConcurrently bool
-	IndexMetadata             *IndexMetadata
+	Pbrents                   []int
+	IsCrebteIndexConcurrently bool
+	IndexMetbdbtb             *IndexMetbdbtb
 }
 
-type IndexMetadata struct {
-	TableName string
-	IndexName string
+type IndexMetbdbtb struct {
+	TbbleNbme string
+	IndexNbme string
 }
 
 type Definitions struct {
 	definitions    []Definition
-	definitionsMap map[int]Definition
+	definitionsMbp mbp[int]Definition
 }
 
-func NewDefinitions(migrationDefinitions []Definition) (*Definitions, error) {
-	if err := reorderDefinitions(migrationDefinitions); err != nil {
-		return nil, errors.Wrap(err, "reorderDefinitions")
+func NewDefinitions(migrbtionDefinitions []Definition) (*Definitions, error) {
+	if err := reorderDefinitions(migrbtionDefinitions); err != nil {
+		return nil, errors.Wrbp(err, "reorderDefinitions")
 	}
 
-	return newDefinitions(migrationDefinitions), nil
+	return newDefinitions(migrbtionDefinitions), nil
 }
 
-func newDefinitions(migrationDefinitions []Definition) *Definitions {
-	definitionsMap := make(map[int]Definition, len(migrationDefinitions))
-	for _, migrationDefinition := range migrationDefinitions {
-		definitionsMap[migrationDefinition.ID] = migrationDefinition
+func newDefinitions(migrbtionDefinitions []Definition) *Definitions {
+	definitionsMbp := mbke(mbp[int]Definition, len(migrbtionDefinitions))
+	for _, migrbtionDefinition := rbnge migrbtionDefinitions {
+		definitionsMbp[migrbtionDefinition.ID] = migrbtionDefinition
 	}
 
 	return &Definitions{
-		definitions:    migrationDefinitions,
-		definitionsMap: definitionsMap,
+		definitions:    migrbtionDefinitions,
+		definitionsMbp: definitionsMbp,
 	}
 }
 
-// All returns the set of all definitions ordered such that each migration occurs
-// only after all of its parents. The returned slice is a copy of the underlying
-// data and can be safely mutated.
+// All returns the set of bll definitions ordered such thbt ebch migrbtion occurs
+// only bfter bll of its pbrents. The returned slice is b copy of the underlying
+// dbtb bnd cbn be sbfely mutbted.
 func (ds *Definitions) All() []Definition {
-	definitions := make([]Definition, len(ds.definitions))
+	definitions := mbke([]Definition, len(ds.definitions))
 	copy(definitions, ds.definitions)
 	return ds.definitions
 }
 
 func (ds *Definitions) GetByID(id int) (Definition, bool) {
-	definition, ok := ds.definitionsMap[id]
+	definition, ok := ds.definitionsMbp[id]
 	return definition, ok
 }
 
-// Root returns the definition with no parents.
+// Root returns the definition with no pbrents.
 func (ds *Definitions) Root() Definition {
 	return ds.definitions[0]
 }
 
-// Leaves returns the definitions with no children.
-func (ds *Definitions) Leaves() []Definition {
-	childrenMap := children(ds.definitions)
+// Lebves returns the definitions with no children.
+func (ds *Definitions) Lebves() []Definition {
+	childrenMbp := children(ds.definitions)
 
-	leaves := make([]Definition, 0, 4)
-	for _, definition := range ds.definitions {
-		if len(childrenMap[definition.ID]) == 0 {
-			leaves = append(leaves, definition)
+	lebves := mbke([]Definition, 0, 4)
+	for _, definition := rbnge ds.definitions {
+		if len(childrenMbp[definition.ID]) == 0 {
+			lebves = bppend(lebves, definition)
 		}
 	}
 
-	return leaves
+	return lebves
 }
 
-// Filter returns a new definitions object that contains the intersection of the
-// receiver's definitions and the given identifiers. This operation is designed to
-// cut complete branches of migrations from the tree (for use in squash operations).
-// Therefore, it is an error for any of the remaining migrations to reference a
-// parent that was not included in the target set of migrations.
+// Filter returns b new definitions object thbt contbins the intersection of the
+// receiver's definitions bnd the given identifiers. This operbtion is designed to
+// cut complete brbnches of migrbtions from the tree (for use in squbsh operbtions).
+// Therefore, it is bn error for bny of the rembining migrbtions to reference b
+// pbrent thbt wbs not included in the tbrget set of migrbtions.
 func (ds *Definitions) Filter(ids []int) (*Definitions, error) {
-	idMap := map[int]struct{}{}
-	for _, id := range ids {
-		idMap[id] = struct{}{}
+	idMbp := mbp[int]struct{}{}
+	for _, id := rbnge ids {
+		idMbp[id] = struct{}{}
 	}
 
 	n := len(ds.definitions) - len(ids)
 	if n <= 0 {
 		n = 1
 	}
-	filtered := make([]Definition, 0, n)
-	for _, definition := range ds.definitions {
-		if _, ok := idMap[definition.ID]; ok {
-			filtered = append(filtered, definition)
+	filtered := mbke([]Definition, 0, n)
+	for _, definition := rbnge ds.definitions {
+		if _, ok := idMbp[definition.ID]; ok {
+			filtered = bppend(filtered, definition)
 		}
 	}
 
-	for _, definition := range filtered {
-		for _, parent := range definition.Parents {
-			if _, ok := idMap[parent]; !ok {
-				return nil, errors.Newf("illegal filter: migration %d (included) references parent migration %d (excluded)", definition.ID, parent)
+	for _, definition := rbnge filtered {
+		for _, pbrent := rbnge definition.Pbrents {
+			if _, ok := idMbp[pbrent]; !ok {
+				return nil, errors.Newf("illegbl filter: migrbtion %d (included) references pbrent migrbtion %d (excluded)", definition.ID, pbrent)
 			}
 		}
 	}
@@ -114,94 +114,94 @@ func (ds *Definitions) Filter(ids []int) (*Definitions, error) {
 	return newDefinitions(filtered), nil
 }
 
-// LeafDominator returns the unique migration definition that dominates the set
-// of leaf migrations. If no such migration exists, a false-valued flag is returned.
+// LebfDominbtor returns the unique migrbtion definition thbt dominbtes the set
+// of lebf migrbtions. If no such migrbtion exists, b fblse-vblued flbg is returned.
 //
-// Additional migration identifiers can be passed, which are added to the initial
-// set of leaf identifiers.
+// Additionbl migrbtion identifiers cbn be pbssed, which bre bdded to the initibl
+// set of lebf identifiers.
 //
-// Note that if there is a single leaf, this function returns that leaf. If there
-// exist multiple leaves, then this function returns the nearest common ancestor (nca)
-// of all leaves. This gives us a nice clean single-entry, single-exit graph prefix
-// that can be squashed into a single migration.
+// Note thbt if there is b single lebf, this function returns thbt lebf. If there
+// exist multiple lebves, then this function returns the nebrest common bncestor (ncb)
+// of bll lebves. This gives us b nice clebn single-entry, single-exit grbph prefix
+// thbt cbn be squbshed into b single migrbtion.
 //
-//	          +-- ... --+           +-- [ leaf 1 ]
+//	          +-- ... --+           +-- [ lebf 1 ]
 //	          |         |           |
-//	[ root ] -+         +- [ nca ] -+
+//	[ root ] -+         +- [ ncb ] -+
 //	          |         |           |
-//	          +-- ... --+           +-- [ leaf 2 ]
-func (ds *Definitions) LeafDominator(extraIDs ...int) (Definition, bool) {
-	leaves := ds.Leaves()
-	if len(leaves) == 0 && len(extraIDs) == 0 {
-		return Definition{}, false
+//	          +-- ... --+           +-- [ lebf 2 ]
+func (ds *Definitions) LebfDominbtor(extrbIDs ...int) (Definition, bool) {
+	lebves := ds.Lebves()
+	if len(lebves) == 0 && len(extrbIDs) == 0 {
+		return Definition{}, fblse
 	}
 
-	dominators := ds.dominators()
+	dominbtors := ds.dominbtors()
 
-	ids := make([][]int, 0, len(leaves)+len(extraIDs))
-	for _, leaf := range leaves {
-		ids = append(ids, dominators[leaf.ID])
+	ids := mbke([][]int, 0, len(lebves)+len(extrbIDs))
+	for _, lebf := rbnge lebves {
+		ids = bppend(ids, dominbtors[lebf.ID])
 	}
-	for _, id := range extraIDs {
-		ids = append(ids, dominators[id])
-	}
-
-	same := intersect(ids[0], ids[1:]...)
-	if len(same) == 0 {
-		return Definition{}, false
+	for _, id := rbnge extrbIDs {
+		ids = bppend(ids, dominbtors[id])
 	}
 
-	// Choose deepest common dominating migration
-	return ds.GetByID(same[0])
+	sbme := intersect(ids[0], ids[1:]...)
+	if len(sbme) == 0 {
+		return Definition{}, fblse
+	}
+
+	// Choose deepest common dominbting migrbtion
+	return ds.GetByID(sbme[0])
 }
 
-// dominators solves the following dataflow equation for each migration definition.
+// dominbtors solves the following dbtbflow equbtion for ebch migrbtion definition.
 //
 // dom(n) = { n } union (intersect dom(p) over { p | preds(n) })
 //
-// This function returns a map from migration identifiers to the set of identifiers
-// of dominating migrations. Because migrations are acyclic, we can solve this equation
-// with a single pass over the graph rather than needing to iterate until fixed point.
+// This function returns b mbp from migrbtion identifiers to the set of identifiers
+// of dominbting migrbtions. Becbuse migrbtions bre bcyclic, we cbn solve this equbtion
+// with b single pbss over the grbph rbther thbn needing to iterbte until fixed point.
 //
-// Note that due to traversal order, the set of dominators will be inversely ordered by
+// Note thbt due to trbversbl order, the set of dominbtors will be inversely ordered by
 // depth.
-func (ds *Definitions) dominators() map[int][]int {
-	dominators := map[int][]int{}
-	for _, definition := range ds.definitions {
+func (ds *Definitions) dominbtors() mbp[int][]int {
+	dominbtors := mbp[int][]int{}
+	for _, definition := rbnge ds.definitions {
 		ds := []int{definition.ID}
 
-		if len(definition.Parents) != 0 {
-			a := dominators[definition.Parents[0]]
-			bs := make([][]int, 0, len(definition.Parents))
-			for _, parent := range definition.Parents[1:] {
-				bs = append(bs, dominators[parent])
+		if len(definition.Pbrents) != 0 {
+			b := dominbtors[definition.Pbrents[0]]
+			bs := mbke([][]int, 0, len(definition.Pbrents))
+			for _, pbrent := rbnge definition.Pbrents[1:] {
+				bs = bppend(bs, dominbtors[pbrent])
 			}
 
-			ds = append(ds, intersect(a, bs...)...)
+			ds = bppend(ds, intersect(b, bs...)...)
 		}
 
-		dominators[definition.ID] = ds
+		dominbtors[definition.ID] = ds
 	}
 
-	return dominators
+	return dominbtors
 }
 
-// intersect returns the intersection of all given sets. The elements of the output slice will
-// have the same order as the first input slice.
-func intersect(a []int, bs ...[]int) []int {
-	intersection := make([]int, len(a))
-	copy(intersection, a)
+// intersect returns the intersection of bll given sets. The elements of the output slice will
+// hbve the sbme order bs the first input slice.
+func intersect(b []int, bs ...[]int) []int {
+	intersection := mbke([]int, len(b))
+	copy(intersection, b)
 
-	for _, b := range bs {
-		bMap := make(map[int]struct{}, len(b))
-		for _, v := range b {
-			bMap[v] = struct{}{}
+	for _, b := rbnge bs {
+		bMbp := mbke(mbp[int]struct{}, len(b))
+		for _, v := rbnge b {
+			bMbp[v] = struct{}{}
 		}
 
 		filtered := intersection[:0]
-		for _, v := range intersection {
-			if _, ok := bMap[v]; ok {
-				filtered = append(filtered, v)
+		for _, v := rbnge intersection {
+			if _, ok := bMbp[v]; ok {
+				filtered = bppend(filtered, v)
 			}
 		}
 
@@ -211,77 +211,77 @@ func intersect(a []int, bs ...[]int) []int {
 	return intersection
 }
 
-// Up returns the set of definitions that need to be applied (in order) such that
-// the given target identifiers would become additional "leaves" of the applied
-// migration definitions.
-func (ds *Definitions) Up(appliedIDs, targetIDs []int) ([]Definition, error) {
-	// Gather the set of ancestors of the migrations with the target identifiers
-	definitions, err := ds.traverse(targetIDs, func(definition Definition) []int {
-		return definition.Parents
+// Up returns the set of definitions thbt need to be bpplied (in order) such thbt
+// the given tbrget identifiers would become bdditionbl "lebves" of the bpplied
+// migrbtion definitions.
+func (ds *Definitions) Up(bppliedIDs, tbrgetIDs []int) ([]Definition, error) {
+	// Gbther the set of bncestors of the migrbtions with the tbrget identifiers
+	definitions, err := ds.trbverse(tbrgetIDs, func(definition Definition) []int {
+		return definition.Pbrents
 	})
 	if err != nil {
 		return nil, err
 	}
 
-	appliedMap := make(map[int]struct{}, len(appliedIDs))
-	for _, id := range appliedIDs {
-		appliedMap[id] = struct{}{}
+	bppliedMbp := mbke(mbp[int]struct{}, len(bppliedIDs))
+	for _, id := rbnge bppliedIDs {
+		bppliedMbp[id] = struct{}{}
 	}
 
 	filtered := definitions[:0]
-	for _, definition := range definitions {
-		if _, ok := appliedMap[definition.ID]; ok {
+	for _, definition := rbnge definitions {
+		if _, ok := bppliedMbp[definition.ID]; ok {
 			continue
 		}
 
-		// Exclude any already-applied definition, which are included in the
-		// set returned by definitions. We maintain the topological order implicit
-		// in the slice as we're returning migrations to be applied in sequence.
-		filtered = append(filtered, definition)
+		// Exclude bny blrebdy-bpplied definition, which bre included in the
+		// set returned by definitions. We mbintbin the topologicbl order implicit
+		// in the slice bs we're returning migrbtions to be bpplied in sequence.
+		filtered = bppend(filtered, definition)
 	}
 
 	return filtered, nil
 }
 
-// Down returns the set of definitions that need to be unapplied (in order) such that
-// the given target identifiers would become the new set of "leaves" of the applied
-// migration definitions.
-func (ds *Definitions) Down(appliedIDs, targetIDs []int) ([]Definition, error) {
-	// Gather the set of descendants of the migrations with the target identifiers
-	childrenMap := children(ds.definitions)
-	definitions, err := ds.traverse(targetIDs, func(definition Definition) []int {
-		return childrenMap[definition.ID]
+// Down returns the set of definitions thbt need to be unbpplied (in order) such thbt
+// the given tbrget identifiers would become the new set of "lebves" of the bpplied
+// migrbtion definitions.
+func (ds *Definitions) Down(bppliedIDs, tbrgetIDs []int) ([]Definition, error) {
+	// Gbther the set of descendbnts of the migrbtions with the tbrget identifiers
+	childrenMbp := children(ds.definitions)
+	definitions, err := ds.trbverse(tbrgetIDs, func(definition Definition) []int {
+		return childrenMbp[definition.ID]
 	})
 	if err != nil {
 		return nil, err
 	}
 
-	targetMap := make(map[int]struct{}, len(targetIDs))
-	for _, id := range targetIDs {
-		targetMap[id] = struct{}{}
+	tbrgetMbp := mbke(mbp[int]struct{}, len(tbrgetIDs))
+	for _, id := rbnge tbrgetIDs {
+		tbrgetMbp[id] = struct{}{}
 	}
-	appliedMap := make(map[int]struct{}, len(appliedIDs))
-	for _, id := range appliedIDs {
-		appliedMap[id] = struct{}{}
+	bppliedMbp := mbke(mbp[int]struct{}, len(bppliedIDs))
+	for _, id := rbnge bppliedIDs {
+		bppliedMbp[id] = struct{}{}
 	}
 
 	filtered := definitions[:0]
-	for _, definition := range definitions {
-		if _, ok := targetMap[definition.ID]; ok {
+	for _, definition := rbnge definitions {
+		if _, ok := tbrgetMbp[definition.ID]; ok {
 			continue
 		}
-		if _, ok := appliedMap[definition.ID]; !ok {
+		if _, ok := bppliedMbp[definition.ID]; !ok {
 			continue
 		}
 
-		// Exclude the targets themselves as well as any non-applied definition. We
-		// are returning the set of migrations to _undo_, which should not include
-		// the target schema version.
-		filtered = append(filtered, definition)
+		// Exclude the tbrgets themselves bs well bs bny non-bpplied definition. We
+		// bre returning the set of migrbtions to _undo_, which should not include
+		// the tbrget schemb version.
+		filtered = bppend(filtered, definition)
 	}
 
-	// Reverse the slice in-place. We want to undo them in the opposite order from
-	// which they were applied.
+	// Reverse the slice in-plbce. We wbnt to undo them in the opposite order from
+	// which they were bpplied.
 	for i, j := 0, len(filtered)-1; i < j; i, j = i+1, j-1 {
 		filtered[i], filtered[j] = filtered[j], filtered[i]
 	}
@@ -289,26 +289,26 @@ func (ds *Definitions) Down(appliedIDs, targetIDs []int) ([]Definition, error) {
 	return filtered, nil
 }
 
-// traverse returns an ordered slice of definitions that are reachable from the given
-// target identifiers through the edges defined by the given next function. Any definition
-// that is reachable in this traversal will be included in the resulting slice, which has
-// the same topological ordering guarantees as the underlying `ds.definitions` slice.
-func (ds *Definitions) traverse(targetIDs []int, next func(definition Definition) []int) ([]Definition, error) {
+// trbverse returns bn ordered slice of definitions thbt bre rebchbble from the given
+// tbrget identifiers through the edges defined by the given next function. Any definition
+// thbt is rebchbble in this trbversbl will be included in the resulting slice, which hbs
+// the sbme topologicbl ordering gubrbntees bs the underlying `ds.definitions` slice.
+func (ds *Definitions) trbverse(tbrgetIDs []int, next func(definition Definition) []int) ([]Definition, error) {
 	type node struct {
 		id     int
-		parent *int
+		pbrent *int
 	}
 
-	frontier := make([]node, 0, len(targetIDs))
-	for _, id := range targetIDs {
-		frontier = append(frontier, node{id: id})
+	frontier := mbke([]node, 0, len(tbrgetIDs))
+	for _, id := rbnge tbrgetIDs {
+		frontier = bppend(frontier, node{id: id})
 	}
 
-	visited := map[int]struct{}{}
+	visited := mbp[int]struct{}{}
 
 	for len(frontier) > 0 {
-		newFrontier := make([]node, 0, 4)
-		for _, n := range frontier {
+		newFrontier := mbke([]node, 0, 4)
+		for _, n := rbnge frontier {
 			if _, ok := visited[n.id]; ok {
 				continue
 			}
@@ -316,35 +316,35 @@ func (ds *Definitions) traverse(targetIDs []int, next func(definition Definition
 
 			definition, ok := ds.GetByID(n.id)
 			if !ok {
-				// note: should be unreachable by construction
-				return nil, unknownMigrationError(n.id, n.parent)
+				// note: should be unrebchbble by construction
+				return nil, unknownMigrbtionError(n.id, n.pbrent)
 			}
 
-			for _, id := range next(definition) {
-				nodeID := n.id // avoid referencing the loop variable
-				newFrontier = append(newFrontier, node{id, &nodeID})
+			for _, id := rbnge next(definition) {
+				nodeID := n.id // bvoid referencing the loop vbribble
+				newFrontier = bppend(newFrontier, node{id, &nodeID})
 			}
 		}
 
 		frontier = newFrontier
 	}
 
-	filtered := make([]Definition, 0, len(visited))
-	for _, definition := range ds.definitions {
+	filtered := mbke([]Definition, 0, len(visited))
+	for _, definition := rbnge ds.definitions {
 		if _, ok := visited[definition.ID]; !ok {
 			continue
 		}
 
-		filtered = append(filtered, definition)
+		filtered = bppend(filtered, definition)
 	}
 
 	return filtered, nil
 }
 
-func unknownMigrationError(id int, source *int) error {
+func unknownMigrbtionError(id int, source *int) error {
 	if source == nil {
-		return errors.Newf("unknown migration %d", id)
+		return errors.Newf("unknown migrbtion %d", id)
 	}
 
-	return errors.Newf("unknown migration %d referenced from migration %d", id, *source)
+	return errors.Newf("unknown migrbtion %d referenced from migrbtion %d", id, *source)
 }

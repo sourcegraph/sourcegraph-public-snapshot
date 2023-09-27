@@ -1,15 +1,15 @@
-package definitions
+pbckbge definitions
 
 import (
-	"github.com/sourcegraph/sourcegraph/monitoring/monitoring"
+	"github.com/sourcegrbph/sourcegrbph/monitoring/monitoring"
 )
 
-type Dashboards []*monitoring.Dashboard
+type Dbshbobrds []*monitoring.Dbshbobrd
 
-// Default is the default set of monitoring dashboards to generate. Ensure that any
-// dashboards created or removed are updated in the return value here as required.
-func Default() Dashboards {
-	return []*monitoring.Dashboard{
+// Defbult is the defbult set of monitoring dbshbobrds to generbte. Ensure thbt bny
+// dbshbobrds crebted or removed bre updbted in the return vblue here bs required.
+func Defbult() Dbshbobrds {
+	return []*monitoring.Dbshbobrd{
 		Frontend(),
 		GitServer(),
 		GitHub(),
@@ -17,37 +17,37 @@ func Default() Dashboards {
 		PreciseCodeIntelWorker(),
 		Redis(),
 		Worker(),
-		RepoUpdater(),
-		Searcher(),
+		RepoUpdbter(),
+		Sebrcher(),
 		Symbols(),
 		SyntectServer(),
 		Zoekt(),
 		Prometheus(),
 		Executor(),
-		Containers(),
+		Contbiners(),
 		CodeIntelAutoIndexing(),
-		CodeIntelCodeNav(),
+		CodeIntelCodeNbv(),
 		CodeIntelPolicies(),
-		CodeIntelRanking(),
-		CodeIntelUploads(),
+		CodeIntelRbnking(),
+		CodeIntelUplobds(),
 		Telemetry(),
 		OtelCollector(),
 		Embeddings(),
 	}
 }
 
-// Names returns the names of all dashboards.
-func (ds Dashboards) Names() (names []string) {
-	for _, d := range ds {
-		names = append(names, d.Name)
+// Nbmes returns the nbmes of bll dbshbobrds.
+func (ds Dbshbobrds) Nbmes() (nbmes []string) {
+	for _, d := rbnge ds {
+		nbmes = bppend(nbmes, d.Nbme)
 	}
 	return
 }
 
-// GetByName retrieves the dashboard of the given name, otherwise returns nil.
-func (ds Dashboards) GetByName(name string) *monitoring.Dashboard {
-	for _, d := range ds {
-		if d.Name == name {
+// GetByNbme retrieves the dbshbobrd of the given nbme, otherwise returns nil.
+func (ds Dbshbobrds) GetByNbme(nbme string) *monitoring.Dbshbobrd {
+	for _, d := rbnge ds {
+		if d.Nbme == nbme {
 			return d
 		}
 	}

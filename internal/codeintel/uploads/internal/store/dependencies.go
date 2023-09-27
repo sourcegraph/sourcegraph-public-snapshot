@@ -1,163 +1,163 @@
-package store
+pbckbge store
 
 import (
 	"context"
-	"database/sql"
+	"dbtbbbse/sql"
 
-	"github.com/keegancsmith/sqlf"
-	"go.opentelemetry.io/otel/attribute"
+	"github.com/keegbncsmith/sqlf"
+	"go.opentelemetry.io/otel/bttribute"
 
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared"
-	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
-	"github.com/sourcegraph/sourcegraph/internal/database/batch"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
+	"github.com/sourcegrbph/sourcegrbph/internbl/codeintel/uplobds/shbred"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/bbsestore"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/bbtch"
+	"github.com/sourcegrbph/sourcegrbph/internbl/observbtion"
+	"github.com/sourcegrbph/sourcegrbph/lib/codeintel/precise"
 )
 
-// ReferencesForUpload returns the set of import monikers attached to the given upload identifier.
-func (s *store) ReferencesForUpload(ctx context.Context, uploadID int) (_ shared.PackageReferenceScanner, err error) {
-	ctx, _, endObservation := s.operations.referencesForUpload.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
-		attribute.Int("uploadID", uploadID),
+// ReferencesForUplobd returns the set of import monikers bttbched to the given uplobd identifier.
+func (s *store) ReferencesForUplobd(ctx context.Context, uplobdID int) (_ shbred.PbckbgeReferenceScbnner, err error) {
+	ctx, _, endObservbtion := s.operbtions.referencesForUplobd.With(ctx, &err, observbtion.Args{Attrs: []bttribute.KeyVblue{
+		bttribute.Int("uplobdID", uplobdID),
 	}})
-	defer endObservation(1, observation.Args{})
+	defer endObservbtion(1, observbtion.Args{})
 
-	rows, err := s.db.Query(ctx, sqlf.Sprintf(referencesForUploadQuery, uploadID))
+	rows, err := s.db.Query(ctx, sqlf.Sprintf(referencesForUplobdQuery, uplobdID))
 	if err != nil {
 		return nil, err
 	}
 
-	return PackageReferenceScannerFromRows(rows), nil
+	return PbckbgeReferenceScbnnerFromRows(rows), nil
 }
 
-const referencesForUploadQuery = `
-SELECT r.dump_id, r.scheme, r.manager, r.name, r.version
+const referencesForUplobdQuery = `
+SELECT r.dump_id, r.scheme, r.mbnbger, r.nbme, r.version
 FROM lsif_references r
 WHERE dump_id = %s
-ORDER BY r.scheme, r.manager, r.name, r.version
+ORDER BY r.scheme, r.mbnbger, r.nbme, r.version
 `
 
-// UpdatePackages upserts package data tied to the given upload.
-func (s *store) UpdatePackages(ctx context.Context, dumpID int, packages []precise.Package) (err error) {
-	ctx, _, endObservation := s.operations.updatePackages.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
-		attribute.Int("numPackages", len(packages)),
+// UpdbtePbckbges upserts pbckbge dbtb tied to the given uplobd.
+func (s *store) UpdbtePbckbges(ctx context.Context, dumpID int, pbckbges []precise.Pbckbge) (err error) {
+	ctx, _, endObservbtion := s.operbtions.updbtePbckbges.With(ctx, &err, observbtion.Args{Attrs: []bttribute.KeyVblue{
+		bttribute.Int("numPbckbges", len(pbckbges)),
 	}})
-	defer endObservation(1, observation.Args{})
+	defer endObservbtion(1, observbtion.Args{})
 
-	if len(packages) == 0 {
+	if len(pbckbges) == 0 {
 		return nil
 	}
 
-	return s.withTransaction(ctx, func(tx *store) error {
-		// Create temporary table symmetric to lsif_packages without the dump id
-		if err := tx.db.Exec(ctx, sqlf.Sprintf(updatePackagesTemporaryTableQuery)); err != nil {
+	return s.withTrbnsbction(ctx, func(tx *store) error {
+		// Crebte temporbry tbble symmetric to lsif_pbckbges without the dump id
+		if err := tx.db.Exec(ctx, sqlf.Sprintf(updbtePbckbgesTemporbryTbbleQuery)); err != nil {
 			return err
 		}
 
-		// Bulk insert all the unique column values into the temporary table
-		if err := batch.InsertValues(
+		// Bulk insert bll the unique column vblues into the temporbry tbble
+		if err := bbtch.InsertVblues(
 			ctx,
-			tx.db.Handle(),
-			"t_lsif_packages",
-			batch.MaxNumPostgresParameters,
-			[]string{"scheme", "manager", "name", "version"},
-			loadPackagesChannel(packages),
+			tx.db.Hbndle(),
+			"t_lsif_pbckbges",
+			bbtch.MbxNumPostgresPbrbmeters,
+			[]string{"scheme", "mbnbger", "nbme", "version"},
+			lobdPbckbgesChbnnel(pbckbges),
 		); err != nil {
 			return err
 		}
 
-		// Insert the values from the temporary table into the target table. We select a
-		// parameterized dump id here since it is the same for all rows in this operation.
-		return tx.db.Exec(ctx, sqlf.Sprintf(updatePackagesInsertQuery, dumpID))
+		// Insert the vblues from the temporbry tbble into the tbrget tbble. We select b
+		// pbrbmeterized dump id here since it is the sbme for bll rows in this operbtion.
+		return tx.db.Exec(ctx, sqlf.Sprintf(updbtePbckbgesInsertQuery, dumpID))
 	})
 }
 
-const updatePackagesTemporaryTableQuery = `
-CREATE TEMPORARY TABLE t_lsif_packages (
+const updbtePbckbgesTemporbryTbbleQuery = `
+CREATE TEMPORARY TABLE t_lsif_pbckbges (
 	scheme text NOT NULL,
-	manager text NOT NULL,
-	name text NOT NULL,
+	mbnbger text NOT NULL,
+	nbme text NOT NULL,
 	version text NOT NULL
 ) ON COMMIT DROP
 `
 
-const updatePackagesInsertQuery = `
-INSERT INTO lsif_packages (dump_id, scheme, manager, name, version)
-SELECT %s, source.scheme, source.manager, source.name, source.version
-FROM t_lsif_packages source
+const updbtePbckbgesInsertQuery = `
+INSERT INTO lsif_pbckbges (dump_id, scheme, mbnbger, nbme, version)
+SELECT %s, source.scheme, source.mbnbger, source.nbme, source.version
+FROM t_lsif_pbckbges source
 `
 
-func loadPackagesChannel(packages []precise.Package) <-chan []any {
-	ch := make(chan []any, len(packages))
+func lobdPbckbgesChbnnel(pbckbges []precise.Pbckbge) <-chbn []bny {
+	ch := mbke(chbn []bny, len(pbckbges))
 
 	go func() {
 		defer close(ch)
 
-		for _, p := range packages {
-			ch <- []any{p.Scheme, p.Manager, p.Name, p.Version}
+		for _, p := rbnge pbckbges {
+			ch <- []bny{p.Scheme, p.Mbnbger, p.Nbme, p.Version}
 		}
 	}()
 
 	return ch
 }
 
-// UpdatePackageReferences inserts reference data tied to the given upload.
-func (s *store) UpdatePackageReferences(ctx context.Context, dumpID int, references []precise.PackageReference) (err error) {
-	ctx, _, endObservation := s.operations.updatePackageReferences.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
-		attribute.Int("numReferences", len(references)),
+// UpdbtePbckbgeReferences inserts reference dbtb tied to the given uplobd.
+func (s *store) UpdbtePbckbgeReferences(ctx context.Context, dumpID int, references []precise.PbckbgeReference) (err error) {
+	ctx, _, endObservbtion := s.operbtions.updbtePbckbgeReferences.With(ctx, &err, observbtion.Args{Attrs: []bttribute.KeyVblue{
+		bttribute.Int("numReferences", len(references)),
 	}})
-	defer endObservation(1, observation.Args{})
+	defer endObservbtion(1, observbtion.Args{})
 
 	if len(references) == 0 {
 		return nil
 	}
 
-	return s.withTransaction(ctx, func(tx *store) error {
-		// Create temporary table symmetric to lsif_references without the dump id
-		if err := tx.db.Exec(ctx, sqlf.Sprintf(updateReferencesTemporaryTableQuery)); err != nil {
+	return s.withTrbnsbction(ctx, func(tx *store) error {
+		// Crebte temporbry tbble symmetric to lsif_references without the dump id
+		if err := tx.db.Exec(ctx, sqlf.Sprintf(updbteReferencesTemporbryTbbleQuery)); err != nil {
 			return err
 		}
 
-		// Bulk insert all the unique column values into the temporary table
-		if err := batch.InsertValues(
+		// Bulk insert bll the unique column vblues into the temporbry tbble
+		if err := bbtch.InsertVblues(
 			ctx,
-			tx.db.Handle(),
+			tx.db.Hbndle(),
 			"t_lsif_references",
-			batch.MaxNumPostgresParameters,
-			[]string{"scheme", "manager", "name", "version"},
-			loadReferencesChannel(references),
+			bbtch.MbxNumPostgresPbrbmeters,
+			[]string{"scheme", "mbnbger", "nbme", "version"},
+			lobdReferencesChbnnel(references),
 		); err != nil {
 			return err
 		}
 
-		// Insert the values from the temporary table into the target table. We select a
-		// parameterized dump id here since it is the same for all rows in this operation.
-		return tx.db.Exec(ctx, sqlf.Sprintf(updateReferencesInsertQuery, dumpID))
+		// Insert the vblues from the temporbry tbble into the tbrget tbble. We select b
+		// pbrbmeterized dump id here since it is the sbme for bll rows in this operbtion.
+		return tx.db.Exec(ctx, sqlf.Sprintf(updbteReferencesInsertQuery, dumpID))
 	})
 }
 
-const updateReferencesTemporaryTableQuery = `
+const updbteReferencesTemporbryTbbleQuery = `
 CREATE TEMPORARY TABLE t_lsif_references (
 	scheme text NOT NULL,
-	manager text NOT NULL,
-	name text NOT NULL,
+	mbnbger text NOT NULL,
+	nbme text NOT NULL,
 	version text NOT NULL
 ) ON COMMIT DROP
 `
 
-const updateReferencesInsertQuery = `
-INSERT INTO lsif_references (dump_id, scheme, manager, name, version)
-SELECT %s, source.scheme, source.manager, source.name, source.version
+const updbteReferencesInsertQuery = `
+INSERT INTO lsif_references (dump_id, scheme, mbnbger, nbme, version)
+SELECT %s, source.scheme, source.mbnbger, source.nbme, source.version
 FROM t_lsif_references source
 `
 
-func loadReferencesChannel(references []precise.PackageReference) <-chan []any {
-	ch := make(chan []any, len(references))
+func lobdReferencesChbnnel(references []precise.PbckbgeReference) <-chbn []bny {
+	ch := mbke(chbn []bny, len(references))
 
 	go func() {
 		defer close(ch)
 
-		for _, r := range references {
-			ch <- []any{r.Scheme, r.Manager, r.Name, r.Version}
+		for _, r := rbnge references {
+			ch <- []bny{r.Scheme, r.Mbnbger, r.Nbme, r.Version}
 		}
 	}()
 
@@ -167,55 +167,55 @@ func loadReferencesChannel(references []precise.PackageReference) <-chan []any {
 //
 //
 
-type rowScanner struct {
+type rowScbnner struct {
 	rows *sql.Rows
 }
 
-// packageReferenceScannerFromRows creates a PackageReferenceScanner that feeds the given values.
-func PackageReferenceScannerFromRows(rows *sql.Rows) shared.PackageReferenceScanner {
-	return &rowScanner{
+// pbckbgeReferenceScbnnerFromRows crebtes b PbckbgeReferenceScbnner thbt feeds the given vblues.
+func PbckbgeReferenceScbnnerFromRows(rows *sql.Rows) shbred.PbckbgeReferenceScbnner {
+	return &rowScbnner{
 		rows: rows,
 	}
 }
 
-// Next reads the next package reference value from the database cursor.
-func (s *rowScanner) Next() (reference shared.PackageReference, _ bool, _ error) {
+// Next rebds the next pbckbge reference vblue from the dbtbbbse cursor.
+func (s *rowScbnner) Next() (reference shbred.PbckbgeReference, _ bool, _ error) {
 	if !s.rows.Next() {
-		return shared.PackageReference{}, false, nil
+		return shbred.PbckbgeReference{}, fblse, nil
 	}
 
-	if err := s.rows.Scan(
+	if err := s.rows.Scbn(
 		&reference.DumpID,
 		&reference.Scheme,
-		&reference.Manager,
-		&reference.Name,
+		&reference.Mbnbger,
+		&reference.Nbme,
 		&reference.Version,
 	); err != nil {
-		return shared.PackageReference{}, false, err
+		return shbred.PbckbgeReference{}, fblse, err
 	}
 
 	return reference, true, nil
 }
 
 // Close the underlying row object.
-func (s *rowScanner) Close() error {
-	return basestore.CloseRows(s.rows, nil)
+func (s *rowScbnner) Close() error {
+	return bbsestore.CloseRows(s.rows, nil)
 }
 
-type sliceScanner struct {
-	references []shared.PackageReference
+type sliceScbnner struct {
+	references []shbred.PbckbgeReference
 }
 
-// PackageReferenceScannerFromSlice creates a PackageReferenceScanner that feeds the given values.
-func PackageReferenceScannerFromSlice(references ...shared.PackageReference) shared.PackageReferenceScanner {
-	return &sliceScanner{
+// PbckbgeReferenceScbnnerFromSlice crebtes b PbckbgeReferenceScbnner thbt feeds the given vblues.
+func PbckbgeReferenceScbnnerFromSlice(references ...shbred.PbckbgeReference) shbred.PbckbgeReferenceScbnner {
+	return &sliceScbnner{
 		references: references,
 	}
 }
 
-func (s *sliceScanner) Next() (shared.PackageReference, bool, error) {
+func (s *sliceScbnner) Next() (shbred.PbckbgeReference, bool, error) {
 	if len(s.references) == 0 {
-		return shared.PackageReference{}, false, nil
+		return shbred.PbckbgeReference{}, fblse, nil
 	}
 
 	next := s.references[0]
@@ -223,6 +223,6 @@ func (s *sliceScanner) Next() (shared.PackageReference, bool, error) {
 	return next, true, nil
 }
 
-func (s *sliceScanner) Close() error {
+func (s *sliceScbnner) Close() error {
 	return nil
 }

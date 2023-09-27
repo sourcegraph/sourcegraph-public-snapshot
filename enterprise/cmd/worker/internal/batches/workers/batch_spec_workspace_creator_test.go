@@ -1,4 +1,4 @@
-package workers
+pbckbge workers
 
 import (
 	"bytes"
@@ -9,1035 +9,1035 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
-	"github.com/graph-gophers/graphql-go/relay"
+	"github.com/grbph-gophers/grbphql-go/relby"
 
-	"github.com/sourcegraph/log/logtest"
+	"github.com/sourcegrbph/log/logtest"
 
-	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/batches/service"
-	"github.com/sourcegraph/sourcegraph/internal/batches/store"
-	bt "github.com/sourcegraph/sourcegraph/internal/batches/testing"
-	btypes "github.com/sourcegraph/sourcegraph/internal/batches/types"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/internal/timeutil"
-	batcheslib "github.com/sourcegraph/sourcegraph/lib/batches"
-	"github.com/sourcegraph/sourcegraph/lib/batches/execution"
-	"github.com/sourcegraph/sourcegraph/lib/batches/execution/cache"
-	"github.com/sourcegraph/sourcegraph/lib/batches/git"
-	"github.com/sourcegraph/sourcegraph/lib/batches/template"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bctor"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bbtches/service"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bbtches/store"
+	bt "github.com/sourcegrbph/sourcegrbph/internbl/bbtches/testing"
+	btypes "github.com/sourcegrbph/sourcegrbph/internbl/bbtches/types"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbtest"
+	"github.com/sourcegrbph/sourcegrbph/internbl/observbtion"
+	"github.com/sourcegrbph/sourcegrbph/internbl/timeutil"
+	bbtcheslib "github.com/sourcegrbph/sourcegrbph/lib/bbtches"
+	"github.com/sourcegrbph/sourcegrbph/lib/bbtches/execution"
+	"github.com/sourcegrbph/sourcegrbph/lib/bbtches/execution/cbche"
+	"github.com/sourcegrbph/sourcegrbph/lib/bbtches/git"
+	"github.com/sourcegrbph/sourcegrbph/lib/bbtches/templbte"
 )
 
-func TestBatchSpecWorkspaceCreatorProcess(t *testing.T) {
+func TestBbtchSpecWorkspbceCrebtorProcess(t *testing.T) {
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := dbtbbbse.NewDB(logger, dbtest.NewDB(logger, t))
 
-	repos, _ := bt.CreateTestRepos(t, context.Background(), db, 4)
+	repos, _ := bt.CrebteTestRepos(t, context.Bbckground(), db, 4)
 
-	user := bt.CreateTestUser(t, db, true)
+	user := bt.CrebteTestUser(t, db, true)
 
-	s := store.New(db, &observation.TestContext, nil)
+	s := store.New(db, &observbtion.TestContext, nil)
 
-	batchSpec, err := btypes.NewBatchSpecFromRaw(bt.TestRawBatchSpecYAML)
+	bbtchSpec, err := btypes.NewBbtchSpecFromRbw(bt.TestRbwBbtchSpecYAML)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
-	batchSpec.UserID = user.ID
-	batchSpec.NamespaceUserID = user.ID
-	if err := s.CreateBatchSpec(context.Background(), batchSpec); err != nil {
-		t.Fatal(err)
+	bbtchSpec.UserID = user.ID
+	bbtchSpec.NbmespbceUserID = user.ID
+	if err := s.CrebteBbtchSpec(context.Bbckground(), bbtchSpec); err != nil {
+		t.Fbtbl(err)
 	}
 
-	job := &btypes.BatchSpecResolutionJob{BatchSpecID: batchSpec.ID}
+	job := &btypes.BbtchSpecResolutionJob{BbtchSpecID: bbtchSpec.ID}
 
-	resolver := &dummyWorkspaceResolver{
-		workspaces: []*service.RepoWorkspace{
+	resolver := &dummyWorkspbceResolver{
+		workspbces: []*service.RepoWorkspbce{
 			{
 				RepoRevision: &service.RepoRevision{
 					Repo:        repos[0],
-					Branch:      "refs/heads/main",
+					Brbnch:      "refs/hebds/mbin",
 					Commit:      "d34db33f",
-					FileMatches: []string{},
+					FileMbtches: []string{},
 				},
-				Path:               "",
-				OnlyFetchWorkspace: true,
+				Pbth:               "",
+				OnlyFetchWorkspbce: true,
 			},
 			{
 				RepoRevision: &service.RepoRevision{
 					Repo:        repos[0],
-					Branch:      "refs/heads/main",
+					Brbnch:      "refs/hebds/mbin",
 					Commit:      "d34db33f",
-					FileMatches: []string{"a/b/c.go"},
+					FileMbtches: []string{"b/b/c.go"},
 				},
-				Path:               "a/b",
-				OnlyFetchWorkspace: false,
+				Pbth:               "b/b",
+				OnlyFetchWorkspbce: fblse,
 			},
 			{
 				RepoRevision: &service.RepoRevision{
 					Repo:        repos[1],
-					Branch:      "refs/heads/base-branch",
+					Brbnch:      "refs/hebds/bbse-brbnch",
 					Commit:      "c0ff33",
-					FileMatches: []string{"d/e/f.go"},
+					FileMbtches: []string{"d/e/f.go"},
 				},
-				Path:               "d/e",
-				OnlyFetchWorkspace: true,
+				Pbth:               "d/e",
+				OnlyFetchWorkspbce: true,
 			},
 			{
 				// Unsupported
 				RepoRevision: &service.RepoRevision{
 					Repo:        repos[2],
-					Branch:      "refs/heads/base-branch",
+					Brbnch:      "refs/hebds/bbse-brbnch",
 					Commit:      "h0rs3s",
-					FileMatches: []string{"main.go"},
+					FileMbtches: []string{"mbin.go"},
 				},
-				Path:        "",
+				Pbth:        "",
 				Unsupported: true,
 			},
 			{
 				// Ignored
 				RepoRevision: &service.RepoRevision{
 					Repo:        repos[3],
-					Branch:      "refs/heads/main-base-branch",
+					Brbnch:      "refs/hebds/mbin-bbse-brbnch",
 					Commit:      "f00b4r",
-					FileMatches: []string{"lol.txt"},
+					FileMbtches: []string{"lol.txt"},
 				},
-				Path:    "",
+				Pbth:    "",
 				Ignored: true,
 			},
 		},
 	}
 
-	creator := &batchSpecWorkspaceCreator{store: s, logger: logtest.Scoped(t)}
-	if err := creator.process(context.Background(), resolver.DummyBuilder, job); err != nil {
-		t.Fatalf("proces failed: %s", err)
+	crebtor := &bbtchSpecWorkspbceCrebtor{store: s, logger: logtest.Scoped(t)}
+	if err := crebtor.process(context.Bbckground(), resolver.DummyBuilder, job); err != nil {
+		t.Fbtblf("proces fbiled: %s", err)
 	}
 
-	have, _, err := s.ListBatchSpecWorkspaces(context.Background(), store.ListBatchSpecWorkspacesOpts{BatchSpecID: batchSpec.ID})
+	hbve, _, err := s.ListBbtchSpecWorkspbces(context.Bbckground(), store.ListBbtchSpecWorkspbcesOpts{BbtchSpecID: bbtchSpec.ID})
 	if err != nil {
-		t.Fatalf("listing workspaces failed: %s", err)
+		t.Fbtblf("listing workspbces fbiled: %s", err)
 	}
 
-	want := []*btypes.BatchSpecWorkspace{
+	wbnt := []*btypes.BbtchSpecWorkspbce{
 		{
 			RepoID:             repos[0].ID,
-			BatchSpecID:        batchSpec.ID,
-			ChangesetSpecIDs:   []int64{},
-			Branch:             "refs/heads/main",
+			BbtchSpecID:        bbtchSpec.ID,
+			ChbngesetSpecIDs:   []int64{},
+			Brbnch:             "refs/hebds/mbin",
 			Commit:             "d34db33f",
-			FileMatches:        []string{},
-			Path:               "",
-			OnlyFetchWorkspace: true,
+			FileMbtches:        []string{},
+			Pbth:               "",
+			OnlyFetchWorkspbce: true,
 		},
 		{
 			RepoID:             repos[0].ID,
-			BatchSpecID:        batchSpec.ID,
-			ChangesetSpecIDs:   []int64{},
-			Branch:             "refs/heads/main",
+			BbtchSpecID:        bbtchSpec.ID,
+			ChbngesetSpecIDs:   []int64{},
+			Brbnch:             "refs/hebds/mbin",
 			Commit:             "d34db33f",
-			FileMatches:        []string{"a/b/c.go"},
-			Path:               "a/b",
-			OnlyFetchWorkspace: false,
+			FileMbtches:        []string{"b/b/c.go"},
+			Pbth:               "b/b",
+			OnlyFetchWorkspbce: fblse,
 		},
 		{
 			RepoID:             repos[1].ID,
-			BatchSpecID:        batchSpec.ID,
-			ChangesetSpecIDs:   []int64{},
-			Branch:             "refs/heads/base-branch",
+			BbtchSpecID:        bbtchSpec.ID,
+			ChbngesetSpecIDs:   []int64{},
+			Brbnch:             "refs/hebds/bbse-brbnch",
 			Commit:             "c0ff33",
-			FileMatches:        []string{"d/e/f.go"},
-			Path:               "d/e",
-			OnlyFetchWorkspace: true,
+			FileMbtches:        []string{"d/e/f.go"},
+			Pbth:               "d/e",
+			OnlyFetchWorkspbce: true,
 		},
 		{
 			RepoID:           repos[2].ID,
-			BatchSpecID:      batchSpec.ID,
-			Branch:           "refs/heads/base-branch",
+			BbtchSpecID:      bbtchSpec.ID,
+			Brbnch:           "refs/hebds/bbse-brbnch",
 			Commit:           "h0rs3s",
-			ChangesetSpecIDs: []int64{},
-			FileMatches:      []string{"main.go"},
+			ChbngesetSpecIDs: []int64{},
+			FileMbtches:      []string{"mbin.go"},
 			Unsupported:      true,
 		},
 		{
 			RepoID:           repos[3].ID,
-			BatchSpecID:      batchSpec.ID,
-			Branch:           "refs/heads/main-base-branch",
+			BbtchSpecID:      bbtchSpec.ID,
+			Brbnch:           "refs/hebds/mbin-bbse-brbnch",
 			Commit:           "f00b4r",
-			ChangesetSpecIDs: []int64{},
-			FileMatches:      []string{"lol.txt"},
+			ChbngesetSpecIDs: []int64{},
+			FileMbtches:      []string{"lol.txt"},
 			Ignored:          true,
 		},
 	}
 
-	assertWorkspacesEqual(t, have, want)
+	bssertWorkspbcesEqubl(t, hbve, wbnt)
 }
 
-func TestBatchSpecWorkspaceCreatorProcess_Caching(t *testing.T) {
+func TestBbtchSpecWorkspbceCrebtorProcess_Cbching(t *testing.T) {
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := dbtbbbse.NewDB(logger, dbtest.NewDB(logger, t))
 
-	ctx := context.Background()
+	ctx := context.Bbckground()
 
-	repos, _ := bt.CreateTestRepos(t, ctx, db, 1)
+	repos, _ := bt.CrebteTestRepos(t, ctx, db, 1)
 
-	user := bt.CreateTestUser(t, db, true)
-	userCtx := actor.WithActor(ctx, actor.FromUser(user.ID))
+	user := bt.CrebteTestUser(t, db, true)
+	userCtx := bctor.WithActor(ctx, bctor.FromUser(user.ID))
 
-	secret := &database.ExecutorSecret{
+	secret := &dbtbbbse.ExecutorSecret{
 		Key:       "FOO",
-		CreatorID: user.ID,
+		CrebtorID: user.ID,
 	}
-	secretValue := "sosecret"
-	err := db.ExecutorSecrets(nil).Create(userCtx, database.ExecutorSecretScopeBatches, secret, secretValue)
+	secretVblue := "sosecret"
+	err := db.ExecutorSecrets(nil).Crebte(userCtx, dbtbbbse.ExecutorSecretScopeBbtches, secret, secretVblue)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
 	now := timeutil.Now()
 	clock := func() time.Time { return now }
-	s := store.NewWithClock(db, &observation.TestContext, nil, clock)
+	s := store.NewWithClock(db, &observbtion.TestContext, nil, clock)
 
-	creator := &batchSpecWorkspaceCreator{store: s, logger: logtest.Scoped(t)}
+	crebtor := &bbtchSpecWorkspbceCrebtor{store: s, logger: logtest.Scoped(t)}
 
-	buildWorkspace := func(commit string) *service.RepoWorkspace {
-		return &service.RepoWorkspace{
+	buildWorkspbce := func(commit string) *service.RepoWorkspbce {
+		return &service.RepoWorkspbce{
 			RepoRevision: &service.RepoRevision{
 				Repo:   repos[0],
-				Branch: "refs/heads/main",
-				// We use a different commit so we get different cache keys and
-				// don't overwrite the cache keys in the tests.
-				Commit:      api.CommitID(commit),
-				FileMatches: []string{},
+				Brbnch: "refs/hebds/mbin",
+				// We use b different commit so we get different cbche keys bnd
+				// don't overwrite the cbche keys in the tests.
+				Commit:      bpi.CommitID(commit),
+				FileMbtches: []string{},
 			},
-			Path:               "",
-			OnlyFetchWorkspace: true,
+			Pbth:               "",
+			OnlyFetchWorkspbce: true,
 		}
 	}
 
 	executionResult := &execution.AfterStepResult{
 		Diff:         testDiff,
 		StepIndex:    0,
-		ChangedFiles: git.Changes{Modified: []string{"README.md", "urls.txt"}},
-		Stdout:       "asdf2",
-		Stderr:       "asdf",
-		Outputs:      map[string]any{},
+		ChbngedFiles: git.Chbnges{Modified: []string{"README.md", "urls.txt"}},
+		Stdout:       "bsdf2",
+		Stderr:       "bsdf",
+		Outputs:      mbp[string]bny{},
 	}
 
-	createBatchSpec := func(t *testing.T, noCache bool, spec string) *btypes.BatchSpec {
-		batchSpec, err := btypes.NewBatchSpecFromRaw(spec)
+	crebteBbtchSpec := func(t *testing.T, noCbche bool, spec string) *btypes.BbtchSpec {
+		bbtchSpec, err := btypes.NewBbtchSpecFromRbw(spec)
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
-		batchSpec.UserID = user.ID
-		batchSpec.NamespaceUserID = user.ID
-		batchSpec.NoCache = noCache
-		if err := s.CreateBatchSpec(context.Background(), batchSpec); err != nil {
-			t.Fatal(err)
+		bbtchSpec.UserID = user.ID
+		bbtchSpec.NbmespbceUserID = user.ID
+		bbtchSpec.NoCbche = noCbche
+		if err := s.CrebteBbtchSpec(context.Bbckground(), bbtchSpec); err != nil {
+			t.Fbtbl(err)
 		}
-		return batchSpec
+		return bbtchSpec
 	}
 
-	createBatchSpecMounts := func(t *testing.T, mounts []*btypes.BatchSpecWorkspaceFile) {
-		for _, mount := range mounts {
-			if err := s.UpsertBatchSpecWorkspaceFile(context.Background(), mount); err != nil {
-				t.Fatal(err)
+	crebteBbtchSpecMounts := func(t *testing.T, mounts []*btypes.BbtchSpecWorkspbceFile) {
+		for _, mount := rbnge mounts {
+			if err := s.UpsertBbtchSpecWorkspbceFile(context.Bbckground(), mount); err != nil {
+				t.Fbtbl(err)
 			}
 		}
 	}
 
-	createCacheEntry := func(t *testing.T, batchSpec *btypes.BatchSpec, workspace *service.RepoWorkspace, result *execution.AfterStepResult, envVarValue string, mounts []*btypes.BatchSpecWorkspaceFile) *btypes.BatchSpecExecutionCacheEntry {
+	crebteCbcheEntry := func(t *testing.T, bbtchSpec *btypes.BbtchSpec, workspbce *service.RepoWorkspbce, result *execution.AfterStepResult, envVbrVblue string, mounts []*btypes.BbtchSpecWorkspbceFile) *btypes.BbtchSpecExecutionCbcheEntry {
 		t.Helper()
 
-		key := cache.KeyForWorkspace(
-			&template.BatchChangeAttributes{
-				Name:        batchSpec.Spec.Name,
-				Description: batchSpec.Spec.Description,
+		key := cbche.KeyForWorkspbce(
+			&templbte.BbtchChbngeAttributes{
+				Nbme:        bbtchSpec.Spec.Nbme,
+				Description: bbtchSpec.Spec.Description,
 			},
-			batcheslib.Repository{
-				ID:          string(relay.MarshalID("Repository", workspace.Repo.ID)),
-				Name:        string(workspace.Repo.Name),
-				BaseRef:     workspace.Branch,
-				BaseRev:     string(workspace.Commit),
-				FileMatches: workspace.FileMatches,
+			bbtcheslib.Repository{
+				ID:          string(relby.MbrshblID("Repository", workspbce.Repo.ID)),
+				Nbme:        string(workspbce.Repo.Nbme),
+				BbseRef:     workspbce.Brbnch,
+				BbseRev:     string(workspbce.Commit),
+				FileMbtches: workspbce.FileMbtches,
 			},
-			workspace.Path,
-			[]string{fmt.Sprintf("FOO=%s", envVarValue)},
-			workspace.OnlyFetchWorkspace,
-			batchSpec.Spec.Steps,
+			workspbce.Pbth,
+			[]string{fmt.Sprintf("FOO=%s", envVbrVblue)},
+			workspbce.OnlyFetchWorkspbce,
+			bbtchSpec.Spec.Steps,
 			result.StepIndex,
-			&remoteFileMetadataRetriever{mounts: mounts},
+			&remoteFileMetbdbtbRetriever{mounts: mounts},
 		)
-		rawKey, err := key.Key()
+		rbwKey, err := key.Key()
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
-		entry, err := btypes.NewCacheEntryFromResult(rawKey, result)
+		entry, err := btypes.NewCbcheEntryFromResult(rbwKey, result)
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
-		entry.UserID = batchSpec.UserID
-		if err := s.CreateBatchSpecExecutionCacheEntry(context.Background(), entry); err != nil {
-			t.Fatal(err)
+		entry.UserID = bbtchSpec.UserID
+		if err := s.CrebteBbtchSpecExecutionCbcheEntry(context.Bbckground(), entry); err != nil {
+			t.Fbtbl(err)
 		}
 		return entry
 	}
 
-	t.Run("caching enabled", func(t *testing.T) {
-		workspace := buildWorkspace("caching-enabled")
+	t.Run("cbching enbbled", func(t *testing.T) {
+		workspbce := buildWorkspbce("cbching-enbbled")
 
-		batchSpec := createBatchSpec(t, false, bt.TestRawBatchSpecYAML)
-		entry := createCacheEntry(t, batchSpec, workspace, executionResult, secretValue, nil)
+		bbtchSpec := crebteBbtchSpec(t, fblse, bt.TestRbwBbtchSpecYAML)
+		entry := crebteCbcheEntry(t, bbtchSpec, workspbce, executionResult, secretVblue, nil)
 
-		resolver := &dummyWorkspaceResolver{workspaces: []*service.RepoWorkspace{workspace}}
-		job := &btypes.BatchSpecResolutionJob{BatchSpecID: batchSpec.ID}
-		if err := creator.process(userCtx, resolver.DummyBuilder, job); err != nil {
-			t.Fatalf("proces failed: %s", err)
+		resolver := &dummyWorkspbceResolver{workspbces: []*service.RepoWorkspbce{workspbce}}
+		job := &btypes.BbtchSpecResolutionJob{BbtchSpecID: bbtchSpec.ID}
+		if err := crebtor.process(userCtx, resolver.DummyBuilder, job); err != nil {
+			t.Fbtblf("proces fbiled: %s", err)
 		}
 
-		have, _, err := s.ListBatchSpecWorkspaces(context.Background(), store.ListBatchSpecWorkspacesOpts{BatchSpecID: batchSpec.ID})
+		hbve, _, err := s.ListBbtchSpecWorkspbces(context.Bbckground(), store.ListBbtchSpecWorkspbcesOpts{BbtchSpecID: bbtchSpec.ID})
 		if err != nil {
-			t.Fatalf("listing workspaces failed: %s", err)
+			t.Fbtblf("listing workspbces fbiled: %s", err)
 		}
 
-		assertWorkspacesEqual(t, have, []*btypes.BatchSpecWorkspace{
+		bssertWorkspbcesEqubl(t, hbve, []*btypes.BbtchSpecWorkspbce{
 			{
 				RepoID:             repos[0].ID,
-				BatchSpecID:        batchSpec.ID,
-				ChangesetSpecIDs:   have[0].ChangesetSpecIDs,
-				Branch:             "refs/heads/main",
-				Commit:             "caching-enabled",
-				FileMatches:        []string{},
-				Path:               "",
-				OnlyFetchWorkspace: true,
-				CachedResultFound:  true,
-				StepCacheResults: map[int]btypes.StepCacheResult{
+				BbtchSpecID:        bbtchSpec.ID,
+				ChbngesetSpecIDs:   hbve[0].ChbngesetSpecIDs,
+				Brbnch:             "refs/hebds/mbin",
+				Commit:             "cbching-enbbled",
+				FileMbtches:        []string{},
+				Pbth:               "",
+				OnlyFetchWorkspbce: true,
+				CbchedResultFound:  true,
+				StepCbcheResults: mbp[int]btypes.StepCbcheResult{
 					1: {
 						Key:   entry.Key,
-						Value: executionResult,
+						Vblue: executionResult,
 					},
 				},
 			},
 		})
 
-		changesetSpecIDs := have[0].ChangesetSpecIDs
-		if len(changesetSpecIDs) == 0 {
-			t.Fatal("BatchSpecWorkspace has no changeset specs")
+		chbngesetSpecIDs := hbve[0].ChbngesetSpecIDs
+		if len(chbngesetSpecIDs) == 0 {
+			t.Fbtbl("BbtchSpecWorkspbce hbs no chbngeset specs")
 		}
 
-		changesetSpec, err := s.GetChangesetSpec(context.Background(), store.GetChangesetSpecOpts{ID: have[0].ChangesetSpecIDs[0]})
+		chbngesetSpec, err := s.GetChbngesetSpec(context.Bbckground(), store.GetChbngesetSpecOpts{ID: hbve[0].ChbngesetSpecIDs[0]})
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
 
-		haveDiff := changesetSpec.Diff
-		if !bytes.Equal(haveDiff, testDiff) {
-			t.Fatalf("changeset spec built from cache has wrong diff: %s", haveDiff)
+		hbveDiff := chbngesetSpec.Diff
+		if !bytes.Equbl(hbveDiff, testDiff) {
+			t.Fbtblf("chbngeset spec built from cbche hbs wrong diff: %s", hbveDiff)
 		}
 
-		reloadedEntries, err := s.ListBatchSpecExecutionCacheEntries(context.Background(), store.ListBatchSpecExecutionCacheEntriesOpts{
-			UserID: batchSpec.UserID,
+		relobdedEntries, err := s.ListBbtchSpecExecutionCbcheEntries(context.Bbckground(), store.ListBbtchSpecExecutionCbcheEntriesOpts{
+			UserID: bbtchSpec.UserID,
 			Keys:   []string{entry.Key},
 		})
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
-		if len(reloadedEntries) != 1 {
-			t.Fatal("cache entry not found")
+		if len(relobdedEntries) != 1 {
+			t.Fbtbl("cbche entry not found")
 		}
-		reloadedEntry := reloadedEntries[0]
-		if !reloadedEntry.LastUsedAt.Equal(now) {
-			t.Fatalf("cache entry LastUsedAt not updated. want=%s, have=%s", now, reloadedEntry.LastUsedAt)
+		relobdedEntry := relobdedEntries[0]
+		if !relobdedEntry.LbstUsedAt.Equbl(now) {
+			t.Fbtblf("cbche entry LbstUsedAt not updbted. wbnt=%s, hbve=%s", now, relobdedEntry.LbstUsedAt)
 		}
 	})
 
-	t.Run("secret value changed", func(t *testing.T) {
-		workspace := buildWorkspace("secret-value-changed")
+	t.Run("secret vblue chbnged", func(t *testing.T) {
+		workspbce := buildWorkspbce("secret-vblue-chbnged")
 
-		batchSpec := createBatchSpec(t, false, bt.TestRawBatchSpecYAML)
-		entry := createCacheEntry(t, batchSpec, workspace, executionResult, "not the secret value", nil)
+		bbtchSpec := crebteBbtchSpec(t, fblse, bt.TestRbwBbtchSpecYAML)
+		entry := crebteCbcheEntry(t, bbtchSpec, workspbce, executionResult, "not the secret vblue", nil)
 
-		resolver := &dummyWorkspaceResolver{workspaces: []*service.RepoWorkspace{workspace}}
-		job := &btypes.BatchSpecResolutionJob{BatchSpecID: batchSpec.ID}
-		if err := creator.process(userCtx, resolver.DummyBuilder, job); err != nil {
-			t.Fatalf("proces failed: %s", err)
+		resolver := &dummyWorkspbceResolver{workspbces: []*service.RepoWorkspbce{workspbce}}
+		job := &btypes.BbtchSpecResolutionJob{BbtchSpecID: bbtchSpec.ID}
+		if err := crebtor.process(userCtx, resolver.DummyBuilder, job); err != nil {
+			t.Fbtblf("proces fbiled: %s", err)
 		}
 
-		have, _, err := s.ListBatchSpecWorkspaces(context.Background(), store.ListBatchSpecWorkspacesOpts{BatchSpecID: batchSpec.ID})
+		hbve, _, err := s.ListBbtchSpecWorkspbces(context.Bbckground(), store.ListBbtchSpecWorkspbcesOpts{BbtchSpecID: bbtchSpec.ID})
 		if err != nil {
-			t.Fatalf("listing workspaces failed: %s", err)
+			t.Fbtblf("listing workspbces fbiled: %s", err)
 		}
 
-		assertWorkspacesEqual(t, have, []*btypes.BatchSpecWorkspace{
+		bssertWorkspbcesEqubl(t, hbve, []*btypes.BbtchSpecWorkspbce{
 			{
 				RepoID:             repos[0].ID,
-				BatchSpecID:        batchSpec.ID,
-				ChangesetSpecIDs:   []int64{},
-				Branch:             "refs/heads/main",
-				Commit:             "secret-value-changed",
-				FileMatches:        []string{},
-				Path:               "",
-				OnlyFetchWorkspace: true,
-				CachedResultFound:  false,
+				BbtchSpecID:        bbtchSpec.ID,
+				ChbngesetSpecIDs:   []int64{},
+				Brbnch:             "refs/hebds/mbin",
+				Commit:             "secret-vblue-chbnged",
+				FileMbtches:        []string{},
+				Pbth:               "",
+				OnlyFetchWorkspbce: true,
+				CbchedResultFound:  fblse,
 			},
 		})
 
-		reloadedEntries, err := s.ListBatchSpecExecutionCacheEntries(context.Background(), store.ListBatchSpecExecutionCacheEntriesOpts{
-			UserID: batchSpec.UserID,
+		relobdedEntries, err := s.ListBbtchSpecExecutionCbcheEntries(context.Bbckground(), store.ListBbtchSpecExecutionCbcheEntriesOpts{
+			UserID: bbtchSpec.UserID,
 			Keys:   []string{entry.Key},
 		})
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
-		if len(reloadedEntries) != 1 {
-			t.Fatal("cache entry not found")
+		if len(relobdedEntries) != 1 {
+			t.Fbtbl("cbche entry not found")
 		}
-		reloadedEntry := reloadedEntries[0]
-		if !reloadedEntry.LastUsedAt.Equal(entry.LastUsedAt) {
-			t.Fatalf("cache entry LastUsedAt updated. want=%s, have=%s", entry.LastUsedAt, reloadedEntry.LastUsedAt)
+		relobdedEntry := relobdedEntries[0]
+		if !relobdedEntry.LbstUsedAt.Equbl(entry.LbstUsedAt) {
+			t.Fbtblf("cbche entry LbstUsedAt updbted. wbnt=%s, hbve=%s", entry.LbstUsedAt, relobdedEntry.LbstUsedAt)
 		}
 	})
 
-	t.Run("only step is statically skipped", func(t *testing.T) {
-		workspace := buildWorkspace("no-step-after-eval")
+	t.Run("only step is stbticblly skipped", func(t *testing.T) {
+		workspbce := buildWorkspbce("no-step-bfter-evbl")
 
 		spec := `
-name: my-unique-name
+nbme: my-unique-nbme
 description: My description
 on:
-- repository: github.com/sourcegraph/src-cli
+- repository: github.com/sourcegrbph/src-cli
 steps:
-- run: echo 'foobar'
-  container: alpine
-  if: ${{ eq repository.name "not the repo" }}
-changesetTemplate:
+- run: echo 'foobbr'
+  contbiner: blpine
+  if: ${{ eq repository.nbme "not the repo" }}
+chbngesetTemplbte:
   title: Hello World
-  body: My first batch change!
-  branch: hello-world
+  body: My first bbtch chbnge!
+  brbnch: hello-world
   commit:
-    message: Append Hello World to all README.md files
+    messbge: Append Hello World to bll README.md files
 `
-		batchSpec := createBatchSpec(t, false, spec)
+		bbtchSpec := crebteBbtchSpec(t, fblse, spec)
 
-		resolver := &dummyWorkspaceResolver{workspaces: []*service.RepoWorkspace{workspace}}
-		job := &btypes.BatchSpecResolutionJob{BatchSpecID: batchSpec.ID}
-		if err := creator.process(userCtx, resolver.DummyBuilder, job); err != nil {
-			t.Fatalf("proces failed: %s", err)
+		resolver := &dummyWorkspbceResolver{workspbces: []*service.RepoWorkspbce{workspbce}}
+		job := &btypes.BbtchSpecResolutionJob{BbtchSpecID: bbtchSpec.ID}
+		if err := crebtor.process(userCtx, resolver.DummyBuilder, job); err != nil {
+			t.Fbtblf("proces fbiled: %s", err)
 		}
 
-		have, _, err := s.ListBatchSpecWorkspaces(context.Background(), store.ListBatchSpecWorkspacesOpts{BatchSpecID: batchSpec.ID})
+		hbve, _, err := s.ListBbtchSpecWorkspbces(context.Bbckground(), store.ListBbtchSpecWorkspbcesOpts{BbtchSpecID: bbtchSpec.ID})
 		if err != nil {
-			t.Fatalf("listing workspaces failed: %s", err)
+			t.Fbtblf("listing workspbces fbiled: %s", err)
 		}
 
-		assertWorkspacesEqual(t, have, []*btypes.BatchSpecWorkspace{
+		bssertWorkspbcesEqubl(t, hbve, []*btypes.BbtchSpecWorkspbce{
 			{
 				RepoID:             repos[0].ID,
-				BatchSpecID:        batchSpec.ID,
-				ChangesetSpecIDs:   []int64{},
-				Branch:             "refs/heads/main",
-				Commit:             "no-step-after-eval",
-				FileMatches:        []string{},
-				Path:               "",
-				OnlyFetchWorkspace: true,
-				CachedResultFound:  true,
+				BbtchSpecID:        bbtchSpec.ID,
+				ChbngesetSpecIDs:   []int64{},
+				Brbnch:             "refs/hebds/mbin",
+				Commit:             "no-step-bfter-evbl",
+				FileMbtches:        []string{},
+				Pbth:               "",
+				OnlyFetchWorkspbce: true,
+				CbchedResultFound:  true,
 			},
 		})
 
-		changesetSpecIDs := have[0].ChangesetSpecIDs
-		if len(changesetSpecIDs) != 0 {
-			t.Fatal("BatchSpecWorkspace has changeset specs, even though nothing ran")
+		chbngesetSpecIDs := hbve[0].ChbngesetSpecIDs
+		if len(chbngesetSpecIDs) != 0 {
+			t.Fbtbl("BbtchSpecWorkspbce hbs chbngeset specs, even though nothing rbn")
 		}
 	})
 
-	t.Run("all steps are statically skipped", func(t *testing.T) {
-		workspace := buildWorkspace("no-steps-after-eval")
+	t.Run("bll steps bre stbticblly skipped", func(t *testing.T) {
+		workspbce := buildWorkspbce("no-steps-bfter-evbl")
 
 		spec := `
-name: my-unique-name
+nbme: my-unique-nbme
 description: My description
 on:
-- repository: github.com/sourcegraph/src-cli
+- repository: github.com/sourcegrbph/src-cli
 steps:
-- run: echo 'foobar'
-  container: alpine
-  if: ${{ eq repository.name "not the repo" }}
-- run: echo 'foobar'
-  container: alpine
-  if: ${{ eq repository.name "not the repo" }}
-changesetTemplate:
+- run: echo 'foobbr'
+  contbiner: blpine
+  if: ${{ eq repository.nbme "not the repo" }}
+- run: echo 'foobbr'
+  contbiner: blpine
+  if: ${{ eq repository.nbme "not the repo" }}
+chbngesetTemplbte:
   title: Hello World
-  body: My first batch change!
-  branch: hello-world
+  body: My first bbtch chbnge!
+  brbnch: hello-world
   commit:
-    message: Append Hello World to all README.md files
+    messbge: Append Hello World to bll README.md files
 `
-		batchSpec := createBatchSpec(t, false, spec)
+		bbtchSpec := crebteBbtchSpec(t, fblse, spec)
 
-		resolver := &dummyWorkspaceResolver{workspaces: []*service.RepoWorkspace{workspace}}
-		job := &btypes.BatchSpecResolutionJob{BatchSpecID: batchSpec.ID}
-		if err := creator.process(userCtx, resolver.DummyBuilder, job); err != nil {
-			t.Fatalf("proces failed: %s", err)
+		resolver := &dummyWorkspbceResolver{workspbces: []*service.RepoWorkspbce{workspbce}}
+		job := &btypes.BbtchSpecResolutionJob{BbtchSpecID: bbtchSpec.ID}
+		if err := crebtor.process(userCtx, resolver.DummyBuilder, job); err != nil {
+			t.Fbtblf("proces fbiled: %s", err)
 		}
 
-		have, _, err := s.ListBatchSpecWorkspaces(context.Background(), store.ListBatchSpecWorkspacesOpts{BatchSpecID: batchSpec.ID})
+		hbve, _, err := s.ListBbtchSpecWorkspbces(context.Bbckground(), store.ListBbtchSpecWorkspbcesOpts{BbtchSpecID: bbtchSpec.ID})
 		if err != nil {
-			t.Fatalf("listing workspaces failed: %s", err)
+			t.Fbtblf("listing workspbces fbiled: %s", err)
 		}
 
-		assertWorkspacesEqual(t, have, []*btypes.BatchSpecWorkspace{
+		bssertWorkspbcesEqubl(t, hbve, []*btypes.BbtchSpecWorkspbce{
 			{
 				RepoID:             repos[0].ID,
-				BatchSpecID:        batchSpec.ID,
-				ChangesetSpecIDs:   []int64{},
-				Branch:             "refs/heads/main",
-				Commit:             "no-steps-after-eval",
-				FileMatches:        []string{},
-				Path:               "",
-				OnlyFetchWorkspace: true,
-				CachedResultFound:  true,
+				BbtchSpecID:        bbtchSpec.ID,
+				ChbngesetSpecIDs:   []int64{},
+				Brbnch:             "refs/hebds/mbin",
+				Commit:             "no-steps-bfter-evbl",
+				FileMbtches:        []string{},
+				Pbth:               "",
+				OnlyFetchWorkspbce: true,
+				CbchedResultFound:  true,
 			},
 		})
 
-		changesetSpecIDs := have[0].ChangesetSpecIDs
-		if len(changesetSpecIDs) != 0 {
-			t.Fatal("BatchSpecWorkspace has changeset specs, even though nothing ran")
+		chbngesetSpecIDs := hbve[0].ChbngesetSpecIDs
+		if len(chbngesetSpecIDs) != 0 {
+			t.Fbtbl("BbtchSpecWorkspbce hbs chbngeset specs, even though nothing rbn")
 		}
 	})
 
-	t.Run("no diff in cache entry", func(t *testing.T) {
-		workspace := buildWorkspace("caching-enabled-no-diff")
+	t.Run("no diff in cbche entry", func(t *testing.T) {
+		workspbce := buildWorkspbce("cbching-enbbled-no-diff")
 
-		batchSpec := createBatchSpec(t, false, bt.TestRawBatchSpecYAML)
+		bbtchSpec := crebteBbtchSpec(t, fblse, bt.TestRbwBbtchSpecYAML)
 
 		resultWithoutDiff := *executionResult
 		resultWithoutDiff.Diff = []byte("")
 
-		entry := createCacheEntry(t, batchSpec, workspace, &resultWithoutDiff, secretValue, nil)
+		entry := crebteCbcheEntry(t, bbtchSpec, workspbce, &resultWithoutDiff, secretVblue, nil)
 
-		resolver := &dummyWorkspaceResolver{workspaces: []*service.RepoWorkspace{workspace}}
-		job := &btypes.BatchSpecResolutionJob{BatchSpecID: batchSpec.ID}
-		if err := creator.process(userCtx, resolver.DummyBuilder, job); err != nil {
-			t.Fatalf("proces failed: %s", err)
+		resolver := &dummyWorkspbceResolver{workspbces: []*service.RepoWorkspbce{workspbce}}
+		job := &btypes.BbtchSpecResolutionJob{BbtchSpecID: bbtchSpec.ID}
+		if err := crebtor.process(userCtx, resolver.DummyBuilder, job); err != nil {
+			t.Fbtblf("proces fbiled: %s", err)
 		}
 
-		have, _, err := s.ListBatchSpecWorkspaces(context.Background(), store.ListBatchSpecWorkspacesOpts{BatchSpecID: batchSpec.ID})
+		hbve, _, err := s.ListBbtchSpecWorkspbces(context.Bbckground(), store.ListBbtchSpecWorkspbcesOpts{BbtchSpecID: bbtchSpec.ID})
 		if err != nil {
-			t.Fatalf("listing workspaces failed: %s", err)
+			t.Fbtblf("listing workspbces fbiled: %s", err)
 		}
 
-		changesetSpecIDs := have[0].ChangesetSpecIDs
-		if len(changesetSpecIDs) != 0 {
-			t.Fatal("BatchSpecWorkspace has changeset specs, even though diff was empty")
+		chbngesetSpecIDs := hbve[0].ChbngesetSpecIDs
+		if len(chbngesetSpecIDs) != 0 {
+			t.Fbtbl("BbtchSpecWorkspbce hbs chbngeset specs, even though diff wbs empty")
 		}
 
-		reloadedEntries, err := s.ListBatchSpecExecutionCacheEntries(context.Background(), store.ListBatchSpecExecutionCacheEntriesOpts{
-			UserID: batchSpec.UserID,
+		relobdedEntries, err := s.ListBbtchSpecExecutionCbcheEntries(context.Bbckground(), store.ListBbtchSpecExecutionCbcheEntriesOpts{
+			UserID: bbtchSpec.UserID,
 			Keys:   []string{entry.Key},
 		})
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
-		if len(reloadedEntries) != 1 {
-			t.Fatal("cache entry not found")
+		if len(relobdedEntries) != 1 {
+			t.Fbtbl("cbche entry not found")
 		}
-		reloadedEntry := reloadedEntries[0]
-		if !reloadedEntry.LastUsedAt.Equal(now) {
-			t.Fatalf("cache entry LastUsedAt not updated. want=%s, have=%s", now, reloadedEntry.LastUsedAt)
+		relobdedEntry := relobdedEntries[0]
+		if !relobdedEntry.LbstUsedAt.Equbl(now) {
+			t.Fbtblf("cbche entry LbstUsedAt not updbted. wbnt=%s, hbve=%s", now, relobdedEntry.LbstUsedAt)
 		}
 	})
 
-	t.Run("workspace is ignored", func(t *testing.T) {
-		workspace := buildWorkspace("caching-enabled-ignored")
-		workspace.Ignored = true
+	t.Run("workspbce is ignored", func(t *testing.T) {
+		workspbce := buildWorkspbce("cbching-enbbled-ignored")
+		workspbce.Ignored = true
 
-		batchSpec := createBatchSpec(t, false, bt.TestRawBatchSpecYAML)
+		bbtchSpec := crebteBbtchSpec(t, fblse, bt.TestRbwBbtchSpecYAML)
 
-		entry := createCacheEntry(t, batchSpec, workspace, executionResult, secretValue, nil)
+		entry := crebteCbcheEntry(t, bbtchSpec, workspbce, executionResult, secretVblue, nil)
 
-		resolver := &dummyWorkspaceResolver{workspaces: []*service.RepoWorkspace{workspace}}
-		job := &btypes.BatchSpecResolutionJob{BatchSpecID: batchSpec.ID}
-		if err := creator.process(userCtx, resolver.DummyBuilder, job); err != nil {
-			t.Fatalf("proces failed: %s", err)
+		resolver := &dummyWorkspbceResolver{workspbces: []*service.RepoWorkspbce{workspbce}}
+		job := &btypes.BbtchSpecResolutionJob{BbtchSpecID: bbtchSpec.ID}
+		if err := crebtor.process(userCtx, resolver.DummyBuilder, job); err != nil {
+			t.Fbtblf("proces fbiled: %s", err)
 		}
 
-		reloadedEntries, err := s.ListBatchSpecExecutionCacheEntries(context.Background(), store.ListBatchSpecExecutionCacheEntriesOpts{
-			UserID: batchSpec.UserID,
+		relobdedEntries, err := s.ListBbtchSpecExecutionCbcheEntries(context.Bbckground(), store.ListBbtchSpecExecutionCbcheEntriesOpts{
+			UserID: bbtchSpec.UserID,
 			Keys:   []string{entry.Key},
 		})
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
-		if len(reloadedEntries) != 1 {
-			t.Fatal("cache entry not found")
+		if len(relobdedEntries) != 1 {
+			t.Fbtbl("cbche entry not found")
 		}
-		reloadedEntry := reloadedEntries[0]
-		if !reloadedEntry.LastUsedAt.IsZero() {
-			t.Fatalf("cache entry LastUsedAt updated, but should not be used: %s", reloadedEntry.LastUsedAt)
+		relobdedEntry := relobdedEntries[0]
+		if !relobdedEntry.LbstUsedAt.IsZero() {
+			t.Fbtblf("cbche entry LbstUsedAt updbted, but should not be used: %s", relobdedEntry.LbstUsedAt)
 		}
 	})
 
-	t.Run("workspace is unsupported", func(t *testing.T) {
-		workspace := buildWorkspace("caching-enabled-ignored")
-		workspace.Unsupported = true
+	t.Run("workspbce is unsupported", func(t *testing.T) {
+		workspbce := buildWorkspbce("cbching-enbbled-ignored")
+		workspbce.Unsupported = true
 
-		batchSpec := createBatchSpec(t, false, bt.TestRawBatchSpecYAML)
+		bbtchSpec := crebteBbtchSpec(t, fblse, bt.TestRbwBbtchSpecYAML)
 
-		entry := createCacheEntry(t, batchSpec, workspace, executionResult, secretValue, nil)
+		entry := crebteCbcheEntry(t, bbtchSpec, workspbce, executionResult, secretVblue, nil)
 
-		resolver := &dummyWorkspaceResolver{workspaces: []*service.RepoWorkspace{workspace}}
-		job := &btypes.BatchSpecResolutionJob{BatchSpecID: batchSpec.ID}
-		if err := creator.process(userCtx, resolver.DummyBuilder, job); err != nil {
-			t.Fatalf("proces failed: %s", err)
+		resolver := &dummyWorkspbceResolver{workspbces: []*service.RepoWorkspbce{workspbce}}
+		job := &btypes.BbtchSpecResolutionJob{BbtchSpecID: bbtchSpec.ID}
+		if err := crebtor.process(userCtx, resolver.DummyBuilder, job); err != nil {
+			t.Fbtblf("proces fbiled: %s", err)
 		}
 
-		reloadedEntries, err := s.ListBatchSpecExecutionCacheEntries(context.Background(), store.ListBatchSpecExecutionCacheEntriesOpts{
-			UserID: batchSpec.UserID,
+		relobdedEntries, err := s.ListBbtchSpecExecutionCbcheEntries(context.Bbckground(), store.ListBbtchSpecExecutionCbcheEntriesOpts{
+			UserID: bbtchSpec.UserID,
 			Keys:   []string{entry.Key},
 		})
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
-		if len(reloadedEntries) != 1 {
-			t.Fatal("cache entry not found")
+		if len(relobdedEntries) != 1 {
+			t.Fbtbl("cbche entry not found")
 		}
-		reloadedEntry := reloadedEntries[0]
-		if !reloadedEntry.LastUsedAt.IsZero() {
-			t.Fatalf("cache entry LastUsedAt updated, but should not be used: %s", reloadedEntry.LastUsedAt)
+		relobdedEntry := relobdedEntries[0]
+		if !relobdedEntry.LbstUsedAt.IsZero() {
+			t.Fbtblf("cbche entry LbstUsedAt updbted, but should not be used: %s", relobdedEntry.LbstUsedAt)
 		}
 	})
 
-	t.Run("caching found with mount file", func(t *testing.T) {
-		workspace := buildWorkspace("caching-enabled-mount")
+	t.Run("cbching found with mount file", func(t *testing.T) {
+		workspbce := buildWorkspbce("cbching-enbbled-mount")
 
-		rawSpec := `
-name: my-unique-name
+		rbwSpec := `
+nbme: my-unique-nbme
 description: My description
 'on':
-- repositoriesMatchingQuery: lang:go func main
-- repository: github.com/sourcegraph/src-cli
+- repositoriesMbtchingQuery: lbng:go func mbin
+- repository: github.com/sourcegrbph/src-cli
 steps:
-- run: echo 'foobar'
-  container: alpine
+- run: echo 'foobbr'
+  contbiner: blpine
   mount:
-    - path: ./hello.txt
+    - pbth: ./hello.txt
       mountpoint: /tmp/hello.txt
   env:
-    PATH: "/work/foobar:$PATH"
-changesetTemplate:
+    PATH: "/work/foobbr:$PATH"
+chbngesetTemplbte:
   title: Hello World
-  body: My first batch change!
-  branch: hello-world
+  body: My first bbtch chbnge!
+  brbnch: hello-world
   commit:
-    message: Append Hello World to all README.md files
-  published: false
+    messbge: Append Hello World to bll README.md files
+  published: fblse
 `
 
-		batchSpec := createBatchSpec(t, false, rawSpec)
-		mounts := []*btypes.BatchSpecWorkspaceFile{{BatchSpecID: batchSpec.ID, FileName: "hello.txt", Content: []byte("hello!"), Size: 6, ModifiedAt: time.Now().UTC()}}
-		createBatchSpecMounts(t, mounts)
-		entry := createCacheEntry(t, batchSpec, workspace, executionResult, secretValue, mounts)
+		bbtchSpec := crebteBbtchSpec(t, fblse, rbwSpec)
+		mounts := []*btypes.BbtchSpecWorkspbceFile{{BbtchSpecID: bbtchSpec.ID, FileNbme: "hello.txt", Content: []byte("hello!"), Size: 6, ModifiedAt: time.Now().UTC()}}
+		crebteBbtchSpecMounts(t, mounts)
+		entry := crebteCbcheEntry(t, bbtchSpec, workspbce, executionResult, secretVblue, mounts)
 
-		resolver := &dummyWorkspaceResolver{workspaces: []*service.RepoWorkspace{workspace}}
-		job := &btypes.BatchSpecResolutionJob{BatchSpecID: batchSpec.ID}
-		if err := creator.process(userCtx, resolver.DummyBuilder, job); err != nil {
-			t.Fatalf("proces failed: %s", err)
+		resolver := &dummyWorkspbceResolver{workspbces: []*service.RepoWorkspbce{workspbce}}
+		job := &btypes.BbtchSpecResolutionJob{BbtchSpecID: bbtchSpec.ID}
+		if err := crebtor.process(userCtx, resolver.DummyBuilder, job); err != nil {
+			t.Fbtblf("proces fbiled: %s", err)
 		}
 
-		have, _, err := s.ListBatchSpecWorkspaces(context.Background(), store.ListBatchSpecWorkspacesOpts{BatchSpecID: batchSpec.ID})
+		hbve, _, err := s.ListBbtchSpecWorkspbces(context.Bbckground(), store.ListBbtchSpecWorkspbcesOpts{BbtchSpecID: bbtchSpec.ID})
 		if err != nil {
-			t.Fatalf("listing workspaces failed: %s", err)
+			t.Fbtblf("listing workspbces fbiled: %s", err)
 		}
 
-		assertWorkspacesEqual(t, have, []*btypes.BatchSpecWorkspace{
+		bssertWorkspbcesEqubl(t, hbve, []*btypes.BbtchSpecWorkspbce{
 			{
 				RepoID:             repos[0].ID,
-				BatchSpecID:        batchSpec.ID,
-				ChangesetSpecIDs:   have[0].ChangesetSpecIDs,
-				Branch:             "refs/heads/main",
-				Commit:             "caching-enabled-mount",
-				FileMatches:        []string{},
-				Path:               "",
-				OnlyFetchWorkspace: true,
-				CachedResultFound:  true,
-				StepCacheResults: map[int]btypes.StepCacheResult{
+				BbtchSpecID:        bbtchSpec.ID,
+				ChbngesetSpecIDs:   hbve[0].ChbngesetSpecIDs,
+				Brbnch:             "refs/hebds/mbin",
+				Commit:             "cbching-enbbled-mount",
+				FileMbtches:        []string{},
+				Pbth:               "",
+				OnlyFetchWorkspbce: true,
+				CbchedResultFound:  true,
+				StepCbcheResults: mbp[int]btypes.StepCbcheResult{
 					1: {
 						Key:   entry.Key,
-						Value: executionResult,
+						Vblue: executionResult,
 					},
 				},
 			},
 		})
 
-		changesetSpecIDs := have[0].ChangesetSpecIDs
-		if len(changesetSpecIDs) == 0 {
-			t.Fatal("BatchSpecWorkspace has no changeset specs")
+		chbngesetSpecIDs := hbve[0].ChbngesetSpecIDs
+		if len(chbngesetSpecIDs) == 0 {
+			t.Fbtbl("BbtchSpecWorkspbce hbs no chbngeset specs")
 		}
 
-		changesetSpec, err := s.GetChangesetSpec(context.Background(), store.GetChangesetSpecOpts{ID: have[0].ChangesetSpecIDs[0]})
+		chbngesetSpec, err := s.GetChbngesetSpec(context.Bbckground(), store.GetChbngesetSpecOpts{ID: hbve[0].ChbngesetSpecIDs[0]})
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
 
-		haveDiff := changesetSpec.Diff
-		if !bytes.Equal(haveDiff, testDiff) {
-			t.Fatalf("changeset spec built from cache has wrong diff: %s", haveDiff)
+		hbveDiff := chbngesetSpec.Diff
+		if !bytes.Equbl(hbveDiff, testDiff) {
+			t.Fbtblf("chbngeset spec built from cbche hbs wrong diff: %s", hbveDiff)
 		}
 
-		reloadedEntries, err := s.ListBatchSpecExecutionCacheEntries(context.Background(), store.ListBatchSpecExecutionCacheEntriesOpts{
-			UserID: batchSpec.UserID,
+		relobdedEntries, err := s.ListBbtchSpecExecutionCbcheEntries(context.Bbckground(), store.ListBbtchSpecExecutionCbcheEntriesOpts{
+			UserID: bbtchSpec.UserID,
 			Keys:   []string{entry.Key},
 		})
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
-		if len(reloadedEntries) != 1 {
-			t.Fatal("cache entry not found")
+		if len(relobdedEntries) != 1 {
+			t.Fbtbl("cbche entry not found")
 		}
-		reloadedEntry := reloadedEntries[0]
-		if !reloadedEntry.LastUsedAt.Equal(now) {
-			t.Fatalf("cache entry LastUsedAt not updated. want=%s, have=%s", now, reloadedEntry.LastUsedAt)
+		relobdedEntry := relobdedEntries[0]
+		if !relobdedEntry.LbstUsedAt.Equbl(now) {
+			t.Fbtblf("cbche entry LbstUsedAt not updbted. wbnt=%s, hbve=%s", now, relobdedEntry.LbstUsedAt)
 		}
 	})
 
-	t.Run("caching found with multiple mount files", func(t *testing.T) {
-		workspace := buildWorkspace("caching-enabled-mounts")
+	t.Run("cbching found with multiple mount files", func(t *testing.T) {
+		workspbce := buildWorkspbce("cbching-enbbled-mounts")
 
-		rawSpec := `
-name: my-unique-name
+		rbwSpec := `
+nbme: my-unique-nbme
 description: My description
 'on':
-- repositoriesMatchingQuery: lang:go func main
-- repository: github.com/sourcegraph/src-cli
+- repositoriesMbtchingQuery: lbng:go func mbin
+- repository: github.com/sourcegrbph/src-cli
 steps:
-- run: echo 'foobar'
-  container: alpine
+- run: echo 'foobbr'
+  contbiner: blpine
   mount:
-    - path: ./hello.txt
+    - pbth: ./hello.txt
       mountpoint: /tmp/hello.txt
-    - path: ./world.txt
+    - pbth: ./world.txt
       mountpoint: /tmp/world.txt
   env:
-    PATH: "/work/foobar:$PATH"
-changesetTemplate:
+    PATH: "/work/foobbr:$PATH"
+chbngesetTemplbte:
   title: Hello World
-  body: My first batch change!
-  branch: hello-world
+  body: My first bbtch chbnge!
+  brbnch: hello-world
   commit:
-    message: Append Hello World to all README.md files
-  published: false
+    messbge: Append Hello World to bll README.md files
+  published: fblse
 `
 
-		batchSpec := createBatchSpec(t, false, rawSpec)
-		mounts := []*btypes.BatchSpecWorkspaceFile{
-			{BatchSpecID: batchSpec.ID, FileName: "hello.txt", Content: []byte("hello!"), Size: 6, ModifiedAt: time.Now().UTC()},
-			{BatchSpecID: batchSpec.ID, FileName: "world.txt", Content: []byte("hello!"), Size: 6, ModifiedAt: time.Now().UTC()},
+		bbtchSpec := crebteBbtchSpec(t, fblse, rbwSpec)
+		mounts := []*btypes.BbtchSpecWorkspbceFile{
+			{BbtchSpecID: bbtchSpec.ID, FileNbme: "hello.txt", Content: []byte("hello!"), Size: 6, ModifiedAt: time.Now().UTC()},
+			{BbtchSpecID: bbtchSpec.ID, FileNbme: "world.txt", Content: []byte("hello!"), Size: 6, ModifiedAt: time.Now().UTC()},
 		}
-		createBatchSpecMounts(t, mounts)
-		entry := createCacheEntry(t, batchSpec, workspace, executionResult, secretValue, mounts)
+		crebteBbtchSpecMounts(t, mounts)
+		entry := crebteCbcheEntry(t, bbtchSpec, workspbce, executionResult, secretVblue, mounts)
 
-		resolver := &dummyWorkspaceResolver{workspaces: []*service.RepoWorkspace{workspace}}
-		job := &btypes.BatchSpecResolutionJob{BatchSpecID: batchSpec.ID}
-		if err := creator.process(userCtx, resolver.DummyBuilder, job); err != nil {
-			t.Fatalf("proces failed: %s", err)
+		resolver := &dummyWorkspbceResolver{workspbces: []*service.RepoWorkspbce{workspbce}}
+		job := &btypes.BbtchSpecResolutionJob{BbtchSpecID: bbtchSpec.ID}
+		if err := crebtor.process(userCtx, resolver.DummyBuilder, job); err != nil {
+			t.Fbtblf("proces fbiled: %s", err)
 		}
 
-		have, _, err := s.ListBatchSpecWorkspaces(context.Background(), store.ListBatchSpecWorkspacesOpts{BatchSpecID: batchSpec.ID})
+		hbve, _, err := s.ListBbtchSpecWorkspbces(context.Bbckground(), store.ListBbtchSpecWorkspbcesOpts{BbtchSpecID: bbtchSpec.ID})
 		if err != nil {
-			t.Fatalf("listing workspaces failed: %s", err)
+			t.Fbtblf("listing workspbces fbiled: %s", err)
 		}
 
-		assertWorkspacesEqual(t, have, []*btypes.BatchSpecWorkspace{
+		bssertWorkspbcesEqubl(t, hbve, []*btypes.BbtchSpecWorkspbce{
 			{
 				RepoID:             repos[0].ID,
-				BatchSpecID:        batchSpec.ID,
-				ChangesetSpecIDs:   have[0].ChangesetSpecIDs,
-				Branch:             "refs/heads/main",
-				Commit:             "caching-enabled-mounts",
-				FileMatches:        []string{},
-				Path:               "",
-				OnlyFetchWorkspace: true,
-				CachedResultFound:  true,
-				StepCacheResults: map[int]btypes.StepCacheResult{
+				BbtchSpecID:        bbtchSpec.ID,
+				ChbngesetSpecIDs:   hbve[0].ChbngesetSpecIDs,
+				Brbnch:             "refs/hebds/mbin",
+				Commit:             "cbching-enbbled-mounts",
+				FileMbtches:        []string{},
+				Pbth:               "",
+				OnlyFetchWorkspbce: true,
+				CbchedResultFound:  true,
+				StepCbcheResults: mbp[int]btypes.StepCbcheResult{
 					1: {
 						Key:   entry.Key,
-						Value: executionResult,
+						Vblue: executionResult,
 					},
 				},
 			},
 		})
 
-		changesetSpecIDs := have[0].ChangesetSpecIDs
-		if len(changesetSpecIDs) == 0 {
-			t.Fatal("BatchSpecWorkspace has no changeset specs")
+		chbngesetSpecIDs := hbve[0].ChbngesetSpecIDs
+		if len(chbngesetSpecIDs) == 0 {
+			t.Fbtbl("BbtchSpecWorkspbce hbs no chbngeset specs")
 		}
 
-		changesetSpec, err := s.GetChangesetSpec(context.Background(), store.GetChangesetSpecOpts{ID: have[0].ChangesetSpecIDs[0]})
+		chbngesetSpec, err := s.GetChbngesetSpec(context.Bbckground(), store.GetChbngesetSpecOpts{ID: hbve[0].ChbngesetSpecIDs[0]})
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
 
-		haveDiff := changesetSpec.Diff
-		if !bytes.Equal(haveDiff, testDiff) {
-			t.Fatalf("changeset spec built from cache has wrong diff: %s", haveDiff)
+		hbveDiff := chbngesetSpec.Diff
+		if !bytes.Equbl(hbveDiff, testDiff) {
+			t.Fbtblf("chbngeset spec built from cbche hbs wrong diff: %s", hbveDiff)
 		}
 
-		reloadedEntries, err := s.ListBatchSpecExecutionCacheEntries(context.Background(), store.ListBatchSpecExecutionCacheEntriesOpts{
-			UserID: batchSpec.UserID,
+		relobdedEntries, err := s.ListBbtchSpecExecutionCbcheEntries(context.Bbckground(), store.ListBbtchSpecExecutionCbcheEntriesOpts{
+			UserID: bbtchSpec.UserID,
 			Keys:   []string{entry.Key},
 		})
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
-		if len(reloadedEntries) != 1 {
-			t.Fatal("cache entry not found")
+		if len(relobdedEntries) != 1 {
+			t.Fbtbl("cbche entry not found")
 		}
-		reloadedEntry := reloadedEntries[0]
-		if !reloadedEntry.LastUsedAt.Equal(now) {
-			t.Fatalf("cache entry LastUsedAt not updated. want=%s, have=%s", now, reloadedEntry.LastUsedAt)
+		relobdedEntry := relobdedEntries[0]
+		if !relobdedEntry.LbstUsedAt.Equbl(now) {
+			t.Fbtblf("cbche entry LbstUsedAt not updbted. wbnt=%s, hbve=%s", now, relobdedEntry.LbstUsedAt)
 		}
 	})
 }
 
-func TestBatchSpecWorkspaceCreatorProcess_Importing(t *testing.T) {
+func TestBbtchSpecWorkspbceCrebtorProcess_Importing(t *testing.T) {
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := dbtbbbse.NewDB(logger, dbtest.NewDB(logger, t))
 
-	repos, _ := bt.CreateTestRepos(t, context.Background(), db, 1)
+	repos, _ := bt.CrebteTestRepos(t, context.Bbckground(), db, 1)
 
-	user := bt.CreateTestUser(t, db, true)
+	user := bt.CrebteTestUser(t, db, true)
 
 	now := timeutil.Now()
 	clock := func() time.Time { return now }
-	s := store.NewWithClock(db, &observation.TestContext, nil, clock)
+	s := store.NewWithClock(db, &observbtion.TestContext, nil, clock)
 
 	testSpecYAML := `
-name: my-unique-name
-importChangesets:
-  - repository: ` + string(repos[0].Name) + `
-    externalIDs:
+nbme: my-unique-nbme
+importChbngesets:
+  - repository: ` + string(repos[0].Nbme) + `
+    externblIDs:
       - 123
 `
 
-	batchSpec := &btypes.BatchSpec{UserID: user.ID, NamespaceUserID: user.ID, RawSpec: testSpecYAML}
-	if err := s.CreateBatchSpec(context.Background(), batchSpec); err != nil {
-		t.Fatal(err)
+	bbtchSpec := &btypes.BbtchSpec{UserID: user.ID, NbmespbceUserID: user.ID, RbwSpec: testSpecYAML}
+	if err := s.CrebteBbtchSpec(context.Bbckground(), bbtchSpec); err != nil {
+		t.Fbtbl(err)
 	}
 
-	job := &btypes.BatchSpecResolutionJob{BatchSpecID: batchSpec.ID}
+	job := &btypes.BbtchSpecResolutionJob{BbtchSpecID: bbtchSpec.ID}
 
-	resolver := &dummyWorkspaceResolver{}
+	resolver := &dummyWorkspbceResolver{}
 
-	creator := &batchSpecWorkspaceCreator{store: s, logger: logtest.Scoped(t)}
-	if err := creator.process(context.Background(), resolver.DummyBuilder, job); err != nil {
-		t.Fatalf("proces failed: %s", err)
+	crebtor := &bbtchSpecWorkspbceCrebtor{store: s, logger: logtest.Scoped(t)}
+	if err := crebtor.process(context.Bbckground(), resolver.DummyBuilder, job); err != nil {
+		t.Fbtblf("proces fbiled: %s", err)
 	}
 
-	have, _, err := s.ListChangesetSpecs(context.Background(), store.ListChangesetSpecsOpts{BatchSpecID: batchSpec.ID})
+	hbve, _, err := s.ListChbngesetSpecs(context.Bbckground(), store.ListChbngesetSpecsOpts{BbtchSpecID: bbtchSpec.ID})
 	if err != nil {
-		t.Fatalf("listing specs failed: %s", err)
+		t.Fbtblf("listing specs fbiled: %s", err)
 	}
 
-	want := btypes.ChangesetSpecs{
+	wbnt := btypes.ChbngesetSpecs{
 		{
-			ID:          have[0].ID,
-			RandID:      have[0].RandID,
+			ID:          hbve[0].ID,
+			RbndID:      hbve[0].RbndID,
 			UserID:      user.ID,
-			BaseRepoID:  repos[0].ID,
-			BatchSpecID: batchSpec.ID,
-			Type:        btypes.ChangesetSpecTypeExisting,
-			ExternalID:  "123",
-			CreatedAt:   now,
-			UpdatedAt:   now,
+			BbseRepoID:  repos[0].ID,
+			BbtchSpecID: bbtchSpec.ID,
+			Type:        btypes.ChbngesetSpecTypeExisting,
+			ExternblID:  "123",
+			CrebtedAt:   now,
+			UpdbtedAt:   now,
 		},
 	}
 
-	if diff := cmp.Diff(want, have); diff != "" {
-		t.Fatal(diff)
+	if diff := cmp.Diff(wbnt, hbve); diff != "" {
+		t.Fbtbl(diff)
 	}
 }
 
-func TestBatchSpecWorkspaceCreatorProcess_NoDiff(t *testing.T) {
+func TestBbtchSpecWorkspbceCrebtorProcess_NoDiff(t *testing.T) {
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := dbtbbbse.NewDB(logger, dbtest.NewDB(logger, t))
 
-	repos, _ := bt.CreateTestRepos(t, context.Background(), db, 1)
+	repos, _ := bt.CrebteTestRepos(t, context.Bbckground(), db, 1)
 
-	user := bt.CreateTestUser(t, db, true)
+	user := bt.CrebteTestUser(t, db, true)
 
 	now := timeutil.Now()
 	clock := func() time.Time { return now }
-	s := store.NewWithClock(db, &observation.TestContext, nil, clock)
+	s := store.NewWithClock(db, &observbtion.TestContext, nil, clock)
 
 	testSpecYAML := `
-name: my-unique-name
-importChangesets:
-  - repository: ` + string(repos[0].Name) + `
-    externalIDs:
+nbme: my-unique-nbme
+importChbngesets:
+  - repository: ` + string(repos[0].Nbme) + `
+    externblIDs:
       - 123
 `
 
-	batchSpec := &btypes.BatchSpec{UserID: user.ID, NamespaceUserID: user.ID, RawSpec: testSpecYAML}
-	if err := s.CreateBatchSpec(context.Background(), batchSpec); err != nil {
-		t.Fatal(err)
+	bbtchSpec := &btypes.BbtchSpec{UserID: user.ID, NbmespbceUserID: user.ID, RbwSpec: testSpecYAML}
+	if err := s.CrebteBbtchSpec(context.Bbckground(), bbtchSpec); err != nil {
+		t.Fbtbl(err)
 	}
 
-	job := &btypes.BatchSpecResolutionJob{BatchSpecID: batchSpec.ID}
+	job := &btypes.BbtchSpecResolutionJob{BbtchSpecID: bbtchSpec.ID}
 
-	resolver := &dummyWorkspaceResolver{}
+	resolver := &dummyWorkspbceResolver{}
 
-	creator := &batchSpecWorkspaceCreator{store: s, logger: logtest.Scoped(t)}
-	if err := creator.process(context.Background(), resolver.DummyBuilder, job); err != nil {
-		t.Fatalf("proces failed: %s", err)
+	crebtor := &bbtchSpecWorkspbceCrebtor{store: s, logger: logtest.Scoped(t)}
+	if err := crebtor.process(context.Bbckground(), resolver.DummyBuilder, job); err != nil {
+		t.Fbtblf("proces fbiled: %s", err)
 	}
 
-	have, _, err := s.ListChangesetSpecs(context.Background(), store.ListChangesetSpecsOpts{BatchSpecID: batchSpec.ID})
+	hbve, _, err := s.ListChbngesetSpecs(context.Bbckground(), store.ListChbngesetSpecsOpts{BbtchSpecID: bbtchSpec.ID})
 	if err != nil {
-		t.Fatalf("listing specs failed: %s", err)
+		t.Fbtblf("listing specs fbiled: %s", err)
 	}
 
-	want := btypes.ChangesetSpecs{
+	wbnt := btypes.ChbngesetSpecs{
 		{
-			ID:          have[0].ID,
-			RandID:      have[0].RandID,
+			ID:          hbve[0].ID,
+			RbndID:      hbve[0].RbndID,
 			UserID:      user.ID,
-			BaseRepoID:  repos[0].ID,
-			BatchSpecID: batchSpec.ID,
-			Type:        btypes.ChangesetSpecTypeExisting,
-			ExternalID:  "123",
-			CreatedAt:   now,
-			UpdatedAt:   now,
+			BbseRepoID:  repos[0].ID,
+			BbtchSpecID: bbtchSpec.ID,
+			Type:        btypes.ChbngesetSpecTypeExisting,
+			ExternblID:  "123",
+			CrebtedAt:   now,
+			UpdbtedAt:   now,
 		},
 	}
 
-	if diff := cmp.Diff(want, have); diff != "" {
-		t.Fatal(diff)
+	if diff := cmp.Diff(wbnt, hbve); diff != "" {
+		t.Fbtbl(diff)
 	}
 }
 
-func TestBatchSpecWorkspaceCreatorProcess_Secrets(t *testing.T) {
+func TestBbtchSpecWorkspbceCrebtorProcess_Secrets(t *testing.T) {
 	logger := logtest.Scoped(t)
-	ctx := context.Background()
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	ctx := context.Bbckground()
+	db := dbtbbbse.NewDB(logger, dbtest.NewDB(logger, t))
 
-	user := bt.CreateTestUser(t, db, true)
-	userCtx := actor.WithActor(ctx, actor.FromUser(user.ID))
+	user := bt.CrebteTestUser(t, db, true)
+	userCtx := bctor.WithActor(ctx, bctor.FromUser(user.ID))
 
-	repos, _ := bt.CreateTestRepos(t, ctx, db, 4)
+	repos, _ := bt.CrebteTestRepos(t, ctx, db, 4)
 
-	s := store.New(db, &observation.TestContext, nil)
+	s := store.New(db, &observbtion.TestContext, nil)
 
-	secret := &database.ExecutorSecret{
+	secret := &dbtbbbse.ExecutorSecret{
 		Key:       "FOO",
-		CreatorID: user.ID,
+		CrebtorID: user.ID,
 	}
-	err := db.ExecutorSecrets(nil).Create(userCtx, database.ExecutorSecretScopeBatches, secret, "sosecret")
+	err := db.ExecutorSecrets(nil).Crebte(userCtx, dbtbbbse.ExecutorSecretScopeBbtches, secret, "sosecret")
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	batchSpec, err := btypes.NewBatchSpecFromRaw(bt.TestRawBatchSpecYAML)
+	bbtchSpec, err := btypes.NewBbtchSpecFromRbw(bt.TestRbwBbtchSpecYAML)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
-	batchSpec.UserID = user.ID
-	batchSpec.NamespaceUserID = user.ID
-	if err := s.CreateBatchSpec(ctx, batchSpec); err != nil {
-		t.Fatal(err)
+	bbtchSpec.UserID = user.ID
+	bbtchSpec.NbmespbceUserID = user.ID
+	if err := s.CrebteBbtchSpec(ctx, bbtchSpec); err != nil {
+		t.Fbtbl(err)
 	}
 
-	job := &btypes.BatchSpecResolutionJob{BatchSpecID: batchSpec.ID}
+	job := &btypes.BbtchSpecResolutionJob{BbtchSpecID: bbtchSpec.ID}
 
-	resolver := &dummyWorkspaceResolver{
-		workspaces: []*service.RepoWorkspace{
+	resolver := &dummyWorkspbceResolver{
+		workspbces: []*service.RepoWorkspbce{
 			{
 				RepoRevision: &service.RepoRevision{
 					Repo:        repos[0],
-					Branch:      "refs/heads/main",
+					Brbnch:      "refs/hebds/mbin",
 					Commit:      "d34db33f",
-					FileMatches: []string{},
+					FileMbtches: []string{},
 				},
-				Path:               "",
-				OnlyFetchWorkspace: true,
+				Pbth:               "",
+				OnlyFetchWorkspbce: true,
 			},
 		},
 	}
 
-	creator := &batchSpecWorkspaceCreator{store: s, logger: logtest.Scoped(t)}
-	if err := creator.process(userCtx, resolver.DummyBuilder, job); err != nil {
-		t.Fatalf("proces failed: %s", err)
+	crebtor := &bbtchSpecWorkspbceCrebtor{store: s, logger: logtest.Scoped(t)}
+	if err := crebtor.process(userCtx, resolver.DummyBuilder, job); err != nil {
+		t.Fbtblf("proces fbiled: %s", err)
 	}
 
-	have, _, err := s.ListBatchSpecWorkspaces(ctx, store.ListBatchSpecWorkspacesOpts{BatchSpecID: batchSpec.ID})
+	hbve, _, err := s.ListBbtchSpecWorkspbces(ctx, store.ListBbtchSpecWorkspbcesOpts{BbtchSpecID: bbtchSpec.ID})
 	if err != nil {
-		t.Fatalf("listing workspaces failed: %s", err)
+		t.Fbtblf("listing workspbces fbiled: %s", err)
 	}
 
-	want := []*btypes.BatchSpecWorkspace{
+	wbnt := []*btypes.BbtchSpecWorkspbce{
 		{
 			RepoID:             repos[0].ID,
-			BatchSpecID:        batchSpec.ID,
-			ChangesetSpecIDs:   []int64{},
-			Branch:             "refs/heads/main",
+			BbtchSpecID:        bbtchSpec.ID,
+			ChbngesetSpecIDs:   []int64{},
+			Brbnch:             "refs/hebds/mbin",
 			Commit:             "d34db33f",
-			FileMatches:        []string{},
-			Path:               "",
-			OnlyFetchWorkspace: true,
+			FileMbtches:        []string{},
+			Pbth:               "",
+			OnlyFetchWorkspbce: true,
 		},
 	}
 
-	assertWorkspacesEqual(t, have, want)
+	bssertWorkspbcesEqubl(t, hbve, wbnt)
 
-	c, err := db.ExecutorSecretAccessLogs().Count(ctx, database.ExecutorSecretAccessLogsListOpts{ExecutorSecretID: secret.ID})
+	c, err := db.ExecutorSecretAccessLogs().Count(ctx, dbtbbbse.ExecutorSecretAccessLogsListOpts{ExecutorSecretID: secret.ID})
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
-	if have, want := c, 1; have != want {
-		t.Fatalf("invalid number of access logs created: have=%d want=%d", have, want)
+	if hbve, wbnt := c, 1; hbve != wbnt {
+		t.Fbtblf("invblid number of bccess logs crebted: hbve=%d wbnt=%d", hbve, wbnt)
 	}
 }
 
-type dummyWorkspaceResolver struct {
-	workspaces []*service.RepoWorkspace
+type dummyWorkspbceResolver struct {
+	workspbces []*service.RepoWorkspbce
 	err        error
 }
 
-// DummyBuilder is a simple implementation of the service.WorkspaceResolverBuilder
-func (d *dummyWorkspaceResolver) DummyBuilder(s *store.Store) service.WorkspaceResolver {
+// DummyBuilder is b simple implementbtion of the service.WorkspbceResolverBuilder
+func (d *dummyWorkspbceResolver) DummyBuilder(s *store.Store) service.WorkspbceResolver {
 	return d
 }
 
-func (d *dummyWorkspaceResolver) ResolveWorkspacesForBatchSpec(context.Context, *batcheslib.BatchSpec) ([]*service.RepoWorkspace, error) {
-	return d.workspaces, d.err
+func (d *dummyWorkspbceResolver) ResolveWorkspbcesForBbtchSpec(context.Context, *bbtcheslib.BbtchSpec) ([]*service.RepoWorkspbce, error) {
+	return d.workspbces, d.err
 }
 
-var testDiff = []byte(`diff README.md README.md
-index 671e50a..851b23a 100644
+vbr testDiff = []byte(`diff README.md README.md
+index 671e50b..851b23b 100644
 --- README.md
 +++ README.md
 @@ -1,2 +1,2 @@
  # README
--This file is hosted at example.com and is a test file.
-+This file is hosted at sourcegraph.com and is a test file.
+-This file is hosted bt exbmple.com bnd is b test file.
++This file is hosted bt sourcegrbph.com bnd is b test file.
 diff --git urls.txt urls.txt
 index 6f8b5d9..17400bc 100644
 --- urls.txt
 +++ urls.txt
 @@ -1,3 +1,3 @@
- another-url.com
--example.com
-+sourcegraph.com
+ bnother-url.com
+-exbmple.com
++sourcegrbph.com
  never-touch-the-mouse.com
 `)
 
-func assertWorkspacesEqual(t *testing.T, have, want []*btypes.BatchSpecWorkspace) {
+func bssertWorkspbcesEqubl(t *testing.T, hbve, wbnt []*btypes.BbtchSpecWorkspbce) {
 	t.Helper()
 
 	opts := []cmp.Option{
-		cmpopts.IgnoreFields(btypes.BatchSpecWorkspace{}, "ID", "CreatedAt", "UpdatedAt"),
+		cmpopts.IgnoreFields(btypes.BbtchSpecWorkspbce{}, "ID", "CrebtedAt", "UpdbtedAt"),
 		cmpopts.IgnoreUnexported(bytes.Buffer{}),
 	}
-	if diff := cmp.Diff(want, have, opts...); diff != "" {
-		t.Fatalf("wrong diff: %s", diff)
+	if diff := cmp.Diff(wbnt, hbve, opts...); diff != "" {
+		t.Fbtblf("wrong diff: %s", diff)
 	}
 }

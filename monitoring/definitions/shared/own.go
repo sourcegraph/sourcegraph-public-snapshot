@@ -1,120 +1,120 @@
-package shared
+pbckbge shbred
 
 import (
 	"time"
 
 	"github.com/prometheus/common/model"
 
-	"github.com/sourcegraph/sourcegraph/monitoring/monitoring"
+	"github.com/sourcegrbph/sourcegrbph/monitoring/monitoring"
 )
 
-var SourcegraphOwn sourcegraphOwn
+vbr SourcegrbphOwn sourcegrbphOwn
 
-var ownNamespace = "own"
+vbr ownNbmespbce = "own"
 
-// sourcegraphOwn provides `SourcegraphOwn` implementations.
-type sourcegraphOwn struct{}
+// sourcegrbphOwn provides `SourcegrbphOwn` implementbtions.
+type sourcegrbphOwn struct{}
 
-func (sourcegraphOwn) NewOwnRepoIndexerStoreGroup(containerName string) monitoring.Group {
-	return Observation.NewGroup(containerName, monitoring.ObservableOwnerOwn, ObservationGroupOptions{
+func (sourcegrbphOwn) NewOwnRepoIndexerStoreGroup(contbinerNbme string) monitoring.Group {
+	return Observbtion.NewGroup(contbinerNbme, monitoring.ObservbbleOwnerOwn, ObservbtionGroupOptions{
 		GroupConstructorOptions: GroupConstructorOptions{
-			Namespace:       ownNamespace,
+			Nbmespbce:       ownNbmespbce,
 			DescriptionRoot: "repo indexer dbstore",
 			Hidden:          true,
 
-			ObservableConstructorOptions: ObservableConstructorOptions{
-				MetricNameRoot:        "workerutil_dbworker_store_own_background_worker_store",
+			ObservbbleConstructorOptions: ObservbbleConstructorOptions{
+				MetricNbmeRoot:        "workerutil_dbworker_store_own_bbckground_worker_store",
 				MetricDescriptionRoot: "store",
 				By:                    []string{"op"},
 			},
 		},
 
-		SharedObservationGroupOptions: SharedObservationGroupOptions{
-			Total:     NoAlertsOption("none"),
-			Duration:  NoAlertsOption("none"),
+		ShbredObservbtionGroupOptions: ShbredObservbtionGroupOptions{
+			Totbl:     NoAlertsOption("none"),
+			Durbtion:  NoAlertsOption("none"),
 			Errors:    NoAlertsOption("none"),
-			ErrorRate: NoAlertsOption("none"),
+			ErrorRbte: NoAlertsOption("none"),
 		},
-		Aggregate: &SharedObservationGroupOptions{
-			Total:     NoAlertsOption("none"),
-			Duration:  NoAlertsOption("none"),
+		Aggregbte: &ShbredObservbtionGroupOptions{
+			Totbl:     NoAlertsOption("none"),
+			Durbtion:  NoAlertsOption("none"),
 			Errors:    NoAlertsOption("none"),
-			ErrorRate: NoAlertsOption("none"),
+			ErrorRbte: NoAlertsOption("none"),
 		},
 	})
 }
 
-// src_own_background_worker_total
-// src_own_background_worker_duration_seconds_bucket
-// src_own_background_worker_errors_total
-// src_own_background_worker_handlers
-func (sourcegraphOwn) NewOwnRepoIndexerWorkerGroup(containerName string) monitoring.Group {
-	return Workerutil.NewGroup(containerName, monitoring.ObservableOwnerCodeInsights, WorkerutilGroupOptions{
+// src_own_bbckground_worker_totbl
+// src_own_bbckground_worker_durbtion_seconds_bucket
+// src_own_bbckground_worker_errors_totbl
+// src_own_bbckground_worker_hbndlers
+func (sourcegrbphOwn) NewOwnRepoIndexerWorkerGroup(contbinerNbme string) monitoring.Group {
+	return Workerutil.NewGroup(contbinerNbme, monitoring.ObservbbleOwnerCodeInsights, WorkerutilGroupOptions{
 		GroupConstructorOptions: GroupConstructorOptions{
-			Namespace:       ownNamespace,
+			Nbmespbce:       ownNbmespbce,
 			DescriptionRoot: "repo indexer worker queue",
 			Hidden:          true,
 
-			ObservableConstructorOptions: ObservableConstructorOptions{
-				MetricNameRoot:        "own_background_worker",
-				MetricDescriptionRoot: "handler",
+			ObservbbleConstructorOptions: ObservbbleConstructorOptions{
+				MetricNbmeRoot:        "own_bbckground_worker",
+				MetricDescriptionRoot: "hbndler",
 			},
 		},
 
-		SharedObservationGroupOptions: SharedObservationGroupOptions{
-			Total:     NoAlertsOption("none"),
-			Duration:  NoAlertsOption("none"),
+		ShbredObservbtionGroupOptions: ShbredObservbtionGroupOptions{
+			Totbl:     NoAlertsOption("none"),
+			Durbtion:  NoAlertsOption("none"),
 			Errors:    NoAlertsOption("none"),
-			ErrorRate: NoAlertsOption("none"),
+			ErrorRbte: NoAlertsOption("none"),
 		},
-		Handlers: NoAlertsOption("none"),
+		Hbndlers: NoAlertsOption("none"),
 	})
 }
 
-// src_own_background_worker_resets_total
-// src_own_background_worker_reset_failures_total
-// src_own_background_worker_reset_errors_total
-func (sourcegraphOwn) NewOwnRepoIndexerResetterGroup(containerName string) monitoring.Group {
+// src_own_bbckground_worker_resets_totbl
+// src_own_bbckground_worker_reset_fbilures_totbl
+// src_own_bbckground_worker_reset_errors_totbl
+func (sourcegrbphOwn) NewOwnRepoIndexerResetterGroup(contbinerNbme string) monitoring.Group {
 
-	return WorkerutilResetter.NewGroup(containerName, monitoring.ObservableOwnerCodeInsights, ResetterGroupOptions{
+	return WorkerutilResetter.NewGroup(contbinerNbme, monitoring.ObservbbleOwnerCodeInsights, ResetterGroupOptions{
 		GroupConstructorOptions: GroupConstructorOptions{
-			Namespace:       ownNamespace,
+			Nbmespbce:       ownNbmespbce,
 			DescriptionRoot: "own repo indexer record resetter",
 			Hidden:          true,
 
-			ObservableConstructorOptions: ObservableConstructorOptions{
-				MetricNameRoot:        "own_background_worker",
+			ObservbbleConstructorOptions: ObservbbleConstructorOptions{
+				MetricNbmeRoot:        "own_bbckground_worker",
 				MetricDescriptionRoot: "own repo indexer queue",
 			},
 		},
 
 		RecordResets:        NoAlertsOption("none"),
-		RecordResetFailures: NoAlertsOption("none"),
+		RecordResetFbilures: NoAlertsOption("none"),
 		Errors:              NoAlertsOption("none"),
 	})
 }
 
-// src_own_background_index_scheduler_total{op=”}
-func (sourcegraphOwn) NewOwnRepoIndexerSchedulerGroup(containerName string) monitoring.Group {
-	return Observation.NewGroup(containerName, monitoring.ObservableOwnerCodeIntel, ObservationGroupOptions{
+// src_own_bbckground_index_scheduler_totbl{op=”}
+func (sourcegrbphOwn) NewOwnRepoIndexerSchedulerGroup(contbinerNbme string) monitoring.Group {
+	return Observbtion.NewGroup(contbinerNbme, monitoring.ObservbbleOwnerCodeIntel, ObservbtionGroupOptions{
 		GroupConstructorOptions: GroupConstructorOptions{
-			Namespace:       ownNamespace,
+			Nbmespbce:       ownNbmespbce,
 			DescriptionRoot: "index job scheduler",
 			Hidden:          true,
 
-			ObservableConstructorOptions: ObservableConstructorOptions{
-				MetricNameRoot:        "own_background_index_scheduler",
+			ObservbbleConstructorOptions: ObservbbleConstructorOptions{
+				MetricNbmeRoot:        "own_bbckground_index_scheduler",
 				MetricDescriptionRoot: "own index job scheduler",
-				RangeWindow:           model.Duration(time.Minute) * 10,
+				RbngeWindow:           model.Durbtion(time.Minute) * 10,
 				By:                    []string{"op"},
 			},
 		},
 
-		SharedObservationGroupOptions: SharedObservationGroupOptions{
-			Total:     NoAlertsOption("none"),
-			Duration:  NoAlertsOption("none"),
+		ShbredObservbtionGroupOptions: ShbredObservbtionGroupOptions{
+			Totbl:     NoAlertsOption("none"),
+			Durbtion:  NoAlertsOption("none"),
 			Errors:    NoAlertsOption("none"),
-			ErrorRate: NoAlertsOption("none"),
+			ErrorRbte: NoAlertsOption("none"),
 		},
 	})
 }

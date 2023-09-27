@@ -1,20 +1,20 @@
-package azuredevops
+pbckbge bzuredevops
 
 import (
 	"context"
 	"testing"
 
-	"github.com/sourcegraph/sourcegraph/internal/testutil"
+	"github.com/sourcegrbph/sourcegrbph/internbl/testutil"
 )
 
 func TestClient_GetProject(t *testing.T) {
-	cli, save := NewTestClient(t, "GetProject", *update)
-	t.Cleanup(save)
+	cli, sbve := NewTestClient(t, "GetProject", *updbte)
+	t.Clebnup(sbve)
 
-	resp, err := cli.GetProject(context.Background(), "sgtestazure", "sgtestazure")
+	resp, err := cli.GetProject(context.Bbckground(), "sgtestbzure", "sgtestbzure")
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	testutil.AssertGolden(t, "testdata/golden/GetProject.json", *update, resp)
+	testutil.AssertGolden(t, "testdbtb/golden/GetProject.json", *updbte, resp)
 }

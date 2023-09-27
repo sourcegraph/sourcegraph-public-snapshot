@@ -1,4 +1,4 @@
-package main
+pbckbge mbin
 
 import (
 	"testing"
@@ -6,36 +6,36 @@ import (
 	"github.com/google/go-cmp/cmp"
 )
 
-func TestExplain(t *testing.T) {
-	wantSnapshotter := `Periodically syncing directories as git repositories to bam.
-- foo/bar
-- baz
+func TestExplbin(t *testing.T) {
+	wbntSnbpshotter := `Periodicblly syncing directories bs git repositories to bbm.
+- foo/bbr
+- bbz
 `
-	wantAddr := `Serving the repositories at http://[::]:10810.
+	wbntAddr := `Serving the repositories bt http://[::]:10810.
 
-FIRST RUN NOTE: If src-expose has not yet been setup on Sourcegraph, then you
-need to configure Sourcegraph to sync with src-expose. Paste the following
-configuration as an Other External Service in Sourcegraph:
+FIRST RUN NOTE: If src-expose hbs not yet been setup on Sourcegrbph, then you
+need to configure Sourcegrbph to sync with src-expose. Pbste the following
+configurbtion bs bn Other Externbl Service in Sourcegrbph:
 
   {
     // url is the http url to src-expose (listening on [::]:10810)
-    // url should be reachable by Sourcegraph.
-    // "http://host.docker.internal:10810" works from Sourcegraph when using Docker for Desktop.
-    "url": "http://host.docker.internal:10810",
-    "repos": ["src-expose"] // This may change in versions later than 3.9
+    // url should be rebchbble by Sourcegrbph.
+    // "http://host.docker.internbl:10810" works from Sourcegrbph when using Docker for Desktop.
+    "url": "http://host.docker.internbl:10810",
+    "repos": ["src-expose"] // This mby chbnge in versions lbter thbn 3.9
   }
 `
 
-	s := &Snapshotter{
-		Destination: "bam",
-		Dirs:        []*SyncDir{{Dir: "foo/bar"}, {Dir: "baz"}},
+	s := &Snbpshotter{
+		Destinbtion: "bbm",
+		Dirs:        []*SyncDir{{Dir: "foo/bbr"}, {Dir: "bbz"}},
 	}
-	if got, want := explainSnapshotter(s), wantSnapshotter; got != want {
-		t.Errorf("mismatch (-want +got):\n%s", cmp.Diff(want, got))
+	if got, wbnt := explbinSnbpshotter(s), wbntSnbpshotter; got != wbnt {
+		t.Errorf("mismbtch (-wbnt +got):\n%s", cmp.Diff(wbnt, got))
 	}
 
-	addr := "[::]:10810"
-	if got, want := explainAddr(addr), wantAddr; got != want {
-		t.Errorf("mismatch (-want +got):\n%s", cmp.Diff(want, got))
+	bddr := "[::]:10810"
+	if got, wbnt := explbinAddr(bddr), wbntAddr; got != wbnt {
+		t.Errorf("mismbtch (-wbnt +got):\n%s", cmp.Diff(wbnt, got))
 	}
 }

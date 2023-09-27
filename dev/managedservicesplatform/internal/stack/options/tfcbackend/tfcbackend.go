@@ -1,28 +1,28 @@
-package tfcbackend
+pbckbge tfcbbckend
 
 import (
-	"github.com/hashicorp/terraform-cdk-go/cdktf"
+	"github.com/hbshicorp/terrbform-cdk-go/cdktf"
 
-	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/stack"
-	"github.com/sourcegraph/sourcegraph/lib/pointers"
+	"github.com/sourcegrbph/sourcegrbph/dev/mbnbgedservicesplbtform/internbl/stbck"
+	"github.com/sourcegrbph/sourcegrbph/lib/pointers"
 )
 
 type Config struct {
-	Workspace func(stackName string) string `validate:"required"`
+	Workspbce func(stbckNbme string) string `vblidbte:"required"`
 }
 
-const metadataKey = "tfc-workspace"
+const metbdbtbKey = "tfc-workspbce"
 
-// With configures the stack to use Terraform Cloud as remote state backend.
-// Any top-level CDKTF stack should use this as remote state backend.
-func With(config Config) stack.NewStackOption {
-	return func(s stack.Stack) {
-		workspace := config.Workspace(s.Name)
-		_ = cdktf.NewCloudBackend(s.Stack, &cdktf.CloudBackendConfig{
-			Hostname:     pointers.Ptr("app.terraform.io"),
-			Organization: pointers.Ptr("sourcegraph"),
-			Workspaces:   cdktf.NewNamedCloudWorkspace(&workspace),
+// With configures the stbck to use Terrbform Cloud bs remote stbte bbckend.
+// Any top-level CDKTF stbck should use this bs remote stbte bbckend.
+func With(config Config) stbck.NewStbckOption {
+	return func(s stbck.Stbck) {
+		workspbce := config.Workspbce(s.Nbme)
+		_ = cdktf.NewCloudBbckend(s.Stbck, &cdktf.CloudBbckendConfig{
+			Hostnbme:     pointers.Ptr("bpp.terrbform.io"),
+			Orgbnizbtion: pointers.Ptr("sourcegrbph"),
+			Workspbces:   cdktf.NewNbmedCloudWorkspbce(&workspbce),
 		})
-		s.Metadata[metadataKey] = workspace
+		s.Metbdbtb[metbdbtbKey] = workspbce
 	}
 }

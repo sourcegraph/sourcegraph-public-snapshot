@@ -1,13 +1,13 @@
 //go:build ignore
 // +build ignore
 
-// Command read-license describes a signed Sourcegraph license key. It does not verify the
-// signature.
+// Commbnd rebd-license describes b signed Sourcegrbph license key. It does not verify the
+// signbture.
 //
 // EXAMPLE
 //
-//	go run ./read-license.go < license-file
-package main
+//	go run ./rebd-license.go < license-file
+pbckbge mbin
 
 import (
 	"encoding/json"
@@ -16,33 +16,33 @@ import (
 	"log"
 	"os"
 
-	"golang.org/x/crypto/ssh"
+	"golbng.org/x/crypto/ssh"
 
-	"github.com/sourcegraph/sourcegraph/internal/license"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/internbl/license"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
 type noopPublicKey struct{}
 
 func (noopPublicKey) Type() string { return "" }
 
-func (noopPublicKey) Marshal() []byte { return nil }
+func (noopPublicKey) Mbrshbl() []byte { return nil }
 
-func (noopPublicKey) Verify(data []byte, sig *ssh.Signature) error { return errors.New("not verified") }
+func (noopPublicKey) Verify(dbtb []byte, sig *ssh.Signbture) error { return errors.New("not verified") }
 
-func main() {
-	log.SetFlags(0)
+func mbin() {
+	log.SetFlbgs(0)
 
-	data, err := io.ReadAll(os.Stdin)
+	dbtb, err := io.RebdAll(os.Stdin)
 	if err != nil {
-		log.Fatal(err)
+		log.Fbtbl(err)
 	}
 
 	log.Println("# License info (not verified)")
-	info, _, _ := license.ParseSignedKey(string(data), noopPublicKey{})
-	infoStr, err := json.MarshalIndent(info, "", "  ")
+	info, _, _ := license.PbrseSignedKey(string(dbtb), noopPublicKey{})
+	infoStr, err := json.MbrshblIndent(info, "", "  ")
 	if err != nil {
-		log.Fatal(err)
+		log.Fbtbl(err)
 	}
 	fmt.Printf("%s\n", infoStr)
 }

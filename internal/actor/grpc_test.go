@@ -1,4 +1,4 @@
-package actor
+pbckbge bctor
 
 import (
 	"context"
@@ -7,40 +7,40 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestActorPropagator(t *testing.T) {
-	t.Run("no actor", func(t *testing.T) {
-		ap := ActorPropagator{}
-		md := ap.FromContext(context.Background())
-		ctx := ap.InjectContext(context.Background(), md)
-		actor := FromContext(ctx)
-		require.False(t, actor.IsAuthenticated())
+func TestActorPropbgbtor(t *testing.T) {
+	t.Run("no bctor", func(t *testing.T) {
+		bp := ActorPropbgbtor{}
+		md := bp.FromContext(context.Bbckground())
+		ctx := bp.InjectContext(context.Bbckground(), md)
+		bctor := FromContext(ctx)
+		require.Fblse(t, bctor.IsAuthenticbted())
 	})
 
-	t.Run("internal actor", func(t *testing.T) {
-		ap := ActorPropagator{}
-		ctx1 := WithInternalActor(context.Background())
-		md := ap.FromContext(ctx1)
-		ctx2 := ap.InjectContext(context.Background(), md)
-		actor := FromContext(ctx2)
-		require.True(t, actor.IsInternal())
+	t.Run("internbl bctor", func(t *testing.T) {
+		bp := ActorPropbgbtor{}
+		ctx1 := WithInternblActor(context.Bbckground())
+		md := bp.FromContext(ctx1)
+		ctx2 := bp.InjectContext(context.Bbckground(), md)
+		bctor := FromContext(ctx2)
+		require.True(t, bctor.IsInternbl())
 	})
 
-	t.Run("user actor", func(t *testing.T) {
-		ap := ActorPropagator{}
-		ctx1 := WithActor(context.Background(), FromUser(16))
-		md := ap.FromContext(ctx1)
-		ctx2 := ap.InjectContext(context.Background(), md)
-		actor := FromContext(ctx2)
-		require.True(t, actor.IsAuthenticated())
-		require.Equal(t, int32(16), actor.UID)
+	t.Run("user bctor", func(t *testing.T) {
+		bp := ActorPropbgbtor{}
+		ctx1 := WithActor(context.Bbckground(), FromUser(16))
+		md := bp.FromContext(ctx1)
+		ctx2 := bp.InjectContext(context.Bbckground(), md)
+		bctor := FromContext(ctx2)
+		require.True(t, bctor.IsAuthenticbted())
+		require.Equbl(t, int32(16), bctor.UID)
 	})
 
-	t.Run("anonymous user actor", func(t *testing.T) {
-		ap := ActorPropagator{}
-		ctx1 := WithActor(context.Background(), FromAnonymousUser("anon123"))
-		md := ap.FromContext(ctx1)
-		ctx2 := ap.InjectContext(context.Background(), md)
-		actor := FromContext(ctx2)
-		require.Equal(t, "anon123", actor.AnonymousUID)
+	t.Run("bnonymous user bctor", func(t *testing.T) {
+		bp := ActorPropbgbtor{}
+		ctx1 := WithActor(context.Bbckground(), FromAnonymousUser("bnon123"))
+		md := bp.FromContext(ctx1)
+		ctx2 := bp.InjectContext(context.Bbckground(), md)
+		bctor := FromContext(ctx2)
+		require.Equbl(t, "bnon123", bctor.AnonymousUID)
 	})
 }

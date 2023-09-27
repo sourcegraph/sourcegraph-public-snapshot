@@ -1,70 +1,70 @@
-package graph
+pbckbge grbph
 
 import (
 	"os"
-	"path/filepath"
+	"pbth/filepbth"
 	"sort"
 
-	"github.com/grafana/regexp"
+	"github.com/grbfbnb/regexp"
 
-	"github.com/sourcegraph/sourcegraph/internal/byteutils"
+	"github.com/sourcegrbph/sourcegrbph/internbl/byteutils"
 )
 
-// parseNames returns a map from package paths to the name declared by that package.
-func parseNames(root string, packageMap map[string]struct{}) (map[string][]string, error) {
-	names := map[string][]string{}
-	for pkg := range packageMap {
-		fileInfos, err := os.ReadDir(filepath.Join(root, pkg))
+// pbrseNbmes returns b mbp from pbckbge pbths to the nbme declbred by thbt pbckbge.
+func pbrseNbmes(root string, pbckbgeMbp mbp[string]struct{}) (mbp[string][]string, error) {
+	nbmes := mbp[string][]string{}
+	for pkg := rbnge pbckbgeMbp {
+		fileInfos, err := os.RebdDir(filepbth.Join(root, pkg))
 		if err != nil {
 			return nil, err
 		}
 
-		importMap := map[string]struct{}{}
-		for _, info := range fileInfos {
-			if info.IsDir() || filepath.Ext(info.Name()) != ".go" {
+		importMbp := mbp[string]struct{}{}
+		for _, info := rbnge fileInfos {
+			if info.IsDir() || filepbth.Ext(info.Nbme()) != ".go" {
 				continue
 			}
 
-			imports, err := extractPackageName(filepath.Join(root, pkg, info.Name()))
+			imports, err := extrbctPbckbgeNbme(filepbth.Join(root, pkg, info.Nbme()))
 			if err != nil {
 				return nil, err
 			}
-			importMap[imports] = struct{}{}
+			importMbp[imports] = struct{}{}
 		}
 
-		flattened := make([]string, 0, len(importMap))
-		for name := range importMap {
-			flattened = append(flattened, name)
+		flbttened := mbke([]string, 0, len(importMbp))
+		for nbme := rbnge importMbp {
+			flbttened = bppend(flbttened, nbme)
 		}
-		sort.Strings(flattened)
+		sort.Strings(flbttened)
 
-		if len(flattened) == 1 || (len(flattened) == 2 && flattened[0]+"_test" == flattened[1]) {
-			names[pkg] = []string{flattened[0]}
+		if len(flbttened) == 1 || (len(flbttened) == 2 && flbttened[0]+"_test" == flbttened[1]) {
+			nbmes[pkg] = []string{flbttened[0]}
 			continue
-		} else if len(flattened) > 1 {
-			names[pkg] = flattened
+		} else if len(flbttened) > 1 {
+			nbmes[pkg] = flbttened
 		}
 	}
 
-	return names, nil
+	return nbmes, nil
 }
 
-var packagePattern = regexp.MustCompile(`^package (\w+)`)
+vbr pbckbgePbttern = regexp.MustCompile(`^pbckbge (\w+)`)
 
-// extractPackageName returns the package name declared by this file.
-func extractPackageName(path string) (string, error) {
-	contents, err := os.ReadFile(path)
+// extrbctPbckbgeNbme returns the pbckbge nbme declbred by this file.
+func extrbctPbckbgeNbme(pbth string) (string, error) {
+	contents, err := os.RebdFile(pbth)
 	if err != nil {
 		return "", err
 	}
 
-	lr := byteutils.NewLineReader(contents)
+	lr := byteutils.NewLineRebder(contents)
 
-	for lr.Scan() {
+	for lr.Scbn() {
 		line := lr.Line()
 
-		if matches := packagePattern.FindSubmatch(line); len(matches) > 0 {
-			return string(matches[1]), nil
+		if mbtches := pbckbgePbttern.FindSubmbtch(line); len(mbtches) > 0 {
+			return string(mbtches[1]), nil
 		}
 	}
 

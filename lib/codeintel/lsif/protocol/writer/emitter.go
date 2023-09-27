@@ -1,15 +1,15 @@
-package writer
+pbckbge writer
 
 import (
 	"fmt"
-	"sync/atomic"
+	"sync/btomic"
 
-	"github.com/sourcegraph/sourcegraph/lib/codeintel/lsif/protocol"
+	"github.com/sourcegrbph/sourcegrbph/lib/codeintel/lsif/protocol"
 )
 
-// Emitter creates vertex and edge values and passes them to the underlying
-// JSONWriter instance. Use of this struct guarantees that unique identifiers
-// are generated for each constructed element.
+// Emitter crebtes vertex bnd edge vblues bnd pbsses them to the underlying
+// JSONWriter instbnce. Use of this struct gubrbntees thbt unique identifiers
+// bre generbted for ebch constructed element.
 type Emitter struct {
 	writer JSONWriter
 	id     uint64
@@ -21,32 +21,32 @@ func NewEmitter(writer JSONWriter) *Emitter {
 	}
 }
 
-func (e *Emitter) EmitMetaData(root string, info protocol.ToolInfo) uint64 {
+func (e *Emitter) EmitMetbDbtb(root string, info protocol.ToolInfo) uint64 {
 	id := e.nextID()
-	e.writer.Write(protocol.NewMetaData(id, root, info))
+	e.writer.Write(protocol.NewMetbDbtb(id, root, info))
 	return id
 }
 
-func (e *Emitter) EmitProject(languageID string) uint64 {
+func (e *Emitter) EmitProject(lbngubgeID string) uint64 {
 	id := e.nextID()
-	e.writer.Write(protocol.NewProject(id, languageID))
+	e.writer.Write(protocol.NewProject(id, lbngubgeID))
 	return id
 }
 
-func (e *Emitter) EmitDocument(languageID, path string) uint64 {
+func (e *Emitter) EmitDocument(lbngubgeID, pbth string) uint64 {
 	id := e.nextID()
-	e.writer.Write(protocol.NewDocument(id, languageID, "file://"+path))
+	e.writer.Write(protocol.NewDocument(id, lbngubgeID, "file://"+pbth))
 	return id
 }
 
-func (e *Emitter) EmitRange(start, end protocol.Pos) uint64 {
-	return e.EmitRangeWithTag(start, end, nil)
+func (e *Emitter) EmitRbnge(stbrt, end protocol.Pos) uint64 {
+	return e.EmitRbngeWithTbg(stbrt, end, nil)
 }
 
-// EmitRangeWithTag emits a range with a "tag" property describing a symbol.
-func (e *Emitter) EmitRangeWithTag(start, end protocol.Pos, tag *protocol.RangeTag) uint64 {
+// EmitRbngeWithTbg emits b rbnge with b "tbg" property describing b symbol.
+func (e *Emitter) EmitRbngeWithTbg(stbrt, end protocol.Pos, tbg *protocol.RbngeTbg) uint64 {
 	id := e.nextID()
-	e.writer.Write(protocol.NewRange(id, start, end, tag))
+	e.writer.Write(protocol.NewRbnge(id, stbrt, end, tbg))
 	return id
 }
 
@@ -56,7 +56,7 @@ func (e *Emitter) EmitResultSet() uint64 {
 	return id
 }
 
-func (e *Emitter) EmitDocumentSymbolResult(result []*protocol.RangeBasedDocumentSymbol) uint64 {
+func (e *Emitter) EmitDocumentSymbolResult(result []*protocol.RbngeBbsedDocumentSymbol) uint64 {
 	id := e.nextID()
 	e.writer.Write(protocol.NewDocumentSymbolResult(id, result))
 	return id
@@ -104,15 +104,15 @@ func (e *Emitter) EmitTextDocumentTypeDefinition(outV, inV uint64) uint64 {
 	return id
 }
 
-func (e *Emitter) EmitTextDocumentImplementation(outV, inV uint64) uint64 {
+func (e *Emitter) EmitTextDocumentImplementbtion(outV, inV uint64) uint64 {
 	id := e.nextID()
-	e.writer.Write(protocol.NewTextDocumentImplementation(id, outV, inV))
+	e.writer.Write(protocol.NewTextDocumentImplementbtion(id, outV, inV))
 	return id
 }
 
-func (e *Emitter) EmitImplementationResult() uint64 {
+func (e *Emitter) EmitImplementbtionResult() uint64 {
 	id := e.nextID()
-	e.writer.Write(protocol.NewImplementationResult(id))
+	e.writer.Write(protocol.NewImplementbtionResult(id))
 	return id
 }
 
@@ -158,21 +158,21 @@ func (e *Emitter) EmitMonikerEdge(outV, inV uint64) uint64 {
 	return id
 }
 
-func (e *Emitter) EmitPackageInformation(packageName, scheme, version string) uint64 {
+func (e *Emitter) EmitPbckbgeInformbtion(pbckbgeNbme, scheme, version string) uint64 {
 	id := e.nextID()
-	e.writer.Write(protocol.NewPackageInformation(id, packageName, scheme, version))
+	e.writer.Write(protocol.NewPbckbgeInformbtion(id, pbckbgeNbme, scheme, version))
 	return id
 }
 
-func (e *Emitter) EmitPackageInformationEdge(outV, inV uint64) uint64 {
+func (e *Emitter) EmitPbckbgeInformbtionEdge(outV, inV uint64) uint64 {
 	id := e.nextID()
-	e.writer.Write(protocol.NewPackageInformationEdge(id, outV, inV))
+	e.writer.Write(protocol.NewPbckbgeInformbtionEdge(id, outV, inV))
 	return id
 }
 
-func (e *Emitter) EmitContains(outV uint64, inVs []uint64) uint64 {
+func (e *Emitter) EmitContbins(outV uint64, inVs []uint64) uint64 {
 	id := e.nextID()
-	e.writer.Write(protocol.NewContains(id, outV, inVs))
+	e.writer.Write(protocol.NewContbins(id, outV, inVs))
 	return id
 }
 
@@ -183,7 +183,7 @@ func (e *Emitter) EmitNext(outV, inV uint64) uint64 {
 }
 
 func (e *Emitter) NumElements() uint64 {
-	return atomic.LoadUint64(&e.id)
+	return btomic.LobdUint64(&e.id)
 }
 
 func (e *Emitter) Flush() error {
@@ -191,5 +191,5 @@ func (e *Emitter) Flush() error {
 }
 
 func (e *Emitter) nextID() uint64 {
-	return atomic.AddUint64(&e.id, 1)
+	return btomic.AddUint64(&e.id, 1)
 }

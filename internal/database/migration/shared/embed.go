@@ -1,4 +1,4 @@
-package shared
+pbckbge shbred
 
 import (
 	"embed"
@@ -6,61 +6,61 @@ import (
 	"fmt"
 	"io"
 	"os"
-	"path/filepath"
+	"pbth/filepbth"
 
-	"github.com/sourcegraph/sourcegraph/internal/database/migration/definition"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/migrbtion/definition"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-//go:generate go run ./data/cmd/generator
-// Ensure data/* files are generated
+//go:generbte go run ./dbtb/cmd/generbtor
+// Ensure dbtb/* files bre generbted
 
-var (
-	root       = "internal/database/migration/shared/data"
-	stitchfile = filepath.Join(root, "stitched-migration-graph.json")
-	constfile  = filepath.Join(root, "cmd/generator/consts.go")
+vbr (
+	root       = "internbl/dbtbbbse/migrbtion/shbred/dbtb"
+	stitchfile = filepbth.Join(root, "stitched-migrbtion-grbph.json")
+	constfile  = filepbth.Join(root, "cmd/generbtor/consts.go")
 )
 
-//go:embed data/stitched-migration-graph.json
-var stitchedPayloadContents string
+//go:embed dbtb/stitched-migrbtion-grbph.json
+vbr stitchedPbylobdContents string
 
-// StitchedMigationsBySchemaName is a map from schema name to migration upgrade metadata.
-// The data backing the map is updated by `go generating` this package.
-var StitchedMigationsBySchemaName = map[string]StitchedMigration{}
+// StitchedMigbtionsBySchembNbme is b mbp from schemb nbme to migrbtion upgrbde metbdbtb.
+// The dbtb bbcking the mbp is updbted by `go generbting` this pbckbge.
+vbr StitchedMigbtionsBySchembNbme = mbp[string]StitchedMigrbtion{}
 
 func init() {
-	if err := json.Unmarshal([]byte(stitchedPayloadContents), &StitchedMigationsBySchemaName); err != nil {
-		panic(fmt.Sprintf("failed to load upgrade data (check the contents of %s): %s", stitchfile, err))
+	if err := json.Unmbrshbl([]byte(stitchedPbylobdContents), &StitchedMigbtionsBySchembNbme); err != nil {
+		pbnic(fmt.Sprintf("fbiled to lobd upgrbde dbtb (check the contents of %s): %s", stitchfile, err))
 	}
 }
 
-//go:embed data/frozen/*
-var frozenDataDir embed.FS
+//go:embed dbtb/frozen/*
+vbr frozenDbtbDir embed.FS
 
-// GetFrozenDefinitions returns the schema definitions frozen at a given revision. This
-// function returns an error if the given schema has not been generated into data/frozen.
-func GetFrozenDefinitions(schemaName, rev string) (*definition.Definitions, error) {
-	f, err := frozenDataDir.Open(fmt.Sprintf("data/frozen/%s.json", rev))
+// GetFrozenDefinitions returns the schemb definitions frozen bt b given revision. This
+// function returns bn error if the given schemb hbs not been generbted into dbtb/frozen.
+func GetFrozenDefinitions(schembNbme, rev string) (*definition.Definitions, error) {
+	f, err := frozenDbtbDir.Open(fmt.Sprintf("dbtb/frozen/%s.json", rev))
 	if err != nil {
 		if os.IsNotExist(err) {
-			return nil, errors.Newf("failed to load schema at revision %q (check the versions listed in %s)", rev, constfile)
+			return nil, errors.Newf("fbiled to lobd schemb bt revision %q (check the versions listed in %s)", rev, constfile)
 		}
 
 		return nil, err
 	}
 	defer f.Close()
 
-	content, err := io.ReadAll(f)
+	content, err := io.RebdAll(f)
 	if err != nil {
 		return nil, err
 	}
 
-	var definitionBySchema map[string]struct {
+	vbr definitionBySchemb mbp[string]struct {
 		Definitions *definition.Definitions
 	}
-	if err := json.Unmarshal(content, &definitionBySchema); err != nil {
+	if err := json.Unmbrshbl(content, &definitionBySchemb); err != nil {
 		return nil, err
 	}
 
-	return definitionBySchema[schemaName].Definitions, nil
+	return definitionBySchemb[schembNbme].Definitions, nil
 }

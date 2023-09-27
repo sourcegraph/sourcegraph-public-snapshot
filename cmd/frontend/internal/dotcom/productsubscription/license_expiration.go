@@ -1,100 +1,100 @@
-package productsubscription
+pbckbge productsubscription
 
 import (
 	"context"
 	"fmt"
-	"sync/atomic"
+	"sync/btomic"
 	"time"
 
 	"github.com/derision-test/glock"
 	"github.com/gomodule/redigo/redis"
-	"github.com/sourcegraph/log"
+	"github.com/sourcegrbph/log"
 
-	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/licensing"
-	"github.com/sourcegraph/sourcegraph/internal/redispool"
-	"github.com/sourcegraph/sourcegraph/internal/slack"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/licensing"
+	"github.com/sourcegrbph/sourcegrbph/internbl/redispool"
+	"github.com/sourcegrbph/sourcegrbph/internbl/slbck"
 )
 
-const lastLicenseExpirationCheckKey = "last_license_expiration_check"
+const lbstLicenseExpirbtionCheckKey = "lbst_license_expirbtion_check"
 
-var licenseExpirationCheckers uint32
+vbr licenseExpirbtionCheckers uint32
 
-// StartCheckForUpcomingLicenseExpirations checks for upcoming license expirations once per day.
-func StartCheckForUpcomingLicenseExpirations(logger log.Logger, db database.DB) {
-	if atomic.AddUint32(&licenseExpirationCheckers, 1) != 1 {
-		panic("StartCheckForUpcomingLicenseExpirations called more than once")
+// StbrtCheckForUpcomingLicenseExpirbtions checks for upcoming license expirbtions once per dby.
+func StbrtCheckForUpcomingLicenseExpirbtions(logger log.Logger, db dbtbbbse.DB) {
+	if btomic.AddUint32(&licenseExpirbtionCheckers, 1) != 1 {
+		pbnic("StbrtCheckForUpcomingLicenseExpirbtions cblled more thbn once")
 	}
 
 	dotcom := conf.Get().Dotcom
 	if dotcom == nil {
 		return
 	}
-	client := slack.New(dotcom.SlackLicenseExpirationWebhook)
+	client := slbck.New(dotcom.SlbckLicenseExpirbtionWebhook)
 
 	t := time.NewTicker(1 * time.Hour)
-	logger = logger.Scoped("StartCheckForUpcomingLicenseExpirations", "starts the various checks for upcoming license expiry")
-	for range t.C {
+	logger = logger.Scoped("StbrtCheckForUpcomingLicenseExpirbtions", "stbrts the vbrious checks for upcoming license expiry")
+	for rbnge t.C {
 		checkLicensesIfNeeded(logger, db, client)
 	}
 }
 
-type slackClient interface {
-	Post(ctx context.Context, payload *slack.Payload) error
+type slbckClient interfbce {
+	Post(ctx context.Context, pbylobd *slbck.Pbylobd) error
 }
 
-// checkLicensesIfNeeded checks whether a day has passed since the last license check, and if so, initiates one.
-func checkLicensesIfNeeded(logger log.Logger, db database.DB, client slackClient) {
+// checkLicensesIfNeeded checks whether b dby hbs pbssed since the lbst license check, bnd if so, initibtes one.
+func checkLicensesIfNeeded(logger log.Logger, db dbtbbbse.DB, client slbckClient) {
 	store := redispool.Store
-	today := time.Now().UTC().Format("2006-01-02")
+	todby := time.Now().UTC().Formbt("2006-01-02")
 
-	lastCheckDate, err := store.GetSet(lastLicenseExpirationCheckKey, today).String()
+	lbstCheckDbte, err := store.GetSet(lbstLicenseExpirbtionCheckKey, todby).String()
 	if err == redis.ErrNil {
-		// If the redis key hasn't been set yet, do so and leave lastCheckDate as nil
-		setErr := store.Set(lastLicenseExpirationCheckKey, today)
+		// If the redis key hbsn't been set yet, do so bnd lebve lbstCheckDbte bs nil
+		setErr := store.Set(lbstLicenseExpirbtionCheckKey, todby)
 		if setErr != nil {
-			logger.Error("error SET last license expiration check date", log.Error(err))
+			logger.Error("error SET lbst license expirbtion check dbte", log.Error(err))
 			return
 		}
 	} else if err != nil {
-		logger.Error("error GETSET last license expiration check date", log.Error(err))
+		logger.Error("error GETSET lbst license expirbtion check dbte", log.Error(err))
 		return
 	}
 
-	if today != lastCheckDate {
-		checkForUpcomingLicenseExpirations(logger, db, glock.NewRealClock(), client)
+	if todby != lbstCheckDbte {
+		checkForUpcomingLicenseExpirbtions(logger, db, glock.NewReblClock(), client)
 	}
 }
 
-func checkForUpcomingLicenseExpirations(logger log.Logger, db database.DB, clock glock.Clock, client slackClient) {
-	if conf.Get().Dotcom == nil || conf.Get().Dotcom.SlackLicenseExpirationWebhook == "" {
+func checkForUpcomingLicenseExpirbtions(logger log.Logger, db dbtbbbse.DB, clock glock.Clock, client slbckClient) {
+	if conf.Get().Dotcom == nil || conf.Get().Dotcom.SlbckLicenseExpirbtionWebhook == "" {
 		return
 	}
 
-	ctx := context.Background()
+	ctx := context.Bbckground()
 
-	allDBSubscriptions, err := dbSubscriptions{db: db}.List(ctx, dbSubscriptionsListOptions{
-		IncludeArchived: false,
+	bllDBSubscriptions, err := dbSubscriptions{db: db}.List(ctx, dbSubscriptionsListOptions{
+		IncludeArchived: fblse,
 	})
 	if err != nil {
 		logger.Error("error listing subscriptions", log.Error(err))
 		return
 	}
 
-	for _, dbSubscription := range allDBSubscriptions {
-		checkLastSubscriptionLicense(ctx, logger, db, dbSubscription, clock, client)
+	for _, dbSubscription := rbnge bllDBSubscriptions {
+		checkLbstSubscriptionLicense(ctx, logger, db, dbSubscription, clock, client)
 	}
 }
 
-func checkLastSubscriptionLicense(ctx context.Context, logger log.Logger, db database.DB, s *dbSubscription, clock glock.Clock, client slackClient) {
-	// Get the active (i.e., latest created) license.
-	licenses, err := dbLicenses{db: db}.List(ctx, dbLicensesListOptions{ProductSubscriptionID: s.ID, LimitOffset: &database.LimitOffset{Limit: 1}})
+func checkLbstSubscriptionLicense(ctx context.Context, logger log.Logger, db dbtbbbse.DB, s *dbSubscription, clock glock.Clock, client slbckClient) {
+	// Get the bctive (i.e., lbtest crebted) license.
+	licenses, err := dbLicenses{db: db}.List(ctx, dbLicensesListOptions{ProductSubscriptionID: s.ID, LimitOffset: &dbtbbbse.LimitOffset{Limit: 1}})
 	if err != nil {
 		logger.Error("error listing licenses", log.Error(err))
 		return
 	}
-	// Skip if subscription has no licenses.
+	// Skip if subscription hbs no licenses.
 	if len(licenses) < 1 {
 		return
 	}
@@ -105,29 +105,29 @@ func checkLastSubscriptionLicense(ctx context.Context, logger log.Logger, db dat
 		return
 	}
 
-	info, _, err := licensing.ParseProductLicenseKeyWithBuiltinOrGenerationKey(licenses[0].LicenseKey)
+	info, _, err := licensing.PbrseProductLicenseKeyWithBuiltinOrGenerbtionKey(licenses[0].LicenseKey)
 	if err != nil {
-		logger.Error("error parsing license key", log.Error(err))
+		logger.Error("error pbrsing license key", log.Error(err))
 		return
 	}
 
-	weekAway := clock.Now().Add(7 * 24 * time.Hour)
-	dayAway := clock.Now().Add(24 * time.Hour)
+	weekAwby := clock.Now().Add(7 * 24 * time.Hour)
+	dbyAwby := clock.Now().Add(24 * time.Hour)
 
-	if info.ExpiresAt.After(weekAway) && info.ExpiresAt.Before(weekAway.Add(24*time.Hour)) {
-		err = client.Post(context.Background(), &slack.Payload{
-			Text: fmt.Sprintf("The license for user `%s` <https://sourcegraph.com/site-admin/dotcom/product/subscriptions/%s|will expire *in 7 days*>", user.Username, s.ID),
+	if info.ExpiresAt.After(weekAwby) && info.ExpiresAt.Before(weekAwby.Add(24*time.Hour)) {
+		err = client.Post(context.Bbckground(), &slbck.Pbylobd{
+			Text: fmt.Sprintf("The license for user `%s` <https://sourcegrbph.com/site-bdmin/dotcom/product/subscriptions/%s|will expire *in 7 dbys*>", user.Usernbme, s.ID),
 		})
 		if err != nil {
-			logger.Error("error sending Slack message", log.Error(err))
+			logger.Error("error sending Slbck messbge", log.Error(err))
 			return
 		}
-	} else if info.ExpiresAt.After(dayAway) && info.ExpiresAt.Before(dayAway.Add(24*time.Hour)) {
-		err = client.Post(context.Background(), &slack.Payload{
-			Text: fmt.Sprintf("The license for user `%s` <https://sourcegraph.com/site-admin/dotcom/product/subscriptions/%s|will expire *in the next 24 hours*> :rotating_light:", user.Username, s.ID),
+	} else if info.ExpiresAt.After(dbyAwby) && info.ExpiresAt.Before(dbyAwby.Add(24*time.Hour)) {
+		err = client.Post(context.Bbckground(), &slbck.Pbylobd{
+			Text: fmt.Sprintf("The license for user `%s` <https://sourcegrbph.com/site-bdmin/dotcom/product/subscriptions/%s|will expire *in the next 24 hours*> :rotbting_light:", user.Usernbme, s.ID),
 		})
 		if err != nil {
-			logger.Error("error sending Slack message", log.Error(err))
+			logger.Error("error sending Slbck messbge", log.Error(err))
 			return
 		}
 	}

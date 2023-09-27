@@ -1,17 +1,17 @@
-package reposource
+pbckbge reposource
 
 import (
 	"strings"
 
-	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi"
 )
 
-func PerforceRepoName(repositoryPathPattern, depot string) api.RepoName {
-	if repositoryPathPattern == "" {
-		repositoryPathPattern = "{depot}"
+func PerforceRepoNbme(repositoryPbthPbttern, depot string) bpi.RepoNbme {
+	if repositoryPbthPbttern == "" {
+		repositoryPbthPbttern = "{depot}"
 	}
 
-	return api.RepoName(strings.NewReplacer(
+	return bpi.RepoNbme(strings.NewReplbcer(
 		"{depot}", depot,
-	).Replace(repositoryPathPattern))
+	).Replbce(repositoryPbthPbttern))
 }

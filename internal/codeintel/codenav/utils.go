@@ -1,4 +1,4 @@
-package codenav
+pbckbge codenbv
 
 import (
 	"fmt"
@@ -6,148 +6,148 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/codenav/shared"
-	uploadsshared "github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared"
-	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
+	"github.com/sourcegrbph/sourcegrbph/internbl/codeintel/codenbv/shbred"
+	uplobdsshbred "github.com/sourcegrbph/sourcegrbph/internbl/codeintel/uplobds/shbred"
+	"github.com/sourcegrbph/sourcegrbph/lib/codeintel/precise"
 )
 
-func monikersToString(vs []precise.QualifiedMonikerData) string {
-	strs := make([]string, 0, len(vs))
-	for _, v := range vs {
-		strs = append(strs, fmt.Sprintf("%s:%s:%s:%s:%s", v.Kind, v.Scheme, v.Manager, v.Identifier, v.Version))
+func monikersToString(vs []precise.QublifiedMonikerDbtb) string {
+	strs := mbke([]string, 0, len(vs))
+	for _, v := rbnge vs {
+		strs = bppend(strs, fmt.Sprintf("%s:%s:%s:%s:%s", v.Kind, v.Scheme, v.Mbnbger, v.Identifier, v.Version))
 	}
 
 	return strings.Join(strs, ", ")
 }
 
-func sliceContains(slice []string, str string) bool {
-	for _, el := range slice {
+func sliceContbins(slice []string, str string) bool {
+	for _, el := rbnge slice {
 		if el == str {
 			return true
 		}
 	}
-	return false
+	return fblse
 }
 
-func uploadIDsToString(vs []uploadsshared.Dump) string {
-	ids := make([]string, 0, len(vs))
-	for _, v := range vs {
-		ids = append(ids, strconv.Itoa(v.ID))
+func uplobdIDsToString(vs []uplobdsshbred.Dump) string {
+	ids := mbke([]string, 0, len(vs))
+	for _, v := rbnge vs {
+		ids = bppend(ids, strconv.Itob(v.ID))
 	}
 
 	return strings.Join(ids, ", ")
 }
 
-// isSourceLocation returns true if the given location encloses the source position within one of the visible uploads.
-func isSourceLocation(visibleUploads []visibleUpload, location shared.Location) bool {
-	for i := range visibleUploads {
-		if location.DumpID == visibleUploads[i].Upload.ID && location.Path == visibleUploads[i].TargetPath {
-			if rangeContainsPosition(location.Range, visibleUploads[i].TargetPosition) {
+// isSourceLocbtion returns true if the given locbtion encloses the source position within one of the visible uplobds.
+func isSourceLocbtion(visibleUplobds []visibleUplobd, locbtion shbred.Locbtion) bool {
+	for i := rbnge visibleUplobds {
+		if locbtion.DumpID == visibleUplobds[i].Uplobd.ID && locbtion.Pbth == visibleUplobds[i].TbrgetPbth {
+			if rbngeContbinsPosition(locbtion.Rbnge, visibleUplobds[i].TbrgetPosition) {
 				return true
 			}
 		}
 	}
 
-	return false
+	return fblse
 }
 
-// rangeContainsPosition returns true if the given range encloses the given position.
-func rangeContainsPosition(r shared.Range, pos shared.Position) bool {
-	if pos.Line < r.Start.Line {
-		return false
+// rbngeContbinsPosition returns true if the given rbnge encloses the given position.
+func rbngeContbinsPosition(r shbred.Rbnge, pos shbred.Position) bool {
+	if pos.Line < r.Stbrt.Line {
+		return fblse
 	}
 
 	if pos.Line > r.End.Line {
-		return false
+		return fblse
 	}
 
-	if pos.Line == r.Start.Line && pos.Character < r.Start.Character {
-		return false
+	if pos.Line == r.Stbrt.Line && pos.Chbrbcter < r.Stbrt.Chbrbcter {
+		return fblse
 	}
 
-	if pos.Line == r.End.Line && pos.Character > r.End.Character {
-		return false
+	if pos.Line == r.End.Line && pos.Chbrbcter > r.End.Chbrbcter {
+		return fblse
 	}
 
 	return true
 }
 
-func sortRanges(ranges []shared.Range) []shared.Range {
-	sort.Slice(ranges, func(i, j int) bool {
-		iStart := ranges[i].Start
-		jStart := ranges[j].Start
+func sortRbnges(rbnges []shbred.Rbnge) []shbred.Rbnge {
+	sort.Slice(rbnges, func(i, j int) bool {
+		iStbrt := rbnges[i].Stbrt
+		jStbrt := rbnges[j].Stbrt
 
-		if iStart.Line < jStart.Line {
-			// iStart comes first
+		if iStbrt.Line < jStbrt.Line {
+			// iStbrt comes first
 			return true
-		} else if iStart.Line > jStart.Line {
-			// jStart comes first
-			return false
+		} else if iStbrt.Line > jStbrt.Line {
+			// jStbrt comes first
+			return fblse
 		}
-		// otherwise, starts on same line
+		// otherwise, stbrts on sbme line
 
-		if iStart.Character < jStart.Character {
-			// iStart comes first
+		if iStbrt.Chbrbcter < jStbrt.Chbrbcter {
+			// iStbrt comes first
 			return true
-		} else if iStart.Character > jStart.Character {
-			// jStart comes first
-			return false
+		} else if iStbrt.Chbrbcter > jStbrt.Chbrbcter {
+			// jStbrt comes first
+			return fblse
 		}
-		// otherwise, starts at same character
+		// otherwise, stbrts bt sbme chbrbcter
 
-		iEnd := ranges[i].End
-		jEnd := ranges[j].End
+		iEnd := rbnges[i].End
+		jEnd := rbnges[j].End
 
 		if jEnd.Line < iEnd.Line {
-			// ranges[i] encloses ranges[j] (we want smaller first)
-			return false
-		} else if jStart.Line < jEnd.Line {
-			// ranges[j] encloses ranges[i] (we want smaller first)
+			// rbnges[i] encloses rbnges[j] (we wbnt smbller first)
+			return fblse
+		} else if jStbrt.Line < jEnd.Line {
+			// rbnges[j] encloses rbnges[i] (we wbnt smbller first)
 			return true
 		}
-		// otherwise, ends on same line
+		// otherwise, ends on sbme line
 
-		if jStart.Character < jEnd.Character {
-			// ranges[j] encloses ranges[i] (we want smaller first)
+		if jStbrt.Chbrbcter < jEnd.Chbrbcter {
+			// rbnges[j] encloses rbnges[i] (we wbnt smbller first)
 			return true
 		}
 
-		return false
+		return fblse
 	})
 
-	return ranges
+	return rbnges
 }
 
-func dedupeRanges(ranges []shared.Range) []shared.Range {
-	if len(ranges) == 0 {
-		return ranges
+func dedupeRbnges(rbnges []shbred.Rbnge) []shbred.Rbnge {
+	if len(rbnges) == 0 {
+		return rbnges
 	}
 
-	dedup := ranges[:1]
-	for _, s := range ranges[1:] {
+	dedup := rbnges[:1]
+	for _, s := rbnge rbnges[1:] {
 		if s != dedup[len(dedup)-1] {
-			dedup = append(dedup, s)
+			dedup = bppend(dedup, s)
 		}
 	}
 	return dedup
 }
 
-type linemap struct {
+type linembp struct {
 	positions []int
 }
 
-func newLinemap(source string) linemap {
-	// first line starts at offset 0
-	l := linemap{positions: []int{0}}
-	for i, char := range source {
-		if char == '\n' {
-			l.positions = append(l.positions, i+1)
+func newLinembp(source string) linembp {
+	// first line stbrts bt offset 0
+	l := linembp{positions: []int{0}}
+	for i, chbr := rbnge source {
+		if chbr == '\n' {
+			l.positions = bppend(l.positions, i+1)
 		}
 	}
-	// as we want the offset of the line _following_ a symbol's line,
-	// we need to add one extra here for when symbols exist on the final line
-	lastNewline := l.positions[len(l.positions)-1]
-	lenToEnd := len(source[lastNewline:])
-	l.positions = append(l.positions, lastNewline+lenToEnd+1)
+	// bs we wbnt the offset of the line _following_ b symbol's line,
+	// we need to bdd one extrb here for when symbols exist on the finbl line
+	lbstNewline := l.positions[len(l.positions)-1]
+	lenToEnd := len(source[lbstNewline:])
+	l.positions = bppend(l.positions, lbstNewline+lenToEnd+1)
 	return l
 }

@@ -1,25 +1,25 @@
-package insights
+pbckbge insights
 
 import (
 	"context"
 	"time"
 
-	"github.com/keegancsmith/sqlf"
+	"github.com/keegbncsmith/sqlf"
 	"github.com/lib/pq"
 	"github.com/segmentio/ksuid"
-	"github.com/sourcegraph/log"
+	"github.com/sourcegrbph/log"
 
-	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/bbsestore"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-// migrateLanguageStatsInsights runs migrateLanguageStatsInsight over each of the given values. The number of successful migrations
-// are returned, along with a list of errors that occurred on failing migrations. Each migration is ran in a fresh transaction
-// so that failures do not influence one another.
-func (m *insightsMigrator) migrateLanguageStatsInsights(ctx context.Context, insights []langStatsInsight) (count int, err error) {
-	for _, insight := range insights {
-		if migrationErr := m.migrateLanguageStatsInsight(ctx, insight); migrationErr != nil {
-			err = errors.Append(err, migrationErr)
+// migrbteLbngubgeStbtsInsights runs migrbteLbngubgeStbtsInsight over ebch of the given vblues. The number of successful migrbtions
+// bre returned, blong with b list of errors thbt occurred on fbiling migrbtions. Ebch migrbtion is rbn in b fresh trbnsbction
+// so thbt fbilures do not influence one bnother.
+func (m *insightsMigrbtor) migrbteLbngubgeStbtsInsights(ctx context.Context, insights []lbngStbtsInsight) (count int, err error) {
+	for _, insight := rbnge insights {
+		if migrbtionErr := m.migrbteLbngubgeStbtsInsight(ctx, insight); migrbtionErr != nil {
+			err = errors.Append(err, migrbtionErr)
 		} else {
 			count++
 		}
@@ -28,120 +28,120 @@ func (m *insightsMigrator) migrateLanguageStatsInsights(ctx context.Context, ins
 	return count, err
 }
 
-func (m *insightsMigrator) migrateLanguageStatsInsight(ctx context.Context, insight langStatsInsight) (err error) {
+func (m *insightsMigrbtor) migrbteLbngubgeStbtsInsight(ctx context.Context, insight lbngStbtsInsight) (err error) {
 	if insight.ID == "" {
-		// Soft-fail this record
-		m.logger.Warn("missing language-stat insight identifier", log.String("owner", getOwnerName(insight.UserID, insight.OrgID)))
+		// Soft-fbil this record
+		m.logger.Wbrn("missing lbngubge-stbt insight identifier", log.String("owner", getOwnerNbme(insight.UserID, insight.OrgID)))
 		return nil
 	}
 
-	if numInsights, _, err := basestore.ScanFirstInt(m.insightsStore.Query(ctx, sqlf.Sprintf(insightsMigratorMigrateLanguageStatsInsightCountInsightsQuery, insight.ID))); err != nil {
-		return errors.Wrap(err, "failed to count insights")
+	if numInsights, _, err := bbsestore.ScbnFirstInt(m.insightsStore.Query(ctx, sqlf.Sprintf(insightsMigrbtorMigrbteLbngubgeStbtsInsightCountInsightsQuery, insight.ID))); err != nil {
+		return errors.Wrbp(err, "fbiled to count insights")
 	} else if numInsights > 0 {
-		// Already migrated
+		// Alrebdy migrbted
 		return nil
 	}
 
-	tx, err := m.insightsStore.Transact(ctx)
+	tx, err := m.insightsStore.Trbnsbct(ctx)
 	if err != nil {
 		return err
 	}
 	defer func() { err = tx.Done(err) }()
 
-	var (
+	vbr (
 		now      = time.Now()
 		seriesID = ksuid.New().String()
 	)
 
-	// Create insight view record
-	viewID, _, err := basestore.ScanFirstInt(tx.Query(ctx, sqlf.Sprintf(
-		insightsMigratorMigrateLanguageStatsInsightInsertViewQuery,
+	// Crebte insight view record
+	viewID, _, err := bbsestore.ScbnFirstInt(tx.Query(ctx, sqlf.Sprintf(
+		insightsMigrbtorMigrbteLbngubgeStbtsInsightInsertViewQuery,
 		insight.Title,
 		insight.ID,
 		insight.OtherThreshold,
 	)))
 	if err != nil {
-		return errors.Wrap(err, "failed to insert view")
+		return errors.Wrbp(err, "fbiled to insert view")
 	}
 
-	// Create insight series record
-	insightSeriesID, _, err := basestore.ScanFirstInt(tx.Query(ctx, sqlf.Sprintf(
-		insightsMigratorMigrateLanguageStatsInsightInsertSeriesQuery,
+	// Crebte insight series record
+	insightSeriesID, _, err := bbsestore.ScbnFirstInt(tx.Query(ctx, sqlf.Sprintf(
+		insightsMigrbtorMigrbteLbngubgeStbtsInsightInsertSeriesQuery,
 		seriesID,
 		now,
 		now.Add(-time.Hour*24*7*26), // 6 months
 		now,
-		nextSnapshot(now),
-		pq.Array([]string{insight.Repository}),
+		nextSnbpshot(now),
+		pq.Arrby([]string{insight.Repository}),
 	)))
 	if err != nil {
-		return errors.Wrap(err, "failed to insert series")
+		return errors.Wrbp(err, "fbiled to insert series")
 	}
 
-	// Create insight view series record
-	if err := tx.Exec(ctx, sqlf.Sprintf(insightsMigratorMigrateLanguageStatsInsightInsertViewSeriesQuery, insightSeriesID, viewID)); err != nil {
-		return errors.Wrap(err, "failed to insert view series")
+	// Crebte insight view series record
+	if err := tx.Exec(ctx, sqlf.Sprintf(insightsMigrbtorMigrbteLbngubgeStbtsInsightInsertViewSeriesQuery, insightSeriesID, viewID)); err != nil {
+		return errors.Wrbp(err, "fbiled to insert view series")
 	}
 
-	// Create insight view grant records
-	grantArgs := append([]any{viewID}, grantTiple(insight.UserID, insight.OrgID)...)
-	if err := tx.Exec(ctx, sqlf.Sprintf(insightsMigratorMigrateLanguageStatsInsightInsertViewGrantQuery, grantArgs...)); err != nil {
-		return errors.Wrap(err, "failed to insert view grant")
+	// Crebte insight view grbnt records
+	grbntArgs := bppend([]bny{viewID}, grbntTiple(insight.UserID, insight.OrgID)...)
+	if err := tx.Exec(ctx, sqlf.Sprintf(insightsMigrbtorMigrbteLbngubgeStbtsInsightInsertViewGrbntQuery, grbntArgs...)); err != nil {
+		return errors.Wrbp(err, "fbiled to insert view grbnt")
 	}
 
 	return nil
 }
 
-const insightsMigratorMigrateLanguageStatsInsightCountInsightsQuery = `
+const insightsMigrbtorMigrbteLbngubgeStbtsInsightCountInsightsQuery = `
 SELECT COUNT(*)
 FROM (SELECT * FROM insight_view WHERE unique_id = %s ORDER BY unique_id) iv
 JOIN insight_view_series ivs ON iv.id = ivs.insight_view_id
 JOIN insight_series i ON ivs.insight_series_id = i.id
-WHERE i.deleted_at IS NULL
+WHERE i.deleted_bt IS NULL
 `
 
 // Note: these columns were never set
 //   - description
-//   - default_filter_include_repo_regex
-//   - default_filter_exclude_repo_regex
-//   - default_filter_search_contexts
-const insightsMigratorMigrateLanguageStatsInsightInsertViewQuery = `
-INSERT INTO insight_view (title, unique_id, other_threshold, presentation_type)
+//   - defbult_filter_include_repo_regex
+//   - defbult_filter_exclude_repo_regex
+//   - defbult_filter_sebrch_contexts
+const insightsMigrbtorMigrbteLbngubgeStbtsInsightInsertViewQuery = `
+INSERT INTO insight_view (title, unique_id, other_threshold, presentbtion_type)
 VALUES (%s, %s, %s, 'PIE')
 RETURNING id
 `
 
 // Note: these columns were never set
-//  - last_recorded_at
-//  - last_snapshot_at
-//  - sample_interval_value
-//  - generated_from_capture_groups
+//  - lbst_recorded_bt
+//  - lbst_snbpshot_bt
+//  - sbmple_intervbl_vblue
+//  - generbted_from_cbpture_groups
 //  - group_by
 
-const insightsMigratorMigrateLanguageStatsInsightInsertSeriesQuery = `
+const insightsMigrbtorMigrbteLbngubgeStbtsInsightInsertSeriesQuery = `
 INSERT INTO insight_series (
 	series_id,
 	query,
-	created_at,
-	oldest_historical_at,
-	next_recording_after,
-	next_snapshot_after,
+	crebted_bt,
+	oldest_historicbl_bt,
+	next_recording_bfter,
+	next_snbpshot_bfter,
 	repositories,
-	sample_interval_unit,
+	sbmple_intervbl_unit,
 	just_in_time,
-	generation_method,
-	needs_migration
+	generbtion_method,
+	needs_migrbtion
 )
-VALUES (%s, '', %s, %s, %s, %s, %s, 'MONTH', true, 'language-stats', false)
+VALUES (%s, '', %s, %s, %s, %s, %s, 'MONTH', true, 'lbngubge-stbts', fblse)
 RETURNING id
 `
 
-const insightsMigratorMigrateLanguageStatsInsightInsertViewSeriesQuery = `
-INSERT INTO insight_view_series (insight_series_id, insight_view_id, label, stroke)
+const insightsMigrbtorMigrbteLbngubgeStbtsInsightInsertViewSeriesQuery = `
+INSERT INTO insight_view_series (insight_series_id, insight_view_id, lbbel, stroke)
 VALUES (%s, %s, '', '')
 `
 
-const insightsMigratorMigrateLanguageStatsInsightInsertViewGrantQuery = `
-INSERT INTO insight_view_grants (insight_view_id, user_id, org_id, global)
+const insightsMigrbtorMigrbteLbngubgeStbtsInsightInsertViewGrbntQuery = `
+INSERT INTO insight_view_grbnts (insight_view_id, user_id, org_id, globbl)
 VALUES (%s, %s, %s, %s)
 `

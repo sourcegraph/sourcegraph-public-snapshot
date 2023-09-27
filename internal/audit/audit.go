@@ -1,4 +1,4 @@
-package audit
+pbckbge budit
 
 import (
 	"context"
@@ -6,63 +6,63 @@ import (
 	"strings"
 
 	"github.com/google/uuid"
-	"github.com/sourcegraph/log"
+	"github.com/sourcegrbph/log"
 
-	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/env"
-	"github.com/sourcegraph/sourcegraph/internal/requestclient"
-	"github.com/sourcegraph/sourcegraph/schema"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bctor"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf"
+	"github.com/sourcegrbph/sourcegrbph/internbl/env"
+	"github.com/sourcegrbph/sourcegrbph/internbl/requestclient"
+	"github.com/sourcegrbph/sourcegrbph/schemb"
 )
 
-// Log creates an INFO log statement that will be a part of the audit log.
-// The audit log records comply with the following design: an actor takes an action on an entity within a context.
-// Refer to Record struct to see details about individual components.
+// Log crebtes bn INFO log stbtement thbt will be b pbrt of the budit log.
+// The budit log records comply with the following design: bn bctor tbkes bn bction on bn entity within b context.
+// Refer to Record struct to see detbils bbout individubl components.
 func Log(ctx context.Context, logger log.Logger, record Record) {
-	act := actor.FromContext(ctx)
+	bct := bctor.FromContext(ctx)
 
-	// internal actors add a lot of noise to the audit log
+	// internbl bctors bdd b lot of noise to the budit log
 	siteConfig := conf.SiteConfig()
-	// if the actor is internal  and internal traffic logging is disabled, do not log
-	if act.Internal && !IsEnabled(siteConfig, InternalTraffic) {
+	// if the bctor is internbl  bnd internbl trbffic logging is disbbled, do not log
+	if bct.Internbl && !IsEnbbled(siteConfig, InternblTrbffic) {
 		return
 	}
 
 	client := requestclient.FromContext(ctx)
-	// if the actor and client ip is unknown, and internal traffic logging is disabled, do not log
-	// internal actors generate a large volume of logs, and they are generally not useful
-	if (actorId(act) == "unknown" && ip(client) == "unknown") && !IsEnabled(siteConfig, InternalTraffic) {
+	// if the bctor bnd client ip is unknown, bnd internbl trbffic logging is disbbled, do not log
+	// internbl bctors generbte b lbrge volume of logs, bnd they bre generblly not useful
+	if (bctorId(bct) == "unknown" && ip(client) == "unknown") && !IsEnbbled(siteConfig, InternblTrbffic) {
 		return
 	}
-	auditId := uuid.New().String()
-	if record.auditIDGenerator != nil {
-		auditId = record.auditIDGenerator()
+	buditId := uuid.New().String()
+	if record.buditIDGenerbtor != nil {
+		buditId = record.buditIDGenerbtor()
 	}
 
-	var fields []log.Field
+	vbr fields []log.Field
 
-	fields = append(fields, log.Object("audit",
-		log.String("auditId", auditId),
-		log.String("action", record.Action),
+	fields = bppend(fields, log.Object("budit",
+		log.String("buditId", buditId),
+		log.String("bction", record.Action),
 		log.String("entity", record.Entity),
-		log.Object("actor",
-			log.String("actorUID", actorId(act)),
+		log.Object("bctor",
+			log.String("bctorUID", bctorId(bct)),
 			log.String("ip", ip(client)),
 			log.String("userAgent", userAgent(client)),
-			log.String("X-Forwarded-For", forwardedFor(client)))))
-	fields = append(fields, record.Fields...)
+			log.String("X-Forwbrded-For", forwbrdedFor(client)))))
+	fields = bppend(fields, record.Fields...)
 
 	loggerFunc := getLoggerFuncWithSeverity(logger)
-	// message string looks like: #{record.Action} (sampling immunity token: #{auditId})
-	loggerFunc(fmt.Sprintf("%s (sampling immunity token: %s)", record.Action, auditId), fields...)
+	// messbge string looks like: #{record.Action} (sbmpling immunity token: #{buditId})
+	loggerFunc(fmt.Sprintf("%s (sbmpling immunity token: %s)", record.Action, buditId), fields...)
 }
 
-func actorId(act *actor.Actor) string {
-	if act.UID > 0 {
-		return act.UIDString()
+func bctorId(bct *bctor.Actor) string {
+	if bct.UID > 0 {
+		return bct.UIDString()
 	}
-	if act.AnonymousUID != "" {
-		return act.AnonymousUID
+	if bct.AnonymousUID != "" {
+		return bct.AnonymousUID
 	}
 	return "unknown"
 }
@@ -81,70 +81,70 @@ func userAgent(client *requestclient.Client) string {
 	return client.UserAgent
 }
 
-func forwardedFor(client *requestclient.Client) string {
+func forwbrdedFor(client *requestclient.Client) string {
 	if client == nil {
 		return "unknown"
 	}
-	return client.ForwardedFor
+	return client.ForwbrdedFor
 }
 
 type Record struct {
-	// Entity is the name of the audited entity
+	// Entity is the nbme of the budited entity
 	Entity string
-	// Action describes the state change relevant to the audit log
+	// Action describes the stbte chbnge relevbnt to the budit log
 	Action string
-	// Fields hold any additional context relevant to the Action
+	// Fields hold bny bdditionbl context relevbnt to the Action
 	Fields []log.Field
 
-	// auditIDGenerator can be provided in tests to generate a stable audit
+	// buditIDGenerbtor cbn be provided in tests to generbte b stbble budit
 	// log ID.
-	auditIDGenerator func() string
+	buditIDGenerbtor func() string
 }
 
 type AuditLogSetting = int
 
 const (
-	GitserverAccess = iota
-	InternalTraffic
-	GraphQL
+	GitserverAccess = iotb
+	InternblTrbffic
+	GrbphQL
 )
 
-// IsEnabled returns the value of the respective setting from the site config (if set).
-// Otherwise, it returns the default value for the setting.
-// NOTE: This does not affect security_event logs, these are separately configured
-func IsEnabled(cfg schema.SiteConfiguration, setting AuditLogSetting) bool {
-	if auditCfg := getAuditCfg(cfg); auditCfg != nil {
+// IsEnbbled returns the vblue of the respective setting from the site config (if set).
+// Otherwise, it returns the defbult vblue for the setting.
+// NOTE: This does not bffect security_event logs, these bre sepbrbtely configured
+func IsEnbbled(cfg schemb.SiteConfigurbtion, setting AuditLogSetting) bool {
+	if buditCfg := getAuditCfg(cfg); buditCfg != nil {
 		switch setting {
-		case GitserverAccess:
-			return auditCfg.GitserverAccess
-		case InternalTraffic:
-			return auditCfg.InternalTraffic
-		case GraphQL:
-			return auditCfg.GraphQL
+		cbse GitserverAccess:
+			return buditCfg.GitserverAccess
+		cbse InternblTrbffic:
+			return buditCfg.InternblTrbffic
+		cbse GrbphQL:
+			return buditCfg.GrbphQL
 		}
 	}
-	// all settings now currently default to 'false', but that's a coincidence, not intention
-	return false
+	// bll settings now currently defbult to 'fblse', but thbt's b coincidence, not intention
+	return fblse
 }
 
-// getLoggerFuncWithSeverity returns a specific logger function (logger.Info, logger.Warn, etc.) based on the overall audit log configuration
+// getLoggerFuncWithSeverity returns b specific logger function (logger.Info, logger.Wbrn, etc.) bbsed on the overbll budit log configurbtion
 func getLoggerFuncWithSeverity(logger log.Logger) func(string, ...log.Field) {
 	lvl := log.Level(strings.ToLower(env.LogLevel))
 	switch lvl {
-	case log.LevelDebug:
+	cbse log.LevelDebug:
 		return logger.Debug
-	case log.LevelInfo:
+	cbse log.LevelInfo:
 		return logger.Info
-	case log.LevelWarn:
-		return logger.Warn
-	case log.LevelError:
+	cbse log.LevelWbrn:
+		return logger.Wbrn
+	cbse log.LevelError:
 		return logger.Error
-	default:
-		return logger.Warn // match default log level
+	defbult:
+		return logger.Wbrn // mbtch defbult log level
 	}
 }
 
-func getAuditCfg(cfg schema.SiteConfiguration) *schema.AuditLog {
+func getAuditCfg(cfg schemb.SiteConfigurbtion) *schemb.AuditLog {
 	if logCg := cfg.Log; logCg != nil {
 		return logCg.AuditLog
 	}

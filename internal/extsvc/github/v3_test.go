@@ -1,4 +1,4 @@
-package github
+pbckbge github
 
 import (
 	"context"
@@ -9,607 +9,607 @@ import (
 	"net/http/httptest"
 	"net/url"
 	"os"
-	"path/filepath"
+	"pbth/filepbth"
 	"sort"
 	"strings"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/bssert"
 	"github.com/stretchr/testify/require"
-	"golang.org/x/time/rate"
+	"golbng.org/x/time/rbte"
 
-	"github.com/sourcegraph/log/logtest"
+	"github.com/sourcegrbph/log/logtest"
 
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
-	"github.com/sourcegraph/sourcegraph/internal/httpcli"
-	"github.com/sourcegraph/sourcegraph/internal/httptestutil"
-	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
-	"github.com/sourcegraph/sourcegraph/internal/rcache"
-	"github.com/sourcegraph/sourcegraph/internal/testutil"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/sourcegraph/sourcegraph/lib/pointers"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc/buth"
+	"github.com/sourcegrbph/sourcegrbph/internbl/httpcli"
+	"github.com/sourcegrbph/sourcegrbph/internbl/httptestutil"
+	"github.com/sourcegrbph/sourcegrbph/internbl/rbtelimit"
+	"github.com/sourcegrbph/sourcegrbph/internbl/rcbche"
+	"github.com/sourcegrbph/sourcegrbph/internbl/testutil"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/lib/pointers"
 )
 
 func newTestClient(t *testing.T, cli httpcli.Doer) *V3Client {
-	return newTestClientWithAuthenticator(t, nil, cli)
+	return newTestClientWithAuthenticbtor(t, nil, cli)
 }
 
-func newTestClientWithAuthenticator(t *testing.T, auth auth.Authenticator, cli httpcli.Doer) *V3Client {
+func newTestClientWithAuthenticbtor(t *testing.T, buth buth.Authenticbtor, cli httpcli.Doer) *V3Client {
 	SetupForTest(t)
-	rcache.SetupForTest(t)
-	ratelimit.SetupForTest(t)
+	rcbche.SetupForTest(t)
+	rbtelimit.SetupForTest(t)
 
-	apiURL := &url.URL{Scheme: "https", Host: "example.com", Path: "/"}
-	c := NewV3Client(logtest.Scoped(t), "Test", apiURL, auth, cli)
-	c.internalRateLimiter = ratelimit.NewInstrumentedLimiter("githubv3", rate.NewLimiter(100, 10))
+	bpiURL := &url.URL{Scheme: "https", Host: "exbmple.com", Pbth: "/"}
+	c := NewV3Client(logtest.Scoped(t), "Test", bpiURL, buth, cli)
+	c.internblRbteLimiter = rbtelimit.NewInstrumentedLimiter("githubv3", rbte.NewLimiter(100, 10))
 	return c
 }
 
-func TestListAffiliatedRepositories(t *testing.T) {
+func TestListAffilibtedRepositories(t *testing.T) {
 	tests := []struct {
-		name         string
+		nbme         string
 		visibility   Visibility
-		affiliations []RepositoryAffiliation
-		wantRepos    []*Repository
+		bffilibtions []RepositoryAffilibtion
+		wbntRepos    []*Repository
 	}{
 		{
-			name:       "list all repositories",
+			nbme:       "list bll repositories",
 			visibility: VisibilityAll,
-			wantRepos: []*Repository{
+			wbntRepos: []*Repository{
 				{
-					ID:               "MDEwOlJlcG9zaXRvcnkyNjMwMzQxNTE=",
-					DatabaseID:       263034151,
-					NameWithOwner:    "sourcegraph-vcr-repos/private-org-repo-1",
-					URL:              "https://github.com/sourcegraph-vcr-repos/private-org-repo-1",
-					IsPrivate:        true,
+					ID:               "MDEwOlJlcG9zbXRvcnkyNjMwMzQxNTE=",
+					DbtbbbseID:       263034151,
+					NbmeWithOwner:    "sourcegrbph-vcr-repos/privbte-org-repo-1",
+					URL:              "https://github.com/sourcegrbph-vcr-repos/privbte-org-repo-1",
+					IsPrivbte:        true,
 					ViewerPermission: "ADMIN",
 					RepositoryTopics: RepositoryTopics{Nodes: []RepositoryTopic{}},
 				}, {
-					ID:               "MDEwOlJlcG9zaXRvcnkyNjMwMzQwNzM=",
-					DatabaseID:       263034073,
-					NameWithOwner:    "sourcegraph-vcr/private-user-repo-1",
-					URL:              "https://github.com/sourcegraph-vcr/private-user-repo-1",
-					IsPrivate:        true,
+					ID:               "MDEwOlJlcG9zbXRvcnkyNjMwMzQwNzM=",
+					DbtbbbseID:       263034073,
+					NbmeWithOwner:    "sourcegrbph-vcr/privbte-user-repo-1",
+					URL:              "https://github.com/sourcegrbph-vcr/privbte-user-repo-1",
+					IsPrivbte:        true,
 					ViewerPermission: "ADMIN",
 					RepositoryTopics: RepositoryTopics{Nodes: []RepositoryTopic{}},
 				}, {
-					ID:               "MDEwOlJlcG9zaXRvcnkyNjMwMzM5NDk=",
-					DatabaseID:       263033949,
-					NameWithOwner:    "sourcegraph-vcr/public-user-repo-1",
-					URL:              "https://github.com/sourcegraph-vcr/public-user-repo-1",
+					ID:               "MDEwOlJlcG9zbXRvcnkyNjMwMzM5NDk=",
+					DbtbbbseID:       263033949,
+					NbmeWithOwner:    "sourcegrbph-vcr/public-user-repo-1",
+					URL:              "https://github.com/sourcegrbph-vcr/public-user-repo-1",
 					ViewerPermission: "ADMIN",
 					RepositoryTopics: RepositoryTopics{Nodes: []RepositoryTopic{}},
 				}, {
-					ID:               "MDEwOlJlcG9zaXRvcnkyNjMwMzM3NjE=",
-					DatabaseID:       263033761,
-					NameWithOwner:    "sourcegraph-vcr-repos/public-org-repo-1",
-					URL:              "https://github.com/sourcegraph-vcr-repos/public-org-repo-1",
+					ID:               "MDEwOlJlcG9zbXRvcnkyNjMwMzM3NjE=",
+					DbtbbbseID:       263033761,
+					NbmeWithOwner:    "sourcegrbph-vcr-repos/public-org-repo-1",
+					URL:              "https://github.com/sourcegrbph-vcr-repos/public-org-repo-1",
 					ViewerPermission: "ADMIN",
 					RepositoryTopics: RepositoryTopics{Nodes: []RepositoryTopic{}},
 				},
 			},
 		},
 		{
-			name:       "list public repositories",
+			nbme:       "list public repositories",
 			visibility: VisibilityPublic,
-			wantRepos: []*Repository{
+			wbntRepos: []*Repository{
 				{
-					ID:               "MDEwOlJlcG9zaXRvcnkyNjMwMzM5NDk=",
-					DatabaseID:       263033949,
-					NameWithOwner:    "sourcegraph-vcr/public-user-repo-1",
-					URL:              "https://github.com/sourcegraph-vcr/public-user-repo-1",
+					ID:               "MDEwOlJlcG9zbXRvcnkyNjMwMzM5NDk=",
+					DbtbbbseID:       263033949,
+					NbmeWithOwner:    "sourcegrbph-vcr/public-user-repo-1",
+					URL:              "https://github.com/sourcegrbph-vcr/public-user-repo-1",
 					ViewerPermission: "ADMIN",
 					RepositoryTopics: RepositoryTopics{Nodes: []RepositoryTopic{}},
 				}, {
-					ID:               "MDEwOlJlcG9zaXRvcnkyNjMwMzM3NjE=",
-					DatabaseID:       263033761,
-					NameWithOwner:    "sourcegraph-vcr-repos/public-org-repo-1",
-					URL:              "https://github.com/sourcegraph-vcr-repos/public-org-repo-1",
+					ID:               "MDEwOlJlcG9zbXRvcnkyNjMwMzM3NjE=",
+					DbtbbbseID:       263033761,
+					NbmeWithOwner:    "sourcegrbph-vcr-repos/public-org-repo-1",
+					URL:              "https://github.com/sourcegrbph-vcr-repos/public-org-repo-1",
 					ViewerPermission: "ADMIN",
 					RepositoryTopics: RepositoryTopics{Nodes: []RepositoryTopic{}},
 				},
 			},
 		},
 		{
-			name:       "list private repositories",
-			visibility: VisibilityPrivate,
-			wantRepos: []*Repository{
+			nbme:       "list privbte repositories",
+			visibility: VisibilityPrivbte,
+			wbntRepos: []*Repository{
 				{
-					ID:               "MDEwOlJlcG9zaXRvcnkyNjMwMzQxNTE=",
-					DatabaseID:       263034151,
-					NameWithOwner:    "sourcegraph-vcr-repos/private-org-repo-1",
-					URL:              "https://github.com/sourcegraph-vcr-repos/private-org-repo-1",
-					IsPrivate:        true,
+					ID:               "MDEwOlJlcG9zbXRvcnkyNjMwMzQxNTE=",
+					DbtbbbseID:       263034151,
+					NbmeWithOwner:    "sourcegrbph-vcr-repos/privbte-org-repo-1",
+					URL:              "https://github.com/sourcegrbph-vcr-repos/privbte-org-repo-1",
+					IsPrivbte:        true,
 					ViewerPermission: "ADMIN",
 					RepositoryTopics: RepositoryTopics{Nodes: []RepositoryTopic{}},
 				}, {
-					ID:               "MDEwOlJlcG9zaXRvcnkyNjMwMzQwNzM=",
-					DatabaseID:       263034073,
-					NameWithOwner:    "sourcegraph-vcr/private-user-repo-1",
-					URL:              "https://github.com/sourcegraph-vcr/private-user-repo-1",
-					IsPrivate:        true,
+					ID:               "MDEwOlJlcG9zbXRvcnkyNjMwMzQwNzM=",
+					DbtbbbseID:       263034073,
+					NbmeWithOwner:    "sourcegrbph-vcr/privbte-user-repo-1",
+					URL:              "https://github.com/sourcegrbph-vcr/privbte-user-repo-1",
+					IsPrivbte:        true,
 					ViewerPermission: "ADMIN",
 					RepositoryTopics: RepositoryTopics{Nodes: []RepositoryTopic{}},
 				},
 			},
 		},
 		{
-			name:         "list collaborator and owner affiliated repositories",
-			affiliations: []RepositoryAffiliation{AffiliationCollaborator, AffiliationOwner},
-			wantRepos: []*Repository{
+			nbme:         "list collbborbtor bnd owner bffilibted repositories",
+			bffilibtions: []RepositoryAffilibtion{AffilibtionCollbborbtor, AffilibtionOwner},
+			wbntRepos: []*Repository{
 				{
-					ID:               "MDEwOlJlcG9zaXRvcnkyNjMwMzQwNzM=",
-					DatabaseID:       263034073,
-					NameWithOwner:    "sourcegraph-vcr/private-user-repo-1",
-					URL:              "https://github.com/sourcegraph-vcr/private-user-repo-1",
-					IsPrivate:        true,
+					ID:               "MDEwOlJlcG9zbXRvcnkyNjMwMzQwNzM=",
+					DbtbbbseID:       263034073,
+					NbmeWithOwner:    "sourcegrbph-vcr/privbte-user-repo-1",
+					URL:              "https://github.com/sourcegrbph-vcr/privbte-user-repo-1",
+					IsPrivbte:        true,
 					ViewerPermission: "ADMIN",
 					RepositoryTopics: RepositoryTopics{Nodes: []RepositoryTopic{}},
 				}, {
-					ID:               "MDEwOlJlcG9zaXRvcnkyNjMwMzM5NDk=",
-					DatabaseID:       263033949,
-					NameWithOwner:    "sourcegraph-vcr/public-user-repo-1",
-					URL:              "https://github.com/sourcegraph-vcr/public-user-repo-1",
+					ID:               "MDEwOlJlcG9zbXRvcnkyNjMwMzM5NDk=",
+					DbtbbbseID:       263033949,
+					NbmeWithOwner:    "sourcegrbph-vcr/public-user-repo-1",
+					URL:              "https://github.com/sourcegrbph-vcr/public-user-repo-1",
 					ViewerPermission: "ADMIN",
 					RepositoryTopics: RepositoryTopics{Nodes: []RepositoryTopic{}},
 				},
 			},
 		},
 	}
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			client, save := newV3TestClient(t, "ListAffiliatedRepositories_"+test.name)
-			defer save()
+	for _, test := rbnge tests {
+		t.Run(test.nbme, func(t *testing.T) {
+			client, sbve := newV3TestClient(t, "ListAffilibtedRepositories_"+test.nbme)
+			defer sbve()
 
-			repos, _, _, err := client.ListAffiliatedRepositories(context.Background(), test.visibility, 1, 100, test.affiliations...)
+			repos, _, _, err := client.ListAffilibtedRepositories(context.Bbckground(), test.visibility, 1, 100, test.bffilibtions...)
 			if err != nil {
-				t.Fatal(err)
+				t.Fbtbl(err)
 			}
 
-			if diff := cmp.Diff(test.wantRepos, repos); diff != "" {
-				t.Fatalf("Repos mismatch (-want +got):\n%s", diff)
+			if diff := cmp.Diff(test.wbntRepos, repos); diff != "" {
+				t.Fbtblf("Repos mismbtch (-wbnt +got):\n%s", diff)
 			}
 		})
 	}
 }
 
-func Test_GetAuthenticatedOAuthScopes(t *testing.T) {
-	client, save := newV3TestClient(t, "GetAuthenticatedOAuthScopes")
-	defer save()
+func Test_GetAuthenticbtedOAuthScopes(t *testing.T) {
+	client, sbve := newV3TestClient(t, "GetAuthenticbtedOAuthScopes")
+	defer sbve()
 
-	scopes, err := client.GetAuthenticatedOAuthScopes(context.Background())
+	scopes, err := client.GetAuthenticbtedOAuthScopes(context.Bbckground())
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	want := []string{"admin:enterprise", "admin:gpg_key", "admin:org", "admin:org_hook", "admin:public_key", "admin:repo_hook", "delete:packages", "delete_repo", "gist", "notifications", "repo", "user", "workflow", "write:discussion", "write:packages"}
+	wbnt := []string{"bdmin:enterprise", "bdmin:gpg_key", "bdmin:org", "bdmin:org_hook", "bdmin:public_key", "bdmin:repo_hook", "delete:pbckbges", "delete_repo", "gist", "notificbtions", "repo", "user", "workflow", "write:discussion", "write:pbckbges"}
 	sort.Strings(scopes)
-	if diff := cmp.Diff(want, scopes); diff != "" {
-		t.Fatalf("Scopes mismatch (-want +got):\n%s", diff)
+	if diff := cmp.Diff(wbnt, scopes); diff != "" {
+		t.Fbtblf("Scopes mismbtch (-wbnt +got):\n%s", diff)
 	}
 }
 
-// NOTE: To update VCR for this test, please use the token of "sourcegraph-vcr"
-// for GITHUB_TOKEN, which can be found in 1Password.
-func TestListRepositoryCollaborators(t *testing.T) {
+// NOTE: To updbte VCR for this test, plebse use the token of "sourcegrbph-vcr"
+// for GITHUB_TOKEN, which cbn be found in 1Pbssword.
+func TestListRepositoryCollbborbtors(t *testing.T) {
 	tests := []struct {
-		name            string
+		nbme            string
 		owner           string
 		repo            string
-		affiliation     CollaboratorAffiliation
-		wantUsers       []*Collaborator
-		wantHasNextPage bool
+		bffilibtion     CollbborbtorAffilibtion
+		wbntUsers       []*Collbborbtor
+		wbntHbsNextPbge bool
 	}{
 		{
-			name:  "public repo",
-			owner: "sourcegraph-vcr-repos",
+			nbme:  "public repo",
+			owner: "sourcegrbph-vcr-repos",
 			repo:  "public-org-repo-1",
-			wantUsers: []*Collaborator{
+			wbntUsers: []*Collbborbtor{
 				{
-					ID:         "MDQ6VXNlcjYzMjkwODUx", // sourcegraph-vcr as owner
-					DatabaseID: 63290851,
+					ID:         "MDQ6VXNlcjYzMjkwODUx", // sourcegrbph-vcr bs owner
+					DbtbbbseID: 63290851,
 				},
 			},
-			wantHasNextPage: false,
+			wbntHbsNextPbge: fblse,
 		},
 		{
-			name:  "private repo",
-			owner: "sourcegraph-vcr-repos",
-			repo:  "private-org-repo-1",
-			wantUsers: []*Collaborator{
+			nbme:  "privbte repo",
+			owner: "sourcegrbph-vcr-repos",
+			repo:  "privbte-org-repo-1",
+			wbntUsers: []*Collbborbtor{
 				{
-					ID:         "MDQ6VXNlcjYzMjkwODUx", // sourcegraph-vcr as owner
-					DatabaseID: 63290851,
+					ID:         "MDQ6VXNlcjYzMjkwODUx", // sourcegrbph-vcr bs owner
+					DbtbbbseID: 63290851,
 				}, {
-					ID:         "MDQ6VXNlcjY2NDY0Nzcz", // sourcegraph-vcr-amy as team member
-					DatabaseID: 66464773,
+					ID:         "MDQ6VXNlcjY2NDY0Nzcz", // sourcegrbph-vcr-bmy bs tebm member
+					DbtbbbseID: 66464773,
 				}, {
-					ID:         "MDQ6VXNlcjY2NDY0OTI2", // sourcegraph-vcr-bob as outside collaborator
-					DatabaseID: 66464926,
+					ID:         "MDQ6VXNlcjY2NDY0OTI2", // sourcegrbph-vcr-bob bs outside collbborbtor
+					DbtbbbseID: 66464926,
 				}, {
-					ID:         "MDQ6VXNlcjg5NDk0ODg0", // sourcegraph-vcr-dave as team member
-					DatabaseID: 89494884,
+					ID:         "MDQ6VXNlcjg5NDk0ODg0", // sourcegrbph-vcr-dbve bs tebm member
+					DbtbbbseID: 89494884,
 				},
 			},
-			wantHasNextPage: false,
+			wbntHbsNextPbge: fblse,
 		},
 		{
-			name:        "direct collaborator outside collaborator",
-			owner:       "sourcegraph-vcr-repos",
-			repo:        "private-org-repo-1",
-			affiliation: AffiliationDirect,
-			wantUsers: []*Collaborator{
+			nbme:        "direct collbborbtor outside collbborbtor",
+			owner:       "sourcegrbph-vcr-repos",
+			repo:        "privbte-org-repo-1",
+			bffilibtion: AffilibtionDirect,
+			wbntUsers: []*Collbborbtor{
 				{
-					ID:         "MDQ6VXNlcjY2NDY0OTI2", // sourcegraph-vcr-bob as outside collaborator
-					DatabaseID: 66464926,
+					ID:         "MDQ6VXNlcjY2NDY0OTI2", // sourcegrbph-vcr-bob bs outside collbborbtor
+					DbtbbbseID: 66464926,
 				},
 			},
-			wantHasNextPage: false,
+			wbntHbsNextPbge: fblse,
 		},
 		{
-			name:        "direct collaborator repo owner",
-			owner:       "sourcegraph-vcr",
+			nbme:        "direct collbborbtor repo owner",
+			owner:       "sourcegrbph-vcr",
 			repo:        "public-user-repo-1",
-			affiliation: AffiliationDirect,
-			wantUsers: []*Collaborator{
+			bffilibtion: AffilibtionDirect,
+			wbntUsers: []*Collbborbtor{
 				{
-					ID:         "MDQ6VXNlcjYzMjkwODUx", // sourcegraph-vcr as owner
-					DatabaseID: 63290851,
+					ID:         "MDQ6VXNlcjYzMjkwODUx", // sourcegrbph-vcr bs owner
+					DbtbbbseID: 63290851,
 				},
 			},
-			wantHasNextPage: false,
+			wbntHbsNextPbge: fblse,
 		},
 		{
-			name:            "has next page is true",
-			owner:           "sourcegraph-vcr",
-			repo:            "private-repo-1",
-			affiliation:     AffiliationDirect,
-			wantUsers:       nil,
-			wantHasNextPage: true,
+			nbme:            "hbs next pbge is true",
+			owner:           "sourcegrbph-vcr",
+			repo:            "privbte-repo-1",
+			bffilibtion:     AffilibtionDirect,
+			wbntUsers:       nil,
+			wbntHbsNextPbge: true,
 		},
 	}
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			client, save := newV3TestClient(t, "ListRepositoryCollaborators_"+test.name)
-			defer save()
+	for _, test := rbnge tests {
+		t.Run(test.nbme, func(t *testing.T) {
+			client, sbve := newV3TestClient(t, "ListRepositoryCollbborbtors_"+test.nbme)
+			defer sbve()
 
-			users, hasNextPage, err := client.ListRepositoryCollaborators(context.Background(), test.owner, test.repo, 1, test.affiliation)
+			users, hbsNextPbge, err := client.ListRepositoryCollbborbtors(context.Bbckground(), test.owner, test.repo, 1, test.bffilibtion)
 			if err != nil {
-				t.Fatal(err)
+				t.Fbtbl(err)
 			}
 
-			if test.wantUsers != nil {
-				if diff := cmp.Diff(test.wantUsers, users); diff != "" {
-					t.Fatalf("Users mismatch (-want +got):\n%s", diff)
+			if test.wbntUsers != nil {
+				if diff := cmp.Diff(test.wbntUsers, users); diff != "" {
+					t.Fbtblf("Users mismbtch (-wbnt +got):\n%s", diff)
 				}
 			}
 
-			if diff := cmp.Diff(test.wantHasNextPage, hasNextPage); diff != "" {
-				t.Fatalf("HasNextPage mismatch (-want +got):\n%s", diff)
+			if diff := cmp.Diff(test.wbntHbsNextPbge, hbsNextPbge); diff != "" {
+				t.Fbtblf("HbsNextPbge mismbtch (-wbnt +got):\n%s", diff)
 			}
 		})
 	}
 }
 
-func TestGetAuthenticatedUserOrgs(t *testing.T) {
-	cli, save := newV3TestClient(t, "GetAuthenticatedUserOrgs")
-	defer save()
+func TestGetAuthenticbtedUserOrgs(t *testing.T) {
+	cli, sbve := newV3TestClient(t, "GetAuthenticbtedUserOrgs")
+	defer sbve()
 
-	ctx := context.Background()
-	orgs, _, _, err := cli.GetAuthenticatedUserOrgsForPage(ctx, 1)
+	ctx := context.Bbckground()
+	orgs, _, _, err := cli.GetAuthenticbtedUserOrgsForPbge(ctx, 1)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
 	testutil.AssertGolden(t,
-		"testdata/golden/GetAuthenticatedUserOrgs",
-		update("GetAuthenticatedUserOrgs"),
+		"testdbtb/golden/GetAuthenticbtedUserOrgs",
+		updbte("GetAuthenticbtedUserOrgs"),
 		orgs,
 	)
 }
 
-func TestGetAuthenticatedUserOrgDetailsAndMembership(t *testing.T) {
-	cli, save := newV3TestClient(t, "GetAuthenticatedUserOrgDetailsAndMembership")
-	defer save()
+func TestGetAuthenticbtedUserOrgDetbilsAndMembership(t *testing.T) {
+	cli, sbve := newV3TestClient(t, "GetAuthenticbtedUserOrgDetbilsAndMembership")
+	defer sbve()
 
-	ctx := context.Background()
-	var err error
-	orgs := make([]OrgDetailsAndMembership, 0)
-	hasNextPage := true
-	for page := 1; hasNextPage; page++ {
-		var pageOrgs []OrgDetailsAndMembership
-		pageOrgs, hasNextPage, _, err = cli.GetAuthenticatedUserOrgsDetailsAndMembership(ctx, page)
+	ctx := context.Bbckground()
+	vbr err error
+	orgs := mbke([]OrgDetbilsAndMembership, 0)
+	hbsNextPbge := true
+	for pbge := 1; hbsNextPbge; pbge++ {
+		vbr pbgeOrgs []OrgDetbilsAndMembership
+		pbgeOrgs, hbsNextPbge, _, err = cli.GetAuthenticbtedUserOrgsDetbilsAndMembership(ctx, pbge)
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
-		orgs = append(orgs, pageOrgs...)
+		orgs = bppend(orgs, pbgeOrgs...)
 	}
 
-	for _, org := range orgs {
-		if org.OrgDetails == nil {
-			t.Fatal("expected org details, got nil")
+	for _, org := rbnge orgs {
+		if org.OrgDetbils == nil {
+			t.Fbtbl("expected org detbils, got nil")
 		}
-		if org.OrgDetails.DefaultRepositoryPermission == "" {
-			t.Fatal("expected default repo permissions data")
+		if org.OrgDetbils.DefbultRepositoryPermission == "" {
+			t.Fbtbl("expected defbult repo permissions dbtb")
 		}
 		if org.OrgMembership == nil {
-			t.Fatal("expected org membership, got nil")
+			t.Fbtbl("expected org membership, got nil")
 		}
 		if org.OrgMembership.Role == "" {
-			t.Fatal("expected org membership data")
+			t.Fbtbl("expected org membership dbtb")
 		}
 	}
 
 	testutil.AssertGolden(t,
-		"testdata/golden/GetAuthenticatedUserOrgDetailsAndMembership",
-		update("GetAuthenticatedUserOrgDetailsAndMembership"),
+		"testdbtb/golden/GetAuthenticbtedUserOrgDetbilsAndMembership",
+		updbte("GetAuthenticbtedUserOrgDetbilsAndMembership"),
 		orgs,
 	)
 }
 
 func TestListOrgRepositories(t *testing.T) {
-	cli, save := newV3TestClient(t, "ListOrgRepositories")
-	defer save()
+	cli, sbve := newV3TestClient(t, "ListOrgRepositories")
+	defer sbve()
 
-	ctx := context.Background()
-	var err error
-	repos := make([]*Repository, 0)
-	hasNextPage := true
-	for page := 1; hasNextPage; page++ {
-		var pageRepos []*Repository
-		pageRepos, hasNextPage, _, err = cli.ListOrgRepositories(ctx, "sourcegraph-vcr-repos", page, "")
+	ctx := context.Bbckground()
+	vbr err error
+	repos := mbke([]*Repository, 0)
+	hbsNextPbge := true
+	for pbge := 1; hbsNextPbge; pbge++ {
+		vbr pbgeRepos []*Repository
+		pbgeRepos, hbsNextPbge, _, err = cli.ListOrgRepositories(ctx, "sourcegrbph-vcr-repos", pbge, "")
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
-		repos = append(repos, pageRepos...)
+		repos = bppend(repos, pbgeRepos...)
 	}
 
 	testutil.AssertGolden(t,
-		"testdata/golden/ListOrgRepositories",
-		update("ListOrgRepositories"),
+		"testdbtb/golden/ListOrgRepositories",
+		updbte("ListOrgRepositories"),
 		repos,
 	)
 }
 
-func TestListTeamRepositories(t *testing.T) {
-	cli, save := newV3TestClient(t, "ListTeamRepositories")
-	defer save()
+func TestListTebmRepositories(t *testing.T) {
+	cli, sbve := newV3TestClient(t, "ListTebmRepositories")
+	defer sbve()
 
-	ctx := context.Background()
-	var err error
-	repos := make([]*Repository, 0)
-	hasNextPage := true
-	for page := 1; hasNextPage; page++ {
-		var pageRepos []*Repository
-		pageRepos, hasNextPage, _, err = cli.ListTeamRepositories(ctx, "sourcegraph-vcr-repos", "private-access", page)
+	ctx := context.Bbckground()
+	vbr err error
+	repos := mbke([]*Repository, 0)
+	hbsNextPbge := true
+	for pbge := 1; hbsNextPbge; pbge++ {
+		vbr pbgeRepos []*Repository
+		pbgeRepos, hbsNextPbge, _, err = cli.ListTebmRepositories(ctx, "sourcegrbph-vcr-repos", "privbte-bccess", pbge)
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
-		repos = append(repos, pageRepos...)
+		repos = bppend(repos, pbgeRepos...)
 	}
 
 	testutil.AssertGolden(t,
-		"testdata/golden/ListTeamRepositories",
-		update("ListTeamRepositories"),
+		"testdbtb/golden/ListTebmRepositories",
+		updbte("ListTebmRepositories"),
 		repos,
 	)
 }
 
-func TestGetAuthenticatedUserTeams(t *testing.T) {
-	cli, save := newV3TestClient(t, "GetAuthenticatedUserTeams")
-	defer save()
+func TestGetAuthenticbtedUserTebms(t *testing.T) {
+	cli, sbve := newV3TestClient(t, "GetAuthenticbtedUserTebms")
+	defer sbve()
 
-	ctx := context.Background()
-	var err error
-	teams := make([]*Team, 0)
-	hasNextPage := true
-	for page := 1; hasNextPage; page++ {
-		var pageTeams []*Team
-		pageTeams, hasNextPage, _, err = cli.GetAuthenticatedUserTeams(ctx, page)
+	ctx := context.Bbckground()
+	vbr err error
+	tebms := mbke([]*Tebm, 0)
+	hbsNextPbge := true
+	for pbge := 1; hbsNextPbge; pbge++ {
+		vbr pbgeTebms []*Tebm
+		pbgeTebms, hbsNextPbge, _, err = cli.GetAuthenticbtedUserTebms(ctx, pbge)
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
-		teams = append(teams, pageTeams...)
+		tebms = bppend(tebms, pbgeTebms...)
 	}
 
 	testutil.AssertGolden(t,
-		"testdata/golden/GetAuthenticatedUserTeams",
-		update("GetAuthenticatedUserTeams"),
-		teams,
+		"testdbtb/golden/GetAuthenticbtedUserTebms",
+		updbte("GetAuthenticbtedUserTebms"),
+		tebms,
 	)
 }
 
-func TestListRepositoryTeams(t *testing.T) {
-	cli, save := newV3TestClient(t, "ListRepositoryTeams")
-	defer save()
+func TestListRepositoryTebms(t *testing.T) {
+	cli, sbve := newV3TestClient(t, "ListRepositoryTebms")
+	defer sbve()
 
-	ctx := context.Background()
-	var err error
-	teams := make([]*Team, 0)
-	hasNextPage := true
-	for page := 1; hasNextPage; page++ {
-		var pageTeams []*Team
-		pageTeams, hasNextPage, err = cli.ListRepositoryTeams(ctx, "sourcegraph-vcr-repos", "private-org-repo-1", page)
+	ctx := context.Bbckground()
+	vbr err error
+	tebms := mbke([]*Tebm, 0)
+	hbsNextPbge := true
+	for pbge := 1; hbsNextPbge; pbge++ {
+		vbr pbgeTebms []*Tebm
+		pbgeTebms, hbsNextPbge, err = cli.ListRepositoryTebms(ctx, "sourcegrbph-vcr-repos", "privbte-org-repo-1", pbge)
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
-		teams = append(teams, pageTeams...)
+		tebms = bppend(tebms, pbgeTebms...)
 	}
 
 	testutil.AssertGolden(t,
-		"testdata/golden/ListRepositoryTeams",
-		update("ListRepositoryTeams"),
-		teams,
+		"testdbtb/golden/ListRepositoryTebms",
+		updbte("ListRepositoryTebms"),
+		tebms,
 	)
 }
 
-func TestGetOrganization(t *testing.T) {
-	cli, save := newV3TestClient(t, "GetOrganization")
-	defer save()
+func TestGetOrgbnizbtion(t *testing.T) {
+	cli, sbve := newV3TestClient(t, "GetOrgbnizbtion")
+	defer sbve()
 
-	t.Run("real org", func(t *testing.T) {
-		ctx := context.Background()
-		org, err := cli.GetOrganization(ctx, "sourcegraph")
+	t.Run("rebl org", func(t *testing.T) {
+		ctx := context.Bbckground()
+		org, err := cli.GetOrgbnizbtion(ctx, "sourcegrbph")
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
 		if org == nil {
-			t.Fatal("expected org, got nil")
+			t.Fbtbl("expected org, got nil")
 		}
-		if org.Login != "sourcegraph" {
-			t.Fatalf("expected org 'sourcegraph', got %+v", org)
+		if org.Login != "sourcegrbph" {
+			t.Fbtblf("expected org 'sourcegrbph', got %+v", org)
 		}
 	})
 
-	t.Run("actually an user", func(t *testing.T) {
-		ctx := context.Background()
-		_, err := cli.GetOrganization(ctx, "sourcegraph-vcr")
+	t.Run("bctublly bn user", func(t *testing.T) {
+		ctx := context.Bbckground()
+		_, err := cli.GetOrgbnizbtion(ctx, "sourcegrbph-vcr")
 		if err == nil {
-			t.Fatal("expected error, got nil")
+			t.Fbtbl("expected error, got nil")
 		}
 		if !IsNotFound(err) {
-			t.Fatalf("expected not found, got %q", err.Error())
+			t.Fbtblf("expected not found, got %q", err.Error())
 		}
 	})
 }
 
 func TestGetRepository(t *testing.T) {
-	rcache.SetupForTest(t)
-	ratelimit.SetupForTest(t)
+	rcbche.SetupForTest(t)
+	rbtelimit.SetupForTest(t)
 
-	cli, save := newV3TestClient(t, "GetRepository")
-	defer save()
+	cli, sbve := newV3TestClient(t, "GetRepository")
+	defer sbve()
 
-	t.Run("cached-response", func(t *testing.T) {
-		var remaining int
+	t.Run("cbched-response", func(t *testing.T) {
+		vbr rembining int
 
 		t.Run("first run", func(t *testing.T) {
-			repo, err := cli.GetRepository(context.Background(), "sourcegraph", "sourcegraph")
+			repo, err := cli.GetRepository(context.Bbckground(), "sourcegrbph", "sourcegrbph")
 			if err != nil {
-				t.Fatal(err)
+				t.Fbtbl(err)
 			}
 
 			if repo == nil {
-				t.Fatal("expected repo, but got nil")
+				t.Fbtbl("expected repo, but got nil")
 			}
 
-			want := "sourcegraph/sourcegraph"
-			if repo.NameWithOwner != want {
-				t.Fatalf("expected NameWithOwner %s, but got %s", want, repo.NameWithOwner)
+			wbnt := "sourcegrbph/sourcegrbph"
+			if repo.NbmeWithOwner != wbnt {
+				t.Fbtblf("expected NbmeWithOwner %s, but got %s", wbnt, repo.NbmeWithOwner)
 			}
 
-			testutil.AssertGolden(t, "testdata/golden/"+t.Name(), update("GetRepository"), repo)
+			testutil.AssertGolden(t, "testdbtb/golden/"+t.Nbme(), updbte("GetRepository"), repo)
 
-			remaining, _, _, _ = cli.ExternalRateLimiter().Get()
+			rembining, _, _, _ = cli.ExternblRbteLimiter().Get()
 		})
 
 		t.Run("second run", func(t *testing.T) {
-			repo, err := cli.GetRepository(context.Background(), "sourcegraph", "sourcegraph")
+			repo, err := cli.GetRepository(context.Bbckground(), "sourcegrbph", "sourcegrbph")
 			if err != nil {
-				t.Fatal(err)
+				t.Fbtbl(err)
 			}
 
 			if repo == nil {
-				t.Fatal("expected repo, but got nil")
+				t.Fbtbl("expected repo, but got nil")
 			}
 
-			want := "sourcegraph/sourcegraph"
-			if repo.NameWithOwner != want {
-				t.Fatalf("expected NameWithOwner %s, but got %s", want, repo.NameWithOwner)
+			wbnt := "sourcegrbph/sourcegrbph"
+			if repo.NbmeWithOwner != wbnt {
+				t.Fbtblf("expected NbmeWithOwner %s, but got %s", wbnt, repo.NbmeWithOwner)
 			}
 
-			testutil.AssertGolden(t, "testdata/golden/"+t.Name(), update("GetRepository"), repo)
+			testutil.AssertGolden(t, "testdbtb/golden/"+t.Nbme(), updbte("GetRepository"), repo)
 
-			remaining2, _, _, _ := cli.ExternalRateLimiter().Get()
-			if remaining2 < remaining {
-				t.Fatalf("expected cached repsonse, but API quota used")
+			rembining2, _, _, _ := cli.ExternblRbteLimiter().Get()
+			if rembining2 < rembining {
+				t.Fbtblf("expected cbched repsonse, but API quotb used")
 			}
 		})
 	})
 
 	t.Run("repo not found", func(t *testing.T) {
-		repo, err := cli.GetRepository(context.Background(), "owner", "repo")
+		repo, err := cli.GetRepository(context.Bbckground(), "owner", "repo")
 		if !IsNotFound(err) {
-			t.Errorf("got err == %v, want IsNotFound(err) == true", err)
+			t.Errorf("got err == %v, wbnt IsNotFound(err) == true", err)
 		}
 		if err != ErrRepoNotFound {
-			t.Errorf("got err == %q, want ErrNotFound", err)
+			t.Errorf("got err == %q, wbnt ErrNotFound", err)
 		}
 		if repo != nil {
 			t.Error("repo != nil")
 		}
-		testutil.AssertGolden(t, "testdata/golden/"+t.Name(), update("GetRepository"), repo)
+		testutil.AssertGolden(t, "testdbtb/golden/"+t.Nbme(), updbte("GetRepository"), repo)
 	})
 
 	t.Run("forked repo", func(t *testing.T) {
-		repo, err := cli.GetRepository(context.Background(), "sgtest", "sourcegraph")
+		repo, err := cli.GetRepository(context.Bbckground(), "sgtest", "sourcegrbph")
 		require.NoError(t, err)
 
-		testutil.AssertGolden(t, "testdata/golden/"+t.Name(), update("GetRepository"), repo)
+		testutil.AssertGolden(t, "testdbtb/golden/"+t.Nbme(), updbte("GetRepository"), repo)
 	})
 }
 
-// ListOrganizations is primarily used for GitHub Enterprise clients. As a result we test against
-// ghe.sgdev.org.  To update this test, access the GitHub Enterprise Admin Account (ghe.sgdev.org)
-// with username milton in 1password. The token used for this test is named sourcegraph-vcr-token
-// and is also saved in 1Password under this account.
-func TestListOrganizations(t *testing.T) {
-	// Note: Testing against enterprise does not return the x-rate-remaining header at the moment,
-	// as a result it is not possible to assert the remaining API calls after each APi request the
-	// way we do in TestGetRepository.
-	t.Run("enterprise-integration-cached-response", func(t *testing.T) {
-		rcache.SetupForTest(t)
-		ratelimit.SetupForTest(t)
+// ListOrgbnizbtions is primbrily used for GitHub Enterprise clients. As b result we test bgbinst
+// ghe.sgdev.org.  To updbte this test, bccess the GitHub Enterprise Admin Account (ghe.sgdev.org)
+// with usernbme milton in 1pbssword. The token used for this test is nbmed sourcegrbph-vcr-token
+// bnd is blso sbved in 1Pbssword under this bccount.
+func TestListOrgbnizbtions(t *testing.T) {
+	// Note: Testing bgbinst enterprise does not return the x-rbte-rembining hebder bt the moment,
+	// bs b result it is not possible to bssert the rembining API cblls bfter ebch APi request the
+	// wby we do in TestGetRepository.
+	t.Run("enterprise-integrbtion-cbched-response", func(t *testing.T) {
+		rcbche.SetupForTest(t)
+		rbtelimit.SetupForTest(t)
 
-		cli, save := newV3TestEnterpriseClient(t, "ListOrganizations")
-		defer save()
+		cli, sbve := newV3TestEnterpriseClient(t, "ListOrgbnizbtions")
+		defer sbve()
 
 		t.Run("first run", func(t *testing.T) {
-			orgs, nextSince, err := cli.ListOrganizations(context.Background(), 0)
+			orgs, nextSince, err := cli.ListOrgbnizbtions(context.Bbckground(), 0)
 			if err != nil {
-				t.Fatal(err)
+				t.Fbtbl(err)
 			}
 
 			if orgs == nil {
-				t.Fatal("expected orgs but got nil")
+				t.Fbtbl("expected orgs but got nil")
 			}
 
 			if len(orgs) != 100 {
-				t.Fatalf("expected 100 orgs but got %d", len(orgs))
+				t.Fbtblf("expected 100 orgs but got %d", len(orgs))
 			}
 
 			if nextSince < 1 {
-				t.Fatalf("expected nextSince to be a positive int but got %v", nextSince)
+				t.Fbtblf("expected nextSince to be b positive int but got %v", nextSince)
 			}
 		})
 
 		t.Run("second run", func(t *testing.T) {
-			// Make the same API call again. This should hit the cache.
-			orgs, nextSince, err := cli.ListOrganizations(context.Background(), 0)
+			// Mbke the sbme API cbll bgbin. This should hit the cbche.
+			orgs, nextSince, err := cli.ListOrgbnizbtions(context.Bbckground(), 0)
 			if err != nil {
-				t.Fatal(err)
+				t.Fbtbl(err)
 			}
 
 			if orgs == nil {
-				t.Fatal("expected orgs but got nil")
+				t.Fbtbl("expected orgs but got nil")
 			}
 
 			if len(orgs) != 100 {
-				t.Fatalf("expected 100 orgs but got %d", len(orgs))
+				t.Fbtblf("expected 100 orgs but got %d", len(orgs))
 			}
 
 			if nextSince < 1 {
-				t.Fatalf("expected nextSince to be a positive int but got %v", nextSince)
+				t.Fbtblf("expected nextSince to be b positive int but got %v", nextSince)
 			}
 		})
 	})
 
-	t.Run("enterprise-pagination", func(t *testing.T) {
-		rcache.SetupForTest(t)
-		ratelimit.SetupForTest(t)
+	t.Run("enterprise-pbginbtion", func(t *testing.T) {
+		rcbche.SetupForTest(t)
+		rbtelimit.SetupForTest(t)
 
-		mockOrgs := make([]*Org, 200)
+		mockOrgs := mbke([]*Org, 200)
 
 		for i := 0; i < 200; i++ {
 			mockOrgs[i] = &Org{
@@ -618,49 +618,49 @@ func TestListOrganizations(t *testing.T) {
 			}
 		}
 
-		testServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			val, ok := r.URL.Query()["since"]
+		testServer := httptest.NewServer(http.HbndlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			vbl, ok := r.URL.Query()["since"]
 			if !ok {
-				t.Fatal(`unexpected test scenario, no query parameter "since"`)
+				t.Fbtbl(`unexpected test scenbrio, no query pbrbmeter "since"`)
 			}
 
 			writeJson := func(orgs []*Org) {
-				data, err := json.Marshal(orgs)
+				dbtb, err := json.Mbrshbl(orgs)
 				if err != nil {
-					t.Fatalf("failed to marshal orgs into json: %v", err)
+					t.Fbtblf("fbiled to mbrshbl orgs into json: %v", err)
 				}
 
-				_, err = w.Write(data)
+				_, err = w.Write(dbtb)
 				if err != nil {
-					t.Fatalf("failed to write response: %v", err)
+					t.Fbtblf("fbiled to write response: %v", err)
 				}
 			}
 
-			switch val[0] {
-			case "0":
+			switch vbl[0] {
+			cbse "0":
 				writeJson(mockOrgs[0:100])
-			case "100":
+			cbse "100":
 				writeJson(mockOrgs[100:])
-			case "200":
+			cbse "200":
 				writeJson([]*Org{})
 			}
 		}))
 
-		uri, _ := url.Parse(testServer.URL)
+		uri, _ := url.Pbrse(testServer.URL)
 		testCli := NewV3Client(logtest.Scoped(t), "Test", uri, gheToken, testServer.Client())
-		testCli.internalRateLimiter = ratelimit.NewInstrumentedLimiter("githubv3", rate.NewLimiter(100, 10))
+		testCli.internblRbteLimiter = rbtelimit.NewInstrumentedLimiter("githubv3", rbte.NewLimiter(100, 10))
 
 		runTest := func(since int, expectedNextSince int, expectedOrgs []*Org) {
-			orgs, nextSince, err := testCli.ListOrganizations(context.Background(), since)
+			orgs, nextSince, err := testCli.ListOrgbnizbtions(context.Bbckground(), since)
 			if err != nil {
-				t.Fatal(err)
+				t.Fbtbl(err)
 			}
 			if nextSince != expectedNextSince {
-				t.Fatalf("expected nextSince: %d but got %d", nextSince, expectedNextSince)
+				t.Fbtblf("expected nextSince: %d but got %d", nextSince, expectedNextSince)
 			}
 
 			if diff := cmp.Diff(expectedOrgs, orgs); diff != "" {
-				t.Fatalf("mismatch in expected orgs and orgs received in response: (-want +got):\n%s", diff)
+				t.Fbtblf("mismbtch in expected orgs bnd orgs received in response: (-wbnt +got):\n%s", diff)
 			}
 		}
 
@@ -680,375 +680,375 @@ func TestListOrganizations(t *testing.T) {
 
 func TestListMembers(t *testing.T) {
 	tests := []struct {
-		name        string
-		fn          func(*V3Client) ([]*Collaborator, error)
-		wantMembers []*Collaborator
+		nbme        string
+		fn          func(*V3Client) ([]*Collbborbtor, error)
+		wbntMembers []*Collbborbtor
 	}{{
-		name: "org members",
-		fn: func(cli *V3Client) ([]*Collaborator, error) {
-			members, _, err := cli.ListOrganizationMembers(context.Background(), "sourcegraph-vcr-repos", 1, false)
+		nbme: "org members",
+		fn: func(cli *V3Client) ([]*Collbborbtor, error) {
+			members, _, err := cli.ListOrgbnizbtionMembers(context.Bbckground(), "sourcegrbph-vcr-repos", 1, fblse)
 			return members, err
 		},
-		wantMembers: []*Collaborator{
-			{ID: "MDQ6VXNlcjYzMjkwODUx", DatabaseID: 63290851}, // sourcegraph-vcr as owner
-			{ID: "MDQ6VXNlcjY2NDY0Nzcz", DatabaseID: 66464773}, // sourcegraph-vcr-amy
-			{ID: "MDQ6VXNlcjg5NDk0ODg0", DatabaseID: 89494884}, // sourcegraph-vcr-dave
+		wbntMembers: []*Collbborbtor{
+			{ID: "MDQ6VXNlcjYzMjkwODUx", DbtbbbseID: 63290851}, // sourcegrbph-vcr bs owner
+			{ID: "MDQ6VXNlcjY2NDY0Nzcz", DbtbbbseID: 66464773}, // sourcegrbph-vcr-bmy
+			{ID: "MDQ6VXNlcjg5NDk0ODg0", DbtbbbseID: 89494884}, // sourcegrbph-vcr-dbve
 		},
 	}, {
-		name: "org admins",
-		fn: func(cli *V3Client) ([]*Collaborator, error) {
-			members, _, err := cli.ListOrganizationMembers(context.Background(), "sourcegraph-vcr-repos", 1, true)
+		nbme: "org bdmins",
+		fn: func(cli *V3Client) ([]*Collbborbtor, error) {
+			members, _, err := cli.ListOrgbnizbtionMembers(context.Bbckground(), "sourcegrbph-vcr-repos", 1, true)
 			return members, err
 		},
-		wantMembers: []*Collaborator{
-			{ID: "MDQ6VXNlcjYzMjkwODUx", DatabaseID: 63290851}, // sourcegraph-vcr as owner
+		wbntMembers: []*Collbborbtor{
+			{ID: "MDQ6VXNlcjYzMjkwODUx", DbtbbbseID: 63290851}, // sourcegrbph-vcr bs owner
 		},
 	}, {
-		name: "team members",
-		fn: func(cli *V3Client) ([]*Collaborator, error) {
-			members, _, err := cli.ListTeamMembers(context.Background(), "sourcegraph-vcr-repos", "private-access", 1)
+		nbme: "tebm members",
+		fn: func(cli *V3Client) ([]*Collbborbtor, error) {
+			members, _, err := cli.ListTebmMembers(context.Bbckground(), "sourcegrbph-vcr-repos", "privbte-bccess", 1)
 			return members, err
 		},
-		wantMembers: []*Collaborator{
-			{ID: "MDQ6VXNlcjYzMjkwODUx", DatabaseID: 63290851}, // sourcegraph-vcr
-			{ID: "MDQ6VXNlcjY2NDY0Nzcz", DatabaseID: 66464773}, // sourcegraph-vcr-amy
+		wbntMembers: []*Collbborbtor{
+			{ID: "MDQ6VXNlcjYzMjkwODUx", DbtbbbseID: 63290851}, // sourcegrbph-vcr
+			{ID: "MDQ6VXNlcjY2NDY0Nzcz", DbtbbbseID: 66464773}, // sourcegrbph-vcr-bmy
 		},
 	}}
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			cli, save := newV3TestClient(t, t.Name())
-			defer save()
+	for _, test := rbnge tests {
+		t.Run(test.nbme, func(t *testing.T) {
+			cli, sbve := newV3TestClient(t, t.Nbme())
+			defer sbve()
 
 			members, err := test.fn(cli)
 			if err != nil {
-				t.Fatal(err)
+				t.Fbtbl(err)
 			}
 
-			if diff := cmp.Diff(test.wantMembers, members); diff != "" {
-				t.Fatal(diff)
+			if diff := cmp.Diff(test.wbntMembers, members); diff != "" {
+				t.Fbtbl(diff)
 			}
 		})
 	}
 }
 
-func TestV3Client_WithAuthenticator(t *testing.T) {
-	uri, err := url.Parse("https://github.com")
+func TestV3Client_WithAuthenticbtor(t *testing.T) {
+	uri, err := url.Pbrse("https://github.com")
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
 	oldClient := &V3Client{
 		log:    logtest.Scoped(t),
-		apiURL: uri,
-		auth:   &auth.OAuthBearerToken{Token: "old_token"},
+		bpiURL: uri,
+		buth:   &buth.OAuthBebrerToken{Token: "old_token"},
 	}
 
-	newToken := &auth.OAuthBearerToken{Token: "new_token"}
-	newClient := oldClient.WithAuthenticator(newToken)
+	newToken := &buth.OAuthBebrerToken{Token: "new_token"}
+	newClient := oldClient.WithAuthenticbtor(newToken)
 	if oldClient == newClient {
-		t.Fatal("both clients have the same address")
+		t.Fbtbl("both clients hbve the sbme bddress")
 	}
 
-	if newClient.auth != newToken {
-		t.Fatalf("token: want %p but got %p", newToken, newClient.auth)
+	if newClient.buth != newToken {
+		t.Fbtblf("token: wbnt %p but got %p", newToken, newClient.buth)
 	}
 }
 
 func TestV3Client_Fork(t *testing.T) {
-	ctx := context.Background()
-	testName := func(t *testing.T) string {
-		return strings.ReplaceAll(t.Name(), "/", "_")
+	ctx := context.Bbckground()
+	testNbme := func(t *testing.T) string {
+		return strings.ReplbceAll(t.Nbme(), "/", "_")
 	}
 
 	t.Run("success", func(t *testing.T) {
-		// For this test, we only need a repository that can be forked into the
-		// user's namespace and sourcegraph-testing: it doesn't matter whether it
-		// already has been or not because of the way the GitHub API operates.
-		// We'll use github.com/sourcegraph/automation-testing as our guinea pig.
+		// For this test, we only need b repository thbt cbn be forked into the
+		// user's nbmespbce bnd sourcegrbph-testing: it doesn't mbtter whether it
+		// blrebdy hbs been or not becbuse of the wby the GitHub API operbtes.
+		// We'll use github.com/sourcegrbph/butombtion-testing bs our guineb pig.
 		//
-		// Note: If you're running this test with `-update=success`, it will fail because the repo
-		// is already forked here at:
+		// Note: If you're running this test with `-updbte=success`, it will fbil becbuse the repo
+		// is blrebdy forked here bt:
 		//
-		// https://github.com/sourcegraph-testing/sourcegraph-automation-testing
+		// https://github.com/sourcegrbph-testing/sourcegrbph-butombtion-testing
 		//
-		// Request an admin to delete the fork and then run the test again with `-update=success`
-		for name, org := range map[string]*string{
+		// Request bn bdmin to delete the fork bnd then run the test bgbin with `-updbte=success`
+		for nbme, org := rbnge mbp[string]*string{
 			"user":                nil,
-			"sourcegraph-testing": pointers.Ptr("sourcegraph-testing"),
+			"sourcegrbph-testing": pointers.Ptr("sourcegrbph-testing"),
 		} {
-			t.Run(name, func(t *testing.T) {
-				testName := testName(t)
-				client, save := newV3TestClient(t, testName)
-				defer save()
+			t.Run(nbme, func(t *testing.T) {
+				testNbme := testNbme(t)
+				client, sbve := newV3TestClient(t, testNbme)
+				defer sbve()
 
-				fork, err := client.Fork(ctx, "sourcegraph", "automation-testing", org, "sourcegraph-automation-testing")
+				fork, err := client.Fork(ctx, "sourcegrbph", "butombtion-testing", org, "sourcegrbph-butombtion-testing")
 				require.Nil(t, err)
 				require.NotNil(t, fork)
 				if org != nil {
 					owner, err := fork.Owner()
 					require.Nil(t, err)
-					require.Equal(t, *org, owner)
+					require.Equbl(t, *org, owner)
 				}
 
-				testutil.AssertGolden(t, filepath.Join("testdata", "golden", testName), update(testName), fork)
+				testutil.AssertGolden(t, filepbth.Join("testdbtb", "golden", testNbme), updbte(testNbme), fork)
 			})
 		}
 	})
 
-	t.Run("failure", func(t *testing.T) {
-		// For this test, we need a repository that cannot be forked. Conveniently,
-		// we have one at github.com/sourcegraph-testing/unforkable.
-		testName := testName(t)
-		client, save := newV3TestClient(t, testName)
-		defer save()
+	t.Run("fbilure", func(t *testing.T) {
+		// For this test, we need b repository thbt cbnnot be forked. Conveniently,
+		// we hbve one bt github.com/sourcegrbph-testing/unforkbble.
+		testNbme := testNbme(t)
+		client, sbve := newV3TestClient(t, testNbme)
+		defer sbve()
 
-		fork, err := client.Fork(ctx, "sourcegraph-testing", "unforkable", nil, "sourcegraph-testing-unforkable")
+		fork, err := client.Fork(ctx, "sourcegrbph-testing", "unforkbble", nil, "sourcegrbph-testing-unforkbble")
 		require.NotNil(t, err)
 		require.Nil(t, fork)
 
-		testutil.AssertGolden(t, filepath.Join("testdata", "golden", testName), update(testName), fork)
+		testutil.AssertGolden(t, filepbth.Join("testdbtb", "golden", testNbme), updbte(testNbme), fork)
 	})
 }
 
 func TestV3Client_GetRef(t *testing.T) {
-	ctx := context.Background()
+	ctx := context.Bbckground()
 	t.Run("success", func(t *testing.T) {
-		cli, save := newV3TestClient(t, "TestV3Client_GetRef_success")
-		defer save()
+		cli, sbve := newV3TestClient(t, "TestV3Client_GetRef_success")
+		defer sbve()
 
-		// For this test, we need the ref for a branch that exists. We'll use the
-		// "always-open-pr" branch of https://github.com/sourcegraph/automation-testing.
-		commit, err := cli.GetRef(ctx, "sourcegraph", "automation-testing", "refs/heads/always-open-pr")
-		assert.Nil(t, err)
-		assert.NotNil(t, commit)
+		// For this test, we need the ref for b brbnch thbt exists. We'll use the
+		// "blwbys-open-pr" brbnch of https://github.com/sourcegrbph/butombtion-testing.
+		commit, err := cli.GetRef(ctx, "sourcegrbph", "butombtion-testing", "refs/hebds/blwbys-open-pr")
+		bssert.Nil(t, err)
+		bssert.NotNil(t, commit)
 
-		// Check that a couple properties on the commit are what we expect.
-		assert.Equal(t, commit.SHA, "37406e7dfa4466b80d1da183d6477aac16b1e58c")
-		assert.Equal(t, commit.URL, "https://api.github.com/repos/sourcegraph/automation-testing/commits/37406e7dfa4466b80d1da183d6477aac16b1e58c")
-		assert.Equal(t, commit.Commit.Author.Name, "Thorsten Ball")
+		// Check thbt b couple properties on the commit bre whbt we expect.
+		bssert.Equbl(t, commit.SHA, "37406e7dfb4466b80d1db183d6477bbc16b1e58c")
+		bssert.Equbl(t, commit.URL, "https://bpi.github.com/repos/sourcegrbph/butombtion-testing/commits/37406e7dfb4466b80d1db183d6477bbc16b1e58c")
+		bssert.Equbl(t, commit.Commit.Author.Nbme, "Thorsten Bbll")
 
-		testutil.AssertGolden(t, filepath.Join("testdata", "golden", "TestV3Client_GetRef_success"), update("TestV3Client_GetRef_success"), commit)
+		testutil.AssertGolden(t, filepbth.Join("testdbtb", "golden", "TestV3Client_GetRef_success"), updbte("TestV3Client_GetRef_success"), commit)
 	})
 
-	t.Run("failure", func(t *testing.T) {
-		cli, save := newV3TestClient(t, "TestV3Client_GetRef_failure")
-		defer save()
+	t.Run("fbilure", func(t *testing.T) {
+		cli, sbve := newV3TestClient(t, "TestV3Client_GetRef_fbilure")
+		defer sbve()
 
-		// For this test, we need the ref for a branch that definitely does not exist.
-		nonexistentBranch := "refs/heads/butterfly-sponge-sandwich-rotation-technique-12345678-lol"
-		commit, err := cli.GetRef(ctx, "sourcegraph", "automation-testing", nonexistentBranch)
-		assert.Nil(t, commit)
-		assert.NotNil(t, err)
-		assert.ErrorContains(t, err, "No commit found for SHA: "+nonexistentBranch)
+		// For this test, we need the ref for b brbnch thbt definitely does not exist.
+		nonexistentBrbnch := "refs/hebds/butterfly-sponge-sbndwich-rotbtion-technique-12345678-lol"
+		commit, err := cli.GetRef(ctx, "sourcegrbph", "butombtion-testing", nonexistentBrbnch)
+		bssert.Nil(t, commit)
+		bssert.NotNil(t, err)
+		bssert.ErrorContbins(t, err, "No commit found for SHA: "+nonexistentBrbnch)
 
-		testutil.AssertGolden(t, filepath.Join("testdata", "golden", "TestV3Client_GetRef_failure"), update("TestV3Client_GetRef_failure"), err)
+		testutil.AssertGolden(t, filepbth.Join("testdbtb", "golden", "TestV3Client_GetRef_fbilure"), updbte("TestV3Client_GetRef_fbilure"), err)
 	})
 }
 
-func TestV3Client_CreateCommit(t *testing.T) {
-	ctx := context.Background()
+func TestV3Client_CrebteCommit(t *testing.T) {
+	ctx := context.Bbckground()
 	t.Run("success", func(t *testing.T) {
-		cli, save := newV3TestClient(t, "TestV3Client_CreateCommit_success")
-		defer save()
+		cli, sbve := newV3TestClient(t, "TestV3Client_CrebteCommit_success")
+		defer sbve()
 
-		// For this test, we'll create a commit on
-		// https://github.com/sourcegraph/automation-testing based on this existing commit:
-		// https://github.com/sourcegraph/automation-testing/commit/37406e7dfa4466b80d1da183d6477aac16b1e58c.
-		treeSha := "851e666a00cd0cf74f1558ac5664fe431d3b1935"
-		parentSha := "9d04a0d8733dafbb5d75e594a9ec525c49dfc975"
-		author := &restAuthorCommiter{
-			Name:  "Sourcegraph VCR Test",
-			Email: "dev@sourcegraph.com",
-			Date:  "2023-06-01T12:00:00Z",
+		// For this test, we'll crebte b commit on
+		// https://github.com/sourcegrbph/butombtion-testing bbsed on this existing commit:
+		// https://github.com/sourcegrbph/butombtion-testing/commit/37406e7dfb4466b80d1db183d6477bbc16b1e58c.
+		treeShb := "851e666b00cd0cf74f1558bc5664fe431d3b1935"
+		pbrentShb := "9d04b0d8733dbfbb5d75e594b9ec525c49dfc975"
+		buthor := &restAuthorCommiter{
+			Nbme:  "Sourcegrbph VCR Test",
+			Embil: "dev@sourcegrbph.com",
+			Dbte:  "2023-06-01T12:00:00Z",
 		}
-		commit, err := cli.CreateCommit(ctx, "sourcegraph", "automation-testing", "I'm a new commit from a VCR test!", treeSha, []string{parentSha}, author, author)
-		assert.Nil(t, err)
-		assert.NotNil(t, commit)
+		commit, err := cli.CrebteCommit(ctx, "sourcegrbph", "butombtion-testing", "I'm b new commit from b VCR test!", treeShb, []string{pbrentShb}, buthor, buthor)
+		bssert.Nil(t, err)
+		bssert.NotNil(t, commit)
 
-		// Check that a couple properties on the commit are what we expect.
-		// The SHA will be different every time, so we just check that it's not the
-		// same as the commit we based this one on.
-		assert.NotEqual(t, commit.SHA, "37406e7dfa4466b80d1da183d6477aac16b1e58c")
-		assert.Equal(t, commit.Message, "I'm a new commit from a VCR test!")
-		assert.Equal(t, commit.Tree.SHA, treeSha)
-		assert.Len(t, commit.Parents, 1)
-		assert.Equal(t, commit.Parents[0].SHA, parentSha)
-		assert.Equal(t, commit.Author, author)
-		assert.Equal(t, commit.Committer, author)
+		// Check thbt b couple properties on the commit bre whbt we expect.
+		// The SHA will be different every time, so we just check thbt it's not the
+		// sbme bs the commit we bbsed this one on.
+		bssert.NotEqubl(t, commit.SHA, "37406e7dfb4466b80d1db183d6477bbc16b1e58c")
+		bssert.Equbl(t, commit.Messbge, "I'm b new commit from b VCR test!")
+		bssert.Equbl(t, commit.Tree.SHA, treeShb)
+		bssert.Len(t, commit.Pbrents, 1)
+		bssert.Equbl(t, commit.Pbrents[0].SHA, pbrentShb)
+		bssert.Equbl(t, commit.Author, buthor)
+		bssert.Equbl(t, commit.Committer, buthor)
 
-		testutil.AssertGolden(t, filepath.Join("testdata", "golden", "TestV3Client_CreateCommit_success"), update("TestV3Client_CreateCommit_success"), commit)
+		testutil.AssertGolden(t, filepbth.Join("testdbtb", "golden", "TestV3Client_CrebteCommit_success"), updbte("TestV3Client_CrebteCommit_success"), commit)
 	})
 
-	t.Run("failure", func(t *testing.T) {
-		cli, save := newV3TestClient(t, "TestV3Client_CreateCommit_failure")
-		defer save()
+	t.Run("fbilure", func(t *testing.T) {
+		cli, sbve := newV3TestClient(t, "TestV3Client_CrebteCommit_fbilure")
+		defer sbve()
 
-		// For this test, we'll create a commit on
-		// https://github.com/sourcegraph/automation-testing with bogus values for several of its properties.
-		commit, err := cli.CreateCommit(ctx, "sourcegraph", "automation-testing", "I'm not going to work!", "loltotallynotatree", []string{"loltotallynotacommit"}, nil, nil)
-		assert.Nil(t, commit)
-		assert.NotNil(t, err)
-		assert.ErrorContains(t, err, "The tree parameter must be exactly 40 characters and contain only [0-9a-f]")
+		// For this test, we'll crebte b commit on
+		// https://github.com/sourcegrbph/butombtion-testing with bogus vblues for severbl of its properties.
+		commit, err := cli.CrebteCommit(ctx, "sourcegrbph", "butombtion-testing", "I'm not going to work!", "loltotbllynotbtree", []string{"loltotbllynotbcommit"}, nil, nil)
+		bssert.Nil(t, commit)
+		bssert.NotNil(t, err)
+		bssert.ErrorContbins(t, err, "The tree pbrbmeter must be exbctly 40 chbrbcters bnd contbin only [0-9b-f]")
 
-		testutil.AssertGolden(t, filepath.Join("testdata", "golden", "TestV3Client_CreateCommit_failure"), update("TestV3Client_CreateCommit_failure"), err)
+		testutil.AssertGolden(t, filepbth.Join("testdbtb", "golden", "TestV3Client_CrebteCommit_fbilure"), updbte("TestV3Client_CrebteCommit_fbilure"), err)
 	})
 }
 
-func TestV3Client_UpdateRef(t *testing.T) {
-	ctx := context.Background()
+func TestV3Client_UpdbteRef(t *testing.T) {
+	ctx := context.Bbckground()
 	t.Run("success", func(t *testing.T) {
-		cli, save := newV3TestClient(t, "TestV3Client_UpdateRef_success")
-		defer save()
+		cli, sbve := newV3TestClient(t, "TestV3Client_UpdbteRef_success")
+		defer sbve()
 
-		// For this test, we'll use the "ready-to-update" branch of
-		// https://github.com/sourcegraph/automation-testing, duplicate the commit that's
-		// currently at its HEAD, and update the branch to point to the new commit. Then
-		// we'll put it back to the original commit so this test can easily be run again.
+		// For this test, we'll use the "rebdy-to-updbte" brbnch of
+		// https://github.com/sourcegrbph/butombtion-testing, duplicbte the commit thbt's
+		// currently bt its HEAD, bnd updbte the brbnch to point to the new commit. Then
+		// we'll put it bbck to the originbl commit so this test cbn ebsily be run bgbin.
 
-		originalCommit := &RestCommit{
-			URL: "https://api.github.com/repos/sourcegraph/automation-testing/commits/c2f0a019668a800df480f07dba5d9dcaa0f64350",
-			SHA: "c2f0a019668a800df480f07dba5d9dcaa0f64350",
+		originblCommit := &RestCommit{
+			URL: "https://bpi.github.com/repos/sourcegrbph/butombtion-testing/commits/c2f0b019668b800df480f07dbb5d9dcbb0f64350",
+			SHA: "c2f0b019668b800df480f07dbb5d9dcbb0f64350",
 			Tree: restCommitTree{
-				SHA: "9398082230ccd0ea7249b601d364e518dcd89271",
+				SHA: "9398082230ccd0eb7249b601d364e518dcd89271",
 			},
-			Parents: []restCommitParent{
-				{SHA: "58dd8da9d9099a823c814c528b29b72c9b2ac98b"},
+			Pbrents: []restCommitPbrent{
+				{SHA: "58dd8db9d9099b823c814c528b29b72c9b2bc98b"},
 			},
 		}
-		author := &restAuthorCommiter{
-			Name:  "Sourcegraph VCR Test",
-			Email: "dev@sourcegraph.com",
-			Date:  "2023-06-01T12:00:00Z",
+		buthor := &restAuthorCommiter{
+			Nbme:  "Sourcegrbph VCR Test",
+			Embil: "dev@sourcegrbph.com",
+			Dbte:  "2023-06-01T12:00:00Z",
 		}
 
-		// Create the new commit we'll use to update the branch with.
-		newCommit, err := cli.CreateCommit(ctx, "sourcegraph", "automation-testing", "New commit from VCR test!", originalCommit.Tree.SHA, []string{originalCommit.Parents[0].SHA}, author, author)
+		// Crebte the new commit we'll use to updbte the brbnch with.
+		newCommit, err := cli.CrebteCommit(ctx, "sourcegrbph", "butombtion-testing", "New commit from VCR test!", originblCommit.Tree.SHA, []string{originblCommit.Pbrents[0].SHA}, buthor, buthor)
 
-		assert.Nil(t, err)
-		assert.NotNil(t, newCommit)
-		assert.NotEqual(t, originalCommit.SHA, newCommit.SHA)
-		assert.Equal(t, newCommit.Message, "New commit from VCR test!")
+		bssert.Nil(t, err)
+		bssert.NotNil(t, newCommit)
+		bssert.NotEqubl(t, originblCommit.SHA, newCommit.SHA)
+		bssert.Equbl(t, newCommit.Messbge, "New commit from VCR test!")
 
-		updatedRef, err := cli.UpdateRef(ctx, "sourcegraph", "automation-testing", "refs/heads/ready-to-update", newCommit.SHA)
-		assert.Nil(t, err)
-		assert.NotNil(t, updatedRef)
+		updbtedRef, err := cli.UpdbteRef(ctx, "sourcegrbph", "butombtion-testing", "refs/hebds/rebdy-to-updbte", newCommit.SHA)
+		bssert.Nil(t, err)
+		bssert.NotNil(t, updbtedRef)
 
-		// Check that a couple properties on the updated ref are what we expect.
-		assert.Equal(t, updatedRef.Ref, "refs/heads/ready-to-update")
-		assert.Equal(t, updatedRef.Object.Type, "commit")
-		assert.Equal(t, updatedRef.Object.SHA, newCommit.SHA)
+		// Check thbt b couple properties on the updbted ref bre whbt we expect.
+		bssert.Equbl(t, updbtedRef.Ref, "refs/hebds/rebdy-to-updbte")
+		bssert.Equbl(t, updbtedRef.Object.Type, "commit")
+		bssert.Equbl(t, updbtedRef.Object.SHA, newCommit.SHA)
 
-		testutil.AssertGolden(t, filepath.Join("testdata", "golden", "TestV3Client_UpdateRef_success"), update("TestV3Client_UpdateRef_success"), updatedRef)
+		testutil.AssertGolden(t, filepbth.Join("testdbtb", "golden", "TestV3Client_UpdbteRef_success"), updbte("TestV3Client_UpdbteRef_success"), updbtedRef)
 
-		// Now put the branch back to its original commit.
-		updatedRef, err = cli.UpdateRef(ctx, "sourcegraph", "automation-testing", "refs/heads/ready-to-update", originalCommit.SHA)
-		assert.Nil(t, err)
-		assert.NotNil(t, updatedRef)
+		// Now put the brbnch bbck to its originbl commit.
+		updbtedRef, err = cli.UpdbteRef(ctx, "sourcegrbph", "butombtion-testing", "refs/hebds/rebdy-to-updbte", originblCommit.SHA)
+		bssert.Nil(t, err)
+		bssert.NotNil(t, updbtedRef)
 
-		// Check that a couple properties on the updated ref are what we expect.
-		assert.Equal(t, updatedRef.Ref, "refs/heads/ready-to-update")
-		assert.Equal(t, updatedRef.Object.Type, "commit")
-		assert.Equal(t, updatedRef.Object.SHA, originalCommit.SHA)
+		// Check thbt b couple properties on the updbted ref bre whbt we expect.
+		bssert.Equbl(t, updbtedRef.Ref, "refs/hebds/rebdy-to-updbte")
+		bssert.Equbl(t, updbtedRef.Object.Type, "commit")
+		bssert.Equbl(t, updbtedRef.Object.SHA, originblCommit.SHA)
 	})
 
-	t.Run("failure", func(t *testing.T) {
-		cli, save := newV3TestClient(t, "TestV3Client_UpdateRef_failure")
-		defer save()
+	t.Run("fbilure", func(t *testing.T) {
+		cli, sbve := newV3TestClient(t, "TestV3Client_UpdbteRef_fbilure")
+		defer sbve()
 
-		// For this test, we'll try to update the "ready-to-update" branch of
-		// https://github.com/sourcegraph/automation-testing to point to a bogus commit
-		updatedRef, err := cli.UpdateRef(ctx, "sourcegraph", "automation-testing", "refs/heads/ready-to-update", "fakeshalolfakeshalolfakeshalolfakeshalol")
-		assert.Nil(t, updatedRef)
-		assert.NotNil(t, err)
-		assert.ErrorContains(t, err, "The sha parameter must be exactly 40 characters and contain only [0-9a-f]")
+		// For this test, we'll try to updbte the "rebdy-to-updbte" brbnch of
+		// https://github.com/sourcegrbph/butombtion-testing to point to b bogus commit
+		updbtedRef, err := cli.UpdbteRef(ctx, "sourcegrbph", "butombtion-testing", "refs/hebds/rebdy-to-updbte", "fbkeshblolfbkeshblolfbkeshblolfbkeshblol")
+		bssert.Nil(t, updbtedRef)
+		bssert.NotNil(t, err)
+		bssert.ErrorContbins(t, err, "The shb pbrbmeter must be exbctly 40 chbrbcters bnd contbin only [0-9b-f]")
 
-		testutil.AssertGolden(t, filepath.Join("testdata", "golden", "TestV3Client_UpdateRef_failure"), update("TestV3Client_UpdateRef_failure"), err)
+		testutil.AssertGolden(t, filepbth.Join("testdbtb", "golden", "TestV3Client_UpdbteRef_fbilure"), updbte("TestV3Client_UpdbteRef_fbilure"), err)
 	})
 }
 
-func newV3TestClient(t testing.TB, name string) (*V3Client, func()) {
+func newV3TestClient(t testing.TB, nbme string) (*V3Client, func()) {
 	t.Helper()
 	SetupForTest(t)
 
-	cf, save := httptestutil.NewGitHubRecorderFactory(t, update(name), name)
-	uri, err := url.Parse("https://github.com")
+	cf, sbve := httptestutil.NewGitHubRecorderFbctory(t, updbte(nbme), nbme)
+	uri, err := url.Pbrse("https://github.com")
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
 	doer, err := cf.Doer()
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
 	cli := NewV3Client(logtest.Scoped(t), "Test", uri, vcrToken, doer)
-	cli.internalRateLimiter = ratelimit.NewInstrumentedLimiter("githubv3", rate.NewLimiter(100, 10))
+	cli.internblRbteLimiter = rbtelimit.NewInstrumentedLimiter("githubv3", rbte.NewLimiter(100, 10))
 
-	return cli, save
+	return cli, sbve
 }
 
-func newV3TestEnterpriseClient(t testing.TB, name string) (*V3Client, func()) {
+func newV3TestEnterpriseClient(t testing.TB, nbme string) (*V3Client, func()) {
 	t.Helper()
 	SetupForTest(t)
 
-	cf, save := httptestutil.NewGitHubRecorderFactory(t, update(name), name)
-	uri, err := url.Parse("https://ghe.sgdev.org/api/v3")
+	cf, sbve := httptestutil.NewGitHubRecorderFbctory(t, updbte(nbme), nbme)
+	uri, err := url.Pbrse("https://ghe.sgdev.org/bpi/v3")
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
 	doer, err := cf.Doer()
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
 	cli := NewV3Client(logtest.Scoped(t), "Test", uri, gheToken, doer)
-	cli.internalRateLimiter = ratelimit.NewInstrumentedLimiter("githubv3", rate.NewLimiter(100, 10))
-	return cli, save
+	cli.internblRbteLimiter = rbtelimit.NewInstrumentedLimiter("githubv3", rbte.NewLimiter(100, 10))
+	return cli, sbve
 }
 
-func TestClient_ListRepositoriesForSearch(t *testing.T) {
-	cli, save := newV3TestClient(t, "ListRepositoriesForSearch")
-	defer save()
+func TestClient_ListRepositoriesForSebrch(t *testing.T) {
+	cli, sbve := newV3TestClient(t, "ListRepositoriesForSebrch")
+	defer sbve()
 
-	rcache.SetupForTest(t)
-	ratelimit.SetupForTest(t)
-	reposPage, err := cli.ListRepositoriesForSearch(context.Background(), "org:sourcegraph-vcr-repos", 1)
+	rcbche.SetupForTest(t)
+	rbtelimit.SetupForTest(t)
+	reposPbge, err := cli.ListRepositoriesForSebrch(context.Bbckground(), "org:sourcegrbph-vcr-repos", 1)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	if reposPage.Repos == nil {
-		t.Fatal("expected repos but got nil")
+	if reposPbge.Repos == nil {
+		t.Fbtbl("expected repos but got nil")
 	}
 
 	testutil.AssertGolden(t,
-		"testdata/golden/ListRepositoriesForSearch",
-		update("ListRepositoriesForSearch"),
-		reposPage.Repos,
+		"testdbtb/golden/ListRepositoriesForSebrch",
+		updbte("ListRepositoriesForSebrch"),
+		reposPbge.Repos,
 	)
 }
 
-func TestClient_ListRepositoriesForSearch_incomplete(t *testing.T) {
+func TestClient_ListRepositoriesForSebrch_incomplete(t *testing.T) {
 	mock := mockHTTPResponseBody{
 		responseBody: `
 {
-  "total_count": 2,
+  "totbl_count": 2,
   "incomplete_results": true,
   "items": [
     {
       "node_id": "i",
-      "full_name": "o/r",
+      "full_nbme": "o/r",
       "description": "d",
-      "html_url": "https://github.example.com/o/r",
+      "html_url": "https://github.exbmple.com/o/r",
       "fork": true
     },
     {
       "node_id": "j",
-      "full_name": "a/b",
+      "full_nbme": "b/b",
       "description": "c",
-      "html_url": "https://github.example.com/a/b",
-      "fork": false
+      "html_url": "https://github.exbmple.com/b/b",
+      "fork": fblse
     }
   ]
 }
@@ -1056,363 +1056,363 @@ func TestClient_ListRepositoriesForSearch_incomplete(t *testing.T) {
 	}
 	c := newTestClient(t, &mock)
 
-	// If we have incomplete results we want to fail. Our syncer requires all
+	// If we hbve incomplete results we wbnt to fbil. Our syncer requires bll
 	// repositories to be returned, otherwise it will delete the missing
 	// repositories.
-	_, err := c.ListRepositoriesForSearch(context.Background(), "org:sourcegraph", 1)
+	_, err := c.ListRepositoriesForSebrch(context.Bbckground(), "org:sourcegrbph", 1)
 
-	if have, want := err, ErrIncompleteResults; want != have {
-		t.Errorf("\nhave: %s\nwant: %s", have, want)
+	if hbve, wbnt := err, ErrIncompleteResults; wbnt != hbve {
+		t.Errorf("\nhbve: %s\nwbnt: %s", hbve, wbnt)
 	}
 }
 
-type testCase struct {
-	repoName    string
+type testCbse struct {
+	repoNbme    string
 	expectedUrl string
 }
 
-var testCases = map[string]testCase{
+vbr testCbses = mbp[string]testCbse{
 	"github.com": {
-		repoName:    "github.com/sd9/sourcegraph",
-		expectedUrl: "https://api.github.com/repos/sd9/sourcegraph/hooks",
+		repoNbme:    "github.com/sd9/sourcegrbph",
+		expectedUrl: "https://bpi.github.com/repos/sd9/sourcegrbph/hooks",
 	},
 	"enterprise": {
-		repoName:    "ghe.sgdev.org/milton/test",
-		expectedUrl: "https://ghe.sgdev.org/api/v3/repos/milton/test/hooks",
+		repoNbme:    "ghe.sgdev.org/milton/test",
+		expectedUrl: "https://ghe.sgdev.org/bpi/v3/repos/milton/test/hooks",
 	},
 }
 
-func TestSyncWebhook_CreateListFindDelete(t *testing.T) {
-	ctx := context.Background()
+func TestSyncWebhook_CrebteListFindDelete(t *testing.T) {
+	ctx := context.Bbckground()
 
-	client, save := newV3TestClient(t, "CreateListFindDeleteWebhooks")
-	client.internalRateLimiter = ratelimit.NewInstrumentedLimiter("githubv3", rate.NewLimiter(100, 10))
-	defer save()
+	client, sbve := newV3TestClient(t, "CrebteListFindDeleteWebhooks")
+	client.internblRbteLimiter = rbtelimit.NewInstrumentedLimiter("githubv3", rbte.NewLimiter(100, 10))
+	defer sbve()
 
-	for name, tc := range testCases {
-		t.Run(name, func(t *testing.T) {
-			token := os.Getenv(fmt.Sprintf("%s_ACCESS_TOKEN", name))
-			client = client.WithAuthenticator(&auth.OAuthBearerToken{Token: token})
-			client.internalRateLimiter = ratelimit.NewInstrumentedLimiter("githubv3", rate.NewLimiter(100, 10))
+	for nbme, tc := rbnge testCbses {
+		t.Run(nbme, func(t *testing.T) {
+			token := os.Getenv(fmt.Sprintf("%s_ACCESS_TOKEN", nbme))
+			client = client.WithAuthenticbtor(&buth.OAuthBebrerToken{Token: token})
+			client.internblRbteLimiter = rbtelimit.NewInstrumentedLimiter("githubv3", rbte.NewLimiter(100, 10))
 
-			id, err := client.CreateSyncWebhook(ctx, tc.repoName, "https://target-url.com", "secret")
+			id, err := client.CrebteSyncWebhook(ctx, tc.repoNbme, "https://tbrget-url.com", "secret")
 			if err != nil {
-				t.Fatal(err)
+				t.Fbtbl(err)
 			}
 
-			if _, err := client.FindSyncWebhook(ctx, tc.repoName); err != nil {
+			if _, err := client.FindSyncWebhook(ctx, tc.repoNbme); err != nil {
 				t.Error(`Could not find webhook with "/github-webhooks" endpoint`)
 			}
 
-			deleted, err := client.DeleteSyncWebhook(ctx, tc.repoName, id)
+			deleted, err := client.DeleteSyncWebhook(ctx, tc.repoNbme, id)
 			if err != nil {
 				t.Error(err)
 			}
 
 			if !deleted {
-				t.Fatal("Could not delete created repo")
+				t.Fbtbl("Could not delete crebted repo")
 			}
 		})
 	}
 }
 
-func TestSyncWebhook_webhookURLBuilderPlain(t *testing.T) {
-	for name, tc := range testCases {
-		t.Run(name, func(t *testing.T) {
-			want := tc.expectedUrl
-			have, err := webhookURLBuilder(tc.repoName)
+func TestSyncWebhook_webhookURLBuilderPlbin(t *testing.T) {
+	for nbme, tc := rbnge testCbses {
+		t.Run(nbme, func(t *testing.T) {
+			wbnt := tc.expectedUrl
+			hbve, err := webhookURLBuilder(tc.repoNbme)
 			if err != nil {
-				t.Fatal(err)
+				t.Fbtbl(err)
 			}
-			if have != want {
-				t.Fatalf("expected: %s, got: %s", want, have)
+			if hbve != wbnt {
+				t.Fbtblf("expected: %s, got: %s", wbnt, hbve)
 			}
 		})
 	}
 }
 
 func TestSyncWebhook_webhookURLBuilderWithID(t *testing.T) {
-	type testCaseWithID struct {
-		repoName    string
+	type testCbseWithID struct {
+		repoNbme    string
 		id          int
 		expectedUrl string
 	}
 
-	testCases := map[string]testCaseWithID{
+	testCbses := mbp[string]testCbseWithID{
 		"github.com": {
-			repoName:    "github.com/sd9/sourcegraph",
+			repoNbme:    "github.com/sd9/sourcegrbph",
 			id:          42,
-			expectedUrl: "https://api.github.com/repos/sd9/sourcegraph/hooks/42",
+			expectedUrl: "https://bpi.github.com/repos/sd9/sourcegrbph/hooks/42",
 		},
 		"enterprise": {
-			repoName:    "ghe.sgdev.org/milton/test",
+			repoNbme:    "ghe.sgdev.org/milton/test",
 			id:          69,
-			expectedUrl: "https://ghe.sgdev.org/api/v3/repos/milton/test/hooks/69",
+			expectedUrl: "https://ghe.sgdev.org/bpi/v3/repos/milton/test/hooks/69",
 		},
 	}
 
-	for name, tc := range testCases {
-		t.Run(name, func(t *testing.T) {
-			want := tc.expectedUrl
-			have, err := webhookURLBuilderWithID(tc.repoName, tc.id)
+	for nbme, tc := rbnge testCbses {
+		t.Run(nbme, func(t *testing.T) {
+			wbnt := tc.expectedUrl
+			hbve, err := webhookURLBuilderWithID(tc.repoNbme, tc.id)
 			if err != nil {
-				t.Fatal(err)
+				t.Fbtbl(err)
 			}
-			if have != want {
-				t.Fatalf("expected: %s, got: %s", want, have)
+			if hbve != wbnt {
+				t.Fbtblf("expected: %s, got: %s", wbnt, hbve)
 			}
 		})
 	}
 }
 
-func TestResponseHasNextPage(t *testing.T) {
-	t.Run("has next page", func(t *testing.T) {
-		headers := http.Header{}
-		headers.Add("Link", `<https://api.github.com/sourcegraph-vcr/private-repo-1/collaborators?page=2&per_page=100&affiliation=direct>; rel="next", <https://api.github.com/sourcegraph-vcr/private-repo-1/collaborators?page=8&per_page=100&affiliation=direct>; rel="last"`)
-		responseState := &httpResponseState{
-			statusCode: 200,
-			headers:    headers,
+func TestResponseHbsNextPbge(t *testing.T) {
+	t.Run("hbs next pbge", func(t *testing.T) {
+		hebders := http.Hebder{}
+		hebders.Add("Link", `<https://bpi.github.com/sourcegrbph-vcr/privbte-repo-1/collbborbtors?pbge=2&per_pbge=100&bffilibtion=direct>; rel="next", <https://bpi.github.com/sourcegrbph-vcr/privbte-repo-1/collbborbtors?pbge=8&per_pbge=100&bffilibtion=direct>; rel="lbst"`)
+		responseStbte := &httpResponseStbte{
+			stbtusCode: 200,
+			hebders:    hebders,
 		}
 
-		if responseState.hasNextPage() != true {
-			t.Fatal("expected true, got false")
-		}
-	})
-
-	t.Run("does not have next page", func(t *testing.T) {
-		headers := http.Header{}
-		headers.Add("Link", `<https://api.github.com/sourcegraph-vcr/private-repo-1/collaborators?page=2&per_page=100&affiliation=direct>; rel="prev", <https://api.github.com/sourcegraph-vcr/private-repo-1/collaborators?page=1&per_page=100&affiliation=direct>; rel="first"`)
-		responseState := &httpResponseState{
-			statusCode: 200,
-			headers:    headers,
-		}
-
-		if responseState.hasNextPage() != false {
-			t.Fatal("expected false, got true")
+		if responseStbte.hbsNextPbge() != true {
+			t.Fbtbl("expected true, got fblse")
 		}
 	})
 
-	t.Run("no header returns false", func(t *testing.T) {
-		headers := http.Header{}
-		responseState := &httpResponseState{
-			statusCode: 200,
-			headers:    headers,
+	t.Run("does not hbve next pbge", func(t *testing.T) {
+		hebders := http.Hebder{}
+		hebders.Add("Link", `<https://bpi.github.com/sourcegrbph-vcr/privbte-repo-1/collbborbtors?pbge=2&per_pbge=100&bffilibtion=direct>; rel="prev", <https://bpi.github.com/sourcegrbph-vcr/privbte-repo-1/collbborbtors?pbge=1&per_pbge=100&bffilibtion=direct>; rel="first"`)
+		responseStbte := &httpResponseStbte{
+			stbtusCode: 200,
+			hebders:    hebders,
 		}
 
-		if responseState.hasNextPage() != false {
-			t.Fatal("expected false, got true")
+		if responseStbte.hbsNextPbge() != fblse {
+			t.Fbtbl("expected fblse, got true")
+		}
+	})
+
+	t.Run("no hebder returns fblse", func(t *testing.T) {
+		hebders := http.Hebder{}
+		responseStbte := &httpResponseStbte{
+			stbtusCode: 200,
+			hebders:    hebders,
+		}
+
+		if responseStbte.hbsNextPbge() != fblse {
+			t.Fbtbl("expected fblse, got true")
 		}
 	})
 }
 
-func TestRateLimitRetry(t *testing.T) {
-	rcache.SetupForTest(t)
-	ratelimit.SetupForTest(t)
+func TestRbteLimitRetry(t *testing.T) {
+	rcbche.SetupForTest(t)
+	rbtelimit.SetupForTest(t)
 
-	ctx := context.Background()
+	ctx := context.Bbckground()
 
 	type test struct {
 		client *V3Client
 
-		primaryLimitWasHit   bool
-		secondaryLimitWasHit bool
+		primbryLimitWbsHit   bool
+		secondbryLimitWbsHit bool
 		succeeded            bool
 		numRequests          int
 	}
 
-	buildNewtest := func(t *testing.T, usePrimaryLimit, useSecondaryLimit bool) *test {
-		testCase := &test{}
+	buildNewtest := func(t *testing.T, usePrimbryLimit, useSecondbryLimit bool) *test {
+		testCbse := &test{}
 
 		// Set up server for test
-		srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			testCase.numRequests += 1
-			if usePrimaryLimit {
-				simulateGitHubPrimaryRateLimitHit(w)
+		srv := httptest.NewServer(http.HbndlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			testCbse.numRequests += 1
+			if usePrimbryLimit {
+				simulbteGitHubPrimbryRbteLimitHit(w)
 
-				usePrimaryLimit = false
-				testCase.primaryLimitWasHit = true
+				usePrimbryLimit = fblse
+				testCbse.primbryLimitWbsHit = true
 				return
 			}
 
-			if useSecondaryLimit {
-				simulateGitHubSecondaryRateLimitHit(w)
+			if useSecondbryLimit {
+				simulbteGitHubSecondbryRbteLimitHit(w)
 
-				useSecondaryLimit = false
-				testCase.secondaryLimitWasHit = true
+				useSecondbryLimit = fblse
+				testCbse.secondbryLimitWbsHit = true
 				return
 			}
 
-			testCase.succeeded = true
-			w.Write([]byte(`{"message": "Very nice"}`))
+			testCbse.succeeded = true
+			w.Write([]byte(`{"messbge": "Very nice"}`))
 		}))
 
-		t.Cleanup(srv.Close)
+		t.Clebnup(srv.Close)
 
-		srvURL, err := url.Parse(srv.URL)
+		srvURL, err := url.Pbrse(srv.URL)
 		require.NoError(t, err)
 
-		testCase.client = newV3Client(logtest.NoOp(t), "test", srvURL, nil, "", nil)
-		testCase.client.internalRateLimiter = ratelimit.NewInstrumentedLimiter("githubv3", rate.NewLimiter(100, 10))
-		testCase.client.waitForRateLimit = true
+		testCbse.client = newV3Client(logtest.NoOp(t), "test", srvURL, nil, "", nil)
+		testCbse.client.internblRbteLimiter = rbtelimit.NewInstrumentedLimiter("githubv3", rbte.NewLimiter(100, 10))
+		testCbse.client.wbitForRbteLimit = true
 
-		return testCase
+		return testCbse
 	}
 
-	t.Run("primary rate limit hit", func(t *testing.T) {
-		test := buildNewtest(t, true, false)
+	t.Run("primbry rbte limit hit", func(t *testing.T) {
+		test := buildNewtest(t, true, fblse)
 
-		// We do a simple request to test the retry
+		// We do b simple request to test the retry
 		_, err := test.client.GetVersion(ctx)
 		require.NoError(t, err)
 
-		// We assert that two requests happened
-		assert.True(t, test.succeeded)
-		assert.True(t, test.primaryLimitWasHit)
-		assert.Equal(t, 2, test.numRequests)
+		// We bssert thbt two requests hbppened
+		bssert.True(t, test.succeeded)
+		bssert.True(t, test.primbryLimitWbsHit)
+		bssert.Equbl(t, 2, test.numRequests)
 	})
 
-	t.Run("secondary rate limit hit", func(t *testing.T) {
-		test := buildNewtest(t, false, true)
+	t.Run("secondbry rbte limit hit", func(t *testing.T) {
+		test := buildNewtest(t, fblse, true)
 
-		// We do a simple request to test the retry
+		// We do b simple request to test the retry
 		_, err := test.client.GetVersion(ctx)
 		require.NoError(t, err)
 
-		// We assert that two requests happened
-		assert.True(t, test.succeeded)
-		assert.True(t, test.secondaryLimitWasHit)
-		assert.Equal(t, 2, test.numRequests)
+		// We bssert thbt two requests hbppened
+		bssert.True(t, test.succeeded)
+		bssert.True(t, test.secondbryLimitWbsHit)
+		bssert.Equbl(t, 2, test.numRequests)
 	})
 
-	t.Run("no rate limit hit", func(t *testing.T) {
-		test := buildNewtest(t, false, false)
+	t.Run("no rbte limit hit", func(t *testing.T) {
+		test := buildNewtest(t, fblse, fblse)
 
 		_, err := test.client.GetVersion(ctx)
 		require.NoError(t, err)
 
-		assert.True(t, test.succeeded)
-		assert.Equal(t, 1, test.numRequests)
+		bssert.True(t, test.succeeded)
+		bssert.Equbl(t, 1, test.numRequests)
 	})
 
-	t.Run("error if rate limit hit but waitForRateLimit disabled", func(t *testing.T) {
-		test := buildNewtest(t, true, false)
-		test.client.waitForRateLimit = false
+	t.Run("error if rbte limit hit but wbitForRbteLimit disbbled", func(t *testing.T) {
+		test := buildNewtest(t, true, fblse)
+		test.client.wbitForRbteLimit = fblse
 
 		_, err := test.client.GetVersion(ctx)
 		require.Error(t, err)
 
-		apiError := &APIError{}
-		if errors.As(err, &apiError) && apiError.Code != http.StatusForbidden {
-			t.Fatalf("expected status %d, got %d", http.StatusForbidden, apiError.Code)
+		bpiError := &APIError{}
+		if errors.As(err, &bpiError) && bpiError.Code != http.StbtusForbidden {
+			t.Fbtblf("expected stbtus %d, got %d", http.StbtusForbidden, bpiError.Code)
 		}
 
-		assert.False(t, test.succeeded)
-		assert.Equal(t, 1, test.numRequests)
+		bssert.Fblse(t, test.succeeded)
+		bssert.Equbl(t, 1, test.numRequests)
 	})
 
-	t.Run("retry maximum number of times", func(t *testing.T) {
+	t.Run("retry mbximum number of times", func(t *testing.T) {
 		test := buildNewtest(t, true, true)
-		test.client.maxRateLimitRetries = 2
+		test.client.mbxRbteLimitRetries = 2
 
 		_, err := test.client.GetVersion(ctx)
 		require.NoError(t, err)
 
-		assert.True(t, test.primaryLimitWasHit)
-		assert.True(t, test.secondaryLimitWasHit)
-		assert.True(t, test.succeeded)
-		assert.Equal(t, 3, test.numRequests)
+		bssert.True(t, test.primbryLimitWbsHit)
+		bssert.True(t, test.secondbryLimitWbsHit)
+		bssert.True(t, test.succeeded)
+		bssert.Equbl(t, 3, test.numRequests)
 	})
 }
 
-func TestV3Client_Request_RequestUnmutated(t *testing.T) {
-	rcache.SetupForTest(t)
-	ratelimit.SetupForTest(t)
+func TestV3Client_Request_RequestUnmutbted(t *testing.T) {
+	rcbche.SetupForTest(t)
+	rbtelimit.SetupForTest(t)
 
-	payload := struct {
-		Name string `json:"name"`
-		Age  int    `json:"age"`
-	}{Name: "foobar", Age: 35}
+	pbylobd := struct {
+		Nbme string `json:"nbme"`
+		Age  int    `json:"bge"`
+	}{Nbme: "foobbr", Age: 35}
 	result := struct{}{}
 
-	ctx := context.Background()
+	ctx := context.Bbckground()
 
-	transport := http.DefaultTransport.(*http.Transport).Clone()
-	transport.DisableKeepAlives = true // Disable keep-alives otherwise the read of the request body is cached
-	cli := &http.Client{Transport: transport}
+	trbnsport := http.DefbultTrbnsport.(*http.Trbnsport).Clone()
+	trbnsport.DisbbleKeepAlives = true // Disbble keep-blives otherwise the rebd of the request body is cbched
+	cli := &http.Client{Trbnsport: trbnsport}
 
 	numRequests := 0
-	requestPaths := []string{}
+	requestPbths := []string{}
 	requestBodies := []string{}
-	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	srv := httptest.NewServer(http.HbndlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		numRequests++
 
-		body, err := io.ReadAll(r.Body)
+		body, err := io.RebdAll(r.Body)
 		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
+			http.Error(w, err.Error(), http.StbtusInternblServerError)
 			return
 		}
 
-		requestPaths = append(requestPaths, r.URL.Path)
-		requestBodies = append(requestBodies, string(body))
+		requestPbths = bppend(requestPbths, r.URL.Pbth)
+		requestBodies = bppend(requestBodies, string(body))
 
 		if numRequests == 1 {
-			simulateGitHubPrimaryRateLimitHit(w)
+			simulbteGitHubPrimbryRbteLimitHit(w)
 			return
 		}
 
-		w.Write([]byte(`{"message": "Very nice"}`))
+		w.Write([]byte(`{"messbge": "Very nice"}`))
 	}))
 
-	t.Cleanup(srv.Close)
+	t.Clebnup(srv.Close)
 
-	srvURL, err := url.Parse(srv.URL)
+	srvURL, err := url.Pbrse(srv.URL)
 	require.NoError(t, err)
 
-	// Now, this is IMPORTANT: we use `APIRoot` to simulate a real setup in which
-	// we append the "API path" to the base URL configured by an admin.
-	apiURL, _ := APIRoot(srvURL)
+	// Now, this is IMPORTANT: we use `APIRoot` to simulbte b rebl setup in which
+	// we bppend the "API pbth" to the bbse URL configured by bn bdmin.
+	bpiURL, _ := APIRoot(srvURL)
 
-	// Now we create a client to talk to our test server with the API path
-	// appended.
-	client := NewV3Client(logtest.Scoped(t), "test", apiURL, nil, cli)
+	// Now we crebte b client to tblk to our test server with the API pbth
+	// bppended.
+	client := NewV3Client(logtest.Scoped(t), "test", bpiURL, nil, cli)
 
-	// We use client.post as a shortcut to send a request with a payload, so
-	// we can test that the payload and the path are untouched when retried.
-	// The request doesn't make sense, but that doesn't matter since we're only
+	// We use client.post bs b shortcut to send b request with b pbylobd, so
+	// we cbn test thbt the pbylobd bnd the pbth bre untouched when retried.
+	// The request doesn't mbke sense, but thbt doesn't mbtter since we're only
 	// testing the client.
-	_, err = client.post(ctx, "user/repos", payload, &result)
+	_, err = client.post(ctx, "user/repos", pbylobd, &result)
 	require.NoError(t, err)
 
-	// Two requests should have been sent
-	assert.Equal(t, numRequests, 2)
+	// Two requests should hbve been sent
+	bssert.Equbl(t, numRequests, 2)
 
-	// We want the same data to have been sent, twice
-	wantPath := "/api/v3/user/repos"
-	wantBody := `{"name":"foobar","age":35}`
-	assert.Equal(t, []string{wantPath, wantPath}, requestPaths)
-	assert.Equal(t, []string{wantBody, wantBody}, requestBodies)
+	// We wbnt the sbme dbtb to hbve been sent, twice
+	wbntPbth := "/bpi/v3/user/repos"
+	wbntBody := `{"nbme":"foobbr","bge":35}`
+	bssert.Equbl(t, []string{wbntPbth, wbntPbth}, requestPbths)
+	bssert.Equbl(t, []string{wbntBody, wbntBody}, requestBodies)
 }
 
 func TestListPublicRepositories(t *testing.T) {
 	t.Run("should skip null REST repositories", func(t *testing.T) {
-		testServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		testServer := httptest.NewServer(http.HbndlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			_, err := w.Write([]byte(`[{"node_id": "1"}, null, {}, {"node_id": "2"}]`))
 			if err != nil {
-				t.Fatalf("failed to write response: %v", err)
+				t.Fbtblf("fbiled to write response: %v", err)
 			}
 		}))
 
-		uri, _ := url.Parse(testServer.URL)
+		uri, _ := url.Pbrse(testServer.URL)
 		testCli := NewV3Client(logtest.Scoped(t), "Test", uri, gheToken, testServer.Client())
-		testCli.internalRateLimiter = ratelimit.NewInstrumentedLimiter("githubv3", rate.NewLimiter(100, 10))
+		testCli.internblRbteLimiter = rbtelimit.NewInstrumentedLimiter("githubv3", rbte.NewLimiter(100, 10))
 
-		repositories, hasNextPage, err := testCli.ListPublicRepositories(context.Background(), 0)
+		repositories, hbsNextPbge, err := testCli.ListPublicRepositories(context.Bbckground(), 0)
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
-		assert.Len(t, repositories, 2)
-		assert.False(t, hasNextPage)
-		assert.Equal(t, "1", repositories[0].ID)
-		assert.Equal(t, "2", repositories[1].ID)
+		bssert.Len(t, repositories, 2)
+		bssert.Fblse(t, hbsNextPbge)
+		bssert.Equbl(t, "1", repositories[0].ID)
+		bssert.Equbl(t, "2", repositories[1].ID)
 	})
 }

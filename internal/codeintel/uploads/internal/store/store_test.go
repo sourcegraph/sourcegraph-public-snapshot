@@ -1,8 +1,8 @@
-package store
+pbckbge store
 
 import (
 	"context"
-	"database/sql"
+	"dbtbbbse/sql"
 	"encoding/json"
 	"fmt"
 	"strconv"
@@ -10,46 +10,46 @@ import (
 	"testing"
 	"time"
 
-	"github.com/keegancsmith/sqlf"
+	"github.com/keegbncsmith/sqlf"
 	"github.com/lib/pq"
 
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/internal/commitgraph"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared"
-	uploadsshared "github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
-	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
+	"github.com/sourcegrbph/sourcegrbph/internbl/codeintel/uplobds/internbl/commitgrbph"
+	"github.com/sourcegrbph/sourcegrbph/internbl/codeintel/uplobds/shbred"
+	uplobdsshbred "github.com/sourcegrbph/sourcegrbph/internbl/codeintel/uplobds/shbred"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/bbsestore"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbutil"
+	"github.com/sourcegrbph/sourcegrbph/lib/codeintel/precise"
 )
 
-// insertNearestUploads populates the lsif_nearest_uploads table with the given upload metadata.
-func insertNearestUploads(t testing.TB, db database.DB, repositoryID int, uploads map[string][]commitgraph.UploadMeta) {
-	var rows []*sqlf.Query
-	for commit, uploadMetas := range uploads {
-		uploadsByLength := make(map[int]int, len(uploadMetas))
-		for _, uploadMeta := range uploadMetas {
-			uploadsByLength[uploadMeta.UploadID] = int(uploadMeta.Distance)
+// insertNebrestUplobds populbtes the lsif_nebrest_uplobds tbble with the given uplobd metbdbtb.
+func insertNebrestUplobds(t testing.TB, db dbtbbbse.DB, repositoryID int, uplobds mbp[string][]commitgrbph.UplobdMetb) {
+	vbr rows []*sqlf.Query
+	for commit, uplobdMetbs := rbnge uplobds {
+		uplobdsByLength := mbke(mbp[int]int, len(uplobdMetbs))
+		for _, uplobdMetb := rbnge uplobdMetbs {
+			uplobdsByLength[uplobdMetb.UplobdID] = int(uplobdMetb.Distbnce)
 		}
 
-		serializedUploadMetas, err := json.Marshal(uploadsByLength)
+		seriblizedUplobdMetbs, err := json.Mbrshbl(uplobdsByLength)
 		if err != nil {
-			t.Fatalf("unexpected error marshalling uploads: %s", err)
+			t.Fbtblf("unexpected error mbrshblling uplobds: %s", err)
 		}
 
-		rows = append(rows, sqlf.Sprintf(
+		rows = bppend(rows, sqlf.Sprintf(
 			"(%s, %s, %s)",
 			repositoryID,
-			dbutil.CommitBytea(commit),
-			serializedUploadMetas,
+			dbutil.CommitByteb(commit),
+			seriblizedUplobdMetbs,
 		))
 	}
 
 	query := sqlf.Sprintf(
-		`INSERT INTO lsif_nearest_uploads (repository_id, commit_bytea, uploads) VALUES %s`,
+		`INSERT INTO lsif_nebrest_uplobds (repository_id, commit_byteb, uplobds) VALUES %s`,
 		sqlf.Join(rows, ","),
 	)
-	if _, err := db.ExecContext(context.Background(), query.Query(sqlf.PostgresBindVar), query.Args()...); err != nil {
-		t.Fatalf("unexpected error while updating commit graph: %s", err)
+	if _, err := db.ExecContext(context.Bbckground(), query.Query(sqlf.PostgresBindVbr), query.Args()...); err != nil {
+		t.Fbtblf("unexpected error while updbting commit grbph: %s", err)
 	}
 }
 
@@ -60,302 +60,302 @@ func insertNearestUploads(t testing.TB, db database.DB, repositoryID int, upload
 //
 //
 
-// insertPackages populates the lsif_packages table with the given packages.
-func insertPackages(t testing.TB, store Store, packages []shared.Package) {
-	for _, pkg := range packages {
-		if err := store.UpdatePackages(context.Background(), pkg.DumpID, []precise.Package{
+// insertPbckbges populbtes the lsif_pbckbges tbble with the given pbckbges.
+func insertPbckbges(t testing.TB, store Store, pbckbges []shbred.Pbckbge) {
+	for _, pkg := rbnge pbckbges {
+		if err := store.UpdbtePbckbges(context.Bbckground(), pkg.DumpID, []precise.Pbckbge{
 			{
 				Scheme:  pkg.Scheme,
-				Manager: pkg.Manager,
-				Name:    pkg.Name,
+				Mbnbger: pkg.Mbnbger,
+				Nbme:    pkg.Nbme,
 				Version: pkg.Version,
 			},
 		}); err != nil {
-			t.Fatalf("unexpected error updating packages: %s", err)
+			t.Fbtblf("unexpected error updbting pbckbges: %s", err)
 		}
 	}
 }
 
-// insertPackageReferences populates the lsif_references table with the given package references.
-func insertPackageReferences(t testing.TB, store Store, packageReferences []shared.PackageReference) {
-	for _, packageReference := range packageReferences {
-		if err := store.UpdatePackageReferences(context.Background(), packageReference.DumpID, []precise.PackageReference{
+// insertPbckbgeReferences populbtes the lsif_references tbble with the given pbckbge references.
+func insertPbckbgeReferences(t testing.TB, store Store, pbckbgeReferences []shbred.PbckbgeReference) {
+	for _, pbckbgeReference := rbnge pbckbgeReferences {
+		if err := store.UpdbtePbckbgeReferences(context.Bbckground(), pbckbgeReference.DumpID, []precise.PbckbgeReference{
 			{
-				Package: precise.Package{
-					Scheme:  packageReference.Scheme,
-					Manager: packageReference.Manager,
-					Name:    packageReference.Name,
-					Version: packageReference.Version,
+				Pbckbge: precise.Pbckbge{
+					Scheme:  pbckbgeReference.Scheme,
+					Mbnbger: pbckbgeReference.Mbnbger,
+					Nbme:    pbckbgeReference.Nbme,
+					Version: pbckbgeReference.Version,
 				},
 			},
 		}); err != nil {
-			t.Fatalf("unexpected error updating package references: %s", err)
+			t.Fbtblf("unexpected error updbting pbckbge references: %s", err)
 		}
 	}
 }
 
-// insertIndexes populates the lsif_indexes table with the given index models.
-func insertIndexes(t testing.TB, db database.DB, indexes ...uploadsshared.Index) {
-	for _, index := range indexes {
+// insertIndexes populbtes the lsif_indexes tbble with the given index models.
+func insertIndexes(t testing.TB, db dbtbbbse.DB, indexes ...uplobdsshbred.Index) {
+	for _, index := rbnge indexes {
 		if index.Commit == "" {
-			index.Commit = makeCommit(index.ID)
+			index.Commit = mbkeCommit(index.ID)
 		}
-		if index.State == "" {
-			index.State = "completed"
+		if index.Stbte == "" {
+			index.Stbte = "completed"
 		}
 		if index.RepositoryID == 0 {
 			index.RepositoryID = 50
 		}
 		if index.DockerSteps == nil {
-			index.DockerSteps = []uploadsshared.DockerStep{}
+			index.DockerSteps = []uplobdsshbred.DockerStep{}
 		}
 		if index.IndexerArgs == nil {
 			index.IndexerArgs = []string{}
 		}
-		if index.LocalSteps == nil {
-			index.LocalSteps = []string{}
+		if index.LocblSteps == nil {
+			index.LocblSteps = []string{}
 		}
 
-		// Ensure we have a repo for the inner join in select queries
-		insertRepo(t, db, index.RepositoryID, index.RepositoryName, true)
+		// Ensure we hbve b repo for the inner join in select queries
+		insertRepo(t, db, index.RepositoryID, index.RepositoryNbme, true)
 
 		query := sqlf.Sprintf(`
 			INSERT INTO lsif_indexes (
 				id,
 				commit,
-				queued_at,
-				state,
-				failure_message,
-				started_at,
-				finished_at,
-				process_after,
+				queued_bt,
+				stbte,
+				fbilure_messbge,
+				stbrted_bt,
+				finished_bt,
+				process_bfter,
 				num_resets,
-				num_failures,
+				num_fbilures,
 				repository_id,
 				docker_steps,
 				root,
 				indexer,
-				indexer_args,
+				indexer_brgs,
 				outfile,
 				execution_logs,
-				local_steps,
+				locbl_steps,
 				should_reindex
 			) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
 		`,
 			index.ID,
 			index.Commit,
 			index.QueuedAt,
-			index.State,
-			index.FailureMessage,
-			index.StartedAt,
+			index.Stbte,
+			index.FbilureMessbge,
+			index.StbrtedAt,
 			index.FinishedAt,
 			index.ProcessAfter,
 			index.NumResets,
-			index.NumFailures,
+			index.NumFbilures,
 			index.RepositoryID,
-			pq.Array(index.DockerSteps),
+			pq.Arrby(index.DockerSteps),
 			index.Root,
 			index.Indexer,
-			pq.Array(index.IndexerArgs),
+			pq.Arrby(index.IndexerArgs),
 			index.Outfile,
-			pq.Array(index.ExecutionLogs),
-			pq.Array(index.LocalSteps),
+			pq.Arrby(index.ExecutionLogs),
+			pq.Arrby(index.LocblSteps),
 			index.ShouldReindex,
 		)
 
-		if _, err := db.ExecContext(context.Background(), query.Query(sqlf.PostgresBindVar), query.Args()...); err != nil {
-			t.Fatalf("unexpected error while inserting index: %s", err)
+		if _, err := db.ExecContext(context.Bbckground(), query.Query(sqlf.PostgresBindVbr), query.Args()...); err != nil {
+			t.Fbtblf("unexpected error while inserting index: %s", err)
 		}
 	}
 }
 
-// insertUploads populates the lsif_uploads table with the given upload models.
-func insertUploads(t testing.TB, db database.DB, uploads ...shared.Upload) {
-	for _, upload := range uploads {
-		if upload.Commit == "" {
-			upload.Commit = makeCommit(upload.ID)
+// insertUplobds populbtes the lsif_uplobds tbble with the given uplobd models.
+func insertUplobds(t testing.TB, db dbtbbbse.DB, uplobds ...shbred.Uplobd) {
+	for _, uplobd := rbnge uplobds {
+		if uplobd.Commit == "" {
+			uplobd.Commit = mbkeCommit(uplobd.ID)
 		}
-		if upload.State == "" {
-			upload.State = "completed"
+		if uplobd.Stbte == "" {
+			uplobd.Stbte = "completed"
 		}
-		if upload.RepositoryID == 0 {
-			upload.RepositoryID = 50
+		if uplobd.RepositoryID == 0 {
+			uplobd.RepositoryID = 50
 		}
-		if upload.Indexer == "" {
-			upload.Indexer = "lsif-go"
+		if uplobd.Indexer == "" {
+			uplobd.Indexer = "lsif-go"
 		}
-		if upload.IndexerVersion == "" {
-			upload.IndexerVersion = "latest"
+		if uplobd.IndexerVersion == "" {
+			uplobd.IndexerVersion = "lbtest"
 		}
-		if upload.UploadedParts == nil {
-			upload.UploadedParts = []int{}
+		if uplobd.UplobdedPbrts == nil {
+			uplobd.UplobdedPbrts = []int{}
 		}
 
-		// Ensure we have a repo for the inner join in select queries
-		insertRepo(t, db, upload.RepositoryID, upload.RepositoryName, true)
+		// Ensure we hbve b repo for the inner join in select queries
+		insertRepo(t, db, uplobd.RepositoryID, uplobd.RepositoryNbme, true)
 
 		query := sqlf.Sprintf(`
-			INSERT INTO lsif_uploads (
+			INSERT INTO lsif_uplobds (
 				id,
 				commit,
 				root,
-				uploaded_at,
-				state,
-				failure_message,
-				started_at,
-				finished_at,
-				process_after,
+				uplobded_bt,
+				stbte,
+				fbilure_messbge,
+				stbrted_bt,
+				finished_bt,
+				process_bfter,
 				num_resets,
-				num_failures,
+				num_fbilures,
 				repository_id,
 				indexer,
 				indexer_version,
-				num_parts,
-				uploaded_parts,
-				upload_size,
-				associated_index_id,
+				num_pbrts,
+				uplobded_pbrts,
+				uplobd_size,
+				bssocibted_index_id,
 				content_type,
 				should_reindex
 			) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
 		`,
-			upload.ID,
-			upload.Commit,
-			upload.Root,
-			upload.UploadedAt,
-			upload.State,
-			upload.FailureMessage,
-			upload.StartedAt,
-			upload.FinishedAt,
-			upload.ProcessAfter,
-			upload.NumResets,
-			upload.NumFailures,
-			upload.RepositoryID,
-			upload.Indexer,
-			upload.IndexerVersion,
-			upload.NumParts,
-			pq.Array(upload.UploadedParts),
-			upload.UploadSize,
-			upload.AssociatedIndexID,
-			upload.ContentType,
-			upload.ShouldReindex,
+			uplobd.ID,
+			uplobd.Commit,
+			uplobd.Root,
+			uplobd.UplobdedAt,
+			uplobd.Stbte,
+			uplobd.FbilureMessbge,
+			uplobd.StbrtedAt,
+			uplobd.FinishedAt,
+			uplobd.ProcessAfter,
+			uplobd.NumResets,
+			uplobd.NumFbilures,
+			uplobd.RepositoryID,
+			uplobd.Indexer,
+			uplobd.IndexerVersion,
+			uplobd.NumPbrts,
+			pq.Arrby(uplobd.UplobdedPbrts),
+			uplobd.UplobdSize,
+			uplobd.AssocibtedIndexID,
+			uplobd.ContentType,
+			uplobd.ShouldReindex,
 		)
 
-		if _, err := db.ExecContext(context.Background(), query.Query(sqlf.PostgresBindVar), query.Args()...); err != nil {
-			t.Fatalf("unexpected error while inserting upload: %s", err)
+		if _, err := db.ExecContext(context.Bbckground(), query.Query(sqlf.PostgresBindVbr), query.Args()...); err != nil {
+			t.Fbtblf("unexpected error while inserting uplobd: %s", err)
 		}
 	}
 }
 
-// insertRepo creates a repository record with the given id and name. If there is already a repository
-// with the given identifier, nothing happens
-func insertRepo(t testing.TB, db database.DB, id int, name string, private bool) {
-	if name == "" {
-		name = fmt.Sprintf("n-%d", id)
+// insertRepo crebtes b repository record with the given id bnd nbme. If there is blrebdy b repository
+// with the given identifier, nothing hbppens
+func insertRepo(t testing.TB, db dbtbbbse.DB, id int, nbme string, privbte bool) {
+	if nbme == "" {
+		nbme = fmt.Sprintf("n-%d", id)
 	}
 
 	deletedAt := sqlf.Sprintf("NULL")
-	if strings.HasPrefix(name, "DELETED-") {
+	if strings.HbsPrefix(nbme, "DELETED-") {
 		deletedAt = sqlf.Sprintf("%s", time.Unix(1587396557, 0).UTC())
 	}
 	insertRepoQuery := sqlf.Sprintf(
-		`INSERT INTO repo (id, name, deleted_at, private) VALUES (%s, %s, %s, %s) ON CONFLICT (id) DO NOTHING`,
+		`INSERT INTO repo (id, nbme, deleted_bt, privbte) VALUES (%s, %s, %s, %s) ON CONFLICT (id) DO NOTHING`,
 		id,
-		name,
+		nbme,
 		deletedAt,
-		private,
+		privbte,
 	)
-	if _, err := db.ExecContext(context.Background(), insertRepoQuery.Query(sqlf.PostgresBindVar), insertRepoQuery.Args()...); err != nil {
-		t.Fatalf("unexpected error while upserting repository: %s", err)
+	if _, err := db.ExecContext(context.Bbckground(), insertRepoQuery.Query(sqlf.PostgresBindVbr), insertRepoQuery.Args()...); err != nil {
+		t.Fbtblf("unexpected error while upserting repository: %s", err)
 	}
 
-	status := "cloned"
-	if strings.HasPrefix(name, "DELETED-") {
-		status = "not_cloned"
+	stbtus := "cloned"
+	if strings.HbsPrefix(nbme, "DELETED-") {
+		stbtus = "not_cloned"
 	}
-	updateGitserverRepoQuery := sqlf.Sprintf(
-		`UPDATE gitserver_repos SET clone_status = %s WHERE repo_id = %s`,
-		status,
+	updbteGitserverRepoQuery := sqlf.Sprintf(
+		`UPDATE gitserver_repos SET clone_stbtus = %s WHERE repo_id = %s`,
+		stbtus,
 		id,
 	)
-	if _, err := db.ExecContext(context.Background(), updateGitserverRepoQuery.Query(sqlf.PostgresBindVar), updateGitserverRepoQuery.Args()...); err != nil {
-		t.Fatalf("unexpected error while upserting gitserver repository: %s", err)
+	if _, err := db.ExecContext(context.Bbckground(), updbteGitserverRepoQuery.Query(sqlf.PostgresBindVbr), updbteGitserverRepoQuery.Args()...); err != nil {
+		t.Fbtblf("unexpected error while upserting gitserver repository: %s", err)
 	}
 }
 
-// makeCommit formats an integer as a 40-character git commit hash.
-func makeCommit(i int) string {
+// mbkeCommit formbts bn integer bs b 40-chbrbcter git commit hbsh.
+func mbkeCommit(i int) string {
 	return fmt.Sprintf("%040d", i)
 }
 
-func getUploadStates(db database.DB, ids ...int) (map[int]string, error) {
+func getUplobdStbtes(db dbtbbbse.DB, ids ...int) (mbp[int]string, error) {
 	if len(ids) == 0 {
 		return nil, nil
 	}
 
 	q := sqlf.Sprintf(
-		`SELECT id, state FROM lsif_uploads WHERE id IN (%s)`,
+		`SELECT id, stbte FROM lsif_uplobds WHERE id IN (%s)`,
 		sqlf.Join(intsToQueries(ids), ", "),
 	)
 
-	return scanStates(db.QueryContext(context.Background(), q.Query(sqlf.PostgresBindVar), q.Args()...))
+	return scbnStbtes(db.QueryContext(context.Bbckground(), q.Query(sqlf.PostgresBindVbr), q.Args()...))
 }
 
-// scanStates scans pairs of id/states from the return value of `*Store.query`.
-func scanStates(rows *sql.Rows, queryErr error) (_ map[int]string, err error) {
+// scbnStbtes scbns pbirs of id/stbtes from the return vblue of `*Store.query`.
+func scbnStbtes(rows *sql.Rows, queryErr error) (_ mbp[int]string, err error) {
 	if queryErr != nil {
 		return nil, queryErr
 	}
-	defer func() { err = basestore.CloseRows(rows, err) }()
+	defer func() { err = bbsestore.CloseRows(rows, err) }()
 
-	states := map[int]string{}
+	stbtes := mbp[int]string{}
 	for rows.Next() {
-		var id int
-		var state string
-		if err := rows.Scan(&id, &state); err != nil {
+		vbr id int
+		vbr stbte string
+		if err := rows.Scbn(&id, &stbte); err != nil {
 			return nil, err
 		}
 
-		states[id] = strings.ToLower(state)
+		stbtes[id] = strings.ToLower(stbte)
 	}
 
-	return states, nil
+	return stbtes, nil
 }
 
-// consumeScanner reads all values from the scanner into memory.
-func consumeScanner(scanner shared.PackageReferenceScanner) (references []shared.PackageReference, _ error) {
+// consumeScbnner rebds bll vblues from the scbnner into memory.
+func consumeScbnner(scbnner shbred.PbckbgeReferenceScbnner) (references []shbred.PbckbgeReference, _ error) {
 	for {
-		reference, exists, err := scanner.Next()
+		reference, exists, err := scbnner.Next()
 		if err != nil {
 			return nil, err
 		}
 		if !exists {
-			break
+			brebk
 		}
 
-		references = append(references, reference)
+		references = bppend(references, reference)
 	}
-	if err := scanner.Close(); err != nil {
+	if err := scbnner.Close(); err != nil {
 		return nil, err
 	}
 
 	return references, nil
 }
 
-// intsToQueries converts a slice of ints into a slice of queries.
-func intsToQueries(values []int) []*sqlf.Query {
-	var queries []*sqlf.Query
-	for _, value := range values {
-		queries = append(queries, sqlf.Sprintf("%d", value))
+// intsToQueries converts b slice of ints into b slice of queries.
+func intsToQueries(vblues []int) []*sqlf.Query {
+	vbr queries []*sqlf.Query
+	for _, vblue := rbnge vblues {
+		queries = bppend(queries, sqlf.Sprintf("%d", vblue))
 	}
 
 	return queries
 }
 
-type printableRank struct{ value *int }
+type printbbleRbnk struct{ vblue *int }
 
-func (r printableRank) String() string {
-	if r.value == nil {
+func (r printbbleRbnk) String() string {
+	if r.vblue == nil {
 		return "nil"
 	}
-	return strconv.Itoa(*r.value)
+	return strconv.Itob(*r.vblue)
 }

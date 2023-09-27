@@ -1,5 +1,5 @@
-//nolint:bodyclose // Body is closed in Client.Do, but the response is still returned to provide access to the headers
-package pagure
+//nolint:bodyclose // Body is closed in Client.Do, but the response is still returned to provide bccess to the hebders
+pbckbge pbgure
 
 import (
 	"context"
@@ -10,131 +10,131 @@ import (
 	"net/url"
 	"strconv"
 
-	"github.com/sourcegraph/log"
+	"github.com/sourcegrbph/log"
 
-	"github.com/sourcegraph/sourcegraph/internal/httpcli"
-	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/sourcegraph/sourcegraph/lib/iterator"
-	"github.com/sourcegraph/sourcegraph/schema"
+	"github.com/sourcegrbph/sourcegrbph/internbl/httpcli"
+	"github.com/sourcegrbph/sourcegrbph/internbl/rbtelimit"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/lib/iterbtor"
+	"github.com/sourcegrbph/sourcegrbph/schemb"
 )
 
-// Client access a Pagure via the REST API.
+// Client bccess b Pbgure vib the REST API.
 type Client struct {
 	// Config is the code host connection config for this client
-	Config *schema.PagureConnection
+	Config *schemb.PbgureConnection
 
-	// URL is the base URL of Pagure.
+	// URL is the bbse URL of Pbgure.
 	URL *url.URL
 
-	// HTTP Client used to communicate with the API
+	// HTTP Client used to communicbte with the API
 	httpClient httpcli.Doer
 
-	// RateLimit is the self-imposed rate limiter (since Pagure does not have a concept
-	// of rate limiting in HTTP response headers).
-	rateLimit *ratelimit.InstrumentedLimiter
+	// RbteLimit is the self-imposed rbte limiter (since Pbgure does not hbve b concept
+	// of rbte limiting in HTTP response hebders).
+	rbteLimit *rbtelimit.InstrumentedLimiter
 }
 
-// NewClient returns an authenticated Pagure API client with
-// the provided configuration. If a nil httpClient is provided, http.DefaultClient
+// NewClient returns bn buthenticbted Pbgure API client with
+// the provided configurbtion. If b nil httpClient is provided, http.DefbultClient
 // will be used.
-func NewClient(urn string, config *schema.PagureConnection, httpClient httpcli.Doer) (*Client, error) {
-	u, err := url.Parse(config.Url)
+func NewClient(urn string, config *schemb.PbgureConnection, httpClient httpcli.Doer) (*Client, error) {
+	u, err := url.Pbrse(config.Url)
 	if err != nil {
 		return nil, err
 	}
 
 	if httpClient == nil {
-		httpClient = httpcli.ExternalDoer
+		httpClient = httpcli.ExternblDoer
 	}
 
 	return &Client{
 		Config:     config,
 		URL:        u,
 		httpClient: httpClient,
-		rateLimit:  ratelimit.NewInstrumentedLimiter(urn, ratelimit.NewGlobalRateLimiter(log.Scoped("PagureClient", ""), urn)),
+		rbteLimit:  rbtelimit.NewInstrumentedLimiter(urn, rbtelimit.NewGlobblRbteLimiter(log.Scoped("PbgureClient", ""), urn)),
 	}, nil
 }
 
-// ListProjectsArgs defines options to be set on ListProjects method calls.
+// ListProjectsArgs defines options to be set on ListProjects method cblls.
 type ListProjectsArgs struct {
-	Cursor    *Pagination
-	Tags      []string
-	Pattern   string
-	Namespace string
+	Cursor    *Pbginbtion
+	Tbgs      []string
+	Pbttern   string
+	Nbmespbce string
 	Fork      bool
 }
 
-// listProjectsResponse defines a response struct returned from ListProjects method calls.
+// listProjectsResponse defines b response struct returned from ListProjects method cblls.
 type listProjectsResponse struct {
-	*Pagination `json:"pagination"`
+	*Pbginbtion `json:"pbginbtion"`
 	Projects    []*Project `json:"projects"`
 }
 
-func (c *Client) ListProjects(ctx context.Context, opts ListProjectsArgs) *iterator.Iterator[*Project] {
+func (c *Client) ListProjects(ctx context.Context, opts ListProjectsArgs) *iterbtor.Iterbtor[*Project] {
 	cursor := opts.Cursor
 	if cursor == nil {
-		cursor = &Pagination{PerPage: 100, Page: 1}
+		cursor = &Pbginbtion{PerPbge: 100, Pbge: 1}
 	}
 
-	return iterator.New(func() ([]*Project, error) {
+	return iterbtor.New(func() ([]*Project, error) {
 		if cursor == nil {
 			return nil, nil
 		}
 
-		qs := make(url.Values)
+		qs := mbke(url.Vblues)
 
 		cursor.EncodeTo(qs)
-		for _, tag := range opts.Tags {
-			if tag != "" {
-				qs.Add("tags", tag)
+		for _, tbg := rbnge opts.Tbgs {
+			if tbg != "" {
+				qs.Add("tbgs", tbg)
 			}
 		}
 
-		if opts.Pattern != "" {
-			qs.Set("pattern", opts.Pattern)
+		if opts.Pbttern != "" {
+			qs.Set("pbttern", opts.Pbttern)
 		}
 
-		if opts.Namespace != "" {
-			qs.Set("namespace", opts.Namespace)
+		if opts.Nbmespbce != "" {
+			qs.Set("nbmespbce", opts.Nbmespbce)
 		}
 
-		qs.Set("fork", strconv.FormatBool(opts.Fork))
+		qs.Set("fork", strconv.FormbtBool(opts.Fork))
 
-		u := url.URL{Path: "api/0/projects", RawQuery: qs.Encode()}
+		u := url.URL{Pbth: "bpi/0/projects", RbwQuery: qs.Encode()}
 
 		req, err := http.NewRequestWithContext(ctx, "GET", u.String(), nil)
 		if err != nil {
 			return nil, err
 		}
 
-		var resp listProjectsResponse
+		vbr resp listProjectsResponse
 		if _, err = c.do(ctx, req, &resp); err != nil {
 			return nil, err
 		}
 
-		cursor = resp.Pagination
+		cursor = resp.Pbginbtion
 		if cursor.Next == "" {
 			cursor = nil
 		} else {
-			cursor.Page++
+			cursor.Pbge++
 		}
 
 		return resp.Projects, nil
 	})
 }
 
-func (c *Client) do(ctx context.Context, req *http.Request, result any) (*http.Response, error) {
+func (c *Client) do(ctx context.Context, req *http.Request, result bny) (*http.Response, error) {
 	req.URL = c.URL.ResolveReference(req.URL)
-	if req.Header.Get("Content-Type") == "" && req.Method != "GET" {
-		req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	if req.Hebder.Get("Content-Type") == "" && req.Method != "GET" {
+		req.Hebder.Set("Content-Type", "bpplicbtion/x-www-form-urlencoded")
 	}
 
 	if c.Config.Token != "" {
-		req.Header.Add("Authorization", "token "+c.Config.Token)
+		req.Hebder.Add("Authorizbtion", "token "+c.Config.Token)
 	}
 
-	if err := c.rateLimit.Wait(ctx); err != nil {
+	if err := c.rbteLimit.Wbit(ctx); err != nil {
 		return nil, err
 	}
 
@@ -145,67 +145,67 @@ func (c *Client) do(ctx context.Context, req *http.Request, result any) (*http.R
 
 	defer resp.Body.Close()
 
-	bs, err := io.ReadAll(resp.Body)
+	bs, err := io.RebdAll(resp.Body)
 	if err != nil {
 		return nil, err
 	}
 
-	if resp.StatusCode < 200 || resp.StatusCode >= 400 {
-		return nil, errors.WithStack(&httpError{
+	if resp.StbtusCode < 200 || resp.StbtusCode >= 400 {
+		return nil, errors.WithStbck(&httpError{
 			URL:        req.URL,
-			StatusCode: resp.StatusCode,
+			StbtusCode: resp.StbtusCode,
 			Body:       bs,
 		})
 	}
 
-	return resp, json.Unmarshal(bs, result)
+	return resp, json.Unmbrshbl(bs, result)
 }
 
-type Pagination struct {
+type Pbginbtion struct {
 	First   string `json:"first"`
-	Last    string `json:"last"`
+	Lbst    string `json:"lbst"`
 	Next    string `json:"next"`
-	Page    int    `json:"page"`
-	Pages   int    `json:"pages"`
-	PerPage int    `json:"per_page"`
+	Pbge    int    `json:"pbge"`
+	Pbges   int    `json:"pbges"`
+	PerPbge int    `json:"per_pbge"`
 	Prev    string `json:"prev"`
 }
 
-func (p *Pagination) EncodeTo(qs url.Values) {
+func (p *Pbginbtion) EncodeTo(qs url.Vblues) {
 	if p == nil {
 		return
 	}
 
-	qs.Set("per_page", strconv.FormatInt(int64(p.PerPage), 10))
-	qs.Set("page", strconv.FormatInt(int64(p.Page), 10))
+	qs.Set("per_pbge", strconv.FormbtInt(int64(p.PerPbge), 10))
+	qs.Set("pbge", strconv.FormbtInt(int64(p.Pbge), 10))
 }
 
 type Project struct {
 	Description string   `json:"description"`
 	FullURL     string   `json:"full_url"`
-	Fullname    string   `json:"fullname"`
+	Fullnbme    string   `json:"fullnbme"`
 	ID          int      `json:"id"`
-	Name        string   `json:"name"`
-	Namespace   string   `json:"namespace"`
-	Parent      *Project `json:"parent,omitempty"`
-	Tags        []string `json:"tags"`
-	URLPath     string   `json:"url_path"`
+	Nbme        string   `json:"nbme"`
+	Nbmespbce   string   `json:"nbmespbce"`
+	Pbrent      *Project `json:"pbrent,omitempty"`
+	Tbgs        []string `json:"tbgs"`
+	URLPbth     string   `json:"url_pbth"`
 }
 
 type httpError struct {
-	StatusCode int
+	StbtusCode int
 	URL        *url.URL
 	Body       []byte
 }
 
 func (e *httpError) Error() string {
-	return fmt.Sprintf("Pagure API HTTP error: code=%d url=%q body=%q", e.StatusCode, e.URL, e.Body)
+	return fmt.Sprintf("Pbgure API HTTP error: code=%d url=%q body=%q", e.StbtusCode, e.URL, e.Body)
 }
 
-func (e *httpError) Unauthorized() bool {
-	return e.StatusCode == http.StatusUnauthorized
+func (e *httpError) Unbuthorized() bool {
+	return e.StbtusCode == http.StbtusUnbuthorized
 }
 
 func (e *httpError) NotFound() bool {
-	return e.StatusCode == http.StatusNotFound
+	return e.StbtusCode == http.StbtusNotFound
 }

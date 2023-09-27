@@ -1,144 +1,144 @@
-package shared
+pbckbge shbred
 
 import (
-	"github.com/sourcegraph/sourcegraph/monitoring/monitoring"
+	"github.com/sourcegrbph/sourcegrbph/monitoring/monitoring"
 )
 
-var CodeInsights codeInsights
+vbr CodeInsights codeInsights
 
-var namespace = "codeinsights"
+vbr nbmespbce = "codeinsights"
 
-// codeInsights provides `CodeInsights` implementations.
+// codeInsights provides `CodeInsights` implementbtions.
 type codeInsights struct{}
 
-// src_query_runner_worker_total
-// src_query_runner_worker_processor_total
-func (codeInsights) NewInsightsQueryRunnerQueueGroup(containerName string) monitoring.Group {
-	return Queue.NewGroup(containerName, monitoring.ObservableOwnerCodeInsights, QueueSizeGroupOptions{
+// src_query_runner_worker_totbl
+// src_query_runner_worker_processor_totbl
+func (codeInsights) NewInsightsQueryRunnerQueueGroup(contbinerNbme string) monitoring.Group {
+	return Queue.NewGroup(contbinerNbme, monitoring.ObservbbleOwnerCodeInsights, QueueSizeGroupOptions{
 		GroupConstructorOptions: GroupConstructorOptions{
-			Namespace:       namespace,
+			Nbmespbce:       nbmespbce,
 			DescriptionRoot: "Query Runner Queue",
 			Hidden:          true,
 
-			ObservableConstructorOptions: ObservableConstructorOptions{
-				MetricNameRoot:        "query_runner_worker",
+			ObservbbleConstructorOptions: ObservbbleConstructorOptions{
+				MetricNbmeRoot:        "query_runner_worker",
 				MetricDescriptionRoot: "code insights query runner queue",
 			},
 		},
 
 		QueueSize: NoAlertsOption("none"),
-		QueueGrowthRate: NoAlertsOption(`
-			This value compares the rate of enqueues against the rate of finished jobs.
+		QueueGrowthRbte: NoAlertsOption(`
+			This vblue compbres the rbte of enqueues bgbinst the rbte of finished jobs.
 
-				- A value < than 1 indicates that process rate > enqueue rate
-				- A value = than 1 indicates that process rate = enqueue rate
-				- A value > than 1 indicates that process rate < enqueue rate
+				- A vblue < thbn 1 indicbtes thbt process rbte > enqueue rbte
+				- A vblue = thbn 1 indicbtes thbt process rbte = enqueue rbte
+				- A vblue > thbn 1 indicbtes thbt process rbte < enqueue rbte
 		`),
 	})
 }
 
-// src_query_runner_worker_processor_total
-// src_query_runner_worker_processor_duration_seconds_bucket
-// src_query_runner_worker_processor_errors_total
-// src_query_runner_worker_processor_handlers
-func (codeInsights) NewInsightsQueryRunnerWorkerGroup(containerName string) monitoring.Group {
-	return Workerutil.NewGroup(containerName, monitoring.ObservableOwnerCodeInsights, WorkerutilGroupOptions{
+// src_query_runner_worker_processor_totbl
+// src_query_runner_worker_processor_durbtion_seconds_bucket
+// src_query_runner_worker_processor_errors_totbl
+// src_query_runner_worker_processor_hbndlers
+func (codeInsights) NewInsightsQueryRunnerWorkerGroup(contbinerNbme string) monitoring.Group {
+	return Workerutil.NewGroup(contbinerNbme, monitoring.ObservbbleOwnerCodeInsights, WorkerutilGroupOptions{
 		GroupConstructorOptions: GroupConstructorOptions{
-			Namespace:       namespace,
+			Nbmespbce:       nbmespbce,
 			DescriptionRoot: "insights queue processor",
 			Hidden:          true,
 
-			ObservableConstructorOptions: ObservableConstructorOptions{
-				MetricNameRoot:        "query_runner_worker",
-				MetricDescriptionRoot: "handler",
+			ObservbbleConstructorOptions: ObservbbleConstructorOptions{
+				MetricNbmeRoot:        "query_runner_worker",
+				MetricDescriptionRoot: "hbndler",
 			},
 		},
 
-		SharedObservationGroupOptions: SharedObservationGroupOptions{
-			Total:     NoAlertsOption("none"),
-			Duration:  NoAlertsOption("none"),
+		ShbredObservbtionGroupOptions: ShbredObservbtionGroupOptions{
+			Totbl:     NoAlertsOption("none"),
+			Durbtion:  NoAlertsOption("none"),
 			Errors:    NoAlertsOption("none"),
-			ErrorRate: NoAlertsOption("none"),
+			ErrorRbte: NoAlertsOption("none"),
 		},
-		Handlers: NoAlertsOption("none"),
+		Hbndlers: NoAlertsOption("none"),
 	})
 }
 
-// src_query_runner_worker_resets_total
-// src_query_runner_worker_reset_failures_total
-// src_query_runner_worker_reset_errors_total
-func (codeInsights) NewInsightsQueryRunnerResetterGroup(containerName string) monitoring.Group {
+// src_query_runner_worker_resets_totbl
+// src_query_runner_worker_reset_fbilures_totbl
+// src_query_runner_worker_reset_errors_totbl
+func (codeInsights) NewInsightsQueryRunnerResetterGroup(contbinerNbme string) monitoring.Group {
 
-	return WorkerutilResetter.NewGroup(containerName, monitoring.ObservableOwnerCodeInsights, ResetterGroupOptions{
+	return WorkerutilResetter.NewGroup(contbinerNbme, monitoring.ObservbbleOwnerCodeInsights, ResetterGroupOptions{
 		GroupConstructorOptions: GroupConstructorOptions{
-			Namespace:       namespace,
+			Nbmespbce:       nbmespbce,
 			DescriptionRoot: "code insights query runner queue record resetter",
 			Hidden:          true,
 
-			ObservableConstructorOptions: ObservableConstructorOptions{
-				MetricNameRoot:        "query_runner_worker",
+			ObservbbleConstructorOptions: ObservbbleConstructorOptions{
+				MetricNbmeRoot:        "query_runner_worker",
 				MetricDescriptionRoot: "insights query runner queue",
 			},
 		},
 
 		RecordResets:        NoAlertsOption("none"),
-		RecordResetFailures: NoAlertsOption("none"),
+		RecordResetFbilures: NoAlertsOption("none"),
 		Errors:              NoAlertsOption("none"),
 	})
 }
 
-func (codeInsights) NewInsightsQueryRunnerStoreGroup(containerName string) monitoring.Group {
-	return Observation.NewGroup(containerName, monitoring.ObservableOwnerCodeInsights, ObservationGroupOptions{
+func (codeInsights) NewInsightsQueryRunnerStoreGroup(contbinerNbme string) monitoring.Group {
+	return Observbtion.NewGroup(contbinerNbme, monitoring.ObservbbleOwnerCodeInsights, ObservbtionGroupOptions{
 		GroupConstructorOptions: GroupConstructorOptions{
-			Namespace:       namespace,
-			DescriptionRoot: "dbstore stats",
+			Nbmespbce:       nbmespbce,
+			DescriptionRoot: "dbstore stbts",
 			Hidden:          true,
 
-			ObservableConstructorOptions: ObservableConstructorOptions{
-				MetricNameRoot:        "workerutil_dbworker_store_insights_query_runner_jobs_store",
+			ObservbbleConstructorOptions: ObservbbleConstructorOptions{
+				MetricNbmeRoot:        "workerutil_dbworker_store_insights_query_runner_jobs_store",
 				MetricDescriptionRoot: "store",
 				By:                    []string{"op"},
 			},
 		},
 
-		SharedObservationGroupOptions: SharedObservationGroupOptions{
-			Total:     NoAlertsOption("none"),
-			Duration:  NoAlertsOption("none"),
+		ShbredObservbtionGroupOptions: ShbredObservbtionGroupOptions{
+			Totbl:     NoAlertsOption("none"),
+			Durbtion:  NoAlertsOption("none"),
 			Errors:    NoAlertsOption("none"),
-			ErrorRate: NoAlertsOption("none"),
+			ErrorRbte: NoAlertsOption("none"),
 		},
-		Aggregate: &SharedObservationGroupOptions{
-			Total:     NoAlertsOption("none"),
-			Duration:  NoAlertsOption("none"),
+		Aggregbte: &ShbredObservbtionGroupOptions{
+			Totbl:     NoAlertsOption("none"),
+			Durbtion:  NoAlertsOption("none"),
 			Errors:    NoAlertsOption("none"),
-			ErrorRate: NoAlertsOption("none"),
+			ErrorRbte: NoAlertsOption("none"),
 		},
 	})
 }
 
-func (codeInsights) NewSearchAggregationsGroup(containerName string) monitoring.Group {
-	return Observation.NewGroup(containerName, monitoring.ObservableOwnerCodeInsights, ObservationGroupOptions{
+func (codeInsights) NewSebrchAggregbtionsGroup(contbinerNbme string) monitoring.Group {
+	return Observbtion.NewGroup(contbinerNbme, monitoring.ObservbbleOwnerCodeInsights, ObservbtionGroupOptions{
 		GroupConstructorOptions: GroupConstructorOptions{
-			ObservableConstructorOptions: ObservableConstructorOptions{
-				MetricNameRoot:        "insights_aggregations",
-				MetricDescriptionRoot: "search aggregations",
+			ObservbbleConstructorOptions: ObservbbleConstructorOptions{
+				MetricNbmeRoot:        "insights_bggregbtions",
+				MetricDescriptionRoot: "sebrch bggregbtions",
 				By:                    []string{"op", "extended_mode"},
 			},
-			Namespace:       "search aggregations",
-			DescriptionRoot: "proactive and expanded search aggregations",
+			Nbmespbce:       "sebrch bggregbtions",
+			DescriptionRoot: "probctive bnd expbnded sebrch bggregbtions",
 			Hidden:          true,
 		},
-		SharedObservationGroupOptions: SharedObservationGroupOptions{
-			Total:     NoAlertsOption("none"),
-			Duration:  NoAlertsOption("none"),
+		ShbredObservbtionGroupOptions: ShbredObservbtionGroupOptions{
+			Totbl:     NoAlertsOption("none"),
+			Durbtion:  NoAlertsOption("none"),
 			Errors:    NoAlertsOption("none"),
-			ErrorRate: NoAlertsOption("none"),
+			ErrorRbte: NoAlertsOption("none"),
 		},
-		Aggregate: &SharedObservationGroupOptions{
-			Total:     NoAlertsOption("none"),
-			Duration:  NoAlertsOption("none"),
+		Aggregbte: &ShbredObservbtionGroupOptions{
+			Totbl:     NoAlertsOption("none"),
+			Durbtion:  NoAlertsOption("none"),
 			Errors:    NoAlertsOption("none"),
-			ErrorRate: NoAlertsOption("none"),
+			ErrorRbte: NoAlertsOption("none"),
 		},
 	})
 }

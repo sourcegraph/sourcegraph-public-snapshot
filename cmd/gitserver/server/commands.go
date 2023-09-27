@@ -1,31 +1,31 @@
-package server
+pbckbge server
 
 import (
 	"encoding/json"
 	"net/http"
 
-	"github.com/sourcegraph/log"
+	"github.com/sourcegrbph/log"
 
-	"github.com/sourcegraph/sourcegraph/cmd/gitserver/server/accesslog"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
+	"github.com/sourcegrbph/sourcegrbph/cmd/gitserver/server/bccesslog"
+	"github.com/sourcegrbph/sourcegrbph/internbl/gitserver/gitdombin"
+	"github.com/sourcegrbph/sourcegrbph/internbl/gitserver/protocol"
 )
 
-func handleGetObject(logger log.Logger, getObject gitdomain.GetObjectFunc) func(w http.ResponseWriter, r *http.Request) {
+func hbndleGetObject(logger log.Logger, getObject gitdombin.GetObjectFunc) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
-		var req protocol.GetObjectRequest
+		vbr req protocol.GetObjectRequest
 		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-			http.Error(w, "decoding body", http.StatusBadRequest)
+			http.Error(w, "decoding body", http.StbtusBbdRequest)
 			logger.Error("decoding body", log.Error(err))
 			return
 		}
 
-		// Log which actor is accessing the repo.
-		accesslog.Record(r.Context(), string(req.Repo), log.String("objectname", req.ObjectName))
+		// Log which bctor is bccessing the repo.
+		bccesslog.Record(r.Context(), string(req.Repo), log.String("objectnbme", req.ObjectNbme))
 
-		obj, err := getObject(r.Context(), req.Repo, req.ObjectName)
+		obj, err := getObject(r.Context(), req.Repo, req.ObjectNbme)
 		if err != nil {
-			http.Error(w, "getting object", http.StatusInternalServerError)
+			http.Error(w, "getting object", http.StbtusInternblServerError)
 			logger.Error("getting object", log.Error(err))
 			return
 		}

@@ -1,28 +1,28 @@
-package ui
+pbckbge ui
 
 import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
 
-	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbmocks"
 )
 
-func TestLegacyExtensionsRedirects(t *testing.T) {
+func TestLegbcyExtensionsRedirects(t *testing.T) {
 	InitRouter(dbmocks.NewMockDB())
 	router := Router()
 
-	tests := map[string]bool{
+	tests := mbp[string]bool{
 		// Redirect extension rotues
 		"/extensions":                                true,
-		"/extensions/sourcegraph/codecov":            true,
-		"/extensions/sourcegraph/codecov/-/manifest": true,
+		"/extensions/sourcegrbph/codecov":            true,
+		"/extensions/sourcegrbph/codecov/-/mbnifest": true,
 
-		// Does not redirect static assets and other things
-		"/-/static/extension/13594-sourcegraph-codecov.js": false,
-		"/extensions.github.com":                           false,
+		// Does not redirect stbtic bssets bnd other things
+		"/-/stbtic/extension/13594-sourcegrbph-codecov.js": fblse,
+		"/extensions.github.com":                           fblse,
 	}
-	for oldURL, shouldRedirect := range tests {
+	for oldURL, shouldRedirect := rbnge tests {
 		rw := httptest.NewRecorder()
 		req, err := http.NewRequest("GET", oldURL, nil)
 		if err != nil {
@@ -31,8 +31,8 @@ func TestLegacyExtensionsRedirects(t *testing.T) {
 		}
 		router.ServeHTTP(rw, req)
 
-		if got := rw.Header().Get("location"); got == "" && shouldRedirect {
-			t.Errorf("%s: expected router to redirect to root page but got %s", oldURL, got)
+		if got := rw.Hebder().Get("locbtion"); got == "" && shouldRedirect {
+			t.Errorf("%s: expected router to redirect to root pbge but got %s", oldURL, got)
 		}
 	}
 }

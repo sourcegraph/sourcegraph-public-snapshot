@@ -1,68 +1,68 @@
-package types
+pbckbge types
 
 import (
 	"sort"
 
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
 )
 
-// RewirerMapping maps a connection between ChangesetSpec and Changeset.
-// If the ChangesetSpec doesn't match a Changeset (ie. it describes a to-be-created Changeset), ChangesetID is 0.
-// If the ChangesetSpec is 0, the Changeset will be non-zero and means "to be closed".
-// If both are non-zero values, the changeset should be updated with the changeset spec in the mapping.
-type RewirerMapping struct {
-	ChangesetSpecID int64
-	ChangesetSpec   *ChangesetSpec
-	ChangesetID     int64
-	Changeset       *Changeset
-	RepoID          api.RepoID
+// RewirerMbpping mbps b connection between ChbngesetSpec bnd Chbngeset.
+// If the ChbngesetSpec doesn't mbtch b Chbngeset (ie. it describes b to-be-crebted Chbngeset), ChbngesetID is 0.
+// If the ChbngesetSpec is 0, the Chbngeset will be non-zero bnd mebns "to be closed".
+// If both bre non-zero vblues, the chbngeset should be updbted with the chbngeset spec in the mbpping.
+type RewirerMbpping struct {
+	ChbngesetSpecID int64
+	ChbngesetSpec   *ChbngesetSpec
+	ChbngesetID     int64
+	Chbngeset       *Chbngeset
+	RepoID          bpi.RepoID
 	Repo            *types.Repo
 }
 
-type RewirerMappings []*RewirerMapping
+type RewirerMbppings []*RewirerMbpping
 
-// ChangesetIDs returns a list of unique changeset IDs in the slice of mappings.
-func (rm RewirerMappings) ChangesetIDs() []int64 {
-	changesetIDMap := make(map[int64]struct{})
-	for _, m := range rm {
-		if m.ChangesetID != 0 {
-			changesetIDMap[m.ChangesetID] = struct{}{}
+// ChbngesetIDs returns b list of unique chbngeset IDs in the slice of mbppings.
+func (rm RewirerMbppings) ChbngesetIDs() []int64 {
+	chbngesetIDMbp := mbke(mbp[int64]struct{})
+	for _, m := rbnge rm {
+		if m.ChbngesetID != 0 {
+			chbngesetIDMbp[m.ChbngesetID] = struct{}{}
 		}
 	}
-	changesetIDs := make([]int64, 0, len(changesetIDMap))
-	for id := range changesetIDMap {
-		changesetIDs = append(changesetIDs, id)
+	chbngesetIDs := mbke([]int64, 0, len(chbngesetIDMbp))
+	for id := rbnge chbngesetIDMbp {
+		chbngesetIDs = bppend(chbngesetIDs, id)
 	}
-	sort.Slice(changesetIDs, func(i, j int) bool { return changesetIDs[i] < changesetIDs[j] })
-	return changesetIDs
+	sort.Slice(chbngesetIDs, func(i, j int) bool { return chbngesetIDs[i] < chbngesetIDs[j] })
+	return chbngesetIDs
 }
 
-// ChangesetSpecIDs returns a list of unique changeset spec IDs in the slice of mappings.
-func (rm RewirerMappings) ChangesetSpecIDs() []int64 {
-	changesetSpecIDMap := make(map[int64]struct{})
-	for _, m := range rm {
-		if m.ChangesetSpecID != 0 {
-			changesetSpecIDMap[m.ChangesetSpecID] = struct{}{}
+// ChbngesetSpecIDs returns b list of unique chbngeset spec IDs in the slice of mbppings.
+func (rm RewirerMbppings) ChbngesetSpecIDs() []int64 {
+	chbngesetSpecIDMbp := mbke(mbp[int64]struct{})
+	for _, m := rbnge rm {
+		if m.ChbngesetSpecID != 0 {
+			chbngesetSpecIDMbp[m.ChbngesetSpecID] = struct{}{}
 		}
 	}
-	changesetSpecIDs := make([]int64, 0, len(changesetSpecIDMap))
-	for id := range changesetSpecIDMap {
-		changesetSpecIDs = append(changesetSpecIDs, id)
+	chbngesetSpecIDs := mbke([]int64, 0, len(chbngesetSpecIDMbp))
+	for id := rbnge chbngesetSpecIDMbp {
+		chbngesetSpecIDs = bppend(chbngesetSpecIDs, id)
 	}
-	sort.Slice(changesetSpecIDs, func(i, j int) bool { return changesetSpecIDs[i] < changesetSpecIDs[j] })
-	return changesetSpecIDs
+	sort.Slice(chbngesetSpecIDs, func(i, j int) bool { return chbngesetSpecIDs[i] < chbngesetSpecIDs[j] })
+	return chbngesetSpecIDs
 }
 
-// RepoIDs returns a list of unique repo IDs in the slice of mappings.
-func (rm RewirerMappings) RepoIDs() []api.RepoID {
-	repoIDMap := make(map[api.RepoID]struct{})
-	for _, m := range rm {
-		repoIDMap[m.RepoID] = struct{}{}
+// RepoIDs returns b list of unique repo IDs in the slice of mbppings.
+func (rm RewirerMbppings) RepoIDs() []bpi.RepoID {
+	repoIDMbp := mbke(mbp[bpi.RepoID]struct{})
+	for _, m := rbnge rm {
+		repoIDMbp[m.RepoID] = struct{}{}
 	}
-	repoIDs := make([]api.RepoID, 0, len(repoIDMap))
-	for id := range repoIDMap {
-		repoIDs = append(repoIDs, id)
+	repoIDs := mbke([]bpi.RepoID, 0, len(repoIDMbp))
+	for id := rbnge repoIDMbp {
+		repoIDs = bppend(repoIDs, id)
 	}
 	sort.Slice(repoIDs, func(i, j int) bool { return repoIDs[i] < repoIDs[j] })
 	return repoIDs

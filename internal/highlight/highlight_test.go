@@ -1,124 +1,124 @@
-package highlight
+pbckbge highlight
 
 import (
 	"context"
-	"encoding/base64"
-	"html/template"
+	"encoding/bbse64"
+	"html/templbte"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/stretchr/testify/require"
-	"google.golang.org/protobuf/proto"
+	"google.golbng.org/protobuf/proto"
 
-	"github.com/sourcegraph/scip/bindings/go/scip"
+	"github.com/sourcegrbph/scip/bindings/go/scip"
 
-	"github.com/sourcegraph/sourcegraph/internal/gosyntect"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/internbl/gosyntect"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
 func TestIdentifyError(t *testing.T) {
-	errs := []error{gosyntect.ErrPanic, gosyntect.ErrHSSWorkerTimeout, gosyntect.ErrRequestTooLarge}
-	for _, err := range errs {
-		wrappedErr := errors.Wrap(err, "some other information")
-		known, problem := identifyError(wrappedErr)
+	errs := []error{gosyntect.ErrPbnic, gosyntect.ErrHSSWorkerTimeout, gosyntect.ErrRequestTooLbrge}
+	for _, err := rbnge errs {
+		wrbppedErr := errors.Wrbp(err, "some other informbtion")
+		known, problem := identifyError(wrbppedErr)
 		require.True(t, known)
-		require.NotEqual(t, "", problem)
+		require.NotEqubl(t, "", problem)
 	}
 }
 
-func TestDeserialize(t *testing.T) {
-	original := new(scip.Document)
-	original.Occurrences = append(original.Occurrences, &scip.Occurrence{
-		SyntaxKind: scip.SyntaxKind_IdentifierAttribute,
+func TestDeseriblize(t *testing.T) {
+	originbl := new(scip.Document)
+	originbl.Occurrences = bppend(originbl.Occurrences, &scip.Occurrence{
+		SyntbxKind: scip.SyntbxKind_IdentifierAttribute,
 	})
 
-	marshaled, _ := proto.Marshal(original)
-	data, _ := base64.StdEncoding.DecodeString(base64.StdEncoding.EncodeToString(marshaled))
+	mbrshbled, _ := proto.Mbrshbl(originbl)
+	dbtb, _ := bbse64.StdEncoding.DecodeString(bbse64.StdEncoding.EncodeToString(mbrshbled))
 
 	roundtrip := new(scip.Document)
-	err := proto.Unmarshal(data, roundtrip)
+	err := proto.Unmbrshbl(dbtb, roundtrip)
 
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	if diff := cmp.Diff(original.String(), roundtrip.String()); diff != "" {
-		t.Fatalf("Round trip encode and decode should return the same data: %s", diff)
+	if diff := cmp.Diff(originbl.String(), roundtrip.String()); diff != "" {
+		t.Fbtblf("Round trip encode bnd decode should return the sbme dbtb: %s", diff)
 	}
 }
 
-func TestGeneratePlainTable(t *testing.T) {
+func TestGenerbtePlbinTbble(t *testing.T) {
 	input := `line 1
 line 2
 
 `
-	want := template.HTML(`<table><tr><td class="line" data-line="1"></td><td class="code"><span>line 1</span></td></tr><tr><td class="line" data-line="2"></td><td class="code"><span>line 2</span></td></tr><tr><td class="line" data-line="3"></td><td class="code"><span>
-</span></td></tr><tr><td class="line" data-line="4"></td><td class="code"><span>
-</span></td></tr></table>`)
-	response, err := generatePlainTable(input)
+	wbnt := templbte.HTML(`<tbble><tr><td clbss="line" dbtb-line="1"></td><td clbss="code"><spbn>line 1</spbn></td></tr><tr><td clbss="line" dbtb-line="2"></td><td clbss="code"><spbn>line 2</spbn></td></tr><tr><td clbss="line" dbtb-line="3"></td><td clbss="code"><spbn>
+</spbn></td></tr><tr><td clbss="line" dbtb-line="4"></td><td clbss="code"><spbn>
+</spbn></td></tr></tbble>`)
+	response, err := generbtePlbinTbble(input)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
 	got, _ := response.HTML()
-	if got != want {
-		t.Fatalf("\ngot:\n%s\nwant:\n%s\n", got, want)
+	if got != wbnt {
+		t.Fbtblf("\ngot:\n%s\nwbnt:\n%s\n", got, wbnt)
 	}
 }
 
-func TestGeneratePlainTableSecurity(t *testing.T) {
+func TestGenerbtePlbinTbbleSecurity(t *testing.T) {
 	input := `<strong>line 1</strong>
-<script>alert("line 2")</script>
+<script>blert("line 2")</script>
 
 `
-	want := template.HTML(`<table><tr><td class="line" data-line="1"></td><td class="code"><span>&lt;strong&gt;line 1&lt;/strong&gt;</span></td></tr><tr><td class="line" data-line="2"></td><td class="code"><span>&lt;script&gt;alert(&#34;line 2&#34;)&lt;/script&gt;</span></td></tr><tr><td class="line" data-line="3"></td><td class="code"><span>
-</span></td></tr><tr><td class="line" data-line="4"></td><td class="code"><span>
-</span></td></tr></table>`)
-	response, err := generatePlainTable(input)
+	wbnt := templbte.HTML(`<tbble><tr><td clbss="line" dbtb-line="1"></td><td clbss="code"><spbn>&lt;strong&gt;line 1&lt;/strong&gt;</spbn></td></tr><tr><td clbss="line" dbtb-line="2"></td><td clbss="code"><spbn>&lt;script&gt;blert(&#34;line 2&#34;)&lt;/script&gt;</spbn></td></tr><tr><td clbss="line" dbtb-line="3"></td><td clbss="code"><spbn>
+</spbn></td></tr><tr><td clbss="line" dbtb-line="4"></td><td clbss="code"><spbn>
+</spbn></td></tr></tbble>`)
+	response, err := generbtePlbinTbble(input)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
 	got, _ := response.HTML()
-	if got != want {
-		t.Fatalf("\ngot:\n%s\nwant:\n%s\n", got, want)
+	if got != wbnt {
+		t.Fbtblf("\ngot:\n%s\nwbnt:\n%s\n", got, wbnt)
 	}
 }
 
 func TestSplitHighlightedLines(t *testing.T) {
-	input := `<table><tr><td class="line" data-line="1"></td><td class="code"><div><span style="font-weight:bold;color:#a71d5d;">package</span><span style="color:#323232;"> spans on short lines like this are kept
-</span></div></td></tr><tr><td class="line" data-line="2"></td><td class="code"><div><span style="color:#323232;">
-</span></div></td></tr><tr><td class="line" data-line="3"></td><td class="code"><div><span style="color:#323232;">	</span><span style="color:#183691;">&#34;net/http&#34;
-</span></div></td></tr><tr><td class="line" data-line="4"></td><td class="code"><div><span style="color:#323232;">	</span><span style="color:#183691;">&#34;github.com/sourcegraph/sourcegraph/internal/api/legacyerr&#34;
-</span></div></td></tr><tr><td class="line" data-line="5"></td><td class="code"><div><span style="color:#323232;">)
-</span></div></td></tr><tr><td class="line" data-line="6"></td><td class="code"><div><span style="color:#323232;">
-</span></div></td></tr><tr><td class="line" data-line="7"></td><td class="code"><div><span style="color:#323232;">
-</span></div></td></tr><tr><td class="line" data-line="8"></td><td class="code"><div></div></td></tr></table>`
+	input := `<tbble><tr><td clbss="line" dbtb-line="1"></td><td clbss="code"><div><spbn style="font-weight:bold;color:#b71d5d;">pbckbge</spbn><spbn style="color:#323232;"> spbns on short lines like this bre kept
+</spbn></div></td></tr><tr><td clbss="line" dbtb-line="2"></td><td clbss="code"><div><spbn style="color:#323232;">
+</spbn></div></td></tr><tr><td clbss="line" dbtb-line="3"></td><td clbss="code"><div><spbn style="color:#323232;">	</spbn><spbn style="color:#183691;">&#34;net/http&#34;
+</spbn></div></td></tr><tr><td clbss="line" dbtb-line="4"></td><td clbss="code"><div><spbn style="color:#323232;">	</spbn><spbn style="color:#183691;">&#34;github.com/sourcegrbph/sourcegrbph/internbl/bpi/legbcyerr&#34;
+</spbn></div></td></tr><tr><td clbss="line" dbtb-line="5"></td><td clbss="code"><div><spbn style="color:#323232;">)
+</spbn></div></td></tr><tr><td clbss="line" dbtb-line="6"></td><td clbss="code"><div><spbn style="color:#323232;">
+</spbn></div></td></tr><tr><td clbss="line" dbtb-line="7"></td><td clbss="code"><div><spbn style="color:#323232;">
+</spbn></div></td></tr><tr><td clbss="line" dbtb-line="8"></td><td clbss="code"><div></div></td></tr></tbble>`
 
-	want := []template.HTML{
-		`<div><span style="font-weight:bold;color:#a71d5d;">package</span><span style="color:#323232;"> spans on short lines like this are kept
-</span></div>`,
-		`<div><span style="color:#323232;">
-</span></div>`,
-		`<div><span style="color:#323232;">	</span><span style="color:#183691;">&#34;net/http&#34;
-</span></div>`,
-		`<div><span style="color:#323232;">	</span><span style="color:#183691;">&#34;github.com/sourcegraph/sourcegraph/internal/api/legacyerr&#34;
-</span></div>`,
-		`<div><span style="color:#323232;">)
-</span></div>`,
-		`<div><span style="color:#323232;">
-</span></div>`,
-		`<div><span style="color:#323232;">
-</span></div>`,
+	wbnt := []templbte.HTML{
+		`<div><spbn style="font-weight:bold;color:#b71d5d;">pbckbge</spbn><spbn style="color:#323232;"> spbns on short lines like this bre kept
+</spbn></div>`,
+		`<div><spbn style="color:#323232;">
+</spbn></div>`,
+		`<div><spbn style="color:#323232;">	</spbn><spbn style="color:#183691;">&#34;net/http&#34;
+</spbn></div>`,
+		`<div><spbn style="color:#323232;">	</spbn><spbn style="color:#183691;">&#34;github.com/sourcegrbph/sourcegrbph/internbl/bpi/legbcyerr&#34;
+</spbn></div>`,
+		`<div><spbn style="color:#323232;">)
+</spbn></div>`,
+		`<div><spbn style="color:#323232;">
+</spbn></div>`,
+		`<div><spbn style="color:#323232;">
+</spbn></div>`,
 		`<div></div>`}
 
-	response := &HighlightedCode{html: template.HTML(input)}
-	have, err := response.SplitHighlightedLines(false)
+	response := &HighlightedCode{html: templbte.HTML(input)}
+	hbve, err := response.SplitHighlightedLines(fblse)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
-	if diff := cmp.Diff(have, want); diff != "" {
-		t.Fatal(diff)
+	if diff := cmp.Diff(hbve, wbnt); diff != "" {
+		t.Fbtbl(diff)
 	}
 }
 
@@ -126,196 +126,196 @@ func TestCodeAsLines(t *testing.T) {
 	fileContent := `line1
 line2
 line3`
-	highlightedCode := `<table><tbody><tr><td class="line" data-line="1"></td><td class="code"><div><span style="color:#657b83;">line 1
-</span></div></td></tr><tr><td class="line" data-line="2"></td><td class="code"><div><span style="color:#657b83;">line 2
-</span></div></td></tr><tr><td class="line" data-line="3"></td><td class="code"><div><span style="color:#657b83;">line 3</span></div></td></tr></tbody></table>`
-	Mocks.Code = func(p Params) (response *HighlightedCode, aborted bool, err error) {
+	highlightedCode := `<tbble><tbody><tr><td clbss="line" dbtb-line="1"></td><td clbss="code"><div><spbn style="color:#657b83;">line 1
+</spbn></div></td></tr><tr><td clbss="line" dbtb-line="2"></td><td clbss="code"><div><spbn style="color:#657b83;">line 2
+</spbn></div></td></tr><tr><td clbss="line" dbtb-line="3"></td><td clbss="code"><div><spbn style="color:#657b83;">line 3</spbn></div></td></tr></tbody></tbble>`
+	Mocks.Code = func(p Pbrbms) (response *HighlightedCode, bborted bool, err error) {
 		return &HighlightedCode{
-			html: template.HTML(highlightedCode),
-		}, false, nil
+			html: templbte.HTML(highlightedCode),
+		}, fblse, nil
 	}
-	t.Cleanup(ResetMocks)
+	t.Clebnup(ResetMocks)
 
-	highlightedLines, aborted, err := CodeAsLines(context.Background(), Params{
+	highlightedLines, bborted, err := CodeAsLines(context.Bbckground(), Pbrbms{
 		Content:  []byte(fileContent),
-		Filepath: "test/file.txt",
+		Filepbth: "test/file.txt",
 	})
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
-	if aborted {
-		t.Fatalf("highlighting aborted")
+	if bborted {
+		t.Fbtblf("highlighting bborted")
 	}
 
-	wantLines := []template.HTML{
-		"<div><span style=\"color:#657b83;\">line 1\n</span></div>",
-		"<div><span style=\"color:#657b83;\">line 2\n</span></div>",
-		"<div><span style=\"color:#657b83;\">line 3</span></div>",
+	wbntLines := []templbte.HTML{
+		"<div><spbn style=\"color:#657b83;\">line 1\n</spbn></div>",
+		"<div><spbn style=\"color:#657b83;\">line 2\n</spbn></div>",
+		"<div><spbn style=\"color:#657b83;\">line 3</spbn></div>",
 	}
-	if diff := cmp.Diff(wantLines, highlightedLines); diff != "" {
-		t.Fatalf("wrong highlighted lines: %s", diff)
+	if diff := cmp.Diff(wbntLines, highlightedLines); diff != "" {
+		t.Fbtblf("wrong highlighted lines: %s", diff)
 	}
 }
 
-func Test_normalizeFilepath(t *testing.T) {
+func Test_normblizeFilepbth(t *testing.T) {
 	tests := []struct {
-		name  string
+		nbme  string
 		input string
-		want  string
+		wbnt  string
 	}{
 		{
-			name:  "normalize_path",
-			input: "a/b/c/FOO.TXT",
-			want:  "a/b/c/FOO.txt",
+			nbme:  "normblize_pbth",
+			input: "b/b/c/FOO.TXT",
+			wbnt:  "b/b/c/FOO.txt",
 		},
 		{
-			name:  "normalize_partial_path",
+			nbme:  "normblize_pbrtibl_pbth",
 			input: "FOO.Sh",
-			want:  "FOO.sh",
+			wbnt:  "FOO.sh",
 		},
 		{
-			name:  "unmodified_path",
-			input: "a/b/c/FOO.txt",
-			want:  "a/b/c/FOO.txt",
+			nbme:  "unmodified_pbth",
+			input: "b/b/c/FOO.txt",
+			wbnt:  "b/b/c/FOO.txt",
 		},
 		{
-			name:  "unmodified_path_no_extension",
-			input: "a/b/c/Makefile",
-			want:  "a/b/c/Makefile",
+			nbme:  "unmodified_pbth_no_extension",
+			input: "b/b/c/Mbkefile",
+			wbnt:  "b/b/c/Mbkefile",
 		},
 		{
-			name:  "unmodified_partial_path_no_extension",
-			input: "Makefile",
-			want:  "Makefile",
+			nbme:  "unmodified_pbrtibl_pbth_no_extension",
+			input: "Mbkefile",
+			wbnt:  "Mbkefile",
 		},
 		{
-			name:  "unmodified_partial_path_extension",
-			input: "Makefile.am",
-			want:  "Makefile.am",
+			nbme:  "unmodified_pbrtibl_pbth_extension",
+			input: "Mbkefile.bm",
+			wbnt:  "Mbkefile.bm",
 		},
 	}
-	for _, tst := range tests {
-		t.Run(tst.name, func(t *testing.T) {
-			got := normalizeFilepath(tst.input)
-			if diff := cmp.Diff(got, tst.want); diff != "" {
-				t.Fatalf("mismatch (-want +got):\n%s", diff)
+	for _, tst := rbnge tests {
+		t.Run(tst.nbme, func(t *testing.T) {
+			got := normblizeFilepbth(tst.input)
+			if diff := cmp.Diff(got, tst.wbnt); diff != "" {
+				t.Fbtblf("mismbtch (-wbnt +got):\n%s", diff)
 			}
 		})
 	}
 }
 
-func TestSplitLineRanges(t *testing.T) {
-	html := `<table><tr><td class="line" data-line="1"></td><td class="code"><div><span style="font-weight:bold;color:#a71d5d;">package</span><span style="color:#323232;"> spans on short lines like this are kept
-</span></div></td></tr><tr><td class="line" data-line="2"></td><td class="code"><div><span style="color:#323232;">
-</span></div></td></tr><tr><td class="line" data-line="3"></td><td class="code"><div><span style="color:#323232;">	</span><span style="color:#183691;">&#34;net/http&#34;
-</span></div></td></tr><tr><td class="line" data-line="4"></td><td class="code"><div><span style="color:#323232;">	</span><span style="color:#183691;">&#34;github.com/sourcegraph/sourcegraph/internal/api/legacyerr&#34;
-</span></div></td></tr><tr><td class="line" data-line="5"></td><td class="code"><div><span style="color:#323232;">)
-</span></div></td></tr><tr><td class="line" data-line="6"></td><td class="code"><div><span style="color:#323232;">
-</span></div></td></tr><tr><td class="line" data-line="7"></td><td class="code"><div><span style="color:#323232;">
-</span></div></td></tr><tr><td class="line" data-line="8"></td><td class="code"><div></div></td></tr></table>`
+func TestSplitLineRbnges(t *testing.T) {
+	html := `<tbble><tr><td clbss="line" dbtb-line="1"></td><td clbss="code"><div><spbn style="font-weight:bold;color:#b71d5d;">pbckbge</spbn><spbn style="color:#323232;"> spbns on short lines like this bre kept
+</spbn></div></td></tr><tr><td clbss="line" dbtb-line="2"></td><td clbss="code"><div><spbn style="color:#323232;">
+</spbn></div></td></tr><tr><td clbss="line" dbtb-line="3"></td><td clbss="code"><div><spbn style="color:#323232;">	</spbn><spbn style="color:#183691;">&#34;net/http&#34;
+</spbn></div></td></tr><tr><td clbss="line" dbtb-line="4"></td><td clbss="code"><div><spbn style="color:#323232;">	</spbn><spbn style="color:#183691;">&#34;github.com/sourcegrbph/sourcegrbph/internbl/bpi/legbcyerr&#34;
+</spbn></div></td></tr><tr><td clbss="line" dbtb-line="5"></td><td clbss="code"><div><spbn style="color:#323232;">)
+</spbn></div></td></tr><tr><td clbss="line" dbtb-line="6"></td><td clbss="code"><div><spbn style="color:#323232;">
+</spbn></div></td></tr><tr><td clbss="line" dbtb-line="7"></td><td clbss="code"><div><spbn style="color:#323232;">
+</spbn></div></td></tr><tr><td clbss="line" dbtb-line="8"></td><td clbss="code"><div></div></td></tr></tbble>`
 
 	tests := []struct {
-		name  string
-		input []LineRange
-		want  [][]string
+		nbme  string
+		input []LineRbnge
+		wbnt  [][]string
 	}{
 		{
-			name: "clamped_negative",
-			input: []LineRange{
-				{StartLine: -10, EndLine: 1},
+			nbme: "clbmped_negbtive",
+			input: []LineRbnge{
+				{StbrtLine: -10, EndLine: 1},
 			},
-			want: [][]string{
+			wbnt: [][]string{
 				{
-					"<tr><td class=\"line\" data-line=\"1\"></td><td class=\"code\"><div><span style=\"font-weight:bold;color:#a71d5d;\">package</span><span style=\"color:#323232;\"> spans on short lines like this are kept\n</span></div></td></tr>",
+					"<tr><td clbss=\"line\" dbtb-line=\"1\"></td><td clbss=\"code\"><div><spbn style=\"font-weight:bold;color:#b71d5d;\">pbckbge</spbn><spbn style=\"color:#323232;\"> spbns on short lines like this bre kept\n</spbn></div></td></tr>",
 				},
 			},
 		},
 		{
-			name: "clamped_positive",
-			input: []LineRange{
-				{StartLine: 0, EndLine: 10000},
+			nbme: "clbmped_positive",
+			input: []LineRbnge{
+				{StbrtLine: 0, EndLine: 10000},
 			},
-			want: [][]string{
+			wbnt: [][]string{
 				{
-					"<tr><td class=\"line\" data-line=\"1\"></td><td class=\"code\"><div><span style=\"font-weight:bold;color:#a71d5d;\">package</span><span style=\"color:#323232;\"> spans on short lines like this are kept\n</span></div></td></tr>",
-					"<tr><td class=\"line\" data-line=\"2\"></td><td class=\"code\"><div><span style=\"color:#323232;\">\n</span></div></td></tr>",
-					"<tr><td class=\"line\" data-line=\"3\"></td><td class=\"code\"><div><span style=\"color:#323232;\">	</span><span style=\"color:#183691;\">&#34;net/http&#34;\n</span></div></td></tr>",
-					"<tr><td class=\"line\" data-line=\"4\"></td><td class=\"code\"><div><span style=\"color:#323232;\">	</span><span style=\"color:#183691;\">&#34;github.com/sourcegraph/sourcegraph/internal/api/legacyerr&#34;\n</span></div></td></tr>",
-					"<tr><td class=\"line\" data-line=\"5\"></td><td class=\"code\"><div><span style=\"color:#323232;\">)\n</span></div></td></tr>",
-					"<tr><td class=\"line\" data-line=\"6\"></td><td class=\"code\"><div><span style=\"color:#323232;\">\n</span></div></td></tr>",
-					"<tr><td class=\"line\" data-line=\"7\"></td><td class=\"code\"><div><span style=\"color:#323232;\">\n</span></div></td></tr>",
-					"<tr><td class=\"line\" data-line=\"8\"></td><td class=\"code\"><div></div></td></tr>",
+					"<tr><td clbss=\"line\" dbtb-line=\"1\"></td><td clbss=\"code\"><div><spbn style=\"font-weight:bold;color:#b71d5d;\">pbckbge</spbn><spbn style=\"color:#323232;\"> spbns on short lines like this bre kept\n</spbn></div></td></tr>",
+					"<tr><td clbss=\"line\" dbtb-line=\"2\"></td><td clbss=\"code\"><div><spbn style=\"color:#323232;\">\n</spbn></div></td></tr>",
+					"<tr><td clbss=\"line\" dbtb-line=\"3\"></td><td clbss=\"code\"><div><spbn style=\"color:#323232;\">	</spbn><spbn style=\"color:#183691;\">&#34;net/http&#34;\n</spbn></div></td></tr>",
+					"<tr><td clbss=\"line\" dbtb-line=\"4\"></td><td clbss=\"code\"><div><spbn style=\"color:#323232;\">	</spbn><spbn style=\"color:#183691;\">&#34;github.com/sourcegrbph/sourcegrbph/internbl/bpi/legbcyerr&#34;\n</spbn></div></td></tr>",
+					"<tr><td clbss=\"line\" dbtb-line=\"5\"></td><td clbss=\"code\"><div><spbn style=\"color:#323232;\">)\n</spbn></div></td></tr>",
+					"<tr><td clbss=\"line\" dbtb-line=\"6\"></td><td clbss=\"code\"><div><spbn style=\"color:#323232;\">\n</spbn></div></td></tr>",
+					"<tr><td clbss=\"line\" dbtb-line=\"7\"></td><td clbss=\"code\"><div><spbn style=\"color:#323232;\">\n</spbn></div></td></tr>",
+					"<tr><td clbss=\"line\" dbtb-line=\"8\"></td><td clbss=\"code\"><div></div></td></tr>",
 				},
 			},
 		},
 		{
-			name: "1_range",
-			input: []LineRange{
-				{StartLine: 3, EndLine: 6},
+			nbme: "1_rbnge",
+			input: []LineRbnge{
+				{StbrtLine: 3, EndLine: 6},
 			},
-			want: [][]string{
+			wbnt: [][]string{
 				{
-					"<tr><td class=\"line\" data-line=\"4\"></td><td class=\"code\"><div><span style=\"color:#323232;\">	</span><span style=\"color:#183691;\">&#34;github.com/sourcegraph/sourcegraph/internal/api/legacyerr&#34;\n</span></div></td></tr>",
-					"<tr><td class=\"line\" data-line=\"5\"></td><td class=\"code\"><div><span style=\"color:#323232;\">)\n</span></div></td></tr>",
-					"<tr><td class=\"line\" data-line=\"6\"></td><td class=\"code\"><div><span style=\"color:#323232;\">\n</span></div></td></tr>",
+					"<tr><td clbss=\"line\" dbtb-line=\"4\"></td><td clbss=\"code\"><div><spbn style=\"color:#323232;\">	</spbn><spbn style=\"color:#183691;\">&#34;github.com/sourcegrbph/sourcegrbph/internbl/bpi/legbcyerr&#34;\n</spbn></div></td></tr>",
+					"<tr><td clbss=\"line\" dbtb-line=\"5\"></td><td clbss=\"code\"><div><spbn style=\"color:#323232;\">)\n</spbn></div></td></tr>",
+					"<tr><td clbss=\"line\" dbtb-line=\"6\"></td><td clbss=\"code\"><div><spbn style=\"color:#323232;\">\n</spbn></div></td></tr>",
 				},
 			},
 		},
 		{
-			name: "2_ranges",
-			input: []LineRange{
-				{StartLine: 1, EndLine: 3},
-				{StartLine: 4, EndLine: 6},
+			nbme: "2_rbnges",
+			input: []LineRbnge{
+				{StbrtLine: 1, EndLine: 3},
+				{StbrtLine: 4, EndLine: 6},
 			},
-			want: [][]string{
+			wbnt: [][]string{
 				{
-					"<tr><td class=\"line\" data-line=\"2\"></td><td class=\"code\"><div><span style=\"color:#323232;\">\n</span></div></td></tr>",
-					"<tr><td class=\"line\" data-line=\"3\"></td><td class=\"code\"><div><span style=\"color:#323232;\">	</span><span style=\"color:#183691;\">&#34;net/http&#34;\n</span></div></td></tr>",
+					"<tr><td clbss=\"line\" dbtb-line=\"2\"></td><td clbss=\"code\"><div><spbn style=\"color:#323232;\">\n</spbn></div></td></tr>",
+					"<tr><td clbss=\"line\" dbtb-line=\"3\"></td><td clbss=\"code\"><div><spbn style=\"color:#323232;\">	</spbn><spbn style=\"color:#183691;\">&#34;net/http&#34;\n</spbn></div></td></tr>",
 				},
 				{
-					"<tr><td class=\"line\" data-line=\"5\"></td><td class=\"code\"><div><span style=\"color:#323232;\">)\n</span></div></td></tr>",
-					"<tr><td class=\"line\" data-line=\"6\"></td><td class=\"code\"><div><span style=\"color:#323232;\">\n</span></div></td></tr>",
-				},
-			},
-		},
-		{
-			name: "3_ranges_unordered",
-			input: []LineRange{
-				{StartLine: 5, EndLine: 6},
-				{StartLine: 7, EndLine: 8},
-				{StartLine: 2, EndLine: 4},
-			},
-			want: [][]string{
-				{
-					"<tr><td class=\"line\" data-line=\"6\"></td><td class=\"code\"><div><span style=\"color:#323232;\">\n</span></div></td></tr>",
-				},
-				{
-					"<tr><td class=\"line\" data-line=\"8\"></td><td class=\"code\"><div></div></td></tr>",
-				},
-				{
-					"<tr><td class=\"line\" data-line=\"3\"></td><td class=\"code\"><div><span style=\"color:#323232;\">	</span><span style=\"color:#183691;\">&#34;net/http&#34;\n</span></div></td></tr>",
-					"<tr><td class=\"line\" data-line=\"4\"></td><td class=\"code\"><div><span style=\"color:#323232;\">	</span><span style=\"color:#183691;\">&#34;github.com/sourcegraph/sourcegraph/internal/api/legacyerr&#34;\n</span></div></td></tr>",
+					"<tr><td clbss=\"line\" dbtb-line=\"5\"></td><td clbss=\"code\"><div><spbn style=\"color:#323232;\">)\n</spbn></div></td></tr>",
+					"<tr><td clbss=\"line\" dbtb-line=\"6\"></td><td clbss=\"code\"><div><spbn style=\"color:#323232;\">\n</spbn></div></td></tr>",
 				},
 			},
 		},
 		{
-			name: "bad_range",
-			input: []LineRange{
-				{StartLine: 6, EndLine: 3},
+			nbme: "3_rbnges_unordered",
+			input: []LineRbnge{
+				{StbrtLine: 5, EndLine: 6},
+				{StbrtLine: 7, EndLine: 8},
+				{StbrtLine: 2, EndLine: 4},
 			},
-			want: [][]string{
+			wbnt: [][]string{
+				{
+					"<tr><td clbss=\"line\" dbtb-line=\"6\"></td><td clbss=\"code\"><div><spbn style=\"color:#323232;\">\n</spbn></div></td></tr>",
+				},
+				{
+					"<tr><td clbss=\"line\" dbtb-line=\"8\"></td><td clbss=\"code\"><div></div></td></tr>",
+				},
+				{
+					"<tr><td clbss=\"line\" dbtb-line=\"3\"></td><td clbss=\"code\"><div><spbn style=\"color:#323232;\">	</spbn><spbn style=\"color:#183691;\">&#34;net/http&#34;\n</spbn></div></td></tr>",
+					"<tr><td clbss=\"line\" dbtb-line=\"4\"></td><td clbss=\"code\"><div><spbn style=\"color:#323232;\">	</spbn><spbn style=\"color:#183691;\">&#34;github.com/sourcegrbph/sourcegrbph/internbl/bpi/legbcyerr&#34;\n</spbn></div></td></tr>",
+				},
+			},
+		},
+		{
+			nbme: "bbd_rbnge",
+			input: []LineRbnge{
+				{StbrtLine: 6, EndLine: 3},
+			},
+			wbnt: [][]string{
 				{},
 			},
 		},
 	}
-	for _, tst := range tests {
-		t.Run(tst.name, func(t *testing.T) {
-			got, err := SplitLineRanges(template.HTML(html), tst.input)
+	for _, tst := rbnge tests {
+		t.Run(tst.nbme, func(t *testing.T) {
+			got, err := SplitLineRbnges(templbte.HTML(html), tst.input)
 			if err != nil {
-				t.Fatal(err)
+				t.Fbtbl(err)
 			}
-			if diff := cmp.Diff(tst.want, got); diff != "" {
-				t.Fatalf("mismatch (-want +got):\n%s", diff)
+			if diff := cmp.Diff(tst.wbnt, got); diff != "" {
+				t.Fbtblf("mismbtch (-wbnt +got):\n%s", diff)
 			}
 		})
 	}

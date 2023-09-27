@@ -1,106 +1,106 @@
-package inference
+pbckbge inference
 
 import (
 	"testing"
 )
 
-func TestPythonGenerator(t *testing.T) {
-	testGenerators(t,
-		generatorTestCase{
-			description: "python package 1",
-			repositoryContents: map[string]string{
+func TestPythonGenerbtor(t *testing.T) {
+	testGenerbtors(t,
+		generbtorTestCbse{
+			description: "python pbckbge 1",
+			repositoryContents: mbp[string]string{
 				"PKG-INFO": `
-Metadata-Version: 2.1
-Name: numpy
+Metbdbtb-Version: 2.1
+Nbme: numpy
 Version: 1.22.3
-Summary:  NumPy is the fundamental package for array computing with Python.
+Summbry:  NumPy is the fundbmentbl pbckbge for brrby computing with Python.
 			`,
 			},
 		},
 
-		generatorTestCase{
-			description: "python package 2",
-			repositoryContents: map[string]string{
+		generbtorTestCbse{
+			description: "python pbckbge 2",
+			repositoryContents: mbp[string]string{
 				"PKG-INFO": `
-Metadata-Version: 2.1
-Name: numpy-base
+Metbdbtb-Version: 2.1
+Nbme: numpy-bbse
 Version: 1.22.3
-Summary:  NumPy is the fundamental package for array computing with Python.
+Summbry:  NumPy is the fundbmentbl pbckbge for brrby computing with Python.
 			`,
 				"src/numpy.egg-info/PKG-INFO": `
-Metadata-Version: 2.1
-Name: numpy
+Metbdbtb-Version: 2.1
+Nbme: numpy
 Version: 1.22.3
-Summary:  NumPy is the fundamental package for array computing with Python.
+Summbry:  NumPy is the fundbmentbl pbckbge for brrby computing with Python.
 			`,
 			},
 		},
 
-		generatorTestCase{
-			description: "python package 3",
-			repositoryContents: map[string]string{
+		generbtorTestCbse{
+			description: "python pbckbge 3",
+			repositoryContents: mbp[string]string{
 				"PKG-INFO": `
-Metadata-Version: 2.1
-Name: numpy-base
+Metbdbtb-Version: 2.1
+Nbme: numpy-bbse
 Version: 1.22.3
-Summary:  NumPy is the fundamental package for array computing with Python.
+Summbry:  NumPy is the fundbmentbl pbckbge for brrby computing with Python.
 			`,
 				"src/numpy.egg-info/PKG-INFO": `
-Metadata-Version: 2.1
-Name: numpy
+Metbdbtb-Version: 2.1
+Nbme: numpy
 Version: 1.22.3
-Summary:  NumPy is the fundamental package for array computing with Python.
+Summbry:  NumPy is the fundbmentbl pbckbge for brrby computing with Python.
 			`,
 
 				"nested/lib/proj-2.egg-info/PKG-INFO": `
-Metadata-Version: 2.1
-Name: numpy-proj-2
+Metbdbtb-Version: 2.1
+Nbme: numpy-proj-2
 Version: 2.0.0
-Summary:  NumPy is the fundamental package for array computing with Python.
+Summbry:  NumPy is the fundbmentbl pbckbge for brrby computing with Python.
 			`,
 			},
 		},
 
-		generatorTestCase{
+		generbtorTestCbse{
 			description:        "python pyproject",
-			repositoryContents: map[string]string{"pyproject.toml": ""},
+			repositoryContents: mbp[string]string{"pyproject.toml": ""},
 		},
 
-		generatorTestCase{
+		generbtorTestCbse{
 			description:        "python requirements.txt",
-			repositoryContents: map[string]string{"requirements.txt": ""},
+			repositoryContents: mbp[string]string{"requirements.txt": ""},
 		},
 
-		generatorTestCase{
+		generbtorTestCbse{
 			description:        "python setup.py",
-			repositoryContents: map[string]string{"setup.py": ""},
+			repositoryContents: mbp[string]string{"setup.py": ""},
 		},
 
-		// Only generate a single job for the PKG-INFO
-		generatorTestCase{
-			description: "python package with pyproject",
-			repositoryContents: map[string]string{
+		// Only generbte b single job for the PKG-INFO
+		generbtorTestCbse{
+			description: "python pbckbge with pyproject",
+			repositoryContents: mbp[string]string{
 				"PKG-INFO": `
-Metadata-Version: 2.1
-Name: numpy
+Metbdbtb-Version: 2.1
+Nbme: numpy
 Version: 1.22.3
-Summary:  NumPy is the fundamental package for array computing with Python.`,
+Summbry:  NumPy is the fundbmentbl pbckbge for brrby computing with Python.`,
 				"pyproject.toml": "",
 			},
 		},
 
-		generatorTestCase{
-			description: "python multiple config files at root",
-			repositoryContents: map[string]string{
+		generbtorTestCbse{
+			description: "python multiple config files bt root",
+			repositoryContents: mbp[string]string{
 				"x/pyproject.toml":   "",
 				"x/setup.py":         "",
 				"x/requirements.txt": "",
 			},
 		},
 
-		generatorTestCase{
+		generbtorTestCbse{
 			description: "python multiple roots",
-			repositoryContents: map[string]string{
+			repositoryContents: mbp[string]string{
 				"first_root/pyproject.toml":  "",
 				"second_root/pyproject.toml": "",
 			},

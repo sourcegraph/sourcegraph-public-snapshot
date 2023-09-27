@@ -1,24 +1,24 @@
-package auth
+pbckbge buth
 
 import "testing"
 
-func TestSafeRedirectURL(t *testing.T) {
-	tests := map[string]string{
+func TestSbfeRedirectURL(t *testing.T) {
+	tests := mbp[string]string{
 		"":                   "/",
 		"/":                  "/",
-		"a@b.com:c":          "/",
-		"a@b.com/c":          "/",
-		"//a":                "/",
-		"http://a.com/b":     "/b",
-		"//a.com/b":          "/b",
-		"//a@b.com/c":        "/c",
-		"/a?b":               "/a?b",
-		"//foo//example.com": "/example.com",
+		"b@b.com:c":          "/",
+		"b@b.com/c":          "/",
+		"//b":                "/",
+		"http://b.com/b":     "/b",
+		"//b.com/b":          "/b",
+		"//b@b.com/c":        "/c",
+		"/b?b":               "/b?b",
+		"//foo//exbmple.com": "/exbmple.com",
 	}
-	for input, want := range tests {
-		got := SafeRedirectURL(input)
-		if got != want {
-			t.Errorf("%q: got %q, want %q", input, got, want)
+	for input, wbnt := rbnge tests {
+		got := SbfeRedirectURL(input)
+		if got != wbnt {
+			t.Errorf("%q: got %q, wbnt %q", input, got, wbnt)
 		}
 	}
 }

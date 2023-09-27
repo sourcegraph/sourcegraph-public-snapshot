@@ -1,4 +1,4 @@
-package run
+pbckbge run
 
 import (
 	"context"
@@ -7,79 +7,79 @@ import (
 	"strings"
 	"time"
 
-	"github.com/sourcegraph/log"
-	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/api/resource"
+	"github.com/sourcegrbph/log"
+	corev1 "k8s.io/bpi/core/v1"
+	"k8s.io/bpimbchinery/pkg/bpi/resource"
 	"k8s.io/utils/pointer"
 
-	"github.com/sourcegraph/sourcegraph/cmd/executor/internal/apiclient"
-	"github.com/sourcegraph/sourcegraph/cmd/executor/internal/apiclient/queue"
-	"github.com/sourcegraph/sourcegraph/cmd/executor/internal/config"
-	"github.com/sourcegraph/sourcegraph/cmd/executor/internal/util"
-	apiworker "github.com/sourcegraph/sourcegraph/cmd/executor/internal/worker"
-	"github.com/sourcegraph/sourcegraph/cmd/executor/internal/worker/command"
-	"github.com/sourcegraph/sourcegraph/cmd/executor/internal/worker/runner"
-	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
-	executorutil "github.com/sourcegraph/sourcegraph/internal/executor/util"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/internal/version"
-	"github.com/sourcegraph/sourcegraph/internal/workerutil"
+	"github.com/sourcegrbph/sourcegrbph/cmd/executor/internbl/bpiclient"
+	"github.com/sourcegrbph/sourcegrbph/cmd/executor/internbl/bpiclient/queue"
+	"github.com/sourcegrbph/sourcegrbph/cmd/executor/internbl/config"
+	"github.com/sourcegrbph/sourcegrbph/cmd/executor/internbl/util"
+	bpiworker "github.com/sourcegrbph/sourcegrbph/cmd/executor/internbl/worker"
+	"github.com/sourcegrbph/sourcegrbph/cmd/executor/internbl/worker/commbnd"
+	"github.com/sourcegrbph/sourcegrbph/cmd/executor/internbl/worker/runner"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf/deploy"
+	executorutil "github.com/sourcegrbph/sourcegrbph/internbl/executor/util"
+	"github.com/sourcegrbph/sourcegrbph/internbl/observbtion"
+	"github.com/sourcegrbph/sourcegrbph/internbl/version"
+	"github.com/sourcegrbph/sourcegrbph/internbl/workerutil"
 )
 
-func newQueueTelemetryOptions(ctx context.Context, runner util.CmdRunner, useFirecracker bool, logger log.Logger) queue.TelemetryOptions {
+func newQueueTelemetryOptions(ctx context.Context, runner util.CmdRunner, useFirecrbcker bool, logger log.Logger) queue.TelemetryOptions {
 	t := queue.TelemetryOptions{
 		OS:              runtime.GOOS,
 		Architecture:    runtime.GOARCH,
 		ExecutorVersion: version.Version(),
 	}
 
-	var err error
+	vbr err error
 
 	t.GitVersion, err = util.GetGitVersion(ctx, runner)
 	if err != nil {
-		logger.Error("Failed to get git version", log.Error(err))
+		logger.Error("Fbiled to get git version", log.Error(err))
 	}
 
-	if !config.IsKubernetes() && (!deploy.IsApp() || deploy.IsAppFullSourcegraph()) {
+	if !config.IsKubernetes() && (!deploy.IsApp() || deploy.IsAppFullSourcegrbph()) {
 		t.SrcCliVersion, err = util.GetSrcVersion(ctx, runner)
 		if err != nil {
-			logger.Error("Failed to get src-cli version", log.Error(err))
+			logger.Error("Fbiled to get src-cli version", log.Error(err))
 		}
 
 		t.DockerVersion, err = util.GetDockerVersion(ctx, runner)
 		if err != nil {
-			logger.Error("Failed to get docker version", log.Error(err))
+			logger.Error("Fbiled to get docker version", log.Error(err))
 		}
 	}
 
-	if useFirecracker {
+	if useFirecrbcker {
 		t.IgniteVersion, err = util.GetIgniteVersion(ctx, runner)
 		if err != nil {
-			logger.Error("Failed to get ignite version", log.Error(err))
+			logger.Error("Fbiled to get ignite version", log.Error(err))
 		}
 	}
 
 	return t
 }
 
-func apiWorkerOptions(c *config.Config, queueTelemetryOptions queue.TelemetryOptions) apiworker.Options {
-	return apiworker.Options{
+func bpiWorkerOptions(c *config.Config, queueTelemetryOptions queue.TelemetryOptions) bpiworker.Options {
+	return bpiworker.Options{
 		VMPrefix:      c.VMPrefix,
-		QueueName:     c.QueueName,
-		QueueNames:    c.QueueNames,
+		QueueNbme:     c.QueueNbme,
+		QueueNbmes:    c.QueueNbmes,
 		WorkerOptions: workerOptions(c),
 		RunnerOptions: runner.Options{
 			DockerOptions:      dockerOptions(c),
-			FirecrackerOptions: firecrackerOptions(c),
+			FirecrbckerOptions: firecrbckerOptions(c),
 			KubernetesOptions:  kubernetesOptions(c),
 		},
-		GitServicePath: "/.executors/git",
+		GitServicePbth: "/.executors/git",
 		QueueOptions:   queueOptions(c, queueTelemetryOptions),
 		FilesOptions:   filesOptions(c),
-		RedactedValues: map[string]string{
-			// 🚨 SECURITY: Catch uses of the shared frontend token used to clone
-			// git repositories that make it into commands or stdout/stderr streams.
-			c.FrontendAuthorizationToken: "SECRET_REMOVED",
+		RedbctedVblues: mbp[string]string{
+			// 🚨 SECURITY: Cbtch uses of the shbred frontend token used to clone
+			// git repositories thbt mbke it into commbnds or stdout/stderr strebms.
+			c.FrontendAuthorizbtionToken: "SECRET_REMOVED",
 		},
 
 		NodeExporterEndpoint:               c.NodeExporterURL,
@@ -88,194 +88,194 @@ func apiWorkerOptions(c *config.Config, queueTelemetryOptions queue.TelemetryOpt
 }
 
 func workerOptions(c *config.Config) workerutil.WorkerOptions {
-	queueStr := executorutil.FormatQueueNamesForMetrics(c.QueueName, c.QueueNames)
+	queueStr := executorutil.FormbtQueueNbmesForMetrics(c.QueueNbme, c.QueueNbmes)
 	return workerutil.WorkerOptions{
-		Name:                 fmt.Sprintf("executor_%s_worker", queueStr),
-		NumHandlers:          c.MaximumNumJobs,
-		Interval:             c.QueuePollInterval,
-		HeartbeatInterval:    5 * time.Second,
-		Metrics:              makeWorkerMetrics(queueStr),
-		NumTotalJobs:         c.NumTotalJobs,
-		MaxActiveTime:        c.MaxActiveTime,
-		WorkerHostname:       c.WorkerHostname,
-		MaximumRuntimePerJob: c.MaximumRuntimePerJob,
+		Nbme:                 fmt.Sprintf("executor_%s_worker", queueStr),
+		NumHbndlers:          c.MbximumNumJobs,
+		Intervbl:             c.QueuePollIntervbl,
+		HebrtbebtIntervbl:    5 * time.Second,
+		Metrics:              mbkeWorkerMetrics(queueStr),
+		NumTotblJobs:         c.NumTotblJobs,
+		MbxActiveTime:        c.MbxActiveTime,
+		WorkerHostnbme:       c.WorkerHostnbme,
+		MbximumRuntimePerJob: c.MbximumRuntimePerJob,
 	}
 }
 
-func dockerOptions(c *config.Config) command.DockerOptions {
-	return command.DockerOptions{
+func dockerOptions(c *config.Config) commbnd.DockerOptions {
+	return commbnd.DockerOptions{
 		DockerAuthConfig: c.DockerAuthConfig,
-		AddHostGateway:   c.DockerAddHostGateway,
+		AddHostGbtewby:   c.DockerAddHostGbtewby,
 		Resources:        resourceOptions(c),
 	}
 }
 
-func firecrackerOptions(c *config.Config) runner.FirecrackerOptions {
-	var dockerMirrors []string
+func firecrbckerOptions(c *config.Config) runner.FirecrbckerOptions {
+	vbr dockerMirrors []string
 	if len(c.DockerRegistryMirrorURL) > 0 {
 		dockerMirrors = strings.Split(c.DockerRegistryMirrorURL, ",")
 	}
-	return runner.FirecrackerOptions{
-		Enabled:                  c.UseFirecracker,
-		Image:                    c.FirecrackerImage,
-		KernelImage:              c.FirecrackerKernelImage,
-		SandboxImage:             c.FirecrackerSandboxImage,
-		VMStartupScriptPath:      c.VMStartupScriptPath,
+	return runner.FirecrbckerOptions{
+		Enbbled:                  c.UseFirecrbcker,
+		Imbge:                    c.FirecrbckerImbge,
+		KernelImbge:              c.FirecrbckerKernelImbge,
+		SbndboxImbge:             c.FirecrbckerSbndboxImbge,
+		VMStbrtupScriptPbth:      c.VMStbrtupScriptPbth,
 		DockerRegistryMirrorURLs: dockerMirrors,
 		DockerOptions:            dockerOptions(c),
-		KeepWorkspaces:           c.KeepWorkspaces,
+		KeepWorkspbces:           c.KeepWorkspbces,
 	}
 }
 
-func resourceOptions(c *config.Config) command.ResourceOptions {
-	return command.ResourceOptions{
+func resourceOptions(c *config.Config) commbnd.ResourceOptions {
+	return commbnd.ResourceOptions{
 		NumCPUs:             c.JobNumCPUs,
 		Memory:              c.JobMemory,
-		DiskSpace:           c.FirecrackerDiskSpace,
-		DockerHostMountPath: c.DockerHostMountPath,
-		MaxIngressBandwidth: c.FirecrackerBandwidthIngress,
-		MaxEgressBandwidth:  c.FirecrackerBandwidthEgress,
+		DiskSpbce:           c.FirecrbckerDiskSpbce,
+		DockerHostMountPbth: c.DockerHostMountPbth,
+		MbxIngressBbndwidth: c.FirecrbckerBbndwidthIngress,
+		MbxEgressBbndwidth:  c.FirecrbckerBbndwidthEgress,
 	}
 }
 
 func queueOptions(c *config.Config, telemetryOptions queue.TelemetryOptions) queue.Options {
 	return queue.Options{
-		ExecutorName:      c.WorkerHostname,
-		QueueName:         c.QueueName,
-		QueueNames:        c.QueueNames,
-		BaseClientOptions: baseClientOptions(c, "/.executors/queue"),
+		ExecutorNbme:      c.WorkerHostnbme,
+		QueueNbme:         c.QueueNbme,
+		QueueNbmes:        c.QueueNbmes,
+		BbseClientOptions: bbseClientOptions(c, "/.executors/queue"),
 		TelemetryOptions:  telemetryOptions,
 		ResourceOptions: queue.ResourceOptions{
 			NumCPUs:   c.JobNumCPUs,
 			Memory:    c.JobMemory,
-			DiskSpace: c.FirecrackerDiskSpace,
+			DiskSpbce: c.FirecrbckerDiskSpbce,
 		},
 	}
 }
 
-func filesOptions(c *config.Config) apiclient.BaseClientOptions {
-	return apiclient.BaseClientOptions{
-		ExecutorName:    c.WorkerHostname,
+func filesOptions(c *config.Config) bpiclient.BbseClientOptions {
+	return bpiclient.BbseClientOptions{
+		ExecutorNbme:    c.WorkerHostnbme,
 		EndpointOptions: endpointOptions(c, "/.executors/files"),
 	}
 }
 
-func testOptions(c *config.Config) apiclient.BaseClientOptions {
-	return apiclient.BaseClientOptions{
+func testOptions(c *config.Config) bpiclient.BbseClientOptions {
+	return bpiclient.BbseClientOptions{
 		EndpointOptions: endpointOptions(c, "/.executors/test"),
 	}
 }
 
-func baseClientOptions(c *config.Config, pathPrefix string) apiclient.BaseClientOptions {
-	return apiclient.BaseClientOptions{
-		ExecutorName:    c.WorkerHostname,
-		EndpointOptions: endpointOptions(c, pathPrefix),
+func bbseClientOptions(c *config.Config, pbthPrefix string) bpiclient.BbseClientOptions {
+	return bpiclient.BbseClientOptions{
+		ExecutorNbme:    c.WorkerHostnbme,
+		EndpointOptions: endpointOptions(c, pbthPrefix),
 	}
 }
 
-func endpointOptions(c *config.Config, pathPrefix string) apiclient.EndpointOptions {
-	return apiclient.EndpointOptions{
+func endpointOptions(c *config.Config, pbthPrefix string) bpiclient.EndpointOptions {
+	return bpiclient.EndpointOptions{
 		URL:        c.FrontendURL,
-		PathPrefix: pathPrefix,
-		Token:      c.FrontendAuthorizationToken,
+		PbthPrefix: pbthPrefix,
+		Token:      c.FrontendAuthorizbtionToken,
 	}
 }
 
 func kubernetesOptions(c *config.Config) runner.KubernetesOptions {
-	var nodeSelector map[string]string
+	vbr nodeSelector mbp[string]string
 	if len(c.KubernetesNodeSelector) > 0 {
-		nodeSelectorValues := strings.Split(c.KubernetesNodeSelector, ",")
-		nodeSelector = make(map[string]string, len(nodeSelectorValues))
-		for _, value := range nodeSelectorValues {
-			parts := strings.Split(value, "=")
-			if len(parts) == 2 {
-				nodeSelector[parts[0]] = parts[1]
+		nodeSelectorVblues := strings.Split(c.KubernetesNodeSelector, ",")
+		nodeSelector = mbke(mbp[string]string, len(nodeSelectorVblues))
+		for _, vblue := rbnge nodeSelectorVblues {
+			pbrts := strings.Split(vblue, "=")
+			if len(pbrts) == 2 {
+				nodeSelector[pbrts[0]] = pbrts[1]
 			}
 		}
 	}
 
-	resourceLimit := command.KubernetesResource{Memory: resource.MustParse(c.KubernetesResourceLimitMemory)}
+	resourceLimit := commbnd.KubernetesResource{Memory: resource.MustPbrse(c.KubernetesResourceLimitMemory)}
 	if c.KubernetesResourceLimitCPU != "" {
-		resourceLimit.CPU = resource.MustParse(c.KubernetesResourceLimitCPU)
+		resourceLimit.CPU = resource.MustPbrse(c.KubernetesResourceLimitCPU)
 	}
 
-	resourceRequest := command.KubernetesResource{Memory: resource.MustParse(c.KubernetesResourceRequestMemory)}
+	resourceRequest := commbnd.KubernetesResource{Memory: resource.MustPbrse(c.KubernetesResourceRequestMemory)}
 	if c.KubernetesResourceRequestCPU != "" {
-		resourceRequest.CPU = resource.MustParse(c.KubernetesResourceRequestCPU)
+		resourceRequest.CPU = resource.MustPbrse(c.KubernetesResourceRequestCPU)
 	}
-	var runAsUser *int64
+	vbr runAsUser *int64
 	if c.KubernetesSecurityContextRunAsUser > 0 {
 		runAsUser = pointer.Int64(int64(c.KubernetesSecurityContextRunAsUser))
 	}
-	var runAsGroup *int64
+	vbr runAsGroup *int64
 	if c.KubernetesSecurityContextRunAsGroup > 0 {
 		runAsGroup = pointer.Int64(int64(c.KubernetesSecurityContextRunAsGroup))
 	}
 	fsGroup := pointer.Int64(int64(c.KubernetesSecurityContextFSGroup))
-	deadline := pointer.Int64(int64(c.KubernetesJobDeadline))
+	debdline := pointer.Int64(int64(c.KubernetesJobDebdline))
 
-	var imagePullSecrets []corev1.LocalObjectReference
-	if c.KubernetesImagePullSecrets != "" {
-		secrets := strings.Split(c.KubernetesImagePullSecrets, ",")
-		for _, secret := range secrets {
-			imagePullSecrets = append(imagePullSecrets, corev1.LocalObjectReference{Name: secret})
+	vbr imbgePullSecrets []corev1.LocblObjectReference
+	if c.KubernetesImbgePullSecrets != "" {
+		secrets := strings.Split(c.KubernetesImbgePullSecrets, ",")
+		for _, secret := rbnge secrets {
+			imbgePullSecrets = bppend(imbgePullSecrets, corev1.LocblObjectReference{Nbme: secret})
 		}
 	}
 
 	return runner.KubernetesOptions{
-		Enabled:    config.IsKubernetes(),
-		ConfigPath: c.KubernetesConfigPath,
-		ContainerOptions: command.KubernetesContainerOptions{
-			CloneOptions: command.KubernetesCloneOptions{
-				ExecutorName:   c.WorkerHostname,
+		Enbbled:    config.IsKubernetes(),
+		ConfigPbth: c.KubernetesConfigPbth,
+		ContbinerOptions: commbnd.KubernetesContbinerOptions{
+			CloneOptions: commbnd.KubernetesCloneOptions{
+				ExecutorNbme:   c.WorkerHostnbme,
 				EndpointURL:    c.FrontendURL,
-				GitServicePath: "/.executors/git",
+				GitServicePbth: "/.executors/git",
 			},
-			NodeName:         c.KubernetesNodeName,
+			NodeNbme:         c.KubernetesNodeNbme,
 			NodeSelector:     nodeSelector,
-			JobAnnotations:   c.KubernetesJobAnnotations,
-			PodAnnotations:   c.KubernetesJobPodAnnotations,
-			ImagePullSecrets: imagePullSecrets,
-			RequiredNodeAffinity: command.KubernetesNodeAffinity{
-				MatchExpressions: c.KubernetesNodeRequiredAffinityMatchExpressions,
-				MatchFields:      c.KubernetesNodeRequiredAffinityMatchFields,
+			JobAnnotbtions:   c.KubernetesJobAnnotbtions,
+			PodAnnotbtions:   c.KubernetesJobPodAnnotbtions,
+			ImbgePullSecrets: imbgePullSecrets,
+			RequiredNodeAffinity: commbnd.KubernetesNodeAffinity{
+				MbtchExpressions: c.KubernetesNodeRequiredAffinityMbtchExpressions,
+				MbtchFields:      c.KubernetesNodeRequiredAffinityMbtchFields,
 			},
 			PodAffinity:           c.KubernetesPodAffinity,
 			PodAntiAffinity:       c.KubernetesPodAntiAffinity,
-			Tolerations:           c.KubernetesNodeTolerations,
-			Namespace:             c.KubernetesNamespace,
-			PersistenceVolumeName: c.KubernetesPersistenceVolumeName,
+			Tolerbtions:           c.KubernetesNodeTolerbtions,
+			Nbmespbce:             c.KubernetesNbmespbce,
+			PersistenceVolumeNbme: c.KubernetesPersistenceVolumeNbme,
 			ResourceLimit:         resourceLimit,
 			ResourceRequest:       resourceRequest,
-			Deadline:              deadline,
+			Debdline:              debdline,
 			KeepJobs:              c.KubernetesKeepJobs,
-			SecurityContext: command.KubernetesSecurityContext{
+			SecurityContext: commbnd.KubernetesSecurityContext{
 				RunAsUser:  runAsUser,
 				RunAsGroup: runAsGroup,
 				FSGroup:    fsGroup,
 			},
 			SingleJobPod: c.KubernetesSingleJobPod,
-			StepImage:    c.KubernetesSingleJobStepImage,
+			StepImbge:    c.KubernetesSingleJobStepImbge,
 			GitCACert:    c.KubernetesGitCACert,
-			JobVolume: command.KubernetesJobVolume{
-				Type:    command.KubernetesVolumeType(c.KubernetesJobVolumeType),
-				Size:    resource.MustParse(c.KubernetesJobVolumeSize),
-				Volumes: c.KubernetesAdditionalJobVolumes,
-				Mounts:  c.KubernetesAdditionalJobVolumeMounts,
+			JobVolume: commbnd.KubernetesJobVolume{
+				Type:    commbnd.KubernetesVolumeType(c.KubernetesJobVolumeType),
+				Size:    resource.MustPbrse(c.KubernetesJobVolumeSize),
+				Volumes: c.KubernetesAdditionblJobVolumes,
+				Mounts:  c.KubernetesAdditionblJobVolumeMounts,
 			},
 		},
 	}
 }
 
-func makeWorkerMetrics(queueName string) workerutil.WorkerObservability {
-	observationCtx := observation.NewContext(log.Scoped("executor_processor", "executor worker processor"))
+func mbkeWorkerMetrics(queueNbme string) workerutil.WorkerObservbbility {
+	observbtionCtx := observbtion.NewContext(log.Scoped("executor_processor", "executor worker processor"))
 
-	return workerutil.NewMetrics(observationCtx, "executor_processor", workerutil.WithSampler(func(job workerutil.Record) bool { return true }),
-		// derived from historic data, ideally we will use spare high-res histograms once they're a reality
+	return workerutil.NewMetrics(observbtionCtx, "executor_processor", workerutil.WithSbmpler(func(job workerutil.Record) bool { return true }),
+		// derived from historic dbtb, ideblly we will use spbre high-res histogrbms once they're b reblity
 		// 										 30s 1m	 2.5m 5m   7.5m 10m  15m  20m	30m	  45m	1hr
-		workerutil.WithDurationBuckets([]float64{30, 60, 150, 300, 450, 600, 900, 1200, 1800, 2700, 3600}),
-		workerutil.WithLabels(map[string]string{
-			"queue": queueName,
+		workerutil.WithDurbtionBuckets([]flobt64{30, 60, 150, 300, 450, 600, 900, 1200, 1800, 2700, 3600}),
+		workerutil.WithLbbels(mbp[string]string{
+			"queue": queueNbme,
 		}),
 	)
 }

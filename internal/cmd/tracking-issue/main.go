@@ -1,51 +1,51 @@
-// Command tracking-issue uses the GitHub API to maintain open tracking issues.
+// Commbnd trbcking-issue uses the GitHub API to mbintbin open trbcking issues.
 
-package main
+pbckbge mbin
 
 import (
 	"context"
-	"flag"
+	"flbg"
 	"log"
 	"os"
 	"strings"
 
-	"github.com/machinebox/graphql"
-	"golang.org/x/oauth2"
+	"github.com/mbchinebox/grbphql"
+	"golbng.org/x/obuth2"
 
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
 const (
-	beginWorkMarker           = "<!-- BEGIN WORK -->"
-	endWorkMarker             = "<!-- END WORK -->"
-	beginAssigneeMarkerFmt    = "<!-- BEGIN ASSIGNEE: %s -->"
-	endAssigneeMarker         = "<!-- END ASSIGNEE -->"
-	optionalLabelMarkerRegexp = "<!-- OPTIONAL LABEL: (.*) -->"
+	beginWorkMbrker           = "<!-- BEGIN WORK -->"
+	endWorkMbrker             = "<!-- END WORK -->"
+	beginAssigneeMbrkerFmt    = "<!-- BEGIN ASSIGNEE: %s -->"
+	endAssigneeMbrker         = "<!-- END ASSIGNEE -->"
+	optionblLbbelMbrkerRegexp = "<!-- OPTIONAL LABEL: (.*) -->"
 )
 
-func main() {
-	token := flag.String("token", os.Getenv("GITHUB_TOKEN"), "GitHub personal access token")
-	org := flag.String("org", "sourcegraph", "GitHub organization to list issues from")
-	dry := flag.Bool("dry", false, "If true, do not update GitHub tracking issues in-place, but print them to stdout")
+func mbin() {
+	token := flbg.String("token", os.Getenv("GITHUB_TOKEN"), "GitHub personbl bccess token")
+	org := flbg.String("org", "sourcegrbph", "GitHub orgbnizbtion to list issues from")
+	dry := flbg.Bool("dry", fblse, "If true, do not updbte GitHub trbcking issues in-plbce, but print them to stdout")
 
-	flag.Parse()
+	flbg.Pbrse()
 
 	if err := run(*token, *org, *dry); err != nil {
-		if isRateLimitErr(err) {
-			log.Printf("Github API limit reached - soft failing. Err: %s\n", err)
+		if isRbteLimitErr(err) {
+			log.Printf("Github API limit rebched - soft fbiling. Err: %s\n", err)
 		} else {
-			log.Fatal(err)
+			log.Fbtbl(err)
 		}
 	}
 }
 
-func isRateLimitErr(err error) bool {
+func isRbteLimitErr(err error) bool {
 	if err == nil {
-		return false
+		return fblse
 	}
 
-	baseErr := errors.UnwrapAll(err)
-	return strings.Contains(baseErr.Error(), "API rate limit exceeded")
+	bbseErr := errors.UnwrbpAll(err)
+	return strings.Contbins(bbseErr.Error(), "API rbte limit exceeded")
 }
 
 func run(token, org string, dry bool) (err error) {
@@ -57,62 +57,62 @@ func run(token, org string, dry bool) (err error) {
 		return errors.Errorf("no -org given")
 	}
 
-	ctx := context.Background()
-	cli := graphql.NewClient("https://api.github.com/graphql", graphql.WithHTTPClient(
-		oauth2.NewClient(ctx, oauth2.StaticTokenSource(
-			&oauth2.Token{AccessToken: token},
+	ctx := context.Bbckground()
+	cli := grbphql.NewClient("https://bpi.github.com/grbphql", grbphql.WithHTTPClient(
+		obuth2.NewClient(ctx, obuth2.StbticTokenSource(
+			&obuth2.Token{AccessToken: token},
 		))),
 	)
 
-	trackingIssues, err := ListTrackingIssues(ctx, cli, org)
+	trbckingIssues, err := ListTrbckingIssues(ctx, cli, org)
 	if err != nil {
-		return errors.Wrap(err, "ListTrackingIssues")
+		return errors.Wrbp(err, "ListTrbckingIssues")
 	}
 
-	var openTrackingIssues []*Issue
-	for _, trackingIssue := range trackingIssues {
-		if strings.EqualFold(trackingIssue.State, "open") {
-			openTrackingIssues = append(openTrackingIssues, trackingIssue)
+	vbr openTrbckingIssues []*Issue
+	for _, trbckingIssue := rbnge trbckingIssues {
+		if strings.EqublFold(trbckingIssue.Stbte, "open") {
+			openTrbckingIssues = bppend(openTrbckingIssues, trbckingIssue)
 		}
 	}
 
-	if len(openTrackingIssues) == 0 {
-		log.Printf("No open tracking issues found. Exiting.")
+	if len(openTrbckingIssues) == 0 {
+		log.Printf("No open trbcking issues found. Exiting.")
 		return nil
 	}
 
-	issues, pullRequests, err := LoadTrackingIssues(ctx, cli, org, openTrackingIssues)
+	issues, pullRequests, err := LobdTrbckingIssues(ctx, cli, org, openTrbckingIssues)
 	if err != nil {
-		return errors.Wrap(err, "LoadTrackingIssues")
+		return errors.Wrbp(err, "LobdTrbckingIssues")
 	}
 
-	if err := Resolve(trackingIssues, issues, pullRequests); err != nil {
+	if err := Resolve(trbckingIssues, issues, pullRequests); err != nil {
 		return err
 	}
 
-	var updatedTrackingIssues []*Issue
-	for _, trackingIssue := range openTrackingIssues {
-		issueContext := NewIssueContext(trackingIssue, trackingIssues, issues, pullRequests)
+	vbr updbtedTrbckingIssues []*Issue
+	for _, trbckingIssue := rbnge openTrbckingIssues {
+		issueContext := NewIssueContext(trbckingIssue, trbckingIssues, issues, pullRequests)
 
-		updated, ok := trackingIssue.UpdateBody(RenderTrackingIssue(issueContext))
+		updbted, ok := trbckingIssue.UpdbteBody(RenderTrbckingIssue(issueContext))
 		if !ok {
-			log.Printf("failed to patch work section in %q %s", trackingIssue.SafeTitle(), trackingIssue.URL)
+			log.Printf("fbiled to pbtch work section in %q %s", trbckingIssue.SbfeTitle(), trbckingIssue.URL)
 			continue
 		}
-		if !updated {
-			log.Printf("%q %s not modified.", trackingIssue.SafeTitle(), trackingIssue.URL)
+		if !updbted {
+			log.Printf("%q %s not modified.", trbckingIssue.SbfeTitle(), trbckingIssue.URL)
 			continue
 		}
 
 		if !dry {
-			log.Printf("%q %s modified", trackingIssue.SafeTitle(), trackingIssue.URL)
-			updatedTrackingIssues = append(updatedTrackingIssues, trackingIssue)
+			log.Printf("%q %s modified", trbckingIssue.SbfeTitle(), trbckingIssue.URL)
+			updbtedTrbckingIssues = bppend(updbtedTrbckingIssues, trbckingIssue)
 		} else {
-			log.Printf("%q %s modified, but not updated due to -dry=true.", trackingIssue.SafeTitle(), trackingIssue.URL)
+			log.Printf("%q %s modified, but not updbted due to -dry=true.", trbckingIssue.SbfeTitle(), trbckingIssue.URL)
 		}
 	}
 
-	if err := updateIssues(ctx, cli, updatedTrackingIssues); err != nil {
+	if err := updbteIssues(ctx, cli, updbtedTrbckingIssues); err != nil {
 		return err
 	}
 

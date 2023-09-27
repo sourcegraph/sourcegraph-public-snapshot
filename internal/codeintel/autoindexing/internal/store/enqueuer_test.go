@@ -1,4 +1,4 @@
-package store
+pbckbge store
 
 import (
 	"context"
@@ -7,55 +7,55 @@ import (
 	"time"
 
 	"github.com/google/go-cmp/cmp"
-	"github.com/sourcegraph/log/logtest"
+	"github.com/sourcegrbph/log/logtest"
 
-	"github.com/sourcegraph/sourcegraph/internal/actor"
-	uploadsshared "github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
-	"github.com/sourcegraph/sourcegraph/internal/executor"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bctor"
+	uplobdsshbred "github.com/sourcegrbph/sourcegrbph/internbl/codeintel/uplobds/shbred"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbtest"
+	"github.com/sourcegrbph/sourcegrbph/internbl/executor"
+	"github.com/sourcegrbph/sourcegrbph/internbl/observbtion"
 )
 
 func TestIsQueued(t *testing.T) {
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
-	store := New(&observation.TestContext, db)
+	db := dbtbbbse.NewDB(logger, dbtest.NewDB(logger, t))
+	store := New(&observbtion.TestContext, db)
 
-	insertIndexes(t, db, uploadsshared.Index{ID: 1, RepositoryID: 1, Commit: makeCommit(1)})
-	insertIndexes(t, db, uploadsshared.Index{ID: 2, RepositoryID: 1, Commit: makeCommit(1), ShouldReindex: true})
-	insertIndexes(t, db, uploadsshared.Index{ID: 3, RepositoryID: 4, Commit: makeCommit(1), ShouldReindex: true})
-	insertIndexes(t, db, uploadsshared.Index{ID: 4, RepositoryID: 5, Commit: makeCommit(4), ShouldReindex: true})
-	insertUploads(t, db, upload{ID: 2, RepositoryID: 2, Commit: makeCommit(2)})
-	insertUploads(t, db, upload{ID: 3, RepositoryID: 3, Commit: makeCommit(3), State: "deleted"})
-	insertUploads(t, db, upload{ID: 4, RepositoryID: 5, Commit: makeCommit(4), ShouldReindex: true})
+	insertIndexes(t, db, uplobdsshbred.Index{ID: 1, RepositoryID: 1, Commit: mbkeCommit(1)})
+	insertIndexes(t, db, uplobdsshbred.Index{ID: 2, RepositoryID: 1, Commit: mbkeCommit(1), ShouldReindex: true})
+	insertIndexes(t, db, uplobdsshbred.Index{ID: 3, RepositoryID: 4, Commit: mbkeCommit(1), ShouldReindex: true})
+	insertIndexes(t, db, uplobdsshbred.Index{ID: 4, RepositoryID: 5, Commit: mbkeCommit(4), ShouldReindex: true})
+	insertUplobds(t, db, uplobd{ID: 2, RepositoryID: 2, Commit: mbkeCommit(2)})
+	insertUplobds(t, db, uplobd{ID: 3, RepositoryID: 3, Commit: mbkeCommit(3), Stbte: "deleted"})
+	insertUplobds(t, db, uplobd{ID: 4, RepositoryID: 5, Commit: mbkeCommit(4), ShouldReindex: true})
 
-	testCases := []struct {
+	testCbses := []struct {
 		repositoryID int
 		commit       string
 		expected     bool
 	}{
-		{1, makeCommit(1), true},
-		{1, makeCommit(2), false},
-		{2, makeCommit(1), false},
-		{2, makeCommit(2), true},
-		{3, makeCommit(1), false},
-		{3, makeCommit(2), false},
-		{3, makeCommit(3), false},
-		{4, makeCommit(1), false},
-		{5, makeCommit(4), false},
+		{1, mbkeCommit(1), true},
+		{1, mbkeCommit(2), fblse},
+		{2, mbkeCommit(1), fblse},
+		{2, mbkeCommit(2), true},
+		{3, mbkeCommit(1), fblse},
+		{3, mbkeCommit(2), fblse},
+		{3, mbkeCommit(3), fblse},
+		{4, mbkeCommit(1), fblse},
+		{5, mbkeCommit(4), fblse},
 	}
 
-	for _, testCase := range testCases {
-		name := fmt.Sprintf("repositoryId=%d commit=%s", testCase.repositoryID, testCase.commit)
+	for _, testCbse := rbnge testCbses {
+		nbme := fmt.Sprintf("repositoryId=%d commit=%s", testCbse.repositoryID, testCbse.commit)
 
-		t.Run(name, func(t *testing.T) {
-			queued, err := store.IsQueued(context.Background(), testCase.repositoryID, testCase.commit)
+		t.Run(nbme, func(t *testing.T) {
+			queued, err := store.IsQueued(context.Bbckground(), testCbse.repositoryID, testCbse.commit)
 			if err != nil {
-				t.Fatalf("unexpected error checking if commit is queued: %s", err)
+				t.Fbtblf("unexpected error checking if commit is queued: %s", err)
 			}
-			if queued != testCase.expected {
-				t.Errorf("unexpected state. repo=%v commit=%v want=%v have=%v", testCase.repositoryID, testCase.commit, testCase.expected, queued)
+			if queued != testCbse.expected {
+				t.Errorf("unexpected stbte. repo=%v commit=%v wbnt=%v hbve=%v", testCbse.repositoryID, testCbse.commit, testCbse.expected, queued)
 			}
 		})
 	}
@@ -63,197 +63,197 @@ func TestIsQueued(t *testing.T) {
 
 func TestIsQueuedRootIndexer(t *testing.T) {
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
-	store := New(&observation.TestContext, db)
+	db := dbtbbbse.NewDB(logger, dbtest.NewDB(logger, t))
+	store := New(&observbtion.TestContext, db)
 
 	now := time.Now()
-	insertIndexes(t, db, uploadsshared.Index{ID: 1, RepositoryID: 1, Commit: makeCommit(1), Root: "/foo", Indexer: "i1", QueuedAt: now.Add(-time.Hour * 1)})
-	insertIndexes(t, db, uploadsshared.Index{ID: 2, RepositoryID: 1, Commit: makeCommit(1), Root: "/foo", Indexer: "i1", QueuedAt: now.Add(-time.Hour * 2)})
-	insertIndexes(t, db, uploadsshared.Index{ID: 3, RepositoryID: 2, Commit: makeCommit(2), Root: "/foo", Indexer: "i1", QueuedAt: now.Add(-time.Hour * 1), ShouldReindex: true})
-	insertIndexes(t, db, uploadsshared.Index{ID: 4, RepositoryID: 2, Commit: makeCommit(2), Root: "/foo", Indexer: "i1", QueuedAt: now.Add(-time.Hour * 2)})
-	insertIndexes(t, db, uploadsshared.Index{ID: 5, RepositoryID: 3, Commit: makeCommit(3), Root: "/foo", Indexer: "i1", QueuedAt: now.Add(-time.Hour * 1)})
-	insertIndexes(t, db, uploadsshared.Index{ID: 6, RepositoryID: 3, Commit: makeCommit(3), Root: "/foo", Indexer: "i1", QueuedAt: now.Add(-time.Hour * 2), ShouldReindex: true})
+	insertIndexes(t, db, uplobdsshbred.Index{ID: 1, RepositoryID: 1, Commit: mbkeCommit(1), Root: "/foo", Indexer: "i1", QueuedAt: now.Add(-time.Hour * 1)})
+	insertIndexes(t, db, uplobdsshbred.Index{ID: 2, RepositoryID: 1, Commit: mbkeCommit(1), Root: "/foo", Indexer: "i1", QueuedAt: now.Add(-time.Hour * 2)})
+	insertIndexes(t, db, uplobdsshbred.Index{ID: 3, RepositoryID: 2, Commit: mbkeCommit(2), Root: "/foo", Indexer: "i1", QueuedAt: now.Add(-time.Hour * 1), ShouldReindex: true})
+	insertIndexes(t, db, uplobdsshbred.Index{ID: 4, RepositoryID: 2, Commit: mbkeCommit(2), Root: "/foo", Indexer: "i1", QueuedAt: now.Add(-time.Hour * 2)})
+	insertIndexes(t, db, uplobdsshbred.Index{ID: 5, RepositoryID: 3, Commit: mbkeCommit(3), Root: "/foo", Indexer: "i1", QueuedAt: now.Add(-time.Hour * 1)})
+	insertIndexes(t, db, uplobdsshbred.Index{ID: 6, RepositoryID: 3, Commit: mbkeCommit(3), Root: "/foo", Indexer: "i1", QueuedAt: now.Add(-time.Hour * 2), ShouldReindex: true})
 
-	testCases := []struct {
+	testCbses := []struct {
 		repositoryID int
 		commit       string
 		root         string
 		indexer      string
 		expected     bool
 	}{
-		{1, makeCommit(1), "/foo", "i1", true},
-		{1, makeCommit(1), "/bar", "i1", false}, // no index for root
-		{2, makeCommit(2), "/foo", "i1", false}, // reindex (live)
-		{3, makeCommit(3), "/foo", "i1", true},  // reindex (done)
+		{1, mbkeCommit(1), "/foo", "i1", true},
+		{1, mbkeCommit(1), "/bbr", "i1", fblse}, // no index for root
+		{2, mbkeCommit(2), "/foo", "i1", fblse}, // reindex (live)
+		{3, mbkeCommit(3), "/foo", "i1", true},  // reindex (done)
 	}
 
-	for _, testCase := range testCases {
-		name := fmt.Sprintf("repositoryId=%d commit=%s", testCase.repositoryID, testCase.commit)
+	for _, testCbse := rbnge testCbses {
+		nbme := fmt.Sprintf("repositoryId=%d commit=%s", testCbse.repositoryID, testCbse.commit)
 
-		t.Run(name, func(t *testing.T) {
-			queued, err := store.IsQueuedRootIndexer(context.Background(), testCase.repositoryID, testCase.commit, testCase.root, testCase.indexer)
+		t.Run(nbme, func(t *testing.T) {
+			queued, err := store.IsQueuedRootIndexer(context.Bbckground(), testCbse.repositoryID, testCbse.commit, testCbse.root, testCbse.indexer)
 			if err != nil {
-				t.Fatalf("unexpected error checking if commit/root/indexer is queued: %s", err)
+				t.Fbtblf("unexpected error checking if commit/root/indexer is queued: %s", err)
 			}
-			if queued != testCase.expected {
-				t.Errorf("unexpected state. repo=%v commit=%v root=%v indexer=%v want=%v have=%v", testCase.repositoryID, testCase.commit, testCase.root, testCase.indexer, testCase.expected, queued)
+			if queued != testCbse.expected {
+				t.Errorf("unexpected stbte. repo=%v commit=%v root=%v indexer=%v wbnt=%v hbve=%v", testCbse.repositoryID, testCbse.commit, testCbse.root, testCbse.indexer, testCbse.expected, queued)
 			}
 		})
 	}
 }
 
 func TestInsertIndexes(t *testing.T) {
-	ctx := context.Background()
+	ctx := context.Bbckground()
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
-	store := New(&observation.TestContext, db)
+	db := dbtbbbse.NewDB(logger, dbtest.NewDB(logger, t))
+	store := New(&observbtion.TestContext, db)
 
 	insertRepo(t, db, 50, "")
 
-	indexes, err := store.InsertIndexes(ctx, []uploadsshared.Index{
+	indexes, err := store.InsertIndexes(ctx, []uplobdsshbred.Index{
 		{
-			State:        "queued",
-			Commit:       makeCommit(1),
+			Stbte:        "queued",
+			Commit:       mbkeCommit(1),
 			RepositoryID: 50,
-			DockerSteps: []uploadsshared.DockerStep{
+			DockerSteps: []uplobdsshbred.DockerStep{
 				{
-					Image:    "cimg/node:12.16",
-					Commands: []string{"yarn install --frozen-lockfile --no-progress"},
+					Imbge:    "cimg/node:12.16",
+					Commbnds: []string{"ybrn instbll --frozen-lockfile --no-progress"},
 				},
 			},
-			LocalSteps:  []string{"echo hello"},
-			Root:        "/foo/bar",
-			Indexer:     "sourcegraph/scip-typescript:latest",
-			IndexerArgs: []string{"index", "--yarn-workspaces"},
+			LocblSteps:  []string{"echo hello"},
+			Root:        "/foo/bbr",
+			Indexer:     "sourcegrbph/scip-typescript:lbtest",
+			IndexerArgs: []string{"index", "--ybrn-workspbces"},
 			Outfile:     "dump.lsif",
 			ExecutionLogs: []executor.ExecutionLogEntry{
-				{Command: []string{"op", "1"}, Out: "Indexing\nUploading\nDone with 1.\n"},
-				{Command: []string{"op", "2"}, Out: "Indexing\nUploading\nDone with 2.\n"},
+				{Commbnd: []string{"op", "1"}, Out: "Indexing\nUplobding\nDone with 1.\n"},
+				{Commbnd: []string{"op", "2"}, Out: "Indexing\nUplobding\nDone with 2.\n"},
 			},
 		},
 		{
-			State:        "queued",
-			Commit:       makeCommit(2),
+			Stbte:        "queued",
+			Commit:       mbkeCommit(2),
 			RepositoryID: 50,
-			DockerSteps: []uploadsshared.DockerStep{
+			DockerSteps: []uplobdsshbred.DockerStep{
 				{
-					Image:    "cimg/rust:nightly",
-					Commands: []string{"cargo install"},
+					Imbge:    "cimg/rust:nightly",
+					Commbnds: []string{"cbrgo instbll"},
 				},
 			},
-			LocalSteps:  nil,
-			Root:        "/baz",
-			Indexer:     "sourcegraph/lsif-rust:15",
+			LocblSteps:  nil,
+			Root:        "/bbz",
+			Indexer:     "sourcegrbph/lsif-rust:15",
 			IndexerArgs: []string{"-v"},
 			Outfile:     "dump.lsif",
 			ExecutionLogs: []executor.ExecutionLogEntry{
-				{Command: []string{"op", "1"}, Out: "Done with 1.\n"},
-				{Command: []string{"op", "2"}, Out: "Done with 2.\n"},
+				{Commbnd: []string{"op", "1"}, Out: "Done with 1.\n"},
+				{Commbnd: []string{"op", "2"}, Out: "Done with 2.\n"},
 			},
 		},
 	})
 	if err != nil {
-		t.Fatalf("unexpected error enqueueing index: %s", err)
+		t.Fbtblf("unexpected error enqueueing index: %s", err)
 	}
 	if len(indexes) == 0 {
-		t.Fatalf("expected records to be inserted")
+		t.Fbtblf("expected records to be inserted")
 	}
 
-	rank1 := 1
-	rank2 := 2
-	expected := []uploadsshared.Index{
+	rbnk1 := 1
+	rbnk2 := 2
+	expected := []uplobdsshbred.Index{
 		{
 			ID:             1,
-			Commit:         makeCommit(1),
+			Commit:         mbkeCommit(1),
 			QueuedAt:       time.Time{},
-			State:          "queued",
-			FailureMessage: nil,
-			StartedAt:      nil,
+			Stbte:          "queued",
+			FbilureMessbge: nil,
+			StbrtedAt:      nil,
 			FinishedAt:     nil,
 			RepositoryID:   50,
-			RepositoryName: "n-50",
-			DockerSteps: []uploadsshared.DockerStep{
+			RepositoryNbme: "n-50",
+			DockerSteps: []uplobdsshbred.DockerStep{
 				{
-					Image:    "cimg/node:12.16",
-					Commands: []string{"yarn install --frozen-lockfile --no-progress"},
+					Imbge:    "cimg/node:12.16",
+					Commbnds: []string{"ybrn instbll --frozen-lockfile --no-progress"},
 				},
 			},
-			LocalSteps:  []string{"echo hello"},
-			Root:        "/foo/bar",
-			Indexer:     "sourcegraph/scip-typescript:latest",
-			IndexerArgs: []string{"index", "--yarn-workspaces"},
+			LocblSteps:  []string{"echo hello"},
+			Root:        "/foo/bbr",
+			Indexer:     "sourcegrbph/scip-typescript:lbtest",
+			IndexerArgs: []string{"index", "--ybrn-workspbces"},
 			Outfile:     "dump.lsif",
 			ExecutionLogs: []executor.ExecutionLogEntry{
-				{Command: []string{"op", "1"}, Out: "Indexing\nUploading\nDone with 1.\n"},
-				{Command: []string{"op", "2"}, Out: "Indexing\nUploading\nDone with 2.\n"},
+				{Commbnd: []string{"op", "1"}, Out: "Indexing\nUplobding\nDone with 1.\n"},
+				{Commbnd: []string{"op", "2"}, Out: "Indexing\nUplobding\nDone with 2.\n"},
 			},
-			Rank: &rank1,
+			Rbnk: &rbnk1,
 		},
 		{
 			ID:             2,
-			Commit:         makeCommit(2),
+			Commit:         mbkeCommit(2),
 			QueuedAt:       time.Time{},
-			State:          "queued",
-			FailureMessage: nil,
-			StartedAt:      nil,
+			Stbte:          "queued",
+			FbilureMessbge: nil,
+			StbrtedAt:      nil,
 			FinishedAt:     nil,
 			RepositoryID:   50,
-			RepositoryName: "n-50",
-			DockerSteps: []uploadsshared.DockerStep{
+			RepositoryNbme: "n-50",
+			DockerSteps: []uplobdsshbred.DockerStep{
 				{
-					Image:    "cimg/rust:nightly",
-					Commands: []string{"cargo install"},
+					Imbge:    "cimg/rust:nightly",
+					Commbnds: []string{"cbrgo instbll"},
 				},
 			},
-			LocalSteps:  []string{},
-			Root:        "/baz",
-			Indexer:     "sourcegraph/lsif-rust:15",
+			LocblSteps:  []string{},
+			Root:        "/bbz",
+			Indexer:     "sourcegrbph/lsif-rust:15",
 			IndexerArgs: []string{"-v"},
 			Outfile:     "dump.lsif",
 			ExecutionLogs: []executor.ExecutionLogEntry{
-				{Command: []string{"op", "1"}, Out: "Done with 1.\n"},
-				{Command: []string{"op", "2"}, Out: "Done with 2.\n"},
+				{Commbnd: []string{"op", "1"}, Out: "Done with 1.\n"},
+				{Commbnd: []string{"op", "2"}, Out: "Done with 2.\n"},
 			},
-			Rank: &rank2,
+			Rbnk: &rbnk2,
 		},
 	}
 
-	for i := range expected {
-		// Update auto-generated timestamp
+	for i := rbnge expected {
+		// Updbte buto-generbted timestbmp
 		expected[i].QueuedAt = indexes[0].QueuedAt
 	}
 
 	if diff := cmp.Diff(expected, indexes); diff != "" {
-		t.Errorf("unexpected indexes (-want +got):\n%s", diff)
+		t.Errorf("unexpected indexes (-wbnt +got):\n%s", diff)
 	}
 }
 
 func TestInsertIndexWithActor(t *testing.T) {
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
-	store := New(&observation.TestContext, db)
+	db := dbtbbbse.NewDB(logger, dbtest.NewDB(logger, t))
+	store := New(&observbtion.TestContext, db)
 
 	insertRepo(t, db, 50, "")
 
-	for i, ctx := range []context.Context{
-		actor.WithActor(context.Background(), actor.FromMockUser(100)),
-		actor.WithInternalActor(context.Background()),
-		context.Background(),
+	for i, ctx := rbnge []context.Context{
+		bctor.WithActor(context.Bbckground(), bctor.FromMockUser(100)),
+		bctor.WithInternblActor(context.Bbckground()),
+		context.Bbckground(),
 	} {
-		indexes, err := store.InsertIndexes(ctx, []uploadsshared.Index{
-			{ID: i, RepositoryID: 50, Commit: makeCommit(i), State: "queued"},
+		indexes, err := store.InsertIndexes(ctx, []uplobdsshbred.Index{
+			{ID: i, RepositoryID: 50, Commit: mbkeCommit(i), Stbte: "queued"},
 		})
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
 
 		if len(indexes) == 0 {
-			t.Fatalf("no indexes returned")
+			t.Fbtblf("no indexes returned")
 		}
 
-		act := actor.FromContext(ctx)
-		if indexes[0].EnqueuerUserID != act.UID {
-			t.Fatalf("unexpected user id (got=%d,want=%d)", indexes[0].EnqueuerUserID, act.UID)
+		bct := bctor.FromContext(ctx)
+		if indexes[0].EnqueuerUserID != bct.UID {
+			t.Fbtblf("unexpected user id (got=%d,wbnt=%d)", indexes[0].EnqueuerUserID, bct.UID)
 		}
 	}
 }

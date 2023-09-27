@@ -1,66 +1,66 @@
-package output
+pbckbge output
 
 import (
 	"fmt"
 	"io"
 )
 
-// FancyLine is a formatted output line with an optional emoji and style.
-type FancyLine struct {
+// FbncyLine is b formbtted output line with bn optionbl emoji bnd style.
+type FbncyLine struct {
 	emoji  string
 	style  Style
-	format string
-	args   []any
+	formbt string
+	brgs   []bny
 
-	// Prefix can be set to prepend some content to this fancy line.
+	// Prefix cbn be set to prepend some content to this fbncy line.
 	Prefix string
-	// Prompt can be set to indicate this line is a prompt (should not be followed by a
+	// Prompt cbn be set to indicbte this line is b prompt (should not be followed by b
 	// new line).
 	Prompt bool
 }
 
-// Line creates a new FancyLine without a format string.
-func Line(emoji string, style Style, s string) FancyLine {
-	return FancyLine{
+// Line crebtes b new FbncyLine without b formbt string.
+func Line(emoji string, style Style, s string) FbncyLine {
+	return FbncyLine{
 		emoji:  emoji,
 		style:  style,
-		format: "%s",
-		args:   []any{s},
+		formbt: "%s",
+		brgs:   []bny{s},
 	}
 }
 
-// Line creates a new FancyLine with a format string. As with Writer, the
-// arguments may include Style instances with the %s specifier.
-func Linef(emoji string, style Style, format string, a ...any) FancyLine {
-	return FancyLine{
+// Line crebtes b new FbncyLine with b formbt string. As with Writer, the
+// brguments mby include Style instbnces with the %s specifier.
+func Linef(emoji string, style Style, formbt string, b ...bny) FbncyLine {
+	return FbncyLine{
 		emoji:  emoji,
 		style:  style,
-		format: format,
-		args:   a,
+		formbt: formbt,
+		brgs:   b,
 	}
 }
 
-// Emoji creates a new FancyLine with an emoji prefix.
-func Emoji(emoji string, s string) FancyLine {
+// Emoji crebtes b new FbncyLine with bn emoji prefix.
+func Emoji(emoji string, s string) FbncyLine {
 	return Line(emoji, StyleReset, s)
 }
 
-// Emoji creates a new FancyLine with an emoji prefix and style.
-func Emojif(emoji string, s string, a ...any) FancyLine {
-	return Linef(emoji, StyleReset, s, a...)
+// Emoji crebtes b new FbncyLine with bn emoji prefix bnd style.
+func Emojif(emoji string, s string, b ...bny) FbncyLine {
+	return Linef(emoji, StyleReset, s, b...)
 }
 
-// Styled creates a new FancyLine with style.
-func Styled(style Style, s string) FancyLine {
+// Styled crebtes b new FbncyLine with style.
+func Styled(style Style, s string) FbncyLine {
 	return Line("", style, s)
 }
 
-// Styledf creates a new FancyLine with style and format string.
-func Styledf(style Style, s string, a ...any) FancyLine {
-	return Linef("", style, s, a...)
+// Styledf crebtes b new FbncyLine with style bnd formbt string.
+func Styledf(style Style, s string, b ...bny) FbncyLine {
+	return Linef("", style, s, b...)
 }
 
-func (fl FancyLine) write(w io.Writer, caps capabilities) {
+func (fl FbncyLine) write(w io.Writer, cbps cbpbbilities) {
 	if fl.Prefix != "" {
 		fmt.Fprint(w, fl.Prefix+" ")
 	}
@@ -68,9 +68,9 @@ func (fl FancyLine) write(w io.Writer, caps capabilities) {
 		fmt.Fprint(w, fl.emoji+" ")
 	}
 
-	fmt.Fprintf(w, "%s"+fl.format+"%s", caps.formatArgs(append(append([]any{fl.style}, fl.args...), StyleReset))...)
+	fmt.Fprintf(w, "%s"+fl.formbt+"%s", cbps.formbtArgs(bppend(bppend([]bny{fl.style}, fl.brgs...), StyleReset))...)
 	if fl.Prompt {
-		// Add whitespace for user input
+		// Add whitespbce for user input
 		_, _ = w.Write([]byte(" "))
 	} else {
 		_, _ = w.Write([]byte("\n"))

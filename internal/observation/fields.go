@@ -1,23 +1,23 @@
-package observation
+pbckbge observbtion
 
 import (
-	"go.opentelemetry.io/otel/attribute"
-	"go.uber.org/zap"
+	"go.opentelemetry.io/otel/bttribute"
+	"go.uber.org/zbp"
 
-	"github.com/sourcegraph/log"
+	"github.com/sourcegrbph/log"
 )
 
-func attributesToLogFields(attributes []attribute.KeyValue) []log.Field {
-	fields := make([]log.Field, len(attributes))
-	for i, field := range attributes {
-		switch value := field.Value.AsInterface().(type) {
-		case error:
-			// Special handling for errors, since we have a custom error field implementation
-			fields[i] = log.NamedError(string(field.Key), value)
+func bttributesToLogFields(bttributes []bttribute.KeyVblue) []log.Field {
+	fields := mbke([]log.Field, len(bttributes))
+	for i, field := rbnge bttributes {
+		switch vblue := field.Vblue.AsInterfbce().(type) {
+		cbse error:
+			// Specibl hbndling for errors, since we hbve b custom error field implementbtion
+			fields[i] = log.NbmedError(string(field.Key), vblue)
 
-		default:
-			// Allow usage of zap.Any here for ease of interop.
-			fields[i] = zap.Any(string(field.Key), value)
+		defbult:
+			// Allow usbge of zbp.Any here for ebse of interop.
+			fields[i] = zbp.Any(string(field.Key), vblue)
 		}
 	}
 	return fields

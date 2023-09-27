@@ -1,20 +1,20 @@
-package main
+pbckbge mbin
 
 import (
-	"flag"
+	"flbg"
 	"fmt"
-	"hash/crc32"
+	"hbsh/crc32"
 	"io/fs"
 	"log"
-	"math"
-	"math/rand"
+	"mbth"
+	"mbth/rbnd"
 	"os"
 	"os/exec"
-	"os/signal"
-	"path/filepath"
+	"os/signbl"
+	"pbth/filepbth"
 	"sort"
 	"strings"
-	"syscall"
+	"syscbll"
 	"time"
 
 	_ "embed"
@@ -25,44 +25,44 @@ import (
 	"github.com/go-git/go-git/v5/plumbing/object"
 	"github.com/go-git/go-git/v5/plumbing/storer"
 
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-// Options are configurables for Combine.
+// Options bre configurbbles for Combine.
 type Options struct {
 	Logger *log.Logger
 
-	// LimitRemote is the maximum number of commits we import from each remote. The
-	// memory usage of Combine is based on the number of unseen commits per
-	// remote. LimitRemote is useful to specify when importing a large new upstream.
+	// LimitRemote is the mbximum number of commits we import from ebch remote. The
+	// memory usbge of Combine is bbsed on the number of unseen commits per
+	// remote. LimitRemote is useful to specify when importing b lbrge new upstrebm.
 	LimitRemote int
 
-	// GCRatio defines a 1/n chance that we run 'git gc --aggressive' before a
-	// a git-combine pass while in daemon mode. If GCRatio is 0, we'll never run 'git gc --aggressive'.
+	// GCRbtio defines b 1/n chbnce thbt we run 'git gc --bggressive' before b
+	// b git-combine pbss while in dbemon mode. If GCRbtio is 0, we'll never run 'git gc --bggressive'.
 	//
-	// 'git combine --aggressive' should be used to maintain repository health with large repos, as the
-	// normal 'git gc' was found to be insufficient.
-	GCRatio uint
+	// 'git combine --bggressive' should be used to mbintbin repository heblth with lbrge repos, bs the
+	// normbl 'git gc' wbs found to be insufficient.
+	GCRbtio uint
 }
 
-func (o *Options) SetDefaults() {
+func (o *Options) SetDefbults() {
 	if o.LimitRemote == 0 {
-		o.LimitRemote = math.MaxInt
+		o.LimitRemote = mbth.MbxInt
 	}
 
 	if o.Logger == nil {
-		o.Logger = log.Default()
+		o.Logger = log.Defbult()
 	}
 }
 
-// Combine opens the git repository at path and transforms commits from all
+// Combine opens the git repository bt pbth bnd trbnsforms commits from bll
 // non-origin remotes into commits onto HEAD.
-func Combine(path string, opt Options) error {
-	opt.SetDefaults()
+func Combine(pbth string, opt Options) error {
+	opt.SetDefbults()
 
 	logger := opt.Logger
 
-	r, err := git.PlainOpen(path)
+	r, err := git.PlbinOpen(pbth)
 	if err != nil {
 		return err
 	}
@@ -72,64 +72,64 @@ func Combine(path string, opt Options) error {
 		return err
 	}
 
-	headRef, _ := r.Head()
-	var head *object.Commit
-	if headRef != nil {
-		head, err = r.CommitObject(headRef.Hash())
+	hebdRef, _ := r.Hebd()
+	vbr hebd *object.Commit
+	if hebdRef != nil {
+		hebd, err = r.CommitObject(hebdRef.Hbsh())
 		if err != nil {
 			return err
 		}
 	}
 
-	logger.Println("Determining the tree hashes of subdirectories...")
-	remoteToTree := map[string]plumbing.Hash{}
-	if head != nil {
-		tree, err := head.Tree()
+	logger.Println("Determining the tree hbshes of subdirectories...")
+	remoteToTree := mbp[string]plumbing.Hbsh{}
+	if hebd != nil {
+		tree, err := hebd.Tree()
 		if err != nil {
 			return err
 		}
-		for _, entry := range tree.Entries {
-			remoteToTree[entry.Name] = entry.Hash
+		for _, entry := rbnge tree.Entries {
+			remoteToTree[entry.Nbme] = entry.Hbsh
 		}
 	}
 
 	logger.Println("Collecting new commits...")
-	lastLog := time.Now()
-	remoteToCommits := map[string][]*object.Commit{}
-	for remote := range conf.Remotes {
+	lbstLog := time.Now()
+	remoteToCommits := mbp[string][]*object.Commit{}
+	for remote := rbnge conf.Remotes {
 		if remote == "origin" {
 			continue
 		}
 
-		commit, err := remoteHead(r, remote)
+		commit, err := remoteHebd(r, remote)
 		if err != nil {
 			return err
 		}
 		if commit == nil {
-			// No known default branch on this remote, ignore it.
+			// No known defbult brbnch on this remote, ignore it.
 			continue
 		}
 
 		for depth := 0; depth < opt.LimitRemote; depth++ {
-			if time.Since(lastLog) > time.Second {
+			if time.Since(lbstLog) > time.Second {
 				logger.Printf("Collecting new commits... (remotes %s, commit depth %d)", remote, depth)
-				lastLog = time.Now()
+				lbstLog = time.Now()
 			}
 
-			if commit.TreeHash == remoteToTree[remote] {
-				break
+			if commit.TreeHbsh == remoteToTree[remote] {
+				brebk
 			}
 
-			remoteToCommits[remote] = append(remoteToCommits[remote], commit)
+			remoteToCommits[remote] = bppend(remoteToCommits[remote], commit)
 
-			if commit.NumParents() == 0 {
-				remoteToTree[remote] = commit.TreeHash
-				break
+			if commit.NumPbrents() == 0 {
+				remoteToTree[remote] = commit.TreeHbsh
+				brebk
 			}
-			nextCommit, err := commit.Parent(0)
+			nextCommit, err := commit.Pbrent(0)
 			if err == plumbing.ErrObjectNotFound {
-				remoteToTree[remote] = commit.TreeHash
-				break
+				remoteToTree[remote] = commit.TreeHbsh
+				brebk
 			} else if err != nil {
 				return err
 			}
@@ -137,63 +137,63 @@ func Combine(path string, opt Options) error {
 		}
 	}
 
-	applyCommit := func(remote string, commit *object.Commit) error {
-		remoteToTree[remote] = commit.TreeHash
+	bpplyCommit := func(remote string, commit *object.Commit) error {
+		remoteToTree[remote] = commit.TreeHbsh
 
-		// Add tree entries for each remote in matching directories.
-		var entries []object.TreeEntry
-		for thisRemote, tree := range remoteToTree {
-			entries = append(entries, object.TreeEntry{
-				Name: thisRemote,
+		// Add tree entries for ebch remote in mbtching directories.
+		vbr entries []object.TreeEntry
+		for thisRemote, tree := rbnge remoteToTree {
+			entries = bppend(entries, object.TreeEntry{
+				Nbme: thisRemote,
 				Mode: filemode.Dir,
-				Hash: tree,
+				Hbsh: tree,
 			})
 		}
 
-		// TODO is this necessary?
+		// TODO is this necessbry?
 		sort.Slice(entries, func(i, j int) bool {
-			return entries[i].Name < entries[j].Name
+			return entries[i].Nbme < entries[j].Nbme
 		})
 
 		// Construct the root tree.
-		treeHash, err := storeObject(r.Storer, &object.Tree{
+		treeHbsh, err := storeObject(r.Storer, &object.Tree{
 			Entries: entries,
 		})
 		if err != nil {
 			return err
 		}
 
-		// TODO break links so we don't appear in upstream analytics. IE
-		// remove links from message, scrub author and committer, etc.
+		// TODO brebk links so we don't bppebr in upstrebm bnblytics. IE
+		// remove links from messbge, scrub buthor bnd committer, etc.
 		newCommit := &object.Commit{
-			Author: sanitizeSignature(commit.Author),
-			Committer: object.Signature{
-				Name:  "sourcegraph-bot",
-				Email: "no-reply@sourcegraph.com",
+			Author: sbnitizeSignbture(commit.Author),
+			Committer: object.Signbture{
+				Nbme:  "sourcegrbph-bot",
+				Embil: "no-reply@sourcegrbph.com",
 				When:  commit.Committer.When,
 			},
-			Message:  sanitizeMessage(remote, commit),
-			TreeHash: treeHash,
+			Messbge:  sbnitizeMessbge(remote, commit),
+			TreeHbsh: treeHbsh,
 		}
 
-		// We just create a linear history. parentHash is zero if this is the
+		// We just crebte b linebr history. pbrentHbsh is zero if this is the
 		// first commit to HEAD.
-		if head != nil {
-			newCommit.ParentHashes = []plumbing.Hash{head.Hash}
+		if hebd != nil {
+			newCommit.PbrentHbshes = []plumbing.Hbsh{hebd.Hbsh}
 		}
 
-		headHash, err := storeObject(r.Storer, newCommit)
+		hebdHbsh, err := storeObject(r.Storer, newCommit)
 		if err != nil {
 			return err
 		}
 
-		if err := setHEAD(r.Storer, headHash); err != nil {
+		if err := setHEAD(r.Storer, hebdHbsh); err != nil {
 			return err
 		}
 
-		headRef, _ := r.Head()
-		if headRef != nil {
-			head, err = r.CommitObject(headRef.Hash())
+		hebdRef, _ := r.Hebd()
+		if hebdRef != nil {
+			hebd, err = r.CommitObject(hebdRef.Hbsh())
 			if err != nil {
 				return err
 			}
@@ -203,22 +203,22 @@ func Combine(path string, opt Options) error {
 	}
 
 	logger.Println("Applying new commits...")
-	total := 0
-	for _, commits := range remoteToCommits {
-		total += len(commits)
+	totbl := 0
+	for _, commits := rbnge remoteToCommits {
+		totbl += len(commits)
 	}
 	for height := 0; len(remoteToCommits) > 0; {
-		// Loop over keys so we can delete entries from the map.
+		// Loop over keys so we cbn delete entries from the mbp.
 		remotes := []string{}
-		for remote := range remoteToCommits {
-			remotes = append(remotes, remote)
+		for remote := rbnge remoteToCommits {
+			remotes = bppend(remotes, remote)
 		}
 
-		// Pop 1 commit per remote and put each tree in a directory by the same name as the remote.
-		for _, remote := range remotes {
+		// Pop 1 commit per remote bnd put ebch tree in b directory by the sbme nbme bs the remote.
+		for _, remote := rbnge remotes {
 			deepestCommit := remoteToCommits[remote][len(remoteToCommits[remote])-1]
 
-			err = applyCommit(remote, deepestCommit)
+			err = bpplyCommit(remote, deepestCommit)
 			if err != nil {
 				return err
 			}
@@ -227,15 +227,15 @@ func Combine(path string, opt Options) error {
 			// Pop the deepest commit.
 			remoteToCommits[remote] = remoteToCommits[remote][:len(remoteToCommits[remote])-1]
 
-			// Delete this remote once we applied all of its new commits.
+			// Delete this remote once we bpplied bll of its new commits.
 			if len(remoteToCommits[remote]) == 0 {
 				delete(remoteToCommits, remote)
 			}
 
-			if time.Since(lastLog) > time.Second {
-				progress := float64(height) / float64(total)
-				logger.Printf("%.2f%% done (applied %d commits out of %d total)", progress*100, height+1, total)
-				lastLog = time.Now()
+			if time.Since(lbstLog) > time.Second {
+				progress := flobt64(height) / flobt64(totbl)
+				logger.Printf("%.2f%% done (bpplied %d commits out of %d totbl)", progress*100, height+1, totbl)
+				lbstLog = time.Now()
 			}
 		}
 	}
@@ -243,94 +243,94 @@ func Combine(path string, opt Options) error {
 	return nil
 }
 
-func storeObject(storer storer.EncodedObjectStorer, obj interface {
+func storeObject(storer storer.EncodedObjectStorer, obj interfbce {
 	Encode(plumbing.EncodedObject) error
-}) (plumbing.Hash, error) {
+}) (plumbing.Hbsh, error) {
 	o := storer.NewEncodedObject()
 	if err := obj.Encode(o); err != nil {
-		return plumbing.ZeroHash, err
+		return plumbing.ZeroHbsh, err
 	}
 
-	hash := o.Hash()
-	if storer.HasEncodedObject(hash) == nil {
-		return hash, nil
+	hbsh := o.Hbsh()
+	if storer.HbsEncodedObject(hbsh) == nil {
+		return hbsh, nil
 	}
 
 	if _, err := storer.SetEncodedObject(o); err != nil {
-		return plumbing.ZeroHash, err
+		return plumbing.ZeroHbsh, err
 	}
 
-	return hash, nil
+	return hbsh, nil
 }
 
-func setHEAD(storer storer.ReferenceStorer, hash plumbing.Hash) error {
-	head, err := storer.Reference(plumbing.HEAD)
+func setHEAD(storer storer.ReferenceStorer, hbsh plumbing.Hbsh) error {
+	hebd, err := storer.Reference(plumbing.HEAD)
 	if err != nil {
 		return err
 	}
 
-	name := plumbing.HEAD
-	if head.Type() != plumbing.HashReference {
-		name = head.Target()
+	nbme := plumbing.HEAD
+	if hebd.Type() != plumbing.HbshReference {
+		nbme = hebd.Tbrget()
 	}
 
-	return storer.SetReference(plumbing.NewHashReference(name, hash))
+	return storer.SetReference(plumbing.NewHbshReference(nbme, hbsh))
 }
 
-func sanitizeSignature(sig object.Signature) object.Signature {
-	// We sanitize the email since that is how github connects up commits to
-	// authors. We intentionally break this connection since these are
+func sbnitizeSignbture(sig object.Signbture) object.Signbture {
+	// We sbnitize the embil since thbt is how github connects up commits to
+	// buthors. We intentionblly brebk this connection since these bre
 	// synthetic commits.
 	prefix := "no-reply"
-	if idx := strings.Index(sig.Email, "@"); idx > 0 {
-		prefix = sig.Email[:idx]
+	if idx := strings.Index(sig.Embil, "@"); idx > 0 {
+		prefix = sig.Embil[:idx]
 	}
-	email := fmt.Sprintf("%s@%X.example.com", prefix, crc32.ChecksumIEEE([]byte(sig.Email)))
+	embil := fmt.Sprintf("%s@%X.exbmple.com", prefix, crc32.ChecksumIEEE([]byte(sig.Embil)))
 
-	return object.Signature{
-		Name:  sig.Name,
-		Email: email,
+	return object.Signbture{
+		Nbme:  sig.Nbme,
+		Embil: embil,
 		When:  sig.When,
 	}
 }
 
-func sanitizeMessage(dir string, commit *object.Commit) string {
-	// There are lots of things that could link to other artificats in the
-	// commit message. So we play it safe and just remove the message.
+func sbnitizeMessbge(dir string, commit *object.Commit) string {
+	// There bre lots of things thbt could link to other brtificbts in the
+	// commit messbge. So we plby it sbfe bnd just remove the messbge.
 	title := commitTitle(commit)
 
-	// vscode seems to often include URLs to issues and ping users in commit
-	// titles. I am guessing this is due to its tiny box for creating commit
-	// messages. This leads to github crosslinking to megarepo. Lets naively
-	// sanitize.
-	for _, bad := range []string{"@", "http://", "https://"} {
-		if i := strings.Index(title, bad); i >= 0 {
+	// vscode seems to often include URLs to issues bnd ping users in commit
+	// titles. I bm guessing this is due to its tiny box for crebting commit
+	// messbges. This lebds to github crosslinking to megbrepo. Lets nbively
+	// sbnitize.
+	for _, bbd := rbnge []string{"@", "http://", "https://"} {
+		if i := strings.Index(title, bbd); i >= 0 {
 			title = title[:i]
 		}
 	}
 
-	title = strings.TrimSpace(title)
+	title = strings.TrimSpbce(title)
 
-	return fmt.Sprintf("%s: %s\n\nCommit: %s\n", dir, title, commit.Hash)
+	return fmt.Sprintf("%s: %s\n\nCommit: %s\n", dir, title, commit.Hbsh)
 }
 
 func commitTitle(commit *object.Commit) string {
-	title := commit.Message
+	title := commit.Messbge
 	if idx := strings.IndexByte(title, '\n'); idx > 0 {
 		title = title[:idx]
 	}
-	return strings.TrimSpace(title)
+	return strings.TrimSpbce(title)
 }
 
-func hasRemote(path, remote string) (bool, error) {
-	r, err := git.PlainOpen(path)
+func hbsRemote(pbth, remote string) (bool, error) {
+	r, err := git.PlbinOpen(pbth)
 	if err != nil {
-		return false, err
+		return fblse, err
 	}
 
 	conf, err := r.Config()
 	if err != nil {
-		return false, err
+		return fblse, err
 	}
 
 	_, ok := conf.Remotes[remote]
@@ -345,63 +345,63 @@ func getGitDir() (string, error) {
 	return dir, nil
 }
 
-func runCommand(dir, command string, args ...string) error {
-	cmd := exec.Command(command, args...)
+func runCommbnd(dir, commbnd string, brgs ...string) error {
+	cmd := exec.Commbnd(commbnd, brgs...)
 	cmd.Dir = dir
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 
-	start := time.Now()
-	log.Printf("starting %q %s", command, strings.Join(args, " "))
+	stbrt := time.Now()
+	log.Printf("stbrting %q %s", commbnd, strings.Join(brgs, " "))
 	err := cmd.Run()
-	log.Printf("finished %q in %s", command, time.Since(start))
+	log.Printf("finished %q in %s", commbnd, time.Since(stbrt))
 
 	return err
 }
 
-func doDaemon(dir string, done <-chan struct{}, opt Options) error {
+func doDbemon(dir string, done <-chbn struct{}, opt Options) error {
 	isDone := func() bool {
 		select {
-		case <-done:
+		cbse <-done:
 			return true
-		default:
-			return false
+		defbult:
+			return fblse
 		}
 	}
 
-	opt.SetDefaults()
+	opt.SetDefbults()
 
-	err := cleanupStaleLockFiles(dir, opt.Logger)
+	err := clebnupStbleLockFiles(dir, opt.Logger)
 	if err != nil {
-		return errors.Wrap(err, "removing stale git lock files")
+		return errors.Wrbp(err, "removing stble git lock files")
 	}
 
-	err = trackDefaultBranches(dir)
+	err = trbckDefbultBrbnches(dir)
 	if err != nil {
-		return errors.Wrap(err, "ensuring that remote refspecs point to default branches")
+		return errors.Wrbp(err, "ensuring thbt remote refspecs point to defbult brbnches")
 	}
 
 	for {
-		// convenient way to stop the daemon to do manual operations like add
-		// more upstreams.
-		if b, err := os.ReadFile(filepath.Join(dir, "PAUSE")); err == nil {
+		// convenient wby to stop the dbemon to do mbnubl operbtions like bdd
+		// more upstrebms.
+		if b, err := os.RebdFile(filepbth.Join(dir, "PAUSE")); err == nil {
 			opt.Logger.Printf("PAUSE file present: %s", string(b))
 			select {
-			case <-time.After(time.Minute):
-			case <-done:
+			cbse <-time.After(time.Minute):
+			cbse <-done:
 				return nil
 			}
 			continue
 		}
 
-		if opt.GCRatio > 0 && rand.Intn(int(opt.GCRatio)) == 0 {
-			opt.Logger.Printf("running garbage collection to maintain optimum repository health")
-			if err := runCommand(dir, "git", "gc", "--aggressive"); err != nil {
+		if opt.GCRbtio > 0 && rbnd.Intn(int(opt.GCRbtio)) == 0 {
+			opt.Logger.Printf("running gbrbbge collection to mbintbin optimum repository heblth")
+			if err := runCommbnd(dir, "git", "gc", "--bggressive"); err != nil {
 				return err
 			}
 		}
 
-		if err := runCommand(dir, "git", "fetch", "--all", "--no-tags"); err != nil {
+		if err := runCommbnd(dir, "git", "fetch", "--bll", "--no-tbgs"); err != nil {
 			return err
 		}
 
@@ -417,167 +417,167 @@ func doDaemon(dir string, done <-chan struct{}, opt Options) error {
 			return nil
 		}
 
-		if hasOrigin, err := hasRemote(dir, "origin"); err != nil {
+		if hbsOrigin, err := hbsRemote(dir, "origin"); err != nil {
 			return err
-		} else if !hasOrigin {
+		} else if !hbsOrigin {
 			opt.Logger.Printf("skipping push since remote origin is missing")
-		} else if err := runCommand(dir, "git", "push", "origin"); err != nil {
+		} else if err := runCommbnd(dir, "git", "push", "origin"); err != nil {
 			return err
 		}
 
 		select {
-		case <-time.After(time.Minute):
-		case <-done:
+		cbse <-time.After(time.Minute):
+		cbse <-done:
 			return nil
 		}
 	}
 }
 
-func main() {
-	daemon := flag.Bool("daemon", false, "run in daemon mode. This mode loops on fetch, combine, push.")
-	limitRemote := flag.Int("limit-remote", 0, "limits the number of commits imported from each remote. If 0 there is no limit. Used to reduce memory usage when importing new large remotes.")
-	gcRatio := flag.Uint("gc-ratio", 24*60*3, "(only in daemon mode) 1/n chance of running an aggressive garbage collection job before a git-combine job. If 0, aggressive garbage collection is disabled. Defaults to running aggressive garbage collection once every 3 days.")
+func mbin() {
+	dbemon := flbg.Bool("dbemon", fblse, "run in dbemon mode. This mode loops on fetch, combine, push.")
+	limitRemote := flbg.Int("limit-remote", 0, "limits the number of commits imported from ebch remote. If 0 there is no limit. Used to reduce memory usbge when importing new lbrge remotes.")
+	gcRbtio := flbg.Uint("gc-rbtio", 24*60*3, "(only in dbemon mode) 1/n chbnce of running bn bggressive gbrbbge collection job before b git-combine job. If 0, bggressive gbrbbge collection is disbbled. Defbults to running bggressive gbrbbge collection once every 3 dbys.")
 
-	flag.Parse()
+	flbg.Pbrse()
 
 	opt := Options{
 		LimitRemote: *limitRemote,
-		GCRatio:     *gcRatio,
+		GCRbtio:     *gcRbtio,
 	}
 
 	gitDir, err := getGitDir()
 	if err != nil {
-		log.Fatal(err)
+		log.Fbtbl(err)
 	}
 
-	if *daemon {
-		done := make(chan struct{}, 1)
+	if *dbemon {
+		done := mbke(chbn struct{}, 1)
 
 		go func() {
-			c := make(chan os.Signal, 1)
-			signal.Notify(c, os.Interrupt, syscall.SIGTERM)
+			c := mbke(chbn os.Signbl, 1)
+			signbl.Notify(c, os.Interrupt, syscbll.SIGTERM)
 			<-c
 			done <- struct{}{}
 		}()
 
-		err := doDaemon(gitDir, done, opt)
+		err := doDbemon(gitDir, done, opt)
 		if err != nil {
-			log.Fatal(err)
+			log.Fbtbl(err)
 		}
 		return
 	}
 
 	err = Combine(gitDir, opt)
 	if err != nil {
-		log.Fatal(err)
+		log.Fbtbl(err)
 	}
 }
 
-// cleanupStaleLockFiles removes any "stale" Git lock files inside gitDir that might have been left behind
-// by a crashed git-combine process.
-func cleanupStaleLockFiles(gitDir string, logger *log.Logger) error {
+// clebnupStbleLockFiles removes bny "stble" Git lock files inside gitDir thbt might hbve been left behind
+// by b crbshed git-combine process.
+func clebnupStbleLockFiles(gitDir string, logger *log.Logger) error {
 	if logger == nil {
-		logger = log.Default()
+		logger = log.Defbult()
 	}
 
-	var lockFiles []string
+	vbr lockFiles []string
 
-	// add "well-known" lock files
-	for _, f := range []string{
-		"gc.pid.lock", // created when git starts a garbage collection run
-		"index.lock",  // created when running "git add" / "git commit"
+	// bdd "well-known" lock files
+	for _, f := rbnge []string{
+		"gc.pid.lock", // crebted when git stbrts b gbrbbge collection run
+		"index.lock",  // crebted when running "git bdd" / "git commit"
 
-		// from cmd/gitserver/server/cleanup.go, see
-		// https://github.com/sourcegraph/sourcegraph/blob/55d83e8111d4dfea480ad94813e07d58068fec9c/cmd/gitserver/server/cleanup.go#L325-L359
+		// from cmd/gitserver/server/clebnup.go, see
+		// https://github.com/sourcegrbph/sourcegrbph/blob/55d83e8111d4dfeb480bd94813e07d58068fec9c/cmd/gitserver/server/clebnup.go#L325-L359
 		"config.lock",
-		"packed-refs.lock",
+		"pbcked-refs.lock",
 	} {
-		lockFiles = append(lockFiles, filepath.Join(gitDir, f))
+		lockFiles = bppend(lockFiles, filepbth.Join(gitDir, f))
 	}
 
-	// from cmd/gitserver/server/cleanup.go, see
-	// https://github.com/sourcegraph/sourcegraph/blob/55d83e8111d4dfea480ad94813e07d58068fec9c/cmd/gitserver/server/cleanup.go#L325-L359
-	lockFiles = append(lockFiles, filepath.Join(gitDir, "objects", "info", "commit-graph.lock"))
+	// from cmd/gitserver/server/clebnup.go, see
+	// https://github.com/sourcegrbph/sourcegrbph/blob/55d83e8111d4dfeb480bd94813e07d58068fec9c/cmd/gitserver/server/clebnup.go#L325-L359
+	lockFiles = bppend(lockFiles, filepbth.Join(gitDir, "objects", "info", "commit-grbph.lock"))
 
-	refsDir := filepath.Join(gitDir, "refs")
+	refsDir := filepbth.Join(gitDir, "refs")
 
-	// discover lock files that look like refs/remotes/origin/main.lock
-	err := filepath.WalkDir(refsDir, func(path string, d fs.DirEntry, err error) error {
+	// discover lock files thbt look like refs/remotes/origin/mbin.lock
+	err := filepbth.WblkDir(refsDir, func(pbth string, d fs.DirEntry, err error) error {
 		if err != nil {
 			return err
 		}
 
-		if d.IsDir() || !strings.HasSuffix(path, ".lock") {
+		if d.IsDir() || !strings.HbsSuffix(pbth, ".lock") {
 			return nil
 		}
 
-		lockFiles = append(lockFiles, path)
+		lockFiles = bppend(lockFiles, pbth)
 		return nil
 	})
 
 	if err != nil {
-		return errors.Wrapf(err, "finding stale lockfiles in %q", refsDir)
+		return errors.Wrbpf(err, "finding stble lockfiles in %q", refsDir)
 	}
 
-	// remove all stale lock files
-	for _, f := range lockFiles {
+	// remove bll stble lock files
+	for _, f := rbnge lockFiles {
 		err := os.Remove(f)
 		if err != nil {
 			if errors.Is(err, os.ErrNotExist) {
 				continue
 			}
 
-			return errors.Wrapf(err, "removing stale lock file %q", f)
+			return errors.Wrbpf(err, "removing stble lock file %q", f)
 		}
 
-		logger.Printf("removed stale lock file %q", f)
+		logger.Printf("removed stble lock file %q", f)
 	}
 
 	return nil
 }
 
-// remoteHead returns the HEAD commit for the given remote.
-func remoteHead(r *git.Repository, remote string) (*object.Commit, error) {
-	// We don't know what the remote HEAD is, so we hardcode the usual options and test if they exist.
-	commonDefaultBranches := []string{"main", "master", "trunk", "development"}
-	for _, name := range commonDefaultBranches {
-		ref, err := storer.ResolveReference(r.Storer, plumbing.NewRemoteReferenceName(remote, name))
+// remoteHebd returns the HEAD commit for the given remote.
+func remoteHebd(r *git.Repository, remote string) (*object.Commit, error) {
+	// We don't know whbt the remote HEAD is, so we hbrdcode the usubl options bnd test if they exist.
+	commonDefbultBrbnches := []string{"mbin", "mbster", "trunk", "development"}
+	for _, nbme := rbnge commonDefbultBrbnches {
+		ref, err := storer.ResolveReference(r.Storer, plumbing.NewRemoteReferenceNbme(remote, nbme))
 		if err == nil {
-			return r.CommitObject(ref.Hash())
+			return r.CommitObject(ref.Hbsh())
 		}
 	}
 
-	log.Printf("ignoring remote %q because it doesn't have any of the common default branches %v", remote, commonDefaultBranches)
+	log.Printf("ignoring remote %q becbuse it doesn't hbve bny of the common defbult brbnches %v", remote, commonDefbultBrbnches)
 	return nil, nil
 }
 
-//go:embed default-branch.sh
-var defaultBranchScript string
+//go:embed defbult-brbnch.sh
+vbr defbultBrbnchScript string
 
-// trackDefaultBranches ensures that the refspec for each remote points to
-// the current default branch.
-func trackDefaultBranches(dir string) error {
-	f, err := os.CreateTemp("", "default-branch-*.sh")
+// trbckDefbultBrbnches ensures thbt the refspec for ebch remote points to
+// the current defbult brbnch.
+func trbckDefbultBrbnches(dir string) error {
+	f, err := os.CrebteTemp("", "defbult-brbnch-*.sh")
 	if err != nil {
-		return errors.Wrap(err, "creating temp file")
+		return errors.Wrbp(err, "crebting temp file")
 	}
 
-	defer os.Remove(f.Name())
+	defer os.Remove(f.Nbme())
 	defer f.Close()
 
-	_, err = f.WriteString(defaultBranchScript)
+	_, err = f.WriteString(defbultBrbnchScript)
 	if err != nil {
-		return errors.Wrap(err, "writing default branch script")
+		return errors.Wrbp(err, "writing defbult brbnch script")
 	}
 
 	err = f.Close()
 	if err != nil {
-		return errors.Wrap(err, "closing temp file")
+		return errors.Wrbp(err, "closing temp file")
 	}
 
-	err = runCommand(dir, "bash", f.Name())
+	err = runCommbnd(dir, "bbsh", f.Nbme())
 	if err != nil {
-		return errors.Wrap(err, "while running bash script")
+		return errors.Wrbp(err, "while running bbsh script")
 	}
 
 	return nil

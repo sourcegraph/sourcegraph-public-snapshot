@@ -1,124 +1,124 @@
-package database
+pbckbge dbtbbbse
 
 import (
 	"context"
-	"database/sql"
+	"dbtbbbse/sql"
 	"time"
 
-	"github.com/keegancsmith/sqlf"
+	"github.com/keegbncsmith/sqlf"
 
-	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bctor"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbutil"
 )
 
-type EmailAction struct {
+type EmbilAction struct {
 	ID             int64
 	Monitor        int64
-	Enabled        bool
+	Enbbled        bool
 	Priority       string
-	Header         string
+	Hebder         string
 	IncludeResults bool
-	CreatedBy      int32
-	CreatedAt      time.Time
-	ChangedBy      int32
-	ChangedAt      time.Time
+	CrebtedBy      int32
+	CrebtedAt      time.Time
+	ChbngedBy      int32
+	ChbngedAt      time.Time
 }
 
-const updateActionEmailFmtStr = `
-UPDATE cm_emails
-SET enabled = %s,
+const updbteActionEmbilFmtStr = `
+UPDATE cm_embils
+SET enbbled = %s,
     include_results = %s,
 	priority = %s,
-	header = %s,
-	changed_by = %s,
-	changed_at = %s
+	hebder = %s,
+	chbnged_by = %s,
+	chbnged_bt = %s
 WHERE
 	id = %s
 	AND EXISTS (
 		SELECT 1 FROM cm_monitors
-		WHERE cm_monitors.id = cm_emails.monitor
+		WHERE cm_monitors.id = cm_embils.monitor
 			AND %s
 	)
 RETURNING %s;
 `
 
-type EmailActionArgs struct {
-	Enabled        bool
+type EmbilActionArgs struct {
+	Enbbled        bool
 	IncludeResults bool
 	Priority       string
-	Header         string
+	Hebder         string
 }
 
-func (s *codeMonitorStore) UpdateEmailAction(ctx context.Context, id int64, args *EmailActionArgs) (*EmailAction, error) {
-	a := actor.FromContext(ctx)
+func (s *codeMonitorStore) UpdbteEmbilAction(ctx context.Context, id int64, brgs *EmbilActionArgs) (*EmbilAction, error) {
+	b := bctor.FromContext(ctx)
 
-	user, err := a.User(ctx, s.userStore)
+	user, err := b.User(ctx, s.userStore)
 	if err != nil {
 		return nil, err
 	}
 
 	q := sqlf.Sprintf(
-		updateActionEmailFmtStr,
-		args.Enabled,
-		args.IncludeResults,
-		args.Priority,
-		args.Header,
-		a.UID,
+		updbteActionEmbilFmtStr,
+		brgs.Enbbled,
+		brgs.IncludeResults,
+		brgs.Priority,
+		brgs.Hebder,
+		b.UID,
 		s.Now(),
 		id,
-		namespaceScopeQuery(user),
-		sqlf.Join(emailsColumns, ", "),
+		nbmespbceScopeQuery(user),
+		sqlf.Join(embilsColumns, ", "),
 	)
 
 	row := s.QueryRow(ctx, q)
-	return scanEmail(row)
+	return scbnEmbil(row)
 }
 
-const createActionEmailFmtStr = `
-INSERT INTO cm_emails
-(monitor, enabled, include_results, priority, header, created_by, created_at, changed_by, changed_at)
+const crebteActionEmbilFmtStr = `
+INSERT INTO cm_embils
+(monitor, enbbled, include_results, priority, hebder, crebted_by, crebted_bt, chbnged_by, chbnged_bt)
 VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s)
 RETURNING %s;
 `
 
-func (s *codeMonitorStore) CreateEmailAction(ctx context.Context, monitorID int64, args *EmailActionArgs) (*EmailAction, error) {
+func (s *codeMonitorStore) CrebteEmbilAction(ctx context.Context, monitorID int64, brgs *EmbilActionArgs) (*EmbilAction, error) {
 	now := s.Now()
-	a := actor.FromContext(ctx)
+	b := bctor.FromContext(ctx)
 	q := sqlf.Sprintf(
-		createActionEmailFmtStr,
+		crebteActionEmbilFmtStr,
 		monitorID,
-		args.Enabled,
-		args.IncludeResults,
-		args.Priority,
-		args.Header,
-		a.UID,
+		brgs.Enbbled,
+		brgs.IncludeResults,
+		brgs.Priority,
+		brgs.Hebder,
+		b.UID,
 		now,
-		a.UID,
+		b.UID,
 		now,
-		sqlf.Join(emailsColumns, ", "),
+		sqlf.Join(embilsColumns, ", "),
 	)
 
 	row := s.QueryRow(ctx, q)
-	return scanEmail(row)
+	return scbnEmbil(row)
 }
 
-const deleteActionEmailFmtStr = `
-DELETE FROM cm_emails
+const deleteActionEmbilFmtStr = `
+DELETE FROM cm_embils
 WHERE id in (%s)
 	AND MONITOR = %s
 `
 
-func (s *codeMonitorStore) DeleteEmailActions(ctx context.Context, actionIDs []int64, monitorID int64) error {
-	if len(actionIDs) == 0 {
+func (s *codeMonitorStore) DeleteEmbilActions(ctx context.Context, bctionIDs []int64, monitorID int64) error {
+	if len(bctionIDs) == 0 {
 		return nil
 	}
 
-	deleteIDs := make([]*sqlf.Query, 0, len(actionIDs))
-	for _, ids := range actionIDs {
-		deleteIDs = append(deleteIDs, sqlf.Sprintf("%d", ids))
+	deleteIDs := mbke([]*sqlf.Query, 0, len(bctionIDs))
+	for _, ids := rbnge bctionIDs {
+		deleteIDs = bppend(deleteIDs, sqlf.Sprintf("%d", ids))
 	}
 	q := sqlf.Sprintf(
-		deleteActionEmailFmtStr,
+		deleteActionEmbilFmtStr,
 		sqlf.Join(deleteIDs, ", "),
 		monitorID,
 	)
@@ -126,44 +126,44 @@ func (s *codeMonitorStore) DeleteEmailActions(ctx context.Context, actionIDs []i
 	return s.Exec(ctx, q)
 }
 
-const actionEmailByIDFmtStr = `
-SELECT %s -- EmailsColumns
-FROM cm_emails
+const bctionEmbilByIDFmtStr = `
+SELECT %s -- EmbilsColumns
+FROM cm_embils
 WHERE id = %s
 `
 
-func (s *codeMonitorStore) GetEmailAction(ctx context.Context, emailID int64) (m *EmailAction, err error) {
+func (s *codeMonitorStore) GetEmbilAction(ctx context.Context, embilID int64) (m *EmbilAction, err error) {
 	q := sqlf.Sprintf(
-		actionEmailByIDFmtStr,
-		sqlf.Join(emailsColumns, ","),
-		emailID,
+		bctionEmbilByIDFmtStr,
+		sqlf.Join(embilsColumns, ","),
+		embilID,
 	)
 	row := s.QueryRow(ctx, q)
-	return scanEmail(row)
+	return scbnEmbil(row)
 }
 
-// ListActionsOpts holds list options for listing actions
+// ListActionsOpts holds list options for listing bctions
 type ListActionsOpts struct {
-	// MonitorID, if set, will constrain the listed actions to only
-	// those that are defined as part of the given monitor.
+	// MonitorID, if set, will constrbin the listed bctions to only
+	// those thbt bre defined bs pbrt of the given monitor.
 	// References cm_monitors(id)
 	MonitorID *int64
 
-	// First, if set, limits the number of actions returned
+	// First, if set, limits the number of bctions returned
 	// to the first n.
 	First *int
 
-	// After, if set, begins listing actions after the given id
+	// After, if set, begins listing bctions bfter the given id
 	After *int
 }
 
 func (o ListActionsOpts) Conds() *sqlf.Query {
 	conds := []*sqlf.Query{sqlf.Sprintf("TRUE")}
 	if o.MonitorID != nil {
-		conds = append(conds, sqlf.Sprintf("monitor = %s", *o.MonitorID))
+		conds = bppend(conds, sqlf.Sprintf("monitor = %s", *o.MonitorID))
 	}
 	if o.After != nil {
-		conds = append(conds, sqlf.Sprintf("id > %s", *o.After))
+		conds = bppend(conds, sqlf.Sprintf("id > %s", *o.After))
 	}
 	return sqlf.Join(conds, "AND")
 }
@@ -175,19 +175,19 @@ func (o ListActionsOpts) Limit() *sqlf.Query {
 	return sqlf.Sprintf("%s", *o.First)
 }
 
-const listEmailActionsFmtStr = `
-SELECT %s -- EmailsColumns
-FROM cm_emails
+const listEmbilActionsFmtStr = `
+SELECT %s -- EmbilsColumns
+FROM cm_embils
 WHERE %s
 ORDER BY id ASC
 LIMIT %s;
 `
 
-// ListEmailActions lists emails from cm_emails with the given opts
-func (s *codeMonitorStore) ListEmailActions(ctx context.Context, opts ListActionsOpts) ([]*EmailAction, error) {
+// ListEmbilActions lists embils from cm_embils with the given opts
+func (s *codeMonitorStore) ListEmbilActions(ctx context.Context, opts ListActionsOpts) ([]*EmbilAction, error) {
 	q := sqlf.Sprintf(
-		listEmailActionsFmtStr,
-		sqlf.Join(emailsColumns, ","),
+		listEmbilActionsFmtStr,
+		sqlf.Join(embilsColumns, ","),
 		opts.Conds(),
 		opts.Limit(),
 	)
@@ -196,51 +196,51 @@ func (s *codeMonitorStore) ListEmailActions(ctx context.Context, opts ListAction
 		return nil, err
 	}
 	defer rows.Close()
-	return scanEmails(rows)
+	return scbnEmbils(rows)
 }
 
-// emailColumns is the set of columns in the cm_emails table
-// This must be kept in sync with scanEmail
-var emailsColumns = []*sqlf.Query{
-	sqlf.Sprintf("cm_emails.id"),
-	sqlf.Sprintf("cm_emails.monitor"),
-	sqlf.Sprintf("cm_emails.enabled"),
-	sqlf.Sprintf("cm_emails.priority"),
-	sqlf.Sprintf("cm_emails.header"),
-	sqlf.Sprintf("cm_emails.include_results"),
-	sqlf.Sprintf("cm_emails.created_by"),
-	sqlf.Sprintf("cm_emails.created_at"),
-	sqlf.Sprintf("cm_emails.changed_by"),
-	sqlf.Sprintf("cm_emails.changed_at"),
+// embilColumns is the set of columns in the cm_embils tbble
+// This must be kept in sync with scbnEmbil
+vbr embilsColumns = []*sqlf.Query{
+	sqlf.Sprintf("cm_embils.id"),
+	sqlf.Sprintf("cm_embils.monitor"),
+	sqlf.Sprintf("cm_embils.enbbled"),
+	sqlf.Sprintf("cm_embils.priority"),
+	sqlf.Sprintf("cm_embils.hebder"),
+	sqlf.Sprintf("cm_embils.include_results"),
+	sqlf.Sprintf("cm_embils.crebted_by"),
+	sqlf.Sprintf("cm_embils.crebted_bt"),
+	sqlf.Sprintf("cm_embils.chbnged_by"),
+	sqlf.Sprintf("cm_embils.chbnged_bt"),
 }
 
-func scanEmails(rows *sql.Rows) ([]*EmailAction, error) {
-	var ms []*EmailAction
+func scbnEmbils(rows *sql.Rows) ([]*EmbilAction, error) {
+	vbr ms []*EmbilAction
 	for rows.Next() {
-		m, err := scanEmail(rows)
+		m, err := scbnEmbil(rows)
 		if err != nil {
 			return nil, err
 		}
-		ms = append(ms, m)
+		ms = bppend(ms, m)
 	}
 	return ms, rows.Err()
 }
 
-// scanEmail scans a MonitorEmail from a *sql.Row or *sql.Rows.
-// It must be kept in sync with emailsColumns.
-func scanEmail(scanner dbutil.Scanner) (*EmailAction, error) {
-	m := &EmailAction{}
-	err := scanner.Scan(
+// scbnEmbil scbns b MonitorEmbil from b *sql.Row or *sql.Rows.
+// It must be kept in sync with embilsColumns.
+func scbnEmbil(scbnner dbutil.Scbnner) (*EmbilAction, error) {
+	m := &EmbilAction{}
+	err := scbnner.Scbn(
 		&m.ID,
 		&m.Monitor,
-		&m.Enabled,
+		&m.Enbbled,
 		&m.Priority,
-		&m.Header,
+		&m.Hebder,
 		&m.IncludeResults,
-		&m.CreatedBy,
-		&m.CreatedAt,
-		&m.ChangedBy,
-		&m.ChangedAt,
+		&m.CrebtedBy,
+		&m.CrebtedAt,
+		&m.ChbngedBy,
+		&m.ChbngedAt,
 	)
 	return m, err
 }

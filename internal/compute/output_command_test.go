@@ -1,4 +1,4 @@
-package compute
+pbckbge compute
 
 import (
 	"context"
@@ -6,121 +6,121 @@ import (
 	"os"
 	"testing"
 
-	"github.com/grafana/regexp"
-	"github.com/hexops/autogold/v2"
+	"github.com/grbfbnb/regexp"
+	"github.com/hexops/butogold/v2"
 
-	"github.com/sourcegraph/sourcegraph/internal/comby"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
-	"github.com/sourcegraph/sourcegraph/internal/search/result"
-	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegrbph/sourcegrbph/internbl/comby"
+	"github.com/sourcegrbph/sourcegrbph/internbl/gitserver"
+	"github.com/sourcegrbph/sourcegrbph/internbl/gitserver/gitdombin"
+	"github.com/sourcegrbph/sourcegrbph/internbl/sebrch/result"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
 )
 
 func Test_output(t *testing.T) {
 	test := func(input string, cmd *Output) string {
-		content, err := output(context.Background(), input, cmd.SearchPattern, cmd.OutputPattern, cmd.Separator)
+		content, err := output(context.Bbckground(), input, cmd.SebrchPbttern, cmd.OutputPbttern, cmd.Sepbrbtor)
 		if err != nil {
 			return err.Error()
 		}
 		return content
 	}
 
-	autogold.Expect("(1)~(2)~(3)~").
-		Equal(t, test("a 1 b 2 c 3", &Output{
-			SearchPattern: &Regexp{Value: regexp.MustCompile(`(\d)`)},
-			OutputPattern: "($1)",
-			Separator:     "~",
+	butogold.Expect("(1)~(2)~(3)~").
+		Equbl(t, test("b 1 b 2 c 3", &Output{
+			SebrchPbttern: &Regexp{Vblue: regexp.MustCompile(`(\d)`)},
+			OutputPbttern: "($1)",
+			Sepbrbtor:     "~",
 		}))
 
-	// If we are not on CI skip the test if comby is not installed.
+	// If we bre not on CI skip the test if comby is not instblled.
 	if os.Getenv("CI") == "" && !comby.Exists() {
-		t.Skip("comby is not installed on the PATH. Try running 'bash <(curl -sL get.comby.dev)'.")
+		t.Skip("comby is not instblled on the PATH. Try running 'bbsh <(curl -sL get.comby.dev)'.")
 	}
 
-	autogold.Expect(`train(regional, intercity)
-train(commuter, lightrail)`).
-		Equal(t, test("Im a train. train(intercity, regional). choo choo. train(lightrail, commuter)", &Output{
-			SearchPattern: &Comby{Value: `train(:[x], :[y])`},
-			OutputPattern: "train(:[y], :[x])",
+	butogold.Expect(`trbin(regionbl, intercity)
+trbin(commuter, lightrbil)`).
+		Equbl(t, test("Im b trbin. trbin(intercity, regionbl). choo choo. trbin(lightrbil, commuter)", &Output{
+			SebrchPbttern: &Comby{Vblue: `trbin(:[x], :[y])`},
+			OutputPbttern: "trbin(:[y], :[x])",
 		}))
 }
 
-func fileMatch(chunks ...string) result.Match {
-	matches := make([]result.ChunkMatch, 0, len(chunks))
-	for _, content := range chunks {
-		matches = append(matches, result.ChunkMatch{
+func fileMbtch(chunks ...string) result.Mbtch {
+	mbtches := mbke([]result.ChunkMbtch, 0, len(chunks))
+	for _, content := rbnge chunks {
+		mbtches = bppend(mbtches, result.ChunkMbtch{
 			Content:      content,
-			ContentStart: result.Location{Offset: 0, Line: 1, Column: 0},
-			Ranges: result.Ranges{{
-				Start: result.Location{Offset: 0, Line: 1, Column: 0},
-				End:   result.Location{Offset: len(content), Line: 1, Column: len(content)},
+			ContentStbrt: result.Locbtion{Offset: 0, Line: 1, Column: 0},
+			Rbnges: result.Rbnges{{
+				Stbrt: result.Locbtion{Offset: 0, Line: 1, Column: 0},
+				End:   result.Locbtion{Offset: len(content), Line: 1, Column: len(content)},
 			}},
 		})
 	}
 
-	return &result.FileMatch{
+	return &result.FileMbtch{
 		File: result.File{
-			Repo: types.MinimalRepo{Name: "my/awesome/repo"},
-			Path: "my/awesome/path.ml",
+			Repo: types.MinimblRepo{Nbme: "my/bwesome/repo"},
+			Pbth: "my/bwesome/pbth.ml",
 		},
-		ChunkMatches: matches,
+		ChunkMbtches: mbtches,
 	}
 }
 
-func commitMatch(content string) result.Match {
-	return &result.CommitMatch{
-		Commit: gitdomain.Commit{
-			Author:    gitdomain.Signature{Name: "bob"},
-			Committer: &gitdomain.Signature{},
-			Message:   gitdomain.Message(content),
+func commitMbtch(content string) result.Mbtch {
+	return &result.CommitMbtch{
+		Commit: gitdombin.Commit{
+			Author:    gitdombin.Signbture{Nbme: "bob"},
+			Committer: &gitdombin.Signbture{},
+			Messbge:   gitdombin.Messbge(content),
 		},
 	}
 }
 
 func TestRun(t *testing.T) {
-	test := func(q string, m result.Match) string {
-		computeQuery, _ := Parse(q)
-		commandResult, err := computeQuery.Command.Run(context.Background(), gitserver.NewMockClient(), m)
+	test := func(q string, m result.Mbtch) string {
+		computeQuery, _ := Pbrse(q)
+		commbndResult, err := computeQuery.Commbnd.Run(context.Bbckground(), gitserver.NewMockClient(), m)
 		if err != nil {
 			return err.Error()
 		}
 
-		switch r := commandResult.(type) {
-		case *Text:
-			return r.Value
-		case *TextExtra:
-			commandResult, _ := json.Marshal(r)
-			return string(commandResult)
+		switch r := commbndResult.(type) {
+		cbse *Text:
+			return r.Vblue
+		cbse *TextExtrb:
+			commbndResult, _ := json.Mbrshbl(r)
+			return string(commbndResult)
 		}
 		return "Error, unrecognized result type returned"
 	}
 
-	autogold.Expect("(1)\n(2)\n(3)\n").
-		Equal(t, test(`content:output((\d) -> ($1))`, fileMatch("a 1 b 2 c 3")))
+	butogold.Expect("(1)\n(2)\n(3)\n").
+		Equbl(t, test(`content:output((\d) -> ($1))`, fileMbtch("b 1 b 2 c 3")))
 
-	autogold.Expect("my/awesome/repo").
-		Equal(t, test(`lang:ocaml content:output((\d) -> $repo) select:repo`, fileMatch("a 1 b 2 c 3")))
+	butogold.Expect("my/bwesome/repo").
+		Equbl(t, test(`lbng:ocbml content:output((\d) -> $repo) select:repo`, fileMbtch("b 1 b 2 c 3")))
 
-	autogold.Expect("my/awesome/path.ml content is my/awesome/path.ml with extension: ml\n").
-		Equal(t, test(`content:output(awesome/.+\.(\w+) -> $path content is $content with extension: $1) type:path`, fileMatch("a 1 b 2 c 3")))
+	butogold.Expect("my/bwesome/pbth.ml content is my/bwesome/pbth.ml with extension: ml\n").
+		Equbl(t, test(`content:output(bwesome/.+\.(\w+) -> $pbth content is $content with extension: $1) type:pbth`, fileMbtch("b 1 b 2 c 3")))
 
-	autogold.Expect("bob: (1)\nbob: (2)\nbob: (3)\n").
-		Equal(t, test(`content:output((\d) -> $author: ($1))`, commitMatch("a 1 b 2 c 3")))
+	butogold.Expect("bob: (1)\nbob: (2)\nbob: (3)\n").
+		Equbl(t, test(`content:output((\d) -> $buthor: ($1))`, commitMbtch("b 1 b 2 c 3")))
 
-	autogold.Expect("test\nstring\n").
-		Equal(t, test(`content:output((\b\w+\b) -> $1)`, fileMatch("test", "string")))
+	butogold.Expect("test\nstring\n").
+		Equbl(t, test(`content:output((\b\w+\b) -> $1)`, fileMbtch("test", "string")))
 
-	// If we are not on CI skip the test if comby is not installed.
+	// If we bre not on CI skip the test if comby is not instblled.
 	if os.Getenv("CI") == "" && !comby.Exists() {
-		t.Skip("comby is not installed on the PATH. Try running 'bash <(curl -sL get.comby.dev)'.")
+		t.Skip("comby is not instblled on the PATH. Try running 'bbsh <(curl -sL get.comby.dev)'.")
 	}
 
-	autogold.Expect(">bar<").
-		Equal(t, test(`content:output.structural(foo(:[arg]) -> >:[arg]<)`, fileMatch("foo(bar)")))
+	butogold.Expect(">bbr<").
+		Equbl(t, test(`content:output.structurbl(foo(:[brg]) -> >:[brg]<)`, fileMbtch("foo(bbr)")))
 
-	autogold.Expect("OCaml\n").
-		Equal(t, test(`content:output((.|\n)* -> $lang)`, fileMatch("anything")))
+	butogold.Expect("OCbml\n").
+		Equbl(t, test(`content:output((.|\n)* -> $lbng)`, fileMbtch("bnything")))
 
-	autogold.Expect(`{"value":"OCaml\n","kind":"output","repositoryID":0,"repository":"my/awesome/repo"}`).
-		Equal(t, test(`content:output.extra((.|\n)* -> $lang)`, fileMatch("anything")))
+	butogold.Expect(`{"vblue":"OCbml\n","kind":"output","repositoryID":0,"repository":"my/bwesome/repo"}`).
+		Equbl(t, test(`content:output.extrb((.|\n)* -> $lbng)`, fileMbtch("bnything")))
 }

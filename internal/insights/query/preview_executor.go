@@ -1,30 +1,30 @@
-package query
+pbckbge query
 
 import (
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/insights/compression"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/insights/compression"
 )
 
-type GeneratedTimeSeries struct {
-	Label    string
-	Points   []TimeDataPoint
+type GenerbtedTimeSeries struct {
+	Lbbel    string
+	Points   []TimeDbtbPoint
 	SeriesId string
 }
 
-type timeCounts map[time.Time]int
+type timeCounts mbp[time.Time]int
 type previewExecutor struct {
-	repoStore database.RepoStore
-	filter    compression.DataFrameFilter
+	repoStore dbtbbbse.RepoStore
+	filter    compression.DbtbFrbmeFilter
 	clock     func() time.Time
 }
 
-func generateTimes(plan compression.BackfillPlan) map[time.Time]int {
-	times := make(map[time.Time]int)
-	for _, execution := range plan.Executions {
+func generbteTimes(plbn compression.BbckfillPlbn) mbp[time.Time]int {
+	times := mbke(mbp[time.Time]int)
+	for _, execution := rbnge plbn.Executions {
 		times[execution.RecordingTime] = 0
-		for _, recording := range execution.SharedRecordings {
+		for _, recording := rbnge execution.ShbredRecordings {
 			times[recording] = 0
 		}
 	}

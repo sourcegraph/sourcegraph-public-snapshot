@@ -1,41 +1,41 @@
-package gitresolvers
+pbckbge gitresolvers
 
 import (
 	"context"
 	"fmt"
-	stdpath "path"
+	stdpbth "pbth"
 	"strings"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/authz"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/resolvers"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi"
+	"github.com/sourcegrbph/sourcegrbph/internbl/buthz"
+	"github.com/sourcegrbph/sourcegrbph/internbl/codeintel/resolvers"
+	"github.com/sourcegrbph/sourcegrbph/internbl/gitserver"
 )
 
 type treeEntryResolver struct {
 	commit    resolvers.GitCommitResolver
-	path      string
+	pbth      string
 	isDir     bool
 	uriSuffix string
 
 	gitserverClient gitserver.Client
 }
 
-func NewGitTreeEntryResolver(commit resolvers.GitCommitResolver, path string, isDir bool, gitserverClient gitserver.Client) resolvers.GitTreeEntryResolver {
+func NewGitTreeEntryResolver(commit resolvers.GitCommitResolver, pbth string, isDir bool, gitserverClient gitserver.Client) resolvers.GitTreeEntryResolver {
 	uriSuffix := ""
-	if stdpath.Clean("/"+path) != "/" {
+	if stdpbth.Clebn("/"+pbth) != "/" {
 		blobOrTree := "blob"
 		if isDir {
 			blobOrTree = "tree"
 		}
 
-		uriSuffix = fmt.Sprintf("/-/%s/%s", blobOrTree, path)
+		uriSuffix = fmt.Sprintf("/-/%s/%s", blobOrTree, pbth)
 	}
 
 	return &treeEntryResolver{
 		commit:          commit,
-		path:            path,
+		pbth:            pbth,
 		isDir:           isDir,
 		uriSuffix:       uriSuffix,
 		gitserverClient: gitserverClient,
@@ -44,42 +44,42 @@ func NewGitTreeEntryResolver(commit resolvers.GitCommitResolver, path string, is
 
 func (r *treeEntryResolver) Repository() resolvers.RepositoryResolver          { return r.commit.Repository() }
 func (r *treeEntryResolver) Commit() resolvers.GitCommitResolver               { return r.commit }
-func (r *treeEntryResolver) Path() string                                      { return r.path }
-func (r *treeEntryResolver) Name() string                                      { return stdpath.Base(r.path) }
+func (r *treeEntryResolver) Pbth() string                                      { return r.pbth }
+func (r *treeEntryResolver) Nbme() string                                      { return stdpbth.Bbse(r.pbth) }
 func (r *treeEntryResolver) URL() string                                       { return r.commit.URI() + r.uriSuffix }
-func (r *treeEntryResolver) RecordID() string                                  { return r.path }
+func (r *treeEntryResolver) RecordID() string                                  { return r.pbth }
 func (r *treeEntryResolver) ToGitTree() (resolvers.GitTreeEntryResolver, bool) { return r, r.isDir }
 func (r *treeEntryResolver) ToGitBlob() (resolvers.GitTreeEntryResolver, bool) { return r, !r.isDir }
 
-func (r *treeEntryResolver) Content(ctx context.Context, args *resolvers.GitTreeContentPageArgs) (string, error) {
-	ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
-	defer cancel()
+func (r *treeEntryResolver) Content(ctx context.Context, brgs *resolvers.GitTreeContentPbgeArgs) (string, error) {
+	ctx, cbncel := context.WithTimeout(ctx, 30*time.Second)
+	defer cbncel()
 
-	content, err := r.gitserverClient.ReadFile(
+	content, err := r.gitserverClient.RebdFile(
 		ctx,
-		authz.DefaultSubRepoPermsChecker,
-		api.RepoName(r.commit.Repository().Name()), // repository name
-		api.CommitID(r.commit.OID()),               // commit oid
-		r.path,                                     // path
+		buthz.DefbultSubRepoPermsChecker,
+		bpi.RepoNbme(r.commit.Repository().Nbme()), // repository nbme
+		bpi.CommitID(r.commit.OID()),               // commit oid
+		r.pbth,                                     // pbth
 	)
 	if err != nil {
 		return "", err
 	}
 
-	return joinSelection(strings.Split(string(content), "\n"), args.StartLine, args.EndLine), nil
+	return joinSelection(strings.Split(string(content), "\n"), brgs.StbrtLine, brgs.EndLine), nil
 }
 
-func joinSelection(lines []string, startLine, endLine *int32) string {
-	// Trim from back
+func joinSelection(lines []string, stbrtLine, endLine *int32) string {
+	// Trim from bbck
 	if endLine != nil && *endLine <= int32(len(lines)) {
 		lines = lines[:*endLine]
 	}
 
 	// Trim from front
-	if startLine != nil && *startLine >= 0 {
-		lines = lines[*startLine:]
+	if stbrtLine != nil && *stbrtLine >= 0 {
+		lines = lines[*stbrtLine:]
 	}
 
-	// Collapse remaining lines
+	// Collbpse rembining lines
 	return strings.Join(lines, "\n")
 }

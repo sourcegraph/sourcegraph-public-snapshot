@@ -1,2 +1,2 @@
-// Package app contains the front-end Web application.
-package app
+// Pbckbge bpp contbins the front-end Web bpplicbtion.
+pbckbge bpp

@@ -1,4 +1,4 @@
-package graphqlbackend
+pbckbge grbphqlbbckend
 
 import (
 	"context"
@@ -6,58 +6,58 @@ import (
 	"testing"
 
 	mockrequire "github.com/derision-test/go-mockgen/testutil/require"
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/bssert"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
-	"github.com/sourcegraph/sourcegraph/internal/auth/userpasswd"
-	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
-	"github.com/sourcegraph/sourcegraph/internal/txemail"
-	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/schema"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/bbckend"
+	"github.com/sourcegrbph/sourcegrbph/internbl/buth/userpbsswd"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbmocks"
+	"github.com/sourcegrbph/sourcegrbph/internbl/txembil"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
+	"github.com/sourcegrbph/sourcegrbph/schemb"
 )
 
 type mockFuncs struct {
 	dB             *dbmocks.MockDB
-	authzStore     *dbmocks.MockAuthzStore
+	buthzStore     *dbmocks.MockAuthzStore
 	usersStore     *dbmocks.MockUserStore
-	userEmailStore *dbmocks.MockUserEmailsStore
+	userEmbilStore *dbmocks.MockUserEmbilsStore
 }
 
-func makeUsersCreateTestDB(t *testing.T) mockFuncs {
+func mbkeUsersCrebteTestDB(t *testing.T) mockFuncs {
 	users := dbmocks.NewMockUserStore()
-	// This is the created user that is returned via the GraphQL API.
-	users.CreateFunc.SetDefaultReturn(&types.User{ID: 1, Username: "alice"}, nil)
+	// This is the crebted user thbt is returned vib the GrbphQL API.
+	users.CrebteFunc.SetDefbultReturn(&types.User{ID: 1, Usernbme: "blice"}, nil)
 	// This refers to the user executing this API request.
-	users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{ID: 2, SiteAdmin: true}, nil)
+	users.GetByCurrentAuthUserFunc.SetDefbultReturn(&types.User{ID: 2, SiteAdmin: true}, nil)
 
-	authz := dbmocks.NewMockAuthzStore()
-	authz.GrantPendingPermissionsFunc.SetDefaultReturn(nil)
+	buthz := dbmocks.NewMockAuthzStore()
+	buthz.GrbntPendingPermissionsFunc.SetDefbultReturn(nil)
 
-	userEmails := dbmocks.NewMockUserEmailsStore()
+	userEmbils := dbmocks.NewMockUserEmbilsStore()
 
 	db := dbmocks.NewMockDB()
-	db.UsersFunc.SetDefaultReturn(users)
-	db.AuthzFunc.SetDefaultReturn(authz)
-	db.UserEmailsFunc.SetDefaultReturn(userEmails)
+	db.UsersFunc.SetDefbultReturn(users)
+	db.AuthzFunc.SetDefbultReturn(buthz)
+	db.UserEmbilsFunc.SetDefbultReturn(userEmbils)
 
 	return mockFuncs{
 		dB:             db,
 		usersStore:     users,
-		authzStore:     authz,
-		userEmailStore: userEmails,
+		buthzStore:     buthz,
+		userEmbilStore: userEmbils,
 	}
 }
 
-func TestCreateUser(t *testing.T) {
-	mocks := makeUsersCreateTestDB(t)
+func TestCrebteUser(t *testing.T) {
+	mocks := mbkeUsersCrebteTestDB(t)
 
 	RunTests(t, []*Test{
 		{
-			Schema: mustParseGraphQLSchema(t, mocks.dB),
+			Schemb: mustPbrseGrbphQLSchemb(t, mocks.dB),
 			Query: `
-				mutation {
-					createUser(username: "alice") {
+				mutbtion {
+					crebteUser(usernbme: "blice") {
 						user {
 							id
 						}
@@ -66,7 +66,7 @@ func TestCreateUser(t *testing.T) {
 			`,
 			ExpectedResult: `
 				{
-					"createUser": {
+					"crebteUser": {
 						"user": {
 							"id": "VXNlcjox"
 						}
@@ -76,165 +76,165 @@ func TestCreateUser(t *testing.T) {
 		},
 	})
 
-	mockrequire.CalledOnce(t, mocks.authzStore.GrantPendingPermissionsFunc)
-	mockrequire.CalledOnce(t, mocks.usersStore.CreateFunc)
+	mockrequire.CblledOnce(t, mocks.buthzStore.GrbntPendingPermissionsFunc)
+	mockrequire.CblledOnce(t, mocks.usersStore.CrebteFunc)
 }
 
-func TestCreateUserResetPasswordURL(t *testing.T) {
-	backend.MockMakePasswordResetURL = func(_ context.Context, _ int32) (*url.URL, error) {
-		return url.Parse("/reset-url?code=foobar")
+func TestCrebteUserResetPbsswordURL(t *testing.T) {
+	bbckend.MockMbkePbsswordResetURL = func(_ context.Context, _ int32) (*url.URL, error) {
+		return url.Pbrse("/reset-url?code=foobbr")
 	}
-	userpasswd.MockResetPasswordEnabled = func() bool { return true }
-	t.Cleanup(func() {
-		backend.MockMakePasswordResetURL = nil
-		userpasswd.MockResetPasswordEnabled = nil
+	userpbsswd.MockResetPbsswordEnbbled = func() bool { return true }
+	t.Clebnup(func() {
+		bbckend.MockMbkePbsswordResetURL = nil
+		userpbsswd.MockResetPbsswordEnbbled = nil
 	})
 
-	t.Run("with SMTP disabled", func(t *testing.T) {
-		mocks := makeUsersCreateTestDB(t)
+	t.Run("with SMTP disbbled", func(t *testing.T) {
+		mocks := mbkeUsersCrebteTestDB(t)
 
 		conf.Mock(&conf.Unified{
-			SiteConfiguration: schema.SiteConfiguration{
-				EmailSmtp: nil,
+			SiteConfigurbtion: schemb.SiteConfigurbtion{
+				EmbilSmtp: nil,
 			},
 		})
-		t.Cleanup(func() { conf.Mock(nil) })
+		t.Clebnup(func() { conf.Mock(nil) })
 
 		RunTests(t, []*Test{
 			{
-				Schema: mustParseGraphQLSchema(t, mocks.dB),
+				Schemb: mustPbrseGrbphQLSchemb(t, mocks.dB),
 				Query: `
-					mutation {
-						createUser(username: "alice",email:"alice@sourcegraph.com",verifiedEmail:false) {
+					mutbtion {
+						crebteUser(usernbme: "blice",embil:"blice@sourcegrbph.com",verifiedEmbil:fblse) {
 							user {
 								id
 							}
-							resetPasswordURL
+							resetPbsswordURL
 						}
 					}
 				`,
 				ExpectedResult: `
 					{
-						"createUser": {
+						"crebteUser": {
 							"user": {
 								"id": "VXNlcjox"
 							},
-							"resetPasswordURL": "http://example.com/reset-url?code=foobar"
+							"resetPbsswordURL": "http://exbmple.com/reset-url?code=foobbr"
 						}
 					}
 				`,
 			},
 		})
 
-		mockrequire.Called(t, mocks.authzStore.GrantPendingPermissionsFunc)
+		mockrequire.Cblled(t, mocks.buthzStore.GrbntPendingPermissionsFunc)
 	})
 
-	t.Run("with SMTP enabled", func(t *testing.T) {
+	t.Run("with SMTP enbbled", func(t *testing.T) {
 		conf.Mock(&conf.Unified{
-			SiteConfiguration: schema.SiteConfiguration{
-				EmailSmtp: &schema.SMTPServerConfig{},
+			SiteConfigurbtion: schemb.SiteConfigurbtion{
+				EmbilSmtp: &schemb.SMTPServerConfig{},
 			},
 		})
 
-		var sentMessage txemail.Message
-		txemail.MockSend = func(_ context.Context, message txemail.Message) error {
-			sentMessage = message
+		vbr sentMessbge txembil.Messbge
+		txembil.MockSend = func(_ context.Context, messbge txembil.Messbge) error {
+			sentMessbge = messbge
 			return nil
 		}
-		t.Cleanup(func() {
+		t.Clebnup(func() {
 			conf.Mock(nil)
-			txemail.MockSend = nil
+			txembil.MockSend = nil
 		})
 
-		mocks := makeUsersCreateTestDB(t)
+		mocks := mbkeUsersCrebteTestDB(t)
 
 		RunTests(t, []*Test{
 			{
-				Schema: mustParseGraphQLSchema(t, mocks.dB),
+				Schemb: mustPbrseGrbphQLSchemb(t, mocks.dB),
 				Query: `
-					mutation {
-						createUser(username: "alice",email:"alice@sourcegraph.com",verifiedEmail:false) {
+					mutbtion {
+						crebteUser(usernbme: "blice",embil:"blice@sourcegrbph.com",verifiedEmbil:fblse) {
 							user {
 								id
 							}
-							resetPasswordURL
+							resetPbsswordURL
 						}
 					}
 				`,
 				ExpectedResult: `
 					{
-						"createUser": {
+						"crebteUser": {
 							"user": {
 								"id": "VXNlcjox"
 							},
-							"resetPasswordURL": "http://example.com/reset-url?code=foobar"
+							"resetPbsswordURL": "http://exbmple.com/reset-url?code=foobbr"
 						}
 					}
 				`,
 			},
 		})
 
-		data := sentMessage.Data.(userpasswd.SetPasswordEmailTemplateData)
-		assert.Contains(t, data.URL, "http://example.com/reset-url")
-		assert.Contains(t, data.URL, "&emailVerifyCode=")
-		assert.Contains(t, data.URL, "&email=")
+		dbtb := sentMessbge.Dbtb.(userpbsswd.SetPbsswordEmbilTemplbteDbtb)
+		bssert.Contbins(t, dbtb.URL, "http://exbmple.com/reset-url")
+		bssert.Contbins(t, dbtb.URL, "&embilVerifyCode=")
+		bssert.Contbins(t, dbtb.URL, "&embil=")
 
-		mockrequire.Called(t, mocks.authzStore.GrantPendingPermissionsFunc)
-		mockrequire.Called(t, mocks.userEmailStore.SetLastVerificationFunc)
+		mockrequire.Cblled(t, mocks.buthzStore.GrbntPendingPermissionsFunc)
+		mockrequire.Cblled(t, mocks.userEmbilStore.SetLbstVerificbtionFunc)
 	})
 
-	t.Run("with SMTP enabled, without verifiedEmail", func(t *testing.T) {
+	t.Run("with SMTP enbbled, without verifiedEmbil", func(t *testing.T) {
 		conf.Mock(&conf.Unified{
-			SiteConfiguration: schema.SiteConfiguration{
-				EmailSmtp: &schema.SMTPServerConfig{},
+			SiteConfigurbtion: schemb.SiteConfigurbtion{
+				EmbilSmtp: &schemb.SMTPServerConfig{},
 			},
 		})
 
-		var sentMessage txemail.Message
-		txemail.MockSend = func(_ context.Context, message txemail.Message) error {
-			sentMessage = message
+		vbr sentMessbge txembil.Messbge
+		txembil.MockSend = func(_ context.Context, messbge txembil.Messbge) error {
+			sentMessbge = messbge
 			return nil
 		}
-		t.Cleanup(func() {
+		t.Clebnup(func() {
 			conf.Mock(nil)
-			txemail.MockSend = nil
+			txembil.MockSend = nil
 		})
 
-		mocks := makeUsersCreateTestDB(t)
+		mocks := mbkeUsersCrebteTestDB(t)
 
 		RunTests(t, []*Test{
 			{
-				Schema: mustParseGraphQLSchema(t, mocks.dB),
+				Schemb: mustPbrseGrbphQLSchemb(t, mocks.dB),
 				Query: `
-					mutation {
-						createUser(username: "alice",email:"alice@sourcegraph.com") {
+					mutbtion {
+						crebteUser(usernbme: "blice",embil:"blice@sourcegrbph.com") {
 							user {
 								id
 							}
-							resetPasswordURL
+							resetPbsswordURL
 						}
 					}
 				`,
 				ExpectedResult: `
 					{
-						"createUser": {
+						"crebteUser": {
 							"user": {
 								"id": "VXNlcjox"
 							},
-							"resetPasswordURL": "http://example.com/reset-url?code=foobar"
+							"resetPbsswordURL": "http://exbmple.com/reset-url?code=foobbr"
 						}
 					}
 				`,
 			},
 		})
 
-		// should not have tried to issue email verification
-		data := sentMessage.Data.(userpasswd.SetPasswordEmailTemplateData)
-		assert.Contains(t, data.URL, "http://example.com/reset-url")
-		assert.NotContains(t, data.URL, "&emailVerifyCode=")
-		assert.NotContains(t, data.URL, "&email=")
+		// should not hbve tried to issue embil verificbtion
+		dbtb := sentMessbge.Dbtb.(userpbsswd.SetPbsswordEmbilTemplbteDbtb)
+		bssert.Contbins(t, dbtb.URL, "http://exbmple.com/reset-url")
+		bssert.NotContbins(t, dbtb.URL, "&embilVerifyCode=")
+		bssert.NotContbins(t, dbtb.URL, "&embil=")
 
-		mockrequire.Called(t, mocks.authzStore.GrantPendingPermissionsFunc)
-		mockrequire.NotCalled(t, mocks.userEmailStore.SetLastVerificationFunc)
+		mockrequire.Cblled(t, mocks.buthzStore.GrbntPendingPermissionsFunc)
+		mockrequire.NotCblled(t, mocks.userEmbilStore.SetLbstVerificbtionFunc)
 	})
 }

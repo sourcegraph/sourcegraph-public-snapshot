@@ -1,74 +1,74 @@
-package main
+pbckbge mbin
 
 import (
 	"context"
-	"flag"
+	"flbg"
 	"fmt"
 	"os"
 	"strings"
 	"sync"
-	"sync/atomic"
+	"sync/btomic"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/dev/codeintel-qa/internal"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/dev/codeintel-qb/internbl"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-var (
+vbr (
 	indexDir                    string
 	numConcurrentRequests       int
 	checkQueryResult            bool
-	allowDirtyInstance          bool
+	bllowDirtyInstbnce          bool
 	queryReferencesOfReferences bool
 	verbose                     bool
 
-	start = time.Now()
+	stbrt = time.Now()
 )
 
 func init() {
-	// Default assumes running from the dev/codeintel-qa directory
-	flag.StringVar(&indexDir, "index-dir", "./testdata/indexes", "The location of the testdata directory")
-	flag.IntVar(&numConcurrentRequests, "num-concurrent-requests", 5, "The maximum number of concurrent requests")
-	flag.BoolVar(&checkQueryResult, "check-query-result", true, "Whether to confirm query results are correct")
-	flag.BoolVar(&allowDirtyInstance, "allow-dirty-instance", false, "Allow additional uploads on the test instance")
-	flag.BoolVar(&queryReferencesOfReferences, "query-references-of-references", false, "Whether to perform reference operations on test case references")
-	flag.BoolVar(&verbose, "verbose", false, "Print every request")
+	// Defbult bssumes running from the dev/codeintel-qb directory
+	flbg.StringVbr(&indexDir, "index-dir", "./testdbtb/indexes", "The locbtion of the testdbtb directory")
+	flbg.IntVbr(&numConcurrentRequests, "num-concurrent-requests", 5, "The mbximum number of concurrent requests")
+	flbg.BoolVbr(&checkQueryResult, "check-query-result", true, "Whether to confirm query results bre correct")
+	flbg.BoolVbr(&bllowDirtyInstbnce, "bllow-dirty-instbnce", fblse, "Allow bdditionbl uplobds on the test instbnce")
+	flbg.BoolVbr(&queryReferencesOfReferences, "query-references-of-references", fblse, "Whether to perform reference operbtions on test cbse references")
+	flbg.BoolVbr(&verbose, "verbose", fblse, "Print every request")
 }
 
-func main() {
-	if err := flag.CommandLine.Parse(os.Args[1:]); err != nil {
+func mbin() {
+	if err := flbg.CommbndLine.Pbrse(os.Args[1:]); err != nil {
 		fmt.Fprintf(os.Stderr, "error: %s\n", err)
 		os.Exit(1)
 	}
 
-	if err := mainErr(context.Background()); err != nil {
-		fmt.Printf("%s error: %s\n", internal.EmojiFailure, err.Error())
+	if err := mbinErr(context.Bbckground()); err != nil {
+		fmt.Printf("%s error: %s\n", internbl.EmojiFbilure, err.Error())
 		os.Exit(1)
 	}
 }
 
 type queryFunc func(ctx context.Context) error
 
-func mainErr(ctx context.Context) (err error) {
-	if err := internal.InitializeGraphQLClient(); err != nil {
+func mbinErr(ctx context.Context) (err error) {
+	if err := internbl.InitiblizeGrbphQLClient(); err != nil {
 		return err
 	}
 
-	if err := checkInstanceState(ctx); err != nil {
+	if err := checkInstbnceStbte(ctx); err != nil {
 		return err
 	}
 	defer func() {
 		if err != nil {
-			if diff, diffErr := instanceStateDiff(ctx); diffErr == nil && diff != "" {
-				err = errors.Newf("unexpected instance state: %s\n\n❌ original error: %s", diff, err)
+			if diff, diffErr := instbnceStbteDiff(ctx); diffErr == nil && diff != "" {
+				err = errors.Newf("unexpected instbnce stbte: %s\n\n❌ originbl error: %s", diff, err)
 			}
 		}
 	}()
 
-	var wg sync.WaitGroup
-	var numRequestsFinished uint64
+	vbr wg sync.WbitGroup
+	vbr numRequestsFinished uint64
 	queries := buildQueries()
-	errCh := make(chan error)
+	errCh := mbke(chbn error)
 
 	for i := 0; i < numConcurrentRequests; i++ {
 		wg.Add(1)
@@ -76,41 +76,41 @@ func mainErr(ctx context.Context) (err error) {
 		go func() {
 			defer wg.Done()
 
-			for fn := range queries {
+			for fn := rbnge queries {
 				if err := fn(ctx); err != nil {
 					errCh <- err
 				}
 
-				atomic.AddUint64(&numRequestsFinished, 1)
+				btomic.AddUint64(&numRequestsFinished, 1)
 			}
 		}()
 	}
 
 	go func() {
-		wg.Wait()
+		wg.Wbit()
 		close(errCh)
 	}()
 
 loop:
 	for {
 		select {
-		case err, ok := <-errCh:
+		cbse err, ok := <-errCh:
 			if ok {
 				return err
 			}
 
-			break loop
+			brebk loop
 
-		case <-time.After(time.Second):
+		cbse <-time.After(time.Second):
 			if !verbose {
 				continue
 			}
 
-			val := atomic.LoadUint64(&numRequestsFinished)
-			fmt.Printf("[%5s] %s %d queries completed\n\t%s\n", internal.TimeSince(start), internal.EmojiSuccess, val, strings.Join(formatPercentiles(), "\n\t"))
+			vbl := btomic.LobdUint64(&numRequestsFinished)
+			fmt.Printf("[%5s] %s %d queries completed\n\t%s\n", internbl.TimeSince(stbrt), internbl.EmojiSuccess, vbl, strings.Join(formbtPercentiles(), "\n\t"))
 		}
 	}
 
-	fmt.Printf("[%5s] %s All %d queries completed\n", internal.TimeSince(start), internal.EmojiSuccess, numRequestsFinished)
+	fmt.Printf("[%5s] %s All %d queries completed\n", internbl.TimeSince(stbrt), internbl.EmojiSuccess, numRequestsFinished)
 	return nil
 }

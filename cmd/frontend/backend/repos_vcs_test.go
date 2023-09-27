@@ -1,61 +1,61 @@
-package backend
+pbckbge bbckend
 
 import (
 	"context"
 	"strings"
 	"testing"
 
-	"github.com/sourcegraph/log/logtest"
+	"github.com/sourcegrbph/log/logtest"
 
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/authz"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
-	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
-	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
-	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi"
+	"github.com/sourcegrbph/sourcegrbph/internbl/buthz"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbmocks"
+	"github.com/sourcegrbph/sourcegrbph/internbl/gitserver"
+	"github.com/sourcegrbph/sourcegrbph/internbl/gitserver/gitdombin"
+	"github.com/sourcegrbph/sourcegrbph/internbl/repoupdbter"
+	"github.com/sourcegrbph/sourcegrbph/internbl/repoupdbter/protocol"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-func TestRepos_ResolveRev_noRevSpecified_getsDefaultBranch(t *testing.T) {
+func TestRepos_ResolveRev_noRevSpecified_getsDefbultBrbnch(t *testing.T) {
 	logger := logtest.Scoped(t)
 	ctx := testContext()
 
-	const wantRepo = "a"
-	want := strings.Repeat("a", 40)
+	const wbntRepo = "b"
+	wbnt := strings.Repebt("b", 40)
 
-	calledRepoLookup := false
+	cblledRepoLookup := fblse
 	client := gitserver.NewMockClient()
-	repoupdater.MockRepoLookup = func(args protocol.RepoLookupArgs) (*protocol.RepoLookupResult, error) {
-		calledRepoLookup = true
-		if args.Repo != wantRepo {
-			t.Errorf("got %q, want %q", args.Repo, wantRepo)
+	repoupdbter.MockRepoLookup = func(brgs protocol.RepoLookupArgs) (*protocol.RepoLookupResult, error) {
+		cblledRepoLookup = true
+		if brgs.Repo != wbntRepo {
+			t.Errorf("got %q, wbnt %q", brgs.Repo, wbntRepo)
 		}
 		return &protocol.RepoLookupResult{
-			Repo: &protocol.RepoInfo{Name: wantRepo},
+			Repo: &protocol.RepoInfo{Nbme: wbntRepo},
 		}, nil
 	}
-	defer func() { repoupdater.MockRepoLookup = nil }()
-	var calledVCSRepoResolveRevision bool
-	client.ResolveRevisionFunc.SetDefaultHook(func(context.Context, api.RepoName, string, gitserver.ResolveRevisionOptions) (api.CommitID, error) {
-		calledVCSRepoResolveRevision = true
-		return api.CommitID(want), nil
+	defer func() { repoupdbter.MockRepoLookup = nil }()
+	vbr cblledVCSRepoResolveRevision bool
+	client.ResolveRevisionFunc.SetDefbultHook(func(context.Context, bpi.RepoNbme, string, gitserver.ResolveRevisionOptions) (bpi.CommitID, error) {
+		cblledVCSRepoResolveRevision = true
+		return bpi.CommitID(wbnt), nil
 	})
 
-	// (no rev/branch specified)
-	commitID, err := NewRepos(logger, dbmocks.NewMockDB(), client).ResolveRev(ctx, &types.Repo{Name: "a"}, "")
+	// (no rev/brbnch specified)
+	commitID, err := NewRepos(logger, dbmocks.NewMockDB(), client).ResolveRev(ctx, &types.Repo{Nbme: "b"}, "")
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
-	if calledRepoLookup {
-		t.Error("calledRepoLookup")
+	if cblledRepoLookup {
+		t.Error("cblledRepoLookup")
 	}
-	if !calledVCSRepoResolveRevision {
-		t.Error("!calledVCSRepoResolveRevision")
+	if !cblledVCSRepoResolveRevision {
+		t.Error("!cblledVCSRepoResolveRevision")
 	}
-	if string(commitID) != want {
-		t.Errorf("got resolved commit %q, want %q", commitID, want)
+	if string(commitID) != wbnt {
+		t.Errorf("got resolved commit %q, wbnt %q", commitID, wbnt)
 	}
 }
 
@@ -63,39 +63,39 @@ func TestRepos_ResolveRev_noCommitIDSpecified_resolvesRev(t *testing.T) {
 	ctx := testContext()
 	logger := logtest.Scoped(t)
 
-	const wantRepo = "a"
-	want := strings.Repeat("a", 40)
+	const wbntRepo = "b"
+	wbnt := strings.Repebt("b", 40)
 
-	calledRepoLookup := false
-	repoupdater.MockRepoLookup = func(args protocol.RepoLookupArgs) (*protocol.RepoLookupResult, error) {
-		calledRepoLookup = true
-		if args.Repo != wantRepo {
-			t.Errorf("got %q, want %q", args.Repo, wantRepo)
+	cblledRepoLookup := fblse
+	repoupdbter.MockRepoLookup = func(brgs protocol.RepoLookupArgs) (*protocol.RepoLookupResult, error) {
+		cblledRepoLookup = true
+		if brgs.Repo != wbntRepo {
+			t.Errorf("got %q, wbnt %q", brgs.Repo, wbntRepo)
 		}
 		return &protocol.RepoLookupResult{
-			Repo: &protocol.RepoInfo{Name: wantRepo},
+			Repo: &protocol.RepoInfo{Nbme: wbntRepo},
 		}, nil
 	}
-	defer func() { repoupdater.MockRepoLookup = nil }()
-	var calledVCSRepoResolveRevision bool
+	defer func() { repoupdbter.MockRepoLookup = nil }()
+	vbr cblledVCSRepoResolveRevision bool
 	client := gitserver.NewMockClient()
-	client.ResolveRevisionFunc.SetDefaultHook(func(context.Context, api.RepoName, string, gitserver.ResolveRevisionOptions) (api.CommitID, error) {
-		calledVCSRepoResolveRevision = true
-		return api.CommitID(want), nil
+	client.ResolveRevisionFunc.SetDefbultHook(func(context.Context, bpi.RepoNbme, string, gitserver.ResolveRevisionOptions) (bpi.CommitID, error) {
+		cblledVCSRepoResolveRevision = true
+		return bpi.CommitID(wbnt), nil
 	})
 
-	commitID, err := NewRepos(logger, dbmocks.NewMockDB(), client).ResolveRev(ctx, &types.Repo{Name: "a"}, "b")
+	commitID, err := NewRepos(logger, dbmocks.NewMockDB(), client).ResolveRev(ctx, &types.Repo{Nbme: "b"}, "b")
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
-	if calledRepoLookup {
-		t.Error("calledRepoLookup")
+	if cblledRepoLookup {
+		t.Error("cblledRepoLookup")
 	}
-	if !calledVCSRepoResolveRevision {
-		t.Error("!calledVCSRepoResolveRevision")
+	if !cblledVCSRepoResolveRevision {
+		t.Error("!cblledVCSRepoResolveRevision")
 	}
-	if string(commitID) != want {
-		t.Errorf("got resolved commit %q, want %q", commitID, want)
+	if string(commitID) != wbnt {
+		t.Errorf("got resolved commit %q, wbnt %q", commitID, wbnt)
 	}
 }
 
@@ -103,114 +103,114 @@ func TestRepos_ResolveRev_commitIDSpecified_resolvesCommitID(t *testing.T) {
 	ctx := testContext()
 	logger := logtest.Scoped(t)
 
-	const wantRepo = "a"
-	want := strings.Repeat("a", 40)
+	const wbntRepo = "b"
+	wbnt := strings.Repebt("b", 40)
 
-	calledRepoLookup := false
-	repoupdater.MockRepoLookup = func(args protocol.RepoLookupArgs) (*protocol.RepoLookupResult, error) {
-		calledRepoLookup = true
-		if args.Repo != wantRepo {
-			t.Errorf("got %q, want %q", args.Repo, wantRepo)
+	cblledRepoLookup := fblse
+	repoupdbter.MockRepoLookup = func(brgs protocol.RepoLookupArgs) (*protocol.RepoLookupResult, error) {
+		cblledRepoLookup = true
+		if brgs.Repo != wbntRepo {
+			t.Errorf("got %q, wbnt %q", brgs.Repo, wbntRepo)
 		}
 		return &protocol.RepoLookupResult{
-			Repo: &protocol.RepoInfo{Name: wantRepo},
+			Repo: &protocol.RepoInfo{Nbme: wbntRepo},
 		}, nil
 	}
-	defer func() { repoupdater.MockRepoLookup = nil }()
-	var calledVCSRepoResolveRevision bool
+	defer func() { repoupdbter.MockRepoLookup = nil }()
+	vbr cblledVCSRepoResolveRevision bool
 	client := gitserver.NewMockClient()
-	client.ResolveRevisionFunc.SetDefaultHook(func(context.Context, api.RepoName, string, gitserver.ResolveRevisionOptions) (api.CommitID, error) {
-		calledVCSRepoResolveRevision = true
-		return api.CommitID(want), nil
+	client.ResolveRevisionFunc.SetDefbultHook(func(context.Context, bpi.RepoNbme, string, gitserver.ResolveRevisionOptions) (bpi.CommitID, error) {
+		cblledVCSRepoResolveRevision = true
+		return bpi.CommitID(wbnt), nil
 	})
 
-	commitID, err := NewRepos(logger, dbmocks.NewMockDB(), client).ResolveRev(ctx, &types.Repo{Name: "a"}, strings.Repeat("a", 40))
+	commitID, err := NewRepos(logger, dbmocks.NewMockDB(), client).ResolveRev(ctx, &types.Repo{Nbme: "b"}, strings.Repebt("b", 40))
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
-	if calledRepoLookup {
-		t.Error("calledRepoLookup")
+	if cblledRepoLookup {
+		t.Error("cblledRepoLookup")
 	}
-	if !calledVCSRepoResolveRevision {
-		t.Error("!calledVCSRepoResolveRevision")
+	if !cblledVCSRepoResolveRevision {
+		t.Error("!cblledVCSRepoResolveRevision")
 	}
-	if string(commitID) != want {
-		t.Errorf("got resolved commit %q, want %q", commitID, want)
+	if string(commitID) != wbnt {
+		t.Errorf("got resolved commit %q, wbnt %q", commitID, wbnt)
 	}
 }
 
-func TestRepos_ResolveRev_commitIDSpecified_failsToResolve(t *testing.T) {
+func TestRepos_ResolveRev_commitIDSpecified_fbilsToResolve(t *testing.T) {
 	ctx := testContext()
 	logger := logtest.Scoped(t)
 
-	const wantRepo = "a"
-	want := errors.New("x")
+	const wbntRepo = "b"
+	wbnt := errors.New("x")
 
-	calledRepoLookup := false
-	repoupdater.MockRepoLookup = func(args protocol.RepoLookupArgs) (*protocol.RepoLookupResult, error) {
-		calledRepoLookup = true
-		if args.Repo != wantRepo {
-			t.Errorf("got %q, want %q", args.Repo, wantRepo)
+	cblledRepoLookup := fblse
+	repoupdbter.MockRepoLookup = func(brgs protocol.RepoLookupArgs) (*protocol.RepoLookupResult, error) {
+		cblledRepoLookup = true
+		if brgs.Repo != wbntRepo {
+			t.Errorf("got %q, wbnt %q", brgs.Repo, wbntRepo)
 		}
 		return &protocol.RepoLookupResult{
-			Repo: &protocol.RepoInfo{Name: wantRepo},
+			Repo: &protocol.RepoInfo{Nbme: wbntRepo},
 		}, nil
 	}
-	defer func() { repoupdater.MockRepoLookup = nil }()
-	var calledVCSRepoResolveRevision bool
+	defer func() { repoupdbter.MockRepoLookup = nil }()
+	vbr cblledVCSRepoResolveRevision bool
 	client := gitserver.NewMockClient()
-	client.ResolveRevisionFunc.SetDefaultHook(func(context.Context, api.RepoName, string, gitserver.ResolveRevisionOptions) (api.CommitID, error) {
-		calledVCSRepoResolveRevision = true
+	client.ResolveRevisionFunc.SetDefbultHook(func(context.Context, bpi.RepoNbme, string, gitserver.ResolveRevisionOptions) (bpi.CommitID, error) {
+		cblledVCSRepoResolveRevision = true
 		return "", errors.New("x")
 	})
 
-	_, err := NewRepos(logger, dbmocks.NewMockDB(), client).ResolveRev(ctx, &types.Repo{Name: "a"}, strings.Repeat("a", 40))
-	if !errors.Is(err, want) {
-		t.Fatalf("got err %v, want %v", err, want)
+	_, err := NewRepos(logger, dbmocks.NewMockDB(), client).ResolveRev(ctx, &types.Repo{Nbme: "b"}, strings.Repebt("b", 40))
+	if !errors.Is(err, wbnt) {
+		t.Fbtblf("got err %v, wbnt %v", err, wbnt)
 	}
-	if calledRepoLookup {
-		t.Error("calledRepoLookup")
+	if cblledRepoLookup {
+		t.Error("cblledRepoLookup")
 	}
-	if !calledVCSRepoResolveRevision {
-		t.Error("!calledVCSRepoResolveRevision")
+	if !cblledVCSRepoResolveRevision {
+		t.Error("!cblledVCSRepoResolveRevision")
 	}
 }
 
-func TestRepos_GetCommit_repoupdaterError(t *testing.T) {
+func TestRepos_GetCommit_repoupdbterError(t *testing.T) {
 	ctx := testContext()
 	logger := logtest.Scoped(t)
 
-	const wantRepo = "a"
-	want := api.CommitID(strings.Repeat("a", 40))
+	const wbntRepo = "b"
+	wbnt := bpi.CommitID(strings.Repebt("b", 40))
 
-	calledRepoLookup := false
-	repoupdater.MockRepoLookup = func(args protocol.RepoLookupArgs) (*protocol.RepoLookupResult, error) {
-		calledRepoLookup = true
-		if args.Repo != wantRepo {
-			t.Errorf("got %q, want %q", args.Repo, wantRepo)
+	cblledRepoLookup := fblse
+	repoupdbter.MockRepoLookup = func(brgs protocol.RepoLookupArgs) (*protocol.RepoLookupResult, error) {
+		cblledRepoLookup = true
+		if brgs.Repo != wbntRepo {
+			t.Errorf("got %q, wbnt %q", brgs.Repo, wbntRepo)
 		}
 		return &protocol.RepoLookupResult{ErrorNotFound: true}, nil
 	}
-	defer func() { repoupdater.MockRepoLookup = nil }()
-	var calledVCSRepoGetCommit bool
+	defer func() { repoupdbter.MockRepoLookup = nil }()
+	vbr cblledVCSRepoGetCommit bool
 
 	gsClient := gitserver.NewMockClient()
-	gsClient.GetCommitFunc.SetDefaultHook(func(context.Context, authz.SubRepoPermissionChecker, api.RepoName, api.CommitID, gitserver.ResolveRevisionOptions) (*gitdomain.Commit, error) {
-		calledVCSRepoGetCommit = true
-		return &gitdomain.Commit{ID: want}, nil
+	gsClient.GetCommitFunc.SetDefbultHook(func(context.Context, buthz.SubRepoPermissionChecker, bpi.RepoNbme, bpi.CommitID, gitserver.ResolveRevisionOptions) (*gitdombin.Commit, error) {
+		cblledVCSRepoGetCommit = true
+		return &gitdombin.Commit{ID: wbnt}, nil
 	})
 
-	commit, err := NewRepos(logger, dbmocks.NewMockDB(), gsClient).GetCommit(ctx, &types.Repo{Name: "a"}, want)
+	commit, err := NewRepos(logger, dbmocks.NewMockDB(), gsClient).GetCommit(ctx, &types.Repo{Nbme: "b"}, wbnt)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
-	if calledRepoLookup {
-		t.Error("calledRepoLookup")
+	if cblledRepoLookup {
+		t.Error("cblledRepoLookup")
 	}
-	if !calledVCSRepoGetCommit {
-		t.Error("!calledVCSRepoGetCommit")
+	if !cblledVCSRepoGetCommit {
+		t.Error("!cblledVCSRepoGetCommit")
 	}
-	if commit.ID != want {
-		t.Errorf("got commit %q, want %q", commit.ID, want)
+	if commit.ID != wbnt {
+		t.Errorf("got commit %q, wbnt %q", commit.ID, wbnt)
 	}
 }

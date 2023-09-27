@@ -1,125 +1,125 @@
-package database
+pbckbge dbtbbbse
 
 import (
 	"context"
-	"database/sql"
+	"dbtbbbse/sql"
 	"encoding/json"
 	"fmt"
-	"math/rand"
+	"mbth/rbnd"
 	"strconv"
 	"strings"
 	"testing"
 	"time"
 
 	"github.com/google/go-cmp/cmp"
-	"github.com/keegancsmith/sqlf"
-	"github.com/stretchr/testify/assert"
+	"github.com/keegbncsmith/sqlf"
+	"github.com/stretchr/testify/bssert"
 	"github.com/stretchr/testify/require"
-	"golang.org/x/sync/errgroup"
+	"golbng.org/x/sync/errgroup"
 
-	"github.com/sourcegraph/log/logtest"
+	"github.com/sourcegrbph/log/logtest"
 
-	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc"
-	"github.com/sourcegraph/sourcegraph/internal/timeutil"
-	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/internal/version"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/sourcegraph/sourcegraph/lib/pointers"
-	"github.com/sourcegraph/sourcegraph/schema"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/bbsestore"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbtest"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc"
+	"github.com/sourcegrbph/sourcegrbph/internbl/timeutil"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
+	"github.com/sourcegrbph/sourcegrbph/internbl/version"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/lib/pointers"
+	"github.com/sourcegrbph/sourcegrbph/schemb"
 )
 
-func TestSanitizeEventURL(t *testing.T) {
-	cases := []struct {
+func TestSbnitizeEventURL(t *testing.T) {
+	cbses := []struct {
 		input       string
-		externalURL string
+		externblURL string
 		output      string
 	}{{
-		input:       "https://about.sourcegraph.com/test", //CI:URL_OK
-		externalURL: "https://sourcegraph.com",
-		output:      "https://about.sourcegraph.com/test", //CI:URL_OK
+		input:       "https://bbout.sourcegrbph.com/test", //CI:URL_OK
+		externblURL: "https://sourcegrbph.com",
+		output:      "https://bbout.sourcegrbph.com/test", //CI:URL_OK
 	}, {
-		input:       "https://test.sourcegraph.com/test",
-		externalURL: "https://sourcegraph.com",
-		output:      "https://test.sourcegraph.com/test",
+		input:       "https://test.sourcegrbph.com/test",
+		externblURL: "https://sourcegrbph.com",
+		output:      "https://test.sourcegrbph.com/test",
 	}, {
-		input:       "https://test.sourcegraph.com/test",
-		externalURL: "https://customerinstance.com",
-		output:      "https://test.sourcegraph.com/test",
+		input:       "https://test.sourcegrbph.com/test",
+		externblURL: "https://customerinstbnce.com",
+		output:      "https://test.sourcegrbph.com/test",
 	}, {
 		input:       "",
-		externalURL: "https://customerinstance.com",
+		externblURL: "https://customerinstbnce.com",
 		output:      "",
 	}, {
-		input:       "https://github.com/my-private-info",
-		externalURL: "https://customerinstance.com",
+		input:       "https://github.com/my-privbte-info",
+		externblURL: "https://customerinstbnce.com",
 		output:      "",
 	}, {
-		input:       "https://github.com/my-private-info",
-		externalURL: "https://sourcegraph.com",
+		input:       "https://github.com/my-privbte-info",
+		externblURL: "https://sourcegrbph.com",
 		output:      "",
 	}, {
-		input:       "invalid url",
-		externalURL: "https://sourcegraph.com",
+		input:       "invblid url",
+		externblURL: "https://sourcegrbph.com",
 		output:      "",
 	}}
 
-	for _, tc := range cases {
+	for _, tc := rbnge cbses {
 		t.Run("", func(t *testing.T) {
 			conf.Mock(&conf.Unified{
-				SiteConfiguration: schema.SiteConfiguration{
-					ExternalURL: tc.externalURL,
+				SiteConfigurbtion: schemb.SiteConfigurbtion{
+					ExternblURL: tc.externblURL,
 				},
 			})
-			got := SanitizeEventURL(tc.input)
-			require.Equal(t, tc.output, got)
+			got := SbnitizeEventURL(tc.input)
+			require.Equbl(t, tc.output, got)
 		})
 	}
 }
 
-func TestEventLogs_ValidInfo(t *testing.T) {
+func TestEventLogs_VblidInfo(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
 	logger := logtest.Scoped(t)
-	t.Parallel()
+	t.Pbrbllel()
 	db := NewDB(logger, dbtest.NewDB(logger, t))
-	ctx := context.Background()
+	ctx := context.Bbckground()
 
-	var testCases = []struct {
-		name  string
+	vbr testCbses = []struct {
+		nbme  string
 		event *Event
 		err   string // Stringified error
 	}{
 		{
-			name:  "EmptyName",
-			event: &Event{UserID: 1, URL: "http://sourcegraph.com", Source: "WEB"},
-			err:   `inserter.Flush: ERROR: new row for relation "event_logs" violates check constraint "event_logs_check_name_not_empty" (SQLSTATE 23514)`,
+			nbme:  "EmptyNbme",
+			event: &Event{UserID: 1, URL: "http://sourcegrbph.com", Source: "WEB"},
+			err:   `inserter.Flush: ERROR: new row for relbtion "event_logs" violbtes check constrbint "event_logs_check_nbme_not_empty" (SQLSTATE 23514)`,
 		},
 		{
-			name:  "InvalidUser",
-			event: &Event{Name: "test_event", URL: "http://sourcegraph.com", Source: "WEB"},
-			err:   `inserter.Flush: ERROR: new row for relation "event_logs" violates check constraint "event_logs_check_has_user" (SQLSTATE 23514)`,
+			nbme:  "InvblidUser",
+			event: &Event{Nbme: "test_event", URL: "http://sourcegrbph.com", Source: "WEB"},
+			err:   `inserter.Flush: ERROR: new row for relbtion "event_logs" violbtes check constrbint "event_logs_check_hbs_user" (SQLSTATE 23514)`,
 		},
 		{
-			name:  "EmptySource",
-			event: &Event{Name: "test_event", URL: "http://sourcegraph.com", UserID: 1},
-			err:   `inserter.Flush: ERROR: new row for relation "event_logs" violates check constraint "event_logs_check_source_not_empty" (SQLSTATE 23514)`,
+			nbme:  "EmptySource",
+			event: &Event{Nbme: "test_event", URL: "http://sourcegrbph.com", UserID: 1},
+			err:   `inserter.Flush: ERROR: new row for relbtion "event_logs" violbtes check constrbint "event_logs_check_source_not_empty" (SQLSTATE 23514)`,
 		},
 		{
-			name:  "ValidInsert",
-			event: &Event{Name: "test_event", UserID: 1, URL: "http://sourcegraph.com", Source: "WEB"},
+			nbme:  "VblidInsert",
+			event: &Event{Nbme: "test_event", UserID: 1, URL: "http://sourcegrbph.com", Source: "WEB"},
 			err:   "<nil>",
 		},
 	}
-	for _, tc := range testCases {
-		t.Run(tc.name, func(t *testing.T) {
+	for _, tc := rbnge testCbses {
+		t.Run(tc.nbme, func(t *testing.T) {
 			err := db.EventLogs().Insert(ctx, tc.event)
 
-			if have, want := fmt.Sprint(errors.Unwrap(err)), tc.err; have != want {
-				t.Errorf("have %+v, want %+v", have, want)
+			if hbve, wbnt := fmt.Sprint(errors.Unwrbp(err)), tc.err; hbve != wbnt {
+				t.Errorf("hbve %+v, wbnt %+v", hbve, wbnt)
 			}
 		})
 	}
@@ -130,34 +130,34 @@ func TestEventLogs_CountUsersWithSetting(t *testing.T) {
 		t.Skip()
 	}
 	logger := logtest.Scoped(t)
-	t.Parallel()
+	t.Pbrbllel()
 	db := NewDB(logger, dbtest.NewDB(logger, t))
-	ctx := context.Background()
+	ctx := context.Bbckground()
 
 	usersStore := db.Users()
-	settingsStore := db.TemporarySettings()
-	eventLogsStore := &eventLogStore{Store: basestore.NewWithHandle(db.Handle())}
+	settingsStore := db.TemporbrySettings()
+	eventLogsStore := &eventLogStore{Store: bbsestore.NewWithHbndle(db.Hbndle())}
 
 	for i := 0; i < 24; i++ {
-		user, err := usersStore.Create(ctx, NewUser{Username: fmt.Sprintf("u%d", i)})
+		user, err := usersStore.Crebte(ctx, NewUser{Usernbme: fmt.Sprintf("u%d", i)})
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
 
 		settings := fmt.Sprintf("{%s}", strings.Join([]string{
 			fmt.Sprintf(`"foo": %d`, user.ID%7),
-			fmt.Sprintf(`"bar": "%d"`, user.ID%5),
-			fmt.Sprintf(`"baz": %v`, user.ID%2 == 0),
+			fmt.Sprintf(`"bbr": "%d"`, user.ID%5),
+			fmt.Sprintf(`"bbz": %v`, user.ID%2 == 0),
 		}, ", "))
 
-		if err := settingsStore.OverwriteTemporarySettings(ctx, user.ID, settings); err != nil {
-			t.Fatal(err)
+		if err := settingsStore.OverwriteTemporbrySettings(ctx, user.ID, settings); err != nil {
+			t.Fbtbl(err)
 		}
 	}
 
-	for _, expectedCount := range []struct {
+	for _, expectedCount := rbnge []struct {
 		key           string
-		value         any
+		vblue         bny
 		expectedCount int
 	}{
 		// foo, ints
@@ -170,187 +170,187 @@ func TestEventLogs_CountUsersWithSetting(t *testing.T) {
 		{"foo", 6, 3},
 		{"foo", 7, 0}, // none
 
-		// bar, strings
-		{"bar", strconv.Itoa(0), 4},
-		{"bar", strconv.Itoa(1), 5},
-		{"bar", strconv.Itoa(2), 5},
-		{"bar", strconv.Itoa(3), 5},
-		{"bar", strconv.Itoa(4), 5},
-		{"bar", strconv.Itoa(5), 0}, // none
+		// bbr, strings
+		{"bbr", strconv.Itob(0), 4},
+		{"bbr", strconv.Itob(1), 5},
+		{"bbr", strconv.Itob(2), 5},
+		{"bbr", strconv.Itob(3), 5},
+		{"bbr", strconv.Itob(4), 5},
+		{"bbr", strconv.Itob(5), 0}, // none
 
-		// baz, bools
-		{"baz", true, 12},
-		{"baz", false, 12},
-		{"baz", nil, 0}, // none
+		// bbz, bools
+		{"bbz", true, 12},
+		{"bbz", fblse, 12},
+		{"bbz", nil, 0}, // none
 	} {
-		count, err := eventLogsStore.CountUsersWithSetting(ctx, expectedCount.key, expectedCount.value)
+		count, err := eventLogsStore.CountUsersWithSetting(ctx, expectedCount.key, expectedCount.vblue)
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
 
 		if count != expectedCount.expectedCount {
-			t.Errorf("unexpected count for %q = %v. want=%d have=%d", expectedCount.key, expectedCount.value, expectedCount.expectedCount, count)
+			t.Errorf("unexpected count for %q = %v. wbnt=%d hbve=%d", expectedCount.key, expectedCount.vblue, expectedCount.expectedCount, count)
 		}
 	}
 }
 
-func TestEventLogs_SiteUsageMultiplePeriods(t *testing.T) {
+func TestEventLogs_SiteUsbgeMultiplePeriods(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
 	logger := logtest.Scoped(t)
-	t.Parallel()
+	t.Pbrbllel()
 	db := NewDB(logger, dbtest.NewDB(logger, t))
-	ctx := context.Background()
+	ctx := context.Bbckground()
 
-	// Several of the events will belong to Sourcegraph employee admin user and Sourcegraph Operator user account
-	sgAdmin, err := db.Users().Create(ctx, NewUser{Username: "sourcegraph-admin"})
+	// Severbl of the events will belong to Sourcegrbph employee bdmin user bnd Sourcegrbph Operbtor user bccount
+	sgAdmin, err := db.Users().Crebte(ctx, NewUser{Usernbme: "sourcegrbph-bdmin"})
 	require.NoError(t, err)
-	err = db.UserEmails().Add(ctx, sgAdmin.ID, "admin@sourcegraph.com", nil)
+	err = db.UserEmbils().Add(ctx, sgAdmin.ID, "bdmin@sourcegrbph.com", nil)
 	require.NoError(t, err)
-	soLoganID, err := db.UserExternalAccounts().CreateUserAndSave(
+	soLogbnID, err := db.UserExternblAccounts().CrebteUserAndSbve(
 		ctx,
 		NewUser{
-			Username: "sourcegraph-operator-logan",
+			Usernbme: "sourcegrbph-operbtor-logbn",
 		},
 		extsvc.AccountSpec{
-			ServiceType: "sourcegraph-operator",
+			ServiceType: "sourcegrbph-operbtor",
 		},
-		extsvc.AccountData{},
+		extsvc.AccountDbtb{},
 	)
 	require.NoError(t, err)
 
-	user1, err := db.Users().Create(ctx, NewUser{Username: "a"})
+	user1, err := db.Users().Crebte(ctx, NewUser{Usernbme: "b"})
 	require.NoError(t, err)
-	user2, err := db.Users().Create(ctx, NewUser{Username: "b"})
+	user2, err := db.Users().Crebte(ctx, NewUser{Usernbme: "b"})
 	require.NoError(t, err)
-	user3, err := db.Users().Create(ctx, NewUser{Username: "c"})
+	user3, err := db.Users().Crebte(ctx, NewUser{Usernbme: "c"})
 	require.NoError(t, err)
-	user4, err := db.Users().Create(ctx, NewUser{Username: "d"})
+	user4, err := db.Users().Crebte(ctx, NewUser{Usernbme: "d"})
 	require.NoError(t, err)
 
 	now := time.Now()
-	startDate, _ := calcStartDate(now, Daily, 3)
-	secondDay := startDate.Add(time.Hour * 24)
-	thirdDay := startDate.Add(time.Hour * 24 * 2)
+	stbrtDbte, _ := cblcStbrtDbte(now, Dbily, 3)
+	secondDby := stbrtDbte.Add(time.Hour * 24)
+	thirdDby := stbrtDbte.Add(time.Hour * 24 * 2)
 
-	soPublicArgument := json.RawMessage(fmt.Sprintf(`{"%s": true}`, EventLogsSourcegraphOperatorKey))
+	soPublicArgument := json.RbwMessbge(fmt.Sprintf(`{"%s": true}`, EventLogsSourcegrbphOperbtorKey))
 	events := []*Event{
-		makeTestEvent(&Event{UserID: uint32(sgAdmin.ID), Timestamp: startDate}),
-		makeTestEvent(&Event{UserID: uint32(sgAdmin.ID), Timestamp: startDate}),
-		makeTestEvent(&Event{UserID: uint32(soLoganID.ID), Timestamp: startDate, PublicArgument: soPublicArgument}),
-		makeTestEvent(&Event{UserID: uint32(soLoganID.ID), Timestamp: startDate, PublicArgument: soPublicArgument}),
-		makeTestEvent(&Event{UserID: uint32(user1.ID), Timestamp: startDate}),
-		makeTestEvent(&Event{UserID: uint32(user1.ID), Timestamp: startDate}),
+		mbkeTestEvent(&Event{UserID: uint32(sgAdmin.ID), Timestbmp: stbrtDbte}),
+		mbkeTestEvent(&Event{UserID: uint32(sgAdmin.ID), Timestbmp: stbrtDbte}),
+		mbkeTestEvent(&Event{UserID: uint32(soLogbnID.ID), Timestbmp: stbrtDbte, PublicArgument: soPublicArgument}),
+		mbkeTestEvent(&Event{UserID: uint32(soLogbnID.ID), Timestbmp: stbrtDbte, PublicArgument: soPublicArgument}),
+		mbkeTestEvent(&Event{UserID: uint32(user1.ID), Timestbmp: stbrtDbte}),
+		mbkeTestEvent(&Event{UserID: uint32(user1.ID), Timestbmp: stbrtDbte}),
 
-		makeTestEvent(&Event{UserID: uint32(sgAdmin.ID), Timestamp: secondDay}),
-		makeTestEvent(&Event{UserID: uint32(user1.ID), Timestamp: secondDay}),
-		makeTestEvent(&Event{UserID: uint32(user2.ID), Timestamp: secondDay}),
-		makeTestEvent(&Event{UserID: uint32(sgAdmin.ID), Timestamp: secondDay}),
-		makeTestEvent(&Event{UserID: uint32(soLoganID.ID), Timestamp: secondDay, PublicArgument: soPublicArgument}),
-		makeTestEvent(&Event{UserID: uint32(soLoganID.ID), Timestamp: secondDay, PublicArgument: soPublicArgument}),
+		mbkeTestEvent(&Event{UserID: uint32(sgAdmin.ID), Timestbmp: secondDby}),
+		mbkeTestEvent(&Event{UserID: uint32(user1.ID), Timestbmp: secondDby}),
+		mbkeTestEvent(&Event{UserID: uint32(user2.ID), Timestbmp: secondDby}),
+		mbkeTestEvent(&Event{UserID: uint32(sgAdmin.ID), Timestbmp: secondDby}),
+		mbkeTestEvent(&Event{UserID: uint32(soLogbnID.ID), Timestbmp: secondDby, PublicArgument: soPublicArgument}),
+		mbkeTestEvent(&Event{UserID: uint32(soLogbnID.ID), Timestbmp: secondDby, PublicArgument: soPublicArgument}),
 
-		makeTestEvent(&Event{UserID: uint32(user1.ID), Timestamp: thirdDay}),
-		makeTestEvent(&Event{UserID: uint32(user2.ID), Timestamp: thirdDay}),
-		makeTestEvent(&Event{UserID: uint32(user3.ID), Timestamp: thirdDay}),
-		makeTestEvent(&Event{UserID: uint32(user4.ID), Timestamp: thirdDay}),
+		mbkeTestEvent(&Event{UserID: uint32(user1.ID), Timestbmp: thirdDby}),
+		mbkeTestEvent(&Event{UserID: uint32(user2.ID), Timestbmp: thirdDby}),
+		mbkeTestEvent(&Event{UserID: uint32(user3.ID), Timestbmp: thirdDby}),
+		mbkeTestEvent(&Event{UserID: uint32(user4.ID), Timestbmp: thirdDby}),
 	}
 	err = db.EventLogs().BulkInsert(ctx, events)
 	require.NoError(t, err)
 
-	values, err := db.EventLogs().SiteUsageMultiplePeriods(ctx, now, 3, 0, 0, nil)
+	vblues, err := db.EventLogs().SiteUsbgeMultiplePeriods(ctx, now, 3, 0, 0, nil)
 	require.NoError(t, err)
 
-	assertUsageValue(t, values.DAUs[0], startDate.Add(time.Hour*24*2), 4, 4, 0, 0)
-	assertUsageValue(t, values.DAUs[1], startDate.Add(time.Hour*24), 4, 4, 0, 0)
-	assertUsageValue(t, values.DAUs[2], startDate, 3, 3, 0, 0)
+	bssertUsbgeVblue(t, vblues.DAUs[0], stbrtDbte.Add(time.Hour*24*2), 4, 4, 0, 0)
+	bssertUsbgeVblue(t, vblues.DAUs[1], stbrtDbte.Add(time.Hour*24), 4, 4, 0, 0)
+	bssertUsbgeVblue(t, vblues.DAUs[2], stbrtDbte, 3, 3, 0, 0)
 
-	values, err = db.EventLogs().SiteUsageMultiplePeriods(ctx, now, 3, 0, 0, &CountUniqueUsersOptions{CommonUsageOptions{ExcludeSourcegraphAdmins: true, ExcludeSourcegraphOperators: true}, nil})
+	vblues, err = db.EventLogs().SiteUsbgeMultiplePeriods(ctx, now, 3, 0, 0, &CountUniqueUsersOptions{CommonUsbgeOptions{ExcludeSourcegrbphAdmins: true, ExcludeSourcegrbphOperbtors: true}, nil})
 	require.NoError(t, err)
 
-	assertUsageValue(t, values.DAUs[0], startDate.Add(time.Hour*24*2), 4, 4, 0, 0)
-	assertUsageValue(t, values.DAUs[1], startDate.Add(time.Hour*24), 2, 2, 0, 0)
-	assertUsageValue(t, values.DAUs[2], startDate, 1, 1, 0, 0)
+	bssertUsbgeVblue(t, vblues.DAUs[0], stbrtDbte.Add(time.Hour*24*2), 4, 4, 0, 0)
+	bssertUsbgeVblue(t, vblues.DAUs[1], stbrtDbte.Add(time.Hour*24), 2, 2, 0, 0)
+	bssertUsbgeVblue(t, vblues.DAUs[2], stbrtDbte, 1, 1, 0, 0)
 }
 
-func TestEventLogs_UsersUsageCounts(t *testing.T) {
+func TestEventLogs_UsersUsbgeCounts(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
 	logger := logtest.Scoped(t)
-	t.Parallel()
+	t.Pbrbllel()
 	db := NewDB(logger, dbtest.NewDB(logger, t))
-	ctx := context.Background()
+	ctx := context.Bbckground()
 
 	now := time.Now()
 
-	startDate, _ := calcStartDate(now, Daily, 3)
-	secondDay := startDate.Add(time.Hour * 24)
-	thirdDay := startDate.Add(time.Hour * 24 * 2)
+	stbrtDbte, _ := cblcStbrtDbte(now, Dbily, 3)
+	secondDby := stbrtDbte.Add(time.Hour * 24)
+	thirdDby := stbrtDbte.Add(time.Hour * 24 * 2)
 
-	days := []time.Time{startDate, secondDay, thirdDay}
-	names := []string{"SearchResultsQueried", "codeintel"}
+	dbys := []time.Time{stbrtDbte, secondDby, thirdDby}
+	nbmes := []string{"SebrchResultsQueried", "codeintel"}
 	users := []uint32{1, 2}
 
-	for _, day := range days {
-		for _, user := range users {
-			for _, name := range names {
+	for _, dby := rbnge dbys {
+		for _, user := rbnge users {
+			for _, nbme := rbnge nbmes {
 				for i := 0; i < 25; i++ {
 					e := &Event{
 						UserID:    user,
-						Name:      name,
-						URL:       "http://sourcegraph.com",
+						Nbme:      nbme,
+						URL:       "http://sourcegrbph.com",
 						Source:    "test",
-						Timestamp: day.Add(time.Minute * time.Duration(rand.Intn(60*12))),
+						Timestbmp: dby.Add(time.Minute * time.Durbtion(rbnd.Intn(60*12))),
 					}
 
 					if err := db.EventLogs().Insert(ctx, e); err != nil {
-						t.Fatal(err)
+						t.Fbtbl(err)
 					}
 				}
 			}
 		}
 	}
 
-	have, err := db.EventLogs().UsersUsageCounts(ctx)
+	hbve, err := db.EventLogs().UsersUsbgeCounts(ctx)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	want := []types.UserUsageCounts{
-		{Date: days[2], UserID: users[0], SearchCount: 25, CodeIntelCount: 25},
-		{Date: days[2], UserID: users[1], SearchCount: 25, CodeIntelCount: 25},
-		{Date: days[1], UserID: users[0], SearchCount: 25, CodeIntelCount: 25},
-		{Date: days[1], UserID: users[1], SearchCount: 25, CodeIntelCount: 25},
-		{Date: days[0], UserID: users[0], SearchCount: 25, CodeIntelCount: 25},
-		{Date: days[0], UserID: users[1], SearchCount: 25, CodeIntelCount: 25},
+	wbnt := []types.UserUsbgeCounts{
+		{Dbte: dbys[2], UserID: users[0], SebrchCount: 25, CodeIntelCount: 25},
+		{Dbte: dbys[2], UserID: users[1], SebrchCount: 25, CodeIntelCount: 25},
+		{Dbte: dbys[1], UserID: users[0], SebrchCount: 25, CodeIntelCount: 25},
+		{Dbte: dbys[1], UserID: users[1], SebrchCount: 25, CodeIntelCount: 25},
+		{Dbte: dbys[0], UserID: users[0], SebrchCount: 25, CodeIntelCount: 25},
+		{Dbte: dbys[0], UserID: users[1], SebrchCount: 25, CodeIntelCount: 25},
 	}
 
-	if diff := cmp.Diff(want, have); diff != "" {
+	if diff := cmp.Diff(wbnt, hbve); diff != "" {
 		t.Error(diff)
 	}
 }
 
-func TestEventLogs_SiteUsage(t *testing.T) {
+func TestEventLogs_SiteUsbge(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
 	logger := logtest.Scoped(t)
-	t.Parallel()
+	t.Pbrbllel()
 	db := NewDB(logger, dbtest.NewDB(logger, t))
-	ctx := context.Background()
+	ctx := context.Bbckground()
 
-	// This unix timestamp is equivalent to `Friday, May 15, 2020 10:30:00 PM GMT` and is set to
-	// be a consistent value so that the tests don't fail when someone runs it at some particular
-	// time that falls too near the edge of a week.
+	// This unix timestbmp is equivblent to `Fridby, Mby 15, 2020 10:30:00 PM GMT` bnd is set to
+	// be b consistent vblue so thbt the tests don't fbil when someone runs it bt some pbrticulbr
+	// time thbt fblls too nebr the edge of b week.
 	now := time.Unix(1589581800, 0).UTC()
 
-	days := map[time.Time]struct {
+	dbys := mbp[time.Time]struct {
 		users   []uint32
-		names   []string
+		nbmes   []string
 		sources []string
 	}{
-		// Today
+		// Todby
 		now: {
 			[]uint32{1, 2, 3, 4, 5},
 			[]string{"ViewSiteAdminX"},
@@ -365,7 +365,7 @@ func TestEventLogs_SiteUsage(t *testing.T) {
 		// This week
 		now.Add(-time.Hour * 24 * 4): {
 			[]uint32{1, 3, 5, 7},
-			[]string{"ViewSiteAdminX", "SavedSearchSlackClicked"},
+			[]string{"ViewSiteAdminX", "SbvedSebrchSlbckClicked"},
 			[]string{"test", "CODEHOSTINTEGRATION"},
 		},
 		// This month
@@ -377,37 +377,37 @@ func TestEventLogs_SiteUsage(t *testing.T) {
 		// This month
 		now.Add(-time.Hour * 24 * 12): {
 			[]uint32{1, 2, 3, 4, 5, 6, 11},
-			[]string{"ViewTree", "SavedSearchSlackClicked"},
+			[]string{"ViewTree", "SbvedSebrchSlbckClicked"},
 			[]string{"test", "CODEHOSTINTEGRATION"},
 		},
 		// Previous month
 		now.Add(-time.Hour * 24 * 40): {
 			[]uint32{0, 1, 5, 6, 13},
-			[]string{"SearchResultsQueried", "DiffSearchResultsQueried"},
+			[]string{"SebrchResultsQueried", "DiffSebrchResultsQueried"},
 			[]string{"test", "CODEHOSTINTEGRATION"},
 		},
 	}
 
-	for day, data := range days {
-		for _, user := range data.users {
-			for _, name := range data.names {
-				for _, source := range data.sources {
+	for dby, dbtb := rbnge dbys {
+		for _, user := rbnge dbtb.users {
+			for _, nbme := rbnge dbtb.nbmes {
+				for _, source := rbnge dbtb.sources {
 					for i := 0; i < 5; i++ {
 						e := &Event{
 							UserID: user,
-							Name:   name,
-							URL:    "http://sourcegraph.com",
+							Nbme:   nbme,
+							URL:    "http://sourcegrbph.com",
 							Source: source,
 							// Jitter current time +/- 30 minutes
-							Timestamp: day.Add(time.Minute * time.Duration(rand.Intn(60)-30)),
+							Timestbmp: dby.Add(time.Minute * time.Durbtion(rbnd.Intn(60)-30)),
 						}
 
 						if user == 0 {
-							e.AnonymousUserID = "deadbeef"
+							e.AnonymousUserID = "debdbeef"
 						}
 
 						if err := db.EventLogs().Insert(ctx, e); err != nil {
-							t.Fatal(err)
+							t.Fbtbl(err)
 						}
 					}
 				}
@@ -415,84 +415,84 @@ func TestEventLogs_SiteUsage(t *testing.T) {
 		}
 	}
 
-	el := &eventLogStore{Store: basestore.NewWithHandle(db.Handle())}
-	summary, err := el.siteUsageCurrentPeriods(ctx, now, nil)
+	el := &eventLogStore{Store: bbsestore.NewWithHbndle(db.Hbndle())}
+	summbry, err := el.siteUsbgeCurrentPeriods(ctx, now, nil)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	expectedSummary := types.SiteUsageSummary{
-		RollingMonth:                   time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, time.UTC).AddDate(0, 0, -30),
-		Month:                          time.Date(now.Year(), now.Month(), 1, 0, 0, 0, 0, time.UTC),
-		Week:                           now.Truncate(time.Hour * 24).Add(-time.Hour * 24 * 5), // the previous Sunday
-		Day:                            now.Truncate(time.Hour * 24),
+	expectedSummbry := types.SiteUsbgeSummbry{
+		RollingMonth:                   time.Dbte(now.Yebr(), now.Month(), now.Dby(), 0, 0, 0, 0, time.UTC).AddDbte(0, 0, -30),
+		Month:                          time.Dbte(now.Yebr(), now.Month(), 1, 0, 0, 0, 0, time.UTC),
+		Week:                           now.Truncbte(time.Hour * 24).Add(-time.Hour * 24 * 5), // the previous Sundby
+		Dby:                            now.Truncbte(time.Hour * 24),
 		UniquesRollingMonth:            11,
 		UniquesMonth:                   11,
 		UniquesWeek:                    7,
-		UniquesDay:                     5,
+		UniquesDby:                     5,
 		RegisteredUniquesRollingMonth:  10,
 		RegisteredUniquesMonth:         10,
 		RegisteredUniquesWeek:          6,
-		RegisteredUniquesDay:           5,
-		IntegrationUniquesRollingMonth: 11,
-		IntegrationUniquesMonth:        11,
-		IntegrationUniquesWeek:         7,
-		IntegrationUniquesDay:          5,
+		RegisteredUniquesDby:           5,
+		IntegrbtionUniquesRollingMonth: 11,
+		IntegrbtionUniquesMonth:        11,
+		IntegrbtionUniquesWeek:         7,
+		IntegrbtionUniquesDby:          5,
 	}
-	if diff := cmp.Diff(expectedSummary, summary); diff != "" {
-		t.Fatal(diff)
+	if diff := cmp.Diff(expectedSummbry, summbry); diff != "" {
+		t.Fbtbl(diff)
 	}
 }
 
-func TestEventLogs_SiteUsage_ExcludeSourcegraphAdmins(t *testing.T) {
+func TestEventLogs_SiteUsbge_ExcludeSourcegrbphAdmins(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
 	logger := logtest.Scoped(t)
-	t.Parallel()
+	t.Pbrbllel()
 	db := NewDB(logger, dbtest.NewDB(logger, t))
-	ctx := context.Background()
+	ctx := context.Bbckground()
 
-	// This unix timestamp is equivalent to `Friday, May 15, 2020 10:30:00 PM GMT` and is set to
-	// be a consistent value so that the tests don't fail when someone runs it at some particular
-	// time that falls too near the edge of a week.
+	// This unix timestbmp is equivblent to `Fridby, Mby 15, 2020 10:30:00 PM GMT` bnd is set to
+	// be b consistent vblue so thbt the tests don't fbil when someone runs it bt some pbrticulbr
+	// time thbt fblls too nebr the edge of b week.
 	now := time.Unix(1589581800, 0).UTC()
 
-	// Several of the events will belong to Sourcegraph employee admin user and Sourcegraph Operator user account
-	sgAdmin, err := db.Users().Create(ctx, NewUser{Username: "sourcegraph-admin"})
+	// Severbl of the events will belong to Sourcegrbph employee bdmin user bnd Sourcegrbph Operbtor user bccount
+	sgAdmin, err := db.Users().Crebte(ctx, NewUser{Usernbme: "sourcegrbph-bdmin"})
 	require.NoError(t, err)
-	err = db.UserEmails().Add(ctx, sgAdmin.ID, "admin@sourcegraph.com", nil)
+	err = db.UserEmbils().Add(ctx, sgAdmin.ID, "bdmin@sourcegrbph.com", nil)
 	require.NoError(t, err)
-	soLogan, err := db.UserExternalAccounts().CreateUserAndSave(
+	soLogbn, err := db.UserExternblAccounts().CrebteUserAndSbve(
 		ctx,
 		NewUser{
-			Username: "sourcegraph-operator-logan",
+			Usernbme: "sourcegrbph-operbtor-logbn",
 		},
 		extsvc.AccountSpec{
-			ServiceType: "sourcegraph-operator",
+			ServiceType: "sourcegrbph-operbtor",
 		},
-		extsvc.AccountData{},
+		extsvc.AccountDbtb{},
 	)
 	require.NoError(t, err)
 
-	user1, err := db.Users().Create(ctx, NewUser{Username: "a"})
+	user1, err := db.Users().Crebte(ctx, NewUser{Usernbme: "b"})
 	require.NoError(t, err)
-	user2, err := db.Users().Create(ctx, NewUser{Username: "b"})
+	user2, err := db.Users().Crebte(ctx, NewUser{Usernbme: "b"})
 	require.NoError(t, err)
 
-	days := map[time.Time]struct {
+	dbys := mbp[time.Time]struct {
 		userIDs []uint32
-		names   []string
+		nbmes   []string
 		sources []string
 	}{
-		// Today
+		// Todby
 		now: {
 			[]uint32{uint32(sgAdmin.ID)},
 			[]string{"ViewSiteAdminX"},
 			[]string{"test", "CODEHOSTINTEGRATION"},
 		},
 		now.Add(-time.Hour): {
-			[]uint32{uint32(soLogan.ID)},
+			[]uint32{uint32(soLogbn.ID)},
 			[]string{"ViewSiteAdminX"},
 			[]string{"test", "CODEHOSTINTEGRATION"},
 		},
@@ -503,34 +503,34 @@ func TestEventLogs_SiteUsage_ExcludeSourcegraphAdmins(t *testing.T) {
 			[]string{"test", "CODEHOSTINTEGRATION"},
 		},
 		now.Add(-time.Hour * 24 * 4): {
-			[]uint32{uint32(soLogan.ID), uint32(user1.ID)},
+			[]uint32{uint32(soLogbn.ID), uint32(user1.ID)},
 			[]string{"ViewRepository", "ViewTree"},
 			[]string{"test", "CODEHOSTINTEGRATION"},
 		},
 		// This month
 		now.Add(-time.Hour * 24 * 6): {
 			[]uint32{uint32(user2.ID)},
-			[]string{"ViewSiteAdminX", "SavedSearchSlackClicked"},
+			[]string{"ViewSiteAdminX", "SbvedSebrchSlbckClicked"},
 			[]string{"test", "CODEHOSTINTEGRATION"},
 		},
 	}
 
-	for day, data := range days {
-		for _, userID := range data.userIDs {
-			for _, name := range data.names {
-				for _, source := range data.sources {
+	for dby, dbtb := rbnge dbys {
+		for _, userID := rbnge dbtb.userIDs {
+			for _, nbme := rbnge dbtb.nbmes {
+				for _, source := rbnge dbtb.sources {
 					for i := 0; i < 5; i++ {
 						e := &Event{
 							UserID: userID,
-							Name:   name,
-							URL:    "http://sourcegraph.com",
+							Nbme:   nbme,
+							URL:    "http://sourcegrbph.com",
 							Source: source,
 							// Jitter current time +/- 30 minutes
-							Timestamp: day.Add(time.Minute * time.Duration(rand.Intn(60)-30)),
+							Timestbmp: dby.Add(time.Minute * time.Durbtion(rbnd.Intn(60)-30)),
 						}
 
-						if userID == uint32(soLogan.ID) {
-							e.PublicArgument = json.RawMessage(fmt.Sprintf(`{"%s": true}`, EventLogsSourcegraphOperatorKey))
+						if userID == uint32(soLogbn.ID) {
+							e.PublicArgument = json.RbwMessbge(fmt.Sprintf(`{"%s": true}`, EventLogsSourcegrbphOperbtorKey))
 						}
 
 						err := db.EventLogs().Insert(ctx, e)
@@ -541,52 +541,52 @@ func TestEventLogs_SiteUsage_ExcludeSourcegraphAdmins(t *testing.T) {
 		}
 	}
 
-	el := &eventLogStore{Store: basestore.NewWithHandle(db.Handle())}
-	summary, err := el.siteUsageCurrentPeriods(ctx, now, &SiteUsageOptions{CommonUsageOptions{ExcludeSourcegraphAdmins: false}})
+	el := &eventLogStore{Store: bbsestore.NewWithHbndle(db.Hbndle())}
+	summbry, err := el.siteUsbgeCurrentPeriods(ctx, now, &SiteUsbgeOptions{CommonUsbgeOptions{ExcludeSourcegrbphAdmins: fblse}})
 	require.NoError(t, err)
 
-	expectedSummary := types.SiteUsageSummary{
-		RollingMonth:                   time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, time.UTC).AddDate(0, 0, -30),
-		Month:                          time.Date(now.Year(), now.Month(), 1, 0, 0, 0, 0, time.UTC),
-		Week:                           now.Truncate(time.Hour * 24).Add(-time.Hour * 24 * 5), // the previous Sunday
-		Day:                            now.Truncate(time.Hour * 24),
+	expectedSummbry := types.SiteUsbgeSummbry{
+		RollingMonth:                   time.Dbte(now.Yebr(), now.Month(), now.Dby(), 0, 0, 0, 0, time.UTC).AddDbte(0, 0, -30),
+		Month:                          time.Dbte(now.Yebr(), now.Month(), 1, 0, 0, 0, 0, time.UTC),
+		Week:                           now.Truncbte(time.Hour * 24).Add(-time.Hour * 24 * 5), // the previous Sundby
+		Dby:                            now.Truncbte(time.Hour * 24),
 		UniquesRollingMonth:            4,
 		UniquesMonth:                   4,
 		UniquesWeek:                    3,
-		UniquesDay:                     2,
+		UniquesDby:                     2,
 		RegisteredUniquesRollingMonth:  4,
 		RegisteredUniquesMonth:         4,
 		RegisteredUniquesWeek:          3,
-		RegisteredUniquesDay:           2,
-		IntegrationUniquesRollingMonth: 4,
-		IntegrationUniquesMonth:        4,
-		IntegrationUniquesWeek:         3,
-		IntegrationUniquesDay:          2,
+		RegisteredUniquesDby:           2,
+		IntegrbtionUniquesRollingMonth: 4,
+		IntegrbtionUniquesMonth:        4,
+		IntegrbtionUniquesWeek:         3,
+		IntegrbtionUniquesDby:          2,
 	}
-	assert.Equal(t, expectedSummary, summary)
+	bssert.Equbl(t, expectedSummbry, summbry)
 
-	summary, err = el.siteUsageCurrentPeriods(ctx, now, &SiteUsageOptions{CommonUsageOptions{ExcludeSourcegraphAdmins: true, ExcludeSourcegraphOperators: true}})
+	summbry, err = el.siteUsbgeCurrentPeriods(ctx, now, &SiteUsbgeOptions{CommonUsbgeOptions{ExcludeSourcegrbphAdmins: true, ExcludeSourcegrbphOperbtors: true}})
 	require.NoError(t, err)
 
-	expectedSummary = types.SiteUsageSummary{
-		RollingMonth:                   time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, time.UTC).AddDate(0, 0, -30),
-		Month:                          time.Date(now.Year(), now.Month(), 1, 0, 0, 0, 0, time.UTC),
-		Week:                           now.Truncate(time.Hour * 24).Add(-time.Hour * 24 * 5), // the previous Sunday
-		Day:                            now.Truncate(time.Hour * 24),
+	expectedSummbry = types.SiteUsbgeSummbry{
+		RollingMonth:                   time.Dbte(now.Yebr(), now.Month(), now.Dby(), 0, 0, 0, 0, time.UTC).AddDbte(0, 0, -30),
+		Month:                          time.Dbte(now.Yebr(), now.Month(), 1, 0, 0, 0, 0, time.UTC),
+		Week:                           now.Truncbte(time.Hour * 24).Add(-time.Hour * 24 * 5), // the previous Sundby
+		Dby:                            now.Truncbte(time.Hour * 24),
 		UniquesRollingMonth:            2,
 		UniquesMonth:                   2,
 		UniquesWeek:                    1,
-		UniquesDay:                     0,
+		UniquesDby:                     0,
 		RegisteredUniquesRollingMonth:  2,
 		RegisteredUniquesMonth:         2,
 		RegisteredUniquesWeek:          1,
-		RegisteredUniquesDay:           0,
-		IntegrationUniquesRollingMonth: 2,
-		IntegrationUniquesMonth:        2,
-		IntegrationUniquesWeek:         1,
-		IntegrationUniquesDay:          0,
+		RegisteredUniquesDby:           0,
+		IntegrbtionUniquesRollingMonth: 2,
+		IntegrbtionUniquesMonth:        2,
+		IntegrbtionUniquesWeek:         1,
+		IntegrbtionUniquesDby:          0,
 	}
-	assert.Equal(t, expectedSummary, summary)
+	bssert.Equbl(t, expectedSummbry, summbry)
 }
 
 func TestEventLogs_codeIntelligenceWeeklyUsersCount(t *testing.T) {
@@ -594,62 +594,62 @@ func TestEventLogs_codeIntelligenceWeeklyUsersCount(t *testing.T) {
 		t.Skip()
 	}
 	logger := logtest.Scoped(t)
-	t.Parallel()
+	t.Pbrbllel()
 	db := NewDB(logger, dbtest.NewDB(logger, t))
-	ctx := context.Background()
+	ctx := context.Bbckground()
 
-	names := []string{"codeintel.lsifHover", "codeintel.searchReferences", "unknown event"}
+	nbmes := []string{"codeintel.lsifHover", "codeintel.sebrchReferences", "unknown event"}
 	users1 := []uint32{10, 20, 30, 40, 50, 60, 70, 80}
 	users2 := []uint32{15, 25, 35, 45, 55, 65, 75, 85}
 
-	// This unix timestamp is equivalent to `Friday, May 15, 2020 10:30:00 PM GMT` and is set to
-	// time that falls too near the edge of a week.
+	// This unix timestbmp is equivblent to `Fridby, Mby 15, 2020 10:30:00 PM GMT` bnd is set to
+	// time thbt fblls too nebr the edge of b week.
 	now := time.Unix(1589581800, 0).UTC()
 
-	for _, name := range names {
-		for _, user := range users1 {
+	for _, nbme := rbnge nbmes {
+		for _, user := rbnge users1 {
 			e := &Event{
 				UserID: user,
-				Name:   name,
-				URL:    "http://sourcegraph.com",
+				Nbme:   nbme,
+				URL:    "http://sourcegrbph.com",
 				Source: "test",
 				// This week; jitter current time +/- 30 minutes
-				Timestamp: now.Add(-time.Hour * 24 * 3).Add(time.Minute * time.Duration(rand.Intn(60)-30)),
+				Timestbmp: now.Add(-time.Hour * 24 * 3).Add(time.Minute * time.Durbtion(rbnd.Intn(60)-30)),
 			}
 
 			if err := db.EventLogs().Insert(ctx, e); err != nil {
-				t.Fatal(err)
+				t.Fbtbl(err)
 			}
 		}
-		for _, user := range users2 {
+		for _, user := rbnge users2 {
 			e := &Event{
 				UserID: user,
-				Name:   name,
-				URL:    "http://sourcegraph.com",
+				Nbme:   nbme,
+				URL:    "http://sourcegrbph.com",
 				Source: "test",
 				// This month: jitter current time +/- 30 minutes
-				Timestamp: now.Add(-time.Hour * 24 * 12).Add(time.Minute * time.Duration(rand.Intn(60)-30)),
+				Timestbmp: now.Add(-time.Hour * 24 * 12).Add(time.Minute * time.Durbtion(rbnd.Intn(60)-30)),
 			}
 
 			if err := db.EventLogs().Insert(ctx, e); err != nil {
-				t.Fatal(err)
+				t.Fbtbl(err)
 			}
 		}
 	}
 
-	eventNames := []string{
+	eventNbmes := []string{
 		"codeintel.lsifHover",
-		"codeintel.searchReferences",
+		"codeintel.sebrchReferences",
 	}
 
-	el := &eventLogStore{Store: basestore.NewWithHandle(db.Handle())}
-	count, err := el.codeIntelligenceWeeklyUsersCount(ctx, eventNames, now)
+	el := &eventLogStore{Store: bbsestore.NewWithHbndle(db.Hbndle())}
+	count, err := el.codeIntelligenceWeeklyUsersCount(ctx, eventNbmes, now)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
 	if count != len(users1) {
-		t.Errorf("unexpected count. want=%d have=%d", len(users1), count)
+		t.Errorf("unexpected count. wbnt=%d hbve=%d", len(users1), count)
 	}
 }
 
@@ -658,169 +658,169 @@ func TestEventLogs_TestCodeIntelligenceRepositoryCounts(t *testing.T) {
 		t.Skip()
 	}
 	logger := logtest.Scoped(t)
-	t.Parallel()
+	t.Pbrbllel()
 	db := NewDB(logger, dbtest.NewDB(logger, t))
-	ctx := context.Background()
+	ctx := context.Bbckground()
 	now := time.Now()
 
 	repos := []struct {
 		id        int
-		name      string
+		nbme      string
 		deletedAt *time.Time
 	}{
 		{1, "test01", nil}, // 2 weeks old
 		{2, "test02", nil},
 		{3, "test03", nil},
-		{4, "test04", nil},  // (no LSIF data)
+		{4, "test04", nil},  // (no LSIF dbtb)
 		{5, "test05", &now}, // deleted
 	}
-	for _, repo := range repos {
+	for _, repo := rbnge repos {
 		query := sqlf.Sprintf(
-			"INSERT INTO repo (id, name, deleted_at) VALUES (%s, %s, %s)",
+			"INSERT INTO repo (id, nbme, deleted_bt) VALUES (%s, %s, %s)",
 			repo.id,
-			repo.name,
+			repo.nbme,
 			repo.deletedAt,
 		)
-		if _, err := db.Handle().ExecContext(ctx, query.Query(sqlf.PostgresBindVar), query.Args()...); err != nil {
-			t.Fatalf("unexpected error preparing database: %s", err.Error())
+		if _, err := db.Hbndle().ExecContext(ctx, query.Query(sqlf.PostgresBindVbr), query.Args()...); err != nil {
+			t.Fbtblf("unexpected error prepbring dbtbbbse: %s", err.Error())
 		}
 	}
 
-	uploads := []struct {
+	uplobds := []struct {
 		repositoryID int
 	}{
 		{1},
-		{1}, // duplicate
+		{1}, // duplicbte
 		{2},
 		{3},
 		{5}, // deleted repository
 		{6}, // missing repository
 	}
 
-	// Insert each upload once a day; first two uploads are not fresh
-	// Add an extra hour so that we're not testing the weird edge boundary
-	// when Postgres NOW() - interval and the record's upload time is not
+	// Insert ebch uplobd once b dby; first two uplobds bre not fresh
+	// Add bn extrb hour so thbt we're not testing the weird edge boundbry
+	// when Postgres NOW() - intervbl bnd the record's uplobd time is not
 	// too close.
-	uploadedAt := time.Now().UTC().Add(-time.Hour * 24 * (7 + 2)).Add(time.Hour)
+	uplobdedAt := time.Now().UTC().Add(-time.Hour * 24 * (7 + 2)).Add(time.Hour)
 
-	for i, upload := range uploads {
+	for i, uplobd := rbnge uplobds {
 		query := sqlf.Sprintf(
-			"INSERT INTO lsif_uploads (repository_id, commit, indexer, uploaded_at, num_parts, uploaded_parts, state) VALUES (%s, %s, 'idx', %s, 1, '{}', 'completed')",
-			upload.repositoryID,
+			"INSERT INTO lsif_uplobds (repository_id, commit, indexer, uplobded_bt, num_pbrts, uplobded_pbrts, stbte) VALUES (%s, %s, 'idx', %s, 1, '{}', 'completed')",
+			uplobd.repositoryID,
 			fmt.Sprintf("%040d", i),
-			uploadedAt,
+			uplobdedAt,
 		)
-		if _, err := db.Handle().ExecContext(ctx, query.Query(sqlf.PostgresBindVar), query.Args()...); err != nil {
-			t.Fatalf("unexpected error preparing database: %s", err.Error())
+		if _, err := db.Hbndle().ExecContext(ctx, query.Query(sqlf.PostgresBindVbr), query.Args()...); err != nil {
+			t.Fbtblf("unexpected error prepbring dbtbbbse: %s", err.Error())
 		}
 
-		uploadedAt = uploadedAt.Add(time.Hour * 24)
+		uplobdedAt = uplobdedAt.Add(time.Hour * 24)
 	}
 
 	query := sqlf.Sprintf(
-		"INSERT INTO lsif_index_configuration (repository_id, data, autoindex_enabled) VALUES (1, '', true)",
+		"INSERT INTO lsif_index_configurbtion (repository_id, dbtb, butoindex_enbbled) VALUES (1, '', true)",
 	)
-	if _, err := db.Handle().ExecContext(ctx, query.Query(sqlf.PostgresBindVar), query.Args()...); err != nil {
-		t.Fatalf("unexpected error preparing database: %s", err.Error())
+	if _, err := db.Hbndle().ExecContext(ctx, query.Query(sqlf.PostgresBindVbr), query.Args()...); err != nil {
+		t.Fbtblf("unexpected error prepbring dbtbbbse: %s", err.Error())
 	}
 
 	query = sqlf.Sprintf(
 		`
-		INSERT INTO lsif_indexes (repository_id, commit, indexer, root, indexer_args, outfile, local_steps, docker_steps, queued_at, state) VALUES
+		INSERT INTO lsif_indexes (repository_id, commit, indexer, root, indexer_brgs, outfile, locbl_steps, docker_steps, queued_bt, stbte) VALUES
 			(1, %s, 'idx', '', '{}', 'dump.lsif', '{}', '{}', %s, 'completed'),
 			(2, %s, 'idx', '', '{}', 'dump.lsif', '{}', '{}', %s, 'completed'),
 			(3, %s, 'idx', '', '{}', 'dump.lsif', '{}', '{}', NOW(), 'queued') -- ignored
 		`,
 		fmt.Sprintf("%040d", 1), time.Now().UTC().Add(-time.Hour*24*7*2), // 2 weeks
-		fmt.Sprintf("%040d", 2), time.Now().UTC().Add(-time.Hour*24*5), // 5 days
+		fmt.Sprintf("%040d", 2), time.Now().UTC().Add(-time.Hour*24*5), // 5 dbys
 		fmt.Sprintf("%040d", 3),
 	)
-	if _, err := db.Handle().ExecContext(ctx, query.Query(sqlf.PostgresBindVar), query.Args()...); err != nil {
-		t.Fatalf("unexpected error preparing database: %s", err.Error())
+	if _, err := db.Hbndle().ExecContext(ctx, query.Query(sqlf.PostgresBindVbr), query.Args()...); err != nil {
+		t.Fbtblf("unexpected error prepbring dbtbbbse: %s", err.Error())
 	}
 
 	t.Run("All", func(t *testing.T) {
 		counts, err := db.EventLogs().CodeIntelligenceRepositoryCounts(ctx)
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
 
 		if counts.NumRepositories != 4 {
-			t.Errorf("unexpected number of repositories. want=%d have=%d", 4, counts.NumRepositories)
+			t.Errorf("unexpected number of repositories. wbnt=%d hbve=%d", 4, counts.NumRepositories)
 		}
-		if counts.NumRepositoriesWithUploadRecords != 3 {
-			t.Errorf("unexpected number of repositories with uploads. want=%d have=%d", 3, counts.NumRepositoriesWithUploadRecords)
+		if counts.NumRepositoriesWithUplobdRecords != 3 {
+			t.Errorf("unexpected number of repositories with uplobds. wbnt=%d hbve=%d", 3, counts.NumRepositoriesWithUplobdRecords)
 		}
-		if counts.NumRepositoriesWithFreshUploadRecords != 2 {
-			t.Errorf("unexpected number of repositories with fresh uploads. want=%d have=%d", 2, counts.NumRepositoriesWithFreshUploadRecords)
+		if counts.NumRepositoriesWithFreshUplobdRecords != 2 {
+			t.Errorf("unexpected number of repositories with fresh uplobds. wbnt=%d hbve=%d", 2, counts.NumRepositoriesWithFreshUplobdRecords)
 		}
 		if counts.NumRepositoriesWithIndexRecords != 2 {
-			t.Errorf("unexpected number of repositories with indexes. want=%d have=%d", 2, counts.NumRepositoriesWithIndexRecords)
+			t.Errorf("unexpected number of repositories with indexes. wbnt=%d hbve=%d", 2, counts.NumRepositoriesWithIndexRecords)
 		}
 		if counts.NumRepositoriesWithFreshIndexRecords != 1 {
-			t.Errorf("unexpected number of repositories with fresh indexes. want=%d have=%d", 1, counts.NumRepositoriesWithFreshIndexRecords)
+			t.Errorf("unexpected number of repositories with fresh indexes. wbnt=%d hbve=%d", 1, counts.NumRepositoriesWithFreshIndexRecords)
 		}
-		if counts.NumRepositoriesWithAutoIndexConfigurationRecords != 1 {
-			t.Errorf("unexpected number of repositories with index configuration. want=%d have=%d", 1, counts.NumRepositoriesWithAutoIndexConfigurationRecords)
+		if counts.NumRepositoriesWithAutoIndexConfigurbtionRecords != 1 {
+			t.Errorf("unexpected number of repositories with index configurbtion. wbnt=%d hbve=%d", 1, counts.NumRepositoriesWithAutoIndexConfigurbtionRecords)
 		}
 	})
 
-	t.Run("ByLanguage", func(t *testing.T) {
-		counts, err := db.EventLogs().CodeIntelligenceRepositoryCountsByLanguage(ctx)
+	t.Run("ByLbngubge", func(t *testing.T) {
+		counts, err := db.EventLogs().CodeIntelligenceRepositoryCountsByLbngubge(ctx)
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
 
 		if len(counts) != 1 {
-			t.Errorf("unexpected number of counts. want=%d have=%d", 1, len(counts))
+			t.Errorf("unexpected number of counts. wbnt=%d hbve=%d", 1, len(counts))
 		}
 
-		for language, counts := range counts {
-			if language != "idx" {
-				t.Errorf("unexpected indexer. want=%s have=%s", "idx", language)
+		for lbngubge, counts := rbnge counts {
+			if lbngubge != "idx" {
+				t.Errorf("unexpected indexer. wbnt=%s hbve=%s", "idx", lbngubge)
 			}
 
-			if counts.NumRepositoriesWithUploadRecords != 3 {
-				t.Errorf("unexpected number of repositories with uploads. want=%d have=%d", 3, counts.NumRepositoriesWithUploadRecords)
+			if counts.NumRepositoriesWithUplobdRecords != 3 {
+				t.Errorf("unexpected number of repositories with uplobds. wbnt=%d hbve=%d", 3, counts.NumRepositoriesWithUplobdRecords)
 			}
-			if counts.NumRepositoriesWithFreshUploadRecords != 2 {
-				t.Errorf("unexpected number of repositories with fresh uploads. want=%d have=%d", 2, counts.NumRepositoriesWithFreshUploadRecords)
+			if counts.NumRepositoriesWithFreshUplobdRecords != 2 {
+				t.Errorf("unexpected number of repositories with fresh uplobds. wbnt=%d hbve=%d", 2, counts.NumRepositoriesWithFreshUplobdRecords)
 			}
 			if counts.NumRepositoriesWithIndexRecords != 2 {
-				t.Errorf("unexpected number of repositories with indexes. want=%d have=%d", 2, counts.NumRepositoriesWithIndexRecords)
+				t.Errorf("unexpected number of repositories with indexes. wbnt=%d hbve=%d", 2, counts.NumRepositoriesWithIndexRecords)
 			}
 			if counts.NumRepositoriesWithFreshIndexRecords != 1 {
-				t.Errorf("unexpected number of repositories with fresh indexes. want=%d have=%d", 1, counts.NumRepositoriesWithFreshIndexRecords)
+				t.Errorf("unexpected number of repositories with fresh indexes. wbnt=%d hbve=%d", 1, counts.NumRepositoriesWithFreshIndexRecords)
 			}
 		}
 	})
 }
 
-func TestEventLogs_CodeIntelligenceSettingsPageViewCounts(t *testing.T) {
+func TestEventLogs_CodeIntelligenceSettingsPbgeViewCounts(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
 	logger := logtest.Scoped(t)
-	t.Parallel()
+	t.Pbrbllel()
 	db := NewDB(logger, dbtest.NewDB(logger, t))
-	ctx := context.Background()
+	ctx := context.Bbckground()
 
-	names := []string{
-		"ViewBatchesConfiguration",
-		"ViewCodeIntelUploadsPage",       // contributes 75 events
-		"ViewCodeIntelUploadPage",        // contributes 75 events
-		"ViewCodeIntelIndexesPage",       // contributes 75 events
-		"ViewCodeIntelIndexPage",         // contributes 75 events
-		"ViewCodeIntelConfigurationPage", // contributes 75 events
+	nbmes := []string{
+		"ViewBbtchesConfigurbtion",
+		"ViewCodeIntelUplobdsPbge",       // contributes 75 events
+		"ViewCodeIntelUplobdPbge",        // contributes 75 events
+		"ViewCodeIntelIndexesPbge",       // contributes 75 events
+		"ViewCodeIntelIndexPbge",         // contributes 75 events
+		"ViewCodeIntelConfigurbtionPbge", // contributes 75 events
 	}
 
-	// This unix timestamp is equivalent to `Friday, May 15, 2020 10:30:00 PM GMT` and is set to
-	// be a consistent value so that the tests don't fail when someone runs it at some particular
-	// time that falls too near the edge of a week.
+	// This unix timestbmp is equivblent to `Fridby, Mby 15, 2020 10:30:00 PM GMT` bnd is set to
+	// be b consistent vblue so thbt the tests don't fbil when someone runs it bt some pbrticulbr
+	// time thbt fblls too nebr the edge of b week.
 	now := time.Unix(1589581800, 0).UTC()
 
-	days := []time.Time{
-		now,                           // Today
+	dbys := []time.Time{
+		now,                           // Todby
 		now.Add(-time.Hour * 24 * 3),  // This week
 		now.Add(-time.Hour * 24 * 4),  // This week
 		now.Add(-time.Hour * 24 * 6),  // This month
@@ -830,17 +830,17 @@ func TestEventLogs_CodeIntelligenceSettingsPageViewCounts(t *testing.T) {
 
 	g, gctx := errgroup.WithContext(ctx)
 
-	for _, name := range names {
-		for _, day := range days {
+	for _, nbme := rbnge nbmes {
+		for _, dby := rbnge dbys {
 			for i := 0; i < 25; i++ {
 				e := &Event{
 					UserID:   1,
-					Name:     name,
-					URL:      "http://sourcegraph.com",
+					Nbme:     nbme,
+					URL:      "http://sourcegrbph.com",
 					Source:   "test",
-					Argument: json.RawMessage(fmt.Sprintf(`{"languageId": "lang-%02d"}`, (i%3)+1)),
+					Argument: json.RbwMessbge(fmt.Sprintf(`{"lbngubgeId": "lbng-%02d"}`, (i%3)+1)),
 					// Jitter current time +/- 30 minutes
-					Timestamp: day.Add(time.Minute * time.Duration(rand.Intn(60)-30)),
+					Timestbmp: dby.Add(time.Minute * time.Durbtion(rbnd.Intn(60)-30)),
 				}
 
 				g.Go(func() error {
@@ -850,40 +850,40 @@ func TestEventLogs_CodeIntelligenceSettingsPageViewCounts(t *testing.T) {
 		}
 	}
 
-	if err := g.Wait(); err != nil {
-		t.Fatal(err)
+	if err := g.Wbit(); err != nil {
+		t.Fbtbl(err)
 	}
 
-	el := &eventLogStore{Store: basestore.NewWithHandle(db.Handle())}
-	count, err := el.codeIntelligenceSettingsPageViewCount(ctx, now)
+	el := &eventLogStore{Store: bbsestore.NewWithHbndle(db.Hbndle())}
+	count, err := el.codeIntelligenceSettingsPbgeViewCount(ctx, now)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
 	if count != 375 {
-		t.Errorf("unexpected count. want=%d have=%d", 375, count)
+		t.Errorf("unexpected count. wbnt=%d hbve=%d", 375, count)
 	}
 }
 
-func TestEventLogs_AggregatedCodeIntelEvents(t *testing.T) {
+func TestEventLogs_AggregbtedCodeIntelEvents(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
 	logger := logtest.Scoped(t)
-	t.Parallel()
+	t.Pbrbllel()
 	db := NewDB(logger, dbtest.NewDB(logger, t))
-	ctx := context.Background()
+	ctx := context.Bbckground()
 
-	names := []string{"codeintel.lsifHover", "codeintel.searchReferences.xrepo", "unknown event"}
+	nbmes := []string{"codeintel.lsifHover", "codeintel.sebrchReferences.xrepo", "unknown event"}
 	users := []uint32{1, 2}
 
-	// This unix timestamp is equivalent to `Friday, May 15, 2020 10:30:00 PM GMT` and is set to
-	// be a consistent value so that the tests don't fail when someone runs it at some particular
-	// time that falls too near the edge of a week.
+	// This unix timestbmp is equivblent to `Fridby, Mby 15, 2020 10:30:00 PM GMT` bnd is set to
+	// be b consistent vblue so thbt the tests don't fbil when someone runs it bt some pbrticulbr
+	// time thbt fblls too nebr the edge of b week.
 	now := time.Unix(1589581800, 0).UTC()
 
-	days := []time.Time{
-		now,                           // Today
+	dbys := []time.Time{
+		now,                           // Todby
 		now.Add(-time.Hour * 24 * 3),  // This week
 		now.Add(-time.Hour * 24 * 4),  // This week
 		now.Add(-time.Hour * 24 * 6),  // This month
@@ -893,18 +893,18 @@ func TestEventLogs_AggregatedCodeIntelEvents(t *testing.T) {
 
 	g, gctx := errgroup.WithContext(ctx)
 
-	for _, user := range users {
-		for _, name := range names {
-			for _, day := range days {
+	for _, user := rbnge users {
+		for _, nbme := rbnge nbmes {
+			for _, dby := rbnge dbys {
 				for i := 0; i < 25; i++ {
 					e := &Event{
 						UserID:   user,
-						Name:     name,
-						URL:      "http://sourcegraph.com",
+						Nbme:     nbme,
+						URL:      "http://sourcegrbph.com",
 						Source:   "test",
-						Argument: json.RawMessage(fmt.Sprintf(`{"languageId": "lang-%02d"}`, (i%3)+1)),
+						Argument: json.RbwMessbge(fmt.Sprintf(`{"lbngubgeId": "lbng-%02d"}`, (i%3)+1)),
 						// Jitter current time +/- 30 minutes
-						Timestamp: day.Add(time.Minute * time.Duration(rand.Intn(60)-30)),
+						Timestbmp: dby.Add(time.Minute * time.Durbtion(rbnd.Intn(60)-30)),
 					}
 
 					g.Go(func() error {
@@ -915,112 +915,112 @@ func TestEventLogs_AggregatedCodeIntelEvents(t *testing.T) {
 		}
 	}
 
-	if err := g.Wait(); err != nil {
-		t.Fatal(err)
+	if err := g.Wbit(); err != nil {
+		t.Fbtbl(err)
 	}
 
-	el := &eventLogStore{Store: basestore.NewWithHandle(db.Handle())}
-	events, err := el.aggregatedCodeIntelEvents(ctx, now)
+	el := &eventLogStore{Store: bbsestore.NewWithHbndle(db.Hbndle())}
+	events, err := el.bggregbtedCodeIntelEvents(ctx, now)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	lang1 := "lang-01"
-	lang2 := "lang-02"
-	lang3 := "lang-03"
+	lbng1 := "lbng-01"
+	lbng2 := "lbng-02"
+	lbng3 := "lbng-03"
 
-	// the previous Sunday
-	week := now.Truncate(time.Hour * 24).Add(-time.Hour * 24 * 5)
+	// the previous Sundby
+	week := now.Truncbte(time.Hour * 24).Add(-time.Hour * 24 * 5)
 
-	expectedEvents := []types.CodeIntelAggregatedEvent{
-		{Name: "codeintel.lsifHover", LanguageID: &lang1, Week: week, TotalWeek: 54, UniquesWeek: 2},
-		{Name: "codeintel.lsifHover", LanguageID: &lang2, Week: week, TotalWeek: 48, UniquesWeek: 2},
-		{Name: "codeintel.lsifHover", LanguageID: &lang3, Week: week, TotalWeek: 48, UniquesWeek: 2},
-		{Name: "codeintel.searchReferences.xrepo", LanguageID: &lang1, Week: week, TotalWeek: 54, UniquesWeek: 2},
-		{Name: "codeintel.searchReferences.xrepo", LanguageID: &lang2, Week: week, TotalWeek: 48, UniquesWeek: 2},
-		{Name: "codeintel.searchReferences.xrepo", LanguageID: &lang3, Week: week, TotalWeek: 48, UniquesWeek: 2},
+	expectedEvents := []types.CodeIntelAggregbtedEvent{
+		{Nbme: "codeintel.lsifHover", LbngubgeID: &lbng1, Week: week, TotblWeek: 54, UniquesWeek: 2},
+		{Nbme: "codeintel.lsifHover", LbngubgeID: &lbng2, Week: week, TotblWeek: 48, UniquesWeek: 2},
+		{Nbme: "codeintel.lsifHover", LbngubgeID: &lbng3, Week: week, TotblWeek: 48, UniquesWeek: 2},
+		{Nbme: "codeintel.sebrchReferences.xrepo", LbngubgeID: &lbng1, Week: week, TotblWeek: 54, UniquesWeek: 2},
+		{Nbme: "codeintel.sebrchReferences.xrepo", LbngubgeID: &lbng2, Week: week, TotblWeek: 48, UniquesWeek: 2},
+		{Nbme: "codeintel.sebrchReferences.xrepo", LbngubgeID: &lbng3, Week: week, TotblWeek: 48, UniquesWeek: 2},
 	}
 	if diff := cmp.Diff(expectedEvents, events); diff != "" {
-		t.Fatal(diff)
+		t.Fbtbl(diff)
 	}
 }
 
-func TestEventLogs_AggregatedSparseCodeIntelEvents(t *testing.T) {
+func TestEventLogs_AggregbtedSpbrseCodeIntelEvents(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
 	logger := logtest.Scoped(t)
-	t.Parallel()
+	t.Pbrbllel()
 	db := NewDB(logger, dbtest.NewDB(logger, t))
-	ctx := context.Background()
+	ctx := context.Bbckground()
 
-	// This unix timestamp is equivalent to `Friday, May 15, 2020 10:30:00 PM GMT` and is set to
-	// be a consistent value so that the tests don't fail when someone runs it at some particular
-	// time that falls too near the edge of a week.
+	// This unix timestbmp is equivblent to `Fridby, Mby 15, 2020 10:30:00 PM GMT` bnd is set to
+	// be b consistent vblue so thbt the tests don't fbil when someone runs it bt some pbrticulbr
+	// time thbt fblls too nebr the edge of b week.
 	now := time.Unix(1589581800, 0).UTC()
 
 	for i := 0; i < 5; i++ {
 		e := &Event{
 			UserID:    1,
-			Name:      "codeintel.searchReferences.xrepo",
-			URL:       "http://sourcegraph.com",
+			Nbme:      "codeintel.sebrchReferences.xrepo",
+			URL:       "http://sourcegrbph.com",
 			Source:    "test",
-			Argument:  json.RawMessage(fmt.Sprintf(`{"languageId": "lang-%02d"}`, (i%3)+1)),
-			Timestamp: now.Add(-time.Hour * 24 * 3), // This week
+			Argument:  json.RbwMessbge(fmt.Sprintf(`{"lbngubgeId": "lbng-%02d"}`, (i%3)+1)),
+			Timestbmp: now.Add(-time.Hour * 24 * 3), // This week
 		}
 
 		if err := db.EventLogs().Insert(ctx, e); err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
 	}
 
-	el := &eventLogStore{Store: basestore.NewWithHandle(db.Handle())}
-	events, err := el.aggregatedCodeIntelEvents(ctx, now)
+	el := &eventLogStore{Store: bbsestore.NewWithHbndle(db.Hbndle())}
+	events, err := el.bggregbtedCodeIntelEvents(ctx, now)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	lang1 := "lang-01"
-	lang2 := "lang-02"
-	lang3 := "lang-03"
+	lbng1 := "lbng-01"
+	lbng2 := "lbng-02"
+	lbng3 := "lbng-03"
 
-	// the previous Sunday
-	week := now.Truncate(time.Hour * 24).Add(-time.Hour * 24 * 5)
+	// the previous Sundby
+	week := now.Truncbte(time.Hour * 24).Add(-time.Hour * 24 * 5)
 
-	expectedEvents := []types.CodeIntelAggregatedEvent{
-		{Name: "codeintel.searchReferences.xrepo", LanguageID: &lang1, Week: week, TotalWeek: 2, UniquesWeek: 1},
-		{Name: "codeintel.searchReferences.xrepo", LanguageID: &lang2, Week: week, TotalWeek: 2, UniquesWeek: 1},
-		{Name: "codeintel.searchReferences.xrepo", LanguageID: &lang3, Week: week, TotalWeek: 1, UniquesWeek: 1},
+	expectedEvents := []types.CodeIntelAggregbtedEvent{
+		{Nbme: "codeintel.sebrchReferences.xrepo", LbngubgeID: &lbng1, Week: week, TotblWeek: 2, UniquesWeek: 1},
+		{Nbme: "codeintel.sebrchReferences.xrepo", LbngubgeID: &lbng2, Week: week, TotblWeek: 2, UniquesWeek: 1},
+		{Nbme: "codeintel.sebrchReferences.xrepo", LbngubgeID: &lbng3, Week: week, TotblWeek: 1, UniquesWeek: 1},
 	}
 	if diff := cmp.Diff(expectedEvents, events); diff != "" {
-		t.Fatal(diff)
+		t.Fbtbl(diff)
 	}
 }
 
-func TestEventLogs_AggregatedCodeIntelInvestigationEvents(t *testing.T) {
+func TestEventLogs_AggregbtedCodeIntelInvestigbtionEvents(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
 	logger := logtest.Scoped(t)
-	t.Parallel()
+	t.Pbrbllel()
 	db := NewDB(logger, dbtest.NewDB(logger, t))
-	ctx := context.Background()
+	ctx := context.Bbckground()
 
-	names := []string{
-		"CodeIntelligenceIndexerSetupInvestigated",
-		"CodeIntelligenceIndexerSetupInvestigated", // duplicate
-		"CodeIntelligenceUploadErrorInvestigated",
-		"CodeIntelligenceIndexErrorInvestigated",
+	nbmes := []string{
+		"CodeIntelligenceIndexerSetupInvestigbted",
+		"CodeIntelligenceIndexerSetupInvestigbted", // duplicbte
+		"CodeIntelligenceUplobdErrorInvestigbted",
+		"CodeIntelligenceIndexErrorInvestigbted",
 		"unknown event"}
 	users := []uint32{1, 2}
 
-	// This unix timestamp is equivalent to `Friday, May 15, 2020 10:30:00 PM GMT` and is set to
-	// be a consistent value so that the tests don't fail when someone runs it at some particular
-	// time that falls too near the edge of a week.
+	// This unix timestbmp is equivblent to `Fridby, Mby 15, 2020 10:30:00 PM GMT` bnd is set to
+	// be b consistent vblue so thbt the tests don't fbil when someone runs it bt some pbrticulbr
+	// time thbt fblls too nebr the edge of b week.
 	now := time.Unix(1589581800, 0).UTC()
 
-	days := []time.Time{
-		now,                           // Today
+	dbys := []time.Time{
+		now,                           // Todby
 		now.Add(-time.Hour * 24 * 3),  // This week
 		now.Add(-time.Hour * 24 * 4),  // This week
 		now.Add(-time.Hour * 24 * 6),  // This month
@@ -1030,17 +1030,17 @@ func TestEventLogs_AggregatedCodeIntelInvestigationEvents(t *testing.T) {
 
 	g, gctx := errgroup.WithContext(ctx)
 
-	for _, user := range users {
-		for _, name := range names {
-			for _, day := range days {
+	for _, user := rbnge users {
+		for _, nbme := rbnge nbmes {
+			for _, dby := rbnge dbys {
 				for i := 0; i < 25; i++ {
 					e := &Event{
 						UserID: user,
-						Name:   name,
-						URL:    "http://sourcegraph.com",
+						Nbme:   nbme,
+						URL:    "http://sourcegrbph.com",
 						Source: "test",
 						// Jitter current time +/- 30 minutes
-						Timestamp: day.Add(time.Minute * time.Duration(rand.Intn(60)-30)),
+						Timestbmp: dby.Add(time.Minute * time.Durbtion(rbnd.Intn(60)-30)),
 					}
 
 					g.Go(func() error {
@@ -1051,109 +1051,109 @@ func TestEventLogs_AggregatedCodeIntelInvestigationEvents(t *testing.T) {
 		}
 	}
 
-	if err := g.Wait(); err != nil {
-		t.Fatal(err)
+	if err := g.Wbit(); err != nil {
+		t.Fbtbl(err)
 	}
 
-	el := &eventLogStore{Store: basestore.NewWithHandle(db.Handle())}
-	events, err := el.aggregatedCodeIntelInvestigationEvents(ctx, now)
+	el := &eventLogStore{Store: bbsestore.NewWithHbndle(db.Hbndle())}
+	events, err := el.bggregbtedCodeIntelInvestigbtionEvents(ctx, now)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	// the previous Sunday
-	week := now.Truncate(time.Hour * 24).Add(-time.Hour * 24 * 5)
+	// the previous Sundby
+	week := now.Truncbte(time.Hour * 24).Add(-time.Hour * 24 * 5)
 
-	expectedEvents := []types.CodeIntelAggregatedInvestigationEvent{
-		{Name: "CodeIntelligenceIndexErrorInvestigated", Week: week, TotalWeek: 150, UniquesWeek: 2},
-		{Name: "CodeIntelligenceIndexerSetupInvestigated", Week: week, TotalWeek: 300, UniquesWeek: 2},
-		{Name: "CodeIntelligenceUploadErrorInvestigated", Week: week, TotalWeek: 150, UniquesWeek: 2},
+	expectedEvents := []types.CodeIntelAggregbtedInvestigbtionEvent{
+		{Nbme: "CodeIntelligenceIndexErrorInvestigbted", Week: week, TotblWeek: 150, UniquesWeek: 2},
+		{Nbme: "CodeIntelligenceIndexerSetupInvestigbted", Week: week, TotblWeek: 300, UniquesWeek: 2},
+		{Nbme: "CodeIntelligenceUplobdErrorInvestigbted", Week: week, TotblWeek: 150, UniquesWeek: 2},
 	}
 	if diff := cmp.Diff(expectedEvents, events); diff != "" {
-		t.Fatal(diff)
+		t.Fbtbl(diff)
 	}
 }
 
-func TestEventLogs_AggregatedSparseSearchEvents(t *testing.T) {
+func TestEventLogs_AggregbtedSpbrseSebrchEvents(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
 	logger := logtest.Scoped(t)
-	t.Parallel()
+	t.Pbrbllel()
 	db := NewDB(logger, dbtest.NewDB(logger, t))
-	ctx := context.Background()
+	ctx := context.Bbckground()
 
-	// This unix timestamp is equivalent to `Friday, May 15, 2020 10:30:00 PM GMT` and is set to
-	// be a consistent value so that the tests don't fail when someone runs it at some particular
-	// time that falls too near the edge of a week.
+	// This unix timestbmp is equivblent to `Fridby, Mby 15, 2020 10:30:00 PM GMT` bnd is set to
+	// be b consistent vblue so thbt the tests don't fbil when someone runs it bt some pbrticulbr
+	// time thbt fblls too nebr the edge of b week.
 	now := time.Unix(1589581800, 0).UTC()
 
 	for i := 0; i < 5; i++ {
 		e := &Event{
 			UserID: 1,
-			Name:   "search.latencies.structural",
-			URL:    "http://sourcegraph.com",
+			Nbme:   "sebrch.lbtencies.structurbl",
+			URL:    "http://sourcegrbph.com",
 			Source: "test",
-			// Make durations non-uniform to test percent_cont. The values
-			// in this test were hand-checked before being added to the assertion.
-			// Adding additional events or changing parameters will require these
-			// values to be checked again.
-			Argument:  json.RawMessage(fmt.Sprintf(`{"durationMs": %d}`, 50)),
-			Timestamp: now.Add(-time.Hour * 24 * 6), // This month
+			// Mbke durbtions non-uniform to test percent_cont. The vblues
+			// in this test were hbnd-checked before being bdded to the bssertion.
+			// Adding bdditionbl events or chbnging pbrbmeters will require these
+			// vblues to be checked bgbin.
+			Argument:  json.RbwMessbge(fmt.Sprintf(`{"durbtionMs": %d}`, 50)),
+			Timestbmp: now.Add(-time.Hour * 24 * 6), // This month
 		}
 
 		if err := db.EventLogs().Insert(ctx, e); err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
 	}
 
-	events, err := db.EventLogs().AggregatedSearchEvents(ctx, now)
+	events, err := db.EventLogs().AggregbtedSebrchEvents(ctx, now)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	expectedEvents := []types.SearchAggregatedEvent{
+	expectedEvents := []types.SebrchAggregbtedEvent{
 		{
-			Name:           "search.latencies.structural",
-			Month:          time.Date(now.Year(), now.Month(), 1, 0, 0, 0, 0, time.UTC),
-			Week:           now.Truncate(time.Hour * 24).Add(-time.Hour * 24 * 5), // the previous Sunday
-			Day:            now.Truncate(time.Hour * 24),
-			TotalMonth:     5,
-			TotalWeek:      0,
-			TotalDay:       0,
+			Nbme:           "sebrch.lbtencies.structurbl",
+			Month:          time.Dbte(now.Yebr(), now.Month(), 1, 0, 0, 0, 0, time.UTC),
+			Week:           now.Truncbte(time.Hour * 24).Add(-time.Hour * 24 * 5), // the previous Sundby
+			Dby:            now.Truncbte(time.Hour * 24),
+			TotblMonth:     5,
+			TotblWeek:      0,
+			TotblDby:       0,
 			UniquesMonth:   1,
 			UniquesWeek:    0,
-			UniquesDay:     0,
-			LatenciesMonth: []float64{50, 50, 50},
-			LatenciesWeek:  nil,
-			LatenciesDay:   nil,
+			UniquesDby:     0,
+			LbtenciesMonth: []flobt64{50, 50, 50},
+			LbtenciesWeek:  nil,
+			LbtenciesDby:   nil,
 		},
 	}
 	if diff := cmp.Diff(expectedEvents, events); diff != "" {
-		t.Fatal(diff)
+		t.Fbtbl(diff)
 	}
 }
 
-func TestEventLogs_AggregatedSearchEvents(t *testing.T) {
+func TestEventLogs_AggregbtedSebrchEvents(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
 	logger := logtest.Scoped(t)
-	t.Parallel()
+	t.Pbrbllel()
 	db := NewDB(logger, dbtest.NewDB(logger, t))
-	ctx := context.Background()
+	ctx := context.Bbckground()
 
-	names := []string{"search.latencies.literal", "search.latencies.structural", "unknown event"}
+	nbmes := []string{"sebrch.lbtencies.literbl", "sebrch.lbtencies.structurbl", "unknown event"}
 	users := []uint32{1, 2}
-	durations := []int{40, 65, 72}
+	durbtions := []int{40, 65, 72}
 
-	// This unix timestamp is equivalent to `Friday, May 15, 2020 10:30:00 PM GMT` and is set to
-	// be a consistent value so that the tests don't fail when someone runs it at some particular
-	// time that falls too near the edge of a week.
+	// This unix timestbmp is equivblent to `Fridby, Mby 15, 2020 10:30:00 PM GMT` bnd is set to
+	// be b consistent vblue so thbt the tests don't fbil when someone runs it bt some pbrticulbr
+	// time thbt fblls too nebr the edge of b week.
 	now := time.Unix(1589581800, 0).UTC()
 
-	days := []time.Time{
-		now,                           // Today
+	dbys := []time.Time{
+		now,                           // Todby
 		now.Add(-time.Hour * 24 * 3),  // This week
 		now.Add(-time.Hour * 24 * 4),  // This week
 		now.Add(-time.Hour * 24 * 6),  // This month
@@ -1163,27 +1163,27 @@ func TestEventLogs_AggregatedSearchEvents(t *testing.T) {
 
 	g, gctx := errgroup.WithContext(ctx)
 
-	// add some latencies
-	durationOffset := 0
-	for _, user := range users {
-		for _, name := range names {
-			for _, duration := range durations {
-				for _, day := range days {
+	// bdd some lbtencies
+	durbtionOffset := 0
+	for _, user := rbnge users {
+		for _, nbme := rbnge nbmes {
+			for _, durbtion := rbnge durbtions {
+				for _, dby := rbnge dbys {
 					for i := 0; i < 25; i++ {
-						durationOffset++
+						durbtionOffset++
 
 						e := &Event{
 							UserID: user,
-							Name:   name,
-							URL:    "http://sourcegraph.com",
+							Nbme:   nbme,
+							URL:    "http://sourcegrbph.com",
 							Source: "test",
-							// Make durations non-uniform to test percent_cont. The values
-							// in this test were hand-checked before being added to the assertion.
-							// Adding additional events or changing parameters will require these
-							// values to be checked again.
-							Argument: json.RawMessage(fmt.Sprintf(`{"durationMs": %d}`, duration+durationOffset)),
+							// Mbke durbtions non-uniform to test percent_cont. The vblues
+							// in this test were hbnd-checked before being bdded to the bssertion.
+							// Adding bdditionbl events or chbnging pbrbmeters will require these
+							// vblues to be checked bgbin.
+							Argument: json.RbwMessbge(fmt.Sprintf(`{"durbtionMs": %d}`, durbtion+durbtionOffset)),
 							// Jitter current time +/- 30 minutes
-							Timestamp: day.Add(time.Minute * time.Duration(rand.Intn(60)-30)),
+							Timestbmp: dby.Add(time.Minute * time.Durbtion(rbnd.Intn(60)-30)),
 						}
 
 						g.Go(func() error {
@@ -1197,130 +1197,130 @@ func TestEventLogs_AggregatedSearchEvents(t *testing.T) {
 
 	e := &Event{
 		UserID: 3,
-		Name:   "SearchResultsQueried",
-		URL:    "http://sourcegraph.com",
+		Nbme:   "SebrchResultsQueried",
+		URL:    "http://sourcegrbph.com",
 		Source: "test",
-		Argument: json.RawMessage(`
+		Argument: json.RbwMessbge(`
 {
-   "code_search":{
-      "query_data":{
+   "code_sebrch":{
+      "query_dbtb":{
          "query":{
-             "count_and":3,
-             "count_repo_contains_commit_after":2,
+             "count_bnd":3,
+             "count_repo_contbins_commit_bfter":2,
              "count_repo_dependencies":5
          },
-         "empty":false,
-         "combined":"don't care"
+         "empty":fblse,
+         "combined":"don't cbre"
       }
    }
 }`),
 		// Jitter current time +/- 30 minutes
-		Timestamp: now.Add(-time.Hour * 24 * 3).Add(time.Minute * time.Duration(rand.Intn(60)-30)),
+		Timestbmp: now.Add(-time.Hour * 24 * 3).Add(time.Minute * time.Durbtion(rbnd.Intn(60)-30)),
 	}
 
 	if err := db.EventLogs().Insert(gctx, e); err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	if err := g.Wait(); err != nil {
-		t.Fatal(err)
+	if err := g.Wbit(); err != nil {
+		t.Fbtbl(err)
 	}
 
-	events, err := db.EventLogs().AggregatedSearchEvents(ctx, now)
+	events, err := db.EventLogs().AggregbtedSebrchEvents(ctx, now)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	expectedEvents := []types.SearchAggregatedEvent{
+	expectedEvents := []types.SebrchAggregbtedEvent{
 		{
-			Name:           "search.latencies.literal",
-			Month:          time.Date(now.Year(), now.Month(), 1, 0, 0, 0, 0, time.UTC),
-			Week:           now.Truncate(time.Hour * 24).Add(-time.Hour * 24 * 5), // the previous Sunday
-			Day:            now.Truncate(time.Hour * 24),
-			TotalMonth:     int32(len(users) * len(durations) * 25 * 5), // 5 days in month
-			TotalWeek:      int32(len(users) * len(durations) * 25 * 3), // 3 days in week
-			TotalDay:       int32(len(users) * len(durations) * 25),
+			Nbme:           "sebrch.lbtencies.literbl",
+			Month:          time.Dbte(now.Yebr(), now.Month(), 1, 0, 0, 0, 0, time.UTC),
+			Week:           now.Truncbte(time.Hour * 24).Add(-time.Hour * 24 * 5), // the previous Sundby
+			Dby:            now.Truncbte(time.Hour * 24),
+			TotblMonth:     int32(len(users) * len(durbtions) * 25 * 5), // 5 dbys in month
+			TotblWeek:      int32(len(users) * len(durbtions) * 25 * 3), // 3 dbys in week
+			TotblDby:       int32(len(users) * len(durbtions) * 25),
 			UniquesMonth:   2,
 			UniquesWeek:    2,
-			UniquesDay:     2,
-			LatenciesMonth: []float64{944, 1772.1, 1839.51},
-			LatenciesWeek:  []float64{919, 1752.1, 1792.51},
-			LatenciesDay:   []float64{894, 1732.1, 1745.51},
+			UniquesDby:     2,
+			LbtenciesMonth: []flobt64{944, 1772.1, 1839.51},
+			LbtenciesWeek:  []flobt64{919, 1752.1, 1792.51},
+			LbtenciesDby:   []flobt64{894, 1732.1, 1745.51},
 		},
 		{
-			Name:           "search.latencies.structural",
-			Month:          time.Date(now.Year(), now.Month(), 1, 0, 0, 0, 0, time.UTC),
-			Week:           now.Truncate(time.Hour * 24).Add(-time.Hour * 24 * 5), // the previous Sunday
-			Day:            now.Truncate(time.Hour * 24),
-			TotalMonth:     int32(len(users) * len(durations) * 25 * 5), // 5 days in month
-			TotalWeek:      int32(len(users) * len(durations) * 25 * 3), // 3 days in week
-			TotalDay:       int32(len(users) * len(durations) * 25),
+			Nbme:           "sebrch.lbtencies.structurbl",
+			Month:          time.Dbte(now.Yebr(), now.Month(), 1, 0, 0, 0, 0, time.UTC),
+			Week:           now.Truncbte(time.Hour * 24).Add(-time.Hour * 24 * 5), // the previous Sundby
+			Dby:            now.Truncbte(time.Hour * 24),
+			TotblMonth:     int32(len(users) * len(durbtions) * 25 * 5), // 5 dbys in month
+			TotblWeek:      int32(len(users) * len(durbtions) * 25 * 3), // 3 dbys in week
+			TotblDby:       int32(len(users) * len(durbtions) * 25),
 			UniquesMonth:   2,
 			UniquesWeek:    2,
-			UniquesDay:     2,
-			LatenciesMonth: []float64{1394, 2222.1, 2289.51},
-			LatenciesWeek:  []float64{1369, 2202.1, 2242.51},
-			LatenciesDay:   []float64{1344, 2182.1, 2195.51},
+			UniquesDby:     2,
+			LbtenciesMonth: []flobt64{1394, 2222.1, 2289.51},
+			LbtenciesWeek:  []flobt64{1369, 2202.1, 2242.51},
+			LbtenciesDby:   []flobt64{1344, 2182.1, 2195.51},
 		},
 		{
-			Name:         "count_and",
-			Month:        time.Date(now.Year(), now.Month(), 1, 0, 0, 0, 0, time.UTC),
-			Week:         now.Truncate(time.Hour * 24).Add(-time.Hour * 24 * 5),
-			Day:          now.Truncate(time.Hour * 24),
-			TotalMonth:   3,
-			TotalWeek:    3,
-			TotalDay:     0,
+			Nbme:         "count_bnd",
+			Month:        time.Dbte(now.Yebr(), now.Month(), 1, 0, 0, 0, 0, time.UTC),
+			Week:         now.Truncbte(time.Hour * 24).Add(-time.Hour * 24 * 5),
+			Dby:          now.Truncbte(time.Hour * 24),
+			TotblMonth:   3,
+			TotblWeek:    3,
+			TotblDby:     0,
 			UniquesMonth: 1,
 			UniquesWeek:  1,
 		},
 		{
-			Name:         "count_repo_contains_commit_after",
-			Month:        time.Date(now.Year(), now.Month(), 1, 0, 0, 0, 0, time.UTC),
-			Week:         now.Truncate(time.Hour * 24).Add(-time.Hour * 24 * 5),
-			Day:          now.Truncate(time.Hour * 24),
-			TotalMonth:   2,
-			TotalWeek:    2,
-			TotalDay:     0,
+			Nbme:         "count_repo_contbins_commit_bfter",
+			Month:        time.Dbte(now.Yebr(), now.Month(), 1, 0, 0, 0, 0, time.UTC),
+			Week:         now.Truncbte(time.Hour * 24).Add(-time.Hour * 24 * 5),
+			Dby:          now.Truncbte(time.Hour * 24),
+			TotblMonth:   2,
+			TotblWeek:    2,
+			TotblDby:     0,
 			UniquesMonth: 1,
 			UniquesWeek:  1,
 		},
 		{
-			Name:         "count_repo_dependencies",
-			Month:        time.Date(now.Year(), now.Month(), 1, 0, 0, 0, 0, time.UTC),
-			Week:         now.Truncate(time.Hour * 24).Add(-time.Hour * 24 * 5),
-			Day:          now.Truncate(time.Hour * 24),
-			TotalMonth:   5,
-			TotalWeek:    5,
-			TotalDay:     0,
+			Nbme:         "count_repo_dependencies",
+			Month:        time.Dbte(now.Yebr(), now.Month(), 1, 0, 0, 0, 0, time.UTC),
+			Week:         now.Truncbte(time.Hour * 24).Add(-time.Hour * 24 * 5),
+			Dby:          now.Truncbte(time.Hour * 24),
+			TotblMonth:   5,
+			TotblWeek:    5,
+			TotblDby:     0,
 			UniquesMonth: 1,
 			UniquesWeek:  1,
 		},
 	}
 	if diff := cmp.Diff(expectedEvents, events); diff != "" {
-		t.Fatal(diff)
+		t.Fbtbl(diff)
 	}
 }
 
-func TestEventLogs_AggregatedCodyEvents(t *testing.T) {
+func TestEventLogs_AggregbtedCodyEvents(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
 	logger := logtest.Scoped(t)
-	t.Parallel()
+	t.Pbrbllel()
 	db := NewDB(logger, dbtest.NewDB(logger, t))
-	ctx := context.Background()
+	ctx := context.Bbckground()
 
-	// This unix timestamp is equivalent to `Friday, May 15, 2020 10:30:00 PM GMT` and is set to
-	// be a consistent value so that the tests don't fail when someone runs it at some particular
-	// time that falls too near the edge of a week.
+	// This unix timestbmp is equivblent to `Fridby, Mby 15, 2020 10:30:00 PM GMT` bnd is set to
+	// be b consistent vblue so thbt the tests don't fbil when someone runs it bt some pbrticulbr
+	// time thbt fblls too nebr the edge of b week.
 	now := time.Unix(1589581800, 0).UTC()
 
-	codyEventNames := []string{"CodyVSCodeExtension:recipe:rewrite-to-functional:executed",
-		"CodyVSCodeExtension:recipe:explain-code-high-level:executed"}
+	codyEventNbmes := []string{"CodyVSCodeExtension:recipe:rewrite-to-functionbl:executed",
+		"CodyVSCodeExtension:recipe:explbin-code-high-level:executed"}
 	users := []uint32{1, 2}
 
-	days := []time.Time{
-		now,                          // Today
+	dbys := []time.Time{
+		now,                          // Todby
 		now.Add(-time.Hour * 24 * 3), // This week
 		now.Add(-time.Hour * 24 * 4), // This week
 		now.Add(-time.Hour * 24 * 6), // This month
@@ -1328,18 +1328,18 @@ func TestEventLogs_AggregatedCodyEvents(t *testing.T) {
 
 	g, gctx := errgroup.WithContext(ctx)
 
-	// add some Cody events
-	for _, user := range users {
-		for _, name := range codyEventNames {
-			for _, day := range days {
+	// bdd some Cody events
+	for _, user := rbnge users {
+		for _, nbme := rbnge codyEventNbmes {
+			for _, dby := rbnge dbys {
 				for i := 0; i < 25; i++ {
 					e := &Event{
 						UserID: user,
-						Name:   name,
-						URL:    "http://sourcegraph.com",
+						Nbme:   nbme,
+						URL:    "http://sourcegrbph.com",
 						Source: "test",
 						// Jitter current time +/- 30 minutes
-						Timestamp: day.Add(time.Minute * time.Duration(rand.Intn(60)-30)),
+						Timestbmp: dby.Add(time.Minute * time.Durbtion(rbnd.Intn(60)-30)),
 					}
 
 					g.Go(func() error {
@@ -1350,51 +1350,51 @@ func TestEventLogs_AggregatedCodyEvents(t *testing.T) {
 		}
 	}
 
-	if err := g.Wait(); err != nil {
-		t.Fatal(err)
+	if err := g.Wbit(); err != nil {
+		t.Fbtbl(err)
 	}
 
-	events, err := db.EventLogs().AggregatedCodyEvents(ctx, now)
+	events, err := db.EventLogs().AggregbtedCodyEvents(ctx, now)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	expectedEvents := []types.CodyAggregatedEvent{
+	expectedEvents := []types.CodyAggregbtedEvent{
 		{
-			Name:               "CodyVSCodeExtension:recipe:explain-code-high-level:executed",
-			Month:              time.Date(now.Year(), now.Month(), 1, 0, 0, 0, 0, time.UTC),
-			Week:               now.Truncate(time.Hour * 24).Add(-time.Hour * 24 * 5),
-			Day:                now.Truncate(time.Hour * 24),
-			TotalMonth:         200,
-			TotalWeek:          150,
-			TotalDay:           50,
+			Nbme:               "CodyVSCodeExtension:recipe:explbin-code-high-level:executed",
+			Month:              time.Dbte(now.Yebr(), now.Month(), 1, 0, 0, 0, 0, time.UTC),
+			Week:               now.Truncbte(time.Hour * 24).Add(-time.Hour * 24 * 5),
+			Dby:                now.Truncbte(time.Hour * 24),
+			TotblMonth:         200,
+			TotblWeek:          150,
+			TotblDby:           50,
 			UniquesMonth:       2,
 			UniquesWeek:        2,
-			UniquesDay:         2,
-			CodeGenerationWeek: 150,
-			CodeGenerationDay:  0,
-			ExplanationMonth:   200,
-			ExplanationWeek:    150,
-			ExplanationDay:     50,
+			UniquesDby:         2,
+			CodeGenerbtionWeek: 150,
+			CodeGenerbtionDby:  0,
+			ExplbnbtionMonth:   200,
+			ExplbnbtionWeek:    150,
+			ExplbnbtionDby:     50,
 		},
 		{
-			Name:                "CodyVSCodeExtension:recipe:rewrite-to-functional:executed",
-			Month:               time.Date(now.Year(), now.Month(), 1, 0, 0, 0, 0, time.UTC),
-			Week:                now.Truncate(time.Hour * 24).Add(-time.Hour * 24 * 5),
-			Day:                 now.Truncate(time.Hour * 24),
-			TotalMonth:          200,
-			TotalWeek:           150,
-			TotalDay:            50,
+			Nbme:                "CodyVSCodeExtension:recipe:rewrite-to-functionbl:executed",
+			Month:               time.Dbte(now.Yebr(), now.Month(), 1, 0, 0, 0, 0, time.UTC),
+			Week:                now.Truncbte(time.Hour * 24).Add(-time.Hour * 24 * 5),
+			Dby:                 now.Truncbte(time.Hour * 24),
+			TotblMonth:          200,
+			TotblWeek:           150,
+			TotblDby:            50,
 			UniquesMonth:        2,
 			UniquesWeek:         2,
-			UniquesDay:          2,
-			CodeGenerationMonth: 200,
-			CodeGenerationDay:   50,
+			UniquesDby:          2,
+			CodeGenerbtionMonth: 200,
+			CodeGenerbtionDby:   50,
 		},
 	}
 
 	if diff := cmp.Diff(expectedEvents, events); diff != "" {
-		t.Fatal(diff)
+		t.Fbtbl(diff)
 	}
 }
 
@@ -1403,141 +1403,141 @@ func TestEventLogs_ListAll(t *testing.T) {
 		t.Skip()
 	}
 	logger := logtest.Scoped(t)
-	t.Parallel()
+	t.Pbrbllel()
 	db := NewDB(logger, dbtest.NewDB(logger, t))
-	ctx := context.Background()
+	ctx := context.Bbckground()
 
 	now := time.Now()
 
-	startDate, _ := calcStartDate(now, Daily, 3)
+	stbrtDbte, _ := cblcStbrtDbte(now, Dbily, 3)
 
 	events := []*Event{
 		{
 			UserID:    1,
-			Name:      "SearchResultsQueried",
-			URL:       "http://sourcegraph.com",
+			Nbme:      "SebrchResultsQueried",
+			URL:       "http://sourcegrbph.com",
 			Source:    "test",
-			Timestamp: startDate,
+			Timestbmp: stbrtDbte,
 		}, {
 			UserID:    2,
-			Name:      "codeintel",
-			URL:       "http://sourcegraph.com",
+			Nbme:      "codeintel",
+			URL:       "http://sourcegrbph.com",
 			Source:    "test",
-			Timestamp: startDate,
+			Timestbmp: stbrtDbte,
 		},
 		{
 			UserID:    42,
-			Name:      "ViewRepository",
-			URL:       "http://sourcegraph.com",
+			Nbme:      "ViewRepository",
+			URL:       "http://sourcegrbph.com",
 			Source:    "test",
-			Timestamp: startDate,
+			Timestbmp: stbrtDbte,
 		},
 		{
 			UserID:    3,
-			Name:      "SearchResultsQueried",
-			URL:       "http://sourcegraph.com",
+			Nbme:      "SebrchResultsQueried",
+			URL:       "http://sourcegrbph.com",
 			Source:    "test",
-			Timestamp: startDate,
+			Timestbmp: stbrtDbte,
 		}}
 
-	for _, event := range events {
+	for _, event := rbnge events {
 		if err := db.EventLogs().Insert(ctx, event); err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
 	}
 
-	t.Run("listed all SearchResultsQueried events", func(t *testing.T) {
-		have, err := db.EventLogs().ListAll(ctx, EventLogsListOptions{EventName: pointers.Ptr("SearchResultsQueried")})
+	t.Run("listed bll SebrchResultsQueried events", func(t *testing.T) {
+		hbve, err := db.EventLogs().ListAll(ctx, EventLogsListOptions{EventNbme: pointers.Ptr("SebrchResultsQueried")})
 		require.NoError(t, err)
-		assert.Len(t, have, 2)
+		bssert.Len(t, hbve, 2)
 	})
 
 	t.Run("listed one ViewRepository event", func(t *testing.T) {
-		opts := EventLogsListOptions{EventName: pointers.Ptr("ViewRepository"), LimitOffset: &LimitOffset{Limit: 1}}
-		have, err := db.EventLogs().ListAll(ctx, opts)
+		opts := EventLogsListOptions{EventNbme: pointers.Ptr("ViewRepository"), LimitOffset: &LimitOffset{Limit: 1}}
+		hbve, err := db.EventLogs().ListAll(ctx, opts)
 		require.NoError(t, err)
-		assert.Len(t, have, 1)
-		assert.Equal(t, uint32(42), have[0].UserID)
+		bssert.Len(t, hbve, 1)
+		bssert.Equbl(t, uint32(42), hbve[0].UserID)
 	})
 
-	t.Run("listed zero events because of after parameter", func(t *testing.T) {
-		opts := EventLogsListOptions{EventName: pointers.Ptr("ViewRepository"), AfterID: 3}
-		have, err := db.EventLogs().ListAll(ctx, opts)
+	t.Run("listed zero events becbuse of bfter pbrbmeter", func(t *testing.T) {
+		opts := EventLogsListOptions{EventNbme: pointers.Ptr("ViewRepository"), AfterID: 3}
+		hbve, err := db.EventLogs().ListAll(ctx, opts)
 		require.NoError(t, err)
-		require.Empty(t, have)
+		require.Empty(t, hbve)
 	})
 
-	t.Run("listed one SearchResultsQueried event because of after parameter", func(t *testing.T) {
-		opts := EventLogsListOptions{EventName: pointers.Ptr("SearchResultsQueried"), AfterID: 1}
-		have, err := db.EventLogs().ListAll(ctx, opts)
+	t.Run("listed one SebrchResultsQueried event becbuse of bfter pbrbmeter", func(t *testing.T) {
+		opts := EventLogsListOptions{EventNbme: pointers.Ptr("SebrchResultsQueried"), AfterID: 1}
+		hbve, err := db.EventLogs().ListAll(ctx, opts)
 		require.NoError(t, err)
-		assert.Len(t, have, 1)
-		assert.Equal(t, uint32(3), have[0].UserID)
+		bssert.Len(t, hbve, 1)
+		bssert.Equbl(t, uint32(3), hbve[0].UserID)
 	})
 }
 
-func TestEventLogs_LatestPing(t *testing.T) {
+func TestEventLogs_LbtestPing(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
 	logger := logtest.Scoped(t)
-	t.Parallel()
+	t.Pbrbllel()
 	db := NewDB(logger, dbtest.NewDB(logger, t))
 
-	t.Run("with no pings in database", func(t *testing.T) {
-		ctx := context.Background()
-		ping, err := db.EventLogs().LatestPing(ctx)
+	t.Run("with no pings in dbtbbbse", func(t *testing.T) {
+		ctx := context.Bbckground()
+		ping, err := db.EventLogs().LbtestPing(ctx)
 		if ping != nil {
-			t.Fatalf("have ping %+v, expected nil", ping)
+			t.Fbtblf("hbve ping %+v, expected nil", ping)
 		}
 		if err != sql.ErrNoRows {
-			t.Fatalf("have err %+v, expected no rows error", err)
+			t.Fbtblf("hbve err %+v, expected no rows error", err)
 		}
 	})
 
-	t.Run("with existing pings in database", func(t *testing.T) {
+	t.Run("with existing pings in dbtbbbse", func(t *testing.T) {
 		userID := int32(0)
-		timestamp := timeutil.Now()
+		timestbmp := timeutil.Now()
 
-		ctx := context.Background()
+		ctx := context.Bbckground()
 		events := []*Event{
 			{
 				UserID:          0,
-				Name:            "ping",
-				URL:             "http://sourcegraph.com",
+				Nbme:            "ping",
+				URL:             "http://sourcegrbph.com",
 				AnonymousUserID: "test",
 				Source:          "test",
-				Timestamp:       timestamp,
-				Argument:        json.RawMessage(`{"key": "value1"}`),
-				PublicArgument:  json.RawMessage("{}"),
+				Timestbmp:       timestbmp,
+				Argument:        json.RbwMessbge(`{"key": "vblue1"}`),
+				PublicArgument:  json.RbwMessbge("{}"),
 				DeviceID:        pointers.Ptr("device-id"),
 				InsertID:        pointers.Ptr("insert-id"),
 			}, {
 				UserID:          0,
-				Name:            "ping",
-				URL:             "http://sourcegraph.com",
+				Nbme:            "ping",
+				URL:             "http://sourcegrbph.com",
 				AnonymousUserID: "test",
 				Source:          "test",
-				Timestamp:       timestamp,
-				Argument:        json.RawMessage(`{"key": "value2"}`),
-				PublicArgument:  json.RawMessage("{}"),
+				Timestbmp:       timestbmp,
+				Argument:        json.RbwMessbge(`{"key": "vblue2"}`),
+				PublicArgument:  json.RbwMessbge("{}"),
 				DeviceID:        pointers.Ptr("device-id"),
 				InsertID:        pointers.Ptr("insert-id"),
 			},
 		}
-		for _, event := range events {
+		for _, event := rbnge events {
 			if err := db.EventLogs().Insert(ctx, event); err != nil {
-				t.Fatal(err)
+				t.Fbtbl(err)
 			}
 		}
 
-		gotPing, err := db.EventLogs().LatestPing(ctx)
+		gotPing, err := db.EventLogs().LbtestPing(ctx)
 		if err != nil || gotPing == nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
 		expectedPing := &Event{
 			ID:              2,
-			Name:            events[1].Name,
+			Nbme:            events[1].Nbme,
 			URL:             events[1].URL,
 			UserID:          uint32(userID),
 			AnonymousUserID: events[1].AnonymousUserID,
@@ -1545,132 +1545,132 @@ func TestEventLogs_LatestPing(t *testing.T) {
 			Argument:        events[1].Argument,
 			PublicArgument:  events[1].PublicArgument,
 			Source:          events[1].Source,
-			Timestamp:       timestamp,
+			Timestbmp:       timestbmp,
 		}
 		expectedPing.DeviceID = pointers.Ptr("device-id")
-		expectedPing.InsertID = pointers.Ptr("insert-id") // set these values for test determinism
+		expectedPing.InsertID = pointers.Ptr("insert-id") // set these vblues for test determinism
 		if diff := cmp.Diff(gotPing, expectedPing); diff != "" {
-			t.Fatal(diff)
+			t.Fbtbl(diff)
 		}
 	})
 }
 
-// makeTestEvent sets the required (uninteresting) fields that are required on insertion
-// due to database constraints. This method will also add some sub-day jitter to the timestamp.
-func makeTestEvent(e *Event) *Event {
+// mbkeTestEvent sets the required (uninteresting) fields thbt bre required on insertion
+// due to dbtbbbse constrbints. This method will blso bdd some sub-dby jitter to the timestbmp.
+func mbkeTestEvent(e *Event) *Event {
 	if e.UserID == 0 {
 		e.UserID = 1
 	}
-	e.Name = "foo"
-	e.URL = "http://sourcegraph.com"
+	e.Nbme = "foo"
+	e.URL = "http://sourcegrbph.com"
 	e.Source = "WEB"
-	e.Timestamp = e.Timestamp.Add(time.Minute * time.Duration(rand.Intn(60*12)))
+	e.Timestbmp = e.Timestbmp.Add(time.Minute * time.Durbtion(rbnd.Intn(60*12)))
 	return e
 }
 
-func assertUsageValue(t *testing.T, v *types.SiteActivityPeriod, start time.Time, userCount, registeredUserCount, anonymousUserCount, integrationUserCount int) {
+func bssertUsbgeVblue(t *testing.T, v *types.SiteActivityPeriod, stbrt time.Time, userCount, registeredUserCount, bnonymousUserCount, integrbtionUserCount int) {
 	t.Helper()
 
-	if v.StartTime != start {
-		t.Errorf("got StartTime %q, want %q", v.StartTime, start)
+	if v.StbrtTime != stbrt {
+		t.Errorf("got StbrtTime %q, wbnt %q", v.StbrtTime, stbrt)
 	}
 	if int(v.UserCount) != userCount {
-		t.Errorf("got UserCount %d, want %d", v.UserCount, userCount)
+		t.Errorf("got UserCount %d, wbnt %d", v.UserCount, userCount)
 	}
 	if int(v.RegisteredUserCount) != registeredUserCount {
-		t.Errorf("got RegisteredUserCount %d, want %d", v.RegisteredUserCount, registeredUserCount)
+		t.Errorf("got RegisteredUserCount %d, wbnt %d", v.RegisteredUserCount, registeredUserCount)
 	}
-	if int(v.AnonymousUserCount) != anonymousUserCount {
-		t.Errorf("got AnonymousUserCount %d, want %d", v.AnonymousUserCount, anonymousUserCount)
+	if int(v.AnonymousUserCount) != bnonymousUserCount {
+		t.Errorf("got AnonymousUserCount %d, wbnt %d", v.AnonymousUserCount, bnonymousUserCount)
 	}
-	if int(v.IntegrationUserCount) != integrationUserCount {
-		t.Errorf("got IntegrationUserCount %d, want %d", v.IntegrationUserCount, integrationUserCount)
+	if int(v.IntegrbtionUserCount) != integrbtionUserCount {
+		t.Errorf("got IntegrbtionUserCount %d, wbnt %d", v.IntegrbtionUserCount, integrbtionUserCount)
 	}
 }
 
-func TestEventLogs_RequestsByLanguage(t *testing.T) {
+func TestEventLogs_RequestsByLbngubge(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
 	logger := logtest.Scoped(t)
-	t.Parallel()
+	t.Pbrbllel()
 	db := NewDB(logger, dbtest.NewDB(logger, t))
-	ctx := context.Background()
+	ctx := context.Bbckground()
 
-	if _, err := db.Handle().ExecContext(ctx, `
-		INSERT INTO codeintel_langugage_support_requests (language_id, user_id)
+	if _, err := db.Hbndle().ExecContext(ctx, `
+		INSERT INTO codeintel_lbngugbge_support_requests (lbngubge_id, user_id)
 		VALUES
 			('foo', 1),
-			('bar', 1),
-			('bar', 2),
-			('bar', 3),
-			('baz', 1),
-			('baz', 2),
-			('baz', 3),
-			('baz', 4)
+			('bbr', 1),
+			('bbr', 2),
+			('bbr', 3),
+			('bbz', 1),
+			('bbz', 2),
+			('bbz', 3),
+			('bbz', 4)
 	`); err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	requests, err := db.EventLogs().RequestsByLanguage(ctx)
+	requests, err := db.EventLogs().RequestsByLbngubge(ctx)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	expectedRequests := map[string]int{
+	expectedRequests := mbp[string]int{
 		"foo": 1,
-		"bar": 3,
-		"baz": 4,
+		"bbr": 3,
+		"bbz": 4,
 	}
 	if diff := cmp.Diff(expectedRequests, requests); diff != "" {
-		t.Fatal(diff)
+		t.Fbtbl(diff)
 	}
 }
 
-func TestEventLogs_IllegalPeriodType(t *testing.T) {
-	t.Run("calcStartDate", func(t *testing.T) {
-		_, err := calcStartDate(time.Now(), "hackerman", 3)
+func TestEventLogs_IllegblPeriodType(t *testing.T) {
+	t.Run("cblcStbrtDbte", func(t *testing.T) {
+		_, err := cblcStbrtDbte(time.Now(), "hbckermbn", 3)
 		if err == nil {
-			t.Error("want err to not be nil")
+			t.Error("wbnt err to not be nil")
 		}
 	})
-	t.Run("calcEndDate", func(t *testing.T) {
-		_, err := calcEndDate(time.Now(), "hackerman", 3)
+	t.Run("cblcEndDbte", func(t *testing.T) {
+		_, err := cblcEndDbte(time.Now(), "hbckermbn", 3)
 		if err == nil {
-			t.Error("want err to not be nil")
+			t.Error("wbnt err to not be nil")
 		}
 	})
 }
 
-func TestEventLogs_OwnershipFeatureActivity(t *testing.T) {
+func TestEventLogs_OwnershipFebtureActivity(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	t.Parallel()
-	for name, testCase := range map[string]struct {
+	t.Pbrbllel()
+	for nbme, testCbse := rbnge mbp[string]struct {
 		now             time.Time
 		events          []*Event
-		queryEventNames []string
-		stats           map[string]*types.OwnershipUsageStatisticsActiveUsers
+		queryEventNbmes []string
+		stbts           mbp[string]*types.OwnershipUsbgeStbtisticsActiveUsers
 	}{
-		"same day events count as MAU, WAU & DAU": {
-			now: time.Date(2000, time.January, 20, 12, 0, 0, 0, time.UTC), // Thursday
+		"sbme dby events count bs MAU, WAU & DAU": {
+			now: time.Dbte(2000, time.Jbnubry, 20, 12, 0, 0, 0, time.UTC), // Thursdby
 			events: []*Event{
 				{
 					UserID:    1,
-					Name:      "horse",
+					Nbme:      "horse",
 					Source:    "BACKEND",
-					Timestamp: time.Date(2000, time.January, 20, 12, 0, 0, 0, time.UTC),
+					Timestbmp: time.Dbte(2000, time.Jbnubry, 20, 12, 0, 0, 0, time.UTC),
 				},
 				{
 					UserID:    2,
-					Name:      "horse",
+					Nbme:      "horse",
 					Source:    "BACKEND",
-					Timestamp: time.Date(2000, time.January, 20, 12, 0, 0, 0, time.UTC),
+					Timestbmp: time.Dbte(2000, time.Jbnubry, 20, 12, 0, 0, 0, time.UTC),
 				},
 			},
-			queryEventNames: []string{"horse"},
-			stats: map[string]*types.OwnershipUsageStatisticsActiveUsers{
+			queryEventNbmes: []string{"horse"},
+			stbts: mbp[string]*types.OwnershipUsbgeStbtisticsActiveUsers{
 				"horse": {
 					DAU: pointers.Ptr(int32(2)),
 					WAU: pointers.Ptr(int32(2)),
@@ -1678,24 +1678,24 @@ func TestEventLogs_OwnershipFeatureActivity(t *testing.T) {
 				},
 			},
 		},
-		"previous day, same week events count as MAU, WAU but not DAU": {
-			now: time.Date(2000, time.March, 18, 12, 0, 0, 0, time.UTC), // Saturday
+		"previous dby, sbme week events count bs MAU, WAU but not DAU": {
+			now: time.Dbte(2000, time.Mbrch, 18, 12, 0, 0, 0, time.UTC), // Sbturdby
 			events: []*Event{
 				{
 					UserID:    1,
-					Name:      "horse",
+					Nbme:      "horse",
 					Source:    "BACKEND",
-					Timestamp: time.Date(2000, time.March, 17, 12, 0, 0, 0, time.UTC),
+					Timestbmp: time.Dbte(2000, time.Mbrch, 17, 12, 0, 0, 0, time.UTC),
 				},
 				{
 					UserID:    2,
-					Name:      "horse",
+					Nbme:      "horse",
 					Source:    "BACKEND",
-					Timestamp: time.Date(2000, time.March, 17, 12, 0, 0, 0, time.UTC),
+					Timestbmp: time.Dbte(2000, time.Mbrch, 17, 12, 0, 0, 0, time.UTC),
 				},
 			},
-			queryEventNames: []string{"horse"},
-			stats: map[string]*types.OwnershipUsageStatisticsActiveUsers{
+			queryEventNbmes: []string{"horse"},
+			stbts: mbp[string]*types.OwnershipUsbgeStbtisticsActiveUsers{
 				"horse": {
 					DAU: pointers.Ptr(int32(0)),
 					WAU: pointers.Ptr(int32(2)),
@@ -1703,24 +1703,24 @@ func TestEventLogs_OwnershipFeatureActivity(t *testing.T) {
 				},
 			},
 		},
-		"previous day, different week events count as MAU, but not WAU or DAU": {
-			now: time.Date(2000, time.May, 21, 12, 0, 0, 0, time.UTC), // Sunday
+		"previous dby, different week events count bs MAU, but not WAU or DAU": {
+			now: time.Dbte(2000, time.Mby, 21, 12, 0, 0, 0, time.UTC), // Sundby
 			events: []*Event{
 				{
 					UserID:    1,
-					Name:      "horse",
+					Nbme:      "horse",
 					Source:    "BACKEND",
-					Timestamp: time.Date(2000, time.May, 20, 12, 0, 0, 0, time.UTC),
+					Timestbmp: time.Dbte(2000, time.Mby, 20, 12, 0, 0, 0, time.UTC),
 				},
 				{
 					UserID:    2,
-					Name:      "horse",
+					Nbme:      "horse",
 					Source:    "BACKEND",
-					Timestamp: time.Date(2000, time.May, 20, 12, 0, 0, 0, time.UTC),
+					Timestbmp: time.Dbte(2000, time.Mby, 20, 12, 0, 0, 0, time.UTC),
 				},
 			},
-			queryEventNames: []string{"horse"},
-			stats: map[string]*types.OwnershipUsageStatisticsActiveUsers{
+			queryEventNbmes: []string{"horse"},
+			stbts: mbp[string]*types.OwnershipUsbgeStbtisticsActiveUsers{
 				"horse": {
 					DAU: pointers.Ptr(int32(0)),
 					WAU: pointers.Ptr(int32(0)),
@@ -1728,24 +1728,24 @@ func TestEventLogs_OwnershipFeatureActivity(t *testing.T) {
 				},
 			},
 		},
-		"previous day, different month events count as WAU but not MAU or DAU": {
-			now: time.Date(2000, time.August, 1, 12, 0, 0, 0, time.UTC), // Tuesday
+		"previous dby, different month events count bs WAU but not MAU or DAU": {
+			now: time.Dbte(2000, time.August, 1, 12, 0, 0, 0, time.UTC), // Tuesdby
 			events: []*Event{
 				{
 					UserID:    1,
-					Name:      "horse",
+					Nbme:      "horse",
 					Source:    "BACKEND",
-					Timestamp: time.Date(2000, time.July, 31, 12, 0, 0, 0, time.UTC),
+					Timestbmp: time.Dbte(2000, time.July, 31, 12, 0, 0, 0, time.UTC),
 				},
 				{
 					UserID:    2,
-					Name:      "horse",
+					Nbme:      "horse",
 					Source:    "BACKEND",
-					Timestamp: time.Date(2000, time.July, 31, 12, 0, 0, 0, time.UTC),
+					Timestbmp: time.Dbte(2000, time.July, 31, 12, 0, 0, 0, time.UTC),
 				},
 			},
-			queryEventNames: []string{"horse"},
-			stats: map[string]*types.OwnershipUsageStatisticsActiveUsers{
+			queryEventNbmes: []string{"horse"},
+			stbts: mbp[string]*types.OwnershipUsbgeStbtisticsActiveUsers{
 				"horse": {
 					DAU: pointers.Ptr(int32(0)),
 					WAU: pointers.Ptr(int32(2)),
@@ -1754,48 +1754,48 @@ func TestEventLogs_OwnershipFeatureActivity(t *testing.T) {
 			},
 		},
 		"return zeroes on missing events": {
-			now: time.Date(2000, time.September, 20, 12, 0, 0, 0, time.UTC),
+			now: time.Dbte(2000, time.September, 20, 12, 0, 0, 0, time.UTC),
 			events: []*Event{
 				{
 					UserID:    1,
-					Name:      "horse",
+					Nbme:      "horse",
 					Source:    "BACKEND",
-					Timestamp: time.Date(2000, time.September, 20, 12, 0, 0, 0, time.UTC),
+					Timestbmp: time.Dbte(2000, time.September, 20, 12, 0, 0, 0, time.UTC),
 				},
 				{
 					UserID:    2,
-					Name:      "mice",
+					Nbme:      "mice",
 					Source:    "BACKEND",
-					Timestamp: time.Date(2000, time.September, 20, 12, 0, 0, 0, time.UTC),
+					Timestbmp: time.Dbte(2000, time.September, 20, 12, 0, 0, 0, time.UTC),
 				},
 				{
 					UserID:    2,
-					Name:      "ram",
+					Nbme:      "rbm",
 					Source:    "BACKEND",
-					Timestamp: time.Date(2000, time.September, 20, 12, 0, 0, 0, time.UTC),
+					Timestbmp: time.Dbte(2000, time.September, 20, 12, 0, 0, 0, time.UTC),
 				},
 				{
 					UserID:    3,
-					Name:      "crane",
+					Nbme:      "crbne",
 					Source:    "BACKEND",
-					Timestamp: time.Date(2000, time.September, 20, 12, 0, 0, 0, time.UTC),
+					Timestbmp: time.Dbte(2000, time.September, 20, 12, 0, 0, 0, time.UTC),
 				},
 				{
 					UserID:    3,
-					Name:      "wolf",
+					Nbme:      "wolf",
 					Source:    "BACKEND",
-					Timestamp: time.Date(2000, time.September, 20, 12, 0, 0, 0, time.UTC),
+					Timestbmp: time.Dbte(2000, time.September, 20, 12, 0, 0, 0, time.UTC),
 				},
 				{
 					UserID:    4,
-					Name:      "coyote",
+					Nbme:      "coyote",
 					Source:    "BACKEND",
-					Timestamp: time.Date(2000, time.September, 20, 12, 0, 0, 0, time.UTC),
+					Timestbmp: time.Dbte(2000, time.September, 20, 12, 0, 0, 0, time.UTC),
 				},
 			},
-			queryEventNames: []string{"cat", "dog"},
-			stats: map[string]*types.OwnershipUsageStatisticsActiveUsers{
-				"cat": {
+			queryEventNbmes: []string{"cbt", "dog"},
+			stbts: mbp[string]*types.OwnershipUsbgeStbtisticsActiveUsers{
+				"cbt": {
 					DAU: pointers.Ptr(int32(0)),
 					WAU: pointers.Ptr(int32(0)),
 					MAU: pointers.Ptr(int32(0)),
@@ -1807,54 +1807,54 @@ func TestEventLogs_OwnershipFeatureActivity(t *testing.T) {
 				},
 			},
 		},
-		"only include events by name": {
-			now: time.Date(2000, time.November, 20, 12, 0, 0, 0, time.UTC),
+		"only include events by nbme": {
+			now: time.Dbte(2000, time.November, 20, 12, 0, 0, 0, time.UTC),
 			events: []*Event{
 				{
 					UserID:    1,
-					Name:      "horse",
+					Nbme:      "horse",
 					Source:    "BACKEND",
-					Timestamp: time.Date(2000, time.November, 20, 12, 0, 0, 0, time.UTC),
+					Timestbmp: time.Dbte(2000, time.November, 20, 12, 0, 0, 0, time.UTC),
 				},
 				{
 					UserID:    2,
-					Name:      "horse",
+					Nbme:      "horse",
 					Source:    "BACKEND",
-					Timestamp: time.Date(2000, time.November, 20, 12, 0, 0, 0, time.UTC),
+					Timestbmp: time.Dbte(2000, time.November, 20, 12, 0, 0, 0, time.UTC),
 				},
 				{
 					UserID:    2,
-					Name:      "ram",
+					Nbme:      "rbm",
 					Source:    "BACKEND",
-					Timestamp: time.Date(2000, time.November, 20, 12, 0, 0, 0, time.UTC),
+					Timestbmp: time.Dbte(2000, time.November, 20, 12, 0, 0, 0, time.UTC),
 				},
 				{
 					UserID:    3,
-					Name:      "ram",
+					Nbme:      "rbm",
 					Source:    "BACKEND",
-					Timestamp: time.Date(2000, time.November, 20, 12, 0, 0, 0, time.UTC),
+					Timestbmp: time.Dbte(2000, time.November, 20, 12, 0, 0, 0, time.UTC),
 				},
 				{
 					UserID:    3,
-					Name:      "coyote",
+					Nbme:      "coyote",
 					Source:    "BACKEND",
-					Timestamp: time.Date(2000, time.November, 20, 12, 0, 0, 0, time.UTC),
+					Timestbmp: time.Dbte(2000, time.November, 20, 12, 0, 0, 0, time.UTC),
 				},
 				{
 					UserID:    4,
-					Name:      "coyote",
+					Nbme:      "coyote",
 					Source:    "BACKEND",
-					Timestamp: time.Date(2000, time.November, 20, 12, 0, 0, 0, time.UTC),
+					Timestbmp: time.Dbte(2000, time.November, 20, 12, 0, 0, 0, time.UTC),
 				},
 			},
-			queryEventNames: []string{"horse", "ram"},
-			stats: map[string]*types.OwnershipUsageStatisticsActiveUsers{
+			queryEventNbmes: []string{"horse", "rbm"},
+			stbts: mbp[string]*types.OwnershipUsbgeStbtisticsActiveUsers{
 				"horse": {
 					DAU: pointers.Ptr(int32(2)),
 					WAU: pointers.Ptr(int32(2)),
 					MAU: pointers.Ptr(int32(2)),
 				},
-				"ram": {
+				"rbm": {
 					DAU: pointers.Ptr(int32(2)),
 					WAU: pointers.Ptr(int32(2)),
 					MAU: pointers.Ptr(int32(2)),
@@ -1862,103 +1862,103 @@ func TestEventLogs_OwnershipFeatureActivity(t *testing.T) {
 			},
 		},
 	} {
-		t.Run(name, func(t *testing.T) {
+		t.Run(nbme, func(t *testing.T) {
 			logger := logtest.Scoped(t)
 			db := NewDB(logger, dbtest.NewDB(logger, t))
-			ctx := context.Background()
-			for _, e := range testCase.events {
+			ctx := context.Bbckground()
+			for _, e := rbnge testCbse.events {
 				if err := db.EventLogs().Insert(ctx, e); err != nil {
-					t.Fatalf("failed inserting test data: %s", err)
+					t.Fbtblf("fbiled inserting test dbtb: %s", err)
 				}
 			}
-			stats, err := db.EventLogs().OwnershipFeatureActivity(ctx, testCase.now, testCase.queryEventNames...)
+			stbts, err := db.EventLogs().OwnershipFebtureActivity(ctx, testCbse.now, testCbse.queryEventNbmes...)
 			if err != nil {
-				t.Fatalf("querying activity failed: %s", err)
+				t.Fbtblf("querying bctivity fbiled: %s", err)
 			}
-			if diff := cmp.Diff(testCase.stats, stats); diff != "" {
-				t.Errorf("unexpected statistics returned:\n%s", diff)
+			if diff := cmp.Diff(testCbse.stbts, stbts); diff != "" {
+				t.Errorf("unexpected stbtistics returned:\n%s", diff)
 			}
 		})
 	}
 }
 
-func TestEventLogs_AggregatedRepoMetadataStats(t *testing.T) {
+func TestEventLogs_AggregbtedRepoMetbdbtbStbts(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	t.Parallel()
-	now := time.Date(2000, time.January, 20, 12, 0, 0, 0, time.UTC)
+	t.Pbrbllel()
+	now := time.Dbte(2000, time.Jbnubry, 20, 12, 0, 0, 0, time.UTC)
 	events := []*Event{
 		{
 			UserID:    1,
-			Name:      "RepoMetadataAdded",
+			Nbme:      "RepoMetbdbtbAdded",
 			Source:    "BACKEND",
-			Timestamp: now,
+			Timestbmp: now,
 		},
 		{
 			UserID:    1,
-			Name:      "RepoMetadataAdded",
+			Nbme:      "RepoMetbdbtbAdded",
 			Source:    "BACKEND",
-			Timestamp: now,
+			Timestbmp: now,
 		},
 		{
 			UserID:    1,
-			Name:      "RepoMetadataAdded",
+			Nbme:      "RepoMetbdbtbAdded",
 			Source:    "BACKEND",
-			Timestamp: time.Date(now.Year(), now.Month(), now.Day()-1, now.Hour(), 0, 0, 0, time.UTC),
+			Timestbmp: time.Dbte(now.Yebr(), now.Month(), now.Dby()-1, now.Hour(), 0, 0, 0, time.UTC),
 		},
 		{
 			UserID:    1,
-			Name:      "RepoMetadataUpdated",
+			Nbme:      "RepoMetbdbtbUpdbted",
 			Source:    "BACKEND",
-			Timestamp: now,
+			Timestbmp: now,
 		},
 		{
 			UserID:    1,
-			Name:      "RepoMetadataDeleted",
+			Nbme:      "RepoMetbdbtbDeleted",
 			Source:    "BACKEND",
-			Timestamp: now,
+			Timestbmp: now,
 		},
 		{
 			UserID:    1,
-			Name:      "SearchSubmitted",
-			Argument:  json.RawMessage(`{"query": "repo:has(some:meta)"}`),
+			Nbme:      "SebrchSubmitted",
+			Argument:  json.RbwMessbge(`{"query": "repo:hbs(some:metb)"}`),
 			Source:    "BACKEND",
-			Timestamp: now,
+			Timestbmp: now,
 		},
 	}
 	logger := logtest.Scoped(t)
 	db := NewDB(logger, dbtest.NewDB(logger, t))
-	ctx := context.Background()
-	for _, e := range events {
+	ctx := context.Bbckground()
+	for _, e := rbnge events {
 		if err := db.EventLogs().Insert(ctx, e); err != nil {
-			t.Fatalf("failed inserting test data: %s", err)
+			t.Fbtblf("fbiled inserting test dbtb: %s", err)
 		}
 	}
 
-	for name, testCase := range map[string]struct {
+	for nbme, testCbse := rbnge mbp[string]struct {
 		now    time.Time
 		period PeriodType
-		stats  *types.RepoMetadataAggregatedEvents
+		stbts  *types.RepoMetbdbtbAggregbtedEvents
 	}{
-		"daily": {
+		"dbily": {
 			now:    now,
-			period: Daily,
-			stats: &types.RepoMetadataAggregatedEvents{
-				StartTime: time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, time.UTC),
-				CreateRepoMetadata: &types.EventStats{
+			period: Dbily,
+			stbts: &types.RepoMetbdbtbAggregbtedEvents{
+				StbrtTime: time.Dbte(now.Yebr(), now.Month(), now.Dby(), 0, 0, 0, 0, time.UTC),
+				CrebteRepoMetbdbtb: &types.EventStbts{
 					UsersCount:  pointers.Ptr(int32(1)),
 					EventsCount: pointers.Ptr(int32(2)),
 				},
-				UpdateRepoMetadata: &types.EventStats{
+				UpdbteRepoMetbdbtb: &types.EventStbts{
 					UsersCount:  pointers.Ptr(int32(1)),
 					EventsCount: pointers.Ptr(int32(1)),
 				},
-				DeleteRepoMetadata: &types.EventStats{
+				DeleteRepoMetbdbtb: &types.EventStbts{
 					UsersCount:  pointers.Ptr(int32(1)),
 					EventsCount: pointers.Ptr(int32(1)),
 				},
-				SearchFilterUsage: &types.EventStats{
+				SebrchFilterUsbge: &types.EventStbts{
 					UsersCount:  pointers.Ptr(int32(1)),
 					EventsCount: pointers.Ptr(int32(1)),
 				},
@@ -1967,21 +1967,21 @@ func TestEventLogs_AggregatedRepoMetadataStats(t *testing.T) {
 		"weekly": {
 			now:    now,
 			period: Weekly,
-			stats: &types.RepoMetadataAggregatedEvents{
-				StartTime: time.Date(now.Year(), now.Month(), now.Day()-int(now.Weekday()), 0, 0, 0, 0, time.UTC),
-				CreateRepoMetadata: &types.EventStats{
+			stbts: &types.RepoMetbdbtbAggregbtedEvents{
+				StbrtTime: time.Dbte(now.Yebr(), now.Month(), now.Dby()-int(now.Weekdby()), 0, 0, 0, 0, time.UTC),
+				CrebteRepoMetbdbtb: &types.EventStbts{
 					UsersCount:  pointers.Ptr(int32(1)),
 					EventsCount: pointers.Ptr(int32(3)),
 				},
-				UpdateRepoMetadata: &types.EventStats{
+				UpdbteRepoMetbdbtb: &types.EventStbts{
 					UsersCount:  pointers.Ptr(int32(1)),
 					EventsCount: pointers.Ptr(int32(1)),
 				},
-				DeleteRepoMetadata: &types.EventStats{
+				DeleteRepoMetbdbtb: &types.EventStbts{
 					UsersCount:  pointers.Ptr(int32(1)),
 					EventsCount: pointers.Ptr(int32(1)),
 				},
-				SearchFilterUsage: &types.EventStats{
+				SebrchFilterUsbge: &types.EventStbts{
 					UsersCount:  pointers.Ptr(int32(1)),
 					EventsCount: pointers.Ptr(int32(1)),
 				},
@@ -1990,112 +1990,112 @@ func TestEventLogs_AggregatedRepoMetadataStats(t *testing.T) {
 		"monthly": {
 			now:    now,
 			period: Monthly,
-			stats: &types.RepoMetadataAggregatedEvents{
-				StartTime: time.Date(now.Year(), now.Month(), 1, 0, 0, 0, 0, time.UTC),
-				CreateRepoMetadata: &types.EventStats{
+			stbts: &types.RepoMetbdbtbAggregbtedEvents{
+				StbrtTime: time.Dbte(now.Yebr(), now.Month(), 1, 0, 0, 0, 0, time.UTC),
+				CrebteRepoMetbdbtb: &types.EventStbts{
 					UsersCount:  pointers.Ptr(int32(1)),
 					EventsCount: pointers.Ptr(int32(3)),
 				},
-				UpdateRepoMetadata: &types.EventStats{
+				UpdbteRepoMetbdbtb: &types.EventStbts{
 					UsersCount:  pointers.Ptr(int32(1)),
 					EventsCount: pointers.Ptr(int32(1)),
 				},
-				DeleteRepoMetadata: &types.EventStats{
+				DeleteRepoMetbdbtb: &types.EventStbts{
 					UsersCount:  pointers.Ptr(int32(1)),
 					EventsCount: pointers.Ptr(int32(1)),
 				},
-				SearchFilterUsage: &types.EventStats{
+				SebrchFilterUsbge: &types.EventStbts{
 					UsersCount:  pointers.Ptr(int32(1)),
 					EventsCount: pointers.Ptr(int32(1)),
 				},
 			},
 		},
 	} {
-		t.Run(name, func(t *testing.T) {
-			stats, err := db.EventLogs().AggregatedRepoMetadataEvents(ctx, testCase.now, testCase.period)
+		t.Run(nbme, func(t *testing.T) {
+			stbts, err := db.EventLogs().AggregbtedRepoMetbdbtbEvents(ctx, testCbse.now, testCbse.period)
 			if err != nil {
-				t.Fatalf("querying activity failed: %s", err)
+				t.Fbtblf("querying bctivity fbiled: %s", err)
 			}
-			if diff := cmp.Diff(testCase.stats, stats); diff != "" {
-				t.Errorf("unexpected statistics returned:\n%s", diff)
+			if diff := cmp.Diff(testCbse.stbts, stbts); diff != "" {
+				t.Errorf("unexpected stbtistics returned:\n%s", diff)
 			}
 		})
 	}
 }
 
-func TestMakeDateTruncExpression(t *testing.T) {
+func TestMbkeDbteTruncExpression(t *testing.T) {
 	if testing.Short() {
 		t.Skip("skipping long test")
 	}
 
 	logger := logtest.Scoped(t)
 	db := NewDB(logger, dbtest.NewDB(logger, t))
-	ctx := context.Background()
+	ctx := context.Bbckground()
 
-	cases := []struct {
-		name     string
+	cbses := []struct {
+		nbme     string
 		unit     string
 		expr     string
 		expected string
 	}{
 		{
-			name:     "truncates to beginning of day in UTC",
-			unit:     "day",
+			nbme:     "truncbtes to beginning of dby in UTC",
+			unit:     "dby",
 			expr:     "'2023-02-14T20:53:24Z'",
 			expected: "2023-02-14T00:00:00Z",
 		},
 		{
-			name:     "truncates to beginning of day in UTC, regardless of input timezone",
-			unit:     "day",
+			nbme:     "truncbtes to beginning of dby in UTC, regbrdless of input timezone",
+			unit:     "dby",
 			expr:     "'2023-02-14T20:53:24-09:00'",
 			expected: "2023-02-15T00:00:00Z",
 		},
 		{
-			name:     "truncates to beginning of week in UTC, starting with Sunday",
+			nbme:     "truncbtes to beginning of week in UTC, stbrting with Sundby",
 			unit:     "week",
 			expr:     "'2023-02-14T20:53:24Z'",
 			expected: "2023-02-12T00:00:00Z",
 		},
 		{
-			name:     "truncates to beginning of month in UTC",
+			nbme:     "truncbtes to beginning of month in UTC",
 			unit:     "month",
 			expr:     "'2023-02-14T20:53:24Z'",
 			expected: "2023-02-01T00:00:00Z",
 		},
 		{
-			name:     "truncates to rolling month in UTC, if month has 30 days",
+			nbme:     "truncbtes to rolling month in UTC, if month hbs 30 dbys",
 			unit:     "rolling_month",
 			expr:     "'2023-04-20T20:53:24Z'",
 			expected: "2023-03-20T00:00:00Z",
 		},
 		{
-			name:     "truncates to rolling month in UTC, even if March has 31 days",
+			nbme:     "truncbtes to rolling month in UTC, even if Mbrch hbs 31 dbys",
 			unit:     "rolling_month",
 			expr:     "'2023-03-14T20:53:24Z'",
 			expected: "2023-02-14T00:00:00Z",
 		},
 		{
-			name:     "truncates to rolling month in UTC, even if Feb only has 28 days",
+			nbme:     "truncbtes to rolling month in UTC, even if Feb only hbs 28 dbys",
 			unit:     "rolling_month",
 			expr:     "'2023-02-14T20:53:24Z'",
 			expected: "2023-01-14T00:00:00Z",
 		},
 		{
-			name:     "truncates to rolling month in UTC, even for leap year February",
+			nbme:     "truncbtes to rolling month in UTC, even for lebp yebr Februbry",
 			unit:     "rolling_month",
 			expr:     "'2024-02-29T20:53:24Z'",
 			expected: "2024-01-29T00:00:00Z",
 		},
 	}
 
-	for _, tc := range cases {
-		t.Run(tc.name, func(t *testing.T) {
-			format := fmt.Sprintf("SELECT %s AS date", makeDateTruncExpression(tc.unit, tc.expr))
-			q := sqlf.Sprintf(format)
-			date, _, err := basestore.ScanFirstTime(db.Handle().QueryContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...))
+	for _, tc := rbnge cbses {
+		t.Run(tc.nbme, func(t *testing.T) {
+			formbt := fmt.Sprintf("SELECT %s AS dbte", mbkeDbteTruncExpression(tc.unit, tc.expr))
+			q := sqlf.Sprintf(formbt)
+			dbte, _, err := bbsestore.ScbnFirstTime(db.Hbndle().QueryContext(ctx, q.Query(sqlf.PostgresBindVbr), q.Args()...))
 			require.NoError(t, err)
 
-			require.Equal(t, tc.expected, date.Format(time.RFC3339))
+			require.Equbl(t, tc.expected, dbte.Formbt(time.RFC3339))
 		})
 	}
 }

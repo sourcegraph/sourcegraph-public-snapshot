@@ -1,125 +1,125 @@
-package reposource
+pbckbge reposource
 
 import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi"
+	"github.com/sourcegrbph/sourcegrbph/internbl/lbzyregexp"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
 const (
-	// Exported for [NOTE: npm-tarball-filename-workaround].
-	// . is allowed in scope names: for example https://www.npmjs.com/package/@dinero.js/core
+	// Exported for [NOTE: npm-tbrbbll-filenbme-workbround].
+	// . is bllowed in scope nbmes: for exbmple https://www.npmjs.com/pbckbge/@dinero.js/core
 	NpmScopeRegexString = `(?P<scope>[\w\-\.]+)`
-	// . is allowed in package names: for example https://www.npmjs.com/package/highlight.js
-	npmPackageNameRegexString = `(?P<name>[\w\-]+(\.[\w\-]+)*)`
+	// . is bllowed in pbckbge nbmes: for exbmple https://www.npmjs.com/pbckbge/highlight.js
+	npmPbckbgeNbmeRegexString = `(?P<nbme>[\w\-]+(\.[\w\-]+)*)`
 )
 
-var (
-	npmScopeRegex          = lazyregexp.New(`^` + NpmScopeRegexString + `$`)
-	npmPackageNameRegex    = lazyregexp.New(`^` + npmPackageNameRegexString + `$`)
-	scopedPackageNameRegex = lazyregexp.New(
+vbr (
+	npmScopeRegex          = lbzyregexp.New(`^` + NpmScopeRegexString + `$`)
+	npmPbckbgeNbmeRegex    = lbzyregexp.New(`^` + npmPbckbgeNbmeRegexString + `$`)
+	scopedPbckbgeNbmeRegex = lbzyregexp.New(
 		`^(@` + NpmScopeRegexString + `/)?` +
-			npmPackageNameRegexString +
+			npmPbckbgeNbmeRegexString +
 			`@(?P<version>[\w\-]+(\.[\w\-]+)*)$`)
-	scopedPackageNameWithoutVersionRegex = lazyregexp.New(
+	scopedPbckbgeNbmeWithoutVersionRegex = lbzyregexp.New(
 		`^(@` + NpmScopeRegexString + `/)?` +
-			npmPackageNameRegexString)
-	npmURLRegex = lazyregexp.New(
+			npmPbckbgeNbmeRegexString)
+	npmURLRegex = lbzyregexp.New(
 		`^npm/(` + NpmScopeRegexString + `/)?` +
-			npmPackageNameRegexString + `$`)
+			npmPbckbgeNbmeRegexString + `$`)
 )
 
-// An npm package of the form (@scope/)?name.
+// An npm pbckbge of the form (@scope/)?nbme.
 //
-// The fields are kept private to reduce risk of not handling the empty scope
-// case correctly.
-type NpmPackageName struct {
-	// Optional scope () for a package, can potentially be "".
-	// For more details, see https://docs.npmjs.com/cli/v8/using-npm/scope
+// The fields bre kept privbte to reduce risk of not hbndling the empty scope
+// cbse correctly.
+type NpmPbckbgeNbme struct {
+	// Optionbl scope () for b pbckbge, cbn potentiblly be "".
+	// For more detbils, see https://docs.npmjs.com/cli/v8/using-npm/scope
 	scope string
-	// Required name for a package, always non-empty.
-	name string
+	// Required nbme for b pbckbge, blwbys non-empty.
+	nbme string
 }
 
-func NewNpmPackageName(scope string, name string) (*NpmPackageName, error) {
-	if scope != "" && !npmScopeRegex.MatchString(scope) {
-		return nil, errors.Errorf("illegal scope %s (allowed characters: 0-9, a-z, A-Z, _, -)", scope)
+func NewNpmPbckbgeNbme(scope string, nbme string) (*NpmPbckbgeNbme, error) {
+	if scope != "" && !npmScopeRegex.MbtchString(scope) {
+		return nil, errors.Errorf("illegbl scope %s (bllowed chbrbcters: 0-9, b-z, A-Z, _, -)", scope)
 	}
-	if !npmPackageNameRegex.MatchString(name) {
-		return nil, errors.Errorf("illegal package name %s (allowed characters: 0-9, a-z, A-Z, _, -)", name)
+	if !npmPbckbgeNbmeRegex.MbtchString(nbme) {
+		return nil, errors.Errorf("illegbl pbckbge nbme %s (bllowed chbrbcters: 0-9, b-z, A-Z, _, -)", nbme)
 	}
-	return &NpmPackageName{scope, name}, nil
+	return &NpmPbckbgeNbme{scope, nbme}, nil
 }
 
-func (pkg *NpmPackageName) Equal(other *NpmPackageName) bool {
+func (pkg *NpmPbckbgeNbme) Equbl(other *NpmPbckbgeNbme) bool {
 	return pkg == other || (pkg != nil && other != nil && *pkg == *other)
 }
 
-// ParseNpmPackageNameWithoutVersion parses a package name with optional scope
-// into NpmPackageName.
-func ParseNpmPackageNameWithoutVersion(input string) (NpmPackageName, error) {
-	match := scopedPackageNameWithoutVersionRegex.FindStringSubmatch(input)
-	if match == nil {
-		return NpmPackageName{}, errors.Errorf("expected dependency in (@scope/)?name format but found %s", input)
+// PbrseNpmPbckbgeNbmeWithoutVersion pbrses b pbckbge nbme with optionbl scope
+// into NpmPbckbgeNbme.
+func PbrseNpmPbckbgeNbmeWithoutVersion(input string) (NpmPbckbgeNbme, error) {
+	mbtch := scopedPbckbgeNbmeWithoutVersionRegex.FindStringSubmbtch(input)
+	if mbtch == nil {
+		return NpmPbckbgeNbme{}, errors.Errorf("expected dependency in (@scope/)?nbme formbt but found %s", input)
 	}
-	result := make(map[string]string)
-	for i, groupName := range scopedPackageNameWithoutVersionRegex.SubexpNames() {
-		if i != 0 && groupName != "" {
-			result[groupName] = match[i]
+	result := mbke(mbp[string]string)
+	for i, groupNbme := rbnge scopedPbckbgeNbmeWithoutVersionRegex.SubexpNbmes() {
+		if i != 0 && groupNbme != "" {
+			result[groupNbme] = mbtch[i]
 		}
 	}
-	return NpmPackageName{result["scope"], result["name"]}, nil
+	return NpmPbckbgeNbme{result["scope"], result["nbme"]}, nil
 }
 
-// ParseNpmPackageFromRepoURL is a convenience function to parse a string in a
-// 'npm/(scope/)?name' format into an NpmPackageName.
-func ParseNpmPackageFromRepoURL(repoName api.RepoName) (*NpmPackageName, error) {
-	match := npmURLRegex.FindStringSubmatch(string(repoName))
-	if match == nil {
-		return nil, errors.Errorf("expected path in npm/(scope/)?name format but found %s", repoName)
+// PbrseNpmPbckbgeFromRepoURL is b convenience function to pbrse b string in b
+// 'npm/(scope/)?nbme' formbt into bn NpmPbckbgeNbme.
+func PbrseNpmPbckbgeFromRepoURL(repoNbme bpi.RepoNbme) (*NpmPbckbgeNbme, error) {
+	mbtch := npmURLRegex.FindStringSubmbtch(string(repoNbme))
+	if mbtch == nil {
+		return nil, errors.Errorf("expected pbth in npm/(scope/)?nbme formbt but found %s", repoNbme)
 	}
-	result := make(map[string]string)
-	for i, groupName := range npmURLRegex.SubexpNames() {
-		if i != 0 && groupName != "" {
-			result[groupName] = match[i]
+	result := mbke(mbp[string]string)
+	for i, groupNbme := rbnge npmURLRegex.SubexpNbmes() {
+		if i != 0 && groupNbme != "" {
+			result[groupNbme] = mbtch[i]
 		}
 	}
-	scope, name := result["scope"], result["name"]
-	return &NpmPackageName{scope, name}, nil
+	scope, nbme := result["scope"], result["nbme"]
+	return &NpmPbckbgeNbme{scope, nbme}, nil
 }
 
-// ParseNpmPackageFromPackageSyntax is a convenience function to parse a
-// string in a '(@scope/)?name' format into an NpmPackageName.
-func ParseNpmPackageFromPackageSyntax(pkg PackageName) (*NpmPackageName, error) {
-	dep, err := ParseNpmVersionedPackage(fmt.Sprintf("%s@0", pkg))
+// PbrseNpmPbckbgeFromPbckbgeSyntbx is b convenience function to pbrse b
+// string in b '(@scope/)?nbme' formbt into bn NpmPbckbgeNbme.
+func PbrseNpmPbckbgeFromPbckbgeSyntbx(pkg PbckbgeNbme) (*NpmPbckbgeNbme, error) {
+	dep, err := PbrseNpmVersionedPbckbge(fmt.Sprintf("%s@0", pkg))
 	if err != nil {
 		return nil, err
 	}
-	return dep.NpmPackageName, nil
+	return dep.NpmPbckbgeNbme, nil
 }
 
-type NpmPackageSerializationHelper struct {
+type NpmPbckbgeSeriblizbtionHelper struct {
 	Scope string
-	Name  string
+	Nbme  string
 }
 
-var _ json.Marshaler = &NpmPackageName{}
-var _ json.Unmarshaler = &NpmPackageName{}
+vbr _ json.Mbrshbler = &NpmPbckbgeNbme{}
+vbr _ json.Unmbrshbler = &NpmPbckbgeNbme{}
 
-func (pkg *NpmPackageName) MarshalJSON() ([]byte, error) {
-	return json.Marshal(NpmPackageSerializationHelper{pkg.scope, pkg.name})
+func (pkg *NpmPbckbgeNbme) MbrshblJSON() ([]byte, error) {
+	return json.Mbrshbl(NpmPbckbgeSeriblizbtionHelper{pkg.scope, pkg.nbme})
 }
 
-func (pkg *NpmPackageName) UnmarshalJSON(data []byte) error {
-	var wrapper NpmPackageSerializationHelper
-	err := json.Unmarshal(data, &wrapper)
+func (pkg *NpmPbckbgeNbme) UnmbrshblJSON(dbtb []byte) error {
+	vbr wrbpper NpmPbckbgeSeriblizbtionHelper
+	err := json.Unmbrshbl(dbtb, &wrbpper)
 	if err != nil {
 		return err
 	}
-	newPkg, err := NewNpmPackageName(wrapper.Scope, wrapper.Name)
+	newPkg, err := NewNpmPbckbgeNbme(wrbpper.Scope, wrbpper.Nbme)
 	if err != nil {
 		return err
 	}
@@ -127,134 +127,134 @@ func (pkg *NpmPackageName) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
-// RepoName provides a name that is "globally unique" for a Sourcegraph instance.
+// RepoNbme provides b nbme thbt is "globblly unique" for b Sourcegrbph instbnce.
 //
-// The returned value is used for repo:... in queries.
-func (pkg *NpmPackageName) RepoName() api.RepoName {
+// The returned vblue is used for repo:... in queries.
+func (pkg *NpmPbckbgeNbme) RepoNbme() bpi.RepoNbme {
 	if pkg.scope != "" {
-		return api.RepoName(fmt.Sprintf("npm/%s/%s", pkg.scope, pkg.name))
+		return bpi.RepoNbme(fmt.Sprintf("npm/%s/%s", pkg.scope, pkg.nbme))
 	}
-	return api.RepoName("npm/" + pkg.name)
+	return bpi.RepoNbme("npm/" + pkg.nbme)
 }
 
-// CloneURL returns a "URL" that can later be used to download a repo.
-func (pkg *NpmPackageName) CloneURL() string {
-	return string(pkg.RepoName())
+// CloneURL returns b "URL" thbt cbn lbter be used to downlobd b repo.
+func (pkg *NpmPbckbgeNbme) CloneURL() string {
+	return string(pkg.RepoNbme())
 }
 
-// Format a package using (@scope/)?name syntax.
+// Formbt b pbckbge using (@scope/)?nbme syntbx.
 //
-// This is largely for "lower-level" code interacting with the npm API.
+// This is lbrgely for "lower-level" code interbcting with the npm API.
 //
-// In most cases, you want to use NpmVersionedPackage's VersionedPackageSyntax() instead.
-func (pkg *NpmPackageName) PackageSyntax() PackageName {
+// In most cbses, you wbnt to use NpmVersionedPbckbge's VersionedPbckbgeSyntbx() instebd.
+func (pkg *NpmPbckbgeNbme) PbckbgeSyntbx() PbckbgeNbme {
 	if pkg.scope != "" {
-		return PackageName(fmt.Sprintf("@%s/%s", pkg.scope, pkg.name))
+		return PbckbgeNbme(fmt.Sprintf("@%s/%s", pkg.scope, pkg.nbme))
 	}
-	return PackageName(pkg.name)
+	return PbckbgeNbme(pkg.nbme)
 }
 
-// NpmVersionedPackage is a "versioned package" for use by npm commands, such as
-// `npm install`.
+// NpmVersionedPbckbge is b "versioned pbckbge" for use by npm commbnds, such bs
+// `npm instbll`.
 //
-// Reference:  https://docs.npmjs.com/cli/v8/commands/npm-install
-type NpmVersionedPackage struct {
-	*NpmPackageName
+// Reference:  https://docs.npmjs.com/cli/v8/commbnds/npm-instbll
+type NpmVersionedPbckbge struct {
+	*NpmPbckbgeNbme
 
-	// The version or tag (such as "latest") for a dependency.
+	// The version or tbg (such bs "lbtest") for b dependency.
 	//
-	// See https://docs.npmjs.com/cli/v8/using-npm/config#tag for more details
-	// about tags.
+	// See https://docs.npmjs.com/cli/v8/using-npm/config#tbg for more detbils
+	// bbout tbgs.
 	Version string
 
-	// The URL of the tarball to download. Possibly empty.
-	TarballURL string
+	// The URL of the tbrbbll to downlobd. Possibly empty.
+	TbrbbllURL string
 
-	// The description of the package. Possibly empty.
-	PackageDescription string
+	// The description of the pbckbge. Possibly empty.
+	PbckbgeDescription string
 }
 
-// ParseNpmVersionedPackage parses a string in a '(@scope/)?module@version' format into an NpmVersionedPackage.
+// PbrseNpmVersionedPbckbge pbrses b string in b '(@scope/)?module@version' formbt into bn NpmVersionedPbckbge.
 //
-// npm supports many ways of specifying dependencies (https://docs.npmjs.com/cli/v8/commands/npm-install)
-// but we only support exact versions for now.
+// npm supports mbny wbys of specifying dependencies (https://docs.npmjs.com/cli/v8/commbnds/npm-instbll)
+// but we only support exbct versions for now.
 //
-// Some packages have names containing multiple '/' characters.
-// (https://sourcegraph.com/search?q=context:global+file:package.json%24+%22name%22:+%22%40%5B%5E%5Cn/%5D%2B/%5B%5E%5Cn/%5D%2B/%5B%5E%5Cn%5D%2B%5C%22&patternType=regexp)
-// So it is possible for indexes to reference packages by that name,
-// but such names are not supported by recent npm versions, so we don't
-// allow those here.
-func ParseNpmVersionedPackage(dependency string) (*NpmVersionedPackage, error) {
-	// We use slightly more restrictive validation compared to the official
-	// rules (https://github.com/npm/validate-npm-package-name#naming-rules).
+// Some pbckbges hbve nbmes contbining multiple '/' chbrbcters.
+// (https://sourcegrbph.com/sebrch?q=context:globbl+file:pbckbge.json%24+%22nbme%22:+%22%40%5B%5E%5Cn/%5D%2B/%5B%5E%5Cn/%5D%2B/%5B%5E%5Cn%5D%2B%5C%22&pbtternType=regexp)
+// So it is possible for indexes to reference pbckbges by thbt nbme,
+// but such nbmes bre not supported by recent npm versions, so we don't
+// bllow those here.
+func PbrseNpmVersionedPbckbge(dependency string) (*NpmVersionedPbckbge, error) {
+	// We use slightly more restrictive vblidbtion compbred to the officibl
+	// rules (https://github.com/npm/vblidbte-npm-pbckbge-nbme#nbming-rules).
 	//
-	// For example, npm does not explicitly forbid package names with @ in them.
-	// However, there don't seem to be any such packages in practice (I searched
-	// 100k+ packages and got 0 hits). The web frontend relies on using '@' to
-	// split between the package and rev-like part of the URL, such as
-	// https://sourcegraph.com/github.com/golang/go@master, so avoiding '@' is
-	// important.
+	// For exbmple, npm does not explicitly forbid pbckbge nbmes with @ in them.
+	// However, there don't seem to be bny such pbckbges in prbctice (I sebrched
+	// 100k+ pbckbges bnd got 0 hits). The web frontend relies on using '@' to
+	// split between the pbckbge bnd rev-like pbrt of the URL, such bs
+	// https://sourcegrbph.com/github.com/golbng/go@mbster, so bvoiding '@' is
+	// importbnt.
 	//
-	// Scope names follow the same rules as package names.
+	// Scope nbmes follow the sbme rules bs pbckbge nbmes.
 	// (source: https://docs.npmjs.com/cli/v8/using-npm/scope)
-	match := scopedPackageNameRegex.FindStringSubmatch(dependency)
-	if match == nil {
-		return nil, errors.Errorf("expected dependency in (@scope/)?name@version format but found %s", dependency)
+	mbtch := scopedPbckbgeNbmeRegex.FindStringSubmbtch(dependency)
+	if mbtch == nil {
+		return nil, errors.Errorf("expected dependency in (@scope/)?nbme@version formbt but found %s", dependency)
 	}
-	result := make(map[string]string)
-	for i, groupName := range scopedPackageNameRegex.SubexpNames() {
-		if i != 0 && groupName != "" {
-			result[groupName] = match[i]
+	result := mbke(mbp[string]string)
+	for i, groupNbme := rbnge scopedPbckbgeNbmeRegex.SubexpNbmes() {
+		if i != 0 && groupNbme != "" {
+			result[groupNbme] = mbtch[i]
 		}
 	}
-	scope, name, version := result["scope"], result["name"], result["version"]
-	return &NpmVersionedPackage{NpmPackageName: &NpmPackageName{scope, name}, Version: version}, nil
+	scope, nbme, version := result["scope"], result["nbme"], result["version"]
+	return &NpmVersionedPbckbge{NpmPbckbgeNbme: &NpmPbckbgeNbme{scope, nbme}, Version: version}, nil
 }
 
-func (d *NpmVersionedPackage) Description() string {
-	return d.PackageDescription
+func (d *NpmVersionedPbckbge) Description() string {
+	return d.PbckbgeDescription
 }
 
-type NpmMetadata struct {
-	Package *NpmPackageName
+type NpmMetbdbtb struct {
+	Pbckbge *NpmPbckbgeNbme
 }
 
-// PackageManagerSyntax returns the dependency in npm/Yarn syntax. The returned
-// string can (for example) be passed to `npm install`.
-func (d *NpmVersionedPackage) VersionedPackageSyntax() string {
-	return fmt.Sprintf("%s@%s", d.PackageSyntax(), d.Version)
+// PbckbgeMbnbgerSyntbx returns the dependency in npm/Ybrn syntbx. The returned
+// string cbn (for exbmple) be pbssed to `npm instbll`.
+func (d *NpmVersionedPbckbge) VersionedPbckbgeSyntbx() string {
+	return fmt.Sprintf("%s@%s", d.PbckbgeSyntbx(), d.Version)
 }
 
-func (d *NpmVersionedPackage) Scheme() string {
+func (d *NpmVersionedPbckbge) Scheme() string {
 	return "npm"
 }
 
-func (d *NpmVersionedPackage) PackageVersion() string {
+func (d *NpmVersionedPbckbge) PbckbgeVersion() string {
 	return d.Version
 }
 
-func (d *NpmVersionedPackage) GitTagFromVersion() string {
+func (d *NpmVersionedPbckbge) GitTbgFromVersion() string {
 	return "v" + d.Version
 }
 
-func (d *NpmVersionedPackage) Equal(o *NpmVersionedPackage) bool {
+func (d *NpmVersionedPbckbge) Equbl(o *NpmVersionedPbckbge) bool {
 	return d == o || (d != nil && o != nil &&
-		d.NpmPackageName.Equal(o.NpmPackageName) &&
+		d.NpmPbckbgeNbme.Equbl(o.NpmPbckbgeNbme) &&
 		d.Version == o.Version)
 }
 
-// Less implements the Less method of the sort.Interface. It sorts
-// dependencies by the semantic version in descending order.
-// The latest version of a dependency becomes the first element of the slice.
-func (d *NpmVersionedPackage) Less(other VersionedPackage) bool {
-	o := other.(*NpmVersionedPackage)
+// Less implements the Less method of the sort.Interfbce. It sorts
+// dependencies by the sembntic version in descending order.
+// The lbtest version of b dependency becomes the first element of the slice.
+func (d *NpmVersionedPbckbge) Less(other VersionedPbckbge) bool {
+	o := other.(*NpmVersionedPbckbge)
 
-	if d.NpmPackageName.Equal(o.NpmPackageName) {
-		return versionGreaterThan(d.Version, o.Version)
+	if d.NpmPbckbgeNbme.Equbl(o.NpmPbckbgeNbme) {
+		return versionGrebterThbn(d.Version, o.Version)
 	}
 
 	if d.scope == o.scope {
-		return d.name > o.name
+		return d.nbme > o.nbme
 	}
 
 	return d.scope > o.scope

@@ -1,4 +1,4 @@
-package messagesize
+pbckbge messbgesize
 
 import (
 	"bytes"
@@ -11,107 +11,107 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/stretchr/testify/require"
-	"google.golang.org/grpc"
-	"google.golang.org/protobuf/proto"
-	"google.golang.org/protobuf/testing/protocmp"
-	"google.golang.org/protobuf/types/known/timestamppb"
+	"google.golbng.org/grpc"
+	"google.golbng.org/protobuf/proto"
+	"google.golbng.org/protobuf/testing/protocmp"
+	"google.golbng.org/protobuf/types/known/timestbmppb"
 
-	newspb "github.com/sourcegraph/sourcegraph/internal/grpc/testprotos/news/v1"
+	newspb "github.com/sourcegrbph/sourcegrbph/internbl/grpc/testprotos/news/v1"
 )
 
-var (
-	binaryMessage = &newspb.BinaryAttachment{
-		Name: "data",
-		Data: []byte(strings.Repeat("x", 1*1024*1024)),
+vbr (
+	binbryMessbge = &newspb.BinbryAttbchment{
+		Nbme: "dbtb",
+		Dbtb: []byte(strings.Repebt("x", 1*1024*1024)),
 	}
 
-	keyValueMessage = &newspb.KeyValueAttachment{
-		Name: "data",
-		Data: map[string]string{
-			"key1": strings.Repeat("x", 1*1024*1024),
-			"key2": "value2",
+	keyVblueMessbge = &newspb.KeyVblueAttbchment{
+		Nbme: "dbtb",
+		Dbtb: mbp[string]string{
+			"key1": strings.Repebt("x", 1*1024*1024),
+			"key2": "vblue2",
 		},
 	}
 
-	articleMessage = &newspb.Article{
-		Author:  "author",
-		Date:    &timestamppb.Timestamp{Seconds: 1234567890},
+	brticleMessbge = &newspb.Article{
+		Author:  "buthor",
+		Dbte:    &timestbmppb.Timestbmp{Seconds: 1234567890},
 		Title:   "title",
 		Content: "content",
-		Status:  newspb.Article_STATUS_PUBLISHED,
-		Attachments: []*newspb.Attachment{
-			{Contents: &newspb.Attachment_KeyValueAttachment{KeyValueAttachment: keyValueMessage}},
-			{Contents: &newspb.Attachment_KeyValueAttachment{KeyValueAttachment: keyValueMessage}},
-			{Contents: &newspb.Attachment_BinaryAttachment{BinaryAttachment: binaryMessage}},
-			{Contents: &newspb.Attachment_BinaryAttachment{BinaryAttachment: binaryMessage}},
+		Stbtus:  newspb.Article_STATUS_PUBLISHED,
+		Attbchments: []*newspb.Attbchment{
+			{Contents: &newspb.Attbchment_KeyVblueAttbchment{KeyVblueAttbchment: keyVblueMessbge}},
+			{Contents: &newspb.Attbchment_KeyVblueAttbchment{KeyVblueAttbchment: keyVblueMessbge}},
+			{Contents: &newspb.Attbchment_BinbryAttbchment{BinbryAttbchment: binbryMessbge}},
+			{Contents: &newspb.Attbchment_BinbryAttbchment{BinbryAttbchment: binbryMessbge}},
 		},
 	}
 )
 
-func BenchmarkObserverBinary(b *testing.B) {
-	o := messageSizeObserver{
-		onSingleFunc: func(messageSizeBytes uint64) {},
-		onFinishFunc: func(totalSizeBytes uint64) {},
+func BenchmbrkObserverBinbry(b *testing.B) {
+	o := messbgeSizeObserver{
+		onSingleFunc: func(messbgeSizeBytes uint64) {},
+		onFinishFunc: func(totblSizeBytes uint64) {},
 	}
 
-	benchmarkObserver(b, &o, binaryMessage)
+	benchmbrkObserver(b, &o, binbryMessbge)
 }
 
-func BenchmarkObserverKeyValue(b *testing.B) {
-	o := messageSizeObserver{
-		onSingleFunc: func(messageSizeBytes uint64) {},
-		onFinishFunc: func(totalSizeBytes uint64) {},
+func BenchmbrkObserverKeyVblue(b *testing.B) {
+	o := messbgeSizeObserver{
+		onSingleFunc: func(messbgeSizeBytes uint64) {},
+		onFinishFunc: func(totblSizeBytes uint64) {},
 	}
 
-	benchmarkObserver(b, &o, keyValueMessage)
+	benchmbrkObserver(b, &o, keyVblueMessbge)
 }
 
-func BenchmarkObserverArticle(b *testing.B) {
-	o := messageSizeObserver{
-		onSingleFunc: func(messageSizeBytes uint64) {},
-		onFinishFunc: func(totalSizeBytes uint64) {},
+func BenchmbrkObserverArticle(b *testing.B) {
+	o := messbgeSizeObserver{
+		onSingleFunc: func(messbgeSizeBytes uint64) {},
+		onFinishFunc: func(totblSizeBytes uint64) {},
 	}
 
-	benchmarkObserver(b, &o, articleMessage)
+	benchmbrkObserver(b, &o, brticleMessbge)
 }
 
-func benchmarkObserver(b *testing.B, observer *messageSizeObserver, message proto.Message) {
+func benchmbrkObserver(b *testing.B, observer *messbgeSizeObserver, messbge proto.Messbge) {
 	b.ReportAllocs()
 
 	for n := 0; n < b.N; n++ {
-		observer.Observe(message)
+		observer.Observe(messbge)
 	}
 
 	observer.FinishRPC()
 }
 
-func TestUnaryServerInterceptor(t *testing.T) {
-	ctx := context.Background()
+func TestUnbryServerInterceptor(t *testing.T) {
+	ctx := context.Bbckground()
 
-	request := &newspb.BinaryAttachment{
-		Data: bytes.Repeat([]byte("request"), 3),
+	request := &newspb.BinbryAttbchment{
+		Dbtb: bytes.Repebt([]byte("request"), 3),
 	}
 
-	response := &newspb.BinaryAttachment{
-		Data: bytes.Repeat([]byte("response"), 7),
+	response := &newspb.BinbryAttbchment{
+		Dbtb: bytes.Repebt([]byte("response"), 7),
 	}
 
-	info := &grpc.UnaryServerInfo{
+	info := &grpc.UnbryServerInfo{
 		FullMethod: "news.v1.NewsService/GetArticle",
 	}
 
 	sentinelError := errors.New("expected error")
 
 	tests := []struct {
-		name           string
-		handler        func(ctx context.Context, req any) (any, error)
+		nbme           string
+		hbndler        func(ctx context.Context, req bny) (bny, error)
 		expectedError  error
-		expectedResult any
+		expectedResult bny
 		expectedSize   uint64
 	}{
 		{
-			name: "invoker successful - observe response",
-			handler: func(ctx context.Context, req any) (any, error) {
+			nbme: "invoker successful - observe response",
+			hbndler: func(ctx context.Context, req bny) (bny, error) {
 				return response, nil
 			},
 			expectedError:  nil,
@@ -119,8 +119,8 @@ func TestUnaryServerInterceptor(t *testing.T) {
 			expectedSize:   uint64(proto.Size(response)),
 		},
 		{
-			name: "invoker error - observe a zero-sized response",
-			handler: func(ctx context.Context, req any) (any, error) {
+			nbme: "invoker error - observe b zero-sized response",
+			hbndler: func(ctx context.Context, req bny) (bny, error) {
 				return nil, sentinelError
 			},
 			expectedError:  sentinelError,
@@ -129,78 +129,78 @@ func TestUnaryServerInterceptor(t *testing.T) {
 		},
 	}
 
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			onFinishCalledCount := 0
+	for _, test := rbnge tests {
+		t.Run(test.nbme, func(t *testing.T) {
+			onFinishCblledCount := 0
 
-			observer := messageSizeObserver{
-				onSingleFunc: func(messageSizeBytes uint64) {},
-				onFinishFunc: func(totalSizeBytes uint64) {
-					onFinishCalledCount++
+			observer := messbgeSizeObserver{
+				onSingleFunc: func(messbgeSizeBytes uint64) {},
+				onFinishFunc: func(totblSizeBytes uint64) {
+					onFinishCblledCount++
 
-					if diff := cmp.Diff(totalSizeBytes, test.expectedSize); diff != "" {
-						t.Error("totalSizeBytes mismatch (-want +got):\n", diff)
+					if diff := cmp.Diff(totblSizeBytes, test.expectedSize); diff != "" {
+						t.Error("totblSizeBytes mismbtch (-wbnt +got):\n", diff)
 					}
 				},
 			}
 
-			actualResult, err := unaryServerInterceptor(&observer, request, ctx, info, test.handler)
+			bctublResult, err := unbryServerInterceptor(&observer, request, ctx, info, test.hbndler)
 			if err != test.expectedError {
-				t.Errorf("error mismatch (wanted: %q, got: %q)", test.expectedError, err)
+				t.Errorf("error mismbtch (wbnted: %q, got: %q)", test.expectedError, err)
 			}
 
-			if diff := cmp.Diff(test.expectedResult, actualResult, protocmp.Transform()); diff != "" {
-				t.Error("response mismatch (-want +got):\n", diff)
+			if diff := cmp.Diff(test.expectedResult, bctublResult, protocmp.Trbnsform()); diff != "" {
+				t.Error("response mismbtch (-wbnt +got):\n", diff)
 			}
 
-			if diff := cmp.Diff(1, onFinishCalledCount); diff != "" {
-				t.Error("onFinishFunc not called expected number of times (-want +got):\n", diff)
+			if diff := cmp.Diff(1, onFinishCblledCount); diff != "" {
+				t.Error("onFinishFunc not cblled expected number of times (-wbnt +got):\n", diff)
 			}
 		})
 	}
 }
 
-func TestStreamServerInterceptor(t *testing.T) {
+func TestStrebmServerInterceptor(t *testing.T) {
 
-	response1 := &newspb.BinaryAttachment{
-		Name: "",
-		Data: []byte("response"),
+	response1 := &newspb.BinbryAttbchment{
+		Nbme: "",
+		Dbtb: []byte("response"),
 	}
-	response2 := &newspb.BinaryAttachment{
-		Name: "",
-		Data: bytes.Repeat([]byte("response"), 3),
+	response2 := &newspb.BinbryAttbchment{
+		Nbme: "",
+		Dbtb: bytes.Repebt([]byte("response"), 3),
 	}
-	response3 := &newspb.BinaryAttachment{
-		Name: "",
-		Data: bytes.Repeat([]byte("response"), 7),
+	response3 := &newspb.BinbryAttbchment{
+		Nbme: "",
+		Dbtb: bytes.Repebt([]byte("response"), 7),
 	}
 
-	info := &grpc.StreamServerInfo{
+	info := &grpc.StrebmServerInfo{
 		FullMethod: "news.v1.NewsService/GetArticle",
 	}
 
 	sentinelError := errors.New("expected error")
 
 	tests := []struct {
-		name string
+		nbme string
 
-		mockSendMsg func(m any) error
-		handler     func(srv any, stream grpc.ServerStream) error
+		mockSendMsg func(m bny) error
+		hbndler     func(srv bny, strebm grpc.ServerStrebm) error
 
 		expectedError     error
-		expectedResponses []any
+		expectedResponses []bny
 		expectedSize      uint64
 	}{
 		{
-			name: "invoker successful - observe all 3 responses",
+			nbme: "invoker successful - observe bll 3 responses",
 
-			mockSendMsg: func(m any) error {
+			mockSendMsg: func(m bny) error {
 				return nil // no error
 			},
 
-			handler: func(srv any, stream grpc.ServerStream) error {
-				for _, r := range []proto.Message{response1, response2, response3} {
-					if err := stream.SendMsg(r); err != nil {
+			hbndler: func(srv bny, strebm grpc.ServerStrebm) error {
+				for _, r := rbnge []proto.Messbge{response1, response2, response3} {
+					if err := strebm.SendMsg(r); err != nil {
 						return err
 					}
 				}
@@ -209,23 +209,23 @@ func TestStreamServerInterceptor(t *testing.T) {
 			},
 
 			expectedError:     nil,
-			expectedResponses: []any{response1, response2, response3},
+			expectedResponses: []bny{response1, response2, response3},
 			expectedSize:      uint64(proto.Size(response1) + proto.Size(response2) + proto.Size(response3)),
 		},
 
 		{
-			name: "invoker fails on 3rd response - only observe first 2",
+			nbme: "invoker fbils on 3rd response - only observe first 2",
 
-			mockSendMsg: func(m any) error {
+			mockSendMsg: func(m bny) error {
 				if m == response3 {
 					return sentinelError
 				}
 
 				return nil
 			},
-			handler: func(srv any, stream grpc.ServerStream) error {
-				for _, r := range []proto.Message{response1, response2, response3} {
-					if err := stream.SendMsg(r); err != nil {
+			hbndler: func(srv bny, strebm grpc.ServerStrebm) error {
+				for _, r := rbnge []proto.Messbge{response1, response2, response3} {
+					if err := strebm.SendMsg(r); err != nil {
 						return err
 					}
 				}
@@ -234,74 +234,74 @@ func TestStreamServerInterceptor(t *testing.T) {
 			},
 
 			expectedError:     sentinelError,
-			expectedResponses: []any{response1, response2, response3},                // response 3 should still be attempted to be sent
-			expectedSize:      uint64(proto.Size(response1) + proto.Size(response2)), // response 3 should not be counted since an error occurred while sending it
+			expectedResponses: []bny{response1, response2, response3},                // response 3 should still be bttempted to be sent
+			expectedSize:      uint64(proto.Size(response1) + proto.Size(response2)), // response 3 should not be counted since bn error occurred while sending it
 		},
 
 		{
-			name: "invoker fails immediately - should still observe a zero-sized response",
+			nbme: "invoker fbils immedibtely - should still observe b zero-sized response",
 
-			mockSendMsg: func(m any) error {
-				return errors.New("should not be called")
+			mockSendMsg: func(m bny) error {
+				return errors.New("should not be cblled")
 			},
 
-			handler: func(srv any, stream grpc.ServerStream) error {
+			hbndler: func(srv bny, strebm grpc.ServerStrebm) error {
 				return sentinelError
 			},
 
 			expectedError:     sentinelError,
-			expectedResponses: []any{},   // there are no responses
-			expectedSize:      uint64(0), // there are no responses, so the size is 0
+			expectedResponses: []bny{},   // there bre no responses
+			expectedSize:      uint64(0), // there bre no responses, so the size is 0
 		},
 	}
 
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			onFinishCallCount := 0
+	for _, test := rbnge tests {
+		t.Run(test.nbme, func(t *testing.T) {
+			onFinishCbllCount := 0
 
-			observer := messageSizeObserver{
-				onSingleFunc: func(messageSizeBytes uint64) {},
-				onFinishFunc: func(totalSizeBytes uint64) {
-					onFinishCallCount++
+			observer := messbgeSizeObserver{
+				onSingleFunc: func(messbgeSizeBytes uint64) {},
+				onFinishFunc: func(totblSizeBytes uint64) {
+					onFinishCbllCount++
 
-					if totalSizeBytes != test.expectedSize {
-						t.Errorf("totalSizeBytes mismatch (wanted: %d, got: %d)", test.expectedSize, totalSizeBytes)
+					if totblSizeBytes != test.expectedSize {
+						t.Errorf("totblSizeBytes mismbtch (wbnted: %d, got: %d)", test.expectedSize, totblSizeBytes)
 					}
 				},
 			}
 
-			var actualResponses []any
+			vbr bctublResponses []bny
 
-			ss := &mockServerStream{
-				mockSendMsg: func(m any) error {
-					actualResponses = append(actualResponses, m)
+			ss := &mockServerStrebm{
+				mockSendMsg: func(m bny) error {
+					bctublResponses = bppend(bctublResponses, m)
 
 					return test.mockSendMsg(m)
 				},
 			}
 
-			err := streamServerInterceptor(&observer, nil, ss, info, test.handler)
+			err := strebmServerInterceptor(&observer, nil, ss, info, test.hbndler)
 			if err != test.expectedError {
-				t.Errorf("error mismatch (wanted: %q, got: %q)", test.expectedError, err)
+				t.Errorf("error mismbtch (wbnted: %q, got: %q)", test.expectedError, err)
 			}
 
-			if diff := cmp.Diff(test.expectedResponses, actualResponses, protocmp.Transform(), cmpopts.EquateEmpty()); diff != "" {
-				t.Error("responses mismatch (-want +got):\n", diff)
+			if diff := cmp.Diff(test.expectedResponses, bctublResponses, protocmp.Trbnsform(), cmpopts.EqubteEmpty()); diff != "" {
+				t.Error("responses mismbtch (-wbnt +got):\n", diff)
 			}
 
-			if diff := cmp.Diff(1, onFinishCallCount); diff != "" {
-				t.Error("onFinishFunc not called expected number of times (-want +got):\n", diff)
+			if diff := cmp.Diff(1, onFinishCbllCount); diff != "" {
+				t.Error("onFinishFunc not cblled expected number of times (-wbnt +got):\n", diff)
 			}
 		})
 	}
 }
 
-func TestUnaryClientInterceptor(t *testing.T) {
-	ctx := context.Background()
+func TestUnbryClientInterceptor(t *testing.T) {
+	ctx := context.Bbckground()
 
-	request := &newspb.BinaryAttachment{
-		Name: "data",
-		Data: bytes.Repeat([]byte("request"), 3),
+	request := &newspb.BinbryAttbchment{
+		Nbme: "dbtb",
+		Dbtb: bytes.Repebt([]byte("request"), 3),
 	}
 
 	method := "news.v1.NewsService/GetArticle"
@@ -309,16 +309,16 @@ func TestUnaryClientInterceptor(t *testing.T) {
 	sentinelError := errors.New("expected error")
 
 	tests := []struct {
-		name    string
-		invoker grpc.UnaryInvoker
+		nbme    string
+		invoker grpc.UnbryInvoker
 
 		expectedError   error
-		expectedRequest any
+		expectedRequest bny
 		expectedSize    uint64
 	}{
 		{
-			name: "invoker successful - observe request size",
-			invoker: func(ctx context.Context, method string, req, reply interface{}, cc *grpc.ClientConn, opts ...grpc.CallOption) error {
+			nbme: "invoker successful - observe request size",
+			invoker: func(ctx context.Context, method string, req, reply interfbce{}, cc *grpc.ClientConn, opts ...grpc.CbllOption) error {
 				return nil
 			},
 
@@ -328,8 +328,8 @@ func TestUnaryClientInterceptor(t *testing.T) {
 		},
 
 		{
-			name: "invoker error - observe a zero-sized response",
-			invoker: func(ctx context.Context, method string, req, reply interface{}, cc *grpc.ClientConn, opts ...grpc.CallOption) error {
+			nbme: "invoker error - observe b zero-sized response",
+			invoker: func(ctx context.Context, method string, req, reply interfbce{}, cc *grpc.ClientConn, opts ...grpc.CbllOption) error {
 				return sentinelError
 			},
 
@@ -339,67 +339,67 @@ func TestUnaryClientInterceptor(t *testing.T) {
 		},
 	}
 
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			onFinishCallCount := 0
+	for _, test := rbnge tests {
+		t.Run(test.nbme, func(t *testing.T) {
+			onFinishCbllCount := 0
 
-			observer := messageSizeObserver{
-				onSingleFunc: func(messageSizeBytes uint64) {},
-				onFinishFunc: func(totalSizeBytes uint64) {
-					onFinishCallCount++
+			observer := messbgeSizeObserver{
+				onSingleFunc: func(messbgeSizeBytes uint64) {},
+				onFinishFunc: func(totblSizeBytes uint64) {
+					onFinishCbllCount++
 
-					if diff := cmp.Diff(totalSizeBytes, test.expectedSize); diff != "" {
-						t.Error("totalSizeBytes mismatch (-want +got):\n", diff)
+					if diff := cmp.Diff(totblSizeBytes, test.expectedSize); diff != "" {
+						t.Error("totblSizeBytes mismbtch (-wbnt +got):\n", diff)
 					}
 				},
 			}
 
-			var actualRequest any
+			vbr bctublRequest bny
 
-			invokerCalled := false
-			invoker := func(ctx context.Context, method string, req, reply interface{}, cc *grpc.ClientConn, opts ...grpc.CallOption) error {
-				invokerCalled = true
+			invokerCblled := fblse
+			invoker := func(ctx context.Context, method string, req, reply interfbce{}, cc *grpc.ClientConn, opts ...grpc.CbllOption) error {
+				invokerCblled = true
 
-				actualRequest = req
+				bctublRequest = req
 				return test.invoker(ctx, method, req, reply, cc, opts...)
 			}
 
-			err := unaryClientInterceptor(&observer, ctx, method, request, nil, nil, invoker)
+			err := unbryClientInterceptor(&observer, ctx, method, request, nil, nil, invoker)
 			if err != test.expectedError {
-				t.Errorf("error mismatch (wanted: %q, got: %q)", test.expectedError, err)
+				t.Errorf("error mismbtch (wbnted: %q, got: %q)", test.expectedError, err)
 			}
 
-			if !invokerCalled {
-				t.Fatal("invoker not called")
+			if !invokerCblled {
+				t.Fbtbl("invoker not cblled")
 			}
 
-			if diff := cmp.Diff(test.expectedRequest, actualRequest, protocmp.Transform()); diff != "" {
-				t.Error("request mismatch (-want +got):\n", diff)
+			if diff := cmp.Diff(test.expectedRequest, bctublRequest, protocmp.Trbnsform()); diff != "" {
+				t.Error("request mismbtch (-wbnt +got):\n", diff)
 			}
 
-			if diff := cmp.Diff(1, onFinishCallCount); diff != "" {
-				t.Error("onFinishFunc not called expected number of times (-want +got):\n", diff)
+			if diff := cmp.Diff(1, onFinishCbllCount); diff != "" {
+				t.Error("onFinishFunc not cblled expected number of times (-wbnt +got):\n", diff)
 			}
 		})
 	}
 }
 
-func TestStreamingClientInterceptor(t *testing.T) {
-	ctx := context.Background()
+func TestStrebmingClientInterceptor(t *testing.T) {
+	ctx := context.Bbckground()
 
-	request1 := &newspb.BinaryAttachment{
-		Name: "data",
-		Data: bytes.Repeat([]byte("request"), 3),
+	request1 := &newspb.BinbryAttbchment{
+		Nbme: "dbtb",
+		Dbtb: bytes.Repebt([]byte("request"), 3),
 	}
 
-	request2 := &newspb.BinaryAttachment{
-		Name: "data",
-		Data: bytes.Repeat([]byte("request"), 7),
+	request2 := &newspb.BinbryAttbchment{
+		Nbme: "dbtb",
+		Dbtb: bytes.Repebt([]byte("request"), 7),
 	}
 
-	request3 := &newspb.BinaryAttachment{
-		Name: "data",
-		Data: bytes.Repeat([]byte("request"), 13),
+	request3 := &newspb.BinbryAttbchment{
+		Nbme: "dbtb",
+		Dbtb: bytes.Repebt([]byte("request"), 13),
 	}
 
 	method := "news.v1.NewsService/GetArticle"
@@ -409,7 +409,7 @@ func TestStreamingClientInterceptor(t *testing.T) {
 	type stepType int
 
 	const (
-		stepSend stepType = iota
+		stepSend stepType = iotb
 		stepRecv
 		stepCloseSend
 	)
@@ -417,90 +417,90 @@ func TestStreamingClientInterceptor(t *testing.T) {
 	type step struct {
 		stepType stepType
 
-		message   any
-		streamErr error
+		messbge   bny
+		strebmErr error
 	}
 
 	tests := []struct {
-		name string
+		nbme string
 
 		steps        []step
 		expectedSize uint64
 	}{
 		{
-			name: "invoker successful - observe request size",
+			nbme: "invoker successful - observe request size",
 			steps: []step{
 				{
 					stepType: stepSend,
 
-					message:   request1,
-					streamErr: nil,
+					messbge:   request1,
+					strebmErr: nil,
 				},
 				{
 					stepType: stepSend,
 
-					message:   request2,
-					streamErr: nil,
+					messbge:   request2,
+					strebmErr: nil,
 				},
 				{
 					stepType: stepSend,
 
-					message:   request3,
-					streamErr: nil,
+					messbge:   request3,
+					strebmErr: nil,
 				},
 				{
 					stepType: stepRecv,
 
-					message:   nil,
-					streamErr: io.EOF, // end of stream
+					messbge:   nil,
+					strebmErr: io.EOF, // end of strebm
 				},
 			},
 
 			expectedSize: uint64(proto.Size(request1) + proto.Size(request2) + proto.Size(request3)),
 		},
 		{
-			name: "2nd send failed - stream aborts and should only observe first request",
+			nbme: "2nd send fbiled - strebm bborts bnd should only observe first request",
 			steps: []step{
 				{
 					stepType:  stepSend,
-					message:   request1,
-					streamErr: nil,
+					messbge:   request1,
+					strebmErr: nil,
 				},
 				{
 					stepType:  stepSend,
-					message:   request2,
-					streamErr: sentinelError,
+					messbge:   request2,
+					strebmErr: sentinelError,
 				},
 			},
 
 			expectedSize: uint64(proto.Size(request1)),
 		},
 		{
-			name: "recv message fails with non io.EOF error - should still observe all requests",
+			nbme: "recv messbge fbils with non io.EOF error - should still observe bll requests",
 			steps: []step{
 				{
 					stepType: stepSend,
 
-					message:   request1,
-					streamErr: nil,
+					messbge:   request1,
+					strebmErr: nil,
 				},
 				{
 					stepType: stepSend,
 
-					message:   request2,
-					streamErr: nil,
+					messbge:   request2,
+					strebmErr: nil,
 				},
 				{
 					stepType: stepSend,
 
-					message:   request3,
-					streamErr: nil,
+					messbge:   request3,
+					strebmErr: nil,
 				},
 				{
 					stepType: stepRecv,
 
-					message:   nil,
-					streamErr: sentinelError,
+					messbge:   nil,
+					strebmErr: sentinelError,
 				},
 			},
 
@@ -508,57 +508,57 @@ func TestStreamingClientInterceptor(t *testing.T) {
 		},
 
 		{
-			name: "close send called - should  observe all requests",
+			nbme: "close send cblled - should  observe bll requests",
 			steps: []step{
 				{
 					stepType: stepSend,
 
-					message:   request1,
-					streamErr: nil,
+					messbge:   request1,
+					strebmErr: nil,
 				},
 				{
 					stepType: stepSend,
 
-					message:   request2,
-					streamErr: nil,
+					messbge:   request2,
+					strebmErr: nil,
 				},
 				{
 					stepType: stepSend,
 
-					message:   request3,
-					streamErr: nil,
+					messbge:   request3,
+					strebmErr: nil,
 				},
 				{
 					stepType: stepCloseSend,
 
-					message:   nil,
-					streamErr: nil,
+					messbge:   nil,
+					strebmErr: nil,
 				},
 			},
 
 			expectedSize: uint64(proto.Size(request1) + proto.Size(request2) + proto.Size(request3)),
 		},
 		{
-			name: "close send called immediately - should observe zero-sized response",
+			nbme: "close send cblled immedibtely - should observe zero-sized response",
 			steps: []step{
 				{
 					stepType: stepCloseSend,
 
-					message:   nil,
-					streamErr: nil,
+					messbge:   nil,
+					strebmErr: nil,
 				},
 			},
 
 			expectedSize: uint64(0),
 		},
 		{
-			name: "first send fails - stream should abort and observe zero-sized response",
+			nbme: "first send fbils - strebm should bbort bnd observe zero-sized response",
 			steps: []step{
 				{
 					stepType: stepSend,
 
-					message:   request1,
-					streamErr: sentinelError,
+					messbge:   request1,
+					strebmErr: sentinelError,
 				},
 			},
 
@@ -566,155 +566,155 @@ func TestStreamingClientInterceptor(t *testing.T) {
 		},
 	}
 
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			onFinishCallCount := 0
+	for _, test := rbnge tests {
+		t.Run(test.nbme, func(t *testing.T) {
+			onFinishCbllCount := 0
 
-			observer := messageSizeObserver{
-				onSingleFunc: func(messageSizeBytes uint64) {},
-				onFinishFunc: func(totalSizeBytes uint64) {
-					onFinishCallCount++
+			observer := messbgeSizeObserver{
+				onSingleFunc: func(messbgeSizeBytes uint64) {},
+				onFinishFunc: func(totblSizeBytes uint64) {
+					onFinishCbllCount++
 
-					if diff := cmp.Diff(totalSizeBytes, test.expectedSize); diff != "" {
-						t.Error("totalSizeBytes mismatch (-want +got):\n", diff)
+					if diff := cmp.Diff(totblSizeBytes, test.expectedSize); diff != "" {
+						t.Error("totblSizeBytes mismbtch (-wbnt +got):\n", diff)
 					}
 				},
 			}
 
-			baseStream := &mockClientStream{}
-			streamerCalled := false
-			streamer := func(ctx context.Context, desc *grpc.StreamDesc, cc *grpc.ClientConn, method string, opts ...grpc.CallOption) (grpc.ClientStream, error) {
-				streamerCalled = true
+			bbseStrebm := &mockClientStrebm{}
+			strebmerCblled := fblse
+			strebmer := func(ctx context.Context, desc *grpc.StrebmDesc, cc *grpc.ClientConn, method string, opts ...grpc.CbllOption) (grpc.ClientStrebm, error) {
+				strebmerCblled = true
 
-				return baseStream, nil
+				return bbseStrebm, nil
 			}
 
-			ss, err := streamClientInterceptor(&observer, ctx, nil, nil, method, streamer)
+			ss, err := strebmClientInterceptor(&observer, ctx, nil, nil, method, strebmer)
 			require.NoError(t, err)
 
-			// Run through all the steps, preparing the mockClientStream to return the expected errors
-			for _, step := range test.steps {
-				baseStreamCalled := false
-				var streamErr error
+			// Run through bll the steps, prepbring the mockClientStrebm to return the expected errors
+			for _, step := rbnge test.steps {
+				bbseStrebmCblled := fblse
+				vbr strebmErr error
 
 				switch step.stepType {
-				case stepSend:
-					baseStream.mockSendMsg = func(m any) error {
-						baseStreamCalled = true
-						return step.streamErr
+				cbse stepSend:
+					bbseStrebm.mockSendMsg = func(m bny) error {
+						bbseStrebmCblled = true
+						return step.strebmErr
 					}
 
-					streamErr = ss.SendMsg(step.message)
-				case stepRecv:
-					baseStream.mockRecvMsg = func(_ any) error {
-						baseStreamCalled = true
-						return step.streamErr
+					strebmErr = ss.SendMsg(step.messbge)
+				cbse stepRecv:
+					bbseStrebm.mockRecvMsg = func(_ bny) error {
+						bbseStrebmCblled = true
+						return step.strebmErr
 					}
 
-					streamErr = ss.RecvMsg(step.message)
+					strebmErr = ss.RecvMsg(step.messbge)
 
-				case stepCloseSend:
-					baseStream.mockCloseSend = func() error {
-						baseStreamCalled = true
-						return step.streamErr
+				cbse stepCloseSend:
+					bbseStrebm.mockCloseSend = func() error {
+						bbseStrebmCblled = true
+						return step.strebmErr
 					}
 
-					streamErr = ss.CloseSend()
-				default:
-					t.Fatalf("unknown step type: %v", step.stepType)
+					strebmErr = ss.CloseSend()
+				defbult:
+					t.Fbtblf("unknown step type: %v", step.stepType)
 				}
 
-				// ensure that the baseStream was called and errors are propagated
-				require.True(t, baseStreamCalled)
-				require.Equal(t, step.streamErr, streamErr)
+				// ensure thbt the bbseStrebm wbs cblled bnd errors bre propbgbted
+				require.True(t, bbseStrebmCblled)
+				require.Equbl(t, step.strebmErr, strebmErr)
 			}
 
-			if !streamerCalled {
-				t.Fatal("streamer not called")
+			if !strebmerCblled {
+				t.Fbtbl("strebmer not cblled")
 			}
 
-			if diff := cmp.Diff(1, onFinishCallCount); diff != "" {
-				t.Error("onFinishFunc not called expected number of times (-want +got):\n", diff)
+			if diff := cmp.Diff(1, onFinishCbllCount); diff != "" {
+				t.Error("onFinishFunc not cblled expected number of times (-wbnt +got):\n", diff)
 			}
 		})
 	}
 }
 
 func TestObserver(t *testing.T) {
-	testCases := []struct {
-		name     string
-		messages []proto.Message
+	testCbses := []struct {
+		nbme     string
+		messbges []proto.Messbge
 	}{
 		{
-			name: "single message",
-			messages: []proto.Message{&newspb.BinaryAttachment{
-				Name: "data1",
-				Data: []byte("sample data"),
+			nbme: "single messbge",
+			messbges: []proto.Messbge{&newspb.BinbryAttbchment{
+				Nbme: "dbtb1",
+				Dbtb: []byte("sbmple dbtb"),
 			}},
 		},
 		{
-			name: "multiple messages",
-			messages: []proto.Message{
-				&newspb.BinaryAttachment{
-					Name: "data1",
-					Data: []byte("sample data"),
+			nbme: "multiple messbges",
+			messbges: []proto.Messbge{
+				&newspb.BinbryAttbchment{
+					Nbme: "dbtb1",
+					Dbtb: []byte("sbmple dbtb"),
 				},
-				&newspb.KeyValueAttachment{
-					Name: "data2",
-					Data: map[string]string{
-						"key1": "value1",
-						"key2": "value2",
+				&newspb.KeyVblueAttbchment{
+					Nbme: "dbtb2",
+					Dbtb: mbp[string]string{
+						"key1": "vblue1",
+						"key2": "vblue2",
 					},
 				},
 			}},
 	}
 
-	for _, tc := range testCases {
-		t.Run(tc.name, func(t *testing.T) {
-			var singleMessageSizes []uint64
-			var totalSize uint64
+	for _, tc := rbnge testCbses {
+		t.Run(tc.nbme, func(t *testing.T) {
+			vbr singleMessbgeSizes []uint64
+			vbr totblSize uint64
 
-			// Create a new observer with custom onSingleFunc and onFinishFunc
-			obs := &messageSizeObserver{
-				onSingleFunc: func(messageSizeBytes uint64) {
-					singleMessageSizes = append(singleMessageSizes, messageSizeBytes)
+			// Crebte b new observer with custom onSingleFunc bnd onFinishFunc
+			obs := &messbgeSizeObserver{
+				onSingleFunc: func(messbgeSizeBytes uint64) {
+					singleMessbgeSizes = bppend(singleMessbgeSizes, messbgeSizeBytes)
 				},
-				onFinishFunc: func(totalSizeBytes uint64) {
-					totalSize = totalSizeBytes
+				onFinishFunc: func(totblSizeBytes uint64) {
+					totblSize = totblSizeBytes
 				},
 			}
 
-			// Call ObserveSingle for each message
-			for _, msg := range tc.messages {
+			// Cbll ObserveSingle for ebch messbge
+			for _, msg := rbnge tc.messbges {
 				obs.Observe(msg)
 			}
 
-			// Check that the singleMessageSizes are correct
-			for i, msg := range tc.messages {
+			// Check thbt the singleMessbgeSizes bre correct
+			for i, msg := rbnge tc.messbges {
 				expectedSize := uint64(proto.Size(msg))
-				require.Equal(t, expectedSize, singleMessageSizes[i])
+				require.Equbl(t, expectedSize, singleMessbgeSizes[i])
 			}
 
-			// Call FinishRPC
+			// Cbll FinishRPC
 			obs.FinishRPC()
 
-			// Check that the totalSize is correct
-			expectedTotalSize := uint64(0)
-			for _, size := range singleMessageSizes {
-				expectedTotalSize += size
+			// Check thbt the totblSize is correct
+			expectedTotblSize := uint64(0)
+			for _, size := rbnge singleMessbgeSizes {
+				expectedTotblSize += size
 			}
-			require.EqualValues(t, expectedTotalSize, totalSize)
+			require.EqublVblues(t, expectedTotblSize, totblSize)
 		})
 	}
 }
 
-type mockServerStream struct {
-	mockSendMsg func(m any) error
+type mockServerStrebm struct {
+	mockSendMsg func(m bny) error
 
-	grpc.ServerStream
+	grpc.ServerStrebm
 }
 
-func (s *mockServerStream) SendMsg(m any) error {
+func (s *mockServerStrebm) SendMsg(m bny) error {
 	if s.mockSendMsg != nil {
 		return s.mockSendMsg(m)
 	}
@@ -722,15 +722,15 @@ func (s *mockServerStream) SendMsg(m any) error {
 	return errors.New("send msg not implemented")
 }
 
-type mockClientStream struct {
-	mockRecvMsg   func(m any) error
-	mockSendMsg   func(m any) error
+type mockClientStrebm struct {
+	mockRecvMsg   func(m bny) error
+	mockSendMsg   func(m bny) error
 	mockCloseSend func() error
 
-	grpc.ClientStream
+	grpc.ClientStrebm
 }
 
-func (s *mockClientStream) SendMsg(m any) error {
+func (s *mockClientStrebm) SendMsg(m bny) error {
 	if s.mockSendMsg != nil {
 		return s.mockSendMsg(m)
 	}
@@ -738,7 +738,7 @@ func (s *mockClientStream) SendMsg(m any) error {
 	return errors.New("send msg not implemented")
 }
 
-func (s *mockClientStream) RecvMsg(m any) error {
+func (s *mockClientStrebm) RecvMsg(m bny) error {
 	if s.mockRecvMsg != nil {
 		return s.mockRecvMsg(m)
 	}
@@ -746,7 +746,7 @@ func (s *mockClientStream) RecvMsg(m any) error {
 	return errors.New("recv msg not implemented")
 }
 
-func (s *mockClientStream) CloseSend() error {
+func (s *mockClientStrebm) CloseSend() error {
 	if s.mockCloseSend != nil {
 		return s.mockCloseSend()
 	}
@@ -754,5 +754,5 @@ func (s *mockClientStream) CloseSend() error {
 	return errors.New("close send not implemented")
 }
 
-var _ grpc.ServerStream = &mockServerStream{}
-var _ grpc.ClientStream = &mockClientStream{}
+vbr _ grpc.ServerStrebm = &mockServerStrebm{}
+vbr _ grpc.ClientStrebm = &mockClientStrebm{}

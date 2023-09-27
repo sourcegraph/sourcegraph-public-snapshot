@@ -1,39 +1,39 @@
-package rockskip
+pbckbge rockskip
 
 import (
 	"context"
 
-	"github.com/sourcegraph/sourcegraph/cmd/symbols/fetcher"
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
-	"github.com/sourcegraph/sourcegraph/internal/search"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/cmd/symbols/fetcher"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi"
+	"github.com/sourcegrbph/sourcegrbph/internbl/gitserver/gitdombin"
+	"github.com/sourcegrbph/sourcegrbph/internbl/sebrch"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-type GitserverClient interface {
-	LogReverseEach(ctx context.Context, repo string, commit string, n int, onLogEntry func(logEntry gitdomain.LogEntry) error) error
+type GitserverClient interfbce {
+	LogReverseEbch(ctx context.Context, repo string, commit string, n int, onLogEntry func(logEntry gitdombin.LogEntry) error) error
 	RevList(ctx context.Context, repo string, commit string, onCommit func(commit string) (shouldContinue bool, err error)) error
 }
 
-func archiveEach(ctx context.Context, fetcher fetcher.RepositoryFetcher, repo string, commit string, paths []string, onFile func(path string, contents []byte) error) error {
-	if len(paths) == 0 {
+func brchiveEbch(ctx context.Context, fetcher fetcher.RepositoryFetcher, repo string, commit string, pbths []string, onFile func(pbth string, contents []byte) error) error {
+	if len(pbths) == 0 {
 		return nil
 	}
 
-	args := search.SymbolsParameters{Repo: api.RepoName(repo), CommitID: api.CommitID(commit)}
-	parseRequestOrErrors := fetcher.FetchRepositoryArchive(ctx, args.Repo, args.CommitID, paths)
+	brgs := sebrch.SymbolsPbrbmeters{Repo: bpi.RepoNbme(repo), CommitID: bpi.CommitID(commit)}
+	pbrseRequestOrErrors := fetcher.FetchRepositoryArchive(ctx, brgs.Repo, brgs.CommitID, pbths)
 	defer func() {
-		// Ensure the channel is drained
-		for range parseRequestOrErrors {
+		// Ensure the chbnnel is drbined
+		for rbnge pbrseRequestOrErrors {
 		}
 	}()
 
-	for parseRequestOrError := range parseRequestOrErrors {
-		if parseRequestOrError.Err != nil {
-			return errors.Wrap(parseRequestOrError.Err, "FetchRepositoryArchive")
+	for pbrseRequestOrError := rbnge pbrseRequestOrErrors {
+		if pbrseRequestOrError.Err != nil {
+			return errors.Wrbp(pbrseRequestOrError.Err, "FetchRepositoryArchive")
 		}
 
-		err := onFile(parseRequestOrError.ParseRequest.Path, parseRequestOrError.ParseRequest.Data)
+		err := onFile(pbrseRequestOrError.PbrseRequest.Pbth, pbrseRequestOrError.PbrseRequest.Dbtb)
 		if err != nil {
 			return err
 		}

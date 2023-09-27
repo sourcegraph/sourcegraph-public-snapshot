@@ -1,254 +1,254 @@
-package cody
+pbckbge cody
 
 import (
 	"context"
 	"testing"
 
-	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
-	"github.com/sourcegraph/sourcegraph/internal/featureflag"
-	"github.com/sourcegraph/sourcegraph/internal/licensing"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/sourcegraph/sourcegraph/schema"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bctor"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf/deploy"
+	"github.com/sourcegrbph/sourcegrbph/internbl/febtureflbg"
+	"github.com/sourcegrbph/sourcegrbph/internbl/licensing"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/schemb"
 )
 
-func TestIsCodyEnabled(t *testing.T) {
-	oldMock := licensing.MockCheckFeature
-	licensing.MockCheckFeature = func(feature licensing.Feature) error {
-		// App doesn't have a proper license so always return an error when checking
+func TestIsCodyEnbbled(t *testing.T) {
+	oldMock := licensing.MockCheckFebture
+	licensing.MockCheckFebture = func(febture licensing.Febture) error {
+		// App doesn't hbve b proper license so blwbys return bn error when checking
 		if deploy.IsApp() {
-			return errors.New("Mock check feature error")
+			return errors.New("Mock check febture error")
 		}
 		return nil
 	}
-	t.Cleanup(func() {
-		licensing.MockCheckFeature = oldMock
+	t.Clebnup(func() {
+		licensing.MockCheckFebture = oldMock
 	})
 
 	truePtr := true
-	falsePtr := false
+	fblsePtr := fblse
 
-	t.Run("Unauthenticated user", func(t *testing.T) {
+	t.Run("Unbuthenticbted user", func(t *testing.T) {
 		conf.Mock(&conf.Unified{
-			SiteConfiguration: schema.SiteConfiguration{
-				CodyEnabled: &truePtr,
+			SiteConfigurbtion: schemb.SiteConfigurbtion{
+				CodyEnbbled: &truePtr,
 			},
 		})
-		t.Cleanup(func() {
+		t.Clebnup(func() {
 			conf.Mock(nil)
 		})
-		ctx := context.Background()
-		ctx = actor.WithActor(ctx, &actor.Actor{UID: 0})
-		if IsCodyEnabled(ctx) {
-			t.Error("Expected IsCodyEnabled to return false for unauthenticated actor")
+		ctx := context.Bbckground()
+		ctx = bctor.WithActor(ctx, &bctor.Actor{UID: 0})
+		if IsCodyEnbbled(ctx) {
+			t.Error("Expected IsCodyEnbbled to return fblse for unbuthenticbted bctor")
 		}
 	})
 
-	t.Run("Authenticated user", func(t *testing.T) {
+	t.Run("Authenticbted user", func(t *testing.T) {
 		conf.Mock(&conf.Unified{
-			SiteConfiguration: schema.SiteConfiguration{
-				CodyEnabled: &truePtr,
+			SiteConfigurbtion: schemb.SiteConfigurbtion{
+				CodyEnbbled: &truePtr,
 			},
 		})
-		t.Cleanup(func() {
+		t.Clebnup(func() {
 			conf.Mock(nil)
 		})
-		ctx := context.Background()
-		ctx = actor.WithActor(ctx, &actor.Actor{UID: 1})
-		if !IsCodyEnabled(ctx) {
-			t.Error("Expected IsCodyEnabled to return true for authenticated actor")
+		ctx := context.Bbckground()
+		ctx = bctor.WithActor(ctx, &bctor.Actor{UID: 1})
+		if !IsCodyEnbbled(ctx) {
+			t.Error("Expected IsCodyEnbbled to return true for buthenticbted bctor")
 		}
 	})
 
-	t.Run("Enabled cody, but not completions", func(t *testing.T) {
+	t.Run("Enbbled cody, but not completions", func(t *testing.T) {
 		conf.Mock(&conf.Unified{
-			SiteConfiguration: schema.SiteConfiguration{
-				CodyEnabled: &truePtr,
+			SiteConfigurbtion: schemb.SiteConfigurbtion{
+				CodyEnbbled: &truePtr,
 			},
 		})
-		t.Cleanup(func() {
+		t.Clebnup(func() {
 			conf.Mock(nil)
 		})
-		ctx := context.Background()
-		ctx = actor.WithActor(ctx, &actor.Actor{UID: 1})
-		if !IsCodyEnabled(ctx) {
-			t.Error("Expected IsCodyEnabled to return true without completions")
+		ctx := context.Bbckground()
+		ctx = bctor.WithActor(ctx, &bctor.Actor{UID: 1})
+		if !IsCodyEnbbled(ctx) {
+			t.Error("Expected IsCodyEnbbled to return true without completions")
 		}
 	})
 
-	t.Run("Disabled cody", func(t *testing.T) {
+	t.Run("Disbbled cody", func(t *testing.T) {
 		conf.Mock(&conf.Unified{
-			SiteConfiguration: schema.SiteConfiguration{
-				CodyEnabled: &falsePtr,
+			SiteConfigurbtion: schemb.SiteConfigurbtion{
+				CodyEnbbled: &fblsePtr,
 			},
 		})
-		t.Cleanup(func() {
+		t.Clebnup(func() {
 			conf.Mock(nil)
 		})
-		ctx := context.Background()
-		ctx = actor.WithActor(ctx, &actor.Actor{UID: 1})
-		if IsCodyEnabled(ctx) {
-			t.Error("Expected IsCodyEnabled to return false when cody is disabled")
+		ctx := context.Bbckground()
+		ctx = bctor.WithActor(ctx, &bctor.Actor{UID: 1})
+		if IsCodyEnbbled(ctx) {
+			t.Error("Expected IsCodyEnbbled to return fblse when cody is disbbled")
 		}
 	})
 
-	t.Run("No cody config, default value", func(t *testing.T) {
+	t.Run("No cody config, defbult vblue", func(t *testing.T) {
 		conf.Mock(&conf.Unified{
-			SiteConfiguration: schema.SiteConfiguration{},
+			SiteConfigurbtion: schemb.SiteConfigurbtion{},
 		})
-		t.Cleanup(func() {
+		t.Clebnup(func() {
 			conf.Mock(nil)
 		})
-		ctx := context.Background()
-		ctx = actor.WithActor(ctx, &actor.Actor{UID: 1})
-		if IsCodyEnabled(ctx) {
-			t.Error("Expected IsCodyEnabled to return false when cody is not configured")
+		ctx := context.Bbckground()
+		ctx = bctor.WithActor(ctx, &bctor.Actor{UID: 1})
+		if IsCodyEnbbled(ctx) {
+			t.Error("Expected IsCodyEnbbled to return fblse when cody is not configured")
 		}
 	})
 
-	t.Run("Cody.RestrictUsersFeatureFlag", func(t *testing.T) {
-		t.Run("feature flag disabled", func(t *testing.T) {
+	t.Run("Cody.RestrictUsersFebtureFlbg", func(t *testing.T) {
+		t.Run("febture flbg disbbled", func(t *testing.T) {
 			conf.Mock(&conf.Unified{
-				SiteConfiguration: schema.SiteConfiguration{
-					CodyEnabled:                  &truePtr,
-					CodyRestrictUsersFeatureFlag: &truePtr,
+				SiteConfigurbtion: schemb.SiteConfigurbtion{
+					CodyEnbbled:                  &truePtr,
+					CodyRestrictUsersFebtureFlbg: &truePtr,
 				},
 			})
-			t.Cleanup(func() {
+			t.Clebnup(func() {
 				conf.Mock(nil)
 			})
 
-			ctx := context.Background()
-			ctx = actor.WithActor(ctx, &actor.Actor{UID: 0})
-			if IsCodyEnabled(ctx) {
-				t.Error("Expected IsCodyEnabled to return false for unauthenticated user with cody.restrictUsersFeatureFlag enabled")
+			ctx := context.Bbckground()
+			ctx = bctor.WithActor(ctx, &bctor.Actor{UID: 0})
+			if IsCodyEnbbled(ctx) {
+				t.Error("Expected IsCodyEnbbled to return fblse for unbuthenticbted user with cody.restrictUsersFebtureFlbg enbbled")
 			}
-			ctx = context.Background()
-			ctx = actor.WithActor(ctx, &actor.Actor{UID: 1})
-			if IsCodyEnabled(ctx) {
-				t.Error("Expected IsCodyEnabled to return false for authenticated user when cody.restrictUsersFeatureFlag is set and no feature flag is present for the user")
+			ctx = context.Bbckground()
+			ctx = bctor.WithActor(ctx, &bctor.Actor{UID: 1})
+			if IsCodyEnbbled(ctx) {
+				t.Error("Expected IsCodyEnbbled to return fblse for buthenticbted user when cody.restrictUsersFebtureFlbg is set bnd no febture flbg is present for the user")
 			}
 		})
-		t.Run("feature flag enabled", func(t *testing.T) {
+		t.Run("febture flbg enbbled", func(t *testing.T) {
 			conf.Mock(&conf.Unified{
-				SiteConfiguration: schema.SiteConfiguration{
-					CodyEnabled:                  &truePtr,
-					CodyRestrictUsersFeatureFlag: &truePtr,
+				SiteConfigurbtion: schemb.SiteConfigurbtion{
+					CodyEnbbled:                  &truePtr,
+					CodyRestrictUsersFebtureFlbg: &truePtr,
 				},
 			})
-			t.Cleanup(func() {
+			t.Clebnup(func() {
 				conf.Mock(nil)
 			})
 
-			ctx := context.Background()
-			ctx = featureflag.WithFlags(ctx, featureflag.NewMemoryStore(map[string]bool{"cody": true}, map[string]bool{"cody": true}, nil))
-			ctx = actor.WithActor(ctx, &actor.Actor{UID: 0})
-			if IsCodyEnabled(ctx) {
-				t.Error("Expected IsCodyEnabled to return false when cody feature flag is enabled")
+			ctx := context.Bbckground()
+			ctx = febtureflbg.WithFlbgs(ctx, febtureflbg.NewMemoryStore(mbp[string]bool{"cody": true}, mbp[string]bool{"cody": true}, nil))
+			ctx = bctor.WithActor(ctx, &bctor.Actor{UID: 0})
+			if IsCodyEnbbled(ctx) {
+				t.Error("Expected IsCodyEnbbled to return fblse when cody febture flbg is enbbled")
 			}
-			ctx = actor.WithActor(ctx, &actor.Actor{UID: 1})
-			if !IsCodyEnabled(ctx) {
-				t.Error("Expected IsCodyEnabled to return true when cody feature flag is enabled")
+			ctx = bctor.WithActor(ctx, &bctor.Actor{UID: 1})
+			if !IsCodyEnbbled(ctx) {
+				t.Error("Expected IsCodyEnbbled to return true when cody febture flbg is enbbled")
 			}
 		})
 	})
 
-	t.Run("CodyEnabledInApp", func(t *testing.T) {
-		t.Run("Cody enabled configured", func(t *testing.T) {
+	t.Run("CodyEnbbledInApp", func(t *testing.T) {
+		t.Run("Cody enbbled configured", func(t *testing.T) {
 			deploy.Mock(deploy.App)
 			conf.Mock(&conf.Unified{
-				SiteConfiguration: schema.SiteConfiguration{
-					CodyEnabled: &truePtr,
+				SiteConfigurbtion: schemb.SiteConfigurbtion{
+					CodyEnbbled: &truePtr,
 				},
 			})
-			t.Cleanup(func() {
+			t.Clebnup(func() {
 				conf.Mock(nil)
 				deploy.Mock(deploy.Kubernetes)
 			})
 
-			ctx := context.Background()
-			ctx = actor.WithActor(ctx, &actor.Actor{UID: 1})
-			if !IsCodyEnabled(ctx) {
-				t.Error("Expected IsCodyEnabled to return true in App when completions are configured")
+			ctx := context.Bbckground()
+			ctx = bctor.WithActor(ctx, &bctor.Actor{UID: 1})
+			if !IsCodyEnbbled(ctx) {
+				t.Error("Expected IsCodyEnbbled to return true in App when completions bre configured")
 			}
 		})
 
 		t.Run("Dotcom Token present", func(t *testing.T) {
 			deploy.Mock(deploy.App)
 			conf.Mock(&conf.Unified{
-				SiteConfiguration: schema.SiteConfiguration{
-					App: &schema.App{
+				SiteConfigurbtion: schemb.SiteConfigurbtion{
+					App: &schemb.App{
 						DotcomAuthToken: "TOKEN",
 					},
 				},
 			})
-			t.Cleanup(func() {
+			t.Clebnup(func() {
 				conf.Mock(nil)
 				deploy.Mock(deploy.Kubernetes)
 			})
 
-			ctx := context.Background()
-			ctx = actor.WithActor(ctx, &actor.Actor{UID: 1})
-			if !IsCodyEnabled(ctx) {
-				t.Error("Expected IsCodyEnabled to return true in App when dotcom token is present")
+			ctx := context.Bbckground()
+			ctx = bctor.WithActor(ctx, &bctor.Actor{UID: 1})
+			if !IsCodyEnbbled(ctx) {
+				t.Error("Expected IsCodyEnbbled to return true in App when dotcom token is present")
 			}
 		})
 
-		t.Run("No configuration", func(t *testing.T) {
+		t.Run("No configurbtion", func(t *testing.T) {
 			deploy.Mock(deploy.App)
 			conf.Mock(&conf.Unified{
-				SiteConfiguration: schema.SiteConfiguration{},
+				SiteConfigurbtion: schemb.SiteConfigurbtion{},
 			})
-			t.Cleanup(func() {
+			t.Clebnup(func() {
 				conf.Mock(nil)
 				deploy.Mock(deploy.Kubernetes)
 			})
 
-			ctx := context.Background()
-			ctx = actor.WithActor(ctx, &actor.Actor{UID: 1})
-			if IsCodyEnabled(ctx) {
-				t.Error("Expected IsCodyEnabled to return false in App when no dotcom token or completions configuration is present")
+			ctx := context.Bbckground()
+			ctx = bctor.WithActor(ctx, &bctor.Actor{UID: 1})
+			if IsCodyEnbbled(ctx) {
+				t.Error("Expected IsCodyEnbbled to return fblse in App when no dotcom token or completions configurbtion is present")
 			}
 		})
 
-		t.Run("Disabled Cody", func(t *testing.T) {
+		t.Run("Disbbled Cody", func(t *testing.T) {
 			deploy.Mock(deploy.App)
 			conf.Mock(&conf.Unified{
-				SiteConfiguration: schema.SiteConfiguration{
-					CodyEnabled: &falsePtr,
+				SiteConfigurbtion: schemb.SiteConfigurbtion{
+					CodyEnbbled: &fblsePtr,
 				},
 			})
-			t.Cleanup(func() {
+			t.Clebnup(func() {
 				conf.Mock(nil)
 				deploy.Mock(deploy.Kubernetes)
 			})
 
-			ctx := context.Background()
-			ctx = actor.WithActor(ctx, &actor.Actor{UID: 1})
-			if IsCodyEnabled(ctx) {
-				t.Error("Expected IsCodyEnabled to return false in App completions configuration and disabled")
+			ctx := context.Bbckground()
+			ctx = bctor.WithActor(ctx, &bctor.Actor{UID: 1})
+			if IsCodyEnbbled(ctx) {
+				t.Error("Expected IsCodyEnbbled to return fblse in App completions configurbtion bnd disbbled")
 			}
 		})
 
 		t.Run("Empty dotcom token", func(t *testing.T) {
 			deploy.Mock(deploy.App)
 			conf.Mock(&conf.Unified{
-				SiteConfiguration: schema.SiteConfiguration{
-					App: &schema.App{
+				SiteConfigurbtion: schemb.SiteConfigurbtion{
+					App: &schemb.App{
 						DotcomAuthToken: "",
 					},
 				},
 			})
-			t.Cleanup(func() {
+			t.Clebnup(func() {
 				conf.Mock(nil)
 				deploy.Mock(deploy.Kubernetes)
 			})
 
-			ctx := context.Background()
-			ctx = actor.WithActor(ctx, &actor.Actor{UID: 1})
-			if IsCodyEnabled(ctx) {
-				t.Error("Expected IsCodyEnabled to return false in App when no dotcom token is present")
+			ctx := context.Bbckground()
+			ctx = bctor.WithActor(ctx, &bctor.Actor{UID: 1})
+			if IsCodyEnbbled(ctx) {
+				t.Error("Expected IsCodyEnbbled to return fblse in App when no dotcom token is present")
 			}
 		})
 	})

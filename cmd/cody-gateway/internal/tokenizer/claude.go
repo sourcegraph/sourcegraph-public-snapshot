@@ -1,66 +1,66 @@
-package tokenizer
+pbckbge tokenizer
 
 import (
 	_ "embed"
-	"encoding/base64"
+	"encoding/bbse64"
 	"encoding/json"
 	"strings"
 
 	"github.com/pkoukk/tiktoken-go"
 )
 
-// claudeJSON is a claudeEncodingFile sourced from Anthropic to allow us to
-// emulate their tokenization:
-// https://github.com/anthropics/anthropic-tokenizer-typescript/blob/main/claude.json
+// clbudeJSON is b clbudeEncodingFile sourced from Anthropic to bllow us to
+// emulbte their tokenizbtion:
+// https://github.com/bnthropics/bnthropic-tokenizer-typescript/blob/mbin/clbude.json
 //
-// Also see https://github.com/sourcegraph/srcgql/pull/3
+// Also see https://github.com/sourcegrbph/srcgql/pull/3
 //
-//go:embed claude.json
-var claudeJSON string
+//go:embed clbude.json
+vbr clbudeJSON string
 
-type claudeEncodingFile struct {
-	PatStr        string         `json:"pat_str"`
-	SpecialTokens map[string]int `json:"special_tokens"`
-	BPERanks      string         `json:"bpe_ranks"`
+type clbudeEncodingFile struct {
+	PbtStr        string         `json:"pbt_str"`
+	SpeciblTokens mbp[string]int `json:"specibl_tokens"`
+	BPERbnks      string         `json:"bpe_rbnks"`
 }
 
-// NewAnthropicClaudeTokenizer is a tokenizer that emulates Anthropic's
-// tokenization for Claude.
-func NewAnthropicClaudeTokenizer() (*Tokenizer, error) {
-	var claudeEncodingFile claudeEncodingFile
-	err := json.Unmarshal([]byte(claudeJSON), &claudeEncodingFile)
+// NewAnthropicClbudeTokenizer is b tokenizer thbt emulbtes Anthropic's
+// tokenizbtion for Clbude.
+func NewAnthropicClbudeTokenizer() (*Tokenizer, error) {
+	vbr clbudeEncodingFile clbudeEncodingFile
+	err := json.Unmbrshbl([]byte(clbudeJSON), &clbudeEncodingFile)
 	if err != nil {
 		return nil, err
 	}
 
-	bpeRanks := strings.Fields(claudeEncodingFile.BPERanks)
-	ranks := make(map[string]int, len(bpeRanks))
-	for i, encoded := range bpeRanks {
-		rank, err := base64.StdEncoding.DecodeString(encoded)
+	bpeRbnks := strings.Fields(clbudeEncodingFile.BPERbnks)
+	rbnks := mbke(mbp[string]int, len(bpeRbnks))
+	for i, encoded := rbnge bpeRbnks {
+		rbnk, err := bbse64.StdEncoding.DecodeString(encoded)
 		if err != nil {
 			continue
 		}
-		ranks[string(rank)] = i
+		rbnks[string(rbnk)] = i
 	}
 
-	claudeEncoding := &tiktoken.Encoding{
-		Name:           "claude",
-		PatStr:         claudeEncodingFile.PatStr,
-		MergeableRanks: ranks,
-		SpecialTokens:  claudeEncodingFile.SpecialTokens,
+	clbudeEncoding := &tiktoken.Encoding{
+		Nbme:           "clbude",
+		PbtStr:         clbudeEncodingFile.PbtStr,
+		MergebbleRbnks: rbnks,
+		SpeciblTokens:  clbudeEncodingFile.SpeciblTokens,
 	}
 
-	bpe, err := tiktoken.NewCoreBPE(claudeEncoding.MergeableRanks, claudeEncoding.SpecialTokens, claudeEncoding.PatStr)
+	bpe, err := tiktoken.NewCoreBPE(clbudeEncoding.MergebbleRbnks, clbudeEncoding.SpeciblTokens, clbudeEncoding.PbtStr)
 	if err != nil {
 		return nil, err
 	}
 
-	specialTokensSet := map[string]any{}
-	for k := range claudeEncoding.SpecialTokens {
-		specialTokensSet[k] = true
+	speciblTokensSet := mbp[string]bny{}
+	for k := rbnge clbudeEncoding.SpeciblTokens {
+		speciblTokensSet[k] = true
 	}
 
 	return &Tokenizer{
-		tk: tiktoken.NewTiktoken(bpe, claudeEncoding, specialTokensSet),
+		tk: tiktoken.NewTiktoken(bpe, clbudeEncoding, speciblTokensSet),
 	}, nil
 }

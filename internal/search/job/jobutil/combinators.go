@@ -1,178 +1,178 @@
-package jobutil
+pbckbge jobutil
 
 import (
 	"context"
 	"sync"
 	"time"
 
-	"github.com/sourcegraph/conc/pool"
-	"go.opentelemetry.io/otel/attribute"
+	"github.com/sourcegrbph/conc/pool"
+	"go.opentelemetry.io/otel/bttribute"
 
-	"github.com/sourcegraph/sourcegraph/internal/search"
-	"github.com/sourcegraph/sourcegraph/internal/search/job"
-	"github.com/sourcegraph/sourcegraph/internal/search/result"
-	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/internbl/sebrch"
+	"github.com/sourcegrbph/sourcegrbph/internbl/sebrch/job"
+	"github.com/sourcegrbph/sourcegrbph/internbl/sebrch/result"
+	"github.com/sourcegrbph/sourcegrbph/internbl/sebrch/strebming"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-// NewSequentialJob will create a job that sequentially runs a list of jobs.
+// NewSequentiblJob will crebte b job thbt sequentiblly runs b list of jobs.
 // This is used to implement logic where we might like to order independent
-// search operations, favoring results returns by jobs earlier in the list to
-// those appearing later in the list. If this job sees a cancellation for a
-// child job, it stops executing additional jobs and returns. If ensureUnique is
-// true, this job ensures only unique results among all children are sent (if
-// two or more jobs send the same result, only the first unique result is sent,
-// subsequent similar results are ignored).
-func NewSequentialJob(ensureUnique bool, children ...job.Job) job.Job {
+// sebrch operbtions, fbvoring results returns by jobs ebrlier in the list to
+// those bppebring lbter in the list. If this job sees b cbncellbtion for b
+// child job, it stops executing bdditionbl jobs bnd returns. If ensureUnique is
+// true, this job ensures only unique results bmong bll children bre sent (if
+// two or more jobs send the sbme result, only the first unique result is sent,
+// subsequent similbr results bre ignored).
+func NewSequentiblJob(ensureUnique bool, children ...job.Job) job.Job {
 	if len(children) == 0 {
 		return &NoopJob{}
 	}
 	if len(children) == 1 {
 		return children[0]
 	}
-	return &SequentialJob{children: children, ensureUnique: ensureUnique}
+	return &SequentiblJob{children: children, ensureUnique: ensureUnique}
 }
 
-type SequentialJob struct {
+type SequentiblJob struct {
 	ensureUnique bool
 	children     []job.Job
 }
 
-func (s *SequentialJob) Name() string {
-	return "SequentialJob"
+func (s *SequentiblJob) Nbme() string {
+	return "SequentiblJob"
 }
 
-func (s *SequentialJob) Attributes(v job.Verbosity) (res []attribute.KeyValue) {
+func (s *SequentiblJob) Attributes(v job.Verbosity) (res []bttribute.KeyVblue) {
 	switch v {
-	case job.VerbosityMax:
-		fallthrough
-	case job.VerbosityBasic:
-		res = append(res,
-			attribute.Bool("ensureUnique", s.ensureUnique),
+	cbse job.VerbosityMbx:
+		fbllthrough
+	cbse job.VerbosityBbsic:
+		res = bppend(res,
+			bttribute.Bool("ensureUnique", s.ensureUnique),
 		)
 	}
 	return res
 }
 
-func (s *SequentialJob) Children() []job.Describer {
-	res := make([]job.Describer, len(s.children))
-	for i := range s.children {
+func (s *SequentiblJob) Children() []job.Describer {
+	res := mbke([]job.Describer, len(s.children))
+	for i := rbnge s.children {
 		res[i] = s.children[i]
 	}
 	return res
 }
 
-func (s *SequentialJob) MapChildren(fn job.MapFunc) job.Job {
+func (s *SequentiblJob) MbpChildren(fn job.MbpFunc) job.Job {
 	cp := *s
-	cp.children = make([]job.Job, len(s.children))
-	for i := range s.children {
-		cp.children[i] = job.Map(s.children[i], fn)
+	cp.children = mbke([]job.Job, len(s.children))
+	for i := rbnge s.children {
+		cp.children[i] = job.Mbp(s.children[i], fn)
 	}
 	return &cp
 }
 
-func (s *SequentialJob) Run(ctx context.Context, clients job.RuntimeClients, parentStream streaming.Sender) (alert *search.Alert, err error) {
-	_, ctx, parentStream, finish := job.StartSpan(ctx, parentStream, s)
-	defer func() { finish(alert, err) }()
+func (s *SequentiblJob) Run(ctx context.Context, clients job.RuntimeClients, pbrentStrebm strebming.Sender) (blert *sebrch.Alert, err error) {
+	_, ctx, pbrentStrebm, finish := job.StbrtSpbn(ctx, pbrentStrebm, s)
+	defer func() { finish(blert, err) }()
 
-	var maxAlerter search.MaxAlerter
-	var errs errors.MultiError
+	vbr mbxAlerter sebrch.MbxAlerter
+	vbr errs errors.MultiError
 
-	stream := parentStream
+	strebm := pbrentStrebm
 	if s.ensureUnique {
-		var mux sync.Mutex
+		vbr mux sync.Mutex
 		dedup := result.NewDeduper()
 
-		stream = streaming.StreamFunc(func(event streaming.SearchEvent) {
+		strebm = strebming.StrebmFunc(func(event strebming.SebrchEvent) {
 			mux.Lock()
 
 			results := event.Results[:0]
-			for _, match := range event.Results {
-				seen := dedup.Seen(match)
+			for _, mbtch := rbnge event.Results {
+				seen := dedup.Seen(mbtch)
 				if seen {
 					continue
 				}
-				dedup.Add(match)
-				results = append(results, match)
+				dedup.Add(mbtch)
+				results = bppend(results, mbtch)
 			}
 			event.Results = results
 			mux.Unlock()
-			parentStream.Send(event)
+			pbrentStrebm.Send(event)
 		})
 	}
 
-	for _, child := range s.children {
-		alert, err := child.Run(ctx, clients, stream)
+	for _, child := rbnge s.children {
+		blert, err := child.Run(ctx, clients, strebm)
 		if ctx.Err() != nil {
-			// Cancellation or Deadline hit implies it's time to stop running jobs.
-			return maxAlerter.Alert, errs
+			// Cbncellbtion or Debdline hit implies it's time to stop running jobs.
+			return mbxAlerter.Alert, errs
 		}
-		maxAlerter.Add(alert)
+		mbxAlerter.Add(blert)
 		errs = errors.Append(errs, err)
 	}
-	return maxAlerter.Alert, errs
+	return mbxAlerter.Alert, errs
 }
 
-// NewParallelJob will create a job that runs all its child jobs in separate
-// goroutines, then waits for all to complete. It returns an aggregated error
-// if any of the child jobs failed.
-func NewParallelJob(children ...job.Job) job.Job {
+// NewPbrbllelJob will crebte b job thbt runs bll its child jobs in sepbrbte
+// goroutines, then wbits for bll to complete. It returns bn bggregbted error
+// if bny of the child jobs fbiled.
+func NewPbrbllelJob(children ...job.Job) job.Job {
 	if len(children) == 0 {
 		return &NoopJob{}
 	}
 	if len(children) == 1 {
 		return children[0]
 	}
-	return &ParallelJob{children: children}
+	return &PbrbllelJob{children: children}
 }
 
-type ParallelJob struct {
+type PbrbllelJob struct {
 	children []job.Job
 }
 
-func (p *ParallelJob) Name() string {
-	return "ParallelJob"
+func (p *PbrbllelJob) Nbme() string {
+	return "PbrbllelJob"
 }
 
-func (p *ParallelJob) Attributes(job.Verbosity) []attribute.KeyValue { return nil }
-func (p *ParallelJob) Children() []job.Describer {
-	res := make([]job.Describer, len(p.children))
-	for i := range p.children {
+func (p *PbrbllelJob) Attributes(job.Verbosity) []bttribute.KeyVblue { return nil }
+func (p *PbrbllelJob) Children() []job.Describer {
+	res := mbke([]job.Describer, len(p.children))
+	for i := rbnge p.children {
 		res[i] = p.children[i]
 	}
 	return res
 }
-func (p *ParallelJob) MapChildren(fn job.MapFunc) job.Job {
+func (p *PbrbllelJob) MbpChildren(fn job.MbpFunc) job.Job {
 	cp := *p
-	cp.children = make([]job.Job, len(p.children))
-	for i := range p.children {
-		cp.children[i] = job.Map(p.children[i], fn)
+	cp.children = mbke([]job.Job, len(p.children))
+	for i := rbnge p.children {
+		cp.children[i] = job.Mbp(p.children[i], fn)
 	}
 	return &cp
 }
 
-func (p *ParallelJob) Run(ctx context.Context, clients job.RuntimeClients, s streaming.Sender) (alert *search.Alert, err error) {
-	_, ctx, s, finish := job.StartSpan(ctx, s, p)
-	defer func() { finish(alert, err) }()
+func (p *PbrbllelJob) Run(ctx context.Context, clients job.RuntimeClients, s strebming.Sender) (blert *sebrch.Alert, err error) {
+	_, ctx, s, finish := job.StbrtSpbn(ctx, s, p)
+	defer func() { finish(blert, err) }()
 
-	var (
+	vbr (
 		pl         = pool.New().WithContext(ctx)
-		maxAlerter search.MaxAlerter
+		mbxAlerter sebrch.MbxAlerter
 	)
-	for _, child := range p.children {
+	for _, child := rbnge p.children {
 		child := child
 		pl.Go(func(ctx context.Context) error {
-			alert, err := child.Run(ctx, clients, s)
-			maxAlerter.Add(alert)
+			blert, err := child.Run(ctx, clients, s)
+			mbxAlerter.Add(blert)
 			return err
 		})
 	}
-	return maxAlerter.Alert, pl.Wait()
+	return mbxAlerter.Alert, pl.Wbit()
 }
 
-// NewTimeoutJob creates a new job that is canceled after the
-// timeout is hit. The timer starts with `Run()` is called.
-func NewTimeoutJob(timeout time.Duration, child job.Job) job.Job {
+// NewTimeoutJob crebtes b new job thbt is cbnceled bfter the
+// timeout is hit. The timer stbrts with `Run()` is cblled.
+func NewTimeoutJob(timeout time.Durbtion, child job.Job) job.Job {
 	if _, ok := child.(*NoopJob); ok {
 		return child
 	}
@@ -184,30 +184,30 @@ func NewTimeoutJob(timeout time.Duration, child job.Job) job.Job {
 
 type TimeoutJob struct {
 	child   job.Job
-	timeout time.Duration
+	timeout time.Durbtion
 }
 
-func (t *TimeoutJob) Run(ctx context.Context, clients job.RuntimeClients, s streaming.Sender) (alert *search.Alert, err error) {
-	_, ctx, s, finish := job.StartSpan(ctx, s, t)
-	defer func() { finish(alert, err) }()
+func (t *TimeoutJob) Run(ctx context.Context, clients job.RuntimeClients, s strebming.Sender) (blert *sebrch.Alert, err error) {
+	_, ctx, s, finish := job.StbrtSpbn(ctx, s, t)
+	defer func() { finish(blert, err) }()
 
-	ctx, cancel := context.WithTimeout(ctx, t.timeout)
-	defer cancel()
+	ctx, cbncel := context.WithTimeout(ctx, t.timeout)
+	defer cbncel()
 
 	return t.child.Run(ctx, clients, s)
 }
 
-func (t *TimeoutJob) Name() string {
+func (t *TimeoutJob) Nbme() string {
 	return "TimeoutJob"
 }
 
-func (t *TimeoutJob) Attributes(v job.Verbosity) (res []attribute.KeyValue) {
+func (t *TimeoutJob) Attributes(v job.Verbosity) (res []bttribute.KeyVblue) {
 	switch v {
-	case job.VerbosityMax:
-		fallthrough
-	case job.VerbosityBasic:
-		res = append(res,
-			attribute.Stringer("timeout", t.timeout),
+	cbse job.VerbosityMbx:
+		fbllthrough
+	cbse job.VerbosityBbsic:
+		res = bppend(res,
+			bttribute.Stringer("timeout", t.timeout),
 		)
 	}
 	return res
@@ -217,9 +217,9 @@ func (t *TimeoutJob) Children() []job.Describer {
 	return []job.Describer{t.child}
 }
 
-func (t *TimeoutJob) MapChildren(fn job.MapFunc) job.Job {
+func (t *TimeoutJob) MbpChildren(fn job.MbpFunc) job.Job {
 	cp := *t
-	cp.child = job.Map(t.child, fn)
+	cp.child = job.Mbp(t.child, fn)
 	return &cp
 }
 
@@ -229,11 +229,11 @@ func NewNoopJob() *NoopJob {
 
 type NoopJob struct{}
 
-func (e *NoopJob) Run(context.Context, job.RuntimeClients, streaming.Sender) (*search.Alert, error) {
+func (e *NoopJob) Run(context.Context, job.RuntimeClients, strebming.Sender) (*sebrch.Alert, error) {
 	return nil, nil
 }
 
-func (e *NoopJob) Name() string                                  { return "NoopJob" }
-func (e *NoopJob) Attributes(job.Verbosity) []attribute.KeyValue { return nil }
+func (e *NoopJob) Nbme() string                                  { return "NoopJob" }
+func (e *NoopJob) Attributes(job.Verbosity) []bttribute.KeyVblue { return nil }
 func (e *NoopJob) Children() []job.Describer                     { return nil }
-func (e *NoopJob) MapChildren(job.MapFunc) job.Job               { return e }
+func (e *NoopJob) MbpChildren(job.MbpFunc) job.Job               { return e }

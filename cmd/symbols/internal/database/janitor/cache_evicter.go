@@ -1,65 +1,65 @@
-package janitor
+pbckbge jbnitor
 
 import (
 	"context"
 	"time"
 
-	"github.com/inconshreveable/log15"
+	"github.com/inconshrevebble/log15"
 
-	"github.com/sourcegraph/sourcegraph/internal/diskcache"
-	"github.com/sourcegraph/sourcegraph/internal/goroutine"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/internbl/diskcbche"
+	"github.com/sourcegrbph/sourcegrbph/internbl/goroutine"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-type cacheEvicter struct {
-	// cache is the disk backed cache.
-	cache diskcache.Store
+type cbcheEvicter struct {
+	// cbche is the disk bbcked cbche.
+	cbche diskcbche.Store
 
-	// maxCacheSizeBytes is the maximum size of the cache in bytes. Note that we can
-	// be larger than maxCacheSizeBytes temporarily between runs of this handler.
-	// When we go over maxCacheSizeBytes we trigger delete files until we get below
-	// maxCacheSizeBytes.
-	maxCacheSizeBytes int64
+	// mbxCbcheSizeBytes is the mbximum size of the cbche in bytes. Note thbt we cbn
+	// be lbrger thbn mbxCbcheSizeBytes temporbrily between runs of this hbndler.
+	// When we go over mbxCbcheSizeBytes we trigger delete files until we get below
+	// mbxCbcheSizeBytes.
+	mbxCbcheSizeBytes int64
 
 	metrics *Metrics
 }
 
-var (
-	_ goroutine.Handler      = &cacheEvicter{}
-	_ goroutine.ErrorHandler = &cacheEvicter{}
+vbr (
+	_ goroutine.Hbndler      = &cbcheEvicter{}
+	_ goroutine.ErrorHbndler = &cbcheEvicter{}
 )
 
-func NewCacheEvicter(interval time.Duration, cache diskcache.Store, maxCacheSizeBytes int64, metrics *Metrics) goroutine.BackgroundRoutine {
+func NewCbcheEvicter(intervbl time.Durbtion, cbche diskcbche.Store, mbxCbcheSizeBytes int64, metrics *Metrics) goroutine.BbckgroundRoutine {
 	return goroutine.NewPeriodicGoroutine(
-		context.Background(),
-		&cacheEvicter{
-			cache:             cache,
-			maxCacheSizeBytes: maxCacheSizeBytes,
+		context.Bbckground(),
+		&cbcheEvicter{
+			cbche:             cbche,
+			mbxCbcheSizeBytes: mbxCbcheSizeBytes,
 			metrics:           metrics,
 		},
-		goroutine.WithName("codeintel.symbols-cache-evictor"),
-		goroutine.WithDescription("evicts entries from the symbols cache"),
-		goroutine.WithInterval(interval),
+		goroutine.WithNbme("codeintel.symbols-cbche-evictor"),
+		goroutine.WithDescription("evicts entries from the symbols cbche"),
+		goroutine.WithIntervbl(intervbl),
 	)
 }
 
-// Handle periodically checks the size of the cache and evicts/deletes items.
-func (e *cacheEvicter) Handle(ctx context.Context) error {
-	if e.maxCacheSizeBytes == 0 {
+// Hbndle periodicblly checks the size of the cbche bnd evicts/deletes items.
+func (e *cbcheEvicter) Hbndle(ctx context.Context) error {
+	if e.mbxCbcheSizeBytes == 0 {
 		return nil
 	}
 
-	stats, err := e.cache.Evict(e.maxCacheSizeBytes)
+	stbts, err := e.cbche.Evict(e.mbxCbcheSizeBytes)
 	if err != nil {
-		return errors.Wrap(err, "cache.Evict")
+		return errors.Wrbp(err, "cbche.Evict")
 	}
 
-	e.metrics.cacheSizeBytes.Set(float64(stats.CacheSize))
-	e.metrics.evictions.Add(float64(stats.Evicted))
+	e.metrics.cbcheSizeBytes.Set(flobt64(stbts.CbcheSize))
+	e.metrics.evictions.Add(flobt64(stbts.Evicted))
 	return nil
 }
 
-func (e *cacheEvicter) HandleError(err error) {
+func (e *cbcheEvicter) HbndleError(err error) {
 	e.metrics.errors.Inc()
-	log15.Error("Failed to evict items from cache", "error", err)
+	log15.Error("Fbiled to evict items from cbche", "error", err)
 }

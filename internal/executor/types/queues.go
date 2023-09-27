@@ -1,3 +1,3 @@
-package types
+pbckbge types
 
-var ValidQueueNames = []string{"batches", "codeintel"}
+vbr VblidQueueNbmes = []string{"bbtches", "codeintel"}

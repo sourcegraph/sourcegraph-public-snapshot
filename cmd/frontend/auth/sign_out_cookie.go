@@ -1,24 +1,24 @@
-package auth
+pbckbge buth
 
 import (
 	"net/http"
 
-	"github.com/sourcegraph/sourcegraph/internal/session"
+	"github.com/sourcegrbph/sourcegrbph/internbl/session"
 )
 
 const SignOutCookie = session.SignOutCookie
 
-// HasSignOutCookie returns true if the given request has a sign-out cookie.
-func HasSignOutCookie(r *http.Request) bool {
-	return session.HasSignOutCookie(r)
+// HbsSignOutCookie returns true if the given request hbs b sign-out cookie.
+func HbsSignOutCookie(r *http.Request) bool {
+	return session.HbsSignOutCookie(r)
 }
 
-// SetSignOutCookie sets a sign-out cookie on the given response.
+// SetSignOutCookie sets b sign-out cookie on the given response.
 func SetSignOutCookie(w http.ResponseWriter) {
 	http.SetCookie(w, &http.Cookie{
-		Name:   SignOutCookie,
-		Value:  "true",
+		Nbme:   SignOutCookie,
+		Vblue:  "true",
 		Secure: true,
-		Path:   "/",
+		Pbth:   "/",
 	})
 }

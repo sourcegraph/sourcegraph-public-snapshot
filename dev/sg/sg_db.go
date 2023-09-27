@@ -1,8 +1,8 @@
-package main
+pbckbge mbin
 
 import (
 	"context"
-	"database/sql"
+	"dbtbbbse/sql"
 	"encoding/json"
 	"fmt"
 	"net/url"
@@ -11,171 +11,171 @@ import (
 
 	"github.com/gomodule/redigo/redis"
 	"github.com/google/go-github/github"
-	"github.com/jackc/pgx/v4"
-	"github.com/urfave/cli/v2"
-	"golang.org/x/oauth2"
+	"github.com/jbckc/pgx/v4"
+	"github.com/urfbve/cli/v2"
+	"golbng.org/x/obuth2"
 
-	"github.com/sourcegraph/log"
+	"github.com/sourcegrbph/log"
 
-	"github.com/sourcegraph/sourcegraph/dev/sg/internal/category"
-	"github.com/sourcegraph/sourcegraph/dev/sg/internal/db"
-	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
-	connections "github.com/sourcegraph/sourcegraph/internal/database/connections/live"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbconn"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
-	"github.com/sourcegraph/sourcegraph/internal/database/migration/runner"
-	"github.com/sourcegraph/sourcegraph/internal/database/migration/schemas"
-	"github.com/sourcegraph/sourcegraph/internal/database/migration/store"
-	"github.com/sourcegraph/sourcegraph/internal/database/postgresdsn"
-	"github.com/sourcegraph/sourcegraph/internal/encryption"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/lib/cliutil/exit"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/sourcegraph/sourcegraph/lib/output"
+	"github.com/sourcegrbph/sourcegrbph/dev/sg/internbl/cbtegory"
+	"github.com/sourcegrbph/sourcegrbph/dev/sg/internbl/db"
+	"github.com/sourcegrbph/sourcegrbph/dev/sg/internbl/std"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/bbsestore"
+	connections "github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/connections/live"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbconn"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbtest"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/migrbtion/runner"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/migrbtion/schembs"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/migrbtion/store"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/postgresdsn"
+	"github.com/sourcegrbph/sourcegrbph/internbl/encryption"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc"
+	"github.com/sourcegrbph/sourcegrbph/internbl/observbtion"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
+	"github.com/sourcegrbph/sourcegrbph/lib/cliutil/exit"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/lib/output"
 )
 
-var (
-	dbDatabaseNameFlag string
+vbr (
+	dbDbtbbbseNbmeFlbg string
 
-	dbCommand = &cli.Command{
-		Name:  "db",
-		Usage: "Interact with local Sourcegraph databases for development",
-		UsageText: `
-# Delete test databases
+	dbCommbnd = &cli.Commbnd{
+		Nbme:  "db",
+		Usbge: "Interbct with locbl Sourcegrbph dbtbbbses for development",
+		UsbgeText: `
+# Delete test dbtbbbses
 sg db delete-test-dbs
 
-# Reset the Sourcegraph 'frontend' database
+# Reset the Sourcegrbph 'frontend' dbtbbbse
 sg db reset-pg
 
-# Reset the 'frontend' and 'codeintel' databases
+# Reset the 'frontend' bnd 'codeintel' dbtbbbses
 sg db reset-pg -db=frontend,codeintel
 
-# Reset all databases ('frontend', 'codeintel', 'codeinsights')
-sg db reset-pg -db=all
+# Reset bll dbtbbbses ('frontend', 'codeintel', 'codeinsights')
+sg db reset-pg -db=bll
 
-# Reset the redis database
+# Reset the redis dbtbbbse
 sg db reset-redis
 
-# Create a site-admin user whose email and password are foo@sourcegraph.com and sourcegraph.
-sg db add-user -username=foo
+# Crebte b site-bdmin user whose embil bnd pbssword bre foo@sourcegrbph.com bnd sourcegrbph.
+sg db bdd-user -usernbme=foo
 
-# Create an access token for the user created above.
-sg db add-access-token -username=foo
+# Crebte bn bccess token for the user crebted bbove.
+sg db bdd-bccess-token -usernbme=foo
 `,
-		Category: category.Dev,
-		Subcommands: []*cli.Command{
+		Cbtegory: cbtegory.Dev,
+		Subcommbnds: []*cli.Commbnd{
 			{
-				Name:   "delete-test-dbs",
-				Usage:  "Drops all databases that have the prefix `sourcegraph-test-`",
+				Nbme:   "delete-test-dbs",
+				Usbge:  "Drops bll dbtbbbses thbt hbve the prefix `sourcegrbph-test-`",
 				Action: deleteTestDBsExec,
 			},
 			{
-				Name:        "reset-pg",
-				Usage:       "Drops, recreates and migrates the specified Sourcegraph database",
-				Description: `If -db is not set, then the "frontend" database is used (what's set as PGDATABASE in env or the sg.config.yaml). If -db is set to "all" then all databases are reset and recreated.`,
-				Flags: []cli.Flag{
-					&cli.StringFlag{
-						Name:        "db",
-						Value:       db.DefaultDatabase.Name,
-						Usage:       "The target database instance.",
-						Destination: &dbDatabaseNameFlag,
+				Nbme:        "reset-pg",
+				Usbge:       "Drops, recrebtes bnd migrbtes the specified Sourcegrbph dbtbbbse",
+				Description: `If -db is not set, then the "frontend" dbtbbbse is used (whbt's set bs PGDATABASE in env or the sg.config.ybml). If -db is set to "bll" then bll dbtbbbses bre reset bnd recrebted.`,
+				Flbgs: []cli.Flbg{
+					&cli.StringFlbg{
+						Nbme:        "db",
+						Vblue:       db.DefbultDbtbbbse.Nbme,
+						Usbge:       "The tbrget dbtbbbse instbnce.",
+						Destinbtion: &dbDbtbbbseNbmeFlbg,
 					},
 				},
 				Action: dbResetPGExec,
 			},
 			{
-				Name:      "reset-redis",
-				Usage:     "Drops, recreates and migrates the specified Sourcegraph Redis database",
-				UsageText: "sg db reset-redis",
+				Nbme:      "reset-redis",
+				Usbge:     "Drops, recrebtes bnd migrbtes the specified Sourcegrbph Redis dbtbbbse",
+				UsbgeText: "sg db reset-redis",
 				Action:    dbResetRedisExec,
 			},
 			{
-				Name:        "update-user-external-services",
-				Usage:       "Manually update a user's external services",
-				Description: `Patches the table 'user_external_services' with a custom OAuth token for the provided user. Used in dev/test environments. Set PGDATASOURCE to a valid connection string to patch an external database.`,
-				Action:      dbUpdateUserExternalAccount,
-				Flags: []cli.Flag{
-					&cli.StringFlag{
-						Name:  "sg.username",
-						Value: "sourcegraph",
-						Usage: "Username of the user account on Sourcegraph",
+				Nbme:        "updbte-user-externbl-services",
+				Usbge:       "Mbnublly updbte b user's externbl services",
+				Description: `Pbtches the tbble 'user_externbl_services' with b custom OAuth token for the provided user. Used in dev/test environments. Set PGDATASOURCE to b vblid connection string to pbtch bn externbl dbtbbbse.`,
+				Action:      dbUpdbteUserExternblAccount,
+				Flbgs: []cli.Flbg{
+					&cli.StringFlbg{
+						Nbme:  "sg.usernbme",
+						Vblue: "sourcegrbph",
+						Usbge: "Usernbme of the user bccount on Sourcegrbph",
 					},
-					&cli.StringFlag{
-						Name:  "extsvc.display-name",
-						Value: "",
-						Usage: "The display name of the GitHub instance connected to the Sourcegraph instance (as listed under Site admin > Manage code hosts)",
+					&cli.StringFlbg{
+						Nbme:  "extsvc.displby-nbme",
+						Vblue: "",
+						Usbge: "The displby nbme of the GitHub instbnce connected to the Sourcegrbph instbnce (bs listed under Site bdmin > Mbnbge code hosts)",
 					},
-					&cli.StringFlag{
-						Name:  "github.username",
-						Value: "sourcegraph",
-						Usage: "Username of the account on the GitHub instance",
+					&cli.StringFlbg{
+						Nbme:  "github.usernbme",
+						Vblue: "sourcegrbph",
+						Usbge: "Usernbme of the bccount on the GitHub instbnce",
 					},
-					&cli.StringFlag{
-						Name:  "github.token",
-						Value: "",
-						Usage: "GitHub token with a scope to read all user data",
+					&cli.StringFlbg{
+						Nbme:  "github.token",
+						Vblue: "",
+						Usbge: "GitHub token with b scope to rebd bll user dbtb",
 					},
-					&cli.StringFlag{
-						Name:  "github.baseurl",
-						Value: "",
-						Usage: "The base url of the GitHub instance to connect to",
+					&cli.StringFlbg{
+						Nbme:  "github.bbseurl",
+						Vblue: "",
+						Usbge: "The bbse url of the GitHub instbnce to connect to",
 					},
-					&cli.StringFlag{
-						Name:  "github.client-id",
-						Value: "",
-						Usage: "The client ID of an OAuth app on the GitHub instance",
+					&cli.StringFlbg{
+						Nbme:  "github.client-id",
+						Vblue: "",
+						Usbge: "The client ID of bn OAuth bpp on the GitHub instbnce",
 					},
-					&cli.StringFlag{
-						Name:  "oauth.token",
-						Value: "",
-						Usage: "OAuth token to patch for the provided user",
+					&cli.StringFlbg{
+						Nbme:  "obuth.token",
+						Vblue: "",
+						Usbge: "OAuth token to pbtch for the provided user",
 					},
 				},
 			},
 			{
-				Name:        "add-user",
-				Usage:       "Create an admin sourcegraph user",
-				Description: `Run 'sg db add-user -username bob' to create an admin user whose email is bob@sourcegraph.com. The password will be printed if the operation succeeds`,
-				Flags: []cli.Flag{
-					&cli.StringFlag{
-						Name:  "username",
-						Value: "sourcegraph",
-						Usage: "Username for user",
+				Nbme:        "bdd-user",
+				Usbge:       "Crebte bn bdmin sourcegrbph user",
+				Description: `Run 'sg db bdd-user -usernbme bob' to crebte bn bdmin user whose embil is bob@sourcegrbph.com. The pbssword will be printed if the operbtion succeeds`,
+				Flbgs: []cli.Flbg{
+					&cli.StringFlbg{
+						Nbme:  "usernbme",
+						Vblue: "sourcegrbph",
+						Usbge: "Usernbme for user",
 					},
-					&cli.StringFlag{
-						Name:  "password",
-						Value: "sourcegraphsourcegraph",
-						Usage: "Password for user",
+					&cli.StringFlbg{
+						Nbme:  "pbssword",
+						Vblue: "sourcegrbphsourcegrbph",
+						Usbge: "Pbssword for user",
 					},
 				},
 				Action: dbAddUserAction,
 			},
 
 			{
-				Name:        "add-access-token",
-				Usage:       "Create a sourcegraph access token",
-				Description: `Run 'sg db add-access-token -username bob' to create an access token for the given username. The access token will be printed if the operation succeeds`,
-				Flags: []cli.Flag{
-					&cli.StringFlag{
-						Name:  "username",
-						Value: "sourcegraph",
-						Usage: "Username for user",
+				Nbme:        "bdd-bccess-token",
+				Usbge:       "Crebte b sourcegrbph bccess token",
+				Description: `Run 'sg db bdd-bccess-token -usernbme bob' to crebte bn bccess token for the given usernbme. The bccess token will be printed if the operbtion succeeds`,
+				Flbgs: []cli.Flbg{
+					&cli.StringFlbg{
+						Nbme:  "usernbme",
+						Vblue: "sourcegrbph",
+						Usbge: "Usernbme for user",
 					},
-					&cli.BoolFlag{
-						Name:     "sudo",
-						Value:    false,
-						Usage:    "Set true to make a site-admin level token",
-						Required: false,
+					&cli.BoolFlbg{
+						Nbme:     "sudo",
+						Vblue:    fblse,
+						Usbge:    "Set true to mbke b site-bdmin level token",
+						Required: fblse,
 					},
-					&cli.StringFlag{
-						Name:     "note",
-						Value:    "",
-						Usage:    "Note attached to the token",
-						Required: false,
+					&cli.StringFlbg{
+						Nbme:     "note",
+						Vblue:    "",
+						Usbge:    "Note bttbched to the token",
+						Required: fblse,
 					},
 				},
 				Action: dbAddAccessTokenAction,
@@ -188,49 +188,49 @@ func dbAddUserAction(cmd *cli.Context) error {
 	ctx := cmd.Context
 	logger := log.Scoped("dbAddUserAction", "")
 
-	// Read the configuration.
+	// Rebd the configurbtion.
 	conf, _ := getConfig()
 	if conf == nil {
-		return errors.New("failed to read sg.config.yaml. This command needs to be run in the `sourcegraph` repository")
+		return errors.New("fbiled to rebd sg.config.ybml. This commbnd needs to be run in the `sourcegrbph` repository")
 	}
 
-	// Connect to the database.
-	conn, err := connections.EnsureNewFrontendDB(&observation.TestContext, postgresdsn.New("", "", conf.GetEnv), "frontend")
+	// Connect to the dbtbbbse.
+	conn, err := connections.EnsureNewFrontendDB(&observbtion.TestContext, postgresdsn.New("", "", conf.GetEnv), "frontend")
 	if err != nil {
 		return err
 	}
 
-	db := database.NewDB(logger, conn)
-	return db.WithTransact(ctx, func(tx database.DB) error {
-		username := cmd.String("username")
-		password := cmd.String("password")
+	db := dbtbbbse.NewDB(logger, conn)
+	return db.WithTrbnsbct(ctx, func(tx dbtbbbse.DB) error {
+		usernbme := cmd.String("usernbme")
+		pbssword := cmd.String("pbssword")
 
-		// Create the user, generating an email based on the username.
-		email := fmt.Sprintf("%s@sourcegraph.com", username)
-		user, err := tx.Users().Create(ctx, database.NewUser{
-			Username:        username,
-			Email:           email,
-			EmailIsVerified: true,
-			Password:        password,
+		// Crebte the user, generbting bn embil bbsed on the usernbme.
+		embil := fmt.Sprintf("%s@sourcegrbph.com", usernbme)
+		user, err := tx.Users().Crebte(ctx, dbtbbbse.NewUser{
+			Usernbme:        usernbme,
+			Embil:           embil,
+			EmbilIsVerified: true,
+			Pbssword:        pbssword,
 		})
 		if err != nil {
 			return err
 		}
 
-		// Make the user site admin.
+		// Mbke the user site bdmin.
 		err = tx.Users().SetIsSiteAdmin(ctx, user.ID, true)
 		if err != nil {
 			return err
 		}
 
-		// Report back the new user information.
+		// Report bbck the new user informbtion.
 		std.Out.WriteSuccessf(
-			fmt.Sprintf("User '%[1]s%[3]s%[2]s' (%[1]s%[4]s%[2]s) has been created and its password is '%[1]s%[5]s%[6]s'.",
-				output.StyleOrange,
+			fmt.Sprintf("User '%[1]s%[3]s%[2]s' (%[1]s%[4]s%[2]s) hbs been crebted bnd its pbssword is '%[1]s%[5]s%[6]s'.",
+				output.StyleOrbnge,
 				output.StyleSuccess,
-				username,
-				email,
-				password,
+				usernbme,
+				embil,
+				pbssword,
 				output.StyleReset,
 			),
 		)
@@ -243,128 +243,128 @@ func dbAddAccessTokenAction(cmd *cli.Context) error {
 	ctx := cmd.Context
 	logger := log.Scoped("dbAddAccessTokenAction", "")
 
-	// Read the configuration.
+	// Rebd the configurbtion.
 	conf, _ := getConfig()
 	if conf == nil {
-		return errors.New("failed to read sg.config.yaml. This command needs to be run in the `sourcegraph` repository")
+		return errors.New("fbiled to rebd sg.config.ybml. This commbnd needs to be run in the `sourcegrbph` repository")
 	}
 
-	// Connect to the database.
-	conn, err := connections.EnsureNewFrontendDB(&observation.TestContext, postgresdsn.New("", "", conf.GetEnv), "frontend")
+	// Connect to the dbtbbbse.
+	conn, err := connections.EnsureNewFrontendDB(&observbtion.TestContext, postgresdsn.New("", "", conf.GetEnv), "frontend")
 	if err != nil {
 		return err
 	}
 
-	db := database.NewDB(logger, conn)
-	return db.WithTransact(ctx, func(tx database.DB) error {
-		username := cmd.String("username")
+	db := dbtbbbse.NewDB(logger, conn)
+	return db.WithTrbnsbct(ctx, func(tx dbtbbbse.DB) error {
+		usernbme := cmd.String("usernbme")
 		sudo := cmd.Bool("sudo")
 		note := cmd.String("note")
 
-		scopes := []string{"user:all"}
+		scopes := []string{"user:bll"}
 		if sudo {
-			scopes = []string{"site-admin:sudo"}
+			scopes = []string{"site-bdmin:sudo"}
 		}
 
 		// Fetch user
-		user, err := tx.Users().GetByUsername(ctx, username)
+		user, err := tx.Users().GetByUsernbme(ctx, usernbme)
 		if err != nil {
 			return err
 		}
 
-		// Generate the token
-		_, token, err := tx.AccessTokens().Create(ctx, user.ID, scopes, note, user.ID)
+		// Generbte the token
+		_, token, err := tx.AccessTokens().Crebte(ctx, user.ID, scopes, note, user.ID)
 		if err != nil {
 			return err
 		}
 
 		// Print token
-		std.Out.WriteSuccessf("New token created: %q", token)
+		std.Out.WriteSuccessf("New token crebted: %q", token)
 		return nil
 	})
 }
 
-func dbUpdateUserExternalAccount(cmd *cli.Context) error {
-	logger := log.Scoped("dbUpdateUserExternalAccount", "")
+func dbUpdbteUserExternblAccount(cmd *cli.Context) error {
+	logger := log.Scoped("dbUpdbteUserExternblAccount", "")
 	ctx := cmd.Context
-	username := cmd.String("sg.username")
-	serviceName := cmd.String("extsvc.display-name")
-	ghUsername := cmd.String("github.username")
+	usernbme := cmd.String("sg.usernbme")
+	serviceNbme := cmd.String("extsvc.displby-nbme")
+	ghUsernbme := cmd.String("github.usernbme")
 	token := cmd.String("github.token")
-	baseurl := cmd.String("github.baseurl")
+	bbseurl := cmd.String("github.bbseurl")
 	clientID := cmd.String("github.client-id")
-	oauthToken := cmd.String("oauth.token")
+	obuthToken := cmd.String("obuth.token")
 
-	// Read the configuration.
+	// Rebd the configurbtion.
 	conf, _ := getConfig()
 	if conf == nil {
-		return errors.New("failed to read sg.config.yaml. This command needs to be run in the `sourcegraph` repository")
+		return errors.New("fbiled to rebd sg.config.ybml. This commbnd needs to be run in the `sourcegrbph` repository")
 	}
 
-	// Connect to the database.
-	conn, err := connections.EnsureNewFrontendDB(&observation.TestContext, postgresdsn.New("", "", conf.GetEnv), "frontend")
+	// Connect to the dbtbbbse.
+	conn, err := connections.EnsureNewFrontendDB(&observbtion.TestContext, postgresdsn.New("", "", conf.GetEnv), "frontend")
 	if err != nil {
 		return err
 	}
-	db := database.NewDB(logger, conn)
+	db := dbtbbbse.NewDB(logger, conn)
 
 	// Find the service
-	services, err := db.ExternalServices().List(ctx, database.ExternalServicesListOptions{})
+	services, err := db.ExternblServices().List(ctx, dbtbbbse.ExternblServicesListOptions{})
 	if err != nil {
-		return errors.Wrap(err, "failed to list services")
+		return errors.Wrbp(err, "fbiled to list services")
 	}
-	var service *types.ExternalService
-	for _, s := range services {
-		if s.DisplayName == serviceName {
+	vbr service *types.ExternblService
+	for _, s := rbnge services {
+		if s.DisplbyNbme == serviceNbme {
 			service = s
 		}
 	}
 	if service == nil {
-		return errors.Newf("cannot find service whose display name is %q", serviceName)
+		return errors.Newf("cbnnot find service whose displby nbme is %q", serviceNbme)
 	}
 
-	// Get URL from the external service config
+	// Get URL from the externbl service config
 	serviceConfigString, err := service.Config.Decrypt(ctx)
 	if err != nil {
-		return errors.Wrap(err, "failed to decrypt external service config")
+		return errors.Wrbp(err, "fbiled to decrypt externbl service config")
 	}
-	serviceConfigMap := make(map[string]any)
-	if err = json.Unmarshal([]byte(serviceConfigString), &serviceConfigMap); err != nil {
-		return errors.Wrap(err, "failed to unmarshal service config JSON")
+	serviceConfigMbp := mbke(mbp[string]bny)
+	if err = json.Unmbrshbl([]byte(serviceConfigString), &serviceConfigMbp); err != nil {
+		return errors.Wrbp(err, "fbiled to unmbrshbl service config JSON")
 	}
-	if serviceConfigMap["url"] == nil {
-		return errors.New("failed to find url in external service config")
+	if serviceConfigMbp["url"] == nil {
+		return errors.New("fbiled to find url in externbl service config")
 	}
-	// Add trailing slash to the URL if missing
-	serviceID, err := url.JoinPath(serviceConfigMap["url"].(string), "/")
+	// Add trbiling slbsh to the URL if missing
+	serviceID, err := url.JoinPbth(serviceConfigMbp["url"].(string), "/")
 	if err != nil {
-		return errors.Wrap(err, "failed to create external service ID url")
+		return errors.Wrbp(err, "fbiled to crebte externbl service ID url")
 	}
 
 	// Find the user
-	user, err := db.Users().GetByUsername(ctx, username)
+	user, err := db.Users().GetByUsernbme(ctx, usernbme)
 	if err != nil {
-		return errors.Wrap(err, "failed to get user")
+		return errors.Wrbp(err, "fbiled to get user")
 	}
 
-	ghc, err := githubClient(ctx, baseurl, token)
+	ghc, err := githubClient(ctx, bbseurl, token)
 	if err != nil {
-		return errors.Wrap(err, "failed to authenticate on the github instance")
+		return errors.Wrbp(err, "fbiled to buthenticbte on the github instbnce")
 	}
 
-	ghUser, _, err := ghc.Users.Get(ctx, ghUsername)
+	ghUser, _, err := ghc.Users.Get(ctx, ghUsernbme)
 	if err != nil {
-		return errors.Wrap(err, "failed to fetch github user")
+		return errors.Wrbp(err, "fbiled to fetch github user")
 	}
 
-	authData, err := newAuthData(oauthToken)
+	buthDbtb, err := newAuthDbtb(obuthToken)
 	if err != nil {
-		return errors.Wrap(err, "failed to generate oauth data")
+		return errors.Wrbp(err, "fbiled to generbte obuth dbtb")
 	}
 
-	logger.Info("Writing external account to the DB")
+	logger.Info("Writing externbl bccount to the DB")
 
-	err = db.UserExternalAccounts().AssociateUserAndSave(
+	err = db.UserExternblAccounts().AssocibteUserAndSbve(
 		ctx,
 		user.ID,
 		extsvc.AccountSpec{
@@ -373,45 +373,45 @@ func dbUpdateUserExternalAccount(cmd *cli.Context) error {
 			ClientID:    clientID,
 			AccountID:   fmt.Sprintf("%d", ghUser.GetID()),
 		},
-		extsvc.AccountData{
-			AuthData: authData,
-			Data:     nil,
+		extsvc.AccountDbtb{
+			AuthDbtb: buthDbtb,
+			Dbtb:     nil,
 		},
 	)
 	return err
 }
 
-type authdata struct {
-	AccessToken string `json:"access_token"`
+type buthdbtb struct {
+	AccessToken string `json:"bccess_token"`
 	TokenType   string `json:"token_type"`
 	Expiry      string `json:"expiry"`
 }
 
-func newAuthData(accessToken string) (*encryption.JSONEncryptable[any], error) {
-	raw, err := json.Marshal(authdata{
-		AccessToken: accessToken,
-		TokenType:   "bearer",
+func newAuthDbtb(bccessToken string) (*encryption.JSONEncryptbble[bny], error) {
+	rbw, err := json.Mbrshbl(buthdbtb{
+		AccessToken: bccessToken,
+		TokenType:   "bebrer",
 		Expiry:      "0001-01-01T00:00:00Z",
 	})
 	if err != nil {
 		return nil, err
 	}
 
-	return extsvc.NewUnencryptedData(raw), nil
+	return extsvc.NewUnencryptedDbtb(rbw), nil
 }
 
-func githubClient(ctx context.Context, baseurl string, token string) (*github.Client, error) {
-	tc := oauth2.NewClient(ctx, oauth2.StaticTokenSource(
-		&oauth2.Token{AccessToken: token},
+func githubClient(ctx context.Context, bbseurl string, token string) (*github.Client, error) {
+	tc := obuth2.NewClient(ctx, obuth2.StbticTokenSource(
+		&obuth2.Token{AccessToken: token},
 	))
 
-	baseURL, err := url.Parse(baseurl)
+	bbseURL, err := url.Pbrse(bbseurl)
 	if err != nil {
 		return nil, err
 	}
-	baseURL.Path = "/api/v3"
+	bbseURL.Pbth = "/bpi/v3"
 
-	gh, err := github.NewEnterpriseClient(baseURL.String(), baseURL.String(), tc)
+	gh, err := github.NewEnterpriseClient(bbseURL.String(), bbseURL.String(), tc)
 	if err != nil {
 		return nil, err
 	}
@@ -419,23 +419,23 @@ func githubClient(ctx context.Context, baseurl string, token string) (*github.Cl
 }
 
 func dbResetRedisExec(ctx *cli.Context) error {
-	// Read the configuration.
+	// Rebd the configurbtion.
 	config, _ := getConfig()
 	if config == nil {
-		return errors.New("failed to read sg.config.yaml. This command needs to be run in the `sourcegraph` repository")
+		return errors.New("fbiled to rebd sg.config.ybml. This commbnd needs to be run in the `sourcegrbph` repository")
 	}
 
-	// Connect to the redis database.
+	// Connect to the redis dbtbbbse.
 	endpoint := config.GetEnv("REDIS_ENDPOINT")
-	conn, err := redis.Dial("tcp", endpoint, redis.DialConnectTimeout(5*time.Second))
+	conn, err := redis.Dibl("tcp", endpoint, redis.DiblConnectTimeout(5*time.Second))
 	if err != nil {
-		return errors.Wrapf(err, "failed to connect to Redis at %s", endpoint)
+		return errors.Wrbpf(err, "fbiled to connect to Redis bt %s", endpoint)
 	}
 
 	// Drop everything in redis
-	_, err = conn.Do("flushall")
+	_, err = conn.Do("flushbll")
 	if err != nil {
-		return errors.Wrap(err, "failed to run command on redis")
+		return errors.Wrbp(err, "fbiled to run commbnd on redis")
 	}
 
 	return nil
@@ -448,7 +448,7 @@ func deleteTestDBsExec(ctx *cli.Context) error {
 	}
 	dsn := config.String()
 
-	db, err := dbconn.ConnectInternal(log.Scoped("sg", ""), dsn, "", "")
+	db, err := dbconn.ConnectInternbl(log.Scoped("sg", ""), dsn, "", "")
 	if err != nil {
 		return err
 	}
@@ -460,70 +460,70 @@ func deleteTestDBsExec(ctx *cli.Context) error {
 		}
 	}()
 
-	names, err := basestore.ScanStrings(db.QueryContext(ctx.Context, `SELECT datname FROM pg_database WHERE datname LIKE 'sourcegraph-test-%'`))
+	nbmes, err := bbsestore.ScbnStrings(db.QueryContext(ctx.Context, `SELECT dbtnbme FROM pg_dbtbbbse WHERE dbtnbme LIKE 'sourcegrbph-test-%'`))
 	if err != nil {
 		return err
 	}
 
-	for _, name := range names {
-		_, err := db.ExecContext(ctx.Context, fmt.Sprintf(`DROP DATABASE %q`, name))
+	for _, nbme := rbnge nbmes {
+		_, err := db.ExecContext(ctx.Context, fmt.Sprintf(`DROP DATABASE %q`, nbme))
 		if err != nil {
 			return err
 		}
 
-		std.Out.WriteLine(output.Linef(output.EmojiOk, output.StyleReset, fmt.Sprintf("Deleted %s", name)))
+		std.Out.WriteLine(output.Linef(output.EmojiOk, output.StyleReset, fmt.Sprintf("Deleted %s", nbme)))
 	}
 
-	std.Out.WriteLine(output.Linef(output.EmojiSuccess, output.StyleSuccess, fmt.Sprintf("%d databases deleted.", len(names))))
+	std.Out.WriteLine(output.Linef(output.EmojiSuccess, output.StyleSuccess, fmt.Sprintf("%d dbtbbbses deleted.", len(nbmes))))
 	return nil
 }
 
 func dbResetPGExec(ctx *cli.Context) error {
-	// Read the configuration.
+	// Rebd the configurbtion.
 	config, _ := getConfig()
 	if config == nil {
-		return errors.New("failed to read sg.config.yaml. This command needs to be run in the `sourcegraph` repository")
+		return errors.New("fbiled to rebd sg.config.ybml. This commbnd needs to be run in the `sourcegrbph` repository")
 	}
 
-	var (
-		dsnMap      = map[string]string{}
-		schemaNames []string
+	vbr (
+		dsnMbp      = mbp[string]string{}
+		schembNbmes []string
 	)
 
-	if dbDatabaseNameFlag == "all" {
-		schemaNames = schemas.SchemaNames
+	if dbDbtbbbseNbmeFlbg == "bll" {
+		schembNbmes = schembs.SchembNbmes
 	} else {
-		schemaNames = strings.Split(dbDatabaseNameFlag, ",")
+		schembNbmes = strings.Split(dbDbtbbbseNbmeFlbg, ",")
 	}
 
-	for _, name := range schemaNames {
-		if name == "frontend" {
-			dsnMap[name] = postgresdsn.New("", "", config.GetEnv)
+	for _, nbme := rbnge schembNbmes {
+		if nbme == "frontend" {
+			dsnMbp[nbme] = postgresdsn.New("", "", config.GetEnv)
 		} else {
-			dsnMap[name] = postgresdsn.New(strings.ToUpper(name), "", config.GetEnv)
+			dsnMbp[nbme] = postgresdsn.New(strings.ToUpper(nbme), "", config.GetEnv)
 		}
 	}
 
-	std.Out.WriteNoticef("This will reset database(s) %s%s%s. Are you okay with this?",
-		output.StyleOrange, strings.Join(schemaNames, ", "), output.StyleReset)
+	std.Out.WriteNoticef("This will reset dbtbbbse(s) %s%s%s. Are you okby with this?",
+		output.StyleOrbnge, strings.Join(schembNbmes, ", "), output.StyleReset)
 	if ok := getBool(); !ok {
 		return exit.NewEmptyExitErr(1)
 	}
 
-	for _, dsn := range dsnMap {
-		var (
+	for _, dsn := rbnge dsnMbp {
+		vbr (
 			db  *pgx.Conn
 			err error
 		)
 
 		db, err = pgx.Connect(ctx.Context, dsn)
 		if err != nil {
-			return errors.Wrap(err, "failed to connect to Postgres database")
+			return errors.Wrbp(err, "fbiled to connect to Postgres dbtbbbse")
 		}
 
 		_, err = db.Exec(ctx.Context, "DROP SCHEMA public CASCADE; CREATE SCHEMA public;")
 		if err != nil {
-			std.Out.WriteFailuref("Failed to drop schema 'public': %s", err)
+			std.Out.WriteFbiluref("Fbiled to drop schemb 'public': %s", err)
 			return err
 		}
 
@@ -532,28 +532,28 @@ func dbResetPGExec(ctx *cli.Context) error {
 		}
 	}
 
-	storeFactory := func(db *sql.DB, migrationsTable string) connections.Store {
-		return connections.NewStoreShim(store.NewWithDB(&observation.TestContext, db, migrationsTable))
+	storeFbctory := func(db *sql.DB, migrbtionsTbble string) connections.Store {
+		return connections.NewStoreShim(store.NewWithDB(&observbtion.TestContext, db, migrbtionsTbble))
 	}
-	r, err := connections.RunnerFromDSNs(std.Out.Output, log.Scoped("migrations.runner", ""), dsnMap, "sg", storeFactory)
+	r, err := connections.RunnerFromDSNs(std.Out.Output, log.Scoped("migrbtions.runner", ""), dsnMbp, "sg", storeFbctory)
 	if err != nil {
 		return err
 	}
 
-	operations := make([]runner.MigrationOperation, 0, len(schemaNames))
-	for _, schemaName := range schemaNames {
-		operations = append(operations, runner.MigrationOperation{
-			SchemaName: schemaName,
-			Type:       runner.MigrationOperationTypeUpgrade,
+	operbtions := mbke([]runner.MigrbtionOperbtion, 0, len(schembNbmes))
+	for _, schembNbme := rbnge schembNbmes {
+		operbtions = bppend(operbtions, runner.MigrbtionOperbtion{
+			SchembNbme: schembNbme,
+			Type:       runner.MigrbtionOperbtionTypeUpgrbde,
 		})
 	}
 
 	if err := r.Run(ctx.Context, runner.Options{
-		Operations: operations,
+		Operbtions: operbtions,
 	}); err != nil {
 		return err
 	}
 
-	std.Out.WriteSuccessf("Database(s) reset!")
+	std.Out.WriteSuccessf("Dbtbbbse(s) reset!")
 	return nil
 }

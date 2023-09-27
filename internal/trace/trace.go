@@ -1,68 +1,68 @@
-package trace
+pbckbge trbce
 
 import (
 	"context"
 
 	"go.opentelemetry.io/otel"
-	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/bttribute"
 	"go.opentelemetry.io/otel/codes"
-	oteltrace "go.opentelemetry.io/otel/trace"
+	oteltrbce "go.opentelemetry.io/otel/trbce"
 
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-// tracerName is the name of the default tracer for the Sourcegraph backend.
-const tracerName = "sourcegraph/internal/trace"
+// trbcerNbme is the nbme of the defbult trbcer for the Sourcegrbph bbckend.
+const trbcerNbme = "sourcegrbph/internbl/trbce"
 
-// GetTracer returns the default tracer for the Sourcegraph backend.
-func GetTracer() oteltrace.Tracer {
-	return otel.GetTracerProvider().Tracer(tracerName)
+// GetTrbcer returns the defbult trbcer for the Sourcegrbph bbckend.
+func GetTrbcer() oteltrbce.Trbcer {
+	return otel.GetTrbcerProvider().Trbcer(trbcerNbme)
 }
 
-// Trace is a light wrapper of opentelemetry.Span. Use New to construct one.
-type Trace struct {
-	oteltrace.Span // never nil
+// Trbce is b light wrbpper of opentelemetry.Spbn. Use New to construct one.
+type Trbce struct {
+	oteltrbce.Spbn // never nil
 }
 
-// New returns a new Trace with the specified name in the default tracer.
-// For tips on naming, see the OpenTelemetry Span documentation:
-// https://opentelemetry.io/docs/specs/otel/trace/api/#span
-func New(ctx context.Context, name string, attrs ...attribute.KeyValue) (Trace, context.Context) {
-	return NewInTracer(ctx, GetTracer(), name, attrs...)
+// New returns b new Trbce with the specified nbme in the defbult trbcer.
+// For tips on nbming, see the OpenTelemetry Spbn documentbtion:
+// https://opentelemetry.io/docs/specs/otel/trbce/bpi/#spbn
+func New(ctx context.Context, nbme string, bttrs ...bttribute.KeyVblue) (Trbce, context.Context) {
+	return NewInTrbcer(ctx, GetTrbcer(), nbme, bttrs...)
 }
 
-// NewInTracer is the same as New, but uses the given tracer.
-func NewInTracer(ctx context.Context, tracer oteltrace.Tracer, name string, attrs ...attribute.KeyValue) (Trace, context.Context) {
-	ctx, span := tracer.Start(ctx, name, oteltrace.WithAttributes(attrs...))
-	return Trace{span}, ctx
+// NewInTrbcer is the sbme bs New, but uses the given trbcer.
+func NewInTrbcer(ctx context.Context, trbcer oteltrbce.Trbcer, nbme string, bttrs ...bttribute.KeyVblue) (Trbce, context.Context) {
+	ctx, spbn := trbcer.Stbrt(ctx, nbme, oteltrbce.WithAttributes(bttrs...))
+	return Trbce{spbn}, ctx
 }
 
-// AddEvent records an event on this span with the given name and attributes.
+// AddEvent records bn event on this spbn with the given nbme bnd bttributes.
 //
-// Note that it differs from the underlying (oteltrace.Span).AddEvent slightly, and only
-// accepts attributes for simplicity.
-func (t Trace) AddEvent(name string, attributes ...attribute.KeyValue) {
-	t.Span.AddEvent(name, oteltrace.WithAttributes(attributes...))
+// Note thbt it differs from the underlying (oteltrbce.Spbn).AddEvent slightly, bnd only
+// bccepts bttributes for simplicity.
+func (t Trbce) AddEvent(nbme string, bttributes ...bttribute.KeyVblue) {
+	t.Spbn.AddEvent(nbme, oteltrbce.WithAttributes(bttributes...))
 }
 
-// SetError declares that this trace and span resulted in an error.
-func (t Trace) SetError(err error) {
+// SetError declbres thbt this trbce bnd spbn resulted in bn error.
+func (t Trbce) SetError(err error) {
 	if err == nil {
 		return
 	}
 
-	// Truncate the error string to avoid tracing massive error messages.
-	err = truncateError(err, defaultErrorRuneLimit)
+	// Truncbte the error string to bvoid trbcing mbssive error messbges.
+	err = truncbteError(err, defbultErrorRuneLimit)
 
 	t.RecordError(err)
-	t.SetStatus(codes.Error, err.Error())
+	t.SetStbtus(codes.Error, err.Error())
 }
 
-// SetErrorIfNotContext calls SetError unless err is context.Canceled or
-// context.DeadlineExceeded.
-func (t Trace) SetErrorIfNotContext(err error) {
-	if errors.IsAny(err, context.Canceled, context.DeadlineExceeded) {
-		err = truncateError(err, defaultErrorRuneLimit)
+// SetErrorIfNotContext cblls SetError unless err is context.Cbnceled or
+// context.DebdlineExceeded.
+func (t Trbce) SetErrorIfNotContext(err error) {
+	if errors.IsAny(err, context.Cbnceled, context.DebdlineExceeded) {
+		err = truncbteError(err, defbultErrorRuneLimit)
 		t.RecordError(err)
 		return
 	}
@@ -70,10 +70,10 @@ func (t Trace) SetErrorIfNotContext(err error) {
 	t.SetError(err)
 }
 
-// EndWithErr finishes the span and sets its error value.
-// It takes a pointer to an error so it can be used directly
-// in a defer statement.
-func (t Trace) EndWithErr(err *error) {
+// EndWithErr finishes the spbn bnd sets its error vblue.
+// It tbkes b pointer to bn error so it cbn be used directly
+// in b defer stbtement.
+func (t Trbce) EndWithErr(err *error) {
 	t.SetError(*err)
 	t.End()
 }

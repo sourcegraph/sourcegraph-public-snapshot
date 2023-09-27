@@ -1,4 +1,4 @@
-package lsifstore
+pbckbge lsifstore
 
 import (
 	"context"
@@ -8,44 +8,44 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/codenav/shared"
+	"github.com/sourcegrbph/sourcegrbph/internbl/codeintel/codenbv/shbred"
 )
 
-func TestDatabaseExists(t *testing.T) {
-	store := populateTestStore(t)
+func TestDbtbbbseExists(t *testing.T) {
+	store := populbteTestStore(t)
 
-	testCases := []struct {
-		uploadID int
-		path     string
+	testCbses := []struct {
+		uplobdID int
+		pbth     string
 		expected bool
 	}{
 		// SCIP
-		{testSCIPUploadID, "template/src/lsif/api.ts", true},
-		{testSCIPUploadID, "template/src/lsif/util.ts", true},
-		{testSCIPUploadID, "missing.ts", false},
+		{testSCIPUplobdID, "templbte/src/lsif/bpi.ts", true},
+		{testSCIPUplobdID, "templbte/src/lsif/util.ts", true},
+		{testSCIPUplobdID, "missing.ts", fblse},
 	}
 
-	for _, testCase := range testCases {
-		if exists, err := store.GetPathExists(context.Background(), testCase.uploadID, testCase.path); err != nil {
-			t.Fatalf("unexpected error %s", err)
-		} else if exists != testCase.expected {
-			t.Errorf("unexpected exists result for %s. want=%v have=%v", testCase.path, testCase.expected, exists)
+	for _, testCbse := rbnge testCbses {
+		if exists, err := store.GetPbthExists(context.Bbckground(), testCbse.uplobdID, testCbse.pbth); err != nil {
+			t.Fbtblf("unexpected error %s", err)
+		} else if exists != testCbse.expected {
+			t.Errorf("unexpected exists result for %s. wbnt=%v hbve=%v", testCbse.pbth, testCbse.expected, exists)
 		}
 	}
 }
 
 func TestStencil(t *testing.T) {
-	testCases := []struct {
-		name           string
-		uploadID       int
-		path           string
-		expectedRanges []string
+	testCbses := []struct {
+		nbme           string
+		uplobdID       int
+		pbth           string
+		expectedRbnges []string
 	}{
 		{
-			name:     "scip",
-			uploadID: testSCIPUploadID,
-			path:     "template/src/telemetry.ts",
-			expectedRanges: []string{
+			nbme:     "scip",
+			uplobdID: testSCIPUplobdID,
+			pbth:     "templbte/src/telemetry.ts",
+			expectedRbnges: []string{
 				"0:0-0:0",
 				"0:12-0:23",
 				"0:29-0:42",
@@ -109,143 +109,143 @@ func TestStencil(t *testing.T) {
 		},
 	}
 
-	store := populateTestStore(t)
+	store := populbteTestStore(t)
 
-	for _, testCase := range testCases {
-		t.Run(testCase.name, func(t *testing.T) {
-			ranges, err := store.GetStencil(context.Background(), testCase.uploadID, testCase.path)
+	for _, testCbse := rbnge testCbses {
+		t.Run(testCbse.nbme, func(t *testing.T) {
+			rbnges, err := store.GetStencil(context.Bbckground(), testCbse.uplobdID, testCbse.pbth)
 			if err != nil {
-				t.Fatalf("unexpected error %s", err)
+				t.Fbtblf("unexpected error %s", err)
 			}
 
-			serializedRanges := make([]string, 0, len(ranges))
-			for _, r := range ranges {
-				serializedRanges = append(serializedRanges, fmt.Sprintf("%d:%d-%d:%d", r.Start.Line, r.Start.Character, r.End.Line, r.End.Character))
+			seriblizedRbnges := mbke([]string, 0, len(rbnges))
+			for _, r := rbnge rbnges {
+				seriblizedRbnges = bppend(seriblizedRbnges, fmt.Sprintf("%d:%d-%d:%d", r.Stbrt.Line, r.Stbrt.Chbrbcter, r.End.Line, r.End.Chbrbcter))
 			}
-			sort.Strings(serializedRanges)
+			sort.Strings(seriblizedRbnges)
 
-			if diff := cmp.Diff(testCase.expectedRanges, serializedRanges); diff != "" {
-				t.Errorf("unexpected ranges (-want +got):\n%s", diff)
+			if diff := cmp.Diff(testCbse.expectedRbnges, seriblizedRbnges); diff != "" {
+				t.Errorf("unexpected rbnges (-wbnt +got):\n%s", diff)
 			}
 		})
 	}
 }
 
-func TestGetRanges(t *testing.T) {
-	store := populateTestStore(t)
-	path := "template/src/util/helpers.ts"
+func TestGetRbnges(t *testing.T) {
+	store := populbteTestStore(t)
+	pbth := "templbte/src/util/helpers.ts"
 
-	// (comments above)
-	// `export function nonEmpty<T>(value: T | T[] | null | undefined): value is T | T[] {`
+	// (comments bbove)
+	// `export function nonEmpty<T>(vblue: T | T[] | null | undefined): vblue is T | T[] {`
 	//                  ^^^^^^^^ ^  ^^^^^  ^   ^                        ^^^^^    ^   ^
 
-	ranges, err := store.GetRanges(context.Background(), testSCIPUploadID, path, 13, 16)
+	rbnges, err := store.GetRbnges(context.Bbckground(), testSCIPUplobdID, pbth, 13, 16)
 	if err != nil {
-		t.Fatalf("unexpected error querying ranges: %s", err)
+		t.Fbtblf("unexpected error querying rbnges: %s", err)
 	}
-	for i := range ranges {
-		// NOTE: currently in-flight as how we're doing this for now,
-		// so we're just un-setting it for the assertions below.
-		ranges[i].Implementations = nil
+	for i := rbnge rbnges {
+		// NOTE: currently in-flight bs how we're doing this for now,
+		// so we're just un-setting it for the bssertions below.
+		rbnges[i].Implementbtions = nil
 	}
 
 	const (
-		nonEmptyHoverText = "```ts\nfunction nonEmpty<T>(value: T | T[] | null | undefined): value is T | T[]\n```\nReturns true if the value is defined and, if an array, contains at least\none element."
-		valueHoverText    = "```ts\n(parameter) value: T | T[] | null | undefined\n```\nThe value to test."
+		nonEmptyHoverText = "```ts\nfunction nonEmpty<T>(vblue: T | T[] | null | undefined): vblue is T | T[]\n```\nReturns true if the vblue is defined bnd, if bn brrby, contbins bt lebst\none element."
+		vblueHoverText    = "```ts\n(pbrbmeter) vblue: T | T[] | null | undefined\n```\nThe vblue to test."
 		tHoverText        = "```ts\nT: T\n```"
 	)
 
-	var (
-		nonEmptyDefinitionLocations = []shared.Location{{DumpID: testSCIPUploadID, Path: path, Range: newRange(15, 16, 15, 24)}}
-		tDefinitionLocations        = []shared.Location{{DumpID: testSCIPUploadID, Path: path, Range: newRange(15, 25, 15, 26)}}
-		valueDefinitionLocations    = []shared.Location{{DumpID: testSCIPUploadID, Path: path, Range: newRange(15, 28, 15, 33)}}
+	vbr (
+		nonEmptyDefinitionLocbtions = []shbred.Locbtion{{DumpID: testSCIPUplobdID, Pbth: pbth, Rbnge: newRbnge(15, 16, 15, 24)}}
+		tDefinitionLocbtions        = []shbred.Locbtion{{DumpID: testSCIPUplobdID, Pbth: pbth, Rbnge: newRbnge(15, 25, 15, 26)}}
+		vblueDefinitionLocbtions    = []shbred.Locbtion{{DumpID: testSCIPUplobdID, Pbth: pbth, Rbnge: newRbnge(15, 28, 15, 33)}}
 
-		nonEmptyReferenceLocations = []shared.Location{}
-		tReferenceLocations        = []shared.Location{
-			{DumpID: testSCIPUploadID, Path: path, Range: newRange(15, 35, 15, 36)},
-			{DumpID: testSCIPUploadID, Path: path, Range: newRange(15, 39, 15, 40)},
-			{DumpID: testSCIPUploadID, Path: path, Range: newRange(15, 73, 15, 74)},
-			{DumpID: testSCIPUploadID, Path: path, Range: newRange(15, 77, 15, 78)},
+		nonEmptyReferenceLocbtions = []shbred.Locbtion{}
+		tReferenceLocbtions        = []shbred.Locbtion{
+			{DumpID: testSCIPUplobdID, Pbth: pbth, Rbnge: newRbnge(15, 35, 15, 36)},
+			{DumpID: testSCIPUplobdID, Pbth: pbth, Rbnge: newRbnge(15, 39, 15, 40)},
+			{DumpID: testSCIPUplobdID, Pbth: pbth, Rbnge: newRbnge(15, 73, 15, 74)},
+			{DumpID: testSCIPUplobdID, Pbth: pbth, Rbnge: newRbnge(15, 77, 15, 78)},
 		}
-		valueReferenceLocations = []shared.Location{
-			{DumpID: testSCIPUploadID, Path: path, Range: newRange(15, 64, 15, 69)},
-			{DumpID: testSCIPUploadID, Path: path, Range: newRange(16, 13, 16, 18)},
-			{DumpID: testSCIPUploadID, Path: path, Range: newRange(16, 38, 16, 43)},
-			{DumpID: testSCIPUploadID, Path: path, Range: newRange(16, 48, 16, 53)},
+		vblueReferenceLocbtions = []shbred.Locbtion{
+			{DumpID: testSCIPUplobdID, Pbth: pbth, Rbnge: newRbnge(15, 64, 15, 69)},
+			{DumpID: testSCIPUplobdID, Pbth: pbth, Rbnge: newRbnge(16, 13, 16, 18)},
+			{DumpID: testSCIPUplobdID, Pbth: pbth, Rbnge: newRbnge(16, 38, 16, 43)},
+			{DumpID: testSCIPUplobdID, Pbth: pbth, Rbnge: newRbnge(16, 48, 16, 53)},
 		}
 
-		nonEmptyImplementationLocations = []shared.Location(nil)
-		tImplementationLocations        = []shared.Location(nil)
-		valueImplementationLocations    = []shared.Location(nil)
+		nonEmptyImplementbtionLocbtions = []shbred.Locbtion(nil)
+		tImplementbtionLocbtions        = []shbred.Locbtion(nil)
+		vblueImplementbtionLocbtions    = []shbred.Locbtion(nil)
 	)
 
-	expectedRanges := []shared.CodeIntelligenceRange{
+	expectedRbnges := []shbred.CodeIntelligenceRbnge{
 		{
 			// `nonEmpty`
-			Range:           newRange(15, 16, 15, 24),
-			Definitions:     nonEmptyDefinitionLocations,
-			References:      nonEmptyReferenceLocations,
-			Implementations: nonEmptyImplementationLocations,
+			Rbnge:           newRbnge(15, 16, 15, 24),
+			Definitions:     nonEmptyDefinitionLocbtions,
+			References:      nonEmptyReferenceLocbtions,
+			Implementbtions: nonEmptyImplementbtionLocbtions,
 			HoverText:       nonEmptyHoverText,
 		},
 		{
 			// `T`
-			Range:           newRange(15, 25, 15, 26),
-			Definitions:     tDefinitionLocations,
-			References:      tReferenceLocations,
-			Implementations: tImplementationLocations,
+			Rbnge:           newRbnge(15, 25, 15, 26),
+			Definitions:     tDefinitionLocbtions,
+			References:      tReferenceLocbtions,
+			Implementbtions: tImplementbtionLocbtions,
 			HoverText:       tHoverText,
 		},
 		{
-			// `value`
-			Range:           newRange(15, 28, 15, 33),
-			Definitions:     valueDefinitionLocations,
-			References:      valueReferenceLocations,
-			Implementations: valueImplementationLocations,
-			HoverText:       valueHoverText,
+			// `vblue`
+			Rbnge:           newRbnge(15, 28, 15, 33),
+			Definitions:     vblueDefinitionLocbtions,
+			References:      vblueReferenceLocbtions,
+			Implementbtions: vblueImplementbtionLocbtions,
+			HoverText:       vblueHoverText,
 		},
 		{
 			// `T`
-			Range:           newRange(15, 35, 15, 36),
-			Definitions:     tDefinitionLocations,
-			References:      tReferenceLocations,
-			Implementations: tImplementationLocations,
-			HoverText:       tHoverText,
-		},
-		{
-			// `T`
-			Range:           newRange(15, 39, 15, 40),
-			Definitions:     tDefinitionLocations,
-			References:      tReferenceLocations,
-			Implementations: tImplementationLocations,
-			HoverText:       tHoverText,
-		},
-		{
-			// `value`
-			Range:           newRange(15, 64, 15, 69),
-			Definitions:     valueDefinitionLocations,
-			References:      valueReferenceLocations,
-			Implementations: valueImplementationLocations,
-			HoverText:       valueHoverText,
-		},
-		{
-			// `T`
-			Range:           newRange(15, 73, 15, 74),
-			Definitions:     tDefinitionLocations,
-			References:      tReferenceLocations,
-			Implementations: tImplementationLocations,
+			Rbnge:           newRbnge(15, 35, 15, 36),
+			Definitions:     tDefinitionLocbtions,
+			References:      tReferenceLocbtions,
+			Implementbtions: tImplementbtionLocbtions,
 			HoverText:       tHoverText,
 		},
 		{
 			// `T`
-			Range:           newRange(15, 77, 15, 78),
-			Definitions:     tDefinitionLocations,
-			References:      tReferenceLocations,
-			Implementations: tImplementationLocations,
+			Rbnge:           newRbnge(15, 39, 15, 40),
+			Definitions:     tDefinitionLocbtions,
+			References:      tReferenceLocbtions,
+			Implementbtions: tImplementbtionLocbtions,
+			HoverText:       tHoverText,
+		},
+		{
+			// `vblue`
+			Rbnge:           newRbnge(15, 64, 15, 69),
+			Definitions:     vblueDefinitionLocbtions,
+			References:      vblueReferenceLocbtions,
+			Implementbtions: vblueImplementbtionLocbtions,
+			HoverText:       vblueHoverText,
+		},
+		{
+			// `T`
+			Rbnge:           newRbnge(15, 73, 15, 74),
+			Definitions:     tDefinitionLocbtions,
+			References:      tReferenceLocbtions,
+			Implementbtions: tImplementbtionLocbtions,
+			HoverText:       tHoverText,
+		},
+		{
+			// `T`
+			Rbnge:           newRbnge(15, 77, 15, 78),
+			Definitions:     tDefinitionLocbtions,
+			References:      tReferenceLocbtions,
+			Implementbtions: tImplementbtionLocbtions,
 			HoverText:       tHoverText,
 		},
 	}
-	if diff := cmp.Diff(expectedRanges, ranges); diff != "" {
-		t.Errorf("unexpected ranges (-want +got):\n%s", diff)
+	if diff := cmp.Diff(expectedRbnges, rbnges); diff != "" {
+		t.Errorf("unexpected rbnges (-wbnt +got):\n%s", diff)
 	}
 }

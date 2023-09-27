@@ -1,117 +1,117 @@
-package backend
+pbckbge bbckend
 
 import (
 	"context"
 	"sync"
 	"time"
 
-	"github.com/keegancsmith/rpc"
-	"github.com/prometheus/client_golang/prometheus"
-	"github.com/prometheus/client_golang/prometheus/promauto"
-	sglog "github.com/sourcegraph/log"
-	"github.com/sourcegraph/zoekt"
-	"github.com/sourcegraph/zoekt/query"
-	"go.opentelemetry.io/otel/attribute"
+	"github.com/keegbncsmith/rpc"
+	"github.com/prometheus/client_golbng/prometheus"
+	"github.com/prometheus/client_golbng/prometheus/prombuto"
+	sglog "github.com/sourcegrbph/log"
+	"github.com/sourcegrbph/zoekt"
+	"github.com/sourcegrbph/zoekt/query"
+	"go.opentelemetry.io/otel/bttribute"
 
-	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/honey"
-	"github.com/sourcegraph/sourcegraph/internal/trace"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bctor"
+	"github.com/sourcegrbph/sourcegrbph/internbl/honey"
+	"github.com/sourcegrbph/sourcegrbph/internbl/trbce"
 )
 
-var requestDuration = promauto.NewHistogramVec(prometheus.HistogramOpts{
-	Name:    "src_zoekt_request_duration_seconds",
+vbr requestDurbtion = prombuto.NewHistogrbmVec(prometheus.HistogrbmOpts{
+	Nbme:    "src_zoekt_request_durbtion_seconds",
 	Help:    "Time (in seconds) spent on request.",
 	Buckets: prometheus.DefBuckets,
-}, []string{"hostname", "category", "code"})
+}, []string{"hostnbme", "cbtegory", "code"})
 
-type meteredSearcher struct {
-	zoekt.Streamer
+type meteredSebrcher struct {
+	zoekt.Strebmer
 
-	hostname string
+	hostnbme string
 	log      sglog.Logger
 }
 
-func NewMeteredSearcher(hostname string, z zoekt.Streamer) zoekt.Streamer {
-	return &meteredSearcher{
-		Streamer: z,
-		hostname: hostname,
-		log:      sglog.Scoped("meteredSearcher", "wraps zoekt.Streamer with observability"),
+func NewMeteredSebrcher(hostnbme string, z zoekt.Strebmer) zoekt.Strebmer {
+	return &meteredSebrcher{
+		Strebmer: z,
+		hostnbme: hostnbme,
+		log:      sglog.Scoped("meteredSebrcher", "wrbps zoekt.Strebmer with observbbility"),
 	}
 }
 
-func (m *meteredSearcher) StreamSearch(ctx context.Context, q query.Q, opts *zoekt.SearchOptions, c zoekt.Sender) (err error) {
-	start := time.Now()
+func (m *meteredSebrcher) StrebmSebrch(ctx context.Context, q query.Q, opts *zoekt.SebrchOptions, c zoekt.Sender) (err error) {
+	stbrt := time.Now()
 
-	// isLeaf is true if this is a zoekt.Searcher which does a network
-	// call. False if we are an aggregator. We use this to decide if we need
-	// to add RPC tracing and adjust how we record metrics.
-	isLeaf := m.hostname != ""
+	// isLebf is true if this is b zoekt.Sebrcher which does b network
+	// cbll. Fblse if we bre bn bggregbtor. We use this to decide if we need
+	// to bdd RPC trbcing bnd bdjust how we record metrics.
+	isLebf := m.hostnbme != ""
 
-	var cat string
-	attrs := []attribute.KeyValue{
-		attribute.String("query", queryString(q)),
+	vbr cbt string
+	bttrs := []bttribute.KeyVblue{
+		bttribute.String("query", queryString(q)),
 	}
-	if !isLeaf {
-		cat = "SearchAll"
+	if !isLebf {
+		cbt = "SebrchAll"
 	} else {
-		cat = "Search"
-		attrs = append(attrs,
-			attribute.String("span.kind", "client"),
-			attribute.String("peer.address", m.hostname),
-			attribute.String("peer.service", "zoekt"),
+		cbt = "Sebrch"
+		bttrs = bppend(bttrs,
+			bttribute.String("spbn.kind", "client"),
+			bttribute.String("peer.bddress", m.hostnbme),
+			bttribute.String("peer.service", "zoekt"),
 		)
 	}
 
 	event := honey.NoopEvent()
-	if honey.Enabled() && cat == "SearchAll" {
-		event = honey.NewEvent("search-zoekt")
-		event.AddField("category", cat)
-		event.AddField("actor", actor.FromContext(ctx).UIDString())
-		event.AddAttributes(attrs)
+	if honey.Enbbled() && cbt == "SebrchAll" {
+		event = honey.NewEvent("sebrch-zoekt")
+		event.AddField("cbtegory", cbt)
+		event.AddField("bctor", bctor.FromContext(ctx).UIDString())
+		event.AddAttributes(bttrs)
 	}
 
-	tr, ctx := trace.New(ctx, "zoekt."+cat, attrs...)
+	tr, ctx := trbce.New(ctx, "zoekt."+cbt, bttrs...)
 	defer func() {
 		tr.SetErrorIfNotContext(err)
 		tr.End()
 	}()
 	if opts != nil {
-		fields := []attribute.KeyValue{
-			attribute.Bool("opts.estimate_doc_count", opts.EstimateDocCount),
-			attribute.Bool("opts.whole", opts.Whole),
-			attribute.Int("opts.shard_max_match_count", opts.ShardMaxMatchCount),
-			attribute.Int("opts.shard_repo_max_match_count", opts.ShardRepoMaxMatchCount),
-			attribute.Int("opts.total_max_match_count", opts.TotalMaxMatchCount),
-			attribute.Int64("opts.max_wall_time_ms", opts.MaxWallTime.Milliseconds()),
-			attribute.Int64("opts.flush_wall_time_ms", opts.FlushWallTime.Milliseconds()),
-			attribute.Int("opts.max_doc_display_count", opts.MaxDocDisplayCount),
-			attribute.Bool("opts.use_document_ranks", opts.UseDocumentRanks),
+		fields := []bttribute.KeyVblue{
+			bttribute.Bool("opts.estimbte_doc_count", opts.EstimbteDocCount),
+			bttribute.Bool("opts.whole", opts.Whole),
+			bttribute.Int("opts.shbrd_mbx_mbtch_count", opts.ShbrdMbxMbtchCount),
+			bttribute.Int("opts.shbrd_repo_mbx_mbtch_count", opts.ShbrdRepoMbxMbtchCount),
+			bttribute.Int("opts.totbl_mbx_mbtch_count", opts.TotblMbxMbtchCount),
+			bttribute.Int64("opts.mbx_wbll_time_ms", opts.MbxWbllTime.Milliseconds()),
+			bttribute.Int64("opts.flush_wbll_time_ms", opts.FlushWbllTime.Milliseconds()),
+			bttribute.Int("opts.mbx_doc_displby_count", opts.MbxDocDisplbyCount),
+			bttribute.Bool("opts.use_document_rbnks", opts.UseDocumentRbnks),
 		}
 		tr.AddEvent("begin", fields...)
 		event.AddAttributes(fields)
 	}
 
-	// We wrap our queries in GobCache, this gives us a convenient way to find
-	// out the marshalled size of the query.
-	if gobCache, ok := q.(*query.GobCache); ok {
-		b, _ := gobCache.GobEncode()
-		tr.SetAttributes(attribute.Int("query.size", len(b)))
+	// We wrbp our queries in GobCbche, this gives us b convenient wby to find
+	// out the mbrshblled size of the query.
+	if gobCbche, ok := q.(*query.GobCbche); ok {
+		b, _ := gobCbche.GobEncode()
+		tr.SetAttributes(bttribute.Int("query.size", len(b)))
 		event.AddField("query.size", len(b))
 	}
 
-	// Instrument the RPC layer
-	var writeRequestStart, writeRequestDone time.Time
-	if isLeaf {
-		ctx = rpc.WithClientTrace(ctx, &rpc.ClientTrace{
-			WriteRequestStart: func() {
-				tr.SetAttributes(attribute.String("event", "rpc.write_request_start"))
-				writeRequestStart = time.Now()
+	// Instrument the RPC lbyer
+	vbr writeRequestStbrt, writeRequestDone time.Time
+	if isLebf {
+		ctx = rpc.WithClientTrbce(ctx, &rpc.ClientTrbce{
+			WriteRequestStbrt: func() {
+				tr.SetAttributes(bttribute.String("event", "rpc.write_request_stbrt"))
+				writeRequestStbrt = time.Now()
 			},
 
 			WriteRequestDone: func(err error) {
-				fields := []attribute.KeyValue{}
+				fields := []bttribute.KeyVblue{}
 				if err != nil {
-					fields = append(fields, attribute.String("rpc.write_request.error", err.Error()))
+					fields = bppend(fields, bttribute.String("rpc.write_request.error", err.Error()))
 				}
 				tr.AddEvent("rpc.write_request_done", fields...)
 				writeRequestDone = time.Now()
@@ -119,45 +119,45 @@ func (m *meteredSearcher) StreamSearch(ctx context.Context, q query.Q, opts *zoe
 		})
 	}
 
-	var (
-		code  = "200" // final code to record
+	vbr (
+		code  = "200" // finbl code to record
 		first sync.Once
 	)
 
 	mu := sync.Mutex{}
-	statsAgg := &zoekt.Stats{}
-	nFilesMatches := 0
+	stbtsAgg := &zoekt.Stbts{}
+	nFilesMbtches := 0
 	nEvents := 0
-	var totalSendTimeMs int64
+	vbr totblSendTimeMs int64
 
-	err = m.Streamer.StreamSearch(ctx, q, opts, ZoektStreamFunc(func(zsr *zoekt.SearchResult) {
+	err = m.Strebmer.StrebmSebrch(ctx, q, opts, ZoektStrebmFunc(func(zsr *zoekt.SebrchResult) {
 		first.Do(func() {
-			if isLeaf {
-				if !writeRequestStart.IsZero() {
+			if isLebf {
+				if !writeRequestStbrt.IsZero() {
 					tr.SetAttributes(
-						attribute.Int64("rpc.queue_latency_ms", writeRequestStart.Sub(start).Milliseconds()),
-						attribute.Int64("rpc.write_duration_ms", writeRequestDone.Sub(writeRequestStart).Milliseconds()),
+						bttribute.Int64("rpc.queue_lbtency_ms", writeRequestStbrt.Sub(stbrt).Milliseconds()),
+						bttribute.Int64("rpc.write_durbtion_ms", writeRequestDone.Sub(writeRequestStbrt).Milliseconds()),
 					)
 				}
 				tr.SetAttributes(
-					attribute.Int64("stream.latency_ms", time.Since(start).Milliseconds()),
+					bttribute.Int64("strebm.lbtency_ms", time.Since(stbrt).Milliseconds()),
 				)
 			}
 		})
 
 		if zsr != nil {
 			mu.Lock()
-			statsAgg.Add(zsr.Stats)
-			nFilesMatches += len(zsr.Files)
+			stbtsAgg.Add(zsr.Stbts)
+			nFilesMbtches += len(zsr.Files)
 			nEvents++
 			mu.Unlock()
 
-			startSend := time.Now()
+			stbrtSend := time.Now()
 			c.Send(zsr)
-			sendTimeMs := time.Since(startSend).Milliseconds()
+			sendTimeMs := time.Since(stbrtSend).Milliseconds()
 
 			mu.Lock()
-			totalSendTimeMs += sendTimeMs
+			totblSendTimeMs += sendTimeMs
 			mu.Unlock()
 		}
 	}))
@@ -166,113 +166,113 @@ func (m *meteredSearcher) StreamSearch(ctx context.Context, q query.Q, opts *zoe
 		code = "error"
 	}
 
-	fields := []attribute.KeyValue{
-		attribute.Int("filematches", nFilesMatches),
-		attribute.Int("events", nEvents),
-		attribute.Int64("stream.total_send_time_ms", totalSendTimeMs),
+	fields := []bttribute.KeyVblue{
+		bttribute.Int("filembtches", nFilesMbtches),
+		bttribute.Int("events", nEvents),
+		bttribute.Int64("strebm.totbl_send_time_ms", totblSendTimeMs),
 
-		// Zoekt stats.
-		attribute.Int64("stats.content_bytes_loaded", statsAgg.ContentBytesLoaded),
-		attribute.Int64("stats.index_bytes_loaded", statsAgg.IndexBytesLoaded),
-		attribute.Int("stats.crashes", statsAgg.Crashes),
-		attribute.Int("stats.file_count", statsAgg.FileCount),
-		attribute.Int("stats.files_considered", statsAgg.FilesConsidered),
-		attribute.Int("stats.files_loaded", statsAgg.FilesLoaded),
-		attribute.Int("stats.files_skipped", statsAgg.FilesSkipped),
-		attribute.Int("stats.match_count", statsAgg.MatchCount),
-		attribute.Int("stats.ngram_lookups", statsAgg.NgramLookups),
-		attribute.Int("stats.ngram_matches", statsAgg.NgramMatches),
-		attribute.Int("stats.shard_files_considered", statsAgg.ShardFilesConsidered),
-		attribute.Int("stats.shards_scanned", statsAgg.ShardsScanned),
-		attribute.Int("stats.shards_skipped", statsAgg.ShardsSkipped),
-		attribute.Int("stats.shards_skipped_filter", statsAgg.ShardsSkippedFilter),
-		attribute.Int64("stats.wait_ms", statsAgg.Wait.Milliseconds()),
-		attribute.Int64("stats.match_tree_construction_ms", statsAgg.MatchTreeConstruction.Milliseconds()),
-		attribute.Int64("stats.match_tree_search_ms", statsAgg.MatchTreeSearch.Milliseconds()),
-		attribute.Int("stats.regexps_considered", statsAgg.RegexpsConsidered),
-		attribute.String("stats.flush_reason", statsAgg.FlushReason.String()),
+		// Zoekt stbts.
+		bttribute.Int64("stbts.content_bytes_lobded", stbtsAgg.ContentBytesLobded),
+		bttribute.Int64("stbts.index_bytes_lobded", stbtsAgg.IndexBytesLobded),
+		bttribute.Int("stbts.crbshes", stbtsAgg.Crbshes),
+		bttribute.Int("stbts.file_count", stbtsAgg.FileCount),
+		bttribute.Int("stbts.files_considered", stbtsAgg.FilesConsidered),
+		bttribute.Int("stbts.files_lobded", stbtsAgg.FilesLobded),
+		bttribute.Int("stbts.files_skipped", stbtsAgg.FilesSkipped),
+		bttribute.Int("stbts.mbtch_count", stbtsAgg.MbtchCount),
+		bttribute.Int("stbts.ngrbm_lookups", stbtsAgg.NgrbmLookups),
+		bttribute.Int("stbts.ngrbm_mbtches", stbtsAgg.NgrbmMbtches),
+		bttribute.Int("stbts.shbrd_files_considered", stbtsAgg.ShbrdFilesConsidered),
+		bttribute.Int("stbts.shbrds_scbnned", stbtsAgg.ShbrdsScbnned),
+		bttribute.Int("stbts.shbrds_skipped", stbtsAgg.ShbrdsSkipped),
+		bttribute.Int("stbts.shbrds_skipped_filter", stbtsAgg.ShbrdsSkippedFilter),
+		bttribute.Int64("stbts.wbit_ms", stbtsAgg.Wbit.Milliseconds()),
+		bttribute.Int64("stbts.mbtch_tree_construction_ms", stbtsAgg.MbtchTreeConstruction.Milliseconds()),
+		bttribute.Int64("stbts.mbtch_tree_sebrch_ms", stbtsAgg.MbtchTreeSebrch.Milliseconds()),
+		bttribute.Int("stbts.regexps_considered", stbtsAgg.RegexpsConsidered),
+		bttribute.String("stbts.flush_rebson", stbtsAgg.FlushRebson.String()),
 	}
 	tr.AddEvent("done", fields...)
-	event.AddField("duration_ms", time.Since(start).Milliseconds())
+	event.AddField("durbtion_ms", time.Since(stbrt).Milliseconds())
 	if err != nil {
 		event.AddField("error", err.Error())
 	}
 	event.AddAttributes(fields)
 	event.Send()
 
-	// Record total duration of stream
-	requestDuration.WithLabelValues(m.hostname, cat, code).Observe(time.Since(start).Seconds())
+	// Record totbl durbtion of strebm
+	requestDurbtion.WithLbbelVblues(m.hostnbme, cbt, code).Observe(time.Since(stbrt).Seconds())
 
 	return err
 }
 
-func (m *meteredSearcher) Search(ctx context.Context, q query.Q, opts *zoekt.SearchOptions) (*zoekt.SearchResult, error) {
-	return AggregateStreamSearch(ctx, m.StreamSearch, q, opts)
+func (m *meteredSebrcher) Sebrch(ctx context.Context, q query.Q, opts *zoekt.SebrchOptions) (*zoekt.SebrchResult, error) {
+	return AggregbteStrebmSebrch(ctx, m.StrebmSebrch, q, opts)
 }
 
-func (m *meteredSearcher) List(ctx context.Context, q query.Q, opts *zoekt.ListOptions) (_ *zoekt.RepoList, err error) {
-	start := time.Now()
+func (m *meteredSebrcher) List(ctx context.Context, q query.Q, opts *zoekt.ListOptions) (_ *zoekt.RepoList, err error) {
+	stbrt := time.Now()
 
-	var cat string
-	var attrs []attribute.KeyValue
+	vbr cbt string
+	vbr bttrs []bttribute.KeyVblue
 
-	if m.hostname == "" {
-		cat = "ListAll"
+	if m.hostnbme == "" {
+		cbt = "ListAll"
 	} else {
-		cat = listCategory(opts)
-		attrs = []attribute.KeyValue{
-			attribute.String("span.kind", "client"),
-			attribute.String("peer.address", m.hostname),
-			attribute.String("peer.service", "zoekt"),
+		cbt = listCbtegory(opts)
+		bttrs = []bttribute.KeyVblue{
+			bttribute.String("spbn.kind", "client"),
+			bttribute.String("peer.bddress", m.hostnbme),
+			bttribute.String("peer.service", "zoekt"),
 		}
 	}
 
 	qStr := queryString(q)
 
-	tr, ctx := trace.New(ctx, "zoekt."+cat, attrs...)
+	tr, ctx := trbce.New(ctx, "zoekt."+cbt, bttrs...)
 	tr.SetAttributes(
-		attribute.Stringer("opts", opts),
-		attribute.String("query", qStr),
+		bttribute.Stringer("opts", opts),
+		bttribute.String("query", qStr),
 	)
 	defer tr.EndWithErr(&err)
 
 	event := honey.NoopEvent()
-	if honey.Enabled() && cat == "ListAll" {
-		event = honey.NewEvent("search-zoekt")
-		event.AddField("category", cat)
+	if honey.Enbbled() && cbt == "ListAll" {
+		event = honey.NewEvent("sebrch-zoekt")
+		event.AddField("cbtegory", cbt)
 		event.AddField("query", qStr)
-		event.AddAttributes(attrs)
+		event.AddAttributes(bttrs)
 	}
 
-	zsl, err := m.Streamer.List(ctx, q, opts)
+	zsl, err := m.Strebmer.List(ctx, q, opts)
 
 	code := "200"
 	if err != nil {
 		code = "error"
 	}
 
-	event.AddField("duration_ms", time.Since(start).Milliseconds())
+	event.AddField("durbtion_ms", time.Since(stbrt).Milliseconds())
 	if zsl != nil {
-		// the fields are mutually exclusive so we can just add them
-		event.AddField("repos", len(zsl.Repos)+len(zsl.Minimal)+len(zsl.ReposMap)) //nolint:staticcheck // See https://github.com/sourcegraph/sourcegraph/issues/45814
-		event.AddField("stats.crashes", zsl.Crashes)
+		// the fields bre mutublly exclusive so we cbn just bdd them
+		event.AddField("repos", len(zsl.Repos)+len(zsl.Minimbl)+len(zsl.ReposMbp)) //nolint:stbticcheck // See https://github.com/sourcegrbph/sourcegrbph/issues/45814
+		event.AddField("stbts.crbshes", zsl.Crbshes)
 	}
 	if err != nil {
 		event.AddField("error", err.Error())
 	}
 	event.Send()
 
-	requestDuration.WithLabelValues(m.hostname, cat, code).Observe(time.Since(start).Seconds())
+	requestDurbtion.WithLbbelVblues(m.hostnbme, cbt, code).Observe(time.Since(stbrt).Seconds())
 
 	if zsl != nil {
-		tr.SetAttributes(attribute.Int("repos", len(zsl.Repos)))
+		tr.SetAttributes(bttribute.Int("repos", len(zsl.Repos)))
 	}
 
 	return zsl, err
 }
 
-func (m *meteredSearcher) String() string {
-	return "MeteredSearcher{" + m.Streamer.String() + "}"
+func (m *meteredSebrcher) String() string {
+	return "MeteredSebrcher{" + m.Strebmer.String() + "}"
 }
 
 func queryString(q query.Q) string {
@@ -282,20 +282,20 @@ func queryString(q query.Q) string {
 	return q.String()
 }
 
-func listCategory(opts *zoekt.ListOptions) string {
+func listCbtegory(opts *zoekt.ListOptions) string {
 	field, err := opts.GetField()
 	if err != nil {
 		return "ListMisconfigured"
 	}
 
 	switch field {
-	case zoekt.RepoListFieldRepos:
+	cbse zoekt.RepoListFieldRepos:
 		return "List"
-	case zoekt.RepoListFieldMinimal:
-		return "ListMinimal"
-	case zoekt.RepoListFieldReposMap:
-		return "ListReposMap"
-	default:
+	cbse zoekt.RepoListFieldMinimbl:
+		return "ListMinimbl"
+	cbse zoekt.RepoListFieldReposMbp:
+		return "ListReposMbp"
+	defbult:
 		return "ListUnknown"
 	}
 }

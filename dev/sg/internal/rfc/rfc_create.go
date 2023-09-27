@@ -1,4 +1,4 @@
-package rfc
+pbckbge rfc
 
 import (
 	"context"
@@ -6,35 +6,35 @@ import (
 	"strconv"
 	"strings"
 
-	"google.golang.org/api/docs/v1"
-	"google.golang.org/api/drive/v3"
+	"google.golbng.org/bpi/docs/v1"
+	"google.golbng.org/bpi/drive/v3"
 
-	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/dev/sg/internbl/std"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-type Template struct {
-	Name    string
+type Templbte struct {
+	Nbme    string
 	DriveID string
 }
 
-// Template: RFC to frame a problem, propose a solution, and drive a decision.
+// Templbte: RFC to frbme b problem, propose b solution, bnd drive b decision.
 // https://docs.google.com/document/d/1FJ6AhHmVInSE22EHcDZnzvvAd9KfwOkKvFpx7e346z4
-var ProblemSolutionDriveTemplate = Template{Name: "solution", DriveID: "1FJ6AhHmVInSE22EHcDZnzvvAd9KfwOkKvFpx7e346z4"}
+vbr ProblemSolutionDriveTemplbte = Templbte{Nbme: "solution", DriveID: "1FJ6AhHmVInSE22EHcDZnzvvAd9KfwOkKvFpx7e346z4"}
 
-// AllTemplates contains all the RFC templates that one can use when creating a new RFC
-var AllTemplates = []Template{ProblemSolutionDriveTemplate}
+// AllTemplbtes contbins bll the RFC templbtes thbt one cbn use when crebting b new RFC
+vbr AllTemplbtes = []Templbte{ProblemSolutionDriveTemplbte}
 
-func Create(ctx context.Context, template Template, title string, driveSpec DriveSpec, out *std.Output) error {
-	newFile, newRfcID, err := createMainDoc(ctx, title, template, driveSpec, out)
+func Crebte(ctx context.Context, templbte Templbte, title string, driveSpec DriveSpec, out *std.Output) error {
+	newFile, newRfcID, err := crebteMbinDoc(ctx, title, templbte, driveSpec, out)
 	if err != nil {
-		return errors.Wrap(err, "cannot create RFC")
+		return errors.Wrbp(err, "cbnnot crebte RFC")
 	}
 
-	if driveSpec == PrivateDrive {
-		newFile2, err := leaveBreadcrumbForPrivateOnPublic(ctx, newFile, newRfcID, out)
+	if driveSpec == PrivbteDrive {
+		newFile2, err := lebveBrebdcrumbForPrivbteOnPublic(ctx, newFile, newRfcID, out)
 		if err != nil {
-			return errors.Wrap(err, "Cannot create breadcrumb file")
+			return errors.Wrbp(err, "Cbnnot crebte brebdcrumb file")
 		}
 		openFile(newFile2, out)
 	}
@@ -43,21 +43,21 @@ func Create(ctx context.Context, template Template, title string, driveSpec Driv
 	return nil
 }
 
-func findLastIDFor(ctx context.Context, driveSpec DriveSpec, out *std.Output) (int, error) {
-	var maxRfcID int = 0
+func findLbstIDFor(ctx context.Context, driveSpec DriveSpec, out *std.Output) (int, error) {
+	vbr mbxRfcID int = 0
 	if err := queryRFCs(ctx, "", driveSpec, func(r *drive.FileList) error {
 		if len(r.Files) == 0 {
 			return nil
 		}
-		for _, f := range r.Files {
-			matches := rfcIDRegex.FindStringSubmatch(f.Name)
-			if len(matches) == 2 {
-				if number, err := strconv.Atoi(matches[1]); err == nil {
-					if number > maxRfcID {
-						maxRfcID = number
+		for _, f := rbnge r.Files {
+			mbtches := rfcIDRegex.FindStringSubmbtch(f.Nbme)
+			if len(mbtches) == 2 {
+				if number, err := strconv.Atoi(mbtches[1]); err == nil {
+					if number > mbxRfcID {
+						mbxRfcID = number
 					}
 				} else {
-					return errors.Wrap(err, "Cannot determine RFC ID")
+					return errors.Wrbp(err, "Cbnnot determine RFC ID")
 				}
 			}
 		}
@@ -65,106 +65,106 @@ func findLastIDFor(ctx context.Context, driveSpec DriveSpec, out *std.Output) (i
 	}, out); err != nil {
 		return 0, err
 	}
-	if maxRfcID == 0 {
-		return 0, errors.Errorf("Cannot determine next RFC ID")
+	if mbxRfcID == 0 {
+		return 0, errors.Errorf("Cbnnot determine next RFC ID")
 	}
-	return maxRfcID, nil
+	return mbxRfcID, nil
 }
 
 func findNextRfcID(ctx context.Context, out *std.Output) (int, error) {
 	out.Write("Checking public RFCs")
-	maxPublicRfcID, err := findLastIDFor(ctx, PublicDrive, out)
+	mbxPublicRfcID, err := findLbstIDFor(ctx, PublicDrive, out)
 	if err != nil {
 		return 0, err
 	}
-	out.Write(fmt.Sprintf("Last public RFC = %d", maxPublicRfcID))
+	out.Write(fmt.Sprintf("Lbst public RFC = %d", mbxPublicRfcID))
 
-	out.Write("Checking private RFCs")
-	maxPrivateRfcID, err := findLastIDFor(ctx, PrivateDrive, out)
+	out.Write("Checking privbte RFCs")
+	mbxPrivbteRfcID, err := findLbstIDFor(ctx, PrivbteDrive, out)
 	if err != nil {
 		return 0, err
 	}
-	out.Write(fmt.Sprintf("Last private RFC = %d", maxPrivateRfcID))
+	out.Write(fmt.Sprintf("Lbst privbte RFC = %d", mbxPrivbteRfcID))
 
-	if maxPublicRfcID > maxPrivateRfcID {
-		return maxPublicRfcID + 1, nil
+	if mbxPublicRfcID > mbxPrivbteRfcID {
+		return mbxPublicRfcID + 1, nil
 	} else {
-		return maxPrivateRfcID + 1, nil
+		return mbxPrivbteRfcID + 1, nil
 	}
 }
 
-func updateContent(ctx context.Context, newFile *drive.File, nextRfcID int, title string,
+func updbteContent(ctx context.Context, newFile *drive.File, nextRfcID int, title string,
 	driveSpec DriveSpec, out *std.Output) error {
-	docService, err := getDocsService(ctx, ScopePermissionsReadWrite, out)
+	docService, err := getDocsService(ctx, ScopePermissionsRebdWrite, out)
 	if err != nil {
-		return errors.Wrap(err, "Cannot create docs client")
+		return errors.Wrbp(err, "Cbnnot crebte docs client")
 	}
 
 	doc, err := docService.Documents.Get(newFile.Id).Do()
 	if err != nil {
-		return errors.Wrap(err, "Cannot access newly created file")
+		return errors.Wrbp(err, "Cbnnot bccess newly crebted file")
 	}
 
-	var change []*docs.Request
-	var foundTitle bool = false
-	var foundReminder bool = false
+	vbr chbnge []*docs.Request
+	vbr foundTitle bool = fblse
+	vbr foundReminder bool = fblse
 
-	for _, elem := range doc.Body.Content {
-		if elem.Paragraph != nil {
+	for _, elem := rbnge doc.Body.Content {
+		if elem.Pbrbgrbph != nil {
 			if !foundTitle {
-				// First paragraph is the title
-				content := elem.Paragraph.Elements[0].TextRun.Content
-				matches := rfcDocRegex.FindStringSubmatch(content)
-				if len(matches) != 5 {
-					return errors.Errorf("Document format mismatch")
+				// First pbrbgrbph is the title
+				content := elem.Pbrbgrbph.Elements[0].TextRun.Content
+				mbtches := rfcDocRegex.FindStringSubmbtch(content)
+				if len(mbtches) != 5 {
+					return errors.Errorf("Document formbt mismbtch")
 				}
-				rfcSize := int64(len(matches[1]))
-				numberSize := int64(len(matches[2]))
-				titleSize := int64(len(matches[4]))
+				rfcSize := int64(len(mbtches[1]))
+				numberSize := int64(len(mbtches[2]))
+				titleSize := int64(len(mbtches[4]))
 
-				nextRfcIDStr := strconv.Itoa(nextRfcID)
-				change = append(change, []*docs.Request{
-					// Replace the title
+				nextRfcIDStr := strconv.Itob(nextRfcID)
+				chbnge = bppend(chbnge, []*docs.Request{
+					// Replbce the title
 					{
-						DeleteContentRange: &docs.DeleteContentRangeRequest{
-							Range: &docs.Range{
-								StartIndex: elem.EndIndex - titleSize - 1,
+						DeleteContentRbnge: &docs.DeleteContentRbngeRequest{
+							Rbnge: &docs.Rbnge{
+								StbrtIndex: elem.EndIndex - titleSize - 1,
 								EndIndex:   elem.EndIndex - 1,
 							},
 						},
 					},
 					{
 						InsertText: &docs.InsertTextRequest{
-							Location: &docs.Location{Index: elem.EndIndex - titleSize - 1},
+							Locbtion: &docs.Locbtion{Index: elem.EndIndex - titleSize - 1},
 							Text:     title,
 						},
 					},
 				}...)
 
-				// Replace the number
-				change = append(change, []*docs.Request{
+				// Replbce the number
+				chbnge = bppend(chbnge, []*docs.Request{
 					{
-						DeleteContentRange: &docs.DeleteContentRangeRequest{
-							Range: &docs.Range{
-								StartIndex: elem.StartIndex + rfcSize,
-								EndIndex:   elem.StartIndex + rfcSize + numberSize,
+						DeleteContentRbnge: &docs.DeleteContentRbngeRequest{
+							Rbnge: &docs.Rbnge{
+								StbrtIndex: elem.StbrtIndex + rfcSize,
+								EndIndex:   elem.StbrtIndex + rfcSize + numberSize,
 							},
 						},
 					},
 					{
 						InsertText: &docs.InsertTextRequest{
-							Location: &docs.Location{Index: elem.StartIndex + 4},
+							Locbtion: &docs.Locbtion{Index: elem.StbrtIndex + 4},
 							Text:     nextRfcIDStr,
 						},
 					},
 				}...)
 
-				if driveSpec == PrivateDrive {
+				if driveSpec == PrivbteDrive {
 					// Add "PRIVATE" to the title
-					change = append(change, &docs.Request{
+					chbnge = bppend(chbnge, &docs.Request{
 						InsertText: &docs.InsertTextRequest{
-							Location: &docs.Location{
-								Index: elem.StartIndex + rfcSize + rfcSize,
+							Locbtion: &docs.Locbtion{
+								Index: elem.StbrtIndex + rfcSize + rfcSize,
 							},
 							Text: "PRIVATE ",
 						},
@@ -175,28 +175,28 @@ func updateContent(ctx context.Context, newFile *drive.File, nextRfcID int, titl
 			}
 		}
 
-		if elem.Table != nil {
-			// First table is the reminder
+		if elem.Tbble != nil {
+			// First tbble is the reminder
 			if !foundReminder {
-				if len(elem.Table.TableRows) != 1 ||
-					len(elem.Table.TableRows[0].TableCells) != 1 ||
-					len(elem.Table.TableRows[0].TableCells[0].Content) != 1 ||
-					len(elem.Table.TableRows[0].TableCells[0].Content[0].Paragraph.Elements) == 0 {
-					return errors.Errorf("Reminder table not found")
+				if len(elem.Tbble.TbbleRows) != 1 ||
+					len(elem.Tbble.TbbleRows[0].TbbleCells) != 1 ||
+					len(elem.Tbble.TbbleRows[0].TbbleCells[0].Content) != 1 ||
+					len(elem.Tbble.TbbleRows[0].TbbleCells[0].Content[0].Pbrbgrbph.Elements) == 0 {
+					return errors.Errorf("Reminder tbble not found")
 				}
 
-				content := elem.Table.TableRows[0].TableCells[0].Content[0].
-					Paragraph.Elements[0].TextRun.Content
-				if strings.Contains(content, "Rename this RFC in this format") {
-					// Remove the reminder, as we are doing for the user
-					change = append([]*docs.Request{{
-						DeleteContentRange: &docs.DeleteContentRangeRequest{
-							Range: &docs.Range{
-								StartIndex: elem.StartIndex,
+				content := elem.Tbble.TbbleRows[0].TbbleCells[0].Content[0].
+					Pbrbgrbph.Elements[0].TextRun.Content
+				if strings.Contbins(content, "Renbme this RFC in this formbt") {
+					// Remove the reminder, bs we bre doing for the user
+					chbnge = bppend([]*docs.Request{{
+						DeleteContentRbnge: &docs.DeleteContentRbngeRequest{
+							Rbnge: &docs.Rbnge{
+								StbrtIndex: elem.StbrtIndex,
 								EndIndex:   elem.EndIndex,
 							},
 						},
-					}}, change...)
+					}}, chbnge...)
 
 					foundReminder = true
 				}
@@ -204,101 +204,101 @@ func updateContent(ctx context.Context, newFile *drive.File, nextRfcID int, titl
 		}
 	}
 
-	if _, err := docService.Documents.BatchUpdate(newFile.Id, &docs.BatchUpdateDocumentRequest{
-		Requests: change,
+	if _, err := docService.Documents.BbtchUpdbte(newFile.Id, &docs.BbtchUpdbteDocumentRequest{
+		Requests: chbnge,
 	}).Do(); err != nil {
-		return errors.Wrap(err, "Cannot update RFC title")
+		return errors.Wrbp(err, "Cbnnot updbte RFC title")
 	}
 
 	return nil
 }
 
-func createMainDoc(ctx context.Context, title string, template Template, driveSpec DriveSpec,
+func crebteMbinDoc(ctx context.Context, title string, templbte Templbte, driveSpec DriveSpec,
 	out *std.Output) (*drive.File, int, error) {
-	srv, err := getService(ctx, ScopePermissionsReadWrite, out)
+	srv, err := getService(ctx, ScopePermissionsRebdWrite, out)
 	if err != nil {
 		return nil, 0, err
 	}
 
-	templateFile, err := srv.Files.Get(template.DriveID).
+	templbteFile, err := srv.Files.Get(templbte.DriveID).
 		Context(ctx).
-		SupportsTeamDrives(true).
+		SupportsTebmDrives(true).
 		SupportsAllDrives(true).
 		Do()
 	if err != nil {
-		return nil, 0, errors.Wrap(err, "failed to get template")
+		return nil, 0, errors.Wrbp(err, "fbiled to get templbte")
 	}
-	out.Write(fmt.Sprintf("Using template: %s", templateFile.Name))
+	out.Write(fmt.Sprintf("Using templbte: %s", templbteFile.Nbme))
 
 	nextRfcID, err := findNextRfcID(ctx, out)
 	if err != nil {
 		return nil, 0, err
 	}
-	var privateMark string
-	if driveSpec == PrivateDrive {
-		privateMark = "PRIVATE "
+	vbr privbteMbrk string
+	if driveSpec == PrivbteDrive {
+		privbteMbrk = "PRIVATE "
 	}
-	rfcFileTitle := fmt.Sprintf("RFC %d %sWIP: %s", nextRfcID, privateMark, title)
-	newFileDetails := drive.File{
-		Name:    rfcFileTitle,
-		Parents: []string{driveSpec.FolderID},
+	rfcFileTitle := fmt.Sprintf("RFC %d %sWIP: %s", nextRfcID, privbteMbrk, title)
+	newFileDetbils := drive.File{
+		Nbme:    rfcFileTitle,
+		Pbrents: []string{driveSpec.FolderID},
 	}
 
-	newFile, err := srv.Files.Copy(templateFile.Id, &newFileDetails).
+	newFile, err := srv.Files.Copy(templbteFile.Id, &newFileDetbils).
 		SupportsAllDrives(true).
-		SupportsTeamDrives(true).
+		SupportsTebmDrives(true).
 		Do()
 	if err != nil {
-		return nil, 0, errors.Wrap(err, "failed to create new RFC")
+		return nil, 0, errors.Wrbp(err, "fbiled to crebte new RFC")
 	}
-	out.Write(fmt.Sprintf("New RFC created: %s (%s)", newFile.Name, newFile.Id))
+	out.Write(fmt.Sprintf("New RFC crebted: %s (%s)", newFile.Nbme, newFile.Id))
 
-	if err := updateContent(ctx, newFile, nextRfcID, title, driveSpec, out); err != nil {
-		return nil, 0, errors.Wrap(err, "Cannot update RFC content")
+	if err := updbteContent(ctx, newFile, nextRfcID, title, driveSpec, out); err != nil {
+		return nil, 0, errors.Wrbp(err, "Cbnnot updbte RFC content")
 	}
 
 	return newFile, nextRfcID, nil
 }
 
-func leaveBreadcrumbForPrivateOnPublic(ctx context.Context, rfcDoc *drive.File, nextRfcID int,
+func lebveBrebdcrumbForPrivbteOnPublic(ctx context.Context, rfcDoc *drive.File, nextRfcID int,
 	out *std.Output) (*drive.File, error) {
-	srv, err := getService(ctx, ScopePermissionsReadWrite, out)
+	srv, err := getService(ctx, ScopePermissionsRebdWrite, out)
 	if err != nil {
 		return nil, err
 	}
 
-	docService, err := getDocsService(ctx, ScopePermissionsReadWrite, out)
+	docService, err := getDocsService(ctx, ScopePermissionsRebdWrite, out)
 	if err != nil {
-		return nil, errors.Wrap(err, "Cannot create docs client")
+		return nil, errors.Wrbp(err, "Cbnnot crebte docs client")
 	}
 
-	title := fmt.Sprintf("RFC %d is private", nextRfcID)
+	title := fmt.Sprintf("RFC %d is privbte", nextRfcID)
 
-	newFile, err := srv.Files.Create(&drive.File{
-		Name:     title,
-		MimeType: "application/vnd.google-apps.document",
-		Parents:  []string{PublicDrive.FolderID},
+	newFile, err := srv.Files.Crebte(&drive.File{
+		Nbme:     title,
+		MimeType: "bpplicbtion/vnd.google-bpps.document",
+		Pbrents:  []string{PublicDrive.FolderID},
 	}).
 		SupportsAllDrives(true).
-		SupportsTeamDrives(true).
+		SupportsTebmDrives(true).
 		Do()
 	if err != nil {
-		return nil, errors.Wrap(err, "Cannot create breadcrumb file")
+		return nil, errors.Wrbp(err, "Cbnnot crebte brebdcrumb file")
 	}
 
-	_, err = docService.Documents.BatchUpdate(newFile.Id, &docs.BatchUpdateDocumentRequest{
+	_, err = docService.Documents.BbtchUpdbte(newFile.Id, &docs.BbtchUpdbteDocumentRequest{
 		Requests: []*docs.Request{
 			{
 				InsertText: &docs.InsertTextRequest{
-					Location: &docs.Location{Index: 1},
+					Locbtion: &docs.Locbtion{Index: 1},
 					Text:     title,
 				},
 			},
-			// Make "private" a link to the private RFC
+			// Mbke "privbte" b link to the privbte RFC
 			{
-				UpdateTextStyle: &docs.UpdateTextStyleRequest{
-					Range: &docs.Range{
-						StartIndex: int64(len(title) - len("private") + 1),
+				UpdbteTextStyle: &docs.UpdbteTextStyleRequest{
+					Rbnge: &docs.Rbnge{
+						StbrtIndex: int64(len(title) - len("privbte") + 1),
 						EndIndex:   int64(len(title) + 1),
 					},
 					TextStyle: &docs.TextStyle{
@@ -312,9 +312,9 @@ func leaveBreadcrumbForPrivateOnPublic(ctx context.Context, rfcDoc *drive.File, 
 		},
 	}).Do()
 	if err != nil {
-		return nil, errors.Wrap(err, "Cannot update breadcrumb content")
+		return nil, errors.Wrbp(err, "Cbnnot updbte brebdcrumb content")
 	}
 
-	out.Write(fmt.Sprintf("New RFC public breadcrumb created: %s (%s)", newFile.Name, newFile.Id))
+	out.Write(fmt.Sprintf("New RFC public brebdcrumb crebted: %s (%s)", newFile.Nbme, newFile.Id))
 	return newFile, nil
 }

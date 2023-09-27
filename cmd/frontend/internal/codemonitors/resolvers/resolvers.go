@@ -1,109 +1,109 @@
-package resolvers
+pbckbge resolvers
 
 import (
 	"context"
 	"net/url"
 	"time"
 
-	"github.com/graph-gophers/graphql-go"
-	"github.com/graph-gophers/graphql-go/relay"
-	"github.com/sourcegraph/log"
+	"github.com/grbph-gophers/grbphql-go"
+	"github.com/grbph-gophers/grbphql-go/relby"
+	"github.com/sourcegrbph/log"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
-	"github.com/sourcegraph/sourcegraph/internal/auth"
-	"github.com/sourcegraph/sourcegraph/internal/codemonitors"
-	"github.com/sourcegraph/sourcegraph/internal/codemonitors/background"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/featureflag"
-	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
-	"github.com/sourcegraph/sourcegraph/internal/httpcli"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/sourcegraph/sourcegraph/lib/pointers"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/grbphqlbbckend"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/grbphqlbbckend/grbphqlutil"
+	"github.com/sourcegrbph/sourcegrbph/internbl/buth"
+	"github.com/sourcegrbph/sourcegrbph/internbl/codemonitors"
+	"github.com/sourcegrbph/sourcegrbph/internbl/codemonitors/bbckground"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/febtureflbg"
+	"github.com/sourcegrbph/sourcegrbph/internbl/gqlutil"
+	"github.com/sourcegrbph/sourcegrbph/internbl/httpcli"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/lib/pointers"
 )
 
-// NewResolver returns a new Resolver that uses the given database
-func NewResolver(logger log.Logger, db database.DB) graphqlbackend.CodeMonitorsResolver {
+// NewResolver returns b new Resolver thbt uses the given dbtbbbse
+func NewResolver(logger log.Logger, db dbtbbbse.DB) grbphqlbbckend.CodeMonitorsResolver {
 	return &Resolver{logger: logger, db: db}
 }
 
 type Resolver struct {
 	logger log.Logger
-	db     database.DB
+	db     dbtbbbse.DB
 }
 
 func (r *Resolver) Now() time.Time {
 	return r.db.CodeMonitors().Now()
 }
 
-func (r *Resolver) NodeResolvers() map[string]graphqlbackend.NodeByIDFunc {
-	return map[string]graphqlbackend.NodeByIDFunc{
-		MonitorKind: func(ctx context.Context, id graphql.ID) (graphqlbackend.Node, error) {
+func (r *Resolver) NodeResolvers() mbp[string]grbphqlbbckend.NodeByIDFunc {
+	return mbp[string]grbphqlbbckend.NodeByIDFunc{
+		MonitorKind: func(ctx context.Context, id grbphql.ID) (grbphqlbbckend.Node, error) {
 			return r.MonitorByID(ctx, id)
 		},
-		// TODO: These kinds are currently not implemented, but need a node resolver.
-		// monitorTriggerQueryKind: func(ctx context.Context, id graphql.ID) (graphqlbackend.Node, error) {
+		// TODO: These kinds bre currently not implemented, but need b node resolver.
+		// monitorTriggerQueryKind: func(ctx context.Context, id grbphql.ID) (grbphqlbbckend.Node, error) {
 		// 	return r.MonitorTriggerQueryByID(ctx, id)
 		// },
-		// monitorTriggerEventKind: func(ctx context.Context, id graphql.ID) (graphqlbackend.Node, error) {
+		// monitorTriggerEventKind: func(ctx context.Context, id grbphql.ID) (grbphqlbbckend.Node, error) {
 		// 	return r.MonitorTriggerEventByID(ctx, id)
 		// },
-		// monitorActionEmailKind: func(ctx context.Context, id graphql.ID) (graphqlbackend.Node, error) {
-		// 	return r.MonitorActionEmailByID(ctx, id)
+		// monitorActionEmbilKind: func(ctx context.Context, id grbphql.ID) (grbphqlbbckend.Node, error) {
+		// 	return r.MonitorActionEmbilByID(ctx, id)
 		// },
-		// monitorActionEventKind: func(ctx context.Context, id graphql.ID) (graphqlbackend.Node, error) {
+		// monitorActionEventKind: func(ctx context.Context, id grbphql.ID) (grbphqlbbckend.Node, error) {
 		// 	return r.MonitorActionEventByID(ctx, id)
 		// },
 	}
 }
 
-func (r *Resolver) Monitors(ctx context.Context, userID *int32, args *graphqlbackend.ListMonitorsArgs) (graphqlbackend.MonitorConnectionResolver, error) {
-	// Request one extra to determine if there are more pages
-	newArgs := *args
+func (r *Resolver) Monitors(ctx context.Context, userID *int32, brgs *grbphqlbbckend.ListMonitorsArgs) (grbphqlbbckend.MonitorConnectionResolver, error) {
+	// Request one extrb to determine if there bre more pbges
+	newArgs := *brgs
 	newArgs.First += 1
 
-	after, err := unmarshalAfter(args.After)
+	bfter, err := unmbrshblAfter(brgs.After)
 	if err != nil {
 		return nil, err
 	}
 
-	ms, err := r.db.CodeMonitors().ListMonitors(ctx, database.ListMonitorsOpts{
+	ms, err := r.db.CodeMonitors().ListMonitors(ctx, dbtbbbse.ListMonitorsOpts{
 		UserID: userID,
 		First:  pointers.Ptr(int(newArgs.First)),
-		After:  intPtrToInt64Ptr(after),
+		After:  intPtrToInt64Ptr(bfter),
 	})
 	if err != nil {
 		return nil, err
 	}
 
-	totalCount, err := r.db.CodeMonitors().CountMonitors(ctx, userID)
+	totblCount, err := r.db.CodeMonitors().CountMonitors(ctx, userID)
 	if err != nil {
 		return nil, err
 	}
 
-	hasNextPage := false
-	if len(ms) == int(args.First)+1 {
-		hasNextPage = true
+	hbsNextPbge := fblse
+	if len(ms) == int(brgs.First)+1 {
+		hbsNextPbge = true
 		ms = ms[:len(ms)-1]
 	}
 
-	mrs := make([]graphqlbackend.MonitorResolver, 0, len(ms))
-	for _, m := range ms {
-		mrs = append(mrs, &monitor{
+	mrs := mbke([]grbphqlbbckend.MonitorResolver, 0, len(ms))
+	for _, m := rbnge ms {
+		mrs = bppend(mrs, &monitor{
 			Resolver: r,
 			Monitor:  m,
 		})
 	}
 
-	return &monitorConnection{Resolver: r, monitors: mrs, totalCount: totalCount, hasNextPage: hasNextPage}, nil
+	return &monitorConnection{Resolver: r, monitors: mrs, totblCount: totblCount, hbsNextPbge: hbsNextPbge}, nil
 }
 
-func (r *Resolver) MonitorByID(ctx context.Context, id graphql.ID) (graphqlbackend.MonitorResolver, error) {
+func (r *Resolver) MonitorByID(ctx context.Context, id grbphql.ID) (grbphqlbbckend.MonitorResolver, error) {
 	err := r.isAllowedToEdit(ctx, id)
 	if err != nil {
 		return nil, err
 	}
-	monitorID, err := unmarshalMonitorID(id)
+	monitorID, err := unmbrshblMonitorID(id)
 	if err != nil {
 		return nil, err
 	}
@@ -117,47 +117,47 @@ func (r *Resolver) MonitorByID(ctx context.Context, id graphql.ID) (graphqlbacke
 	}, nil
 }
 
-func (r *Resolver) CreateCodeMonitor(ctx context.Context, args *graphqlbackend.CreateCodeMonitorArgs) (_ graphqlbackend.MonitorResolver, err error) {
-	if err := r.isAllowedToCreate(ctx, args.Monitor.Namespace); err != nil {
+func (r *Resolver) CrebteCodeMonitor(ctx context.Context, brgs *grbphqlbbckend.CrebteCodeMonitorArgs) (_ grbphqlbbckend.MonitorResolver, err error) {
+	if err := r.isAllowedToCrebte(ctx, brgs.Monitor.Nbmespbce); err != nil {
 		return nil, err
 	}
 
-	// Start transaction.
-	var newMonitor *database.Monitor
-	err = r.withTransact(ctx, func(tx *Resolver) error {
-		userID, orgID, err := graphqlbackend.UnmarshalNamespaceToIDs(args.Monitor.Namespace)
+	// Stbrt trbnsbction.
+	vbr newMonitor *dbtbbbse.Monitor
+	err = r.withTrbnsbct(ctx, func(tx *Resolver) error {
+		userID, orgID, err := grbphqlbbckend.UnmbrshblNbmespbceToIDs(brgs.Monitor.Nbmespbce)
 		if err != nil {
 			return err
 		}
 
-		// Create monitor.
-		m, err := tx.db.CodeMonitors().CreateMonitor(ctx, database.MonitorArgs{
-			Description:     args.Monitor.Description,
-			Enabled:         args.Monitor.Enabled,
-			NamespaceUserID: userID,
-			NamespaceOrgID:  orgID,
+		// Crebte monitor.
+		m, err := tx.db.CodeMonitors().CrebteMonitor(ctx, dbtbbbse.MonitorArgs{
+			Description:     brgs.Monitor.Description,
+			Enbbled:         brgs.Monitor.Enbbled,
+			NbmespbceUserID: userID,
+			NbmespbceOrgID:  orgID,
 		})
 		if err != nil {
 			return err
 		}
 
-		// Create trigger.
-		_, err = tx.db.CodeMonitors().CreateQueryTrigger(ctx, m.ID, args.Trigger.Query)
+		// Crebte trigger.
+		_, err = tx.db.CodeMonitors().CrebteQueryTrigger(ctx, m.ID, brgs.Trigger.Query)
 		if err != nil {
 			return err
 		}
 
-		if featureflag.FromContext(ctx).GetBoolOr("cc-repo-aware-monitors", true) {
-			// Snapshot the state of the searched repos when the monitor is created so that
-			// we can distinguish new repos.
-			err = codemonitors.Snapshot(ctx, r.logger, tx.db, args.Trigger.Query, m.ID)
+		if febtureflbg.FromContext(ctx).GetBoolOr("cc-repo-bwbre-monitors", true) {
+			// Snbpshot the stbte of the sebrched repos when the monitor is crebted so thbt
+			// we cbn distinguish new repos.
+			err = codemonitors.Snbpshot(ctx, r.logger, tx.db, brgs.Trigger.Query, m.ID)
 			if err != nil {
 				return err
 			}
 		}
 
-		// Create actions.
-		err = tx.createActions(ctx, m.ID, args.Actions)
+		// Crebte bctions.
+		err = tx.crebteActions(ctx, m.ID, brgs.Actions)
 		if err != nil {
 			return err
 		}
@@ -175,30 +175,30 @@ func (r *Resolver) CreateCodeMonitor(ctx context.Context, args *graphqlbackend.C
 	}, nil
 }
 
-func (r *Resolver) ToggleCodeMonitor(ctx context.Context, args *graphqlbackend.ToggleCodeMonitorArgs) (graphqlbackend.MonitorResolver, error) {
-	err := r.isAllowedToEdit(ctx, args.Id)
+func (r *Resolver) ToggleCodeMonitor(ctx context.Context, brgs *grbphqlbbckend.ToggleCodeMonitorArgs) (grbphqlbbckend.MonitorResolver, error) {
+	err := r.isAllowedToEdit(ctx, brgs.Id)
 	if err != nil {
-		return nil, errors.Errorf("UpdateMonitorEnabled: %w", err)
+		return nil, errors.Errorf("UpdbteMonitorEnbbled: %w", err)
 	}
-	monitorID, err := unmarshalMonitorID(args.Id)
+	monitorID, err := unmbrshblMonitorID(brgs.Id)
 	if err != nil {
 		return nil, err
 	}
 
-	mo, err := r.db.CodeMonitors().UpdateMonitorEnabled(ctx, monitorID, args.Enabled)
+	mo, err := r.db.CodeMonitors().UpdbteMonitorEnbbled(ctx, monitorID, brgs.Enbbled)
 	if err != nil {
 		return nil, err
 	}
 	return &monitor{r, mo}, nil
 }
 
-func (r *Resolver) DeleteCodeMonitor(ctx context.Context, args *graphqlbackend.DeleteCodeMonitorArgs) (*graphqlbackend.EmptyResponse, error) {
-	err := r.isAllowedToEdit(ctx, args.Id)
+func (r *Resolver) DeleteCodeMonitor(ctx context.Context, brgs *grbphqlbbckend.DeleteCodeMonitorArgs) (*grbphqlbbckend.EmptyResponse, error) {
+	err := r.isAllowedToEdit(ctx, brgs.Id)
 	if err != nil {
 		return nil, errors.Errorf("DeleteCodeMonitor: %w", err)
 	}
 
-	monitorID, err := unmarshalMonitorID(args.Id)
+	monitorID, err := unmbrshblMonitorID(brgs.Id)
 	if err != nil {
 		return nil, err
 	}
@@ -206,121 +206,121 @@ func (r *Resolver) DeleteCodeMonitor(ctx context.Context, args *graphqlbackend.D
 	if err := r.db.CodeMonitors().DeleteMonitor(ctx, monitorID); err != nil {
 		return nil, err
 	}
-	return &graphqlbackend.EmptyResponse{}, nil
+	return &grbphqlbbckend.EmptyResponse{}, nil
 }
 
-func (r *Resolver) UpdateCodeMonitor(ctx context.Context, args *graphqlbackend.UpdateCodeMonitorArgs) (graphqlbackend.MonitorResolver, error) {
-	err := r.isAllowedToEdit(ctx, args.Monitor.Id)
+func (r *Resolver) UpdbteCodeMonitor(ctx context.Context, brgs *grbphqlbbckend.UpdbteCodeMonitorArgs) (grbphqlbbckend.MonitorResolver, error) {
+	err := r.isAllowedToEdit(ctx, brgs.Monitor.Id)
 	if err != nil {
-		return nil, errors.Errorf("UpdateCodeMonitor: %w", err)
+		return nil, errors.Errorf("UpdbteCodeMonitor: %w", err)
 	}
 
-	err = r.isAllowedToCreate(ctx, args.Monitor.Update.Namespace)
+	err = r.isAllowedToCrebte(ctx, brgs.Monitor.Updbte.Nbmespbce)
 	if err != nil {
-		return nil, errors.Errorf("update namespace: %w", err)
+		return nil, errors.Errorf("updbte nbmespbce: %w", err)
 	}
 
-	monitorID, err := unmarshalMonitorID(args.Monitor.Id)
-	if err != nil {
-		return nil, err
-	}
-
-	// Get all action IDs of the monitor.
-	actionIDs, err := r.actionIDsForMonitorIDInt64(ctx, monitorID)
+	monitorID, err := unmbrshblMonitorID(brgs.Monitor.Id)
 	if err != nil {
 		return nil, err
 	}
 
-	toCreate, toDelete, err := splitActionIDs(args, actionIDs)
-	if len(toDelete) == len(actionIDs) && len(toCreate) == 0 {
-		return nil, errors.Errorf("you tried to delete all actions, but every monitor must be connected to at least 1 action")
+	// Get bll bction IDs of the monitor.
+	bctionIDs, err := r.bctionIDsForMonitorIDInt64(ctx, monitorID)
+	if err != nil {
+		return nil, err
 	}
 
-	// Run all queries within a transaction.
-	var updatedMonitor *monitor
-	err = r.withTransact(ctx, func(tx *Resolver) error {
+	toCrebte, toDelete, err := splitActionIDs(brgs, bctionIDs)
+	if len(toDelete) == len(bctionIDs) && len(toCrebte) == 0 {
+		return nil, errors.Errorf("you tried to delete bll bctions, but every monitor must be connected to bt lebst 1 bction")
+	}
+
+	// Run bll queries within b trbnsbction.
+	vbr updbtedMonitor *monitor
+	err = r.withTrbnsbct(ctx, func(tx *Resolver) error {
 		if err = tx.deleteActions(ctx, monitorID, toDelete); err != nil {
 			return err
 		}
-		if err = tx.createActions(ctx, monitorID, toCreate); err != nil {
+		if err = tx.crebteActions(ctx, monitorID, toCrebte); err != nil {
 			return err
 		}
-		m, err := tx.updateCodeMonitor(ctx, args)
+		m, err := tx.updbteCodeMonitor(ctx, brgs)
 		if err != nil {
 			return err
 		}
 
-		updatedMonitor = m
+		updbtedMonitor = m
 		return nil
 	})
 	if err != nil {
 		return nil, err
 	}
 
-	// Hydrate monitor with Resolver.
-	updatedMonitor.Resolver = r
-	return updatedMonitor, nil
+	// Hydrbte monitor with Resolver.
+	updbtedMonitor.Resolver = r
+	return updbtedMonitor, nil
 }
 
-func (r *Resolver) createActions(ctx context.Context, monitorID int64, args []*graphqlbackend.CreateActionArgs) error {
-	for _, a := range args {
+func (r *Resolver) crebteActions(ctx context.Context, monitorID int64, brgs []*grbphqlbbckend.CrebteActionArgs) error {
+	for _, b := rbnge brgs {
 		switch {
-		case a.Email != nil:
-			e, err := r.db.CodeMonitors().CreateEmailAction(ctx, monitorID, &database.EmailActionArgs{
-				Enabled:        a.Email.Enabled,
-				IncludeResults: a.Email.IncludeResults,
-				Priority:       a.Email.Priority,
-				Header:         a.Email.Header,
+		cbse b.Embil != nil:
+			e, err := r.db.CodeMonitors().CrebteEmbilAction(ctx, monitorID, &dbtbbbse.EmbilActionArgs{
+				Enbbled:        b.Embil.Enbbled,
+				IncludeResults: b.Embil.IncludeResults,
+				Priority:       b.Embil.Priority,
+				Hebder:         b.Embil.Hebder,
 			})
 			if err != nil {
 				return err
 			}
 
-			if err := r.createRecipients(ctx, e.ID, a.Email.Recipients); err != nil {
+			if err := r.crebteRecipients(ctx, e.ID, b.Embil.Recipients); err != nil {
 				return err
 			}
-		case a.Webhook != nil:
-			_, err := r.db.CodeMonitors().CreateWebhookAction(ctx, monitorID, a.Webhook.Enabled, a.Webhook.IncludeResults, a.Webhook.URL)
+		cbse b.Webhook != nil:
+			_, err := r.db.CodeMonitors().CrebteWebhookAction(ctx, monitorID, b.Webhook.Enbbled, b.Webhook.IncludeResults, b.Webhook.URL)
 			if err != nil {
 				return err
 			}
-		case a.SlackWebhook != nil:
-			if err := validateSlackURL(a.SlackWebhook.URL); err != nil {
+		cbse b.SlbckWebhook != nil:
+			if err := vblidbteSlbckURL(b.SlbckWebhook.URL); err != nil {
 				return err
 			}
-			_, err := r.db.CodeMonitors().CreateSlackWebhookAction(ctx, monitorID, a.SlackWebhook.Enabled, a.SlackWebhook.IncludeResults, a.SlackWebhook.URL)
+			_, err := r.db.CodeMonitors().CrebteSlbckWebhookAction(ctx, monitorID, b.SlbckWebhook.Enbbled, b.SlbckWebhook.IncludeResults, b.SlbckWebhook.URL)
 			if err != nil {
 				return err
 			}
-		default:
-			return errors.New("exactly one of Email, Webhook, or SlackWebhook must be set")
+		defbult:
+			return errors.New("exbctly one of Embil, Webhook, or SlbckWebhook must be set")
 		}
 	}
 	return nil
 }
 
-func (r *Resolver) deleteActions(ctx context.Context, monitorID int64, ids []graphql.ID) error {
-	var email, webhook, slackWebhook []int64
-	for _, id := range ids {
-		var intID int64
-		err := relay.UnmarshalSpec(id, &intID)
+func (r *Resolver) deleteActions(ctx context.Context, monitorID int64, ids []grbphql.ID) error {
+	vbr embil, webhook, slbckWebhook []int64
+	for _, id := rbnge ids {
+		vbr intID int64
+		err := relby.UnmbrshblSpec(id, &intID)
 		if err != nil {
 			return err
 		}
 
-		switch relay.UnmarshalKind(id) {
-		case monitorActionEmailKind:
-			email = append(email, intID)
-		case monitorActionWebhookKind:
-			webhook = append(webhook, intID)
-		case monitorActionSlackWebhookKind:
-			slackWebhook = append(slackWebhook, intID)
-		default:
-			return errors.New("action IDs must be exactly one of email, webhook, or slack webhook")
+		switch relby.UnmbrshblKind(id) {
+		cbse monitorActionEmbilKind:
+			embil = bppend(embil, intID)
+		cbse monitorActionWebhookKind:
+			webhook = bppend(webhook, intID)
+		cbse monitorActionSlbckWebhookKind:
+			slbckWebhook = bppend(slbckWebhook, intID)
+		defbult:
+			return errors.New("bction IDs must be exbctly one of embil, webhook, or slbck webhook")
 		}
 	}
 
-	if err := r.db.CodeMonitors().DeleteEmailActions(ctx, email, monitorID); err != nil {
+	if err := r.db.CodeMonitors().DeleteEmbilActions(ctx, embil, monitorID); err != nil {
 		return err
 	}
 
@@ -328,21 +328,21 @@ func (r *Resolver) deleteActions(ctx context.Context, monitorID int64, ids []gra
 		return err
 	}
 
-	if err := r.db.CodeMonitors().DeleteSlackWebhookActions(ctx, monitorID, slackWebhook...); err != nil {
+	if err := r.db.CodeMonitors().DeleteSlbckWebhookActions(ctx, monitorID, slbckWebhook...); err != nil {
 		return err
 	}
 
 	return nil
 }
 
-func (r *Resolver) createRecipients(ctx context.Context, emailID int64, recipients []graphql.ID) error {
-	for _, recipient := range recipients {
-		userID, orgID, err := graphqlbackend.UnmarshalNamespaceToIDs(recipient)
+func (r *Resolver) crebteRecipients(ctx context.Context, embilID int64, recipients []grbphql.ID) error {
+	for _, recipient := rbnge recipients {
+		userID, orgID, err := grbphqlbbckend.UnmbrshblNbmespbceToIDs(recipient)
 		if err != nil {
-			return errors.Wrap(err, "UnmarshalNamespaceID")
+			return errors.Wrbp(err, "UnmbrshblNbmespbceID")
 		}
 
-		_, err = r.db.CodeMonitors().CreateRecipient(ctx, emailID, userID, orgID)
+		_, err = r.db.CodeMonitors().CrebteRecipient(ctx, embilID, userID, orgID)
 		if err != nil {
 			return err
 		}
@@ -350,88 +350,88 @@ func (r *Resolver) createRecipients(ctx context.Context, emailID int64, recipien
 	return nil
 }
 
-// ResetTriggerQueryTimestamps is a convenience function which resets the
-// timestamps `next_run` and `last_result` with the purpose to trigger associated
-// actions (emails, webhooks) immediately. This is useful during development and
-// troubleshooting. Only site admins can call this functions.
-func (r *Resolver) ResetTriggerQueryTimestamps(ctx context.Context, args *graphqlbackend.ResetTriggerQueryTimestampsArgs) (*graphqlbackend.EmptyResponse, error) {
-	err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db)
+// ResetTriggerQueryTimestbmps is b convenience function which resets the
+// timestbmps `next_run` bnd `lbst_result` with the purpose to trigger bssocibted
+// bctions (embils, webhooks) immedibtely. This is useful during development bnd
+// troubleshooting. Only site bdmins cbn cbll this functions.
+func (r *Resolver) ResetTriggerQueryTimestbmps(ctx context.Context, brgs *grbphqlbbckend.ResetTriggerQueryTimestbmpsArgs) (*grbphqlbbckend.EmptyResponse, error) {
+	err := buth.CheckCurrentUserIsSiteAdmin(ctx, r.db)
 	if err != nil {
 		return nil, err
 	}
-	var queryIDInt64 int64
-	err = relay.UnmarshalSpec(args.Id, &queryIDInt64)
+	vbr queryIDInt64 int64
+	err = relby.UnmbrshblSpec(brgs.Id, &queryIDInt64)
 	if err != nil {
 		return nil, err
 	}
-	err = r.db.CodeMonitors().ResetQueryTriggerTimestamps(ctx, queryIDInt64)
+	err = r.db.CodeMonitors().ResetQueryTriggerTimestbmps(ctx, queryIDInt64)
 	if err != nil {
 		return nil, err
 	}
-	return &graphqlbackend.EmptyResponse{}, nil
+	return &grbphqlbbckend.EmptyResponse{}, nil
 }
 
-func (r *Resolver) TriggerTestEmailAction(ctx context.Context, args *graphqlbackend.TriggerTestEmailActionArgs) (*graphqlbackend.EmptyResponse, error) {
-	err := r.isAllowedToCreate(ctx, args.Namespace)
+func (r *Resolver) TriggerTestEmbilAction(ctx context.Context, brgs *grbphqlbbckend.TriggerTestEmbilActionArgs) (*grbphqlbbckend.EmptyResponse, error) {
+	err := r.isAllowedToCrebte(ctx, brgs.Nbmespbce)
 	if err != nil {
 		return nil, err
 	}
 
-	for _, recipient := range args.Email.Recipients {
-		if err := sendTestEmail(ctx, r.db, recipient, args.Description); err != nil {
+	for _, recipient := rbnge brgs.Embil.Recipients {
+		if err := sendTestEmbil(ctx, r.db, recipient, brgs.Description); err != nil {
 			return nil, err
 		}
 	}
 
-	return &graphqlbackend.EmptyResponse{}, nil
+	return &grbphqlbbckend.EmptyResponse{}, nil
 }
 
-func (r *Resolver) TriggerTestWebhookAction(ctx context.Context, args *graphqlbackend.TriggerTestWebhookActionArgs) (*graphqlbackend.EmptyResponse, error) {
-	err := r.isAllowedToCreate(ctx, args.Namespace)
+func (r *Resolver) TriggerTestWebhookAction(ctx context.Context, brgs *grbphqlbbckend.TriggerTestWebhookActionArgs) (*grbphqlbbckend.EmptyResponse, error) {
+	err := r.isAllowedToCrebte(ctx, brgs.Nbmespbce)
 	if err != nil {
 		return nil, err
 	}
 
-	if err := background.SendTestWebhook(ctx, httpcli.ExternalDoer, args.Description, args.Webhook.URL); err != nil {
+	if err := bbckground.SendTestWebhook(ctx, httpcli.ExternblDoer, brgs.Description, brgs.Webhook.URL); err != nil {
 		return nil, err
 	}
 
-	return &graphqlbackend.EmptyResponse{}, nil
+	return &grbphqlbbckend.EmptyResponse{}, nil
 }
 
-func (r *Resolver) TriggerTestSlackWebhookAction(ctx context.Context, args *graphqlbackend.TriggerTestSlackWebhookActionArgs) (*graphqlbackend.EmptyResponse, error) {
-	err := r.isAllowedToCreate(ctx, args.Namespace)
+func (r *Resolver) TriggerTestSlbckWebhookAction(ctx context.Context, brgs *grbphqlbbckend.TriggerTestSlbckWebhookActionArgs) (*grbphqlbbckend.EmptyResponse, error) {
+	err := r.isAllowedToCrebte(ctx, brgs.Nbmespbce)
 	if err != nil {
 		return nil, err
 	}
 
-	if err := background.SendTestSlackWebhook(ctx, httpcli.ExternalDoer, args.Description, args.SlackWebhook.URL); err != nil {
+	if err := bbckground.SendTestSlbckWebhook(ctx, httpcli.ExternblDoer, brgs.Description, brgs.SlbckWebhook.URL); err != nil {
 		return nil, err
 	}
 
-	return &graphqlbackend.EmptyResponse{}, nil
+	return &grbphqlbbckend.EmptyResponse{}, nil
 }
 
-func sendTestEmail(ctx context.Context, db database.DB, recipient graphql.ID, description string) error {
-	var (
+func sendTestEmbil(ctx context.Context, db dbtbbbse.DB, recipient grbphql.ID, description string) error {
+	vbr (
 		userID int32
 		orgID  int32
 	)
-	err := graphqlbackend.UnmarshalNamespaceID(recipient, &userID, &orgID)
+	err := grbphqlbbckend.UnmbrshblNbmespbceID(recipient, &userID, &orgID)
 	if err != nil {
 		return err
 	}
-	// TODO: Send test email to org members.
+	// TODO: Send test embil to org members.
 	if orgID != 0 {
 		return nil
 	}
-	data := background.NewTestTemplateDataForNewSearchResults(description)
-	return background.SendEmailForNewSearchResult(ctx, db, userID, data)
+	dbtb := bbckground.NewTestTemplbteDbtbForNewSebrchResults(description)
+	return bbckground.SendEmbilForNewSebrchResult(ctx, db, userID, dbtb)
 }
 
-func (r *Resolver) actionIDsForMonitorIDInt64(ctx context.Context, monitorID int64) ([]graphql.ID, error) {
-	opts := database.ListActionsOpts{MonitorID: &monitorID}
-	emailActions, err := r.db.CodeMonitors().ListEmailActions(ctx, opts)
+func (r *Resolver) bctionIDsForMonitorIDInt64(ctx context.Context, monitorID int64) ([]grbphql.ID, error) {
+	opts := dbtbbbse.ListActionsOpts{MonitorID: &monitorID}
+	embilActions, err := r.db.CodeMonitors().ListEmbilActions(ctx, opts)
 	if err != nil {
 		return nil, err
 	}
@@ -439,145 +439,145 @@ func (r *Resolver) actionIDsForMonitorIDInt64(ctx context.Context, monitorID int
 	if err != nil {
 		return nil, err
 	}
-	slackWebhookActions, err := r.db.CodeMonitors().ListSlackWebhookActions(ctx, opts)
+	slbckWebhookActions, err := r.db.CodeMonitors().ListSlbckWebhookActions(ctx, opts)
 	if err != nil {
 		return nil, err
 	}
-	ids := make([]graphql.ID, 0, len(emailActions)+len(webhookActions)+len(slackWebhookActions))
-	for _, emailAction := range emailActions {
-		ids = append(ids, (&monitorEmail{EmailAction: emailAction}).ID())
+	ids := mbke([]grbphql.ID, 0, len(embilActions)+len(webhookActions)+len(slbckWebhookActions))
+	for _, embilAction := rbnge embilActions {
+		ids = bppend(ids, (&monitorEmbil{EmbilAction: embilAction}).ID())
 	}
-	for _, webhookAction := range webhookActions {
-		ids = append(ids, (&monitorWebhook{WebhookAction: webhookAction}).ID())
+	for _, webhookAction := rbnge webhookActions {
+		ids = bppend(ids, (&monitorWebhook{WebhookAction: webhookAction}).ID())
 	}
-	for _, slackWebhookAction := range slackWebhookActions {
-		ids = append(ids, (&monitorSlackWebhook{SlackWebhookAction: slackWebhookAction}).ID())
+	for _, slbckWebhookAction := rbnge slbckWebhookActions {
+		ids = bppend(ids, (&monitorSlbckWebhook{SlbckWebhookAction: slbckWebhookAction}).ID())
 	}
 	return ids, nil
 }
 
-// splitActionIDs splits actions into three buckets: create, delete and update.
-// Note: args is mutated. After splitActionIDs, args only contains actions to be updated.
-func splitActionIDs(args *graphqlbackend.UpdateCodeMonitorArgs, actionIDs []graphql.ID) (toCreate []*graphqlbackend.CreateActionArgs, toDelete []graphql.ID, err error) {
-	aMap := make(map[graphql.ID]struct{}, len(actionIDs))
-	for _, id := range actionIDs {
-		aMap[id] = struct{}{}
+// splitActionIDs splits bctions into three buckets: crebte, delete bnd updbte.
+// Note: brgs is mutbted. After splitActionIDs, brgs only contbins bctions to be updbted.
+func splitActionIDs(brgs *grbphqlbbckend.UpdbteCodeMonitorArgs, bctionIDs []grbphql.ID) (toCrebte []*grbphqlbbckend.CrebteActionArgs, toDelete []grbphql.ID, err error) {
+	bMbp := mbke(mbp[grbphql.ID]struct{}, len(bctionIDs))
+	for _, id := rbnge bctionIDs {
+		bMbp[id] = struct{}{}
 	}
 
-	var toUpdateActions []*graphqlbackend.EditActionArgs
-	for _, a := range args.Actions {
+	vbr toUpdbteActions []*grbphqlbbckend.EditActionArgs
+	for _, b := rbnge brgs.Actions {
 		switch {
-		case a.Email != nil:
-			if a.Email.Id == nil {
-				toCreate = append(toCreate, &graphqlbackend.CreateActionArgs{Email: a.Email.Update})
+		cbse b.Embil != nil:
+			if b.Embil.Id == nil {
+				toCrebte = bppend(toCrebte, &grbphqlbbckend.CrebteActionArgs{Embil: b.Embil.Updbte})
 				continue
 			}
-			if _, ok := aMap[*a.Email.Id]; !ok {
-				return nil, nil, errors.Errorf("unknown ID=%s for action", *a.Email.Id)
+			if _, ok := bMbp[*b.Embil.Id]; !ok {
+				return nil, nil, errors.Errorf("unknown ID=%s for bction", *b.Embil.Id)
 			}
-			toUpdateActions = append(toUpdateActions, a)
-			delete(aMap, *a.Email.Id)
-		case a.Webhook != nil:
-			if a.Webhook.Id == nil {
-				toCreate = append(toCreate, &graphqlbackend.CreateActionArgs{Webhook: a.Webhook.Update})
+			toUpdbteActions = bppend(toUpdbteActions, b)
+			delete(bMbp, *b.Embil.Id)
+		cbse b.Webhook != nil:
+			if b.Webhook.Id == nil {
+				toCrebte = bppend(toCrebte, &grbphqlbbckend.CrebteActionArgs{Webhook: b.Webhook.Updbte})
 				continue
 			}
-			if _, ok := aMap[*a.Webhook.Id]; !ok {
-				return nil, nil, errors.Errorf("unknown ID=%s for action", *a.Webhook.Id)
+			if _, ok := bMbp[*b.Webhook.Id]; !ok {
+				return nil, nil, errors.Errorf("unknown ID=%s for bction", *b.Webhook.Id)
 			}
-			toUpdateActions = append(toUpdateActions, a)
-			delete(aMap, *a.Webhook.Id)
-		case a.SlackWebhook != nil:
-			if a.SlackWebhook.Id == nil {
-				toCreate = append(toCreate, &graphqlbackend.CreateActionArgs{SlackWebhook: a.SlackWebhook.Update})
+			toUpdbteActions = bppend(toUpdbteActions, b)
+			delete(bMbp, *b.Webhook.Id)
+		cbse b.SlbckWebhook != nil:
+			if b.SlbckWebhook.Id == nil {
+				toCrebte = bppend(toCrebte, &grbphqlbbckend.CrebteActionArgs{SlbckWebhook: b.SlbckWebhook.Updbte})
 				continue
 			}
-			if _, ok := aMap[*a.SlackWebhook.Id]; !ok {
-				return nil, nil, errors.Errorf("unknown ID=%s for action", *a.SlackWebhook.Id)
+			if _, ok := bMbp[*b.SlbckWebhook.Id]; !ok {
+				return nil, nil, errors.Errorf("unknown ID=%s for bction", *b.SlbckWebhook.Id)
 			}
-			toUpdateActions = append(toUpdateActions, a)
-			delete(aMap, *a.SlackWebhook.Id)
+			toUpdbteActions = bppend(toUpdbteActions, b)
+			delete(bMbp, *b.SlbckWebhook.Id)
 		}
 	}
 
-	args.Actions = toUpdateActions
-	for id := range aMap {
-		toDelete = append(toDelete, id)
+	brgs.Actions = toUpdbteActions
+	for id := rbnge bMbp {
+		toDelete = bppend(toDelete, id)
 	}
-	return toCreate, toDelete, nil
+	return toCrebte, toDelete, nil
 }
 
-func (r *Resolver) updateCodeMonitor(ctx context.Context, args *graphqlbackend.UpdateCodeMonitorArgs) (*monitor, error) {
-	// Update monitor.
-	monitorID, err := unmarshalMonitorID(args.Monitor.Id)
+func (r *Resolver) updbteCodeMonitor(ctx context.Context, brgs *grbphqlbbckend.UpdbteCodeMonitorArgs) (*monitor, error) {
+	// Updbte monitor.
+	monitorID, err := unmbrshblMonitorID(brgs.Monitor.Id)
 	if err != nil {
 		return nil, err
 	}
 
-	userID, orgID, err := graphqlbackend.UnmarshalNamespaceToIDs(args.Monitor.Update.Namespace)
+	userID, orgID, err := grbphqlbbckend.UnmbrshblNbmespbceToIDs(brgs.Monitor.Updbte.Nbmespbce)
 	if err != nil {
 		return nil, err
 	}
 
-	mo, err := r.db.CodeMonitors().UpdateMonitor(ctx, monitorID, database.MonitorArgs{
-		Description:     args.Monitor.Update.Description,
-		Enabled:         args.Monitor.Update.Enabled,
-		NamespaceUserID: userID,
-		NamespaceOrgID:  orgID,
+	mo, err := r.db.CodeMonitors().UpdbteMonitor(ctx, monitorID, dbtbbbse.MonitorArgs{
+		Description:     brgs.Monitor.Updbte.Description,
+		Enbbled:         brgs.Monitor.Updbte.Enbbled,
+		NbmespbceUserID: userID,
+		NbmespbceOrgID:  orgID,
 	})
 	if err != nil {
 		return nil, err
 	}
 
-	var triggerID int64
-	if err := relay.UnmarshalSpec(args.Trigger.Id, &triggerID); err != nil {
+	vbr triggerID int64
+	if err := relby.UnmbrshblSpec(brgs.Trigger.Id, &triggerID); err != nil {
 		return nil, err
 	}
 
-	if featureflag.FromContext(ctx).GetBoolOr("cc-repo-aware-monitors", true) {
+	if febtureflbg.FromContext(ctx).GetBoolOr("cc-repo-bwbre-monitors", true) {
 		currentTrigger, err := r.db.CodeMonitors().GetQueryTriggerForMonitor(ctx, monitorID)
 		if err != nil {
 			return nil, err
 		}
 
-		// When the query is changed, take a new snapshot of the commits that currently
-		// exist so we know where to start.
-		if currentTrigger.QueryString != args.Trigger.Update.Query {
-			// Snapshot the state of the searched repos when the monitor is created so that
-			// we can distinguish new repos.
-			err = codemonitors.Snapshot(ctx, r.logger, r.db, args.Trigger.Update.Query, monitorID)
+		// When the query is chbnged, tbke b new snbpshot of the commits thbt currently
+		// exist so we know where to stbrt.
+		if currentTrigger.QueryString != brgs.Trigger.Updbte.Query {
+			// Snbpshot the stbte of the sebrched repos when the monitor is crebted so thbt
+			// we cbn distinguish new repos.
+			err = codemonitors.Snbpshot(ctx, r.logger, r.db, brgs.Trigger.Updbte.Query, monitorID)
 			if err != nil {
 				return nil, err
 			}
 		}
 	}
 
-	// Update trigger.
-	err = r.db.CodeMonitors().UpdateQueryTrigger(ctx, triggerID, args.Trigger.Update.Query)
+	// Updbte trigger.
+	err = r.db.CodeMonitors().UpdbteQueryTrigger(ctx, triggerID, brgs.Trigger.Updbte.Query)
 	if err != nil {
 		return nil, err
 	}
 
-	// Update actions.
-	if len(args.Actions) == 0 {
+	// Updbte bctions.
+	if len(brgs.Actions) == 0 {
 		return &monitor{
 			Resolver: r,
 			Monitor:  mo,
 		}, nil
 	}
-	for _, action := range args.Actions {
+	for _, bction := rbnge brgs.Actions {
 		switch {
-		case action.Email != nil:
-			err = r.updateEmailAction(ctx, *action.Email)
-		case action.Webhook != nil:
-			err = r.updateWebhookAction(ctx, *action.Webhook)
-		case action.SlackWebhook != nil:
-			if err := validateSlackURL(action.SlackWebhook.Update.URL); err != nil {
+		cbse bction.Embil != nil:
+			err = r.updbteEmbilAction(ctx, *bction.Embil)
+		cbse bction.Webhook != nil:
+			err = r.updbteWebhookAction(ctx, *bction.Webhook)
+		cbse bction.SlbckWebhook != nil:
+			if err := vblidbteSlbckURL(bction.SlbckWebhook.Updbte.URL); err != nil {
 				return nil, err
 			}
-			err = r.updateSlackWebhookAction(ctx, *action.SlackWebhook)
-		default:
-			err = errors.New("action must be one of email, webhook, or slack webhook")
+			err = r.updbteSlbckWebhookAction(ctx, *bction.SlbckWebhook)
+		defbult:
+			err = errors.New("bction must be one of embil, webhook, or slbck webhook")
 		}
 		if err != nil {
 			return nil, err
@@ -589,52 +589,52 @@ func (r *Resolver) updateCodeMonitor(ctx context.Context, args *graphqlbackend.U
 	}, nil
 }
 
-func (r *Resolver) updateEmailAction(ctx context.Context, args graphqlbackend.EditActionEmailArgs) error {
-	emailID, err := unmarshalEmailID(*args.Id)
+func (r *Resolver) updbteEmbilAction(ctx context.Context, brgs grbphqlbbckend.EditActionEmbilArgs) error {
+	embilID, err := unmbrshblEmbilID(*brgs.Id)
 	if err != nil {
 		return err
 	}
-	err = r.db.CodeMonitors().DeleteRecipients(ctx, emailID)
+	err = r.db.CodeMonitors().DeleteRecipients(ctx, embilID)
 	if err != nil {
 		return err
 	}
 
-	e, err := r.db.CodeMonitors().UpdateEmailAction(ctx, emailID, &database.EmailActionArgs{
-		Enabled:        args.Update.Enabled,
-		IncludeResults: args.Update.IncludeResults,
-		Priority:       args.Update.Priority,
-		Header:         args.Update.Header,
+	e, err := r.db.CodeMonitors().UpdbteEmbilAction(ctx, embilID, &dbtbbbse.EmbilActionArgs{
+		Enbbled:        brgs.Updbte.Enbbled,
+		IncludeResults: brgs.Updbte.IncludeResults,
+		Priority:       brgs.Updbte.Priority,
+		Hebder:         brgs.Updbte.Hebder,
 	})
 	if err != nil {
 		return err
 	}
-	return r.createRecipients(ctx, e.ID, args.Update.Recipients)
+	return r.crebteRecipients(ctx, e.ID, brgs.Updbte.Recipients)
 }
 
-func (r *Resolver) updateWebhookAction(ctx context.Context, args graphqlbackend.EditActionWebhookArgs) error {
-	var id int64
-	err := relay.UnmarshalSpec(*args.Id, &id)
+func (r *Resolver) updbteWebhookAction(ctx context.Context, brgs grbphqlbbckend.EditActionWebhookArgs) error {
+	vbr id int64
+	err := relby.UnmbrshblSpec(*brgs.Id, &id)
 	if err != nil {
 		return err
 	}
 
-	_, err = r.db.CodeMonitors().UpdateWebhookAction(ctx, id, args.Update.Enabled, args.Update.IncludeResults, args.Update.URL)
+	_, err = r.db.CodeMonitors().UpdbteWebhookAction(ctx, id, brgs.Updbte.Enbbled, brgs.Updbte.IncludeResults, brgs.Updbte.URL)
 	return err
 }
 
-func (r *Resolver) updateSlackWebhookAction(ctx context.Context, args graphqlbackend.EditActionSlackWebhookArgs) error {
-	var id int64
-	err := relay.UnmarshalSpec(*args.Id, &id)
+func (r *Resolver) updbteSlbckWebhookAction(ctx context.Context, brgs grbphqlbbckend.EditActionSlbckWebhookArgs) error {
+	vbr id int64
+	err := relby.UnmbrshblSpec(*brgs.Id, &id)
 	if err != nil {
 		return err
 	}
 
-	_, err = r.db.CodeMonitors().UpdateSlackWebhookAction(ctx, id, args.Update.Enabled, args.Update.IncludeResults, args.Update.URL)
+	_, err = r.db.CodeMonitors().UpdbteSlbckWebhookAction(ctx, id, brgs.Updbte.Enbbled, brgs.Updbte.IncludeResults, brgs.Updbte.URL)
 	return err
 }
 
-func (r *Resolver) withTransact(ctx context.Context, f func(*Resolver) error) error {
-	return r.db.WithTransact(ctx, func(tx database.DB) error {
+func (r *Resolver) withTrbnsbct(ctx context.Context, f func(*Resolver) error) error {
+	return r.db.WithTrbnsbct(ctx, func(tx dbtbbbse.DB) error {
 		return f(&Resolver{
 			logger: r.logger,
 			db:     tx,
@@ -642,9 +642,9 @@ func (r *Resolver) withTransact(ctx context.Context, f func(*Resolver) error) er
 	})
 }
 
-// isAllowedToEdit checks whether an actor is allowed to edit a given monitor.
-func (r *Resolver) isAllowedToEdit(ctx context.Context, id graphql.ID) error {
-	monitorID, err := unmarshalMonitorID(id)
+// isAllowedToEdit checks whether bn bctor is bllowed to edit b given monitor.
+func (r *Resolver) isAllowedToEdit(ctx context.Context, id grbphql.ID) error {
+	monitorID, err := unmbrshblMonitorID(id)
 	if err != nil {
 		return err
 	}
@@ -652,136 +652,136 @@ func (r *Resolver) isAllowedToEdit(ctx context.Context, id graphql.ID) error {
 	if err != nil {
 		return err
 	}
-	return r.isAllowedToCreate(ctx, owner)
+	return r.isAllowedToCrebte(ctx, owner)
 }
 
-// isAllowedToCreate compares the owner of a monitor (user or org) to the actor of
-// the request. A user can create a monitor if either of the following statements
+// isAllowedToCrebte compbres the owner of b monitor (user or org) to the bctor of
+// the request. A user cbn crebte b monitor if either of the following stbtements
 // is true:
 // - she is the owner
-// - she is a member of the organization which is the owner of the monitor
-// - she is a site-admin
-func (r *Resolver) isAllowedToCreate(ctx context.Context, owner graphql.ID) error {
-	var ownerInt32 int32
-	err := relay.UnmarshalSpec(owner, &ownerInt32)
+// - she is b member of the orgbnizbtion which is the owner of the monitor
+// - she is b site-bdmin
+func (r *Resolver) isAllowedToCrebte(ctx context.Context, owner grbphql.ID) error {
+	vbr ownerInt32 int32
+	err := relby.UnmbrshblSpec(owner, &ownerInt32)
 	if err != nil {
 		return err
 	}
-	switch kind := relay.UnmarshalKind(owner); kind {
-	case "User":
-		return auth.CheckSiteAdminOrSameUser(ctx, r.db, ownerInt32)
-	case "Org":
-		return errors.Errorf("creating a code monitor with an org namespace is no longer supported")
-	default:
-		return errors.Errorf("provided ID is not a namespace")
+	switch kind := relby.UnmbrshblKind(owner); kind {
+	cbse "User":
+		return buth.CheckSiteAdminOrSbmeUser(ctx, r.db, ownerInt32)
+	cbse "Org":
+		return errors.Errorf("crebting b code monitor with bn org nbmespbce is no longer supported")
+	defbult:
+		return errors.Errorf("provided ID is not b nbmespbce")
 	}
 }
 
-func (r *Resolver) ownerForID64(ctx context.Context, monitorID int64) (graphql.ID, error) {
+func (r *Resolver) ownerForID64(ctx context.Context, monitorID int64) (grbphql.ID, error) {
 	monitor, err := r.db.CodeMonitors().GetMonitor(ctx, monitorID)
 	if err != nil {
 		return "", err
 	}
 
-	return graphqlbackend.MarshalUserID(monitor.UserID), nil
+	return grbphqlbbckend.MbrshblUserID(monitor.UserID), nil
 }
 
 // MonitorConnection
 type monitorConnection struct {
 	*Resolver
-	monitors    []graphqlbackend.MonitorResolver
-	totalCount  int32
-	hasNextPage bool
+	monitors    []grbphqlbbckend.MonitorResolver
+	totblCount  int32
+	hbsNextPbge bool
 }
 
-func (m *monitorConnection) Nodes() []graphqlbackend.MonitorResolver {
+func (m *monitorConnection) Nodes() []grbphqlbbckend.MonitorResolver {
 	return m.monitors
 }
 
-func (m *monitorConnection) TotalCount() int32 {
-	return m.totalCount
+func (m *monitorConnection) TotblCount() int32 {
+	return m.totblCount
 }
 
-func (m *monitorConnection) PageInfo() *graphqlutil.PageInfo {
-	if len(m.monitors) == 0 || !m.hasNextPage {
-		return graphqlutil.HasNextPage(false)
+func (m *monitorConnection) PbgeInfo() *grbphqlutil.PbgeInfo {
+	if len(m.monitors) == 0 || !m.hbsNextPbge {
+		return grbphqlutil.HbsNextPbge(fblse)
 	}
-	return graphqlutil.NextPageCursor(string(m.monitors[len(m.monitors)-1].ID()))
+	return grbphqlutil.NextPbgeCursor(string(m.monitors[len(m.monitors)-1].ID()))
 }
 
 const (
 	MonitorKind                        = "CodeMonitor"
 	monitorTriggerQueryKind            = "CodeMonitorTriggerQuery"
 	monitorTriggerEventKind            = "CodeMonitorTriggerEvent"
-	monitorActionEmailKind             = "CodeMonitorActionEmail"
+	monitorActionEmbilKind             = "CodeMonitorActionEmbil"
 	monitorActionWebhookKind           = "CodeMonitorActionWebhook"
-	monitorActionSlackWebhookKind      = "CodeMonitorActionSlackWebhook"
-	monitorActionEmailEventKind        = "CodeMonitorActionEmailEvent"
+	monitorActionSlbckWebhookKind      = "CodeMonitorActionSlbckWebhook"
+	monitorActionEmbilEventKind        = "CodeMonitorActionEmbilEvent"
 	monitorActionWebhookEventKind      = "CodeMonitorActionWebhookEvent"
-	monitorActionSlackWebhookEventKind = "CodeMonitorActionSlackWebhookEvent"
-	monitorActionEmailRecipientKind    = "CodeMonitorActionEmailRecipient"
+	monitorActionSlbckWebhookEventKind = "CodeMonitorActionSlbckWebhookEvent"
+	monitorActionEmbilRecipientKind    = "CodeMonitorActionEmbilRecipient"
 )
 
-func unmarshalMonitorID(id graphql.ID) (int64, error) {
-	if kind := relay.UnmarshalKind(id); kind != MonitorKind {
-		return 0, errors.Errorf("expected graphql ID kind %s, got %s", MonitorKind, kind)
+func unmbrshblMonitorID(id grbphql.ID) (int64, error) {
+	if kind := relby.UnmbrshblKind(id); kind != MonitorKind {
+		return 0, errors.Errorf("expected grbphql ID kind %s, got %s", MonitorKind, kind)
 	}
-	var i int64
-	err := relay.UnmarshalSpec(id, &i)
+	vbr i int64
+	err := relby.UnmbrshblSpec(id, &i)
 	return i, err
 }
 
-func unmarshalEmailID(id graphql.ID) (int64, error) {
-	if kind := relay.UnmarshalKind(id); kind != monitorActionEmailKind {
-		return 0, errors.Errorf("expected graphql ID kind %s, got %s", monitorActionEmailKind, kind)
+func unmbrshblEmbilID(id grbphql.ID) (int64, error) {
+	if kind := relby.UnmbrshblKind(id); kind != monitorActionEmbilKind {
+		return 0, errors.Errorf("expected grbphql ID kind %s, got %s", monitorActionEmbilKind, kind)
 	}
-	var i int64
-	err := relay.UnmarshalSpec(id, &i)
+	vbr i int64
+	err := relby.UnmbrshblSpec(id, &i)
 	return i, err
 }
 
-func unmarshalAfter(after *string) (*int, error) {
-	if after == nil {
+func unmbrshblAfter(bfter *string) (*int, error) {
+	if bfter == nil {
 		return nil, nil
 	}
 
-	var a int
-	err := relay.UnmarshalSpec(graphql.ID(*after), &a)
-	return &a, err
+	vbr b int
+	err := relby.UnmbrshblSpec(grbphql.ID(*bfter), &b)
+	return &b, err
 }
 
 // Monitor
 type monitor struct {
 	*Resolver
-	*database.Monitor
+	*dbtbbbse.Monitor
 }
 
-func (m *monitor) ID() graphql.ID {
-	return relay.MarshalID(MonitorKind, m.Monitor.ID)
+func (m *monitor) ID() grbphql.ID {
+	return relby.MbrshblID(MonitorKind, m.Monitor.ID)
 }
 
-func (m *monitor) CreatedBy(ctx context.Context) (*graphqlbackend.UserResolver, error) {
-	return graphqlbackend.UserByIDInt32(ctx, m.db, m.Monitor.CreatedBy)
+func (m *monitor) CrebtedBy(ctx context.Context) (*grbphqlbbckend.UserResolver, error) {
+	return grbphqlbbckend.UserByIDInt32(ctx, m.db, m.Monitor.CrebtedBy)
 }
 
-func (m *monitor) CreatedAt() gqlutil.DateTime {
-	return gqlutil.DateTime{Time: m.Monitor.CreatedAt}
+func (m *monitor) CrebtedAt() gqlutil.DbteTime {
+	return gqlutil.DbteTime{Time: m.Monitor.CrebtedAt}
 }
 
 func (m *monitor) Description() string {
 	return m.Monitor.Description
 }
 
-func (m *monitor) Enabled() bool {
-	return m.Monitor.Enabled
+func (m *monitor) Enbbled() bool {
+	return m.Monitor.Enbbled
 }
 
-func (m *monitor) Owner(ctx context.Context) (graphqlbackend.NamespaceResolver, error) {
-	n, err := graphqlbackend.UserByIDInt32(ctx, m.db, m.UserID)
-	return graphqlbackend.NamespaceResolver{Namespace: n}, err
+func (m *monitor) Owner(ctx context.Context) (grbphqlbbckend.NbmespbceResolver, error) {
+	n, err := grbphqlbbckend.UserByIDInt32(ctx, m.db, m.UserID)
+	return grbphqlbbckend.NbmespbceResolver{Nbmespbce: n}, err
 }
 
-func (m *monitor) Trigger(ctx context.Context) (graphqlbackend.MonitorTrigger, error) {
+func (m *monitor) Trigger(ctx context.Context) (grbphqlbbckend.MonitorTrigger, error) {
 	t, err := m.db.CodeMonitors().GetQueryTriggerForMonitor(ctx, m.Monitor.ID)
 	if err != nil {
 		return nil, err
@@ -789,14 +789,14 @@ func (m *monitor) Trigger(ctx context.Context) (graphqlbackend.MonitorTrigger, e
 	return &monitorTrigger{&monitorQuery{m.Resolver, t}}, nil
 }
 
-func (m *monitor) Actions(ctx context.Context, args *graphqlbackend.ListActionArgs) (graphqlbackend.MonitorActionConnectionResolver, error) {
-	return m.actionConnectionResolverWithTriggerID(ctx, nil, m.Monitor.ID, args)
+func (m *monitor) Actions(ctx context.Context, brgs *grbphqlbbckend.ListActionArgs) (grbphqlbbckend.MonitorActionConnectionResolver, error) {
+	return m.bctionConnectionResolverWithTriggerID(ctx, nil, m.Monitor.ID, brgs)
 }
 
-func (r *Resolver) actionConnectionResolverWithTriggerID(ctx context.Context, triggerEventID *int32, monitorID int64, args *graphqlbackend.ListActionArgs) (graphqlbackend.MonitorActionConnectionResolver, error) {
-	opts := database.ListActionsOpts{MonitorID: &monitorID}
+func (r *Resolver) bctionConnectionResolverWithTriggerID(ctx context.Context, triggerEventID *int32, monitorID int64, brgs *grbphqlbbckend.ListActionArgs) (grbphqlbbckend.MonitorActionConnectionResolver, error) {
+	opts := dbtbbbse.ListActionsOpts{MonitorID: &monitorID}
 
-	es, err := r.db.CodeMonitors().ListEmailActions(ctx, opts)
+	es, err := r.db.CodeMonitors().ListEmbilActions(ctx, opts)
 	if err != nil {
 		return nil, err
 	}
@@ -806,23 +806,23 @@ func (r *Resolver) actionConnectionResolverWithTriggerID(ctx context.Context, tr
 		return nil, err
 	}
 
-	sws, err := r.db.CodeMonitors().ListSlackWebhookActions(ctx, opts)
+	sws, err := r.db.CodeMonitors().ListSlbckWebhookActions(ctx, opts)
 	if err != nil {
 		return nil, err
 	}
 
-	actions := make([]graphqlbackend.MonitorAction, 0, len(es)+len(ws)+len(sws))
-	for _, e := range es {
-		actions = append(actions, &action{
-			email: &monitorEmail{
+	bctions := mbke([]grbphqlbbckend.MonitorAction, 0, len(es)+len(ws)+len(sws))
+	for _, e := rbnge es {
+		bctions = bppend(bctions, &bction{
+			embil: &monitorEmbil{
 				Resolver:       r,
-				EmailAction:    e,
+				EmbilAction:    e,
 				triggerEventID: triggerEventID,
 			},
 		})
 	}
-	for _, w := range ws {
-		actions = append(actions, &action{
+	for _, w := rbnge ws {
+		bctions = bppend(bctions, &bction{
 			webhook: &monitorWebhook{
 				Resolver:       r,
 				WebhookAction:  w,
@@ -830,132 +830,132 @@ func (r *Resolver) actionConnectionResolverWithTriggerID(ctx context.Context, tr
 			},
 		})
 	}
-	for _, sw := range sws {
-		actions = append(actions, &action{
-			slackWebhook: &monitorSlackWebhook{
+	for _, sw := rbnge sws {
+		bctions = bppend(bctions, &bction{
+			slbckWebhook: &monitorSlbckWebhook{
 				Resolver:           r,
-				SlackWebhookAction: sw,
+				SlbckWebhookAction: sw,
 				triggerEventID:     triggerEventID,
 			},
 		})
 	}
 
-	totalCount := len(actions)
-	if args.After != nil {
-		for i, action := range actions {
-			if action.ID() == graphql.ID(*args.After) {
-				actions = actions[i+1:]
-				break
+	totblCount := len(bctions)
+	if brgs.After != nil {
+		for i, bction := rbnge bctions {
+			if bction.ID() == grbphql.ID(*brgs.After) {
+				bctions = bctions[i+1:]
+				brebk
 			}
 		}
 	}
 
-	if args.First > 0 && len(actions) > int(args.First) {
-		actions = actions[:args.First]
+	if brgs.First > 0 && len(bctions) > int(brgs.First) {
+		bctions = bctions[:brgs.First]
 	}
 
-	return &monitorActionConnection{actions: actions, totalCount: int32(totalCount)}, nil
+	return &monitorActionConnection{bctions: bctions, totblCount: int32(totblCount)}, nil
 }
 
 // MonitorTrigger <<UNION>>
 type monitorTrigger struct {
-	query graphqlbackend.MonitorQueryResolver
+	query grbphqlbbckend.MonitorQueryResolver
 }
 
-func (t *monitorTrigger) ToMonitorQuery() (graphqlbackend.MonitorQueryResolver, bool) {
+func (t *monitorTrigger) ToMonitorQuery() (grbphqlbbckend.MonitorQueryResolver, bool) {
 	return t.query, t.query != nil
 }
 
 // Query
 type monitorQuery struct {
 	*Resolver
-	*database.QueryTrigger
+	*dbtbbbse.QueryTrigger
 }
 
-func (q *monitorQuery) ID() graphql.ID {
-	return relay.MarshalID(monitorTriggerQueryKind, q.QueryTrigger.ID)
+func (q *monitorQuery) ID() grbphql.ID {
+	return relby.MbrshblID(monitorTriggerQueryKind, q.QueryTrigger.ID)
 }
 
 func (q *monitorQuery) Query() string {
 	return q.QueryString
 }
 
-func (q *monitorQuery) Events(ctx context.Context, args *graphqlbackend.ListEventsArgs) (graphqlbackend.MonitorTriggerEventConnectionResolver, error) {
-	after, err := unmarshalAfter(args.After)
+func (q *monitorQuery) Events(ctx context.Context, brgs *grbphqlbbckend.ListEventsArgs) (grbphqlbbckend.MonitorTriggerEventConnectionResolver, error) {
+	bfter, err := unmbrshblAfter(brgs.After)
 	if err != nil {
 		return nil, err
 	}
-	es, err := q.db.CodeMonitors().ListQueryTriggerJobs(ctx, database.ListTriggerJobsOpts{
+	es, err := q.db.CodeMonitors().ListQueryTriggerJobs(ctx, dbtbbbse.ListTriggerJobsOpts{
 		QueryID: &q.QueryTrigger.ID,
-		First:   pointers.Ptr(int(args.First)),
-		After:   intPtrToInt64Ptr(after),
+		First:   pointers.Ptr(int(brgs.First)),
+		After:   intPtrToInt64Ptr(bfter),
 	})
 	if err != nil {
 		return nil, err
 	}
-	totalCount, err := q.db.CodeMonitors().CountQueryTriggerJobs(ctx, q.QueryTrigger.ID)
+	totblCount, err := q.db.CodeMonitors().CountQueryTriggerJobs(ctx, q.QueryTrigger.ID)
 	if err != nil {
 		return nil, err
 	}
-	events := make([]graphqlbackend.MonitorTriggerEventResolver, 0, len(es))
-	for _, e := range es {
-		events = append(events, graphqlbackend.MonitorTriggerEventResolver(&monitorTriggerEvent{
+	events := mbke([]grbphqlbbckend.MonitorTriggerEventResolver, 0, len(es))
+	for _, e := rbnge es {
+		events = bppend(events, grbphqlbbckend.MonitorTriggerEventResolver(&monitorTriggerEvent{
 			Resolver:   q.Resolver,
 			monitorID:  q.Monitor,
 			TriggerJob: e,
 		}))
 	}
-	return &monitorTriggerEventConnection{Resolver: q.Resolver, events: events, totalCount: totalCount}, nil
+	return &monitorTriggerEventConnection{Resolver: q.Resolver, events: events, totblCount: totblCount}, nil
 }
 
 // MonitorTriggerEventConnection
 type monitorTriggerEventConnection struct {
 	*Resolver
-	events     []graphqlbackend.MonitorTriggerEventResolver
-	totalCount int32
+	events     []grbphqlbbckend.MonitorTriggerEventResolver
+	totblCount int32
 }
 
-func (a *monitorTriggerEventConnection) Nodes() []graphqlbackend.MonitorTriggerEventResolver {
-	return a.events
+func (b *monitorTriggerEventConnection) Nodes() []grbphqlbbckend.MonitorTriggerEventResolver {
+	return b.events
 }
 
-func (a *monitorTriggerEventConnection) TotalCount() int32 {
-	return a.totalCount
+func (b *monitorTriggerEventConnection) TotblCount() int32 {
+	return b.totblCount
 }
 
-func (a *monitorTriggerEventConnection) PageInfo() *graphqlutil.PageInfo {
-	if len(a.events) == 0 {
-		return graphqlutil.HasNextPage(false)
+func (b *monitorTriggerEventConnection) PbgeInfo() *grbphqlutil.PbgeInfo {
+	if len(b.events) == 0 {
+		return grbphqlutil.HbsNextPbge(fblse)
 	}
-	return graphqlutil.NextPageCursor(string(a.events[len(a.events)-1].ID()))
+	return grbphqlutil.NextPbgeCursor(string(b.events[len(b.events)-1].ID()))
 }
 
 // MonitorTriggerEvent
 type monitorTriggerEvent struct {
 	*Resolver
-	*database.TriggerJob
+	*dbtbbbse.TriggerJob
 	monitorID int64
 }
 
-func (m *monitorTriggerEvent) ID() graphql.ID {
-	return relay.MarshalID(monitorTriggerEventKind, m.TriggerJob.ID)
+func (m *monitorTriggerEvent) ID() grbphql.ID {
+	return relby.MbrshblID(monitorTriggerEventKind, m.TriggerJob.ID)
 }
 
-// stateToStatus maps the state of the dbworker job to the public GraphQL status of
+// stbteToStbtus mbps the stbte of the dbworker job to the public GrbphQL stbtus of
 // events.
-var stateToStatus = map[string]string{
+vbr stbteToStbtus = mbp[string]string{
 	"completed":  "SUCCESS",
 	"queued":     "PENDING",
 	"processing": "PENDING",
 	"errored":    "ERROR",
-	"failed":     "ERROR",
+	"fbiled":     "ERROR",
 }
 
-func (m *monitorTriggerEvent) Status() (string, error) {
-	if v, ok := stateToStatus[m.State]; ok {
+func (m *monitorTriggerEvent) Stbtus() (string, error) {
+	if v, ok := stbteToStbtus[m.Stbte]; ok {
 		return v, nil
 	}
-	return "", errors.Errorf("unknown status: %s", m.State)
+	return "", errors.Errorf("unknown stbtus: %s", m.Stbte)
 }
 
 func (m *monitorTriggerEvent) Query() *string {
@@ -964,203 +964,203 @@ func (m *monitorTriggerEvent) Query() *string {
 
 func (m *monitorTriggerEvent) ResultCount() int32 {
 	count := 0
-	for _, cm := range m.TriggerJob.SearchResults {
+	for _, cm := rbnge m.TriggerJob.SebrchResults {
 		count += cm.ResultCount()
 	}
 	return int32(count)
 }
 
-func (m *monitorTriggerEvent) Message() *string {
-	return m.FailureMessage
+func (m *monitorTriggerEvent) Messbge() *string {
+	return m.FbilureMessbge
 }
 
-func (m *monitorTriggerEvent) Timestamp() (gqlutil.DateTime, error) {
+func (m *monitorTriggerEvent) Timestbmp() (gqlutil.DbteTime, error) {
 	if m.FinishedAt == nil {
-		return gqlutil.DateTime{Time: m.db.CodeMonitors().Now()}, nil
+		return gqlutil.DbteTime{Time: m.db.CodeMonitors().Now()}, nil
 	}
-	return gqlutil.DateTime{Time: *m.FinishedAt}, nil
+	return gqlutil.DbteTime{Time: *m.FinishedAt}, nil
 }
 
-func (m *monitorTriggerEvent) Actions(ctx context.Context, args *graphqlbackend.ListActionArgs) (graphqlbackend.MonitorActionConnectionResolver, error) {
-	return m.actionConnectionResolverWithTriggerID(ctx, &m.TriggerJob.ID, m.monitorID, args)
+func (m *monitorTriggerEvent) Actions(ctx context.Context, brgs *grbphqlbbckend.ListActionArgs) (grbphqlbbckend.MonitorActionConnectionResolver, error) {
+	return m.bctionConnectionResolverWithTriggerID(ctx, &m.TriggerJob.ID, m.monitorID, brgs)
 }
 
 // ActionConnection
 type monitorActionConnection struct {
-	actions    []graphqlbackend.MonitorAction
-	totalCount int32
+	bctions    []grbphqlbbckend.MonitorAction
+	totblCount int32
 }
 
-func (a *monitorActionConnection) Nodes() []graphqlbackend.MonitorAction {
-	return a.actions
+func (b *monitorActionConnection) Nodes() []grbphqlbbckend.MonitorAction {
+	return b.bctions
 }
 
-func (a *monitorActionConnection) TotalCount() int32 {
-	return a.totalCount
+func (b *monitorActionConnection) TotblCount() int32 {
+	return b.totblCount
 }
 
-func (a *monitorActionConnection) PageInfo() *graphqlutil.PageInfo {
-	if len(a.actions) == 0 {
-		return graphqlutil.HasNextPage(false)
+func (b *monitorActionConnection) PbgeInfo() *grbphqlutil.PbgeInfo {
+	if len(b.bctions) == 0 {
+		return grbphqlutil.HbsNextPbge(fblse)
 	}
-	last := a.actions[len(a.actions)-1]
-	if email, ok := last.ToMonitorEmail(); ok {
-		return graphqlutil.NextPageCursor(string(email.ID()))
+	lbst := b.bctions[len(b.bctions)-1]
+	if embil, ok := lbst.ToMonitorEmbil(); ok {
+		return grbphqlutil.NextPbgeCursor(string(embil.ID()))
 	}
-	panic("found non-email monitor action")
+	pbnic("found non-embil monitor bction")
 }
 
 // Action <<UNION>>
-type action struct {
-	email        graphqlbackend.MonitorEmailResolver
-	webhook      graphqlbackend.MonitorWebhookResolver
-	slackWebhook graphqlbackend.MonitorSlackWebhookResolver
+type bction struct {
+	embil        grbphqlbbckend.MonitorEmbilResolver
+	webhook      grbphqlbbckend.MonitorWebhookResolver
+	slbckWebhook grbphqlbbckend.MonitorSlbckWebhookResolver
 }
 
-func (a *action) ID() graphql.ID {
+func (b *bction) ID() grbphql.ID {
 	switch {
-	case a.email != nil:
-		return a.email.ID()
-	case a.webhook != nil:
-		return a.webhook.ID()
-	case a.slackWebhook != nil:
-		return a.slackWebhook.ID()
-	default:
-		panic("action must have a type")
+	cbse b.embil != nil:
+		return b.embil.ID()
+	cbse b.webhook != nil:
+		return b.webhook.ID()
+	cbse b.slbckWebhook != nil:
+		return b.slbckWebhook.ID()
+	defbult:
+		pbnic("bction must hbve b type")
 	}
 }
 
-func (a *action) ToMonitorEmail() (graphqlbackend.MonitorEmailResolver, bool) {
-	return a.email, a.email != nil
+func (b *bction) ToMonitorEmbil() (grbphqlbbckend.MonitorEmbilResolver, bool) {
+	return b.embil, b.embil != nil
 }
 
-func (a *action) ToMonitorWebhook() (graphqlbackend.MonitorWebhookResolver, bool) {
-	return a.webhook, a.webhook != nil
+func (b *bction) ToMonitorWebhook() (grbphqlbbckend.MonitorWebhookResolver, bool) {
+	return b.webhook, b.webhook != nil
 }
 
-func (a *action) ToMonitorSlackWebhook() (graphqlbackend.MonitorSlackWebhookResolver, bool) {
-	return a.slackWebhook, a.slackWebhook != nil
+func (b *bction) ToMonitorSlbckWebhook() (grbphqlbbckend.MonitorSlbckWebhookResolver, bool) {
+	return b.slbckWebhook, b.slbckWebhook != nil
 }
 
-// Email
-type monitorEmail struct {
+// Embil
+type monitorEmbil struct {
 	*Resolver
-	*database.EmailAction
+	*dbtbbbse.EmbilAction
 
-	// If triggerEventID == nil, all events of this action will be returned.
-	// Otherwise, only those events of this action which are related to the specified
+	// If triggerEventID == nil, bll events of this bction will be returned.
+	// Otherwise, only those events of this bction which bre relbted to the specified
 	// trigger event will be returned.
 	triggerEventID *int32
 }
 
-func (m *monitorEmail) Recipients(ctx context.Context, args *graphqlbackend.ListRecipientsArgs) (graphqlbackend.MonitorActionEmailRecipientsConnectionResolver, error) {
-	after, err := unmarshalAfter(args.After)
+func (m *monitorEmbil) Recipients(ctx context.Context, brgs *grbphqlbbckend.ListRecipientsArgs) (grbphqlbbckend.MonitorActionEmbilRecipientsConnectionResolver, error) {
+	bfter, err := unmbrshblAfter(brgs.After)
 	if err != nil {
 		return nil, err
 	}
-	ms, err := m.db.CodeMonitors().ListRecipients(ctx, database.ListRecipientsOpts{
-		EmailID: &m.EmailAction.ID,
-		First:   pointers.Ptr(int(args.First)),
-		After:   intPtrToInt64Ptr(after),
+	ms, err := m.db.CodeMonitors().ListRecipients(ctx, dbtbbbse.ListRecipientsOpts{
+		EmbilID: &m.EmbilAction.ID,
+		First:   pointers.Ptr(int(brgs.First)),
+		After:   intPtrToInt64Ptr(bfter),
 	})
 	if err != nil {
 		return nil, err
 	}
-	ns := make([]graphqlbackend.NamespaceResolver, 0, len(ms))
-	for _, r := range ms {
-		n := graphqlbackend.NamespaceResolver{}
-		if r.NamespaceOrgID == nil {
-			n.Namespace, err = graphqlbackend.UserByIDInt32(ctx, m.db, *r.NamespaceUserID)
+	ns := mbke([]grbphqlbbckend.NbmespbceResolver, 0, len(ms))
+	for _, r := rbnge ms {
+		n := grbphqlbbckend.NbmespbceResolver{}
+		if r.NbmespbceOrgID == nil {
+			n.Nbmespbce, err = grbphqlbbckend.UserByIDInt32(ctx, m.db, *r.NbmespbceUserID)
 		} else {
-			n.Namespace, err = graphqlbackend.OrgByIDInt32(ctx, m.db, *r.NamespaceOrgID)
+			n.Nbmespbce, err = grbphqlbbckend.OrgByIDInt32(ctx, m.db, *r.NbmespbceOrgID)
 		}
 		if err != nil {
 			return nil, err
 		}
-		ns = append(ns, n)
+		ns = bppend(ns, n)
 	}
 
-	// Since recipients can either be a user or an org it would be very tedious to
-	// use the user-id or org-id of the last entry as a cursor for the next page. It
-	// is easier to just use the id of the recipients table.
-	var nextPageCursor string
+	// Since recipients cbn either be b user or bn org it would be very tedious to
+	// use the user-id or org-id of the lbst entry bs b cursor for the next pbge. It
+	// is ebsier to just use the id of the recipients tbble.
+	vbr nextPbgeCursor string
 	if len(ms) > 0 {
-		nextPageCursor = string(relay.MarshalID(monitorActionEmailRecipientKind, ms[len(ms)-1].ID))
+		nextPbgeCursor = string(relby.MbrshblID(monitorActionEmbilRecipientKind, ms[len(ms)-1].ID))
 	}
 
-	total, err := m.db.CodeMonitors().CountRecipients(ctx, m.EmailAction.ID)
+	totbl, err := m.db.CodeMonitors().CountRecipients(ctx, m.EmbilAction.ID)
 	if err != nil {
 		return nil, err
 	}
-	return &monitorActionEmailRecipientsConnection{ns, nextPageCursor, total}, nil
+	return &monitorActionEmbilRecipientsConnection{ns, nextPbgeCursor, totbl}, nil
 }
 
-func (m *monitorEmail) Enabled() bool {
-	return m.EmailAction.Enabled
+func (m *monitorEmbil) Enbbled() bool {
+	return m.EmbilAction.Enbbled
 }
 
-func (m *monitorEmail) IncludeResults() bool {
-	return m.EmailAction.IncludeResults
+func (m *monitorEmbil) IncludeResults() bool {
+	return m.EmbilAction.IncludeResults
 }
 
-func (m *monitorEmail) Priority() string {
-	return m.EmailAction.Priority
+func (m *monitorEmbil) Priority() string {
+	return m.EmbilAction.Priority
 }
 
-func (m *monitorEmail) Header() string {
-	return m.EmailAction.Header
+func (m *monitorEmbil) Hebder() string {
+	return m.EmbilAction.Hebder
 }
 
-func (m *monitorEmail) ID() graphql.ID {
-	return relay.MarshalID(monitorActionEmailKind, m.EmailAction.ID)
+func (m *monitorEmbil) ID() grbphql.ID {
+	return relby.MbrshblID(monitorActionEmbilKind, m.EmbilAction.ID)
 }
 
-func (m *monitorEmail) Events(ctx context.Context, args *graphqlbackend.ListEventsArgs) (graphqlbackend.MonitorActionEventConnectionResolver, error) {
-	after, err := unmarshalAfter(args.After)
+func (m *monitorEmbil) Events(ctx context.Context, brgs *grbphqlbbckend.ListEventsArgs) (grbphqlbbckend.MonitorActionEventConnectionResolver, error) {
+	bfter, err := unmbrshblAfter(brgs.After)
 	if err != nil {
 		return nil, err
 	}
 
-	ajs, err := m.db.CodeMonitors().ListActionJobs(ctx, database.ListActionJobsOpts{
-		EmailID:        pointers.Ptr(int(m.EmailAction.ID)),
+	bjs, err := m.db.CodeMonitors().ListActionJobs(ctx, dbtbbbse.ListActionJobsOpts{
+		EmbilID:        pointers.Ptr(int(m.EmbilAction.ID)),
 		TriggerEventID: m.triggerEventID,
-		First:          pointers.Ptr(int(args.First)),
-		After:          after,
+		First:          pointers.Ptr(int(brgs.First)),
+		After:          bfter,
 	})
 	if err != nil {
 		return nil, err
 	}
 
-	totalCount, err := m.db.CodeMonitors().CountActionJobs(ctx, database.ListActionJobsOpts{
-		EmailID:        pointers.Ptr(int(m.EmailAction.ID)),
+	totblCount, err := m.db.CodeMonitors().CountActionJobs(ctx, dbtbbbse.ListActionJobsOpts{
+		EmbilID:        pointers.Ptr(int(m.EmbilAction.ID)),
 		TriggerEventID: m.triggerEventID,
 	})
 	if err != nil {
 		return nil, err
 	}
-	events := make([]graphqlbackend.MonitorActionEventResolver, len(ajs))
-	for i, aj := range ajs {
-		events[i] = &monitorActionEvent{Resolver: m.Resolver, ActionJob: aj}
+	events := mbke([]grbphqlbbckend.MonitorActionEventResolver, len(bjs))
+	for i, bj := rbnge bjs {
+		events[i] = &monitorActionEvent{Resolver: m.Resolver, ActionJob: bj}
 	}
-	return &monitorActionEventConnection{events: events, totalCount: int32(totalCount)}, nil
+	return &monitorActionEventConnection{events: events, totblCount: int32(totblCount)}, nil
 }
 
 type monitorWebhook struct {
 	*Resolver
-	*database.WebhookAction
+	*dbtbbbse.WebhookAction
 
-	// If triggerEventID == nil, all events of this action will be returned.
-	// Otherwise, only those events of this action which are related to the specified
+	// If triggerEventID == nil, bll events of this bction will be returned.
+	// Otherwise, only those events of this bction which bre relbted to the specified
 	// trigger event will be returned.
 	triggerEventID *int32
 }
 
-func (m *monitorWebhook) ID() graphql.ID {
-	return relay.MarshalID(monitorActionWebhookKind, m.WebhookAction.ID)
+func (m *monitorWebhook) ID() grbphql.ID {
+	return relby.MbrshblID(monitorActionWebhookKind, m.WebhookAction.ID)
 }
 
-func (m *monitorWebhook) Enabled() bool {
-	return m.WebhookAction.Enabled
+func (m *monitorWebhook) Enbbled() bool {
+	return m.WebhookAction.Enbbled
 }
 
 func (m *monitorWebhook) IncludeResults() bool {
@@ -1171,90 +1171,90 @@ func (m *monitorWebhook) URL() string {
 	return m.WebhookAction.URL
 }
 
-func (m *monitorWebhook) Events(ctx context.Context, args *graphqlbackend.ListEventsArgs) (graphqlbackend.MonitorActionEventConnectionResolver, error) {
-	after, err := unmarshalAfter(args.After)
+func (m *monitorWebhook) Events(ctx context.Context, brgs *grbphqlbbckend.ListEventsArgs) (grbphqlbbckend.MonitorActionEventConnectionResolver, error) {
+	bfter, err := unmbrshblAfter(brgs.After)
 	if err != nil {
 		return nil, err
 	}
 
-	ajs, err := m.db.CodeMonitors().ListActionJobs(ctx, database.ListActionJobsOpts{
+	bjs, err := m.db.CodeMonitors().ListActionJobs(ctx, dbtbbbse.ListActionJobsOpts{
 		WebhookID:      pointers.Ptr(int(m.WebhookAction.ID)),
 		TriggerEventID: m.triggerEventID,
-		First:          pointers.Ptr(int(args.First)),
-		After:          after,
+		First:          pointers.Ptr(int(brgs.First)),
+		After:          bfter,
 	})
 	if err != nil {
 		return nil, err
 	}
 
-	totalCount, err := m.db.CodeMonitors().CountActionJobs(ctx, database.ListActionJobsOpts{
+	totblCount, err := m.db.CodeMonitors().CountActionJobs(ctx, dbtbbbse.ListActionJobsOpts{
 		WebhookID:      pointers.Ptr(int(m.WebhookAction.ID)),
 		TriggerEventID: m.triggerEventID,
 	})
 	if err != nil {
 		return nil, err
 	}
-	events := make([]graphqlbackend.MonitorActionEventResolver, len(ajs))
-	for i, aj := range ajs {
-		events[i] = &monitorActionEvent{Resolver: m.Resolver, ActionJob: aj}
+	events := mbke([]grbphqlbbckend.MonitorActionEventResolver, len(bjs))
+	for i, bj := rbnge bjs {
+		events[i] = &monitorActionEvent{Resolver: m.Resolver, ActionJob: bj}
 	}
-	return &monitorActionEventConnection{events: events, totalCount: int32(totalCount)}, nil
+	return &monitorActionEventConnection{events: events, totblCount: int32(totblCount)}, nil
 }
 
-type monitorSlackWebhook struct {
+type monitorSlbckWebhook struct {
 	*Resolver
-	*database.SlackWebhookAction
+	*dbtbbbse.SlbckWebhookAction
 
-	// If triggerEventID == nil, all events of this action will be returned.
-	// Otherwise, only those events of this action which are related to the specified
+	// If triggerEventID == nil, bll events of this bction will be returned.
+	// Otherwise, only those events of this bction which bre relbted to the specified
 	// trigger event will be returned.
 	triggerEventID *int32
 }
 
-func (m *monitorSlackWebhook) ID() graphql.ID {
-	return relay.MarshalID(monitorActionSlackWebhookKind, m.SlackWebhookAction.ID)
+func (m *monitorSlbckWebhook) ID() grbphql.ID {
+	return relby.MbrshblID(monitorActionSlbckWebhookKind, m.SlbckWebhookAction.ID)
 }
 
-func (m *monitorSlackWebhook) Enabled() bool {
-	return m.SlackWebhookAction.Enabled
+func (m *monitorSlbckWebhook) Enbbled() bool {
+	return m.SlbckWebhookAction.Enbbled
 }
 
-func (m *monitorSlackWebhook) IncludeResults() bool {
-	return m.SlackWebhookAction.IncludeResults
+func (m *monitorSlbckWebhook) IncludeResults() bool {
+	return m.SlbckWebhookAction.IncludeResults
 }
 
-func (m *monitorSlackWebhook) URL() string {
-	return m.SlackWebhookAction.URL
+func (m *monitorSlbckWebhook) URL() string {
+	return m.SlbckWebhookAction.URL
 }
 
-func (m *monitorSlackWebhook) Events(ctx context.Context, args *graphqlbackend.ListEventsArgs) (graphqlbackend.MonitorActionEventConnectionResolver, error) {
-	after, err := unmarshalAfter(args.After)
+func (m *monitorSlbckWebhook) Events(ctx context.Context, brgs *grbphqlbbckend.ListEventsArgs) (grbphqlbbckend.MonitorActionEventConnectionResolver, error) {
+	bfter, err := unmbrshblAfter(brgs.After)
 	if err != nil {
 		return nil, err
 	}
 
-	ajs, err := m.db.CodeMonitors().ListActionJobs(ctx, database.ListActionJobsOpts{
-		SlackWebhookID: pointers.Ptr(int(m.SlackWebhookAction.ID)),
+	bjs, err := m.db.CodeMonitors().ListActionJobs(ctx, dbtbbbse.ListActionJobsOpts{
+		SlbckWebhookID: pointers.Ptr(int(m.SlbckWebhookAction.ID)),
 		TriggerEventID: m.triggerEventID,
-		First:          pointers.Ptr(int(args.First)),
-		After:          after,
+		First:          pointers.Ptr(int(brgs.First)),
+		After:          bfter,
 	})
 	if err != nil {
 		return nil, err
 	}
 
-	totalCount, err := m.db.CodeMonitors().CountActionJobs(ctx, database.ListActionJobsOpts{
-		SlackWebhookID: pointers.Ptr(int(m.SlackWebhookAction.ID)),
+	totblCount, err := m.db.CodeMonitors().CountActionJobs(ctx, dbtbbbse.ListActionJobsOpts{
+		SlbckWebhookID: pointers.Ptr(int(m.SlbckWebhookAction.ID)),
 		TriggerEventID: m.triggerEventID,
 	})
 	if err != nil {
 		return nil, err
 	}
-	events := make([]graphqlbackend.MonitorActionEventResolver, len(ajs))
-	for i, aj := range ajs {
-		events[i] = &monitorActionEvent{Resolver: m.Resolver, ActionJob: aj}
+	events := mbke([]grbphqlbbckend.MonitorActionEventResolver, len(bjs))
+	for i, bj := rbnge bjs {
+		events[i] = &monitorActionEvent{Resolver: m.Resolver, ActionJob: bj}
 	}
-	return &monitorActionEventConnection{events: events, totalCount: int32(totalCount)}, nil
+	return &monitorActionEventConnection{events: events, totblCount: int32(totblCount)}, nil
 }
 
 func intPtrToInt64Ptr(i *int) *int64 {
@@ -1265,87 +1265,87 @@ func intPtrToInt64Ptr(i *int) *int64 {
 	return &j
 }
 
-// MonitorActionEmailRecipientConnection
-type monitorActionEmailRecipientsConnection struct {
-	recipients     []graphqlbackend.NamespaceResolver
-	nextPageCursor string
-	totalCount     int32
+// MonitorActionEmbilRecipientConnection
+type monitorActionEmbilRecipientsConnection struct {
+	recipients     []grbphqlbbckend.NbmespbceResolver
+	nextPbgeCursor string
+	totblCount     int32
 }
 
-func (a *monitorActionEmailRecipientsConnection) Nodes() []graphqlbackend.NamespaceResolver {
-	return a.recipients
+func (b *monitorActionEmbilRecipientsConnection) Nodes() []grbphqlbbckend.NbmespbceResolver {
+	return b.recipients
 }
 
-func (a *monitorActionEmailRecipientsConnection) TotalCount() int32 {
-	return a.totalCount
+func (b *monitorActionEmbilRecipientsConnection) TotblCount() int32 {
+	return b.totblCount
 }
 
-func (a *monitorActionEmailRecipientsConnection) PageInfo() *graphqlutil.PageInfo {
-	if len(a.recipients) == 0 {
-		return graphqlutil.HasNextPage(false)
+func (b *monitorActionEmbilRecipientsConnection) PbgeInfo() *grbphqlutil.PbgeInfo {
+	if len(b.recipients) == 0 {
+		return grbphqlutil.HbsNextPbge(fblse)
 	}
-	return graphqlutil.NextPageCursor(a.nextPageCursor)
+	return grbphqlutil.NextPbgeCursor(b.nextPbgeCursor)
 }
 
 // MonitorActionEventConnection
 type monitorActionEventConnection struct {
-	events     []graphqlbackend.MonitorActionEventResolver
-	totalCount int32
+	events     []grbphqlbbckend.MonitorActionEventResolver
+	totblCount int32
 }
 
-func (a *monitorActionEventConnection) Nodes() []graphqlbackend.MonitorActionEventResolver {
-	return a.events
+func (b *monitorActionEventConnection) Nodes() []grbphqlbbckend.MonitorActionEventResolver {
+	return b.events
 }
 
-func (a *monitorActionEventConnection) TotalCount() int32 {
-	return a.totalCount
+func (b *monitorActionEventConnection) TotblCount() int32 {
+	return b.totblCount
 }
 
-func (a *monitorActionEventConnection) PageInfo() *graphqlutil.PageInfo {
-	if len(a.events) == 0 {
-		return graphqlutil.HasNextPage(false)
+func (b *monitorActionEventConnection) PbgeInfo() *grbphqlutil.PbgeInfo {
+	if len(b.events) == 0 {
+		return grbphqlutil.HbsNextPbge(fblse)
 	}
-	return graphqlutil.NextPageCursor(string(a.events[len(a.events)-1].ID()))
+	return grbphqlutil.NextPbgeCursor(string(b.events[len(b.events)-1].ID()))
 }
 
 // MonitorEvent
 type monitorActionEvent struct {
 	*Resolver
-	*database.ActionJob
+	*dbtbbbse.ActionJob
 }
 
-func (m *monitorActionEvent) ID() graphql.ID {
-	return relay.MarshalID(monitorActionEmailEventKind, m.ActionJob.ID)
+func (m *monitorActionEvent) ID() grbphql.ID {
+	return relby.MbrshblID(monitorActionEmbilEventKind, m.ActionJob.ID)
 }
 
-func (m *monitorActionEvent) Status() (string, error) {
-	status, ok := stateToStatus[m.State]
+func (m *monitorActionEvent) Stbtus() (string, error) {
+	stbtus, ok := stbteToStbtus[m.Stbte]
 	if !ok {
-		return "", errors.Errorf("unknown state: %s", m.State)
+		return "", errors.Errorf("unknown stbte: %s", m.Stbte)
 	}
-	return status, nil
+	return stbtus, nil
 }
 
-func (m *monitorActionEvent) Message() *string {
-	return m.FailureMessage
+func (m *monitorActionEvent) Messbge() *string {
+	return m.FbilureMessbge
 }
 
-func (m *monitorActionEvent) Timestamp() gqlutil.DateTime {
+func (m *monitorActionEvent) Timestbmp() gqlutil.DbteTime {
 	if m.FinishedAt == nil {
-		return gqlutil.DateTime{Time: m.db.CodeMonitors().Now()}
+		return gqlutil.DbteTime{Time: m.db.CodeMonitors().Now()}
 	}
-	return gqlutil.DateTime{Time: *m.FinishedAt}
+	return gqlutil.DbteTime{Time: *m.FinishedAt}
 }
 
-func validateSlackURL(urlString string) error {
-	u, err := url.Parse(urlString)
+func vblidbteSlbckURL(urlString string) error {
+	u, err := url.Pbrse(urlString)
 	if err != nil {
 		return err
 	}
 
-	// Restrict slack webhooks to only canonical host and HTTPS
-	if u.Host != "hooks.slack.com" || u.Scheme != "https" {
-		return errors.New("slack webhook URL must begin with 'https://hooks.slack.com/")
+	// Restrict slbck webhooks to only cbnonicbl host bnd HTTPS
+	if u.Host != "hooks.slbck.com" || u.Scheme != "https" {
+		return errors.New("slbck webhook URL must begin with 'https://hooks.slbck.com/")
 	}
 	return nil
 }

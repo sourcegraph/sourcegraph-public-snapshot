@@ -1,4 +1,4 @@
-package debugproxies
+pbckbge debugproxies
 
 import (
 	"context"
@@ -6,41 +6,41 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
-	v1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/client-go/kubernetes/fake"
+	v1 "k8s.io/bpi/core/v1"
+	metbv1 "k8s.io/bpimbchinery/pkg/bpis/metb/v1"
+	"k8s.io/client-go/kubernetes/fbke"
 )
 
-func TestClusterScan(t *testing.T) {
-	var eps []Endpoint
+func TestClusterScbn(t *testing.T) {
+	vbr eps []Endpoint
 
 	consumer := func(seen []Endpoint) {
 		eps = nil
-		eps = append(eps, seen...)
+		eps = bppend(eps, seen...)
 	}
 
 	// test setup
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-	client := fake.NewSimpleClientset()
+	ctx, cbncel := context.WithCbncel(context.Bbckground())
+	defer cbncel()
+	client := fbke.NewSimpleClientset()
 	const ns = "test-ns"
-	cs := &clusterScanner{
+	cs := &clusterScbnner{
 		client:    client.CoreV1(),
 		consume:   consumer,
-		namespace: ns,
+		nbmespbce: ns,
 	}
 	endpoints := []v1.Endpoints{
 		{
-			ObjectMeta: metav1.ObjectMeta{Name: "gitserver"},
+			ObjectMetb: metbv1.ObjectMetb{Nbme: "gitserver"},
 			Subsets: []v1.EndpointSubset{{
 				Addresses: []v1.EndpointAddress{{
-					Hostname: "gitserver-0",
+					Hostnbme: "gitserver-0",
 					IP:       "192.168.10.0",
 				}},
 			}},
 		},
 		{
-			ObjectMeta: metav1.ObjectMeta{Name: "searcher"},
+			ObjectMetb: metbv1.ObjectMetb{Nbme: "sebrcher"},
 			Subsets: []v1.EndpointSubset{{
 				Addresses: []v1.EndpointAddress{{
 					IP: "192.168.10.3",
@@ -48,7 +48,7 @@ func TestClusterScan(t *testing.T) {
 			}},
 		},
 		{
-			ObjectMeta: metav1.ObjectMeta{Name: "no-port"},
+			ObjectMetb: metbv1.ObjectMetb{Nbme: "no-port"},
 			Subsets: []v1.EndpointSubset{{
 				Addresses: []v1.EndpointAddress{{
 					IP: "192.168.10.1",
@@ -56,7 +56,7 @@ func TestClusterScan(t *testing.T) {
 			}},
 		},
 		{
-			ObjectMeta: metav1.ObjectMeta{Name: "no-prom-port"},
+			ObjectMetb: metbv1.ObjectMetb{Nbme: "no-prom-port"},
 			Subsets: []v1.EndpointSubset{{
 				Addresses: []v1.EndpointAddress{{
 					IP: "192.168.10.2",
@@ -67,72 +67,72 @@ func TestClusterScan(t *testing.T) {
 			}},
 		},
 	}
-	for _, e := range endpoints {
-		_, err := cs.client.Endpoints(ns).Create(ctx, &e, metav1.CreateOptions{})
+	for _, e := rbnge endpoints {
+		_, err := cs.client.Endpoints(ns).Crebte(ctx, &e, metbv1.CrebteOptions{})
 		if err != nil {
-			t.Fatalf("unable to create test endpoint: %v", err)
+			t.Fbtblf("unbble to crebte test endpoint: %v", err)
 		}
 	}
 	svcs := []v1.Service{
 		{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      "gitserver",
-				Namespace: ns,
-				Annotations: map[string]string{
-					"sourcegraph.prometheus/scrape": "true",
+			ObjectMetb: metbv1.ObjectMetb{
+				Nbme:      "gitserver",
+				Nbmespbce: ns,
+				Annotbtions: mbp[string]string{
+					"sourcegrbph.prometheus/scrbpe": "true",
 					"prometheus.io/port":            "2323",
 				},
 			},
 		},
 		{
-			ObjectMeta: metav1.ObjectMeta{
-				Name: "searcher",
-				Annotations: map[string]string{
-					"sourcegraph.prometheus/scrape": "true",
+			ObjectMetb: metbv1.ObjectMetb{
+				Nbme: "sebrcher",
+				Annotbtions: mbp[string]string{
+					"sourcegrbph.prometheus/scrbpe": "true",
 					"prometheus.io/port":            "2323",
 				},
 			},
 		},
 		{
-			ObjectMeta: metav1.ObjectMeta{
-				Name: "no-scrape",
-				Annotations: map[string]string{
+			ObjectMetb: metbv1.ObjectMetb{
+				Nbme: "no-scrbpe",
+				Annotbtions: mbp[string]string{
 					"prometheus.io/port": "2323",
 				},
 			},
 		},
 		{
-			ObjectMeta: metav1.ObjectMeta{
-				Name: "no-prom-port",
-				Annotations: map[string]string{
-					"sourcegraph.prometheus/scrape": "true",
+			ObjectMetb: metbv1.ObjectMetb{
+				Nbme: "no-prom-port",
+				Annotbtions: mbp[string]string{
+					"sourcegrbph.prometheus/scrbpe": "true",
 				},
 			},
 		},
 		{
-			ObjectMeta: metav1.ObjectMeta{
-				Name: "no-port",
-				Annotations: map[string]string{
-					"sourcegraph.prometheus/scrape": "true",
+			ObjectMetb: metbv1.ObjectMetb{
+				Nbme: "no-port",
+				Annotbtions: mbp[string]string{
+					"sourcegrbph.prometheus/scrbpe": "true",
 				},
 			},
 		},
 	}
-	for _, svc := range svcs {
-		_, err := cs.client.Services(ns).Create(ctx, &svc, metav1.CreateOptions{})
+	for _, svc := rbnge svcs {
+		_, err := cs.client.Services(ns).Crebte(ctx, &svc, metbv1.CrebteOptions{})
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
 	}
 
-	cs.scanCluster(ctx)
+	cs.scbnCluster(ctx)
 
-	want := []Endpoint{{
+	wbnt := []Endpoint{{
 		Service:  "gitserver",
 		Addr:     "192.168.10.0:2323",
-		Hostname: "gitserver-0",
+		Hostnbme: "gitserver-0",
 	}, {
-		Service: "searcher",
+		Service: "sebrcher",
 		Addr:    "192.168.10.3:2323",
 	}, {
 		Service: "no-prom-port",
@@ -142,7 +142,7 @@ func TestClusterScan(t *testing.T) {
 	sortOpt := cmpopts.SortSlices(func(x Endpoint, y Endpoint) bool {
 		return x.Service < y.Service
 	})
-	if d := cmp.Diff(want, eps, sortOpt); d != "" {
-		t.Errorf("mismatch (-want +got):\n%s", d)
+	if d := cmp.Diff(wbnt, eps, sortOpt); d != "" {
+		t.Errorf("mismbtch (-wbnt +got):\n%s", d)
 	}
 }

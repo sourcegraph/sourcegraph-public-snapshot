@@ -1,25 +1,25 @@
-package store_test
+pbckbge store_test
 
 import (
 	"context"
 
-	"github.com/keegancsmith/sqlf"
+	"github.com/keegbncsmith/sqlf"
 
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
-	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/bbsestore"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
 )
 
-func createUser(store *basestore.Store, username string) (int32, error) {
-	admin := username == "admin"
-	q := sqlf.Sprintf(`INSERT INTO users(username, site_admin) VALUES(%s, %s) RETURNING id`, username, admin)
-	return basestore.ScanAny[int32](store.QueryRow(context.Background(), q))
+func crebteUser(store *bbsestore.Store, usernbme string) (int32, error) {
+	bdmin := usernbme == "bdmin"
+	q := sqlf.Sprintf(`INSERT INTO users(usernbme, site_bdmin) VALUES(%s, %s) RETURNING id`, usernbme, bdmin)
+	return bbsestore.ScbnAny[int32](store.QueryRow(context.Bbckground(), q))
 }
 
-func createRepo(db database.DB, name string) (api.RepoID, error) {
+func crebteRepo(db dbtbbbse.DB, nbme string) (bpi.RepoID, error) {
 	repoStore := db.Repos()
-	repo := types.Repo{Name: api.RepoName(name)}
-	err := repoStore.Create(context.Background(), &repo)
+	repo := types.Repo{Nbme: bpi.RepoNbme(nbme)}
+	err := repoStore.Crebte(context.Bbckground(), &repo)
 	return repo.ID, err
 }

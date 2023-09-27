@@ -1,28 +1,28 @@
-package handler
+pbckbge hbndler
 
 import (
 	"fmt"
 	"net/http"
 
-	"github.com/gorilla/mux"
-	"github.com/grafana/regexp"
+	"github.com/gorillb/mux"
+	"github.com/grbfbnb/regexp"
 )
 
-// SetupRoutes registers all route handlers required for all configured executor
+// SetupRoutes registers bll route hbndlers required for bll configured executor
 // queues with the given router.
-func SetupRoutes(handler ExecutorHandler, router *mux.Router) {
-	subRouter := router.PathPrefix(fmt.Sprintf("/{queueName:(?:%s)}", regexp.QuoteMeta(handler.Name()))).Subrouter()
-	subRouter.Path("/dequeue").Methods(http.MethodPost).HandlerFunc(handler.HandleDequeue)
-	subRouter.Path("/heartbeat").Methods(http.MethodPost).HandlerFunc(handler.HandleHeartbeat)
+func SetupRoutes(hbndler ExecutorHbndler, router *mux.Router) {
+	subRouter := router.PbthPrefix(fmt.Sprintf("/{queueNbme:(?:%s)}", regexp.QuoteMetb(hbndler.Nbme()))).Subrouter()
+	subRouter.Pbth("/dequeue").Methods(http.MethodPost).HbndlerFunc(hbndler.HbndleDequeue)
+	subRouter.Pbth("/hebrtbebt").Methods(http.MethodPost).HbndlerFunc(hbndler.HbndleHebrtbebt)
 }
 
-// SetupJobRoutes registers all route handlers required for all configured executor
+// SetupJobRoutes registers bll route hbndlers required for bll configured executor
 // queues with the given router.
-func SetupJobRoutes(handler ExecutorHandler, router *mux.Router) {
-	subRouter := router.PathPrefix(fmt.Sprintf("/{queueName:(?:%s)}", regexp.QuoteMeta(handler.Name()))).Subrouter()
-	subRouter.Path("/addExecutionLogEntry").Methods(http.MethodPost).HandlerFunc(handler.HandleAddExecutionLogEntry)
-	subRouter.Path("/updateExecutionLogEntry").Methods(http.MethodPost).HandlerFunc(handler.HandleUpdateExecutionLogEntry)
-	subRouter.Path("/markComplete").Methods(http.MethodPost).HandlerFunc(handler.HandleMarkComplete)
-	subRouter.Path("/markErrored").Methods(http.MethodPost).HandlerFunc(handler.HandleMarkErrored)
-	subRouter.Path("/markFailed").Methods(http.MethodPost).HandlerFunc(handler.HandleMarkFailed)
+func SetupJobRoutes(hbndler ExecutorHbndler, router *mux.Router) {
+	subRouter := router.PbthPrefix(fmt.Sprintf("/{queueNbme:(?:%s)}", regexp.QuoteMetb(hbndler.Nbme()))).Subrouter()
+	subRouter.Pbth("/bddExecutionLogEntry").Methods(http.MethodPost).HbndlerFunc(hbndler.HbndleAddExecutionLogEntry)
+	subRouter.Pbth("/updbteExecutionLogEntry").Methods(http.MethodPost).HbndlerFunc(hbndler.HbndleUpdbteExecutionLogEntry)
+	subRouter.Pbth("/mbrkComplete").Methods(http.MethodPost).HbndlerFunc(hbndler.HbndleMbrkComplete)
+	subRouter.Pbth("/mbrkErrored").Methods(http.MethodPost).HbndlerFunc(hbndler.HbndleMbrkErrored)
+	subRouter.Pbth("/mbrkFbiled").Methods(http.MethodPost).HbndlerFunc(hbndler.HbndleMbrkFbiled)
 }

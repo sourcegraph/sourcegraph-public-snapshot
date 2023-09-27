@@ -1,17 +1,17 @@
-package repoupdater
+pbckbge repoupdbter
 
 import (
-	"flag"
+	"flbg"
 	"os"
 	"testing"
 
-	"github.com/inconshreveable/log15"
+	"github.com/inconshrevebble/log15"
 )
 
-func TestMain(m *testing.M) {
-	flag.Parse()
+func TestMbin(m *testing.M) {
+	flbg.Pbrse()
 	if !testing.Verbose() {
-		log15.Root().SetHandler(log15.LvlFilterHandler(log15.LvlError, log15.Root().GetHandler()))
+		log15.Root().SetHbndler(log15.LvlFilterHbndler(log15.LvlError, log15.Root().GetHbndler()))
 	}
 	os.Exit(m.Run())
 }

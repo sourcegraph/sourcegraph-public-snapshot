@@ -1,169 +1,169 @@
-package main
+pbckbge mbin
 
 import (
 	"testing"
 	"time"
 
 	"github.com/buildkite/go-buildkite/v3/buildkite"
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/bssert"
 )
 
-func TestGenerateHistory(t *testing.T) {
-	day := time.Date(2006, 01, 02, 0, 0, 0, 0, time.UTC)
-	dayString := day.Format("2006-01-02")
+func TestGenerbteHistory(t *testing.T) {
+	dby := time.Dbte(2006, 01, 02, 0, 0, 0, 0, time.UTC)
+	dbyString := dby.Formbt("2006-01-02")
 
 	tests := []struct {
-		name                    string
+		nbme                    string
 		builds                  []buildkite.Build
-		wantFlakes              map[string]int
-		wantConsecutiveFailures map[string]int
+		wbntFlbkes              mbp[string]int
+		wbntConsecutiveFbilures mbp[string]int
 	}{{
-		name: "consecutive failures",
+		nbme: "consecutive fbilures",
 		builds: []buildkite.Build{{
-			CreatedAt: &buildkite.Timestamp{Time: day.Add(2 * time.Hour)},
-			State:     buildkite.String("failed"),
+			CrebtedAt: &buildkite.Timestbmp{Time: dby.Add(2 * time.Hour)},
+			Stbte:     buildkite.String("fbiled"),
 		}, {
-			CreatedAt: &buildkite.Timestamp{Time: day.Add(1 * time.Hour)},
-			State:     buildkite.String("failed"),
+			CrebtedAt: &buildkite.Timestbmp{Time: dby.Add(1 * time.Hour)},
+			Stbte:     buildkite.String("fbiled"),
 		}, {
-			CreatedAt: &buildkite.Timestamp{Time: day.Add(5 * time.Minute)},
-			State:     buildkite.String("failed"),
+			CrebtedAt: &buildkite.Timestbmp{Time: dby.Add(5 * time.Minute)},
+			Stbte:     buildkite.String("fbiled"),
 		}, {
-			CreatedAt: &buildkite.Timestamp{Time: day},
-			State:     buildkite.String("failed"),
+			CrebtedAt: &buildkite.Timestbmp{Time: dby},
+			Stbte:     buildkite.String("fbiled"),
 		}},
-		wantFlakes: map[string]int{},
-		wantConsecutiveFailures: map[string]int{
-			dayString: 60 * 2,
+		wbntFlbkes: mbp[string]int{},
+		wbntConsecutiveFbilures: mbp[string]int{
+			dbyString: 60 * 2,
 		},
 	}, {
-		name: "passed, then consecutive failures",
+		nbme: "pbssed, then consecutive fbilures",
 		builds: []buildkite.Build{{
-			CreatedAt: &buildkite.Timestamp{Time: day.Add(2 * time.Hour)},
-			State:     buildkite.String("passed"),
+			CrebtedAt: &buildkite.Timestbmp{Time: dby.Add(2 * time.Hour)},
+			Stbte:     buildkite.String("pbssed"),
 		}, {
-			CreatedAt: &buildkite.Timestamp{Time: day.Add(1 * time.Hour)},
-			State:     buildkite.String("failed"),
+			CrebtedAt: &buildkite.Timestbmp{Time: dby.Add(1 * time.Hour)},
+			Stbte:     buildkite.String("fbiled"),
 		}, {
-			CreatedAt: &buildkite.Timestamp{Time: day.Add(30 * time.Minute)},
-			State:     buildkite.String("failed"),
+			CrebtedAt: &buildkite.Timestbmp{Time: dby.Add(30 * time.Minute)},
+			Stbte:     buildkite.String("fbiled"),
 		}, {
-			CreatedAt: &buildkite.Timestamp{Time: day},
-			State:     buildkite.String("failed"),
+			CrebtedAt: &buildkite.Timestbmp{Time: dby},
+			Stbte:     buildkite.String("fbiled"),
 		}},
-		wantFlakes: map[string]int{},
-		wantConsecutiveFailures: map[string]int{
-			dayString: 60 * 2,
+		wbntFlbkes: mbp[string]int{},
+		wbntConsecutiveFbilures: mbp[string]int{
+			dbyString: 60 * 2,
 		},
 	}, {
-		name: "mixed flakes",
+		nbme: "mixed flbkes",
 		builds: []buildkite.Build{{
-			CreatedAt: &buildkite.Timestamp{Time: day.Add(2 * time.Hour)},
-			State:     buildkite.String("passed"),
+			CrebtedAt: &buildkite.Timestbmp{Time: dby.Add(2 * time.Hour)},
+			Stbte:     buildkite.String("pbssed"),
 		}, {
-			CreatedAt: &buildkite.Timestamp{Time: day.Add(1 * time.Hour)},
-			State:     buildkite.String("failed"),
+			CrebtedAt: &buildkite.Timestbmp{Time: dby.Add(1 * time.Hour)},
+			Stbte:     buildkite.String("fbiled"),
 		}, {
-			CreatedAt: &buildkite.Timestamp{Time: day.Add(30 * time.Minute)},
-			State:     buildkite.String("passed"),
+			CrebtedAt: &buildkite.Timestbmp{Time: dby.Add(30 * time.Minute)},
+			Stbte:     buildkite.String("pbssed"),
 		}, {
-			CreatedAt: &buildkite.Timestamp{Time: day.Add(5 * time.Minute)},
-			State:     buildkite.String("failed"),
+			CrebtedAt: &buildkite.Timestbmp{Time: dby.Add(5 * time.Minute)},
+			Stbte:     buildkite.String("fbiled"),
 		}, {
-			CreatedAt: &buildkite.Timestamp{Time: day},
-			State:     buildkite.String("failed"),
+			CrebtedAt: &buildkite.Timestbmp{Time: dby},
+			Stbte:     buildkite.String("fbiled"),
 		}},
-		wantFlakes: map[string]int{
-			dayString: 3,
+		wbntFlbkes: mbp[string]int{
+			dbyString: 3,
 		},
-		wantConsecutiveFailures: map[string]int{},
+		wbntConsecutiveFbilures: mbp[string]int{},
 	}, {
-		name: "flake -> consecutive",
+		nbme: "flbke -> consecutive",
 		builds: []buildkite.Build{{
-			CreatedAt: &buildkite.Timestamp{Time: day.Add(2 * time.Hour)},
-			State:     buildkite.String("failed"),
+			CrebtedAt: &buildkite.Timestbmp{Time: dby.Add(2 * time.Hour)},
+			Stbte:     buildkite.String("fbiled"),
 		}, {
-			CreatedAt: &buildkite.Timestamp{Time: day.Add(1 * time.Hour)},
-			State:     buildkite.String("passed"),
+			CrebtedAt: &buildkite.Timestbmp{Time: dby.Add(1 * time.Hour)},
+			Stbte:     buildkite.String("pbssed"),
 		}, {
-			CreatedAt: &buildkite.Timestamp{Time: day.Add(30 * time.Minute)},
-			State:     buildkite.String("failed"),
+			CrebtedAt: &buildkite.Timestbmp{Time: dby.Add(30 * time.Minute)},
+			Stbte:     buildkite.String("fbiled"),
 		}, {
-			CreatedAt: &buildkite.Timestamp{Time: day.Add(5 * time.Minute)},
-			State:     buildkite.String("failed"),
+			CrebtedAt: &buildkite.Timestbmp{Time: dby.Add(5 * time.Minute)},
+			Stbte:     buildkite.String("fbiled"),
 		}, {
-			CreatedAt: &buildkite.Timestamp{Time: day},
-			State:     buildkite.String("failed"),
+			CrebtedAt: &buildkite.Timestbmp{Time: dby},
+			Stbte:     buildkite.String("fbiled"),
 		}},
-		wantFlakes: map[string]int{
-			dayString: 1,
+		wbntFlbkes: mbp[string]int{
+			dbyString: 1,
 		},
-		wantConsecutiveFailures: map[string]int{
-			dayString: 60,
+		wbntConsecutiveFbilures: mbp[string]int{
+			dbyString: 60,
 		},
 	}, {
-		name: "consecutive -> flake",
+		nbme: "consecutive -> flbke",
 		builds: []buildkite.Build{{
-			CreatedAt: &buildkite.Timestamp{Time: day.Add(2 * time.Hour)},
-			State:     buildkite.String("failed"),
+			CrebtedAt: &buildkite.Timestbmp{Time: dby.Add(2 * time.Hour)},
+			Stbte:     buildkite.String("fbiled"),
 		}, {
-			CreatedAt: &buildkite.Timestamp{Time: day.Add(1 * time.Hour)},
-			State:     buildkite.String("failed"),
+			CrebtedAt: &buildkite.Timestbmp{Time: dby.Add(1 * time.Hour)},
+			Stbte:     buildkite.String("fbiled"),
 		}, {
-			CreatedAt: &buildkite.Timestamp{Time: day.Add(30 * time.Minute)},
-			State:     buildkite.String("failed"),
+			CrebtedAt: &buildkite.Timestbmp{Time: dby.Add(30 * time.Minute)},
+			Stbte:     buildkite.String("fbiled"),
 		}, {
-			CreatedAt: &buildkite.Timestamp{Time: day.Add(5 * time.Minute)},
-			State:     buildkite.String("passed"),
+			CrebtedAt: &buildkite.Timestbmp{Time: dby.Add(5 * time.Minute)},
+			Stbte:     buildkite.String("pbssed"),
 		}, {
-			CreatedAt: &buildkite.Timestamp{Time: day},
-			State:     buildkite.String("failed"),
+			CrebtedAt: &buildkite.Timestbmp{Time: dby},
+			Stbte:     buildkite.String("fbiled"),
 		}},
-		wantFlakes: map[string]int{
-			dayString: 1,
+		wbntFlbkes: mbp[string]int{
+			dbyString: 1,
 		},
-		wantConsecutiveFailures: map[string]int{
-			dayString: 90,
+		wbntConsecutiveFbilures: mbp[string]int{
+			dbyString: 90,
 		},
 	}}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			_, gotFlakes, gotConsecutiveFailures := generateHistory(tt.builds, day.Add(2*time.Hour), CheckOptions{
-				FailuresThreshold: 3,
-				BuildTimeout:      0, // disable timeout check
+	for _, tt := rbnge tests {
+		t.Run(tt.nbme, func(t *testing.T) {
+			_, gotFlbkes, gotConsecutiveFbilures := generbteHistory(tt.builds, dby.Add(2*time.Hour), CheckOptions{
+				FbiluresThreshold: 3,
+				BuildTimeout:      0, // disbble timeout check
 			})
-			assert.Equal(t, gotFlakes, tt.wantFlakes, "flakes")
-			assert.Equal(t, gotConsecutiveFailures, tt.wantConsecutiveFailures, "consecutive failures")
+			bssert.Equbl(t, gotFlbkes, tt.wbntFlbkes, "flbkes")
+			bssert.Equbl(t, gotConsecutiveFbilures, tt.wbntConsecutiveFbilures, "consecutive fbilures")
 		})
 	}
 }
 
-func TestMapToRecords(t *testing.T) {
+func TestMbpToRecords(t *testing.T) {
 	tests := []struct {
-		name        string
-		arg         map[string]int
-		wantRecords [][]string
+		nbme        string
+		brg         mbp[string]int
+		wbntRecords [][]string
 	}{{
-		name: "sorted",
-		arg: map[string]int{
+		nbme: "sorted",
+		brg: mbp[string]int{
 			"2022-01-02": 2,
 			"2022-01-01": 1,
 			"2022-01-03": 3,
 		},
-		wantRecords: [][]string{
+		wbntRecords: [][]string{
 			{"2022-01-01", "1"},
 			{"2022-01-02", "2"},
 			{"2022-01-03", "3"},
 		},
 	}, {
-		name: "gaps filled in",
-		arg: map[string]int{
+		nbme: "gbps filled in",
+		brg: mbp[string]int{
 			"2022-01-01": 1,
 			"2022-01-03": 3,
 			"2022-01-06": 6,
 			"2022-01-07": 7,
 		},
-		wantRecords: [][]string{
+		wbntRecords: [][]string{
 			{"2022-01-01", "1"},
 			{"2022-01-02", "0"},
 			{"2022-01-03", "3"},
@@ -173,10 +173,10 @@ func TestMapToRecords(t *testing.T) {
 			{"2022-01-07", "7"},
 		},
 	}}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			gotRecords := mapToRecords(tt.arg)
-			assert.Equal(t, tt.wantRecords, gotRecords)
+	for _, tt := rbnge tests {
+		t.Run(tt.nbme, func(t *testing.T) {
+			gotRecords := mbpToRecords(tt.brg)
+			bssert.Equbl(t, tt.wbntRecords, gotRecords)
 		})
 	}
 }

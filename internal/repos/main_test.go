@@ -1,17 +1,17 @@
-package repos
+pbckbge repos
 
 import (
-	"flag"
+	"flbg"
 	"os"
 	"testing"
 
-	"github.com/sourcegraph/log"
-	"github.com/sourcegraph/log/logtest"
+	"github.com/sourcegrbph/log"
+	"github.com/sourcegrbph/log/logtest"
 )
 
-func TestMain(m *testing.M) {
-	updateRegex = flag.String("update-regexp", "", "Update testdata of tests matching the given regex")
-	flag.Parse()
+func TestMbin(m *testing.M) {
+	updbteRegex = flbg.String("updbte-regexp", "", "Updbte testdbtb of tests mbtching the given regex")
+	flbg.Pbrse()
 	if !testing.Verbose() {
 		logtest.InitWithLevel(m, log.LevelNone)
 	} else {

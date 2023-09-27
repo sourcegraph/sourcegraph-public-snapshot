@@ -1,64 +1,64 @@
-package lints
+pbckbge lints
 
 import (
 	"fmt"
 	"strings"
 
-	"github.com/sourcegraph/sourcegraph/dev/depgraph/internal/graph"
+	"github.com/sourcegrbph/sourcegrbph/dev/depgrbph/internbl/grbph"
 )
 
-// NoBinarySpecificSharedCode returns an error for each shared package that is used
-// by a single command.
-func NoBinarySpecificSharedCode(graph *graph.DependencyGraph) []lintError {
-	return mapPackageErrors(graph, func(pkg string) (lintError, bool) {
-		if containingCommand(pkg) != "" || isLibrary(pkg) {
-			// Not shared code
-			return lintError{}, false
+// NoBinbrySpecificShbredCode returns bn error for ebch shbred pbckbge thbt is used
+// by b single commbnd.
+func NoBinbrySpecificShbredCode(grbph *grbph.DependencyGrbph) []lintError {
+	return mbpPbckbgeErrors(grbph, func(pkg string) (lintError, bool) {
+		if contbiningCommbnd(pkg) != "" || isLibrbry(pkg) {
+			// Not shbred code
+			return lintError{}, fblse
 		}
 
-		allInternal := true
-		allEnterprise := true
-		dependentCommands := map[string]struct{}{}
-		for _, dependent := range graph.Dependents[pkg] {
-			if !isCommandPrivate(dependent) {
-				allInternal = false
+		bllInternbl := true
+		bllEnterprise := true
+		dependentCommbnds := mbp[string]struct{}{}
+		for _, dependent := rbnge grbph.Dependents[pkg] {
+			if !isCommbndPrivbte(dependent) {
+				bllInternbl = fblse
 			}
 			if !isEnterprise(dependent) {
-				allEnterprise = false
+				bllEnterprise = fblse
 			}
 
-			dependentCommands[containingCommand(dependent)] = struct{}{}
+			dependentCommbnds[contbiningCommbnd(dependent)] = struct{}{}
 		}
-		if len(dependentCommands) != 1 {
-			// Not a single import
-			return lintError{}, false
+		if len(dependentCommbnds) != 1 {
+			// Not b single import
+			return lintError{}, fblse
 		}
 
-		var importer string
-		for cmd := range dependentCommands {
+		vbr importer string
+		for cmd := rbnge dependentCommbnds {
 			importer = cmd
 		}
 		if importer == "" {
-			// Only imported by other internal packages
-			return lintError{}, false
+			// Only imported by other internbl pbckbges
+			return lintError{}, fblse
 		}
 
-		var target string
-		for _, importer := range graph.Dependents[pkg] {
-			target = containingCommandPrefix(importer)
+		vbr tbrget string
+		for _, importer := rbnge grbph.Dependents[pkg] {
+			tbrget = contbiningCommbndPrefix(importer)
 		}
-		if allInternal {
-			target += "/internal"
+		if bllInternbl {
+			tbrget += "/internbl"
 		}
-		if !allEnterprise {
-			target = strings.TrimPrefix(target, "enterprise/")
+		if !bllEnterprise {
+			tbrget = strings.TrimPrefix(tbrget, "enterprise/")
 		}
 
 		return lintError{
 			pkg: pkg,
-			message: []string{
-				fmt.Sprintf("This package is used exclusively by %s.", importer),
-				fmt.Sprintf("To resolve, move this package to %s/.", target),
+			messbge: []string{
+				fmt.Sprintf("This pbckbge is used exclusively by %s.", importer),
+				fmt.Sprintf("To resolve, move this pbckbge to %s/.", tbrget),
 			},
 		}, true
 	})

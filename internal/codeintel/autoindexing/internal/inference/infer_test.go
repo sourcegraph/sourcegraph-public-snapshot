@@ -1,76 +1,76 @@
-package inference
+pbckbge inference
 
 import (
 	"testing"
 
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies"
+	"github.com/sourcegrbph/sourcegrbph/internbl/codeintel/dependencies"
 )
 
 func TestInferRepositoryAndRevision(t *testing.T) {
 	t.Run("Go", func(t *testing.T) {
-		testCases := []struct {
-			pkg      dependencies.MinimialVersionedPackageRepo
-			repoName string
+		testCbses := []struct {
+			pkg      dependencies.MinimiblVersionedPbckbgeRepo
+			repoNbme string
 			revision string
 		}{
 			{
-				pkg: dependencies.MinimialVersionedPackageRepo{
+				pkg: dependencies.MinimiblVersionedPbckbgeRepo{
 					Scheme:  "gomod",
-					Name:    "https://github.com/sourcegraph/sourcegraph",
+					Nbme:    "https://github.com/sourcegrbph/sourcegrbph",
 					Version: "v2.3.2",
 				},
-				repoName: "github.com/sourcegraph/sourcegraph",
+				repoNbme: "github.com/sourcegrbph/sourcegrbph",
 				revision: "v2.3.2",
 			},
 			{
-				pkg: dependencies.MinimialVersionedPackageRepo{
+				pkg: dependencies.MinimiblVersionedPbckbgeRepo{
 					Scheme:  "gomod",
-					Name:    "https://github.com/aws/aws-sdk-go-v2/credentials",
+					Nbme:    "https://github.com/bws/bws-sdk-go-v2/credentibls",
 					Version: "v0.1.0",
 				},
-				repoName: "github.com/aws/aws-sdk-go-v2",
+				repoNbme: "github.com/bws/bws-sdk-go-v2",
 				revision: "v0.1.0",
 			},
 			{
-				pkg: dependencies.MinimialVersionedPackageRepo{
+				pkg: dependencies.MinimiblVersionedPbckbgeRepo{
 					Scheme:  "gomod",
-					Name:    "https://github.com/sourcegraph/sourcegraph",
+					Nbme:    "https://github.com/sourcegrbph/sourcegrbph",
 					Version: "v0.0.0-de0123456789",
 				},
-				repoName: "github.com/sourcegraph/sourcegraph",
+				repoNbme: "github.com/sourcegrbph/sourcegrbph",
 				revision: "de0123456789",
 			},
 			{
-				pkg: dependencies.MinimialVersionedPackageRepo{
+				pkg: dependencies.MinimiblVersionedPbckbgeRepo{
 					Scheme:  "npm",
-					Name:    "mypackage",
+					Nbme:    "mypbckbge",
 					Version: "1.0.0",
 				},
-				repoName: "npm/mypackage",
+				repoNbme: "npm/mypbckbge",
 				revision: "v1.0.0",
 			},
 			{
-				pkg: dependencies.MinimialVersionedPackageRepo{
+				pkg: dependencies.MinimiblVersionedPbckbgeRepo{
 					Scheme:  "npm",
-					Name:    "@myscope/mypackage",
+					Nbme:    "@myscope/mypbckbge",
 					Version: "1.0.0",
 				},
-				repoName: "npm/myscope/mypackage",
+				repoNbme: "npm/myscope/mypbckbge",
 				revision: "v1.0.0",
 			},
 		}
 
-		for _, testCase := range testCases {
-			repoName, revision, ok := InferRepositoryAndRevision(testCase.pkg)
+		for _, testCbse := rbnge testCbses {
+			repoNbme, revision, ok := InferRepositoryAndRevision(testCbse.pkg)
 			if !ok {
-				t.Fatalf("expected repository to be inferred")
+				t.Fbtblf("expected repository to be inferred")
 			}
 
-			if string(repoName) != testCase.repoName {
-				t.Errorf("unexpected repo name. want=%q have=%q", testCase.repoName, string(repoName))
+			if string(repoNbme) != testCbse.repoNbme {
+				t.Errorf("unexpected repo nbme. wbnt=%q hbve=%q", testCbse.repoNbme, string(repoNbme))
 			}
-			if revision != testCase.revision {
-				t.Errorf("unexpected revision. want=%q have=%q", testCase.revision, revision)
+			if revision != testCbse.revision {
+				t.Errorf("unexpected revision. wbnt=%q hbve=%q", testCbse.revision, revision)
 			}
 		}
 	})

@@ -1,12 +1,12 @@
 //go:build !windows
 // +build !windows
 
-package blobstore
+pbckbge blobstore
 
 import "os"
 
-func fsync(path string) error {
-	f, err := os.Open(path)
+func fsync(pbth string) error {
+	f, err := os.Open(pbth)
 	if err != nil {
 		return err
 	}

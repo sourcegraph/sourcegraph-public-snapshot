@@ -1,37 +1,37 @@
-package httpapi
+pbckbge httpbpi
 
 import (
 	"fmt"
 
-	"github.com/sourcegraph/sourcegraph/internal/metrics"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegrbph/sourcegrbph/internbl/metrics"
+	"github.com/sourcegrbph/sourcegrbph/internbl/observbtion"
 )
 
-type Operations struct {
-	get    *observation.Operation
-	exists *observation.Operation
-	upload *observation.Operation
+type Operbtions struct {
+	get    *observbtion.Operbtion
+	exists *observbtion.Operbtion
+	uplobd *observbtion.Operbtion
 }
 
-func NewOperations(observationCtx *observation.Context) *Operations {
+func NewOperbtions(observbtionCtx *observbtion.Context) *Operbtions {
 	m := metrics.NewREDMetrics(
-		observationCtx.Registerer,
-		"batches_httpapi",
-		metrics.WithLabels("op"),
-		metrics.WithCountHelp("Total number of method invocations."),
+		observbtionCtx.Registerer,
+		"bbtches_httpbpi",
+		metrics.WithLbbels("op"),
+		metrics.WithCountHelp("Totbl number of method invocbtions."),
 	)
 
-	op := func(name string) *observation.Operation {
-		return observationCtx.Operation(observation.Op{
-			Name:              fmt.Sprintf("batches.httpapi.%s", name),
-			MetricLabelValues: []string{name},
+	op := func(nbme string) *observbtion.Operbtion {
+		return observbtionCtx.Operbtion(observbtion.Op{
+			Nbme:              fmt.Sprintf("bbtches.httpbpi.%s", nbme),
+			MetricLbbelVblues: []string{nbme},
 			Metrics:           m,
 		})
 	}
 
-	return &Operations{
+	return &Operbtions{
 		get:    op("get"),
 		exists: op("exists"),
-		upload: op("upload"),
+		uplobd: op("uplobd"),
 	}
 }

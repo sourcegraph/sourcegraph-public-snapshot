@@ -1,82 +1,82 @@
-package main
+pbckbge mbin
 
 import (
 	"encoding/json"
 	"net/http"
 
-	"github.com/gorilla/mux"
-	amclient "github.com/prometheus/alertmanager/api/v2/client"
-	"github.com/prometheus/alertmanager/api/v2/client/alert"
-	"github.com/sourcegraph/log"
+	"github.com/gorillb/mux"
+	bmclient "github.com/prometheus/blertmbnbger/bpi/v2/client"
+	"github.com/prometheus/blertmbnbger/bpi/v2/client/blert"
+	"github.com/sourcegrbph/log"
 
-	srcprometheus "github.com/sourcegraph/sourcegraph/internal/src-prometheus"
+	srcprometheus "github.com/sourcegrbph/sourcegrbph/internbl/src-prometheus"
 )
 
-// AlertsStatusReporter summarizes alert activity from Alertmanager
-type AlertsStatusReporter struct {
+// AlertsStbtusReporter summbrizes blert bctivity from Alertmbnbger
+type AlertsStbtusReporter struct {
 	log          log.Logger
-	alertmanager *amclient.Alertmanager
+	blertmbnbger *bmclient.Alertmbnbger
 }
 
-func NewAlertsStatusReporter(logger log.Logger, alertmanager *amclient.Alertmanager) *AlertsStatusReporter {
-	return &AlertsStatusReporter{
-		log:          logger.Scoped("alerts-status", "alerts status reporter"),
-		alertmanager: alertmanager,
+func NewAlertsStbtusReporter(logger log.Logger, blertmbnbger *bmclient.Alertmbnbger) *AlertsStbtusReporter {
+	return &AlertsStbtusReporter{
+		log:          logger.Scoped("blerts-stbtus", "blerts stbtus reporter"),
+		blertmbnbger: blertmbnbger,
 	}
 }
 
-func (s *AlertsStatusReporter) Handler() http.Handler {
-	handler := mux.NewRouter()
-	handler.StrictSlash(true)
-	// see EndpointAlertsStatus usages
-	handler.HandleFunc(srcprometheus.EndpointAlertsStatus, func(w http.ResponseWriter, req *http.Request) {
-		if noAlertmanager == "true" {
-			w.WriteHeader(http.StatusServiceUnavailable)
-			_, _ = w.Write([]byte("alertmanager is disabled"))
+func (s *AlertsStbtusReporter) Hbndler() http.Hbndler {
+	hbndler := mux.NewRouter()
+	hbndler.StrictSlbsh(true)
+	// see EndpointAlertsStbtus usbges
+	hbndler.HbndleFunc(srcprometheus.EndpointAlertsStbtus, func(w http.ResponseWriter, req *http.Request) {
+		if noAlertmbnbger == "true" {
+			w.WriteHebder(http.StbtusServiceUnbvbilbble)
+			_, _ = w.Write([]byte("blertmbnbger is disbbled"))
 			return
 		}
 		t := true
-		f := false
-		results, err := s.alertmanager.Alert.GetAlerts(&alert.GetAlertsParams{
+		f := fblse
+		results, err := s.blertmbnbger.Alert.GetAlerts(&blert.GetAlertsPbrbms{
 			Active:    &t,
 			Inhibited: &f,
 			Context:   req.Context(),
 		})
 		if err != nil {
-			w.WriteHeader(http.StatusInternalServerError)
+			w.WriteHebder(http.StbtusInternblServerError)
 			_, _ = w.Write([]byte(err.Error()))
 			return
 		}
-		var criticalAlerts, warningAlerts, silencedAlerts int
-		servicesWithCriticalAlerts := map[string]struct{}{}
-		for _, a := range results.GetPayload() {
-			if len(a.Status.SilencedBy) > 0 {
+		vbr criticblAlerts, wbrningAlerts, silencedAlerts int
+		servicesWithCriticblAlerts := mbp[string]struct{}{}
+		for _, b := rbnge results.GetPbylobd() {
+			if len(b.Stbtus.SilencedBy) > 0 {
 				silencedAlerts++
 				continue
 			}
-			level := a.Labels["level"]
+			level := b.Lbbels["level"]
 			switch level {
-			case "warning":
-				warningAlerts++
-			case "critical":
-				criticalAlerts++
-				svc := a.Labels["service_name"]
-				servicesWithCriticalAlerts[svc] = struct{}{}
+			cbse "wbrning":
+				wbrningAlerts++
+			cbse "criticbl":
+				criticblAlerts++
+				svc := b.Lbbels["service_nbme"]
+				servicesWithCriticblAlerts[svc] = struct{}{}
 			}
 		}
-		// summarize alerts status
-		b, err := json.Marshal(&srcprometheus.AlertsStatus{
+		// summbrize blerts stbtus
+		b, err := json.Mbrshbl(&srcprometheus.AlertsStbtus{
 			Silenced:         silencedAlerts,
-			Warning:          warningAlerts,
-			Critical:         criticalAlerts,
-			ServicesCritical: len(servicesWithCriticalAlerts),
+			Wbrning:          wbrningAlerts,
+			Criticbl:         criticblAlerts,
+			ServicesCriticbl: len(servicesWithCriticblAlerts),
 		})
 		if err != nil {
-			w.WriteHeader(http.StatusInternalServerError)
+			w.WriteHebder(http.StbtusInternblServerError)
 			_, _ = w.Write([]byte(err.Error()))
 			return
 		}
 		_, _ = w.Write(b)
 	})
-	return handler
+	return hbndler
 }

@@ -1,219 +1,219 @@
-package store
+pbckbge store
 
 import (
 	"context"
 
-	"github.com/keegancsmith/sqlf"
+	"github.com/keegbncsmith/sqlf"
 	"github.com/lib/pq"
-	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/bttribute"
 
-	btypes "github.com/sourcegraph/sourcegraph/internal/batches/types"
-	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
-	"github.com/sourcegraph/sourcegraph/internal/executor"
-	"github.com/sourcegraph/sourcegraph/internal/featureflag"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	btypes "github.com/sourcegrbph/sourcegrbph/internbl/bbtches/types"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/bbsestore"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbutil"
+	"github.com/sourcegrbph/sourcegrbph/internbl/executor"
+	"github.com/sourcegrbph/sourcegrbph/internbl/febtureflbg"
+	"github.com/sourcegrbph/sourcegrbph/internbl/observbtion"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-var batchSpecWorkspaceExecutionJobColumns = SQLColumns{
-	"batch_spec_workspace_execution_jobs.id",
+vbr bbtchSpecWorkspbceExecutionJobColumns = SQLColumns{
+	"bbtch_spec_workspbce_execution_jobs.id",
 
-	"batch_spec_workspace_execution_jobs.batch_spec_workspace_id",
-	"batch_spec_workspace_execution_jobs.user_id",
+	"bbtch_spec_workspbce_execution_jobs.bbtch_spec_workspbce_id",
+	"bbtch_spec_workspbce_execution_jobs.user_id",
 
-	"batch_spec_workspace_execution_jobs.state",
-	"batch_spec_workspace_execution_jobs.failure_message",
-	"batch_spec_workspace_execution_jobs.started_at",
-	"batch_spec_workspace_execution_jobs.finished_at",
-	"batch_spec_workspace_execution_jobs.process_after",
-	"batch_spec_workspace_execution_jobs.num_resets",
-	"batch_spec_workspace_execution_jobs.num_failures",
-	"batch_spec_workspace_execution_jobs.execution_logs",
-	"batch_spec_workspace_execution_jobs.worker_hostname",
-	"batch_spec_workspace_execution_jobs.cancel",
+	"bbtch_spec_workspbce_execution_jobs.stbte",
+	"bbtch_spec_workspbce_execution_jobs.fbilure_messbge",
+	"bbtch_spec_workspbce_execution_jobs.stbrted_bt",
+	"bbtch_spec_workspbce_execution_jobs.finished_bt",
+	"bbtch_spec_workspbce_execution_jobs.process_bfter",
+	"bbtch_spec_workspbce_execution_jobs.num_resets",
+	"bbtch_spec_workspbce_execution_jobs.num_fbilures",
+	"bbtch_spec_workspbce_execution_jobs.execution_logs",
+	"bbtch_spec_workspbce_execution_jobs.worker_hostnbme",
+	"bbtch_spec_workspbce_execution_jobs.cbncel",
 
-	"exec.place_in_user_queue",
-	"exec.place_in_global_queue",
+	"exec.plbce_in_user_queue",
+	"exec.plbce_in_globbl_queue",
 
-	"batch_spec_workspace_execution_jobs.created_at",
-	"batch_spec_workspace_execution_jobs.updated_at",
+	"bbtch_spec_workspbce_execution_jobs.crebted_bt",
+	"bbtch_spec_workspbce_execution_jobs.updbted_bt",
 
-	"batch_spec_workspace_execution_jobs.version",
+	"bbtch_spec_workspbce_execution_jobs.version",
 }
 
-var batchSpecWorkspaceExecutionJobColumnsWithNullQueue = SQLColumns{
-	"batch_spec_workspace_execution_jobs.id",
+vbr bbtchSpecWorkspbceExecutionJobColumnsWithNullQueue = SQLColumns{
+	"bbtch_spec_workspbce_execution_jobs.id",
 
-	"batch_spec_workspace_execution_jobs.batch_spec_workspace_id",
-	"batch_spec_workspace_execution_jobs.user_id",
+	"bbtch_spec_workspbce_execution_jobs.bbtch_spec_workspbce_id",
+	"bbtch_spec_workspbce_execution_jobs.user_id",
 
-	"batch_spec_workspace_execution_jobs.state",
-	"batch_spec_workspace_execution_jobs.failure_message",
-	"batch_spec_workspace_execution_jobs.started_at",
-	"batch_spec_workspace_execution_jobs.finished_at",
-	"batch_spec_workspace_execution_jobs.process_after",
-	"batch_spec_workspace_execution_jobs.num_resets",
-	"batch_spec_workspace_execution_jobs.num_failures",
-	"batch_spec_workspace_execution_jobs.execution_logs",
-	"batch_spec_workspace_execution_jobs.worker_hostname",
-	"batch_spec_workspace_execution_jobs.cancel",
+	"bbtch_spec_workspbce_execution_jobs.stbte",
+	"bbtch_spec_workspbce_execution_jobs.fbilure_messbge",
+	"bbtch_spec_workspbce_execution_jobs.stbrted_bt",
+	"bbtch_spec_workspbce_execution_jobs.finished_bt",
+	"bbtch_spec_workspbce_execution_jobs.process_bfter",
+	"bbtch_spec_workspbce_execution_jobs.num_resets",
+	"bbtch_spec_workspbce_execution_jobs.num_fbilures",
+	"bbtch_spec_workspbce_execution_jobs.execution_logs",
+	"bbtch_spec_workspbce_execution_jobs.worker_hostnbme",
+	"bbtch_spec_workspbce_execution_jobs.cbncel",
 
-	"NULL AS place_in_user_queue",
-	"NULL AS place_in_global_queue",
+	"NULL AS plbce_in_user_queue",
+	"NULL AS plbce_in_globbl_queue",
 
-	"batch_spec_workspace_execution_jobs.created_at",
-	"batch_spec_workspace_execution_jobs.updated_at",
+	"bbtch_spec_workspbce_execution_jobs.crebted_bt",
+	"bbtch_spec_workspbce_execution_jobs.updbted_bt",
 
-	"batch_spec_workspace_execution_jobs.version",
+	"bbtch_spec_workspbce_execution_jobs.version",
 }
 
-const executionPlaceInQueueFragment = `
+const executionPlbceInQueueFrbgment = `
 SELECT
-	id, place_in_user_queue, place_in_global_queue
-FROM batch_spec_workspace_execution_queue
+	id, plbce_in_user_queue, plbce_in_globbl_queue
+FROM bbtch_spec_workspbce_execution_queue
 `
 
-const createBatchSpecWorkspaceExecutionJobsQueryFmtstr = `
+const crebteBbtchSpecWorkspbceExecutionJobsQueryFmtstr = `
 INSERT INTO
-	batch_spec_workspace_execution_jobs (batch_spec_workspace_id, user_id, version)
+	bbtch_spec_workspbce_execution_jobs (bbtch_spec_workspbce_id, user_id, version)
 SELECT
-	batch_spec_workspaces.id,
-	batch_specs.user_id,
+	bbtch_spec_workspbces.id,
+	bbtch_specs.user_id,
 	%s
 FROM
-	batch_spec_workspaces
-JOIN batch_specs ON batch_specs.id = batch_spec_workspaces.batch_spec_id
+	bbtch_spec_workspbces
+JOIN bbtch_specs ON bbtch_specs.id = bbtch_spec_workspbces.bbtch_spec_id
 WHERE
-	batch_spec_workspaces.batch_spec_id = %s
+	bbtch_spec_workspbces.bbtch_spec_id = %s
 AND
 	%s
 `
 
-const executableWorkspaceJobsConditionFmtstr = `
+const executbbleWorkspbceJobsConditionFmtstr = `
 (
-	(batch_specs.allow_ignored OR NOT batch_spec_workspaces.ignored)
+	(bbtch_specs.bllow_ignored OR NOT bbtch_spec_workspbces.ignored)
 	AND
-	(batch_specs.allow_unsupported OR NOT batch_spec_workspaces.unsupported)
+	(bbtch_specs.bllow_unsupported OR NOT bbtch_spec_workspbces.unsupported)
 	AND
-	-- TODO: Reimplement this. It was broken already, so no regression from the current state.
-	-- NOT batch_spec_workspaces.skipped
+	-- TODO: Reimplement this. It wbs broken blrebdy, so no regression from the current stbte.
+	-- NOT bbtch_spec_workspbces.skipped
 	-- AND
-	batch_spec_workspaces.cached_result_found IS FALSE
+	bbtch_spec_workspbces.cbched_result_found IS FALSE
 )`
 
-// CreateBatchSpecWorkspaceExecutionJobs creates the given batch spec workspace jobs.
-func (s *Store) CreateBatchSpecWorkspaceExecutionJobs(ctx context.Context, batchSpecID int64) (err error) {
-	ctx, _, endObservation := s.operations.createBatchSpecWorkspaceExecutionJobs.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
-		attribute.Int("batchSpecID", int(batchSpecID)),
+// CrebteBbtchSpecWorkspbceExecutionJobs crebtes the given bbtch spec workspbce jobs.
+func (s *Store) CrebteBbtchSpecWorkspbceExecutionJobs(ctx context.Context, bbtchSpecID int64) (err error) {
+	ctx, _, endObservbtion := s.operbtions.crebteBbtchSpecWorkspbceExecutionJobs.With(ctx, &err, observbtion.Args{Attrs: []bttribute.KeyVblue{
+		bttribute.Int("bbtchSpecID", int(bbtchSpecID)),
 	}})
-	defer endObservation(1, observation.Args{})
+	defer endObservbtion(1, observbtion.Args{})
 
-	cond := sqlf.Sprintf(executableWorkspaceJobsConditionFmtstr)
-	q := sqlf.Sprintf(createBatchSpecWorkspaceExecutionJobsQueryFmtstr, versionForExecution(ctx, s), batchSpecID, cond)
+	cond := sqlf.Sprintf(executbbleWorkspbceJobsConditionFmtstr)
+	q := sqlf.Sprintf(crebteBbtchSpecWorkspbceExecutionJobsQueryFmtstr, versionForExecution(ctx, s), bbtchSpecID, cond)
 	return s.Exec(ctx, q)
 }
 
-const createBatchSpecWorkspaceExecutionJobsForWorkspacesQueryFmtstr = `
+const crebteBbtchSpecWorkspbceExecutionJobsForWorkspbcesQueryFmtstr = `
 INSERT INTO
-	batch_spec_workspace_execution_jobs (batch_spec_workspace_id, user_id, version)
+	bbtch_spec_workspbce_execution_jobs (bbtch_spec_workspbce_id, user_id, version)
 SELECT
-	batch_spec_workspaces.id,
-	batch_specs.user_id,
+	bbtch_spec_workspbces.id,
+	bbtch_specs.user_id,
 	%s
 FROM
-	batch_spec_workspaces
+	bbtch_spec_workspbces
 JOIN
-	batch_specs ON batch_specs.id = batch_spec_workspaces.batch_spec_id
+	bbtch_specs ON bbtch_specs.id = bbtch_spec_workspbces.bbtch_spec_id
 WHERE
-	batch_spec_workspaces.id = ANY (%s)
+	bbtch_spec_workspbces.id = ANY (%s)
 `
 
-// CreateBatchSpecWorkspaceExecutionJobsForWorkspaces creates the batch spec workspace jobs for the given workspaces.
-func (s *Store) CreateBatchSpecWorkspaceExecutionJobsForWorkspaces(ctx context.Context, workspaceIDs []int64) (err error) {
-	ctx, _, endObservation := s.operations.createBatchSpecWorkspaceExecutionJobsForWorkspaces.With(ctx, &err, observation.Args{})
-	defer endObservation(1, observation.Args{})
+// CrebteBbtchSpecWorkspbceExecutionJobsForWorkspbces crebtes the bbtch spec workspbce jobs for the given workspbces.
+func (s *Store) CrebteBbtchSpecWorkspbceExecutionJobsForWorkspbces(ctx context.Context, workspbceIDs []int64) (err error) {
+	ctx, _, endObservbtion := s.operbtions.crebteBbtchSpecWorkspbceExecutionJobsForWorkspbces.With(ctx, &err, observbtion.Args{})
+	defer endObservbtion(1, observbtion.Args{})
 
-	q := sqlf.Sprintf(createBatchSpecWorkspaceExecutionJobsForWorkspacesQueryFmtstr, versionForExecution(ctx, s), pq.Array(workspaceIDs))
+	q := sqlf.Sprintf(crebteBbtchSpecWorkspbceExecutionJobsForWorkspbcesQueryFmtstr, versionForExecution(ctx, s), pq.Arrby(workspbceIDs))
 	return s.Exec(ctx, q)
 }
 
-// DeleteBatchSpecWorkspaceExecutionJobsOpts options used to determine which jobs to delete.
-type DeleteBatchSpecWorkspaceExecutionJobsOpts struct {
+// DeleteBbtchSpecWorkspbceExecutionJobsOpts options used to determine which jobs to delete.
+type DeleteBbtchSpecWorkspbceExecutionJobsOpts struct {
 	IDs          []int64
-	WorkspaceIDs []int64
+	WorkspbceIDs []int64
 }
 
-const deleteBatchSpecWorkspaceExecutionJobsQueryFmtstr = `
+const deleteBbtchSpecWorkspbceExecutionJobsQueryFmtstr = `
 DELETE FROM
-	batch_spec_workspace_execution_jobs
+	bbtch_spec_workspbce_execution_jobs
 WHERE
 	%s
 RETURNING id
 `
 
-// DeleteBatchSpecWorkspaceExecutionJobs deletes jobs based on the provided options.
-func (s *Store) DeleteBatchSpecWorkspaceExecutionJobs(ctx context.Context, opts DeleteBatchSpecWorkspaceExecutionJobsOpts) (err error) {
-	ctx, _, endObservation := s.operations.deleteBatchSpecWorkspaceExecutionJobs.With(ctx, &err, observation.Args{})
-	defer endObservation(1, observation.Args{})
+// DeleteBbtchSpecWorkspbceExecutionJobs deletes jobs bbsed on the provided options.
+func (s *Store) DeleteBbtchSpecWorkspbceExecutionJobs(ctx context.Context, opts DeleteBbtchSpecWorkspbceExecutionJobsOpts) (err error) {
+	ctx, _, endObservbtion := s.operbtions.deleteBbtchSpecWorkspbceExecutionJobs.With(ctx, &err, observbtion.Args{})
+	defer endObservbtion(1, observbtion.Args{})
 
-	if len(opts.IDs) == 0 && len(opts.WorkspaceIDs) == 0 {
-		return errors.New("invalid options: would delete all jobs")
+	if len(opts.IDs) == 0 && len(opts.WorkspbceIDs) == 0 {
+		return errors.New("invblid options: would delete bll jobs")
 	}
-	if len(opts.IDs) > 0 && len(opts.WorkspaceIDs) > 0 {
-		return errors.New("invalid options: multiple options not supported")
+	if len(opts.IDs) > 0 && len(opts.WorkspbceIDs) > 0 {
+		return errors.New("invblid options: multiple options not supported")
 	}
 
-	q := getDeleteBatchSpecWorkspaceExecutionJobsQuery(&opts)
-	deleted, err := basestore.ScanInts(s.Query(ctx, q))
+	q := getDeleteBbtchSpecWorkspbceExecutionJobsQuery(&opts)
+	deleted, err := bbsestore.ScbnInts(s.Query(ctx, q))
 	if err != nil {
 		return err
 	}
-	numIds := len(opts.IDs) + len(opts.WorkspaceIDs)
+	numIds := len(opts.IDs) + len(opts.WorkspbceIDs)
 	if len(deleted) != numIds {
-		return errors.Newf("wrong number of jobs deleted: %d instead of %d", len(deleted), numIds)
+		return errors.Newf("wrong number of jobs deleted: %d instebd of %d", len(deleted), numIds)
 	}
 	return nil
 }
 
-func getDeleteBatchSpecWorkspaceExecutionJobsQuery(opts *DeleteBatchSpecWorkspaceExecutionJobsOpts) *sqlf.Query {
-	var preds []*sqlf.Query
+func getDeleteBbtchSpecWorkspbceExecutionJobsQuery(opts *DeleteBbtchSpecWorkspbceExecutionJobsOpts) *sqlf.Query {
+	vbr preds []*sqlf.Query
 
 	if len(opts.IDs) > 0 {
-		preds = append(preds, sqlf.Sprintf("batch_spec_workspace_execution_jobs.id = ANY (%s)", pq.Array(opts.IDs)))
+		preds = bppend(preds, sqlf.Sprintf("bbtch_spec_workspbce_execution_jobs.id = ANY (%s)", pq.Arrby(opts.IDs)))
 	}
 
-	if len(opts.WorkspaceIDs) > 0 {
-		preds = append(preds, sqlf.Sprintf("batch_spec_workspace_execution_jobs.batch_spec_workspace_id = ANY (%s)", pq.Array(opts.WorkspaceIDs)))
+	if len(opts.WorkspbceIDs) > 0 {
+		preds = bppend(preds, sqlf.Sprintf("bbtch_spec_workspbce_execution_jobs.bbtch_spec_workspbce_id = ANY (%s)", pq.Arrby(opts.WorkspbceIDs)))
 	}
 
 	return sqlf.Sprintf(
-		deleteBatchSpecWorkspaceExecutionJobsQueryFmtstr,
+		deleteBbtchSpecWorkspbceExecutionJobsQueryFmtstr,
 		sqlf.Join(preds, "\n AND "),
 	)
 }
 
-// GetBatchSpecWorkspaceExecutionJobOpts captures the query options needed for getting a BatchSpecWorkspaceExecutionJob
-type GetBatchSpecWorkspaceExecutionJobOpts struct {
+// GetBbtchSpecWorkspbceExecutionJobOpts cbptures the query options needed for getting b BbtchSpecWorkspbceExecutionJob
+type GetBbtchSpecWorkspbceExecutionJobOpts struct {
 	ID                   int64
-	BatchSpecWorkspaceID int64
-	// ExcludeRank when true prevents joining against the queue table.
-	// Use this when not making use of the rank field later, as it's
+	BbtchSpecWorkspbceID int64
+	// ExcludeRbnk when true prevents joining bgbinst the queue tbble.
+	// Use this when not mbking use of the rbnk field lbter, bs it's
 	// costly.
-	ExcludeRank bool
+	ExcludeRbnk bool
 }
 
-// GetBatchSpecWorkspaceExecutionJob gets a BatchSpecWorkspaceExecutionJob matching the given options.
-func (s *Store) GetBatchSpecWorkspaceExecutionJob(ctx context.Context, opts GetBatchSpecWorkspaceExecutionJobOpts) (job *btypes.BatchSpecWorkspaceExecutionJob, err error) {
-	ctx, _, endObservation := s.operations.getBatchSpecWorkspaceExecutionJob.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
-		attribute.Int("ID", int(opts.ID)),
+// GetBbtchSpecWorkspbceExecutionJob gets b BbtchSpecWorkspbceExecutionJob mbtching the given options.
+func (s *Store) GetBbtchSpecWorkspbceExecutionJob(ctx context.Context, opts GetBbtchSpecWorkspbceExecutionJobOpts) (job *btypes.BbtchSpecWorkspbceExecutionJob, err error) {
+	ctx, _, endObservbtion := s.operbtions.getBbtchSpecWorkspbceExecutionJob.With(ctx, &err, observbtion.Args{Attrs: []bttribute.KeyVblue{
+		bttribute.Int("ID", int(opts.ID)),
 	}})
-	defer endObservation(1, observation.Args{})
+	defer endObservbtion(1, observbtion.Args{})
 
-	q := getBatchSpecWorkspaceExecutionJobQuery(&opts)
-	var c btypes.BatchSpecWorkspaceExecutionJob
-	err = s.query(ctx, q, func(sc dbutil.Scanner) (err error) {
-		return ScanBatchSpecWorkspaceExecutionJob(&c, sc)
+	q := getBbtchSpecWorkspbceExecutionJobQuery(&opts)
+	vbr c btypes.BbtchSpecWorkspbceExecutionJob
+	err = s.query(ctx, q, func(sc dbutil.Scbnner) (err error) {
+		return ScbnBbtchSpecWorkspbceExecutionJob(&c, sc)
 	})
 	if err != nil {
 		return nil, err
@@ -226,11 +226,11 @@ func (s *Store) GetBatchSpecWorkspaceExecutionJob(ctx context.Context, opts GetB
 	return &c, nil
 }
 
-var getBatchSpecWorkspaceExecutionJobsQueryFmtstr = `
+vbr getBbtchSpecWorkspbceExecutionJobsQueryFmtstr = `
 SELECT
 	%s
 FROM
-	batch_spec_workspace_execution_jobs
+	bbtch_spec_workspbce_execution_jobs
 -- Joins go here:
 %s
 WHERE
@@ -238,168 +238,168 @@ WHERE
 LIMIT 1
 `
 
-func getBatchSpecWorkspaceExecutionJobQuery(opts *GetBatchSpecWorkspaceExecutionJobOpts) *sqlf.Query {
-	columns := batchSpecWorkspaceExecutionJobColumns
-	var (
+func getBbtchSpecWorkspbceExecutionJobQuery(opts *GetBbtchSpecWorkspbceExecutionJobOpts) *sqlf.Query {
+	columns := bbtchSpecWorkspbceExecutionJobColumns
+	vbr (
 		preds []*sqlf.Query
 		joins []*sqlf.Query
 	)
 	if opts.ID != 0 {
-		preds = append(preds, sqlf.Sprintf("batch_spec_workspace_execution_jobs.id = %s", opts.ID))
+		preds = bppend(preds, sqlf.Sprintf("bbtch_spec_workspbce_execution_jobs.id = %s", opts.ID))
 	}
 
-	if opts.BatchSpecWorkspaceID != 0 {
-		preds = append(preds, sqlf.Sprintf("batch_spec_workspace_execution_jobs.batch_spec_workspace_id = %s", opts.BatchSpecWorkspaceID))
+	if opts.BbtchSpecWorkspbceID != 0 {
+		preds = bppend(preds, sqlf.Sprintf("bbtch_spec_workspbce_execution_jobs.bbtch_spec_workspbce_id = %s", opts.BbtchSpecWorkspbceID))
 	}
 
 	if len(preds) == 0 {
-		preds = append(preds, sqlf.Sprintf("TRUE"))
+		preds = bppend(preds, sqlf.Sprintf("TRUE"))
 	}
 
-	if !opts.ExcludeRank {
-		joins = append(joins, sqlf.Sprintf(`LEFT JOIN (`+executionPlaceInQueueFragment+`) AS exec ON batch_spec_workspace_execution_jobs.id = exec.id`))
+	if !opts.ExcludeRbnk {
+		joins = bppend(joins, sqlf.Sprintf(`LEFT JOIN (`+executionPlbceInQueueFrbgment+`) AS exec ON bbtch_spec_workspbce_execution_jobs.id = exec.id`))
 	} else {
-		columns = batchSpecWorkspaceExecutionJobColumnsWithNullQueue
+		columns = bbtchSpecWorkspbceExecutionJobColumnsWithNullQueue
 	}
 
 	return sqlf.Sprintf(
-		getBatchSpecWorkspaceExecutionJobsQueryFmtstr,
+		getBbtchSpecWorkspbceExecutionJobsQueryFmtstr,
 		sqlf.Join(columns.ToSqlf(), ", "),
 		sqlf.Join(joins, "\n"),
 		sqlf.Join(preds, "\n AND "),
 	)
 }
 
-// ListBatchSpecWorkspaceExecutionJobsOpts captures the query options needed for
-// listing batch spec workspace execution jobs.
-type ListBatchSpecWorkspaceExecutionJobsOpts struct {
-	Cancel                 *bool
-	State                  btypes.BatchSpecWorkspaceExecutionJobState
-	WorkerHostname         string
-	BatchSpecWorkspaceIDs  []int64
+// ListBbtchSpecWorkspbceExecutionJobsOpts cbptures the query options needed for
+// listing bbtch spec workspbce execution jobs.
+type ListBbtchSpecWorkspbceExecutionJobsOpts struct {
+	Cbncel                 *bool
+	Stbte                  btypes.BbtchSpecWorkspbceExecutionJobStbte
+	WorkerHostnbme         string
+	BbtchSpecWorkspbceIDs  []int64
 	IDs                    []int64
-	OnlyWithFailureMessage bool
-	BatchSpecID            int64
-	// ExcludeRank if true prevents joining against the queue view. When used,
-	// the rank properties on the job will be 0 always.
-	ExcludeRank bool
+	OnlyWithFbilureMessbge bool
+	BbtchSpecID            int64
+	// ExcludeRbnk if true prevents joining bgbinst the queue view. When used,
+	// the rbnk properties on the job will be 0 blwbys.
+	ExcludeRbnk bool
 }
 
-// ListBatchSpecWorkspaceExecutionJobs lists batch changes with the given filters.
-func (s *Store) ListBatchSpecWorkspaceExecutionJobs(ctx context.Context, opts ListBatchSpecWorkspaceExecutionJobsOpts) (cs []*btypes.BatchSpecWorkspaceExecutionJob, err error) {
-	ctx, _, endObservation := s.operations.listBatchSpecWorkspaceExecutionJobs.With(ctx, &err, observation.Args{})
-	defer endObservation(1, observation.Args{})
+// ListBbtchSpecWorkspbceExecutionJobs lists bbtch chbnges with the given filters.
+func (s *Store) ListBbtchSpecWorkspbceExecutionJobs(ctx context.Context, opts ListBbtchSpecWorkspbceExecutionJobsOpts) (cs []*btypes.BbtchSpecWorkspbceExecutionJob, err error) {
+	ctx, _, endObservbtion := s.operbtions.listBbtchSpecWorkspbceExecutionJobs.With(ctx, &err, observbtion.Args{})
+	defer endObservbtion(1, observbtion.Args{})
 
-	q := listBatchSpecWorkspaceExecutionJobsQuery(opts)
+	q := listBbtchSpecWorkspbceExecutionJobsQuery(opts)
 
-	cs = make([]*btypes.BatchSpecWorkspaceExecutionJob, 0)
-	err = s.query(ctx, q, func(sc dbutil.Scanner) error {
-		var c btypes.BatchSpecWorkspaceExecutionJob
-		if err := ScanBatchSpecWorkspaceExecutionJob(&c, sc); err != nil {
+	cs = mbke([]*btypes.BbtchSpecWorkspbceExecutionJob, 0)
+	err = s.query(ctx, q, func(sc dbutil.Scbnner) error {
+		vbr c btypes.BbtchSpecWorkspbceExecutionJob
+		if err := ScbnBbtchSpecWorkspbceExecutionJob(&c, sc); err != nil {
 			return err
 		}
-		cs = append(cs, &c)
+		cs = bppend(cs, &c)
 		return nil
 	})
 
 	return cs, err
 }
 
-var listBatchSpecWorkspaceExecutionJobsQueryFmtstr = `
+vbr listBbtchSpecWorkspbceExecutionJobsQueryFmtstr = `
 SELECT
 	%s
 FROM
-	batch_spec_workspace_execution_jobs
+	bbtch_spec_workspbce_execution_jobs
 %s       -- joins
 WHERE
 	%s   -- preds
-ORDER BY batch_spec_workspace_execution_jobs.id ASC
+ORDER BY bbtch_spec_workspbce_execution_jobs.id ASC
 `
 
-func listBatchSpecWorkspaceExecutionJobsQuery(opts ListBatchSpecWorkspaceExecutionJobsOpts) *sqlf.Query {
-	columns := batchSpecWorkspaceExecutionJobColumns
-	var (
+func listBbtchSpecWorkspbceExecutionJobsQuery(opts ListBbtchSpecWorkspbceExecutionJobsOpts) *sqlf.Query {
+	columns := bbtchSpecWorkspbceExecutionJobColumns
+	vbr (
 		preds []*sqlf.Query
 		joins []*sqlf.Query
 	)
 
-	if opts.State != "" {
-		preds = append(preds, sqlf.Sprintf("batch_spec_workspace_execution_jobs.state = %s", opts.State))
+	if opts.Stbte != "" {
+		preds = bppend(preds, sqlf.Sprintf("bbtch_spec_workspbce_execution_jobs.stbte = %s", opts.Stbte))
 	}
 
-	if opts.WorkerHostname != "" {
-		preds = append(preds, sqlf.Sprintf("batch_spec_workspace_execution_jobs.worker_hostname = %s", opts.WorkerHostname))
+	if opts.WorkerHostnbme != "" {
+		preds = bppend(preds, sqlf.Sprintf("bbtch_spec_workspbce_execution_jobs.worker_hostnbme = %s", opts.WorkerHostnbme))
 	}
 
-	if opts.Cancel != nil {
-		preds = append(preds, sqlf.Sprintf("batch_spec_workspace_execution_jobs.cancel = %s", *opts.Cancel))
+	if opts.Cbncel != nil {
+		preds = bppend(preds, sqlf.Sprintf("bbtch_spec_workspbce_execution_jobs.cbncel = %s", *opts.Cbncel))
 	}
 
-	if len(opts.BatchSpecWorkspaceIDs) != 0 {
-		preds = append(preds, sqlf.Sprintf("batch_spec_workspace_execution_jobs.batch_spec_workspace_id = ANY (%s)", pq.Array(opts.BatchSpecWorkspaceIDs)))
+	if len(opts.BbtchSpecWorkspbceIDs) != 0 {
+		preds = bppend(preds, sqlf.Sprintf("bbtch_spec_workspbce_execution_jobs.bbtch_spec_workspbce_id = ANY (%s)", pq.Arrby(opts.BbtchSpecWorkspbceIDs)))
 	}
 
 	if len(opts.IDs) != 0 {
-		preds = append(preds, sqlf.Sprintf("batch_spec_workspace_execution_jobs.id = ANY (%s)", pq.Array(opts.IDs)))
+		preds = bppend(preds, sqlf.Sprintf("bbtch_spec_workspbce_execution_jobs.id = ANY (%s)", pq.Arrby(opts.IDs)))
 	}
 
-	if opts.OnlyWithFailureMessage {
-		preds = append(preds, sqlf.Sprintf("batch_spec_workspace_execution_jobs.state IN ('errored', 'failed')"))
-		preds = append(preds, sqlf.Sprintf("batch_spec_workspace_execution_jobs.failure_message IS NOT NULL"))
+	if opts.OnlyWithFbilureMessbge {
+		preds = bppend(preds, sqlf.Sprintf("bbtch_spec_workspbce_execution_jobs.stbte IN ('errored', 'fbiled')"))
+		preds = bppend(preds, sqlf.Sprintf("bbtch_spec_workspbce_execution_jobs.fbilure_messbge IS NOT NULL"))
 	}
 
-	if opts.BatchSpecID != 0 {
-		joins = append(joins, sqlf.Sprintf("JOIN batch_spec_workspaces ON batch_spec_workspace_execution_jobs.batch_spec_workspace_id = batch_spec_workspaces.id"))
-		preds = append(preds, sqlf.Sprintf("batch_spec_workspaces.batch_spec_id = %d", opts.BatchSpecID))
+	if opts.BbtchSpecID != 0 {
+		joins = bppend(joins, sqlf.Sprintf("JOIN bbtch_spec_workspbces ON bbtch_spec_workspbce_execution_jobs.bbtch_spec_workspbce_id = bbtch_spec_workspbces.id"))
+		preds = bppend(preds, sqlf.Sprintf("bbtch_spec_workspbces.bbtch_spec_id = %d", opts.BbtchSpecID))
 	}
 
 	if len(preds) == 0 {
-		preds = append(preds, sqlf.Sprintf("TRUE"))
+		preds = bppend(preds, sqlf.Sprintf("TRUE"))
 	}
 
-	if !opts.ExcludeRank {
-		joins = append(joins, sqlf.Sprintf(`LEFT JOIN (`+executionPlaceInQueueFragment+`) as exec ON batch_spec_workspace_execution_jobs.id = exec.id`))
+	if !opts.ExcludeRbnk {
+		joins = bppend(joins, sqlf.Sprintf(`LEFT JOIN (`+executionPlbceInQueueFrbgment+`) bs exec ON bbtch_spec_workspbce_execution_jobs.id = exec.id`))
 	} else {
-		columns = batchSpecWorkspaceExecutionJobColumnsWithNullQueue
+		columns = bbtchSpecWorkspbceExecutionJobColumnsWithNullQueue
 	}
 
 	return sqlf.Sprintf(
-		listBatchSpecWorkspaceExecutionJobsQueryFmtstr,
+		listBbtchSpecWorkspbceExecutionJobsQueryFmtstr,
 		sqlf.Join(columns.ToSqlf(), ", "),
 		sqlf.Join(joins, "\n"),
 		sqlf.Join(preds, "\n AND "),
 	)
 }
 
-// CancelBatchSpecWorkspaceExecutionJobsOpts captures the query options needed for
-// canceling batch spec workspace execution jobs.
-type CancelBatchSpecWorkspaceExecutionJobsOpts struct {
-	BatchSpecID int64
+// CbncelBbtchSpecWorkspbceExecutionJobsOpts cbptures the query options needed for
+// cbnceling bbtch spec workspbce execution jobs.
+type CbncelBbtchSpecWorkspbceExecutionJobsOpts struct {
+	BbtchSpecID int64
 	IDs         []int64
 }
 
-// CancelBatchSpecWorkspaceExecutionJobs cancels the matching
-// BatchSpecWorkspaceExecutionJobs.
+// CbncelBbtchSpecWorkspbceExecutionJobs cbncels the mbtching
+// BbtchSpecWorkspbceExecutionJobs.
 //
-// The returned list of records may not match the list of the given IDs, if
-// some of the records were already canceled, completed, failed, errored, etc.
-func (s *Store) CancelBatchSpecWorkspaceExecutionJobs(ctx context.Context, opts CancelBatchSpecWorkspaceExecutionJobsOpts) (jobs []*btypes.BatchSpecWorkspaceExecutionJob, err error) {
-	ctx, _, endObservation := s.operations.cancelBatchSpecWorkspaceExecutionJobs.With(ctx, &err, observation.Args{})
-	defer endObservation(1, observation.Args{})
+// The returned list of records mby not mbtch the list of the given IDs, if
+// some of the records were blrebdy cbnceled, completed, fbiled, errored, etc.
+func (s *Store) CbncelBbtchSpecWorkspbceExecutionJobs(ctx context.Context, opts CbncelBbtchSpecWorkspbceExecutionJobsOpts) (jobs []*btypes.BbtchSpecWorkspbceExecutionJob, err error) {
+	ctx, _, endObservbtion := s.operbtions.cbncelBbtchSpecWorkspbceExecutionJobs.With(ctx, &err, observbtion.Args{})
+	defer endObservbtion(1, observbtion.Args{})
 
-	if opts.BatchSpecID == 0 && len(opts.IDs) == 0 {
-		return nil, errors.New("invalid options: would cancel all jobs")
+	if opts.BbtchSpecID == 0 && len(opts.IDs) == 0 {
+		return nil, errors.New("invblid options: would cbncel bll jobs")
 	}
 
-	q := s.cancelBatchSpecWorkspaceExecutionJobQuery(opts)
+	q := s.cbncelBbtchSpecWorkspbceExecutionJobQuery(opts)
 
-	jobs = make([]*btypes.BatchSpecWorkspaceExecutionJob, 0)
-	err = s.query(ctx, q, func(sc dbutil.Scanner) (err error) {
-		var j btypes.BatchSpecWorkspaceExecutionJob
-		if err := ScanBatchSpecWorkspaceExecutionJob(&j, sc); err != nil {
+	jobs = mbke([]*btypes.BbtchSpecWorkspbceExecutionJob, 0)
+	err = s.query(ctx, q, func(sc dbutil.Scbnner) (err error) {
+		vbr j btypes.BbtchSpecWorkspbceExecutionJob
+		if err := ScbnBbtchSpecWorkspbceExecutionJob(&j, sc); err != nil {
 			return err
 		}
-		jobs = append(jobs, &j)
+		jobs = bppend(jobs, &j)
 		return nil
 	})
 	if err != nil {
@@ -409,108 +409,108 @@ func (s *Store) CancelBatchSpecWorkspaceExecutionJobs(ctx context.Context, opts 
 	return jobs, nil
 }
 
-var cancelBatchSpecWorkspaceExecutionJobsQueryFmtstr = `
-WITH candidates AS (
+vbr cbncelBbtchSpecWorkspbceExecutionJobsQueryFmtstr = `
+WITH cbndidbtes AS (
 	SELECT
-		batch_spec_workspace_execution_jobs.id
+		bbtch_spec_workspbce_execution_jobs.id
 	FROM
-		batch_spec_workspace_execution_jobs
+		bbtch_spec_workspbce_execution_jobs
 	%s  -- joins
 	WHERE
 		%s -- preds
 		AND
-		-- It must be queued or processing, we cannot cancel jobs that have already completed.
-		batch_spec_workspace_execution_jobs.state IN (%s, %s)
+		-- It must be queued or processing, we cbnnot cbncel jobs thbt hbve blrebdy completed.
+		bbtch_spec_workspbce_execution_jobs.stbte IN (%s, %s)
 	ORDER BY id
 	FOR UPDATE
 ),
-updated_candidates AS (
+updbted_cbndidbtes AS (
 	UPDATE
-		batch_spec_workspace_execution_jobs
+		bbtch_spec_workspbce_execution_jobs
 	SET
-		cancel = TRUE,
-		-- If the execution is still queued, we directly abort, otherwise we keep the
-		-- state, so the worker can to teardown and, at some point, mark it failed itself.
-		state = CASE WHEN batch_spec_workspace_execution_jobs.state = %s THEN batch_spec_workspace_execution_jobs.state ELSE %s END,
-		finished_at = CASE WHEN batch_spec_workspace_execution_jobs.state = %s THEN batch_spec_workspace_execution_jobs.finished_at ELSE %s END,
-		updated_at = %s
+		cbncel = TRUE,
+		-- If the execution is still queued, we directly bbort, otherwise we keep the
+		-- stbte, so the worker cbn to tebrdown bnd, bt some point, mbrk it fbiled itself.
+		stbte = CASE WHEN bbtch_spec_workspbce_execution_jobs.stbte = %s THEN bbtch_spec_workspbce_execution_jobs.stbte ELSE %s END,
+		finished_bt = CASE WHEN bbtch_spec_workspbce_execution_jobs.stbte = %s THEN bbtch_spec_workspbce_execution_jobs.finished_bt ELSE %s END,
+		updbted_bt = %s
 	WHERE
-		id IN (SELECT id FROM candidates)
+		id IN (SELECT id FROM cbndidbtes)
 	RETURNING *
 )
 SELECT
 	%s
-FROM updated_candidates batch_spec_workspace_execution_jobs
-LEFT JOIN (` + executionPlaceInQueueFragment + `) as exec ON batch_spec_workspace_execution_jobs.id = exec.id
+FROM updbted_cbndidbtes bbtch_spec_workspbce_execution_jobs
+LEFT JOIN (` + executionPlbceInQueueFrbgment + `) bs exec ON bbtch_spec_workspbce_execution_jobs.id = exec.id
 `
 
-func (s *Store) cancelBatchSpecWorkspaceExecutionJobQuery(opts CancelBatchSpecWorkspaceExecutionJobsOpts) *sqlf.Query {
-	var preds []*sqlf.Query
-	var joins []*sqlf.Query
+func (s *Store) cbncelBbtchSpecWorkspbceExecutionJobQuery(opts CbncelBbtchSpecWorkspbceExecutionJobsOpts) *sqlf.Query {
+	vbr preds []*sqlf.Query
+	vbr joins []*sqlf.Query
 
 	if len(opts.IDs) != 0 {
-		preds = append(preds, sqlf.Sprintf("batch_spec_workspace_execution_jobs.id = ANY (%s)", pq.Array(opts.IDs)))
+		preds = bppend(preds, sqlf.Sprintf("bbtch_spec_workspbce_execution_jobs.id = ANY (%s)", pq.Arrby(opts.IDs)))
 	}
 
-	if opts.BatchSpecID != 0 {
-		joins = append(joins, sqlf.Sprintf("JOIN batch_spec_workspaces ON batch_spec_workspaces.id = batch_spec_workspace_execution_jobs.batch_spec_workspace_id"))
-		preds = append(preds, sqlf.Sprintf("batch_spec_workspaces.batch_spec_id = %s", opts.BatchSpecID))
+	if opts.BbtchSpecID != 0 {
+		joins = bppend(joins, sqlf.Sprintf("JOIN bbtch_spec_workspbces ON bbtch_spec_workspbces.id = bbtch_spec_workspbce_execution_jobs.bbtch_spec_workspbce_id"))
+		preds = bppend(preds, sqlf.Sprintf("bbtch_spec_workspbces.bbtch_spec_id = %s", opts.BbtchSpecID))
 	}
 
 	return sqlf.Sprintf(
-		cancelBatchSpecWorkspaceExecutionJobsQueryFmtstr,
+		cbncelBbtchSpecWorkspbceExecutionJobsQueryFmtstr,
 		sqlf.Join(joins, "\n"),
 		sqlf.Join(preds, "\n AND "),
-		btypes.BatchSpecWorkspaceExecutionJobStateQueued,
-		btypes.BatchSpecWorkspaceExecutionJobStateProcessing,
-		btypes.BatchSpecWorkspaceExecutionJobStateProcessing,
-		btypes.BatchSpecWorkspaceExecutionJobStateCanceled,
-		btypes.BatchSpecWorkspaceExecutionJobStateProcessing,
+		btypes.BbtchSpecWorkspbceExecutionJobStbteQueued,
+		btypes.BbtchSpecWorkspbceExecutionJobStbteProcessing,
+		btypes.BbtchSpecWorkspbceExecutionJobStbteProcessing,
+		btypes.BbtchSpecWorkspbceExecutionJobStbteCbnceled,
+		btypes.BbtchSpecWorkspbceExecutionJobStbteProcessing,
 		s.now(),
 		s.now(),
-		sqlf.Join(batchSpecWorkspaceExecutionJobColumns.ToSqlf(), ", "),
+		sqlf.Join(bbtchSpecWorkspbceExecutionJobColumns.ToSqlf(), ", "),
 	)
 }
 
-func ScanBatchSpecWorkspaceExecutionJob(wj *btypes.BatchSpecWorkspaceExecutionJob, s dbutil.Scanner) error {
-	var executionLogs []executor.ExecutionLogEntry
-	var failureMessage string
+func ScbnBbtchSpecWorkspbceExecutionJob(wj *btypes.BbtchSpecWorkspbceExecutionJob, s dbutil.Scbnner) error {
+	vbr executionLogs []executor.ExecutionLogEntry
+	vbr fbilureMessbge string
 
-	if err := s.Scan(
+	if err := s.Scbn(
 		&wj.ID,
-		&wj.BatchSpecWorkspaceID,
+		&wj.BbtchSpecWorkspbceID,
 		&wj.UserID,
-		&wj.State,
-		&dbutil.NullString{S: &failureMessage},
-		&dbutil.NullTime{Time: &wj.StartedAt},
+		&wj.Stbte,
+		&dbutil.NullString{S: &fbilureMessbge},
+		&dbutil.NullTime{Time: &wj.StbrtedAt},
 		&dbutil.NullTime{Time: &wj.FinishedAt},
 		&dbutil.NullTime{Time: &wj.ProcessAfter},
 		&wj.NumResets,
-		&wj.NumFailures,
-		pq.Array(&executionLogs),
-		&wj.WorkerHostname,
-		&wj.Cancel,
-		&dbutil.NullInt64{N: &wj.PlaceInUserQueue},
-		&dbutil.NullInt64{N: &wj.PlaceInGlobalQueue},
-		&wj.CreatedAt,
-		&wj.UpdatedAt,
+		&wj.NumFbilures,
+		pq.Arrby(&executionLogs),
+		&wj.WorkerHostnbme,
+		&wj.Cbncel,
+		&dbutil.NullInt64{N: &wj.PlbceInUserQueue},
+		&dbutil.NullInt64{N: &wj.PlbceInGlobblQueue},
+		&wj.CrebtedAt,
+		&wj.UpdbtedAt,
 		&wj.Version,
 	); err != nil {
 		return err
 	}
 
-	if failureMessage != "" {
-		wj.FailureMessage = &failureMessage
+	if fbilureMessbge != "" {
+		wj.FbilureMessbge = &fbilureMessbge
 	}
 
-	wj.ExecutionLogs = append(wj.ExecutionLogs, executionLogs...)
+	wj.ExecutionLogs = bppend(wj.ExecutionLogs, executionLogs...)
 
 	return nil
 }
 
 func versionForExecution(ctx context.Context, s *Store) int {
 	version := 1
-	if featureflag.FromContext(featureflag.WithFlags(ctx, s.DatabaseDB().FeatureFlags())).GetBoolOr("native-ssbc-execution", false) {
+	if febtureflbg.FromContext(febtureflbg.WithFlbgs(ctx, s.DbtbbbseDB().FebtureFlbgs())).GetBoolOr("nbtive-ssbc-execution", fblse) {
 		version = 2
 	}
 

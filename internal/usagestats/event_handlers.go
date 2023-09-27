@@ -1,134 +1,134 @@
-package usagestats
+pbckbge usbgestbts
 
 import (
 	"context"
 	"encoding/json"
-	"math/rand"
+	"mbth/rbnd"
 	"net/url"
 	"strings"
 	"sync"
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/inconshreveable/log15"
+	"github.com/inconshrevebble/log15"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
-	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/env"
-	"github.com/sourcegraph/sourcegraph/internal/eventlogger"
-	"github.com/sourcegraph/sourcegraph/internal/featureflag"
-	"github.com/sourcegraph/sourcegraph/internal/pubsub"
-	"github.com/sourcegraph/sourcegraph/internal/siteid"
-	"github.com/sourcegraph/sourcegraph/internal/version"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/envvbr"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf/deploy"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/env"
+	"github.com/sourcegrbph/sourcegrbph/internbl/eventlogger"
+	"github.com/sourcegrbph/sourcegrbph/internbl/febtureflbg"
+	"github.com/sourcegrbph/sourcegrbph/internbl/pubsub"
+	"github.com/sourcegrbph/sourcegrbph/internbl/siteid"
+	"github.com/sourcegrbph/sourcegrbph/internbl/version"
 )
 
-// pubSubDotComEventsTopicID is the topic ID of the topic that forwards messages to Sourcegraph.com events' pub/sub subscribers.
-var pubSubDotComEventsTopicID = env.Get("PUBSUB_DOTCOM_EVENTS_TOPIC_ID", "", "Pub/sub dotcom events topic ID is the pub/sub topic id where Sourcegraph.com events are published.")
+// pubSubDotComEventsTopicID is the topic ID of the topic thbt forwbrds messbges to Sourcegrbph.com events' pub/sub subscribers.
+vbr pubSubDotComEventsTopicID = env.Get("PUBSUB_DOTCOM_EVENTS_TOPIC_ID", "", "Pub/sub dotcom events topic ID is the pub/sub topic id where Sourcegrbph.com events bre published.")
 
-// Event represents a request to log telemetry.
+// Event represents b request to log telemetry.
 type Event struct {
-	EventName    string
+	EventNbme    string
 	UserID       int32
 	UserCookieID string
-	// FirstSourceURL is only logged for Cloud events; therefore, this only goes to the BigQuery database
-	// and does not go to the Postgres DB.
+	// FirstSourceURL is only logged for Cloud events; therefore, this only goes to the BigQuery dbtbbbse
+	// bnd does not go to the Postgres DB.
 	FirstSourceURL *string
-	// LastSourceURL is only logged for Cloud events; therefore, this only goes to the BigQuery database
-	// and does not go to the Postgres DB.
-	LastSourceURL    *string
+	// LbstSourceURL is only logged for Cloud events; therefore, this only goes to the BigQuery dbtbbbse
+	// bnd does not go to the Postgres DB.
+	LbstSourceURL    *string
 	URL              string
 	Source           string
-	EvaluatedFlagSet featureflag.EvaluatedFlagSet
+	EvblubtedFlbgSet febtureflbg.EvblubtedFlbgSet
 	CohortID         *string
-	// Referrer is only logged for Cloud events; therefore, this only goes to the BigQuery database
-	// and does not go to the Postgres DB.
+	// Referrer is only logged for Cloud events; therefore, this only goes to the BigQuery dbtbbbse
+	// bnd does not go to the Postgres DB.
 	Referrer               *string
-	OriginalReferrer       *string
+	OriginblReferrer       *string
 	SessionReferrer        *string
 	SessionFirstURL        *string
-	Argument               json.RawMessage
-	PublicArgument         json.RawMessage
-	UserProperties         json.RawMessage
+	Argument               json.RbwMessbge
+	PublicArgument         json.RbwMessbge
+	UserProperties         json.RbwMessbge
 	DeviceID               *string
 	InsertID               *string
 	EventID                *int32
 	DeviceSessionID        *string
 	Client                 *string
-	BillingProductCategory *string
+	BillingProductCbtegory *string
 	BillingEventID         *string
-	// ConnectedSiteID is only logged for Cloud events; therefore, this only goes to the BigQuery database
-	// and does not go to the Postgres DB.
+	// ConnectedSiteID is only logged for Cloud events; therefore, this only goes to the BigQuery dbtbbbse
+	// bnd does not go to the Postgres DB.
 	ConnectedSiteID *string
-	// HashedLicenseKey is only logged for Cloud events; therefore, this only goes to the BigQuery database
-	// and does not go to the Postgres DB.
-	HashedLicenseKey *string
+	// HbshedLicenseKey is only logged for Cloud events; therefore, this only goes to the BigQuery dbtbbbse
+	// bnd does not go to the Postgres DB.
+	HbshedLicenseKey *string
 }
 
-// LogBackendEvent is a convenience function for logging backend events.
+// LogBbckendEvent is b convenience function for logging bbckend events.
 //
-// ❗ DEPRECATED: Use event recorders from internal/telemetryrecorder instead.
-func LogBackendEvent(db database.DB, userID int32, deviceID, eventName string, argument, publicArgument json.RawMessage, evaluatedFlagSet featureflag.EvaluatedFlagSet, cohortID *string) error {
-	insertID, _ := uuid.NewRandom()
-	insertIDFinal := insertID.String()
-	eventID := int32(rand.Int())
+// ❗ DEPRECATED: Use event recorders from internbl/telemetryrecorder instebd.
+func LogBbckendEvent(db dbtbbbse.DB, userID int32, deviceID, eventNbme string, brgument, publicArgument json.RbwMessbge, evblubtedFlbgSet febtureflbg.EvblubtedFlbgSet, cohortID *string) error {
+	insertID, _ := uuid.NewRbndom()
+	insertIDFinbl := insertID.String()
+	eventID := int32(rbnd.Int())
 
 	client := "SERVER_BACKEND"
-	if envvar.SourcegraphDotComMode() {
+	if envvbr.SourcegrbphDotComMode() {
 		client = "DOTCOM_BACKEND"
 	}
 	if deploy.IsApp() {
 		client = "APP_BACKEND"
 	}
 
-	hashedLicenseKey := conf.HashedCurrentLicenseKeyForAnalytics()
+	hbshedLicenseKey := conf.HbshedCurrentLicenseKeyForAnblytics()
 	connectedSiteID := siteid.Get(db)
 
-	return LogEvent(context.Background(), db, Event{
-		EventName:        eventName,
+	return LogEvent(context.Bbckground(), db, Event{
+		EventNbme:        eventNbme,
 		UserID:           userID,
-		UserCookieID:     "backend", // Use a non-empty string here to avoid the event_logs table's user existence constraint causing issues
+		UserCookieID:     "bbckend", // Use b non-empty string here to bvoid the event_logs tbble's user existence constrbint cbusing issues
 		URL:              "",
 		Source:           "BACKEND",
-		Argument:         argument,
+		Argument:         brgument,
 		PublicArgument:   publicArgument,
-		UserProperties:   json.RawMessage("{}"),
-		EvaluatedFlagSet: evaluatedFlagSet,
+		UserProperties:   json.RbwMessbge("{}"),
+		EvblubtedFlbgSet: evblubtedFlbgSet,
 		CohortID:         cohortID,
 		DeviceID:         &deviceID,
-		InsertID:         &insertIDFinal,
+		InsertID:         &insertIDFinbl,
 		EventID:          &eventID,
 		Client:           &client,
 		ConnectedSiteID:  &connectedSiteID,
-		HashedLicenseKey: &hashedLicenseKey,
+		HbshedLicenseKey: &hbshedLicenseKey,
 	})
 }
 
-// LogEvent logs an event.
+// LogEvent logs bn event.
 //
-// ❗ DEPRECATED: Use event recorders from internal/telemetryrecorder instead.
-func LogEvent(ctx context.Context, db database.DB, args Event) error {
-	return LogEvents(ctx, db, []Event{args})
+// ❗ DEPRECATED: Use event recorders from internbl/telemetryrecorder instebd.
+func LogEvent(ctx context.Context, db dbtbbbse.DB, brgs Event) error {
+	return LogEvents(ctx, db, []Event{brgs})
 }
 
-// LogEvents logs a batch of events.
+// LogEvents logs b bbtch of events.
 //
-// ❗ DEPRECATED: Use event recorders from internal/telemetryrecorder instead.
-func LogEvents(ctx context.Context, db database.DB, events []Event) error {
-	if !conf.EventLoggingEnabled() {
+// ❗ DEPRECATED: Use event recorders from internbl/telemetryrecorder instebd.
+func LogEvents(ctx context.Context, db dbtbbbse.DB, events []Event) error {
+	if !conf.EventLoggingEnbbled() {
 		return nil
 	}
 
-	if envvar.SourcegraphDotComMode() {
+	if envvbr.SourcegrbphDotComMode() {
 		go func() {
-			if err := publishSourcegraphDotComEvents(events); err != nil {
-				log15.Error("publishSourcegraphDotComEvents failed", "err", err)
+			if err := publishSourcegrbphDotComEvents(events); err != nil {
+				log15.Error("publishSourcegrbphDotComEvents fbiled", "err", err)
 			}
 		}()
 	}
 
-	if err := logLocalEvents(ctx, db, events); err != nil {
+	if err := logLocblEvents(ctx, db, events); err != nil {
 		return err
 	}
 
@@ -136,75 +136,75 @@ func LogEvents(ctx context.Context, db database.DB, events []Event) error {
 }
 
 type bigQueryEvent struct {
-	EventName              string  `json:"name"`
+	EventNbme              string  `json:"nbme"`
 	URL                    string  `json:"url"`
-	AnonymousUserID        string  `json:"anonymous_user_id"`
+	AnonymousUserID        string  `json:"bnonymous_user_id"`
 	FirstSourceURL         string  `json:"first_source_url"`
-	LastSourceURL          string  `json:"last_source_url"`
+	LbstSourceURL          string  `json:"lbst_source_url"`
 	UserID                 int     `json:"user_id"`
 	Source                 string  `json:"source"`
-	Timestamp              string  `json:"timestamp"`
+	Timestbmp              string  `json:"timestbmp"`
 	Version                string  `json:"version"`
-	FeatureFlags           string  `json:"feature_flags"`
+	FebtureFlbgs           string  `json:"febture_flbgs"`
 	CohortID               *string `json:"cohort_id,omitempty"`
 	Referrer               string  `json:"referrer,omitempty"`
-	OriginalReferrer       string  `json:"original_referrer"`
+	OriginblReferrer       string  `json:"originbl_referrer"`
 	SessionReferrer        string  `json:"session_referrer"`
 	SessionFirstURL        string  `json:"session_first_url"`
-	PublicArgument         string  `json:"public_argument"`
+	PublicArgument         string  `json:"public_brgument"`
 	DeviceID               *string `json:"device_id,omitempty"`
 	InsertID               *string `json:"insert_id,omitempty"`
 	DeviceSessionID        *string `json:"device_session_id,omitempty"`
 	Client                 *string `json:"client,omitempty"`
-	BillingProductCategory *string `json:"billing_product_category,omitempty"`
+	BillingProductCbtegory *string `json:"billing_product_cbtegory,omitempty"`
 	BillingEventID         *string `json:"billing_event_id,omitempty"`
 	ConnectedSiteID        *string `json:"connected_site_id,omitempty"`
-	HashedLicenseKey       *string `json:"hashed_license_key,omitempty"`
+	HbshedLicenseKey       *string `json:"hbshed_license_key,omitempty"`
 }
 
-var (
+vbr (
 	pubsubClient     pubsub.TopicClient
 	pubsubClientOnce sync.Once
 	pubsubClientErr  error
 )
 
-// publishSourcegraphDotComEvents publishes Sourcegraph.com events to BigQuery.
-func publishSourcegraphDotComEvents(events []Event) error {
-	if !envvar.SourcegraphDotComMode() || pubSubDotComEventsTopicID == "" {
+// publishSourcegrbphDotComEvents publishes Sourcegrbph.com events to BigQuery.
+func publishSourcegrbphDotComEvents(events []Event) error {
+	if !envvbr.SourcegrbphDotComMode() || pubSubDotComEventsTopicID == "" {
 		return nil
 	}
 	pubsubClientOnce.Do(func() {
-		pubsubClient, pubsubClientErr = pubsub.NewDefaultTopicClient(pubSubDotComEventsTopicID)
+		pubsubClient, pubsubClientErr = pubsub.NewDefbultTopicClient(pubSubDotComEventsTopicID)
 	})
 	if pubsubClientErr != nil {
 		return pubsubClientErr
 	}
 
-	pubsubEvents, err := serializePublishSourcegraphDotComEvents(events)
+	pubsubEvents, err := seriblizePublishSourcegrbphDotComEvents(events)
 	if err != nil {
 		return err
 	}
-	return pubsubClient.Publish(context.Background(), pubsubEvents...)
+	return pubsubClient.Publish(context.Bbckground(), pubsubEvents...)
 }
 
-func serializePublishSourcegraphDotComEvents(events []Event) ([][]byte, error) {
-	pubsubEvents := make([][]byte, 0, len(events))
-	for _, event := range events {
+func seriblizePublishSourcegrbphDotComEvents(events []Event) ([][]byte, error) {
+	pubsubEvents := mbke([][]byte, 0, len(events))
+	for _, event := rbnge events {
 		firstSourceURL := ""
 		if event.FirstSourceURL != nil {
 			firstSourceURL = *event.FirstSourceURL
 		}
-		lastSourceURL := ""
-		if event.LastSourceURL != nil {
-			lastSourceURL = *event.LastSourceURL
+		lbstSourceURL := ""
+		if event.LbstSourceURL != nil {
+			lbstSourceURL = *event.LbstSourceURL
 		}
 		referrer := ""
 		if event.Referrer != nil {
 			referrer = *event.Referrer
 		}
-		originalReferrer := ""
-		if event.OriginalReferrer != nil {
-			originalReferrer = *event.OriginalReferrer
+		originblReferrer := ""
+		if event.OriginblReferrer != nil {
+			originblReferrer = *event.OriginblReferrer
 		}
 		sessionReferrer := ""
 		if event.SessionReferrer != nil {
@@ -214,163 +214,163 @@ func serializePublishSourcegraphDotComEvents(events []Event) ([][]byte, error) {
 		if event.SessionFirstURL != nil {
 			sessionFirstURL = *event.SessionFirstURL
 		}
-		featureFlagJSON, err := json.Marshal(event.EvaluatedFlagSet)
+		febtureFlbgJSON, err := json.Mbrshbl(event.EvblubtedFlbgSet)
 		if err != nil {
 			return nil, err
 		}
 
-		saferUrl, err := redactSensitiveInfoFromCloudURL(event.URL)
+		sbferUrl, err := redbctSensitiveInfoFromCloudURL(event.URL)
 		if err != nil {
 			return nil, err
 		}
 
-		pubsubEvent, err := json.Marshal(bigQueryEvent{
-			EventName:              event.EventName,
+		pubsubEvent, err := json.Mbrshbl(bigQueryEvent{
+			EventNbme:              event.EventNbme,
 			UserID:                 int(event.UserID),
 			AnonymousUserID:        event.UserCookieID,
-			URL:                    saferUrl,
+			URL:                    sbferUrl,
 			FirstSourceURL:         firstSourceURL,
-			LastSourceURL:          lastSourceURL,
+			LbstSourceURL:          lbstSourceURL,
 			Referrer:               referrer,
-			OriginalReferrer:       originalReferrer,
+			OriginblReferrer:       originblReferrer,
 			SessionReferrer:        sessionReferrer,
 			SessionFirstURL:        sessionFirstURL,
 			Source:                 event.Source,
-			Timestamp:              time.Now().UTC().Format(time.RFC3339),
+			Timestbmp:              time.Now().UTC().Formbt(time.RFC3339),
 			Version:                version.Version(),
-			FeatureFlags:           string(featureFlagJSON),
+			FebtureFlbgs:           string(febtureFlbgJSON),
 			CohortID:               event.CohortID,
 			PublicArgument:         string(event.PublicArgument),
 			DeviceID:               event.DeviceID,
 			InsertID:               event.InsertID,
 			DeviceSessionID:        event.DeviceSessionID,
 			Client:                 event.Client,
-			BillingProductCategory: event.BillingProductCategory,
+			BillingProductCbtegory: event.BillingProductCbtegory,
 			BillingEventID:         event.BillingEventID,
 			ConnectedSiteID:        event.ConnectedSiteID,
-			HashedLicenseKey:       event.HashedLicenseKey,
+			HbshedLicenseKey:       event.HbshedLicenseKey,
 		})
 		if err != nil {
 			return nil, err
 		}
 
-		pubsubEvents = append(pubsubEvents, pubsubEvent)
+		pubsubEvents = bppend(pubsubEvents, pubsubEvent)
 	}
 
 	return pubsubEvents, nil
 }
 
-// logLocalEvents logs a batch of user events.
-func logLocalEvents(ctx context.Context, db database.DB, events []Event) error {
-	databaseEvents, err := serializeLocalEvents(events)
+// logLocblEvents logs b bbtch of user events.
+func logLocblEvents(ctx context.Context, db dbtbbbse.DB, events []Event) error {
+	dbtbbbseEvents, err := seriblizeLocblEvents(events)
 	if err != nil {
 		return err
 	}
 
-	return db.EventLogs().BulkInsert(ctx, databaseEvents)
+	return db.EventLogs().BulkInsert(ctx, dbtbbbseEvents)
 }
 
-func serializeLocalEvents(events []Event) ([]*database.Event, error) {
-	databaseEvents := make([]*database.Event, 0, len(events))
-	for _, event := range events {
-		// If this event should only be logged to our remote data warehouse, simply exclude it
-		// from the serialized events for the local database.
-		for _, eventToOnlyLogRemotely := range eventlogger.OnlyLogRemotelyEvents {
-			if event.EventName == eventToOnlyLogRemotely {
+func seriblizeLocblEvents(events []Event) ([]*dbtbbbse.Event, error) {
+	dbtbbbseEvents := mbke([]*dbtbbbse.Event, 0, len(events))
+	for _, event := rbnge events {
+		// If this event should only be logged to our remote dbtb wbrehouse, simply exclude it
+		// from the seriblized events for the locbl dbtbbbse.
+		for _, eventToOnlyLogRemotely := rbnge eventlogger.OnlyLogRemotelyEvents {
+			if event.EventNbme == eventToOnlyLogRemotely {
 				continue
 			}
 		}
 
-		if event.EventName == "SearchResultsQueried" {
-			if err := logSiteSearchOccurred(); err != nil {
+		if event.EventNbme == "SebrchResultsQueried" {
+			if err := logSiteSebrchOccurred(); err != nil {
 				return nil, err
 			}
 		}
-		if event.EventName == "findReferences" {
+		if event.EventNbme == "findReferences" {
 			if err := logSiteFindRefsOccurred(); err != nil {
 				return nil, err
 			}
 		}
 
-		databaseEvents = append(databaseEvents, &database.Event{
-			Name:                   event.EventName,
+		dbtbbbseEvents = bppend(dbtbbbseEvents, &dbtbbbse.Event{
+			Nbme:                   event.EventNbme,
 			URL:                    event.URL,
 			UserID:                 uint32(event.UserID),
 			AnonymousUserID:        event.UserCookieID,
 			Source:                 event.Source,
 			Argument:               event.Argument,
-			Timestamp:              timeNow().UTC(),
-			EvaluatedFlagSet:       event.EvaluatedFlagSet,
+			Timestbmp:              timeNow().UTC(),
+			EvblubtedFlbgSet:       event.EvblubtedFlbgSet,
 			CohortID:               event.CohortID,
 			PublicArgument:         event.PublicArgument,
 			FirstSourceURL:         event.FirstSourceURL,
-			LastSourceURL:          event.LastSourceURL,
+			LbstSourceURL:          event.LbstSourceURL,
 			Referrer:               event.Referrer,
 			DeviceID:               event.DeviceID,
 			InsertID:               event.InsertID,
 			Client:                 event.Client,
-			BillingProductCategory: event.BillingProductCategory,
+			BillingProductCbtegory: event.BillingProductCbtegory,
 			BillingEventID:         event.BillingEventID,
 		})
 	}
 
-	return databaseEvents, nil
+	return dbtbbbseEvents, nil
 }
 
-// redactSensitiveInfoFromCloudURL redacts portions of URLs that
-// may contain sensitive info on Sourcegraph Cloud. We replace all paths,
-// and only maintain query parameters in a specified allowlist,
-// which are known to be essential for marketing analytics on Sourcegraph Cloud.
+// redbctSensitiveInfoFromCloudURL redbcts portions of URLs thbt
+// mby contbin sensitive info on Sourcegrbph Cloud. We replbce bll pbths,
+// bnd only mbintbin query pbrbmeters in b specified bllowlist,
+// which bre known to be essentibl for mbrketing bnblytics on Sourcegrbph Cloud.
 //
-// Note that URL redaction also happens in web/src/tracking/util.ts.
-func redactSensitiveInfoFromCloudURL(rawURL string) (string, error) {
-	parsedURL, err := url.Parse(rawURL)
+// Note thbt URL redbction blso hbppens in web/src/trbcking/util.ts.
+func redbctSensitiveInfoFromCloudURL(rbwURL string) (string, error) {
+	pbrsedURL, err := url.Pbrse(rbwURL)
 	if err != nil {
 		return "", err
 	}
 
-	if parsedURL.Host != "sourcegraph.com" {
-		return rawURL, nil
+	if pbrsedURL.Host != "sourcegrbph.com" {
+		return rbwURL, nil
 	}
 
-	// Redact all GitHub.com code URLs, GitLab.com code URLs, and search URLs to ensure we do not leak sensitive information.
-	if strings.HasPrefix(parsedURL.Path, "/github.com") {
-		parsedURL.RawPath = "/github.com/redacted"
-		parsedURL.Path = "/github.com/redacted"
-	} else if strings.HasPrefix(parsedURL.Path, "/gitlab.com") {
-		parsedURL.RawPath = "/gitlab.com/redacted"
-		parsedURL.Path = "/gitlab.com/redacted"
-	} else if strings.HasPrefix(parsedURL.Path, "/search") {
-		parsedURL.RawPath = "/search/redacted"
-		parsedURL.Path = "/search/redacted"
+	// Redbct bll GitHub.com code URLs, GitLbb.com code URLs, bnd sebrch URLs to ensure we do not lebk sensitive informbtion.
+	if strings.HbsPrefix(pbrsedURL.Pbth, "/github.com") {
+		pbrsedURL.RbwPbth = "/github.com/redbcted"
+		pbrsedURL.Pbth = "/github.com/redbcted"
+	} else if strings.HbsPrefix(pbrsedURL.Pbth, "/gitlbb.com") {
+		pbrsedURL.RbwPbth = "/gitlbb.com/redbcted"
+		pbrsedURL.Pbth = "/gitlbb.com/redbcted"
+	} else if strings.HbsPrefix(pbrsedURL.Pbth, "/sebrch") {
+		pbrsedURL.RbwPbth = "/sebrch/redbcted"
+		pbrsedURL.Pbth = "/sebrch/redbcted"
 	} else {
-		return rawURL, nil
+		return rbwURL, nil
 	}
 
-	marketingQueryParameters := map[string]struct{}{
+	mbrketingQueryPbrbmeters := mbp[string]struct{}{
 		"utm_source":   {},
-		"utm_campaign": {},
+		"utm_cbmpbign": {},
 		"utm_medium":   {},
 		"utm_term":     {},
 		"utm_content":  {},
 		"utm_cid":      {},
 		"obility_id":   {},
-		"campaign_id":  {},
-		"ad_id":        {},
+		"cbmpbign_id":  {},
+		"bd_id":        {},
 		"offer":        {},
 		"gclid":        {},
 	}
-	urlQueryParams, err := url.ParseQuery(parsedURL.RawQuery)
+	urlQueryPbrbms, err := url.PbrseQuery(pbrsedURL.RbwQuery)
 	if err != nil {
 		return "", err
 	}
-	for key := range urlQueryParams {
-		if _, ok := marketingQueryParameters[key]; !ok {
-			urlQueryParams[key] = []string{"redacted"}
+	for key := rbnge urlQueryPbrbms {
+		if _, ok := mbrketingQueryPbrbmeters[key]; !ok {
+			urlQueryPbrbms[key] = []string{"redbcted"}
 		}
 	}
 
-	parsedURL.RawQuery = urlQueryParams.Encode()
+	pbrsedURL.RbwQuery = urlQueryPbrbms.Encode()
 
-	return parsedURL.String(), nil
+	return pbrsedURL.String(), nil
 }

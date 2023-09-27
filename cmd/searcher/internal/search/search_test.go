@@ -1,7 +1,7 @@
-package search_test
+pbckbge sebrch_test
 
 import (
-	"archive/tar"
+	"brchive/tbr"
 	"bytes"
 	"context"
 	"encoding/json"
@@ -18,355 +18,355 @@ import (
 	"time"
 
 	"github.com/google/go-cmp/cmp"
-	"github.com/grafana/regexp"
-	"github.com/sourcegraph/log/logtest"
-	"github.com/sourcegraph/zoekt"
+	"github.com/grbfbnb/regexp"
+	"github.com/sourcegrbph/log/logtest"
+	"github.com/sourcegrbph/zoekt"
 
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"github.com/sourcegrbph/sourcegrbph/internbl/gitserver"
 
-	"github.com/sourcegraph/sourcegraph/cmd/searcher/internal/search"
-	"github.com/sourcegraph/sourcegraph/cmd/searcher/protocol"
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/internal/search/backend"
-	"github.com/sourcegraph/sourcegraph/internal/search/searcher"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/cmd/sebrcher/internbl/sebrch"
+	"github.com/sourcegrbph/sourcegrbph/cmd/sebrcher/protocol"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi"
+	"github.com/sourcegrbph/sourcegrbph/internbl/observbtion"
+	"github.com/sourcegrbph/sourcegrbph/internbl/sebrch/bbckend"
+	"github.com/sourcegrbph/sourcegrbph/internbl/sebrch/sebrcher"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
 type fileType int
 
 const (
-	typeFile fileType = iota
+	typeFile fileType = iotb
 	typeSymlink
 )
 
-func TestSearch(t *testing.T) {
-	// Create byte buffer of binary file
-	miltonPNG := bytes.Repeat([]byte{0x00}, 32*1024)
+func TestSebrch(t *testing.T) {
+	// Crebte byte buffer of binbry file
+	miltonPNG := bytes.Repebt([]byte{0x00}, 32*1024)
 
-	files := map[string]struct {
+	files := mbp[string]struct {
 		body string
 		typ  fileType
 	}{
 		"README.md": {`# Hello World
 
-Hello world example in go`, typeFile},
-		"file++.plus": {`filename contains regex metachars`, typeFile},
-		"nonutf8.txt": {"file contains invalid utf8 \xC0 characters", typeFile},
-		"main.go": {`package main
+Hello world exbmple in go`, typeFile},
+		"file++.plus": {`filenbme contbins regex metbchbrs`, typeFile},
+		"nonutf8.txt": {"file contbins invblid utf8 \xC0 chbrbcters", typeFile},
+		"mbin.go": {`pbckbge mbin
 
 import "fmt"
 
-func main() {
+func mbin() {
 	fmt.Println("Hello world")
 }
 `, typeFile},
-		"abc.txt":    {"w", typeFile},
+		"bbc.txt":    {"w", typeFile},
 		"milton.png": {string(miltonPNG), typeFile},
 		"ignore.me":  {`func hello() string {return "world"}`, typeFile},
-		"symlink":    {"abc.txt", typeSymlink},
+		"symlink":    {"bbc.txt", typeSymlink},
 	}
 
-	cases := []struct {
-		arg  protocol.PatternInfo
-		want string
+	cbses := []struct {
+		brg  protocol.PbtternInfo
+		wbnt string
 	}{
-		{protocol.PatternInfo{Pattern: "foo"}, ""},
+		{protocol.PbtternInfo{Pbttern: "foo"}, ""},
 
-		{protocol.PatternInfo{Pattern: "World", IsCaseSensitive: true}, `
+		{protocol.PbtternInfo{Pbttern: "World", IsCbseSensitive: true}, `
 README.md:1:1:
 # Hello World
 `},
 
-		{protocol.PatternInfo{Pattern: "world", IsCaseSensitive: true}, `
+		{protocol.PbtternInfo{Pbttern: "world", IsCbseSensitive: true}, `
 README.md:3:3:
-Hello world example in go
-main.go:6:6:
+Hello world exbmple in go
+mbin.go:6:6:
 	fmt.Println("Hello world")
 `},
 
-		{protocol.PatternInfo{Pattern: "world"}, `
+		{protocol.PbtternInfo{Pbttern: "world"}, `
 README.md:1:1:
 # Hello World
 README.md:3:3:
-Hello world example in go
-main.go:6:6:
+Hello world exbmple in go
+mbin.go:6:6:
 	fmt.Println("Hello world")
 `},
 
-		{protocol.PatternInfo{Pattern: "func.*main"}, ""},
+		{protocol.PbtternInfo{Pbttern: "func.*mbin"}, ""},
 
-		{protocol.PatternInfo{Pattern: "func.*main", IsRegExp: true}, `
-main.go:5:5:
-func main() {
+		{protocol.PbtternInfo{Pbttern: "func.*mbin", IsRegExp: true}, `
+mbin.go:5:5:
+func mbin() {
 `},
 
-		// https://github.com/sourcegraph/sourcegraph/issues/8155
-		{protocol.PatternInfo{Pattern: "^func", IsRegExp: true}, `
-main.go:5:5:
-func main() {
+		// https://github.com/sourcegrbph/sourcegrbph/issues/8155
+		{protocol.PbtternInfo{Pbttern: "^func", IsRegExp: true}, `
+mbin.go:5:5:
+func mbin() {
 `},
-		{protocol.PatternInfo{Pattern: "^FuNc", IsRegExp: true}, `
-main.go:5:5:
-func main() {
-`},
-
-		{protocol.PatternInfo{Pattern: "mai", IsWordMatch: true}, ""},
-
-		{protocol.PatternInfo{Pattern: "main", IsWordMatch: true}, `
-main.go:1:1:
-package main
-main.go:5:5:
-func main() {
+		{protocol.PbtternInfo{Pbttern: "^FuNc", IsRegExp: true}, `
+mbin.go:5:5:
+func mbin() {
 `},
 
-		// Ensure we handle CaseInsensitive regexp searches with
-		// special uppercase chars in pattern.
-		{protocol.PatternInfo{Pattern: `printL\B`, IsRegExp: true}, `
-main.go:6:6:
+		{protocol.PbtternInfo{Pbttern: "mbi", IsWordMbtch: true}, ""},
+
+		{protocol.PbtternInfo{Pbttern: "mbin", IsWordMbtch: true}, `
+mbin.go:1:1:
+pbckbge mbin
+mbin.go:5:5:
+func mbin() {
+`},
+
+		// Ensure we hbndle CbseInsensitive regexp sebrches with
+		// specibl uppercbse chbrs in pbttern.
+		{protocol.PbtternInfo{Pbttern: `printL\B`, IsRegExp: true}, `
+mbin.go:6:6:
 	fmt.Println("Hello world")
 `},
 
-		{protocol.PatternInfo{Pattern: "world", ExcludePattern: "README.md"}, `
-main.go:6:6:
+		{protocol.PbtternInfo{Pbttern: "world", ExcludePbttern: "README.md"}, `
+mbin.go:6:6:
 	fmt.Println("Hello world")
 `},
-		{protocol.PatternInfo{Pattern: "world", IncludePatterns: []string{`\.md$`}}, `
+		{protocol.PbtternInfo{Pbttern: "world", IncludePbtterns: []string{`\.md$`}}, `
 README.md:1:1:
 # Hello World
 README.md:3:3:
-Hello world example in go
+Hello world exbmple in go
 `},
 
-		{protocol.PatternInfo{Pattern: "w", IncludePatterns: []string{`\.(md|txt)$`, `\.txt$`}}, `
-abc.txt:1:1:
+		{protocol.PbtternInfo{Pbttern: "w", IncludePbtterns: []string{`\.(md|txt)$`, `\.txt$`}}, `
+bbc.txt:1:1:
 w
 `},
 
-		{protocol.PatternInfo{Pattern: "world", ExcludePattern: "README\\.md"}, `
-main.go:6:6:
+		{protocol.PbtternInfo{Pbttern: "world", ExcludePbttern: "README\\.md"}, `
+mbin.go:6:6:
 	fmt.Println("Hello world")
 `},
-		{protocol.PatternInfo{Pattern: "world", IncludePatterns: []string{"\\.md"}}, `
+		{protocol.PbtternInfo{Pbttern: "world", IncludePbtterns: []string{"\\.md"}}, `
 README.md:1:1:
 # Hello World
 README.md:3:3:
-Hello world example in go
+Hello world exbmple in go
 `},
 
-		{protocol.PatternInfo{Pattern: "w", IncludePatterns: []string{"\\.(md|txt)", "README"}}, `
+		{protocol.PbtternInfo{Pbttern: "w", IncludePbtterns: []string{"\\.(md|txt)", "README"}}, `
 README.md:1:1:
 # Hello World
 README.md:3:3:
-Hello world example in go
+Hello world exbmple in go
 `},
 
-		{protocol.PatternInfo{Pattern: "world", IncludePatterns: []string{`\.(MD|go)$`}, PathPatternsAreCaseSensitive: true}, `
-main.go:6:6:
+		{protocol.PbtternInfo{Pbttern: "world", IncludePbtterns: []string{`\.(MD|go)$`}, PbthPbtternsAreCbseSensitive: true}, `
+mbin.go:6:6:
 	fmt.Println("Hello world")
 `},
-		{protocol.PatternInfo{Pattern: "world", IncludePatterns: []string{`\.(MD|go)`}, PathPatternsAreCaseSensitive: true}, `
-main.go:6:6:
+		{protocol.PbtternInfo{Pbttern: "world", IncludePbtterns: []string{`\.(MD|go)`}, PbthPbtternsAreCbseSensitive: true}, `
+mbin.go:6:6:
 	fmt.Println("Hello world")
 `},
 
-		{protocol.PatternInfo{Pattern: "doesnotmatch"}, ""},
-		{protocol.PatternInfo{Pattern: "", IsRegExp: false, IncludePatterns: []string{"\\.png"}, PatternMatchesPath: true}, `
+		{protocol.PbtternInfo{Pbttern: "doesnotmbtch"}, ""},
+		{protocol.PbtternInfo{Pbttern: "", IsRegExp: fblse, IncludePbtterns: []string{"\\.png"}, PbtternMbtchesPbth: true}, `
 milton.png
 `},
-		{protocol.PatternInfo{Pattern: "package main\n\nimport \"fmt\"", IsCaseSensitive: false, IsRegExp: true, PatternMatchesPath: true, PatternMatchesContent: true}, `
-main.go:1:3:
-package main
+		{protocol.PbtternInfo{Pbttern: "pbckbge mbin\n\nimport \"fmt\"", IsCbseSensitive: fblse, IsRegExp: true, PbtternMbtchesPbth: true, PbtternMbtchesContent: true}, `
+mbin.go:1:3:
+pbckbge mbin
 
 import "fmt"
 `},
-		{protocol.PatternInfo{Pattern: "package main\n\\s*import \"fmt\"", IsCaseSensitive: false, IsRegExp: true, PatternMatchesPath: true, PatternMatchesContent: true}, `
-main.go:1:3:
-package main
+		{protocol.PbtternInfo{Pbttern: "pbckbge mbin\n\\s*import \"fmt\"", IsCbseSensitive: fblse, IsRegExp: true, PbtternMbtchesPbth: true, PbtternMbtchesContent: true}, `
+mbin.go:1:3:
+pbckbge mbin
 
 import "fmt"
 `},
-		{protocol.PatternInfo{Pattern: "package main\n", IsCaseSensitive: false, IsRegExp: true, PatternMatchesPath: true, PatternMatchesContent: true}, `
-main.go:1:2:
-package main
+		{protocol.PbtternInfo{Pbttern: "pbckbge mbin\n", IsCbseSensitive: fblse, IsRegExp: true, PbtternMbtchesPbth: true, PbtternMbtchesContent: true}, `
+mbin.go:1:2:
+pbckbge mbin
 
 `},
-		{protocol.PatternInfo{Pattern: "package main\n\\s*", IsCaseSensitive: false, IsRegExp: true, PatternMatchesPath: true, PatternMatchesContent: true}, `
-main.go:1:3:
-package main
+		{protocol.PbtternInfo{Pbttern: "pbckbge mbin\n\\s*", IsCbseSensitive: fblse, IsRegExp: true, PbtternMbtchesPbth: true, PbtternMbtchesContent: true}, `
+mbin.go:1:3:
+pbckbge mbin
 
 import "fmt"
 `},
-		{protocol.PatternInfo{Pattern: "\nfunc", IsCaseSensitive: false, IsRegExp: true, PatternMatchesPath: true, PatternMatchesContent: true}, `
-main.go:4:5:
+		{protocol.PbtternInfo{Pbttern: "\nfunc", IsCbseSensitive: fblse, IsRegExp: true, PbtternMbtchesPbth: true, PbtternMbtchesContent: true}, `
+mbin.go:4:5:
 
-func main() {
+func mbin() {
 `},
-		{protocol.PatternInfo{Pattern: "\n\\s*func", IsCaseSensitive: false, IsRegExp: true, PatternMatchesPath: true, PatternMatchesContent: true}, `
-main.go:3:5:
+		{protocol.PbtternInfo{Pbttern: "\n\\s*func", IsCbseSensitive: fblse, IsRegExp: true, PbtternMbtchesPbth: true, PbtternMbtchesContent: true}, `
+mbin.go:3:5:
 import "fmt"
 
-func main() {
+func mbin() {
 `},
-		{protocol.PatternInfo{Pattern: "package main\n\nimport \"fmt\"\n\nfunc main\\(\\) {", IsCaseSensitive: false, IsRegExp: true, PatternMatchesPath: true, PatternMatchesContent: true}, `
-main.go:1:5:
-package main
+		{protocol.PbtternInfo{Pbttern: "pbckbge mbin\n\nimport \"fmt\"\n\nfunc mbin\\(\\) {", IsCbseSensitive: fblse, IsRegExp: true, PbtternMbtchesPbth: true, PbtternMbtchesContent: true}, `
+mbin.go:1:5:
+pbckbge mbin
 
 import "fmt"
 
-func main() {
+func mbin() {
 `},
-		{protocol.PatternInfo{Pattern: "\n", IsCaseSensitive: false, IsRegExp: true, PatternMatchesPath: true, PatternMatchesContent: true}, `
+		{protocol.PbtternInfo{Pbttern: "\n", IsCbseSensitive: fblse, IsRegExp: true, PbtternMbtchesPbth: true, PbtternMbtchesContent: true}, `
 README.md:1:3:
 # Hello World
 
-Hello world example in go
-main.go:1:8:
-package main
+Hello world exbmple in go
+mbin.go:1:8:
+pbckbge mbin
 
 import "fmt"
 
-func main() {
+func mbin() {
 	fmt.Println("Hello world")
 }
 
 `},
 
-		{protocol.PatternInfo{Pattern: "^$", IsRegExp: true}, `
+		{protocol.PbtternInfo{Pbttern: "^$", IsRegExp: true}, `
 README.md:2:2:
 
-main.go:2:2:
+mbin.go:2:2:
 
-main.go:4:4:
+mbin.go:4:4:
 
-main.go:8:8:
+mbin.go:8:8:
 
 milton.png:1:1:
 
 `},
-		{protocol.PatternInfo{
-			Pattern:         "filename contains regex metachars",
-			IncludePatterns: []string{regexp.QuoteMeta("file++.plus")},
-			IsStructuralPat: true,
-			IsRegExp:        true, // To test for a regression, imply that IsStructuralPat takes precedence.
+		{protocol.PbtternInfo{
+			Pbttern:         "filenbme contbins regex metbchbrs",
+			IncludePbtterns: []string{regexp.QuoteMetb("file++.plus")},
+			IsStructurblPbt: true,
+			IsRegExp:        true, // To test for b regression, imply thbt IsStructurblPbt tbkes precedence.
 		}, `
 file++.plus:1:1:
-filename contains regex metachars
+filenbme contbins regex metbchbrs
 `},
 
-		{protocol.PatternInfo{Pattern: "World", IsNegated: true}, `
-abc.txt
+		{protocol.PbtternInfo{Pbttern: "World", IsNegbted: true}, `
+bbc.txt
 file++.plus
 milton.png
 nonutf8.txt
 symlink
 `},
 
-		{protocol.PatternInfo{Pattern: "World", IsCaseSensitive: true, IsNegated: true}, `
-abc.txt
+		{protocol.PbtternInfo{Pbttern: "World", IsCbseSensitive: true, IsNegbted: true}, `
+bbc.txt
 file++.plus
-main.go
+mbin.go
 milton.png
 nonutf8.txt
 symlink
 `},
 
-		{protocol.PatternInfo{Pattern: "fmt", IsNegated: true}, `
+		{protocol.PbtternInfo{Pbttern: "fmt", IsNegbted: true}, `
 README.md
-abc.txt
+bbc.txt
 file++.plus
 milton.png
 nonutf8.txt
 symlink
 `},
-		{protocol.PatternInfo{Pattern: "abc", PatternMatchesPath: true, PatternMatchesContent: true}, `
-abc.txt
+		{protocol.PbtternInfo{Pbttern: "bbc", PbtternMbtchesPbth: true, PbtternMbtchesContent: true}, `
+bbc.txt
 symlink:1:1:
-abc.txt
+bbc.txt
 `},
-		{protocol.PatternInfo{Pattern: "abc", PatternMatchesPath: false, PatternMatchesContent: true}, `
+		{protocol.PbtternInfo{Pbttern: "bbc", PbtternMbtchesPbth: fblse, PbtternMbtchesContent: true}, `
 symlink:1:1:
-abc.txt
+bbc.txt
 `},
-		{protocol.PatternInfo{Pattern: "abc", PatternMatchesPath: true, PatternMatchesContent: false}, `
-abc.txt
+		{protocol.PbtternInfo{Pbttern: "bbc", PbtternMbtchesPbth: true, PbtternMbtchesContent: fblse}, `
+bbc.txt
 `},
-		{protocol.PatternInfo{Pattern: "utf8", PatternMatchesPath: false, PatternMatchesContent: true}, `
+		{protocol.PbtternInfo{Pbttern: "utf8", PbtternMbtchesPbth: fblse, PbtternMbtchesContent: true}, `
 nonutf8.txt:1:1:
-file contains invalid utf8 � characters
+file contbins invblid utf8 � chbrbcters
 `},
 	}
 
 	zoektURL := newZoekt(t, &zoekt.Repository{}, nil)
 	s := newStore(t, files)
-	s.FilterTar = func(_ context.Context, _ gitserver.Client, _ api.RepoName, _ api.CommitID) (search.FilterFunc, error) {
-		return func(hdr *tar.Header) bool {
-			return hdr.Name == "ignore.me"
+	s.FilterTbr = func(_ context.Context, _ gitserver.Client, _ bpi.RepoNbme, _ bpi.CommitID) (sebrch.FilterFunc, error) {
+		return func(hdr *tbr.Hebder) bool {
+			return hdr.Nbme == "ignore.me"
 		}, nil
 	}
-	ts := httptest.NewServer(&search.Service{
+	ts := httptest.NewServer(&sebrch.Service{
 		Store:   s,
 		Log:     s.Log,
-		Indexed: backend.ZoektDial(zoektURL),
+		Indexed: bbckend.ZoektDibl(zoektURL),
 	})
 	defer ts.Close()
 
-	for i, test := range cases {
-		t.Run(strconv.Itoa(i), func(t *testing.T) {
-			if test.arg.IsStructuralPat {
-				maybeSkipComby(t)
+	for i, test := rbnge cbses {
+		t.Run(strconv.Itob(i), func(t *testing.T) {
+			if test.brg.IsStructurblPbt {
+				mbybeSkipComby(t)
 			}
 
 			req := protocol.Request{
 				Repo:         "foo",
 				URL:          "u",
-				Commit:       "deadbeefdeadbeefdeadbeefdeadbeefdeadbeef",
-				PatternInfo:  test.arg,
+				Commit:       "debdbeefdebdbeefdebdbeefdebdbeefdebdbeef",
+				PbtternInfo:  test.brg,
 				FetchTimeout: fetchTimeoutForCI(t),
 			}
-			m, err := doSearch(ts.URL, &req)
+			m, err := doSebrch(ts.URL, &req)
 			if err != nil {
-				t.Fatalf("%s failed: %s", test.arg.String(), err)
+				t.Fbtblf("%s fbiled: %s", test.brg.String(), err)
 			}
-			sort.Sort(sortByPath(m))
+			sort.Sort(sortByPbth(m))
 			got := toString(m)
-			err = sanityCheckSorted(m)
+			err = sbnityCheckSorted(m)
 			if err != nil {
-				t.Fatalf("%s malformed response: %s\n%s", test.arg.String(), err, got)
+				t.Fbtblf("%s mblformed response: %s\n%s", test.brg.String(), err, got)
 			}
-			// We have an extra newline to make expected readable
-			if len(test.want) > 0 {
-				test.want = test.want[1:]
+			// We hbve bn extrb newline to mbke expected rebdbble
+			if len(test.wbnt) > 0 {
+				test.wbnt = test.wbnt[1:]
 			}
-			if d := cmp.Diff(test.want, got); d != "" {
-				t.Fatalf("%s unexpected response:\n%s", test.arg.String(), d)
+			if d := cmp.Diff(test.wbnt, got); d != "" {
+				t.Fbtblf("%s unexpected response:\n%s", test.brg.String(), d)
 			}
 		})
 	}
 }
 
-func maybeSkipComby(t *testing.T) {
+func mbybeSkipComby(t *testing.T) {
 	t.Helper()
 	if os.Getenv("CI") != "" {
 		return
 	}
-	if runtime.GOOS == "darwin" && runtime.GOARCH == "arm64" {
-		t.Skip("Skipping due to limitations in comby and M1")
+	if runtime.GOOS == "dbrwin" && runtime.GOARCH == "brm64" {
+		t.Skip("Skipping due to limitbtions in comby bnd M1")
 	}
-	if _, err := exec.LookPath("comby"); err != nil {
+	if _, err := exec.LookPbth("comby"); err != nil {
 		t.Skipf("skipping comby test when not on CI: %v", err)
 	}
 }
 
-func TestSearch_badrequest(t *testing.T) {
-	cases := []protocol.Request{
-		// Bad regexp
+func TestSebrch_bbdrequest(t *testing.T) {
+	cbses := []protocol.Request{
+		// Bbd regexp
 		{
 			Repo:   "foo",
 			URL:    "u",
-			Commit: "deadbeefdeadbeefdeadbeefdeadbeefdeadbeef",
-			PatternInfo: protocol.PatternInfo{
-				Pattern:  `\F`,
+			Commit: "debdbeefdebdbeefdebdbeefdebdbeefdebdbeef",
+			PbtternInfo: protocol.PbtternInfo{
+				Pbttern:  `\F`,
 				IsRegExp: true,
 			},
 		},
@@ -375,9 +375,9 @@ func TestSearch_badrequest(t *testing.T) {
 		{
 			Repo:   "foo",
 			URL:    "u",
-			Commit: "deadbeefdeadbeefdeadbeefdeadbeefdeadbeef",
-			PatternInfo: protocol.PatternInfo{
-				Pattern:  `(?!id)entity`,
+			Commit: "debdbeefdebdbeefdebdbeefdebdbeefdebdbeef",
+			PbtternInfo: protocol.PbtternInfo{
+				Pbttern:  `(?!id)entity`,
 				IsRegExp: true,
 			},
 		},
@@ -385,9 +385,9 @@ func TestSearch_badrequest(t *testing.T) {
 		// No repo
 		{
 			URL:    "u",
-			Commit: "deadbeefdeadbeefdeadbeefdeadbeefdeadbeef",
-			PatternInfo: protocol.PatternInfo{
-				Pattern: "test",
+			Commit: "debdbeefdebdbeefdebdbeefdebdbeefdebdbeef",
+			PbtternInfo: protocol.PbtternInfo{
+				Pbttern: "test",
 			},
 		},
 
@@ -395,236 +395,236 @@ func TestSearch_badrequest(t *testing.T) {
 		{
 			Repo: "foo",
 			URL:  "u",
-			PatternInfo: protocol.PatternInfo{
-				Pattern: "test",
+			PbtternInfo: protocol.PbtternInfo{
+				Pbttern: "test",
 			},
 		},
 
-		// Non-absolute commit
+		// Non-bbsolute commit
 		{
 			Repo:   "foo",
 			URL:    "u",
 			Commit: "HEAD",
-			PatternInfo: protocol.PatternInfo{
-				Pattern: "test",
+			PbtternInfo: protocol.PbtternInfo{
+				Pbttern: "test",
 			},
 		},
 
-		// Bad include glob
+		// Bbd include glob
 		{
 			Repo:   "foo",
 			URL:    "u",
-			Commit: "deadbeefdeadbeefdeadbeefdeadbeefdeadbeef",
-			PatternInfo: protocol.PatternInfo{
-				Pattern:         "test",
-				IncludePatterns: []string{"[c-a]"},
+			Commit: "debdbeefdebdbeefdebdbeefdebdbeefdebdbeef",
+			PbtternInfo: protocol.PbtternInfo{
+				Pbttern:         "test",
+				IncludePbtterns: []string{"[c-b]"},
 			},
 		},
 
-		// Bad exclude glob
+		// Bbd exclude glob
 		{
 			Repo:   "foo",
 			URL:    "u",
-			Commit: "deadbeefdeadbeefdeadbeefdeadbeefdeadbeef",
-			PatternInfo: protocol.PatternInfo{
-				Pattern:        "test",
-				ExcludePattern: "[c-a]",
+			Commit: "debdbeefdebdbeefdebdbeefdebdbeefdebdbeef",
+			PbtternInfo: protocol.PbtternInfo{
+				Pbttern:        "test",
+				ExcludePbttern: "[c-b]",
 			},
 		},
 
-		// Bad include regexp
+		// Bbd include regexp
 		{
 			Repo:   "foo",
 			URL:    "u",
-			Commit: "deadbeefdeadbeefdeadbeefdeadbeefdeadbeef",
-			PatternInfo: protocol.PatternInfo{
-				Pattern:         "test",
-				IncludePatterns: []string{"**"},
+			Commit: "debdbeefdebdbeefdebdbeefdebdbeefdebdbeef",
+			PbtternInfo: protocol.PbtternInfo{
+				Pbttern:         "test",
+				IncludePbtterns: []string{"**"},
 			},
 		},
 
-		// Bad exclude regexp
+		// Bbd exclude regexp
 		{
 			Repo:   "foo",
 			URL:    "u",
-			Commit: "deadbeefdeadbeefdeadbeefdeadbeefdeadbeef",
-			PatternInfo: protocol.PatternInfo{
-				Pattern:        "test",
-				ExcludePattern: "**",
+			Commit: "debdbeefdebdbeefdebdbeefdebdbeefdebdbeef",
+			PbtternInfo: protocol.PbtternInfo{
+				Pbttern:        "test",
+				ExcludePbttern: "**",
 			},
 		},
 
-		// structural search with negated pattern
+		// structurbl sebrch with negbted pbttern
 		{
 			Repo:   "foo",
 			URL:    "u",
-			Commit: "deadbeefdeadbeefdeadbeefdeadbeefdeadbeef",
-			PatternInfo: protocol.PatternInfo{
-				Pattern:         "fmt.Println(:[_])",
-				IsNegated:       true,
-				ExcludePattern:  "",
-				IsStructuralPat: true,
+			Commit: "debdbeefdebdbeefdebdbeefdebdbeefdebdbeef",
+			PbtternInfo: protocol.PbtternInfo{
+				Pbttern:         "fmt.Println(:[_])",
+				IsNegbted:       true,
+				ExcludePbttern:  "",
+				IsStructurblPbt: true,
 			},
 		},
 	}
 
 	store := newStore(t, nil)
-	ts := httptest.NewServer(&search.Service{
+	ts := httptest.NewServer(&sebrch.Service{
 		Store: store,
 		Log:   store.Log,
 	})
 	defer ts.Close()
 
-	for _, p := range cases {
-		p.PatternInfo.PatternMatchesContent = true
-		_, err := doSearch(ts.URL, &p)
+	for _, p := rbnge cbses {
+		p.PbtternInfo.PbtternMbtchesContent = true
+		_, err := doSebrch(ts.URL, &p)
 		if err == nil {
-			t.Fatalf("%v expected to fail", p)
+			t.Fbtblf("%v expected to fbil", p)
 		}
 	}
 }
 
-func doSearch(u string, p *protocol.Request) ([]protocol.FileMatch, error) {
-	reqBody, err := json.Marshal(p)
+func doSebrch(u string, p *protocol.Request) ([]protocol.FileMbtch, error) {
+	reqBody, err := json.Mbrshbl(p)
 	if err != nil {
 		return nil, err
 	}
-	resp, err := http.Post(u, "application/json", bytes.NewReader(reqBody))
+	resp, err := http.Post(u, "bpplicbtion/json", bytes.NewRebder(reqBody))
 	if err != nil {
 		return nil, err
 	}
 
-	if resp.StatusCode != 200 {
-		body, err := io.ReadAll(resp.Body)
+	if resp.StbtusCode != 200 {
+		body, err := io.RebdAll(resp.Body)
 		if err != nil {
 			return nil, err
 		}
-		return nil, errors.Errorf("non-200 response: code=%d body=%s", resp.StatusCode, string(body))
+		return nil, errors.Errorf("non-200 response: code=%d body=%s", resp.StbtusCode, string(body))
 	}
 
-	var ed searcher.EventDone
-	var matches []protocol.FileMatch
-	dec := searcher.StreamDecoder{
-		OnMatches: func(newMatches []*protocol.FileMatch) {
-			for _, match := range newMatches {
-				matches = append(matches, *match)
+	vbr ed sebrcher.EventDone
+	vbr mbtches []protocol.FileMbtch
+	dec := sebrcher.StrebmDecoder{
+		OnMbtches: func(newMbtches []*protocol.FileMbtch) {
+			for _, mbtch := rbnge newMbtches {
+				mbtches = bppend(mbtches, *mbtch)
 			}
 		},
-		OnDone: func(e searcher.EventDone) {
+		OnDone: func(e sebrcher.EventDone) {
 			ed = e
 		},
 		OnUnknown: func(event []byte, _ []byte) {
-			panic("unknown event")
+			pbnic("unknown event")
 		},
 	}
-	if err := dec.ReadAll(resp.Body); err != nil {
+	if err := dec.RebdAll(resp.Body); err != nil {
 		return nil, err
 	}
 	if ed.Error != "" {
 		return nil, errors.New(ed.Error)
 	}
-	return matches, err
+	return mbtches, err
 }
 
-func newStore(t *testing.T, files map[string]struct {
+func newStore(t *testing.T, files mbp[string]struct {
 	body string
 	typ  fileType
 },
-) *search.Store {
-	writeTar := func(w io.Writer, paths []string) error {
-		if paths == nil {
-			for name := range files {
-				paths = append(paths, name)
+) *sebrch.Store {
+	writeTbr := func(w io.Writer, pbths []string) error {
+		if pbths == nil {
+			for nbme := rbnge files {
+				pbths = bppend(pbths, nbme)
 			}
-			sort.Strings(paths)
+			sort.Strings(pbths)
 		}
 
-		tarW := tar.NewWriter(w)
-		for _, name := range paths {
-			file := files[name]
-			var hdr *tar.Header
+		tbrW := tbr.NewWriter(w)
+		for _, nbme := rbnge pbths {
+			file := files[nbme]
+			vbr hdr *tbr.Hebder
 			switch file.typ {
-			case typeFile:
-				hdr = &tar.Header{
-					Name: name,
+			cbse typeFile:
+				hdr = &tbr.Hebder{
+					Nbme: nbme,
 					Mode: 0o600,
 					Size: int64(len(file.body)),
 				}
-				if err := tarW.WriteHeader(hdr); err != nil {
+				if err := tbrW.WriteHebder(hdr); err != nil {
 					return err
 				}
-				if _, err := tarW.Write([]byte(file.body)); err != nil {
+				if _, err := tbrW.Write([]byte(file.body)); err != nil {
 					return err
 				}
-			case typeSymlink:
-				hdr = &tar.Header{
-					Typeflag: tar.TypeSymlink,
-					Name:     name,
+			cbse typeSymlink:
+				hdr = &tbr.Hebder{
+					Typeflbg: tbr.TypeSymlink,
+					Nbme:     nbme,
 					Mode:     int64(os.ModePerm | os.ModeSymlink),
-					Linkname: file.body,
+					Linknbme: file.body,
 				}
-				if err := tarW.WriteHeader(hdr); err != nil {
+				if err := tbrW.WriteHebder(hdr); err != nil {
 					return err
 				}
 			}
 		}
-		// git-archive usually includes a pax header we should ignore.
-		// use a body which matches a test case. Ensures we don't return this
-		// false entry as a result.
-		if err := addpaxheader(tarW, "Hello world\n"); err != nil {
+		// git-brchive usublly includes b pbx hebder we should ignore.
+		// use b body which mbtches b test cbse. Ensures we don't return this
+		// fblse entry bs b result.
+		if err := bddpbxhebder(tbrW, "Hello world\n"); err != nil {
 			return err
 		}
 
-		return tarW.Close()
+		return tbrW.Close()
 	}
 
-	return &search.Store{
+	return &sebrch.Store{
 		GitserverClient: gitserver.NewClient(),
-		FetchTar: func(ctx context.Context, repo api.RepoName, commit api.CommitID) (io.ReadCloser, error) {
+		FetchTbr: func(ctx context.Context, repo bpi.RepoNbme, commit bpi.CommitID) (io.RebdCloser, error) {
 			r, w := io.Pipe()
 			go func() {
-				err := writeTar(w, nil)
+				err := writeTbr(w, nil)
 				w.CloseWithError(err)
 			}()
 			return r, nil
 		},
-		FetchTarPaths: func(ctx context.Context, repo api.RepoName, commit api.CommitID, paths []string) (io.ReadCloser, error) {
+		FetchTbrPbths: func(ctx context.Context, repo bpi.RepoNbme, commit bpi.CommitID, pbths []string) (io.RebdCloser, error) {
 			r, w := io.Pipe()
 			go func() {
-				err := writeTar(w, paths)
+				err := writeTbr(w, pbths)
 				w.CloseWithError(err)
 			}()
 			return r, nil
 		},
-		Path: t.TempDir(),
+		Pbth: t.TempDir(),
 		Log:  logtest.Scoped(t),
 
-		ObservationCtx: observation.TestContextTB(t),
+		ObservbtionCtx: observbtion.TestContextTB(t),
 	}
 }
 
-// fetchTimeoutForCI gives a large timeout for CI. CI can be very busy, so we
-// give a large timeout instead of giving bad signal on PRs.
-func fetchTimeoutForCI(t *testing.T) time.Duration {
-	if deadline, ok := t.Deadline(); ok {
-		return time.Until(deadline) / 2
+// fetchTimeoutForCI gives b lbrge timeout for CI. CI cbn be very busy, so we
+// give b lbrge timeout instebd of giving bbd signbl on PRs.
+func fetchTimeoutForCI(t *testing.T) time.Durbtion {
+	if debdline, ok := t.Debdline(); ok {
+		return time.Until(debdline) / 2
 	}
 	return 500 * time.Millisecond
 }
 
-func toString(m []protocol.FileMatch) string {
+func toString(m []protocol.FileMbtch) string {
 	buf := new(bytes.Buffer)
-	for _, f := range m {
-		if len(f.ChunkMatches) == 0 {
-			buf.WriteString(f.Path)
+	for _, f := rbnge m {
+		if len(f.ChunkMbtches) == 0 {
+			buf.WriteString(f.Pbth)
 			buf.WriteByte('\n')
 		}
-		for _, cm := range f.ChunkMatches {
-			buf.WriteString(f.Path)
+		for _, cm := rbnge f.ChunkMbtches {
+			buf.WriteString(f.Pbth)
 			buf.WriteByte(':')
-			buf.WriteString(strconv.Itoa(int(cm.ContentStart.Line) + 1))
+			buf.WriteString(strconv.Itob(int(cm.ContentStbrt.Line) + 1))
 			buf.WriteByte(':')
-			buf.WriteString(strconv.Itoa(int(cm.ContentStart.Line) + strings.Count(cm.Content, "\n") + 1))
+			buf.WriteString(strconv.Itob(int(cm.ContentStbrt.Line) + strings.Count(cm.Content, "\n") + 1))
 			buf.WriteByte(':')
 			buf.WriteByte('\n')
 			buf.WriteString(cm.Content)
@@ -634,35 +634,35 @@ func toString(m []protocol.FileMatch) string {
 	return buf.String()
 }
 
-func sanityCheckSorted(m []protocol.FileMatch) error {
-	if !sort.IsSorted(sortByPath(m)) {
-		return errors.New("unsorted file matches, please sortByPath")
+func sbnityCheckSorted(m []protocol.FileMbtch) error {
+	if !sort.IsSorted(sortByPbth(m)) {
+		return errors.New("unsorted file mbtches, plebse sortByPbth")
 	}
-	for i := range m {
-		if i > 0 && m[i].Path == m[i-1].Path {
-			return errors.Errorf("duplicate FileMatch on %s", m[i].Path)
+	for i := rbnge m {
+		if i > 0 && m[i].Pbth == m[i-1].Pbth {
+			return errors.Errorf("duplicbte FileMbtch on %s", m[i].Pbth)
 		}
-		cm := m[i].ChunkMatches
+		cm := m[i].ChunkMbtches
 		if !sort.IsSorted(sortByLineNumber(cm)) {
-			return errors.Errorf("unsorted LineMatches for %s", m[i].Path)
+			return errors.Errorf("unsorted LineMbtches for %s", m[i].Pbth)
 		}
-		for j := range cm {
-			if j > 0 && cm[j].ContentStart.Line == cm[j-1].ContentStart.Line {
-				return errors.Errorf("duplicate LineNumber on %s:%d", m[i].Path, cm[j].ContentStart.Line)
+		for j := rbnge cm {
+			if j > 0 && cm[j].ContentStbrt.Line == cm[j-1].ContentStbrt.Line {
+				return errors.Errorf("duplicbte LineNumber on %s:%d", m[i].Pbth, cm[j].ContentStbrt.Line)
 			}
 		}
 	}
 	return nil
 }
 
-type sortByPath []protocol.FileMatch
+type sortByPbth []protocol.FileMbtch
 
-func (m sortByPath) Len() int           { return len(m) }
-func (m sortByPath) Less(i, j int) bool { return m[i].Path < m[j].Path }
-func (m sortByPath) Swap(i, j int)      { m[i], m[j] = m[j], m[i] }
+func (m sortByPbth) Len() int           { return len(m) }
+func (m sortByPbth) Less(i, j int) bool { return m[i].Pbth < m[j].Pbth }
+func (m sortByPbth) Swbp(i, j int)      { m[i], m[j] = m[j], m[i] }
 
-type sortByLineNumber []protocol.ChunkMatch
+type sortByLineNumber []protocol.ChunkMbtch
 
 func (m sortByLineNumber) Len() int           { return len(m) }
-func (m sortByLineNumber) Less(i, j int) bool { return m[i].ContentStart.Line < m[j].ContentStart.Line }
-func (m sortByLineNumber) Swap(i, j int)      { m[i], m[j] = m[j], m[i] }
+func (m sortByLineNumber) Less(i, j int) bool { return m[i].ContentStbrt.Line < m[j].ContentStbrt.Line }
+func (m sortByLineNumber) Swbp(i, j int)      { m[i], m[j] = m[j], m[i] }

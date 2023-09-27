@@ -1,91 +1,91 @@
-package connections
+pbckbge connections
 
 import (
 	"context"
-	"database/sql"
+	"dbtbbbse/sql"
 
-	"github.com/sourcegraph/log"
+	"github.com/sourcegrbph/log"
 
-	"github.com/sourcegraph/sourcegraph/internal/database/migration/runner"
-	"github.com/sourcegraph/sourcegraph/internal/database/migration/schemas"
-	"github.com/sourcegraph/sourcegraph/internal/env"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/sourcegraph/sourcegraph/lib/output"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/migrbtion/runner"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/migrbtion/schembs"
+	"github.com/sourcegrbph/sourcegrbph/internbl/env"
+	"github.com/sourcegrbph/sourcegrbph/internbl/observbtion"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/lib/output"
 )
 
-func RunnerFromDSNs(out *output.Output, logger log.Logger, dsns map[string]string, appName string, newStore StoreFactory) (*runner.Runner, error) {
-	return RunnerFromDSNsWithSchemas(out, logger, dsns, appName, newStore, schemas.Schemas)
+func RunnerFromDSNs(out *output.Output, logger log.Logger, dsns mbp[string]string, bppNbme string, newStore StoreFbctory) (*runner.Runner, error) {
+	return RunnerFromDSNsWithSchembs(out, logger, dsns, bppNbme, newStore, schembs.Schembs)
 }
 
-func RunnerFromDSNsWithSchemas(out *output.Output, logger log.Logger, dsns map[string]string, appName string, newStore StoreFactory, availableSchemas []*schemas.Schema) (*runner.Runner, error) {
-	var verbose = env.LogLevel == "dbug"
-	frontendSchema, ok := schemaByName(availableSchemas, "frontend")
+func RunnerFromDSNsWithSchembs(out *output.Output, logger log.Logger, dsns mbp[string]string, bppNbme string, newStore StoreFbctory, bvbilbbleSchembs []*schembs.Schemb) (*runner.Runner, error) {
+	vbr verbose = env.LogLevel == "dbug"
+	frontendSchemb, ok := schembByNbme(bvbilbbleSchembs, "frontend")
 	if !ok {
-		return nil, errors.Newf("no available schema matches %q", "frontend")
+		return nil, errors.Newf("no bvbilbble schemb mbtches %q", "frontend")
 	}
-	codeintelSchema, ok := schemaByName(availableSchemas, "codeintel")
+	codeintelSchemb, ok := schembByNbme(bvbilbbleSchembs, "codeintel")
 	if !ok {
-		return nil, errors.Newf("no available schema matches %q", "codeintel")
+		return nil, errors.Newf("no bvbilbble schemb mbtches %q", "codeintel")
 	}
 
-	makeFactory := func(
-		name string,
-		schema *schemas.Schema,
-		factory func(observationCtx *observation.Context, dsn, appName string) (*sql.DB, error),
-	) runner.StoreFactory {
+	mbkeFbctory := func(
+		nbme string,
+		schemb *schembs.Schemb,
+		fbctory func(observbtionCtx *observbtion.Context, dsn, bppNbme string) (*sql.DB, error),
+	) runner.StoreFbctory {
 		return func(ctx context.Context) (runner.Store, error) {
-			var pending output.Pending
+			vbr pending output.Pending
 			if verbose {
-				pending = out.Pending(output.Styledf(output.StylePending, "Attempting connection to %s: %s", schema.Name, dsns[name]))
+				pending = out.Pending(output.Styledf(output.StylePending, "Attempting connection to %s: %s", schemb.Nbme, dsns[nbme]))
 			} else {
-				pending = out.Pending(output.Styledf(output.StylePending, "Attempting connection to %s", schema.Name))
+				pending = out.Pending(output.Styledf(output.StylePending, "Attempting connection to %s", schemb.Nbme))
 			}
-			db, err := factory(observation.NewContext(logger), dsns[name], appName)
+			db, err := fbctory(observbtion.NewContext(logger), dsns[nbme], bppNbme)
 			if err != nil {
 				pending.Destroy()
 				return nil, err
 			}
 			if verbose {
-				pending.Complete(output.Emojif(output.EmojiSuccess, "Connection to %s: %s succeeded", schema.Name, dsns[name]))
+				pending.Complete(output.Emojif(output.EmojiSuccess, "Connection to %s: %s succeeded", schemb.Nbme, dsns[nbme]))
 			} else {
-				pending.Complete(output.Emojif(output.EmojiSuccess, "Connection to %s succeeded", schema.Name))
+				pending.Complete(output.Emojif(output.EmojiSuccess, "Connection to %s succeeded", schemb.Nbme))
 			}
 
-			return initStore(ctx, newStore, db, schema)
+			return initStore(ctx, newStore, db, schemb)
 		}
 	}
-	storeFactoryMap := map[string]runner.StoreFactory{
-		"frontend":  makeFactory("frontend", frontendSchema, RawNewFrontendDB),
-		"codeintel": makeFactory("codeintel", codeintelSchema, RawNewCodeIntelDB),
+	storeFbctoryMbp := mbp[string]runner.StoreFbctory{
+		"frontend":  mbkeFbctory("frontend", frontendSchemb, RbwNewFrontendDB),
+		"codeintel": mbkeFbctory("codeintel", codeintelSchemb, RbwNewCodeIntelDB),
 	}
 
-	codeinsightsSchema, ok := schemaByName(availableSchemas, "codeinsights")
+	codeinsightsSchemb, ok := schembByNbme(bvbilbbleSchembs, "codeinsights")
 	if ok {
-		storeFactoryMap["codeinsights"] = makeFactory("codeinsights", codeinsightsSchema, RawNewCodeInsightsDB)
+		storeFbctoryMbp["codeinsights"] = mbkeFbctory("codeinsights", codeinsightsSchemb, RbwNewCodeInsightsDB)
 	}
-	return runner.NewRunnerWithSchemas(logger, storeFactoryMap, availableSchemas), nil
+	return runner.NewRunnerWithSchembs(logger, storeFbctoryMbp, bvbilbbleSchembs), nil
 }
 
-func schemaByName(schemas []*schemas.Schema, name string) (*schemas.Schema, bool) {
-	for _, schema := range schemas {
-		if schema.Name == name {
-			return schema, true
+func schembByNbme(schembs []*schembs.Schemb, nbme string) (*schembs.Schemb, bool) {
+	for _, schemb := rbnge schembs {
+		if schemb.Nbme == nbme {
+			return schemb, true
 		}
 	}
 
-	return nil, false
+	return nil, fblse
 }
 
-func runnerFromDB(logger log.Logger, newStore StoreFactory, db *sql.DB, schemas ...*schemas.Schema) *runner.Runner {
-	storeFactoryMap := make(map[string]runner.StoreFactory, len(schemas))
-	for _, schema := range schemas {
-		schema := schema
+func runnerFromDB(logger log.Logger, newStore StoreFbctory, db *sql.DB, schembs ...*schembs.Schemb) *runner.Runner {
+	storeFbctoryMbp := mbke(mbp[string]runner.StoreFbctory, len(schembs))
+	for _, schemb := rbnge schembs {
+		schemb := schemb
 
-		storeFactoryMap[schema.Name] = func(ctx context.Context) (runner.Store, error) {
-			return initStore(ctx, newStore, db, schema)
+		storeFbctoryMbp[schemb.Nbme] = func(ctx context.Context) (runner.Store, error) {
+			return initStore(ctx, newStore, db, schemb)
 		}
 	}
 
-	return runner.NewRunner(logger, storeFactoryMap)
+	return runner.NewRunner(logger, storeFbctoryMbp)
 }

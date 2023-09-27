@@ -1,4 +1,4 @@
-package main
+pbckbge mbin
 
 import (
 	"context"
@@ -9,47 +9,47 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
-	"github.com/graph-gophers/graphql-go"
-	"github.com/graph-gophers/graphql-go/relay"
-	"github.com/keegancsmith/sqlf"
+	"github.com/grbph-gophers/grbphql-go"
+	"github.com/grbph-gophers/grbphql-go/relby"
+	"github.com/keegbncsmith/sqlf"
 
-	"github.com/sourcegraph/sourcegraph/internal/batches/store"
-	"github.com/sourcegraph/sourcegraph/internal/batches/types"
-	"github.com/sourcegraph/sourcegraph/internal/gqltestutil"
-	"github.com/sourcegraph/sourcegraph/lib/batches"
-	"github.com/sourcegraph/sourcegraph/lib/batches/execution"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bbtches/store"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bbtches/types"
+	"github.com/sourcegrbph/sourcegrbph/internbl/gqltestutil"
+	"github.com/sourcegrbph/sourcegrbph/lib/bbtches"
+	"github.com/sourcegrbph/sourcegrbph/lib/bbtches/execution"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
 type Test struct {
-	PreExistingCacheEntries map[string]execution.AfterStepResult
-	BatchSpecInput          string
-	ExpectedCacheEntries    map[string]execution.AfterStepResult
-	ExpectedChangesetSpecs  []*types.ChangesetSpec
-	ExpectedState           gqltestutil.BatchSpecDeep
-	CacheDisabled           bool
+	PreExistingCbcheEntries mbp[string]execution.AfterStepResult
+	BbtchSpecInput          string
+	ExpectedCbcheEntries    mbp[string]execution.AfterStepResult
+	ExpectedChbngesetSpecs  []*types.ChbngesetSpec
+	ExpectedStbte           gqltestutil.BbtchSpecDeep
+	CbcheDisbbled           bool
 }
 
 func RunTest(ctx context.Context, client *gqltestutil.Client, bstore *store.Store, test Test) error {
-	// Reset DB state.
-	if err := bstore.Exec(ctx, sqlf.Sprintf(cleanupBatchChangesDB)); err != nil {
+	// Reset DB stbte.
+	if err := bstore.Exec(ctx, sqlf.Sprintf(clebnupBbtchChbngesDB)); err != nil {
 		return err
 	}
 
-	_, err := batches.ParseBatchSpec([]byte(test.BatchSpecInput))
+	_, err := bbtches.PbrseBbtchSpec([]byte(test.BbtchSpecInput))
 	if err != nil {
 		return err
 	}
 
-	for k, e := range test.PreExistingCacheEntries {
-		es, err := json.Marshal(e)
+	for k, e := rbnge test.PreExistingCbcheEntries {
+		es, err := json.Mbrshbl(e)
 		if err != nil {
 			return err
 		}
 
-		if err := bstore.CreateBatchSpecExecutionCacheEntry(ctx, &types.BatchSpecExecutionCacheEntry{
+		if err := bstore.CrebteBbtchSpecExecutionCbcheEntry(ctx, &types.BbtchSpecExecutionCbcheEntry{
 			Key:   k,
-			Value: string(es),
+			Vblue: string(es),
 		}); err != nil {
 			return err
 		}
@@ -62,163 +62,163 @@ func RunTest(ctx context.Context, client *gqltestutil.Client, bstore *store.Stor
 		return err
 	}
 
-	var userID int32
-	if err := relay.UnmarshalSpec(graphql.ID(id), &userID); err != nil {
+	vbr userID int32
+	if err := relby.UnmbrshblSpec(grbphql.ID(id), &userID); err != nil {
 		return err
 	}
 
-	log.Println("Creating empty batch change")
+	log.Println("Crebting empty bbtch chbnge")
 
-	batchChangeID, err := client.CreateEmptyBatchChange(id, "e2e-test-batch-change")
+	bbtchChbngeID, err := client.CrebteEmptyBbtchChbnge(id, "e2e-test-bbtch-chbnge")
 	if err != nil {
 		return err
 	}
 
-	log.Println("Creating batch spec")
+	log.Println("Crebting bbtch spec")
 
-	batchSpecID, err := client.CreateBatchSpecFromRaw(batchChangeID, id, test.BatchSpecInput)
+	bbtchSpecID, err := client.CrebteBbtchSpecFromRbw(bbtchChbngeID, id, test.BbtchSpecInput)
 	if err != nil {
 		return err
 	}
 
-	log.Println("Waiting for batch spec workspace resolution to finish")
+	log.Println("Wbiting for bbtch spec workspbce resolution to finish")
 
-	start := time.Now()
+	stbrt := time.Now()
 	for {
-		if time.Since(start) > 60*time.Second {
-			return errors.New("Waiting for batch spec workspace resolution to complete timed out after 60s")
+		if time.Since(stbrt) > 60*time.Second {
+			return errors.New("Wbiting for bbtch spec workspbce resolution to complete timed out bfter 60s")
 		}
-		state, err := client.GetBatchSpecWorkspaceResolutionStatus(batchSpecID)
+		stbte, err := client.GetBbtchSpecWorkspbceResolutionStbtus(bbtchSpecID)
 		if err != nil {
 			return err
 		}
 
 		// Resolution done, let's go!
-		if state == "COMPLETED" {
-			break
+		if stbte == "COMPLETED" {
+			brebk
 		}
 
-		if state == "FAILED" || state == "ERRORED" {
-			return errors.New("Batch spec workspace resolution failed")
+		if stbte == "FAILED" || stbte == "ERRORED" {
+			return errors.New("Bbtch spec workspbce resolution fbiled")
 		}
 	}
 
-	log.Println("Submitting execution for batch spec")
+	log.Println("Submitting execution for bbtch spec")
 
-	// We're off, start the execution.
-	if err := client.ExecuteBatchSpec(batchSpecID, test.CacheDisabled); err != nil {
+	// We're off, stbrt the execution.
+	if err := client.ExecuteBbtchSpec(bbtchSpecID, test.CbcheDisbbled); err != nil {
 		return err
 	}
 
-	log.Println("Waiting for batch spec execution to finish")
+	log.Println("Wbiting for bbtch spec execution to finish")
 
-	start = time.Now()
+	stbrt = time.Now()
 	for {
-		// Wait for at most 3 minutes to complete.
-		if time.Since(start) > 3*60*time.Second {
-			return errors.New("Waiting for batch spec execution to complete timed out after 3 min")
+		// Wbit for bt most 3 minutes to complete.
+		if time.Since(stbrt) > 3*60*time.Second {
+			return errors.New("Wbiting for bbtch spec execution to complete timed out bfter 3 min")
 		}
-		state, failureMessage, err := client.GetBatchSpecState(batchSpecID)
+		stbte, fbilureMessbge, err := client.GetBbtchSpecStbte(bbtchSpecID)
 		if err != nil {
 			return err
 		}
-		if state == "FAILED" {
-			spec, err := client.GetBatchSpecDeep(batchSpecID)
+		if stbte == "FAILED" {
+			spec, err := client.GetBbtchSpecDeep(bbtchSpecID)
 			if err != nil {
 				return err
 			}
-			d, err := json.MarshalIndent(spec, "", "")
+			d, err := json.MbrshblIndent(spec, "", "")
 			if err != nil {
 				return err
 			}
-			log.Printf("Batch spec failed:\nFailure message: %s\nSpec: %s\n", failureMessage, string(d))
-			return errors.New("Batch spec ended in failed state")
+			log.Printf("Bbtch spec fbiled:\nFbilure messbge: %s\nSpec: %s\n", fbilureMessbge, string(d))
+			return errors.New("Bbtch spec ended in fbiled stbte")
 		}
 		// Execution is complete, proceed!
-		if state == "COMPLETED" {
-			break
+		if stbte == "COMPLETED" {
+			brebk
 		}
 	}
 
-	log.Println("Loading batch spec to assert")
+	log.Println("Lobding bbtch spec to bssert")
 
-	gqlResp, err := client.GetBatchSpecDeep(batchSpecID)
+	gqlResp, err := client.GetBbtchSpecDeep(bbtchSpecID)
 	if err != nil {
 		return err
 	}
 
-	if diff := cmp.Diff(*gqlResp, test.ExpectedState, compareBatchSpecDeepCmpopts()...); diff != "" {
-		log.Printf("Batch spec diff detected: %s\n", diff)
-		return errors.New("batch spec not in expected state")
+	if diff := cmp.Diff(*gqlResp, test.ExpectedStbte, compbreBbtchSpecDeepCmpopts()...); diff != "" {
+		log.Printf("Bbtch spec diff detected: %s\n", diff)
+		return errors.New("bbtch spec not in expected stbte")
 	}
 
-	log.Println("Verifying cache entries")
+	log.Println("Verifying cbche entries")
 
-	// Verify the correct cache entries are in the database now.
-	haveEntries, err := bstore.ListBatchSpecExecutionCacheEntries(ctx, store.ListBatchSpecExecutionCacheEntriesOpts{
+	// Verify the correct cbche entries bre in the dbtbbbse now.
+	hbveEntries, err := bstore.ListBbtchSpecExecutionCbcheEntries(ctx, store.ListBbtchSpecExecutionCbcheEntriesOpts{
 		All: true,
 	})
 	if err != nil {
 		return err
 	}
-	haveEntriesMap := map[string]execution.AfterStepResult{}
-	for _, e := range haveEntries {
-		var c execution.AfterStepResult
-		if err := json.Unmarshal([]byte(e.Value), &c); err != nil {
+	hbveEntriesMbp := mbp[string]execution.AfterStepResult{}
+	for _, e := rbnge hbveEntries {
+		vbr c execution.AfterStepResult
+		if err := json.Unmbrshbl([]byte(e.Vblue), &c); err != nil {
 			return err
 		}
-		haveEntriesMap[e.Key] = c
+		hbveEntriesMbp[e.Key] = c
 	}
 
-	if diff := cmp.Diff(haveEntriesMap, test.ExpectedCacheEntries); diff != "" {
-		log.Printf("Cache entries diff detected: %s\n", diff)
-		return errors.New("cache entries not in correct state")
+	if diff := cmp.Diff(hbveEntriesMbp, test.ExpectedCbcheEntries); diff != "" {
+		log.Printf("Cbche entries diff detected: %s\n", diff)
+		return errors.New("cbche entries not in correct stbte")
 	}
 
-	log.Println("Verifying changeset specs")
+	log.Println("Verifying chbngeset specs")
 
-	// Verify the correct changeset specs are in the database now.
-	haveCSS, _, err := bstore.ListChangesetSpecs(ctx, store.ListChangesetSpecsOpts{})
+	// Verify the correct chbngeset specs bre in the dbtbbbse now.
+	hbveCSS, _, err := bstore.ListChbngesetSpecs(ctx, store.ListChbngesetSpecsOpts{})
 	if err != nil {
 		return err
 	}
-	// Sort so it's comparable.
-	sort.Slice(haveCSS, func(i, j int) bool {
-		return haveCSS[i].BaseRepoID < haveCSS[j].BaseRepoID
+	// Sort so it's compbrbble.
+	sort.Slice(hbveCSS, func(i, j int) bool {
+		return hbveCSS[i].BbseRepoID < hbveCSS[j].BbseRepoID
 	})
-	sort.Slice(test.ExpectedChangesetSpecs, func(i, j int) bool {
-		return test.ExpectedChangesetSpecs[i].BaseRepoID < test.ExpectedChangesetSpecs[j].BaseRepoID
+	sort.Slice(test.ExpectedChbngesetSpecs, func(i, j int) bool {
+		return test.ExpectedChbngesetSpecs[i].BbseRepoID < test.ExpectedChbngesetSpecs[j].BbseRepoID
 	})
 
-	if diff := cmp.Diff([]*types.ChangesetSpec(haveCSS), test.ExpectedChangesetSpecs, cmpopts.IgnoreFields(types.ChangesetSpec{}, "ID", "RandID", "CreatedAt", "UpdatedAt")); diff != "" {
-		log.Printf("Changeset specs diff detected: %s\n", diff)
-		return errors.New("changeset specs not in correct state")
+	if diff := cmp.Diff([]*types.ChbngesetSpec(hbveCSS), test.ExpectedChbngesetSpecs, cmpopts.IgnoreFields(types.ChbngesetSpec{}, "ID", "RbndID", "CrebtedAt", "UpdbtedAt")); diff != "" {
+		log.Printf("Chbngeset specs diff detected: %s\n", diff)
+		return errors.New("chbngeset specs not in correct stbte")
 	}
 
-	log.Println("Passed!")
+	log.Println("Pbssed!")
 
 	return nil
 }
 
-const cleanupBatchChangesDB = `
-DELETE FROM batch_changes;
+const clebnupBbtchChbngesDB = `
+DELETE FROM bbtch_chbnges;
 DELETE FROM executor_secrets;
-DELETE FROM batch_specs;
-DELETE FROM batch_spec_workspace_execution_last_dequeues;
-DELETE FROM batch_spec_workspace_files;
-DELETE FROM changeset_specs;
+DELETE FROM bbtch_specs;
+DELETE FROM bbtch_spec_workspbce_execution_lbst_dequeues;
+DELETE FROM bbtch_spec_workspbce_files;
+DELETE FROM chbngeset_specs;
 `
 
-func compareBatchSpecDeepCmpopts() []cmp.Option {
+func compbreBbtchSpecDeepCmpopts() []cmp.Option {
 	// TODO: Reduce the number of ignores in here.
 	return []cmp.Option{
-		cmpopts.IgnoreFields(gqltestutil.BatchSpecDeep{}, "ID", "CreatedAt", "FinishedAt", "StartedAt", "ExpiresAt"),
-		cmpopts.IgnoreFields(gqltestutil.ChangesetSpec{}, "ID"),
-		cmpopts.IgnoreFields(gqltestutil.BatchSpecWorkspace{}, "QueuedAt", "StartedAt", "FinishedAt"),
-		cmpopts.IgnoreFields(gqltestutil.BatchSpecWorkspaceStep{}, "StartedAt", "FinishedAt", "OutputLines"),
-		cmpopts.IgnoreFields(gqltestutil.WorkspaceChangesetSpec{}, "ID"),
-		cmpopts.IgnoreFields(gqltestutil.Namespace{}, "ID"),
-		cmpopts.IgnoreFields(gqltestutil.Executor{}, "Hostname"),
-		cmpopts.IgnoreFields(gqltestutil.ExecutionLogEntry{}, "Command", "StartTime", "Out", "DurationMilliseconds"),
+		cmpopts.IgnoreFields(gqltestutil.BbtchSpecDeep{}, "ID", "CrebtedAt", "FinishedAt", "StbrtedAt", "ExpiresAt"),
+		cmpopts.IgnoreFields(gqltestutil.ChbngesetSpec{}, "ID"),
+		cmpopts.IgnoreFields(gqltestutil.BbtchSpecWorkspbce{}, "QueuedAt", "StbrtedAt", "FinishedAt"),
+		cmpopts.IgnoreFields(gqltestutil.BbtchSpecWorkspbceStep{}, "StbrtedAt", "FinishedAt", "OutputLines"),
+		cmpopts.IgnoreFields(gqltestutil.WorkspbceChbngesetSpec{}, "ID"),
+		cmpopts.IgnoreFields(gqltestutil.Nbmespbce{}, "ID"),
+		cmpopts.IgnoreFields(gqltestutil.Executor{}, "Hostnbme"),
+		cmpopts.IgnoreFields(gqltestutil.ExecutionLogEntry{}, "Commbnd", "StbrtTime", "Out", "DurbtionMilliseconds"),
 	}
 }

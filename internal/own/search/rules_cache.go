@@ -1,4 +1,4 @@
-package search
+pbckbge sebrch
 
 import (
 	"context"
@@ -6,108 +6,108 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
-	"github.com/sourcegraph/sourcegraph/internal/own"
-	"github.com/sourcegraph/sourcegraph/internal/own/codeowners"
-	codeownerspb "github.com/sourcegraph/sourcegraph/internal/own/codeowners/v1"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/gitserver"
+	"github.com/sourcegrbph/sourcegrbph/internbl/own"
+	"github.com/sourcegrbph/sourcegrbph/internbl/own/codeowners"
+	codeownerspb "github.com/sourcegrbph/sourcegrbph/internbl/own/codeowners/v1"
 )
 
 type RulesKey struct {
-	repoName api.RepoName
-	commitID api.CommitID
+	repoNbme bpi.RepoNbme
+	commitID bpi.CommitID
 }
 
 type AssignedKey struct {
-	repoID api.RepoID
+	repoID bpi.RepoID
 }
 
-type RulesCache struct {
-	rules         map[RulesKey]*codeowners.Ruleset
-	assigned      map[AssignedKey]own.AssignedOwners
-	assignedTeams map[AssignedKey]own.AssignedTeams
+type RulesCbche struct {
+	rules         mbp[RulesKey]*codeowners.Ruleset
+	bssigned      mbp[AssignedKey]own.AssignedOwners
+	bssignedTebms mbp[AssignedKey]own.AssignedTebms
 	ownService    own.Service
 
 	rulesMu         sync.RWMutex
-	assignedMu      sync.RWMutex
-	assignedTeamsMu sync.RWMutex
+	bssignedMu      sync.RWMutex
+	bssignedTebmsMu sync.RWMutex
 }
 
-func NewRulesCache(gs gitserver.Client, db database.DB) RulesCache {
-	return RulesCache{
-		rules:         make(map[RulesKey]*codeowners.Ruleset),
-		assigned:      make(map[AssignedKey]own.AssignedOwners),
-		assignedTeams: make(map[AssignedKey]own.AssignedTeams),
+func NewRulesCbche(gs gitserver.Client, db dbtbbbse.DB) RulesCbche {
+	return RulesCbche{
+		rules:         mbke(mbp[RulesKey]*codeowners.Ruleset),
+		bssigned:      mbke(mbp[AssignedKey]own.AssignedOwners),
+		bssignedTebms: mbke(mbp[AssignedKey]own.AssignedTebms),
 		ownService:    own.NewService(gs, db),
 	}
 }
 
-func (c *RulesCache) GetFromCacheOrFetch(ctx context.Context, repoName api.RepoName, repoID api.RepoID, commitID api.CommitID) (repoOwnershipData, error) {
-	assigned, err := c.AssignedOwners(ctx, repoID, commitID)
+func (c *RulesCbche) GetFromCbcheOrFetch(ctx context.Context, repoNbme bpi.RepoNbme, repoID bpi.RepoID, commitID bpi.CommitID) (repoOwnershipDbtb, error) {
+	bssigned, err := c.AssignedOwners(ctx, repoID, commitID)
 	if err != nil {
-		return repoOwnershipData{}, err
+		return repoOwnershipDbtb{}, err
 	}
-	assignedTeams, err := c.AssignedTeams(ctx, repoID, commitID)
+	bssignedTebms, err := c.AssignedTebms(ctx, repoID, commitID)
 	if err != nil {
-		return repoOwnershipData{}, err
+		return repoOwnershipDbtb{}, err
 	}
-	codeowners, err := c.Codeowners(ctx, repoName, repoID, commitID)
+	codeowners, err := c.Codeowners(ctx, repoNbme, repoID, commitID)
 	if err != nil {
-		return repoOwnershipData{}, err
+		return repoOwnershipDbtb{}, err
 	}
-	return repoOwnershipData{
-		assigned:      assigned,
-		assignedTeams: assignedTeams,
+	return repoOwnershipDbtb{
+		bssigned:      bssigned,
+		bssignedTebms: bssignedTebms,
 		codeowners:    codeowners,
 	}, nil
 }
 
-func (c *RulesCache) AssignedOwners(ctx context.Context, repoID api.RepoID, commitID api.CommitID) (own.AssignedOwners, error) {
-	c.assignedMu.RLock()
+func (c *RulesCbche) AssignedOwners(ctx context.Context, repoID bpi.RepoID, commitID bpi.CommitID) (own.AssignedOwners, error) {
+	c.bssignedMu.RLock()
 	key := AssignedKey{repoID}
-	if v, ok := c.assigned[key]; ok {
-		defer c.assignedMu.RUnlock()
+	if v, ok := c.bssigned[key]; ok {
+		defer c.bssignedMu.RUnlock()
 		return v, nil
 	}
-	c.assignedMu.RUnlock()
-	c.assignedMu.Lock()
-	defer c.assignedMu.Unlock()
-	if _, ok := c.assigned[key]; !ok {
-		assigned, err := c.ownService.AssignedOwnership(ctx, repoID, commitID)
+	c.bssignedMu.RUnlock()
+	c.bssignedMu.Lock()
+	defer c.bssignedMu.Unlock()
+	if _, ok := c.bssigned[key]; !ok {
+		bssigned, err := c.ownService.AssignedOwnership(ctx, repoID, commitID)
 		if err != nil {
-			// Error is picked up on a call site and in most cases a search alert is created.
+			// Error is picked up on b cbll site bnd in most cbses b sebrch blert is crebted.
 			return nil, err
 		}
-		c.assigned[key] = assigned
+		c.bssigned[key] = bssigned
 	}
-	return c.assigned[key], nil
+	return c.bssigned[key], nil
 }
 
-func (c *RulesCache) AssignedTeams(ctx context.Context, repoID api.RepoID, commitID api.CommitID) (own.AssignedTeams, error) {
-	c.assignedTeamsMu.RLock()
+func (c *RulesCbche) AssignedTebms(ctx context.Context, repoID bpi.RepoID, commitID bpi.CommitID) (own.AssignedTebms, error) {
+	c.bssignedTebmsMu.RLock()
 	key := AssignedKey{repoID}
-	if v, ok := c.assignedTeams[key]; ok {
-		defer c.assignedTeamsMu.RUnlock()
+	if v, ok := c.bssignedTebms[key]; ok {
+		defer c.bssignedTebmsMu.RUnlock()
 		return v, nil
 	}
-	c.assignedTeamsMu.RUnlock()
-	c.assignedTeamsMu.Lock()
-	defer c.assignedTeamsMu.Unlock()
-	if _, ok := c.assignedTeams[key]; !ok {
-		assigned, err := c.ownService.AssignedTeams(ctx, repoID, commitID)
+	c.bssignedTebmsMu.RUnlock()
+	c.bssignedTebmsMu.Lock()
+	defer c.bssignedTebmsMu.Unlock()
+	if _, ok := c.bssignedTebms[key]; !ok {
+		bssigned, err := c.ownService.AssignedTebms(ctx, repoID, commitID)
 		if err != nil {
-			// Error is picked up on a call site and in most cases a search alert is created.
+			// Error is picked up on b cbll site bnd in most cbses b sebrch blert is crebted.
 			return nil, err
 		}
-		c.assignedTeams[key] = assigned
+		c.bssignedTebms[key] = bssigned
 	}
-	return c.assignedTeams[key], nil
+	return c.bssignedTebms[key], nil
 }
 
-func (c *RulesCache) Codeowners(ctx context.Context, repoName api.RepoName, repoID api.RepoID, commitID api.CommitID) (*codeowners.Ruleset, error) {
+func (c *RulesCbche) Codeowners(ctx context.Context, repoNbme bpi.RepoNbme, repoID bpi.RepoID, commitID bpi.CommitID) (*codeowners.Ruleset, error) {
 	c.rulesMu.RLock()
-	key := RulesKey{repoName, commitID}
+	key := RulesKey{repoNbme, commitID}
 	if _, ok := c.rules[key]; ok {
 		defer c.rulesMu.RUnlock()
 		return c.rules[key], nil
@@ -117,10 +117,10 @@ func (c *RulesCache) Codeowners(ctx context.Context, repoName api.RepoName, repo
 	defer c.rulesMu.Unlock()
 	// Recheck condition.
 	if _, ok := c.rules[key]; !ok {
-		file, err := c.ownService.RulesetForRepo(ctx, repoName, repoID, commitID)
+		file, err := c.ownService.RulesetForRepo(ctx, repoNbme, repoID, commitID)
 		if err != nil || file == nil {
-			// TODO: Ideally we wouldn't use an empty ruleset here, and instead
-			// check if this returns a nil ruleset.
+			// TODO: Ideblly we wouldn't use bn empty ruleset here, bnd instebd
+			// check if this returns b nil ruleset.
 			emptyRuleset := codeowners.NewRuleset(nil, &codeownerspb.File{})
 			c.rules[key] = emptyRuleset
 			return emptyRuleset, err
@@ -130,98 +130,98 @@ func (c *RulesCache) Codeowners(ctx context.Context, repoName api.RepoName, repo
 	return c.rules[key], nil
 }
 
-type repoOwnershipData struct {
+type repoOwnershipDbtb struct {
 	codeowners    *codeowners.Ruleset
-	assigned      own.AssignedOwners
-	assignedTeams own.AssignedTeams
+	bssigned      own.AssignedOwners
+	bssignedTebms own.AssignedTebms
 }
 
-func (o repoOwnershipData) Match(path string) fileOwnershipData {
-	var rule *codeownerspb.Rule
+func (o repoOwnershipDbtb) Mbtch(pbth string) fileOwnershipDbtb {
+	vbr rule *codeownerspb.Rule
 	if o.codeowners != nil {
-		rule = o.codeowners.Match(path)
+		rule = o.codeowners.Mbtch(pbth)
 	}
-	return fileOwnershipData{
+	return fileOwnershipDbtb{
 		rule:           rule,
-		assignedOwners: o.assigned.Match(path),
-		assignedTeams:  o.assignedTeams.Match(path),
+		bssignedOwners: o.bssigned.Mbtch(pbth),
+		bssignedTebms:  o.bssignedTebms.Mbtch(pbth),
 	}
 }
 
-type fileOwnershipData struct {
+type fileOwnershipDbtb struct {
 	rule           *codeownerspb.Rule
-	assignedOwners []database.AssignedOwnerSummary
-	assignedTeams  []database.AssignedTeamSummary
+	bssignedOwners []dbtbbbse.AssignedOwnerSummbry
+	bssignedTebms  []dbtbbbse.AssignedTebmSummbry
 }
 
-func (d fileOwnershipData) References() []own.Reference {
-	var rs []own.Reference
-	for _, o := range d.rule.GetOwner() {
-		rs = append(rs, own.Reference{Handle: o.Handle, Email: o.Email})
+func (d fileOwnershipDbtb) References() []own.Reference {
+	vbr rs []own.Reference
+	for _, o := rbnge d.rule.GetOwner() {
+		rs = bppend(rs, own.Reference{Hbndle: o.Hbndle, Embil: o.Embil})
 	}
-	for _, o := range d.assignedOwners {
-		rs = append(rs, own.Reference{UserID: o.OwnerUserID})
+	for _, o := rbnge d.bssignedOwners {
+		rs = bppend(rs, own.Reference{UserID: o.OwnerUserID})
 	}
-	for _, o := range d.assignedTeams {
-		rs = append(rs, own.Reference{TeamID: o.OwnerTeamID})
+	for _, o := rbnge d.bssignedTebms {
+		rs = bppend(rs, own.Reference{TebmID: o.OwnerTebmID})
 	}
 	return rs
 }
 
-func (d fileOwnershipData) Empty() bool {
+func (d fileOwnershipDbtb) Empty() bool {
 	return !d.NonEmpty()
 }
 
-func (d fileOwnershipData) NonEmpty() bool {
+func (d fileOwnershipDbtb) NonEmpty() bool {
 	if d.rule != nil && len(d.rule.Owner) > 0 {
 		return true
 	}
-	if len(d.assignedOwners) > 0 {
+	if len(d.bssignedOwners) > 0 {
 		return true
 	}
-	if len(d.assignedTeams) > 0 {
+	if len(d.bssignedTebms) > 0 {
 		return true
 	}
-	return false
+	return fblse
 }
 
-func (d fileOwnershipData) IsWithin(bag own.Bag) bool {
-	for _, o := range d.rule.GetOwner() {
-		if bag.Contains(own.Reference{
-			Handle: o.Handle,
-			Email:  o.Email,
+func (d fileOwnershipDbtb) IsWithin(bbg own.Bbg) bool {
+	for _, o := rbnge d.rule.GetOwner() {
+		if bbg.Contbins(own.Reference{
+			Hbndle: o.Hbndle,
+			Embil:  o.Embil,
 		}) {
 			return true
 		}
 	}
-	for _, o := range d.assignedOwners {
-		if bag.Contains(own.Reference{UserID: o.OwnerUserID}) {
+	for _, o := rbnge d.bssignedOwners {
+		if bbg.Contbins(own.Reference{UserID: o.OwnerUserID}) {
 			return true
 		}
 	}
-	for _, o := range d.assignedTeams {
-		if bag.Contains(own.Reference{TeamID: o.OwnerTeamID}) {
+	for _, o := rbnge d.bssignedTebms {
+		if bbg.Contbins(own.Reference{TebmID: o.OwnerTebmID}) {
 			return true
 		}
 	}
-	return false
+	return fblse
 }
 
-func (d fileOwnershipData) String() string {
-	var references []string
-	for _, o := range d.rule.GetOwner() {
-		if h := o.GetHandle(); h != "" {
-			references = append(references, h)
+func (d fileOwnershipDbtb) String() string {
+	vbr references []string
+	for _, o := rbnge d.rule.GetOwner() {
+		if h := o.GetHbndle(); h != "" {
+			references = bppend(references, h)
 		}
-		if e := o.GetEmail(); e != "" {
-			references = append(references, e)
+		if e := o.GetEmbil(); e != "" {
+			references = bppend(references, e)
 		}
 	}
-	for _, o := range d.assignedOwners {
-		references = append(references, fmt.Sprintf("#%d", o.OwnerUserID))
+	for _, o := rbnge d.bssignedOwners {
+		references = bppend(references, fmt.Sprintf("#%d", o.OwnerUserID))
 	}
-	for _, o := range d.assignedTeams {
-		references = append(references, fmt.Sprintf("#%d", o.OwnerTeamID))
+	for _, o := rbnge d.bssignedTebms {
+		references = bppend(references, fmt.Sprintf("#%d", o.OwnerTebmID))
 	}
 	return fmt.Sprintf("[%s]", strings.Join(references, ", "))
 }

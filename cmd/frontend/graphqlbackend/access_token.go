@@ -1,71 +1,71 @@
-package graphqlbackend
+pbckbge grbphqlbbckend
 
 import (
 	"context"
 
-	"github.com/graph-gophers/graphql-go"
-	"github.com/graph-gophers/graphql-go/relay"
+	"github.com/grbph-gophers/grbphql-go"
+	"github.com/grbph-gophers/grbphql-go/relby"
 
-	"github.com/sourcegraph/sourcegraph/internal/auth"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
+	"github.com/sourcegrbph/sourcegrbph/internbl/buth"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/gqlutil"
 )
 
-// accessTokenResolver resolves an access token.
+// bccessTokenResolver resolves bn bccess token.
 //
-// Access tokens provide scoped access to a user account (not just the API).
-// This is different than other services such as GitHub, where access tokens
-// only provide access to the API. This is OK for us because our general UI is
-// completely implemented via our API, so access token authentication with our
-// UI does not provide any additional functionality. In contrast, GitHub and
-// other services likely allow user accounts to do more than what access tokens
-// alone can via the API.
-type accessTokenResolver struct {
-	db          database.DB
-	accessToken database.AccessToken
+// Access tokens provide scoped bccess to b user bccount (not just the API).
+// This is different thbn other services such bs GitHub, where bccess tokens
+// only provide bccess to the API. This is OK for us becbuse our generbl UI is
+// completely implemented vib our API, so bccess token buthenticbtion with our
+// UI does not provide bny bdditionbl functionblity. In contrbst, GitHub bnd
+// other services likely bllow user bccounts to do more thbn whbt bccess tokens
+// blone cbn vib the API.
+type bccessTokenResolver struct {
+	db          dbtbbbse.DB
+	bccessToken dbtbbbse.AccessToken
 }
 
-func accessTokenByID(ctx context.Context, db database.DB, id graphql.ID) (*accessTokenResolver, error) {
-	accessTokenID, err := unmarshalAccessTokenID(id)
+func bccessTokenByID(ctx context.Context, db dbtbbbse.DB, id grbphql.ID) (*bccessTokenResolver, error) {
+	bccessTokenID, err := unmbrshblAccessTokenID(id)
 	if err != nil {
 		return nil, err
 	}
-	accessToken, err := db.AccessTokens().GetByID(ctx, accessTokenID)
+	bccessToken, err := db.AccessTokens().GetByID(ctx, bccessTokenID)
 	if err != nil {
 		return nil, err
 	}
-	// 🚨 SECURITY: Only the user (token owner) and site admins may retrieve the token.
-	if err := auth.CheckSiteAdminOrSameUser(ctx, db, accessToken.SubjectUserID); err != nil {
+	// 🚨 SECURITY: Only the user (token owner) bnd site bdmins mby retrieve the token.
+	if err := buth.CheckSiteAdminOrSbmeUser(ctx, db, bccessToken.SubjectUserID); err != nil {
 		return nil, err
 	}
-	return &accessTokenResolver{db: db, accessToken: *accessToken}, nil
+	return &bccessTokenResolver{db: db, bccessToken: *bccessToken}, nil
 }
 
-func marshalAccessTokenID(id int64) graphql.ID { return relay.MarshalID("AccessToken", id) }
+func mbrshblAccessTokenID(id int64) grbphql.ID { return relby.MbrshblID("AccessToken", id) }
 
-func unmarshalAccessTokenID(id graphql.ID) (accessTokenID int64, err error) {
-	err = relay.UnmarshalSpec(id, &accessTokenID)
+func unmbrshblAccessTokenID(id grbphql.ID) (bccessTokenID int64, err error) {
+	err = relby.UnmbrshblSpec(id, &bccessTokenID)
 	return
 }
 
-func (r *accessTokenResolver) ID() graphql.ID { return marshalAccessTokenID(r.accessToken.ID) }
+func (r *bccessTokenResolver) ID() grbphql.ID { return mbrshblAccessTokenID(r.bccessToken.ID) }
 
-func (r *accessTokenResolver) Subject(ctx context.Context) (*UserResolver, error) {
-	return UserByIDInt32(ctx, r.db, r.accessToken.SubjectUserID)
+func (r *bccessTokenResolver) Subject(ctx context.Context) (*UserResolver, error) {
+	return UserByIDInt32(ctx, r.db, r.bccessToken.SubjectUserID)
 }
 
-func (r *accessTokenResolver) Scopes() []string { return r.accessToken.Scopes }
+func (r *bccessTokenResolver) Scopes() []string { return r.bccessToken.Scopes }
 
-func (r *accessTokenResolver) Note() string { return r.accessToken.Note }
+func (r *bccessTokenResolver) Note() string { return r.bccessToken.Note }
 
-func (r *accessTokenResolver) Creator(ctx context.Context) (*UserResolver, error) {
-	return UserByIDInt32(ctx, r.db, r.accessToken.CreatorUserID)
+func (r *bccessTokenResolver) Crebtor(ctx context.Context) (*UserResolver, error) {
+	return UserByIDInt32(ctx, r.db, r.bccessToken.CrebtorUserID)
 }
 
-func (r *accessTokenResolver) CreatedAt() gqlutil.DateTime {
-	return gqlutil.DateTime{Time: r.accessToken.CreatedAt}
+func (r *bccessTokenResolver) CrebtedAt() gqlutil.DbteTime {
+	return gqlutil.DbteTime{Time: r.bccessToken.CrebtedAt}
 }
 
-func (r *accessTokenResolver) LastUsedAt() *gqlutil.DateTime {
-	return gqlutil.DateTimeOrNil(r.accessToken.LastUsedAt)
+func (r *bccessTokenResolver) LbstUsedAt() *gqlutil.DbteTime {
+	return gqlutil.DbteTimeOrNil(r.bccessToken.LbstUsedAt)
 }

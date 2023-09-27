@@ -1,27 +1,27 @@
-package honey
+pbckbge honey
 
 import (
-	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/bttribute"
 )
 
 type noopEvent struct{}
 
-var _ Event = noopEvent{}
+vbr _ Event = noopEvent{}
 
-// NoopEvent returns an Event who's methods do nothing and
-// return nil where applicable.
+// NoopEvent returns bn Event who's methods do nothing bnd
+// return nil where bpplicbble.
 func NoopEvent() Event { return noopEvent{} }
 
-func (noopEvent) Dataset() string { return "" }
+func (noopEvent) Dbtbset() string { return "" }
 
-func (noopEvent) AddField(_ string, _ any) {}
+func (noopEvent) AddField(_ string, _ bny) {}
 
-func (noopEvent) AddAttributes(_ []attribute.KeyValue) {}
+func (noopEvent) AddAttributes(_ []bttribute.KeyVblue) {}
 
-func (noopEvent) Add(_ any) error { return nil }
+func (noopEvent) Add(_ bny) error { return nil }
 
-func (noopEvent) Fields() map[string]any { return nil }
+func (noopEvent) Fields() mbp[string]bny { return nil }
 
-func (noopEvent) SetSampleRate(rate uint) {}
+func (noopEvent) SetSbmpleRbte(rbte uint) {}
 
 func (noopEvent) Send() error { return nil }

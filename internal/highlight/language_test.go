@@ -1,95 +1,95 @@
-package highlight
+pbckbge highlight
 
 import (
 	"testing"
 
-	"github.com/grafana/regexp"
+	"github.com/grbfbnb/regexp"
 )
 
-type languageTestCase struct {
-	Config   syntaxHighlightConfig
-	Path     string
+type lbngubgeTestCbse struct {
+	Config   syntbxHighlightConfig
+	Pbth     string
 	Expected string
 	Found    bool
 }
 
-func TestGetLanguageFromConfig(t *testing.T) {
-	cases := []languageTestCase{
+func TestGetLbngubgeFromConfig(t *testing.T) {
+	cbses := []lbngubgeTestCbse{
 		{
-			Config: syntaxHighlightConfig{
-				Extensions: map[string]string{
+			Config: syntbxHighlightConfig{
+				Extensions: mbp[string]string{
 					"go": "not go",
 				},
 			},
-			Path:     "example.go",
+			Pbth:     "exbmple.go",
 			Found:    true,
 			Expected: "not go",
 		},
 		{
-			Config: syntaxHighlightConfig{
-				Extensions: map[string]string{},
+			Config: syntbxHighlightConfig{
+				Extensions: mbp[string]string{},
 			},
-			Path:     "example.go",
-			Found:    false,
+			Pbth:     "exbmple.go",
+			Found:    fblse,
 			Expected: "",
 		},
 
 		{
-			Config: syntaxHighlightConfig{
-				Extensions: map[string]string{
-					"strato": "scala",
+			Config: syntbxHighlightConfig{
+				Extensions: mbp[string]string{
+					"strbto": "scblb",
 				},
 			},
-			Path:     "test.strato",
+			Pbth:     "test.strbto",
 			Found:    true,
-			Expected: "scala",
+			Expected: "scblb",
 		},
 
 		{
-			Config: syntaxHighlightConfig{
-				Patterns: []languagePattern{
+			Config: syntbxHighlightConfig{
+				Pbtterns: []lbngubgePbttern{
 					{
-						pattern:  regexp.MustCompile("asdf"),
-						language: "not matching",
+						pbttern:  regexp.MustCompile("bsdf"),
+						lbngubge: "not mbtching",
 					},
 					{
-						pattern:  regexp.MustCompile("\\.bashrc"),
-						language: "bash",
+						pbttern:  regexp.MustCompile("\\.bbshrc"),
+						lbngubge: "bbsh",
 					},
 				},
 			},
-			Path:     "/home/example/.bashrc",
+			Pbth:     "/home/exbmple/.bbshrc",
 			Found:    true,
-			Expected: "bash",
+			Expected: "bbsh",
 		},
 	}
 
-	for _, testCase := range cases {
-		language, found := getLanguageFromConfig(testCase.Config, testCase.Path)
-		if found != testCase.Found {
-			t.Fatalf("Got: %v, Expected: %v", testCase.Found, found)
+	for _, testCbse := rbnge cbses {
+		lbngubge, found := getLbngubgeFromConfig(testCbse.Config, testCbse.Pbth)
+		if found != testCbse.Found {
+			t.Fbtblf("Got: %v, Expected: %v", testCbse.Found, found)
 		}
 
-		if language != testCase.Expected {
-			t.Fatalf("Got: %s, Expected: %s", testCase.Expected, language)
+		if lbngubge != testCbse.Expected {
+			t.Fbtblf("Got: %s, Expected: %s", testCbse.Expected, lbngubge)
 		}
 	}
 }
 
-func TestShebang(t *testing.T) {
-	type testCase struct {
+func TestShebbng(t *testing.T) {
+	type testCbse struct {
 		Contents string
 		Expected string
 	}
 
-	cases := []testCase{
+	cbses := []testCbse{
 		{
 			Contents: "#!/usr/bin/env python",
 			Expected: "Python",
 		},
 		{
 			Contents: "#!/usr/bin/env node",
-			Expected: "JavaScript",
+			Expected: "JbvbScript",
 		},
 		{
 			Contents: "#!/usr/bin/env ruby",
@@ -104,8 +104,8 @@ func TestShebang(t *testing.T) {
 			Expected: "PHP",
 		},
 		{
-			Contents: "#!/usr/bin/env lua",
-			Expected: "lua",
+			Contents: "#!/usr/bin/env lub",
+			Expected: "lub",
 		},
 		{
 			Contents: "#!/usr/bin/env tclsh",
@@ -117,41 +117,41 @@ func TestShebang(t *testing.T) {
 		},
 	}
 
-	for _, testCase := range cases {
-		language, _ := getLanguage("", testCase.Contents)
-		if language != testCase.Expected {
-			t.Fatalf("%s\nGot: %s, Expected: %s", testCase.Contents, language, testCase.Expected)
+	for _, testCbse := rbnge cbses {
+		lbngubge, _ := getLbngubge("", testCbse.Contents)
+		if lbngubge != testCbse.Expected {
+			t.Fbtblf("%s\nGot: %s, Expected: %s", testCbse.Contents, lbngubge, testCbse.Expected)
 		}
 	}
 }
 
-func TestGetLanguageFromContent(t *testing.T) {
-	type testCase struct {
-		Filename string
+func TestGetLbngubgeFromContent(t *testing.T) {
+	type testCbse struct {
+		Filenbme string
 		Contents string
 		Expected string
 	}
 
-	cases := []testCase{
+	cbses := []testCbse{
 		{
-			Filename: "bruh.m",
+			Filenbme: "bruh.m",
 			Contents: `#import "Import.h"
-@interface Interface ()
+@interfbce Interfbce ()
 @end`,
 			Expected: "objective-c",
 		},
 		{
-			Filename: "slay.m",
+			Filenbme: "slby.m",
 			Contents: `function setupPythonIfNeeded()
-%setupPythonIfNeeded Check if python is installed and configured.  If it's`,
-			Expected: "matlab",
+%setupPythonIfNeeded Check if python is instblled bnd configured.  If it's`,
+			Expected: "mbtlbb",
 		},
 	}
 
-	for _, testCase := range cases {
-		language, _ := getLanguage(testCase.Filename, testCase.Contents)
-		if language != testCase.Expected {
-			t.Fatalf("%s\nGot: %s, Expected: %s", testCase.Contents, language, testCase.Expected)
+	for _, testCbse := rbnge cbses {
+		lbngubge, _ := getLbngubge(testCbse.Filenbme, testCbse.Contents)
+		if lbngubge != testCbse.Expected {
+			t.Fbtblf("%s\nGot: %s, Expected: %s", testCbse.Contents, lbngubge, testCbse.Expected)
 		}
 	}
 }

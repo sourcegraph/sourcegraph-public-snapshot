@@ -1,4 +1,4 @@
-package rbac
+pbckbge rbbc
 
 import (
 	"fmt"
@@ -6,62 +6,62 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	rtypes "github.com/sourcegraph/sourcegraph/internal/rbac/types"
+	rtypes "github.com/sourcegrbph/sourcegrbph/internbl/rbbc/types"
 )
 
-func TestParsePermissionDisplayName(t *testing.T) {
+func TestPbrsePermissionDisplbyNbme(t *testing.T) {
 	tests := []struct {
-		displayName string
-		name        string
+		displbyNbme string
+		nbme        string
 
-		namespace     rtypes.PermissionNamespace
-		action        rtypes.NamespaceAction
+		nbmespbce     rtypes.PermissionNbmespbce
+		bction        rtypes.NbmespbceAction
 		expectedError error
 	}{
 		{
-			name:          "valid display name",
-			displayName:   fmt.Sprintf("%s#READ", rtypes.BatchChangesNamespace),
-			namespace:     rtypes.BatchChangesNamespace,
-			action:        "READ",
+			nbme:          "vblid displby nbme",
+			displbyNbme:   fmt.Sprintf("%s#READ", rtypes.BbtchChbngesNbmespbce),
+			nbmespbce:     rtypes.BbtchChbngesNbmespbce,
+			bction:        "READ",
 			expectedError: nil,
 		},
 		{
-			name:          "display name without action",
-			displayName:   "BATCH_CHANGES#",
-			namespace:     "",
-			action:        "",
-			expectedError: invalidPermissionDisplayName,
+			nbme:          "displby nbme without bction",
+			displbyNbme:   "BATCH_CHANGES#",
+			nbmespbce:     "",
+			bction:        "",
+			expectedError: invblidPermissionDisplbyNbme,
 		},
 		{
-			name:          "display name without namespace",
-			displayName:   "#READ",
-			namespace:     "",
-			action:        "",
-			expectedError: invalidPermissionDisplayName,
+			nbme:          "displby nbme without nbmespbce",
+			displbyNbme:   "#READ",
+			nbmespbce:     "",
+			bction:        "",
+			expectedError: invblidPermissionDisplbyNbme,
 		},
 		{
-			name:          "display name without namespace and action",
-			displayName:   "#",
-			namespace:     "",
-			action:        "",
-			expectedError: invalidPermissionDisplayName,
+			nbme:          "displby nbme without nbmespbce bnd bction",
+			displbyNbme:   "#",
+			nbmespbce:     "",
+			bction:        "",
+			expectedError: invblidPermissionDisplbyNbme,
 		},
 		{
-			name:          "empty string",
-			displayName:   "",
-			namespace:     "",
-			action:        "",
-			expectedError: invalidPermissionDisplayName,
+			nbme:          "empty string",
+			displbyNbme:   "",
+			nbmespbce:     "",
+			bction:        "",
+			expectedError: invblidPermissionDisplbyNbme,
 		},
 	}
 
-	for _, tc := range tests {
-		t.Run(tc.name, func(t *testing.T) {
-			ns, action, err := ParsePermissionDisplayName(tc.displayName)
+	for _, tc := rbnge tests {
+		t.Run(tc.nbme, func(t *testing.T) {
+			ns, bction, err := PbrsePermissionDisplbyNbme(tc.displbyNbme)
 
-			require.Equal(t, ns, tc.namespace)
-			require.Equal(t, action, tc.action)
-			require.Equal(t, err, tc.expectedError)
+			require.Equbl(t, ns, tc.nbmespbce)
+			require.Equbl(t, bction, tc.bction)
+			require.Equbl(t, err, tc.expectedError)
 		})
 	}
 }

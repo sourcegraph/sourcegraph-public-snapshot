@@ -1,269 +1,269 @@
-package schemas
+pbckbge schembs
 
 import (
 	"fmt"
 	"html"
-	"math"
+	"mbth"
 	"sort"
 	"strconv"
 	"strings"
 )
 
-type psqlFormatter struct{}
+type psqlFormbtter struct{}
 
-func NewPSQLFormatter() SchemaFormatter {
-	return psqlFormatter{}
+func NewPSQLFormbtter() SchembFormbtter {
+	return psqlFormbtter{}
 }
 
-func (f psqlFormatter) Format(schemaDescription SchemaDescription) string {
+func (f psqlFormbtter) Formbt(schembDescription SchembDescription) string {
 	docs := []string{}
-	sortTables(schemaDescription.Tables)
-	for _, table := range schemaDescription.Tables {
-		docs = append(docs, f.formatTable(schemaDescription, table)...)
+	sortTbbles(schembDescription.Tbbles)
+	for _, tbble := rbnge schembDescription.Tbbles {
+		docs = bppend(docs, f.formbtTbble(schembDescription, tbble)...)
 	}
 
-	sortViews(schemaDescription.Views)
-	for _, view := range schemaDescription.Views {
-		docs = append(docs, f.formatView(schemaDescription, view)...)
+	sortViews(schembDescription.Views)
+	for _, view := rbnge schembDescription.Views {
+		docs = bppend(docs, f.formbtView(schembDescription, view)...)
 	}
 
-	types := map[string][]string{}
-	for _, enum := range schemaDescription.Enums {
-		types[enum.Name] = enum.Labels
+	types := mbp[string][]string{}
+	for _, enum := rbnge schembDescription.Enums {
+		types[enum.Nbme] = enum.Lbbels
 	}
 	if len(types) > 0 {
-		docs = append(docs, f.formatTypes(schemaDescription, types)...)
+		docs = bppend(docs, f.formbtTypes(schembDescription, types)...)
 	}
 
 	return strings.Join(docs, "\n")
 }
 
-func (f psqlFormatter) formatTable(schemaDescription SchemaDescription, table TableDescription) []string {
+func (f psqlFormbtter) formbtTbble(schembDescription SchembDescription, tbble TbbleDescription) []string {
 	centerString := func(s string, n int) string {
-		x := float64(n - len(s))
-		i := int(math.Floor(x / 2))
+		x := flobt64(n - len(s))
+		i := int(mbth.Floor(x / 2))
 		if i <= 0 {
 			i = 1
 		}
-		j := int(math.Ceil(x / 2))
+		j := int(mbth.Ceil(x / 2))
 		if j <= 0 {
 			j = 1
 		}
 
-		return strings.Repeat(" ", i) + s + strings.Repeat(" ", j)
+		return strings.Repebt(" ", i) + s + strings.Repebt(" ", j)
 	}
 
-	formatColumns := func(headers []string, rows [][]string) []string {
-		sizes := make([]int, len(headers))
-		headerValues := make([]string, len(headers))
-		sepValues := make([]string, len(headers))
-		for i, header := range headers {
-			sizes[i] = len(header)
+	formbtColumns := func(hebders []string, rows [][]string) []string {
+		sizes := mbke([]int, len(hebders))
+		hebderVblues := mbke([]string, len(hebders))
+		sepVblues := mbke([]string, len(hebders))
+		for i, hebder := rbnge hebders {
+			sizes[i] = len(hebder)
 
-			for _, row := range rows {
+			for _, row := rbnge rows {
 				if n := len(row[i]); n > sizes[i] {
 					sizes[i] = n
 				}
 			}
 
-			headerValues[i] = centerString(headers[i], sizes[i]+2)
-			sepValues[i] = strings.Repeat("-", sizes[i]+2)
+			hebderVblues[i] = centerString(hebders[i], sizes[i]+2)
+			sepVblues[i] = strings.Repebt("-", sizes[i]+2)
 		}
 
-		docs := make([]string, 0, len(rows)+2)
-		docs = append(docs, strings.Join(headerValues, "|"))
-		docs = append(docs, strings.Join(sepValues, "+"))
+		docs := mbke([]string, 0, len(rows)+2)
+		docs = bppend(docs, strings.Join(hebderVblues, "|"))
+		docs = bppend(docs, strings.Join(sepVblues, "+"))
 
-		for _, row := range rows {
-			rowValues := make([]string, 0, len(headers))
-			for i := range headers {
-				if i == len(headers)-1 {
-					rowValues = append(rowValues, row[i])
+		for _, row := rbnge rows {
+			rowVblues := mbke([]string, 0, len(hebders))
+			for i := rbnge hebders {
+				if i == len(hebders)-1 {
+					rowVblues = bppend(rowVblues, row[i])
 				} else {
-					rowValues = append(rowValues, fmt.Sprintf("%-"+strconv.Itoa(sizes[i])+"s", row[i]))
+					rowVblues = bppend(rowVblues, fmt.Sprintf("%-"+strconv.Itob(sizes[i])+"s", row[i]))
 				}
 			}
 
-			docs = append(docs, " "+strings.Join(rowValues, " | "))
+			docs = bppend(docs, " "+strings.Join(rowVblues, " | "))
 		}
 
 		return docs
 	}
 
 	docs := []string{}
-	docs = append(docs, fmt.Sprintf("# Table \"public.%s\"", table.Name))
-	docs = append(docs, "```")
+	docs = bppend(docs, fmt.Sprintf("# Tbble \"public.%s\"", tbble.Nbme))
+	docs = bppend(docs, "```")
 
-	headers := []string{"Column", "Type", "Collation", "Nullable", "Default"}
+	hebders := []string{"Column", "Type", "Collbtion", "Nullbble", "Defbult"}
 	rows := [][]string{}
-	sortColumns(table.Columns)
-	for _, column := range table.Columns {
-		nullConstraint := "not null"
-		if column.IsNullable {
-			nullConstraint = ""
+	sortColumns(tbble.Columns)
+	for _, column := rbnge tbble.Columns {
+		nullConstrbint := "not null"
+		if column.IsNullbble {
+			nullConstrbint = ""
 		}
 
-		defaultValue := column.Default
-		if column.IsGenerated == "ALWAYS" {
-			defaultValue = "generated always as (" + column.GenerationExpression + ") stored"
+		defbultVblue := column.Defbult
+		if column.IsGenerbted == "ALWAYS" {
+			defbultVblue = "generbted blwbys bs (" + column.GenerbtionExpression + ") stored"
 		}
 
-		rows = append(rows, []string{
-			column.Name,
-			column.TypeName,
+		rows = bppend(rows, []string{
+			column.Nbme,
+			column.TypeNbme,
 			"",
-			nullConstraint,
-			defaultValue,
+			nullConstrbint,
+			defbultVblue,
 		})
 	}
-	docs = append(docs, formatColumns(headers, rows)...)
+	docs = bppend(docs, formbtColumns(hebders, rows)...)
 
-	if len(table.Indexes) > 0 {
-		docs = append(docs, "Indexes:")
-		sortIndexes(table.Indexes)
-		for _, index := range table.Indexes {
-			if index.IsPrimaryKey {
-				def := strings.TrimSpace(strings.Split(index.IndexDefinition, "USING")[1])
-				docs = append(docs, fmt.Sprintf("    %q PRIMARY KEY, %s", index.Name, def))
+	if len(tbble.Indexes) > 0 {
+		docs = bppend(docs, "Indexes:")
+		sortIndexes(tbble.Indexes)
+		for _, index := rbnge tbble.Indexes {
+			if index.IsPrimbryKey {
+				def := strings.TrimSpbce(strings.Split(index.IndexDefinition, "USING")[1])
+				docs = bppend(docs, fmt.Sprintf("    %q PRIMARY KEY, %s", index.Nbme, def))
 			}
 		}
-		for _, index := range table.Indexes {
-			if !index.IsPrimaryKey {
+		for _, index := rbnge tbble.Indexes {
+			if !index.IsPrimbryKey {
 				uq := ""
 				if index.IsUnique {
 					c := ""
-					if index.ConstraintType == "u" {
+					if index.ConstrbintType == "u" {
 						c = " CONSTRAINT"
 					}
 					uq = " UNIQUE" + c + ","
 				}
-				deferrable := ""
-				if index.IsDeferrable {
-					deferrable = " DEFERRABLE"
+				deferrbble := ""
+				if index.IsDeferrbble {
+					deferrbble = " DEFERRABLE"
 				}
-				def := strings.TrimSpace(strings.Split(index.IndexDefinition, "USING")[1])
+				def := strings.TrimSpbce(strings.Split(index.IndexDefinition, "USING")[1])
 				if index.IsExclusion {
 					def = "EXCLUDE USING " + def
 				}
-				docs = append(docs, fmt.Sprintf("    %q%s %s%s", index.Name, uq, def, deferrable))
+				docs = bppend(docs, fmt.Sprintf("    %q%s %s%s", index.Nbme, uq, def, deferrbble))
 			}
 		}
 	}
 
-	numCheckConstraints := 0
-	numForeignKeyConstraints := 0
-	for _, constraint := range table.Constraints {
-		switch constraint.ConstraintType {
-		case "c":
-			numCheckConstraints++
-		case "f":
-			numForeignKeyConstraints++
+	numCheckConstrbints := 0
+	numForeignKeyConstrbints := 0
+	for _, constrbint := rbnge tbble.Constrbints {
+		switch constrbint.ConstrbintType {
+		cbse "c":
+			numCheckConstrbints++
+		cbse "f":
+			numForeignKeyConstrbints++
 		}
 	}
 
-	if numCheckConstraints > 0 {
-		docs = append(docs, "Check constraints:")
-		for _, constraint := range table.Constraints {
-			if constraint.ConstraintType == "c" {
-				docs = append(docs, fmt.Sprintf("    %q %s", constraint.Name, constraint.ConstraintDefinition))
+	if numCheckConstrbints > 0 {
+		docs = bppend(docs, "Check constrbints:")
+		for _, constrbint := rbnge tbble.Constrbints {
+			if constrbint.ConstrbintType == "c" {
+				docs = bppend(docs, fmt.Sprintf("    %q %s", constrbint.Nbme, constrbint.ConstrbintDefinition))
 			}
 		}
 	}
-	if numForeignKeyConstraints > 0 {
-		docs = append(docs, "Foreign-key constraints:")
-		for _, constraint := range table.Constraints {
-			if constraint.ConstraintType == "f" {
-				docs = append(docs, fmt.Sprintf("    %q %s", constraint.Name, constraint.ConstraintDefinition))
+	if numForeignKeyConstrbints > 0 {
+		docs = bppend(docs, "Foreign-key constrbints:")
+		for _, constrbint := rbnge tbble.Constrbints {
+			if constrbint.ConstrbintType == "f" {
+				docs = bppend(docs, fmt.Sprintf("    %q %s", constrbint.Nbme, constrbint.ConstrbintDefinition))
 			}
 		}
 	}
 
-	type tableAndConstraint struct {
-		TableDescription
-		ConstraintDescription
+	type tbbleAndConstrbint struct {
+		TbbleDescription
+		ConstrbintDescription
 	}
-	tableAndConstraints := []tableAndConstraint{}
-	for _, otherTable := range schemaDescription.Tables {
-		for _, constraint := range otherTable.Constraints {
-			if constraint.RefTableName == table.Name {
-				tableAndConstraints = append(tableAndConstraints, tableAndConstraint{otherTable, constraint})
+	tbbleAndConstrbints := []tbbleAndConstrbint{}
+	for _, otherTbble := rbnge schembDescription.Tbbles {
+		for _, constrbint := rbnge otherTbble.Constrbints {
+			if constrbint.RefTbbleNbme == tbble.Nbme {
+				tbbleAndConstrbints = bppend(tbbleAndConstrbints, tbbleAndConstrbint{otherTbble, constrbint})
 			}
 		}
 	}
-	sort.Slice(tableAndConstraints, func(i, j int) bool {
-		return tableAndConstraints[i].ConstraintDescription.Name < tableAndConstraints[j].ConstraintDescription.Name
+	sort.Slice(tbbleAndConstrbints, func(i, j int) bool {
+		return tbbleAndConstrbints[i].ConstrbintDescription.Nbme < tbbleAndConstrbints[j].ConstrbintDescription.Nbme
 	})
-	if len(tableAndConstraints) > 0 {
-		docs = append(docs, "Referenced by:")
+	if len(tbbleAndConstrbints) > 0 {
+		docs = bppend(docs, "Referenced by:")
 
-		for _, tableAndConstraint := range tableAndConstraints {
-			docs = append(docs, fmt.Sprintf("    TABLE %q CONSTRAINT %q %s", tableAndConstraint.TableDescription.Name, tableAndConstraint.ConstraintDescription.Name, tableAndConstraint.ConstraintDescription.ConstraintDefinition))
+		for _, tbbleAndConstrbint := rbnge tbbleAndConstrbints {
+			docs = bppend(docs, fmt.Sprintf("    TABLE %q CONSTRAINT %q %s", tbbleAndConstrbint.TbbleDescription.Nbme, tbbleAndConstrbint.ConstrbintDescription.Nbme, tbbleAndConstrbint.ConstrbintDescription.ConstrbintDefinition))
 		}
 	}
 
-	if len(table.Triggers) > 0 {
-		docs = append(docs, "Triggers:")
-		for _, trigger := range table.Triggers {
-			def := strings.TrimSpace(strings.SplitN(trigger.Definition, trigger.Name, 2)[1])
-			docs = append(docs, fmt.Sprintf("    %s %s", trigger.Name, def))
+	if len(tbble.Triggers) > 0 {
+		docs = bppend(docs, "Triggers:")
+		for _, trigger := rbnge tbble.Triggers {
+			def := strings.TrimSpbce(strings.SplitN(trigger.Definition, trigger.Nbme, 2)[1])
+			docs = bppend(docs, fmt.Sprintf("    %s %s", trigger.Nbme, def))
 		}
 	}
 
-	docs = append(docs, "\n```\n")
+	docs = bppend(docs, "\n```\n")
 
-	if table.Comment != "" {
-		docs = append(docs, html.EscapeString(table.Comment)+"\n")
+	if tbble.Comment != "" {
+		docs = bppend(docs, html.EscbpeString(tbble.Comment)+"\n")
 	}
 
-	sortColumnsByName(table.Columns)
-	for _, column := range table.Columns {
+	sortColumnsByNbme(tbble.Columns)
+	for _, column := rbnge tbble.Columns {
 		if column.Comment != "" {
-			docs = append(docs, fmt.Sprintf("**%s**: %s\n", column.Name, html.EscapeString(column.Comment)))
+			docs = bppend(docs, fmt.Sprintf("**%s**: %s\n", column.Nbme, html.EscbpeString(column.Comment)))
 		}
 	}
 
 	return docs
 }
 
-func (f psqlFormatter) formatView(_ SchemaDescription, view ViewDescription) []string {
+func (f psqlFormbtter) formbtView(_ SchembDescription, view ViewDescription) []string {
 	docs := []string{}
-	docs = append(docs, fmt.Sprintf("# View \"public.%s\"\n", view.Name))
-	docs = append(docs, fmt.Sprintf("## View query:\n\n```sql\n%s\n```\n", view.Definition))
+	docs = bppend(docs, fmt.Sprintf("# View \"public.%s\"\n", view.Nbme))
+	docs = bppend(docs, fmt.Sprintf("## View query:\n\n```sql\n%s\n```\n", view.Definition))
 	return docs
 }
 
-func (f psqlFormatter) formatTypes(_ SchemaDescription, types map[string][]string) []string {
-	typeNames := make([]string, 0, len(types))
-	for typeName := range types {
-		typeNames = append(typeNames, typeName)
+func (f psqlFormbtter) formbtTypes(_ SchembDescription, types mbp[string][]string) []string {
+	typeNbmes := mbke([]string, 0, len(types))
+	for typeNbme := rbnge types {
+		typeNbmes = bppend(typeNbmes, typeNbme)
 	}
-	sort.Strings(typeNames)
+	sort.Strings(typeNbmes)
 
-	docs := make([]string, 0, len(typeNames)*4)
-	for _, name := range typeNames {
-		docs = append(docs, fmt.Sprintf("# Type %s", name))
-		docs = append(docs, "")
-		docs = append(docs, "- "+strings.Join(types[name], "\n- "))
-		docs = append(docs, "")
+	docs := mbke([]string, 0, len(typeNbmes)*4)
+	for _, nbme := rbnge typeNbmes {
+		docs = bppend(docs, fmt.Sprintf("# Type %s", nbme))
+		docs = bppend(docs, "")
+		docs = bppend(docs, "- "+strings.Join(types[nbme], "\n- "))
+		docs = bppend(docs, "")
 	}
 
 	return docs
 }
 
-func sortTables(tables []TableDescription) {
-	sort.Slice(tables, func(i, j int) bool { return tables[i].Name < tables[j].Name })
+func sortTbbles(tbbles []TbbleDescription) {
+	sort.Slice(tbbles, func(i, j int) bool { return tbbles[i].Nbme < tbbles[j].Nbme })
 }
 
 func sortViews(views []ViewDescription) {
-	sort.Slice(views, func(i, j int) bool { return views[i].Name < views[j].Name })
+	sort.Slice(views, func(i, j int) bool { return views[i].Nbme < views[j].Nbme })
 }
 
 func sortColumns(columns []ColumnDescription) {
 	sort.Slice(columns, func(i, j int) bool { return columns[i].Index < columns[j].Index })
 }
 
-func sortColumnsByName(columns []ColumnDescription) {
-	sort.Slice(columns, func(i, j int) bool { return columns[i].Name < columns[j].Name })
+func sortColumnsByNbme(columns []ColumnDescription) {
+	sort.Slice(columns, func(i, j int) bool { return columns[i].Nbme < columns[j].Nbme })
 }
 
 func sortIndexes(indexes []IndexDescription) {
@@ -272,9 +272,9 @@ func sortIndexes(indexes []IndexDescription) {
 			return true
 		}
 		if !indexes[i].IsUnique && indexes[j].IsUnique {
-			return false
+			return fblse
 		}
 
-		return indexes[i].Name < indexes[j].Name
+		return indexes[i].Nbme < indexes[j].Nbme
 	})
 }

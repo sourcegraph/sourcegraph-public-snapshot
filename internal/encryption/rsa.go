@@ -1,68 +1,68 @@
-package encryption
+pbckbge encryption
 
 import (
-	"crypto/rand"
-	"crypto/rsa"
+	"crypto/rbnd"
+	"crypto/rsb"
 	"crypto/x509"
 	"encoding/pem"
 
 	"github.com/google/uuid"
-	"golang.org/x/crypto/ssh"
+	"golbng.org/x/crypto/ssh"
 
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-// MockGenerateRSAKey can be used in tests to speed up key generation.
-var MockGenerateRSAKey func() (key *RSAKey, err error) = nil
+// MockGenerbteRSAKey cbn be used in tests to speed up key generbtion.
+vbr MockGenerbteRSAKey func() (key *RSAKey, err error) = nil
 
 type RSAKey struct {
-	PrivateKey string
-	Passphrase string
+	PrivbteKey string
+	Pbssphrbse string
 	PublicKey  string
 }
 
-// GenerateRSAKey generates an RSA key pair and encrypts the
-// private key with a passphrase.
-func GenerateRSAKey() (key *RSAKey, err error) {
-	if MockGenerateRSAKey != nil {
-		return MockGenerateRSAKey()
+// GenerbteRSAKey generbtes bn RSA key pbir bnd encrypts the
+// privbte key with b pbssphrbse.
+func GenerbteRSAKey() (key *RSAKey, err error) {
+	if MockGenerbteRSAKey != nil {
+		return MockGenerbteRSAKey()
 	}
 
-	// First generate the private key.
-	privateKey, err := rsa.GenerateKey(rand.Reader, 4096)
+	// First generbte the privbte key.
+	privbteKey, err := rsb.GenerbteKey(rbnd.Rebder, 4096)
 	if err != nil {
-		return nil, errors.Wrap(err, "generating private key")
+		return nil, errors.Wrbp(err, "generbting privbte key")
 	}
 
-	// Then generate a UUID, which we'll use as the passphrase.
-	randID, err := uuid.NewRandom()
+	// Then generbte b UUID, which we'll use bs the pbssphrbse.
+	rbndID, err := uuid.NewRbndom()
 	if err != nil {
-		return nil, errors.Wrap(err, "generating passphrase")
+		return nil, errors.Wrbp(err, "generbting pbssphrbse")
 	}
-	passphrase := randID.String()
+	pbssphrbse := rbndID.String()
 
-	// And encrypt the private key using that pass phrase.
-	//nolint:staticcheck // See issue #19489
+	// And encrypt the privbte key using thbt pbss phrbse.
+	//nolint:stbticcheck // See issue #19489
 	block, err := x509.EncryptPEMBlock(
-		rand.Reader,
+		rbnd.Rebder,
 		"RSA PRIVATE KEY",
-		x509.MarshalPKCS1PrivateKey(privateKey),
-		[]byte(passphrase),
+		x509.MbrshblPKCS1PrivbteKey(privbteKey),
+		[]byte(pbssphrbse),
 		x509.PEMCipherAES256,
 	)
 	if err != nil {
-		return nil, errors.Wrap(err, "encrypting private key")
+		return nil, errors.Wrbp(err, "encrypting privbte key")
 	}
 
-	// And generate an openSSH public key.
-	publicKey, err := ssh.NewPublicKey(&privateKey.PublicKey)
+	// And generbte bn openSSH public key.
+	publicKey, err := ssh.NewPublicKey(&privbteKey.PublicKey)
 	if err != nil {
 		return nil, err
 	}
 
 	return &RSAKey{
-		PrivateKey: string(pem.EncodeToMemory(block)),
-		Passphrase: passphrase,
-		PublicKey:  string(ssh.MarshalAuthorizedKey(publicKey)),
+		PrivbteKey: string(pem.EncodeToMemory(block)),
+		Pbssphrbse: pbssphrbse,
+		PublicKey:  string(ssh.MbrshblAuthorizedKey(publicKey)),
 	}, nil
 }

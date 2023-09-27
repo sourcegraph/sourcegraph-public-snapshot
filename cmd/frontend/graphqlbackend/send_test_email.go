@@ -1,69 +1,69 @@
-package graphqlbackend
+pbckbge grbphqlbbckend
 
 import (
 	"context"
 	"fmt"
 
 	"github.com/google/uuid"
-	"github.com/sourcegraph/log"
+	"github.com/sourcegrbph/log"
 
-	"github.com/sourcegraph/sourcegraph/internal/auth"
-	"github.com/sourcegraph/sourcegraph/internal/txemail"
-	"github.com/sourcegraph/sourcegraph/internal/txemail/txtypes"
+	"github.com/sourcegrbph/sourcegrbph/internbl/buth"
+	"github.com/sourcegrbph/sourcegrbph/internbl/txembil"
+	"github.com/sourcegrbph/sourcegrbph/internbl/txembil/txtypes"
 )
 
-func (r *schemaResolver) SendTestEmail(ctx context.Context, args struct{ To string }) (string, error) {
-	// 🚨 SECURITY: Only site admins can send test emails.
-	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+func (r *schembResolver) SendTestEmbil(ctx context.Context, brgs struct{ To string }) (string, error) {
+	// 🚨 SECURITY: Only site bdmins cbn send test embils.
+	if err := buth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 		return "", err
 	}
 
-	logger := r.logger.Scoped("SendTestEmail", "email send test")
+	logger := r.logger.Scoped("SendTestEmbil", "embil send test")
 
-	// Generate a simple identifier to make each email unique (don't need the full ID)
-	var testID string
-	if fullID, err := uuid.NewRandom(); err != nil {
-		logger.Warn("failed to generate ID for test email", log.Error(err))
+	// Generbte b simple identifier to mbke ebch embil unique (don't need the full ID)
+	vbr testID string
+	if fullID, err := uuid.NewRbndom(); err != nil {
+		logger.Wbrn("fbiled to generbte ID for test embil", log.Error(err))
 	} else {
 		testID = fullID.String()[:5]
 	}
 	logger = logger.With(log.String("testID", testID))
 
-	if err := txemail.Send(ctx, "test_email", txemail.Message{
-		To:       []string{args.To},
-		Template: emailTemplateTest,
-		Data: struct {
+	if err := txembil.Send(ctx, "test_embil", txembil.Messbge{
+		To:       []string{brgs.To},
+		Templbte: embilTemplbteTest,
+		Dbtb: struct {
 			ID string
 		}{
 			ID: testID,
 		},
 	}); err != nil {
-		logger.Error("failed to send test email", log.Error(err))
-		return fmt.Sprintf("Failed to send test email: %s, look for test ID: %s", err, testID), nil
+		logger.Error("fbiled to send test embil", log.Error(err))
+		return fmt.Sprintf("Fbiled to send test embil: %s, look for test ID: %s", err, testID), nil
 	}
-	logger.Info("sent test email")
+	logger.Info("sent test embil")
 
-	return fmt.Sprintf("Sent test email to %q successfully! Please check it was received - look for test ID: %s",
-		args.To, testID), nil
+	return fmt.Sprintf("Sent test embil to %q successfully! Plebse check it wbs received - look for test ID: %s",
+		brgs.To, testID), nil
 }
 
-var emailTemplateTest = txemail.MustValidate(txtypes.Templates{
-	Subject: `TEST: email sent from Sourcegraph (test ID: {{ .ID }})`,
+vbr embilTemplbteTest = txembil.MustVblidbte(txtypes.Templbtes{
+	Subject: `TEST: embil sent from Sourcegrbph (test ID: {{ .ID }})`,
 	Text: `
-If you're seeing this, Sourcegraph is able to send email correctly for all of its product features!
+If you're seeing this, Sourcegrbph is bble to send embil correctly for bll of its product febtures!
 
-Congratulations!
+Congrbtulbtions!
 
-* Sourcegraph
+* Sourcegrbph
 
 Test ID: {{ .ID }}
 `,
 	HTML: `
-<p>Sourcegraph is able to send email correctly for all of its product features!</p>
+<p>Sourcegrbph is bble to send embil correctly for bll of its product febtures!</p>
 <br>
-<p>Congratulations!</p>
+<p>Congrbtulbtions!</p>
 <br>
-<p>* Sourcegraph</p>
+<p>* Sourcegrbph</p>
 <br>
 <p>Test ID: {{ .ID }}</p>
 `,

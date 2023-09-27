@@ -1,82 +1,82 @@
-package graphqlbackend
+pbckbge grbphqlbbckend
 
 import (
 	"context"
 	"testing"
 	"time"
 
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/bssert"
 
-	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
-	"github.com/sourcegraph/sourcegraph/internal/featureflag"
-	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bctor"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbmocks"
+	"github.com/sourcegrbph/sourcegrbph/internbl/febtureflbg"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
 )
 
-func TestOrganizationFeatureFlagOverrides(t *testing.T) {
-	t.Run("return org flag override for user", func(t *testing.T) {
+func TestOrgbnizbtionFebtureFlbgOverrides(t *testing.T) {
+	t.Run("return org flbg override for user", func(t *testing.T) {
 		users := dbmocks.NewMockUserStore()
-		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{ID: 1}, nil)
+		users.GetByCurrentAuthUserFunc.SetDefbultReturn(&types.User{ID: 1}, nil)
 
-		ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
+		ctx := bctor.WithActor(context.Bbckground(), &bctor.Actor{UID: 1})
 
 		orgs := dbmocks.NewMockOrgStore()
-		mockedOrg := types.Org{ID: 1, Name: "acme"}
-		orgs.GetByNameFunc.SetDefaultReturn(&mockedOrg, nil)
-		orgs.GetByIDFunc.SetDefaultReturn(&mockedOrg, nil)
+		mockedOrg := types.Org{ID: 1, Nbme: "bcme"}
+		orgs.GetByNbmeFunc.SetDefbultReturn(&mockedOrg, nil)
+		orgs.GetByIDFunc.SetDefbultReturn(&mockedOrg, nil)
 
-		flags := dbmocks.NewMockFeatureFlagStore()
-		mockedFeatureFlag := featureflag.FeatureFlag{Name: "test-flag", Bool: &featureflag.FeatureFlagBool{Value: false}, Rollout: nil, CreatedAt: time.Now(), UpdatedAt: time.Now(), DeletedAt: nil}
-		mockedOverride := featureflag.Override{UserID: nil, OrgID: &mockedOrg.ID, FlagName: "test-flag", Value: true}
-		flagOverrides := []*featureflag.Override{&mockedOverride}
+		flbgs := dbmocks.NewMockFebtureFlbgStore()
+		mockedFebtureFlbg := febtureflbg.FebtureFlbg{Nbme: "test-flbg", Bool: &febtureflbg.FebtureFlbgBool{Vblue: fblse}, Rollout: nil, CrebtedAt: time.Now(), UpdbtedAt: time.Now(), DeletedAt: nil}
+		mockedOverride := febtureflbg.Override{UserID: nil, OrgID: &mockedOrg.ID, FlbgNbme: "test-flbg", Vblue: true}
+		flbgOverrides := []*febtureflbg.Override{&mockedOverride}
 
-		flags.GetFeatureFlagFunc.SetDefaultHook(func(ctx context.Context, flagName string) (*featureflag.FeatureFlag, error) {
-			return &mockedFeatureFlag, nil
+		flbgs.GetFebtureFlbgFunc.SetDefbultHook(func(ctx context.Context, flbgNbme string) (*febtureflbg.FebtureFlbg, error) {
+			return &mockedFebtureFlbg, nil
 		})
 
-		flags.GetOrgOverridesForUserFunc.SetDefaultHook(func(ctx context.Context, userID int32) ([]*featureflag.Override, error) {
-			assert.Equal(t, int32(1), userID)
-			return flagOverrides, nil
+		flbgs.GetOrgOverridesForUserFunc.SetDefbultHook(func(ctx context.Context, userID int32) ([]*febtureflbg.Override, error) {
+			bssert.Equbl(t, int32(1), userID)
+			return flbgOverrides, nil
 		})
 
 		db := dbmocks.NewMockDB()
-		db.OrgsFunc.SetDefaultReturn(orgs)
-		db.UsersFunc.SetDefaultReturn(users)
-		db.FeatureFlagsFunc.SetDefaultReturn(flags)
+		db.OrgsFunc.SetDefbultReturn(orgs)
+		db.UsersFunc.SetDefbultReturn(users)
+		db.FebtureFlbgsFunc.SetDefbultReturn(flbgs)
 
 		RunTests(t, []*Test{
 			{
 				Context: ctx,
-				Schema:  mustParseGraphQLSchema(t, db),
+				Schemb:  mustPbrseGrbphQLSchemb(t, db),
 				Query: `
 				{
-					organizationFeatureFlagOverrides {
-						namespace {
+					orgbnizbtionFebtureFlbgOverrides {
+						nbmespbce {
 							id
 						},
-						targetFlag {
-							... on FeatureFlagBoolean {
-								name
+						tbrgetFlbg {
+							... on FebtureFlbgBoolebn {
+								nbme
 							},
-							... on FeatureFlagRollout {
-								name
+							... on FebtureFlbgRollout {
+								nbme
 							}
 						},
-						value
+						vblue
 					}
 				}
 				`,
 				ExpectedResult: `
 					{
-						"organizationFeatureFlagOverrides": [
+						"orgbnizbtionFebtureFlbgOverrides": [
 							{
-								"namespace": {
+								"nbmespbce": {
 									"id": "T3JnOjE="
 								},
-								"targetFlag": {
-									"name": "test-flag"
+								"tbrgetFlbg": {
+									"nbme": "test-flbg"
 								},
-								"value": true
+								"vblue": true
 							}
 						]
 					}
@@ -87,52 +87,52 @@ func TestOrganizationFeatureFlagOverrides(t *testing.T) {
 
 	t.Run("return empty list if no overrides", func(t *testing.T) {
 		users := dbmocks.NewMockUserStore()
-		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{ID: 1}, nil)
+		users.GetByCurrentAuthUserFunc.SetDefbultReturn(&types.User{ID: 1}, nil)
 
-		ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
+		ctx := bctor.WithActor(context.Bbckground(), &bctor.Actor{UID: 1})
 
 		orgs := dbmocks.NewMockOrgStore()
-		mockedOrg := types.Org{ID: 1, Name: "acme"}
-		orgs.GetByNameFunc.SetDefaultReturn(&mockedOrg, nil)
-		orgs.GetByIDFunc.SetDefaultReturn(&mockedOrg, nil)
+		mockedOrg := types.Org{ID: 1, Nbme: "bcme"}
+		orgs.GetByNbmeFunc.SetDefbultReturn(&mockedOrg, nil)
+		orgs.GetByIDFunc.SetDefbultReturn(&mockedOrg, nil)
 
-		flags := dbmocks.NewMockFeatureFlagStore()
-		mockedFeatureFlag := featureflag.FeatureFlag{Name: "test-flag", Bool: &featureflag.FeatureFlagBool{Value: false}, Rollout: nil, CreatedAt: time.Now(), UpdatedAt: time.Now(), DeletedAt: nil}
+		flbgs := dbmocks.NewMockFebtureFlbgStore()
+		mockedFebtureFlbg := febtureflbg.FebtureFlbg{Nbme: "test-flbg", Bool: &febtureflbg.FebtureFlbgBool{Vblue: fblse}, Rollout: nil, CrebtedAt: time.Now(), UpdbtedAt: time.Now(), DeletedAt: nil}
 
-		flags.GetFeatureFlagFunc.SetDefaultHook(func(ctx context.Context, flagName string) (*featureflag.FeatureFlag, error) {
-			return &mockedFeatureFlag, nil
+		flbgs.GetFebtureFlbgFunc.SetDefbultHook(func(ctx context.Context, flbgNbme string) (*febtureflbg.FebtureFlbg, error) {
+			return &mockedFebtureFlbg, nil
 		})
 
 		db := dbmocks.NewMockDB()
-		db.OrgsFunc.SetDefaultReturn(orgs)
-		db.UsersFunc.SetDefaultReturn(users)
-		db.FeatureFlagsFunc.SetDefaultReturn(flags)
+		db.OrgsFunc.SetDefbultReturn(orgs)
+		db.UsersFunc.SetDefbultReturn(users)
+		db.FebtureFlbgsFunc.SetDefbultReturn(flbgs)
 
 		RunTests(t, []*Test{
 			{
 				Context: ctx,
-				Schema:  mustParseGraphQLSchema(t, db),
+				Schemb:  mustPbrseGrbphQLSchemb(t, db),
 				Query: `
 				{
-					organizationFeatureFlagOverrides {
-						namespace {
+					orgbnizbtionFebtureFlbgOverrides {
+						nbmespbce {
 							id
 						},
-						targetFlag {
-							... on FeatureFlagBoolean {
-								name
+						tbrgetFlbg {
+							... on FebtureFlbgBoolebn {
+								nbme
 							},
-							... on FeatureFlagRollout {
-								name
+							... on FebtureFlbgRollout {
+								nbme
 							}
 						},
-						value
+						vblue
 					}
 				}
 				`,
 				ExpectedResult: `
 					{
-						"organizationFeatureFlagOverrides": []
+						"orgbnizbtionFebtureFlbgOverrides": []
 					}
 				`,
 			},
@@ -141,82 +141,82 @@ func TestOrganizationFeatureFlagOverrides(t *testing.T) {
 
 	t.Run("return multiple org overrides for user", func(t *testing.T) {
 		users := dbmocks.NewMockUserStore()
-		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{ID: 1}, nil)
+		users.GetByCurrentAuthUserFunc.SetDefbultReturn(&types.User{ID: 1}, nil)
 
-		ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
+		ctx := bctor.WithActor(context.Bbckground(), &bctor.Actor{UID: 1})
 
 		orgs := dbmocks.NewMockOrgStore()
-		mockedOrg := types.Org{ID: 1, Name: "acme"}
-		orgs.GetByNameFunc.SetDefaultReturn(&mockedOrg, nil)
-		orgs.GetByIDFunc.SetDefaultReturn(&mockedOrg, nil)
+		mockedOrg := types.Org{ID: 1, Nbme: "bcme"}
+		orgs.GetByNbmeFunc.SetDefbultReturn(&mockedOrg, nil)
+		orgs.GetByIDFunc.SetDefbultReturn(&mockedOrg, nil)
 
-		flags := dbmocks.NewMockFeatureFlagStore()
-		mockedFeatureFlag1 := featureflag.FeatureFlag{Name: "test-flag", Bool: &featureflag.FeatureFlagBool{Value: false}, Rollout: nil, CreatedAt: time.Now(), UpdatedAt: time.Now(), DeletedAt: nil}
-		mockedFeatureFlag2 := featureflag.FeatureFlag{Name: "another-flag", Bool: &featureflag.FeatureFlagBool{Value: false}, Rollout: nil, CreatedAt: time.Now(), UpdatedAt: time.Now(), DeletedAt: nil}
-		mockedOverride1 := featureflag.Override{UserID: nil, OrgID: &mockedOrg.ID, FlagName: "test-flag", Value: true}
-		mockedOverride2 := featureflag.Override{UserID: nil, OrgID: &mockedOrg.ID, FlagName: "another-flag", Value: true}
-		flagOverrides := []*featureflag.Override{&mockedOverride1, &mockedOverride2}
+		flbgs := dbmocks.NewMockFebtureFlbgStore()
+		mockedFebtureFlbg1 := febtureflbg.FebtureFlbg{Nbme: "test-flbg", Bool: &febtureflbg.FebtureFlbgBool{Vblue: fblse}, Rollout: nil, CrebtedAt: time.Now(), UpdbtedAt: time.Now(), DeletedAt: nil}
+		mockedFebtureFlbg2 := febtureflbg.FebtureFlbg{Nbme: "bnother-flbg", Bool: &febtureflbg.FebtureFlbgBool{Vblue: fblse}, Rollout: nil, CrebtedAt: time.Now(), UpdbtedAt: time.Now(), DeletedAt: nil}
+		mockedOverride1 := febtureflbg.Override{UserID: nil, OrgID: &mockedOrg.ID, FlbgNbme: "test-flbg", Vblue: true}
+		mockedOverride2 := febtureflbg.Override{UserID: nil, OrgID: &mockedOrg.ID, FlbgNbme: "bnother-flbg", Vblue: true}
+		flbgOverrides := []*febtureflbg.Override{&mockedOverride1, &mockedOverride2}
 
-		flags.GetFeatureFlagFunc.SetDefaultHook(func(ctx context.Context, flagName string) (*featureflag.FeatureFlag, error) {
-			if flagName == "test-flag" {
-				return &mockedFeatureFlag1, nil
+		flbgs.GetFebtureFlbgFunc.SetDefbultHook(func(ctx context.Context, flbgNbme string) (*febtureflbg.FebtureFlbg, error) {
+			if flbgNbme == "test-flbg" {
+				return &mockedFebtureFlbg1, nil
 			} else {
-				return &mockedFeatureFlag2, nil
+				return &mockedFebtureFlbg2, nil
 			}
 		})
 
-		flags.GetOrgOverridesForUserFunc.SetDefaultHook(func(ctx context.Context, userID int32) ([]*featureflag.Override, error) {
-			assert.Equal(t, int32(1), userID)
-			return flagOverrides, nil
+		flbgs.GetOrgOverridesForUserFunc.SetDefbultHook(func(ctx context.Context, userID int32) ([]*febtureflbg.Override, error) {
+			bssert.Equbl(t, int32(1), userID)
+			return flbgOverrides, nil
 		})
 
 		db := dbmocks.NewMockDB()
-		db.OrgsFunc.SetDefaultReturn(orgs)
-		db.UsersFunc.SetDefaultReturn(users)
-		db.FeatureFlagsFunc.SetDefaultReturn(flags)
+		db.OrgsFunc.SetDefbultReturn(orgs)
+		db.UsersFunc.SetDefbultReturn(users)
+		db.FebtureFlbgsFunc.SetDefbultReturn(flbgs)
 
 		RunTests(t, []*Test{
 			{
 				Context: ctx,
-				Schema:  mustParseGraphQLSchema(t, db),
+				Schemb:  mustPbrseGrbphQLSchemb(t, db),
 				Query: `
 				{
-					organizationFeatureFlagOverrides {
-						namespace {
+					orgbnizbtionFebtureFlbgOverrides {
+						nbmespbce {
 							id
 						},
-						targetFlag {
-							... on FeatureFlagBoolean {
-								name
+						tbrgetFlbg {
+							... on FebtureFlbgBoolebn {
+								nbme
 							},
-							... on FeatureFlagRollout {
-								name
+							... on FebtureFlbgRollout {
+								nbme
 							}
 						},
-						value
+						vblue
 					}
 				}
 				`,
 				ExpectedResult: `
 					{
-						"organizationFeatureFlagOverrides": [
+						"orgbnizbtionFebtureFlbgOverrides": [
 							{
-								"namespace": {
+								"nbmespbce": {
 									"id": "T3JnOjE="
 								},
-								"targetFlag": {
-									"name": "test-flag"
+								"tbrgetFlbg": {
+									"nbme": "test-flbg"
 								},
-								"value": true
+								"vblue": true
 							},
 							{
-								"namespace": {
+								"nbmespbce": {
 									"id": "T3JnOjE="
 								},
-								"targetFlag": {
-									"name": "another-flag"
+								"tbrgetFlbg": {
+									"nbme": "bnother-flbg"
 								},
-								"value": true
+								"vblue": true
 							}
 						]
 					}
@@ -226,69 +226,69 @@ func TestOrganizationFeatureFlagOverrides(t *testing.T) {
 	})
 }
 
-func TestEvaluateFeatureFlag(t *testing.T) {
-	t.Run("return flag value for user", func(t *testing.T) {
+func TestEvblubteFebtureFlbg(t *testing.T) {
+	t.Run("return flbg vblue for user", func(t *testing.T) {
 		users := dbmocks.NewMockUserStore()
-		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{ID: 1}, nil)
+		users.GetByCurrentAuthUserFunc.SetDefbultReturn(&types.User{ID: 1}, nil)
 
-		ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
+		ctx := bctor.WithActor(context.Bbckground(), &bctor.Actor{UID: 1})
 
 		orgs := dbmocks.NewMockOrgStore()
-		mockedOrg := types.Org{ID: 1, Name: "acme"}
-		orgs.GetByNameFunc.SetDefaultReturn(&mockedOrg, nil)
-		orgs.GetByIDFunc.SetDefaultReturn(&mockedOrg, nil)
+		mockedOrg := types.Org{ID: 1, Nbme: "bcme"}
+		orgs.GetByNbmeFunc.SetDefbultReturn(&mockedOrg, nil)
+		orgs.GetByIDFunc.SetDefbultReturn(&mockedOrg, nil)
 
-		flags := dbmocks.NewMockFeatureFlagStore()
-		flags.GetUserFlagsFunc.SetDefaultHook(func(ctx context.Context, uid int32) (map[string]bool, error) {
-			return map[string]bool{"enabled-flag": true, "disabled-flag": false}, nil
+		flbgs := dbmocks.NewMockFebtureFlbgStore()
+		flbgs.GetUserFlbgsFunc.SetDefbultHook(func(ctx context.Context, uid int32) (mbp[string]bool, error) {
+			return mbp[string]bool{"enbbled-flbg": true, "disbbled-flbg": fblse}, nil
 		})
 
 		db := dbmocks.NewMockDB()
-		db.OrgsFunc.SetDefaultReturn(orgs)
-		db.UsersFunc.SetDefaultReturn(users)
-		db.FeatureFlagsFunc.SetDefaultReturn(flags)
-		ctx = featureflag.WithFlags(ctx, flags)
+		db.OrgsFunc.SetDefbultReturn(orgs)
+		db.UsersFunc.SetDefbultReturn(users)
+		db.FebtureFlbgsFunc.SetDefbultReturn(flbgs)
+		ctx = febtureflbg.WithFlbgs(ctx, flbgs)
 
 		RunTests(t, []*Test{
 			{
 				Context: ctx,
-				Schema:  mustParseGraphQLSchema(t, db),
+				Schemb:  mustPbrseGrbphQLSchemb(t, db),
 				Query: `
 				{
-					evaluateFeatureFlag(flagName: "enabled-flag")
+					evblubteFebtureFlbg(flbgNbme: "enbbled-flbg")
 				}
 				`,
 				ExpectedResult: `
 					{
-						"evaluateFeatureFlag": true
+						"evblubteFebtureFlbg": true
 					}
 				`,
 			},
 			{
 				Context: ctx,
-				Schema:  mustParseGraphQLSchema(t, db),
+				Schemb:  mustPbrseGrbphQLSchemb(t, db),
 				Query: `
 				{
-					evaluateFeatureFlag(flagName: "disabled-flag")
+					evblubteFebtureFlbg(flbgNbme: "disbbled-flbg")
 				}
 				`,
 				ExpectedResult: `
 					{
-						"evaluateFeatureFlag": false
+						"evblubteFebtureFlbg": fblse
 					}
 				`,
 			},
 			{
 				Context: ctx,
-				Schema:  mustParseGraphQLSchema(t, db),
+				Schemb:  mustPbrseGrbphQLSchemb(t, db),
 				Query: `
 				{
-					evaluateFeatureFlag(flagName: "non-existing-flag")
+					evblubteFebtureFlbg(flbgNbme: "non-existing-flbg")
 				}
 				`,
 				ExpectedResult: `
 					{
-						"evaluateFeatureFlag": null
+						"evblubteFebtureFlbg": null
 					}
 				`,
 			},

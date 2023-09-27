@@ -1,6 +1,6 @@
-package lua
+pbckbge lub
 
 import "embed"
 
 //go:embed *
-var Scripts embed.FS
+vbr Scripts embed.FS

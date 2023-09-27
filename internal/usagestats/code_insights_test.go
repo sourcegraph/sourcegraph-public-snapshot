@@ -1,4 +1,4 @@
-package usagestats
+pbckbge usbgestbts
 
 import (
 	"context"
@@ -8,168 +8,168 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 
-	"github.com/sourcegraph/log/logtest"
+	"github.com/sourcegrbph/log/logtest"
 
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
-	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbtest"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
 )
 
-func TestCodeInsightsUsageStatistics(t *testing.T) {
-	ctx := context.Background()
+func TestCodeInsightsUsbgeStbtistics(t *testing.T) {
+	ctx := context.Bbckground()
 
 	defer func() {
 		timeNow = time.Now
 	}()
 
-	weekStart := time.Date(2021, 1, 25, 0, 0, 0, 0, time.UTC)
-	now := time.Date(2021, 1, 28, 0, 0, 0, 0, time.UTC)
+	weekStbrt := time.Dbte(2021, 1, 25, 0, 0, 0, 0, time.UTC)
+	now := time.Dbte(2021, 1, 28, 0, 0, 0, 0, time.UTC)
 	mockTimeNow(now)
 
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := dbtbbbse.NewDB(logger, dbtest.NewDB(logger, t))
 
-	_, err := db.ExecContext(context.Background(), `
+	_, err := db.ExecContext(context.Bbckground(), `
 		INSERT INTO event_logs
-			(id, name, argument, url, user_id, anonymous_user_id, source, version, timestamp)
+			(id, nbme, brgument, url, user_id, bnonymous_user_id, source, version, timestbmp)
 		VALUES
-			(1, 'ViewInsights', '{}', '', 1, '420657f0-d443-4d16-ac7d-003d8cdc91ef', 'WEB', '3.23.0', $1::timestamp - interval '1 day'),
-			(2, 'ViewInsights', '{}', '', 1, '420657f0-d443-4d16-ac7d-003d8cdc91ef', 'WEB', '3.23.0', $1::timestamp - interval '1 day'),
-			(3, 'InsightAddition', '{"insightType": "searchInsights"}', '', 1, '420657f0-d443-4d16-ac7d-003d8cdc91ef', 'WEB', '3.23.0', $1::timestamp - interval '1 day'),
-			(4, 'InsightAddition', '{"insightType": "codeStatsInsights"}', '', 2, '420657f0-d443-4d16-ac7d-003d8cdc19ac', 'WEB', '3.23.0', $1::timestamp - interval '1 day'),
-			(5, 'InsightAddition', '{"insightType": "searchInsights"}', '', 2, '420657f0-d443-4d16-ac7d-003d8cdc19ac', 'WEB', '3.23.0', $1::timestamp - interval '1 day'),
-			(6, 'InsightEdit', '{"insightType": "searchInsights"}', '', 2, '420657f0-d443-4d16-ac7d-003d8cdc19ac', 'WEB', '3.23.0', $1::timestamp - interval '2 days'),
-			(7, 'InsightAddition', '{"insightType": "codeStatsInsights"}', '', 1, '420657f0-d443-4d16-ac7d-003d8cdc91ef', 'WEB', '3.23.0', $1::timestamp - interval '8 days'),
-			(8, 'CodeInsightsSearchBasedCreationPageSubmitClick', '{}', '', 1, '420657f0-d443-4d16-ac7d-003d8cdc91ef', 'WEB', '3.23.0', $1::timestamp - interval '1 day')
+			(1, 'ViewInsights', '{}', '', 1, '420657f0-d443-4d16-bc7d-003d8cdc91ef', 'WEB', '3.23.0', $1::timestbmp - intervbl '1 dby'),
+			(2, 'ViewInsights', '{}', '', 1, '420657f0-d443-4d16-bc7d-003d8cdc91ef', 'WEB', '3.23.0', $1::timestbmp - intervbl '1 dby'),
+			(3, 'InsightAddition', '{"insightType": "sebrchInsights"}', '', 1, '420657f0-d443-4d16-bc7d-003d8cdc91ef', 'WEB', '3.23.0', $1::timestbmp - intervbl '1 dby'),
+			(4, 'InsightAddition', '{"insightType": "codeStbtsInsights"}', '', 2, '420657f0-d443-4d16-bc7d-003d8cdc19bc', 'WEB', '3.23.0', $1::timestbmp - intervbl '1 dby'),
+			(5, 'InsightAddition', '{"insightType": "sebrchInsights"}', '', 2, '420657f0-d443-4d16-bc7d-003d8cdc19bc', 'WEB', '3.23.0', $1::timestbmp - intervbl '1 dby'),
+			(6, 'InsightEdit', '{"insightType": "sebrchInsights"}', '', 2, '420657f0-d443-4d16-bc7d-003d8cdc19bc', 'WEB', '3.23.0', $1::timestbmp - intervbl '2 dbys'),
+			(7, 'InsightAddition', '{"insightType": "codeStbtsInsights"}', '', 1, '420657f0-d443-4d16-bc7d-003d8cdc91ef', 'WEB', '3.23.0', $1::timestbmp - intervbl '8 dbys'),
+			(8, 'CodeInsightsSebrchBbsedCrebtionPbgeSubmitClick', '{}', '', 1, '420657f0-d443-4d16-bc7d-003d8cdc91ef', 'WEB', '3.23.0', $1::timestbmp - intervbl '1 dby')
 	`, now)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	have, err := GetCodeInsightsUsageStatistics(ctx, db)
+	hbve, err := GetCodeInsightsUsbgeStbtistics(ctx, db)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
 	zeroInt := int32(0)
 	oneInt := int32(1)
 	twoInt := int32(2)
 
-	searchInsightsType := "searchInsights"
-	codeStatsInsightsType := "codeStatsInsights"
+	sebrchInsightsType := "sebrchInsights"
+	codeStbtsInsightsType := "codeStbtsInsights"
 
-	weeklyUsageStatisticsByInsight := []*types.InsightUsageStatistics{
+	weeklyUsbgeStbtisticsByInsight := []*types.InsightUsbgeStbtistics{
 		{
-			InsightType:      &codeStatsInsightsType,
+			InsightType:      &codeStbtsInsightsType,
 			Additions:        &oneInt,
 			Edits:            &zeroInt,
-			Removals:         &zeroInt,
+			Removbls:         &zeroInt,
 			Hovers:           &zeroInt,
-			UICustomizations: &zeroInt,
-			DataPointClicks:  &zeroInt,
-			FiltersChange:    &zeroInt,
+			UICustomizbtions: &zeroInt,
+			DbtbPointClicks:  &zeroInt,
+			FiltersChbnge:    &zeroInt,
 		},
 		{
-			InsightType:      &searchInsightsType,
+			InsightType:      &sebrchInsightsType,
 			Additions:        &twoInt,
 			Edits:            &oneInt,
-			Removals:         &zeroInt,
+			Removbls:         &zeroInt,
 			Hovers:           &zeroInt,
-			UICustomizations: &zeroInt,
-			DataPointClicks:  &zeroInt,
-			FiltersChange:    &zeroInt,
+			UICustomizbtions: &zeroInt,
+			DbtbPointClicks:  &zeroInt,
+			FiltersChbnge:    &zeroInt,
 		},
 	}
 
-	want := &types.CodeInsightsUsageStatistics{
-		WeeklyUsageStatisticsByInsight:               weeklyUsageStatisticsByInsight,
-		WeeklyInsightsPageViews:                      &twoInt,
-		WeeklyInsightsGetStartedPageViews:            &zeroInt,
-		WeeklyInsightsUniquePageViews:                &oneInt,
-		WeeklyInsightsGetStartedUniquePageViews:      &zeroInt,
+	wbnt := &types.CodeInsightsUsbgeStbtistics{
+		WeeklyUsbgeStbtisticsByInsight:               weeklyUsbgeStbtisticsByInsight,
+		WeeklyInsightsPbgeViews:                      &twoInt,
+		WeeklyInsightsGetStbrtedPbgeViews:            &zeroInt,
+		WeeklyInsightsUniquePbgeViews:                &oneInt,
+		WeeklyInsightsGetStbrtedUniquePbgeViews:      &zeroInt,
 		WeeklyInsightConfigureClick:                  &zeroInt,
 		WeeklyInsightAddMoreClick:                    &zeroInt,
-		WeekStart:                                    weekStart,
-		WeeklyInsightCreators:                        &twoInt,
-		WeeklyFirstTimeInsightCreators:               &oneInt,
-		WeeklyGetStartedTabClickByTab:                []types.InsightGetStartedTabClickPing{},
-		WeeklyGetStartedTabMoreClickByTab:            []types.InsightGetStartedTabClickPing{},
-		TotalDashboardCount:                          &zeroInt,
-		TotalOrgsWithDashboard:                       &zeroInt,
-		WeeklyStandaloneDashboardClicks:              &zeroInt,
-		WeeklyStandaloneInsightUniqueEditClicks:      &zeroInt,
-		WeeklyStandaloneInsightUniquePageViews:       &zeroInt,
-		WeeklyStandaloneInsightUniqueDashboardClicks: &zeroInt,
-		WeeklyStandaloneInsightPageViews:             &zeroInt,
-		WeeklyStandaloneEditClicks:                   &zeroInt,
+		WeekStbrt:                                    weekStbrt,
+		WeeklyInsightCrebtors:                        &twoInt,
+		WeeklyFirstTimeInsightCrebtors:               &oneInt,
+		WeeklyGetStbrtedTbbClickByTbb:                []types.InsightGetStbrtedTbbClickPing{},
+		WeeklyGetStbrtedTbbMoreClickByTbb:            []types.InsightGetStbrtedTbbClickPing{},
+		TotblDbshbobrdCount:                          &zeroInt,
+		TotblOrgsWithDbshbobrd:                       &zeroInt,
+		WeeklyStbndbloneDbshbobrdClicks:              &zeroInt,
+		WeeklyStbndbloneInsightUniqueEditClicks:      &zeroInt,
+		WeeklyStbndbloneInsightUniquePbgeViews:       &zeroInt,
+		WeeklyStbndbloneInsightUniqueDbshbobrdClicks: &zeroInt,
+		WeeklyStbndbloneInsightPbgeViews:             &zeroInt,
+		WeeklyStbndbloneEditClicks:                   &zeroInt,
 		WeeklyGroupResultsOpenSection:                &zeroInt,
-		WeeklyGroupResultsCollapseSection:            &zeroInt,
+		WeeklyGroupResultsCollbpseSection:            &zeroInt,
 		WeeklyGroupResultsInfoIconHover:              &zeroInt,
-		WeeklyDataExportClicks:                       &zeroInt,
+		WeeklyDbtbExportClicks:                       &zeroInt,
 	}
 
-	wantedWeeklyUsage := []types.AggregatedPingStats{
-		{Name: "CodeInsightsSearchBasedCreationPageSubmitClick", TotalCount: 1, UniqueCount: 1},
+	wbntedWeeklyUsbge := []types.AggregbtedPingStbts{
+		{Nbme: "CodeInsightsSebrchBbsedCrebtionPbgeSubmitClick", TotblCount: 1, UniqueCount: 1},
 	}
 
-	want.WeeklyAggregatedUsage = wantedWeeklyUsage
+	wbnt.WeeklyAggregbtedUsbge = wbntedWeeklyUsbge
 
-	want.WeeklyGroupResultsExpandedViewOpen = []types.GroupResultExpandedViewPing{}
-	want.WeeklyGroupResultsExpandedViewCollapse = []types.GroupResultExpandedViewPing{}
-	want.WeeklyGroupResultsChartBarHover = []types.GroupResultPing{}
-	want.WeeklyGroupResultsChartBarClick = []types.GroupResultPing{}
-	want.WeeklyGroupResultsAggregationModeClicked = []types.GroupResultPing{}
-	want.WeeklyGroupResultsAggregationModeDisabledHover = []types.GroupResultPing{}
+	wbnt.WeeklyGroupResultsExpbndedViewOpen = []types.GroupResultExpbndedViewPing{}
+	wbnt.WeeklyGroupResultsExpbndedViewCollbpse = []types.GroupResultExpbndedViewPing{}
+	wbnt.WeeklyGroupResultsChbrtBbrHover = []types.GroupResultPing{}
+	wbnt.WeeklyGroupResultsChbrtBbrClick = []types.GroupResultPing{}
+	wbnt.WeeklyGroupResultsAggregbtionModeClicked = []types.GroupResultPing{}
+	wbnt.WeeklyGroupResultsAggregbtionModeDisbbledHover = []types.GroupResultPing{}
 
-	if diff := cmp.Diff(want, have); diff != "" {
-		t.Fatal(diff)
+	if diff := cmp.Diff(wbnt, hbve); diff != "" {
+		t.Fbtbl(diff)
 	}
 }
 
-func TestWithCreationPings(t *testing.T) {
-	t.Parallel()
+func TestWithCrebtionPings(t *testing.T) {
+	t.Pbrbllel()
 
-	ctx := context.Background()
-	now := time.Date(2021, 1, 28, 0, 0, 0, 0, time.UTC)
+	ctx := context.Bbckground()
+	now := time.Dbte(2021, 1, 28, 0, 0, 0, 0, time.UTC)
 
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := dbtbbbse.NewDB(logger, dbtest.NewDB(logger, t))
 
-	user1 := "420657f0-d443-4d16-ac7d-003d8cdc91ef"
+	user1 := "420657f0-d443-4d16-bc7d-003d8cdc91ef"
 	user2 := "55555555-5555-5555-5555-555555555555"
 
-	_, err := db.ExecContext(context.Background(), `
+	_, err := db.ExecContext(context.Bbckground(), `
 		INSERT INTO event_logs
-			(id, name, argument, url, user_id, anonymous_user_id, source, version, timestamp)
+			(id, nbme, brgument, url, user_id, bnonymous_user_id, source, version, timestbmp)
 		VALUES
-			(1, 'ViewInsights', '{}', '', 1, $2, 'WEB', '3.23.0', $1::timestamp - interval '1 day'),
-			(2, 'ViewInsights', '{}', '', 1, $2, 'WEB', '3.23.0', $1::timestamp - interval '1 day'),
-			(3, 'ViewCodeInsightsCreationPage', '{}', '', 1, $2, 'WEB', '3.23.0', $1::timestamp - interval '1 day'),
-			(4, 'ViewCodeInsightsCreationPage', '{}', '', 1, $2, 'WEB', '3.23.0', $1::timestamp - interval '10 days'),
-			(5, 'ViewCodeInsightsCreationPage', '{}', '', 2, $3, 'WEB', '3.23.0', $1::timestamp - interval '2 days'),
-			(6, 'ViewCodeInsightsCreationPage', '{}', '', 2, $3, 'WEB', '3.23.0', $1::timestamp - interval '2 days')
+			(1, 'ViewInsights', '{}', '', 1, $2, 'WEB', '3.23.0', $1::timestbmp - intervbl '1 dby'),
+			(2, 'ViewInsights', '{}', '', 1, $2, 'WEB', '3.23.0', $1::timestbmp - intervbl '1 dby'),
+			(3, 'ViewCodeInsightsCrebtionPbge', '{}', '', 1, $2, 'WEB', '3.23.0', $1::timestbmp - intervbl '1 dby'),
+			(4, 'ViewCodeInsightsCrebtionPbge', '{}', '', 1, $2, 'WEB', '3.23.0', $1::timestbmp - intervbl '10 dbys'),
+			(5, 'ViewCodeInsightsCrebtionPbge', '{}', '', 2, $3, 'WEB', '3.23.0', $1::timestbmp - intervbl '2 dbys'),
+			(6, 'ViewCodeInsightsCrebtionPbge', '{}', '', 2, $3, 'WEB', '3.23.0', $1::timestbmp - intervbl '2 dbys')
 	`, now, user1, user2)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	want := map[types.PingName]types.AggregatedPingStats{
-		"ViewCodeInsightsCreationPage": {Name: "ViewCodeInsightsCreationPage", UniqueCount: 2, TotalCount: 3},
+	wbnt := mbp[types.PingNbme]types.AggregbtedPingStbts{
+		"ViewCodeInsightsCrebtionPbge": {Nbme: "ViewCodeInsightsCrebtionPbge", UniqueCount: 2, TotblCount: 3},
 	}
 
-	stats := &types.CodeInsightsUsageStatistics{}
-	err = getCreationViewUsage(ctx, db, stats, now)
+	stbts := &types.CodeInsightsUsbgeStbtistics{}
+	err = getCrebtionViewUsbge(ctx, db, stbts, now)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	// convert into map so we can reliably test for equality
-	got := make(map[types.PingName]types.AggregatedPingStats)
-	for _, v := range stats.WeeklyAggregatedUsage {
-		got[v.Name] = v
+	// convert into mbp so we cbn relibbly test for equblity
+	got := mbke(mbp[types.PingNbme]types.AggregbtedPingStbts)
+	for _, v := rbnge stbts.WeeklyAggregbtedUsbge {
+		got[v.Nbme] = v
 	}
 
-	if !cmp.Equal(want, got) {
-		t.Fatal(fmt.Sprintf("want: %v got: %v", want, got))
+	if !cmp.Equbl(wbnt, got) {
+		t.Fbtbl(fmt.Sprintf("wbnt: %v got: %v", wbnt, got))
 	}
 }
